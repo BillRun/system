@@ -29,3 +29,5 @@ $calculator = calculator_basic::getInstance($options);
 $calculator->load();
 
 $calculator->calc();
+
+$calculator->write();

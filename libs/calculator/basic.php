@@ -82,7 +82,7 @@ abstract class calculator_basic
 	/**
 	 * write the calculation into DB
 	 */
-	abstract protected function writeDB($row);
+	abstract protected function updateRow($row);
 
 	/**
 	 * identify if the row belong to calculator

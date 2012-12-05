@@ -29,18 +29,11 @@ class calculator_ilds extends calculator_basic implements calculator
 	 */
 	public function calc()
 	{
-		$lines = $this->db->getCollection(self::lines_table);
+		// @TODO trigger before calc
 		foreach($this->data as $item) {
-			$current = $item->getRawData();
-			$charge = $item->get('call_charge') / 100;
-			$added_values = array(
-				'price_customer' => $charge,
-				'price_provider' => $charge,
-			);
-			$newData = array_merge($current, $added_values);
-			$item->setRawData($newData);
-			$item->save($lines);
+			$this->updateRow($item);
 		}
+		// @TODO trigger after calc
 	}
 
 	/**
@@ -48,15 +41,29 @@ class calculator_ilds extends calculator_basic implements calculator
 	 */
 	public function write()
 	{
-		
+		// @TODO trigger before write
+		$lines = $this->db->getCollection(self::lines_table);
+		foreach($this->data as $item) {
+			$item->save($lines);
+		}
+		// @TODO trigger after write
 	}
 
 	/**
 	 * write the calculation into DB
 	 */
-	protected function writeDB($row)
+	protected function updateRow($row)
 	{
-		
+		// @TODO trigger before update row
+		$current = $row->getRawData();
+		$charge = $row->get('call_charge') / 100;
+		$added_values = array(
+			'price_customer' => $charge,
+			'price_provider' => $charge,
+		);
+		$newData = array_merge($current, $added_values);
+		$row->setRawData($newData);
+		// @TODO trigger after update row
 	}
 
 }
