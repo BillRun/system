@@ -15,22 +15,28 @@ abstract class processor
 {
 
 	/**
-	 *
-	 * @var file handler to proecess
+	 * the file handler to process on
+	 * @var file handler
 	 */
 	protected $fileHandler;
 
 	/**
-	 *
-	 * @var parser to processor the file
+	 * parser to processor the file
+	 * @var processor class
 	 */
 	protected $parser = null;
 
 	/**
-	 *
-	 * @var data container
+	 * the container work on
+	 * @var array
 	 */
 	protected $data = null;
+	
+	/**
+	 * the database we are working on
+	 * @var db resource
+	 */
+	protected $db = null;
 	
 	/**
 	 * constants of tables

@@ -10,27 +10,22 @@
 define('LIBS_PATH', __DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'libs' . DIRECTORY_SEPARATOR);
 require_once LIBS_PATH . 'parser.php';
 require_once LIBS_PATH . 'processor.php';
+require_once LIBS_PATH . 'calculator' . DIRECTORY_SEPARATOR . 'basic.php';
 define('MONGODLOID_PATH', LIBS_PATH . DIRECTORY_SEPARATOR . 'Mongodloid'.  DIRECTORY_SEPARATOR);
 require_once MONGODLOID_PATH . 'Connection.php';
 require_once MONGODLOID_PATH . 'Exception.php';
 
 // load mongodb instance
-//$conn = Mongodloid_Connection::getInstance();
-//$db = $conn->getDB('billing');
+$conn = Mongodloid_Connection::getInstance();
+$db = $conn->getDB('billing');
 
-// retreive file
-//$file_path = __DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'workspace' . DIRECTORY_SEPARATOR . 'SXFN_FINTL_ID000006_201209201634.DAT';
-// @todo log file
+$options = array(
+	'type' => 'ilds',
+	'db' => $db,
+);
 
-//$options = array(
-//	'type' => '018',
-//	'file_path' => $file_path,
-//	'parser' => parser::getInstance('fixed'),
-//	'db' => $db,
-//);
-//
-//$processor = processor::getInstance($options);
-//
-//$processor->process();
-//
-//echo "<pre>"; print_R($processor->getData());
+$calculator = calculator_basic::getInstance($options);
+
+$calculator->load();
+
+$calculator->calc();

@@ -18,15 +18,15 @@ interface calculator
 	/**
 	 * load the data to calculate
 	 */
-	abstract public function load();
+	public function load();
 
 	/**
 	 * execute the calculation process
 	 */
-	abstract public function calc();
+	public function calc();
 
 	/**
-	 * execute write down the calculation output
+	 * execute write the calculation output into DB
 	 */
-	abstract public function write();
+	public function write();
 }

@@ -172,12 +172,19 @@ class Mongodloid_Entity
 		$key = preg_replace('@\\[([^\\]]+)\\]@', '.$1', $key);
 		$result = $this->_values;
 
-		do
+		if (strpos($key, '.') !== FALSE)
 		{
-			list($current, $key) = explode('.', $key, 2);
-			$result = $result[$current];
+			do
+			{
+				list($current, $key) = explode('.', $key, 2);
+				$result = $result[$current];
+			}
+			while ($key !== null);
 		}
-		while ($key !== null);
+		else
+		{
+			$result = $this->_values[$key];
+		}
 
 		return $result;
 	}

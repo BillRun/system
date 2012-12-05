@@ -142,7 +142,7 @@ class Mongodloid_Query implements IteratorAggregate
 		{
 			foreach ($key as $k => $v)
 			{
-				if (is_array($v) && is_array($this->_params[$k]))
+				if (is_array($v) && isset($this->_params[$k]) && is_array($this->_params[$k]))
 					$this->_params[$k] += $v;
 				else
 					$this->_params[$k] = $v;
