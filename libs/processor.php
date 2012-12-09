@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package			Billing
  * @copyright		Copyright (C) 2012 S.D.O.C. LTD. All rights reserved.
@@ -31,19 +32,20 @@ abstract class processor
 	 * @var array
 	 */
 	protected $data = null;
-	
+
 	/**
 	 * the database we are working on
 	 * @var db resource
 	 */
 	protected $db = null;
-	
+
 	/**
 	 * constants of tables
 	 */
+
 	const log_table = 'log';
 	const lines_table = 'lines';
-	
+
 	/**
 	 * constructor - load basic options
 	 * 
@@ -60,30 +62,62 @@ abstract class processor
 		{
 			$this->setParser($options['parser']);
 		}
-		
-		if (isset($options['db'])) {
+
+		if (isset($options['db']))
+		{
 			$this->setDB($options['db']);
 		}
 	}
-	
-	public function setDB($db) {
+
+	public function setDB($db)
+	{
 		$this->db = $db;
 	}
 
-	public function getData() {
+	public function getData()
+	{
 		return $this->data;
 	}
+
 	/**
 	 * method to get the data from the file
+	 * @todo take to parent abstract
 	 */
-	abstract public function process();
+	public function process()
+	{
+
+		// @todo: trigger before parse (including $ret)
+		if (!$this->parse())
+		{
+			return false;
+		}
+
+		// @todo: trigger after parse line (including $ret)
+		// @todo: trigger before storage line (including $ret)
+
+		if (!$this->logDB())
+		{
+			//raise error
+			return false;
+		}
+
+		if (!$this->store())
+		{
+			//raise error
+			return false;
+		}
+
+		// @todo: trigger after storage line (including $ret)
+
+		return true;
+	}
 
 	/**
 	 * method to load the data to the db
 	 * @todo refactoring this method
 	 */
 	abstract protected function logDB();
-	
+
 	/**
 	 * method to parse the data
 	 */

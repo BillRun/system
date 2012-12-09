@@ -15,6 +15,8 @@
 class processor_018 extends processor
 {
 
+	protected $type = '018';
+
 	public function __construct($options)
 	{
 		parent::__construct($options);
@@ -67,38 +69,6 @@ class processor_018 extends processor
 	}
 
 	/**
-	 * method to get the data from the file
-	 * @todo take to parent abstract
-	 */
-	public function process()
-	{
-
-		// @todo: trigger before parse (including $ret)
-		if (!$this->parse()) {
-			return false;			
-		}
-
-		// @todo: trigger after parse line (including $ret)
-		// @todo: trigger before storage line (including $ret)
-
-		if (!$this->logDB())
-		{
-			//raise error
-			return false;
-		}
-
-		if (!$this->store())
-		{
-			//raise error
-			return false;
-		}
-
-		// @todo: trigger after storage line (including $ret)
-
-		return true;
-	}
-
-	/**
 	 * method to parse the data
 	 */
 	protected function parse()
@@ -118,10 +88,12 @@ class processor_018 extends processor
 					}
 
 					$this->parser->setStructure($this->header_structure);
-					$this->data['header'] = $header = $this->parser->setLine($line)->parse();
-					$header_stamp = $this->data['header']['stamp'];
-					// @todo: trigger after row load (including $header)
-					$this->parser->setStructure($this->data_structure); // for the next iteration
+					$this->parser->setLine($line);
+					// @todo: trigger after header load (including $header)
+					$header = $this->parser->parse();
+					// @todo: trigger after header parse (including $header)
+					$header['type'] = $this->type;
+					$this->data['header'] = $header;
 
 					break;
 				case 'T': //trailer
@@ -132,16 +104,29 @@ class processor_018 extends processor
 					}
 
 					$this->parser->setStructure($this->trailer_structure);
-					// @todo: trigger after row load (including $header, $data, $trailer)
-					$trailer = $this->parser->setLine($line)->parse();
-					$trailer['header_stamp'] = $header_stamp;
+					$this->parser->setLine($line);
+					// @todo: trigger after trailer load (including $header, $data, $trailer)
+					$trailer = $this->parser->parse();
+					// @todo: trigger after trailer parse (including $header, $data, $trailer)
+					$trailer['type'] = $this->type;
+					$trailer['header_stamp'] = $this->data['header']['stamp'];
 					$this->data['trailer'] = $trailer;
 
 					break;
 				case 'D': //data
-					$row = $this->parser->setLine($line)->parse();
+					if (isset($this->data['header']))
+					{
+						//raise error -> double header
+						return false;
+					}
+
+					$this->parser->setStructure($this->data_structure); // for the next iteration
+					$this->parser->setLine($line);
 					// @todo: trigger after row load (including $header, $row)
-					$row['header_stamp'] = $header_stamp;
+					$row = $this->parser->parse();
+					// @todo: trigger after row parse (including $header, $row)
+					$row['type'] = $this->type;
+					$row['header_stamp'] = $this->data['header']['stamp'];
 					$this->data['data'][] = $row;
 
 					break;
