@@ -16,6 +16,12 @@ abstract class processor
 {
 
 	/**
+	 * the file path to process on
+	 * @var file path
+	 */
+	protected $filePath;
+	
+	/**
 	 * the file handler to process on
 	 * @var file handler
 	 */
@@ -162,6 +168,7 @@ abstract class processor
 	{
 		if (file_exists($file_path))
 		{
+			$this->filePath = $file_path;
 			$this->fileHandler = fopen($file_path, 'r');
 		}
 		else

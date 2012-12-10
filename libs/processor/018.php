@@ -83,7 +83,7 @@ class processor_018 extends processor
 				case 'H': // header
 					if (isset($this->data['header']))
 					{
-						//raise error -> double header
+						echo "double header" . PHP_EOL;
 						return false;
 					}
 
@@ -93,13 +93,14 @@ class processor_018 extends processor
 					$header = $this->parser->parse();
 					// @todo: trigger after header parse (including $header)
 					$header['type'] = $this->type;
+					$row['file'] = basename($this->filePath);
 					$this->data['header'] = $header;
 
 					break;
 				case 'T': //trailer
 					if (isset($this->data['trailer']))
 					{
-						//raise error -> double trailer
+						echo "double trailer" . PHP_EOL;
 						return false;
 					}
 
@@ -110,13 +111,14 @@ class processor_018 extends processor
 					// @todo: trigger after trailer parse (including $header, $data, $trailer)
 					$trailer['type'] = $this->type;
 					$trailer['header_stamp'] = $this->data['header']['stamp'];
+					$trailer['file'] = basename($this->filePath);
 					$this->data['trailer'] = $trailer;
 
 					break;
 				case 'D': //data
-					if (isset($this->data['header']))
+					if (!isset($this->data['header']))
 					{
-						//raise error -> double header
+						echo "No header found" . PHP_EOL;
 						return false;
 					}
 
@@ -127,6 +129,7 @@ class processor_018 extends processor
 					// @todo: trigger after row parse (including $header, $row)
 					$row['type'] = $this->type;
 					$row['header_stamp'] = $this->data['header']['stamp'];
+					$row['file'] = basename($this->filePath);
 					$this->data['data'][] = $row;
 
 					break;
