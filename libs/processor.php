@@ -119,10 +119,45 @@ abstract class processor
 	}
 
 	/**
-	 * method to load the data to the db
+	 * method to log the processing
 	 * @todo refactoring this method
 	 */
-	abstract protected function logDB();
+	protected function logDB()
+	{
+		if (!isset($this->db) || !isset($this->data['trailer']))
+		{
+			// raise error
+			return false;
+		}
+
+		$log = $this->db->getCollection(self::log_table);
+		$entity = new Mongodloid_Entity($this->data['trailer']);
+
+		return $entity->save($log);
+	}
+
+	/**
+	 * method to store the processing data
+	 * @todo refactoring this method
+	 */
+	protected function store()
+	{
+		if (!isset($this->db) || !isset($this->data['data']))
+		{
+			// raise error
+			return false;
+		}
+
+		$lines = $this->db->getCollection(self::lines_table);
+
+		foreach ($this->data['data'] as $row)
+		{
+			$entity = new Mongodloid_Entity($row);
+			$entity->save($lines);
+		}
+
+		return true;
+	}
 
 	/**
 	 * method to parse the data
