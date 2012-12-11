@@ -5,6 +5,7 @@
  * @copyright		Copyright (C) 2012 S.D.O.C. LTD. All rights reserved.
  * @license			GNU General Public License version 2 or later; see LICENSE.txt
  */
+require_once __DIR__ . '/../' . 'subscriber.php';
 
 /**
  * Billing aggregator class for ilds records
@@ -24,43 +25,38 @@ class aggregator_ilds extends aggregator
 		foreach ($this->data as $item)
 		{
 			// load subscriber
-//			$phone_number = $item->get('caller_phone_no');
-//			$time = $item->get('call_start_dt');
+			$phone_number = $item->get('caller_phone_no');
+			$time = $item->get('call_start_dt');
 			// load subscriber
-//			$subscriber = $this->loadSubscriber($phone_number, $time);
-			// temp usage
-			$subscriber = array(
-				'id' => 123456,
-				'account_id' => 1234,
-			);
+			$subscriber = subscriber::get($phone_number, $time);
 
 			if (!$subscriber)
 			{
-				//raise warning
+				print "subscriber not found. phone:" . $phone_number . " time: " . $time . PHP_EOL;
 				continue;
 			}
 
+			$subscriber_id = $subscriber['id'];
 			// load the customer billrun line (aggregated collection)
 			$billrun = $this->loadSubscriberBillrun($subscriber);
 
 			if (!$billrun)
 			{
-				//raise warning
+				print "subscriber " . $subscriber_id . " cannot load billrun" . PHP_EOL;
 				continue;
 			}
 
 			// update billrun subscriber with amount
 			if (!$this->updateBillrun($billrun, $item))
 			{
-				//raise warning
+				print "subscriber " . $subscriber_id . " cannot update billrun" . PHP_EOL;
 				continue;
 			}
 
 			// update billing line with billrun stamp
 			if (!$this->updateBillingLine($item))
 			{
-				// revert updateBillrun
-				// raise warning
+				print "subscriber " . $subscriber_id . " cannot update billing line" . PHP_EOL;
 				continue;
 			}
 
@@ -69,23 +65,30 @@ class aggregator_ilds extends aggregator
 				self::billrun_table => $billrun,
 			);
 
-			$this->save($save_data);
+			if (!$this->save($save_data)) {
+				print "subscriber " . $subscriber_id . " cannot save data" . PHP_EOL;
+				continue;
+			}
+			
+			print "subscriber " . $subscriber_id . " saved successfully" . PHP_EOL;
 
 		}
 		// @TODO trigger after aggregate	
 	}
 
-	protected function loadSubscriberBillrun($subscriber)
+	public function loadSubscriberBillrun($subscriber)
 	{
-		$query = 'stamp = ' . $this->stamp .
-			' and subscriber_id = ' . $subscriber['id'] .
-			' and account_id = ' . $subscriber['account_id'];
+		
 		$billrun = $this->db->getCollection(self::billrun_table);
-		$resource = $billrun->query($query);
+		$resource = $billrun->query()
+			->equals('subscriber_id', $subscriber['id'])
+			->equals('account_id', $subscriber['account_id'])
+			->equals('stamp', $this->getStamp());
 
-		if ($resource && count($resource->cursor()->current()->getRawData()))
+		if ($resource && $resource->count())
 		{
-			return $resource[0];
+			foreach($resource as $entity) {break;} // @todo make this in more appropriate way
+			return $entity;
 		}
 
 		$values = array(
@@ -103,7 +106,8 @@ class aggregator_ilds extends aggregator
 		// @TODO trigger before update row
 		$current = $billrun->getRawData();
 		$added_charge = $row->get('price_customer');
-		if (!$added_charge || !is_numeric($added_charge))
+
+		if (!is_numeric($added_charge))
 		{
 			//raise an error 
 			return false;
@@ -155,7 +159,8 @@ class aggregator_ilds extends aggregator
 
 	protected function save($data)
 	{
-		foreach ($data as $coll_name => $coll_data) {
+		foreach ($data as $coll_name => $coll_data)
+		{
 			$coll = $this->db->getCollection($coll_name);
 			$coll->save($coll_data);
 		}

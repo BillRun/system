@@ -14,23 +14,6 @@ define('MONGODLOID_PATH', LIBS_PATH . DIRECTORY_SEPARATOR . 'Mongodloid'.  DIREC
 require_once MONGODLOID_PATH . 'Connection.php';
 require_once MONGODLOID_PATH . 'Exception.php';
 
-// load mongodb instance
-//$conn = Mongodloid_Connection::getInstance();
-//$db = $conn->getDB('billing');
+// make simple test for the system
 
-// retreive file
-//$file_path = __DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'workspace' . DIRECTORY_SEPARATOR . 'SXFN_FINTL_ID000006_201209201634.DAT';
-// @todo log file
-
-//$options = array(
-//	'type' => '018',
-//	'file_path' => $file_path,
-//	'parser' => parser::getInstance('fixed'),
-//	'db' => $db,
-//);
-//
-//$processor = processor::getInstance($options);
-//
-//$processor->process();
-//
-//echo "<pre>"; print_R($processor->getData());
+echo 'Open Source Last Forever!';

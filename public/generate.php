@@ -9,7 +9,7 @@
 // @todo make auto load
 define('LIBS_PATH', __DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'libs' . DIRECTORY_SEPARATOR);
 require_once LIBS_PATH . 'parser.php';
-require_once LIBS_PATH . 'aggregator.php';
+require_once LIBS_PATH . 'generator.php';
 define('MONGODLOID_PATH', LIBS_PATH . DIRECTORY_SEPARATOR . 'Mongodloid'.  DIRECTORY_SEPARATOR);
 require_once MONGODLOID_PATH . 'Connection.php';
 require_once MONGODLOID_PATH . 'Exception.php';
@@ -26,11 +26,10 @@ $options = array(
 
 echo "<pre>";
 
-$aggregator = aggregator::getInstance($options);
+$generator = generator::getInstance($options);
 
-//$subscriber = array('id' => '133628', 'account_id' => '1826244');
-//$aggregator->loadSubscriberBillrun($subscriber);
+//$generator->loadSubscriberBillrun($subscriber);
+//
+//$generator->load();
 
-$aggregator->load();
-
-$aggregator->aggregate();
+//$generator->generate();
