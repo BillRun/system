@@ -56,7 +56,7 @@ class calculator_ilds extends calculator_basic implements calculator
 	{
 		// @TODO trigger before update row
 		$current = $row->getRawData();
-		$charge = $row->get('call_charge') / 100;
+		$charge = round($row->get('call_charge') / 100, 2);
 		$added_values = array(
 			'price_customer' => $charge,
 			'price_provider' => $charge,
