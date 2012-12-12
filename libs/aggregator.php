@@ -82,7 +82,7 @@ abstract class aggregator
 	 */
 	abstract public function load();
 
-	abstract protected function updateBillingLine($row);
+	abstract protected function updateBillingLine($subscriber_id, $item);
 
 	abstract protected function updateBillrun($billrun, $row);
 

@@ -28,8 +28,6 @@ echo "<pre>";
 
 $generator = generator::getInstance($options);
 
-//$generator->loadSubscriberBillrun($subscriber);
-//
-//$generator->load();
+$generator->load();
 
-//$generator->generate();
+$generator->generate();

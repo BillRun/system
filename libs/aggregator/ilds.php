@@ -54,7 +54,7 @@ class aggregator_ilds extends aggregator
 			}
 
 			// update billing line with billrun stamp
-			if (!$this->updateBillingLine($item))
+			if (!$this->updateBillingLine($subscriber_id, $item))
 			{
 				print "subscriber " . $subscriber_id . " cannot update billing line" . PHP_EOL;
 				continue;
@@ -124,10 +124,11 @@ class aggregator_ilds extends aggregator
 		);
 	}
 
-	protected function updateBillingLine($row)
+	protected function updateBillingLine($subscriber_id, $row)
 	{
 		$current = $row->getRawData();
 		$added_values = array(
+			'subscriber_id' => $subscriber_id,
 			'billrun' => $this->getStamp(),
 		);
 		$newData = array_merge($current, $added_values);
