@@ -19,10 +19,19 @@ $conn = Mongodloid_Connection::getInstance();
 $db = $conn->getDB('billing');
 
 // retreive file
-$file_path = __DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'workspace' . DIRECTORY_SEPARATOR . 'SXFN_FINTL_ID000006_201209201634.DAT';
+//$file_path = __DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'workspace' . DIRECTORY_SEPARATOR . 'SXFN_FINTL_ID000006_201209201634.DAT';
+//
+//$options = array(
+//	'type' => '018',
+//	'file_path' => $file_path,
+//	'parser' => parser::getInstance('fixed'),
+//	'db' => $db,
+//);
+
+$file_path = __DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'workspace' . DIRECTORY_SEPARATOR . 'INT_KVZ_GLN_MABAL_000022_201202131213';
 
 $options = array(
-	'type' => '018',
+	'type' => '012',
 	'file_path' => $file_path,
 	'parser' => parser::getInstance('fixed'),
 	'db' => $db,
@@ -30,6 +39,6 @@ $options = array(
 
 $processor = processor::getInstance($options);
 
-$processor->process();
+$ret = $processor->process();
 
-echo "<pre>"; print_R($processor->getData());
+echo "<pre>"; var_dump($ret); print_R($processor->getData());
