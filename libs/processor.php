@@ -164,6 +164,12 @@ abstract class processor
 	 */
 	protected function parse()
 	{
+		if (!is_resource($this->fileHandler))
+		{
+			echo "Resource is not configured well" . PHP_EOL;
+			return false;
+		}
+		
 		while ($line = fgets($this->fileHandler))
 		{
 			$record_type = substr($line, 0, 1);
@@ -259,7 +265,7 @@ abstract class processor
 
 		if (!file_exists($file_path))
 		{
-			// @todo raise an error
+			echo "path not found " . $file_path . PHP_EOL;
 			return false;
 		}
 
@@ -268,7 +274,7 @@ abstract class processor
 
 		if (!class_exists($class))
 		{
-			// @todo raise an error
+			echo "class not found " . $class . PHP_EOL;
 			return false;
 		}
 

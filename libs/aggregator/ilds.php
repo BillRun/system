@@ -95,7 +95,7 @@ class aggregator_ilds extends aggregator
 			'stamp' => $this->stamp,
 			'account_id' => $subscriber['account_id'],
 			'subscriber_id' => $subscriber['id'],
-			'cost' => 0,
+			'cost' => array(),
 		);
 
 		return new Mongodloid_Entity($values, $billrun);
@@ -113,7 +113,15 @@ class aggregator_ilds extends aggregator
 			return false;
 		}
 
-		$current['cost'] += $added_charge;
+		$type = $row->get('type');
+		if (!isset($current['cost'][$type]))
+		{
+			$current['cost'][$type] = $added_charge;
+		}
+		else
+		{
+			$current['cost'][$type] += $added_charge;			
+		}
 
 		$billrun->setRawData($current);
 		// @TODO trigger after update row

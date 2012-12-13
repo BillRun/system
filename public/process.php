@@ -18,28 +18,43 @@ require_once MONGODLOID_PATH . 'Exception.php';
 $conn = Mongodloid_Connection::getInstance();
 $db = $conn->getDB('billing');
 
-// retreive file
-//$file_path = __DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'workspace' . DIRECTORY_SEPARATOR . 'SXFN_FINTL_ID000006_201209201634.DAT';
-//
-//$options = array(
-//	'type' => '018',
-//	'file_path' => $file_path,
-//	'parser' => parser::getInstance('fixed'),
-//	'db' => $db,
-//);
+if (isset($argv[1]))
+{
+	$ilds_type = $argv[1];
+}
+else
+{
+	$ilds_type = '012';
+}
 
-$file_path = __DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'workspace' . DIRECTORY_SEPARATOR . 'INT_KVZ_GLN_MABAL_000001_201207311333.DAT';
+
+if (isset($argv[2]))
+{
+	$file_path = $argv[2];
+}
+else
+{
+	$file_path = __DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'workspace' . DIRECTORY_SEPARATOR . 'INT_KVZ_GLN_MABAL_000001_201207311333.DAT';	
+	//$file_path = __DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'workspace' . DIRECTORY_SEPARATOR . 'SXFN_FINTL_ID000006_201209201634.DAT';
+}
 
 $options = array(
-	'type' => '012',
+	'type' => $ilds_type,
 	'file_path' => $file_path,
 	'parser' => parser::getInstance('fixed'),
 	'db' => $db,
 );
 
 $processor = processor::getInstance($options);
-
-$ret = $processor->process();
+if ($processor)
+{
+	$ret = $processor->process();	
+}
+else
+{
+	echo "error with loading processor" . PHP_EOL;
+	exit();
+}
 
 echo "<pre>";
 var_dump($ret);

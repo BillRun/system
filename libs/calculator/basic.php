@@ -77,9 +77,8 @@ abstract class calculator_basic
 		}
 
 		$resource = $lines->query()
-			->notExists('price_customer')
-//			->notExists('price_provider') // @todo: check how to do
-			->equals('type', $this->type);
+			->notExists('price_customer');
+//			->notExists('price_provider'); // @todo: check how to do or between 2 not exists
 
 		foreach ($resource as $entity)
 		{

@@ -18,8 +18,17 @@ require_once MONGODLOID_PATH . 'Exception.php';
 $conn = Mongodloid_Connection::getInstance();
 $db = $conn->getDB('billing');
 
+if (isset($argv[1]))
+{
+	$type = $argv[1];
+}
+else
+{
+	$type = 'ilds';
+}
+
 $options = array(
-	'type' => 'ilds',
+	'type' => $type,
 	'db' => $db,
 	'stamp' => '201212ilds1',
 );

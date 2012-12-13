@@ -36,7 +36,8 @@ class calculator_ilds extends calculator_basic implements calculator
 	public function calc()
 	{
 		// @TODO trigger before calc
-		foreach($this->data as $item) {
+		foreach ($this->data as $item)
+		{
 			$this->updateRow($item);
 		}
 		// @TODO trigger after calc
@@ -49,7 +50,8 @@ class calculator_ilds extends calculator_basic implements calculator
 	{
 		// @TODO trigger before write
 		$lines = $this->db->getCollection(self::lines_table);
-		foreach($this->data as $item) {
+		foreach ($this->data as $item)
+		{
 			$item->save($lines);
 		}
 		// @TODO trigger after write
@@ -62,7 +64,7 @@ class calculator_ilds extends calculator_basic implements calculator
 	{
 		// @TODO trigger before update row
 		$current = $row->getRawData();
-		$charge = $this->calcChargeLine($row->get('call_charge'));
+		$charge = $this->calcChargeLine($row->get('type'), $row->get('call_charge'));
 		$added_values = array(
 			'price_customer' => $charge,
 			'price_provider' => $charge,
@@ -71,9 +73,20 @@ class calculator_ilds extends calculator_basic implements calculator
 		$row->setRawData($newData);
 		// @TODO trigger after update row
 	}
-	
-	protected function calcChargeLine($charge) {
-		return round($charge / 100, 2);
+
+	protected function calcChargeLine($type, $charge)
+	{
+		switch ($type):
+			case '012':
+				$rating_charge = round($charge / 1000, 3);
+				break;
+			case '018':
+				$rating_charge = round($charge / 100, 2);
+				break;
+			default:
+				$rating_charge = $charge;
+		endswitch;
+		return $rating_charge;
 	}
 
 }
