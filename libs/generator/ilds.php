@@ -59,7 +59,7 @@ class generator_ilds extends generator
 		{
 			$subscriber_id = $row->get('subscriber_id');
 			$data = $row->getRawData();
-			
+
 			$lines = $this->get_subscriber_lines($subscriber_id);
 			$subscriber_data = array(
 				'sum' => $data,
@@ -69,7 +69,7 @@ class generator_ilds extends generator
 			$ret[$account_id][$subscriber_id] = array(
 				'data' => $subscriber_data,
 				'row' => $row,
-				);
+			);
 		}
 
 		return $ret;
@@ -166,14 +166,24 @@ class generator_ilds extends generator
 			}
 			$invoice_sumup->TOTAL_INCL_VAT = $total;
 			$row['xml'] = $xml->asXML();
-			print htmlentities($row['xml']);die;
+			$this->createXml($invoice_id, $xml->asXML());
+			print htmlentities($row['xml']);
+			die;
 		}
 	}
 
-	protected function saveInvoiceId($row, $invoice_id) {
+	protected function createXml($fileName, $xmlContent)
+	{
+		$path = $this->export_directory . '/' . $fileName . '.xml';
+		return file_put_contents($path, $xmlContent);
+	}
+
+	protected function saveInvoiceId($row, $invoice_id)
+	{
 		$billrun = $this->db->getCollection(self::billrun_table);
 		$data = $row->getRawData();
-		if (!isset($data['invoice_id'])){
+		if (!isset($data['invoice_id']))
+		{
 			$data['invoice_id'] = $invoice_id;
 			$row->setRawData($data);
 			$row->save($billrun);
@@ -181,7 +191,7 @@ class generator_ilds extends generator
 		}
 		return $data['invoice_id'];
 	}
-	
+
 	protected function createInvoiceId()
 	{
 		$invoices = $this->db->getCollection(self::billrun_table);
