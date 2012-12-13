@@ -30,7 +30,8 @@ class generator_ilds extends generator
 		}
 
 		$resource = $billrun->query()
-			->equals('stamp', $this->getStamp());
+			->equals('stamp', $this->getStamp())
+			->notExists('invoice_id');
 
 		foreach ($resource as $entity)
 		{
@@ -46,10 +47,12 @@ class generator_ilds extends generator
 	public function generate()
 	{
 		$data = $this->normailze();
-//		print_R($data);die;
+
 		// generate xml
 		$this->xml($data);
+
 		// generate csv
+		$this->csv();
 	}
 
 	protected function normailze($field = 'account_id')
@@ -95,9 +98,9 @@ class generator_ilds extends generator
 
 	protected function xml($rows)
 	{
-//		print_R($rows);die;
 		// use $this->export_directory
 		$short_format_date = 'd/m/Y';
+		$i = 0;
 		foreach ($rows as $key => $row)
 		{
 			// @todo refactoring the xml generation to another class
@@ -149,13 +152,13 @@ class generator_ilds extends generator
 			$invoice_id = $this->saveInvoiceId($subscriber['row'], $this->createInvoiceId());
 			// update billrun with the invoice id
 			$xml->INV_INVOICE_TOTAL->INVOICE_NUMBER = $invoice_id;
+			$xml->INV_INVOICE_TOTAL->INVOICE_DATE = date($short_format_date);
 			$xml->INV_INVOICE_TOTAL->FIRST_GENERATION_TIME = date($short_format_date);
 			$xml->INV_INVOICE_TOTAL->FROM_PERIOD = date($short_format_date, strtotime('2012-05-14'));
 			$xml->INV_INVOICE_TOTAL->TO_PERIOD = date($short_format_date, strtotime('2012-11-30'));
 			$xml->INV_INVOICE_TOTAL->SUBSCRIBER_COUNT = count($total_ilds);
 
 			$invoice_sumup = $xml->INV_INVOICE_TOTAL->addChild('INVOICE_SUMUP');
-			$invoice_sumup->INVOICE_DATE = date($short_format_date);
 			$total = 0;
 			foreach ($total_ilds as $ild => $total_ild_cost)
 			{
@@ -166,10 +169,35 @@ class generator_ilds extends generator
 			}
 			$invoice_sumup->TOTAL_INCL_VAT = $total;
 			$row['xml'] = $xml->asXML();
+			print $invoice_id . PHP_EOL;
 			$this->createXml($invoice_id, $xml->asXML());
-			print htmlentities($row['xml']);
-			die;
+
+			$this->addRowToCsv($invoice_id, $key, $total, $subscriber['data']['sum']['cost']);
+			if (++$i > 10)
+				return;
 		}
+	}
+
+	protected function csv()
+	{
+		$path = $this->export_directory . '/' . $this->getStamp() . '.csv';
+		return file_put_contents($path, $this->csvContent);
+	}
+
+	protected function addRowToCsv($invoice_id, $account_id, $total, $cost_ilds)
+	{
+		if (!isset($cost_ilds['012']))
+		{
+			$cost_ilds['012'] = 0;
+		}
+		if (!isset($cost_ilds['018']))
+		{
+			$cost_ilds['018'] = 0;
+		}
+		ksort($cost_ilds);
+		$seperator = ',';
+		$this->csvContent .= $invoice_id . $seperator . $account_id . $seperator .
+			$total . $seperator . implode($seperator, $cost_ilds) . PHP_EOL;
 	}
 
 	protected function createXml($fileName, $xmlContent)
@@ -202,24 +230,15 @@ class generator_ilds extends generator
 		}
 		if (isset($e['invoice_id']))
 		{
-			return $e['invoice_id'] + 1;
+			return (string) ($e['invoice_id'] + 1); // convert to string cause mongo cannot store bigint
 		}
-		else
-		{
-			return '3100000000';
-		}
-		die;
+		return '3100000000';
 	}
 
 	protected function basic_xml()
 	{
 		$xml_path = LIBS_PATH . '/../files/ilds.xml';
 		return simplexml_load_file($xml_path);
-	}
-
-	protected function csv()
-	{
-		
 	}
 
 }

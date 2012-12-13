@@ -14,7 +14,6 @@
  */
 abstract class generator
 {
-
 	/**
 	 * constants of tables
 	 */
@@ -28,20 +27,25 @@ abstract class generator
 	 * @var string
 	 */
 	protected $export_directory;
-	
+	protected $csvContent = '';
+	protected $csvPath;
+
 	public function __construct($options)
 	{
 		if ($options['db'])
 		{
 			$this->setDB($options['db']);
 		}
-		
-		if (isset($options['export_directory'])) {
+
+		if (isset($options['export_directory']))
+		{
 			$this->export_directory = $options['export_directory'];
-		} else {
+		}
+		else
+		{
 			$this->export_directory = __DIR__ . '/../files/';
 		}
-		
+
 		if ($options['stamp'])
 		{
 			$this->setStamp($options['stamp']);
@@ -51,13 +55,29 @@ abstract class generator
 			$this->setStamp(uniqid(get_class($this)));
 		}
 
+		$this->csvPath = $this->export_directory . '/' . $this->getStamp() . '.csv';
+		$this->loadCsv();
+	}
+
+	protected function loadCsv()
+	{
+		if (file_exists($this->csvPath))
+		{
+			$this->csvContent = file_get_contents($this->csvPath);			
+		}
 	}
 	
+	protected function csv()
+	{
+		return file_put_contents($this->csvPath, $this->csvContent);
+	}
+
+
 	public function setDB($db)
 	{
 		$this->db = $db;
 	}
-	
+
 	public function setStamp($stamp)
 	{
 		$this->stamp = $stamp;
@@ -109,7 +129,7 @@ abstract class generator
 			// @todo raise an error
 			return false;
 		}
-		
+
 		return new $class($args);
 	}
 
