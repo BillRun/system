@@ -36,7 +36,7 @@ class Mongodloid_Connection
 			return;
 
 		// this can throw an Exception
-		$this->_connection = new Mongo($this->_server ? $this->_server : 'localhost:27017', true, $this->_persistent);
+		$this->_connection = new Mongo($this->_server ? $this->_server : 'localhost:27017', array());
 
 		$this->_connected = true;
 	}
