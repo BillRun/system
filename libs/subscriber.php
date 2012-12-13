@@ -12,14 +12,13 @@ class subscriber
 //		$collection = $db->getCollection($accountCollectionName);
 //		$query = array('$where' => '');
 //		$collection->query($query);
-
 		// @todo: store the data and avoid too much requests
 		return self::request($phone, $time);
 	}
 
-
-	static protected function request($phone, $time) {
-		//http://192.168.37.10/gt-dev/dev/rpc/subscribers_by_date.rpc.php
+	static protected function request($phone, $time)
+	{
+		//http://192.168.37.10/gt-dev/dev/rpc/subscribers_by_date.rpc.php?date=2012-07-19 08:12&NDC_SN=502052428
 		$host = '192.168.37.10';
 		$url = 'gt-dev/dev/rpc/subscribers_by_date.rpc.php';
 		$datetime_format = 'Y-m-d H:i:s';
@@ -27,7 +26,7 @@ class subscriber
 			'NDC_SN' => self::NDC_SN($phone),
 			'date' => date($datetime_format, strtotime($time)),
 		);
-		
+
 		$path = 'http://' . $host . '/' . $url . '?' . http_build_query($params);
 		$json = self::send($path);
 
@@ -44,8 +43,8 @@ class subscriber
 		}
 
 		return (array) $object->data;
-
 	}
+
 	static protected function NDC_SN($phone)
 	{
 		if (substr($phone, 0, 1) == '0')
@@ -65,13 +64,13 @@ class subscriber
 		curl_setopt($ch, CURLOPT_HEADER, FALSE);
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
 		curl_setopt($ch, CURLOPT_USERPWD, 'free:free');
-		
+
 		// grab URL and pass it to the browser
 		$output = curl_exec($ch);
 
 		// close cURL resource, and free up system resources
 		curl_close($ch);
-		
+
 		return $output;
 	}
 

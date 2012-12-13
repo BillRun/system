@@ -37,6 +37,7 @@ abstract class calculator_basic
 	/**
 	 * constants of tables
 	 */
+
 	const log_table = 'log';
 	const lines_table = 'lines';
 
@@ -56,7 +57,7 @@ abstract class calculator_basic
 	{
 		$this->db = $db;
 	}
-	
+
 	/**
 	 * load the data to calculate
 	 */
@@ -70,10 +71,11 @@ abstract class calculator_basic
 //		$query = "{\$or: [" . $customer_query . ", " . $provider_query . "]}";
 //		$query = "price_customer NOT EXISTS or price_provider NOT EXISTS";
 
-		if ($initData) {
+		if ($initData)
+		{
 			$this->data = array();
 		}
-		
+
 		$resource = $lines->query()
 			->notExists('price_customer')
 //			->notExists('price_provider') // @todo: check how to do
@@ -86,7 +88,6 @@ abstract class calculator_basic
 
 		print "entities loaded: " . count($this->data) . PHP_EOL;
 	}
-
 
 	/**
 	 * write the calculation into DB

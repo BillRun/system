@@ -1,16 +1,16 @@
 <?php
+
 /**
  * @package			Billing
  * @copyright		Copyright (C) 2012 S.D.O.C. LTD. All rights reserved.
  * @license			GNU General Public License version 2 or later; see LICENSE.txt
  */
-
 // initiate libs
 // @todo make auto load
 define('LIBS_PATH', __DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'libs' . DIRECTORY_SEPARATOR);
 require_once LIBS_PATH . 'parser.php';
 require_once LIBS_PATH . 'processor.php';
-define('MONGODLOID_PATH', LIBS_PATH . DIRECTORY_SEPARATOR . 'Mongodloid'.  DIRECTORY_SEPARATOR);
+define('MONGODLOID_PATH', LIBS_PATH . DIRECTORY_SEPARATOR . 'Mongodloid' . DIRECTORY_SEPARATOR);
 require_once MONGODLOID_PATH . 'Connection.php';
 require_once MONGODLOID_PATH . 'Exception.php';
 
@@ -28,7 +28,7 @@ $db = $conn->getDB('billing');
 //	'db' => $db,
 //);
 
-$file_path = __DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'workspace' . DIRECTORY_SEPARATOR . 'INT_KVZ_GLN_MABAL_000022_201202131213';
+$file_path = __DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'workspace' . DIRECTORY_SEPARATOR . 'INT_KVZ_GLN_MABAL_000001_201207311333.DAT';
 
 $options = array(
 	'type' => '012',
@@ -41,4 +41,6 @@ $processor = processor::getInstance($options);
 
 $ret = $processor->process();
 
-echo "<pre>"; var_dump($ret); print_R($processor->getData());
+echo "<pre>";
+var_dump($ret);
+print_R($processor->getData());
