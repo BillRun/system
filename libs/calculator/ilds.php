@@ -16,6 +16,12 @@ class calculator_ilds extends calculator_basic implements calculator
 {
 
 	/**
+	 * the type of the calculator
+	 * @var string
+	 */
+	protected $type = 'ilds';
+
+	/**
 	 * constructor
 	 * @param array $options
 	 */
@@ -56,7 +62,7 @@ class calculator_ilds extends calculator_basic implements calculator
 	{
 		// @TODO trigger before update row
 		$current = $row->getRawData();
-		$charge = round($row->get('call_charge') / 100, 2);
+		$charge = $this->calcChargeLine($row->get('call_charge'));
 		$added_values = array(
 			'price_customer' => $charge,
 			'price_provider' => $charge,
@@ -64,6 +70,10 @@ class calculator_ilds extends calculator_basic implements calculator
 		$newData = array_merge($current, $added_values);
 		$row->setRawData($newData);
 		// @TODO trigger after update row
+	}
+	
+	protected function calcChargeLine($charge) {
+		return round($charge / 100, 2);
 	}
 
 }

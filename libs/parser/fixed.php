@@ -12,6 +12,7 @@ require_once __DIR__ . DIRECTORY_SEPARATOR . '../parser.php';
  *
  * @package  Billing
  * @since    1.0
+ * @todo should make first derivative parser text and then fixed parser will inherited text parser
  */
 class parser_fixed extends parser
 {

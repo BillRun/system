@@ -29,6 +29,12 @@ abstract class calculator_basic
 	protected $data = array();
 
 	/**
+	 * the type of the calculator
+	 * @var string
+	 */
+	protected $type = 'basic';
+
+	/**
 	 * constants of tables
 	 */
 	const log_table = 'log';
@@ -62,13 +68,16 @@ abstract class calculator_basic
 //		$customer_query = "{'price_customer':{\$exists:false}}";
 //		$provider_query = "{'price_provider':{\$exists:false}}";
 //		$query = "{\$or: [" . $customer_query . ", " . $provider_query . "]}";
-		$query = "price_customer NOT EXISTS or price_provider NOT EXISTS";
+//		$query = "price_customer NOT EXISTS or price_provider NOT EXISTS";
 
 		if ($initData) {
 			$this->data = array();
 		}
 		
-		$resource = $lines->query($query);
+		$resource = $lines->query()
+			->notExists('price_customer')
+//			->notExists('price_provider') // @todo: check how to do
+			->equals('type', $this->type);
 
 		foreach ($resource as $entity)
 		{
@@ -108,7 +117,7 @@ abstract class calculator_basic
 			$args = $args[0];
 		}
 
-		$file_path = __DIR__ . DIRECTORY_SEPARATOR . $type . '.php';
+		$file_path = __DIR__ . DIRECTORY_SEPARATOR . str_replace('_', '/', $type) . '.php';
 
 		if (!file_exists($file_path))
 		{
