@@ -58,13 +58,18 @@ class generator_ilds extends generator
 		foreach ($this->data as $row)
 		{
 			$subscriber_id = $row->get('subscriber_id');
+			$data = $row->getRawData();
+			
 			$lines = $this->get_subscriber_lines($subscriber_id);
 			$subscriber_data = array(
-				'sum' => $row->getRawData(),
+				'sum' => $data,
 				'lines' => $lines,
 			);
 			$account_id = $row->get($field);
-			$ret[$account_id][$subscriber_id] = $subscriber_data;
+			$ret[$account_id][$subscriber_id] = array(
+				'data' => $subscriber_data,
+				'row' => $row,
+				);
 		}
 
 		return $ret;
@@ -74,12 +79,12 @@ class generator_ilds extends generator
 	{
 		$lines = $this->db->getCollection(self::lines_table);
 
+		$ret = array();
 
 		$resource = $lines->query()
 			->equals('billrun', $this->getStamp())
 			->equals('subscriber_id', $subscriber_id);
 
-		$ret = array();
 		foreach ($resource as $entity)
 		{
 			$ret[] = $entity->getRawData();
@@ -92,6 +97,7 @@ class generator_ilds extends generator
 	{
 //		print_R($rows);die;
 		// use $this->export_directory
+		$short_format_date = 'd/m/Y';
 		foreach ($rows as $key => $row)
 		{
 			// @todo refactoring the xml generation to another class
@@ -99,27 +105,100 @@ class generator_ilds extends generator
 			$xml->TELECOM_INFORMATION->LASTTIMECDRPROCESSED = date('Y-m-d h:i:s');
 			$xml->TELECOM_INFORMATION->VAT_VALUE = '17';
 			$xml->TELECOM_INFORMATION->COMPANY_NAME_IN_ENGLISH = 'GOLAN';
-			$xml->INV_CUSTOMER_INFORMATION->CUSTOMER_CONTACT->NUMBER = $key;
+			$xml->INV_CUSTOMER_INFORMATION->CUSTOMER_CONTACT->EXTERNALACCOUNTREFERENCE = $key;
+			$total_ilds = array();
 			foreach ($row as $id => $subscriber)
 			{
 				$subscriber_inf = $xml->addChild('SUBSCRIBER_INF');
-				$subscriber_inf->SUBSCRIBER_DETAILS->NUMBER = $id;
+				$subscriber_inf->SUBSCRIBER_DETAILS->SUBSCRIBER_ID = $subscriber['data']['sum']['subscriber_id'];
 				$billing_records = $subscriber_inf->addChild('BILLING_LINES');
-				foreach ($subscriber['lines'] as $line)
+				foreach ($subscriber['data']['lines'] as $line)
 				{
 					$billing_record = $billing_records->addChild('BILLING_RECORD');
 					$billing_record->TIMEOFBILLING = $line['call_start_dt'];
+					$billing_record->TARIFFITEM = 'IL_ILD';
 					$billing_record->CTXT_CALL_OUT_DESTINATIONPNB = $line['called_no'];
 					$billing_record->CHARGEDURATIONINSEC = $line['chrgbl_call_dur'];
 					$billing_record->CHARGE = $line['price_customer'];
+					$billing_record->TARIFFKIND = 'Call';
+					$billing_record->INTERNATIONAL = '1';
+					$billing_record->ILD = $line['type'];
 				}
+
 				$subscriber_sumup = $subscriber_inf->addChild('SUBSCRIBER_SUMUP');
-				$subscriber_sumup->TOTAL_CHARGE = $subscriber['sum']['cost'];
-				$subscriber_sumup->TOTAL_VAT = 17;
-				$subscriber['xml'] = $xml->asXML();
+				$total_cost = 0;
+				foreach ($subscriber['data']['sum']['cost'] as $ild => $cost)
+				{
+					if (isset($total_ilds[$ild]))
+					{
+						$total_ilds[$ild] += $cost;
+					}
+					else
+					{
+						$total_ilds[$ild] = $cost;
+					}
+					$ild_xml = $subscriber_sumup->addChild('ILD');
+					$ild_xml->NDC = $ild;
+					$ild_xml->CHARGE_INCL_VAT = $cost;
+					$total_cost += $cost;
+				}
+				$subscriber_sumup->TOTAL_CHARGE_INCL_VAT = $total_cost;
 				// TODO create file with the xml content and file name of invoice number (ILD000123...)
 			}
+
+			$invoice_id = $this->saveInvoiceId($subscriber['row'], $this->createInvoiceId());
+			// update billrun with the invoice id
+			$xml->INV_INVOICE_TOTAL->INVOICE_NUMBER = $invoice_id;
+			$xml->INV_INVOICE_TOTAL->FIRST_GENERATION_TIME = date($short_format_date);
+			$xml->INV_INVOICE_TOTAL->FROM_PERIOD = date($short_format_date, strtotime('2012-05-14'));
+			$xml->INV_INVOICE_TOTAL->TO_PERIOD = date($short_format_date, strtotime('2012-11-30'));
+			$xml->INV_INVOICE_TOTAL->SUBSCRIBER_COUNT = count($total_ilds);
+
+			$invoice_sumup = $xml->INV_INVOICE_TOTAL->addChild('INVOICE_SUMUP');
+			$invoice_sumup->INVOICE_DATE = date($short_format_date);
+			$total = 0;
+			foreach ($total_ilds as $ild => $total_ild_cost)
+			{
+				$ild_xml = $invoice_sumup->addChild('ILD');
+				$ild_xml->NDC = $ild;
+				$ild_xml->CHARGE_INCL_VAT = $total_ild_cost;
+				$total += $total_ild_cost;
+			}
+			$invoice_sumup->TOTAL_INCL_VAT = $total;
+			$row['xml'] = $xml->asXML();
+			print htmlentities($row['xml']);die;
 		}
+	}
+
+	protected function saveInvoiceId($row, $invoice_id) {
+		$billrun = $this->db->getCollection(self::billrun_table);
+		$data = $row->getRawData();
+		if (!isset($data['invoice_id'])){
+			$data['invoice_id'] = $invoice_id;
+			$row->setRawData($data);
+			$row->save($billrun);
+			return $invoice_id;
+		}
+		return $data['invoice_id'];
+	}
+	
+	protected function createInvoiceId()
+	{
+		$invoices = $this->db->getCollection(self::billrun_table);
+		$resource = $invoices->query()->cursor()->sort(array('invoice_id' => -1))->limit(1);
+		foreach ($resource as $e)
+		{
+			// demi loop
+		}
+		if (isset($e['invoice_id']))
+		{
+			return $e['invoice_id'] + 1;
+		}
+		else
+		{
+			return '3100000000';
+		}
+		die;
 	}
 
 	protected function basic_xml()

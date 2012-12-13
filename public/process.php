@@ -34,7 +34,7 @@ if (isset($argv[2]))
 }
 else
 {
-	$file_path = __DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'workspace' . DIRECTORY_SEPARATOR . 'INT_KVZ_GLN_MABAL_000001_201207311333.DAT';	
+	$file_path = __DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'workspace' . DIRECTORY_SEPARATOR . 'INT_KVZ_GLN_MABAL_000001_201207311333.DAT';
 	//$file_path = __DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'workspace' . DIRECTORY_SEPARATOR . 'SXFN_FINTL_ID000006_201209201634.DAT';
 }
 
@@ -48,7 +48,7 @@ $options = array(
 $processor = processor::getInstance($options);
 if ($processor)
 {
-	$ret = $processor->process();	
+	$ret = $processor->process();
 }
 else
 {
