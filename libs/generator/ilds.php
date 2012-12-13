@@ -173,15 +173,7 @@ class generator_ilds extends generator
 			$this->createXml($invoice_id, $xml->asXML());
 
 			$this->addRowToCsv($invoice_id, $key, $total, $subscriber['data']['sum']['cost']);
-			if (++$i > 10)
-				return;
 		}
-	}
-
-	protected function csv()
-	{
-		$path = $this->export_directory . '/' . $this->getStamp() . '.csv';
-		return file_put_contents($path, $this->csvContent);
 	}
 
 	protected function addRowToCsv($invoice_id, $account_id, $total, $cost_ilds)
