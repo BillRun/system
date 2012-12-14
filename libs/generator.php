@@ -69,7 +69,7 @@ abstract class generator
 	
 	protected function csv()
 	{
-		return file_put_contents($this->csvPath, $this->csvContent);
+		return file_put_contents($this->csvPath, $this->csvContent, FILE_APPEND);
 	}
 
 
