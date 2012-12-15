@@ -67,9 +67,9 @@ abstract class generator
 		}
 	}
 	
-	protected function csv()
+	protected function csv($row)
 	{
-		return file_put_contents($this->csvPath, $this->csvContent, FILE_APPEND);
+		return file_put_contents($this->csvPath, $row, FILE_APPEND);
 	}
 
 

@@ -34,8 +34,8 @@ if (isset($argv[2]))
 }
 else
 {
-	$file_path = __DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'workspace' . DIRECTORY_SEPARATOR . 'INT_KVZ_GLN_MABAL_000001_201207311333.DAT';
-	//$file_path = __DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'workspace' . DIRECTORY_SEPARATOR . 'SXFN_FINTL_ID000006_201209201634.DAT';
+//	$file_path = __DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'workspace' . DIRECTORY_SEPARATOR . 'INT_KVZ_GLN_MABAL_000001_201207311333.DAT';
+//	$file_path = __DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'workspace' . DIRECTORY_SEPARATOR . 'SXFN_FINTL_ID000006_201209201634.DAT';
 }
 
 $options = array(
@@ -57,5 +57,7 @@ else
 }
 
 echo "<pre>";
-var_dump($ret);
-print_R($processor->getData());
+var_dump($ret); print  PHP_EOL;
+print "type: " . $ilds_type . PHP_EOL
+	. "file path: " . $file_path . PHP_EOL
+	. "import lines: " . count($processor->getData()) . PHP_EOL;

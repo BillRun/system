@@ -31,6 +31,7 @@ class generator_ilds extends generator
 
 		$resource = $billrun->query()
 			->equals('stamp', $this->getStamp())
+//			->in('account_id', array('7024774','1218460', '8348358'))
 			->notExists('invoice_id');
 
 		foreach ($resource as $entity)
@@ -52,15 +53,17 @@ class generator_ilds extends generator
 		$this->xml($data);
 
 		// generate csv
-		$this->csv();
+//		$this->csv();
 	}
 
 	protected function normailze($field = 'account_id')
 	{
 		$ret = array();
+		$i = 0;
 		foreach ($this->data as $row)
 		{
 			$subscriber_id = $row->get('subscriber_id');
+			print "normalize " . $subscriber_id . " (" . $i++ . ")" . PHP_EOL;
 			$data = $row->getRawData();
 
 			$lines = $this->get_subscriber_lines($subscriber_id);
@@ -103,6 +106,7 @@ class generator_ilds extends generator
 		$i = 0;
 		foreach ($rows as $key => $row)
 		{
+			print "xml account " . $key . PHP_EOL;
 			// @todo refactoring the xml generation to another class
 			$xml = $this->basic_xml();
 			$xml->TELECOM_INFORMATION->LASTTIMECDRPROCESSED = date('Y-m-d h:i:s');
@@ -142,21 +146,23 @@ class generator_ilds extends generator
 					}
 					$ild_xml = $subscriber_sumup->addChild('ILD');
 					$ild_xml->NDC = $ild;
-					$ild_xml->CHARGE_INCL_VAT = $cost;
+					$ild_xml->CHARGE_EXCL_VAT = $cost;
+					$ild_xml->CHARGE_INCL_VAT = $cost*1.17;
 					$total_cost += $cost;
 				}
-				$subscriber_sumup->TOTAL_CHARGE_INCL_VAT = $total_cost;
+				$subscriber_sumup->TOTAL_CHARGE_EXCL_VAT = $total_cost;
+				$subscriber_sumup->TOTAL_CHARGE_INCL_VAT = $total_cost*1.17;
 				// TODO create file with the xml content and file name of invoice number (ILD000123...)
 			}
 
-			$invoice_id = $this->saveInvoiceId($subscriber['row'], $this->createInvoiceId());
+			$invoice_id = $this->saveInvoiceId($key, $this->createInvoiceId());
 			// update billrun with the invoice id
 			$xml->INV_INVOICE_TOTAL->INVOICE_NUMBER = $invoice_id;
 			$xml->INV_INVOICE_TOTAL->INVOICE_DATE = date($short_format_date);
 			$xml->INV_INVOICE_TOTAL->FIRST_GENERATION_TIME = date($short_format_date);
 			$xml->INV_INVOICE_TOTAL->FROM_PERIOD = date($short_format_date, strtotime('2012-05-14'));
 			$xml->INV_INVOICE_TOTAL->TO_PERIOD = date($short_format_date, strtotime('2012-11-30'));
-			$xml->INV_INVOICE_TOTAL->SUBSCRIBER_COUNT = count($total_ilds);
+			$xml->INV_INVOICE_TOTAL->SUBSCRIBER_COUNT = count($row);
 
 			$invoice_sumup = $xml->INV_INVOICE_TOTAL->addChild('INVOICE_SUMUP');
 			$total = 0;
@@ -164,15 +170,17 @@ class generator_ilds extends generator
 			{
 				$ild_xml = $invoice_sumup->addChild('ILD');
 				$ild_xml->NDC = $ild;
-				$ild_xml->CHARGE_INCL_VAT = $total_ild_cost;
+				$ild_xml->CHARGE_EXCL_VAT = $total_ild_cost;
+				$ild_xml->CHARGE_INCL_VAT = $total_ild_cost*1.17;
 				$total += $total_ild_cost;
 			}
-			$invoice_sumup->TOTAL_INCL_VAT = $total;
+			$invoice_sumup->TOTAL_EXCL_VAT = $total;
+			$invoice_sumup->TOTAL_INCL_VAT = $total*1.17;
 			$row['xml'] = $xml->asXML();
 			print $invoice_id . PHP_EOL;
 			$this->createXml($invoice_id, $xml->asXML());
 
-			$this->addRowToCsv($invoice_id, $key, $total, $subscriber['data']['sum']['cost']);
+			$this->addRowToCsv($invoice_id, $key, $total, $total_ilds);
 		}
 	}
 
@@ -188,8 +196,9 @@ class generator_ilds extends generator
 		}
 		ksort($cost_ilds);
 		$seperator = ',';
-		$this->csvContent .= $invoice_id . $seperator . $account_id . $seperator .
-			$total . $seperator . implode($seperator, $cost_ilds) . PHP_EOL;
+		$row = $invoice_id . $seperator . $account_id . $seperator .
+			$total . $seperator . ($total*1.17) . $seperator . implode($seperator, $cost_ilds) . PHP_EOL;
+		$this->csv($row);
 	}
 
 	protected function createXml($fileName, $xmlContent)
@@ -198,18 +207,27 @@ class generator_ilds extends generator
 		return file_put_contents($path, $xmlContent);
 	}
 
-	protected function saveInvoiceId($row, $invoice_id)
+	protected function saveInvoiceId($account_id, $invoice_id)
 	{
 		$billrun = $this->db->getCollection(self::billrun_table);
-		$data = $row->getRawData();
-		if (!isset($data['invoice_id']))
-		{
-			$data['invoice_id'] = $invoice_id;
-			$row->setRawData($data);
-			$row->save($billrun);
-			return $invoice_id;
+
+		$resource = $billrun->query()
+			->equals('stamp', $this->getStamp())
+			->equals('account_id', (string) $account_id)
+			->notExists('invoice_id');
+
+		foreach($resource as $billrun_line) {
+			$data = $billrun_line->getRawData();
+			if (!isset($data['invoice_id'])) 
+			{
+				$data['invoice_id'] = $invoice_id;
+				$billrun_line->setRawData($data);
+				$billrun_line->save($billrun);
+			}
 		}
-		return $data['invoice_id'];
+		
+		return $invoice_id;
+
 	}
 
 	protected function createInvoiceId()
