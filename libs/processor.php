@@ -54,7 +54,7 @@ abstract class processor
 
 	/**
 	 * constructor - load basic options
-	 * 
+	 *
 	 * @param array $options for the file processor
 	 */
 	public function __construct($options)
@@ -158,6 +158,18 @@ abstract class processor
 
 		return true;
 	}
+	/**
+	 * Get the type of the currently parsed line.
+	 * @param $line  string containing the parsed line.
+	 * @return Character representing the line type
+	 *	'H' => Header
+	 *	'D' => Data
+	 *	'T' => Tail
+	 */
+	protected function getLineType($line)
+	{
+		return substr($line, 0, 1);
+	}
 
 	/**
 	 * method to parse the data
@@ -169,10 +181,10 @@ abstract class processor
 			echo "Resource is not configured well" . PHP_EOL;
 			return false;
 		}
-		
+
 		while ($line = fgets($this->fileHandler))
 		{
-			$record_type = substr($line, 0, 1);
+			$record_type = $this->getLineType($line);
 
 			// @todo: convert each case code snippet to protected method (including triggers)
 			switch ($record_type)
