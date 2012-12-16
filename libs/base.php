@@ -41,26 +41,26 @@ abstract class base {
 	 * constant of billrun collection name
 	 */
 	const billrun_table = 'billrun';
-	
+
 	/**
 	 * constructor
 	 * @param array $options
 	 */
 	public function __construct($options)
 	{
-		if ($options['db'])
+		if (isset($options['db']))
 		{
 			$this->setDB($options['db']);
 		}
 
-		if ($options['stamp']) {
+		if (isset($options['stamp']) && $options['stamp']) {
 			$this->setStamp($options['stamp']);
 		} else {
 			$this->setStamp(uniqid(get_class($this)));
 		}
 
 	}
-	
+
 	/**
 	 * set database of the basic object
 	 * @param resource $db
@@ -73,7 +73,7 @@ abstract class base {
 	/**
 	 * set stamp of the basic object
 	 * used for unique object actions
-	 * 
+	 *
 	 * @param string $stamp
 	 */
 	public function setStamp($stamp)
@@ -85,7 +85,7 @@ abstract class base {
 	/**
 	 * get stamp of the basic object
 	 * used for unique object actions
-	 * 
+	 *
 	 * @return string the stamp of the object
 	 */
 	public function getStamp()
