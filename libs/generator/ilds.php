@@ -8,13 +8,17 @@
 
 /**
  * Billing abstract generator ilds class
- * require to generate xml for each account 
+ * require to generate xml for each account
  * require to generate csv contain how much to credit each account
  *
  * @package  Billing
  * @since    1.0
  */
 class generator_ilds extends generator {
+	/**
+	 * The VAT value (TODO get from outside/config).
+	 */
+	 const VAT_VALUE = 1.17;
 
 	/**
 	 * load the container the need to be generate
@@ -130,11 +134,11 @@ class generator_ilds extends generator {
 					$ild_xml = $subscriber_sumup->addChild('ILD');
 					$ild_xml->NDC = $ild;
 					$ild_xml->CHARGE_EXCL_VAT = $cost;
-					$ild_xml->CHARGE_INCL_VAT = $cost * 1.17;
+					$ild_xml->CHARGE_INCL_VAT = $cost *  self::VAT_VALUE;
 					$total_cost += $cost;
 				}
 				$subscriber_sumup->TOTAL_CHARGE_EXCL_VAT = $total_cost;
-				$subscriber_sumup->TOTAL_CHARGE_INCL_VAT = $total_cost * 1.17;
+				$subscriber_sumup->TOTAL_CHARGE_INCL_VAT = $total_cost *  self::VAT_VALUE;
 				// TODO create file with the xml content and file name of invoice number (ILD000123...)
 			}
 
@@ -153,11 +157,11 @@ class generator_ilds extends generator {
 				$ild_xml = $invoice_sumup->addChild('ILD');
 				$ild_xml->NDC = $ild;
 				$ild_xml->CHARGE_EXCL_VAT = $total_ild_cost;
-				$ild_xml->CHARGE_INCL_VAT = $total_ild_cost * 1.17;
+				$ild_xml->CHARGE_INCL_VAT = $total_ild_cost *  self::VAT_VALUE;
 				$total += $total_ild_cost;
 			}
 			$invoice_sumup->TOTAL_EXCL_VAT = $total;
-			$invoice_sumup->TOTAL_INCL_VAT = $total * 1.17;
+			$invoice_sumup->TOTAL_INCL_VAT = $total *  self::VAT_VALUE;
 			$row['xml'] = $xml->asXML();
 			print $invoice_id . PHP_EOL;
 			$this->createXml($invoice_id, $xml->asXML());
@@ -167,16 +171,17 @@ class generator_ilds extends generator {
 	}
 
 	protected function addRowToCsv($invoice_id, $account_id, $total, $cost_ilds) {
-		if (!isset($cost_ilds['012'])) {
-			$cost_ilds['012'] = 0;
+		//empty costsfor each ofthe providers
+		foreach(array('012','018','013') as $key) {
+			if (!isset($cost_ilds[$key])) {
+				$cost_ilds[$key] = 0;
+			}
 		}
-		if (!isset($cost_ilds['018'])) {
-			$cost_ilds['018'] = 0;
-		}
+
 		ksort($cost_ilds);
 		$seperator = ',';
 		$row = $invoice_id . $seperator . $account_id . $seperator .
-			$total . $seperator . ($total * 1.17) . $seperator . implode($seperator, $cost_ilds) . PHP_EOL;
+			$total . $seperator . ($total *  self::VAT_VALUE) . $seperator . implode($seperator, $cost_ilds) . PHP_EOL;
 		$this->csv($row);
 	}
 
@@ -218,7 +223,7 @@ class generator_ilds extends generator {
 	}
 
 	protected function basic_xml() {
-		$xml_path = LIBS_PATH . '/../files/ilds.xml';
+		$xml_path = BASEDIR . '/files/ilds.xml';
 		return simplexml_load_file($xml_path);
 	}
 

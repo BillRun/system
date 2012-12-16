@@ -72,6 +72,7 @@ class calculator_ilds extends calculator_basic implements calculator {
 			case '012':
 				$rating_charge = round($charge / 1000, 3);
 				break;
+			case '013':
 			case '018':
 				$rating_charge = round($charge / 100, 2);
 				break;

@@ -6,14 +6,7 @@
  * @license			GNU General Public License version 2 or later; see LICENSE.txt
  */
 // initiate libs
-// @todo make auto load
-/*define('LIBS_PATH', __DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'libs' . DIRECTORY_SEPARATOR);
-require_once LIBS_PATH . 'parser.php';
-require_once LIBS_PATH . 'processor.php';
-require_once LIBS_PATH . 'calculator' . DIRECTORY_SEPARATOR . 'basic.php';
-define('MONGODLOID_PATH', LIBS_PATH . DIRECTORY_SEPARATOR . 'Mongodloid' . DIRECTORY_SEPARATOR);
-require_once MONGODLOID_PATH . 'Connection.php';
-require_once MONGODLOID_PATH . 'Exception.php';*/
+
 require_once "./libs/autoloader.php";
 
 // load mongodb instance
