@@ -12,13 +12,11 @@
  * @package  Billing
  * @since    1.0
  */
-class processor_012 extends processor
-{
+class processor_012 extends processor {
 
 	protected $type = '012';
 
-	public function __construct($options)
-	{
+	public function __construct($options) {
 		parent::__construct($options);
 
 		$this->data_structure = array(

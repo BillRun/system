@@ -12,8 +12,7 @@
  * @package  calculator
  * @since    1.0
  */
-class calculator_ilds extends calculator_basic implements calculator
-{
+class calculator_ilds extends calculator_basic implements calculator {
 
 	/**
 	 * the type of the calculator
@@ -25,19 +24,16 @@ class calculator_ilds extends calculator_basic implements calculator
 	 * constructor
 	 * @param array $options
 	 */
-	public function __construct($options)
-	{
+	public function __construct($options) {
 		parent::__construct($options);
 	}
 
 	/**
 	 * execute the calculation process
 	 */
-	public function calc()
-	{
+	public function calc() {
 		// @TODO trigger before calc
-		foreach ($this->data as $item)
-		{
+		foreach ($this->data as $item) {
 			$this->updateRow($item);
 		}
 		// @TODO trigger after calc
@@ -46,12 +42,10 @@ class calculator_ilds extends calculator_basic implements calculator
 	/**
 	 * execute write down the calculation output
 	 */
-	public function write()
-	{
+	public function write() {
 		// @TODO trigger before write
 		$lines = $this->db->getCollection(self::lines_table);
-		foreach ($this->data as $item)
-		{
+		foreach ($this->data as $item) {
 			$item->save($lines);
 		}
 		// @TODO trigger after write
@@ -60,8 +54,7 @@ class calculator_ilds extends calculator_basic implements calculator
 	/**
 	 * write the calculation into DB
 	 */
-	protected function updateRow($row)
-	{
+	protected function updateRow($row) {
 		// @TODO trigger before update row
 		$current = $row->getRawData();
 		$charge = $this->calcChargeLine($row->get('type'), $row->get('call_charge'));
@@ -74,8 +67,7 @@ class calculator_ilds extends calculator_basic implements calculator
 		// @TODO trigger after update row
 	}
 
-	protected function calcChargeLine($type, $charge)
-	{
+	protected function calcChargeLine($type, $charge) {
 		switch ($type):
 			case '012':
 				$rating_charge = round($charge / 1000, 3);

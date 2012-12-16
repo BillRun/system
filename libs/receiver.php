@@ -12,8 +12,7 @@
  * @package  Billing
  * @since    1.0
  */
-abstract class receiver
-{
+abstract class receiver extends base {
 
 	/**
 	 * general function to receive
@@ -22,16 +21,14 @@ abstract class receiver
 	 */
 	abstract public function receive();
 
-	static public function getInstance()
-	{
+	static public function getInstance() {
 		$args = func_get_args();
 		$type = $args[0];
 		unset($args[0]);
 
 		$file_path = __DIR__ . DIRECTORY_SEPARATOR . 'receiver' . DIRECTORY_SEPARATOR . $type . '.php';
 
-		if (!file_exists($file_path))
-		{
+		if (!file_exists($file_path)) {
 			// @todo raise an error
 			return false;
 		}
@@ -39,8 +36,7 @@ abstract class receiver
 		require_once $file_path;
 		$class = 'receiver_' . $type;
 
-		if (!class_exists($class))
-		{
+		if (!class_exists($class)) {
 			// @todo raise an error
 			return false;
 		}

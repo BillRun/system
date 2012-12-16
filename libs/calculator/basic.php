@@ -13,8 +13,7 @@ require_once __DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'calcu
  * @package  calculator
  * @since    1.0
  */
-abstract class calculator_basic
-{
+abstract class calculator_basic {
 
 	/**
 	 * the database we are working on
@@ -45,24 +44,20 @@ abstract class calculator_basic
 	 * constructor
 	 * @param array $options
 	 */
-	public function __construct($options)
-	{
-		if ($options['db'])
-		{
+	public function __construct($options) {
+		if ($options['db']) {
 			$this->setDB($options['db']);
 		}
 	}
 
-	public function setDB($db)
-	{
+	public function setDB($db) {
 		$this->db = $db;
 	}
 
 	/**
 	 * load the data to calculate
 	 */
-	public function load($initData = true)
-	{
+	public function load($initData = true) {
 		$lines = $this->db->getCollection(self::lines_table);
 
 		// @todo refactoring query to be able to extend
@@ -71,8 +66,7 @@ abstract class calculator_basic
 //		$query = "{\$or: [" . $customer_query . ", " . $provider_query . "]}";
 //		$query = "price_customer NOT EXISTS or price_provider NOT EXISTS";
 
-		if ($initData)
-		{
+		if ($initData) {
 			$this->data = array();
 		}
 
@@ -80,8 +74,7 @@ abstract class calculator_basic
 			->notExists('price_customer');
 //			->notExists('price_provider'); // @todo: check how to do or between 2 not exists
 
-		foreach ($resource as $entity)
-		{
+		foreach ($resource as $entity) {
 			$this->data[] = $entity;
 		}
 
@@ -97,21 +90,16 @@ abstract class calculator_basic
 	 * identify if the row belong to calculator
 	 * @return boolean true if the row identify as belonging to the calculator, else false
 	 */
-	protected function identify($row)
-	{
+	protected function identify($row) {
 		return true;
 	}
 
-	static public function getInstance()
-	{
+	static public function getInstance() {
 		$args = func_get_args();
-		if (!is_array($args))
-		{
+		if (!is_array($args)) {
 			$type = $args[0];
 			$args = array();
-		}
-		else
-		{
+		} else {
 			$type = $args[0]['type'];
 			unset($args[0]['type']);
 			$args = $args[0];
@@ -119,8 +107,7 @@ abstract class calculator_basic
 
 		$file_path = __DIR__ . DIRECTORY_SEPARATOR . str_replace('_', '/', $type) . '.php';
 
-		if (!file_exists($file_path))
-		{
+		if (!file_exists($file_path)) {
 			print "calculator file doesn't exists: " . $file_path . PHP_EOL;
 			return false;
 		}
@@ -128,8 +115,7 @@ abstract class calculator_basic
 		require_once $file_path;
 		$class = 'calculator_' . $type;
 
-		if (!class_exists($class))
-		{
+		if (!class_exists($class)) {
 			// @todo raise an error
 			print "calculator class doesn't exists: " . $class;
 			return false;

@@ -1,10 +1,10 @@
 <?php
+
 /**
  * @package			Billing
  * @copyright		Copyright (C) 2012 S.D.O.C. LTD. All rights reserved.
  * @license			GNU General Public License version 2 or later; see LICENSE.txt
  */
-
 require_once __DIR__ . DIRECTORY_SEPARATOR . '../parser.php';
 
 /**
@@ -14,27 +14,24 @@ require_once __DIR__ . DIRECTORY_SEPARATOR . '../parser.php';
  * @since    1.0
  * @todo should make first derivative parser text and then fixed parser will inherited text parser
  */
-class parser_fixed extends parser
-{
+class parser_fixed extends parser {
 
 	/**
 	 *
 	 * @var array the structure of the parser line
 	 */
 	protected $structure;
-	
+
 	public function setStructure($structure) {
 		$this->structure = $structure;
 		return $this;
 	}
 
-	public function parse()
-	{
+	public function parse() {
 		$pointer = 0;
 		$ar_line = array();
 
-		foreach ($this->structure as $key => $length)
-		{
+		foreach ($this->structure as $key => $length) {
 			$ar_line[$key] = trim(substr($this->line, $pointer, $length), "\n\r ");
 			$pointer += $length;
 		}

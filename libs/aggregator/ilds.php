@@ -13,25 +13,21 @@ require_once __DIR__ . '/../' . 'subscriber.php';
  * @package  calculator
  * @since    1.0
  */
-class aggregator_ilds extends aggregator
-{
+class aggregator_ilds extends aggregator {
 
 	/**
 	 * execute aggregate
 	 */
-	public function aggregate()
-	{
+	public function aggregate() {
 		// @TODO trigger before aggregate
-		foreach ($this->data as $item)
-		{
+		foreach ($this->data as $item) {
 			// load subscriber
 			$phone_number = $item->get('caller_phone_no');
 			$time = $item->get('call_start_dt');
 			// load subscriber
 			$subscriber = subscriber::get($phone_number, $time);
 
-			if (!$subscriber)
-			{
+			if (!$subscriber) {
 				print "subscriber not found. phone:" . $phone_number . " time: " . $time . PHP_EOL;
 				continue;
 			}
@@ -40,22 +36,19 @@ class aggregator_ilds extends aggregator
 			// load the customer billrun line (aggregated collection)
 			$billrun = $this->loadSubscriberBillrun($subscriber);
 
-			if (!$billrun)
-			{
+			if (!$billrun) {
 				print "subscriber " . $subscriber_id . " cannot load billrun" . PHP_EOL;
 				continue;
 			}
 
 			// update billrun subscriber with amount
-			if (!$this->updateBillrun($billrun, $item))
-			{
+			if (!$this->updateBillrun($billrun, $item)) {
 				print "subscriber " . $subscriber_id . " cannot update billrun" . PHP_EOL;
 				continue;
 			}
 
 			// update billing line with billrun stamp
-			if (!$this->updateBillingLine($subscriber_id, $item))
-			{
+			if (!$this->updateBillingLine($subscriber_id, $item)) {
 				print "subscriber " . $subscriber_id . " cannot update billing line" . PHP_EOL;
 				continue;
 			}
@@ -69,25 +62,24 @@ class aggregator_ilds extends aggregator
 				print "subscriber " . $subscriber_id . " cannot save data" . PHP_EOL;
 				continue;
 			}
-			
-			print "subscriber " . $subscriber_id . " saved successfully" . PHP_EOL;
 
+			print "subscriber " . $subscriber_id . " saved successfully" . PHP_EOL;
 		}
 		// @TODO trigger after aggregate	
 	}
 
-	public function loadSubscriberBillrun($subscriber)
-	{
-		
+	public function loadSubscriberBillrun($subscriber) {
+
 		$billrun = $this->db->getCollection(self::billrun_table);
 		$resource = $billrun->query()
 			->equals('subscriber_id', $subscriber['id'])
 			->equals('account_id', $subscriber['account_id'])
 			->equals('stamp', $this->getStamp());
 
-		if ($resource && $resource->count())
-		{
-			foreach($resource as $entity) {break;} // @todo make this in more appropriate way
+		if ($resource && $resource->count()) {
+			foreach ($resource as $entity) {
+				break;
+			} // @todo make this in more appropriate way
 			return $entity;
 		}
 
@@ -101,26 +93,21 @@ class aggregator_ilds extends aggregator
 		return new Mongodloid_Entity($values, $billrun);
 	}
 
-	protected function updateBillrun($billrun, $row)
-	{
+	protected function updateBillrun($billrun, $row) {
 		// @TODO trigger before update row
 		$current = $billrun->getRawData();
 		$added_charge = $row->get('price_customer');
 
-		if (!is_numeric($added_charge))
-		{
+		if (!is_numeric($added_charge)) {
 			//raise an error 
 			return false;
 		}
 
 		$type = $row->get('type');
-		if (!isset($current['cost'][$type]))
-		{
+		if (!isset($current['cost'][$type])) {
 			$current['cost'][$type] = $added_charge;
-		}
-		else
-		{
-			$current['cost'][$type] += $added_charge;			
+		} else {
+			$current['cost'][$type] += $added_charge;
 		}
 
 		$billrun->setRawData($current);
@@ -132,8 +119,7 @@ class aggregator_ilds extends aggregator
 		);
 	}
 
-	protected function updateBillingLine($subscriber_id, $row)
-	{
+	protected function updateBillingLine($subscriber_id, $row) {
 		$current = $row->getRawData();
 		$added_values = array(
 			'subscriber_id' => $subscriber_id,
@@ -147,29 +133,24 @@ class aggregator_ilds extends aggregator
 	/**
 	 * load the data to aggregate
 	 */
-	public function load($initData = true)
-	{
+	public function load($initData = true) {
 		$lines = $this->db->getCollection(self::lines_table);
 		$query = "price_customer EXISTS and price_provider EXISTS and billrun NOT EXISTS";
-		if ($initData)
-		{
+		if ($initData) {
 			$this->data = array();
 		}
 
 		$resource = $lines->query($query);
 
-		foreach ($resource as $entity)
-		{
+		foreach ($resource as $entity) {
 			$this->data[] = $entity;
 		}
 
 		print "aggregator entities loaded: " . count($this->data) . PHP_EOL;
 	}
 
-	protected function save($data)
-	{
-		foreach ($data as $coll_name => $coll_data)
-		{
+	protected function save($data) {
+		foreach ($data as $coll_name => $coll_data) {
 			$coll = $this->db->getCollection($coll_name);
 			$coll->save($coll_data);
 		}

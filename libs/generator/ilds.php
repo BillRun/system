@@ -14,18 +14,15 @@
  * @package  Billing
  * @since    1.0
  */
-class generator_ilds extends generator
-{
+class generator_ilds extends generator {
 
 	/**
 	 * load the container the need to be generate
 	 */
-	public function load($initData = true)
-	{
+	public function load($initData = true) {
 		$billrun = $this->db->getCollection(self::billrun_table);
 
-		if ($initData)
-		{
+		if ($initData) {
 			$this->data = array();
 		}
 
@@ -34,8 +31,7 @@ class generator_ilds extends generator
 //			->in('account_id', array('7024774','1218460', '8348358'))
 			->notExists('invoice_id');
 
-		foreach ($resource as $entity)
-		{
+		foreach ($resource as $entity) {
 			$this->data[] = $entity;
 		}
 
@@ -45,8 +41,7 @@ class generator_ilds extends generator
 	/**
 	 * execute the generate action
 	 */
-	public function generate()
-	{
+	public function generate() {
 		$data = $this->normailze();
 
 		// generate xml
@@ -56,12 +51,10 @@ class generator_ilds extends generator
 //		$this->csv();
 	}
 
-	protected function normailze($field = 'account_id')
-	{
+	protected function normailze($field = 'account_id') {
 		$ret = array();
 		$i = 0;
-		foreach ($this->data as $row)
-		{
+		foreach ($this->data as $row) {
 			$subscriber_id = $row->get('subscriber_id');
 			print "normalize " . $subscriber_id . " (" . $i++ . ")" . PHP_EOL;
 			$data = $row->getRawData();
@@ -81,8 +74,7 @@ class generator_ilds extends generator
 		return $ret;
 	}
 
-	protected function get_subscriber_lines($subscriber_id)
-	{
+	protected function get_subscriber_lines($subscriber_id) {
 		$lines = $this->db->getCollection(self::lines_table);
 
 		$ret = array();
@@ -91,21 +83,18 @@ class generator_ilds extends generator
 			->equals('billrun', $this->getStamp())
 			->equals('subscriber_id', $subscriber_id);
 
-		foreach ($resource as $entity)
-		{
+		foreach ($resource as $entity) {
 			$ret[] = $entity->getRawData();
 		}
 
 		return $ret;
 	}
 
-	protected function xml($rows)
-	{
+	protected function xml($rows) {
 		// use $this->export_directory
 		$short_format_date = 'd/m/Y';
 		$i = 0;
-		foreach ($rows as $key => $row)
-		{
+		foreach ($rows as $key => $row) {
 			print "xml account " . $key . PHP_EOL;
 			// @todo refactoring the xml generation to another class
 			$xml = $this->basic_xml();
@@ -114,13 +103,11 @@ class generator_ilds extends generator
 			$xml->TELECOM_INFORMATION->COMPANY_NAME_IN_ENGLISH = 'GOLAN';
 			$xml->INV_CUSTOMER_INFORMATION->CUSTOMER_CONTACT->EXTERNALACCOUNTREFERENCE = $key;
 			$total_ilds = array();
-			foreach ($row as $id => $subscriber)
-			{
+			foreach ($row as $id => $subscriber) {
 				$subscriber_inf = $xml->addChild('SUBSCRIBER_INF');
 				$subscriber_inf->SUBSCRIBER_DETAILS->SUBSCRIBER_ID = $subscriber['data']['sum']['subscriber_id'];
 				$billing_records = $subscriber_inf->addChild('BILLING_LINES');
-				foreach ($subscriber['data']['lines'] as $line)
-				{
+				foreach ($subscriber['data']['lines'] as $line) {
 					$billing_record = $billing_records->addChild('BILLING_RECORD');
 					$billing_record->TIMEOFBILLING = $line['call_start_dt'];
 					$billing_record->TARIFFITEM = 'IL_ILD';
@@ -134,24 +121,20 @@ class generator_ilds extends generator
 
 				$subscriber_sumup = $subscriber_inf->addChild('SUBSCRIBER_SUMUP');
 				$total_cost = 0;
-				foreach ($subscriber['data']['sum']['cost'] as $ild => $cost)
-				{
-					if (isset($total_ilds[$ild]))
-					{
+				foreach ($subscriber['data']['sum']['cost'] as $ild => $cost) {
+					if (isset($total_ilds[$ild])) {
 						$total_ilds[$ild] += $cost;
-					}
-					else
-					{
+					} else {
 						$total_ilds[$ild] = $cost;
 					}
 					$ild_xml = $subscriber_sumup->addChild('ILD');
 					$ild_xml->NDC = $ild;
 					$ild_xml->CHARGE_EXCL_VAT = $cost;
-					$ild_xml->CHARGE_INCL_VAT = $cost*1.17;
+					$ild_xml->CHARGE_INCL_VAT = $cost * 1.17;
 					$total_cost += $cost;
 				}
 				$subscriber_sumup->TOTAL_CHARGE_EXCL_VAT = $total_cost;
-				$subscriber_sumup->TOTAL_CHARGE_INCL_VAT = $total_cost*1.17;
+				$subscriber_sumup->TOTAL_CHARGE_INCL_VAT = $total_cost * 1.17;
 				// TODO create file with the xml content and file name of invoice number (ILD000123...)
 			}
 
@@ -166,16 +149,15 @@ class generator_ilds extends generator
 
 			$invoice_sumup = $xml->INV_INVOICE_TOTAL->addChild('INVOICE_SUMUP');
 			$total = 0;
-			foreach ($total_ilds as $ild => $total_ild_cost)
-			{
+			foreach ($total_ilds as $ild => $total_ild_cost) {
 				$ild_xml = $invoice_sumup->addChild('ILD');
 				$ild_xml->NDC = $ild;
 				$ild_xml->CHARGE_EXCL_VAT = $total_ild_cost;
-				$ild_xml->CHARGE_INCL_VAT = $total_ild_cost*1.17;
+				$ild_xml->CHARGE_INCL_VAT = $total_ild_cost * 1.17;
 				$total += $total_ild_cost;
 			}
 			$invoice_sumup->TOTAL_EXCL_VAT = $total;
-			$invoice_sumup->TOTAL_INCL_VAT = $total*1.17;
+			$invoice_sumup->TOTAL_INCL_VAT = $total * 1.17;
 			$row['xml'] = $xml->asXML();
 			print $invoice_id . PHP_EOL;
 			$this->createXml($invoice_id, $xml->asXML());
@@ -184,31 +166,26 @@ class generator_ilds extends generator
 		}
 	}
 
-	protected function addRowToCsv($invoice_id, $account_id, $total, $cost_ilds)
-	{
-		if (!isset($cost_ilds['012']))
-		{
+	protected function addRowToCsv($invoice_id, $account_id, $total, $cost_ilds) {
+		if (!isset($cost_ilds['012'])) {
 			$cost_ilds['012'] = 0;
 		}
-		if (!isset($cost_ilds['018']))
-		{
+		if (!isset($cost_ilds['018'])) {
 			$cost_ilds['018'] = 0;
 		}
 		ksort($cost_ilds);
 		$seperator = ',';
 		$row = $invoice_id . $seperator . $account_id . $seperator .
-			$total . $seperator . ($total*1.17) . $seperator . implode($seperator, $cost_ilds) . PHP_EOL;
+			$total . $seperator . ($total * 1.17) . $seperator . implode($seperator, $cost_ilds) . PHP_EOL;
 		$this->csv($row);
 	}
 
-	protected function createXml($fileName, $xmlContent)
-	{
+	protected function createXml($fileName, $xmlContent) {
 		$path = $this->export_directory . '/' . $fileName . '.xml';
 		return file_put_contents($path, $xmlContent);
 	}
 
-	protected function saveInvoiceId($account_id, $invoice_id)
-	{
+	protected function saveInvoiceId($account_id, $invoice_id) {
 		$billrun = $this->db->getCollection(self::billrun_table);
 
 		$resource = $billrun->query()
@@ -216,37 +193,31 @@ class generator_ilds extends generator
 			->equals('account_id', (string) $account_id)
 			->notExists('invoice_id');
 
-		foreach($resource as $billrun_line) {
+		foreach ($resource as $billrun_line) {
 			$data = $billrun_line->getRawData();
-			if (!isset($data['invoice_id'])) 
-			{
+			if (!isset($data['invoice_id'])) {
 				$data['invoice_id'] = $invoice_id;
 				$billrun_line->setRawData($data);
 				$billrun_line->save($billrun);
 			}
 		}
-		
-		return $invoice_id;
 
+		return $invoice_id;
 	}
 
-	protected function createInvoiceId()
-	{
+	protected function createInvoiceId() {
 		$invoices = $this->db->getCollection(self::billrun_table);
 		$resource = $invoices->query()->cursor()->sort(array('invoice_id' => -1))->limit(1);
-		foreach ($resource as $e)
-		{
+		foreach ($resource as $e) {
 			// demi loop
 		}
-		if (isset($e['invoice_id']))
-		{
+		if (isset($e['invoice_id'])) {
 			return (string) ($e['invoice_id'] + 1); // convert to string cause mongo cannot store bigint
 		}
 		return '3100000000';
 	}
 
-	protected function basic_xml()
-	{
+	protected function basic_xml() {
 		$xml_path = LIBS_PATH . '/../files/ilds.xml';
 		return simplexml_load_file($xml_path);
 	}
