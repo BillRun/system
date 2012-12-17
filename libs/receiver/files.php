@@ -25,7 +25,8 @@
 			$files = scandir($this->workPath . DIRECTORY_SEPARATOR . $type );
 			foreach($files as $file) {
 				$path = $this->workPath . DIRECTORY_SEPARATOR . $type. DIRECTORY_SEPARATOR .$file;
-				if(is_dir($path)) {continue;}
+				if(is_dir($path) || $this->isFileProcessed($file,$type) ) {continue;}
+
 				$this->processFile($path,$type);
 			}
 		}
@@ -41,7 +42,7 @@
 		$options = array(
 			'type' => $type,
 			'file_path' => $filePath,
-			'parser' => parser::getInstance('fixed'),
+			'parser' => parser::getInstance(array('type'=>'fixed')),
 			'db' => $this->db,
 		);
 
@@ -55,5 +56,14 @@
 		print "type: " . $type . PHP_EOL
 			. "file path: " . $filePath . PHP_EOL
 			. "import lines: " . count($processor->getData()) . PHP_EOL;
+	}
+
+	/**
+	 *
+	 */
+	private function isFileProcessed($filename,$type) {
+		$log = $this->db->getCollection(self::log_table);
+		$resource = $log->query()->equals('type',$type)->equals('file',$filename);
+		return $resource->count() > 0;
 	}
 }
