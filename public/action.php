@@ -46,7 +46,7 @@ if (isset($opts->process)) {
 	);
 
 	$processor = processor::getInstance($options);
-	
+
 	if ($processor) {
 		$processor->process();
 	} else {
