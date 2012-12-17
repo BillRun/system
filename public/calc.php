@@ -28,7 +28,7 @@ $options = array(
 	'db' => $db,
 );
 
-$calculator = calculator_basic::getInstance($options);
+$calculator = calculator::getInstance($options);
 
 $calculator->load();
 

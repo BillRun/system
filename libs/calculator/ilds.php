@@ -12,7 +12,7 @@
  * @package  calculator
  * @since    1.0
  */
-class calculator_ilds extends calculator_basic implements calculator {
+class calculator_ilds extends calculator {
 
 	/**
 	 * the type of the calculator
