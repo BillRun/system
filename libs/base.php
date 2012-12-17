@@ -50,6 +50,9 @@ abstract class base {
 	public function __construct($options) {
 		if (isset($options['db'])) {
 			$this->setDB($options['db']);
+		} else {
+			$conn = Mongodloid_Connection::getInstance();
+			$this->setDB($conn->getDB('billing'));
 		}
 
 		if (isset($options['stamp']) && $options['stamp']) {
