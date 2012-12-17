@@ -21,7 +21,7 @@ class parser_binary_egcdr extends parser {
 	 * @return mixed
 	 */
 	public function parse() {
-		
+
 	}
 
 }

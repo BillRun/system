@@ -12,7 +12,7 @@
  * @package  Billing
  * @since    1.0
  */
-class processor_013 extends processor
+class processor_ilds_013 extends processor
 {
 
 	protected $type = '013';

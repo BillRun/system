@@ -24,22 +24,26 @@ else
 
 if (isset($argv[2]))
 {
-	$file_path = $argv[2];
+//	$file_path = $argv[2];
 }
 else
 {
 //	$file_path = __DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'workspace' . DIRECTORY_SEPARATOR . 'INT_KVZ_GLN_MABAL_000001_201207311333.DAT';
 //	$file_path = __DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'workspace' . DIRECTORY_SEPARATOR . 'SXFN_FINTL_ID000006_201209201634.DAT';
+	$file_path = __DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'workspace' 
+		. DIRECTORY_SEPARATOR . 'egsn/GLTNGPT_-_0000001973.20121210_-_1516+0200';
 }
 
+$parser = parser::getInstance(array('type'=>'binary_egcdr'));
+
 $options = array(
-	'type' => $ilds_type,
+	'type' => 'binary',
 	'file_path' => $file_path,
-	'parser' => parser::getInstance(array('type'=>'fixed')),
-	'db' => $db,
+	'parser' => $parser,
 );
 
 $processor = processor::getInstance($options);
+
 if ($processor)
 {
 	$ret = $processor->process();
@@ -51,7 +55,8 @@ else
 }
 
 echo "<pre>";
+
 var_dump($ret); print  PHP_EOL;
-print "type: " . $ilds_type . PHP_EOL
-	. "file path: " . $file_path . PHP_EOL
-	. "import lines: " . count($processor->getData()) . PHP_EOL;
+//print "type: " . $ilds_type . PHP_EOL
+//	. "file path: " . $file_path . PHP_EOL
+//	. "import lines: " . count($processor->getData()) . PHP_EOL;

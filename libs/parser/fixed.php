@@ -27,7 +27,7 @@ class parser_fixed extends parser {
 	}
 
 	/**
-	 * general function to parse
+	 * General function to parse
 	 * 
 	 * @return mixed
 	 */
@@ -45,6 +45,25 @@ class parser_fixed extends parser {
 			return $ar_line;
 		}
 		return (object) $ar_line;
+	}
+
+	/**
+	 * 
+	 * @return string the line that parsed
+	 */
+	public function getLine() {
+		return $this->line;
+	}
+
+	/**
+	 * method to set the line of the parser
+	 * 
+	 * @param string $line the line to set to the parser
+	 * @return Object the parser itself (for concatening methods)
+	 */
+	public function setLine($line) {
+		$this->line = $line;
+		return $this;
 	}
 
 }
