@@ -12,8 +12,7 @@
  * @package  calculator
  * @since    1.0
  */
-interface calculator
-{
+interface calculator {
 
 	/**
 	 * load the data to calculate

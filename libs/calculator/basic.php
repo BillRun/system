@@ -13,16 +13,10 @@ require_once __DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'calcu
  * @package  calculator
  * @since    1.0
  */
-abstract class calculator_basic {
+abstract class calculator_basic extends base {
 
 	/**
-	 * the database we are working on
-	 * @var db resource
-	 */
-	protected $db = null;
-
-	/**
-	 * the container the calculator work on
+	 * the container data of the calculator
 	 * @var array
 	 */
 	protected $data = array();
@@ -32,23 +26,6 @@ abstract class calculator_basic {
 	 * @var string
 	 */
 	protected $type = 'basic';
-
-	/**
-	 * constants of tables
-	 */
-
-	const log_table = 'log';
-	const lines_table = 'lines';
-
-	/**
-	 * constructor
-	 * @param array $options
-	 */
-	public function __construct($options) {
-		if ($options['db']) {
-			$this->setDB($options['db']);
-		}
-	}
 
 	public function setDB($db) {
 		$this->db = $db;
@@ -92,37 +69,6 @@ abstract class calculator_basic {
 	 */
 	protected function identify($row) {
 		return true;
-	}
-
-	static public function getInstance() {
-		$args = func_get_args();
-		if (!is_array($args)) {
-			$type = $args[0];
-			$args = array();
-		} else {
-			$type = $args[0]['type'];
-			unset($args[0]['type']);
-			$args = $args[0];
-		}
-
-		$file_path = __DIR__ . DIRECTORY_SEPARATOR . str_replace('_', '/', $type) . '.php';
-
-		if (!file_exists($file_path)) {
-			print "calculator file doesn't exists: " . $file_path . PHP_EOL;
-			return false;
-		}
-
-		require_once $file_path;
-		$class = 'calculator_' . $type;
-
-		if (!class_exists($class)) {
-			// @todo raise an error
-			print "calculator class doesn't exists: " . $class;
-			return false;
-		}
-
-		$instance = new $class($args);
-		return $instance;
 	}
 
 }
