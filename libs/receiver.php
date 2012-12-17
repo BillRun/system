@@ -14,9 +14,17 @@
  */
 abstract class receiver extends base {
 
+
+	protected $workPath = ".";
+
+	public function __construct($options) {
+		$this->workPath = $options['workspace'];
+		parent::__construct($options);
+	}
+
 	/**
 	 * general function to receive
-	 * 
+	 *
 	 * @return mixed
 	 */
 	abstract public function receive();

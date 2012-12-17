@@ -35,7 +35,7 @@ else
 $options = array(
 	'type' => $ilds_type,
 	'file_path' => $file_path,
-	'parser' => parser::getInstance('fixed'),
+	'parser' => parser::getInstance(array('type'=>'fixed')),
 	'db' => $db,
 );
 

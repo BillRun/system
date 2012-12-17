@@ -98,20 +98,20 @@ abstract class base {
 			$args = $args[0];
 		}
 
-		$file_path = __DIR__ . DIRECTORY_SEPARATOR . str_replace('_', DIRECTORY_SEPARATOR, __CLASS__) . DIRECTORY_SEPARATOR . $type . '.php';
+		/*$file_path = __DIR__ . DIRECTORY_SEPARATOR . str_replace('_', DIRECTORY_SEPARATOR, __CLASS__) . DIRECTORY_SEPARATOR . $type . '.php';
 
 		if (!file_exists($file_path)) {
 			// @todo raise an error
 			return false;
-		}
+		}*/
 
-		require_once $file_path;
-		$class = __CLASS__ . '_' . $type;
+		//require_once $file_path;
+		$class = get_called_class(). '_' . $type;
 
-		if (!class_exists($class)) {
+		/*if (!class_exists($class)) {
 			// @todo raise an error
 			return false;
-		}
+		}*/
 
 		return new $class($args);
 	}
