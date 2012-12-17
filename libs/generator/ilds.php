@@ -111,7 +111,7 @@ class generator_ilds extends generator {
 				$subscriber_inf = $xml->addChild('SUBSCRIBER_INF');
 				$subscriber_inf->SUBSCRIBER_DETAILS->SUBSCRIBER_ID =$id;
 				$billing_records = $subscriber_inf->addChild('BILLING_LINES');
-				foreach ($subscriber['lines'] as $line) {
+				foreach ($this->get_subscriber_lines($id) as $line) {
 					$billing_record = $billing_records->addChild('BILLING_RECORD');
 					$billing_record->TIMEOFBILLING = $line['call_start_dt'];
 					$billing_record->TARIFFITEM = 'IL_ILD';

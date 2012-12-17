@@ -132,7 +132,6 @@ class aggregator_ilds extends aggregator {
 			$subExist = $current['subscribers'][ $subscriberId]['cost'] && $current['subscribers'][ $subscriberId]['cost'][$type];
 			$current['subscribers'][$subscriberId]['cost'][$type] = ($subExist ? $current['subscribers'][ $subscriberId]['cost'][$type] : 0 ) + $added_charge;
 		}
-		$current['subscribers'][$subscriberId]['lines'][] = $line->getRawData();
 
 		$billrun->setRawData($current);
 		// @TODO trigger after update row
