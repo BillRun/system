@@ -66,34 +66,4 @@ abstract class generator extends base {
 	 * execute the generate action
 	 */
 	abstract public function generate();
-
-	static public function getInstance() {
-		$args = func_get_args();
-		if (!is_array($args)) {
-			$type = $args['type'];
-			$args = array();
-		} else {
-			$type = $args[0]['type'];
-			unset($args[0]['type']);
-			$args = $args[0];
-		}
-
-		$file_path = __DIR__ . DIRECTORY_SEPARATOR . 'generator' . DIRECTORY_SEPARATOR . $type . '.php';
-
-		if (!file_exists($file_path)) {
-			// @todo raise an error
-			return false;
-		}
-
-		require_once $file_path;
-		$class = 'generator_' . $type;
-
-		if (!class_exists($class)) {
-			// @todo raise an error
-			return false;
-		}
-
-		return new $class($args);
-	}
-
 }

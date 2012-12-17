@@ -21,27 +21,4 @@ abstract class receiver extends base {
 	 */
 	abstract public function receive();
 
-	static public function getInstance() {
-		$args = func_get_args();
-		$type = $args[0];
-		unset($args[0]);
-
-		$file_path = __DIR__ . DIRECTORY_SEPARATOR . 'receiver' . DIRECTORY_SEPARATOR . $type . '.php';
-
-		if (!file_exists($file_path)) {
-			// @todo raise an error
-			return false;
-		}
-
-		require_once $file_path;
-		$class = 'receiver_' . $type;
-
-		if (!class_exists($class)) {
-			// @todo raise an error
-			return false;
-		}
-
-		return new $class($args);
-	}
-
 }

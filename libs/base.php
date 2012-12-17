@@ -30,6 +30,7 @@ abstract class base {
 	/**
 	 * constant of log collection name
 	 */
+
 	const log_table = 'log';
 
 	/**
@@ -46,10 +47,8 @@ abstract class base {
 	 * constructor
 	 * @param array $options
 	 */
-	public function __construct($options)
-	{
-		if (isset($options['db']))
-		{
+	public function __construct($options) {
+		if (isset($options['db'])) {
 			$this->setDB($options['db']);
 		}
 
@@ -58,15 +57,13 @@ abstract class base {
 		} else {
 			$this->setStamp(uniqid(get_class($this)));
 		}
-
 	}
 
 	/**
 	 * set database of the basic object
 	 * @param resource $db
 	 */
-	public function setDB($db)
-	{
+	public function setDB($db) {
 		$this->db = $db;
 	}
 
@@ -76,11 +73,9 @@ abstract class base {
 	 *
 	 * @param string $stamp
 	 */
-	public function setStamp($stamp)
-	{
+	public function setStamp($stamp) {
 		$this->stamp = $stamp;
 	}
-
 
 	/**
 	 * get stamp of the basic object
@@ -88,10 +83,37 @@ abstract class base {
 	 *
 	 * @return string the stamp of the object
 	 */
-	public function getStamp()
-	{
+	public function getStamp() {
 		return $this->stamp;
 	}
 
+	static public function getInstance() {
+		$args = func_get_args();
+		if (!is_array($args)) {
+			$type = $args['type'];
+			$args = array();
+		} else {
+			$type = $args[0]['type'];
+			unset($args[0]['type']);
+			$args = $args[0];
+		}
+
+		$file_path = __DIR__ . DIRECTORY_SEPARATOR . str_replace('_', DIRECTORY_SEPARATOR, __CLASS__) . DIRECTORY_SEPARATOR . $type . '.php';
+
+		if (!file_exists($file_path)) {
+			// @todo raise an error
+			return false;
+		}
+
+		require_once $file_path;
+		$class = __CLASS__ . '_' . $type;
+
+		if (!class_exists($class)) {
+			// @todo raise an error
+			return false;
+		}
+
+		return new $class($args);
+	}
 
 }
