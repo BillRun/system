@@ -41,23 +41,25 @@ class aggregator_ilds extends aggregator {
 				continue;
 			}
 
-			// update billrun subscriber with amount
-			if (!$this->updateBillrun($billrun, $item)) {
-				print "subscriber " . $subscriber_id . " cannot update billrun" . PHP_EOL;
-				continue;
-			}
-
 			// update billing line with billrun stamp
 			if (!$this->updateBillingLine($subscriber_id, $item)) {
 				print "subscriber " . $subscriber_id . " cannot update billing line" . PHP_EOL;
 				continue;
 			}
 
+			// update billrun subscriber with amount
+			if (!$this->updateBillrun($billrun, $item)) {
+				print "subscriber " . $subscriber_id . " cannot update billrun" . PHP_EOL;
+				continue;
+			}
+
+
+
 			$save_data = array(
 				self::lines_table => $item,
 				self::billrun_table => $billrun,
 			);
-
+			//print_r($save_data);//TODO remove!
 			if (!$this->save($save_data)) {
 				print "subscriber " . $subscriber_id . " cannot save data" . PHP_EOL;
 				continue;
@@ -65,21 +67,21 @@ class aggregator_ilds extends aggregator {
 
 			print "subscriber " . $subscriber_id . " saved successfully" . PHP_EOL;
 		}
-		// @TODO trigger after aggregate	
+		// @TODO trigger after aggregate
 	}
 
 	/**
 	 * load the subscriber billrun raw (aggregated)
 	 * if not found, create entity with default values
 	 * @param type $subscriber
-	 * 
+	 *
 	 * @return Mongodloid_Entity
 	 */
 	public function loadSubscriberBillrun($subscriber) {
 
 		$billrun = $this->db->getCollection(self::billrun_table);
 		$resource = $billrun->query()
-			->equals('subscriber_id', $subscriber['id'])
+			//->exists("subscriber.{$subscriber['id']}")
 			->equals('account_id', $subscriber['account_id'])
 			->equals('stamp', $this->getStamp());
 
@@ -93,7 +95,7 @@ class aggregator_ilds extends aggregator {
 		$values = array(
 			'stamp' => $this->stamp,
 			'account_id' => $subscriber['account_id'],
-			'subscriber_id' => $subscriber['id'],
+			'subscribers' => array($subscriber['id'] => array('cost'=> array()) ),
 			'cost' => array(),
 		);
 
@@ -104,7 +106,7 @@ class aggregator_ilds extends aggregator {
 	 * method to update the billrun by the billing line (row)
 	 * @param Mongodloid_Entity $billrun the billrun line
 	 * @param Mongodloid_Entity $line the billing line
-	 * 
+	 *
 	 * @return boolean true on success else false
 	 */
 	protected function updateBillrun($billrun, $line) {
@@ -113,16 +115,24 @@ class aggregator_ilds extends aggregator {
 		$added_charge = $line->get('price_customer');
 
 		if (!is_numeric($added_charge)) {
-			//raise an error 
+			//raise an error
 			return false;
 		}
 
 		$type = $line->get('type');
+		$subscriberId = $line->get('subscriber_id');
+		if(!isset($current['subscribers'][$subscriberId])) {
+			$current['subscribers'][$subscriberId] = array('cost' => array());
+		}
 		if (!isset($current['cost'][$type])) {
 			$current['cost'][$type] = $added_charge;
+			$current['subscribers'][$subscriberId]['cost'][$type] = $added_charge;
 		} else {
 			$current['cost'][$type] += $added_charge;
+			$subExist = $current['subscribers'][ $subscriberId]['cost'] && $current['subscribers'][ $subscriberId]['cost'][$type];
+			$current['subscribers'][$subscriberId]['cost'][$type] = ($subExist ? $current['subscribers'][ $subscriberId]['cost'][$type] : 0 ) + $added_charge;
 		}
+		$current['subscribers'][$subscriberId]['lines'][] = $line->getRawData();
 
 		$billrun->setRawData($current);
 		// @TODO trigger after update row
@@ -135,10 +145,10 @@ class aggregator_ilds extends aggregator {
 
 	/**
 	 * update the billing line with stamp to avoid another aggregation
-	 * 
+	 *
 	 * @param int $subscriber_id the subscriber id to update
 	 * @param Mongodloid_Entity $line the billing line to update
-	 * 
+	 *
 	 * @return boolean true on success else false
 	 */
 	protected function updateBillingLine($subscriber_id, $line) {

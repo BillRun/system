@@ -46,16 +46,16 @@ class generator_ilds extends generator {
 	 * execute the generate action
 	 */
 	public function generate() {
-		$data = $this->normailze();
+		//$data = $this->normailze();
 
 		// generate xml
-		$this->xml($data);
+		$this->xml($this->data);
 
 		// generate csv
 //		$this->csv();
 	}
 
-	protected function normailze($field = 'account_id') {
+	/*protected function normailze($field = 'account_id') {
 		$ret = array();
 		$i = 0;
 		foreach ($this->data as $row) {
@@ -76,7 +76,7 @@ class generator_ilds extends generator {
 		}
 
 		return $ret;
-	}
+	}*/
 
 	protected function get_subscriber_lines($subscriber_id) {
 		$lines = $this->db->getCollection(self::lines_table);
@@ -98,20 +98,20 @@ class generator_ilds extends generator {
 		// use $this->export_directory
 		$short_format_date = 'd/m/Y';
 		$i = 0;
-		foreach ($rows as $key => $row) {
-			print "xml account " . $key . PHP_EOL;
+		foreach ($rows as $row) {
+			print "xml account " . $row->get('account_id') . PHP_EOL;
 			// @todo refactoring the xml generation to another class
 			$xml = $this->basic_xml();
 			$xml->TELECOM_INFORMATION->LASTTIMECDRPROCESSED = date('Y-m-d h:i:s');
 			$xml->TELECOM_INFORMATION->VAT_VALUE = '17';
 			$xml->TELECOM_INFORMATION->COMPANY_NAME_IN_ENGLISH = 'GOLAN';
-			$xml->INV_CUSTOMER_INFORMATION->CUSTOMER_CONTACT->EXTERNALACCOUNTREFERENCE = $key;
+			$xml->INV_CUSTOMER_INFORMATION->CUSTOMER_CONTACT->EXTERNALACCOUNTREFERENCE = $row->get('account_id');;
 			$total_ilds = array();
-			foreach ($row as $id => $subscriber) {
+			foreach ($row->get('subscribers') as $id => $subscriber) {
 				$subscriber_inf = $xml->addChild('SUBSCRIBER_INF');
-				$subscriber_inf->SUBSCRIBER_DETAILS->SUBSCRIBER_ID = $subscriber['data']['sum']['subscriber_id'];
+				$subscriber_inf->SUBSCRIBER_DETAILS->SUBSCRIBER_ID =$id;
 				$billing_records = $subscriber_inf->addChild('BILLING_LINES');
-				foreach ($subscriber['data']['lines'] as $line) {
+				foreach ($subscriber['lines'] as $line) {
 					$billing_record = $billing_records->addChild('BILLING_RECORD');
 					$billing_record->TIMEOFBILLING = $line['call_start_dt'];
 					$billing_record->TARIFFITEM = 'IL_ILD';
@@ -125,7 +125,7 @@ class generator_ilds extends generator {
 
 				$subscriber_sumup = $subscriber_inf->addChild('SUBSCRIBER_SUMUP');
 				$total_cost = 0;
-				foreach ($subscriber['data']['sum']['cost'] as $ild => $cost) {
+				foreach ($subscriber['cost'] as $ild => $cost) {
 					if (isset($total_ilds[$ild])) {
 						$total_ilds[$ild] += $cost;
 					} else {
@@ -142,7 +142,7 @@ class generator_ilds extends generator {
 				// TODO create file with the xml content and file name of invoice number (ILD000123...)
 			}
 
-			$invoice_id = $this->saveInvoiceId($key, $this->createInvoiceId());
+			$invoice_id = $this->saveInvoiceId($row->get('account_id'), $this->createInvoiceId());
 			// update billrun with the invoice id
 			$xml->INV_INVOICE_TOTAL->INVOICE_NUMBER = $invoice_id;
 			$xml->INV_INVOICE_TOTAL->INVOICE_DATE = date($short_format_date);
@@ -162,11 +162,11 @@ class generator_ilds extends generator {
 			}
 			$invoice_sumup->TOTAL_EXCL_VAT = $total;
 			$invoice_sumup->TOTAL_INCL_VAT = $total *  self::VAT_VALUE;
-			$row['xml'] = $xml->asXML();
+			//$row->{'xml'} = $xml->asXML();
 			print $invoice_id . PHP_EOL;
 			$this->createXml($invoice_id, $xml->asXML());
 
-			$this->addRowToCsv($invoice_id, $key, $total, $total_ilds);
+			$this->addRowToCsv($invoice_id, $row->get('account_id'), $total, $total_ilds);
 		}
 	}
 

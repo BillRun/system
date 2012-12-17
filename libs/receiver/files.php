@@ -13,7 +13,12 @@
  * @since    1.0
  */
  class receiver_files extends receiver {
-
+	//HACK remove! switch to configuration
+	protected $hardcodedProviders = array(
+				//'012' ,
+				//'018' ,
+				'013',
+				);
 	/**
 	 * general function to receive
 	 *
@@ -21,7 +26,7 @@
 	 */
 	 public function receive(){
 		//TODO get from config...
-		foreach(array('012','018','013') as $type) {
+		foreach($this->hardcodedProviders as $type) {
 			$files = scandir($this->workPath . DIRECTORY_SEPARATOR . $type );
 			foreach($files as $file) {
 				$path = $this->workPath . DIRECTORY_SEPARATOR . $type. DIRECTORY_SEPARATOR .$file;
