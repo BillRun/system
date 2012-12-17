@@ -85,7 +85,7 @@ class generator_ilds extends generator {
 
 		$resource = $lines->query()
 			->equals('billrun', $this->getStamp())
-			->equals('subscriber_id', $subscriber_id);
+			->equals('subscriber_id', "$subscriber_id");
 
 		foreach ($resource as $entity) {
 			$ret[] = $entity->getRawData();
@@ -111,6 +111,7 @@ class generator_ilds extends generator {
 				$subscriber_inf = $xml->addChild('SUBSCRIBER_INF');
 				$subscriber_inf->SUBSCRIBER_DETAILS->SUBSCRIBER_ID =$id;
 				$billing_records = $subscriber_inf->addChild('BILLING_LINES');
+
 				foreach ($this->get_subscriber_lines($id) as $line) {
 					$billing_record = $billing_records->addChild('BILLING_RECORD');
 					$billing_record->TIMEOFBILLING = $line['call_start_dt'];
