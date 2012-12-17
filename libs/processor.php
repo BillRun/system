@@ -39,19 +39,6 @@ abstract class processor extends base {
 	protected $data = null;
 
 	/**
-	 * the database we are working on
-	 * @var db resource
-	 */
-	protected $db = null;
-
-	/**
-	 * constants of tables
-	 */
-
-	const log_table = 'log';
-	const lines_table = 'lines';
-
-	/**
 	 * constructor - load basic options
 	 * 
 	 * @param array $options for the file processor
