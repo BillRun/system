@@ -107,7 +107,7 @@ abstract class processor extends base {
 		$log = $this->db->getCollection(self::log_table);
 		$entity = new Mongodloid_Entity($this->data['trailer']);
 
-		return $entity->save($log);
+		return $entity->save($log,true);
 	}
 
 	/**
@@ -124,7 +124,7 @@ abstract class processor extends base {
 
 		foreach ($this->data['data'] as $row) {
 			$entity = new Mongodloid_Entity($row);
-			$entity->save($lines);
+			$entity->save($lines,true);
 		}
 
 		return true;

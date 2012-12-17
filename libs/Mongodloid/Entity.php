@@ -213,7 +213,7 @@ class Mongodloid_Entity
 		$this->_values = unserialize(serialize($data));
 	}
 
-	public function save($collection = null)
+	public function save($collection = null,$save = false,$w=1)
 	{
 		if ($collection instanceOf Mongodloid_Collection)
 			$this->collection($collection);
@@ -221,7 +221,7 @@ class Mongodloid_Entity
 		if (!$this->collection())
 			throw new Mongodloid_Exception('You need to specify the collection');
 
-		return $this->collection()->save($this);
+		return $this->collection()->save($this,array('save'=>$save, 'w' => $w));
 	}
 
 	public function collection($collection = null)
