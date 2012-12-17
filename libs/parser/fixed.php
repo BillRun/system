@@ -5,7 +5,6 @@
  * @copyright		Copyright (C) 2012 S.D.O.C. LTD. All rights reserved.
  * @license			GNU General Public License version 2 or later; see LICENSE.txt
  */
-require_once __DIR__ . DIRECTORY_SEPARATOR . '../parser.php';
 
 /**
  * Billing parser class for fixed size
@@ -27,6 +26,11 @@ class parser_fixed extends parser {
 		return $this;
 	}
 
+	/**
+	 * general function to parse
+	 * 
+	 * @return mixed
+	 */
 	public function parse() {
 		$pointer = 0;
 		$ar_line = array();
