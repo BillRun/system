@@ -68,6 +68,13 @@ class aggregator_ilds extends aggregator {
 		// @TODO trigger after aggregate	
 	}
 
+	/**
+	 * load the subscriber billrun raw (aggregated)
+	 * if not found, create entity with default values
+	 * @param type $subscriber
+	 * 
+	 * @return Mongodloid_Entity
+	 */
 	public function loadSubscriberBillrun($subscriber) {
 
 		$billrun = $this->db->getCollection(self::billrun_table);
@@ -93,17 +100,24 @@ class aggregator_ilds extends aggregator {
 		return new Mongodloid_Entity($values, $billrun);
 	}
 
-	protected function updateBillrun($billrun, $row) {
+	/**
+	 * method to update the billrun by the billing line (row)
+	 * @param Mongodloid_Entity $billrun the billrun line
+	 * @param Mongodloid_Entity $line the billing line
+	 * 
+	 * @return boolean true on success else false
+	 */
+	protected function updateBillrun($billrun, $line) {
 		// @TODO trigger before update row
 		$current = $billrun->getRawData();
-		$added_charge = $row->get('price_customer');
+		$added_charge = $line->get('price_customer');
 
 		if (!is_numeric($added_charge)) {
 			//raise an error 
 			return false;
 		}
 
-		$type = $row->get('type');
+		$type = $line->get('type');
 		if (!isset($current['cost'][$type])) {
 			$current['cost'][$type] = $added_charge;
 		} else {
@@ -119,14 +133,22 @@ class aggregator_ilds extends aggregator {
 		);
 	}
 
-	protected function updateBillingLine($subscriber_id, $row) {
-		$current = $row->getRawData();
+	/**
+	 * update the billing line with stamp to avoid another aggregation
+	 * 
+	 * @param int $subscriber_id the subscriber id to update
+	 * @param Mongodloid_Entity $line the billing line to update
+	 * 
+	 * @return boolean true on success else false
+	 */
+	protected function updateBillingLine($subscriber_id, $line) {
+		$current = $line->getRawData();
 		$added_values = array(
 			'subscriber_id' => $subscriber_id,
 			'billrun' => $this->getStamp(),
 		);
 		$newData = array_merge($current, $added_values);
-		$row->setRawData($newData);
+		$line->setRawData($newData);
 		return true;
 	}
 
