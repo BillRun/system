@@ -21,10 +21,19 @@ else
 	$type = 'ilds';
 }
 
+if (isset($argv[2]))
+{
+	$stamp = $argv[2];
+}
+else
+{
+	$stamp = '201212ilds2';
+}
+
 $options = array(
 	'type' => $type,
 	'db' => $db,
-	'stamp' => '201212ilds1',
+	'stamp' => $stamp,
 );
 
 echo "<pre>";
