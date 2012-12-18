@@ -29,6 +29,10 @@
 	 public function receive(){
 		//TODO get from config...
 		foreach($this->hardcodedProviders as $type) {
+			if(!file_exists($this->workPath . DIRECTORY_SEPARATOR . $type)) {
+				print("NOTICE : SKIPPING $type !!! directory ".$this->workPath . DIRECTORY_SEPARATOR . $type." not found!!");
+				continue;
+			}
 			$files = scandir($this->workPath . DIRECTORY_SEPARATOR . $type );
 			foreach($files as $file) {
 				$path = $this->workPath . DIRECTORY_SEPARATOR . $type. DIRECTORY_SEPARATOR .$file;

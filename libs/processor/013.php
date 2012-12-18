@@ -65,7 +65,7 @@ class processor_013 extends processor
 			'record_type' => 1,
 			'file_creation_date' => 8,
 			'file_received_time' => 6,
-			'filze_size' => 9,
+			'file_size' => 9,
 			'line_count' => 9,
 			'total_charge' => 17,
 		);
