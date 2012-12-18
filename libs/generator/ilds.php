@@ -174,7 +174,7 @@ class generator_ilds extends generator {
 
 	protected function addRowToCsv($invoice_id, $account_id, $total, $cost_ilds) {
 		//empty costs for each of the providers
-		foreach(array('012','013','014','018') as $key) {
+		foreach(array('012','013','014','015','018') as $key) {
 			if (!isset($cost_ilds[$key])) {
 				$cost_ilds[$key] = 0;
 			}

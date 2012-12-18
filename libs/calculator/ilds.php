@@ -70,8 +70,11 @@ class calculator_ilds extends calculator {
 	protected function calcChargeLine($type, $charge) {
 		switch ($type):
 			case '012':
+			case '014':
+			case '015':
 				$rating_charge = round($charge / 1000, 3);
 				break;
+
 			case '013':
 			case '018':
 				$rating_charge = round($charge / 100, 2);

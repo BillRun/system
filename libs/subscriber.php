@@ -13,14 +13,13 @@ class subscriber
 //		$query = array('$where' => '');
 //		$collection->query($query);
 		// @todo: store the data and avoid too much requests
-		if( isset(self::$subscribersCache[$phone]) &&
-		   (!self::$subscribersCache[$phone] ||
-		    date_create(self::$subscribersCache[$phone]['last_modified']) < date_create($time) ) ) {
+		if( isset(self::$subscribersCache[$phone]) && self::$subscribersCache[$phone] &&
+		   ( date_create(self::$subscribersCache[$phone]['last_modified']) < date_create($time) ) ) {
 			return self::$subscribersCache[$phone];
 		}
 
 		$retSubscriber = self::request($phone, $time);
-		if( !$retSubscriber || (!isset($retSubscriber['end_date']) && $retSubscriber['status'] == "in_use" ) ) {
+		if( $retSubscriber && (!isset($retSubscriber['end_date']) && $retSubscriber['status'] == "in_use" ) ) {
 			self::$subscribersCache[$phone] = $retSubscriber;
 		}
 		return $retSubscriber;

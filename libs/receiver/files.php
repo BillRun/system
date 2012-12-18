@@ -17,9 +17,9 @@
 	protected $hardcodedProviders = array(
  				'012' ,
 				'013',
-				"014",
- 				'018' ,
-// 				'015',
+ 				"014",
+ 				'015',
+ 				'018',
 				);
 	/**
 	 * general function to receive
