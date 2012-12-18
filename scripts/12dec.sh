@@ -33,7 +33,7 @@ php ./public/calc.php
 
 #sleep 1;
 # aggregate each line with the account and subscriber
-php ./public/aggregate.php
+php ./public/aggregate.php ilds 201212ilds2
 
 # generate xml + csv
-php ./public/generate.php
+php ./public/generate.php ilds 201212ilds2

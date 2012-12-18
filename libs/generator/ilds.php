@@ -198,7 +198,8 @@ class generator_ilds extends generator {
 		$resource = $billrun->query()
 			->equals('stamp', $this->getStamp())
 			->equals('account_id', (string) $account_id)
-			->notExists('invoice_id');
+//			->notExists('invoice_id')
+			;
 
 		foreach ($resource as $billrun_line) {
 			$data = $billrun_line->getRawData();
@@ -206,6 +207,8 @@ class generator_ilds extends generator {
 				$data['invoice_id'] = $invoice_id;
 				$billrun_line->setRawData($data);
 				$billrun_line->save($billrun);
+			} else {
+				$invoice_id = $data['invoice_id'];
 			}
 		}
 
