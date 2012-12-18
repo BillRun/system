@@ -12,9 +12,9 @@
  * @package  Billing
  * @since    1.0
  */
-class processor_018 extends processor {
+class processor_014 extends processor {
 
-	protected $type = '018';
+	protected $type = '014';
 
 	public function __construct($options) {
 		parent::__construct($options);

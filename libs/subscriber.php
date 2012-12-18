@@ -2,7 +2,7 @@
 
 class subscriber
 {
-
+	static $subscribersCache = array();
 	static public function get($phone, $time)
 	{
 		// @todo: refactoring
@@ -13,7 +13,16 @@ class subscriber
 //		$query = array('$where' => '');
 //		$collection->query($query);
 		// @todo: store the data and avoid too much requests
-		return self::request($phone, $time);
+		if(isset(self::$subscribersCache[$phone]) ) {
+			 return self::$subscribersCache[$phone];
+		}
+
+		$retSubscriber = self::request($phone, $time);
+		if( !$retSubscriber || (!isset($retSubscriber['end_date']) && $retSubscriber['status'] == "in_use" ) ) {
+			self::$subscribersCache[$phone] = $retSubscriber;
+		}
+		return $retSubscriber;
+		//return self::request($phone, $time);
 	}
 
 	static protected function request($phone, $time)
