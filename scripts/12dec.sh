@@ -27,9 +27,11 @@
 #processs al the files in workspace
 php ./public/receive.php ./workspace
 
+#sleep 1;
 # calculate each line
 php ./public/calc.php
 
+#sleep 1;
 # aggregate each line with the account and subscriber
 php ./public/aggregate.php
 

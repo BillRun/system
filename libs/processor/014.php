@@ -21,7 +21,8 @@ class processor_014 extends processor {
 
 		$this->data_structure = array(
 			'record_type' => 1,
-			'caller_phone_no' => 14,
+			'caller_msi' => 3,
+			'caller_phone_no' => 11,
 			'called_no' => 28,
 			'call_start_dt' => 8,
 			'call_start_tm' => 6,

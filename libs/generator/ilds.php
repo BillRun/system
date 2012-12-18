@@ -117,6 +117,7 @@ class generator_ilds extends generator {
 					$billing_record->TIMEOFBILLING = $line['call_start_dt'];
 					$billing_record->TARIFFITEM = 'IL_ILD';
 					$billing_record->CTXT_CALL_OUT_DESTINATIONPNB = $line['called_no'];
+					$billing_record->CTXT_CALL_IN_CLI = $line['caller_phone_no'];
 					$billing_record->CHARGEDURATIONINSEC = $line['chrgbl_call_dur'];
 					$billing_record->CHARGE = $line['price_customer'];
 					$billing_record->TARIFFKIND = 'Call';
@@ -172,8 +173,8 @@ class generator_ilds extends generator {
 	}
 
 	protected function addRowToCsv($invoice_id, $account_id, $total, $cost_ilds) {
-		//empty costsfor each ofthe providers
-		foreach(array('012','018','013') as $key) {
+		//empty costs for each of the providers
+		foreach(array('012','013','014','018') as $key) {
 			if (!isset($cost_ilds[$key])) {
 				$cost_ilds[$key] = 0;
 			}

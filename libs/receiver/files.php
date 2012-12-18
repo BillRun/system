@@ -13,11 +13,13 @@
  * @since    1.0
  */
  class receiver_files extends receiver {
-	//HACK remove! switch to configuration
+	//HACK remove! get this from configuration!!
 	protected $hardcodedProviders = array(
-				//'012' ,
-				//'018' ,
+ 				'012' ,
 				'013',
+				"014",
+ 				'018' ,
+// 				'015',
 				);
 	/**
 	 * general function to receive
