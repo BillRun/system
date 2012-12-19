@@ -80,8 +80,7 @@ abstract class processor extends base {
 		// @todo: trigger before storage line (including $ret)
 
 		if (!$this->logDB()) {
-			//raise error
-			return false;
+			//TODO raise error
 		}
 
 		if (!$this->store()) {
@@ -106,7 +105,10 @@ abstract class processor extends base {
 
 		$log = $this->db->getCollection(self::log_table);
 		$entity = new Mongodloid_Entity($this->data['trailer']);
-
+		if($log->query('stamp',$entity->get('stamp'))->count() > 0) {
+			print("processor::logDB - DUPLICATE! trying to insert duplicate line with stamp of : {$entity->get('stamp')} \n");
+			return FALSE;
+		}
 		return $entity->save($log,true);
 	}
 
@@ -124,6 +126,11 @@ abstract class processor extends base {
 
 		foreach ($this->data['data'] as $row) {
 			$entity = new Mongodloid_Entity($row);
+			if($lines->query('stamp',$entity->get('stamp'))->count() > 0 ) {
+				print("processor::store - DUPLICATE! trying to insert duplicate line with stamp of : {$entity->get('stamp')} \n");
+				///print("processor::store - {$entity->get('caller_phone_no')} , {$entity->get('call_start_dt')}   \n");
+				continue;
+			}
 			$entity->save($lines,true);
 		}
 
