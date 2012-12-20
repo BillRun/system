@@ -7,7 +7,7 @@
  */
 // initiate libs
 
-require_once "./libs/autoloader.php";
+require_once __DIR__ . "/../libs/autoloader.php";
 
 // load mongodb instance
 $conn = Mongodloid_Connection::getInstance();

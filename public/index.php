@@ -6,7 +6,7 @@
  */
 
 // initiate libs
-require_once "./libs/autoloader.php";
+require_once __DIR__ . "/../libs/autoloader.php";
 // make simple test for the system
 
 echo 'Open Source Last Forever!';

@@ -6,6 +6,7 @@
  */
 
 define('BASEDIR', __DIR__ . DIRECTORY_SEPARATOR . "..");
+define('LIBSDIR', __DIR__);
 
 /**
  * Autoloader class

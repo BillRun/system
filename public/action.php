@@ -6,7 +6,7 @@
  * @license			GNU General Public License version 2 or later; see LICENSE.txt
  */
 // initiate auto loader
-require_once "./libs/autoloader.php";
+require_once __DIR__ . "/../libs/autoloader.php";
 
 try {
 	$opts = new Zend_Console_Getopt(

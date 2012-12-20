@@ -6,8 +6,8 @@
  * @license			GNU General Public License version 2 or later; see LICENSE.txt
  */
 // initiate libs
-require_once "./libs/autoloader.php";
-
+require_once __DIR__ . "/../libs/autoloader.php";
+print __DIR__;die;
 // load mongodb instance
 $conn = Mongodloid_Connection::getInstance();
 $db = $conn->getDB('billing');
