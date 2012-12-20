@@ -12,31 +12,31 @@
  * @package  Billing
  * @since    1.0
  */
-class processor_013 extends processor
-{
+class processor_013 extends processor {
 
 	protected $type = '013';
-
 
 	/**
 	 * (Override) Get the type of the currently parsed line.
 	 * @param $line  string containing the parsed line.
 	 * @return Character representing the line type
-	 *	'H' => Header
-	 *	'D' => Data
-	 *	'T' => Tail
+	 * 		'H' => Header
+	 * 		'D' => Data
+	 * 		'T' => Tail
 	 */
-	protected function getLineType($line)
-	{
-		$type = substr($line, 0, 1);
-		if($type == 'D') return 'D';
+	protected function getLineType($line) {
+		if (substr($line, 0, 1) == 'D') {
+			return 'D';
+		}
+
 		$type = substr($line, 11, 1);
-		if($type == 'F') return 'T';
+		if ($type == 'F') {
+			return 'T';
+		}
 		return $type;
 	}
 
-	public function __construct($options)
-	{
+	public function __construct($options) {
 		parent::__construct($options);
 
 		$this->data_structure = array(
