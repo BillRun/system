@@ -16,7 +16,7 @@ $db = $conn->getDB('billing');
 if (isset($argv[1])) {
 	$path = $argv[1];
 } else {
-	$path = __DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'workspace' ;
+	$path = __DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'workspace';
 }
 
 $options = array(
@@ -28,8 +28,7 @@ $options = array(
 $receiver = receiver::getInstance($options);
 if ($receiver) {
 	$ret = $receiver->receive();
-}
-else {
+} else {
 	echo "error with loading receiver" . PHP_EOL;
 	exit();
 }

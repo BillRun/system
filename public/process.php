@@ -50,8 +50,10 @@ else
 	exit();
 }
 
+$data = $processor->getData();
+
 echo "<pre>";
 var_dump($ret); print  PHP_EOL;
 print "type: " . $ilds_type . PHP_EOL
 	. "file path: " . $file_path . PHP_EOL
-	. "import lines: " . count($processor->getData()) . PHP_EOL;
+	. "import lines: " . count($data['data']) . PHP_EOL;

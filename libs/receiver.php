@@ -14,7 +14,6 @@
  */
 abstract class receiver extends base {
 
-
 	protected $workPath = ".";
 
 	public function __construct($options) {
@@ -28,5 +27,4 @@ abstract class receiver extends base {
 	 * @return mixed
 	 */
 	abstract public function receive();
-
 }
