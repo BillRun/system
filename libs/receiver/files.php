@@ -14,23 +14,14 @@
  */
 class receiver_files extends receiver {
 
-	//HACK remove! get this from configuration!!
-	protected $hardcodedProviders = array(
-		'012',
-		'013',
-		'014',
-		'015',
-		'018',
-	);
-
 	/**
 	 * general function to receive
 	 *
 	 * @return mixed
 	 */
 	public function receive() {
-		//TODO get from config...
-		foreach ($this->hardcodedProviders as $type) {
+
+		foreach ($this->config->providers as $type) {
 			if (!file_exists($this->workPath . DIRECTORY_SEPARATOR . $type)) {
 				print("NOTICE : SKIPPING $type !!! directory " . $this->workPath . DIRECTORY_SEPARATOR . $type . " not found!!");
 				continue;
@@ -67,16 +58,16 @@ class receiver_files extends receiver {
 		} else {
 			echo "error with loading processor" . PHP_EOL;
 		}
-		
+
 		$data = $processor->getData();
 		//print result
 		print "type: " . $type . PHP_EOL
 			. "file path: " . $filePath . PHP_EOL
-			. (isset($data['data']) ? "import lines: " . count($data['data']): "no data received") . PHP_EOL;
+			. (isset($data['data']) ? "import lines: " . count($data['data']) : "no data received") . PHP_EOL;
 	}
 
 	/**
-	 *
+	 * method to check if the file already processed
 	 */
 	private function isFileProcessed($filename, $type) {
 		$log = $this->db->getCollection(self::log_table);

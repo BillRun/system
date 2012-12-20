@@ -13,13 +13,13 @@
  * @since    1.0
  */
 class config {
-	
+
 	/**
 	 * the environment the application run on
 	 * @var string
 	 */
-	static protected $env = 'dev';
-	
+	protected $env = 'dev';
+
 	/**
 	 * instance for singleton config
 	 * @var config class
@@ -32,18 +32,21 @@ class config {
 	 */
 	protected $properties = array();
 
+	/**
+	 * constructor
+	 * @param array $options options for the config
+	 */
 	protected function __construct(array $options) {
-		foreach ($options as $key => $value) {
+		foreach ($options[$this->env] as $key => $value) {
 			$this->{$key} = $value;
 		}
 	}
-	
-    protected function __clone()
-    {
-		// prevent clone
-    }
 
-	
+	/**
+	 * prevent clone the object
+	 */
+	protected function __clone() {}
+
 	static public function getInstance() {
 		self::load();
 		return self::$instance;
@@ -55,15 +58,26 @@ class config {
 	protected static function load() {
 		if (is_null(self::$instance)) {
 			$options = self::getOptions();
-			self::$instance = new config($options);
-		}		
+			self::$instance = new config($options);				
+		}
 	}
-	
+
+	/**
+	 * method to get the configuration options
+	 * this method should be override once implement database configuration
+	 * 
+	 * @return array
+	 */
 	static protected function getOptions() {
-		$file_path = LIBSDIR . '/config/' . self::$env . '/config.ini';
-		return parse_ini_file($file_path);
+		$file_path = LIBSDIR . '/config/config.ini';
+		return parse_ini_file($file_path, TRUE);
 	}
-	
+
+	/**
+	 * get property of the config
+	 * @param string $name the property name
+	 * @return mixed if config contain property return the property value, else false
+	 */
 	public function __get($name) {
 		if (isset($this->properties[$name])) {
 			return $this->properties[$name];
@@ -71,7 +85,13 @@ class config {
 		return FALSE;
 	}
 
+	/**
+	 * set property of the config
+	 * @param string $name the property name
+	 * @param mixed $value the property new value
+	 */
 	public function __set($name, $value) {
 		$this->properties[$name] = $value;
 	}
+
 }

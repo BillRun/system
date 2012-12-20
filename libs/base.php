@@ -44,15 +44,27 @@ abstract class base {
 	const billrun_table = 'billrun';
 
 	/**
+	 * the configuration of the system
+	 * @var configuration class
+	 */
+	protected $config;
+
+	/**
 	 * constructor
 	 * @param array $options
 	 */
 	public function __construct($options) {
+		if (isset($options['config'])) {
+			$this->config = $options['config'];
+		} else {
+			$this->config = config::getInstance();
+		}
+
 		if (isset($options['db'])) {
 			$this->setDB($options['db']);
 		} else {
-			$conn = Mongodloid_Connection::getInstance();
-			$this->setDB($conn->getDB('billing'));
+			$conn = Mongodloid_Connection::getInstance($this->config->dbhost, $this->config->dbport);
+			$this->setDB($conn->getDB($this->config->dbname));
 		}
 
 		if (isset($options['stamp']) && $options['stamp']) {
@@ -101,20 +113,8 @@ abstract class base {
 			$args = $args[0];
 		}
 
-		/*$file_path = __DIR__ . DIRECTORY_SEPARATOR . str_replace('_', DIRECTORY_SEPARATOR, __CLASS__) . DIRECTORY_SEPARATOR . $type . '.php';
-
-		if (!file_exists($file_path)) {
-			// @todo raise an error
-			return false;
-		}*/
-
 		//require_once $file_path;
 		$class = get_called_class(). '_' . $type;
-
-		/*if (!class_exists($class)) {
-			// @todo raise an error
-			return false;
-		}*/
 
 		return new $class($args);
 	}
