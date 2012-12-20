@@ -24,10 +24,32 @@ abstract class aggregator extends base {
 	 */
 	abstract public function load();
 
+	/**
+	 * update the billing line with stamp to avoid another aggregation
+	 *
+	 * @param int $subscriber_id the subscriber id to update
+	 * @param Mongodloid_Entity $line the billing line to update
+	 *
+	 * @return boolean true on success else false
+	 */
 	abstract protected function updateBillingLine($subscriber_id, $item);
 
+	/**
+	 * method to update the billrun by the billing line (row)
+	 * @param Mongodloid_Entity $billrun the billrun line
+	 * @param Mongodloid_Entity $line the billing line
+	 *
+	 * @return boolean true on success else false
+	 */
 	abstract protected function updateBillrun($billrun, $row);
 
+	/**
+	 * load the subscriber billrun raw (aggregated)
+	 * if not found, create entity with default values
+	 * @param type $subscriber
+	 *
+	 * @return mixed
+	 */
 	protected function loadSubscriber($phone_number, $time) {
 		$object = new stdClass();
 		$object->phone_number = $phone_number;
