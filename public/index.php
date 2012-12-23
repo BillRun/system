@@ -1,12 +1,14 @@
 <?php
+
 /**
  * @package			Billing
  * @copyright		Copyright (C) 2012 S.D.O.C. LTD. All rights reserved.
  * @license			GNU General Public License version 2 or later; see LICENSE.txt
  */
+defined('APPLICATION_PATH')
+	|| define("APPLICATION_PATH", __DIR__ . "/..");
 
-// initiate libs
-require_once __DIR__ . "/../libs/autoloader.php";
-// make simple test for the system
+$conf_path = APPLICATION_PATH . "/conf/application.ini";
+$app = new Yaf_Application($conf_path);
 
-echo 'Open Source Last Forever!';
+$app->bootstrap()->run();

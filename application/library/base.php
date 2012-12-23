@@ -57,14 +57,14 @@ abstract class base {
 		if (isset($options['config'])) {
 			$this->config = $options['config'];
 		} else {
-			$this->config = config::getInstance();
+			$this->config = Yaf_Application::app()->getConfig();
 		}
 
 		if (isset($options['db'])) {
 			$this->setDB($options['db']);
 		} else {
-			$conn = Mongodloid_Connection::getInstance($this->config->dbhost, $this->config->dbport);
-			$this->setDB($conn->getDB($this->config->dbname));
+			$conn = Mongodloid_Connection::getInstance($this->config->db->host, $this->config->db->port);
+			$this->setDB($conn->getDB($this->config->db->name));
 		}
 
 		if (isset($options['stamp']) && $options['stamp']) {
