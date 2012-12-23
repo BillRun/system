@@ -13,5 +13,13 @@
  * @since    1.0
  */
 class Bootstrap extends Yaf_Bootstrap_Abstract {
+        public function _initPlugin(Yaf_Dispatcher $dispatcher) {
+            /* register a billrun plugin system from config */
+			$config = Yaf_Application::app()->getConfig();
+			$plugins = $config->plugins->toArray();
+			foreach ($plugins as $plugin) {
+				$dispatcher->registerPlugin(new $plugin);
+			}
+        }
 
 }

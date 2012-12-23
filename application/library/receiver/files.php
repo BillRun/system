@@ -21,7 +21,7 @@ class receiver_files extends receiver {
 	 */
 	public function receive() {
 
-		foreach ($this->config->providers as $type) {
+		foreach ($this->config->providers->toArray() as $type) {
 			if (!file_exists($this->workPath . DIRECTORY_SEPARATOR . $type)) {
 				print("NOTICE : SKIPPING $type !!! directory " . $this->workPath . DIRECTORY_SEPARATOR . $type . " not found!!");
 				continue;
