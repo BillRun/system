@@ -22,6 +22,10 @@ abstract class generator extends base {
 	protected $csvContent = '';
 	protected $csvPath;
 
+	/**
+	 * constructor
+	 * @param array $options parameters for the generator to dynamically behaiour
+	 */
 	public function __construct($options) {
 
 		parent::__construct($options);
@@ -35,12 +39,20 @@ abstract class generator extends base {
 		$this->loadCsv();
 	}
 
+	/**
+	 * load csv file to write the generating info into
+	 */
 	protected function loadCsv() {
 		if (file_exists($this->csvPath)) {
 			$this->csvContent = file_get_contents($this->csvPath);
 		}
 	}
 
+	/**
+	 * write row to csv file to write the generating info into in
+	 * @param string $row the row to write into
+	 * @return boolean true if succes to write info else false
+	 */
 	protected function csv($row) {
 		return file_put_contents($this->csvPath, $row, FILE_APPEND);
 	}
