@@ -28,7 +28,7 @@ abstract class generator extends base {
 		if (isset($options['export_directory'])) {
 			$this->export_directory = $options['export_directory'];
 		} else {
-			$this->export_directory = __DIR__ . '/../files/';
+			$this->export_directory = $this->config->ilds->export;//__DIR__ . '/../files/';
 		}
 
 		$this->csvPath = $this->export_directory . '/' . $this->getStamp() . '.csv';
