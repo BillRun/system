@@ -52,13 +52,6 @@ abstract class processor extends base {
 			$this->setParser($options['parser']);
 		}
 
-		if (isset($options['db'])) {
-			$this->setDB($options['db']);
-		}
-	}
-
-	public function setDB($db) {
-		$this->db = $db;
 	}
 
 	public function getData() {

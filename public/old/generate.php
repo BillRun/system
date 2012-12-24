@@ -8,11 +8,6 @@
 // initiate libs
 require_once __DIR__ . "/../libs/autoloader.php";
 
-// load mongodb instance
-$conn = Mongodloid_Connection::getInstance();
-$db = $conn->getDB('billing');
-
-
 if (isset($argv[1]))
 {
 	$type = $argv[1];
@@ -33,7 +28,6 @@ else
 
 $options = array(
 	'type' => $type,
-	'db' => $db,
 	'stamp' => $stamp,
 );
 

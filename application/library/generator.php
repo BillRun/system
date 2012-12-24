@@ -45,18 +45,6 @@ abstract class generator extends base {
 		return file_put_contents($this->csvPath, $row, FILE_APPEND);
 	}
 
-	public function setDB($db) {
-		$this->db = $db;
-	}
-
-	public function setStamp($stamp) {
-		$this->stamp = $stamp;
-	}
-
-	public function getStamp() {
-		return $this->stamp;
-	}
-
 	/**
 	 * load the container the need to be generate
 	 */

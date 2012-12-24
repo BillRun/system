@@ -25,10 +25,6 @@ abstract class calculator extends base {
 	 */
 	protected $type = 'basic';
 
-	public function setDB($db) {
-		$this->db = $db;
-	}
-
 	/**
 	 * load the data to calculate
 	 */

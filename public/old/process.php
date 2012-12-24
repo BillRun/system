@@ -8,10 +8,6 @@
 // initiate libs
 require_once __DIR__ . "/../libs/autoloader.php";
 
-// load mongodb instance
-$conn = Mongodloid_Connection::getInstance();
-$db = $conn->getDB('billing');
-
 if (isset($argv[1]))
 {
 	$ilds_type = $argv[1];
@@ -36,7 +32,6 @@ $options = array(
 	'type' => $ilds_type,
 	'file_path' => $file_path,
 	'parser' => parser::getInstance(array('type'=>'fixed')),
-	'db' => $db,
 );
 
 $processor = processor::getInstance($options);

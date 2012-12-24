@@ -8,11 +8,6 @@
 // initiate libs
 require_once __DIR__ . "/../libs/autoloader.php";
 
-// load mongodb instance
-$conn = Mongodloid_Connection::getInstance();
-$db = $conn->getDB('billing');
-
-
 if (isset($argv[1])) {
 	$path = $argv[1];
 } else {
@@ -21,7 +16,6 @@ if (isset($argv[1])) {
 
 $options = array(
 	'type' => 'files',
-	'db' => $db,
 	'workspace' => $path,
 );
 
