@@ -15,10 +15,8 @@
 class IndexController extends Yaf_Controller_Abstract {
 
 	public function indexAction() {
-		$path = __DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'workspace';
 		$options = array(
 			'type' => 'files',
-			'workspace' => $path,
 		);
 
 		$receiver = receiver::getInstance($options);

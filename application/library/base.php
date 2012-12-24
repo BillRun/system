@@ -102,6 +102,11 @@ abstract class base {
 		return $this->stamp;
 	}
 
+	/**
+	 * Loose coupling of objects in the system
+	 * 
+	 * @return mixed the bridge class
+	 */
 	static public function getInstance() {
 		$args = func_get_args();
 		if (!is_array($args)) {
@@ -113,7 +118,6 @@ abstract class base {
 			$args = $args[0];
 		}
 
-		//require_once $file_path;
 		$class = get_called_class(). '_' . $type;
 
 		return new $class($args);

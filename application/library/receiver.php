@@ -14,11 +14,22 @@
  */
 abstract class receiver extends base {
 
-	protected $workPath = ".";
+	/**
+	 * the receiver workspace of files
+	 * @var string directory path
+	 */
+	protected $workPath;
 
 	public function __construct($options) {
-		$this->workPath = $options['workspace'];
 		parent::__construct($options);
+
+		if (isset($options['workspace'])) {
+			$this->workPath = $options['workspace'];
+		} else {
+			$this->workPath = $this->config->ilds->path;
+		}
+		
+		
 	}
 
 	/**
