@@ -8,6 +8,7 @@
 // initiate libs
 require_once "./libs/autoloader.php";
 
+
 // load mongodb instance
 $conn = Mongodloid_Connection::getInstance();
 $db = $conn->getDB('billing');
@@ -30,14 +31,14 @@ else
 {
 //	$file_path = __DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'workspace' . DIRECTORY_SEPARATOR . 'INT_KVZ_GLN_MABAL_000001_201207311333.DAT';
 //	$file_path = __DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'workspace' . DIRECTORY_SEPARATOR . 'SXFN_FINTL_ID000006_201209201634.DAT';
-	$file_path = __DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'workspace' 
+	$file_path = __DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'workspace'
 		. DIRECTORY_SEPARATOR . 'egsn/GLTNGPT_-_0000001973.20121210_-_1516+0200';
 }
 
 $parser = parser::getInstance(array('type'=>'binary_egcdr'));
 
 $options = array(
-	'type' => 'binary',
+	'type' => 'binary_egsn',
 	'file_path' => $file_path,
 	'parser' => $parser,
 );
