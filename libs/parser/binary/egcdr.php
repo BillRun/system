@@ -85,6 +85,8 @@ class parser_binary_egcdr extends parser_binary {
 			foreach($pos as $depth) {
 				if( isset($tempData[$depth])) {
 					$tempData = $tempData[$depth];
+				} else {
+					$tempData ="";
 				}
 			}
 			if(isset($tempData) ) {
@@ -137,13 +139,13 @@ class parser_binary_egcdr extends parser_binary {
 	 */
 	protected function parseL($asnData) {
 		$retArr= array();
-//		print_r($asnData);
+		//print_r($asnData);
 		foreach($this->data_structure['list'] as $key => $val) {
 			if($val) {
 				$retArr[$key] = $this->parseField($val,$asnData);
 			}
 		}
-		print_r($retArr);
+		//($retArr);
 		return $retArr;
 	}
 
@@ -172,8 +174,8 @@ class parser_binary_egcdr extends parser_binary {
 				'fbc_downlink_volume' => array('number' => array(0,10)),
 				'time_of_report' => array('datetime' => array(0,11)),
 				'rat_type' => array('number' => array(0,12)),
-				'failure_handle_continue' => array('number' => array(0,13,0)),
-				'service_id' => array('BCDencode' => array(0,14)),
+				'failure_handle_continue' => array('number' => array(0,13)),
+				'service_id' => array('number' => array(0,14)),
 			),
 			'base' => array(
 				'record_type' => array('C' => array(0)),
