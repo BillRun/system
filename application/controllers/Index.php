@@ -20,7 +20,7 @@ class IndexController extends Yaf_Controller_Abstract {
 		$options = array(
 			'type' => 'files',
 		);
-		$receiver = receiver::getInstance($options);
+		$receiver = Billrun_Receiver::getInstance($options);
 	}
 
 }
