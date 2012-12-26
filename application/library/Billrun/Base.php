@@ -118,7 +118,7 @@ abstract class Billrun_Base {
 			$args = $args[0];
 		}
 
-		$class = get_called_class(). '_' . $type;
+		$class = get_called_class(). '_' . ucfirst($type);
 
 		return new $class($args);
 	}
