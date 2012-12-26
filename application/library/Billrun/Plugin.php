@@ -15,32 +15,11 @@
 abstract class Billrun_Plugin extends Billrun_Spl_Object {
 
 	/**
-	 * Event object to observe.
-	 *
-	 * @var mixed
+	 * plugin name
+	 * 
+	 * @var string 
 	 */
-	protected $_subject = null;
-
-	/**
-	 * parameters for the plugin
-	 *
-	 * @var array
-	 */
-	public $params = null;
-
-	/**
-	 * The name of the plugin
-	 *
-	 * @var string
-	 */
-	protected $_name = null;
-
-	/**
-	 * The plugin type
-	 *
-	 * @var    string
-	 */
-	protected $_type = null;
+	protected $name = 'Billrun';
 
 	/**
 	 * Constructor
@@ -52,31 +31,31 @@ abstract class Billrun_Plugin extends Billrun_Spl_Object {
 	 *
 	 */
 	public function __construct($subject, $config = array()) {
-		// Get the parameters.
-		if (isset($config['params'])) {
-			if ($config['params'] instanceof JRegistry) {
-				$this->params = $config['params'];
-			} else {
-				$this->params = new JRegistry;
-				$this->params->loadString($config['params']);
-			}
-		}
-
-		// Get the plugin name.
-		if (isset($config['name'])) {
-			$this->_name = $config['name'];
-		}
-
-		// Get the plugin type.
-		if (isset($config['type'])) {
-			$this->_type = $config['type'];
-		}
 
 		// Register the observer ($this) so we can be notified
 		$subject->attach($this);
 
 		// Set the subject to observe
 		$this->_subject = &$subject;
+	}
+
+	/**
+	 * method to receive plugin name
+	 * this will be used by the subject (dispatcher)
+	 * 
+	 * @return String The plugin name
+	 */
+	public function getName() {
+		return $this->name;
+	}
+
+	/**
+	 * method to set the plugin name
+	 * 
+	 * @param string $name The plugin name
+	 */
+	public function setName($name) {
+		$this->name = $name;
 	}
 
 	/**
@@ -90,11 +69,10 @@ abstract class Billrun_Plugin extends Billrun_Spl_Object {
 	 * 
 	 * @return  mixed  Routine return value
 	 */
-	public function update($args) {
-		// First let's get the event from the argument array.  Next we will unset the
-		// event argument as it has no bearing on the method to handle the event.
-		$event = $args['event'];
-		unset($args['event']);
+	public function update(SplSubject $subject) {
+
+		$event = $subject->getEvent();
+		$args = $subject->getArgs();
 
 		/*
 		 * If the method to handle an event exists, call it and return its return

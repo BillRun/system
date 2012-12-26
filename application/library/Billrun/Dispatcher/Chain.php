@@ -7,39 +7,35 @@
  */
 
 /**
- * Billing dispatcher class
+ * Billing dispatcher chain of responsibility class
  *
  * @package  Dispatcher
  * @since    1.0
  */
-class Billrun_Dispatcher extends Billrun_Spl_Observer {
+class Billrun_Dispatcher_Chain extends Billrun_Dispatcher {
 
-	protected $instance = null;
-
-	public function getInstance() {
-		if (is_null(self::$instance)) {
-			self::$instance = new Billrun_Dispatcher();
-		}
-		return self::$instance;
-	}
-	
 	/**
 	 * Triggers an event by dispatching arguments to all observers that handle
 	 * the event and returning their return values.
+	 * The loop will continue to run all over the observer as long no observer return false
+	 * Once observer return false the chain will break
 	 *
 	 * @param   string  $event  The event to trigger.
 	 * @param   array   $args   An array of arguments.
 	 *
-	 * @return  array  An array of results from each function call.
+	 * @return  array  An array of results from each function call
 	 *
 	 */
 	public function notify() {
 		$ret = array();
 		foreach ($this->observers as $observer) {
-			$ret[$observer->getName()] = $observer->update($this);
+			$observerName = $observer->getName();
+			$ret[$observerName] = $observer->update($this);
+			if ($ret[$observerName] === FALSE) {
+				break;
+			}
 		}
 		return $ret;
 	}
-
 
 }

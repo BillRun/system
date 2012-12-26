@@ -14,6 +14,11 @@
  */
 class Billrun_Spl_Observer implements SplObserver {
 
+	/**
+	 * method to trigger the observer
+	 * 
+	 * @param SplSubject $subject the subject which trigger this observer
+	 */
 	public function update(SplSubject $subject) {
 		echo "I was updated by " . get_class($subject);
 	}
