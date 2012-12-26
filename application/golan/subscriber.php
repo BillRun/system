@@ -1,6 +1,6 @@
 <?php
 
-class subscriber
+class golan_subscriber
 {
 	static $subscribersCache = array();
 	static public function get($phone, $time)
