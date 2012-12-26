@@ -15,13 +15,17 @@
  */
 class parser_binary extends parser {
 
+	public function __constract() {
+		parent::__constract();
+
+	}
 	/**
 	 * general function to parse
-	 * 
+	 *
 	 * @return mixed
 	 */
 	public function parse() {
-		
+
 	}
 
 }

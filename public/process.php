@@ -41,6 +41,7 @@ $options = array(
 	'type' => 'binary_egsn',
 	'file_path' => $file_path,
 	'parser' => $parser,
+	'db' => $db,
 );
 
 $processor = processor::getInstance($options);

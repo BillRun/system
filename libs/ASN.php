@@ -172,8 +172,9 @@ class ASN {
 			if ($type==0){ // if we are type 0, just continue
 				break;
 			} else {
-				if(($type & ASN_CONSTRUCTOR) && ($type & ASN_CONTEXT) && (($type & 0x1F) == 0x1F)) {
+				if( ($type & ASN_CONTEXT) && (($type & 0x1F) == 0x1F)) {
 					$type = ord($string[$p++]);
+// 					print("long ".dechex($type));
 				}
 				$length = ord($string[$p++]);
 				if (($length & ASN_LONG_LEN) == ASN_LONG_LEN){
@@ -185,13 +186,13 @@ class ASN {
 
 				}
 
-				for($i=0;$i<$level;$i++) {
-					print('	');
-				}
-				print(dechex($length)."	".dechex($type)."\n");
+// 				for($i=0;$i<$level;$i++) {
+// 					print('	');
+// 				}
+// 				print(dechex($length)."	".dechex($type)."\n");
 				//if($length==0) {print('33333333 '.dechex($type));}
 				$data = substr($string, $p, ( $length > 0 ? $length : (strlen($string)-$p)) );
-				$parsed[] = self::parseASNData($type, $data, $level, $maxLevels);
+				$parsed[] = self::parseASNData($type, $data, $level, $maxLevels)->asnData;
 				$p = $p + $length;
 			}
 		}
@@ -210,7 +211,7 @@ class ASN {
 	 * @return	mixed	The data that was parsed from the raw binary data string
 	 */
 	public static function parseASNData($type, $data, $level, $maxLevels){
-		$constracted = $type & 0x20;
+		$constracted = $type & ASN_CONSTRUCTOR;
 		$type = $type&0x1F; // strip out context
 		switch($type) {
 			case ASN_BOOLEAN: $data = (bool)$data;
@@ -218,51 +219,15 @@ class ASN {
 			//case ASN_OBJECT_ID: $data = self::parseOID($data);
 			//	break;
 		}
-		$val = $constracted || $type == 0x10 || $type == 0x11 || $type == 0x1F ? self::parseASNString($data, $level+1, $maxLevels) : $data;
+		$val = $constracted || $type == 0x10  || $type == 0x1F ? self::parseASNString($data, $level+1, $maxLevels) : $data;
 		if(isset(ASN::$ASN_TYPES[$type])) {
 			$clsType = ASN::$ASN_TYPES[$type];
 			$cls = new $clsType($val);
 		} else {
-			print("not detected : ". dechex($type));
+// 			print("not detected : ". dechex($type));
 			$cls = new ASN($val);
 		}
 		return $cls;
-		/*switch ($type){
-			default:
-				return new ASN($data);
-			case ASN_BOOLEAN:
-				return new ASN_BOOLEAN((bool)$data);
-			case ASN_INTEGER:
-				return new ASN_INTEGER(strtr(base64_encode($data),'+/','-_'));
-//				return new ASN_INTEGER(ord($data));
-			case ASN_BIT_STR:
-				return new ASN_BIT_STR(self::parseASNString($data, $level+1, $maxLevels));
-			case ASN_OCTET_STR:
-				return new ASN_OCTET_STR($data);
-			case ASN_NULL:
-				return new ASN_NULL(null);
-			case ASN_REAL:
-				return new ASN_REAL($data);
-			case ASN_ENUMERATED:
-				return new ASN_ENUMERATED(self::parseASNString($data, $level+1, $maxLevels));
-			case ASN_RELATIVE_OID: // I don't really know how this works and don't have an example :-)
-						// so, lets just return it ...
-				return new ASN_RELATIVE_OID($data);
-			case ASN_SEQUENCE:
-				return new ASN_SEQUENCE(self::parseASNString($data, $level+1, $maxLevels));
-			case ASN_SET:
-				return new ASN_SET(self::parseASNString($data, $level+1, $maxLevels));
-			case ASN_PRINT_STR:
-				return new ASN_PRINT_STR($data);
-			case ASN_IA5_STR:
-				return new ASN_IA5_STR($data);
-			case ASN_UTC_TIME:
-				return new ASN_UTC_TIME($data);
-			case ASN_GENERAL_TIME:
-				return new ASN_GENERAL_TIME($data);
-			case ASN_OBJECT_ID:
-				return new ASN_OBJECT_ID(self::parseOID($data));
-		}*/
 	}
 
 	/**

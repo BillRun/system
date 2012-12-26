@@ -24,54 +24,85 @@ abstract class processor_binary extends processor {
 			return false;
 		}
 
-		$count = $i = 0;
-		fread($this->fileHandler, 54);
+		$count =0;
+		$header['data'] = fread($this->fileHandler, 54);
+		$header['type'] = $this->type;
+		$header['file'] = basename($this->filePath);
+		$header['process_time'] = date('Y-m-d h:i:s');
+		$this->data['header'] = $header;
 		while (!feof($this->fileHandler)) {
 			$bytes .= fread($this->fileHandler, 512);
 			$asnObject = ASN::parseASNString($bytes);
-			echo PHP_EOL . ASN::$parsedLength . PHP_EOL;
 			$bytes = substr($bytes,ASN::$parsedLength+3);
-			//ASN::printASN($asnObject);
 			//print_r($asnObject[0]);
-			$this->parseASNData($asnObject[0]);
-			sleep(1);
+			$row = $this->parseASNData($asnObject[0]);
+			$row['type'] = $this->type;
+			//$row['header_stamp'] = $this->data['header']['stamp'];
+			$row['file'] = basename($this->filePath);
+			$row['process_time'] = date('Y-m-d h:i:s');
+			$this->data['data'][] = $row;
+			//sleep(0.2);
+			$count++;
 		}
-		echo PHP_EOL . ASN::$parsedLength . PHP_EOL;
-		die("!!!!!!!!!!!!!!!!!!!!!!!!!!!!" . PHP_EOL);
+		echo PHP_EOL .$count . PHP_EOL;
+		$trailer['type'] = $this->type;
+		//$trailer['header_stamp'] = $this->data['header']['stamp'];
+		$trailer['file'] = basename($this->filePath);
+		$trailer['process_time'] = date('Y-m-d h:i:s');
+		$trailer['data'] = $bytes;
+		$this->data['trailer'] = $trailer;
+		return true;
 	}
 
 	protected function parseASNData($asnData) {
+		$retArr= array();
 		foreach($this->data_structure as $key => $val) {
-			$tempData = $asnData;
+
 			foreach($val as $type => $pos) {
+				$tempData = $asnData;
 				foreach($pos as $depth) {
-					if(isset($tempData->asnData[$depth])) {
-						$tempData = $tempData->asnData[$depth];
+					if( isset($tempData[$depth])) {
+						$tempData = $tempData[$depth];
 					}
 				}
-				switch($type) {
-					case 'string':
-							$tempData = $tempData->asnData;
-						break;
-					case 'imsi' :
-						$tempData = implode(unpack("L*",$tempData->asnData));
-						break;
-					case 'ip' :
-						$tempData = implode(".",unpack("C*",$tempData->asnData));
-						break;
-					case 'ttr' :
-						print_r($tempData->asnData);
-						$tempData = implode(".",unpack("C*",$tempData->asnData));
+				if(isset($tempData)) {
+					switch($type) {
 
-						break;
-
-					default:
-						$tempData = implode("",unpack($type,$tempData->asnData));
+						case 'string':
+							break;
+						case 'number':
+							$numarr = unpack("C*",$tempData);
+							$tempData =0;
+							foreach($numarr as $byte) {
+								//$tempData = $tempData <<8;
+								$tempData =  ($tempData << 8 )+ $byte;
+							}
+							break;
+						case 'BCDencode' :
+							$halfBytes = unpack("C*",$tempData);
+							$tempData ="";
+							foreach($halfBytes as $byte) {
+								//$tempData = $tempData <<8;
+								$tempData .= ($byte & 0xF) . ((($byte >>4) < 10) ? ($byte >>4) : "" ) ;
+							}
+							break;
+						case 'ip' :
+							$tempData = implode(".",unpack("C*",$tempData));
+							break;
+						case 'datetime' :
+							$tempTime = DateTime::createFromFormat("ymdHisT",str_replace("2b","+",implode(unpack("H*",$tempData))) );
+							$tempData = is_object($tempTime) ?  $tempTime->format("H:i:s d/m/Y T") : "";
+							break;
+						case 'json' :
+							$tempData = json_encode($tempData);
+							break;
+						default:
+							$tempData = is_array($tempData) ? "" : implode("",unpack($type,$tempData));
+					}
 				}
-//print_r($tempData);
 			}
-
-			print("$key : {$tempData}\n");
+			$retArr[$key] = $tempData;
+			//print("$key : {$tempData}\n");
 		}
 
 	}

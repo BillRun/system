@@ -93,7 +93,7 @@ abstract class processor extends base {
 
 		return true;
 	}
-	
+
 	abstract protected function parse();
 
 	/**
