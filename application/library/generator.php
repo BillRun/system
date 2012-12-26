@@ -24,6 +24,7 @@ abstract class generator extends base {
 
 	/**
 	 * constructor
+	 * 
 	 * @param array $options parameters for the generator to dynamically behaiour
 	 */
 	public function __construct($options) {
@@ -35,7 +36,12 @@ abstract class generator extends base {
 			$this->export_directory = $this->config->ilds->export;//__DIR__ . '/../files/';
 		}
 
-		$this->csvPath = $this->export_directory . '/' . $this->getStamp() . '.csv';
+		if (isset($options['csv_filename'])) {
+			$this->csvPath = $this->export_directory . '/' . $options['csv_filename'] . '.csv';
+		} else {
+			$this->csvPath = $this->export_directory . '/' . $this->getStamp() . '.csv';
+		}
+
 		$this->loadCsv();
 	}
 
@@ -49,8 +55,10 @@ abstract class generator extends base {
 	}
 
 	/**
-	 * write row to csv file to write the generating info into in
+	 * write row to csv file for generating info into in
+	 * 
 	 * @param string $row the row to write into
+	 * 
 	 * @return boolean true if succes to write info else false
 	 */
 	protected function csv($row) {
