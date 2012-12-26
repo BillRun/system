@@ -25,11 +25,11 @@ abstract class processor_binary extends processor {
 		}
 
 		$count =0;
-		$header['data'] =  "";
-		fread($this->fileHandler, 54);
+		$header['data'] = utf8_encode(fread($this->fileHandler, 54));
 		$header['type'] = $this->type;
 		$header['file'] = basename($this->filePath);
 		$header['process_time'] = date('Y-m-d h:i:s');
+		$header['stamp'] = md5(serialize($header));
 		$this->data['header'] = $header;
 		$bytes = null;
 		do {
@@ -41,7 +41,7 @@ abstract class processor_binary extends processor {
 			//print_r($row);
 			$bytes = substr($bytes,$this->parser->getLastParseLength());
 			$row['type'] = $this->type;
-			//$row['header_stamp'] = $this->data['header']['stamp'];
+			$row['header_stamp'] = $this->data['header']['stamp'];
 			$row['file'] = basename($this->filePath);
 			$row['process_time'] = date('Y-m-d h:i:s');
 			$this->data['data'][] = $row;
@@ -51,7 +51,7 @@ abstract class processor_binary extends processor {
 		echo PHP_EOL .$count . PHP_EOL;
 
 		$trailer['type'] = $this->type;
-		//$trailer['header_stamp'] = $this->data['header']['stamp'];
+		$trailer['header_stamp'] = $this->data['header']['stamp'];
 		$trailer['file'] = basename($this->filePath);
 		$trailer['process_time'] = date('Y-m-d h:i:s');
 		$trailer['data'] = "";//$bytes;

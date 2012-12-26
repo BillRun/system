@@ -281,14 +281,14 @@ class parser_binary_egcdr extends parser_binary {
 					'rat_type'	=>	null,
 					'ms_timezone'	=>	null,
 					'user_location_information'	=>	null,
-					'list_of_service_data'	=>	array('json'=> array(21)),
+					'list_of_service_data'	=>	array('l'=> array(21)),
 				),
 			'0120340567008910111201314151617181920001234567089101112101234567089101112'=> array(
 					'served_imeisv'	=>	null,
 					'rat_type'	=>	null,
 					'ms_timezone'	=>	null,
 					'user_location_information'	=>	null,
-					'list_of_service_data'	=>	array('json'=> array(20)),
+					'list_of_service_data'	=>	array('l'=> array(20)),
 					'record_extensions'	=>	array('json'=> array(21)),
 				),
 			'0120340567008910111213141516171819202122230240012345670891011121314'=> array(
@@ -323,7 +323,7 @@ class parser_binary_egcdr extends parser_binary {
 					'rat_type'	=>	array('H*'=> array(22)),
 					'ms_timezone'	=>	null,
 					'user_location_information'	=>	null,
-					'list_of_service_data'	=>	array('json'=> array(23)),
+					'list_of_service_data'	=>	array('l'=> array(23)),
 				),
 			'0120340567008910111201314151617181920212223240250012345670891011121314' => array(
 					'record_sequence_number' => array('L*'=> array(13)),
@@ -338,7 +338,7 @@ class parser_binary_egcdr extends parser_binary {
 					'rat_type'	=>	array('H*'=> array(22)),
 					'ms_timezone'	=>	array('datetime'=> array(23)),
 					'user_location_information'	=>	array('datetime'=> array(24,0)),
-					'list_of_service_data'	=>	array('json'=> array(25)),
+					'list_of_service_data'	=>	array('l'=> array(25)),
 				),
 			);
 		return $data_structure;
