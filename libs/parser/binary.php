@@ -13,19 +13,34 @@
  * @since    1.0
  * @todo should make first derivative parser text and then fixed parser will inherited text parser
  */
-class parser_binary extends parser {
+abstract class parser_binary extends parser {
 
-	public function __constract() {
-		parent::__constract();
+	protected $parsedBytes = 0;
 
-	}
 	/**
-	 * general function to parse
-	 *
-	 * @return mixed
+	 * Get the amount of bytes that were parsed on the last parsing run.
+	 * @return int	 containing the count of the bytes that were processed/parsed.
 	 */
-	public function parse() {
-
+	public function getLastParseLength() {
+		return $this->parsedBytes;
 	}
 
+	/**
+	 * method to set the line of the parser
+	 *
+	 * @param string $line the line to set to the parser
+	 * @return Object the parser itself (for concatening methods)
+	 */
+	public function setLine($line) {
+		$this->line = $line;
+		return $this;
+	}
+
+	/**
+	 *
+	 * @return string the line that parsed
+	 */
+	public function getLine() {
+		return $this->line;
+	}
 }

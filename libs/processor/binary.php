@@ -25,86 +25,40 @@ abstract class processor_binary extends processor {
 		}
 
 		$count =0;
-		$header['data'] = fread($this->fileHandler, 54);
+		$header['data'] =  "";
+		fread($this->fileHandler, 54);
 		$header['type'] = $this->type;
 		$header['file'] = basename($this->filePath);
 		$header['process_time'] = date('Y-m-d h:i:s');
 		$this->data['header'] = $header;
-		while (!feof($this->fileHandler)) {
-			$bytes .= fread($this->fileHandler, 512);
-			$asnObject = ASN::parseASNString($bytes);
-			$bytes = substr($bytes,ASN::$parsedLength+3);
-			//print_r($asnObject[0]);
-			$row = $this->parseASNData($asnObject[0]);
+		$bytes = null;
+		do {
+			if(!feof($this->fileHandler) ) {
+				$bytes .= fread($this->fileHandler, 8192);
+			}
+			$this->parser->setLine($bytes);
+			$row = $this->parser->parse();
+			print_r($row);
+			$bytes = substr($bytes,$this->parser->getLastParseLength());
 			$row['type'] = $this->type;
 			//$row['header_stamp'] = $this->data['header']['stamp'];
 			$row['file'] = basename($this->filePath);
 			$row['process_time'] = date('Y-m-d h:i:s');
 			$this->data['data'][] = $row;
-			//sleep(0.2);
 			$count++;
-		}
+		} while ( strlen($bytes) > 54);
+
 		echo PHP_EOL .$count . PHP_EOL;
+
 		$trailer['type'] = $this->type;
 		//$trailer['header_stamp'] = $this->data['header']['stamp'];
 		$trailer['file'] = basename($this->filePath);
 		$trailer['process_time'] = date('Y-m-d h:i:s');
-		$trailer['data'] = $bytes;
+		$trailer['data'] = "";//$bytes;
 		$this->data['trailer'] = $trailer;
+
 		return true;
 	}
 
-	protected function parseASNData($asnData) {
-		$retArr= array();
-		foreach($this->data_structure as $key => $val) {
-
-			foreach($val as $type => $pos) {
-				$tempData = $asnData;
-				foreach($pos as $depth) {
-					if( isset($tempData[$depth])) {
-						$tempData = $tempData[$depth];
-					}
-				}
-				if(isset($tempData)) {
-					switch($type) {
-
-						case 'string':
-							break;
-						case 'number':
-							$numarr = unpack("C*",$tempData);
-							$tempData =0;
-							foreach($numarr as $byte) {
-								//$tempData = $tempData <<8;
-								$tempData =  ($tempData << 8 )+ $byte;
-							}
-							break;
-						case 'BCDencode' :
-							$halfBytes = unpack("C*",$tempData);
-							$tempData ="";
-							foreach($halfBytes as $byte) {
-								//$tempData = $tempData <<8;
-								$tempData .= ($byte & 0xF) . ((($byte >>4) < 10) ? ($byte >>4) : "" ) ;
-							}
-							break;
-						case 'ip' :
-							$tempData = implode(".",unpack("C*",$tempData));
-							break;
-						case 'datetime' :
-							$tempTime = DateTime::createFromFormat("ymdHisT",str_replace("2b","+",implode(unpack("H*",$tempData))) );
-							$tempData = is_object($tempTime) ?  $tempTime->format("H:i:s d/m/Y T") : "";
-							break;
-						case 'json' :
-							$tempData = json_encode($tempData);
-							break;
-						default:
-							$tempData = is_array($tempData) ? "" : implode("",unpack($type,$tempData));
-					}
-				}
-			}
-			$retArr[$key] = $tempData;
-			//print("$key : {$tempData}\n");
-		}
-
-	}
 
 }
