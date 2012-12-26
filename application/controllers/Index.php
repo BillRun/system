@@ -15,12 +15,12 @@
 class IndexController extends Yaf_Controller_Abstract {
 
 	public function indexAction() {
+        $this->getView()->content = "Open Source Last Forever!";
+
 		$options = array(
 			'type' => 'files',
 		);
-
 		$receiver = receiver::getInstance($options);
-		print_R($receiver);die;
 	}
 
 }

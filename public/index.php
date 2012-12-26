@@ -6,7 +6,7 @@
  * @license         GNU General Public License version 2 or later; see LICENSE.txt
  */
 defined('APPLICATION_PATH')
-	|| define("APPLICATION_PATH", __DIR__ . "/..");
+	|| define("APPLICATION_PATH", dirname(__DIR__));
 
 $conf_path = APPLICATION_PATH . "/conf/application.ini";
 $app = new Yaf_Application($conf_path);
