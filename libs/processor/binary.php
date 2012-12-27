@@ -38,7 +38,7 @@ abstract class processor_binary extends processor {
 			}
 			$this->parser->setLine($bytes);
 			$row = $this->parser->parse();
-			//print_r($row);
+			print_r($row);
 			$bytes = substr($bytes,$this->parser->getLastParseLength());
 			$row['type'] = $this->type;
 			$row['header_stamp'] = $this->data['header']['stamp'];
