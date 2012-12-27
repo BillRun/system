@@ -16,49 +16,49 @@
  */
 abstract class processor_binary extends processor {
 
-	protected function parse() {
-
-		// run all over the file with the parser helper
-		if (!is_resource($this->fileHandler)) {
-			echo "Resource is not configured well" . PHP_EOL;
-			return false;
-		}
-
-		$count =0;
-		$header['data'] = utf8_encode(fread($this->fileHandler, 54));
+	/**
+	 * create an header record
+	 * @param $data  the header record data.
+	 * @return Array an array to be used as the header data record.
+	 */
+	protected function buildHeader($data) {
+		$header['data'] = utf8_encode($data);
 		$header['type'] = $this->type;
 		$header['file'] = basename($this->filePath);
 		$header['process_time'] = date('Y-m-d h:i:s');
 		$header['stamp'] = md5(serialize($header));
-		$this->data['header'] = $header;
-		$bytes = null;
-		do {
-			if(!feof($this->fileHandler) ) {
-				$bytes .= fread($this->fileHandler, 8192);
-			}
-			$this->parser->setLine($bytes);
-			$row = $this->parser->parse();
-			print_r($row);
-			$bytes = substr($bytes,$this->parser->getLastParseLength());
+		return $header;
+	}
+
+	/**
+	 * This function should be used to build a Data row
+	 * @param $data the raw row data
+	 * @return Array that conatins all the parsed and processed data.
+	 */
+	protected function buildDataRow($data) {
+		$this->parser->setLine($data);
+		$row = $this->parser->parse();
+		if($row) {
+			//print_r($row);
 			$row['type'] = $this->type;
 			$row['header_stamp'] = $this->data['header']['stamp'];
 			$row['file'] = basename($this->filePath);
 			$row['process_time'] = date('Y-m-d h:i:s');
-			$this->data['data'][] = $row;
-			$count++;
-		} while ( strlen($bytes) > 54);
-
-		echo PHP_EOL .$count . PHP_EOL;
-
+		}
+		return $row;
+	}
+	/**
+	 * Create an trailer record.
+	 * @param $data  the trailer record data.
+	 * @return Array an array to be used as the trailer data record.
+	 */
+	protected function buildTrailer($data) {
+		$trailer['data'] = utf8_encode($data);
 		$trailer['type'] = $this->type;
 		$trailer['header_stamp'] = $this->data['header']['stamp'];
 		$trailer['file'] = basename($this->filePath);
 		$trailer['process_time'] = date('Y-m-d h:i:s');
-		$trailer['data'] = "";//$bytes;
-		$this->data['trailer'] = $trailer;
-
-		return true;
+		return $trailer;
 	}
-
 
 }

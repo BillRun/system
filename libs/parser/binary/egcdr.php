@@ -31,8 +31,15 @@ class parser_binary_egcdr extends parser_binary {
 	public function parse() {
 		$asnObject = ASN::parseASNString($this->getLine());
 		$this->parsedBytes = ASN::$parsedLength;
-		$ret =$this->parseASNData(	$this->data_structure[$this->calcStructureSign($asnObject[0])],
+		$dataSign = $this->calcStructureSign($asnObject[0]);
+		if(isset($this->data_structure[$dataSign]) ) {
+		$ret =$this->parseASNData(	$this->data_structure[$dataSign],
 						$asnObject[0] );
+		} else {
+			error_log("parser_binary_egcdr::parse - WARNING! : CDR record with signture : $dataSign doesn't  exist in the signture structure.!!");
+			return false;
+
+		}
 
 		return $ret;
 	}
@@ -63,8 +70,7 @@ class parser_binary_egcdr extends parser_binary {
 		$retArr= array();
 
 		foreach($struct as $key => $val) {
-			if($val) {
-				print($key."\n");
+			if(!isset($val['discard']) || !$val['discard'] ) {
 				$retArr[$key] = $this->parseField($val,$asnData);
 			}
 		}
@@ -100,6 +106,7 @@ class parser_binary_egcdr extends parser_binary {
 						}
 						break;
 					case 'BCDencode' :
+						if(is_array($tempData)) { print_r($tempData);}
 						$halfBytes = unpack("C*",$tempData);
 						$tempData ="";
 						foreach($halfBytes as $byte) {
@@ -185,24 +192,24 @@ class parser_binary_egcdr extends parser_binary {
 											'service_id' =>  array( 'map' => array('BCDencode' => array(0,14)) ),
 									),
 					),
-				'record_extensions'	=>	null,
+				'record_extensions'	=>	array( 'discard' => true ),
 			);
 		$data_structure = array(
 
 			'0120340567008910111201314151617181920001234567089101112'=> array(
-					'served_imeisv'	=>null,
-					'rat_type'	=>null,
-					'ms_timezone'	=>null,
-					'user_location_information'	=>null,
+					'served_imeisv'	=>array( 'discard' => true ),
+					'rat_type'	=>array( 'discard' => true ),
+					'ms_timezone'	=>array( 'discard' => true ),
+					'user_location_information'	=>array( 'discard' => true ),
 					'list_of_service_data'	=> array( 'map' => array('nested' => array(20)) ),
 				),
 			'01203405670089101112131415161718192021220230240012345670891011121314'=> array(
-					//'diagnostics' => null,
+					//'diagnostics' => array( 'discard' => true ),
 					//'record_sequence_number' =>  array( 'map' => array('C'=> array(12)) ),
 					'user_location_information'	=>	 array( 'map' => array('C*'=> array(23,0)) ),
 				),
 			'0120340567008910111213141516171819202122023240012345670891011121314'=> array(
-					//'diagnostics' => null,
+					//'diagnostics' => array( 'discard' => true ),
 					//'record_sequence_number' =>  array( 'map' => array('C*'=> array(12)) ),
 				),
 			'012034056700891011120131415161718192021220230240012345670891011121314'=> array(
@@ -241,15 +248,15 @@ class parser_binary_egcdr extends parser_binary {
 			'01203405670089101112013141516171819202122023240012345670891011121314'=> array(
 				),
 			'012034056700891011121314151617181920001234567089101112'=> array(
-					'served_imeisv'	=>	null,
-					'rat_type'	=>	null,
-					'ms_timezone'	=>	null,
-					'user_location_information'	=>	null,
+					'served_imeisv'	=>	array( 'discard' => true ),
+					'rat_type'	=>	array( 'discard' => true ),
+					'ms_timezone'	=>	array( 'discard' => true ),
+					'user_location_information'	=>	array( 'discard' => true ),
 					'list_of_service_data'	=>	 array( 'map' => array('nested' => array(20)) ),
 					//'record_extensions'	=>	 array( 'map' => array('json'=> array(20)) ),
 				),
 			'01203405670089101112131415161718192021220230012345670891011121314'=> array(
-					'user_location_information'	=> null,
+					'user_location_information'	=> array( 'discard' => true ),
 					'list_of_service_data'	=>	 array( 'map' => array('nested' => array(23)) ),
 				),
 			'012034056700891011120131415161718192021001234567089101112'=> array(
@@ -261,19 +268,19 @@ class parser_binary_egcdr extends parser_binary {
 					'charging_characteristics'	=>	 array( 'map' => array('C*'=> array(18)) ),
 					'charging_characteristics_selection_mode'	=>	 array( 'map' => array('C*'=> array(19)) ),
 					'sgsn_plmn_id'	=>	 array( 'map' => array('number'=> array(20)) ),
-					'served_imeisv'	=>	null,
-					'rat_type'	=>	null,
-					'ms_timezone'	=>	null,
-					'user_location_information'	=>	null,
+					'served_imeisv'	=>	array( 'discard' => true ),
+					'rat_type'	=>	array( 'discard' => true ),
+					'ms_timezone'	=>	array( 'discard' => true ),
+					'user_location_information'	=>	array( 'discard' => true ),
 					'list_of_service_data'	=>	 array( 'map' => array('nested' => array(21)) ),
 				),
 			'0120340567008910111201314151617181920001234567089101112101234567089101112'=> array(
-					'served_imeisv'	=>	null,
-					'rat_type'	=>	null,
-					'ms_timezone'	=>	null,
-					'user_location_information'	=>	null,
+					'served_imeisv'	=>	array( 'discard' => true ),
+					'rat_type'	=>	array( 'discard' => true ),
+					'ms_timezone'	=>	array( 'discard' => true ),
+					'user_location_information'	=>	array( 'discard' => true ),
 					'list_of_service_data'	=>	 array( 'map' => array('nested' => array(20)) ),
-					'record_extensions'	=>	 array( 'map' => array('json'=> array(21)) ),
+					'record_extensions'	=>	 array( 'discard' => false, 'map' => array('json'=> array(21)) ),
 				),
 			'0120340567008910111213141516171819202122230240012345670891011121314'=> array(
 				),
@@ -291,7 +298,7 @@ class parser_binary_egcdr extends parser_binary {
 					'served_imeisv'	=>	 array( 'map' => array('BCDencode'=> array(21)) ),
 					'rat_type'	=>	 array( 'map' => array('H*'=> array(22)) ),
 					'ms_timezone'	=>	 array( 'map' => array('datetime'=> array(23,0)) ),
-					'user_location_information'	=>	null,
+					'user_location_information'	=>	array( 'discard' => true ),
 					'list_of_service_data'	=>	 array( 'map' => array('json'=> array(23)) ),
 				),
 			'012034056700891011120131415161718192021222300123456708910111213' => array(
@@ -305,8 +312,8 @@ class parser_binary_egcdr extends parser_binary {
 					'sgsn_plmn_id'	=>	 array( 'map' => array('number'=> array(20)) ),
 					'served_imeisv'	=>	 array( 'map' => array('BCDencode'=> array(21)) ),
 					'rat_type'	=>	 array( 'map' => array('H*'=> array(22)) ),
-					'ms_timezone'	=>	null,
-					'user_location_information'	=>	null,
+					'ms_timezone'	=>	array( 'discard' => true ),
+					'user_location_information'	=>	array( 'discard' => true ),
 					'list_of_service_data'	=>	 array( 'map' => array('nested' => array(23)) ),
 				),
 			'0120340567008910111201314151617181920212223240250012345670891011121314' => array(
