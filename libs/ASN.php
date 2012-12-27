@@ -1,11 +1,16 @@
 <?php
+/**
+ * @package			ASN
+ * @copyright		Copyright (C) 2012 S.D.O.C. LTD. All rights reserved.
+ * @license			GNU General Public License version 2 or later; see LICENSE.txt
+ */
 
-// ASN.1 parsing library
-// Attribution: http://www.krisbailey.com
-// license: unknown
-// modified: Mike Macgrivin hide@address.com 6-oct-2010 to support Salmon auto-discovery
-// from openssl public keys
-
+/**
+ * This calls is used to parse ASN.1 encoded data.
+ *
+ * @package  ASN
+ * @since    1.0
+ */
 
 class ASN {
 	public $asnData = null;
@@ -275,30 +280,6 @@ class ASN {
 		}
 		return $ret;
 	}
-
-	public static function printASN($x, $indent=''){
-		if (is_object($x)) {
-			echo $indent.$x->typeName."\n";
-			if (ASN_NULL == $x->type) return;
-			if (is_array($x->data)) {
-				while ($d = $x->value) {
-					echo self::printASN($d, $indent.'.  ');
-				}
-				$x->reset();
-			} else {
-				echo self::printASN($x->data, $indent.'.  ');
-			}
-		} elseif (is_array($x)) {
-			foreach ($x as $d) {
-				echo self::printASN($d, $indent);
-			}
-		} else {
-			if (preg_match('/[^[:print:]]/', $x))	// if we have non-printable characters that would
-				$x = base64_encode($x);		// mess up the console, then print the base64 of them...
-			echo $indent.$x."\n";
-		}
-	}
-
 
 }
 

@@ -17,7 +17,6 @@ class Autoloader {
 	 * Hold all the possible locations to find library files.
 	 */
 	protected static $locations = array('.'=> false,'libs' =>false);
-	protected static $recursiveLocations = array();
 
 	/**
 	 * Add path or severalpathes to the possible path locations
@@ -41,7 +40,7 @@ class Autoloader {
 	 * @param $class the name of the missing class.
 	 */
 	public static function autoload($class) {
-		$classPath = str_replace("_",DIRECTORY_SEPARATOR,$class);
+		$classPath = strtolower(str_replace("_",DIRECTORY_SEPARATOR,$class));
 		foreach(Autoloader::$locations as $val => $recurs) {
 			$base = ( substr($val,0,1) != "/" ? BASEDIR . DIRECTORY_SEPARATOR : "" );
 			$filepaths[] = $base . $val  .  DIRECTORY_SEPARATOR . $classPath . ".php";
@@ -51,6 +50,7 @@ class Autoloader {
 			foreach($filepaths as $filepath) {
 				if(file_exists($filepath) && is_readable($filepath)) {
 					require_once $filepath;
+					//TODO add ending only class name support
 					return;
 				}
 			}
@@ -59,10 +59,10 @@ class Autoloader {
 	}
 
 	/**
-	 *
+	 * TODO
 	 */
 	protected static function getRecuresivePaths($basePath,$classPath) {
-		return array();;
+		return array();
 
 	}
 }
