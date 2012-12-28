@@ -12,17 +12,54 @@
  * @package  Dispatcher
  * @since    1.0
  */
-class Billrun_Dispatcher extends Billrun_Spl_Observer {
+class Billrun_Dispatcher extends Billrun_Spl_Subject {
 
-	protected $instance = null;
+	/**
+	 * dispatcher singleton instance (singleton)
+	 * 
+	 * @var Billrun_Dispatcher 
+	 */
+	static protected $instance = array();
 
-	public function getInstance() {
-		if (is_null(self::$instance)) {
-			self::$instance = new Billrun_Dispatcher();
+	/**
+	 * arguments send to the observers
+	 * 
+	 * @var array 
+	 */
+	protected $args = array();
+
+	/**
+	 * the event which trigger to the observers
+	 * 
+	 * @var string 
+	 */
+	protected $event;
+
+	/**
+	 * Singleton/Bridge pattern
+	 * By default it will take self instance
+	 * If require special dispatcher type will be passed in the params array
+	 * 
+	 * @param array $params paramters of the instance
+	 * @return type
+	 */
+	public static function getInstance(array $params = array()) {
+		//
+		if (isset($params['type'])) {
+			if (!isset(self::$instance[$params['type']])) {
+				settype($params['type'], 'string');
+				$dispatcher = 'Billrun_Dispatcher_' . $params['type'];
+				self::$instance[$params['type']] = new $dispatcher();
+			}
+			return self::$instance[$params['type']];
 		}
-		return self::$instance;
+		
+		if (!isset(self::$instance['default'])) {
+			self::$instance['default'] = new Billrun_Dispatcher();
+		}
+		return self::$instance['default'];
 	}
-	
+
 	/**
 	 * Triggers an event by dispatching arguments to all observers that handle
 	 * the event and returning their return values.
@@ -36,10 +73,68 @@ class Billrun_Dispatcher extends Billrun_Spl_Observer {
 	public function notify() {
 		$ret = array();
 		foreach ($this->observers as $observer) {
-			$ret[$observer->getName()] = $observer->update($this);
+			$ret[$observer->getName()] = $observer->update();
 		}
 		return $ret;
 	}
 
+	/**
+	 * Triggers an event by dispatching arguments to all observers that handle
+	 * the event and returning their return values.
+	 *
+	 * @param   string  $event  The event to trigger.
+	 * @param   array   $args   An array of arguments.
+	 *
+	 * @return  array  An array of results from each function call.
+	 *
+	 */
+	public function trigger($event, $args = array()) {
+		// set the event and the args, they will be used by the observers (plugins)
+		$this->setEvent($event);
+		$this->setArgs($args);
+
+		// notify all observer about the event triggered
+		$this->notify();
+	}
+
+	/**
+	 * method to get the arguments of the object
+	 * 
+	 * @return array the arguments of the object	
+	 */
+	protected function getArgs() {
+		return $this->args;
+	}
+
+	/**
+	 * method to set the arguments of the object
+	 * 
+	 * @param array $args arguments to set the object
+	 * 
+	 * @return void
+	 */
+	protected function setArgs(array $args) {
+		return $this->args = $args;
+	}
+
+	/**
+	 * method to get the event of the object
+	 * 
+	 * @return string the event of the object	
+	 */
+	protected function getEvent() {
+		return $this->event;
+	}
+
+	/**
+	 * method to set the event of the object
+	 * 
+	 * @param string $event event to set the object
+	 * 
+	 * @return void
+	 */
+	protected function setEvent($event) {
+		return $this->event = $event;
+	}
 
 }

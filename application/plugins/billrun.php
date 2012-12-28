@@ -12,7 +12,7 @@
  * @package  plugin
  * @since    1.0
  */
-abstract class Billrun_Plugin extends Billrun_Spl_Object {
+abstract class billrunPlugin extends Billrun_Spl_Observer {
 
 	/**
 	 * plugin name
@@ -20,24 +20,6 @@ abstract class Billrun_Plugin extends Billrun_Spl_Object {
 	 * @var string 
 	 */
 	protected $name = 'Billrun';
-
-	/**
-	 * Constructor
-	 *
-	 * @param   object  &$subject  The object to observe
-	 * @param   array   $config    An optional associative array of configuration settings.
-	 *                             Recognized key values include 'name', 'group', 'params', 'language'
-	 *                             (this list is not meant to be comprehensive).
-	 *
-	 */
-	public function __construct($subject, $config = array()) {
-
-		// Register the observer ($this) so we can be notified
-		$subject->attach($this);
-
-		// Set the subject to observe
-		$this->_subject = &$subject;
-	}
 
 	/**
 	 * method to receive plugin name
@@ -71,12 +53,13 @@ abstract class Billrun_Plugin extends Billrun_Spl_Object {
 	 */
 	public function update(SplSubject $subject) {
 
+		// get the event and args from the subject (dispatcher) to use in the plugin
 		$event = $subject->getEvent();
 		$args = $subject->getArgs();
 
 		/*
-		 * If the method to handle an event exists, call it and return its return
-		 * value.  If it does not exist, return null.
+		 * If the method to handle an event exists, call it and return its value
+		 * If it does not exist, return null.
 		 */
 		if (method_exists($this, $event)) {
 			return call_user_func_array(array($this, $event), $args);

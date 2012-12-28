@@ -12,7 +12,7 @@
  * @package SPL
  * @since    1.0
  */
-class Billrun_Spl_Observer implements SplObserver {
+abstract class Billrun_Spl_Observer implements SplObserver {
 
 	/**
 	 * method to trigger the observer
@@ -20,7 +20,7 @@ class Billrun_Spl_Observer implements SplObserver {
 	 * @param SplSubject $subject the subject which trigger this observer
 	 */
 	public function update(SplSubject $subject) {
-		echo "I was updated by " . get_class($subject);
+		$subject->notify();
 	}
 
 }

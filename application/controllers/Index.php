@@ -17,10 +17,10 @@ class IndexController extends Yaf_Controller_Abstract {
 	public function indexAction() {
         $this->getView()->content = "Open Source Last Forever!";
 
-		$options = array(
-			'type' => 'files',
-		);
-		$receiver = Billrun_Receiver::getInstance($options);
+//		$options = array(
+//			'type' => 'files',
+//		);
+//		$receiver = Billrun_Receiver::getInstance($options);
 	}
 
 }

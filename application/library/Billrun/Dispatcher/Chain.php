@@ -20,10 +20,7 @@ class Billrun_Dispatcher_Chain extends Billrun_Dispatcher {
 	 * The loop will continue to run all over the observer as long no observer return false
 	 * Once observer return false the chain will break
 	 *
-	 * @param   string  $event  The event to trigger.
-	 * @param   array   $args   An array of arguments.
-	 *
-	 * @return  array  An array of results from each function call
+	 * @return  array  An array of results from each function call succeed
 	 *
 	 */
 	public function notify() {
