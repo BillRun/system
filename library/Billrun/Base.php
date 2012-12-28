@@ -16,6 +16,7 @@ abstract class Billrun_Base {
 
 	/**
 	 * the database we are working on
+	 * 
 	 * @var db resource
 	 */
 	protected $db = null;
@@ -23,9 +24,24 @@ abstract class Billrun_Base {
 	/**
 	 * the stamp of the aggregator
 	 * used for mark the aggregation
+	 * 
 	 * @var db resource
 	 */
 	protected $stamp = null;
+
+	/**
+	 * the configuration of the system
+	 * 
+	 * @var configuration class
+	 */
+	protected $config;
+
+	/**
+	 * dispatcher of the plugin system
+	 * 
+	 * @var dispatcher class
+	 */
+	protected $dispatcher;
 
 	/**
 	 * constant of log collection name
@@ -42,12 +58,6 @@ abstract class Billrun_Base {
 	 * constant of billrun collection name
 	 */
 	const billrun_table = 'billrun';
-
-	/**
-	 * the configuration of the system
-	 * @var configuration class
-	 */
-	protected $config;
 
 	/**
 	 * constructor
@@ -71,6 +81,12 @@ abstract class Billrun_Base {
 			$this->setStamp($options['stamp']);
 		} else {
 			$this->setStamp(uniqid(get_class($this)));
+		}
+
+		if (isset($options['dispatcher'])) {
+			$this->dispatcher = $options['dispatcher'];
+		} else {
+			$this->dispatcher = Billrun_Dispatcher::getInstance();
 		}
 	}
 
@@ -118,7 +134,7 @@ abstract class Billrun_Base {
 			$args = $args[0];
 		}
 
-		$class = get_called_class(). '_' . ucfirst($type);
+		$class = get_called_class() . '_' . ucfirst($type);
 
 		return new $class($args);
 	}

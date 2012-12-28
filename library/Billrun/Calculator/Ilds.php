@@ -32,30 +32,32 @@ class Billrun_Calculator_Ilds extends Billrun_Calculator {
 	 * execute the calculation process
 	 */
 	public function calc() {
-		// @TODO trigger before calc
+
+		$this->dispatcher->trigger('beforeCalcData', array('data' => $this->data));
 		foreach ($this->data as $item) {
 			$this->updateRow($item);
 		}
-		// @TODO trigger after calc
+		$this->dispatcher->trigger('afterCalcData', array('data' => $this->data));
 	}
 
 	/**
 	 * execute write down the calculation output
 	 */
 	public function write() {
-		// @TODO trigger before write
+		$this->dispatcher->trigger('beforeCalcWriteData', array('data' => $this->data));
 		$lines = $this->db->getCollection(self::lines_table);
 		foreach ($this->data as $item) {
 			$item->save($lines);
 		}
-		// @TODO trigger after write
+		$this->dispatcher->trigger('afterCalcWriteData', array('data' => $this->data));
 	}
 
 	/**
 	 * write the calculation into DB
 	 */
 	protected function updateRow($row) {
-		// @TODO trigger before update row
+		$this->dispatcher->trigger('beforeCalcWriteRow', array('row' => $row));
+		
 		$current = $row->getRawData();
 		$charge = $this->calcChargeLine($row->get('type'), $row->get('call_charge'));
 		$added_values = array(
@@ -64,9 +66,19 @@ class Billrun_Calculator_Ilds extends Billrun_Calculator {
 		);
 		$newData = array_merge($current, $added_values);
 		$row->setRawData($newData);
-		// @TODO trigger after update row
+		
+		$this->dispatcher->trigger('afterCalcWriteRow', array('row' => $row));
 	}
 
+	/**
+	 * method to calculate the charge from flat rate
+	 * 
+	 * @param string $type the type of the charge (depend on provider)
+	 * @param double $charge the amount of charge
+	 * @return double the amount to charge
+	 * 
+	 * @todo: refactoring it by mediator or plugin system
+	 */
 	protected function calcChargeLine($type, $charge) {
 		switch ($type):
 			case '012':
