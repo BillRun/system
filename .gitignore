@@ -1,5 +1,4 @@
 files
 workspace
 mongo/*.json
-log/*.log
 *~
