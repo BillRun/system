@@ -21,14 +21,6 @@ class Billrun_Calculator_Ilds extends Billrun_Calculator {
 	protected $type = 'ilds';
 
 	/**
-	 * constructor
-	 * @param array $options
-	 */
-	public function __construct($options) {
-		parent::__construct($options);
-	}
-
-	/**
 	 * execute the calculation process
 	 */
 	public function calc() {

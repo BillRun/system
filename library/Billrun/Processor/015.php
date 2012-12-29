@@ -7,16 +7,17 @@
  */
 
 /**
- * Billing processor for 013 class
+ * Billing processor for 015 class
  *
  * @package  Billing
  * @since    1.0
  */
 class Billrun_Processor_015 extends Billrun_Processor {
-{
+
 	protected $type = '015';
 
-		public function __construct($options) {
+	public function __construct($options) {
+
 		parent::__construct($options);
 
 		$this->data_structure = array(

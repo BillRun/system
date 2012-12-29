@@ -37,6 +37,7 @@ class Billrun_Processor_013 extends Billrun_Processor {
 	}
 
 	public function __construct($options) {
+		
 		parent::__construct($options);
 
 		$this->data_structure = array(
