@@ -70,6 +70,12 @@ abstract class Billrun_Base {
 			$this->config = Yaf_Application::app()->getConfig();
 		}
 
+		if (isset($options['log'])) {
+			$this->log = $options['log'];
+		} else {
+			$this->log = Billrun_Log::getInstance();
+		}
+		
 		if (isset($options['db'])) {
 			$this->setDB($options['db']);
 		} else {
@@ -88,6 +94,8 @@ abstract class Billrun_Base {
 		} else {
 			$this->dispatcher = Billrun_Dispatcher::getInstance();
 		}
+		
+		
 	}
 
 	/**
