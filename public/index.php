@@ -11,4 +11,7 @@ defined('APPLICATION_PATH')
 $conf_path = APPLICATION_PATH . "/conf/application.ini";
 $app = new Yaf_Application($conf_path);
 
+if (!isset($_SERVER['HTTP_USER_AGENT'])) {
+	$app->getDispatcher()->setDefaultAction('Cli');
+}
 $app->bootstrap()->run();
