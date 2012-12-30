@@ -111,10 +111,11 @@ class Billrun_Dispatcher extends Billrun_Spl_Subject {
 	 * 
 	 * @param array $args arguments to set the object
 	 * 
-	 * @return void
+	 * @return Dispatcher self instance
 	 */
 	protected function setArgs(array $args) {
-		return $this->args = $args;
+		$this->args = $args;
+		return $this;
 	}
 
 	/**
@@ -131,10 +132,11 @@ class Billrun_Dispatcher extends Billrun_Spl_Subject {
 	 * 
 	 * @param string $event event to set the object
 	 * 
-	 * @return void
+	 * @return Dispatcher self instance
 	 */
 	protected function setEvent($event) {
-		return $this->event = $event;
+		$this->event = $event;
+		return $this;
 	}
 
 }

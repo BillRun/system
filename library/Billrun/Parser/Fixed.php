@@ -21,13 +21,19 @@ class Billrun_Parser_Fixed extends Billrun_Parser {
 	 */
 	protected $structure;
 
+	/**
+	 * method to set structure of the parsed file
+	 * @param array $structure the structure of the parsed file
+	 * 
+	 * @return Billrun_Parser_Fixed self instance
+	 */
 	public function setStructure($structure) {
 		$this->structure = $structure;
 		return $this;
 	}
 
 	/**
-	 * general function to parse
+	 * general method to parse
 	 * 
 	 * @return mixed
 	 */
