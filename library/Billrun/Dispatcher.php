@@ -90,8 +90,7 @@ class Billrun_Dispatcher extends Billrun_Spl_Subject {
 	 */
 	public function trigger($event, $args = array()) {
 		// set the event and the args, they will be used by the observers (plugins)
-		$this->setEvent($event);
-		$this->setArgs($args);
+		$this->setEvent($event)->setArgs($args);
 
 		// notify all observer about the event triggered
 		$this->notify();
