@@ -129,7 +129,13 @@ class IndexController extends Yaf_Controller_Abstract {
 
 		if ($processor) {
 			$this->outputAdd("Start to process. This action can take awhile...");
+			
+			// buffer all action output
+			ob_start();
 			$processor->process();
+			// write to log and the output the buffer
+			$this->outputAdd(ob_get_contents());
+			ob_end_clean();
 		} else {
 			$this->outputAdd("Processor cannot be loaded");
 		}
