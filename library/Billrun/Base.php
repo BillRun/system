@@ -96,22 +96,30 @@ abstract class Billrun_Base {
 		}
 	}
 
+
 	/**
 	 * set database of the basic object
-	 * @param resource $db
+	 * 
+	 * @param resource $db the database instance to set
+	 * 
+	 * @return mixed self instance
 	 */
 	public function setDB($db) {
 		$this->db = $db;
+		return $this;
 	}
 
 	/**
-	 * set stamp of the basic object
+	 * set stamp of the basic object 
 	 * used for unique object actions
 	 *
-	 * @param string $stamp
+	 * @param string $stamp the stamp to set
+	 * 
+	 * @return mixed self instance
 	 */
 	public function setStamp($stamp) {
 		$this->stamp = $stamp;
+		return $this;
 	}
 
 	/**
