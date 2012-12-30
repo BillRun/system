@@ -45,7 +45,9 @@ class Billrun_Config {
 	/**
 	 * prevent clone the object
 	 */
-	protected function __clone() {}
+	protected function __clone() {
+		
+	}
 
 	static public function getInstance() {
 		self::load();
@@ -58,7 +60,7 @@ class Billrun_Config {
 	protected static function load() {
 		if (is_null(self::$instance)) {
 			$options = self::getOptions();
-			self::$instance = new config($options);				
+			self::$instance = new config($options);
 		}
 	}
 

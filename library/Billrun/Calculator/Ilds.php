@@ -49,7 +49,7 @@ class Billrun_Calculator_Ilds extends Billrun_Calculator {
 	 */
 	protected function updateRow($row) {
 		$this->dispatcher->trigger('beforeCalcWriteRow', array('row' => $row));
-		
+
 		$current = $row->getRawData();
 		$charge = $this->calcChargeLine($row->get('type'), $row->get('call_charge'));
 		$added_values = array(
@@ -58,7 +58,7 @@ class Billrun_Calculator_Ilds extends Billrun_Calculator {
 		);
 		$newData = array_merge($current, $added_values);
 		$row->setRawData($newData);
-		
+
 		$this->dispatcher->trigger('afterCalcWriteRow', array('row' => $row));
 	}
 

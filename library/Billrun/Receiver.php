@@ -21,7 +21,7 @@ abstract class Billrun_Receiver extends Billrun_Base {
 	protected $workPath;
 
 	public function __construct($options) {
-		
+
 		parent::__construct($options);
 
 		if (isset($options['workspace'])) {
@@ -29,8 +29,6 @@ abstract class Billrun_Receiver extends Billrun_Base {
 		} else {
 			$this->workPath = $this->config->ilds->path;
 		}
-		
-		
 	}
 
 	/**

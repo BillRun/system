@@ -30,11 +30,11 @@ abstract class Billrun_Generator extends Billrun_Base {
 	public function __construct($options) {
 
 		parent::__construct($options);
-		
+
 		if (isset($options['export_directory'])) {
 			$this->export_directory = $options['export_directory'];
 		} else {
-			$this->export_directory = $this->config->ilds->export;//__DIR__ . '/../files/';
+			$this->export_directory = $this->config->ilds->export; //__DIR__ . '/../files/';
 		}
 
 		if (isset($options['csv_filename'])) {

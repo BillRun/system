@@ -53,7 +53,7 @@ class Billrun_Dispatcher extends Billrun_Spl_Subject {
 			}
 			return self::$instance[$params['type']];
 		}
-		
+
 		if (!isset(self::$instance['default'])) {
 			self::$instance['default'] = new Billrun_Dispatcher();
 		}

@@ -17,7 +17,7 @@ class Billrun_Processor_012 extends Billrun_Processor {
 	protected $type = '012';
 
 	public function __construct($options) {
-		
+
 		parent::__construct($options);
 
 		$this->data_structure = array(

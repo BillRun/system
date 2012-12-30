@@ -13,7 +13,8 @@
  * @since    1.0
  */
 abstract class Billrun_Calculator extends Billrun_Base {
-/**
+
+	/**
 	 * the container data of the calculator
 	 * @var array
 	 */

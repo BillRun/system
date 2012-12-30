@@ -44,9 +44,9 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 * @param array $options for the file processor
 	 */
 	public function __construct($options) {
-		
+
 		parent::__construct($options);
-		
+
 		if (isset($options['file_path'])) {
 			$this->loadFile($options['file_path']);
 		}
@@ -54,7 +54,6 @@ abstract class Billrun_Processor extends Billrun_Base {
 		if (isset($options['parser'])) {
 			$this->setParser($options['parser']);
 		}
-
 	}
 
 	public function getData() {

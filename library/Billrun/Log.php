@@ -16,9 +16,9 @@
 class Billrun_Log extends Zend_Log {
 
 	protected static $instance = null;
-	
+
 	public static function getInstance(array $options = array()) {
-		
+
 		if (is_null(self::$instance)) {
 			if (empty($options)) {
 				$config = Yaf_Application::app()->getConfig();
@@ -26,8 +26,8 @@ class Billrun_Log extends Zend_Log {
 			}
 			self::$instance = self::factory($options);
 		}
-		
+
 		return self::$instance;
 	}
-	
+
 }

@@ -18,7 +18,8 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 	/**
 	 * The VAT value (TODO get from outside/config).
 	 */
-	 const VAT_VALUE = 1.17;
+
+	const VAT_VALUE = 1.17;
 
 	/**
 	 * load the container the need to be generate
@@ -47,7 +48,6 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 	 */
 	public function generate() {
 		//$data = $this->normailze();
-
 		// generate xml
 		$this->xml($this->data);
 
@@ -55,28 +55,28 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 //		$this->csv();
 	}
 
-	/*protected function normailze($field = 'account_id') {
-		$ret = array();
-		$i = 0;
-		foreach ($this->data as $row) {
-			$subscriber_id = $row->get('subscriber_id');
-			print "normalize " . $subscriber_id . " (" . $i++ . ")" . PHP_EOL;
-			$data = $row->getRawData();
+	/* protected function normailze($field = 'account_id') {
+	  $ret = array();
+	  $i = 0;
+	  foreach ($this->data as $row) {
+	  $subscriber_id = $row->get('subscriber_id');
+	  print "normalize " . $subscriber_id . " (" . $i++ . ")" . PHP_EOL;
+	  $data = $row->getRawData();
 
-			$lines = $this->get_subscriber_lines($subscriber_id);
-			$subscriber_data = array(
-				'sum' => $data,
-				'lines' => $lines,
-			);
-			$account_id = $row->get($field);
-			$ret[$account_id][$subscriber_id] = array(
-				'data' => $subscriber_data,
-				'row' => $row,
-			);
-		}
+	  $lines = $this->get_subscriber_lines($subscriber_id);
+	  $subscriber_data = array(
+	  'sum' => $data,
+	  'lines' => $lines,
+	  );
+	  $account_id = $row->get($field);
+	  $ret[$account_id][$subscriber_id] = array(
+	  'data' => $subscriber_data,
+	  'row' => $row,
+	  );
+	  }
 
-		return $ret;
-	}*/
+	  return $ret;
+	  } */
 
 	protected function get_subscriber_lines($subscriber_id) {
 		$lines = $this->db->getCollection(self::lines_table);
@@ -105,11 +105,12 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 			$xml->TELECOM_INFORMATION->LASTTIMECDRPROCESSED = date('Y-m-d h:i:s');
 			$xml->TELECOM_INFORMATION->VAT_VALUE = '17';
 			$xml->TELECOM_INFORMATION->COMPANY_NAME_IN_ENGLISH = 'GOLAN';
-			$xml->INV_CUSTOMER_INFORMATION->CUSTOMER_CONTACT->EXTERNALACCOUNTREFERENCE = $row->get('account_id');;
+			$xml->INV_CUSTOMER_INFORMATION->CUSTOMER_CONTACT->EXTERNALACCOUNTREFERENCE = $row->get('account_id');
+			;
 			$total_ilds = array();
 			foreach ($row->get('subscribers') as $id => $subscriber) {
 				$subscriber_inf = $xml->addChild('SUBSCRIBER_INF');
-				$subscriber_inf->SUBSCRIBER_DETAILS->SUBSCRIBER_ID =$id;
+				$subscriber_inf->SUBSCRIBER_DETAILS->SUBSCRIBER_ID = $id;
 				$billing_records = $subscriber_inf->addChild('BILLING_LINES');
 
 				foreach ($this->get_subscriber_lines($id) as $line) {
@@ -136,11 +137,11 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 					$ild_xml = $subscriber_sumup->addChild('ILD');
 					$ild_xml->NDC = $ild;
 					$ild_xml->CHARGE_EXCL_VAT = $cost;
-					$ild_xml->CHARGE_INCL_VAT = $cost *  self::VAT_VALUE;
+					$ild_xml->CHARGE_INCL_VAT = $cost * self::VAT_VALUE;
 					$total_cost += $cost;
 				}
 				$subscriber_sumup->TOTAL_CHARGE_EXCL_VAT = $total_cost;
-				$subscriber_sumup->TOTAL_CHARGE_INCL_VAT = $total_cost *  self::VAT_VALUE;
+				$subscriber_sumup->TOTAL_CHARGE_INCL_VAT = $total_cost * self::VAT_VALUE;
 				// TODO create file with the xml content and file name of invoice number (ILD000123...)
 			}
 
@@ -159,11 +160,11 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 				$ild_xml = $invoice_sumup->addChild('ILD');
 				$ild_xml->NDC = $ild;
 				$ild_xml->CHARGE_EXCL_VAT = $total_ild_cost;
-				$ild_xml->CHARGE_INCL_VAT = $total_ild_cost *  self::VAT_VALUE;
+				$ild_xml->CHARGE_INCL_VAT = $total_ild_cost * self::VAT_VALUE;
 				$total += $total_ild_cost;
 			}
 			$invoice_sumup->TOTAL_EXCL_VAT = $total;
-			$invoice_sumup->TOTAL_INCL_VAT = $total *  self::VAT_VALUE;
+			$invoice_sumup->TOTAL_INCL_VAT = $total * self::VAT_VALUE;
 			//$row->{'xml'} = $xml->asXML();
 			print $invoice_id . PHP_EOL;
 			$this->createXml($invoice_id, $xml->asXML());
@@ -174,7 +175,7 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 
 	protected function addRowToCsv($invoice_id, $account_id, $total, $cost_ilds) {
 		//empty costs for each of the providers
-		foreach(array('012','013','014','015','018') as $key) {
+		foreach (array('012', '013', '014', '015', '018') as $key) {
 			if (!isset($cost_ilds[$key])) {
 				$cost_ilds[$key] = 0;
 			}
@@ -183,7 +184,7 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 		ksort($cost_ilds);
 		$seperator = ',';
 		$row = $invoice_id . $seperator . $account_id . $seperator .
-			$total . $seperator . ($total *  self::VAT_VALUE) . $seperator . implode($seperator, $cost_ilds) . PHP_EOL;
+			$total . $seperator . ($total * self::VAT_VALUE) . $seperator . implode($seperator, $cost_ilds) . PHP_EOL;
 		$this->csv($row);
 	}
 
@@ -199,7 +200,7 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 			->equals('stamp', $this->getStamp())
 			->equals('account_id', (string) $account_id)
 //			->notExists('invoice_id')
-			;
+		;
 
 		foreach ($resource as $billrun_line) {
 			$data = $billrun_line->getRawData();

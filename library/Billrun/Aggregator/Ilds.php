@@ -95,7 +95,7 @@ class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 		$values = array(
 			'stamp' => $this->stamp,
 			'account_id' => $subscriber['account_id'],
-			'subscribers' => array($subscriber['id'] => array('cost'=> array()) ),
+			'subscribers' => array($subscriber['id'] => array('cost' => array())),
 			'cost' => array(),
 		);
 
@@ -121,7 +121,7 @@ class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 
 		$type = $line->get('type');
 		$subscriberId = $line->get('subscriber_id');
-		if(!isset($current['subscribers'][$subscriberId])) {
+		if (!isset($current['subscribers'][$subscriberId])) {
 			$current['subscribers'][$subscriberId] = array('cost' => array());
 		}
 		if (!isset($current['cost'][$type])) {
@@ -129,8 +129,8 @@ class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 			$current['subscribers'][$subscriberId]['cost'][$type] = $added_charge;
 		} else {
 			$current['cost'][$type] += $added_charge;
-			$subExist = $current['subscribers'][ $subscriberId]['cost'] && $current['subscribers'][ $subscriberId]['cost'][$type];
-			$current['subscribers'][$subscriberId]['cost'][$type] = ($subExist ? $current['subscribers'][ $subscriberId]['cost'][$type] : 0 ) + $added_charge;
+			$subExist = $current['subscribers'][$subscriberId]['cost'] && $current['subscribers'][$subscriberId]['cost'][$type];
+			$current['subscribers'][$subscriberId]['cost'][$type] = ($subExist ? $current['subscribers'][$subscriberId]['cost'][$type] : 0 ) + $added_charge;
 		}
 
 		$billrun->setRawData($current);

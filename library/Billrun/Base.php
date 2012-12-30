@@ -75,7 +75,7 @@ abstract class Billrun_Base {
 		} else {
 			$this->log = Billrun_Log::getInstance();
 		}
-		
+
 		if (isset($options['db'])) {
 			$this->setDB($options['db']);
 		} else {
@@ -94,8 +94,6 @@ abstract class Billrun_Base {
 		} else {
 			$this->dispatcher = Billrun_Dispatcher::getInstance();
 		}
-		
-		
 	}
 
 	/**
