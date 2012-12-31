@@ -15,13 +15,31 @@
  */
 class Billrun_Parser_Binary extends Billrun_Parser {
 
+	protected $parsedBytes = 0;
 	/**
-	 * general function to parse
-	 * 
-	 * @return mixed
+	 * Get the amount of bytes that were parsed on the last parsing run.
+	 * @return int	 containing the count of the bytes that were processed/parsed.
 	 */
-	public function parse() {
-		
+	public function getLastParseLength() {
+		return $this->parsedBytes;
 	}
 
+	/**
+	 * method to set the line of the parser
+	 *
+	 * @param string $line the line to set to the parser
+	 * @return Object the parser itself (for concatening methods)
+	 */
+	public function setLine($line) {
+		$this->line = $line;
+		return $this;
+	}
+
+	/**
+	 *
+	 * @return string the line that parsed
+	 */
+	public function getLine() {
+		return $this->line;
+	}
 }

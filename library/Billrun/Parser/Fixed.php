@@ -53,4 +53,23 @@ class Billrun_Parser_Fixed extends Billrun_Parser {
 		return (object) $ar_line;
 	}
 
+	/**
+	 * 
+	 * @return string the line that parsed
+	 */
+	public function getLine() {
+		return $this->line;
+	}
+
+	/**
+	 * method to set the line of the parser
+	 * 
+	 * @param string $line the line to set to the parser
+	 * @return Object the parser itself (for concatening methods)
+	 */
+	public function setLine($line) {
+		$this->line = $line;
+		return $this;
+	}
+
 }
