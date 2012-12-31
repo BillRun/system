@@ -1,11 +1,11 @@
 <?php
 
 
-class ASN_TYPE_OBJECT_ID extends ASN_PRIMITIVE {
+class ASN_TYPE_OBJECTID extends ASN_OBJECT {
 
 
-	public function __construct($data) {
-		parent::__construct($data);
+	public function __construct($data, $type) {
+		parent::__construct($data,$type);
 	}
 
 	/**
@@ -19,7 +19,8 @@ class ASN_TYPE_OBJECT_ID extends ASN_PRIMITIVE {
 	 * @param	string	$data		The raw binary data string
 	 */
 	protected function parse($string){
-		$ret = floor(ord($string[0])/40).".";
+		parent::parse($string);
+	/*	$ret = floor(ord($string[0])/40).".";
 		$ret .= (ord($string[0]) % 40);
 		$build = array();
 		$cs = 0;
@@ -51,5 +52,6 @@ class ASN_TYPE_OBJECT_ID extends ASN_PRIMITIVE {
 			}
 		}
 		$this->parsedData = $ret;
+	*/
 	}
 }

@@ -18,6 +18,7 @@ class Autoloader {
 	 */
 	protected static $locations = array('.'=> false,'libs' =>false);
 
+	protected static $cache = array();
 	/**
 	 * Add path or severalpathes to the possible path locations
 	 * @param paths string or an array of pathes
@@ -40,10 +41,15 @@ class Autoloader {
 	 * @param $class the name of the missing class.
 	 */
 	public static function autoload($class) {
-		$classPath = strtolower(str_replace("_",DIRECTORY_SEPARATOR,$class));
+		if(isset(self::$cache[$class])) {
+			if(self::$cache[$class]) { require_once self::$cache[$class];}
+			return;
+		}
+		$classPath = str_replace("_",DIRECTORY_SEPARATOR,$class);
 		foreach(Autoloader::$locations as $val => $recurs) {
 			$base = ( substr($val,0,1) != "/" ? BASEDIR . DIRECTORY_SEPARATOR : "" );
 			$filepaths[] = $base . $val  .  DIRECTORY_SEPARATOR . $classPath . ".php";
+			$filepaths[] = $base . $val  .  DIRECTORY_SEPARATOR . strtolower($classPath) . ".php";
 			if($recurs) {
 				$filepaths = array_merge($filepaths, $this->getRecuresivePaths($val,$classPath));
 			}
@@ -51,10 +57,12 @@ class Autoloader {
 				if(file_exists($filepath) && is_readable($filepath)) {
 					require_once $filepath;
 					//TODO add ending only class name support
+					self::$cache[$class] = $filepath;
 					return;
 				}
 			}
 		}
+		self::$cache[$class] = false;
 		error_log( "couldn't find included class : $class , searched in  : ". implode(PATH_SEPARATOR,Autoloader::$locations) );
 	}
 

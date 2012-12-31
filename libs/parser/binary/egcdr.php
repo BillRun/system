@@ -29,18 +29,12 @@ class parser_binary_egcdr extends parser_binary {
 	 * @return mixed
 	 */
 	public function parse() {
-		$asnObject = ASN::parseASNString($this->getLine());
-		$this->parsedBytes = ASN::$parsedLength;
-		$dataSign = $this->calcStructureSign($asnObject[0]);
-		if(isset($this->data_structure[$dataSign]) ) {
-		$ret =$this->parseASNData(	$this->data_structure[$dataSign],
-						$asnObject[0] );
-		} else {
-			error_log("parser_binary_egcdr::parse - WARNING! : CDR record with signture : $dataSign doesn't  exist in the signture structure.!!");
-			return false;
 
-		}
-
+		$asnObject =  ASN_BASE::parseASNString($this->getLine());
+		$this->parsedBytes = $asnObject->getDataLength();
+		$dataArr  = ASN_BASE::getDataArray($asnObject);
+		$ret =$this->parseASNData(	$this->data_structure,
+						$asnObject );
 		return $ret;
 	}
 
@@ -50,7 +44,7 @@ class parser_binary_egcdr extends parser_binary {
 	 * @return int	 containing the count of the bytes that were processed/parsed.
 	 */
 	public function getLastParseLength() {
-		return parent::getLastParseLength() +3;
+		return parent::getLastParseLength() +8;
 	}
 
 	protected function calcStructureSign($structure) {
@@ -69,10 +63,27 @@ class parser_binary_egcdr extends parser_binary {
 	protected function parseASNData($struct,$asnData) {
 		$retArr= array();
 
-		foreach($struct as $key => $val) {
-			if(!isset($val['discard']) || !$val['discard'] ) {
-				$retArr[$key] = $this->parseField($val,$asnData);
+		foreach($asnData->parsedData as $key => $val) {
+			if(isset($struct[$key]) ) {
+				$type = '0x' . $val->getType();
+				if(is_array($val->getData())) {
+					//print(" digging into : $key\n" );
+					$retArr = array_merge($retArr,$this->parseASNData($struct[$key],$val) );
+					//print("\n" );
+				} else if(isset($struct[$key]) && isset($struct[$key][$type]) && isset($this->fields[$struct[$key][$type]]) ) {
+					$field = $struct[$key][$type];
+					$retArr[$field] = $this->parseField($this->fields[$field],$val);
+				}else {
+					print("Couldn`t find field for : $key with type :$type\n" );
+					print("Structue is : ". print_r($struct,1)."\n" );
+					sleep(5);
+				}
+			} else {
+				print("Couldn`t find field for : $key with value :". print_r($val,1)."\n" );
+				print("Structue is : ". print_r($struct,1)."\n" );
+				sleep(5);
 			}
+
 		}
 
 		return $retArr;
@@ -81,63 +92,78 @@ class parser_binary_egcdr extends parser_binary {
 	/**
 	 * Parse an ASN field using a specific data structure.
 	 */
-	protected function parseField($fieldMap,$asnData) {
-		foreach($fieldMap['map'] as $type => $pos) {
-			$tempData = $asnData;
-			foreach($pos as $depth) {
-				if( isset($tempData[$depth])) {
-					$tempData = $tempData[$depth];
-				} else {
+	protected function parseField($type,$fieldData) {
+		if($type != 'debug') {$fieldData = $fieldData->getData();}//TODO remove
+		if(isset($fieldData) ) {
+			switch($type) {
+				//TODO remove
+				case 'debug':
+					$fieldType = $fieldData->getType();
+					$fieldClass = get_class($fieldData);
+					$fieldData = $fieldData->getData();
+					$numarr = unpack("C*",$fieldData);
+					$numData =0;
+					foreach($numarr as $byte) {
+						//$fieldData = $fieldData <<8;
+						$numData =  ($numData << 8 )+ $byte;
+					}
+					$halfBytes = unpack("C*",$fieldData);
 					$tempData ="";
-				}
-			}
-			if(isset($tempData) ) {
-				switch($type) {
+					foreach($halfBytes as $byte) {
+						$tempData .= ($byte & 0xF) . ((($byte >>4) < 10) ? ($byte >>4) : "" );
+					}
+					$fieldData = "DEBUG : ".$fieldClass." | ". $fieldType ." | " . $numData . " | "  . $tempData . " | " . implode(unpack("H*",$fieldData)). " | " . implode(unpack("C*",$fieldData)). " | " . $fieldData;
+					break;
 
-					case 'string':
-						$tempData = utf8_encode($tempData);
-						break;
-					case 'number':
-						$numarr = unpack("C*",$tempData);
-						$tempData =0;
-						foreach($numarr as $byte) {
-							//$tempData = $tempData <<8;
-							$tempData =  ($tempData << 8 )+ $byte;
-						}
-						break;
-					case 'BCDencode' :
-						if(is_array($tempData)) { print_r($tempData);}
-						$halfBytes = unpack("C*",$tempData);
-						$tempData ="";
-						foreach($halfBytes as $byte) {
-							//$tempData = $tempData <<8;
-							$tempData .= ($byte & 0xF) . ((($byte >>4) < 10) ? ($byte >>4) : "" ) ;
-						}
-						break;
-					case 'ip' :
-						$tempData = implode(".",unpack("C*",$tempData));
-						break;
-					case 'datetime' :
-						$tempTime = DateTime::createFromFormat("ymdHisT",str_replace("2b","+",implode(unpack("H*",$tempData))) );
-						$tempData = is_object($tempTime) ?  $tempTime->format("H:i:s d/m/Y T") : "";
-						break;
-					case 'json' :
+				case 'string':
+					$fieldData = utf8_encode($fieldData);
+					break;
 
-						$tempData = json_encode($this->utf8encodeArr($tempData));
-						break;
-					case 'nested' :
-						$tempData = $this->parseASNData($fieldMap['parse'],$tempData);
-						break;
-					default:
-						$tempData = is_array($tempData) ? "" : implode("",unpack($type,$tempData));
-				}
+				case 'number':
+					$numarr = unpack("C*",$fieldData);
+					$fieldData =0;
+					foreach($numarr as $byte) {
+						//$fieldData = $fieldData <<8;
+						$fieldData =  ($fieldData << 8 )+ $byte;
+					}
+					break;
+
+				case 'BCDencode' :
+					$halfBytes = unpack("C*",$fieldData);
+					$fieldData ="";
+					foreach($halfBytes as $byte) {
+						//$fieldData = $fieldData <<8;
+						$fieldData .= ($byte & 0xF) . ((($byte >>4) < 10) ? ($byte >>4) : "" ) ;
+					}
+					break;
+
+				case 'ip' :
+					$fieldData = implode(".",unpack("C*",$fieldData));
+					break;
+
+				case 'datetime' :
+					$tempTime = DateTime::createFromFormat("ymdHisT",str_replace("2b","+",implode(unpack("H*",$fieldData))) );
+					$fieldData = is_object($tempTime) ?  $tempTime->format("H:i:s d/m/Y T") : "";
+					break;
+
+				case 'json' :
+
+					$fieldData = json_encode($this->utf8encodeArr($fieldData));
+					break;
+
+				default:
+					$fieldData = is_array($fieldData) ? "" : implode("",unpack($type,$fieldData));
 			}
 		}
-		return $tempData;
+		return $fieldData;
 
 	}
 
-
+	/**
+	 * Encode an array content in utf encoding
+	 * @param $arr the array to encode.
+	 * @return array with a recurcivly encoded values.
+	 */
 	protected function utf8encodeArr($arr) {
 		foreach($arr as &$val) {
 		    $val = is_array($val) ? $this->utf8encodeArr($val) : utf8_encode($val);
@@ -148,193 +174,131 @@ class parser_binary_egcdr extends parser_binary {
 	 * HACK this is anhack to solve the problem  that the
 	 */
 	protected function buildDataMap() {
-		$base = array(
-				'record_type' => array( 'map' => array('C' => array(0))),
-				'served_imsi' => array( 'map' => array('BCDencode'=> array(1))),
-				'ggsn_address' => array( 'map' => array('ip' => array(2,0))),
-				'charging_id' => array( 'map' => array('number' => array(3))),
-				'sgsn_address' => array( 'map' => array('ip' => array(4,0)) ),
-				'apnni' =>  array( 'map' => array('string'=> array(5)) ),
-				'pdp_type' =>  array( 'map' => array('C' => array(6)) ),
-				'served_pdp_address' =>  array( 'map' => array('ip'=> array(7,0,0)) ),
-				'dynamic_address_flag' =>  array( 'map' => array('C'=> array(8)) ),
-				'record_opening_time' =>  array( 'map' => array('datetime'=> array(9)) ),
-				'duration' =>  array( 'map' => array('number'=> array(10)) ),
-				'cause_for_record_closing' =>  array( 'map' => array('C'=> array(11)) ),
-				'diagnostics' =>  array( 'map' => array('C*'=> array(12,0)) ),
-				'node_id' =>  array( 'map' => array('string'=> array(13)) ),
-				'local_sequence_number' =>  array( 'map' => array('number'=> array(14)) ),
-				'apn_selection_mode' =>  array( 'map' => array('C*'=> array(15)) ),
-				'served_msisdn'	=>	 array( 'map' => array('BCDencode'=> array(16)) ),
-				'charging_characteristics'	=>	 array( 'map' => array('C*'=> array(17)) ),
-				'charging_characteristics_selection_mode'	=>	 array( 'map' => array('C*'=> array(18,0,0)) ),
-				'sgsn_plmn_id'	=>	 array( 'map' => array('number'=> array(19)) ),
-				'served_imeisv'	=>	 array( 'map' => array('BCDencode'=> array(20)) ),
-				'rat_type'	=>	 array( 'map' => array('H*'=> array(21)) ),
-				'ms_timezone'	=>	 array( 'map' => array('C*'=> array(22,0)) ),
-				'user_location_information'	=>	 array( 'map' => array('C*'=> array(23)) ),
-				'list_of_service_data'	=>	 array( 'map' => array('nested' => array(24)),
-									'parse' => array(
-											array( 'map' => array('number' => array(0,0)) ),
-											array( 'map' => array('number' => array(0,1)) ),
-											'first_usage' =>  array( 'map' => array('datetime' => array(0,2)) ),
-											'last_usage' =>  array( 'map' => array('datetime' => array(0,3)) ),
-											'time_usage' =>  array( 'map' => array('number' => array(0,4)) ),
-											'service_condition_change' =>  array( 'map' => array('H*' => array(0,5)) ),
-											'qos_info' =>  array( 'map' => array('H*' => array(0,6)) ),
-											'sgsn_address' =>  array( 'map' => array('ip' => array(0,7,0)) ),
-											'sgsn_plmn_id' =>  array( 'map' => array('number' => array(0,8)) ),
-											'fbc_uplink_volume' =>  array( 'map' => array('number' => array(0,9)) ),
-											'fbc_downlink_volume' =>  array( 'map' => array('number' => array(0,10)) ),
-											'time_of_report' =>  array( 'map' => array('datetime' => array(0,11)) ),
-											'rat_type' =>  array( 'map' => array('number' => array(0,12)) ),
-											'failure_handle_continue' =>  array( 'map' => array('number' => array(0,13)) ),
-											'service_id' =>  array( 'map' => array('BCDencode' => array(0,14)) ),
-									),
-					),
-				'record_extensions'	=>	array( 'discard' => true ),
-			);
+		//create the data structure  the praser will use.
+		$losdArr = array(
+					'0x1'=> 'losd_unknown',
+					'0x0'=> 'losd_unknown1',
+					0 => array('0x81'=> 'rating_group'),
+					1 => array('0x84'=> 'losd_local_seq_num'),
+					2 => array('0x85'=> 'first_usage'),
+					3 => array('0x86'=> 'last_usage'),
+					4 => array('0x87'=> 'time_usage'),
+					5 => array('0x88'=> 'service_condition_change'),
+					6 => array('0x89'=> 'qos_info'),
+					7 => array(0 => array('0x80'=> 'lsod_sgsn_address')),
+					8 => array('0x8b'=> 'losd_sgsn_plmn_id'),
+					9 => array('0x8c'=> 'fbc_uplink_volume'),
+					10 => array('0x8d'=> 'fbc_downlink_volume'),
+					11 => array('0x8d'=> 'fbc_downlink_volume','0x8e'=> 'time_of_report'),
+					12 => array(	'0x8e'=> 'time_of_report',
+							'0x8f'=> 'losd_rat_type',
+							'0x91'=> 'failure_handle_continue'),
+					13 => array('0x91'=> 'failure_handle_continue','0x92'=> 'v'),
+					14 => array(	'0x92'=> 'service_id',
+							'0x93'=> 'user_location_information',
+							'0x94'=> 'user_location_information'),
+					15 => array('0x93'=> 'user_location_information','0x94'=> 'user_location_information'),
+				);
 		$data_structure = array(
+				0 => array('0x80'=> 'record_type'),
+				1 => array('0x83'=> 'served_imsi'),
+				2 => array( 0 => array('0x80'=> 'ggsn_address') ),
+				3 => array('0x85'=> 'charging_id'),
+				4 =>  array(0 => array('0x80'=> 'sgsn_address')),
+				5 => array('0x87'=> 'apnni'),
+				6 => array('0x88'=> 'pdp_type'),
+				7 => array( 0 => array( 0 => array('0x80'=> 'served_pdp_address')) ),
+				8 => array('0x8b'=> 'dynamic_address_flag'),
+				9 => array('0x8d'=> 'record_opening_time'),
+				10 => array('0x8e'=> 'duration'),
+				11 => array('0x8f'=> 'cause_for_record_closing'),
+				12 => array(	'0x91'=> 'record_sequence_number',
+						0 => array('0x80'=> 'diagnostics')),
+				13 => array('0x92'=> 'node_id','0x91'=> 'record_sequence_number',),
+				14 => array('0x94'=> 'local_sequence_number','0x92'=> 'node_id'),
+				15 => array('0x94'=> 'local_sequence_number','0x95'=> 'apn_selection_mode'),
+				16 => array('0x95'=> 'apn_selection_mode','0x96'=> 'served_msisdn'),
+				17 => array('0x96'=> 'served_msisdn','0x97'=> 'charging_characteristics'),
+				18 => array('0x97'=> 'charging_characteristics','0x98'=> 'charging_characteristics_selection_mode',
+						0 => array( 0 => array('0xfield'=> 'charging_characteristics_selection_mode')) ),
+				19 => array('0x98'=> 'charging_characteristics_selection_mode','0x9b'=> 'sgsn_plmn_id'),
+				20 => array(	'0x9b'=> 'sgsn_plmn_id',
+						'0x9d'=> 'served_imeisv',
+						0 => $losdArr,
+						1 => $losdArr,
+				),
+				21 => array(	'0x9d'=> 'served_imeisv',
+						'0x9e'=> 'rat_type',
+						0 => $losdArr,
+				),
+				22 => array(	'0x9e'=> 'rat_type',
+						'0x1f'=> 'ms_timezone',
+						0 => $losdArr,
+				),
+				23 => array(	'0x1f'=> 'ms_timezone',
+						0 => $losdArr,
+						1 => array("0x81" => 'unkonwn'),
+				),
+				24 => array( 0 => $losdArr, ),
+				25 => array( 0 => $losdArr, ),
+		);
 
-			'0120340567008910111201314151617181920001234567089101112'=> array(
-					'served_imeisv'	=>array( 'discard' => true ),
-					'rat_type'	=>array( 'discard' => true ),
-					'ms_timezone'	=>array( 'discard' => true ),
-					'user_location_information'	=>array( 'discard' => true ),
-					'list_of_service_data'	=> array( 'map' => array('nested' => array(20)) ),
-				),
-			'01203405670089101112131415161718192021220230240012345670891011121314'=> array(
-					//'diagnostics' => array( 'discard' => true ),
-					//'record_sequence_number' =>  array( 'map' => array('C'=> array(12)) ),
-					'user_location_information'	=>	 array( 'map' => array('C*'=> array(23,0)) ),
-				),
-			'0120340567008910111213141516171819202122023240012345670891011121314'=> array(
-					//'diagnostics' => array( 'discard' => true ),
-					//'record_sequence_number' =>  array( 'map' => array('C*'=> array(12)) ),
-				),
-			'012034056700891011120131415161718192021220230240012345670891011121314'=> array(
-
-				),
-			'01203405670089101112013141516171819202122230240250012345670891011121314'=> array(
-					'record_sequence_number' =>  array( 'map' => array('number'=> array(13)) ),
-					'node_id' =>  array( 'map' => array('string'=> array(14)) ),
-					'local_sequence_number' =>  array( 'map' => array('number'=> array(15)) ),
-					'apn_selection_mode' =>  array( 'map' => array('C*'=> array(16)) ),
-					'served_msisdn'	=>	 array( 'map' => array('C*'=> array(17)) ),
-					'charging_characteristics'	=>	 array( 'map' => array('C*'=> array(18)) ),
-					'charging_characteristics_selection_mode'	=>	 array( 'map' => array('C*'=> array(19)) ),
-					'sgsn_plmn_id'	=>	 array( 'map' => array('number'=> array(20)) ),
-					'served_imeisv'	=>	 array( 'map' => array('BCDencode'=> array(21)) ),
-					'rat_type'	=>	 array( 'map' => array('H*'=> array(22)) ),
-					'ms_timezone'	=>	 array( 'map' => array('C*'=> array(23,0)) ),
-					'user_location_information'	=>	 array( 'map' => array('C*'=> array(24,0)) ),
-					'list_of_service_data'	=>	 array( 'map' => array('nested' => array(25)) ),
-				),
-			'0120340567008910111201314151617181920212223024250012345670891011121314'=> array(
-					'record_sequence_number' =>  array( 'map' => array('number'=> array(13)) ),
-					'node_id' =>  array( 'map' => array('string'=> array(14)) ),
-					'local_sequence_number' =>  array( 'map' => array('number'=> array(15)) ),
-					'apn_selection_mode' =>  array( 'map' => array('C*'=> array(16)) ),
-					'served_msisdn'	=>	 array( 'map' => array('C*'=> array(17)) ),
-					'charging_characteristics'	=>	 array( 'map' => array('C*'=> array(18)) ),
-					'charging_characteristics_selection_mode'	=>	 array( 'map' => array('C*'=> array(19)) ),
-					'sgsn_plmn_id'	=>	 array( 'map' => array('number'=> array(20)) ),
-					'served_imeisv'	=>	 array( 'map' => array('BCDencode'=> array(21)) ),
-					'rat_type'	=>	 array( 'map' => array('H*'=> array(22)) ),
-					'ms_timezone'	=>	 array( 'map' => array('C*'=> array(23,0)) ),
-					'user_location_information'	=>	 array( 'map' => array('c*'=> array(24)) ),
-					'list_of_service_data'	=>	 array( 'map' => array('nested' => array(25)) ),
-				),
-			'01203405670089101112013141516171819202122023240012345670891011121314'=> array(
-				),
-			'012034056700891011121314151617181920001234567089101112'=> array(
-					'served_imeisv'	=>	array( 'discard' => true ),
-					'rat_type'	=>	array( 'discard' => true ),
-					'ms_timezone'	=>	array( 'discard' => true ),
-					'user_location_information'	=>	array( 'discard' => true ),
-					'list_of_service_data'	=>	 array( 'map' => array('nested' => array(20)) ),
-					//'record_extensions'	=>	 array( 'map' => array('json'=> array(20)) ),
-				),
-			'01203405670089101112131415161718192021220230012345670891011121314'=> array(
-					'user_location_information'	=> array( 'discard' => true ),
-					'list_of_service_data'	=>	 array( 'map' => array('nested' => array(23)) ),
-				),
-			'012034056700891011120131415161718192021001234567089101112'=> array(
-					'record_sequence_number' =>  array( 'map' => array('number'=> array(13)) ),
-					'node_id' =>  array( 'map' => array('string'=> array(14)) ),
-					'local_sequence_number' =>  array( 'map' => array('number'=> array(15)) ),
-					'apn_selection_mode' =>  array( 'map' => array('C*'=> array(16)) ),
-					'served_msisdn'	=>	 array( 'map' => array('C*'=> array(17)) ),
-					'charging_characteristics'	=>	 array( 'map' => array('C*'=> array(18)) ),
-					'charging_characteristics_selection_mode'	=>	 array( 'map' => array('C*'=> array(19)) ),
-					'sgsn_plmn_id'	=>	 array( 'map' => array('number'=> array(20)) ),
-					'served_imeisv'	=>	array( 'discard' => true ),
-					'rat_type'	=>	array( 'discard' => true ),
-					'ms_timezone'	=>	array( 'discard' => true ),
-					'user_location_information'	=>	array( 'discard' => true ),
-					'list_of_service_data'	=>	 array( 'map' => array('nested' => array(21)) ),
-				),
-			'0120340567008910111201314151617181920001234567089101112101234567089101112'=> array(
-					'served_imeisv'	=>	array( 'discard' => true ),
-					'rat_type'	=>	array( 'discard' => true ),
-					'ms_timezone'	=>	array( 'discard' => true ),
-					'user_location_information'	=>	array( 'discard' => true ),
-					'list_of_service_data'	=>	 array( 'map' => array('nested' => array(20)) ),
-					'record_extensions'	=>	 array( 'discard' => false, 'map' => array('json'=> array(21)) ),
-				),
-			'0120340567008910111213141516171819202122230240012345670891011121314'=> array(
-				),
-			'012034056700891011121314151617181920212202302400123456708910111213141012345670891011121314' =>  array(
-			),
-			'01203405670089101112013141516171819202122230240012345670891011121314' => array(
-					'record_sequence_number' =>  array( 'map' => array('number'=> array(13)) ),
-					'node_id' =>  array( 'map' => array('string'=> array(14)) ),
-					'local_sequence_number' =>  array( 'map' => array('number'=> array(15)) ),
-					'apn_selection_mode' =>  array( 'map' => array('C*'=> array(16)) ),
-					'served_msisdn'	=>	 array( 'map' => array('C*'=> array(17)) ),
-					'charging_characteristics'	=>	 array( 'map' => array('C*'=> array(18)) ),
-					'charging_characteristics_selection_mode'	=>	 array( 'map' => array('C*'=> array(19)) ),
-					'sgsn_plmn_id'	=>	 array( 'map' => array('number'=> array(20)) ),
-					'served_imeisv'	=>	 array( 'map' => array('BCDencode'=> array(21)) ),
-					'rat_type'	=>	 array( 'map' => array('H*'=> array(22)) ),
-					'ms_timezone'	=>	 array( 'map' => array('datetime'=> array(23,0)) ),
-					'user_location_information'	=>	array( 'discard' => true ),
-					'list_of_service_data'	=>	 array( 'map' => array('json'=> array(23)) ),
-				),
-			'012034056700891011120131415161718192021222300123456708910111213' => array(
-					'record_sequence_number' =>  array( 'map' => array('number'=> array(13)) ),
-					'node_id' =>  array( 'map' => array('string'=> array(14)) ),
-					'local_sequence_number' =>  array( 'map' => array('number'=> array(15)) ),
-					'apn_selection_mode' =>  array( 'map' => array('C*'=> array(16)) ),
-					'served_msisdn'	=>	 array( 'map' => array('C*'=> array(17)) ),
-					'charging_characteristics'	=>	 array( 'map' => array('C*'=> array(18)) ),
-					'charging_characteristics_selection_mode'	=>	 array( 'map' => array('C*'=> array(19)) ),
-					'sgsn_plmn_id'	=>	 array( 'map' => array('number'=> array(20)) ),
-					'served_imeisv'	=>	 array( 'map' => array('BCDencode'=> array(21)) ),
-					'rat_type'	=>	 array( 'map' => array('H*'=> array(22)) ),
-					'ms_timezone'	=>	array( 'discard' => true ),
-					'user_location_information'	=>	array( 'discard' => true ),
-					'list_of_service_data'	=>	 array( 'map' => array('nested' => array(23)) ),
-				),
-			'0120340567008910111201314151617181920212223240250012345670891011121314' => array(
-					'record_sequence_number' =>  array( 'map' => array('number'=> array(13)) ),
-					'node_id' =>  array( 'map' => array('string'=> array(14)) ),
-					'local_sequence_number' =>  array( 'map' => array('number'=> array(15)) ),
-					'apn_selection_mode' =>  array( 'map' => array('C*'=> array(16)) ),
-					'served_msisdn'	=>	 array( 'map' => array('C*'=> array(17)) ),
-					'charging_characteristics'	=>	 array( 'map' => array('C*'=> array(18)) ),
-					'charging_characteristics_selection_mode'	=>	 array( 'map' => array('C*'=> array(19)) ),
-					'sgsn_plmn_id'	=>	 array( 'map' => array('number'=> array(20)) ),
-					'served_imeisv'	=>	 array( 'map' => array('BCDencode'=> array(21)) ),
-					'rat_type'	=>	 array( 'map' => array('H*'=> array(22)) ),
-					'ms_timezone'	=>	 array( 'map' => array('datetime'=> array(23)) ),
-					'user_location_information'	=>	 array( 'map' => array('datetime'=> array(24,0)) ),
-					'list_of_service_data'	=>	 array( 'map' => array('nested' => array(25)) ),
-				),
-			);
-		foreach($data_structure as $key => &$val) {
-		    $val = array_merge_recursive($base , $val);
-		}
+		//set the fields and how we translate them.
+		$this->fields = array(
+					'rating_group' 		=> 'number',
+					'losd_local_seq_num' 	=> 'number',
+					'first_usage' 		=>  'datetime',
+					'last_usage' 		=> 'datetime',
+					'time_usage' 		=> 'number',
+					'service_condition_change' => 'H*',
+					'qos_info' 		=> 'H*',
+					'sgsn_address' 		=>  'ip',
+					'sgsn_plmn_id' 		=>	'number',
+					'fbc_uplink_volume' 	=>	'number',
+					'fbc_downlink_volume' =>  'number',
+					'time_of_report' =>  'datetime',
+					'rat_type' =>  'number',
+					'lsod_rat_type' =>  'number',
+					'failure_handle_continue' =>  'number',
+					'service_id' =>  'BCDencode',
+					'record_type' => 'C',
+					'served_imsi' => 'BCDencode',
+					'ggsn_address' => 'ip',
+					'charging_id' => 'number',
+					'sgsn_address' => 'ip',
+					'lsod_sgsn_address' => 'ip',
+					'apnni' =>  'string',
+					'pdp_type' =>  'C',
+					'served_pdp_address' =>  'ip',
+					'dynamic_address_flag' =>  'C',
+					'record_opening_time' =>  'datetime',
+					'duration' =>  'number',
+					'cause_for_record_closing' =>  'C',
+					'diagnostics' =>  'number',
+					'record_sequence_number' => 'number',
+					'node_id' =>  'string',
+					'local_sequence_number' =>  'number',
+					'apn_selection_mode' =>  'C*',
+					'served_msisdn'	=>	 'BCDencode',
+					'charging_characteristics'	=>	 'C*',
+					'charging_characteristics_selection_mode'	=>	 'C*',
+					'sgsn_plmn_id'	=>	 'number',
+					'losd_sgsn_plmn_id'	=>	 'number',
+					'served_imeisv'	=>	 'BCDencode',
+					'rat_type'	=>	 'H*',
+					'losd_rat_type'	=>	 'H*',
+					'ms_timezone'	=>	 'C*',
+					'user_location_information'	=>	 'H*',
+					'list_of_service_data'	=>'losd',
+					'record_extensions'	=> 'json',
+					//TODO solve later...
+					'unknown' => "H*",
+					'losd_unknown' => "H*",
+					'losd_unknown1' => "H*",
+					//FOR DEBUGGING
+					'debug_losd' => 'debug',
+					'debug' => 'debug',
+		);
 
 		return $data_structure;
 
