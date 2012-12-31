@@ -12,7 +12,7 @@
  * @package  Billing
  * @since    1.0
  */
-class processor_ilds extends base {
+class Billrun_Processor_Ilds extends Billrun_Processor {
 
 	/**
 	 * method to parse the data

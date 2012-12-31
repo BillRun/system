@@ -14,7 +14,7 @@
  * @package  Billing
  * @since    1.0
  */
-abstract class processor_binary extends processor {
+abstract class Billrun_Processor_Binary extends Billrun_Processor {
 
 	/**
 	 * create an header record
