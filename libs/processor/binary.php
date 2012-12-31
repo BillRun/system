@@ -39,7 +39,7 @@ abstract class processor_binary extends processor {
 		$this->parser->setLine($data);
 		$row = $this->parser->parse();
 		if($row) {
-			//print_r($row);
+			//print_r($row); //TODO remove
 			$row['type'] = $this->type;
 			$row['header_stamp'] = $this->data['header']['stamp'];
 			$row['file'] = basename($this->filePath);

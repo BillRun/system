@@ -7,7 +7,8 @@
  */
 
 /**
- * This calls is used to parse ASN.1 encoded data.
+ * This class is used to parse ASN.1 encoded data.
+ * It defines some static functions deal with ASN data/objects
  *
  * @package  ASN
  * @since    1.0
@@ -15,21 +16,6 @@
 
 
 class ASN_BASE {
-	protected $typeId = null;
-	public $asnData = null;
-	public $parsedData = null;
-
-
-	function __construct($data = false, $type = false)
-	{
-		if (false !== $data) {
-			$this->asnData = $data;
-		}
-		if(false !== $type) {
-			$this->typeId = $type;
-		}
-	}
-
 
 	/**
 	 * Parse an ASN.1 binary string.

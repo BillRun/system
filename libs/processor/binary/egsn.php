@@ -17,7 +17,7 @@ class processor_binary_egsn extends processor_binary {
 	protected $type = 'egsn';
 	const HEADER_LENGTH = 54;
 	const MAX_CHUNKLENGTH_LENGTH = 512;
-	const FILE_READ_AHEAD_LENGTH = 16384;
+	const FILE_READ_AHEAD_LENGTH = 32768;
 
 	public function __construct($options) {
 		parent::__construct($options);

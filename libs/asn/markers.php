@@ -1,5 +1,19 @@
 <?php
 
+/**
+ * @package			ASN
+ * @copyright		Copyright (C) 2012 S.D.O.C. LTD. All rights reserved.
+ * @license			GNU General Public License version 2 or later; see LICENSE.txt
+ */
+
+/**
+ * This class holds the constats that are use in ASN.
+ *
+ * @package  ASN
+ * @since    1.0
+ */
+
+
 class ASN_MARKERS {
 	const	ASN_UNIVERSAL = 0x00;
 	const	ASN_APPLICATION = 0x40;

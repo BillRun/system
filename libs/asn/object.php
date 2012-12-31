@@ -1,12 +1,30 @@
 <?php
 
-class ASN_OBJECT extends ASN_BASE {
+/**
+ * @package			ASN
+ * @copyright		Copyright (C) 2012 S.D.O.C. LTD. All rights reserved.
+ * @license			GNU General Public License version 2 or later; see LICENSE.txt
+ */
 
-	public $dataLength = false;
+/**
+ * This define a general ASN object.
+ *
+ * @package  ASN
+ * @since    1.0
+ */
+
+
+class ASN_OBJECT extends ASN_BASE {
+	protected  $parsedData = null;
+	protected $dataLength = false;
+	protected $typeId = null;
+	protected $asnData = null;
 
 	function __construct($data = false, $type = false)
 	{
-		parent::__construct($data,$type);
+		if (false !== $data) { $this->asnData = $data; }
+		if(false !== $type)  { $this->typeId = $type;  }
+
 		if($this->isConstructed()) {
 			//the object is constructed from smaller objects
 			$this->parsedData = array();
@@ -50,7 +68,7 @@ class ASN_OBJECT extends ASN_BASE {
 	 * @return boolean which will be true if the corrent object is constructed false otherwise.
 	 */
 	public function isConstructed() {
-		return $this->typeId &  ASN_MARKERS::ASN_CONSTRUCTOR;
+		return $this->typeId & ASN_MARKERS::ASN_CONSTRUCTOR;
 	}
 
 	/**

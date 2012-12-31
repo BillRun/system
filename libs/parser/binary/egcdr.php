@@ -63,7 +63,7 @@ class parser_binary_egcdr extends parser_binary {
 	protected function parseASNData($struct,$asnData) {
 		$retArr= array();
 
-		foreach($asnData->parsedData as $key => $val) {
+		foreach($asnData->getData() as $key => $val) {
 			if(isset($struct[$key]) ) {
 				$type = '0x' . $val->getType();
 				if(is_array($val->getData())) {
@@ -76,12 +76,12 @@ class parser_binary_egcdr extends parser_binary {
 				}else {
 					print("Couldn`t find field for : $key with type :$type\n" );
 					print("Structue is : ". print_r($struct,1)."\n" );
-					sleep(5);
+					sleep(180);
 				}
 			} else {
 				print("Couldn`t find field for : $key with value :". print_r($val,1)."\n" );
 				print("Structue is : ". print_r($struct,1)."\n" );
-				sleep(5);
+				sleep(180);
 			}
 
 		}
@@ -239,8 +239,8 @@ class parser_binary_egcdr extends parser_binary {
 						0 => $losdArr,
 						1 => array("0x81" => 'unkonwn'),
 				),
-				24 => array( 0 => $losdArr, ),
-				25 => array( 0 => $losdArr, ),
+				24 => array( 0 => $losdArr, 1=> $losdArr, ),
+				25 => array( 0 => $losdArr, 1=> $losdArr,  ),
 		);
 
 		//set the fields and how we translate them.

@@ -1,8 +1,20 @@
 <?php
+/**
+ * @package			ASN
+ * @copyright		Copyright (C) 2012 S.D.O.C. LTD. All rights reserved.
+ * @license			GNU General Public License version 2 or later; see LICENSE.txt
+ */
+
+/**
+ * This class holds a mappingto  all the types there is in ASN specifications to classes.
+ *
+ * @package  ASN
+ * @since    1.0
+ */
 
 class ASN_TYPES {
 	public static $TYPES = array(
-	//	0x0	=> 'ASN_TYPE_EOC',
+		//0x0	=> 'ASN_TYPE_EOC',
 		0x1	=> 'ASN_TYPE_BOOLEAN',
 		0x2	=> 'ASN_TYPE_INTEGER',
 		0x3	=> 'ASN_TYPE_BITSTR',
