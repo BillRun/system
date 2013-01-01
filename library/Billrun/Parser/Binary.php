@@ -13,7 +13,7 @@
  * @since    1.0
  * @todo should make first derivative parser text and then fixed parser will inherited text parser
  */
-class Billrun_Parser_Binary extends Billrun_Parser {
+abstract class Billrun_Parser_Binary extends Billrun_Parser {
 
 	protected $parsedBytes = 0;
 	/**

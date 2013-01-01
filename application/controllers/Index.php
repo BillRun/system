@@ -99,7 +99,7 @@ class IndexController extends Yaf_Controller_Abstract {
 	}
 
 	protected function receive($opts) {
-		
+
 	}
 
 	protected function process($opts) {
@@ -129,7 +129,7 @@ class IndexController extends Yaf_Controller_Abstract {
 
 		if ($processor) {
 			$this->outputAdd("Start to process. This action can take awhile...");
-			
+
 			// buffer all action output
 			ob_start();
 			$processor->process();
@@ -142,15 +142,15 @@ class IndexController extends Yaf_Controller_Abstract {
 	}
 
 	protected function calculate($opts) {
-		
+
 	}
 
 	protected function aggregate($opts) {
-		
+
 	}
 
 	protected function generate($opts) {
-		
+
 	}
 
 }

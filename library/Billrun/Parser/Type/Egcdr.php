@@ -13,7 +13,7 @@
  * @since    1.0
  * @todo should make first derivative parser text and then fixed parser will inherited text parser
  */
-class Billrun_Parser_Binary_Egcdr extends Billrun_Parser_Binary {
+class Billrun_Parser_Type_Egcdr extends Billrun_Parser_Binary {
 
 	public function __construct($options) {
 
@@ -24,14 +24,14 @@ class Billrun_Parser_Binary_Egcdr extends Billrun_Parser_Binary {
 	}
 	/**
 	 * general function to parse
-	 * 
+	 *
 	 * @return mixed
 	 */
 	public function parse() {
 
-		$asnObject =  ASN_BASE::parseASNString($this->getLine());
+		$asnObject =  Asn_Base::parseASNString($this->getLine());
 		$this->parsedBytes = $asnObject->getDataLength();
-		$dataArr  = ASN_BASE::getDataArray($asnObject);
+		$dataArr  = Asn_Base::getDataArray($asnObject);
 		$ret =$this->parseASNData(	$this->data_structure,
 						$asnObject );
 		return $ret;

@@ -16,7 +16,7 @@ abstract class Billrun_Base {
 
 	/**
 	 * the database we are working on
-	 * 
+	 *
 	 * @var db resource
 	 */
 	protected $db = null;
@@ -24,21 +24,21 @@ abstract class Billrun_Base {
 	/**
 	 * the stamp of the aggregator
 	 * used for mark the aggregation
-	 * 
+	 *
 	 * @var db resource
 	 */
 	protected $stamp = null;
 
 	/**
 	 * the configuration of the system
-	 * 
+	 *
 	 * @var configuration class
 	 */
 	protected $config;
 
 	/**
 	 * dispatcher of the plugin system
-	 * 
+	 *
 	 * @var dispatcher class
 	 */
 	protected $dispatcher;
@@ -99,9 +99,9 @@ abstract class Billrun_Base {
 
 	/**
 	 * set database of the basic object
-	 * 
+	 *
 	 * @param resource $db the database instance to set
-	 * 
+	 *
 	 * @return mixed self instance
 	 */
 	public function setDB($db) {
@@ -110,11 +110,11 @@ abstract class Billrun_Base {
 	}
 
 	/**
-	 * set stamp of the basic object 
+	 * set stamp of the basic object
 	 * used for unique object actions
 	 *
 	 * @param string $stamp the stamp to set
-	 * 
+	 *
 	 * @return mixed self instance
 	 */
 	public function setStamp($stamp) {
@@ -134,7 +134,7 @@ abstract class Billrun_Base {
 
 	/**
 	 * Loose coupling of objects in the system
-	 * 
+	 *
 	 * @return mixed the bridge class
 	 */
 	static public function getInstance() {
@@ -149,7 +149,6 @@ abstract class Billrun_Base {
 		}
 
 		$class = get_called_class() . '_' . ucfirst($type);
-
 		return new $class($args);
 	}
 

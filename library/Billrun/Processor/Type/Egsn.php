@@ -12,7 +12,7 @@
  * @package  Billing
  * @since    1.0
  */
-class Processor_Binary_Egsn extends Billrun_Processor_Binary {
+class Billrun_Processor_Type_Egsn extends Billrun_Processor_Binary {
 
 	protected $type = 'egsn';
 	const HEADER_LENGTH = 54;

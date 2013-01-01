@@ -39,7 +39,6 @@ abstract class Billrun_Processor_Binary extends Billrun_Processor {
 		$this->parser->setLine($data);
 		$row = $this->parser->parse();
 		if($row) {
-			//print_r($row); //TODO remove
 			$row['type'] = $this->type;
 			$row['header_stamp'] = $this->data['header']['stamp'];
 			$row['file'] = basename($this->filePath);
