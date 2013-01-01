@@ -15,7 +15,7 @@
  */
 
 
-class ASN_BASE {
+class Asn_Base {
 
 	/**
 	 * Parse an ASN.1 binary string.
@@ -40,7 +40,7 @@ class ASN_BASE {
 	public static function getDataArray($rootObj) {
 		$retArr = array();
 		foreach($rootObj->parsedData as $val) {
-		    $retArr[] = ($val instanceof ASN_OBJECT && $val->isConstructed()) ? self::getDataArray($val) : $val->getData();
+		    $retArr[] = ($val instanceof Asn_Object && $val->isConstructed()) ? self::getDataArray($val) : $val->getData();
 		}
 		return $retArr;
 	}
@@ -49,17 +49,17 @@ class ASN_BASE {
 	/**
 	 * Create a new ASN object from a given byte data encoded in ASN1.
 	 * @param $rawData the raw byte data that we want to decode
-	 * @return ASN_OBJECT an asn object holding the parsed ASN1 data.
+	 * @return Asn_Object an asn object holding the parsed ASN1 data.
 	 */
 	protected static function newClassFromData(&$rawData) {
 		$offset = 0;
 		$type = ord($rawData[$offset++]);
-		if( ($type & ASN_MARKERS::ASN_CONTEXT) && (($type & 0x1F) == 0x1F)) {
+		if( ($type & Asn_Markers::ASN_CONTEXT) && (($type & 0x1F) == 0x1F)) {
 			$type = ord($rawData[$offset++]);
 		}
 		$cls = self::getClassForType($type);
 		if(!$cls) {
-			print("ASN_BASE::newClassFromData couldn't create class!!");
+			print("Asn_Base::newClassFromData couldn't create class!!");
 			return null;
 		}
 		$data = self::getObjectData($rawData,$offset);
@@ -74,14 +74,14 @@ class ASN_BASE {
 	 */
 	protected static function getObjectData(&$rawData, $offest = 0) {
 		$length = ord($rawData[$offest++]);
-		if (($length & ASN_MARKERS::ASN_LONG_LEN) == ASN_MARKERS::ASN_LONG_LEN){
+		if (($length & Asn_Markers::ASN_LONG_LEN) == Asn_Markers::ASN_LONG_LEN){
 			$tempLength = 0;
-			for ($x=($length-ASN_MARKERS::ASN_LONG_LEN); $x > 0; $x--){
+			for ($x=($length-Asn_Markers::ASN_LONG_LEN); $x > 0; $x--){
 				$tempLength = ord($rawData[$offest++]) + ($tempLength << 8);
 			}
 			$length = $tempLength;
 		}
-		//print("ASN_BASE::getRawData data length : $length \n");
+		//print("Asn_Base::getRawData data length : $length \n");
 		return self::shift($rawData,$length,$offest);
 	}
 
@@ -104,17 +104,17 @@ class ASN_BASE {
 	 * @return String  the name of the class that should be used to handle the data.
 	 */
 	protected static function getClassForType($type) {
-		$constructed = $type &  ASN_MARKERS::ASN_CONSTRUCTOR ;
-		$context = $type &  ASN_MARKERS::ASN_CONTEXT;
+		$constructed = $type &  Asn_Markers::ASN_CONSTRUCTOR ;
+		$context = $type &  Asn_Markers::ASN_CONTEXT;
 		$type = $type & 0x1F; // strip out context
-		if( !$context && isset(ASN_TYPES::$TYPES[$type]) && class_exists(ASN_TYPES::$TYPES[$type])) {
-			$cls = ASN_TYPES::$TYPES[$type];
+		if( !$context && isset(Asn_Types::$TYPES[$type]) && class_exists(Asn_Types::$TYPES[$type])) {
+			$cls = Asn_Types::$TYPES[$type];
 ;
 		} else {
  			//print("not detected : ". dechex($type)."\n");
-			$cls = 'ASN_OBJECT';//!( $constructed )  ?  'ASN_PRIMITIVE' : 'ASN_CONSTRUCT';
+			$cls = 'Asn_Object';//!( $constructed )  ?  'ASN_PRIMITIVE' : 'ASN_CONSTRUCT';
 		}
-		//print("ASN_BASE::getClassForType $cls  for type id  : ".dechex($type)."\n");
+		//print("Asn_Base::getClassForType $cls  for type id  : ".dechex($type)."\n");
 
 		return $cls;
 	}

@@ -14,7 +14,7 @@
  */
 
 
-class ASN_OBJECT extends ASN_BASE {
+class Asn_Object extends Asn_Base {
 	protected  $parsedData = null;
 	protected $dataLength = false;
 	protected $typeId = null;
@@ -68,7 +68,7 @@ class ASN_OBJECT extends ASN_BASE {
 	 * @return boolean which will be true if the corrent object is constructed false otherwise.
 	 */
 	public function isConstructed() {
-		return $this->typeId & ASN_MARKERS::ASN_CONSTRUCTOR;
+		return $this->typeId & Asn_Markers::ASN_CONSTRUCTOR;
 	}
 
 	/**

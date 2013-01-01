@@ -14,7 +14,7 @@
  */
 
 
-class ASN_MARKERS {
+class Asn_Markers {
 	const	ASN_UNIVERSAL = 0x00;
 	const	ASN_APPLICATION = 0x40;
 	const	ASN_CONTEXT	= 0x80;

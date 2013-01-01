@@ -4,7 +4,7 @@
  * @copyright		Copyright (C) 2012 S.D.O.C. LTD. All rights reserved.
  * @license			GNU General Public License version 2 or later; see LICENSE.txt
  */
-class ASN_TYPE_OBJECTID extends ASN_OBJECT {
+class Asn_Type_ObjectID extends Asn_Object {
 
 
 	public function __construct($data, $type) {
@@ -31,19 +31,19 @@ class ASN_TYPE_OBJECTID extends ASN_OBJECT {
 		for ($i=1; $i<strlen($string); $i++){
 			$v = ord($string[$i]);
 			if ($v>127){
-				$build[] = ord($string[$i])-ASN_MARKERS::ASN_BIT;
+				$build[] = ord($string[$i])-Asn_Markers::ASN_BIT;
 			} elseif ($build){
 				// do the build here for multibyte values
-				$build[] = ord($string[$i])-ASN_MARKERS::ASN_BIT;
+				$build[] = ord($string[$i])-Asn_Markers::ASN_BIT;
 				// you know, it seems there should be a better way to do this...
 				$build = array_reverse($build);
 				$num = 0;
 				for ($x=0; $x<count($build); $x++){
 					$mult = $x==0?1:pow(256, $x);
 					if ($x+1==count($build)){
-						$value = ((($build[$x] & (ASN_MARKERS::ASN_BIT-1)) >> $x)) * $mult;
+						$value = ((($build[$x] & (Asn_Markers::ASN_BIT-1)) >> $x)) * $mult;
 					} else {
-						$value = ((($build[$x] & (ASN_MARKERS::ASN_BIT-1)) >> $x) ^ ($build[$x+1] << (7 - $x) & 255)) * $mult;
+						$value = ((($build[$x] & (Asn_Markers::ASN_BIT-1)) >> $x) ^ ($build[$x+1] << (7 - $x) & 255)) * $mult;
 					}
 					$num += $value;
 				}
