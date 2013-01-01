@@ -16,6 +16,7 @@
 abstract class Billrun_Parser_Binary extends Billrun_Parser {
 
 	protected $parsedBytes = 0;
+
 	/**
 	 * Get the amount of bytes that were parsed on the last parsing run.
 	 * @return int	 containing the count of the bytes that were processed/parsed.
@@ -42,4 +43,5 @@ abstract class Billrun_Parser_Binary extends Billrun_Parser {
 	public function getLine() {
 		return $this->line;
 	}
+
 }

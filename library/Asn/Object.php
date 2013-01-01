@@ -12,23 +12,25 @@
  * @package  ASN
  * @since    1.0
  */
-
-
 class Asn_Object extends Asn_Base {
-	protected  $parsedData = null;
+
+	protected $parsedData = null;
 	protected $dataLength = false;
 	protected $typeId = null;
 	protected $asnData = null;
 
-	function __construct($data = false, $type = false)
-	{
-		if (false !== $data) { $this->asnData = $data; }
-		if(false !== $type)  { $this->typeId = $type;  }
+	function __construct($data = false, $type = false) {
+		if (false !== $data) {
+			$this->asnData = $data;
+		}
+		if (false !== $type) {
+			$this->typeId = $type;
+		}
 
-		if($this->isConstructed()) {
+		if ($this->isConstructed()) {
 			//the object is constructed from smaller objects
 			$this->parsedData = array();
-			while (strlen($data) > 0){
+			while (strlen($data) > 0) {
 				$this->parsedData[] = $this->newClassFromData($data);
 			}
 		} else {
@@ -41,17 +43,19 @@ class Asn_Object extends Asn_Base {
 	 * get the parsed data that was encoded in the ASN.
 	 * @retrun mixed the actual that that was encoded in this field.
 	 */
-	 public function getData() {
+	public function getData() {
 		return $this->parsedData;
-	 }
+	}
 
 	/**
 	 * get the length of the data this object contains
 	 * @return integer the length of the data conatined in the object.
 	 */
 	public function getDataLength() {
-		if(!$this->dataLength) {$this->dataLength = strlen($this->asnData);}
-		return  $this->dataLength;
+		if (!$this->dataLength) {
+			$this->dataLength = strlen($this->asnData);
+		}
+		return $this->dataLength;
 	}
 
 	/**
@@ -79,6 +83,6 @@ class Asn_Object extends Asn_Base {
 	protected function parse($data) {
 		$this->parsedData = $data;
 	}
-}
 
+}
 

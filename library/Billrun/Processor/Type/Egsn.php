@@ -15,16 +15,16 @@
 class Billrun_Processor_Type_Egsn extends Billrun_Processor_Binary {
 
 	protected $type = 'egsn';
+
 	const HEADER_LENGTH = 54;
 	const MAX_CHUNKLENGTH_LENGTH = 512;
 	const FILE_READ_AHEAD_LENGTH = 32768;
 
 	public function __construct($options) {
 		parent::__construct($options);
-
 	}
 
-protected function parse() {
+	protected function parse() {
 
 		// run all over the file with the parser helper
 		if (!is_resource($this->fileHandler)) {
@@ -36,24 +36,21 @@ protected function parse() {
 
 		$bytes = null;
 		do {
-			if(!isset($bytes[self::MAX_CHUNKLENGTH_LENGTH]) && !feof($this->fileHandler)) {
-				$bytes .= fread($this->fileHandler, self::FILE_READ_AHEAD_LENGTH );
+			if (!isset($bytes[self::MAX_CHUNKLENGTH_LENGTH]) && !feof($this->fileHandler)) {
+				$bytes .= fread($this->fileHandler, self::FILE_READ_AHEAD_LENGTH);
 			}
 
 			$row = $this->buildDataRow($bytes);
-			if($row) {
+			if ($row) {
 				$this->data['data'][] = $row;
 			}
 
-			$bytes = substr($bytes,$this->parser->getLastParseLength());
-		} while ( isset($bytes[self::HEADER_LENGTH]) );
+			$bytes = substr($bytes, $this->parser->getLastParseLength());
+		} while (isset($bytes[self::HEADER_LENGTH]));
 
 		$this->data['trailer'] = $this->buildTrailer($bytes);
 
 		return true;
 	}
-
-
-
 
 }

@@ -6,8 +6,6 @@
  * @license			GNU General Public License version 2 or later; see LICENSE.txt
  */
 
-
-
 /**
  * Billing  processor binary class
  *
@@ -38,7 +36,7 @@ abstract class Billrun_Processor_Binary extends Billrun_Processor {
 	protected function buildDataRow($data) {
 		$this->parser->setLine($data);
 		$row = $this->parser->parse();
-		if($row) {
+		if ($row) {
 			$row['type'] = $this->type;
 			$row['header_stamp'] = $this->data['header']['stamp'];
 			$row['file'] = basename($this->filePath);
@@ -46,6 +44,7 @@ abstract class Billrun_Processor_Binary extends Billrun_Processor {
 		}
 		return $row;
 	}
+
 	/**
 	 * Create an trailer record.
 	 * @param $data  the trailer record data.
