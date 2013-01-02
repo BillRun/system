@@ -14,6 +14,8 @@
  */
 abstract class Billrun_Parser extends Billrun_Base {
 
+	protected $type = "parser";
+	
 	/**
 	 *
 	 * @var string the line to parse 

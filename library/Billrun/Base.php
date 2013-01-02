@@ -44,6 +44,13 @@ abstract class Billrun_Base {
 	protected $dispatcher;
 
 	/**
+	 * the type of the object
+	 *
+	 * @var string
+	 */
+	protected $type = "base";
+
+	/**
 	 * constant of log collection name
 	 */
 
@@ -58,6 +65,11 @@ abstract class Billrun_Base {
 	 * constant of billrun collection name
 	 */
 	const billrun_table = 'billrun';
+	
+	/**
+	 * constant for base date format
+	 */
+	const base_dateformat = 'Y-m-d h:i:s';
 
 	/**
 	 * constructor

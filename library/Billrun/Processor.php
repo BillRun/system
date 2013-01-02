@@ -140,10 +140,10 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 * @return Character representing the line type
 	 * 	'H' => Header
 	 * 	'D' => Data
-	 * 	'T' => Tail
+	 * 	'T' => Trailer
 	 */
-	protected function getLineType($line) {
-		return substr($line, 0, 1);
+	protected function getLineType($line, $length = 1) {
+		return substr($line, 0, $length);
 	}
 
 	/**

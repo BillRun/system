@@ -3,23 +3,39 @@
 /**
  * @category   Billrun
  * @package    Processor
- * @subpackage Ilds
+ * @subpackage Nrtrde
  * @copyright  Copyright (C) 2012 S.D.O.C. LTD. All rights reserved.
- * @license    GNU General Public License version 2 or later; see LICENSE.txt
+ * @license    GNU General Public License version 2 or later
  */
 
 /**
- * Billing abstract processor ilds class
+ * Billing processor for NRTRDE
+ * see also:
+ * http://www.tapeditor.com/OnlineDemo/NRTRDE-ASCII-format.html
  *
- * @category   Billrun
- * @package    Processor
- * @subpackage Ilds
+ * @package    Billing
+ * @subpackage Processor
  * @since      1.0
  */
-class Billrun_Processor_Ilds extends Billrun_Processor {
+class Billrun_Processor_Separator extends Billrun_Processor {
 
-	protected $type = 'ilds';
-	
+	protected $type = 'separator';
+
+	public function __construct($options) {
+		parent::__construct($options);
+	}
+
+	/**
+	 * Get the type of the currently parsed line.
+	 * 
+	 * @param $line  string containing the parsed line.
+	 * 
+	 * @return Character representing the line type
+	 */
+	protected function getLineType($line) {
+		return $line[0];
+	}
+
 	/**
 	 * method to parse the data
 	 */
@@ -29,12 +45,14 @@ class Billrun_Processor_Ilds extends Billrun_Processor {
 			return false;
 		}
 
-		while ($line = fgets($this->fileHandler)) {
-			$record_type = $this->getLineType($line);
+		$separator = $this->parser->getSeparator();
+		while ($line = fgetcsv($this->fileHandler, 8092, $separator)) {
+			$record_type = $this->getLineType($line, $separator);
 
 			// @todo: convert each case code snippet to protected method (including triggers)
 			switch ($record_type) {
-				case 'H': // header
+				case '10':
+				case 'NRTRDE': // header
 					if (isset($this->data['header'])) {
 						echo "double header" . PHP_EOL;
 						return false;
@@ -47,29 +65,14 @@ class Billrun_Processor_Ilds extends Billrun_Processor {
 					// @todo: trigger after header parse (including $header)
 					$header['type'] = $this->type;
 					$header['file'] = basename($this->filePath);
-					$header['process_time'] = date('Y-m-d h:i:s');
+					$header['process_time'] = date(self::base_dateformat);
 					$this->data['header'] = $header;
 
 					break;
-				case 'T': //trailer
-					if (isset($this->data['trailer'])) {
-						echo "double trailer" . PHP_EOL;
-						return false;
-					}
-
-					$this->parser->setStructure($this->trailer_structure);
-					$this->parser->setLine($line);
-					// @todo: trigger after trailer load (including $header, $data, $trailer)
-					$trailer = $this->parser->parse();
-					// @todo: trigger after trailer parse (including $header, $data, $trailer)
-					$trailer['type'] = $this->type;
-					$trailer['header_stamp'] = $this->data['header']['stamp'];
-					$trailer['file'] = basename($this->filePath);
-					$trailer['process_time'] = date('Y-m-d h:i:s');
-					$this->data['trailer'] = $trailer;
-
-					break;
-				case 'D': //data
+				case '20':
+				case 'MOC':
+				case '30':
+				case 'MTC': // data
 					if (!isset($this->data['header'])) {
 						echo "No header found" . PHP_EOL;
 						return false;
@@ -83,7 +86,7 @@ class Billrun_Processor_Ilds extends Billrun_Processor {
 					$row['type'] = $this->type;
 					$row['header_stamp'] = $this->data['header']['stamp'];
 					$row['file'] = basename($this->filePath);
-					$row['process_time'] = date('Y-m-d h:i:s');
+					$row['process_time'] = date(self::base_dateformat);
 					// hot fix cause this field contain iso-8859-8
 					if (isset($row['country_desc'])) {
 						$row['country_desc'] = mb_convert_encoding($row['country_desc'], 'UTF-8', 'ISO-8859-8');
