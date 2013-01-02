@@ -15,6 +15,7 @@
 class IndexController extends Yaf_Controller_Abstract {
 
 	protected $eol = PHP_EOL;
+	protected $possibleActions = array('receive','process','calculate','aggregate','generate');
 
 	public function indexAction() {
 		$this->getView()->content = "Open Source Last Forever!";
@@ -30,7 +31,8 @@ class IndexController extends Yaf_Controller_Abstract {
 				'g|G|generate' => 'Generate xml and csv files of specific billrun',
 				'g|G|generate' => 'Generate xml and csv files of specific billrun',
 				'h|H|help' => 'Displays usage information.',
-				'ild-s' => 'Process: Ild to use',
+				'type-s' => 'Process: Ild type to use',
+				'stamp-s' => 'Process: Stamp to use for this run',
 				'path-s' => 'Process: Path of the process file',
 				'parser-s' => 'Process: Parser type (default fixed)',
 			);
@@ -42,52 +44,13 @@ class IndexController extends Yaf_Controller_Abstract {
 			return;
 		}
 
-		/**
-		 * Action : receive
-		 */
-		if (isset($opts->receive)) {
-			$this->outputAdd("Receiveing...");
-			$this->receive($opts);
-			return;
-		}
-
-		/**
-		 * Action : process
-		 */
-		if (isset($opts->process)) {
-			$this->outputAdd("Processing...");
-			$this->process($opts);
-			return;
-		}
-
-		/**
-		 * Action : calculate
-		 */
-		if (isset($opts->calculate)) {
-			// do something
-			$this->outputAdd("calculate");
-			$this->calculate($opts);
-			return;
-		}
-
-		/**
-		 * Action : aggregate
-		 */
-		if (isset($opts->aggregate)) {
-			// do something
-			$this->outputAdd("aggregate");
-			$this->aggregate($opts);
-			return;
-		}
-
-		/**
-		 * Action : generate
-		 */
-		if (isset($opts->generate)) {
-			// do something
-			$this->outputAdd("generate");
-			$this->generate($opts);
-			return;
+		//Go through all actions and run the first one that was selected
+		foreach($this->possibleActions as $val) {
+			if (isset($opts->{$val})) {
+				$this->outputAdd(ucfirst($val)."...");
+				$this->{$val}($opts);
+				return;
+			}
 		}
 
 		$this->outputAdd($opts->getUsageMessage());
@@ -103,25 +66,13 @@ class IndexController extends Yaf_Controller_Abstract {
 	}
 
 	protected function process($opts) {
-		$ild = $opts->getOption('ild');
-		if (empty($ild)) {
-			$this->outputAdd("Error: No ild selected");
-			return;
-		}
+		$options =$this->getInstanceOptions($opts);
+		if(!$options) {return;}
 
-		$path = $opts->getOption('path');
-		$parser = $opts->getOption('parser');
-		if (empty($parser)) {
-			$parser = 'fixed';
-		}
+		$this->outputAdd("Parser selected: " . $options['parser']);
+		$options['parser'] = Billrun_Parser::getInstance(array('type' => $options['parser']));
 
 		$this->outputAdd("Parser selected: " . $parser);
-
-		$options = array(
-			'type' => $ild,
-			'file_path' => $path,
-			'parser' => Billrun_Parser::getInstance(array('type' => $parser)),
-		);
 
 		$this->outputAdd("Loading processor");
 		$processor = Billrun_Processor::getInstance($options);
@@ -142,15 +93,97 @@ class IndexController extends Yaf_Controller_Abstract {
 	}
 
 	protected function calculate($opts) {
+		$options =$this->getInstanceOptions($opts);
+		if(!$options) {return;}
 
+		$this->outputAdd("Loading Calculator");
+		$calculator = Billrun_Calculator::getInstance($options);
+		$this->outputAdd("Calculator loaded");
+
+		if ($calculator) {
+			// buffer all action output
+			ob_start();
+
+			$this->outputAdd("Loading data to calculate...");
+			$calculator->load();
+			$this->outputAdd("Starting to calculate. This action can take awhile...");
+			$calculator->calc();
+			$this->outputAdd("Writing calculated data.");
+			$calculator->write();
+
+			// write the buffer into log and output
+			$this->outputAdd(ob_get_contents());
+			ob_end_clean();
+		} else {
+			$this->outputAdd("Calculator cannot be loaded");
+		}
 	}
 
 	protected function aggregate($opts) {
+		$options =$this->getInstanceOptions($opts);
+		if(!$options) {return;}
 
+		$this->outputAdd("Loading aggregator");
+		$aggregator = Billrun_Aggregator::getInstance($options);
+		$this->outputAdd("Aggregator loaded");
+
+		if ($aggregator) {
+			// buffer all action output
+			ob_start();
+			$this->outputAdd("Loading data to Aggregate...");
+			$aggregator->load();
+			$this->outputAdd("Starting to Aggregate. This action can take awhile...");
+			$aggregator->aggregate();
+			// write the buffer into log and output
+			$this->outputAdd(ob_get_contents());
+			ob_end_clean();
+		} else {
+			$this->outputAdd("Aggregator cannot be loaded");
+		}
 	}
 
 	protected function generate($opts) {
+		$options =$this->getInstanceOptions($opts);
+		if(!$options) {return;}
 
+		$this->outputAdd("Loading aggregator");
+		$aggregator = Billrun_Aggregator::getInstance($options);
+		$this->outputAdd("Aggregator loaded");
+
+		if ($aggregator) {
+			// buffer all action output
+			ob_start();
+			$this->outputAdd("Loading data to Aggregate...");
+			$aggregator->load();
+			$this->outputAdd("Starting to Aggregate. This action can take awhile...");
+			$aggregator->aggregate();
+			// write the buffer into log and output
+			$this->outputAdd(ob_get_contents());
+			ob_end_clean();
+		} else {
+			$this->outputAdd("Aggregator cannot be loaded");
+		}
+	}
+
+	protected function getInstanceOptions($opts,$posibleOptions = false) {
+		$posibleOptions = $posibleOptions ? $posibleOptions : array(	'type'=> false,
+										'stamp' => false,
+										'path' =>  "./",
+										'parser' => 'fixed' );
+		$options = array();
+		foreach($posibleOptions as $key => $defVal) {
+			$options[$key] = $opts->getOption($key);
+			if (empty($options[$key]) ) {
+				if(!$defVal) {
+					$this->outputAdd("Error: No $key selected");
+					return null;
+				} else {
+					$options[$key] = $defVal;
+				}
+			}
+
+		}
+		return $options;
 	}
 
 }

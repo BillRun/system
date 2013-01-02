@@ -5,7 +5,7 @@
  * @copyright		Copyright (C) 2012 S.D.O.C. LTD. All rights reserved.
  * @license			GNU General Public License version 2 or later; see LICENSE.txt
  */
-require_once __DIR__ . '/../' . 'subscriber.php';
+require_once __DIR__ . '/../../../application/golan/' . 'subscriber.php';
 
 /**
  * Billing aggregator class for ilds records
@@ -13,7 +13,7 @@ require_once __DIR__ . '/../' . 'subscriber.php';
  * @package  calculator
  * @since    1.0
  */
-class aggregator_egsn extends aggregator {
+class Billrun_Aggregator_Egsn extends Billrun_Aggregator {
 
 	/**
 	 * execute aggregate
@@ -26,7 +26,7 @@ class aggregator_egsn extends aggregator {
 			$phone_number = preg_replace("/^19972/","",$item->get('served_msisdn'));
 			$time = $item->get('time_of_report');
 			// load subscriber
-			$subscriber = subscriber::get($phone_number, $time);
+			$subscriber = golan_subscriber::get($phone_number, $time);
 
 			if (!$subscriber) {
 				print "subscriber not found. phone_number:" . $phone_number . " time: " . $time . PHP_EOL;
