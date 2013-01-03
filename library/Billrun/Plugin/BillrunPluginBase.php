@@ -12,19 +12,19 @@
  * @package  plugin
  * @since    1.0
  */
-abstract class billrunPlugin extends Billrun_Spl_Observer {
+abstract class Billrun_Plugin_BillrunPluginBase extends Billrun_Spl_Observer {
 
 	/**
 	 * plugin name
-	 * 
-	 * @var string 
+	 *
+	 * @var string
 	 */
 	protected $name = 'Billrun';
 
 	/**
 	 * method to receive plugin name
 	 * this will be used by the subject (dispatcher)
-	 * 
+	 *
 	 * @return String The plugin name
 	 */
 	public function getName() {
@@ -33,7 +33,7 @@ abstract class billrunPlugin extends Billrun_Spl_Observer {
 
 	/**
 	 * method to set the plugin name
-	 * 
+	 *
 	 * @param string $name The plugin name
 	 */
 	public function setName($name) {
@@ -48,7 +48,7 @@ abstract class billrunPlugin extends Billrun_Spl_Observer {
 	 * returns null.
 	 *
 	 * @param   array  &$args  Arguments
-	 * 
+	 *
 	 * @return  mixed  Routine return value
 	 */
 	public function update(SplSubject $subject) {

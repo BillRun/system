@@ -13,7 +13,7 @@ require_once __DIR__ . '/../' . 'subscriber.php';
  * @package  calculator
  * @since    1.0
  */
-class aggregator_egsn extends aggregator {
+class Billrun_Aggregator_Egsn extends Billrun_Aggregator {
 
 	/**
 	 * execute aggregate

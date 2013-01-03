@@ -47,8 +47,8 @@ abstract class Billrun_Processor extends Billrun_Base {
 
 		parent::__construct($options);
 
-		if (isset($options['file_path'])) {
-			$this->loadFile($options['file_path']);
+		if (isset($options['path'])) {
+			$this->loadFile($options['path']);
 		}
 
 		if (isset($options['parser'])) {

@@ -1,6 +1,6 @@
 <?php
 
-class ilds013Plugin extends billrunPlugin {
-	
+class ilds013Plugin extends Billrun_Plugin_BillrunPluginBase {
+
 
 }
