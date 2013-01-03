@@ -12,7 +12,17 @@
  * @package  Billing
  * @since    1.0
  */
-class Billrun_Receiver_Files extends Billrun_Receiver {
+class Billrun_Receiver_Nrtrde extends Billrun_Receiver {
+
+	public function __construct($options) {
+		parent::__construct($options);
+		
+		if (isset($options['workspace'])) {
+			$this->workspace = $options['workspace'];
+		} else {
+			$this->workspace = $this->config->ilds->path;
+		}
+	}
 
 	/**
 	 * general function to receive
@@ -22,13 +32,13 @@ class Billrun_Receiver_Files extends Billrun_Receiver {
 	public function receive() {
 
 		foreach ($this->config->providers->toArray() as $type) {
-			if (!file_exists($this->workPath . DIRECTORY_SEPARATOR . $type)) {
-				print("NOTICE : SKIPPING $type !!! directory " . $this->workPath . DIRECTORY_SEPARATOR . $type . " not found!!");
+			if (!file_exists($this->workspace . DIRECTORY_SEPARATOR . $type)) {
+				print("NOTICE : SKIPPING $type !!! directory " . $this->workspace . DIRECTORY_SEPARATOR . $type . " not found!!");
 				continue;
 			}
-			$files = scandir($this->workPath . DIRECTORY_SEPARATOR . $type);
+			$files = scandir($this->workspace . DIRECTORY_SEPARATOR . $type);
 			foreach ($files as $file) {
-				$path = $this->workPath . DIRECTORY_SEPARATOR . $type . DIRECTORY_SEPARATOR . $file;
+				$path = $this->workspace . DIRECTORY_SEPARATOR . $type . DIRECTORY_SEPARATOR . $file;
 				if (is_dir($path) || $this->isFileProcessed($file, $type)) {
 					continue;
 				}
@@ -37,7 +47,7 @@ class Billrun_Receiver_Files extends Billrun_Receiver {
 			}
 		}
 	}
-	
+
 	/**
 	 * Process an ILD file
 	 * @param $filePath  Path to the filethat needs processing.
@@ -56,14 +66,15 @@ class Billrun_Receiver_Files extends Billrun_Receiver {
 		if ($processor) {
 			$processor->process();
 		} else {
-			echo "error with loading processor" . PHP_EOL;
+			$this->log->log("error with loading processor", Zend_log::ERR);
+			return false;
 		}
 
 		$data = $processor->getData();
-		//print result
-		print "type: " . $type . PHP_EOL
-			. "file path: " . $filePath . PHP_EOL
-			. (isset($data['data']) ? "import lines: " . count($data['data']) : "no data received") . PHP_EOL;
+
+		$this->log->log("Process type: " . $type, Zend_log::INFO);
+		$this->log->log("file path: " . $filePath, Zend_log::INFO);
+		$this->log->log((isset($data['data']) ? "import lines: " . count($data['data']) : "no data received"), Zend_log::INFO);
 	}
 
 	/**

@@ -12,7 +12,28 @@
  * @package  Billing
  * @since    1.0
  */
-class Billrun_Receiver_Files extends Billrun_Receiver {
+class Billrun_Receiver_Nrtrde extends Billrun_Receiver {
+	
+	/**
+	 * resource to the ftp server
+	 * 
+	 * @var Zend_Ftp
+	 */
+	protected $ftp = null;
+
+
+	public function __construct($options) {
+		parent::__construct($options);
+
+		if (isset($options['workspace'])) {
+			$this->workspace = $options['workspace'];
+		} else {
+			$this->workspace = $this->config->nrtrde->workspace;
+		}
+		
+		$this->ftp = new Zend_Ftp($this->config->nrtrde->ftp['host'], $this->config->nrtrde->ftp['user'], $this->config->nrtrde->ftp['password']);
+		
+	}
 
 	/**
 	 * general function to receive
@@ -21,23 +42,36 @@ class Billrun_Receiver_Files extends Billrun_Receiver {
 	 */
 	public function receive() {
 
-		foreach ($this->config->providers->toArray() as $type) {
-			if (!file_exists($this->workPath . DIRECTORY_SEPARATOR . $type)) {
-				print("NOTICE : SKIPPING $type !!! directory " . $this->workPath . DIRECTORY_SEPARATOR . $type . " not found!!");
-				continue;
-			}
-			$files = scandir($this->workPath . DIRECTORY_SEPARATOR . $type);
-			foreach ($files as $file) {
-				$path = $this->workPath . DIRECTORY_SEPARATOR . $type . DIRECTORY_SEPARATOR . $file;
-				if (is_dir($path) || $this->isFileProcessed($file, $type)) {
-					continue;
-				}
+		// get files from ftp server
+		$this->download();
+		// extract
+		// send to process
+	}
 
-				$this->processFile($path, $type);
+	protected function download() {
+		$directory = $this->ftp->getCurrentDirectory();
+		$contents = $directory->getContents();
+		print_R($contents);die;
+		// Alternatively with chaining
+//		$contents = Zend_Ftp::connect($host, $username, $password)
+//			->getCurrentDirectory()
+//			->getContents()
+//		;
+
+		foreach ($contents as $content) {
+			if ($content->isFile()) {
+				echo 'File: ' . $content->name . '<br />';
+			} else {
+				echo 'Directory: ' . $content->name . '<br />';
 			}
 		}
+
+		$file = $ftp->getFile('/foo/bar.txt');
+		$file->saveToPath('data');
+		
+		$ftp->getCurrentDirectory()->changeDirectory('foo')->saveContentsToPath('data');
 	}
-	
+
 	/**
 	 * Process an ILD file
 	 * @param $filePath  Path to the filethat needs processing.
@@ -54,7 +88,7 @@ class Billrun_Receiver_Files extends Billrun_Receiver {
 
 		$processor = processor::getInstance($options);
 		if ($processor) {
-			$processor->process();
+			$ret = $processor->process();
 		} else {
 			echo "error with loading processor" . PHP_EOL;
 		}

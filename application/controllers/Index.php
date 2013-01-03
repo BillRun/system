@@ -15,7 +15,7 @@
 class IndexController extends Yaf_Controller_Abstract {
 
 	protected $eol = PHP_EOL;
-	protected $possibleActions = array('receive','process','calculate','aggregate','generate');
+	protected $possibleActions = array('receive', 'process', 'calculate', 'aggregate', 'generate');
 
 	public function indexAction() {
 		$this->getView()->content = "Open Source Last Forever!";
@@ -25,6 +25,7 @@ class IndexController extends Yaf_Controller_Abstract {
 		$this->outputAdd("Running Billrun from CLI!");
 		try {
 			$input = array(
+				'r|R|receive' => 'Process files into database',
 				'p|P|process' => 'Process files into database',
 				'c|C|calc|calculate' => 'Calculate lines in database',
 				'a|A|aggregate' => 'Aggregate lines for billrun',
@@ -45,9 +46,9 @@ class IndexController extends Yaf_Controller_Abstract {
 		}
 
 		//Go through all actions and run the first one that was selected
-		foreach($this->possibleActions as $val) {
+		foreach ($this->possibleActions as $val) {
 			if (isset($opts->{$val})) {
-				$this->outputAdd(ucfirst($val)."...");
+				$this->outputAdd(ucfirst($val) . "...");
 				$this->{$val}($opts);
 				return;
 			}
@@ -62,12 +63,21 @@ class IndexController extends Yaf_Controller_Abstract {
 	}
 
 	protected function receive($opts) {
+		$posibleOptions = array(
+			'type' => false,
+			'workspace' => "./",
+		);
 
+		$options = $this->getInstanceOptions($opts, $posibleOptions);
+		$receiver = Billrun_Receiver::getInstance($options);
+		$receiver->receive();
 	}
 
 	protected function process($opts) {
-		$options =$this->getInstanceOptions($opts);
-		if(!$options) {return;}
+		$options = $this->getInstanceOptions($opts);
+		if (!$options) {
+			return;
+		}
 
 		$this->outputAdd("Parser selected: " . $options['parser']);
 		$options['parser'] = Billrun_Parser::getInstance(array('type' => $options['parser']));
@@ -93,8 +103,10 @@ class IndexController extends Yaf_Controller_Abstract {
 	}
 
 	protected function calculate($opts) {
-		$options =$this->getInstanceOptions($opts);
-		if(!$options) {return;}
+		$options = $this->getInstanceOptions($opts);
+		if (!$options) {
+			return;
+		}
 
 		$this->outputAdd("Loading Calculator");
 		$calculator = Billrun_Calculator::getInstance($options);
@@ -120,8 +132,10 @@ class IndexController extends Yaf_Controller_Abstract {
 	}
 
 	protected function aggregate($opts) {
-		$options =$this->getInstanceOptions($opts);
-		if(!$options) {return;}
+		$options = $this->getInstanceOptions($opts);
+		if (!$options) {
+			return;
+		}
 
 		$this->outputAdd("Loading aggregator");
 		$aggregator = Billrun_Aggregator::getInstance($options);
@@ -143,8 +157,10 @@ class IndexController extends Yaf_Controller_Abstract {
 	}
 
 	protected function generate($opts) {
-		$options =$this->getInstanceOptions($opts);
-		if(!$options) {return;}
+		$options = $this->getInstanceOptions($opts);
+		if (!$options) {
+			return;
+		}
 
 		$this->outputAdd("Loading aggregator");
 		$aggregator = Billrun_Aggregator::getInstance($options);
@@ -165,23 +181,25 @@ class IndexController extends Yaf_Controller_Abstract {
 		}
 	}
 
-	protected function getInstanceOptions($opts,$posibleOptions = false) {
-		$posibleOptions = $posibleOptions ? $posibleOptions : array(	'type'=> false,
-										'stamp' => false,
-										'path' =>  "./",
-										'parser' => 'fixed' );
+	protected function getInstanceOptions($opts, $posibleOptions = false) {
+		if (!$posibleOptions) {
+			$posibleOptions = array(
+				'type' => false,
+				'stamp' => false,
+				'path' => "./",
+				'parser' => 'fixed');
+		}
 		$options = array();
-		foreach($posibleOptions as $key => $defVal) {
+		foreach ($posibleOptions as $key => $defVal) {
 			$options[$key] = $opts->getOption($key);
-			if (empty($options[$key]) ) {
-				if(!$defVal) {
+			if (empty($options[$key])) {
+				if (!$defVal) {
 					$this->outputAdd("Error: No $key selected");
 					return null;
 				} else {
 					$options[$key] = $defVal;
 				}
 			}
-
 		}
 		return $options;
 	}

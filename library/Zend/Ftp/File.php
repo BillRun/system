@@ -119,7 +119,7 @@ class Zend_Ftp_File {
 		}
 		$get = @ftp_get($this->_ftp->getConnection(), $file, $this->_path, $mode, $offset);
 		if ($get === false) {
-//throw new Zend_Ftp_File_Exception('Unable to save file "' . $this->path . '"')
+			//throw new Zend_Ftp_File_Exception('Unable to save file "' . $this->path . '"')
 		}
 
 		return $this;
@@ -139,7 +139,7 @@ class Zend_Ftp_File {
 		}
 		$put = @ftp_put($this->_ftp->getConnection(), $this->_path, $localFilepath, $mode, $startPos);
 		if ($put === false) {
-//throw new Zend_Ftp_File_Exception('Unable to put file "' . $this->path . '"')
+			//throw new Zend_Ftp_File_Exception('Unable to put file "' . $this->path . '"')
 		}
 
 		return $this;
@@ -164,7 +164,7 @@ class Zend_Ftp_File {
 	 * @return Zend_Ftp_File
 	 */
 	public function rename($filename) {
-// ftp_rename
+		// ftp_rename
 
 		return $this;
 	}
@@ -176,7 +176,7 @@ class Zend_Ftp_File {
 	 * @return Zend_Ftp_File
 	 */
 	public function copy($filename) {
-// copy
+		// copy
 	}
 
 	/**
@@ -186,7 +186,7 @@ class Zend_Ftp_File {
 	 * @return Zend_Ftp_File
 	 */
 	public function move($path) {
-// move
+		// move
 
 		return $this;
 	}
@@ -197,7 +197,7 @@ class Zend_Ftp_File {
 	 * @return Zend_Ftp_File
 	 */
 	public function delete() {
-// delete
+		// delete
 
 		return $this;
 	}
@@ -208,7 +208,7 @@ class Zend_Ftp_File {
 	 * @return boolean
 	 */
 	public function exists() {
-// Unfinished
+		// Unfinished
 	}
 
 }

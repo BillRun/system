@@ -15,21 +15,10 @@
 abstract class Billrun_Receiver extends Billrun_Base {
 
 	/**
-	 * the receiver workspace of files
+	 * the receiver workspace path of files
 	 * @var string directory path
 	 */
-	protected $workPath;
-
-	public function __construct($options) {
-
-		parent::__construct($options);
-
-		if (isset($options['workspace'])) {
-			$this->workPath = $options['workspace'];
-		} else {
-			$this->workPath = $this->config->ilds->path;
-		}
-	}
+	protected $workspace;
 
 	/**
 	 * general function to receive
