@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 /**
  * @package			Billing
@@ -12,7 +12,7 @@
  * @package  Billing
  * @since    1.0
  */
-class Billrun_Processor_Type_Egsn extends Billrun_Processor_Binary {
+class Billrun_Processor_Egsn extends Billrun_Processor_Base_Binary {
 
 	protected $type = 'egsn';
 

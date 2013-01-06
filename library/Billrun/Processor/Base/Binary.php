@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 /**
  * @package			Billing
@@ -12,7 +12,7 @@
  * @package  Billing
  * @since    1.0
  */
-abstract class Billrun_Processor_Binary extends Billrun_Processor {
+abstract class Billrun_Processor_Base_Binary extends Billrun_Processor {
 
 	/**
 	 * create an header record

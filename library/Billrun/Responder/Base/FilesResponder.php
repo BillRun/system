@@ -12,7 +12,7 @@
  * @package  Billing
  * @since    1.0
  */
-abstract class Billrun_Responder_FilesResponderBase extends Billrun_Responder {
+abstract class Billrun_Responder_Base_FilesResponder extends Billrun_Responder {
 
 	/**
 	 * the responder export base path.

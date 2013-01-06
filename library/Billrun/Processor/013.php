@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 /**
  * @package         Billing
@@ -12,7 +12,7 @@
  * @package  Billing
  * @since    1.0
  */
-class Billrun_Processor_Type_013 extends Billrun_Processor_Ilds {
+class Billrun_Processor_013 extends Billrun_Processor_Base_Ilds {
 
 	protected $type = '013';
 

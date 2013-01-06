@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 /**
  * @package         Billing
@@ -12,9 +12,9 @@
  * @package  Billing
  * @since    1.0
  */
-class Billrun_Processor_Type_014 extends Billrun_Processor_Ilds {
+class Billrun_Processor_018 extends Billrun_Processor_Base_Ilds {
 
-	protected $type = '014';
+	protected $type = '018';
 
 	public function __construct($options) {
 
@@ -22,55 +22,48 @@ class Billrun_Processor_Type_014 extends Billrun_Processor_Ilds {
 
 		$this->data_structure = array(
 			'record_type' => 1,
-			'caller_msi' => 3,
-			'caller_phone_no' => 11,
-			'called_no' => 28,
-			'call_start_dt' => 8,
-			'call_start_tm' => 6,
+			'call_type' => 2,
+			'caller_phone_no' => 10,
+			'called_no' => 18,
+			'call_start_dt' => 14,
+			'call_end_dt' => 14,
 			'actual_call_dur' => 6,
 			'chrgbl_call_dur' => 6,
-			'units' => 6,
 			'call_charge_sign' => 1,
 			'call_charge' => 11,
 			'collection_ind' => 1,
-			'collection_ind2' => 1,
-			'provider_subscriber_type' => 1,
 			'record_status' => 2,
 			'sequence_no' => 6,
 			'correction_code' => 2,
-			'call_type' => 2,
 			'filler' => 96,
 		);
 
 
 		$this->header_structure = array(
 			'record_type' => 1,
-			'file_type' => 14,
-			'sending_company_id' => 3,
-			'receiving_company_id' => 3,
-			'sequence_no' => 5,
-			'file_creation_date' => 8,
-			'file_creation_time' => 6,
-			'file_received_date' => 8,
-			'file_received_time' => 6,
+			'file_type' => 3,
+			'sending_company_id' => 4,
+			'receiving_company_id' => 4,
+			'sequence_no' => 6,
+			'file_creation_date' => 14,
+			'file_received_date' => 14,
 			'file_status' => 2,
+			'version_no' => 2,
+			'filler' => 140,
 		);
 
 		$this->trailer_structure = array(
 			'record_type' => 1,
-			'file_type' => 14,
-			'sending_company_id' => 3,
-			'receiving_company_id' => 3,
-			'sequence_no' => 5,
-			'file_creation_date' => 8,
-			'file_creation_time' => 6,
-			'file_received_date' => 8,
-			'file_received_time' => 6,
+			'file_type' => 3,
+			'sending_company_id' => 4,
+			'receiving_company_id' => 4,
+			'sequence_no' => 6,
+			'file_creation_date' => 14,
 			'total_charge_sign' => 1,
-			'total_charge' => 16,
+			'total_charge' => 15,
 			'total_rec_no' => 6,
-			'total_valid_rec_no' => 6,
 			'total_err_rec_no' => 6,
+			'filler' => 130,
 		);
 	}
 

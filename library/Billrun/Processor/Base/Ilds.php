@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 /**
  * @package			Billing
@@ -12,7 +12,7 @@
  * @package  Billing
  * @since    1.0
  */
-class Billrun_Processor_Ilds extends Billrun_Processor {
+class Billrun_Processor_Base_Ilds extends Billrun_Processor {
 
 	/**
 	 * method to parse the data
