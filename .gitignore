@@ -2,3 +2,4 @@ files
 workspace
 mongo/*.json
 *~
+exports
