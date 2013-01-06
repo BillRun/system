@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 /**
  * @package         Billing
@@ -32,12 +32,10 @@ abstract class Billrun_Responder extends Billrun_Base {
 			$this->workPath = $this->config->ilds->path;
 		}
 
-		$this->exportDir = $options['path'];
-
 	}
 
 	/**
-	 * general function to respond to file that were recieved and processed
+	 * general function to receive
 	 *
 	 * @return mixed
 	 */
