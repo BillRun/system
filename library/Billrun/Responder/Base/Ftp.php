@@ -18,10 +18,21 @@ abstract class Billrun_Responder_Base_Ftp extends Billrun_Responder_Base_FilesRe
 	const UPLOAD_FILE_MODE = 0666;
 	protected $host = null;
 	protected $port = 21;
+	protected $username = "";
+	protected $password = "";
+
+	public function __construct($options) {
+
+		parent::__construct($options);
+		if($this->config->ftp) {
+			$this->username = $this->config->ftp->username;
+			$this->password = $this->config->ftp->password;
+		}
+	}
 
 	protected function respondAFile($responseFilePath, $fileName, $logLine) {
 		$ftpH = ftp_connect($this->host,$this->port, Billrun_Responder_Base_Ftp::TIMEOUT);
-		if($ftpH){
+		if($ftpH && ftp_login($ftpH, $this->username, $this->password) ) {
 			//upload  to the remote ftp.
 			$result = ftp_put($ftpH,$this->exportDir . $fileName, $responseFilePath, Billrun_Responder_Base_Ftp::UPLOAD_FILE_MODE );
 			ftp_close($ftpH);

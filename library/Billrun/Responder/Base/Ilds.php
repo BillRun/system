@@ -18,11 +18,12 @@ abstract class Billrun_Responder_Base_Ilds extends Billrun_Responder_Base_LocalD
 
 	protected function processFileForResponse($filePath,$logLine) {
 		$logLine = $logLine->getRawData();
+		$dbLines = $this->db->getCollection(self::lines_table)->query()->exists('billrun')->equals('file',$logLine['file']);
+		//run only after the lines were processed by the billrun.
+		if($dbLines->count() == 0) { return false; }
+
 		//save file to a temporary location
 		$responsePath = $this->workPath . rand();
-
-		$dbLines = $this->db->getCollection(self::lines_table)->query()->equals('file',$logLine['file']);
-
 		$srcFile = fopen($filePath,"r+");
 		$file = fopen($responsePath,"w");
 
@@ -42,7 +43,6 @@ abstract class Billrun_Responder_Base_Ilds extends Billrun_Responder_Base_LocalD
 
 	protected function updateHeader($line,$logLine) {
 		$line = trim($line);
-
 		return $line;
 
 	}

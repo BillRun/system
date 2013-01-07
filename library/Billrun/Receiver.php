@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 /**
  * @package         Billing
@@ -14,11 +14,14 @@
  */
 abstract class Billrun_Receiver extends Billrun_Base {
 
+
 	/**
 	 * the receiver workspace of files
 	 * @var string directory path
 	 */
 	protected $workPath;
+
+	protected $parser;
 
 	public function __construct($options) {
 
@@ -28,6 +31,10 @@ abstract class Billrun_Receiver extends Billrun_Base {
 			$this->workPath = $options['workspace'];
 		} else {
 			$this->workPath = $this->config->ilds->path;
+		}
+
+		if (isset($options['parser'])) {
+			$this->parser = $options['parser'];
 		}
 	}
 

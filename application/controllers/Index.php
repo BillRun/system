@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 /**
  * @package         Billing
@@ -30,10 +30,13 @@ class IndexController extends Yaf_Controller_Abstract {
 				'a|A|aggregate' => 'Aggregate lines for billrun',
 				'g|G|generate' => 'Generate xml and csv files of specific billrun',
 				'r|R|respond' => 'Respond to files that were processed',
+				'v|V|receive' => 'Respond to files that were processed',
 				'h|H|help' => 'Displays usage information.',
 				'type-s' => 'Process: Ild type to use',
 				'stamp-s' => 'Process: Stamp to use for this run',
 				'path-s' => 'Process: Path of the process file',
+				'export-path-s' => 'Respond: The path To export files',
+				'workspace-s' => 'The path to the workspace directory',
 				'parser-s' => 'Process: Parser type (default fixed)',
 			);
 
@@ -62,7 +65,29 @@ class IndexController extends Yaf_Controller_Abstract {
 	}
 
 	protected function receive($opts) {
+		$options =$this->getInstanceOptions($opts, array('type' => 'files','parser'=> 'fixed'));
+		if(!$options) {return;}
 
+		$this->outputAdd("Parser selected: " . $options['parser']);
+		$options['parser'] = Billrun_Parser::getInstance(array('type' => $options['parser']));
+
+
+		$this->outputAdd("Loading Receiver");
+		$revceiver = Billrun_Receiver::getInstance($options);
+		$this->outputAdd("Receiver loaded");
+
+		if ($revceiver) {
+			$this->outputAdd("Starting to receive. This action can take awhile...");
+
+			// buffer all action output
+			ob_start();
+			$revceiver->receive();
+			// write the buffer into log and output
+			$this->outputAdd(ob_get_contents());
+			ob_end_clean();
+		} else {
+			$this->outputAdd("Receiver cannot be loaded");
+		}
 	}
 
 	protected function process($opts) {
@@ -92,7 +117,7 @@ class IndexController extends Yaf_Controller_Abstract {
 
 	protected function respond($opts) {
 		$options =$this->getInstanceOptions($opts, array('type'=> false,
-								'path' =>  "./exports" ));
+								'export-path' => true));
 		if(!$options) {return;}
 
 		$this->outputAdd("Loading Responder");
@@ -101,20 +126,20 @@ class IndexController extends Yaf_Controller_Abstract {
 
 		if ($responder) {
 			// buffer all action output
-			//ob_start();
+			ob_start();
 
 			$responder->respond($options);
 
 			// write the buffer into log and output
 			$this->outputAdd(ob_get_contents());
-			//ob_end_clean();
+			ob_end_clean();
 		} else {
 			$this->outputAdd("Responder cannot be loaded");
 		}
 	}
 
 	protected function calculate($opts) {
-		$options =$this->getInstanceOptions($opts);
+		$options =$this->getInstanceOptions($opts,array('type'=>false));
 		if(!$options) {return;}
 
 		$this->outputAdd("Loading Calculator");
@@ -150,7 +175,7 @@ class IndexController extends Yaf_Controller_Abstract {
 
 		if ($aggregator) {
 			// buffer all action output
-			ob_start();
+			ob_start(FALSE,16384);
 			$this->outputAdd("Loading data to Aggregate...");
 			$aggregator->load();
 			$this->outputAdd("Starting to Aggregate. This action can take awhile...");
@@ -187,7 +212,7 @@ class IndexController extends Yaf_Controller_Abstract {
 	}
 
 	protected function getInstanceOptions($opts,$posibleOptions = false) {
-		$posibleOptions = $posibleOptions ? $posibleOptions : array(	'type'=> false,
+		$posibleOptions = (false !== $posibleOptions) ? $posibleOptions : array(	'type'=> false,
 										'stamp' => true,
 										'path' =>  "./",
 										'parser' => 'fixed' );

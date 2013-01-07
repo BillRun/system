@@ -74,4 +74,18 @@ class Billrun_Processor_014 extends Billrun_Processor_Base_Ilds {
 		);
 	}
 
+	/**
+	 * Check is a given data record is a valid record.
+	 * @param $dataLine a structure containing the data record as it will be saved to the DB.
+	 * @return true (by default) if the line is valid or false if theres some problem.
+	 */
+	protected function isValidDataRecord($dataLine) {
+		$itOnUsDate = date_create("1/7/2012");
+		$dataLineCreateDate = date_create_from_format("YmdHis", $dataLine['call_start_dt']);
+		if($dataLineCreateDate && intval($itOnUsDate->diff($dataLineCreateDate)->format("%r%d")) < 0) {
+			print("!!!!!!");
+		}
+		return $dataLineCreateDate && intval($itOnUsDate->diff($dataLineCreateDate)->format("%r%d")) < 0;
+	}
+
 }

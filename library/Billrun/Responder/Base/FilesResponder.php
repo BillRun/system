@@ -24,10 +24,8 @@ abstract class Billrun_Responder_Base_FilesResponder extends Billrun_Responder {
 
 		parent::__construct($options);
 
-
-
-		if (isset($options['path'])) {
-			$this->exportDir = $options['path'];
+		if (isset($options['export-path'])) {
+			$this->exportDir = $options['export-path'];
 		} else {
 			$this->exportDir = $this->config->response->export->path;
 		}
@@ -48,7 +46,9 @@ abstract class Billrun_Responder_Base_FilesResponder extends Billrun_Responder {
 			}
 
 			$responseFilePath = $this->processFileForResponse($filePath, $logLine,$filename);
-			$this->respondAFile($responseFilePath,$filename,$logLine);
+			if($responseFilePath) {
+				$this->respondAFile($responseFilePath,$filename,$logLine);
+			}
 		}
 	}
 

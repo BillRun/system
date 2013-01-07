@@ -1,11 +1,11 @@
-<?php
+﻿<?php
 
 /**
  * @package         Billing
  * @copyright       Copyright (C) 2012 S.D.O.C. LTD. All rights reserved.
  * @license         GNU General Public License version 2 or later; see LICENSE.txt
  */
-require_once __DIR__ . '/../' . 'subscriber.php';
+require_once __DIR__ . '/../../../application/golan/' . 'subscriber.php';
 
 /**
  * Billing aggregator class for ilds records
@@ -25,7 +25,7 @@ class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 			$phone_number = $item->get('caller_phone_no');
 			$time = $item->get('call_start_dt');
 			// load subscriber
-			$subscriber = subscriber::get($phone_number, $time);
+			$subscriber = golan_subscriber::get($phone_number, $time);
 
 			if (!$subscriber) {
 				print "subscriber not found. phone:" . $phone_number . " time: " . $time . PHP_EOL;

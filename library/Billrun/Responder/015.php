@@ -55,7 +55,11 @@ class Billrun_Responder_015 extends Billrun_Responder_Base_Ilds {
 			'total_charge_sign' => '%1s',
 			'total_charge' => '%15s',
 			'total_rec_no' => '%6s',
-			'total_err_rec_no' => '%6s',
 		);	}
 
+	protected function updateTrailer($logLine) {
+		$line = parent::updateTrailer($logLine);
+		$line.=  sprintf("%06s",$this->linesErrors);
+		return $line;
+	}
 }

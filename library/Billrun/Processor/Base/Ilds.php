@@ -82,7 +82,9 @@ class Billrun_Processor_Base_Ilds extends Billrun_Processor {
 					if (isset($row['country_desc'])) {
 						$row['country_desc'] = mb_convert_encoding($row['country_desc'], 'UTF-8', 'ISO-8859-8');
 					}
-					$this->data['data'][] = $row;
+					if($this->isValidDataRecord($row)) {
+						$this->data['data'][] = $row;
+					}
 
 					break;
 				default:
@@ -93,4 +95,13 @@ class Billrun_Processor_Base_Ilds extends Billrun_Processor {
 		return true;
 	}
 
+	/**
+	 * Check is a given data record is a valid record.
+	 * @param $dataLine a structure containing the data record as it will be saved to the DB.
+	 * @return true (by default) if the line is valid or false if theres some problem.
+	 */
+	protected function isValidDataRecord($dataLine) {
+		return true;
+
+	}
 }

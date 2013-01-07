@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 /**
  * @package         Billing
@@ -16,22 +16,22 @@ class Billrun_Dispatcher extends Billrun_Spl_Subject {
 
 	/**
 	 * dispatcher singleton instance (singleton)
-	 * 
-	 * @var Billrun_Dispatcher 
+	 *
+	 * @var Billrun_Dispatcher
 	 */
 	static protected $instance = array();
 
 	/**
 	 * arguments send to the observers
-	 * 
-	 * @var array 
+	 *
+	 * @var array
 	 */
 	protected $args = array();
 
 	/**
 	 * the event which trigger to the observers
-	 * 
-	 * @var string 
+	 *
+	 * @var string
 	 */
 	protected $event;
 
@@ -39,7 +39,7 @@ class Billrun_Dispatcher extends Billrun_Spl_Subject {
 	 * Singleton/Bridge pattern
 	 * By default it will take self instance
 	 * If require special dispatcher type will be passed in the params array
-	 * 
+	 *
 	 * @param array $params paramters of the instance
 	 * @return type
 	 */
@@ -73,7 +73,7 @@ class Billrun_Dispatcher extends Billrun_Spl_Subject {
 	public function notify() {
 		$ret = array();
 		foreach ($this->observers as $observer) {
-			$ret[$observer->getName()] = $observer->update();
+			$ret[$observer->getName()] = $observer->update($this);
 		}
 		return $ret;
 	}
@@ -98,18 +98,18 @@ class Billrun_Dispatcher extends Billrun_Spl_Subject {
 
 	/**
 	 * method to get the arguments of the object
-	 * 
-	 * @return array the arguments of the object	
+	 *
+	 * @return array the arguments of the object
 	 */
-	protected function getArgs() {
+	public function getArgs() {
 		return $this->args;
 	}
 
 	/**
 	 * method to set the arguments of the object
-	 * 
+	 *
 	 * @param array $args arguments to set the object
-	 * 
+	 *
 	 * @return Dispatcher self instance
 	 */
 	protected function setArgs(array $args) {
@@ -119,18 +119,18 @@ class Billrun_Dispatcher extends Billrun_Spl_Subject {
 
 	/**
 	 * method to get the event of the object
-	 * 
-	 * @return string the event of the object	
+	 *
+	 * @return string the event of the object
 	 */
-	protected function getEvent() {
+	public function getEvent() {
 		return $this->event;
 	}
 
 	/**
 	 * method to set the event of the object
-	 * 
+	 *
 	 * @param string $event event to set the object
-	 * 
+	 *
 	 * @return Dispatcher self instance
 	 */
 	protected function setEvent($event) {

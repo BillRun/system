@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 /**
  * @package         Billing
@@ -47,12 +47,12 @@ class Billrun_Receiver_Files extends Billrun_Receiver {
 
 		$options = array(
 			'type' => $type,
-			'file_path' => $filePath,
-			'parser' => parser::getInstance(array('type' => 'fixed')),
+			'path' => $filePath,
+			'parser' => Billrun_Parser::getInstance(array('type' => 'fixed')),
 			'db' => $this->db,
 		);
 
-		$processor = processor::getInstance($options);
+		$processor = Billrun_Processor::getInstance($options);
 		if ($processor) {
 			$ret = $processor->process();
 		} else {
