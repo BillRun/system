@@ -15,6 +15,8 @@
 abstract class Billrun_Responder_Base_Ilds extends Billrun_Responder_Base_LocalDir {
 
 	protected $linesErrors = 0;
+	protected $linesCount = 0;
+	protected $totalChargeAmount = 0;
 
 	protected function processFileForResponse($filePath,$logLine) {
 		$logLine = $logLine->getRawData();
@@ -31,6 +33,8 @@ abstract class Billrun_Responder_Base_Ilds extends Billrun_Responder_Base_LocalD
 		fputs($file,$this->updateHeader(fgets($srcFile),$logLine)."\n");
 		foreach($dbLines as $dbLine) {
 			//alter data line
+			$this->linesCount++;
+			$this->totalChargeAmount += intval($dbLine->get('call_charge'));
 			fputs($file,$this->updateLine($dbLine->getRawData(),$logLine)."\n");
 		}
 		//alter trailer

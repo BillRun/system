@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 /**
  * @package         Billing
@@ -229,7 +229,7 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 	}
 
 	protected function basic_xml() {
-		$xml_path = BASEDIR . '/files/ilds.xml';
+		$xml_path = $this->config->ilds->export . 'ilds.xml';
 		return simplexml_load_file($xml_path);
 	}
 

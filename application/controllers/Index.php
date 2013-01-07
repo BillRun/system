@@ -62,6 +62,7 @@ class IndexController extends Yaf_Controller_Abstract {
 	protected function outputAdd($content) {
 		Billrun_Log::getInstance()->log($content . PHP_EOL, Zend_Log::INFO);
 		$this->getView()->output .= $content . $this->eol;
+
 	}
 
 	protected function receive($opts) {
@@ -91,7 +92,9 @@ class IndexController extends Yaf_Controller_Abstract {
 	}
 
 	protected function process($opts) {
-		$options =$this->getInstanceOptions($opts);
+		$options =$this->getInstanceOptions($opts,array('type'=> false,
+								'path' => false,
+								'parser' => 'fixed' ));
 		if(!$options) {return;}
 
 		$this->outputAdd("Parser selected: " . $options['parser']);
@@ -166,30 +169,8 @@ class IndexController extends Yaf_Controller_Abstract {
 	}
 
 	protected function aggregate($opts) {
-		$options =$this->getInstanceOptions($opts);
-		if(!$options) {return;}
-
-		$this->outputAdd("Loading aggregator");
-		$aggregator = Billrun_Aggregator::getInstance($options);
-		$this->outputAdd("Aggregator loaded");
-
-		if ($aggregator) {
-			// buffer all action output
-			ob_start(FALSE,16384);
-			$this->outputAdd("Loading data to Aggregate...");
-			$aggregator->load();
-			$this->outputAdd("Starting to Aggregate. This action can take awhile...");
-			$aggregator->aggregate();
-			// write the buffer into log and output
-			$this->outputAdd(ob_get_contents());
-			ob_end_clean();
-		} else {
-			$this->outputAdd("Aggregator cannot be loaded");
-		}
-	}
-
-	protected function generate($opts) {
-		$options =$this->getInstanceOptions($opts);
+		$options =$this->getInstanceOptions($opts,array( 'type'=> false,
+								'stamp' => false,));
 		if(!$options) {return;}
 
 		$this->outputAdd("Loading aggregator");
@@ -211,9 +192,33 @@ class IndexController extends Yaf_Controller_Abstract {
 		}
 	}
 
+	protected function generate($opts) {
+		$options =$this->getInstanceOptions($opts,array( 'type'=> false,
+								'stamp' => false,));
+		if(!$options) {return;}
+
+		$this->outputAdd("Loading generator");
+		$generator = Billrun_Generator::getInstance($options);
+		$this->outputAdd("Generator loaded");
+
+		if ($generator) {
+			// buffer all action output
+			ob_start();
+			$this->outputAdd("Loading data to Generate...");
+			$generator->load();
+			$this->outputAdd("Starting to Generate. This action can take awhile...");
+			$generator->generate();
+			// write the buffer into log and output
+			$this->outputAdd(ob_get_contents());
+			ob_end_clean();
+		} else {
+			$this->outputAdd("Aggregator cannot be loaded");
+		}
+	}
+
 	protected function getInstanceOptions($opts,$posibleOptions = false) {
 		$posibleOptions = (false !== $posibleOptions) ? $posibleOptions : array(	'type'=> false,
-										'stamp' => true,
+										'stamp' => date_format(new DateTime('now'),"YmdH"),
 										'path' =>  "./",
 										'parser' => 'fixed' );
 		$options = array();
@@ -223,7 +228,7 @@ class IndexController extends Yaf_Controller_Abstract {
 				if(!$defVal) {
 					$this->outputAdd("Error: No $key selected");
 					return null;
-				} else {
+				} else if(true !== $defVal){
 					$options[$key] = $defVal;
 				}
 			}
