@@ -52,10 +52,13 @@ class Zend_Ftp_Directory_Iterator implements SeekableIterator, Countable, ArrayA
 	 */
 	public function __construct($dir, $ftp) {
 		$this->_dir = $dir;
-		$this->_filter = $filter;
 		$this->_ftp = $ftp;
 
-		$lines = @ftp_rawlist($this->_ftp->getConnection(), $dir);
+		$lines = @ftp_rawlist($this->_ftp->getConnection(), $this->_dir);
+
+		if (!is_array($lines)) {
+			return false;
+		}
 
 		foreach ($lines as $line) {
 			preg_match('/^([\-dl])([rwx\-]+)\s+(\d+)\s+(\w+)\s+(\w+)\s+(\d+)\s+(\w+\s+\d+\s+[\d\:]+)\s+(.*)$/', $line, $matches);
