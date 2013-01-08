@@ -19,12 +19,18 @@
  */
 class Billrun_Processor_Type_Nrtrde extends Billrun_Processor_Separator {
 
-	protected $type = 'nrtrde';
+	/**
+	 * the type of the object
+	 *
+	 * @var string
+	 */
+	static protected $type = 'nrtrde';
 
 	public function __construct($options) {
 		parent::__construct($options);
 		
 		$this->header_structure = array(
+			'record_type',
 			'specificationVersionNumber',
 			'releaseVersionNumber',
 			'sender',
@@ -34,7 +40,9 @@ class Billrun_Processor_Type_Nrtrde extends Billrun_Processor_Separator {
 			'utcTimeOffset',
 			'callEventsCount',
 		);
+		
 		$this->moc_structure = array(
+			'record_type',
 			'imsi',
 			'imei',
 			'callEventStartTimeStamp',
@@ -53,6 +61,7 @@ class Billrun_Processor_Type_Nrtrde extends Billrun_Processor_Separator {
 		);
 
 		$this->mtc_structure = array(
+			'record_type',
 			'imsi',
 			'imei',
 			'callEventStartTimeStamp',
@@ -84,6 +93,33 @@ class Billrun_Processor_Type_Nrtrde extends Billrun_Processor_Separator {
 	 */
 	protected function getDataOptions() {
 		return array('20', 'MOC', '30', 'MTC');
+	}
+
+	/**
+	 * method to parse data
+	 * 
+	 * @param array $line data line
+	 * 
+	 * @return array the data array
+	 */
+	protected function parseData($line) {
+		if (!isset($this->data['header'])) {
+			$this->log->log("No header found", Zend_Log::ERR);
+			return false;
+		}
+
+		$data_type = strtolower($this->getLineType($line, $this->parser->getSeparator())); // can be moc or mtc
+		$this->parser->setStructure($this->{$data_type . "_structure"}); // for the next iteration
+		$this->parser->setLine($line);
+		$this->dispatcher->trigger('beforeDataParsing', array($line, $this));
+		$row = $this->parser->parse();
+		$row['type'] = static::$type;
+		$row['header_stamp'] = $this->data['header']['stamp'];
+		$row['file'] = basename($this->filePath);
+		$row['process_time'] = date(self::base_dateformat);
+		$this->dispatcher->trigger('afterDataParsing', array($row, $this));
+		$this->data['data'][] = $row;
+		return $row;
 	}
 
 }

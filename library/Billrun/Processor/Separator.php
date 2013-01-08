@@ -19,7 +19,7 @@
  */
 class Billrun_Processor_Separator extends Billrun_Processor {
 
-	protected $type = 'separator';
+	static protected $type = 'separator';
 
 	public function __construct($options) {
 		parent::__construct($options);
@@ -46,7 +46,7 @@ class Billrun_Processor_Separator extends Billrun_Processor {
 		}
 
 		$headerOptions = $this->getHeaderOptions();
-		$dataOptions = $this->getDeaderOptions();
+		$dataOptions = $this->getDataOptions();
 		$footerOptions = $this->getFooterOptions();
 		
 		while ($line = $this->getLine()) {
@@ -62,6 +62,7 @@ class Billrun_Processor_Separator extends Billrun_Processor {
 				$this->log->log("Billrun_Processor_Separator: cannot identify record type " . $record_type, Zend_Log::WARN);
 			}
 		}
+
 		return true;
 	}
 
@@ -118,7 +119,7 @@ class Billrun_Processor_Separator extends Billrun_Processor {
 		$this->parser->setLine($line);
 		$this->dispatcher->trigger('beforeHeaderParsing', array($line, $this));
 		$header = $this->parser->parse();
-		$header['type'] = $this->type;
+		$header['type'] = static::$type;
 		$header['file'] = basename($this->filePath);
 		$header['process_time'] = date(self::base_dateformat);
 		$this->dispatcher->trigger('afterHeaderParsing', array($header, $this));
@@ -143,7 +144,7 @@ class Billrun_Processor_Separator extends Billrun_Processor {
 		$this->parser->setLine($line);
 		$this->dispatcher->trigger('beforeDataParsing', array($line, $this));
 		$row = $this->parser->parse();
-		$row['type'] = $this->type;
+		$row['type'] = static::$type;
 		$row['header_stamp'] = $this->data['header']['stamp'];
 		$row['file'] = basename($this->filePath);
 		$row['process_time'] = date(self::base_dateformat);
@@ -170,7 +171,7 @@ class Billrun_Processor_Separator extends Billrun_Processor {
 		$this->parser->setLine($line);
 		$this->dispatcher->trigger('beforeFooterParsing', array($line, $this));
 		$trailer = $this->parser->parse();
-		$trailer['type'] = $this->type;
+		$trailer['type'] = static::$type;
 		$trailer['header_stamp'] = $this->data['header']['stamp'];
 		$trailer['file'] = basename($this->filePath);
 		$trailer['process_time'] = date('Y-m-d h:i:s');

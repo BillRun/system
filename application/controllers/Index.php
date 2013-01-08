@@ -91,15 +91,19 @@ class IndexController extends Yaf_Controller_Abstract {
 	}
 
 	protected function process($opts) {
-		$options = $this->getInstanceOptions($opts);
+		$posibleOptions = array(
+			'type' => false,
+			'path' => false,
+			'parser' => false,
+		);
+
+		$options = $this->getInstanceOptions($opts, $posibleOptions);
 		if (!$options) {
 			return;
 		}
 
 		$this->outputAdd("Parser selected: " . $options['parser']);
 		$options['parser'] = Billrun_Parser::getInstance(array('type' => $options['parser']));
-
-		$this->outputAdd("Parser selected: " . $parser);
 
 		$this->outputAdd("Loading processor");
 		$processor = Billrun_Processor::getInstance($options);
@@ -110,8 +114,9 @@ class IndexController extends Yaf_Controller_Abstract {
 
 			// buffer all action output
 			ob_start();
-			$processor->process();
+			$lines = $processor->process();
 			// write the buffer into log and output
+			$this->outputAdd("Parsed " . count($lines) . " files");
 			$this->outputAdd(ob_get_contents());
 			ob_end_clean();
 		} else {

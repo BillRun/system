@@ -14,8 +14,13 @@
  */
 abstract class Billrun_Parser extends Billrun_Base {
 
-	protected $type = "parser";
-	
+	/**
+	 * the type of the object
+	 *
+	 * @var string
+	 */
+	static protected $type = "parser";
+
 	/**
 	 *
 	 * @var string the line to parse 

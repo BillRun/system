@@ -15,6 +15,13 @@
 abstract class Billrun_Processor extends Billrun_Base {
 
 	/**
+	 * the type of the object
+	 *
+	 * @var string
+	 */
+	static protected $type = 'processor';
+
+	/**
 	 * the file path to process on
 	 * @var file path
 	 */
@@ -47,8 +54,8 @@ abstract class Billrun_Processor extends Billrun_Base {
 
 		parent::__construct($options);
 
-		if (isset($options['file_path'])) {
-			$this->loadFile($options['file_path']);
+		if (isset($options['path'])) {
+			$this->loadFile($options['path']);
 		}
 
 		if (isset($options['parser'])) {
@@ -67,28 +74,28 @@ abstract class Billrun_Processor extends Billrun_Base {
 	public function process() {
 
 		$this->dispatcher->trigger('beforeProcessorParsing', array($this));
-		
-		if (!$this->parse()) {
+
+		if ($this->parse() === FALSE) {
 			$this->log->log("Billrun_Processor: cannot parse", Zend_Log::ERR);
 			return false;
 		}
 
 		$this->dispatcher->trigger('afterProcessorParsing', array($this));
 
-		if (!$this->logDB()) {
+		if ($this->logDB() === FALSE) {
 			$this->log->log("Billrun_Processor: cannot log parsing action", Zend_Log::WARN);
 		}
 
 		$this->dispatcher->trigger('beforeProcessorStore', array($this));
-		
-		if (!$this->store()) {
-			$this->log->log("Billrun_Processor: cannot store the parser output", Zend_Log::ERR);
+
+		if ($this->store() === FALSE) {
+			$this->log->log("Billrun_Processor: cannot store the parser lines", Zend_Log::ERR);
 			return false;
 		}
 
 		$this->dispatcher->trigger('afterProcessorStore', array($this));
 
-		return true;
+		return $this->data['data'];
 	}
 
 	abstract protected function parse();
@@ -104,16 +111,16 @@ abstract class Billrun_Processor extends Billrun_Base {
 		}
 
 		$log = $this->db->getCollection(self::log_table);
-		
+
 		if (isset($this->data['trailer'])) {
 			$entity = new Mongodloid_Entity($this->data['trailer']);
 		} else if (isset($this->data['header'])) {
-			$entity = new Mongodloid_Entity($this->data['header']);			
+			$entity = new Mongodloid_Entity($this->data['header']);
 		} else {
 			$this->log->log("Billrun_Processor::logDB - cannot locate trailer ot header to log", Zend_Log::ERR);
 			return FALSE;
 		}
-		
+
 		if ($log->query('stamp', $entity->get('stamp'))->count() > 0) {
 			$this->log->log("Billrun_Processor::logDB - DUPLICATE! trying to insert duplicate log line with stamp of : {$entity->get('stamp')}", Zend_Log::NOTICE);
 			return FALSE;
@@ -197,11 +204,11 @@ abstract class Billrun_Processor extends Billrun_Base {
 	static public function getInstance() {
 		$args = func_get_args();
 		if (!is_array($args)) {
-			$args['type'] = "Type_". $args['type'];
+			$args['type'] = "Type_" . $args['type'];
 		} else {
-			$args[0]['type'] =  "Type_" . $args[0]['type'];
+			$args[0]['type'] = "Type_" . $args[0]['type'];
 		}
-		return forward_static_call_array(array('parent','getInstance'),$args);
+		return forward_static_call_array(array('parent', 'getInstance'), $args);
 	}
 
 }

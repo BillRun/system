@@ -7,7 +7,7 @@
  */
 
 /**
- * Billing parser class for separator size
+ * Billing parser class for separator
  *
  * @package  Billing
  * @since    1.0
@@ -28,14 +28,14 @@ class Billrun_Parser_Separator extends Billrun_Parser {
 	 * @var string 
 	 */
 	protected $separator = ",";
-	
+
 	public function __construct($options) {
 		parent::__construct($options);
 		if (isset($options['separator'])) {
 			$this->setSeparator((string) $options['separator']);
 		}
 	}
-	
+
 	/**
 	 * method to set structure of the parsed file
 	 * 
@@ -59,7 +59,7 @@ class Billrun_Parser_Separator extends Billrun_Parser {
 		$this->separator = $separator;
 		return $this;
 	}
-	
+
 	/**
 	 * method to get separator of the parsed file
 	 * 
@@ -70,9 +70,10 @@ class Billrun_Parser_Separator extends Billrun_Parser {
 	public function getSeparator() {
 		return $this->separator;
 	}
-	
+
 	/**
-	 * general method to parse
+	 * method to parse separtor
+	 * basicaly it's just attached the values array into array keys
 	 * 
 	 * @return mixed
 	 */

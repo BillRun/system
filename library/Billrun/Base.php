@@ -72,7 +72,7 @@ abstract class Billrun_Base {
 	 * constant of billrun collection name
 	 */
 	const billrun_table = 'billrun';
-	
+
 	/**
 	 * constant for base date format
 	 */
@@ -115,7 +115,6 @@ abstract class Billrun_Base {
 			$this->dispatcher = Billrun_Dispatcher::getInstance();
 		}
 	}
-
 
 	/**
 	 * set database of the basic object
@@ -174,9 +173,9 @@ abstract class Billrun_Base {
 			$type = $config_type['type'];
 			$args = array_merge($args, $config_type->toArray());
 		}
-		
+
 		$class = get_called_class() . '_' . ucfirst($type);
 		return new $class($args);
-		}
-		
 	}
+
+}
