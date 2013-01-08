@@ -101,7 +101,7 @@ class Billrun_Dispatcher extends Billrun_Spl_Subject {
 	 * 
 	 * @return array the arguments of the object	
 	 */
-	protected function getArgs() {
+	public function getArgs() {
 		return $this->args;
 	}
 
@@ -122,7 +122,7 @@ class Billrun_Dispatcher extends Billrun_Spl_Subject {
 	 * 
 	 * @return string the event of the object	
 	 */
-	protected function getEvent() {
+	public function getEvent() {
 		return $this->event;
 	}
 

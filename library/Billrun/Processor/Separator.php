@@ -41,65 +41,142 @@ class Billrun_Processor_Separator extends Billrun_Processor {
 	 */
 	protected function parse() {
 		if (!is_resource($this->fileHandler)) {
-			echo "Resource is not configured well" . PHP_EOL;
+			$this->log->log("Resource is not configured well", Zend_Log::ERR);
 			return false;
 		}
 
-		$separator = $this->parser->getSeparator();
-		while ($line = fgetcsv($this->fileHandler, 8092, $separator)) {
-			$record_type = $this->getLineType($line, $separator);
+		$headerOptions = $this->getHeaderOptions();
+		$dataOptions = $this->getDeaderOptions();
+		$footerOptions = $this->getFooterOptions();
+		
+		while ($line = $this->getLine()) {
+			$record_type = $this->getLineType($line, $this->parser->getSeparator());
 
-			// @todo: convert each case code snippet to protected method (including triggers)
-			switch ($record_type) {
-				case '10':
-				case 'NRTRDE': // header
-					if (isset($this->data['header'])) {
-						echo "double header" . PHP_EOL;
-						return false;
-					}
-
-					$this->parser->setStructure($this->header_structure);
-					$this->parser->setLine($line);
-					// @todo: trigger after header load (including $header)
-					$header = $this->parser->parse();
-					// @todo: trigger after header parse (including $header)
-					$header['type'] = $this->type;
-					$header['file'] = basename($this->filePath);
-					$header['process_time'] = date(self::base_dateformat);
-					$this->data['header'] = $header;
-
-					break;
-				case '20':
-				case 'MOC':
-				case '30':
-				case 'MTC': // data
-					if (!isset($this->data['header'])) {
-						echo "No header found" . PHP_EOL;
-						return false;
-					}
-
-					$this->parser->setStructure($this->data_structure); // for the next iteration
-					$this->parser->setLine($line);
-					// @todo: trigger after row load (including $header, $row)
-					$row = $this->parser->parse();
-					// @todo: trigger after row parse (including $header, $row)
-					$row['type'] = $this->type;
-					$row['header_stamp'] = $this->data['header']['stamp'];
-					$row['file'] = basename($this->filePath);
-					$row['process_time'] = date(self::base_dateformat);
-					// hot fix cause this field contain iso-8859-8
-					if (isset($row['country_desc'])) {
-						$row['country_desc'] = mb_convert_encoding($row['country_desc'], 'UTF-8', 'ISO-8859-8');
-					}
-					$this->data['data'][] = $row;
-
-					break;
-				default:
-					//raise warning
-					break;
+			if (in_array($record_type, $headerOptions)) {
+				$this->parseHeader($line);
+			} else if (in_array($record_type, $dataOptions)) {
+				$this->parseData($line);
+			} else if (in_array($record_type, $footerOptions)) {
+				$this->parseFooter($line);
+			} else {
+				$this->log->log("Billrun_Processor_Separator: cannot identify record type " . $record_type, Zend_Log::WARN);
 			}
 		}
 		return true;
+	}
+
+	/**
+	 * method to get available header record type strings
+	 * 
+	 * @return array all strings available as header
+	 */
+	protected function getHeaderOptions() {
+		return array('H', 'h');
+	}
+
+	/**
+	 * method to get available data record type strings
+	 * 
+	 * @return array all strings available as header
+	 */
+	protected function getDataOptions() {
+		return array('D', 'd');
+	}
+
+	/**
+	 * method to get available footer record type strings
+	 * 
+	 * @return array all strings available as header
+	 */
+	protected function getFooterOptions() {
+		return array('F', 'f');
+	}
+
+	/**
+	 * method to receive the next line to parse
+	 * 
+	 * @return array the lines parsed
+	 */
+	protected function getLine() {
+		return fgetcsv($this->fileHandler, 8092, $this->parser->getSeparator());
+	}
+
+	/**
+	 * method to parse header
+	 * 
+	 * @param array $line header line
+	 * 
+	 * @return array the header array
+	 */
+	protected function parseHeader($line) {
+		if (isset($this->data['header'])) {
+			$this->log->log("double header", Zend_Log::ERR);
+			return false;
+		}
+
+		$this->parser->setStructure($this->header_structure);
+		$this->parser->setLine($line);
+		$this->dispatcher->trigger('beforeHeaderParsing', array($line, $this));
+		$header = $this->parser->parse();
+		$header['type'] = $this->type;
+		$header['file'] = basename($this->filePath);
+		$header['process_time'] = date(self::base_dateformat);
+		$this->dispatcher->trigger('afterHeaderParsing', array($header, $this));
+		$this->data['header'] = $header;
+		return $header;
+	}
+
+	/**
+	 * method to parse data
+	 * 
+	 * @param array $line data line
+	 * 
+	 * @return array the data array
+	 */
+	protected function parseData($line) {
+		if (!isset($this->data['header'])) {
+			$this->log->log("No header found", Zend_Log::ERR);
+			return false;
+		}
+
+		$this->parser->setStructure($this->data_structure); // for the next iteration
+		$this->parser->setLine($line);
+		$this->dispatcher->trigger('beforeDataParsing', array($line, $this));
+		$row = $this->parser->parse();
+		$row['type'] = $this->type;
+		$row['header_stamp'] = $this->data['header']['stamp'];
+		$row['file'] = basename($this->filePath);
+		$row['process_time'] = date(self::base_dateformat);
+		$this->dispatcher->trigger('afterDataParsing', array($row, $this));
+		$this->data['data'][] = $row;
+		return $row;
+	}
+
+	/**
+	 * method to parse footer
+	 * 
+	 * @param array $line footer line
+	 * 
+	 * @return array the footer array
+	 */
+	protected function parseFooter($line) {
+		
+		if (isset($this->data['trailer'])) {
+			$this->log->log("double trailer", Zend_Log::ERR);
+			return false;
+		}
+
+		$this->parser->setStructure($this->trailer_structure);
+		$this->parser->setLine($line);
+		$this->dispatcher->trigger('beforeFooterParsing', array($line, $this));
+		$trailer = $this->parser->parse();
+		$trailer['type'] = $this->type;
+		$trailer['header_stamp'] = $this->data['header']['stamp'];
+		$trailer['file'] = basename($this->filePath);
+		$trailer['process_time'] = date('Y-m-d h:i:s');
+		$this->dispatcher->trigger('afterFooterParsing', array($trailer, $this));
+		$this->data['trailer'] = $trailer;
+		return $trailer;
 	}
 
 }

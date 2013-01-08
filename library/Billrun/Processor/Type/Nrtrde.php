@@ -68,4 +68,22 @@ class Billrun_Processor_Type_Nrtrde extends Billrun_Processor_Separator {
 		);
 	}
 
+	/**
+	 * method to get available header record type strings
+	 * 
+	 * @return array all strings available as header
+	 */
+	protected function getHeaderOptions() {
+		return array('10', 'NRTRDE');
+	}
+
+	/**
+	 * method to get available data record type strings
+	 * 
+	 * @return array all strings available as header
+	 */
+	protected function getDataOptions() {
+		return array('20', 'MOC', '30', 'MTC');
+	}
+
 }
