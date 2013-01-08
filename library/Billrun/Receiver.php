@@ -15,15 +15,24 @@
 abstract class Billrun_Receiver extends Billrun_Base {
 
 	/**
+	 * the type of the object
+	 *
+	 * @var string
+	 */
+	static protected $type = "receiver";
+	
+	/**
 	 * the receiver workspace path of files
-	 * @var string directory path
+	 * this is the place where the files will be received
+	 * 
+	 * @var string
 	 */
 	protected $workspace;
 
 	/**
 	 * general function to receive
 	 *
-	 * @return mixed
+	 * @return array list of files received
 	 */
 	abstract public function receive();
 }

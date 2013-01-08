@@ -27,7 +27,7 @@ class Billrun_Receiver_Nrtrde extends Billrun_Receiver {
 	/**
 	 * general function to receive
 	 *
-	 * @return mixed
+	 * @return array list of files received
 	 */
 	public function receive() {
 
@@ -37,14 +37,18 @@ class Billrun_Receiver_Nrtrde extends Billrun_Receiver {
 				continue;
 			}
 			$files = scandir($this->workspace . DIRECTORY_SEPARATOR . $type);
+			$ret = array();
 			foreach ($files as $file) {
 				$path = $this->workspace . DIRECTORY_SEPARATOR . $type . DIRECTORY_SEPARATOR . $file;
 				if (is_dir($path) || $this->isFileProcessed($file, $type)) {
 					continue;
 				}
 
+				$ret[] = $path;
 				$this->processFile($path, $type);
 			}
+			
+			return $ret;
 		}
 	}
 

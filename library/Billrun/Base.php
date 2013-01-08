@@ -55,7 +55,7 @@ abstract class Billrun_Base {
 	 *
 	 * @var string
 	 */
-	protected $type = "base";
+	static protected $type = "base";
 
 	/**
 	 * constant of log collection name
@@ -80,6 +80,7 @@ abstract class Billrun_Base {
 
 	/**
 	 * constructor
+	 * 
 	 * @param array $options
 	 */
 	public function __construct($options) {
@@ -167,8 +168,15 @@ abstract class Billrun_Base {
 			$args = $args[0];
 		}
 
+		$config_type = Yaf_Application::app()->getConfig()->{$type};
+
+		if ($config_type && isset($config_type->type)) {
+			$type = $config_type['type'];
+			$args = array_merge($args, $config_type->toArray());
+		}
+		
 		$class = get_called_class() . '_' . ucfirst($type);
 		return new $class($args);
+		}
+		
 	}
-
-}

@@ -67,10 +67,27 @@ class IndexController extends Yaf_Controller_Abstract {
 			'type' => false,
 		);
 
+
 		$options = $this->getInstanceOptions($opts, $posibleOptions);
 //		$options['db'] = 0; //temporary hack for testing
+		$this->outputAdd("Loading receiver");
 		$receiver = Billrun_Receiver::getInstance($options);
-		$receiver->receive();
+		$this->outputAdd("Receiver loaded");
+		
+		if ($receiver) {
+			$this->outputAdd("Start to receiving. This action can take awhile...");
+
+			// buffer all action output
+			ob_start();
+			$files = $receiver->receive();
+			$this->outputAdd("Received " . count($files) . " files");
+			// write the buffer into log and output
+			$this->outputAdd(ob_get_contents());
+			ob_end_clean();
+		} else {
+			$this->outputAdd("Receiver cannot be loaded");
+		}
+
 	}
 
 	protected function process($opts) {

@@ -73,7 +73,7 @@ class Billrun_Dispatcher extends Billrun_Spl_Subject {
 	public function notify() {
 		$ret = array();
 		foreach ($this->observers as $observer) {
-			$ret[$observer->getName()] = $observer->update();
+			$ret[$observer->getName()] = $observer->update($this);
 		}
 		return $ret;
 	}
