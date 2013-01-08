@@ -24,33 +24,27 @@ class Billrun_Receiver_Nrtrde extends Billrun_Receiver {
 	/**
 	 * the path on the remote server
 	 * 
-	 * @param string $ftp_path
+	 * @param string
 	 */
 	protected $ftp_path = '.';
 
 	/**
 	 * the path on the local machine that we will extract and import
 	 * 
-	 * @param string $ftp_path
+	 * @param string
 	 */
 	protected $workspace_path = '.';
 
 	/**
 	 * the path on the backup
 	 * 
-	 * @param string $ftp_path
+	 * @param string
 	 */
 	protected $backup_path = '.';
 	
 	public function __construct($options) {
 		parent::__construct($options);
 
-		if (isset($options['workspace'])) {
-			$this->workspace = $options['workspace'];
-		} else {
-			$this->workspace = $this->config->nrtrde->workspace;
-		}
-		
 		$this->ftp = Zend_Ftp::connect($this->config->nrtrde->ftp['host'], $this->config->nrtrde->ftp['user'], $this->config->nrtrde->ftp['password']);
 		$this->ftp->setPassive(false);
 		
@@ -59,17 +53,17 @@ class Billrun_Receiver_Nrtrde extends Billrun_Receiver {
 		} else if (isset($this->config->nrtrde->ftp['remote_directory'])) {
 			$this->ftp_path = $this->config->nrtrde->ftp['remote_directory'];
 		}
-		
+
 		if (isset($options['workspace'])) {
 			$this->workspace_path = $options['workspace'];
-		} else if (isset($this->config->nrtrde->ftp['workspace'])) {
-			$this->workspace_path = $this->config->nrtrde->ftp['workspace'];
+		} else if (isset($this->config->nrtrde->workspace)) {
+			$this->workspace_path = $this->config->nrtrde->workspace;
 		}
-		
+
 		if (isset($options['backup'])) {
 			$this->backup_path = $options['backup'];
-		} else if (isset($this->config->nrtrde->ftp['backup'])) {
-			$this->backup_path = $this->config->nrtrde->ftp['backup'];
+		} else if (isset($this->config->nrtrde->backup)) {
+			$this->backup_path = $this->config->nrtrde->backup;
 		}
 
 	}
@@ -94,18 +88,20 @@ class Billrun_Receiver_Nrtrde extends Billrun_Receiver {
 	}
 
 	protected function download() {
-		die($this->workspace_path . PHP_EOL);
-		$contents = $this->ftp->getDirectory($this->ftp_path)->getContents();
 
-		foreach ($contents as $content) {
-			if ($content->isFile()) {
-				$content->saveToPath($this->workspace_path);
+		$files = $this->ftp->getDirectory($this->ftp_path)->getContents();
+
+		$ret = array();
+		foreach ($files as $file) {
+			if ($file->isFile()) {
+				$this->log->log("NRTRDE: Download file " . $file->name . " from remote host to ", Zend_Log::INFO);
+				$file->saveToPath($this->workspace_path);
+				$ret[] = $this->workspace_path . $file->name;
 			}
 		}
 
 //		$file = $this->ftp->getFile('/foo/bar.txt');
 //		$file->saveToPath('data');
-//		
 //		$ftp->getCurrentDirectory()->changeDirectory('foo')->saveContentsToPath('data');
 	}
 

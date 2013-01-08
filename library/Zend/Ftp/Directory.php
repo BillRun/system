@@ -79,7 +79,7 @@ class Zend_Ftp_Directory {
 	protected function _changeToDir() {
 		$chdir = ftp_chdir($this->_ftp->getConnection(), $this->_path);
 		if ($chdir === false) {
-//throw new Zend_Ftp_Directory_Exception('Unable to change to directory');
+			//throw new Zend_Ftp_Directory_Exception('Unable to change to directory');
 		}
 	}
 
@@ -135,12 +135,12 @@ class Zend_Ftp_Directory {
 	public function create($permissions = null) {
 		$makedir = @ftp_mkdir($this->_ftp->getConnection(), $this->_path);
 		if ($makedir === false) {
-//throw new Zend_Ftp_Directory_Exception('Unable to create directory "' . $dir . '"');
+			//throw new Zend_Ftp_Directory_Exception('Unable to create directory "' . $dir . '"');
 		}
 		if ($permissions !== null) {
 			$chmod = $this->_ftp->chmod($this->_path, $permissions);
 			if ($chmod === false) {
-//throw new Zend_Ftp_Directory_Exception('Unable to chmod directory "' . $dir . '"');
+				//throw new Zend_Ftp_Directory_Exception('Unable to chmod directory "' . $dir . '"');
 			}
 		}
 
@@ -193,7 +193,7 @@ class Zend_Ftp_Directory {
 	 * @return boolean
 	 */
 	public function exists() {
-// Unfinished
+		// Unfinished
 	}
 
 	/**
@@ -203,7 +203,7 @@ class Zend_Ftp_Directory {
 	 * @return Zend_Ftp_Directory
 	 */
 	public function delete($recursive = false) {
-// Unfinished
+		// Unfinished
 
 		return $this;
 	}
@@ -215,7 +215,7 @@ class Zend_Ftp_Directory {
 	 * @return Zend_Ftp_Directory
 	 */
 	public function deleteContents($recursive = false) {
-// Unfinished
+		// Unfinished
 
 		return $this;
 	}
@@ -227,7 +227,7 @@ class Zend_Ftp_Directory {
 	 * @return Zend_Ftp_Directory
 	 */
 	public function rename($filename) {
-// Unfinished
+		// Unfinished
 
 		return $this;
 	}
@@ -239,8 +239,8 @@ class Zend_Ftp_Directory {
 	 * @return Zend_Ftp_Directory
 	 */
 	public function copy($filename) {
-// Unfinished
-// Return the new directory
+		// Unfinished
+		// Return the new directory
 	}
 
 	/**
@@ -250,7 +250,7 @@ class Zend_Ftp_Directory {
 	 * @return Zend_Ftp_Directory
 	 */
 	public function move($filename) {
-// Unfinished
+		// Unfinished
 
 		return $this;
 	}
@@ -262,7 +262,7 @@ class Zend_Ftp_Directory {
 	 * @return Zend_Ftp_Directory
 	 */
 	public function chmod($permissions) {
-// Unfinished
+		// Unfinished
 
 		return $this;
 	}
@@ -274,7 +274,7 @@ class Zend_Ftp_Directory {
 	 * @return Zend_Ftp_Directory
 	 */
 	public function saveToPath($recursive = false) {
-// Unfinished
+		// Unfinished
 
 		return $this;
 	}
@@ -286,7 +286,7 @@ class Zend_Ftp_Directory {
 	 * @return Zend_Ftp_Directory
 	 */
 	public function saveContentsToPath($recursive = false) {
-// Unfinished
+		// Unfinished
 
 		return $this;
 	}

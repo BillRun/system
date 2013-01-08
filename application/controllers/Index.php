@@ -65,10 +65,10 @@ class IndexController extends Yaf_Controller_Abstract {
 	protected function receive($opts) {
 		$posibleOptions = array(
 			'type' => false,
-			'workspace' => "./",
 		);
 
 		$options = $this->getInstanceOptions($opts, $posibleOptions);
+//		$options['db'] = 0; //temporary hack for testing
 		$receiver = Billrun_Receiver::getInstance($options);
 		$receiver->receive();
 	}

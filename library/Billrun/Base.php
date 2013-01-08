@@ -30,9 +30,16 @@ abstract class Billrun_Base {
 	protected $stamp = null;
 
 	/**
+	 * the log of the system
+	 *
+	 * @var Billrun_Log
+	 */
+	protected $log;
+
+	/**
 	 * the configuration of the system
 	 *
-	 * @var configuration class
+	 * @var YAF_Config
 	 */
 	protected $config;
 
