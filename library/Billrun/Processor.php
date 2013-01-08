@@ -66,24 +66,27 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 */
 	public function process() {
 
-		// @todo: trigger before parse (including $ret)
+		$this->dispatcher->trigger('beforeProcessorParsing', array($this));
+		
 		if (!$this->parse()) {
+			$this->log->log("Billrun_Processor: cannot parse", Zend_Log::ERR);
 			return false;
 		}
 
-		// @todo: trigger after parse line (including $ret)
-		// @todo: trigger before storage line (including $ret)
+		$this->dispatcher->trigger('afterProcessorParsing', array($this));
 
 		if (!$this->logDB()) {
-			//TODO raise error
+			$this->log->log("Billrun_Processor: cannot log parsing action", Zend_Log::WARN);
 		}
 
+		$this->dispatcher->trigger('beforeProcessorStore', array($this));
+		
 		if (!$this->store()) {
-			//raise error
+			$this->log->log("Billrun_Processor: cannot store the parser output", Zend_Log::ERR);
 			return false;
 		}
 
-		// @todo: trigger after storage line (including $ret)
+		$this->dispatcher->trigger('afterProcessorStore', array($this));
 
 		return true;
 	}
@@ -101,9 +104,18 @@ abstract class Billrun_Processor extends Billrun_Base {
 		}
 
 		$log = $this->db->getCollection(self::log_table);
-		$entity = new Mongodloid_Entity($this->data['trailer']);
+		
+		if (isset($this->data['trailer'])) {
+			$entity = new Mongodloid_Entity($this->data['trailer']);
+		} else if (isset($this->data['header'])) {
+			$entity = new Mongodloid_Entity($this->data['header']);			
+		} else {
+			$this->log->log("Billrun_Processor::logDB - cannot locate trailer ot header to log", Zend_Log::ERR);
+			return FALSE;
+		}
+		
 		if ($log->query('stamp', $entity->get('stamp'))->count() > 0) {
-			print("processor::logDB - DUPLICATE! trying to insert duplicate line with stamp of : {$entity->get('stamp')} \n");
+			$this->log->log("Billrun_Processor::logDB - DUPLICATE! trying to insert duplicate log line with stamp of : {$entity->get('stamp')}", Zend_Log::NOTICE);
 			return FALSE;
 		}
 		return $entity->save($log, true);
@@ -111,6 +123,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 
 	/**
 	 * method to store the processing data
+	 * 
 	 * @todo refactoring this method
 	 */
 	protected function store() {
@@ -136,7 +149,9 @@ abstract class Billrun_Processor extends Billrun_Base {
 
 	/**
 	 * Get the type of the currently parsed line.
+	 * 
 	 * @param $line  string containing the parsed line.
+	 * 
 	 * @return Character representing the line type
 	 * 	'H' => Header
 	 * 	'D' => Data
@@ -148,7 +163,9 @@ abstract class Billrun_Processor extends Billrun_Base {
 
 	/**
 	 * load file to be handle by the processor
+	 * 
 	 * @param string $file_path
+	 * 
 	 * @return void
 	 */
 	public function loadFile($file_path) {
@@ -162,6 +179,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 
 	/**
 	 * method to set the parser of the processor
+	 * 
 	 * @param Billrun_Parser $parser the parser to use by the processor
 	 *
 	 * @return mixed the processor itself (for concatening methods)
