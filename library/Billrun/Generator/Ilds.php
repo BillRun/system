@@ -229,8 +229,24 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 	}
 
 	protected function basic_xml() {
-		$xml_path = $this->config->ilds->export . 'ilds.xml';
-		return simplexml_load_file($xml_path);
+		//$xml_path = $this->config->ilds->export . 'ilds.xml';
+		//return simplexml_load_file($xml_path);
+		$xml = <<<EOI
+<?xml version="1.0" encoding="UTF-8"?>
+<INVOICE>
+	<TELECOM_INFORMATION>
+		<LASTTIMECDRPROCESSED></LASTTIMECDRPROCESSED>
+		<VAT_VALUE></VAT_VALUE>
+		<COMPANY_NAME_IN_ENGLISH></COMPANY_NAME_IN_ENGLISH>
+		<COMPANY_NAME_IN_NATIVE></COMPANY_NAME_IN_NATIVE>
+	</TELECOM_INFORMATION>
+	<INV_CUSTOMER_INFORMATION>
+		<CUSTOMER_CONTACT>
+		</CUSTOMER_CONTACT>
+	</INV_CUSTOMER_INFORMATION>
+</INVOICE>
+EOI;
+		return simplexml_load_string($xml);
 	}
 
 }

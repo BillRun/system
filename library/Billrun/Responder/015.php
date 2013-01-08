@@ -25,7 +25,7 @@ class Billrun_Responder_015 extends Billrun_Responder_Base_Ilds {
 			'caller_phone_no' => '%-10s',
 			'called_no' => '%-28s',
 			'call_start_dt' => '%14s',
-			'chrgbl_call_dur' => '%6s',
+			'chrgbl_call_dur' => '%06s',
 			'rate_code' => '%1s',
 			'call_charge_sign' => '%1s',
 			'call_charge' => '%11s',
