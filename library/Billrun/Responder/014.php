@@ -26,21 +26,21 @@ class Billrun_Responder_014 extends Billrun_Responder_Base_Ilds {
 			'caller_msi' => "%03s",
 			'caller_phone_no' => '%-11s',
 			'called_no' => '%-28s',
-			'call_start_dt' => '%8s',
-			'call_start_tm' => '%6s',
+			'call_start_dt' => '%14s',
+			//'call_start_tm' => '%6s',
 			'actual_call_dur' => '%06s',
 			'chrgbl_call_dur' => '%06s',
-			'units' => '%6s',
+			'units' => '%4s',
 			'call_charge_sign' => '%1s',
 			'call_charge' => '%11s',
 			'collection_ind' => '%1s',
 			'collection_ind2' => '%1s',
 			'provider_subscriber_type' => '%1s',
 			'record_status' => '%02s',
-			'sequence_no' => '%06s',
-			'correction_code' => '%2s',
-			'call_type' => '%2s',
-			'filler' => '%75s',
+// 			'sequence_no' => '%06s',
+// 			'correction_code' => '%2s',
+// 			'call_type' => '%2s',
+			'filler' => '%87s',
 		);
 
 
@@ -75,4 +75,19 @@ class Billrun_Responder_014 extends Billrun_Responder_Base_Ilds {
 		);
 	}
 
+
+	protected function processFileForResponse($filePath,$logLine) {
+		$logLine = $logLine->getRawData();
+		$unprocessDBLines = $this->db->getCollection(self::lines_table)->query()->notExists('billrun')->equals('file',$logLine['file']);
+		//run only if theres problematic lines in the file.
+		if( $unprocessDBLines->count() == 0) { return false; }
+
+		return parent::processFileForResponse($filePath,$logLine);
+
+	}
+
+	function processErrorLine($dbLine) {
+		$dbLine['record_status'] = '02';
+		return  $dbLine;
+	}
 }

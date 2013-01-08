@@ -68,5 +68,7 @@ class Billrun_Responder_018 extends Billrun_Responder_Base_Ilds {
 		);
 
 	}
-
+	function processErrorLine($dbLine) {
+		return  $dbLine;
+	}
 }

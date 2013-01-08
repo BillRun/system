@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 /**
  * @package         Billing
@@ -24,7 +24,7 @@ class Billrun_Parser_Fixed extends Billrun_Parser {
 	/**
 	 * method to set structure of the parsed file
 	 * @param array $structure the structure of the parsed file
-	 * 
+	 *
 	 * @return Billrun_Parser_Fixed self instance
 	 */
 	public function setStructure($structure) {
@@ -34,7 +34,7 @@ class Billrun_Parser_Fixed extends Billrun_Parser {
 
 	/**
 	 * general method to parse
-	 * 
+	 *
 	 * @return mixed
 	 */
 	public function parse() {
@@ -54,7 +54,7 @@ class Billrun_Parser_Fixed extends Billrun_Parser {
 	}
 
 	/**
-	 * 
+	 *
 	 * @return string the line that parsed
 	 */
 	public function getLine() {
@@ -63,7 +63,7 @@ class Billrun_Parser_Fixed extends Billrun_Parser {
 
 	/**
 	 * method to set the line of the parser
-	 * 
+	 *
 	 * @param string $line the line to set to the parser
 	 * @return Object the parser itself (for concatening methods)
 	 */

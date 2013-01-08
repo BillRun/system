@@ -15,6 +15,7 @@
 class Billrun_Processor_014 extends Billrun_Processor_Base_Ilds {
 
 	protected $type = '014';
+	const ITS_ON_GOLAN_DATE = "07/02/2012";
 
 	public function __construct($options) {
 
@@ -25,21 +26,21 @@ class Billrun_Processor_014 extends Billrun_Processor_Base_Ilds {
 			'caller_msi' => 3,
 			'caller_phone_no' => 11,
 			'called_no' => 28,
-			'call_start_dt' => 8,
-			'call_start_tm' => 6,
+			'call_start_dt' => 14,
+			//'call_start_tm' => 6,
 			'actual_call_dur' => 6,
 			'chrgbl_call_dur' => 6,
-			'units' => 6,
+			'units' => 4,
 			'call_charge_sign' => 1,
 			'call_charge' => 11,
 			'collection_ind' => 1,
 			'collection_ind2' => 1,
 			'provider_subscriber_type' => 1,
 			'record_status' => 2,
-			'sequence_no' => 6,
-			'correction_code' => 2,
-			'call_type' => 2,
-			'filler' => 96,
+// 			'sequence_no' => 6,
+// 			'correction_code' => 2,
+// 			'call_type' => 2,
+			'filler' => 87,
 		);
 
 
@@ -80,12 +81,10 @@ class Billrun_Processor_014 extends Billrun_Processor_Base_Ilds {
 	 * @return true (by default) if the line is valid or false if theres some problem.
 	 */
 	protected function isValidDataRecord($dataLine) {
-		$itOnUsDate = date_create("1/7/2012");
+		$itOnUsDate = date_create(self::ITS_ON_GOLAN_DATE);
 		$dataLineCreateDate = date_create_from_format("YmdHis", $dataLine['call_start_dt']);
-		if($dataLineCreateDate && intval($itOnUsDate->diff($dataLineCreateDate)->format("%r%d")) < 0) {
-			print("!!!!!!");
-		}
-		return $dataLineCreateDate && intval($itOnUsDate->diff($dataLineCreateDate)->format("%r%d")) < 0;
+
+		return $dataLineCreateDate && intval($itOnUsDate->diff($dataLineCreateDate)->format("%r%a")) >= 0;
 	}
 
 }

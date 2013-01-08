@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 /**
  * @package         Billing
@@ -64,17 +64,16 @@ class Billrun_Calculator_Ilds extends Billrun_Calculator {
 
 	/**
 	 * method to calculate the charge from flat rate
-	 * 
+	 *
 	 * @param string $type the type of the charge (depend on provider)
 	 * @param double $charge the amount of charge
 	 * @return double the amount to charge
-	 * 
+	 *
 	 * @todo: refactoring it by mediator or plugin system
 	 */
 	protected function calcChargeLine($type, $charge) {
 		switch ($type):
 			case '012':
-			case '014':
 			case '015':
 				$rating_charge = round($charge / 1000, 3);
 				break;
@@ -82,6 +81,9 @@ class Billrun_Calculator_Ilds extends Billrun_Calculator {
 			case '013':
 			case '018':
 				$rating_charge = round($charge / 100, 2);
+				break;
+			case '014':
+				$rating_charge = round($charge, 3);
 				break;
 			default:
 				$rating_charge = $charge;

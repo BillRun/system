@@ -66,12 +66,17 @@ class Billrun_Responder_015 extends Billrun_Responder_Base_Ilds {
 
 	protected function updateLine($dbLine,$logLine) {
 		$line= parent::updateLine($dbLine,$logLine);
-		return $line. "00";
+		return $line. (strlen($line) > 76 ? "" :  "00");
 	}
 
 	protected function updateTrailer($logLine) {
 		$line = parent::updateTrailer($logLine);
 		$line.=  sprintf("%06s",$this->linesErrors);
 		return $line;
+	}
+
+	function processErrorLine($dbLine) {
+		$dbLine['record_status'] = '02';
+		return  $dbLine;
 	}
 }
