@@ -14,22 +14,6 @@
  */
 abstract class Billrun_Responder_Base_FilesResponder extends Billrun_Responder {
 
-	/**
-	 * the responder export base path.
-	 * @var string directory path
-	 */
-	protected $exportDir;
-
-	public function __construct($options) {
-
-		parent::__construct($options);
-
-		if (isset($options['export-path'])) {
-			$this->exportDir = $options['export-path'];
-		} else {
-			$this->exportDir = $this->config->response->export->path;
-		}
-	}
 
 	/**
 	 * general function to receive
