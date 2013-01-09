@@ -56,4 +56,7 @@ class Billrun_Responder_013 extends Billrun_Responder_Base_Ilds {
 		return false;
 	}
 
+	protected function getResponseFilename($receivedFilename,$logLine) {
+			return $receivedFilename;
+	}
 }

@@ -30,7 +30,7 @@ class Billrun_Responder_015 extends Billrun_Responder_Base_Ilds {
 			'call_charge_sign' => '%1s',
 			'call_charge' => '%11s',
 			'charge_code' => '%2s',
-			//'record_status' => '%02s',
+			'record_status' => '%02s',
 		);
 
 		$this->header_structure = array(
@@ -65,8 +65,8 @@ class Billrun_Responder_015 extends Billrun_Responder_Base_Ilds {
 	}
 
 	protected function updateLine($dbLine,$logLine) {
-		$line= parent::updateLine($dbLine,$logLine);
-		return $line. (strlen($line) > 76 ? "" :  "00");
+		$dbLine['record_status'] = '00';
+		return  parent::updateLine($dbLine,$logLine);
 	}
 
 	protected function updateTrailer($logLine) {
@@ -78,5 +78,9 @@ class Billrun_Responder_015 extends Billrun_Responder_Base_Ilds {
 	function processErrorLine($dbLine) {
 		$dbLine['record_status'] = '02';
 		return  $dbLine;
+	}
+
+	protected function getResponseFilename($receivedFilename,$logLine) {
+			return $receivedFilename;
 	}
 }

@@ -14,6 +14,23 @@
  */
 abstract class Billrun_Responder_Base_LocalDir extends Billrun_Responder_Base_FilesResponder {
 
+	/**
+	 * the responder export base path.
+	 * @var string directory path
+	 */
+	protected $exportDir;
+
+	public function __construct($options) {
+
+		parent::__construct($options);
+
+		if (isset($options['export-path'])) {
+			$this->exportDir = $options['export-path'];
+		} else {
+			$this->exportDir = $this->config->response->export->path;
+		}
+	}
+
 	protected function respondAFile($responseFilePath, $fileName, $logLine) {
 		//move file to export folder
 		if(!file_exists($this->exportDir . DIRECTORY_SEPARATOR . $this->type ))  {

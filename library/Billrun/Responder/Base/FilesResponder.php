@@ -47,7 +47,7 @@ abstract class Billrun_Responder_Base_FilesResponder extends Billrun_Responder {
 
 			$responseFilePath = $this->processFileForResponse($filePath, $logLine,$filename);
 			if($responseFilePath) {
-				$this->respondAFile($responseFilePath,$filename,$logLine);
+				$this->respondAFile($responseFilePath, $this->getResponseFilename($filename,$logLine), $logLine);
 			}
 		}
 	}
@@ -61,7 +61,7 @@ abstract class Billrun_Responder_Base_FilesResponder extends Billrun_Responder {
 
 		$log = $this->db->getCollection(self::log_table);
 
-		$logLines = $log->query()->equals('type',$type)->notExists('response_time');
+		$logLines = $log->query()->equals('type',$type)->exists('process_time')->notExists('response_time');
 		foreach($logLines as $logEntry) {
 			$logEntry->collection($log);
 			$files[$logEntry->get('file')] = $logEntry;
@@ -73,12 +73,16 @@ abstract class Billrun_Responder_Base_FilesResponder extends Billrun_Responder {
 
 	abstract protected function processFileForResponse($filePath,$logLine) ;
 
+	abstract protected function getResponseFilename($receivedFilename,$logLine) ;
+
 	protected function respondAFile($responseFilePath, $fileName, $logLine) {
 		$data = $logLine->getRawData();
 		$data['response_time'] = time();
 		$logLine->setRawData($data);
 		$logLine->save();
 	}
+
+
 }
 
 

@@ -77,8 +77,8 @@ class Billrun_Responder_014 extends Billrun_Responder_Base_Ilds {
 
 
 	protected function processFileForResponse($filePath,$logLine) {
-		$logLine = $logLine->getRawData();
-		$unprocessDBLines = $this->db->getCollection(self::lines_table)->query()->notExists('billrun')->equals('file',$logLine['file']);
+		$tmpLogLine = $logLine->getRawData();
+		$unprocessDBLines = $this->db->getCollection(self::lines_table)->query()->notExists('billrun')->equals('file',$tmpLogLine['file']);
 		//run only if theres problematic lines in the file.
 		if( $unprocessDBLines->count() == 0) { return false; }
 
@@ -89,5 +89,12 @@ class Billrun_Responder_014 extends Billrun_Responder_Base_Ilds {
 	function processErrorLine($dbLine) {
 		$dbLine['record_status'] = '02';
 		return  $dbLine;
+	}
+
+	protected function getResponseFilename($receivedFilename,$logLine) {
+			$responseFilename = preg_replace("/\WMBZ\W/","OUR",$receivedFilename);
+			$responseFilename = preg_replace("/\WGTC\W/","MBZ",$responseFilename);
+			$responseFilename = preg_replace("/\WOUR\W/","GTC",$responseFilename);
+			return $responseFilename;
 	}
 }

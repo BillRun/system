@@ -56,7 +56,7 @@ abstract class Billrun_Responder_Base_Ilds extends Billrun_Responder_Base_LocalD
 
 	protected function updateLine($dbLine,$logLine) {
 		$line="";
-		if(!isset($dbLine['billrun'])) {
+		if(!isset($dbLine['billrun']) || !$dbLine['billrun']) {
 			$dbLine = $this->processErrorLine($dbLine);
 		}
 		if(!$dbLine || (isset($dbLine['record_status']) && intval($dbLine['record_status']) != 0 ) ) {
