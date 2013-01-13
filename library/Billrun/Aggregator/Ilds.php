@@ -167,7 +167,7 @@ class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 	public function load($initData = true) {
 		$previous_month = date("Ymt235959", strtotime("previous month"));
 		$query = "price_customer EXISTS and price_provider EXISTS and billrun NOT EXISTS "
-			. "call_start_dt <= " . $previous_month;
+			. "and call_start_dt <= " . $previous_month;
 		
 		if ($initData) {
 			$this->data = array();
