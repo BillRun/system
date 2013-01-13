@@ -21,10 +21,19 @@ class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 	public function aggregate() {
 		// @TODO trigger before aggregate
 		foreach ($this->data as $item) {
+
+			$time = $item->get('call_start_dt');
+			
+			// @TODO make it configurable
+			$previous_month = date("Ymt235959", strtotime("previous month"));
+			
+			if ($time > $previous_month) {
+				print "time frame is not till the end of previous month " . $time . "; continue to the next line" . PHP_EOL;
+				continue;
+			}
+
 			// load subscriber
 			$phone_number = $item->get('caller_phone_no');
-			$time = $item->get('call_start_dt');
-			// load subscriber
 			$subscriber = golan_subscriber::get($phone_number, $time);
 
 			if (!$subscriber) {
@@ -165,9 +174,7 @@ class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 	 * load the data to aggregate
 	 */
 	public function load($initData = true) {
-		$previous_month = date("Ymt235959", strtotime("previous month"));
-		$query = "price_customer EXISTS and price_provider EXISTS and billrun NOT EXISTS "
-			. "and call_start_dt <= " . $previous_month;
+		$query = "price_customer EXISTS and price_provider EXISTS and billrun NOT EXISTS";		
 		
 		if ($initData) {
 			$this->data = array();
