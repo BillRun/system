@@ -27,6 +27,7 @@ abstract class Billrun_Processor_Base_Binary extends Billrun_Processor {
 	 * @return Array an array to be used as the header data record.
 	 */
 	protected function buildHeader($data) {
+		$header = array();
 		$header['data'] = utf8_encode($data);
 		$header['type'] = self::$type;
 		$header['file'] = basename($this->filePath);
@@ -58,6 +59,7 @@ abstract class Billrun_Processor_Base_Binary extends Billrun_Processor {
 	 * @return Array an array to be used as the trailer data record.
 	 */
 	protected function buildTrailer($data) {
+		$trailer = array();
 		$trailer['data'] = utf8_encode($data);
 		$trailer['type'] = self::$type;
 		$trailer['header_stamp'] = $this->data['header']['stamp'];
