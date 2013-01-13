@@ -15,7 +15,7 @@
 class IndexController extends Yaf_Controller_Abstract {
 
 	protected $eol = PHP_EOL;
-	protected $possibleActions = array('receive','process','respond','calculate','aggregate','generate');
+	protected $possibleActions = array('receive', 'process', 'respond', 'calculate', 'aggregate', 'generate');
 
 	public function indexAction() {
 		$this->getView()->title = "BillRun | The best open source billing system";
@@ -50,9 +50,9 @@ class IndexController extends Yaf_Controller_Abstract {
 		}
 
 		//Go through all actions and run the first one that was selected
-		foreach($this->possibleActions as $val) {
+		foreach ($this->possibleActions as $val) {
 			if (isset($opts->{$val})) {
-				$this->outputAdd(ucfirst($val)."...");
+				$this->outputAdd(ucfirst($val) . "...");
 				$this->{$val}($opts);
 				return;
 			}
@@ -77,7 +77,7 @@ class IndexController extends Yaf_Controller_Abstract {
 		$this->outputAdd("Loading receiver");
 		$receiver = Billrun_Receiver::getInstance($options);
 		$this->outputAdd("Receiver loaded");
-		
+
 		if ($receiver) {
 			$this->outputAdd("Start to receiving. This action can take awhile...");
 
@@ -91,7 +91,6 @@ class IndexController extends Yaf_Controller_Abstract {
 		} else {
 			$this->outputAdd("Receiver cannot be loaded");
 		}
-
 	}
 
 	protected function process($opts) {
@@ -129,9 +128,11 @@ class IndexController extends Yaf_Controller_Abstract {
 	}
 
 	protected function respond($opts) {
-		$options =$this->getInstanceOptions($opts, array('type'=> false,
-								'export-path' => true));
-		if(!$options) {return;}
+		$options = $this->getInstanceOptions($opts, array('type' => false,
+			'export-path' => true));
+		if (!$options) {
+			return;
+		}
 
 		$this->outputAdd("Loading Responder");
 		$responder = Billrun_Responder::getInstance($options);
@@ -152,8 +153,10 @@ class IndexController extends Yaf_Controller_Abstract {
 	}
 
 	protected function calculate($opts) {
-		$options =$this->getInstanceOptions($opts,array('type'=>false));
-		if(!$options) {return;}
+		$options = $this->getInstanceOptions($opts, array('type' => false));
+		if (!$options) {
+			return;
+		}
 
 		$this->outputAdd("Loading Calculator");
 		$calculator = Billrun_Calculator::getInstance($options);
@@ -179,9 +182,11 @@ class IndexController extends Yaf_Controller_Abstract {
 	}
 
 	protected function aggregate($opts) {
-		$options =$this->getInstanceOptions($opts,array( 'type'=> false,
-								'stamp' => false,));
-		if(!$options) {return;}
+		$options = $this->getInstanceOptions($opts, array('type' => false,
+			'stamp' => false,));
+		if (!$options) {
+			return;
+		}
 
 		$this->outputAdd("Loading aggregator");
 		$aggregator = Billrun_Aggregator::getInstance($options);
@@ -203,9 +208,11 @@ class IndexController extends Yaf_Controller_Abstract {
 	}
 
 	protected function generate($opts) {
-		$options =$this->getInstanceOptions($opts,array( 'type'=> false,
-								'stamp' => false,));
-		if(!$options) {return;}
+		$options = $this->getInstanceOptions($opts, array('type' => false,
+			'stamp' => false,));
+		if (!$options) {
+			return;
+		}
 
 		$this->outputAdd("Loading generator");
 		$generator = Billrun_Generator::getInstance($options);

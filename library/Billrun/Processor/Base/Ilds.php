@@ -15,6 +15,13 @@
 class Billrun_Processor_Base_Ilds extends Billrun_Processor {
 
 	/**
+	 * the type of the object
+	 *
+	 * @var string
+	 */
+	static protected $type = 'ilds';
+	
+	/**
 	 * method to parse the data
 	 */
 	protected function parse() {
@@ -39,7 +46,7 @@ class Billrun_Processor_Base_Ilds extends Billrun_Processor {
 					// @todo: trigger after header load (including $header)
 					$header = $this->parser->parse();
 					// @todo: trigger after header parse (including $header)
-					$header['type'] = $this->type;
+					$header['type'] = $header['source'] = self::$type;
 					$header['file'] = basename($this->filePath);
 					$header['process_time'] = date('Y-m-d h:i:s');
 					$this->data['header'] = $header;
@@ -56,7 +63,7 @@ class Billrun_Processor_Base_Ilds extends Billrun_Processor {
 					// @todo: trigger after trailer load (including $header, $data, $trailer)
 					$trailer = $this->parser->parse();
 					// @todo: trigger after trailer parse (including $header, $data, $trailer)
-					$trailer['type'] = $this->type;
+					$trailer['type'] = $trailer['source'] = self::$type;
 					$trailer['header_stamp'] = $this->data['header']['stamp'];
 					$trailer['file'] = basename($this->filePath);
 					$trailer['process_time'] = date('Y-m-d h:i:s');
@@ -74,7 +81,7 @@ class Billrun_Processor_Base_Ilds extends Billrun_Processor {
 					// @todo: trigger after row load (including $header, $row)
 					$row = $this->parser->parse();
 					// @todo: trigger after row parse (including $header, $row)
-					$row['type'] = $this->type;
+					$row['type'] = $row['source'] = self::$type;
 					$row['header_stamp'] = $this->data['header']['stamp'];
 					$row['file'] = basename($this->filePath);
 					$row['process_time'] = date('Y-m-d h:i:s');

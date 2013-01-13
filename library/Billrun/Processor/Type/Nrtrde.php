@@ -28,7 +28,7 @@ class Billrun_Processor_Type_Nrtrde extends Billrun_Processor_Separator {
 
 	public function __construct($options) {
 		parent::__construct($options);
-		
+
 		$this->header_structure = array(
 			'record_type',
 			'specificationVersionNumber',
@@ -40,7 +40,7 @@ class Billrun_Processor_Type_Nrtrde extends Billrun_Processor_Separator {
 			'utcTimeOffset',
 			'callEventsCount',
 		);
-		
+
 		$this->moc_structure = array(
 			'record_type',
 			'imsi',

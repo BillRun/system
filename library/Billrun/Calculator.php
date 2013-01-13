@@ -15,16 +15,17 @@
 abstract class Billrun_Calculator extends Billrun_Base {
 
 	/**
+	 * the type of the object
+	 *
+	 * @var string
+	 */
+	static protected $type = 'calculator';
+
+	/**
 	 * the container data of the calculator
 	 * @var array
 	 */
 	protected $data = array();
-
-	/**
-	 * the type of the calculator
-	 * @var string
-	 */
-	protected $type = 'basic';
 
 	/**
 	 * load the data to calculate

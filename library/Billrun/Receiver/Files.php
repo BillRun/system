@@ -1,5 +1,4 @@
 ﻿<?php
-
 /**
  * @package         Billing
  * @copyright       Copyright (C) 2012 S.D.O.C. LTD. All rights reserved.
@@ -22,13 +21,13 @@ class Billrun_Receiver_Files extends Billrun_Receiver {
 	public function receive() {
 
 		foreach ($this->config->providers->toArray() as $type) {
-			if (!file_exists($this->workPath . DIRECTORY_SEPARATOR . $type)) {
-				print("NOTICE : SKIPPING $type !!! directory " . $this->workPath . DIRECTORY_SEPARATOR . $type . " not found!!");
+			if (!file_exists($this->workspace . DIRECTORY_SEPARATOR . $type)) {
+				print("NOTICE : SKIPPING $type !!! directory " . $this->workspace . DIRECTORY_SEPARATOR . $type . " not found!!");
 				continue;
 			}
-			$files = scandir($this->workPath . DIRECTORY_SEPARATOR . $type);
+			$files = scandir($this->workspace . DIRECTORY_SEPARATOR . $type);
 			foreach ($files as $file) {
-				$path = $this->workPath . DIRECTORY_SEPARATOR . $type . DIRECTORY_SEPARATOR . $file;
+				$path = $this->workspace . DIRECTORY_SEPARATOR . $type . DIRECTORY_SEPARATOR . $file;
 				if (is_dir($path) || $this->isFileProcessed($file, $type)) {
 					continue;
 				}
@@ -37,7 +36,7 @@ class Billrun_Receiver_Files extends Billrun_Receiver {
 			}
 		}
 	}
-	
+
 	/**
 	 * Process an ILD file
 	 * @param $filePath  Path to the filethat needs processing.

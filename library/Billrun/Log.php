@@ -29,5 +29,5 @@ class Billrun_Log extends Zend_Log {
 
 		return self::$instance;
 	}
-	
+
 }

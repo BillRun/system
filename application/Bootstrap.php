@@ -15,14 +15,14 @@
 class Bootstrap extends Yaf_Bootstrap_Abstract {
 
 	public function _initPlugin(Yaf_Dispatcher $dispatcher) {
-		
+
 		// set include paths of the system.
-		set_include_path(get_include_path() . PATH_SEPARATOR. Yaf_Loader::getInstance()->getLibraryPath());
-		
+		set_include_path(get_include_path() . PATH_SEPARATOR . Yaf_Loader::getInstance()->getLibraryPath());
+
 		/* register a billrun plugin system from config */
 		$dispatcher = Billrun_Dispatcher::getInstance();
 		$config = Yaf_Application::app()->getConfig();
-		
+
 		if (isset($config->plugins)) {
 			$plugins = $config->plugins->toArray();
 
@@ -32,7 +32,5 @@ class Bootstrap extends Yaf_Bootstrap_Abstract {
 			}
 		}
 	}
-
-
 
 }

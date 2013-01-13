@@ -19,6 +19,11 @@
  */
 class Billrun_Processor_Separator extends Billrun_Processor {
 
+	/**
+	 * the type of the object
+	 *
+	 * @var string
+	 */
 	static protected $type = 'separator';
 
 	public function __construct($options) {
@@ -48,7 +53,7 @@ class Billrun_Processor_Separator extends Billrun_Processor {
 		$headerOptions = $this->getHeaderOptions();
 		$dataOptions = $this->getDataOptions();
 		$footerOptions = $this->getFooterOptions();
-		
+
 		while ($line = $this->getLine()) {
 			$record_type = $this->getLineType($line, $this->parser->getSeparator());
 
@@ -161,7 +166,7 @@ class Billrun_Processor_Separator extends Billrun_Processor {
 	 * @return array the footer array
 	 */
 	protected function parseFooter($line) {
-		
+
 		if (isset($this->data['trailer'])) {
 			$this->log->log("double trailer", Zend_Log::ERR);
 			return false;

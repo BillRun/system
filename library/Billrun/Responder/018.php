@@ -1,5 +1,4 @@
 ﻿<?php
-
 /**
  * @package         Billing
  * @copyright       Copyright (C) 2012 S.D.O.C. LTD. All rights reserved.
@@ -17,11 +16,11 @@ class Billrun_Responder_018 extends Billrun_Responder_Base_Ilds {
 
 	protected $linesErrors = 0;
 
-	public function __construct( $options = false ) {
-		parent::__construct( $options );
-		$this->type = "018";
+	public function __construct(array $params = array()) {
+		parent::__construct($params);
+		self::$type = '018';
 
-			$this->data_structure = array(
+		$this->data_structure = array(
 			'record_type' => '%1s',
 			'call_type' => '%2s',
 			'caller_phone_no' => '%10s',
@@ -66,13 +65,14 @@ class Billrun_Responder_018 extends Billrun_Responder_Base_Ilds {
 			'total_err_rec_no' => '%6s',
 			'filler' => '%-122s',
 		);
-
 	}
+
 	function processErrorLine($dbLine) {
-		return  $dbLine;
+		return $dbLine;
 	}
 
-	protected function getResponseFilename($receivedFilename,$logLine) {
-			return $receivedFilename;
+	protected function getResponseFilename($receivedFilename, $logLine) {
+		return $receivedFilename;
 	}
+
 }

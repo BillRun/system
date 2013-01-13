@@ -1,5 +1,4 @@
 ﻿<?php
-
 /**
  * @package			Billing
  * @copyright		Copyright (C) 2012 S.D.O.C. LTD. All rights reserved.
@@ -23,7 +22,7 @@ class Billrun_Aggregator_Egsn extends Billrun_Aggregator {
 		// @TODO trigger before aggregate
 		foreach ($this->data as $item) {
 			// load subscriber
-			$phone_number = preg_replace("/^19972/","",$item->get('served_msisdn'));
+			$phone_number = preg_replace("/^19972/", "", $item->get('served_msisdn'));
 			$time = $item->get('time_of_report');
 			// load subscriber
 			$subscriber = golan_subscriber::get($phone_number, $time);
@@ -121,7 +120,7 @@ class Billrun_Aggregator_Egsn extends Billrun_Aggregator {
 
 		$type = $line->get('type');
 		if (!isset($current['data_usage'][$type])) {
-			$current['data_usage'][$type] = array ( 'upload' => $added_ul , 'download' => $added_dl);
+			$current['data_usage'][$type] = array('upload' => $added_ul, 'download' => $added_dl);
 		} else {
 			$current['data_usage'][$type]['upload'] += $added_ul;
 			$current['data_usage'][$type]['download'] += $added_dl;
@@ -132,7 +131,7 @@ class Billrun_Aggregator_Egsn extends Billrun_Aggregator {
 		// the return values will be used for revert
 		return array(
 			'newUsage' => $current['data_usage'],
-			'added' => array ( 'upload' => $added_ul , 'download' => $added_dl),
+			'added' => array('upload' => $added_ul, 'download' => $added_dl),
 		);
 	}
 
@@ -160,7 +159,7 @@ class Billrun_Aggregator_Egsn extends Billrun_Aggregator {
 	 */
 	public function load($initData = true) {
 		$lines = $this->db->getCollection(self::lines_table)->query('billrun NOT EXISTS')
-				->equals("type", 'egsn');
+			->equals("type", 'egsn');
 
 		if ($initData) {
 			$this->data = array();

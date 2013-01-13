@@ -1,5 +1,4 @@
 ﻿<?php
-
 /**
  * @package         Billing
  * @copyright       Copyright (C) 2012 S.D.O.C. LTD. All rights reserved.
@@ -33,14 +32,13 @@ abstract class Billrun_Responder_Base_LocalDir extends Billrun_Responder_Base_Fi
 
 	protected function respondAFile($responseFilePath, $fileName, $logLine) {
 		//move file to export folder
-		if(!file_exists($this->exportDir . DIRECTORY_SEPARATOR . $this->type ))  {
-			mkdir($this->exportDir . DIRECTORY_SEPARATOR . $this->type );
+		if (!file_exists($this->exportDir . DIRECTORY_SEPARATOR . self::$type)) {
+			mkdir($this->exportDir . DIRECTORY_SEPARATOR . self::$type);
 		}
-		$result = rename($responseFilePath, $this->exportDir . DIRECTORY_SEPARATOR . $this->type . DIRECTORY_SEPARATOR .$fileName);
-		if($result) {
+		$result = rename($responseFilePath, $this->exportDir . DIRECTORY_SEPARATOR . self::$type . DIRECTORY_SEPARATOR . $fileName);
+		if ($result) {
 			parent::respondAFile($responseFilePath, $fileName, $logLine);
 		}
 	}
-
 
 }

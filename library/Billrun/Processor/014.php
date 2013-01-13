@@ -14,8 +14,14 @@
  */
 class Billrun_Processor_014 extends Billrun_Processor_Base_Ilds {
 
-	protected $type = '014';
-	const ITS_ON_GOLAN_DATE = "07/02/2012";
+	/**
+	 * the type of the object
+	 *
+	 * @var string
+	 */
+	static protected $type = '014';
+	
+	const ITS_ON_GOLAN_DATE = '07/02/2012';
 
 	public function __construct($options) {
 

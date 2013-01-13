@@ -14,9 +14,16 @@
  */
 class Billrun_Receiver_Nrtrde extends Billrun_Receiver {
 
+	/**
+	 * the type of the object
+	 *
+	 * @var string
+	 */
+	static protected $type = 'nrtrde';
+
 	public function __construct($options) {
 		parent::__construct($options);
-		
+
 		if (isset($options['workspace'])) {
 			$this->workspace = $options['workspace'];
 		} else {
@@ -47,7 +54,7 @@ class Billrun_Receiver_Nrtrde extends Billrun_Receiver {
 				$ret[] = $path;
 				$this->processFile($path, $type);
 			}
-			
+
 			return $ret;
 		}
 	}

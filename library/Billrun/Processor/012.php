@@ -14,7 +14,12 @@
  */
 class Billrun_Processor_012 extends Billrun_Processor_Base_Ilds {
 
-	protected $type = '012';
+	/**
+	 * the type of the object
+	 *
+	 * @var string
+	 */
+	static protected $type = "012";
 
 	public function __construct($options) {
 

@@ -55,7 +55,7 @@ abstract class Billrun_Base {
 	 *
 	 * @var string
 	 */
-	static protected $type = "base";
+	static protected $type = 'base';
 
 	/**
 	 * constant of log collection name

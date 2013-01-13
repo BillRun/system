@@ -15,13 +15,20 @@
 abstract class Billrun_Processor_Base_Binary extends Billrun_Processor {
 
 	/**
+	 * the type of the object
+	 *
+	 * @var string
+	 */
+	static protected $type = 'binary';
+	
+	/**
 	 * create an header record
 	 * @param $data  the header record data.
 	 * @return Array an array to be used as the header data record.
 	 */
 	protected function buildHeader($data) {
 		$header['data'] = utf8_encode($data);
-		$header['type'] = $this->type;
+		$header['type'] = self::$type;
 		$header['file'] = basename($this->filePath);
 		$header['process_time'] = date('Y-m-d h:i:s');
 		$header['stamp'] = md5(serialize($header));
@@ -37,7 +44,7 @@ abstract class Billrun_Processor_Base_Binary extends Billrun_Processor {
 		$this->parser->setLine($data);
 		$row = $this->parser->parse();
 		if ($row) {
-			$row['type'] = $this->type;
+			$row['type'] = self::$type;
 			$row['header_stamp'] = $this->data['header']['stamp'];
 			$row['file'] = basename($this->filePath);
 			$row['process_time'] = date('Y-m-d h:i:s');
@@ -52,7 +59,7 @@ abstract class Billrun_Processor_Base_Binary extends Billrun_Processor {
 	 */
 	protected function buildTrailer($data) {
 		$trailer['data'] = utf8_encode($data);
-		$trailer['type'] = $this->type;
+		$trailer['type'] = self::$type;
 		$trailer['header_stamp'] = $this->data['header']['stamp'];
 		$trailer['file'] = basename($this->filePath);
 		$trailer['process_time'] = date('Y-m-d h:i:s');

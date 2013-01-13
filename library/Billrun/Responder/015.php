@@ -1,5 +1,4 @@
 ﻿<?php
-
 /**
  * @package         Billing
  * @copyright       Copyright (C) 2012 S.D.O.C. LTD. All rights reserved.
@@ -15,9 +14,9 @@
  */
 class Billrun_Responder_015 extends Billrun_Responder_Base_Ilds {
 
-	public function __construct( $options = false ) {
-		parent::__construct( $options );
-		$this->type = "015";
+	public function __construct(array $params = array()) {
+		parent::__construct($params);
+		self::$type = '015';
 
 		$this->data_structure = array(
 			'record_type' => '%1s',
@@ -42,7 +41,6 @@ class Billrun_Responder_015 extends Billrun_Responder_Base_Ilds {
 			'file_creation_date' => '%14s',
 			'file_received_date' => '%14s',
 			//'file_status' => '%02s',
-
 		);
 
 		$this->trailer_structure = array(
@@ -56,31 +54,33 @@ class Billrun_Responder_015 extends Billrun_Responder_Base_Ilds {
 			'total_charge_sign' => '%1s',
 			'total_charge' => '%15s',
 			'total_rec_no' => '%6s',
-		);	}
+		);
+	}
 
-	protected function updateHeader($line,$logLine) {
-		$line = parent::updateHeader($line,$logLine);
+	protected function updateHeader($line, $logLine) {
+		$line = parent::updateHeader($line, $logLine);
 		$line.="00"; //TODO add problem detection.
 		return $line;
 	}
 
-	protected function updateLine($dbLine,$logLine) {
+	protected function updateLine($dbLine, $logLine) {
 		$dbLine['record_status'] = '00';
-		return  parent::updateLine($dbLine,$logLine);
+		return parent::updateLine($dbLine, $logLine);
 	}
 
 	protected function updateTrailer($logLine) {
 		$line = parent::updateTrailer($logLine);
-		$line.=  sprintf("%06s",$this->linesErrors);
+		$line.= sprintf("%06s", $this->linesErrors);
 		return $line;
 	}
 
 	function processErrorLine($dbLine) {
 		$dbLine['record_status'] = '02';
-		return  $dbLine;
+		return $dbLine;
 	}
 
-	protected function getResponseFilename($receivedFilename,$logLine) {
-			return $receivedFilename;
+	protected function getResponseFilename($receivedFilename, $logLine) {
+		return $receivedFilename;
 	}
+
 }
