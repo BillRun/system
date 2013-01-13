@@ -37,7 +37,7 @@ class Billrun_Receiver_Files extends Billrun_Receiver {
 			}
 		}
 	}
-
+	
 	/**
 	 * Process an ILD file
 	 * @param $filePath  Path to the filethat needs processing.
@@ -54,7 +54,7 @@ class Billrun_Receiver_Files extends Billrun_Receiver {
 
 		$processor = Billrun_Processor::getInstance($options);
 		if ($processor) {
-			$ret = $processor->process();
+			$processor->process();
 		} else {
 			echo "error with loading processor" . PHP_EOL;
 		}
