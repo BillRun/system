@@ -165,12 +165,15 @@ class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 	 * load the data to aggregate
 	 */
 	public function load($initData = true) {
-		$lines = $this->db->getCollection(self::lines_table);
-		$query = "price_customer EXISTS and price_provider EXISTS and billrun NOT EXISTS";
+		$previous_month = date("Ymt235959", strtotime("previous month"));
+		$query = "price_customer EXISTS and price_provider EXISTS and billrun NOT EXISTS "
+			. "call_start_dt <= " . $previous_month;
+		
 		if ($initData) {
 			$this->data = array();
 		}
 
+		$lines = $this->db->getCollection(self::lines_table);
 		$resource = $lines->query($query);
 
 		foreach ($resource as $entity) {
