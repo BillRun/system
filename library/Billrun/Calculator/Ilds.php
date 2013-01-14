@@ -15,10 +15,11 @@
 class Billrun_Calculator_Ilds extends Billrun_Calculator {
 
 	/**
-	 * the type of the calculator
+	 * the type of the object
+	 *
 	 * @var string
 	 */
-	protected $type = 'ilds';
+	static protected $type = "receiver";
 
 	/**
 	 * execute the calculation process

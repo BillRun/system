@@ -30,9 +30,16 @@ abstract class Billrun_Base {
 	protected $stamp = null;
 
 	/**
+	 * the log of the system
+	 *
+	 * @var Billrun_Log
+	 */
+	protected $log;
+
+	/**
 	 * the configuration of the system
 	 *
-	 * @var configuration class
+	 * @var YAF_Config
 	 */
 	protected $config;
 
@@ -42,6 +49,13 @@ abstract class Billrun_Base {
 	 * @var dispatcher class
 	 */
 	protected $dispatcher;
+
+	/**
+	 * the type of the object
+	 *
+	 * @var string
+	 */
+	static protected $type = 'base';
 
 	/**
 	 * constant of log collection name
@@ -60,7 +74,13 @@ abstract class Billrun_Base {
 	const billrun_table = 'billrun';
 
 	/**
+	 * constant for base date format
+	 */
+	const base_dateformat = 'Y-m-d h:i:s';
+
+	/**
 	 * constructor
+	 * 
 	 * @param array $options
 	 */
 	public function __construct($options) {
@@ -95,7 +115,6 @@ abstract class Billrun_Base {
 			$this->dispatcher = Billrun_Dispatcher::getInstance();
 		}
 	}
-
 
 	/**
 	 * set database of the basic object
@@ -146,6 +165,13 @@ abstract class Billrun_Base {
 			$type = $args[0]['type'];
 			unset($args[0]['type']);
 			$args = $args[0];
+		}
+
+		$config_type = Yaf_Application::app()->getConfig()->{$type};
+
+		if ($config_type && isset($config_type->type)) {
+			$type = $config_type['type'];
+			$args = array_merge($args, $config_type->toArray());
 		}
 
 		$class = get_called_class() . '_' . ucfirst($type);

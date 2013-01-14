@@ -30,6 +30,7 @@ class golan_subscriber
 	{
 		//http://192.168.37.10/gt-dev/dev/rpc/subscribers_by_date.rpc.php?date=2012-07-19 08:12&NDC_SN=502052428
 //		$host = '192.168.37.10';
+		//http://gtgt.no-ip.org/gt-dev/dev/rpc/subscribers_by_date.rpc.php?date=2012-07-19 08:12&NDC_SN=502052428
 		$host = 'gtgt.no-ip.org';
 		$url = 'gt-dev/dev/rpc/subscribers_by_date.rpc.php';
 		$datetime_format = 'Y-m-d H:i:s';

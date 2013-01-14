@@ -14,22 +14,27 @@
  */
 abstract class Billrun_Responder extends Billrun_Base {
 
-	protected $type = "";
+	/**
+	 * the type of the object
+	 *
+	 * @var string
+	 */
+	static protected $type = 'responder';
 
 	/**
 	 * the responder files workspace.
 	 * @var string directory path
 	 */
-	protected $workPath;
+	protected $workspace;
 
 	public function __construct($options) {
 
 		parent::__construct($options);
 
 		if (isset($options['workspace'])) {
-			$this->workPath = $options['workspace'];
+			$this->workspace = $options['workspace'];
 		} else {
-			$this->workPath = $this->config->ilds->path;
+			$this->workspace = $this->config->ilds->path;
 		}
 
 	}

@@ -1,5 +1,4 @@
 ﻿<?php
-
 /**
  * @package         Billing
  * @copyright       Copyright (C) 2012 S.D.O.C. LTD. All rights reserved.
@@ -16,9 +15,9 @@ class Billrun_Responder_014 extends Billrun_Responder_Base_Ilds {
 
 	protected $linesErrors = 0;
 
-	public function __construct( $options = false ) {
-		parent::__construct( $options );
-		$this->type = "014";
+	public function __construct(array $params = array()) {
+		parent::__construct($params);
+		self::$type = '014';
 
 
 		$this->data_structure = array(
@@ -75,26 +74,27 @@ class Billrun_Responder_014 extends Billrun_Responder_Base_Ilds {
 		);
 	}
 
-
-	protected function processFileForResponse($filePath,$logLine) {
+	protected function processFileForResponse($filePath, $logLine) {
 		$tmpLogLine = $logLine->getRawData();
-		$unprocessDBLines = $this->db->getCollection(self::lines_table)->query()->notExists('billrun')->equals('file',$tmpLogLine['file']);
+		$unprocessDBLines = $this->db->getCollection(self::lines_table)->query()->notExists('billrun')->equals('file', $tmpLogLine['file']);
 		//run only if theres problematic lines in the file.
-		if( $unprocessDBLines->count() == 0) { return false; }
+		if ($unprocessDBLines->count() == 0) {
+			return false;
+		}
 
-		return parent::processFileForResponse($filePath,$logLine);
-
+		return parent::processFileForResponse($filePath, $logLine);
 	}
 
 	protected function processErrorLine($dbLine) {
 		$dbLine['record_status'] = '02';
-		return  $dbLine;
+		return $dbLine;
 	}
 
-	protected function getResponseFilename($receivedFilename,$logLine) {
-			$responseFilename = preg_replace("/\WMBZ\W/","OUR",$receivedFilename);
-			$responseFilename = preg_replace("/\WGTC\W/","MBZ",$responseFilename);
-			$responseFilename = preg_replace("/\WOUR\W/","GTC",$responseFilename);
-			return $responseFilename;
+	protected function getResponseFilename($receivedFilename, $logLine) {
+		$responseFilename = preg_replace("/\WMBZ\W/", "OUR", $receivedFilename);
+		$responseFilename = preg_replace("/\WGTC\W/", "MBZ", $responseFilename);
+		$responseFilename = preg_replace("/\WOUR\W/", "GTC", $responseFilename);
+		return $responseFilename;
 	}
+
 }

@@ -1,5 +1,4 @@
 ﻿<?php
-
 /**
  * @package         Billing
  * @copyright       Copyright (C) 2012 S.D.O.C. LTD. All rights reserved.
@@ -15,10 +14,9 @@
  */
 class Billrun_Responder_013 extends Billrun_Responder_Base_Ilds {
 
-
-	public function __construct( $options = false ) {
-		parent::__construct( $options );
-		$this->type = "013";
+	public function __construct(array $params = array()) {
+		parent::__construct($params);
+		self::$type = '013';
 
 		$this->data_structure = array(
 			'record_type' => '%1s',
@@ -56,7 +54,8 @@ class Billrun_Responder_013 extends Billrun_Responder_Base_Ilds {
 		return false;
 	}
 
-	protected function getResponseFilename($receivedFilename,$logLine) {
-			return $receivedFilename;
+	protected function getResponseFilename($receivedFilename, $logLine) {
+		return $receivedFilename;
 	}
+
 }

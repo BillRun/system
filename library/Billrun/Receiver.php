@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 
 /**
  * @package         Billing
@@ -14,34 +14,25 @@
  */
 abstract class Billrun_Receiver extends Billrun_Base {
 
+	/**
+	 * the type of the object
+	 *
+	 * @var string
+	 */
+	static protected $type = 'receiver';
 
 	/**
-	 * the receiver workspace of files
-	 * @var string directory path
+	 * the receiver workspace path of files
+	 * this is the place where the files will be received
+	 * 
+	 * @var string
 	 */
-	protected $workPath;
-
-	protected $parser;
-
-	public function __construct($options) {
-
-		parent::__construct($options);
-
-		if (isset($options['workspace'])) {
-			$this->workPath = $options['workspace'];
-		} else {
-			$this->workPath = $this->config->ilds->path;
-		}
-
-		if (isset($options['parser'])) {
-			$this->parser = $options['parser'];
-		}
-	}
+	protected $workspace;
 
 	/**
 	 * general function to receive
 	 *
-	 * @return mixed
+	 * @return array list of files received
 	 */
 	abstract public function receive();
 }

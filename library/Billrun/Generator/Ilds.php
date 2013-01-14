@@ -85,8 +85,9 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 
 		$resource = $lines->query()
 			->equals('billrun', $this->getStamp())
-			->equals('subscriber_id', "$subscriber_id");
-
+			->equals('subscriber_id', "$subscriber_id")
+			->cursor()->sort(array('call_start_dt' => 1));
+			
 		foreach ($resource as $entity) {
 			$ret[] = $entity->getRawData();
 		}
@@ -113,7 +114,8 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 				$subscriber_inf->SUBSCRIBER_DETAILS->SUBSCRIBER_ID = $id;
 				$billing_records = $subscriber_inf->addChild('BILLING_LINES');
 
-				foreach ($this->get_subscriber_lines($id) as $line) {
+				$subscriber_lines = $this->get_subscriber_lines($id);
+				foreach ($subscriber_lines as $line) {
 					$billing_record = $billing_records->addChild('BILLING_RECORD');
 					$billing_record->TIMEOFBILLING = $line['call_start_dt'];
 					$billing_record->TARIFFITEM = 'IL_ILD';

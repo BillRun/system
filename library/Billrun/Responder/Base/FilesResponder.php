@@ -1,5 +1,4 @@
 ﻿<?php
-
 /**
  * @package         Billing
  * @copyright       Copyright (C) 2012 S.D.O.C. LTD. All rights reserved.
@@ -14,7 +13,6 @@
  */
 abstract class Billrun_Responder_Base_FilesResponder extends Billrun_Responder {
 
-
 	/**
 	 * general function to receive
 	 *
@@ -22,16 +20,16 @@ abstract class Billrun_Responder_Base_FilesResponder extends Billrun_Responder {
 	 */
 	public function respond() {
 
-		foreach($this->getProcessedFilesForType($this->type) as $filename => $logLine) {
-			$filePath = $this->workPath . DIRECTORY_SEPARATOR . $this->type . DIRECTORY_SEPARATOR . $filename ;
+		foreach ($this->getProcessedFilesForType(self::$type) as $filename => $logLine) {
+			$filePath = $this->workspace . DIRECTORY_SEPARATOR . self::$type . DIRECTORY_SEPARATOR . $filename;
 			if (!file_exists($filePath)) {
-				print("NOTICE : SKIPPING $filename for type : $this->type !!! ,path -  $filePath not found!!\n");
+				print("NOTICE : SKIPPING $filename for type : " . self::$type . "!!! ,path -  $filePath not found!!\n");
 				continue;
 			}
 
-			$responseFilePath = $this->processFileForResponse($filePath, $logLine,$filename);
-			if($responseFilePath) {
-				$this->respondAFile($responseFilePath, $this->getResponseFilename($filename,$logLine), $logLine);
+			$responseFilePath = $this->processFileForResponse($filePath, $logLine, $filename);
+			if ($responseFilePath) {
+				$this->respondAFile($responseFilePath, $this->getResponseFilename($filename, $logLine), $logLine);
 			}
 		}
 	}
@@ -39,14 +37,14 @@ abstract class Billrun_Responder_Base_FilesResponder extends Billrun_Responder {
 	protected function getProcessedFilesForType($type) {
 		$files = array();
 		if (!isset($this->db)) {
-			$this->log->log("Billrun_Responder_Remote::getProcessedFilesForType - please providDB instance.",Zend_Log::DEBUG);
+			$this->log->log("Billrun_Responder_Remote::getProcessedFilesForType - please providDB instance.", Zend_Log::DEBUG);
 			return false;
 		}
 
 		$log = $this->db->getCollection(self::log_table);
 
-		$logLines = $log->query()->equals('type',$type)->exists('process_time')->notExists('response_time');
-		foreach($logLines as $logEntry) {
+		$logLines = $log->query()->equals('type', $type)->exists('process_time')->notExists('response_time');
+		foreach ($logLines as $logEntry) {
 			$logEntry->collection($log);
 			$files[$logEntry->get('file')] = $logEntry;
 		}
@@ -54,10 +52,9 @@ abstract class Billrun_Responder_Base_FilesResponder extends Billrun_Responder {
 		return $files;
 	}
 
+	abstract protected function processFileForResponse($filePath, $logLine);
 
-	abstract protected function processFileForResponse($filePath,$logLine) ;
-
-	abstract protected function getResponseFilename($receivedFilename,$logLine) ;
+	abstract protected function getResponseFilename($receivedFilename, $logLine);
 
 	protected function respondAFile($responseFilePath, $fileName, $logLine) {
 		$data = $logLine->getRawData();
@@ -66,7 +63,5 @@ abstract class Billrun_Responder_Base_FilesResponder extends Billrun_Responder {
 		$logLine->save();
 	}
 
-
 }
-
 

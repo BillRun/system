@@ -14,7 +14,12 @@
  */
 class Billrun_Processor_Egsn extends Billrun_Processor_Base_Binary {
 
-	protected $type = 'egsn';
+	/**
+	 * the type of the object
+	 *
+	 * @var string
+	 */
+	static protected $type = 'egsn';
 
 	const HEADER_LENGTH = 54;
 	const MAX_CHUNKLENGTH_LENGTH = 512;
