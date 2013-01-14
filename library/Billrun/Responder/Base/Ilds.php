@@ -85,5 +85,5 @@ abstract class Billrun_Responder_Base_Ilds extends Billrun_Responder_Base_LocalD
 		return $line;
 	}
 
-	abstract function processErrorLine($dbLine);
+	abstract protected function processErrorLine($dbLine);
 }

@@ -26,13 +26,12 @@ class IndexController extends Yaf_Controller_Abstract {
 		$this->outputAdd("Running Billrun from CLI!");
 		try {
 			$input = array(
-				'r|R|receive' => 'Process files into database',
+				'r|R|receive' => 'Recieve files and process them into database',
 				'p|P|process' => 'Process files into database',
 				'c|C|calc|calculate' => 'Calculate lines in database',
 				'a|A|aggregate' => 'Aggregate lines for billrun',
 				'g|G|generate' => 'Generate xml and csv files of specific billrun',
-				'r|R|respond' => 'Respond to files that were processed',
-				'v|V|receive' => 'Respond to files that were processed',
+				'e|E|respond' => 'Respond to files that were processed',
 				'h|H|help' => 'Displays usage information.',
 				'type-s' => 'Process: Ild type to use',
 				'stamp-s' => 'Process: Stamp to use for this run',
