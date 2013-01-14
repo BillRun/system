@@ -68,8 +68,8 @@ class Billrun_Responder_018 extends Billrun_Responder_Base_Ilds {
 		);
 
 	}
-	function processErrorLine($dbLine) {
-		return  $dbLine;
+	protected function processErrorLine($dbLine) {
+		return  false;
 	}
 
 	protected function getResponseFilename($receivedFilename,$logLine) {

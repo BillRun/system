@@ -75,7 +75,7 @@ class Billrun_Responder_015 extends Billrun_Responder_Base_Ilds {
 		return $line;
 	}
 
-	function processErrorLine($dbLine) {
+	protected function processErrorLine($dbLine) {
 		$dbLine['record_status'] = '02';
 		return  $dbLine;
 	}

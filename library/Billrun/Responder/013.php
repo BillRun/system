@@ -52,7 +52,7 @@ class Billrun_Responder_013 extends Billrun_Responder_Base_Ilds {
 		);
 	}
 
-	function processErrorLine($dbLine) {
+	protected function processErrorLine($dbLine) {
 		return false;
 	}
 

@@ -61,11 +61,11 @@ abstract class Billrun_Responder_Base_Ilds extends Billrun_Responder_Base_LocalD
 		}
 		if(!$dbLine || (isset($dbLine['record_status']) && intval($dbLine['record_status']) != 0 ) ) {
 				$this->linesErrors++;
-				if(!$dbLine) {return false;}
+				if(!$dbLine) { return false;}
 		}
 		foreach($this->data_structure as $key => $val) {
 			$data = (isset($dbLine[$key]) ? $dbLine[$key] : "");
-			$line .= sprintf($val,mb_convert_encoding($data, 'ISO-8859-8', 'UTF-8'));
+			$line .= sprintf($val, mb_convert_encoding($data, 'ISO-8859-8', 'UTF-8'));
 		}
 
 		return $line;
