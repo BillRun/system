@@ -1,8 +1,8 @@
 ﻿<?php
 /**
- * @package			Billing
- * @copyright		Copyright (C) 2012 S.D.O.C. LTD. All rights reserved.
- * @license			GNU General Public License version 2 or later; see LICENSE.txt
+ * @package         Billing
+ * @copyright       Copyright (C) 2012 S.D.O.C. LTD. All rights reserved.
+ * @license         GNU General Public License version 2 or later; see LICENSE.txt
  */
 require_once __DIR__ . '/../../../application/golan/' . 'subscriber.php';
 
