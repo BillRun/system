@@ -35,7 +35,8 @@ abstract class Billrun_Responder_Base_Ilds extends Billrun_Responder_Base_LocalD
 		$dbLines = $this->db->getCollection(self::lines_table)->query()->equals('file', $logLine['file']);
 
 		//run only after the lines were processed by the billrun.
-		if ($dbLines->count() == 0 || $dbLines->exists('billrun')->count() == 0) {
+		if ($dbLines->count() == 0 || /* TODO fix this db query  find a way to query the $dbLines results insted */ 
+			$this->db->getCollection(self::lines_table)->query()->equals('file', $logLine['file'])->exists('billrun')->count() == 0) {
 			return false;
 		}
 
@@ -48,10 +49,10 @@ abstract class Billrun_Responder_Base_Ilds extends Billrun_Responder_Base_LocalD
 		fputs($file, $this->updateHeader(fgets($srcFile), $logLine) . "\n");
 		foreach ($dbLines as $dbLine) {
 			//alter data line
-			$this->linesCount++;
-			$this->totalChargeAmount += intval($dbLine->get('call_charge'));
 			$line = $this->updateLine($dbLine->getRawData(), $logLine);
 			if ($line) {
+				$this->linesCount++;
+				$this->totalChargeAmount += floatval($dbLine->get('call_charge'));
 				fputs($file, $line . "\n");
 			}
 		}
@@ -87,6 +88,7 @@ abstract class Billrun_Responder_Base_Ilds extends Billrun_Responder_Base_LocalD
 		if (!$dbLine || (isset($dbLine['record_status']) && intval($dbLine['record_status']) != 0 )) {
 			$this->linesErrors++;
 			if (!$dbLine) {
+				$this->log->log("updateLine skipping dbLine, ID : ${dbLine['_id']}",  Zend_Log::DEBUG);
 				return false;
 			}
 		}

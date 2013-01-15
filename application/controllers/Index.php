@@ -135,8 +135,8 @@ class IndexController extends Yaf_Controller_Abstract {
 	}
 
 	protected function respond($opts) {
-		$options = $this->getInstanceOptions($opts, array('type' => false,
-			'export-path' => true));
+		$options = $this->getInstanceOptions($opts, array(	'type' => false,
+															'export-path' => true ));
 		if (!$options) {
 			return;
 		}
