@@ -85,8 +85,10 @@ class Billrun_Responder_014 extends Billrun_Responder_Base_Ilds {
 		return parent::processFileForResponse($filePath, $logLine);
 	}
 
-	protected function processErrorLine($dbLine) {
-		$dbLine['record_status'] = '02';
+	protected function processLineErrors($dbLine) {
+		if(!isset($dbLine['billrun']) || !$dbLine['billrun']) {
+			$dbLine['record_status'] = '02';
+		}
 		return $dbLine;
 	}
 

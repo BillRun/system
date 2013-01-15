@@ -13,6 +13,18 @@
  */
 class Billrun_Receiver_Files extends Billrun_Receiver {
 
+	
+	
+	public function __construct($options) {
+		parent::__construct($options);
+
+		if (isset($options['workspace'])) {
+			$this->workspace = $options['workspace'];
+		} else {
+			$this->workspace = $this->config->ilds->path;
+		}
+	}
+	
 	/**
 	 * general function to receive
 	 *

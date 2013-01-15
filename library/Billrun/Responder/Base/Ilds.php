@@ -13,10 +13,22 @@
  */
 abstract class Billrun_Responder_Base_Ilds extends Billrun_Responder_Base_LocalDir {
 
+	// A  count of the line that contain some kind of error in the proceesed file.
 	protected $linesErrors = 0;
+	
+	// The line count that were proceesed in the proceesed file.
 	protected $linesCount = 0;
+	
+	// The total charge amount in the processed file.
 	protected $totalChargeAmount = 0;
-
+	
+	/**
+	 * Process a given file and create a temporary response file to it.  
+	 * @param type $filePath the location of the file that need to be proceesed
+	 * @param type $logLine the log line that associated with the file to process.
+	 * @return boolean|string	return the temporary file path if the file should be responded to.
+	 *							or false if the file wasn't processed into the DB yet.
+	 */
 	protected function processFileForResponse($filePath, $logLine) {
 		$logLine = $logLine->getRawData();
 
@@ -50,17 +62,28 @@ abstract class Billrun_Responder_Base_Ilds extends Billrun_Responder_Base_LocalD
 
 		return $responsePath;
 	}
-
+	/**
+	 * 
+	 * @param type $line
+	 * @param type $logLine
+	 * @return type
+	 */
 	protected function updateHeader($line, $logLine) {
 		$line = trim($line);
 		return $line;
 	}
-
+	
+	/**
+	 * Create and update a data line for response
+	 * @param Array $dbLine the data line from the DB to respond to.
+	 * @param Array $logLine thelogline of the file the data line is linked to.
+	 * @return string a record data line that holds the data from the proccesed db line. 
+	 */
 	protected function updateLine($dbLine, $logLine) {
 		$line = "";
-		if (!isset($dbLine['billrun']) || !$dbLine['billrun']) {
-			$dbLine = $this->processErrorLine($dbLine);
-		}
+		
+		$dbLine = $this->processLineErrors($dbLine);
+		
 		if (!$dbLine || (isset($dbLine['record_status']) && intval($dbLine['record_status']) != 0 )) {
 			$this->linesErrors++;
 			if (!$dbLine) {
@@ -74,16 +97,27 @@ abstract class Billrun_Responder_Base_Ilds extends Billrun_Responder_Base_LocalD
 
 		return $line;
 	}
-
+	
+	/**
+	 * Create  and update the trailer of the response file.
+	 * @param array $logLine the logline of the processed file
+	 * @return string the response trailer line(s) .
+	 */
 	protected function updateTrailer($logLine) {
 		$line = "";
 		foreach ($this->trailer_structure as $key => $val) {
-			$data = (isset($dbLine[$key]) ? $logLine[$key] : "");
-			$line .= sprintf($val, $logLine[$key]);
+			$data = (isset($logLine[$key]) ? $logLine[$key] : "");
+			$line .= sprintf($val,$data);
 		}
 
 		return $line;
 	}
-
-	abstract protected function processErrorLine($dbLine);
+	
+	/**
+	 * Process record data line structure and check for errors or issues with it
+	 * Change it  accordingly and return the updated line.
+	 * @param $dbLine A structure the holds a single data line from the DB.
+	 * @return An updated line data structure. 
+	 */
+	abstract protected function processLineErrors($dbLine);
 }
