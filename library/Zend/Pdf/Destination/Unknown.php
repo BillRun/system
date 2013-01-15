@@ -21,7 +21,6 @@
  */
 
 /** Zend_Pdf_Destination_Explicit */
-require_once 'Zend/Pdf/Destination/Explicit.php';
 
 
 /**
