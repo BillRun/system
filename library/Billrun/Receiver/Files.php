@@ -39,7 +39,7 @@ class Billrun_Receiver_Files extends Billrun_Receiver {
 
 		foreach ($this->config->providers->toArray() as $type) {
 			if (!file_exists($this->workspace . DIRECTORY_SEPARATOR . $type)) {
-				print("NOTICE : SKIPPING $type !!! directory " . $this->workspace . DIRECTORY_SEPARATOR . $type . " not found!!");
+				$this->log->log("NOTICE : SKIPPING $type !!! directory " . $this->workspace . DIRECTORY_SEPARATOR . $type . " not found!!", Zend_Log::NOTICE);
 				continue;
 			}
 			$files = scandir($this->workspace . DIRECTORY_SEPARATOR . $type);

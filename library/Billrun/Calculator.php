@@ -51,7 +51,9 @@ abstract class Billrun_Calculator extends Billrun_Base {
 			$this->data[] = $entity;
 		}
 
-		print "entities loaded: " . count($this->data) . PHP_EOL;
+		$this->log->log("entities loaded: " . count($this->data), Zend_Log::INFO);
+		
+		$this->dispatcher->trigger('afterCalculatorLoadData', $this);
 	}
 
 	/**
@@ -61,6 +63,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 
 	/**
 	 * identify if the row belong to calculator
+	 * 
 	 * @return boolean true if the row identify as belonging to the calculator, else false
 	 */
 	protected function identify($row) {
