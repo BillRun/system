@@ -28,7 +28,7 @@ class Billrun_Aggregator_Egsn extends Billrun_Aggregator {
 			$subscriber = golan_subscriber::get($phone_number, $time);
 
 			if (!$subscriber) {
-				print "subscriber not found. phone_number:" . $phone_number . " time: " . $time . PHP_EOL;
+				$this->log->log("subscriber not found. phone_number:" . $phone_number . " time: " . $time, Zend_Log::INFO);
 				continue;
 			}
 
@@ -37,19 +37,19 @@ class Billrun_Aggregator_Egsn extends Billrun_Aggregator {
 			$billrun = $this->loadSubscriberBillrun($subscriber);
 
 			if (!$billrun) {
-				print "subscriber " . $subscriber_id . " cannot load billrun" . PHP_EOL;
+				$this->log->log("subscriber " . $subscriber_id . " cannot load billrun", Zend_Log::INFO);
 				continue;
 			}
 
 			// update billrun subscriber with amount
 			if (!$this->updateBillrun($billrun, $item)) {
-				print "subscriber " . $subscriber_id . " cannot update billrun" . PHP_EOL;
+				$this->log->log("subscriber " . $subscriber_id . " cannot update billrun", Zend_Log::INFO);
 				continue;
 			}
 
 			// update billing line with billrun stamp
 			if (!$this->updateBillingLine($subscriber_id, $item)) {
-				print "subscriber " . $subscriber_id . " cannot update billing line" . PHP_EOL;
+				$this->log->log("subscriber " . $subscriber_id . " cannot update billing line", Zend_Log::INFO);
 				continue;
 			}
 
@@ -59,11 +59,11 @@ class Billrun_Aggregator_Egsn extends Billrun_Aggregator {
 			);
 
 			if (!$this->save($save_data)) {
-				print "subscriber " . $subscriber_id . " cannot save data" . PHP_EOL;
+				$this->log->log("subscriber " . $subscriber_id . " cannot save data", Zend_Log::INFO);
 				continue;
 			}
 
-			print "subscriber " . $subscriber_id . " saved successfully" . PHP_EOL;
+			$this->log->log("subscriber " . $subscriber_id . " saved successfully", Zend_Log::INFO);
 		}
 		// @TODO trigger after aggregate
 	}
@@ -170,7 +170,7 @@ class Billrun_Aggregator_Egsn extends Billrun_Aggregator {
 			$this->data[] = $entity;
 		}
 
-		print "aggregator entities loaded: " . count($this->data) . PHP_EOL;
+		$this->log->log("aggregator entities loaded: " . count($this->data), Zend_Log::INFO);
 	}
 
 	protected function save($data) {

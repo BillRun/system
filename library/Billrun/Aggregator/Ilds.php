@@ -28,7 +28,7 @@ class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 			$previous_month = date("Ymt235959", strtotime("previous month"));
 			
 			if ($time > $previous_month) {
-				print "time frame is not till the end of previous month " . $time . "; continue to the next line" . PHP_EOL;
+				$this->log->log("time frame is not till the end of previous month " . $time . "; continue to the next line", Zend_Log::INFO);
 				continue;
 			}
 
@@ -37,7 +37,7 @@ class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 			$subscriber = golan_subscriber::get($phone_number, $time);
 
 			if (!$subscriber) {
-				print "subscriber not found. phone:" . $phone_number . " time: " . $time . PHP_EOL;
+				$this->log->log("subscriber not found. phone:" . $phone_number . " time: " . $time, Zend_Log::INFO);
 				continue;
 			}
 
@@ -46,19 +46,19 @@ class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 			$billrun = $this->loadSubscriberBillrun($subscriber);
 
 			if (!$billrun) {
-				print "subscriber " . $subscriber_id . " cannot load billrun" . PHP_EOL;
+				$this->log->log("subscriber " . $subscriber_id . " cannot load billrun", Zend_Log::INFO);
 				continue;
 			}
 
 			// update billing line with billrun stamp
 			if (!$this->updateBillingLine($subscriber_id, $item)) {
-				print "subscriber " . $subscriber_id . " cannot update billing line" . PHP_EOL;
+				$this->log->log("subscriber " . $subscriber_id . " cannot update billing line", Zend_Log::INFO);
 				continue;
 			}
 
 			// update billrun subscriber with amount
 			if (!$this->updateBillrun($billrun, $item)) {
-				print "subscriber " . $subscriber_id . " cannot update billrun" . PHP_EOL;
+				$this->log->log("subscriber " . $subscriber_id . " cannot update billrun", Zend_Log::INFO);
 				continue;
 			}
 
@@ -68,13 +68,13 @@ class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 				self::lines_table => $item,
 				self::billrun_table => $billrun,
 			);
-			//print_r($save_data);//TODO remove!
+
 			if (!$this->save($save_data)) {
-				print "subscriber " . $subscriber_id . " cannot save data" . PHP_EOL;
+				$this->log->log("subscriber " . $subscriber_id . " cannot save data", Zend_Log::INFO);
 				continue;
 			}
 
-			print "subscriber " . $subscriber_id . " saved successfully" . PHP_EOL;
+			$this->log->log("subscriber " . $subscriber_id . " saved successfully", Zend_Log::INFO);
 		}
 		// @TODO trigger after aggregate
 	}
@@ -187,7 +187,9 @@ class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 			$this->data[] = $entity;
 		}
 
-		print "aggregator entities loaded: " . count($this->data) . PHP_EOL;
+		$this->log->log("aggregator entities loaded: " . count($this->data), Zend_Log::INFO);
+		
+		$this->dispatcher->trigger('afterAggregatorLoadData', array('aggregator' => $this));
 	}
 
 	protected function save($data) {

@@ -68,7 +68,7 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 	 */
 	public function receive() {
 
-		$this->dispatcher->trigger('beforeReceive', array($this));
+		$this->dispatcher->trigger('beforeFTPReceive', array($this));
 
 		$files = $this->ftp->getDirectory($this->ftp_path)->getContents();
 
@@ -81,7 +81,7 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 			}
 		}
 
-		$this->dispatcher->trigger('afterReceive', array($this, $ret));
+		$this->dispatcher->trigger('afterFTPReceive', array($this, $ret));
 
 		return $ret;
 	}

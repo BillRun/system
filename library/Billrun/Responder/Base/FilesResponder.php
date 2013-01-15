@@ -23,7 +23,7 @@ abstract class Billrun_Responder_Base_FilesResponder extends Billrun_Responder {
 		foreach ($this->getProcessedFilesForType(self::$type) as $filename => $logLine) {
 			$filePath = $this->workspace . DIRECTORY_SEPARATOR . self::$type . DIRECTORY_SEPARATOR . $filename;
 			if (!file_exists($filePath)) {
-				print("NOTICE : SKIPPING $filename for type : " . self::$type . "!!! ,path -  $filePath not found!!\n");
+				$this->log->log("NOTICE : SKIPPING $filename for type : " . self::$type . "!!! ,path -  $filePath not found!!", Zend_Log::NOTICE);
 				continue;
 			}
 

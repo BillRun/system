@@ -143,8 +143,8 @@ abstract class Billrun_Processor extends Billrun_Base {
 		foreach ($this->data['data'] as $row) {
 			$entity = new Mongodloid_Entity($row);
 			if ($lines->query('stamp', $entity->get('stamp'))->count() > 0) {
-				print("processor::store - DUPLICATE! trying to insert duplicate line with stamp of : {$entity->get('stamp')} \n");
-				///print("processor::store - {$entity->get('caller_phone_no')} , {$entity->get('call_start_dt')}   \n");
+				$this->log->log("processor::store - DUPLICATE! trying to insert duplicate line with stamp of : {$entity->get('stamp')}", Zend_Log::NOTICE);
+				$this->log->log("processor::store - {$entity->get('caller_phone_no')} , {$entity->get('call_start_dt')}", Zend_Log::NOTICE);
 				continue;
 			}
 			$entity->save($lines, true);

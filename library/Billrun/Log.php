@@ -15,19 +15,20 @@
  */
 class Billrun_Log extends Zend_Log {
 
-	protected static $instance = null;
+	protected static $instances = array();
 
 	public static function getInstance(array $options = array()) {
 
-		if (is_null(self::$instance)) {
+		$stamp = md5(serialize($options));
+		if (!isset(self::$instances[$stamp])) {
 			if (empty($options)) {
 				$config = Yaf_Application::app()->getConfig();
 				$options = $config->log->toArray();
 			}
-			self::$instance = self::factory($options);
+			self::$instances[$stamp] = self::factory($options);
 		}
 
-		return self::$instance;
+		return self::$instances[$stamp];
 	}
-
+	
 }
