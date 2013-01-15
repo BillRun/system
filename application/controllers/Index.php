@@ -22,7 +22,15 @@ class IndexController extends Yaf_Controller_Abstract {
 		$this->getView()->content = "Open Source Last Forever!";
 	}
 
+	/**
+	 * method which run when the app running from command line
+	 * 
+	 * @return void
+	 * @since 1.0
+	 */
 	public function cliAction() {
+		// add log to stdout when we are on cli
+		Billrun_Log::getInstance()->addWriter(new Zend_Log_Writer_Stream('php://stdout'));
 		$this->outputAdd("Running Billrun from CLI!");
 		try {
 			$input = array(
@@ -61,8 +69,8 @@ class IndexController extends Yaf_Controller_Abstract {
 	}
 
 	protected function outputAdd($content) {
-		Billrun_Log::getInstance()->log($content . PHP_EOL, Zend_Log::INFO);
-		$this->getView()->output .= $content . $this->eol;
+		Billrun_Log::getInstance()->log($content, Zend_Log::INFO);
+//		$this->getView()->output .= $content . $this->eol;
 	}
 
 	protected function receive($opts) {

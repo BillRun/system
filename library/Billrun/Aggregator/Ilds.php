@@ -189,7 +189,7 @@ class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 
 		$this->log->log("aggregator entities loaded: " . count($this->data), Zend_Log::INFO);
 		
-		$this->dispatcher->trigger('afterAggregatorLoadData', $this);
+		$this->dispatcher->trigger('afterAggregatorLoadData', array('aggregator' => $this));
 	}
 
 	protected function save($data) {

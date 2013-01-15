@@ -26,30 +26,30 @@ class Billrun_Calculator_Ilds extends Billrun_Calculator {
 	 */
 	public function calc() {
 
-		$this->dispatcher->trigger('beforeCalcData', array('data' => $this->data));
+		$this->dispatcher->trigger('beforeCalculateData', array('data' => $this->data));
 		foreach ($this->data as $item) {
 			$this->updateRow($item);
 		}
-		$this->dispatcher->trigger('afterCalcData', array('data' => $this->data));
+		$this->dispatcher->trigger('afterCalculateData', array('data' => $this->data));
 	}
 
 	/**
 	 * execute write down the calculation output
 	 */
 	public function write() {
-		$this->dispatcher->trigger('beforeCalcWriteData', array('data' => $this->data));
+		$this->dispatcher->trigger('beforeCalculatorWriteData', array('data' => $this->data));
 		$lines = $this->db->getCollection(self::lines_table);
 		foreach ($this->data as $item) {
 			$item->save($lines);
 		}
-		$this->dispatcher->trigger('afterCalcWriteData', array('data' => $this->data));
+		$this->dispatcher->trigger('afterCalculatorWriteData', array('data' => $this->data));
 	}
 
 	/**
 	 * write the calculation into DB
 	 */
 	protected function updateRow($row) {
-		$this->dispatcher->trigger('beforeCalcWriteRow', array('row' => $row));
+		$this->dispatcher->trigger('beforeCalculatorWriteRow', array('row' => $row));
 
 		$current = $row->getRawData();
 		$charge = $this->calcChargeLine($row->get('type'), $row->get('call_charge'));
@@ -60,7 +60,7 @@ class Billrun_Calculator_Ilds extends Billrun_Calculator {
 		$newData = array_merge($current, $added_values);
 		$row->setRawData($newData);
 
-		$this->dispatcher->trigger('afterCalcWriteRow', array('row' => $row));
+		$this->dispatcher->trigger('afterCalculatorWriteRow', array('row' => $row));
 	}
 
 	/**
