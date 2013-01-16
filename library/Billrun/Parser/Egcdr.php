@@ -139,7 +139,7 @@ class Billrun_Parser_Egcdr extends Billrun_Parser_Base_Binary {
 
 				case 'datetime' :
 					$tempTime = DateTime::createFromFormat("ymdHisT", str_replace("2b", "+", implode(unpack("H*", $fieldData))));
-					$fieldData = is_object($tempTime) ? $tempTime->format("H:i:s d/m/Y T") : "";
+					$fieldData = is_object($tempTime) ? $tempTime->format("Y/m/d H:i:s T") : "";
 					break;
 
 				case 'json' :
@@ -260,7 +260,7 @@ class Billrun_Parser_Egcdr extends Billrun_Parser_Base_Binary {
 			'record_type' => 'C',
 			'served_imsi' => 'BCDencode',
 			'ggsn_address' => 'ip',
-			'charging_id' => 'number',
+			'charging_id' => 'BCDencode',
 			'sgsn_address' => 'ip',
 			'lsod_sgsn_address' => 'ip',
 			'apnni' => 'string',
@@ -276,8 +276,8 @@ class Billrun_Parser_Egcdr extends Billrun_Parser_Base_Binary {
 			'local_sequence_number' => 'number',
 			'apn_selection_mode' => 'C*',
 			'served_msisdn' => 'BCDencode',
-			'charging_characteristics' => 'C*',
-			'charging_characteristics_selection_mode' => 'C*',
+			'charging_characteristics' => 'H*',
+			'charging_characteristics_selection_mode' => 'H*',
 			'sgsn_plmn_id' => 'number',
 			'losd_sgsn_plmn_id' => 'number',
 			'served_imeisv' => 'BCDencode',
