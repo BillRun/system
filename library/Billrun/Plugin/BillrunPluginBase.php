@@ -67,5 +67,9 @@ abstract class Billrun_Plugin_BillrunPluginBase extends Billrun_Spl_Observer {
 			return null;
 		}
 	}
+	
+	protected function log($message, $priority, $extras = null) {
+		Billrun_Log::getInstance()->log($message, $priority, $extras);
+	}
 
 }
