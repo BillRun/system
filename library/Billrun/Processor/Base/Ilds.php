@@ -46,7 +46,8 @@ class Billrun_Processor_Base_Ilds extends Billrun_Processor {
 					// @todo: trigger after header load (including $header)
 					$header = $this->parser->parse();
 					// @todo: trigger after header parse (including $header)
-					$header['type'] = $header['source'] = self::$type;
+					$header['source'] = self::$type;
+					$header['type'] = static::$type;
 					$header['file'] = basename($this->filePath);
 					$header['process_time'] = date('Y-m-d h:i:s');
 					$this->data['header'] = $header;
@@ -63,7 +64,8 @@ class Billrun_Processor_Base_Ilds extends Billrun_Processor {
 					// @todo: trigger after trailer load (including $header, $data, $trailer)
 					$trailer = $this->parser->parse();
 					// @todo: trigger after trailer parse (including $header, $data, $trailer)
-					$trailer['type'] = $trailer['source'] = self::$type;
+					$trailer['source'] = self::$type;
+					$trailer['type'] = static::$type;
 					$trailer['header_stamp'] = $this->data['header']['stamp'];
 					$trailer['file'] = basename($this->filePath);
 					$trailer['process_time'] = date('Y-m-d h:i:s');
@@ -81,7 +83,8 @@ class Billrun_Processor_Base_Ilds extends Billrun_Processor {
 					// @todo: trigger after row load (including $header, $row)
 					$row = $this->parser->parse();
 					// @todo: trigger after row parse (including $header, $row)
-					$row['type'] = $row['source'] = self::$type;
+					$row['source'] = self::$type;
+					$row['type'] = static::$type;
 					$row['header_stamp'] = $this->data['header']['stamp'];
 					$row['file'] = basename($this->filePath);
 					$row['process_time'] = date('Y-m-d h:i:s');
