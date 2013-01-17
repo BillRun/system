@@ -10,7 +10,7 @@
  *
  * @package  Billing
  * @since    1.0
- * TODO ! ACTUALLY IMPLEMENT!! THERESCURRENTLY NO SPEC'S FOR THIS ! TODO
+ * TODO ! ACTUALLY IMPLEMENT!! THERES CURRENTLY NO SPEC'S FOR THIS ! TODO
  */
 class Billrun_Responder_013 extends Billrun_Responder_Base_Ilds {
 
@@ -50,8 +50,11 @@ class Billrun_Responder_013 extends Billrun_Responder_Base_Ilds {
 		);
 	}
 
-	protected function processErrorLine($dbLine) {
-		return false;
+	protected function processLineErrors($dbLine) {
+		if(!isset($dbLine['billrun']) || !$dbLine['billrun']) {
+			return false;
+		}
+		return $dbLine;
 	}
 
 	protected function getResponseFilename($receivedFilename, $logLine) {

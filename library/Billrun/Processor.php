@@ -195,19 +195,19 @@ abstract class Billrun_Processor extends Billrun_Base {
 		return $this;
 	}
 
-	/**
-	 * Loose coupling of objects in the system
-	 *
-	 * @return mixed the bridge class
-	 */
-	static public function getInstance() {
-		$args = func_get_args();
-		if (!is_array($args)) {
-			$args['type'] = "Type_" . $args['type'];
-		} else {
-			$args[0]['type'] = "Type_" . $args[0]['type'];
-		}
-		return forward_static_call_array(array('parent', 'getInstance'), $args);
-	}
+//	/**
+//	 * Loose coupling of objects in the system
+//	 *
+//	 * @return mixed the bridge class
+//	 */
+//	static public function getInstance() {
+//		$args = func_get_args();
+//		if (!is_array($args)) {
+//			$args['type'] = "Type_" . $args['type'];
+//		} else {
+//			$args[0]['type'] = "Type_" . $args[0]['type'];
+//		}
+//		return forward_static_call_array(array('parent', 'getInstance'), $args);
+//	}
 
 }

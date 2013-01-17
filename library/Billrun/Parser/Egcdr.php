@@ -13,7 +13,7 @@
  * @since    1.0
  * @todo should make first derivative parser text and then fixed parser will inherited text parser
  */
-class Billrun_Parser_Type_Egcdr extends Billrun_Parser_Binary {
+class Billrun_Parser_Egcdr extends Billrun_Parser_Base_Binary {
 
 	public function __construct($options) {
 
@@ -65,7 +65,7 @@ class Billrun_Parser_Type_Egcdr extends Billrun_Parser_Binary {
 			if (isset($struct[$key])) {
 				$type = '0x' . $val->getType();
 				if (is_array($val->getData())) {
-					$this->log->log(" digging into : $key", Zend_Log::DEBUG);
+					//$this->log->log(" digging into : $key", Zend_Log::DEBUG);
 					$retArr = array_merge($retArr, $this->parseASNData($struct[$key], $val));
 				} else if (isset($struct[$key]) && isset($struct[$key][$type]) && isset($this->fields[$struct[$key][$type]])) {
 					$field = $struct[$key][$type];

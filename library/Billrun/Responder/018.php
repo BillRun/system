@@ -66,8 +66,11 @@ class Billrun_Responder_018 extends Billrun_Responder_Base_Ilds {
 			'filler' => '%-122s',
 		);
 	}
-	protected function processErrorLine($dbLine) {
-		return  false;
+	protected function processLineErrors($dbLine) {
+		if(!isset($dbLine['billrun']) || !$dbLine['billrun']) {
+			return false;
+		}
+		return  $dbLine;
 	}
 
 	protected function getResponseFilename($receivedFilename, $logLine) {

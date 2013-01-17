@@ -18,24 +18,29 @@ abstract class Billrun_Responder_Base_LocalDir extends Billrun_Responder_Base_Fi
 	 * @var string directory path
 	 */
 	protected $exportDir;
+	
+	protected $exportFromConfig = false;
 
 	public function __construct($options) {
 
 		parent::__construct($options);
 
-		if (isset($options['export-path'])) {
+		if (isset($options['export-path']) &&  true !== $options['export-path']) {
 			$this->exportDir = $options['export-path'];
 		} else {
 			$this->exportDir = $this->config->response->export->path;
+			$this->exportFromConfig = true;
 		}
 	}
 
 	protected function respondAFile($responseFilePath, $fileName, $logLine) {
 		//move file to export folder
-		if (!file_exists($this->exportDir . DIRECTORY_SEPARATOR . self::$type)) {
-			mkdir($this->exportDir . DIRECTORY_SEPARATOR . self::$type);
+		$exportDir = $this->exportFromConfig ?	$this->exportDir . DIRECTORY_SEPARATOR . self::$type : 
+												$this->exportDir;
+		if (!file_exists($exportDir)) {
+			mkdir($exportDir);
 		}
-		$result = rename($responseFilePath, $this->exportDir . DIRECTORY_SEPARATOR . self::$type . DIRECTORY_SEPARATOR . $fileName);
+		$result = rename($responseFilePath, $exportDir . DIRECTORY_SEPARATOR . $fileName);
 		if ($result) {
 			parent::respondAFile($responseFilePath, $fileName, $logLine);
 		}
