@@ -3,7 +3,9 @@
 class nrtrdePlugin extends Billrun_Plugin_BillrunPluginBase {
 
 	public function beforeFTPReceive($ftp) {
-		print "beforeFTPReceive" . PHP_EOL;
+		Billrun_Log::getInstance()->log("beforeFTPReceive", Zend_Log::DEBUG);
+		
+		return true;
 	}
 
 	/**
@@ -25,10 +27,14 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginBase {
 			));
 
 		$filter->filter($local_path);
+		
+		return true;
 	}
 
 	public function afterFTPReceived($ftp, $files) {
-		print "afterFTPReceived" . PHP_EOL;
+		Billrun_Log::getInstance()->log("afterFTPReceived", Zend_Log::DEBUG);
+		
+		return true;
 	}
 
 }
