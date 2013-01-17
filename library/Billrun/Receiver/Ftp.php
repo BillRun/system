@@ -77,11 +77,13 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 			if ($file->isFile()) {
 				$this->log->log("FTP: Download file " . $file->name . " from remote host", Zend_Log::INFO);
 				$file->saveToPath($this->workspace);
-				$ret[] = $this->workspace . $file->name;
+				$received_path = $this->workspace . $file->name;
+				$this->dispatcher->trigger('afterFTPFileReceived', array($received_path, $file, $this));
+				$ret[] = $received_path;
 			}
 		}
 
-		$this->dispatcher->trigger('afterFTPReceive', array($this, $ret));
+		$this->dispatcher->trigger('afterFTPReceived', array($this, $ret));
 
 		return $ret;
 	}

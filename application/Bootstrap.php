@@ -20,11 +20,11 @@ class Bootstrap extends Yaf_Bootstrap_Abstract {
 		set_include_path(get_include_path() . PATH_SEPARATOR . Yaf_Loader::getInstance()->getLibraryPath());
 
 		/* register a billrun plugin system from config */
-		$dispatcher = Billrun_Dispatcher::getInstance();
 		$config = Yaf_Application::app()->getConfig();
 
 		if (isset($config->plugins)) {
 			$plugins = $config->plugins->toArray();
+			$dispatcher = Billrun_Dispatcher::getInstance();
 
 			foreach ($plugins as $plugin) {
 				Billrun_Log::getInstance()->log("Load plugin " . $plugin . PHP_EOL, Zend_log::DEBUG);
