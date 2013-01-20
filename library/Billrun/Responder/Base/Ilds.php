@@ -88,7 +88,6 @@ abstract class Billrun_Responder_Base_Ilds extends Billrun_Responder_Base_LocalD
 		if (!$dbLine || (isset($dbLine['record_status']) && intval($dbLine['record_status']) != 0 )) {
 			$this->linesErrors++;
 			if (!$dbLine) {
-				$this->log->log("updateLine skipping dbLine, ID : ${dbLine['_id']}",  Zend_Log::DEBUG);
 				return false;
 			}
 		}
