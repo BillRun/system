@@ -117,10 +117,10 @@ class Billrun_Parser_Egcdr extends Billrun_Parser_Base_Binary {
 
 				case 'number':
 					$numarr = unpack("C*", $fieldData);
-					$fieldData = 0;
+					$fieldData = "0";
 					foreach ($numarr as $byte) {
 						//$fieldData = $fieldData <<8;
-						$fieldData = ($fieldData << 8 ) + $byte;
+						$fieldData = bcadd(bcmul($fieldData , 256 ), $byte);
 					}
 					break;
 
@@ -139,7 +139,7 @@ class Billrun_Parser_Egcdr extends Billrun_Parser_Base_Binary {
 
 				case 'datetime' :
 					$tempTime = DateTime::createFromFormat("ymdHisT", str_replace("2b", "+", implode(unpack("H*", $fieldData))));
-					$fieldData = is_object($tempTime) ? $tempTime->format("H:i:s d/m/Y T") : "";
+					$fieldData = is_object($tempTime) ? $tempTime->format("Y/m/d H:i:s T") : "";
 					break;
 
 				case 'json' :
@@ -276,8 +276,8 @@ class Billrun_Parser_Egcdr extends Billrun_Parser_Base_Binary {
 			'local_sequence_number' => 'number',
 			'apn_selection_mode' => 'C*',
 			'served_msisdn' => 'BCDencode',
-			'charging_characteristics' => 'C*',
-			'charging_characteristics_selection_mode' => 'C*',
+			'charging_characteristics' => 'H*',
+			'charging_characteristics_selection_mode' => 'H*',
 			'sgsn_plmn_id' => 'number',
 			'losd_sgsn_plmn_id' => 'number',
 			'served_imeisv' => 'BCDencode',

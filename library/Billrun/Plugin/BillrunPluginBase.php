@@ -56,7 +56,6 @@ abstract class Billrun_Plugin_BillrunPluginBase extends Billrun_Spl_Observer {
 		// get the event and args from the subject (dispatcher) to use in the plugin
 		$event = $subject->getEvent();
 		$args = $subject->getArgs();
-
 		/*
 		 * If the method to handle an event exists, call it and return its value
 		 * If it does not exist, return null.
