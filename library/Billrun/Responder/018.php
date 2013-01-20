@@ -68,7 +68,7 @@ class Billrun_Responder_018 extends Billrun_Responder_Base_Ilds {
 	}
 	protected function processLineErrors($dbLine) {
 		if(!isset($dbLine['billrun']) || !$dbLine['billrun']) {
-			return false;
+				$dbLine['record_status'] = '02';
 		}
 		return  $dbLine;
 	}

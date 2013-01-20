@@ -88,7 +88,7 @@ abstract class Billrun_Base {
 	 * 
 	 * @param array $options
 	 */
-	public function __construct($options) {
+	public function __construct($options = array()) {
 		if (isset($options['config'])) {
 			$this->config = $options['config'];
 		} else {

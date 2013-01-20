@@ -84,9 +84,11 @@ class Billrun_Responder_012 extends Billrun_Responder_Base_Ilds {
 	}
 
 	protected function getResponseFilename($receivedFilename, $logLine) {
-		$responseFilename = preg_replace("/\WKVZ\W/", "OUR", $receivedFilename);
-		$responseFilename = preg_replace("/\WGLN\W/", "KVZ", $responseFilename);
-		$responseFilename = preg_replace("/\WOUR\W/", "GLN", $responseFilename);
+		$responseFilename = preg_replace("/\WOUR\W/", "GLN",
+								preg_replace("/\WGLN\W/", "KVZ", 
+									preg_replace("/\WKVZ\W/", "OUR", $receivedFilename)
+								)
+							);
 
 		return $responseFilename;
 	}

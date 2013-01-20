@@ -12,6 +12,8 @@ class dataAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 
 	public function thresholdReached($alertDispather, $args) {
 		
+		$apiResponse = false;
+		
 		if(	!isset($args['type']) || 
 			$args['type'] != 'ggsn' || 
 			!isset($args['thresholdType'])) { 
@@ -23,22 +25,27 @@ class dataAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 				$args['threshold'] = $args['threshold'] / 1024;
 				$args['value'] = $args['value'] / 1024;
 				$args['units'] = "KB";
-				$this->notifyOnEvent($args);
+				$apiResponse = $this->notifyOnEvent($args);
 				break;
+			
 			case 'download' :
 				$args['threshold'] = $args['threshold'] / 1024;
 				$args['value'] = $args['value'] / 1024;
 				$args['units'] = "KB";
-				$this->notifyOnEvent($args);
+				$apiResponse = $this->notifyOnEvent($args);
 				break;
+			
 			case 'duration' :
 				$args['units'] = "SEC";
-				$this->notifyOnEvent($args);
+				$apiResponse = $this->notifyOnEvent($args);
 				break;
 		}
-		$event = new Mongodloid_Entity();
-		$event->setRawData(array('type' => $args['type'],'event_type' => $args['thresholdType'],'value'=>$args['value'], "imsi" => $args['imsi'] , "msisdn" => $args['msisdn'], 'stamp' => $args['stamp'] ));
-		$this->db->getCollection(static::events_table)->save($event);
+		if($apiResponse) {
+			$event = new Mongodloid_Entity();
+			$event->setRawData(array('type' => $args['type'],'event_type' => $args['thresholdType'],'value'=>$args['value'], "imsi" => $args['imsi'] , "msisdn" => $args['msisdn'], 'stamp' => $args['stamp'] ));
+			$this->db->getCollection(static::events_table)->save($event);
+		}
+		return $apiResponse;
 	}
 	
 	protected function notifyOnEvent($args) {
@@ -50,7 +57,10 @@ class dataAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 														"&units={$args['units']}" );
 		curl_setopt($client, CURLOPT_POST, TRUE);
 		curl_setopt($client, CURLOPT_POSTFIELDS, array('extra_data' => json_encode($args)));
-		curl_exec($client);
+		curl_setopt($client, CURLOPT_RETURNTRANSFER, TRUE);
+		$response = curl_exec($client);
 		curl_close($client);
+//		Billrun_Log::getInstance()->log("EgsnAlertcdPlugin::notifyOnEvent {$args['imsi']} API  response : $response", Zend_LOg::DEBUG);	
+		return json_decode($response);
 	}
 }
