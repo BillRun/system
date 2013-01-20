@@ -117,10 +117,10 @@ class Billrun_Parser_Egcdr extends Billrun_Parser_Base_Binary {
 
 				case 'number':
 					$numarr = unpack("C*", $fieldData);
-					$fieldData = 0;
+					$fieldData = "0";
 					foreach ($numarr as $byte) {
 						//$fieldData = $fieldData <<8;
-						$fieldData = ($fieldData << 8 ) + $byte;
+						$fieldData = bcadd(bcmul($fieldData , 256 ), $byte);
 					}
 					break;
 
@@ -260,7 +260,7 @@ class Billrun_Parser_Egcdr extends Billrun_Parser_Base_Binary {
 			'record_type' => 'C',
 			'served_imsi' => 'BCDencode',
 			'ggsn_address' => 'ip',
-			'charging_id' => 'BCDencode',
+			'charging_id' => 'number',
 			'sgsn_address' => 'ip',
 			'lsod_sgsn_address' => 'ip',
 			'apnni' => 'string',

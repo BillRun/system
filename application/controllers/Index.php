@@ -15,7 +15,7 @@
 class IndexController extends Yaf_Controller_Abstract {
 
 	protected $eol = PHP_EOL;
-	protected $possibleActions = array('receive', 'process', 'respond', 'calculate', 'aggregate', 'generate');
+	protected $possibleActions = array('receive', 'process', 'respond', 'calculate', 'aggregate', 'generate','alert');
 
 	public function indexAction() {
 		$this->getView()->title = "BillRun | The best open source billing system";
@@ -40,6 +40,7 @@ class IndexController extends Yaf_Controller_Abstract {
 				'a|A|aggregate' => 'Aggregate lines for billrun',
 				'g|G|generate' => 'Generate xml and csv files of specific billrun',
 				'e|E|respond' => 'Respond to files that were processed',
+				'l|L|alert' => 'Process and detect alerts',
 				'h|H|help' => 'Displays usage information.',
 				'type-s' => 'Process: Ild type to use',
 				'stamp-s' => 'Process: Stamp to use for this run',
@@ -214,6 +215,35 @@ class IndexController extends Yaf_Controller_Abstract {
 		}
 	}
 
+	protected function alert($opts) {
+		$options = $this->getInstanceOptions($opts, array('type' => false,));
+		if (!$options) {
+			return;
+		}
+
+		$this->outputAdd("Loading alertor");
+		$alertor = Billrun_Alert::getInstance($options);
+		$this->outputAdd("Alertor loaded");
+
+		if ($alertor) {
+			// buffer all action output
+			ob_start();
+			$this->outputAdd("Loading data to detect alerts...");
+			$alertor->load();
+			$this->outputAdd("Starting to alerts detection. This action can take awhile...");
+			$alertor->aggregate();
+			$thresholds = $alertor->getThresholdsReached();
+			if($thresholds) {
+				$alertor->handleThresholds($thresholds);
+			}
+			// write the buffer into log and output
+			$this->outputAdd(ob_get_contents());
+			ob_end_clean();
+		} else {
+			$this->outputAdd("Aggregator cannot be loaded");
+		}
+	}	
+	
 	protected function generate($opts) {
 		$options = $this->getInstanceOptions($opts, array('type' => false,
 			'stamp' => false,));

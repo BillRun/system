@@ -29,7 +29,7 @@ abstract class Billrun_Processor_Base_Binary extends Billrun_Processor {
 	protected function buildHeader($data) {
 		$header = array();
 		$header['data'] = utf8_encode($data);
-		$header['type'] = self::$type;
+		$header['type'] = static::$type;
 		$header['file'] = basename($this->filePath);
 		$header['stamp'] = md5(serialize($header));
 		$header['process_time'] = date('Y-m-d h:i:s');
@@ -46,7 +46,7 @@ abstract class Billrun_Processor_Base_Binary extends Billrun_Processor {
 		$this->parser->setLine($data);
 		$row = $this->parser->parse();
 		if ($row) {
-			$row['type'] = self::$type;
+			$row['type'] = static::$type;
 			$row['header_stamp'] = $this->data['header']['stamp'];
 			$row['file'] = basename($this->filePath);
 			$row['stamp'] = md5(serialize($row));
@@ -63,7 +63,7 @@ abstract class Billrun_Processor_Base_Binary extends Billrun_Processor {
 	protected function buildTrailer($data) {
 		$trailer = array();
 		$trailer['data'] = utf8_encode($data);
-		$trailer['type'] = self::$type;
+		$trailer['type'] = static::$type;
 		$trailer['header_stamp'] = $this->data['header']['stamp'];
 		$trailer['file'] = basename($this->filePath);
 		$trailer['stamp'] = md5(serialize($trailer));

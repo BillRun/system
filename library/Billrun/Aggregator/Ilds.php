@@ -138,7 +138,7 @@ class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 			$current['subscribers'][$subscriberId]['cost'][$type] = $added_charge;
 		} else {
 			$current['cost'][$type] += $added_charge;
-			$subExist = $current['subscribers'][$subscriberId]['cost'] && $current['subscribers'][$subscriberId]['cost'][$type];
+			$subExist = isset($current['subscribers'][$subscriberId]['cost']) && isset($current['subscribers'][$subscriberId]['cost'][$type]);
 			$current['subscribers'][$subscriberId]['cost'][$type] = ($subExist ? $current['subscribers'][$subscriberId]['cost'][$type] : 0 ) + $added_charge;
 		}
 

@@ -74,6 +74,11 @@ abstract class Billrun_Base {
 	const billrun_table = 'billrun';
 
 	/**
+	 * constant of events collection name
+	 */
+	const events_table = 'events';
+	
+	/**
 	 * constant for base date format
 	 */
 	const base_dateformat = 'Y-m-d h:i:s';
