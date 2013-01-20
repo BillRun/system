@@ -42,7 +42,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 * the container work on
 	 * @var array
 	 */
-	protected $data = null;
+	protected $data = array();
 
 	/**
 	 * constructor - load basic options
@@ -66,6 +66,39 @@ abstract class Billrun_Processor extends Billrun_Base {
 		return $this->data;
 	}
 
+	/**
+	 * method to run over all the files received which did not have been processed
+	 */
+	public function process_files() {
+
+		$log = $this->db->getCollection(self::log_table);
+		$files = $log->query()
+			->equals('source', static::$type)
+			->notExists('process_time');
+		$i = 2;
+		foreach ($files as $file) {
+			$this->setStamp($file->getID());
+			$this->loadFile($file->get('path'));
+			$this->process();
+			$file->collection($log);
+			$file->set('process_time', date(self::base_dateformat));
+			$this->init();
+//			if (!(--$i)) break;
+//			die(PHP_EOL);
+		}
+	}
+	
+	/**
+	 * method to initialize the data and the file handler of the processor
+	 * useful when processing files in iterations one after another
+	 */
+	protected function init() {
+		$this->data = array();
+		if (is_resource($this->fileHandler)) {
+			fclose($this->fileHandler);
+		}
+
+	}
 	/**
 	 * method to get the data from the file
 	 * @todo take to parent abstract
@@ -101,11 +134,17 @@ abstract class Billrun_Processor extends Billrun_Base {
 
 	/**
 	 * method to log the processing
+	 * 
 	 * @todo refactoring this method
 	 */
 	protected function logDB() {
-		if (!isset($this->db) || !isset($this->data['trailer'])) {
-			// raise error
+		if (!isset($this->db)) {
+			$this->log->log("Billrun_Processor:logDB not database instance", Zend_Log::ERR);
+			return false;
+		}
+		
+		if (!isset($this->data['trailer']) && !isset($this->data['header'])) {
+			$this->log->log("Billrun_Processor:logDB no header nor trailer to log", Zend_Log::ERR);
 			return false;
 		}
 
@@ -116,15 +155,25 @@ abstract class Billrun_Processor extends Billrun_Base {
 		} else if (isset($this->data['header'])) {
 			$entity = new Mongodloid_Entity($this->data['header']);
 		} else {
-			$this->log->log("Billrun_Processor::logDB - cannot locate trailer ot header to log", Zend_Log::ERR);
+			$this->log->log("Billrun_Processor::logDB - cannot locate trailer or header to log", Zend_Log::ERR);
 			return FALSE;
 		}
 
-		if ($log->query('stamp', $entity->get('stamp'))->count() > 0) {
-			$this->log->log("Billrun_Processor::logDB - DUPLICATE! trying to insert duplicate log line with stamp of : {$entity->get('stamp')}", Zend_Log::NOTICE);
-			return FALSE;
+		$current_stamp = $this->getStamp(); // mongo id
+		if (empty($current_stamp)) {
+			// backword compatability
+			// old method of processing => receiver did not logged, so it's the first time the file logged into DB
+			if ($log->query('stamp', $entity->get('stamp'))->count() > 0) {
+				$this->log->log("Billrun_Processor::logDB - DUPLICATE! trying to insert duplicate log file with stamp of : {$entity->get('stamp')}", Zend_Log::NOTICE);
+				return FALSE;
+			}
+			return $entity->save($log, true);
+		} else {
+			$resource = $log->findOne($current_stamp);
+			$resource->set('metadata', $entity->getRawData());
+			return $resource->save($log, true);
+
 		}
-		return $entity->save($log, true);
 	}
 
 	/**
@@ -144,7 +193,6 @@ abstract class Billrun_Processor extends Billrun_Base {
 			$entity = new Mongodloid_Entity($row);
 			if ($lines->query('stamp', $entity->get('stamp'))->count() > 0) {
 				$this->log->log("processor::store - DUPLICATE! trying to insert duplicate line with stamp of : {$entity->get('stamp')}", Zend_Log::NOTICE);
-				$this->log->log("processor::store - {$entity->get('caller_phone_no')} , {$entity->get('call_start_dt')}", Zend_Log::NOTICE);
 				continue;
 			}
 			$entity->save($lines, true);
@@ -175,12 +223,16 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 * @return void
 	 */
 	public function loadFile($file_path) {
+		$this->dispatcher->trigger('processorBeforeFileLoad', array(&$file_path));
 		if (file_exists($file_path)) {
 			$this->filePath = $file_path;
 			$this->fileHandler = fopen($file_path, 'r');
+			$this->log->log("Billrun Processor load the file: " . $file_path, Zend_Log::INFO);
+
 		} else {
-			// log file not exists
+			$this->log->log("Billrun_Processor->loadFile: cannot load the file: " . $file_path, Zend_Log::ERR);
 		}
+		$this->dispatcher->trigger('processorAfterFileLoad', array(&$file_path));
 	}
 
 	/**

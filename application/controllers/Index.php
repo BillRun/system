@@ -103,7 +103,6 @@ class IndexController extends Yaf_Controller_Abstract {
 	protected function process($opts) {
 		$posibleOptions = array(
 			'type' => false,
-			'path' => false,
 			'parser' => false,
 		);
 
@@ -124,9 +123,13 @@ class IndexController extends Yaf_Controller_Abstract {
 
 			// buffer all action output
 			ob_start();
-			$lines = $processor->process();
+			if (isset($options['path'])) {
+				$lines = $processor->process();
+			} else {
+				$lines = $processor->process_files();
+			}
 			// write the buffer into log and output
-			$this->outputAdd("Parsed " . count($lines) . " files");
+			$this->outputAdd("processed " . count($lines) . " lines");
 			$this->outputAdd(ob_get_contents());
 			ob_end_clean();
 		} else {
