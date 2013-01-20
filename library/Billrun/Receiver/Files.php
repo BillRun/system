@@ -37,7 +37,7 @@ class Billrun_Receiver_Files extends Billrun_Receiver {
 	 */
 	public function receive() {
 
-		foreach ($this->config->providers->toArray() as $type) {
+		foreach ($this->config->ilds->providers->toArray() as $type) {
 			if (!file_exists($this->workspace . DIRECTORY_SEPARATOR . $type)) {
 				$this->log->log("NOTICE : SKIPPING $type !!! directory " . $this->workspace . DIRECTORY_SEPARATOR . $type . " not found!!", Zend_Log::NOTICE);
 				continue;
@@ -54,8 +54,9 @@ class Billrun_Receiver_Files extends Billrun_Receiver {
 				$this->processFile($path, $type);
 			}
 
-			return $ret;
+
 		}
+		return $ret;
 	}
 
 	/**
