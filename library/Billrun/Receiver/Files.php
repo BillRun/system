@@ -50,6 +50,7 @@ class Billrun_Receiver_Files extends Billrun_Receiver {
 					continue;
 				}
 
+				$this->logDB($path);
 				$ret[] = $path;
 				$this->processFile($path, $type);
 			}

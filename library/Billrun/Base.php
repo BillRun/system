@@ -119,6 +119,11 @@ abstract class Billrun_Base {
 		} else {
 			$this->dispatcher = Billrun_Dispatcher::getInstance();
 		}
+		
+		if (isset($options['type'])) {
+			static::$type = $options['type'];
+		}
+
 	}
 
 	/**
@@ -175,11 +180,14 @@ abstract class Billrun_Base {
 		$config_type = Yaf_Application::app()->getConfig()->{$type};
 
 		if ($config_type && isset($config_type->type)) {
-			$type = $config_type['type'];
+			$class_type = $config_type['type'];
 			$args = array_merge($args, $config_type->toArray());
+			$args['type'] = $type;
+		} else {
+			$class_type = $type;
 		}
 
-		$class = get_called_class() . '_' . ucfirst($type);
+		$class = get_called_class() . '_' . ucfirst($class_type);
 		return new $class($args);
 	}
 

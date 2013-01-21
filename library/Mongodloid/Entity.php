@@ -148,13 +148,11 @@ class Mongodloid_Entity
 		$real_key = $key;
 		$result = &$this->_values;
 
-		do
-		{
-			list($current, $key) = explode('.', $key, 2);
-			$result = &$result[$current];
+		$keys = explode('.', $key);
+		foreach($keys as $key) {
+			$result = &$result[$key];
 		}
-		while ($key !== null);
-
+		
 		$result = $value;
 
 		if (!$dontSend && $this->getId())

@@ -111,9 +111,10 @@ class Billrun_Processor_Nrtrde extends Billrun_Processor_Base_Separator {
 		$data_type = strtolower($this->getLineType($line, $this->parser->getSeparator())); // can be moc or mtc
 		$this->parser->setStructure($this->{$data_type . "_structure"}); // for the next iteration
 		$this->parser->setLine($line);
-		$this->dispatcher->trigger('beforeDataParsing', array($line, $this));
+		$this->dispatcher->trigger('beforeDataParsing', array(&$line, $this));
 		$row = $this->parser->parse();
 		$row['source'] = static::$type;
+		$row['type'] = self::$type;
 		$row['header_stamp'] = $this->data['header']['stamp'];
 		$row['file'] = basename($this->filePath);
 		$row['process_time'] = date(self::base_dateformat);
