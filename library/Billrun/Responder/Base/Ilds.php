@@ -31,7 +31,8 @@ abstract class Billrun_Responder_Base_Ilds extends Billrun_Responder_Base_LocalD
 	 */
 	protected function processFileForResponse($filePath, $logLine) {
 		$logLine = $logLine->getRawData();
-
+		$this->linesCount = $this->linesErrors = $this->totalChargeAmount = 0;
+		
 		$dbLines = $this->db->getCollection(self::lines_table)->query()->equals('file', $logLine['file']);
 
 		//run only after the lines were processed by the billrun.

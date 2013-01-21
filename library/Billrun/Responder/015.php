@@ -35,8 +35,8 @@ class Billrun_Responder_015 extends Billrun_Responder_Base_Ilds {
 		$this->header_structure = array(
 			'record_type' => '%1s',
 			'file_type' => '%15s',
-			'sending_company_id' => '%10s',
 			'receiving_company_id' => '%10s',
+			'sending_company_id' => '%10s',
 			'sequence_no' => '%06s',
 			'file_creation_date' => '%14s',
 			'file_received_date' => '%14s',
@@ -46,8 +46,8 @@ class Billrun_Responder_015 extends Billrun_Responder_Base_Ilds {
 		$this->trailer_structure = array(
 			'record_type' => '%1s',
 			'file_type' => '%-15s',
-			'sending_company_id' => '%-10s',
 			'receiving_company_id' => '%-10s',
+			'sending_company_id' => '%-10s',
 			'sequence_no' => '%6s',
 			'file_creation_date' => '%14s',
 			'total_phone_number' => '%15s',

@@ -232,9 +232,9 @@ class IndexController extends Yaf_Controller_Abstract {
 			$alertor->load();
 			$this->outputAdd("Starting to alerts detection. This action can take awhile...");
 			$alertor->aggregate();
-			$thresholds = $alertor->getThresholdsReached();
+			$thresholds = $alertor->getAlerts();
 			if($thresholds) {
-				$alertor->handleThresholds($thresholds);
+				$alertor->handleAlerts($thresholds);
 			}
 			// write the buffer into log and output
 			$this->outputAdd(ob_get_contents());
