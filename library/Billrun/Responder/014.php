@@ -13,7 +13,6 @@
  */
 class Billrun_Responder_014 extends Billrun_Responder_Base_Ilds {
 
-	protected $linesErrors = 0;
 
 	public function __construct(array $params = array()) {
 		parent::__construct($params);
@@ -46,8 +45,8 @@ class Billrun_Responder_014 extends Billrun_Responder_Base_Ilds {
 		$this->header_structure = array(
 			'record_type' => '%1s',
 			'file_type' => '%14s',
-			'sending_company_id' => '%3s',
 			'receiving_company_id' => '%3s',
+			'sending_company_id' => '%3s',
 			'sequence_no' => '%5s',
 			'file_creation_date' => '%8s',
 			'file_creation_time' => '%6s',
@@ -59,8 +58,8 @@ class Billrun_Responder_014 extends Billrun_Responder_Base_Ilds {
 		$this->trailer_structure = array(
 			'record_type' => '%1s',
 			'file_type' => '%14s',
-			'sending_company_id' => '%3s',
 			'receiving_company_id' => '%3s',
+			'sending_company_id' => '%3s',
 			'sequence_no' => '%5s',
 			'file_creation_date' => '%8s',
 			'file_creation_time' => '%6s',
@@ -93,9 +92,9 @@ class Billrun_Responder_014 extends Billrun_Responder_Base_Ilds {
 	}
 
 	protected function getResponseFilename($receivedFilename, $logLine) {
-		$responseFilename =		preg_replace("/\WOUR\W/", "GTC",
-									preg_replace("/\WGTC\W/", "MBZ", 
-										preg_replace("/\WMBZ\W/", "OUR", $receivedFilename)
+		$responseFilename =		preg_replace("/_OUR_/i", "_GTC_",
+									preg_replace("/_GTC_/i", "_MBZ_", 
+										preg_replace("/_MBZ_/", "_OUR_", $receivedFilename)
 									)
 								);
 		return $responseFilename;

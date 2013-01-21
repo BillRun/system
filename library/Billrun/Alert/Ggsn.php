@@ -15,10 +15,6 @@ class Billrun_Alert_Ggsn extends Billrun_Alert_Base_Threshold {
 
 	static protected $type = 'ggsn';
 	
-	protected $thresholds = array(	'upload' => 1000000,
-									'download' => 1000000,
-									'duration' => 2400,);
-	
 	public function __construct($options = array()) {
 		parent::__construct($options);
 		
@@ -44,16 +40,8 @@ class Billrun_Alert_Ggsn extends Billrun_Alert_Base_Threshold {
 		foreach ($lines as $entity) {
 			$this->data[] = $entity;
 		}
-
+		
 		$this->log->log("aggregator entities loaded: " . count($this->data), Zend_Log::INFO);
-	}
-
-	protected function save($data) {
-		foreach ($data as $coll_name => $coll_data) {
-			$coll = $this->db->getCollection($coll_name);
-			$coll->save($coll_data);
-		}
-		return true;
 	}
 
 	protected function aggregateLine($lineAggr, $item) {
@@ -78,63 +66,6 @@ class Billrun_Alert_Ggsn extends Billrun_Alert_Base_Threshold {
 
 	protected function getImisi($item) {
 		return $item->get('served_imsi');
-		
-	}
-
-	public function getThresholdsReached() {
-		$thresholds = array();
-
-		foreach($this->aggregated as $imsi => $msisdns ) {
-			$msisdnThrs = array();
-			foreach($msisdns as  $msisdn => $aggr ) {
-				$tmpholds = array();
-				foreach($this->thresholds as $key => $thr) {
-					if($aggr[$key] > $thr) {
-						$tmpholds[$key] =  $aggr[$key];
-					}
-				}
-				if( count($tmpholds) ) {
-					$msisdnThrs[$msisdn] = array(	'lines' => $aggr['lines'],
-													'usage' => $tmpholds, );		
-				}
-			}
-			if( count($msisdnThrs) ) {
-				$thresholds[$imsi] = $msisdnThrs ;		
-			}
-		}
-		return count($thresholds) > 0 ? $thresholds : FALSE;
-	}
-
-	public function handleThresholds($thresholds) {
-		foreach ($thresholds as $imsi => $msisdns) {
-			foreach ($msisdns as $msisdn => $thrs) {
-				$stamp = md5(serialize($thrs['lines']));
-				$results = array();
-				foreach($thrs['usage'] as $type => $val) {
-					 $results[$type] = $this->dispatcher->trigger('thresholdReached', array(	'alertor' => $this,
-																			'args' => array( 
-																				'type'=> static::$type,
-																				'thresholdType'=> $type,
-																				'threshold' => $this->thresholds[$type],
-																				'value'=> $val, 
-																				'imsi' => $imsi,
-																				'msisdn' => $msisdn,
-																				'stamp' => $stamp, ),
-																		));
-				}
-				foreach($results as $typeResults) {
-					foreach($results as $key => $res) {
-						if($res) {
-							foreach($thrs['lines'] as $item) {
-								//TODO think about it a little more same line can be responsible for serval events. 
-								$this->updateLine(array(self::DB_STAMP => $stamp), $item);
-							}
-							break;
-						}
-					}
-				}
-			}
-		}
 	}
 
 	public function updateLine($data, $line) {

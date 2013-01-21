@@ -8,7 +8,7 @@ class dataAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 */
 	protected $name = 'dataAlerts';
 	
-	protected static $alertServer = "http://127.0.0.1";
+	protected static $alertServer = "http://127.0.0.1/fraud_events.rpc.php";
 
 	public function thresholdReached($alertDispather, $args) {
 		
@@ -50,7 +50,7 @@ class dataAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	
 	protected function notifyOnEvent($args) {
 		Billrun_Log::getInstance()->log("EgsnAlertcdPlugin::notifyOnEvent {$args['imsi']} with type : {$args['thresholdType']} , value : {$args['value']}", Zend_LOg::DEBUG);	
-		$client = curl_init(static::$alertServer."/?event_type=GGSN_DATA&IMSI={$args['imsi']}".
+		$client = curl_init(static::$alertServer."?event_type=GGSN_DATA&IMSI={$args['imsi']}".
 														"&NDC_SN=". preg_replace("/^19972/","",$args['msisdn']).
 														"&threshold={$args['threshold']}".
 														"&usage={$args['value']}".

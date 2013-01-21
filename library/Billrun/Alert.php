@@ -24,13 +24,13 @@ abstract class Billrun_Alert extends Billrun_Base {
 	 * @return Array|bool	false if no threshold was crossed or
 	 *						an array conatining the crossed thresholds and thier values
 	 */
-	abstract public function getThresholdsReached();
+	abstract public function getAlerts();
 
 	/**
 	 * Handle crossed threshold accordingly (trigger events,log events,etc..)
 	 * @param Array		$thresholds the value returned from getThresholds function.
 	 * 
 	 */
-	abstract public function handleThresholds($thresholds);
+	abstract public function handleAlerts($thresholds);
 
 }

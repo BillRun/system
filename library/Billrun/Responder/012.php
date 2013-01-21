@@ -38,8 +38,8 @@ class Billrun_Responder_012 extends Billrun_Responder_Base_Ilds {
 		$this->header_structure = array(
 			'record_type' => "%1s",
 			'file_type' => "%10s",
-			'sending_company_id' => "%10s",
 			'receiving_company_id' => "%10s",
+			'sending_company_id' => "%10s",
 			'sequence_no' => "%6s",
 			'file_creation_date' => "%12s",
 		);
@@ -47,8 +47,8 @@ class Billrun_Responder_012 extends Billrun_Responder_Base_Ilds {
 		$this->trailer_structure = array(
 			'record_type' => "%1s",
 			'file_type' => "%10s",
-			'sending_company_id' => "%10s",
 			'receiving_company_id' => "%10s",
+			'sending_company_id' => "%10s",
 			'sequence_no' => "%6s",
 			'file_creation_date' => "%12s",
 			'total_phone_number' => "%15s", // WTF?!
@@ -71,8 +71,8 @@ class Billrun_Responder_012 extends Billrun_Responder_Base_Ilds {
 	protected function updateTrailer($logLine) {
 		$line = parent::updateTrailer($logLine);
 		$line.= sprintf("%015s", $this->totalChargeAmount);
-		$line.= sprintf("%06s", $this->linesCount);
-		$line.= sprintf("%06s", $this->linesErrors);
+		$line.= sprintf("%6s", $this->linesCount);
+		$line.= sprintf("%6s", $this->linesErrors);
 		return $line;
 	}
 
@@ -84,12 +84,11 @@ class Billrun_Responder_012 extends Billrun_Responder_Base_Ilds {
 	}
 
 	protected function getResponseFilename($receivedFilename, $logLine) {
-		$responseFilename = preg_replace("/\WOUR\W/", "GLN",
-								preg_replace("/\WGLN\W/", "KVZ", 
-									preg_replace("/\WKVZ\W/", "OUR", $receivedFilename)
+		$responseFilename = preg_replace("/_OUR_/i", "_GLN_",
+								preg_replace("/_GLN_/i", "_KVZ_", 
+									preg_replace("/_KVZ_/i", "_OUR_", $receivedFilename)
 								)
 							);
-
 		return $responseFilename;
 	}
 
