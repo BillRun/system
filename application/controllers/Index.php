@@ -105,6 +105,7 @@ class IndexController extends Yaf_Controller_Abstract {
 		$posibleOptions = array(
 			'type' => false,
 			'parser' => false,
+			'path' => true,
 		);
 
 		$options = $this->getInstanceOptions($opts, $posibleOptions);
