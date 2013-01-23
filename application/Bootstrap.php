@@ -34,11 +34,11 @@ class Bootstrap extends Yaf_Bootstrap_Abstract {
 		
 		if (isset($config->chains)) {
 			$chains = $config->chains->toArray();
-			$chain = Billrun_Dispatcher::getInstance(array('type' => 'chain'));
+			$dispatcherChain = Billrun_Dispatcher::getInstance(array('type' => 'chain'));
 
 			foreach ($chains as $chain) {
 				Billrun_Log::getInstance()->log("Load plugin " . $chain, Zend_log::DEBUG);
-				$chain->attach(new $chain);
+				$dispatcherChain->attach(new $chain);
 			}
 		}
 
