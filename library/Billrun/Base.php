@@ -128,9 +128,9 @@ abstract class Billrun_Base {
 		}
 		
 		if (isset($options['chain'])) {
-			$this->dispatcher = $options['chain'];
+			$this->chain = $options['chain'];
 		} else {
-			$this->dispatcher = Billrun_Dispatcher::getInstance(array('type' => 'chain'));
+			$this->chain = Billrun_Dispatcher::getInstance(array('type' => 'chain'));
 		}
 		
 		if (isset($options['type'])) {
