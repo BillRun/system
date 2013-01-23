@@ -9,9 +9,9 @@
 class Mongodloid_DB
 {
 
-	private $_db;
-	private $_connection;
-	private $_collections = array();
+	protected $_db;
+	protected $_connection;
+	protected $_collections = array();
 
 	public function getCollection($name)
 	{
