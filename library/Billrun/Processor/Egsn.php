@@ -23,7 +23,7 @@ class Billrun_Processor_Egsn extends Billrun_Processor_Base_Binary {
 
 	const HEADER_LENGTH = 54;
 	const MAX_CHUNKLENGTH_LENGTH = 512;
-	const FILE_READ_AHEAD_LENGTH = 32768;
+	const FILE_READ_AHEAD_LENGTH = 16384;
 
 	public function __construct($options) {
 		parent::__construct($options);
@@ -52,7 +52,7 @@ class Billrun_Processor_Egsn extends Billrun_Processor_Base_Binary {
 
 			$bytes = substr($bytes, $this->parser->getLastParseLength());
 		} while (isset($bytes[self::HEADER_LENGTH]));
-
+		
 		$this->data['trailer'] = $this->buildTrailer($bytes);
 
 		return true;

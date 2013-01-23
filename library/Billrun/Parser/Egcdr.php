@@ -15,6 +15,8 @@
  */
 class Billrun_Parser_Egcdr extends Billrun_Parser_Base_Binary {
 
+	const TYPE_PREFIX = '0x'; 
+	
 	public function __construct($options) {
 
 		parent::__construct($options);
@@ -60,14 +62,14 @@ class Billrun_Parser_Egcdr extends Billrun_Parser_Base_Binary {
 	 */
 	protected function parseASNData($struct, $asnData) {
 		$retArr = array();
-
+		
 		foreach ($asnData->getData() as $key => $val) {
 			if (isset($struct[$key])) {
-				$type = '0x' . $val->getType();
+				$type = static::TYPE_PREFIX . $val->getType();
 				if (is_array($val->getData())) {
 					//$this->log->log(" digging into : $key", Zend_Log::DEBUG);
 					$retArr = array_merge($retArr, $this->parseASNData($struct[$key], $val));
-				} else if (isset($struct[$key]) && isset($struct[$key][$type]) && isset($this->fields[$struct[$key][$type]])) {
+				} else if (isset($struct[$key][$type]) && isset($this->fields[$struct[$key][$type]])) {
 					$field = $struct[$key][$type];
 					$retArr[$field] = $this->parseField($this->fields[$field], $val);
 				} else {
@@ -87,13 +89,13 @@ class Billrun_Parser_Egcdr extends Billrun_Parser_Base_Binary {
 	 * Parse an ASN field using a specific data structure.
 	 */
 	protected function parseField($type, $fieldData) {
-		if ($type != 'debug') {
-			$fieldData = $fieldData->getData();
-		}//TODO remove
+		//if ($type != 'debug') {
+		$fieldData = $fieldData->getData();
+		//}/*///TODO remove
 		if (isset($fieldData)) {
 			switch ($type) {
 				//TODO remove
-				case 'debug':
+			/*	case 'debug':
 					$fieldType = $fieldData->getType();
 					$fieldClass = get_class($fieldData);
 					$fieldData = $fieldData->getData();
@@ -110,12 +112,12 @@ class Billrun_Parser_Egcdr extends Billrun_Parser_Base_Binary {
 					}
 					$fieldData = "DEBUG : " . $fieldClass . " | " . $fieldType . " | " . $numData . " | " . $tempData . " | " . implode(unpack("H*", $fieldData)) . " | " . implode(unpack("C*", $fieldData)) . " | " . $fieldData;
 					break;
-
+*/
 				case 'string':
 					$fieldData = utf8_encode($fieldData);
 					break;
 
-				case 'number':
+				case 'long':
 					$numarr = unpack("C*", $fieldData);
 					$fieldData = "0";
 					foreach ($numarr as $byte) {
@@ -124,6 +126,15 @@ class Billrun_Parser_Egcdr extends Billrun_Parser_Base_Binary {
 					}
 					break;
 
+				case 'number':
+					$numarr = unpack("C*", $fieldData);
+					$fieldData = "0";
+					foreach ($numarr as $byte) {
+						//$fieldData = $fieldData <<8;
+						$fieldData = ($fieldData << 8) + $byte;
+					}
+					break;
+					
 				case 'BCDencode' :
 					$halfBytes = unpack("C*", $fieldData);
 					$fieldData = "";
@@ -250,8 +261,8 @@ class Billrun_Parser_Egcdr extends Billrun_Parser_Base_Binary {
 			'qos_info' => 'H*',
 			'sgsn_address' => 'ip',
 			'sgsn_plmn_id' => 'number',
-			'fbc_uplink_volume' => 'number',
-			'fbc_downlink_volume' => 'number',
+			'fbc_uplink_volume' => 'long',
+			'fbc_downlink_volume' => 'long',
 			'time_of_report' => 'datetime',
 			'rat_type' => 'number',
 			'lsod_rat_type' => 'number',
@@ -260,7 +271,7 @@ class Billrun_Parser_Egcdr extends Billrun_Parser_Base_Binary {
 			'record_type' => 'C',
 			'served_imsi' => 'BCDencode',
 			'ggsn_address' => 'ip',
-			'charging_id' => 'number',
+			'charging_id' => 'long',
 			'sgsn_address' => 'ip',
 			'lsod_sgsn_address' => 'ip',
 			'apnni' => 'string',
