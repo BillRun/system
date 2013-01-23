@@ -63,10 +63,22 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginBase {
 //		return TRUE;
 	}
 	
-	public function processorBeforeFileLoad($file_path) {
-		$this->decompress($file_path);
-		$file_path = str_replace('.zip', '', $file_path);
-		return true;
+	/**
+	 * method to unzip the processing file of NRTRDE (received as zip archive)
+	 * 
+	 * @param string $file_path the path of the file
+	 * @param Billrun_Processor $processor instance of the processor who dispatch this event
+	 * 
+	 * @return boolean
+	 */
+	public function processorBeforeFileLoad($file_path, $processor) {
+		if ($processor instanceof Billrun_Processor_Nrtrde) {
+			$this->decompress($file_path);
+			$file_path = str_replace('.zip', '', $file_path);
+			return true;
+		}
+		return false;
+		
 	}
 	
 	public function beforeDataParsing($line, $processor) {

@@ -105,7 +105,7 @@ class IndexController extends Yaf_Controller_Abstract {
 		$posibleOptions = array(
 			'type' => false,
 			'parser' => false,
-			'path' => true
+			'path' => true,
 		);
 
 		$options = $this->getInstanceOptions($opts, $posibleOptions);
@@ -279,7 +279,7 @@ class IndexController extends Yaf_Controller_Abstract {
 			$posibleOptions = array(
 				'type' => false,
 				'stamp' => false,
-				'path' => true,
+				'path' => "./",
 				'parser' => 'fixed');
 		}
 		$options = array();
@@ -289,7 +289,7 @@ class IndexController extends Yaf_Controller_Abstract {
 				if (!$defVal) {
 					$this->outputAdd("Error: No $key selected");
 					return null;
-				} else if(true !== $defVal){
+				} else {
 					$options[$key] = $defVal;
 				}
 			}
