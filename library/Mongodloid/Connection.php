@@ -9,11 +9,11 @@
 class Mongodloid_Connection
 {
 
-	private $_connected = false;
-	private $_connection = null;
-	private $_persistent = false;
-	private $_server = '';
-	private $_dbs = array();
+	protected $_connected = false;
+	protected $_connection = null;
+	protected $_persistent = false;
+	protected $_server = '';
+	protected $_dbs = array();
 
 	public function getDB($db)
 	{
