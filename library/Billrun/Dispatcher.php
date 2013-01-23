@@ -47,7 +47,7 @@ class Billrun_Dispatcher extends Billrun_Spl_Subject {
 		if (isset($params['type'])) {
 			if (!isset(self::$instance[$params['type']])) {
 				settype($params['type'], 'string');
-				$dispatcher = 'Billrun_Dispatcher_' . $params['type'];
+				$dispatcher = 'Billrun_Dispatcher_' . ucfirst($params['type']);
 				self::$instance[$params['type']] = new $dispatcher();
 			}
 			return self::$instance[$params['type']];

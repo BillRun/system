@@ -28,27 +28,26 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginBase {
 //		
 		return true;
 	}
-	
+
 	protected function decompress($local_path) {
 		//Create filter object
 		$filter = new Zend_Filter_Decompress(
-			array(
-				'adapter' => 'Zend_Filter_Compress_Zip', //Or 'Zend_Filter_Compress_Tar', or 'Zend_Filter_Compress_Gz'
-				'options' => array(
-					'target' => dirname($local_path),
-				)
+				array(
+					'adapter' => 'Zend_Filter_Compress_Zip', //Or 'Zend_Filter_Compress_Tar', or 'Zend_Filter_Compress_Gz'
+					'options' => array(
+						'target' => dirname($local_path),
+					)
 			));
 
 		$filter->filter($local_path);
-		
-		return true;
 
+		return true;
 	}
 
 	public function afterFTPReceived($ftp, $files) {
 		return true;
 	}
-	
+
 	/**
 	 *  method to extend and add data to the log of the receiver
 	 * 
@@ -62,7 +61,7 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginBase {
 //		
 //		return TRUE;
 	}
-	
+
 	/**
 	 * method to unzip the processing file of NRTRDE (received as zip archive)
 	 * 
@@ -78,10 +77,65 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginBase {
 			return true;
 		}
 		return false;
+	}
+
+	public function beforeDataParsing($line, $processor) {
 		
 	}
-	
-	public function beforeDataParsing($line, $processor) {
+
+	/**
+	 * method to collect data which need to be handle by event
+	 */
+	public function handlerCollect() {
+		$db = Billrun_Factory::db();
+		$lines = $db->getCollection($db::lines_table);
+		$where = array(
+			'$match' => array(
+				'source' => 'nrtrde',
+				'record_type' => 'MOC',
+				'connectedNumber' => '/^972/',
+				'deposit_stamp' => array('$exists' => false),
+			),
+		);
+
+		$group = array(
+			'$group' => array(
+				"_id" => '$imsi',
+				"total" => array('$sum' => '$callEventDuration'),
+			),
+		);
+
+//		$project = array(
+//			'$project' => array(
+//				'imsi' => 1,
+//				'total' => 'function() {return 1}'
+//			),
+//		);
+		
+		$having = array(
+			'$match' => array(
+				'total' => array('$gte' => 100)
+			),
+		);
+
+		$moc_israel = $lines->aggregate($where, $group, $having);
+		
+		$where['$match']['connectedNumber'] = '/^(?!972)/';
+		$moc_nonisrael = $lines->aggregate($where, $group, $having);
+		
+		$where['$match']['record_type'] = 'MTC';
+		$having['$match']['total']['$gte'] = 200;
+		
+		$mtc = $lines->aggregate($where, $group, $having);
+		
+		$where['$match']['record_type'] = 'MOC';
+		$where['$match']['callEventDuration'] = 0;
+		$group['$group']['total']['$sum'] = 1;
+		$having['$match']['total']['$gte'] = 2;
+
+		$sms_out = $lines->aggregate($where, $group, $having);
+		print_R($sms_out);
+		die;
 	}
 
 }
