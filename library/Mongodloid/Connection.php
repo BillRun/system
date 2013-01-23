@@ -87,7 +87,7 @@ class Mongodloid_Connection
 		return $instances[$server];
 	}
 
-	private function __construct($server = '', $persistent = false)
+	protected function __construct($server = '', $persistent = false)
 	{
 		$this->_persistent = (bool) $persistent;
 		$this->_server = (string) $server;
