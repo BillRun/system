@@ -146,5 +146,10 @@ class Mongodloid_Collection
 	{
 		return $this->_collection->find($query);
 	}
+	
+	public function aggregate() {
+		$args = func_get_args();
+		return call_user_func_array(array($this->_collection, 'aggregate'), $args);
+	}
 
 }

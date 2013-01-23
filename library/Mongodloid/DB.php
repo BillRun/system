@@ -31,5 +31,9 @@ class Mongodloid_DB
 		$this->_db = $db;
 		$this->_connection = $connection;
 	}
+	
+	public function command(array $command, array $options = array()) {
+		return $this->_db->command($command, $options);
+	}
 
 }
