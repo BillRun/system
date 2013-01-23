@@ -83,17 +83,35 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginBase {
 		
 	}
 
+    protected function get_last_charge_time($return_timestamp = false) {
+		// TODO take the 25 from config
+		$dayofmonth = 25;
+		$format = "Ym" . $dayofmonth . "000000";
+        if (date("d") >= $dayofmonth) {
+            $time = date($format);
+        } else {
+            $time = date($format, strtotime('-1 month'));
+        }
+        if ($return_timestamp) {
+            return strtotime($time);
+        }
+        return $time;
+    }
+
 	/**
 	 * method to collect data which need to be handle by event
 	 */
 	public function handlerCollect() {
 		$db = Billrun_Factory::db();
 		$lines = $db->getCollection($db::lines_table);
+		$charge_time = $this->get_last_charge_time();
+
 		$where = array(
 			'$match' => array(
 				'source' => 'nrtrde',
 				'record_type' => 'MOC',
-				'connectedNumber' => '/^972/',
+				'connectedNumber' => array('$regex' => '^972'),
+				'callEventStartTimeStamp' => array('$gte' => $charge_time),
 				'deposit_stamp' => array('$exists' => false),
 			),
 		);
@@ -114,16 +132,18 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginBase {
 		
 		$having = array(
 			'$match' => array(
-				'total' => array('$gte' => 100)
+				'total' => array('$gte' => 0)
 			),
 		);
 
 		$moc_israel = $lines->aggregate($where, $group, $having);
-		
-		$where['$match']['connectedNumber'] = '/^(?!972)/';
+
+		$where['$match']['connectedNumber']['$regex'] = '^(?!972)';
+		$having['$match']['total']['$gte'] = 0;
 		$moc_nonisrael = $lines->aggregate($where, $group, $having);
 		
 		$where['$match']['record_type'] = 'MTC';
+		unset($where['$match']['connectedNumber']);
 		$having['$match']['total']['$gte'] = 200;
 		
 		$mtc = $lines->aggregate($where, $group, $having);
@@ -134,7 +154,8 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginBase {
 		$having['$match']['total']['$gte'] = 2;
 
 		$sms_out = $lines->aggregate($where, $group, $having);
-		print_R($sms_out);
+		
+		// unite all the results per imsi
 		die;
 	}
 
