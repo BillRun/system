@@ -51,6 +51,13 @@ abstract class Billrun_Base {
 	protected $dispatcher;
 
 	/**
+	 * chain dispatcher of the plugin system
+	 *
+	 * @var dispatcher class
+	 */
+	protected $chain;
+
+	/**
 	 * the type of the object
 	 *
 	 * @var string
@@ -118,6 +125,12 @@ abstract class Billrun_Base {
 			$this->dispatcher = $options['dispatcher'];
 		} else {
 			$this->dispatcher = Billrun_Dispatcher::getInstance();
+		}
+		
+		if (isset($options['chain'])) {
+			$this->dispatcher = $options['chain'];
+		} else {
+			$this->dispatcher = Billrun_Dispatcher::getInstance(array('type' => 'chain'));
 		}
 		
 		if (isset($options['type'])) {
