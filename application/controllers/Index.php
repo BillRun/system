@@ -154,11 +154,11 @@ class IndexController extends Yaf_Controller_Abstract {
 			// buffer all action output
 			ob_start();
 
-			$responder->respond($options);
-
+			$paths = $responder->respond($options);
 			// write the buffer into log and output
 			$this->outputAdd(ob_get_contents());
 			ob_end_clean();
+			$this->outputAdd("Responder responded on ".count($paths)." files.");
 		} else {
 			$this->outputAdd("Responder cannot be loaded");
 		}

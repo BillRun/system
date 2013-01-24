@@ -26,6 +26,7 @@ abstract class Billrun_Responder extends Billrun_Base {
 	 * @var string directory path
 	 */
 	protected $workspace;
+	
 
 	public function __construct($options) {
 
@@ -34,7 +35,7 @@ abstract class Billrun_Responder extends Billrun_Base {
 		if (isset($options['workspace'])) {
 			$this->workspace = $options['workspace'];
 		} else {
-			$this->workspace = $this->config->ilds->path;
+			$this->workspace = $this->config->response->workspace;
 		}
 
 	}
@@ -42,7 +43,7 @@ abstract class Billrun_Responder extends Billrun_Base {
 	/**
 	 * general function to receive
 	 *
-	 * @return mixed
+	 * @return array containing paths to the exported files.
 	 */
 	abstract public function respond();
 }

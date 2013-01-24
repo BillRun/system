@@ -45,18 +45,23 @@ abstract class Billrun_Responder_Base_Ilds extends Billrun_Responder_Base_LocalD
 		$responsePath = $this->workspace . rand();
 		$srcFile = fopen($filePath, "r+");
 		$file = fopen($responsePath, "w");
-
-		//alter lines
-		fputs($file, $this->updateHeader(fgets($srcFile), $logLine) . "\n");
+		
+		$lines = "";
 		foreach ($dbLines as $dbLine) {
 			//alter data line
 			$line = $this->updateLine($dbLine->getRawData(), $logLine);
 			if ($line) {
 				$this->linesCount++;
 				$this->totalChargeAmount += floatval($dbLine->get('call_charge'));
-				fputs($file, $line . "\n");
+				$lines .= $line . "\n";
 			}
 		}
+		
+		//alter lines
+		fputs($file, $this->updateHeader(fgets($srcFile), $logLine) . "\n");
+		
+		fputs($file, $lines);
+		
 		//alter trailer
 		fputs($file, $this->updateTrailer($logLine) . "\n");
 

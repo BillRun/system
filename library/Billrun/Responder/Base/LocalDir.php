@@ -40,10 +40,13 @@ abstract class Billrun_Responder_Base_LocalDir extends Billrun_Responder_Base_Fi
 		if (!file_exists($exportDir)) {
 			mkdir($exportDir);
 		}
-		$result = rename($responseFilePath, $exportDir . DIRECTORY_SEPARATOR . $fileName);
-		if ($result) {
-			parent::respondAFile($responseFilePath, $fileName, $logLine);
+		$exportPath = $exportDir . DIRECTORY_SEPARATOR . $fileName;
+		$result = rename($responseFilePath, $exportPath);
+		if (!$result) {
+			return FALSE;
 		}
+		parent::respondAFile($responseFilePath, $fileName, $logLine);
+		return $exportPath;
 	}
 
 }

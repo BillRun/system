@@ -19,7 +19,7 @@ class Billrun_Calculator_Ilds extends Billrun_Calculator {
 	 *
 	 * @var string
 	 */
-	static protected $type = "receiver";
+	static protected $type = "ilds";
 
 	/**
 	 * execute the calculation process
@@ -84,10 +84,11 @@ class Billrun_Calculator_Ilds extends Billrun_Calculator {
 				$rating_charge = round($charge / 100, 2);
 				break;
 			case '014':
+			case '019':	
 				$rating_charge = round($charge, 3);
 				break;
 			default:
-				$rating_charge = $charge;
+				$rating_charge = floatval($charge);
 		endswitch;
 		return $rating_charge;
 	}

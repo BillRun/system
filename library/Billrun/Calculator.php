@@ -44,9 +44,9 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		}
 
 		$resource = $lines->query()
+			->equals('source', static::$type)
 			->notExists('price_customer');
 //			->notExists('price_provider'); // @todo: check how to do or between 2 not exists
-
 		foreach ($resource as $entity) {
 			$this->data[] = $entity;
 		}

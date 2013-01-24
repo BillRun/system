@@ -19,7 +19,8 @@ abstract class Billrun_Responder_Base_FilesResponder extends Billrun_Responder {
 	 * @return mixed
 	 */
 	public function respond() {
-
+		$retPaths = array();
+		
 		foreach ($this->getProcessedFilesForType(self::$type) as $filename => $logLine) {
 			$filePath = $this->workspace . DIRECTORY_SEPARATOR . self::$type . DIRECTORY_SEPARATOR . $filename;
 			if (!file_exists($filePath)) {
@@ -29,9 +30,11 @@ abstract class Billrun_Responder_Base_FilesResponder extends Billrun_Responder {
 
 			$responseFilePath = $this->processFileForResponse($filePath, $logLine, $filename);
 			if ($responseFilePath) {
-				$this->respondAFile($responseFilePath, $this->getResponseFilename($filename, $logLine), $logLine);
+				$retPaths[] = $this->respondAFile($responseFilePath, $this->getResponseFilename($filename, $logLine), $logLine);
 			}
 		}
+		
+		return $retPaths;
 	}
 
 	protected function getProcessedFilesForType($type) {
@@ -61,6 +64,7 @@ abstract class Billrun_Responder_Base_FilesResponder extends Billrun_Responder {
 		$data['response_time'] = time();
 		$logLine->setRawData($data);
 		$logLine->save();
+		return $responseFilePath;
 	}
 
 }
