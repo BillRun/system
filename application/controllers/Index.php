@@ -77,6 +77,8 @@ class IndexController extends Yaf_Controller_Abstract {
 	protected function receive($opts) {
 		$posibleOptions = array(
 			'type' => false,
+			'path' => true,
+			'workspace' => true,
 		);
 
 
@@ -125,7 +127,7 @@ class IndexController extends Yaf_Controller_Abstract {
 
 			// buffer all action output
 			ob_start();
-			if (isset($options['path'])) {
+			if (isset($options['path']) && $options['path']) {
 				$lines = $processor->process();
 			} else {
 				$lines = $processor->process_files();
@@ -285,8 +287,8 @@ class IndexController extends Yaf_Controller_Abstract {
 				if (!$defVal) {
 					$this->outputAdd("Error: No $key selected");
 					return null;
-				} else {
-					$options[$key] = $defVal;
+				} else if(true !== $defVal) {
+					$options[$key] = $defVal ;
 				}
 			}
 		}

@@ -11,7 +11,7 @@
  * @package  Billing
  * @since    1.0
  */
-abstract class Billrun_Receiver_Base_Files extends Billrun_Receiver {
+abstract class Billrun_Receiver_Base_LocalFiles extends Billrun_Receiver {
 
 	/**
 	 * The type of the object
@@ -20,6 +20,10 @@ abstract class Billrun_Receiver_Base_Files extends Billrun_Receiver {
 	 */
 	static protected $type = 'files';
 
+	/**
+	 * the source directory to get the files from.
+	 * @var type 
+	 */
 	protected $srcPath = null; 
 	
 	public function __construct($options) {
@@ -40,6 +44,9 @@ abstract class Billrun_Receiver_Base_Files extends Billrun_Receiver {
 	 * @return array list of files received
 	 */
 	public function receive() {
+		
+			$this->dispatcher->trigger('beforeLocalFilesReceive', array($this));
+		
 			$type = static::$type;
 			if (!file_exists($this->srcPath)) {
 				$this->log->log("NOTICE : SKIPPING $type !!! directory " .$this->srcPath . " not found!!", Zend_Log::NOTICE);
@@ -49,10 +56,10 @@ abstract class Billrun_Receiver_Base_Files extends Billrun_Receiver {
 			$ret = array();
 			foreach ($files as $file) {
 				$path = $this->srcPath . DIRECTORY_SEPARATOR . $file;
-				if(!isFileValid($file, $path) || $this->isFileProcessed($file, $type) || is_dir($path) ) { 
+				if(!$this->isFileValid($file, $path) || $this->isFileProcessed($file, $type) || is_dir($path) ) { 
 					continue; 
 				}
-				$path = $this->relocateFile($path, $file);
+				$path = $this->handleFile($path, $file);
 				if(!$path) {
 					$this->log->log("NOTICE : Couldn't relocate file from  $path.", Zend_Log::NOTICE);
 					continue; 
@@ -61,20 +68,18 @@ abstract class Billrun_Receiver_Base_Files extends Billrun_Receiver {
 				$ret[] = $path;
 			}
 
+		$this->dispatcher->trigger('afterLocalFilesReceived', array($this, $ret));	
+			
 		return $ret;
 	}
 	
 	/**
-	 * Move the file to the workspace.
+	 * Handle the file before receiving it (move it to appropiate position, exctract it..).
 	 * @param type $path The original file poistion
 	 */
-	protected function relocateFile($srcPath, $filename) {
-		$newPath = $this->workspace . DIRECTORY_SEPARATOR . static::$type;
-		if(file_exists($newPath)) {
-			mkdir($newPath);
-		}
-		$newPath .= DIRECTORY_SEPARATOR . $filename;
-		return copy($srcPath, $newPath) ? $newPath : FALSE;
+	protected function handleFile($srcPath, $filename) {
+		$this->dispatcher->trigger('handlingLocalFilesReceive', array($this, &$srcPath,$filename));
+		return $srcPath;
 	}
 	
 	/**
