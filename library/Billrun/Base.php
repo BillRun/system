@@ -191,16 +191,20 @@ abstract class Billrun_Base {
 		}
 
 		$config_type = Yaf_Application::app()->getConfig()->{$type};
-
-		if ($config_type && isset($config_type->type)) {
-			$class_type = $config_type['type'];
+		$called_class = get_called_class();
+		
+		if ($config_type && 
+			isset($config_type->{$called_class::$type}) && 
+			isset($config_type->{$called_class::$type}->type)) {
+			$class_type = $config_type[$called_class::$type]['type'];
 			$args = array_merge($args, $config_type->toArray());
 			$args['type'] = $type;
 		} else {
 			$class_type = $type;
 		}
-
-		$class = get_called_class() . '_' . ucfirst($class_type);
+		
+		print_r($class_type);
+		$class = $called_class . '_' . ucfirst($class_type);
 		return new $class($args);
 	}
 
