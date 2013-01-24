@@ -9,9 +9,9 @@
 class Mongodloid_DB
 {
 
-	private $_db;
-	private $_connection;
-	private $_collections = array();
+	protected $_db;
+	protected $_connection;
+	protected $_collections = array();
 
 	public function getCollection($name)
 	{
@@ -30,6 +30,10 @@ class Mongodloid_DB
 	{
 		$this->_db = $db;
 		$this->_connection = $connection;
+	}
+	
+	public function command(array $command, array $options = array()) {
+		return $this->_db->command($command, $options);
 	}
 
 }

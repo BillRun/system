@@ -146,5 +146,15 @@ class Mongodloid_Collection
 	{
 		return $this->_collection->find($query);
 	}
+	
+	public function aggregate() {
+		$args = func_get_args();
+		$result = call_user_func_array(array($this->_collection, 'aggregate'), $args);
+		if (!isset($result['ok']) || !$result['ok']) {
+			throw new Mongodloid_Exception('aggregate failed with the following error: ' . $result['code'] . ' - ' . $result['errmsg']);
+			return false;
+		}
+		return $result['result'];
+	}
 
 }

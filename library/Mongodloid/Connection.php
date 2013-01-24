@@ -9,11 +9,11 @@
 class Mongodloid_Connection
 {
 
-	private $_connected = false;
-	private $_connection = null;
-	private $_persistent = false;
-	private $_server = '';
-	private $_dbs = array();
+	protected $_connected = false;
+	protected $_connection = null;
+	protected $_persistent = false;
+	protected $_server = '';
+	protected $_dbs = array();
 
 	public function getDB($db)
 	{
@@ -87,7 +87,7 @@ class Mongodloid_Connection
 		return $instances[$server];
 	}
 
-	private function __construct($server = '', $persistent = false)
+	protected function __construct($server = '', $persistent = false)
 	{
 		$this->_persistent = (bool) $persistent;
 		$this->_server = (string) $server;

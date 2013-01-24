@@ -220,26 +220,22 @@ class IndexController extends Yaf_Controller_Abstract {
 	}
 
 	protected function alert($opts) {
-		$options = $this->getInstanceOptions($opts, array('type' => false,));
+		$availableOptions =array(
+			'type' => false,
+		);
+		$options = $this->getInstanceOptions($opts, $availableOptions);
 		if (!$options) {
 			return;
 		}
 
-		$this->outputAdd("Loading alertor");
-		$alertor = Billrun_Alert::getInstance($options);
-		$this->outputAdd("Alertor loaded");
+		$this->outputAdd("Loading handler");
+		$handler = Billrun_Handler::getInstance();
+		$this->outputAdd("Handler loaded");
 
-		if ($alertor) {
+		if ($handler) {
 			// buffer all action output
 			ob_start();
-			$this->outputAdd("Loading data to detect alerts...");
-			$alertor->load();
-			$this->outputAdd("Starting to alerts detection. This action can take awhile...");
-			$alertor->aggregate();
-			$thresholds = $alertor->getAlerts();
-			if($thresholds) {
-				$alertor->handleAlerts($thresholds);
-			}
+			$handler->execute();
 			// write the buffer into log and output
 			$this->outputAdd(ob_get_contents());
 			ob_end_clean();
