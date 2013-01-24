@@ -92,7 +92,7 @@ class Billrun_Dispatcher extends Billrun_Spl_Subject {
 		$this->setEvent($event)->setArgs($args);
 
 		// notify all observer about the event triggered
-		$this->notify();
+		return $this->notify();
 	}
 
 	/**

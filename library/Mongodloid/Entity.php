@@ -6,7 +6,7 @@
  * @license         GNU General Public License version 2 or later; see LICENSE.txt
  */
 
-class Mongodloid_Entity
+class Mongodloid_Entity implements ArrayAccess
 {
 
 	private $_values;
@@ -24,6 +24,30 @@ class Mongodloid_Entity
 		'pull',
 		'pullAll'
 	);
+	
+		public function __construct($values = null, $collection = null)
+	{
+		if ($values instanceOf Mongodloid_ID)
+		{
+			if (!$collection instanceOf Mongodloid_Collection)
+				throw new Mongodloid_Exception('You need to specify the collection');
+
+			$values = $collection->findOne($values, true);
+		}
+
+		if ($values instanceOf Mongodloid_Collection)
+		{
+			$collection = $values;
+			$values = null;
+		}
+
+		if (!is_array($values))
+			$values = array();
+
+		$this->setRawData($values);
+		$this->collection($collection);
+	}
+	
 
 	public function same(Mongodloid_Entity $obj)
 	{
@@ -240,27 +264,21 @@ class Mongodloid_Entity
 		return $this->collection()->remove($this);
 	}
 
-	public function __construct($values = null, $collection = null)
-	{
-		if ($values instanceOf Mongodloid_ID)
-		{
-			if (!$collection instanceOf Mongodloid_Collection)
-				throw new Mongodloid_Exception('You need to specify the collection');
+	//=============== ArrayAccess Implementation =============
+	public function offsetExists($offset) {
+		return isset($this->_values[$offset]);
+	}
 
-			$values = $collection->findOne($values, true);
-		}
+	public function offsetGet($offset) {
+		return $this->get($offset);
+	}
 
-		if ($values instanceOf Mongodloid_Collection)
-		{
-			$collection = $values;
-			$values = null;
-		}
+	public function offsetSet($offset, $value) {
+		return $this->set($offset,$value,true);
+	}
 
-		if (!is_array($values))
-			$values = array();
-
-		$this->setRawData($values);
-		$this->collection($collection);
+	public function offsetUnset($offset) {
+		 unset($this->_values[$offset]);	
 	}
 
 }

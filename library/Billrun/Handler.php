@@ -61,7 +61,7 @@ class Billrun_Handler extends Billrun_Base {
 	 * 
 	 * @return boolean true if success
 	 */
-	protected function alert($items) {
+	protected function alert(&$items) {
 		$this->log->log("Handler alert start", Zend_Log::INFO);
 		
 		if (!is_array($items) || !count($items)) {
@@ -69,8 +69,10 @@ class Billrun_Handler extends Billrun_Base {
 			return FALSE;
 		}
 		
-		foreach ($items as $item) {
-			$this->dispatcher->trigger('handlerAlert', array(&$item));
+		foreach ($items as $plugin => &$plguinItems) {
+			foreach ($plguinItems as  &$item) {	
+				$this->dispatcher->trigger('handlerAlert', array(&$item,$plugin));
+			}
 		}
 		// TODO: check return values
 		
@@ -85,7 +87,7 @@ class Billrun_Handler extends Billrun_Base {
 	 * 
 	 * @return boolean true if success
 	 */
-	protected function markdown($items) {
+	protected function markdown(&$items) {
 		$this->log->log("Handler markdown start", Zend_Log::INFO);
 
 		if (!is_array($items) || !count($items)) {
@@ -93,8 +95,10 @@ class Billrun_Handler extends Billrun_Base {
 			return FALSE;
 		}
 
-		foreach ($items as $item) {
-			$this->dispatcher->trigger('handlerMarkDown', array(&$item));
+		foreach ($items as $plugin => &$plguinItems) {
+			foreach ($plguinItems as  &$item) {	
+				$this->dispatcher->trigger('handlerMarkDown', array(&$item,$plugin));
+			}
 		}
 		// TODO: check return values
 		

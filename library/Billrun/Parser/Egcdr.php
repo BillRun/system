@@ -119,7 +119,7 @@ class Billrun_Parser_Egcdr extends Billrun_Parser_Base_Binary {
 
 				case 'long':
 					$numarr = unpack("C*", $fieldData);
-					$fieldData = "0";
+					$fieldData = 0;
 					foreach ($numarr as $byte) {
 						//$fieldData = $fieldData <<8;
 						$fieldData = bcadd(bcmul($fieldData , 256 ), $byte);
@@ -128,7 +128,7 @@ class Billrun_Parser_Egcdr extends Billrun_Parser_Base_Binary {
 
 				case 'number':
 					$numarr = unpack("C*", $fieldData);
-					$fieldData = "0";
+					$fieldData = 0;
 					foreach ($numarr as $byte) {
 						//$fieldData = $fieldData <<8;
 						$fieldData = ($fieldData << 8) + $byte;
@@ -150,7 +150,7 @@ class Billrun_Parser_Egcdr extends Billrun_Parser_Base_Binary {
 
 				case 'datetime' :
 					$tempTime = DateTime::createFromFormat("ymdHisT", str_replace("2b", "+", implode(unpack("H*", $fieldData))));
-					$fieldData = is_object($tempTime) ? $tempTime->format("Y/m/d H:i:s T") : "";
+					$fieldData = is_object($tempTime) ? $tempTime->format("YmdHis") : "";
 					break;
 
 				case 'json' :
@@ -261,8 +261,8 @@ class Billrun_Parser_Egcdr extends Billrun_Parser_Base_Binary {
 			'qos_info' => 'H*',
 			'sgsn_address' => 'ip',
 			'sgsn_plmn_id' => 'number',
-			'fbc_uplink_volume' => 'long',
-			'fbc_downlink_volume' => 'long',
+			'fbc_uplink_volume' => 'number',
+			'fbc_downlink_volume' => 'number',
 			'time_of_report' => 'datetime',
 			'rat_type' => 'number',
 			'lsod_rat_type' => 'number',

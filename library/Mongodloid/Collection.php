@@ -21,9 +21,9 @@ class Mongodloid_Collection
 		$this->_db = $db;
 	}
 
-	public function update($query, $values)
+	public function update($query, $values, $options = array())
 	{
-		return $this->_collection->update($query, $values);
+		return $this->_collection->update($query, $values, $options);
 	}
 
 	public function getName()
