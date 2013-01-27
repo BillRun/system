@@ -69,11 +69,15 @@ class Billrun_Handler extends Billrun_Base {
 			return FALSE;
 		}
 		
-		foreach ($items as $plugin => &$plguinItems) {
-			foreach ($plguinItems as  &$item) {	
-				$this->dispatcher->trigger('handlerAlert', array(&$item,$plugin));
-			}
+		$this->dispatcher->trigger('beforeHandlerAlert', array(&$items));
+		
+		foreach ($items as $plugin => &$pluginItems) {
+			// ggsn
+			$this->dispatcher->trigger('handlerAlert', array(&$pluginItems, $plugin));
 		}
+		
+		$this->dispatcher->trigger('afterHandlerAlert', array(&$items));
+
 		// TODO: check return values
 		
 		$this->log->log("Handler alert finished", Zend_Log::INFO);
@@ -95,11 +99,16 @@ class Billrun_Handler extends Billrun_Base {
 			return FALSE;
 		}
 
-		foreach ($items as $plugin => &$plguinItems) {
-			foreach ($plguinItems as  &$item) {	
+		$this->dispatcher->trigger('beforeHandlerMarkDown', array(&$items));
+		
+		foreach ($items as $plugin => &$pluginItems) {
+			foreach ($pluginItems as  &$item) {	
 				$this->dispatcher->trigger('handlerMarkDown', array(&$item,$plugin));
 			}
 		}
+
+		$this->dispatcher->trigger('afterHandlerMarkDown', array(&$items));
+
 		// TODO: check return values
 		
 		$this->log->log("Handler markdown finished", Zend_Log::INFO);
