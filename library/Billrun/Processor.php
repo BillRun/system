@@ -75,7 +75,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 		$files = $log->query()
 			->equals('source', static::$type)
 			->notExists('process_time');
-		$i = 2;
+
 		foreach ($files as $file) {
 			$this->setStamp($file->getID());
 			$this->loadFile($file->get('path'));
@@ -159,8 +159,12 @@ abstract class Billrun_Processor extends Billrun_Base {
 			return FALSE;
 		}
 
-		$current_stamp = $this->getStamp(); // mongo id
-		if (!($current_stamp instanceof Mongodloid_Entity)) {
+		$current_stamp = $this->getStamp(); // mongo id in new version; else string
+		if ($current_stamp instanceof Mongodloid_Entity || $current_stamp instanceof Mongodloid_ID) {
+			$resource = $log->findOne($current_stamp);
+			$resource->set('metadata', $entity->getRawData());
+			return $resource->save($log, true);
+		} else {
 			// backword compatability
 			// old method of processing => receiver did not logged, so it's the first time the file logged into DB
 			if ($log->query('stamp', $entity->get('stamp'))->count() > 0) {
@@ -168,11 +172,6 @@ abstract class Billrun_Processor extends Billrun_Base {
 				return FALSE;
 			}
 			return $entity->save($log, true);
-		} else {
-			$resource = $log->findOne($current_stamp);
-			$resource->set('metadata', $entity->getRawData());
-			return $resource->save($log, true);
-
 		}
 	}
 

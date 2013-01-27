@@ -71,7 +71,7 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @return boolean
 	 */
 	public function processorBeforeFileLoad($file_path, $processor) {
-		if ($processor instanceof Billrun_Processor_Nrtrde) {
+		if ($processor instanceof Billrun_Processor_Nrtrde && file_exists($file_path)) {
 			$this->decompress($file_path);
 			$file_path = str_replace('.zip', '', $file_path);
 			return true;
