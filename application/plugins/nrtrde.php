@@ -113,50 +113,86 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginBase {
 				'connectedNumber' => array('$regex' => '^972'),
 				'callEventStartTimeStamp' => array('$gte' => $charge_time),
 				'deposit_stamp' => array('$exists' => false),
+				'callEventDuration' => array('$gt' => 0),
 			),
 		);
 
 		$group = array(
 			'$group' => array(
 				"_id" => '$imsi',
-				"total" => array('$sum' => '$callEventDuration'),
+				"moc_israel" => array('$sum' => '$callEventDuration'),
 			),
 		);
 
-//		$project = array(
-//			'$project' => array(
-//				'imsi' => 1,
-//				'total' => 'function() {return 1}'
-//			),
-//		);
+		$project = array(
+			'$project' => array(
+				'imsi' => '$_id',
+				'_id' => 0, 
+				'moc_israel' => 1,
+			),
+		);
 		
 		$having = array(
 			'$match' => array(
-				'total' => array('$gte' => 0)
+				'moc_israel' => array('$gte' => 10)
 			),
 		);
 
-		$moc_israel = $lines->aggregate($where, $group, $having);
+		$ret = array();
+			
+		$moc_israel = $lines->aggregate($where, $group, $project, $having);
+		
+		$this->normalize(&$ret, $moc_israel, 'moc_israel');
 
 		$where['$match']['connectedNumber']['$regex'] = '^(?!972)';
-		$having['$match']['total']['$gte'] = 0;
-		$moc_nonisrael = $lines->aggregate($where, $group, $having);
-		
+		$group['$group']['moc_nonisrael'] = $group['$group']['moc_israel'];
+		unset($group['$group']['moc_israel']);
+		unset($having['$match']['moc_israel']);
+		$having['$match']['moc_nonisrael'] = array('$gte' => 0);
+		$project['$project']['moc_nonisrael'] = 1;
+		unset($project['$project']['moc_israel']);
+		$moc_nonisrael = $lines->aggregate($where, $group, $project, $having);
+		$this->normalize(&$ret, $moc_nonisrael, 'moc_nonisrael');
+
 		$where['$match']['record_type'] = 'MTC';
 		unset($where['$match']['connectedNumber']);
-		$having['$match']['total']['$gte'] = 200;
-		
-		$mtc = $lines->aggregate($where, $group, $having);
+		$group['$group']['mtc_all'] = $group['$group']['moc_nonisrael'];
+		unset($group['$group']['moc_nonisrael']);
+		unset($having['$match']['moc_nonisrael']);
+		$having['$match']['mtc_all'] = array('$gte' => 100);
+		$project['$project']['mtc_all'] = 1;
+		unset($project['$project']['moc_nonisrael']);
+		$mtc = $lines->aggregate($where, $group, $project, $having);
+		$this->normalize(&$ret, $mtc, 'mtc_all');
 		
 		$where['$match']['record_type'] = 'MOC';
 		$where['$match']['callEventDuration'] = 0;
-		$group['$group']['total']['$sum'] = 1;
-		$having['$match']['total']['$gte'] = 2;
+		$group['$group']['sms_out'] = $group['$group']['mtc_all'];
+		unset($group['$group']['mtc_all']);
+		unset($having['$match']['mtc_all']);
+		$group['$group']['sms_out'] = array('$sum' => 1);
+		$having['$match']['sms_out'] = array('$gte' => 3);
+		$project['$project']['sms_out'] = 1;
+		unset($project['$project']['mtc_all']);
+		$sms_out = $lines->aggregate($where, $group, $project, $having);
+		$this->normalize(&$ret, $sms_out, 'sms_out');
 
-		$sms_out = $lines->aggregate($where, $group, $having);
-		
+		print_R($ret);
+
 		// unite all the results per imsi
 		die;
 	}
-
+	
+	protected function normalize($ret, $items, $field) {
+		if (!is_array($items) || !count($items)) {
+			return false;
+		}
+		
+		foreach ($items as $item) {
+			$ret[$item['imsi']][$field] = $item[$field];
+		}
+		
+		return true;
+	}
+	
 }

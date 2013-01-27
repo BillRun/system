@@ -39,5 +39,10 @@ class Billrun_Db extends Mongodloid_Db {
 		$conn = Billrun_Connection::getInstance($config->db->host, $config->db->port);
 		return $conn->getDB($config->db->name);
 	}
+	
+	public function simple_aggregate($collection_name, $where, $group, $having) {
+		$collection = self::db()->getCollection($collection_name);
+		return $collection->aggregate(array('$match' => $where), array('$group' => $group), array('$match' => $having));
+	}
 
 }
