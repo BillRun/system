@@ -13,7 +13,12 @@
  * @since    1.0
  */
 class Billrun_Handler extends Billrun_Base {
-
+	/**
+	 * method to retreive instance of Billrun Handler
+	 * 
+	 * @return self instance
+	 * @todo make args signature to avoid over loading of instance
+	 */
 	static public function getInstance() {
 		
 		$args = func_get_args();
@@ -33,6 +38,8 @@ class Billrun_Handler extends Billrun_Base {
 		$this->alert($collect_data);
 
 		$this->markdown($collect_data);
+		
+		$this->notify();
 		
 		$this->log->log("Handler execute finished", Zend_Log::INFO);
 		
@@ -54,6 +61,23 @@ class Billrun_Handler extends Billrun_Base {
 		return $items;
 	}
 
+	
+	/**
+	 * method to notify other systems  that an event has happend.
+	 * 
+	 * @return array list of notifyed items
+	 */
+	protected function notify() {
+
+		$this->log->log("Handler notify start", Zend_Log::INFO);
+
+		$items = $this->dispatcher->trigger('handlerNotify');
+		
+		$this->log->log("Handler notify finished", Zend_Log::INFO);
+
+		return $items;
+	}
+	
 	/**
 	 * method to alert the data collected
 	 * 
@@ -101,10 +125,8 @@ class Billrun_Handler extends Billrun_Base {
 
 		$this->dispatcher->trigger('beforeHandlerMarkDown', array(&$items));
 		
-		foreach ($items as $plugin => &$pluginItems) {
-			foreach ($pluginItems as  &$item) {	
-				$this->dispatcher->trigger('handlerMarkDown', array(&$item,$plugin));
-			}
+		foreach ($items as $plugin => &$pluginItems) {	
+				$this->dispatcher->trigger('handlerMarkDown', array(&$pluginItems,$plugin));
 		}
 
 		$this->dispatcher->trigger('afterHandlerMarkDown', array(&$items));

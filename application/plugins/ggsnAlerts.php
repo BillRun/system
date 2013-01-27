@@ -10,30 +10,37 @@ class ggsnAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 */
 	protected $name = 'ggsnAlerts';
 
-	public function handlerAlert(&$item,$pluginName) {
+	
+	public function handlerAlert(&$items,$pluginName) {
 		if($pluginName != $this->getName()) {return;}
 		
 		$db = Billrun_Factory::db();
 		$events = $db->getCollection($db::events_table);
 		//$this->log->log("New Alert For {$item['imsi']}",Zend_Log::DEBUG);
-		
-		$newEvent = new Mongodloid_Entity($item);
-		unset($newEvent['lines_ids']);
-		$newEvent['stamp'] = md5(serialize($newEvent));
-		$item['alert_stamp'] = $newEvent['stamp'];
-		return $events->save($newEvent);
+		$ret = array();
+		foreach($items as &$item) { 
+			$newEvent = new Mongodloid_Entity($item);
+			unset($newEvent['lines_ids']);
+			$newEvent['source']='ggsn';
+			$newEvent['stamp'] = md5(serialize($newEvent));
+			$item['alert_stamp'] = $newEvent['stamp'];
+			$ret[] = $events->save($newEvent);
+		}
+		return $ret; 
 	}
 	
-	public function handlerMarkDown(&$item, $pluginName) {
+	public function handlerMarkDown(&$items, $pluginName) {
 		if($pluginName != $this->getName()) {return;}
 		//$this->log->log("Marking down Alert For {$item['imsi']}",Zend_Log::DEBUG);
-		
+		$ret = array();
 		$db = Billrun_Factory::db();
 		$lines = $db->getCollection($db::lines_table);
-		return $lines->update(	array('stamp'=> array('$in' => $item['lines_ids'])),
+		foreach($items as &$item) { 
+			$ret[] = $lines->update(	array('stamp'=> array('$in' => $item['lines_ids'])),
 								array('$set' => array('alert_stamp' => $item['alert_stamp'])),
 								array('multiple'=>1));
-
+		}
+		return $ret;
 	}
 	
 	/**
@@ -96,6 +103,7 @@ class ggsnAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$dataAlerts = $lines->aggregate(array_merge($aggregateQuery, array($dataThrs)) );
 		foreach($dataAlerts as &$alert) {
 			$alert['units'] = 'KB';
+			$alert['value'] = ($alert['download'] > $this->config->ggsn->thresholds->datalimit ? $alert['download'] : $alert['upload']);
 			$alert['threshold'] = $this->config->ggsn->thresholds->datalimit;
 			$alert['alert_type'] = 'data';
 		}
@@ -111,26 +119,11 @@ class ggsnAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$durationAlert = $lines->aggregate(array_merge($aggregateQuery, array($durationThrs)) );
 		foreach($durationAlert as &$alert) {
 			$alert['units'] = 'SEC';
+			$alert['value'] = $alert['duration'];
 			$alert['threshold'] = $this->config->ggsn->thresholds->duration;
 			$alert['alert_type'] = 'data_duration';
 		}
 		return $durationAlert;
-	}
-	
-	protected function notifyOnEvent($args) {
-		Billrun_Log::getInstance()->log("EgsnAlertcdPlugin::notifyOnEvent {$args['imsi']} with type : {$args['thresholdType']} , value : {$args['value']}", Zend_LOg::DEBUG);	
-		$client = curl_init(static::$alertServer."?event_type=GGSN_DATA&IMSI={$args['imsi']}".
-														"&NDC_SN={$args['msisdn']}".
-														"&threshold={$args['threshold']}".
-														"&usage={$args['value']}".
-														"&units={$args['units']}" );
-		curl_setopt($client, CURLOPT_POST, TRUE);
-		curl_setopt($client, CURLOPT_POSTFIELDS, array('extra_data' => json_encode($args)));
-		curl_setopt($client, CURLOPT_RETURNTRANSFER, TRUE);
-		$response = curl_exec($client);
-		curl_close($client);
-//		Billrun_Log::getInstance()->log("EgsnAlertcdPlugin::notifyOnEvent {$args['imsi']} API  response : $response", Zend_LOg::DEBUG);	
-		return json_decode($response);
 	}
 	
 		protected function get_last_charge_time($return_timestamp = false) {

@@ -238,6 +238,7 @@ class IndexController extends Yaf_Controller_Abstract {
 			// buffer all action output
 			ob_start();
 			$handler->execute();
+
 			// write the buffer into log and output
 			$this->outputAdd(ob_get_contents());
 			ob_end_clean();
