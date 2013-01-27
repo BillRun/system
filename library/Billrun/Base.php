@@ -207,5 +207,17 @@ abstract class Billrun_Base {
 		$class = $called_class . '_' . ucfirst($class_type);
 		return new $class($args);
 	}
+	
+	protected function getConfigValue($keys,$defVal) {
+		$currConf = $this->config;
+		$path = explode(".", $keys);
+		
+		foreach($path as $key) {
+			if(!isset($currConf[$key]) ) { return $defVal; }
+			$currConf = $currConf[$key];
+		}
+		
+		return $currConf;
+	}
 
 }

@@ -1,6 +1,6 @@
 <?php
 
-class ggsnAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
+class ggsnPlugin extends Billrun_Plugin_BillrunPluginBase {
 
 	
 	/**
@@ -8,7 +8,7 @@ class ggsnAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 *
 	 * @var string
 	 */
-	protected $name = 'ggsnAlerts';
+	protected $name = 'ggsn';
 
 	
 	public function handlerAlert(&$items,$pluginName) {
@@ -92,43 +92,45 @@ class ggsnAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 
 	protected function detectDataExceeders($lines,$aggregateQuery) {
+		$limit = floatval($this->getConfigValue('ggsn.thresholds.datalimit',1000));
 		$dataThrs =	array(
 				'$match' => array(
 					'$or' => array(
-							array( 'download' => array( '$gte' => floatval($this->config->ggsn->thresholds->datalimit)) ),
-							array( 'upload' => array( '$gte' => floatval($this->config->ggsn->thresholds->datalimit)) ),		
+							array( 'download' => array( '$gte' => $limit ) ),
+							array( 'upload' => array( '$gte' => $limit ) ),		
 					),
 				),
 			);
 		$dataAlerts = $lines->aggregate(array_merge($aggregateQuery, array($dataThrs)) );
 		foreach($dataAlerts as &$alert) {
 			$alert['units'] = 'KB';
-			$alert['value'] = ($alert['download'] > $this->config->ggsn->thresholds->datalimit ? $alert['download'] : $alert['upload']);
-			$alert['threshold'] = $this->config->ggsn->thresholds->datalimit;
+			$alert['value'] = ($alert['download'] > $limit ? $alert['download'] : $alert['upload']);
+			$alert['threshold'] = $limit;
 			$alert['alert_type'] = 'data';
 		}
 		return $dataAlerts;
 	}
 	
 	protected function detectDurationExceeders($lines,$aggregateQuery) {
+		$threshold = floatval($this->getConfigValue('ggsn.thresholds.duration',2400));
 		$durationThrs =	array(
 				'$match' => array(
-					'duration' => array('$gte' => floatval($this->config->ggsn->thresholds->duration) )
+					'duration' => array('$gte' => $threshold )
 				),
 			);
 		$durationAlert = $lines->aggregate(array_merge($aggregateQuery, array($durationThrs)) );
 		foreach($durationAlert as &$alert) {
 			$alert['units'] = 'SEC';
 			$alert['value'] = $alert['duration'];
-			$alert['threshold'] = $this->config->ggsn->thresholds->duration;
+			$alert['threshold'] = $threshold;
 			$alert['alert_type'] = 'data_duration';
 		}
 		return $durationAlert;
 	}
 	
-		protected function get_last_charge_time($return_timestamp = false) {
+	protected function get_last_charge_time($return_timestamp = false) {
 		// TODO take the 25 from config
-		$dayofmonth = $this->config->billrun->charging_day;
+		$dayofmonth = $this->getConfigValue('billrun.charging_day',25);
 		$format = "Ym" . $dayofmonth . "000000";
         if (date("d") >= $dayofmonth) {
             $time = date($format);

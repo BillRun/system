@@ -9,7 +9,15 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 */
 	protected $name = 'fraudAlerts';
 		
-	protected  static $alertServer = "http://127.0.0.1";
+	protected $alertHost = "http://127.0.0.1";
+	
+	public function __construct($options = array()) {
+		parent::__construct($options);
+		
+		$this->alertServer = isset($options['alertHost']) ?
+									$options['alertHost'] :
+									$this->getConfigValue('fraudAlerts.alert.host', $this->alertHost);
+	}
 	
 	public function handlerNotify() {
 		$db = Billrun_Factory::db();
@@ -56,11 +64,15 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 		return $retValue;
 	}
-	
+	/**
+	 * Atually send events to the remote server.
+	 * @param type $args 
+	 * @return type
+	 */
 	protected function notifyOnEvent($args) {
 		$excedingValue = ( $args['value']);
 		Billrun_Log::getInstance()->log("notifyOnEvent {$args['imsi']} with type : {$args['alert_type']} , value : {$excedingValue}", Zend_LOg::DEBUG);	
-		$client = curl_init(static::$alertServer."?event_type=GGSN_DATA&IMSI={$args['imsi']}".
+		$client = curl_init($this->alertServer."?event_type=GGSN_DATA&IMSI={$args['imsi']}".
 														"&NDC_SN={$args['msisdn']}".
 														"&threshold={$args['threshold']}".
 														"&usage={$excedingValue}".
@@ -73,6 +85,6 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		
 		Billrun_Log::getInstance()->log("EgsnAlertcdPlugin::notifyOnEvent ".print_r(json_decode($response), 1), Zend_LOg::DEBUG);			
 
-		return true;//json_decode($response);
+		return json_decode($response);
 	}
 }

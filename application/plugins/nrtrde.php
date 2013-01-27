@@ -2,6 +2,14 @@
 
 class nrtrdePlugin extends Billrun_Plugin_BillrunPluginBase {
 
+		
+	/**
+	 * plugin name
+	 *
+	 * @var string
+	 */
+	protected $name = 'nrtrde';
+	
 	public function beforeFTPReceive($ftp) {
 		return true;
 	}
@@ -84,8 +92,7 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 
     protected function get_last_charge_time($return_timestamp = false) {
-		// TODO take the 25 from config
-		$dayofmonth = 25;
+		$dayofmonth = $this->getConfigValue('billrun.charging_day',25);
 		$format = "Ym" . $dayofmonth . "000000";
         if (date("d") >= $dayofmonth) {
             $time = date($format);
@@ -97,7 +104,51 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginBase {
         }
         return $time;
     }
+	
+	/**
+	 * 
+	 * @param type $items
+	 * @param type $pluginName
+	 */
+	public function handlerAlert(&$items,$pluginName) {
+			if($pluginName != $this->getName()) {return;}
+		//$this->log->log("Marking down Alert For {$item['imsi']}",Zend_Log::DEBUG);
+		$ret = array();
+		$db = Billrun_Factory::db();
+		$lines = $db->getCollection($db::lines_table);
+		foreach($items as $item) {
+			$newEvent = new Mongodloid_Entity($item);
+			$newEvent['source']	= $this->getName();
+			$newEvent['units']	= "TODO";
+			$newEvent['threshold']	= "TODO";
+			$newEvent['value']	= "TODO";
+			$newEvent['stamp']	= md5(serialize($newEvent));
+			$item['alert_stamp']= $newEvent['stamp'];
+			$ret[] = $events->save($newEvent);
+		}
+		return $ret;
+	}
 
+	/**
+	 * 
+	 * @param type $items
+	 * @param type $pluginName
+	 * @return array
+	 */
+	public function handlerMarkDown(&$items, $pluginName) {
+		if($pluginName != $this->getName()) {return;}
+		//$this->log->log("Marking down Alert For {$item['imsi']}",Zend_Log::DEBUG);
+		$ret = array();
+		$db = Billrun_Factory::db();
+		$lines = $db->getCollection($db::lines_table);
+		foreach($items as &$item) { 
+			$ret[] = $lines->update(	array('stamp'=> array('$in' => $item['lines_stamps'])),
+								array('$set' => array('alert_stamp' => $item['alert_stamp'])),
+								array('multiple'=>1));
+		}
+		return $ret;
+	}
+	
 	/**
 	 * method to collect data which need to be handle by event
 	 */
@@ -121,6 +172,7 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginBase {
 			'$group' => array(
 				"_id" => '$imsi',
 				"moc_israel" => array('$sum' => '$callEventDuration'),
+				'lines_stamps' => array('$addToSet' => '$stamp'),
 			),
 		);
 
@@ -134,7 +186,7 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginBase {
 		
 		$having = array(
 			'$match' => array(
-				'moc_israel' => array('$gte' => 10)
+				'moc_israel' => array('$gte' => $this->getConfigValue('nrtde.thresholds.moc.israel',10))
 			),
 		);
 
@@ -142,28 +194,28 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginBase {
 			
 		$moc_israel = $lines->aggregate($where, $group, $project, $having);
 		
-		$this->normalize(&$ret, $moc_israel, 'moc_israel');
+		$this->normalize($ret, $moc_israel, 'moc_israel');
 
 		$where['$match']['connectedNumber']['$regex'] = '^(?!972)';
 		$group['$group']['moc_nonisrael'] = $group['$group']['moc_israel'];
 		unset($group['$group']['moc_israel']);
 		unset($having['$match']['moc_israel']);
-		$having['$match']['moc_nonisrael'] = array('$gte' => 0);
+		$having['$match']['moc_nonisrael'] = array('$gte' => $this->getConfigValue('nrtde.thresholds.moc.nonisrael',0));
 		$project['$project']['moc_nonisrael'] = 1;
 		unset($project['$project']['moc_israel']);
 		$moc_nonisrael = $lines->aggregate($where, $group, $project, $having);
-		$this->normalize(&$ret, $moc_nonisrael, 'moc_nonisrael');
+		$this->normalize($ret, $moc_nonisrael, 'moc_nonisrael');
 
 		$where['$match']['record_type'] = 'MTC';
 		unset($where['$match']['connectedNumber']);
 		$group['$group']['mtc_all'] = $group['$group']['moc_nonisrael'];
 		unset($group['$group']['moc_nonisrael']);
 		unset($having['$match']['moc_nonisrael']);
-		$having['$match']['mtc_all'] = array('$gte' => 100);
+		$having['$match']['mtc_all'] = array('$gte' => $this->getConfigValue('nrtde.thresholds.moc.mtc',100));
 		$project['$project']['mtc_all'] = 1;
 		unset($project['$project']['moc_nonisrael']);
 		$mtc = $lines->aggregate($where, $group, $project, $having);
-		$this->normalize(&$ret, $mtc, 'mtc_all');
+		$this->normalize($ret, $mtc, 'mtc_all');
 		
 		$where['$match']['record_type'] = 'MOC';
 		$where['$match']['callEventDuration'] = 0;
@@ -171,11 +223,11 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginBase {
 		unset($group['$group']['mtc_all']);
 		unset($having['$match']['mtc_all']);
 		$group['$group']['sms_out'] = array('$sum' => 1);
-		$having['$match']['sms_out'] = array('$gte' => 3);
+		$having['$match']['sms_out'] = array('$gte' => $this->getConfigValue('nrtde.thresholds.moc.smsout',3));
 		$project['$project']['sms_out'] = 1;
 		unset($project['$project']['mtc_all']);
 		$sms_out = $lines->aggregate($where, $group, $project, $having);
-		$this->normalize(&$ret, $sms_out, 'sms_out');
+		$this->normalize($ret, $sms_out, 'sms_out');
 
 		print_R($ret);
 
@@ -183,7 +235,7 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginBase {
 		die;
 	}
 	
-	protected function normalize($ret, $items, $field) {
+	protected function normalize(&$ret, $items, $field) {
 		if (!is_array($items) || !count($items)) {
 			return false;
 		}
