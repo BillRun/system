@@ -33,7 +33,7 @@ class Billrun_Processor_Egsn extends Billrun_Processor_Base_Binary {
 
 		// run all over the file with the parser helper
 		if (!is_resource($this->fileHandler)) {
-			echo "Resource is not configured well" . PHP_EOL;
+			$this->log->log("Resource is not configured well", Zend_Log::ERR);
 			return false;
 		}
 

@@ -26,7 +26,7 @@ class Billrun_Processor_Base_Ilds extends Billrun_Processor {
 	 */
 	protected function parse() {
 		if (!is_resource($this->fileHandler)) {
-			echo "Resource is not configured well" . PHP_EOL;
+			$this->log->log("Resource is not configured well", Zend_Log::ERR);
 			return false;
 		}
 
@@ -37,7 +37,7 @@ class Billrun_Processor_Base_Ilds extends Billrun_Processor {
 			switch ($record_type) {
 				case 'H': // header
 					if (isset($this->data['header'])) {
-						echo "double header" . PHP_EOL;
+						$this->log->log("double header", Zend_Log::ERR);
 						return false;
 					}
 
@@ -55,7 +55,7 @@ class Billrun_Processor_Base_Ilds extends Billrun_Processor {
 					break;
 				case 'T': //trailer
 					if (isset($this->data['trailer'])) {
-						echo "double trailer" . PHP_EOL;
+						$this->log->log("double trailer", Zend_Log::ERR);
 						return false;
 					}
 
@@ -74,7 +74,7 @@ class Billrun_Processor_Base_Ilds extends Billrun_Processor {
 					break;
 				case 'D': //data
 					if (!isset($this->data['header'])) {
-						echo "No header found" . PHP_EOL;
+						$this->log->log("No header found", Zend_Log::ERR);
 						return false;
 					}
 
