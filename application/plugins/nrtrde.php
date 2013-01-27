@@ -119,7 +119,7 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginBase {
 		$group = array(
 			'$group' => array(
 				"_id" => '$imsi',
-				"total" => array('$sum' => '$callEventDuration'),
+				"moc_israel" => array('$sum' => '$callEventDuration'),
 			),
 		);
 
@@ -132,31 +132,42 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginBase {
 		
 		$having = array(
 			'$match' => array(
-				'total' => array('$gte' => 0)
+				'moc_israel' => array('$gte' => 0)
 			),
 		);
 
 		$moc_israel = $lines->aggregate($where, $group, $having);
+		print_R($moc_israel);
 
 		$where['$match']['connectedNumber']['$regex'] = '^(?!972)';
-		$having['$match']['total']['$gte'] = 0;
+		$group['$group']['moc_nonisrael'] = $group['$group']['moc_israel'];
+		unset($group['$group']['moc_israel']);
+		unset($having['$match']['moc_israel']);
+		$having['$match']['moc_nonisrael'] = array('$gte' => 0);
 		$moc_nonisrael = $lines->aggregate($where, $group, $having);
+		print_R($moc_nonisrael);
 		
 		$where['$match']['record_type'] = 'MTC';
 		unset($where['$match']['connectedNumber']);
-		$having['$match']['total']['$gte'] = 200;
-		
+		$group['$group']['mtc_all'] = $group['$group']['moc_nonisrael'];
+		unset($group['$group']['moc_nonisrael']);
+		unset($having['$match']['moc_nonisrael']);
+		$having['$match']['mtc_all'] = array('$gte' => 1);
 		$mtc = $lines->aggregate($where, $group, $having);
+		print_R($mtc);
 		
 		$where['$match']['record_type'] = 'MOC';
-		$where['$match']['callEventDuration'] = 0;
-		$group['$group']['total']['$sum'] = 1;
-		$having['$match']['total']['$gte'] = 2;
-
+		$where['$match']['callEventDuration'] = "0";
+		$group['$group']['sms_out'] = $group['$group']['mtc'];
+		unset($group['$group']['mtc_all']);
+		unset($having['$match']['mtc_all']);
+		$group['$group']['sms_out'] = array('$sum' => 1);
+		$having['$match']['sms_out'] = array('$gte' => 0);
 		$sms_out = $lines->aggregate($where, $group, $having);
-		
+		print_R($sms_out);
+
 		// unite all the results per imsi
 		die;
 	}
-
+	
 }

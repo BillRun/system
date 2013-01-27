@@ -118,7 +118,8 @@ class Billrun_Processor_Nrtrde extends Billrun_Processor_Base_Separator {
 		$row['header_stamp'] = $this->data['header']['stamp'];
 		$row['file'] = basename($this->filePath);
 		$row['process_time'] = date(self::base_dateformat);
-		$this->dispatcher->trigger('afterDataParsing', array($row, $this));
+		settype($row['callEventDuration'], 'integer');
+		$this->dispatcher->trigger('afterDataParsing', array(&$row, $this));
 		$this->data['data'][] = $row;
 		return $row;
 	}
