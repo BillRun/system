@@ -10,13 +10,17 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	protected $name = 'fraudAlerts';
 		
 	protected $alertHost = "http://127.0.0.1";
-	
+	protected $startTime;
+
+
 	public function __construct($options = array()) {
 		parent::__construct($options);
 		
 		$this->alertServer = isset($options['alertHost']) ?
 									$options['alertHost'] :
 									$this->getConfigValue('fraudAlerts.alert.host', $this->alertHost);
+		
+		$this->startTime  = $_SERVER['REQUEST_TIME'];
 	}
 	
 	public function handlerNotify() {
@@ -31,6 +35,7 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	
 	protected function roamingNotify($db, $eventsCol, $linesCol) {
 		$retValue = array();
+		//Aggregate the  events by imsi  taking only the first one.
 		$events = $eventsCol->aggregate(array('$match' => array('notify_time'=> array('$exists'=>false),
 																/*'source'=> array('$in'=> array('nrtrde','ggsn'))*/)),
 										array('$sort' => array('imsi' => 1)),
@@ -56,7 +61,7 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 								array('multiple'=> 1));
 				
 				//mark deposit for the lines on the current imsi 
-				$linesCol->update(	array( 'process_time'=> array('$lt'=> date('Y-m-d H:i:s',time()),'imsi' => $event['imsi']) ),
+				$linesCol->update(	array( 'process_time'=> array('$lt'=> date('Y-m-d H:i:s',$this->startTime),'imsi' => $event['imsi']) ),
 								array('$set' => array('deposit_stamp' => $event['id'] )),
 								array('multiple'=>1));
 				$retValue[] = $event;
@@ -64,6 +69,7 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 		return $retValue;
 	}
+	
 	/**
 	 * Atually send events to the remote server.
 	 * @param type $args 

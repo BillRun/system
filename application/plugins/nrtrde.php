@@ -118,12 +118,13 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginBase {
 		$lines = $db->getCollection($db::lines_table);
 		foreach($items as $item) {
 			$newEvent = new Mongodloid_Entity($item);
+			
 			$newEvent['source']	= $this->getName();
-			$newEvent['units']	= "TODO";
-			$newEvent['threshold']	= "TODO";
-			$newEvent['value']	= "TODO";
+			unset($newEvent['lines_stamps']);
+			$newEvent = $this->addAlertData($newEvent);
 			$newEvent['stamp']	= md5(serialize($newEvent));
 			$item['alert_stamp']= $newEvent['stamp'];
+			
 			$ret[] = $events->save($newEvent);
 		}
 		return $ret;
@@ -211,7 +212,7 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginBase {
 		$group['$group']['mtc_all'] = $group['$group']['moc_nonisrael'];
 		unset($group['$group']['moc_nonisrael']);
 		unset($having['$match']['moc_nonisrael']);
-		$having['$match']['mtc_all'] = array('$gte' => $this->getConfigValue('nrtde.thresholds.moc.mtc',100));
+		$having['$match']['mtc_all'] = array('$gte' => $this->getConfigValue('nrtde.thresholds.mtc',100));
 		$project['$project']['mtc_all'] = 1;
 		unset($project['$project']['moc_nonisrael']);
 		$mtc = $lines->aggregate($where, $group, $project, $having);
@@ -223,7 +224,7 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginBase {
 		unset($group['$group']['mtc_all']);
 		unset($having['$match']['mtc_all']);
 		$group['$group']['sms_out'] = array('$sum' => 1);
-		$having['$match']['sms_out'] = array('$gte' => $this->getConfigValue('nrtde.thresholds.moc.smsout',3));
+		$having['$match']['sms_out'] = array('$gte' => $this->getConfigValue('nrtde.thresholds.smsout',3));
 		$project['$project']['sms_out'] = 1;
 		unset($project['$project']['mtc_all']);
 		$sms_out = $lines->aggregate($where, $group, $project, $having);
@@ -245,6 +246,41 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 		
 		return true;
+	}
+	
+	/**
+	 * Add data that is needed to use the event object/DB document later
+	 * @param Array|Object $event the event to add fields to.
+	 * @return Array|Object the event object with added fields
+	 */
+	protected function addAlertData($event) {
+		$type = isset($newEvent['moc_israel']) ? 'moc_israel': 
+					(isset($newEvent['moc_nonisrael']) ? 'moc_nonisrael' : 
+						(isset($newEvent['mtc_all']) ? 'mtc_all' : 
+								'sms_out'));
+		
+		$newEvent['units']	= 'MIN';
+		$newEvent['value']	= $newEvent[$type];
+		
+		switch($type) {
+			case 'moc_israel':
+					$newEvent['threshold']	= $this->getConfigValue('nrtde.thresholds.moc.israel', 0);
+				break;
+			
+			case 'moc_nonisrael':				
+					$newEvent['threshold']	= $this->getConfigValue('nrtde.thresholds.moc.nonisrael', 100);
+				break;
+			case 'mtc_all':
+					$newEvent['threshold']	= $this->getConfigValue('nrtde.thresholds.mtc', 0);
+				break;
+			
+			case 'sms_out':
+					$newEvent['threshold']	= $this->getConfigValue('nrtde.thresholds.smsout', 0);
+					$newEvent['units']	= 'SMS';
+				break;
+		}
+		
+		return $newEvent;
 	}
 	
 }
