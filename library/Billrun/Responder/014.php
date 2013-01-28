@@ -76,7 +76,7 @@ class Billrun_Responder_014 extends Billrun_Responder_Base_Ilds {
 	protected function processFileForResponse($filePath, $logLine) {
 		$tmpLogLine = $logLine->getRawData();
 		$unprocessDBLines = $this->db->getCollection(self::lines_table)->query()->notExists('billrun')->equals('file', $tmpLogLine['file']);
-		//run only if theres problematic lines in the file.
+		//run only if theres promlematic lines in the file.
 		if ($unprocessDBLines->count() == 0) {
 			return false;
 		}
@@ -90,7 +90,28 @@ class Billrun_Responder_014 extends Billrun_Responder_Base_Ilds {
 		}
 		return $dbLine;
 	}
+	
+	protected function updateHeader($line, $logLine) {
+		$line = substr( parent::updateHeader($line, $logLine), 0, 40);
+		$now = date_create();
+		$line.=$now->format("YmdHis");
+		$line.= sprintf("%02s",$this->getHeaderStateCode($line, $logLine)); //TODO add problem detection.
+		$line = $this->switchNamesInLine("GTC", "MBZ", $line);
 
+		return $line;
+	}
+	
+	protected function updateTrailer($logLine) {
+		$logLine['file_received_date'] = date('Ymd');
+		$logLine['file_received_time'] = date('His');
+		$logLine['total_rec_no'] = $this->linesCount;
+		$logLine['total_valid_rec_no'] = ($this->linesCount - $this->linesErrors);
+		$logLine['total_err_rec_no'] = $this->linesErrors;
+		$line = parent::updateTrailer($logLine);
+
+		return $line;
+	}
+	
 	protected function getResponseFilename($receivedFilename, $logLine) {
 		$responseFilename =		preg_replace("/_OUR_/i", "_GTC_",
 									preg_replace("/_GTC_/i", "_MBZ_", 
@@ -100,4 +121,18 @@ class Billrun_Responder_014 extends Billrun_Responder_Base_Ilds {
 		return $responseFilename;
 	}
 
+		protected function getHeaderStateCode($headerLine,$logLine) {
+		if($logLine['file_type'] != "CDR") {
+			return 1;
+		}
+		if($logLine['sending_company_id'] != "MBZ") {
+			return 2;
+		}
+		if(!is_numeric($logLine['sequence_no']) ) {
+			return 3;
+		}
+			
+		//TOD add the other errors
+		return 0;
+	}
 }

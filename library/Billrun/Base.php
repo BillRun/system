@@ -203,7 +203,6 @@ abstract class Billrun_Base {
 			$class_type = $type;
 		}
 		
-		print_r($class_type);
 		$class = $called_class . '_' . ucfirst($class_type);
 		return new $class($args);
 	}

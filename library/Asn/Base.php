@@ -15,6 +15,8 @@
  */
 class Asn_Base {
 
+	const USE_AUTOLOAD = false;
+	
 	/**
 	 * Parse an ASN.1 binary string.
 	 *
@@ -51,7 +53,7 @@ class Asn_Base {
 	protected static function newClassFromData(&$rawData) {
 		$offset = 0;
 		$type = ord($rawData[$offset++]);
-		if (($type & Asn_Markers::ASN_CONTEXT) && (($type & 0x1F) == 0x1F)) {
+		if (($type & Asn_Markers::ASN_CONTEXT) && (($type & Asn_Markers::ASN_EXTENSION_ID) == 0x1F)) {
 			$type = ord($rawData[$offset++]);
 		}
 		$cls = self::getClassForType($type);
@@ -104,9 +106,8 @@ class Asn_Base {
 		$constructed = $type & Asn_Markers::ASN_CONSTRUCTOR;
 		$context = $type & Asn_Markers::ASN_CONTEXT;
 		$type = $type & 0x1F; // strip out context
-		if (!$context && isset(Asn_Types::$TYPES[$type]) && class_exists(Asn_Types::$TYPES[$type])) {
+		if (!$context && isset(Asn_Types::$TYPES[$type]) && class_exists(Asn_Types::$TYPES[$type],self::USE_AUTOLOAD)) {
 			$cls = Asn_Types::$TYPES[$type];
-			;
 		} else {
 			//print("not detected : ". dechex($type)."\n");
 			$cls = 'Asn_Object'; //!( $constructed )  ?  'ASN_PRIMITIVE' : 'ASN_CONSTRUCT';

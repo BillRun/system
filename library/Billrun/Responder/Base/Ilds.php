@@ -121,6 +121,23 @@ abstract class Billrun_Responder_Base_Ilds extends Billrun_Responder_Base_LocalD
 	}
 	
 	/**
+	 * switch between two strings in a line
+	 * (done a lot..)
+	 * @param type $name1
+	 * @param type $name2
+	 * @param type $line
+	 * @return type
+	 */
+	protected function switchNamesInLine($name1, $name2, $line) {
+			$ourSign = base64_encode($name1.$name2);
+			return str_replace($ourSign, $name1,
+									str_replace($name1, $name2, 
+										str_replace($name2, $ourSign, $line)
+									)
+								);
+	}
+	
+	/**
 	 * Process record data line structure and check for errors or issues with it
 	 * Change it  accordingly and return the updated line.
 	 * @param $dbLine A structure the holds a single data line from the DB.

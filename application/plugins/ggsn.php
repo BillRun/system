@@ -23,7 +23,7 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginBase {
 			unset($newEvent['lines_ids']);
 			$newEvent['source']='ggsn';
 			$newEvent['stamp'] = md5(serialize($newEvent));
-			$item['alert_stamp'] = $newEvent['stamp'];
+			$item['event_stamp'] = $newEvent['stamp'];
 			$ret[] = $events->save($newEvent);
 		}
 		return $ret; 
@@ -37,7 +37,7 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$lines = $db->getCollection($db::lines_table);
 		foreach($items as &$item) { 
 			$ret[] = $lines->update(	array('stamp'=> array('$in' => $item['lines_ids'])),
-								array('$set' => array('alert_stamp' => $item['alert_stamp'])),
+								array('$set' => array('event_stamp' => $item['event_stamp'])),
 								array('multiple'=>1));
 		}
 		return $ret;
@@ -55,10 +55,10 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginBase {
 			array(
 				'$match' => array(
 					'type' => 'egsn',
-					'sgsn_address' => array('$regex' => '^(?!62\.90\.|37\.26\.)'),
-					'record_opening_time' => array('$gte' => $charge_time),
 					'deposit_stamp' => array('$exists' => false),
-					'alert_stamp' => array('$exists' => false),
+					'event_stamp' => array('$exists' => false),
+					'record_opening_time' => array('$gte' => $charge_time),
+					'sgsn_address' => array('$regex' => '^(?!62\.90\.|37\.26\.)'),
 				),
 			),
 			array(

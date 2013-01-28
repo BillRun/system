@@ -111,7 +111,7 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @param type $pluginName
 	 */
 	public function handlerAlert(&$items,$pluginName) {
-			if($pluginName != $this->getName()) {return;}
+			if($pluginName != $this->getName() || !$items ) {return;}
 		//$this->log->log("Marking down Alert For {$item['imsi']}",Zend_Log::DEBUG);
 		$ret = array();
 		$db = Billrun_Factory::db();
@@ -123,7 +123,7 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginBase {
 			unset($newEvent['lines_stamps']);
 			$newEvent = $this->addAlertData($newEvent);
 			$newEvent['stamp']	= md5(serialize($newEvent));
-			$item['alert_stamp']= $newEvent['stamp'];
+			$item['event_stamp']= $newEvent['stamp'];
 			
 			$ret[] = $events->save($newEvent);
 		}
@@ -137,14 +137,14 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @return array
 	 */
 	public function handlerMarkDown(&$items, $pluginName) {
-		if($pluginName != $this->getName()) {return;}
+		if($pluginName != $this->getName() || !$items ) {return;}
 		//$this->log->log("Marking down Alert For {$item['imsi']}",Zend_Log::DEBUG);
 		$ret = array();
 		$db = Billrun_Factory::db();
 		$lines = $db->getCollection($db::lines_table);
 		foreach($items as &$item) { 
 			$ret[] = $lines->update(	array('stamp'=> array('$in' => $item['lines_stamps'])),
-								array('$set' => array('alert_stamp' => $item['alert_stamp'])),
+								array('$set' => array('event_stamp' => $item['event_stamp'])),
 								array('multiple'=>1));
 		}
 		return $ret;
@@ -233,7 +233,8 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginBase {
 		print_R($ret);
 
 		// unite all the results per imsi
-		die;
+	//	die;
+		return $ret;
 	}
 	
 	protected function normalize(&$ret, $items, $field) {

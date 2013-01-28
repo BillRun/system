@@ -23,7 +23,7 @@ class Billrun_Processor_Egsn extends Billrun_Processor_Base_Binary {
 
 	const HEADER_LENGTH = 54;
 	const MAX_CHUNKLENGTH_LENGTH = 512;
-	const FILE_READ_AHEAD_LENGTH = 16384;
+	const FILE_READ_AHEAD_LENGTH = 8196;
 
 	public function __construct($options) {
 		parent::__construct($options);

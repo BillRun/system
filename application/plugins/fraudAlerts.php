@@ -28,12 +28,18 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$eventsCol = $db->getCollection($db::events_table);
 		$lineCol = $db->getCollection($db::lines_table);
 		
-		$ret = $this->roamingNotify($db, $eventsCol, $lineCol);
+		$ret = $this->roamingNotify($eventsCol, $lineCol);
 		
 		return $ret;
 	}
-	
-	protected function roamingNotify($db, $eventsCol, $linesCol) {
+	/**
+	 * Handle Roaming events and try to notify the remote server.
+	 * @param type $db
+	 * @param type $eventsCol
+	 * @param type $linesCol
+	 * @return type
+	 */
+	protected function roamingNotify($eventsCol, $linesCol) {
 		$retValue = array();
 		//Aggregate the  events by imsi  taking only the first one.
 		$events = $eventsCol->aggregate(array('$match' => array('notify_time'=> array('$exists'=>false),
