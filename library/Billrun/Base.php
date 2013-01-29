@@ -94,6 +94,7 @@ abstract class Billrun_Base {
 	 * constructor
 	 * 
 	 * @param array $options
+	 * @todo use factory for all basic instances (config, log, db, etc)
 	 */
 	public function __construct($options = array()) {
 		if (isset($options['config'])) {
@@ -207,15 +208,29 @@ abstract class Billrun_Base {
 		return new $class($args);
 	}
 	
-	protected function getConfigValue($keys,$defVal) {
+	/**
+	 * method to get config value
+	 * 
+	 * @param mixed $keys array of keys or string divided by period
+	 * @param mixed $defVal the value return if the keys not found in the config
+	 * @return mixed the config value
+	 * @deprecated since version 1.0
+	 */
+	public function getConfigValue($keys, $defVal) {
+		$this->log->log("Billrun_Base::getConfigValue is deprecated; please use Billrun_Config::getConfigValue through factory::config()", Zend_Log::DEBUG);
 		$currConf = $this->config;
-		$path = explode(".", $keys);
-		
-		foreach($path as $key) {
-			if(!isset($currConf[$key]) ) { return $defVal; }
+
+		if (!is_array($keys)) {
+			$path = explode(".", $keys);
+		}
+
+		foreach ($path as $key) {
+			if (!isset($currConf[$key])) {
+				return $defVal;
+			}
 			$currConf = $currConf[$key];
 		}
-		
+
 		return $currConf;
 	}
 

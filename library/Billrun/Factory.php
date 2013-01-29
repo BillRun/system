@@ -38,6 +38,11 @@ class Billrun_Factory {
 	 */
 	public static $dispatcher = null;
 	
+	/**
+	 * method to retreive the log instance
+	 * 
+	 * @return Billrun_Log
+	 */
 	static public function log() {
 		if (!self::$log) {
 			self::$log = Billrun_Log::getInstance();			
@@ -46,24 +51,37 @@ class Billrun_Factory {
 		return self::$log;
 	}
 	
+	/**
+	 * method to retreive the config instance
+	 * 
+	 * @return Billrun_Config
+	 */
 	static public function config() {
 		if (!self::$config) {
-			self::$config = Yaf_Application::app()->getConfig();
+			self::$config = Billrun_Config::getInstance();
 		}
 		
 		return self::$config;
 	}
 	
+	/**
+	 * method to retreive the db instance
+	 * 
+	 * @return Billrun_Db
+	 */
 	static public function db() {
 		if (!self::$db) {
-//			$conn = Mongodloid_Connection::getInstance(self::config()->db->host, self::config()->db->port);
-//			self::$db = $conn->getDB(self::config()->db->name);
 			self::$db = Billrun_Db::getInstance();
 		}
 		
 		return self::$db;
 	}
 	
+	/**
+	 * method to retreive the dispatcher instance
+	 * 
+	 * @return Billrun_Dispatcher
+	 */
 	static public function dispatcher() {
 		if (!self::$db) {
 			self::$dispatcher = Billrun_Dispatcher::getInstance();
@@ -71,5 +89,5 @@ class Billrun_Factory {
 		
 		return self::$dispatcher;
 	}
-		
+
 }
