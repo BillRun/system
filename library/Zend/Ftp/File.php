@@ -100,9 +100,8 @@ class Zend_Ftp_File {
 		if (substr($path, -1) != '/') {
 			$path = $path . '/';
 		}
-		$this->saveToFile($path . basename($this->_name), $mode, $offset);
-
-		return $this;
+		
+		return $this->saveToFile($path . basename($this->_name), $mode, $offset);
 	}
 
 	/**
@@ -120,6 +119,7 @@ class Zend_Ftp_File {
 		$get = @ftp_get($this->_ftp->getConnection(), $file, $this->_path, $mode, $offset);
 		if ($get === false) {
 			//throw new Zend_Ftp_File_Exception('Unable to save file "' . $this->path . '"')
+			return false;
 		}
 
 		return $this;
