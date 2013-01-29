@@ -76,16 +76,17 @@ abstract class Billrun_Processor extends Billrun_Base {
 			->equals('source', static::$type)
 			->notExists('process_time');
 
+		$lines = array();
 		foreach ($files as $file) {
 			$this->setStamp($file->getID());
 			$this->loadFile($file->get('path'));
-			$this->process();
+			$lines = array_merge($lines, $this->process());
 			$file->collection($log);
 			$file->set('process_time', date(self::base_dateformat));
 			$this->init();
-//			if (!(--$i)) break;
-//			die(PHP_EOL);
 		}
+		
+		return $lines;
 	}
 	
 	/**
@@ -161,9 +162,9 @@ abstract class Billrun_Processor extends Billrun_Base {
 
 		$current_stamp = $this->getStamp(); // mongo id in new version; else string
 		if ($current_stamp instanceof Mongodloid_Entity || $current_stamp instanceof Mongodloid_ID) {
-			$resource = $log->findOne($current_stamp);
-			$resource->set('metadata', $entity->getRawData());
-			return $resource->save($log, true);
+				$resource = $log->findOne($current_stamp);
+				$resource->set('metadata', $entity->getRawData());
+				return $resource->save($log, true);
 		} else {
 			// backword compatability
 			// old method of processing => receiver did not logged, so it's the first time the file logged into DB
