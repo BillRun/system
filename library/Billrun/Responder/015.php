@@ -59,6 +59,7 @@ class Billrun_Responder_015 extends Billrun_Responder_Base_Ilds {
 
 	protected function updateHeader($line, $logLine) {
 		$line = parent::updateHeader($line, $logLine);
+		$line = $this->switchNamesInLine("HLT", "NTV", $line);
 		$line.="00"; //TODO add problem detection.
 		return $line;
 	}
