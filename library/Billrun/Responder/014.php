@@ -95,7 +95,7 @@ class Billrun_Responder_014 extends Billrun_Responder_Base_Ilds {
 		$line = substr( parent::updateHeader($line, $logLine), 0, 40);
 		$now = date_create();
 		$line.=$now->format("YmdHis");
-		$line.= sprintf("%02s",$this->getHeaderStateCode($line, $logLine)); //TODO add problem detection.
+		$line.= sprintf("%02s",$this->getHeaderStateCode($line, $logLine)); 
 		$line = $this->switchNamesInLine("GTC", "MBZ", $line);
 
 		return $line;
@@ -131,7 +131,9 @@ class Billrun_Responder_014 extends Billrun_Responder_Base_Ilds {
 		if(!is_numeric($logLine['sequence_no']) ) {
 			return 3;
 		}
-			
+		if(!date_create_from_format("YmdHis",substr($headerLine, 26,14)) ) {
+			return 4;
+		}	
 		//TOD add the other errors
 		return 0;
 	}

@@ -82,7 +82,7 @@ class Billrun_Responder_015 extends Billrun_Responder_Base_Ilds {
 	}
 
 	protected function getResponseFilename($receivedFilename, $logLine) {
-		return $receivedFilename;
+		return preg_replace("/_CDR_/i", "_CDR_R_", $receivedFilename);
 	}
 
 }

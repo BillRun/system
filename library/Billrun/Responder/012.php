@@ -52,8 +52,9 @@ class Billrun_Responder_012 extends Billrun_Responder_Base_Ilds {
 			'file_creation_date' => "%12s",
 			'total_phone_number' => "%15s", // WTF?!
 			'total_charge_sign' => "%1s",
-			//'total_charge' => "%15s",
-			//'total_rec_no' => "%6s",
+			'total_charge' => "%015s",
+			'total_rec_no' => "%6s",
+			'total_err_rec_no' => "%6s",
 		);
 	}
 
@@ -69,10 +70,13 @@ class Billrun_Responder_012 extends Billrun_Responder_Base_Ilds {
 	}
 
 	protected function updateTrailer($logLine) {
+		$logLine['total_charge'] = $this->totalChargeAmount;
+		$logLine['total_rec_no'] =  $this->linesCount;
+		$logLine['total_err_rec_no'] =  $this->linesErrors;
 		$line = parent::updateTrailer($logLine);
-		$line.= sprintf("%015s", $this->totalChargeAmount);
-		$line.= sprintf("%6s", $this->linesCount);
-		$line.= sprintf("%6s", $this->linesErrors);
+//		$line.= sprintf("%015s", $this->totalChargeAmount);
+//		$line.= sprintf("%6s", $this->linesCount);
+//		$line.= sprintf("%6s", $this->linesErrors);
 		return $line;
 	}
 
