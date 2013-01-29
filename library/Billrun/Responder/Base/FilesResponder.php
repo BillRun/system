@@ -19,6 +19,9 @@ abstract class Billrun_Responder_Base_FilesResponder extends Billrun_Responder {
 	 * @return mixed
 	 */
 	public function respond() {
+		
+		$this->dispatcher->trigger('beforeResponse', array('type' => self::$type , 'responder' => &$this));
+		
 		$retPaths = array();
 		
 		foreach ($this->getProcessedFilesForType(self::$type) as $filename => $logLine) {
@@ -33,6 +36,8 @@ abstract class Billrun_Responder_Base_FilesResponder extends Billrun_Responder {
 				$retPaths[] = $this->respondAFile($responseFilePath, $this->getResponseFilename($filename, $logLine), $logLine);
 			}
 		}
+		
+		$this->dispatcher->trigger('afterResponse', array('type' => self::$type , 'responder' => &$this));
 		
 		return $retPaths;
 	}
