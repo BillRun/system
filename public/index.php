@@ -29,7 +29,7 @@ foreach ($config['servers'] as $key => $server) {
 
 $conf_path = APPLICATION_PATH . "/conf/" . $config_env . ".ini";
 if (!file_exists($conf_path)) {
-	die("no config file found");
+	die("no config file found" . PHP_EOL);
 }
 $app = new Yaf_Application($conf_path);
 
