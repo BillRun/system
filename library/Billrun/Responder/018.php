@@ -60,12 +60,28 @@ class Billrun_Responder_018 extends Billrun_Responder_Base_Ilds {
 			'sequence_no' => '%6s',
 			'file_creation_date' => '%14s',
 			'total_charge_sign' => '%1s',
-			'total_charge' => '%15s',
-			'total_rec_no' => '%6s',
-			'total_err_rec_no' => '%6s',
+			'total_charge' => '%015s',
+			'total_rec_no' => '%06s',
+			'total_err_rec_no' => '%06s',
 			'filler' => '%-122s',
 		);
 	}
+	
+	protected function updateHeader($line, $logLine) {
+		$line = parent::updateHeader($line, $logLine);
+		$line = $this->switchNamesInLine("XFN", "GOLA", $line);
+		return $line;
+	}
+	
+	
+	protected function updateTrailer($logLine) {
+		$logLine['total_charge'] = $this->totalChargeAmount;
+		$logLine['total_rec_no'] = $this->linesCount;
+		$logLine['total_err_rec_no'] = $this->linesErrors;
+		$line = parent::updateTrailer($logLine);
+		return $line;
+	}
+	
 	protected function processLineErrors($dbLine) {
 		if(!isset($dbLine['billrun']) || !$dbLine['billrun']) {
 				$dbLine['record_status'] = '02';
