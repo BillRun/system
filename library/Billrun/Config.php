@@ -46,6 +46,7 @@ class Billrun_Config {
 	public function __get($key) {
 		return $this->getConfigValue($key);
 	}
+
 	/**
 	 * method to get the instance of the class (singleton)
 	 */
