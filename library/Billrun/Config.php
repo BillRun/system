@@ -14,22 +14,47 @@
  */
 class Billrun_Config {
 
+	/**
+	 * the config instance (for singleton)
+	 * 
+	 * @var Billrun_Config 
+	 */
 	static $instance = null;
 
 	/**
-	 * method to convert this class to singleton design pattern
+	 * the config container
+	 * 
+	 * @var Yaf_Config
 	 */
-	protected function __construct() {
-		
+	protected $config;
+
+	/**
+	 * constructor of the class
+	 * protected for converting this class to singleton design pattern
+	 */
+	protected function __construct($config) {
+		$this->config = $config;
+	}
+
+	/**
+	 * magic method for backward compatability (Yaf_Config style)
+	 * 
+	 * @param string $key the key in the config container (Yaf_Config)
+	 * 
+	 * @return mixed the value in the config
+	 */
+	public function __get($key) {
+		return $this->getConfigValue($key);
 	}
 	/**
 	 * method to get the instance of the class (singleton)
 	 */
-	public function getInstance() {
-		if (!is_null(self::$instance)) {
-			self::$instance = Yaf_Application::app()->getConfig();
+	static public function getInstance() {
+		if (is_null(self::$instance)) {
+			$config = Yaf_Application::app()->getConfig();
+			self::$instance = new self($config);
 		}
-		return self::$config[$signature];
+		return self::$instance;
 	}
 
 	/**
@@ -39,7 +64,7 @@ class Billrun_Config {
 	 * @param mixed $defVal the value return if the keys not found in the config
 	 * @return mixed the config value
 	 */
-	public function getConfigValue($keys, $defVal) {
+	public function getConfigValue($keys, $defVal = null) {
 		$currConf = $this->config;
 
 		if (!is_array($keys)) {
