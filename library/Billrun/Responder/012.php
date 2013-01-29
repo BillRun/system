@@ -70,6 +70,7 @@ class Billrun_Responder_012 extends Billrun_Responder_Base_Ilds {
 	}
 
 	protected function updateTrailer($logLine) {
+		$logLine['file_type'] = "MABAL_R";
 		$logLine['total_charge'] = $this->totalChargeAmount;
 		$logLine['total_rec_no'] =  $this->linesCount;
 		$logLine['total_err_rec_no'] =  $this->linesErrors;
