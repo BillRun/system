@@ -60,6 +60,11 @@ abstract class Billrun_Receiver extends Billrun_Base {
 		
 		$this->dispatcher->trigger('beforeLogReceiveFile', array(&$log_data, $this));
 		$entity = new Mongodloid_Entity($log_data);
+		if ($log->query('stamp', $entity->get('stamp'))->count() > 0) {
+			$this->log->log("Billrun_Receiver::logDB - DUPLICATE! trying to insert duplicate log file with stamp of : {$entity->get('stamp')}", Zend_Log::NOTICE);
+			return FALSE;
+		}
+
 		return $entity->save($log, true);
 	}
 
