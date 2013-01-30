@@ -49,10 +49,8 @@ class ildsPlugin extends Billrun_Plugin_BillrunPluginFraud {
 		);
 
 		$ret = $lines->aggregate($where, $group, $project, $having);
-		
+
 		return $ret;
-
 	}
-
 
 }
