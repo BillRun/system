@@ -92,7 +92,7 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 
     protected function get_last_charge_time($return_timestamp = false) {
-		$dayofmonth = $this->getConfigValue('billrun.charging_day',25);
+		$dayofmonth = Billrun_Factory::config()->getConfigValue('billrun.charging_day',25);
 		$format = "Ym" . $dayofmonth . "000000";
         if (date("d") >= $dayofmonth) {
             $time = date($format);
@@ -119,7 +119,6 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginBase {
 		foreach($items as $item) {
 			$newEvent = new Mongodloid_Entity($item);
 			
-			$newEvent['source']	= $this->getName();
 			unset($newEvent['lines_stamps']);
 			$newEvent = $this->addAlertData($newEvent);
 			$newEvent['stamp']	= md5(serialize($newEvent));
@@ -187,7 +186,7 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginBase {
 		
 		$having = array(
 			'$match' => array(
-				'moc_israel' => array('$gte' => $this->getConfigValue('nrtde.thresholds.moc.israel',10))
+				'moc_israel' => array('$gte' => Billrun_Factory::config()->getConfigValue('nrtde.thresholds.moc.israel',10))
 			),
 		);
 
@@ -201,7 +200,7 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginBase {
 		$group['$group']['moc_nonisrael'] = $group['$group']['moc_israel'];
 		unset($group['$group']['moc_israel']);
 		unset($having['$match']['moc_israel']);
-		$having['$match']['moc_nonisrael'] = array('$gte' => $this->getConfigValue('nrtde.thresholds.moc.nonisrael',0));
+		$having['$match']['moc_nonisrael'] = array('$gte' => Billrun_Factory::config()->getConfigValue('nrtde.thresholds.moc.nonisrael',0));
 		$project['$project']['moc_nonisrael'] = 1;
 		unset($project['$project']['moc_israel']);
 		$moc_nonisrael = $lines->aggregate($where, $group, $project, $having);
@@ -212,7 +211,7 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginBase {
 		$group['$group']['mtc_all'] = $group['$group']['moc_nonisrael'];
 		unset($group['$group']['moc_nonisrael']);
 		unset($having['$match']['moc_nonisrael']);
-		$having['$match']['mtc_all'] = array('$gte' => $this->getConfigValue('nrtde.thresholds.mtc',100));
+		$having['$match']['mtc_all'] = array('$gte' => Billrun_Factory::config()->getConfigValue('nrtde.thresholds.mtc',100));
 		$project['$project']['mtc_all'] = 1;
 		unset($project['$project']['moc_nonisrael']);
 		$mtc = $lines->aggregate($where, $group, $project, $having);
@@ -224,12 +223,23 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginBase {
 		unset($group['$group']['mtc_all']);
 		unset($having['$match']['mtc_all']);
 		$group['$group']['sms_out'] = array('$sum' => 1);
-		$having['$match']['sms_out'] = array('$gte' => $this->getConfigValue('nrtde.thresholds.smsout',3));
+		$having['$match']['sms_out'] = array('$gte' => Billrun_Factory::config()->getConfigValue('nrtde.thresholds.smsout',3));
 		$project['$project']['sms_out'] = 1;
 		unset($project['$project']['mtc_all']);
 		$sms_out = $lines->aggregate($where, $group, $project, $having);
 		$this->normalize($ret, $sms_out, 'sms_out');
-
+		
+		unset($group['$group']['sms_out']);
+		unset($having['$match']['sms_out']);
+		unset($project['$project']['sms_out']);
+		$timeWindow= strtotime("-" . Billrun_Factory::config()->getConfigValue('nnrtrde.hourly.timespan','1h'));
+		$where['$match']['callEventStartTimeStamp']['$gt'] = date('YmdHis',$timeWindow);
+		$group['$group']['sms_hourly'] = array('$sum' => 1);
+		$having['$match']['sms_hourly'] = array('$gte' => Billrun_Factory::config()->getConfigValue('nrtde.hourly.thresholds.smsout',3));
+		$project['$project']['sms_hourly'] = 1;
+		$sms_hourly = $lines->aggregate($where, $group, $project, $having);
+		$this->normalize($ret, $sms_hourly, 'sms_hourly');
+		
 		print_R($ret);
 
 		// unite all the results per imsi
@@ -258,10 +268,13 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginBase {
 		$type = isset($newEvent['moc_israel']) ? 'moc_israel': 
 					(isset($newEvent['moc_nonisrael']) ? 'moc_nonisrael' : 
 						(isset($newEvent['mtc_all']) ? 'mtc_all' : 
-								'sms_out'));
+						(isset($newEvent['sms_hourly']) ? 'sms_hourly' : 
+								'sms_out')));
 		
 		$newEvent['units']	= 'MIN';
 		$newEvent['value']	= $newEvent[$type];
+		$newEvent['event_type']	= 'NRTRDE_VOICE';
+		$newEvent['source']	= $this->getName();
 		
 		switch($type) {
 			case 'moc_israel':
@@ -271,6 +284,7 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginBase {
 			case 'moc_nonisrael':				
 					$newEvent['threshold']	= $this->getConfigValue('nrtde.thresholds.moc.nonisrael', 100);
 				break;
+			
 			case 'mtc_all':
 					$newEvent['threshold']	= $this->getConfigValue('nrtde.thresholds.mtc', 0);
 				break;
@@ -278,7 +292,14 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginBase {
 			case 'sms_out':
 					$newEvent['threshold']	= $this->getConfigValue('nrtde.thresholds.smsout', 0);
 					$newEvent['units']	= 'SMS';
+					$newEvent['event_type']	= 'NRTRDE_SMS';
 				break;
+			case 'sms_hourly':
+					$newEvent['threshold']	= $this->getConfigValue('nrtde.hourly.thresholds.smsout', 0);
+					$newEvent['units']	= 'SMS';
+					$newEvent['event_type']	= 'NRTRDE_HOURLY_SMS';
+				break;	
+			
 		}
 		
 		return $newEvent;

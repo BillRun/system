@@ -43,14 +43,14 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$retValue = array();
 		//Aggregate the  events by imsi  taking only the first one.
 		$events = $eventsCol->aggregate(array('$match' => array('notify_time'=> array('$exists'=>false),
-																/*'source'=> array('$in'=> array('nrtrde','ggsn'))*/)),
+																'source'=> array('$in'=> array('nrtrde','ggsn','deposit')))),
 										array('$sort' => array('imsi' => 1)),
 										array('$group' => array(
 											'_id' => '$imsi',
 											'id' => array('$addToSet'=> '$_id'),
 											'imsi' => array('$first'=> '$imsi'),
 											'value' => array('$first'=> '$value'),
-											'alert_type' => array('$first'=> '$alert_type'),
+											'event_type' => array('$first'=> '$event_type'),
 											'units' => array('$first'=> '$units'),
 											'msisdn' => array('$first'=> '$msisdn'),
 											'threshold' => array('$first'=> '$threshold'),
@@ -58,12 +58,16 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		
 		foreach($events as $event) {
 			if($this->notifyOnEvent($event)) {
-					Billrun_Log::getInstance()->log("handlerNotify ".print_r($event,1), Zend_LOg::DEBUG);
+				//Billrun_Log::getInstance()->log("handlerNotify ".print_r($event,1), Zend_LOg::DEBUG);
 				//mark events has delt with.
 				$eventsCol->update(	array( 'notify_time'=> array('$exists' => false),
 											'_id' => array('$in' => $event['id']), 
 										),
-								array('$set' => array('notify_time' => time() )),
+								array('$set' => array(	
+											'notify_time' => time(),
+											'deposit_stamp' => $event['id'],
+										)
+									),
 								array('multiple'=> 1));
 				
 				//mark deposit for the lines on the current imsi 
@@ -83,9 +87,9 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 */
 	protected function notifyOnEvent($args) {
 		$excedingValue = ( $args['value']);
-		Billrun_Log::getInstance()->log("notifyOnEvent {$args['imsi']} with type : {$args['alert_type']} , value : {$excedingValue}", Zend_LOg::DEBUG);	
-		$client = curl_init($this->alertServer."?event_type=GGSN_DATA&IMSI={$args['imsi']}".
-														"&NDC_SN={$args['msisdn']}".
+		Billrun_Log::getInstance()->log("notifyOnEvent {$args['imsi']} with type : {$args['event_type']} , value : {$excedingValue}", Zend_LOg::DEBUG);	
+		$client = curl_init($this->alertServer."?event_type={$args['event_type']}&IMSI={$args['imsi']}".
+														(isset($args['msisdn']) && $args['msisdn'] ?"&NDC_SN={$args['msisdn']}" : "").
 														"&threshold={$args['threshold']}".
 														"&usage={$excedingValue}".
 														"&units={$args['units']}" );
