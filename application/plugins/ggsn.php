@@ -1,6 +1,6 @@
 <?php
 
-class ggsnPlugin extends Billrun_Plugin_BillrunPluginBase {
+class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud {
 
 	
 	/**
@@ -10,7 +10,12 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 */
 	protected $name = 'ggsn';
 
-	
+	/**
+	 * Write all the threshold that were broken as events to the db events collection 
+	 * @param type $items the broken  thresholds
+	 * @param type $pluginName the plugin that identified the threshold breakage
+	 * @return type
+	 *
 	public function handlerAlert(&$items,$pluginName) {
 		if($pluginName != $this->getName()) {return;}
 		
@@ -27,21 +32,7 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$ret[] = $events->save($newEvent);
 		}
 		return $ret; 
-	}
-	
-	public function handlerMarkDown(&$items, $pluginName) {
-		if($pluginName != $this->getName()) {return;}
-		//$this->log->log("Marking down Alert For {$item['imsi']}",Zend_Log::DEBUG);
-		$ret = array();
-		$db = Billrun_Factory::db();
-		$lines = $db->getCollection($db::lines_table);
-		foreach($items as &$item) { 
-			$ret[] = $lines->update(	array('stamp'=> array('$in' => $item['lines_stamps'])),
-								array('$set' => array('event_stamp' => $item['event_stamp'])),
-								array('multiple' => 1));
-		}
-		return $ret;
-	}
+	}*/
 	
 	/**
 	 * method to collect data which need to be handle by event
@@ -57,15 +48,14 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$alerts = array_merge($alerts,$this->detectDataExceeders($lines, $aggregateQuery));
 		$alerts = array_merge($alerts , $this->detectHourlyDataExceeders($lines, $aggregateQuery));
 		
-		$this->log->log("Found ". count($alerts) . " Exceeders",Zend_Log::DEBUG);
-		
 		return $alerts;
 	}
 	
 	/**
-	 * 
-	 * @param type $db
-	 * @return type
+	 * Detect data usage above an houlrly limit
+	 * @param Mongoldoid_Collection $linesCol the db lines collection
+	 * @param Array $aggregateQuery the standard query to aggregate data (see $this->getBaseAggregateQuery())
+	 * @return Array containing all the hourly data excceders.
 	 */
 	protected function detectHourlyDataExceeders($linesCol, $aggregateQuery) {
 		$exceeders = array();
@@ -85,7 +75,6 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginBase {
 					),
 				),
 			);
-		//print_r( $aggregateQuery[0]['$match']['$and'] );
 		foreach($linesCol->aggregate(array_merge($aggregateQuery, array($having))) as $alert) {
 			$alert['units'] = 'KB';
 			$alert['value'] = ($alert['download'] > $limit ? $alert['download'] : $alert['upload']);
@@ -136,24 +125,10 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginBase {
 		return $durationAlert;
 	}
 	
-	protected function get_last_charge_time($return_timestamp = false) {
-		// TODO take the 25 from config
-		$dayofmonth = Billrun_Factory::config()->getConfigValue('billrun.charging_day',25);
-		$format = "Ym" . $dayofmonth . "000000";
-        if (date("d") >= $dayofmonth) {
-            $time = date($format);
-        } else {
-            $time = date($format, strtotime('-1 month'));
-        }
-        if ($return_timestamp) {
-            return strtotime($time);
-        }
-        return $time;
-    }
 	/**
 	 * Get the base aggregation query.
-	 * @param type $charge_time
-	 * @return type
+	 * @param type $charge_time the charge time of the billrun (records will not be pull before that)
+	 * @return Array containing a standard PHP mongo aggregate query to retrive  ggsn entries by imsi.
 	 */
 	protected function getBaseAggregateQuery($charge_time) {
 		return array(
@@ -191,5 +166,9 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginBase {
 					),
 				),
 			);
+	}
+
+	protected function addAlertData($event) {
+		return $event;
 	}
 }

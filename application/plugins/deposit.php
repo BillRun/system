@@ -69,7 +69,7 @@ class depositPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$ret = array();
 		$ret = array_merge($ret,$this->detectDepositExceeders($db));
 		
-		$this->log->log(print_R($ret,1),  Zend_Log::DEBUG);
+	//	$this->log->log(print_R($ret,1),  Zend_Log::DEBUG);
 		// unite all the results per imsi
 	//	die;
 		return $ret;
@@ -120,51 +120,7 @@ class depositPlugin extends Billrun_Plugin_BillrunPluginBase {
 		return $eventsCol->aggregate($where, $group, $project, $having);
 	}
 
-	/**
-	 * 
-	 * @param type $db
-	 * @return type
-	 *
-	protected function detectSMSExceeders($db) {
-		$exceeders = array();
-		$linesCol = $db->getCollection(Billrun_Db::events_table);
-		$where = array(
-			'$match' => array(
-				'source' => 'nrtrde',
-				'record_type' => 'MOC',
-				'connectedNumber' => array('$regex' => '^(?!972)'),
-				'callEventStartTimeStamp' => array('$gte' => $charge_time),
-				'event_stamp' => array('$exists' => false),
-				'callEventDuration' => 0,
-			),
-		);
 
-		$group = array(
-			'$group' => array(
-				"_id" => '$imsi',
-				"sms" => array('$sum' => 1),
-				'lines_stamps' => array('$addToSet' => '$stamp'),
-			),
-		);
-
-		$project = array(
-			'$project' => array(
-				'imsi' => '$_id',
-				'_id' => 0, 
-				'sms' => 1,
-			),
-		);
-		
-		$having = array(
-			'$match' => array(
-				'sms' => array('$gte' => Billrun_Factory::config()->getConfigValue('timespan_events.thresholds.smslimit',10)),
-			),
-		);
-		
-		$exceeders = $eventsCol->aggregate($where, $group, $having);
-		return $exceeders;
-	}*/
-	
 	
 
 	/**

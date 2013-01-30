@@ -20,6 +20,7 @@ class ildsPlugin extends Billrun_Plugin_BillrunPluginFraud {
 		$where = array(
 			'$match' => array(
 				'source' => 'ilds',
+				'event_stamp' => array('$exists' => false),
 				'deposit_stamp' => array('$exists' => false),
 				'call_start_dt' => array('$gte' => $charge_time),
 				'price_customer' => array('$exists' => true),
@@ -28,7 +29,8 @@ class ildsPlugin extends Billrun_Plugin_BillrunPluginFraud {
 
 		$group = array(
 			'$group' => array(
-				"_id" => '$imsi',
+				"_id" => '$caller_phone_no',
+				'msisdn' => array('$first' => '$caller_phone_no'),
 				"total" => array('$sum' => '$price_customer'),
 				'lines_stamps' => array('$addToSet' => '$stamp'),
 			),
@@ -38,13 +40,15 @@ class ildsPlugin extends Billrun_Plugin_BillrunPluginFraud {
 			'$project' => array(
 				'caller_phone_no' => '$_id',
 				'_id' => 0,
+				'msidsn' => 1,
 				'total' => 1,
+				'lines_stamps' => 1,
 			),
 		);
 
 		$having = array(
 			'$match' => array(
-				'total' => array('$gte' => $this->getConfigValue('ilds.threshold', 100))
+				'total' => array('$gte' => floatval( Billrun_Factory::config()->getConfigValue('ilds.threshold', 100)) )
 			),
 		);
 
@@ -52,5 +56,19 @@ class ildsPlugin extends Billrun_Plugin_BillrunPluginFraud {
 
 		return $ret;
 	}
+	
+	/**
+	 * Add data that is needed to use the event object/DB document later
+	 * @param Array|Object $event the event to add fields to.
+	 * @return Array|Object the event object with added fields
+	 */
+	protected function addAlertData($newEvent) {
+		
+		$newEvent['units']	= 'MIN';
+		$newEvent['value']	= $newEvent['total'];
+		$newEvent['threshold'] = Billrun_Factory::config()->getConfigValue('ilds.threshold', 100);
+		$newEvent['event_type']	= 'ILDS';
 
+		return $newEvent;
+	}
 }

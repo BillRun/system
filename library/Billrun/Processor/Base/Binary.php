@@ -47,6 +47,7 @@ abstract class Billrun_Processor_Base_Binary extends Billrun_Processor {
 		$row = $this->parser->parse();
 		if ($row) {
 			$row['type'] = static::$type;
+			$row['source'] = self::$type;
 			$row['header_stamp'] = $this->data['header']['stamp'];
 			$row['file'] = basename($this->filePath);
 			$row['stamp'] = md5(serialize($row));

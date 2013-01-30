@@ -47,12 +47,33 @@ abstract class Billrun_Plugin_BillrunPluginFraud extends Billrun_Plugin_BillrunP
 	 */
 	abstract public function handlerCollect();
 
-	/**
-	 * 
-	 * @param type $items
-	 * @param type $pluginName
+	
+		/**
+	 * Write all the threshold that were broken as events to the db events collection 
+	 * @param type $items the broken  thresholds
+	 * @param type $pluginName the plugin that identified the threshold breakage
+	 * @return type
 	 */
-	public function handlerAlert(&$items, $pluginName);
+	public function handlerAlert(&$items,$pluginName) {
+		if($pluginName != $this->getName()) {return;}
+		
+		$db = Billrun_Factory::db();
+		$events = $db->getCollection(Billrun_Db::events_table);
+		//$this->log->log("New Alert For {$item['imsi']}",Zend_Log::DEBUG);
+		$ret = array();
+		foreach($items as &$item) { 
+			$newEvent = new Mongodloid_Entity($item);
+			unset($newEvent['lines_stamps']);
+			
+			$newEvent = $this->addAlertData($newEvent);
+			$newEvent['source']	= $this->getName();
+			$newEvent['stamp'] = md5(serialize($newEvent));
+			$item['event_stamp'] = $newEvent['stamp'];
+			
+			$ret[] = $events->save($newEvent);
+		}
+		return $ret; 
+	}
 
 	/**
 	 * method to markdown all the lines that triggered the event
@@ -71,9 +92,17 @@ abstract class Billrun_Plugin_BillrunPluginFraud extends Billrun_Plugin_BillrunP
 		$db = Billrun_Factory::db();
 		$lines = $db->getCollection($db::lines_table);
 		foreach ($items as &$item) {
-			$ret[] = $lines->update(array('stamp' => array('$in' => $item['lines_stamps'])), array('$set' => array('event_stamp' => $item['event_stamp'])), array('multiple' => 1));
+			$ret[] = $lines->update(	array('stamp' => array('$in' => $item['lines_stamps'])),
+									array('$set' => array('event_stamp' => $item['event_stamp'])),
+									array('multiple' => 1));
 		}
 		return $ret;
 	}
 
+	/**
+	 * Add data that is needed to use the event object/DB document later
+	 * @param Array|Object $event the event to add fields to.
+	 * @return Array|Object the event object with added fields
+	 */
+	abstract protected function addAlertData($event);
 }

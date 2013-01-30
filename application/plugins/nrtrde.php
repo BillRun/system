@@ -1,6 +1,6 @@
 <?php
 
-class nrtrdePlugin extends Billrun_Plugin_BillrunPluginBase {
+class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 
 		
 	/**
@@ -106,50 +106,6 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginBase {
     }
 	
 	/**
-	 * 
-	 * @param type $items
-	 * @param type $pluginName
-	 */
-	public function handlerAlert(&$items,$pluginName) {
-			if($pluginName != $this->getName() || !$items ) {return;}
-		//$this->log->log("Marking down Alert For {$item['imsi']}",Zend_Log::DEBUG);
-		$ret = array();
-		$db = Billrun_Factory::db();
-		$lines = $db->getCollection($db::lines_table);
-		foreach($items as $item) {
-			$newEvent = new Mongodloid_Entity($item);
-			
-			unset($newEvent['lines_stamps']);
-			$newEvent = $this->addAlertData($newEvent);
-			$newEvent['stamp']	= md5(serialize($newEvent));
-			$item['event_stamp']= $newEvent['stamp'];
-			
-			$ret[] = $events->save($newEvent);
-		}
-		return $ret;
-	}
-
-	/**
-	 * 
-	 * @param type $items
-	 * @param type $pluginName
-	 * @return array
-	 */
-	public function handlerMarkDown(&$items, $pluginName) {
-		if($pluginName != $this->getName() || !$items ) {return;}
-		//$this->log->log("Marking down Alert For {$item['imsi']}",Zend_Log::DEBUG);
-		$ret = array();
-		$db = Billrun_Factory::db();
-		$lines = $db->getCollection($db::lines_table);
-		foreach($items as &$item) { 
-			$ret[] = $lines->update(	array('stamp'=> array('$in' => $item['lines_stamps'])),
-								array('$set' => array('event_stamp' => $item['event_stamp'])),
-								array('multiple'=>1));
-		}
-		return $ret;
-	}
-	
-	/**
 	 * method to collect data which need to be handle by event
 	 */
 	public function handlerCollect() {
@@ -238,9 +194,6 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginBase {
 		$having['$match']['sms_hourly'] = array('$gte' => Billrun_Factory::config()->getConfigValue('nrtde.hourly.thresholds.smsout',3));
 		$project['$project']['sms_hourly'] = 1;
 		$sms_hourly = $lines->aggregate($where, $group, $project, $having);
-		$this->normalize($ret, $sms_hourly, 'sms_hourly');
-		
-		print_R($ret);
 
 		// unite all the results per imsi
 	//	die;
@@ -274,7 +227,6 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginBase {
 		$newEvent['units']	= 'MIN';
 		$newEvent['value']	= $newEvent[$type];
 		$newEvent['event_type']	= 'NRTRDE_VOICE';
-		$newEvent['source']	= $this->getName();
 		
 		switch($type) {
 			case 'moc_israel':

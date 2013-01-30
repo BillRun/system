@@ -43,10 +43,10 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$retValue = array();
 		//Aggregate the  events by imsi  taking only the first one.
 		$events = $eventsCol->aggregate(array('$match' => array('notify_time'=> array('$exists'=>false),
-																'source'=> array('$in'=> array('nrtrde','ggsn','deposit')))),
-										array('$sort' => array('imsi' => 1)),
+																'source'=> array('$in'=> array('nrtrde','ggsn','deposit','ilds')))),
+										array('$sort' => array('imsi' => 1,'msisdn' => 1)),
 										array('$group' => array(
-											'_id' => '$imsi',
+											'_id' => array('imsi' => '$imsi', 'msisdn' => '$msidn'),
 											'id' => array('$addToSet'=> '$_id'),
 											'imsi' => array('$first'=> '$imsi'),
 											'value' => array('$first'=> '$value'),
@@ -54,6 +54,7 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 											'units' => array('$first'=> '$units'),
 											'msisdn' => array('$first'=> '$msisdn'),
 											'threshold' => array('$first'=> '$threshold'),
+											'deposit_stamp' => array('$first'=> '$_id'),
 										),));
 		
 		foreach($events as $event) {
@@ -65,14 +66,22 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 										),
 								array('$set' => array(	
 											'notify_time' => time(),
-											'deposit_stamp' => $event['id'],
+											'deposit_stamp' =>  $event['deposit_stamp'],
 										)
 									),
 								array('multiple'=> 1));
 				
 				//mark deposit for the lines on the current imsi 
-				$linesCol->update(	array( 'process_time'=> array('$lt'=> date('Y-m-d H:i:s',$this->startTime),'imsi' => $event['imsi']) ),
-								array('$set' => array('deposit_stamp' => $event['id'] )),
+				$linesWhere = 	array( 'process_time'=> array('$lt'=> date('Y-m-d H:i:s',$this->startTime),) );
+				if(isset($event['imsi']) && $event['imsi']) {
+					$linesWhere['imsi'] = $event['imsi'];
+				}
+				if(isset($event['msisdn']) && $event['msisdn']) {
+					$linesWhere['msisdn'] = $event['msisdn'];
+				}
+				
+				$linesCol->update($linesWhere,
+								array('$set' => array('deposit_stamp' =>  $event['deposit_stamp'] )),
 								array('multiple'=>1));
 				$retValue[] = $event;
 			}
@@ -86,12 +95,12 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @return type
 	 */
 	protected function notifyOnEvent($args) {
-		$excedingValue = ( $args['value']);
-		Billrun_Log::getInstance()->log("notifyOnEvent {$args['imsi']} with type : {$args['event_type']} , value : {$excedingValue}", Zend_LOg::DEBUG);	
-		$client = curl_init($this->alertServer."?event_type={$args['event_type']}&IMSI={$args['imsi']}".
+		//Billrun_Log::getInstance()->log("notifyOnEvent {$args['imsi']} with type : {$args['event_type']} , value : {$excedingValue}", Zend_LOg::DEBUG);	
+		$client = curl_init($this->alertServer."?event_type={$args['event_type']}".
+														(isset($args['imsi']) && $args['imsi'] ? "&IMSI={$args['imsi']}" : "").
 														(isset($args['msisdn']) && $args['msisdn'] ?"&NDC_SN={$args['msisdn']}" : "").
 														"&threshold={$args['threshold']}".
-														"&usage={$excedingValue}".
+														"&usage={$args['value']}".
 														"&units={$args['units']}" );
 		curl_setopt($client, CURLOPT_POST, TRUE);
 		curl_setopt($client, CURLOPT_POSTFIELDS, array('extra_data' => json_encode($args)));
