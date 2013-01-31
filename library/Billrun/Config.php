@@ -64,6 +64,7 @@ class Billrun_Config {
 	 * @param mixed  $keys array of keys or string divided by period
 	 * @param mixed  $defVal the value return if the keys not found in the config
 	 * @param string $retType the type of the return value (int, bool, string, float, array, object)
+	 *               if null passed the return value type will be declare by the default value type
 	 * @return mixed the config value
 	 */
 	public function getConfigValue($keys, $defVal = null, $retType = null) {
@@ -81,8 +82,10 @@ class Billrun_Config {
 			$currConf = $currConf[$key];
 		}
 
-		if (!is_null($retType)) {
+		if ($retType) {
 			settype($currConf, $retType);
+		} else if (strtoupper($type = gettype($defVal)) != 'NULL') {
+			settype($currConf, $type);
 		}
 		return $currConf;
 	}
