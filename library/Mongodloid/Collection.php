@@ -148,13 +148,24 @@ class Mongodloid_Collection
 	}
 	
 	public function aggregate() {
+		$timeout = $this->getTimeout();
+		$this->setTimeout(-1);
 		$args = func_get_args();
 		$result = call_user_func_array(array($this->_collection, 'aggregate'), $args);
+		$this->setTimeout($timeout);
 		if (!isset($result['ok']) || !$result['ok']) {
 			throw new Mongodloid_Exception('aggregate failed with the following error: ' . $result['code'] . ' - ' . $result['errmsg']);
 			return false;
 		}
 		return $result['result'];
+	}
+
+	public function setTimeout($timeout) {
+		MongoCursor::$timeout = (int) $timeout;
+	}
+	
+	public function getTimeout() {
+		return MongoCursor::$timeout;
 	}
 
 }
