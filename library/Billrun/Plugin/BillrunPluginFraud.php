@@ -104,5 +104,5 @@ abstract class Billrun_Plugin_BillrunPluginFraud extends Billrun_Plugin_BillrunP
 	 * @param Array|Object $event the event to add fields to.
 	 * @return Array|Object the event object with added fields
 	 */
-	abstract protected function addAlertData($event);
+	abstract protected function addAlertData(&$event);
 }
