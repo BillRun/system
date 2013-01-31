@@ -59,6 +59,7 @@ abstract class Billrun_Receiver_Base_LocalFiles extends Billrun_Receiver {
 				if(!$this->isFileValid($file, $path) || $this->isFileProcessed($file, $type) || is_dir($path) ) { 
 					continue; 
 				}
+				$this->log->log("Billrun_Receiver_Base_LocalFiles::receive - Handaled file {$file}",  Zend_Log::DEBUG);
 				$path = $this->handleFile($path, $file);
 				if(!$path) {
 					$this->log->log("NOTICE : Couldn't relocate file from  $path.", Zend_Log::NOTICE);

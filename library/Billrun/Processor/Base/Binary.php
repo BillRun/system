@@ -44,8 +44,9 @@ abstract class Billrun_Processor_Base_Binary extends Billrun_Processor {
 	 */
 	protected function buildDataRow($data) {
 		$this->parser->setLine($data);
-		$row = $this->parser->parse();
-		if ($row) {
+		$rawRow = $this->parser->parse();
+		if ($rawRow) {
+			$row = $this->filterFields($rawRow);
 			$row['type'] = static::$type;
 			$row['source'] = self::$type;
 			$row['header_stamp'] = $this->data['header']['stamp'];
@@ -73,4 +74,28 @@ abstract class Billrun_Processor_Base_Binary extends Billrun_Processor {
 		return $trailer;
 	}
 
+	/**
+	 * filter the record row data fields from the records
+	 * (The required field can be written in the config using <type>.fields_filter)
+	 * @param Array		$rawRow the full data record row.
+	 * @return Array	the record row with filtered only the requierd fields in it  
+	 *					or if no filter is defined in the configuration the full data record.
+	 */
+	private function filterFields($rawRow) {
+		$row = array();
+		
+		$requiredFieldsConfig = Billrun_Factory::config()->getConfigValue( static::$type.".fields_filter",false);
+		if($requiredFieldsConfig) {
+			$requireFields = explode(',', $requiredFieldsConfig);
+			foreach($requireFields as $field) {
+				if(isset($rawRow[$field])) {
+					$row[$field] = $rawRow[$field];
+				}
+			}
+		} else {
+			return $rawRow;
+		}
+		
+		return $row;
+	}
 }
