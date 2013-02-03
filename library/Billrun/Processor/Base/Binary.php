@@ -81,10 +81,10 @@ abstract class Billrun_Processor_Base_Binary extends Billrun_Processor {
 	 * @return Array	the record row with filtered only the requierd fields in it  
 	 *					or if no filter is defined in the configuration the full data record.
 	 */
-	private function filterFields($rawRow) {
+	protected function filterFields($rawRow) {
 		$row = array();
 		
-		$requiredFieldsConfig = Billrun_Factory::config()->getConfigValue( static::$type.'.fields_filter',false);
+		$requiredFieldsConfig = Billrun_Factory::config()->getConfigValue( static::$type.'.fields_filter');
 		if($requiredFieldsConfig) {
 			$requireFields = explode(',', $requiredFieldsConfig);
 			foreach($requireFields as $field) {
