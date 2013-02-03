@@ -134,7 +134,7 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud {
 		return array(
 				array(
 					'$match' => array(
-						'type' => 'egsn',
+						'type' => 'ggsn',
 						'deposit_stamp' => array('$exists' => false),
 						'event_stamp' => array('$exists' => false),
 						'record_opening_time' => array('$ne' => $charge_time),

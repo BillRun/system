@@ -108,7 +108,7 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$response = curl_exec($client);
 		curl_close($client);
 		
-		Billrun_Log::getInstance()->log("EgsnAlertcdPlugin::notifyOnEvent ".print_r(json_decode($response), 1), Zend_LOg::DEBUG);			
+		Billrun_Log::getInstance()->log("fraudAlertsPlugin::notifyOnEvent ".print_r(json_decode($response), 1), Zend_LOg::DEBUG);			
 
 		return json_decode($response);
 	}

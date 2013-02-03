@@ -12,7 +12,7 @@ require_once __DIR__ . '/../../../application/golan/' . 'subscriber.php';
  * @package  calculator
  * @since    1.0
  */
-class Billrun_Aggregator_Egsn extends Billrun_Aggregator {
+class Billrun_Aggregator_Ggsn extends Billrun_Aggregator {
 
 	/**
 	 * execute aggregate
@@ -23,7 +23,7 @@ class Billrun_Aggregator_Egsn extends Billrun_Aggregator {
 		foreach ($this->data as $item) {
 			// load subscriber
 			$phone_number = preg_replace("/^19972/", "", $item->get('served_msisdn'));
-			$time = $item->get('time_of_report');
+			$time = $item->get('record_opening_time');
 			// load subscriber
 			$subscriber = golan_subscriber::get($phone_number, $time);
 
@@ -159,7 +159,7 @@ class Billrun_Aggregator_Egsn extends Billrun_Aggregator {
 	 */
 	public function load($initData = true) {
 		$lines = $this->db->getCollection(self::lines_table)->query('billrun NOT EXISTS')
-			->equals("type", 'egsn');
+			->equals("type", 'ggsn');
 
 		if ($initData) {
 			$this->data = array();
