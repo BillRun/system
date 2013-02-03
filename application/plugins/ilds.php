@@ -62,7 +62,7 @@ class ildsPlugin extends Billrun_Plugin_BillrunPluginFraud {
 	 * @param Array|Object $event the event to add fields to.
 	 * @return Array|Object the event object with added fields
 	 */
-	protected function addAlertData($newEvent) {
+	protected function addAlertData(&$newEvent) {
 		
 		$newEvent['units']	= 'MIN';
 		$newEvent['value']	= $newEvent['total'];

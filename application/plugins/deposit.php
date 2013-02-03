@@ -16,20 +16,20 @@ class depositPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @param type $pluginName
 	 */
 	public function handlerAlert(&$items,$pluginName) {
-			if($pluginName != $this->getName() || !$items ) {return;}
-		//$this->log->log("Marking down Alert For {$item['imsi']}",Zend_Log::DEBUG);
+		if($pluginName != $this->getName() || !$items ) {return;}
+		$this->log->log("Marking down Alert For $pluginName", Zend_Log::DEBUG);
 		$ret = array();
 		$db = Billrun_Factory::db();
-		$lines = $db->getCollection($db::lines_table);
-		foreach($items as $item) {
-			$newEvent = new Mongodloid_Entity($item);
+		$events = $db->getCollection($db::events_table);
+		foreach($items as &$item) {
+			$event = new Mongodloid_Entity($item);
 			
-
-			unset($newEvent['events_ids']);
-			unset($newEvent['events_stamps']);
-			$newEvent = $this->addAlertData($newEvent);
+			unset($event['events_ids']);
+			unset($event['events_stamps']);
+			$newEvent = $this->addAlertData($event);
 			$newEvent['stamp']	= md5(serialize($newEvent));
-			$item['event_stamp']= $newEvent['stamp'];
+			
+			$item['event_stamp'] = $newEvent['stamp'];
 			
 			$ret[] = $events->save($newEvent);
 		}
@@ -113,7 +113,7 @@ class depositPlugin extends Billrun_Plugin_BillrunPluginBase {
 		);
 		$having = array(
 			'$match' => array(
-				'deposits' => array('$gt' => floatval(Billrun_Factory::config()->getConfigValue('deposit.hourly.thresholds.deposits', 3)))
+				'deposits' => array('$gt' => floatval(Billrun_Factory::config()->getConfigValue('deposit.hourly.thresholds.deposits', 3, 'int')))
 			),
 		);
 		
@@ -128,7 +128,7 @@ class depositPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @param Array|Object $event the event to add fields to.
 	 * @return Array|Object the event object with added fields
 	 */
-	protected function addAlertData($newEvent) {
+	protected function addAlertData(&$newEvent) {
 		$type = 'deposit';
 		
 		$newEvent['value']= $newEvent[$type];

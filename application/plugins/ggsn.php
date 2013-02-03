@@ -44,11 +44,10 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud {
 
 		$aggregateQuery = $this->getBaseAggregateQuery($charge_time); 
 		
-		$alerts = array();
-		$alerts = array_merge($alerts,$this->detectDataExceeders($lines, $aggregateQuery));
-		$alerts = array_merge($alerts , $this->detectHourlyDataExceeders($lines, $aggregateQuery));
+		$dataExceedersAlerts = $this->detectDataExceeders($lines, $aggregateQuery);
+		$hourlyDataExceedersAlerts = $this->detectHourlyDataExceeders($lines, $aggregateQuery);
 		
-		return $alerts;
+		return array_merge($dataExceedersAlerts, $hourlyDataExceedersAlerts);
 	}
 	
 	/**
@@ -168,7 +167,7 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud {
 			);
 	}
 
-	protected function addAlertData($event) {
+	protected function addAlertData(&$event) {
 		return $event;
 	}
 }

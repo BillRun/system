@@ -61,11 +61,13 @@ class Billrun_Config {
 	/**
 	 * method to get config value
 	 * 
-	 * @param mixed $keys array of keys or string divided by period
-	 * @param mixed $defVal the value return if the keys not found in the config
+	 * @param mixed  $keys array of keys or string divided by period
+	 * @param mixed  $defVal the value return if the keys not found in the config
+	 * @param string $retType the type of the return value (int, bool, string, float, array, object)
+	 *               if null passed the return value type will be declare by the default value type
 	 * @return mixed the config value
 	 */
-	public function getConfigValue($keys, $defVal = null) {
+	public function getConfigValue($keys, $defVal = null, $retType = null) {
 		$currConf = $this->config;
 
 		if (!is_array($keys)) {
@@ -74,11 +76,17 @@ class Billrun_Config {
 
 		foreach ($path as $key) {
 			if (!isset($currConf[$key])) {
-				return $defVal;
+				$currConf = $defVal;
+				break;
 			}
 			$currConf = $currConf[$key];
 		}
 
+		if ($retType) {
+			settype($currConf, $retType);
+		} else if (strtoupper($type = gettype($defVal)) != 'NULL') {
+			settype($currConf, $type);
+		}
 		return $currConf;
 	}
 
