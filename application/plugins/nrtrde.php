@@ -10,6 +10,8 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 	 */
 	protected $name = 'nrtrde';
 	
+	const time_format = 'YmdHis';
+	
 	public function beforeFTPReceive($ftp) {
 		return true;
 	}
@@ -190,12 +192,24 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 		unset($having['$match']['sms_out']);
 		unset($project['$project']['sms_out']);
 		$timeWindow= strtotime("-" . Billrun_Factory::config()->getConfigValue('nnrtrde.hourly.timespan','1h'));
-		$where['$match']['callEventStartTimeStamp']['$gt'] = date('YmdHis',$timeWindow);
+		$where['$match']['callEventStartTimeStamp']['$gt'] = date(self::time_format, $timeWindow);
 		$group['$group']['sms_hourly'] = array('$sum' => 1);
 		$having['$match']['sms_hourly'] = array('$gte' => Billrun_Factory::config()->getConfigValue('nrtde.hourly.thresholds.smsout', 250, 'int'));
 		$project['$project']['sms_hourly'] = 1;
 		$sms_hourly = $lines->aggregate($where, $group, $project, $having);
 		$this->normalize($ret, $sms_hourly, 'sms_hourly');
+		
+		unset($group['$group']['sms_hourly']);
+		unset($having['$match']['sms_hourly']);
+		unset($project['$project']['sms_hourly']);
+		$where['$match']['callEventStartTimeStamp']['$gt'] = date(self::time_format,$timeWindow);
+		$where['$match']['callEventDuration'] = array('$gt' => 0);
+		$group['$group']['moc_nonisrael_hourly'] = array('$sum' => '$callEventDuration');
+		$having['$match']['moc_nonisrael_hourly'] = array('$gte' => Billrun_Factory::config()->getConfigValue('nrtde.hourly.thresholds.mocnonisrael', 3000));
+		$project['$project']['moc_nonisrael_hourly'] = 1;
+		$moc_nonisrael_hourly = $lines->aggregate($where, $group, $project, $having);
+		$this->normalize($ret, $moc_nonisrael_hourly, 'moc_nonisrael_hourly');
+
 
 		return $ret;
 	}
