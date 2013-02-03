@@ -88,7 +88,7 @@ class Billrun_Config {
 			$currConf = $currConf[$key];
 		}
 
-		if ($retType) {
+		if (isset($retType) && $retType) {
 			settype($currConf, $retType);
 		} else if (strtoupper($type = gettype($defVal)) != 'NULL') {
 			settype($currConf, $type);
