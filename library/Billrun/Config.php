@@ -27,6 +27,11 @@ class Billrun_Config {
 	 * @var Yaf_Config
 	 */
 	protected $config;
+	
+	/**
+	 * the environment field in config ini file
+	 */
+	const environment_field = 'environment';
 
 	/**
 	 * constructor of the class
@@ -88,6 +93,41 @@ class Billrun_Config {
 			settype($currConf, $type);
 		}
 		return $currConf;
+	}
+	
+	/**
+	 * method to receive the environment the app running
+	 * 
+	 * @return string the environment (prod, test or dev)
+	 */
+	public function getEnv() {
+		return $this->getConfigValue(self::environment_field, 'dev');
+	}
+
+	/**
+	 * method to check if the environment is set under some specific environment
+	 * 
+	 * @param string $env the environment to check
+	 * 
+	 * @return boolean true if the environment is the one that supplied, else false
+	 */
+	public function checkEnv($env) {
+		if ($this->getEnv() === $env) {
+			return true;
+		}
+		return false;
+	}
+	
+	/**
+	 * method to check if the environment is production
+	 * 
+	 * @return mixed true if it's production
+	 */
+	public function isProd() {
+		if ($this->checkEnv('prod')) {
+			return true;
+		}
+		return false;
 	}
 
 }
