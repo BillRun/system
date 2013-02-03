@@ -121,7 +121,7 @@ class Billrun_Config {
 	/**
 	 * method to check if the environment is production
 	 * 
-	 * @return mixed true if it's production
+	 * @return boolean true if it's production, else false
 	 */
 	public function isProd() {
 		if ($this->checkEnv('prod')) {
