@@ -34,7 +34,7 @@ class Billrun_Parser_Egcdr extends Billrun_Parser_Base_Binary {
 
 		$asnObject = Asn_Base::parseASNString($this->getLine());
 		$this->parsedBytes = $asnObject->getDataLength();
-		$dataArr = Asn_Base::getDataArray($asnObject);
+		//$dataArr = Asn_Base::getDataArray($asnObject);
 		$ret = $this->parseASNData($this->data_structure, $asnObject);
 		return $ret;
 	}
@@ -118,7 +118,7 @@ class Billrun_Parser_Egcdr extends Billrun_Parser_Base_Binary {
 					break;
 
 				case 'long':
-					$numarr = unpack("C*", $fieldData);
+					$numarr = unpack('C*', $fieldData);
 					$fieldData = 0;
 					foreach ($numarr as $byte) {
 						//$fieldData = $fieldData <<8;
@@ -127,7 +127,7 @@ class Billrun_Parser_Egcdr extends Billrun_Parser_Base_Binary {
 					break;
 
 				case 'number':
-					$numarr = unpack("C*", $fieldData);
+					$numarr = unpack('C*', $fieldData);
 					$fieldData = 0;
 					foreach ($numarr as $byte) {
 						//$fieldData = $fieldData <<8;
@@ -136,21 +136,21 @@ class Billrun_Parser_Egcdr extends Billrun_Parser_Base_Binary {
 					break;
 					
 				case 'BCDencode' :
-					$halfBytes = unpack("C*", $fieldData);
-					$fieldData = "";
+					$halfBytes = unpack('C*', $fieldData);
+					$fieldData = '';
 					foreach ($halfBytes as $byte) {
 						//$fieldData = $fieldData <<8;
-						$fieldData .= ($byte & 0xF) . ((($byte >> 4) < 10) ? ($byte >> 4) : "" );
+						$fieldData .= ($byte & 0xF) . ((($byte >> 4) < 10) ? ($byte >> 4) : '' );
 					}
 					break;
 
 				case 'ip' :
-					$fieldData = implode(".", unpack("C*", $fieldData));
+					$fieldData = implode('.', unpack('C*', $fieldData));
 					break;
 
 				case 'datetime' :
-					$tempTime = DateTime::createFromFormat("ymdHisT", str_replace("2b", "+", implode(unpack("H*", $fieldData))));
-					$fieldData = is_object($tempTime) ? $tempTime->format("YmdHis") : "";
+					$tempTime = DateTime::createFromFormat('ymdHisT', str_replace('2b', '+', implode(unpack('H*', $fieldData))));
+					$fieldData = is_object($tempTime) ? $tempTime->format('YmdHis') : '';
 					break;
 
 				case 'json' :
@@ -159,7 +159,7 @@ class Billrun_Parser_Egcdr extends Billrun_Parser_Base_Binary {
 					break;
 
 				default:
-					$fieldData = is_array($fieldData) ? "" : implode("", unpack($type, $fieldData));
+					$fieldData = is_array($fieldData) ? '' : implode('', unpack($type, $fieldData));
 			}
 		}
 		return $fieldData;
@@ -178,7 +178,7 @@ class Billrun_Parser_Egcdr extends Billrun_Parser_Base_Binary {
 	}
 
 	/**
-	 * HACK this is anhack to solve the problem  that the
+	 * HACK this is an hack to solve the problem that not all the data fields are known.
 	 */
 	protected function buildDataMap() {
 		//create the data structure  the praser will use.
@@ -299,12 +299,12 @@ class Billrun_Parser_Egcdr extends Billrun_Parser_Base_Binary {
 			'list_of_service_data' => 'losd',
 			'record_extensions' => 'json',
 			//TODO solve later...
-			'unknown' => "H*",
-			'losd_unknown' => "H*",
-			'losd_unknown1' => "H*",
+			'unknown' => 'H*',
+			'losd_unknown' => 'H*',
+			'losd_unknown1' => 'H*',
 			//FOR DEBUGGING
-			'debug_losd' => 'debug',
-			'debug' => 'debug',
+//			'debug_losd' => 'debug',
+//			'debug' => 'debug',
 		);
 
 		return $data_structure;

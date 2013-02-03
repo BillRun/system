@@ -30,7 +30,7 @@ class Asn_Object extends Asn_Base {
 		if ($this->isConstructed()) {
 			//the object is constructed from smaller objects
 			$this->parsedData = array();
-			while (strlen($data) > 0) {
+			while ( isset($data[0]) ) {
 				$this->parsedData[] = $this->newClassFromData($data);
 			}
 		} else {
