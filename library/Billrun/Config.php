@@ -70,6 +70,7 @@ class Billrun_Config {
 	 * @param mixed  $defVal the value return if the keys not found in the config
 	 * @param string $retType the type of the return value (int, bool, string, float, array, object)
 	 *               if null passed the return value type will be declare by the default value type
+	 *               this argument is deprecated; the return value type is defined by the default value type
 	 * @return mixed the config value
 	 */
 	public function getConfigValue($keys, $defVal = null, $retType = null) {
@@ -87,7 +88,7 @@ class Billrun_Config {
 			$currConf = $currConf[$key];
 		}
 
-		if ($retType) {
+		if (isset($retType) && $retType) {
 			settype($currConf, $retType);
 		} else if (strtoupper($type = gettype($defVal)) != 'NULL') {
 			settype($currConf, $type);
@@ -121,7 +122,7 @@ class Billrun_Config {
 	/**
 	 * method to check if the environment is production
 	 * 
-	 * @return mixed true if it's production
+	 * @return boolean true if it's production, else false
 	 */
 	public function isProd() {
 		if ($this->checkEnv('prod')) {
