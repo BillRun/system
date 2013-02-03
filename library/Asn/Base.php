@@ -58,7 +58,7 @@ class Asn_Base {
 		}
 		$cls = self::getClassForType($type);
 		if (!$cls) {
-			print("Asn_Base::newClassFromData couldn't create class!!");
+			print('Asn_Base::newClassFromData couldn`t create class!!');
 			return null;
 		}
 		$data = self::getObjectData($rawData, $offset);
@@ -103,7 +103,7 @@ class Asn_Base {
 	 * @return String  the name of the class that should be used to handle the data.
 	 */
 	protected static function getClassForType($type) {
-		$constructed = $type & Asn_Markers::ASN_CONSTRUCTOR;
+		//$constructed = $type & Asn_Markers::ASN_CONSTRUCTOR;
 		$context = $type & Asn_Markers::ASN_CONTEXT;
 		$type = $type & 0x1F; // strip out context
 		if (!$context && isset(Asn_Types::$TYPES[$type]) && class_exists(Asn_Types::$TYPES[$type],self::USE_AUTOLOAD)) {
