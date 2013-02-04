@@ -151,7 +151,12 @@ abstract class Billrun_Processor extends Billrun_Base {
 
 		$log = $this->db->getCollection(self::log_table);
 
+
+		
 		if (isset($this->data['trailer'])) {
+			if(isset($this->data['header']) ) {
+				$this->data['trailer']['header'] = $this->data['header'];
+			}
 			$entity = new Mongodloid_Entity($this->data['trailer']);
 		} else if (isset($this->data['header'])) {
 			$entity = new Mongodloid_Entity($this->data['header']);
@@ -164,6 +169,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 		if ($current_stamp instanceof Mongodloid_Entity || $current_stamp instanceof Mongodloid_ID) {
 				$resource = $log->findOne($current_stamp);
 				$resource->set('metadata', $entity->getRawData());
+				
 				return $resource->save($log, true);
 		} else {
 			// backword compatability

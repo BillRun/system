@@ -50,9 +50,6 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 			$this->workspace = $options['workspace'];
 		}
 
-		if (isset($options['backup'])) {
-			$this->backup_path = $options['backup'];
-		}
 	}
 
 	/**
@@ -65,7 +62,7 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 		$this->dispatcher->trigger('beforeFTPReceive', array($this));
 
 		$files = $this->ftp->getDirectory($this->ftp_path)->getContents();
-
+		
 		$ret = array();
 		foreach ($files as $file) {
 			if ($file->isFile()) {

@@ -86,9 +86,9 @@ class Billrun_Parser_Egcdr extends Billrun_Parser_Base_Binary {
 	}
 
 	/**
-	 * Parse an ASN field using a specific data structure.
+	 * Parse an binary field using a specific data structure.
 	 */
-	protected function parseField($type, $fieldData) {
+	public function parseField($type, $fieldData) {
 		//if ($type != 'debug') {
 		$fieldData = $fieldData->getData();
 		//}/*///TODO remove
@@ -308,6 +308,14 @@ class Billrun_Parser_Egcdr extends Billrun_Parser_Base_Binary {
 		);
 
 		return $data_structure;
+	}
+
+	public function parseHeader($data) {
+		return utf8_encode(base64_encode($data));
+	}
+
+	public function parseTrailer($data) {
+		return utf8_encode(base64_encode($data));
 	}
 
 }
