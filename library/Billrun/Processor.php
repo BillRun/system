@@ -162,7 +162,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 		} 
 		
 		if (empty($header) && empty($trailer)) {
-			$this->log->log("Billrun_Processor::logDB - cannot locate trailer or header to log", Zend_Log::ERR);
+			$this->log->log("Billrun_Processor::logDB - trailer and header are empty", Zend_Log::ERR);
 			return FALSE;
 		}
 
