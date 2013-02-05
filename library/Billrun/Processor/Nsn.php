@@ -45,7 +45,7 @@ class Billrun_Processor_Nsn extends Billrun_Processor_Base_BlockedSeperatedBinar
 		
 		$this->data['trailer'] = $this->buildTrailer($this->parser->parseTrailer($bytes));
 		if((0x1ff0 - $header['data_length_in_block']) > 0) {
-			fread($this->fileHandler, 0x1ff0 - $header['data_length_in_block'] );
+			fread($this->fileHandler, (0x1ff0 - $header['data_length_in_block']) );
 		}
 		return true;
 	}

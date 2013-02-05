@@ -18,25 +18,25 @@ class Billrun_Parser_Nsn extends Billrun_Parser_Base_Binary  {
 		parent::__construct($options);
 
 		$this->header_structure = array(
-									'record_length' => array('number' => 2),
-									'record_type' => array('number' => 1),
-									'charging_block_size' => array('number' => 1),
-									'tape_block_type' => array('number' => 2),
-									'data_length_in_block' => array('number' => 2),
+									'record_length' => array('decimal' => 2),
+									'record_type' => array('decimal' => 1),
+									'charging_block_size' => array('decimal' => 1),
+									'tape_block_type' => array('decimal' => 2),
+									'data_length_in_block' => array('decimal' => 2),
 									'exchange_id' => array('long' => 10),
-									'first_record_number' => array('number' => 4),
-									'batch_seq_number' => array('number' => 4),
-									'block_seq_number' => array('number' => 2),
+									'first_record_number' => array('decimal' => 4),
+									'batch_seq_number' => array('decimal' => 4),
+									'block_seq_number' => array('decimal' => 2),
 									'start_time' =>  array('bcd_encode' => 7),
 									'format_version' =>  array('format_ver' => 6),
 		);
 		
 		$this->trailer_structure = array(
-									'record_length' => array('number' => 2),
-									'record_type' => array('number' => 1),
+									'record_length' => array('decimal' => 2),
+									'record_type' => array('decimal' => 1),
 									'exchange_id' => array('long' => 10),
 									'end_time' => array('bcd_encode' => 7),
-									'last_record_number' => array('number' => 4),
+									'last_record_number' => array('decimal' => 4),
 		);		
 		$this->nsnConfig = parse_ini_file(Billrun_Factory::config()->getConfigValue('nsn.config_path'), true);
 
@@ -46,23 +46,27 @@ class Billrun_Parser_Nsn extends Billrun_Parser_Base_Binary  {
 		$data = array();
 		$line = $this->getLine();
 
-		$data['record_length'] = $this->parseField($line, array('number' => 2));
+		$data['record_length'] = $this->parseField($line, array('decimal' => 2));
 		$line = substr($line, 2);
 		$data['record_type'] = $this->parseField($line, array('bcd_encode' => 1));
 		$line = substr($line, 1);
-		$data['rand'] = rand(0,99999888888999999);
+		
 		if(isset($this->nsnConfig[$data['record_type']])) {
 			foreach ($this->nsnConfig[$data['record_type']] as $key => $fieldDesc) {
-				if(is_array($fieldDesc)){
-					$data[$key] = $this->parseField($line, $fieldDesc);
-					$line = substr($line, intval(current($fieldDesc),10));
-				//	$this->log->log("Data $key : {$data[$key]}",Zend_log::DEBUG);
+				if($fieldDesc) {
+					if (isset($this->nsnConfig['fields'][$fieldDesc])) {
+							$data[$key] = $this->parseField($line, $this->nsnConfig['fields'][$fieldDesc]);
+							$line = substr($line, intval(current($this->nsnConfig['fields'][$fieldDesc]), 10));
+							//	$this->log->log("Data $key : {$data[$key]}",Zend_log::DEBUG);
+					} else {
+						throw new Exception("Nsn:parse - Couldn't find field: $fieldDesc  ");
+					}
 				}
 			}
 		}
 		$this->parsedBytes = $data['record_length'];
 		
-		return $data;
+		return isset($this->nsnConfig[$data['record_type']]) ?  $data : false;
 	}
 	
 	public function getLastParseLength() {
@@ -92,46 +96,68 @@ class Billrun_Parser_Nsn extends Billrun_Parser_Base_Binary  {
 	public function parseField($data, $fileDesc) {
 		$type = key($fileDesc); 
 		$length = $fileDesc[$type];
+		$retValue = '';
+		
 		switch($type) {
-			case 'number' :
-					$value =0;
+			case 'decimal' :
+					$retValue = 0;
 					for($i=$length-1; $i >= 0 ; --$i) {
-						$value = ord($data[$i]) + ($value << 8);
-						//$this->log->log("Parsed Number $value",Zend_log::DEBUG);
+						$retValue = ord($data[$i]) + ($retValue << 8);
 					}
-					
-					return $value;
+				break;
+				
+			case 'phone_number' :
+					$retValue = '';
+					for($i=$length-1; $i >= 0 ; --$i) {
+						$byteVal = ord($data[$i]);
+						$left = $byteVal & 0xF;
+						$right =  $byteVal >> 4;
+						$digit =  $left == 0xA ? "*" : 
+									($left == 0xB ? "#" :
+									($left > 0xC ? dechex($left-2) :
+									 $left));
+						$digit1 =  $right == 0xA ? "*" : 
+									($right == 0xB ? "#" :
+									($right > 0xC ? dechex($right-2) :
+									 $right));
+						$retValue .=  $digit . $digit1;
+					}
+					str_replace('ff','',$retValue);
 				break;
 				
 			case 'long':
-					$value =0;
+					$retValue = 0;
 					for($i=$length-1; $i >= 0 ; --$i) {
-						//$fieldData = $fieldData <<8;
-						$value = bcadd(bcmul($value , 256 ), ord($data[$i]));
+						$retValue = bcadd(bcmul($retValue , 256 ), ord($data[$i]));
 					}
-					return $value;
 				break;
+				
 			case 'hex' :
-					$value ='';
+					$retValue ='';
 					for($i=$length-1; $i >= 0  ; --$i) {
-						$value .= dechex(ord($data[$i]));
+						$retValue .= dechex(ord($data[$i]));
 					}
-					return $value;
 				break;
+				
+			case 'datetime':
 			case 'bcd_encode' :
-					$value = '';
+					$retValue = '';
 					for($i=$length-1; $i >= 0 ;--$i) {
 						$byteVal = ord($data[$i]);
-						$value .=  ((($byteVal >> 4) < 10) ? ($byteVal >> 4) : '' ) . ((($byteVal & 0xF) < 10) ? ($byteVal & 0xF) : "") ;
+						$retValue .=  ((($byteVal >> 4) < 10) ? ($byteVal >> 4) : '' ) . ((($byteVal & 0xF) < 10) ? ($byteVal & 0xF) : "") ;
 					}
-					return $value;
 					break;	
-			case 'format_ver' :
-					$value =$data[0]. $data[1].ord($data[2]).'.'.ord($data[3]).'-'.ord($data[4]);
 					
-					return $value;
-				break;	
+			case 'format_ver' :
+					$retValue =$data[0]. $data[1].ord($data[2]).'.'.ord($data[3]).'-'.ord($data[4]);
+				break;
+			
+			case 'ascii':
+					$retValue = preg_replace("/\W/","",substr($data,0,$length));
+				break;
 		}
+		
+		return $retValue;
 	}
 
 	
