@@ -45,6 +45,12 @@ abstract class Billrun_Processor extends Billrun_Base {
 	protected $data = array();
 
 	/**
+	 * the file path to process on
+	 * @var file path
+	 */
+	protected $backupPath  = './backup';
+	
+	/**
 	 * constructor - load basic options
 	 *
 	 * @param array $options for the file processor
@@ -60,11 +66,31 @@ abstract class Billrun_Processor extends Billrun_Base {
 		if (isset($options['parser'])) {
 			$this->setParser($options['parser']);
 		}
-	}
+		
+		if (isset($options['backupPath'])) {
+			$this->setBackupPath($options['backupPath']);
+		}
 
+	}
+	
+	/**
+	 * method to receive the items that the processor parsed on each iteration of parser
+	 * 
+	 * @return array items 
+	 */
 	public function getData() {
 		return $this->data;
 	}
+
+	/**
+	 * method to setup the backup path that the processor will stored the parsing file
+	 * 
+	 * @param string $path the backup path
+	 */
+	public function setBackupPath($path) {
+			$this->backupPath = $path;
+	}
+
 
 	/**
 	 * method to run over all the files received which did not have been processed
@@ -80,7 +106,8 @@ abstract class Billrun_Processor extends Billrun_Base {
 		foreach ($files as $file) {
 			$this->setStamp($file->getID());
 			$this->loadFile($file->get('path'));
-			$lines = array_merge($lines, $this->process());
+			$processed_lines = $this->process();
+			$lines = array_merge($lines, $processed_lines);
 			$file->collection($log);
 			$file->set('process_time', date(self::base_dateformat));
 			$this->init();
@@ -101,33 +128,42 @@ abstract class Billrun_Processor extends Billrun_Base {
 	}
 
 	/**
-	 * method to get the data from the file
-	 * @todo take to parent abstract
+	 * method to process file by the processor parser
+	 * 
+	 * @return mixed
 	 */
 	public function process() {
 
 		$this->dispatcher->trigger('beforeProcessorParsing', array($this));
 
 		if ($this->parse() === FALSE) {
-			$this->log->log("Billrun_Processor: cannot parse", Zend_Log::ERR);
+			Billrun_Factory::log()->log("Billrun_Processor: cannot parse", Zend_Log::ERR);
 			return false;
 		}
 
 		$this->dispatcher->trigger('afterProcessorParsing', array($this));
 
 		if ($this->logDB() === FALSE) {
-			$this->log->log("Billrun_Processor: cannot log parsing action", Zend_Log::WARN);
+			Billrun_Factory::log()->log("Billrun_Processor: cannot log parsing action", Zend_Log::WARN);
 		}
 
 		$this->dispatcher->trigger('beforeProcessorStore', array($this));
 
 		if ($this->store() === FALSE) {
-			$this->log->log("Billrun_Processor: cannot store the parser lines", Zend_Log::ERR);
+			Billrun_Factory::log()->log("Billrun_Processor: cannot store the parser lines", Zend_Log::ERR);
 			return false;
 		}
 
 		$this->dispatcher->trigger('afterProcessorStore', array($this));
+		
+		if ($this->backup() === TRUE) {
+			Billrun_Factory::log()->log("Success backup file " . $this->filePath . " to " . $this->backupPath, Zend_Log::INFO);
+		} else {
+			Billrun_Factory::log()->log("Failed backup file " . $this->filePath . " to " . $this->backupPath, Zend_Log::INFO);
+		}
 
+		$this->dispatcher->trigger('afterProcessorBackup', array($this));
+		
 		return $this->data['data'];
 	}
 
@@ -140,12 +176,12 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 */
 	protected function logDB() {
 		if (!isset($this->db)) {
-			$this->log->log("Billrun_Processor:logDB not database instance", Zend_Log::ERR);
+			Billrun_Factory::log()->log("Billrun_Processor:logDB not database instance", Zend_Log::ERR);
 			return false;
 		}
 
 		if (!isset($this->data['trailer']) && !isset($this->data['header'])) {
-			$this->log->log("Billrun_Processor:logDB no header nor trailer to log", Zend_Log::ERR);
+			Billrun_Factory::log()->log("Billrun_Processor:logDB no header nor trailer to log", Zend_Log::ERR);
 			return false;
 		}
 
@@ -162,7 +198,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 		}
 
 		if (empty($header) && empty($trailer)) {
-			$this->log->log("Billrun_Processor::logDB - trailer and header are empty", Zend_Log::ERR);
+			Billrun_Factory::log()->log("Billrun_Processor::logDB - trailer and header are empty", Zend_Log::ERR);
 			return FALSE;
 		}
 
@@ -181,7 +217,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 			// old method of processing => receiver did not logged, so it's the first time the file logged into DB
 			$entity = new Mongodloid_Entity($trailer);
 			if ($log->query('stamp', $entity->get('stamp'))->count() > 0) {
-				$this->log->log("Billrun_Processor::logDB - DUPLICATE! trying to insert duplicate log file with stamp of : {$entity->get('stamp')}", Zend_Log::NOTICE);
+				Billrun_Factory::log()->log("Billrun_Processor::logDB - DUPLICATE! trying to insert duplicate log file with stamp of : {$entity->get('stamp')}", Zend_Log::NOTICE);
 				return FALSE;
 			}
 			return $entity->save($log, true);
@@ -204,7 +240,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 		foreach ($this->data['data'] as $row) {
 			$entity = new Mongodloid_Entity($row);
 			if ($lines->query('stamp', $entity->get('stamp'))->count() > 0) {
-				$this->log->log("processor::store - DUPLICATE! trying to insert duplicate line with stamp of : {$entity->get('stamp')}", Zend_Log::NOTICE);
+				Billrun_Factory::log()->log("processor::store - DUPLICATE! trying to insert duplicate line with stamp of : {$entity->get('stamp')}", Zend_Log::NOTICE);
 				continue;
 			}
 			$entity->save($lines, true);
@@ -239,9 +275,9 @@ abstract class Billrun_Processor extends Billrun_Base {
 		if (file_exists($file_path)) {
 			$this->filePath = $file_path;
 			$this->fileHandler = fopen($file_path, 'r');
-			$this->log->log("Billrun Processor load the file: " . $file_path, Zend_Log::INFO);
+			Billrun_Factory::log()->log("Billrun Processor load the file: " . $file_path, Zend_Log::INFO);
 		} else {
-			$this->log->log("Billrun_Processor->loadFile: cannot load the file: " . $file_path, Zend_Log::ERR);
+			Billrun_Factory::log()->log("Billrun_Processor->loadFile: cannot load the file: " . $file_path, Zend_Log::ERR);
 		}
 		$this->dispatcher->trigger('processorAfterFileLoad', array(&$file_path));
 	}
@@ -256,6 +292,24 @@ abstract class Billrun_Processor extends Billrun_Base {
 	public function setParser($parser) {
 		$this->parser = $parser;
 		return $this;
+	}
+	
+	/**
+	 * method to backup the processed file
+	 * 
+	 * @param boolean $copy copy or rename (move) the file to backup
+	 * 
+	 * @return boolean return true if success to backup
+	 */
+	protected function backup($copy = false) {
+		if ($copy) {
+			$callback = "copy";
+		} else {
+			$callback = "rename";
+		}
+		
+		return @call_user_func_array($callback, array($this->filePath, $this->backupPath));
+
 	}
 
 }
