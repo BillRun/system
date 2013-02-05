@@ -151,11 +151,17 @@ abstract class Billrun_Processor extends Billrun_Base {
 
 		$log = $this->db->getCollection(self::log_table);
 
+		$header = array();
+		if (isset($this->data['header'])) {
+			$header = $this->data['header'];
+		}
+		
+		$trailer = array();
 		if (isset($this->data['trailer'])) {
-			$entity = new Mongodloid_Entity($this->data['trailer']);
-		} else if (isset($this->data['header'])) {
-			$entity = new Mongodloid_Entity($this->data['header']);
-		} else {
+			$trailer = $this->data['trailer'];
+		} 
+		
+		if (empty($header) && empty($trailer)) {
 			$this->log->log("Billrun_Processor::logDB - cannot locate trailer or header to log", Zend_Log::ERR);
 			return FALSE;
 		}
@@ -163,11 +169,17 @@ abstract class Billrun_Processor extends Billrun_Base {
 		$current_stamp = $this->getStamp(); // mongo id in new version; else string
 		if ($current_stamp instanceof Mongodloid_Entity || $current_stamp instanceof Mongodloid_ID) {
 				$resource = $log->findOne($current_stamp);
-				$resource->set('metadata', $entity->getRawData());
+				if (!empty($header)) {
+					$resource->set('header', $header);
+				}
+				if (!empty($trailer)) {
+					$resource->set('trailer', $trailer);
+				}
 				return $resource->save($log, true);
 		} else {
 			// backword compatability
 			// old method of processing => receiver did not logged, so it's the first time the file logged into DB
+			$entity = new Mongodloid_Entity($trailer);
 			if ($log->query('stamp', $entity->get('stamp'))->count() > 0) {
 				$this->log->log("Billrun_Processor::logDB - DUPLICATE! trying to insert duplicate log file with stamp of : {$entity->get('stamp')}", Zend_Log::NOTICE);
 				return FALSE;
