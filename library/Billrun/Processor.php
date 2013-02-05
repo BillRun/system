@@ -67,8 +67,8 @@ abstract class Billrun_Processor extends Billrun_Base {
 			$this->setParser($options['parser']);
 		}
 		
-		if (isset($options['backupPath'])) {
-			$this->setBackupPath($options['backupPath']);
+		if (isset($options['backup'])) {
+			$this->setBackupPath($options['backup']);
 		}
 
 	}
@@ -88,7 +88,19 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 * @param string $path the backup path
 	 */
 	public function setBackupPath($path) {
-			$this->backupPath = $path;
+		// in case the path is not exists but we can't create it
+		if (!file_exists($path) && !@mkdir($path, 0777, true)) {
+			Billrun_Factory::log()->log("Can't create backup path or is not a directory " . $path, Zend_Log::WARN);
+			return FALSE;
+		}
+		// in case the path exists but it's a file
+		if (!is_dir($path)) {
+			Billrun_Factory::log()->log("The path " . $path . " is not directory", Zend_Log::WARN);
+			return FALSE;
+		}
+				
+		$this->backupPath = $path;
+		return TRUE;
 	}
 
 

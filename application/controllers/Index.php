@@ -48,6 +48,7 @@ class IndexController extends Yaf_Controller_Abstract {
 				'export-path-s' => 'Respond: The path To export files',
 				'workspace-s' => 'The path to the workspace directory',
 				'parser-s' => 'Process: Parser type (default fixed)',
+				'backup' => 'Process: Backup path after the file processed (default ./backup)',
 			);
 
 			$opts = new Zend_Console_Getopt($input);
@@ -108,6 +109,7 @@ class IndexController extends Yaf_Controller_Abstract {
 			'type' => false,
 			'parser' => false,
 			'path' => true,
+			'backup' => true, // backup path
 		);
 
 		$options = $this->getInstanceOptions($opts, $posibleOptions);
