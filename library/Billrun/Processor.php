@@ -85,10 +85,10 @@ abstract class Billrun_Processor extends Billrun_Base {
 			$file->set('process_time', date(self::base_dateformat));
 			$this->init();
 		}
-		
+
 		return $lines;
 	}
-	
+
 	/**
 	 * method to initialize the data and the file handler of the processor
 	 * useful when processing files in iterations one after another
@@ -98,8 +98,8 @@ abstract class Billrun_Processor extends Billrun_Base {
 		if (is_resource($this->fileHandler)) {
 			fclose($this->fileHandler);
 		}
-
 	}
+
 	/**
 	 * method to get the data from the file
 	 * @todo take to parent abstract
@@ -143,7 +143,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 			$this->log->log("Billrun_Processor:logDB not database instance", Zend_Log::ERR);
 			return false;
 		}
-		
+
 		if (!isset($this->data['trailer']) && !isset($this->data['header'])) {
 			$this->log->log("Billrun_Processor:logDB no header nor trailer to log", Zend_Log::ERR);
 			return false;
@@ -155,12 +155,12 @@ abstract class Billrun_Processor extends Billrun_Base {
 		if (isset($this->data['header'])) {
 			$header = $this->data['header'];
 		}
-		
+
 		$trailer = array();
 		if (isset($this->data['trailer'])) {
 			$trailer = $this->data['trailer'];
-		} 
-		
+		}
+
 		if (empty($header) && empty($trailer)) {
 			$this->log->log("Billrun_Processor::logDB - trailer and header are empty", Zend_Log::ERR);
 			return FALSE;
@@ -168,14 +168,14 @@ abstract class Billrun_Processor extends Billrun_Base {
 
 		$current_stamp = $this->getStamp(); // mongo id in new version; else string
 		if ($current_stamp instanceof Mongodloid_Entity || $current_stamp instanceof Mongodloid_ID) {
-				$resource = $log->findOne($current_stamp);
-				if (!empty($header)) {
-					$resource->set('header', $header);
-				}
-				if (!empty($trailer)) {
-					$resource->set('trailer', $trailer);
-				}
-				return $resource->save($log, true);
+			$resource = $log->findOne($current_stamp);
+			if (!empty($header)) {
+				$resource->set('header', $header);
+			}
+			if (!empty($trailer)) {
+				$resource->set('trailer', $trailer);
+			}
+			return $resource->save($log, true);
 		} else {
 			// backword compatability
 			// old method of processing => receiver did not logged, so it's the first time the file logged into DB
@@ -240,7 +240,6 @@ abstract class Billrun_Processor extends Billrun_Base {
 			$this->filePath = $file_path;
 			$this->fileHandler = fopen($file_path, 'r');
 			$this->log->log("Billrun Processor load the file: " . $file_path, Zend_Log::INFO);
-
 		} else {
 			$this->log->log("Billrun_Processor->loadFile: cannot load the file: " . $file_path, Zend_Log::ERR);
 		}
@@ -258,20 +257,5 @@ abstract class Billrun_Processor extends Billrun_Base {
 		$this->parser = $parser;
 		return $this;
 	}
-
-//	/**
-//	 * Loose coupling of objects in the system
-//	 *
-//	 * @return mixed the bridge class
-//	 */
-//	static public function getInstance() {
-//		$args = func_get_args();
-//		if (!is_array($args)) {
-//			$args['type'] = "Type_" . $args['type'];
-//		} else {
-//			$args[0]['type'] = "Type_" . $args[0]['type'];
-//		}
-//		return forward_static_call_array(array('parent', 'getInstance'), $args);
-//	}
 
 }

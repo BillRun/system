@@ -35,7 +35,7 @@ abstract class Billrun_Receiver extends Billrun_Base {
 	 * @return array list of files received
 	 */
 	abstract public function receive();
-	
+
 	/**
 	 * method to log the processing
 	 * 
@@ -48,16 +48,16 @@ abstract class Billrun_Receiver extends Billrun_Base {
 		}
 
 		$log = $this->db->getCollection(self::log_table);
-		
+
 		$log_data = array(
 			'source' => static::$type,
 			'path' => $path,
 			'file_name' => basename($path),
 		);
-		
+
 		$log_data['stamp'] = md5(serialize($log_data));
 		$log_data['received_time'] = date(self::base_dateformat);
-		
+
 		$this->dispatcher->trigger('beforeLogReceiveFile', array(&$log_data, $this));
 		$entity = new Mongodloid_Entity($log_data);
 		if ($log->query('stamp', $entity->get('stamp'))->count() > 0) {

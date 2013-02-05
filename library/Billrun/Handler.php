@@ -13,6 +13,7 @@
  * @since    1.0
  */
 class Billrun_Handler extends Billrun_Base {
+
 	/**
 	 * method to retreive instance of Billrun Handler
 	 * 
@@ -20,7 +21,7 @@ class Billrun_Handler extends Billrun_Base {
 	 * @todo make args signature to avoid over loading of instance
 	 */
 	static public function getInstance() {
-		
+
 		$args = func_get_args();
 
 		return new self($args);
@@ -30,19 +31,18 @@ class Billrun_Handler extends Billrun_Base {
 	 * method to execute simple handler that collect data to handle
 	 */
 	public function execute() {
-		
+
 		$this->log->log("Handler execute start", Zend_Log::INFO);
-		
+
 		$collect_data = $this->collect();
 
 		$this->alert($collect_data);
 
 		$this->markdown($collect_data);
-		
+
 		$this->notify();
-		
+
 		$this->log->log("Handler execute finished", Zend_Log::INFO);
-		
 	}
 
 	/**
@@ -55,13 +55,12 @@ class Billrun_Handler extends Billrun_Base {
 		$this->log->log("Handler collect start", Zend_Log::INFO);
 
 		$items = $this->dispatcher->trigger('handlerCollect');
-		
+
 		$this->log->log("Handler collect finished", Zend_Log::INFO);
 
 		return $items;
 	}
 
-	
 	/**
 	 * method to notify other systems  that an event has happend.
 	 * 
@@ -72,12 +71,12 @@ class Billrun_Handler extends Billrun_Base {
 		$this->log->log("Handler notify start", Zend_Log::INFO);
 
 		$items = $this->dispatcher->trigger('handlerNotify');
-		
+
 		$this->log->log("Handler notify finished", Zend_Log::INFO);
 
 		return $items;
 	}
-	
+
 	/**
 	 * method to alert the data collected
 	 * 
@@ -87,23 +86,23 @@ class Billrun_Handler extends Billrun_Base {
 	 */
 	protected function alert(&$items) {
 		$this->log->log("Handler alert start", Zend_Log::INFO);
-		
+
 		if (!is_array($items) || !count($items)) {
 			$this->log->log("Handler alert items not found", Zend_Log::NOTICE);
 			return FALSE;
 		}
-		
+
 		$this->dispatcher->trigger('beforeHandlerAlert', array(&$items));
-		
+
 		foreach ($items as $plugin => &$pluginItems) {
 			// ggsn
 			$this->dispatcher->trigger('handlerAlert', array(&$pluginItems, $plugin));
 		}
-		
+
 		$this->dispatcher->trigger('afterHandlerAlert', array(&$items));
 
 		// TODO: check return values
-		
+
 		$this->log->log("Handler alert finished", Zend_Log::INFO);
 		return TRUE;
 	}
@@ -124,15 +123,15 @@ class Billrun_Handler extends Billrun_Base {
 		}
 
 		$this->dispatcher->trigger('beforeHandlerMarkDown', array(&$items));
-		
-		foreach ($items as $plugin => &$pluginItems) {	
-				$this->dispatcher->trigger('handlerMarkDown', array(&$pluginItems,$plugin));
+
+		foreach ($items as $plugin => &$pluginItems) {
+			$this->dispatcher->trigger('handlerMarkDown', array(&$pluginItems, $plugin));
 		}
 
 		$this->dispatcher->trigger('afterHandlerMarkDown', array(&$items));
 
 		// TODO: check return values
-		
+
 		$this->log->log("Handler markdown finished", Zend_Log::INFO);
 		return TRUE;
 	}

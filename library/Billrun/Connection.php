@@ -13,11 +13,9 @@
  * @since    1.0
  */
 class Billrun_Connection extends Mongodloid_Connection {
-	
-	public function getDB($db)
-	{
-		if (!isset($this->_dbs[$db]) || !$this->_dbs[$db])
-		{
+
+	public function getDB($db) {
+		if (!isset($this->_dbs[$db]) || !$this->_dbs[$db]) {
 			$this->forceConnect();
 			$this->_dbs[$db] = new Billrun_DB($this->_connection->selectDB($db), $this);
 		}
@@ -25,42 +23,35 @@ class Billrun_Connection extends Mongodloid_Connection {
 		return $this->_dbs[$db];
 	}
 
-	public static function getInstance($server = '', $port = '', $persistent = false)
-	{
+	public static function getInstance($server = '', $port = '', $persistent = false) {
 		static $instances;
 
-		if (!$instances)
-		{
+		if (!$instances) {
 			$instances = array();
 		}
 
-		if (is_bool($server))
-		{
+		if (is_bool($server)) {
 			$persistent = $server;
 			$server = $port = '';
 		}
 
-		if (is_bool($port))
-		{
+		if (is_bool($port)) {
 			$persistent = $port;
 			$port = '';
 		}
 
-		if (is_numeric($port) && $port)
-		{
+		if (is_numeric($port) && $port) {
 			$server .= ':' . $port;
 		}
 
 		$persistent = (bool) $persistent;
 		$server = (string) $server;
 
-		if (!isset($instances[$server]) || !$instances[$server])
-		{
+		if (!isset($instances[$server]) || !$instances[$server]) {
 			$instances[$server] = new Billrun_Connection($server, $persistent);
 		}
 
 		return $instances[$server];
 	}
 
-	
 }

@@ -1,5 +1,4 @@
 ﻿<?php
-
 /**
  * @package         Billing
  * @copyright       Copyright (C) 2012 S.D.O.C. LTD. All rights reserved.
@@ -26,7 +25,6 @@ abstract class Billrun_Responder extends Billrun_Base {
 	 * @var string directory path
 	 */
 	protected $workspace;
-	
 
 	public function __construct($options) {
 
@@ -37,7 +35,6 @@ abstract class Billrun_Responder extends Billrun_Base {
 		} else {
 			$this->workspace = $this->config->response->workspace;
 		}
-
 	}
 
 	/**
@@ -47,5 +44,4 @@ abstract class Billrun_Responder extends Billrun_Base {
 	 */
 	abstract public function respond();
 }
-
 

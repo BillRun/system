@@ -27,7 +27,7 @@ class Billrun_Config {
 	 * @var Yaf_Config
 	 */
 	protected $config;
-	
+
 	/**
 	 * the environment field in config ini file
 	 */
@@ -95,7 +95,7 @@ class Billrun_Config {
 		}
 		return $currConf;
 	}
-	
+
 	/**
 	 * method to receive the environment the app running
 	 * 
@@ -118,7 +118,7 @@ class Billrun_Config {
 		}
 		return false;
 	}
-	
+
 	/**
 	 * method to check if the environment is production
 	 * 

@@ -84,7 +84,7 @@ abstract class Billrun_Base {
 	 * constant of events collection name
 	 */
 	const events_table = 'events';
-	
+
 	/**
 	 * constant for base date format
 	 */
@@ -127,17 +127,16 @@ abstract class Billrun_Base {
 		} else {
 			$this->dispatcher = Billrun_Dispatcher::getInstance();
 		}
-		
+
 		if (isset($options['chain'])) {
 			$this->chain = $options['chain'];
 		} else {
 			$this->chain = Billrun_Dispatcher::getInstance(array('type' => 'chain'));
 		}
-		
+
 		if (isset($options['type'])) {
 			static::$type = $options['type'];
 		}
-
 	}
 
 	/**
@@ -193,9 +192,9 @@ abstract class Billrun_Base {
 
 		$config_type = Yaf_Application::app()->getConfig()->{$type};
 		$called_class = get_called_class();
-		
-		if ($config_type && 
-			isset($config_type->{$called_class::$type}) && 
+
+		if ($config_type &&
+			isset($config_type->{$called_class::$type}) &&
 			isset($config_type->{$called_class::$type}->type)) {
 			$class_type = $config_type[$called_class::$type]['type'];
 			$args = array_merge($args, $config_type->toArray());
@@ -203,11 +202,11 @@ abstract class Billrun_Base {
 		} else {
 			$class_type = $type;
 		}
-		
+
 		$class = $called_class . '_' . ucfirst($class_type);
 		return new $class($args);
 	}
-	
+
 	/**
 	 * method to get config value
 	 * 
