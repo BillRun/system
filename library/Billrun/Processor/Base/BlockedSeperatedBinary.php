@@ -12,15 +12,21 @@
  */
 abstract  class Billrun_Processor_Base_BlockedSeperatedBinary extends Billrun_Processor_Base_Binary {
 	
-	protected $byteData = null;
-	
 	public function process() {
-		$this->dispatcher->trigger('beforeProcessorParsing', array($this));
-
+		
+		// run all over the file with the parser helper
+		if (!is_resource($this->fileHandler)) {
+			$this->log->log("Resource is not configured well", Zend_Log::ERR);
+			return false;
+		}
+		
 		while(!$this->processFinished()) {
+			
 			$this->data['data'] = array();
 			$this->data['header'] = array();
 			$this->data['trailer'] = array();
+			
+			$this->dispatcher->trigger('beforeProcessorParsing', array($this));
 			
 			if ($this->parse() === FALSE) {
 				$this->log->log("Billrun_Processor: cannot parse", Zend_Log::ERR);
@@ -39,8 +45,8 @@ abstract  class Billrun_Processor_Base_BlockedSeperatedBinary extends Billrun_Pr
 				$this->log->log("Billrun_Processor: cannot store the parser lines", Zend_Log::ERR);
 				return false;
 			}
-		}	
-		$this->dispatcher->trigger('afterProcessorStore', array($this));
+			$this->dispatcher->trigger('afterProcessorStore', array($this));
+		}			
 
 		return $this->data['data'];
 	}

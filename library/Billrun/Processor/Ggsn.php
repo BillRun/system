@@ -34,7 +34,7 @@ class Billrun_Processor_Ggsn extends Billrun_Processor_Base_Binary {
 			return false;
 		}
 
-		$this->data['header'] = $this->buildHeader($this->parser->parseHeader(fread($this->fileHandler, self::HEADER_LENGTH)));
+		$this->data['header'] = $this->buildHeader(fread($this->fileHandler, self::HEADER_LENGTH));
 
 		$bytes = null;
 		do {
@@ -50,7 +50,7 @@ class Billrun_Processor_Ggsn extends Billrun_Processor_Base_Binary {
 			$bytes = substr($bytes, $this->parser->getLastParseLength());
 		} while (isset($bytes[self::HEADER_LENGTH]));
 		
-		$this->data['trailer'] = $this->buildTrailer($this->parser->parseTrailer($bytes));
+		$this->data['trailer'] = $this->buildTrailer($bytes);
 
 		return true;
 	}
