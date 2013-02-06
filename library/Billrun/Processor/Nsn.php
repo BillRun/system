@@ -51,7 +51,8 @@ class Billrun_Processor_Nsn extends Billrun_Processor_Base_BlockedSeperatedBinar
 	}
 
 	protected function processFinished() {
-		return feof($this->fileHandler);
+		$stats = fstat($this->fileHandler);
+		return feof($this->fileHandler) || ftell($this->fileHandler) + self::TRAILER_LENGTH >= $stats['size'];
 	}
 }
 ?>

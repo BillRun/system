@@ -44,19 +44,20 @@ class Billrun_Parser_Nsn extends Billrun_Parser_Base_Binary  {
 	
 	public function parse() {
 		$data = array();
+		$offset = 0;
 		$line = $this->getLine();
-
-		$data['record_length'] = $this->parseField($line, array('decimal' => 2));
-		$line = substr($line, 2);
-		$data['record_type'] = $this->parseField($line, array('bcd_encode' => 1));
-		$line = substr($line, 1);
 		
+		$data['record_length'] = $this->parseField(substr($line, $offset, 2), array('decimal' => 2));
+		$offset += 2;	
+		$data['record_type'] = $this->parseField(substr($line, $offset, 1), array('bcd_encode' => 1));
+		$offset += 1;
 		if(isset($this->nsnConfig[$data['record_type']])) {
 			foreach ($this->nsnConfig[$data['record_type']] as $key => $fieldDesc) {
 				if($fieldDesc) {
 					if (isset($this->nsnConfig['fields'][$fieldDesc])) {
-							$data[$key] = $this->parseField($line, $this->nsnConfig['fields'][$fieldDesc]);
-							$line = substr($line, intval(current($this->nsnConfig['fields'][$fieldDesc]), 10));
+							$length = intval(current($this->nsnConfig['fields'][$fieldDesc]), 10);
+							$data[$key] = $this->parseField(substr($line,$offset,$length), $this->nsnConfig['fields'][$fieldDesc]);
+							$offset += $length;
 							//	$this->log->log("Data $key : {$data[$key]}",Zend_log::DEBUG);
 					} else {
 						throw new Exception("Nsn:parse - Couldn't find field: $fieldDesc  ");
