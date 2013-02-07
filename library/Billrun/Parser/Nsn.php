@@ -142,7 +142,6 @@ class Billrun_Parser_Nsn extends Billrun_Parser_Base_Binary  {
 		
 		return $retValue;
 	}
-
 	
 }
 

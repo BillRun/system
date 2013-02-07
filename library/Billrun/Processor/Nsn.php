@@ -25,14 +25,13 @@ class Billrun_Processor_Nsn extends Billrun_Processor_Base_BlockedSeperatedBinar
 		$bytes= null;
 		
 		$headerData = fread($this->fileHandler, self::HEADER_LENGTH);
-		$this->data['header'] = $this->buildHeader($headerData);
-		$header = $this->data['header']['data'];
+		//$this->data['header'] = $this->buildHeader($headerData);
+		$header = $this->parser->parseHeader($headerData);
 		if (isset($header['data_length_in_block']) && !feof($this->fileHandler)) {
 			$bytes = fread($this->fileHandler, $header['data_length_in_block'] - self::HEADER_LENGTH );
 		}
 		
-		do {
-			
+		do {			
 			$row = $this->buildDataRow($bytes);
 			if ($row) {
 				$this->data['data'][] = $row;
@@ -41,7 +40,7 @@ class Billrun_Processor_Nsn extends Billrun_Processor_Base_BlockedSeperatedBinar
 			$bytes = substr($bytes,  $this->parser->getLastParseLength());
 		} while (isset($bytes[self::TRAILER_LENGTH+1]));
 		
-		$this->data['trailer'] = $this->buildTrailer($bytes);
+		//$this->data['trailer'] = $this->buildTrailer($bytes);
 		//align the readhead
 		if((self::RECORD_ALIGNMENT- $header['data_length_in_block']) > 0) {
 			fread($this->fileHandler, (self::RECORD_ALIGNMENT - $header['data_length_in_block']) );
