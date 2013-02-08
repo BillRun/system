@@ -63,7 +63,6 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud {
 		$this->lastSequenceNumber = $sequenceNumber;
 	}
 
-
 	/**
 	 * Detect data usage above an houlrly limit
 	 * @param Mongoldoid_Collection $linesCol the db lines collection

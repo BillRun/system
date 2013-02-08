@@ -33,7 +33,6 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 
 		$resource = $billrun->query()
 			->equals('stamp', $this->getStamp())
-//			->in('account_id', array('7024774','1218460', '8348358'))
 			->notExists('invoice_id');
 
 		foreach ($resource as $entity) {

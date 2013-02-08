@@ -173,6 +173,7 @@ abstract class Billrun_Base {
 	public function getStamp() {
 		return $this->stamp;
 	}
+	
 	/**
 	 * Get the type name of the current object.
 	 * @return string conatining the current.
@@ -199,16 +200,20 @@ abstract class Billrun_Base {
 
 		$config_type = Yaf_Application::app()->getConfig()->{$type};
 		$called_class = get_called_class();
-
-		if ($config_type &&
-			isset($config_type->{$called_class::$type}) &&
-			isset($config_type->{$called_class::$type}->type)) {
-			$class_type = $config_type[$called_class::$type]['type'];
-			$args = array_merge($args, $config_type->toArray());
-			$args['type'] = $type;
-		} else {
-			$class_type = $type;
+		
+		if($called_class && Billrun_Factory::config()->getConfigValue($called_class)) {
+			$args = array_merge($args, Billrun_Factory::config()->getConfigValue($called_class)->toArray());
 		}
+		
+		$class_type = $type;
+		if ( $config_type ) {
+			$args = array_merge($args, $config_type->toArray());
+			if( isset($config_type->{$called_class::$type}) &&
+				isset($config_type->{$called_class::$type}->type)) {
+				$class_type = $config_type[$called_class::$type]['type'];
+				$args['type'] = $type;
+			} 
+		} 
 
 		$class = $called_class . '_' . ucfirst($class_type);
 		return new $class($args);

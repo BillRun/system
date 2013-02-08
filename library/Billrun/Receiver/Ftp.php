@@ -29,12 +29,6 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 	 */
 	protected $ftp_path = '/';
 
-	/**
-	 * the path on the backup
-	 * 
-	 * @param string
-	 */
-	protected $backup_path = '.';
 
 	public function __construct($options) {
 		parent::__construct($options);
@@ -50,9 +44,6 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 			$this->workspace = $options['workspace'];
 		}
 
-		if (isset($options['backup'])) {
-			$this->backup_path = $options['backup'];
-		}
 	}
 
 	/**

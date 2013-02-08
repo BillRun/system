@@ -69,6 +69,7 @@ abstract class Billrun_Responder_Base_Ilds extends Billrun_Responder_Base_LocalD
 
 		return $responsePath;
 	}
+	
 	/**
 	 * 
 	 * @param type $line
