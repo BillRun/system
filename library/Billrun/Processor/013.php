@@ -19,7 +19,7 @@ class Billrun_Processor_013 extends Billrun_Processor_Base_Ilds {
 	 *
 	 * @var string
 	 */
-	static protected $type = "receiver";
+	static protected $type = "013";
 
 	/**
 	 * (Override) Get the type of the currently parsed line.

@@ -69,6 +69,8 @@ abstract class Billrun_Processor extends Billrun_Base {
 		
 		if (isset($options['backup'])) {
 			$this->setBackupPath($options['backup']);
+		} else {
+				$this->setBackupPath( Billrun_Factory::config()->getConfigValue('processor.backup_bas_path', './backups/') . $this->getType());
 		}
 
 	}
@@ -286,6 +288,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 		$this->dispatcher->trigger('processorBeforeFileLoad', array(&$file_path, $this));
 		if (file_exists($file_path)) {
 			$this->filePath = $file_path;
+			$this->filename = substr($file_path, strrpos($file_path, '/'));
 			$this->fileHandler = fopen($file_path, 'r');
 			Billrun_Factory::log()->log("Billrun Processor load the file: " . $file_path, Zend_Log::INFO);
 		} else {
@@ -319,8 +322,9 @@ abstract class Billrun_Processor extends Billrun_Base {
 		} else {
 			$callback = "rename";
 		}
-		
-		return @call_user_func_array($callback, array($this->filePath, $this->backupPath));
+		return @call_user_func_array($callback, array(	$this->filePath, 
+														$this->backupPath . DIRECTORY_SEPARATOR . $this->filename 
+													));
 
 	}
 
