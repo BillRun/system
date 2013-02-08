@@ -173,6 +173,13 @@ abstract class Billrun_Base {
 	public function getStamp() {
 		return $this->stamp;
 	}
+	/**
+	 * Get the type name of the current object.
+	 * @return string conatining the current.
+	 */
+	public function getType() {
+		return static::$type;
+	}
 
 	/**
 	 * Loose coupling of objects in the system

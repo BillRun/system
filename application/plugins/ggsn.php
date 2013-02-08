@@ -11,30 +11,6 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud {
 	protected $name = 'ggsn';
 
 	/**
-	 * Write all the threshold that were broken as events to the db events collection 
-	 * @param type $items the broken  thresholds
-	 * @param type $pluginName the plugin that identified the threshold breakage
-	 * @return type
-	 *
-	public function handlerAlert(&$items,$pluginName) {
-		if($pluginName != $this->getName()) {return;}
-		
-		$db = Billrun_Factory::db();
-		$events = $db->getCollection($db::events_table);
-		//$this->log->log("New Alert For {$item['imsi']}",Zend_Log::DEBUG);
-		$ret = array();
-		foreach($items as &$item) { 
-			$newEvent = new Mongodloid_Entity($item);
-			unset($newEvent['lines_stamps']);
-			$newEvent['source']='ggsn';
-			$newEvent['stamp'] = md5(serialize($newEvent));
-			$item['event_stamp'] = $newEvent['stamp'];
-			$ret[] = $events->save($newEvent);
-		}
-		return $ret; 
-	}*/
-	
-	/**
 	 * method to collect data which need to be handle by event
 	 */
 	public function handlerCollect() {
@@ -50,6 +26,44 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud {
 		return array_merge($dataExceedersAlerts, $hourlyDataExceedersAlerts);
 	}
 	
+	public function afterFTPFileReceived(&$receivedPath, $filename, $receiver) {
+		if($receiver->getType() != 'ggsn') { return; } 
+		
+		$this->verifyFileSequence($filename);
+	}
+	
+	public function handlingLocalFilesReceive($receiver, &$srcPath, $filename) {
+		if($receiver->getType() != 'ggsn') { return; } 
+
+		$this->verifyFileSequence($filename);
+	}
+	
+	/**
+	 * Check that the received files are in the proper order.
+	 * @param $filename the recieve filename.
+	 */
+	protected $lastSequenceNumber = false;
+	protected function verifyFileSequence($filename) {
+		$pregResults = array();
+		if(!preg_match("/\w+_-_(\d+).\d+_-_\d+\+\d+/",$filename, $pregResults) ) {
+				Billrun_Factory::log()->log("GGSN Reciever : Couldnt parse received file : $filename !!!!, last sequence was {$this->lastSequenceNumber}",  Zend_Log::ALERT);			
+		}
+		
+		$sequenceNumber = intval($pregResults[1],10);
+		if($this->lastSequenceNumber) {
+			if( $this->lastSequenceNumber + 1 != $sequenceNumber  ) {
+				$msg = "GGSN Reciever : Received a file out of sequence - for file $filename , last sequence was : {$this->lastSequenceNumber}, current sequence is : {$sequenceNumber} ";
+				//TODO use a common mail agent.
+				if(!mail(Billrun_Factory::config()->getConfigValue('receiver.errors.email.notify'), 'GGSN file out of sequence', $msg)) {
+					Billrun_Factory::log()->log("COULDNT SEND EMAIL!!!!!",  Zend_Log::CRIT);
+				} 
+				Billrun_Factory::log()->log($msg,  Zend_Log::ALERT);
+			}
+		}
+		$this->lastSequenceNumber = $sequenceNumber;
+	}
+
+
 	/**
 	 * Detect data usage above an houlrly limit
 	 * @param Mongoldoid_Collection $linesCol the db lines collection

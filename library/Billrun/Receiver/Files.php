@@ -26,7 +26,7 @@ class Billrun_Receiver_Files extends Billrun_Receiver {
 		if (isset($options['workspace'])) {
 			$this->workspace = $options['workspace'];
 		} else {
-			$this->workspace = $this->config->ilds->path;
+			$this->workspace = Billrun_Factory::config()->getConfigValue('ilds.workspace','./workspace/');
 		}
 	}
 
