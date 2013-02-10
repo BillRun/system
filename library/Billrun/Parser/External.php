@@ -12,11 +12,11 @@
  */
 class Billrun_Parser_External  extends Billrun_Parser_Base_Binary  {
 	public function parse() {
-		return $this->chain->trigger('parseData',array($this->getType(),$this->getLine(), &$this));
+		return $this->chain->trigger('parse',array($this->getType(),$this->getLine(), &$this));
 	}
 
 	public function parseField($data, $fileDesc) {
-		return $this->chain->trigger('parseField', array($this->getType(),$data, $fileDesc, &$this));
+		return $this->chain->trigger('parseSingleField', array($this->getType(),$data, $fileDesc, &$this));
 	}
 
 	public function parseHeader($data) {

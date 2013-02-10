@@ -1,20 +1,15 @@
 <?php
 
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 
 /**
- * Description of IParser
- *
+ * This interface defines the interface needed to add parsing behavior to a plugin.
  * @author eran
  */
 interface Billrun_Plugin_Interface_IParser {
 	
 	public function parse($type, $data, &$parser);
 
-	public function parseField($type, $data, $fileDesc, &$parser);
+	public function parseSingleField($type, $data, $fileDesc, &$parser);
 
 	public function parseHeader($type, $data, &$parser);
 
