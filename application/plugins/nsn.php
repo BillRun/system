@@ -6,14 +6,13 @@
  */
 
 /**
- * Description of Nsn
+ * Description of nsn
  *
  * @author eran
  */
-class Billrun_Parser_Nsn extends Billrun_Parser_Base_Binary  {
-
-	protected $nsnConfig = null;
-
+class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plugin_Interface_IParser {
+	//put your code here
+	
 	public function __construct($options) {
 		parent::__construct($options);
 
@@ -21,7 +20,16 @@ class Billrun_Parser_Nsn extends Billrun_Parser_Base_Binary  {
 
 	}
 	
-	public function parse() {
+	protected function addAlertData($event) {
+		
+	}
+
+	public function handlerCollect() {
+		
+	}
+	
+	//Parser part... 
+	public function parse($type, $data, &$parser) {
 		$data = array();
 		$offset = 0;
 		$line = $this->getLine();
@@ -44,35 +52,12 @@ class Billrun_Parser_Nsn extends Billrun_Parser_Base_Binary  {
 				}
 			}
 		}
-		$this->parsedBytes = $data['record_length'];
+		$parser->parsedBytes = $data['record_length'];
 		
 		return isset($this->nsnConfig[$data['record_type']]) ?  $data : false;
 	}
 
-	public function parseHeader($data) {
-		$header = array();
-		foreach ($this->nsnConfig['block_header'] as $key => $fieldDesc) {
-			$fieldStruct=$this->nsnConfig['fields'][$fieldDesc];
-			$header[$key] = $this->parseField($data, $fieldStruct);
-			$data = substr($data, current($fieldStruct));
-			//$this->log->log("Header $key : {$header[$key]}",Zend_log::DEBUG);
-		}
-		return $header;
-	}
-
-	public function parseTrailer($data) {
-		$trailer = array();
-		foreach ($this->nsnConfig['block_trailer'] as $key => $fieldDesc) {
-			$fieldStruct=$this->nsnConfig['fields'][$fieldDesc];
-			$trailer[$key] = $this->parseField($data, $fieldStruct);
-			$data = substr($data, current($fieldStruct));
-		//$this->log->log("Trailer $key : {$trailer[$key]}",Zend_log::DEBUG);
-		}
-		return $trailer;
-	}
-	
-
-	public function parseField($data, $fileDesc) {
+	public function parseField($type, $data, $fileDesc, &$parser) {
 		$type = key($fileDesc); 
 		$length = $fileDesc[$type];
 		$retValue = '';
@@ -136,9 +121,31 @@ class Billrun_Parser_Nsn extends Billrun_Parser_Base_Binary  {
 				break;
 		}
 		
-		return $retValue;
+		return $retValue;		
 	}
-	
+
+	public function parseHeader($type, $data, &$parser) {
+		$header = array();
+		foreach ($this->nsnConfig['block_header'] as $key => $fieldDesc) {
+			$fieldStruct=$this->nsnConfig['fields'][$fieldDesc];
+			$header[$key] = $this->parseField($data, $fieldStruct);
+			$data = substr($data, current($fieldStruct));
+			$this->log->log("Header $key : {$header[$key]}",Zend_log::DEBUG);
+		}
+		return $header;		
+	}
+
+	public function parseTrailer($type, $data, &$parser) {
+		$trailer = array();
+		foreach ($this->nsnConfig['block_trailer'] as $key => $fieldDesc) {
+			$fieldStruct=$this->nsnConfig['fields'][$fieldDesc];
+			$trailer[$key] = $this->parseField($data, $fieldStruct);
+			$data = substr($data, current($fieldStruct));
+			$this->log->log("Trailer $key : {$trailer[$key]}",Zend_log::DEBUG);
+		}
+		return $trailer;
+	}
+
 }
 
 ?>

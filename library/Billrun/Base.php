@@ -174,6 +174,10 @@ abstract class Billrun_Base {
 	public function getStamp() {
 		return $this->stamp;
 	}
+	
+	public function getType() {
+		return static::$type;
+	}
 
 	/**
 	 * Loose coupling of objects in the system
