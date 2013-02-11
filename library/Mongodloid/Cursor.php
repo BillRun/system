@@ -47,7 +47,7 @@ class Mongodloid_Cursor implements Iterator
 
 	public function sort(array $fields)
 	{
-		return $this->_cursor->sort($fields);
+		$this->_cursor->sort($fields);
 		return $this;
 	}
 
