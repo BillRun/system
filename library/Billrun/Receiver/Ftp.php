@@ -56,7 +56,6 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 		$this->dispatcher->trigger('beforeFTPReceive', array($this));
 
 		$files = $this->ftp->getDirectory($this->ftp_path)->getContents();
-
 		$ret = array();
 		foreach ($files as $file) {
 			if ($file->isFile()) {
@@ -67,8 +66,9 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 				}
 				$received_path = $this->workspace . $file->name;
 				$this->dispatcher->trigger('afterFTPFileReceived', array(&$received_path, $file, $this));
-				$this->logDB($received_path);
-				$ret[] = $received_path;
+				if($this->logDB($received_path)) {
+					$ret[] = $received_path;
+				}
 			}
 		}
 

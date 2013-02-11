@@ -2,7 +2,21 @@
 
 class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud {
 
+	protected $lastSequenceData = false;
+	protected $lastLogFile = false;
+
 	
+	public function __construct($options = array()) {
+		parent::__construct($options);
+		$db = Billrun_Factory::db();
+		$log = $db->getCollection($db::log_table);
+		$lastLogFile = $log->query()->equals('source','ggsn')->exists('received_time')->cursor()->sort(array('received_time' => -1))->limit(1)->rewind()->current();
+		if( isset($lastLogFile['file_name']) ) {
+			$this->lastLogFile = $lastLogFile;
+			$this->lastSequenceData = $this->getFileSequenceData($lastLogFile->get('file_name'));
+		}
+		//print_r($this->lastSequenceData);die();
+	}
 	/**
 	 * plugin name
 	 *
@@ -26,41 +40,63 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud {
 		return array_merge($dataExceedersAlerts, $hourlyDataExceedersAlerts);
 	}
 	
-	public function afterFTPFileReceived(&$receivedPath, $filename, $receiver) {
+	public function afterFTPReceived($receiver,  $filepaths ) {
 		if($receiver->getType() != 'ggsn') { return; } 
 		
-		$this->verifyFileSequence($filename);
-	}
-	
-	public function handlingLocalFilesReceive($receiver, &$srcPath, $filename) {
-		if($receiver->getType() != 'ggsn') { return; } 
-
-		$this->verifyFileSequence($filename);
+		$mailMsg = FALSE;
+		if($filepaths) {
+			foreach($filepaths as $path) {
+				$ret = $this->verifyFileSequence(basename ($path));
+				if($ret) {
+					$mailMsg .= $ret . "\n";
+				}
+			}
+		} else {
+			$timediff = time()- strtotime($this->lastLogFile['received_time']);
+			if($timediff > Billrun_Factory::config()->getConfigValue('ggsn.receiver.max_missing_file_wait',3600) ) {
+				$mailMsg = 'Didn`t received any new GGSN files for more then '.$timediff .' Seconds';
+			}
+		}
+		//If there were anyerrors send an email 
+		//TODO Move this to a common class/Logic to all the billrun Maybe Specific exception handling?
+		if($mailMsg) {
+			if(!mail(Billrun_Factory::config()->getConfigValue('receiver.errors.email.notify'), 'GGSN files receiving erros', $mailMsg)) {
+				Billrun_Factory::log()->log("ggsnPlugin::afterFTPReceived COULDNT SEND ALERT EMAIL!!!!!",  Zend_Log::CRIT);
+			} 
+		}
 	}
 	
 	/**
 	 * Check that the received files are in the proper order.
 	 * @param $filename the recieve filename.
 	 */
-	protected $lastSequenceNumber = false;
 	protected function verifyFileSequence($filename) {
-		$pregResults = array();
-		if(!preg_match("/\w+_-_(\d+).\d+_-_\d+\+\d+/",$filename, $pregResults) ) {
-				Billrun_Factory::log()->log("GGSN Reciever : Couldnt parse received file : $filename !!!!, last sequence was {$this->lastSequenceNumber}",  Zend_Log::ALERT);			
-		}
-		
-		$sequenceNumber = intval($pregResults[1],10);
-		if($this->lastSequenceNumber) {
-			if( $this->lastSequenceNumber + 1 != $sequenceNumber  ) {
-				$msg = "GGSN Reciever : Received a file out of sequence - for file $filename , last sequence was : {$this->lastSequenceNumber}, current sequence is : {$sequenceNumber} ";
+		$msg = FALSE;
+		if(!($sequenceData = $this->getFileSequenceData($filename))) {
+			$msg = "GGSN Reciever : Couldnt parse received file : $filename !!!!, last sequence was". ($this->lastSequenceData ? " : ".$this->lastSequenceData['seq'] : "n't set");
+			Billrun_Factory::log()->log($msg,  Zend_Log::ALERT);			
+			return $msg;
+		}	
+
+		if($this->lastSequenceData) {
+			
+			if( $this->lastSequenceData['date']  == $sequenceData['date'] && $this->lastSequenceData['seq'] + 1 != $sequenceData['seq'] || 
+				 $this->lastSequenceData['date']  != $sequenceData['date'] && $sequenceData['seq'] != 0 ) {
+				$msg = "GGSN Reciever : Received a file out of sequence - for file $filename , last sequence was : {$this->lastSequenceData['seq']}, current sequence is : {$sequenceData['seq']} ";
 				//TODO use a common mail agent.
-				if(!mail(Billrun_Factory::config()->getConfigValue('receiver.errors.email.notify'), 'GGSN file out of sequence', $msg)) {
-					Billrun_Factory::log()->log("COULDNT SEND EMAIL!!!!!",  Zend_Log::CRIT);
-				} 
 				Billrun_Factory::log()->log($msg,  Zend_Log::ALERT);
 			}
 		}
-		$this->lastSequenceNumber = $sequenceNumber;
+		$this->lastSequenceData =  $sequenceData;
+		return $msg;
+	}
+	
+	protected function getFileSequenceData($filename) {
+		$pregResults = array();
+		if(!preg_match("/\w+_-_(\d+)\.(\d+)_-_\d+\+\d+/",$filename, $pregResults) ) {
+						return false;
+		}
+		return array('seq'=> intval($pregResults[1],10), 'date' => $pregResults[2] );
 	}
 
 	/**
