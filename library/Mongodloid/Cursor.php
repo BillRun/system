@@ -37,7 +37,8 @@ class Mongodloid_Cursor implements Iterator
 
 	public function rewind()
 	{
-		return $this->_cursor->rewind();
+		$this->_cursor->rewind();
+		return $this;
 	}
 
 	public function valid()
@@ -51,9 +52,9 @@ class Mongodloid_Cursor implements Iterator
 		return $this;
 	}
 
-	public function limit(int $limit)
+	public function limit($limit)
 	{
-		$this->_cursor->limit($limit);
+		$this->_cursor->limit(intval($limit));
 		return $this;
 	}
 
