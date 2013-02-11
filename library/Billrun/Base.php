@@ -88,7 +88,7 @@ abstract class Billrun_Base {
 	/**
 	 * constant for base date format
 	 */
-	const base_dateformat = 'Y-m-d h:i:s';
+	const base_dateformat = 'Y-m-d H:i:s';
 
 	/**
 	 * constructor
