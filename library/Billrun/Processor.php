@@ -48,7 +48,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 * the file path to process on
 	 * @var file path
 	 */
-	protected $backupPath  = './backup';
+	protected $backupPaths  = array();
 	
 	/**
 	 * constructor - load basic options
@@ -67,10 +67,11 @@ abstract class Billrun_Processor extends Billrun_Base {
 			$this->setParser($options['parser']);
 		}
 		
-		if (isset($options['backup'])) {
-			$this->setBackupPath($options['backup']);
+		if (isset($options['backup_path'])) {
+			$this->setBackupPath($options['backup_path']);
 		} else {
-				$this->setBackupPath( Billrun_Factory::config()->getConfigValue('processor.backup_bas_path', './backups/') . $this->getType());
+			
+				$this->setBackupPath( Billrun_Factory::config()->getConfigValue($this->getType().'.backup_path',array('./backups/'.$this->getType())));
 		}
 
 	}
@@ -89,19 +90,24 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 * 
 	 * @param string $path the backup path
 	 */
-	public function setBackupPath($path) {
+	public function setBackupPath($paths) {
+		$paths = is_array($paths) ? $paths : explode(',',$paths);
+		$this->backupPaths = array();
 		// in case the path is not exists but we can't create it
-		if (!file_exists($path) && !@mkdir($path, 0777, true)) {
-			Billrun_Factory::log()->log("Can't create backup path or is not a directory " . $path, Zend_Log::WARN);
-			return FALSE;
-		}
-		// in case the path exists but it's a file
-		if (!is_dir($path)) {
-			Billrun_Factory::log()->log("The path " . $path . " is not directory", Zend_Log::WARN);
-			return FALSE;
-		}
-				
-		$this->backupPath = $path;
+
+		foreach($paths as $path) {
+			if (!file_exists($path) && !@mkdir($path, 0777, true)) {
+				Billrun_Factory::log()->log("Can't create backup path or is not a directory " . $path, Zend_Log::WARN);
+				return FALSE;
+			}
+			// in case the path exists but it's a file
+			if (!is_dir($path)) {
+				Billrun_Factory::log()->log("The path " . $path . " is not directory", Zend_Log::WARN);
+				return FALSE;
+			}
+			$this->backupPaths[] = $path;
+		}	
+	
 		return TRUE;
 	}
 
@@ -121,9 +127,11 @@ abstract class Billrun_Processor extends Billrun_Base {
 			$this->setStamp($file->getID());
 			$this->loadFile($file->get('path'));
 			$processed_lines = $this->process();
-			$lines = array_merge($lines, $processed_lines);
-			$file->collection($log);
-			$file->set('process_time', date(self::base_dateformat));
+			if($processed_lines) {
+				$lines = array_merge($lines, $processed_lines);
+				$file->collection($log);
+				$file->set('process_time', date(self::base_dateformat));
+			}
 			$this->init();
 		}
 
@@ -170,10 +178,12 @@ abstract class Billrun_Processor extends Billrun_Base {
 
 		$this->dispatcher->trigger('afterProcessorStore', array($this));
 		
-		if ($this->backup() === TRUE) {
-			Billrun_Factory::log()->log("Success backup file " . $this->filePath . " to " . $this->backupPath, Zend_Log::INFO);
-		} else {
-			Billrun_Factory::log()->log("Failed backup file " . $this->filePath . " to " . $this->backupPath, Zend_Log::INFO);
+		for($i=0; $i < count($this->backupPaths) ; $i++) {
+			if ($this->backup($this->backupPaths[$i], $i+1 < count($this->backupPaths)) === TRUE) {
+				Billrun_Factory::log()->log("Success backup file " . $this->filePath . " to " . $this->backupPaths[$i], Zend_Log::INFO);
+			} else {
+				Billrun_Factory::log()->log("Failed backup file " . $this->filePath . " to " . $this->backupPaths[$i], Zend_Log::INFO);
+			}
 		}
 
 		$this->dispatcher->trigger('afterProcessorBackup', array($this));
@@ -311,19 +321,19 @@ abstract class Billrun_Processor extends Billrun_Base {
 	
 	/**
 	 * method to backup the processed file
-	 * 
+	 * @param string $path  the path to backup the file to.
 	 * @param boolean $copy copy or rename (move) the file to backup
 	 * 
 	 * @return boolean return true if success to backup
 	 */
-	protected function backup($copy = false) {
+	protected function backup($path, $copy = false) {
 		if ($copy) {
 			$callback = "copy";
 		} else {
 			$callback = "rename";
 		}
 		return @call_user_func_array($callback, array(	$this->filePath, 
-														$this->backupPath . DIRECTORY_SEPARATOR . $this->filename 
+														$path. DIRECTORY_SEPARATOR . $this->filename 
 													));
 
 	}

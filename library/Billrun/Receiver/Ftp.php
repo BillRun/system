@@ -29,7 +29,14 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 	 */
 	protected $ftp_path = '/';
 
-
+	/**
+	 * A regular expression to identify the files that should be downloaded
+	 * 
+	 * @param string
+	 */
+	protected $filenameRegex = '/.*/';
+	
+	
 	public function __construct($options) {
 		parent::__construct($options);
 
@@ -43,6 +50,11 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 		if (isset($options['workspace'])) {
 			$this->workspace = $options['workspace'];
 		}
+		
+		if (isset($options['ftp']['filename_regex'])) {
+			$this->filenameRegex = $options['ftp']['filename_regex'];
+		}
+
 
 	}
 
@@ -58,7 +70,7 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 		$files = $this->ftp->getDirectory($this->ftp_path)->getContents();
 		$ret = array();
 		foreach ($files as $file) {
-			if ($file->isFile()) {
+			if ($file->isFile() && preg_match($this->filenameRegex, $file->name)) {
 				$this->log->log("FTP: Download file " . $file->name . " from remote host", Zend_Log::INFO);
 				if ($file->saveToPath($this->workspace) === FALSE) {
 					$this->log->log("FTP: failed to download " . $file->name . " from remote host", Zend_Log::ALERT);
@@ -69,6 +81,7 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 				if($this->logDB($received_path)) {
 					$ret[] = $received_path;
 				}
+				$file->delete();
 			}
 		}
 
