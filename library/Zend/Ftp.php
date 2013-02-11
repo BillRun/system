@@ -362,7 +362,17 @@ class Zend_Ftp {
 
 		return $this;
 	}
+	/**
+	 * Delete a file from the ftp server
+	 * 
+	 * @param string $path The path to the file or directory to delete
+	 * @return bool TRUE if the file/directory deletion was successful.
+	 */
+	public function delete($path) {
+		$res = @ftp_delete($this->_connection, $path);
 
+		return $res;
+	}
 	/**
 	 * Converts string permissions into octal format
 	 * 

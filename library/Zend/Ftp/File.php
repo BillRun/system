@@ -197,7 +197,7 @@ class Zend_Ftp_File {
 	 * @return Zend_Ftp_File
 	 */
 	public function delete() {
-		// delete
+		$res = $this->_ftp->delete($this->_path);
 
 		return $this;
 	}
