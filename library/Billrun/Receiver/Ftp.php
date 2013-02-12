@@ -36,12 +36,11 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 	 */
 	protected $filenameRegex = '/.*/';
 	
-	
+	protected $ftpConfig = false;
+
 	public function __construct($options) {
 		parent::__construct($options);
-
-		$this->ftp = Zend_Ftp::connect($options['ftp']['host'], $options['ftp']['user'], $options['ftp']['password']);
-		$this->ftp->setPassive(false);
+		$this->ftpConfig = is_array( $options['ftp']['host'] ) ? Billrun_Util::joinSubArraysOnKey($options['ftp'],2) : array($options['ftp']);
 
 		if (isset($options['ftp']['remote_directory'])) {
 			$this->ftp_path = $options['ftp']['remote_directory'];
@@ -64,30 +63,50 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 	 * @return array list of the files received
 	 */
 	public function receive() {
-
-		$this->dispatcher->trigger('beforeFTPReceive', array($this));
-
-		$files = $this->ftp->getDirectory($this->ftp_path)->getContents();
 		$ret = array();
-		foreach ($files as $file) {
-			if ($file->isFile() && preg_match($this->filenameRegex, $file->name)) {
-				$this->log->log("FTP: Download file " . $file->name . " from remote host", Zend_Log::INFO);
-				if ($file->saveToPath($this->workspace) === FALSE) {
-					$this->log->log("FTP: failed to download " . $file->name . " from remote host", Zend_Log::ALERT);
-					continue;
+		
+		foreach($this->ftpConfig as $hostName => $config) {
+			if(!is_array($config)) { continue; }
+			if(is_numeric($hostName)) { $hostName='';}
+			$this->ftp = Zend_Ftp::connect($config['host'], $config['user'], $config['password']);
+			$this->ftp->setPassive(false);
+
+			$this->dispatcher->trigger('beforeFTPReceive', array($this, $hostName));
+
+			$files = $this->ftp->getDirectory($config['remote_directory'])->getContents();
+
+			foreach ($files as $file) {
+				if ($file->isFile() && $this->isFileValid($file->name,$file->path)) {
+					if($this->isFileReceived($file->name,$this->getType())) {
+							$file->delete();
+							continue;
+					}
+					$this->log->log("FTP: Download file " . $file->name . " from remote host", Zend_Log::INFO);
+					if ($file->saveToPath($this->workspace) === FALSE) {
+						$this->log->log("FTP: failed to download " . $file->name . " from remote host", Zend_Log::ALERT);
+						continue;
+					}
+					$received_path = $this->workspace . $file->name;
+					$this->dispatcher->trigger('afterFTPFileReceived', array(&$received_path, $file, $this, $hostName));
+					if($this->logDB($received_path, $hostName)) {
+						$ret[] = $received_path;
+					}
 				}
-				$received_path = $this->workspace . $file->name;
-				$this->dispatcher->trigger('afterFTPFileReceived', array(&$received_path, $file, $this));
-				if($this->logDB($received_path)) {
-					$ret[] = $received_path;
-				}
-				$file->delete();
 			}
+
+			$this->dispatcher->trigger('afterFTPReceived', array($this, $ret, $hostName));
 		}
-
-		$this->dispatcher->trigger('afterFTPReceived', array($this, $ret));
-
+		
 		return $ret;
+	}
+	
+		
+	/**
+	 * Verify that the file is a valid file. 
+	 * @return boolean false if the file name should not be received true if it should.
+	 */
+	protected function isFileValid($filename, $path) {
+		return preg_match($this->filenameRegex, $filename);
 	}
 
 }

@@ -40,7 +40,7 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud {
 		return array_merge($dataExceedersAlerts, $hourlyDataExceedersAlerts);
 	}
 	
-	public function afterFTPReceived($receiver,  $filepaths ) {
+	public function afterFTPReceived($receiver,  $filepaths , $hostname ) {
 		if($receiver->getType() != 'ggsn') { return; } 
 		
 		$mailMsg = FALSE;

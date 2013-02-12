@@ -56,7 +56,7 @@ abstract class Billrun_Receiver_Base_LocalFiles extends Billrun_Receiver {
 			$ret = array();
 			foreach ($files as $file) {
 				$path = $this->srcPath . DIRECTORY_SEPARATOR . $file;
-				if(!$this->isFileValid($file, $path) || $this->isFileProcessed($file, $type) || is_dir($path) ) { 
+				if(!$this->isFileValid($file, $path) || $this->isFileReceived($file, $type) || is_dir($path) ) { 
 					continue; 
 				}
 				$this->log->log("Billrun_Receiver_Base_LocalFiles::receive - Handaled file {$file}",  Zend_Log::DEBUG);
@@ -91,21 +91,5 @@ abstract class Billrun_Receiver_Base_LocalFiles extends Billrun_Receiver {
 		return $this->workspace . DIRECTORY_SEPARATOR . static::$type;
 	}
 	
-	/**
-	 * Verify that the file is a valid file. 
-	 * @return boolean false if the file name should not be received true if it should.
-	 */
-	protected function isFileValid($filename, $path) {
-		return true;
-	}
-	
-	/**
-	 * method to check if the file already processed
-	 */
-	private function isFileProcessed($filename, $type) {
-		$log = $this->db->getCollection(self::log_table);
-		$resource = $log->query()->equals('source', $type)->equals('file', $filename);
-		return $resource->count() > 0;
-	}
 
 }

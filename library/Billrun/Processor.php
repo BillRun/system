@@ -125,7 +125,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 		$lines = array();
 		foreach ($files as $file) {
 			$this->setStamp($file->getID());
-			$this->loadFile($file->get('path'));
+			$this->loadFile($file->get('path'), $file->get('retreived_from'));
 			$processed_lines = $this->process();
 			if($processed_lines) {
 				$lines = array_merge($lines, $processed_lines);
@@ -179,10 +179,11 @@ abstract class Billrun_Processor extends Billrun_Base {
 		$this->dispatcher->trigger('afterProcessorStore', array($this));
 		
 		for($i=0; $i < count($this->backupPaths) ; $i++) {
-			if ($this->backup($this->backupPaths[$i], $i+1 < count($this->backupPaths)) === TRUE) {
-				Billrun_Factory::log()->log("Success backup file " . $this->filePath . " to " . $this->backupPaths[$i], Zend_Log::INFO);
+			$backupPath = $this->backupPaths[$i] . DIRECTORY_SEPARATOR . $this->retreivedHostname;
+			if ($this->backup( $backupPath , $i+1 < count($this->backupPaths)) === TRUE) {
+				Billrun_Factory::log()->log("Success backup file " . $this->filePath . " to " . $backupPath, Zend_Log::INFO);
 			} else {
-				Billrun_Factory::log()->log("Failed backup file " . $this->filePath . " to " . $this->backupPaths[$i], Zend_Log::INFO);
+				Billrun_Factory::log()->log("Failed backup file " . $this->filePath . " to " . $backupPath, Zend_Log::INFO);
 			}
 		}
 
@@ -294,11 +295,12 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 * 
 	 * @return void
 	 */
-	public function loadFile($file_path) {
+	public function loadFile($file_path, $retrivedHost) {
 		$this->dispatcher->trigger('processorBeforeFileLoad', array(&$file_path, $this));
 		if (file_exists($file_path)) {
 			$this->filePath = $file_path;
 			$this->filename = substr($file_path, strrpos($file_path, '/'));
+			$this->retreivedHostname = $retrivedHost;
 			$this->fileHandler = fopen($file_path, 'r');
 			Billrun_Factory::log()->log("Billrun Processor load the file: " . $file_path, Zend_Log::INFO);
 		} else {
@@ -331,6 +333,10 @@ abstract class Billrun_Processor extends Billrun_Base {
 			$callback = "copy";
 		} else {
 			$callback = "rename";
+		}
+		if(!file_exists($path)) {
+			@mkdir($path, 0777, true);
+			
 		}
 		return @call_user_func_array($callback, array(	$this->filePath, 
 														$path. DIRECTORY_SEPARATOR . $this->filename 

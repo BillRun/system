@@ -49,7 +49,7 @@ class Billrun_Config {
 	 * @return mixed the value in the config
 	 */
 	public function __get($key) {
-		return $this->getConfigValue($key);
+		return $this->config->{$key};
 	}
 
 	/**
@@ -87,7 +87,9 @@ class Billrun_Config {
 			}
 			$currConf = $currConf[$key];
 		}
-		
+		if(is_object($currConf)) {
+			$currConf = $currConf->toArray();
+		}
 		if (isset($retType) && $retType) {
 			settype($currConf, $retType);
 		} else if (strtoupper($type = gettype($defVal)) != 'NULL') {

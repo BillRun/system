@@ -41,7 +41,7 @@ abstract class Billrun_Receiver extends Billrun_Base {
 	 * 
 	 * @todo refactoring this method
 	 */
-	protected function logDB($path) {
+	protected function logDB($path, $remoteHost = '') {
 		if (!isset($this->db)) {
 			$this->log->log("Billrun_Processor:logDB database instance not found", Zend_Log::ERR);
 			return false;
@@ -53,6 +53,7 @@ abstract class Billrun_Receiver extends Billrun_Base {
 			'source' => static::$type,
 			'path' => $path,
 			'file_name' => basename($path),
+			'retreived_from' => $remoteHost,
 		);
 
 		$log_data['stamp'] = md5(serialize($log_data));
@@ -68,4 +69,20 @@ abstract class Billrun_Receiver extends Billrun_Base {
 		return $entity->save($log, true);
 	}
 
+	/**
+	 * method to check if the file already processed
+	 */
+	protected function isFileReceived($filename, $type) {
+		$log = $this->db->getCollection(self::log_table);
+		$resource = $log->query()->equals('source', $type)->equals('file_name', $filename);
+		return $resource->count() > 0;
+	}
+	
+	/**
+	 * Verify that the file is a valid file. 
+	 * @return boolean false if the file name should not be received true if it should.
+	 */
+	protected function isFileValid($filename, $path) {
+		return true;
+	}
 }

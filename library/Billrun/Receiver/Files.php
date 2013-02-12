@@ -18,7 +18,7 @@ class Billrun_Receiver_Files extends Billrun_Receiver {
 	 *
 	 * @var string
 	 */
-	static protected $type = 'files';
+	static protected $type = 'ilds';
 
 	public function __construct($options) {
 		parent::__construct($options);
@@ -46,15 +46,16 @@ class Billrun_Receiver_Files extends Billrun_Receiver {
 			$ret = array();
 			foreach ($files as $file) {
 				$path = $this->workspace . DIRECTORY_SEPARATOR . $type . DIRECTORY_SEPARATOR . $file;
-				if (is_dir($path) || $this->isFileProcessed($file, $type)) {
+				if (is_dir($path) || $this->isFileReceived($file, $type) || !$this->isFileValid($file, $path)) {
 					continue;
 				}
 
 				$this->logDB($path);
 				$ret[] = $path;
-				$this->processFile($path, $type);
-			}
 
+			}
+			
+			$this->processType($type);
 
 		}
 		return $ret;
@@ -62,21 +63,20 @@ class Billrun_Receiver_Files extends Billrun_Receiver {
 
 	/**
 	 * Process an ILD file
-	 * @param $filePath  Path to the filethat needs processing.
 	 * @param $type  the type of the ILD.
 	 */
-	private function processFile($filePath, $type) {
+	private function processType($type) {
 
 		$options = array(
 			'type' => $type,
-			'path' => $filePath,
+			//'path' => $filePath,
 			'parser' => Billrun_Parser::getInstance(array('type' => 'fixed')),
 			'db' => $this->db,
 		);
 
 		$processor = Billrun_Processor::getInstance($options);
 		if ($processor) {
-			$processor->process();
+			$processor->process_files();
 		} else {
 			$this->log->log("error with loading processor", Zend_log::ERR);
 			return false;
@@ -85,17 +85,20 @@ class Billrun_Receiver_Files extends Billrun_Receiver {
 		$data = $processor->getData();
 
 		$this->log->log("Process type: " . $type, Zend_log::INFO);
-		$this->log->log("file path: " . $filePath, Zend_log::INFO);
+	//	$this->log->log("file path: " . $filePath, Zend_log::INFO);
 		$this->log->log((isset($data['data']) ? "import lines: " . count($data['data']) : "no data received"), Zend_log::INFO);
 	}
 
 	/**
 	 * method to check if the file already processed
 	 */
-	private function isFileProcessed($filename, $type) {
+	protected function isFileReceived($filename, $type) {
 		$log = $this->db->getCollection(self::log_table);
-		$resource = $log->query()->equals('type', $type)->equals('file', $filename);
+		$resource = $log->query()->equals('type', $type)->equals('file_name', $filename);
 		return $resource->count() > 0;
 	}
 
+	protected function isFileValid($filename, $path) {
+		return preg_match("/^\w/", $filename);
+	}
 }
