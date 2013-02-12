@@ -99,7 +99,4 @@ class Billrun_Receiver_Files extends Billrun_Receiver {
 		return $resource->count() > 0;
 	}
 
-	protected function isFileValid($filename, $path) {
-		return preg_match("/^\w/", $filename);
-	}
 }

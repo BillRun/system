@@ -42,7 +42,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 * the container work on
 	 * @var array
 	 */
-	protected $data = array();
+	protected $data = array('data' => array() );
 
 	/**
 	 * the file path to process on
@@ -70,8 +70,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 		if (isset($options['backup_path'])) {
 			$this->setBackupPath($options['backup_path']);
 		} else {
-			
-				$this->setBackupPath( Billrun_Factory::config()->getConfigValue($this->getType().'.backup_path',array('./backups/'.$this->getType())));
+			$this->setBackupPath( Billrun_Factory::config()->getConfigValue($this->getType().'.backup_path',array('./backups/'.$this->getType())));
 		}
 
 	}
@@ -143,7 +142,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 * useful when processing files in iterations one after another
 	 */
 	protected function init() {
-		$this->data = array();
+		$this->data = array('data'=> array());
 		if (is_resource($this->fileHandler)) {
 			fclose($this->fileHandler);
 		}
@@ -165,10 +164,6 @@ abstract class Billrun_Processor extends Billrun_Base {
 
 		$this->dispatcher->trigger('afterProcessorParsing', array($this));
 
-		if ($this->logDB() === FALSE) {
-			Billrun_Factory::log()->log("Billrun_Processor: cannot log parsing action", Zend_Log::WARN);
-		}
-
 		$this->dispatcher->trigger('beforeProcessorStore', array($this));
 
 		if ($this->store() === FALSE) {
@@ -176,6 +171,11 @@ abstract class Billrun_Processor extends Billrun_Base {
 			return false;
 		}
 
+		if ($this->logDB() === FALSE) {
+			Billrun_Factory::log()->log("Billrun_Processor: cannot log parsing action", Zend_Log::WARN);
+			return false;
+		}
+		
 		$this->dispatcher->trigger('afterProcessorStore', array($this));
 		
 		for($i=0; $i < count($this->backupPaths) ; $i++) {

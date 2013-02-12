@@ -83,6 +83,7 @@ abstract class Billrun_Receiver extends Billrun_Base {
 	 * @return boolean false if the file name should not be received true if it should.
 	 */
 	protected function isFileValid($filename, $path) {
-		return true;
+		//igonore hidden files
+		return preg_match("/^[^\.]/", $filename);
 	}
 }

@@ -74,11 +74,11 @@ class Billrun_Parser_Egcdr extends Billrun_Parser_Base_Binary {
 					$retArr[$field] = $this->parseField($this->fields[$field], $val);
 				} else {
 					$this->log->log("Couldn`t find field for : $key with type :$type", Zend_Log::DEBUG);
-					$this->log->log("Structure is : " . print_r($struct, 1), Zend_Log::DEBUG);
+				//	$this->log->log("Structure is : " . print_r($struct, 1), Zend_Log::DEBUG);
 				}
 			} else {
-				$this->log->log("Couldn`t find field for : $key with value :" . print_r($val, 1), Zend_Log::DEBUG);
-				$this->log->log("Structure is : " . print_r($struct, 1), Zend_Log::DEBUG);
+				$this->log->log("Couldn`t find field for : $key"/* with value :" . print_r($val, 1)*/, Zend_Log::DEBUG);
+			//	$this->log->log("Structure is : " . print_r($struct, 1), Zend_Log::DEBUG);
 			}
 		}
 
