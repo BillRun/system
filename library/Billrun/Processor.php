@@ -126,7 +126,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 			$this->setStamp($file->getID());
 			$this->loadFile($file->get('path'), $file->get('retreived_from'));
 			$processed_lines = $this->process();
-			if($processed_lines) {
+			if(FALSE !== $processed_lines) {
 				$lines = array_merge($lines, $processed_lines);
 				$file->collection($log);
 				$file->set('process_time', date(self::base_dateformat));
