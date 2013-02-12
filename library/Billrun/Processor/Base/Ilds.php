@@ -49,7 +49,7 @@ class Billrun_Processor_Base_Ilds extends Billrun_Processor {
 					$header['source'] = self::$type;
 					$header['type'] = static::$type;
 					$header['file'] = basename($this->filePath);
-					$header['process_time'] = date('Y-m-d h:i:s');
+					$header['process_time'] = date(self::base_dateformat);
 					$this->data['header'] = $header;
 
 					break;
@@ -68,7 +68,7 @@ class Billrun_Processor_Base_Ilds extends Billrun_Processor {
 					$trailer['type'] = static::$type;
 					$trailer['header_stamp'] = $this->data['header']['stamp'];
 					$trailer['file'] = basename($this->filePath);
-					$trailer['process_time'] = date('Y-m-d h:i:s');
+					$trailer['process_time'] = date(self::base_dateformat);
 					$this->data['trailer'] = $trailer;
 
 					break;
@@ -87,7 +87,7 @@ class Billrun_Processor_Base_Ilds extends Billrun_Processor {
 					$row['type'] = static::$type;
 					$row['header_stamp'] = $this->data['header']['stamp'];
 					$row['file'] = basename($this->filePath);
-					$row['process_time'] = date('Y-m-d h:i:s');
+					$row['process_time'] = date(self::base_dateformat);
 					// hot fix cause this field contain iso-8859-8
 					if (isset($row['country_desc'])) {
 						$row['country_desc'] = mb_convert_encoding($row['country_desc'], 'UTF-8', 'ISO-8859-8');

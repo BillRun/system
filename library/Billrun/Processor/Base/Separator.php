@@ -182,7 +182,7 @@ abstract class Billrun_Processor_Base_Separator extends Billrun_Processor {
 		$trailer['type'] = self::$type;
 		$trailer['header_stamp'] = $this->data['header']['stamp'];
 		$trailer['file'] = basename($this->filePath);
-		$trailer['process_time'] = date('Y-m-d h:i:s');
+		$trailer['process_time'] = date(self::base_dateformat);
 		$this->dispatcher->trigger('afterFooterParsing', array($trailer, $this));
 		$this->data['trailer'] = $trailer;
 		return $trailer;
