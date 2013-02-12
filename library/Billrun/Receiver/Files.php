@@ -42,8 +42,10 @@ class Billrun_Receiver_Files extends Billrun_Receiver {
 				$this->log->log("NOTICE : SKIPPING $type !!! directory " . $this->workspace . DIRECTORY_SEPARATOR . $type . " not found!!", Zend_Log::NOTICE);
 				continue;
 			}
+
 			$files = scandir($this->workspace . DIRECTORY_SEPARATOR . $type);
 			$ret = array();
+			static::$type = $type;
 			foreach ($files as $file) {
 				$path = $this->workspace . DIRECTORY_SEPARATOR . $type . DIRECTORY_SEPARATOR . $file;
 				if (is_dir($path) || $this->isFileReceived($file, $type) || !$this->isFileValid($file, $path)) {
@@ -54,7 +56,6 @@ class Billrun_Receiver_Files extends Billrun_Receiver {
 				$ret[] = $path;
 
 			}
-			
 			$this->processType($type);
 
 		}
