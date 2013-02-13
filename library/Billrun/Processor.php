@@ -124,7 +124,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 		$lines = array();
 		foreach ($files as $file) {
 			$this->setStamp($file->getID());
-			$this->loadFile($file->get('path'), $file->get('retreived_from'));
+			$this->loadFile($file->get('path'), $file->get('retrieved_from'));
 			$processed_lines = $this->process();
 			if(FALSE !== $processed_lines) {
 				$lines = array_merge($lines, $processed_lines);

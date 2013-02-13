@@ -53,7 +53,7 @@ abstract class Billrun_Receiver extends Billrun_Base {
 			'source' => static::$type,
 			'path' => $path,
 			'file_name' => basename($path),
-			'retreived_from' => $remoteHost,
+			'retrieved_from' => $remoteHost,
 		);
 
 		$log_data['stamp'] = md5(serialize($log_data));

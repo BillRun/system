@@ -50,8 +50,8 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 			$this->workspace = $options['workspace'];
 		}
 		
-		if (isset($options['ftp']['filename_regex'])) {
-			$this->filenameRegex = $options['ftp']['filename_regex'];
+		if (isset($options['filename_regex'])) {
+			$this->filenameRegex = $options['filename_regex'];
 		}
 
 
@@ -68,13 +68,26 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 		
 		foreach($this->ftpConfig as $hostName => $config) {
 			if(!is_array($config)) { continue; }
-			$hostRet = array();
+
 			if(is_numeric($hostName)) { $hostName='';}
+			
 			$this->ftp = Zend_Ftp::connect($config['host'], $config['user'], $config['password']);
 			$this->ftp->setPassive(false);
 
 			$this->dispatcher->trigger('beforeFTPReceive', array($this, $hostName));
-
+			$hostRet = $this->receiveFromHost($hostName, $config);
+			$this->dispatcher->trigger('afterFTPReceived', array($this, $hostRet, $hostName));
+			
+			$ret = array_merge($ret, $hostRet);	
+		}
+		
+		$this->dispatcher->trigger('afterFTPReceivedFullRun', array($this, $ret, $hostName));
+		return $ret;
+	}
+	
+	
+	protected function receiveFromHost($hostName,$config) {
+			$ret = array();
 			$files = $this->ftp->getDirectory($config['remote_directory'])->getContents();
 
 			foreach ($files as $file) {
@@ -91,18 +104,12 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 					$received_path = $this->workspace . $file->name;
 					$this->dispatcher->trigger('afterFTPFileReceived', array(&$received_path, $file, $this, $hostName));
 					if($this->logDB($received_path, $hostName)) {
-						$hostRet[] = $received_path;
+						$ret[] = $received_path;
 					}
 				}
 			}
-			$this->dispatcher->trigger('afterFTPReceivedFullRun', array($this, $hostRet, $hostName));
-			$ret = array_merge($ret, $hostRet);	
-		}
-		
-		$this->dispatcher->trigger('afterFTPReceived', array($this, $ret, $hostName));
-		return $ret;
+			return $ret;
 	}
-	
 		
 	/**
 	 * Verify that the file is a valid file. 

@@ -2,9 +2,7 @@
 
 class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud {
 
-	protected $lastSequenceData = false;
-	protected $lastLogFile = false;
-	protected $lastFtpHost = false;
+	protected $hostSequenceCheckers = array();
 	
 	public function __construct($options = array()) {
 		parent::__construct($options);
@@ -31,25 +29,30 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud {
 		
 		return array_merge($dataExceedersAlerts, $hourlyDataExceedersAlerts);
 	}
+	public function beforeFTPReceive($receiver,  $hostname) {
+		if($receiver->getType() != 'ggsn') { return; } 
+		if(!isset($this->hostSequenceCheckers[$hostname])) {
+			$this->hostSequenceCheckers[$hostname] = new Billrun_Common_FileSequenceChecker(array($this,'getFileSequenceData'), $hostname);
+		}
+	}
 	
 	public function afterFTPReceived($receiver,  $filepaths , $hostname ) {
 		if($receiver->getType() != 'ggsn') { return; } 
-		if($this->lastFtpHost != $hostname) {
-			$this->loadLastFileDataFromHost($hostname);
+		if(!isset($this->hostSequenceCheckers[$hostname])) { 
+			throw new Exception('Couldn`t find hostname in sequence checker might be a problem with the program flow.');
 		}
-		
 		$mailMsg = FALSE;
 		if($filepaths) {
 			foreach($filepaths as $path) {
-				$ret = $this->verifyFileSequence(basename ($path));
+				$ret = $this->hostSequenceCheckers[$hostname]->verifyFileSequence(basename($path));
 				if($ret) {
 					$mailMsg .= $ret . "\n";
 				}
 			}
-		} else {
-			$timediff = time()- strtotime($this->lastLogFile['received_time']);
+		} else if ($this->hostSequenceCheckers[$hostname]->lastLogFile) {
+			$timediff = time()- strtotime($this->hostSequenceCheckers[$hostname]->lastLogFile['received_time']);
 			if($timediff > Billrun_Factory::config()->getConfigValue('ggsn.receiver.max_missing_file_wait',3600) ) {
-				$mailMsg = 'Didn`t received any new GGSN files for more then '.$timediff .' Seconds';
+				$mailMsg = 'Didn`t received any new GGSN files form host '.$hostname.' for more then '.$timediff .' Seconds';
 			}
 		}
 		//If there were anyerrors send an email 
@@ -60,50 +63,21 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud {
 			} 
 		}
 	}
-	
+
 	/**
-	 * Check that the received files are in the proper order.
-	 * @param $filename the recieve filename.
+	 * An helper function for the Billrun_Common_FileSequenceChecker  ( helper :) ) class.
+	 * Retrive the ggsn file date and sequence number
+	 * @param type $filename the full file name.
+	 * @return boolea|Array false if the file couldn't be parsed or an array containing the file sequence data
+	 *						[seq] => the file sequence number.
+	 *						[date] => the file date.  
 	 */
-	protected function verifyFileSequence($filename) {
-		$msg = FALSE;
-		if(!($sequenceData = $this->getFileSequenceData($filename))) {
-			$msg = "GGSN Reciever : Couldnt parse received file : $filename !!!!, last sequence was". ($this->lastSequenceData ? " : ".$this->lastSequenceData['seq'] : "n't set");
-			Billrun_Factory::log()->log($msg,  Zend_Log::ALERT);			
-			return $msg;
-		}	
-		if($this->lastSequenceData) {
-			
-			if( $this->lastSequenceData['date']  == $sequenceData['date'] && $this->lastSequenceData['seq'] + 1 != $sequenceData['seq'] || 
-				 $this->lastSequenceData['date']  != $sequenceData['date'] && $sequenceData['seq'] != 0 ) {
-				$msg = "GGSN Reciever : Received a file out of sequence - for file $filename , last sequence was : {$this->lastSequenceData['seq']}, current sequence is : {$sequenceData['seq']} ";
-				//TODO use a common mail agent.
-				Billrun_Factory::log()->log($msg,  Zend_Log::ALERT);
-			}
-		}
-		$this->lastSequenceData =  $sequenceData;
-		return $msg;
-	}
-	
-	protected function getFileSequenceData($filename) {
+	public function getFileSequenceData($filename) {
 		$pregResults = array();
 		if(!preg_match("/\w+_-_(\d+)\.(\d+)_-_\d+\+\d+/",$filename, $pregResults) ) {
 						return false;
 		}
 		return array('seq'=> intval($pregResults[1],10), 'date' => $pregResults[2] );
-	}
-	
-	protected function loadLastFileDataFromHost($host) {
-		$db = Billrun_Factory::db();
-		$log = $db->getCollection($db::log_table);
-		$lastLogFile = $log->query()->equals('source','ggsn')->exists('received_time')
-									->equals('received_from',$host)->
-									cursor()->sort(array('received_time' => -1))->limit(1)->rewind()->current();
-		if( isset($lastLogFile['file_name']) ) {
-			$this->lastLogFile = $lastLogFile;
-			$this->lastSequenceData = $this->getFileSequenceData($lastLogFile->get('file_name'));
-		}
-		$this->lastFtpHost = $host;
 	}
 
 	/**
