@@ -33,7 +33,7 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud {
 	public function beforeFTPReceive($receiver,  $hostname) {
 		if($receiver->getType() != 'ggsn') { return; } 
 		if(!isset($this->hostSequenceCheckers[$hostname])) {
-			$this->hostSequenceCheckers[$hostname] = new Billrun_Common_FileSequenceChecker(array($this,'getFileSequenceData'), $hostname);
+			$this->hostSequenceCheckers[$hostname] = new Billrun_Common_FileSequenceChecker(array($this,'getFileSequenceData'), $hostname, $this->getName() );
 		}
 	}
 	
@@ -43,6 +43,8 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud {
 			throw new Exception('Couldn`t find hostname in sequence checker might be a problem with the program flow.');
 		}
 		$mailMsg = FALSE;
+		
+		sort($filepaths);
 		if($filepaths) {
 			foreach($filepaths as $path) {
 				$ret = $this->hostSequenceCheckers[$hostname]->verifyFileSequence(basename($path));
@@ -94,7 +96,7 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud {
 		$aggregateQuery[0]['$match']['$and'] =  array( array('record_opening_time' => array('$gte' => date('YmdHis',$timeWindow))),
 														array('record_opening_time' => $aggregateQuery[0]['$match']['record_opening_time']) );						
 	
-		unset($aggregateQuery[0]['$match']['sgsn_address']);
+		//unset($aggregateQuery[0]['$match']['sgsn_address']);
 		unset($aggregateQuery[0]['$match']['record_opening_time']);
 		
 		$having =	array(

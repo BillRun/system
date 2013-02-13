@@ -17,11 +17,12 @@ class Billrun_Common_FileSequenceChecker {
 	protected $lastSequenceData = false;
 	protected $getFileSequenceDataCallable = false;
 	protected $hostname = '';
+	protected $type = false;
 	
-	public function __construct( $getFileSequenceDataFunc, $host) {
+	public function __construct( $getFileSequenceDataFunc, $host, $type) {
 		$this->getFileSequenceDataCallable = $getFileSequenceDataFunc;
 		$this->hostname = $host;
-		
+		$this->type = $type;
 		$this->loadLastFileDataFromHost();
 	}
 	
@@ -55,7 +56,7 @@ class Billrun_Common_FileSequenceChecker {
 	protected function loadLastFileDataFromHost() {
 		$db = Billrun_Factory::db();
 		$log = $db->getCollection($db::log_table);
-		$lastLogFile = $log->query()->equals('source','ggsn')->exists('received_time')
+		$lastLogFile = $log->query()->equals('source',$this->type)->exists('received_time')
 									->equals('retrieved_from',$this->hostname)->
 									cursor()->sort(array('received_time' => -1))->limit(1)->rewind()->current();
 		if( isset($lastLogFile['file_name']) ) {
