@@ -4,18 +4,10 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud {
 
 	protected $lastSequenceData = false;
 	protected $lastLogFile = false;
-
+	protected $lastFtpHost = false;
 	
 	public function __construct($options = array()) {
 		parent::__construct($options);
-		$db = Billrun_Factory::db();
-		$log = $db->getCollection($db::log_table);
-		$lastLogFile = $log->query()->equals('source','ggsn')->exists('received_time')->cursor()->sort(array('received_time' => -1))->limit(1)->rewind()->current();
-		if( isset($lastLogFile['file_name']) ) {
-			$this->lastLogFile = $lastLogFile;
-			$this->lastSequenceData = $this->getFileSequenceData($lastLogFile->get('file_name'));
-		}
-		//print_r($this->lastSequenceData);die();
 	}
 	/**
 	 * plugin name
@@ -42,6 +34,9 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud {
 	
 	public function afterFTPReceived($receiver,  $filepaths , $hostname ) {
 		if($receiver->getType() != 'ggsn') { return; } 
+		if($this->lastFtpHost != $hostname) {
+			$this->loadLastFileDataFromHost($hostname);
+		}
 		
 		$mailMsg = FALSE;
 		if($filepaths) {
@@ -77,7 +72,6 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud {
 			Billrun_Factory::log()->log($msg,  Zend_Log::ALERT);			
 			return $msg;
 		}	
-
 		if($this->lastSequenceData) {
 			
 			if( $this->lastSequenceData['date']  == $sequenceData['date'] && $this->lastSequenceData['seq'] + 1 != $sequenceData['seq'] || 
@@ -97,6 +91,19 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud {
 						return false;
 		}
 		return array('seq'=> intval($pregResults[1],10), 'date' => $pregResults[2] );
+	}
+	
+	protected function loadLastFileDataFromHost($host) {
+		$db = Billrun_Factory::db();
+		$log = $db->getCollection($db::log_table);
+		$lastLogFile = $log->query()->equals('source','ggsn')->exists('received_time')
+									->equals('received_from',$host)->
+									cursor()->sort(array('received_time' => -1))->limit(1)->rewind()->current();
+		if( isset($lastLogFile['file_name']) ) {
+			$this->lastLogFile = $lastLogFile;
+			$this->lastSequenceData = $this->getFileSequenceData($lastLogFile->get('file_name'));
+		}
+		$this->lastFtpHost = $host;
 	}
 
 	/**

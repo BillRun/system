@@ -64,9 +64,11 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 	 */
 	public function receive() {
 		$ret = array();
+		$this->dispatcher->trigger('beforeFTPReceiveFullRun', array($this));
 		
 		foreach($this->ftpConfig as $hostName => $config) {
 			if(!is_array($config)) { continue; }
+			$hostRet = array();
 			if(is_numeric($hostName)) { $hostName='';}
 			$this->ftp = Zend_Ftp::connect($config['host'], $config['user'], $config['password']);
 			$this->ftp->setPassive(false);
@@ -89,14 +91,15 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 					$received_path = $this->workspace . $file->name;
 					$this->dispatcher->trigger('afterFTPFileReceived', array(&$received_path, $file, $this, $hostName));
 					if($this->logDB($received_path, $hostName)) {
-						$ret[] = $received_path;
+						$hostRet[] = $received_path;
 					}
 				}
 			}
-
-			$this->dispatcher->trigger('afterFTPReceived', array($this, $ret, $hostName));
+			$this->dispatcher->trigger('afterFTPReceivedFullRun', array($this, $hostRet, $hostName));
+			$ret = array_merge($ret, $hostRet);	
 		}
 		
+		$this->dispatcher->trigger('afterFTPReceived', array($this, $ret, $hostName));
 		return $ret;
 	}
 	
