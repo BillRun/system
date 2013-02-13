@@ -29,6 +29,7 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud {
 		
 		return array_merge($dataExceedersAlerts, $hourlyDataExceedersAlerts);
 	}
+	
 	public function beforeFTPReceive($receiver,  $hostname) {
 		if($receiver->getType() != 'ggsn') { return; } 
 		if(!isset($this->hostSequenceCheckers[$hostname])) {
@@ -113,7 +114,12 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud {
 		}
 		return $exceeders;
 	}
-
+	/**
+	 * Run arrgregation to find excess usgae of data.
+	 * @param type $lines the cdr lines db collection instance.
+	 * @param type $aggregateQuery the general aggregate query.
+	 * @return Array containing all the exceeding events.
+	 */
 	protected function detectDataExceeders($lines,$aggregateQuery) {
 		$limit = floatval(Billrun_Factory::config()->getConfigValue('ggsn.thresholds.datalimit',1000));
 		$dataThrs =	array(
@@ -166,11 +172,11 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud {
 						'type' => 'ggsn',
 						'deposit_stamp' => array('$exists' => false),
 						'event_stamp' => array('$exists' => false),
-						'record_opening_time' => array('$ne' => $charge_time),
+						'record_opening_time' => array('$gt' => $charge_time),
 						'sgsn_address' => array('$regex' => '^(?!62\.90\.|37\.26\.)'),
 						'$or' => array(
-										array('download' => array('$gt' => 0 )),
-										array('upload' => array('$gt' => 0))
+										array('fbc_downlink_volume' => array('$gt' => 0 )),
+										array('fbc_uplink_volume' => array('$gt' => 0))
 									),
 					),
 				),
