@@ -10,9 +10,9 @@ defined('APPLICATION_PATH')
 
 $config = array(
 	'servers' => array(
-		'dev' => array('127.0.0.1', '127.0.1.1'),
+		'dev' => array('127.0.0.1', '127.0.1.1', '::1'),
 		'test' => array('192.168.36.10'),
-		'prod' => '192.168.37.10',
+		'prod' => array('192.168.37.10'),
 	)
 );
 
