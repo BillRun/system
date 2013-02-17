@@ -198,12 +198,14 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 //														"&units={$args['units']}";
 		// TODO: use Zend_Http_Client instead
 		// http://framework.zend.com/manual/1.12/en/zend.http.client.adapters.html#zend.http.client.adapters.curl
-		$url = 'http://' . $this->alertServer . http_build_query($query_args);
+		$url = 'http://' . $this->alertServer . '?' . http_build_query($query_args);
 		$post_array = array_diff($args, $query_args);
+		$post_fields = array(
+			'extra_data' => Zend_Json::encode($post_array)
+		);
 		$client = curl_init($url);
 		curl_setopt($client, CURLOPT_POST, TRUE);
-		curl_setopt($client, CURLOPT_POSTFIELDS, array(
-			'extra_data' => Zend_Json::encode($post_array)));
+		curl_setopt($client, CURLOPT_POSTFIELDS, $post_fields);
 		curl_setopt($client, CURLOPT_RETURNTRANSFER, TRUE);
 		$response = curl_exec($client);
 		curl_close($client);
