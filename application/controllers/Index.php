@@ -116,7 +116,7 @@ class IndexController extends Yaf_Controller_Abstract {
 		}
 
 		$this->outputAdd("Parser selected: " . $options['parser']);
-		$options['parser'] = Billrun_Parser::getInstance(array('type' => $options['parser']));
+		//$options['parser'] = Billrun_Parser::getInstance(array('type' => $options['parser']));
 
 		$this->outputAdd("Loading processor");
 		$processor = Billrun_Processor::getInstance($options);

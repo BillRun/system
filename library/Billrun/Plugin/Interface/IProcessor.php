@@ -5,7 +5,8 @@
  * @author eran
  */
 interface  Billrun_Plugin_Interface_IProcessor {
-	//put your code here
+	public function processData($type, $fileHandle, Billrun_Processor &$processor);
+	public function isProcessingFinished($type, $fileHandle, Billrun_Processor &$processor);
 }
 
 ?>

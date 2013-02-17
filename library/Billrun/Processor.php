@@ -65,7 +65,14 @@ abstract class Billrun_Processor extends Billrun_Base {
 	public function getData() {
 		return $this->data;
 	}
-
+	
+	public function addDataRow( $row ) {
+		if(!isset($this->data['data'])) { $this->data['data'] = array();	}
+		$this->data['data'][] = $row;
+		return true;
+	}
+	
+	
 	/**
 	 * method to run over all the files received which did not have been processed
 	 */
@@ -249,8 +256,12 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 * @return mixed the processor itself (for concatening methods)
 	 */
 	public function setParser($parser) {
-		$this->parser = $parser;
+		$this->parser = Billrun_Parser::getInstance( $parser );
 		return $this;
+	}
+	
+	public function getParser() {
+		return $this->parser;
 	}
 
 //	/**

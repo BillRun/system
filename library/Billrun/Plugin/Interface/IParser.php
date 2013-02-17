@@ -7,13 +7,13 @@
  */
 interface Billrun_Plugin_Interface_IParser {
 	
-	public function parse($type, $data, &$parser);
+	public function parseData($type, $data, Billrun_Parser &$parser);
 
-	public function parseSingleField($type, $data, $fileDesc, &$parser);
+	public function parseSingleField( $type, $data, Array $fieldDesc, Billrun_Parser  &$parser);
 
-	public function parseHeader($type, $data, &$parser);
+	public function parseHeader($type, $data, Billrun_Parser  &$parser);
 
-	public function parseTrailer($type, $data, &$parser);
+	public function parseTrailer( $type, $data, Billrun_Parser  &$parser);
 }
 
 ?>

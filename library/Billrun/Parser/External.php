@@ -12,7 +12,7 @@
  */
 class Billrun_Parser_External  extends Billrun_Parser_Base_Binary  {
 	public function parse() {
-		return $this->chain->trigger('parse',array($this->getType(),$this->getLine(), &$this));
+		return $this->chain->trigger('parseData',array($this->getType(),$this->getLine(), &$this));
 	}
 
 	public function parseField($data, $fileDesc) {
@@ -25,6 +25,14 @@ class Billrun_Parser_External  extends Billrun_Parser_Base_Binary  {
 
 	public function parseTrailer($data) {
 		return $this->chain->trigger('parseTrailer', array($this->getType(),$data, &$this));
+	}
+	
+	/**
+	 * Set the amount of bytes that were parsed on the last parsing run.
+	 * @param $parsedBytes	Containing the count of the bytes that were processed/parsed.
+	 */
+	public function setLastParseLength($parsedBytes) {
+		$this->parsedBytes = $parsedBytes;
 	}
 	
 }
