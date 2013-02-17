@@ -70,7 +70,7 @@ class Billrun_Receiver_Files extends Billrun_Receiver {
 		$options = array(
 			'type' => $type,
 			'path' => $filePath,
-			'parser' => Billrun_Parser::getInstance(array('type' => 'fixed')),
+			'parser' =>'fixed',
 			'db' => $this->db,
 		);
 

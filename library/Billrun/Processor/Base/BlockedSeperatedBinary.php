@@ -19,9 +19,9 @@ abstract  class Billrun_Processor_Base_BlockedSeperatedBinary extends Billrun_Pr
 			$this->log->log("Resource is not configured well", Zend_Log::ERR);
 			return false;
 		}
-		
+		$this->data['trailer'] = array();
 		$this->data['header'] = $this->buildHeader(false);
-			
+		
 		$this->dispatcher->trigger('beforeProcessorParsing', array($this));
 			
 		while(!$this->processFinished()) {
@@ -29,12 +29,14 @@ abstract  class Billrun_Processor_Base_BlockedSeperatedBinary extends Billrun_Pr
 				$this->log->log("Billrun_Processor: cannot parse", Zend_Log::ERR);
 				return false;
 			}
-		}			
-		$this->data['trailer'] = array_merge(	$this->buildTrailer(false),
-												array(
-													'lines_stamp' => md5(serialize($this->data['data'])),
-													'lines_count' => count($this->data['data'])
-													));
+		}
+		
+		$this->data['trailer'] = $this->buildTrailer($this->data['trailer']);
+//		$this->data['trailer'] = array_merge(	$this->buildTrailer(false),
+//												array(
+//													'lines_stamp' => md5(serialize($this->data['data'])),
+//													'lines_count' => count($this->data['data'])
+//													));
 		$this->dispatcher->trigger('afterProcessorParsing', array($this));
 
 		if ($this->logDB() === FALSE) {

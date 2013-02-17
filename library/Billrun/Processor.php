@@ -62,7 +62,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 		}
 	}
 
-	public function getData() {
+	public function &getData() {
 		return $this->data;
 	}
 	
@@ -259,6 +259,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 * @return mixed the processor itself (for concatening methods)
 	 */
 	public function setParser($parser) {
+		$parser = is_array($parser) ? $parser : array('type' => $parser ); 
 		$this->parser = Billrun_Parser::getInstance( $parser );
 		return $this;
 	}

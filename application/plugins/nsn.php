@@ -185,10 +185,17 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 	public function processData($type, $fileHandle, \Billrun_Processor &$processor) {
 		$bytes= null;
 		
+		$processorData = &$processor->getData();
 		$headerData = fread($fileHandle, self::HEADER_LENGTH);
-		//print_r($processor->getParser());die();
-		//$this->data['header'] = $this->buildHeader($headerData);
+		//$this->data['header'] = $this->buildHeader($headerBatch);
 		$header = $processor->getParser()->parseHeader($headerData);
+		//add header- data
+		if(!isset($processorData['header']['blocks'])) {
+			$processorData['header']['blocks'] = array();
+		}
+		$processorData['header']['batch'] = $header['batch_seq_number']; 
+		$processorData['header']['blocks'][] = $header['block_seq_number']; 
+		
 		if (isset($header['data_length_in_block']) && !feof($fileHandle)) {
 			$bytes = fread($fileHandle, $header['data_length_in_block'] - self::HEADER_LENGTH );
 		}
@@ -202,12 +209,17 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 			$bytes = substr($bytes,  $processor->getParser()->getLastParseLength());
 		} while (isset($bytes[self::TRAILER_LENGTH+1]));
 		
-		//$this->data['trailer'] = $this->buildTrailer($bytes);
+		$trailer = $processor->getParser()->parseTrailer($bytes);
 		//align the readhead
 		if((self::RECORD_ALIGNMENT- $header['data_length_in_block']) > 0) {
 			fread($fileHandle, (self::RECORD_ALIGNMENT - $header['data_length_in_block']) );
 		}
-		
+		//add trailer data
+		if(!isset($processorData['trailer']['last_record_no'])) {
+			$processorData['trailer']['last_record_no'] = array();
+		}
+		$processorData['trailer']['last_record_no'][] = $trailer['last_record_number'];		
+
 		return true;
 	}
 	

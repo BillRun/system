@@ -65,7 +65,7 @@ abstract class Billrun_Processor_Base_Binary extends Billrun_Processor {
 	 */
 	public function buildTrailer($data) {
 		$trailer = array();
-		$trailer['data'] = $data ? $this->getParser()->parseTrailer($data) : $data;
+		$trailer['data'] = ($data && !is_array($data)) ? $this->getParser()->parseTrailer($data) : $data;
 		$trailer['type'] = static::$type;
 		$trailer['header_stamp'] = $this->data['header']['stamp'];
 		$trailer['file'] = basename($this->filePath);
