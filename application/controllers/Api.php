@@ -77,7 +77,7 @@ class ApiController extends Yaf_Controller_Abstract {
 	 * method to set how the api output method
 	 */
 	protected function setOutputMethod() {
-		$this->getView()->outputMethod = Billrun_Factory::config()->getConfigValue('api.outputMethod', array());
+		$this->getView()->outputMethod = Billrun_Factory::config()->getConfigValue('api.outputMethod');
 	}
 
 }
