@@ -67,7 +67,10 @@ abstract class Billrun_Processor extends Billrun_Base {
 	}
 	
 	public function addDataRow( $row ) {
-		if(!isset($this->data['data'])) { $this->data['data'] = array();	}
+		if(!isset($this->data['data'])) { 
+			$this->data['data'] = array();	
+		}
+		
 		$this->data['data'][] = $row;
 		return true;
 	}
