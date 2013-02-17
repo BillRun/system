@@ -254,13 +254,17 @@ abstract class Billrun_Processor extends Billrun_Base {
 	/**
 	 * method to set the parser of the processor
 	 * 
-	 * @param Billrun_Parser $parser the parser to use by the processor
+	 * @param Billrun_Parser|string|array $parser the parser to use by the processor or its name.
 	 *
 	 * @return mixed the processor itself (for concatening methods)
 	 */
 	public function setParser($parser) {
-		$parser = is_array($parser) ? $parser : array('type' => $parser ); 
-		$this->parser = Billrun_Parser::getInstance( $parser );
+		if(is_object($parser)) {
+			$this->parser = $parser ;
+		} else {
+			$parser = is_array($parser) ? $parser : array('type' => $parser ); 
+			$this->parser = Billrun_Parser::getInstance( $parser );
+		}
 		return $this;
 	}
 	
