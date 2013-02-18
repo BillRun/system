@@ -93,7 +93,9 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 			foreach ($files as $file) {
 				if ($file->isFile() && $this->isFileValid($file->name,$file->path)) {
 					if($this->isFileReceived($file->name,$this->getType())) {
-							// TODO uncomment in production $file->delete();
+							if(Billrun_Factory::config()->isProd()) {
+								$file->delete();
+							}
 							continue;
 					}
 					$this->log->log("FTP: Download file " . $file->name . " from remote host", Zend_Log::INFO);

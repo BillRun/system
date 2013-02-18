@@ -27,8 +27,8 @@ class Billrun_Dispatcher_Chain extends Billrun_Dispatcher {
 		$ret = array();
 		foreach ($this->observers as $observer) {
 			$observerName = $observer->getName();
-			$ret[$observerName] = $observer->update($this);
-			if ($ret[$observerName] === TRUE) {
+			$ret = $observer->update($this);
+			if ($ret !== FALSE) {
 				break;
 			}
 		}

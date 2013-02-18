@@ -64,6 +64,7 @@ class Billrun_Receiver_Files extends Billrun_Receiver {
 
 	/**
 	 * Process an ILD file
+	 * @param $filePath  Path to the filethat needs processing.
 	 * @param $type  the type of the ILD.
 	 */
 	private function processType($type) {
@@ -71,7 +72,7 @@ class Billrun_Receiver_Files extends Billrun_Receiver {
 		$options = array(
 			'type' => $type,
 			//'path' => $filePath,
-			'parser' => Billrun_Parser::getInstance(array('type' => 'fixed')),
+			'parser' => 'fixed',
 			'db' => $this->db,
 		);
 

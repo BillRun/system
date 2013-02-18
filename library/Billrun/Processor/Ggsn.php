@@ -54,6 +54,7 @@ class Billrun_Processor_Ggsn extends Billrun_Processor_Base_Binary {
 
 		return true;
 	}
+
 }
 
 ?>

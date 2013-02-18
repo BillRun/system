@@ -33,7 +33,14 @@ abstract class Billrun_Responder extends Billrun_Base {
 		if (isset($options['workspace'])) {
 			$this->workspace = $options['workspace'];
 		} else {
-			$this->workspace = $this->config->response->workspace;
+			$this->workspace = Billrun_Factory::config()->getConfigValue('response.workspace');
+		}
+		
+		if (isset($options['backup'])) {
+			$this->workspace = $options['backup'];
+		} else {
+			$defBackup = Billrun_Factory::config()->getConfigValue('response.backup');
+			$this->workspace = Billrun_Factory::config()->getConfigValue(static::type.'.backup', $defBackup);
 		}
 	}
 
