@@ -32,11 +32,7 @@ abstract  class Billrun_Processor_Base_BlockedSeperatedBinary extends Billrun_Pr
 		}
 		
 		$this->data['trailer'] = $this->buildTrailer($this->data['trailer']);
-//		$this->data['trailer'] = array_merge(	$this->buildTrailer(false),
-//												array(
-//													'lines_stamp' => md5(serialize($this->data['data'])),
-//													'lines_count' => count($this->data['data'])
-//													));
+
 		$this->dispatcher->trigger('afterProcessorParsing', array($this));
 
 		if ($this->logDB() === FALSE) {

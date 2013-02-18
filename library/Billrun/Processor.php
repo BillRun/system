@@ -195,14 +195,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 		
 		$this->dispatcher->trigger('afterProcessorStore', array($this));
 		
-		for($i=0; $i < count($this->backupPaths) ; $i++) {
-			$backupPath = $this->backupPaths[$i] . DIRECTORY_SEPARATOR . $this->retreivedHostname;
-			if ($this->backup( $backupPath , $i+1 < count($this->backupPaths)) === TRUE) {
-				Billrun_Factory::log()->log("Success backup file " . $this->filePath . " to " . $backupPath, Zend_Log::INFO);
-			} else {
-				Billrun_Factory::log()->log("Failed backup file " . $this->filePath . " to " . $backupPath, Zend_Log::INFO);
-			}
-		}
+		$this->backup();
 
 		$this->dispatcher->trigger('afterProcessorBackup', array($this));
 		
@@ -344,13 +337,29 @@ abstract class Billrun_Processor extends Billrun_Base {
 	}
 
 	/**
+	 * Backup the current processed file to the proper backup paths
+	 * @param type $move should the file be moved when the backup ends?
+	 */
+	protected function backup($move = true) {
+		for($i=0; $i < count($this->backupPaths) ; $i++) {
+			$backupPath = $this->backupPaths[$i] . DIRECTORY_SEPARATOR . $this->retreivedHostname;
+			if ($this->backupToPath( $backupPath , !($move && $i+1 == count($this->backupPaths)) ) === TRUE) {
+				Billrun_Factory::log()->log("Success backup file " . $this->filePath . " to " . $backupPath, Zend_Log::INFO);
+			} else {
+				Billrun_Factory::log()->log("Failed backup file " . $this->filePath . " to " . $backupPath, Zend_Log::INFO);
+			}
+		}
+	}
+
+
+	/**
 	 * method to backup the processed file
 	 * @param string $path  the path to backup the file to.
 	 * @param boolean $copy copy or rename (move) the file to backup
 	 * 
 	 * @return boolean return true if success to backup
 	 */
-	protected function backup($path, $copy = false) {
+	protected function backupToPath($path, $copy = false) {
 		if ($copy) {
 			$callback = "copy";
 		} else {
@@ -361,9 +370,8 @@ abstract class Billrun_Processor extends Billrun_Base {
 			
 		}
 		return @call_user_func_array($callback, array(	$this->filePath, 
-														$path. DIRECTORY_SEPARATOR . $this->filename 
+														$path . DIRECTORY_SEPARATOR . $this->filename 
 													));
-
 	}
 
 }

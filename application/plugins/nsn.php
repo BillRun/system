@@ -35,10 +35,6 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 		$this->nsnConfig = parse_ini_file(Billrun_Factory::config()->getConfigValue('nsn.config_path'), true);
 
 	}
-	
-	protected function addAlertData(&$event) {
-		
-	}
 
 	public function handlerCollect() {
 		
@@ -46,7 +42,7 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 	
 	//Parser part... 
 	public function parseData($type, $line, Billrun_Parser &$parser) {
-	//	if($type != $this->getName()) {return;}
+		if($type != $this->getName()) {return;}
 		
 		$data = array();
 		$offset = 0;
@@ -75,14 +71,14 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 	}
 
 	public function parseSingleField($type, $data, Array $fileDesc, Billrun_Parser &$parser = null) {
-		//if($type != $this->getName()) {return;}
+		if($type != $this->getName()) {return;}
 
 		return $this->parseField($data, $fileDesc);
 	}
 	
 	public function parseHeader($type, $data, Billrun_Parser &$parser ) {
-	//	if($type != $this->getName()) {return;}
-
+		if($type != $this->getName()) {return;}
+		
 		$header = array();
 		foreach ($this->nsnConfig['block_header'] as $key => $fieldDesc) {
 			$fieldStruct = $this->nsnConfig['fields'][$fieldDesc];
@@ -95,7 +91,7 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 	}
 
 	public function parseTrailer( $type, $data, Billrun_Parser &$parser) {
-	//	if($type != $this->getName()) {return null;}
+		if($type != $this->getName()) {return null;}
 
 		$trailer = array();
 		foreach ($this->nsnConfig['block_trailer'] as $key => $fieldDesc) {
@@ -185,13 +181,8 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 	public function processData($type, $fileHandle, \Billrun_Processor &$processor) {
 		$bytes= null;
 		
-		$processorData = &$processor->getData();
 		$headerData = fread($fileHandle, self::HEADER_LENGTH);
-		//$this->data['header'] = $this->buildHeader($headerBatch);
 		$header = $processor->getParser()->parseHeader($headerData);
-		//add header- data
-		
-		
 		if (isset($header['data_length_in_block']) && !feof($fileHandle)) {
 			$bytes = fread($fileHandle, $header['data_length_in_block'] - self::HEADER_LENGTH );
 		}
@@ -201,7 +192,6 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 			if ($row) {
 				$processor->addDataRow( $row );
 			}
-
 			$bytes = substr($bytes,  $processor->getParser()->getLastParseLength());
 		} while (isset($bytes[self::TRAILER_LENGTH+1]));
 		
@@ -210,8 +200,11 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 		if((self::RECORD_ALIGNMENT- $header['data_length_in_block']) > 0) {
 			fread($fileHandle, (self::RECORD_ALIGNMENT - $header['data_length_in_block']) );
 		}
+		
 		//add trailer data
+		$processorData = &$processor->getData();
 		$processorData['trailer'] = $this->updateBlockData($trailer, $header, $processorData['trailer']);
+
 		return true;
 	}
 	
@@ -229,6 +222,10 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 															'first_record_number' => $header['first_record_number'],
 															'seq_no' =>  $header['block_seq_number']); 
 		return $logTrailer;
+	}
+	
+	protected function addAlertData(&$event) {
+		
 	}
 }
 
