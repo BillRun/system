@@ -40,7 +40,9 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 		
 	}
 	
-	//Parser part... 
+	/**
+	 * @see Billrun_Plugin_Interface_IParser::parseData
+	 */
 	public function parseData($type, $line, Billrun_Parser &$parser) {
 		if($type != $this->getName()) {return;}
 		
@@ -69,13 +71,17 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 		
 		return isset($this->nsnConfig[$data['record_type']]) ?  $data : false;
 	}
-
+	/**
+	 * @see Billrun_Plugin_Interface_IParser::parseSingleField
+	 */
 	public function parseSingleField($type, $data, Array $fileDesc, Billrun_Parser &$parser = null) {
 		if($type != $this->getName()) {return;}
 
 		return $this->parseField($data, $fileDesc);
 	}
-	
+		/**
+	 * @see Billrun_Plugin_Interface_IParser::parseHeader
+	 */
 	public function parseHeader($type, $data, Billrun_Parser &$parser ) {
 		if($type != $this->getName()) {return;}
 		
@@ -89,7 +95,10 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 
 		return $header;		
 	}
-
+	
+	/**
+	 * @see Billrun_Plugin_Interface_IParser::parseTrailer
+	 */
 	public function parseTrailer( $type, $data, Billrun_Parser &$parser) {
 		if($type != $this->getName()) {return null;}
 
@@ -103,6 +112,12 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 		return $trailer;
 	}
 
+	/**
+	 * parse a field from raw data based on a field description
+	 * @param string $data the raw data to be parsed.
+	 * @param array $fileDesc the field description
+	 * @return mixed the parsed value from the field.
+	 */
 	protected function parseField($data, $fileDesc) {
 		$type = key($fileDesc); 
 		$length = $fileDesc[$type];
@@ -170,6 +185,9 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 		return $retValue;		
 	}
 
+	/**
+	 * @see Billrun_Plugin_Interface_IProcessor::isProcessingFinished
+	 */
 	public function isProcessingFinished($type, $fileHandle, \Billrun_Processor &$processor) {
 		if(!$this->fileStats) {
 			$this->fileStats = fstat($fileHandle);
@@ -177,7 +195,10 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 		return feof($fileHandle) ||
 				ftell($fileHandle) + self::TRAILER_LENGTH >= $this->fileStats['size'];
 	}
-
+	
+	/**
+	 * @see Billrun_Plugin_Interface_IProcessor::processData
+	 */
 	public function processData($type, $fileHandle, \Billrun_Processor &$processor) {
 		$bytes= null;
 		
@@ -208,6 +229,13 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 		return true;
 	}
 	
+	/**
+	 * Add block related data from the processor to the log DB collection entry.
+	 * @param type $trailer the block header data
+	 * @param type $header the block tralier
+	 * @param type $logTrailer the log db trailer entry of the paresed file
+	 * @return the updated log  trailer entry. 
+	 */
 	protected function updateBlockData($trailer,$header,$logTrailer) {
 		if(!isset($logTrailer['block_data'])) {
 			$logTrailer['block_data'] = array();

@@ -49,40 +49,29 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$retValue = array(
 			);
 		//Aggregate the  events by imsi  taking only the first one.
-		$events = $eventsCol->aggregate(array(
-			'$match' => array(
-				'notify_time' => array(
-					'$exists' => false),
-				'source' => array(
-					'$in' => array(
-						'nrtrde',
-						'ggsn',
-						'deposit',
-						'ilds')))), array(
-			'$sort' => array(
-				'imsi' => 1,
-				'msisdn' => 1)), array(
-			'$group' => array(
-				'_id' => array(
-					'imsi' => '$imsi',
-					'msisdn' => '$msidn'),
-				'id' => array(
-					'$addToSet' => '$_id'),
-				'imsi' => array(
-					'$first' => '$imsi'),
-				'value' => array(
-					'$first' => '$value'),
-				'event_type' => array(
-					'$first' => '$event_type'),
-				'units' => array(
-					'$first' => '$units'),
-				'msisdn' => array(
-					'$first' => '$msisdn'),
-				'threshold' => array(
-					'$first' => '$threshold'),
-				'deposit_stamp' => array(
-					'$first' => '$_id'),
-			),));
+		$events = $eventsCol->aggregate(
+			array(
+					'$match' => array(
+							'notify_time' => array(	'$exists' => false),
+							'source' => array( '$in' => array( 'nrtrde','ggsn', 'deposit','ilds'))
+					)
+				), 
+			array(
+					'$sort' => array( 'imsi' => 1, 'msisdn' => 1)
+				), 
+			array(
+					'$group' => array(
+							'_id' => array( 'imsi' => '$imsi', 'msisdn' => '$msidn'),
+							'id' => array( '$addToSet' => '$_id'),
+							'imsi' => array( '$first' => '$imsi'),
+							'value' => array( '$first' => '$value'),
+							'event_type' => array( '$first' => '$event_type'),
+							'units' => array( '$first' => '$units'),
+							'msisdn' => array( '$first' => '$msisdn'),
+							'threshold' => array( '$first' => '$threshold'),
+							'deposit_stamp' => array( '$first' => '$_id'),
+						),
+				));
 
 		foreach ($events as $event) {
 			if (isset($event['imsi']) && $event['imsi']) {
@@ -190,12 +179,6 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 			Billrun_Log::getInstance()->log("fraudAlertsPlugin::notifyOnEvent cannot find IMSI nor NDC_SN", Zend_Log::DEBUG);
 		}
 
-//		$url = $this->alertServer."?event_type={$args['event_type']}".
-//														(isset($args['imsi']) && $args['imsi'] ? "&IMSI={$args['imsi']}" : "").
-//														(isset($args['msisdn']) && $args['msisdn'] ?"&NDC_SN={$args['msisdn']}" : "").
-//														"&threshold={$args['threshold']}".
-//														"&usage={$args['value']}".
-//														"&units={$args['units']}";
 		// TODO: use Zend_Http_Client instead
 		// http://framework.zend.com/manual/1.12/en/zend.http.client.adapters.html#zend.http.client.adapters.curl
 		$url = 'http://' . $this->alertServer . '?' . http_build_query($query_args);

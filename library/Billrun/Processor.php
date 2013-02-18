@@ -342,7 +342,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 */
 	protected function backup($move = true) {
 		for($i=0; $i < count($this->backupPaths) ; $i++) {
-			$backupPath = $this->backupPaths[$i] . DIRECTORY_SEPARATOR . $this->retreivedHostname;
+			$backupPath = $this->retreivedHostname ?  $this->backupPaths[$i] . DIRECTORY_SEPARATOR . $this->retreivedHostname : $this->backupPaths[$i];
 			if ($this->backupToPath( $backupPath , !($move && $i+1 == count($this->backupPaths)) ) === TRUE) {
 				Billrun_Factory::log()->log("Success backup file " . $this->filePath . " to " . $backupPath, Zend_Log::INFO);
 			} else {
