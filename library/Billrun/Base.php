@@ -203,19 +203,18 @@ abstract class Billrun_Base {
 		$called_class = get_called_class();
 		
 		if($called_class && Billrun_Factory::config()->getConfigValue($called_class)) {
-			$args = array_merge($args, Billrun_Factory::config()->getConfigValue($called_class)->toArray());
+			$args = array_merge( Billrun_Factory::config()->getConfigValue($called_class)->toArray(),$args);
 		}
 		
 		$class_type = $type;
 		if ( $config_type ) {
-			$args = array_merge($args, $config_type->toArray());
+			$args = array_merge( $config_type->toArray(),$args);
 			if( isset($config_type->{$called_class::$type}) &&
 				isset($config_type->{$called_class::$type}->type)) {
 				$class_type = $config_type[$called_class::$type]['type'];
 				$args['type'] = $type;
 			} 
 		} 
-
 		$class = $called_class . '_' . ucfirst($class_type);
 		return new $class($args);
 	}

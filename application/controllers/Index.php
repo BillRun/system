@@ -292,6 +292,8 @@ class IndexController extends Yaf_Controller_Abstract {
 					return null;
 				} else if(true !== $defVal) {
 					$options[$key] = $defVal ;
+				} else {
+					unset($options[$key] );
 				}
 			}
 		}
