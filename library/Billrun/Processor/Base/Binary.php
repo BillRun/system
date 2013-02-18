@@ -26,9 +26,9 @@ abstract class Billrun_Processor_Base_Binary extends Billrun_Processor {
 	 * @param $data  the header record data.
 	 * @return Array an array to be used as the header data record.
 	 */
-	protected function buildHeader($data) {
+	public function buildHeader($data) {
 		$header = array();
-		$header['data'] = utf8_encode($data);
+		$header['data'] = $data ? $this->getParser()->parseHeader($data) : $data;
 		$header['type'] = static::$type;
 		$header['file'] = basename($this->filePath);
 		$header['stamp'] = md5(serialize($header));
@@ -42,9 +42,10 @@ abstract class Billrun_Processor_Base_Binary extends Billrun_Processor {
 	 * @param $data the raw row data
 	 * @return Array that conatins all the parsed and processed data.
 	 */
-	protected function buildDataRow($data) {
-		$this->parser->setLine($data);
-		$rawRow = $this->parser->parse();
+	public function buildDataRow($data) {
+		$row = false;
+		$this->getParser()->setLine($data);
+		$rawRow = $this->getParser()->parse();
 		if ($rawRow) {
 			$row = $this->filterFields($rawRow);
 			$row['type'] = static::$type;
@@ -62,9 +63,9 @@ abstract class Billrun_Processor_Base_Binary extends Billrun_Processor {
 	 * @param $data  the trailer record data.
 	 * @return Array an array to be used as the trailer data record.
 	 */
-	protected function buildTrailer($data) {
+	public function buildTrailer($data) {
 		$trailer = array();
-		$trailer['data'] = utf8_encode($data);
+		$trailer['data'] = ($data && !is_array($data)) ? $this->getParser()->parseTrailer($data) : $data;
 		$trailer['type'] = static::$type;
 		$trailer['header_stamp'] = $this->data['header']['stamp'];
 		$trailer['file'] = basename($this->filePath);
@@ -84,10 +85,13 @@ abstract class Billrun_Processor_Base_Binary extends Billrun_Processor {
 	protected function filterFields($rawRow) {
 		$row = array();
 		
-		$requiredFieldsConfig = Billrun_Factory::config()->getConfigValue( static::$type.'.fields_filter');
-		if($requiredFieldsConfig) {
-			$requireFields = explode(',', $requiredFieldsConfig);
-			foreach($requireFields as $field) {
+//		$requiredFieldsConfig = Billrun_Factory::config()->getConfigValue( static::$type.'.fields_filter');
+//		if($requiredFieldsConfig) {
+//			$requireFields = explode(',', $requiredFieldsConfig);
+//			foreach($requireFields as $field) {
+		$requiredFields = Billrun_Factory::config()->getConfigValue( static::$type.'.fields_filter',false,'array');
+		if($requiredFields) {
+			foreach($requiredFields as $field) {
 				if(isset($rawRow[$field])) {
 					$row[$field] = $rawRow[$field];
 				}
@@ -98,4 +102,5 @@ abstract class Billrun_Processor_Base_Binary extends Billrun_Processor {
 		
 		return $row;
 	}
+	
 }

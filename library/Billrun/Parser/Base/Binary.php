@@ -43,5 +43,11 @@ abstract class Billrun_Parser_Base_Binary extends Billrun_Parser {
 	public function getLine() {
 		return $this->line;
 	}
+	
+	abstract public function parseHeader($data);
+	
+	abstract public function parseTrailer($data);
+	
+	abstract public function parseField($data, $fileDesc);
 
 }

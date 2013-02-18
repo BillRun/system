@@ -137,6 +137,7 @@ abstract class Billrun_Base {
 		if (isset($options['type'])) {
 			static::$type = $options['type'];
 		}
+
 	}
 
 	/**

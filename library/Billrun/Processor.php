@@ -80,8 +80,21 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 * 
 	 * @return array items 
 	 */
-	public function getData() {
+	public function &getData() {
 		return $this->data;
+	}
+
+	public function addDataRow( $row ) {
+		if(!isset($this->data['data'])) { 
+			$this->data['data'] = array();	
+		}
+		
+		$this->data['data'][] = $row;
+		return true;
+	}
+	
+	public function getParser() {
+		return $this->parser;
 	}
 
 	/**
@@ -146,8 +159,8 @@ abstract class Billrun_Processor extends Billrun_Base {
 		if (is_resource($this->fileHandler)) {
 			fclose($this->fileHandler);
 		}
-	}
 
+	}
 	/**
 	 * method to process file by the processor parser
 	 * 
@@ -163,6 +176,10 @@ abstract class Billrun_Processor extends Billrun_Base {
 		}
 
 		$this->dispatcher->trigger('afterProcessorParsing', array($this));
+
+		if ($this->logDB() === FALSE) {
+			$this->log->log("Billrun_Processor: cannot log parsing action", Zend_Log::WARN);
+		}
 
 		$this->dispatcher->trigger('beforeProcessorStore', array($this));
 
@@ -312,15 +329,20 @@ abstract class Billrun_Processor extends Billrun_Base {
 	/**
 	 * method to set the parser of the processor
 	 * 
-	 * @param Billrun_Parser $parser the parser to use by the processor
+	 * @param Billrun_Parser|string|array $parser the parser to use by the processor or its name.
 	 *
 	 * @return mixed the processor itself (for concatening methods)
 	 */
 	public function setParser($parser) {
-		$this->parser = $parser;
+		if(is_object($parser)) {
+			$this->parser = $parser ;
+		} else {
+			$parser = is_array($parser) ? $parser : array('type' => $parser ); 
+			$this->parser = Billrun_Parser::getInstance( $parser );
+		}
 		return $this;
 	}
-	
+
 	/**
 	 * method to backup the processed file
 	 * @param string $path  the path to backup the file to.
