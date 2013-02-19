@@ -85,7 +85,12 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 		return $ret;
 	}
 	
-	
+	/**
+	 * receive files from the ftp host.
+	 * @param type $hostName the ftp hostname/alias
+	 * @param type $config the ftp configuration
+	 * @return array conatining the path to the received files.
+	 */
 	protected function receiveFromHost($hostName,$config) {
 			$ret = array();
 			$files = $this->ftp->getDirectory($config['remote_directory'])->getContents();
