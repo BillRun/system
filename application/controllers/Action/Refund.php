@@ -53,7 +53,7 @@ class RefundAction extends Action_Base {
 			}
 		}
 		
-		$post['stamp'] = Billrun_Util::generateStamp($post);
+		$post['stamp'] = Billrun_Util::generateArrayStamp($post);
 		$post['process_time'] = Billrun_Util::generateCurrentTime();
 		$db = Billrun_Factory::db();
 		$linesCollection = $db->getCollection(Billrun_Db::lines_table);

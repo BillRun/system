@@ -49,10 +49,20 @@ class Billrun_Util {
 		return $retArr;
 	}
 	
-	public static function generateStamp($ar) {
+	/**
+	 * generate array stamp
+	 * @param array $ar array to generate the stamp from
+	 * @return string the array stamp
+	 */
+	public static function generateArrayStamp($ar) {
 		return md5(serialize($ar));
 	}
 	
+	/**
+	 * generate current time from the base time date format
+	 * 
+	 * @return string the current date time formatted by the system default format
+	 */
 	public static function generateCurrentTime() {
 		return date(Billrun_Base::base_dateformat);
 	}

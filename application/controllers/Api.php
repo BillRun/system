@@ -60,7 +60,6 @@ class ApiController extends Yaf_Controller_Abstract {
 	 */
 	public function setOutput() {
 		$args = func_get_args();
-//		print_R($args);die;
 		if (count($args) == 2) {
 			$key = $args[0];
 			$value = $args[1];
