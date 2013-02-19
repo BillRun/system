@@ -58,7 +58,7 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud {
 				$mailMsg = 'Didn`t received any new GGSN files form host '.$hostname.' for more then '.$timediff .' Seconds';
 			}
 		}
-		//If there were anyerrors send an email 
+		//If there were any errors send an email 
 		//TODO Move this to a common class/Logic to all the billrun Maybe Specific exception handling?
 		if($mailMsg) {
 			if(!mail(Billrun_Factory::config()->getConfigValue('receiver.errors.email.notify'), 'GGSN files receiving erros', $mailMsg)) {
@@ -116,6 +116,7 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud {
 		}
 		return $exceeders;
 	}
+	
 	/**
 	 * Run arrgregation to find excess usgae of data.
 	 * @param type $lines the cdr lines db collection instance.
@@ -142,6 +143,12 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud {
 		return $dataAlerts;
 	}
 	
+	/**
+	 * detected data duration usage exceeders.
+	 * @param type $lines the cdr lines db collection instance.
+	 * @param type $aggregateQuery the general aggregate query.
+	 * @return Array containing all the exceeding  duration events.
+	 */
 	protected function detectDurationExceeders($lines,$aggregateQuery) {
 		$threshold = floatval(Billrun_Factory::config()->getConfigValue('ggsn.thresholds.duration',2400));
 		unset($aggregateQuery[0]['$match']['$or']);

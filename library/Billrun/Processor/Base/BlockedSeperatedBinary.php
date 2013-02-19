@@ -32,11 +32,7 @@ abstract  class Billrun_Processor_Base_BlockedSeperatedBinary extends Billrun_Pr
 		}
 		
 		$this->data['trailer'] = $this->buildTrailer($this->data['trailer']);
-//		$this->data['trailer'] = array_merge(	$this->buildTrailer(false),
-//												array(
-//													'lines_stamp' => md5(serialize($this->data['data'])),
-//													'lines_count' => count($this->data['data'])
-//													));
+
 		$this->dispatcher->trigger('afterProcessorParsing', array($this));
 
 		if ($this->logDB() === FALSE) {
@@ -51,15 +47,7 @@ abstract  class Billrun_Processor_Base_BlockedSeperatedBinary extends Billrun_Pr
 		}
 		$this->dispatcher->trigger('afterProcessorStore', array($this));
 
-			
-		for($i=0; $i < count($this->backupPaths) ; $i++) {
-			$backupPath = $this->backupPaths[$i] . DIRECTORY_SEPARATOR . $this->retreivedHostname;
-			if ($this->backup( $backupPath , $i+1 < count($this->backupPaths)) === TRUE) {
-				Billrun_Factory::log()->log("Success backup file " . $this->filePath . " to " . $backupPath, Zend_Log::INFO);
-			} else {
-				Billrun_Factory::log()->log("Failed backup file " . $this->filePath . " to " . $backupPath, Zend_Log::INFO);
-			}
-		}
+		$this->backup();
 		
 		$this->dispatcher->trigger('afterProcessorBackup', array($this));
 		

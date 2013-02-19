@@ -11,6 +11,8 @@
  * @author eran
  */
 class Billrun_Parser_External  extends Billrun_Parser_Base_Binary  {
+	static protected $type = "external";
+
 	public function parse() {
 		return $this->chain->trigger('parseData',array($this->getType(), $this->getLine(), &$this));
 	}

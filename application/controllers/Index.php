@@ -72,7 +72,6 @@ class IndexController extends Yaf_Controller_Abstract {
 
 	protected function outputAdd($content) {
 		Billrun_Log::getInstance()->log($content, Zend_Log::INFO);
-//		$this->getView()->output .= $content . $this->eol;
 	}
 
 	protected function receive($opts) {
@@ -84,7 +83,6 @@ class IndexController extends Yaf_Controller_Abstract {
 
 
 		$options = $this->getInstanceOptions($opts, $posibleOptions);
-//		$options['db'] = 0; //temporary hack for testing
 		$this->outputAdd("Loading receiver");
 		$receiver = Billrun_Receiver::getInstance($options);
 		$this->outputAdd("Receiver loaded");
@@ -292,6 +290,8 @@ class IndexController extends Yaf_Controller_Abstract {
 					return null;
 				} else if(true !== $defVal) {
 					$options[$key] = $defVal ;
+				} else {
+					unset($options[$key] );
 				}
 			}
 		}
