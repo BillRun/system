@@ -48,5 +48,13 @@ class Billrun_Util {
 		}
 		return $retArr;
 	}
+	
+	public static function generateStamp($ar) {
+		return md5(serialize($ar));
+	}
+	
+	public static function generateCurrentTime() {
+		return date(Billrun_Base::base_dateformat);
+	}
 
 }
