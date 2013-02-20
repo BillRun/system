@@ -78,6 +78,17 @@ class Billrun_Factory {
 	}
 	
 	/**
+	 * method to retreive the a mailer instance
+	 * 
+	 * @return Billrun_Db
+	 */
+	static public function mailer() {
+		$mail = new Zend_Mail();
+		//TODO set common configuration. 
+		return $mail;
+	}
+	
+	/**
 	 * method to retreive the dispatcher instance
 	 * 
 	 * @return Billrun_Dispatcher

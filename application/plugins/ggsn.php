@@ -61,7 +61,11 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud {
 		//If there were any errors send an email 
 		//TODO Move this to a common class/Logic to all the billrun Maybe Specific exception handling?
 		if($mailMsg) {
-			if(!mail(Billrun_Factory::config()->getConfigValue('receiver.errors.email.notify'), 'GGSN files receiving erros', $mailMsg)) {
+			$mailer = Billrun_Factory::mailer();
+			$mailer->addTo(Billrun_Factory::config()->getConfigValue('receiver.errors.email.notify','root'));
+			$mailer->setSubject('GGSN files receiving erros');
+			$mailer->setBodyText($mailMsg);
+			if(!$mailer->send()) {
 				Billrun_Factory::log()->log("ggsnPlugin::afterFTPReceived COULDNT SEND ALERT EMAIL!!!!!",  Zend_Log::CRIT);
 			} 
 		}
