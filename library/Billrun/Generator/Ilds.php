@@ -65,6 +65,7 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 		$resource = $lines->query()
 			->equals('billrun', $this->getStamp())
 			->equals('subscriber_id', "$subscriber_id")
+			->notExists('billrun_excluded')
 			->cursor()->sort(array('call_start_dt' => 1));
 			
 		foreach ($resource as $entity) {
