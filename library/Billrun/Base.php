@@ -142,7 +142,7 @@ abstract class Billrun_Base {
 
 	/**
 	 * set database of the basic object
-	 *
+	 * @deprecated since version 0.1.1
 	 * @param resource $db the database instance to set
 	 *
 	 * @return mixed self instance

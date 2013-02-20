@@ -35,9 +35,78 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 		$this->nsnConfig = parse_ini_file(Billrun_Factory::config()->getConfigValue('nsn.config_path'), true);
 
 	}
-
+	/**
+	 * @see Billrun_Plugin_BillrunPluginFraud::handlerCollect
+	 */
 	public function handlerCollect() {
+		$monthlyThreshold = floatval(Billrun_Factory::config()->getConfigValue('nsn.thresholds.monthly_voice',36000));
+		$dailyThreshold = floatval(Billrun_Factory::config()->getConfigValue('nsn.thresholds.daily_voice',3600));
+
+		$monthlyAlerts = $this->detectDurationExcceders(date('Y0101000000'), $monthlyThreshold);
+		foreach($monthlyAlerts as &$val) {
+				$val['threshold'] = $monthlyThreshold; 		
+		};
+
+		$dailyAlerts = $this->detectDurationExcceders(date('Y01d000000'), $dailyThreshold);
+		foreach ($dailyAlerts as &$val) {
+				$val['threshold'] = $dailyThreshold; 
+		}
 		
+		return array_merge($monthlyAlerts,$dailyAlerts);
+		
+	}
+	/**
+	 * Detect calls that exceed a certain duration threshold
+	 * @param type $fromDate the date that from which a call is a valid call to aggregate (formated : 'YmdHis') 
+	 * @param type $threshold the duration threshold in second that above it is considered an excess
+	 * @return array an array conatining all the duration excedding  call  aggregated by imsi/msisdn
+	 */
+	protected function detectDurationExcceders($fromDate, $threshold) {
+		$aggregateQuery = array(
+				array(
+					'$match' => array(
+						'type' => 'nsn',
+						'event_stamp' => array('$exists' => false),
+						'record_type' => array('$in' => array('01','11')),
+						'called_number' => array('$regex' => '^(?=10[^1]|1016|016|97216)....'),
+						'duration'=> array('$gt'=> 0),
+						'charging_start_time' => array('$gte' => $fromDate),
+					),
+				),
+				array(
+					'$group' => array(	
+						'_id' => array('imsi'=>'$calling_imsi', 'msisdn' => '$calling_number' ),
+						'duration' => array('$sum' => '$duration'),
+						'lines_stamps' => array('$addToSet' => '$stamp'),	
+					),
+				),
+				array(
+					'$project' => array(
+							'_id' => 0,
+							'imsi' => '$_id.imsi',
+							'msisdn' => '$_id.msisdn',
+							'value' => '$duration',
+							'lines_stamps' => 1,
+					),	
+				),
+				array(
+					'$match' => array(
+						'value' => array('$gte' => $threshold ),
+					),
+				),
+		);
+		$db = Billrun_Factory::db();
+		$linesCol = $db->getCollection(Billrun_Db::lines_table);
+		return $linesCol->aggregate($aggregateQuery);		
+	}
+	
+	/**
+	 * @see Billrun_Plugin_BillrunPluginFraud::addAlertData 
+	 */
+	protected function addAlertData(&$event) {
+		$event['units'] = 'SECS';
+		$event['event_type'] = 'MABAL_016';
+		return $event;
 	}
 	
 	/**
@@ -71,6 +140,7 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 		
 		return isset($this->nsnConfig[$data['record_type']]) ?  $data : false;
 	}
+	
 	/**
 	 * @see Billrun_Plugin_Interface_IParser::parseSingleField
 	 */
@@ -79,7 +149,8 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 
 		return $this->parseField($data, $fileDesc);
 	}
-		/**
+	
+	/**
 	 * @see Billrun_Plugin_Interface_IParser::parseHeader
 	 */
 	public function parseHeader($type, $data, Billrun_Parser &$parser ) {
@@ -166,10 +237,14 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 				
 			case 'datetime':
 			case 'bcd_encode' :
+			case 'bcd_number' :
 					$retValue = '';
 					for($i=$length-1; $i >= 0 ;--$i) {
 						$byteVal = ord($data[$i]);
 						$retValue .=  ((($byteVal >> 4) < 10) ? ($byteVal >> 4) : '' ) . ((($byteVal & 0xF) < 10) ? ($byteVal & 0xF) : '') ;
+					}
+					if($type == 'bcd_number') {
+						$retValue = intval($retValue,10);
 					}
 					break;	
 					
@@ -250,10 +325,6 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 															'first_record_number' => $header['first_record_number'],
 															'seq_no' =>  $header['block_seq_number']); 
 		return $logTrailer;
-	}
-	
-	protected function addAlertData(&$event) {
-		
 	}
 }
 

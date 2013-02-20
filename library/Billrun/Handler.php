@@ -20,10 +20,9 @@ class Billrun_Handler extends Billrun_Base {
 	 * @return self instance
 	 * @todo make args signature to avoid over loading of instance
 	 */
-	static public function getInstance() {
+	static public function getInstance($args = array()) {
 
-		$args = func_get_args();
-
+		//$args = func_get_args();
 		return new self($args);
 	}
 
@@ -70,7 +69,7 @@ class Billrun_Handler extends Billrun_Base {
 
 		$this->log->log("Handler notify start", Zend_Log::INFO);
 
-		$items = $this->dispatcher->trigger('handlerNotify');
+		$items = $this->dispatcher->trigger('handlerNotify',array($this));
 
 		$this->log->log("Handler notify finished", Zend_Log::INFO);
 

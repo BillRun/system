@@ -1,17 +1,25 @@
 <?php
 
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
+/**
+ * @package         Billing
+ * @copyright       Copyright (C) 2012 S.D.O.C. LTD. All rights reserved.
+ * @license         GNU General Public License version 2 or later; see LICENSE.txt
  */
 
+
 /**
- * Description of Plugin
- *
- * @author eran
+ * This defiens an empty parser the do nothing but pass behavior to the out side plugins
  */
 class Billrun_Parser_External  extends Billrun_Parser_Base_Binary  {
 	static protected $type = "external";
+
+	public function __construct($options) {
+		parent::__construct($options);
+		if($this->getType() == "external") {
+			throw new Exception('Billrun_Parser_External::__construct : cannot run without specifing a specific type for external parser, current type is :'.$this->getType());
+		}
+	}
+
 
 	public function parse() {
 		return $this->chain->trigger('parseData',array($this->getType(), $this->getLine(), &$this));

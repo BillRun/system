@@ -223,7 +223,7 @@ class IndexController extends Yaf_Controller_Abstract {
 
 	protected function alert($opts) {
 		$availableOptions =array(
-			'type' => false,
+			'type' => true,
 		);
 		$options = $this->getInstanceOptions($opts, $availableOptions);
 		if (!$options) {
@@ -231,7 +231,7 @@ class IndexController extends Yaf_Controller_Abstract {
 		}
 
 		$this->outputAdd("Loading handler");
-		$handler = Billrun_Handler::getInstance();
+		$handler = Billrun_Handler::getInstance($options);
 		$this->outputAdd("Handler loaded");
 
 		if ($handler) {

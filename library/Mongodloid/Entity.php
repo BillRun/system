@@ -206,7 +206,12 @@ class Mongodloid_Entity implements ArrayAccess
 		}
 		else
 		{
+			//lazy load MongoId Ref objects
+			if($this->_values[$key] instanceof MongoId && $this->collection()) {
+				$this->_values[$key] = $this->collection()->findOne($this->_values[$key]['$id']);
+			}
 			$result = $this->_values[$key];
+			
 		}
 
 		return $result;

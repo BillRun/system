@@ -1,19 +1,26 @@
 <?php
 
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
+/**
+ * @package         Billing
+ * @copyright       Copyright (C) 2012 S.D.O.C. LTD. All rights reserved.
+ * @license         GNU General Public License version 2 or later; see LICENSE.txt
  */
 
+
 /**
- * Description of BlockedBinaryExternal
- *
- * @author eran
+ * This defines an empty processor that pass the processing action to extarnal plugin.
  */
 class Billrun_Processor_BlockedBinaryExternal extends Billrun_Processor_Base_BlockedSeperatedBinary
 {	
 	static protected $type = 'blockedBinaryExternal';
 
+	public function __construct($options = array()) {
+		parent::__construct($options);
+		if($this->getType() == 'blockedBinaryExternal') {
+			throw new Exception('Billrun_Processor_BlockedBinaryExternal::__construct : cannot run without specifing a specific type.');
+		}
+	}
+	
 	protected function parse() {
 			return $this->chain->trigger('processData',array($this->getType(), $this->fileHandler, &$this));
 	}

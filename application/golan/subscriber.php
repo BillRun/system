@@ -76,7 +76,7 @@ class golan_subscriber
 		curl_setopt($ch, CURLOPT_URL, $url);
 		curl_setopt($ch, CURLOPT_HEADER, FALSE);
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
-		curl_setopt($ch, CURLOPT_USERPWD, 'free:free');
+		curl_setopt($ch, CURLOPT_USERPWD, 'eranu:free');
 
 		// grab URL and pass it to the browser
 		$output = curl_exec($ch);
