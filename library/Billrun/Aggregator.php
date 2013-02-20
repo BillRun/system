@@ -14,6 +14,18 @@
  */
 abstract class Billrun_Aggregator extends Billrun_Base {
 
+	protected $excludes = array();
+	
+	public function __construct($options = array()) {
+		parent::__construct($options);
+		
+		$configPath = Billrun_Factory::config()->getConfigValue($this->getType().'.billrun.config_path');
+		if($configPath) {
+			$config =  new Yaf_Config_Ini( $configPath );
+			$this->excludes = $config->billrun->exclude->toArray();
+		}
+	}
+	
 	/**
 	 * execute aggregate
 	 */
