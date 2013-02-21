@@ -44,13 +44,19 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud {
 		}
 		$mailMsg = FALSE;
 		
-		sort($filepaths);
 		if($filepaths) {
 			foreach($filepaths as $path) {
-				$ret = $this->hostSequenceCheckers[$hostname]->verifyFileSequence(basename($path));
+				$ret = $this->hostSequenceCheckers[$hostname]->addFileToSequence(basename($path));
 				if($ret) {
 					$mailMsg .= $ret . "\n";
 				}
+			}
+			$ret = $this->hostSequenceCheckers[$hostname]->hasSequenceMissing();
+			if($ret) {
+					$mailMsg .=  "GGSN Reciever : Received a file out of sequence from host : $hostname - for the following files : \n";
+					foreach($ret as $file) {
+						$mailMsg .= $file . "\n";
+					}
 			}
 		} else if ($this->hostSequenceCheckers[$hostname]->lastLogFile) {
 			$timediff = time()- strtotime($this->hostSequenceCheckers[$hostname]->lastLogFile['received_time']);
@@ -58,16 +64,9 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud {
 				$mailMsg = 'Didn`t received any new GGSN files form host '.$hostname.' for more then '.$timediff .' Seconds';
 			}
 		}
-		//If there were any errors send an email 
-		//TODO Move this to a common class/Logic to all the billrun Maybe Specific exception handling?
+		//If there were any errors log them as high issues 
 		if($mailMsg) {
-			$mailer = Billrun_Factory::mailer();
-			$mailer->addTo(Billrun_Factory::config()->getConfigValue('receiver.errors.email.notify','root'));
-			$mailer->setSubject('GGSN files receiving erros');
-			$mailer->setBodyText($mailMsg);
-			if(!$mailer->send()) {
-				Billrun_Factory::log()->log("ggsnPlugin::afterFTPReceived COULDNT SEND ALERT EMAIL!!!!!",  Zend_Log::CRIT);
-			} 
+			Billrun_Factory::log()->log($mailMsg,  Zend_Log::ALERT);
 		}
 	}
 
@@ -216,6 +215,9 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud {
 			);
 	}
 
+	/**
+	 * @see Billrun_Plugin_BillrunPluginFraud::addAlertData
+	 */
 	protected function addAlertData(&$event) {
 		return $event;
 	}

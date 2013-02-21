@@ -179,7 +179,6 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		return $events;
 	}
 	
-	
 	/**
 	 * Mark an specific event as finished event. 
 	 * @param type $event the event to mark as dealt with.
@@ -230,7 +229,6 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 				$lines_where['event_stamp'] = $event['stamp']; 
 			}
 			
-			$this->linesCol->update($lines_where, $lines_update_set, $update_options);
-				
+			$this->linesCol->update($lines_where, $lines_update_set, $update_options);				
 	}
 }

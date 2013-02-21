@@ -84,7 +84,11 @@ class Billrun_Factory {
 	 */
 	static public function mailer() {
 		$mail = new Zend_Mail();
-		//TODO set common configuration. 
+		//TODO set common configuration.
+		$mail->setFrom(	Billrun_Factory::config()->getConfigValue('mailer.from.address', 'no-replay'),
+						Billrun_Factory::config()->getConfigValue('mailer.from.name', 'Billrun'));
+		
+		//$mail->setDefaultTransport($transport);
 		return $mail;
 	}
 	
