@@ -53,11 +53,25 @@ class ApiController extends Yaf_Controller_Abstract {
 	/**
 	 * method to set view output
 	 * 
-	 * @param string $key
-	 * @param mixed $value
+	 * @param mixed $key array of key=>value or key (later need to be with $value)
+	 * @param mixed $value optional in case key is string this the value of it
+	 * 
+	 * @return boolean on success, else false
 	 */
-	public function setOutput($key, $value) {
-		$this->output->$key = $value;
+	public function setOutput() {
+		$args = func_get_args();
+		if (count($args) == 2) {
+			$key = $args[0];
+			$value = $args[1];
+			$this->output->$key = $value;
+			return true;
+		} else if (is_array($args[0])) {
+			foreach($args[0] as $key => $value) {
+				$this->setOutput($key, $value);
+			}
+			return true;
+		}
+		return false;
 	}
 
 	/**
