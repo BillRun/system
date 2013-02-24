@@ -41,7 +41,7 @@ class Billrun_Common_FileSequenceChecker {
 			return $msg;
 		}
 		
-		$this->sequenceArr[intval($sequenceData['seq'],10)] =  $filename;
+		$this->sequenceArr[$sequenceData['date']][intval($sequenceData['seq'],10)] =  $filename;
 	
 		return $msg;
 	}
@@ -51,38 +51,40 @@ class Billrun_Common_FileSequenceChecker {
 	 * @return bool|array false if the sequence is ok or anarry containg the files that were checked.
 	 */
 	public function hasSequenceMissing() {
-		$highSeq = false;
 		$ret = false;
-		$lowSeq = false;
-		ksort($this->sequenceArr);
 
-		foreach($this->sequenceArr as $seq => $filename ) {
-			if($lowSeq === false || $lowSeq > $seq) {
-					$lowSeq = $seq;
-			} 
-			if($highSeq === false || $highSeq < $seq) {
-					$highSeq = $seq;
+		foreach($this->sequenceArr as $date => $sequence) {
+			ksort($sequence);
+			$highSeq = $lowSeq = false;
+			foreach($sequence as $seq => $filename ) {
+				if($lowSeq === false || $lowSeq > $seq) {
+						$lowSeq = $seq;
+				} 
+				if($highSeq === false || $highSeq < $seq) {
+						$highSeq = $seq;
+				}
 			}
-		}
-		
-		if(count($this->sequenceArr)-1 != $highSeq - $lowSeq) {
-			$ret = array_values($this->sequenceArr);
+			if(count($sequence) > 1 && count($sequence)-1 != $highSeq - $lowSeq) {
+				$ret = array_values($sequence);
+			}
 		}
 		
 		return $ret;
 	}
 	
+	/**
+	 * load the last sequence number for the files of the current type from the data base.
+	 */
 	protected function loadLastFileDataFromHost() {
 		$db = Billrun_Factory::db();
 		$log = $db->getCollection($db::log_table);
 		$lastLogFile = $log->query()->equals('source',$this->type)->exists('received_time')
 									->equals('retrieved_from',$this->hostname)->
-									cursor()->sort(array('received_time' => -1))->limit(1)->rewind()->current();
+									cursor()->sort(array('received_time' => -1,'file_name' => -1))->limit(1)->rewind()->current();
 		if( isset($lastLogFile['file_name']) ) {
 			$this->lastLogFile = $lastLogFile;
 			$lastSequenceData = call_user_func($this->getFileSequenceDataCallable, $lastLogFile->get('file_name'));
-			$this->sequenceArr[intval($lastSequenceData,10)] =  $lastLogFile['file_name'];
-			//Billrun_Factory::log()->log(print_r($this->lastSequenceData,1),  Zend_Log::DEBUG);
+			$this->sequenceArr[$lastSequenceData['date']][intval($lastSequenceData['seq'],10)] =  $lastLogFile['file_name'];;
 		}
 	}
 
