@@ -74,11 +74,11 @@ class Billrun_Parser_Egcdr extends Billrun_Parser_Base_Binary {
 					$retArr[$field] = $this->parseField($this->fields[$field], $val);
 				} else {
 					$this->log->log("Couldn`t find field for : $key with type :$type", Zend_Log::DEBUG);
-				//	$this->log->log("Structure is : " . print_r($struct, 1), Zend_Log::DEBUG);
+					//$this->log->log("Structure is : " . print_r($struct, 1), Zend_Log::DEBUG);
 				}
 			} else {
 				$this->log->log("Couldn`t find field for : $key"/* with value :" . print_r($val, 1)*/, Zend_Log::DEBUG);
-			//	$this->log->log("Structure is : " . print_r($struct, 1), Zend_Log::DEBUG);
+				//$this->log->log("Structure is : " . print_r($struct, 1), Zend_Log::DEBUG);
 			}
 		}
 
@@ -91,11 +91,11 @@ class Billrun_Parser_Egcdr extends Billrun_Parser_Base_Binary {
 	public function parseField($type, $fieldData) {
 		//if ($type != 'debug') {
 		$fieldData = $fieldData->getData();
-		//}/*///TODO remove
+		//}///TODO remove
 		if (isset($fieldData)) {
 			switch ($type) {
-				//TODO remove
-			/*	case 'debug':
+				/* //TODO remove
+				case 'debug':
 					$fieldType = $fieldData->getType();
 					$fieldClass = get_class($fieldData);
 					$fieldData = $fieldData->getData();
@@ -110,9 +110,10 @@ class Billrun_Parser_Egcdr extends Billrun_Parser_Base_Binary {
 					foreach ($halfBytes as $byte) {
 						$tempData .= ($byte & 0xF) . ((($byte >> 4) < 10) ? ($byte >> 4) : "" );
 					}
-					$fieldData = "DEBUG : " . $fieldClass . " | " . $fieldType . " | " . $numData . " | " . $tempData . " | " . implode(unpack("H*", $fieldData)) . " | " . implode(unpack("C*", $fieldData)) . " | " . $fieldData;
+					Billrun_Factory::log()->log( "DEBUG : " . $fieldClass . " | " . $fieldType . " | " . $numData . " | " . $tempData . " | " . implode(unpack("H*", $fieldData)) . " | " . implode(unpack("C*", $fieldData)) . " | " . $fieldData ,  Zend_Log::DEBUG);
+					$fieldData = "";
 					break;
-*/
+				*/
 				case 'string':
 					$fieldData = utf8_encode($fieldData);
 					break;
@@ -231,12 +232,16 @@ class Billrun_Parser_Egcdr extends Billrun_Parser_Base_Binary {
 			19 => array('0x98' => 'charging_characteristics_selection_mode', '0x9b' => 'sgsn_plmn_id'),
 			20 => array('0x9b' => 'sgsn_plmn_id',
 				'0x9d' => 'served_imeisv',
+				'0x9e' => 'rat_type',
+				'0x1f' => 'ms_timezone',
 				0 => $losdArr,
 				1 => $losdArr,
 			),
 			21 => array('0x9d' => 'served_imeisv',
+				'0x1f' => 'ms_timezone',
 				'0x9e' => 'rat_type',
 				0 => $losdArr,
+				1 => $losdArr,
 			),
 			22 => array('0x9e' => 'rat_type',
 				'0x1f' => 'ms_timezone',
@@ -244,7 +249,7 @@ class Billrun_Parser_Egcdr extends Billrun_Parser_Base_Binary {
 			),
 			23 => array('0x1f' => 'ms_timezone',
 				0 => $losdArr,
-				1 => array("0x81" => 'unkonwn'),
+				1 => array_merge($losdArr,array("0x81" => 'unkonwn')),
 			),
 			24 => array(0 => $losdArr, 1 => $losdArr,),
 			25 => array(0 => $losdArr, 1 => $losdArr,),

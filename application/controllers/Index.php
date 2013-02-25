@@ -32,6 +32,8 @@ class IndexController extends Yaf_Controller_Abstract {
 		// add log to stdout when we are on cli
 		Billrun_Log::getInstance()->addWriter(new Zend_Log_Writer_Stream('php://stdout'));
 		$this->outputAdd("Running Billrun from CLI!");
+		$this->outputAdd("Runnning under : '".Billrun_Factory::config()->getEnv()."' configuration.");
+		
 		try {
 			$input = array(
 				'r|R|receive' => 'Recieve files and process them into database',

@@ -1,5 +1,15 @@
 <?php
 
+
+/**
+ * @package         Billing
+ * @copyright       Copyright (C) 2012 S.D.O.C. LTD. All rights reserved.
+ * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ */
+
+/**
+ * This a plgunin to provide GGSN support to the billing system.
+ */
 class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud {
 
 	protected $hostSequenceCheckers = array();
@@ -18,8 +28,7 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud {
 	 * method to collect data which need to be handle by event
 	 */
 	public function handlerCollect() {
-		$db = Billrun_Factory::db();
-		$lines = $db->getCollection($db::lines_table);
+		$lines = Billrun_Factory::db()->getCollection(Billrun_DB::lines_table);
 		$charge_time = $this->get_last_charge_time();
 
 		$aggregateQuery = $this->getBaseAggregateQuery($charge_time); 

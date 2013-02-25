@@ -1,5 +1,10 @@
 <?php
 
+/**
+ * @package         Billing
+ * @copyright       Copyright (C) 2012 S.D.O.C. LTD. All rights reserved.
+ * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ */
 
 /**
  * This is an Helper class to allow sequence checking for plugins 
@@ -17,7 +22,7 @@ class Billrun_Common_FileSequenceChecker {
 	protected $getFileSequenceDataCallable = false;
 	protected $hostname = '';
 	protected $type = false;
-	protected $sequenceArr = array();
+	protected $sequencers = array();
 	
 	public function __construct( $getFileSequenceDataFunc, $host, $type) {
 		$this->getFileSequenceDataCallable = $getFileSequenceDataFunc;
@@ -35,13 +40,17 @@ class Billrun_Common_FileSequenceChecker {
 		if(!$this->getFileSequenceDataCallable) {
 			throw new Exception('getFileSequenceData Function wasn`t set on construction!');
 		}
+		
 		if(!($sequenceData = call_user_func($this->getFileSequenceDataCallable, $filename))) {
 			$msg = "GGSN Reciever : Couldnt parse received file : $filename !!!!";
 			Billrun_Factory::log()->log($msg,  Zend_Log::ALERT);			
 			return $msg;
 		}
 		
-		$this->sequenceArr[$sequenceData['date']][intval($sequenceData['seq'],10)] =  $filename;
+		if(!isset($this->sequencers[$sequenceData['date']])) {
+			$this->sequencers[$sequenceData['date']] = new Billrun_Common_SequenceChecker();
+		}
+		$this->sequencers[$sequenceData['date']]->addSequence($sequenceData['seq'],  $filename);
 	
 		return $msg;
 	}
@@ -53,19 +62,9 @@ class Billrun_Common_FileSequenceChecker {
 	public function hasSequenceMissing() {
 		$ret = false;
 
-		foreach($this->sequenceArr as $date => $sequence) {
-			ksort($sequence);
-			$highSeq = $lowSeq = false;
-			foreach($sequence as $seq => $filename ) {
-				if($lowSeq === false || $lowSeq > $seq) {
-						$lowSeq = $seq;
-				} 
-				if($highSeq === false || $highSeq < $seq) {
-						$highSeq = $seq;
-				}
-			}
-			if(count($sequence) > 1 && count($sequence)-1 != $highSeq - $lowSeq) {
-				$ret = array_values($sequence);
+		foreach($this->sequencers as $sequencer) {
+			if(!$sequencer->isSequenceValid()) {
+				$ret = array_values($sequencer->sequence);
 			}
 		}
 		
@@ -84,7 +83,8 @@ class Billrun_Common_FileSequenceChecker {
 		if( isset($lastLogFile['file_name']) ) {
 			$this->lastLogFile = $lastLogFile;
 			$lastSequenceData = call_user_func($this->getFileSequenceDataCallable, $lastLogFile->get('file_name'));
-			$this->sequenceArr[$lastSequenceData['date']][intval($lastSequenceData['seq'],10)] =  $lastLogFile['file_name'];;
+			$this->sequencers[$lastSequenceData['date']] = new Billrun_Common_SequenceChecker();
+			$this->sequencers[$lastSequenceData['date']]->addSequence($lastSequenceData['seq'], $lastLogFile['file_name']);
 		}
 	}
 
