@@ -113,7 +113,7 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 	 * @see Billrun_Plugin_Interface_IParser::parseData
 	 */
 	public function parseData($type, $line, Billrun_Parser &$parser) {
-		if($type != $this->getName()) {return;}
+		if($type != $this->getName()) {return FALSE;}
 		
 		$data = array();
 		$offset = 0;
@@ -145,7 +145,7 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 	 * @see Billrun_Plugin_Interface_IParser::parseSingleField
 	 */
 	public function parseSingleField($type, $data, Array $fileDesc, Billrun_Parser &$parser = null) {
-		if($type != $this->getName()) {return;}
+		if($type != $this->getName()) {return FALSE;}
 
 		return $this->parseField($data, $fileDesc);
 	}
@@ -154,7 +154,7 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 	 * @see Billrun_Plugin_Interface_IParser::parseHeader
 	 */
 	public function parseHeader($type, $data, Billrun_Parser &$parser ) {
-		if($type != $this->getName()) {return;}
+		if($type != $this->getName()) {return FALSE;}
 		
 		$header = array();
 		foreach ($this->nsnConfig['block_header'] as $key => $fieldDesc) {
@@ -264,6 +264,7 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 	 * @see Billrun_Plugin_Interface_IProcessor::isProcessingFinished
 	 */
 	public function isProcessingFinished($type, $fileHandle, \Billrun_Processor &$processor) {
+		if($type != $this->getName()) {return false;}
 		if(!$this->fileStats) {
 			$this->fileStats = fstat($fileHandle);
 		}
@@ -275,6 +276,7 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 	 * @see Billrun_Plugin_Interface_IProcessor::processData
 	 */
 	public function processData($type, $fileHandle, \Billrun_Processor &$processor) {
+		if($type != $this->getName()) {return false;}
 		$bytes= null;
 		
 		$headerData = fread($fileHandle, self::HEADER_LENGTH);

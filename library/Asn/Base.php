@@ -51,18 +51,23 @@ class Asn_Base {
 	 * @return Asn_Object an asn object holding the parsed ASN1 data.
 	 */
 	protected static function newClassFromData(&$rawData) {
-		$offset = 0;
-		$type = ord($rawData[$offset++]);
-		if (($type & Asn_Markers::ASN_CONTEXT) && (($type & Asn_Markers::ASN_EXTENSION_ID) == 0x1F)) {
-			$type = ord($rawData[$offset++]);
+		$tmpType = $offset = 0;
+		$flags = $type = ord($rawData[$offset++]);
+		if(	($type & Asn_Markers::ASN_EXTENSION_ID) == 0x1F ) {
+			$type = 0;
+			do  {
+				$tmpType = ord($rawData[$offset++]);
+				$type = ( $tmpType & 0x7F  ? $type << 7 : 0 ) + ( $tmpType & 0x7F ) ;
+			} while ( $tmpType & Asn_Markers::ASN_CONTEXT && ($tmpType & 0x7F) );
 		}
-		$cls = self::getClassForType($type);
+
+		$cls = self::getClassForType($type,$flags);
 		if (!$cls) {
 			print('Asn_Base::newClassFromData couldn`t create class!!');
 			return null;
 		}
 		$data = self::getObjectData($rawData, $offset);
-		return new $cls($data, $type);
+		return new $cls($data, $type, $flags);
 	}
 
 	/**
@@ -78,7 +83,7 @@ class Asn_Base {
 			for ($x = ($length - Asn_Markers::ASN_LONG_LEN); $x > 0; $x--) {
 				$tempLength = ord($rawData[$offest++]) + ($tempLength << 8);
 			}
-			$length = $tempLength;
+			$length = $length == Asn_Markers::ASN_LONG_LEN ? 0xffffffff : $tempLength;
 		}
 		//print("Asn_Base::getRawData data length : $length \n");
 		return self::shift($rawData, $length, $offest);
@@ -102,9 +107,9 @@ class Asn_Base {
 	 * Get a class to hold an ASN1 type.
 	 * @return String  the name of the class that should be used to handle the data.
 	 */
-	protected static function getClassForType($type) {
+	protected static function getClassForType($type, $flags) {
 		//$constructed = $type & Asn_Markers::ASN_CONSTRUCTOR;
-		$context = $type & Asn_Markers::ASN_CONTEXT;
+		$context = $flags & Asn_Markers::ASN_CONTEXT;
 		$type = $type & 0x1F; // strip out context
 		if (!$context && isset(Asn_Types::$TYPES[$type]) && class_exists(Asn_Types::$TYPES[$type],self::USE_AUTOLOAD)) {
 			$cls = Asn_Types::$TYPES[$type];

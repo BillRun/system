@@ -305,7 +305,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 * 
 	 * @return void
 	 */
-	public function loadFile($file_path, $retrivedHost) {
+	public function loadFile($file_path, $retrivedHost = '') {
 		$this->dispatcher->trigger('processorBeforeFileLoad', array(&$file_path, $this));
 		if (file_exists($file_path)) {
 			$this->filePath = $file_path;
