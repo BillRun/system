@@ -37,10 +37,14 @@ class Asn_Base {
 	 * @param @rootObj the ASN object to get the data from.
 	 * @return Array containing the object  and it`s nested childrens data.
 	 */
-	public static function getDataArray($rootObj) {
+	public static function getDataArray($rootObj, $keepTypes = false) {
 		$retArr = array();
 		foreach ($rootObj->parsedData as $val) {
-			$retArr[] = ($val instanceof Asn_Object && $val->isConstructed()) ? self::getDataArray($val) : $val->getData();
+			if($keepTypes) {
+				$retArr[ (($val instanceof Asn_Object ) ? $val->getType() : $rootObj->getType()) ] = ($val instanceof Asn_Object && $val->isConstructed()) ? self::getDataArray($val, $keepTypes) : $val->getData();				
+			} else {
+				$retArr[] = ($val instanceof Asn_Object && $val->isConstructed()) ? self::getDataArray($val, $keepTypes) : $val->getData();
+			}
 		}
 		return $retArr;
 	}
@@ -52,16 +56,17 @@ class Asn_Base {
 	 */
 	protected static function newClassFromData(&$rawData) {
 		$tmpType = $offset = 0;
-		$flags = $type = ord($rawData[$offset++]);
+		$flags =  ord($rawData[$offset++]); 
+		$type = $flags & Asn_Markers::ASN_EXTENSION_ID;
 		if(	($type & Asn_Markers::ASN_EXTENSION_ID) == 0x1F ) {
 			$type = 0;
 			do  {
 				$tmpType = ord($rawData[$offset++]);
 				$type = ( $tmpType & 0x7F  ? $type << 7 : 0 ) + ( $tmpType & 0x7F ) ;
 			} while ( $tmpType & Asn_Markers::ASN_CONTEXT && ($tmpType & 0x7F) );
-		}
+		} 
 
-		$cls = self::getClassForType($type,$flags);
+		$cls = self::getClassForType( $type, $flags );
 		if (!$cls) {
 			print('Asn_Base::newClassFromData couldn`t create class!!');
 			return null;

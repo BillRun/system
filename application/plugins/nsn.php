@@ -171,7 +171,7 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 	 * @see Billrun_Plugin_Interface_IParser::parseTrailer
 	 */
 	public function parseTrailer( $type, $data, Billrun_Parser &$parser) {
-		if($type != $this->getName()) {return null;}
+		if($type != $this->getName()) {return FALSE;}
 
 		$trailer = array();
 		foreach ($this->nsnConfig['block_trailer'] as $key => $fieldDesc) {
