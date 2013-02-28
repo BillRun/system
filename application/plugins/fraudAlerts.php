@@ -23,6 +23,10 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$this->alertServer = isset($options['alertHost']) ?
 			$options['alertHost'] :
 			Billrun_Factory::config()->getConfigValue('fraudAlerts.alert.host', '127.0.0.1');
+		
+		$this->alertPath = isset($options['alertPath']) ?
+			$options['alertPath'] :
+			Billrun_Factory::config()->getConfigValue('fraudAlerts.alert.path', '/');
 
 		$this->startTime = $_SERVER['REQUEST_TIME'];
 		
@@ -101,8 +105,9 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$required_args[$key] = isset ($args[$argsKey]) ? $args[$argsKey] : null;
 			unset( $args[$argsKey] );
 		}
-	
-		return  $this->notifyRemoteServer($required_args, $args);
+		
+		$ret =  $this->notifyRemoteServer($required_args, $args);
+		return $ret && $ret['success'];
 	}
 	
 	/**
@@ -114,11 +119,12 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	protected function notifyRemoteServer($query_args, $post_args) {
 		// TODO: use Zend_Http_Client instead
 		// http://framework.zend.com/manual/1.12/en/zend.http.client.adapters.html#zend.http.client.adapters.curl
-		$url = 'http://' . $this->alertServer . '?' . http_build_query($query_args);
+		$url = 'http://' . $this->alertServer . $this->alertPath .'?' . http_build_query($query_args);
 		$post_array = array_diff($post_args, $query_args);
 		$post_fields = array(
 			'extra_data' => Zend_Json::encode($post_array)
 		);
+
 		$client = curl_init($url);
 		curl_setopt($client, CURLOPT_POST, TRUE);
 		curl_setopt($client, CURLOPT_POSTFIELDS, $post_fields);
@@ -126,7 +132,7 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$response = curl_exec($client);
 		curl_close($client);
 
-		Billrun_Log::getInstance()->log("fraudAlertsPlugin::notifyOnEvent " . print_r(json_decode($response), 1), Zend_Log::DEBUG);
+		Billrun_Log::getInstance()->log("fraudAlertsPlugin::notifyRemoteServer " . print_r(json_decode($response), 1), Zend_Log::DEBUG);
 
 		return Zend_Json::decode($response);
 	}
