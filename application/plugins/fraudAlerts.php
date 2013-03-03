@@ -36,6 +36,11 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 
 	}
 
+	/**
+	 * Handle Notification that should be done on events that were logged in the system.
+	 * @param type $handler the caller handler.
+	 * @return type
+	 */
 	public function handlerNotify($handler) {
 
 		$ret = $this->roamingNotify();
@@ -45,14 +50,12 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 
 	/**
 	 * Handle Roaming events and try to notify the remote server.
-	 * 
 	 * @return array return value of each event status
 	 */
 	protected function roamingNotify() {
 		$retValue = array();
 		//Aggregate the  events by imsi  taking only the first one.
 		$events = $this->gatherEvents(array( 'nrtrde','ggsn', 'deposit','ilds','nsn'));
-	//	print_r($events);die();
 		foreach ($events as $event) {
 			$ret = $this->notifyOnEvent($event);
 			if ($ret) {
