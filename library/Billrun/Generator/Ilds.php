@@ -134,7 +134,8 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 			$xml->INV_INVOICE_TOTAL->FROM_PERIOD = date($short_format_date, strtotime('2012-05-14'));
 			$xml->INV_INVOICE_TOTAL->TO_PERIOD = date($short_format_date, strtotime('2012-11-30'));
 			$xml->INV_INVOICE_TOTAL->SUBSCRIBER_COUNT = count($row);
-
+			$xml->INV_INVOICE_TOTAL->INVOICE_TYPE = "ilds";
+				
 			$invoice_sumup = $xml->INV_INVOICE_TOTAL->addChild('INVOICE_SUMUP');
 			$total = 0;
 			foreach ($total_ilds as $ild => $total_ild_cost) {
