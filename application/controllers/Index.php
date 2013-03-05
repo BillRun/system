@@ -23,8 +23,7 @@ class IndexController extends Yaf_Controller_Abstract {
 	}
 
 	/**
-	 * method which run when the app running from command line
-	 * 
+	 * method which run when the app running from command line.
 	 * @return void
 	 * @since 1.0
 	 */
@@ -51,6 +50,7 @@ class IndexController extends Yaf_Controller_Abstract {
 				'workspace-s' => 'The path to the workspace directory',
 				'parser-s' => 'Process: Parser type (default fixed)',
 				'backup' => 'Process: Backup path after the file processed (default ./backup)',
+				'environment-s' => 'Set the  Environment to dev/test/prod temporarly (for a single run)'
 			);
 
 			$opts = new Zend_Console_Getopt($input);
@@ -90,7 +90,7 @@ class IndexController extends Yaf_Controller_Abstract {
 		$this->outputAdd("Receiver loaded");
 
 		if ($receiver) {
-			$this->outputAdd("Start to receiving. This action can take awhile...");
+			$this->outputAdd("Start to receive. This action can take awhile...");
 
 			// buffer all action output
 			ob_start();
@@ -125,7 +125,7 @@ class IndexController extends Yaf_Controller_Abstract {
 		$this->outputAdd("Processor loaded");
 
 		if ($processor) {
-			$this->outputAdd("Start to process. This action can take awhile...");
+			$this->outputAdd("Starting to process. This action can take awhile...");
 
 			// buffer all action output
 			ob_start();

@@ -16,20 +16,23 @@ $config = array(
 	)
 );
 
+$envOpts = getopt('',array('environment:'));
+$envArg = isset($envOpts['environment']) ?  $envOpts['environment'] : false;
 $current_server = gethostbyname(gethostname()); // we cannot use $_SERVER cause we are on CLI on most cases
 foreach ($config['servers'] as $key => $server) {
-	if (is_array($server) && in_array($current_server, $server)) {
-		$config_env = $key;
-		break;
-	} elseif ($current_server == $server) {
-		$config_env = $key;
-		break;
-	}
+	if ( is_array($server) && in_array($current_server, $server) ||
+		 $current_server == $server ||
+		 $key == $envArg ) {
+		
+			$config_env = $key;
+
+		}	
 }
+
 
 $conf_path = APPLICATION_PATH . "/conf/" . $config_env . ".ini";
 if (!file_exists($conf_path)) {
-	die("no config file found" . PHP_EOL);
+	die("no config file found at : {$conf_path}" . PHP_EOL);
 }
 $app = new Yaf_Application($conf_path);
 

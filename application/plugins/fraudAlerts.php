@@ -127,6 +127,7 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$post_fields = array(
 			'extra_data' => Zend_Json::encode($post_array)
 		);
+		Billrun_Log::getInstance()->log("fraudAlertsPlugin::notifyRemoteServer  URL :" . $url, Zend_Log::DEBUG);
 
 		$client = curl_init($url);
 		curl_setopt($client, CURLOPT_POST, TRUE);
