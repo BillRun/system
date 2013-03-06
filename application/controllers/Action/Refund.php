@@ -26,6 +26,7 @@ class RefundAction extends Action_Base {
 			'credit_time',
 			'amount_without_vat',
 			'reason',
+			'imsi',
 		);
 
 		$post = $this->getRequest()->getQuery();
