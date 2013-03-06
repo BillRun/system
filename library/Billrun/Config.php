@@ -93,9 +93,9 @@ class Billrun_Config {
 			$currConf = $currConf->toArray();
 		}
 		
-		if (isset($retType) && $retType) {
+		if (isset($retType) && $retType && $currConf != $defVal) {
 			settype($currConf, $retType);
-		} else if (strtoupper($type = gettype($defVal)) != 'NULL') {
+		} else if (strtoupper($type = gettype($defVal)) != 'NULL' && $currConf != $defVal) {
 			settype($currConf, $type);
 		}
 

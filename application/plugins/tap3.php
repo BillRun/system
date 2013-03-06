@@ -34,15 +34,15 @@ class tap3Plugin  extends Billrun_Plugin_BillrunPluginBase
 	 */	
 	public function parseHeader($type, $data, \Billrun_Parser &$parser) {
 		if($this->getName() != $type) { return FALSE; }
-		$parsedData = Asn_Base::parseASNString($data);
-		$parser->setLastParseLength($parsedData->getDataLength()+4);
+		$dataArr = Asn_Base::getDataArray( $data ,true );
+		$header = array();
 		foreach($this->nsnConfig['header'] as $key => $val) {
-			$header[$key] = $this->parseASNData(explode(',', $val), Asn_Base::getDataArray( $parsedData,true));
+			$tmpVal = $this->parseASNData(explode(',', $val), $dataArr);
+			if($tmpVal) {
+				$header[$key] = $tmpVal;
+			}
 		}
-		Billrun_Factory::log()->log(print_r($header,1),  Zend_Log::DEBUG);
-		Billrun_Factory::log()->log(print_r(Asn_Base::getDataArray($parsedData,true),1),  Zend_Log::DEBUG);
-	
-		
+		return count($header) ? $header : false;
 	}
 
 	/**
@@ -50,11 +50,22 @@ class tap3Plugin  extends Billrun_Plugin_BillrunPluginBase
 	 */	
 	public function parseData($type, $data, \Billrun_Parser &$parser) {
 		if($this->getName() != $type) { return FALSE; }
-		$parsedData = Asn_Base::parseASNString($data);
-		$parser->setLastParseLength($parsedData->getDataLength()+4);
-		Billrun_Factory::log()->log($parsedData->getType() . ' : ' .  print_r(Asn_Base::getDataArray($parsedData,true),1),  Zend_Log::DEBUG);
-		
-		//die();
+
+		$type = $data->getType();
+		$cdrLine =  array();
+		if(isset($this->nsnConfig[$type])) {
+			$dataArr = Asn_Base::getDataArray( $data ,true );
+			foreach($this->nsnConfig[$type] as $key => $val) {
+				$tempVal = $this->parseASNData(explode(',', $val), $dataArr);
+				if($tempVal) {
+					$cdrLine[$key] = $tempVal;
+				}
+			}
+		} else {
+			//Billrun_Factory::log()->log("couldn't find  definition for {$type}",  Zend_Log::DEBUG);
+		}
+		//Billrun_Factory::log()->log($data->getType() . " : " . print_r($cdrLine,1) ,  Zend_Log::DEBUG);
+		return count($cdrLine) ? $cdrLine :false;
 	}
 	
 	/**
@@ -70,10 +81,17 @@ class tap3Plugin  extends Billrun_Plugin_BillrunPluginBase
 	 * @see Billrun_Plugin_Interface_IParser::parseTrailer
 	 */
 	public function parseTrailer($type, $data, \Billrun_Parser &$parser) {
-		if($this->getName() != $type) { return FALSE; }
-		$parsedData = Asn_Base::parseASNString($data);
-		$parser->setLastParseLength($parsedData->getDataLength());
-		Billrun_Factory::log()->log(print_r(Asn_Base::getDataArray($parsedData,true),1),  Zend_Log::DEBUG);
+		if($this->getName() != $type) { return FALSE; }	
+		$dataArr = Asn_Base::getDataArray( $data, true );
+		$trailer= array();
+		foreach($this->nsnConfig['trailer'] as $key => $val) {			
+			$tmpVal = $this->parseASNData(explode(',', $val), $dataArr);
+			if($tmpVal) {
+				$trailer[$key] = $tmpVal;
+			}
+		}
+		Billrun_Factory::log()->log(print_r($trailer,1),  Zend_Log::DEBUG);
+		return count($trailer) ? $trailer : false;
 	}
 	
 	/**
@@ -83,23 +101,30 @@ class tap3Plugin  extends Billrun_Plugin_BillrunPluginBase
 		if($this->getName() != $type) { return FALSE; }
 
 		$processorData = &$processor->getData();
-		$bytes = fread($fileHandle, self::HEADER_LENGTH);
-		$processorData['header'] = $processor->buildHeader($bytes);
-		$bytes = substr($bytes, $processor->getParser()->getLastParseLength());
-		
+		$bytes= '';
 		do {
-			if ( !feof($fileHandle) && !isset($bytes[self::MAX_CHUNKLENGTH_LENGTH]) ) {
-				$bytes .= fread($fileHandle, self::FILE_READ_AHEAD_LENGTH);
-			}
-			$row = $processor->buildDataRow($bytes);
-			if ($row) {
-				$processorData['data'][] = $row;
-			}
-			$bytes = substr($bytes, $processor->getParser()->getLastParseLength());
-		} while ( !feof($fileHandle) || isset($bytes[self::TRAILER_LENGTH]));
+			$bytes .= fread($fileHandle, self::HEADER_LENGTH);
+		} while ( !feof($fileHandle));
+		$parsedData = Asn_Base::parseASNString($bytes);
+		$processorData['header'] = $processor->buildHeader($parsedData);
+		//$bytes = substr($bytes, $processor->getParser()->getLastParseLength());
 
-		$processorData['trailer'] = $processor->buildTrailer($bytes);
+		foreach($parsedData->getData() as  $record ) {			
+			Billrun_Factory::log()->log($record->getType() . " : " . count($record->getData()) ,  Zend_Log::DEBUG);
+			if(in_array($record->getType(),$this->nsnConfig['config']['data_records'])) {
+				foreach($record->getData() as $key => $data ) {			
+					$row = $processor->buildDataRow($data);
+					if ($row) {
+						$processorData['data'][] = $row;
+					}									
+				}
+			} else {
+					//Billrun_Factory::log()->log(print_r($record,1) ,  Zend_Log::DEBUG);
+			}
+		}
 
+		$processorData['trailer'] = $processor->buildTrailer($parsedData);
+		
 		return true;
 	}
 	
@@ -117,14 +142,16 @@ class tap3Plugin  extends Billrun_Plugin_BillrunPluginBase
 	 * @return Array conatining the fields in the ASN record converted to readableformat and keyed by they're use.
 	 */
 	protected function parseASNData($struct, $asnData) {
+		$matches = array();
 		if(  preg_match("/\[(\w+)\]/",$struct[0],$matches) || !is_array($asnData)) {
+			//$this->log->log(" digging into : {$struct[0]} data : ". print_r($asnData,1) , Zend_Log::DEBUG);
 			$ret = $this->parseField( $asnData, $this->nsnConfig['fields'][$matches[1]]);
 			return $ret;
 		}
 		foreach ($struct as $val) {
 
 			if (isset($asnData[$val])) {
-					//$this->log->log(" digging into : $key", Zend_Log::DEBUG);
+					//$this->log->log(" digging into : $val  data :". print_r($asnData[$val],1), Zend_Log::DEBUG);
 					$newStruct = $struct;
 					array_shift($newStruct);
 					return $this->parseASNData($newStruct, $asnData[$val]);
@@ -145,7 +172,6 @@ class tap3Plugin  extends Billrun_Plugin_BillrunPluginBase
 		$type = $fileDesc; 
 		$length = 0;//$fileDesc[$type];
 		$retValue = '';
-		print_r($fileDesc);
 		switch($type) {
 			case 'decimal' :
 					$retValue = 0;
@@ -187,10 +213,10 @@ class tap3Plugin  extends Billrun_Plugin_BillrunPluginBase
 					}
 				break;
 				
-			case 'bcd_encode' :
+			case 'bcd_encode' :					
 					$retValue = '';
-					for($i=$length-1; $i >= 0 ;--$i) {
-						$byteVal = ord($data[$i]);
+					foreach( unpack("C*",$data) as $byteVal ) {
+						//$byteVal = ord($data[$i]);
 						$retValue .=  ((($byteVal >> 4) < 10) ? ($byteVal >> 4) : '' ) . ((($byteVal & 0xF) < 10) ? ($byteVal & 0xF) : '') ;
 					}
 					if($type == 'bcd_number') {
@@ -210,14 +236,33 @@ class tap3Plugin  extends Billrun_Plugin_BillrunPluginBase
 				break;
 			
 			case 'integer':
-				$retValue = unpack("I",$data);
+				$retValue = 0;
+				foreach (unpack("C",$data) as $val) {
+						$retValue = $val + ($retValue << 8);
+				}
 			break;
+			case 'raw_data':
+					$retValue = $this->utf8encodeArr($data);
+				break;
 			case 'debug':
-					$retValue = unpack("C*",$data);
+					$retValue = implode(",",unpack("C*",$data));
+					$retValue .=  " | " . implode(",",unpack("H*",$data));
 				break;
 		}
 		
 		return $retValue;		
+	}
+	
+	/**
+	 * Encode an array content in utf encoding
+	 * @param $arr the array to encode.
+	 * @return array with a recurcivly encoded values.
+	 */
+	protected function utf8encodeArr($arr) {
+		foreach ($arr as &$val) {
+			$val = is_array($val) ? $this->utf8encodeArr($val) : utf8_encode($val);
+		}
+		return $arr;
 	}
 }
 
