@@ -68,7 +68,7 @@ class ildsPlugin extends Billrun_Plugin_BillrunPluginFraud {
 		$newEvent['value']	= $newEvent['total'];
 		$newEvent['threshold'] = Billrun_Factory::config()->getConfigValue('ilds.threshold', 100);
 		$newEvent['event_type']	= 'ILDS';
-		$newEvent['msisdn']	= $event['caller_phone_no'];
+		$newEvent['msisdn']	= $newEvent['caller_phone_no'];
 		return $newEvent;
 	}
 }
