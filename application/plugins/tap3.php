@@ -34,15 +34,9 @@ class tap3Plugin  extends Billrun_Plugin_BillrunPluginBase
 	 */	
 	public function parseHeader($type, $data, \Billrun_Parser &$parser) {
 		if($this->getName() != $type) { return FALSE; }
-		$dataArr = Asn_Base::getDataArray( $data ,true );
-		$header = array();
-		foreach($this->nsnConfig['header'] as $key => $val) {
-			$tmpVal = $this->parseASNData(explode(',', $val), $dataArr);
-			if($tmpVal) {
-				$header[$key] = $tmpVal;
-			}
-		}
-		return count($header) ? $header : false;
+		$header = $this->getASNDataByConfig($data, $this->nsnConfig['header'] );	
+	
+		return $header;
 	}
 
 	/**
@@ -52,20 +46,18 @@ class tap3Plugin  extends Billrun_Plugin_BillrunPluginBase
 		if($this->getName() != $type) { return FALSE; }
 
 		$type = $data->getType();
-		$cdrLine =  array();
+		$cdrLine = false;
+		
 		if(isset($this->nsnConfig[$type])) {
-			$dataArr = Asn_Base::getDataArray( $data ,true );
-			foreach($this->nsnConfig[$type] as $key => $val) {
-				$tempVal = $this->parseASNData(explode(',', $val), $dataArr);
-				if($tempVal) {
-					$cdrLine[$key] = $tempVal;
-				}
+			$cdrLine =  $this->getASNDataByConfig($data, $this->nsnConfig[$type] );			
+			if($cdrLine) {
+				$cdrLine['record_type'] = $type;
 			}
 		} else {
 			//Billrun_Factory::log()->log("couldn't find  definition for {$type}",  Zend_Log::DEBUG);
 		}
 		//Billrun_Factory::log()->log($data->getType() . " : " . print_r($cdrLine,1) ,  Zend_Log::DEBUG);
-		return count($cdrLine) ? $cdrLine :false;
+		return $cdrLine;
 	}
 	
 	/**
@@ -75,6 +67,7 @@ class tap3Plugin  extends Billrun_Plugin_BillrunPluginBase
 		if($this->getName() != $type) { return FALSE; }
 		$parsedData = Asn_Base::parseASNString($data);
 		//	Billrun_Factory::log()->log(print_r(Asn_Base::getDataArray($parsedData),1),  Zend_Log::DEBUG);
+		return $this->parseField($parsedData, $fieldDesc);
 	}
 	
 	/**
@@ -82,16 +75,11 @@ class tap3Plugin  extends Billrun_Plugin_BillrunPluginBase
 	 */
 	public function parseTrailer($type, $data, \Billrun_Parser &$parser) {
 		if($this->getName() != $type) { return FALSE; }	
-		$dataArr = Asn_Base::getDataArray( $data, true );
-		$trailer= array();
-		foreach($this->nsnConfig['trailer'] as $key => $val) {			
-			$tmpVal = $this->parseASNData(explode(',', $val), $dataArr);
-			if($tmpVal) {
-				$trailer[$key] = $tmpVal;
-			}
-		}
+		
+		$trailer= $this->getASNDataByConfig($data, $this->nsnConfig['trailer']);		
 		Billrun_Factory::log()->log(print_r($trailer,1),  Zend_Log::DEBUG);
-		return count($trailer) ? $trailer : false;
+		
+		return $trailer;
 	}
 	
 	/**
@@ -134,6 +122,24 @@ class tap3Plugin  extends Billrun_Plugin_BillrunPluginBase
 	public function isProcessingFinished($type, $fileHandle, \Billrun_Processor &$processor) {
 		if($this->getName() != $type) { return FALSE; }
 		return feof($fileHandle);
+	}
+	
+	/**
+	 * Get specific data from an asn.1 structure  based on configuration
+	 * @param type $data the ASN.1 data struture
+	 * @param type $config the configuration of the data to retrive.
+	 * @return Array an array containing flatten asn.1 data keyed by the configuration.
+	 */
+	protected function getASNDataByConfig( $data, $config ) {
+		$dataArr = Asn_Base::getDataArray( $data, true );
+		$valueArr= array();
+		foreach($config as $key => $val) {			
+			$tmpVal = $this->parseASNData(explode(',', $val), $dataArr);
+			if($tmpVal) {
+				$valueArr[$key] = $tmpVal;
+			}
+		}
+		return count($valueArr) ? $valueArr : false;
 	}
 	
 	/**
