@@ -123,6 +123,7 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		// TODO: use Zend_Http_Client instead
 		// http://framework.zend.com/manual/1.12/en/zend.http.client.adapters.html#zend.http.client.adapters.curl
 		$url = 'http://' . $this->alertServer . $this->alertPath .'?' . http_build_query($query_args);
+		unset($post_args['stamps']);
 		$post_array = array_diff($post_args, $query_args);
 		$post_fields = array(
 			'extra_data' => Zend_Json::encode($post_array)
@@ -135,7 +136,8 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		curl_setopt($client, CURLOPT_RETURNTRANSFER, TRUE);
 		$response = curl_exec($client);
 		curl_close($client);
-
+		
+		Billrun_Log::getInstance()->log("fraudAlertsPlugin::notifyRemoteServer " .$response, Zend_Log::DEBUG);
 		Billrun_Log::getInstance()->log("fraudAlertsPlugin::notifyRemoteServer " . print_r(json_decode($response), 1), Zend_Log::DEBUG);
 
 		return Zend_Json::decode($response);
@@ -169,6 +171,7 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 									'threshold' => array( '$first' => '$threshold'),
 									'deposit_stamp' => array( '$first' => '$_id'),
 									'source' => array( '$first' => '$source' ),
+									'stamps' => array( '$addToSet' => '$stamp' ),
 								),
 						),
 					array(
@@ -183,6 +186,7 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 									'deposit_stamp' => 1,
 									'id' => 1,
 									'source' => 1,
+									'stamps' => 1,
 								),
 						)
 			);
@@ -235,8 +239,8 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$update_options = array( 'multiple' => 1 );
 			
 			if(!($imsi || $msisdn)) {
-				Billrun_Log::getInstance()->log("fraudAlertsPlugin::markEventLine cannot find IMSI nor NDC_SN on event, marking CDR lines with event_stamp of : ".$event['stamp'], Zend_Log::DEBUG);
-				$lines_where['event_stamp'] = $event['stamp']; 
+				Billrun_Log::getInstance()->log("fraudAlertsPlugin::markEventLine cannot find IMSI nor NDC_SN on event, marking CDR lines with event_stamp of : ". print_r($event['stamps'],1), Zend_Log::DEBUG);
+				$lines_where['event_stamp'] = array( '$in' =>  $event['stamps']); 
 			}
 			
 			$this->linesCol->update($lines_where, $lines_update_set, $update_options);				
