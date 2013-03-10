@@ -18,9 +18,6 @@ class tap3Plugin  extends Billrun_Plugin_BillrunPluginBase
 	
 	protected $nsnConfig = false;
 	
-	const HEADER_LENGTH = 125;
-	const TRAILER_LENGTH = 84;
-	const MAX_CHUNKLENGTH_LENGTH = 16384;
 	const FILE_READ_AHEAD_LENGTH = 32768;
 
 	public function __construct($options = array()) {
@@ -54,7 +51,7 @@ class tap3Plugin  extends Billrun_Plugin_BillrunPluginBase
 				$cdrLine['record_type'] = $type;
 			}
 		} else {
-			//Billrun_Factory::log()->log("couldn't find  definition for {$type}",  Zend_Log::DEBUG);
+			Billrun_Factory::log()->log("couldn't find  definition for {$type}",  Zend_Log::DEBUG);
 		}
 		//Billrun_Factory::log()->log($data->getType() . " : " . print_r($cdrLine,1) ,  Zend_Log::DEBUG);
 		return $cdrLine;
@@ -91,7 +88,7 @@ class tap3Plugin  extends Billrun_Plugin_BillrunPluginBase
 		$processorData = &$processor->getData();
 		$bytes= '';
 		do {
-			$bytes .= fread($fileHandle, self::HEADER_LENGTH);
+			$bytes .= fread($fileHandle, self::FILE_READ_AHEAD_LENGTH);
 		} while ( !feof($fileHandle));
 		$parsedData = Asn_Base::parseASNString($bytes);
 		$processorData['header'] = $processor->buildHeader($parsedData);
