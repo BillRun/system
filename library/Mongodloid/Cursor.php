@@ -47,11 +47,11 @@ class Mongodloid_Cursor implements Iterator
 
 	public function sort(array $fields)
 	{
-		return $this->_cursor->sort($fields);
+		$this->_cursor->sort($fields);
 		return $this;
 	}
 
-	public function limit(int $limit)
+	public function limit($limit)
 	{
 		$this->_cursor->limit($limit);
 		return $this;
