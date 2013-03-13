@@ -1,5 +1,5 @@
 <?php
-
+require_once __DIR__ . '/AsnParsing.php';
 
 /**
  * @package         Billing
@@ -10,10 +10,16 @@
 /**
  * This a plgunin to provide GGSN support to the billing system.
  */
-class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plugin_Interface_IParser {
-    use application_helpers_Traits_AsnParsing;
+class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements	Billrun_Plugin_Interface_IParser, 
+																		Billrun_Plugin_Interface_IProcessor {
+    use AsnParsing;
 	
 	protected $hostSequenceCheckers = array();
+	
+	const HEADER_LENGTH = 54;
+	const MAX_CHUNKLENGTH_LENGTH = 512;
+	const FILE_READ_AHEAD_LENGTH = 8196;
+
 	
 	public function __construct($options = array()) {
 		parent::__construct($options);
@@ -252,20 +258,20 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Pl
 		if($this->getName() != $type) { return FALSE; }
 		
 		$asnObject = Asn_Base::parseASNString($data);
-		$this->parsedBytes = $asnObject->getDataLength();
+		$parser->setLastParseLength($asnObject->getDataLength()+8);
 		
-		$type = $data->getType();
+		$type = $asnObject->getType();
 		$cdrLine = false;
 		
 		if(isset($this->ggsnConfig[$type])) {
-			$cdrLine =  $this->getASNDataByConfig($asnObject, $this->nsnConfig[$type] );			
-			if($cdrLine) {
+			$cdrLine =  $this->getASNDataByConfig($asnObject, $this->ggsnConfig[$type] , $this->ggsnConfig['fields']);			
+			if($cdrLine && !isset($cdrLine['record_type'])) {
 				$cdrLine['record_type'] = $type;
 			}
 		} else {
 			Billrun_Factory::log()->log("couldn't find  definition for {$type}",  Zend_Log::DEBUG);
 		}
-		//Billrun_Factory::log()->log($data->getType() . " : " . print_r($cdrLine,1) ,  Zend_Log::DEBUG);
+	//	Billrun_Factory::log()->log($asnObject->getType() . " : " . print_r($cdrLine,1) ,  Zend_Log::DEBUG);
 		return $cdrLine;
 	
 	}
@@ -273,20 +279,20 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Pl
 	public function parseHeader($type, $data, \Billrun_Parser &$parser) {
 		if($this->getName() != $type) { return FALSE; }	
 		
-		$header= $this->getASNDataByConfig($data, $this->nsnConfig['trailer']);		
+		$header = false;//$this->getASNDataByConfig($data, $this->ggsnConfig['header'], $this->ggsnConfig['fields']);		
 		Billrun_Factory::log()->log(print_r($header,1),  Zend_Log::DEBUG);
 		
 		return $header;
 	}
 
 	public function parseSingleField($type, $data, array $fieldDesc, \Billrun_Parser &$parser) {
-		
+		return $this->parseField($fieldDesc,$data);
 	}
 
 	public function parseTrailer($type, $data, \Billrun_Parser &$parser) {
 			if($this->getName() != $type) { return FALSE; }	
 		
-		$trailer= $this->getASNDataByConfig($data, $this->nsnConfig['trailer']);		
+		$trailer = false;//$this->getASNDataByConfig($data, $this->ggsnConfig['trailer'], $this->ggsnConfig['fields']);		
 		Billrun_Factory::log()->log(print_r($trailer,1),  Zend_Log::DEBUG);
 		
 		return $trailer;
@@ -296,16 +302,10 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Pl
 	 * Parse an binary field using a specific data structure.
 	 */
 	protected function parseField($type, $fieldData) {
-		//if ($type != 'debug') {
-		$fieldData = $fieldData->getData();
-		//}///TODO remove
 		if (isset($fieldData)) {
 			switch ($type) {
 				/* //TODO remove */
-				case 'debug':
-					$fieldType = $fieldData->getType();
-					$fieldClass = get_class($fieldData);
-					$fieldData = $fieldData->getData();
+				case 'debug':					
 					$numarr = unpack("C*", $fieldData);
 					$numData = 0;
 					foreach ($numarr as $byte) {
@@ -317,7 +317,7 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Pl
 					foreach ($halfBytes as $byte) {
 						$tempData .= ($byte & 0xF) . ((($byte >> 4) < 10) ? ($byte >> 4) : "" );
 					}
-					Billrun_Factory::log()->log( "DEBUG : " . $fieldClass . " | " . $fieldType . " | " . $numData . " | " . $tempData . " | " . implode(unpack("H*", $fieldData)) . " | " . implode(unpack("C*", $fieldData)) . " | " . $fieldData ,  Zend_Log::DEBUG);
+					Billrun_Factory::log()->log( "DEBUG : " . $type . " | " . $numData . " | " . $tempData . " | " . implode(unpack("H*", $fieldData)) . " | " . implode(unpack("C*", $fieldData)) . " | " . $fieldData ,  Zend_Log::DEBUG);
 					$fieldData = "";
 					break;
 
@@ -328,8 +328,7 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Pl
 				case 'long':
 					$numarr = unpack('C*', $fieldData);
 					$fieldData = 0;
-					foreach ($numarr as $byte) {
-						//$fieldData = $fieldData <<8;
+					foreach ($numarr as $byte) {						
 						$fieldData = bcadd(bcmul($fieldData , 256 ), $byte);
 					}
 					break;
@@ -338,7 +337,6 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Pl
 					$numarr = unpack('C*', $fieldData);
 					$fieldData = 0;
 					foreach ($numarr as $byte) {
-						//$fieldData = $fieldData <<8;
 						$fieldData = ($fieldData << 8) + $byte;
 					}
 					break;
@@ -362,14 +360,51 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Pl
 					break;
 
 				case 'json' :
-
 					$fieldData = json_encode($this->utf8encodeArr($fieldData));
 					break;
-
+				
+				case 'ch_ch_selection_mode':
+					$selection_mode = array(0 => 'sGSNSupplied',
+											1 => 'subscriptionSpecific',
+											2 => 'aPNSpecific',
+											3 => 'homeDefault',
+											4 => 'roamingDefault',
+											5 => 'visitingDefault');
+					$smode = intval(implode('.', unpack('C', $fieldData)));
+					$fieldData = isset($selection_mode[$smode]) ? $selection_mode[$smode] : false; 
+					break;
+				
 				default:
 					$fieldData = is_array($fieldData) ? '' : implode('', unpack($type, $fieldData));
 			}
 		}
 		return $fieldData;
+	}
+
+	public function isProcessingFinished($type, $fileHandle, \Billrun_Processor &$processor) {
+		return !feof($fileHandle);
+	}
+
+	public function processData($type, $fileHandle, \Billrun_Processor &$processor) {
+		$processedData = &$processor->getData();
+		$processedData['header'] = $processor->buildHeader(fread($fileHandle, self::HEADER_LENGTH));
+
+		$bytes = null;
+		do {
+			if ( !feof($fileHandle) && !isset($bytes[self::MAX_CHUNKLENGTH_LENGTH]) ) {
+				$bytes .= fread($fileHandle, self::FILE_READ_AHEAD_LENGTH);
+			}
+
+			$row = $processor->buildDataRow($bytes);
+			if ($row) {
+				$processedData['data'][] = $row;
+			}
+			//Billrun_Factory::log()->log( $processor->getParser()->getLastParseLength(),  Zend_Log::DEBUG);	
+			$bytes = substr($bytes, $processor->getParser()->getLastParseLength());
+		} while (isset($bytes[self::HEADER_LENGTH]));
+		
+		$processedData['trailer'] = $processor->buildTrailer($bytes);
+
+		return true;
 	}
 }

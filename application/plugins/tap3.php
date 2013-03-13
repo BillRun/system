@@ -162,8 +162,7 @@ class tap3Plugin  extends Billrun_Plugin_BillrunPluginBase
 		}
 
 		return false;
-	}
-	
+	}	
 	
 	/**
 	 * parse a field from raw data based on a field description
