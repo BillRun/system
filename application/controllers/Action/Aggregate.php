@@ -21,8 +21,10 @@ class AggregateAction extends Action_Base {
 	 */
 	public function execute() {
 
-		$options = $this->getInstanceOptions($opts, array('type' => false,
-			'stamp' => false,));
+		$possibleOptions = array(
+			'type' => false,
+			'stamp' => false,
+		);
 		
 		if (($options = $this->_controller->getInstanceOptions($possibleOptions)) === FALSE) {
 			return;
