@@ -10,12 +10,15 @@
 /**
  * This a plgunin to provide GGSN support to the billing system.
  */
-class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud {
-
+class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plugin_Interface_IParser {
+    use application_helpers_Traits_AsnParsing;
+	
 	protected $hostSequenceCheckers = array();
 	
 	public function __construct($options = array()) {
 		parent::__construct($options);
+		
+		$this->ggsnConfig = parse_ini_file(Billrun_Factory::config()->getConfigValue('ggsn.config_path'), true);
 	}
 	/**
 	 * plugin name
@@ -39,6 +42,12 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud {
 		return array_merge($dataExceedersAlerts, $hourlyDataExceedersAlerts);
 	}
 	
+	/**
+	 * Setup the sequence checker.
+	 * @param type $receiver
+	 * @param type $hostname
+	 * @return type
+	 */
 	public function beforeFTPReceive($receiver,  $hostname) {
 		if($receiver->getType() != 'ggsn') { return; } 
 		if(!isset($this->hostSequenceCheckers[$hostname])) {
@@ -46,6 +55,14 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud {
 		}
 	}
 	
+	/**
+	 * Check the  received files sequence.
+	 * @param type $receiver
+	 * @param type $filepaths
+	 * @param type $hostname
+	 * @return type
+	 * @throws Exception
+	 */
 	public function afterFTPReceived($receiver,  $filepaths , $hostname ) {
 		if($receiver->getType() != 'ggsn') { return; } 
 		if(!isset($this->hostSequenceCheckers[$hostname])) { 
@@ -229,5 +246,130 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud {
 	 */
 	protected function addAlertData(&$event) {
 		return $event;
+	}
+
+	public function parseData($type, $data, \Billrun_Parser &$parser) {
+		if($this->getName() != $type) { return FALSE; }
+		
+		$asnObject = Asn_Base::parseASNString($data);
+		$this->parsedBytes = $asnObject->getDataLength();
+		
+		$type = $data->getType();
+		$cdrLine = false;
+		
+		if(isset($this->ggsnConfig[$type])) {
+			$cdrLine =  $this->getASNDataByConfig($asnObject, $this->nsnConfig[$type] );			
+			if($cdrLine) {
+				$cdrLine['record_type'] = $type;
+			}
+		} else {
+			Billrun_Factory::log()->log("couldn't find  definition for {$type}",  Zend_Log::DEBUG);
+		}
+		//Billrun_Factory::log()->log($data->getType() . " : " . print_r($cdrLine,1) ,  Zend_Log::DEBUG);
+		return $cdrLine;
+	
+	}
+
+	public function parseHeader($type, $data, \Billrun_Parser &$parser) {
+		if($this->getName() != $type) { return FALSE; }	
+		
+		$header= $this->getASNDataByConfig($data, $this->nsnConfig['trailer']);		
+		Billrun_Factory::log()->log(print_r($header,1),  Zend_Log::DEBUG);
+		
+		return $header;
+	}
+
+	public function parseSingleField($type, $data, array $fieldDesc, \Billrun_Parser &$parser) {
+		
+	}
+
+	public function parseTrailer($type, $data, \Billrun_Parser &$parser) {
+			if($this->getName() != $type) { return FALSE; }	
+		
+		$trailer= $this->getASNDataByConfig($data, $this->nsnConfig['trailer']);		
+		Billrun_Factory::log()->log(print_r($trailer,1),  Zend_Log::DEBUG);
+		
+		return $trailer;
+	}
+	
+	/**
+	 * Parse an binary field using a specific data structure.
+	 */
+	protected function parseField($type, $fieldData) {
+		//if ($type != 'debug') {
+		$fieldData = $fieldData->getData();
+		//}///TODO remove
+		if (isset($fieldData)) {
+			switch ($type) {
+				/* //TODO remove */
+				case 'debug':
+					$fieldType = $fieldData->getType();
+					$fieldClass = get_class($fieldData);
+					$fieldData = $fieldData->getData();
+					$numarr = unpack("C*", $fieldData);
+					$numData = 0;
+					foreach ($numarr as $byte) {
+						//$fieldData = $fieldData <<8;
+						$numData = ($numData << 8 ) + $byte;
+					}
+					$halfBytes = unpack("C*", $fieldData);
+					$tempData = "";
+					foreach ($halfBytes as $byte) {
+						$tempData .= ($byte & 0xF) . ((($byte >> 4) < 10) ? ($byte >> 4) : "" );
+					}
+					Billrun_Factory::log()->log( "DEBUG : " . $fieldClass . " | " . $fieldType . " | " . $numData . " | " . $tempData . " | " . implode(unpack("H*", $fieldData)) . " | " . implode(unpack("C*", $fieldData)) . " | " . $fieldData ,  Zend_Log::DEBUG);
+					$fieldData = "";
+					break;
+
+				case 'string':
+					$fieldData = utf8_encode($fieldData);
+					break;
+
+				case 'long':
+					$numarr = unpack('C*', $fieldData);
+					$fieldData = 0;
+					foreach ($numarr as $byte) {
+						//$fieldData = $fieldData <<8;
+						$fieldData = bcadd(bcmul($fieldData , 256 ), $byte);
+					}
+					break;
+
+				case 'number':
+					$numarr = unpack('C*', $fieldData);
+					$fieldData = 0;
+					foreach ($numarr as $byte) {
+						//$fieldData = $fieldData <<8;
+						$fieldData = ($fieldData << 8) + $byte;
+					}
+					break;
+					
+				case 'BCDencode' :
+					$halfBytes = unpack('C*', $fieldData);
+					$fieldData = '';
+					foreach ($halfBytes as $byte) {
+						//$fieldData = $fieldData <<8;
+						$fieldData .= ($byte & 0xF) . ((($byte >> 4) < 10) ? ($byte >> 4) : '' );
+					}
+					break;
+
+				case 'ip' :
+					$fieldData = implode('.', unpack('C*', $fieldData));
+					break;
+
+				case 'datetime' :
+					$tempTime = DateTime::createFromFormat('ymdHisT', str_replace('2b', '+', implode(unpack('H*', $fieldData))));
+					$fieldData = is_object($tempTime) ? $tempTime->format('YmdHis') : '';
+					break;
+
+				case 'json' :
+
+					$fieldData = json_encode($this->utf8encodeArr($fieldData));
+					break;
+
+				default:
+					$fieldData = is_array($fieldData) ? '' : implode('', unpack($type, $fieldData));
+			}
+		}
+		return $fieldData;
 	}
 }
