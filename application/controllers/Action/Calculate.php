@@ -32,9 +32,6 @@ class CalculateAction extends Action_Base {
 		$this->_controller->addOutput("Calculator loaded");
 
 		if ($calculator) {
-			// buffer all action output
-			$this->_controller->addOutput("Loading data to calculate...");
-			$calculator->load();
 			$this->_controller->addOutput("Starting to calculate. This action can take awhile...");
 			$calculator->calc();
 			$this->_controller->addOutput("Writing calculated data.");

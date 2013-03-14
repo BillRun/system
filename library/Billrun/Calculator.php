@@ -27,26 +27,33 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	 */
 	protected $data = array();
 
+	public function __construct($options = array()) {
+		parent::__construct($options);
+		
+		if (!isset($options['autoload']) || !$options['autoload']) {
+			$this->load();
+		}
+	}
+
 	/**
-	 * load the data to calculate
+	 * method to get calculator lines
+	 */
+	abstract protected function getLines();
+
+	/**
+	 * load the data to run the calculator for
+	 * 
+	 * @param boolean $initData reset the data in the calculator before loading
+	 * 
 	 */
 	public function load($initData = true) {
-		$lines = $this->db->getCollection(self::lines_table);
-
-		// @todo refactoring query to be able to extend
-//		$customer_query = "{'price_customer':{\$exists:false}}";
-//		$provider_query = "{'price_provider':{\$exists:false}}";
-//		$query = "{\$or: [" . $customer_query . ", " . $provider_query . "]}";
-//		$query = "price_customer NOT EXISTS or price_provider NOT EXISTS";
-
+		
 		if ($initData) {
 			$this->data = array();
 		}
 
-		$resource = $lines->query()
-			->equals('source', static::$type)
-			->notExists('price_customer');
-//			->notExists('price_provider'); // @todo: check how to do or between 2 not exists
+		$resource = $this->getLines();
+		
 		foreach ($resource as $entity) {
 			$this->data[] = $entity;
 		}
@@ -55,6 +62,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 
 		$this->dispatcher->trigger('afterCalculatorLoadData', array('calculator' => $this));
 	}
+
 
 	/**
 	 * write the calculation into DB
