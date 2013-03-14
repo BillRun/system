@@ -15,7 +15,7 @@
 abstract class Billrun_Receiver extends Billrun_Base {
 
 	/**
-	 * the type of the object
+	 * Type of object
 	 *
 	 * @var string
 	 */

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package         Billing
  * @copyright       Copyright (C) 2012 S.D.O.C. LTD. All rights reserved.
@@ -14,7 +15,7 @@
 class Billrun_Receiver_Files extends Billrun_Receiver {
 
 	/**
-	 * the type of the object
+	 * Type of object
 	 *
 	 * @var string
 	 */
@@ -26,12 +27,12 @@ class Billrun_Receiver_Files extends Billrun_Receiver {
 		if (isset($options['workspace'])) {
 			$this->workspace = $options['workspace'];
 		} else {
-			$this->workspace = Billrun_Factory::config()->getConfigValue('ilds.workspace','./workspace/');
+			$this->workspace = Billrun_Factory::config()->getConfigValue('ilds.workspace', './workspace/');
 		}
 	}
 
 	/**
-	 * general function to receive
+	 * General function to receive
 	 *
 	 * @return array list of files received
 	 */
@@ -54,10 +55,8 @@ class Billrun_Receiver_Files extends Billrun_Receiver {
 
 				$this->logDB($path);
 				$ret[] = $path;
-
 			}
 			$this->processType($type);
-
 		}
 		return $ret;
 	}
@@ -87,7 +86,7 @@ class Billrun_Receiver_Files extends Billrun_Receiver {
 		$data = $processor->getData();
 
 		$this->log->log("Process type: " . $type, Zend_log::INFO);
-	//	$this->log->log("file path: " . $filePath, Zend_log::INFO);
+		//	$this->log->log("file path: " . $filePath, Zend_log::INFO);
 		$this->log->log((isset($data['data']) ? "import lines: " . count($data['data']) : "no data received"), Zend_log::INFO);
 	}
 
