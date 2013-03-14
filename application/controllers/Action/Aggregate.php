@@ -39,7 +39,7 @@ class AggregateAction extends Action_Base {
 			$aggregator->load();
 			$this->_controller->addOutput("Starting to Aggregate. This action can take awhile...");
 			$aggregator->aggregate();
-			$this->_controller->addOutput("Finish to Aggregate. This action can take awhile...");
+			$this->_controller->addOutput("Finish to Aggregate.");
 		} else {
 			$this->_controller->addOutput("Aggregator cannot be loaded");
 		}
