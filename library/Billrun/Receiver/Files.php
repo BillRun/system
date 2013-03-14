@@ -11,6 +11,7 @@
  *
  * @package  Billing
  * @since    1.0
+ * @deprecated since version 0.2; use Billrun_Receiver_Relocate
  */
 class Billrun_Receiver_Files extends Billrun_Receiver {
 
