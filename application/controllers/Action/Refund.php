@@ -7,7 +7,7 @@
  */
 
 /**
- * Billing api controller class
+ * Refund action class
  *
  * @package  Action
  * @since    1.0
