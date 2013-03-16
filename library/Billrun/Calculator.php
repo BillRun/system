@@ -58,7 +58,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 			$this->data[] = $entity;
 		}
 
-		$this->log->log("entities loaded: " . count($this->data), Zend_Log::INFO);
+		Billrun_Factory::log()->log("entities loaded: " . count($this->data), Zend_Log::INFO);
 
 		$this->dispatcher->trigger('afterCalculatorLoadData', array('calculator' => $this));
 	}

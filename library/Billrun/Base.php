@@ -23,13 +23,6 @@ abstract class Billrun_Base {
 	protected $stamp = null;
 
 	/**
-	 * the log of the system
-	 *
-	 * @var Billrun_Log
-	 */
-	protected $log;
-
-	/**
 	 * the configuration of the system
 	 *
 	 * @var YAF_Config
@@ -69,18 +62,6 @@ abstract class Billrun_Base {
 	 * @todo use factory for all basic instances (config, log, db, etc)
 	 */
 	public function __construct($options = array()) {
-		if (isset($options['config'])) {
-			$this->config = $options['config'];
-		} else {
-			$this->config = Yaf_Application::app()->getConfig();
-		}
-
-		if (isset($options['log'])) {
-			$this->log = $options['log'];
-		} else {
-			$this->log = Billrun_Log::getInstance();
-		}
-
 		if (isset($options['stamp']) && $options['stamp']) {
 			$this->setStamp($options['stamp']);
 		} else {

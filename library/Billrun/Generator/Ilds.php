@@ -39,7 +39,7 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 			$this->data[] = $entity;
 		}
 
-		$this->log->log("aggregator entities loaded: " . count($this->data), Zend_Log::INFO);
+		Billrun_Factory::log()->log("aggregator entities loaded: " . count($this->data), Zend_Log::INFO);
 		
 		$this->dispatcher->trigger('afterGeneratorLoadData', array('generator' => $this));
 
@@ -78,7 +78,7 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 		// use $this->export_directory
 		$short_format_date = 'd/m/Y';
 		foreach ($rows as $row) {
-			$this->log->log("xml account " . $row->get('account_id'), Zend_Log::INFO);
+			Billrun_Factory::log()->log("xml account " . $row->get('account_id'), Zend_Log::INFO);
 			// @todo refactoring the xml generation to another class
 			$xml = $this->basic_xml();
 			$xml->TELECOM_INFORMATION->LASTTIMECDRPROCESSED = date('Y-m-d h:i:s');
@@ -147,7 +147,7 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 			$invoice_sumup->TOTAL_EXCL_VAT = $total;
 			$invoice_sumup->TOTAL_INCL_VAT = $total * self::VAT_VALUE;
 			//$row->{'xml'} = $xml->asXML();
-			$this->log->log("invoice id created " . $invoice_id . " for the account", Zend_Log::INFO);
+			Billrun_Factory::log()->log("invoice id created " . $invoice_id . " for the account", Zend_Log::INFO);
 			$this->createXml($invoice_id, $xml->asXML());
 
 			$this->addRowToCsv($invoice_id, $row->get('account_id'), $total, $total_ilds);
@@ -210,7 +210,7 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 	}
 
 	protected function basic_xml() {
-		//$xml_path = $this->config->ilds->export . 'ilds.xml';
+		//$xml_path = Billrun_Factory::config()->ilds->export . 'ilds.xml';
 		//return simplexml_load_file($xml_path);
 		$xml = <<<EOI
 <?xml version="1.0" encoding="UTF-8"?>

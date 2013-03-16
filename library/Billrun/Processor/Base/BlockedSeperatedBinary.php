@@ -17,7 +17,7 @@ abstract  class Billrun_Processor_Base_BlockedSeperatedBinary extends Billrun_Pr
 		
 		// run all over the file with the parser helper
 		if (!is_resource($this->fileHandler)) {
-			$this->log->log("Resource is not configured well", Zend_Log::ERR);
+			Billrun_Factory::log()->log("Resource is not configured well", Zend_Log::ERR);
 			return false;
 		}
 		$this->data['trailer'] = array();
@@ -27,7 +27,7 @@ abstract  class Billrun_Processor_Base_BlockedSeperatedBinary extends Billrun_Pr
 			
 		while(!$this->processFinished()) {
 			if ($this->parse() === FALSE) {
-				$this->log->log("Billrun_Processor: cannot parse", Zend_Log::ERR);
+				Billrun_Factory::log()->log("Billrun_Processor: cannot parse", Zend_Log::ERR);
 				return false;
 			}
 		}
@@ -37,13 +37,13 @@ abstract  class Billrun_Processor_Base_BlockedSeperatedBinary extends Billrun_Pr
 		$this->dispatcher->trigger('afterProcessorParsing', array($this));
 
 		if ($this->logDB() === FALSE) {
-			$this->log->log("Billrun_Processor: cannot log parsing action", Zend_Log::WARN);
+			Billrun_Factory::log()->log("Billrun_Processor: cannot log parsing action", Zend_Log::WARN);
 		}
 
 		$this->dispatcher->trigger('beforeProcessorStore', array($this));
 
 		if ($this->store() === FALSE) {
-			$this->log->log("Billrun_Processor: cannot store the parser lines", Zend_Log::ERR);
+			Billrun_Factory::log()->log("Billrun_Processor: cannot store the parser lines", Zend_Log::ERR);
 			return false;
 		}
 		$this->dispatcher->trigger('afterProcessorStore', array($this));

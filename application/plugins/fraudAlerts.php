@@ -30,8 +30,8 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 
 		$this->startTime = $_SERVER['REQUEST_TIME'];
 		
-		$this->eventsCol = $db->getCollection(Billrun_Db::events_table);
-		$this->linesCol = $db->getCollection(Billrun_Db::lines_table);
+		$this->eventsCol = Billrun_Factory::db()->getCollection(Billrun_Db::events_table);
+		$this->linesCol = Billrun_Factory::db()->getCollection(Billrun_Db::lines_table);
 
 	}
 

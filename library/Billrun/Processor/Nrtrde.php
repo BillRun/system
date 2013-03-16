@@ -104,7 +104,7 @@ class Billrun_Processor_Nrtrde extends Billrun_Processor_Base_Separator {
 	 */
 	protected function parseData($line) {
 		if (!isset($this->data['header'])) {
-			$this->log->log("No header found", Zend_Log::ERR);
+			Billrun_Factory::log()->log("No header found", Zend_Log::ERR);
 			return false;
 		}
 

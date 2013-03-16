@@ -59,7 +59,7 @@ abstract class Billrun_Plugin_BillrunPluginFraud extends Billrun_Plugin_BillrunP
 		
 		$db = Billrun_Factory::db();
 		$events = $db->getCollection(Billrun_Db::events_table);
-		//$this->log->log("New Alert For {$item['imsi']}",Zend_Log::DEBUG);
+		//Billrun_Factory::log()->log("New Alert For {$item['imsi']}",Zend_Log::DEBUG);
 		$ret = array();
 		foreach($items as &$item) { 
 			$newEvent = new Mongodloid_Entity($item);

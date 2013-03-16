@@ -28,7 +28,7 @@ class Billrun_Aggregator_Ggsn extends Billrun_Aggregator {
 			$subscriber = golan_subscriber::get($phone_number, $time);
 
 			if (!$subscriber) {
-				$this->log->log("subscriber not found. phone_number:" . $phone_number . " time: " . $time, Zend_Log::INFO);
+				Billrun_Factory::log()->log("subscriber not found. phone_number:" . $phone_number . " time: " . $time, Zend_Log::INFO);
 				continue;
 			}
 
@@ -37,19 +37,19 @@ class Billrun_Aggregator_Ggsn extends Billrun_Aggregator {
 			$billrun = $this->loadSubscriberBillrun($subscriber);
 
 			if (!$billrun) {
-				$this->log->log("subscriber " . $subscriber_id . " cannot load billrun", Zend_Log::INFO);
+				Billrun_Factory::log()->log("subscriber " . $subscriber_id . " cannot load billrun", Zend_Log::INFO);
 				continue;
 			}
 
 			// update billrun subscriber with amount
 			if (!$this->updateBillrun($billrun, $item)) {
-				$this->log->log("subscriber " . $subscriber_id . " cannot update billrun", Zend_Log::INFO);
+				Billrun_Factory::log()->log("subscriber " . $subscriber_id . " cannot update billrun", Zend_Log::INFO);
 				continue;
 			}
 
 			// update billing line with billrun stamp
 			if (!$this->updateBillingLine($subscriber_id, $item)) {
-				$this->log->log("subscriber " . $subscriber_id . " cannot update billing line", Zend_Log::INFO);
+				Billrun_Factory::log()->log("subscriber " . $subscriber_id . " cannot update billing line", Zend_Log::INFO);
 				continue;
 			}
 
@@ -59,11 +59,11 @@ class Billrun_Aggregator_Ggsn extends Billrun_Aggregator {
 			);
 
 			if (!$this->save($save_data)) {
-				$this->log->log("subscriber " . $subscriber_id . " cannot save data", Zend_Log::INFO);
+				Billrun_Factory::log()->log("subscriber " . $subscriber_id . " cannot save data", Zend_Log::INFO);
 				continue;
 			}
 
-			$this->log->log("subscriber " . $subscriber_id . " saved successfully", Zend_Log::INFO);
+			Billrun_Factory::log()->log("subscriber " . $subscriber_id . " saved successfully", Zend_Log::INFO);
 		}
 		// @TODO trigger after aggregate
 	}
@@ -170,7 +170,7 @@ class Billrun_Aggregator_Ggsn extends Billrun_Aggregator {
 			$this->data[] = $entity;
 		}
 
-		$this->log->log("aggregator entities loaded: " . count($this->data), Zend_Log::INFO);
+		Billrun_Factory::log()->log("aggregator entities loaded: " . count($this->data), Zend_Log::INFO);
 	}
 
 	protected function save($data) {
