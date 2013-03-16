@@ -46,7 +46,7 @@ abstract class Billrun_Receiver_Base_LocalFiles extends Billrun_Receiver {
 	 */
 	public function receive() {
 
-		$this->dispatcher->trigger('beforeLocalFilesReceive', array($this));
+		Billrun_Factory::dispatcher()->trigger('beforeLocalFilesReceive', array($this));
 
 		$type = static::$type;
 		if (!file_exists($this->srcPath)) {
@@ -70,7 +70,7 @@ abstract class Billrun_Receiver_Base_LocalFiles extends Billrun_Receiver {
 			$ret[] = $path;
 		}
 
-		$this->dispatcher->trigger('afterLocalFilesReceived', array($this, $ret));
+		Billrun_Factory::dispatcher()->trigger('afterLocalFilesReceived', array($this, $ret));
 
 		return $ret;
 	}
@@ -82,7 +82,7 @@ abstract class Billrun_Receiver_Base_LocalFiles extends Billrun_Receiver {
 	 * @return string the new path
 	 */
 	protected function handleFile($srcPath, $filename) {
-		$this->dispatcher->trigger('handlingLocalFilesReceive', array($this, &$srcPath, $filename));
+		Billrun_Factory::dispatcher()->trigger('handlingLocalFilesReceive', array($this, &$srcPath, $filename));
 		return $srcPath;
 	}
 

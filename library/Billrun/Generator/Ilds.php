@@ -41,7 +41,7 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 
 		Billrun_Factory::log()->log("aggregator entities loaded: " . count($this->data), Zend_Log::INFO);
 		
-		$this->dispatcher->trigger('afterGeneratorLoadData', array('generator' => $this));
+		Billrun_Factory::dispatcher()->trigger('afterGeneratorLoadData', array('generator' => $this));
 
 	}
 

@@ -39,6 +39,12 @@ class Billrun_Factory {
 	public static $dispatcher = null;
 	
 	/**
+	 * Chain instance
+	 * @var Billrun Chain
+	 */
+	public static $chain = null;
+	
+	/**
 	 * method to retreive the log instance
 	 * 
 	 * @return Billrun_Log
@@ -85,7 +91,7 @@ class Billrun_Factory {
 	static public function mailer() {
 		$mail = new Zend_Mail();
 		//TODO set common configuration.
-		$mail->setFrom(	Billrun_Factory::config()->getConfigValue('mailer.from.address', 'no-replay'),
+		$mail->setFrom(	Billrun_Factory::config()->getConfigValue('mailer.from.address', 'no-reply'),
 						Billrun_Factory::config()->getConfigValue('mailer.from.name', 'Billrun'));
 		
 		//$mail->setDefaultTransport($transport);
@@ -98,11 +104,24 @@ class Billrun_Factory {
 	 * @return Billrun_Dispatcher
 	 */
 	static public function dispatcher() {
-		if (!self::$db) {
+		if (!self::$dispatcher) {
 			self::$dispatcher = Billrun_Dispatcher::getInstance();
 		}
 		
 		return self::$dispatcher;
+	}
+
+	/**
+	 * method to retreive the dispatcher instance
+	 * 
+	 * @return Billrun_Dispatcher
+	 */
+	static public function chain() {
+		if (!self::$chain) {
+			self::$chain = Billrun_Dispatcher::getInstance(array('type' => 'chain'));
+		}
+		
+		return self::$chain;
 	}
 
 }

@@ -20,7 +20,7 @@ abstract class Billrun_Responder_Base_FilesResponder extends Billrun_Responder {
 	 */
 	public function respond() {
 		
-		$this->dispatcher->trigger('beforeResponse', array('type' => self::$type , 'responder' => &$this));
+		Billrun_Factory::dispatcher()->trigger('beforeResponse', array('type' => self::$type , 'responder' => &$this));
 		
 		$retPaths = array();
 		
@@ -37,7 +37,7 @@ abstract class Billrun_Responder_Base_FilesResponder extends Billrun_Responder {
 			}
 		}
 		
-		$this->dispatcher->trigger('afterResponse', array('type' => self::$type , 'responder' => &$this));
+		Billrun_Factory::dispatcher()->trigger('afterResponse', array('type' => self::$type , 'responder' => &$this));
 		
 		return $retPaths;
 	}

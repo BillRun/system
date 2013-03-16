@@ -28,10 +28,10 @@ class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 	 */
 	public function aggregate() {
 		// @TODO trigger before aggregate
-		$this->dispatcher->trigger('beforeAggregate', array($this->data,&$this));
+		Billrun_Factory::dispatcher()->trigger('beforeAggregate', array($this->data,&$this));
 		 
 		foreach ($this->data as $item) {
-			$this->dispatcher->trigger('beforeAggregateLine', array(&$item,&$this));
+			Billrun_Factory::dispatcher()->trigger('beforeAggregateLine', array(&$item,&$this));
 			$time = $item->get('call_start_dt');
 			
 			// @TODO make it configurable
@@ -89,7 +89,7 @@ class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 		
 			$save_data[Billrun_Db::lines_table] = $item;
 			
-			$this->dispatcher->trigger('beforeAggregateSaveLine', array(&$save_data, &$this));
+			Billrun_Factory::dispatcher()->trigger('beforeAggregateSaveLine', array(&$save_data, &$this));
 			
 			if (!$this->save($save_data)) {
 				Billrun_Factory::log()->log("subscriber " . $subscriber_id . " cannot save data", Zend_Log::INFO);
@@ -99,7 +99,7 @@ class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 			Billrun_Factory::log()->log("subscriber " . $subscriber_id . " saved successfully", Zend_Log::INFO);
 		}
 		// @TODO trigger after aggregate
-		$this->dispatcher->trigger('afterAggregate', array($this->data,&$this));
+		Billrun_Factory::dispatcher()->trigger('afterAggregate', array($this->data,&$this));
 	}
 
 	/**
@@ -213,7 +213,7 @@ class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 
 		Billrun_Factory::log()->log("aggregator entities loaded: " . count($this->data), Zend_Log::INFO);
 		
-		$this->dispatcher->trigger('afterAggregatorLoadData', array('aggregator' => $this));
+		Billrun_Factory::dispatcher()->trigger('afterAggregatorLoadData', array('aggregator' => $this));
 	}
 
 	protected function save($data) {

@@ -23,7 +23,7 @@ abstract  class Billrun_Processor_Base_BlockedSeperatedBinary extends Billrun_Pr
 		$this->data['trailer'] = array();
 		$this->data['header'] = $this->buildHeader(false);
 		
-		$this->dispatcher->trigger('beforeProcessorParsing', array($this));
+		Billrun_Factory::dispatcher()->trigger('beforeProcessorParsing', array($this));
 			
 		while(!$this->processFinished()) {
 			if ($this->parse() === FALSE) {
@@ -34,23 +34,23 @@ abstract  class Billrun_Processor_Base_BlockedSeperatedBinary extends Billrun_Pr
 		
 		$this->data['trailer'] = $this->buildTrailer($this->data['trailer']);
 
-		$this->dispatcher->trigger('afterProcessorParsing', array($this));
+		Billrun_Factory::dispatcher()->trigger('afterProcessorParsing', array($this));
 
 		if ($this->logDB() === FALSE) {
 			Billrun_Factory::log()->log("Billrun_Processor: cannot log parsing action", Zend_Log::WARN);
 		}
 
-		$this->dispatcher->trigger('beforeProcessorStore', array($this));
+		Billrun_Factory::dispatcher()->trigger('beforeProcessorStore', array($this));
 
 		if ($this->store() === FALSE) {
 			Billrun_Factory::log()->log("Billrun_Processor: cannot store the parser lines", Zend_Log::ERR);
 			return false;
 		}
-		$this->dispatcher->trigger('afterProcessorStore', array($this));
+		Billrun_Factory::dispatcher()->trigger('afterProcessorStore', array($this));
 
 		$this->backup();
 		
-		$this->dispatcher->trigger('afterProcessorBackup', array($this));
+		Billrun_Factory::dispatcher()->trigger('afterProcessorBackup', array($this));
 		
 		return $this->data['data'];
 	}

@@ -53,7 +53,7 @@ class Billrun_Handler extends Billrun_Base {
 
 		Billrun_Factory::log()->log("Handler collect start", Zend_Log::INFO);
 
-		$items = $this->dispatcher->trigger('handlerCollect');
+		$items = Billrun_Factory::dispatcher()->trigger('handlerCollect');
 
 		Billrun_Factory::log()->log("Handler collect finished", Zend_Log::INFO);
 
@@ -69,7 +69,7 @@ class Billrun_Handler extends Billrun_Base {
 
 		Billrun_Factory::log()->log("Handler notify start", Zend_Log::INFO);
 
-		$items = $this->dispatcher->trigger('handlerNotify',array($this));
+		$items = Billrun_Factory::dispatcher()->trigger('handlerNotify',array($this));
 
 		Billrun_Factory::log()->log("Handler notify finished", Zend_Log::INFO);
 
@@ -91,14 +91,14 @@ class Billrun_Handler extends Billrun_Base {
 			return FALSE;
 		}
 
-		$this->dispatcher->trigger('beforeHandlerAlert', array(&$items));
+		Billrun_Factory::dispatcher()->trigger('beforeHandlerAlert', array(&$items));
 
 		foreach ($items as $plugin => &$pluginItems) {
 			// ggsn
-			$this->dispatcher->trigger('handlerAlert', array(&$pluginItems, $plugin));
+			Billrun_Factory::dispatcher()->trigger('handlerAlert', array(&$pluginItems, $plugin));
 		}
 
-		$this->dispatcher->trigger('afterHandlerAlert', array(&$items));
+		Billrun_Factory::dispatcher()->trigger('afterHandlerAlert', array(&$items));
 
 		// TODO: check return values
 
@@ -121,13 +121,13 @@ class Billrun_Handler extends Billrun_Base {
 			return FALSE;
 		}
 
-		$this->dispatcher->trigger('beforeHandlerMarkDown', array(&$items));
+		Billrun_Factory::dispatcher()->trigger('beforeHandlerMarkDown', array(&$items));
 
 		foreach ($items as $plugin => &$pluginItems) {
-			$this->dispatcher->trigger('handlerMarkDown', array(&$pluginItems, $plugin));
+			Billrun_Factory::dispatcher()->trigger('handlerMarkDown', array(&$pluginItems, $plugin));
 		}
 
-		$this->dispatcher->trigger('afterHandlerMarkDown', array(&$items));
+		Billrun_Factory::dispatcher()->trigger('afterHandlerMarkDown', array(&$items));
 
 		// TODO: check return values
 

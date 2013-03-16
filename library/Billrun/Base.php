@@ -15,10 +15,10 @@
 abstract class Billrun_Base {
 
 	/**
-	 * the stamp of the aggregator
-	 * used for mark the aggregation
+	 * Stamp of the object
+	 * Used to make the object unique
 	 *
-	 * @var db resource
+	 * @var string
 	 */
 	protected $stamp = null;
 
@@ -59,31 +59,17 @@ abstract class Billrun_Base {
 	 * constructor
 	 * 
 	 * @param array $options
-	 * @todo use factory for all basic instances (config, log, db, etc)
 	 */
 	public function __construct($options = array()) {
+		if (isset($options['type'])) {
+			static::$type = $options['type'];
+		}
+
 		if (isset($options['stamp']) && $options['stamp']) {
 			$this->setStamp($options['stamp']);
 		} else {
 			$this->setStamp(uniqid(get_class($this)));
 		}
-
-		if (isset($options['dispatcher'])) {
-			$this->dispatcher = $options['dispatcher'];
-		} else {
-			$this->dispatcher = Billrun_Dispatcher::getInstance();
-		}
-
-		if (isset($options['chain'])) {
-			$this->chain = $options['chain'];
-		} else {
-			$this->chain = Billrun_Dispatcher::getInstance(array('type' => 'chain'));
-		}
-
-		if (isset($options['type'])) {
-			static::$type = $options['type'];
-		}
-
 	}
 
 	/**

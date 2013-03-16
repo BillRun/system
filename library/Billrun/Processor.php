@@ -168,20 +168,20 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 */
 	public function process() {
 
-		$this->dispatcher->trigger('beforeProcessorParsing', array($this));
+		Billrun_Factory::dispatcher()->trigger('beforeProcessorParsing', array($this));
 
 		if ($this->parse() === FALSE) {
 			Billrun_Factory::log()->log("Billrun_Processor: cannot parse", Zend_Log::ERR);
 			return false;
 		}
 
-		$this->dispatcher->trigger('afterProcessorParsing', array($this));
+		Billrun_Factory::dispatcher()->trigger('afterProcessorParsing', array($this));
 
 		if ($this->logDB() === FALSE) {
 			$this->log->log("Billrun_Processor: cannot log parsing action", Zend_Log::WARN);
 		}
 
-		$this->dispatcher->trigger('beforeProcessorStore', array($this));
+		Billrun_Factory::dispatcher()->trigger('beforeProcessorStore', array($this));
 
 		if ($this->store() === FALSE) {
 			Billrun_Factory::log()->log("Billrun_Processor: cannot store the parser lines", Zend_Log::ERR);
@@ -193,11 +193,11 @@ abstract class Billrun_Processor extends Billrun_Base {
 			return false;
 		}
 		
-		$this->dispatcher->trigger('afterProcessorStore', array($this));
+		Billrun_Factory::dispatcher()->trigger('afterProcessorStore', array($this));
 		
 		$this->backup();
 
-		$this->dispatcher->trigger('afterProcessorBackup', array($this));
+		Billrun_Factory::dispatcher()->trigger('afterProcessorBackup', array($this));
 		
 		return $this->data['data'];
 	}
@@ -302,7 +302,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 * @return void
 	 */
 	public function loadFile($file_path, $retrivedHost) {
-		$this->dispatcher->trigger('processorBeforeFileLoad', array(&$file_path, $this));
+		Billrun_Factory::dispatcher()->trigger('processorBeforeFileLoad', array(&$file_path, $this));
 		if (file_exists($file_path)) {
 			$this->filePath = $file_path;
 			$this->filename = substr($file_path, strrpos($file_path, '/'));
@@ -312,7 +312,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 		} else {
 			Billrun_Factory::log()->log("Billrun_Processor->loadFile: cannot load the file: " . $file_path, Zend_Log::ERR);
 		}
-		$this->dispatcher->trigger('processorAfterFileLoad', array(&$file_path));
+		Billrun_Factory::dispatcher()->trigger('processorAfterFileLoad', array(&$file_path));
 	}
 
 	/**
