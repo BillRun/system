@@ -20,7 +20,7 @@ class depositPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$this->log->log("Marking down Alert For $pluginName", Zend_Log::DEBUG);
 		$ret = array();
 		$db = Billrun_Factory::db();
-		$events = $db->getCollection($db::events_table);
+		$events = $db->getCollection(Billrun_Db::events_table);
 		foreach($items as &$item) {
 			$event = new Mongodloid_Entity($item);
 			

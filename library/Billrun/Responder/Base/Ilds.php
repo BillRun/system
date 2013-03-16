@@ -33,11 +33,11 @@ abstract class Billrun_Responder_Base_Ilds extends Billrun_Responder_Base_LocalD
 		$logLine = $logLine->getRawData();
 		$this->linesCount = $this->linesErrors = $this->totalChargeAmount = 0;
 		
-		$dbLines = $this->db->getCollection(self::lines_table)->query()->equals('file', $logLine['file']);
+		$dbLines = Billrun_Factory::db()->getCollection(Billrun_Db::lines_table)->query()->equals('file', $logLine['file']);
 
 		//run only after the lines were processed by the billrun.
 		if ($dbLines->count() == 0 || /* TODO fix this db query  find a way to query the $dbLines results insted */ 
-			$this->db->getCollection(self::lines_table)->query()->equals('file', $logLine['file'])->exists('billrun')->count() == 0) {
+			Billrun_Factory::db()->getCollection(Billrun_Db::lines_table)->query()->equals('file', $logLine['file'])->exists('billrun')->count() == 0) {
 			return false;
 		}
 

@@ -15,13 +15,6 @@
 abstract class Billrun_Base {
 
 	/**
-	 * the database we are working on
-	 *
-	 * @var db resource
-	 */
-	protected $db = null;
-
-	/**
 	 * the stamp of the aggregator
 	 * used for mark the aggregation
 	 *
@@ -65,27 +58,6 @@ abstract class Billrun_Base {
 	static protected $type = 'base';
 
 	/**
-	 * constant of log collection name
-	 */
-
-	const log_table = 'log';
-
-	/**
-	 * constant of lines collection name
-	 */
-	const lines_table = 'lines';
-
-	/**
-	 * constant of billrun collection name
-	 */
-	const billrun_table = 'billrun';
-
-	/**
-	 * constant of events collection name
-	 */
-	const events_table = 'events';
-
-	/**
 	 * constant for base date format
 	 */
 	const base_dateformat = 'Y-m-d H:i:s';
@@ -107,13 +79,6 @@ abstract class Billrun_Base {
 			$this->log = $options['log'];
 		} else {
 			$this->log = Billrun_Log::getInstance();
-		}
-
-		if (isset($options['db'])) {
-			$this->setDB($options['db']);
-		} else {
-			$conn = Mongodloid_Connection::getInstance($this->config->db->host, $this->config->db->port);
-			$this->setDB($conn->getDB($this->config->db->name));
 		}
 
 		if (isset($options['stamp']) && $options['stamp']) {
@@ -138,18 +103,6 @@ abstract class Billrun_Base {
 			static::$type = $options['type'];
 		}
 
-	}
-
-	/**
-	 * set database of the basic object
-	 * @deprecated since version 0.1.1
-	 * @param resource $db the database instance to set
-	 *
-	 * @return mixed self instance
-	 */
-	public function setDB($db) {
-		$this->db = $db;
-		return $this;
 	}
 
 	/**

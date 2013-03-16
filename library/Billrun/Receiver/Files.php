@@ -73,7 +73,6 @@ class Billrun_Receiver_Files extends Billrun_Receiver {
 			'type' => $type,
 			//'path' => $filePath,
 			'parser' => 'fixed',
-			'db' => $this->db,
 		);
 
 		$processor = Billrun_Processor::getInstance($options);
@@ -95,7 +94,7 @@ class Billrun_Receiver_Files extends Billrun_Receiver {
 	 * method to check if the file already processed
 	 */
 	protected function isFileReceived($filename, $type) {
-		$log = $this->db->getCollection(self::log_table);
+		$log = Billrun_Factory::db()->getCollection(Billrun_Db::log_table);
 		$resource = $log->query()->equals('type', $type)->equals('file_name', $filename);
 		return $resource->count() > 0;
 	}

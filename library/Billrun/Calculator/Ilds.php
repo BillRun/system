@@ -54,7 +54,7 @@ class Billrun_Calculator_Ilds extends Billrun_Calculator {
 	 */
 	public function write() {
 		$this->dispatcher->trigger('beforeCalculatorWriteData', array('data' => $this->data));
-		$lines = $this->db->getCollection(self::lines_table);
+		$lines = Billrun_Factory::db()->getCollection(Billrun_Db::lines_table);
 		foreach ($this->data as $item) {
 			$item->save($lines);
 		}

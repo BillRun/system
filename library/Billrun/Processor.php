@@ -129,7 +129,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 */
 	public function process_files() {
 
-		$log = $this->db->getCollection(self::log_table);
+		$log = Billrun_Factory::db()->getCollection(Billrun_Db::log_table);
 		$files = $log->query()
 			->equals('source', static::$type)
 			->notExists('process_time');
@@ -210,17 +210,13 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 * @todo refactoring this method
 	 */
 	protected function logDB() {
-		if (!isset($this->db)) {
-			Billrun_Factory::log()->log("Billrun_Processor:logDB not database instance", Zend_Log::ERR);
-			return false;
-		}
 
 		if (!isset($this->data['trailer']) && !isset($this->data['header'])) {
 			Billrun_Factory::log()->log("Billrun_Processor:logDB no header nor trailer to log", Zend_Log::ERR);
 			return false;
 		}
 
-		$log = $this->db->getCollection(self::log_table);
+		$log = Billrun_Factory::db()->getCollection(Billrun_Db::log_table);
 
 		$header = array();
 		if (isset($this->data['header'])) {
@@ -265,12 +261,12 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 * @todo refactoring this method
 	 */
 	protected function store() {
-		if (!isset($this->db) || !isset($this->data['data'])) {
+		if (!isset($this->data['data'])) {
 			// raise error
 			return false;
 		}
 
-		$lines = $this->db->getCollection(self::lines_table);
+		$lines = Billrun_Factory::db()->getCollection(Billrun_Db::lines_table);
 
 		foreach ($this->data['data'] as $row) {
 			$entity = new Mongodloid_Entity($row);

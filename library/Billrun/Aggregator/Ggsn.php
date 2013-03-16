@@ -54,8 +54,8 @@ class Billrun_Aggregator_Ggsn extends Billrun_Aggregator {
 			}
 
 			$save_data = array(
-				self::lines_table => $item,
-				self::billrun_table => $billrun,
+				Billrun_Db::lines_table => $item,
+				Billrun_Db::billrun_table => $billrun,
 			);
 
 			if (!$this->save($save_data)) {
@@ -77,7 +77,7 @@ class Billrun_Aggregator_Ggsn extends Billrun_Aggregator {
 	 */
 	public function loadSubscriberBillrun($subscriber) {
 
-		$billrun = $this->db->getCollection(self::billrun_table);
+		$billrun = Billrun_Factory::db()->getCollection(Billrun_Db::billrun_table);
 		$resource = $billrun->query()
 			->equals('subscriber_id', $subscriber['id'])
 			->equals('account_id', $subscriber['account_id'])
@@ -158,7 +158,7 @@ class Billrun_Aggregator_Ggsn extends Billrun_Aggregator {
 	 * load the data to aggregate
 	 */
 	public function load($initData = true) {
-		$lines = $this->db->getCollection(self::lines_table)->query('billrun NOT EXISTS')
+		$lines = Billrun_Factory::db()->getCollection(Billrun_Db::lines_table)->query('billrun NOT EXISTS')
 			->equals("type", 'ggsn');
 
 		if ($initData) {
@@ -175,7 +175,7 @@ class Billrun_Aggregator_Ggsn extends Billrun_Aggregator {
 
 	protected function save($data) {
 		foreach ($data as $coll_name => $coll_data) {
-			$coll = $this->db->getCollection($coll_name);
+			$coll = Billrun_Factory::db()->getCollection($coll_name);
 			$coll->save($coll_data);
 		}
 		return true;
