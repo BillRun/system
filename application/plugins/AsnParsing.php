@@ -42,7 +42,7 @@ trait AsnParsing {
 		if(  preg_match("/\[(\w+)\]/",$struct[0],$matches) || !is_array($asnData) ) {
 			$ret = false;
 			if(!isset($matches[1]) || !$matches[1] || !isset($fields[$matches[1]])) {
-				$this->log->log(" digging into : {$struct[0]} struct : ". print_r($struct,1) . " data : " . print_r($asnData,1) , Zend_Log::DEBUG);				
+				$this->log->log(" couldn't digg into : {$struct[0]} struct : ". print_r($struct,1) . " data : " . print_r($asnData,1) , Zend_Log::DEBUG);				
 			} else {
 				$ret = $this->parseField( $fields[$matches[1]], $asnData );
 			}
@@ -63,11 +63,84 @@ trait AsnParsing {
 	
 	/**
 	 * parse a field from raw data based on a field description
-	 * @param string $data the raw data to be parsed.
-	 * @param array $fileDesc the field description
+	 * @param string $fieldData the raw data to be parsed.
+	 * @param array $type the field description
 	 * @return mixed the parsed value from the field.
 	 */
-	abstract protected function parseField( $fileDesc, $data );
+	abstract protected function parseField( $type, $fieldData );
+	
+	/**
+	 * Standrad field parsing methods.
+	 * @param string $fieldData the raw data to be parsed.
+	 * @param array $type the field description
+	 * @return the parsed value of the field or null if the type wasnt found.
+	 */
+	protected function parseStandardFields( $type, $fieldData ) {
+			switch ($type) {
+				/* //TODO remove */
+				case 'debug':					
+					$numarr = unpack("C*", $fieldData);
+					$numData = 0;
+					foreach ($numarr as $byte) {
+						//$fieldData = $fieldData <<8;
+						$numData = ($numData << 8 ) + $byte;
+					}
+					$halfBytes = unpack("C*", $fieldData);
+					$tempData = "";
+					foreach ($halfBytes as $byte) {
+						$tempData .= ($byte & 0xF) . ((($byte >> 4) < 10) ? ($byte >> 4) : "" );
+					}
+					Billrun_Factory::log()->log( "DEBUG : " . $type . " | " . $numData . " | " . $tempData . " | " . implode(unpack("H*", $fieldData)) . " | " . implode(unpack("C*", $fieldData)) . " | " . $fieldData ,  Zend_Log::DEBUG);
+					$fieldData = "";
+					break;
+
+				case 'string':
+					$fieldData = utf8_encode($fieldData);
+					break;
+
+				case 'long':
+					$numarr = unpack('C*', $fieldData);
+					$fieldData = 0;
+					foreach ($numarr as $byte) {						
+						$fieldData = bcadd(bcmul($fieldData , 256 ), $byte);
+					}
+					break;
+
+				case 'number':
+					$numarr = unpack('C*', $fieldData);
+					$fieldData = 0;
+					foreach ($numarr as $byte) {
+						$fieldData = ($fieldData << 8) + $byte;
+					}
+					break;
+
+				case 'BCDencode' :
+					$halfBytes = unpack('C*', $fieldData);
+					$fieldData = '';
+					foreach ($halfBytes as $byte) {
+						//$fieldData = $fieldData <<8;
+						$fieldData .= ($byte & 0xF) . ((($byte >> 4) < 10) ? ($byte >> 4) : '' );
+					}
+					break;
+
+				case 'ip' :
+					$fieldData = implode('.', unpack('C*', $fieldData));
+					break;
+
+				case 'datetime' :
+					$tempTime = DateTime::createFromFormat('ymdHisT', str_replace('2b', '+', implode(unpack('H*', $fieldData))));
+					$fieldData = is_object($tempTime) ? $tempTime->format('YmdHis') : '';
+					break;
+
+				case 'json' :
+					$fieldData = json_encode($this->utf8encodeArr($fieldData));
+					break;
+
+				default:
+					$fieldData = null;
+			}
+		return $fieldData;
+	 }
 }
 
 ?>
