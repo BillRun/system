@@ -1,5 +1,4 @@
 <?php
-require_once __DIR__ . '/AsnParsing.php';
 
 /**
  * @package         Billing
@@ -15,7 +14,7 @@ require_once __DIR__ . '/AsnParsing.php';
 class tap3Plugin  extends Billrun_Plugin_BillrunPluginBase
 					implements	Billrun_Plugin_Interface_IParser,  
 								Billrun_Plugin_Interface_IProcessor {
-	use AsnParsing;
+	use Billrun_Helpers_AsnParsing;
 
 	protected $name = 'tap3';
 	

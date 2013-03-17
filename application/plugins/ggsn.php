@@ -1,5 +1,4 @@
 <?php
-require_once __DIR__ . '/AsnParsing.php';
 
 /**
  * @package         Billing
@@ -12,11 +11,11 @@ require_once __DIR__ . '/AsnParsing.php';
  */
 class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements	Billrun_Plugin_Interface_IParser, 
 																		Billrun_Plugin_Interface_IProcessor {
-    use AsnParsing;
+    use Billrun_Helpers_AsnParsing;
 		
 	const HEADER_LENGTH = 54;
 	const MAX_CHUNKLENGTH_LENGTH = 512;
-	const FILE_READ_AHEAD_LENGTH = 8196;
+	const FILE_READ_AHEAD_LENGTH = 16384;
 
 	
 	/**
