@@ -24,7 +24,7 @@ class Mongodloid_Entity implements ArrayAccess {
 	);
 
 	public function __construct($values = null, $collection = null) {
-		if ($values instanceOf Mongodloid_ID) {
+		if ($values instanceOf Mongodloid_Id) {
 			if (!$collection instanceOf Mongodloid_Collection)
 				throw new Mongodloid_Exception('You need to specify the collection');
 
@@ -191,7 +191,7 @@ class Mongodloid_Entity implements ArrayAccess {
 		if (!$this->_values['_id'])
 			return false;
 
-		return new Mongodloid_ID($this->_values['_id']);
+		return new Mongodloid_Id($this->_values['_id']);
 	}
 
 	public function getRawData() {

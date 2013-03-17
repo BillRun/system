@@ -116,7 +116,7 @@ class Mongodloid_Collection {
 		if ($query instanceOf Mongodloid_Entity)
 			$query = $query->getId();
 
-		if ($query instanceOf Mongodloid_ID)
+		if ($query instanceOf Mongodloid_Id)
 			$query = array('_id' => $query->getMongoId());
 
 		return $this->_collection->remove($query);

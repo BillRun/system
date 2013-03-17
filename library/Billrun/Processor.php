@@ -234,7 +234,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 		}
 
 		$current_stamp = $this->getStamp(); // mongo id in new version; else string
-		if ($current_stamp instanceof Mongodloid_Entity || $current_stamp instanceof Mongodloid_ID) {
+		if ($current_stamp instanceof Mongodloid_Entity || $current_stamp instanceof Mongodloid_Id) {
 			$resource = $log->findOne($current_stamp);
 			if (!empty($header)) {
 				$resource->set('header', $header);
