@@ -56,9 +56,9 @@ class tap3Plugin  extends Billrun_Plugin_BillrunPluginBase
 				$cdrLine['record_type'] = $type;
 			}
 		} else {
-			Billrun_Factory::log()->log("couldn't find  definition for {$type}",  Zend_Log::DEBUG);
+			//Billrun_Factory::log()->log("couldn't find  definition for {$type}",  Zend_Log::DEBUG);
 		}
-		Billrun_Factory::log()->log($data->getType() . " : " . print_r($cdrLine,1) ,  Zend_Log::DEBUG);
+		//Billrun_Factory::log()->log($data->getType() . " : " . print_r($cdrLine,1) ,  Zend_Log::DEBUG);
 		return $cdrLine;
 	}
 	
@@ -79,7 +79,7 @@ class tap3Plugin  extends Billrun_Plugin_BillrunPluginBase
 		if($this->getName() != $type) { return FALSE; }	
 		
 		$trailer= $this->getASNDataByConfig($data, $this->nsnConfig['trailer'], $this->nsnConfig['fields']);		
-		Billrun_Factory::log()->log(print_r($trailer,1),  Zend_Log::DEBUG);
+		//Billrun_Factory::log()->log(print_r($trailer,1),  Zend_Log::DEBUG);
 		
 		return $trailer;
 	}
