@@ -36,6 +36,8 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements	Billrun_Pl
 		parent::__construct($options);
 		
 		$this->ggsnConfig = parse_ini_file(Billrun_Factory::config()->getConfigValue('ggsn.config_path'), true);
+		$this->initParsing();
+		$this->addParsingMethods();
 	}
 	
 	/**
@@ -315,44 +317,49 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements	Billrun_Pl
 	}
 	
 	/**
-	 * Parse an parseField($type, $fieldData) binary field using a specific data structure.
+	 * add GGSN specific parsing methods.
 	 */
-	protected function parseField($type, $fieldData) {
-		$ret = $this->parseStandardFields($type, $fieldData);
-		if($ret !== null) {
-			$fieldData = $ret;
-		} else {
-			switch ($type) {
-				case 'diagnostics':
-					$data = $fieldData;
-					$fieldData = false;
-					$diags = $this->ggsnConfig['fields_translate']['diagnostics'];
-					if(!is_array($data)) {
-						$diag = intval(implode('.', unpack('C', $data)));
-						$fieldData = isset($diags[$diag]) ? $diags[$diag] : false; 
-					} else {
-						foreach($diags as $key => $diagnostics) {
-							if(is_array($diagnostics) && isset($data[$key]) ) {
-								$diag = intval(implode('.', unpack('C', $data[$key])));
-								Billrun_Factory::log()->log($diag. " : " . $diagnostics[$diag],  Zend_Log::DEBUG);
-								$fieldData = $diagnostics[$diag];
-								
+	protected function addParsingMethods() {
+		$newParsingMethods = array(
+				'diagnostics' => function($data) {
+						$ret = false;
+						$diags = $this->ggsnConfig['fields_translate']['diagnostics'];
+						if(!is_array($data)) {
+							$diag = intval(implode('.', unpack('C', $data)));
+							$ret = isset($diags[$diag]) ? $diags[$diag] : false; 
+						} else {
+							foreach($diags as $key => $diagnostics) {
+								if(is_array($diagnostics) && isset($data[$key]) ) {
+									$diag = intval(implode('.', unpack('C', $data[$key])));
+									Billrun_Factory::log()->log($diag. " : " . $diagnostics[$diag],  Zend_Log::DEBUG);
+									$ret = $diagnostics[$diag];
+
+								}
 							}
 						}
-					}
-					break;
+						return $ret;
+					},
 					
-				case 'ch_ch_selection_mode':
+				'ch_ch_selection_mode' => function($data) {	
+						$smode = intval(implode('.', unpack('C', $data)));
+						return (isset($this->ggsnConfig['fields_translate']['ch_ch_selection_mode'][$smode]) ? 
+											$this->ggsnConfig['fields_translate']['ch_ch_selection_mode'][$smode] : 
+											false);
+					},
+				'bcd_encode' => function($fieldData)	{
+						$halfBytes = unpack('C*', $fieldData);
+						$ret = '';
+						foreach ($halfBytes as $byte) {
+							$ret .=   ($byte & 0xF) . ((($byte >> 4) < 10) ? ($byte >> 4) : '' ) ;
+						}
+						return $ret;
+					},
+				'default' => function($type, $data) {
+						return (is_array($data) ? '' : implode('', unpack($type, $data)));
+					},
+				);
 					
-					$smode = intval(implode('.', unpack('C', $fieldData)));
-					$fieldData = isset($this->ggsnConfig['fields_translate']['ch_ch_selection_mode'][$smode]) ? $this->ggsnConfig['fields_translate']['ch_ch_selection_mode'][$smode] : false; 
-					break;
-				
-				default:
-					$fieldData = is_array($fieldData) ? '' : implode('', unpack($type, $fieldData));
-			}
-		}
-		return $fieldData;
+			$this->parsingMethods  = array_merge( $this->parsingMethods, $newParsingMethods );
 	}
 	
 	

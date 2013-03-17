@@ -12,6 +12,74 @@
  */
 trait AsnParsing {
 	
+	protected $parsingMethods = array();
+
+	protected  function initParsing() {
+		$this->parsingMethods = array( 
+					'debug' => function($fieldData)	{					/* //TODO remove */			
+							$numarr = unpack("C*", $fieldData);
+							$numData = 0;
+							foreach ($numarr as $byte) {
+								//$fieldData = $fieldData <<8;
+								$numData = ($numData << 8 ) + $byte;
+							}
+							$halfBytes = unpack("C*", $fieldData);
+							$tempData = "";
+							foreach ($halfBytes as $byte) {
+								$tempData .= ($byte & 0xF) . ((($byte >> 4) < 10) ? ($byte >> 4) : "" );
+							}
+							Billrun_Factory::log()->log( "DEBUG : " . $type . " | " . $numData . " | " . $tempData . " | " . implode(unpack("H*", $fieldData)) . " | " . implode(unpack("C*", $fieldData)) . " | " . $fieldData ,  Zend_Log::DEBUG);
+							return "";
+					 },
+					'string'=> function($fieldData)	{
+						return utf8_encode($fieldData);
+					},
+					'ascii' => function($fieldData)	{
+						return preg_replace('/[^(\x20-\x7F)]*/','', $fieldData);
+					},
+					'ascii_number' => function($fieldData)	{
+						return intval( preg_replace('/[^(\x20-\x7F)]*/','', $fieldData),10);
+					},
+					 'long' => function($fieldData)	{
+						$numarr = unpack('C*', $fieldData);
+						$ret = 0;
+						foreach ($numarr as $byte) {						
+							$ret = bcadd(bcmul($ret , 256 ), $byte);
+						}
+						return $ret;
+					 },
+					'number' => function($fieldData)	{
+						$numarr = unpack('C*', $fieldData);
+						$ret = 0;
+						foreach ($numarr as $byte) {
+							$ret = ($ret << 8) + $byte;
+						}
+						return $ret;
+					},
+					'bcd_encode' => function($fieldData)	{
+						$halfBytes = unpack('C*', $fieldData);
+						$ret = '';
+						foreach ($halfBytes as $byte) {
+							$ret .=  ((($byte >> 4) < 10) ? ($byte >> 4) : '' ) . ($byte & 0xF) ;
+						}
+						return $ret;
+					},
+					'ip' => function($fieldData)	{
+						return implode('.', unpack('C*', $fieldData));
+					},
+					'ip6'  => function($fieldData)	{
+						return implode(':', unpack('H*', $fieldData));
+					},
+					'datetime' => function($fieldData)	{
+						$tempTime = DateTime::createFromFormat('ymdHisT', str_replace('2b', '+', implode(unpack('H*', $fieldData))));
+						return is_object($tempTime) ? $tempTime->format('YmdHis') : '';
+					},
+					'json' => function($fieldData)	{
+						return json_encode($this->utf8encodeArr($fieldData));
+					},
+				);
+	}
+
 	/**
 	 * Get specific data from an asn.1 structure  based on configuration
 	 * @param type $data the ASN.1 data struture
@@ -67,95 +135,15 @@ trait AsnParsing {
 	 * @param array $type the field description
 	 * @return mixed the parsed value from the field.
 	 */
-	abstract protected function parseField( $type, $fieldData );
-	
-	/**
-	 * Standrad field parsing methods.
-	 * @param string $fieldData the raw data to be parsed.
-	 * @param array $type the field description
-	 * @return the parsed value of the field or null if the type wasnt found.
-	 */
-	protected function parseStandardFields( $type, $fieldData ) {
-			switch ($type) {
-				/* //TODO remove */
-				case 'debug':					
-					$numarr = unpack("C*", $fieldData);
-					$numData = 0;
-					foreach ($numarr as $byte) {
-						//$fieldData = $fieldData <<8;
-						$numData = ($numData << 8 ) + $byte;
-					}
-					$halfBytes = unpack("C*", $fieldData);
-					$tempData = "";
-					foreach ($halfBytes as $byte) {
-						$tempData .= ($byte & 0xF) . ((($byte >> 4) < 10) ? ($byte >> 4) : "" );
-					}
-					Billrun_Factory::log()->log( "DEBUG : " . $type . " | " . $numData . " | " . $tempData . " | " . implode(unpack("H*", $fieldData)) . " | " . implode(unpack("C*", $fieldData)) . " | " . $fieldData ,  Zend_Log::DEBUG);
-					$fieldData = "";
-					break;
-
-				case 'string':
-					$fieldData = utf8_encode($fieldData);
-					break;
-				
-				case 'ascii':
-						$retValue = preg_replace('/[^(\x20-\x7F)]*/','', $fieldData);
-					break;
-				
-				case 'ascii_number':
-						$retValue = intval( preg_replace('/[^(\x20-\x7F)]*/','', $fieldData),10);
-					break;
-
-				case 'long':
-					$numarr = unpack('C*', $fieldData);
-					$fieldData = 0;
-					foreach ($numarr as $byte) {						
-						$fieldData = bcadd(bcmul($fieldData , 256 ), $byte);
-					}
-					break;
-
-				case 'number':
-					$numarr = unpack('C*', $fieldData);
-					$fieldData = 0;
-					foreach ($numarr as $byte) {
-						$fieldData = ($fieldData << 8) + $byte;
-					}
-					break;
-					
-				case 'bcd_number' :
-				case 'bcd_encode' :
-					$halfBytes = unpack('C*', $fieldData);
-					$fieldData = '';
-					foreach ($halfBytes as $byte) {
-						$fieldData .=  ((($byte >> 4) < 10) ? ($byte >> 4) : '' ) . ($byte & 0xF) ;
-					}
-					if($type == 'bcd_number') {
-						$retValue = intval($retValue,10);
-					}
-					break;
+	 protected function parseField( $type, $fieldData ) {
+		 
+		$ret = isset($this->parsingMethods[$type]) ? $this->parsingMethods[$type]($fieldData) : null;
+		if(null === $ret && $this->parsingMethods['default']) {
+			$ret = $this->parsingMethods['default']($type, $fieldData);
+		}
 		
-				case 'ip' :
-					$fieldData = implode('.', unpack('C*', $fieldData));
-					break;
-				
-				case 'ip6' :
-					$fieldData = implode(':', unpack('H*', $fieldData));
-					break;
-				
-				case 'datetime' :
-					$tempTime = DateTime::createFromFormat('ymdHisT', str_replace('2b', '+', implode(unpack('H*', $fieldData))));
-					$fieldData = is_object($tempTime) ? $tempTime->format('YmdHis') : '';
-					break;
-
-				case 'json' :
-					$fieldData = json_encode($this->utf8encodeArr($fieldData));
-					break;
-
-				default:
-					$fieldData = null;
-			}
-		return $fieldData;
-	 }
+		return $ret;
+	}
 	 
 	/**
 	 * Encode an array content in utf encoding

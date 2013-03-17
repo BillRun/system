@@ -8,9 +8,6 @@ require_once __DIR__ . '/AsnParsing.php';
  */
 
 /**
- * 
- */
-/**
  * This a plguin to provide TAP3 CDRs support to the billing system.
  *
  * @author eran
@@ -30,6 +27,8 @@ class tap3Plugin  extends Billrun_Plugin_BillrunPluginBase
 		parent::__construct($options);
 		
 		$this->nsnConfig = parse_ini_file(Billrun_Factory::config()->getConfigValue('tap3.config_path'), true);
+		$this->initParsing();
+		$this->addParsingMethods();
 	}
 	
 	/**
@@ -86,52 +85,16 @@ class tap3Plugin  extends Billrun_Plugin_BillrunPluginBase
 	}
 	
 	/**
-	 * parse a field from raw data based on a field description
-	 * @param string $data the raw data to be parsed.
-	 * @param array $fileDesc the field description
-	 * @return mixed the parsed value from the field.
+	 * add GGSN specific parsing methods.
 	 */
-	protected function parseField($type, $data) {
-		$retValue = $this->parseStandardFields($type, $data);
-		if($retValue === null) { 
-			switch($type) {
-				case 'phone_number' :
-						$val = '';
-						for($i=0; $i < $length ; ++$i) {
-							$byteVal = ord($data[$i]);
-							$left = $byteVal & 0xF;
-							$right = $byteVal >> 4;
-							$digit =  $left == 0xA ? "*" : 
-										($left == 0xB ? "#" :
-										($left > 0xC ? dechex($left-2) :
-										 $left));
-							$digitRight =  $right == 0xA ? "*" : 
-										($right == 0xB ? "#" :
-										($right > 0xC ? dechex($right-2) :
-										 $right));
-							$val .=  $digit . $digitRight;
-						}
-						$retValue = str_replace('d','',$val);
-					break;
-
-				case 'hex' :
-						$retValue ='';
-						for($i=$length-1; $i >= 0  ; --$i) {
-							$retValue .= dechex(ord($data[$i]));
-						}
-					break;
-
-				case 'format_ver' :
-						$retValue =$data[0]. $data[1].ord($data[2]).'.'.ord($data[3]).'-'.ord($data[4]);
-					break;
-
-				case 'raw_data':
-						$retValue = $this->utf8encodeArr($data);
-					break;
-			}
-		}
-		
-		return $retValue;		
+	protected function addParsingMethods() {
+		$newParsingMethods = array(
+				 'raw_data'  => function($data)	{
+						return $this->utf8encodeArr($data);
+					},
+				);
+					
+		$this->parsingMethods  = array_merge( $this->parsingMethods, $newParsingMethods );
 	}
 
 	
