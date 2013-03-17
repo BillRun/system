@@ -97,6 +97,14 @@ trait AsnParsing {
 				case 'string':
 					$fieldData = utf8_encode($fieldData);
 					break;
+				
+				case 'ascii':
+						$retValue = preg_replace('/[^(\x20-\x7F)]*/','', $fieldData);
+					break;
+				
+				case 'ascii_number':
+						$retValue = intval( preg_replace('/[^(\x20-\x7F)]*/','', $fieldData),10);
+					break;
 
 				case 'long':
 					$numarr = unpack('C*', $fieldData);
@@ -113,20 +121,27 @@ trait AsnParsing {
 						$fieldData = ($fieldData << 8) + $byte;
 					}
 					break;
-
-				case 'BCDencode' :
+					
+				case 'bcd_number' :
+				case 'bcd_encode' :
 					$halfBytes = unpack('C*', $fieldData);
 					$fieldData = '';
 					foreach ($halfBytes as $byte) {
-						//$fieldData = $fieldData <<8;
-						$fieldData .= ($byte & 0xF) . ((($byte >> 4) < 10) ? ($byte >> 4) : '' );
+						$fieldData .=  ((($byte >> 4) < 10) ? ($byte >> 4) : '' ) . ($byte & 0xF) ;
+					}
+					if($type == 'bcd_number') {
+						$retValue = intval($retValue,10);
 					}
 					break;
-
+		
 				case 'ip' :
 					$fieldData = implode('.', unpack('C*', $fieldData));
 					break;
-
+				
+				case 'ip6' :
+					$fieldData = implode(':', unpack('H*', $fieldData));
+					break;
+				
 				case 'datetime' :
 					$tempTime = DateTime::createFromFormat('ymdHisT', str_replace('2b', '+', implode(unpack('H*', $fieldData))));
 					$fieldData = is_object($tempTime) ? $tempTime->format('YmdHis') : '';
@@ -141,6 +156,18 @@ trait AsnParsing {
 			}
 		return $fieldData;
 	 }
+	 
+	/**
+	 * Encode an array content in utf encoding
+	 * @param $arr the array to encode.
+	 * @return array with a recurcivly encoded values.
+	 */
+	protected function utf8encodeArr($arr) {
+		foreach ($arr as &$val) {
+			$val = is_array($val) ? $this->utf8encodeArr($val) : utf8_encode($val);
+		}
+		return $arr;
+	}
 }
 
 ?>

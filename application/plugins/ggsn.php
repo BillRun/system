@@ -8,7 +8,7 @@ require_once __DIR__ . '/AsnParsing.php';
  */
 
 /**
- * This a plgunin to provide GGSN support to the billing system.
+ * This a plguin to provide GGSN support to the billing system.
  */
 class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements	Billrun_Plugin_Interface_IParser, 
 																		Billrun_Plugin_Interface_IProcessor {
