@@ -98,7 +98,7 @@ class Billrun_Factory {
 	 * @return Billrun_Dispatcher
 	 */
 	static public function dispatcher() {
-		if (!self::$db) {
+		if (!self::$dispatcher) {
 			self::$dispatcher = Billrun_Dispatcher::getInstance();
 		}
 		
