@@ -14,7 +14,7 @@
 class tap3Plugin  extends Billrun_Plugin_BillrunPluginBase
 					implements	Billrun_Plugin_Interface_IParser,  
 								Billrun_Plugin_Interface_IProcessor {
-	use Billrun_Helpers_AsnParsing;
+	use Billrun_Traits_AsnParsing;
 
 	protected $name = 'tap3';
 	

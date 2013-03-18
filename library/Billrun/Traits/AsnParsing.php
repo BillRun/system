@@ -10,7 +10,7 @@
  *
  * @author eran
  */
-trait Billrun_Helpers_AsnParsing {
+trait Billrun_Traits_AsnParsing {
 	
 	protected $parsingMethods = array();
 
