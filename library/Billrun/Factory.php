@@ -45,7 +45,7 @@ class Billrun_Factory {
 	public static $chain = null;
 	
 	/**
-	 * method to retreive the log instance
+	 * method to retrieve the log instance
 	 * 
 	 * @return Billrun_Log
 	 */
@@ -58,7 +58,7 @@ class Billrun_Factory {
 	}
 	
 	/**
-	 * method to retreive the config instance
+	 * method to retrieve the config instance
 	 * 
 	 * @return Billrun_Config
 	 */
@@ -71,7 +71,7 @@ class Billrun_Factory {
 	}
 	
 	/**
-	 * method to retreive the db instance
+	 * method to retrieve the db instance
 	 * 
 	 * @return Billrun_Db
 	 */
@@ -84,7 +84,7 @@ class Billrun_Factory {
 	}
 	
 	/**
-	 * method to retreive the a mailer instance
+	 * method to retrieve the a mailer instance
 	 * 
 	 * @return Billrun_Db
 	 */
@@ -99,7 +99,7 @@ class Billrun_Factory {
 	}
 	
 	/**
-	 * method to retreive the dispatcher instance
+	 * method to retrieve the dispatcher instance
 	 * 
 	 * @return Billrun_Dispatcher
 	 */
@@ -112,7 +112,7 @@ class Billrun_Factory {
 	}
 
 	/**
-	 * method to retreive the dispatcher instance
+	 * method to retrieve the dispatcher instance
 	 * 
 	 * @return Billrun_Dispatcher
 	 */
