@@ -55,6 +55,9 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$retValue = array();
 		//Aggregate the  events by imsi  taking only the first one.
 		$events = $this->gatherEvents(array( 'nrtrde','ggsn', 'deposit','ilds','nsn'));
+		//Get the amount of alerts allow per run 0 means no limit (or a very high limit)
+		$alertsLeft = Billrun_Factory::config()->getConfigValue('fraudAlerts.alert_limit', 0);
+		
 		foreach ($events as $event) {
 			$ret = $this->notifyOnEvent($event);
 			if ($ret) {
@@ -64,6 +67,11 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 				$this->markEventLine($event);
 				$retValue[] = $event;
 			}
+			
+			//Decrese the amount of alerts allowed in a single run if 0 is reached the break the loop.
+			$alertsLeft--;
+			if($alertsLeft == 0) {break;}
+			
 		}
 		
 		return $retValue;
