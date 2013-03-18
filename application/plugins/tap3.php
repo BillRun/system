@@ -115,7 +115,6 @@ class tap3Plugin  extends Billrun_Plugin_BillrunPluginBase
 		//$bytes = substr($bytes, $processor->getParser()->getLastParseLength());
 
 		foreach($parsedData->getData() as  $record ) {			
-			Billrun_Factory::log()->log($record->getType() . " : " . count($record->getData()) ,  Zend_Log::DEBUG);
 			if(in_array($record->getType(),$this->nsnConfig['config']['data_records'])) {
 				foreach($record->getData() as $key => $data ) {			
 					$row = $processor->buildDataRow($data);
