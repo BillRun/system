@@ -46,7 +46,7 @@ abstract class Billrun_Processor_Base_Separator extends Billrun_Processor {
 	 */
 	protected function parse() {
 		if (!is_resource($this->fileHandler)) {
-			$this->log->log("Resource is not configured well", Zend_Log::ERR);
+			Billrun_Factory::log()->log("Resource is not configured well", Zend_Log::ERR);
 			return false;
 		}
 
@@ -64,7 +64,7 @@ abstract class Billrun_Processor_Base_Separator extends Billrun_Processor {
 			} else if (in_array($record_type, $footerOptions)) {
 				$this->parseFooter($line);
 			} else {
-				$this->log->log("Billrun_Processor_Separator: cannot identify record type " . $record_type, Zend_Log::WARN);
+				Billrun_Factory::log()->log("Billrun_Processor_Separator: cannot identify record type " . $record_type, Zend_Log::WARN);
 			}			
 		}
 
@@ -116,19 +116,19 @@ abstract class Billrun_Processor_Base_Separator extends Billrun_Processor {
 	 */
 	protected function parseHeader($line) {
 		if (isset($this->data['header'])) {
-			$this->log->log("double header", Zend_Log::ERR);
+			Billrun_Factory::log()->log("double header", Zend_Log::ERR);
 			return false;
 		}
 
 		$this->parser->setStructure($this->header_structure);
 		$this->parser->setLine($line);
-		$this->dispatcher->trigger('beforeHeaderParsing', array($line, $this));
+		Billrun_Factory::dispatcher()->trigger('beforeHeaderParsing', array($line, $this));
 		$header = $this->parser->parse();
 		$header['source'] = static::$type; 
 		$header['type'] = self::$type;
 		$header['file'] = basename($this->filePath);
 		$header['process_time'] = date(self::base_dateformat);
-		$this->dispatcher->trigger('afterHeaderParsing', array($header, $this));
+		Billrun_Factory::dispatcher()->trigger('afterHeaderParsing', array($header, $this));
 		$this->data['header'] = $header;
 		return $header;
 	}
@@ -142,20 +142,20 @@ abstract class Billrun_Processor_Base_Separator extends Billrun_Processor {
 	 */
 	protected function parseData($line) {
 		if (!isset($this->data['header'])) {
-			$this->log->log("No header found", Zend_Log::ERR);
+			Billrun_Factory::log()->log("No header found", Zend_Log::ERR);
 			return false;
 		}
 
 		$this->parser->setStructure($this->data_structure); // for the next iteration
 		$this->parser->setLine($line);
-		$this->dispatcher->trigger('beforeDataParsing', array(&$line, $this));
+		Billrun_Factory::dispatcher()->trigger('beforeDataParsing', array(&$line, $this));
 		$row = $this->parser->parse();
 		$row['source'] = static::$type;
 		$row['type'] = self::$type;
 		$row['header_stamp'] = $this->data['header']['stamp'];
 		$row['file'] = basename($this->filePath);
 		$row['process_time'] = date(self::base_dateformat);
-		$this->dispatcher->trigger('afterDataParsing', array(&$row, $this));
+		Billrun_Factory::dispatcher()->trigger('afterDataParsing', array(&$row, $this));
 		$this->data['data'][] = $row;
 		return $row;
 	}
@@ -170,20 +170,20 @@ abstract class Billrun_Processor_Base_Separator extends Billrun_Processor {
 	protected function parseFooter($line) {
 
 		if (isset($this->data['trailer'])) {
-			$this->log->log("double trailer", Zend_Log::ERR);
+			Billrun_Factory::log()->log("double trailer", Zend_Log::ERR);
 			return false;
 		}
 
 		$this->parser->setStructure($this->trailer_structure);
 		$this->parser->setLine($line);
-		$this->dispatcher->trigger('beforeFooterParsing', array($line, $this));
+		Billrun_Factory::dispatcher()->trigger('beforeFooterParsing', array($line, $this));
 		$trailer = $this->parser->parse();
 		$trailer['source'] = static::$type;
 		$trailer['type'] = self::$type;
 		$trailer['header_stamp'] = $this->data['header']['stamp'];
 		$trailer['file'] = basename($this->filePath);
 		$trailer['process_time'] = date(self::base_dateformat);
-		$this->dispatcher->trigger('afterFooterParsing', array($trailer, $this));
+		Billrun_Factory::dispatcher()->trigger('afterFooterParsing', array($trailer, $this));
 		$this->data['trailer'] = $trailer;
 		return $trailer;
 	}

@@ -32,15 +32,15 @@ class ProcessAction extends Action_Base {
 			return;
 		}
 
-		$this->outputAdd("Parser selected: " . $options['parser']);
+		$this->_controller->addOutput("Parser selected: " . $options['parser']);
 		//$options['parser'] = Billrun_Parser::getInstance(array('type' => $options['parser']));
 
-		$this->outputAdd("Loading processor");
+		$this->_controller->addOutput("Loading processor");
 		$processor = Billrun_Processor::getInstance($options);
-		$this->outputAdd("Processor loaded");
+		$this->_controller->addOutput("Processor loaded");
 
 		if ($processor) {
-			$this->outputAdd("Starting to process. This action can take awhile...");
+			$this->_controller->addOutput("Starting to process. This action can take awhile...");
 
 			// buffer all action output
 			ob_start();
@@ -50,11 +50,11 @@ class ProcessAction extends Action_Base {
 				$lines = $processor->process_files();
 			}
 			// write the buffer into log and output
-			$this->outputAdd("processed " . count($lines) . " lines");
-			$this->outputAdd(ob_get_contents());
+			$this->_controller->addOutput("processed " . count($lines) . " lines");
+			$this->_controller->addOutput(ob_get_contents());
 			ob_end_clean();
 		} else {
-			$this->outputAdd("Processor cannot be loaded");
+			$this->_controller->addOutput("Processor cannot be loaded");
 		}
 	}
 

@@ -5,9 +5,7 @@
  * @copyright       Copyright (C) 2012 S.D.O.C. LTD. All rights reserved.
  * @license         GNU General Public License version 2 or later; see LICENSE.txt
  */
-
-class Mongodloid_Query implements IteratorAggregate
-{
+class Mongodloid_Query implements IteratorAggregate {
 
 	private $_collection;
 	private $_operators = array(
@@ -42,32 +40,22 @@ class Mongodloid_Query implements IteratorAggregate
 	);
 	private $_params = array();
 
-	private function _parseQuery($str)
-	{
+	private function _parseQuery($str) {
 		$exprs = preg_split('@ AND |&&@i', $str);
-		foreach ($exprs as $expr)
-		{
-			if (preg_match('@(?<left>.*?)(?<operator>%|==|>=|>|<=|<|!=|NOT EXISTS|EXISTS|SIZE|NOT IN|IN|ALL|WHERE)(?<right>.*)@', $expr, $matches))
-			{
+		foreach ($exprs as $expr) {
+			if (preg_match('@(?<left>.*?)(?<operator>%|==|>=|>|<=|<|!=|NOT EXISTS|EXISTS|SIZE|NOT IN|IN|ALL|WHERE)(?<right>.*)@', $expr, $matches)) {
 				$right = trim($matches['right']);
 				$func = $this->_operators[$matches['operator']];
-				if ($matches['operator'] == '%')
-				{
-					$right = array_map(function($v)
-						{
+				if ($matches['operator'] == '%') {
+					$right = array_map(function($v) {
 							return (int) trim($v);
 						}, explode('==', $right));
-				}
-				else if ($matches['operator'] == 'EXISTS')
-				{
+				} else if ($matches['operator'] == 'EXISTS') {
 					$right = true;
-				}
-				else if ($matches['operator'] == 'NOT EXISTS')
-				{
+				} else if ($matches['operator'] == 'NOT EXISTS') {
 					$right = false;
 				}
-				if (is_numeric($right))
-				{
+				if (is_numeric($right)) {
 					$right = (float) $right;
 				}
 				$this->$func(trim($matches['left']), $right);
@@ -75,27 +63,23 @@ class Mongodloid_Query implements IteratorAggregate
 		}
 	}
 
-	public function __construct(Mongodloid_Collection $collection)
-	{
+	public function __construct(Mongodloid_Collection $collection) {
 		$this->_collection = $collection;
 	}
 
-	public function where($what, $b = null)
-	{
+	public function where($what, $b = null) {
 		if ($b)
 			$what = $b;
 		return $this->query(array(
 				'$where' => $what
-			));
+		));
 	}
 
-	public function equals($key, $value)
-	{
+	public function equals($key, $value) {
 		return $this->query($key, $value);
 	}
 
-	public function __call($name, $param)
-	{
+	public function __call($name, $param) {
 		if ($name == 'exists')
 			$param[1] = true;
 		else if ($name == 'notExists')
@@ -104,12 +88,9 @@ class Mongodloid_Query implements IteratorAggregate
 			$param[1] = array($param[1], $param[2]);
 
 
-		if ($this->_mongoOperators[$name])
-		{
-			if (is_string($param[1]))
-			{
-				$param[1] = array_map(function($v)
-					{
+		if ($this->_mongoOperators[$name]) {
+			if (is_string($param[1])) {
+				$param[1] = array_map(function($v) {
 						$v = trim($v);
 						if (is_numeric($v))
 							return (float) $v;
@@ -120,46 +101,37 @@ class Mongodloid_Query implements IteratorAggregate
 					$param[0] => array(
 						$this->_mongoOperators[$name] => $param[1]
 					)
-				));
+			));
 		}
 		throw new Mongodloid_Exception(__CLASS__ . '::' . $name . ' does not exists and hasn\'t been trapped in call');
 	}
 
-	public function count()
-	{
+	public function count() {
 		return $this->cursor()->count();
 	}
 
-	public function cursor()
-	{
+	public function cursor() {
 		return new Mongodloid_Cursor($this->_collection->find($this->_params));
 	}
 
-	public function query($key, $value = null)
-	{
-		if (is_array($key))
-		{
-			foreach ($key as $k => $v)
-			{
+	public function query($key, $value = null) {
+		if (is_array($key)) {
+			foreach ($key as $k => $v) {
 				if (is_array($v) && isset($this->_params[$k]) && is_array($this->_params[$k]))
 					$this->_params[$k] += $v;
 				else
 					$this->_params[$k] = $v;
 			}
-		} else if ($value)
-		{
+		} else if ($value) {
 			$this->_params[$key] = $value;
-		}
-		else if (is_string($key))
-		{
+		} else if (is_string($key)) {
 			$this->_parseQuery($key);
 		}
 
 		return $this;
 	}
 
-	public function getIterator()
-	{
+	public function getIterator() {
 		return $this->cursor();
 	}
 

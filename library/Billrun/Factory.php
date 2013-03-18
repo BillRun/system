@@ -39,7 +39,13 @@ class Billrun_Factory {
 	public static $dispatcher = null;
 	
 	/**
-	 * method to retreive the log instance
+	 * Chain instance
+	 * @var Billrun Chain
+	 */
+	public static $chain = null;
+	
+	/**
+	 * method to retrieve the log instance
 	 * 
 	 * @return Billrun_Log
 	 */
@@ -52,7 +58,7 @@ class Billrun_Factory {
 	}
 	
 	/**
-	 * method to retreive the config instance
+	 * method to retrieve the config instance
 	 * 
 	 * @return Billrun_Config
 	 */
@@ -65,7 +71,7 @@ class Billrun_Factory {
 	}
 	
 	/**
-	 * method to retreive the db instance
+	 * method to retrieve the db instance
 	 * 
 	 * @return Billrun_Db
 	 */
@@ -78,14 +84,14 @@ class Billrun_Factory {
 	}
 	
 	/**
-	 * method to retreive the a mailer instance
+	 * method to retrieve the a mailer instance
 	 * 
 	 * @return Billrun_Db
 	 */
 	static public function mailer() {
 		$mail = new Zend_Mail();
 		//TODO set common configuration.
-		$mail->setFrom(	Billrun_Factory::config()->getConfigValue('mailer.from.address', 'no-replay'),
+		$mail->setFrom(	Billrun_Factory::config()->getConfigValue('mailer.from.address', 'no-reply'),
 						Billrun_Factory::config()->getConfigValue('mailer.from.name', 'Billrun'));
 		
 		//$mail->setDefaultTransport($transport);
@@ -93,7 +99,7 @@ class Billrun_Factory {
 	}
 	
 	/**
-	 * method to retreive the dispatcher instance
+	 * method to retrieve the dispatcher instance
 	 * 
 	 * @return Billrun_Dispatcher
 	 */
@@ -103,6 +109,19 @@ class Billrun_Factory {
 		}
 		
 		return self::$dispatcher;
+	}
+
+	/**
+	 * method to retrieve the dispatcher instance
+	 * 
+	 * @return Billrun_Dispatcher
+	 */
+	static public function chain() {
+		if (!self::$chain) {
+			self::$chain = Billrun_Dispatcher::getInstance(array('type' => 'chain'));
+		}
+		
+		return self::$chain;
 	}
 
 }

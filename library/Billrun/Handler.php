@@ -31,7 +31,7 @@ class Billrun_Handler extends Billrun_Base {
 	 */
 	public function execute() {
 
-		$this->log->log("Handler execute start", Zend_Log::INFO);
+		Billrun_Factory::log()->log("Handler execute start", Zend_Log::INFO);
 
 		$collect_data = $this->collect();
 
@@ -41,7 +41,7 @@ class Billrun_Handler extends Billrun_Base {
 
 		$this->notify();
 
-		$this->log->log("Handler execute finished", Zend_Log::INFO);
+		Billrun_Factory::log()->log("Handler execute finished", Zend_Log::INFO);
 	}
 
 	/**
@@ -51,11 +51,11 @@ class Billrun_Handler extends Billrun_Base {
 	 */
 	protected function collect() {
 
-		$this->log->log("Handler collect start", Zend_Log::INFO);
+		Billrun_Factory::log()->log("Handler collect start", Zend_Log::INFO);
 
-		$items = $this->dispatcher->trigger('handlerCollect');
+		$items = Billrun_Factory::dispatcher()->trigger('handlerCollect');
 
-		$this->log->log("Handler collect finished", Zend_Log::INFO);
+		Billrun_Factory::log()->log("Handler collect finished", Zend_Log::INFO);
 
 		return $items;
 	}
@@ -67,11 +67,11 @@ class Billrun_Handler extends Billrun_Base {
 	 */
 	protected function notify() {
 
-		$this->log->log("Handler notify start", Zend_Log::INFO);
+		Billrun_Factory::log()->log("Handler notify start", Zend_Log::INFO);
 
-		$items = $this->dispatcher->trigger('handlerNotify',array($this));
+		$items = Billrun_Factory::dispatcher()->trigger('handlerNotify',array($this));
 
-		$this->log->log("Handler notify finished", Zend_Log::INFO);
+		Billrun_Factory::log()->log("Handler notify finished", Zend_Log::INFO);
 
 		return $items;
 	}
@@ -84,25 +84,25 @@ class Billrun_Handler extends Billrun_Base {
 	 * @return boolean true if success
 	 */
 	protected function alert(&$items) {
-		$this->log->log("Handler alert start", Zend_Log::INFO);
+		Billrun_Factory::log()->log("Handler alert start", Zend_Log::INFO);
 
 		if (!is_array($items) || !count($items)) {
-			$this->log->log("Handler alert items not found", Zend_Log::NOTICE);
+			Billrun_Factory::log()->log("Handler alert items not found", Zend_Log::NOTICE);
 			return FALSE;
 		}
 
-		$this->dispatcher->trigger('beforeHandlerAlert', array(&$items));
+		Billrun_Factory::dispatcher()->trigger('beforeHandlerAlert', array(&$items));
 
 		foreach ($items as $plugin => &$pluginItems) {
 			// ggsn
-			$this->dispatcher->trigger('handlerAlert', array(&$pluginItems, $plugin));
+			Billrun_Factory::dispatcher()->trigger('handlerAlert', array(&$pluginItems, $plugin));
 		}
 
-		$this->dispatcher->trigger('afterHandlerAlert', array(&$items));
+		Billrun_Factory::dispatcher()->trigger('afterHandlerAlert', array(&$items));
 
 		// TODO: check return values
 
-		$this->log->log("Handler alert finished", Zend_Log::INFO);
+		Billrun_Factory::log()->log("Handler alert finished", Zend_Log::INFO);
 		return TRUE;
 	}
 
@@ -114,24 +114,24 @@ class Billrun_Handler extends Billrun_Base {
 	 * @return boolean true if success
 	 */
 	protected function markdown(&$items) {
-		$this->log->log("Handler markdown start", Zend_Log::INFO);
+		Billrun_Factory::log()->log("Handler markdown start", Zend_Log::INFO);
 
 		if (!is_array($items) || !count($items)) {
-			$this->log->log("Handler markdown items not found", Zend_Log::NOTICE);
+			Billrun_Factory::log()->log("Handler markdown items not found", Zend_Log::NOTICE);
 			return FALSE;
 		}
 
-		$this->dispatcher->trigger('beforeHandlerMarkDown', array(&$items));
+		Billrun_Factory::dispatcher()->trigger('beforeHandlerMarkDown', array(&$items));
 
 		foreach ($items as $plugin => &$pluginItems) {
-			$this->dispatcher->trigger('handlerMarkDown', array(&$pluginItems, $plugin));
+			Billrun_Factory::dispatcher()->trigger('handlerMarkDown', array(&$pluginItems, $plugin));
 		}
 
-		$this->dispatcher->trigger('afterHandlerMarkDown', array(&$items));
+		Billrun_Factory::dispatcher()->trigger('afterHandlerMarkDown', array(&$items));
 
 		// TODO: check return values
 
-		$this->log->log("Handler markdown finished", Zend_Log::INFO);
+		Billrun_Factory::log()->log("Handler markdown finished", Zend_Log::INFO);
 		return TRUE;
 	}
 
