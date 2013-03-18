@@ -16,7 +16,7 @@ trait Billrun_Helpers_AsnParsing {
 
 	protected  function initParsing() {
 		$this->parsingMethods = array( 
-					'debug' => function($fieldData)	{					/* //TODO remove */			
+					'debug' => function($fieldData)	{/* //TODO remove */			
 							$numarr = unpack("C*", $fieldData);
 							$numData = 0;
 							foreach ($numarr as $byte) {
