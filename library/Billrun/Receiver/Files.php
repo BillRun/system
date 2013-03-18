@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package         Billing
  * @copyright       Copyright (C) 2012 S.D.O.C. LTD. All rights reserved.
@@ -10,11 +11,12 @@
  *
  * @package  Billing
  * @since    1.0
+ * @deprecated since version 0.2; use Billrun_Receiver_Relocate
  */
 class Billrun_Receiver_Files extends Billrun_Receiver {
 
 	/**
-	 * the type of the object
+	 * Type of object
 	 *
 	 * @var string
 	 */
@@ -26,18 +28,18 @@ class Billrun_Receiver_Files extends Billrun_Receiver {
 		if (isset($options['workspace'])) {
 			$this->workspace = $options['workspace'];
 		} else {
-			$this->workspace = Billrun_Factory::config()->getConfigValue('ilds.workspace','./workspace/');
+			$this->workspace = Billrun_Factory::config()->getConfigValue('ilds.workspace', './workspace/');
 		}
 	}
 
 	/**
-	 * general function to receive
+	 * General function to receive
 	 *
 	 * @return array list of files received
 	 */
 	public function receive() {
 
-		foreach ($this->config->ilds->providers->toArray() as $type) {
+		foreach (Billrun_Factory::config()->getConfigValue('ilds.providers', array()) as $type) {
 			if (!file_exists($this->workspace . DIRECTORY_SEPARATOR . $type)) {
 				$this->log->log("NOTICE : SKIPPING $type !!! directory " . $this->workspace . DIRECTORY_SEPARATOR . $type . " not found!!", Zend_Log::NOTICE);
 				continue;
@@ -54,10 +56,8 @@ class Billrun_Receiver_Files extends Billrun_Receiver {
 
 				$this->logDB($path);
 				$ret[] = $path;
-
 			}
 			$this->processType($type);
-
 		}
 		return $ret;
 	}
@@ -73,7 +73,6 @@ class Billrun_Receiver_Files extends Billrun_Receiver {
 			'type' => $type,
 			//'path' => $filePath,
 			'parser' => 'fixed',
-			'db' => $this->db,
 		);
 
 		$processor = Billrun_Processor::getInstance($options);
@@ -87,7 +86,7 @@ class Billrun_Receiver_Files extends Billrun_Receiver {
 		$data = $processor->getData();
 
 		$this->log->log("Process type: " . $type, Zend_log::INFO);
-	//	$this->log->log("file path: " . $filePath, Zend_log::INFO);
+		//	$this->log->log("file path: " . $filePath, Zend_log::INFO);
 		$this->log->log((isset($data['data']) ? "import lines: " . count($data['data']) : "no data received"), Zend_log::INFO);
 	}
 
@@ -95,7 +94,7 @@ class Billrun_Receiver_Files extends Billrun_Receiver {
 	 * method to check if the file already processed
 	 */
 	protected function isFileReceived($filename, $type) {
-		$log = $this->db->getCollection(self::log_table);
+		$log = Billrun_Factory::db()->getCollection(Billrun_Db::log_table);
 		$resource = $log->query()->equals('type', $type)->equals('file_name', $filename);
 		return $resource->count() > 0;
 	}

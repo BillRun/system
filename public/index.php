@@ -13,6 +13,6 @@ require_once APPLICATION_PATH . DIRECTORY_SEPARATOR . 'conf' . DIRECTORY_SEPARAT
 $app = new Yaf_Application(BILLRUN_CONFIG_PATH);
 
 if (!isset($_SERVER['HTTP_USER_AGENT'])) {
-	$app->getDispatcher()->setDefaultAction('Cli');
+	$app->getDispatcher()->setDefaultController('Cli');
 }
 $app->bootstrap()->run();

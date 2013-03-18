@@ -28,17 +28,17 @@ class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 	 */
 	public function aggregate() {
 		// @TODO trigger before aggregate
-		$this->dispatcher->trigger('beforeAggregate', array($this->data,&$this));
+		Billrun_Factory::dispatcher()->trigger('beforeAggregate', array($this->data,&$this));
 		 
 		foreach ($this->data as $item) {
-			$this->dispatcher->trigger('beforeAggregateLine', array(&$item,&$this));
+			Billrun_Factory::dispatcher()->trigger('beforeAggregateLine', array(&$item,&$this));
 			$time = $item->get('call_start_dt');
 			
 			// @TODO make it configurable
 			$previous_month = date("Ymt235959", strtotime("previous month"));
 			
 			if ($time > $previous_month) {
-				$this->log->log("time frame is not till the end of previous month " . $time . "; continue to the next line", Zend_Log::INFO);
+				Billrun_Factory::log()->log("time frame is not till the end of previous month " . $time . "; continue to the next line", Zend_Log::INFO);
 				continue;
 			}
 
@@ -47,7 +47,7 @@ class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 			$subscriber = golan_subscriber::get($phone_number, $time);
 
 			if (!$subscriber) {
-				$this->log->log("subscriber not found. phone:" . $phone_number . " time: " . $time, Zend_Log::INFO);
+				Billrun_Factory::log()->log("subscriber not found. phone:" . $phone_number . " time: " . $time, Zend_Log::INFO);
 				continue;
 			}
 
@@ -55,12 +55,12 @@ class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 			
 			// update billing line with billrun stamp
 			if (!$this->updateBillingLine($subscriber_id, $item)) {
-				$this->log->log("subscriber " . $subscriber_id . " cannot update billing line", Zend_Log::INFO);
+				Billrun_Factory::log()->log("subscriber " . $subscriber_id . " cannot update billing line", Zend_Log::INFO);
 				continue;
 			}
 			
 			if(isset($this->excludes['subscribers']) && in_array($subscriber_id, $this->excludes['subscribers'])) {
-				$this->log->log("subscriber " . $subscriber_id . " is in the excluded list skipping billrun for him.", Zend_Log::INFO);
+				Billrun_Factory::log()->log("subscriber " . $subscriber_id . " is in the excluded list skipping billrun for him.", Zend_Log::INFO);
 				//mark line as excluded.
 				$item['billrun_excluded'] = true; 
 			}
@@ -73,33 +73,33 @@ class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 				$billrun = $this->loadSubscriberBillrun($subscriber);
 
 				if (!$billrun) {
-					$this->log->log("subscriber " . $subscriber_id . " cannot load billrun", Zend_Log::INFO);
+					Billrun_Factory::log()->log("subscriber " . $subscriber_id . " cannot load billrun", Zend_Log::INFO);
 					continue;
 				}
 
 				// update billrun subscriber with amount
 				if (!$this->updateBillrun($billrun, $item)) {
-					$this->log->log("subscriber " . $subscriber_id . " cannot update billrun", Zend_Log::INFO);
+					Billrun_Factory::log()->log("subscriber " . $subscriber_id . " cannot update billrun", Zend_Log::INFO);
 					continue;
 				}
 				
-				$save_data[self::billrun_table] = $billrun;
+				$save_data[Billrun_Db::billrun_table] = $billrun;
 			}
 			
 		
-			$save_data[self::lines_table] = $item;
+			$save_data[Billrun_Db::lines_table] = $item;
 			
-			$this->dispatcher->trigger('beforeAggregateSaveLine', array(&$save_data, &$this));
+			Billrun_Factory::dispatcher()->trigger('beforeAggregateSaveLine', array(&$save_data, &$this));
 			
 			if (!$this->save($save_data)) {
-				$this->log->log("subscriber " . $subscriber_id . " cannot save data", Zend_Log::INFO);
+				Billrun_Factory::log()->log("subscriber " . $subscriber_id . " cannot save data", Zend_Log::INFO);
 				continue;
 			}
 
-			$this->log->log("subscriber " . $subscriber_id . " saved successfully", Zend_Log::INFO);
+			Billrun_Factory::log()->log("subscriber " . $subscriber_id . " saved successfully", Zend_Log::INFO);
 		}
 		// @TODO trigger after aggregate
-		$this->dispatcher->trigger('afterAggregate', array($this->data,&$this));
+		Billrun_Factory::dispatcher()->trigger('afterAggregate', array($this->data,&$this));
 	}
 
 	/**
@@ -111,7 +111,7 @@ class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 	 */
 	public function loadSubscriberBillrun($subscriber) {
 
-		$billrun = $this->db->getCollection(self::billrun_table);
+		$billrun = Billrun_Factory::db()->getCollection(Billrun_Db::billrun_table);
 		$resource = $billrun->query()
 			//->exists("subscriber.{$subscriber['id']}")
 			->equals('account_id', $subscriber['account_id'])
@@ -204,21 +204,21 @@ class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 			$this->data = array();
 		}
 
-		$lines = $this->db->getCollection(self::lines_table);
+		$lines = Billrun_Factory::db()->getCollection(Billrun_Db::lines_table);
 		$resource = $lines->query($query);
 
 		foreach ($resource as $entity) {
 			$this->data[] = $entity;
 		}
 
-		$this->log->log("aggregator entities loaded: " . count($this->data), Zend_Log::INFO);
+		Billrun_Factory::log()->log("aggregator entities loaded: " . count($this->data), Zend_Log::INFO);
 		
-		$this->dispatcher->trigger('afterAggregatorLoadData', array('aggregator' => $this));
+		Billrun_Factory::dispatcher()->trigger('afterAggregatorLoadData', array('aggregator' => $this));
 	}
 
 	protected function save($data) {
 		foreach ($data as $coll_name => $coll_data) {
-			$coll = $this->db->getCollection($coll_name);
+			$coll = Billrun_Factory::db()->getCollection($coll_name);
 			$coll->save($coll_data);
 		}
 		return true;

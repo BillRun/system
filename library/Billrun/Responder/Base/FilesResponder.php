@@ -20,7 +20,7 @@ abstract class Billrun_Responder_Base_FilesResponder extends Billrun_Responder {
 	 */
 	public function respond() {
 		
-		$this->dispatcher->trigger('beforeResponse', array('type' => self::$type , 'responder' => &$this));
+		Billrun_Factory::dispatcher()->trigger('beforeResponse', array('type' => self::$type , 'responder' => &$this));
 		
 		$retPaths = array();
 		
@@ -37,19 +37,14 @@ abstract class Billrun_Responder_Base_FilesResponder extends Billrun_Responder {
 			}
 		}
 		
-		$this->dispatcher->trigger('afterResponse', array('type' => self::$type , 'responder' => &$this));
+		Billrun_Factory::dispatcher()->trigger('afterResponse', array('type' => self::$type , 'responder' => &$this));
 		
 		return $retPaths;
 	}
 
 	protected function getProcessedFilesForType($type) {
 		$files = array();
-		if (!isset($this->db)) {
-			$this->log->log("Billrun_Responder_Remote::getProcessedFilesForType - please providDB instance.", Zend_Log::DEBUG);
-			return false;
-		}
-
-		$log = $this->db->getCollection(self::log_table);
+		$log = Billrun_Factory::db()->getCollection(Billrun_Db::log_table);
 
 		$logLines = $log->query()->equals('type', $type)->exists('process_time')->notExists('response_time');
 		foreach ($logLines as $logEntry) {

@@ -5,9 +5,7 @@
  * @copyright       Copyright (C) 2012 S.D.O.C. LTD. All rights reserved.
  * @license         GNU General Public License version 2 or later; see LICENSE.txt
  */
-
-class Mongodloid_Entity implements ArrayAccess
-{
+class Mongodloid_Entity implements ArrayAccess {
 
 	private $_values;
 	private $_collection;
@@ -24,19 +22,16 @@ class Mongodloid_Entity implements ArrayAccess
 		'pull',
 		'pullAll'
 	);
-	
-		public function __construct($values = null, $collection = null)
-	{
-		if ($values instanceOf Mongodloid_ID)
-		{
+
+	public function __construct($values = null, $collection = null) {
+		if ($values instanceOf Mongodloid_Id) {
 			if (!$collection instanceOf Mongodloid_Collection)
 				throw new Mongodloid_Exception('You need to specify the collection');
 
 			$values = $collection->findOne($values, true);
 		}
 
-		if ($values instanceOf Mongodloid_Collection)
-		{
+		if ($values instanceOf Mongodloid_Collection) {
 			$collection = $values;
 			$values = null;
 		}
@@ -47,15 +42,12 @@ class Mongodloid_Entity implements ArrayAccess
 		$this->setRawData($values);
 		$this->collection($collection);
 	}
-	
 
-	public function same(Mongodloid_Entity $obj)
-	{
+	public function same(Mongodloid_Entity $obj) {
 		return $this->getId() && ((string) $this->getId() == (string) $obj->getId());
 	}
 
-	public function equals(Mongodloid_Entity $obj)
-	{
+	public function equals(Mongodloid_Entity $obj) {
 		$data1 = $this->getRawData();
 		$data2 = $obj->getRawData();
 		unset($data1['_id'], $data2['_id']);
@@ -63,10 +55,8 @@ class Mongodloid_Entity implements ArrayAccess
 		return $data1 == $data2;
 	}
 
-	public function inArray($key, $value)
-	{
-		if ($value instanceOf Mongodloid_Entity)
-		{
+	public function inArray($key, $value) {
+		if ($value instanceOf Mongodloid_Entity) {
 			// TODO: Add DBRef checking
 			return $this->inArray($key, $value->getId()) || $this->inArray($key, (string) $value->getId());
 		}
@@ -74,13 +64,10 @@ class Mongodloid_Entity implements ArrayAccess
 		return in_array($value, $this->get($key));
 	}
 
-	public function __call($name, $params)
-	{
-		if (in_array($name, $this->_atomics))
-		{
+	public function __call($name, $params) {
+		if (in_array($name, $this->_atomics)) {
 			$value = $this->get($params[0]);
-			switch ($name)
-			{
+			switch ($name) {
 				case 'inc':
 					if ($params[1] === null)
 						$params[1] = 1;
@@ -101,12 +88,9 @@ class Mongodloid_Entity implements ArrayAccess
 					$params[1] = self::POPFIRST;
 				case 'pop':
 					$params[1] = ($params[1] == self::POPFIRST) ? -1 : 1;
-					if ($params[1] == -1)
-					{
+					if ($params[1] == -1) {
 						array_shift($value);
-					}
-					else
-					{
+					} else {
 						array_pop($value);
 					}
 					break;
@@ -117,10 +101,8 @@ class Mongodloid_Entity implements ArrayAccess
 					  }
 					 */
 					$_value = array();
-					foreach ($value as $val)
-					{
-						if ($val !== $params[1])
-						{
+					foreach ($value as $val) {
+						if ($val !== $params[1]) {
 							$_value[] = $val;
 						}
 					} // save array indexes - save the world!
@@ -128,10 +110,8 @@ class Mongodloid_Entity implements ArrayAccess
 					break;
 				case 'pullAll':
 					$_value = array();
-					foreach ($value as $val)
-					{
-						if (!in_array($val, $params[1]))
-						{
+					foreach ($value as $val) {
+						if (!in_array($val, $params[1])) {
 							$_value[] = $val;
 						}
 					}
@@ -141,8 +121,7 @@ class Mongodloid_Entity implements ArrayAccess
 
 			$value = $this->set($params[0], $value, true);
 
-			if ($this->getId())
-			{
+			if ($this->getId()) {
 				$this->update(array(
 					'$' . $name => array(
 						$params[0] => $params[1]
@@ -156,8 +135,7 @@ class Mongodloid_Entity implements ArrayAccess
 		throw new Mongodloid_Exception(__CLASS__ . '::' . $name . ' does not exists and hasn\'t been trapped in __call()');
 	}
 
-	public function update($fields)
-	{
+	public function update($fields) {
 		if (!$this->collection())
 			throw new Mongodloid_Exception('You need to specify the collection');
 
@@ -166,17 +144,16 @@ class Mongodloid_Entity implements ArrayAccess
 				), $fields);
 	}
 
-	public function set($key, $value, $dontSend = false)
-	{
+	public function set($key, $value, $dontSend = false) {
 		$key = preg_replace('@\\[([^\\]]+)\\]@', '.$1', $key);
 		$real_key = $key;
 		$result = &$this->_values;
 
 		$keys = explode('.', $key);
-		foreach($keys as $key) {
+		foreach ($keys as $key) {
 			$result = &$result[$key];
 		}
-		
+
 		$result = $value;
 
 		if (!$dontSend && $this->getId())
@@ -185,8 +162,7 @@ class Mongodloid_Entity implements ArrayAccess
 		return $this;
 	}
 
-	public function get($key)
-	{
+	public function get($key) {
 		if (!$key)
 			return $this->_values;
 		if ($key == '_id')
@@ -195,43 +171,34 @@ class Mongodloid_Entity implements ArrayAccess
 		$key = preg_replace('@\\[([^\\]]+)\\]@', '.$1', $key);
 		$result = $this->_values;
 
-		if (strpos($key, '.') !== FALSE)
-		{
-			do
-			{
+		if (strpos($key, '.') !== FALSE) {
+			do {
 				list($current, $key) = explode('.', $key, 2);
 				$result = $result[$current];
-			}
-			while ($key !== null);
-		}
-		else
-		{
+			} while ($key !== null);
+		} else {
 			//lazy load MongoId Ref objects
-			if($this->_values[$key] instanceof MongoId && $this->collection()) {
+			if ($this->_values[$key] instanceof MongoId && $this->collection()) {
 				$this->_values[$key] = $this->collection()->findOne($this->_values[$key]['$id']);
 			}
 			$result = $this->_values[$key];
-			
 		}
 
 		return $result;
 	}
 
-	public function getId()
-	{
+	public function getId() {
 		if (!$this->_values['_id'])
 			return false;
 
-		return new Mongodloid_ID($this->_values['_id']);
+		return new Mongodloid_Id($this->_values['_id']);
 	}
 
-	public function getRawData()
-	{
+	public function getRawData() {
 		return $this->_values;
 	}
 
-	public function setRawData($data)
-	{
+	public function setRawData($data) {
 		if (!is_array($data))
 			throw new Mongodloid_Exception('Data must be an array!');
 
@@ -239,27 +206,24 @@ class Mongodloid_Entity implements ArrayAccess
 		$this->_values = unserialize(serialize($data));
 	}
 
-	public function save($collection = null,$save = false,$w=1)
-	{
+	public function save($collection = null, $save = false, $w = 1) {
 		if ($collection instanceOf Mongodloid_Collection)
 			$this->collection($collection);
 
 		if (!$this->collection())
 			throw new Mongodloid_Exception('You need to specify the collection');
 
-		return $this->collection()->save($this,array('save'=>$save, 'w' => $w));
+		return $this->collection()->save($this, array('save' => $save, 'w' => $w));
 	}
 
-	public function collection($collection = null)
-	{
+	public function collection($collection = null) {
 		if ($collection instanceOf Mongodloid_Collection)
 			$this->_collection = $collection;
 
 		return $this->_collection;
 	}
 
-	public function remove()
-	{
+	public function remove() {
 		if (!$this->collection())
 			throw new Mongodloid_Exception('You need to specify the collection');
 
@@ -279,11 +243,11 @@ class Mongodloid_Entity implements ArrayAccess
 	}
 
 	public function offsetSet($offset, $value) {
-		return $this->set($offset,$value,true);
+		return $this->set($offset, $value, true);
 	}
 
 	public function offsetUnset($offset) {
-		 unset($this->_values[$offset]);	
+		unset($this->_values[$offset]);
 	}
 
 }

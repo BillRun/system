@@ -22,11 +22,11 @@ class Billrun_Processor_BlockedBinaryExternal extends Billrun_Processor_Base_Blo
 	}
 	
 	protected function parse() {
-			return $this->chain->trigger('processData',array($this->getType(), $this->fileHandler, &$this));
+			return Billrun_Factory::chain()->trigger('processData',array($this->getType(), $this->fileHandler, &$this));
 	}
 
 	protected function processFinished() {
-			return $this->chain->trigger('isProcessingFinished',array($this->getType(), $this->fileHandler, &$this));		
+			return Billrun_Factory::chain()->trigger('isProcessingFinished',array($this->getType(), $this->fileHandler, &$this));		
 	}
 }
 

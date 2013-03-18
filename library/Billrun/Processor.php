@@ -129,7 +129,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 */
 	public function process_files() {
 
-		$log = $this->db->getCollection(self::log_table);
+		$log = Billrun_Factory::db()->getCollection(Billrun_Db::log_table);
 		$files = $log->query()
 			->equals('source', static::$type)
 			->notExists('process_time');
@@ -168,20 +168,20 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 */
 	public function process() {
 
-		$this->dispatcher->trigger('beforeProcessorParsing', array($this));
+		Billrun_Factory::dispatcher()->trigger('beforeProcessorParsing', array($this));
 
 		if ($this->parse() === FALSE) {
 			Billrun_Factory::log()->log("Billrun_Processor: cannot parse", Zend_Log::ERR);
 			return false;
 		}
 
-		$this->dispatcher->trigger('afterProcessorParsing', array($this));
+		Billrun_Factory::dispatcher()->trigger('afterProcessorParsing', array($this));
 
 		if ($this->logDB() === FALSE) {
 			$this->log->log("Billrun_Processor: cannot log parsing action", Zend_Log::WARN);
 		}
 
-		$this->dispatcher->trigger('beforeProcessorStore', array($this));
+		Billrun_Factory::dispatcher()->trigger('beforeProcessorStore', array($this));
 
 		if ($this->store() === FALSE) {
 			Billrun_Factory::log()->log("Billrun_Processor: cannot store the parser lines", Zend_Log::ERR);
@@ -193,11 +193,11 @@ abstract class Billrun_Processor extends Billrun_Base {
 			return false;
 		}
 		
-		$this->dispatcher->trigger('afterProcessorStore', array($this));
+		Billrun_Factory::dispatcher()->trigger('afterProcessorStore', array($this));
 		
 		$this->backup();
 
-		$this->dispatcher->trigger('afterProcessorBackup', array($this));
+		Billrun_Factory::dispatcher()->trigger('afterProcessorBackup', array($this));
 		
 		return $this->data['data'];
 	}
@@ -210,17 +210,13 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 * @todo refactoring this method
 	 */
 	protected function logDB() {
-		if (!isset($this->db)) {
-			Billrun_Factory::log()->log("Billrun_Processor:logDB not database instance", Zend_Log::ERR);
-			return false;
-		}
 
 		if (!isset($this->data['trailer']) && !isset($this->data['header'])) {
 			Billrun_Factory::log()->log("Billrun_Processor:logDB no header nor trailer to log", Zend_Log::ERR);
 			return false;
 		}
 
-		$log = $this->db->getCollection(self::log_table);
+		$log = Billrun_Factory::db()->getCollection(Billrun_Db::log_table);
 
 		$header = array();
 		if (isset($this->data['header'])) {
@@ -238,7 +234,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 		}
 
 		$current_stamp = $this->getStamp(); // mongo id in new version; else string
-		if ($current_stamp instanceof Mongodloid_Entity || $current_stamp instanceof Mongodloid_ID) {
+		if ($current_stamp instanceof Mongodloid_Entity || $current_stamp instanceof Mongodloid_Id) {
 			$resource = $log->findOne($current_stamp);
 			if (!empty($header)) {
 				$resource->set('header', $header);
@@ -265,12 +261,12 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 * @todo refactoring this method
 	 */
 	protected function store() {
-		if (!isset($this->db) || !isset($this->data['data'])) {
+		if (!isset($this->data['data'])) {
 			// raise error
 			return false;
 		}
 
-		$lines = $this->db->getCollection(self::lines_table);
+		$lines = Billrun_Factory::db()->getCollection(Billrun_Db::lines_table);
 
 		foreach ($this->data['data'] as $row) {
 			$entity = new Mongodloid_Entity($row);
@@ -306,7 +302,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 * @return void
 	 */
 	public function loadFile($file_path, $retrivedHost) {
-		$this->dispatcher->trigger('processorBeforeFileLoad', array(&$file_path, $this));
+		Billrun_Factory::dispatcher()->trigger('processorBeforeFileLoad', array(&$file_path, $this));
 		if (file_exists($file_path)) {
 			$this->filePath = $file_path;
 			$this->filename = substr($file_path, strrpos($file_path, '/'));
@@ -316,7 +312,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 		} else {
 			Billrun_Factory::log()->log("Billrun_Processor->loadFile: cannot load the file: " . $file_path, Zend_Log::ERR);
 		}
-		$this->dispatcher->trigger('processorAfterFileLoad', array(&$file_path));
+		Billrun_Factory::dispatcher()->trigger('processorAfterFileLoad', array(&$file_path));
 	}
 
 	/**

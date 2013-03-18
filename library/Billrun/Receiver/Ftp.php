@@ -64,7 +64,7 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 	 */
 	public function receive() {
 		$ret = array();
-		$this->dispatcher->trigger('beforeFTPReceiveFullRun', array($this));
+		Billrun_Factory::dispatcher()->trigger('beforeFTPReceiveFullRun', array($this));
 		
 		foreach($this->ftpConfig as $hostName => $config) {
 			if(!is_array($config)) { continue; }
@@ -74,14 +74,14 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 			$this->ftp = Zend_Ftp::connect($config['host'], $config['user'], $config['password']);
 			$this->ftp->setPassive(false);
 
-			$this->dispatcher->trigger('beforeFTPReceive', array($this, $hostName));
+			Billrun_Factory::dispatcher()->trigger('beforeFTPReceive', array($this, $hostName));
 			$hostRet = $this->receiveFromHost($hostName, $config);
-			$this->dispatcher->trigger('afterFTPReceived', array($this, $hostRet, $hostName));
+			Billrun_Factory::dispatcher()->trigger('afterFTPReceived', array($this, $hostRet, $hostName));
 			
 			$ret = array_merge($ret, $hostRet);	
 		}
 		
-		$this->dispatcher->trigger('afterFTPReceivedFullRun', array($this, $ret, $hostName));
+		Billrun_Factory::dispatcher()->trigger('afterFTPReceivedFullRun', array($this, $ret, $hostName));
 		return $ret;
 	}
 	
@@ -109,7 +109,7 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 						continue;
 					}
 					$received_path = $this->workspace . $file->name;
-					$this->dispatcher->trigger('afterFTPFileReceived', array(&$received_path, $file, $this, $hostName));
+					Billrun_Factory::dispatcher()->trigger('afterFTPFileReceived', array(&$received_path, $file, $this, $hostName));
 					if($this->logDB($received_path, $hostName)) {
 						$ret[] = $received_path;
 					}
