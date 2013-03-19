@@ -25,7 +25,7 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 	 * load the container the need to be generate
 	 */
 	public function load($initData = true) {
-		$billrun = Billrun_Factory::db()->getCollection(Billrun_Db::billrun_table);
+		$billrun = Billrun_Factory::db()->billrunCollection();
 
 		if ($initData) {
 			$this->data = array();
@@ -57,7 +57,7 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 	}
 
 	protected function get_subscriber_lines($subscriber_id) {
-		$lines = Billrun_Factory::db()->getCollection(Billrun_Db::lines_table);
+		$lines = Billrun_Factory::db()->linesCollection();
 
 		$ret = array();
 
@@ -175,7 +175,7 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 	}
 
 	protected function saveInvoiceId($account_id, $invoice_id) {
-		$billrun = Billrun_Factory::db()->getCollection(Billrun_Db::billrun_table);
+		$billrun = Billrun_Factory::db()->billrunCollection();
 
 		$resource = $billrun->query()
 			->equals('stamp', $this->getStamp())
@@ -198,7 +198,7 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 	}
 
 	protected function createInvoiceId() {
-		$invoices = Billrun_Factory::db()->getCollection(Billrun_Db::billrun_table);
+		$invoices = Billrun_Factory::db()->billrunCollection();
 		$resource = $invoices->query()->cursor()->sort(array('invoice_id' => -1))->limit(1);
 		foreach ($resource as $e) {
 			// demi loop

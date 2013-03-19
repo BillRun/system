@@ -42,7 +42,7 @@ abstract class Billrun_Receiver extends Billrun_Base {
 	 * @todo refactoring this method
 	 */
 	protected function logDB($path, $remoteHost = '') {
-		$log = Billrun_Factory::db()->getCollection(Billrun_Db::log_table);
+		$log = Billrun_Factory::db()->logCollection();
 
 		$log_data = array(
 			'source' => static::$type,
@@ -68,7 +68,7 @@ abstract class Billrun_Receiver extends Billrun_Base {
 	 * method to check if the file already processed
 	 */
 	protected function isFileReceived($filename, $type) {
-		$log = Billrun_Factory::db()->getCollection(Billrun_Db::log_table);
+		$log = Billrun_Factory::db()->logCollection();
 		$resource = $log->query()->equals('source', $type)->equals('file_name', $filename);
 		return $resource->count() > 0;
 	}

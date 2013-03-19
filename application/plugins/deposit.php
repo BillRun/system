@@ -19,8 +19,7 @@ class depositPlugin extends Billrun_Plugin_BillrunPluginBase {
 		if($pluginName != $this->getName() || !$items ) {return;}
 		$this->log->log("Marking down Alert For $pluginName", Zend_Log::DEBUG);
 		$ret = array();
-		$db = Billrun_Factory::db();
-		$events = $db->getCollection(Billrun_Db::events_table);
+		$events = Billrun_Factory::db()->eventsCollection();
 		foreach($items as &$item) {
 			$event = new Mongodloid_Entity($item);
 			
@@ -47,7 +46,7 @@ class depositPlugin extends Billrun_Plugin_BillrunPluginBase {
 		//$this->log->log("Marking down Alert For {$item['imsi']}",Zend_Log::DEBUG);
 		$ret = array();
 		$db = Billrun_Factory::db();
-		$eventsCol = $db->getCollection(Billrun_Db::events_table);
+		$eventsCol = Billrun_Factory::db()->eventsCollection();
 		foreach($items as &$item) { 
 			$eventsCol->update(	array( '_id' => array('$in' => $item['ids']), 
 										),
@@ -77,11 +76,11 @@ class depositPlugin extends Billrun_Plugin_BillrunPluginBase {
 	
 	/**
 	 * 
-	 * @param Mongodloid_DB $db
+	 * @param Mongodloid_Db $db
 	 * @return type
 	 */
-	protected function detectDepositExceeders(Mongodloid_DB $db) {
-		$eventsCol = $db->getCollection(Billrun_Db::events_table);
+	protected function detectDepositExceeders(Mongodloid_Db $db) {
+		$eventsCol = Billrun_Factory::db()->eventsCollection();
 		$timeWindow= strtotime("-" . Billrun_Factory::config()->getConfigValue('deposit.hourly.timespan','4 hours'));
 		$where = array( 
 			'$match' => array (

@@ -15,6 +15,8 @@
 class IndexController extends Yaf_Controller_Abstract {
 
 	public function indexAction() {
+		$a = Billrun_Factory::db()->billrunCollection();
+		var_dump($a);die;
 		$this->getView()->title = "BillRun | The best open source billing system";
 		$this->getView()->content = "Open Source Last Forever!";
 	}

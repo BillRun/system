@@ -83,11 +83,11 @@ class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 					continue;
 				}
 				
-				$save_data[Billrun_Db::billrun_table] = $billrun;
+				$save_data[Billrun_Factory::db()->billrun] = $billrun;
 			}
 			
 		
-			$save_data[Billrun_Db::lines_table] = $item;
+			$save_data[Billrun_Factory::db()->lines] = $item;
 			
 			Billrun_Factory::dispatcher()->trigger('beforeAggregateSaveLine', array(&$save_data, &$this));
 			
@@ -111,7 +111,7 @@ class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 	 */
 	public function loadSubscriberBillrun($subscriber) {
 
-		$billrun = Billrun_Factory::db()->getCollection(Billrun_Db::billrun_table);
+		$billrun = Billrun_Factory::db()->billrunCollection();
 		$resource = $billrun->query()
 			//->exists("subscriber.{$subscriber['id']}")
 			->equals('account_id', $subscriber['account_id'])
@@ -204,7 +204,7 @@ class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 			$this->data = array();
 		}
 
-		$lines = Billrun_Factory::db()->getCollection(Billrun_Db::lines_table);
+		$lines = Billrun_Factory::db()->linesCollection();
 		$resource = $lines->query($query);
 
 		foreach ($resource as $entity) {
