@@ -13,6 +13,7 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements	Billrun_Pl
 																		Billrun_Plugin_Interface_IProcessor {
     use Billrun_Traits_AsnParsing;
 
+	use Billrun_Traits_FileSequenceChecking;
 		
 	const HEADER_LENGTH = 54;
 	const MAX_CHUNKLENGTH_LENGTH = 512;
@@ -25,11 +26,6 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements	Billrun_Pl
 	 * @var string
 	 */
 	protected $name = 'ggsn';
-	/**
-	 * Holds sequence checkers 
-	 * @var Array of
-	 */
-	protected $hostSequenceCheckers = array();
 	
 	public function __construct($options = array()) {
 		parent::__construct($options);
@@ -76,9 +72,7 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements	Billrun_Pl
 	 */
 	public function beforeFTPReceive($receiver,  $hostname) {
 		if($receiver->getType() != 'ggsn') { return; } 
-		if(!isset($this->hostSequenceCheckers[$hostname])) {
-			$this->hostSequenceCheckers[$hostname] = new Billrun_Common_FileSequenceChecker(array($this,'getFileSequenceData'), $hostname, $this->getName() );
-		}
+		$this->setFilesSequenceCheckForHost($hostname);
 	}
 	
 	/**
@@ -90,55 +84,9 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements	Billrun_Pl
 	 * @throws Exception
 	 */
 	public function afterFTPReceived($receiver,  $filepaths , $hostname ) {
-		if($receiver->getType() != 'ggsn') { return; } 
-		if(!isset($this->hostSequenceCheckers[$hostname])) { 
-			throw new Exception('Couldn`t find hostname in sequence checker might be a problem with the program flow.');
-		}
-		$mailMsg = FALSE;
-		
-		if($filepaths) {
-			foreach($filepaths as $path) {
-				$ret = $this->hostSequenceCheckers[$hostname]->addFileToSequence(basename($path));
-				if($ret) {
-					$mailMsg .= $ret . "\n";
-				}
-			}
-			$ret = $this->hostSequenceCheckers[$hostname]->hasSequenceMissing();
-			if($ret) {
-					$mailMsg .=  "GGSN Reciever : Received a file out of sequence from host : $hostname - for the following files : \n";
-					foreach($ret as $file) {
-						$mailMsg .= $file . "\n";
-					}
-			}
-		} else if ($this->hostSequenceCheckers[$hostname]->lastLogFile) {
-			$timediff = time()- strtotime($this->hostSequenceCheckers[$hostname]->lastLogFile['received_time']);
-			if($timediff > Billrun_Factory::config()->getConfigValue('ggsn.receiver.max_missing_file_wait',3600) ) {
-				$mailMsg = 'Didn`t received any new GGSN files form host '.$hostname.' for more then '.$timediff .' Seconds';
-			}
-		}
-		//If there were any errors log them as high issues 
-		if($mailMsg) {
-			Billrun_Factory::log()->log($mailMsg,  Zend_Log::ALERT);
-		}
+		if($receiver->getType() != 'ggsn') { return; }
+		$this->checkFilesSeq($filepaths, $hostname);
 	}
-
-	/**
-	 * An helper function for the Billrun_Common_FileSequenceChecker  ( helper :) ) class.
-	 * Retrive the ggsn file date and sequence number
-	 * @param type $filename the full file name.
-	 * @return boolea|Array false if the file couldn't be parsed or an array containing the file sequence data
-	 *						[seq] => the file sequence number.
-	 *						[date] => the file date.  
-	 */
-	public function getFileSequenceData($filename) {
-	
-		return array(
-				'seq' => Billrun_Util::regexFirstValue(Billrun_Factory::config()->getConfigValue($this->getType().".sequence_regex.seq","/(\d+)/"), $filename),
-				'date' =>Billrun_Util::regexFirstValue(Billrun_Factory::config()->getConfigValue($this->getType().".sequence_regex.date","/(20\d{6})/"), $filename),
-				'time' => Billrun_Util::regexFirstValue(Billrun_Factory::config()->getConfigValue($this->getType().".sequence_regex.time","/\D(\d{4,6})\D/"), $filename)	,
-			);
-	}
-	
 
 	/**
 	 * Detect data usage above an houlrly limit

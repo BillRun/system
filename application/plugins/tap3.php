@@ -16,6 +16,7 @@ class tap3Plugin  extends Billrun_Plugin_BillrunPluginBase
 								Billrun_Plugin_Interface_IProcessor {
 	
 	use Billrun_Traits_AsnParsing;
+	use Billrun_Traits_FileSequenceChecking;
 
 	protected $name = 'tap3';
 	
@@ -30,6 +31,32 @@ class tap3Plugin  extends Billrun_Plugin_BillrunPluginBase
 		$this->initParsing();
 		$this->addParsingMethods();
 	}
+	/////////////////////////////////////////////// Reciver //////////////////////////////////////
+	
+	/**
+	 * Setup the sequence checker.
+	 * @param type $receiver
+	 * @param type $hostname
+	 * @return type
+	 */
+	public function beforeFTPReceive($receiver,  $hostname) {
+		if($receiver->getType() != $this->getName()) { return; } 
+		$this->setFilesSequenceCheckForHost($hostname);
+	}
+	
+	/**
+	 * Check recieved file sequences
+	 * @param type $receiver
+	 * @param type $filepaths
+	 * @param type $hostname
+	 * @return type
+	 */
+	public function afterFTPReceived($receiver,  $filepaths , $hostname ) {
+		if($receiver->getType() != $this->getName()) { return; }
+		$this->checkFilesSeq($filepaths, $hostname);
+	}
+	
+	///////////////////////////////////////////////// Parser //////////////////////////////////
 	
 	/**
 	 * @see Billrun_Plugin_Interface_IParser::parseHeader
@@ -151,22 +178,6 @@ class tap3Plugin  extends Billrun_Plugin_BillrunPluginBase
 	public function getSequenceData($type, $filename, &$processor) {
 		if($this->getName() != $type) { return FALSE; }
 		return $this->getFileSequenceData($filename);
-	}
-	
-	/**
-	 * An helper function for the Billrun_Common_FileSequenceChecker  ( helper :) ) class.
-	 * Retrive the ggsn file date and sequence number
-	 * @param type $filename the full file name.
-	 * @return boolea|Array false if the file couldn't be parsed or an array containing the file sequence data
-	 *						[seq] => the file sequence number.
-	 *						[date] => the file date.  
-	 */
-	public function getFileSequenceData($filename) {
-		return array(
-				'seq' => Billrun_Util::regexFirstValue(Billrun_Factory::config()->getConfigValue($this->getType().".sequence_regex.seq","/(\d+)/"), $filename),
-				'date' =>Billrun_Util::regexFirstValue(Billrun_Factory::config()->getConfigValue($this->getType().".sequence_regex.date","/(20\d{6})/"), $filename),
-				'time' => Billrun_Util::regexFirstValue(Billrun_Factory::config()->getConfigValue($this->getType().".sequence_regex.time","/\D(\d{4,6})\D/"), $filename)	,
-			);
 	}
 	
 }
