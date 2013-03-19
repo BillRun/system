@@ -130,8 +130,8 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 			$xml->INV_INVOICE_TOTAL->INVOICE_NUMBER = $invoice_id;
 			$xml->INV_INVOICE_TOTAL->INVOICE_DATE = date($short_format_date);
 			$xml->INV_INVOICE_TOTAL->FIRST_GENERATION_TIME = date($short_format_date);
-			$xml->INV_INVOICE_TOTAL->FROM_PERIOD = date($short_format_date, strtotime('2012-05-14'));
-			$xml->INV_INVOICE_TOTAL->TO_PERIOD = date($short_format_date, strtotime('2012-11-30'));
+			$xml->INV_INVOICE_TOTAL->FROM_PERIOD = date($short_format_date, strtotime('first day of previous month'));
+			$xml->INV_INVOICE_TOTAL->TO_PERIOD = date($short_format_date, strtotime('last day of previous month'));
 			$xml->INV_INVOICE_TOTAL->SUBSCRIBER_COUNT = count($row);
 			$xml->INV_INVOICE_TOTAL->INVOICE_TYPE = "ilds";
 				
@@ -156,7 +156,7 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 
 	protected function addRowToCsv($invoice_id, $account_id, $total, $cost_ilds) {
 		//empty costs for each of the providers
-		foreach (array('012', '013', '014', '015', '018') as $key) {
+		foreach (array('012', '013', '014', '015', '018', '019') as $key) {
 			if (!isset($cost_ilds[$key])) {
 				$cost_ilds[$key] = 0;
 			}
