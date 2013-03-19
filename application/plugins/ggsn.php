@@ -12,6 +12,7 @@
 class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements	Billrun_Plugin_Interface_IParser, 
 																		Billrun_Plugin_Interface_IProcessor {
     use Billrun_Traits_AsnParsing;
+
 		
 	const HEADER_LENGTH = 54;
 	const MAX_CHUNKLENGTH_LENGTH = 512;
@@ -24,7 +25,6 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements	Billrun_Pl
 	 * @var string
 	 */
 	protected $name = 'ggsn';
-
 	/**
 	 * Holds sequence checkers 
 	 * @var Array of
@@ -38,6 +38,20 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements	Billrun_Pl
 		$this->initParsing();
 		$this->addParsingMethods();
 	}
+	
+	public function afterProcessorStore(\Billrun_Processor $processor) {
+		if($processor->getType() != 'ggsn') { return; } 
+		$path = Billrun_Factory::config()->getConfigValue('ggsn.thirdparty.backup_path',false,'string');
+		if(!$path) return;
+		if( $processor->retreivedHostname ) {
+			$path = $path . DIRECTORY_SEPARATOR . $processor->retreivedHostname;
+		}
+		Billrun_Factory::log()->log(" saving  file to third party at : $path" , Zend_Log::DEBUG);
+		$processor->backupToPath($path ,true);
+	}
+
+
+	/////////////////////////////////////////  Alerts /////////////////////////////////////////
 	
 	/**
 	 * method to collect data which need to be handle by event
@@ -117,12 +131,14 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements	Billrun_Pl
 	 *						[date] => the file date.  
 	 */
 	public function getFileSequenceData($filename) {
-		$pregResults = array();
-		if(!preg_match("/\w+_-_(\d+)\.(\d+)_-_\d+\+\d+/",$filename, $pregResults) ) {
-						return false;
-		}
-		return array('seq'=> intval($pregResults[1],10), 'date' => $pregResults[2] );
+	
+		return array(
+				'seq' => Billrun_Util::regexFirstValue(Billrun_Factory::config()->getConfigValue($this->getType().".sequence_regex.seq","/(\d+)/"), $filename),
+				'date' =>Billrun_Util::regexFirstValue(Billrun_Factory::config()->getConfigValue($this->getType().".sequence_regex.date","/(20\d{6})/"), $filename),
+				'time' => Billrun_Util::regexFirstValue(Billrun_Factory::config()->getConfigValue($this->getType().".sequence_regex.time","/\D(\d{4,6})\D/"), $filename)	,
+			);
 	}
+	
 
 	/**
 	 * Detect data usage above an houlrly limit
@@ -395,6 +411,18 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements	Billrun_Pl
 	 */
 	public function isProcessingFinished($type, $fileHandle, \Billrun_Processor &$processor) {
 		return !feof($fileHandle);
+	}
+	
+	/**
+	 * Retrive the sequence data  for a ggsn file
+	 * @param type $type the type of the file being processed
+	 * @param type $filename the file name of the file being processed
+	 * @param type $processor the processor instace that triggered the fuction
+	 * @return boolean
+	 */
+	public function getSequenceData($type, $filename, &$processor) {
+		if($this->getName() != $type) { return FALSE; }
+		return $this->getFileSequenceData($filename);
 	}
 
 }

@@ -14,18 +14,19 @@
 class tap3Plugin  extends Billrun_Plugin_BillrunPluginBase
 					implements	Billrun_Plugin_Interface_IParser,  
 								Billrun_Plugin_Interface_IProcessor {
+	
 	use Billrun_Traits_AsnParsing;
 
 	protected $name = 'tap3';
 	
 	protected $nsnConfig = false;
 	
-	const FILE_READ_AHEAD_LENGTH = 32768;
+	const FILE_READ_AHEAD_LENGTH = 65535;
 
 	public function __construct($options = array()) {
 		parent::__construct($options);
 		
-		$this->nsnConfig = parse_ini_file(Billrun_Factory::config()->getConfigValue('tap3.config_path'), true);
+		$this->nsnConfig = (new Zend_Config_Ini(Billrun_Factory::config()->getConfigValue('tap3.config_path')))->toArray();		
 		$this->initParsing();
 		$this->addParsingMethods();
 	}
@@ -140,6 +141,34 @@ class tap3Plugin  extends Billrun_Plugin_BillrunPluginBase
 		return feof($fileHandle);
 	}
 
+	/**
+	 * Retrive the sequence data  for a ggsn file
+	 * @param type $type the type of the file being processed
+	 * @param type $filename the file name of the file being processed
+	 * @param type $processor the processor instace that triggered the fuction
+	 * @return boolean
+	 */
+	public function getSequenceData($type, $filename, &$processor) {
+		if($this->getName() != $type) { return FALSE; }
+		return $this->getFileSequenceData($filename);
+	}
+	
+	/**
+	 * An helper function for the Billrun_Common_FileSequenceChecker  ( helper :) ) class.
+	 * Retrive the ggsn file date and sequence number
+	 * @param type $filename the full file name.
+	 * @return boolea|Array false if the file couldn't be parsed or an array containing the file sequence data
+	 *						[seq] => the file sequence number.
+	 *						[date] => the file date.  
+	 */
+	public function getFileSequenceData($filename) {
+		return array(
+				'seq' => Billrun_Util::regexFirstValue(Billrun_Factory::config()->getConfigValue($this->getType().".sequence_regex.seq","/(\d+)/"), $filename),
+				'date' =>Billrun_Util::regexFirstValue(Billrun_Factory::config()->getConfigValue($this->getType().".sequence_regex.date","/(20\d{6})/"), $filename),
+				'time' => Billrun_Util::regexFirstValue(Billrun_Factory::config()->getConfigValue($this->getType().".sequence_regex.time","/\D(\d{4,6})\D/"), $filename)	,
+			);
+	}
+	
 }
 
 ?>

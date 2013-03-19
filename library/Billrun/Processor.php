@@ -344,8 +344,12 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 * @param type $move should the file be moved when the backup ends?
 	 */
 	protected function backup($move = true) {
-		for($i=0; $i < count($this->backupPaths) ; $i++) {
-			$backupPath = $this->retreivedHostname ?  $this->backupPaths[$i] . DIRECTORY_SEPARATOR . $this->retreivedHostname : $this->backupPaths[$i];
+		$seqData= $this->getSequenceData($this->filename);
+		for($i=0; $i < count($this->backupPaths) ; $i++) {			
+			$backupPath =  $this->backupPaths[$i];
+			$backupPath .= ($seqData['date'] ? DIRECTORY_SEPARATOR . $seqData['date'] : "");
+			$backupPath .= ($seqData['seq'] ? DIRECTORY_SEPARATOR . substr($seqData['seq'],0,-2) : "");
+			
 			if ($this->backupToPath( $backupPath , !($move && $i+1 == count($this->backupPaths)) ) === TRUE) {
 				Billrun_Factory::log()->log("Success backup file " . $this->filePath . " to " . $backupPath, Zend_Log::INFO);
 			} else {
@@ -362,7 +366,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 * 
 	 * @return boolean return true if success to backup
 	 */
-	protected function backupToPath($path, $copy = false) {
+	public function backupToPath($path, $copy = false) {
 		if ($copy) {
 			$callback = "copy";
 		} else {
@@ -376,5 +380,19 @@ abstract class Billrun_Processor extends Billrun_Base {
 														$path . DIRECTORY_SEPARATOR . $this->filename 
 													));
 	}
+	
+	
+	/**
+	 * Get the file Sequence number data.
+	 * @return an array containing the sequence data. ie:
+	 *			array(seq => 00001, date => 20130101 )
+	 */
+	 public function getSequenceData($filename) {
+			return array(
+						'seq' => Billrun_Util::regexFirstValue(Billrun_Factory::config()->getConfigValue($this->getType().".sequence_regex.seq","/(\d+)/"), $filename),
+						'date' =>Billrun_Util::regexFirstValue(Billrun_Factory::config()->getConfigValue($this->getType().".sequence_regex.date","/(20\d{6})/"), $filename),
+						'time' => Billrun_Util::regexFirstValue(Billrun_Factory::config()->getConfigValue($this->getType().".sequence_regex.time","/\D(\d{4,6})\D/"), $filename)	,
+					);
+	 }
 
 }
