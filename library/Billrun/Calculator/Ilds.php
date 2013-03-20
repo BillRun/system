@@ -28,8 +28,7 @@ class Billrun_Calculator_Ilds extends Billrun_Calculator {
 	 */
 	protected function getLines() {
 		
-		$db = Billrun_Factory::db();
-		$lines = $db->getCollection($db::lines_table);
+		$lines = Billrun_Factory::db()->linesCollection();
 
 		return $lines->query()
 			->equals('source', static::$type)
@@ -54,7 +53,7 @@ class Billrun_Calculator_Ilds extends Billrun_Calculator {
 	 */
 	public function write() {
 		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteData', array('data' => $this->data));
-		$lines = Billrun_Factory::db()->getCollection(Billrun_Db::lines_table);
+		$lines = Billrun_Factory::db()->linesCollection();
 		foreach ($this->data as $item) {
 			$item->save($lines);
 		}

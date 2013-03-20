@@ -129,7 +129,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 */
 	public function process_files() {
 
-		$log = Billrun_Factory::db()->getCollection(Billrun_Db::log_table);
+		$log = Billrun_Factory::db()->logCollection();
 		$files = $log->query()
 			->equals('source', static::$type)
 			->notExists('process_time');
@@ -217,7 +217,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 			return false;
 		}
 
-		$log = Billrun_Factory::db()->getCollection(Billrun_Db::log_table);
+		$log = Billrun_Factory::db()->logCollection();
 
 		$header = array();
 		if (isset($this->data['header'])) {
@@ -267,7 +267,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 			return false;
 		}
 
-		$lines = Billrun_Factory::db()->getCollection(Billrun_Db::lines_table);
+		$lines = Billrun_Factory::db()->linesCollection();
 
 		foreach ($this->data['data'] as $row) {
 			$entity = new Mongodloid_Entity($row);

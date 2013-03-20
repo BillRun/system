@@ -44,7 +44,7 @@ abstract class Billrun_Responder_Base_FilesResponder extends Billrun_Responder {
 
 	protected function getProcessedFilesForType($type) {
 		$files = array();
-		$log = Billrun_Factory::db()->getCollection(Billrun_Db::log_table);
+		$log = Billrun_Factory::db()->logCollection();
 
 		$logLines = $log->query()->equals('type', $type)->exists('process_time')->notExists('response_time');
 		foreach ($logLines as $logEntry) {

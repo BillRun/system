@@ -94,7 +94,7 @@ class Billrun_Receiver_Files extends Billrun_Receiver {
 	 * method to check if the file already processed
 	 */
 	protected function isFileReceived($filename, $type) {
-		$log = Billrun_Factory::db()->getCollection(Billrun_Db::log_table);
+		$log = Billrun_Factory::db()->logCollection();
 		$resource = $log->query()->equals('type', $type)->equals('file_name', $filename);
 		return $resource->count() > 0;
 	}

@@ -123,8 +123,8 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 					),
 				),
 		);
-		$db = Billrun_Factory::db();
-		$linesCol = $db->getCollection(Billrun_Db::lines_table);
+
+		$linesCol = Billrun_Factory::db()->linesCollection();
 		return $linesCol->aggregate($aggregateQuery);		
 	}
 	

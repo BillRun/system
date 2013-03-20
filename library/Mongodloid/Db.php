@@ -5,11 +5,16 @@
  * @copyright       Copyright (C) 2012 S.D.O.C. LTD. All rights reserved.
  * @license         GNU General Public License version 2 or later; see LICENSE.txt
  */
-class Mongodloid_DB {
+class Mongodloid_Db {
 
 	protected $_db;
 	protected $_connection;
 	protected $_collections = array();
+
+	public function __construct(MongoDb $db, Mongodloid_Connection $connection) {
+		$this->_db = $db;
+		$this->_connection = $connection;
+	}
 
 	public function getCollection($name) {
 		if (!isset($this->_collections[$name]) || !$this->_collections[$name])
@@ -20,11 +25,6 @@ class Mongodloid_DB {
 
 	public function getName() {
 		return (string) $this->_db;
-	}
-
-	public function __construct(MongoDb $db, Mongodloid_Connection $connection) {
-		$this->_db = $db;
-		$this->_connection = $connection;
 	}
 
 	public function command(array $command, array $options = array()) {

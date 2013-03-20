@@ -57,15 +57,14 @@ abstract class Billrun_Plugin_BillrunPluginFraud extends Billrun_Plugin_BillrunP
 	public function handlerAlert(&$items,$pluginName) {
 		if($pluginName != $this->getName()) {return;}
 		
-		$db = Billrun_Factory::db();
-		$events = $db->getCollection(Billrun_Db::events_table);
+		$events = Billrun_Factory::db()->eventsCollection();
 		//Billrun_Factory::log()->log("New Alert For {$item['imsi']}",Zend_Log::DEBUG);
 		$ret = array();
 		foreach($items as &$item) { 
-			$newEvent = new Mongodloid_Entity($item);
-			unset($newEvent['lines_stamps']);
+			$event = new Mongodloid_Entity($item);
+			unset($event['lines_stamps']);
 			
-			$newEvent = $this->addAlertData($newEvent);
+			$newEvent = $this->addAlertData($event);
 			$newEvent['source']	= $this->getName();
 			$newEvent['stamp'] = md5(serialize($newEvent));
 			$item['event_stamp'] = $newEvent['stamp'];
@@ -89,8 +88,7 @@ abstract class Billrun_Plugin_BillrunPluginFraud extends Billrun_Plugin_BillrunP
 		}
 
 		$ret = array();
-		$db = Billrun_Factory::db();
-		$lines = $db->getCollection($db::lines_table);
+		$lines = Billrun_Factory::db()->linesCollection();
 		foreach ($items as &$item) {
 			$ret[] = $lines->update(	array('stamp' => array('$in' => $item['lines_stamps'])),
 									array('$set' => array('event_stamp' => $item['event_stamp'])),
