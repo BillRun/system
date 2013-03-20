@@ -13,9 +13,10 @@
 class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud 
 				implements	Billrun_Plugin_Interface_IParser,  
 							Billrun_Plugin_Interface_IProcessor {
-	//put your code here
 	
-		/**
+	use Billrun_Traits_FileSequenceChecking;
+	
+	/**
 	 * plugin name
 	 *
 	 * @var string
@@ -32,9 +33,35 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 	public function __construct($options = array()) {
 		parent::__construct($options);
 
-		$this->nsnConfig = parse_ini_file(Billrun_Factory::config()->getConfigValue('nsn.config_path'), true);
+		$this->nsnConfig = (new Zend_Config_Ini(Billrun_Factory::config()->getConfigValue('nsn.config_path')))->toArray();
 
 	}
+	
+	/////////////////////////////////////////////// Reciver //////////////////////////////////////
+	
+	/**
+	 * Setup the sequence checker.
+	 * @param type $receiver
+	 * @param type $hostname
+	 * @return type
+	 */
+	public function beforeFTPReceive($receiver,  $hostname) {
+		if($receiver->getType() != $this->getName()) { return; } 
+		$this->setFilesSequenceCheckForHost($hostname);
+	}
+	
+	/**
+	 * Check recieved file sequences
+	 * @param type $receiver
+	 * @param type $filepaths
+	 * @param type $hostname
+	 * @return type
+	 */
+	public function afterFTPReceived($receiver,  $filepaths , $hostname ) {
+		if($receiver->getType() != $this->getName()) { return; }
+		$this->checkFilesSeq($filepaths, $hostname);
+	}
+	
 	/**
 	 * @see Billrun_Plugin_BillrunPluginFraud::handlerCollect
 	 */
@@ -55,6 +82,7 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 		return array_merge($monthlyAlerts,$dailyAlerts);
 		
 	}
+	
 	/**
 	 * Detect calls that exceed a certain duration threshold
 	 * @param type $fromDate the date that from which a call is a valid call to aggregate (formated : 'YmdHis') 
@@ -109,11 +137,13 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 		return $event;
 	}
 	
+	////////////////////////////////////////////// Parser ///////////////////////////////////////////
+	
 	/**
 	 * @see Billrun_Plugin_Interface_IParser::parseData
 	 */
 	public function parseData($type, $line, Billrun_Parser &$parser) {
-		if($type != $this->getName()) {return;}
+		if($type != $this->getName()) {return FALSE;}
 		
 		$data = array();
 		$offset = 0;
@@ -145,7 +175,7 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 	 * @see Billrun_Plugin_Interface_IParser::parseSingleField
 	 */
 	public function parseSingleField($type, $data, Array $fileDesc, Billrun_Parser &$parser = null) {
-		if($type != $this->getName()) {return;}
+		if($type != $this->getName()) {return FALSE;}
 
 		return $this->parseField($data, $fileDesc);
 	}
@@ -154,14 +184,14 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 	 * @see Billrun_Plugin_Interface_IParser::parseHeader
 	 */
 	public function parseHeader($type, $data, Billrun_Parser &$parser ) {
-		if($type != $this->getName()) {return;}
+		if($type != $this->getName()) {return FALSE;}
 		
 		$header = array();
 		foreach ($this->nsnConfig['block_header'] as $key => $fieldDesc) {
 			$fieldStruct = $this->nsnConfig['fields'][$fieldDesc];
 			$header[$key] = $this->parseField($data, $fieldStruct);
 			$data = substr($data, current($fieldStruct));
-			//$this->log->log("Header $key : {$header[$key]}",Zend_log::DEBUG);
+			//Billrun_Factory::log()->log("Header $key : {$header[$key]}",Zend_log::DEBUG);
 		}
 
 		return $header;		
@@ -171,14 +201,14 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 	 * @see Billrun_Plugin_Interface_IParser::parseTrailer
 	 */
 	public function parseTrailer( $type, $data, Billrun_Parser &$parser) {
-		if($type != $this->getName()) {return null;}
+		if($type != $this->getName()) {return FALSE;}
 
 		$trailer = array();
 		foreach ($this->nsnConfig['block_trailer'] as $key => $fieldDesc) {
 			$fieldStruct=$this->nsnConfig['fields'][$fieldDesc];
 			$trailer[$key] = $this->parseField($data, $fieldStruct);
 			$data = substr($data, current($fieldStruct));
-			//$this->log->log("Trailer $key : {$trailer[$key]}",Zend_log::DEBUG);
+			//Billrun_Factory::log()->log("Trailer $key : {$trailer[$key]}",Zend_log::DEBUG);
 		}
 		return $trailer;
 	}
@@ -260,10 +290,13 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 		return $retValue;		
 	}
 
+	//////////////////////////////////////////// Processor //////////////////////////////////////
+	
 	/**
 	 * @see Billrun_Plugin_Interface_IProcessor::isProcessingFinished
 	 */
 	public function isProcessingFinished($type, $fileHandle, \Billrun_Processor &$processor) {
+		if($type != $this->getName()) {return FALSE;}
 		if(!$this->fileStats) {
 			$this->fileStats = fstat($fileHandle);
 		}
@@ -272,11 +305,25 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 	}
 	
 	/**
+	 * Retrive the sequence data  for a ggsn file
+	 * @param type $type the type of the file being processed
+	 * @param type $filename the file name of the file being processed
+	 * @param type $processor the processor instace that triggered the fuction
+	 * @return array containing the file sequence data or false if there was an error.
+	 */
+	public function getSequenceData($type, $filename, &$processor) {
+		if($this->getName() != $type) { return FALSE; }
+		return $this->getFileSequenceData($filename);
+	}
+	
+	
+	/**
 	 * @see Billrun_Plugin_Interface_IProcessor::processData
 	 */
 	public function processData($type, $fileHandle, \Billrun_Processor &$processor) {
+		if($type != $this->getName()) {return FALSE;}
 		$bytes= null;
-		
+
 		$headerData = fread($fileHandle, self::HEADER_LENGTH);
 		$header = $processor->getParser()->parseHeader($headerData);
 		if (isset($header['data_length_in_block']) && !feof($fileHandle)) {
@@ -284,7 +331,7 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 		}
 		
 		do {			
-			$row = $processor->buildDataRow($bytes);
+			$row = $processor->buildDataRow( $bytes );
 			if ($row) {
 				$processor->addDataRow( $row );
 			}

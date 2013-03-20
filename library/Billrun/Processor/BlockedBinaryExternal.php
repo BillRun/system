@@ -22,12 +22,23 @@ class Billrun_Processor_BlockedBinaryExternal extends Billrun_Processor_Base_Blo
 	}
 	
 	protected function parse() {
+			if (!is_resource($this->fileHandler)) {
+				Billrun_Factory::log()->log('Resource is not configured well', Zend_Log::ERR);
+				return false;
+			}
 			return Billrun_Factory::chain()->trigger('processData',array($this->getType(), $this->fileHandler, &$this));
 	}
 
 	protected function processFinished() {
 			return Billrun_Factory::chain()->trigger('isProcessingFinished',array($this->getType(), $this->fileHandler, &$this));		
 	}
+	
+	/**
+	 * @see Billrun_Processor::getSequenceData
+	 */
+	public function getSequenceData($filename) {
+		return Billrun_Factory::chain()->trigger('getSequenceData',array($this->getType(), $filename, &$this));		
+	}
+	
 }
 
-?>

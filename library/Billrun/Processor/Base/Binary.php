@@ -85,10 +85,6 @@ abstract class Billrun_Processor_Base_Binary extends Billrun_Processor {
 	protected function filterFields($rawRow) {
 		$row = array();
 		
-//		$requiredFieldsConfig = Billrun_Factory::config()->getConfigValue( static::$type.'.fields_filter');
-//		if($requiredFieldsConfig) {
-//			$requireFields = explode(',', $requiredFieldsConfig);
-//			foreach($requireFields as $field) {
 		$requiredFields = Billrun_Factory::config()->getConfigValue( static::$type.'.fields_filter',false,'array');
 		if($requiredFields) {
 			foreach($requiredFields as $field) {

@@ -66,5 +66,19 @@ class Billrun_Util {
 	public static function generateCurrentTime() {
 		return date(Billrun_Base::base_dateformat);
 	}
+	
+	/**
+	 * Get the first value that match to a regex
+	 * @param $pattern the regex pattern
+	 * @param $subject the string to run the regex on.
+	 * @return the first regex group  that match ed or false if there was no match
+	 */
+	public static function regexFirstValue( $pattern, $subject ) {
+		$matches = array();
+		if( !preg_match($pattern,$subject,$matches) ) {
+			return FALSE;
+		}
+		return $matches[1];
+	}
 
 }

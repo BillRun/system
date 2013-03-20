@@ -1,6 +1,5 @@
 <?php
 
-
 /**
  * @package         Billing
  * @copyright       Copyright (C) 2012 S.D.O.C. LTD. All rights reserved.
@@ -8,22 +7,48 @@
  */
 
 /**
- * This a plgunin to provide GGSN support to the billing system.
+ * This a plguin to provide GGSN support to the billing system.
  */
-class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud {
+class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements	Billrun_Plugin_Interface_IParser, 
+																		Billrun_Plugin_Interface_IProcessor {
+    use Billrun_Traits_AsnParsing;
 
-	protected $hostSequenceCheckers = array();
+	use Billrun_Traits_FileSequenceChecking;
+		
+	const HEADER_LENGTH = 54;
+	const MAX_CHUNKLENGTH_LENGTH = 512;
+	const FILE_READ_AHEAD_LENGTH = 16384;
+
 	
-	public function __construct($options = array()) {
-		parent::__construct($options);
-	}
 	/**
 	 * plugin name
 	 *
 	 * @var string
 	 */
 	protected $name = 'ggsn';
+	
+	public function __construct($options = array()) {
+		parent::__construct($options);
+		
+		$this->ggsnConfig = parse_ini_file(Billrun_Factory::config()->getConfigValue('ggsn.config_path'), true);
+		$this->initParsing();
+		$this->addParsingMethods();
+	}
+	
+	public function afterProcessorStore(\Billrun_Processor $processor) {
+		if($processor->getType() != 'ggsn') { return; } 
+		$path = Billrun_Factory::config()->getConfigValue('ggsn.thirdparty.backup_path',false,'string');
+		if(!$path) return;
+		if( $processor->retreivedHostname ) {
+			$path = $path . DIRECTORY_SEPARATOR . $processor->retreivedHostname;
+		}
+		Billrun_Factory::log()->log(" saving  file to third party at : $path" , Zend_Log::DEBUG);
+		$processor->backupToPath($path ,true);
+	}
 
+
+	/////////////////////////////////////////  Alerts /////////////////////////////////////////
+	
 	/**
 	 * method to collect data which need to be handle by event
 	 */
@@ -39,60 +64,28 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud {
 		return array_merge($dataExceedersAlerts, $hourlyDataExceedersAlerts);
 	}
 	
+	/**
+	 * Setup the sequence checker.
+	 * @param type $receiver
+	 * @param type $hostname
+	 * @return type
+	 */
 	public function beforeFTPReceive($receiver,  $hostname) {
 		if($receiver->getType() != 'ggsn') { return; } 
-		if(!isset($this->hostSequenceCheckers[$hostname])) {
-			$this->hostSequenceCheckers[$hostname] = new Billrun_Common_FileSequenceChecker(array($this,'getFileSequenceData'), $hostname, $this->getName() );
-		}
+		$this->setFilesSequenceCheckForHost($hostname);
 	}
 	
-	public function afterFTPReceived($receiver,  $filepaths , $hostname ) {
-		if($receiver->getType() != 'ggsn') { return; } 
-		if(!isset($this->hostSequenceCheckers[$hostname])) { 
-			throw new Exception('Couldn`t find hostname in sequence checker might be a problem with the program flow.');
-		}
-		$mailMsg = FALSE;
-		
-		if($filepaths) {
-			foreach($filepaths as $path) {
-				$ret = $this->hostSequenceCheckers[$hostname]->addFileToSequence(basename($path));
-				if($ret) {
-					$mailMsg .= $ret . "\n";
-				}
-			}
-			$ret = $this->hostSequenceCheckers[$hostname]->hasSequenceMissing();
-			if($ret) {
-					$mailMsg .=  "GGSN Reciever : Received a file out of sequence from host : $hostname - for the following files : \n";
-					foreach($ret as $file) {
-						$mailMsg .= $file . "\n";
-					}
-			}
-		} else if ($this->hostSequenceCheckers[$hostname]->lastLogFile) {
-			$timediff = time()- strtotime($this->hostSequenceCheckers[$hostname]->lastLogFile['received_time']);
-			if($timediff > Billrun_Factory::config()->getConfigValue('ggsn.receiver.max_missing_file_wait',3600) ) {
-				$mailMsg = 'Didn`t received any new GGSN files form host '.$hostname.' for more then '.$timediff .' Seconds';
-			}
-		}
-		//If there were any errors log them as high issues 
-		if($mailMsg) {
-			Billrun_Factory::log()->log($mailMsg,  Zend_Log::ALERT);
-		}
-	}
-
 	/**
-	 * An helper function for the Billrun_Common_FileSequenceChecker  ( helper :) ) class.
-	 * Retrive the ggsn file date and sequence number
-	 * @param type $filename the full file name.
-	 * @return boolea|Array false if the file couldn't be parsed or an array containing the file sequence data
-	 *						[seq] => the file sequence number.
-	 *						[date] => the file date.  
+	 * Check the  received files sequence.
+	 * @param type $receiver
+	 * @param type $filepaths
+	 * @param type $hostname
+	 * @return type
+	 * @throws Exception
 	 */
-	public function getFileSequenceData($filename) {
-		$pregResults = array();
-		if(!preg_match("/\w+_-_(\d+)\.(\d+)_-_\d+\+\d+/",$filename, $pregResults) ) {
-						return false;
-		}
-		return array('seq'=> intval($pregResults[1],10), 'date' => $pregResults[2] );
+	public function afterFTPReceived($receiver,  $filepaths , $hostname ) {
+		if($receiver->getType() != 'ggsn') { return; }
+		$this->checkFilesSeq($filepaths, $hostname);
 	}
 
 	/**
@@ -230,4 +223,157 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud {
 	protected function addAlertData(&$event) {
 		return $event;
 	}
+	
+	///////////////////////////////////////////// Parser ////////////////////////////////////////////
+	/**
+	 * @see Billrun_Plugin_Interface_IParser::parseData
+	 */
+	public function parseData($type, $data, \Billrun_Parser &$parser) {
+		if($this->getName() != $type) { return FALSE; }
+		
+		$asnObject = Asn_Base::parseASNString($data);
+		$parser->setLastParseLength($asnObject->getDataLength()+8);
+		
+		$type = $asnObject->getType();
+		$cdrLine = false;
+		
+		if(isset($this->ggsnConfig[$type])) {
+			$cdrLine =  $this->getASNDataByConfig($asnObject, $this->ggsnConfig[$type] , $this->ggsnConfig['fields']);			
+			if($cdrLine && !isset($cdrLine['record_type'])) {
+				$cdrLine['record_type'] = $type;
+			}
+		} else {
+			Billrun_Factory::log()->log("couldn't find  definition for {$type}",  Zend_Log::DEBUG);
+		}
+		//Billrun_Factory::log()->log($asnObject->getType() . " : " . print_r($cdrLine,1) ,  Zend_Log::DEBUG);
+		return $cdrLine;
+	
+	}
+	
+	/**
+	 * @see Billrun_Plugin_Interface_IParser::parseHeader
+	 */
+	public function parseHeader($type, $data, \Billrun_Parser &$parser) {
+		if($this->getName() != $type) { return FALSE; }	
+		
+		$header = utf8_encode(base64_encode($data));//$this->getASNDataByConfig($data, $this->ggsnConfig['header'], $this->ggsnConfig['fields']);		
+		
+		return $header;
+	}
+	
+	/**
+	 * @see Billrun_Plugin_Interface_IParser::parseSingleField
+	 */
+	public function parseSingleField($type, $data, array $fieldDesc, \Billrun_Parser &$parser) {
+		if($this->getName() != $type) { return FALSE; }	
+		return $this->parseField($fieldDesc,$data);
+	}
+
+	/**
+	 * @see Billrun_Plugin_Interface_IParser::parseTrailer
+	 */
+	public function parseTrailer($type, $data, \Billrun_Parser &$parser) {
+			if($this->getName() != $type) { return FALSE; }	
+		
+		$trailer = utf8_encode(base64_encode($data));//$this->getASNDataByConfig($data, $this->ggsnConfig['trailer'], $this->ggsnConfig['fields']);		
+	
+		return $trailer;
+	}
+	
+	/**
+	 * add GGSN specific parsing methods.
+	 */
+	protected function addParsingMethods() {
+		$newParsingMethods = array(
+				'diagnostics' => function($data) {
+						$ret = false;
+						$diags = $this->ggsnConfig['fields_translate']['diagnostics'];
+						if(!is_array($data)) {
+							$diag = intval(implode('.', unpack('C', $data)));
+							$ret = isset($diags[$diag]) ? $diags[$diag] : false; 
+						} else {
+							foreach($diags as $key => $diagnostics) {
+								if(is_array($diagnostics) && isset($data[$key]) ) {
+									$diag = intval(implode('.', unpack('C', $data[$key])));
+									Billrun_Factory::log()->log($diag. " : " . $diagnostics[$diag],  Zend_Log::DEBUG);
+									$ret = $diagnostics[$diag];
+
+								}
+							}
+						}
+						return $ret;
+					},
+					
+				'ch_ch_selection_mode' => function($data) {	
+						$smode = intval(implode('.', unpack('C', $data)));
+						return (isset($this->ggsnConfig['fields_translate']['ch_ch_selection_mode'][$smode]) ? 
+											$this->ggsnConfig['fields_translate']['ch_ch_selection_mode'][$smode] : 
+											false);
+					},
+				'bcd_encode' => function($fieldData)	{
+						$halfBytes = unpack('C*', $fieldData);
+						$ret = '';
+						foreach ($halfBytes as $byte) {
+							$ret .=   ($byte & 0xF) . ((($byte >> 4) < 10) ? ($byte >> 4) : '' ) ;
+						}
+						return $ret;
+					},
+				'default' => function($type, $data) {
+						return (is_array($data) ? '' : implode('', unpack($type, $data)));
+					},
+				);
+					
+			$this->parsingMethods  = array_merge( $this->parsingMethods, $newParsingMethods );
+	}
+	
+	
+	//////////////////////////////////////////// Processor ////////////////////////////////////////////
+	
+	/**
+	 * @see Billrun_Plugin_Interface_IProcessor::processData
+	 */
+	public function processData($type, $fileHandle, \Billrun_Processor &$processor) {
+		if($this->getName() != $type) { return FALSE; }	
+		$processedData = &$processor->getData();
+		$processedData['header'] = $processor->buildHeader(fread($fileHandle, self::HEADER_LENGTH));
+
+		$bytes = null;
+		do {
+			if ( !feof($fileHandle) && !isset($bytes[self::MAX_CHUNKLENGTH_LENGTH]) ) {
+				$bytes .= fread($fileHandle, self::FILE_READ_AHEAD_LENGTH);
+			}
+
+			$row = $processor->buildDataRow($bytes);
+			if ($row) {
+				$processedData['data'][] = $row;
+			}
+			//Billrun_Factory::log()->log( $processor->getParser()->getLastParseLength(),  Zend_Log::DEBUG);	
+			$bytes = substr($bytes, $processor->getParser()->getLastParseLength());
+		} while (isset($bytes[self::HEADER_LENGTH]));
+		
+		$processedData['trailer'] = $processor->buildTrailer($bytes);
+
+		return true;
+	}
+	
+	/**
+	 * @see Billrun_Plugin_Interface_IProcessor::isProcessingFinished
+	 */
+	public function isProcessingFinished($type, $fileHandle, \Billrun_Processor &$processor) {
+		if($this->getName() != $type) { return FALSE; }	
+		return feof($fileHandle);
+	}
+	
+	/**
+	 * Retrive the sequence data  for a ggsn file
+	 * @param type $type the type of the file being processed
+	 * @param type $filename the file name of the file being processed
+	 * @param type $processor the processor instace that triggered the fuction
+	 * @return boolean
+	 */
+	public function getSequenceData($type, $filename, &$processor) {
+		if($this->getName() != $type) { return FALSE; }
+		return $this->getFileSequenceData($filename);
+	}
+
 }

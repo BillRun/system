@@ -1,4 +1,9 @@
 <?php
+/**
+ * @package         Billing
+ * @copyright       Copyright (C) 2012 S.D.O.C. LTD. All rights reserved.
+ * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ */
 
 /**
  * Billing receiver for ftp
@@ -103,9 +108,9 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 							}
 							continue;
 					}
-					$this->log->log("FTP: Download file " . $file->name . " from remote host", Zend_Log::INFO);
+					Billrun_Factory::log()->log("FTP: Download file " . $file->name . " from remote host", Zend_Log::INFO);
 					if ($file->saveToPath($this->workspace) === FALSE) {
-						$this->log->log("FTP: failed to download " . $file->name . " from remote host", Zend_Log::ALERT);
+						Billrun_Factory::log()->log("FTP: failed to download " . $file->name . " from remote host", Zend_Log::ALERT);
 						continue;
 					}
 					$received_path = $this->workspace . $file->name;
