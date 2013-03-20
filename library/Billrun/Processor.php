@@ -383,9 +383,9 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 */
 	 public function getSequenceData($filename) {
 			return array(
-						'seq' => Billrun_Util::regexFirstValue(Billrun_Factory::config()->getConfigValue($this->getType().".sequence_regex.seq","/(\d+)/"), $filename),
-						'date' =>Billrun_Util::regexFirstValue(Billrun_Factory::config()->getConfigValue($this->getType().".sequence_regex.date","/(20\d{6})/"), $filename),
-						'time' => Billrun_Util::regexFirstValue(Billrun_Factory::config()->getConfigValue($this->getType().".sequence_regex.time","/\D(\d{4,6})\D/"), $filename)	,
+						'seq' => @Billrun_Util::regexFirstValue(Billrun_Factory::config()->getConfigValue($this->getType().".sequence_regex.seq","/(\d+)/"), $filename),
+						'date' => @Billrun_Util::regexFirstValue(Billrun_Factory::config()->getConfigValue($this->getType().".sequence_regex.date","/(20\d{4})/"), $filename),
+						'time' => @Billrun_Util::regexFirstValue(Billrun_Factory::config()->getConfigValue($this->getType().".sequence_regex.time","/\D(\d{4,6})\D/"), $filename)	,
 					);
 	 }
 
