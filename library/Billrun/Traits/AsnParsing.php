@@ -130,6 +130,35 @@ trait Billrun_Traits_AsnParsing {
 	}
 	
 	/**
+	 * convert the actual data we got from the ASN record to a readable information
+	 * @param $struct TODO
+	 * @param $asnData the parsed ASN.1 recrod.
+	 * @param $fields TODO
+	 * @return Array conatining the fields in the ASN record converted to readableformat and keyed by they're use.
+	 */
+	protected function parseASNDataRecur($struct, $asnData, $fields) {
+		$ret = false;
+		if( isset($struct['type']) || !is_array($asnData) ) {
+
+			if(!isset($struct['type']) || !isset($fields[$struct['type']])) {
+				$this->log->log(" couldn't digg into struct : ". print_r($struct,1) . " data : " . $asnData, Zend_Log::DEBUG);				
+			} else {
+				$ret = $this->parseField( $fields[$struct['type']], $asnData );
+			}
+		} else {
+			foreach ($struct as $key => $val) {
+				if (isset($asnData[$key])) {
+					//	Billrun_Factory::log()->log(" digging into : $key". print_r($val,1), Zend_Log::DEBUG);
+						$ret[$val['name']] = $this->parseASNDataRecur($val, $asnData[$key], $fields);
+					} 
+			}
+		}
+
+		return $ret;
+	}
+	
+	
+	/**
 	 * parse a field from raw data based on a field description
 	 * @param string $fieldData the raw data to be parsed.
 	 * @param array $type the field description

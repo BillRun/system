@@ -265,6 +265,7 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements	Billrun_Pl
 	 * @see Billrun_Plugin_Interface_IParser::parseSingleField
 	 */
 	public function parseSingleField($type, $data, array $fieldDesc, \Billrun_Parser &$parser) {
+		if($this->getName() != $type) { return FALSE; }	
 		return $this->parseField($fieldDesc,$data);
 	}
 
@@ -332,6 +333,7 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements	Billrun_Pl
 	 * @see Billrun_Plugin_Interface_IProcessor::processData
 	 */
 	public function processData($type, $fileHandle, \Billrun_Processor &$processor) {
+		if($this->getName() != $type) { return FALSE; }	
 		$processedData = &$processor->getData();
 		$processedData['header'] = $processor->buildHeader(fread($fileHandle, self::HEADER_LENGTH));
 
@@ -358,7 +360,8 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements	Billrun_Pl
 	 * @see Billrun_Plugin_Interface_IProcessor::isProcessingFinished
 	 */
 	public function isProcessingFinished($type, $fileHandle, \Billrun_Processor &$processor) {
-		return !feof($fileHandle);
+		if($this->getName() != $type) { return FALSE; }	
+		return feof($fileHandle);
 	}
 	
 	/**

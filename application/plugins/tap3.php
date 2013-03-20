@@ -63,7 +63,7 @@ class tap3Plugin  extends Billrun_Plugin_BillrunPluginBase
 	 */	
 	public function parseHeader($type, $data, \Billrun_Parser &$parser) {
 		if($this->getName() != $type) { return FALSE; }
-		$header = $this->getASNDataByConfig($data, $this->nsnConfig['header'], $this->nsnConfig['fields'] );	
+		$header = $this->parseASNDataRecur( $this->nsnConfig['header'], Asn_Base::getDataArray( $data ,true ), $this->nsnConfig['fields'] );	
 	
 		return $header;
 	}
@@ -78,13 +78,14 @@ class tap3Plugin  extends Billrun_Plugin_BillrunPluginBase
 		$cdrLine = false;
 		
 		if(isset($this->nsnConfig[$type])) {
-			$cdrLine =  $this->getASNDataByConfig($data, $this->nsnConfig[$type], $this->nsnConfig['fields'] );			
+			$cdrLine =  $this->parseASNDataRecur( $this->nsnConfig[$type], Asn_Base::getDataArray( $data ,true ), $this->nsnConfig['fields'] );			
 			if($cdrLine) {
 				$cdrLine['record_type'] = $type;
 			}
-		} else {
+		} 
+		//else { FOR DEBUG
 			//Billrun_Factory::log()->log("couldn't find  definition for {$type}",  Zend_Log::DEBUG);
-		}
+		//}
 		//Billrun_Factory::log()->log($data->getType() . " : " . print_r($cdrLine,1) ,  Zend_Log::DEBUG);
 		return $cdrLine;
 	}
@@ -105,7 +106,7 @@ class tap3Plugin  extends Billrun_Plugin_BillrunPluginBase
 	public function parseTrailer($type, $data, \Billrun_Parser &$parser) {
 		if($this->getName() != $type) { return FALSE; }	
 		
-		$trailer= $this->getASNDataByConfig($data, $this->nsnConfig['trailer'], $this->nsnConfig['fields']);		
+		$trailer= $this->parseASNDataRecur( $this->nsnConfig['trailer'], Asn_Base::getDataArray( $data ,true ), $this->nsnConfig['fields']);		
 		//Billrun_Factory::log()->log(print_r($trailer,1),  Zend_Log::DEBUG);
 		
 		return $trailer;

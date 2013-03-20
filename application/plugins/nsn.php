@@ -33,7 +33,7 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 	public function __construct($options = array()) {
 		parent::__construct($options);
 
-		$this->nsnConfig = parse_ini_file(Billrun_Factory::config()->getConfigValue('nsn.config_path'), true);
+		$this->nsnConfig = (new Zend_Config_Ini(Billrun_Factory::config()->getConfigValue('nsn.config_path')))->toArray();
 
 	}
 	
@@ -82,6 +82,7 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 		return array_merge($monthlyAlerts,$dailyAlerts);
 		
 	}
+	
 	/**
 	 * Detect calls that exceed a certain duration threshold
 	 * @param type $fromDate the date that from which a call is a valid call to aggregate (formated : 'YmdHis') 
@@ -136,6 +137,8 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 		return $event;
 	}
 	
+	////////////////////////////////////////////// Parser ///////////////////////////////////////////
+	
 	/**
 	 * @see Billrun_Plugin_Interface_IParser::parseData
 	 */
@@ -188,7 +191,7 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 			$fieldStruct = $this->nsnConfig['fields'][$fieldDesc];
 			$header[$key] = $this->parseField($data, $fieldStruct);
 			$data = substr($data, current($fieldStruct));
-			//$this->log->log("Header $key : {$header[$key]}",Zend_log::DEBUG);
+			//Billrun_Factory::log()->log("Header $key : {$header[$key]}",Zend_log::DEBUG);
 		}
 
 		return $header;		
@@ -205,7 +208,7 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 			$fieldStruct=$this->nsnConfig['fields'][$fieldDesc];
 			$trailer[$key] = $this->parseField($data, $fieldStruct);
 			$data = substr($data, current($fieldStruct));
-			//$this->log->log("Trailer $key : {$trailer[$key]}",Zend_log::DEBUG);
+			//Billrun_Factory::log()->log("Trailer $key : {$trailer[$key]}",Zend_log::DEBUG);
 		}
 		return $trailer;
 	}
@@ -287,11 +290,13 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 		return $retValue;		
 	}
 
+	//////////////////////////////////////////// Processor //////////////////////////////////////
+	
 	/**
 	 * @see Billrun_Plugin_Interface_IProcessor::isProcessingFinished
 	 */
 	public function isProcessingFinished($type, $fileHandle, \Billrun_Processor &$processor) {
-		if($type != $this->getName()) {return false;}
+		if($type != $this->getName()) {return FALSE;}
 		if(!$this->fileStats) {
 			$this->fileStats = fstat($fileHandle);
 		}
@@ -316,9 +321,9 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 	 * @see Billrun_Plugin_Interface_IProcessor::processData
 	 */
 	public function processData($type, $fileHandle, \Billrun_Processor &$processor) {
-		if($type != $this->getName()) {return false;}
+		if($type != $this->getName()) {return FALSE;}
 		$bytes= null;
-		
+
 		$headerData = fread($fileHandle, self::HEADER_LENGTH);
 		$header = $processor->getParser()->parseHeader($headerData);
 		if (isset($header['data_length_in_block']) && !feof($fileHandle)) {
@@ -326,7 +331,7 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 		}
 		
 		do {			
-			$row = $processor->buildDataRow($bytes);
+			$row = $processor->buildDataRow( $bytes );
 			if ($row) {
 				$processor->addDataRow( $row );
 			}
