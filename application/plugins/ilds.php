@@ -13,8 +13,7 @@ class ildsPlugin extends Billrun_Plugin_BillrunPluginFraud {
 	 * method to collect data which need to be handle by event
 	 */
 	public function handlerCollect() {
-		$db = Billrun_Factory::db();
-		$lines = $db->getCollection($db::lines_table);
+		$lines = Billrun_Factory::db()->linesCollection();
 		$charge_time = $this->get_last_charge_time();
 
 		$where = array(

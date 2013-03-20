@@ -13,26 +13,24 @@
  * @since    1.0
  */
 class Billrun_Db extends Mongodloid_Db {
-	
-	/**
-	 * constant of log collection name
-	 */
-	const log_table = 'log';
 
 	/**
-	 * constant of lines collection name
+	 * list of collections available in the DB
+	 * 
+	 * @var array
+	 * @since 0.3
 	 */
-	const lines_table = 'lines';
+	protected $collections = array();
 
 	/**
-	 * constant of billrun collection name
+	 * 
+	 * @param \MongoDb $db
+	 * @param \Mongodloid_Connection $connection
 	 */
-	const billrun_table = 'billrun';
-
-	/**
-	 * constant of events collection name
-	 */
-	const events_table = 'events';
+	public function __construct(\MongoDb $db, \Mongodloid_Connection $connection) {
+		parent::__construct($db, $connection);
+		$this->collections = Billrun_Factory::config()->getConfigValue('db.collections', array());
+	}
 
 	/**
 	 * method to override the base getInstance
@@ -44,7 +42,7 @@ class Billrun_Db extends Mongodloid_Db {
 		$conn = Billrun_Connection::getInstance($config->db->host, $config->db->port);
 		return $conn->getDB($config->db->name);
 	}
-	
+
 	/**
 	 * method to create simple aggregation function over MongoDB
 	 * 
@@ -61,30 +59,28 @@ class Billrun_Db extends Mongodloid_Db {
 	}
 
 	/**
-	 * get lines collection
+	 * Magic method to receive collection instance
 	 * 
-	 * @return Mongodloid_Collection Base collection object
+	 * @param string $name name of the function call; convention is getCollnameCollection
+	 * @param array $arguments not used for getCollnameCollection
+	 * @return mixed if collection exists return instance of Mongodloid_Collection, else false
 	 */
-	public function getLinesCollection() {
-		return $this->getCollection(Billrun_Db::lines_table);
+	public function __call($name, $arguments) {
+		$suffix = 'Collection';
+		if (substr($name, (-1) * strlen($suffix)) == $suffix) {
+			$collectionName = substr($name, 0, (strpos($name, $suffix)));
+			if (in_array($collectionName, $this->collections)) {
+				return $this->getCollection($this->collections[$collectionName]);
+			}
+		}
+		return false;
 	}
 
-	/**
-	 * get billrun collection
-	 * 
-	 * @return Mongodloid_Collection Base collection object
-	 */
-	public function getBillrunCollection() {
-		return $this->getCollection(Billrun_Db::billrun_table);
-	}
-
-	/**
-	 * get log collection
-	 * 
-	 * @return Mongodloid_Collection Base collection object
-	 */
-	public function getLogCollection() {
-		return $this->getCollection(Billrun_Db::log_table);
+	public function __get($name) {
+		if (in_array($name, $this->collections)) {
+			return $this->collections[$name];
+		}
+		Billrun_Factory::log()->log('Collection or property' . $name . ' did not found in the DB layer', Zend_Log::ALERT);
 	}
 
 }
