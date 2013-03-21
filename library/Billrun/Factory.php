@@ -13,37 +13,49 @@
  * @since    1.0
  */
 class Billrun_Factory {
-	
+
 	/**
 	 * Log instance
+	 * 
 	 * @var Billrun_Log
 	 */
-	public static $log = null;
-	
+	protected static $log = null;
+
 	/**
 	 * Config instance
+	 * 
 	 * @var Yaf config
 	 */
-	public static $config = null;
-	
+	protected static $config = null;
+
 	/**
-	 * DB instance
+	 * Database instance
+	 * 
 	 * @var Mongoloid db
 	 */
-	public static $db = null;
-	
+	protected static $db = null;
+
+	/**
+	 * Cache instance
+	 * 
+	 * @var Billrun Cache
+	 */
+	protected static $cache = null;
+
 	/**
 	 * Dispatcher instance
+	 * 
 	 * @var Billrun Dispatcher
 	 */
-	public static $dispatcher = null;
-	
+	protected static $dispatcher = null;
+
 	/**
 	 * Chain instance
+	 * 
 	 * @var Billrun Chain
 	 */
-	public static $chain = null;
-	
+	protected static $chain = null;
+
 	/**
 	 * method to retrieve the log instance
 	 * 
@@ -51,12 +63,12 @@ class Billrun_Factory {
 	 */
 	static public function log() {
 		if (!self::$log) {
-			self::$log = Billrun_Log::getInstance();			
+			self::$log = Billrun_Log::getInstance();
 		}
-		
+
 		return self::$log;
 	}
-	
+
 	/**
 	 * method to retrieve the config instance
 	 * 
@@ -66,10 +78,10 @@ class Billrun_Factory {
 		if (!self::$config) {
 			self::$config = Billrun_Config::getInstance();
 		}
-		
+
 		return self::$config;
 	}
-	
+
 	/**
 	 * method to retrieve the db instance
 	 * 
@@ -79,25 +91,47 @@ class Billrun_Factory {
 		if (!self::$db) {
 			self::$db = Billrun_Db::getInstance();
 		}
-		
+
 		return self::$db;
 	}
-	
+
+	/**
+	 * method to retrieve the cache instance
+	 * 
+	 * @return Billrun_Cache
+	 */
+	static public function cache() {
+		if (!self::$cache) {
+			$args = self::config()->getConfigValue('cache', array());
+			if (empty($args)) {
+				return false;
+			}
+			self::$cache = Billrun_Cache::getInstance($args);
+		}
+
+		return self::$cache;
+	}
+
 	/**
 	 * method to retrieve the a mailer instance
 	 * 
 	 * @return Billrun_Db
 	 */
 	static public function mailer() {
-		$mail = new Zend_Mail();
-		//TODO set common configuration.
-		$mail->setFrom(	Billrun_Factory::config()->getConfigValue('mailer.from.address', 'no-reply'),
-						Billrun_Factory::config()->getConfigValue('mailer.from.name', 'Billrun'));
-		
-		//$mail->setDefaultTransport($transport);
-		return $mail;
+		try {
+			$mail = new Zend_Mail();
+			//TODO set common configuration.
+			$fromName = Billrun_Factory::config()->getConfigValue('mailer.from.address', 'no-reply');
+			$fromAddress = Billrun_Factory::config()->getConfigValue('mailer.from.name', 'Billrun');
+			$mail->setFrom($fromName, $fromAddress);
+			//$mail->setDefaultTransport($transport);
+			return $mail;
+		} catch (Exception $e) {
+			self::log("Can't instantiat mail object. Please check your settings", Zend_Log::ALERT);
+			return false;
+		}
 	}
-	
+
 	/**
 	 * method to retrieve the dispatcher instance
 	 * 
@@ -107,7 +141,7 @@ class Billrun_Factory {
 		if (!self::$dispatcher) {
 			self::$dispatcher = Billrun_Dispatcher::getInstance();
 		}
-		
+
 		return self::$dispatcher;
 	}
 
@@ -120,7 +154,7 @@ class Billrun_Factory {
 		if (!self::$chain) {
 			self::$chain = Billrun_Dispatcher::getInstance(array('type' => 'chain'));
 		}
-		
+
 		return self::$chain;
 	}
 
