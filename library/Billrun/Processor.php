@@ -338,7 +338,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 * @param type $move should the file be moved when the backup ends?
 	 */
 	protected function backup($move = true) {
-		$seqData= $this->getSequenceData($this->filename);
+		$seqData= $this->getFilenameData($this->filename);
 		for($i=0; $i < count($this->backupPaths) ; $i++) {			
 			$backupPath =  $this->backupPaths[$i];
 			$backupPath .= ($seqData['date'] ? DIRECTORY_SEPARATOR . $seqData['date'] : "");
@@ -377,15 +377,15 @@ abstract class Billrun_Processor extends Billrun_Base {
 	
 	
 	/**
-	 * Get the file Sequence number data.
+	 * Get the data the is stored in the file name.
 	 * @return an array containing the sequence data. ie:
 	 *			array(seq => 00001, date => 20130101 )
 	 */
-	 public function getSequenceData($filename) {
+	 public function getFilenameData($filename) {
 			return array(
-						'seq' => @Billrun_Util::regexFirstValue(Billrun_Factory::config()->getConfigValue($this->getType().".sequence_regex.seq","/(\d+)/"), $filename),
-						'date' => @Billrun_Util::regexFirstValue(Billrun_Factory::config()->getConfigValue($this->getType().".sequence_regex.date","/(20\d{4})/"), $filename),
-						'time' => @Billrun_Util::regexFirstValue(Billrun_Factory::config()->getConfigValue($this->getType().".sequence_regex.time","/\D(\d{4,6})\D/"), $filename)	,
+						'seq' => Billrun_Util::regexFirstValue(Billrun_Factory::config()->getConfigValue($this->getType().".sequence_regex.seq","/(\d+)/"), $filename),
+						'date' => Billrun_Util::regexFirstValue(Billrun_Factory::config()->getConfigValue($this->getType().".sequence_regex.date","/(20\d{4})/"), $filename),
+						'time' => Billrun_Util::regexFirstValue(Billrun_Factory::config()->getConfigValue($this->getType().".sequence_regex.time","/\D(\d{4,6})\D/"), $filename)	,
 					);
 	 }
 

@@ -29,7 +29,11 @@ class Asn_Base {
 	 * @return	ASN	The array representation of the ASN.1 data contained in $string
 	 */
 	public static function parseASNString($rawData) {
-		return self::newClassFromData($rawData);
+		try {
+			return self::newClassFromData($rawData);
+		} catch ( Exception $e ) {
+			throw new Exception("Failed parsing data cause : ". $e);
+		}
 	}
 
 	/**

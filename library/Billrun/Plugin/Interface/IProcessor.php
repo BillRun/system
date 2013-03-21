@@ -26,7 +26,7 @@ interface  Billrun_Plugin_Interface_IProcessor {
 	 * @param type $processor the processor instace that triggered the fuction
 	 * @return array containing the file sequence data or false if there was an error.
 	 */
-	public function getSequenceData($type, $filename, &$processor);
+	public function getFilenameData($type, $filename, &$processor);
 }
 
 ?>

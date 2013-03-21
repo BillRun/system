@@ -311,7 +311,7 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 	 * @param type $processor the processor instace that triggered the fuction
 	 * @return array containing the file sequence data or false if there was an error.
 	 */
-	public function getSequenceData($type, $filename, &$processor) {
+	public function getFilenameData($type, $filename, &$processor) {
 		if($this->getName() != $type) { return FALSE; }
 		return $this->getFileSequenceData($filename);
 	}

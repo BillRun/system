@@ -176,7 +176,7 @@ class tap3Plugin  extends Billrun_Plugin_BillrunPluginBase
 	 * @param type $processor the processor instace that triggered the fuction
 	 * @return boolean
 	 */
-	public function getSequenceData($type, $filename, &$processor) {
+	public function getFilenameData($type, $filename, &$processor) {
 		if($this->getName() != $type) { return FALSE; }
 		return $this->getFileSequenceData($filename);
 	}

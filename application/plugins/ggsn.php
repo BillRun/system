@@ -371,7 +371,7 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements	Billrun_Pl
 	 * @param type $processor the processor instace that triggered the fuction
 	 * @return boolean
 	 */
-	public function getSequenceData($type, $filename, &$processor) {
+	public function getFilenameData($type, $filename, &$processor) {
 		if($this->getName() != $type) { return FALSE; }
 		return $this->getFileSequenceData($filename);
 	}

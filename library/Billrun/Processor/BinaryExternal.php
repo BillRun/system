@@ -33,7 +33,7 @@ class Billrun_Processor_BinaryExternal extends Billrun_Processor_Base_Binary {
 	/**
 	 * @see Billrun_Processor::getSequenceData
 	 */
-	public function getSequenceData($filename) {
+	public function getFilenameData($filename) {
 		return Billrun_Factory::chain()->trigger('getSequenceData',array($this->getType(), $filename, &$this));
 	}
 	
