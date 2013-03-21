@@ -27,7 +27,7 @@ class tap3Plugin  extends Billrun_Plugin_BillrunPluginBase
 	public function __construct($options = array()) {
 		parent::__construct($options);
 		
-		$this->nsnConfig = (new Zend_Config_Ini(Billrun_Factory::config()->getConfigValue('tap3.config_path')))->toArray();		
+		$this->nsnConfig = (new Yaf_Config_Ini(Billrun_Factory::config()->getConfigValue('tap3.config_path')))->toArray();		
 		$this->initParsing();
 		$this->addParsingMethods();
 	}

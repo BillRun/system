@@ -33,7 +33,7 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 	public function __construct($options = array()) {
 		parent::__construct($options);
 
-		$this->nsnConfig = (new Zend_Config_Ini(Billrun_Factory::config()->getConfigValue('nsn.config_path')))->toArray();
+		$this->nsnConfig = (new Yaf_Config_Ini(Billrun_Factory::config()->getConfigValue('nsn.config_path')))->toArray();
 
 	}
 	
