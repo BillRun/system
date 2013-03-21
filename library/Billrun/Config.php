@@ -19,7 +19,7 @@ class Billrun_Config {
 	 * 
 	 * @var Billrun_Config 
 	 */
-	static $instance = null;
+	protected static $instance = null;
 
 	/**
 	 * the config container
