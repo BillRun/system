@@ -27,7 +27,6 @@ class Billrun_Common_FileSequenceChecker {
 		$this->getFileSequenceDataCallable = $getFileSequenceDataFunc;
 		$this->hostname = $host;
 		$this->type = $type;
-		$this->loadLastFileDataFromHost();
 	}
 
 	/**
@@ -68,22 +67,6 @@ class Billrun_Common_FileSequenceChecker {
 		}
 
 		return $ret;
-	}
-
-	/**
-	 * load the last sequence number for the files of the current type from the data base.
-	 */
-	protected function loadLastFileDataFromHost() {
-		$log = Billrun_Factory::db()->logCollection();
-		$lastLogFile = $log->query()->equals('source', $this->type)->exists('received_time')
-				->equals('retrieved_from', $this->hostname)->
-				cursor()->sort(array('received_time' => -1, 'file_name' => -1))->limit(1)->rewind()->current();
-		if (isset($lastLogFile['file_name'])) {
-			$this->lastLogFile = $lastLogFile;
-			$lastSequenceData = call_user_func($this->getFileSequenceDataCallable, $lastLogFile->get('file_name'));
-			$this->sequencers[$lastSequenceData['date']] = new Billrun_Common_SequenceChecker();
-			$this->sequencers[$lastSequenceData['date']]->addSequence($lastSequenceData['seq'], $lastLogFile['file_name']);
-		}
 	}
 
 }

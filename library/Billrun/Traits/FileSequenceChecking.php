@@ -25,7 +25,11 @@ trait Billrun_Traits_FileSequenceChecking {
 	 */
 	protected function setFilesSequenceCheckForHost($hostname) {
 		if(!isset($this->hostSequenceCheckers[$hostname])) {
-			$this->hostSequenceCheckers[$hostname] = new Billrun_Common_FileSequenceChecker(array($this,'getFileSequenceData'), $hostname, $this->getType() );
+			$this->hostSequenceCheckers[$hostname] = new Billrun_Common_FileSequenceChecker(array($this,'getFileSequenceData'), $hostname, $this->getName() );
+			$lastFile = $this->loadLastFileDataFromHost($hostname);
+			if($lastFile) {
+				$this->hostSequenceCheckers[$hostname]->addFileToSequence($lastFile);
+			}
 		}
 	}
 
@@ -53,15 +57,15 @@ trait Billrun_Traits_FileSequenceChecking {
 			}
 			$ret = $this->hostSequenceCheckers[$hostname]->hasSequenceMissing();
 			if($ret) {
-					$mailMsg .=  $this->getType()." Reciever : Received a file out of sequence from host : $hostname - for the following files : \n";
+					$mailMsg .=  $this->getName()." Reciever : Received a file out of sequence from host : $hostname - for the following files : \n";
 					foreach($ret as $file) {
 						$mailMsg .= $file . "\n";
 					}
 			}
 		} else if ($this->hostSequenceCheckers[$hostname]->lastLogFile) {
 			$timediff = time()- strtotime($this->hostSequenceCheckers[$hostname]->lastLogFile['received_time']);
-			if($timediff > Billrun_Factory::config()->getConfigValue($this->getType().'.receiver.max_missing_file_wait',3600) ) {
-				$mailMsg = 'Didn`t received any new '.$this->getType().' files form host '.$hostname.' for more then '.$timediff .' Seconds';
+			if($timediff > Billrun_Factory::config()->getConfigValue($this->getName().'.receiver.max_missing_file_wait',3600) ) {
+				$mailMsg = 'Didn`t received any new '.$this->getName().' files form host '.$hostname.' for more then '.$timediff .' Seconds';
 			}
 		}
 		//If there were any errors log them as high issues 
@@ -80,16 +84,28 @@ trait Billrun_Traits_FileSequenceChecking {
 	 */
 	public function getFileSequenceData($filename) {
 		return array(
-				'seq' => Billrun_Util::regexFirstValue(Billrun_Factory::config()->getConfigValue($this->getType().".sequence_regex.seq","/(\d+)/"), $filename),
-				'date' =>Billrun_Util::regexFirstValue(Billrun_Factory::config()->getConfigValue($this->getType().".sequence_regex.date","/(20\d{6})/"), $filename),
-				'time' => Billrun_Util::regexFirstValue(Billrun_Factory::config()->getConfigValue($this->getType().".sequence_regex.time","/\D(\d{4,6})\D/"), $filename)	,
+				'seq' => Billrun_Util::regexFirstValue(Billrun_Factory::config()->getConfigValue($this->getName().".sequence_regex.seq","/(\d+)/"), $filename),
+				'date' =>Billrun_Util::regexFirstValue(Billrun_Factory::config()->getConfigValue($this->getName().".sequence_regex.date","/(20\d{6})/"), $filename),
+				'time' => Billrun_Util::regexFirstValue(Billrun_Factory::config()->getConfigValue($this->getName().".sequence_regex.time","/\D(\d{4,6})\D/"), $filename)	,
 			);
+	}
+	
+	/**
+	 * load the last sequence number for the files of the current type from the data base.
+	 */
+	protected function loadLastFileDataFromHost($hostname) {
+		$log = Billrun_Factory::db()->logCollection();
+		$lastLogFile = $log->query()->equals('source', $this->getName())->exists('received_time')
+				->equals('retrieved_from', $hostname)->
+				cursor()->sort(array('_id' => -1))->limit(1)->rewind()->current();
+		
+		return isset($lastLogFile['file_name']) ? $lastLogFile['file_name'] : false;			
 	}
 	
 	/**
 	 * Retrive the type of the current object to match to the configuration type.
 	 */
-	abstract function getType();
+	abstract function getName();
 }
 
 ?>
