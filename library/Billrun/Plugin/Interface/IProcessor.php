@@ -6,17 +6,17 @@
  */
 interface  Billrun_Plugin_Interface_IProcessor {
 	/**
-	 * 
-	 * @param type $type
-	 * @param type $fileHandle
-	 * @param Billrun_Processor $processor
+	 * Process data from a file.
+	 * @param type $type the type of file to process
+	 * @param type $fileHandle the file handle
+	 * @param Billrun_Processor $processor the processor object that managing the file processing
 	 */
 	public function processData($type, $fileHandle, Billrun_Processor &$processor);
 	/**
-	 * 
-	 * @param type $type
-	 * @param type $fileHandle
-	 * @param Billrun_Processor $processor
+	 * Check if thers more  processing to be done.
+	 * @param type $type  type of file being processed
+	 * @param type $fileHandle the processed file handle
+	 * @param Billrun_Processor $processor the processor object that managing the file processing
 	 */
 	public function isProcessingFinished($type, $fileHandle, Billrun_Processor &$processor);
 	/**

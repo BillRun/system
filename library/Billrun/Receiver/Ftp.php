@@ -45,7 +45,7 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 
 	public function __construct($options) {
 		parent::__construct($options);
-		$this->ftpConfig = is_array( $options['ftp']['host'] ) ? Billrun_Util::joinSubArraysOnKey($options['ftp'],2) : array($options['ftp']);
+		$this->ftpConfig = isset($options['ftp']['host']) ? array('ftp' =>  $options['ftp']) : $options['ftp'];
 
 		if (isset($options['ftp']['remote_directory'])) {
 			$this->ftp_path = $options['ftp']['remote_directory'];
@@ -58,7 +58,6 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 		if (isset($options['filename_regex'])) {
 			$this->filenameRegex = $options['filename_regex'];
 		}
-
 
 	}
 
