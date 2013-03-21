@@ -75,10 +75,10 @@ class Billrun_Util {
 	 */
 	public static function regexFirstValue( $pattern, $subject ) {
 		$matches = array();
-		if( !@preg_match(($pattern ? $pattern : "//"), $subject, $matches) ) {
+		if( !preg_match(($pattern ? $pattern : "//"), $subject, $matches) ) {
 			return FALSE;
 		}
-		return $matches[1];
+		return $matches[0];
 	}
 
 }
