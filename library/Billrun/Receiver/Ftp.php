@@ -34,12 +34,6 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 	 */
 	protected $ftp_path = '/';
 
-	/**
-	 * A regular expression to identify the files that should be downloaded
-	 * 
-	 * @param string
-	 */
-	protected $filenameRegex = '/.*/';
 	
 	protected $ftpConfig = false;
 
@@ -53,10 +47,6 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 
 		if (isset($options['workspace'])) {
 			$this->workspace = $options['workspace'];
-		}
-		
-		if (isset($options['filename_regex'])) {
-			$this->filenameRegex = $options['filename_regex'];
 		}
 
 	}

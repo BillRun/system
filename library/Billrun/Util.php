@@ -71,14 +71,15 @@ class Billrun_Util {
 	 * Get the first value that match to a regex
 	 * @param $pattern the regex pattern
 	 * @param $subject the string to run the regex on.
+	 * @param $resIndex (optional) the index to get , of the returned regex results.
 	 * @return the first regex group  that match ed or false if there was no match
 	 */
-	public static function regexFirstValue( $pattern, $subject ) {
+	public static function regexFirstValue( $pattern, $subject, $resIndex = 1 ) {
 		$matches = array();
 		if( !preg_match(($pattern ? $pattern : "//"), $subject, $matches) ) {
 			return FALSE;
 		}
-		return $matches[0];
+		return (isset($matches[$resIndex])) ? $matches[$resIndex] : FALSE;
 	}
 
 }

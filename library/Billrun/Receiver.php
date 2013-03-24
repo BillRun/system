@@ -29,6 +29,23 @@ abstract class Billrun_Receiver extends Billrun_Base {
 	 */
 	protected $workspace;
 
+		/**
+	 * A regular expression to identify the files that should be downloaded
+	 * 
+	 * @param string
+	 */
+	protected $filenameRegex = '/.*/';
+	
+	
+	public function __construct($options = array()) {
+		parent::__construct($options);
+						
+		if (isset($options['filename_regex'])) {
+			$this->filenameRegex = $options['filename_regex'];
+		}
+
+	}
+	
 	/**
 	 * general function to receive
 	 *
@@ -79,6 +96,6 @@ abstract class Billrun_Receiver extends Billrun_Base {
 	 */
 	protected function isFileValid($filename, $path) {
 		//igonore hidden files
-		return preg_match("/^[^\.]/", $filename);
+		return preg_match( ( $this->filenameRegex ? $this->filenameRegex : "/^[^\.]/" ), $filename);
 	}
 }
