@@ -41,7 +41,7 @@ class Billrun_Receiver_Files extends Billrun_Receiver {
 
 		foreach (Billrun_Factory::config()->getConfigValue('ilds.providers', array()) as $type) {
 			if (!file_exists($this->workspace . DIRECTORY_SEPARATOR . $type)) {
-				$this->log->log("NOTICE : SKIPPING $type !!! directory " . $this->workspace . DIRECTORY_SEPARATOR . $type . " not found!!", Zend_Log::NOTICE);
+				Billrun_Factory::log()->log("NOTICE : SKIPPING $type !!! directory " . $this->workspace . DIRECTORY_SEPARATOR . $type . " not found!!", Zend_Log::NOTICE);
 				continue;
 			}
 
@@ -79,15 +79,15 @@ class Billrun_Receiver_Files extends Billrun_Receiver {
 		if ($processor) {
 			$processor->process_files();
 		} else {
-			$this->log->log("error with loading processor", Zend_log::ERR);
+			Billrun_Factory::log()->log("error with loading processor", Zend_log::ERR);
 			return false;
 		}
 
 		$data = $processor->getData();
 
-		$this->log->log("Process type: " . $type, Zend_log::INFO);
-		//	$this->log->log("file path: " . $filePath, Zend_log::INFO);
-		$this->log->log((isset($data['data']) ? "import lines: " . count($data['data']) : "no data received"), Zend_log::INFO);
+		Billrun_Factory::log()->log("Process type: " . $type, Zend_log::INFO);
+		//	Billrun_Factory::log()->log("file path: " . $filePath, Zend_log::INFO);
+		Billrun_Factory::log()->log((isset($data['data']) ? "import lines: " . count($data['data']) : "no data received"), Zend_log::INFO);
 	}
 
 	/**

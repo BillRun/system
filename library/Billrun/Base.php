@@ -15,40 +15,19 @@
 abstract class Billrun_Base {
 
 	/**
+	 * the type of the object
+	 *
+	 * @var string
+	 */
+	static protected $type = 'base';
+
+	/**
 	 * Stamp of the object
 	 * Used to make the object unique
 	 *
 	 * @var string
 	 */
 	protected $stamp = null;
-
-	/**
-	 * the configuration of the system
-	 *
-	 * @var YAF_Config
-	 */
-	protected $config;
-
-	/**
-	 * dispatcher of the plugin system
-	 *
-	 * @var dispatcher class
-	 */
-	protected $dispatcher;
-
-	/**
-	 * chain dispatcher of the plugin system
-	 *
-	 * @var dispatcher class
-	 */
-	protected $chain;
-
-	/**
-	 * the type of the object
-	 *
-	 * @var string
-	 */
-	static protected $type = 'base';
 
 	/**
 	 * constant for base date format

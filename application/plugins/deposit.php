@@ -17,7 +17,7 @@ class depositPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 */
 	public function handlerAlert(&$items,$pluginName) {
 		if($pluginName != $this->getName() || !$items ) {return;}
-		$this->log->log("Marking down Alert For $pluginName", Zend_Log::DEBUG);
+		Billrun_Factory::log()->log("Marking down Alert For $pluginName", Zend_Log::DEBUG);
 		$ret = array();
 		$events = Billrun_Factory::db()->eventsCollection();
 		foreach($items as &$item) {
@@ -43,7 +43,7 @@ class depositPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 */
 	public function handlerMarkDown(&$items, $pluginName) {
 		if($pluginName != $this->getName() || !$items ) {return;}
-		//$this->log->log("Marking down Alert For {$item['imsi']}",Zend_Log::DEBUG);
+		//Billrun_Factory::log()->log("Marking down Alert For {$item['imsi']}",Zend_Log::DEBUG);
 		$ret = array();
 		$db = Billrun_Factory::db();
 		$eventsCol = Billrun_Factory::db()->eventsCollection();
@@ -68,7 +68,7 @@ class depositPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$ret = array();
 		$ret = array_merge($ret,$this->detectDepositExceeders($db));
 		
-	//	$this->log->log(print_R($ret,1),  Zend_Log::DEBUG);
+	//	Billrun_Factory::log()->log(print_R($ret,1),  Zend_Log::DEBUG);
 		// unite all the results per imsi
 	//	die;
 		return $ret;
