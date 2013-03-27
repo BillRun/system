@@ -148,7 +148,7 @@ abstract class Billrun_Base {
 	 * @deprecated since version 1.0
 	 */
 	public function getConfigValue($keys, $defVal) {
-		$this->log->log("Billrun_Base::getConfigValue is deprecated; please use Billrun_Config::getConfigValue through factory::config()", Zend_Log::DEBUG);
+		Billrun_Factory::log()->log("Billrun_Base::getConfigValue is deprecated; please use Billrun_Config::getConfigValue through factory::config()", Zend_Log::DEBUG);
 		return Billrun_Factory::config()->getConfigValue($keys, $defVal);
 	}
 
