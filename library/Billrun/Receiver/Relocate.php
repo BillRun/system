@@ -52,7 +52,7 @@ class Billrun_Receiver_Relocate extends Billrun_Receiver_Base_LocalFiles {
 			mkdir($newPath);
 		}
 		$newPath .= DIRECTORY_SEPARATOR . $filename;
-		$ret = $this->moveFiles ? rename($srcPath, $newPath) : copy($srcPath, $newPath) ;
+		$ret = $this->moveFiles ? (copy($srcPath, $newPath) && unlink($srcPath)) : copy($srcPath, $newPath) ;
 		Billrun_Factory::dispatcher()->trigger('afterRelocateFileHandling', array($this, &$srcPath, &$newPath, $filename, $ret));
 		return $ret ? $newPath : FALSE;
 	}
