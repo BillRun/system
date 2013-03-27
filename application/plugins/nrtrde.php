@@ -257,24 +257,24 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 		
 		switch($type) {
 			case 'moc_israel':
-					$event['threshold']	= $this->getConfigValue('nrtde.thresholds.moc.israel', 1800, 'int');
+					$event['threshold']	= Billrun_Factory::config()->getConfigValue('nrtde.thresholds.moc.israel', 1800, 'int');
 				break;
 			
 			case 'moc_nonisrael':				
-					$event['threshold']	= $this->getConfigValue('nrtde.thresholds.moc.nonisrael', 600, 'int');
+					$event['threshold']	= Billrun_Factory::config()->getConfigValue('nrtde.thresholds.moc.nonisrael', 600, 'int');
 				break;
 			
 			case 'mtc_all':
-					$event['threshold']	= $this->getConfigValue('nrtde.thresholds.mtc', 2400, 'int');
+					$event['threshold']	= Billrun_Factory::config()->getConfigValue('nrtde.thresholds.mtc', 2400, 'int');
 				break;
 			
 			case 'sms_out':
-					$event['threshold']	= $this->getConfigValue('nrtde.thresholds.smsout', 70, 'int');
+					$event['threshold']	= Billrun_Factory::config()->getConfigValue('nrtde.thresholds.smsout', 70, 'int');
 					$event['units']	= 'SMS';
 					$event['event_type']	= 'NRTRDE_SMS';
 				break;
 			case 'sms_hourly':
-					$event['threshold']	= $this->getConfigValue('nrtde.hourly.thresholds.smsout', 250, 'int');
+					$event['threshold']	= Billrun_Factory::config()->getConfigValue('nrtde.hourly.thresholds.smsout', 250, 'int');
 					$event['units']	= 'SMS';
 					$event['event_type']	= 'NRTRDE_HOURLY_SMS';
 				break;	
