@@ -22,6 +22,21 @@ class Billrun_Receiver_Relocate extends Billrun_Receiver_Base_LocalFiles {
 	static protected $type = 'relocate';
 	
 	/**
+	 * Flag to check if the relocate should moved the received files or copy them.
+	 * @var boolean defaults to FALSE
+	 */
+	protected $moveFiles = false; 
+	
+	public function __construct($options) {
+		parent::__construct($options);
+		
+		
+		if (isset($options['receiver']) && isset($options['receiver']['move_received_files'])) {
+			$this->moveFiles = $options['receiver']['move_received_files'];
+		}
+	}
+	
+	/**
 	 * Move the file to the workspace.
 	 * 
 	 * @param string $srcPath The original file position
@@ -37,9 +52,9 @@ class Billrun_Receiver_Relocate extends Billrun_Receiver_Base_LocalFiles {
 			mkdir($newPath);
 		}
 		$newPath .= DIRECTORY_SEPARATOR . $filename;
-		$ret = copy($srcPath, $newPath) ? $newPath : FALSE;
+		$ret = $this->moveFiles ? rename($srcPath, $newPath) : copy($srcPath, $newPath) ;
 		Billrun_Factory::dispatcher()->trigger('afterRelocateFileHandling', array($this, &$srcPath, &$newPath, $filename, $ret));
-		return $ret;
+		return $ret ? $newPath : FALSE;
 	}
 
 }

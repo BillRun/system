@@ -36,6 +36,8 @@ abstract class Billrun_Receiver_Base_LocalFiles extends Billrun_Receiver {
 
 		if (isset($options['path'])) {
 			$this->srcPath = $options['path'];
+		} else if( isset($options['receiver']) && isset($options['receiver']['path'])) {
+			$this->srcPath = $options['receiver']['path'];
 		}
 	}
 
