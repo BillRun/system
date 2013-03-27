@@ -72,6 +72,12 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 //		return TRUE;
 	}
 
+	public function afterDataParsing($row, $parser) {
+		if (isset($row['callEventDuration'])) {
+			$callEventDuration = $row['callEventDuration'];
+			$row['callEventDurationRound'] = ceil($callEventDuration/60)*60;
+		}
+	}
 	/**
 	 * method to unzip the processing file of NRTRDE (received as zip archive)
 	 * 
@@ -122,14 +128,14 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 				'connectedNumber' => array('$regex' => '^972'),
 				'callEventStartTimeStamp' => array('$gte' => $charge_time),
 				'deposit_stamp' => array('$exists' => false),
-				'callEventDuration' => array('$gt' => 0), // not sms
+				'callEventDurationRound' => array('$gt' => 0), // not sms
 			),
 		);
 
 		$group = array(
 			'$group' => array(
 				"_id" => '$imsi',
-				"moc_israel" => array('$sum' => '$callEventDuration'),
+				"moc_israel" => array('$sum' => '$callEventDurationRound'),
 				'lines_stamps' => array('$addToSet' => '$stamp'),
 			),
 		);
@@ -177,7 +183,7 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 		$this->normalize($ret, $mtc, 'mtc_all');
 
 		$where['$match']['record_type'] = 'MOC';
-		$where['$match']['callEventDuration'] = 0;
+		$where['$match']['callEventDurationRound'] = 0;
 		$group['$group']['sms_out'] = $group['$group']['mtc_all'];
 		unset($group['$group']['mtc_all']);
 		unset($having['$match']['mtc_all']);
@@ -203,8 +209,8 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 		unset($having['$match']['sms_hourly']);
 		unset($project['$project']['sms_hourly']);
 		$where['$match']['callEventStartTimeStamp']['$gt'] = date(self::time_format,$timeWindow);
-		$where['$match']['callEventDuration'] = array('$gt' => 0);
-		$group['$group']['moc_nonisrael_hourly'] = array('$sum' => '$callEventDuration');
+		$where['$match']['callEventDurationRound'] = array('$gt' => 0);
+		$group['$group']['moc_nonisrael_hourly'] = array('$sum' => '$callEventDurationRound');
 		$having['$match']['moc_nonisrael_hourly'] = array('$gte' => Billrun_Factory::config()->getConfigValue('nrtde.hourly.thresholds.mocnonisrael', 3000));
 		$project['$project']['moc_nonisrael_hourly'] = 1;
 		$moc_nonisrael_hourly = $lines->aggregate($where, $group, $project, $having);
