@@ -72,8 +72,8 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 //		return TRUE;
 	}
 
-	public function afterDataParsing($row, $parser) {
-		if (isset($row['callEventDuration'])) {
+	public function afterDataParsing(&$row, $parser) {
+		if ($parser->getType() == 'nrtrde' && isset($row['callEventDuration'])) {
 			$callEventDuration = $row['callEventDuration'];
 			$row['callEventDurationRound'] = ceil($callEventDuration/60)*60;
 		}
