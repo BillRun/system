@@ -293,7 +293,7 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 			
 			case 'moc_nonisrael_hourly':
 				$event['threshold'] = Billrun_Factory::config()->getConfigValue('nrtrde.hourly.thresholds.mocnonisrael', 3000);
-				$event['event_type'] = 'NRTRDE_HOURLY_SMS';
+				$event['event_type'] = 'NRTRDE_HOURLY_VOICE';
 				break;
 		}
 
