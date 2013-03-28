@@ -262,7 +262,7 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 						(isset($event['sms_out']) ? 'sms_out' :
 						'moc_nonisrael_hourly'))));
 
-		$event['units'] = 'MIN';
+		$event['units'] = 'SEC';
 		$event['value'] = $event[$type];
 		$event['event_type'] = 'NRTRDE_VOICE';
 
