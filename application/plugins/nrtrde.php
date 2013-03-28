@@ -128,7 +128,7 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 				'record_type' => 'MOC',
 				'connectedNumber' => array('$regex' => '^972'),
 				'callEventStartTimeStamp' => array('$gte' => $charge_time),
-				'deposit_stamp' => array('$exists' => false),
+				'event_stamp' => array('$exists' => false),
 				'callEventDurationRound' => array('$gt' => 0), // not sms
 			),
 		);
