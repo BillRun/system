@@ -2,16 +2,15 @@
 
 class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 
-		
 	/**
 	 * plugin name
 	 *
 	 * @var string
 	 */
 	protected $name = 'nrtrde';
-	
+
 	const time_format = 'YmdHis';
-	
+
 	public function beforeFTPReceive($ftp) {
 		return true;
 	}
@@ -42,12 +41,12 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 	protected function decompress($local_path) {
 		//Create filter object
 		$filter = new Zend_Filter_Decompress(
-				array(
-					'adapter' => 'Zend_Filter_Compress_Zip', //Or 'Zend_Filter_Compress_Tar', or 'Zend_Filter_Compress_Gz'
-					'options' => array(
-						'target' => dirname($local_path),
-					)
-			));
+			array(
+			'adapter' => 'Zend_Filter_Compress_Zip', //Or 'Zend_Filter_Compress_Tar', or 'Zend_Filter_Compress_Gz'
+			'options' => array(
+				'target' => dirname($local_path),
+			)
+		));
 
 		$filter->filter($local_path);
 
@@ -75,9 +74,10 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 	public function afterDataParsing(&$row, $parser) {
 		if ($parser->getType() == 'nrtrde' && isset($row['callEventDuration'])) {
 			$callEventDuration = $row['callEventDuration'];
-			$row['callEventDurationRound'] = ceil($callEventDuration/60)*60;
+			$row['callEventDurationRound'] = ceil($callEventDuration / 60) * 60;
 		}
 	}
+
 	/**
 	 * method to unzip the processing file of NRTRDE (received as zip archive)
 	 * 
@@ -99,20 +99,20 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 		
 	}
 
-    protected function get_last_charge_time($return_timestamp = false) {
+	protected function get_last_charge_time($return_timestamp = false) {
 		$dayofmonth = Billrun_Factory::config()->getConfigValue('billrun.charging_day', 25, 'int');
 		$format = "Ym" . $dayofmonth . "000000";
-        if (date("d") >= $dayofmonth) {
-            $time = date($format);
-        } else {
-            $time = date($format, strtotime('-1 month'));
-        }
-        if ($return_timestamp) {
-            return strtotime($time);
-        }
-        return $time;
-    }
-	
+		if (date("d") >= $dayofmonth) {
+			$time = date($format);
+		} else {
+			$time = date($format, strtotime('-1 month'));
+		}
+		if ($return_timestamp) {
+			return strtotime($time);
+		}
+		return $time;
+	}
+
 	/**
 	 * method to collect data which need to be handle by event
 	 */
@@ -143,22 +143,22 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 		$project = array(
 			'$project' => array(
 				'imsi' => '$_id',
-				'_id' => 0, 
+				'_id' => 0,
 				'moc_israel' => 1,
 				'lines_stamps' => 1,
 			),
 		);
-		
+
 		$having = array(
 			'$match' => array(
-				'moc_israel' => array('$gte' => Billrun_Factory::config()->getConfigValue('nrtrde.thresholds.moc.israel',1800, 'int'))
+				'moc_israel' => array('$gte' => Billrun_Factory::config()->getConfigValue('nrtrde.thresholds.moc.israel', 1800, 'int'))
 			),
 		);
 
 		$ret = array();
-			
+
 		$moc_israel = $lines->aggregate($where, $group, $project, $having);
-		
+
 		$this->normalize($ret, $moc_israel, 'moc_israel');
 
 		$where['$match']['connectedNumber']['$regex'] = '^(?!972)';
@@ -193,22 +193,22 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 		unset($project['$project']['mtc_all']);
 		$sms_out = $lines->aggregate($where, $group, $project, $having);
 		$this->normalize($ret, $sms_out, 'sms_out');
-		
+
 		unset($group['$group']['sms_out']);
 		unset($having['$match']['sms_out']);
 		unset($project['$project']['sms_out']);
-		$timeWindow= strtotime("-" . Billrun_Factory::config()->getConfigValue('nnrtrde.hourly.timespan','1h'));
+		$timeWindow = strtotime("-" . Billrun_Factory::config()->getConfigValue('nnrtrde.hourly.timespan', '1h'));
 		$where['$match']['callEventStartTimeStamp']['$gt'] = date(self::time_format, $timeWindow);
 		$group['$group']['sms_hourly'] = array('$sum' => 1);
 		$having['$match']['sms_hourly'] = array('$gte' => Billrun_Factory::config()->getConfigValue('nrtrde.hourly.thresholds.smsout', 250, 'int'));
 		$project['$project']['sms_hourly'] = 1;
 		$sms_hourly = $lines->aggregate($where, $group, $project, $having);
 		$this->normalize($ret, $sms_hourly, 'sms_hourly');
-		
+
 		unset($group['$group']['sms_hourly']);
 		unset($having['$match']['sms_hourly']);
 		unset($project['$project']['sms_hourly']);
-		$where['$match']['callEventStartTimeStamp']['$gt'] = date(self::time_format,$timeWindow);
+		$where['$match']['callEventStartTimeStamp']['$gt'] = date(self::time_format, $timeWindow);
 		$where['$match']['callEventDurationRound'] = array('$gt' => 0);
 		$group['$group']['moc_nonisrael_hourly'] = array('$sum' => '$callEventDurationRound');
 		$having['$match']['moc_nonisrael_hourly'] = array('$gte' => Billrun_Factory::config()->getConfigValue('nrtrde.hourly.thresholds.mocnonisrael', 3000));
@@ -219,32 +219,31 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 
 		return $ret;
 	}
-	
+
 	protected function normalize(&$ret, $items, $field) {
 		if (!is_array($items) || !count($items)) {
 			return false;
 		}
-		
+
 		foreach ($items as $item) {
 			$imsi = $item['imsi'];
 			if (!isset($ret[$imsi])) {
 				$ret[$imsi] = array();
 			}
-			
+
 			$ret[$imsi][$field] = $item[$field];
 			$ret[$imsi]['imsi'] = $imsi;
-			
+
 			if (isset($ret[$imsi]['lines_stamps'])) {
 				$ret[$imsi]['lines_stamps'] = array_merge($ret[$imsi]['lines_stamps'], $item['lines_stamps']);
 			} else {
 				$ret[$item['imsi']]['lines_stamps'] = $item['lines_stamps'];
 			}
-			
-		} 
-		
+		}
+
 		return true;
 	}
-	
+
 	/**
 	 * Add data that is needed to use the event object/DB document later
 	 * 
@@ -252,43 +251,42 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 	 * @return Array|Object the event object with added fields
 	 */
 	protected function addAlertData(&$event) {
-		$type = isset($event['moc_israel']) ? 'moc_israel': 
-					(isset($event['moc_nonisrael']) ? 'moc_nonisrael' : 
-						(isset($event['mtc_all']) ? 'mtc_all' : 
-						(isset($event['sms_hourly']) ? 'sms_hourly' : 
-								'sms_out')));
-		
-		$event['units']	= 'MIN';
-		$event['value']	= $event[$type];
-		$event['event_type']	= 'NRTRDE_VOICE';
-		
-		switch($type) {
+		$type = isset($event['moc_israel']) ? 'moc_israel' :
+			(isset($event['moc_nonisrael']) ? 'moc_nonisrael' :
+				(isset($event['mtc_all']) ? 'mtc_all' :
+					(isset($event['sms_hourly']) ? 'sms_hourly' :
+						'sms_out')));
+
+		$event['units'] = 'MIN';
+		$event['value'] = $event[$type];
+		$event['event_type'] = 'NRTRDE_VOICE';
+
+		switch ($type) {
 			case 'moc_israel':
-					$event['threshold']	= Billrun_Factory::config()->getConfigValue('nrtrde.thresholds.moc.israel', 1800, 'int');
+				$event['threshold'] = Billrun_Factory::config()->getConfigValue('nrtrde.thresholds.moc.israel', 1800, 'int');
 				break;
-			
-			case 'moc_nonisrael':				
-					$event['threshold']	= Billrun_Factory::config()->getConfigValue('nrtrde.thresholds.moc.nonisrael', 600, 'int');
+
+			case 'moc_nonisrael':
+				$event['threshold'] = Billrun_Factory::config()->getConfigValue('nrtrde.thresholds.moc.nonisrael', 600, 'int');
 				break;
-			
+
 			case 'mtc_all':
-					$event['threshold']	= Billrun_Factory::config()->getConfigValue('nrtrde.thresholds.mtc', 2400, 'int');
+				$event['threshold'] = Billrun_Factory::config()->getConfigValue('nrtrde.thresholds.mtc', 2400, 'int');
 				break;
-			
+
 			case 'sms_out':
-					$event['threshold']	= Billrun_Factory::config()->getConfigValue('nrtrde.thresholds.smsout', 70, 'int');
-					$event['units']	= 'SMS';
-					$event['event_type']	= 'NRTRDE_SMS';
+				$event['threshold'] = Billrun_Factory::config()->getConfigValue('nrtrde.thresholds.smsout', 70, 'int');
+				$event['units'] = 'SMS';
+				$event['event_type'] = 'NRTRDE_SMS';
 				break;
 			case 'sms_hourly':
-					$event['threshold']	= Billrun_Factory::config()->getConfigValue('nrtrde.hourly.thresholds.smsout', 250, 'int');
-					$event['units']	= 'SMS';
-					$event['event_type']	= 'NRTRDE_HOURLY_SMS';
-				break;	
-			
+				$event['threshold'] = Billrun_Factory::config()->getConfigValue('nrtrde.hourly.thresholds.smsout', 250, 'int');
+				$event['units'] = 'SMS';
+				$event['event_type'] = 'NRTRDE_HOURLY_SMS';
+				break;
 		}
-		
+
 		return $event;
 	}
-	
+
 }
