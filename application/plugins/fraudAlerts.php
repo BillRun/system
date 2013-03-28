@@ -15,6 +15,12 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @var timestamp
 	 */
 	protected $startTime;
+	
+	/**
+	 * Is the  Alert plugin in a dry run mode (doesn't  actually sends alerts)
+	 * @var timestamp
+	 */
+	protected $isDryRun = false;
 
 	public function __construct($options = array(
 	)) {
@@ -28,6 +34,10 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$options['alertPath'] :
 			Billrun_Factory::config()->getConfigValue('fraudAlerts.alert.path', '/');
 
+		$this->isDryRun = isset($options['dryRun']) ?
+			$options['dryRun'] :
+			Billrun_Factory::config()->getConfigValue('fraudAlerts.alert.dry_run', false);
+		
 		$this->startTime = $_SERVER['REQUEST_TIME'];
 		
 		$this->eventsCol = Billrun_Factory::db()->eventsCollection();
@@ -137,17 +147,21 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		);
 		Billrun_Log::getInstance()->log("fraudAlertsPlugin::notifyRemoteServer  URL :" . $url, Zend_Log::DEBUG);
 
-		$client = curl_init($url);
-		curl_setopt($client, CURLOPT_POST, TRUE);
-		curl_setopt($client, CURLOPT_POSTFIELDS, $post_fields);
-		curl_setopt($client, CURLOPT_RETURNTRANSFER, TRUE);
-		$response = curl_exec($client);
-		curl_close($client);
-		
-		Billrun_Log::getInstance()->log("fraudAlertsPlugin::notifyRemoteServer " .$response, Zend_Log::DEBUG);
-		Billrun_Log::getInstance()->log("fraudAlertsPlugin::notifyRemoteServer " . print_r(json_decode($response), 1), Zend_Log::DEBUG);
+		if(!$this->isDryRun) {
+			$client = curl_init($url);
+			curl_setopt($client, CURLOPT_POST, TRUE);
+			curl_setopt($client, CURLOPT_POSTFIELDS, $post_fields);
+			curl_setopt($client, CURLOPT_RETURNTRANSFER, TRUE);
+			$response = curl_exec($client);
+			curl_close($client);
 
-		return Zend_Json::decode($response);
+			Billrun_Log::getInstance()->log("fraudAlertsPlugin::notifyRemoteServer " .$response, Zend_Log::DEBUG);
+			Billrun_Log::getInstance()->log("fraudAlertsPlugin::notifyRemoteServer " . print_r(json_decode($response), 1), Zend_Log::DEBUG);
+
+			return Zend_Json::decode($response);
+		} else {
+			return array('success' => true);
+		}
 	}
 	
 	/**
