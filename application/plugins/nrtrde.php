@@ -121,6 +121,7 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 		$lines = Billrun_Factory::db()->linesCollection();
 		$charge_time = $this->get_last_charge_time();
 
+		// TODO: take it to config ? how to handle variables ?
 		$where = array(
 			'$match' => array(
 				'source' => 'nrtrde',
@@ -249,13 +250,17 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 	 * 
 	 * @param Array|Object $event the event to add fields to.
 	 * @return Array|Object the event object with added fields
+	 * 
+	 * @todo LOOSE COUPLING !!!
 	 */
 	protected function addAlertData(&$event) {
+		// @todo: WTF?!?! Are you real with this condition???
 		$type = isset($event['moc_israel']) ? 'moc_israel' :
 			(isset($event['moc_nonisrael']) ? 'moc_nonisrael' :
 				(isset($event['mtc_all']) ? 'mtc_all' :
 					(isset($event['sms_hourly']) ? 'sms_hourly' :
-						'sms_out')));
+						(isset($event['sms_out']) ? 'sms_out' :
+						'moc_nonisrael_hourly'))));
 
 		$event['units'] = 'MIN';
 		$event['value'] = $event[$type];
@@ -267,21 +272,27 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 				break;
 
 			case 'moc_nonisrael':
-				$event['threshold'] = Billrun_Factory::config()->getConfigValue('nrtrde.thresholds.moc.nonisrael', 600, 'int');
+				$event['threshold'] = Billrun_Factory::config()->getConfigValue('nrtrde.thresholds.moc.nonisrael', 600);
 				break;
 
 			case 'mtc_all':
-				$event['threshold'] = Billrun_Factory::config()->getConfigValue('nrtrde.thresholds.mtc', 2400, 'int');
+				$event['threshold'] = Billrun_Factory::config()->getConfigValue('nrtrde.thresholds.mtc', 7200);
 				break;
 
 			case 'sms_out':
-				$event['threshold'] = Billrun_Factory::config()->getConfigValue('nrtrde.thresholds.smsout', 70, 'int');
+				$event['threshold'] = Billrun_Factory::config()->getConfigValue('nrtrde.thresholds.smsout', 70);
 				$event['units'] = 'SMS';
 				$event['event_type'] = 'NRTRDE_SMS';
 				break;
+			
 			case 'sms_hourly':
-				$event['threshold'] = Billrun_Factory::config()->getConfigValue('nrtrde.hourly.thresholds.smsout', 250, 'int');
+				$event['threshold'] = Billrun_Factory::config()->getConfigValue('nrtrde.hourly.thresholds.smsout', 250);
 				$event['units'] = 'SMS';
+				$event['event_type'] = 'NRTRDE_HOURLY_SMS';
+				break;
+			
+			case 'moc_nonisrael_hourly':
+				$event['threshold'] = Billrun_Factory::config()->getConfigValue('nrtrde.hourly.thresholds.mocnonisrael', 3000);
 				$event['event_type'] = 'NRTRDE_HOURLY_SMS';
 				break;
 		}
