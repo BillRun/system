@@ -20,7 +20,9 @@ class Billrun_Processor_BinaryExternal extends Billrun_Processor_Base_Binary {
 			throw new Exception('Billrun_Processor_BinaryExternal::__construct : cannot run without specifing a specific type.');
 		}
 	}
-	
+	/**
+	 * @see Billrun_Processor::parse()
+	 */
 	protected function parse() {
 		if (!is_resource($this->fileHandler)) {
 			Billrun_Factory::log()->log('Resource is not configured well', Zend_Log::ERR);

@@ -36,6 +36,21 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 		$this->nsnConfig = (new Yaf_Config_Ini(Billrun_Factory::config()->getConfigValue('nsn.config_path')))->toArray();
 
 	}
+	/**
+	 * back up retrived files that were processed to a third patry path.
+	 * @param \Billrun_Processor $processor the processor instace contain the current processed file data. 
+	 */
+	public function afterProcessorStore(\Billrun_Processor $processor) {
+		if($processor->getType() != $this->getName()) { return; } 
+		$path = Billrun_Factory::config()->getConfigValue($this->getName().'.thirdparty.backup_path',false,'string');
+		if(!$path) return;
+		if( $processor->retreivedHostname ) {
+			$path = $path . DIRECTORY_SEPARATOR . $processor->retreivedHostname;
+		}
+		Billrun_Factory::log()->log("Saving  file to third party at : $path" , Zend_Log::DEBUG);
+		$processor->backupToPath($path ,true);
+	}
+
 	
 	/////////////////////////////////////////////// Reciver //////////////////////////////////////
 	

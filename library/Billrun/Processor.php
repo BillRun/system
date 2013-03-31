@@ -202,6 +202,10 @@ abstract class Billrun_Processor extends Billrun_Base {
 		return $this->data['data'];
 	}
 
+	/**
+	 * Parse the current CDR line. 
+	 * @return array conatining the parsed data.  
+	 */
 	abstract protected function parse();
 
 	/**
