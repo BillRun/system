@@ -10,18 +10,18 @@
  *
  * @author eran
  */
-class smscPlugin extends Billrun_Plugin_BillrunPluginBase {
+class smsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	
 	/**
 	 * plugin name
 	 *
 	 * @var string
 	 */
-	protected $name = 'smsc';
+	protected $name = 'sms';
 	
 	public function afterFTPReceived($receiver,  $filepaths , $hostname) {
-		if($receiver->getType() != $this->getName()) { return; } 
-		$path = Billrun_Factory::config()->getConfigValue('smsc.thirdparty.backup_path',false,'string');
+		if($receiver->getType() != 'smsc' && $receiver->getType() != "smpp" ) { return; } 
+		$path = Billrun_Factory::config()->getConfigValue($receiver->getType().'.thirdparty.backup_path',false,'string');
 		
 		if(!$path) return;
 		if( $hostname ) {

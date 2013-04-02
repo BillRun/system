@@ -63,7 +63,7 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 		foreach($this->ftpConfig as $hostName => $config) {
 			if(!is_array($config)) { continue; }
 
-			if(is_numeric($hostName)) { $hostName='';}
+			if(is_numeric($hostName) || $hostName == 'ftp') { $hostName='';}
 			
 			$this->ftp = Zend_Ftp::connect($config['host'], $config['user'], $config['password']);
 			$this->ftp->setPassive(false);
