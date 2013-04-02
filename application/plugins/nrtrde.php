@@ -129,6 +129,7 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 				'connectedNumber' => array('$regex' => '^972'),
 				'callEventStartTimeStamp' => array('$gte' => $charge_time),
 				'event_stamp' => array('$exists' => false),
+				'deposit_stamp' => array('$exists' => false),
 				'callEventDurationRound' => array('$gt' => 0), // not sms
 			),
 		);
@@ -230,10 +231,10 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 			$imsi = $item['imsi'];
 			if (!isset($ret[$imsi])) {
 				$ret[$imsi] = array();
+				$ret[$imsi]['imsi'] = $imsi;
 			}
 
 			$ret[$imsi][$field] = $item[$field];
-			$ret[$imsi]['imsi'] = $imsi;
 
 			if (isset($ret[$imsi]['lines_stamps'])) {
 				$ret[$imsi]['lines_stamps'] = array_merge($ret[$imsi]['lines_stamps'], $item['lines_stamps']);
