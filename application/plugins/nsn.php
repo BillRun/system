@@ -48,7 +48,9 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 			$path = $path . DIRECTORY_SEPARATOR . $processor->retreivedHostname;
 		}
 		Billrun_Factory::log()->log("Saving  file to third party at : $path" , Zend_Log::DEBUG);
-		$processor->backupToPath($path ,true);
+		if(!$processor->backupToPath($path ,true) ) {
+			Billrun_Factory::log()->log("Couldn't  save file to third patry path at : $path" , Zend_Log::ERR);
+		}
 	}
 
 	
