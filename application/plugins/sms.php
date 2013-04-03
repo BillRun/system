@@ -1,12 +1,7 @@
 <?php
 
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-
 /**
- * Description of smsc
+ * Temporary plugin  to handle smsc/smpp/mmsc retrival should be changed to specific CDR  handling baviour
  *
  * @author eran
  */
@@ -25,7 +20,7 @@ class smsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @param type $hostname the  "hostname" the file  were recevied from
 	 */
 	public function afterFTPReceived($receiver,  $filepaths , $hostname) {
-		if($receiver->getType() != 'smsc' && $receiver->getType() != "smpp" ) { return; } 
+		if($receiver->getType() != 'smsc' && $receiver->getType() != "smpp" && $receiver->getType() != "mmsc" ) { return; } 
 		$path = Billrun_Factory::config()->getConfigValue($receiver->getType().'.thirdparty.backup_path',false,'string');
 		
 		if(!$path) return;
