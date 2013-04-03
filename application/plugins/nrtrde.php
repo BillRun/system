@@ -77,7 +77,38 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 			$row['callEventDurationRound'] = ceil($callEventDuration / 60) * 60;
 		}
 	}
+	
+	/**
+	 * move zip files to backup path after the processing was done
+	 * @param Billrun_Processor $processor the proce
+	 * @param string $file_path the path of the current processing file.
+	 */
+	public function afterProcessorBackup($processor, &$file_path) {
+		if($processor->getType() != $this->getName()) { return; }
+		$path = Billrun_Factory::config()->getConfigValue($this->getName().'.processor.zip_move_path',false,'string');
+		if(!$path) return;
+		
+		if( $processor->retreivedHostname ) {
+			$path = $path . DIRECTORY_SEPARATOR . $processor->retreivedHostname;	
+		}
+		
+		$path .=  DIRECTORY_SEPARATOR . date("Ym");
+		
+		if(!file_exists($path)) {
+			Billrun_Factory::log()->log("Creating Directory : $path" , Zend_Log::DEBUG);
+			mkdir($path, 0777, true);
+		}
 
+		$srcPath = $file_path . ".zip";
+		if(file_exists($srcPath)) {
+			Billrun_Factory::log()->log("Saving zip file to : $path" , Zend_Log::DEBUG);
+			if(!rename($srcPath, $path .DIRECTORY_SEPARATOR. basename($srcPath))) {
+				Billrun_Factory::log()->log(" Failed when trying to save file : ".  basename($srcPath)." to third party path : $path" , Zend_Log::ERR);
+			}
+		}
+
+	}
+	
 	/**
 	 * method to unzip the processing file of NRTRDE (received as zip archive)
 	 * 
@@ -90,6 +121,7 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 		if ($processor instanceof Billrun_Processor_Nrtrde && file_exists($file_path)) {
 			$this->decompress($file_path);
 			$file_path = str_replace('.zip', '', $file_path);
+			
 			return true;
 		}
 		return false;

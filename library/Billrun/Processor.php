@@ -197,7 +197,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 		
 		$this->backup();
 
-		Billrun_Factory::dispatcher()->trigger('afterProcessorBackup', array($this));
+		Billrun_Factory::dispatcher()->trigger('afterProcessorBackup', array($this , &$this->filePath));
 		
 		return $this->data['data'];
 	}
