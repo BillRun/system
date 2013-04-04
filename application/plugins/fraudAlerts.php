@@ -98,16 +98,22 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		if (!(isset($args['imsi']) || isset($args['msisdn']))) {
 			Billrun_Log::getInstance()->log("fraudAlertsPlugin::notifyOnEvent cannot find IMSI nor NDC_SN", Zend_Log::DEBUG);
 		}
+		$alertsFilter = Billrun_Factory::config()->getConfigValue('fraudAlerts.filter', array());
+		if(!empty($alertsFilter) && !in_array($args['event_type'], $alertsFilter)) {
+				return FALSE;
+		}
 		
 		if (!Billrun_Factory::config()->isProd()) {
 			$key = Billrun_Factory::config()->getConfigValue('fraudAlerts.alert.key', 'ofer');
 
 			$debugData = array(	'ofer' => array(  'imsi' => '425089209101076', 'msisdn' => '546918666'),
+								'eli' => array(  'imsi' => '425089209102700', 'msisdn' => '586801559'),
 								'eran' =>  array( 'imsi' => '425089109239847', 'msisdn' => '547371030') );
 
 			$args['imsi'] = $debugData[$key]['imsi'];
 			$args['msisdn'] = $debugData[$key]['msisdn'];
 		}
+		
 		//unset uneeded fields...
 		unset($args['id']);
 		unset($args['deposit_stamp']);
