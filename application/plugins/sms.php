@@ -27,7 +27,7 @@ class smsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		if( $hostname ) {
 			$path = $path . DIRECTORY_SEPARATOR . $hostname;
 		}
-		Billrun_Factory::log()->log("Making directory : $path" , Zend_Log::ERR);
+		Billrun_Factory::log()->log("Making directory : $path" , Zend_Log::DEBUG);
 		if(!file_exists($path)) {
 			if(mkdir($path, 0777, true)) {
 				Billrun_Factory::log()->log("Failed when trying to create directory : $path" , Zend_Log::ERR);
