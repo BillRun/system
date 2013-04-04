@@ -213,7 +213,7 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements	Billrun_Pl
 					'$project' => array(
 						'_id' => 0,
 						'download' => array('$multiply' => array('$download',0.001)),
-						'upload' => array('$multiply' => array('$download',0.001)),
+						'upload' => array('$multiply' => array('$upload',0.001)),
 						'duration' => 1,
 						'imsi' => '$_id.imsi',
 						'msisdn' => array('$substr'=> array('$_id.msisdn',5,10)),
