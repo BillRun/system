@@ -27,7 +27,7 @@ class depositPlugin extends Billrun_Plugin_BillrunPluginBase {
 			unset($event['events_stamps']);
 			$newEvent = $this->addAlertData($event);
 			$newEvent['stamp']	= md5(serialize($newEvent));
-			
+			$newEvent['creation_time'] = date(Billrun_Base::base_dateformat);
 			$item['event_stamp'] = $newEvent['stamp'];
 			
 			$ret[] = $events->save($newEvent);
