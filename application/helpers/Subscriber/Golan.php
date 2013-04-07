@@ -1,9 +1,10 @@
 <?php
 
-class golan_subscriber
+class Subscriber_Golan extends Billrun_Subscriber
 {
 	static $subscribersCache = array();
-	static public function get($phone, $time)
+	
+	static protected function get($phone, $time)
 	{
 		// @todo: refactoring
 //		$conn = Mongodloid_Connection::getInstance();
@@ -85,6 +86,32 @@ class golan_subscriber
 		curl_close($ch);
 
 		return $output;
+	}
+
+	/**
+	 * method to load subsbscriber details
+	 * 
+	 * 
+	 */
+	public function load($params) {
+		$data = self::get($params['phone'], $params['time']);
+		$this->availableFields = array_keys($data);
+		$this->data = $data;
+		return $this;
+	}
+
+	/**
+	 * method to save subsbscriber details
+	 */
+	public function save() {
+		return $this;
+	}
+
+	/**
+	 * method to delete subsbscriber entity
+	 */
+	public function delete() {
+		return TRUE;
 	}
 
 }

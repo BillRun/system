@@ -57,6 +57,13 @@ class Billrun_Factory {
 	protected static $chain = null;
 
 	/**
+	 * Subscriber instance
+	 * 
+	 * @var Billrun Subscriber
+	 */
+	protected static $subscriber = null;
+
+	/**
 	 * method to retrieve the log instance
 	 * 
 	 * @return Billrun_Log
@@ -146,9 +153,9 @@ class Billrun_Factory {
 	}
 
 	/**
-	 * method to retrieve the dispatcher instance
+	 * method to retrieve the chain instance
 	 * 
-	 * @return Billrun_Dispatcher
+	 * @return Billrun_Chain
 	 */
 	static public function chain() {
 		if (!self::$chain) {
@@ -156,6 +163,21 @@ class Billrun_Factory {
 		}
 
 		return self::$chain;
+	}
+
+	/**
+	 * method to retrieve the subscriber instance
+	 * 
+	 * @return Billrun_Subscriber
+	 */
+	static public function subscriber() {
+		if (!self::$subscriber) {
+			$subscriberSettings = self::config()->getConfigValue('subscriber', array());
+			var_dump($subscriberSettings);
+			self::$subscriber = Billrun_Subscriber::getInstance($subscriberSettings);
+		}
+
+		return self::$subscriber;
 	}
 
 }

@@ -5,7 +5,6 @@
  * @copyright       Copyright (C) 2012 S.D.O.C. LTD. All rights reserved.
  * @license         GNU General Public License version 2 or later; see LICENSE.txt
  */
-require_once __DIR__ . '/../../../application/golan/' . 'subscriber.php';
 
 /**
  * Billing aggregator class for ilds records
@@ -15,28 +14,27 @@ require_once __DIR__ . '/../../../application/golan/' . 'subscriber.php';
  */
 class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 
-
-		/**
+	/**
 	 * the type of the object
 	 *
 	 * @var string
 	 */
 	static protected $type = 'ilds';
-	
+
 	/**
 	 * execute aggregate
 	 */
 	public function aggregate() {
 		// @TODO trigger before aggregate
-		Billrun_Factory::dispatcher()->trigger('beforeAggregate', array($this->data,&$this));
-		 
+		Billrun_Factory::dispatcher()->trigger('beforeAggregate', array($this->data, &$this));
+
 		foreach ($this->data as $item) {
-			Billrun_Factory::dispatcher()->trigger('beforeAggregateLine', array(&$item,&$this));
+			Billrun_Factory::dispatcher()->trigger('beforeAggregateLine', array(&$item, &$this));
 			$time = $item->get('call_start_dt');
-			
+
 			// @TODO make it configurable
 			$previous_month = date("Ymt235959", strtotime("previous month"));
-			
+
 			if ($time > $previous_month) {
 				Billrun_Factory::log()->log("time frame is not till the end of previous month " . $time . "; continue to the next line", Zend_Log::INFO);
 				continue;
@@ -44,31 +42,31 @@ class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 
 			// load subscriber
 			$phone_number = $item->get('caller_phone_no');
-			$subscriber = golan_subscriber::get($phone_number, $time);
+			$subscriber = Billrun_Factory::subscriber()->load(array('phone' => $phone_number, 'time' => $time));
 
 			if (!$subscriber) {
 				Billrun_Factory::log()->log("subscriber not found. phone:" . $phone_number . " time: " . $time, Zend_Log::INFO);
 				continue;
 			}
 
-			$subscriber_id = $subscriber['id'];
-			
+			$subscriber_id = $subscriber->id;
+
 			// update billing line with billrun stamp
 			if (!$this->updateBillingLine($subscriber_id, $item)) {
 				Billrun_Factory::log()->log("subscriber " . $subscriber_id . " cannot update billing line", Zend_Log::INFO);
 				continue;
 			}
-			
-			if(isset($this->excludes['subscribers']) && in_array($subscriber_id, $this->excludes['subscribers'])) {
+
+			if (isset($this->excludes['subscribers']) && in_array($subscriber_id, $this->excludes['subscribers'])) {
 				Billrun_Factory::log()->log("subscriber " . $subscriber_id . " is in the excluded list skipping billrun for him.", Zend_Log::INFO);
 				//mark line as excluded.
-				$item['billrun_excluded'] = true; 
+				$item['billrun_excluded'] = true;
 			}
-			
+
 			$save_data = array();
-			
+
 			//if the subscriber should be excluded dont update the billrun.
-			if(!(isset($item['billrun_excluded']) && $item['billrun_excluded']) ) {
+			if (!(isset($item['billrun_excluded']) && $item['billrun_excluded'])) {
 				// load the customer billrun line (aggregated collection)
 				$billrun = $this->loadSubscriberBillrun($subscriber);
 
@@ -82,15 +80,15 @@ class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 					Billrun_Factory::log()->log("subscriber " . $subscriber_id . " cannot update billrun", Zend_Log::INFO);
 					continue;
 				}
-				
+
 				$save_data[Billrun_Factory::db()->billrun] = $billrun;
 			}
-			
-		
+
+
 			$save_data[Billrun_Factory::db()->lines] = $item;
-			
+
 			Billrun_Factory::dispatcher()->trigger('beforeAggregateSaveLine', array(&$save_data, &$this));
-			
+
 			if (!$this->save($save_data)) {
 				Billrun_Factory::log()->log("subscriber " . $subscriber_id . " cannot save data", Zend_Log::INFO);
 				continue;
@@ -99,13 +97,14 @@ class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 			Billrun_Factory::log()->log("subscriber " . $subscriber_id . " saved successfully", Zend_Log::INFO);
 		}
 		// @TODO trigger after aggregate
-		Billrun_Factory::dispatcher()->trigger('afterAggregate', array($this->data,&$this));
+		Billrun_Factory::dispatcher()->trigger('afterAggregate', array($this->data, &$this));
 	}
 
 	/**
 	 * load the subscriber billrun raw (aggregated)
 	 * if not found, create entity with default values
-	 * @param type $subscriber
+	 * 
+	 * @param array $subscriber subscriber details
 	 *
 	 * @return Mongodloid_Entity
 	 */
@@ -114,7 +113,7 @@ class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 		$billrun = Billrun_Factory::db()->billrunCollection();
 		$resource = $billrun->query()
 			//->exists("subscriber.{$subscriber['id']}")
-			->equals('account_id', $subscriber['account_id'])
+			->equals('account_id', $subscriber->account_id)
 			->equals('stamp', $this->getStamp());
 
 		if ($resource && $resource->count()) {
@@ -126,8 +125,8 @@ class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 
 		$values = array(
 			'stamp' => $this->stamp,
-			'account_id' => $subscriber['account_id'],
-			'subscribers' => array($subscriber['id'] => array('cost' => array())),
+			'account_id' => $subscriber->account_id,
+			'subscribers' => array($subscriber->id => array('cost' => array())),
 			'cost' => array(),
 		);
 
@@ -143,7 +142,7 @@ class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 	 */
 	protected function updateBillrun($billrun, $line) {
 		// @TODO trigger before update row
-		
+
 		$current = $billrun->getRawData();
 		$added_charge = $line->get('price_customer');
 
@@ -198,8 +197,8 @@ class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 	 * load the data to aggregate
 	 */
 	public function load($initData = true) {
-		$query = "price_customer EXISTS and price_provider EXISTS and billrun NOT EXISTS";		
-		
+		$query = "price_customer EXISTS and price_provider EXISTS and billrun NOT EXISTS";
+
 		if ($initData) {
 			$this->data = array();
 		}
@@ -212,7 +211,7 @@ class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 		}
 
 		Billrun_Factory::log()->log("aggregator entities loaded: " . count($this->data), Zend_Log::INFO);
-		
+
 		Billrun_Factory::dispatcher()->trigger('afterAggregatorLoadData', array('aggregator' => $this));
 	}
 

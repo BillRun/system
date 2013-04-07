@@ -42,6 +42,11 @@ class Bootstrap extends Yaf_Bootstrap_Abstract {
 			}
 		}
 
+		// make the helpers autoload
+		$loader = Yaf_Loader::getInstance(APPLICATION_PATH . '/application/helpers');
+		$loader->registerLocalNamespace("Action");
+		$loader->registerLocalNamespace("Subscriber");
+
 	}
 
 }

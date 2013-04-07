@@ -21,8 +21,6 @@ class CliController extends Yaf_Controller_Abstract {
 	protected $options;
 
 	public function init() {
-		$loader = Yaf_Loader::getInstance(APPLICATION_PATH . '/application/helpers');
-		$loader->registerLocalNamespace("Action");
 		$this->setActions();
 		$this->setOptions();
 	}
