@@ -86,11 +86,13 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 		$monthlyThreshold = floatval(Billrun_Factory::config()->getConfigValue('nsn.thresholds.monthly_voice',36000));
 		$dailyThreshold = floatval(Billrun_Factory::config()->getConfigValue('nsn.thresholds.daily_voice',3600));
 
+		Billrun_Factory::log()->log("nsnPlugin::handlerCollect collecting monthly  exceedres",  Zend_Log::DEBUG);
 		$monthlyAlerts = $this->detectDurationExcceders(date('Y0101000000'), $monthlyThreshold);
 		foreach($monthlyAlerts as &$val) {
 				$val['threshold'] = $monthlyThreshold; 		
 		};
 
+		Billrun_Factory::log()->log("nsnPlugin::handlerCollect collecting hourly  exceedres",  Zend_Log::DEBUG);
 		$dailyAlerts = $this->detectDurationExcceders(date('Y01d000000'), $dailyThreshold);
 		foreach ($dailyAlerts as &$val) {
 				$val['threshold'] = $dailyThreshold; 
