@@ -76,10 +76,11 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 				$this->markEvent($event);
 				$this->markEventLine($event);
 				$retValue[] = $event;
+				
+				//Decrese the amount of alerts allowed in a single run if 0 is reached the break the loop.
+				$alertsLeft--;
 			}
 			
-			//Decrese the amount of alerts allowed in a single run if 0 is reached the break the loop.
-			$alertsLeft--;
 			if($alertsLeft == 0) {break;}
 			
 		}
