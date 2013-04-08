@@ -38,7 +38,7 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$options['dryRun'] :
 			Billrun_Factory::config()->getConfigValue('fraudAlerts.alert.dry_run', false);
 		
-		$this->startTime = $_SERVER['REQUEST_TIME'];
+		$this->startTime = time();
 		
 		$this->eventsCol = Billrun_Factory::db()->eventsCollection();
 		$this->linesCol = Billrun_Factory::db()->linesCollection();
@@ -251,7 +251,7 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$msisdn = (isset($event['msisdn']) && $event['msisdn']) ? $event['msisdn'] : null;
 
 			$lines_where = array(
-				'process_time' => array( '$lt' => date('Y-m-d H:i:s', $this->startTime) )
+				'process_time' => array( '$lt' => date(Billrun_Base::base_dateformat, $this->startTime) )
 			);
 
 			if ($imsi) {
