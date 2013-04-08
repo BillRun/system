@@ -64,7 +64,9 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements	Billrun_Pl
 
 		$aggregateQuery = $this->getBaseAggregateQuery($charge_time); 
 		
+		Billrun_Factory::log()->log("ggsnPlugin::handlerCollect collecting monthly data exceedres",  Zend_Log::DEBUG);
 		$dataExceedersAlerts = $this->detectDataExceeders($lines, $aggregateQuery);
+		Billrun_Factory::log()->log("ggsnPlugin::handlerCollect collecting hourly data exceedres",  Zend_Log::DEBUG);
 		$hourlyDataExceedersAlerts = $this->detectHourlyDataExceeders($lines, $aggregateQuery);
 		
 		return array_merge($dataExceedersAlerts, $hourlyDataExceedersAlerts);

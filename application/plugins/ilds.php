@@ -51,6 +51,7 @@ class ildsPlugin extends Billrun_Plugin_BillrunPluginFraud {
 			),
 		);
 
+		Billrun_Factory::log()->log("ildsPlugin::handlerCollect collecting exceedres",  Zend_Log::DEBUG);
 		$ret = $lines->aggregate($where, $group, $project, $having);
 
 		return $ret;
