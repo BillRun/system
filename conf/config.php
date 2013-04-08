@@ -20,8 +20,8 @@ if (!defined('BILLRUN_CONFIG_PATH')) {
 	$config = array(
 		'servers' => array(
 			'dev' => array('127.0.0.1', '127.0.1.1', '::1'),
-			'test' => array('192.168.36.10', '192.168.30.20', 'fraud.golan.local'),
-			'prod' => array('192.168.37.10'),
+			'test' => array(),
+			'prod' => array('192.168.37.10', 'fraud.golan.local', '192.168.30.20'),
 		)
 	);
 
