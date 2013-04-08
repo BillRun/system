@@ -167,6 +167,7 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 
 			return Zend_Json::decode($response);
 		} else {
+			Billrun_Log::getInstance()->log("fraudAlertsPlugin::notifyRemoteServer - Running in DRY RUN mode returning successful alert.", Zend_Log::DEBUG);
 			return array('success' => true);
 		}
 	}

@@ -106,11 +106,11 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements	Billrun_Pl
 		$exceeders = array();
 		$timeWindow= strtotime("-" . Billrun_Factory::config()->getConfigValue('ggsn.hourly.timespan','4 hours'));
 		$limit = floatval(Billrun_Factory::config()->getConfigValue('ggsn.hourly.thresholds.datalimit',0));
-		$aggregateQuery[0]['$match']['$and'] =  array( array('record_opening_time' => array('$gte' => date('YmdHis',$timeWindow))),
-														array('record_opening_time' => $aggregateQuery[0]['$match']['record_opening_time']) );						
+		$aggregateQuery[1]['$match']['$and'] =  array( array('record_opening_time' => array('$gte' => date('YmdHis',$timeWindow))),
+														array('record_opening_time' => $aggregateQuery[1]['$match']['record_opening_time']) );						
 	
 		//unset($aggregateQuery[0]['$match']['sgsn_address']);
-		unset($aggregateQuery[0]['$match']['record_opening_time']);
+		unset($aggregateQuery[1]['$match']['record_opening_time']);
 		
 		$having =	array(
 				'$match' => array(
@@ -189,9 +189,13 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements	Billrun_Pl
 	 */
 	protected function getBaseAggregateQuery($charge_time) {
 		return array(
+				array(	
+					'$match' => array( 
+							'type' => 'ggsn', 
+					),
+				),
 				array(
-					'$match' => array(
-						'type' => 'ggsn',
+					'$match' => array( 
 						'deposit_stamp' => array('$exists' => false),
 						'event_stamp' => array('$exists' => false),
 						'record_opening_time' => array('$gt' => $charge_time),

@@ -113,6 +113,10 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 				array(
 					'$match' => array(
 						'type' => 'nsn',
+					),
+				),
+				array(
+					'$match' => array(
 						'event_stamp' => array('$exists' => false),
 						'record_type' => array('$in' => array('01','11')),
 						'called_number' => array('$regex' => '^(?=10[^1]|1016|016|97216)....'),
