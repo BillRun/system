@@ -81,7 +81,7 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 	}
 	
 	/**
-	 * receive files from the ftp host.
+	 * Receive files from the ftp host.
 	 * @param type $hostName the ftp hostname/alias
 	 * @param type $config the ftp configuration
 	 * @return array conatining the path to the received files.
@@ -95,7 +95,7 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 				Billrun_Factory::dispatcher()->trigger('beforeFTPFileReceived', array(&$file, $this, $hostName));
 				if ($file->isFile() && $this->isFileValid($file->name,$file->path)) {
 					if($this->isFileReceived($file->name,$this->getType())) {
-							if(Billrun_Factory::config()->isProd()) {
+							if( Billrun_Factory::config()->isProd() && (isset($config['delete_received']) && $config['delete_received'] ) ) {
 								Billrun_Factory::log()->log("FTP: Deleteing file {$file->name} from remote host ", Zend_Log::DEBUG);
 								// TODO reinstate after full switch to new fraud system 
 								// $file->delete();
