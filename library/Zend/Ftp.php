@@ -1,6 +1,13 @@
 <?php
 
 class Zend_Ftp {
+	
+	/**
+	 * The value of  an Unkown system type.
+	 */
+
+	const UNKNOWN_SYSTEM_TYPE = 'unknown';
+	
 	/**
 	 * ASCII transfer mode
 	 */
@@ -101,6 +108,13 @@ class Zend_Ftp {
 	 */
 	protected $_asciiTypes = array('txt', 'html', 'htm', 'php', 'phtml');
 
+	/**
+	 * The connected system type  returned by ftp_systype() or 'unknown' if the 
+	 * 
+	 * @var array
+	 */
+	protected $_systype = Zend_Ftp::UNKNOWN_SYSTEM_TYPE;
+	
 	/**
 	 * Instantiate
 	 * 
@@ -412,6 +426,19 @@ class Zend_Ftp {
 	 */
 	public static function connect($host, $username, $password, $port = 21, $timeout = 90) {
 		return new self($host, $username, $password, $port, $timeout);
+	}
+	
+	/**
+	 * Get the currently connected system type.
+	 * @return string identifing the currently connected system type (ie. unix/windows/unkown...)
+	 */
+	public function getSysType() {
+		if(!$this->_connection) {
+			throw new Exception("System ftype  can only be checked after a successful contection is made");
+		}
+		$ret = @ftp_systype($this->_connection);
+		return $ret ? $ret : Zend_Ftp::UNKNOWN_SYSTEM_TYPE;
+		
 	}
 
 }

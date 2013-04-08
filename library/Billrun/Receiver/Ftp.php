@@ -49,6 +49,7 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 			$this->workspace = $options['workspace'];
 		}
 
+		Zend_Ftp_Factory::registerParserType(Zend_Ftp::UNKNOWN_SYSTEM_TYPE, 'Billrun_Receiver_NsnFtpParser');
 	}
 
 	/**
@@ -91,6 +92,7 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 			Billrun_Factory::log()->log("FTP: Starting to receive from remote host : $hostName", Zend_Log::DEBUG);
 			foreach ($files as $file) {
 				Billrun_Factory::log()->log("FTP: Found file " . $file->name . " on remote host", Zend_Log::DEBUG);
+				Billrun_Factory::dispatcher()->trigger('beforeFTPFileReceived', array(&$file, $this, $hostName));
 				if ($file->isFile() && $this->isFileValid($file->name,$file->path)) {
 					if($this->isFileReceived($file->name,$this->getType())) {
 							if(Billrun_Factory::config()->isProd()) {
