@@ -77,38 +77,40 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 			$row['callEventDurationRound'] = ceil($callEventDuration / 60) * 60;
 		}
 	}
-	
+
 	/**
 	 * move zip files to backup path after the processing was done
 	 * @param Billrun_Processor $processor the proce
 	 * @param string $file_path the path of the current processing file.
 	 */
 	public function afterProcessorBackup($processor, &$file_path) {
-		if($processor->getType() != $this->getName()) { return; }
-		$path = Billrun_Factory::config()->getConfigValue($this->getName().'.processor.zip_move_path',false,'string');
-		if(!$path) return;
-		
-		if( $processor->retreivedHostname ) {
-			$path = $path . DIRECTORY_SEPARATOR . $processor->retreivedHostname;	
+		if ($processor->getType() != $this->getName()) {
+			return;
 		}
-		
-		$path .=  DIRECTORY_SEPARATOR . date("Ym");
-		
-		if(!file_exists($path)) {
-			Billrun_Factory::log()->log("Creating Directory : $path" , Zend_Log::DEBUG);
+		$path = Billrun_Factory::config()->getConfigValue($this->getName() . '.processor.zip_move_path', false, 'string');
+		if (!$path)
+			return;
+
+		if ($processor->retreivedHostname) {
+			$path = $path . DIRECTORY_SEPARATOR . $processor->retreivedHostname;
+		}
+
+		$path .= DIRECTORY_SEPARATOR . date("Ym");
+
+		if (!file_exists($path)) {
+			Billrun_Factory::log()->log("Creating Directory : $path", Zend_Log::DEBUG);
 			mkdir($path, 0777, true);
 		}
 
 		$srcPath = $file_path . ".zip";
-		if(file_exists($srcPath)) {
-			Billrun_Factory::log()->log("Saving zip file to : $path" , Zend_Log::DEBUG);
-			if(!rename($srcPath, $path .DIRECTORY_SEPARATOR. basename($srcPath))) {
-				Billrun_Factory::log()->log(" Failed when trying to save file : ".  basename($srcPath)." to third party path : $path" , Zend_Log::ERR);
+		if (file_exists($srcPath)) {
+			Billrun_Factory::log()->log("Saving zip file to : $path", Zend_Log::DEBUG);
+			if (!rename($srcPath, $path . DIRECTORY_SEPARATOR . basename($srcPath))) {
+				Billrun_Factory::log()->log(" Failed when trying to save file : " . basename($srcPath) . " to third party path : $path", Zend_Log::ERR);
 			}
 		}
-
 	}
-	
+
 	/**
 	 * method to unzip the processing file of NRTRDE (received as zip archive)
 	 * 
@@ -121,7 +123,7 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 		if ($processor instanceof Billrun_Processor_Nrtrde && file_exists($file_path)) {
 			$this->decompress($file_path);
 			$file_path = str_replace('.zip', '', $file_path);
-			
+
 			return true;
 		}
 		return false;
@@ -154,9 +156,13 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 		$charge_time = $this->get_last_charge_time();
 
 		// TODO: take it to config ? how to handle variables ?
-		$where = array(
+		$base_match = array(
 			'$match' => array(
 				'source' => 'nrtrde',
+			)
+		);
+		$where = array(
+			'$match' => array(
 				'record_type' => 'MOC',
 				'connectedNumber' => array('$regex' => '^972'),
 				'callEventStartTimeStamp' => array('$gte' => $charge_time),
@@ -191,8 +197,8 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 
 		$ret = array();
 
-		Billrun_Factory::log()->log("nrtrdePlugin::handlerCollect collecting moc_israel exceedres",  Zend_Log::DEBUG);
-		$moc_israel = $lines->aggregate($where, $group, $project, $having);
+		Billrun_Factory::log()->log("nrtrdePlugin::handlerCollect collecting moc_israel exceedres", Zend_Log::DEBUG);
+		$moc_israel = $lines->aggregate($base_match, $where, $group, $project, $having);
 
 		$this->normalize($ret, $moc_israel, 'moc_israel');
 
@@ -203,8 +209,8 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 		$having['$match']['moc_nonisrael'] = array('$gte' => Billrun_Factory::config()->getConfigValue('nrtrde.thresholds.moc.nonisrael', 600, 'int'));
 		$project['$project']['moc_nonisrael'] = 1;
 		unset($project['$project']['moc_israel']);
-		Billrun_Factory::log()->log("nrtrdePlugin::handlerCollect collecting moc_nonisrael exceedres",  Zend_Log::DEBUG);
-		$moc_nonisrael = $lines->aggregate($where, $group, $project, $having);
+		Billrun_Factory::log()->log("nrtrdePlugin::handlerCollect collecting moc_nonisrael exceedres", Zend_Log::DEBUG);
+		$moc_nonisrael = $lines->aggregate($base_match, $where, $group, $project, $having);
 		$this->normalize($ret, $moc_nonisrael, 'moc_nonisrael');
 
 		$where['$match']['record_type'] = 'MTC';
@@ -215,8 +221,8 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 		$having['$match']['mtc_all'] = array('$gte' => Billrun_Factory::config()->getConfigValue('nrtrde.thresholds.mtc', 2400, 'int'));
 		$project['$project']['mtc_all'] = 1;
 		unset($project['$project']['moc_nonisrael']);
-		Billrun_Factory::log()->log("nrtrdePlugin::handlerCollect collecting mtc_all exceedres",  Zend_Log::DEBUG);		
-		$mtc = $lines->aggregate($where, $group, $project, $having);
+		Billrun_Factory::log()->log("nrtrdePlugin::handlerCollect collecting mtc_all exceedres", Zend_Log::DEBUG);
+		$mtc = $lines->aggregate($base_match, $where, $group, $project, $having);
 		$this->normalize($ret, $mtc, 'mtc_all');
 
 		$where['$match']['record_type'] = 'MOC';
@@ -228,32 +234,32 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 		$having['$match']['sms_out'] = array('$gte' => Billrun_Factory::config()->getConfigValue('nrtrde.thresholds.smsout', 70, 'int'));
 		$project['$project']['sms_out'] = 1;
 		unset($project['$project']['mtc_all']);
-		Billrun_Factory::log()->log("nrtrdePlugin::handlerCollect collecting sms_out exceedres",  Zend_Log::DEBUG);			
-		$sms_out = $lines->aggregate($where, $group, $project, $having);
+		Billrun_Factory::log()->log("nrtrdePlugin::handlerCollect collecting sms_out exceedres", Zend_Log::DEBUG);
+		$sms_out = $lines->aggregate($base_match, $where, $group, $project, $having);
 		$this->normalize($ret, $sms_out, 'sms_out');
 
 		unset($group['$group']['sms_out']);
 		unset($having['$match']['sms_out']);
 		unset($project['$project']['sms_out']);
 		$timeWindow = strtotime("-" . Billrun_Factory::config()->getConfigValue('nnrtrde.hourly.timespan', '1h'));
-		$where['$match']['callEventStartTimeStamp']['$gt'] = date(self::time_format, $timeWindow);
+		$where['$match']['callEventStartTimeStamp'] = array('$gt' => date(self::time_format, $timeWindow));
 		$group['$group']['sms_hourly'] = array('$sum' => 1);
 		$having['$match']['sms_hourly'] = array('$gte' => Billrun_Factory::config()->getConfigValue('nrtrde.hourly.thresholds.smsout', 250, 'int'));
 		$project['$project']['sms_hourly'] = 1;
-		Billrun_Factory::log()->log("nrtrdePlugin::handlerCollect collecting sms_hourly exceedres",  Zend_Log::DEBUG);				
-		$sms_hourly = $lines->aggregate($where, $group, $project, $having);
+		Billrun_Factory::log()->log("nrtrdePlugin::handlerCollect collecting sms_hourly exceedres", Zend_Log::DEBUG);
+		$sms_hourly = $lines->aggregate($base_match, $where, $group, $project, $having);
 		$this->normalize($ret, $sms_hourly, 'sms_hourly');
 
 		unset($group['$group']['sms_hourly']);
 		unset($having['$match']['sms_hourly']);
 		unset($project['$project']['sms_hourly']);
-		$where['$match']['callEventStartTimeStamp']['$gt'] = date(self::time_format, $timeWindow);
+		$where['$match']['callEventStartTimeStamp'] = array('$gt' => date(self::time_format, $timeWindow));
 		$where['$match']['callEventDurationRound'] = array('$gt' => 0);
 		$group['$group']['moc_nonisrael_hourly'] = array('$sum' => '$callEventDurationRound');
 		$having['$match']['moc_nonisrael_hourly'] = array('$gte' => Billrun_Factory::config()->getConfigValue('nrtrde.hourly.thresholds.mocnonisrael', 3000));
 		$project['$project']['moc_nonisrael_hourly'] = 1;
-		Billrun_Factory::log()->log("nrtrdePlugin::handlerCollect collecting moc_nonisrael_hourly exceedres",  Zend_Log::DEBUG);		
-		$moc_nonisrael_hourly = $lines->aggregate($where, $group, $project, $having);
+		Billrun_Factory::log()->log("nrtrdePlugin::handlerCollect collecting moc_nonisrael_hourly exceedres", Zend_Log::DEBUG);
+		$moc_nonisrael_hourly = $lines->aggregate($base_match, $where, $group, $project, $having);
 		$this->normalize($ret, $moc_nonisrael_hourly, 'moc_nonisrael_hourly');
 
 
@@ -299,7 +305,7 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 				(isset($event['mtc_all']) ? 'mtc_all' :
 					(isset($event['sms_hourly']) ? 'sms_hourly' :
 						(isset($event['sms_out']) ? 'sms_out' :
-						'moc_nonisrael_hourly'))));
+							'moc_nonisrael_hourly'))));
 
 		$event['units'] = 'SEC';
 		$event['value'] = $event[$type];
@@ -323,13 +329,13 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 				$event['units'] = 'SMS';
 				$event['event_type'] = 'NRTRDE_SMS';
 				break;
-			
+
 			case 'sms_hourly':
 				$event['threshold'] = Billrun_Factory::config()->getConfigValue('nrtrde.hourly.thresholds.smsout', 250);
 				$event['units'] = 'SMS';
 				$event['event_type'] = 'NRTRDE_HOURLY_SMS';
 				break;
-			
+
 			case 'moc_nonisrael_hourly':
 				$event['threshold'] = Billrun_Factory::config()->getConfigValue('nrtrde.hourly.thresholds.mocnonisrael', 3000);
 				$event['event_type'] = 'NRTRDE_HOURLY_VOICE';
