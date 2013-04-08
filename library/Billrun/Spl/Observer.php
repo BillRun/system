@@ -12,7 +12,7 @@
  * @package SPL
  * @since    1.0
  */
-abstract class Billrun_Spl_Observer extends Billrun_Base implements SplObserver {
+abstract class Billrun_Spl_Observer implements SplObserver {
 
 	/**
 	 * Method to trigger events.

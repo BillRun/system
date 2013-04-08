@@ -43,7 +43,6 @@ class Billrun_Dispatcher extends Billrun_Spl_Subject {
 	 * @return type
 	 */
 	public static function getInstance(array $params = array()) {
-		//
 		if (isset($params['type'])) {
 			if (!isset(self::$instance[$params['type']])) {
 				settype($params['type'], 'string');
