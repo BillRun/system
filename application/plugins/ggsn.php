@@ -126,7 +126,7 @@ use Billrun_Traits_FileSequenceChecking;
 			),
 		);
 
-		$alerts = $linesCol->aggregate(array('$match' => array('type' => 'ggsn')), array_merge($aggregateQuery, array($having)));
+		$alerts = $linesCol->aggregate(array_merge($aggregateQuery, array($having)));
 		foreach ($alerts as $alert) {
 			$alert['units'] = 'KB';
 			$alert['value'] = ($alert['download'] > $limit ? $alert['download'] : $alert['upload']);
@@ -153,7 +153,7 @@ use Billrun_Traits_FileSequenceChecking;
 				),
 			),
 		);
-		$dataAlerts = $lines->aggregate(array('$match' => array('type' => 'ggsn')), array_merge($aggregateQuery, array($dataThrs)));
+		$dataAlerts = $lines->aggregate(array_merge($aggregateQuery, array($dataThrs)));
 		foreach ($dataAlerts as &$alert) {
 			$alert['units'] = 'KB';
 			$alert['value'] = ($alert['download'] > $limit ? $alert['download'] : $alert['upload']);
@@ -179,7 +179,7 @@ use Billrun_Traits_FileSequenceChecking;
 			),
 		);
 
-		$durationAlert = $lines->aggregate(array('$match' => array('type' => 'ggsn')), array_merge($aggregateQuery, array($durationThrs)));
+		$durationAlert = $lines->aggregate(array_merge($aggregateQuery, array($durationThrs)));
 		foreach ($durationAlert as &$alert) {
 			$alert['units'] = 'SEC';
 			$alert['value'] = $alert['duration'];
@@ -196,6 +196,11 @@ use Billrun_Traits_FileSequenceChecking;
 	 */
 	protected function getBaseAggregateQuery($charge_time) {
 		return array(
+			array(
+				'$match' => array(
+					'type' => 'ggsn'
+				)
+			),
 			array(
 				'$match' => array(
 					'deposit_stamp' => array('$exists' => false),
