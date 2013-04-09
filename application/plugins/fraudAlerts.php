@@ -53,7 +53,7 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	public function handlerNotify($handler) {
 
 		$ret = $this->roamingNotify();
-
+		$this->sendResultsSummary($ret);
 		return $ret;
 	}
 
@@ -70,8 +70,9 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		
 		foreach ($events as $event) {
 			$ret = $this->notifyOnEvent($event);
-			if ($ret) {
-				$event['deposit_stamp'] = md5(serialize($ret).serialize($event));//TOD change to value return from the server/email/something
+			if (isset($ret['success']) && $ret['success']) {
+				$event['deposit_stamp'] = md5(serialize($ret).$event['$stamp']);//TOD change to value return from the server/email/something
+				$event['returned_value'] = $ret;
 				//Billrun_Log::getInstance()->log("handlerNotify ".print_r($event,1), Zend_Log::DEBUG);
 				$this->markEvent($event);
 				$this->markEventLine($event);
@@ -229,8 +230,8 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	protected function markEvent($event) {
 			//mark events as dealt with.
 			$events_where = array( 
-					'notify_time' => array( '$exists' => false ),
 					'_id' => array( '$in' => $event['id']),
+					'notify_time' => array( '$exists' => false ),
 			);
 			$events_update_set = array(
 					'$set' => array(
@@ -239,7 +240,7 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 					),
 			);
 			$update_options = array( 'multiple' => 1 );
-			$this->eventsCol->update($events_where, $events_update_set, $update_options);
+			Billrun_Factory::db()->eventsCollection()->update($events_where, $events_update_set, $update_options);
 	}
 	
 	/**
@@ -273,5 +274,16 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 			}
 			
 			$this->linesCol->update($lines_where, $lines_update_set, $update_options);				
+	}
+	
+	/**
+	 * send  alerts results by email.
+	 */
+	protected  function sendResultsSummary($ret) {
+		Billrun_Log::getInstance()->log("Sending result to email", Zend_Log::DEBUG);
+		 Billrun_Factory::mailer()->addTo('euzan@golantelecom.co.il')->
+									addTo('eran')->
+									setBodyText(print_r($ret,1))->
+									send();
 	}
 }
