@@ -2,46 +2,28 @@
 
 class Subscriber_Golan extends Billrun_Subscriber
 {
-	static $subscribersCache = array();
-	
-	static protected function get($phone, $time)
-	{
-		// @todo: refactoring
-//		$conn = Mongodloid_Connection::getInstance();
-//		$db = $conn->getDB('billing');
-//		$accountCollectionName = 'accounts';
-//		$collection = $db->getCollection($accountCollectionName);
-//		$query = array('$where' => '');
-//		$collection->query($query);
-		// @todo: store the data and avoid too much requests
-		if( isset(self::$subscribersCache[$phone]) && self::$subscribersCache[$phone] &&
-		   ( date_create(self::$subscribersCache[$phone]['last_modified']) < date_create($time) ) ) {
-			return self::$subscribersCache[$phone];
-		}
 
-		$retSubscriber = self::request($phone, $time);
-		if( $retSubscriber && (!isset($retSubscriber['end_date']) && $retSubscriber['status'] == "in_use" ) ) {
-			self::$subscribersCache[$phone] = $retSubscriber;
-		}
-		return $retSubscriber;
-		//return self::request($phone, $time);
-	}
-
+	/**
+	 * method to send request to Golan rpc
+	 * 
+	 * @param string $phone the phone number of the client
+	 * @param string $time the time that phone requested
+	 * 
+	 * @return array subscriber details
+	 */
 	static protected function request($phone, $time)
 	{
-		//http://192.168.37.10/gt-dev/dev/rpc/subscribers_by_date.rpc.php?date=2012-07-19 08:12&NDC_SN=502052428
-//		$host = '192.168.37.10';
-		//http://gtgt.no-ip.org/gt-dev/dev/rpc/subscribers_by_date.rpc.php?date=2012-07-19 08:12&NDC_SN=502052428
-//		$host = 'gtgt.no-ip.org';
+		
 		$host = Billrun_Factory::config()->getConfigValue('provider.rpc.server', 'gtgt.no-ip.org');
-		$url = 'gt-dev/dev/rpc/subscribers_by_date.rpc.php';
-		$datetime_format = 'Y-m-d H:i:s';
+		$url = Billrun_Factory::config()->getConfigValue('provider.rpc.url','gt-dev/dev/rpc/subscribers_by_date.rpc.php');
+		$datetime_format = Billrun_Base::base_dateformat; // 'Y-m-d H:i:s';
 		$params = array(
 			'NDC_SN' => self::NDC_SN($phone),
 			'date' => date($datetime_format, strtotime($time)),
 		);
 
 		$path = 'http://' . $host . '/' . $url . '?' . http_build_query($params);
+		// @TODO: use Zend_Http_Client
 		$json = self::send($path);
 
 		if (!$json)
@@ -59,6 +41,13 @@ class Subscriber_Golan extends Billrun_Subscriber
 		return (array) $object->data;
 	}
 
+	/**
+	 * method to verify phone number is in NDC_SN format (with leading zero)
+	 * 
+	 * @param string $phone phone number
+	 * 
+	 * @return type string
+	 */
 	static protected function NDC_SN($phone)
 	{
 		if (substr($phone, 0, 1) == '0')
@@ -68,6 +57,15 @@ class Subscriber_Golan extends Billrun_Subscriber
 		return $phone;
 	}
 
+	/**
+	 * method to send http request via curl
+	 * 
+	 * @param string $url the url to send
+	 * 
+	 * @return string the request output
+	 * 
+	 * @todo use Zend_Http_Client
+	 */
 	static function send($url)
 	{
 		// create a new cURL resource
@@ -91,12 +89,21 @@ class Subscriber_Golan extends Billrun_Subscriber
 	/**
 	 * method to load subsbscriber details
 	 * 
+	 * @param array $params the params to load by
 	 * 
+	 * @return Subscriber_Golan self object for chaining calls and use magic method for properties
 	 */
 	public function load($params) {
-		$data = self::get($params['phone'], $params['time']);
-		$this->availableFields = array_keys($data);
-		$this->data = $data;
+		if (isset($params['phone'])) {
+			if (isset($params['time'])) {
+				$time = $params['time'];
+			} else {
+				$time = date(Billrun_Base::base_dateformat);
+			}
+			$data = self::request($params['phone'], $time);
+			$this->availableFields = array_keys($data);
+			$this->data = $data;
+		}
 		return $this;
 	}
 
