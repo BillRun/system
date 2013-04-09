@@ -197,7 +197,7 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 
 		$ret = array();
 
-		Billrun_Factory::log()->log("nrtrdePlugin::handlerCollect collecting moc_israel exceedres", Zend_Log::DEBUG);
+		Billrun_Factory::log()->log("nrtrdePlugin::handlerCollect collecting moc_israel exceeders", Zend_Log::DEBUG);
 		$moc_israel = $lines->aggregate($base_match, $where, $group, $project, $having);
 
 		$this->normalize($ret, $moc_israel, 'moc_israel');
@@ -209,7 +209,7 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 		$having['$match']['moc_nonisrael'] = array('$gte' => Billrun_Factory::config()->getConfigValue('nrtrde.thresholds.moc.nonisrael', 600, 'int'));
 		$project['$project']['moc_nonisrael'] = 1;
 		unset($project['$project']['moc_israel']);
-		Billrun_Factory::log()->log("nrtrdePlugin::handlerCollect collecting moc_nonisrael exceedres", Zend_Log::DEBUG);
+		Billrun_Factory::log()->log("nrtrdePlugin::handlerCollect collecting moc_nonisrael exceeders", Zend_Log::DEBUG);
 		$moc_nonisrael = $lines->aggregate($base_match, $where, $group, $project, $having);
 		$this->normalize($ret, $moc_nonisrael, 'moc_nonisrael');
 
@@ -221,7 +221,7 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 		$having['$match']['mtc_all'] = array('$gte' => Billrun_Factory::config()->getConfigValue('nrtrde.thresholds.mtc', 2400, 'int'));
 		$project['$project']['mtc_all'] = 1;
 		unset($project['$project']['moc_nonisrael']);
-		Billrun_Factory::log()->log("nrtrdePlugin::handlerCollect collecting mtc_all exceedres", Zend_Log::DEBUG);
+		Billrun_Factory::log()->log("nrtrdePlugin::handlerCollect collecting mtc_all exceeders", Zend_Log::DEBUG);
 		$mtc = $lines->aggregate($base_match, $where, $group, $project, $having);
 		$this->normalize($ret, $mtc, 'mtc_all');
 
@@ -234,7 +234,7 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 		$having['$match']['sms_out'] = array('$gte' => Billrun_Factory::config()->getConfigValue('nrtrde.thresholds.smsout', 70, 'int'));
 		$project['$project']['sms_out'] = 1;
 		unset($project['$project']['mtc_all']);
-		Billrun_Factory::log()->log("nrtrdePlugin::handlerCollect collecting sms_out exceedres", Zend_Log::DEBUG);
+		Billrun_Factory::log()->log("nrtrdePlugin::handlerCollect collecting sms_out exceeders", Zend_Log::DEBUG);
 		$sms_out = $lines->aggregate($base_match, $where, $group, $project, $having);
 		$this->normalize($ret, $sms_out, 'sms_out');
 
@@ -246,7 +246,7 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 		$group['$group']['sms_hourly'] = array('$sum' => 1);
 		$having['$match']['sms_hourly'] = array('$gte' => Billrun_Factory::config()->getConfigValue('nrtrde.hourly.thresholds.smsout', 250, 'int'));
 		$project['$project']['sms_hourly'] = 1;
-		Billrun_Factory::log()->log("nrtrdePlugin::handlerCollect collecting sms_hourly exceedres", Zend_Log::DEBUG);
+		Billrun_Factory::log()->log("nrtrdePlugin::handlerCollect collecting sms_hourly exceeders", Zend_Log::DEBUG);
 		$sms_hourly = $lines->aggregate($base_match, $where, $group, $project, $having);
 		$this->normalize($ret, $sms_hourly, 'sms_hourly');
 
@@ -258,7 +258,7 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 		$group['$group']['moc_nonisrael_hourly'] = array('$sum' => '$callEventDurationRound');
 		$having['$match']['moc_nonisrael_hourly'] = array('$gte' => Billrun_Factory::config()->getConfigValue('nrtrde.hourly.thresholds.mocnonisrael', 3000));
 		$project['$project']['moc_nonisrael_hourly'] = 1;
-		Billrun_Factory::log()->log("nrtrdePlugin::handlerCollect collecting moc_nonisrael_hourly exceedres", Zend_Log::DEBUG);
+		Billrun_Factory::log()->log("nrtrdePlugin::handlerCollect collecting moc_nonisrael_hourly exceeders", Zend_Log::DEBUG);
 		$moc_nonisrael_hourly = $lines->aggregate($base_match, $where, $group, $project, $having);
 		$this->normalize($ret, $moc_nonisrael_hourly, 'moc_nonisrael_hourly');
 
