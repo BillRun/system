@@ -171,25 +171,25 @@ abstract class Billrun_Processor extends Billrun_Base {
 		Billrun_Factory::dispatcher()->trigger('beforeProcessorParsing', array($this));
 
 		if ($this->parse() === FALSE) {
-			Billrun_Factory::log()->log("Billrun_Processor: cannot parse", Zend_Log::ERR);
+			Billrun_Factory::log()->log("Billrun_Processor: cannot parse " . $this->filePath, Zend_Log::ERR);
 			return false;
 		}
 
 		Billrun_Factory::dispatcher()->trigger('afterProcessorParsing', array($this));
 
 		if ($this->logDB() === FALSE) {
-			Billrun_Factory::log()->log("Billrun_Processor: cannot log parsing action", Zend_Log::WARN);
+			Billrun_Factory::log()->log("Billrun_Processor: cannot log parsing action " . $this->filePath, Zend_Log::WARN);
 		}
 
 		Billrun_Factory::dispatcher()->trigger('beforeProcessorStore', array($this));
 
 		if ($this->store() === FALSE) {
-			Billrun_Factory::log()->log("Billrun_Processor: cannot store the parser lines", Zend_Log::ERR);
+			Billrun_Factory::log()->log("Billrun_Processor: cannot store the parser lines " .  $this->filePath, Zend_Log::ERR);
 			return false;
 		}
 
 		if ($this->logDB() === FALSE) {
-			Billrun_Factory::log()->log("Billrun_Processor: cannot log parsing action", Zend_Log::WARN);
+			Billrun_Factory::log()->log("Billrun_Processor: cannot log parsing action" .  $this->filePath, Zend_Log::WARN);
 			return false;
 		}
 		
@@ -217,7 +217,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 
 
 		if (!isset($this->data['trailer']) && !isset($this->data['header'])) {
-			Billrun_Factory::log()->log("Billrun_Processor:logDB no header nor trailer to log", Zend_Log::ERR);
+			Billrun_Factory::log()->log("Billrun_Processor:logDB " . $this->filePath . "no header nor trailer to log", Zend_Log::ERR);
 			return false;
 		}
 
