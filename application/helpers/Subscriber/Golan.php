@@ -4,6 +4,41 @@ class Subscriber_Golan extends Billrun_Subscriber
 {
 
 	/**
+	 * method to load subsbscriber details
+	 * 
+	 * @param array $params the params to load by
+	 * 
+	 * @return Subscriber_Golan self object for chaining calls and use magic method for properties
+	 */
+	public function load($params) {
+		if (isset($params['phone'])) {
+			if (isset($params['time'])) {
+				$time = $params['time'];
+			} else {
+				$time = date(Billrun_Base::base_dateformat);
+			}
+			$data = $this->request($params['phone'], $time);
+			$this->availableFields = array_keys($data);
+			$this->data = $data;
+		}
+		return $this;
+	}
+
+	/**
+	 * method to save subsbscriber details
+	 */
+	public function save() {
+		return $this;
+	}
+
+	/**
+	 * method to delete subsbscriber entity
+	 */
+	public function delete() {
+		return TRUE;
+	}
+	
+	/**
 	 * method to send request to Golan rpc
 	 * 
 	 * @param string $phone the phone number of the client
@@ -11,20 +46,20 @@ class Subscriber_Golan extends Billrun_Subscriber
 	 * 
 	 * @return array subscriber details
 	 */
-	static protected function request($phone, $time)
+	protected function request($phone, $time)
 	{
 		
 		$host = Billrun_Factory::config()->getConfigValue('provider.rpc.server', 'gtgt.no-ip.org');
 		$url = Billrun_Factory::config()->getConfigValue('provider.rpc.url','gt-dev/dev/rpc/subscribers_by_date.rpc.php');
 		$datetime_format = Billrun_Base::base_dateformat; // 'Y-m-d H:i:s';
 		$params = array(
-			'NDC_SN' => self::NDC_SN($phone),
+			'NDC_SN' => $this->NDC_SN($phone),
 			'date' => date($datetime_format, strtotime($time)),
 		);
 
 		$path = 'http://' . $host . '/' . $url . '?' . http_build_query($params);
 		// @TODO: use Zend_Http_Client
-		$json = self::send($path);
+		$json = $this->send($path);
 
 		if (!$json)
 		{
@@ -48,7 +83,7 @@ class Subscriber_Golan extends Billrun_Subscriber
 	 * 
 	 * @return type string
 	 */
-	static protected function NDC_SN($phone)
+	protected function NDC_SN($phone)
 	{
 		if (substr($phone, 0, 1) == '0')
 		{
@@ -66,7 +101,7 @@ class Subscriber_Golan extends Billrun_Subscriber
 	 * 
 	 * @todo use Zend_Http_Client
 	 */
-	static function send($url)
+	protected function send($url)
 	{
 		// create a new cURL resource
 		$ch = curl_init();
@@ -85,40 +120,5 @@ class Subscriber_Golan extends Billrun_Subscriber
 
 		return $output;
 	}
-
-	/**
-	 * method to load subsbscriber details
-	 * 
-	 * @param array $params the params to load by
-	 * 
-	 * @return Subscriber_Golan self object for chaining calls and use magic method for properties
-	 */
-	public function load($params) {
-		if (isset($params['phone'])) {
-			if (isset($params['time'])) {
-				$time = $params['time'];
-			} else {
-				$time = date(Billrun_Base::base_dateformat);
-			}
-			$data = self::request($params['phone'], $time);
-			$this->availableFields = array_keys($data);
-			$this->data = $data;
-		}
-		return $this;
-	}
-
-	/**
-	 * method to save subsbscriber details
-	 */
-	public function save() {
-		return $this;
-	}
-
-	/**
-	 * method to delete subsbscriber entity
-	 */
-	public function delete() {
-		return TRUE;
-	}
-
+	
 }
