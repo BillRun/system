@@ -111,11 +111,11 @@ use Billrun_Traits_FileSequenceChecking;
 		$exceeders = array();
 		$timeWindow = strtotime("-" . Billrun_Factory::config()->getConfigValue('ggsn.hourly.timespan', '4 hours'));
 		$limit = floatval(Billrun_Factory::config()->getConfigValue('ggsn.hourly.thresholds.datalimit', 0));
-		$aggregateQuery[0]['$match']['$and'] = array(array('record_opening_time' => array('$gte' => date('YmdHis', $timeWindow))),
-			array('record_opening_time' => $aggregateQuery[0]['$match']['record_opening_time']));
+		$aggregateQuery[1]['$match']['$and'] = array(array('record_opening_time' => array('$gte' => date('YmdHis', $timeWindow))),
+			array('record_opening_time' => $aggregateQuery[1]['$match']['record_opening_time']));
 
 		//unset($aggregateQuery[0]['$match']['sgsn_address']);
-		unset($aggregateQuery[0]['$match']['record_opening_time']);
+		unset($aggregateQuery[1]['$match']['record_opening_time']);
 
 		$having = array(
 			'$match' => array(
