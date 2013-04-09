@@ -217,7 +217,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 
 
 		if (!isset($this->data['trailer']) && !isset($this->data['header'])) {
-			Billrun_Factory::log()->log("Billrun_Processor:logDB " . $this->filePath . "no header nor trailer to log", Zend_Log::ERR);
+			Billrun_Factory::log()->log("Billrun_Processor:logDB " . $this->filePath . " no header nor trailer to log", Zend_Log::ERR);
 			return false;
 		}
 
