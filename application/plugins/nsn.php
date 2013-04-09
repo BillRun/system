@@ -107,10 +107,14 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 	 * @return array an array conatining all the duration excedding  call  aggregated by imsi/msisdn
 	 */
 	protected function detectDurationExcceders($fromDate, $threshold) {
+		$base_match = array(
+			'$match' => array(
+				'type' => 'nsn',
+			)
+		);
 		$aggregateQuery = array(
 				array(
 					'$match' => array(
-						'type' => 'nsn',
 						'event_stamp' => array('$exists' => false),
 						'record_type' => array('$in' => array('01','11')),
 						'called_number' => array('$regex' => '^(?=10[^1]|1016|016|97216)....'),
@@ -142,7 +146,7 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 		);
 
 		$linesCol = Billrun_Factory::db()->linesCollection();
-		return $linesCol->aggregate($aggregateQuery);		
+		return $linesCol->aggregate($base_match, $aggregateQuery);		
 	}
 	
 	/**

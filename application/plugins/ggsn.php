@@ -120,7 +120,9 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements	Billrun_Pl
 					),
 				),
 			);
-		foreach($linesCol->aggregate(array_merge($aggregateQuery, array($having))) as $alert) {
+		
+		$alerts = $linesCol->aggregate(array('$match' => array('type' => 'ggsn')), array_merge($aggregateQuery, array($having)));
+		foreach($alerts as $alert) {
 			$alert['units'] = 'KB';
 			$alert['value'] = ($alert['download'] > $limit ? $alert['download'] : $alert['upload']);
 			$alert['threshold'] = $limit;
@@ -146,7 +148,7 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements	Billrun_Pl
 					),
 				),
 			);
-		$dataAlerts = $lines->aggregate(array_merge($aggregateQuery, array($dataThrs)) );
+		$dataAlerts = $lines->aggregate(array('$match' => array('type' => 'ggsn')), array_merge($aggregateQuery, array($dataThrs)) );
 		foreach($dataAlerts as &$alert) {
 			$alert['units'] = 'KB';
 			$alert['value'] = ($alert['download'] > $limit ? $alert['download'] : $alert['upload']);
@@ -172,7 +174,7 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements	Billrun_Pl
 				),
 			);
 		
-		$durationAlert = $lines->aggregate(array_merge($aggregateQuery, array($durationThrs)) );
+		$durationAlert = $lines->aggregate(array('$match' => array('type' => 'ggsn')), array_merge($aggregateQuery, array($durationThrs)) );
 		foreach($durationAlert as &$alert) {
 			$alert['units'] = 'SEC';
 			$alert['value'] = $alert['duration'];
@@ -191,7 +193,6 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements	Billrun_Pl
 		return array(
 				array(
 					'$match' => array(
-						'type' => 'ggsn',
 						'deposit_stamp' => array('$exists' => false),
 						'event_stamp' => array('$exists' => false),
 						'record_opening_time' => array('$gt' => $charge_time),

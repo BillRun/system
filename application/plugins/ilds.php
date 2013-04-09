@@ -16,9 +16,14 @@ class ildsPlugin extends Billrun_Plugin_BillrunPluginFraud {
 		$lines = Billrun_Factory::db()->linesCollection();
 		$charge_time = $this->get_last_charge_time();
 
-		$where = array(
+		$base_match = array(
 			'$match' => array(
 				'source' => 'ilds',
+			)
+		);
+		
+		$where = array(
+			'$match' => array(
 				'event_stamp' => array('$exists' => false),
 				'deposit_stamp' => array('$exists' => false),
 				'call_start_dt' => array('$gte' => $charge_time),
@@ -52,7 +57,7 @@ class ildsPlugin extends Billrun_Plugin_BillrunPluginFraud {
 		);
 
 		Billrun_Factory::log()->log("ildsPlugin::handlerCollect collecting exceedres",  Zend_Log::DEBUG);
-		$ret = $lines->aggregate($where, $group, $project, $having);
+		$ret = $lines->aggregate($base_match, $where, $group, $project, $having);
 
 		return $ret;
 	}
