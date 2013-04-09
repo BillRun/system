@@ -33,7 +33,7 @@ class Billrun_Db extends Mongodloid_Db {
 	}
 
 	/**
-	 * method to override the base getInstance
+	 * Method to override the base getInstance
 	 * 
 	 * @return Billrun_Db instance of the Database
 	 */
@@ -44,7 +44,7 @@ class Billrun_Db extends Mongodloid_Db {
 	}
 
 	/**
-	 * method to create simple aggregation function over MongoDB
+	 * Method to create simple aggregation function over MongoDB
 	 * 
 	 * @param string $collection_name the collection name
 	 * @param array $where the filter clause (before the aggregation)
@@ -76,6 +76,11 @@ class Billrun_Db extends Mongodloid_Db {
 		return false;
 	}
 
+	/**
+	 * get collections  for the database.
+	 * @param type $name the name of the colleaction to retreive.
+	 * @return type the requested collection
+	 */
 	public function __get($name) {
 		if (in_array($name, $this->collections)) {
 			return $this->collections[$name];
