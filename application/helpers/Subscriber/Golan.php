@@ -1,7 +1,6 @@
 <?php
 
-class Subscriber_Golan extends Billrun_Subscriber
-{
+class Subscriber_Golan extends Billrun_Subscriber {
 
 	/**
 	 * method to load subsbscriber details
@@ -12,15 +11,24 @@ class Subscriber_Golan extends Billrun_Subscriber
 	 */
 	public function load($params) {
 		if (isset($params['phone'])) {
-			if (isset($params['time'])) {
-				$time = $params['time'];
-			} else {
-				$time = date(Billrun_Base::base_dateformat);
-			}
-			$data = $this->request($params['phone'], $time);
-			$this->availableFields = array_keys($data);
-			$this->data = $data;
+			$key = $params['phone'];
+		} else if (isset($params['imsi'])) {
+			$key = $params['imsi'];
+		} else {
+			Billrun_Factory::log('Cannot identified Golan subscriber. Require phone or imsi to load. Current parameters: ' . print_R($params), Zend_Log::ALERT);
+			return $this;
 		}
+
+		if (isset($params['time'])) {
+			$time = $params['time'];
+		} else {
+			$time = date(Billrun_Base::base_dateformat);
+		}
+
+		$data = $this->request($key, $time);
+		$this->availableFields = array_keys($data);
+		$this->data = $data;
+
 		return $this;
 	}
 
@@ -37,7 +45,7 @@ class Subscriber_Golan extends Billrun_Subscriber
 	public function delete() {
 		return TRUE;
 	}
-	
+
 	/**
 	 * method to send request to Golan rpc
 	 * 
@@ -46,11 +54,10 @@ class Subscriber_Golan extends Billrun_Subscriber
 	 * 
 	 * @return array subscriber details
 	 */
-	protected function request($phone, $time)
-	{
-		
+	protected function request($phone, $time) {
+
 		$host = Billrun_Factory::config()->getConfigValue('provider.rpc.server', 'gtgt.no-ip.org');
-		$url = Billrun_Factory::config()->getConfigValue('provider.rpc.url','gt-dev/dev/rpc/subscribers_by_date.rpc.php');
+		$url = Billrun_Factory::config()->getConfigValue('provider.rpc.url', 'gt-dev/dev/rpc/subscribers_by_date.rpc.php');
 		$datetime_format = Billrun_Base::base_dateformat; // 'Y-m-d H:i:s';
 		$params = array(
 			'NDC_SN' => $this->NDC_SN($phone),
@@ -61,15 +68,13 @@ class Subscriber_Golan extends Billrun_Subscriber
 		// @TODO: use Zend_Http_Client
 		$json = $this->send($path);
 
-		if (!$json)
-		{
+		if (!$json) {
 			return false;
 		}
 
 		$object = @json_decode($json);
 
-		if (!$object || !isset($object->result) || !$object->result || !isset($object->data))
-		{
+		if (!$object || !isset($object->result) || !$object->result || !isset($object->data)) {
 			return false;
 		}
 
@@ -83,10 +88,8 @@ class Subscriber_Golan extends Billrun_Subscriber
 	 * 
 	 * @return type string
 	 */
-	protected function NDC_SN($phone)
-	{
-		if (substr($phone, 0, 1) == '0')
-		{
+	protected function NDC_SN($phone) {
+		if (substr($phone, 0, 1) == '0') {
 			return substr($phone, 1, strlen($phone) - 1);
 		}
 		return $phone;
@@ -101,8 +104,7 @@ class Subscriber_Golan extends Billrun_Subscriber
 	 * 
 	 * @todo use Zend_Http_Client
 	 */
-	protected function send($url)
-	{
+	protected function send($url) {
 		// create a new cURL resource
 		$ch = curl_init();
 
@@ -120,5 +122,5 @@ class Subscriber_Golan extends Billrun_Subscriber
 
 		return $output;
 	}
-	
+
 }
