@@ -171,7 +171,7 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements	Billrun_Pl
 				),
 			);
 
-		$durationAlert = $lines->aggregate(array('$match' => array('type' => 'ggsn')), array_merge($aggregateQuery, array($durationThrs)));
+		$durationAlert = $lines->aggregate( array_merge($aggregateQuery, array($durationThrs)));
 		foreach ($durationAlert as &$alert) {
 			$alert['units'] = 'SEC';
 			$alert['value'] = $alert['duration'];
