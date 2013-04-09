@@ -104,23 +104,23 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements	Billrun_Pl
 	 */
 	protected function detectHourlyDataExceeders($linesCol, $aggregateQuery) {
 		$exceeders = array();
-		$timeWindow= strtotime("-" . Billrun_Factory::config()->getConfigValue('ggsn.hourly.timespan','4 hours'));
-		$limit = floatval(Billrun_Factory::config()->getConfigValue('ggsn.hourly.thresholds.datalimit',0));
-		$aggregateQuery[1]['$match']['$and'] =  array( array('record_opening_time' => array('$gte' => date('YmdHis',$timeWindow))),
-														array('record_opening_time' => $aggregateQuery[1]['$match']['record_opening_time']) );						
-	
+		$timeWindow = strtotime("-" . Billrun_Factory::config()->getConfigValue('ggsn.hourly.timespan', '4 hours'));
+		$limit = floatval(Billrun_Factory::config()->getConfigValue('ggsn.hourly.thresholds.datalimit', 0));
+		$aggregateQuery[0]['$match']['$and'] = array(array('record_opening_time' => array('$gte' => date('YmdHis', $timeWindow))),
+			array('record_opening_time' => $aggregateQuery[0]['$match']['record_opening_time']));
 		//unset($aggregateQuery[0]['$match']['sgsn_address']);
-		unset($aggregateQuery[1]['$match']['record_opening_time']);
-		
-		$having =	array(
-				'$match' => array(
-					'$or' => array(
-							array( 'download' => array( '$gte' => $limit ) ),
-							array( 'upload' => array( '$gte' => $limit ) ),		
-					),
+		unset($aggregateQuery[0]['$match']['record_opening_time']);
+		$having = array(
+			'$match' => array(
+				'$or' => array(
+					array('download' => array('$gte' => $limit)),
+					array('upload' => array('$gte' => $limit)),
 				),
-			);
-		foreach($linesCol->aggregate(array_merge($aggregateQuery, array($having))) as $alert) {
+			),
+		);
+
+		$alerts = $linesCol->aggregate(array('$match' => array('type' => 'ggsn')), array_merge($aggregateQuery, array($having)));
+		foreach ($alerts as $alert) {
 			$alert['units'] = 'KB';
 			$alert['value'] = ($alert['download'] > $limit ? $alert['download'] : $alert['upload']);
 			$alert['threshold'] = $limit;
@@ -136,18 +136,18 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements	Billrun_Pl
 	 * @param type $aggregateQuery the general aggregate query.
 	 * @return Array containing all the exceeding events.
 	 */
-	protected function detectDataExceeders($lines,$aggregateQuery) {
-		$limit = floatval(Billrun_Factory::config()->getConfigValue('ggsn.thresholds.datalimit',1000));
-		$dataThrs =	array(
-				'$match' => array(
-					'$or' => array(
-							array( 'download' => array( '$gte' => $limit ) ),
-							array( 'upload' => array( '$gte' => $limit ) ),		
-					),
+	protected function detectDataExceeders($lines, $aggregateQuery) {
+		$limit = floatval(Billrun_Factory::config()->getConfigValue('ggsn.thresholds.datalimit', 1000));
+		$dataThrs = array(
+			'$match' => array(
+				'$or' => array(
+					array('download' => array('$gte' => $limit)),
+					array('upload' => array('$gte' => $limit)),
 				),
-			);
-		$dataAlerts = $lines->aggregate(array_merge($aggregateQuery, array($dataThrs)) );
-		foreach($dataAlerts as &$alert) {
+			),
+		);
+		$dataAlerts = $lines->aggregate(array('$match' => array('type' => 'ggsn')), array_merge($aggregateQuery, array($dataThrs)));
+		foreach ($dataAlerts as &$alert) {
 			$alert['units'] = 'KB';
 			$alert['value'] = ($alert['download'] > $limit ? $alert['download'] : $alert['upload']);
 			$alert['threshold'] = $limit;
@@ -165,15 +165,14 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements	Billrun_Pl
 	protected function detectDurationExceeders($lines,$aggregateQuery) {
 		$threshold = floatval(Billrun_Factory::config()->getConfigValue('ggsn.thresholds.duration',2400));
 		unset($aggregateQuery[0]['$match']['$or']);
-		
-		$durationThrs =	array(
-				'$match' => array(
-					'duration' => array('$gte' => $threshold )
-				),
-			);
-		
-		$durationAlert = $lines->aggregate(array_merge($aggregateQuery, array($durationThrs)) );
-		foreach($durationAlert as &$alert) {
+		$durationThrs = array(
+			'$match' => array(
+				'duration' => array('$gte' => $threshold)
+			),
+		);
+
+		$durationAlert = $lines->aggregate(array('$match' => array('type' => 'ggsn')), array_merge($aggregateQuery, array($durationThrs)));
+		foreach ($durationAlert as &$alert) {
 			$alert['units'] = 'SEC';
 			$alert['value'] = $alert['duration'];
 			$alert['threshold'] = $threshold;
@@ -189,21 +188,15 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements	Billrun_Pl
 	 */
 	protected function getBaseAggregateQuery($charge_time) {
 		return array(
-				array(	
-					'$match' => array( 
-							'type' => 'ggsn', 
-					),
-				),
-				array(
-					'$match' => array( 
-						'deposit_stamp' => array('$exists' => false),
-						'event_stamp' => array('$exists' => false),
-						'record_opening_time' => array('$gt' => $charge_time),
-						'sgsn_address' => array('$regex' => '^(?!62\.90\.|37\.26\.)'),
-						'$or' => array(
-										array('fbc_downlink_volume' => array('$gt' => 0 )),
-										array('fbc_uplink_volume' => array('$gt' => 0))
-									),
+			array(
+				'$match' => array(
+					'deposit_stamp' => array('$exists' => false),
+					'event_stamp' => array('$exists' => false),
+					'record_opening_time' => array('$gt' => $charge_time),
+					'sgsn_address' => array('$regex' => '^(?!62\.90\.|37\.26\.)'),
+					'$or' => array(
+						array('fbc_downlink_volume' => array('$gt' => 0)),
+						array('fbc_uplink_volume' => array('$gt' => 0))
 					),
 				),
 				array(

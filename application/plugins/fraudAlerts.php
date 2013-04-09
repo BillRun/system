@@ -53,6 +53,7 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	public function handlerNotify($handler) {
 
 		$ret = $this->roamingNotify();
+
 		$this->sendResultsSummary($ret);
 		return $ret;
 	}
@@ -228,19 +229,19 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @param type $event the event to mark as dealt with.
 	 */
 	protected function markEvent($event) {
-			//mark events as dealt with.
-			$events_where = array( 
-					'_id' => array( '$in' => $event['id']),
-					'notify_time' => array( '$exists' => false ),
-			);
-			$events_update_set = array(
-					'$set' => array(
-						'notify_time' => time(),
-						'deposit_stamp' => $event['deposit_stamp'],
-					),
-			);
-			$update_options = array( 'multiple' => 1 );
-			Billrun_Factory::db()->eventsCollection()->update($events_where, $events_update_set, $update_options);
+		//mark events as dealt with.
+		$events_where = array(
+			'notify_time' => array('$exists' => false),
+			'_id' => array('$in' => $event['id']),
+		);
+		$events_update_set = array(
+			'$set' => array(
+				'notify_time' => time(),
+				'deposit_stamp' => $event['deposit_stamp'],
+			),
+		);
+		$update_options = array('multiple' => 1);
+		$this->eventsCol->update($events_where, $events_update_set, $update_options);
 	}
 	
 	/**
