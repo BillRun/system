@@ -21,7 +21,7 @@ class ildsPlugin extends Billrun_Plugin_BillrunPluginFraud {
 				'source' => 'ilds',
 			)
 		);
-		
+
 		$where = array(
 			'$match' => array(
 				'event_stamp' => array('$exists' => false),
