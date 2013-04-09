@@ -106,10 +106,10 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements	Billrun_Pl
 		$exceeders = array();
 		$timeWindow = strtotime("-" . Billrun_Factory::config()->getConfigValue('ggsn.hourly.timespan', '4 hours'));
 		$limit = floatval(Billrun_Factory::config()->getConfigValue('ggsn.hourly.thresholds.datalimit', 0));
-		$aggregateQuery[0]['$match']['$and'] = array(array('record_opening_time' => array('$gte' => date('YmdHis', $timeWindow))),
-			array('record_opening_time' => $aggregateQuery[0]['$match']['record_opening_time']));
-		//unset($aggregateQuery[0]['$match']['sgsn_address']);
-		unset($aggregateQuery[0]['$match']['record_opening_time']);
+		$aggregateQuery[1]['$match']['$and'] = array(array('record_opening_time' => array('$gte' => date('YmdHis', $timeWindow))),
+			array('record_opening_time' => $aggregateQuery[1]['$match']['record_opening_time']));
+		//unset($aggregateQuery[1]['$match']['sgsn_address']);
+		unset($aggregateQuery[1]['$match']['record_opening_time']);
 		$having = array(
 			'$match' => array(
 				'$or' => array(
@@ -119,7 +119,7 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements	Billrun_Pl
 			),
 		);
 
-		$alerts = $linesCol->aggregate(array('$match' => array('type' => 'ggsn')), array_merge($aggregateQuery, array($having)));
+		$alerts = $linesCol->aggregate(array_merge($aggregateQuery, array($having)));
 		foreach ($alerts as $alert) {
 			$alert['units'] = 'KB';
 			$alert['value'] = ($alert['download'] > $limit ? $alert['download'] : $alert['upload']);
@@ -146,7 +146,7 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements	Billrun_Pl
 				),
 			),
 		);
-		$dataAlerts = $lines->aggregate(array('$match' => array('type' => 'ggsn')), array_merge($aggregateQuery, array($dataThrs)));
+		$dataAlerts = $lines->aggregate(array_merge($aggregateQuery, array($dataThrs)));
 		foreach ($dataAlerts as &$alert) {
 			$alert['units'] = 'KB';
 			$alert['value'] = ($alert['download'] > $limit ? $alert['download'] : $alert['upload']);
@@ -166,10 +166,10 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements	Billrun_Pl
 		$threshold = floatval(Billrun_Factory::config()->getConfigValue('ggsn.thresholds.duration',2400));
 		unset($aggregateQuery[0]['$match']['$or']);
 		$durationThrs = array(
-			'$match' => array(
-				'duration' => array('$gte' => $threshold)
-			),
-		);
+				'$match' => array(
+					'duration' => array('$gte' => $threshold)
+				),
+			);
 
 		$durationAlert = $lines->aggregate(array('$match' => array('type' => 'ggsn')), array_merge($aggregateQuery, array($durationThrs)));
 		foreach ($durationAlert as &$alert) {
@@ -188,38 +188,43 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements	Billrun_Pl
 	 */
 	protected function getBaseAggregateQuery($charge_time) {
 		return array(
-			array(
-				'$match' => array(
-					'deposit_stamp' => array('$exists' => false),
-					'event_stamp' => array('$exists' => false),
-					'record_opening_time' => array('$gt' => $charge_time),
-					'sgsn_address' => array('$regex' => '^(?!62\.90\.|37\.26\.)'),
-					'$or' => array(
-						array('fbc_downlink_volume' => array('$gt' => 0)),
-						array('fbc_uplink_volume' => array('$gt' => 0))
-					),
-				),
 				array(
-					'$group' => array(
-						"_id" => array('imsi'=>'$served_imsi','msisdn' =>'$served_msisdn'),
-						"download" => array('$sum' => '$fbc_downlink_volume'),
-						"upload" => array('$sum' => '$fbc_uplink_volume'),
-						"duration" => array('$sum' => '$duration'),
-						'lines_stamps' => array('$addToSet' => '$stamp'),
-					),	
-				),
-				array(
-					'$project' => array(
-						'_id' => 0,
-						'download' => array('$multiply' => array('$download',0.001)),
-						'upload' => array('$multiply' => array('$upload',0.001)),
-						'duration' => 1,
-						'imsi' => '$_id.imsi',
-						'msisdn' => array('$substr'=> array('$_id.msisdn',5,10)),
-						'lines_stamps' => 1,
+					'$match' => 
+						array('type' => 'ggsn'),
 					),
-				),
-			);
+				array(
+					'$match' => array(
+						'deposit_stamp' => array('$exists' => false),
+						'event_stamp' => array('$exists' => false),
+						'record_opening_time' => array('$gt' => $charge_time),
+						'sgsn_address' => array('$regex' => '^(?!62\.90\.|37\.26\.)'),
+						'$or' => array(
+									array('fbc_downlink_volume' => array('$gt' => 0)),
+									array('fbc_uplink_volume' => array('$gt' => 0))
+							),
+						),
+					),
+					array(
+						'$group' => array(
+							"_id" => array('imsi'=>'$served_imsi','msisdn' =>'$served_msisdn'),
+							"download" => array('$sum' => '$fbc_downlink_volume'),
+							"upload" => array('$sum' => '$fbc_uplink_volume'),
+							"duration" => array('$sum' => '$duration'),
+							'lines_stamps' => array('$addToSet' => '$stamp'),
+						),	
+					),
+					array(
+						'$project' => array(
+							'_id' => 0,
+							'download' => array('$multiply' => array('$download',0.001)),
+							'upload' => array('$multiply' => array('$upload',0.001)),
+							'duration' => 1,
+							'imsi' => '$_id.imsi',
+							'msisdn' => array('$substr'=> array('$_id.msisdn',5,10)),
+							'lines_stamps' => 1,
+						),
+					),
+				);
 	}
 
 	/**
