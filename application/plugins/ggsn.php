@@ -65,9 +65,9 @@ use Billrun_Traits_FileSequenceChecking;
 
 		$aggregateQuery = $this->getBaseAggregateQuery($charge_time);
 
-		Billrun_Factory::log()->log("ggsnPlugin::handlerCollect collecting monthly data exceedres", Zend_Log::DEBUG);
+		Billrun_Factory::log()->log("ggsnPlugin::handlerCollect collecting monthly data exceeders", Zend_Log::DEBUG);
 		$dataExceedersAlerts = $this->detectDataExceeders($lines, $aggregateQuery);
-		Billrun_Factory::log()->log("ggsnPlugin::handlerCollect collecting hourly data exceedres", Zend_Log::DEBUG);
+		Billrun_Factory::log()->log("ggsnPlugin::handlerCollect collecting hourly data exceeders", Zend_Log::DEBUG);
 		$hourlyDataExceedersAlerts = $this->detectHourlyDataExceeders($lines, $aggregateQuery);
 
 		return array_merge($dataExceedersAlerts, $hourlyDataExceedersAlerts);
