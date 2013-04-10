@@ -1,14 +1,13 @@
 <?php
 
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
+/**
+ * @package         Billing
+ * @copyright       Copyright (C) 2012 S.D.O.C. LTD. All rights reserved.
+ * @license         GNU General Public License version 2 or later; see LICENSE.txt
  */
 
 /**
- * Description of nsn
- *
- * @author eran
+ * This is a plguin to provide NSN support to the billing system.
  */
 class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud 
 				implements	Billrun_Plugin_Interface_IParser,  
