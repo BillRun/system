@@ -33,6 +33,10 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$this->alertPath = isset($options['alertPath']) ?
 			$options['alertPath'] :
 			Billrun_Factory::config()->getConfigValue('fraudAlerts.alert.path', '/');
+		
+		$this->alertTypes = isset($options['alertTypes']) ?
+			$options['alertTypes'] :
+			Billrun_Factory::config()->getConfigValue('fraudAlerts.alert.types', array( 'nrtrde','ggsn', 'deposit','ilds','nsn') );
 
 		$this->isDryRun = isset($options['dryRun']) ?
 			$options['dryRun'] :
@@ -54,7 +58,6 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		
 		$ret = $this->roamingNotify();
 
-		$this->sendResultsSummary($ret);
 		return $ret;
 	}
 
@@ -65,7 +68,7 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	protected function roamingNotify() {
 		$retValue = array();
 		//Aggregate the  events by imsi  taking only the first one.
-		$events = $this->gatherEvents(array( 'nrtrde','ggsn', 'deposit','ilds','nsn'));
+		$events = $this->gatherEvents($this->alertTypes);
 		//Get the amount of alerts allow per run 0 means no limit (or a very high limit)
 		$alertsLeft = Billrun_Factory::config()->getConfigValue('fraudAlerts.alert_limit', 0);
 		
@@ -248,6 +251,7 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 			'$set' => array(
 				'notify_time' => time(),
 				'deposit_stamp' => $event['deposit_stamp'],
+				'returned_value' => $event['returned_value'],
 			),
 		);
 		$update_options = array('multiple' => 1);
@@ -287,104 +291,4 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$this->linesCol->update($lines_where, $lines_update_set, $update_options);				
 	}
 	
-	//================================================================= email notifications ========================================
-	/**
-	 * send  alerts results by email.
-	 */
-	protected  function sendResultsSummary($events) {
-		if(!Billrun_Factory::config()->getConfigValue('fraudAlerts.email.send_summary', false)) { return FALSE;}
-		$recipients = Billrun_Factory::config()->getConfigValue('fraudAlerts.email.recipients', array());
-		
-		Billrun_Log::getInstance()->log("Sending result to email", Zend_Log::DEBUG);
-		$seqData = $this->getSeqData($events);
-		$failed = $successful = 0;
-		foreach($events as $event) {
-			if(isset($event['returned_value']) && isset($event['returned_value']['success']) && $event['returned_value']['success']) {
-				$successful++;
-			} else {
-				$failed++;
-			}
-		}
-		
-		$msg =/*"Current Index: {$seqData['last']}\n".
-			"Previous Index: {$seqData['current']}\n".*/
-			"Count of failed: $failed".
-			"Count of success: $successful".
-			"\n".
-			"This mail contain 1 attachment for libreoffice and ms-office\n";
-		
-		$attachment = $this->generateMailCSV('/tmp/file'.date('U').'.csv',$events);
-		$mailer = Billrun_Factory::mailer()->
-									setSubject("NRTRDE status ".date(Billrun_Base::base_dateformat))->
-									setBodyText($msg)->
-									addAttachment($attachment);
-		
-		foreach($recipients as $recipient) {
-			$mailer->addTo($recipient);
-		}
-		
-		return $mailer->send();
-	}
-	
-	protected  function getSeqData($events) {	
-		 /*Billrun_Factory::db()->logCollection()->aggregate(array('$match' => array('source'=>'nrtrde')),array('$group' => array('_id' => '$received_time')),a);
-		try {
-			$last = Billrun_Factory::db()->logCollection()->query()->equals('source','nrtrde')->less('received_time',date(Billrun_Base::base_dateformat,$this->startTime))->cursor()->sort( array('_id' => -1 ))->limit(1);
-				foreach($last as $t) {
-					$last = $t->getRawData();
-					break;;
-				}
-				Billrun_Factory::log()->log(print_r($last,1),Zend_Log::DEBUG);
-				$lastSeq = $this->getFileSequenceData($last['file_name'], 'nrtrde');
-		} catch(Exception $e) {
-			$lastSeq = array('seq' => 0000);
-		}
-		
-		$current = Billrun_Factory::db()->logCollection()->query()->equals('source','nrtrde')->cursor()->sort( array('_id' => -1 ))->limit(1);
-		foreach($current as $t) {
-			$current = $t->getRawData();
-			break;;
-		}
-
-		Billrun_Factory::log()->log(print_r($current,1),Zend_Log::DEBUG);
-		$currentSeq = $this->getFileSequenceData($current['file_name'], 'nrtrde');*/
-		return array('last' =>000, 'current' => 00001);
-	}
-	
-	protected function generateMailCSV($filename, $events) {
-		$fp = fopen($filename, 'w');
-		$header = array('account_id','NDC_SN','imsi','event_type','subscriber_id','deposit_result','success');
-		fputcsv($fp, $header);
-		foreach ($events as $event) {
-			$csvEvent = array();
-			foreach ($header as $fieldKey) {
-				$csvEvent[$fieldKey] =  isset($event['returned_value'][$fieldKey]) ?
-												$event['returned_value'][$fieldKey] : 
-												( isset($event[$fieldKey]) ? $event[$fieldKey] : "");
-			}
-
-			fputcsv($fp, $csvEvent);
-		}
-
-		fclose($fp);
-		return new Zend_Mime_Part($filename);
-	}
-	
-	
-	/**
-	 * An helper function for the Billrun_Common_FileSequenceChecker  ( helper :) ) class.
-	 * Retrive the ggsn file date and sequence number
-	 * @param type $filename the full file name.
-	 * @return boolea|Array false if the file couldn't be parsed or an array containing the file sequence data
-	 *						[seq] => the file sequence number.
-	 *						[date] => the file date.  
-	 */
-	public function getFileSequenceData($filename,$type) {
-		Billrun_Factory::log()->log($filename,Zend_Log::DEBUG);
-		return array(
-				'seq' => Billrun_Util::regexFirstValue(Billrun_Factory::config()->getConfigValue($type.".sequence_regex.seq","/(\d+)/"), $filename),
-				'date' =>Billrun_Util::regexFirstValue(Billrun_Factory::config()->getConfigValue($type.".sequence_regex.date","/(20\d{6})/"), $filename),
-				'time' => Billrun_Util::regexFirstValue(Billrun_Factory::config()->getConfigValue($type.".sequence_regex.time","/\D(\d{4,6})\D/"), $filename)	,
-			);
-	}
 }
