@@ -56,8 +56,8 @@ class Subscriber_Golan extends Billrun_Subscriber {
 	 */
 	protected function request($phone, $time) {
 
-		$host = Billrun_Factory::config()->getConfigValue('provider.rpc.server', 'gtgt.no-ip.org');
-		$url = Billrun_Factory::config()->getConfigValue('provider.rpc.url', 'gt-dev/dev/rpc/subscribers_by_date.rpc.php');
+		$host = Billrun_Factory::config()->getConfigValue('provider.rpc.server', '');
+		$url = Billrun_Factory::config()->getConfigValue('provider.rpc.url', '');
 		$datetime_format = Billrun_Base::base_dateformat; // 'Y-m-d H:i:s';
 		$params = array(
 			'NDC_SN' => $this->NDC_SN($phone),
