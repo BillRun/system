@@ -172,7 +172,6 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase  {
 		}
 	}
 	
-	//================================================================= email notifications ========================================
 	/**
 	 * send  alerts results by email.
 	 */
