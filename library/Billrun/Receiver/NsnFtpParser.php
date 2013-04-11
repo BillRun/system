@@ -2,6 +2,7 @@
 
 
 /**
+ * @TODO change  placce in the directory structure Billrun/Receiver/ isn't the correct place!
  * Parse out from an Nsn system.
  *
  * @author eran
