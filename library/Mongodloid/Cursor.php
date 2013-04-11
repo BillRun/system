@@ -18,6 +18,10 @@ class Mongodloid_Cursor implements Iterator {
 	}
 
 	public function current() {
+		//IF  at the stsrt of the vector move to the first element.
+		if(!$this->_cursor->current() && $this->_cursor->hasNext()) {
+				$this->_cursor->next();
+		}
 		return new Mongodloid_Entity($this->_cursor->current());
 	}
 
