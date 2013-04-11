@@ -39,9 +39,12 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		}
 
 		$data = $this->request($key, $time);
-		$this->availableFields = array_keys($data);
-		$this->data = $data;
-
+		if (is_array($data)) {
+			$this->availableFields = array_keys($data);
+			$this->data = $data;
+		} else {
+			Billrun_Factory::log()->log('Failed to load Golan subscriber data', Zend_Log::ALERT);
+		}
 		return $this;
 	}
 
