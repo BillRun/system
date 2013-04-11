@@ -190,7 +190,7 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 			}
 		}
 		$parser->setLastParseLength( $data['record_length'] );
-		
+		//@TODO add unifiom field translation. ('record_opening_time',etc...)
 		return isset($this->nsnConfig[$data['record_type']]) ?  $data : false;
 	}
 	

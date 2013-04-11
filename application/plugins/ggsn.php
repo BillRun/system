@@ -267,6 +267,7 @@ use Billrun_Traits_FileSequenceChecking;
 			Billrun_Factory::log()->log("couldn't find  definition for {$type}", Zend_Log::DEBUG);
 		}
 		//Billrun_Factory::log()->log($asnObject->getType() . " : " . print_r($cdrLine,1) ,  Zend_Log::DEBUG);
+		//@TODO add unifiom field translation. ('record_opening_time',etc...)
 		return $cdrLine;
 	}
 

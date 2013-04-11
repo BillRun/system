@@ -101,10 +101,7 @@ class tap3Plugin  extends Billrun_Plugin_BillrunPluginBase
 				$cdrLine['record_type'] = $type;
 			}
 		} 
-		//else { FOR DEBUG
-			//Billrun_Factory::log()->log("couldn't find  definition for {$type}",  Zend_Log::DEBUG);
-		//}
-		//Billrun_Factory::log()->log($data->getType() . " : " . print_r($cdrLine,1) ,  Zend_Log::DEBUG);
+				//@TODO add unifiom field translation. ('record_opening_time',etc...)
 		return $cdrLine;
 	}
 	
