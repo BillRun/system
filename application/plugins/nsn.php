@@ -30,8 +30,6 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 	protected $fileStats = null;
 	
 	public function __construct($options = array()) {
-		parent::__construct($options);
-
 		$this->nsnConfig = (new Yaf_Config_Ini(Billrun_Factory::config()->getConfigValue('nsn.config_path')))->toArray();
 
 	}

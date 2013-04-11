@@ -22,9 +22,7 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 */
 	protected $isDryRun = false;
 
-	public function __construct($options = array(
-	)) {
-		parent::__construct($options);
+	public function __construct(array $options = array()) {
 
 		$this->alertServer = isset($options['alertHost']) ?
 			$options['alertHost'] :

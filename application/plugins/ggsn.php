@@ -26,8 +26,6 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Pl
 	protected $name = 'ggsn';
 
 	public function __construct($options = array()) {
-		parent::__construct($options);
-
 		$this->ggsnConfig = (new Yaf_Config_Ini(Billrun_Factory::config()->getConfigValue('ggsn.config_path')))->toArray();
 		$this->initParsing();
 		$this->addParsingMethods();
