@@ -72,9 +72,17 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 	}
 
 	public function afterDataParsing(&$row, $parser) {
-		if ($parser->getType() == 'nrtrde' && isset($row['callEventDuration'])) {
-			$callEventDuration = $row['callEventDuration'];
-			$row['callEventDurationRound'] = ceil($callEventDuration / 60) * 60;
+		if ($parser->getType() == 'nrtrde') {
+			// make the duration rounded by minute
+			if (isset($row['callEventDuration'])) {
+				$callEventDuration = $row['callEventDuration'];
+				$row['callEventDurationRound'] = ceil($callEventDuration / 60) * 60;
+			}
+
+			// add record opening time UTC aligned
+			if (isset($row['callEventStartTimeStamp'])) {
+				$row['unified_record_time'] = new MongoDate(Billrun_Util::dateTimeConvertShortToIso($row['callEventStartTimeStamp'], $row['utcTimeOffset']));
+			}
 		}
 	}
 
@@ -165,7 +173,7 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 			'$match' => array(
 				'record_type' => 'MOC',
 				'connectedNumber' => array('$regex' => '^972'),
-				'callEventStartTimeStamp' => array('$gte' => $charge_time),
+				'unified_record_time' => array('$gte' => $charge_time),
 				'event_stamp' => array('$exists' => false),
 				'deposit_stamp' => array('$exists' => false),
 				'callEventDurationRound' => array('$gt' => 0), // not sms
@@ -241,8 +249,8 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 		unset($group['$group']['sms_out']);
 		unset($having['$match']['sms_out']);
 		unset($project['$project']['sms_out']);
-		$timeWindow = strtotime("-" . Billrun_Factory::config()->getConfigValue('nnrtrde.hourly.timespan', '1h'));
-		$where['$match']['callEventStartTimeStamp'] = array('$gt' => date(self::time_format, $timeWindow));
+		$timeWindow = strtotime("-" . Billrun_Factory::config()->getConfigValue('nrtrde.hourly.timespan', '1h'));
+		$where['$match']['unified_record_time'] = array('$gt' => new MongoDate($timeWindow));
 		$group['$group']['sms_hourly'] = array('$sum' => 1);
 		$having['$match']['sms_hourly'] = array('$gte' => Billrun_Factory::config()->getConfigValue('nrtrde.hourly.thresholds.smsout', 250, 'int'));
 		$project['$project']['sms_hourly'] = 1;
@@ -253,7 +261,7 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 		unset($group['$group']['sms_hourly']);
 		unset($having['$match']['sms_hourly']);
 		unset($project['$project']['sms_hourly']);
-		$where['$match']['callEventStartTimeStamp'] = array('$gt' => date(self::time_format, $timeWindow));
+		$where['$match']['unified_record_time'] = array('$gt' => new MongoDate($timeWindow));
 		$where['$match']['callEventDurationRound'] = array('$gt' => 0);
 		$group['$group']['moc_nonisrael_hourly'] = array('$sum' => '$callEventDurationRound');
 		$having['$match']['moc_nonisrael_hourly'] = array('$gte' => Billrun_Factory::config()->getConfigValue('nrtrde.hourly.thresholds.mocnonisrael', 3000));
