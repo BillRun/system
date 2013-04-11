@@ -266,6 +266,7 @@ use Billrun_Traits_FileSequenceChecking;
 		} else {
 			Billrun_Factory::log()->log("couldn't find  definition for {$type}", Zend_Log::DEBUG);
 		}
+		$cdrLine['unified_record_time'] = new MongoDate(Billrun_Util::dateTimeConvertShortToIso($cdrLine['record_opening_time']));
 		//Billrun_Factory::log()->log($asnObject->getType() . " : " . print_r($cdrLine,1) ,  Zend_Log::DEBUG);
 		return $cdrLine;
 	}

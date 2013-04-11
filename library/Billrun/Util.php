@@ -81,5 +81,25 @@ class Billrun_Util {
 		}
 		return (isset($matches[$resIndex])) ? $matches[$resIndex] : FALSE;
 	}
+	
+	/**
+	 * method to convert short datetime (20090213145327) into ISO-8601 format (2009-02-13T14:53:27+01:00)
+	 * the method can be relative to timezone offset
+	 * 
+	 * @param string $datetime the datetime. can be all input types of strtotime function
+	 * @param type $offset the timezone offset +/-xxxx or +/-xx:xx
+	 * 
+	 * @return MongoDate MongoObject
+	 */
+	public static function dateTimeConvertShortToIso($datetime, $offset = '+00:00') {
+		if (strpos($offset, ':') === FALSE) {
+			$tz_offset = substr($offset, 0, 3) . ':00';
+		} else {
+			$tz_offset = $offset;
+		}
+		$date_formatted = str_replace(' ', 'T', date(Billrun_Base::base_dateformat, strtotime($datetime))) . $tz_offset;
+		$datetime = strtotime($date_formatted);
+		return $datetime;
+	}
 
 }
