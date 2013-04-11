@@ -116,10 +116,10 @@ abstract class Billrun_Base {
 			} 
 		}
 		$class = $called_class . '_' . ucfirst($class_type);
-		if (!class_exists($class, true)) {
+		if (!@class_exists($class, true)) {
 			// try to search in external sources (defined by Bootstrap)
 			$external_class = str_replace('Billrun_', '', $class);
-			if (!class_exists($external_class, true)) {
+			if (!@class_exists($external_class, true)) {
 				Billrun_Factory::log("Can't find class: " . $class, Zend_Log::EMERG);
 				return false;
 			}
