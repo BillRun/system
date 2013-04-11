@@ -28,7 +28,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		} else if (isset($params['imsi'])) {
 			$key = $params['imsi'];
 		} else {
-			Billrun_Factory::log('Cannot identified Golan subscriber. Require phone or imsi to load. Current parameters: ' . print_R($params), Zend_Log::ALERT);
+			Billrun_Factory::log()->log('Cannot identified Golan subscriber. Require phone or imsi to load. Current parameters: ' . print_R($params), Zend_Log::ALERT);
 			return $this;
 		}
 
