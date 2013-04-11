@@ -75,7 +75,7 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		foreach ($events as $event) {
 			$ret = $this->notifyOnEvent($event);
 			if (isset($ret['success']) && $ret['success']) {
-				$event['deposit_stamp'] = md5(serialize($ret).serialize($event['stamps']));//TOD change to value return from the server/email/something
+				$event['deposit_stamp'] = $event['stamps'][0];// remember what event you sent to the remote server
 				$event['returned_value'] = $ret;
 				//Billrun_Log::getInstance()->log("handlerNotify ".print_r($event,1), Zend_Log::DEBUG);
 				$this->markEvent($event);
@@ -182,7 +182,6 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 						'account_id' => 1337, 
 						'SMS' => 1, 
 						'EMAIL' => 1,
-						'nsoft_refund' => 1,
 						'success' => 1);
 		}
 	}
