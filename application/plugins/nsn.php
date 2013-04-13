@@ -175,21 +175,24 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 		$offset += 2;	
 		$data['record_type'] = $this->parseField(substr($line, $offset, 1), array('bcd_encode' => 1));
 		$offset += 1;
-
+		//Billrun_Factory::log()->log("Record_type : {$data['record_type']}",Zend_log::DEBUG);
 		if(isset($this->nsnConfig[$data['record_type']])) {
 			foreach ($this->nsnConfig[$data['record_type']] as $key => $fieldDesc) {
 				if($fieldDesc) {
 					if (isset($this->nsnConfig['fields'][$fieldDesc])) {
 							$length = intval(current($this->nsnConfig['fields'][$fieldDesc]), 10);
 							$data[$key] = $this->parseField(substr($line,$offset,$length), $this->nsnConfig['fields'][$fieldDesc]);
+							//Billrun_Factory::log()->log("Data $key : {$data[$key]}",Zend_log::DEBUG);
 							$offset += $length;
 					} else {
 						throw new Exception("Nsn:parse - Couldn't find field: $fieldDesc  ");
 					}
 				}
 			}
-		}
+			$data['unified_record_time'] = new MongoDate(Billrun_Util::dateTimeConvertShortToIso($data['charging_start_time']));
+		} 
 		$parser->setLastParseLength( $data['record_length'] );
+		
 		//@TODO add unifiom field translation. ('record_opening_time',etc...)
 		return isset($this->nsnConfig[$data['record_type']]) ?  $data : false;
 	}

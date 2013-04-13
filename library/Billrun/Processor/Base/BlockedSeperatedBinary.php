@@ -50,7 +50,7 @@ abstract  class Billrun_Processor_Base_BlockedSeperatedBinary extends Billrun_Pr
 
 		$this->backup();
 		
-		Billrun_Factory::dispatcher()->trigger('afterProcessorBackup', array($this));
+		Billrun_Factory::dispatcher()->trigger('afterProcessorBackup', array($this, &$this->filePath));
 		
 		return $this->data['data'];
 	}
