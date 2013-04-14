@@ -35,7 +35,22 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 	 */
 	protected $availableFields = array();
 
-	abstract function load();
+	public function __construct($options = array()) {
+		parent::__construct($options);
+		if (isset($options['availableFields'])) {
+			$this->availableFields = $options['availableFields'];
+		}
+	}
+
+	/**
+	 * method to load subsbscriber details
+	 */
+	public function __set($name, $value) {
+		if (in_array($name, $this->availableFields) && array_key_exists($name, $this->data)) {
+			$this->data[$name] = $value;
+		}
+		return null;
+	}
 
 	/**
 	 * method to get public field from the data container
@@ -44,10 +59,26 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 	 * @return mixed if data field  accessible return data field, else null
 	 */
 	public function __get($name) {
-		if (isset($this->availableFields[$name]) && array_key_exists($name, $this->data)) {
+		if (in_array($name, $this->availableFields) && array_key_exists($name, $this->data)) {
 			return $this->data[$name];
 		}
 		return null;
 	}
 
+	/**
+	 * method to load subsbscriber details
+	 * 
+	 * @param array $params load by those params 
+	 */
+	abstract public function load($params);
+
+	/**
+	 * method to save subsbscriber details
+	 */
+	abstract public function save();
+
+	/**
+	 * method to delete subsbscriber entity
+	 */
+	abstract public function delete();
 }

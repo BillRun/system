@@ -7,13 +7,12 @@
  */
 
 /**
- * This a plguin to provide GGSN support to the billing system.
+ * This is a plguin to provide GGSN support to the billing system.
  */
 class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plugin_Interface_IParser, Billrun_Plugin_Interface_IProcessor {
 
 	use Billrun_Traits_AsnParsing;
-
-use Billrun_Traits_FileSequenceChecking;
+	use Billrun_Traits_FileSequenceChecking;
 
 	const HEADER_LENGTH = 54;
 	const MAX_CHUNKLENGTH_LENGTH = 512;
@@ -26,9 +25,7 @@ use Billrun_Traits_FileSequenceChecking;
 	 */
 	protected $name = 'ggsn';
 
-	public function __construct($options = array()) {
-		parent::__construct($options);
-
+	public function __construct(array $options = array()) {
 		$this->ggsnConfig = (new Yaf_Config_Ini(Billrun_Factory::config()->getConfigValue('ggsn.config_path')))->toArray();
 		$this->initParsing();
 		$this->addParsingMethods();
@@ -54,8 +51,9 @@ use Billrun_Traits_FileSequenceChecking;
 		}
 	}
 
-	/////////////////////////////////////////  Alerts /////////////////////////////////////////
 
+	/////////////////////////////////////////  Alerts /////////////////////////////////////////
+	
 	/**
 	 * method to collect data which need to be handle by event
 	 */

@@ -39,11 +39,10 @@ class Billrun_Dispatcher extends Billrun_Spl_Subject {
 	 * By default it will take self instance
 	 * If require special dispatcher type will be passed in the params array
 	 *
-	 * @param array $params paramters of the instance
+	 * @param array $params parameters of the instance
 	 * @return type
 	 */
 	public static function getInstance(array $params = array()) {
-		//
 		if (isset($params['type'])) {
 			if (!isset(self::$instance[$params['type']])) {
 				settype($params['type'], 'string');

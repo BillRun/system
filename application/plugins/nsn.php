@@ -1,14 +1,13 @@
 <?php
 
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
+/**
+ * @package         Billing
+ * @copyright       Copyright (C) 2012 S.D.O.C. LTD. All rights reserved.
+ * @license         GNU General Public License version 2 or later; see LICENSE.txt
  */
 
 /**
- * Description of nsn
- *
- * @author eran
+ * This is a plguin to provide NSN support to the billing system.
  */
 class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud 
 				implements	Billrun_Plugin_Interface_IParser,  
@@ -30,9 +29,7 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 	
 	protected $fileStats = null;
 	
-	public function __construct($options = array()) {
-		parent::__construct($options);
-
+	public function __construct(array $options = array()) {
 		$this->nsnConfig = (new Yaf_Config_Ini(Billrun_Factory::config()->getConfigValue('nsn.config_path')))->toArray();
 
 	}

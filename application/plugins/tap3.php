@@ -24,9 +24,7 @@ class tap3Plugin  extends Billrun_Plugin_BillrunPluginBase
 	
 	const FILE_READ_AHEAD_LENGTH = 65535;
 
-	public function __construct($options = array()) {
-		parent::__construct($options);
-		
+	public function __construct(array $options = array()) {
 		$this->nsnConfig = (new Yaf_Config_Ini(Billrun_Factory::config()->getConfigValue('tap3.config_path')))->toArray();		
 		$this->initParsing();
 		$this->addParsingMethods();

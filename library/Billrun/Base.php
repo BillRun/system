@@ -89,7 +89,8 @@ abstract class Billrun_Base {
 	 */
 	static public function getInstance() {
 		$args = func_get_args();
-		if (!is_array($args)) {
+
+		if (isset($args['type'])) {
 			$type = $args['type'];
 			$args = array();
 		} else {
@@ -113,8 +114,17 @@ abstract class Billrun_Base {
 				$class_type = $config_type[$called_class::$type]['type'];
 				$args['type'] = $type;
 			} 
-		} 
+		}
 		$class = $called_class . '_' . ucfirst($class_type);
+		if (!@class_exists($class, true)) {
+			// try to search in external sources (defined by Bootstrap)
+			$external_class = str_replace('Billrun_', '', $class);
+			if (!@class_exists($external_class, true)) {
+				Billrun_Factory::log("Can't find class: " . $class, Zend_Log::EMERG);
+				return false;
+			}
+			$class = $external_class;
+		}
 		return new $class($args);
 	}
 
