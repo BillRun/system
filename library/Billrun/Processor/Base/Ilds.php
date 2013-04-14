@@ -10,7 +10,7 @@
  * Billing abstract processor ilds class
  *
  * @package  Billing
- * @since    1.0
+ * @since    0.5
  */
 class Billrun_Processor_Base_Ilds extends Billrun_Processor {
 

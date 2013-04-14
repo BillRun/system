@@ -10,7 +10,7 @@
  * Billing relocate receiver class
  *
  * @package  Billing
- * @since    1.0
+ * @since    0.5
  */
 class Billrun_Receiver_Relocate extends Billrun_Receiver_Base_LocalFiles {
 

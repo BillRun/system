@@ -10,7 +10,7 @@
  * Billing basic abstract class
  *
  * @package  base
- * @since    1.0
+ * @since    0.5
  */
 abstract class Billrun_Base {
 

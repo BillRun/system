@@ -10,7 +10,7 @@
  * Billing calculator class
  *
  * @package  calculator
- * @since    1.0
+ * @since    0.5
  */
 abstract class Billrun_Calculator extends Billrun_Base {
 

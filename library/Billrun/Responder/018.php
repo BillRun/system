@@ -9,7 +9,7 @@
  * Billing Remote Files responder class
  *
  * @package  Billing
- * @since    1.0
+ * @since    0.5
  * TODO ! ACTUALLY IMPLEMENT!! THERESCURRENTLY NO SPEC'S FOR THIS ! TODO
  */
 class Billrun_Responder_018 extends Billrun_Responder_Base_Ilds {

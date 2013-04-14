@@ -10,7 +10,7 @@
  * Billing abstract fraud plugin class
  *
  * @package  plugin
- * @since    1.0
+ * @since    0.5
  */
 abstract class Billrun_Plugin_BillrunPluginFraud extends Billrun_Plugin_BillrunPluginBase {
 

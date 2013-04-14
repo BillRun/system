@@ -9,7 +9,7 @@
  * Billing dispatcher class
  *
  * @package  Dispatcher
- * @since    1.0
+ * @since    0.5
  */
 class Billrun_Dispatcher extends Billrun_Spl_Subject {
 

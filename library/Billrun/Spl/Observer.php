@@ -10,7 +10,7 @@
  * Billing Spl Observer
  *
  * @package SPL
- * @since    1.0
+ * @since    0.5
  */
 abstract class Billrun_Spl_Observer implements SplObserver {
 

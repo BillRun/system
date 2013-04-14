@@ -10,7 +10,7 @@
  * Billing abstract generator class
  *
  * @package  Billing
- * @since    1.0
+ * @since    0.5
  */
 abstract class Billrun_Generator extends Billrun_Base {
 

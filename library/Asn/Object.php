@@ -10,7 +10,7 @@
  * This define a general ASN object.
  *
  * @package  ASN
- * @since    1.0
+ * @since    0.5
  */
 class Asn_Object extends Asn_Base {
 

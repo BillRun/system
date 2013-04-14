@@ -10,7 +10,7 @@
  * This class holds a mapping to all the types there is in ASN specifications to classes.
  *
  * @package  ASN
- * @since    1.0
+ * @since    0.5
  */
 class Asn_Types {
 

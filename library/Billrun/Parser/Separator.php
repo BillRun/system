@@ -10,7 +10,7 @@
  * Billing parser class for separator
  *
  * @package  Billing
- * @since    1.0
+ * @since    0.5
  * @todo should make first derivative parser text and then fixed parser will inherited text parser
  */
 class Billrun_Parser_Separator extends Billrun_Parser {

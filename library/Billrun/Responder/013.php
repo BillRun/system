@@ -9,7 +9,7 @@
  * Billing 013 Responder file processor
  *
  * @package  Billing
- * @since    1.0
+ * @since    0.5
  * TODO ! ACTUALLY IMPLEMENT!! THERES CURRENTLY NO SPEC'S FOR THIS ! TODO
  */
 class Billrun_Responder_013 extends Billrun_Responder_Base_Ilds {

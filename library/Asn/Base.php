@@ -11,7 +11,7 @@
  * It defines some static functions deal with ASN data/objects
  *
  * @package  ASN
- * @since    1.0
+ * @since    0.5
  */
 class Asn_Base {
 

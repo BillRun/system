@@ -12,7 +12,7 @@
  * require to generate csv contain how much to credit each account
  *
  * @package  Billing
- * @since    1.0
+ * @since    0.5
  */
 class Billrun_Generator_Ilds extends Billrun_Generator {
 	/**

@@ -10,7 +10,7 @@
  * Billing cache class
  *
  * @package  Config
- * @since    1.0
+ * @since    0.5
  */
 class Billrun_Cache {
 

@@ -9,7 +9,7 @@
  * Billing abstract receiver class
  *
  * @package  Billing
- * @since    1.0
+ * @since    0.5
  */
 abstract class Billrun_Responder extends Billrun_Base {
 

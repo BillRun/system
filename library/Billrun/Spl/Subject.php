@@ -10,7 +10,7 @@
  * Billing Spl Object
  *
  * @package  SPL
- * @since    1.0
+ * @since    0.5
  */
 class Billrun_Spl_Subject implements SplSubject {
 

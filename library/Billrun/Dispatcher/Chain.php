@@ -10,7 +10,7 @@
  * Billing dispatcher chain of responsibility class
  *
  * @package  Dispatcher
- * @since    1.0
+ * @since    0.5
  */
 class Billrun_Dispatcher_Chain extends Billrun_Dispatcher {
 

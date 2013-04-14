@@ -10,7 +10,7 @@
  * Billing db class
  *
  * @package  Db
- * @since    1.0
+ * @since    0.5
  */
 class Billrun_Connection extends Mongodloid_Connection {
 

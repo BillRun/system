@@ -10,7 +10,7 @@
  * The handler can be extend the system to plugins
  *
  * @package  handler
- * @since    1.0
+ * @since    0.5
  */
 class Billrun_Handler extends Billrun_Base {
 

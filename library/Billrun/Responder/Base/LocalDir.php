@@ -9,7 +9,7 @@
  * Billing Remote Files responder class
  *
  * @package  Billing
- * @since    1.0
+ * @since    0.5
  */
 abstract class Billrun_Responder_Base_LocalDir extends Billrun_Responder_Base_FilesResponder {
 

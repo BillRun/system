@@ -9,7 +9,7 @@
  * Billing receiver for ftp
  *
  * @package  Billing
- * @since    1.0
+ * @since    0.5
  */
 class Billrun_Receiver_Ftp extends Billrun_Receiver {
 

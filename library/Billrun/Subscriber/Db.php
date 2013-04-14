@@ -10,7 +10,7 @@
  * Billing subscriber class based on database
  *
  * @package  Billing
- * @since    1.0
+ * @since    0.5
  */
 class Billrun_Subscriber_Db extends Billrun_Subscriber {
 

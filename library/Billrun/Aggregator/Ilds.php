@@ -10,7 +10,7 @@
  * Billing aggregator class for ilds records
  *
  * @package  calculator
- * @since    1.0
+ * @since    0.5
  */
 class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 

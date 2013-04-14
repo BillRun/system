@@ -11,7 +11,7 @@
  * Based on Zend Log class
  *
  * @package  Billing
- * @since    1.0
+ * @since    0.5
  */
 class Billrun_Log extends Zend_Log {
 

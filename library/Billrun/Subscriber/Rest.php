@@ -10,7 +10,7 @@
  * Billing abstract subscriber class based on rest
  *
  * @package  Billing
- * @since    1.0
+ * @since    0.5
  */
 class Billrun_Subscriber_Rest extends Billrun_Subscriber {
 

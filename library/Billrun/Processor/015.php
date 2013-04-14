@@ -10,7 +10,7 @@
  * Billing processor for 015 class
  *
  * @package  Billing
- * @since    1.0
+ * @since    0.5
  */
 class Billrun_Processor_015 extends Billrun_Processor_Base_Ilds {
 

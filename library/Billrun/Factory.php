@@ -10,7 +10,7 @@
  * Billing factory class
  *
  * @package  Factory
- * @since    1.0
+ * @since    0.5
  */
 class Billrun_Factory {
 

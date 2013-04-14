@@ -10,7 +10,7 @@
  * Billing parser class for binary size
  *
  * @package  Billing
- * @since    1.0
+ * @since    0.5
  * @todo should make first derivative parser text and then fixed parser will inherited text parser
  */
 abstract class Billrun_Parser_Base_Binary extends Billrun_Parser {

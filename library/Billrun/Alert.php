@@ -10,7 +10,7 @@
  * Billing interface Alertor class
  *
  * @package  calculator
- * @since    1.0
+ * @since    0.5
  */
 abstract class Billrun_Alert extends Billrun_Base {
 

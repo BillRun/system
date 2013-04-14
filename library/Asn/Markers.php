@@ -10,7 +10,7 @@
  * This class holds the constats that are use in ASN.
  *
  * @package  ASN
- * @since    1.0
+ * @since    0.5
  */
 class Asn_Markers {
 

@@ -10,7 +10,7 @@
  * Billing abstract subscriber class
  *
  * @package  Billing
- * @since    1.0
+ * @since    0.5
  */
 abstract class Billrun_Subscriber extends Billrun_Base {
 

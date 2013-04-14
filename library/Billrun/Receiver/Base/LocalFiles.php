@@ -10,7 +10,7 @@
  * Billing Files receiver class
  *
  * @package  Billing
- * @since    1.0
+ * @since    0.5
  */
 abstract class Billrun_Receiver_Base_LocalFiles extends Billrun_Receiver {
 
