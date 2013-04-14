@@ -61,9 +61,12 @@ use Billrun_Traits_FileSequenceChecking;
 	 */
 	public function handlerCollect() {
 		$lines = Billrun_Factory::db()->linesCollection();
-		$charge_time = $this->get_last_charge_time(true) - date_default_timezone_get() ;
-
-		$aggregateQuery = $this->getBaseAggregateQuery(new MongoDate($charge_time));
+		
+		//@TODO  switch  these lines  once  you have the time to test it.
+		//$charge_time = new MongoDate($this->get_last_charge_time(true) - date_default_timezone_get() );
+		$charge_time = $this->get_last_charge_time();
+		
+		$aggregateQuery = $this->getBaseAggregateQuery($charge_time);
 
 		Billrun_Factory::log()->log("ggsnPlugin::handlerCollect collecting monthly data exceeders", Zend_Log::DEBUG);
 		$dataExceedersAlerts = $this->detectDataExceeders($lines, $aggregateQuery);
@@ -203,9 +206,12 @@ use Billrun_Traits_FileSequenceChecking;
 			),
 			array(
 				'$match' => array(
-					'unified_record_time' => array('$gt' => $charge_time),
+					//@TODO  switch to unified time once you have the time to test it
+					//'unified_record_time' => array('$gt' => $charge_time),
+					'record_opening_time' => array('$gt' => $charge_time),
 					'deposit_stamp' => array('$exists' => false),
 					'event_stamp' => array('$exists' => false),
+					
 					'sgsn_address' => array('$regex' => '^(?!62\.90\.|37\.26\.)'),
 					'$or' => array(
 						array('fbc_downlink_volume' => array('$gt' => 0)),
@@ -262,11 +268,14 @@ use Billrun_Traits_FileSequenceChecking;
 			$cdrLine = $this->getASNDataByConfig($asnObject, $this->ggsnConfig[$type], $this->ggsnConfig['fields']);
 			if ($cdrLine && !isset($cdrLine['record_type'])) {
 				$cdrLine['record_type'] = $type;
-			}
+			}			
+			//convert to unified time GMT  time.
+			$timeOffset = (isset($cdrLine['ms_timezone']) ? $cdrLine['ms_timezone'] : date('P') );
+			$cdrLine['unified_record_time'] = new MongoDate(  Billrun_Util::dateTimeConvertShortToIso( $cdrLine['record_opening_time'], $timeOffset ) );
 		} else {
-			Billrun_Factory::log()->log("couldn't find  definition for {$type}", Zend_Log::DEBUG);
+			Billrun_Factory::log()->log("couldn't find  definition for {$type}", Zend_Log::INFO);
 		}
-		$cdrLine['unified_record_time'] = new MongoDate(Billrun_Util::dateTimeConvertShortToIso($cdrLine['record_opening_time'],$cdrLine['ms_timezone']));
+		
 		//Billrun_Factory::log()->log($asnObject->getType() . " : " . print_r($cdrLine,1) ,  Zend_Log::DEBUG);
 		//@TODO add unifiom field translation. ('record_opening_time',etc...)
 		return $cdrLine;
@@ -333,9 +342,10 @@ use Billrun_Traits_FileSequenceChecking;
 			'timezone' => function ($data) {
 				$smode =unpack('c*', $data);
 				//$timeSaving=intval($smode[2] < 3 ? $smode[2] : 0 );
-				$quarterOffset = intval($smode[1]);				
-				$h = str_pad(intval($quarterOffset/4), 2 ,"0", STR_PAD_LEFT);
-				$m = str_pad(($quarterOffset%4)*15, 2, "0", STR_PAD_LEFT);
+				//time zone offset is repesented  by  multiples of  15 minutes.
+				$quarterOffset = intval($smode[1]);
+				$h = str_pad(intval($quarterOffset/4), 2 ,"0", STR_PAD_LEFT); // calc the offset hours
+				$m = str_pad(($quarterOffset%4)*15, 2, "0", STR_PAD_LEFT); // calc the offset minutes
 				return  (($quarterOffset > 0) ? "+" : "-") . "$h:$m" ;
 			},
 			'ch_ch_selection_mode' => function($data) {
