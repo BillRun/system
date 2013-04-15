@@ -26,7 +26,7 @@ class ildsPlugin extends Billrun_Plugin_BillrunPluginFraud {
 			'$match' => array(
 				'event_stamp' => array('$exists' => false),
 				'deposit_stamp' => array('$exists' => false),
-				'call_start_dt' => array('$gte' => $charge_time),
+				'billrun' => array('$exists' => false),
 				'price_customer' => array('$exists' => true),
 			),
 		);
