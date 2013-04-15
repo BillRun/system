@@ -7,7 +7,7 @@
  */
 
 /**
- * Billing calculator class
+ * Billing calculator base class
  *
  * @package  calculator
  * @since    0.5
@@ -27,6 +27,11 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	 */
 	protected $data = array();
 
+	/**
+	 * constructor of the class
+	 * 
+	 * @param array $options the options of object load
+	 */
 	public function __construct($options = array()) {
 		parent::__construct($options);
 		

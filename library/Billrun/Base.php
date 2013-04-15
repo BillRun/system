@@ -30,6 +30,13 @@ abstract class Billrun_Base {
 	protected $stamp = null;
 
 	/**
+	 * Base array instances container
+	 *
+	 * @var array
+	 */
+	static protected $instance = array();
+	
+	/**
 	 * constant for base date format
 	 */
 	const base_dateformat = 'Y-m-d H:i:s';
@@ -89,7 +96,12 @@ abstract class Billrun_Base {
 	 */
 	static public function getInstance() {
 		$args = func_get_args();
-
+		
+		$stamp = md5(serialize($args));
+		if (isset(self::$instance[$stamp])) {
+			return self::$instance[$stamp];
+		}
+		
 		if (isset($args['type'])) {
 			$type = $args['type'];
 			$args = array();
@@ -125,7 +137,9 @@ abstract class Billrun_Base {
 			}
 			$class = $external_class;
 		}
-		return new $class($args);
+		
+		self::$instance[$stamp] = new $class($args);
+		return self::$instance[$stamp];
 	}
 
 	/**
