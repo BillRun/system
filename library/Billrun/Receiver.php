@@ -58,7 +58,7 @@ abstract class Billrun_Receiver extends Billrun_Base {
 	 * 
 	 * @todo refactoring this method
 	 */
-	protected function logDB($path, $remoteHost = '') {
+	protected function logDB($path, $remoteHost = '', $extraData = array()) {
 		$log = Billrun_Factory::db()->logCollection();
 
 		$log_data = array(
@@ -66,6 +66,7 @@ abstract class Billrun_Receiver extends Billrun_Base {
 			'path' => $path,
 			'file_name' => basename($path),
 			'retrieved_from' => $remoteHost,
+			'extra_data' => $extraData,
 		);
 
 		$log_data['stamp'] = md5(serialize($log_data));
@@ -86,7 +87,9 @@ abstract class Billrun_Receiver extends Billrun_Base {
 	 */
 	protected function isFileReceived($filename, $type) {
 		$log = Billrun_Factory::db()->logCollection();
-		$resource = $log->query()->equals('source', $type)->equals('file_name', $filename);
+		$query = array();
+		Billrun_Factory::dispatcher()->trigger('alertisFileReceivedQuery', array(&$query, $type, $this));
+		$resource = $log->query($query)->equals('source', $type)->equals('file_name', $filename);
 		return $resource->count() > 0;
 	}
 	

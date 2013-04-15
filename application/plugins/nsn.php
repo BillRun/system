@@ -68,6 +68,7 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 	}
 	
 	/**
+	 * (dispatcher hook)
 	 * Check recieved file sequences
 	 * @param type $receiver
 	 * @param type $filepaths
@@ -79,6 +80,26 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 		$this->checkFilesSeq($filepaths, $hostname);
 	}
 	
+	/**
+	 * (dispatcher hook)
+	 * alter the file name to match the month the file was recevied to prevent duplicate files.
+	 */
+	public function beforeFTPFileReceived(&$file, $receiver, $hostName, &$extraData) {
+		if($receiver->getType() != $this->getName()) { return; } 
+		$extraData['month'] = date('Ym');
+	}
+
+	/**
+	 *  (dispatcher hook)
+	 *  @param $query the query to prform on the DB to detect is the file was received.
+	 *  @param $type the type of file to check
+	 *  @param $receiver the reciver instance.
+	 */
+	public function alertisFileReceivedQuery(&$query, $type, $receiver ) {
+		if($type != $this->getName()) { return; }
+		//check if the file was received more then an hour ago.
+		$query['extra_data.month'] = date('Ym', time() - 3600);
+	}
 	/**
 	 * @see Billrun_Plugin_BillrunPluginFraud::handlerCollect
 	 */
