@@ -58,7 +58,7 @@ abstract class Billrun_Receiver extends Billrun_Base {
 	 * 
 	 * @todo refactoring this method
 	 */
-	protected function logDB($path, $remoteHost = '', $extraData = array()) {
+	protected function logDB($path, $remoteHost = '', $extraData = false ) {
 		$log = Billrun_Factory::db()->logCollection();
 
 		$log_data = array(
@@ -66,8 +66,10 @@ abstract class Billrun_Receiver extends Billrun_Base {
 			'path' => $path,
 			'file_name' => basename($path),
 			'retrieved_from' => $remoteHost,
-			'extra_data' => $extraData,
 		);
+		if($extraData) {
+			$log_data['extra_data'] = $extraData;
+		}
 
 		$log_data['stamp'] = md5(serialize($log_data));
 		$log_data['received_time'] = date(self::base_dateformat);
