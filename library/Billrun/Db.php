@@ -41,7 +41,7 @@ class Billrun_Db extends Mongodloid_Db {
 	static public function getInstance() {
 		$config = Billrun_Factory::config();
 		$conn = Billrun_Connection::getInstance($config->db->host, $config->db->port);
-		return $conn->getDB($config->db->name);
+		return $conn->getDB($config->db->name, $config->db->user, $config->db->password);
 	}
 
 	/**
