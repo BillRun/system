@@ -98,7 +98,7 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 	public function alertisFileReceivedQuery(&$query, $type, $receiver ) {
 		if($type != $this->getName()) { return; }
 		//check if the file was received more then an hour ago.
-		$query['extra_data.month'] = date('Ym', time() - 3600);
+		$query['extra_data.month'] =array('$gt' => date('Ym', strtotime('previous month')));
 	}
 	/**
 	 * @see Billrun_Plugin_BillrunPluginFraud::handlerCollect
