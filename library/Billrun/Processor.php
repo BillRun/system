@@ -199,7 +199,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 
 		Billrun_Factory::dispatcher()->trigger('afterProcessorBackup', array($this , &$this->filePath));
 		
-		return $this->data['data'];
+		return $this->data['stored_data'];
 	}
 
 	/**
@@ -272,6 +272,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 		}
 
 		$lines = Billrun_Factory::db()->linesCollection();
+		$this->data['stored_data'] = array();
 
 		foreach ($this->data['data'] as $row) {
 			$entity = new Mongodloid_Entity($row);
@@ -279,7 +280,9 @@ abstract class Billrun_Processor extends Billrun_Base {
 				Billrun_Factory::log()->log("processor::store - DUPLICATE! trying to insert duplicate line with stamp of : {$entity->get('stamp')}", Zend_Log::NOTICE);
 				continue;
 			}
+			
 			$entity->save($lines, true);
+			$this->data['stored_data'][] = $row;
 		}
 
 		return true;
