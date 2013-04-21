@@ -271,14 +271,18 @@ abstract class Billrun_Processor extends Billrun_Base {
 			return false;
 		}
 
+		Billrun_Factory::log()->log("Store data of file " . basename($this->filePath), Zend_Log::DEBUG);
+		
 		$lines = Billrun_Factory::db()->linesCollection();
 
 		foreach ($this->data['data'] as $row) {
-			$entity = new Mongodloid_Entity($row);
-			if ($lines->query('stamp', $entity->get('stamp'))->count() > 0) {
-				Billrun_Factory::log()->log("processor::store - DUPLICATE! trying to insert duplicate line with stamp of : {$entity->get('stamp')}", Zend_Log::NOTICE);
+			$stamp = $row['stamp'];
+			Billrun_Factory::log()->log("Store line with the stamp " . $stamp . " (" . $row['type'] . ")", Zend_Log::DEBUG);
+			if ($lines->query('stamp', $stamp)->count() > 0) {
+				Billrun_Factory::log()->log("processor::store - DUPLICATE! trying to insert duplicate line with stamp of : " . $stamp, Zend_Log::NOTICE);
 				continue;
 			}
+			$entity = new Mongodloid_Entity($row);
 			$entity->save($lines, true);
 		}
 
