@@ -14,10 +14,14 @@
  */
 class Billrun_Connection extends Mongodloid_Connection {
 
-	public function getDB($db) {
+	public function getDB($db, $user = false , $pass = false) {
 		if (!isset($this->_dbs[$db]) || !$this->_dbs[$db]) {
 			$this->forceConnect();
-			$this->_dbs[$db] = new Billrun_DB($this->_connection->selectDB($db), $this);
+			$newDb = $this->_connection->selectDB($db);
+			if($user) {
+				$newDb->authenticate($user,$pass);
+			}
+			$this->_dbs[$db] = new Billrun_DB($newDb, $this);
 		}
 
 		return $this->_dbs[$db];

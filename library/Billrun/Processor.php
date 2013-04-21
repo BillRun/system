@@ -134,20 +134,20 @@ abstract class Billrun_Processor extends Billrun_Base {
 			->equals('source', static::$type)
 			->notExists('process_time');
 
-		$lines = array();
+		$linesCount = 0;
 		foreach ($files as $file) {
 			$this->setStamp($file->getID());
 			$this->loadFile($file->get('path'), $file->get('retrieved_from'));
-			$processed_lines = $this->process();
-			if(FALSE !== $processed_lines) {
-				$lines = array_merge($lines, $processed_lines);
+			$processedLinesCount = $this->process();
+			if(FALSE !== $processedLinesCount) {
+				$linesCount += $processedLinesCount;
 				$file->collection($log);
 				$file->set('process_time', date(self::base_dateformat));
 			}
 			$this->init();
 		}
 
-		return $lines;
+		return $linesCount;
 	}
 
 	/**
@@ -172,25 +172,20 @@ abstract class Billrun_Processor extends Billrun_Base {
 
 		if ($this->parse() === FALSE) {
 			Billrun_Factory::log()->log("Billrun_Processor: cannot parse " . $this->filePath, Zend_Log::ERR);
-			return false;
+			return FALSE;
 		}
 
 		Billrun_Factory::dispatcher()->trigger('afterProcessorParsing', array($this));
-
-		if ($this->logDB() === FALSE) {
-			Billrun_Factory::log()->log("Billrun_Processor: cannot log parsing action " . $this->filePath, Zend_Log::WARN);
-		}
-
 		Billrun_Factory::dispatcher()->trigger('beforeProcessorStore', array($this));
 
 		if ($this->store() === FALSE) {
 			Billrun_Factory::log()->log("Billrun_Processor: cannot store the parser lines " .  $this->filePath, Zend_Log::ERR);
-			return false;
+			return FALSE;
 		}
 
 		if ($this->logDB() === FALSE) {
 			Billrun_Factory::log()->log("Billrun_Processor: cannot log parsing action" .  $this->filePath, Zend_Log::WARN);
-			return false;
+			return FALSE;
 		}
 		
 		Billrun_Factory::dispatcher()->trigger('afterProcessorStore', array($this));
@@ -199,7 +194,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 
 		Billrun_Factory::dispatcher()->trigger('afterProcessorBackup', array($this , &$this->filePath));
 		
-		return $this->data['data'];
+		return count($this->data['data']);
 	}
 
 	/**
@@ -271,14 +266,18 @@ abstract class Billrun_Processor extends Billrun_Base {
 			return false;
 		}
 
+		Billrun_Factory::log()->log("Store data of file " . basename($this->filePath), Zend_Log::DEBUG);
+		
 		$lines = Billrun_Factory::db()->linesCollection();
 
 		foreach ($this->data['data'] as $row) {
-			$entity = new Mongodloid_Entity($row);
-			if ($lines->query('stamp', $entity->get('stamp'))->count() > 0) {
-				Billrun_Factory::log()->log("processor::store - DUPLICATE! trying to insert duplicate line with stamp of : {$entity->get('stamp')}", Zend_Log::NOTICE);
+			$stamp = $row['stamp'];
+			Billrun_Factory::log()->log("Store line with the stamp " . $stamp . " (" . $row['type'] . ")", Zend_Log::DEBUG);
+			if ($lines->query('stamp', $stamp)->count() > 0) {
+				Billrun_Factory::log()->log("processor::store - DUPLICATE! trying to insert duplicate line with stamp of : " . $stamp, Zend_Log::NOTICE);
 				continue;
 			}
+			$entity = new Mongodloid_Entity($row);
 			$entity->save($lines, true);
 		}
 
@@ -311,7 +310,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 		if (file_exists($file_path)) {
 			$this->filePath = $file_path;
 			$this->filename = substr($file_path, strrpos($file_path, '/'));
-			$this->retreivedHostname = $retrivedHost;
+			$this->retrievedHostname = $retrivedHost;
 			$this->fileHandler = fopen($file_path, 'r');
 			Billrun_Factory::log()->log("Billrun Processor load the file: " . $file_path, Zend_Log::INFO);
 		} else {

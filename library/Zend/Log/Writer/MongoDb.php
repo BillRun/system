@@ -230,6 +230,9 @@ class Zend_Log_Writer_MongoDb extends Zend_Log_Writer_Abstract
         } else {
             $options = $config['options'];
         }
+		if (isset($config['database'])) {
+			$options['db'] = $config['database'];
+		}
         $mongo = new MongoClient($server, $options);
         return $mongo->selectDB($config['database'])
             ->selectCollection($config['collection']);

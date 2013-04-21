@@ -91,8 +91,9 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 			$files = $this->ftp->getDirectory($config['remote_directory'])->getContents();
 			Billrun_Factory::log()->log("FTP: Starting to receive from remote host : $hostName", Zend_Log::DEBUG);
 			foreach ($files as $file) {
+				$extraData = array();
 				Billrun_Factory::log()->log("FTP: Found file " . $file->name . " on remote host", Zend_Log::DEBUG);
-				Billrun_Factory::dispatcher()->trigger('beforeFTPFileReceived', array(&$file, $this, $hostName));
+				Billrun_Factory::dispatcher()->trigger('beforeFTPFileReceived', array(&$file, $this, $hostName, &$extraData));
 				if ($file->isFile() && $this->isFileValid($file->name,$file->path)) {
 					if($this->isFileReceived($file->name,$this->getType())) {
 							if( Billrun_Factory::config()->isProd() && (isset($config['delete_received']) && $config['delete_received'] ) ) {
@@ -108,9 +109,9 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 						continue;
 					}
 					$received_path = $this->workspace . $file->name;
-					Billrun_Factory::dispatcher()->trigger('afterFTPFileReceived', array(&$received_path, $file, $this, $hostName));
-					if($this->logDB($received_path, $hostName)) {
-						$ret[] = $received_path;
+					Billrun_Factory::dispatcher()->trigger('afterFTPFileReceived', array(&$received_path, $file, $this, $hostName, $extraData));
+					if($this->logDB($received_path, $hostName , $extraData)) {
+						$ret[] = $received_path;						
 					}
 				}
 			}

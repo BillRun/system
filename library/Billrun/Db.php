@@ -30,7 +30,9 @@ class Billrun_Db extends Mongodloid_Db {
 	public function __construct(\MongoDb $db, \Mongodloid_Connection $connection) {
 		parent::__construct($db, $connection);
 		$this->collections = Billrun_Factory::config()->getConfigValue('db.collections', array());
-		MongoCursor::$timeout = Billrun_Factory::config()->getConfigValue('db.timeout', 300000); // default 5 minutes
+		$timeout = Billrun_Factory::config()->getConfigValue('db.timeout', 3600000); // default 60 minutes
+		Billrun_Factory::log()->log('Set database cursor timeout to: ' . $timeout, Zend_Log::INFO);
+		MongoCursor::$timeout = $timeout;
 	}
 
 	/**
@@ -41,7 +43,7 @@ class Billrun_Db extends Mongodloid_Db {
 	static public function getInstance() {
 		$config = Billrun_Factory::config();
 		$conn = Billrun_Connection::getInstance($config->db->host, $config->db->port);
-		return $conn->getDB($config->db->name);
+		return $conn->getDB($config->db->name, $config->db->user, $config->db->password);
 	}
 
 	/**
@@ -79,7 +81,7 @@ class Billrun_Db extends Mongodloid_Db {
 
 	/**
 	 * get collections  for the database.
-	 * @param type $name the name of the colleaction to retreive.
+	 * @param type $name the name of the colleaction to retrieve.
 	 * @return type the requested collection
 	 */
 	public function __get($name) {

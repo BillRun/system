@@ -99,7 +99,7 @@ class Zend_Filter_Inflector implements Zend_Filter_Interface
     }
 
     /**
-     * Retreive PluginLoader
+     * retrieve PluginLoader
      *
      * @return Zend_Loader_PluginLoader_Interface
      */
