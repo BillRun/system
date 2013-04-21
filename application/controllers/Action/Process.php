@@ -45,12 +45,12 @@ class ProcessAction extends Action_Base {
 			// buffer all action output
 			ob_start();
 			if (isset($options['path']) && $options['path']) {
-				$lines = $processor->process();
+				$linesProcessedCount = $processor->process();
 			} else {
-				$lines = $processor->process_files();
+				$linesProcessedCount = $processor->process_files();
 			}
 			// write the buffer into log and output
-			$this->_controller->addOutput("processed " . count($lines) . " lines");
+			$this->_controller->addOutput("processed " . $linesProcessedCount . " lines");
 			$this->_controller->addOutput(ob_get_contents());
 			ob_end_clean();
 		} else {
