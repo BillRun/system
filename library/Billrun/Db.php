@@ -81,7 +81,7 @@ class Billrun_Db extends Mongodloid_Db {
 
 	/**
 	 * get collections  for the database.
-	 * @param type $name the name of the colleaction to retreive.
+	 * @param type $name the name of the colleaction to retrieve.
 	 * @return type the requested collection
 	 */
 	public function __get($name) {

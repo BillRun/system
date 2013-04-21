@@ -310,7 +310,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 		if (file_exists($file_path)) {
 			$this->filePath = $file_path;
 			$this->filename = substr($file_path, strrpos($file_path, '/'));
-			$this->retreivedHostname = $retrivedHost;
+			$this->retrievedHostname = $retrivedHost;
 			$this->fileHandler = fopen($file_path, 'r');
 			Billrun_Factory::log()->log("Billrun Processor load the file: " . $file_path, Zend_Log::INFO);
 		} else {

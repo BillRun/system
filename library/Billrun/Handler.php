@@ -15,7 +15,7 @@
 class Billrun_Handler extends Billrun_Base {
 
 	/**
-	 * method to retreive instance of Billrun Handler
+	 * method to retrieve instance of Billrun Handler
 	 * 
 	 * @return self instance
 	 * @todo make args signature to avoid over loading of instance

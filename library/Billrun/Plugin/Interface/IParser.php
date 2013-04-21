@@ -9,7 +9,7 @@ interface Billrun_Plugin_Interface_IParser {
 	/**
 	 * Parse data from a files
 	 * @param type $type the name of the type that is being parsed.
-	 * @param type $data the data that was retreived from the file to parse.
+	 * @param type $data the data that was retrieved from the file to parse.
 	 * @param Billrun_Parser $parser the instance of the parser parsing the file.
 	 */
 	public function parseData($type, $data, Billrun_Parser &$parser);

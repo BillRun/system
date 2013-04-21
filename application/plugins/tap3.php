@@ -40,8 +40,8 @@ class tap3Plugin  extends Billrun_Plugin_BillrunPluginBase
 		if($processor->getType() != $this->getName()) { return; } 
 		$path = Billrun_Factory::config()->getConfigValue($this->getName().'.thirdparty.backup_path',false,'string');
 		if(!$path) return;
-		if( $processor->retreivedHostname ) {
-			$path = $path . DIRECTORY_SEPARATOR . $processor->retreivedHostname;
+		if( $processor->retrievedHostname ) {
+			$path = $path . DIRECTORY_SEPARATOR . $processor->retrievedHostname;
 		}
 		Billrun_Factory::log()->log("Saving file to third party at : $path" , Zend_Log::DEBUG);
 		if(!$processor->backupToPath($path ,true) ) {

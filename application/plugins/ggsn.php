@@ -45,8 +45,8 @@ use Billrun_Traits_FileSequenceChecking;
 		$path = Billrun_Factory::config()->getConfigValue('ggsn.thirdparty.backup_path', false, 'string');
 		if (!$path)
 			return;
-		if ($processor->retreivedHostname) {
-			$path = $path . DIRECTORY_SEPARATOR . $processor->retreivedHostname;
+		if ($processor->retrievedHostname) {
+			$path = $path . DIRECTORY_SEPARATOR . $processor->retrievedHostname;
 		}
 		Billrun_Factory::log()->log("Saving  file to third party at : $path", Zend_Log::DEBUG);
 		if (!$processor->backupToPath($path, true)) {
@@ -113,7 +113,7 @@ use Billrun_Traits_FileSequenceChecking;
 	protected function detectHourlyDataExceeders($linesCol, $aggregateQuery) {
 		$exceeders = array();
 		$timeWindow = strtotime("-" . Billrun_Factory::config()->getConfigValue('ggsn.hourly.timespan', '4 hours'));
-		$limit = floatval(Billrun_Factory::config()->getConfigValue('ggsn.hourly.thresholds.datalimit', 0));
+		$limit = floatval(Billrun_Factory::config()->getConfigValue('ggsn.hourly.thresholds.datalimit', 150000));
 		$aggregateQuery[1]['$match']['$and'] = array(array('record_opening_time' => array('$gte' => date('YmdHis', $timeWindow))),
 			array('record_opening_time' => $aggregateQuery[1]['$match']['record_opening_time']));
 

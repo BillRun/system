@@ -99,8 +99,8 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 		if (!$path)
 			return;
 
-		if ($processor->retreivedHostname) {
-			$path = $path . DIRECTORY_SEPARATOR . $processor->retreivedHostname;
+		if ($processor->retrievedHostname) {
+			$path = $path . DIRECTORY_SEPARATOR . $processor->retrievedHostname;
 		}
 
 		$path .= DIRECTORY_SEPARATOR . date("Ym");
