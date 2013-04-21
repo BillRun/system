@@ -60,6 +60,7 @@ abstract class Billrun_Responder_Base_FilesResponder extends Billrun_Responder {
 	abstract protected function getResponseFilename($receivedFilename, $logLine);
 
 	protected function respondAFile($responseFilePath, $fileName, $logLine) {
+		Billrun_Factory::log()->log("Responding on : $fileName", Zend_Log::DEBUG);
 		$data = $logLine->getRawData();
 		$data['response_time'] = time();
 		$logLine->setRawData($data);
