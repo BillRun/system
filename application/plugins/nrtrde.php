@@ -141,6 +141,15 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 		
 	}
 
+	/**
+	 * method to receive the last charge datetime
+	 * 
+	 * @param boolean $return_timestamp define what type of return value
+	 * 
+	 * @return mixed timestamp or string in base date format
+	 * 
+	 * @todo refactoring to external util cause we probably need it in more places
+	 */
 	protected function get_last_charge_time($return_timestamp = false) {
 		$dayofmonth = Billrun_Factory::config()->getConfigValue('billrun.charging_day', 25, 'int');
 		$format = "Ym" . $dayofmonth . "000000";
@@ -161,7 +170,7 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 	public function handlerCollect() {
 
 		$lines = Billrun_Factory::db()->linesCollection();
-		$charge_time = $this->get_last_charge_time();
+		$charge_time = $this->get_last_charge_time(true); // true means return timestamp
 
 		// TODO: take it to config ? how to handle variables ?
 		$base_match = array(
@@ -173,7 +182,7 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 			'$match' => array(
 				'record_type' => 'MOC',
 				'connectedNumber' => array('$regex' => '^972'),
-				'unified_record_time' => array('$gte' => $charge_time),
+				'unified_record_time' => array('$gte' => new MongoDate($charge_time)),
 				'event_stamp' => array('$exists' => false),
 				'deposit_stamp' => array('$exists' => false),
 				'callEventDurationRound' => array('$gt' => 0), // not sms
