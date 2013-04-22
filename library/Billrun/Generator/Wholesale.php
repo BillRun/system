@@ -15,23 +15,23 @@ class Billrun_Generator_Wholesale extends Billrun_Generator {
 	protected $reportType = 'wholesale';
 	
 	protected $providers= array(
-			'Bezeq' => array('provider'=> 'BZ[$Q]'),
-			'BezeqInt' => array('provider'=> "BZI"),
-			'Cellcom' => array('provider'=> "CEL"),
-			'Partner' => array('provider'=> "PRT"),
-			'Mirs' => array('provider'=> "MRS"),
-			'Pelephone' => array('provider'=> "PEL"),
-			'Smile' => array('provider'=> "SML"),
-			'Hot' => array('provider'=> "HOT"),
-			'Telzar' =>	array('provider'=> "TLZ"),
-			'Xfone' =>	array('provider'=> "XFN"),
-			'Hilat'=>	array('provider'=> "HLT"),
-			'Kartel'=>	array('provider'=> "KRT(?=ROM|)"),
-			'Paltel'=>	array('provider'=> "SPAL"),
-			'Wataniya'=>	array('provider'=> "SWAT"),
+			'Bezeq' => array('provider'=> '^\wBZ[$Q]'),
+			'BezeqInt' => array('provider'=> "^\wBZI"),
+			'Cellcom' => array('provider'=> "^[^R]CEL"),
+			'Partner' => array('provider'=> "^\wPRT"),
+			'Mirs' => array('provider'=> "^\wMRS"),
+			'Pelephone' => array('provider'=> "^\wPEL"),
+			'Smile' => array('provider'=> "^\wSML"),
+			'Hot' => array('provider'=> "^\wHOT"),
+			'Telzar' =>	array('provider'=> "^\wTLZ"),
+			'Xfone' =>	array('provider'=> "^\wXFN"),
+			'Hilat'=>	array('provider'=> "^\wHLT"),
+			'Kartel'=>	array('provider'=> "^\wKRT(?=ROM|)"),
+			'Paltel'=>	array('provider'=> "^\wSPAL"),
+			'Wataniya'=>	array('provider'=> "^\wSWAT"),
 		);
 	protected $types = array(
-				//'roaming' => "R",
+				'roaming' => "R",
 				'international' => 'I',
 				'connectivity' => 'M',
 				'national' => 'N',
@@ -48,28 +48,28 @@ class Billrun_Generator_Wholesale extends Billrun_Generator {
 	public function generate() {
 		$ret =array();
 		$wh = fopen($this->reportBasePath . DIRECTORY_SEPARATOR. date('Ymd').'_wholesale_report.csv', 'w');
-		foreach($this->providers as $key => $val) {
+		foreach($this->providers as $providerName => $val) {
 			$providerResults = array();
 			Billrun_Factory::log()->log("-----------------------------------------------------------------------",Zend_Log::DEBUG);
-			Billrun_Factory::log()->log("$key : ",Zend_Log::DEBUG);
-			fputcsv($wh, array($key));
-			$fh = fopen($this->reportBasePath . DIRECTORY_SEPARATOR. date('Ymd').'_'.$key.'.csv', 'w');
-			foreach ($this->types as $typeName => $type) {
-				//$incoming = $this->callForProvider('in',array_merge($val,array('type' => $type)));
-				//$outgoing = $this->callForProvider('out',array_merge($val,array('type' => $type)));
-				$providerAggregation = $this->aggregate( $this->getCallLinesForProvider("^{$type}{$val['provider']}", new MongoDate(strtotime('2013-01-01T00:00:00Z')) ));
-				if( !empty($providerAggregation) ) {
+			Billrun_Factory::log()->log("$providerName : ",Zend_Log::DEBUG);
+			fputcsv($wh, array($providerName));
+			$fh = fopen($this->reportBasePath . DIRECTORY_SEPARATOR. date('Ymd').'_'.$providerName.'.csv', 'w');
+			$providerAggregation = $this->aggregate( $this->getCallLinesForProvider("{$val['provider']}", new MongoDate(strtotime('2013-01-01T00:00:00Z')) ));
+			if( empty($providerAggregation) ) {
+				continue;
+			}
+			Billrun_Factory::log()->log(print_r($providerAggregation,1),Zend_Log::DEBUG);
+			foreach ($providerAggregation as $typeName => $typeAggr) {
 					Billrun_Factory::log()->log("$typeName : ",Zend_Log::DEBUG);
 					$providerResults[$typeName] = $providerAggregation;
-					fputcsv($fh, array($typeName));
-					fputcsv($wh, array($typeName));
+					fputcsv($fh, array('',$typeName));
+					fputcsv($wh, array('',$typeName));
 					
 					$order = array('day','product','units','minutes','tariff_per_product','charge','direction');
-					foreach ($providerAggregation as $typeKey => $lines) {
-						fputcsv($wh, array($typeKey));
-						fputcsv($wh, array($typeKey));
+					foreach ($typeAggr as $typeKey => $lines) {
+
 						foreach ( $lines as $line) {
-							$l = array();
+							$l = array('','');
 							foreach ($order as $name) {
 								$l[] = $line[$name];
 							}
@@ -77,9 +77,6 @@ class Billrun_Generator_Wholesale extends Billrun_Generator {
 							fputcsv($wh, $l);
 						}	
 					}
-					
-					Billrun_Factory::log()->log(print_r($providerResults[$typeName],1),Zend_Log::DEBUG);
-				}
 			}
 			
 			fclose($fh);
@@ -176,25 +173,27 @@ class Billrun_Generator_Wholesale extends Billrun_Generator {
 //			return $results;
 //	}
 	protected function getCallLinesForProvider($provider, $timehorizon) {
-		$results = Billrun_Factory::db()->linesCollection()->query(array(
+		$results = Billrun_Factory::db()->linesCollection()->query(
+										array(
 											'type'=>'nsn',
-											'unified_record_time' => array('$gt' => $timehorizon )))->
-											query((array( '$or' =>array(
-													array('record_type' => array('$in' => array("02","01"))),
-													array('$and' => array(	array('record_type' => array('$in' => array("11","12"))), 
-																			array('$or' => array( 
-																				array("in_circuit_group_name" => array('$regex' => "^RCEL" )),
-																				array("out_circuit_group_name" => array('$regex' => "^RECL" ))
-																			),)) 
-														),)
-												)))->
-										query(array(
-											'$or' => array( 
-														array("in_circuit_group_name" => array('$regex' => "$provider" )),
-														array("out_circuit_group_name" => array('$regex' => "$provider" ))
-												),
+											'unified_record_time' => array('$gt' => $timehorizon ),
+											'$and' => array(
+												array('$or' => array(
+															array('record_type' => array('$in' => array("02","01"))),
+															array('$and' => array(
+																				array('record_type' => array('$in' => array("11","12"))), 
+																				array('$or' => array( 
+																					array("in_circuit_group_name" => array('$regex' => "^RCEL" )),
+																					array("out_circuit_group_name" => array('$regex' => "^RECL" ))
+																				),)) 
+															),
+													),),
+												array('$or' => array( 
+															array("in_circuit_group_name" => array('$regex' => "$provider" )),
+															array("out_circuit_group_name" => array('$regex' => "$provider" ))
+													),),
+											),
 										));
-							;
 
 		return $results;
 	}
@@ -207,17 +206,31 @@ class Billrun_Generator_Wholesale extends Billrun_Generator {
 	protected function aggregate($lines) {
 		$aggregate = array();
 		
+		$connects =array(
+				'R' => 'roaming',
+				'I' => 'international',
+				'M' => 'connectivity',
+				'N' => 'national',
+				'4' => '144' ,
+			);
+		
 		foreach ($lines as $value) {
-			//Billrun_Factory::log()->log(print_r($value,1),Zend_Log::DEBUG);
-			if( preg_match("/^RCEL/", $value['out_circuit_group_name']) ) {
+			
+			if($value['record_type'] == "02" || preg_match("/^RCEL/", $value['out_circuit_group_name']) ) {
 				$callType = 'incoming';
 			} else {
 				$callType = 'outgoing';
 			}
+			$lineConnectType = ($callType == 'incoming' ? substr($value['in_circuit_group_name'],0,1) : substr($value['out_circuit_group_name'],0,1));
+			if(!isset($connects[$lineConnectType])) {
+				Billrun_Factory::log()->log(print_r($value,1),Zend_Log::DEBUG);
+				continue;
+			}
+			$connectType =  $connects[$lineConnectType];
 			$day = substr($value['call_reference_time'],0,8);
 			$aggrKey = $day.$this->getTariffForLine($value);
-			if(!isset($aggregate[$callType][$aggrKey])) {
-				$aggregate[$callType][$aggrKey] =array(
+			if(!isset($aggregate[$connectType][$callType][$aggrKey])) {
+				$aggregate[$connectType][$callType][$aggrKey] =array(
 													'day' => $day, 
 													'product' => $callType.' call',
 													'units' => 0,
@@ -227,17 +240,20 @@ class Billrun_Generator_Wholesale extends Billrun_Generator {
 													'direction' => ($callType == 'incoming' ? 'TG' : 'FG'),
 												);
 			}
-			 
-			$aggregate[$callType][$aggrKey]['units']++;
-			$aggregate[$callType][$aggrKey]['minutes'] += $value['charging_end_time'] - $value['charging_start_time'];
-			$aggregate[$callType][$aggrKey]['tariff_per_product'] = $this->getTariffForLine($value);
-			$aggregate[$callType][$aggrKey]['charge'] += isset($value['provider_price']) ? $value['provider_price'] : 0;
+	
+			$aggregate[$connectType][$callType][$aggrKey]['units']++;
+			$aggregate[$connectType][$callType][$aggrKey]['minutes'] += ($value['charging_end_time'] && $value['charging_start_time']) ? strtotime($value['charging_end_time']) - strtotime($value['charging_start_time']) :
+																															$value['duration'];
+			$aggregate[$connectType][$callType][$aggrKey]['tariff_per_product'] = $this->getTariffForLine($value);
+			$aggregate[$connectType][$callType][$aggrKey]['charge'] += isset($value['provider_price']) ? $value['provider_price'] : 0;
 		}
 		
 		// process aggregated data.
-		foreach ($aggregate as &$calltype) {
-			foreach ($calltype as  &$value) {
-				$value['minutes'] = $value['minutes']/60;
+		foreach ($aggregate as &$connectType) {
+			foreach ($connectType as &$calltype) {
+				foreach ($calltype as  &$value) {
+					$value['minutes'] = $value['minutes']/60;
+				}
 			}
 		}
 		return $aggregate;

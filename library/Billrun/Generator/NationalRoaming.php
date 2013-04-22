@@ -45,22 +45,22 @@ class Billrun_Generator_NationalRoaming extends Billrun_Generator {
 	public function generate() {
 		$ret =array();
 		$wh = fopen($this->reportBasePath . DIRECTORY_SEPARATOR. date('Ymd').'_notional_roaming.csv', 'w');
-		foreach($this->providers as $key => $val) {
+		foreach($this->providers as $providerName => $val) {
 			$providerResults = array();
 			Billrun_Factory::log()->log("-----------------------------------------------------------------------",Zend_Log::DEBUG);
-			Billrun_Factory::log()->log("$key : ",Zend_Log::DEBUG);
+			Billrun_Factory::log()->log("$providerName : ",Zend_Log::DEBUG);
+			fputcsv($wh, array($providerName));
 			foreach ($this->types as $typeName => $type) {
 				$aggregate = $this->aggregate( $this->getCallLinesForProvider("^{$type}{$val['provider']}", new MongoDate(strtotime('2013-01-01T00:00:00Z')) ));
 				if(!empty($aggregate) ) {
 					Billrun_Factory::log()->log("$typeName : ",Zend_Log::DEBUG);
 					$providerResults[$typeName] = $aggregate;
-					fputcsv($wh, array($typeName));
+					fputcsv($wh, array('',$typeName));
 					
 					$order = array('day','product','units','minutes' ,'tariff_per_product' ,'charge' ,'direction' );
 					foreach ($aggregate as $typeKey => $lines) {
-						fputcsv($wh, array($typeKey));
 						foreach ( $lines as $line) {
-							$l = array();
+							$l = array('','',);
 							foreach ($order as $name) {
 								$l[] = $line[$name];
 							}
@@ -88,17 +88,18 @@ class Billrun_Generator_NationalRoaming extends Billrun_Generator {
 											'type'=>'nsn',
 											'record_type' => array('$in' => array("11","12")),
 											'unified_record_time' => array('$gt' => $timehorizon ),
-										))->
-										query(array(
-											'$or' => array( 
-														array("in_circuit_group_name" => array('$regex' => "$provider" )),
-														array("out_circuit_group_name" => array('$regex' => "$provider" ))
+											'$and' => array(
+												array( '$or' => array( 
+															array("in_circuit_group_name" => array('$regex' => "$provider" )),
+															array("out_circuit_group_name" => array('$regex' => "$provider" ))
+													),
 												),
-										))->
-							query(array('$or' => array( 
-													array("in_circuit_group_name" => array('$regex' => "^RCEL" )),
-													array("out_circuit_group_name" => array('$regex' => "^RECL" ))
-												), 
+												array('$or' => array( 
+														array("in_circuit_group_name" => array('$regex' => "^RCEL" )),
+														array("out_circuit_group_name" => array('$regex' => "^RECL" ))
+													),
+												),
+											),		
 										));
 
 		return $results;
@@ -114,7 +115,7 @@ class Billrun_Generator_NationalRoaming extends Billrun_Generator {
 		
 		foreach ($lines as $value) {
 			//Billrun_Factory::log()->log(print_r($value,1),Zend_Log::DEBUG);
-			if( preg_match("/^RCEL/", $value['out_circuit_group_name']) ) {
+			if( $value['record_type'] == "12"  ) {
 				$callType = 'incoming';
 			} else {
 				$callType = 'outgoing';
@@ -134,7 +135,7 @@ class Billrun_Generator_NationalRoaming extends Billrun_Generator {
 			}
 			 
 			$aggregate[$callType][$aggrKey]['units']++;
-			$aggregate[$callType][$aggrKey]['minutes'] += $value['charging_end_time'] - $value['charging_start_time'];
+			$aggregate[$callType][$aggrKey]['minutes'] += strtotime($value['charging_end_time']) - strtotime($value['charging_start_time']);
 			$aggregate[$callType][$aggrKey]['tariff_per_product'] = $this->getTariffForLine($value);
 			$aggregate[$callType][$aggrKey]['charge'] += isset($value['provider_price']) ? $value['provider_price'] : 0;
 		}
