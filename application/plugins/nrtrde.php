@@ -279,6 +279,7 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 		$moc_nonisrael_hourly = $lines->aggregate($base_match, $where, $group, $project, $having);
 		$this->normalize($ret, $moc_nonisrael_hourly, 'moc_nonisrael_hourly');
 
+		Billrun_Factory::log()->log("NRTRDE plugin locate " . count($ret) . " items as fraud events", Zend_Log::INFO);
 
 		return $ret;
 	}
