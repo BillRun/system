@@ -1,4 +1,4 @@
-system
+System
 ======
 
 BillRun - Open Source Billing and Fraud System
