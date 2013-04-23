@@ -1,6 +1,3 @@
-System
-======
-
 BillRun - Open Source Billing and Fraud System
 
 http://www.billrun.net
