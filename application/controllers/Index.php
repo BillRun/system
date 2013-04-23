@@ -10,7 +10,7 @@
  * Billing index controller class
  *
  * @package  Controller
- * @since    1.0
+ * @since    0.5
  */
 class IndexController extends Yaf_Controller_Abstract {
 

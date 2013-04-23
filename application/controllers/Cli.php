@@ -10,7 +10,7 @@
  * Billing command line controller class
  *
  * @package  Controller
- * @since    1.0
+ * @since    0.5
  */
 class CliController extends Yaf_Controller_Abstract {
 

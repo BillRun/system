@@ -1,5 +1,18 @@
 <?php
 
+/**
+ * @package         Billing
+ * @copyright       Copyright (C) 2012 S.D.O.C. LTD. All rights reserved.
+ * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ */
+
+/**
+ * Fraud alerts plugin
+ *
+ * @package  Application
+ * @subpackage Plugins
+ * @since    0.5
+ */
 class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 
 	/**

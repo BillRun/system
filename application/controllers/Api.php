@@ -10,7 +10,7 @@
  * Billing api controller class
  *
  * @package  Controller
- * @since    1.0
+ * @since    0.5
  */
 class ApiController extends Yaf_Controller_Abstract {
 

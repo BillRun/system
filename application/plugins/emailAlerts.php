@@ -1,17 +1,20 @@
 <?php
 
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
+/**
+ * @package         Billing
+ * @copyright       Copyright (C) 2012 S.D.O.C. LTD. All rights reserved.
+ * @license         GNU General Public License version 2 or later; see LICENSE.txt
  */
 
 /**
- * Description of emailAlerts
+ * Email alerts plugin
  *
- * @author eran
+ * @package  Application
+ * @subpackage Plugins
+ * @since    0.5
  */
-class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
-
+class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase  {
+	
 	/**
 	 * plugin name
 	 *
