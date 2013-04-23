@@ -54,9 +54,10 @@ class Billrun_Generator_Wholesale extends Billrun_Generator_Base_WholesaleReport
 												array('$or' => array(
 															array('record_type' => array('$in' => array("02","01"))),
 															array('$and' => array(
-																				array('record_type' => array('$in' => array("12"))), 
+																				array('record_type' => array('$in' => array("12","11"))), 
 																				array('$or' => array( 
 																					array("in_circuit_group_name" => array('$regex' => self::CELLCOM_ROAMING_REGEX )),
+																					array("in_circuit_group_name" => ''),
 																					array("out_circuit_group_name" => array('$regex' => self::CELLCOM_ROAMING_REGEX ))
 																				),)
 																), 
@@ -70,10 +71,10 @@ class Billrun_Generator_Wholesale extends Billrun_Generator_Base_WholesaleReport
 										));
 		$lines = array();
 		//Billrun_Factory::log()->log("Query results length : ". $results->count(),Zend_Log::DEBUG);
-		foreach ($results as $key => $value) {
+		/*foreach ($results as $key => $value) {
 			$lines[$value['call_reference']] = $value;
-		}
+		}*/
 		//Billrun_Factory::log()->log("aggrgated CDR length : ".count($lines),Zend_Log::DEBUG);
-		return $lines;
+		return $results;
 	}
 }

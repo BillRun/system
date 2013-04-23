@@ -42,16 +42,17 @@ abstract class Billrun_Generator_Base_WholesaleReport extends Billrun_Generator 
 																		'M' => 'Mobile',
 																		'N' => 'National',
 																		'4' => 'National' ,
+																		'UNKNOWN' => 'Other',
 																	));
 		
 		$this->providers = Billrun_Factory::config()->getConfigValue( $this->reportType.'.reports.providers', 
 																	  array(
-																			'Bezeq' => array('provider'=> '^\wBZQ'),
-																			'BezeqInt' => array('provider'=> "^\wBZI"),
+																			'Bezeq' => array('provider'=> '^\w{0,1}BZQ'),
+																			'BezeqInt' => array('provider'=> "^\w{0,1}BZI"),
 																			'Cellcom' => array('provider'=> "^[^R]CEL"),
-																			'Partner' => array('provider'=> "^\wPRT"),
-																			'Mirs' => array('provider'=> "^\wMRS"),
-																			'Pelephone' => array('provider'=> "^\wPEL"),
+																			'Partner' => array('provider'=> "^\w{0,1}PRT"),
+																			'Mirs' => array('provider'=> "^\w{0,1}MRS"),
+																			'Pelephone' => array('provider'=> "^\w{0,1}PEL"),
 																			/*'Smile' => array('provider'=> "^\wSML"),
 																			'Hot' => array('provider'=> "^\wHOT"),
 																			'Telzar' =>	array('provider'=> "^\wTLZ"),
@@ -61,6 +62,7 @@ abstract class Billrun_Generator_Base_WholesaleReport extends Billrun_Generator 
 																			'Paltel'=>	array('provider'=> "^\wSPAL"),
 																			'Wataniya'=>	array('provider'=> "^\wSWAT"),*/
 																		));
+		
 		$this->startDate = isset($options['start_date']) ? $options['start_date'] : 
 							 (strlen($this->stamp) > 8 ? strtotime($this->stamp) : Billrun_Util::getLastChargeTime(true));
 		$this->endDate = isset($options['start_date']) ? $options['start_date'] : 
@@ -73,7 +75,6 @@ abstract class Billrun_Generator_Base_WholesaleReport extends Billrun_Generator 
 	 */
 	public function generate() {
 		$providerResults = array();
-		$startTime = strlen($this->stamp) > 8 ? strtotime($this->stamp) : Billrun_Util::getLastChargeTime(true);
 		$timeHorizions['start'] = $this->startDate;
 		$timeHorizions['end'] = $this->endDate;
 		foreach($this->providers as $providerName => $val) {
@@ -94,9 +95,6 @@ abstract class Billrun_Generator_Base_WholesaleReport extends Billrun_Generator 
 	 * @return type
 	 */
 	public function load($initData = true) {
-		$timeHorizions['start'] = new MongoDate(strlen($this->stamp) > 8 ? strtotime($this->stamp) : Billrun_Util::getLastChargeTime(true));
-		$timeHorizions['end'] = new MongoDate(strlen($this->stamp) > 8 ? strtotime($this->stamp) : Billrun_Util::getLastChargeTime(true));
-
 		return  false; //$this->getCDRs("", $timeHorizions);
 	}
 	
@@ -116,11 +114,11 @@ abstract class Billrun_Generator_Base_WholesaleReport extends Billrun_Generator 
 	}
 	
 	protected function productType($line) {
-		$ret = 'calls';
-		if(preg_match('/^(?=972)1800/', $line['called_number'])) {
+		$ret = 'Calls';
+		if(preg_match('/^(?=972|)1800/', $line['called_number'])) {
 			$ret = "1800 calls";
 		}
-		if(preg_match('/^(?=972)144$/', $line['called_number'])) {
+		if(preg_match('/^(?=972|)144$/', $line['called_number'])) {
 			$ret = "144 calls";
 		}
 
@@ -137,12 +135,14 @@ abstract class Billrun_Generator_Base_WholesaleReport extends Billrun_Generator 
 		$aggregate = array();
 	
 		foreach ($lines as $value) {
-			$isIncoming = ($value['record_type'] == "02" || $value['record_type'] == "12" && preg_match("/".self::CELLCOM_ROAMING_REGEX."/", $value['out_circuit_group_name']));
+			$isIncoming =	( $value['record_type'] == "02" ||
+							(( $value['record_type'] == "12" ||  $value['record_type'] == "11" )&& preg_match("/".self::CELLCOM_ROAMING_REGEX."/", $value['out_circuit_group_name'])));
 			$lineConnectType = ($isIncoming ? substr($value['in_circuit_group_name'],0,1) : substr($value['out_circuit_group_name'],0,1));
 			
 			if(!isset($this->types[$lineConnectType])) {
-				Billrun_Factory::log()->log(print_r($value,1),Zend_Log::DEBUG);
-				continue;
+				//Billrun_Factory::log()->log(print_r($value,1),Zend_Log::DEBUG);
+				//continue;
+				$lineConnectType ='UNKNOWN';
 			}
 			$connectType =  $this->types[$lineConnectType];
 			$day = substr($value['call_reference_time'],0,8);
@@ -174,6 +174,7 @@ abstract class Billrun_Generator_Base_WholesaleReport extends Billrun_Generator 
 		
 		foreach ($aggregate as $key => $connectType) {
 				$tmp = array();
+				ksort($connectType);
 				foreach ($connectType as $value) {
 					$value['minutes'] = $value['minutes']/60;
 					$tmp[]= $value;

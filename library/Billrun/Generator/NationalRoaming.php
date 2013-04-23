@@ -37,7 +37,7 @@ class Billrun_Generator_NationalRoaming extends Billrun_Generator_Base_Wholesale
 
 		$results = Billrun_Factory::db()->linesCollection()->query(array(
 											'type'=>'nsn',
-											'record_type' => array('$in' => array("12")),
+											'record_type' => array('$in' => array("11","12")),
 											'$and' => array(
 												array( 'unified_record_time' => array('$gt' => $timehorizons['start'] ) ),
 												array( 'unified_record_time' => array('$lt' => $timehorizons['end'] ) ),
@@ -50,7 +50,8 @@ class Billrun_Generator_NationalRoaming extends Billrun_Generator_Base_Wholesale
 												),
 												array('$or' => array( 
 														array("in_circuit_group_name" => array('$regex' => self::CELLCOM_ROAMING_REGEX  )),
-														array("out_circuit_group_name" => array('$regex' => self::CELLCOM_ROAMING_REGEX  ))
+														array("out_circuit_group_name" => array('$regex' => self::CELLCOM_ROAMING_REGEX  )),
+														array("in_circuit_group_name" => '')
 													),
 												),
 											),		
