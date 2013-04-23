@@ -34,7 +34,6 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 
 	public function __construct($options = array(
 	)) {
-		parent::__construct($options);
 
 		$this->isDryRun = isset($options['dryRun']) ?
 			$options['dryRun'] :
