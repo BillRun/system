@@ -81,7 +81,7 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 				$this->markEvent($event);
 				$this->markEventLine($event);				
 				
-				//Decrese the amount of alerts allowed in a single run if 0 is reached the break the loop.
+				//Decrease the amount of alerts allowed in a single run if 0 is reached the break the loop.
 				$alertsLeft--;
 			}
 			
@@ -109,14 +109,11 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 		
 		if (!Billrun_Factory::config()->isProd()) {
-			$key = Billrun_Factory::config()->getConfigValue('fraudAlerts.alert.key', 'ofer');
+			$key = Billrun_Factory::config()->getConfigValue('fraudAlerts.alert.key', '');
+			$testData = Billrun_Factory::config()->getConfigValue('fraudAlerts.alert.testKeys', array());
 
-			$debugData = array(	'ofer' => array(  'imsi' => '425089209101076', 'msisdn' => '546918666'),
-								'eli' => array(  'imsi' => '425089209102700', 'msisdn' => '586801559'),
-								'eran' =>  array( 'imsi' => '425089109239847', 'msisdn' => '547371030') );
-
-			$args['imsi'] = $debugData[$key]['imsi'];
-			$args['msisdn'] = $debugData[$key]['msisdn'];
+			$args['imsi'] = $testData[$key]['imsi'];
+			$args['msisdn'] = $testData[$key]['msisdn'];
 		}
 		
 		//unset uneeded fields...
@@ -267,7 +264,9 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$msisdn = (isset($event['msisdn']) && $event['msisdn']) ? $event['msisdn'] : null;
 
 			$lines_where = array(
-				'process_time' => array( '$lt' => date(Billrun_Base::base_dateformat, $this->startTime) )
+				'process_time' => array( '$gt' => date(Billrun_Base::base_dateformat, Billrun_Util::getLastChargeTime()) ),
+				'process_time' => array( '$lt' => date(Billrun_Base::base_dateformat, $this->startTime) ),
+				'deposit_stamp' => array( '$exists' => false ),
 			);
 
 			if ($imsi) {
