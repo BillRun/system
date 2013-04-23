@@ -179,7 +179,7 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 			"Count of success: $successful" . PHP_EOL;
 
 		if ($failed || $successful) {
-			$msg = PHP_EOL . "This mail contain 1 attachment for libreoffice and ms-office" . PHP_EOL;
+			$msg .= PHP_EOL . "This mail contain 1 attachment for libreoffice and ms-office" . PHP_EOL;
 			$attachmentPath = '/tmp/' . date('YmdHi') . '_alert_status.csv';
 			$attachment = $this->generateMailCSV($attachmentPath, $events);
 		}
