@@ -1,10 +1,9 @@
-BillRun - Open Source Billing and Fraud System
-
-http://www.billrun.net
-
 About
 ======
-BillRun is brand Billing and Anti-Fraud System.
+
+BillRun is Open-Source Billing and Anti-Fraud System. 
+
+http://www.billrun.net
 
 BillRun used in Telecom companies which required sophisticated system and tools to receive, process, rate, charge and monitor customer usage. The usage can be telecom CDR-s, pre-pay cards, and all can be handle in real-time. The system support different type of output such as customer invoices, wholesale reports for management, system monitor & alerts, anti-fraud system that can be trigger event. The system is fail-over safe and fully support in high-availability volumes and sizes. 
 
