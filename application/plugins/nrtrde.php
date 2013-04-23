@@ -141,27 +141,13 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 		
 	}
 
-	protected function get_last_charge_time($return_timestamp = false) {
-		$dayofmonth = Billrun_Factory::config()->getConfigValue('billrun.charging_day', 25, 'int');
-		$format = "Ym" . $dayofmonth . "000000";
-		if (date("d") >= $dayofmonth) {
-			$time = date($format);
-		} else {
-			$time = date($format, strtotime('-1 month'));
-		}
-		if ($return_timestamp) {
-			return strtotime($time);
-		}
-		return $time;
-	}
-
 	/**
 	 * method to collect data which need to be handle by event
 	 */
 	public function handlerCollect() {
 
 		$lines = Billrun_Factory::db()->linesCollection();
-		$charge_time = $this->get_last_charge_time();
+		$charge_time = Billrun_Util::getLastChargeTime(true); // true means return timestamp
 
 		// TODO: take it to config ? how to handle variables ?
 		$base_match = array(
@@ -173,7 +159,7 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 			'$match' => array(
 				'record_type' => 'MOC',
 				'connectedNumber' => array('$regex' => '^972'),
-				'unified_record_time' => array('$gte' => $charge_time),
+				'unified_record_time' => array('$gte' => new MongoDate($charge_time)),
 				'event_stamp' => array('$exists' => false),
 				'deposit_stamp' => array('$exists' => false),
 				'callEventDurationRound' => array('$gt' => 0), // not sms
@@ -270,6 +256,7 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 		$moc_nonisrael_hourly = $lines->aggregate($base_match, $where, $group, $project, $having);
 		$this->normalize($ret, $moc_nonisrael_hourly, 'moc_nonisrael_hourly');
 
+		Billrun_Factory::log()->log("NRTRDE plugin locate " . count($ret) . " items as fraud events", Zend_Log::INFO);
 
 		return $ret;
 	}

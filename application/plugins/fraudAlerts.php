@@ -79,7 +79,7 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 				$this->markEvent($event);
 				$this->markEventLine($event);				
 				
-				//Decrese the amount of alerts allowed in a single run if 0 is reached the break the loop.
+				//Decrease the amount of alerts allowed in a single run if 0 is reached the break the loop.
 				$alertsLeft--;
 			}
 			
@@ -265,7 +265,9 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$msisdn = (isset($event['msisdn']) && $event['msisdn']) ? $event['msisdn'] : null;
 
 			$lines_where = array(
-				'process_time' => array( '$lt' => date(Billrun_Base::base_dateformat, $this->startTime) )
+				'process_time' => array( '$gt' => date(Billrun_Base::base_dateformat, Billrun_Util::getLastChargeTime()) ),
+				'process_time' => array( '$lt' => date(Billrun_Base::base_dateformat, $this->startTime) ),
+				'deposit_stamp' => array( '$exists' => false ),
 			);
 
 			if ($imsi) {
