@@ -133,10 +133,18 @@ abstract class Billrun_Generator_Base_WholesaleReport extends Billrun_Generator 
 	protected function aggregate( $lines ) {
 		Billrun_Factory::log()->log("Aggregating all the related CDRs, this can take awhile...",Zend_Log::DEBUG);
 		$aggregate = array();
+		$callReferences= array();
 	
 		foreach ($lines as $value) {
+			
+			if(isset($callReferences[$value['call_reference']])) { 
+				continue;
+			}
+			$callReferences[$value['call_reference']] = true;
+			
 			$isIncoming =	( $value['record_type'] == "02" ||
-							(( $value['record_type'] == "12" ||  $value['record_type'] == "11" )&& preg_match("/".self::CELLCOM_ROAMING_REGEX."/", $value['out_circuit_group_name'])));
+							(( $value['record_type'] == "12" ||  $value['record_type'] == "11" )&& 
+							( preg_match("/".self::CELLCOM_ROAMING_REGEX."/", $value['out_circuit_group_name']) ||  $value['out_circuit_group_name']=='' ) ));
 			$lineConnectType = ($isIncoming ? substr($value['in_circuit_group_name'],0,1) : substr($value['out_circuit_group_name'],0,1));
 			
 			if(!isset($this->types[$lineConnectType])) {
