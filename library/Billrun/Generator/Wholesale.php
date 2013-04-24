@@ -46,35 +46,20 @@ class Billrun_Generator_Wholesale extends Billrun_Generator_Base_WholesaleReport
 		$results = Billrun_Factory::db()->linesCollection()->query(
 										array(
 											'type'=>'nsn',
-											'$and' => array(
-												array( 'unified_record_time' => array('$gt' => $timehorizons['start'] ) ),
-												array( 'unified_record_time' => array('$lt' => $timehorizons['end'] ) ),
+											'unified_record_time' => array('$gte' => $timehorizons['start'], '$lt' => $timehorizons['end']  ),
+											'$or' => array(
+												array(	
+														'record_type' => array('$in' => array("11")), 
+														"out_circuit_group_name" => array('$regex' => "$provider" ),
+													),
+												array(	
+														'record_type' => array('$in' => array("12")), 
+														"in_circuit_group_name" => array('$regex' => "$provider" ),
+													),
 											),
-											'$and' => array(
-												array('$or' => array(
-															array('record_type' => array('$in' => array("02","01"))),
-															array('$and' => array(
-																				array('record_type' => array('$in' => array("12","11"))), 
-																				array('$or' => array( 
-																					array("in_circuit_group_name" => array('$regex' => self::CELLCOM_ROAMING_REGEX )),
-																					array("in_circuit_group_name" => ''),
-																					array("out_circuit_group_name" => array('$regex' => self::CELLCOM_ROAMING_REGEX ))
-																				),)
-																), 
-															),
-													),),
-												array('$or' => array( 
-															array("in_circuit_group_name" => array('$regex' => "$provider" )),
-															array("out_circuit_group_name" => array('$regex' => "$provider" ))
-													),),
-											),
+											
 										));
-		$lines = array();
-		//Billrun_Factory::log()->log("Query results length : ". $results->count(),Zend_Log::DEBUG);
-		/*foreach ($results as $key => $value) {
-			$lines[$value['call_reference']] = $value;
-		}*/
-		//Billrun_Factory::log()->log("aggrgated CDR length : ".count($lines),Zend_Log::DEBUG);
+		
 		return $results;
 	}
 }

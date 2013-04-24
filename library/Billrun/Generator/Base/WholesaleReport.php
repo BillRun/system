@@ -41,18 +41,23 @@ abstract class Billrun_Generator_Base_WholesaleReport extends Billrun_Generator 
 																		'I' => 'International',
 																		'M' => 'Mobile',
 																		'N' => 'National',
-																		'4' => 'National' ,
-																		'UNKNOWN' => 'Other',
+																		'4' => 'National' ,																	
 																	));
 		
 		$this->providers = Billrun_Factory::config()->getConfigValue( $this->reportType.'.reports.providers', 
 																	  array(
-																			'Bezeq' => array('provider'=> '^\w{0,1}BZQ'),
-																			'BezeqInt' => array('provider'=> "^\w{0,1}BZI"),
-																			'Cellcom' => array('provider'=> "^[^R]CEL"),
-																			'Partner' => array('provider'=> "^\w{0,1}PRT"),
-																			'Mirs' => array('provider'=> "^\w{0,1}MRS"),
-																			'Pelephone' => array('provider'=> "^\w{0,1}PEL"),
+																			'Bezeq' => array('provider'=> '^[4N]BZQ'),																			
+																			'Bezeq International Mapa' => array('provider'=> "^NBZI"),
+																			'Bezeq International' => array('provider'=> "^IBZI"),
+																			'Cellcom Mapa' => array('provider'=> "^[N4]CEL"),
+																		  	'Cellcom' => array('provider'=> "^MCEL"),
+																			'Partner' => array('provider'=> "^MPRT"),
+																			'Partner Mapa' => array('provider'=> "^NPRT"),
+																			'Mirs' => array('provider'=> "^MMRS"),
+																			'Pelephone' => array('provider'=> "^MPEL"),
+																			'Netvision' => array('provider'=> "^NNTV"),
+																			'Netvision International' => array('provider'=> "^INTV"),
+																			'Hot Mapa' => array('provider'=> "^NHOT"),
 																			/*'Smile' => array('provider'=> "^\wSML"),
 																			'Hot' => array('provider'=> "^\wHOT"),
 																			'Telzar' =>	array('provider'=> "^\wTLZ"),
@@ -63,10 +68,9 @@ abstract class Billrun_Generator_Base_WholesaleReport extends Billrun_Generator 
 																			'Wataniya'=>	array('provider'=> "^\wSWAT"),*/
 																		));
 		
-		$this->startDate = isset($options['start_date']) ? $options['start_date'] : 
+		$this->startDate = isset($options['start_date']) ?  strtotime($options['start_date']) : 
 							 (strlen($this->stamp) > 8 ? strtotime($this->stamp) : Billrun_Util::getLastChargeTime(true));
-		$this->endDate = isset($options['start_date']) ? $options['start_date'] : 
-							new MongoDate(strtotime($this->startDate) + 30*24*3600);
+		$this->endDate = isset($options['end_date']) ?  strtotime($options['end_date']) : $this->startDate + 30*24*3600;
 	}
 	
 	/**
@@ -75,8 +79,9 @@ abstract class Billrun_Generator_Base_WholesaleReport extends Billrun_Generator 
 	 */
 	public function generate() {
 		$providerResults = array();
-		$timeHorizions['start'] = $this->startDate;
-		$timeHorizions['end'] = $this->endDate;
+		$timeHorizions['start'] = new MongoDate($this->startDate);
+		$timeHorizions['end'] = new MongoDate($this->endDate);
+		Billrun_Factory::log()->log("Start Date : ".date("Y-m-d",$this->startDate)." End Date : ".date("Y-m-d",$this->endDate),Zend_Log::DEBUG);
 		foreach($this->providers as $providerName => $val) {
 			Billrun_Factory::log()->log("Aggregating  $providerName NSN usage: ",Zend_Log::DEBUG);
 			$providerAggregation = $this->aggregate( $this->getCDRs($val['provider'], $timeHorizions ));
@@ -134,7 +139,7 @@ abstract class Billrun_Generator_Base_WholesaleReport extends Billrun_Generator 
 		Billrun_Factory::log()->log("Aggregating all the related CDRs, this can take awhile...",Zend_Log::DEBUG);
 		$aggregate = array();
 		$callReferences= array();
-	
+		//Billrun_Factory::log()->log(print_r($lines->count(),1),Zend_Log::DEBUG);
 		foreach ($lines as $value) {
 			
 			if(isset($callReferences[$value['call_reference']])) { 
@@ -143,14 +148,13 @@ abstract class Billrun_Generator_Base_WholesaleReport extends Billrun_Generator 
 			$callReferences[$value['call_reference']] = true;
 			
 			$isIncoming =	( $value['record_type'] == "02" ||
-							(( $value['record_type'] == "12" ||  $value['record_type'] == "11" )&& 
-							( preg_match("/".self::CELLCOM_ROAMING_REGEX."/", $value['out_circuit_group_name']) ||  $value['out_circuit_group_name']=='' ) ));
+							(	$value['record_type'] == "12" && 
+								!preg_match("/".self::CELLCOM_ROAMING_REGEX."/", $value['in_circuit_group_name'])) && $value['in_circuit_group_name'] != '' );
 			$lineConnectType = ($isIncoming ? substr($value['in_circuit_group_name'],0,1) : substr($value['out_circuit_group_name'],0,1));
 			
 			if(!isset($this->types[$lineConnectType])) {
 				//Billrun_Factory::log()->log(print_r($value,1),Zend_Log::DEBUG);
-				//continue;
-				$lineConnectType ='UNKNOWN';
+				continue;
 			}
 			$connectType =  $this->types[$lineConnectType];
 			$day = substr($value['call_reference_time'],0,8);
@@ -219,4 +223,3 @@ abstract class Billrun_Generator_Base_WholesaleReport extends Billrun_Generator 
 		fputcsv($fileDesc, $line);
 	}
 }
-
