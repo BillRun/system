@@ -148,7 +148,7 @@ abstract class Billrun_Generator_Base_WholesaleReport extends Billrun_Generator 
 			$callReferences[$value['call_reference']] = true;
 			
 			$isIncoming =	( $value['record_type'] == "02" ||
-							(	$value['record_type'] == "12" && 
+							( ($value['record_type'] == "12" || $value['record_type'] == "11") && 
 								!preg_match("/".self::CELLCOM_ROAMING_REGEX."/", $value['in_circuit_group_name'])) && $value['in_circuit_group_name'] != '' );
 			$lineConnectType = ($isIncoming ? substr($value['in_circuit_group_name'],0,1) : substr($value['out_circuit_group_name'],0,1));
 			
