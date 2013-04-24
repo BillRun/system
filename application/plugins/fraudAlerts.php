@@ -78,7 +78,7 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 				$event['returned_value'] = $ret;
 				//Billrun_Log::getInstance()->log("handlerNotify ".print_r($event,1), Zend_Log::DEBUG);
 				$this->markEvent($event);
-				$this->markEventLine($event);
+				$this->markEventLines($event);
 
 				//Decrease the amount of alerts allowed in a single run if 0 is reached the break the loop.
 				$alertsLeft--;
@@ -257,9 +257,9 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * Mark the lines that generated the event as dealt with.
 	 * @param type $event the event that relate to the lines.
 	 */
-	protected function markEventLine($event) {
+	protected function markEventLines($event) {
 		//mark deposit for the lines on the current imsi
-		Billrun_Log::getInstance()->log("Fraud alerts mark event " . $event['deposit_stamp'], Zend_Log::DEBUG);
+		Billrun_Log::getInstance()->log("Fraud alerts mark event lines " . $event['deposit_stamp'], Zend_Log::DEBUG);
 		$imsi = (isset($event['imsi']) && $event['imsi']) ? $event['imsi'] : null;
 		$msisdn = (isset($event['msisdn']) && $event['msisdn']) ? $event['msisdn'] : null;
 
@@ -278,7 +278,7 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$lines_where['deposit_stamp'] = array('$exists' => false);
 
 		if (!($imsi || $msisdn)) {
-			Billrun_Log::getInstance()->log("fraudAlertsPlugin::markEventLine cannot find IMSI nor NDC_SN on event, marking CDR lines with event_stamp of : " . print_r($event['stamps'], 1), Zend_Log::DEBUG);
+			Billrun_Log::getInstance()->log("fraudAlertsPlugin::markEventLines cannot find IMSI nor NDC_SN on event, marking CDR lines with event_stamp of : " . print_r($event['stamps'], 1), Zend_Log::DEBUG);
 			$lines_where['event_stamp'] = array('$in' => $event['stamps']);
 		}
 
