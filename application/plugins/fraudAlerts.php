@@ -238,6 +238,7 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @param type $event the event to mark as dealt with.
 	 */
 	protected function markEvent($event) {
+		Billrun_Log::getInstance()->log("Fraud alerts mark event ". $event['deposit_stamp'], Zend_Log::DEBUG);
 		//mark events as dealt with.
 		$events_where = array(
 			'notify_time' => array('$exists' => false),
@@ -259,7 +260,8 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @param type $event the event that relate to the lines.
 	 */
 	protected function markEventLine($event) {
-			//mark deposit for the lines on the current imsi 
+			//mark deposit for the lines on the current imsi
+			Billrun_Log::getInstance()->log("Fraud alerts mark event ". $event['deposit_stamp'], Zend_Log::DEBUG);
 			$imsi =  (isset($event['imsi']) && $event['imsi']) ? $event['imsi'] : null;
 			$msisdn = (isset($event['msisdn']) && $event['msisdn']) ? $event['msisdn'] : null;
 
