@@ -263,12 +263,8 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$imsi =  (isset($event['imsi']) && $event['imsi']) ? $event['imsi'] : null;
 			$msisdn = (isset($event['msisdn']) && $event['msisdn']) ? $event['msisdn'] : null;
 
-			$lines_where = array(
-				'process_time' => array( '$gt' => date(Billrun_Base::base_dateformat, Billrun_Util::getLastChargeTime()) ),
-				'process_time' => array( '$lt' => date(Billrun_Base::base_dateformat, $this->startTime) ),
-				'deposit_stamp' => array( '$exists' => false ),
-			);
-
+			$lines_where = array();
+			
 			if ($imsi) {
 				$lines_where['imsi'] = $imsi;
 			}
@@ -276,17 +272,32 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 			if ($msisdn) {
 				$lines_where['msisdn'] = $msisdn;
 			}
-			$lines_update_set = array(
-					'$set' => array( 'deposit_stamp' => $event['deposit_stamp'] )
-				);
-			$update_options = array( 'multiple' => 1 );
 			
+			$lines_where['process_time'] = array( '$gt' => date(Billrun_Base::base_dateformat, Billrun_Util::getLastChargeTime()) );
+			$lines_where['process_time'] = array( '$lt' => date(Billrun_Base::base_dateformat, $this->startTime) );
+			$lines_where['deposit_stamp'] = array( '$exists' => false );
+
 			if(!($imsi || $msisdn)) {
 				Billrun_Log::getInstance()->log("fraudAlertsPlugin::markEventLine cannot find IMSI nor NDC_SN on event, marking CDR lines with event_stamp of : ". print_r($event['stamps'],1), Zend_Log::DEBUG);
 				$lines_where['event_stamp'] = array( '$in' =>  $event['stamps']); 
 			}
 			
-			$this->linesCol->update($lines_where, $lines_update_set, $update_options);				
+			// the update will done manually due to performance with collection update (not supported with hint)
+			// @TODO: when update command will suport hint will use update (see remark code after foreach loop)
+			$rows = $this->linesCol->find($lines_where)->hint(array('imsi' => 1));
+			foreach($rows as $row) {
+				$row->set('deposit_stamp', $event['deposit_stamp']);
+			}
+			
+			// forward compatibility
+//			$lines_update_set = array(
+//					'$set' => array( 'deposit_stamp' => $event['deposit_stamp'] )
+//			);
+//			$update_options = array( 'multiple' => 1 );
+//			
+			
+//			$this->linesCol->update($lines_where, $lines_update_set, $update_options);				
+			
 	}
 	
 }
