@@ -284,9 +284,10 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 
 		// the update will done manually due to performance with collection update (not supported with hint)
 		// @TODO: when update command will suport hint will use update (see remark code after foreach loop)
-		$rows = $this->linesCol->find($lines_where)->hint(array('imsi' => 1));
+		$rows = $this->linesCol->query($lines_where)->hint(array('imsi' => 1));
 		foreach ($rows as $row) {
 			$row->set('deposit_stamp', $event['deposit_stamp']);
+			$row->save($this->linesCol);
 		}
 
 		// forward compatibility

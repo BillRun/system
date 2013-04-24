@@ -184,7 +184,7 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$attachment = $this->generateMailCSV($attachmentPath, $events);
 		}
 
-		$ret = $this->sendMail("NRTRDE status " . date(Billrun_Base::base_dateformat), $msg, Billrun_Factory::config()->getConfigValue('emailAlerts.alerts.recipients', array()), array($attachment));
+		$ret = $this->sendMail("NRTRDE status " . date(Billrun_Base::base_dateformat), $msg, Billrun_Factory::config()->getConfigValue('emailAlerts.alerts.recipients', array()),(isset($attachment) ?  array($attachment) : array() ));
 
 		if (file_exists($attachmentPath)) {
 			@unlink($attachmentPath);
