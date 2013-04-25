@@ -112,7 +112,7 @@ class depositPlugin extends Billrun_Plugin_BillrunPluginBase {
 		);
 		$having = array(
 			'$match' => array(
-				'deposits' => array('$gt' => floatval(Billrun_Factory::config()->getConfigValue('deposit.hourly.thresholds.deposits', 3, 'int')))
+				'deposits' => array('$gte' => floatval(Billrun_Factory::config()->getConfigValue('deposit.hourly.thresholds.deposits', 3)))
 			),
 		);
 		
