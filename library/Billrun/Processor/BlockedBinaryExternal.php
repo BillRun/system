@@ -26,6 +26,7 @@ class Billrun_Processor_BlockedBinaryExternal extends Billrun_Processor_Base_Blo
 				Billrun_Factory::log()->log('Resource is not configured well', Zend_Log::ERR);
 				return false;
 			}
+			$this->markStartProcessing();
 			return Billrun_Factory::chain()->trigger('processData',array($this->getType(), $this->fileHandler, &$this));
 	}
 
@@ -38,6 +39,18 @@ class Billrun_Processor_BlockedBinaryExternal extends Billrun_Processor_Base_Blo
 	 */
 	public function getFilenameData($filename) {
 		return Billrun_Factory::chain()->trigger('getFilenameData',array($this->getType(), $filename, &$this));		
+	}
+	
+	/**
+	 * mark the current log line as being processed
+	 */
+	protected function markStartProcessing() {
+		$current_stamp = $this->getStamp(); // mongo id in new version; else string
+		if ($current_stamp instanceof Mongodloid_Entity || $current_stamp instanceof Mongodloid_Id) {
+			$resource = Billrun_Factory::db()->logCollection()->findOne($current_stamp);		
+			$resource->set('start_process_time', new MongoDate(time()));
+			return $resource->save(Billrun_Factory::db()->logCollection(), true);
+		}
 	}
 	
 }

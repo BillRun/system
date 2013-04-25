@@ -13,6 +13,8 @@
  */
 abstract class Billrun_Processor extends Billrun_Base {
 
+	const BACKUP_FILE_SEQUENCE_GRANULARITY = 2;
+	
 	/**
 	 * the type of the object
 	 *
@@ -132,11 +134,15 @@ abstract class Billrun_Processor extends Billrun_Base {
 		$log = Billrun_Factory::db()->logCollection();
 		$files = $log->query()
 			->equals('source', static::$type)
-			->notExists('process_time');
+			->notExists('process_time')->notExists('start_process_time');
 
 		$linesCount = 0;
 		foreach ($files as $file) {
+			if($log->findOne($file->getID())->offsetExists('start_process_time')) {
+				continue;
+			}
 			$this->setStamp($file->getID());
+			
 			$this->loadFile($file->get('path'), $file->get('retrieved_from'));
 			$processedLinesCount = $this->process();
 			if(FALSE !== $processedLinesCount) {
@@ -272,7 +278,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 
 		foreach ($this->data['data'] as $row) {
 			$stamp = $row['stamp'];
-			Billrun_Factory::log()->log("Store line with the stamp " . $stamp . " (" . $row['type'] . ")", Zend_Log::DEBUG);
+			//Billrun_Factory::log()->log("Store line with the stamp " . $stamp . " (" . $row['type'] . ")", Zend_Log::DEBUG);
 			if ($lines->query('stamp', $stamp)->count() > 0) {
 				Billrun_Factory::log()->log("processor::store - DUPLICATE! trying to insert duplicate line with stamp of : " . $stamp, Zend_Log::NOTICE);
 				continue;
@@ -344,8 +350,9 @@ abstract class Billrun_Processor extends Billrun_Base {
 		$seqData = $this->getFilenameData($this->filename);
 		for($i=0; $i < count($this->backupPaths) ; $i++) {			
 			$backupPath =  $this->backupPaths[$i];
+			$backupPath .= ($this->retrievedHostname ? DIRECTORY_SEPARATOR . $this->retrievedHostname: "");
 			$backupPath .= ($seqData['date'] ? DIRECTORY_SEPARATOR . $seqData['date'] : "");
-			$backupPath .= ($seqData['seq'] ? DIRECTORY_SEPARATOR . substr($seqData['seq'],0,-2) : "");
+			$backupPath .= ($seqData['seq'] ? DIRECTORY_SEPARATOR . substr($seqData['seq'],0,-self::BACKUP_FILE_SEQUENCE_GRANULARITY) : "");
 			
 			if ($this->backupToPath( $backupPath , !($move && $i+1 == count($this->backupPaths)) ) === TRUE) {
 				Billrun_Factory::log()->log("Success backup file " . $this->filePath . " to " . $backupPath, Zend_Log::INFO);
