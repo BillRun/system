@@ -63,23 +63,7 @@ class depositPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * method to collect data which need to be handle by event
 	 */
 	public function handlerCollect() {
-		$db = Billrun_Factory::db();
-
-		$ret = array();
-		$ret = array_merge($ret,$this->detectDepositExceeders($db));
-		
-	//	Billrun_Factory::log()->log(print_R($ret,1),  Zend_Log::DEBUG);
-		// unite all the results per imsi
-	//	die;
-		return $ret;
-	}
-	
-	/**
-	 * 
-	 * @param Mongodloid_Db $db
-	 * @return type
-	 */
-	protected function detectDepositExceeders(Mongodloid_Db $db) {
+		Billrun_Factory::log()->log("Collect deposits fraud (deposits plugin)", Zend_Log::DEBUG);
 		$eventsCol = Billrun_Factory::db()->eventsCollection();
 		$timeWindow= strtotime("-" . Billrun_Factory::config()->getConfigValue('deposit.hourly.timespan','4 hours'));
 		$where = array( 
@@ -116,12 +100,13 @@ class depositPlugin extends Billrun_Plugin_BillrunPluginBase {
 			),
 		);
 		
-		return $eventsCol->aggregate($where, $group, $project, $having);
+		$items = $eventsCol->aggregate($where, $group, $project, $having);
+
+		Billrun_Factory::log()->log("Deposits fraud found " . count($items) . " items", Zend_Log::DEBUG);
+
+		return $items;
 	}
-
-
 	
-
 	/**
 	 * Add data that is needed to use the event object/DB document later
 	 * @param Array|Object $event the event to add fields to.
