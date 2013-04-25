@@ -139,6 +139,8 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 						'record_type' => array('$in' => array('01','11')),
 						'called_number' => array('$regex' => '^(?=10[^1]|1016|016|97216)....'),
 						'duration'=> array('$gt'=> 0),
+						//@TODO  switch to unified time once you have the time to test it
+						//'unified_record_time' => array('$gt' => $charge_time),
 						'charging_start_time' => array('$gte' => $fromDate),
 					),
 				),
@@ -179,7 +181,7 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 	}
 	
 	////////////////////////////////////////////// Parser ///////////////////////////////////////////
-	
+	const DEFAULT_TIME_OFFSET="+03:00";
 	/**
 	 * @see Billrun_Plugin_Interface_IParser::parseData
 	 */
@@ -207,7 +209,7 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 					}
 				}
 			}
-			$data['unified_record_time'] = new MongoDate(Billrun_Util::dateTimeConvertShortToIso($data['charging_start_time']));
+			$data['unified_record_time'] = new MongoDate(Billrun_Util::dateTimeConvertShortToIso((string)$data['call_reference_time'],self::DEFAULT_TIME_OFFSET));
 		} 
 		$parser->setLastParseLength( $data['record_length'] );
 		

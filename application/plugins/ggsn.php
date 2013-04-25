@@ -45,7 +45,7 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Pl
 		if ($processor->retrievedHostname) {
 			$path = $path . DIRECTORY_SEPARATOR . $processor->retrievedHostname;
 		}
-		Billrun_Factory::log()->log("Saving  file to third party at : $path", Zend_Log::DEBUG);
+		Billrun_Factory::log()->log("Saving  file to third party at : $path", Zend_Log::INFO);
 		if (!$processor->backupToPath($path, true)) {
 			Billrun_Factory::log()->log("Couldn't  save file to third patry path at : $path", Zend_Log::ERR);
 		}
@@ -68,8 +68,10 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Pl
 
 		Billrun_Factory::log()->log("ggsnPlugin::handlerCollect collecting monthly data exceeders", Zend_Log::DEBUG);
 		$dataExceedersAlerts = $this->detectDataExceeders($lines, $aggregateQuery);
+		Billrun_Factory::log()->log("GGSN plugin of monthly usage fraud found " . count($dataExceedersAlerts) . " ", Zend_Log::INFO);
 		Billrun_Factory::log()->log("ggsnPlugin::handlerCollect collecting hourly data exceeders", Zend_Log::DEBUG);
 		$hourlyDataExceedersAlerts = $this->detectHourlyDataExceeders($lines, $aggregateQuery);
+		Billrun_Factory::log()->log("GGSN plugin of hourly usage fraud found " . count($hourlyDataExceedersAlerts) . " ", Zend_Log::INFO);
 
 		return array_merge($dataExceedersAlerts, $hourlyDataExceedersAlerts);
 	}
