@@ -50,11 +50,11 @@ class Billrun_Generator_Wholesale extends Billrun_Generator_Base_WholesaleReport
 											'$or' => array(
 												array(	
 														'record_type' => array('$in' => array("11")), 
-														"out_circuit_group_name" => array('$regex' => "$provider" ),
+														"in_circuit_group_name" => array('$regex' => "$provider" ),
 													),
 												array(	
 														'record_type' => array('$in' => array("12")), 
-														"in_circuit_group_name" => array('$regex' => "$provider" ),
+														"out_circuit_group_name" => array('$regex' => "$provider" ),
 													),
 											),
 											
