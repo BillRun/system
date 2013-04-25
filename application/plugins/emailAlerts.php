@@ -78,7 +78,6 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$events = $this->gatherEvents($this->alertTypes);
 
 		foreach ($events as $event) {
-			//	Billrun_Log::getInstance()->log("emailAlerts::alertsNotify : ".print_r($event,1), Zend_Log::DEBUG);
 			$retValue[] = $event;
 		}
 		$this->sendAlertsResultsSummary($retValue);
@@ -144,7 +143,6 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 					query(array('source' => $type, 'received_time' => array('$exists' => true)))->cursor()->
 					sort(array('received_time' => -1, '_id' => -1))->limit(1)->current();
 		}
-		//Billrun_Log::getInstance()->log("emailAlerts::alertsNotify : ".print_r($aggregateLogs,1), Zend_Log::DEBUG);
 		return $aggregateLogs;
 	}
 
@@ -164,7 +162,7 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 */
 	protected function sendAlertsResultsSummary($events) {
 
-		Billrun_Log::getInstance()->log("Sending alerts result to email", Zend_Log::DEBUG);
+		Billrun_Log::getInstance()->log("Sending alerts result to email", Zend_Log::INFO);
 
 		$failed = $successful = 0;
 		foreach ($events as $event) {
@@ -199,10 +197,9 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * send  processing results by email.
 	 */
 	protected function sendProcessingSummary($logs) {
-		Billrun_Log::getInstance()->log("Sending Processing result to email", Zend_Log::DEBUG);
+		Billrun_Log::getInstance()->log("Sending Processing result to email", Zend_Log::INFO);
 
 		$msg = "";
-		//Billrun_Log::getInstance()->log(print_r($logs), Zend_Log::DEBUG);die();
 		foreach ($logs as $type => $val) {
 			$name = strtoupper($type);
 			if (!isset($val['last_received'])) {

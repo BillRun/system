@@ -17,7 +17,7 @@ class depositPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 */
 	public function handlerAlert(&$items,$pluginName) {
 		if($pluginName != $this->getName() || !$items ) {return;}
-		Billrun_Factory::log()->log("Marking down Alert For $pluginName", Zend_Log::DEBUG);
+		Billrun_Factory::log()->log("Marking down Alert For $pluginName", Zend_Log::INFO);
 		$ret = array();
 		$events = Billrun_Factory::db()->eventsCollection();
 		foreach($items as &$item) {
@@ -43,9 +43,8 @@ class depositPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 */
 	public function handlerMarkDown(&$items, $pluginName) {
 		if($pluginName != $this->getName() || !$items ) {return;}
-		//Billrun_Factory::log()->log("Marking down Alert For {$item['imsi']}",Zend_Log::DEBUG);
+		Billrun_Factory::log()->log("Marking down Alert For deposits fraud plugin",Zend_Log::INFO);
 		$ret = array();
-		$db = Billrun_Factory::db();
 		$eventsCol = Billrun_Factory::db()->eventsCollection();
 		foreach($items as &$item) { 
 			$eventsCol->update(	array( '_id' => array('$in' => $item['ids']), 
@@ -63,7 +62,7 @@ class depositPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * method to collect data which need to be handle by event
 	 */
 	public function handlerCollect() {
-		Billrun_Factory::log()->log("Collect deposits fraud (deposits plugin)", Zend_Log::DEBUG);
+		Billrun_Factory::log()->log("Collect deposits fraud (deposits plugin)", Zend_Log::INFO);
 		$eventsCol = Billrun_Factory::db()->eventsCollection();
 		$timeWindow= strtotime("-" . Billrun_Factory::config()->getConfigValue('deposit.hourly.timespan','4 hours'));
 		$where = array( 
@@ -102,7 +101,7 @@ class depositPlugin extends Billrun_Plugin_BillrunPluginBase {
 		
 		$items = $eventsCol->aggregate($where, $group, $project, $having);
 
-		Billrun_Factory::log()->log("Deposits fraud found " . count($items) . " items", Zend_Log::DEBUG);
+		Billrun_Factory::log()->log("Deposits fraud found " . count($items) . " items", Zend_Log::INFO);
 
 		return $items;
 	}
