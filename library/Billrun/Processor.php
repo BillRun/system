@@ -51,6 +51,10 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 * @var file path
 	 */
 	protected $backupPaths  = array();
+	/**
+	 * The time to wait  until adopting file  that were  started processing but weren't finished.
+	 */
+	protected $orphendFilesAdoptionTime = '1 day';
 	
 	/**
 	 * constructor - load basic options
@@ -74,6 +78,11 @@ abstract class Billrun_Processor extends Billrun_Base {
 		} else {
 			$this->setBackupPath( Billrun_Factory::config()->getConfigValue($this->getType().'.backup_path',array('./backups/'.$this->getType())));
 		}
+		
+		if (isset($options['orphen_files_time'])) {
+			$this->orphendFilesAdoptionTime = $options['orphen_files_time'];
+		}
+		
 
 	}
 	
@@ -130,20 +139,30 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 * method to run over all the files received which did not have been processed
 	 */
 	public function process_files() {
-
+		$adoptThreshold = strtotime('-'.$this->orphendFilesAdoptionTime);
 		$log = Billrun_Factory::db()->logCollection();
-		$files = $log->query()
-			->equals('source', static::$type)
-			->notExists('process_time')->notExists('start_process_time');
+		$files = $log->query( array(
+						'$or' => array(
+								array('start_process_time'=> array('$exists' => false)),
+								array('start_process_time'=> array( '$lt' => new MongoDate($adoptThreshold) ) ),
+						),
+				)
+			)->equals('source', static::$type)
+			->notExists('process_time');
 
 		$linesCount = 0;
 		foreach ($files as $file) {
-			if($log->findOne($file->getID())->offsetExists('start_process_time')) {
-				continue;
+			if( $log->findOne($file->getID())->offsetExists('start_process_time') ) {
+				if( strtotime($log->findOne($file->getID())['start_process_time']) >= $adoptThreshold ) {
+					Billrun_Factory::log()->log("Skipping file {$file['file_name']} with start time of {$file['start_process_time']}", Zend_Log::DEBUG);
+					continue;
+				}
+				Billrun_Factory::log()->log("Reprocessing file {$file['file_name']} with start time of {$file['start_process_time']}", Zend_Log::DEBUG);
 			}
 			$this->setStamp($file->getID());
 			
 			$this->loadFile($file->get('path'), $file->get('retrieved_from'));
+			$this->markStartProcessing();
 			$processedLinesCount = $this->process();
 			if(FALSE !== $processedLinesCount) {
 				$linesCount += $processedLinesCount;
@@ -398,5 +417,17 @@ abstract class Billrun_Processor extends Billrun_Base {
 						'time' => Billrun_Util::regexFirstValue(Billrun_Factory::config()->getConfigValue($this->getType().".sequence_regex.time","/\D(\d{4,6})\D/"), $filename),
 					);
 	 }
+	 
+	 /**
+	 * mark the current log line as being processed
+	 */
+	protected function markStartProcessing() {
+		$current_stamp = $this->getStamp(); // mongo id in new version; else string
+		if ($current_stamp instanceof Mongodloid_Entity || $current_stamp instanceof Mongodloid_Id) {
+			$resource = Billrun_Factory::db()->logCollection()->findOne($current_stamp);		
+			$resource->set('start_process_time', new MongoDate(time()));
+			return $resource->save(Billrun_Factory::db()->logCollection(), true);
+		}
+	}
 
 }
