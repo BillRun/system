@@ -51,6 +51,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 * @var file path
 	 */
 	protected $backupPaths  = array();
+	
 	/**
 	 * The time to wait  until adopting file  that were  started processing but weren't finished.
 	 */
@@ -81,6 +82,8 @@ abstract class Billrun_Processor extends Billrun_Base {
 		
 		if (isset($options['orphen_files_time'])) {
 			$this->orphendFilesAdoptionTime = $options['orphen_files_time'];
+		} else if(isset($options['processor']['orphen_files_time'])) {
+			$this->orphendFilesAdoptionTime = $options['processor']['orphen_files_time'];
 		}
 		
 
