@@ -112,8 +112,7 @@ abstract class Billrun_Base {
 		if (isset($options['db'])) {
 			$this->setDB($options['db']);
 		} else {
-			$conn = Mongodloid_Connection::getInstance($this->config->db->host, $this->config->db->port);
-			$this->setDB($conn->getDB($this->config->db->name));
+			$this->setDB(Billrun_Db::getInstance());
 		}
 
 		if (isset($options['stamp']) && $options['stamp']) {
