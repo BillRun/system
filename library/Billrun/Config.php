@@ -73,6 +73,8 @@ class Billrun_Config {
 	 *               if null passed the return value type will be declare by the default value type
 	 *               this argument is deprecated; the return value type is defined by the default value type
 	 * @return mixed the config value
+	 * 
+	 * @todo add cache for the config get method
 	 */
 	public function getConfigValue($keys, $defVal = null, $retType = null) {
 		$currConf = $this->config;
