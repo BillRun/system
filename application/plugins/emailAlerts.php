@@ -78,7 +78,6 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$events = $this->gatherEvents($this->alertTypes);
 
 		foreach ($events as $event) {
-			//	Billrun_Log::getInstance()->log("emailAlerts::alertsNotify : ".print_r($event,1), Zend_Log::DEBUG);
 			$retValue[] = $event;
 		}
 		$this->sendAlertsResultsSummary($retValue);
@@ -144,7 +143,6 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 					query(array('source' => $type, 'received_time' => array('$exists' => true)))->cursor()->
 					sort(array('received_time' => -1, '_id' => -1))->limit(1)->current();
 		}
-		//Billrun_Log::getInstance()->log("emailAlerts::alertsNotify : ".print_r($aggregateLogs,1), Zend_Log::DEBUG);
 		return $aggregateLogs;
 	}
 
@@ -164,7 +162,7 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 */
 	protected function sendAlertsResultsSummary($events) {
 
-		Billrun_Log::getInstance()->log("Sending alerts result to email", Zend_Log::DEBUG);
+		Billrun_Log::getInstance()->log("Sending alerts result to email", Zend_Log::INFO);
 
 		$failed = $successful = 0;
 		foreach ($events as $event) {
@@ -181,12 +179,14 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		if ($failed || $successful) {
 			$msg .= PHP_EOL . "This mail contain 1 attachment for libreoffice and ms-office" . PHP_EOL;
 			$attachmentPath = '/tmp/' . date('YmdHi') . '_alert_status.csv';
-			$attachment = $this->generateMailCSV($attachmentPath, $events);
+			$attachment = array($this->generateMailCSV($attachmentPath, $events));
+		} else {
+			$attachment = array();
 		}
 
-		$ret = $this->sendMail("NRTRDE status " . date(Billrun_Base::base_dateformat), $msg, Billrun_Factory::config()->getConfigValue('emailAlerts.alerts.recipients', array()),(isset($attachment) ?  array($attachment) : array() ));
+		$ret = $this->sendMail("NRTRDE status " . date(Billrun_Base::base_dateformat), $msg, Billrun_Factory::config()->getConfigValue('emailAlerts.alerts.recipients', array()), $attachment );
 
-		if (file_exists($attachmentPath)) {
+		if (count($attachment) && file_exists($attachmentPath)) {
 			@unlink($attachmentPath);
 		}
 
@@ -197,10 +197,9 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * send  processing results by email.
 	 */
 	protected function sendProcessingSummary($logs) {
-		Billrun_Log::getInstance()->log("Sending Processing result to email", Zend_Log::DEBUG);
+		Billrun_Log::getInstance()->log("Sending Processing result to email", Zend_Log::INFO);
 
 		$msg = "";
-		//Billrun_Log::getInstance()->log(print_r($logs), Zend_Log::DEBUG);die();
 		foreach ($logs as $type => $val) {
 			$name = strtoupper($type);
 			if (!isset($val['last_received'])) {
