@@ -27,6 +27,15 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	 */
 	protected $data = array();
 
+	/**
+	 * Limit iterator
+	 * used to limit the count of row to calc on.
+	 * 0 or less means no limit
+	 *
+	 * @var int
+	 */
+	protected $limit = 0;
+	
 	public function __construct($options = array()) {
 		parent::__construct($options);
 		

@@ -30,10 +30,16 @@ class Billrun_Calculator_Ilds extends Billrun_Calculator {
 		
 		$lines = Billrun_Factory::db()->linesCollection();
 
-		return $lines->query()
+		$query = $lines->query()
 			->equals('source', static::$type)
 			->notExists('price_customer');
 //			->notExists('price_provider'); // @todo: check how to do or between 2 not exists		
+		
+		if ($this->limit > 0) {
+			$query->limit($this->limit);
+		}
+		
+		return $query;
 	}
 	
 	/**
