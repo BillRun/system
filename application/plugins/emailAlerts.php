@@ -251,8 +251,14 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		foreach ($recipients as $recipient) {
 			$mailer->addTo($recipient);
 		}
-		//sen email
-		return $mailer->send();
+		//send email
+		try {
+			$ret = $mailer->send();
+		} catch(Exception $e ) {
+			Billrun_Factory::log()->log("Failed when trying to send  email on alert results, Failed with : ".$e, Zend_Log::ERR);
+			$ret = FALSE;
+		}
+		return $ret;
 	}
 
 	/**

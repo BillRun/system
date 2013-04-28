@@ -36,7 +36,7 @@ abstract class Billrun_Plugin_BillrunPluginFraud extends Billrun_Plugin_BillrunP
 	/**
 	 * method to collect data which need to be handle by event
 	 */
-	abstract public function handlerCollect();
+	abstract public function handlerCollect($options);
 
 	
 		/**
@@ -46,8 +46,10 @@ abstract class Billrun_Plugin_BillrunPluginFraud extends Billrun_Plugin_BillrunP
 	 * @return type
 	 */
 	public function handlerAlert(&$items,$pluginName) {
-		if($pluginName != $this->getName()) {return;}
-		
+		if($pluginName != $this->getName() || !$items ) {
+			return;	
+		}
+
 		$events = Billrun_Factory::db()->eventsCollection();
 		//Billrun_Factory::log()->log("New Alert For {$item['imsi']}",Zend_Log::DEBUG);
 		$ret = array();
@@ -78,7 +80,7 @@ abstract class Billrun_Plugin_BillrunPluginFraud extends Billrun_Plugin_BillrunP
 		if ($pluginName != $this->getName() || !$items) {
 			return;
 		}
-
+		
 		$ret = array();
 		$lines = Billrun_Factory::db()->linesCollection();
 		foreach ($items as &$item) {

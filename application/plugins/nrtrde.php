@@ -144,8 +144,10 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 	/**
 	 * method to collect data which need to be handle by event
 	 */
-	public function handlerCollect() {
-
+	public function handlerCollect($options) {
+		if( $options['type'] != 'roaming') { 
+			return FALSE; 
+		}
 		$lines = Billrun_Factory::db()->linesCollection();
 		$charge_time = Billrun_Util::getLastChargeTime(true); // true means return timestamp
 
