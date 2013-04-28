@@ -194,20 +194,29 @@ class Mongodloid_Entity implements ArrayAccess {
 		$key = preg_replace('@\\[([^\\]]+)\\]@', '.$1', $key);
 		$result = $this->_values;
 
+		// if this is chained key, let's pull it
 		if (strpos($key, '.') !== FALSE) {
 			do {
 				list($current, $key) = explode('.', $key, 2);
-				$result = $result[$current];
-			} while ($key !== null);
-		} else {
-			//lazy load MongoId Ref objects
-			if ($this->_values[$key] instanceof MongoId && $this->collection()) {
-				$this->_values[$key] = $this->collection()->findOne($this->_values[$key]['$id']);
-			}
-			$result = $this->_values[$key];
+				if (isset($result[$current])) {
+					$result = $result[$current];
+				} else {
+					// if key is not in the values, let's return null -> not found key
+					return null;
+				}
+			} while (strpos($key, '.') !== FALSE);
 		}
 
-		return $result;
+		if (!isset($result[$key])) {
+			return null;
+		}
+
+		//lazy load MongoId Ref objects
+		if ($result[$key] instanceof MongoId && $this->collection()) {
+			$result[$key] = $this->collection()->findOne($result[$key]['$id']);
+		}
+		
+		return $result[$key];
 	}
 
 	public function getId() {
