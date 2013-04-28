@@ -95,11 +95,11 @@ class Processor_Mergezonepackage extends Billrun_Processor_Base_Separator {
 				if ($entity->getId()) {
 					$entity->collection($rates);
 					$entity->set("rates.call.package", true);
-					if ($key === "IL_1344") {
-						print "**************" . "<br />";
-						var_dump($entity->get("rates.sms"));
-						print "**************" . "<br />";
-					}
+//					if ($key === "IL_1344") {
+//						print "**************" . "<br />";
+//						var_dump($entity->get("rates.sms"));
+//						print "**************" . "<br />";
+//					}
 					if ($entity->get("rates.sms")) {
 						$entity->set("rates.sms.package", true);
 					}
