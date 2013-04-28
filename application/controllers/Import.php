@@ -47,10 +47,30 @@ class ImportController extends Yaf_Controller_Abstract {
 		$merge->setBackupPath(array()); // no backup
 		$mergeData = $merge->process();
 
+		$parser2 = Billrun_Parser::getInstance(array(
+			'type' => 'separator',
+			'separator' => ",",
+		));
+		
+
+		$mergePackage = Billrun_Processor::getInstance(array(
+			'type' => 'mergezonepackage', 
+			'parser' => $parser2, 
+			'path' => '/home/ofer/Desktop/billing_data/zone_group_element.csv'
+		));
+
+		if ($mergePackage === FALSE) {
+			exit('cannot load merge processor');
+		}
+		
+		$mergePackage->setBackupPath(array()); // no backup
+		$mergePackageData = $mergePackage->process();
+		
 		$this->getView()->title = "BillRun | The best open source billing system";
 		$this->getView()->content = "Data import count: " . count($importData)
 			. "<br />" . PHP_EOL
-			. "Data import count: " . count($mergeData)
+			. "Data merge count: " . count($mergeData) . "<br />"
+			. "Data merge package count: " . count($mergePackageData)
 		;
 
 		

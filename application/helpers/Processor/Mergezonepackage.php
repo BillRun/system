@@ -15,7 +15,7 @@
  * @subpackage MergeRates
  * @since      1.0
  */
-class Processor_Mergerates extends Billrun_Processor_Base_Separator {
+class Processor_Mergezonepackage extends Billrun_Processor_Base_Separator {
 
 	/**
 	 * the type of the object
@@ -84,55 +84,22 @@ class Processor_Mergerates extends Billrun_Processor_Base_Separator {
 		}
 
 		$rates = Billrun_Factory::db()->ratesCollection();
-//		$query = $rates->query();
-//		foreach ($query as $row) {
-//			print_R($row->get('key')); die;
-//		}
 
 		$this->data['stored_data'] = array();
 
 		foreach ($this->data['data'] as $key => $row) {
-			switch ($row['kind']) {
-				case 'A':
-					$rateKey = 'data';
-					continue; // we will take care later
-					break;
-				case 'C':
-					$rateKey = 'call';
-					$unit = 'seconds';
-					break;
-				case 'I':
-					$rateKey = 'data';
-					continue; // we will take care later
-					break;
-				case 'M':
-					$rateKey = 'sms';
-					$unit = 'counter';
-					break;
-				case 'N':
-					continue;
-					break;
-			}
-			$entity = $rates->query('key', $row['zoneOrItem'])->cursor()->current();
-			// todo check if rate already exists, if so, close row and open new row
-			if ($entity->getId()) {
-				$entity->collection($rates);
-				$value = array(
-					'unit' => $unit,
-					'rate' => array(
-						'to' => (int) 2147483647,
-						'price' => (int) $row['tinf_sampPrice0'],
-						'interval' => (int) $row['tinf_sampDelayInSec0'],
-					),
-				);
-				if ($row['kind'] == 'C') { // add access price for calls
-					$value['access'] = (int) $row['tinf_accessPrice0'];
+//			print_R($row);die;
+			if (isset($row['zoneGroupEltId_tariffItem'])) {
+				$key = $row['zoneGroupEltId_tariffItem'];
+				$entity = $rates->query('key', $row['zoneGroupEltId_tariffItem'])->cursor()->current();
+				if ($entity->getId()) {
+					$entity->collection($rates);
+					$entity->set("package", true);
+					$entity->save($rates);
+					$this->data['stored_data'][] = $row;
+				} else {
+					echo $row['zoneGroupEltId_tariffItem'] . " zone not found" . PHP_EOL . "<br />";
 				}
-				$entity->set("rates.".$rateKey, $value);
-				$entity->save($rates);
-				$this->data['stored_data'][] = $row;
-			} else {
-				echo $row['zoneOrItem'] . " zone not found" . PHP_EOL . "<br />";
 			}
 		}
 
