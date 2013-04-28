@@ -94,12 +94,19 @@ class Billrun_Factory {
 	 * 
 	 * @return Billrun_Db
 	 */
-	static public function db() {
-		if (!self::$db) {
-			self::$db = Billrun_Db::getInstance();
+	static public function db(array $options = array()) {
+		if (empty($options)) {
+			$options = Billrun_Factory::config()->getConfigValue('db'); // the stdclass force it to return object
+		}
+		
+		// unique stamp per db connection
+		$stamp = md5(serialize($options));
+		
+		if (!isset(self::$db[$stamp])) {
+			self::$db[$stamp] = Billrun_Db::getInstance($options);
 		}
 
-		return self::$db;
+		return self::$db[$stamp];
 	}
 
 	/**
