@@ -101,7 +101,7 @@ class Processor_Mergezonepackage extends Billrun_Processor_Base_Separator {
 //						print "**************" . "<br />";
 //					}
 					if ($entity->get("rates.sms")) {
-						$entity->set("rates.sms.package", true);
+						$entity->set("rates.sms.package", array(9, 99));
 					}
 					$entity->save($rates);
 					$this->data['stored_data'][] = $row;
