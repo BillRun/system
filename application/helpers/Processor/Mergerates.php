@@ -121,12 +121,12 @@ class Processor_Mergerates extends Billrun_Processor_Base_Separator {
 					'unit' => $unit,
 					'rate' => array(
 						'to' => (int) 2147483647,
-						'price' => (int) $row['tinf_sampPrice0'],
+						'price' => (double) $row['tinf_sampPrice0'],
 						'interval' => (int) $row['tinf_sampDelayInSec0'],
 					),
 				);
 				if ($row['kind'] == 'C') { // add access price for calls
-					$value['access'] = (int) $row['tinf_accessPrice0'];
+					$value['access'] = (double) $row['tinf_accessPrice0'];
 				}
 				$entity->set("rates.".$rateKey, $value);
 				$entity->save($rates);
