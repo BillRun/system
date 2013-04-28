@@ -12,7 +12,7 @@
  */
 abstract class Billrun_Generator_Base_WholesaleReport extends Billrun_Generator  {
 
-	const CELLCOM_ROAMING_REGEX="^RCEL";
+	const CELLCOM_ROAMING_REGEX="^[R4]CEL";
 	
 	/**
 	 * The report type  shou8ld  be  overriden  by inheriting functions.
@@ -41,15 +41,18 @@ abstract class Billrun_Generator_Base_WholesaleReport extends Billrun_Generator 
 																		'I' => 'International',
 																		'M' => 'Mobile',
 																		'N' => 'National',
-																		'4' => 'National' ,																	
+																		'4' => 'National' ,
+																		'P' => 'National',
+																		'Un' => 'Other',
 																	));
 		
 		$this->providers = Billrun_Factory::config()->getConfigValue( $this->reportType.'.reports.providers', 
 																	  array(
+																			'Golan' => array('provider'=> '^$'),
 																			'Bezeq' => array('provider'=> '^[4N]BZQ'),																			
-																			'Bezeq International Mapa' => array('provider'=> "^NBZI"),
-																			'Bezeq International' => array('provider'=> "^IBZI"),
-																			'Cellcom Mapa' => array('provider'=> "^[N4]CEL"),
+															//				'Bezeq International Mapa' => array('provider'=> "^NBZI"),
+															//				'Bezeq International' => array('provider'=> "^IBZI"),
+																			'Cellcom Mapa' => array('provider'=> "^NCEL"),
 																		  	'Cellcom' => array('provider'=> "^MCEL"),
 																			'Partner' => array('provider'=> "^MPRT"),
 																			'Partner Mapa' => array('provider'=> "^NPRT"),
@@ -58,13 +61,14 @@ abstract class Billrun_Generator_Base_WholesaleReport extends Billrun_Generator 
 																			'Netvision' => array('provider'=> "^NNTV"),
 																			'Netvision International' => array('provider'=> "^INTV"),
 																			'Hot Mapa' => array('provider'=> "^NHOT"),
+																			'Paltel'=>	array('provider'=> "^SPAL"),
 																			/*'Smile' => array('provider'=> "^\wSML"),
 																			'Hot' => array('provider'=> "^\wHOT"),
 																			'Telzar' =>	array('provider'=> "^\wTLZ"),
 																			'Xfone' =>	array('provider'=> "^\wXFN"),
 																			'Hilat'=>	array('provider'=> "^\wHLT"),
 																			'Kartel'=>	array('provider'=> "^\wKRT(?=ROM|)"),
-																			'Paltel'=>	array('provider'=> "^\wSPAL"),
+																			
 																			'Wataniya'=>	array('provider'=> "^\wSWAT"),*/
 																		));
 		
@@ -97,7 +101,7 @@ abstract class Billrun_Generator_Base_WholesaleReport extends Billrun_Generator 
 	/**
 	 * 
 	 * @param type $initData
-	 * @return type
+	 * @r-eturn type
 	 */
 	public function load($initData = true) {
 		return  false; //$this->getCDRs("", $timeHorizions);
@@ -142,19 +146,22 @@ abstract class Billrun_Generator_Base_WholesaleReport extends Billrun_Generator 
 		//Billrun_Factory::log()->log(print_r($lines->count(),1),Zend_Log::DEBUG);
 		foreach ($lines as $value) {
 			
-			if(isset($callReferences[$value['call_reference']])) { 
+			/*if(isset($callReferences[$value['call_reference']])) { 
 				continue;
 			}
-			$callReferences[$value['call_reference']] = true;
+			$callReferences[$value['call_reference']] = true;*/
 			
-			$isIncoming =	( $value['record_type'] == "02" ||
-							( ($value['record_type'] == "12" || $value['record_type'] == "11") && 
-								!preg_match("/".self::CELLCOM_ROAMING_REGEX."/", $value['in_circuit_group_name'])) && $value['in_circuit_group_name'] != '' );
+			$isIncoming =	$value['record_type'] == "02" || 
+								(($value['record_type'] == "11" || $value['record_type'] == "11") && 
+								!preg_match("/".self::CELLCOM_ROAMING_REGEX."/", $value['in_circuit_group_name']) && 
+								$value['in_circuit_group_name'] != '' );
+			
 			$lineConnectType = ($isIncoming ? substr($value['in_circuit_group_name'],0,1) : substr($value['out_circuit_group_name'],0,1));
 			
 			if(!isset($this->types[$lineConnectType])) {
 				//Billrun_Factory::log()->log(print_r($value,1),Zend_Log::DEBUG);
-				continue;
+				//continue;
+				$lineConnectType = "Un";
 			}
 			$connectType =  $this->types[$lineConnectType];
 			$day = substr($value['call_reference_time'],0,8);

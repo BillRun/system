@@ -70,7 +70,11 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 			$this->ftp->setPassive(isset($config['passive']) ? $config['passive'] : false);
 
 			Billrun_Factory::dispatcher()->trigger('beforeFTPReceive', array($this, $hostName));
-			$hostRet = $this->receiveFromHost($hostName, $config);
+			try {
+				$hostRet = $this->receiveFromHost($hostName, $config);
+			} catch(Exception $e) {
+				Billrun_Factory::log()->log("FTP: Fail when downloading from : $hostName with exception : ".$e, Zend_Log::DEBUG);
+			}
 			Billrun_Factory::dispatcher()->trigger('afterFTPReceived', array($this, $hostRet, $hostName));
 			
 			$ret = array_merge($ret, $hostRet);	

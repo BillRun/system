@@ -14,6 +14,9 @@ class Billrun_Generator_NationalRoaming extends Billrun_Generator_Base_Wholesale
 		
 	public function __construct($options) {
 		parent::__construct(array_merge($options, array('report_type' => 'national_roaming')));
+		$this->providers['Golan'] = array('provider'=> '^(?=RCEL.*|)$');
+		$this->providers['Voice Mail'] = array('provider'=> '^VVOM');
+		
 	}
 	
 	/**

@@ -13,8 +13,9 @@ class ildsPlugin extends Billrun_Plugin_BillrunPluginFraud {
 	 * method to collect data which need to be handle by event
 	 */
 	public function handlerCollect() {
+		Billrun_Factory::log()->log("ILDS fraud collect handler triggered",  Zend_Log::DEBUG);
 		$lines = Billrun_Factory::db()->linesCollection();
-		$charge_time = $this->get_last_charge_time();
+		$charge_time = Billrun_Util::getLastChargeTime(); //$this->get_last_charge_time();
 
 		$base_match = array(
 			'$match' => array(
@@ -56,8 +57,8 @@ class ildsPlugin extends Billrun_Plugin_BillrunPluginFraud {
 			),
 		);
 
-		Billrun_Factory::log()->log("ildsPlugin::handlerCollect collecting exceeders",  Zend_Log::DEBUG);
 		$ret = $lines->aggregate($base_match, $where, $group, $project, $having);
+		Billrun_Factory::log()->log("ILDS fraud plugin found " . count($ret) . " items",  Zend_Log::DEBUG);
 
 		return $ret;
 	}
