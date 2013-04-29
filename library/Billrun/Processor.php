@@ -55,7 +55,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 	/**
 	 * The time to wait  until adopting file  that were  started processing but weren't finished.
 	 */
-	protected $orphendFilesAdoptionTime = '1 day';
+	protected $orphandFilesAdoptionTime = '1 day';
 	
 	/**
 	 * constructor - load basic options
@@ -80,10 +80,10 @@ abstract class Billrun_Processor extends Billrun_Base {
 			$this->setBackupPath( Billrun_Factory::config()->getConfigValue($this->getType().'.backup_path',array('./backups/'.$this->getType())));
 		}
 		
-		if (isset($options['orphen_files_time'])) {
-			$this->orphendFilesAdoptionTime = $options['orphen_files_time'];
-		} else if(isset($options['processor']['orphen_files_time'])) {
-			$this->orphendFilesAdoptionTime = $options['processor']['orphen_files_time'];
+		if (isset($options['orphan_files_time'])) {
+			$this->orphandFilesAdoptionTime = $options['orphan_files_time'];
+		} else if(isset($options['processor']['orphan_files_time'])) {
+			$this->orphandFilesAdoptionTime = $options['processor']['orphan_files_time'];
 		}
 		
 		if(isset($options['processor']['limit']) && $options['processor']['limit']) {
@@ -145,7 +145,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 * method to run over all the files received which did not have been processed
 	 */
 	public function process_files() {
-		$adoptThreshold = strtotime('-'.$this->orphendFilesAdoptionTime);
+		$adoptThreshold = strtotime('-'.$this->orphandFilesAdoptionTime);
 		$log = Billrun_Factory::db()->logCollection();
 		$files = $log->query( array(
 						'$or' => array(
