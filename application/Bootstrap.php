@@ -42,15 +42,8 @@ class Bootstrap extends Yaf_Bootstrap_Abstract {
 			}
 		}
 
-		// make the helpers autoload
-		// deprecated; for example, check the autoload of Billrun_Base::getInstance()
-//		$loader = Yaf_Loader::getInstance(APPLICATION_PATH . '/application/helpers');
-//		if (isset($config->namespaces)) {
-//			$namespaces = $config->namespaces->toArray();
-//			foreach ($namespaces as $namespace) {
-//				$loader->registerLocalNamespace($namespace);
-//			}
-//		}
+		// make the base action load required by controllers actions)
+		Yaf_Loader::getInstance(APPLICATION_PATH . '/application/helpers')->registerLocalNamespace('Action');
 
 
 	}
