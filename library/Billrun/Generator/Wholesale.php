@@ -14,6 +14,15 @@ class Billrun_Generator_Wholesale extends Billrun_Generator_Base_WholesaleReport
 
 	public function __construct($options) {
 		parent::__construct(array_merge($options, array('report_type' => 'wholesale')));
+		/*$this->providers['Bezeq International'] = array('provider'=> "^IBZI");
+		$this->providers['Netvision International'] = array('provider'=> "^INTV");
+		$this->providers['Smile'] = array('provider'=> "^\wSML");
+		$this->providers['Hot'] = array('provider'=> "^\wHOT");
+		$this->providers['Telzar'] = array('provider'=> "^\wTLZ");
+		$this->providers['Xfone'] =	array('provider'=> "^\wXFN");
+		$this->providers['Hilat'] =	array('provider'=> "^\wHLT");
+		$this->providers['Kartel'] = array('provider'=> "^\wKRT(?=ROM|)");
+		$this->providers['Wataniya'] =	array('provider'=> "^\wSWAT");*/
 	}
 	
 	/**
@@ -56,6 +65,25 @@ class Billrun_Generator_Wholesale extends Billrun_Generator_Base_WholesaleReport
 														'record_type' => array('$in' => array("12")), 
 														"out_circuit_group_name" => array('$regex' => "$provider" ),
 													),
+												//SIP Calls
+												array(
+														'record_type' => array('$in' => array("01")), 
+														"out_circuit_group_name" => array('$regex' => "$provider" ),
+												),
+												array(
+														'record_type' => array('$in' => array("02")), 
+														"in_circuit_group_name" => array('$regex' => "$provider" ),
+												),
+												array(
+														'record_type' => array('$in' => array("11")), 
+														"out_circuit_group_name" => array('$regex' => "$provider" ),
+														"in_circuit_group_name" => array('$regex' => self::CELLCOM_ROAMING_REGEX ),
+												),
+												array(
+														'record_type' => array('$in' => array("12")), 
+														"in_circuit_group_name" => array('$regex' => "$provider" ),
+														"out_circuit_group_name" => array('$regex' => self::CELLCOM_ROAMING_REGEX ),
+												),
 											),
 											
 										));
