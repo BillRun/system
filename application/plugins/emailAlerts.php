@@ -60,8 +60,8 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase  {
 	 */
 	public function handlerNotify($handler) {
 
-		$ret[] = $this->alertsNotify();
-		$ret[] = $this->processingNotify();
+		$processingStatusMsg = $this->processingNotify();
+		$ret[] = $this->alertsNotify($processingStatusMsg);
 
 
 		return $ret;
@@ -71,7 +71,7 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase  {
 	 * Gather all the finished events.
 	 * @return array return value of each event status
 	 */
-	protected function alertsNotify() {
+	protected function alertsNotify($postMsg = null) {
 		$retValue = array();
 		if (!Billrun_Factory::config()->getConfigValue('emailAlerts.alerts.active', true)) {
 			return $retValue;
@@ -83,7 +83,7 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase  {
 		foreach ($events as $event) {
 			$retValue[] = $event;
 		}
-		$this->sendAlertsResultsSummary($retValue);
+		$this->sendAlertsResultsSummary($retValue, $postMsg);
 		$this->markSentEmailEvents($events);
 		return $retValue;
 	}
@@ -110,8 +110,7 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase  {
 			}
 			$retValue[$key] = $log;
 		}
-		$this->sendProcessingSummary($retValue);
-		return $retValue;
+		return $this->getProcessingSummary($retValue);
 	}
 
 	/**
@@ -141,10 +140,10 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase  {
 		foreach ($types as $type) {
 			$aggregateLogs[$type]['last_processed'] = Billrun_Factory::db()->logCollection()->
 					query(array('source' => $type, 'process_time' => array('$exists' => true)))->cursor()->
-					sort(array('proccess_time' => -1, '_id' => -1))->limit(1)->current();
-			$aggregateLogs[$type]['last_received'] = Billrun_Factory::db()->logCollection()->
-					query(array('source' => $type, 'received_time' => array('$exists' => true)))->cursor()->
-					sort(array('received_time' => -1, '_id' => -1))->limit(1)->current();
+					sort(array('process_time' => -1, '_id' => -1))->limit(1)->current();
+//			$aggregateLogs[$type]['last_received'] = Billrun_Factory::db()->logCollection()->
+//					query(array('source' => $type, 'received_time' => array('$exists' => true)))->cursor()->
+//					sort(array('received_time' => -1, '_id' => -1))->limit(1)->current();
 		}
 		return $aggregateLogs;
 	}
@@ -163,7 +162,7 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase  {
 	/**
 	 * send  alerts results by email.
 	 */
-	protected function sendAlertsResultsSummary($events) {
+	protected function sendAlertsResultsSummary($events, $postMsg = null) {
 
 		Billrun_Log::getInstance()->log("Sending alerts result to email", Zend_Log::INFO);
 
@@ -176,8 +175,10 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase  {
 			}
 		}
 
-		$msg = "Count of failed: $failed" . PHP_EOL .
-			"Count of success: $successful" . PHP_EOL;
+		$msg = "Count of failed: $failed" . PHP_EOL
+			. "Count of success: $successful" . PHP_EOL
+			. PHP_EOL . $postMsg . PHP_EOL
+		;
 
 		if ($failed || $successful) {
 			$msg .= PHP_EOL . "This mail contain 1 attachment for libreoffice and ms-office" . PHP_EOL;
@@ -199,36 +200,37 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase  {
 	/**
 	 * send  processing results by email.
 	 */
-	protected function sendProcessingSummary($logs) {
-		Billrun_Log::getInstance()->log("Sending Processing result to email", Zend_Log::INFO);
+	protected function getProcessingSummary($logs) {
+		Billrun_Log::getInstance()->log("Generate Processing result to email", Zend_Log::INFO);
 
 		$msg = "";
 		foreach ($logs as $type => $val) {
-			$name = strtoupper($type);
-			if (!isset($val['last_received'])) {
-				$msg .= strtoupper($type) . " no files were processed or recevied";
-				continue;
-			}
-			if ($val['warning']) {
-				$msg .= "WARNNING! : it seems the server stopped processing $name" . PHP_EOL . PHP_EOL;
-			}
-			if ($val['alert']) {
-				$msg .= "ALERT! : didn't processed $name longer then the configuraed time" . PHP_EOL . PHP_EOL;
-			}
+//			$name = strtoupper($type);
+//			if (!isset($val['last_received'])) {
+//				$msg .= strtoupper($type) . " no files were processed or recevied";
+//				continue;
+//			}
+//			if ($val['warning']) {
+//				$msg .= "WARNNING! : it seems the server stopped processing $name" . PHP_EOL . PHP_EOL;
+//			}
+//			if ($val['alert']) {
+//				$msg .= "ALERT! : didn't processed $name longer then the configuraed time" . PHP_EOL . PHP_EOL;
+//			}
 
 			if (isset($val['last_processed'])) {
 				$seq = $this->getFileSequenceData($val['last_processed']['file_name'], $type);
-				$msg .= strtoupper($type) . " last processed Index : " . $seq['seq'] . " processing date : " . $val['last_processed']['process_time'] . PHP_EOL;
+				$msg .= strtoupper($type) . " last processed Index: " . $seq['seq'] 
+					. " processing date: " . $val['last_processed']['process_time'] . PHP_EOL;
 			} else {
 				$msg .= strtoupper($type) . " no processed files " . PHP_EOL;
 			}
-			$seq = $this->getFileSequenceData($val['last_received']['file_name'], $type);
-			$msg .= strtoupper($type) . " recevied Index : " . $seq['seq'] . " receving date : " . $val['last_received']['received_time'] . PHP_EOL;
+//			$seq = $this->getFileSequenceData($val['last_received']['file_name'], $type);
+//			$msg .= strtoupper($type) . " recevied Index : " . $seq['seq'] . " receving date : " . $val['last_received']['received_time'] . PHP_EOL;
 
-			$msg .= PHP_EOL . PHP_EOL;
 		}
 
-		return $this->sendMail("Processing status " . date(Billrun_Base::base_dateformat), $msg, Billrun_Factory::config()->getConfigValue('emailAlerts.processing.recipients', array()));
+//		return $this->sendMail("Processing status " . date(Billrun_Base::base_dateformat), $msg, Billrun_Factory::config()->getConfigValue('emailAlerts.processing.recipients', array()));
+		return $msg;
 	}
 
 	/**
@@ -254,8 +256,14 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase  {
 		foreach ($recipients as $recipient) {
 			$mailer->addTo($recipient);
 		}
-		//sen email
-		return $mailer->send();
+		//send email
+		try {
+			$ret = $mailer->send();
+		} catch(Exception $e ) {
+			Billrun_Factory::log()->log("Failed when trying to send  email on alert results, Failed with : ".$e, Zend_Log::ERR);
+			$ret = FALSE;
+		}
+		return $ret;
 	}
 
 	/**
@@ -304,5 +312,3 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase  {
 	}
 
 }
-
-?>

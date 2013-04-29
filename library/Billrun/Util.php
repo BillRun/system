@@ -14,8 +14,17 @@
  */
 class Billrun_Util {
 
-	public static function getLastChargeTime($return_timestamp = false) {
-		$dayofmonth = Billrun_Factory::config()->getConfigValue('billrun.charging_day', 25);
+	/**
+	 * method to receive full datetime of last billrun time
+	 * 
+	 * @param boolean $return_timestamp set this on if you need timestamp instead of string
+	 * @param int $dayofmonth the day of the month require to get; if omitted return config value
+	 * @return mixed date string of format YYYYmmddHHmmss or int timestamp 
+	 */
+	public static function getLastChargeTime($return_timestamp = false, $dayofmonth = null) {
+		if (!$dayofmonth) {
+			$dayofmonth = Billrun_Factory::config()->getConfigValue('billrun.charging_day', 25);
+		}
 		$format = "Ym" . $dayofmonth . "000000";
 		if (date("d") >= $dayofmonth) {
 			$time = date($format);

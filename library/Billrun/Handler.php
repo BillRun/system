@@ -15,6 +15,15 @@
 class Billrun_Handler extends Billrun_Base {
 
 	/**
+	 * Options passed from  the owner of the handler object
+	 */
+	protected $options = array();
+	
+	public function __construct($options = array()) {
+		$this->options = $options;
+	}
+	
+	/**
 	 * method to retrieve instance of Billrun Handler
 	 * 
 	 * @return self instance
@@ -53,7 +62,7 @@ class Billrun_Handler extends Billrun_Base {
 
 		Billrun_Factory::log()->log("Handler collect start", Zend_Log::INFO);
 
-		$items = Billrun_Factory::dispatcher()->trigger('handlerCollect');
+		$items = Billrun_Factory::dispatcher()->trigger('handlerCollect',array($this->options));
 
 		Billrun_Factory::log()->log("Handler collect finished", Zend_Log::INFO);
 
@@ -69,7 +78,7 @@ class Billrun_Handler extends Billrun_Base {
 
 		Billrun_Factory::log()->log("Handler notify start", Zend_Log::INFO);
 
-		$items = Billrun_Factory::dispatcher()->trigger('handlerNotify',array($this));
+		$items = Billrun_Factory::dispatcher()->trigger('handlerNotify',array($this,$this->options));
 
 		Billrun_Factory::log()->log("Handler notify finished", Zend_Log::INFO);
 
@@ -95,7 +104,7 @@ class Billrun_Handler extends Billrun_Base {
 
 		foreach ($items as $plugin => &$pluginItems) {
 			// ggsn
-			Billrun_Factory::dispatcher()->trigger('handlerAlert', array(&$pluginItems, $plugin));
+			Billrun_Factory::dispatcher()->trigger('handlerAlert', array(&$pluginItems, $plugin, $this->options));
 		}
 
 		Billrun_Factory::dispatcher()->trigger('afterHandlerAlert', array(&$items));
@@ -124,7 +133,7 @@ class Billrun_Handler extends Billrun_Base {
 		Billrun_Factory::dispatcher()->trigger('beforeHandlerMarkDown', array(&$items));
 
 		foreach ($items as $plugin => &$pluginItems) {
-			Billrun_Factory::dispatcher()->trigger('handlerMarkDown', array(&$pluginItems, $plugin));
+			Billrun_Factory::dispatcher()->trigger('handlerMarkDown', array(&$pluginItems, $plugin, $this->options));
 		}
 
 		Billrun_Factory::dispatcher()->trigger('afterHandlerMarkDown', array(&$items));

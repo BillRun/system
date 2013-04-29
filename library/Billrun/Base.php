@@ -35,11 +35,21 @@ abstract class Billrun_Base {
 	const base_dateformat = 'Y-m-d H:i:s';
 
 	/**
+	 * Limit iterator
+	 * used to limit the count of row to calc on.
+	 * 0 or less means no limit
+	 *
+	 * @var int
+	 */
+	protected $limit = 0;
+	
+	/**
 	 * constructor
 	 * 
 	 * @param array $options
 	 */
 	public function __construct($options = array()) {
+		
 		if (isset($options['type'])) {
 			static::$type = $options['type'];
 		}
@@ -49,6 +59,11 @@ abstract class Billrun_Base {
 		} else {
 			$this->setStamp(uniqid(get_class($this)));
 		}
+
+		if(isset($options['limit']) && $options['limit']) {
+			$this->setLimit($options['limit']);
+		} 
+		
 	}
 
 	/**
@@ -72,6 +87,29 @@ abstract class Billrun_Base {
 	 */
 	public function getStamp() {
 		return $this->stamp;
+	}
+	
+	
+	/**
+	 * Set running limit for the current instance
+	 * used differently by each inheriteing class
+	 * 
+	 * @param string $limit the limit to set
+	 *
+	 * @return mixed self instance
+	 */
+	public function setLimit($limit) {
+		$this->limit = $limit;
+		return $this;
+	}
+
+	/**
+	 * Get the current instance limit
+	 *
+	 * @return string the limit of the object
+	 */
+	public function getLimit() {
+		return $this->limit;
 	}
 	
 	/**

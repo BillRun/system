@@ -57,7 +57,10 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Pl
 	/**
 	 * method to collect data which need to be handle by event
 	 */
-	public function handlerCollect() {
+	public function handlerCollect($options) {
+		if( $options['type'] != 'roaming') { 
+			return FALSE; 
+		}
 		$lines = Billrun_Factory::db()->linesCollection();
 		
 		//@TODO  switch  these lines  once  you have the time to test it.

@@ -100,7 +100,10 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 	/**
 	 * @see Billrun_Plugin_BillrunPluginFraud::handlerCollect
 	 */
-	public function handlerCollect() {
+	public function handlerCollect($options) {
+		if( $options['type'] != 'roaming') { 
+			return FALSE; 
+		}
 		$monthlyThreshold = floatval(Billrun_Factory::config()->getConfigValue('nsn.thresholds.monthly_voice',36000));
 		$dailyThreshold = floatval(Billrun_Factory::config()->getConfigValue('nsn.thresholds.daily_voice',3600));
 
