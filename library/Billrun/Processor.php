@@ -294,7 +294,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 			return false;
 		}
 
-		Billrun_Factory::log()->log("Store data of file " . basename($this->filePath), Zend_Log::DEBUG);
+		Billrun_Factory::log()->log("Store data of file " . basename($this->filePath) . " with ". count($this->data['data']) . " lines", Zend_Log::DEBUG);
 		
 		$lines = Billrun_Factory::db()->linesCollection();
 
