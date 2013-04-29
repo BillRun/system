@@ -42,7 +42,7 @@ class Bootstrap extends Yaf_Bootstrap_Abstract {
 			}
 		}
 
-		// make the base action load required by controllers actions)
+		// make the base action auto load (required by controllers actions)
 		Yaf_Loader::getInstance(APPLICATION_PATH . '/application/helpers')->registerLocalNamespace('Action');
 
 
