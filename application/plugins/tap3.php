@@ -99,6 +99,7 @@ class tap3Plugin  extends Billrun_Plugin_BillrunPluginBase
 			$cdrLine =  $this->parseASNDataRecur( $this->nsnConfig[$type], Asn_Base::getDataArray( $data ,true ), $this->nsnConfig['fields'] );			
 			if($cdrLine) {
 				$cdrLine['record_type'] = $type;
+				//@TODO add unifiom field translation. ('record_opening_time',etc...)
 				if(isset($cdrLine['basicCallInformation']['CallEventStartTimeStamp']['localTimeStamp'])) {
 					$cdrLine['unified_record_time'] = new MongoDate(Billrun_Util::dateTimeConvertShortToIso($cdrLine['basicCallInformation']['CallEventStartTimeStamp']['localTimeStamp'], 
 																											$cdrLine['basicCallInformation']['CallEventStartTimeStamp']['TimeOffset']));
@@ -106,7 +107,6 @@ class tap3Plugin  extends Billrun_Plugin_BillrunPluginBase
 			}
 		} 
 		
-				//@TODO add unifiom field translation. ('record_opening_time',etc...)
 		return $cdrLine;
 	}
 	
