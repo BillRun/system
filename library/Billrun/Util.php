@@ -14,8 +14,10 @@
  */
 class Billrun_Util {
 
-	public static function getLastChargeTime($return_timestamp = false) {
-		$dayofmonth = Billrun_Factory::config()->getConfigValue('billrun.charging_day', 25);
+	public static function getLastChargeTime($return_timestamp = false, $dayofmonth = null) {
+		if (!$dayofmonth) {
+			$dayofmonth = Billrun_Factory::config()->getConfigValue('billrun.charging_day', 25);
+		}
 		$format = "Ym" . $dayofmonth . "000000";
 		if (date("d") >= $dayofmonth) {
 			$time = date($format);
