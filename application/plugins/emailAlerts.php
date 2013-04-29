@@ -224,7 +224,6 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 //			$seq = $this->getFileSequenceData($val['last_received']['file_name'], $type);
 //			$msg .= strtoupper($type) . " recevied Index : " . $seq['seq'] . " receving date : " . $val['last_received']['received_time'] . PHP_EOL;
 
-			$msg .= PHP_EOL . PHP_EOL;
 		}
 
 //		return $this->sendMail("Processing status " . date(Billrun_Base::base_dateformat), $msg, Billrun_Factory::config()->getConfigValue('emailAlerts.processing.recipients', array()));
@@ -310,5 +309,3 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 
 }
-
-?>
