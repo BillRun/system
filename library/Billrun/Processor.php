@@ -86,6 +86,9 @@ abstract class Billrun_Processor extends Billrun_Base {
 			$this->orphendFilesAdoptionTime = $options['processor']['orphen_files_time'];
 		}
 		
+		if(isset($options['processor']['limit']) && $options['processor']['limit']) {
+			$this->setLimit($options['processor']['limit']);
+		} 
 
 	}
 	
@@ -151,7 +154,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 						),
 				)
 			)->equals('source', static::$type)
-			->notExists('process_time');
+			->notExists('process_time')->cursor()->limit($this->getLimit());
 
 		$linesCount = 0;
 		foreach ($files as $file) {
