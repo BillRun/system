@@ -112,6 +112,7 @@ class Processor_ImportZones extends Billrun_Processor_Base_Separator {
 			if (!isset($ret[$key])) {
 				$ret[$key] = array(
 					'from' => new MongoDate(strtotime('2013-01-01T00:00:00+00:00')),
+					'to' => new MongoDate(strtotime(date('Y')+100, '-01-01T00:00:00+00:00')),
 					'key' => $row['zoneName'],
 					'destinations' => array($row['prefix']),
 				);
