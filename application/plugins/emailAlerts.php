@@ -216,7 +216,8 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 
 			if (isset($val['last_processed'])) {
 				$seq = $this->getFileSequenceData($val['last_processed']['file_name'], $type);
-				$msg .= strtoupper($type) . " last processed Index : " . $seq['seq'] . " processing date : " . $val['last_processed']['process_time'] . PHP_EOL;
+				$msg .= strtoupper($type) . " last processed Index: " . $seq['seq'] 
+					. " processing date: " . $val['last_processed']['process_time'] . PHP_EOL;
 			} else {
 				$msg .= strtoupper($type) . " no processed files " . PHP_EOL;
 			}
