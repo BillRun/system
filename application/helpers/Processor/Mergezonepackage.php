@@ -94,9 +94,9 @@ class Processor_Mergezonepackage extends Billrun_Processor_Base_Separator {
 				$entity = $rates->query('key', $row['zoneGroupEltId_tariffItem'])->cursor()->current();
 				if ($entity->getId()) {
 					$entity->collection($rates);
-					$entity->set("rates.call.package", true);
+					$entity->set("rates.call.packages", array(99));
 					if ($entity->get("rates.sms")) {
-						$entity->set("rates.sms.package", true);
+						$entity->set("rates.sms.packages", array(9, 99));
 					}
 					$entity->save($rates);
 					$this->data['stored_data'][] = $row;
