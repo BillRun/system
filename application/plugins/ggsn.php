@@ -67,7 +67,7 @@ use Billrun_Traits_FileSequenceChecking;
 		
 		//@TODO  switch  these lines  once  you have the time to test it.
 		//$charge_time = new MongoDate($this->get_last_charge_time(true) - date_default_timezone_get() );
-		$charge_time = $this->get_last_charge_time();
+		$charge_time = Billrun_Util::getLastChargeTime(true);
 		
 		$aggregateQuery = $this->getBaseAggregateQuery($charge_time);
 
@@ -212,8 +212,8 @@ use Billrun_Traits_FileSequenceChecking;
 			array(
 				'$match' => array(
 					//@TODO  switch to unified time once you have the time to test it
-					//'unified_record_time' => array('$gt' => $charge_time),
-					'record_opening_time' => array('$gt' => $charge_time),
+					'unified_record_time' => array('$gte' => new MongoDate($charge_time)),
+//					'record_opening_time' => array('$gt' => $charge_time),
 					'deposit_stamp' => array('$exists' => false),
 					'event_stamp' => array('$exists' => false),
 					
