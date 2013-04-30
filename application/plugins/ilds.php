@@ -19,7 +19,7 @@ class ildsPlugin extends Billrun_Plugin_BillrunPluginFraud {
 		
 		Billrun_Factory::log()->log("ILDS fraud collect handler triggered",  Zend_Log::DEBUG);
 		$lines = Billrun_Factory::db()->linesCollection();
-		$charge_time = $this->get_last_charge_time(8);
+		$charge_time = Billrun_Util::getLastChargeTime(false, 20);
 
 		$base_match = array(
 			'$match' => array(
