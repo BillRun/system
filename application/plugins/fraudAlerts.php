@@ -269,7 +269,13 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		if ($msisdn) {
 			$lines_where['msisdn'] = $msisdn;
 		}
-
+		
+//		if (isset($event['effects'])) {
+//			$lines_where[$event['effects']['key']] = $event['effects']['filter'];
+//		} else {
+//			$lines_where['type'] = $event['source'];
+//		}
+//
 		$lines_where['process_time'] = array('$gt' => date(Billrun_Base::base_dateformat, Billrun_Util::getLastChargeTime()));
 		$lines_where['process_time'] = array('$lt' => date(Billrun_Base::base_dateformat, $this->startTime));
 		$lines_where['deposit_stamp'] = array('$exists' => false);

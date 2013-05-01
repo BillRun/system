@@ -251,6 +251,10 @@ use Billrun_Traits_FileSequenceChecking;
 	 * @see Billrun_Plugin_BillrunPluginFraud::addAlertData
 	 */
 	protected function addAlertData(&$event) {
+		$event['effects'] = array(
+			'key' => 'type',
+			'filter' => array('$in' => array('nrtrde', 'ggsn'))
+		);
 		return $event;
 	}
 
