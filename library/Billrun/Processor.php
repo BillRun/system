@@ -160,7 +160,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 					->equals('source', static::$type)
 					->notExists('process_time')
 					->cursor()->limit(1)->current();
-			if (!$file) {
+			if (!$file || !$file->getID() ) {
 				break;
 			}
 			$this->markStartProcessing($file);
