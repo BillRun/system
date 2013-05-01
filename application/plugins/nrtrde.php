@@ -338,6 +338,11 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 				$event['event_type'] = 'NRTRDE_HOURLY_VOICE';
 				break;
 		}
+		
+		$event['effects'] = array(
+			'key' => 'type',
+			'filter' => array('$in' => array('nrtrde', 'ggsn'))
+		);
 
 		return $event;
 	}
