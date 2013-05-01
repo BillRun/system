@@ -14,7 +14,7 @@ class Billrun_Generator_Wholesale extends Billrun_Generator_Base_WholesaleReport
 
 	public function __construct($options) {
 		parent::__construct(array_merge($options, array('report_type' => 'wholesale')));
-		/*$this->providers['Bezeq International'] = array('provider'=> "^IBZI");
+		$this->providers['Bezeq International'] = array('provider'=> "^IBZI");
 		$this->providers['Netvision International'] = array('provider'=> "^INTV");
 		$this->providers['Smile'] = array('provider'=> "^\wSML");
 		$this->providers['Hot'] = array('provider'=> "^\wHOT");
@@ -22,7 +22,7 @@ class Billrun_Generator_Wholesale extends Billrun_Generator_Base_WholesaleReport
 		$this->providers['Xfone'] =	array('provider'=> "^\wXFN");
 		$this->providers['Hilat'] =	array('provider'=> "^\wHLT");
 		$this->providers['Kartel'] = array('provider'=> "^\wKRT(?=ROM|)");
-		$this->providers['Wataniya'] =	array('provider'=> "^\wSWAT");*/
+		$this->providers['Wataniya'] =	array('provider'=> "^\wSWAT");
 	}
 	
 	/**
@@ -33,15 +33,22 @@ class Billrun_Generator_Wholesale extends Billrun_Generator_Base_WholesaleReport
 		$providerResults = parent::generate();
 		foreach ($providerResults as $providerName => $value) {
 				$fh = fopen($this->reportBasePath . DIRECTORY_SEPARATOR. date('Ymd').'_'.$providerName.'.csv', 'w');
-				fputcsv($fh,  array('Connection Type','','Day','Product','Units','Minutes' ,'Tariff per product' ,'Charge' ,'Direction' ));				
-				$this->addArrayToCSV( $fh, $value);
-				fclose($fh);
+				if($fh){
+					fputcsv($fh,  array('Connection Type','','Day','Product','Units','Minutes' ,'Tariff per product' ,'Charge' ,'Direction' ));				
+					$this->addArrayToCSV( $fh, $value);
+					fclose($fh);
+				} else {
+					Billrun_Factory::log()->log("Couldn't  open  file in path : ".$this->reportBasePath . DIRECTORY_SEPARATOR. date('Ymd').'_'.$providerName.'.csv' , Zend_Log::ERR);
+				}
 		}
 		$wh = fopen($this->reportBasePath . DIRECTORY_SEPARATOR. date('Ymd').'_wholesale_report.csv', 'w');
-		fputcsv($wh,  array('Provider','Connection Type','','Day','Product','Units','Minutes' ,'Tariff per product' ,'Charge' ,'Direction' ));
-		
-		$this->addArrayToCSV( $wh, $providerResults);
-		fclose($wh);
+		if($wh) {
+			fputcsv($wh,  array('Provider','Connection Type','','Day','Product','Units','Minutes' ,'Tariff per product' ,'Charge' ,'Direction' ));
+			$this->addArrayToCSV( $wh, $providerResults);
+			fclose($wh);
+		} else {
+			Billrun_Factory::log()->log("Couldn't  open  file in path : ".$this->reportBasePath . DIRECTORY_SEPARATOR. date('Ymd').'_wholesale_report.csv' , Zend_Log::ERR);
+		}
 		
 		return $providerResults;
 	}
@@ -86,7 +93,7 @@ class Billrun_Generator_Wholesale extends Billrun_Generator_Base_WholesaleReport
 												),
 											),
 											
-										));
+										))->cursor()->hint(array('record_type' =>1));
 		
 		return $results;
 	}
