@@ -88,6 +88,7 @@ class Billrun_Processor_Base_Ilds extends Billrun_Processor {
 					$row['header_stamp'] = $this->data['header']['stamp'];
 					$row['file'] = basename($this->filePath);
 					$row['process_time'] = date(self::base_dateformat);
+					$row['unified_record_time'] = new MongoDate(  Billrun_Util::dateTimeConvertShortToIso( $row['call_start_dt'] ) );
 					// hot fix cause this field contain iso-8859-8
 					if (isset($row['country_desc'])) {
 						$row['country_desc'] = mb_convert_encoding($row['country_desc'], 'UTF-8', 'ISO-8859-8');

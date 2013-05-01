@@ -138,9 +138,9 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$aggregateLogs[$type]['last_processed'] = Billrun_Factory::db()->logCollection()->
 					query(array('source' => $type, 'process_time' => array('$exists' => true)))->cursor()->
 					sort(array('process_time' => -1, '_id' => -1))->limit(1)->current();
-			$aggregateLogs[$type]['last_received'] = Billrun_Factory::db()->logCollection()->
-					query(array('source' => $type, 'received_time' => array('$exists' => true)))->cursor()->
-					sort(array('received_time' => -1, '_id' => -1))->limit(1)->current();
+//			$aggregateLogs[$type]['last_received'] = Billrun_Factory::db()->logCollection()->
+//					query(array('source' => $type, 'received_time' => array('$exists' => true)))->cursor()->
+//					sort(array('received_time' => -1, '_id' => -1))->limit(1)->current();
 		}
 		return $aggregateLogs;
 	}
@@ -202,28 +202,28 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 
 		$msg = "";
 		foreach ($logs as $type => $val) {
-			$name = strtoupper($type);
-			if (!isset($val['last_received'])) {
-				$msg .= strtoupper($type) . " no files were processed or recevied";
-				continue;
-			}
-			if ($val['warning']) {
-				$msg .= "WARNNING! : it seems the server stopped processing $name" . PHP_EOL . PHP_EOL;
-			}
-			if ($val['alert']) {
-				$msg .= "ALERT! : didn't processed $name longer then the configuraed time" . PHP_EOL . PHP_EOL;
-			}
+//			$name = strtoupper($type);
+//			if (!isset($val['last_received'])) {
+//				$msg .= strtoupper($type) . " no files were processed or recevied";
+//				continue;
+//			}
+//			if ($val['warning']) {
+//				$msg .= "WARNNING! : it seems the server stopped processing $name" . PHP_EOL . PHP_EOL;
+//			}
+//			if ($val['alert']) {
+//				$msg .= "ALERT! : didn't processed $name longer then the configuraed time" . PHP_EOL . PHP_EOL;
+//			}
 
 			if (isset($val['last_processed'])) {
 				$seq = $this->getFileSequenceData($val['last_processed']['file_name'], $type);
-				$msg .= strtoupper($type) . " last processed Index : " . $seq['seq'] . " processing date : " . $val['last_processed']['process_time'] . PHP_EOL;
+				$msg .= strtoupper($type) . " last processed Index: " . $seq['seq'] 
+					. " processing date: " . $val['last_processed']['process_time'] . PHP_EOL;
 			} else {
 				$msg .= strtoupper($type) . " no processed files " . PHP_EOL;
 			}
-			$seq = $this->getFileSequenceData($val['last_received']['file_name'], $type);
-			$msg .= strtoupper($type) . " recevied Index : " . $seq['seq'] . " receving date : " . $val['last_received']['received_time'] . PHP_EOL;
+//			$seq = $this->getFileSequenceData($val['last_received']['file_name'], $type);
+//			$msg .= strtoupper($type) . " recevied Index : " . $seq['seq'] . " receving date : " . $val['last_received']['received_time'] . PHP_EOL;
 
-			$msg .= PHP_EOL . PHP_EOL;
 		}
 
 //		return $this->sendMail("Processing status " . date(Billrun_Base::base_dateformat), $msg, Billrun_Factory::config()->getConfigValue('emailAlerts.processing.recipients', array()));
@@ -309,5 +309,3 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 
 }
-
-?>
