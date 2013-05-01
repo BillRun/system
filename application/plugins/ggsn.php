@@ -65,7 +65,7 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Pl
 		
 		//@TODO  switch  these lines  once  you have the time to test it.
 		//$charge_time = new MongoDate($this->get_last_charge_time(true) - date_default_timezone_get() );
-		$charge_time = $this->get_last_charge_time();
+		$charge_time = Billrun_Util::getLastChargeTime(true);
 		
 		$aggregateQuery = $this->getBaseAggregateQuery($charge_time);
 
@@ -210,8 +210,8 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Pl
 			array(
 				'$match' => array(
 					//@TODO  switch to unified time once you have the time to test it
-					//'unified_record_time' => array('$gt' => $charge_time),
-					'record_opening_time' => array('$gt' => $charge_time),
+					'unified_record_time' => array('$gte' => new MongoDate($charge_time)),
+//					'record_opening_time' => array('$gt' => $charge_time),
 					'deposit_stamp' => array('$exists' => false),
 					'event_stamp' => array('$exists' => false),
 					
@@ -249,6 +249,10 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Pl
 	 * @see Billrun_Plugin_BillrunPluginFraud::addAlertData
 	 */
 	protected function addAlertData(&$event) {
+		$event['effects'] = array(
+			'key' => 'type',
+			'filter' => array('$in' => array('nrtrde', 'ggsn'))
+		);
 		return $event;
 	}
 

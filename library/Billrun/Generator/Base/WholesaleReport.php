@@ -37,7 +37,6 @@ abstract class Billrun_Generator_Base_WholesaleReport extends Billrun_Generator 
 
 		$this->types = Billrun_Factory::config()->getConfigValue( $this->reportType.'.reports.types',
 																  array(
-																		'R' => 'Roaming',
 																		'I' => 'International',
 																		'M' => 'Mobile',
 																		'N' => 'National',
@@ -48,10 +47,8 @@ abstract class Billrun_Generator_Base_WholesaleReport extends Billrun_Generator 
 		
 		$this->providers = Billrun_Factory::config()->getConfigValue( $this->reportType.'.reports.providers', 
 																	  array(
-																			'Golan' => array('provider'=> '^$'),
 																			'Bezeq' => array('provider'=> '^[4N]BZQ'),																			
-															//				'Bezeq International Mapa' => array('provider'=> "^NBZI"),
-															//				'Bezeq International' => array('provider'=> "^IBZI"),
+																			'Bezeq International Mapa' => array('provider'=> "^NBZI"),
 																			'Cellcom Mapa' => array('provider'=> "^NCEL"),
 																		  	'Cellcom' => array('provider'=> "^MCEL"),
 																			'Partner' => array('provider'=> "^MPRT"),
@@ -59,22 +56,13 @@ abstract class Billrun_Generator_Base_WholesaleReport extends Billrun_Generator 
 																			'Mirs' => array('provider'=> "^MMRS"),
 																			'Pelephone' => array('provider'=> "^MPEL"),
 																			'Netvision' => array('provider'=> "^NNTV"),
-																			'Netvision International' => array('provider'=> "^INTV"),
 																			'Hot Mapa' => array('provider'=> "^NHOT"),
 																			'Paltel'=>	array('provider'=> "^SPAL"),
-																			/*'Smile' => array('provider'=> "^\wSML"),
-																			'Hot' => array('provider'=> "^\wHOT"),
-																			'Telzar' =>	array('provider'=> "^\wTLZ"),
-																			'Xfone' =>	array('provider'=> "^\wXFN"),
-																			'Hilat'=>	array('provider'=> "^\wHLT"),
-																			'Kartel'=>	array('provider'=> "^\wKRT(?=ROM|)"),
-																			
-																			'Wataniya'=>	array('provider'=> "^\wSWAT"),*/
 																		));
 		
 		$this->startDate = isset($options['start_date']) ?  strtotime($options['start_date']) : 
 							 (strlen($this->stamp) > 8 ? strtotime($this->stamp) : Billrun_Util::getLastChargeTime(true));
-		$this->endDate = isset($options['end_date']) ?  strtotime($options['end_date']) : $this->startDate + 30*24*3600;
+		$this->endDate = isset($options['end_date']) ?  strtotime($options['end_date']) : strtotime(date('Ymt',$this->startDate));
 	}
 	
 	/**
@@ -88,7 +76,7 @@ abstract class Billrun_Generator_Base_WholesaleReport extends Billrun_Generator 
 		Billrun_Factory::log()->log("Start Date : ".date("Y-m-d",$this->startDate)." End Date : ".date("Y-m-d",$this->endDate),Zend_Log::DEBUG);
 		foreach($this->providers as $providerName => $val) {
 			Billrun_Factory::log()->log("Aggregating  $providerName NSN usage: ",Zend_Log::DEBUG);
-			$providerAggregation = $this->aggregate( $this->getCDRs($val['provider'], $timeHorizions ));
+			$providerAggregation = $this->aggregate( $this->getCDRs($val['provider'], $timeHorizions ),$val['provider']);
 			
 			if( empty($providerAggregation) ) {
 				continue;
@@ -139,31 +127,33 @@ abstract class Billrun_Generator_Base_WholesaleReport extends Billrun_Generator 
 	 * @param Mongodloid_Query $lines the CDR lines that were retrived from the DB.
 	 * @return array containing the lines values  aggreagted by type  and day.
 	 */
-	protected function aggregate( $lines ) {
+	protected function aggregate( $lines, $providerRegex ) {
 		Billrun_Factory::log()->log("Aggregating all the related CDRs, this can take awhile...",Zend_Log::DEBUG);
 		$aggregate = array();
 		$callReferences= array();
 		//Billrun_Factory::log()->log(print_r($lines->count(),1),Zend_Log::DEBUG);
 		foreach ($lines as $value) {
 			
-			/*if(isset($callReferences[$value['call_reference']])) { 
+			if(isset($callReferences[$value['call_reference']])) { 
 				continue;
 			}
-			$callReferences[$value['call_reference']] = true;*/
+			$callReferences[$value['call_reference']] = true;
 			
-			$isIncoming =	$value['record_type'] == "02" || 
-								(($value['record_type'] == "11" || $value['record_type'] == "11") && 
+			/*$isIncoming =	$value['record_type'] == "02" ||
+								( ($value['record_type'] == "11" ||  $value['record_type'] == "12" ) && 
 								!preg_match("/".self::CELLCOM_ROAMING_REGEX."/", $value['in_circuit_group_name']) && 
-								$value['in_circuit_group_name'] != '' );
+								$value['in_circuit_group_name'] != '' );*/
+			$isIncoming = !preg_match("/".$providerRegex."/", $value['out_circuit_group_name']);					
 			
 			$lineConnectType = ($isIncoming ? substr($value['in_circuit_group_name'],0,1) : substr($value['out_circuit_group_name'],0,1));
-			
+
 			if(!isset($this->types[$lineConnectType])) {
 				//Billrun_Factory::log()->log(print_r($value,1),Zend_Log::DEBUG);
 				//continue;
 				$lineConnectType = "Un";
 			}
 			$connectType =  $this->types[$lineConnectType];
+			
 			$day = substr($value['call_reference_time'],0,8);
 			$aggrKey = $day.$isIncoming.$this->tariffForLine($value).$this->productType($value);
 			

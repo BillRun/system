@@ -102,7 +102,7 @@ class Billrun_Util {
 	 */
 	public static function dateTimeConvertShortToIso($datetime, $offset = '+00:00') {
 		if (strpos($offset, ':') === FALSE) {
-			$tz_offset = substr($offset, 0, 3) . ':00';
+			$tz_offset = substr($offset, 0, 3) . ':' . substr($offset, -2);
 		} else {
 			$tz_offset = $offset;
 		}

@@ -41,7 +41,7 @@ abstract class Billrun_Base {
 	 *
 	 * @var int
 	 */
-	protected $limit = 0;
+	protected $limit = 10000;
 	
 	/**
 	 * constructor
