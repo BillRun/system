@@ -31,13 +31,10 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 			$this->data = array();
 		}
 
-		$resource = $billrun->query()
+		$this->data = $billrun->query()
 			->equals('stamp', $this->getStamp())
+			->equals('source', 'ilds')
 			->notExists('invoice_id');
-
-		foreach ($resource as $entity) {
-			$this->data[] = $entity;
-		}
 
 		Billrun_Factory::log()->log("aggregator entities loaded: " . count($this->data), Zend_Log::INFO);
 		
@@ -50,7 +47,7 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 	 */
 	public function generate() {
 		// generate xml
-		$this->xml($this->data);
+		$this->xml();
 
 		// generate csv
 //		$this->csv();
@@ -62,6 +59,7 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 		$ret = array();
 
 		$resource = $lines->query()
+			->equals('source', 'ilds')
 			->equals('billrun', $this->getStamp())
 			->equals('subscriber_id', "$subscriber_id")
 			->notExists('billrun_excluded')
@@ -77,7 +75,7 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 	protected function xml($rows) {
 		// use $this->export_directory
 		$short_format_date = 'd/m/Y';
-		foreach ($rows as $row) {
+		foreach ($this->data as $rows) {
 			Billrun_Factory::log()->log("xml account " . $row->get('account_id'), Zend_Log::INFO);
 			// @todo refactoring the xml generation to another class
 			$xml = $this->basic_xml();
@@ -199,6 +197,7 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 
 	protected function createInvoiceId() {
 		$invoices = Billrun_Factory::db()->billrunCollection();
+		// @TODO: need to the level of the invoice type
 		$resource = $invoices->query()->cursor()->sort(array('invoice_id' => -1))->limit(1);
 		foreach ($resource as $e) {
 			// demi loop
