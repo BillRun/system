@@ -36,7 +36,7 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 			->equals('source', 'ilds')
 			->notExists('invoice_id');
 
-		Billrun_Factory::log()->log("aggregator entities loaded: " . count($this->data), Zend_Log::INFO);
+		Billrun_Factory::log()->log("aggregator entities loaded: " . $this->data->count(), Zend_Log::INFO);
 		
 		Billrun_Factory::dispatcher()->trigger('afterGeneratorLoadData', array('generator' => $this));
 
@@ -63,7 +63,8 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 			->equals('billrun', $this->getStamp())
 			->equals('subscriber_id', "$subscriber_id")
 			->notExists('billrun_excluded')
-			->cursor()->sort(array('call_start_dt' => 1));
+			->cursor()->hint(array('source' => 1, 'billrun' => 1))
+			->sort(array('unified_record_time' => 1));
 			
 		foreach ($resource as $entity) {
 			$ret[] = $entity->getRawData();
