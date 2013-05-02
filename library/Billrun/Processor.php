@@ -159,8 +159,9 @@ abstract class Billrun_Processor extends Billrun_Base {
 			$file = $log->query($baseQuery)
 					->equals('source', static::$type)
 					->notExists('process_time')
-					->cursor()->limit(1)->current();
-			if (!$file || !$file->getID() ) {
+					->cursor()->sort(array('received_time' => 1))
+					->limit(1)->current();
+			if (!$file || !$file->getID()) {
 				break;
 			}
 			$this->markStartProcessing($file);
@@ -403,7 +404,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 		}
 		return @call_user_func_array($callback, array($this->filePath,
 				$path . DIRECTORY_SEPARATOR . $this->filename
-			));
+		));
 	}
 
 	/**

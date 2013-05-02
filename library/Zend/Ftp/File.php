@@ -94,14 +94,15 @@ class Zend_Ftp_File {
 	 * @param string $path The full path to save to
 	 * @param int $mode [optional] The transfer mode
 	 * @param int $offset [optional] The offset to start from for resuming
+	 * @param boolean $autoRecover [optional] try to auto recover connection if set so (on some unstable connections is usable)
 	 * @return Zend_Ftp_File
 	 */
-	public function saveToPath($path, $mode = null, $offset = 0) {
+	public function saveToPath($path, $mode = null, $offset = 0, $autoRecover = false) {
 		if (substr($path, -1) != '/') {
 			$path = $path . '/';
 		}
 		
-		return $this->saveToFile($path . basename($this->_name), $mode, $offset);
+		return $this->saveToFile($path . basename($this->_name), $mode, $offset, $autoRecover);
 	}
 
 	/**
@@ -110,13 +111,21 @@ class Zend_Ftp_File {
 	 * @param string $file The full path to the local file
 	 * @param int $mode [optional] The transfer mode
 	 * @param int $offset [optional] The offset to start from for resuming
+	 * @param boolean $autoRecover [optional] try to auto recover connection if set so (on some unstable connections is usable)
 	 * @return Zend_Ftp_File
 	 */
-	public function saveToFile($file, $mode = null, $offset = 0) {
+	public function saveToFile($file, $mode = null, $offset = 0, $autoRecover = false) {
 		if ($mode === null) {
 			$mode = ($this->_mode === null ? $this->_ftp->determineMode($this->_path) : $this->_mode);
 		}
 		$get = @ftp_get($this->_ftp->getConnection(), $file, $this->_path, $mode, $offset);
+		
+		// 
+		if ($get === FALSE && $autoRecover) {
+			$this->_ftp->disconnect();
+			$get = @ftp_get($this->_ftp->getConnection(), $file, $this->_path, $mode, $offset);
+		}
+		
 		if ($get === false) {
 			//throw new Zend_Ftp_File_Exception('Unable to save file "' . $this->path . '"')
 			return false;
