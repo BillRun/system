@@ -58,15 +58,19 @@ abstract class Billrun_Receiver extends Billrun_Base {
 	 * 
 	 * @todo refactoring this method
 	 */
-	protected function logDB($path, $remoteHost = '', $extraData = false ) {
+	protected function logDB($path, $remoteHost = null, $extraData = false ) {
 		$log = Billrun_Factory::db()->logCollection();
 
 		$log_data = array(
 			'source' => static::$type,
 			'path' => $path,
 			'file_name' => basename($path),
-			'retrieved_from' => $remoteHost,
 		);
+		
+		if (!is_null($remoteHost)) {
+			$log_data['retrieved_from'] = $remoteHost;
+		}
+		
 		if($extraData) {
 			$log_data['extra_data'] = $extraData;
 		}
@@ -77,7 +81,7 @@ abstract class Billrun_Receiver extends Billrun_Base {
 		Billrun_Factory::dispatcher()->trigger('beforeLogReceiveFile', array(&$log_data, $this));
 		$entity = new Mongodloid_Entity($log_data);
 		if ($log->query('stamp', $entity->get('stamp'))->count() > 0) {
-			Billrun_Factory::log()->log("Billrun_Receiver::logDB - DUPLICATE! trying to insert duplicate log file with stamp of : {$entity->get('stamp')}", Zend_Log::NOTICE);
+			Billrun_Factory::log()->log("Billrun_Receiver::logDB - DUPLICATE! trying to insert duplicate log file " . $log_data['file_name'] . " with stamp of : {$entity->get('stamp')}", Zend_Log::NOTICE);
 			return FALSE;
 		}
 
