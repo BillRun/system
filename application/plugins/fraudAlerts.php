@@ -73,6 +73,11 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 
 		foreach ($events as $event) {
 			$ret = $this->notifyOnEvent($event);
+			if ($ret === FALSE) {
+				//some connection failure - mark event as paused
+				$this->markEvent($event, FALSE);
+				
+			}
 			if (isset($ret['success']) && $ret['success']) {
 				$event['deposit_stamp'] = $event['stamps'][0]; // remember what event you sent to the remote server
 				$event['returned_value'] = $ret;
@@ -139,8 +144,9 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	/**
 	 * Notify remote server on an event.
 	 * @param type $query_args the argument to pass in the url query
-	 * @param type $post_args extra data to pass as post data.
-	 * @return the decoded values that was return  from the remote server (using json).
+	 * @param type $post_args extra data to pass as post data
+	 * 
+	 * @return mixed on success - the decoded values that was return  from the remote server (using json). on failure - false
 	 */
 	protected function notifyRemoteServer($query_args, $post_args) {
 		// TODO: use Zend_Http_Client instead
@@ -161,6 +167,11 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$response = curl_exec($client);
 			curl_close($client);
 
+			if ($response === FALSE) {
+				Billrun_Log::getInstance()->log("fraudAlertsPlugin::notifyRemoteServer response is false value cause of failure.", Zend_Log::ERR);
+				return FALSE;
+			}
+			
 			Billrun_Log::getInstance()->log("fraudAlertsPlugin::notifyRemoteServer response: " . $response, Zend_Log::INFO);
 			Billrun_Log::getInstance()->log("fraudAlertsPlugin::notifyRemoteServer decode: " . print_r(json_decode($response), 1), Zend_Log::INFO);
 
@@ -230,24 +241,36 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 
 	/**
 	 * Mark an specific event as finished event. 
-	 * @param type $event the event to mark as dealt with.
+	 * @param array $event the event to mark as dealt with.
+	 * @param mixed $failure info on failure
 	 */
-	protected function markEvent($event) {
+	protected function markEvent($event, $failure = null) {
 		Billrun_Log::getInstance()->log("Fraud alerts mark event " . $event['deposit_stamp'], Zend_Log::INFO);
 		//mark events as dealt with.
 		$events_where = array(
 			'notify_time' => array('$exists' => false),
 			'_id' => array('$in' => $event['id']),
 		);
-		$events_update_set = array(
-			'$set' => array(
-				'notify_time' => time(),
-				'deposit_stamp' => $event['deposit_stamp'],
-				'returned_value' => $event['returned_value'],
-			),
-		);
+		
+		if (is_null($failure)) {
+			$events_update_set = array(
+				'$set' => array(
+					'notify_time' => new MongoDate(),
+					'deposit_stamp' => $event['deposit_stamp'],
+					'returned_value' => $event['returned_value'],
+				),
+			);
+		} else {
+			$events_update_set = array(
+				'$set' => array(
+					'notify_time' => new MongoDate(),
+					'deposit_stamp' => 'ERROR-' . date(Billrun_Base::base_dateformat),
+					'returned_value' => $failure,
+				),
+			);			
+		}
 		$update_options = array('multiple' => 1);
-		$this->eventsCol->update($events_where, $events_update_set, $update_options);
+		return $this->eventsCol->update($events_where, $events_update_set, $update_options);
 	}
 
 	/**
