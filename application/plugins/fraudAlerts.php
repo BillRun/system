@@ -76,6 +76,7 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 			if ($ret === FALSE) {
 				//some connection failure - mark event as paused
 				$this->markEvent($event, FALSE);
+				$alertsLeft--;
 				
 			}
 			if (isset($ret['success']) && $ret['success']) {
