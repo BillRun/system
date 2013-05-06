@@ -166,7 +166,7 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$response = curl_exec($client);
 			curl_close($client);
 
-			if ($response === FALSE) {
+			if ($response === FALSE || empty($response)) {
 				Billrun_Log::getInstance()->log("fraudAlertsPlugin::notifyRemoteServer response is false value cause of failure.", Zend_Log::ERR);
 				return FALSE;
 			}
