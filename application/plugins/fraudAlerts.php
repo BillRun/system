@@ -76,20 +76,18 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 			if ($ret === FALSE) {
 				//some connection failure - mark event as paused
 				$this->markEvent($event, FALSE);
-				$alertsLeft--;
-				
-			}
-			if (isset($ret['success']) && $ret['success']) {
+			} else if (isset($ret['success']) && $ret['success']) {
 				$event['deposit_stamp'] = $event['stamps'][0]; // remember what event you sent to the remote server
 				$event['returned_value'] = $ret;
 				$this->markEvent($event);
 				$this->markEventLines($event);
 
-				//Decrease the amount of alerts allowed in a single run if 0 is reached the break the loop.
-				$alertsLeft--;
 			}
+			
+			//Decrease the amount of alerts allowed in a single run if 0 is reached the break the loop.
+			$alertsLeft--;
 
-			if ($alertsLeft == 0) {
+			if ($alertsLeft <= 0) {
 				break;
 			}
 			$retValue[] = $event;
