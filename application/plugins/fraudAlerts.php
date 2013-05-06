@@ -151,7 +151,7 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$post_fields = array(
 			'extra_data' => Zend_Json::encode($post_array)
 		);
-		Billrun_Log::getInstance()->log("fraudAlertsPlugin::notifyRemoteServer URL :" . $url, Zend_Log::INFO);
+		Billrun_Log::getInstance()->log("fraudAlertsPlugin::notifyRemoteServer URL: " . $url, Zend_Log::INFO);
 
 		if (!$this->isDryRun) {
 			$client = curl_init($url);
@@ -161,8 +161,8 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$response = curl_exec($client);
 			curl_close($client);
 
-			Billrun_Log::getInstance()->log("fraudAlertsPlugin::notifyRemoteServer " . $response, Zend_Log::INFO);
-			Billrun_Log::getInstance()->log("fraudAlertsPlugin::notifyRemoteServer " . print_r(json_decode($response), 1), Zend_Log::INFO);
+			Billrun_Log::getInstance()->log("fraudAlertsPlugin::notifyRemoteServer response: " . $response, Zend_Log::INFO);
+			Billrun_Log::getInstance()->log("fraudAlertsPlugin::notifyRemoteServer decode: " . print_r(json_decode($response), 1), Zend_Log::INFO);
 
 			return Zend_Json::decode($response);
 		} else {
