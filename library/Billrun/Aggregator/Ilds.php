@@ -53,7 +53,7 @@ class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 			$subscriber_id = $subscriber['id'];
 
 			// update billing line with billrun stamp
-			if (!$this->updateBillingLine($subscriber_id, $item)) {
+			if (!$this->updateBillingLine($subscriber, $item)) {
 				Billrun_Factory::log()->log("subscriber " . $subscriber_id . " cannot update billing line", Zend_Log::INFO);
 				continue;
 			}
@@ -182,12 +182,23 @@ class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 	 *
 	 * @return boolean true on success else false
 	 */
-	protected function updateBillingLine($subscriber_id, $line) {
+	protected function updateBillingLine($subscriber, $line) {
+		if (isset($subscriber['id'])) {
+			$subscriber_id = $subscriber['id'];
+		} else {
+			// todo: alert to log
+			return false;
+		}
 		$current = $line->getRawData();
 		$added_values = array(
 			'subscriber_id' => $subscriber_id,
 			'billrun' => $this->getStamp(),
 		);
+		
+		if (isset($subscriber['id'])) {
+			$added_values['account_id'] = $subscriber['account_id'];
+		}
+
 		$newData = array_merge($current, $added_values);
 		$line->setRawData($newData);
 		return true;
