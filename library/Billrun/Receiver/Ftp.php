@@ -99,24 +99,24 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 				Billrun_Factory::log()->log("FTP: Found file " . $file->name . " on remote host", Zend_Log::DEBUG);
 				Billrun_Factory::dispatcher()->trigger('beforeFTPFileReceived', array(&$file, $this, $hostName, &$extraData));
 				if ($file->isFile() && $this->isFileValid($file->name,$file->path)) {
-					if($this->isFileReceived($file->name,$this->getType())) {
-							if( Billrun_Factory::config()->isProd() && (isset($config['delete_received']) && $config['delete_received'] ) ) {
-								Billrun_Factory::log()->log("FTP: Deleting file {$file->name} from remote host ", Zend_Log::DEBUG);
-								// TODO reinstate after full switch to new fraud system 
-								 $file->delete();
-							}
-							continue;
-					}
 					Billrun_Factory::log()->log("FTP: Download file " . $file->name . " from remote host", Zend_Log::INFO);
-					if ($file->saveToPath($this->workspace) === FALSE) {
+					if ($file->saveToPath($this->workspace, null, 0, true) === FALSE) { // the last arg declare try to recover on failure
 						Billrun_Factory::log()->log("FTP: failed to download " . $file->name . " from remote host", Zend_Log::ALERT);
 						continue;
 					}
+					
 					$received_path = $this->workspace . $file->name;
 					Billrun_Factory::dispatcher()->trigger('afterFTPFileReceived', array(&$received_path, $file, $this, $hostName, $extraData));
+					
 					if($this->logDB($received_path, $hostName , $extraData)) {
 						$ret[] = $received_path;						
+						// delete the file after downloading and store it to processing queue
+						if( Billrun_Factory::config()->isProd() && (isset($config['delete_received']) && $config['delete_received'] ) ) {
+							Billrun_Factory::log()->log("FTP: Deleting file {$file->name} from remote host ", Zend_Log::DEBUG);
+							 $file->delete();
+						}
 					}
+					
 				}
 			}
 			return $ret;

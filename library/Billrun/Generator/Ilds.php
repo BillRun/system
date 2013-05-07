@@ -24,12 +24,8 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 	/**
 	 * load the container the need to be generate
 	 */
-	public function load($initData = true) {
+	public function load() {
 		$billrun = Billrun_Factory::db()->billrunCollection();
-
-		if ($initData) {
-			$this->data = array();
-		}
 
 		$this->data = $billrun->query()
 			->equals('stamp', $this->getStamp())
@@ -73,10 +69,10 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 		return $ret;
 	}
 
-	protected function xml($rows) {
+	protected function xml() {
 		// use $this->export_directory
 		$short_format_date = 'd/m/Y';
-		foreach ($this->data as $rows) {
+		foreach ($this->data as $row) {
 			Billrun_Factory::log()->log("xml account " . $row->get('account_id'), Zend_Log::INFO);
 			// @todo refactoring the xml generation to another class
 			$xml = $this->basic_xml();
