@@ -301,14 +301,13 @@ abstract class Billrun_Processor extends Billrun_Base {
 		$lines = Billrun_Factory::db()->linesCollection();
 
 		foreach ($this->data['data'] as $row) {
-			$stamp = $row['stamp'];
-			//Billrun_Factory::log()->log("Store line with the stamp " . $stamp . " (" . $row['type'] . ")", Zend_Log::DEBUG);
-			if ($lines->query('stamp', $stamp)->count() > 0) {
-				Billrun_Factory::log()->log("processor::store - DUPLICATE! trying to insert duplicate line with stamp of : " . $stamp, Zend_Log::NOTICE);
+			try {
+				$entity = new Mongodloid_Entity($row);
+				$entity->save($lines, true);
+			} catch (Exception $e) {
+				Billrun_Factory::log()->log("Processor store " . basename($this->filePath) . " failed on stamp : " . $row['stamp']. " with the next message: " . $e->getCode() . ": " . $e->getMessage(), Zend_Log::NOTICE);
 				continue;
 			}
-			$entity = new Mongodloid_Entity($row);
-			$entity->save($lines, true);
 		}
 
 		return true;

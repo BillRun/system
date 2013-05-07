@@ -58,15 +58,19 @@ abstract class Billrun_Receiver extends Billrun_Base {
 	 * 
 	 * @todo refactoring this method
 	 */
-	protected function logDB($path, $remoteHost = '', $extraData = false ) {
+	protected function logDB($path, $remoteHost = null, $extraData = false ) {
 		$log = Billrun_Factory::db()->logCollection();
 
 		$log_data = array(
 			'source' => static::$type,
 			'path' => $path,
 			'file_name' => basename($path),
-			'retrieved_from' => $remoteHost,
 		);
+		
+		if (!is_null($remoteHost)) {
+			$log_data['retrieved_from'] = $remoteHost;
+		}
+		
 		if($extraData) {
 			$log_data['extra_data'] = $extraData;
 		}

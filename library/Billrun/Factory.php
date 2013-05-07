@@ -66,11 +66,25 @@ class Billrun_Factory {
 	/**
 	 * method to retrieve the log instance
 	 * 
+	 * @param string [Optional] $message message to log
+	 * @param int [Optional] $priority message to log
+	 * 
 	 * @return Billrun_Log
 	 */
 	static public function log() {
 		if (!self::$log) {
 			self::$log = Billrun_Log::getInstance();
+		}
+		
+		$args = func_get_args();
+		if (count($args) > 0) {
+			$message = (string) $args[0];
+			if (!isset($args[1])) {
+				$priority = Zend_Log::DEBUG;
+			} else {
+				$priority = (int) $args[1];
+			}
+			self::$log->log($message, $priority);
 		}
 
 		return self::$log;
