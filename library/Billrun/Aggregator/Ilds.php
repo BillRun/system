@@ -103,8 +103,7 @@ class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 	/**
 	 * load the subscriber billrun raw (aggregated)
 	 * if not found, create entity with default values
-	 * 
-	 * @param array $subscriber subscriber details
+	 * @param type $subscriber
 	 *
 	 * @return Mongodloid_Entity
 	 */
@@ -207,12 +206,8 @@ class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 	/**
 	 * load the data to aggregate
 	 */
-	public function load($initData = true) {
+	public function load() {
 		$query = "price_customer EXISTS and price_provider EXISTS and billrun NOT EXISTS";
-
-		if ($initData) {
-			$this->data = array();
-		}
 
 		$lines = Billrun_Factory::db()->linesCollection();
 		$this->data = $lines->query($query)

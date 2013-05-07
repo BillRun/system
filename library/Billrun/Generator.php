@@ -69,7 +69,7 @@ abstract class Billrun_Generator extends Billrun_Base {
 	/**
 	 * load the container the need to be generate
 	 */
-	abstract public function load($initData = true);
+	abstract public function load();
 
 	/**
 	 * execute the generate action
