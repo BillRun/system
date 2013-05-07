@@ -108,7 +108,7 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 							continue;
 					}
 					Billrun_Factory::log()->log("FTP: Download file " . $file->name . " from remote host", Zend_Log::INFO);
-					if ($file->saveToPath($this->workspace) === FALSE) {
+					if ($file->saveToPath($this->workspace, null, 0, true) === FALSE) { // the last arg declare try to recover on failure
 						Billrun_Factory::log()->log("FTP: failed to download " . $file->name . " from remote host", Zend_Log::ALERT);
 						continue;
 					}
