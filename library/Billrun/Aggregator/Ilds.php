@@ -195,7 +195,7 @@ class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 			'billrun' => $this->getStamp(),
 		);
 		
-		if (isset($subscriber['id'])) {
+		if (isset($subscriber['account_id'])) {
 			$added_values['account_id'] = $subscriber['account_id'];
 		}
 
@@ -207,12 +207,8 @@ class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 	/**
 	 * load the data to aggregate
 	 */
-	public function load($initData = true) {
+	public function load() {
 		$query = "price_customer EXISTS and price_provider EXISTS and billrun NOT EXISTS";
-
-		if ($initData) {
-			$this->data = array();
-		}
 
 		$lines = Billrun_Factory::db()->linesCollection();
 		$this->data = $lines->query($query)
