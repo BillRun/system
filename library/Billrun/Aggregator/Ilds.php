@@ -128,6 +128,7 @@ class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 			'account_id' => $subscriber['account_id'],
 			'subscribers' => array($subscriber['id'] => array('cost' => array())),
 			'cost' => array(),
+			'source' => 'ilds',
 		);
 
 		return new Mongodloid_Entity($values, $billrun);
