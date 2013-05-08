@@ -127,6 +127,7 @@ class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 			'account_id' => $subscriber->account_id,
 			'subscribers' => array($subscriber->id => array('cost' => array())),
 			'cost' => array(),
+			'source' => 'ilds',
 		);
 
 		return new Mongodloid_Entity($values, $billrun);
@@ -207,11 +208,13 @@ class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 	 * load the data to aggregate
 	 */
 	public function load() {
-		$query = "price_customer EXISTS and price_provider EXISTS and billrun NOT EXISTS";
 
 		$lines = Billrun_Factory::db()->linesCollection();
-		$this->data = $lines->query($query)
-				->equal(array('source' => 'ilds'))
+		$this->data = $lines->query()
+				->equals('source', 'ilds')
+				->notExists('billrun')
+				->exists('price_provider')
+				->exists('price_customer')
 				->cursor()->hint(array('source' => 1));
 
 		Billrun_Factory::log()->log("aggregator entities loaded: " . $this->data->count(), Zend_Log::INFO);
