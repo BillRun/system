@@ -63,7 +63,13 @@ class ildsPlugin extends Billrun_Plugin_BillrunPluginFraud {
 			),
 		);
 
-		$ret = $lines->aggregate($base_match, $where, $group, $project, $having);
+		$sort = array(
+			'$sort' => array(
+				'total' => -1
+			),
+		);
+		
+		$ret = $lines->aggregate($base_match, $where, $group, $project, $having, $sort);
 		Billrun_Factory::log()->log("ILDS fraud plugin found " . count($ret) . " items",  Zend_Log::DEBUG);
 
 		return $ret;
