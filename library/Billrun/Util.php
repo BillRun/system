@@ -25,7 +25,7 @@ class Billrun_Util {
 		if (!$dayofmonth) {
 			$dayofmonth = Billrun_Factory::config()->getConfigValue('billrun.charging_day', 25);
 		}
-		$format = "Ym" . $dayofmonth . "000000";
+		$format = "Ym" . str_pad($dayofmonth, '2', '0', STR_PAD_LEFT) . "000000";
 		if (date("d") >= $dayofmonth) {
 			$time = date($format);
 		} else {
