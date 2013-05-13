@@ -101,7 +101,7 @@ class Zend_Ftp_File {
 		if (substr($path, -1) != '/') {
 			$path = $path . '/';
 		}
-		
+
 		return $this->saveToFile($path . basename($this->_name), $mode, $offset, $autoRecover);
 	}
 
@@ -119,14 +119,14 @@ class Zend_Ftp_File {
 			$mode = ($this->_mode === null ? $this->_ftp->determineMode($this->_path) : $this->_mode);
 		}
 		$get = @ftp_get($this->_ftp->getConnection(), $file, $this->_path, $mode, $offset);
-		
+
 		// retry ftp get if declared
 		if ($get === FALSE && $autoRecover) {
 			$this->_ftp->disconnect();
 			// the first arg will connect again to the ftp resource
 			$get = @ftp_get($this->_ftp->getConnection(), $file, $this->_path, $mode, $offset);
 		}
-		
+
 		if ($get === false) {
 			//throw new Zend_Ftp_File_Exception('Unable to save file "' . $this->path . '"')
 			return false;
@@ -211,7 +211,7 @@ class Zend_Ftp_File {
 
 		return $this;
 	}
-	
+
 	/**
 	 * method to receive file size on server
 	 * 
