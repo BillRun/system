@@ -108,7 +108,7 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 					$received_path = $this->workspace . $file->name;
 					Billrun_Factory::dispatcher()->trigger('afterFTPFileReceived', array(&$received_path, $file, $this, $hostName, $extraData));
 					
-					if($this->logDB($received_path, $hostName , $extraData)) {
+					if(filesize($received_path) === $file->size() && $this->logDB($received_path, $hostName , $extraData)) {
 						$ret[] = $received_path;						
 						// delete the file after downloading and store it to processing queue
 						if( Billrun_Factory::config()->isProd() && (isset($config['delete_received']) && $config['delete_received'] ) ) {

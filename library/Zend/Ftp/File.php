@@ -210,6 +210,15 @@ class Zend_Ftp_File {
 
 		return $this;
 	}
+	
+	/**
+	 * method to receive file size on server
+	 * 
+	 * @return int the file size on success, or -1 on error
+	 */
+	public function size() {
+		return @ftp_size($this->_ftp, $this->_path);
+	}
 
 	/**
 	 * Whether or not the file exists
