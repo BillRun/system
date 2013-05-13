@@ -123,6 +123,7 @@ class Zend_Ftp_File {
 		// retry ftp get if declared
 		if ($get === FALSE && $autoRecover) {
 			$this->_ftp->disconnect();
+			// the first arg will connect again to the ftp resource
 			$get = @ftp_get($this->_ftp->getConnection(), $file, $this->_path, $mode, $offset);
 		}
 		
