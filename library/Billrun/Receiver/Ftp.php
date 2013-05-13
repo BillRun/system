@@ -108,7 +108,14 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 					$received_path = $this->workspace . $file->name;
 					Billrun_Factory::dispatcher()->trigger('afterFTPFileReceived', array(&$received_path, $file, $this, $hostName, $extraData));
 					
-					if(filesize($received_path) === $file->size() && $this->logDB($received_path, $hostName , $extraData)) {
+					$local_size = filesize($received_path);
+					$remote_size = $file->size();
+					if ($local_size !== $remote_size) {
+						Billrun_Factory::log()->log("FTP: The remote file size (" . $remote_size . ") is different from local file size (" . $local_size . ")", Zend_Log::DEBUG);
+						continue;
+					}
+					
+					if($this->logDB($received_path, $hostName , $extraData)) {
 						$ret[] = $received_path;						
 						// delete the file after downloading and store it to processing queue
 						if( Billrun_Factory::config()->isProd() && (isset($config['delete_received']) && $config['delete_received'] ) ) {
