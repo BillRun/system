@@ -182,6 +182,8 @@ class Mongodloid_Entity implements ArrayAccess {
 				$this->_values[$key] = $this->collection()->findOne($this->_values[$key]['$id']);
 			}
 			$result = $this->_values[$key];
+		} else {
+			$result = null;
 		}
 
 		return $result;
