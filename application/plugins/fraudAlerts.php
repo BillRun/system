@@ -110,7 +110,8 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 			return FALSE;
 		}
 
-		if (!Billrun_Factory::config()->isProd()) {
+		$forceTest = Billrun_Factory::config()->getConfigValue('fraudAlerts.forceTest', FALSE);
+		if ($forceTest || !Billrun_Factory::config()->isProd()) {
 			$key = Billrun_Factory::config()->getConfigValue('fraudAlerts.alert.key', '');
 			$testData = Billrun_Factory::config()->getConfigValue('fraudAlerts.alert.testKeys', array());
 
@@ -123,7 +124,8 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		unset($args['deposit_stamp']);
 
 		//move field that are required to a specific array leave extra field in the old one.
-		$required_args = array('event_type' => 'event_type',
+		$required_args = array(
+			'event_type' => 'event_type',
 			'threshold' => 'threshold',
 			'usage' => 'value',
 			'units' => 'units',
