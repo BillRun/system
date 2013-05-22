@@ -71,7 +71,13 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		//Get the amount of alerts allow per run 0 means no limit (or a very high limit)
 		$alertsLeft = Billrun_Factory::config()->getConfigValue('fraudAlerts.alert_limit', 0);
 
+		$alertsFilter = Billrun_Factory::config()->getConfigValue('fraudAlerts.filter', array());
 		foreach ($events as $event) {
+			// check if alert is filter by configuration
+			if (!empty($alertsFilter) && !in_array($event['event_type'], $alertsFilter)) {
+				continue;
+			}
+			
 			$ret = $this->notifyOnEvent($event);
 			if ($ret === FALSE) {
 				//some connection failure - mark event as paused
@@ -104,10 +110,6 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	protected function notifyOnEvent($args) {
 		if (!(isset($args['imsi']) || isset($args['msisdn']))) {
 			Billrun_Log::getInstance()->log("fraudAlertsPlugin::notifyOnEvent cannot find IMSI nor NDC_SN", Zend_Log::NOTICE);
-		}
-		$alertsFilter = Billrun_Factory::config()->getConfigValue('fraudAlerts.filter', array());
-		if (!empty($alertsFilter) && !in_array($args['event_type'], $alertsFilter)) {
-			return FALSE;
 		}
 
 		$forceTest = Billrun_Factory::config()->getConfigValue('fraudAlerts.forceTest', FALSE);
