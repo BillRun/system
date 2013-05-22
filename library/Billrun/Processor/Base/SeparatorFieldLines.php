@@ -30,7 +30,7 @@ abstract class Billrun_Processor_Base_SeparatorFieldLines extends Billrun_Proces
 			return false;
 		}
 	
-		while ($line = fgets($this->fileHandler)) {
+		while ($line = $this->fgetsIncrementLine($this->fileHandler)) {
 			$record_type = $this->getLineType($line);
 	
 			// @todo: convert each case code snippet to protected method (including triggers)
@@ -101,7 +101,7 @@ abstract class Billrun_Processor_Base_SeparatorFieldLines extends Billrun_Proces
 			return $trailer;
 	}
 	
-	protected function buildData($line) {
+	protected function buildData($line, $line_number = null) {
 			$this->parser->setStructure($this->data_structure); // for the next iteration
 			$this->parser->setLine($line);
 			// @todo: trigger after row load (including $header, $row)
@@ -111,8 +111,10 @@ abstract class Billrun_Processor_Base_SeparatorFieldLines extends Billrun_Proces
 			$row['type'] = static::$type;
 			$row['header_stamp'] = $this->data['header']['stamp'];
 			$row['file'] = basename($this->filePath);
-			$row['process_time'] = date(self::base_dateformat);			
-			
+			$row['process_time'] = date(self::base_dateformat);
+			if ($this->line_numbers) {
+				$row['line_number'] = $this->current_line;
+			}
 			return $row;
 	}
 
