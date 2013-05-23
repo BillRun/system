@@ -48,6 +48,7 @@ class RefundAction extends Action_Base {
 			'type', 
 			'charge_type',
 		);
+		
 		foreach ($optional_fields as $field) {
 			if (!isset($post[$field])) {
 				$post[$field] = 'refund';
@@ -56,6 +57,7 @@ class RefundAction extends Action_Base {
 		
 		$post['stamp'] = Billrun_Util::generateArrayStamp($post);
 		$post['process_time'] = Billrun_Util::generateCurrentTime();
+		$post['unified_record_time'] = new MongoDate($post['credit_time'] ." ".date("P") );
 		
 		$linesCollection = Billrun_Factory::db()->linesCollection();
 		if ($linesCollection->query('stamp', $post['stamp'])->count() > 0) {

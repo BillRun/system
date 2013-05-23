@@ -54,8 +54,13 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 
 		$ret = array();
 
-		$resource = $lines->query()
-			->equals('source', 'ilds')
+		$resource = $lines->query(array(
+					'$or' => array(
+						array('source' => 'ilds'),
+						array('source' => 'api', 'type' => 'refund', 'reason' => 'ILDS_DEPOSIT')
+					)
+				))
+			//->equals('source', 'ilds')
 			->equals('billrun', $this->getStamp())
 			->equals('subscriber_id', "$subscriber_id")
 			->notExists('billrun_excluded')
@@ -78,7 +83,7 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 			// @todo refactoring the xml generation to another class
 			$xml = $this->basic_xml();
 			$xml->TELECOM_INFORMATION->LASTTIMECDRPROCESSED = date('Y-m-d h:i:s');
-			$xml->TELECOM_INFORMATION->VAT_VALUE = '17';
+			$xml->TELECOM_INFORMATION->VAT_VALUE = (string) ((self::VAT_VALUE * 100) - 100);//'17';
 			$xml->TELECOM_INFORMATION->COMPANY_NAME_IN_ENGLISH = 'GOLAN';
 			$xml->INV_CUSTOMER_INFORMATION->CUSTOMER_CONTACT->EXTERNALACCOUNTREFERENCE = $row->get('account_id');
 			;
@@ -91,15 +96,11 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 				$subscriber_lines = $this->get_subscriber_lines($id);
 				foreach ($subscriber_lines as $line) {
 					$billing_record = $billing_records->addChild('BILLING_RECORD');
-					$billing_record->TIMEOFBILLING = $line['call_start_dt'];
-					$billing_record->TARIFFITEM = 'IL_ILD';
-					$billing_record->CTXT_CALL_OUT_DESTINATIONPNB = $line['called_no'];
-					$billing_record->CTXT_CALL_IN_CLI = $line['caller_phone_no'];
-					$billing_record->CHARGEDURATIONINSEC = $line['chrgbl_call_dur'];
-					$billing_record->CHARGE = $line['price_customer'];
-					$billing_record->TARIFFKIND = 'Call';
-					$billing_record->INTERNATIONAL = '1';
-					$billing_record->ILD = $line['type'];
+					if($line['type'] == 'refund') {
+						$this->addRefundLineXML($billing_record, $line);
+					} else {
+						$this->addIldLineXML($billing_record, $line);
+					}
 				}
 
 				$subscriber_sumup = $subscriber_inf->addChild('SUBSCRIBER_SUMUP');
@@ -152,7 +153,7 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 
 	protected function addRowToCsv($invoice_id, $account_id, $total, $cost_ilds) {
 		//empty costs for each of the providers
-		foreach (array('012', '013', '014', '015', '018', '019') as $key) {
+		foreach (array('012', '013', '014', '015', '018', '019','refund') as $key) {
 			if (!isset($cost_ilds[$key])) {
 				$cost_ilds[$key] = 0;
 			}
@@ -204,6 +205,47 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 			return (string) ($e['invoice_id'] + 1); // convert to string cause mongo cannot store bigint
 		}
 		return '3100000000';
+	}
+	
+	protected function addIldLineXML(&$billing_record , $line) {
+			$billing_record->TIMEOFBILLING = $line['call_start_dt'];
+			$billing_record->TARIFFITEM = 'IL_ILD';
+			$billing_record->CTXT_CALL_OUT_DESTINATIONPNB = $line['called_no'];
+			$billing_record->CTXT_CALL_IN_CLI =  $line['caller_phone_no'];
+			$billing_record->CHARGEDURATIONINSEC =  $line['chrgbl_call_dur'];
+			$billing_record->CHARGE = $line['price_customer'];
+			$billing_record->TARIFFKIND = 'Call';
+			$billing_record->INTERNATIONAL = '1';
+			$billing_record->ILD = $line['type'];
+	}
+	
+	protected function addRefundLineXML(&$billing_record ,$line) {
+		$billing_record->TIMEOFBILLING = date("Y/m/t H:i:s", $line['unified_record_time']->sec);
+        $billing_record->TARIFFITEM = $line['reason']; //
+        $billing_record->CTXT_CALL_OUT_DESTINATIONPNB="";
+		$billing_record->CHARGEDURATIONINSEC = "";
+		$billing_record->CHARGE = 0;
+		$billing_record->CREDIT = -$line['price_customer'];
+		$billing_record->NEWBALANCE = 0;
+        $billing_record->PREVIOUSBALANCE = 0;
+		$billing_record->TTAR_TCLASSNAME_EXT="";
+        $billing_record->TTAR_TIMEPERIOD = "";
+        $billing_record->TTAR_ACCESSPRICE1 = 0;
+		$billing_record->TTAR_SAMPLEDELAYINSEC1 = 0 ; 
+		$billing_record->TTAR_SAMPPRICE1 = 0;
+		$billing_record->CTXT_CALL_IN_CLI = "";
+		$billing_record->ACCESSTYPENAME = "";
+		$billing_record->CTXT_CALL_OUT_CARRIERNAME_EXT = "";
+		$billing_record->SERVINGPLMN = "";
+		$billing_record->TYPE_OF_BILLING_CHAR = "R";
+		//<!-- eXSWI_ID_BILLING_CALCULATED_VALUES!-->
+		$billing_record->ROAMING = 0;
+		//<!-- eXSWI_ID_BILLING_CALCULATED_VALUES!-->
+		$billing_record->TARIFFKIND = "Service";
+		//<!-- eXSWI_ID_BILLING_CALCULATED_VALUES!-->
+		$billing_record->INTERNATIONAL = 1; 
+		//<!-- eXSWI_ID_BILLING_CALCULATED_VALUES!-->
+		$billing_record->DISCOUNT_USAGE = "DISCOUNT_NONE";
 	}
 
 	protected function basic_xml() {
