@@ -18,10 +18,10 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 
 	/**
 	 * Is the  Alert plugin in a dry run mode (doesn't  actually sends alerts)
-	 * @var timestamp
+	 * @var boolean
 	 */
 	protected $isDryRun = false;
-
+	
 	public function __construct($options = array(
 	)) {
 		parent::__construct($options);
@@ -215,22 +215,25 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 				'source' => array('$in' => $types)
 			),
 			), array(
-			'$sort' => array('imsi' => 1, 'msisdn' => 1)
+			'$sort' => array('priority' => 1)
 			), array(
 			'$group' => array(
 				'_id' => array('imsi' => '$imsi', 'msisdn' => '$msisdn'),
 				'id' => array('$addToSet' => '$_id'),
 				'imsi' => array('$first' => '$imsi'),
+				'msisdn' => array('$first' => '$msisdn'),
 				'value' => array('$first' => '$value'),
 				'event_type' => array('$first' => '$event_type'),
 				'units' => array('$first' => '$units'),
-				'msisdn' => array('$first' => '$msisdn'),
 				'threshold' => array('$first' => '$threshold'),
-				'deposit_stamp' => array('$first' => '$_id'),
+				'priority' => array('$first' => '$priority'),
+				//'deposit_stamp' => array('$first' => '$_id'),
 				'source' => array('$first' => '$source'),
 				'stamps' => array('$addToSet' => '$stamp'),
 			),
 			), array(
+			'$sort' => array('priority' => 1)
+			),	array(
 			'$project' => array(
 				'_id' => 0,
 				'imsi' => '$_id.imsi',
@@ -239,7 +242,7 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 				'event_type' => 1,
 				'units' => 1,
 				'threshold' => 1,
-				'deposit_stamp' => 1,
+			//	'deposit_stamp' => 1,
 				'id' => 1,
 				'source' => 1,
 				'stamps' => 1,

@@ -90,12 +90,13 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @return array return value of each event status
 	 */
 	protected function processingNotify() {
-		$retValue = array();
+
 		if (!Billrun_Factory::config()->getConfigValue('emailAlerts.processing.active', true)) {
-			return $retValue;
+			return "";
 		}
 
 		//Aggregate the  events by imsi  taking only the first one.
+		$retValue = array();
 		$logs = $this->gatherLogs($this->processingTypes);
 		$warningTime = strtotime("-" . Billrun_Factory::config()->getConfigValue('emailAlerts.processing.thresholds.warning', '1 day'));
 		$alertTime = strtotime("-" . Billrun_Factory::config()->getConfigValue('emailAlerts.processing.thresholds.alert', '12 hours'));
