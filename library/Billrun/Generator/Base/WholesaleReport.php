@@ -133,14 +133,14 @@ abstract class Billrun_Generator_Base_WholesaleReport extends Billrun_Generator 
 		$callReferences= array();
 		//Billrun_Factory::log()->log(print_r($lines->count(),1),Zend_Log::DEBUG);
 		foreach ($lines as $value) {
-			//TODO move to use only  global_call reference once the old nsn data  will be re inserted to the DB...
-			if((isset($value['global_call_reference']) && isset($callReferences[$value['global_call_reference']])) || 
+			
+			if(/*(isset($value['global_call_reference']) && isset($callReferences[$value['global_call_reference'].$value['call_reference']])) || */
 				isset($callReferences[$value['call_reference'].$value['calling_number'].$value['called_number']])) { 
 				continue;
 			}
-			if(isset($value['global_call_reference']))  {
-				$callReferences[$value['global_call_reference']] = true;
-			}
+			/*if(isset($value['global_call_reference']))  {
+				$callReferences[$value['global_call_reference'].$value['call_reference']] = true;
+			}*/
 			$callReferences[$value['call_reference'].$value['calling_number'].$value['called_number']] = true;			
 			
 			$isIncoming = !preg_match("/".$providerRegex."/", $value['out_circuit_group_name']);					
