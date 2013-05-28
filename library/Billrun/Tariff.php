@@ -60,45 +60,30 @@ class Billrun_Tariff {
 	 */
 	public function get() {
 		$args = func_get_args();
-		if (!is_array($args[0])) {
-			return;
-		}
-
-		$params = $args[0];
-
-		if (isset($params['searchValue'])) {
-			$searchValue = $params['searchValue'];
+		if (is_array($args[0])) {
+			$params = $args[0];
+			$searchValue = isset($params['searchValue']) ? $params['searchValue'] : array('$exists' => true );
+			$searchField = isset($params['searchBy']) ? $params['searchBy'] : 'key';
 		} else {
-			return;
+			@list($searchField,$searchValue) = $args;
+			$searchValue = $searchValue ? $params['searchBy'] : array('$exists' => true );
 		}
 
-		if (isset($params['searchBy'])) {
-			$searchField = $params['searchBy'];
-		} else {
-			$searchField = 'key';
-		}
+		$data = $this->rates->query()->equals($searchField, $searchValue)->cursor()->current();
 
-		if (isset($params['findColumn'])) {
-			$returnField = $params['findColumn'];
-		} else {
-			$returnField = false;
-		}
-
-		if (isset($params['callback'])) {
-			$callback = $params['callback'];
-		} else {
-			$callback = false;
-		}
-
-		if ($callback) {
-//			call_user_func_array($callback, $param_arr);
-		}
-
-		$data = $this->rates->query()->equal($searchField, $searchValue);
-		if ($returnField) {
-			
-		}
+		return $data;
 	}
+	/**
+	 * get tariff rate
+	 */
+	public function query() {
+		$args = func_get_args();
+
+		$data = $this->rates->query($args);
+
+		return $data;
+	}
+	
 
 	/**
 	 * set the tariff rate

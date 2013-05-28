@@ -42,8 +42,9 @@ class Billrun_Calculator_Ilds extends Billrun_Calculator {
 	public function calc() {
 
 		Billrun_Factory::dispatcher()->trigger('beforeCalculateData', array('data' => $this->data));
-		foreach ($this->data as $item) {
+		foreach ($this->lines as $item) {
 			$this->updateRow($item);
+			$this->data[] = $item;
 		}
 		Billrun_Factory::dispatcher()->trigger('afterCalculateData', array('data' => $this->data));
 	}
