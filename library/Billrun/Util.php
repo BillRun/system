@@ -27,20 +27,21 @@ class Billrun_Util {
 		}
 		return $time;
 	}
-	
-	
+
 	public static function joinSubArraysOnKey($arrays, $depth = 1, $key = false) {
 
-		if($depth == 0 || !is_array($arrays)) {return $arrays;}
-	//	print_r($arrays);
-		$retArr = array();		
-		foreach($arrays as $subKey => $subArray) {
-			if($key) {
-					$retArr[$subKey] = array( $key => Billrun_Util::joinSubArraysOnKey($subArray, $depth-1, $subKey));
-				} else {
-				$swappedArr = Billrun_Util::joinSubArraysOnKey($subArray, $depth-1, $subKey);
-				if(is_array($swappedArr)) {
-					$retArr = array_merge_recursive($retArr,$swappedArr);
+		if ($depth == 0 || !is_array($arrays)) {
+			return $arrays;
+		}
+		//	print_r($arrays);
+		$retArr = array();
+		foreach ($arrays as $subKey => $subArray) {
+			if ($key) {
+				$retArr[$subKey] = array($key => Billrun_Util::joinSubArraysOnKey($subArray, $depth - 1, $subKey));
+			} else {
+				$swappedArr = Billrun_Util::joinSubArraysOnKey($subArray, $depth - 1, $subKey);
+				if (is_array($swappedArr)) {
+					$retArr = array_merge_recursive($retArr, $swappedArr);
 				} else {
 					$retArr[$subKey] = $swappedArr;
 				}
@@ -48,7 +49,7 @@ class Billrun_Util {
 		}
 		return $retArr;
 	}
-	
+
 	/**
 	 * generate array stamp
 	 * @param array $ar array to generate the stamp from
@@ -57,7 +58,7 @@ class Billrun_Util {
 	public static function generateArrayStamp($ar) {
 		return md5(serialize($ar));
 	}
-	
+
 	/**
 	 * generate current time from the base time date format
 	 * 
@@ -66,7 +67,7 @@ class Billrun_Util {
 	public static function generateCurrentTime() {
 		return date(Billrun_Base::base_dateformat);
 	}
-	
+
 	/**
 	 * Get the first value that match to a regex
 	 * @param $pattern the regex pattern
@@ -74,14 +75,14 @@ class Billrun_Util {
 	 * @param $resIndex (optional) the index to get , of the returned regex results.
 	 * @return the first regex group  that match ed or false if there was no match
 	 */
-	public static function regexFirstValue( $pattern, $subject, $resIndex = 1 ) {
+	public static function regexFirstValue($pattern, $subject, $resIndex = 1) {
 		$matches = array();
-		if( !preg_match(($pattern ? $pattern : "//"), $subject, $matches) ) {
+		if (!preg_match(($pattern ? $pattern : "//"), $subject, $matches)) {
 			return FALSE;
 		}
 		return (isset($matches[$resIndex])) ? $matches[$resIndex] : FALSE;
 	}
-	
+
 	/**
 	 * method to convert short datetime (20090213145327) into ISO-8601 format (2009-02-13T14:53:27+01:00)
 	 * the method can be relative to timezone offset
@@ -100,6 +101,10 @@ class Billrun_Util {
 		$date_formatted = str_replace(' ', 'T', date(Billrun_Base::base_dateformat, strtotime($datetime))) . $tz_offset;
 		$datetime = strtotime($date_formatted);
 		return $datetime;
+	}
+
+	public static function startsWith($haystack, $needle) {
+		return !strncmp($haystack, $needle, strlen($needle));
 	}
 
 }

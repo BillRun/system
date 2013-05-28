@@ -29,7 +29,7 @@ class Processor_ImportZones extends Billrun_Processor_Base_Separator {
 		$header = $this->getLine();
 		$this->parser->setStructure($header);
 	}
-	
+
 	/**
 	 * we do not need to log
 	 * 
@@ -38,6 +38,7 @@ class Processor_ImportZones extends Billrun_Processor_Base_Separator {
 	public function logDB() {
 		return TRUE;
 	}
+
 	/**
 	 * method to parse the data
 	 */
@@ -75,7 +76,7 @@ class Processor_ImportZones extends Billrun_Processor_Base_Separator {
 		$this->data['data'][] = $row;
 		return $row;
 	}
-	
+
 	protected function store() {
 		if (!isset($this->data['data'])) {
 			// raise error
@@ -89,7 +90,7 @@ class Processor_ImportZones extends Billrun_Processor_Base_Separator {
 
 		foreach ($data as $key => $row) {
 			$entity = new Mongodloid_Entity($row);
-			
+
 			if ($rates->query('key', $key)->count() > 0) {
 				continue;
 			}
@@ -100,7 +101,7 @@ class Processor_ImportZones extends Billrun_Processor_Base_Separator {
 
 		return true;
 	}
-	
+
 	protected function normalize($data) {
 		$ret = array();
 		foreach ($data as $row) {
@@ -110,20 +111,53 @@ class Processor_ImportZones extends Billrun_Processor_Base_Separator {
 			}
 			$key = $row['zoneName'];
 			if (!isset($ret[$key])) {
+				if (Billrun_Util::startsWith($row['zoneName'], "IL_ILD") || Billrun_Util::startsWith($row['zoneName'], "KT")) {
+					$out_circuit_group = array(
+						array(
+							"from" => "2000",
+							"to" => "2101"
+						)
+					);
+				} else {
+					$out_circuit_group = array(
+						array(
+							"from" => "0",
+							"to" => "1999"
+						),
+						array(
+							"from" => "2102",
+							"to" => "99999999"
+						),
+					);
+				}
 				$ret[$key] = array(
 					'from' => new MongoDate(strtotime('2013-01-01T00:00:00+00:00')),
-					'to' => new MongoDate(strtotime(date('Y')+100, '-01-01T00:00:00+00:00')),
+					'to' => new MongoDate(strtotime(date('Y') + 100, '-01-01T00:00:00+00:00')),
 					'key' => $row['zoneName'],
-					'destinations' => array($row['prefix']),
+					'params' => array(
+						'prefix' => array($row['prefix']),
+						'out_circuit_group' => $out_circuit_group
+					),
 				);
 			} else {
-				$ret[$key]['destinations'][] = $row['prefix'];
+				$ret[$key]['params']['prefix'][] = $row['prefix'];
+			}
+		}
+		
+		foreach ($ret as $value) {
+			if ($value['key']=="IL_FIX" || $value['key']=="IL_MOBILE") {
+				$params_dup = array();
+				$il_prefix = "972";
+				foreach ($value['params']['prefix'] as $prefix) {
+					if (Billrun_Util::startsWith($prefix, $il_prefix)) {
+						$params_dup[] = substr($prefix, strlen($il_prefix));
+					}
+				}
+				$ret[$value['key']]['params']['prefix'] = array_merge($value['params']['prefix'], $params_dup);
 			}
 		}
 
 		return $ret;
-		
 	}
-
 
 }

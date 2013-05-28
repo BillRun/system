@@ -94,23 +94,27 @@ class Processor_Mergerates extends Billrun_Processor_Base_Separator {
 		foreach ($this->data['data'] as $key => $row) {
 			switch ($row['kind']) {
 				case 'A':
-					$rateKey = 'data';
+					continue 2;
+					$rateType = 'data';
 					continue; // we will take care later
 					break;
 				case 'C':
-					$rateKey = 'call';
+					$rateType = 'call';
+					$record_type = array("01","11");
 					$unit = 'seconds';
 					break;
 				case 'I':
-					$rateKey = 'data';
+					continue 2;
+					$rateType = 'data';
 					continue; // we will take care later
 					break;
 				case 'M':
-					$rateKey = 'sms';
+					continue 2;
+					$rateType = 'sms';
 					$unit = 'counter';
 					break;
 				case 'N':
-					continue;
+					continue 2;
 					break;
 			}
 			$entity = $rates->query('key', $row['zoneOrItem'])->cursor()->current();
@@ -128,7 +132,9 @@ class Processor_Mergerates extends Billrun_Processor_Base_Separator {
 				if ($row['kind'] == 'C') { // add access price for calls
 					$value['access'] = (double) $row['tinf_accessPrice0'];
 				}
-				$entity->set("rates.".$rateKey, $value);
+				$entity->set("type", $rateType);
+				$entity->set("rates", $value);
+				$entity->set("params.record_type", $record_type);
 				$entity->save($rates);
 				$this->data['stored_data'][] = $row;
 			} else {

@@ -17,14 +17,14 @@ class ImportController extends Yaf_Controller_Abstract {
 	public function indexAction() {
 		$parser = Billrun_Parser::getInstance(array(
 			'type' => 'separator',
-			'separator' => "\t",
+			'separator' => ",",
 		));
 		
-		$parser->setSeparator("\t");
+		$parser->setSeparator(",");
 		$import = Billrun_Processor::getInstance(array(
 			'type' => 'importzones', 
 			'parser' => $parser, 
-			'path' => '/home/ofer/Desktop/billing_data/zone.csv'
+			'path' => '/home/shani/Documents/S.D.O.C/BillRun/backups/zone.csv'
 		));
 		
 		if ($import === FALSE) {
@@ -33,11 +33,11 @@ class ImportController extends Yaf_Controller_Abstract {
 		
 		$import->setBackupPath(array()); // no backup
 		$importData = $import->process();
-
+		
 		$merge = Billrun_Processor::getInstance(array(
 			'type' => 'mergerates', 
 			'parser' => $parser, 
-			'path' => '/home/ofer/Desktop/billing_data/tariff_v2.csv'
+			'path' => '/home/shani/Documents/S.D.O.C/BillRun/backups/tariff_v2_filtered.csv'
 		));
 
 		if ($merge === FALSE) {
@@ -45,17 +45,11 @@ class ImportController extends Yaf_Controller_Abstract {
 		}
 		
 		$merge->setBackupPath(array()); // no backup
-		$mergeData = $merge->process();
-
-		$parser2 = Billrun_Parser::getInstance(array(
-			'type' => 'separator',
-			'separator' => ",",
-		));
-		
+		$mergeData = $merge->process();		
 
 		$mergePackage = Billrun_Processor::getInstance(array(
 			'type' => 'mergezonepackage', 
-			'parser' => $parser2, 
+			'parser' => $parser, 
 			'path' => '/home/ofer/Desktop/billing_data/zone_group_element.csv'
 		));
 
