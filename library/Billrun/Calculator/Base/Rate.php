@@ -13,7 +13,7 @@
  * @package  calculator
  * @since    0.5
  */
-abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
+abstract class Billrun_Calculator_Base_Rate extends Billrun_Calculator {
 
 	/**
 	 * the type of the object
@@ -21,30 +21,6 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	 * @var string
 	 */
 	static protected $type = 'rate';
-
-	protected function load($initData = true) {
-		parent::load($initData);
-		// load the rate data
-	}
-
-	/**
-	 * method to get calculator lines
-	 */
-	protected function getLines() {
-		$lines = Billrun_Factory::db()->linesCollection();
-
-		return $lines->query()
-			->in('type', array('nsn', 'tap3'))
-			->notExists('price_customer');
-
-	}
-
-	/**
-	 * write the calculation into DB
-	 */
-	protected function updateRow($row) {
-		
-	}
 
 	/**
 	 * identify if the row belong to calculator
@@ -58,14 +34,25 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	/**
 	 * execute the calculation process
 	 */
-	public function calc() {
-		
+	public function calc() {		
+		Billrun_Factory::dispatcher()->trigger('beforeCalculateData', array('data' => $this->data));
+		foreach ($this->lines as $item) {
+			//Billrun_Factory::log()->log("Calcuating row : ".print_r($item,1),  Zend_Log::DEBUG);			
+			$this->updateRow($item);
+			$this->data[] = $item;
+		}
+		Billrun_Factory::dispatcher()->trigger('afterCalculateData', array('data' => $this->data));
 	}
 
 	/**
 	 * execute write the calculation output into DB
 	 */
 	public function write() {
-		
+		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteData', array('data' => $this->data));
+		$lines = Billrun_Factory::db()->linesCollection();
+		foreach ($this->data as $item) {
+			$item->save($lines);
+		}
+		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteData', array('data' => $this->data));
 	}
 }
