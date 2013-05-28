@@ -53,6 +53,8 @@ class Processor_ImportZones extends Billrun_Processor_Base_Separator {
 			$this->parseData($line);
 		}
 
+		$this->addUnrated();
+
 		return true;
 	}
 
@@ -110,7 +112,10 @@ class Processor_ImportZones extends Billrun_Processor_Base_Separator {
 				continue;
 			}
 			$key = $row['zoneName'];
-			if (!isset($ret[$key])) {
+			if ($key=='UNRATED') {
+				$ret[$key]['key'] = $key;
+			}
+			else if (!isset($ret[$key])) {
 				if (Billrun_Util::startsWith($row['zoneName'], "IL_ILD") || Billrun_Util::startsWith($row['zoneName'], "KT")) {
 					$out_circuit_group = array(
 						array(
@@ -143,9 +148,9 @@ class Processor_ImportZones extends Billrun_Processor_Base_Separator {
 				$ret[$key]['params']['prefix'][] = $row['prefix'];
 			}
 		}
-		
+
 		foreach ($ret as $value) {
-			if ($value['key']=="IL_FIX" || $value['key']=="IL_MOBILE") {
+			if ($value['key'] == "IL_FIX" || $value['key'] == "IL_MOBILE") {
 				$params_dup = array();
 				$il_prefix = "972";
 				foreach ($value['params']['prefix'] as $prefix) {
@@ -158,6 +163,12 @@ class Processor_ImportZones extends Billrun_Processor_Base_Separator {
 		}
 
 		return $ret;
+	}
+
+	protected function addUnrated() {
+		$row = array();
+		$row['zoneName'] = "UNRATED";
+		$this->data['data'][] = $row;
 	}
 
 }

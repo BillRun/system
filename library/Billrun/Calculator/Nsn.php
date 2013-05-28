@@ -24,7 +24,7 @@ class Billrun_Calculator_Nsn extends Billrun_Calculator {
 	public function __construct($options = array()) {
 		parent::__construct($options);
 
-		$config = Billrun_Factory::config()->getConfigValue('calculator.nsn.customer', array());
+//		$this->config = Billrun_Factory::config()->getConfigValue('calculator.nsn.customer', array());
 	}
 
 	/**
@@ -38,9 +38,7 @@ class Billrun_Calculator_Nsn extends Billrun_Calculator {
 
 		return $lines->query()
 				->equals('type', static::$type)
-				->notExists('price_customer')
 				->notExists('customer_rate');
-		//TODO add notExists reference to rates
 	}
 
 	/**
@@ -81,19 +79,13 @@ class Billrun_Calculator_Nsn extends Billrun_Calculator {
 
 		$rates = Billrun_Factory::db()->ratesCollection();
 
-//		$query = "aggregate({\$match:{'params.prefix':{\$in:[\"3932020\"]}}},{\$unwind:\"\$params.prefix\"}, {\$sort:{\"params.prefix\":-1}},{\$match:{'params.prefix':{\$in:[\"3932020\"]}}})";
-
-		if ($record_type=="01" || ($record_type=="11" && ($icg=="1001" || $icg=="1006" || ($icg>"1201" && $icg>"1209")))) {
-
+		if ($record_type == "01" || ($record_type == "11" && ($icg == "1001" || $icg == "1006" || ($icg > "1201" && $icg < "1209")))) {
 			$called_number_prefixes = $this->getPrefixes($called_number);
 
 			$base_match = array(
 				'$match' => array(
 					'params.prefix' => array(
 						'$in' => $called_number_prefixes,
-					),
-					'params.record_type' => array(
-						'$in' => array($record_type),
 					),
 					'params.out_circuit_group' => array(
 						'$elemMatch' => array(
@@ -128,23 +120,24 @@ class Billrun_Calculator_Nsn extends Billrun_Calculator {
 
 			$matched_rates = $rates->aggregate($base_match, $unwind, $sort, $match2);
 
-//		$charge = $this->calcChargeLine($row->get('type'), $row->get('call_charge'));
+		} else { // put 0 rate
+			$base_match = array(
+				'$match' => array(
+					'key' => 'UNRATED',
+				),
+			);
+			$matched_rates = $rates->aggregate($base_match);
+		}
 
-			if (!empty($matched_rates)) {
-				$rate = reset($matched_rates);
-				$current = $row->getRawData();
-				$rate_reference = array(
-					'customer_rate' => $rate['_id'],
-				);
-				$newData = array_merge($current, $rate_reference);
-				$row->setRawData($newData);
-//			echo $called_number . "\n\n\n\n\n\n";
-			}
+		if (!empty($matched_rates)) {
+			$rate = reset($matched_rates);
+			$current = $row->getRawData();
+			$rate_reference = array(
+				'customer_rate' => $rate['_id'],
+			);
+			$newData = array_merge($current, $rate_reference);
+			$row->setRawData($newData);
 		}
-		else { // put 0 rate
-			
-		}
-//		echo "processed";
 
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteRow', array('row' => $row));
 	}

@@ -53,6 +53,8 @@ class Processor_Mergerates extends Billrun_Processor_Base_Separator {
 			$this->parseData($line);
 		}
 
+		$this->addZeroRate();
+
 		return true;
 	}
 
@@ -100,7 +102,7 @@ class Processor_Mergerates extends Billrun_Processor_Base_Separator {
 					break;
 				case 'C':
 					$rateType = 'call';
-					$record_type = array("01","11");
+					$record_type = array("01", "11");
 					$unit = 'seconds';
 					break;
 				case 'I':
@@ -134,7 +136,9 @@ class Processor_Mergerates extends Billrun_Processor_Base_Separator {
 				}
 				$entity->set("type", $rateType);
 				$entity->set("rates", $value);
-				$entity->set("params.record_type", $record_type);
+				if ($row['zoneOrItem'] != 'UNRATED') {
+					$entity->set("params.record_type", $record_type);
+				}
 				$entity->save($rates);
 				$this->data['stored_data'][] = $row;
 			} else {
@@ -143,6 +147,16 @@ class Processor_Mergerates extends Billrun_Processor_Base_Separator {
 		}
 
 		return true;
+	}
+
+	protected function addZeroRate() {
+		$row = array();
+		$row['zoneOrItem'] = 'UNRATED';
+		$row['kind'] = 'C';
+		$row['tinf_sampPrice0'] = 0;
+		$row['tinf_sampDelayInSec0'] = 1;
+		$row['tinf_accessPrice0'] = 0;
+		$this->data['data'][] = $row;
 	}
 
 }
