@@ -38,7 +38,7 @@ class Billrun_Calculator_Nsn extends Billrun_Calculator_Base_Rate {
 
 		return $lines->query()
 				->equals('type', static::$type)
-				->notExists('customer_rate');
+				->notExists('customer_rate')->cursor()->limit($this->limit);
 	}
 
 	/**
@@ -62,6 +62,7 @@ class Billrun_Calculator_Nsn extends Billrun_Calculator_Base_Rate {
 					'params.prefix' => array(
 						'$in' => $called_number_prefixes,
 					),
+					'call' => array('$exists' => true ),
 					'params.out_circuit_group' => array(
 						'$elemMatch' => array(
 							'from' => array(

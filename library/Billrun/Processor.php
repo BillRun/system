@@ -283,7 +283,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 * @todo refactoring this method
 	 */
 	protected function store() {
-		if (!isset($this->data['stored_data'])) {
+		if (!isset($this->data['data'])) {
 			// raise error
 			return false;
 		}

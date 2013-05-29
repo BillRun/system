@@ -31,7 +31,7 @@ class Billrun_Calculator_Data extends Billrun_Calculator_Base_Rate {
 		
 		return $lines->query()
 			->in('type', array('ggsn'))
-			->notExists('rate_customer')->cursor()->limit($this->limit);
+			->notExists('customer_rate')->cursor()->limit($this->limit);
 
 	}	
 	

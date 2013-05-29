@@ -35,13 +35,15 @@ abstract class Billrun_Calculator_Base_Rate extends Billrun_Calculator {
 	 * execute the calculation process
 	 */
 	public function calc() {		
-		Billrun_Factory::dispatcher()->trigger('beforeCalculateData', array('data' => $this->data));
+		Billrun_Factory::dispatcher()->trigger('beforeRateData', array('data' => $this->data));
 		foreach ($this->lines as $item) {
 			//Billrun_Factory::log()->log("Calcuating row : ".print_r($item,1),  Zend_Log::DEBUG);			
+			Billrun_Factory::dispatcher()->trigger('beforeRateDataRow', array('data' => &$item));
 			$this->updateRow($item);
 			$this->data[] = $item;
+			Billrun_Factory::dispatcher()->trigger('afterRateDataRow', array('data' => &$item));
 		}
-		Billrun_Factory::dispatcher()->trigger('afterCalculateData', array('data' => $this->data));
+		Billrun_Factory::dispatcher()->trigger('afterRateData', array('data' => $this->data));
 	}
 
 	/**
