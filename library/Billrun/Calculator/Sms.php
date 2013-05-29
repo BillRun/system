@@ -25,7 +25,7 @@ class Billrun_Calculator_Sms extends Billrun_Calculator_Base_Rate {
 		$lines = Billrun_Factory::db()->linesCollection();
 		
 		return $lines->query()
-			->in('type', array('smpp','smsc'))
+			->in('type', array('smpp','smsc','mmsc'))
 			->notExists('customer_rate')->cursor()->limit($this->limit);
 
 	}
@@ -64,11 +64,11 @@ class Billrun_Calculator_Sms extends Billrun_Calculator_Base_Rate {
 	 * @return Array 
 	 */
 	protected function getLineRate($row) {		
-		$called_number = preg_replace('/^0+/', '', $row->get('called_number'));
+		$called_number = preg_replace('/[^\d]/', '', preg_replace('/^0+/', '', ($row['type'] == 'mmsc' ? $row['called_number'] : $row['recipent_addr']) ) );
 
 		$rates = Billrun_Factory::db()->ratesCollection();
 		//Billrun_Factory::log()->log("row : ".print_r($row ,1),  Zend_Log::DEBUG);
-
+		$type = $row['type'] == 'mmsc' ? 'mms' : 'sms';	
 		$called_number_prefixes = $this->getPrefixes($called_number);
 		//Billrun_Factory::log()->log("prefixes : ".print_r($called_number_prefixes ,1),  Zend_Log::DEBUG);
 		$base_match = array(
@@ -76,7 +76,7 @@ class Billrun_Calculator_Sms extends Billrun_Calculator_Base_Rate {
 				'params.prefix' => array(
 					'$in' => $called_number_prefixes,
 				),
-				'sms' => array('$exists' => true )
+				'$type' => array('$exists' => true )
 			)
 		);
 

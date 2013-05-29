@@ -106,5 +106,23 @@ class Billrun_Util {
 	public static function startsWith($haystack, $needle) {
 		return !strncmp($haystack, $needle, strlen($needle));
 	}
+	
+	/**
+	 * convert corrency.  
+	 * (this  should  be change to somthing more dynamic)
+	 * @param type $value the value to convert.
+	 * @param type $from the currency to conver from.
+	 * @param type $to the currency to convert to.
+	 * @return float the converted value.
+	 */
+	public static function convertCurrency($value, $from, $to) {
+		$conversion = array(
+			'ILS' => 1,
+			'EUR' => 4.78,
+			'USD' => 3.68,
+		);
+		
+		return $value * ($conversion[$from]/$conversion[$to]);
+	}
 
 }
