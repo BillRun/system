@@ -48,8 +48,19 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 * the file path to process on
 	 * @var file path
 	 */
-	protected $backupPaths  = array();
-	
+	protected $backupPaths = array();
+
+	/**
+	 * whether to log records' line number in the source file
+	 * @var boolean 
+	 */
+	protected $line_numbers = false;
+
+	/**
+	 * current processed line number
+	 * @var boolean 
+	 */
+	protected $current_line = 0;
 	/**
 	 * constructor - load basic options
 	 *
@@ -66,8 +77,14 @@ abstract class Billrun_Processor extends Billrun_Base {
 		if (isset($options['parser'])) {
 			$this->setParser($options['parser']);
 		}
-		
-		if (isset($options['backup_path'])) {
+		if (isset($options['processor']['line_numbers']))
+		{
+
+			$this->line_numbers = $options['processor']['line_numbers'];
+		}
+
+		if (isset($options['backup_path']))
+		{
 			$this->setBackupPath($options['backup_path']);
 		} else {
 			$this->setBackupPath( Billrun_Factory::config()->getConfigValue($this->getType().'.backup_path',array('./backups/'.$this->getType())));
@@ -199,7 +216,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 
 		Billrun_Factory::dispatcher()->trigger('afterProcessorBackup', array($this , &$this->filePath));
 		
-		return $this->data['stored_data'];
+		return $this->data['data'];
 	}
 
 	/**
@@ -266,7 +283,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 * @todo refactoring this method
 	 */
 	protected function store() {
-		if (!isset($this->data['data'])) {
+		if (!isset($this->data['stored_data'])) {
 			// raise error
 			return false;
 		}
@@ -388,12 +405,23 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 * @return an array containing the sequence data. ie:
 	 *			array(seq => 00001, date => 20130101 )
 	 */
-	 public function getFilenameData($filename) {
-			return array(
-						'seq' => Billrun_Util::regexFirstValue(Billrun_Factory::config()->getConfigValue($this->getType().".sequence_regex.seq","/(\d+)/"), $filename),
-						'date' => Billrun_Util::regexFirstValue(Billrun_Factory::config()->getConfigValue($this->getType().".sequence_regex.date","/(20\d{4})/"), $filename),
-						'time' => Billrun_Util::regexFirstValue(Billrun_Factory::config()->getConfigValue($this->getType().".sequence_regex.time","/\D(\d{4,6})\D/"), $filename),
-					);
-	 }
+	public function getFilenameData($filename)
+	{
+		return array(
+		    'seq' => Billrun_Util::regexFirstValue(Billrun_Factory::config()->getConfigValue($this->getType() . ".sequence_regex.seq", "/(\d+)/"), $filename),
+		    'date' => Billrun_Util::regexFirstValue(Billrun_Factory::config()->getConfigValue($this->getType() . ".sequence_regex.date", "/(20\d{4})/"), $filename),
+		    'time' => Billrun_Util::regexFirstValue(Billrun_Factory::config()->getConfigValue($this->getType() . ".sequence_regex.time", "/\D(\d{4,6})\D/"), $filename),
+		);
+	}
+
+	public function fgetsIncrementLine($file_handler)
+	{
+		$ret = fgets($file_handler);
+		if ($ret)
+		{
+			$this->current_line++;
+		}
+		return $ret;
+	}
 
 }
