@@ -48,8 +48,19 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 * the file path to process on
 	 * @var file path
 	 */
-	protected $backupPaths  = array();
-	
+	protected $backupPaths = array();
+
+	/**
+	 * whether to log records' line number in the source file
+	 * @var boolean 
+	 */
+	protected $line_numbers = false;
+
+	/**
+	 * current processed line number
+	 * @var boolean 
+	 */
+	protected $current_line = 0;
 	/**
 	 * constructor - load basic options
 	 *
@@ -66,8 +77,14 @@ abstract class Billrun_Processor extends Billrun_Base {
 		if (isset($options['parser'])) {
 			$this->setParser($options['parser']);
 		}
-		
-		if (isset($options['backup_path'])) {
+		if (isset($options['processor']['line_numbers']))
+		{
+
+			$this->line_numbers = $options['processor']['line_numbers'];
+		}
+
+		if (isset($options['backup_path']))
+		{
 			$this->setBackupPath($options['backup_path']);
 		} else {
 			$this->setBackupPath( Billrun_Factory::config()->getConfigValue($this->getType().'.backup_path',array('./backups/'.$this->getType())));
@@ -134,20 +151,20 @@ abstract class Billrun_Processor extends Billrun_Base {
 			->equals('source', static::$type)
 			->notExists('process_time');
 
-		$linesCount = 0;
+		$lines = array();
 		foreach ($files as $file) {
 			$this->setStamp($file->getID());
 			$this->loadFile($file->get('path'), $file->get('retrieved_from'));
-			$processedLinesCount = $this->process();
-			if(FALSE !== $processedLinesCount) {
-				$linesCount += $processedLinesCount;
+			$processed_lines = $this->process();
+			if(FALSE !== $processed_lines) {
+				$lines = array_merge($lines, $processed_lines);
 				$file->collection($log);
 				$file->set('process_time', date(self::base_dateformat));
 			}
 			$this->init();
 		}
 
-		return $linesCount;
+		return $lines;
 	}
 
 	/**
@@ -172,20 +189,25 @@ abstract class Billrun_Processor extends Billrun_Base {
 
 		if ($this->parse() === FALSE) {
 			Billrun_Factory::log()->log("Billrun_Processor: cannot parse " . $this->filePath, Zend_Log::ERR);
-			return FALSE;
+			return false;
 		}
 
 		Billrun_Factory::dispatcher()->trigger('afterProcessorParsing', array($this));
+
+		if ($this->logDB() === FALSE) {
+			Billrun_Factory::log()->log("Billrun_Processor: cannot log parsing action " . $this->filePath, Zend_Log::WARN);
+		}
+
 		Billrun_Factory::dispatcher()->trigger('beforeProcessorStore', array($this));
 
 		if ($this->store() === FALSE) {
 			Billrun_Factory::log()->log("Billrun_Processor: cannot store the parser lines " .  $this->filePath, Zend_Log::ERR);
-			return FALSE;
+			return false;
 		}
 
 		if ($this->logDB() === FALSE) {
 			Billrun_Factory::log()->log("Billrun_Processor: cannot log parsing action" .  $this->filePath, Zend_Log::WARN);
-			return FALSE;
+			return false;
 		}
 		
 		Billrun_Factory::dispatcher()->trigger('afterProcessorStore', array($this));
@@ -194,7 +216,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 
 		Billrun_Factory::dispatcher()->trigger('afterProcessorBackup', array($this , &$this->filePath));
 		
-		return count($this->data['data']);
+		return $this->data['data'];
 	}
 
 	/**
@@ -266,19 +288,18 @@ abstract class Billrun_Processor extends Billrun_Base {
 			return false;
 		}
 
-		Billrun_Factory::log()->log("Store data of file " . basename($this->filePath), Zend_Log::DEBUG);
-		
 		$lines = Billrun_Factory::db()->linesCollection();
+		$this->data['stored_data'] = array();
 
 		foreach ($this->data['data'] as $row) {
-			$stamp = $row['stamp'];
-			Billrun_Factory::log()->log("Store line with the stamp " . $stamp . " (" . $row['type'] . ")", Zend_Log::DEBUG);
-			if ($lines->query('stamp', $stamp)->count() > 0) {
-				Billrun_Factory::log()->log("processor::store - DUPLICATE! trying to insert duplicate line with stamp of : " . $stamp, Zend_Log::NOTICE);
+			$entity = new Mongodloid_Entity($row);
+			if ($lines->query('stamp', $entity->get('stamp'))->count() > 0) {
+				Billrun_Factory::log()->log("processor::store - DUPLICATE! trying to insert duplicate line with stamp of : {$entity->get('stamp')}", Zend_Log::NOTICE);
 				continue;
 			}
-			$entity = new Mongodloid_Entity($row);
+			
 			$entity->save($lines, true);
+			$this->data['stored_data'][] = $row;
 		}
 
 		return true;
@@ -310,7 +331,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 		if (file_exists($file_path)) {
 			$this->filePath = $file_path;
 			$this->filename = substr($file_path, strrpos($file_path, '/'));
-			$this->retrievedHostname = $retrivedHost;
+			$this->retreivedHostname = $retrivedHost;
 			$this->fileHandler = fopen($file_path, 'r');
 			Billrun_Factory::log()->log("Billrun Processor load the file: " . $file_path, Zend_Log::INFO);
 		} else {
@@ -384,12 +405,23 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 * @return an array containing the sequence data. ie:
 	 *			array(seq => 00001, date => 20130101 )
 	 */
-	 public function getFilenameData($filename) {
-			return array(
-						'seq' => Billrun_Util::regexFirstValue(Billrun_Factory::config()->getConfigValue($this->getType().".sequence_regex.seq","/(\d+)/"), $filename),
-						'date' => Billrun_Util::regexFirstValue(Billrun_Factory::config()->getConfigValue($this->getType().".sequence_regex.date","/(20\d{4})/"), $filename),
-						'time' => Billrun_Util::regexFirstValue(Billrun_Factory::config()->getConfigValue($this->getType().".sequence_regex.time","/\D(\d{4,6})\D/"), $filename),
-					);
-	 }
+	public function getFilenameData($filename)
+	{
+		return array(
+		    'seq' => Billrun_Util::regexFirstValue(Billrun_Factory::config()->getConfigValue($this->getType() . ".sequence_regex.seq", "/(\d+)/"), $filename),
+		    'date' => Billrun_Util::regexFirstValue(Billrun_Factory::config()->getConfigValue($this->getType() . ".sequence_regex.date", "/(20\d{4})/"), $filename),
+		    'time' => Billrun_Util::regexFirstValue(Billrun_Factory::config()->getConfigValue($this->getType() . ".sequence_regex.time", "/\D(\d{4,6})\D/"), $filename),
+		);
+	}
+
+	public function fgetsIncrementLine($file_handler)
+	{
+		$ret = fgets($file_handler);
+		if ($ret)
+		{
+			$this->current_line++;
+		}
+		return $ret;
+	}
 
 }

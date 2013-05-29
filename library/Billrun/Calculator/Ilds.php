@@ -12,7 +12,7 @@
  * @package  calculator
  * @since    0.5
  */
-class Billrun_Calculator_Ilds extends Billrun_Calculator {
+class Billrun_Calculator_Ilds extends Billrun_Calculator_Base_Rate {
 
 	/**
 	 * the type of the object
@@ -34,30 +34,6 @@ class Billrun_Calculator_Ilds extends Billrun_Calculator {
 			->equals('source', static::$type)
 			->notExists('price_customer');
 //			->notExists('price_provider'); // @todo: check how to do or between 2 not exists		
-	}
-	
-	/**
-	 * Execute the calculation process
-	 */
-	public function calc() {
-
-		Billrun_Factory::dispatcher()->trigger('beforeCalculateData', array('data' => $this->data));
-		foreach ($this->data as $item) {
-			$this->updateRow($item);
-		}
-		Billrun_Factory::dispatcher()->trigger('afterCalculateData', array('data' => $this->data));
-	}
-
-	/**
-	 * Execute write down the calculation output
-	 */
-	public function write() {
-		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteData', array('data' => $this->data));
-		$lines = Billrun_Factory::db()->linesCollection();
-		foreach ($this->data as $item) {
-			$item->save($lines);
-		}
-		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteData', array('data' => $this->data));
 	}
 
 	/**

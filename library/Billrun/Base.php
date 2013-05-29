@@ -30,6 +30,13 @@ abstract class Billrun_Base {
 	protected $stamp = null;
 
 	/**
+	 * Base array instances container
+	 *
+	 * @var array
+	 */
+	static protected $instance = array();
+	
+	/**
 	 * constant for base date format
 	 */
 	const base_dateformat = 'Y-m-d H:i:s';
@@ -89,7 +96,12 @@ abstract class Billrun_Base {
 	 */
 	static public function getInstance() {
 		$args = func_get_args();
-
+		
+		$stamp = md5(serialize($args));
+		if (isset(self::$instance[$stamp])) {
+			return self::$instance[$stamp];
+		}
+		
 		if (isset($args['type'])) {
 			$type = $args['type'];
 			$args = array();
@@ -117,15 +129,21 @@ abstract class Billrun_Base {
 		}
 		$class = $called_class . '_' . ucfirst($class_type);
 		if (!@class_exists($class, true)) {
-			// try to search in external sources (defined by Bootstrap)
+			// try to search in external sources (application/helpers)
 			$external_class = str_replace('Billrun_', '', $class);
+			if (($pos = strpos($external_class, "_")) !== FALSE) {
+				$namespace = substr($external_class, 0, $pos);
+				Yaf_Loader::getInstance(APPLICATION_PATH . '/application/helpers')->registerLocalNamespace($namespace);
+			}
 			if (!@class_exists($external_class, true)) {
 				Billrun_Factory::log("Can't find class: " . $class, Zend_Log::EMERG);
 				return false;
 			}
 			$class = $external_class;
 		}
-		return new $class($args);
+		
+		self::$instance[$stamp] = new $class($args);
+		return self::$instance[$stamp];
 	}
 
 	/**
