@@ -106,20 +106,23 @@ class Processor_Mergerates extends Billrun_Processor_Base_Separator {
 					$unit = 'seconds';
 					break;
 				case 'I':
-					continue 2;
+					//continue 2;
 					$rateType = 'data';
+					$unit = 'bytes';
 					continue; // we will take care later
 					break;
 				case 'M':
-					continue 2;
+					//continue 2;
 					$rateType = 'sms';
 					$unit = 'counter';
 					break;
 				case 'N':
-					continue 2;
+					//continue 2;
+					$rateType = 'mms';
+					$unit = 'counter';
 					break;
 			}
-			$entity = $rates->query('key', $row['zoneOrItem'])->cursor()->current();
+			$entity = $rates->query(array('key' => $row['zoneOrItem']))->cursor()->current();
 			// todo check if rate already exists, if so, close row and open new row
 			if ($entity->getId()) {
 				$entity->collection($rates);
@@ -134,8 +137,7 @@ class Processor_Mergerates extends Billrun_Processor_Base_Separator {
 				if ($row['kind'] == 'C') { // add access price for calls
 					$value['access'] = (double) $row['tinf_accessPrice0'];
 				}
-				$entity->set("type", $rateType);
-				$entity->set("rates", $value);
+				$entity->set($rateType, $value);
 				if ($row['zoneOrItem'] != 'UNRATED') {
 					$entity->set("params.record_type", $record_type);
 				}
