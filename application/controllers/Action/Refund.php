@@ -10,7 +10,7 @@
  * Refund action class
  *
  * @package  Action
- * @since    1.0
+ * @since    0.5
  */
 class RefundAction extends Action_Base {
 

@@ -14,8 +14,17 @@
  */
 class Billrun_Util {
 
-	public static function getLastChargeTime($return_timestamp = false) {
-		$dayofmonth = Billrun_Factory::config()->getConfigValue('billrun.charging_day', 25);
+	/**
+	 * method to receive full datetime of last billrun time
+	 * 
+	 * @param boolean $return_timestamp set this on if you need timestamp instead of string
+	 * @param int $dayofmonth the day of the month require to get; if omitted return config value
+	 * @return mixed date string of format YYYYmmddHHmmss or int timestamp 
+	 */
+	public static function getLastChargeTime($return_timestamp = false, $dayofmonth = null) {
+		if (!$dayofmonth) {
+			$dayofmonth = Billrun_Factory::config()->getConfigValue('billrun.charging_day', 25);
+		}
 		$format = "Ym" . $dayofmonth . "000000";
 		if (date("d") >= $dayofmonth) {
 			$time = date($format);
@@ -27,7 +36,8 @@ class Billrun_Util {
 		}
 		return $time;
 	}
-
+	
+	
 	public static function joinSubArraysOnKey($arrays, $depth = 1, $key = false) {
 
 		if ($depth == 0 || !is_array($arrays)) {
@@ -49,7 +59,7 @@ class Billrun_Util {
 		}
 		return $retArr;
 	}
-
+	
 	/**
 	 * generate array stamp
 	 * @param array $ar array to generate the stamp from
@@ -58,7 +68,7 @@ class Billrun_Util {
 	public static function generateArrayStamp($ar) {
 		return md5(serialize($ar));
 	}
-
+	
 	/**
 	 * generate current time from the base time date format
 	 * 
@@ -67,7 +77,7 @@ class Billrun_Util {
 	public static function generateCurrentTime() {
 		return date(Billrun_Base::base_dateformat);
 	}
-
+	
 	/**
 	 * Get the first value that match to a regex
 	 * @param $pattern the regex pattern
@@ -82,7 +92,7 @@ class Billrun_Util {
 		}
 		return (isset($matches[$resIndex])) ? $matches[$resIndex] : FALSE;
 	}
-
+	
 	/**
 	 * method to convert short datetime (20090213145327) into ISO-8601 format (2009-02-13T14:53:27+01:00)
 	 * the method can be relative to timezone offset
@@ -94,7 +104,7 @@ class Billrun_Util {
 	 */
 	public static function dateTimeConvertShortToIso($datetime, $offset = '+00:00') {
 		if (strpos($offset, ':') === FALSE) {
-			$tz_offset = substr($offset, 0, 3) . ':00';
+			$tz_offset = substr($offset, 0, 3) . ':' . substr($offset, -2);
 		} else {
 			$tz_offset = $offset;
 		}
@@ -107,6 +117,27 @@ class Billrun_Util {
 		return !strncmp($haystack, $needle, strlen($needle));
 	}
 	
+	/**
+	 * method to receive next billrun key
+	 * 
+	 * @param string $datetime the anchor datetime. can be all input types of strtotime function
+	 * @param int $dayofmonth the day of the month require to get; if omitted return config value
+	 * @return string date string of format YYYYmm
+	 */
+	public static function getNextChargeKey($datetime, $dayofmonth = null) {
+		if (!$dayofmonth) {
+			$dayofmonth = Billrun_Factory::config()->getConfigValue('billrun.charging_day', 25);
+		}
+		$month = date("m", $datetime);
+		$format = "Y" . $month;
+		if (date("d", $datetime) < $dayofmonth) {
+			$key = date($format);
+		} else {
+			$key = date($format, strtotime('+1 month'));
+		}
+		return $key;
+	}
+
 	/**
 	 * convert corrency.  
 	 * (this  should  be change to somthing more dynamic)

@@ -10,7 +10,7 @@
  * Billing bootstrap class
  *
  * @package  Bootstrap
- * @since    1.0
+ * @since    0.5
  */
 class Bootstrap extends Yaf_Bootstrap_Abstract {
 

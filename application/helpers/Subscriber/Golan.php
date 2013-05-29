@@ -23,24 +23,20 @@ class Subscriber_Golan extends Billrun_Subscriber {
 	 * @return Subscriber_Golan self object for chaining calls and use magic method for properties
 	 */
 	public function load($params) {
-		if (isset($params['phone'])) {
-			$key = $params['phone'];
-		} else if (isset($params['imsi'])) {
-			$key = $params['imsi'];
-		} else {
+		
+		if (!isset($params['imsi']) && !isset($params['IMSI']) && !isset($params['NDC_SN'])) {
 			Billrun_Factory::log()->log('Cannot identified Golan subscriber. Require phone or imsi to load. Current parameters: ' . print_R($params), Zend_Log::ALERT);
 			return $this;
 		}
 
-		if (isset($params['time'])) {
-			$time = $params['time'];
+		if (!isset($params['time'])) {
+			$params['DATETIME'] = date(Billrun_Base::base_dateformat);
 		} else {
-			$time = date(Billrun_Base::base_dateformat);
+			$params['DATETIME'] = $params['time'];
 		}
 
-		$data = $this->request($key, $time);
+		$data = $this->request($params);
 		if (is_array($data)) {
-			$this->availableFields = array_keys($data);
 			$this->data = $data;
 		} else {
 			Billrun_Factory::log()->log('Failed to load Golan subscriber data', Zend_Log::ALERT);
@@ -70,15 +66,11 @@ class Subscriber_Golan extends Billrun_Subscriber {
 	 * 
 	 * @return array subscriber details
 	 */
-	protected function request($phone, $time) {
+	protected function request($params) {
 
 		$host = Billrun_Factory::config()->getConfigValue('provider.rpc.server', '');
 		$url = Billrun_Factory::config()->getConfigValue('provider.rpc.url', '');
 		$datetime_format = Billrun_Base::base_dateformat; // 'Y-m-d H:i:s';
-		$params = array(
-			'NDC_SN' => $this->NDC_SN($phone),
-			'date' => date($datetime_format, strtotime($time)),
-		);
 
 		$path = 'http://' . $host . '/' . $url . '?' . http_build_query($params);
 		// @TODO: use Zend_Http_Client
@@ -90,11 +82,11 @@ class Subscriber_Golan extends Billrun_Subscriber {
 
 		$object = @json_decode($json);
 
-		if (!$object || !isset($object->result) || !$object->result || !isset($object->data)) {
+		if (!$object || !is_object($object)) {
 			return false;
 		}
 
-		return (array) $object->data;
+		return (array) $object;
 	}
 
 	/**

@@ -45,7 +45,7 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Pl
 		if ($processor->retrievedHostname) {
 			$path = $path . DIRECTORY_SEPARATOR . $processor->retrievedHostname;
 		}
-		Billrun_Factory::log()->log("Saving  file to third party at : $path", Zend_Log::DEBUG);
+		Billrun_Factory::log()->log("Saving  file to third party at : $path", Zend_Log::INFO);
 		if (!$processor->backupToPath($path, true)) {
 			Billrun_Factory::log()->log("Couldn't  save file to third patry path at : $path", Zend_Log::ERR);
 		}
@@ -57,19 +57,24 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Pl
 	/**
 	 * method to collect data which need to be handle by event
 	 */
-	public function handlerCollect() {
+	public function handlerCollect($options) {
+		if( $options['type'] != 'roaming') { 
+			return FALSE; 
+		}
 		$lines = Billrun_Factory::db()->linesCollection();
 		
 		//@TODO  switch  these lines  once  you have the time to test it.
 		//$charge_time = new MongoDate($this->get_last_charge_time(true) - date_default_timezone_get() );
-		$charge_time = $this->get_last_charge_time();
+		$charge_time = Billrun_Util::getLastChargeTime(true);
 		
 		$aggregateQuery = $this->getBaseAggregateQuery($charge_time);
 
 		Billrun_Factory::log()->log("ggsnPlugin::handlerCollect collecting monthly data exceeders", Zend_Log::DEBUG);
 		$dataExceedersAlerts = $this->detectDataExceeders($lines, $aggregateQuery);
+		Billrun_Factory::log()->log("GGSN plugin of monthly usage fraud found " . count($dataExceedersAlerts) . " ", Zend_Log::INFO);
 		Billrun_Factory::log()->log("ggsnPlugin::handlerCollect collecting hourly data exceeders", Zend_Log::DEBUG);
 		$hourlyDataExceedersAlerts = $this->detectHourlyDataExceeders($lines, $aggregateQuery);
+		Billrun_Factory::log()->log("GGSN plugin of hourly usage fraud found " . count($hourlyDataExceedersAlerts) . " ", Zend_Log::INFO);
 
 		return array_merge($dataExceedersAlerts, $hourlyDataExceedersAlerts);
 	}
@@ -205,8 +210,8 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Pl
 			array(
 				'$match' => array(
 					//@TODO  switch to unified time once you have the time to test it
-					//'unified_record_time' => array('$gt' => $charge_time),
-					'record_opening_time' => array('$gt' => $charge_time),
+					'unified_record_time' => array('$gte' => new MongoDate($charge_time)),
+//					'record_opening_time' => array('$gt' => $charge_time),
 					'deposit_stamp' => array('$exists' => false),
 					'event_stamp' => array('$exists' => false),
 					
@@ -244,6 +249,10 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Pl
 	 * @see Billrun_Plugin_BillrunPluginFraud::addAlertData
 	 */
 	protected function addAlertData(&$event) {
+		$event['effects'] = array(
+			'key' => 'type',
+			'filter' => array('$in' => array('nrtrde', 'ggsn'))
+		);
 		return $event;
 	}
 

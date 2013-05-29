@@ -356,8 +356,16 @@ class Zend_Ftp {
 	 */
 	public function __destruct() {
 		if ($this->_connection !== null) {
-			@ftp_close($this->_connection);
+			$this->disconnect();
 		}
+	}
+	
+	public function disconnect() {
+		$ret = @ftp_close($this->_connection);
+		if (!is_null($this->_connection)) {
+			$this->_connection = null;
+		}
+		return $ret;
 	}
 
 	/**

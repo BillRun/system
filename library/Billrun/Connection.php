@@ -14,6 +14,7 @@
  */
 class Billrun_Connection extends Mongodloid_Connection {
 
+	protected static $instances;
 	/**
 	 * Method to get database instance
 	 * 
@@ -45,7 +46,7 @@ class Billrun_Connection extends Mongodloid_Connection {
 	 * @return Billrun_Connection
 	 */
 	public static function getInstance($server = '', $port = '', $persistent = false) {
-		static $instances;
+
 
 		$server_port = $server . ':' . $port;
 		settype($server_port, 'int');

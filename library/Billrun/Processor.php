@@ -13,6 +13,7 @@
  */
 abstract class Billrun_Processor extends Billrun_Base {
 
+	const BACKUP_FILE_SEQUENCE_GRANULARITY = 2;
 	/**
 	 * the type of the object
 	 *
@@ -51,10 +52,16 @@ abstract class Billrun_Processor extends Billrun_Base {
 	protected $backupPaths = array();
 
 	/**
+	 * The time to wait  until adopting file  that were  started processing but weren't finished.
+	 */
+	protected $orphandFilesAdoptionTime = '1 day';
+
+	/**
 	 * whether to log records' line number in the source file
 	 * @var boolean 
 	 */
 	protected $line_numbers = false;
+
 
 	/**
 	 * current processed line number
@@ -90,6 +97,15 @@ abstract class Billrun_Processor extends Billrun_Base {
 			$this->setBackupPath( Billrun_Factory::config()->getConfigValue($this->getType().'.backup_path',array('./backups/'.$this->getType())));
 		}
 
+		if (isset($options['orphan_files_time'])) {
+			$this->orphandFilesAdoptionTime = $options['orphan_files_time'];
+		} else if (isset($options['processor']['orphan_files_time'])) {
+			$this->orphandFilesAdoptionTime = $options['processor']['orphan_files_time'];
+		}
+
+		if (isset($options['processor']['limit']) && $options['processor']['limit']) {
+			$this->setLimit($options['processor']['limit']);
+		}
 	}
 	
 	/**
@@ -101,9 +117,9 @@ abstract class Billrun_Processor extends Billrun_Base {
 		return $this->data;
 	}
 
-	public function addDataRow( $row ) {
-		if(!isset($this->data['data'])) { 
-			$this->data['data'] = array();	
+	public function addDataRow($row) {
+		if (!isset($this->data['data'])) {
+			$this->data['data'] = array();
 		}
 		
 		$this->data['data'][] = $row;
@@ -120,11 +136,11 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 * @param string $path the backup path
 	 */
 	public function setBackupPath($paths) {
-		$paths = is_array($paths) ? $paths : explode(',',$paths);
+		$paths = is_array($paths) ? $paths : explode(',', $paths);
 		$this->backupPaths = array();
 		// in case the path is not exists but we can't create it
 
-		foreach($paths as $path) {
+		foreach ($paths as $path) {
 			if (!file_exists($path) && !@mkdir($path, 0777, true)) {
 				Billrun_Factory::log()->log("Can't create backup path or is not a directory " . $path, Zend_Log::WARN);
 				return FALSE;
@@ -135,8 +151,8 @@ abstract class Billrun_Processor extends Billrun_Base {
 				return FALSE;
 			}
 			$this->backupPaths[] = $path;
-		}	
-	
+		}
+
 		return TRUE;
 	}
 
@@ -147,24 +163,38 @@ abstract class Billrun_Processor extends Billrun_Base {
 	public function process_files() {
 
 		$log = Billrun_Factory::db()->logCollection();
-		$files = $log->query()
-			->equals('source', static::$type)
-			->notExists('process_time');
 
-		$lines = array();
-		foreach ($files as $file) {
+		$adoptThreshold = strtotime('-' . $this->orphandFilesAdoptionTime);
+		$baseQuery = array(
+			'$or' => array(
+				array('start_process_time' => array('$exists' => false)),
+				array('start_process_time' => array('$lt' => new MongoDate($adoptThreshold))),
+			),
+		);
+		$linesCount = 0;
+
+		for ($i = $this->getLimit(); $i >= 0; $i--) {
+			$file = $log->query($baseQuery)
+					->equals('source', static::$type)
+					->notExists('process_time')
+					->cursor()->sort(array('received_time' => 1))
+					->limit(1)->current();
+			if (!$file || !$file->getID()) {
+				break;
+			}
+			$this->markStartProcessing($file);
 			$this->setStamp($file->getID());
 			$this->loadFile($file->get('path'), $file->get('retrieved_from'));
-			$processed_lines = $this->process();
-			if(FALSE !== $processed_lines) {
-				$lines = array_merge($lines, $processed_lines);
+			$processedLinesCount = $this->process();
+			if (FALSE !== $processedLinesCount) {
+				$linesCount += $processedLinesCount;
 				$file->collection($log);
 				$file->set('process_time', date(self::base_dateformat));
 			}
 			$this->init();
 		}
 
-		return $lines;
+		return $linesCount;
 	}
 
 	/**
@@ -189,25 +219,20 @@ abstract class Billrun_Processor extends Billrun_Base {
 
 		if ($this->parse() === FALSE) {
 			Billrun_Factory::log()->log("Billrun_Processor: cannot parse " . $this->filePath, Zend_Log::ERR);
-			return false;
+			return FALSE;
 		}
 
 		Billrun_Factory::dispatcher()->trigger('afterProcessorParsing', array($this));
-
-		if ($this->logDB() === FALSE) {
-			Billrun_Factory::log()->log("Billrun_Processor: cannot log parsing action " . $this->filePath, Zend_Log::WARN);
-		}
-
 		Billrun_Factory::dispatcher()->trigger('beforeProcessorStore', array($this));
 
 		if ($this->store() === FALSE) {
 			Billrun_Factory::log()->log("Billrun_Processor: cannot store the parser lines " .  $this->filePath, Zend_Log::ERR);
-			return false;
+			return FALSE;
 		}
 
 		if ($this->logDB() === FALSE) {
 			Billrun_Factory::log()->log("Billrun_Processor: cannot log parsing action" .  $this->filePath, Zend_Log::WARN);
-			return false;
+			return FALSE;
 		}
 		
 		Billrun_Factory::dispatcher()->trigger('afterProcessorStore', array($this));
@@ -216,7 +241,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 
 		Billrun_Factory::dispatcher()->trigger('afterProcessorBackup', array($this , &$this->filePath));
 		
-		return $this->data['data'];
+		return count($this->data['data']);
 	}
 
 	/**
@@ -266,7 +291,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 			}
 			return $resource->save($log, true);
 		} else {
-			// backword compatability
+			// backward compatibility
 			// old method of processing => receiver did not logged, so it's the first time the file logged into DB
 			$entity = new Mongodloid_Entity($trailer);
 			if ($log->query('stamp', $entity->get('stamp'))->count() > 0) {
@@ -288,18 +313,19 @@ abstract class Billrun_Processor extends Billrun_Base {
 			return false;
 		}
 
+		Billrun_Factory::log()->log("Store data of file " . basename($this->filePath) . " with " . count($this->data['data']) . " lines", Zend_Log::DEBUG);
 		$lines = Billrun_Factory::db()->linesCollection();
 		$this->data['stored_data'] = array();
 
 		foreach ($this->data['data'] as $row) {
-			$entity = new Mongodloid_Entity($row);
-			if ($lines->query('stamp', $entity->get('stamp'))->count() > 0) {
-				Billrun_Factory::log()->log("processor::store - DUPLICATE! trying to insert duplicate line with stamp of : {$entity->get('stamp')}", Zend_Log::NOTICE);
+			try {
+				$entity = new Mongodloid_Entity($row);
+				$entity->save($lines, true);
+				$this->data['stored_data'][] = $row;
+			} catch (Exception $e) {
+				Billrun_Factory::log()->log("Processor store " . basename($this->filePath) . " failed on stamp : " . $row['stamp']. " with the next message: " . $e->getCode() . ": " . $e->getMessage(), Zend_Log::NOTICE);
 				continue;
 			}
-			
-			$entity->save($lines, true);
-			$this->data['stored_data'][] = $row;
 		}
 
 		return true;
@@ -331,7 +357,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 		if (file_exists($file_path)) {
 			$this->filePath = $file_path;
 			$this->filename = substr($file_path, strrpos($file_path, '/'));
-			$this->retreivedHostname = $retrivedHost;
+			$this->retrievedHostname = $retrivedHost;
 			$this->fileHandler = fopen($file_path, 'r');
 			Billrun_Factory::log()->log("Billrun Processor load the file: " . $file_path, Zend_Log::INFO);
 		} else {
@@ -351,8 +377,8 @@ abstract class Billrun_Processor extends Billrun_Base {
 		if(is_object($parser)) {
 			$this->parser = $parser ;
 		} else {
-			$parser = is_array($parser) ? $parser : array('type' => $parser ); 
-			$this->parser = Billrun_Parser::getInstance( $parser );
+			$parser = is_array($parser) ? $parser : array('type' => $parser);
+			$this->parser = Billrun_Parser::getInstance($parser);
 		}
 		return $this;
 	}
@@ -363,12 +389,13 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 */
 	protected function backup($move = true) {
 		$seqData = $this->getFilenameData($this->filename);
-		for($i=0; $i < count($this->backupPaths) ; $i++) {			
-			$backupPath =  $this->backupPaths[$i];
+		for ($i = 0; $i < count($this->backupPaths); $i++) {
+			$backupPath = $this->backupPaths[$i];
+			$backupPath .= ($this->retrievedHostname ? DIRECTORY_SEPARATOR . $this->retrievedHostname : "");
 			$backupPath .= ($seqData['date'] ? DIRECTORY_SEPARATOR . $seqData['date'] : "");
-			$backupPath .= ($seqData['seq'] ? DIRECTORY_SEPARATOR . substr($seqData['seq'],0,-2) : "");
-			
-			if ($this->backupToPath( $backupPath , !($move && $i+1 == count($this->backupPaths)) ) === TRUE) {
+			$backupPath .= ($seqData['seq'] ? DIRECTORY_SEPARATOR . substr($seqData['seq'], 0, -self::BACKUP_FILE_SEQUENCE_GRANULARITY) : "");
+
+			if ($this->backupToPath($backupPath, !($move && $i + 1 == count($this->backupPaths))) === TRUE) {
 				Billrun_Factory::log()->log("Success backup file " . $this->filePath . " to " . $backupPath, Zend_Log::INFO);
 			} else {
 				Billrun_Factory::log()->log("Failed backup file " . $this->filePath . " to " . $backupPath, Zend_Log::INFO);
@@ -390,28 +417,39 @@ abstract class Billrun_Processor extends Billrun_Base {
 		} else {
 			$callback = "rename";
 		}
-		if(!file_exists($path)) {
+		if (!file_exists($path)) {
 			@mkdir($path, 0777, true);
 			
 		}
-		return @call_user_func_array($callback, array(	$this->filePath, 
-														$path . DIRECTORY_SEPARATOR . $this->filename 
-													));
+		return @call_user_func_array($callback, array($this->filePath,
+				$path . DIRECTORY_SEPARATOR . $this->filename
+		));
 	}
 	
 	
 	/**
 	 * Get the data the is stored in the file name.
 	 * @return an array containing the sequence data. ie:
-	 *			array(seq => 00001, date => 20130101 )
+	 * 			array(seq => 00001, date => 20130101 )
 	 */
-	public function getFilenameData($filename)
-	{
+	public function getFilenameData($filename) {
 		return array(
-		    'seq' => Billrun_Util::regexFirstValue(Billrun_Factory::config()->getConfigValue($this->getType() . ".sequence_regex.seq", "/(\d+)/"), $filename),
-		    'date' => Billrun_Util::regexFirstValue(Billrun_Factory::config()->getConfigValue($this->getType() . ".sequence_regex.date", "/(20\d{4})/"), $filename),
-		    'time' => Billrun_Util::regexFirstValue(Billrun_Factory::config()->getConfigValue($this->getType() . ".sequence_regex.time", "/\D(\d{4,6})\D/"), $filename),
+			'seq' => Billrun_Util::regexFirstValue(Billrun_Factory::config()->getConfigValue($this->getType() . ".sequence_regex.seq", "/(\d+)/"), $filename),
+			'date' => Billrun_Util::regexFirstValue(Billrun_Factory::config()->getConfigValue($this->getType() . ".sequence_regex.date", "/(20\d{4})/"), $filename),
+			'time' => Billrun_Util::regexFirstValue(Billrun_Factory::config()->getConfigValue($this->getType() . ".sequence_regex.time", "/\D(\d{4,6})\D/"), $filename),
 		);
+	}
+
+	/**
+	 * mark a file in the log  collection  as being processed.
+	 * @param $file the file to mark as being processed.
+	 * @return  TRUE on sucessful update false otherwise
+	 */
+	protected function markStartProcessing($file) {
+		$log = Billrun_Factory::db()->logCollection();
+		$file->collection($log);
+		$file->set('start_process_time', new MongoDate(time()));
+		return $file->save($log, true);
 	}
 
 	public function fgetsIncrementLine($file_handler)

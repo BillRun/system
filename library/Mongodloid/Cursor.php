@@ -76,5 +76,13 @@ class Mongodloid_Cursor implements Iterator,  Countable {
 		$this->_cursor->limit(intval($limit));
 		return $this;
 	}
+	
+	public function hint(array $key_pattern) {
+		if (empty($key_pattern)) {
+			return;
+		}
+		$this->_cursor->hint($key_pattern);
+		return $this;
+	}
 
 }

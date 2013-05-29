@@ -10,7 +10,7 @@
  * Billing api controller class
  *
  * @package  Action
- * @since    1.0
+ * @since    0.5
  */
 abstract class Action_Base extends Yaf_Action_Abstract {
 

@@ -22,6 +22,29 @@ class Billrun_Calculator_Ilds extends Billrun_Calculator_Base_Rate {
 	static protected $type = "ilds";
 	
 	/**
+	 * load the data to run the calculator for
+	 * 
+	 * @param boolean $initData reset the data in the calculator before loading
+	 * 
+	 */
+	public function load($initData = true) {
+		
+		if ($initData) {
+			$this->data = array();
+		}
+
+		$resource = $this->getLines();
+		
+		foreach ($resource as $entity) {
+			$this->data[] = $entity;
+		}
+
+		Billrun_Factory::log()->log("entities loaded: " . count($this->data), Zend_Log::INFO);
+
+		Billrun_Factory::dispatcher()->trigger('afterCalculatorLoadData', array('calculator' => $this));
+	}
+
+	/**
 	 * method to receive the lines the calculator should take care
 	 * 
 	 * @return Mongodloid_Cursor Mongo cursor for iteration
@@ -30,10 +53,16 @@ class Billrun_Calculator_Ilds extends Billrun_Calculator_Base_Rate {
 		
 		$lines = Billrun_Factory::db()->linesCollection();
 
-		return $lines->query()
+		$query = $lines->query()
 			->equals('source', static::$type)
 			->notExists('price_customer');
 //			->notExists('price_provider'); // @todo: check how to do or between 2 not exists		
+		
+		if ($this->limit > 0) {
+			$query->limit($this->limit);
+		}
+		
+		return $query;
 	}
 
 	/**

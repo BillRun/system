@@ -51,6 +51,15 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 		}
 		return null;
 	}
+	
+	/**
+	 * method to receive public properties of the subscriber
+	 * 
+	 * @return array the available fields for the subscriber
+	 */
+	public function getAvailableFields() {
+		return $this->availableFields;
+	}
 
 	/**
 	 * method to get public field from the data container

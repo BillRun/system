@@ -73,11 +73,25 @@ class Billrun_Factory {
 	/**
 	 * method to retrieve the log instance
 	 * 
+	 * @param string [Optional] $message message to log
+	 * @param int [Optional] $priority message to log
+	 * 
 	 * @return Billrun_Log
 	 */
 	static public function log() {
 		if (!self::$log) {
 			self::$log = Billrun_Log::getInstance();
+		}
+		
+		$args = func_get_args();
+		if (count($args) > 0) {
+			$message = (string) $args[0];
+			if (!isset($args[1])) {
+				$priority = Zend_Log::DEBUG;
+			} else {
+				$priority = (int) $args[1];
+			}
+			self::$log->log($message, $priority);
 		}
 
 		return self::$log;
@@ -101,12 +115,19 @@ class Billrun_Factory {
 	 * 
 	 * @return Billrun_Db
 	 */
-	static public function db() {
-		if (!self::$db) {
-			self::$db = Billrun_Db::getInstance();
+	static public function db(array $options = array()) {
+		if (empty($options)) {
+			$options = Billrun_Factory::config()->getConfigValue('db'); // the stdclass force it to return object
+		}
+		
+		// unique stamp per db connection
+		$stamp = md5(serialize($options));
+		
+		if (!isset(self::$db[$stamp])) {
+			self::$db[$stamp] = Billrun_Db::getInstance($options);
 		}
 
-		return self::$db;
+		return self::$db[$stamp];
 	}
 
 	/**

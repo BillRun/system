@@ -52,7 +52,7 @@ class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 			$subscriber_id = $subscriber->id;
 
 			// update billing line with billrun stamp
-			if (!$this->updateBillingLine($subscriber_id, $item)) {
+			if (!$this->updateBillingLine($subscriber, $item)) {
 				Billrun_Factory::log()->log("subscriber " . $subscriber_id . " cannot update billing line", Zend_Log::INFO);
 				continue;
 			}
@@ -103,8 +103,7 @@ class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 	/**
 	 * load the subscriber billrun raw (aggregated)
 	 * if not found, create entity with default values
-	 * 
-	 * @param array $subscriber subscriber details
+	 * @param type $subscriber
 	 *
 	 * @return Mongodloid_Entity
 	 */
@@ -128,6 +127,7 @@ class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 			'account_id' => $subscriber->account_id,
 			'subscribers' => array($subscriber->id => array('cost' => array())),
 			'cost' => array(),
+			'source' => 'ilds',
 		);
 
 		return new Mongodloid_Entity($values, $billrun);
@@ -182,12 +182,23 @@ class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 	 *
 	 * @return boolean true on success else false
 	 */
-	protected function updateBillingLine($subscriber_id, $line) {
+	protected function updateBillingLine($subscriber, $line) {
+		if (isset($subscriber->id)) {
+			$subscriber_id = $subscriber->id;
+		} else {
+			// todo: alert to log
+			return false;
+		}
 		$current = $line->getRawData();
 		$added_values = array(
 			'subscriber_id' => $subscriber_id,
 			'billrun' => $this->getStamp(),
 		);
+		
+		if (isset($subscriber->account_id)) {
+			$added_values['account_id'] = $subscriber->account_id;
+		}
+
 		$newData = array_merge($current, $added_values);
 		$line->setRawData($newData);
 		return true;
@@ -196,21 +207,17 @@ class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 	/**
 	 * load the data to aggregate
 	 */
-	public function load($initData = true) {
-		$query = "price_customer EXISTS and price_provider EXISTS and billrun NOT EXISTS";
-
-		if ($initData) {
-			$this->data = array();
-		}
+	public function load() {
 
 		$lines = Billrun_Factory::db()->linesCollection();
-		$resource = $lines->query($query);
+		$this->data = $lines->query()
+				->equals('source', 'ilds')
+				->notExists('billrun')
+				->exists('price_provider')
+				->exists('price_customer')
+				->cursor()->hint(array('source' => 1));
 
-		foreach ($resource as $entity) {
-			$this->data[] = $entity;
-		}
-
-		Billrun_Factory::log()->log("aggregator entities loaded: " . count($this->data), Zend_Log::INFO);
+		Billrun_Factory::log()->log("aggregator entities loaded: " . $this->data->count(), Zend_Log::INFO);
 
 		Billrun_Factory::dispatcher()->trigger('afterAggregatorLoadData', array('aggregator' => $this));
 	}
