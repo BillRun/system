@@ -96,7 +96,8 @@ class Billrun_Calculator_Nsn extends Billrun_Calculator_Base_Rate {
 
 			$matched_rates = $rates->aggregate($base_match, $unwind, $sort, $match2);
 
-		} else { // put 0 rate
+		}
+		/*else { // put 0 rate
 			$base_match = array(
 				'$match' => array(
 					'key' => 'UNRATED',
@@ -104,7 +105,7 @@ class Billrun_Calculator_Nsn extends Billrun_Calculator_Base_Rate {
 			);
 			$matched_rates = $rates->aggregate($base_match);
 		}
-
+		*/
 		if (!empty($matched_rates)) {
 			$rate = reset($matched_rates);
 			$current = $row->getRawData();

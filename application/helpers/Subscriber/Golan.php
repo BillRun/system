@@ -130,5 +130,20 @@ class Subscriber_Golan extends Billrun_Subscriber {
 
 		return $output;
 	}
+	/**
+	 * check if the returned subscriber data is a valid data set.
+	 * @return boolean true  is the data is valid  false otherwise.
+	 */
+	public function isValid() {
+		$validFields = true;
+		foreach($this->getAvailableFields() as $field) {
+			if(!isset($this->data[$field]) || is_null($this->data[$field])) {
+				$validFields = false;
+				break;
+			}				
+		}
+		
+		return (!isset($this->data['success']) || $this->data['success'] != FALSE ) && $validFields;
+	}
 
 }

@@ -161,7 +161,7 @@ class Processor_ImportZones extends Billrun_Processor_Base_Separator {
 				$ret[$value['key']]['params']['prefix'] = array_merge($value['params']['prefix'], $params_dup);
 			}
 		}
-
+		$ret['rates'] = array();
 		return $ret;
 	}
 

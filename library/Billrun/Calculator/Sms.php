@@ -76,7 +76,7 @@ class Billrun_Calculator_Sms extends Billrun_Calculator_Base_Rate {
 				'params.prefix' => array(
 					'$in' => $called_number_prefixes,
 				),
-				'$type' => array('$exists' => true )
+				"rates.$type" => array('$exists' => true )
 			)
 		);
 

@@ -23,6 +23,11 @@ class Processor_Mergezonepackage extends Billrun_Processor_Base_Separator {
 	 * @var string
 	 */
 	static protected $type = 'mergerates';
+	
+	static protected $nsoftPLanToGolanPlan = array(
+									'SMALL' => array('ZG_HAVILA_SMS','ZG_HAVILA_VOICE'),
+									'LARGE' => array('ZG_HAVILA_SMS','ZG_HAVILA_VOICE','ZG_HAVILA_HOOL'),
+					);
 
 	public function __construct($options) {
 		parent::__construct($options);
@@ -94,10 +99,15 @@ class Processor_Mergezonepackage extends Billrun_Processor_Base_Separator {
 				$entity = $rates->query('key', $row['zoneGroupEltId_tariffItem'])->cursor()->current();
 				if ($entity->getId()) {
 					$entity->collection($rates);
-					$entity->set("rates.call.packages", array(99));
+					foreach (self::$nsoftPLanToGolanPlan as $planName => $nsoftVal) {
+						if($row['zoneGroupEltId_zoneGroupId_zoneGroupName'] == $nsoftVal) {
+							$entity['plans'][] = $planName;
+						}
+					}
+					/*$entity->set("rates.call.packages", array(99));
 					if ($entity->get("rates.sms")) {
 						$entity->set("rates.sms.packages", array(9, 99));
-					}
+					}*/
 					$entity->save($rates);
 					$this->data['stored_data'][] = $row;
 				} else {

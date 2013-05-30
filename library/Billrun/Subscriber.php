@@ -90,4 +90,10 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 	 * method to delete subsbscriber entity
 	 */
 	abstract public function delete();
+	
+	/**
+	 * method to check if the subscriber is valid
+	 */
+	abstract public function isValid();
+	
 }
