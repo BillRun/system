@@ -96,9 +96,9 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 */
 	protected function updateSubscriberBalance($sub,$counters,$charge) {
 		foreach($values as $key => $value) {
-			$sub['balance']['counters'][$key] += $value;
+			$sub['balance']['usage_counters'][$key] += $value;
 		}
-		$sub['balance']['current_charge'] = $charge;
+		$sub['balance']['current_charge'] += $charge;
 		$sub->save(Billrun_Factory::db()->subscribersCollection());
 
 	}
