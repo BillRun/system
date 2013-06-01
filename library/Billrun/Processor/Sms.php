@@ -38,7 +38,6 @@ class  Billrun_Processor_Sms extends Billrun_Processor_Base_SeparatorFieldLines 
 		
 		return parent::parse();
 		
-		
 	}
 	
 	/**
@@ -77,6 +76,26 @@ class  Billrun_Processor_Sms extends Billrun_Processor_Base_SeparatorFieldLines 
 		
 	}
 	
+	protected function buildData($line, $line_number = null) {
+			$row = parent::buildData($line, $line_number);
+			if(isset($row[$this->structConfig['config']['date_field']])) {
+				if($row['type'] == 'mmsc') {
+					$datetime = DateTime::createFromFormat(	$this->structConfig['config']['date_format'],  
+					preg_replace('/^(\d+)\+(\d)$/', '$1+0$2:00', $row[$this->structConfig['config']['date_field']]) );
+									
+				} else {
+					if(isset($row[$this->structConfig['config']['date_field']])) {
+						$offset =  (isset($this->structConfig['config']['date_offset']) && isset($row[$this->structConfig['config']['date_offset']]) ? 
+										($row[$this->structConfig['config']['date_offset']] > 0 ? "+" : "" ) . $row[$this->structConfig['config']['date_offset']] : "00" ) .':00';
+						$datetime = DateTime::createFromFormat(	$this->structConfig['config']['date_format'],  
+																$row[$this->structConfig['config']['date_field']] . $offset	 );
+					}
+
+				}
+				$row['unified_record_time'] =	new MongoDate($datetime->format('U'));
+			}
+			return $row;
+	}
 }
 
 ?>

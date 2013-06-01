@@ -24,9 +24,12 @@ class Billrun_Calculator_Sms extends Billrun_Calculator_Base_Rate {
 	protected function getLines() {
 		$lines = Billrun_Factory::db()->linesCollection();
 		
-		return $lines->query()
-			->in('type', array('smpp','smsc','mmsc'))
-			->notExists('customer_rate')->cursor()->limit($this->limit);
+		return $lines->query(array('$or' => array(
+												array('type' => array('$in' => array('smpp','smsc')) , 'calling_imsi' =>array('$ne' => '000000000000000') ) ,
+												array('type' => array('$in' => array('mmsc')) , 'action' => array('$in' => array('S') ) ),
+											),
+							'customer_rate' => array('$exists'=> false)) )
+			->cursor()->limit($this->limit);
 
 	}
 
@@ -45,6 +48,7 @@ class Billrun_Calculator_Sms extends Billrun_Calculator_Base_Rate {
 			);
 			$newData = array_merge($current, $added_values);
 			$row->setRawData($newData);
+		//	Billrun_Factory::log()->log("row : ".print_r($row ,1),  Zend_Log::DEBUG);
 		}
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteRow', array('row' => $row));
 	}
@@ -64,13 +68,13 @@ class Billrun_Calculator_Sms extends Billrun_Calculator_Base_Rate {
 	 * @return Array 
 	 */
 	protected function getLineRate($row) {		
-		$called_number = preg_replace('/[^\d]/', '', preg_replace('/^0+/', '', ($row['type'] == 'mmsc' ? $row['called_number'] : $row['recipent_addr']) ) );
+		$called_number = preg_replace('/[^\d]/', '', preg_replace('/^0+/', '', ($row['type'] != 'mmsc' ? $row['called_number'] : $row['recipent_addr']) ) );
 
 		$rates = Billrun_Factory::db()->ratesCollection();
 		//Billrun_Factory::log()->log("row : ".print_r($row ,1),  Zend_Log::DEBUG);
 		$type = $row['type'] == 'mmsc' ? 'mms' : 'sms';	
 		$called_number_prefixes = $this->getPrefixes($called_number);
-		//Billrun_Factory::log()->log("prefixes : ".print_r($called_number_prefixes ,1),  Zend_Log::DEBUG);
+		//Billrun_Factory::log()->log("prefixes  for $called_number : ".print_r($called_number_prefixes ,1),  Zend_Log::DEBUG);
 		$base_match = array(
 			'$match' => array(
 				'params.prefix' => array(

@@ -119,36 +119,5 @@ class Billrun_Tariff {
 		}
 		return self::$instance;
 	}
-	
-	/**
-	 * check if a subscriber 
-	 * @param type $rate
-	 * @param type $sub
-	 * @return type
-	 */
-	static public function isRateInSubPlan($rate,$sub) {			
-			return isset($rate['plans']) && $rate['plans'] && in_array($sub['plan'], $rate['plans']);
-	}
-	
-	/**
-	 * TODO  move to a different class
-	 */
-	public static function usageLeftInPlan($subscriber,$usagetype = FALSE) {
-		$plan = Billrun_Factory::db()->plansCollection()->findOne('name',$subscriber['plan']);
-		
-		if(!$usagetype) {
-			return $plan['include']['$usagetype'];
-		}		
-		if(!isset($subscriber['balance']['usage_counters'][$usagetype])) {
-			throw new Exception("Inproper usage counter requested : $usagetype from subscriber : ".  print_r($subscriber,1));
-		}
-		
-		if($plan['include'][$usagetype] == 'UNLIMITED') {
-			return PHP_INT_MAX;
-		}
-		$usageLeft = $plan['include'][$usagetype] - $subscriber['balance']['usage_counters'][$usagetype];
-		
-		return floatval($usageLeft < 0 ? 0  : $usageLeft);
-	}
 
 }
