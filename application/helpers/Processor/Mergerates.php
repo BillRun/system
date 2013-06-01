@@ -140,7 +140,12 @@ class Processor_Mergerates extends Billrun_Processor_Base_Separator {
 				$entityRates = $entity['rates'];
 				$entityRates[$rateType] =  $value;
 				$entity['rates'] = $entityRates;
+				//@TODO Talk to Shani..
+				//$entity->set("access_type_name", $row['accessTypeName']);
+				//$entity->set("type", $rateType);
+				//$entity->set("rates", $value);
 				
+				//$entity['rates'][$rateType] = $value;
 				if ($row['zoneOrItem'] != 'UNRATED') {
 					$entity->set("params.record_type", $record_type);
 				}

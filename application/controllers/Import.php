@@ -50,7 +50,7 @@ class ImportController extends Yaf_Controller_Abstract {
 		$mergePackage = Billrun_Processor::getInstance(array(
 			'type' => 'mergezonepackage', 
 			'parser' => $parser, 
-			'path' => '/home/ofer/Desktop/billing_data/zone_group_element.csv'
+			'path' => '/home/shani/Documents/S.D.O.C/BillRun/backups/zone_group_element.csv'
 		));
 
 		if ($mergePackage === FALSE) {
