@@ -25,8 +25,16 @@ class Processor_Mergezonepackage extends Billrun_Processor_Base_Separator {
 	static protected $type = 'mergerates';
 	
 	static protected $nsoftPLanToGolanPlan = array(
-									'SMALL' => array('ZG_HAVILA_SMS','ZG_HAVILA_VOICE'),
-									'LARGE' => array('ZG_HAVILA_SMS','ZG_HAVILA_VOICE','ZG_HAVILA_HOOL'),
+									'SMALL' => array('ZG_HAVILA_SMS','ZG_HAVILA_VOICE','ZG_HAVILA_MMS'),
+									'LARGE' => array('ZG_HAVILA_SMS','ZG_HAVILA_VOICE','ZG_HAVILA_MMS','ZG_HAVILA_HOOL','ZG_NATIONAL'),
+					);
+	
+	static protected $typesTranslation = array(
+									'M' => 'sms',
+									'C' => 'call',
+									'A' => 'call',
+									'I' => 'data',
+									'N' => 'mms'
 					);
 
 	public function __construct($options) {
@@ -93,25 +101,26 @@ class Processor_Mergezonepackage extends Billrun_Processor_Base_Separator {
 		$this->data['stored_data'] = array();
 
 		foreach ($this->data['data'] as $key => $row) {
-//			print_R($row);die;
+			$type = self::$typesTranslation[$row['zoneGroupEltId_tariffKind']];
 			if (isset($row['zoneGroupEltId_tariffItem'])) {
-				$key = $row['zoneGroupEltId_tariffItem'];
+				//$key = $row['zoneGroupEltId_tariffItem'];
 				$entity = $rates->query('key', $row['zoneGroupEltId_tariffItem'])->cursor()->current();
 				if ($entity->getId()) {
 					$entity->collection($rates);
+					Billrun_Factory::log()->log("Setting plan for : ".$entity->getId(), Zend_Log::DEBUG);
+					$rowRates = $entity['rates'];
+					$plans = isset($rowRates[$type]['plans']) ? $rowRates[$type]['plans'] : array();
 					foreach (self::$nsoftPLanToGolanPlan as $planName => $nsoftVal) {
-						if($row['zoneGroupEltId_zoneGroupId_zoneGroupName'] == $nsoftVal) {
-							$entity['plans'][] = $planName;
+						if(in_array($row['zoneGroupEltId_zoneGroupId_zoneGroupName'],$nsoftVal) && !in_array($planName,$plans)) {
+							 $plans[] = $planName;
 						}
 					}
-					/*$entity->set("rates.call.packages", array(99));
-					if ($entity->get("rates.sms")) {
-						$entity->set("rates.sms.packages", array(9, 99));
-					}*/
+					$rowRates[$type]['plans']= $plans;
+					$entity['rates'] = $rowRates;
 					$entity->save($rates);
 					$this->data['stored_data'][] = $row;
 				} else {
-					echo $row['zoneGroupEltId_tariffItem'] . " zone not found" . PHP_EOL . "<br />";
+					echo $row['zoneGroupEltId_tariffItem'] . "  when  trying to merge plans zone not found" . PHP_EOL . "<br />";
 				}
 			}
 		}

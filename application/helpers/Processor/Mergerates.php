@@ -137,7 +137,10 @@ class Processor_Mergerates extends Billrun_Processor_Base_Separator {
 				if ($row['kind'] == 'C') { // add access price for calls
 					$value['access'] = (double) $row['tinf_accessPrice0'];
 				}				
-				$entity['rates'][$rateType] =  $value;
+				$entityRates = $entity['rates'];
+				$entityRates[$rateType] =  $value;
+				$entity['rates'] = $entityRates;
+				
 				if ($row['zoneOrItem'] != 'UNRATED') {
 					$entity->set("params.record_type", $record_type);
 				}
