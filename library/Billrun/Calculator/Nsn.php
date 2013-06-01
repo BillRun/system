@@ -38,7 +38,7 @@ class Billrun_Calculator_Nsn extends Billrun_Calculator_Base_Rate {
 
 		return $lines->query()
 				->equals('type', static::$type)
-				->notExists('customer_rate')->cursor()->limit($this->limit);
+				->notExists('customer_rate')->notExists('unrated')->cursor()->limit($this->limit);
 	}
 
 	/**
@@ -54,7 +54,7 @@ class Billrun_Calculator_Nsn extends Billrun_Calculator_Base_Rate {
 
 		$rates = Billrun_Factory::db()->ratesCollection();
 
-		if ($record_type == "01" || ($record_type == "11" && ($icg == "1001" || $icg == "1006" || ($icg > "1201" && $icg < "1209")))) {
+		if ($record_type == "01" || ($record_type == "11" && ($icg == "1001" || $icg == "1006" || ($icg > "1201" && $icg < "1209")) && $ocg != '3051')) {
 			$called_number_prefixes = $this->getPrefixes($called_number);
 
 			$base_match = array(
@@ -62,7 +62,7 @@ class Billrun_Calculator_Nsn extends Billrun_Calculator_Base_Rate {
 					'params.prefix' => array(
 						'$in' => $called_number_prefixes,
 					),
-					'call' => array('$exists' => true ),
+					'rates.call' => array('$exists' => true ),
 					'params.out_circuit_group' => array(
 						'$elemMatch' => array(
 							'from' => array(
@@ -97,15 +97,23 @@ class Billrun_Calculator_Nsn extends Billrun_Calculator_Base_Rate {
 			$matched_rates = $rates->aggregate($base_match, $unwind, $sort, $match2);
 
 		}
-		/*else { // put 0 rate
-			$base_match = array(
+		else { // put 0 rate
+		/*	$base_match = array(
 				'$match' => array(
 					'key' => 'UNRATED',
 				),
 			);
-			$matched_rates = $rates->aggregate($base_match);
+			$matched_rates = $rates->aggregate($base_match);*/
+
+			$current = $row->getRawData();
+			$rate_reference = array(
+				'unrated' => new MongoDate(time()),
+			);
+			$newData = array_merge($current, $rate_reference);
+			$row->setRawData($newData);
+
 		}
-		*/
+		
 		if (!empty($matched_rates)) {
 			$rate = reset($matched_rates);
 			$current = $row->getRawData();
