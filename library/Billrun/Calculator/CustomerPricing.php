@@ -27,10 +27,10 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 																				'billrun_month' =>  Billrun_Util::getNextChargeKey($row['unified_record_time']->sec)
 																			))->cursor()->current();
 		if(!isset($subscriber) || !$subscriber ) {
-			Billrun_Factory::log()->log("couldn't  get subsciber for : ".print_r(array(
-																				'subscriber_id' => $row['subscriber_id'],
-																				'billrun_month' =>  Billrun_Util::getNextChargeKey($row['unified_record_time']->sec)
-																			),1),  Zend_Log::DEBUG);			
+//			Billrun_Factory::log()->log("couldn't  get subsciber for : ".print_r(array(
+//																				'subscriber_id' => $row['subscriber_id'],
+//																				'billrun_month' =>  Billrun_Util::getNextChargeKey($row['unified_record_time']->sec)
+//																			),1),  Zend_Log::DEBUG);			
 			return;
 		}
 		//@TODO  change this  be be configurable.
@@ -77,14 +77,24 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		}
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteData', array('data' => $this->data));
 	}
-	
+	/**
+	 * 
+	 * @param type $volume
+	 * @param type $lineType
+	 * @param type $rate
+	 * @param type $subr
+	 * @return type
+	 */
 	protected function priceLine($volume, $lineType, $rate, $subr) {
 		$typedRates = $rate['rates'][$lineType];
 		$volumeToPrice = $volume;
-		$accessPrice = $typedRates['access'];
-		if(Billrun_Tariff::isRateInSubPlan($rate,$subr)) {
-			$volumeToPrice = $volumeToPrice - Billrun_Tariff::usageLeftInPlan($subr, $lineType);
-			if($volumeToPrice < 0) {
+		$accessPrice =  isset($typedRates['access']) ? $typedRates['access'] : 0;
+		if(Billrun_Model_Plan::isRateInSubPlan($rate, $subr, $lineType)) {
+			 $discount = Billrun_Model_Plan::usageLeftInPlan($subr, $lineType);
+			//Billrun_Factory::log()->log("Passed the PLan  limit: ".print_r($volumeToPrice,1),  Zend_Log::DEBUG);
+			$volumeToPrice = $volumeToPrice - $discount;
+
+			if($volumeToPrice < 0) {				
 				$volumeToPrice = 0;
 				$accessPrice = 0;
 			}
@@ -100,58 +110,6 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		
 		return $price;
 	}
-
-/*
-	protected function priceSmsLine($line, $rate, $sub) {
-		$volumeToPrice = 1;
-		$accessPrice == $rate['access'];
-		if(Billrun_Tariff::isRateInSubPlan($rate,$sub)) {
-			$volumeToPrice = $volumeToPrice - Billrun_Tariff::usageLeftInPlan($sub,'sms');
-			if($volumeToPrice < 0) {
-				$volumeToPrice = 0;
-				$accessPrice = 0;
-			}
-		}
-		$price = $rate['rate']['price'];
-		$this->updateSubscriberBalance($sub, array('sms' => 1 ), $price);
-		return $price;
-	}
-	
-	protected function priceDataLine($line, $rate, $sub) {
-		//Billrun_Factory::log()->log("got Rating : ".print_r($rate,1),  Zend_Log::DEBUG);	
-		$volumeToPrice = $line['duration'];
-		$accessPrice == $rate['access'];
-		if(Billrun_Tariff::isRateInSubPlan($rate,$sub)) {
-			$volumeToPrice = $volumeToPrice - Billrun_Tariff::usageLeftInPlan($sub,'data');
-			if($volumeToPrice < 0) {
-				$volumeToPrice = 0;
-				$accessPrice = 0;
-			}
-		}
-		$price = $accessPrice + floatval((round(($line['fbc_downlink_volume'] + $line['fbc_uplink_volume']) / $rate['rate']['interval']) ) * $rate['rate']['price']);
-		$this->updateSubscriberBalance($sub, array('data' => $line['fbc_downlink_volume'] + $line['fbc_uplink_volume'] ), $price);
-		return $price;
-	}
-	
-	protected function priceCallLine($line, $rate, $sub) {
-		//Billrun_Factory::log()->log("got Rating : ".print_r($rate,1),  Zend_Log::DEBUG);	
-		//TODO  add subscriber plan considuration
-		$volumeToPrice = $line['duration'];
-		$accessPrice == $rate['access'];
-		if(Billrun_Tariff::isRateInSubPlan($rate,$sub)) {
-			$volumeToPrice = $volumeToPrice - Billrun_Tariff::usageLeftInPlan($sub,'call');
-			if($volumeToPrice < 0) {
-				$volumeToPrice = 0;
-				$accessPrice = 0;
-			}
-		}
-		$price = $accessPrice + floatval((round($line['duration']  / $rate['rate']['interval']) ) * $rate['rate']['price']);
-		
-		$this->updateSubscriberBalance($sub, array('call' => $line['duration'] ), $price);
-		
-		return $price;
-	}
-  */
  
 	/**
 	 * 

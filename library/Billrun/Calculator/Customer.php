@@ -22,11 +22,10 @@ class Billrun_Calculator_Customer extends Billrun_Calculator_Base_Rate {
 	protected $item;
 
 	/**
-	 * the relevant record in subscribers document
-	 * 
-	 * @var Mongo Entity
+	 *
+	 * @var type 
 	 */
-	protected $subscriber_line;
+	protected $subscriberNumber;
 
 	/**
 	 * the type of the object
@@ -50,8 +49,8 @@ class Billrun_Calculator_Customer extends Billrun_Calculator_Base_Rate {
 
 		return $lines->query()
 			->in('type', array('nsn', 'ggsn', 'smsc', 'mmsc', 'smpp'))
-			->notEq('customer_rate','UNRATED')
-			->notExists('subscriber_id')->cursor()->limit($this->limit);;
+			->exists('customer_rate')
+			->notExists('subscriber_id')->cursor()->limit($this->limit);
 	}
 	
 
@@ -86,16 +85,17 @@ class Billrun_Calculator_Customer extends Billrun_Calculator_Base_Rate {
 			// @TODO: load it by config
 			
 			$translate = array(
-						'imsi' => 'IMSI',
-						'msisdn' => 'NDC_SN',
-						'calling_number' => 'NDC_SN',
+						'imsi' => array('toKey' => 'IMSI', 'clearRegex'=> '//' ),
+						'msisdn' => array('toKey' => 'NDC_SN', 'clearRegex'=> '/^0*\+{0,1}972/' ),
+						'calling_number' => array('toKey' => 'NDC_SN', 'clearRegex'=> '/^0*\+{0,1}972/' ) ,
 					);
 			$params = array();
 			
 			foreach($translate as $key => $toKey) {
 				if(isset($row[$key])) {
-					$params[$toKey] = $row[$key];
-					Billrun_Factory::log('found indetification of L ' . $row[$key], Zend_Log::DEBUG);
+					$params[$toKey['toKey']] = preg_replace($toKey['clearRegex'], '', $row[$key]);
+					$this->subscriberNumber = $params[$toKey['toKey']];
+					Billrun_Factory::log('found indetification of : '.$toKey['toKey'] . ' with value :' . $params[$toKey['toKey']], Zend_Log::DEBUG);
 				}
 			}
 			
@@ -108,6 +108,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator_Base_Rate {
 			
 			return $this->subscriber->load($params);
 	}
+	
 	/**
 	 * create a subscriber  entery  if none exists 
 	 * (TODO   may move this to the Billrun_Subscriber class?)
@@ -136,6 +137,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator_Base_Rate {
 			'account_id' => $account_id,
 			'subscriber_id' => $subscriber_id,
 			'plan_current' => $plan_current,
+			//'number' => $this->subscriberNumber, //@TODO remove before production here to allow offline subscriber search...
 			'balance' => array(
 				'usage_counters' => array(
 					'call' => 0,
