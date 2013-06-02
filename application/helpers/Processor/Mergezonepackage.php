@@ -107,16 +107,20 @@ class Processor_Mergezonepackage extends Billrun_Processor_Base_Separator {
 				$entity = $rates->query('key', $row['zoneGroupEltId_tariffItem'])->cursor()->current();
 				if ($entity->getId()) {
 					$entity->collection($rates);
-					Billrun_Factory::log()->log("Setting plan for : ".$entity->getId(), Zend_Log::DEBUG);
-					$rowRates = $entity['rates'];
-					$plans = isset($rowRates[$type]['plans']) ? $rowRates[$type]['plans'] : array();
-					foreach (self::$nsoftPLanToGolanPlan as $planName => $nsoftVal) {
-						if(in_array($row['zoneGroupEltId_zoneGroupId_zoneGroupName'],$nsoftVal) && !in_array($planName,$plans)) {
-							 $plans[] = $planName;
+					
+					if($entity['rates'][$type]) {
+						Billrun_Factory::log()->log("Setting plan for : ".$entity->getId(), Zend_Log::DEBUG);
+						$rowRates = $entity['rates'];
+						$plans = isset($rowRates[$type]['plans']) ? $rowRates[$type]['plans'] : array();
+						foreach (self::$nsoftPLanToGolanPlan as $planName => $nsoftVal) {
+							if(in_array($row['zoneGroupEltId_zoneGroupId_zoneGroupName'],$nsoftVal) && !in_array($planName,$plans)) {
+								 $plans[] = $planName;
+							}
 						}
+						$rowRates[$type]['plans']= $plans;
+						$entity['rates'] = $rowRates;
 					}
-					$rowRates[$type]['plans']= $plans;
-					$entity['rates'] = $rowRates;
+					
 					$entity->save($rates);
 					$this->data['stored_data'][] = $row;
 				} else {
