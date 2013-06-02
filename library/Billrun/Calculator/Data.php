@@ -41,7 +41,7 @@ class Billrun_Calculator_Data extends Billrun_Calculator_Base_Rate {
 		
 		return $lines->query()
 			->in('type', array('ggsn'))
-			->notExists('customer_rate')->cursor()->limit($this->limit);
+			->notExists($this->ratingField)->cursor()->limit($this->limit);
 
 	}	
 	
@@ -55,7 +55,7 @@ class Billrun_Calculator_Data extends Billrun_Calculator_Base_Rate {
 		$rate = $this->getLineRate($row);	
 		if($rate !== FALSE) {			
 			$added_values = array(
-				'customer_rate' => $rate['_id'],
+				$this->ratingField => ($rate ? $rate['_id'] : $rate),
 			);
 			$newData = array_merge($current, $added_values);
 			$row->setRawData($newData);

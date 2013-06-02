@@ -29,7 +29,7 @@ class Billrun_Calculator_Sms extends Billrun_Calculator_Base_Rate {
 												array('type' => array('$in' => array('smsc')),'record_type' => '1' ,  'calling_msc' =>array('$ne' => '000000000000000') ) ,
 												array('type' => array('$in' => array('mmsc')) , 'action' => array('$in' => array('S') ) ),
 											),
-							'customer_rate' => array('$exists'=> false)) )
+							$this->ratingField => array('$exists'=> false)) )
 			->cursor()->limit($this->limit);
 
 	}
@@ -45,7 +45,7 @@ class Billrun_Calculator_Sms extends Billrun_Calculator_Base_Rate {
 		$rate = $this->getLineRate($row);	
 		if($rate !== FALSE) {			
 			$added_values = array(
-				'customer_rate' => $rate['_id'],
+				$this->ratingField => ($rate ? $rate['_id'] : FALSE),
 			);
 			$newData = array_merge($current, $added_values);
 			$row->setRawData($newData);

@@ -49,7 +49,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator_Base_Rate {
 
 		return $lines->query()
 				->in('type', array('nsn', 'ggsn', 'smsc', 'mmsc', 'smpp'))
-				->exists('customer_rate')
+				->exists('customer_rate')->notEq('customer_rate',FALSE)
 				->notExists('subscriber_id')->cursor()->limit($this->limit);
 	}
 

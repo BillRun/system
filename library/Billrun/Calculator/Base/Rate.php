@@ -23,6 +23,14 @@ abstract class Billrun_Calculator_Base_Rate extends Billrun_Calculator {
 	static protected $type = 'rate';
 
 	/**
+	 * the rating field to update in the CDR line.
+	 *
+	 * @var string
+	 */
+	protected $ratingField = 'customer_rate';
+
+	
+	/**
 	 * identify if the row belong to calculator
 	 * 
 	 * @return boolean true if the row identify as belonging to the calculator, else false

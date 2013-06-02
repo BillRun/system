@@ -38,7 +38,7 @@ class Billrun_Calculator_Nsn extends Billrun_Calculator_Base_Rate {
 
 		return $lines->query()
 				->equals('type', static::$type)
-				->notExists('customer_rate')->notExists('unrated')->cursor()->limit($this->limit);
+				->notExists($this->ratingField)->cursor()->limit($this->limit);
 	}
 
 	/**
@@ -53,7 +53,8 @@ class Billrun_Calculator_Nsn extends Billrun_Calculator_Base_Rate {
 		$icg = $row->get('in_circuit_group');
 
 		$rates = Billrun_Factory::db()->ratesCollection();
-
+		$rateId = FALSE;
+		
 		if ($record_type == "01" || //MOC call
 			($record_type == "11" && ($icg == "1001" || $icg == "1006" || ($icg >= "1201" && $icg <= "1209")) && ($ocg != '3051' && $ocg != '3050'))// Roaming on Cellcom and the call is not to a voice mail
 			) {
@@ -107,24 +108,15 @@ class Billrun_Calculator_Nsn extends Billrun_Calculator_Base_Rate {
 				$matched_rates = $rates->aggregate($base_match);
 			}
 			
-			$rate = reset($matched_rates);
-			$current = $row->getRawData();
-			$rate_reference = array(
-				'customer_rate' => $rate['_id'],
-			);
-			$newData = array_merge($current, $rate_reference);
-			$row->setRawData($newData);
-
-		} else { // put 0 rate
-
-			$current = $row->getRawData();
-			$rate_reference = array(
-				'customer_unrated' => new MongoDate(time()),
-			);
-			$newData = array_merge($current, $rate_reference);
-			$row->setRawData($newData);
-
-		}
+			$rateId = reset($matched_rates)['_id'];
+		} 
+			
+		$current = $row->getRawData();
+		$rate_reference = array(
+			$this->ratingField => $rateId,
+		);
+		$newData = array_merge($current, $rate_reference);
+		$row->setRawData($newData);
 
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteRow', array('row' => $row));
 	}
