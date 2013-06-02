@@ -108,7 +108,7 @@ class Processor_Mergezonepackage extends Billrun_Processor_Base_Separator {
 				if ($entity->getId()) {
 					$entity->collection($rates);
 					
-					if($entity['rates'][$type]) {
+					if(isset($entity['rates'][$type])) {
 						Billrun_Factory::log()->log("Setting plan for : ".$entity->getId(), Zend_Log::DEBUG);
 						$rowRates = $entity['rates'];
 						$plans = isset($rowRates[$type]['plans']) ? $rowRates[$type]['plans'] : array();
