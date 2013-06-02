@@ -25,7 +25,8 @@ class Billrun_Calculator_Sms extends Billrun_Calculator_Base_Rate {
 		$lines = Billrun_Factory::db()->linesCollection();
 		
 		return $lines->query(array('$or' => array(
-												array('type' => array('$in' => array('smpp','smsc')) , 'calling_imsi' =>array('$ne' => '000000000000000') ) ,
+												array('type' => array('$in' => array('smpp')) , 'record_type' => '1' ,  'calling_imsi' =>array('$ne' => '000000000000000') ) ,//@TODO  ask  sefi  for  proper idntification
+												array('type' => array('$in' => array('smsc')),'record_type' => '1' ,  'calling_msc' =>array('$ne' => '000000000000000') ) ,
 												array('type' => array('$in' => array('mmsc')) , 'action' => array('$in' => array('S') ) ),
 											),
 							'customer_rate' => array('$exists'=> false)) )
@@ -68,7 +69,7 @@ class Billrun_Calculator_Sms extends Billrun_Calculator_Base_Rate {
 	 * @return Array 
 	 */
 	protected function getLineRate($row) {		
-		$called_number = preg_replace('/[^\d]/', '', preg_replace('/^0+/', '', ($row['type'] != 'mmsc' ? $row['called_number'] : $row['recipent_addr']) ) );
+		$called_number = preg_replace('/[^\d]/', '', preg_replace('/^0+/', '', ($row['type'] != 'mmsc' ? $row['called_msc'] : $row['recipent_addr']) ) );
 
 		$rates = Billrun_Factory::db()->ratesCollection();
 		//Billrun_Factory::log()->log("row : ".print_r($row ,1),  Zend_Log::DEBUG);

@@ -73,6 +73,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		$datetime_format = Billrun_Base::base_dateformat; // 'Y-m-d H:i:s';
 
 		$path = 'http://' . $host . '/' . $url . '?' . http_build_query($params);
+		//Billrun_Factory::log()->log($path, Zend_Log::DEBUG);
 		// @TODO: use Zend_Http_Client
 		$json = $this->send($path);
 
@@ -130,6 +131,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 
 		return $output;
 	}
+
 	/**
 	 * check if the returned subscriber data is a valid data set.
 	 * @return boolean true  is the data is valid  false otherwise.
@@ -142,8 +144,9 @@ class Subscriber_Golan extends Billrun_Subscriber {
 				break;
 			}				
 		}
+		$validFields = $validFields && ($this->data['plan'] != 'ERROR' );
 		
-		return (!isset($this->data['success']) || $this->data['success'] != FALSE ) && $validFields;
+		return (!isset($this->data['success']) || $this->data['success'] != FALSE ) && $validFields ;
 	}
 
 }

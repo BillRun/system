@@ -36,7 +36,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator_Base_Rate {
 
 	public function __construct($options = array()) {
 		parent::__construct($options);
-		
+
 		$this->subscriber = Billrun_Factory::subscriber();
 		$this->subscribers = Billrun_Factory::db()->subscribersCollection();
 	}
@@ -48,107 +48,75 @@ class Billrun_Calculator_Customer extends Billrun_Calculator_Base_Rate {
 		$lines = Billrun_Factory::db()->linesCollection();
 
 		return $lines->query()
-			->in('type', array('nsn', 'ggsn', 'smsc', 'mmsc', 'smpp'))
-			->exists('customer_rate')
-			->notExists('subscriber_id')->cursor()->limit($this->limit);
+				->in('type', array('nsn', 'ggsn', 'smsc', 'mmsc', 'smpp'))
+				->exists('customer_rate')
+				->notExists('subscriber_id')->cursor()->limit($this->limit);
 	}
-	
 
 	/**
 	 * write the calculation into DB
 	 */
 	protected function updateRow($row) {
-			//Billrun_Factory::log('Load line ' . $row->get('stamp'), Zend_Log::INFO);
-			$subscriber = $this->loadSubscriberForLine($row);			
-			
-			if(!$subscriber || !$subscriber->isValid()) {
-				Billrun_Factory::log('Missing subscriber info for line with stamp : ' . $row->get('stamp'), Zend_Log::ALERT);
-				return;
-			}
-			
-			foreach ($subscriber->getAvailableFields() as $field) {
-				$subscriber_field = $subscriber->{$field};					
-				$row[$field] = $subscriber_field;				
-			}
-			$this->createSubscriberIfMissing($subscriber, Billrun_Util::getNextChargeKey($row->get('unified_record_time')->sec));
+		//Billrun_Factory::log('Load line ' . $row->get('stamp'), Zend_Log::INFO);
+		$subscriber = $this->loadSubscriberForLine($row);
 
+		if (!$subscriber || !$subscriber->isValid()) {
+			Billrun_Factory::log('Missing subscriber info for line with stamp : ' . $row->get('stamp'), Zend_Log::ALERT);
+			return;
+		}
+
+		foreach ($subscriber->getAvailableFields() as $field) {
+			$subscriber_field = $subscriber->{$field};
+			$row[$field] = $subscriber_field;
+		}
+		$this->createSubscriberIfMissing($subscriber, Billrun_Util::getNextChargeKey($row->get('unified_record_time')->sec));
 	}
-	
+
 	/**
 	 * load a subscriber for a given CDR line.
 	 * @param type $row
 	 * @return type
 	 */
 	protected function loadSubscriberForLine($row) {
-			
-			// @TODO: move the iteration code snippet into function; this is the reason we load the item to class property
-			// @TODO: load it by config
-			
-			$translate = array(
-						'imsi' => array('toKey' => 'IMSI', 'clearRegex'=> '//' ),
-						'msisdn' => array('toKey' => 'NDC_SN', 'clearRegex'=> '/^0*\+{0,1}972/' ),
-						'calling_number' => array('toKey' => 'NDC_SN', 'clearRegex'=> '/^0*\+{0,1}972/' ) ,
-					);
-			$params = array();
-			
-			foreach($translate as $key => $toKey) {
-				if(isset($row[$key])) {
-					$params[$toKey['toKey']] = preg_replace($toKey['clearRegex'], '', $row[$key]);
-					$this->subscriberNumber = $params[$toKey['toKey']];
-					Billrun_Factory::log('found indetification of : '.$toKey['toKey'] . ' with value :' . $params[$toKey['toKey']], Zend_Log::DEBUG);
-				}
+
+		// @TODO: move the iteration code snippet into function; this is the reason we load the item to class property
+		// @TODO: load it by config
+		// 
+		// translate the customer identifing fields so they can used by the CRM API.
+		$translateCustomerIdentToAPI = array(
+			'imsi' => array('toKey' => 'IMSI', 'clearRegex' => '//'),
+			'msisdn' => array('toKey' => 'NDC_SN', 'clearRegex' => '/^0*\+{0,1}972/'),
+			'calling_number' => array('toKey' => 'NDC_SN', 'clearRegex' => '/^0*\+{0,1}972/'),
+		);
+		$params = array();
+
+		foreach ($translateCustomerIdentToAPI as $key => $toKey) {
+			if (isset($row[$key])) {
+				$params[$toKey['toKey']] = preg_replace($toKey['clearRegex'], '', $row[$key]);
+				$this->subscriberNumber = $params[$toKey['toKey']];
+				Billrun_Factory::log('found indetification of : ' . $toKey['toKey'] . ' with value :' . $params[$toKey['toKey']], Zend_Log::DEBUG);
 			}
-			
-			if(count($params) == 0) {
-				Billrun_Factory::log('Couldn\'t identify caller for line of stamp ' . $row->get('stamp'), Zend_Log::ALERT);
-				return;
-			}
-			
-			$params['time'] = date(Billrun_Base::base_dateformat, $row->get('unified_record_time')->sec);
-			
-			return $this->subscriber->load($params);
-	}
-	
-	/**
-	 * create a subscriber  entery  if none exists 
-	 * (TODO   may move this to the Billrun_Subscriber class?)
-	 * @param type $subscriber
-	 */
-	protected function createSubscriberIfMissing($subscriber, $billrun_key) {			
-			if ($this->subscribers->query(array('subscriber_id' => $subscriber->subscriber_id, 'billrun_month' => $billrun_key))->count() == 0) { // create empty balance row
-				Billrun_Factory::log('Adding subscriber ' .  $subscriber->subscriber_id . ' to subscribers collection', Zend_Log::INFO);
-				$newSubscriber = new Mongodloid_Entity($this->getEmptyBalance($billrun_key, $subscriber->account_id, $subscriber->subscriber_id, $subscriber->plan));
-				$newSubscriber->collection($this->subscribers);
-				$newSubscriber->save();
-			}
+		}
+
+		if (count($params) == 0) {
+			Billrun_Factory::log('Couldn\'t identify caller for line of stamp ' . $row->get('stamp'), Zend_Log::ALERT);
+			return;
+		}
+
+		$params['time'] = date(Billrun_Base::base_dateformat, $row->get('unified_record_time')->sec);
+
+		return $this->subscriber->load($params);
 	}
 
 	/**
-	 * create an empty balance array.
-	 * @param type $billrun_month
-	 * @param type $account_id
-	 * @param type $subscriber_id
-	 * @param type $plan_current
-	 * @return type
+	 * Create a subscriber  entery if none exists. 
+	 * (TODO   may move this to the Billrun_Subscriber class?)
+	 * @param type $subscriber
 	 */
-	protected function getEmptyBalance($billrun_month, $account_id, $subscriber_id, $plan_current) {
-		return array(
-			'billrun_month' => $billrun_month,
-			'account_id' => $account_id,
-			'subscriber_id' => $subscriber_id,
-			'plan_current' => $plan_current,
-			//'number' => $this->subscriberNumber, //@TODO remove before production here to allow offline subscriber search...
-			'balance' => array(
-				'usage_counters' => array(
-					'call' => 0,
-					'sms' => 0,
-					'data' => 0,
-					'international_call' => 0,
-					'international_sms' => 0,
-				),
-				'current_charge' => 0,
-			),
-		);
+	protected function createSubscriberIfMissing($subscriber, $billrun_key) {
+		if (!Billrun_Model_Subscriber::get($subscriber->subscriber_id, $billrun_key)) {
+			Billrun_Model_Subscriber::create($billrun_key, $subscriber->subscriber_id, $subscriber->plan, $subscriber->account_id);
+		}
 	}
 
 }

@@ -21,7 +21,17 @@ class Billrun_Calculator_Data extends Billrun_Calculator_Base_Rate {
 	 *
 	 * @var string
 	 */
-	static protected $type = 'data';	
+	static protected $type = 'data';
+	
+	protected $rateMaping = array('searchBy'=>'key','searchValue'=>'INTERNET_BILL_BY_VOLUME');
+	
+	public function __construct($options = array()) {
+		parent::__construct($options);
+		if(isset($options['rate_mapping'])) {
+			$this->rateMaping = $options['rate_maping'];
+		}
+		
+	}
 
 	/**
 	 * method to get calculator lines
@@ -54,9 +64,8 @@ class Billrun_Calculator_Data extends Billrun_Calculator_Base_Rate {
 	}
 	
 	protected function getLineRate($row) {
-		if(preg_match('/^(?=62\.90\.|37\.26\.)/', $row['sgsn_address'])) {
-			//TODO  replace this  with  a call to the rating collection API. 
-			$rate = Billrun_Factory::tariff()->get(array('searchBy'=>'key','searchValue'=>'INTERNET_BILL_BY_VOLUME'));
+		if(preg_match('/^(?=62\.90\.|37\.26\.)/', $row['sgsn_address'])) {			
+			$rate = Billrun_Factory::tariff()->get($this->rateMaping);
 			return  $rate->getRawData();
 		}
 	//	Billrun_Factory::log()->log("International row : ".print_r($row,1),  Zend_Log::DEBUG);

@@ -22,7 +22,7 @@ class Billrun_Model_Plan {
 	 * @param type $sub
 	 * @return type
 	 */
-	static public function isRateInSubPlan($rate,$sub,$type) {			
+	static public function isRateInSubPlan($rate, $sub, $type) {			
 			return isset($rate['rates'][$type]['plans']) && 
 					is_array($rate['rates'][$type]['plans']) && 
 					in_array($sub['plan_current'], $rate['rates'][$type]['plans']);
@@ -33,7 +33,7 @@ class Billrun_Model_Plan {
 	 */
 	public static function usageLeftInPlan($subscriber,$usagetype = FALSE) {
 		//TODO cache this...
-		$plan = self::get($subscriber['plan']));
+		$plan = self::get($subscriber['plan_current']);
 		
 		if(!$usagetype) {
 			return $plan['include']['$usagetype'];
