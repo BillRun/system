@@ -26,7 +26,7 @@ class Billrun_Model_Subscriber {
 						'billrun_month' => $billrunKey
 					 ))->cursor()->current();
 		
-		if(!count($subcr->getRawData()) {
+		if(!count($subcr->getRawData())) {
 			return FALSE;
 		}
 		return $subcr;
