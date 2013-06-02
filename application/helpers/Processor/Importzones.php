@@ -108,7 +108,7 @@ class Processor_ImportZones extends Billrun_Processor_Base_Separator {
 		$ret = array();
 		foreach ($data as $row) {
 			$row['rates'] = array();
-			if (!isset($row['zoneName'])) {
+			if (!isset($row['zoneName']) || $row['zoneName']=='ROAM_ALL_DEST' || $row['zoneName']=='$DEFAULT' || $row['zoneName']=='ALL_DESTINATION') {
 				print_R($row);
 				continue;
 			}
@@ -162,6 +162,7 @@ class Processor_ImportZones extends Billrun_Processor_Base_Separator {
 				$ret[$value['key']]['params']['prefix'] = array_merge($value['params']['prefix'], $params_dup);
 			}
 		}
+		
 		return $ret;
 	}
 

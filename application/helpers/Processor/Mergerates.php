@@ -48,11 +48,11 @@ class Processor_Mergerates extends Billrun_Processor_Base_Separator {
 			return false;
 		}
 
-
 		while ($line = $this->getLine()) {
 			$this->parseData($line);
 		}
-
+		
+		$this->addZonesByRates();
 		$this->addZeroRate();
 
 		return true;
@@ -136,15 +136,14 @@ class Processor_Mergerates extends Billrun_Processor_Base_Separator {
 				);
 				if ($row['kind'] == 'C') { // add access price for calls
 					$value['access'] = (double) $row['tinf_accessPrice0'];
-				}				
+				}
 				$entityRates = $entity['rates'];
-				$entityRates[$rateType] =  $value;
+				$entityRates[$rateType] = $value;
 				$entity['rates'] = $entityRates;
 				//@TODO Talk to Shani..
 				//$entity->set("access_type_name", $row['accessTypeName']);
 				//$entity->set("type", $rateType);
 				//$entity->set("rates", $value);
-				
 				//$entity['rates'][$rateType] = $value;
 				if ($row['zoneOrItem'] != 'UNRATED') {
 					$entity->set("params.record_type", $record_type);
@@ -157,6 +156,32 @@ class Processor_Mergerates extends Billrun_Processor_Base_Separator {
 		}
 
 		return true;
+	}
+
+	protected function addZonesByRates() {
+		$rates = Billrun_Factory::db()->ratesCollection();
+		foreach ($this->data['data'] as &$row) {
+			switch ($row['zoneOrItem']) {
+				case "ROAM_ALL_DEST":
+				case "\$DEFAULT":
+				case "ALL_DESTINATION":
+					$row['zoneOrItem'] = $row['accessTypeName'];
+
+					$new_zone = array();
+					$new_zone['from'] = new MongoDate(strtotime('2013-01-01T00:00:00+00:00'));
+					$new_zone['to'] = new MongoDate(strtotime(date('Y') + 100, '-01-01T00:00:00+00:00'));
+					$new_zone['key'] = $row['zoneOrItem'];
+					$entity = new Mongodloid_Entity($new_zone);
+
+					if ($rates->query('key', $new_zone['key'])->count() > 0) {
+						continue;
+					}
+					$entity->save($rates, true);
+					break;
+				default:
+					continue 2;
+			}
+		}
 	}
 
 	protected function addZeroRate() {
