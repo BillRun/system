@@ -36,17 +36,17 @@ class Billrun_Model_Subscriber {
 	 * Create aa new subscriber in a given month.
 	 * @param type $billrun_month
 	 * @param type $subscriber_id
-	 * @param type $plan_current
+	 * @param type $plan
 	 * @param type $account_id
 	 * @return boolean
 	 */
-	static public function create($billrun_month, $subscriber_id, $plan_current, $account_id) {
-		if(self::get( $subscriber_id, $billrun_month )) {
-			Billrun_Factory::log('Adding subscriber ' .  $subscriber_id . ' to subscribers collection', Zend_Log::INFO);
-			$newSubscriber = new Mongodloid_Entity(self::getEmptySubscriberEntry($billrun_key, $account_id, $subscriber_id, $plan));
+	static public function create($billrunKey, $subscriberId, $plan, $accountId) {
+		if(!self::get( $subscriberId, $billrunKey )) {
+			Billrun_Factory::log('Adding subscriber ' .  $subscriberId . ' to subscribers collection', Zend_Log::INFO);
+			$newSubscriber = new Mongodloid_Entity(self::getEmptySubscriberEntry($billrunKey, $accountId, $subscriberId, $plan));
 			$newSubscriber->collection(Billrun_Factory::db()->subscribersCollection());
 			$newSubscriber->save();
-			return self::get( $subscriber_id, $billrun_month );
+			return self::get( $subscriberId, $billrunKey );
 		} 
 		return FALSE;
 	}	
@@ -71,8 +71,12 @@ class Billrun_Model_Subscriber {
 					'call' => 0,
 					'sms' => 0,
 					'data' => 0,
-					'international_call' => 0,
-					'international_sms' => 0,
+					'inter_call' => 0,
+					'inter_sms' => 0,
+					'inter_roam_call' => 0,
+					'inter_roam_callback' => 0,
+					'inter_roam_sms' => 0,
+					'inter_roam_data' => 0,
 				),
 				'current_charge' => 0,
 			),

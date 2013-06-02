@@ -54,7 +54,9 @@ class Billrun_Calculator_Nsn extends Billrun_Calculator_Base_Rate {
 
 		$rates = Billrun_Factory::db()->ratesCollection();
 
-		if ($record_type == "01" || ($record_type == "11" && ($icg == "1001" || $icg == "1006" || ($icg > "1201" && $icg < "1209")) && $ocg != '3051')) {
+		if ($record_type == "01" || //MOC call
+			($record_type == "11" && ($icg == "1001" || $icg == "1006" || ($icg >= "1201" && $icg <= "1209")) && ($ocg != '3051' && $ocg != '3050'))// Roaming on Cellcom and the call is not to a voice mail
+			) {
 			$called_number_prefixes = $this->getPrefixes($called_number);
 
 			$base_match = array(
@@ -96,25 +98,15 @@ class Billrun_Calculator_Nsn extends Billrun_Calculator_Base_Rate {
 
 			$matched_rates = $rates->aggregate($base_match, $unwind, $sort, $match2);
 
-		}
-		else { // put 0 rate
-		/*	$base_match = array(
-				'$match' => array(
-					'key' => 'UNRATED',
-				),
-			);
-			$matched_rates = $rates->aggregate($base_match);*/
-
-			$current = $row->getRawData();
-			$rate_reference = array(
-				'unrated' => new MongoDate(time()),
-			);
-			$newData = array_merge($current, $rate_reference);
-			$row->setRawData($newData);
-
-		}
-		
-		if (!empty($matched_rates)) {
+			if (empty($matched_rates)) {
+					$base_match = array(
+					'$match' => array(
+						'key' => 'UNRATED',
+					),
+				);
+				$matched_rates = $rates->aggregate($base_match);
+			}
+			
 			$rate = reset($matched_rates);
 			$current = $row->getRawData();
 			$rate_reference = array(
@@ -122,11 +114,26 @@ class Billrun_Calculator_Nsn extends Billrun_Calculator_Base_Rate {
 			);
 			$newData = array_merge($current, $rate_reference);
 			$row->setRawData($newData);
+
+		} else { // put 0 rate
+
+			$current = $row->getRawData();
+			$rate_reference = array(
+				'customer_unrated' => new MongoDate(time()),
+			);
+			$newData = array_merge($current, $rate_reference);
+			$row->setRawData($newData);
+
 		}
 
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteRow', array('row' => $row));
 	}
 
+	/**
+	 * get all the prefixes from a given number
+	 * @param type $str
+	 * @return type
+	 */
 	protected function getPrefixes($str) {
 		$prefixes = array();
 		for ($i = 0; $i < strlen($str); $i++) {
