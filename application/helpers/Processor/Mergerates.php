@@ -161,9 +161,14 @@ class Processor_Mergerates extends Billrun_Processor_Base_Separator {
 		$rates = Billrun_Factory::db()->ratesCollection();
 		foreach ($this->data['data'] as &$row) {
 			switch ($row['zoneOrItem']) {
+				
 				case "ROAM_ALL_DEST":
 				case "\$DEFAULT":
+				case "":
 				case "ALL_DESTINATION":
+					if ($row['zoneOrItem']=='') {
+						Billrun_Factory::log('Found empty zone name. Treating as \'ROAM_ALL_DEST\' zone.', Zend_Log::ALERT);
+					}
 					$row['zoneOrItem'] = $row['accessTypeName'];
 
 					$new_zone = array();
@@ -175,6 +180,7 @@ class Processor_Mergerates extends Billrun_Processor_Base_Separator {
 					if ($rates->query('key', $new_zone['key'])->count() > 0) {
 						continue;
 					}
+					
 					$entity->save($rates, true);
 					break;
 				default:
