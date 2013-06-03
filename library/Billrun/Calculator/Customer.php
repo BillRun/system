@@ -48,7 +48,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator_Base_Rate {
 		$lines = Billrun_Factory::db()->linesCollection();
 
 		return $lines->query()
-				->in('type', array('nsn', 'ggsn', 'smsc', 'mmsc', 'smpp'))
+				->in('type', array('nsn', 'ggsn', 'smsc', 'mmsc', 'smpp', 'tap3') )
 				->exists('customer_rate')->notEq('customer_rate',FALSE)
 				->notExists('subscriber_id')->cursor()->limit($this->limit);
 	}
@@ -83,18 +83,21 @@ class Billrun_Calculator_Customer extends Billrun_Calculator_Base_Rate {
 		// @TODO: load it by config
 		// 
 		// translate the customer identifing fields so they can used by the CRM API.
-		$translateCustomerIdentToAPI = array(
-			'imsi' => array('toKey' => 'IMSI', 'clearRegex' => '//'),
+		$translateCustomerIdentToAPI = array(			
 			'msisdn' => array('toKey' => 'NDC_SN', 'clearRegex' => '/^0*\+{0,1}972/'),
-			'calling_number' => array('toKey' => 'NDC_SN', 'clearRegex' => '/^0*\+{0,1}972/'),
+			'calling_number' => array('toKey' => 'NDC_SN', 'clearRegex' => '/^0*\+{0,1}972/'),			
+			'imsi' => array('toKey' => 'IMSI', 'clearRegex' => '//'),			
+			'basicCallInformation.chargeableSubscriber.simChargeableSubscriber.imsi' => array('toKey' => 'IMSI', 'clearRegex' => '//'),
+			'basicCallInformation.GprsChargeableSubscriber.chargeableSubscriber.simChargeableSubscriber.imsi' => array('toKey' => 'IMSI', 'clearRegex' => '//'),
 		);
 		$params = array();
+		foreach ($translateCustomerIdentToAPI as $key => $toKey) {		
 
-		foreach ($translateCustomerIdentToAPI as $key => $toKey) {
-			if (isset($row[$key])) {
-				$params[$toKey['toKey']] = preg_replace($toKey['clearRegex'], '', $row[$key]);
+			if ( $row->get($key) ) {
+				$params[$toKey['toKey']] = preg_replace($toKey['clearRegex'], '', $row->get($key) );
 				$this->subscriberNumber = $params[$toKey['toKey']];
-				Billrun_Factory::log('found indetification of : ' . $toKey['toKey'] . ' with value :' . $params[$toKey['toKey']], Zend_Log::DEBUG);
+				Billrun_Factory::log("found indetification from {$key} to : " . $toKey['toKey'] . ' with value :' . $params[$toKey['toKey']], Zend_Log::DEBUG);
+				break;
 			}
 		}
 
