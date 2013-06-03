@@ -10,8 +10,7 @@
  *
  * @author eran
  */
-class Billrun_Model_Subscriber {
-	
+class Billrun_Model_Subscriber {	
 	
 	
 	/**

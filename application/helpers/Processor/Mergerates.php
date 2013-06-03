@@ -96,9 +96,9 @@ class Processor_Mergerates extends Billrun_Processor_Base_Separator {
 		foreach ($this->data['data'] as $key => $row) {
 			switch ($row['kind']) {
 				case 'A':
-					continue 2;
+					continue 2; // we will take care later
 					$rateType = 'data';
-					continue; // we will take care later
+					$unit = 'bytes';
 					break;
 				case 'C':
 					$rateType = 'call';
@@ -106,21 +106,20 @@ class Processor_Mergerates extends Billrun_Processor_Base_Separator {
 					$unit = 'seconds';
 					break;
 				case 'I':
-					//continue 2;
 					$rateType = 'data';
 					$unit = 'bytes';
-					continue; // we will take care later
 					break;
 				case 'M':
-					//continue 2;
 					$rateType = 'sms';
 					$unit = 'counter';
 					break;
 				case 'N':
-					//continue 2;
 					$rateType = 'mms';
 					$unit = 'counter';
 					break;
+				default:
+					echo("Unknown kind :  {$row['kind']} <br/>\n");
+					continue;
 			}
 			$entity = $rates->query(array('key' => $row['zoneOrItem']))->cursor()->current();
 			// todo check if rate already exists, if so, close row and open new row
@@ -169,7 +168,7 @@ class Processor_Mergerates extends Billrun_Processor_Base_Separator {
 
 					$new_zone = array();
 					$new_zone['from'] = new MongoDate(strtotime('2013-01-01T00:00:00+00:00'));
-					$new_zone['to'] = new MongoDate(strtotime(date('Y') + 100, '-01-01T00:00:00+00:00'));
+					$new_zone['to'] = new MongoDate(strtotime('+100 years'));
 					$new_zone['key'] = $row['zoneOrItem'];
 					$entity = new Mongodloid_Entity($new_zone);
 

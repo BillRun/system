@@ -31,17 +31,16 @@ class Billrun_Model_Plan {
 	/**
 	 * TODO  move to a different class
 	 */
-	public static function usageLeftInPlan($subscriber,$usagetype = FALSE) {
-		//TODO cache this...
-		$plan = self::get($subscriber['plan_current']);
-		
-		if(!$usagetype) {
-			return $plan['include']['$usagetype'];
-		}		
+	public static function usageLeftInPlan($subscriber,$usagetype = 'call') {
+	
 		if(!isset($subscriber['balance']['usage_counters'][$usagetype])) {
 			throw new Exception("Inproper usage counter requested : $usagetype from subscriber : ".  print_r($subscriber,1));
 		}
-		
+			
+		if(!($plan = self::get($subscriber['plan_current']))) {
+			throw new Exception("Couldn't load plan for subscriber : ".  print_r($subscriber,1));
+		}
+
 		if($plan['include'][$usagetype] == 'UNLIMITED') {
 			return PHP_INT_MAX;
 		}
