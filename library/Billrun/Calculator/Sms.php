@@ -16,7 +16,7 @@ class Billrun_Calculator_Sms extends Billrun_Calculator_Base_Rate {
 	 *
 	 * @var string
 	 */
-	static protected $type = 'data';	
+	static protected $type = 'sms';
 
 	/**
 	 * method to get calculator lines
