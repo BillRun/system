@@ -102,7 +102,6 @@ class Processor_Importintnetworkmappings extends Billrun_Processor_Base_Separato
 			$entity->save($int_network_mappings, true);
 			$this->data['stored_data'][] = $row;
 		}
-
 		return true;
 	}
 
