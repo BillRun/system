@@ -93,6 +93,7 @@ class Processor_Mergerates extends Billrun_Processor_Base_Separator {
 		$this->data['stored_data'] = array();
 
 		foreach ($this->data['data'] as $key => $row) {
+			$intervalMultiplier = 1;
 			switch ($row['kind']) {
 				case 'A':
 					continue 2; // we will take care later
@@ -107,6 +108,7 @@ class Processor_Mergerates extends Billrun_Processor_Base_Separator {
 				case 'I':
 					$rateType = 'data';
 					$unit = 'bytes';
+					$intervalMultiplier = 1024;
 					break;
 				case 'M':
 					$rateType = 'sms';
@@ -130,7 +132,7 @@ class Processor_Mergerates extends Billrun_Processor_Base_Separator {
 					'rate' => array(
 						'to' => (int) 2147483647,
 						'price' => (double) $row['tinf_sampPrice0'],
-						'interval' => (int) $row['tinf_sampDelayInSec0'],
+						'interval' => (int) ($row['tinf_sampDelayInSec0'] * $intervalMultiplier),
 					),
 				);
 				if ($row['kind'] == 'C') { // add access price for calls
