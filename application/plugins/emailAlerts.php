@@ -28,7 +28,7 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase  {
 	 * @var timestamp
 	 */
 	protected $startTime;
-
+	
 	/**
 	 * Is the  Alert plugin in a dry run mode (doesn't  actually sends alerts)
 	 * @var timestamp
@@ -41,15 +41,15 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase  {
 		$this->isDryRun = isset($options['dryRun']) ?
 			$options['dryRun'] :
 			Billrun_Factory::config()->getConfigValue('emailAlerts.dry_run', false);
-
+		
 		$this->alertTypes = isset($options['alertTypes']) ?
 			$options['alertTypes'] :
-			Billrun_Factory::config()->getConfigValue('emailAlerts.alert.types', array('nrtrde', 'ggsn', 'deposit', 'ilds', 'nsn'));
-
+			Billrun_Factory::config()->getConfigValue('emailAlerts.alert.types', array( 'nrtrde','ggsn', 'deposit','ilds','nsn') );
+		
 		$this->processingTypes = isset($options['processingTypes']) ?
 			$options['processingTypes'] :
-			Billrun_Factory::config()->getConfigValue('emailAlerts.processing.types', array('nrtrde', 'ggsn', 'nsn', 'tap3'));
-
+			Billrun_Factory::config()->getConfigValue('emailAlerts.processing.types', array( 'nrtrde','ggsn','nsn','tap3') );
+		
 		$this->startTime = time();
 	}
 
@@ -59,10 +59,8 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase  {
 	 * @return type
 	 */
 	public function handlerNotify($handler) {
-
 		$processingStatusMsg = $this->processingNotify();
 		$ret[] = $this->alertsNotify($processingStatusMsg);
-
 
 		return $ret;
 	}
@@ -76,11 +74,10 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase  {
 		if (!Billrun_Factory::config()->getConfigValue('emailAlerts.alerts.active', true)) {
 			return $retValue;
 		}
-
 		//Aggregate the  events by imsi  taking only the first one.
 		$events = $this->gatherEvents($this->alertTypes);
-
 		foreach ($events as $event) {
+		//	Billrun_Log::getInstance()->log("emailAlerts::alertsNotify : ".print_r($event,1), Zend_Log::DEBUG);
 			$retValue[] = $event;
 		}
 		$this->sendAlertsResultsSummary($retValue, $postMsg);
@@ -97,7 +94,6 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase  {
 		if (!Billrun_Factory::config()->getConfigValue('emailAlerts.processing.active', true)) {
 			return $retValue;
 		}
-
 		//Aggregate the  events by imsi  taking only the first one.
 		$logs = $this->gatherLogs($this->processingTypes);
 		$warningTime = strtotime("-" . Billrun_Factory::config()->getConfigValue('emailAlerts.processing.thresholds.warning', '1 day'));
@@ -109,10 +105,14 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase  {
 				$log['alert'] = strtotime($log['last_processed']['process_time']) - $alertTime < 0;
 			}
 			$retValue[$key] = $log;
+			
 		}
 		return $this->getProcessingSummary($retValue);
 	}
 
+		
+	
+		
 	/**
 	 * get handaled events from the DB.
 	 * @param Array $types the type (sources) of the events to gather.
@@ -126,10 +126,10 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase  {
 			'$where' => "this.deposit_stamp == this.stamp",
 		));
 
-
+		
 		return $events;
 	}
-
+	
 	/**
 	 * get handaled events from the DB.
 	 * @param Array $types the type (sources) of the events to gather.
@@ -145,9 +145,10 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase  {
 //					query(array('source' => $type, 'received_time' => array('$exists' => true)))->cursor()->
 //					sort(array('received_time' => -1, '_id' => -1))->limit(1)->current();
 		}
+		//Billrun_Log::getInstance()->log("emailAlerts::alertsNotify : ".print_r($aggregateLogs,1), Zend_Log::DEBUG);
 		return $aggregateLogs;
 	}
-
+	
 	/**
 	 * Mark an specific event after email sent. 
 	 * @param type $event the event to mark as dealt with.
@@ -158,7 +159,7 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase  {
 			$event->save(Billrun_Factory::db()->eventsCollection());
 		}
 	}
-
+	
 	/**
 	 * send  alerts results by email.
 	 */
@@ -174,7 +175,6 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase  {
 				$failed++;
 			}
 		}
-
 		$msg = "Count of failed: $failed" . PHP_EOL
 			. "Count of success: $successful" . PHP_EOL
 			. PHP_EOL . $postMsg . PHP_EOL
@@ -196,13 +196,12 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase  {
 
 		return $ret;
 	}
-
+	
 	/**
 	 * send  processing results by email.
 	 */
 	protected function getProcessingSummary($logs) {
 		Billrun_Log::getInstance()->log("Generate Processing result to email", Zend_Log::INFO);
-
 		$msg = "";
 		foreach ($logs as $type => $val) {
 //			$name = strtoupper($type);
@@ -226,13 +225,11 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase  {
 			}
 //			$seq = $this->getFileSequenceData($val['last_received']['file_name'], $type);
 //			$msg .= strtoupper($type) . " recevied Index : " . $seq['seq'] . " receving date : " . $val['last_received']['received_time'] . PHP_EOL;
-
 		}
-
 //		return $this->sendMail("Processing status " . date(Billrun_Base::base_dateformat), $msg, Billrun_Factory::config()->getConfigValue('emailAlerts.processing.recipients', array()));
 		return $msg;
 	}
-
+	
 	/**
 	 * Send Email helper
 	 * @param type $subject the subject of the message.
@@ -243,11 +240,9 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase  {
 	protected function sendMail($subject, $body, $recipients = array(), $attachments = array()) {
 		$recipients = $this->isDryRun ? array('eran', 'ofer') :
 			Billrun_Factory::config()->getConfigValue('emailAlerts.recipients', $recipients);
-
 		$mailer = Billrun_Factory::mailer()->
 			setSubject($subject)->
 			setBodyText($body);
-
 		//add attachments
 		foreach ($attachments as $attachment) {
 			$mailer->addAttachment($attachment);
@@ -256,14 +251,8 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase  {
 		foreach ($recipients as $recipient) {
 			$mailer->addTo($recipient);
 		}
-		//send email
-		try {
-			$ret = $mailer->send();
-		} catch(Exception $e ) {
-			Billrun_Factory::log()->log("Failed when trying to send  email on alert results, Failed with : ".$e, Zend_Log::ERR);
-			$ret = FALSE;
-		}
-		return $ret;
+		//sen email
+		return $mailer->send();
 	}
 
 	/**
@@ -291,10 +280,11 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase  {
 		$mime = new Zend_Mime_Part(file_get_contents($filepath));
 		$mime->filename = basename($filepath);
 		$mime->disposition = Zend_Mime::DISPOSITION_INLINE;
-		$mime->encoding = Zend_Mime::ENCODING_BASE64;
+		$mime->encoding    = Zend_Mime::ENCODING_BASE64;
 		return $mime;
 	}
-
+	
+	
 	/**
 	 * An helper function for the Billrun_Common_FileSequenceChecker  ( helper :) ) class.
 	 * Retrive the ggsn file date and sequence number
@@ -310,5 +300,6 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase  {
 			'time' => Billrun_Util::regexFirstValue(Billrun_Factory::config()->getConfigValue($type . ".sequence_regex.time", "/\D(\d{4,6})\D/"), $filename),
 		);
 	}
-
 }
+
+?>

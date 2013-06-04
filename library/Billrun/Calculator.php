@@ -7,7 +7,7 @@
  */
 
 /**
- * Billing calculator class
+ * Billing calculator base class
  *
  * @package  calculator
  * @since    0.5
@@ -28,16 +28,32 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	protected $data = array();
 
 	/**
+	 * The lines to rate
+	 * @var array
+	 */
+	protected $lines = array();
+
+	/**
 	 * Limit iterator
 	 * used to limit the count of row to calc on.
 	 * 0 or less means no limit
 	 *
 	 * @var int
 	 */
-	protected $limit = 0;
+	protected $limit = 1000000;
 	
+	
+	/**
+	 * constructor of the class
+	 * 
+	 * @param array $options the options of object load
+	 */
 	public function __construct($options = array()) {
 		parent::__construct($options);
+		
+		if (isset($options['calculator']['limit'])) {
+			$this->limit = $options['calculator']['limit'];
+		}
 		
 		if (!isset($options['autoload']) || !$options['autoload']) {
 			$this->load();
@@ -58,16 +74,16 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	public function load($initData = true) {
 		
 		if ($initData) {
-			$this->data = array();
+			$this->lines = array();
 		}
 
-		$resource = $this->getLines();
+		$this->lines = $this->getLines();
 		
-		foreach ($resource as $entity) {
+		/*foreach ($resource as $entity) {
 			$this->data[] = $entity;
-		}
+		}*/
 
-		Billrun_Factory::log()->log("entities loaded: " . count($this->data), Zend_Log::INFO);
+		Billrun_Factory::log()->log("entities loaded: " . count($this->lines), Zend_Log::INFO);
 
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorLoadData', array('calculator' => $this));
 	}

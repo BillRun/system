@@ -63,8 +63,9 @@ class Billrun_Db extends Mongodloid_Db {
 	/**
 	 * Magic method to receive collection instance
 	 * 
-	 * @param string $name name of the function call; convention is getCollnameCollection
-	 * @param array $arguments not used for getCollnameCollection
+	 * @param string $name name of the function call; convention is collectionnameCollection
+	 * @param array $arguments not used for collectionnameCollection (forward compatability)
+	 * 
 	 * @return mixed if collection exists return instance of Mongodloid_Collection, else false
 	 */
 	public function __call($name, $arguments) {

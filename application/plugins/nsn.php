@@ -313,7 +313,8 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 						$retValue .= dechex(ord($data[$i]));
 					}
 				break;
-				
+			case 'reveresed_bcd_encode' :	
+					
 			case 'datetime':
 			case 'bcd_encode' :
 			case 'bcd_number' :
@@ -324,6 +325,9 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 					}
 					if($type == 'bcd_number') {
 						$retValue = intval($retValue,10);
+					}
+					if('reveresed_bcd_encode' == $type) {
+						$retValue = strrev($retValue);
 					}
 					break;	
 					

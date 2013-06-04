@@ -37,4 +37,8 @@ class Billrun_Subscriber_Rest extends Billrun_Subscriber {
 		return true;
 	}
 
+	public function isValid() {
+		return true;
+	}
+
 }

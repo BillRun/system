@@ -64,6 +64,13 @@ class Billrun_Factory {
 	protected static $subscriber = null;
 
 	/**
+	 * Tariff instance
+	 * 
+	 * @var Billrun Tariff
+	 */
+	protected static $tariff = null;
+
+	/**
 	 * method to retrieve the log instance
 	 * 
 	 * @param string [Optional] $message message to log
@@ -198,6 +205,20 @@ class Billrun_Factory {
 		}
 
 		return self::$subscriber;
+	}
+
+	/**
+	 * method to retrieve the tariff instance
+	 * 
+	 * @return Billrun_Subscriber
+	 */
+	static public function tariff() {
+		if (!self::$tariff) {
+			$tariffSettings = self::config()->getConfigValue('tariff', array());
+			self::$tariff = Billrun_Tariff::getInstance($tariffSettings);
+		}
+
+		return self::$tariff;
 	}
 
 }

@@ -33,7 +33,7 @@ class CliController extends Yaf_Controller_Abstract {
 	protected function setOptions() {
 		try {
 			$input = array(
-				'r|R|receive' => 'Recieve files and process them into database',
+				'r|R|receive' => 'Receive files and process them into database',
 				'p|P|process' => 'Process files into database',
 				'c|C|calc|calculate' => 'Calculate lines in database',
 				'a|A|aggregate' => 'Aggregate lines for billrun',

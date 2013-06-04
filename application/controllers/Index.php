@@ -15,7 +15,6 @@
 class IndexController extends Yaf_Controller_Abstract {
 
 	public function indexAction() {
-
 		$this->getView()->title = "BillRun | The best open source billing system";
 		$this->getView()->content = "Open Source Last Forever!";
 		$this->getView()->favicon = Billrun_Factory::config()->getConfigValue('favicon');

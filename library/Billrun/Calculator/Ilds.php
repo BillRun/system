@@ -12,7 +12,7 @@
  * @package  calculator
  * @since    0.5
  */
-class Billrun_Calculator_Ilds extends Billrun_Calculator {
+class Billrun_Calculator_Ilds extends Billrun_Calculator_Base_Rate {
 
 	/**
 	 * the type of the object
@@ -21,6 +21,29 @@ class Billrun_Calculator_Ilds extends Billrun_Calculator {
 	 */
 	static protected $type = "ilds";
 	
+	/**
+	 * load the data to run the calculator for
+	 * 
+	 * @param boolean $initData reset the data in the calculator before loading
+	 * 
+	 */
+	public function load($initData = true) {
+		
+		if ($initData) {
+			$this->data = array();
+		}
+
+		$resource = $this->getLines();
+		
+		foreach ($resource as $entity) {
+			$this->data[] = $entity;
+		}
+
+		Billrun_Factory::log()->log("entities loaded: " . count($this->data), Zend_Log::INFO);
+
+		Billrun_Factory::dispatcher()->trigger('afterCalculatorLoadData', array('calculator' => $this));
+	}
+
 	/**
 	 * method to receive the lines the calculator should take care
 	 * 

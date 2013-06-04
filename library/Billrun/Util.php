@@ -40,16 +40,18 @@ class Billrun_Util {
 	
 	public static function joinSubArraysOnKey($arrays, $depth = 1, $key = false) {
 
-		if($depth == 0 || !is_array($arrays)) {return $arrays;}
-	//	print_r($arrays);
-		$retArr = array();		
-		foreach($arrays as $subKey => $subArray) {
-			if($key) {
-					$retArr[$subKey] = array( $key => Billrun_Util::joinSubArraysOnKey($subArray, $depth-1, $subKey));
-				} else {
-				$swappedArr = Billrun_Util::joinSubArraysOnKey($subArray, $depth-1, $subKey);
-				if(is_array($swappedArr)) {
-					$retArr = array_merge_recursive($retArr,$swappedArr);
+		if ($depth == 0 || !is_array($arrays)) {
+			return $arrays;
+		}
+		//	print_r($arrays);
+		$retArr = array();
+		foreach ($arrays as $subKey => $subArray) {
+			if ($key) {
+				$retArr[$subKey] = array($key => Billrun_Util::joinSubArraysOnKey($subArray, $depth - 1, $subKey));
+			} else {
+				$swappedArr = Billrun_Util::joinSubArraysOnKey($subArray, $depth - 1, $subKey);
+				if (is_array($swappedArr)) {
+					$retArr = array_merge_recursive($retArr, $swappedArr);
 				} else {
 					$retArr[$subKey] = $swappedArr;
 				}
@@ -83,9 +85,9 @@ class Billrun_Util {
 	 * @param $resIndex (optional) the index to get , of the returned regex results.
 	 * @return the first regex group  that match ed or false if there was no match
 	 */
-	public static function regexFirstValue( $pattern, $subject, $resIndex = 1 ) {
+	public static function regexFirstValue($pattern, $subject, $resIndex = 1) {
 		$matches = array();
-		if( !preg_match(($pattern ? $pattern : "//"), $subject, $matches) ) {
+		if (!preg_match(($pattern ? $pattern : "//"), $subject, $matches)) {
 			return FALSE;
 		}
 		return (isset($matches[$resIndex])) ? $matches[$resIndex] : FALSE;
@@ -109,6 +111,49 @@ class Billrun_Util {
 		$date_formatted = str_replace(' ', 'T', date(Billrun_Base::base_dateformat, strtotime($datetime))) . $tz_offset;
 		$datetime = strtotime($date_formatted);
 		return $datetime;
+	}
+
+	public static function startsWith($haystack, $needle) {
+		return !strncmp($haystack, $needle, strlen($needle));
+	}
+	
+	/**
+	 * method to receive next billrun key
+	 * 
+	 * @param string $datetime the anchor datetime. can be all input types of strtotime function
+	 * @param int $dayofmonth the day of the month require to get; if omitted return config value
+	 * @return string date string of format YYYYmm
+	 */
+	public static function getNextChargeKey($datetime, $dayofmonth = null) {
+		if (!$dayofmonth) {
+			$dayofmonth = Billrun_Factory::config()->getConfigValue('billrun.charging_day', 25);
+		}
+		$month = date("m", $datetime);
+		$format = "Y" . $month;
+		if (date("d", $datetime) < $dayofmonth) {
+			$key = date($format);
+		} else {
+			$key = date($format, strtotime('+1 month'));
+		}
+		return $key;
+	}
+
+	/**
+	 * convert corrency.  
+	 * (this  should  be change to somthing more dynamic)
+	 * @param type $value the value to convert.
+	 * @param type $from the currency to conver from.
+	 * @param type $to the currency to convert to.
+	 * @return float the converted value.
+	 */
+	public static function convertCurrency($value, $from, $to) {
+		$conversion = array(
+			'ILS' => 1,
+			'EUR' => 4.78,
+			'USD' => 3.68,
+		);
+		
+		return $value * ($conversion[$from]/$conversion[$to]);
 	}
 
 }

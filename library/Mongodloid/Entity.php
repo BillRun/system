@@ -1,32 +1,32 @@
 <?php
 
 /**
-Copyright (c) 2009, Valentin Golev
-All rights reserved.
+  Copyright (c) 2009, Valentin Golev
+  All rights reserved.
 
-Redistribution and use in source and binary forms, with or without modification,
-are permitted provided that the following conditions are met:
+  Redistribution and use in source and binary forms, with or without modification,
+  are permitted provided that the following conditions are met:
 
-    * Redistributions of source code must retain the above copyright notice,
-      this list of conditions and the following disclaimer.
+ * Redistributions of source code must retain the above copyright notice,
+  this list of conditions and the following disclaimer.
 
-    * Redistributions in binary form must reproduce the above copyright notice,
-      this list of conditions and the following disclaimer in the documentation
-      and/or other materials provided with the distribution.
+ * Redistributions in binary form must reproduce the above copyright notice,
+  this list of conditions and the following disclaimer in the documentation
+  and/or other materials provided with the distribution.
 
-    * The names of contributors may not be used to endorse or promote products
-      derived from this software without specific prior written permission.
+ * The names of contributors may not be used to endorse or promote products
+  derived from this software without specific prior written permission.
 
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
-ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+  DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+  ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+  ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 class Mongodloid_Entity implements ArrayAccess {
 
@@ -185,33 +185,45 @@ class Mongodloid_Entity implements ArrayAccess {
 		return $this;
 	}
 
-	public function get($key) {
-		if (!$key)
+	public function get() {
+		if (func_num_args()==0) {
 			return $this->_values;
+		}
+		$key = func_get_arg(0);
+			
 		if ($key == '_id')
 			return $this->getId();
 
 		$key = preg_replace('@\\[([^\\]]+)\\]@', '.$1', $key);
 		$result = $this->_values;
 
+		// if this is chained key, let's pull it
 		if (strpos($key, '.') !== FALSE) {
 			do {
 				list($current, $key) = explode('.', $key, 2);
-				$result = $result[$current];
-			} while ($key !== null);
-		} else {
-			//lazy load MongoId Ref objects
-			if ($this->_values[$key] instanceof MongoId && $this->collection()) {
-				$this->_values[$key] = $this->collection()->findOne($this->_values[$key]['$id']);
-			}
-			$result = $this->_values[$key];
+				if (isset($result[$current])) {
+					$result = $result[$current];
+				} else {
+					// if key is not in the values, let's return null -> not found key
+					return null;
+				}
+			} while (strpos($key, '.') !== FALSE);
 		}
 
-		return $result;
+		if (!isset($result[$key])) {
+			return null;
+		}
+
+		//lazy load MongoId Ref objects
+		if ($result[$key] instanceof MongoId && $this->collection()) {
+			$result[$key] = $this->collection()->findOne($result[$key]['$id']);
+		}
+
+		return $result[$key];
 	}
 
 	public function getId() {
-		if (!isset($this->_values['_id'])  ||  !$this->_values['_id'])
+		if (!isset($this->_values['_id']) || !$this->_values['_id'])
 			return false;
 
 		return new Mongodloid_Id($this->_values['_id']);

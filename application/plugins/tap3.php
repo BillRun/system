@@ -138,6 +138,11 @@ class tap3Plugin  extends Billrun_Plugin_BillrunPluginBase
 				 'raw_data'  => function($data)	{
 						return $this->utf8encodeArr($data);
 					},
+					'bcd_number' => function($fieldData) {
+						$ret = $this->parsingMethods['bcd_encode']($fieldData);
+						
+						return preg_replace('/15$/','',$ret);
+					},
 				);
 					
 		$this->parsingMethods  = array_merge( $this->parsingMethods, $newParsingMethods );

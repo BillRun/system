@@ -37,4 +37,8 @@ class Billrun_Subscriber_Api extends Billrun_Subscriber {
 		return true;
 	}
 
+	public function isValid() {
+		return true;
+	}
+
 }

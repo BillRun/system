@@ -310,12 +310,12 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 	 */
 	protected function addAlertData(&$event) {
 		// @todo: WTF?!?! Are you real with this condition???
-		$type = isset($event['moc_israel']) ? 'moc_israel' :
-			(isset($event['moc_nonisrael']) ? 'moc_nonisrael' :
-				(isset($event['mtc_all']) ? 'mtc_all' :
-					(isset($event['sms_hourly']) ? 'sms_hourly' :
-						(isset($event['sms_out']) ? 'sms_out' :
-							'moc_nonisrael_hourly'))));
+		$type = isset($event['moc_israel']) ?	'moc_israel' :
+				(isset($event['moc_nonisrael'])?'moc_nonisrael' :
+				(isset($event['mtc_all'])	?	'mtc_all' :
+				(isset($event['sms_hourly'])?	'sms_hourly' :
+				(isset($event['sms_out'])	?	'sms_out' :
+												'moc_nonisrael_hourly'))));
 
 		$event['units'] = 'SEC';
 		$event['value'] = $event[$type];
