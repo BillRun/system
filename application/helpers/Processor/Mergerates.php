@@ -48,10 +48,10 @@ class Processor_Mergerates extends Billrun_Processor_Base_Separator {
 			return false;
 		}
 
-		while ($line = $this->getLine()) {			
+		while ($line = $this->getLine()) {
 			$this->parseData($line);
 		}
-		
+
 		$this->addZeroRate();
 
 		return true;
@@ -123,7 +123,7 @@ class Processor_Mergerates extends Billrun_Processor_Base_Separator {
 			$entity = $rates->query(array('key' => ( $row['zoneOrItem'] != '' ? $row['zoneOrItem'] : 'ALL_DESTINATION')))->cursor()->current();
 			// todo check if rate already exists, if so, close row and open new row
 			if ($entity->getId()) {
-				$this->addZonesByRates($row,$entity);
+				$this->addZonesByRates($row, $entity);
 				$entity->collection($rates);
 				$value = array(
 					'unit' => $unit,
@@ -157,24 +157,19 @@ class Processor_Mergerates extends Billrun_Processor_Base_Separator {
 		return true;
 	}
 
-	protected function addZonesByRates( &$row, &$entity ) {
+	protected function addZonesByRates(&$row, &$entity) {
 		$rates = Billrun_Factory::db()->ratesCollection();
 		//foreach ($this->data['data'] as &$row) {
-			switch ($row['zoneOrItem']) {
-				
-				case "ROAM_ALL_DEST":
-				case "\$DEFAULT":
-				case "":
-				case "ALL_DESTINATION":
-					if ($row['zoneOrItem']=='') {
-						Billrun_Factory::log('Found empty zone name. Treating as \'ROAM_ALL_DEST\' zone.', Zend_Log::ALERT);
-					}
-					if(Billrun_Factory::db()->ratesCollection()->query(array('key' => $row['accessTypeName']))->cursor()->current()->getId()) {
-						return;
-					}
-					$row['zoneOrItem'] = $row['accessTypeName'];
-					$entity['key'] = $row['zoneOrItem'];
-					unset($entity['_id']);
+		if ($row['accessTypeName'] != 'Regular' && $row['accessTypeName'] != 'Callback') {
+			if ($row['zoneOrItem'] == '') {
+				Billrun_Factory::log('Found empty zone name. Treating as \'ROAM_ALL_DEST\' zone.', Zend_Log::ALERT);
+			}
+			if (Billrun_Factory::db()->ratesCollection()->query(array('key' => $row['accessTypeName']))->cursor()->current()->getId()) {
+				return;
+			}
+			$row['zoneOrItem'] = $row['accessTypeName'];
+			$entity['key'] = $row['zoneOrItem'];
+			unset($entity['_id']);
 //					$new_zone = array();
 //					$new_zone['from'] = new MongoDate(strtotime('2013-01-01T00:00:00+00:00'));
 //					$new_zone['to'] = new MongoDate(strtotime('+100 years'));
@@ -185,11 +180,8 @@ class Processor_Mergerates extends Billrun_Processor_Base_Separator {
 //						continue;
 //					}
 //					
-					//$entity->save($rates, true);
-					break;
-				default:
-				return ;
-			}
+			//$entity->save($rates, true);
+		}
 		//}
 	}
 
