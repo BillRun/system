@@ -23,12 +23,24 @@ abstract class Billrun_Calculator_Base_Rate extends Billrun_Calculator {
 	static protected $type = 'rate';
 
 	/**
-	 * the rating field to update in the CDR line.
-	 *
+	 * The rating field to update in the CDR line.
 	 * @var string
 	 */
 	protected $ratingField = 'customer_rate';
 
+	/**
+	 * The mapping of the fileds in the lines to the 
+	 * @var array
+	 */
+	protected $rateMapping = array();
+	
+	public function __construct($options = array()) {
+		parent::__construct($options);
+		if(isset($options['calculator']['rate_mapping'])) {
+			$this->rateMapping = $options['calculator']['rate_mapping'];
+			//Billrun_Factory::log()->log("receive options : ".print_r($this->rateMapping,1),  Zend_Log::DEBUG);
+		}
+	}
 	
 	/**
 	 * identify if the row belong to calculator
@@ -45,7 +57,7 @@ abstract class Billrun_Calculator_Base_Rate extends Billrun_Calculator {
 	public function calc() {		
 		Billrun_Factory::dispatcher()->trigger('beforeRateData', array('data' => $this->data));
 		foreach ($this->lines as $item) {
-			//Billrun_Factory::log()->log("Calcuating row : ".print_r($item,1),  Zend_Log::DEBUG);			
+			//Billrun_Factory::log()->log("Calcuating row : ".print_r($item,1),  Zend_Log::DEBUG);
 			Billrun_Factory::dispatcher()->trigger('beforeRateDataRow', array('data' => &$item));
 			$this->updateRow($item);
 			$this->data[] = $item;
@@ -65,4 +77,5 @@ abstract class Billrun_Calculator_Base_Rate extends Billrun_Calculator {
 		}
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteData', array('data' => $this->data));
 	}
+	
 }
