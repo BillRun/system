@@ -28,7 +28,7 @@ class Billrun_Calculator_Sms extends Billrun_Calculator_Base_Rate {
 												array('type' => array('$in' => array('smpp')) , 'record_type' => '1' , "cause_of_terminition" => "100", 'calling_number' =>array('$in' => array('000000000002020','000000000006060','000000000007070' ) ) ) ,
 												array('type' => array('$in' => array('smsc')),'record_type' => '1' ,  'calling_msc' =>array('$ne' => '000000000000000') , "cause_of_terminition" => "100") ,
 												array('type' => array('$in' => array('mmsc')) , 'action' => array('$in' => array('S') ) ,'final_state' => 'S', 'mm_source_addr'=> array('$regex'=> '^\+\d+\/TYPE\s*=\s*.*golantelecom')),
-											),-
+											),
 							$this->ratingField => array('$exists'=> false)) )
 			->cursor()->limit($this->limit);
 
@@ -42,14 +42,12 @@ class Billrun_Calculator_Sms extends Billrun_Calculator_Base_Rate {
 		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteRow', array('row' => $row));
 
 		$current = $row->getRawData();
-		$rate = $this->getLineRate($row);	
-		if($rate !== FALSE) {			
-			$added_values = array(
-				$this->ratingField => ($rate ? $rate['_id'] : FALSE),
-			);
-			$newData = array_merge($current, $added_values);
-			$row->setRawData($newData);
-		}
+		$rate = $this->getLineRate($row);			
+		$added_values = array(
+			$this->ratingField => ($rate ? $rate['_id'] : FALSE),
+		);
+		$newData = array_merge($current, $added_values);
+		$row->setRawData($newData);
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteRow', array('row' => $row));
 	}
 
