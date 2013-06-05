@@ -32,20 +32,24 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			return;
 		}
 		//@TODO  change this  be be configurable.
+		$pricingData = array();
 		switch ($row['type']) {
 			case 'smsc' :
 			case 'smpp' :
-				$row['price_customer'] = $this->priceLine(1, 'sms', $rate, $subscriber);
+				$pricingData = $this->getLinePricingData(1, 'sms', $rate, $subscriber);
 				break;
 
 			case 'nsn' :
-				$row['price_customer'] = $this->priceLine($row['duration'], 'call', $rate, $subscriber);
+				$pricingData = $this->getLinePricingData($row['duration'], 'call', $rate, $subscriber);
 				break;
 
 			case 'ggsn' :
-				$row['price_customer'] = $this->priceLine($row['fbc_downlink_volume'] + $row['fbc_uplink_volume'], 'data', $rate, $subscriber);
+				$pricingData = $this->getLinePricingData($row['fbc_downlink_volume'] + $row['fbc_uplink_volume'], 'data', $rate, $subscriber);
 				break;
 		}
+		
+		$row->setRawData(array_merge( $row->getRawData(), $pricingData ));
+		
 	}
 
 	/**
@@ -87,14 +91,14 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	}
 
 	/**
-	 * 
-	 * @param type $volume
-	 * @param type $lineType
-	 * @param type $rate
-	 * @param type $subr
+	 * Get pricing data for a given rate / subcriber.
+	 * @param type $volume The usage volume (seconds of call, count of SMS, bytes  of data)
+	 * @param type $lineType The type  of the usage (call/sms/data)
+	 * @param type $rate The rate of associated with the usage.
+	 * @param type $subr the  subscriber that generated the usage.
 	 * @return type
 	 */
-	protected function priceLine($volume, $lineType, $rate, $subr) {
+	protected function getLinePricingData($volume, $lineType, $rate, $subr) {
 		$typedRates = $rate['rates'][$lineType];
 		$volumeToPrice = $volume;
 		$accessPrice = isset($typedRates['access']) ? $typedRates['access'] : 0;
@@ -106,23 +110,27 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 
 			if ($volumeToPrice < 0) {
 				$volumeToPrice = 0;
+				//@TODO  check  if that actually the action we  want  once  all the usage is in the plan...
 				$accessPrice = 0;
+			}  else if($volumeToPrice > 0) {
+				$ret['over_plan']  = true;
 			}
+		} else {
+			$ret['out_plan'] = true;
 		}
 
 		$interval = $typedRates['rate']['interval'] ? $typedRates['rate']['interval'] : 1;
-		$price = $accessPrice + ( floatval((round($volumeToPrice / $interval) ) * $typedRates['rate']['price']) );
+		$ret['price_customer'] = $accessPrice + ( floatval((round($volumeToPrice / $interval) ) * $typedRates['rate']['price']) );
 
-		$this->updateSubscriberBalance($subr, array($lineType => $volume), $price);
-
-		return $price;
+		$this->updateSubscriberBalance($subr, array($lineType => $volume), $ret['price_customer']);
+		return $ret;
 	}
 
 	/**
-	 * 
-	 * @param type $sub
-	 * @param type $counters
-	 * @param type $charge
+	 * Update the subsciber balance for a given usage.
+	 * @param type $sub the subscriber. 
+	 * @param type $counters the  counters to update
+	 * @param type $charge the changre to add of  the usage.
 	 */
 	protected function updateSubscriberBalance($sub, $counters, $charge) {
 		$subRaw = $sub->getRawData();
