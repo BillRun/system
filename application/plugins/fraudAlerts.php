@@ -82,9 +82,9 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 			if ($ret === FALSE) {
 				//some connection failure - mark event as paused
 				$this->markEvent($event, FALSE);
-			} else if (isset($ret['success']) && $ret['success']) {
+			} else if (isset($ret->success) && $ret->success) {
 				$event['deposit_stamp'] = $event['stamps'][0]; // remember what event you sent to the remote server
-				$event['returned_value'] = $ret;
+				$event['returned_value'] = (array) $ret;
 				$this->markEvent($event);
 				$this->markEventLines($event);
 
