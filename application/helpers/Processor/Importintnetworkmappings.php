@@ -75,6 +75,7 @@ class Processor_Importintnetworkmappings extends Billrun_Processor_Base_Separato
 		$row['type']['incoming_call'] = $parsed_row['mnAccessTypeForInCall'];
 		$row['type']['data'] = $parsed_row['accessTypeForData'];
 		$row['type']['sms'] = $parsed_row['mnAccessTypeForSms'];		
+		$row['type']['incoming_sms'] = 'UNRATED';		
 		$row['comment'] = $parsed_row['mnComment'];
 
 		Billrun_Factory::dispatcher()->trigger('afterDataParsing', array(&$row, $this));

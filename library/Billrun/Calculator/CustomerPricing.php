@@ -16,35 +16,73 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		$lines = Billrun_Factory::db()->linesCollection();
 
 		return $lines->query()
-				->in('type', array('ggsn', 'smpp', 'smsc', 'nsn'))
-				->exists('customer_rate')->exists('subscriber_id')->notExists('price_customer')->cursor()->limit($this->limit);
+				->in('type', array('ggsn', 'smpp', 'smsc', 'nsn', 'tap3'))
+				->exists('customer_rate')->notEq('customer_rate', FALSE)->exists('subscriber_id')->notExists('price_customer')->cursor()->limit($this->limit);
 	}
 
 	protected function updateRow($row) {
 		$rate = Billrun_Factory::db()->ratesCollection()->findOne(new Mongodloid_Id($row['customer_rate']));
 		$subscriber = Billrun_Model_Subscriber::get($row['subscriber_id'], Billrun_Util::getNextChargeKey($row['unified_record_time']->sec));
-
+		if ($row['subscriber_id']=='103008') {
+			echo "103008";
+		}
 		if (!isset($subscriber) || !$subscriber) {
-			Billrun_Factory::log()->log("couldn't  get subsciber for : " . print_r(array(
+			Billrun_Factory::log()->log("couldn't  get subscriber for : " . print_r(array(
 					'subscriber_id' => $row['subscriber_id'],
 					'billrun_month' => Billrun_Util::getNextChargeKey($row['unified_record_time']->sec)
 					), 1), Zend_Log::DEBUG);
 			return;
 		}
 		//@TODO  change this  be be configurable.
+
+		$volume = null;
+		$usage_type_class_prefix = '';
+
 		switch ($row['type']) {
 			case 'smsc' :
 			case 'smpp' :
-				$row['price_customer'] = $this->priceLine(1, 'sms', $rate, $subscriber);
+				$usage_type = 'sms';
+				$volume = 1;
 				break;
 
 			case 'nsn' :
-				$row['price_customer'] = $this->priceLine($row['duration'], 'call', $rate, $subscriber);
+				$usage_type = 'call';
+				$volume = $row['duration'];
 				break;
 
 			case 'ggsn' :
-				$row['price_customer'] = $this->priceLine($row['fbc_downlink_volume'] + $row['fbc_uplink_volume'], 'data', $rate, $subscriber);
+				$usage_type = 'data';
+				$volume = $row['fbc_downlink_volume'] + $row['fbc_uplink_volume'];
 				break;
+
+			case 'tap3' :
+				if (isset($row['usage_type'])) {
+					$usage_type = $row['usage_type'];
+					$usage_type_class_prefix = "inter_roam_";
+					switch ($usage_type) {
+						case 'sms' :
+						case 'incoming_sms' :
+							$volume = 1;
+							break;
+
+						case 'call' :
+						case 'incoming_call' :
+							$volume = $row->get('basicCallInformation.TotalCallEventDuration');
+							break;
+
+						case 'data' :
+							$volume = $row->get('GprsServiceUsed.DataVolumeIncoming') + $row->get('GprsServiceUsed.DataVolumeOutgoing');
+							break;
+					}
+				}
+				break;
+		}
+
+		if (isset($volume)) {
+			$row['price_customer'] = $this->priceLine($volume, $usage_type, $rate, $subscriber);
+			$this->updateSubscriberBalance($subscriber, array($usage_type_class_prefix . $usage_type => $volume), $row['price_customer']);
+		} else {
+			//@TODO error?
 		}
 	}
 
@@ -94,15 +132,12 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @param type $subr
 	 * @return type
 	 */
-	protected function priceLine($volume, $lineType, $rate, $subr) {
-		$typedRates = $rate['rates'][$lineType];
-		$volumeToPrice = $volume;
+	protected function priceLine($volumeToPrice, $usage_type, $rate, $subr) {
+		$typedRates = $rate['rates'][$usage_type];
 		$accessPrice = isset($typedRates['access']) ? $typedRates['access'] : 0;
 
-		if (Billrun_Model_Plan::isRateInSubPlan($rate, $subr, $lineType)) {
-			$discount = Billrun_Model_Plan::usageLeftInPlan($subr, $lineType);
-			//Billrun_Factory::log()->log("Passed the PLan  limit: ".print_r($volumeToPrice,1),  Zend_Log::DEBUG);
-			$volumeToPrice = $volumeToPrice - $discount;
+		if (Billrun_Model_Plan::isRateInSubPlan($rate, $subr, $usage_type)) {
+			$volumeToPrice = $volumeToPrice - Billrun_Model_Plan::usageLeftInPlan($subr, $usage_type);
 
 			if ($volumeToPrice < 0) {
 				$volumeToPrice = 0;
@@ -111,9 +146,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		}
 
 		$interval = $typedRates['rate']['interval'] ? $typedRates['rate']['interval'] : 1;
-		$price = $accessPrice + ( floatval((round($volumeToPrice / $interval) ) * $typedRates['rate']['price']) );
-
-		$this->updateSubscriberBalance($subr, array($lineType => $volume), $price);
+		$price = $accessPrice + ( floatval((ceil($volumeToPrice / $interval) ) * $typedRates['rate']['price']) );
 
 		return $price;
 	}
