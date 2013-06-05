@@ -68,14 +68,15 @@ class Billrun_Model_Subscriber {
 			'balance' => array(
 				'usage_counters' => array(
 					'call' => 0,
+					'incoming_call' => 0,
 					'sms' => 0,
 					'data' => 0,
-					'inter_call' => 0,
-					'inter_sms' => 0,
+					'inter_roam_incoming_call' => 0,
 					'inter_roam_call' => 0,
 					'inter_roam_callback' => 0,
 					'inter_roam_sms' => 0,
 					'inter_roam_data' => 0,
+					'inter_roam_incoming_sms' => 0,
 				),
 				'current_charge' => 0,
 			),
