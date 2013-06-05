@@ -62,29 +62,8 @@ class Billrun_Calculator_Tap3 extends Billrun_Calculator_Base_Rate {
 		if (!is_null($serving_network)) {
 			$rates = Billrun_Factory::db()->ratesCollection();
 
-			$record_type = $row->get('record_type');
-			$tele_service_code = $row->get('BasicServiceUsedList.BasicServiceUsed.BasicService.BasicServiceCode.TeleServiceCode');
-			
-			if (is_null($tele_service_code)) {
-				if ($record_type == 'e') {
-					$mapping_key = 'data';
-				}
-			} else {
-				if ($tele_service_code == '11') {
-					if ($record_type == '9') {
-						$mapping_key = 'call'; // outgoing call
-					} else if ($record_type == 'a') {
-						$mapping_key = 'incoming_call'; // incoming / callback
-					}
-				} else if ($tele_service_code == '22') {
-					if ($record_type == '9') {
-						$mapping_key = 'sms';
-					}
-				}
-			}
-
-			if (isset($mapping_key)) {
-				$rate_key = $int_network_mappings->query(array('PLMN' => $serving_network))->cursor()->current()->get('type.' . $mapping_key);
+			if (isset($row['usage_type'])) {
+				$rate_key = $int_network_mappings->query(array('PLMN' => $serving_network))->cursor()->current()->get('type.' . $row['usage_type']);
 				if (!is_null($rate_key)) {
 					$rate = $rates->query(array('key' => $rate_key))->cursor()->current();
 					return $rate->get('_id');
