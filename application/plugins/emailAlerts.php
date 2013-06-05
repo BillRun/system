@@ -296,6 +296,7 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase  {
 	public function getFileSequenceData($filename, $type) {
 		return array(
 			'seq' => Billrun_Util::regexFirstValue(Billrun_Factory::config()->getConfigValue($type . ".sequence_regex.seq", "/(\d+)/"), $filename),
+			'zone' =>Billrun_Util::regexFirstValue(Billrun_Factory::config()->getConfigValue($type .".sequence_regex.zone","//"), $filename),			
 			'date' => Billrun_Util::regexFirstValue(Billrun_Factory::config()->getConfigValue($type . ".sequence_regex.date", "/(20\d{6})/"), $filename),
 			'time' => Billrun_Util::regexFirstValue(Billrun_Factory::config()->getConfigValue($type . ".sequence_regex.time", "/\D(\d{4,6})\D/"), $filename),
 		);

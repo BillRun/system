@@ -85,6 +85,7 @@ trait Billrun_Traits_FileSequenceChecking {
 	public function getFileSequenceData($filename) {
 		return array(
 				'seq' => Billrun_Util::regexFirstValue(Billrun_Factory::config()->getConfigValue($this->getName().".sequence_regex.seq","/(\d+)/"), $filename),
+				'zone' =>Billrun_Util::regexFirstValue(Billrun_Factory::config()->getConfigValue($this->getName().".sequence_regex.zone","//"), $filename),
 				'date' =>Billrun_Util::regexFirstValue(Billrun_Factory::config()->getConfigValue($this->getName().".sequence_regex.date","/(20\d{6})/"), $filename),
 				'time' => Billrun_Util::regexFirstValue(Billrun_Factory::config()->getConfigValue($this->getName().".sequence_regex.time","/\D(\d{4,6})\D/"), $filename)	,
 			);

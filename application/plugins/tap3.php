@@ -103,7 +103,7 @@ class tap3Plugin  extends Billrun_Plugin_BillrunPluginBase
 				$this->surfaceCDRFields($cdrLine);
 			}
 		} else {
-			Billrun_Factory::log()->log("Unidetifiyed type :  $type",Zend_Log::DEBUG);
+			//Billrun_Factory::log()->log("Unidetifiyed type :  $type",Zend_Log::DEBUG);
 		}
 		
 		return $cdrLine;
