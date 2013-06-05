@@ -180,6 +180,7 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$ret = json_decode($response);
 			
 			if (is_null($ret)) {
+				Billrun_Log::getInstance()->log("fraudAlertsPlugin::notifyRemoteServer response is empty, null or not json string: ", Zend_Log::ERR);
 				return FALSE;
 			}
 
