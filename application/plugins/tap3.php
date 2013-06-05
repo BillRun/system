@@ -79,8 +79,10 @@ class tap3Plugin  extends Billrun_Plugin_BillrunPluginBase
 	 */	
 	public function parseHeader($type, $data, \Billrun_Parser &$parser) {
 		if($this->getName() != $type) { return FALSE; }
-		$header = $this->parseASNDataRecur( $this->nsnConfig['header'], Asn_Base::getDataArray( $data ,true ), $this->nsnConfig['fields'] );	
-	
+		//Billrun_Factory::log()->log("Header datat : ". print_r(Asn_Base::getDataArray( $data ,true ),1) ,  Zend_Log::DEBUG);
+		$header = $this->parseASNDataRecur( $this->nsnConfig['header'], Asn_Base::getDataArray( $data ,true, true ), $this->nsnConfig['fields'] );	
+		$this->currentFileHeader = $header;
+		
 		return $header;
 	}
 
@@ -98,12 +100,11 @@ class tap3Plugin  extends Billrun_Plugin_BillrunPluginBase
 			if($cdrLine) {
 				$cdrLine['record_type'] = $type;
 				//@TODO add unifiom field translation. ('record_opening_time',etc...)
-				if(isset($cdrLine['basicCallInformation']['CallEventStartTimeStamp']['localTimeStamp'])) {
-					$cdrLine['unified_record_time'] = new MongoDate(Billrun_Util::dateTimeConvertShortToIso($cdrLine['basicCallInformation']['CallEventStartTimeStamp']['localTimeStamp'], 
-																											$cdrLine['basicCallInformation']['CallEventStartTimeStamp']['TimeOffset']));
-				}
+				$this->surfaceCDRFields($cdrLine);
 			}
-		} 
+		} else {
+			Billrun_Factory::log()->log("Unidetifiyed type :  $type",Zend_Log::DEBUG);
+		}
 		
 		return $cdrLine;
 	}
@@ -129,6 +130,32 @@ class tap3Plugin  extends Billrun_Plugin_BillrunPluginBase
 		
 		return $trailer;
 	}
+	/**
+	 * Pull required fields from the CDR nested tree to the surface.
+	 * @param type $cdrLine the line to monipulate.
+	 */
+	protected function surfaceCDRFields(&$cdrLine) {
+		if(isset($cdrLine['basicCallInformation']['CallEventStartTimeStamp']['localTimeStamp'])) {
+					$offset = $this->currentFileHeader['networkInfo']['UtcTimeOffsetInfoList'][$cdrLine['basicCallInformation']['CallEventStartTimeStamp']['TimeOffsetCode']];
+					$cdrLine['unified_record_time'] = new MongoDate(Billrun_Util::dateTimeConvertShortToIso($cdrLine['basicCallInformation']['CallEventStartTimeStamp']['localTimeStamp'],$offset));
+				}
+				
+				if(isset($cdrLine['basicCallInformation']['chargeableSubscriber']['simChargeableSubscriber']['imsi'])) {
+					$cdrLine['imsi'] = $cdrLine['basicCallInformation']['chargeableSubscriber']['simChargeableSubscriber']['imsi'];
+				}
+				
+				if(isset($cdrLine['basicCallInformation']['GprsChargeableSubscriber']['chargeableSubscriber']['simChargeableSubscriber']['imsi'])) {
+					$cdrLine['imsi'] = $cdrLine['basicCallInformation']['GprsChargeableSubscriber']['chargeableSubscriber']['simChargeableSubscriber']['imsi'];
+				}
+				
+				if(isset($cdrLine['basicCallInformation']['chargeableSubscriber']['simChargeableSubscriber']['msisdn'])) {
+					$cdrLine['calling_number'] = $cdrLine['basicCallInformation']['chargeableSubscriber']['simChargeableSubscriber']['msisdn'];
+				}
+				
+				if(isset($cdrLine['basicCallInformation']['GprsChargeableSubscriber']['chargeableSubscriber']['simChargeableSubscriber']['msisdn'])) {
+					$cdrLine['calling_number'] = $cdrLine['basicCallInformation']['GprsChargeableSubscriber']['chargeableSubscriber']['simChargeableSubscriber']['msisdn'];
+				}
+	}
 	
 	/**
 	 * add GGSN specific parsing methods.
@@ -143,12 +170,27 @@ class tap3Plugin  extends Billrun_Plugin_BillrunPluginBase
 						
 						return preg_replace('/15$/','',$ret);
 					},
+				'time_offset_list'  => function($data)	{
+						return $this->parseTimeOffsetList($data);
+					},		
 				);
 					
 		$this->parsingMethods  = array_merge( $this->parsingMethods, $newParsingMethods );
 	}
+	/**
+	 * Parse time offset list that  conatin the time offset  refecenced in each line  cal start time
+	 * @param type $data the  time offset list
+	 * @return rray  containing the time offset list  keyed by its offset code.
+	 */
+	protected function parseTimeOffsetList($data) {
+		$timeOffsets= array();
+		foreach( $data['e9'] as $value) {
+			$key = $this->parseField('number',$value['e8']);			
+			$timeOffsets[$key] = $value['e7'];
+		}
+		return $timeOffsets;
+	}
 
-	
 	/////////////////////////////////////////// Processor /////////////////////////////////////////
 	
 	/**

@@ -41,13 +41,26 @@ class Asn_Base {
 	 * @param @rootObj the ASN object to get the data from.
 	 * @return Array containing the object  and it`s nested childrens data.
 	 */
-	public static function getDataArray($rootObj, $keepTypes = false) {
+	public static function getDataArray($rootObj, $keepTypes = false, $mergeArrays = false) {
 		$retArr = array();
 		foreach ($rootObj->parsedData as $val) {
 			if($keepTypes) {
-				$retArr[ (($val instanceof Asn_Object ) ? $val->getType() : $rootObj->getType()) ] = ($val instanceof Asn_Object && $val->isConstructed()) ? self::getDataArray($val, $keepTypes) : $val->getData();				
+				$typeKey = (($val instanceof Asn_Object ) ? $val->getType() : $rootObj->getType()) ;
+				$value =  ($val instanceof Asn_Object && $val->isConstructed()) ? self::getDataArray($val, $keepTypes,$mergeArrays) : $val->getData();
+				if($mergeArrays && isset($retArr[ $typeKey ]) ) {	
+					if( is_array( $retArr[ $typeKey ] )) {
+						if(!isset($retArr[ $typeKey ][0])) {
+							$retArr[ $typeKey ] = array($retArr[ $typeKey ]);
+						}
+						array_push($retArr[ $typeKey ],$value);
+					} else {
+						$retArr[ $typeKey ] =array($retArr[ $typeKey ], $value);
+					}
+				} else {
+					$retArr[ $typeKey ] = $value;				
+				}
 			} else {
-				$retArr[] = ($val instanceof Asn_Object && $val->isConstructed()) ? self::getDataArray($val, $keepTypes) : $val->getData();
+				$retArr[] = ($val instanceof Asn_Object && $val->isConstructed()) ? self::getDataArray($val, $keepTypes,$mergeArrays) : $val->getData();
 			}
 		}
 		return $retArr;
