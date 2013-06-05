@@ -15,28 +15,25 @@
 class Billrun_Calculator_Customer extends Billrun_Calculator_Base_Rate {
 
 	/**
-	 * the item we are running on
-	 * 
-	 * @var Mongo Entity
-	 */
-	protected $item;
-
-	/**
-	 *
-	 * @var type 
-	 */
-	protected $subscriberNumber;
-
-	/**
 	 * the type of the object
 	 *
 	 * @var string
 	 */
 	static protected $type = 'customer';
+	
+	/**
+	 * Array for translating CDR line values to  customer identifing values (finding out thier MSISDN/IMSI numbers)
+	 * @var array
+	 */
+	protected $translateCustomerIdentToAPI = array();
 
 	public function __construct($options = array()) {
 		parent::__construct($options);
 
+		if(isset($options['calculator']['customer_identification_translation'])) {
+			$this->translateCustomerIdentToAPI = $options['calculator']['customer_identification_translation'];
+		}
+		
 		$this->subscriber = Billrun_Factory::subscriber();
 		$this->subscribers = Billrun_Factory::db()->subscribersCollection();
 	}
@@ -80,22 +77,13 @@ class Billrun_Calculator_Customer extends Billrun_Calculator_Base_Rate {
 	protected function loadSubscriberForLine($row) {
 
 		// @TODO: move the iteration code snippet into function; this is the reason we load the item to class property
-		// @TODO: load it by config
-		// 
-		// translate the customer identifing fields so they can used by the CRM API.
-		$translateCustomerIdentToAPI = array(			
-			'msisdn' => array('toKey' => 'NDC_SN', 'clearRegex' => '/^0*\+{0,1}972/'),
-			'calling_number' => array('toKey' => 'NDC_SN', 'clearRegex' => '/^0*\+{0,1}972/'),			
-			'imsi' => array('toKey' => 'IMSI', 'clearRegex' => '//'),			
-			'basicCallInformation.chargeableSubscriber.simChargeableSubscriber.imsi' => array('toKey' => 'IMSI', 'clearRegex' => '//'),
-			'basicCallInformation.GprsChargeableSubscriber.chargeableSubscriber.simChargeableSubscriber.imsi' => array('toKey' => 'IMSI', 'clearRegex' => '//'),
-		);
+		
 		$params = array();
-		foreach ($translateCustomerIdentToAPI as $key => $toKey) {		
+		foreach ($this->translateCustomerIdentToAPI as $key => $toKey) {		
 
 			if ( $row->get($key) ) {
 				$params[$toKey['toKey']] = preg_replace($toKey['clearRegex'], '', $row->get($key) );
-				$this->subscriberNumber = $params[$toKey['toKey']];
+				//$this->subscriberNumber = $params[$toKey['toKey']];
 				Billrun_Factory::log("found indetification from {$key} to : " . $toKey['toKey'] . ' with value :' . $params[$toKey['toKey']], Zend_Log::DEBUG);
 				break;
 			}
@@ -113,7 +101,6 @@ class Billrun_Calculator_Customer extends Billrun_Calculator_Base_Rate {
 
 	/**
 	 * Create a subscriber  entery if none exists. 
-	 * (TODO   may move this to the Billrun_Subscriber class?)
 	 * @param type $subscriber
 	 */
 	protected function createSubscriberIfMissing($subscriber, $billrun_key) {
