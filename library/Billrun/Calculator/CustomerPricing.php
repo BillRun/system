@@ -154,7 +154,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		}
 
 		$interval = $typedRates['rate']['interval'] ? $typedRates['rate']['interval'] : 1;
-		$ret['price_customer'] = $accessPrice + ( floatval((round($volumeToPrice / $interval) ) * $typedRates['rate']['price']) );
+		$ret['price_customer'] = $accessPrice + ( floatval((ceil($volumeToPrice / $interval) ) * $typedRates['rate']['price']) );
 
 		return $ret;
 	}
