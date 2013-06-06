@@ -79,7 +79,7 @@ class tap3Plugin  extends Billrun_Plugin_BillrunPluginBase
 	 */	
 	public function parseHeader($type, $data, \Billrun_Parser &$parser) {
 		if($this->getName() != $type) { return FALSE; }
-		//Billrun_Factory::log()->log("Header datat : ". print_r(Asn_Base::getDataArray( $data ,true ),1) ,  Zend_Log::DEBUG);
+		//Billrun_Factory::log()->log("Header data : ". print_r(Asn_Base::getDataArray( $data ,true ),1) ,  Zend_Log::DEBUG);
 		$header = $this->parseASNDataRecur( $this->nsnConfig['header'], Asn_Base::getDataArray( $data ,true, true ), $this->nsnConfig['fields'] );	
 		$this->currentFileHeader = $header;
 		
@@ -96,7 +96,7 @@ class tap3Plugin  extends Billrun_Plugin_BillrunPluginBase
 		$cdrLine = false;
 		
 		if(isset($this->nsnConfig[$type])) {
-			$cdrLine =  $this->parseASNDataRecur( $this->nsnConfig[$type], Asn_Base::getDataArray( $data ,true ), $this->nsnConfig['fields'] );			
+			$cdrLine =  $this->parseASNDataRecur( $this->nsnConfig[$type], Asn_Base::getDataArray( $data ,true, true ), $this->nsnConfig['fields'] );			
 			if($cdrLine) {
 				$cdrLine['record_type'] = $type;
 				
@@ -187,8 +187,11 @@ class tap3Plugin  extends Billrun_Plugin_BillrunPluginBase
 	 * @return rray  containing the time offset list  keyed by its offset code.
 	 */
 	protected function parseTimeOffsetList($data) {
-		$timeOffsets= array();
-		foreach( $data['e9'] as $value) {
+		$timeOffsets = array();
+		if(isset($data['e9']['e8'])) {
+			$data['e9'] = array($data['e9']);
+		}
+		foreach( $data['e9'] as $value) {			
 			$key = $this->parseField('number',$value['e8']);			
 			$timeOffsets[$key] = $value['e7'];
 		}
