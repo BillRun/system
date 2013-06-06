@@ -92,7 +92,6 @@ class Processor_ImportZones extends Billrun_Processor_Base_Separator {
 
 		foreach ($data as $key => $row) {
 			$entity = new Mongodloid_Entity($row);
-
 			if ($rates->query('key', $key)->count() > 0) {
 				continue;
 			}
@@ -106,6 +105,7 @@ class Processor_ImportZones extends Billrun_Processor_Base_Separator {
 
 	protected function normalize($data) {
 		$ret = array();
+		$data[] = array('zoneName' => '$DEFAULT'); // does not exist in zone
 		foreach ($data as $row) {
 			$row['rates'] = array();
 			/*if (!isset($row['zoneName']) || $row['zoneName']=='ROAM_ALL_DEST' || $row['zoneName']=='$DEFAULT' || $row['zoneName']=='ALL_DESTINATION') {
@@ -141,7 +141,7 @@ class Processor_ImportZones extends Billrun_Processor_Base_Separator {
 					'to' => new MongoDate(strtotime('+100 years')),
 					'key' => $row['zoneName'],
 					'params' => array(
-						'prefix' => array($row['prefix']),
+						'prefix' => (isset( $row['prefix'] ) ?  array( $row['prefix'] ) : array() ),
 						'out_circuit_group' => $out_circuit_group
 					),
 				);

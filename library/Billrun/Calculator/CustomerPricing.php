@@ -16,8 +16,8 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		$lines = Billrun_Factory::db()->linesCollection();
 
 		return $lines->query()
-				->in('type', array('ggsn', 'smpp', 'smsc', 'nsn'))
-				->exists('customer_rate')->exists('subscriber_id')->notExists('price_customer')->cursor()->limit($this->limit);
+				->in('type', array('ggsn', 'smpp', 'smsc', 'nsn', 'tap3'))
+				->exists('customer_rate')->notEq('customer_rate', FALSE)->exists('subscriber_id')->notExists('price_customer')->cursor()->limit($this->limit);
 	}
 
 	protected function updateRow($row) {
@@ -33,23 +33,60 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		}
 		//@TODO  change this  be be configurable.
 		$pricingData = array();
+		$usage_class_prefix="";
 		switch ($row['type']) {
 			case 'smsc' :
 			case 'smpp' :
-				$pricingData = $this->getLinePricingData(1, 'sms', $rate, $subscriber);
+				$usage_type = 'sms';
+				$volume = 1;
+				break;
+
+			case 'mmsc' :
+				$usage_type = 'mms';
+				$volume = 1;
 				break;
 
 			case 'nsn' :
-				$pricingData = $this->getLinePricingData($row['duration'], 'call', $rate, $subscriber);
+				$usage_type = 'call';
+				$volume = $row['duration'];
 				break;
 
 			case 'ggsn' :
-				$pricingData = $this->getLinePricingData($row['fbc_downlink_volume'] + $row['fbc_uplink_volume'], 'data', $rate, $subscriber);
+				$usage_type = 'data';
+				$volume = $row['fbc_downlink_volume'] + $row['fbc_uplink_volume'];
+				break;
+
+			case 'tap3' :
+				if (isset($row['usage_type'])) {
+					$usage_type = $row['usage_type'];
+					$usage_class_prefix = "inter_roam_";
+					switch ($usage_type) {
+						case 'sms' :
+						case 'incoming_sms' :
+							$volume = 1;
+							break;
+
+						case 'call' :
+						case 'incoming_call' :
+							$volume = $row->get('basicCallInformation.TotalCallEventDuration');
+							break;
+
+						case 'data' :
+							$volume = $row->get('GprsServiceUsed.DataVolumeIncoming') + $row->get('GprsServiceUsed.DataVolumeOutgoing');
+							break;
+					}
+				}
 				break;
 		}
-		
-		$row->setRawData(array_merge( $row->getRawData(), $pricingData ));
-		
+
+		if (isset($volume)) {
+			$pricingData = $this->getLinePricingData($volume, $usage_type, $rate, $subscriber); //$this->priceLine($volume, $usage_type, $rate, $subscriber);
+			$this->updateSubscriberBalance($subscriber, array($usage_class_prefix . $usage_type => $volume), $pricingData['price_customer']);
+		} else {
+			//@TODO error?
+		}
+
+		$row->setRawData(array_merge($row->getRawData(), $pricingData));
 	}
 
 	/**
@@ -93,27 +130,24 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	/**
 	 * Get pricing data for a given rate / subcriber.
 	 * @param type $volume The usage volume (seconds of call, count of SMS, bytes  of data)
-	 * @param type $lineType The type  of the usage (call/sms/data)
+	 * @param type $usageType The type  of the usage (call/sms/data)
 	 * @param type $rate The rate of associated with the usage.
 	 * @param type $subr the  subscriber that generated the usage.
 	 * @return type
 	 */
-	protected function getLinePricingData($volume, $lineType, $rate, $subr) {
-		$typedRates = $rate['rates'][$lineType];
-		$volumeToPrice = $volume;
+	protected function getLinePricingData($volumeToPrice, $usageType, $rate, $subr) {
+		$typedRates = $rate['rates'][$usageType];
 		$accessPrice = isset($typedRates['access']) ? $typedRates['access'] : 0;
 
-		if (Billrun_Model_Plan::isRateInSubPlan($rate, $subr, $lineType)) {
-			$discount = Billrun_Model_Plan::usageLeftInPlan($subr, $lineType);
-			//Billrun_Factory::log()->log("Passed the PLan  limit: ".print_r($volumeToPrice,1),  Zend_Log::DEBUG);
-			$volumeToPrice = $volumeToPrice - $discount;
+		if (Billrun_Model_Plan::isRateInSubPlan($rate, $subr, $usageType)) {
+			$volumeToPrice = $volumeToPrice - Billrun_Model_Plan::usageLeftInPlan($subr, $usageType);
 
 			if ($volumeToPrice < 0) {
 				$volumeToPrice = 0;
 				//@TODO  check  if that actually the action we  want  once  all the usage is in the plan...
 				$accessPrice = 0;
-			}  else if($volumeToPrice > 0) {
-				$ret['over_plan']  = true;
+			} else if ($volumeToPrice > 0) {
+				$ret['over_plan'] = true;
 			}
 		} else {
 			$ret['out_plan'] = true;
@@ -122,7 +156,6 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		$interval = $typedRates['rate']['interval'] ? $typedRates['rate']['interval'] : 1;
 		$ret['price_customer'] = $accessPrice + ( floatval((round($volumeToPrice / $interval) ) * $typedRates['rate']['price']) );
 
-		$this->updateSubscriberBalance($subr, array($lineType => $volume), $ret['price_customer']);
 		return $ret;
 	}
 

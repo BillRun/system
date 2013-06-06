@@ -48,11 +48,11 @@ class Processor_Mergerates extends Billrun_Processor_Base_Separator {
 			return false;
 		}
 
-		while ($line = $this->getLine()) {			
+		while ($line = $this->getLine()) {
 			$this->parseData($line);
 		}
-		
-		$this->addZeroRate();
+
+		$this->addZeroRates();
 
 		return true;
 	}
@@ -96,9 +96,8 @@ class Processor_Mergerates extends Billrun_Processor_Base_Separator {
 			$intervalMultiplier = 1;
 			switch ($row['kind']) {
 				case 'A':
-					continue 2; // we will take care later
-					$rateType = 'data';
-					$unit = 'bytes';
+					$rateType = 'incoming_call';
+					$unit = 'seconds';
 					break;
 				case 'C':
 					$rateType = 'call';
@@ -118,14 +117,21 @@ class Processor_Mergerates extends Billrun_Processor_Base_Separator {
 					$rateType = 'mms';
 					$unit = 'counter';
 					break;
+				case 'incoming_sms':
+					$rateType = 'incoming_sms';
+					$unit = 'counter';
+					break;
 				default:
 					echo("Unknown kind :  {$row['kind']} <br/>\n");
 					continue;
 			}
 			$entity = $rates->query(array('key' => ( $row['zoneOrItem'] != '' ? $row['zoneOrItem'] : 'ALL_DESTINATION')))->cursor()->current();
 			// todo check if rate already exists, if so, close row and open new row
+//			if ($row['accessTypeName'] == 'AC_ROAM_INCOMING1') {
+//				echo "yes";
+//			}
 			if ($entity->getId()) {
-				$this->addZonesByRates($row,$entity);
+				$this->addZonesByRates($row, $entity);
 				$entity->collection($rates);
 				$value = array(
 					'unit' => $unit,
@@ -141,12 +147,7 @@ class Processor_Mergerates extends Billrun_Processor_Base_Separator {
 				$entityRates = $entity['rates'];
 				$entityRates[$rateType] = $value;
 				$entity['rates'] = $entityRates;
-				//@TODO Talk to Shani..
-				//$entity->set("access_type_name", $row['accessTypeName']);
-				//$entity->set("type", $rateType);
-				//$entity->set("rates", $value);
-				//$entity['rates'][$rateType] = $value;
-				if ($row['zoneOrItem'] != 'UNRATED') {
+				if ($row['zoneOrItem'] != 'UNRATED' && isset($record_type) ) {
 					$entity->set("params.record_type", $record_type);
 				}
 				$entity->save($rates);
@@ -159,50 +160,53 @@ class Processor_Mergerates extends Billrun_Processor_Base_Separator {
 		return true;
 	}
 
-	protected function addZonesByRates( &$row, &$entity ) {
+	protected function addZonesByRates(&$row, &$entity) {
 		$rates = Billrun_Factory::db()->ratesCollection();
 		//foreach ($this->data['data'] as &$row) {
-			switch ($row['zoneOrItem']) {
-				
-				case "ROAM_ALL_DEST":
-				case "\$DEFAULT":
-				case "":
-				case "ALL_DESTINATION":
-					if ($row['zoneOrItem']=='') {
-						Billrun_Factory::log('Found empty zone name. Treating as \'ROAM_ALL_DEST\' zone.', Zend_Log::ALERT);
-					}
-					if(Billrun_Factory::db()->ratesCollection()->query(array('key' => $row['accessTypeName']))->cursor()->current()->getId()) {
-						return;
-					}
-					$row['zoneOrItem'] = $row['accessTypeName'];
-					$entity['key'] = $row['zoneOrItem'];
-					unset($entity['_id']);
-//					$new_zone = array();
-//					$new_zone['from'] = new MongoDate(strtotime('2013-01-01T00:00:00+00:00'));
-//					$new_zone['to'] = new MongoDate(strtotime('+100 years'));
-//					$new_zone['key'] = $row['zoneOrItem'];
-//					$entity = new Mongodloid_Entity($new_zone);
-//
-//					if ($rates->query('key', $new_zone['key'])->count() > 0) {
-//						continue;
-//					}
-//					
-					//$entity->save($rates, true);
-					break;
-				default:
-				return ;
+		if (isset($row['accessTypeName']) && $row['accessTypeName'] != 'Regular' && $row['accessTypeName'] != 'Callback') {
+			if ($row['zoneOrItem'] == '') {
+				Billrun_Factory::log('Found empty zone name. Treating as \'ROAM_ALL_DEST\' zone.', Zend_Log::ALERT);
 			}
-		//}
+			if (Billrun_Factory::db()->ratesCollection()->query(array('key' => $row['accessTypeName']))->cursor()->current()->getId()) {
+				return;
+			}
+			$row['zoneOrItem'] = $row['accessTypeName'];
+			$entity['vat_excluded'] = true;
+			$entity['key'] = $row['zoneOrItem'];
+			unset($entity['_id']);
+		}
 	}
 
-	protected function addZeroRate() {
-		$row = array();
-		$row['zoneOrItem'] = 'UNRATED';
-		$row['kind'] = 'C';
-		$row['tinf_sampPrice0'] = 0;
-		$row['tinf_sampDelayInSec0'] = 1;
-		$row['tinf_accessPrice0'] = 0;
-		$this->data['data'][] = $row;
+	protected function addZeroRates() {
+		$usage_types = array(
+			'C' => array(
+				'interval' => 1
+			),
+			'incoming_sms' => array(
+				'interval' => 1
+			),
+			'A' => array(
+				'interval' => 1
+			),
+			'I' => array(
+				'interval' => 10
+			),
+			'M' => array(
+				'interval' => 1
+			),
+			'N' => array(
+				'interval' => 1
+			),
+		);
+		foreach ($usage_types as $usage_type_kind => $usage_type) {
+			$row = array();
+			$row['zoneOrItem'] = 'UNRATED';
+			$row['kind'] = $usage_type_kind;
+			$row['tinf_sampPrice0'] = 0;
+			$row['tinf_sampDelayInSec0'] = $usage_type['interval'];
+			$row['tinf_accessPrice0'] = 0;
+			$this->data['data'][] = $row;
+		}
 	}
 
 }

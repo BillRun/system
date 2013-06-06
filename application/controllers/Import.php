@@ -80,7 +80,7 @@ class ImportController extends Yaf_Controller_Abstract {
 			. "Data merge count: " . count($mergeData) . "<br />"
 			. "Data merge package count: " . count($mergePackageData) . "<br />"
 			. "Data merge package count: " . count($mergePackageData) . "<br />"
-			. "Data import count: " . $importMapData . "<br />" . PHP_EOL;
+			. "Import mappings count: " . $importMapData . "<br />" . PHP_EOL;
 		;
 	}
 
