@@ -1,0 +1,2 @@
+{ "_id" : { "$oid" : "51b0997d510692826179cf9f" }, "from" : { "$date" : 1369872000000 }, "to" : null, "name" : "LARGE", "include" : { "call" : "UNLIMITED", "sms" : "UNLIMITED", "mms" : "UNLIMITED", "data" : "UNLIMITED" } }
+{ "_id" : { "$oid" : "51b0997e510692826179cfa0" }, "from" : { "$date" : 1369872000000 }, "to" : null, "name" : "SMALL", "include" : { "call" : "3600", "sms" : "60", "data" : "1000000000" } }
