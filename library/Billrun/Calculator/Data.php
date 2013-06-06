@@ -61,7 +61,8 @@ class Billrun_Calculator_Data extends Billrun_Calculator_Base_Rate {
 	}
 	
 	protected function getLineRate($row) {
-		if(preg_match('/^(?=62\.90\.|37\.26\.)/', $row['sgsn_address'])) {			
+		if(preg_match('/^(?=62\.90\.|37\.26\.)/', $row['sgsn_address']) && 
+			(!isset($row['rating_group']) || $row['rating_group'] == 0)) {			
 			$rate = Billrun_Factory::db()->ratesCollection()->query($this->rateMapping)->cursor()->current();
 			return  $rate->getRawData();
 		}

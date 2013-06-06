@@ -92,7 +92,7 @@ trait Billrun_Traits_AsnParsing {
 		$valueArr= array();
 		foreach($config as $key => $val) {			
 			$tmpVal = $this->parseASNData(explode(',', $val), $dataArr, $fields );
-			if($tmpVal) {
+			if($tmpVal) { // @TODO change to "isset($tmpVal)" once  you can check it  (Will affect GGSN,TAP3)
 				$valueArr[$key] = $tmpVal;
 			}
 		}

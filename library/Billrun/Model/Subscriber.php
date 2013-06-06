@@ -70,6 +70,7 @@ class Billrun_Model_Subscriber {
 					'call' => 0,
 					'incoming_call' => 0,
 					'sms' => 0,
+					'mms' => 0,
 					'data' => 0,
 					'inter_roam_incoming_call' => 0,
 					'inter_roam_call' => 0,

@@ -282,9 +282,8 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Pl
 		} else {
 			Billrun_Factory::log()->log("couldn't find  definition for {$type}", Zend_Log::INFO);
 		}
-		
+
 		//Billrun_Factory::log()->log($asnObject->getType() . " : " . print_r($cdrLine,1) ,  Zend_Log::DEBUG);
-		//@TODO add unifiom field translation. ('record_opening_time',etc...)
 		return $cdrLine;
 	}
 

@@ -16,7 +16,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		$lines = Billrun_Factory::db()->linesCollection();
 
 		return $lines->query()
-				->in('type', array('ggsn', 'smpp', 'smsc', 'nsn', 'tap3'))
+				->in('type', array('ggsn', 'smpp', 'smsc', 'mmsc', 'nsn', 'tap3'))
 				->exists('customer_rate')->notEq('customer_rate', FALSE)->exists('subscriber_id')->notExists('price_customer')->cursor()->limit($this->limit);
 	}
 

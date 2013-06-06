@@ -40,12 +40,13 @@ class Billrun_Model_Plan {
 		if(!($plan = self::get($subscriber['plan_current']))) {
 			throw new Exception("Couldn't load plan for subscriber : ".  print_r($subscriber,1));
 		}
-
-		if($plan['include'][$usagetype] == 'UNLIMITED') {
-			return PHP_INT_MAX;
+		$usageLeft = 0;
+		if(isset($plan['include'][$usagetype])) {
+			if($plan['include'][$usagetype] == 'UNLIMITED') {
+				return PHP_INT_MAX;
+			}
+			$usageLeft = $plan['include'][$usagetype] - $subscriber['balance']['usage_counters'][$usagetype];
 		}
-		$usageLeft = $plan['include'][$usagetype] - $subscriber['balance']['usage_counters'][$usagetype];
-		
 		return floatval($usageLeft < 0 ? 0  : $usageLeft);
 	}
 }
