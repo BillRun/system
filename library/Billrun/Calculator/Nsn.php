@@ -51,6 +51,7 @@ class Billrun_Calculator_Nsn extends Billrun_Calculator_Base_Rate {
 		$called_number = $row->get('called_number');
 		$ocg = $row->get('out_circuit_group');
 		$icg = $row->get('in_circuit_group');
+		$line_time = $row->get('unified_record_time');
 
 		$rates = Billrun_Factory::db()->ratesCollection();
 		$rateId = FALSE;
@@ -75,7 +76,13 @@ class Billrun_Calculator_Nsn extends Billrun_Calculator_Base_Rate {
 								'$gte' => $ocg
 							)
 						)
-					)
+					),
+					'from' => array(
+						'$lte' => $line_time,
+					),
+					'to' => array(
+						'$gte' => $line_time,
+					),
 				)
 			);
 

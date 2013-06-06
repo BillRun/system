@@ -15,19 +15,17 @@
  *
  */
 class Billrun_Calculator_Data extends Billrun_Calculator_Base_Rate {
-	
+
 	/**
 	 * the type of the object
 	 *
 	 * @var string
 	 */
 	static protected $type = 'data';
-	
-	protected $rateMapping = array('key'=>'INTERNET_BILL_BY_VOLUME');
-	
+	protected $rateKeyMapping = array('key' => 'INTERNET_BILL_BY_VOLUME');
+
 	public function __construct($options = array()) {
 		parent::__construct($options);
-		
 	}
 
 	/**
@@ -35,13 +33,12 @@ class Billrun_Calculator_Data extends Billrun_Calculator_Base_Rate {
 	 */
 	protected function getLines() {
 		$lines = Billrun_Factory::db()->linesCollection();
-		
-		return $lines->query()
-			->in('type', array('ggsn'))
-			->notExists($this->ratingField)->cursor()->limit($this->limit);
 
-	}	
-	
+		return $lines->query()
+				->in('type', array('ggsn'))
+				->notExists($this->ratingField)->cursor()->limit($this->limit);
+	}
+
 	/**
 	 * write the calculation into DB
 	 */
@@ -49,8 +46,8 @@ class Billrun_Calculator_Data extends Billrun_Calculator_Base_Rate {
 		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteRow', array('row' => $row));
 
 		$current = $row->getRawData();
-		$rate = $this->getLineRate($row);	
-		if($rate !== FALSE) {			
+		$rate = $this->getLineRate($row);
+		if ($rate !== FALSE) {
 			$added_values = array(
 				$this->ratingField => ($rate ? $rate['_id'] : $rate),
 			);
@@ -59,13 +56,25 @@ class Billrun_Calculator_Data extends Billrun_Calculator_Base_Rate {
 		}
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteRow', array('row' => $row));
 	}
-	
+
 	protected function getLineRate($row) {
-		if(preg_match('/^(?=62\.90\.|37\.26\.)/', $row['sgsn_address'])) {			
-			$rate = Billrun_Factory::db()->ratesCollection()->query($this->rateMapping)->cursor()->current();
-			return  $rate->getRawData();
+		$line_time = $row['unified_record_time'];
+		if (preg_match('/^(?=62\.90\.|37\.26\.)/', $row['sgsn_address'])) {
+			$rate = Billrun_Factory::db()->ratesCollection()->query(
+					array_merge(
+						$this->rateKeyMapping, array(
+						'from' => array(
+							'$lte' => $line_time,
+						),
+						'to' => array(
+							'$gte' => $line_time,
+						),
+						)
+					))->cursor()->current();
+			return $rate->getRawData();
 		}
-	//	Billrun_Factory::log()->log("International row : ".print_r($row,1),  Zend_Log::DEBUG);
+		//	Billrun_Factory::log()->log("International row : ".print_r($row,1),  Zend_Log::DEBUG);
 		return FALSE;
 	}
+
 }

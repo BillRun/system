@@ -52,6 +52,7 @@ class Billrun_Calculator_Tap3 extends Billrun_Calculator_Base_Rate {
 		$header = $this->getLineHeader($row);
 		$int_network_mappings = Billrun_Factory::db()->intnetworkmappingsCollection();
 		$log = Billrun_Factory::db()->logCollection();
+		$line_time = $row['unified_record_time'];
 
 		if (isset($row['LocationInformation']['GeographicalLocation']['ServingNetwork'])) {
 			$serving_network = $row['LocationInformation']['GeographicalLocation']['ServingNetwork'];
@@ -65,12 +66,20 @@ class Billrun_Calculator_Tap3 extends Billrun_Calculator_Base_Rate {
 			if (isset($row['usage_type'])) {
 				$rate_key = $int_network_mappings->query(array('PLMN' => $serving_network))->cursor()->current()->get('type.' . $row['usage_type']);
 				if (!is_null($rate_key)) {
-					$rate = $rates->query(array('key' => $rate_key))->cursor()->current();
+					$rate = $rates->query(array(
+							'key' => $rate_key,
+							'from' => array(
+								'$lte' => $line_time
+							),
+							'to' => array(
+								'$gte' => $line_time
+							),
+						))->cursor()->current();
 					return $rate->get('_id');
 				}
 			}
 		}
-	
+
 		return false;
 	}
 
