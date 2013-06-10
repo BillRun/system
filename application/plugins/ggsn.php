@@ -221,6 +221,10 @@ use Billrun_Traits_FileSequenceChecking;
 					
 					'sgsn_address' => array('$regex' => '^(?!62\.90\.|37\.26\.)'),
 					'$or' => array(
+						array('rating_group' => array( '$exists' => FALSE)),
+						array('rating_group' => 0)
+					),
+					'$or' => array(
 						array('fbc_downlink_volume' => array('$gt' => 0)),
 						array('fbc_uplink_volume' => array('$gt' => 0))
 					),
