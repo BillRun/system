@@ -7,7 +7,7 @@
  */
 
 /**
- * Billing abstract generator ilds class
+ * Billing generator ilds class
  * require to generate xml for each account
  * require to generate csv contain how much to credit each account
  *
@@ -15,11 +15,18 @@
  * @since    1.0
  */
 class Billrun_Generator_Ilds extends Billrun_Generator {
+	
 	/**
-	 * The VAT value (TODO get from outside/config).
+	 * The VAT value including the complete; for example 1.17
+	 * 
+	 * @var float
 	 */
+	protected $vat;
 
-	const VAT_VALUE = 1.17;
+	public function __construct($options) {
+		parent::__construct($options);
+		$this->vat = Billrun_Factory::config()->getConfigValue('pricing.vat', 1.18);
+	}
 
 	/**
 	 * load the container the need to be generate
@@ -83,7 +90,7 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 			// @todo refactoring the xml generation to another class
 			$xml = $this->basic_xml();
 			$xml->TELECOM_INFORMATION->LASTTIMECDRPROCESSED = date('Y-m-d h:i:s');
-			$xml->TELECOM_INFORMATION->VAT_VALUE = (string) ((self::VAT_VALUE * 100) - 100);//'17';
+			$xml->TELECOM_INFORMATION->VAT_VALUE = (string) (($this->vat * 100) - 100);//'17';
 			$xml->TELECOM_INFORMATION->COMPANY_NAME_IN_ENGLISH = 'GOLAN';
 			$xml->INV_CUSTOMER_INFORMATION->CUSTOMER_CONTACT->EXTERNALACCOUNTREFERENCE = $row->get('account_id');
 			;
@@ -114,11 +121,11 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 					$ild_xml = $subscriber_sumup->addChild('ILD');
 					$ild_xml->NDC = $ild;
 					$ild_xml->CHARGE_EXCL_VAT = $cost;
-					$ild_xml->CHARGE_INCL_VAT = $cost * self::VAT_VALUE;
+					$ild_xml->CHARGE_INCL_VAT = $cost * $this->vat;
 					$total_cost += $cost;
 				}
 				$subscriber_sumup->TOTAL_CHARGE_EXCL_VAT = $total_cost;
-				$subscriber_sumup->TOTAL_CHARGE_INCL_VAT = $total_cost * self::VAT_VALUE;
+				$subscriber_sumup->TOTAL_CHARGE_INCL_VAT = $total_cost * $this->vat;
 				// TODO create file with the xml content and file name of invoice number (ILD000123...)
 			}
 
@@ -138,11 +145,11 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 				$ild_xml = $invoice_sumup->addChild('ILD');
 				$ild_xml->NDC = $ild;
 				$ild_xml->CHARGE_EXCL_VAT = $total_ild_cost;
-				$ild_xml->CHARGE_INCL_VAT = $total_ild_cost * self::VAT_VALUE;
+				$ild_xml->CHARGE_INCL_VAT = $total_ild_cost * $this->vat;
 				$total += $total_ild_cost;
 			}
 			$invoice_sumup->TOTAL_EXCL_VAT = $total;
-			$invoice_sumup->TOTAL_INCL_VAT = $total * self::VAT_VALUE;
+			$invoice_sumup->TOTAL_INCL_VAT = $total * $this->vat;
 			//$row->{'xml'} = $xml->asXML();
 			Billrun_Factory::log()->log("invoice id created " . $invoice_id . " for the account", Zend_Log::INFO);
 			$this->createXml($invoice_id, $xml->asXML());
@@ -162,7 +169,7 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 		ksort($cost_ilds);
 		$seperator = ',';
 		$row = $invoice_id . $seperator . $account_id . $seperator .
-			$total . $seperator . ($total * self::VAT_VALUE) . $seperator . implode($seperator, $cost_ilds) . PHP_EOL;
+			$total . $seperator . ($total * $this->vat) . $seperator . implode($seperator, $cost_ilds) . PHP_EOL;
 		$this->csv($row);
 	}
 
