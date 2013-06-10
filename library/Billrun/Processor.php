@@ -69,6 +69,13 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 * @var boolean 
 	 */
 	protected $current_line = 0;
+	
+	/**
+	 * the backup sequence file number digits granularity 
+	 * (1=batches of 10 files  in each directory, 2= batches of 100, 3= batches of 1000,etc...)
+	 * @param integer
+	 */
+	protected $backup_seq_granularity = self::BACKUP_FILE_SEQUENCE_GRANULARITY;
 	/**
 	 * constructor - load basic options
 	 *
@@ -106,6 +113,10 @@ abstract class Billrun_Processor extends Billrun_Base {
 
 		if (isset($options['processor']['limit']) && $options['processor']['limit']) {
 			$this->setLimit($options['processor']['limit']);
+		}
+		
+		if (isset($options['processor']['backup_granularity']) && $options['processor']['backup_granularity']) {
+			$this->backup_seq_granularity = $options['processor']['backup_granularity'];
 		}
 	}
 	
@@ -392,9 +403,9 @@ abstract class Billrun_Processor extends Billrun_Base {
 		$seqData = $this->getFilenameData($this->filename);
 		for ($i = 0; $i < count($this->backupPaths); $i++) {
 			$backupPath = $this->backupPaths[$i];
-			$backupPath .= ($this->retrievedHostname ? DIRECTORY_SEPARATOR . $this->retrievedHostname : "");
-			$backupPath .= ($seqData['date'] ? DIRECTORY_SEPARATOR . $seqData['date'] : "");
-			$backupPath .= ($seqData['seq'] ? DIRECTORY_SEPARATOR . substr($seqData['seq'], 0, -self::BACKUP_FILE_SEQUENCE_GRANULARITY) : "");
+			$backupPath .= ($this->retrievedHostname ? DIRECTORY_SEPARATOR . $this->retrievedHostname : "");//If theres more then one host or the files were retrived from a named host backup under that host name
+			$backupPath .= DIRECTORY_SEPARATOR . ($seqData['date'] ? $seqData['date'] : date("Ym"));// if the file name has a date  save under that date else save under tthe current month
+			$backupPath .= ($seqData['seq'] ? DIRECTORY_SEPARATOR . substr($seqData['seq'], 0, -$this->backup_seq_granularity) : ""); // brak the date to sequence number with varing granularity
 
 			if ($this->backupToPath($backupPath, !($move && $i + 1 == count($this->backupPaths))) === TRUE) {
 				Billrun_Factory::log()->log("Success backup file " . $this->filePath . " to " . $backupPath, Zend_Log::INFO);

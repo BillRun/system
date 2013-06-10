@@ -1,14 +1,16 @@
 <?php
 
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
+/**
+ * @package         Billing
+ * @copyright       Copyright (C) 2012 S.D.O.C. LTD. All rights reserved.
+ * @license         GNU General Public License version 2 or later; see LICENSE.txt
  */
 
 /**
- * Description of Sms
+ * Billing calculator class for SMS records
  *
- * @author eran
+ * @package  calculator
+ * @since    0.5
  */
 class Billrun_Calculator_Sms extends Billrun_Calculator_Base_Rate {
 	/**
