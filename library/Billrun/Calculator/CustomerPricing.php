@@ -33,7 +33,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		}
 		//@TODO  change this  be be configurable.
 		$pricingData = array();
-		$usage_class_prefix="";
+		$usage_class_prefix = "";
 		switch ($row['type']) {
 			case 'smsc' :
 			case 'smpp' :
@@ -57,25 +57,9 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				break;
 
 			case 'tap3' :
-				if (isset($row['usage_type'])) {
-					$usage_type = $row['usage_type'];
-					$usage_class_prefix = "inter_roam_";
-					switch ($usage_type) {
-						case 'sms' :
-						case 'incoming_sms' :
-							$volume = 1;
-							break;
-
-						case 'call' :
-						case 'incoming_call' :
-							$volume = $row->get('basicCallInformation.TotalCallEventDuration');
-							break;
-
-						case 'data' :
-							$volume = $row->get('GprsServiceUsed.DataVolumeIncoming') + $row->get('GprsServiceUsed.DataVolumeOutgoing');
-							break;
-					}
-				}
+				$usage_type = $row['usaget'];
+				$usage_class_prefix = "inter_roam_";
+				$volume = $row['usagev'];
 				break;
 		}
 

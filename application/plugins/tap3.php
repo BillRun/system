@@ -157,7 +157,7 @@ class tap3Plugin  extends Billrun_Plugin_BillrunPluginBase
 				}
 				$usage_type = $this->getUsageType($cdrLine);
 				if ($usage_type) {
-					$cdrLine['usage_type'] = $usage_type;
+					$cdrLine['usaget'] = $usage_type;
 				}
 	}
 	
