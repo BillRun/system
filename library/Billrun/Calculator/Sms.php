@@ -35,7 +35,7 @@ class Billrun_Calculator_Sms extends Billrun_Calculator_Base_Rate {
 	}
 
 	/**
-	 * write the calculation into DB.
+	 * Write the calculation into DB.
 	 * @param $row the line CDR to update. 
 	 */
 	protected function updateRow($row) {
@@ -52,7 +52,7 @@ class Billrun_Calculator_Sms extends Billrun_Calculator_Base_Rate {
 	}
 
 	/**
-	 * identify if the row belong to calculator
+	 * Identify if the row belong to calculator
 	 * 
 	 * @return boolean true if the row identify as belonging to the calculator, else false
 	 */
@@ -109,7 +109,11 @@ class Billrun_Calculator_Sms extends Billrun_Calculator_Base_Rate {
 		return reset($matched_rates);
 		
 	}
-	
+	/**
+	 * Get an array of prefixes for a given number.
+	 * @param type $str the number to get  prefixes to.
+	 * @return Array the possible prefixes of the number.
+	 */
 	protected function getPrefixes($str) {
 		$prefixes = array();
 		for ($i = 0; $i < strlen($str); $i++) {

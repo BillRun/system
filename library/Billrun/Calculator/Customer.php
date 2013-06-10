@@ -70,7 +70,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator_Base_Rate {
 	}
 
 	/**
-	 * load a subscriber for a given CDR line.
+	 * Load a subscriber for a given CDR line.
 	 * @param type $row
 	 * @return type
 	 */

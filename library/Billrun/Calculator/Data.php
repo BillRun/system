@@ -66,7 +66,6 @@ class Billrun_Calculator_Data extends Billrun_Calculator_Base_Rate {
 			$rate = Billrun_Factory::db()->ratesCollection()->query($this->rateMapping)->cursor()->current();
 			return  $rate->getRawData();
 		}
-	//	Billrun_Factory::log()->log("International row : ".print_r($row,1),  Zend_Log::DEBUG);
 		return FALSE;
 	}
 }
