@@ -71,6 +71,13 @@ class Billrun_Factory {
 	protected static $tariff = null;
 
 	/**
+	 * Tariff instance
+	 * 
+	 * @var Billrun Tariff
+	 */
+	protected static $plan = null;
+
+	/**
 	 * method to retrieve the log instance
 	 * 
 	 * @param string [Optional] $message message to log
@@ -219,6 +226,23 @@ class Billrun_Factory {
 		}
 
 		return self::$tariff;
+	}
+
+	/**
+	 * method to retrieve the plan instance
+	 * 
+	 * @return Billrun_Plan
+	 */
+	static public function plan($params) {
+
+		// unique stamp per plan
+		$stamp = md5(serialize($params));
+		
+		if (!isset(self::$plan[$stamp])) {
+			self::$plan[$stamp] = new Billrun_Plan($params);
+		}
+
+		return self::$plan[$stamp];
 	}
 
 }
