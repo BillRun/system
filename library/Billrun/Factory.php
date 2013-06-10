@@ -33,7 +33,7 @@ class Billrun_Factory {
 	 * 
 	 * @var Mongoloid db
 	 */
-	protected static $db = null;
+	protected static $db = array();
 
 	/**
 	 * Cache instance
@@ -71,11 +71,11 @@ class Billrun_Factory {
 	protected static $tariff = null;
 
 	/**
-	 * Tariff instance
+	 * Plan instance
 	 * 
-	 * @var Billrun Tariff
+	 * @var Billrun Plan
 	 */
-	protected static $plan = null;
+	protected static $plan = array();
 
 	/**
 	 * method to retrieve the log instance
