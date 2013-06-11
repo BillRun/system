@@ -25,7 +25,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		$subscriber = Billrun_Model_Subscriber::get($row['subscriber_id'], Billrun_Util::getNextChargeKey($row['unified_record_time']->sec));
 
 		if (!isset($subscriber) || !$subscriber) {
-			Billrun_Factory::log()->log("couldn't  get subsciber for : " . print_r(array(
+			Billrun_Factory::log()->log("couldn't get subscriber for : " . print_r(array(
 					'subscriber_id' => $row['subscriber_id'],
 					'billrun_month' => Billrun_Util::getNextChargeKey($row['unified_record_time']->sec)
 					), 1), Zend_Log::DEBUG);
@@ -136,7 +136,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		}
 		$subRaw['balance']['current_charge'] += $charge;
 		$sub->setRawData($subRaw);
-		$sub->save(Billrun_Factory::db()->subscribersCollection());
+		$sub->save(Billrun_Factory::db()->balancesCollection());
 	}
 
 }

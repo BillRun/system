@@ -20,7 +20,7 @@ class Billrun_Model_Subscriber {
 	 * @return boolean
 	 */
 	static public function get( $subscriberId, $billrunKey ) {		
-		$subcr = Billrun_Factory::db()->subscribersCollection()->query(array(
+		$subcr = Billrun_Factory::db()->balancesCollection()->query(array(
 						'subscriber_id' => $subscriberId, 
 						'billrun_month' => $billrunKey
 					 ))->cursor()->current();
@@ -41,9 +41,9 @@ class Billrun_Model_Subscriber {
 	 */
 	static public function create($billrunKey, $subscriberId, $plan_ref, $accountId) {
 		if(!self::get( $subscriberId, $billrunKey )) {
-			Billrun_Factory::log('Adding subscriber ' .  $subscriberId . ' to subscribers collection', Zend_Log::INFO);
+			Billrun_Factory::log('Adding subscriber ' .  $subscriberId . ' to balances collection', Zend_Log::INFO);
 			$newSubscriber = new Mongodloid_Entity(self::getEmptySubscriberEntry($billrunKey, $accountId, $subscriberId, $plan_ref));
-			$newSubscriber->collection(Billrun_Factory::db()->subscribersCollection());
+			$newSubscriber->collection(Billrun_Factory::db()->balancesCollection());
 			$newSubscriber->save();
 			return self::get( $subscriberId, $billrunKey );
 		} 
