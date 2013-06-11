@@ -61,18 +61,18 @@ class ImportController extends Yaf_Controller_Abstract {
 		$mergePackageData = $mergePackage->process();
 
 
-		$import_mappings = Billrun_Processor::getInstance(array(
-				'type' => 'importintnetworkmappings',
+		$merge_intl_networks = Billrun_Processor::getInstance(array(
+				'type' => 'mergeintlnetworks',
 				'parser' => $parser,
 				'path' => '/home/shani/Documents/S.D.O.C/BillRun/backups/mobile_network.csv'
 			));
 
-		if ($import_mappings === FALSE) {
+		if ($merge_intl_networks === FALSE) {
 			exit('cannot load import processor');
 		}
 
-		$import_mappings->setBackupPath(array()); // no backup
-		$importMapData = $import_mappings->process();
+		$merge_intl_networks->setBackupPath(array()); // no backup
+		$importMapData = $merge_intl_networks->process();
 
 		$this->getView()->title = "BillRun | The best open source billing system";
 		$this->getView()->content = "Data import count: " . count($importData)
@@ -80,7 +80,7 @@ class ImportController extends Yaf_Controller_Abstract {
 			. "Data merge count: " . count($mergeData) . "<br />"
 			. "Data merge package count: " . count($mergePackageData) . "<br />"
 			. "Data merge package count: " . count($mergePackageData) . "<br />"
-			. "Import mappings count: " . $importMapData . "<br />" . PHP_EOL;
+			. "Merge intl. networks count: " . $importMapData . "<br />" . PHP_EOL;
 		;
 	}
 

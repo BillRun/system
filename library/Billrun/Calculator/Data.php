@@ -15,19 +15,17 @@
  *
  */
 class Billrun_Calculator_Data extends Billrun_Calculator_Base_Rate {
-	
+
 	/**
 	 * the type of the object
 	 *
 	 * @var string
 	 */
 	static protected $type = 'data';
-	
-	protected $rateMapping = array('key'=>'INTERNET_BILL_BY_VOLUME');
-	
+	protected $rateKeyMapping = array('key' => 'INTERNET_BILL_BY_VOLUME');
+
 	public function __construct($options = array()) {
 		parent::__construct($options);
-		
 	}
 
 	/**
@@ -35,13 +33,12 @@ class Billrun_Calculator_Data extends Billrun_Calculator_Base_Rate {
 	 */
 	protected function getLines() {
 		$lines = Billrun_Factory::db()->linesCollection();
-		
-		return $lines->query()
-			->in('type', array('ggsn'))
-			->notExists($this->ratingField)->cursor()->limit($this->limit);
 
-	}	
-	
+		return $lines->query()
+				->in('type', array('ggsn'))
+				->notExists($this->ratingField)->cursor()->limit($this->limit);
+	}
+
 	/**
 	 * write the calculation into DB
 	 */
@@ -49,27 +46,48 @@ class Billrun_Calculator_Data extends Billrun_Calculator_Base_Rate {
 		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteRow', array('row' => $row));
 
 		$current = $row->getRawData();
-		$rate = $this->getLineRate($row);	
-		if($rate !== FALSE) {			
-			$added_values = array(
-				$this->ratingField => ($rate ? $rate['_id'] : $rate),
-			);
-			$newData = array_merge($current, $added_values);
-			$row->setRawData($newData);
-		}
+		$usage_type = $this->getLineUsageType($row);
+		$volume = $this->getLineVolume($row, $usage_type);
+		$rate = $this->getLineRate($row, $usage_type);
+
+		$added_values = array(
+			'usaget' => $usage_type,
+			'usagev' => $volume,
+			$this->ratingField => ($rate ? $rate['_id'] : $rate),
+		);
+		$newData = array_merge($current, $added_values);
+		$row->setRawData($newData);
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteRow', array('row' => $row));
 	}
-	/**
-	 * Retrive the  rate object for a given CDR line.
-	 * @param type $row the CDR line to get the rate for.
-	 * @return mixed The rate object if the rate was found or FALSE if the line couldn't be rated.
-	 */
+
+	protected function getLineVolume($row, $usage_type) {
+		return $row['fbc_downlink_volume'] + $row['fbc_uplink_volume'];
+	}
+
+	protected function getLineUsageType($row) {
+		return 'data';
+	}
+
 	protected function getLineRate($row) {
-		if(preg_match('/^(?=62\.90\.|37\.26\.)/', $row['sgsn_address']) && 
-			(!isset($row['rating_group']) || $row['rating_group'] == 0)) {			
-			$rate = Billrun_Factory::db()->ratesCollection()->query($this->rateMapping)->cursor()->current();
-			return  $rate->getRawData();
+		$line_time = $row['unified_record_time'];
+		if (preg_match('/^(?=62\.90\.|37\.26\.)/', $row['sgsn_address'])) {
+			$rate = Billrun_Factory::db()->ratesCollection()->query(
+					array_merge(
+						$this->rateKeyMapping, array(
+						'from' => array(
+							'$lte' => $line_time,
+						),
+						'to' => array(
+							'$gte' => $line_time,
+						),
+						)
+					))->cursor()->current();
+			if ($rate->getId()) {
+				return $rate->getRawData();
+			}
 		}
+		//	Billrun_Factory::log()->log("International row : ".print_r($row,1),  Zend_Log::DEBUG);
 		return FALSE;
 	}
+
 }

@@ -155,10 +155,7 @@ class tap3Plugin  extends Billrun_Plugin_BillrunPluginBase
 				if(isset($cdrLine['basicCallInformation']['GprsChargeableSubscriber']['chargeableSubscriber']['simChargeableSubscriber']['msisdn'])) {
 					$cdrLine['calling_number'] = $cdrLine['basicCallInformation']['GprsChargeableSubscriber']['chargeableSubscriber']['simChargeableSubscriber']['msisdn'];
 				}
-				$usage_type = $this->getUsageType($cdrLine);
-				if ($usage_type) {
-					$cdrLine['usage_type'] = $usage_type;
-				}
+
 	}
 	
 	/**
@@ -231,36 +228,7 @@ class tap3Plugin  extends Billrun_Plugin_BillrunPluginBase
 		
 		return true;
 	}
-	protected function getUsageType($row) {
 
-		$usage_type = false;
-
-		$record_type = $row['record_type'];
-		if (isset($row['BasicServiceUsedList']['BasicServiceUsed']['BasicService']['BasicServiceCode']['TeleServiceCode'])) {
-			$tele_service_code = $row['BasicServiceUsedList']['BasicServiceUsed']['BasicService']['BasicServiceCode']['TeleServiceCode'];
-			if ($tele_service_code == '11') {
-				if ($record_type == '9') {
-					$usage_type = 'call'; // outgoing call
-				} else if ($record_type == 'a') {
-					$usage_type = 'incoming_call'; // incoming / callback
-				}
-			} else if ($tele_service_code == '22') {
-				if ($record_type == '9') {
-					$usage_type = 'sms';
-				}
-			} else if ($tele_service_code == '21') {
-				if ($record_type == 'a') {
-					$usage_type = 'incoming_sms';
-				}
-			}
-		} else {
-			if ($record_type == 'e') {
-				$usage_type = 'data';
-			}
-		}
-
-		return $usage_type;
-	}
 	/**
 	 * @see Billrun_Plugin_Interface_IProcessor::isProcessingFinished
 	 */	

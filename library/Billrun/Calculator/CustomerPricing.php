@@ -27,7 +27,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		$subscriber = Billrun_Model_Subscriber::get($row['subscriber_id'], Billrun_Util::getNextChargeKey($row['unified_record_time']->sec));
 
 		if (!isset($subscriber) || !$subscriber) {
-			Billrun_Factory::log()->log("couldn't  get subsciber for : " . print_r(array(
+			Billrun_Factory::log()->log("couldn't get subscriber for : " . print_r(array(
 					'subscriber_id' => $row['subscriber_id'],
 					'billrun_month' => Billrun_Util::getNextChargeKey($row['unified_record_time']->sec)
 					), 1), Zend_Log::DEBUG);
@@ -35,50 +35,13 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		}
 		//@TODO  change this  be be configurable.
 		$pricingData = array();
-		$usage_class_prefix="";
-		switch ($row['type']) {
-			case 'smsc' :
-			case 'smpp' :
-				$usage_type = 'sms';
-				$volume = 1;
-				break;
 
-			case 'mmsc' :
-				$usage_type = 'mms';
-				$volume = 1;
-				break;
-
-			case 'nsn' :
-				$usage_type = 'call';
-				$volume = $row['duration'];
-				break;
-
-			case 'ggsn' :
-				$usage_type = 'data';
-				$volume = $row['fbc_downlink_volume'] + $row['fbc_uplink_volume'];
-				break;
-
-			case 'tap3' :
-				if (isset($row['usage_type'])) {
-					$usage_type = $row['usage_type'];
-					$usage_class_prefix = "inter_roam_";
-					switch ($usage_type) {
-						case 'sms' :
-						case 'incoming_sms' :
-							$volume = 1;
-							break;
-
-						case 'call' :
-						case 'incoming_call' :
-							$volume = $row->get('basicCallInformation.TotalCallEventDuration');
-							break;
-
-						case 'data' :
-							$volume = $row->get('GprsServiceUsed.DataVolumeIncoming') + $row->get('GprsServiceUsed.DataVolumeOutgoing');
-							break;
-					}
-				}
-				break;
+		$usage_type = $row['usaget'];
+		$volume = $row['usagev'];
+		if ($row['type'] == 'tap3') {
+			$usage_class_prefix = "inter_roam_";
+		} else {
+			$usage_class_prefix = "";
 		}
 
 		if (isset($volume)) {
@@ -171,7 +134,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		}
 		$subRaw['balance']['current_charge'] += $charge;
 		$sub->setRawData($subRaw);
-		$sub->save(Billrun_Factory::db()->subscribersCollection());
+		$sub->save(Billrun_Factory::db()->balancesCollection());
 	}
 
 }
