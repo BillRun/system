@@ -20,7 +20,7 @@ if (!defined('BILLRUN_CONFIG_PATH')) {
 	$config = array(
 		'servers' => array(
 			'dev' => array('127.0.0.1', '127.0.1.1', '::1'),
-			'test' => array(),
+			'test' => array('sdocserver'),
 			'prod' => array('192.168.37.10', 'fraud.golan.local', '192.168.30.20'),
 		)
 	);
@@ -40,7 +40,7 @@ if (!defined('BILLRUN_CONFIG_PATH')) {
 
 	$conf_path = APPLICATION_PATH . "/conf/" . $config_env . ".ini";
 	if (!file_exists($conf_path)) {
-		die("no config file found" . PHP_EOL);
+		die("no config file found in : $conf_path" . PHP_EOL);
 	}
 
 	define('BILLRUN_CONFIG_PATH', $conf_path);
