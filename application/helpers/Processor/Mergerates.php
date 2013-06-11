@@ -4,7 +4,7 @@
  * @category   Application
  * @package    Helpers
  * @subpackage Processor
- * @copyright  Copyright (C) 2012 S.D.O.C. LTD. All rights reserved.
+ * @copyright  Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
  * @license    GNU General Public License version 2 or later
  */
 
