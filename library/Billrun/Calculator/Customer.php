@@ -20,7 +20,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator_Base_Rate {
 	 * @var string
 	 */
 	static protected $type = 'customer';
-	
+
 	/**
 	 * Array for translating CDR line values to  customer identifing values (finding out thier MSISDN/IMSI numbers)
 	 * @var array
@@ -30,12 +30,13 @@ class Billrun_Calculator_Customer extends Billrun_Calculator_Base_Rate {
 	public function __construct($options = array()) {
 		parent::__construct($options);
 
-		if(isset($options['calculator']['customer_identification_translation'])) {
+		if (isset($options['calculator']['customer_identification_translation'])) {
 			$this->translateCustomerIdentToAPI = $options['calculator']['customer_identification_translation'];
 		}
-		
+
 		$this->subscriber = Billrun_Factory::subscriber();
-		$this->subscribers = Billrun_Factory::db()->subscribersCollection();
+		$this->balances = Billrun_Factory::db()->balancesCollection();
+		$this->plans = Billrun_Factory::db()->plansCollection();
 	}
 
 	/**
@@ -45,8 +46,8 @@ class Billrun_Calculator_Customer extends Billrun_Calculator_Base_Rate {
 		$lines = Billrun_Factory::db()->linesCollection();
 
 		return $lines->query()
-				->in('type', array('nsn', 'ggsn', 'smsc', 'mmsc', 'smpp', 'tap3') )
-				->exists('customer_rate')->notEq('customer_rate',FALSE)
+				->in('type', array('nsn', 'ggsn', 'smsc', 'mmsc', 'smpp', 'tap3'))
+				->exists('customer_rate')->notEq('customer_rate', FALSE)
 				->notExists('subscriber_id')->cursor()->limit($this->limit);
 	}
 
@@ -66,7 +67,8 @@ class Billrun_Calculator_Customer extends Billrun_Calculator_Base_Rate {
 			$subscriber_field = $subscriber->{$field};
 			$row[$field] = $subscriber_field;
 		}
-		$this->createSubscriberIfMissing($subscriber, Billrun_Util::getNextChargeKey($row->get('unified_record_time')->sec));
+		$this->addPlanRef($row, $subscriber->plan);
+		$this->createSubscriberIfMissing($subscriber, Billrun_Util::getNextChargeKey($row->get('unified_record_time')->sec), $row['plan_ref']);
 	}
 
 	/**
@@ -77,12 +79,12 @@ class Billrun_Calculator_Customer extends Billrun_Calculator_Base_Rate {
 	protected function loadSubscriberForLine($row) {
 
 		// @TODO: move the iteration code snippet into function; this is the reason we load the item to class property
-		
-		$params = array();
-		foreach ($this->translateCustomerIdentToAPI as $key => $toKey) {		
 
-			if ( $row->get($key) ) {
-				$params[$toKey['toKey']] = preg_replace($toKey['clearRegex'], '', $row->get($key) );
+		$params = array();
+		foreach ($this->translateCustomerIdentToAPI as $key => $toKey) {
+
+			if ($row->get($key)) {
+				$params[$toKey['toKey']] = preg_replace($toKey['clearRegex'], '', $row->get($key));
 				//$this->subscriberNumber = $params[$toKey['toKey']];
 				Billrun_Factory::log("found indetification from {$key} to : " . $toKey['toKey'] . ' with value :' . $params[$toKey['toKey']], Zend_Log::DEBUG);
 				break;
@@ -100,13 +102,22 @@ class Billrun_Calculator_Customer extends Billrun_Calculator_Base_Rate {
 	}
 
 	/**
-	 * Create a subscriber  entery if none exists. 
+	 * Create a subscriber  entry if none exists. 
 	 * @param type $subscriber
 	 */
-	protected function createSubscriberIfMissing($subscriber, $billrun_key) {
+	protected function createSubscriberIfMissing($subscriber, $billrun_key, $plan_ref) {
 		if (!Billrun_Model_Subscriber::get($subscriber->subscriber_id, $billrun_key)) {
-			Billrun_Model_Subscriber::create($billrun_key, $subscriber->subscriber_id, $subscriber->plan, $subscriber->account_id);
+			Billrun_Model_Subscriber::create($billrun_key, $subscriber->subscriber_id, $plan_ref, $subscriber->account_id);
 		}
+	}
+
+	/**
+	 * Add plan reference to line
+	 * @param Mongodloid_Entity $row
+	 * @param string $plan
+	 */
+	protected function addPlanRef($row, $plan) {
+		$row['plan_ref'] = Billrun_Model_Plan::getPlanRef($plan, date(Billrun_Base::base_dateformat, $row['unified_record_time']->sec))->getMongoID();
 	}
 
 }

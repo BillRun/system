@@ -23,19 +23,17 @@ class Processor_Mergezonepackage extends Billrun_Processor_Base_Separator {
 	 * @var string
 	 */
 	static protected $type = 'mergerates';
-	
 	static protected $nsoftPLanToGolanPlan = array(
-									'SMALL' => array('ZG_HAVILA_SMS','ZG_HAVILA_VOICE','ZG_HAVILA_MMS'),
-									'LARGE' => array('ZG_HAVILA_SMS','ZG_HAVILA_VOICE','ZG_HAVILA_MMS','ZG_HAVILA_HOOL','ZG_NATIONAL'),
-					);
-	
+		'SMALL' => array('ZG_HAVILA_SMS', 'ZG_HAVILA_VOICE', 'ZG_HAVILA_MMS'),
+		'LARGE' => array('ZG_HAVILA_SMS', 'ZG_HAVILA_VOICE', 'ZG_HAVILA_MMS', 'ZG_HAVILA_HOOL', 'ZG_NATIONAL'),
+	);
 	static protected $typesTranslation = array(
-									'M' => 'sms',
-									'C' => 'call',
-									'A' => 'call',
-									'I' => 'data',
-									'N' => 'mms'
-					);
+		'M' => 'sms',
+		'C' => 'call',
+		'A' => 'call',
+		'I' => 'data',
+		'N' => 'mms'
+	);
 
 	public function __construct($options) {
 		parent::__construct($options);
@@ -105,22 +103,29 @@ class Processor_Mergezonepackage extends Billrun_Processor_Base_Separator {
 			if (isset($row['zoneGroupEltId_tariffItem'])) {
 				//$key = $row['zoneGroupEltId_tariffItem'];
 				$entity = $rates->query('key', $row['zoneGroupEltId_tariffItem'])->cursor()->current();
+					
 				if ($entity->getId()) {
 					$entity->collection($rates);
-					
-					if(isset($entity['rates'][$type])) {
-						Billrun_Factory::log()->log("Setting plan for : ".$entity->getId(), Zend_Log::DEBUG);
+
+					if (isset($entity['rates'][$type])) {
+						Billrun_Factory::log()->log("Setting plan for : " . $entity->getId(), Zend_Log::DEBUG);
 						$rowRates = $entity['rates'];
 						$plans = isset($rowRates[$type]['plans']) ? $rowRates[$type]['plans'] : array();
 						foreach (self::$nsoftPLanToGolanPlan as $planName => $nsoftVal) {
-							if(in_array($row['zoneGroupEltId_zoneGroupId_zoneGroupName'],$nsoftVal) && !in_array($planName,$plans)) {
-								 $plans[] = $planName;
+							if (in_array($row['zoneGroupEltId_zoneGroupId_zoneGroupName'], $nsoftVal)) {
+								$plan_ref = Billrun_Model_Plan::getPlanRef($planName);
+								if ($plan_ref) {
+									$plan_ref_id = $plan_ref->getMongoID();
+									if (!in_array($plan_ref_id, $plans)) {
+										$plans[] = $plan_ref_id;
+									}
+								}
 							}
 						}
-						$rowRates[$type]['plans']= $plans;
+						$rowRates[$type]['plans'] = $plans;
 						$entity['rates'] = $rowRates;
 					}
-					
+
 					$entity->save($rates);
 					$this->data['stored_data'][] = $row;
 				} else {

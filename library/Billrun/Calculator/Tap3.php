@@ -38,8 +38,14 @@ class Billrun_Calculator_Tap3 extends Billrun_Calculator_Base_Rate {
 		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteRow', array('row' => $row));
 
 		$current = $row->getRawData();
-		$rate = $this->getLineRate($row);
+
+		$usage_type = $this->getLineUsageType($row);
+		$volume = $this->getLineVolume($row, $usage_type);
+		$rate = $this->getLineRate($row, $usage_type);
+
 		$added_values = array(
+			'usaget' => $usage_type,
+			'usagev' => $volume,
 			'customer_rate' => ($rate !== FALSE ? $rate->getMongoID() : $rate),
 		);
 		$newData = array_merge($current, $added_values);
@@ -48,10 +54,62 @@ class Billrun_Calculator_Tap3 extends Billrun_Calculator_Base_Rate {
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteRow', array('row' => $row));
 	}
 
-	protected function getLineRate($row) {
+	protected function getLineVolume($row, $usage_type) {
+		$volume = null;
+		switch ($usage_type) {
+			case 'sms' :
+			case 'incoming_sms' :
+				$volume = 1;
+				break;
+
+			case 'call' :
+			case 'incoming_call' :
+				$volume = $row->get('basicCallInformation.TotalCallEventDuration');
+				break;
+
+			case 'data' :
+				$volume = $row->get('GprsServiceUsed.DataVolumeIncoming') + $row->get('GprsServiceUsed.DataVolumeOutgoing');
+				break;
+		}
+		return $volume;
+	}
+
+	protected function getLineUsageType($row) {
+
+		$usage_type = null;
+
+		$record_type = $row['record_type'];
+		if (isset($row['BasicServiceUsedList']['BasicServiceUsed']['BasicService']['BasicServiceCode']['TeleServiceCode'])) {
+			$tele_service_code = $row['BasicServiceUsedList']['BasicServiceUsed']['BasicService']['BasicServiceCode']['TeleServiceCode'];
+			if ($tele_service_code == '11') {
+				if ($record_type == '9') {
+					$usage_type = 'call'; // outgoing call
+				} else if ($record_type == 'a') {
+					$usage_type = 'incoming_call'; // incoming / callback
+				}
+			} else if ($tele_service_code == '22') {
+				if ($record_type == '9') {
+					$usage_type = 'sms';
+				}
+			} else if ($tele_service_code == '21') {
+				if ($record_type == 'a') {
+					$usage_type = 'incoming_sms';
+				}
+			}
+		} else {
+			if ($record_type == 'e') {
+				$usage_type = 'data';
+			}
+		}
+
+		return $usage_type;
+	}
+
+	protected function getLineRate($row, $usage_type) {
 		$header = $this->getLineHeader($row);
-		$int_network_mappings = Billrun_Factory::db()->intnetworkmappingsCollection();
+		$rates = Billrun_Factory::db()->ratesCollection();
 		$log = Billrun_Factory::db()->logCollection();
+		$line_time = $row['unified_record_time'];
 
 		if (isset($row['LocationInformation']['GeographicalLocation']['ServingNetwork'])) {
 			$serving_network = $row['LocationInformation']['GeographicalLocation']['ServingNetwork'];
@@ -62,15 +120,28 @@ class Billrun_Calculator_Tap3 extends Billrun_Calculator_Base_Rate {
 		if (!is_null($serving_network)) {
 			$rates = Billrun_Factory::db()->ratesCollection();
 
-			if (isset($row['usage_type'])) {
-				$rate_key = $int_network_mappings->query(array('PLMN' => $serving_network))->cursor()->current()->get('type.' . $row['usage_type']);
-				if (!is_null($rate_key)) {
-					$rate = $rates->query(array('key' => $rate_key))->cursor()->current();
+			if (isset($usage_type)) {
+				$filter_array = array(
+					'params.serving_networks' => array(
+						'$in' => array($serving_network),
+					),
+					'rates.' . $usage_type => array(
+						'$exists' => true,
+					),
+					'from' => array(
+						'$lte' => $line_time,
+					),
+					'to' => array(
+						'$gte' => $line_time,
+					),
+				);
+				$rate = $rates->query($filter_array)->cursor()->current();
+				if ($rate->getId()) {
 					return $rate->get('_id');
 				}
 			}
 		}
-	
+
 		return false;
 	}
 

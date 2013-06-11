@@ -73,6 +73,11 @@ class Processor_Mergerates extends Billrun_Processor_Base_Separator {
 //		$row['header_stamp'] = $this->data['header']['stamp'];
 		$row['file'] = basename($this->filePath);
 		$row['process_time'] = date(self::base_dateformat);
+		
+		if (Billrun_Util::startsWith($row['accessTypeName'], "AC_ROAM_CALLBACK")) { //@TODO change this check when there is a way to detect callback as the usage type
+			$row['kind'] = "A";
+		}
+		
 		Billrun_Factory::dispatcher()->trigger('afterDataParsing', array(&$row, $this));
 		$this->data['data'][] = $row;
 		return $row;

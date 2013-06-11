@@ -20,7 +20,7 @@ class Billrun_Model_Subscriber {
 	 * @return boolean
 	 */
 	static public function get( $subscriberId, $billrunKey ) {		
-		$subcr = Billrun_Factory::db()->subscribersCollection()->query(array(
+		$subcr = Billrun_Factory::db()->balancesCollection()->query(array(
 						'subscriber_id' => $subscriberId, 
 						'billrun_month' => $billrunKey
 					 ))->cursor()->current();
@@ -39,16 +39,16 @@ class Billrun_Model_Subscriber {
 	 * @param type $account_id
 	 * @return boolean
 	 */
-	static public function create($billrunKey, $subscriberId, $plan, $accountId) {
+	static public function create($billrunKey, $subscriberId, $plan_ref, $accountId) {
 		if(!self::get( $subscriberId, $billrunKey )) {
-			Billrun_Factory::log('Adding subscriber ' .  $subscriberId . ' to subscribers collection', Zend_Log::INFO);
-			$newSubscriber = new Mongodloid_Entity(self::getEmptySubscriberEntry($billrunKey, $accountId, $subscriberId, $plan));
-			$newSubscriber->collection(Billrun_Factory::db()->subscribersCollection());
+			Billrun_Factory::log('Adding subscriber ' .  $subscriberId . ' to balances collection', Zend_Log::INFO);
+			$newSubscriber = new Mongodloid_Entity(self::getEmptySubscriberEntry($billrunKey, $accountId, $subscriberId, $plan_ref));
+			$newSubscriber->collection(Billrun_Factory::db()->balancesCollection());
 			$newSubscriber->save();
 			return self::get( $subscriberId, $billrunKey );
 		} 
 		return FALSE;
-	}	
+	}
 
 	/**
 	 * get a new subscriber array to be place in the DB.
@@ -58,12 +58,12 @@ class Billrun_Model_Subscriber {
 	 * @param type $plan_current
 	 * @return type
 	 */
-	static public function getEmptySubscriberEntry($billrun_month, $account_id, $subscriber_id, $plan_current) {
+	static public function getEmptySubscriberEntry($billrun_month, $account_id, $subscriber_id, $plan_ref) {
 		return array(
 			'billrun_month' => $billrun_month,
 			'account_id' => $account_id,
 			'subscriber_id' => $subscriber_id,
-			'plan_current' => $plan_current,
+			'plan_current' => $plan_ref,
 			//'number' => $this->subscriberNumber, //@TODO remove before production here to allow offline subscriber search...
 			'balance' => array(
 				'usage_counters' => array(
