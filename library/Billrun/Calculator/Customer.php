@@ -120,7 +120,5 @@ class Billrun_Calculator_Customer extends Billrun_Calculator_Base_Rate {
 	protected function addPlanRef($row, $plan) {
 		$row['plan_ref'] = Billrun_Model_Plan::getPlanRef($plan, date(Billrun_Base::base_dateformat, $row['unified_record_time']->sec))->getMongoID();
 	}
-	
-	
 
 }

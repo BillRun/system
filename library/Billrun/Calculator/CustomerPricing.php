@@ -33,34 +33,13 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		}
 		//@TODO  change this  be be configurable.
 		$pricingData = array();
-		$usage_class_prefix = "";
-		switch ($row['type']) {
-			case 'smsc' :
-			case 'smpp' :
-				$usage_type = 'sms';
-				$volume = 1;
-				break;
 
-			case 'mmsc' :
-				$usage_type = 'mms';
-				$volume = 1;
-				break;
-
-			case 'nsn' :
-				$usage_type = 'call';
-				$volume = $row['duration'];
-				break;
-
-			case 'ggsn' :
-				$usage_type = 'data';
-				$volume = $row['fbc_downlink_volume'] + $row['fbc_uplink_volume'];
-				break;
-
-			case 'tap3' :
-				$usage_type = $row['usaget'];
-				$usage_class_prefix = "inter_roam_";
-				$volume = $row['usagev'];
-				break;
+		$usage_type = $row['usaget'];
+		$volume = $row['usagev'];
+		if ($row['type'] == 'tap3') {
+			$usage_class_prefix = "inter_roam_";
+		} else {
+			$usage_class_prefix = "";
 		}
 
 		if (isset($volume)) {

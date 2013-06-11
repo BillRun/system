@@ -46,15 +46,26 @@ class Billrun_Calculator_Data extends Billrun_Calculator_Base_Rate {
 		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteRow', array('row' => $row));
 
 		$current = $row->getRawData();
-		$rate = $this->getLineRate($row);
-		if ($rate !== FALSE) {
-			$added_values = array(
-				$this->ratingField => ($rate ? $rate['_id'] : $rate),
-			);
-			$newData = array_merge($current, $added_values);
-			$row->setRawData($newData);
-		}
+		$usage_type = $this->getLineUsageType($row);
+		$volume = $this->getLineVolume($row, $usage_type);
+		$rate = $this->getLineRate($row, $usage_type);
+
+		$added_values = array(
+			'usaget' => $usage_type,
+			'usagev' => $volume,
+			$this->ratingField => ($rate ? $rate['_id'] : $rate),
+		);
+		$newData = array_merge($current, $added_values);
+		$row->setRawData($newData);
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteRow', array('row' => $row));
+	}
+
+	protected function getLineVolume($row, $usage_type) {
+		return $row['fbc_downlink_volume'] + $row['fbc_uplink_volume'];
+	}
+
+	protected function getLineUsageType($row) {
+		return 'data';
 	}
 
 	protected function getLineRate($row) {
@@ -71,7 +82,9 @@ class Billrun_Calculator_Data extends Billrun_Calculator_Base_Rate {
 						),
 						)
 					))->cursor()->current();
-			return $rate->getRawData();
+			if ($rate->getId()) {
+				return $rate->getRawData();
+			}
 		}
 		//	Billrun_Factory::log()->log("International row : ".print_r($row,1),  Zend_Log::DEBUG);
 		return FALSE;
