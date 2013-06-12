@@ -12,7 +12,7 @@
  * @package  calculator
  * @since    0.5
  */
-class Billrun_Calculator_Sms extends Billrun_Calculator_Base_Rate {
+class Billrun_Calculator_Rate_Sms extends Billrun_Calculator_Rate {
 
 	/**
 	 * the type of the object
@@ -56,11 +56,17 @@ class Billrun_Calculator_Sms extends Billrun_Calculator_Base_Rate {
 		$row->setRawData($newData);
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteRow', array('row' => $row));
 	}
-
+	
+	/**
+	 * @see Billrun_Calculator_Rate::getLineVolume
+	 */
 	protected function getLineVolume($row, $usage_type) {
 		return 1;
 	}
-
+	
+	/**
+	 * @see Billrun_Calculator_Rate::getLineUsageType
+	 */
 	protected function getLineUsageType($row) {
 		return $row['type'] == 'mmsc' ? 'mms' : 'sms';
 	}
@@ -75,9 +81,7 @@ class Billrun_Calculator_Sms extends Billrun_Calculator_Base_Rate {
 	}
 
 	/**
-	 * Get the rate the best fit a given line
-	 * @param type $row the line to get the rate for.
-	 * @return Array 
+	 * @see Billrun_Calculator_Rate::getLineRate
 	 */
 	protected function getLineRate($row, $usage_type) {
 		$called_number = preg_replace('/[^\d]/', '', preg_replace('/^0+/', '', ($row['type'] != 'mmsc' ? $row['called_msc'] : $row['recipent_addr'])));

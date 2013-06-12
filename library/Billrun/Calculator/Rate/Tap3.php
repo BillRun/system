@@ -1,16 +1,18 @@
 <?php
 
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
+/**
+ * @package         Billing
+ * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
+ * @license         GNU General Public License version 2 or later; see LICENSE.txt
  */
 
 /**
- * Description of Tap3
+ * Billing calculator class for tap3 records
  *
- * @author eran
+ * @package  calculator
+ * @since    0.5
  */
-class Billrun_Calculator_Tap3 extends Billrun_Calculator_Base_Rate {
+class Billrun_Calculator_Rate_Tap3 extends Billrun_Calculator_Rate {
 
 	/**
 	 * the type of the object
@@ -53,7 +55,11 @@ class Billrun_Calculator_Tap3 extends Billrun_Calculator_Base_Rate {
 
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteRow', array('row' => $row));
 	}
-
+	
+	
+	/**
+	 * @see Billrun_Calculator_Rate::getLineVolume
+	 */
 	protected function getLineVolume($row, $usage_type) {
 		$volume = null;
 		switch ($usage_type) {
@@ -73,7 +79,9 @@ class Billrun_Calculator_Tap3 extends Billrun_Calculator_Base_Rate {
 		}
 		return $volume;
 	}
-
+	/**
+	 * @see Billrun_Calculator_Rate::getLineUsageType
+	 */
 	protected function getLineUsageType($row) {
 
 		$usage_type = null;
@@ -105,8 +113,11 @@ class Billrun_Calculator_Tap3 extends Billrun_Calculator_Base_Rate {
 		return $usage_type;
 	}
 
+	/**
+	 * @see Billrun_Calculator_Rate::getLineRate
+	 */
 	protected function getLineRate($row, $usage_type) {
-		$header = $this->getLineHeader($row);
+		//$header = $this->getLineHeader($row); @TODO should this be removed? 2013/06
 		$rates = Billrun_Factory::db()->ratesCollection();
 		$log = Billrun_Factory::db()->logCollection();
 		$line_time = $row['unified_record_time'];

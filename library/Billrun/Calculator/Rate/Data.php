@@ -14,7 +14,7 @@
  * @since    0.5
  *
  */
-class Billrun_Calculator_Data extends Billrun_Calculator_Base_Rate {
+class Billrun_Calculator_Rate_Data extends Billrun_Calculator_Rate {
 
 	/**
 	 * the type of the object
@@ -22,6 +22,11 @@ class Billrun_Calculator_Data extends Billrun_Calculator_Base_Rate {
 	 * @var string
 	 */
 	static protected $type = 'data';
+
+	/**
+	 *@see Billrun_Calculator_Base_Rate
+	 * @var type 
+	 */
 	protected $rateKeyMapping = array('key' => 'INTERNET_BILL_BY_VOLUME');
 
 	public function __construct($options = array()) {
@@ -60,15 +65,24 @@ class Billrun_Calculator_Data extends Billrun_Calculator_Base_Rate {
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteRow', array('row' => $row));
 	}
 
+	/**
+	 * @see Billrun_Calculator_Rate::getLineVolume
+	 */	
 	protected function getLineVolume($row, $usage_type) {
 		return $row['fbc_downlink_volume'] + $row['fbc_uplink_volume'];
 	}
 
+	/**
+	 * @see Billrun_Calculator_Rate::getLineUsageType
+	 */	
 	protected function getLineUsageType($row) {
 		return 'data';
 	}
 
-	protected function getLineRate($row) {
+	/**
+	 * @see Billrun_Calculator_Rate::getLineRate
+	 */
+	protected function getLineRate($row, $usag_type) {
 		$line_time = $row['unified_record_time'];
 		if (preg_match('/^(?=62\.90\.|37\.26\.)/', $row['sgsn_address'])) {
 			$rate = Billrun_Factory::db()->ratesCollection()->query(

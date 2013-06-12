@@ -12,7 +12,7 @@
  * @package  calculator
  * @since    0.5
  */
-class Billrun_Calculator_Nsn extends Billrun_Calculator_Base_Rate {
+class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 
 	/**
 	 * the type of the object
@@ -20,12 +20,6 @@ class Billrun_Calculator_Nsn extends Billrun_Calculator_Base_Rate {
 	 * @var string
 	 */
 	static protected $type = "nsn";
-
-	public function __construct($options = array()) {
-		parent::__construct($options);
-
-//		$this->config = Billrun_Factory::config()->getConfigValue('calculator.nsn.customer', array());
-	}
 
 	/**
 	 * method to receive the lines the calculator should take care
@@ -63,15 +57,24 @@ class Billrun_Calculator_Nsn extends Billrun_Calculator_Base_Rate {
 
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteRow', array('row' => $row));
 	}
-
+	
+	/**
+	 * @see Billrun_Calculator_Rate::getLineVolume
+	 */
 	protected function getLineVolume($row, $usage_type) {
 		return $row['duration'];
 	}
 
+	/**
+	 * @see Billrun_Calculator_Rate::getLineUsageType
+	 */	
 	protected function getLineUsageType($row) {
 		return 'call';
 	}
 
+	/**
+	 * @see Billrun_Calculator_Rate::getLineRate
+	 */
 	protected function getLineRate($row, $usage_type) {
 		$record_type = $row->get('record_type');
 

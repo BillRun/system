@@ -13,43 +13,18 @@
  * @package  calculator
  * @since    0.5
  */
-abstract class Billrun_Calculator_Base_Rate extends Billrun_Calculator {
+abstract class Billrun_Calculator_SaveOnUpdate extends Billrun_Calculator {
 
-	/**
-	 * the type of the object
-	 *
-	 * @var string
-	 */
-	static protected $type = 'rate';
-
-	/**
-	 * The rating field to update in the CDR line.
-	 * @var string
-	 */
-	protected $ratingField = 'customer_rate';
-
-	/**
-	 * The mapping of the fileds in the lines to the 
-	 * @var array
-	 */
-	protected $rateMapping = array();
-	
-	public function __construct($options = array()) {
-		parent::__construct($options);
-		if(isset($options['calculator']['rate_mapping'])) {
-			$this->rateMapping = $options['calculator']['rate_mapping'];
-			//Billrun_Factory::log()->log("receive options : ".print_r($this->rateMapping,1),  Zend_Log::DEBUG);
-		}
-	}
 	
 	/**
+	 * @TODO unneeded??
 	 * identify if the row belong to calculator
 	 * 
 	 * @return boolean true if the row identify as belonging to the calculator, else false
-	 */
+	 *
 	protected function identify($row) {
 		return true;
-	}
+	}*/
 
 	/**
 	 * execute the calculation process
@@ -84,5 +59,6 @@ abstract class Billrun_Calculator_Base_Rate extends Billrun_Calculator {
 		$line->save( Billrun_Factory::db()->linesCollection());
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteLine', array('data' => $line));
 	}
+
 	
 }
