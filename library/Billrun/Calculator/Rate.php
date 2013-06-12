@@ -10,7 +10,7 @@
  *
  * @author eran
  */
-abstract class Billrun_Calculator_Rate extends Billrun_Calculator_SaveOnUpdate {
+abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 
 	/**
 	 * the type of the object

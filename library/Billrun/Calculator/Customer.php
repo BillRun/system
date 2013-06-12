@@ -12,7 +12,7 @@
  * @package  calculator
  * @since    0.5
  */
-class Billrun_Calculator_Customer extends Billrun_Calculator_SaveOnUpdate {
+class Billrun_Calculator_Customer extends Billrun_Calculator {
 
 	/**
 	 * the type of the object
