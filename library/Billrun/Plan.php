@@ -17,9 +17,9 @@ class Billrun_Plan {
 	/**
 	 * container of the plan data
 	 * 
-	 * @var array
+	 * @var mixed
 	 */
-	protected $data = array();
+	protected $data = null;
 	
 	/**
 	 * constructor
@@ -28,17 +28,28 @@ class Billrun_Plan {
 	 * @param array $params array of parmeters (plan name & time)
 	 */
 	public function __construct(array $params = array()) {
-		if (!isset($params['name']) || isset($params['time'])) {
+		if ((!isset($params['name']) || !isset($params['time'])) && (!isset($params['id'])) ) {
 			//throw an error
+			throw new Exception("plan  constructor  was called  without the appropiate paramters , got : ". print_r($params,1));
 		}
-		$date = new MongoDate($params['time']);
-		$this->data = Billrun_Factory::db()
-			->plansCollection()
-			->greaterEq('from', $date)
-			->lessEq('to', $date)
-			->query('name', $params['name'])
-			->cursor()
-			->current();
+		
+		if(isset($params['id'])) {
+			$this->data = Billrun_Factory::db()->plansCollection()->findOne($params['id']) ;
+		} else {
+			$date = new MongoDate($params['time']);
+			$this->data = Billrun_Factory::db()->plansCollection()
+					->query(array(
+							'name' => $params['name'], 
+							'$or' => array(
+										array('to'=> array('$gt' => $date)), 
+										array('to' => null)
+								) 
+							))
+					->lessEq('from', $date)			
+					->cursor()
+					->current();
+		}
+
 	}
 
 	/**
@@ -64,7 +75,7 @@ class Billrun_Plan {
 	public function isRateInSubPlan($rate, $sub, $type) {
 		return isset($rate['rates'][$type]['plans']) &&
 			is_array($rate['rates'][$type]['plans']) &&
-			in_array($sub['plan_current'], $rate['rates'][$type]['plans']);
+			in_array($sub['current_plan'], $rate['rates'][$type]['plans']);
 	}
 
 	/**
@@ -79,7 +90,7 @@ class Billrun_Plan {
 			throw new Exception("Inproper usage counter requested : $usagetype from subscriber : " . print_r($subscriber, 1));
 		}
 
-		if (!($plan = self::get($subscriber['plan_current']))) {
+		if (!($plan = self::get($subscriber['current_plan']))) {
 			throw new Exception("Couldn't load plan for subscriber : " . print_r($subscriber, 1));
 		}
 		$usageLeft = 0;
@@ -90,6 +101,10 @@ class Billrun_Plan {
 			$usageLeft = $plan['include'][$usagetype] - $subscriber['balance']['usage_counters'][$usagetype];
 		}
 		return floatval($usageLeft < 0 ? 0 : $usageLeft);
+	}
+	
+	public function getRef() {
+		return $this->data->getId();
 	}
 
 }
