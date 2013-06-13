@@ -99,9 +99,9 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	protected function getLinePricingData($volumeToPrice, $usageType, $rate, $subr) {
 		$typedRates = $rate['rates'][$usageType];
 		$accessPrice = isset($typedRates['access']) ? $typedRates['access'] : 0;
-
-		if (Billrun_Model_Plan::isRateInSubPlan($rate, $subr, $usageType)) {
-			$volumeToPrice = $volumeToPrice - Billrun_Model_Plan::usageLeftInPlan($subr, $usageType);
+		$plan = Billrun_Factory::plan(array('id' => $subr['current_plan']));
+		if ($plan->isRateInSubPlan($rate, $subr, $usageType)) {
+			$volumeToPrice = $volumeToPrice - $plan->usageLeftInPlan($subr, $usageType);
 
 			if ($volumeToPrice < 0) {
 				$volumeToPrice = 0;

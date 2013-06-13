@@ -113,7 +113,7 @@ class Processor_Mergezonepackage extends Billrun_Processor_Base_Separator {
 						$plans = isset($rowRates[$type]['plans']) ? $rowRates[$type]['plans'] : array();
 						foreach (self::$nsoftPLanToGolanPlan as $planName => $nsoftVal) {
 							if (in_array($row['zoneGroupEltId_zoneGroupId_zoneGroupName'], $nsoftVal)) {
-								$plan_ref = Billrun_Model_Plan::getPlanRef($planName);
+								$plan_ref = Billrun_Factory::plan(array('name' => $planName, 'time' => time()))->getRef();
 								if ($plan_ref) {
 									$plan_ref_id = $plan_ref->getMongoID();
 									if (!in_array($plan_ref_id, $plans)) {

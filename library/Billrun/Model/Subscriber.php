@@ -55,7 +55,7 @@ class Billrun_Model_Subscriber {
 	 * @param type $billrun_month
 	 * @param type $account_id
 	 * @param type $subscriber_id
-	 * @param type $plan_current
+	 * @param type $current_plan
 	 * @return type
 	 */
 	static public function getEmptySubscriberEntry($billrun_month, $account_id, $subscriber_id, $plan_ref) {
@@ -63,8 +63,7 @@ class Billrun_Model_Subscriber {
 			'billrun_month' => $billrun_month,
 			'account_id' => $account_id,
 			'subscriber_id' => $subscriber_id,
-			'plan_current' => $plan_ref,
-			//'number' => $this->subscriberNumber, //@TODO remove before production here to allow offline subscriber search...
+			'current_plan' => $plan_ref,
 			'balance' => array(
 				'usage_counters' => array(
 					'call' => 0,

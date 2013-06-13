@@ -117,7 +117,12 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	 * @param string $plan
 	 */
 	protected function addPlanRef($row, $plan) {
-		$row['plan_ref'] = Billrun_Model_Plan::getPlanRef($plan, date(Billrun_Base::base_dateformat, $row['unified_record_time']->sec))->getMongoID();
+		$planObj = Billrun_Factory::plan(array('name' => $plan, 'time' => $row['unified_record_time']->sec));
+		if(!$planObj->get('_id')) {
+				Billrun_Factory::log("Couldn't get plan for CDR line : {$row['stamp']} with plan $plan", Zend_Log::ALERT);
+				return;
+		}
+		$row['plan_ref'] = $planObj->get('_id')->getMongoID();
 	}
 
 }
