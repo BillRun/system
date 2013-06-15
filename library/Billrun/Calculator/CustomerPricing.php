@@ -26,9 +26,9 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 
 	protected function updateRow($row) {
 		$rate = Billrun_Factory::db()->ratesCollection()->findOne(new Mongodloid_Id($row['customer_rate']));
-		$subscriber = Billrun_Model_Subscriber::get($row['subscriber_id'], Billrun_Util::getNextChargeKey($row['unified_record_time']->sec));
+		$subcrBalance = Billrun_Factory::subscriber()->getBalance( Billrun_Util::getNextChargeKey($row['unified_record_time']->sec), $row['subscriber_id']);
 
-		if (!isset($subscriber) || !$subscriber) {
+		if (!isset($subcrBalance) || !$subcrBalance) {
 			Billrun_Factory::log()->log("couldn't get subscriber for : " . print_r(array(
 					'subscriber_id' => $row['subscriber_id'],
 					'billrun_month' => Billrun_Util::getNextChargeKey($row['unified_record_time']->sec)
@@ -47,9 +47,9 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		}
 
 		if (isset($volume)) {
-			$pricingData = $this->getLinePricingData($volume, $usage_type, $rate, $subscriber,  Billrun_Factory::plan(array('id'=> $row['plan_ref'] )) );
+			$pricingData = $this->getLinePricingData($volume, $usage_type, $rate, $subcrBalance,  Billrun_Factory::plan(array('id'=> $row['plan_ref'] )) );
 			$row->setRawData(array_merge($row->getRawData(), $pricingData));
-			$this->updateSubscriberBalance($subscriber, array($usage_class_prefix . $usage_type => $volume), $pricingData[$this->pricingField]);
+			$this->updateSubscriberBalance($subcrBalance, array($usage_class_prefix . $usage_type => $volume), $pricingData[$this->pricingField]);
 			$this->writeLine($row); //@TODO  this here to prevent divergance  between the priced lines and the subscriber account if the process fails in the middle.
 		} else {
 			Billrun_Factory::log()>log("Couldn't price line {$row['stamp']} as it doent has any volume.",Zend_Log::ERR);

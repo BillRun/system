@@ -68,7 +68,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			$row[$field] = $subscriber_field;
 		}
 		$this->addPlanRef($row, $subscriber->plan);
-		$this->createSubscriberIfMissing($subscriber, Billrun_Util::getNextChargeKey($row->get('unified_record_time')->sec), $row['plan_ref']);
+		$this->createBalanceIfMissing($subscriber, Billrun_Util::getNextChargeKey($row->get('unified_record_time')->sec), $row['plan_ref']);
 	}
 
 	/**
@@ -105,9 +105,9 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	 * Create a subscriber  entry if none exists. 
 	 * @param type $subscriber
 	 */
-	protected function createSubscriberIfMissing($subscriber, $billrun_key, $plan_ref) {
-		if (!Billrun_Model_Subscriber::get($subscriber->subscriber_id, $billrun_key)) {
-			Billrun_Model_Subscriber::create($billrun_key, $subscriber->subscriber_id, $plan_ref, $subscriber->account_id);
+	protected function createBalanceIfMissing($subscriber, $billrun_key, $plan_ref) {
+		if (!Billrun_Factory::subscriber()->getBalance( $billrun_key, $subscriber->subscriber_id)) {
+			Billrun_Factory::subscriber()->createBalance($billrun_key, $subscriber->subscriber_id, $plan_ref, $subscriber->account_id);
 		}
 	}
 
