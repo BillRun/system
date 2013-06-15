@@ -14,12 +14,14 @@
  */
 class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 
+	protected $pricingField = 'price_customer';
+	
 	protected function getLines() {
 		$lines = Billrun_Factory::db()->linesCollection();
 
 		return $lines->query()
 				->in('type', array('ggsn', 'smpp', 'smsc', 'mmsc', 'nsn', 'tap3'))
-				->exists('customer_rate')->notEq('customer_rate', FALSE)->exists('subscriber_id')->notExists('price_customer')->cursor()->limit($this->limit);
+				->exists('customer_rate')->notEq('customer_rate', FALSE)->exists('subscriber_id')->notExists($this->pricingField)->cursor()->limit($this->limit);
 	}
 
 	protected function updateRow($row) {
@@ -47,10 +49,10 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		if (isset($volume)) {
 			$pricingData = $this->getLinePricingData($volume, $usage_type, $rate, $subscriber); //$this->priceLine($volume, $usage_type, $rate, $subscriber);
 			$row->setRawData(array_merge($row->getRawData(), $pricingData));
-			$this->updateSubscriberBalance($subscriber, array($usage_class_prefix . $usage_type => $volume), $pricingData['price_customer']);
-			$this->updateLinePrice($row); //@TODO  this here to prevent divergance  between the priced lines and the subscriber account if the process fails in the middle.
+			$this->updateSubscriberBalance($subscriber, array($usage_class_prefix . $usage_type => $volume), $pricingData[$this->pricingField]);
+			$this->writeLine($row); //@TODO  this here to prevent divergance  between the priced lines and the subscriber account if the process fails in the middle.
 		} else {
-			//@TODO error?
+			Billrun_Factory::log()>log("Couldn't price line {$row['stamp']} as it doent has any volume.",Zend_Log::ERR);
 		}		
 	}
 
@@ -68,24 +70,6 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			Billrun_Factory::dispatcher()->trigger('afterPricingDataRow', array('data' => &$item));
 		}
 		Billrun_Factory::dispatcher()->trigger('afterPricingData', array('data' => $this->data));
-	}
-
-	/**
-	 * This does noting  as  the  data i writen after each line update (not  at  the end) as  the  pricing is dependent on live  data.
-	 */
-	public function write() {
-		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteData', array('data' => $this->data));
-
-		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteData', array('data' => $this->data));
-	}
-
-	/**
-	 * execute write the calculation output into DB
-	 */
-	protected function updateLinePrice($line) {
-		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteLineData', array('data' => $this->data));
-		$line->save( Billrun_Factory::db()->linesCollection());
-		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteLineData', array('data' => $this->data));
 	}
 
 	/**
@@ -114,8 +98,15 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			$ret['out_plan'] = true;
 		}
 
-		$interval = $typedRates['rate']['interval'] ? $typedRates['rate']['interval'] : 1;
-		$ret['price_customer'] = $accessPrice + ( floatval((ceil($volumeToPrice / $interval) ) * $typedRates['rate']['price']) );
+		$price = $accessPrice;
+		foreach( $typedRates['rate'] as $key => $rate ) {
+			if(!$volumeToPrice) { break; }//break if no volume left to price.
+			$volumeToPriceCurrentRating =  ($volumeToPrice - $rate['to'] < 0) ? $volumeToPrice : $rate['to']; // get the volume that needed to be priced for the current rating
+			$price += floatval((ceil( $volumeToPriceCurrentRating / $rate['interval'] ) * $rate['price']) ); // actually price the usage volume by the current 
+			$volumeToPrice = $volumeToPrice - $volumeToPriceCurrentRating; //decressed the volume that was priced
+		}
+		$ret[$this->pricingField] = $price;
+		
 
 		return $ret;
 	}

@@ -112,8 +112,8 @@ abstract class Billrun_Calculator extends Billrun_Base {
 			//Billrun_Factory::log()->log("Calcuating row : ".print_r($item,1),  Zend_Log::DEBUG);
 			Billrun_Factory::dispatcher()->trigger('beforeRateDataRow', array('data' => &$item));
 			$this->updateRow($item);
-			$this->data[] = $item;
 			$this->writeLine($item);
+			$this->data[] = $item;
 			Billrun_Factory::dispatcher()->trigger('afterRateDataRow', array('data' => &$item));
 		}
 		Billrun_Factory::dispatcher()->trigger('afterRateData', array('data' => $this->data));

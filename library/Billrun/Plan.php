@@ -79,7 +79,7 @@ class Billrun_Plan {
 	}
 
 	/**
-	 * TODO  move to a different class
+	 * TODO  refactor to be based on the current plan
 	 * @deprecated since version 0.1
 	 *		should be removed from here; 
 	 *		the check of plan should be run on line not subscriber/balance
@@ -90,15 +90,15 @@ class Billrun_Plan {
 			throw new Exception("Inproper usage counter requested : $usagetype from subscriber : " . print_r($subscriber, 1));
 		}
 
-		if (!($plan = self::get($subscriber['current_plan']))) {
+		if ( !($plan = Billrun_Factory::plan(array('id' => $subscriber['current_plan']))) ) {
 			throw new Exception("Couldn't load plan for subscriber : " . print_r($subscriber, 1));
 		}
 		$usageLeft = 0;
-		if (isset($plan['include'][$usagetype])) {
-			if ($plan['include'][$usagetype] == 'UNLIMITED') {
+		if (isset($plan->get('include')[$usagetype])) {
+			if ($plan->get('include')[$usagetype] == 'UNLIMITED') {
 				return PHP_INT_MAX;
 			}
-			$usageLeft = $plan['include'][$usagetype] - $subscriber['balance']['usage_counters'][$usagetype];
+			$usageLeft = $plan->get('include')[$usagetype] - $subscriber['balance']['usage_counters'][$usagetype];
 		}
 		return floatval($usageLeft < 0 ? 0 : $usageLeft);
 	}

@@ -141,10 +141,11 @@ class Processor_Mergerates extends Billrun_Processor_Base_Separator {
 				$value = array(
 					'unit' => $unit,
 					'rate' => array(
-						'to' => (int) 2147483647,
-						'price' => (double) $row['tinf_sampPrice0'],
-						'interval' => (int) ($row['tinf_sampDelayInSec0'] * $intervalMultiplier),
-					),
+							array(
+							'to' => (int) 2147483647,
+							'price' => (double) $row['tinf_sampPrice0'],
+							'interval' => (int) ( $row['tinf_sampDelayInSec0'] ? ($row['tinf_sampDelayInSec0'] * $intervalMultiplier) : 1 ),
+						) ),
 				);
 				if ($row['kind'] == 'C') { // add access price for calls
 					$value['access'] = (double) $row['tinf_accessPrice0'];
