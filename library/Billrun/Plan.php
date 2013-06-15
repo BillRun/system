@@ -79,30 +79,33 @@ class Billrun_Plan {
 	}
 
 	/**
-	 * TODO  refactor to be based on the current plan
-	 * @deprecated since version 0.1
-	 *		should be removed from here; 
-	 *		the check of plan should be run on line not subscriber/balance
+	 * Get the usage left in the current plan.
+	 * @param $subscriberBalance the current sunscriber balance.
+	 * @param $usagetype the usage type to check.
+	 * @return int  the usage  left in the usage type of the subscriber.
 	 */
-	public function usageLeftInPlan($subscriber, $usagetype = 'call') {
+	public function usageLeftInPlan($subscriberBalance, $usagetype = 'call') {
 
-		if (!isset($subscriber['balance']['usage_counters'][$usagetype])) {
-			throw new Exception("Inproper usage counter requested : $usagetype from subscriber : " . print_r($subscriber, 1));
+		if (!isset($subscriberBalance['usage_counters'][$usagetype])) {
+			throw new Exception("Inproper usage counter requested : $usagetype from subscriber balance : " . print_r($subscriberBalance, 1));
 		}
 
-		if ( !($plan = Billrun_Factory::plan(array('id' => $subscriber['current_plan']))) ) {
+		/*if ( ($this->getRef() != $subscriber['current_plan']) ) {
 			throw new Exception("Couldn't load plan for subscriber : " . print_r($subscriber, 1));
-		}
+		}*/
 		$usageLeft = 0;
-		if (isset($plan->get('include')[$usagetype])) {
-			if ($plan->get('include')[$usagetype] == 'UNLIMITED') {
+		if (isset($this->get('include')[$usagetype])) {
+			if ($this->get('include')[$usagetype] == 'UNLIMITED') {
 				return PHP_INT_MAX;
 			}
-			$usageLeft = $plan->get('include')[$usagetype] - $subscriber['balance']['usage_counters'][$usagetype];
+			$usageLeft = $this->get('include')[$usagetype] - $subscriberBalance['usage_counters'][$usagetype];
 		}
 		return floatval($usageLeft < 0 ? 0 : $usageLeft);
 	}
-	
+	/**
+	 * Get the DB reference for the current plan. 
+	 * @return type
+	 */
 	public function getRef() {
 		return $this->data->getId();
 	}

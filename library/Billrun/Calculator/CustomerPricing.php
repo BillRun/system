@@ -35,7 +35,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 					), 1), Zend_Log::DEBUG);
 			return;
 		}
-		//@TODO  change this  be be configurable.
+
 		$pricingData = array();
 
 		$usage_type = $row['usaget'];
@@ -47,7 +47,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		}
 
 		if (isset($volume)) {
-			$pricingData = $this->getLinePricingData($volume, $usage_type, $rate, $subscriber); //$this->priceLine($volume, $usage_type, $rate, $subscriber);
+			$pricingData = $this->getLinePricingData($volume, $usage_type, $rate, $subscriber,  Billrun_Factory::plan(array('id'=> $row['plan_ref'] )) );
 			$row->setRawData(array_merge($row->getRawData(), $pricingData));
 			$this->updateSubscriberBalance($subscriber, array($usage_class_prefix . $usage_type => $volume), $pricingData[$this->pricingField]);
 			$this->writeLine($row); //@TODO  this here to prevent divergance  between the priced lines and the subscriber account if the process fails in the middle.
@@ -74,18 +74,19 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 
 	/**
 	 * Get pricing data for a given rate / subcriber.
-	 * @param type $volume The usage volume (seconds of call, count of SMS, bytes  of data)
-	 * @param type $usageType The type  of the usage (call/sms/data)
-	 * @param type $rate The rate of associated with the usage.
-	 * @param type $subr the  subscriber that generated the usage.
-	 * @return type
+	 * @param int $volume The usage volume (seconds of call, count of SMS, bytes  of data)
+	 * @param string $usageType The type  of the usage (call/sms/data)
+	 * @param mixed $rate The rate of associated with the usage.
+	 * @param mixed $subr the  subscriber that generated the usage.
+	 * @param Billrun_Plan the plan that subscriber that created the line was in when the line was created.
+	 * @return Array the 
 	 */
-	protected function getLinePricingData($volumeToPrice, $usageType, $rate, $subr) {
+	protected function getLinePricingData($volumeToPrice, $usageType, $rate, $subr, $plan) {
 		$typedRates = $rate['rates'][$usageType];
 		$accessPrice = isset($typedRates['access']) ? $typedRates['access'] : 0;
-		$plan = Billrun_Factory::plan(array('id' => $subr['current_plan']));
+//		$plan = Billrun_Factory::plan(array('id' => $subr['current_plan']));
 		if ($plan->isRateInSubPlan($rate, $subr, $usageType)) {
-			$volumeToPrice = $volumeToPrice - $plan->usageLeftInPlan($subr, $usageType);
+			$volumeToPrice = $volumeToPrice - $plan->usageLeftInPlan($subr['balance'], $usageType);
 
 			if ($volumeToPrice < 0) {
 				$volumeToPrice = 0;
