@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
  * @license         GNU General Public License version 2 or later; see LICENSE.txt
  */
 
@@ -14,80 +14,46 @@
  */
 class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 
+	protected $pricingField = 'price_customer';
+	
 	protected function getLines() {
 		$lines = Billrun_Factory::db()->linesCollection();
 
 		return $lines->query()
 				->in('type', array('ggsn', 'smpp', 'smsc', 'mmsc', 'nsn', 'tap3'))
-				->exists('customer_rate')->notEq('customer_rate', FALSE)->exists('subscriber_id')->notExists('price_customer')->cursor()->limit($this->limit);
+				->exists('customer_rate')->notEq('customer_rate', FALSE)->exists('subscriber_id')->notExists($this->pricingField)->cursor()->limit($this->limit);
 	}
 
 	protected function updateRow($row) {
 		$rate = Billrun_Factory::db()->ratesCollection()->findOne(new Mongodloid_Id($row['customer_rate']));
-		$subscriber = Billrun_Model_Subscriber::get($row['subscriber_id'], Billrun_Util::getNextChargeKey($row['unified_record_time']->sec));
+		$subcrBalance = Billrun_Factory::balance( array(	'subscriber_id' => $row['subscriber_id'],
+															'billrun_key' => Billrun_Util::getNextChargeKey($row['unified_record_time']->sec)) );
 
-		if (!isset($subscriber) || !$subscriber) {
-			Billrun_Factory::log()->log("couldn't  get subsciber for : " . print_r(array(
+		if (!isset($subcrBalance) || !$subcrBalance->isValid()) {
+			Billrun_Factory::log()->log("couldn't get subscriber for : " . print_r(array(
 					'subscriber_id' => $row['subscriber_id'],
 					'billrun_month' => Billrun_Util::getNextChargeKey($row['unified_record_time']->sec)
 					), 1), Zend_Log::DEBUG);
 			return;
 		}
-		//@TODO  change this  be be configurable.
+
 		$pricingData = array();
-		$usage_class_prefix="";
-		switch ($row['type']) {
-			case 'smsc' :
-			case 'smpp' :
-				$usage_type = 'sms';
-				$volume = 1;
-				break;
 
-			case 'mmsc' :
-				$usage_type = 'mms';
-				$volume = 1;
-				break;
-
-			case 'nsn' :
-				$usage_type = 'call';
-				$volume = $row['duration'];
-				break;
-
-			case 'ggsn' :
-				$usage_type = 'data';
-				$volume = $row['fbc_downlink_volume'] + $row['fbc_uplink_volume'];
-				break;
-
-			case 'tap3' :
-				if (isset($row['usage_type'])) {
-					$usage_type = $row['usage_type'];
-					$usage_class_prefix = "inter_roam_";
-					switch ($usage_type) {
-						case 'sms' :
-						case 'incoming_sms' :
-							$volume = 1;
-							break;
-
-						case 'call' :
-						case 'incoming_call' :
-							$volume = $row->get('basicCallInformation.TotalCallEventDuration');
-							break;
-
-						case 'data' :
-							$volume = $row->get('GprsServiceUsed.DataVolumeIncoming') + $row->get('GprsServiceUsed.DataVolumeOutgoing');
-							break;
-					}
-				}
-				break;
+		$usage_type = $row['usaget'];
+		$volume = $row['usagev'];
+		if ($row['type'] == 'tap3') {
+			$usage_class_prefix = "inter_roam_";
+		} else {
+			$usage_class_prefix = "";
 		}
 
 		if (isset($volume)) {
-			$pricingData = $this->getLinePricingData($volume, $usage_type, $rate, $subscriber); //$this->priceLine($volume, $usage_type, $rate, $subscriber);
+			$pricingData = $this->getLinePricingData($volume, $usage_type, $rate, $subcrBalance,  Billrun_Factory::plan(array('id' => $row['plan_ref'] )) );
 			$row->setRawData(array_merge($row->getRawData(), $pricingData));
-			$this->updateSubscriberBalance($subscriber, array($usage_class_prefix . $usage_type => $volume), $pricingData['price_customer']);
-			$this->updateLinePrice($row); //@TODO  this here to prevent divergance  between the priced lines and the subscriber account if the process fails in the middle.
+			$this->updateSubscriberBalance($subcrBalance, array($usage_class_prefix . $usage_type => $volume), $pricingData[$this->pricingField]);
+			$this->writeLine($row); //@TODO  this here to prevent divergance  between the priced lines and the subscriber account if the process fails in the middle.
 		} else {
-			//@TODO error?
+			Billrun_Factory::log()>log("Couldn't price line {$row['stamp']} as it doent has any volume.",Zend_Log::ERR);
 		}		
 	}
 
@@ -108,51 +74,41 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	}
 
 	/**
-	 * This does noting  as  the  data i writen after each line update (not  at  the end) as  the  pricing is dependent on live  data.
-	 */
-	public function write() {
-		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteData', array('data' => $this->data));
-
-		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteData', array('data' => $this->data));
-	}
-
-	/**
-	 * execute write the calculation output into DB
-	 */
-	protected function updateLinePrice($line) {
-		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteLineData', array('data' => $this->data));
-		$line->save( Billrun_Factory::db()->linesCollection());
-		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteLineData', array('data' => $this->data));
-	}
-
-	/**
 	 * Get pricing data for a given rate / subcriber.
-	 * @param type $volume The usage volume (seconds of call, count of SMS, bytes  of data)
-	 * @param type $usageType The type  of the usage (call/sms/data)
-	 * @param type $rate The rate of associated with the usage.
-	 * @param type $subr the  subscriber that generated the usage.
-	 * @return type
+	 * @param int $volume The usage volume (seconds of call, count of SMS, bytes  of data)
+	 * @param string $usageType The type  of the usage (call/sms/data)
+	 * @param mixed $rate The rate of associated with the usage.
+	 * @param mixed $subr the  subscriber that generated the usage.
+	 * @param Billrun_Plan the plan that subscriber that created the line was in when the line was created.
+	 * @return Array the 
 	 */
-	protected function getLinePricingData($volumeToPrice, $usageType, $rate, $subr) {
+	protected function getLinePricingData($volumeToPrice, $usageType, $rate, $subr, $plan) {
 		$typedRates = $rate['rates'][$usageType];
 		$accessPrice = isset($typedRates['access']) ? $typedRates['access'] : 0;
-
-		if (Billrun_Model_Plan::isRateInSubPlan($rate, $subr, $usageType)) {
-			$volumeToPrice = $volumeToPrice - Billrun_Model_Plan::usageLeftInPlan($subr, $usageType);
+//		$plan = Billrun_Factory::plan(array('id' => $subr['current_plan']));
+		if ($plan->isRateInSubPlan($rate, $subr, $usageType)) {
+			$volumeToPrice = $volumeToPrice - $plan->usageLeftInPlan($subr['balance'], $usageType);
 
 			if ($volumeToPrice < 0) {
 				$volumeToPrice = 0;
 				//@TODO  check  if that actually the action we  want  once  all the usage is in the plan...
 				$accessPrice = 0;
 			} else if ($volumeToPrice > 0) {
-				$ret['over_plan'] = true;
+				$ret['over_plan'] = $volumeToPrice;
 			}
 		} else {
-			$ret['out_plan'] = true;
+			$ret['out_plan'] = $volumeToPrice;
 		}
 
-		$interval = $typedRates['rate']['interval'] ? $typedRates['rate']['interval'] : 1;
-		$ret['price_customer'] = $accessPrice + ( floatval((ceil($volumeToPrice / $interval) ) * $typedRates['rate']['price']) );
+		$price = $accessPrice;
+		foreach( $typedRates['rate'] as $key => $rate ) {
+			if(!$volumeToPrice) { break; }//break if no volume left to price.
+			$volumeToPriceCurrentRating =  ($volumeToPrice - $rate['to'] < 0) ? $volumeToPrice : $rate['to']; // get the volume that needed to be priced for the current rating
+			$price += floatval((ceil( $volumeToPriceCurrentRating / $rate['interval'] ) * $rate['price']) ); // actually price the usage volume by the current 
+			$volumeToPrice = $volumeToPrice - $volumeToPriceCurrentRating; //decressed the volume that was priced
+		}
+		$ret[$this->pricingField] = $price;
+		
 
 		return $ret;
 	}
@@ -171,7 +127,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		}
 		$subRaw['balance']['current_charge'] += $charge;
 		$sub->setRawData($subRaw);
-		$sub->save(Billrun_Factory::db()->subscribersCollection());
+		$sub->save();
 	}
 
 }

@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
  * @license         GNU General Public License version 2 or later; see LICENSE.txt
  */
 
@@ -92,7 +92,7 @@ trait Billrun_Traits_AsnParsing {
 		$valueArr= array();
 		foreach($config as $key => $val) {			
 			$tmpVal = $this->parseASNData(explode(',', $val), $dataArr, $fields );
-			if($tmpVal) { // @TODO change to "isset($tmpVal)" once  you can check it  (Will affect GGSN,TAP3)
+			if( $tmpVal !== FALSE ) {
 				$valueArr[$key] = $tmpVal;
 			}
 		}

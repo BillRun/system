@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
  * @license         GNU General Public License version 2 or later; see LICENSE.txt
  */
 
@@ -33,7 +33,7 @@ class Billrun_Factory {
 	 * 
 	 * @var Mongoloid db
 	 */
-	protected static $db = null;
+	protected static $db = array();
 
 	/**
 	 * Cache instance
@@ -64,11 +64,25 @@ class Billrun_Factory {
 	protected static $subscriber = null;
 
 	/**
+	 * Subscriber instance
+	 * 
+	 * @var Billrun Subscriber
+	 */
+	protected static $balance = null;
+	
+	/**
 	 * Tariff instance
 	 * 
 	 * @var Billrun Tariff
 	 */
 	protected static $tariff = null;
+
+	/**
+	 * Plan instance
+	 * 
+	 * @var Billrun Plan
+	 */
+	protected static $plan = array();
 
 	/**
 	 * method to retrieve the log instance
@@ -206,6 +220,23 @@ class Billrun_Factory {
 
 		return self::$subscriber;
 	}
+	
+	/**
+	 * method to retrieve a balance instance
+	 * 
+	 * @return Billrun_Balance
+	 */
+	static public function balance( $params = array() ) {
+		// unique stamp per plan
+		$stamp = md5(serialize($params));
+		
+		if (!isset(self::$balance[$stamp])) {
+			$balanceSettings = self::config()->getConfigValue('balance', array());
+			self::$balance[$stamp] = new Billrun_Balance( array_merge($balanceSettings,$params) );
+		}
+
+		return self::$balance[$stamp];
+	}
 
 	/**
 	 * method to retrieve the tariff instance
@@ -219,6 +250,23 @@ class Billrun_Factory {
 		}
 
 		return self::$tariff;
+	}
+
+	/**
+	 * method to retrieve the plan instance
+	 * 
+	 * @return Billrun_Plan
+	 */
+	static public function plan($params) {
+
+		// unique stamp per plan
+		$stamp = md5(serialize($params));
+		
+		if (!isset(self::$plan[$stamp])) {
+			self::$plan[$stamp] = new Billrun_Plan($params);
+		}
+
+		return self::$plan[$stamp];
 	}
 
 }

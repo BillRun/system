@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
  * @license         GNU General Public License version 2 or later; see LICENSE.txt
  */
 
@@ -95,5 +95,16 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 	 * method to check if the subscriber is valid
 	 */
 	abstract public function isValid();
+	
+	
+	/**
+	 * Get subscriber balance information for the current month.
+	 * @param type $subscriberId (optional)
+	 * @param type $billrunKey (optional)
+	 * @return boolean
+	 */
+	public function getBalance() {		
+		return Billrun_Factory::balance()->load($this->data['subscriber_id'], Billrun_Util::getNextChargeKey(time()));
+	}
 	
 }
