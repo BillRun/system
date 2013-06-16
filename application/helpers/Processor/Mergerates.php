@@ -4,7 +4,7 @@
  * @category   Application
  * @package    Helpers
  * @subpackage Processor
- * @copyright  Copyright (C) 2012 S.D.O.C. LTD. All rights reserved.
+ * @copyright  Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
  * @license    GNU General Public License version 2 or later
  */
 
@@ -73,6 +73,11 @@ class Processor_Mergerates extends Billrun_Processor_Base_Separator {
 //		$row['header_stamp'] = $this->data['header']['stamp'];
 		$row['file'] = basename($this->filePath);
 		$row['process_time'] = date(self::base_dateformat);
+		
+		if (Billrun_Util::startsWith($row['accessTypeName'], "AC_ROAM_CALLBACK")) { //@TODO change this check when there is a way to detect callback as the usage type
+			$row['kind'] = "A";
+		}
+		
 		Billrun_Factory::dispatcher()->trigger('afterDataParsing', array(&$row, $this));
 		$this->data['data'][] = $row;
 		return $row;
@@ -136,10 +141,11 @@ class Processor_Mergerates extends Billrun_Processor_Base_Separator {
 				$value = array(
 					'unit' => $unit,
 					'rate' => array(
-						'to' => (int) 2147483647,
-						'price' => (double) $row['tinf_sampPrice0'],
-						'interval' => (int) ($row['tinf_sampDelayInSec0'] * $intervalMultiplier),
-					),
+							array(
+							'to' => (int) 2147483647,
+							'price' => (double) $row['tinf_sampPrice0'],
+							'interval' => (int) ( $row['tinf_sampDelayInSec0'] ? ($row['tinf_sampDelayInSec0'] ) : 1  ) * $intervalMultiplier,
+						) ),
 				);
 				if ($row['kind'] == 'C') { // add access price for calls
 					$value['access'] = (double) $row['tinf_accessPrice0'];

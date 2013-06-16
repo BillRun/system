@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
  * @license         GNU General Public License version 2 or later; see LICENSE.txt
  */
 
@@ -12,7 +12,7 @@
  * @package  calculator
  * @since    0.5
  */
-class Billrun_Calculator_Nsn extends Billrun_Calculator_Base_Rate {
+class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 
 	/**
 	 * the type of the object
@@ -20,12 +20,6 @@ class Billrun_Calculator_Nsn extends Billrun_Calculator_Base_Rate {
 	 * @var string
 	 */
 	static protected $type = "nsn";
-
-	public function __construct($options = array()) {
-		parent::__construct($options);
-
-//		$this->config = Billrun_Factory::config()->getConfigValue('calculator.nsn.customer', array());
-	}
 
 	/**
 	 * method to receive the lines the calculator should take care
@@ -47,17 +41,54 @@ class Billrun_Calculator_Nsn extends Billrun_Calculator_Base_Rate {
 	protected function updateRow($row) {
 		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteRow', array('row' => $row));
 
+		$usage_type = $this->getLineUsageType($row);
+		$volume = $this->getLineVolume($row, $usage_type);
+		$rate = $this->getLineRate($row, $usage_type);
+
+		$current = $row->getRawData();
+
+		$rate_reference = array(
+			'usaget' => $usage_type,
+			'usagev' => $volume,
+			$this->ratingField => $rate,
+		);
+		$newData = array_merge($current, $rate_reference);
+		$row->setRawData($newData);
+
+		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteRow', array('row' => $row));
+	}
+	
+	/**
+	 * @see Billrun_Calculator_Rate::getLineVolume
+	 */
+	protected function getLineVolume($row, $usage_type) {
+		return $row['duration'];
+	}
+
+	/**
+	 * @see Billrun_Calculator_Rate::getLineUsageType
+	 */	
+	protected function getLineUsageType($row) {
+		return 'call';
+	}
+
+	/**
+	 * @see Billrun_Calculator_Rate::getLineRate
+	 */
+	protected function getLineRate($row, $usage_type) {
 		$record_type = $row->get('record_type');
+
 		$called_number = $row->get('called_number');
 		$ocg = $row->get('out_circuit_group');
 		$icg = $row->get('in_circuit_group');
+		$line_time = $row->get('unified_record_time');
 
 		$rates = Billrun_Factory::db()->ratesCollection();
 		$rateId = FALSE;
-		
+
 		if ($record_type == "01" || //MOC call
 			($record_type == "11" && ($icg == "1001" || $icg == "1006" || ($icg >= "1201" && $icg <= "1209")) && ($ocg != '3051' && $ocg != '3050'))// Roaming on Cellcom and the call is not to a voice mail
-			) {
+		) {
 			$called_number_prefixes = $this->getPrefixes($called_number);
 
 			$base_match = array(
@@ -65,7 +96,7 @@ class Billrun_Calculator_Nsn extends Billrun_Calculator_Base_Rate {
 					'params.prefix' => array(
 						'$in' => $called_number_prefixes,
 					),
-					'rates.call' => array('$exists' => true ),
+					'rates.' . $usage_type => array('$exists' => true),
 					'params.out_circuit_group' => array(
 						'$elemMatch' => array(
 							'from' => array(
@@ -75,7 +106,13 @@ class Billrun_Calculator_Nsn extends Billrun_Calculator_Base_Rate {
 								'$gte' => $ocg
 							)
 						)
-					)
+					),
+					'from' => array(
+						'$lte' => $line_time,
+					),
+					'to' => array(
+						'$gte' => $line_time,
+					),
 				)
 			);
 
@@ -100,25 +137,17 @@ class Billrun_Calculator_Nsn extends Billrun_Calculator_Base_Rate {
 			$matched_rates = $rates->aggregate($base_match, $unwind, $sort, $match2);
 
 			if (empty($matched_rates)) {
-					$base_match = array(
+				$base_match = array(
 					'$match' => array(
 						'key' => 'UNRATED',
 					),
 				);
 				$matched_rates = $rates->aggregate($base_match);
 			}
-			
-			$rateId = reset($matched_rates)['_id'];
-		} 
-			
-		$current = $row->getRawData();
-		$rate_reference = array(
-			$this->ratingField => $rateId,
-		);
-		$newData = array_merge($current, $rate_reference);
-		$row->setRawData($newData);
 
-		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteRow', array('row' => $row));
+			$rateId = reset($matched_rates)['_id'];
+		}
+		return $rateId;
 	}
 
 	/**

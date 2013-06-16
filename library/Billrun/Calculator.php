@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
  * @license         GNU General Public License version 2 or later; see LICENSE.txt
  */
 
@@ -106,10 +106,35 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	/**
 	 * execute the calculation process
 	 */
-	abstract public function calc();
+	public function calc() {		
+		Billrun_Factory::dispatcher()->trigger('beforeRateData', array('data' => $this->data));
+		foreach ($this->lines as $item) {
+			//Billrun_Factory::log()->log("Calcuating row : ".print_r($item,1),  Zend_Log::DEBUG);
+			Billrun_Factory::dispatcher()->trigger('beforeRateDataRow', array('data' => &$item));
+			$this->updateRow($item);
+			$this->writeLine($item);
+			$this->data[] = $item;
+			Billrun_Factory::dispatcher()->trigger('afterRateDataRow', array('data' => &$item));
+		}
+		Billrun_Factory::dispatcher()->trigger('afterRateData', array('data' => $this->data));
+	}
 
 	/**
 	 * execute write the calculation output into DB
 	 */
-	abstract public function write();
+	public function write() {
+		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteData', array('data' => $this->data));
+		//no need  the  line is now  written right after update
+		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteData', array('data' => $this->data));
+	}
+
+	/**
+	 * Save a modified line to the lines collection.
+	 */
+	public function writeLine($line) {
+		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteLine', array('data' => $line));		
+		$line->save( Billrun_Factory::db()->linesCollection());
+		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteLine', array('data' => $line));
+	}
+
 }

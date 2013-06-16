@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
  * @license         GNU General Public License version 2 or later; see LICENSE.txt
  */
 
@@ -29,9 +29,10 @@ abstract class Billrun_Processor_Base_Binary extends Billrun_Processor {
 	public function buildHeader($data) {
 		$header = array();
 		$header['data'] = $data ? $this->getParser()->parseHeader($data) : $data;
+		$header['stamp'] = md5(serialize($header));
 		$header['type'] = static::$type;
 		$header['file'] = basename($this->filePath);
-		$header['stamp'] = md5(serialize($header));
+		
 		$header['process_time'] = date(self::base_dateformat);
 
 		return $header;
@@ -48,11 +49,11 @@ abstract class Billrun_Processor_Base_Binary extends Billrun_Processor {
 		$rawRow = $this->getParser()->parse();
 		if ($rawRow) {
 			$row = $this->filterFields($rawRow);
+			$row['stamp'] = md5(serialize($row));
 			$row['type'] = static::$type;
 			$row['source'] = self::$type;
-			$row['header_stamp'] = $this->data['header']['stamp'];
 			$row['file'] = basename($this->filePath);
-			$row['stamp'] = md5(serialize($row));
+			$row['header_stamp'] = $this->data['header']['stamp'];
 			$row['process_time'] = date(self::base_dateformat);
 		}
 		return $row;
@@ -66,10 +67,10 @@ abstract class Billrun_Processor_Base_Binary extends Billrun_Processor {
 	public function buildTrailer($data) {
 		$trailer = array();
 		$trailer['data'] = ($data && !is_array($data)) ? $this->getParser()->parseTrailer($data) : $data;
+		$trailer['stamp'] = md5(serialize($trailer));
 		$trailer['type'] = static::$type;
 		$trailer['header_stamp'] = $this->data['header']['stamp'];
 		$trailer['file'] = basename($this->filePath);
-		$trailer['stamp'] = md5(serialize($trailer));
 		$trailer['process_time'] = date(self::base_dateformat);
 		
 		return $trailer;
