@@ -94,10 +94,10 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				//@TODO  check  if that actually the action we  want  once  all the usage is in the plan...
 				$accessPrice = 0;
 			} else if ($volumeToPrice > 0) {
-				$ret['over_plan'] = true;
+				$ret['over_plan'] = $volumeToPrice;
 			}
 		} else {
-			$ret['out_plan'] = true;
+			$ret['out_plan'] = $volumeToPrice;
 		}
 
 		$price = $accessPrice;
