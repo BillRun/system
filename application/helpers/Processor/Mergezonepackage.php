@@ -30,7 +30,7 @@ class Processor_Mergezonepackage extends Billrun_Processor_Base_Separator {
 	static protected $typesTranslation = array(
 		'M' => 'sms',
 		'C' => 'call',
-		'A' => 'call',
+		'A' => 'incoming_call',
 		'I' => 'data',
 		'N' => 'mms'
 	);
@@ -103,7 +103,7 @@ class Processor_Mergezonepackage extends Billrun_Processor_Base_Separator {
 			if (isset($row['zoneGroupEltId_tariffItem'])) {
 				//$key = $row['zoneGroupEltId_tariffItem'];
 				$entity = $rates->query('key', $row['zoneGroupEltId_tariffItem'])->cursor()->current();
-					
+
 				if ($entity->getId()) {
 					$entity->collection($rates);
 
@@ -121,6 +121,14 @@ class Processor_Mergezonepackage extends Billrun_Processor_Base_Separator {
 									}
 								}
 							}
+						}
+						if ($row['zoneGroupEltId_zoneGroupId_zoneGroupClassName'] == 'ZGC_NATIONAL') {
+							$category = 'flat';
+						} else if ($row['zoneGroupEltId_zoneGroupId_zoneGroupClassName'] == 'ZGC_SPECIAL_SERVICES') {
+							$category = 'special';
+						}
+						if (isset($category)) {
+							$rowRates[$type]['category'] = $category;
 						}
 						$rowRates[$type]['plans'] = $plans;
 						$entity['rates'] = $rowRates;
