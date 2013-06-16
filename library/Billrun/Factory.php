@@ -64,6 +64,13 @@ class Billrun_Factory {
 	protected static $subscriber = null;
 
 	/**
+	 * Subscriber instance
+	 * 
+	 * @var Billrun Subscriber
+	 */
+	protected static $balance = null;
+	
+	/**
 	 * Tariff instance
 	 * 
 	 * @var Billrun Tariff
@@ -212,6 +219,23 @@ class Billrun_Factory {
 		}
 
 		return self::$subscriber;
+	}
+	
+	/**
+	 * method to retrieve a balance instance
+	 * 
+	 * @return Billrun_Balance
+	 */
+	static public function balance( $params = array() ) {
+		// unique stamp per plan
+		$stamp = md5(serialize($params));
+		
+		if (!isset(self::$balance[$stamp])) {
+			$balanceSettings = self::config()->getConfigValue('balance', array());
+			self::$balance[$stamp] = new Billrun_Balance( array_merge($balanceSettings,$params) );
+		}
+
+		return self::$balance[$stamp];
 	}
 
 	/**

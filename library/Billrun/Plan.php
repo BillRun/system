@@ -110,4 +110,20 @@ class Billrun_Plan {
 		return $this->data->getId();
 	}
 
+	
+	public  function getEmptyPlanCounters() {
+		return array(
+					'call' => 0,
+					'incoming_call' => 0,
+					'sms' => 0,
+					'mms' => 0,
+					'data' => 0,
+					'inter_roam_incoming_call' => 0,
+					'inter_roam_call' => 0,
+					'inter_roam_callback' => 0,
+					'inter_roam_sms' => 0,
+					'inter_roam_data' => 0,
+					'inter_roam_incoming_sms' => 0,
+			);
+	}
 }

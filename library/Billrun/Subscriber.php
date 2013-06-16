@@ -97,76 +97,14 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 	abstract public function isValid();
 	
 	
-		/**
-	 * Get subscriber information for a certain month
+	/**
+	 * Get subscriber balance information for the current month.
 	 * @param type $subscriberId (optional)
 	 * @param type $billrunKey (optional)
 	 * @return boolean
 	 */
-	public function getBalance( $billrunKey = null, $subscriberId = null ) {
-		$billrunKey = !$billrunKey ? Billrun_Util::getNextChargeKey(time()) : $billrunKey;
-		$subscriberId = !$subscriberId ? $this->data['subscriber_id'] : $subscriberId;
-		
-		$subcr = Billrun_Factory::db()->balancesCollection()->query(array(
-						'subscriber_id' => $subscriberId, 
-						'billrun_month' => $billrunKey
-					 ))->cursor()->current();
-		
-		if(!count($subcr->getRawData())) {
-			return FALSE;
-		}
-		return $subcr;
+	public function getBalance() {		
+		return Billrun_Factory::balance()->load($this->data['subscriber_id'], Billrun_Util::getNextChargeKey(time()));
 	}
 	
-	/**
-	 * Create aa new subscriber in a given month.
-	 * @param type $billrun_month
-	 * @param type $subscriber_id
-	 * @param type $plan
-	 * @param type $account_id
-	 * @return boolean
-	 */
-	public function createBalance($billrunKey, $subscriberId, $plan_ref, $accountId) {
-		if(!$this->getBalance( $billrunKey, $subscriberId)) {
-			Billrun_Factory::log('Adding subscriber ' .  $subscriberId . ' to balances collection', Zend_Log::INFO);
-			$newSubscriber = new Mongodloid_Entity(self::getEmptySubscriberEntry($billrunKey, $accountId, $subscriberId, $plan_ref));
-			$newSubscriber->collection(Billrun_Factory::db()->balancesCollection());
-			$newSubscriber->save();
-			return $this->getBalance( $billrunKey, $subscriberId );
-		} 
-		return FALSE;
-	}
-
-	/**
-	 * get a new subscriber array to be place in the DB.
-	 * @param type $billrun_month
-	 * @param type $account_id
-	 * @param type $subscriber_id
-	 * @param type $current_plan
-	 * @return type
-	 */
-	public function getEmptySubscriberEntry($billrun_month, $account_id, $subscriber_id, $plan_ref) {
-		return array(
-			'billrun_month' => $billrun_month,
-			'account_id' => $account_id,
-			'subscriber_id' => $subscriber_id,
-			'current_plan' => $plan_ref,
-			'balance' => array(
-				'usage_counters' => array(
-					'call' => 0,
-					'incoming_call' => 0,
-					'sms' => 0,
-					'mms' => 0,
-					'data' => 0,
-					'inter_roam_incoming_call' => 0,
-					'inter_roam_call' => 0,
-					'inter_roam_callback' => 0,
-					'inter_roam_sms' => 0,
-					'inter_roam_data' => 0,
-					'inter_roam_incoming_sms' => 0,
-				),
-				'current_charge' => 0,
-			),
-		);
-	}
 }

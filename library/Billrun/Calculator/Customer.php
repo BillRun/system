@@ -106,8 +106,9 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	 * @param type $subscriber
 	 */
 	protected function createBalanceIfMissing($subscriber, $billrun_key, $plan_ref) {
-		if (!Billrun_Factory::subscriber()->getBalance( $billrun_key, $subscriber->subscriber_id)) {
-			Billrun_Factory::subscriber()->createBalance($billrun_key, $subscriber->subscriber_id, $plan_ref, $subscriber->account_id);
+		$balance = Billrun_Factory::balance( array('subscriber_id' => $subscriber->subscriber_id, 'billrun_key' =>  $billrun_key) );
+		if (!$balance->isValid() ) {
+			$balance->create($billrun_key, $subscriber, $plan_ref);
 		}
 	}
 
