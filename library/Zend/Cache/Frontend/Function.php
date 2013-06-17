@@ -24,6 +24,7 @@
 /**
  * @see Zend_Cache_Core
  */
+require_once 'Zend/Cache/Core.php';
 
 
 /**
