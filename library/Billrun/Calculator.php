@@ -23,9 +23,9 @@ abstract class Billrun_Calculator extends Billrun_Base {
 
 	/**
 	 * the container data of the calculator
-	 * @var array
+	 * @var Mongodloid_Cursor the data container
 	 */
-	protected $data = array();
+	protected $data = null;
 
 	/**
 	 * The lines to rate

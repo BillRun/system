@@ -12,6 +12,18 @@
  */
 class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 
+	/**
+	 *
+	 * @var boolean is customer price vatable by default
+	 */
+	protected $vatable = true;
+
+//
+//	protected function __construct($options = array()) {
+//		parent::__construct($options);
+//		
+//	}
+
 	protected function getLines() {
 		$lines = Billrun_Factory::db()->linesCollection();
 
@@ -22,12 +34,13 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 
 	protected function updateRow($row) {
 		$rate = Billrun_Factory::db()->ratesCollection()->findOne(new Mongodloid_Id($row['customer_rate']));
-		$subscriber = Billrun_Model_Subscriber::get($row['subscriber_id'], Billrun_Util::getNextChargeKey($row['unified_record_time']->sec));
+		$billrun_key = Billrun_Util::getBillrunKey($row['unified_record_time']->sec);
+		$subscriber_balance = Billrun_Model_Subscriber::getBalance($row['subscriber_id'], $billrun_key);
 
-		if (!isset($subscriber) || !$subscriber) {
+		if (!isset($subscriber_balance) || !$subscriber_balance) {
 			Billrun_Factory::log()->log("couldn't get subscriber for : " . print_r(array(
 					'subscriber_id' => $row['subscriber_id'],
-					'billrun_month' => Billrun_Util::getNextChargeKey($row['unified_record_time']->sec)
+					'billrun_month' => Billrun_Util::getBillrunKey($row['unified_record_time']->sec)
 					), 1), Zend_Log::DEBUG);
 			return;
 		}
@@ -43,8 +56,9 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		}
 
 		if (isset($volume)) {
-			$pricingData = $this->getLinePricingData($volume, $usage_type, $rate, $subscriber); //$this->priceLine($volume, $usage_type, $rate, $subscriber);
-			$this->updateSubscriberBalance($subscriber, array($usage_class_prefix . $usage_type => $volume), $pricingData['price_customer']);
+			$pricingData = $this->getLinePricingData($volume, $usage_type, $rate, $subscriber_balance);
+			$this->updateSubscriberBalance($subscriber_balance, array($usage_class_prefix . $usage_type => $volume), $pricingData['price_customer']);
+			$this->updateBillrun($subscriber_balance, array($usage_class_prefix . $usage_type => $volume), $pricingData, $row, $billrun_key);
 		} else {
 			//@TODO error?
 		}
@@ -132,12 +146,134 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		$subRaw = $sub->getRawData();
 		//Billrun_Factory::log()->log("Raw Subscriber : ".print_r($subRaw,1),  Zend_Log::DEBUG);
 		foreach ($counters as $key => $value) {
-			$subRaw['balance']['usage_counters'][$key] += $value;
+			$subRaw['balance']['totals'][$key]['usagev'] += $value;
 		}
-		$subRaw['balance']['current_charge'] += $charge;
+		$subRaw['balance']['cost'] += $charge;
 		$sub->setRawData($subRaw);
 		$sub->save(Billrun_Factory::db()->balancesCollection());
 	}
 
-}
+	static public function getOpenBillrun($subscriber, $billrun_key) {
+		$billrun_coll = Billrun_Factory::db()->billrunCollection();
+		$billrun = $billrun_coll
+			->query(array(
+				'account_id' => $subscriber['account_id'],
+				'billrun_key' => $billrun_key,
+			))
+			->exists('subscribers.' . $subscriber['subscriber_id'])
+			->cursor();
+		if ($billrun->count()) {
+			if (!$billrun->current()->offsetExists('invoice_id')) { // found billing is open
+				return $billrun->current();
+			} else {
+				self::getOpenBillrun($subscriber, Billrun_Util::getFollowingBillrunKey($billrun_key));
+			}
+		} else {
+			return Billrun_Model_Subscriber::createBillrun($subscriber, $billrun_key);
+		}
+	}
 
+	protected function updateBillrun($subscriber, $counters, $pricingData, $row, $billrun_key) {
+		$billrun = self::getOpenBillrun($subscriber, $billrun_key);
+		$billRaw = $billrun->getRawData();
+		$subscriberRaw = $billRaw['subscribers'][$subscriber->get('subscriber_id')];
+		$rate = Billrun_Factory::db()->ratesCollection()->findOne(new Mongodloid_Id($row['customer_rate']));
+		$vatable = (!(isset($rate['vatable']) && !$rate['vatable']) || (!isset($rate['vatable']) && !$this->vatable));
+
+		// update costs
+		if (isset($pricingData['over_plan']) && $pricingData['over_plan']) {
+			$subscriberRaw['costs']['over_plan'] += $pricingData['price_customer'];
+		} else if (isset($pricingData['out_plan']) && $pricingData['out_plan']) {
+			if ($vatable) {
+				$subscriberRaw['costs']['out_plan_vatable'] += $pricingData['price_customer'];
+			} else {
+				$subscriberRaw['costs']['out_plan_vat_free'] += $pricingData['price_customer'];
+			}
+		}
+
+		switch ($row['usaget']) {
+			case 'call':
+			case 'incoming_call':
+				$usage_type = 'call';
+				break;
+			case 'sms':
+				$usage_type = 'sms';
+				break;
+			case 'data':
+				$usage_type = 'data';
+				break;
+			default:
+				$usage_type = 'call';
+				break;
+		}
+
+		// update lines refs
+		$subscriberRaw['lines'][$usage_type]['refs'][] = $row['_id']->getMongoID();
+
+		// update data counters
+		if ($usage_type == 'data') {
+			$date_key = date("Ymd", $row['unified_record_time']->sec);
+			if (isset($subscriberRaw['lines']['data']['counters'][$date_key])) {
+				$subscriberRaw['lines']['data']['counters'][$date_key]+=$row['usagev'];
+			} else {
+				$subscriberRaw['lines']['data']['counters'][$date_key] = $row['usagev'];
+			}
+		}
+
+		// update breakdown
+		if (!isset($pricingData['over_plan']) && !isset($pricingData['out_plan'])) { // in plan
+			$breakdown_key = 'flat';
+			$zone_key = $billrun_key;
+		} else if (isset($pricingData['over_plan']) && $pricingData['over_plan']) {
+			$breakdown_key = 'over_plan';
+		} else {
+
+			$category = $rate['rates'][$row['usaget']]['category'];
+			switch ($category) {
+				case "roaming":
+					$breakdown_key = "roaming";
+					$zone_key = $row['serving_network'];
+					break;
+				case "special":
+					$breakdown_key = "special";
+					break;
+				default:
+					$breakdown_key = "intl";
+					break;
+			}
+		}
+		if (!isset($zone_key)) {
+			$zone_key = Billrun_Factory::db()->ratesCollection()
+					->query('_id', $row['customer_rate'])
+					->cursor()->current()->get('key');
+		}
+		$this->addToBreakdown($subscriberRaw['breakdown'], $breakdown_key, $zone_key, $counters, $pricingData['price_customer'], $vatable);
+
+		$billRaw['subscribers'][$subscriber['subscriber_id']] = $subscriberRaw;
+		$billrun->setRawData($billRaw);
+		$billrun->save(Billrun_Factory::db()->billrunCollection());
+	}
+
+	/**
+	 * 
+	 * @param type $key
+	 * @param type $usage_type
+	 * @param type $volume
+	 */
+	protected function addToBreakdown(&$breakdown_raw, $breakdown_key, $zone_key, $counters, $charge, $vatable) {
+		if (!isset($breakdown_raw[$breakdown_key][$zone_key])) {
+			$breakdown_raw[$breakdown_key][$zone_key] = Billrun_Model_Subscriber::getEmptyBalance();
+		}
+		$breakdown_raw[$breakdown_key][$zone_key]['totals'][key($counters)]['usagev']+=current($counters);
+		$breakdown_raw[$breakdown_key][$zone_key]['totals'][key($counters)]['cost']+=$charge;
+		if ($breakdown_key != 'flat') {
+			$breakdown_raw[$breakdown_key][$zone_key]['cost']+=$charge;
+		} else {
+			
+		}
+		if (!isset($breakdown_raw[$breakdown_key][$zone_key]['vat'])) {
+			$breakdown_raw[$breakdown_key][$zone_key]['vat'] = ($vatable ? Billrun_Factory::config()->getConfigValue('pricing.vat', '1.18') - 1 : 0); //@TODO we assume here that all the lines would be vatable or all vat-free
+		}
+	}
+
+}

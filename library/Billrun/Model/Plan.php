@@ -52,18 +52,18 @@ class Billrun_Model_Plan {
 	 */
 	public static function usageLeftInPlan($subscriber, $usagetype = 'call') {
 
-		if (!isset($subscriber['balance']['usage_counters'][$usagetype])) {
+		if (!isset($subscriber['balance']['totals'][$usagetype]['usagev'])) {
 			throw new Exception("Inproper usage counter requested : $usagetype from subscriber : " . print_r($subscriber, 1));
 		}
 
-		if (!($plan = self::get($subscriber['plan_current']))) {
+		if (!($plan = Billrun_Factory::db()->plansCollection()->findOne(new Mongodloid_Id($subscriber['plan_current'])))) {
 			throw new Exception("Couldn't load plan for subscriber : " . print_r($subscriber, 1));
 		}
 
 		if ($plan['include'][$usagetype] == 'UNLIMITED') { //@TODO $plan is a ref...
 			return PHP_INT_MAX;
 		}
-		$usageLeft = $plan['include'][$usagetype] - $subscriber['balance']['usage_counters'][$usagetype];
+		$usageLeft = $plan['include'][$usagetype] - $subscriber['balance']['totals'][$usagetype]['usagev'];
 
 		return floatval($usageLeft < 0 ? 0 : $usageLeft);
 	}

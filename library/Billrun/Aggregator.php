@@ -16,6 +16,13 @@ abstract class Billrun_Aggregator extends Billrun_Base {
 
 	protected $excludes = array();
 	
+	/**
+	 *
+	 * @var mixed The data container, should extend Traversable
+	 */
+	protected $data = null;
+
+
 	public function __construct($options = array()) {
 		parent::__construct($options);
 		

@@ -110,12 +110,8 @@ class Billrun_Calculator_Tap3 extends Billrun_Calculator_Base_Rate {
 		$rates = Billrun_Factory::db()->ratesCollection();
 		$log = Billrun_Factory::db()->logCollection();
 		$line_time = $row['unified_record_time'];
+		$serving_network = $row['serving_network'];
 
-		if (isset($row['LocationInformation']['GeographicalLocation']['ServingNetwork'])) {
-			$serving_network = $row['LocationInformation']['GeographicalLocation']['ServingNetwork'];
-		} else {
-			$serving_network = $log->query(array('source' => static::$type, 'header.stamp' => $row['header_stamp']))->cursor()->current()->get('header.data.header.sending_source');
-		}
 
 		if (!is_null($serving_network)) {
 			$rates = Billrun_Factory::db()->ratesCollection();
