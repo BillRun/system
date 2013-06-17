@@ -15,8 +15,10 @@ $app = new Yaf_Application(BILLRUN_CONFIG_PATH);
 if (!isset($_SERVER['HTTP_USER_AGENT'])) {
 	$app->getDispatcher()->setDefaultController('Cli');
 }
-try {
-	$app->bootstrap()->run();
-} catch(Exception $e){
-	Billrun_Factory::log()->log("Crashed When running... exception details are as follow : \n".print_r($e,1), Zend_Log::CRIT);			
-}
+//try {
+//	$app->bootstrap()->run();
+//} catch(Exception $e){
+//	Billrun_Factory::log()->log("Crashed When running... exception details are as follow : \n".print_r($e,1), Zend_Log::CRIT);			
+//}
+
+$app->bootstrap()->run();

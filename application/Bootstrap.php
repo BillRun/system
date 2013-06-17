@@ -31,7 +31,7 @@ class Bootstrap extends Yaf_Bootstrap_Abstract {
 				$dispatcher->attach(new $plugin);
 			}
 		}
-		
+
 		if (isset($config->chains)) {
 			$chains = $config->chains->toArray();
 			$dispatcherChain = Billrun_Dispatcher::getInstance(array('type' => 'chain'));
@@ -44,8 +44,13 @@ class Bootstrap extends Yaf_Bootstrap_Abstract {
 
 		// make the base action auto load (required by controllers actions)
 		Yaf_Loader::getInstance(APPLICATION_PATH . '/application/helpers')->registerLocalNamespace('Action');
+	}
 
-
+	public function _initLayout(Yaf_Dispatcher $dispatcher) {
+		//TODO: check if admin
+		$path = Billrun_Factory::config()->getConfigValue('application.directory');
+		$view = new Yaf_View_Simple($path . '/views/layout');
+		Yaf_Application::app()->getDispatcher()->setView($view);
 	}
 
 }
