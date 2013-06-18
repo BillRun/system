@@ -49,9 +49,16 @@ abstract class Billrun_Base {
 	 * @var int
 	 */
 	protected $limit = 10000;
+
+	/**
+	 * Construction options
+	 *
+	 * @var array
+	 */
+	protected $options = array();	
 	
 	/**
-	 * constructor
+	 * Constructor options.
 	 * 
 	 * @param array $options
 	 */
@@ -71,6 +78,7 @@ abstract class Billrun_Base {
 			$this->setLimit($options['limit']);
 		} 
 		
+		$this->options = $options;
 	}
 
 	/**
