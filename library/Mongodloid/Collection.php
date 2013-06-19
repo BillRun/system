@@ -107,7 +107,6 @@ class Mongodloid_Collection {
 	public function save(Mongodloid_Entity $entity, $save = false, $w = 1) {
 		$data = $entity->getRawData();
 
-		print_R($entity->getRawData());
 		$result = $this->_collection->save($entity->getRawData(), array('save' => $save, 'w' => $w));
 		if (!$result)
 			return false;

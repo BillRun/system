@@ -54,10 +54,4 @@ class Mongodloid_Db {
 		return $this->_db->command($command, $options);
 	}
 
-//	public function getRef($key) {
-//		var_dump($this->_db, $key);
-//		$ret = MongoDBRef::get($this->_db, $key);
-//		var_dump($ret);
-//		return $ret;
-//	}
 }
