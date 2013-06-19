@@ -39,7 +39,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 	public function load($params) {
 
 		if (!isset($params['imsi']) && !isset($params['IMSI']) && !isset($params['NDC_SN'])) {
-			Billrun_Factory::log()->log('Cannot identified Golan subscriber. Require phone or imsi to load. Current parameters: ' . print_R($params), Zend_Log::ALERT);
+			Billrun_Factory::log()->log('Cannot identify Golan subscriber. Require phone or imsi to load. Current parameters: ' . print_R($params), Zend_Log::ALERT);
 			return $this;
 		}
 
@@ -197,8 +197,8 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		$subscriber_general_settings = Billrun_Config::getInstance()->getConfigValue('subscriber', array());
 		foreach ($accounts as $account) {
 			foreach ($account['subscribers'] as $subscriber) {
-				$subscriber_settings = array_merge($subscriber_general_settings, array('time' => $time, 'data' => array_merge(array('account_id' => $account['account_id']),$subscriber)));
-				$ret_data[] = Billrun_Subscriber::getInstance($subscriber_settings);
+				$subscriber_settings = array_merge($subscriber_general_settings, array('time' => $time, 'data' => array_merge(array('account_id' => $account['account_id']), $subscriber)));
+				$ret_data[$account['account_id']][] = Billrun_Subscriber::getInstance($subscriber_settings);
 			}
 		}
 		return $ret_data;
@@ -215,13 +215,8 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		return $this->plan;
 	}
 
-	public function addFlat($billrunKey) {
-		if (!is_null($this->time)) {
-			Billrun_Factory::log('Adding flat to subscriber ' . $this->subscriber_id, Zend_Log::INFO);
-			$flat_entry = new Mongodloid_Entity($this->getFlatEntry($billrunKey));
-			$flat_entry->collection(Billrun_Factory::db()->linesCollection());
-			$flat_entry->save();
-		}
+	public function getFlatPrice() {
+		return $this->getPlan()->getPrice();
 	}
 
 	/**
@@ -230,8 +225,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 	 * @param MongoDate $unified_record_time
 	 * @return array
 	 */
-	protected function getFlatEntry($billrun_key) {
-		$subscriber_plan = $this->getPlan();
+	public function getFlatEntry($billrun_key) {
 		$flat_entry = array(
 			'account_id' => $this->account_id,
 			'subscriber_id' => $this->subscriber_id,
@@ -239,8 +233,8 @@ class Subscriber_Golan extends Billrun_Subscriber {
 			'type' => 'flat',
 			'unified_record_time' => new MongoDate(),
 			'flat_key' => $billrun_key,
-			'price_customer' => $subscriber_plan->get('price'),
-			'current_plan' => $subscriber_plan->get('_id')->getMongoID(),
+			'price_customer' => $this->getFlatPrice(),
+			'current_plan' => $this->getPlan()->get('_id')->getMongoID(),
 		);
 		$stamp = md5($flat_entry['account_id'] . $flat_entry['subscriber_id'] . $flat_entry['flat_key']);
 		$flat_entry['stamp'] = $stamp;

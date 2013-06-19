@@ -82,7 +82,7 @@ class Billrun_Factory {
 		if (!self::$log) {
 			self::$log = Billrun_Log::getInstance();
 		}
-		
+
 		$args = func_get_args();
 		if (count($args) > 0) {
 			$message = (string) $args[0];
@@ -119,10 +119,10 @@ class Billrun_Factory {
 		if (empty($options)) {
 			$options = Billrun_Factory::config()->getConfigValue('db'); // the stdclass force it to return object
 		}
-		
+
 		// unique stamp per db connection
 		$stamp = md5(serialize($options));
-		
+
 		if (!isset(self::$db[$stamp])) {
 			self::$db[$stamp] = Billrun_Db::getInstance($options);
 		}
@@ -219,6 +219,16 @@ class Billrun_Factory {
 		}
 
 		return self::$tariff;
+	}
+
+	/**
+	 * method to retrieve a billrun instance
+	 * 
+	 * @return Billrun_Billrun
+	 */
+	static public function billrun($params = array()) {
+		$billrunSettings = self::config()->getConfigValue('billrun', array());
+		return new Billrun_Billrun(array_merge($billrunSettings, $params));
 	}
 
 }

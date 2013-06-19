@@ -139,7 +139,9 @@ class Billrun_Util {
 
 	public static function getFollowingBillrunKey($billrun_key) {
 		$datetime = $billrun_key . "01000000";
-		return date("Ym", strtotime('+1 month',$datetime));
+		$month_later = strtotime('+1 month',  strtotime($datetime));
+		$ret = date("Ym", $month_later);
+		return $ret;
 	}
 
 	/**

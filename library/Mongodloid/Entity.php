@@ -215,9 +215,9 @@ class Mongodloid_Entity implements ArrayAccess {
 		}
 
 		//lazy load MongoId Ref objects
-		if ($result[$key] instanceof MongoId && $this->collection()) {
-			$result[$key] = $this->collection()->findOne($result[$key]['$id']);
-		}
+//		if ($result[$key] instanceof MongoId && $this->collection()) {
+//			$result[$key] = $this->collection()->findOne(new Mongodloid_Id($result[$key])); // what if the id is of another collection's entity?
+//		}
 
 		return $result[$key];
 	}

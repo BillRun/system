@@ -90,5 +90,9 @@ class Billrun_Plan {
 		}
 		return floatval($usageLeft < 0 ? 0 : $usageLeft);
 	}
+	
+	public function getPrice() {
+		return $this->get('price');
+	}
 
 }

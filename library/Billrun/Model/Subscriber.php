@@ -87,82 +87,12 @@ class Billrun_Model_Subscriber {
 		);
 	}
 
-	/**
-	 * Create a new billrun record for a subscriber
-	 * @param type $subscriber
-	 */
-	static public function createBillrun($subscriber, $billrun_key) {
-
-		// check if there is a billrun entry for the account
-//		$billrun = Billrun_Factory::db()->billrunCollection()
-//			->query('accound_id', $subscriber->account_id)
-//			->notExists('invoice_id')
-//			->cursor();
-//
-//		if ($billrun->count() == 0) { // need to create a billrun entry for the account
-			$billrun = new Mongodloid_Entity(self::getAccountEmptyBillrunEntry($subscriber['account_id']));
-//		}
-		$billrun['billrun_key'] = $billrun_key;
-		$subscribers = $billrun['subscribers'];
-		$subscribers[$subscriber['subscriber_id']] = self::getEmptySubscriberBillrunEntry();
-		$billrun['subscribers'] = $subscribers;
-		Billrun_Factory::log('Adding subscriber ' . $subscriber['subscriber_id'] . ' to billrun collection', Zend_Log::INFO);
-		$billrun->collection(Billrun_Factory::db()->billrunCollection());
-		$billrun->save();
-		return $billrun;
-	}
-
-	/**
-	 * 
-	 * @todo move this function to account model(?)
-	 * @param type $account_id
-	 * @return type
-	 */
-	static public function getAccountEmptyBillrunEntry($account_id) {
-		return array(
+	static public function getBillrun($account_id, $billrun_key) {
+		$billrun = Billrun_Factory::billrun(array(
 			'account_id' => $account_id,
-			'subscribers' => array(
-			),
-		);
-	}
-
-	static public function getEmptySubscriberBillrunEntry() {
-		return array(
-			'costs' => array(
-				'flat' => 0,
-				'over_plan' => 0,
-				'out_plan_vatable' => 0,
-				'out_plan_vat_free' => 0,
-			),
-			'lines' => array(
-				'call' => array(
-					'refs' => array(
-					),
-				),
-				'sms' => array(
-					'refs' => array(
-					),
-				),
-				'data' => array(
-					'counters' => array(
-					),
-					'refs' => array(
-					),
-				),
-			),
-			'breakdown' => array(
-				'flat' => array(
-				),
-				'over_plan' => array(
-				),
-				'intl' => array(
-				),
-				'special' => array(
-				),
-				'roaming' => array(
-				),
-			),
-		);
+			'billrun_key' => $billrun_key,
+		));
+		return $billrun;
 	}
 
 }
