@@ -229,10 +229,15 @@ class Mongodloid_Entity implements ArrayAccess {
 	/**
 	 * method to create MongoDBRef from the current entity
 	 * 
+	 * @param Mongodloid_Collection $refCollection the collection to reference to
+	 * 
 	 * @return mixed MongoDBRef if succeed, else false
+	 * @todo check if the current id exists in the collection
 	 */
-	public function createRef() {
-		if (!$this->collection()) {
+	public function createRef($refCollection = null) {
+		if (!is_null($refCollection)) {
+			$this->collection($refCollection);
+		} else if (!$this->collection()) {
 			return;
 		}
 		return $this->collection()->createRef($this->getRawData());
