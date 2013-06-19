@@ -235,7 +235,6 @@ class Mongodloid_Entity implements ArrayAccess {
 		if (!$this->collection()) {
 			return;
 		}
-		$id = $this->getId()->getMongoID();
 		return $this->collection()->createRef($this->getRawData());
 	}
 	
