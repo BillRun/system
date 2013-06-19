@@ -184,7 +184,7 @@ class Mongodloid_Collection {
 		if (!($ref['$id'] instanceof MongoId)) {
 			$ref['$id'] = new MongoId($ref['$id']);
 		}
-		return $this->_collection->getDBRef($ref);
+		return new Mongodloid_Entity($this->_collection->getDBRef($ref));
 	}
 	
 	/**
