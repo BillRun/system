@@ -38,7 +38,7 @@ class Mongodloid_Db {
 		$this->_db = $db;
 		$this->_connection = $connection;
 	}
-
+	
 	public function getCollection($name) {
 		if (!isset($this->_collections[$name]) || !$this->_collections[$name])
 			$this->_collections[$name] = new Mongodloid_Collection($this->_db->selectCollection($name), $this);
@@ -54,4 +54,10 @@ class Mongodloid_Db {
 		return $this->_db->command($command, $options);
 	}
 
+//	public function getRef($key) {
+//		var_dump($this->_db, $key);
+//		$ret = MongoDBRef::get($this->_db, $key);
+//		var_dump($ret);
+//		return $ret;
+//	}
 }
