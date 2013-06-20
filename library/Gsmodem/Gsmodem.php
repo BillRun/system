@@ -17,6 +17,7 @@ class Gsmodem_Gsmodem  {
 	//-----------------------------------------------------
 	const CONNECTED = "connected";
 	const NO_ANSWER = "no_answer";
+	const CALL_DISCONNECTED = "call_disconnected";
 	const BUSY = "busy";
 	const UNKNOWN = "unknown";
 	const NO_RESPONSE = "";
@@ -30,16 +31,17 @@ class Gsmodem_Gsmodem  {
 							'answer' => 'ATA',
 							'hangup' => 'ATH',	
 							'reset' => 'ATZ',
+							'register' => 'AT+CREG=%0%',
 						);
 
 	static protected $resultsMap = array( 
 							'NO ANSWER' => self::NO_ANSWER,
 							'BUSY' => self::BUSY,
 							'ERROR' => self::UNKNOWN,
-							'NO CARRIER' => self::NO_ANSWER,	
+							'NO CARRIER' => self::CALL_DISCONNECTED,	
 							'OK' => self::CONNECTED,
 							'RING' => self::RINGING,					
-				);
+					);
 	//-----------------------------------------------------
 	
 	/**
@@ -81,17 +83,52 @@ class Gsmodem_Gsmodem  {
 	}
 	
 	/**
-	 * 
+	 * TODO
 	 * @param type $waitTime
 	 * @return type
 	 */
 	public function waitForCallToEnd($waitTime = PHP_INT_MAX) {
-		//TODO  find out  if this  need to have some kind  of match condition		
-		return $this->getResult($waitTime);
+		//TODO  find out  if this  need to have some kind  of match condition	
+		while(	$this->state->getState() == Gsmodem_StateMapping::IN_CALL_STATE || 
+				$this->state->getState() == Gsmodem_StateMapping::OUT_CALL_STATE ) {
+			$lastResult = $this->getResult($waitTime);
+		}
+		return $lastResult;
 	}
 	
 	/**
-	 * 
+	 * TODO
+	 * @param type $waitTime
+	 * @return type
+	 */
+	public function waitForRingToEnd($waitTime = PHP_INT_MAX) {
+		//TODO  find out  if this  need to have some kind  of match condition
+		while($this->state->getState() == Gsmodem_StateMapping::RINGING_STATE) {
+			$lastResult = $this->getResult($waitTime);
+		}
+		return $lastResult;
+	}
+
+	/**
+	 * TODO
+	 * @param type $waitTime
+	 * @return type
+	 */
+	public function registerToNet() {
+		$this->doCmd($this->getATcmd('register',array(0)), true);
+	}
+	
+	/**
+	 * TODO
+	 * @param type $waitTime
+	 * @return type
+	 */
+	public function unregisterFromNet() {
+		$this->doCmd($this->getATcmd('register',array(5)), true);
+	}	
+	
+	/**
+	 * TODO
 	 * @param type $waitTime
 	 * @return boolean
 	 */

@@ -123,8 +123,15 @@ class CliController extends Yaf_Controller_Abstract {
 				'path' => "./",
 				'parser' => 'fixed');
 		}
-
+		
 		$options = array();
+		foreach($this->options->getRemainingArgs() as  $val) {
+			//TODO add "." separation add cascading fileds
+			$tmpArr = split("=", $val);
+			$options[$tmpArr[0]] = isset($tmpArr[1]) ? $tmpArr[1] :  true;			
+
+		}
+
 
 		foreach ($possibleOptions as $key => $defVal) {
 			$options[$key] = $this->options->getOption($key);
@@ -139,6 +146,7 @@ class CliController extends Yaf_Controller_Abstract {
 				}
 			}
 		}
+
 		return $options;
 	}
 
