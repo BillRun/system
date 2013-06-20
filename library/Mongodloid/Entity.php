@@ -190,10 +190,11 @@ class Mongodloid_Entity implements ArrayAccess {
 			return $this->_values;
 		}
 		$key = func_get_arg(0);
-			
-		if ($key == '_id')
+		
+		if ($key == '_id') {
 			return $this->getId();
-
+		}
+		
 		$key = preg_replace('@\\[([^\\]]+)\\]@', '.$1', $key);
 		$result = $this->_values;
 
@@ -214,12 +215,46 @@ class Mongodloid_Entity implements ArrayAccess {
 			return null;
 		}
 
-		//lazy load MongoId Ref objects
+		//lazy load MongoId Ref objects or MongoDBRef
+		//http://docs.mongodb.org/manual/reference/database-references/
 		if ($result[$key] instanceof MongoId && $this->collection()) {
 			$result[$key] = $this->collection()->findOne($result[$key]['$id']);
+		} else if (MongoDBRef::isRef($result[$key])) {
+			$result[$key] = $this->loadRef($result[$key]);
 		}
 
 		return $result[$key];
+	}
+	
+	/**
+	 * method to create MongoDBRef from the current entity
+	 * 
+	 * @param Mongodloid_Collection $refCollection the collection to reference to
+	 * 
+	 * @return mixed MongoDBRef if succeed, else false
+	 * @todo check if the current id exists in the collection
+	 */
+	public function createRef($refCollection = null) {
+		if (!is_null($refCollection)) {
+			$this->collection($refCollection);
+		} else if (!$this->collection()) {
+			return;
+		}
+		return $this->collection()->createRef($this->getRawData());
+	}
+	
+	/**
+	 * method to load DB reference object
+	 * 
+	 * @param string $key the key of the current object which reference to another object
+	 * 
+	 * @return array the raw data of the reference object
+	 */
+	protected function loadRef($key) {
+		if (!$this->collection()) {
+			return;
+		}
+		return $this->_collection->getRef($key);
 	}
 
 	public function getId() {
