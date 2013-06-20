@@ -50,15 +50,15 @@ class Billrun_Calculator_Nsn extends Billrun_Calculator_Base_Rate {
 		$usage_type = $this->getLineUsageType($row);
 		$volume = $this->getLineVolume($row, $usage_type);
 		$rate = $this->getLineRate($row, $usage_type);
-
+		
 		$current = $row->getRawData();
 
-		$rate_reference = array(
+		$added_values = array(
 			'usaget' => $usage_type,
 			'usagev' => $volume,
-			$this->ratingField => $rate,
+			$this->ratingField => $rate? $rate->createRef() : $rate,
 		);
-		$newData = array_merge($current, $rate_reference);
+		$newData = array_merge($current, $added_values);
 		$row->setRawData($newData);
 
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteRow', array('row' => $row));
@@ -81,7 +81,7 @@ class Billrun_Calculator_Nsn extends Billrun_Calculator_Base_Rate {
 		$line_time = $row->get('unified_record_time');
 
 		$rates = Billrun_Factory::db()->ratesCollection();
-		$rateId = FALSE;
+		$rate = FALSE;
 
 		if ($record_type == "01" || //MOC call
 			($record_type == "11" && ($icg == "1001" || $icg == "1006" || ($icg >= "1201" && $icg <= "1209")) && ($ocg != '3051' && $ocg != '3050'))// Roaming on Cellcom and the call is not to a voice mail
@@ -142,9 +142,9 @@ class Billrun_Calculator_Nsn extends Billrun_Calculator_Base_Rate {
 				$matched_rates = $rates->aggregate($base_match);
 			}
 
-			$rateId = reset($matched_rates)['_id'];
+			$rate = new Mongodloid_Entity(reset($matched_rates),$rates);
 		}
-		return $rateId;
+		return $rate;
 	}
 
 	/**

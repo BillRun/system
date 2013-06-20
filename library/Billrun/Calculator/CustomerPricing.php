@@ -20,34 +20,31 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 
 	/**
 	 *
-	 * @var int calculation period in months
-	 */
-	protected $months = 4;
-
-	/**
-	 *
 	 * @var string
 	 */
 	protected $runtime_billrun_key;
 
 	public function __construct($options = array()) {
+		$options['autoload'] = false;
 		parent::__construct($options);
+
 		if (isset($options['calculator']['limit'])) {
 			$this->limit = $options['calculator']['limit'];
 		}
 		if (isset($options['calculator']['vatable'])) {
 			$this->vatable = $options['calculator']['vatable'];
 		}
-		if (isset($options['calculator']['months'])) {
-			$this->months = $options['calculator']['months'];
+		if (isset($options['calculator']['months_limit'])) {
+			$this->months_limit = $options['calculator']['months_limit'];
 		}
 		$this->runtime_billrun_key = Billrun_Util::getBillrunKey(time());
-
+		// set months limit
+		$this->load();
 	}
 
 	protected function getLines() {
 		$lines = Billrun_Factory::db()->linesCollection();
-		$billrun_lower_bound_date = new MongoDate(strtotime($this->months . " months ago", time()));
+		$billrun_lower_bound_date = new MongoDate(is_null($this->months_limit) ? 0 : strtotime($this->months_limit . " months ago", time()));
 
 		return $lines->query()
 				->in('type', array('ggsn', 'smpp', 'smsc', 'nsn', 'tap3'))
@@ -56,8 +53,8 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				->exists('subscriber_id')
 				->notExists('price_customer')
 				->notExists('billrun')
-				->greaterEq('unified_record_time', $billrun_lower_bound_date)
-			->cursor()->limit($this->limit);
+				->greaterEq('unified_record_time', $billrun_lower_bound_date) // move this check to rate calculation stage?
+				->cursor()->limit($this->limit);
 	}
 
 	public function loadOpenBillrun($billrun, $account_id, $billrun_key) {
@@ -77,7 +74,8 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	}
 
 	protected function updateRow($row) {
-		$rate = Billrun_Factory::db()->ratesCollection()->findOne(new Mongodloid_Id($row['customer_rate']));
+//		$rate = Billrun_Factory::db()->ratesCollection()->findOne(new Mongodloid_Id($row['customer_rate']));
+		$rate = $row['customer_rate'];
 		$billrun_key = Billrun_Util::getBillrunKey($row['unified_record_time']->sec);
 		$subscriber_balance = Billrun_Model_Subscriber::getBalance($row['subscriber_id'], $billrun_key);
 		if (!isset($subscriber_balance) || !$subscriber_balance) {
@@ -107,6 +105,9 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		}
 
 		if (isset($volume)) {
+			if ($subscriber_balance['subscriber_id'] == '209547') {
+				echo 4;
+			}
 			$pricingData = $this->getLinePricingData($volume, $usage_type, $rate, $subscriber_balance);
 			$this->updateSubscriberBalance($subscriber_balance, array($usage_class_prefix . $usage_type => $volume), $pricingData['price_customer']);
 			$vatable = (!(isset($rate['vatable']) && !$rate['vatable']) || (!isset($rate['vatable']) && !$this->vatable));
@@ -123,9 +124,11 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 */
 	public function calc() {
 		Billrun_Factory::dispatcher()->trigger('beforePricingData', array('data' => $this->data));
+		$lines_coll = Billrun_Factory::db()->linesCollection();
 		foreach ($this->lines as $item) {
 			Billrun_Factory::dispatcher()->trigger('beforePricingDataRow', array('data' => &$item));
 			//Billrun_Factory::log()->log("Calcuating row : ".print_r($item,1),  Zend_Log::DEBUG);
+			$item->collection($lines_coll);
 			$this->updateRow($item);
 			$this->data[] = $item;
 			$this->updateLinePrice($item); //@TODO  this here to prevent divergance  between the priced lines and the subscriber's balance/billrun if the process fails in the middle.
@@ -151,8 +154,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 */
 	protected function updateLinePrice($line) {
 		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteLineData', array('data' => $this->data));
-		$lines = Billrun_Factory::db()->linesCollection();
-		$line->save($lines);
+		$line->save();
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteLineData', array('data' => $this->data));
 	}
 

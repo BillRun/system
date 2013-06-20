@@ -144,6 +144,9 @@ class Billrun_Billrun {
 
 	public function update($subscriber_id, $counters, $pricingData, $row, $vatable) {
 		$billrun_key = $this->getBillrunKey();
+		if (!$this->exists($subscriber_id)) {
+			$this->addSubscriber($subscriber_id);
+		}
 		$billRaw = $this->data->getRawData();
 		$subscriberRaw = $billRaw['subscribers'][$subscriber_id];
 
@@ -161,7 +164,7 @@ class Billrun_Billrun {
 		}
 
 		if (!($row['type'] == 'flat')) {
-			$rate = Billrun_Factory::db()->ratesCollection()->findOne(new Mongodloid_Id($row['customer_rate']));
+			$rate = $row['customer_rate'];
 			switch ($row['usaget']) {
 				case 'call':
 				case 'incoming_call':
@@ -179,7 +182,7 @@ class Billrun_Billrun {
 			}
 
 			// update lines refs
-			$subscriberRaw['lines'][$usage_type]['refs'][] = $row['_id']->getMongoID();
+			$subscriberRaw['lines'][$usage_type]['refs'][] = $row->createRef();
 
 			// update data counters
 			if ($usage_type == 'data') {
@@ -214,9 +217,7 @@ class Billrun_Billrun {
 			}
 		}
 		if (!isset($zone_key)) {
-			$zone_key = Billrun_Factory::db()->ratesCollection()
-					->query('_id', $row['customer_rate'])
-					->cursor()->current()->get('key');
+			$zone_key = $row['customer_rate']['key'];
 		}
 		self::addToBreakdown($subscriberRaw['breakdown'], $breakdown_key, $zone_key, $vatable, $counters, $pricingData['price_customer']);
 

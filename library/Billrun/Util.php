@@ -139,7 +139,7 @@ class Billrun_Util {
 
 	public static function getFollowingBillrunKey($billrun_key) {
 		$datetime = $billrun_key . "01000000";
-		$month_later = strtotime('+1 month',  strtotime($datetime));
+		$month_later = strtotime('+1 month', strtotime($datetime));
 		$ret = date("Ym", $month_later);
 		return $ret;
 	}
@@ -161,5 +161,24 @@ class Billrun_Util {
 
 		return $value * ($conversion[$from] / $conversion[$to]);
 	}
+
+//	public static function deep_in_array($needle, $haystack) {
+//		foreach ($haystack as $item) {
+//			if (!is_array($item)) {
+//				if ($item == $needle) {
+//					return true;
+//				} else {
+//					continue;
+//				}
+//			}
+//			if (in_array($needle, $item)) {
+//				return true;
+//			}
+//			else if (self::deep_in_array($needle, $item)) {
+//				return true;
+//			}
+//		}
+//		return false;
+//	}
 
 }

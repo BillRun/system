@@ -46,7 +46,7 @@ class Billrun_Calculator_Tap3 extends Billrun_Calculator_Base_Rate {
 		$added_values = array(
 			'usaget' => $usage_type,
 			'usagev' => $volume,
-			'customer_rate' => ($rate !== FALSE ? $rate->getMongoID() : $rate),
+			$this->ratingField => $rate ? $rate->createRef() : $rate,
 		);
 		$newData = array_merge($current, $added_values);
 		$row->setRawData($newData);
@@ -133,7 +133,7 @@ class Billrun_Calculator_Tap3 extends Billrun_Calculator_Base_Rate {
 				);
 				$rate = $rates->query($filter_array)->cursor()->current();
 				if ($rate->getId()) {
-					return $rate->get('_id');
+					return $rate;
 				}
 			}
 		}

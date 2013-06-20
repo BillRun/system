@@ -37,6 +37,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator_Base_Rate {
 		$this->subscriber = Billrun_Factory::subscriber();
 		$this->balances = Billrun_Factory::db()->balancesCollection();
 		$this->plans = Billrun_Factory::db()->plansCollection();
+		$this->lines_coll = Billrun_Factory::db()->linesCollection();
 	}
 
 	/**
@@ -55,6 +56,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator_Base_Rate {
 	 * write the calculation into DB
 	 */
 	protected function updateRow($row) {
+		$row->collection($this->lines_coll);
 		//Billrun_Factory::log('Load line ' . $row->get('stamp'), Zend_Log::INFO);
 		$subscriber = $this->loadSubscriberForLine($row);
 
@@ -67,9 +69,13 @@ class Billrun_Calculator_Customer extends Billrun_Calculator_Base_Rate {
 			$subscriber_field = $subscriber->{$field};
 			$row[$field] = $subscriber_field;
 		}
-		$this->addPlanRef($row, $subscriber->plan);
+		$plan_ref = $this->addPlanRef($row, $subscriber->plan);
+		if (is_null($plan_ref)) {
+			Billrun_Factory::log('No plan found for subscriber ' . $subscriber->subscriber_id, Zend_Log::ALERT);
+			return;
+		}
 		$billrun_key = Billrun_Util::getBillrunKey($row->get('unified_record_time')->sec);
-		$this->createBalanceIfMissing($subscriber, $billrun_key, $row['plan_ref']);
+		$this->createBalanceIfMissing($subscriber, $billrun_key, $plan_ref);
 	}
 
 	/**
@@ -118,7 +124,8 @@ class Billrun_Calculator_Customer extends Billrun_Calculator_Base_Rate {
 	 * @param string $plan
 	 */
 	protected function addPlanRef($row, $plan) {
-		$row['plan_ref'] = Billrun_Model_Plan::getPlanRef($plan, date(Billrun_Base::base_dateformat, $row['unified_record_time']->sec))->getMongoID();
+		$row['plan_ref'] = Billrun_Model_Plan::getPlanRef($plan, date(Billrun_Base::base_dateformat, $row['unified_record_time']->sec));
+		return $row->get('plan_ref', true);
 	}
 
 }

@@ -44,7 +44,7 @@ class Billrun_Model_Plan {
 	static public function isRateInSubPlan($rate, $sub, $type) {
 		return isset($rate['rates'][$type]['plans']) &&
 			is_array($rate['rates'][$type]['plans']) &&
-			in_array($sub['plan_current'], $rate['rates'][$type]['plans']);
+			in_array($sub->get('plan_current',true), $rate['rates'][$type]['plans']);
 	}
 
 	/**
@@ -56,7 +56,7 @@ class Billrun_Model_Plan {
 			throw new Exception("Inproper usage counter requested : $usagetype from subscriber : " . print_r($subscriber, 1));
 		}
 
-		if (!($plan = Billrun_Factory::db()->plansCollection()->findOne(new Mongodloid_Id($subscriber['plan_current'])))) {
+		if (!($plan = $subscriber['plan_current'])) {
 			throw new Exception("Couldn't load plan for subscriber : " . print_r($subscriber, 1));
 		}
 
@@ -69,7 +69,7 @@ class Billrun_Model_Plan {
 	}
 
 	static public function getPlanRef($name, $plan_date = null) {
-		return self::get($name, $plan_date)->getId();
+		return self::get($name, $plan_date)->createRef(Billrun_Factory::db()->plansCollection());
 	}
 
 }

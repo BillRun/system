@@ -137,7 +137,7 @@ EOT;
 						$billrun->addSubscriber($subscriber_id);
 					}
 					try {
-						$plan = $this->plans->findOne(new Mongodloid_Id($flat_entry['current_plan']));
+						$plan = $flat_entry['current_plan'];
 						$billrun->update($subscriber_id, array(), array('price_customer' => $flat_price), $flat_entry, $plan['vatable']);
 					} catch (Exception $e) {
 						Billrun_Factory::log()->log("Flat costs already exist in billrun collection for subscriber " . $subscriber_id . " for billrun " . $billrun_key, Zend_Log::NOTICE);

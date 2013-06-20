@@ -31,13 +31,15 @@ class Billrun_Plan {
 		if (!isset($params['name']) || !isset($params['time'])) {
 			//throw an error
 		}
+		$plans_coll = Billrun_Factory::db()->plansCollection();
 		$date = new MongoDate($params['time']);
-		$this->data = Billrun_Factory::db()->plansCollection()->query()
+		$this->data = $plans_coll->query()
 			->lessEq('from', $date)
 			->greaterEq('to', $date)
 			->query('name', $params['name'])
 			->cursor()
 			->current();
+		$this->data->collection($plans_coll);
 	}
 
 	/**
@@ -93,6 +95,10 @@ class Billrun_Plan {
 	
 	public function getPrice() {
 		return $this->get('price');
+	}
+	
+	public function createRef() {
+		return $this->data->createRef();
 	}
 
 }

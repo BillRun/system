@@ -40,7 +40,7 @@ class Mongodloid_Collection {
 		$this->_collection = $collection;
 		$this->_db = $db;
 	}
-
+	
 	public function update($query, $values, $options = array()) {
 		return $this->_collection->update($query, $values, $options);
 	}
@@ -116,7 +116,7 @@ class Mongodloid_Collection {
 	}
 
 	public function findOne($id, $want_array = false) {
-		$values = $this->_collection->findOne(array('_id' => $id->getMongoId()));
+		$values = $this->_collection->findOne(array('_id' => ($id instanceof Mongodloid_Id ? $id->getMongoId() : $id) ));
 		if ($want_array)
 			return $values;
 
@@ -168,6 +168,50 @@ class Mongodloid_Collection {
 
 	public function getTimeout() {
 		return MongoCursor::$timeout;
+	}
+
+	/**
+	 * method to load Mongo DB reference object
+	 * 
+	 * @param MongoDBRef $ref the reference object
+	 * 
+	 * @return array
+	 */
+	public function getRef($ref) {
+		if (!MongoDBRef::isRef($ref)) {
+			return;
+		}
+		if (!($ref['$id'] instanceof MongoId)) {
+			$ref['$id'] = new MongoId($ref['$id']);
+		}
+		return new Mongodloid_Entity($this->_collection->getDBRef($ref));
+	}
+	
+	/**
+	 * method to create Mongo DB reference object
+	 * 
+	 * @param array $a raw data of object to create reference to itself; later on you can use the return value to store in other collection
+	 * 
+	 * @return MongoDBRef
+	 */
+	public function createRef($a) {
+		return $this->_collection->createDBRef($a);
+	}
+
+	/**
+	 * Update a document and return it
+	 * 
+	 * @param array $query The query criteria to search for
+	 * @param array $update The update criteria
+	 * @param array $fields Optionally only return these fields
+	 * @param array $options An array of options to apply, such as remove the match document from the DB and return it
+	 * 
+	 * @return type the original document, or the modified document when new is set.
+	 * @throws MongoResultException on failure
+	 * @see http://php.net/manual/en/mongocollection.findandmodify.php
+	 */
+	public function findAndModify(array $query, array $update = array(), array $fields = array(), array $options = array()) {
+		return $this->_collection->findAndModify($query, $update, $fields, $options);
 	}
 
 }

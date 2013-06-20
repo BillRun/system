@@ -27,6 +27,7 @@ class Billrun_Model_Subscriber {
 		if (!count($subcr->getRawData())) {
 			return FALSE;
 		}
+		$subcr->collection(Billrun_Factory::db()->balancesCollection());
 		return $subcr;
 	}
 
