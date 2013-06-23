@@ -24,7 +24,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	}
 
 	/**
-	 * default method of admin
+	 * default controller of admin
 	 */
 	public function indexAction() {
 		if (($table = $this->getRequest()->getParam('table'))) {
@@ -32,6 +32,32 @@ class AdminController extends Yaf_Controller_Abstract {
 		} else {
 			$this->getView()->component = $this->renderView('home');
 		}
+	}
+	
+	/**
+	 * plans controller of admin
+	 */
+	public function plansAction() {
+		$columns = array(
+			'name',
+			'from',
+			'to',
+			'_id',
+		);
+		$this->getView()->component = $this->setTableView('plans', $columns);
+	}
+
+	/**
+	 * rates controller of admin
+	 */
+	public function ratesAction() {
+		$columns = array(
+			'key',
+			'from',
+			'to',
+			'_id',
+		);
+		$this->getView()->component = $this->setTableView('rates', $columns);
 	}
 
 	/**
@@ -57,26 +83,14 @@ class AdminController extends Yaf_Controller_Abstract {
 		return $view->render($viewName . '.phtml', $params);
 	}
 
-	public function plansAction() {
-		$columns = array(
-			'name',
-			'from',
-			'to',
-			'_id',
-		);
-		$this->getView()->component = $this->setTableView('plans', $columns);
-	}
-
-	public function ratesAction() {
-		$columns = array(
-			'key',
-			'from',
-			'to',
-			'_id',
-		);
-		$this->getView()->component = $this->setTableView('rates', $columns);
-	}
-
+	/**
+	 * method to render table view
+	 * 
+	 * @param string $table the db table to render
+	 * @param array $columns the columns to show
+	 * 
+	 * @return string the render page (HTML)
+	 */
 	protected function setTableView($table, $columns) {
 		$page = 0;
 		$limit = 100;
@@ -99,6 +113,13 @@ class AdminController extends Yaf_Controller_Abstract {
 		return $ret;
 	}
 
+	/**
+	 * 
+	 * @param string $tpl the default tpl the controller used; this will be override to use the general admin layout
+	 * @param array $parameters parameters of the view
+	 * 
+	 * @return string the render layout including the page (component)
+	 */
 	protected function render($tpl, array $parameters = array()) {
 		$tpl = 'index';
 		//check with active menu we are on
