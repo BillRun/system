@@ -86,11 +86,11 @@ class Billrun_Plan {
 	 */
 	public function usageLeftInPlan($subscriberBalance, $usagetype = 'call') {
 
-		if (!isset($subscriberBalance['usage_counters'][$usagetype])) {
-			throw new Exception("Inproper usage counter requested : $usagetype from subscriber balance : " . print_r($subscriberBalance, 1));
+		if (!isset($subscriberBalance['balance']['totals'][$usagetype]['usagev'])) {
+			throw new Exception("Inproper usage counter requested : $usagetype from subscriber : " . print_r($subscriber, 1));
 		}
 
-		/*if ( ($this->getRef() != $subscriber['current_plan']) ) {
+		/*if ( ($this->getRef() != $subscriberBalance['current_plan']) ) {
 			throw new Exception("Couldn't load plan for subscriber : " . print_r($subscriber, 1));
 		}*/
 		$usageLeft = 0;
@@ -102,12 +102,13 @@ class Billrun_Plan {
 		}
 		return floatval($usageLeft < 0 ? 0 : $usageLeft);
 	}
-	/**
-	 * Get the DB reference for the current plan. 
-	 * @return type
-	 */
-	public function getRef() {
-		return $this->data->getId();
+	
+	public function getPrice() {
+		return $this->get('price');
+	}
+	
+	public function createRef() {
+		return $this->data->createRef();
 	}
 
 	

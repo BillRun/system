@@ -23,9 +23,9 @@ abstract class Billrun_Calculator extends Billrun_Base {
 
 	/**
 	 * the container data of the calculator
-	 * @var array
+	 * @var Mongodloid_Cursor the data container
 	 */
-	protected $data = array();
+	protected $data = null;
 
 	/**
 	 * The lines to rate
@@ -41,8 +41,13 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	 * @var int
 	 */
 	protected $limit = 1000000;
-	
-	
+
+	/**
+	 *
+	 * @var int calculation period in months
+	 */
+	protected $months_limit = null;
+
 	/**
 	 * constructor of the class
 	 * 
@@ -50,12 +55,17 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	 */
 	public function __construct($options = array()) {
 		parent::__construct($options);
-		
+
 		if (isset($options['calculator']['limit'])) {
 			$this->limit = $options['calculator']['limit'];
 		}
+
 		
-		if (!isset($options['autoload']) || !$options['autoload']) {
+		if (isset($options['months_limit'])) {
+			$this->months_limit = $options['months_limit'];
+		}
+
+		if (!isset($options['autoload']) || $options['autoload']) {
 			$this->load();
 		}
 	}
@@ -72,22 +82,21 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	 * 
 	 */
 	public function load($initData = true) {
-		
+
 		if ($initData) {
 			$this->lines = array();
 		}
 
 		$this->lines = $this->getLines();
-		
-		/*foreach ($resource as $entity) {
-			$this->data[] = $entity;
-		}*/
+
+		/* foreach ($resource as $entity) {
+		  $this->data[] = $entity;
+		  } */
 
 		Billrun_Factory::log()->log("entities loaded: " . count($this->lines), Zend_Log::INFO);
 
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorLoadData', array('calculator' => $this));
 	}
-
 
 	/**
 	 * write the calculation into DB

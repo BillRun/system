@@ -64,9 +64,9 @@ class Billrun_Factory {
 	protected static $subscriber = null;
 
 	/**
-	 * Subscriber instance
+	 * Balance instance
 	 * 
-	 * @var Billrun Subscriber
+	 * @var Billrun Balance
 	 */
 	protected static $balance = null;
 	
@@ -267,6 +267,16 @@ class Billrun_Factory {
 		}
 
 		return self::$plan[$stamp];
+	}
+
+	/**
+	 * method to retrieve a billrun instance
+	 * 
+	 * @return Billrun_Billrun
+	 */
+	static public function billrun($params = array()) {
+		$billrunSettings = self::config()->getConfigValue('billrun', array());
+		return new Billrun_Billrun(array_merge($billrunSettings, $params));
 	}
 
 }

@@ -48,7 +48,7 @@ class Billrun_Calculator_Rate_Tap3 extends Billrun_Calculator_Rate {
 		$added_values = array(
 			'usaget' => $usage_type,
 			'usagev' => $volume,
-			'customer_rate' => ($rate !== FALSE ? $rate->getMongoID() : $rate),
+			$this->ratingField => $rate ? $rate->createRef() : $rate,
 		);
 		$newData = array_merge($current, $added_values);
 		$row->setRawData($newData);
@@ -121,12 +121,8 @@ class Billrun_Calculator_Rate_Tap3 extends Billrun_Calculator_Rate {
 		$rates = Billrun_Factory::db()->ratesCollection();
 		$log = Billrun_Factory::db()->logCollection();
 		$line_time = $row['unified_record_time'];
+		$serving_network = $row['serving_network'];
 
-		if (isset($row['LocationInformation']['GeographicalLocation']['ServingNetwork'])) {
-			$serving_network = $row['LocationInformation']['GeographicalLocation']['ServingNetwork'];
-		} else {
-			$serving_network = $log->query(array('source' => static::$type, 'header.stamp' => $row['header_stamp']))->cursor()->current()->get('header.data.header.sending_source');
-		}
 
 		if (!is_null($serving_network)) {
 			$rates = Billrun_Factory::db()->ratesCollection();
@@ -148,7 +144,7 @@ class Billrun_Calculator_Rate_Tap3 extends Billrun_Calculator_Rate {
 				);
 				$rate = $rates->query($filter_array)->cursor()->current();
 				if ($rate->getId()) {
-					return $rate->get('_id');
+					return $rate;
 				}
 			}
 		}
