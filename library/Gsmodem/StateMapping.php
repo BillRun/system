@@ -1,17 +1,22 @@
 <?php
 
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
+/**
+ * @package         Gsmodem
+ * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
+ * @license         GNU General Public License version 2 or later; see LICENSE.txt
  */
 
 /**
- * Description of ModemStatesMapping
+ * Mapping logic to that is  used to mapp standard AT modem  to various states.
  *
- * @author eran
+ * @package  Gsmodem
+ * @since    0.1
  */
 class Gsmodem_StateMapping {
 	
+		/**
+		 * Possible modem states
+		 */
 		const CALLING_STATE = 'calling_state';
 		const IDLE_STATE = 'idle_state';
 		const ANSWERING_STATE = 'answering_state';
@@ -20,6 +25,9 @@ class Gsmodem_StateMapping {
 		const IN_CALL_STATE = 'in_call_state';
 		const OUT_CALL_STATE = 'outgoing_call_state';
 	
+		/**
+		 * Mapping result  to the state to should lead to.
+		 */
 		public $resultToStateMapping = array(
 					self::OUT_CALL_STATE => array(
 							'NO ANSWER' => self::IDLE_STATE,
@@ -55,6 +63,9 @@ class Gsmodem_StateMapping {
 					),
 	);
 
+	/**
+	 * Mapping issued commands to the state to should lead to.
+	 */	
 	public $commandToStateMapping = array(
 					self::IDLE_STATE => array(							
 							'^ATD' => self::CALLING_STATE,							
@@ -73,4 +84,38 @@ class Gsmodem_StateMapping {
 							'^ATH' => self::HANGING_UP_STATE,							
 					),
 	);
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 
+	 * @param type $currentState
+	 * @param type $result
+	 * @return type
+	 */
+	public function getStateForResult($currentState, $result) {
+		$newState  =  isset($this->resultToStateMapping[$currentState][$result]) ? 
+						$this->resultToStateMapping[$currentState][$result]
+						: $currentState;
+		
+		return $newState;
+	}
+	
+	/**
+	 * 
+	 * @param type $currentState
+	 * @param type $command
+	 * @return type
+	 */
+	public function getStateForCommand($currentState, $command) {
+		$newState = $currentState;
+		$stateMap = $this->commandToStateMapping[$currentState];
+		foreach($stateMap as $key => $val) {
+
+			if(preg_match("/".$key."/i",trim($command))) {
+				$newState = $val;
+			}
+		}	
+		return $newState;
+	}
+
 }

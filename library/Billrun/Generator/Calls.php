@@ -27,14 +27,14 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 	protected $calls = array();
 
 	/**
-	 * TODO
-	 * @var type 
+	 * The calling device.
+	 * @var Gsmodem_Gsmodem
 	 */
 	protected $callingDevice = null;
 
 	/**
-	 * TODO
-	 * @var type 
+	 * the answering device.
+	 * @var Gsmodem_Gsmodem 
 	 */
 	protected $answeringDevice = null;
 
@@ -48,6 +48,9 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 		}		
 	}
 	
+	/**
+	 * Generate the calls as defined in the configuration.
+	 */
 	public function generate() {	
 		$callsMade = array();			
 		if($this->callingDevice && $this->callingDevice->isValid()) {
@@ -72,15 +75,17 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 		Billrun_Factory::log()->log(print_r($callsMade,1),  Zend_Log::DEBUG);
 		$this->save($callsMade);
 	}
-		
+	/**
+	 * dummy function of Generator
+	 */	
 	public function load() {
 		
 	}
 	
 	/**
-	 * 
-	 * @param type $callRecord
-	 * @return type
+	 * make a call as defiend  by the configuration.
+	 * @param type $callRecord the  call record to save to the DB.
+	 * @return mixed the call record with the data regarding making the call.
 	 */
 	protected function makeACall(&$callRecord) {
 		$callRecord['calling_result'] = $this->callingDevice->call($this->options['number_to_call']);
@@ -90,9 +95,9 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 	}
 	
 	/**
-	 * 
-	 * @param type $callRecord
-	 * @return type
+	 *  wait for a call.
+	 * @param mixed $callRecord  the call record to save to the DB.
+	 * @return mixed the call record with the data regarding the incoming call.
 	 */
 	protected function waitForCall(&$callRecord) {
 		$this->answeringDevice->waitForCall();
@@ -102,14 +107,14 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 			 $this->answeringDevice->waitForRingToEnd();
 			 $callRecord['calling_result'] = 'ignored';
 		} else {
-			$callRecord['calling_result'] =  $this->answeringDevice->hangUp();
+			$callRecord['calling_result'] =  $this->answeringDevice->hangUp() ;
 		}	
 		return $callRecord['calling_result']; 
 	}
 	
 	/**
-	 * 
-	 * @param type $callRecord
+	 * handle an active call.
+	 * @param type $callRecord the call record to save to the DB.
 	 */
 	protected  function HandleCall(&$callRecord) {
 		$callRecord['call_start_time'] = date("YmdTHis");
@@ -123,7 +128,8 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 	}
 
 	/**
-	 * TODO
+	 * Get  an empty  call record to be save to the DB.
+	 * @return Array representing the call record with initailized values. 
 	 */
 	protected function getEmptyCall($direction) {
 		return array(	'execution_start_time' => date("YmdTHis"),
@@ -138,8 +144,8 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 	}
 	
 	/**
-	 * TODO
-	 * @param type $calls
+	 * save  calls made/received to DB.
+	 * @param Array $calls containing the call recrods of the calls  that where made/received
 	 * @return boolean
 	 */
 	protected function save($calls) {
@@ -149,6 +155,7 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 		foreach ($calls as $row) {
 			$row['stamp'] = md5(serialize($row));
 			$row['source'] = 'generator';
+			$row['unified_record_time'] = new MongoDate(strtotime($row['call_start_time']));
 			$row['type'] = static::$type;
 			if(!($lines->query(array('stamp'=> $row['stamp'] ) )->cursor()->hasNext() ) )  {				
 				$entity = new Mongodloid_Entity($row);

@@ -7,19 +7,24 @@
  */
 
 /**
- * Gsmodem AT command  interface class
- *
+ * Modem state logic class
+ * This  class is using the StateMapping or any class hinerited for it inordedr to map  the different states.
+ * 
  * @package  Gsmodem
  * @since    0.1
  */
 class Gsmodem_ModemState {
 	
 	/**
-	 * TODO
-	 * @var type 
+	 * Hold the current state fo the modem  as it mapped be the mapping class
+	 * @var mixed
 	 */
 	protected $state;
 	
+	/**
+	 * The state  transition mapping.
+	 * @var type 
+	 */
 	protected $mapping;
 	
 	public function __construct($startingState = Gsmodem_StateMapping::IDLE_STATE, $mapping = false) {
@@ -28,40 +33,33 @@ class Gsmodem_ModemState {
 	}
 	
 	/**
-	 * 
-	 * @param type $result
-	 * @return type
+	 * Update the state upon results.
+	 * @param string $result contains the results that rwas received from the modem.
+	 * @return string the reuslt that was recieved from the modem.
 	 */
 	public function gotResult($result) {
-		$this->state = isset($this->mapping->resultToStateMapping[$this->state][$result])	? 
-								$this->mapping->resultToStateMapping[$this->state][$result]	: 
-								$this->state;	
+		$this->state = $this->mapping->getStateForResult($this->state,$result);
 		Billrun_Factory::log()->log("Switched to state : {$this->state}",Zend_Log::DEBUG);
 		return $result;
 	}
 	
 	/**
-	 * 
-	 * @param type $cmd
-	 * @return type
+	 * Update the state upon a newly issued command.
+	 * @param string $cmd the command that was issued to the modem.
+	 * @return string the command that was issued to the modem.
 	 */
-	public function issuedCommabd($cmd) {
-		$stateMap = $this->mapping->commandToStateMapping[$this->state];
-		foreach($stateMap as $key => $val) {
-
-			if(preg_match("/".$key."/i",trim($cmd))) {
-				$this->state = $val;
-			}
-		}
+	public function issuedCommand($cmd) {
+		$this->state = $this->mapping->getStateForCommand($this->state,$cmd);
 		Billrun_Factory::log()->log("Switched to state : {$this->state}",Zend_Log::DEBUG);
 		return $cmd;
 	}
 	
-	
+	/**
+	 * Get the current dtate
+	 * @return mixed the  current modem state.
+	 */
 	public function getState() {
 		return $this->state;
 	}
-	
-	//=================== PROTECTED =================
 		
 }

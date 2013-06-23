@@ -7,14 +7,15 @@
  */
 
 /**
- * Gsmodem AT command  interface class
+ * Gsmodem AT command interface class
  *
  * @package  Gsmodem
  * @since    0.1
  */
 class Gsmodem_Gsmodem  {
 
-	//-----------------------------------------------------
+	//-------------------------- CONSTANTS / STATICS ---------------------------
+	
 	const CONNECTED = "connected";
 	const NO_ANSWER = "no_answer";
 	const CALL_DISCONNECTED = "call_disconnected";
@@ -42,17 +43,18 @@ class Gsmodem_Gsmodem  {
 							'OK' => self::CONNECTED,
 							'RING' => self::RINGING,					
 					);
-	//-----------------------------------------------------
+	
+	//--------------------------------------------------------------------------
 	
 	/**
-	 * TODO
-	 * @var type 
+	 * Hold the modem file descriptor.
+	 * @var resource 
 	 */
 	protected $deviceFD = FALSE;
 
 	/**
-	 * TODO
-	 * @var type 
+	 * Hold the state that thmodem is at (@see Gsmodem_ModemState)
+	 * @var \Gsmodem_ModemState 
 	 */
 	protected $state = null;
 	
@@ -75,67 +77,69 @@ class Gsmodem_Gsmodem  {
 	}
 	
 	/**
-	 * 
-	 * @return type
+	 * Hang up an active call 
+	 * @return TRUE if the command  was sent OK false otherwise.
 	 */
 	public function hangUp() {
-		return $this->doCmd($this->getATcmd('hangup'));				
+		return  $this->state->getState() != Gsmodem_StateMapping::IDLE_STATE && 
+				$this->doCmd($this->getATcmd('hangup')) ? self::HANGING_UP : self::UNKNOWN;						
 	}
 	
 	/**
-	 * TODO
-	 * @param type $waitTime
-	 * @return type
+	 * Wait for the current call to end
+	 * @param type $waitTime (optional) the maximum amount of time to wait  before returning.
+	 * @return boolean|string FALSE  if the waiting timedout  or the call result if  the call was ended
 	 */
 	public function waitForCallToEnd($waitTime = PHP_INT_MAX) {
-		//TODO  find out  if this  need to have some kind  of match condition	
-		while(	$this->state->getState() == Gsmodem_StateMapping::IN_CALL_STATE || 
-				$this->state->getState() == Gsmodem_StateMapping::OUT_CALL_STATE ) {
-			$lastResult = $this->getResult($waitTime);
+		$lastResult= FALSE;
+		 while ( ($this->state->getState() == Gsmodem_StateMapping::IN_CALL_STATE || $this->state->getState() == Gsmodem_StateMapping::OUT_CALL_STATE)) {
+			if( ($lastResult = $this->getResult($waitTime) ) == FALSE) {
+				break;				
+			}
 		}
 		return $lastResult;
 	}
 	
 	/**
-	 * TODO
-	 * @param type $waitTime
-	 * @return type
+	 * Wait for the phone to stop ringing (incoming call has stopped).
+	 * @param type $waitTime (optional) the maximum amount of time to wait before returning.
+	 * @return boolean|string FALSE if the waiting timed out TRUE if the phone has stopped ringing.
 	 */
 	public function waitForRingToEnd($waitTime = PHP_INT_MAX) {
-		//TODO  find out  if this  need to have some kind  of match condition
-		while($this->state->getState() == Gsmodem_StateMapping::RINGING_STATE) {
-			$lastResult = $this->getResult($waitTime);
+		$lastResult= FALSE;
+		while($this->state->getState() == Gsmodem_StateMapping::RINGING_STATE ) {
+			if( ($lastResult = $this->getResult($waitTime) ) == FALSE) {
+				break;				
+			}
 		}
-		return $lastResult;
+		
+		return $lastResult != FALSE;
 	}
 
 	/**
-	 * TODO
-	 * @param type $waitTime
-	 * @return type
+	 * Register to the GSM  network
 	 */
 	public function registerToNet() {
 		$this->doCmd($this->getATcmd('register',array(0)), true);
 	}
 	
 	/**
-	 * TODO
-	 * @param type $waitTime
-	 * @return type
+	 * unregistyer from the GSM network (go off line)
 	 */
 	public function unregisterFromNet() {
 		$this->doCmd($this->getATcmd('register',array(5)), true);
 	}	
 	
 	/**
-	 * TODO
-	 * @param type $waitTime
-	 * @return boolean
+	 * Wait for the phone to ring (recieve incoming call).
+	 * @param type $waitTime (optional) the maximum amount of time to wait before returning.
+	 * @return  boolean|string FALSE if the waiting timed out TRUE if the phone is ringing.
 	 */
 	public function waitForCall($waitTime = PHP_INT_MAX) {		
 		$startTime = time();
 		while($waitTime > time() - $startTime) {
-			if(self::RINGING != $this->getResult($waitTime)) {
+			 $lastResult =  $this->getResult($waitTime);
+			if($this->state->getState() == Gsmodem_StateMapping::RINGING_STATE) {
 				return TRUE;
 			}
 		}
@@ -143,26 +147,29 @@ class Gsmodem_Gsmodem  {
 	}
 	
 	/**
-	 * 
+	 * Answer an incoming call
+	 * @return 
 	 */
 	public function answer() {
-		$this->doCmd($this->getATcmd('answer'));
+		return $this->doCmd($this->getATcmd('answer'),true);
 	}
 	
 	/**
-	 * 
-	 * @return type
+	 * Check if the current instance is  valid  and  can be used.
+	 * @return	TRUE if  you can use this instance ,
+	 *			FALSE if some problem occured and  you better of using  another one (if this  happens too much yell at you sysadmin... :P)
 	 */
 	public function isValid() {
 		return $this->deviceFD != FALSE;
 	}
 	
-	//-------------------- PROTECTED -------------------------------
+	//----------------------------- PROTECTED ----------------------------------
+	
 	/**
-	 * 
-	 * @param type $command
-	 * @param type $params
-	 * @return type
+	 * Get the command string to pass to the modem
+	 * @param type $command the  command we  want to issue.
+	 * @param type $params the parameters  we should passto the command (phone number,baud value, etc..)
+	 * @return string the AT string to pass to the modem inorder to execute the command.
 	 */
 	protected function getATcmd($command,$params =array()) {
 		$cmdStr = self::$atCmdMap[$command];
@@ -173,15 +180,15 @@ class Gsmodem_Gsmodem  {
 	}
 	
 	/**
-	 * 
-	 * @param type $waitTime
-	 * @return type
+	 * Get result/message from the modem
+	 * @param type $waitTime thwe amount of time to wait for the result.
+	 * @return string|boolean the result/message string we got  from the modem or false if the waiting timed out.
 	 */
 	protected function getResult($waitTime = PHP_INT_MAX) {
 		$res =  FALSE;
 		$callResult = "";
 		stream_set_blocking($this->deviceFD,FALSE);
-		while (($callResult .=  fread($this->deviceFD,4096)) || $waitTime--) {	
+		while (($callResult .=  fread($this->deviceFD,4096)) || --$waitTime  > 0) {	
 		
 			if( isset(self::$resultsMap[trim($callResult)])) {
 					Billrun_Factory::log()->log(trim($callResult),  Zend_Log::DEBUG);
@@ -196,22 +203,23 @@ class Gsmodem_Gsmodem  {
 	}
 	
 	/**
-	 * 
-	 * @param type $cmd
-	 * @param type $getResult
-	 * @return type
+	 * Issue an AT command to the modem (use this  and  getAtCmd)
+	 * @param type	$cmd the AT  command string to issue.
+	 * @param type	$getResult (optional) should we wait for a result?  ( default to FALSE )
+	 * @return mixed	FALSE if the there was a problem to issue the command 
+	 *					or if the $getReesult flag is true  the  value that was returned by the modem.
 	 */
 	protected function doCmd($cmd,$getResult = true) {
 		$this->clearBuffer();
 		$res = fwrite($this->deviceFD, $cmd) > 0 && !$getResult;
 		fflush($this->deviceFD);	
-		$this->state->issuedCommabd($cmd);
+		$this->state->issuedCommand($cmd);
 		
-		return $getResult ?  $this->getResult() :  $res ;
+		return $getResult ?  trim($this->getResult()) :  $res > 0  ;
 	}
 	
 	/**
-	 * 
+	 * clear the modem buffer.
 	 */
 	protected function clearBuffer() {
 		stream_set_blocking($this->deviceFD,FALSE);
