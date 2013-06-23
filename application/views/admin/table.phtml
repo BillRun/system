@@ -1,38 +1,34 @@
-<?php
-// todo: move to view class (extend yaf_view)
-$headers = array(
-	'name',
-	'from',
-	'to',
-	'_id',
-);
-?><div class="container">
-	<h1>Plans</h1>
+<div class="container">
+	<h1><?php echo $this->title; ?></h1>
 	<?php
-	print '<table class="table table-striped table-bordered">';
-	print '<thead><tr><th>#</th>';
-	foreach ($headers as $h) {
-		print '<th>' . $h . '</th>';
-	}
-	print '</tr></thead><tbody>';
-	$c = 0;
-	foreach ($this->data as $item) {
-		print '<tr>';
-		print '<td><label class="checkbox">' . '<input type="checkbox" id="chk' . $c++ . '"/></label></td>';
-		foreach ($headers as $h) {
-			$data = $item->get($h);
-			print '<td>';
-			if ($h == 'from' || $h == 'to') {
-				// TODO: move he_IL to config
-				$d = new Zend_Date($data->sec, null, new Zend_Locale('he_IL'));
-				echo $d->getIso();
-			} else {
-				print $data;
-			}
-			print '</td></label>';
+	if (isset($this->data) && $this->data instanceof Mongodloid_Cursor) :
+		print '<table class="table table-striped table-bordered">';
+		print '<thead><tr><th>#</th>';
+		foreach ($this->columns as $h) {
+			print '<th>' . $h . '</th>';
 		}
-		print '</tr>';
-	}
-	print '</tbody></table>';
+		print '</tr></thead><tbody>';
+		$c = 0;
+		foreach ($this->data as $item) {
+			print '<tr>';
+			print '<td><label class="checkbox">' . '<input type="checkbox" id="chk' . $c++ . '"/></label></td>';
+			foreach ($this->columns as $h) {
+				$data = $item->get($h);
+				print '<td>';
+				if ($h == 'from' || $h == 'to') {
+					// TODO: move he_IL to config
+					$d = new Zend_Date($data->sec, null, new Zend_Locale('he_IL'));
+					echo $d->getIso();
+				} else {
+					print $data;
+				}
+				print '</td>';
+			}
+			print '</tr>';
+		}
+		print '</tbody></table>';
+	else :
+		print "No data";
+	endif;
 ?>
 </div>

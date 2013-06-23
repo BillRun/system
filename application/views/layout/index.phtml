@@ -1,3 +1,6 @@
+<?php
+//var_dump($active);
+?>
 <!DOCTYPE html>
 <html class="no-js">
     <head>
@@ -7,17 +10,17 @@
         <meta name="description" content="BillRun Admin Panel">
         <meta name="viewport" content="width=device-width">
 
-        <link rel="stylesheet" href="<?php echo $this->base_url; ?>/css/bootstrap.min.css">
+        <link rel="stylesheet" href="<?php echo $this->baseUrl; ?>/css/bootstrap.min.css">
         <style>
             body {
                 padding-top: 60px;
                 padding-bottom: 40px;
             }
         </style>
-        <link rel="stylesheet" href="<?php echo $this->base_url; ?>/css/bootstrap-responsive.min.css">
-        <link rel="stylesheet" href="<?php echo $this->base_url; ?>/css/main.css">
+        <link rel="stylesheet" href="<?php echo $this->baseUrl; ?>/css/bootstrap-responsive.min.css">
+        <link rel="stylesheet" href="<?php echo $this->baseUrl; ?>/css/main.css">
 
-        <script src="<?php echo $this->base_url; ?>/js/vendor/modernizr-2.6.2-respond-1.1.0.min.js"></script>
+        <script src="<?php echo $this->baseUrl; ?>/js/vendor/modernizr-2.6.2-respond-1.1.0.min.js"></script>
     </head>
     <body>
 
@@ -32,10 +35,10 @@
                     <a class="brand" href="#">BillRun</a>
                     <div class="nav-collapse collapse">
                         <ul class="nav">
-                            <li class="active"><a href="/">Home</a></li>
-                            <li><a href="#">Lines</a></li>
-                            <li><a href="<?php echo $this->base_url; ?>/admin/plans">Plans</a></li>
-                            <li><a href="<?php echo $this->base_url; ?>/admin/rates">Rates</a></li>
+                            <li<?php echo ($active==''?' class="active"':''); ?>><a href="<?php echo $this->baseUrl; ?>/admin">Home</a></li>
+                            <li<?php echo ($active=='lines'?' class="active"':''); ?>><a href="#">Lines</a></li>
+                            <li<?php echo ($active=='plans'?' class="active"':''); ?>><a href="<?php echo $this->baseUrl; ?>/admin/plans">Plans</a></li>
+                            <li<?php echo ($active=='rates'?' class="active"':''); ?>><a href="<?php echo $this->baseUrl; ?>/admin/rates">Rates</a></li>
 <!--                            <li class="dropdown">
                                 <a href="#" class="dropdown-toggle" data-toggle="dropdown">Dropdown <b class="caret"></b></a>
                                 <ul class="dropdown-menu">
@@ -58,8 +61,9 @@
                 </div>
             </div>
         </div>
+		<!-- main component -->
 		<?php echo $this->component; ?>
-
+		<!-- end of main component -->
         <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
         <script>window.jQuery || document.write('<script src="js/vendor/jquery-1.9.1.min.js"><\/script>')</script>
 
