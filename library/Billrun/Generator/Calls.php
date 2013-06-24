@@ -30,22 +30,14 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 	 * The calling device.
 	 * @var Gsmodem_Gsmodem
 	 */
-	protected $callingDevice = null;
-
-	/**
-	 * the answering device.
-	 * @var Gsmodem_Gsmodem 
-	 */
-	protected $answeringDevice = null;
+	protected $modemDevice = null;
 
 	public function __construct($options) {
 		parent::__construct($options);
 		if(isset($options['path_to_calling_device'])) {
-			$this->callingDevice = new Gsmodem_Gsmodem($options['path_to_calling_device']);
+			$this->modemDevice = new Gsmodem_Gsmodem($options['path_to_calling_device']);
 		}
-		if(isset($options['path_to_answering_device'])) {
-			$this->answeringDevice = new Gsmodem_Gsmodem($options['path_to_answering_device']);
-		}		
+
 	}
 	
 	/**
@@ -53,7 +45,7 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 	 */
 	public function generate() {	
 		$callsMade = array();			
-		if($this->callingDevice && $this->callingDevice->isValid()) {
+		if($this->modemDevice && $this->modemDevice->isValid()) {
 			//make the calls and remember their results
 			for($i=0; $i < $this->options['times']; $i++) {
 				$call = $this->getEmptyCall($this->options['direction'] ? 'calling' : 'answering');
@@ -75,6 +67,7 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 		Billrun_Factory::log()->log(print_r($callsMade,1),  Zend_Log::DEBUG);
 		$this->save($callsMade);
 	}
+	
 	/**
 	 * dummy function of Generator
 	 */	
@@ -83,44 +76,50 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 	}
 	
 	/**
-	 * make a call as defiend  by the configuration.
+	 * Make a call as defiend  by the configuration.
 	 * @param type $callRecord the  call record to save to the DB.
 	 * @return mixed the call record with the data regarding making the call.
 	 */
 	protected function makeACall(&$callRecord) {
-		$callRecord['calling_result'] = $this->callingDevice->call($this->options['number_to_call']);
+		$callRecord['calling_result'] = $this->modemDevice->call($this->options['number_to_call']);
 		$callRecord['called_number'] = $this->options['number_to_call'];
 
 		return $callRecord['calling_result'];
 	}
 	
 	/**
-	 *  wait for a call.
+	 * Wait for a call.
 	 * @param mixed $callRecord  the call record to save to the DB.
 	 * @return mixed the call record with the data regarding the incoming call.
 	 */
 	protected function waitForCall(&$callRecord) {
-		$this->answeringDevice->waitForCall();
-		if(isset($this->options['should_answer']) && $this->options['should_answer']) {
-			$callRecord['calling_result'] = $this->answeringDevice->answer();
-		} elseif(isset($this->options['ignore_call']) && $this->options['ignore_call']) {
-			 $this->answeringDevice->waitForRingToEnd();
-			 $callRecord['calling_result'] = 'ignored';
-		} else {
-			$callRecord['calling_result'] =  $this->answeringDevice->hangUp() ;
-		}	
+		
+		if($this->modemDevice->waitForCall() !== FALSE) {
+			if(isset($this->options['should_answer']) && $this->options['should_answer']) {				
+				$callRecord['calling_result'] = $this->modemDevice->answer();
+				
+			} elseif(isset($this->options['ignore_call']) && $this->options['ignore_call']) {				
+				 $this->modemDevice->waitForRingToEnd();
+				 $callRecord['calling_result'] = 'ignored';
+				 
+			} else {				
+				$callRecord['calling_result'] =  $this->modemDevice->hangUp() ;
+				
+			}	
+		}
+		
 		return $callRecord['calling_result']; 
 	}
 	
 	/**
-	 * handle an active call.
+	 * Handle an active call.
 	 * @param type $callRecord the call record to save to the DB.
 	 */
 	protected  function HandleCall(&$callRecord) {
 		$callRecord['call_start_time'] = date("YmdTHis");
-		$callRecord['end_result'] =  $this->callingDevice->waitForCallToEnd($this->options['call_wait_time']);
+		$callRecord['end_result'] =  $this->modemDevice->waitForCallToEnd($this->options['call_wait_time']);
 		if($callRecord['end_result'] == Gsmodem_Gsmodem::NO_RESPONSE) {
-			$this->callingDevice->hangUp();
+			$this->modemDevice->hangUp();
 			$callRecord['end_result'] = 'hang_up';						
 		}
 		$callRecord['call_end_time'] = date("YmdTHis");
@@ -144,7 +143,7 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 	}
 	
 	/**
-	 * save  calls made/received to DB.
+	 * Save calls made/received to DB.
 	 * @param Array $calls containing the call recrods of the calls  that where made/received
 	 * @return boolean
 	 */
