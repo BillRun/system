@@ -7,10 +7,9 @@
  */
 
 /**
- * Billing abstract generator ilds class
- * require to generate xml for each account
- * require to generate csv contain how much to credit each account
- *
+ * Billing call generator class
+ * Make and  receive call  base on several  parameters
+  *
  * @package  Billing
  * @since    0.5
  */
@@ -153,8 +152,8 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 		
 		foreach ($calls as $row) {
 			$row['stamp'] = md5(serialize($row));
-			$row['source'] = 'generator';
-			$row['unified_record_time'] = new MongoDate(strtotime($row['call_start_time']));
+			$row['source'] = 'generator';			
+			$row['unified_record_time'] = new MongoDate(strtotime($row['call_start_time']  ? $row['call_start_time'] : $row['execution_start_time']));
 			$row['type'] = static::$type;
 			if(!($lines->query(array('stamp'=> $row['stamp'] ) )->cursor()->hasNext() ) )  {				
 				$entity = new Mongodloid_Entity($row);
