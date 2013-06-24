@@ -48,7 +48,7 @@ class AdminController extends Yaf_Controller_Abstract {
 			'to',
 			'_id',
 		);
-		$this->getView()->component = $this->setTableView('plans', $columns);
+		$this->getView()->component = $this->setTableView('plans', $columns, array('creation_time' => -1));
 	}
 
 	/**
@@ -61,7 +61,7 @@ class AdminController extends Yaf_Controller_Abstract {
 			'to',
 			'_id',
 		);
-		$this->getView()->component = $this->setTableView('rates', $columns);
+		$this->getView()->component = $this->setTableView('rates', $columns, array('creation_time' => -1));
 	}
 
 	/**
@@ -78,7 +78,22 @@ class AdminController extends Yaf_Controller_Abstract {
 			'value',
 			'_id',
 		);
-		$this->getView()->component = $this->setTableView('events', $columns);
+		$this->getView()->component = $this->setTableView('events', $columns, array('creation_time' => -1));
+	}
+
+	/**
+	 * log controller of admin
+	 */
+	public function logAction() {
+		$columns = array(
+			'source',
+			'type',
+			'file_name',
+			'received_time',
+			'process_time',
+			'_id',
+		);
+		$this->getView()->component = $this->setTableView('log', $columns, array('received_time' => -1));
 	}
 
 	/**
@@ -113,10 +128,10 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * 
 	 * @return string the render page (HTML)
 	 */
-	protected function setTableView($table, $columns) {
+	protected function setTableView($table, $columns = array(), $sort = array()) {
 		$page = 0;
 		$limit = 100;
-		$sort = array('creation_time' => -1);
+
 		$options = array(
 			'collection' => $table,
 			'page' => $page,
