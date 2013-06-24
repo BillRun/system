@@ -35,6 +35,13 @@ class TableModel {
 	protected $size;
 
 	/**
+	 * the sort of the page
+	 * 
+	 * @var array
+	 */
+	protected $sort;
+
+	/**
 	 * constructor
 	 * 
 	 * @param array $params of parameters to preset the object
@@ -52,6 +59,11 @@ class TableModel {
 		if (isset($params['size'])) {
 			$this->size = $params['size'];
 		}
+		
+		if (isset($params['sort'])) {
+			$this->sort = $params['sort'];
+		}
+
 	}
 
 	/**
@@ -61,7 +73,7 @@ class TableModel {
 	 */
 	public function getData() {
 		$skip = $this->page * $this->size;
-		$resource = $this->collection->query()->cursor()->skip($skip)->limit($this->size);
+		$resource = $this->collection->query()->cursor()->sort($this->sort)->skip($skip)->limit($this->size);
 		return $resource;
 	}
 

@@ -14,8 +14,12 @@
  */
 class AdminController extends Yaf_Controller_Abstract {
 
-	protected $componentView = null;
-
+	/**
+	 * use for page title
+	 * 
+	 * @var string 
+	 */
+	protected $title = null;
 	/**
 	 * method to control and navigate the user to the right view
 	 */
@@ -61,6 +65,23 @@ class AdminController extends Yaf_Controller_Abstract {
 	}
 
 	/**
+	 * events controller of admin
+	 */
+	public function eventsAction() {
+		$columns = array(
+			'creation_time',
+			'event_type',
+			'imsi',
+			'source',
+			'threshold',
+			'units',
+			'value',
+			'_id',
+		);
+		$this->getView()->component = $this->setTableView('events', $columns);
+	}
+
+	/**
 	 * method to render component page
 	 * 
 	 * @param string $viewName the view name to render
@@ -79,6 +100,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		}
 		if (isset($params['title'])) {
 			$view->assign('title', $params['title']);
+			$this->title = $params['title'];
 		}
 		return $view->render($viewName . '.phtml', $params);
 	}
@@ -94,10 +116,12 @@ class AdminController extends Yaf_Controller_Abstract {
 	protected function setTableView($table, $columns) {
 		$page = 0;
 		$limit = 100;
+		$sort = array('creation_time' => -1);
 		$options = array(
 			'collection' => $table,
 			'page' => $page,
 			'size' => $limit,
+			'sort' => $sort,
 		);
 
 		$model = new TableModel($options);
@@ -124,6 +148,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$tpl = 'index';
 		//check with active menu we are on
 		$parameters['active'] = $this->getRequest()->getActionName();
+		$parameters['title'] = $this->title;
 		return $this->getView()->render($tpl . ".phtml", $parameters);
 	}
 
