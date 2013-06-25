@@ -114,8 +114,14 @@ class AdminController extends Yaf_Controller_Abstract {
 		if (isset($params['columns'])) {
 			$view->assign('columns', $params['columns']);
 		}
-		if (isset($params['pager'])) {
-			$view->assign('pager', $params['pager']);
+		if (isset($params['offset'])) {
+			$view->assign('offset', $params['offset']);
+		}
+		if (isset($params['pagination'])) {
+			$view->assign('pagination', $params['pagination']);
+		}
+		if (isset($params['sizeList'])) {
+			$view->assign('sizeList', $params['sizeList']);
 		}
 		if (isset($params['title'])) {
 			$view->assign('title', $params['title']);
@@ -138,11 +144,6 @@ class AdminController extends Yaf_Controller_Abstract {
 
 		$session = Yaf_session::getInstance();
 		$session->start();
-		
-//		$session->del('page');
-//		$session->del('size');
-//		print_R($session);
-//		die;
 		
 		if (!isset($session->page)) {
 			$session->page = new stdClass();
@@ -174,12 +175,15 @@ class AdminController extends Yaf_Controller_Abstract {
 		$data = $model->getData();
 		// use ready pager/paginiation class (zend? joomla?) with auto print
 		$pager = $model->getPager();
-
+		$pagination = $model->printPager();
+		$sizeList = $model->printSizeList();
 		$params = array(
 			'data' => $data,
 			'title' => ucfirst($table),
 			'columns' => $columns,
-			'pager' => $pager,
+			'offset' => $model->offset(),
+			'pagination' => $pagination,
+			'sizeList' => $sizeList,
 		);
 
 		$ret = $this->renderView('table', $params);

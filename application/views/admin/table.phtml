@@ -10,12 +10,7 @@
 		}
 		print '</tr></thead><tbody>';
 
-		if ($this->pager['current'] == 1) {
-			$c = 0;
-		} else {
-			$c = ($this->pager['current']-1)*$this->pager['size'];
-		}
-		
+		$c = $this->offset;
 		foreach ($this->data as $item) {
 			print '<tr>';
 			print '<td><label class="checkbox">#' . ($c+1) . '&nbsp;<input value="" type="checkbox" id="chk' . $c++ . '"/></label></td>';
@@ -36,70 +31,10 @@
 		print '</tbody></table>';
 
 		// print pagination
-		// TODO: move to external library
-		if ($this->pager['count'] > 1) :
-			$current = $this->pager['current'];
-			$count = $this->pager['count'];
-			$range = 5;
-
-			$min = $current - $range;
-			$max = $current + $range;
-
-			if ($current < 1) {
-				$current = 1;
-			}
-
-			if ($current > $count) {
-				$current = $count;
-			}
-
-			if ($min < 1) {
-				$min = 1;
-			}
-			if ($max > $count) {
-				$max = $count;
-			}
-
-			print '<div class="pagination pagination-right">'
-				. '<ul>';
-			if ($current == 1) {
-				print '<li class="disabled"><a href="javascript:void(0);">First</a></li>'
-					. '<li class="disabled"><a href="javascript:void(0);">Prev</a></li>';
-			} else {
-				print '<li><a href="?page=1">First</a></li>'
-					. '<li><a href="?page=' . ($current - 1) . '">Prev</a></li>';
-			}
-
-			for ($i = $min; $i < $current; $i++) {
-				print '<li><a href="?page=' . $i . '">' . $i . '</a></li>';
-			}
-
-			print '<li class="active disabled"><a href="javascript:void(0);">' . $current . '</a></li>';
-
-			for ($i = ($current + 1); $i <= $max; $i++) {
-				print '<li><a href="?page=' . $i . '">' . $i . '</a></li>';
-			}
-
-			if ($current == $count) {
-				print '<li class="disabled"><a href="javascript:void(0);">Next</a></li>'
-					. '<li class="disabled"><a href="javascript:void(0);">Last</a></li>';
-			} else {
-				print '<li><a href="?page=' . ($current + 1) . '">Next</a></li>'
-					. '<li><a href="?page=' . $count . '">Last</a></li>';
-			}
-
-			print '</ul></div>';
-		endif; ?>
-			<div id="listSize" class="btn-group">
-				<button class="btn btn-danger dropdown-toggle" data-toggle="dropdown"><?php echo $this->pager['size']; ?> <span class="caret"></span></button>
-				<ul class="dropdown-menu">
-					<li><a href="<?php echo '?listSize=10'; ?>">10</a></li>
-					<li><a href="<?php echo '?listSize=50'; ?>">50</a></li>
-					<li><a href="<?php echo '?listSize=100'; ?>">100</a></li>
-					<li><a href="<?php echo '?listSize=500'; ?>">500</a></li>
-					<li><a href="<?php echo '?listSize=1000'; ?>">1000</a></li>
-				</ul>
-			</div><!-- /btn-group -->
+		echo $this->pagination;
+		echo $this->sizeList;
+		?>
+		
 			<?php
 	else :
 		print "No data";
