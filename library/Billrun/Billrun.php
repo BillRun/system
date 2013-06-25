@@ -122,7 +122,7 @@ class Billrun_Billrun {
 	 */
 	static public function addToBreakdown(&$breakdown_raw, $breakdown_key, $zone_key, $vatable, $counters = array(), $charge = null) {
 		if (!isset($breakdown_raw[$breakdown_key][$zone_key])) {
-			$breakdown_raw[$breakdown_key][$zone_key] = Billrun_Model_Subscriber::getEmptyBalance();
+			$breakdown_raw[$breakdown_key][$zone_key] = Billrun_Plan::getEmptyPlanBalance();
 		}
 		if (!empty($counters)) {
 			$breakdown_raw[$breakdown_key][$zone_key]['totals'][key($counters)]['usagev']+=current($counters);
@@ -244,6 +244,14 @@ class Billrun_Billrun {
 		$line->setRawData($newData);
 		$line->save(Billrun_Factory::db()->linesCollection());
 		return true;
+	}
+	
+	static public function getBillrun($account_id, $billrun_key) {
+		$billrun = Billrun_Factory::billrun(array(
+			'account_id' => $account_id,
+			'billrun_key' => $billrun_key,
+		));
+		return $billrun;
 	}
 
 	public function close() {

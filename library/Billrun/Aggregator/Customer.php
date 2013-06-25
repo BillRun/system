@@ -113,7 +113,8 @@ EOT;
 		$billrun_key = $this->getStamp();
 
 		foreach ($this->data as $account_id => $account) {
-			$billrun = Billrun_Model_Subscriber::getBillrun($account_id, $billrun_key);
+			//TODO refactor this to use the Billrun_Factory ??
+			$billrun = Billrun_Billrun::getBillrun($account_id, $billrun_key);
 			if (!$billrun->isValid()) {
 				$billrun->create($account_id, $billrun_key);
 			}

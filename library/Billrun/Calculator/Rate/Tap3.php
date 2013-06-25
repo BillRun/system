@@ -123,7 +123,6 @@ class Billrun_Calculator_Rate_Tap3 extends Billrun_Calculator_Rate {
 		$line_time = $row['unified_record_time'];
 		$serving_network = $row['serving_network'];
 
-
 		if (!is_null($serving_network)) {
 			$rates = Billrun_Factory::db()->ratesCollection();
 
@@ -144,6 +143,7 @@ class Billrun_Calculator_Rate_Tap3 extends Billrun_Calculator_Rate {
 				);
 				$rate = $rates->query($filter_array)->cursor()->current();
 				if ($rate->getId()) {
+					$rate->collection(Billrun_Factory::db()->ratesCollection());
 					return $rate;
 				}
 			}

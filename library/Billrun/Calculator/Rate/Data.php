@@ -97,6 +97,7 @@ class Billrun_Calculator_Rate_Data extends Billrun_Calculator_Rate {
 						)
 					))->cursor()->current();
 			if ($rate->getId()) {
+				$rate->collection(Billrun_Factory::db()->ratesCollection());
 				return $rate;
 			}
 		}

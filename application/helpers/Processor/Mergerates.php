@@ -147,9 +147,9 @@ class Processor_Mergerates extends Billrun_Processor_Base_Separator {
 							'interval' => (int) ( $row['tinf_sampDelayInSec0'] ? ($row['tinf_sampDelayInSec0'] ) : 1  ) * $intervalMultiplier,
 						) ),
 				);
-				if (Billrun_Util::startsWith($row['zoneOrItem'], 'KT_')) {
+				if (isset($row['zoneOrItem']) && Billrun_Util::startsWith($row['zoneOrItem'], 'KT_')) {
 					$category = "intl";
-				} else if (Billrun_Util::startsWith($row['accessTypeName'], 'AC_ROAM_')) {
+				} else if (isset($row['accessTypeName']) && Billrun_Util::startsWith($row['accessTypeName'], 'AC_ROAM_')) {
 					$category = "roaming";
 				}
 				if (isset($category)) {

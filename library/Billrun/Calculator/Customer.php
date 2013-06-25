@@ -130,7 +130,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 				Billrun_Factory::log("Couldn't get plan for CDR line : {$row['stamp']} with plan $plan", Zend_Log::ALERT);
 				return;
 		}
-		$row['plan_ref'] = $planObj->getPlanRef($plan, date(Billrun_Base::base_dateformat, $row['unified_record_time']->sec));
+		$row['plan_ref'] = $planObj->createRef();
 		return $row->get('plan_ref', true);
 	}
 

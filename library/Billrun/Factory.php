@@ -227,15 +227,16 @@ class Billrun_Factory {
 	 * @return Billrun_Balance
 	 */
 	static public function balance( $params = array() ) {
-		// unique stamp per plan
+		/*
+		 * No caching for now as we need updated data  each time (as more then once calculator  can run at the same time).
 		$stamp = md5(serialize($params));
 		
 		if (!isset(self::$balance[$stamp])) {
 			$balanceSettings = self::config()->getConfigValue('balance', array());
 			self::$balance[$stamp] = new Billrun_Balance( array_merge($balanceSettings,$params) );
-		}
-
-		return self::$balance[$stamp];
+		}*/
+		$balanceSettings = self::config()->getConfigValue('balance', array());
+		return new Billrun_Balance( array_merge($balanceSettings,$params) );
 	}
 
 	/**
