@@ -76,6 +76,14 @@ class TableModel {
 		$resource = $this->collection->query()->cursor()->sort($this->sort)->skip($skip)->limit($this->size);
 		return $resource;
 	}
+	
+	public function getPager() {
+		$ret = array(
+			'count' => (int) ceil($this->collection->query()->count() / $this->size),
+			'current' => $this->page,
+		);
+		return $ret;
+	}
 
 	public function update($data) {
 		

@@ -1,3 +1,4 @@
+<?php // var_dump($this);die;  ?>
 <div class="container component">
 	<h1><?php echo $this->title; ?></h1>
 	<?php
@@ -27,8 +28,47 @@
 			print '</tr>';
 		}
 		print '</tbody></table>';
+		print '<div class="pagination pagination-right">';
+		if ($this->pager['count'] > 1) :
+			$current = $this->pager['current'];
+			$count = $this->pager['count'];
+			$min = $current - 5;
+			$max = $current + 5;
+			
+			if ($current < 0) {
+				$current = 0;
+			}
+			
+			if ($current > $count) {
+				$current = $count;
+			}
+
+			if ($min < 0) {
+				$min = 0;
+			}
+			if ($max > $count) {
+				$max = $count;
+			}
+
+			print '<ul>';
+			print '<li' . ($current == 1 ? ' class="disabled"' : '' ) . '><a href="#">First</a></li>';
+			print '<li' . ($current == 1 ? ' class="disabled"' : '' ) . '><a href="#">Prev</a></li>';
+			for ($i = $min; $i < $current; $i++) {
+				print '<li><a href="#">' . ($i) . '</a></li>';
+			}
+			
+			print '<li class="active disabled"><a href="javascript:void(0);">' . ($current) . '</a></li>';
+			$i++;
+			for (; $i <= $max; $i++) {
+				print '<li><a href="#">' . ($i) . '</a></li>';
+			}
+			print '<li' . ($current == $count ?  'class="disabled"' : '' ) . '><a href="#">Next</a></li>';
+			print '<li' . ($current == $count ? ' class="disabled"' : '' ) . '><a href="#">Last</a></li>';
+			print '</ul>';
+		endif;
+		echo "</div>";
 	else :
 		print "No data";
 	endif;
-?>
+	?>
 </div>

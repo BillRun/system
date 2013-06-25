@@ -113,6 +113,9 @@ class AdminController extends Yaf_Controller_Abstract {
 		if (isset($params['columns'])) {
 			$view->assign('columns', $params['columns']);
 		}
+		if (isset($params['pager'])) {
+			$view->assign('pager', $params['pager']);
+		}
 		if (isset($params['title'])) {
 			$view->assign('title', $params['title']);
 			$this->title = $params['title'];
@@ -129,8 +132,8 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * @return string the render page (HTML)
 	 */
 	protected function setTableView($table, $columns = array(), $sort = array()) {
-		$page = 0;
-		$limit = 100;
+		$page = (int) $this->getRequest()->get('page', 0);
+		$limit = (int) $this->getRequest()->getParam('listSize', 100);
 
 		$options = array(
 			'collection' => $table,
@@ -141,12 +144,16 @@ class AdminController extends Yaf_Controller_Abstract {
 
 		$model = new TableModel($options);
 		$data = $model->getData();
-
+		// use ready pager/paginiation class (zend? joomla?) with auto print
+		$pager = $model->getPager();
+		
 		$params = array(
 			'data' => $data,
 			'title' => ucfirst($table),
 			'columns' => $columns,
+			'pager' => $pager,
 		);
+
 		$ret = $this->renderView('table', $params);
 
 		return $ret;
