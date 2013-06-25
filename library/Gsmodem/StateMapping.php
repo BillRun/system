@@ -28,7 +28,7 @@ class Gsmodem_StateMapping {
 	/**
 	 * Mapping result  to the state to should lead to.
 	 */
-	public $resultToStateMapping = array(
+	protected $resultToStateMapping = array(
 		self::OUT_CALL_STATE => array(
 			'NO ANSWER' => self::IDLE_STATE,
 			'BUSY' => self::IDLE_STATE,
@@ -65,7 +65,7 @@ class Gsmodem_StateMapping {
 	/**
 	 * Mapping issued commands to the state to should lead to.
 	 */
-	public $commandToStateMapping = array(
+	protected $commandToStateMapping = array(
 		self::IDLE_STATE => array(
 			'^ATD' => self::CALLING_STATE,
 		),

@@ -39,7 +39,7 @@ class Gsmodem_ModemState {
 	 */
 	public function gotResult($result) {
 		$this->state = $this->mapping->getStateForResult($this->state,$result);
-		Billrun_Factory::log()->log("Switched to state : {$this->state}",Zend_Log::DEBUG);
+		//Billrun_Factory::log()->log("Switched to state : {$this->state}",Zend_Log::DEBUG);
 		return $result;
 	}
 	
@@ -50,7 +50,7 @@ class Gsmodem_ModemState {
 	 */
 	public function issuedCommand($cmd) {
 		$this->state = $this->mapping->getStateForCommand($this->state,$cmd);
-		Billrun_Factory::log()->log("Switched to state : {$this->state}",Zend_Log::DEBUG);
+		//Billrun_Factory::log()->log("Switched to state : {$this->state}",Zend_Log::DEBUG);
 		return $cmd;
 	}
 	

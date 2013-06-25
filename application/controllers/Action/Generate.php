@@ -38,8 +38,11 @@ class GenerateAction extends Action_Base {
 			$this->_controller->addOutput("Loading data to Generate...");
 			$generator->load();
 			$this->_controller->addOutput("Starting to Generate. This action can take awhile...");
-			$generator->generate();
+			 $report = $generator->generate();
 			$this->_controller->addOutput("Finish to Generate. This action can take awhile...");
+			if($generator->getTemplate()) {
+					$this->_controller->addOutput($this->render($generator->getTemplate(), $report));
+			}
 		} else {
 			$this->_controller->addOutput("Aggregator cannot be loaded");
 		}

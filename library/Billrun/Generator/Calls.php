@@ -62,9 +62,13 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 				
 				sleep($this->options['interval']);
 			}	
-		}
+			
 		Billrun_Factory::log()->log(print_r($callsMade,1),  Zend_Log::DEBUG);
 		$this->save($callsMade);
+
+		} else {
+			Billrun_Factory::log()->log("couldn't use specified device : {$this->options['path_to_calling_device']}",  Zend_Log::INFO);
+		}
 	}
 	
 	/**

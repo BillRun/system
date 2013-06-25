@@ -191,7 +191,7 @@ class Gsmodem_Gsmodem  {
 		while (($callResult .=  fread($this->deviceFD,4096)) || --$waitTime  > 0) {	
 		
 			if( isset(self::$resultsMap[trim($callResult)])) {
-					Billrun_Factory::log()->log(trim($callResult),  Zend_Log::DEBUG);
+					//Billrun_Factory::log()->log(trim($callResult),  Zend_Log::DEBUG);
 					$this->state->gotResult(trim($callResult));
 					$res = self::$resultsMap[trim($callResult)];
 					break;

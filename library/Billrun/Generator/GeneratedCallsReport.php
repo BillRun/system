@@ -31,7 +31,7 @@ class Billrun_Generator_GeneratedCallsReport extends Billrun_Generator {
 		if($options['called_number']) {
 			$this->calledNumber = $options['called_number'];
 		}
-		$this->from = isset($options['from_date']) ? strtotime($options['from_date']) : time()-(192*3600);
+		$this->from = isset($options['from_date']) ? strtotime($options['from_date']) : time()-(24*3600);
 	
 		$this->to = isset($options['to_date']) ? strtotime($options['to_date']) : time();
 	}
@@ -54,8 +54,15 @@ class Billrun_Generator_GeneratedCallsReport extends Billrun_Generator {
 		}
 		
 		print_r($subscriberLines);
+		$report['cdr_calls_comparison'] = $subscriberLines;
 		print_r($callResults);
-		$this->printSummaryReport($subscriberLines, $callResults);
+		$report['generated_breakdown'] = $callResults;
+		$report['summary'] = $this->printSummaryReport($subscriberLines, $callResults);
+		return $report;
+	}
+	
+	public function getTemplate() {
+		return 'generated_calls_report';
 	}
 	
 	protected function printSummaryReport($subscriberLines,$callResults) {
