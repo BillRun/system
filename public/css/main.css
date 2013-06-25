@@ -10,3 +10,6 @@
 a.brand {
 	text-indent: 0 -999px;
 }
+div#listSize {
+	float:right;
+}
