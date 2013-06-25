@@ -42,6 +42,13 @@ class TableModel {
 	protected $sort;
 
 	/**
+	 * the count of the page
+	 * 
+	 * @var int
+	 */
+	protected $_count = null;
+
+	/**
 	 * constructor
 	 * 
 	 * @param array $params of parameters to preset the object
@@ -67,13 +74,16 @@ class TableModel {
 	}
 
 	/**
-	 * get the data resource
+	 * Get the data resource
 	 * 
-	 * @return type
+	 * @return Mongo Cursor
 	 */
 	public function getData() {
 		if ($this->page > 0) {
 			$skip = ($this->page-1) * $this->size;
+			if ($skip > $this->count()) {
+				$skip = 0;
+			}
 		} else {
 			$skip = 0;
 		}
@@ -82,9 +92,28 @@ class TableModel {
 		return $resource;
 	}
 	
+	/**
+	 * Get whole data count
+	 * 
+	 * @param boolean $force if set will inforce recount although already count done
+	 * 
+	 * @return int
+	 */
+	public function count($force = false) {
+		if ($force || is_null($this->_count)) {
+			$this->_count = $this->collection->query()->count();
+		}
+		return $this->_count;
+	}
+	
+	/**
+	 * get the pager data
+	 * 
+	 * @return array
+	 */
 	public function getPager() {
 		$ret = array(
-			'count' => (int) ceil($this->collection->query()->count() / $this->size),
+			'count' => (int) ceil($this->count() / $this->size),
 			'current' => $this->page,
 			'size' => $this->size,
 		);

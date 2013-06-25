@@ -138,23 +138,35 @@ class AdminController extends Yaf_Controller_Abstract {
 
 		$session = Yaf_session::getInstance();
 		$session->start();
+		
+//		$session->del('page');
+//		$session->del('size');
+//		print_R($session);
+//		die;
+		
+		if (!isset($session->page)) {
+			$session->page = new stdClass();
+		}
+		if (!isset($session->size)) {
+			$session->size = new stdClass();
+		}
 
 		if ($page) {
-			$session->page = $page;
-		} else if (!isset($session->page)) {
-			$session->page = 0;
+			$session->page->$table = $page;
+		} else if (!isset($session->page->$table)) {
+			$session->page->$table = 0;
 		}
 
 		if ($size) {
-			$session->size = $size;
-		} else if (!isset($session->size)) {
-			$session->size= 100;
+			$session->size->$table = $size;
+		} else if (!isset($session->size->$table)) {
+			$session->size->$table= 100;
 		}
 
 		$options = array(
 			'collection' => $table,
-			'page' => $session->page,
-			'size' => $session->size,
+			'page' => $session->page->$table,
+			'size' => $session->size->$table,
 			'sort' => $sort,
 		);
 
