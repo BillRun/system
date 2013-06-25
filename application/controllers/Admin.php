@@ -20,6 +20,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * @var string 
 	 */
 	protected $title = null;
+
 	/**
 	 * method to control and navigate the user to the right view
 	 */
@@ -37,7 +38,7 @@ class AdminController extends Yaf_Controller_Abstract {
 			$this->getView()->component = $this->renderView('home');
 		}
 	}
-	
+
 	/**
 	 * plans controller of admin
 	 */
@@ -132,13 +133,28 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * @return string the render page (HTML)
 	 */
 	protected function setTableView($table, $columns = array(), $sort = array()) {
-		$page = (int) $this->getRequest()->get('page', 0);
-		$limit = (int) $this->getRequest()->getParam('listSize', 100);
+		$page = (int) $this->getRequest()->get('page');
+		$size = (int) $this->getRequest()->get('listSize');
+
+		$session = Yaf_session::getInstance();
+		$session->start();
+
+		if ($page) {
+			$session->page = $page;
+		} else if (!isset($session->page)) {
+			$session->page = 0;
+		}
+
+		if ($size) {
+			$session->size = $size;
+		} else if (!isset($session->size)) {
+			$session->size= 100;
+		}
 
 		$options = array(
 			'collection' => $table,
-			'page' => $page,
-			'size' => $limit,
+			'page' => $session->page,
+			'size' => $session->size,
 			'sort' => $sort,
 		);
 
@@ -146,7 +162,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$data = $model->getData();
 		// use ready pager/paginiation class (zend? joomla?) with auto print
 		$pager = $model->getPager();
-		
+
 		$params = array(
 			'data' => $data,
 			'title' => ucfirst($table),

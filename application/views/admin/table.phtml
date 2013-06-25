@@ -1,4 +1,4 @@
-<?php // var_dump($this);die;  ?>
+<?php // var_dump($this);die;       ?>
 <div class="container component">
 	<h1><?php echo $this->title; ?></h1>
 	<?php
@@ -28,45 +28,75 @@
 			print '</tr>';
 		}
 		print '</tbody></table>';
-		print '<div class="pagination pagination-right">';
+
+		// print pagination
+		// TODO: move to external library
 		if ($this->pager['count'] > 1) :
 			$current = $this->pager['current'];
 			$count = $this->pager['count'];
-			$min = $current - 5;
-			$max = $current + 5;
-			
-			if ($current < 0) {
-				$current = 0;
+			$range = 5;
+
+			$min = $current - $range;
+			$max = $current + $range;
+
+			if ($current < 1) {
+				$current = 1;
 			}
-			
+
 			if ($current > $count) {
 				$current = $count;
 			}
 
-			if ($min < 0) {
-				$min = 0;
+			if ($min < 1) {
+				$min = 1;
 			}
 			if ($max > $count) {
 				$max = $count;
 			}
 
-			print '<ul>';
-			print '<li' . ($current == 1 ? ' class="disabled"' : '' ) . '><a href="#">First</a></li>';
-			print '<li' . ($current == 1 ? ' class="disabled"' : '' ) . '><a href="#">Prev</a></li>';
+			print '<div class="pagination pagination-right">'
+				. '<ul>';
+			if ($current == 1) {
+				print '<li class="disabled"><a href="javascript:void(0);">First</a></li>'
+					. '<li class="disabled"><a href="javascript:void(0);">Prev</a></li>';
+			} else {
+				print '<li><a href="?page=1">First</a></li>'
+					. '<li><a href="?page=' . ($current - 1) . '">Prev</a></li>';
+			}
+
 			for ($i = $min; $i < $current; $i++) {
-				print '<li><a href="#">' . ($i) . '</a></li>';
+				print '<li><a href="?page=' . $i . '">' . $i . '</a></li>';
 			}
-			
-			print '<li class="active disabled"><a href="javascript:void(0);">' . ($current) . '</a></li>';
-			$i++;
-			for (; $i <= $max; $i++) {
-				print '<li><a href="#">' . ($i) . '</a></li>';
+
+			print '<li class="active disabled"><a href="javascript:void(0);">' . $current . '</a></li>';
+
+			for ($i = ($current + 1); $i <= $max; $i++) {
+				print '<li><a href="?page=' . $i . '">' . $i . '</a></li>';
 			}
-			print '<li' . ($current == $count ?  'class="disabled"' : '' ) . '><a href="#">Next</a></li>';
-			print '<li' . ($current == $count ? ' class="disabled"' : '' ) . '><a href="#">Last</a></li>';
-			print '</ul>';
+
+			if ($current == $count) {
+				print '<li class="disabled"><a href="javascript:void(0);">Next</a></li>'
+					. '<li class="disabled"><a href="javascript:void(0);">Last</a></li>';
+			} else {
+				print '<li><a href="?page=' . ($current + 1) . '">Next</a></li>'
+					. '<li><a href="?page=' . $count . '">Last</a></li>';
+			}
+
+			print '</ul></div>';
+			?>
+
+			<div id="listSize" class="btn-group">
+				<button class="btn btn-danger dropdown-toggle" data-toggle="dropdown"><?php echo $this->pager['size']; ?> <span class="caret"></span></button>
+				<ul class="dropdown-menu">
+					<li><a href="<?php echo '?listSize=10'; ?>">10</a></li>
+					<li><a href="<?php echo '?listSize=50'; ?>">50</a></li>
+					<li><a href="<?php echo '?listSize=100'; ?>">100</a></li>
+					<li><a href="<?php echo '?listSize=500'; ?>">500</a></li>
+					<li><a href="<?php echo '?listSize=1000'; ?>">1000</a></li>
+				</ul>
+			</div><!-- /btn-group -->
+			<?php
 		endif;
-		echo "</div>";
 	else :
 		print "No data";
 	endif;

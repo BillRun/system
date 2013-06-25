@@ -72,7 +72,12 @@ class TableModel {
 	 * @return type
 	 */
 	public function getData() {
-		$skip = $this->page * $this->size;
+		if ($this->page > 0) {
+			$skip = ($this->page-1) * $this->size;
+		} else {
+			$skip = 0;
+		}
+
 		$resource = $this->collection->query()->cursor()->sort($this->sort)->skip($skip)->limit($this->size);
 		return $resource;
 	}
@@ -81,6 +86,7 @@ class TableModel {
 		$ret = array(
 			'count' => (int) ceil($this->collection->query()->count() / $this->size),
 			'current' => $this->page,
+			'size' => $this->size,
 		);
 		return $ret;
 	}
