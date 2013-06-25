@@ -9,10 +9,16 @@
 			print '<th>' . $h . '</th>';
 		}
 		print '</tr></thead><tbody>';
-		$c = 0;
+
+		if ($this->pager['current'] == 1) {
+			$c = 0;
+		} else {
+			$c = ($this->pager['current']-1)*$this->pager['size'];
+		}
+		
 		foreach ($this->data as $item) {
 			print '<tr>';
-			print '<td><label class="checkbox">' . '<input type="checkbox" id="chk' . $c++ . '"/></label></td>';
+			print '<td><label class="checkbox">#' . ($c+1) . '&nbsp;<input value="" type="checkbox" id="chk' . $c++ . '"/></label></td>';
 			foreach ($this->columns as $h) {
 				$data = $item->get($h);
 				print '<td>';
@@ -83,8 +89,7 @@
 			}
 
 			print '</ul></div>';
-			?>
-
+		endif; ?>
 			<div id="listSize" class="btn-group">
 				<button class="btn btn-danger dropdown-toggle" data-toggle="dropdown"><?php echo $this->pager['size']; ?> <span class="caret"></span></button>
 				<ul class="dropdown-menu">
@@ -96,7 +101,6 @@
 				</ul>
 			</div><!-- /btn-group -->
 			<?php
-		endif;
 	else :
 		print "No data";
 	endif;
