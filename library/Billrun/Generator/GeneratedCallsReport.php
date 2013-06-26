@@ -58,7 +58,9 @@ class Billrun_Generator_GeneratedCallsReport extends Billrun_Generator {
 		print_r($callResults);
 		$report['generated_breakdown'] = $callResults;
 		$report['summary'] = $this->printSummaryReport($subscriberLines, $callResults);
-		return $report;
+		$report['from']	 = $this->from;
+		$report['to']	 = $this->to;
+		return array(date("YmdHi") => $report);
 	}
 	
 	public function getTemplate() {

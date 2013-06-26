@@ -1,55 +1,42 @@
-<!--
-/**
- * @package         Billing
- * @copyright       Copyright (C) 2012 S.D.O.C. LTD. All rights reserved.
- * @license         GNU General Public License version 2 or later; see LICENSE.txt
- */
--->
-<html>
-	<head>
-		<title><?php echo $this->title; ?></title>
-		<link href="<?php echo $this->favicon; ?>" rel="shortcut icon" type="image/vnd.microsoft.icon" />
-	</head>
-	<body>
-		<div id='summary'>
-			<div><span>Missed</span> <span><?= $summary['missed'] ?></span> </div>
-			<div><span>Duration Difference</span> <span><?= $summary['duration_diff'] ?></span> </div>
-			<div>
-				<?php foreach ($summary['calls_types'] as $key => $value) {	?>
-					<span><?= $key?></span> : <span><?= $value ?></span>
-				<?php } ?>
-			</div>
-		</div>
-		<div id='comparison'>
-			<?php foreach ($cdr_calls_comparison as $key => $value) {	?>
-			<div>
-				<span>Call Time : </span><span><?= date("H:i:s d/m/Y",$key*2)?></span>
-				<div>
-					<div>
-						<?php if (isset($cdr_calls_comparison[$key]['generated'])) {	?>
-						<span>Generated :</span>
-							<?php foreach ($cdr_calls_comparison[$key]['generated'] as $key => $value) {	?>
-								<div><span><?= $key ?></span><span><?= $value ?></span></div>
-							<?php } ?>
-						<?php } ?>								
-					</div>
-					<div>
-					<?php if (isset($cdr_calls_comparison[$key]['cdr'])) {	?>
-						<span>CDR :</span>
-							<?php foreach ($cdr_calls_comparison[$key]['cdr'] as $key => $value) {	?>
-								<div><span><?= $key ?></span><span><?= $value ?></span></div>
-							<?php } ?>
+<<?= "?" ?>xml version="1.0" encoding="UTF-16" ?>
+<CallGeneratorReport>
+	<From><?= date(Billrun_Base::base_dateformat,$from) ?></From>
+	<To><?= date(Billrun_Base::base_dateformat, $to) ?></To>
+	<Summary>
+		<Missed><?= $summary['missed'] ?></Missed>
+		<DurationDifference><?= $summary['duration_diff'] ?></DurationDifference>
+		<CallTypes>
+			<?php foreach ($summary['calls_types'] as $key => $value) {	?>
+				<<?= ucfirst($key) ?>><?= $value ?></<?= ucfirst($key) ?>>
+			<?php } ?>
+		</CallTypes>
+	<Summary>
+	<Comparison>
+		<?php foreach ($cdr_calls_comparison as $key => $value) {	?>
+		<CallComparison>
+			<CallTime><?= date(Billrun_Base::base_dateformat,$key*2)?></CallTime>
+			<Generated>
+				<?php if (isset($cdr_calls_comparison[$key]['generated'])) {	?>					
+					<?php foreach ($cdr_calls_comparison[$key]['generated'] as $key => $value) {	?>
+						<<?= ucfirst($key) ?>><?= $value ?></<?= ucfirst($key) ?>>
 					<?php } ?>
-					</div>
-				</div>
-			</div>
-			<?php } ?>
-			
-		</div>
-		<div id='calls-breakdown'>
-			<?php foreach ($generated_breakdown as $key => $value) { ?>
-				<span><?= $key?></span> <span><?= count($value )?></span>
-			<?php } ?>
-		</div>
-	</body>
-</html>
+				<?php } ?>								
+			</Generated>
+			<CDR>
+				<?php if (isset($cdr_calls_comparison[$key]['cdr'])) {	?>
+					<?php foreach ($cdr_calls_comparison[$key]['cdr'] as $key => $value) {	?>
+						<<?= ucfirst($key) ?>><?= $value ?></<?= ucfirst($key) ?>>
+					<?php } ?>
+				<?php } ?>
+
+			</CDR>
+		</CallComparison>
+		<?php } ?>
+
+	</Comparison>
+	<CallsBreakdown>
+		<?php foreach ($generated_breakdown as $key => $value) { ?>
+			<<?= ucfirst($key) ?>><?= count($value )?></<?= ucfirst($key) ?>>
+		<?php } ?>
+	</CallsBreakdown>
+</CallGeneratorReport>

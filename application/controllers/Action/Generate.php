@@ -38,12 +38,14 @@ class GenerateAction extends Action_Base {
 			$this->_controller->addOutput("Loading data to Generate...");
 			$generator->load();
 			$this->_controller->addOutput("Starting to Generate. This action can take awhile...");
-			 $report = $generator->generate();
+			 $results = $generator->generate();
 			$this->_controller->addOutput("Finish to Generate. This action can take awhile...");
 			if( method_exists($generator,'getTemplate') && $generator->getTemplate()) {
-					$fd = fopen($options['stamp']."_reprt.html","w");
+				foreach ($results as $name => $report) {
+					$fd = fopen("$name.xml","w");
 					fwrite($fd, $this->getView()->render('index/'.$generator->getTemplate().'.phtml',$report));
-					fclose($fd);
+					fclose($fd);	
+				}				
 			}
 		} else {
 			$this->_controller->addOutput("Aggregator cannot be loaded");
