@@ -1,7 +1,17 @@
-<?php // var_dump($this);die;       ?>
 <div class="container component">
 	<h1><?php echo $this->title; ?></h1>
+	<?php if ($this->title == 'Rates' || $this->title == 'Plans') : ?>
+	<div class="toolbar">
+		<form action="" method="post">
+			<div class="input-append date" id="datetimepicker" data-date="<?php echo $this->filterDate->toString('YYYY-MM-dd HH:mm:ss'); ?>" data-date-format="yyyy-MM-dd hh:mm:ss">
+				<input name="dateFilter" class="span2" size="16" type="text" value="<?php echo $this->filterDate->toString('YYYY-MM-dd HH:mm:ss'); ?>">
+				<span class="add-on"><i class="icon-th"></i></span>
+			</div>
+			<span><button type="submit" class="btn">Submit</button></span>
+		</form>
+	</div>
 	<?php
+	endif;
 	if (isset($this->data) && $this->data instanceof Mongodloid_Cursor) :
 		print '<table class="table table-striped table-bordered">';
 		print '<thead><tr><th>#</th>';
@@ -13,7 +23,7 @@
 		$c = $this->offset;
 		foreach ($this->data as $item) {
 			print '<tr>';
-			print '<td><label class="checkbox">#' . ($c+1) . '&nbsp;<input value="" type="checkbox" id="chk' . $c++ . '"/></label></td>';
+			print '<td><label class="checkbox">#' . ($c + 1) . '&nbsp;<input value="" type="checkbox" id="chk' . $c++ . '"/></label></td>';
 			foreach ($this->columns as $h) {
 				$data = $item->get($h);
 				print '<td>';
@@ -33,9 +43,6 @@
 		// print pagination
 		echo $this->pagination;
 		echo $this->sizeList;
-		?>
-		
-			<?php
 	else :
 		print "No data";
 	endif;

@@ -13,3 +13,9 @@ a.brand {
 div#listSize {
 	float:right;
 }
+.toolbar {
+	float:right;
+}
+.date {
+	margin-bottom:0;
+}

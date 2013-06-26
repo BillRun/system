@@ -108,25 +108,10 @@ class AdminController extends Yaf_Controller_Abstract {
 		$view_path = $path . '/views/' . strtolower($this->getRequest()->getControllerName());
 		$view = new Yaf_View_Simple($view_path);
 
-		if (isset($params['data'])) {
-			$view->assign('data', $params['data']);
+		foreach ($params as $key => $val) {
+			$view->assign($key, $val);
 		}
-		if (isset($params['columns'])) {
-			$view->assign('columns', $params['columns']);
-		}
-		if (isset($params['offset'])) {
-			$view->assign('offset', $params['offset']);
-		}
-		if (isset($params['pagination'])) {
-			$view->assign('pagination', $params['pagination']);
-		}
-		if (isset($params['sizeList'])) {
-			$view->assign('sizeList', $params['sizeList']);
-		}
-		if (isset($params['title'])) {
-			$view->assign('title', $params['title']);
-			$this->title = $params['title'];
-		}
+
 		return $view->render($viewName . '.phtml', $params);
 	}
 
@@ -137,6 +122,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * @param array $columns the columns to show
 	 * 
 	 * @return string the render page (HTML)
+	 * @todo refactoring this function
 	 */
 	protected function setTableView($table, $columns = array(), $sort = array()) {
 		$page = (int) $this->getRequest()->get('page');
@@ -144,51 +130,84 @@ class AdminController extends Yaf_Controller_Abstract {
 
 		$session = Yaf_session::getInstance();
 		$session->start();
-		
-		if (!isset($session->page)) {
-			$session->page = new stdClass();
-		}
-		if (!isset($session->size)) {
-			$session->size = new stdClass();
+
+		if (!isset($session->$table)) {
+			$session->$table = new stdClass();
 		}
 
 		if ($page) {
-			$session->page->$table = $page;
-		} else if (!isset($session->page->$table)) {
-			$session->page->$table = 0;
+			$session->$table->page = $page;
+		} else if (!isset($session->$table->page)) {
+			$session->$table->page = 0;
 		}
 
 		if ($size) {
-			$session->size->$table = $size;
-		} else if (!isset($session->size->$table)) {
-			$session->size->$table= 100;
+			$session->$table->size = $size;
+		} else if (!isset($session->$table->size)) {
+			$session->$table->size = 100;
 		}
 
+		// use for model
 		$options = array(
 			'collection' => $table,
-			'page' => $session->page->$table,
-			'size' => $session->size->$table,
+			'page' => $session->$table->page,
+			'size' => $session->$table->size,
 			'sort' => $sort,
 		);
+		
+		if ($table == 'rates' || $table == 'plans') {
+			$date = $this->getRequest()->getPost('dateFilter');
+			if (is_string($date)) {
+				$filterDate = new Zend_Date($date, null, new Zend_Locale('he_IL'));
+			}
+			
+			if (isset($filterDate)) {
+				$session->$table->filterDate = $filterDate;
+			} else if (!isset($session->$table->filterDate)) {
+				$session->$table->filterDate = new Zend_Date(null, null, new Zend_Locale('he_IL'));
+			} // else it will take what already in the session
 
-		$model = new TableModel($options);
+			$options['date'] = $session->$table->filterDate;
+			$model = new TabledateModel($options);
+		} else {
+			$model = new TableModel($options);
+		}
+
 		$data = $model->getData();
-		// use ready pager/paginiation class (zend? joomla?) with auto print
-		$pager = $model->getPager();
+		// TODO: use ready pager/paginiation class (zend? joomla?) with auto print
 		$pagination = $model->printPager();
 		$sizeList = $model->printSizeList();
+		$title = ucfirst($table);
+
 		$params = array(
 			'data' => $data,
-			'title' => ucfirst($table),
+			'title' => $title,
 			'columns' => $columns,
 			'offset' => $model->offset(),
 			'pagination' => $pagination,
 			'sizeList' => $sizeList,
 		);
+		
+		if ($table == 'rates' || $table == 'plans') {
+			$params['filterDate'] = $session->$table->filterDate;
+		}
+		$this->title = $title;
 
 		$ret = $this->renderView('table', $params);
 
 		return $ret;
+	}
+
+	protected function createFilterToolbar() {
+		
+	}
+
+	// choose columns
+	// delete
+	// apply property
+	// remove property
+	protected function createToolbar() {
+		
 	}
 
 	/**
