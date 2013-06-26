@@ -16,23 +16,21 @@
 		<CallComparison>
 			<CallTime><?= date(Billrun_Base::base_dateformat,$key*2)?></CallTime>
 			<Generated>
-				<?php if (isset($cdr_calls_comparison[$key]['generated'])) {	?>					
-					<?php foreach ($cdr_calls_comparison[$key]['generated'] as $key => $value) {	?>
+				<?php if (isset($cdr_calls_comparison[$key]['generated'])) {					
+						 foreach ($cdr_calls_comparison[$key]['generated'] as $key => $value) {	?>
 						<<?= ucfirst($key) ?>><?= $value ?></<?= ucfirst($key) ?>>
-					<?php } ?>
-				<?php } ?>								
+					<?php } 
+					} ?>								
 			</Generated>
 			<CDR>
-				<?php if (isset($cdr_calls_comparison[$key]['cdr'])) {	?>
-					<?php foreach ($cdr_calls_comparison[$key]['cdr'] as $key => $value) {	?>
+				<?php if (isset($cdr_calls_comparison[$key]['cdr'])) {
+						 foreach ($cdr_calls_comparison[$key]['cdr'] as $key => $value) {	?>
 						<<?= ucfirst($key) ?>><?= $value ?></<?= ucfirst($key) ?>>
-					<?php } ?>
-				<?php } ?>
-
+					<?php } 
+					 } ?>
 			</CDR>
 		</CallComparison>
 		<?php } ?>
-
 	</Comparison>
 	<CallsBreakdown>
 		<?php foreach ($generated_breakdown as $key => $value) { ?>

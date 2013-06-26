@@ -94,6 +94,13 @@ abstract class Billrun_Generator_Base_WholesaleReport extends Billrun_Generator 
 	public function load($initData = true) {
 		return  false; //$this->getCDRs("", $timeHorizions);
 	}
+	/**
+	 * Get the summary template
+	 * @return string
+	 */
+	public function getTemplate() {
+		return 'csv_report.phtml';
+	}
 	
 	/**
 	 *  Retrive the call CDR lines from the DB for a given provider.

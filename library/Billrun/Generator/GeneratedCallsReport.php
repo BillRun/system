@@ -60,11 +60,11 @@ class Billrun_Generator_GeneratedCallsReport extends Billrun_Generator {
 		$report['summary'] = $this->printSummaryReport($subscriberLines, $callResults);
 		$report['from']	 = $this->from;
 		$report['to']	 = $this->to;
-		return array(date("YmdHi") => $report);
+		return array(date("YmdHi").".xml" => $report);
 	}
 	
 	public function getTemplate() {
-		return 'generated_calls_report';
+		return 'generated_calls_report.phtml';
 	}
 	
 	protected function printSummaryReport($subscriberLines,$callResults) {

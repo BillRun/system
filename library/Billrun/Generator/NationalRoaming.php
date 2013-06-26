@@ -26,12 +26,14 @@ class Billrun_Generator_NationalRoaming extends Billrun_Generator_Base_Wholesale
 	 */
 	public function generate() {
 		$providerResults = parent::generate();
-		$wh = fopen($this->reportBasePath . DIRECTORY_SEPARATOR. date('Ymd').'_national_roaming.csv', 'w');
-		fputcsv($wh,  array('Provider','Connection Type','','Day','Product','Units','Minutes' ,'Tariff per product' ,'Charge' ,'Direction' ));
-		
-		$this->addArrayToCSV( $wh, $providerResults);
-		fclose($wh);
-		return $providerResults;
+
+		$results = array(
+			date('Ymd').'_national_roaming.csv' => array(
+						'header' =>	array('Provider','Connection Type','','Day','Product','Units','Minutes' ,'Tariff per product' ,'Charge' ,'Direction' ),
+						'results' => $providerResults,
+				),
+		);
+		return $results;
 	}
 	
 	/**

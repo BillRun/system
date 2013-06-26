@@ -42,8 +42,8 @@ class GenerateAction extends Action_Base {
 			$this->_controller->addOutput("Finish to Generate. This action can take awhile...");
 			if( method_exists($generator,'getTemplate') && $generator->getTemplate()) {
 				foreach ($results as $name => $report) {
-					$fd = fopen("$name.xml","w");
-					fwrite($fd, $this->getView()->render('index/'.$generator->getTemplate().'.phtml',$report));
+					$fd = fopen("files/$name","w");
+					fwrite($fd, $this->getView()->render('cli/generator/'.$generator->getTemplate(),$report));
 					fclose($fd);	
 				}				
 			}

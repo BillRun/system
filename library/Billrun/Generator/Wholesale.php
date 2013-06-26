@@ -30,20 +30,21 @@ class Billrun_Generator_Wholesale extends Billrun_Generator_Base_WholesaleReport
 	 * @see Billrun_Generator_Base_WholesaleReport::generate
 	 */
 	public function generate() {
+		$results = array();
 		$providerResults = parent::generate();
 		foreach ($providerResults as $providerName => $value) {
-				$fh = fopen($this->reportBasePath . DIRECTORY_SEPARATOR. date('Ymd').'_'.$providerName.'.csv', 'w');
-				fputcsv($fh,  array('Connection Type','','Day','Product','Units','Minutes' ,'Tariff per product' ,'Charge' ,'Direction' ));				
-				$this->addArrayToCSV( $fh, $value);
-				fclose($fh);
+				$results[date('Ymd').'_'.$providerName.'.csv']= array(
+					'header' => array('Connection Type','','Day','Product','Units','Minutes' ,'Tariff per product' ,'Charge' ,'Direction' ),
+					'results' => $value,
+				);
 		}
-		$wh = fopen($this->reportBasePath . DIRECTORY_SEPARATOR. date('Ymd').'_wholesale_report.csv', 'w');
-		fputcsv($wh,  array('Provider','Connection Type','','Day','Product','Units','Minutes' ,'Tariff per product' ,'Charge' ,'Direction' ));
 		
-		$this->addArrayToCSV( $wh, $providerResults);
-		fclose($wh);
+		$results[date('Ymd').'_wholesale_report.csv'] = array(
+				'header' => array('Provider','Connection Type','','Day','Product','Units','Minutes' ,'Tariff per product' ,'Charge' ,'Direction' ),		
+				'results' => $providerResults,
+			);
 		
-		return $providerResults;
+		return $results;
 	}
 	
 
