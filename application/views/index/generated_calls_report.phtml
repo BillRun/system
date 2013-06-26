@@ -11,6 +11,45 @@
 		<link href="<?php echo $this->favicon; ?>" rel="shortcut icon" type="image/vnd.microsoft.icon" />
 	</head>
 	<body>
-		<?php echo $this->content; ?>
+		<div id='summary'>
+			<div><span>Missed</span> <span><?= $summary['missed'] ?></span> </div>
+			<div><span>Duration Difference</span> <span><?= $summary['duration_diff'] ?></span> </div>
+			<div>
+				<?php foreach ($summary['calls_types'] as $key => $value) {	?>
+					<span><?= $key?></span> : <span><?= $value ?></span>
+				<?php } ?>
+			</div>
+		</div>
+		<div id='comparison'>
+			<?php foreach ($cdr_calls_comparison as $key => $value) {	?>
+			<div>
+				<span>Call Time : </span><span><?= date("H:i:s d/m/Y",$key*2)?></span>
+				<div>
+					<div>
+						<?php if (isset($cdr_calls_comparison[$key]['generated'])) {	?>
+						<span>Generated :</span>
+							<?php foreach ($cdr_calls_comparison[$key]['generated'] as $key => $value) {	?>
+								<div><span><?= $key ?></span><span><?= $value ?></span></div>
+							<?php } ?>
+						<?php } ?>								
+					</div>
+					<div>
+					<?php if (isset($cdr_calls_comparison[$key]['cdr'])) {	?>
+						<span>CDR :</span>
+							<?php foreach ($cdr_calls_comparison[$key]['cdr'] as $key => $value) {	?>
+								<div><span><?= $key ?></span><span><?= $value ?></span></div>
+							<?php } ?>
+					<?php } ?>
+					</div>
+				</div>
+			</div>
+			<?php } ?>
+			
+		</div>
+		<div id='calls-breakdown'>
+			<?php foreach ($generated_breakdown as $key => $value) { ?>
+				<span><?= $key?></span> <span><?= count($value )?></span>
+			<?php } ?>
+		</div>
 	</body>
 </html>

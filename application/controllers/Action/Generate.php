@@ -41,7 +41,9 @@ class GenerateAction extends Action_Base {
 			 $report = $generator->generate();
 			$this->_controller->addOutput("Finish to Generate. This action can take awhile...");
 			if( method_exists($generator,'getTemplate') && $generator->getTemplate()) {
-					$this->getController()->addOutput($this->render($generator->getTemplate(), $report));
+					$fd = fopen($options['stamp']."_reprt.html","w");
+					fwrite($fd, $this->getView()->render('index/'.$generator->getTemplate().'.phtml',$report));
+					fclose($fd);
 			}
 		} else {
 			$this->_controller->addOutput("Aggregator cannot be loaded");

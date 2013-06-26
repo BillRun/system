@@ -179,11 +179,13 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 
 		return true;
 	}
+	
 	/**
-	 * Get config value for a given call instance and allow  for  configuration overide.
-	 * @param type $name 
-	 * @param type $callConfig
-	 * @return boolean
+	 * Get config value for a given call instance and allow  for configuration overide.
+	 * @param string $name the config  key  to look for
+	 * @param array $callConfig the configuration override.
+	 * @return mixed the config value in the override  or if it not found the config value in the general configuration 
+	 *			or FALSE if no value  was found to the config key.
 	 */
 	protected function getConfig($configKey, $callInstanceConfig = array()) {
 		 return isset($callInstanceConfig[$configKey]) ? $callInstanceConfig[$configKey] :

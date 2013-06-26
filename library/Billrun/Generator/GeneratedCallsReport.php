@@ -77,7 +77,7 @@ class Billrun_Generator_GeneratedCallsReport extends Billrun_Generator {
 			}
 		}
 		$summary['missed'] = $missed;
-		$summary['dusration_diff'] = $durationDiff;
+		$summary['duration_diff'] = $durationDiff;
 		Billrun_Factory::log()->log("From the CDR records : Had $missed call that weren't found in the calling records and $durationDiff with  missmatching duration", Zend_Log::DEBUG);
 		foreach ($callResults as $key => $value) {
 			$summary['calls_types'][$key] = count($value);
