@@ -114,7 +114,7 @@ EOT;
 
 		foreach ($this->data as $account_id => $account) {
 			//TODO refactor this to use the Billrun_Factory ??
-			$billrun = Billrun_Billrun::getBillrun($account_id, $billrun_key);
+			$billrun = Billrun_Factory::billrun(array( 'account_id' => $account_id, 'billrun_key' => $billrun_key ));
 			if (!$billrun->isValid()) {
 				$billrun->create($account_id, $billrun_key);
 			}

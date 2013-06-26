@@ -20,6 +20,12 @@ class Billrun_Billrun {
 		}
 	}
 
+	/**
+	 * 
+	 * @param type $account_id
+	 * @param type $billrun_key
+	 * @return \Billrun_Billrun
+	 */
 	public function load($account_id, $billrun_key) {
 		$this->data = Billrun_Factory::db()->billrunCollection()->query(array(
 					'account_id' => strval($account_id),
@@ -42,6 +48,11 @@ class Billrun_Billrun {
 		return $this->load($account_id, $billrun_key);
 	}
 
+	/**
+	 * Add a subscriber to the current billrun entry.
+	 * @param type $subscriber_id the  subscriber id  to add.
+	 * @return \Billrun_Billrun the current instance  of the billrun entry.
+	 */
 	public function addSubscriber($subscriber_id) {
 		$subscribers = $this->data['subscribers'];
 		$subscribers[strval($subscriber_id)] = $this->getEmptySubscriberBillrunEntry();
@@ -52,6 +63,11 @@ class Billrun_Billrun {
 		return $this;
 	}
 
+	/**
+	 * check if a given subscriber exists in the current billrun.
+	 * @param type $subscriber_id the  subscriber id to check.
+	 * @return boolean TRUE  is  the subscriber  exists in the current billrun entry FALSE otherwise.
+	 */
 	public function exists($subscriber_id) {
 		return isset($this->data->getRawData()['subscribers'][strval($subscriber_id)]);
 	}
@@ -63,10 +79,19 @@ class Billrun_Billrun {
 		return count($this->data->getRawData()) > 0;
 	}
 
+	/**
+	 * Check if the current billrun entry  is  open and can be updated.
+	 * @return boolean TRUE if can be up date FALSE otherwise.
+	 */
 	public function isOpen() {
 		return $this->isValid() && !($this->data->offsetExists('invoice_id'));
 	}
 
+	/**
+	 * Get an empty billrun account  entry structure.
+	 * @param type $account_id the account id that the enery belongs to.
+	 * @return Array tan empty billrun account  structure.
+	 */
 	public function getAccountEmptyBillrunEntry($account_id) {
 		return array(
 			'account_id' => strval($account_id),
@@ -75,6 +100,10 @@ class Billrun_Billrun {
 		);
 	}
 
+	/**
+	 * Get an empty billrun subscriber entry structure.
+	 * @return Array tan empty billrun subscriber entry structure.
+	 */	
 	public function getEmptySubscriberBillrunEntry() {
 		return array(
 			'costs' => array(
@@ -115,14 +144,14 @@ class Billrun_Billrun {
 	}
 
 	/**
-	 * 
+	 * Add pricing and usaaage counters to the billrun breakdown.
 	 * @param type $key
 	 * @param type $usage_type
 	 * @param type $volume
 	 */
 	static public function addToBreakdown(&$breakdown_raw, $breakdown_key, $zone_key, $vatable, $counters = array(), $charge = null) {
 		if (!isset($breakdown_raw[$breakdown_key][$zone_key])) {
-			$breakdown_raw[$breakdown_key][$zone_key] = Billrun_Plan::getEmptyPlanBalance();
+			$breakdown_raw[$breakdown_key][$zone_key] = Billrun_Balance::getEmptyBalance();
 		}
 		if (!empty($counters)) {
 			$breakdown_raw[$breakdown_key][$zone_key]['totals'][key($counters)]['usagev']+=current($counters);
@@ -137,11 +166,23 @@ class Billrun_Billrun {
 			$breakdown_raw[$breakdown_key][$zone_key]['vat'] = ($vatable ? Billrun_Factory::config()->getConfigValue('pricing.vat', '1.18') - 1 : 0); //@TODO we assume here that all the lines would be vatable or all vat-free
 		}
 	}
-
+	
+	/**
+	 * Get the key of the current billrun
+	 * @return string the billrun key. 
+	 */
 	public function getBillrunKey() {
 		return $this->data->get('billrun_key');
 	}
-
+	
+	/**
+	 * Update  
+	 * @param type $subscriber_id
+	 * @param type $counters
+	 * @param type $pricingData
+	 * @param type $row
+	 * @param type $vatable
+	 */
 	public function update($subscriber_id, $counters, $pricingData, $row, $vatable) {
 		$billrun_key = $this->getBillrunKey();
 		if (!$this->exists($subscriber_id)) {
@@ -228,7 +269,7 @@ class Billrun_Billrun {
 	}
 
 	/**
-	 * update the billing line with stamp to avoid another pricing
+	 * Update the billing line with stamp to avoid another pricing
 	 *
 	 * @param Mongodloid_Entity $line the billing line to update
 	 *
@@ -246,14 +287,18 @@ class Billrun_Billrun {
 		return true;
 	}
 	
+	/** TODO remove ...
 	static public function getBillrun($account_id, $billrun_key) {
 		$billrun = Billrun_Factory::billrun(array(
 			'account_id' => $account_id,
 			'billrun_key' => $billrun_key,
 		));
 		return $billrun;
-	}
+	}*/
 
+	/**
+	 * Close the current billrun and create an invoice ID. 
+	 */
 	public function close() {
 		$account_id = $this->data->getRawData()['account_id'];
 		$billrun_key = $this->getBillrunKey();

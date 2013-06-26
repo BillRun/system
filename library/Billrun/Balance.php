@@ -134,7 +134,7 @@ class Billrun_Balance implements ArrayAccess {
 			'account_id' => $account_id,
 			'subscriber_id' => $subscriber_id,
 			'current_plan' => $plan_ref,
-			'balance' =>  Billrun_Factory::plan(array('id'=> $plan_ref))->getEmptyPlanBalance(),				
+			'balance' =>  self::getEmptyBalance(),				
 		);
 	}
 	
@@ -155,6 +155,33 @@ class Billrun_Balance implements ArrayAccess {
 			return FALSE;
 		}
 		return TRUE;
+	}
+	
+		/**
+	 * Get an empty balance structure
+	 * @return array containing an empty balance structure.
+	 */
+	static public function getEmptyBalance() {
+		$ret = array(
+			'totals' => array(),
+			'cost' => 0,
+		);
+		$usage_types = array('call', 'incoming_call', 'sms', 'data', 'inter_roam_incoming_call', 'inter_roam_call', 'inter_roam_callback', 'inter_roam_sms', 'inter_roam_data', 'inter_roam_incoming_sms',);
+		foreach ($usage_types as $usage_type) {
+			$ret['totals'][$usage_type] = self::getEmptyUsageTypeTotals();
+		}
+		return $ret;
+	}
+	
+		/**
+	 * Get an empty plan usage counters.
+	 * @return array containing an empty plan structure.
+	 */
+	static public function getEmptyUsageTypeTotals() {
+		return array(
+			'usagev' => 0,
+			'cost' => 0,
+		);
 	}
 		
 	//=============== ArrayAccess Implementation =============

@@ -106,10 +106,19 @@ class Billrun_Plan {
 		return floatval($usageLeft < 0 ? 0 : $usageLeft);
 	}
 	
+	/**
+	 * Get the price of the current plan.
+	 * @return float the price  of the plan without VAT.
+	 */
 	public function getPrice() {
 		return $this->get('price');
 	}
 	
+	/**
+	 * create  a DB reference to the current plan
+	 * @param type $collection (optional) the collection to use to create the reference.
+	 * @return MongoDBRef the refernce to current plan.
+	 */
 	public function createRef($collection = false ) {
 		$collection =$collection ? $collection : 
 					($this->data->collection() ? $this->data->collection() : Billrun_Factory::db()->plansCollection() );
@@ -120,23 +129,4 @@ class Billrun_Plan {
 		return self::get($name, $plan_date)->createRef(Billrun_Factory::db()->plansCollection());
 	}
 	
-
-	static public function getEmptyPlanBalance() {
-		$ret = array(
-			'totals' => array(),
-			'cost' => 0,
-		);
-		$usage_types = array('call', 'incoming_call', 'sms', 'data', 'inter_roam_incoming_call', 'inter_roam_call', 'inter_roam_callback', 'inter_roam_sms', 'inter_roam_data', 'inter_roam_incoming_sms',);
-		foreach ($usage_types as $usage_type) {
-			$ret['totals'][$usage_type] = self::getEmptyUsageTypeTotals();
-		}
-		return $ret;
-	}
-
-	static public function getEmptyUsageTypeTotals() {
-		return array(
-			'usagev' => 0,
-			'cost' => 0,
-		);
-	}
 }
