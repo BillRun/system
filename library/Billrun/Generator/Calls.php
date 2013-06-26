@@ -43,24 +43,33 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 	 * Generate the calls as defined in the configuration.
 	 */
 	public function generate() {	
+		$isCalling= $this->getConfig('direction') == 'calling';
 		$callsMade = array();			
+		$callsBehavior= Billrun_Factory::config()->getConfigValue(($isCalling ? 'calls.calling_behavior' :'calls.answering_behavior' ) ,array($this->options));
+		$callsIdx = 0;
+
 		if($this->modemDevice && $this->modemDevice->isValid()) {
 			//make the calls and remember their results
-			for($i=0; $i < $this->options['times']; $i++) {
-				$call = $this->getEmptyCall($this->options['direction'] ? 'calling' : 'answering');
-				if($this->options['direction'] == 'calling') {
-					$this->makeACall($call);
+			for($i=0; $i < $this->getConfig('times'); $i++) {
+				$behavior = $callsBehavior[$callsIdx];
+				Billrun_Factory::log()->log(print_r($behavior,1),  Zend_Log::DEBUG);
+				$call = $this->getEmptyCall($isCalling ? 'calling' : 'answering');
+				if( $isCalling ) {
+					$this->makeACall($call, $this->getConfig('number_to_call', $behavior));
 				} else {
-					$this->waitForCall($call);
+					$this->waitForCall(	$call, $this->getConfigValue('should_answer', $behavior), $this->getConfig('ignore_call' ,$behavior) );
 				}
 
 				if($call['calling_result'] == Gsmodem_Gsmodem::CONNECTED ) {
-					$this->HandleCall($call);
+					$this->HandleCall($call, $this->getConfig('call_wait_time',$behavior));
 				}
 				$call['execution_end_time'] = date("YmdTHis");
 				$callsMade[] = $call;
 				
-				sleep($this->options['interval']);
+				sleep($this->getConfig('interval'));
+				if(isset($callsBehavior[$callsIdx+1])) {
+					$callsIdx++;
+				}
 			}	
 			
 		Billrun_Factory::log()->log(print_r($callsMade,1),  Zend_Log::DEBUG);
@@ -83,9 +92,9 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 	 * @param type $callRecord the  call record to save to the DB.
 	 * @return mixed the call record with the data regarding making the call.
 	 */
-	protected function makeACall(&$callRecord) {
-		$callRecord['calling_result'] = $this->modemDevice->call($this->options['number_to_call']);
-		$callRecord['called_number'] = $this->options['number_to_call'];
+	protected function makeACall(&$callRecord,$numberToCall) {
+		$callRecord['calling_result'] = $this->modemDevice->call($numberToCall);
+		$callRecord['called_number'] =$numberToCall;
 
 		return $callRecord['calling_result'];
 	}
@@ -95,13 +104,13 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 	 * @param mixed $callRecord  the call record to save to the DB.
 	 * @return mixed the call record with the data regarding the incoming call.
 	 */
-	protected function waitForCall(&$callRecord) {
+	protected function waitForCall(&$callRecord , $shouldAnswer, $ignoreCall) {
 		
 		if($this->modemDevice->waitForCall() !== FALSE) {
-			if(isset($this->options['should_answer']) && $this->options['should_answer']) {				
+			if($shouldAnswer) {				
 				$callRecord['calling_result'] = $this->modemDevice->answer();
 				
-			} elseif(isset($this->options['ignore_call']) && $this->options['ignore_call']) {				
+			} elseif($ignoreCall) {				
 				 $this->modemDevice->waitForRingToEnd();
 				 $callRecord['calling_result'] = 'ignored';
 				 
@@ -118,9 +127,9 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 	 * Handle an active call.
 	 * @param type $callRecord the call record to save to the DB.
 	 */
-	protected  function HandleCall(&$callRecord) {
+	protected  function HandleCall(&$callRecord, $waitTime) {
 		$callRecord['call_start_time'] = date("YmdTHis");
-		$callRecord['end_result'] =  $this->modemDevice->waitForCallToEnd($this->options['call_wait_time']);
+		$callRecord['end_result'] =  $this->modemDevice->waitForCallToEnd($waitTime);
 		if($callRecord['end_result'] == Gsmodem_Gsmodem::NO_RESPONSE) {
 			$this->modemDevice->hangUp();
 			$callRecord['end_result'] = 'hang_up';						
@@ -169,6 +178,16 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 		}
 
 		return true;
+	}
+	/**
+	 * Get config value for a given call instance and allow  for  configuration overide.
+	 * @param type $name 
+	 * @param type $callConfig
+	 * @return boolean
+	 */
+	protected function getConfig($configKey, $callInstanceConfig = array()) {
+		 return isset($callInstanceConfig[$configKey]) ? $callInstanceConfig[$configKey] :
+				Billrun_Factory::config()->getConfigValue($this->getType().'.'.$configKey, FALSE, 'string');		
 	}
 	
 }

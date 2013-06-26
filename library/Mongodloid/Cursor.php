@@ -54,6 +54,10 @@ class Mongodloid_Cursor implements Iterator,  Countable {
 		return $this->_cursor->key();
 	}
 
+	public function hasNext() {
+		return $this->_cursor->hasNext();
+	}
+	
 	public function next() {
 		return $this->_cursor->next();
 	}
