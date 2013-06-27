@@ -41,9 +41,10 @@ class GenerateAction extends Action_Base {
 			 $results = $generator->generate();
 			$this->_controller->addOutput("Finish to Generate. This action can take awhile...");
 			if( method_exists($generator,'getTemplate') && $generator->getTemplate()) {
+				$template = ($generator->getTemplate()[0] == '/' ? "" : 'cli/generator/') .$generator->getTemplate();
 				foreach ($results as $name => $report) {
 					$fd = fopen("files/$name","w");
-					fwrite($fd, $this->getView()->render('cli/generator/'.$generator->getTemplate(),$report));
+					fwrite($fd, $this->getView()->render($template,$report));
 					fclose($fd);	
 				}				
 			}

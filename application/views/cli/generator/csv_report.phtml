@@ -19,12 +19,13 @@
 					//Billrun_Factory::log()->log("$key : $depth",Zend_Log::DEBUG);
 					$retStr .= join(",", array_merge($depthArr,array($key))) . PHP_EOL;
 				}
-				addArrayToCSV($value, $depth+1);
+				$retStr .= addArrayToCSV($value, $depth+1);
 				continue;
 			}
 			$line[] = $value;
 		}
 		$retStr .= join(",",$line) . PHP_EOL;
+		return $retStr;
 	}
 ?>
 <?php
