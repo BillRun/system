@@ -1,7 +1,7 @@
-﻿<?php
+<?php
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
  * @license         GNU General Public License version 2 or later; see LICENSE.txt
  */
 
@@ -9,7 +9,7 @@
  * Billing 013 Responder file processor
  *
  * @package  Billing
- * @since    1.0
+ * @since    0.5
  */
 class Billrun_Responder_014 extends Billrun_Responder_Base_Ilds {
 
@@ -76,7 +76,7 @@ class Billrun_Responder_014 extends Billrun_Responder_Base_Ilds {
 	protected function processFileForResponse($filePath, $logLine) {
 		$tmpLogLine = $logLine->getRawData();
 		//only response if some lines werent processed
-		$unprocessDBLines = $this->db->getCollection(self::lines_table)->query()->notExists('billrun')->equals('file', $tmpLogLine['file']);
+		$unprocessDBLines = $this->db->getCollection(self::lines_table)->query()->notExists('billrun')->equals('file', $this->getFilenameFromLogLine($tmpLogLine));
 		//run only if theres promlematic lines in the file.
 		if ($unprocessDBLines->count() == 0) {
 			return false;
