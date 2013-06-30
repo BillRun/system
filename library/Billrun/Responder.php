@@ -25,22 +25,27 @@ abstract class Billrun_Responder extends Billrun_Base {
 	 * @var string directory path
 	 */
 	protected $workspace;
-
+	/**
+	 * the backup base path.
+	 * @var string directory path
+	 */
+	protected $backupPaths;
+	
 	public function __construct($options) {
 
 		parent::__construct($options);
-
+		
 		if (isset($options['workspace'])) {
-			$this->workspace = $options['workspace'];
+			$this->workspace = $options['workspace'];			
 		} else {
 			$this->workspace = Billrun_Factory::config()->getConfigValue('response.workspace');
 		}
 		
-		if (isset($options['backup'])) {
-			$this->workspace = $options['backup'];
+		if (isset($options['backup_path'])) {
+			$this->backupPaths = $options['backup_path'];
 		} else {
 			$defBackup = Billrun_Factory::config()->getConfigValue('response.backup');
-			$this->workspace = Billrun_Factory::config()->getConfigValue(static::type.'.backup', $defBackup);
+			$this->backupPaths = Billrun_Factory::config()->getConfigValue(static::$type.'.backup', $defBackup);
 		}
 	}
 

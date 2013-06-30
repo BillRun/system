@@ -75,7 +75,7 @@ class Billrun_Responder_014 extends Billrun_Responder_Base_Ilds {
 
 	protected function processFileForResponse($filePath, $logLine) {
 		$tmpLogLine = $logLine->getRawData();
-		$unprocessDBLines = Billrun_Factory::db()->linesCollection()->query()->notExists('billrun')->equals('file', $tmpLogLine['file']);
+		$unprocessDBLines = Billrun_Factory::db()->linesCollection()->query(array('$or' => array(array('file_name'=> $tmpLogLine['file']),array('file'=> $tmpLogLine['file']))))->notExists('billrun');
 		//run only if theres promlematic lines in the file.
 		if ($unprocessDBLines->count() == 0) {
 			return false;

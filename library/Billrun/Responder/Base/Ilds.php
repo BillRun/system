@@ -34,11 +34,12 @@ abstract class Billrun_Responder_Base_Ilds extends Billrun_Responder_Base_LocalD
 		$this->linesCount = $this->linesErrors = $this->totalChargeAmount = 0;
 		
 		$linesCollection = Billrun_Factory::db()->linesCollection();
-		$dbLines = $linesCollection->query()->equals('file', $logLine['file']);
+		$filename = (isset($logLine['file']) ?  $logLine['file'] : $logLine['file_name']); // TODO (27/06/2013) remove  backward compatiblity REMOVE 
+		$dbLines = $linesCollection->query(array( '$or' => array(array('file' =>  $filename), array('file_name' =>  $filename)) ) ); 
 
 		//run only after the lines were processed by the billrun.
 		if ($dbLines->count() == 0 || /* TODO fix this db query  find a way to query the $dbLines results insted */ 
-			$linesCollection->query()->equals('file', $logLine['file'])->exists('billrun')->count() == 0) {
+			$linesCollection->query(array( '$or' => array(array('file' =>  $filename), array('file_name' =>  $filename) ) ))->exists('billrun')->count() == 0) {
 			return false;
 		}
 
