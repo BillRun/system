@@ -7,9 +7,7 @@
  */
 
 /**
- * Description of AsnParser
- *
- * @author eran
+ * A Trait to add Asn (binaryy file format) parasing capability to a class.
  */
 trait Billrun_Traits_AsnParsing {
 	

@@ -12,7 +12,7 @@
  * @package  calculator
  * @since    0.5
  */
-class Billrun_Calculator_Ilds extends Billrun_Calculator_Base_Rate {
+class Billrun_Calculator_Ilds extends Billrun_Calculator {
 
 	/**
 	 * the type of the object
@@ -59,7 +59,7 @@ class Billrun_Calculator_Ilds extends Billrun_Calculator_Base_Rate {
 //			->notExists('price_provider'); // @todo: check how to do or between 2 not exists		
 		
 		if ($this->limit > 0) {
-			$query->limit($this->limit);
+			$query->cursor()->limit($this->limit);
 		}
 		
 		return $query;
