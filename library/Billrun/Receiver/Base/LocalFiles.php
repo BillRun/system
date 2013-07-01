@@ -57,6 +57,7 @@ abstract class Billrun_Receiver_Base_LocalFiles extends Billrun_Receiver {
 		}
 		$files = scandir($this->srcPath);
 		$ret = array();
+		$receivedCount = 0; 
 		foreach ($files as $file) {
 			$path = $this->srcPath . DIRECTORY_SEPARATOR . $file;
 			if (!$this->isFileValid($file, $path) || $this->isFileReceived($file, $type) || is_dir($path)) {
@@ -70,6 +71,10 @@ abstract class Billrun_Receiver_Base_LocalFiles extends Billrun_Receiver {
 			}
 			$this->logDB($path);
 			$ret[] = $path;
+			
+			if(($receivedCount++) > $this->limit) {
+				break;
+			}
 		}
 
 		Billrun_Factory::dispatcher()->trigger('afterLocalFilesReceived', array($this, $ret));

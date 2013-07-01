@@ -29,19 +29,22 @@ abstract class Billrun_Receiver extends Billrun_Base {
 	 */
 	protected $workspace;
 
-		/**
+	/**
 	 * A regular expression to identify the files that should be downloaded
 	 * 
 	 * @param string
 	 */
 	protected $filenameRegex = '/.*/';
 	
-	
 	public function __construct($options = array()) {
 		parent::__construct($options);
 						
 		if (isset($options['filename_regex'])) {
 			$this->filenameRegex = $options['filename_regex'];
+		}
+		
+		if (isset($options['receiver']['limit'])) {
+			$this->limit = intval($options['receiver']['limit']);
 		}
 
 	}
