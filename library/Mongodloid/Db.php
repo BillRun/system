@@ -38,7 +38,7 @@ class Mongodloid_Db {
 		$this->_db = $db;
 		$this->_connection = $connection;
 	}
-
+	
 	public function getCollection($name) {
 		if (!isset($this->_collections[$name]) || !$this->_collections[$name])
 			$this->_collections[$name] = new Mongodloid_Collection($this->_db->selectCollection($name), $this);

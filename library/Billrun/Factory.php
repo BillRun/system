@@ -64,9 +64,9 @@ class Billrun_Factory {
 	protected static $subscriber = null;
 
 	/**
-	 * Subscriber instance
+	 * Balance instance
 	 * 
-	 * @var Billrun Subscriber
+	 * @var Billrun Balance
 	 */
 	protected static $balance = null;
 	
@@ -227,15 +227,16 @@ class Billrun_Factory {
 	 * @return Billrun_Balance
 	 */
 	static public function balance( $params = array() ) {
-		// unique stamp per plan
+		/*
+		 * No caching for now as we need updated data  each time (as more then once calculator  can run at the same time).
 		$stamp = md5(serialize($params));
 		
 		if (!isset(self::$balance[$stamp])) {
 			$balanceSettings = self::config()->getConfigValue('balance', array());
 			self::$balance[$stamp] = new Billrun_Balance( array_merge($balanceSettings,$params) );
-		}
-
-		return self::$balance[$stamp];
+		}*/
+		$balanceSettings = self::config()->getConfigValue('balance', array());
+		return new Billrun_Balance( array_merge($balanceSettings,$params) );
 	}
 
 	/**
@@ -267,6 +268,16 @@ class Billrun_Factory {
 		}
 
 		return self::$plan[$stamp];
+	}
+
+	/**
+	 * method to retrieve a billrun instance
+	 * 
+	 * @return Billrun_Billrun
+	 */
+	static public function billrun($params = array()) {
+		$billrunSettings = self::config()->getConfigValue('billrun', array());
+		return new Billrun_Billrun(array_merge($billrunSettings, $params));
 	}
 
 }

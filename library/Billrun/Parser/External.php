@@ -8,7 +8,7 @@
 
 
 /**
- * This defiens an empty parser the do nothing but pass behavior to the out side plugins
+ * This defines an empty parser that does nothing but passing behavior to the outside plugins
  */
 class Billrun_Parser_External  extends Billrun_Parser_Base_Binary  {
 	static protected $type = "external";

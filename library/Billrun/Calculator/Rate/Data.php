@@ -58,7 +58,7 @@ class Billrun_Calculator_Rate_Data extends Billrun_Calculator_Rate {
 		$added_values = array(
 			'usaget' => $usage_type,
 			'usagev' => $volume,
-			$this->ratingField => ($rate ? $rate['_id'] : $rate),
+			$this->ratingField => $rate? $rate->createRef() : $rate,
 		);
 		$newData = array_merge($current, $added_values);
 		$row->setRawData($newData);
@@ -97,7 +97,8 @@ class Billrun_Calculator_Rate_Data extends Billrun_Calculator_Rate {
 						)
 					))->cursor()->current();
 			if ($rate->getId()) {
-				return $rate->getRawData();
+				$rate->collection(Billrun_Factory::db()->ratesCollection());
+				return $rate;
 			}
 		}
 		//	Billrun_Factory::log()->log("International row : ".print_r($row,1),  Zend_Log::DEBUG);

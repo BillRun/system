@@ -50,7 +50,7 @@ class Billrun_Calculator_Rate_Sms extends Billrun_Calculator_Rate {
 		$added_values = array(
 			'usaget' => $usage_type,
 			'usagev' => $volume,
-			$this->ratingField => ($rate ? $rate['_id'] : FALSE),
+			$this->ratingField => $rate? $rate->createRef() : $rate,
 		);
 		$newData = array_merge($current, $added_values);
 		$row->setRawData($newData);
@@ -133,7 +133,7 @@ class Billrun_Calculator_Rate_Sms extends Billrun_Calculator_Rate {
 			return FALSE;
 		}
 
-		return reset($matched_rates);
+		return new Mongodloid_Entity(reset($matched_rates),$rates);
 	}
 	/**
 	 * Get an array of prefixes for a given number.

@@ -15,6 +15,20 @@
  */
 class Subscriber_Golan extends Billrun_Subscriber {
 
+	protected $plan = null;
+	protected $time = null;
+
+	public function __construct($options = array()) {
+		parent::__construct($options);
+		if (isset($options['data'])) {
+			$this->data = $options['data'];
+		}
+		if (isset($options['time'])) {
+			$this->time = $options['time'];
+		}
+		// pay attention that just availableFields array can be access from outside
+	}
+
 	/**
 	 * method to load subsbscriber details
 	 * 
@@ -23,9 +37,9 @@ class Subscriber_Golan extends Billrun_Subscriber {
 	 * @return Subscriber_Golan self object for chaining calls and use magic method for properties
 	 */
 	public function load($params) {
-		
+
 		if (!isset($params['imsi']) && !isset($params['IMSI']) && !isset($params['NDC_SN'])) {
-			Billrun_Factory::log()->log('Cannot identified Golan subscriber. Require phone or imsi to load. Current parameters: ' . print_R($params), Zend_Log::ALERT);
+			Billrun_Factory::log()->log('Cannot identify Golan subscriber. Require phone or imsi to load. Current parameters: ' . print_R($params), Zend_Log::ALERT);
 			return $this;
 		}
 
@@ -138,15 +152,93 @@ class Subscriber_Golan extends Billrun_Subscriber {
 	 */
 	public function isValid() {
 		$validFields = true;
-		foreach($this->getAvailableFields() as $field) {
-			if(!isset($this->data[$field]) || is_null($this->data[$field])) {
+		foreach ($this->getAvailableFields() as $field) {
+			if (!isset($this->data[$field]) || is_null($this->data[$field])) {
 				$validFields = false;
 				break;
-			}				
+			}
 		}
 		$validFields = $validFields && ($this->data['plan'] != 'ERROR' );
-		
-		return (!isset($this->data['success']) || $this->data['success'] != FALSE ) && $validFields ;
+
+		return (!isset($this->data['success']) || $this->data['success'] != FALSE ) && $validFields;
+	}
+
+	//@TODO change this function
+	static public function requestAccounts($page, $size, $time) {
+		$accounts = json_encode(array(
+			array(
+				'account_id' => '4072863',
+				'subscribers' => array(
+					array(
+						'subscriber_id' => '155215',
+						'plan' => 'LARGE',
+					),
+				)
+			),
+			array(
+				'account_id' => '7112968',
+				'subscribers' => array(
+					array(
+						'subscriber_id' => '116815',
+						'plan' => 'SMALL',
+					),
+					array(
+						'subscriber_id' => '32443',
+						'plan' => 'SMALL',
+					),
+				),
+			)
+			));
+		return $accounts;
+	}
+
+	static public function getList($page, $size, $time) {
+		$accounts = json_decode(self::requestAccounts($page, $size, $time), 1);
+		$subscriber_general_settings = Billrun_Config::getInstance()->getConfigValue('subscriber', array());
+		foreach ($accounts as $account) {
+			foreach ($account['subscribers'] as $subscriber) {
+				$subscriber_settings = array_merge($subscriber_general_settings, array('time' => $time, 'data' => array_merge(array('account_id' => $account['account_id']), $subscriber)));
+				$ret_data[$account['account_id']][] = Billrun_Subscriber::getInstance($subscriber_settings);
+			}
+		}
+		return $ret_data;
+	}
+
+	public function getPlan() {
+		if (is_null($this->plan)) {
+			$params = array(
+				'name' => $this->data['plan'],
+				'time' => $this->time,
+			);
+			$this->plan = new Billrun_Plan($params);
+		}
+		return $this->plan;
+	}
+
+	public function getFlatPrice() {
+		return $this->getPlan()->getPrice();
+	}
+
+	/**
+	 * 
+	 * @param string $billrun_key
+	 * @param MongoDate $unified_record_time
+	 * @return array
+	 */
+	public function getFlatEntry($billrun_key) {
+		$flat_entry = array(
+			'account_id' => $this->account_id,
+			'subscriber_id' => $this->subscriber_id,
+			'source' => 'billrun',
+			'type' => 'flat',
+			'unified_record_time' => new MongoDate(),
+			'flat_key' => $billrun_key,
+			'price_customer' => $this->getFlatPrice(),
+			'current_plan' => $this->getPlan()->createRef(),
+		);
+		$stamp = md5($flat_entry['account_id'] . $flat_entry['subscriber_id'] . $flat_entry['flat_key']);
+		$flat_entry['stamp'] = $stamp;
+		return $flat_entry;
 	}
 
 }
