@@ -69,11 +69,12 @@ abstract class Billrun_Receiver_Base_LocalFiles extends Billrun_Receiver {
 				Billrun_Factory::log()->log("NOTICE : Couldn't relocate file from  $path.", Zend_Log::NOTICE);
 				continue;
 			}
-			$this->logDB($path);
-			$ret[] = $path;
-			
-			if(($receivedCount++) > $this->limit) {
-				break;
+			if($this->logDB($path) !== FALSE) {
+				$ret[] = $path;
+
+				if(($receivedCount++) > $this->limit) {
+					break;
+				}
 			}
 		}
 
