@@ -1,0 +1,25 @@
+<?php
+//print_R($this->entity);
+//var_dump(json_encode($this->entity));die;
+?>
+<script type="text/javascript">
+	var entityJson = <?php echo json_encode($this->entity); ?>;
+	var opt = {
+		change: function(data) { /* called on every change */
+		},
+		propertyclick: function(path) { /* called when a property is clicked with the JS path to that property */
+			jsonPath = JSON.parse(path);
+			var protectedKeys = <?php echo json_encode($this->protectedValues); ?>;
+			for (p in jsonPath) {
+				if ($.inArray(jsonPath[p], protectedKeys) !== -1) {
+					$('input[title="' + jsonPath[p] + '"]').attr('disabled', 'disabled');
+				}
+			}
+		}
+	};
+	/* opt.propertyElement = '<textarea>'; */ // element of the property field, <input> is default
+	/* opt.valueElement = '<textarea>'; */  // element of the value field, <input> is default
+	$('#jsondiv').jsonEditor(entityJson, opt);
+</script>
+
+<div id="jsondiv" class="json-editor"></div>

@@ -19,3 +19,7 @@ div#listSize {
 .date {
 	margin-bottom:0;
 }
+
+.json-editor .value {
+	width:400px;
+}

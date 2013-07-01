@@ -1,7 +1,6 @@
 <?php
 //var_dump($title);
-?>
-<!DOCTYPE html>
+?><!DOCTYPE html>
 <html class="no-js">
     <head>
         <meta charset="utf-8">
@@ -20,9 +19,10 @@
         </style>
         <link rel="stylesheet" href="<?php echo $this->baseUrl; ?>/css/bootstrap-responsive.css">
         <link rel="stylesheet" href="<?php echo $this->baseUrl; ?>/css/bootstrap-datetimepicker.min.css">
+        <link rel="stylesheet" href="<?php echo $this->baseUrl; ?>/css/jsoneditor.css">
         <link rel="stylesheet" href="<?php echo $this->baseUrl; ?>/css/main.css">
 
-        <script src="<?php echo $this->baseUrl; ?>/js/vendor/modernizr-2.6.2-respond-1.1.0.js"></script>
+        <!--<script src="<?php echo $this->baseUrl; ?>/js/vendor/modernizr-2.6.2-respond-1.1.0.js"></script>-->
     </head>
     <body>
 
@@ -57,24 +57,7 @@
                             <li<?php echo ($active=='log'?' class="active"':''); ?>>
 								<a href="<?php echo $this->baseUrl; ?>/admin/log">Log</a>
 							</li>
-<!--                            <li class="dropdown">
-                                <a href="#" class="dropdown-toggle" data-toggle="dropdown">Dropdown <b class="caret"></b></a>
-                                <ul class="dropdown-menu">
-                                    <li><a href="#">Action</a></li>
-                                    <li><a href="#">Another action</a></li>
-                                    <li><a href="#">Something else here</a></li>
-                                    <li class="divider"></li>
-                                    <li class="nav-header">Nav header</li>
-                                    <li><a href="#">Separated link</a></li>
-                                    <li><a href="#">One more separated link</a></li>
-                                </ul>
-                            </li>-->
                         </ul>
-<!--                        <form class="navbar-form pull-right">
-                            <input class="span2" type="text" placeholder="Email">
-                            <input class="span2" type="password" placeholder="Password">
-                            <button type="submit" class="btn">Sign in</button>
-                        </form>-->
                     </div><!--/.nav-collapse -->
                 </div>
             </div>
@@ -89,6 +72,7 @@
 
         <script src="<?php echo $this->baseUrl; ?>/js/plugins.js"></script>
         <script src="<?php echo $this->baseUrl; ?>/js/bootstrap-datetimepicker.min.js"></script>
+        <script src="<?php echo $this->baseUrl; ?>/js/jquery.jsoneditor.js"></script>
         <script src="<?php echo $this->baseUrl; ?>/js/main.js"></script>
 
     </body>

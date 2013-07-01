@@ -39,6 +39,26 @@ class AdminController extends Yaf_Controller_Abstract {
 		}
 	}
 
+	public function editAction() {
+		$coll = Billrun_Util::filter_var($this->getRequest()->get('type'), FILTER_SANITIZE_STRING);
+		$id = Billrun_Util::filter_var($this->getRequest()->get('id'), FILTER_SANITIZE_STRING);
+		
+		$collection = Billrun_Factory::db()->getCollection($coll);
+		if (!($collection instanceof Mongodloid_Collection)) {
+			return false;
+		}
+
+		$entity = $collection->findOne($id, true);
+
+		// convert mongo values into javascript values
+		$entity['_id'] = (string) $entity['_id'];
+		$entity['from'] = (new Zend_Date($entity['from']->sec))->toString('YYYY-MM-dd HH:mm:ss');
+		$entity['to'] = (new Zend_Date($entity['to']->sec))->toString('YYYY-MM-dd HH:mm:ss');
+		
+		$this->getView()->entity = $entity; // passed the value into the view
+		$this->getView()->protectedValues = array('_id'); // passed the value into the view
+}
+
 	/**
 	 * plans controller of admin
 	 */
@@ -218,11 +238,14 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * @return string the render layout including the page (component)
 	 */
 	protected function render($tpl, array $parameters = array()) {
+		if ($tpl == 'edit') {
+			return parent::render($tpl, $parameters);
+		}
 		$tpl = 'index';
 		//check with active menu we are on
 		$parameters['active'] = $this->getRequest()->getActionName();
 		$parameters['title'] = $this->title;
 		return $this->getView()->render($tpl . ".phtml", $parameters);
 	}
-
+	
 }

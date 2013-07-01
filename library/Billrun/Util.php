@@ -13,6 +13,22 @@
  * @since    0.5
  */
 class Billrun_Util {
+	
+	/**
+	 * method to filter user input
+	 * 
+	 * @param mixed $input Value to filter
+	 * @param int $filter The ID of the filter to apply. The manual page lists the available filters
+	 * @param mixed $option [Optional] Associative array of options or bitwise disjunction of flags.
+	 * 
+	 * @return mixed the filtered data, or FALSE if the filter fails
+	 * 
+	 * @see http://www.php.net/manual/en/function.filter-var.php
+	 * @see http://www.php.net/manual/en/filter.filters.php
+	 */
+	public static function filter_var($input, $filter = FILTER_DEFAULT, $options = array()) {
+		return filter_var($input, $filter, $options);
+	}
 
 	/**
 	 * method to receive full datetime of last billrun time
