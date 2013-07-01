@@ -405,7 +405,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 			$backupPath = $this->backupPaths[$i];
 			$backupPath .= ($this->retrievedHostname ? DIRECTORY_SEPARATOR . $this->retrievedHostname : "");//If theres more then one host or the files were retrived from a named host backup under that host name
 			$backupPath .= DIRECTORY_SEPARATOR . ($seqData['date'] ? $seqData['date'] : date("Ym"));// if the file name has a date  save under that date else save under tthe current month
-			$backupPath .= ($seqData['seq'] ? DIRECTORY_SEPARATOR . substr($seqData['seq'], 0, -$this->backup_seq_granularity) : ""); // brak the date to sequence number with varing granularity
+			$backupPath .= (($seqData['seq'] && strlen($seqData['seq']) > $this->backup_seq_granularity ) ? DIRECTORY_SEPARATOR . substr($seqData['seq'], 0, -$this->backup_seq_granularity) : ""); // brak the date to sequence number with varing granularity
 
 			if ($this->backupToPath($backupPath, !($move && $i + 1 == count($this->backupPaths))) === TRUE) {
 				Billrun_Factory::log()->log("Success backup file " . $this->filePath . " to " . $backupPath, Zend_Log::INFO);
