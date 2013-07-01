@@ -323,5 +323,9 @@ class Mongodloid_Entity implements ArrayAccess {
 	public function offsetUnset($offset) {
 		unset($this->_values[$offset]);
 	}
+	
+	public function isEmpty() {
+		return empty($this->_values);
+	}
 
 }

@@ -27,11 +27,13 @@ class Billrun_Billrun {
 	 * @return \Billrun_Billrun
 	 */
 	public function load($account_id, $billrun_key) {
-		$this->data = Billrun_Factory::db()->billrunCollection()->query(array(
-					'account_id' => strval($account_id),
+		$billrun_coll = Billrun_Factory::db()->billrunCollection();
+		$this->data = $billrun_coll->query(array(
+					'account_id' => $account_id,
 					'billrun_key' => $billrun_key,
 				))
 				->cursor()->current();
+		$this->data->collection($billrun_coll);
 		return $this;
 	}
 
@@ -40,8 +42,7 @@ class Billrun_Billrun {
 	 * @param type $subscriber
 	 */
 	public function create($account_id, $billrun_key) {
-		$billrun = new Mongodloid_Entity($this->getAccountEmptyBillrunEntry($account_id));
-		$billrun['billrun_key'] = $billrun_key;
+		$billrun = new Mongodloid_Entity($this->getAccountEmptyBillrunEntry($account_id, $billrun_key));
 		Billrun_Factory::log("Adding account " . $account_id . " with billrun key " . $billrun_key . " to billrun collection", Zend_Log::INFO);
 		$billrun->collection(Billrun_Factory::db()->billrunCollection());
 		$billrun->save();
@@ -54,9 +55,9 @@ class Billrun_Billrun {
 	 * @return \Billrun_Billrun the current instance  of the billrun entry.
 	 */
 	public function addSubscriber($subscriber_id) {
-		$subscribers = $this->data['subscribers'];
-		$subscribers[strval($subscriber_id)] = $this->getEmptySubscriberBillrunEntry();
-		$this->data['subscribers'] = $subscribers;
+		$subscribers = $this->data['subs'];
+		$subscribers[] = $this->getEmptySubscriberBillrunEntry($subscriber_id);
+		$this->data['subs'] = $subscribers;
 		Billrun_Factory::log('Adding subscriber ' . $subscriber_id . ' to billrun collection', Zend_Log::INFO);
 		$this->data->collection(Billrun_Factory::db()->billrunCollection());
 		$this->data->save();
@@ -69,7 +70,7 @@ class Billrun_Billrun {
 	 * @return boolean TRUE  is  the subscriber  exists in the current billrun entry FALSE otherwise.
 	 */
 	public function exists($subscriber_id) {
-		return isset($this->data->getRawData()['subscribers'][strval($subscriber_id)]);
+		return $this->getSubRawData($subscriber_id) != false;
 	}
 
 	/**
@@ -92,20 +93,24 @@ class Billrun_Billrun {
 	 * @param type $account_id the account id that the enery belongs to.
 	 * @return Array tan empty billrun account  structure.
 	 */
-	public function getAccountEmptyBillrunEntry($account_id) {
+	public function getAccountEmptyBillrunEntry($account_id, $billrun_key) {
+		$vat = Billrun_Util::getVAT(Billrun_Util::getEndTime($billrun_key));
 		return array(
-			'account_id' => strval($account_id),
-			'subscribers' => array(
+			'account_id' => $account_id,
+			'subs' => array(
 			),
+			'vat' => $vat,
+			'billrun_key' => $billrun_key,
 		);
 	}
 
 	/**
 	 * Get an empty billrun subscriber entry structure.
 	 * @return Array tan empty billrun subscriber entry structure.
-	 */	
-	public function getEmptySubscriberBillrunEntry() {
+	 */
+	public function getEmptySubscriberBillrunEntry($subscriber_id) {
 		return array(
+			'sub_id' => $subscriber_id,
 			'costs' => array(
 				'flat' => 0,
 				'over_plan' => 0,
@@ -163,10 +168,10 @@ class Billrun_Billrun {
 			$breakdown_raw[$breakdown_key][$zone_key]['cost'] = $charge;
 		}
 		if (!isset($breakdown_raw[$breakdown_key][$zone_key]['vat'])) {
-			$breakdown_raw[$breakdown_key][$zone_key]['vat'] = ($vatable ? Billrun_Factory::config()->getConfigValue('pricing.vat', '1.18') - 1 : 0); //@TODO we assume here that all the lines would be vatable or all vat-free
+			$breakdown_raw[$breakdown_key][$zone_key]['vat'] = ($vatable ? Billrun_Factory::config()->getConfigValue('pricing.vat', '0.18'): 0); //@TODO we assume here that all the lines would be vatable or all vat-free
 		}
 	}
-	
+
 	/**
 	 * Get the key of the current billrun
 	 * @return string the billrun key. 
@@ -174,7 +179,7 @@ class Billrun_Billrun {
 	public function getBillrunKey() {
 		return $this->data->get('billrun_key');
 	}
-	
+
 	/**
 	 * Update  
 	 * @param type $subscriber_id
@@ -188,8 +193,8 @@ class Billrun_Billrun {
 		if (!$this->exists($subscriber_id)) {
 			$this->addSubscriber($subscriber_id);
 		}
-		$billRaw = $this->data->getRawData();
-		$subscriberRaw = $billRaw['subscribers'][$subscriber_id];
+
+		$subscriberRaw = $this->getSubRawData($subscriber_id);
 
 		// update costs
 		if (isset($pricingData['over_plan']) && $pricingData['over_plan']) {
@@ -262,9 +267,7 @@ class Billrun_Billrun {
 		}
 		self::addToBreakdown($subscriberRaw['breakdown'], $breakdown_key, $zone_key, $vatable, $counters, $pricingData['price_customer']);
 
-		$billRaw['subscribers'][$subscriber_id] = $subscriberRaw;
-		$this->data->setRawData($billRaw);
-		$this->data->save(Billrun_Factory::db()->billrunCollection());
+		$this->setSubRawData($subscriber_id, $subscriberRaw);
 		$this->setStamp($row);
 	}
 
@@ -286,15 +289,15 @@ class Billrun_Billrun {
 		$line->save(Billrun_Factory::db()->linesCollection());
 		return true;
 	}
-	
+
 	/** TODO remove ...
-	static public function getBillrun($account_id, $billrun_key) {
-		$billrun = Billrun_Factory::billrun(array(
-			'account_id' => $account_id,
-			'billrun_key' => $billrun_key,
-		));
-		return $billrun;
-	}*/
+	  static public function getBillrun($account_id, $billrun_key) {
+	  $billrun = Billrun_Factory::billrun(array(
+	  'account_id' => $account_id,
+	  'billrun_key' => $billrun_key,
+	  ));
+	  return $billrun;
+	  } */
 
 	/**
 	 * Close the current billrun and create an invoice ID. 
@@ -302,7 +305,7 @@ class Billrun_Billrun {
 	public function close() {
 		$account_id = $this->data->getRawData()['account_id'];
 		$billrun_key = $this->getBillrunKey();
-		$closeBillrunCmd = "closeBillrun('$account_id', '$billrun_key');";
+		$closeBillrunCmd = "closeBillrun($account_id, '$billrun_key');";
 		$ret = Billrun_Factory::db()->execute($closeBillrunCmd);
 		if ($ret['ok']) {
 			Billrun_Factory::log()->log("Created invoice " . $ret['retval'] . " for account " . $account_id, Zend_Log::INFO);
@@ -310,6 +313,38 @@ class Billrun_Billrun {
 			Billrun_Factory::log()->log("Failed to create invoice for account " . $account_id, Zend_Log::INFO);
 		}
 //		$ret = Billrun_Factory::db()->execute("db.getLastErrorObj();");
+	}
+
+	/**
+	 * 
+	 * @param type $subscriber_id
+	 * @return mixed
+	 */
+	protected function getSubRawData($subscriber_id) {
+		foreach ($this->data->get('subs') as $sub_entry) {
+			if ($sub_entry['sub_id'] == $subscriber_id) {
+				return $sub_entry;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * 
+	 * @param int $subscriber_id
+	 * @param array $subscriber_raw
+	 * @return boolean
+	 */
+	protected function setSubRawData($subscriber_id, $subscriber_raw) {
+		foreach ($this->data->get('subs') as $key => $sub_entry) {
+			if ($sub_entry['sub_id'] == $subscriber_id) {
+				$this->data->set('subs.'.$key, $subscriber_raw);
+				$this->data->save(Billrun_Factory::db()->billrunCollection());
+				return true;
+			}
+		}
+		return false;
+		
 	}
 
 }
