@@ -214,4 +214,30 @@ class Mongodloid_Collection {
 		return $this->_collection->findAndModify($query, $update, $fields, $options);
 	}
 
+	/**
+	 * method to bulk insert of multiple documents
+	 * 
+	 * @param array $a array or object. If an object is used, it may not have protected or private properties
+	 * @param array $options options for the inserts.; see php documentation
+	 * 
+	 * @return mixed If the w parameter is set to acknowledge the write, returns an associative array with the status of the inserts ("ok") and any error that may have occurred ("err"). Otherwise, returns TRUE if the batch insert was successfully sent, FALSE otherwise
+	 * @see http://php.net/manual/en/mongocollection.batchinsert.php
+	 */
+	public function batchInsert(array $a, array $options = array()) {
+		return $this->_collection->batchInsert($a, $options);
+	}
+	
+	/**
+	 * method to insert document
+	 * 
+	 * @param array $a array or object. If an object is used, it may not have protected or private properties
+	 * @param array $options the options for the insert; see php documentation
+	 * 
+	 * @return mixed Returns an array containing the status of the insertion if the "w" option is set. Otherwise, returns TRUE if the inserted array is not empty
+	 * @see http://www.php.net/manual/en/mongocollection.insert.php
+	 */
+	public function insert($a, array $options = array()) {
+		return $this->_collection->insert($a, $options);
+	}
+
 }
