@@ -357,7 +357,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 					$offset += $this->bulkInsert;
 				}
 			} catch (Exception $e) {
-				Billrun_Factory::log()->log("Processor store " . basename($this->filePath) . " failed on bulk insert on batch : ".$offset." , with the next message: " . $e->getCode() . ": " . $e->getMessage(), Zend_Log::NOTICE);
+				Billrun_Factory::log()->log("Processor store " . basename($this->filePath) . " failed on bulk insert on batch : ".$offset." , with the next message: " . $e->getCode() . ": " . utf8_encode($e->getMessage()), Zend_Log::NOTICE);
 				return false;
 			}
 		} else {
@@ -369,7 +369,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 					$entity->save($lines, true);
 					$this->data['stored_data'][] = $row;
 				} catch (Exception $e) {
-					Billrun_Factory::log()->log("Processor store " . basename($this->filePath) . " failed on stamp : " . $row['stamp']. " with the next message: " . $e->getCode() . ": " . $e->getMessage(), Zend_Log::NOTICE);
+					Billrun_Factory::log()->log("Processor store " . basename($this->filePath) . " failed on stamp : " . $row['stamp']. " with the next message: " . $e->getCode() . ": " . utf8_encode($e->getMessage()), Zend_Log::NOTICE);
 					continue;
 				}
 			}
