@@ -170,7 +170,18 @@ class Billrun_Util {
 	public static function getEndTime($billrun_key) {
 		$dayofmonth = Billrun_Factory::config()->getConfigValue('billrun.charging_day', 25);
 		$datetime = $billrun_key . $dayofmonth . "000000";
-		return strtotime($datetime);
+		return strtotime('-1 second', strtotime($datetime));
+	}
+	
+	/**
+	 * returns the start timestamp of the input billing period
+	 * @param type $billrun_key
+	 * @return type int
+	 */
+	public static function getStartTime($billrun_key) {
+		$dayofmonth = Billrun_Factory::config()->getConfigValue('billrun.charging_day', 25);
+		$datetime = $billrun_key . $dayofmonth . "000000";
+		return strtotime('-1 month', strtotime($datetime));
 	}
 
 	/**

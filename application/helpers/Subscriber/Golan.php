@@ -49,7 +49,9 @@ class Subscriber_Golan extends Billrun_Subscriber {
 			$params['DATETIME'] = $params['time'];
 		}
 
-		$data = $this->request($params);
+		$data = $this->request($params); // @todo uncomment this
+//		$data = array("account_id" => 7112968, "subscriber_id" => 116815, "plan" =>"SMALL"); // @todo remove this
+
 		if (is_array($data)) {
 			$this->data = $data;
 		} else {
@@ -231,6 +233,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 			'subscriber_id' => $this->subscriber_id,
 			'source' => 'billrun',
 			'type' => 'flat',
+			'usaget' => 'flat',
 			'unified_record_time' => new MongoDate(),
 			'flat_key' => $billrun_key,
 			'price_customer' => $this->getFlatPrice(),
