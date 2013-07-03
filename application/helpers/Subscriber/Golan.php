@@ -167,23 +167,23 @@ class Subscriber_Golan extends Billrun_Subscriber {
 	static public function requestAccounts($page, $size, $time) {
 		$accounts = json_encode(array(
 			array(
-				'account_id' => '4072863',
+				'account_id' => 4072863,
 				'subscribers' => array(
 					array(
-						'subscriber_id' => '155215',
+						'subscriber_id' => 155215,
 						'plan' => 'LARGE',
 					),
 				)
 			),
 			array(
-				'account_id' => '7112968',
+				'account_id' => 7112968,
 				'subscribers' => array(
 					array(
-						'subscriber_id' => '116815',
+						'subscriber_id' => 116815,
 						'plan' => 'SMALL',
 					),
 					array(
-						'subscriber_id' => '32443',
+						'subscriber_id' => 32443,
 						'plan' => 'SMALL',
 					),
 				),

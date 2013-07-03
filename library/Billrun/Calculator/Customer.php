@@ -66,9 +66,13 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		}
 
 		foreach ($subscriber->getAvailableFields() as $field) {
+			if (is_numeric($subscriber->{$field})) {
+				$subscriber->{$field} = intval($subscriber->{$field}); // remove this conversion when Vitali changes the output of the CRM to integers
+			}
 			$subscriber_field = $subscriber->{$field};
 			$row[$field] = $subscriber_field;
 		}
+
 		$plan_ref = $this->addPlanRef($row, $subscriber->plan);
 		if (is_null($plan_ref)) {
 			Billrun_Factory::log('No plan found for subscriber ' . $subscriber->subscriber_id, Zend_Log::ALERT);

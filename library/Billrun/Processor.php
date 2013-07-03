@@ -47,6 +47,13 @@ abstract class Billrun_Processor extends Billrun_Base {
 	protected $data = array('data' => array() );
 
 	/**
+	 * flag indicate to make bulk insert into database
+	 * 
+	 * @var boolean
+	 */
+	protected $bulkInsert = 1000;
+	
+	/**
 	 * the file path to process on
 	 * @var file path
 	 */
@@ -118,6 +125,12 @@ abstract class Billrun_Processor extends Billrun_Base {
 		if (isset($options['processor']['backup_granularity']) && $options['processor']['backup_granularity']) {
 			$this->backup_seq_granularity = $options['processor']['backup_granularity'];
 		}
+		
+		if (isset($options['bulkInsert']))
+		{
+			$this->bulkInsert = $options['bulkInsert'];
+		}
+
 	}
 	
 	/**
@@ -327,16 +340,38 @@ abstract class Billrun_Processor extends Billrun_Base {
 
 		Billrun_Factory::log()->log("Store data of file " . basename($this->filePath) . " with " . count($this->data['data']) . " lines", Zend_Log::DEBUG);
 		$lines = Billrun_Factory::db()->linesCollection();
-		$this->data['stored_data'] = array();
-
-		foreach ($this->data['data'] as $row) {
+		
+		if ($this->bulkInsert) {
+			settype($this->bulkInsert, 'int');
 			try {
-				$entity = new Mongodloid_Entity($row);
-				$entity->save($lines, true);
-				$this->data['stored_data'][] = $row;
+				$bulkOptions = array(
+					'continueOnError' => true,
+					'j' => true,
+					'wtimeout' => 300000,
+					'timeout' => 300000,
+				);
+				$offset = 0;
+				while(count($insert = array_slice($this->data['data'], $offset, $this->bulkInsert, true))) {
+					Billrun_Factory::log()->log("Processor bulk insert " . basename($this->filePath) . " from: " . $offset . ' count: ' . $this->bulkInsert, Zend_Log::DEBUG);
+					$lines->batchInsert($insert, $bulkOptions);
+					$offset += $this->bulkInsert;
+				}
 			} catch (Exception $e) {
-				Billrun_Factory::log()->log("Processor store " . basename($this->filePath) . " failed on stamp : " . $row['stamp']. " with the next message: " . $e->getCode() . ": " . $e->getMessage(), Zend_Log::NOTICE);
-				continue;
+				Billrun_Factory::log()->log("Processor store " . basename($this->filePath) . " failed on bulk insert with the next message: " . $e->getCode() . ": " . $e->getMessage(), Zend_Log::NOTICE);
+				return false;
+			}
+		} else {
+			$this->data['stored_data'] = array();
+
+			foreach ($this->data['data'] as $row) {
+				try {
+					$entity = new Mongodloid_Entity($row);
+					$entity->save($lines, true);
+					$this->data['stored_data'][] = $row;
+				} catch (Exception $e) {
+					Billrun_Factory::log()->log("Processor store " . basename($this->filePath) . " failed on stamp : " . $row['stamp']. " with the next message: " . $e->getCode() . ": " . $e->getMessage(), Zend_Log::NOTICE);
+					continue;
+				}
 			}
 		}
 

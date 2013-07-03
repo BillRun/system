@@ -162,23 +162,29 @@ class Billrun_Util {
 		return $value * ($conversion[$from] / $conversion[$to]);
 	}
 
-//	public static function deep_in_array($needle, $haystack) {
-//		foreach ($haystack as $item) {
-//			if (!is_array($item)) {
-//				if ($item == $needle) {
-//					return true;
-//				} else {
-//					continue;
-//				}
-//			}
-//			if (in_array($needle, $item)) {
-//				return true;
-//			}
-//			else if (self::deep_in_array($needle, $item)) {
-//				return true;
-//			}
-//		}
-//		return false;
-//	}
+	/**
+	 * returns the end timestamp of the input billing period
+	 * @param type $billrun_key
+	 * @return type int
+	 */
+	public static function getEndTime($billrun_key) {
+		$dayofmonth = Billrun_Factory::config()->getConfigValue('billrun.charging_day', 25);
+		$datetime = $billrun_key . $dayofmonth . "000000";
+		return strtotime($datetime);
+	}
+
+	/**
+	 * 
+	 * @param type $timestamp
+	 * @return real the VAT at the current timestamp
+	 */
+	public static function getVAT($timestamp) {
+		$mongo_date = new MongoDate($timestamp);
+		return Billrun_Factory::db()->ratesCollection()
+				->query('key', 'VAT')
+				->lessEq('from', $mongo_date)
+				->greaterEq('to', $mongo_date)
+				->cursor()->current()->get('vat');
+	}
 
 }

@@ -81,10 +81,10 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		$rate = $row->get('customer_rate');
 		$billrun_key = Billrun_Util::getBillrunKey($row['unified_record_time']->sec);
 		$subscriber_balance = Billrun_Factory::balance(array( 'subscriber_id' =>  $row['subscriber_id'],'billrun_key' => $billrun_key));
-		if (!isset($subscriber_balance) || !$subscriber_balance) {
+		if (!$subscriber_balance->isValid()) {
 			Billrun_Factory::log()->log("couldn't get balance for : " . print_r(array(
 					'subscriber_id' => $row['subscriber_id'],
-					'billrun_month' => Billrun_Util::getBillrunKey($row['unified_record_time']->sec)
+					'billrun_month' => $billrun_key
 					), 1), Zend_Log::DEBUG);
 			return;
 		}
@@ -108,9 +108,6 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		}
 
 		if (isset($volume)) {
-			if ($subscriber_balance['subscriber_id'] == '209547') {
-				echo 4;
-			}
 			$pricingData = $this->getLinePricingData($volume, $usage_type, $rate, $subscriber_balance);
 			$this->updateSubscriberBalance($subscriber_balance, array($usage_class_prefix . $usage_type => $volume), $pricingData['price_customer']);
 			$vatable = (!(isset($rate['vatable']) && !$rate['vatable']) || (!isset($rate['vatable']) && !$this->vatable));
