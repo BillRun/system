@@ -51,7 +51,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 * 
 	 * @var boolean
 	 */
-	protected $bulkInsert = 1000;
+	protected $bulkInsert = 500;
 	
 	/**
 	 * the file path to process on
@@ -126,9 +126,9 @@ abstract class Billrun_Processor extends Billrun_Base {
 			$this->backup_seq_granularity = $options['processor']['backup_granularity'];
 		}
 		
-		if (isset($options['bulkInsert']))
+		if (isset($options['bulk_insert']))
 		{
-			$this->bulkInsert = $options['bulkInsert'];
+			$this->bulkInsert = $options['bulk_insert'];
 		}
 
 	}
@@ -343,6 +343,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 		
 		if ($this->bulkInsert) {
 			settype($this->bulkInsert, 'int');
+			$offset = 0;
 			try {
 				$bulkOptions = array(
 					'continueOnError' => true,
@@ -350,14 +351,13 @@ abstract class Billrun_Processor extends Billrun_Base {
 					'wtimeout' => 300000,
 					'timeout' => 300000,
 				);
-				$offset = 0;
 				while(count($insert = array_slice($this->data['data'], $offset, $this->bulkInsert, true))) {
-					Billrun_Factory::log()->log("Processor bulk insert " . basename($this->filePath) . " from: " . $offset . ' count: ' . $this->bulkInsert, Zend_Log::DEBUG);
+					//Billrun_Factory::log()->log("Processor bulk insert " . basename($this->filePath) . " from: " . $offset . ' count: ' . $this->bulkInsert, Zend_Log::DEBUG);
 					$lines->batchInsert($insert, $bulkOptions);
 					$offset += $this->bulkInsert;
 				}
 			} catch (Exception $e) {
-				Billrun_Factory::log()->log("Processor store " . basename($this->filePath) . " failed on bulk insert with the next message: " . $e->getCode() . ": " . $e->getMessage(), Zend_Log::NOTICE);
+				Billrun_Factory::log()->log("Processor store " . basename($this->filePath) . " failed on bulk insert on batch : ".$offset." , with the next message: " . $e->getCode() . ": " . $e->getMessage(), Zend_Log::NOTICE);
 				return false;
 			}
 		} else {
