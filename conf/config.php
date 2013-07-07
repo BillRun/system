@@ -21,7 +21,7 @@ if (!defined('BILLRUN_CONFIG_PATH')) {
 		'servers' => array(
 			'dev' => array('127.0.0.1', '127.0.1.1', '::1'),
 			'test' => array(),
-			'prod' => array('192.168.37.10', 'fraud.golan.local', '192.168.30.20'),
+			'prod' => array('192.168.37.10', 'fraud.golan.local', '192.168.30.20','172.29.202.10'),
 		)
 	);
 
