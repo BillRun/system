@@ -74,12 +74,13 @@ class RefundAction extends Action_Base {
 				'desc' => 'failed to store into DB',
 				'input' => $post,
 			));
+		} else {
+			$this->getController()->setOutput(array(
+				'status' => 1,
+				'desc' => 'success',
+				'input' => $post,
+			));
 		}
-		$this->getController()->setOutput(array(
-			'status' => 1,
-			'desc' => 'success',
-			'input' => $post,
-		));
 	}
 
 }
