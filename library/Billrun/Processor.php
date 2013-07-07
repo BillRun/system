@@ -77,6 +77,8 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 */
 	protected $current_line = 0;
 	
+	protected $maxIntervalBetweenFiles = 2;
+	
 	/**
 	 * the backup sequence file number digits granularity 
 	 * (1=batches of 10 files  in each directory, 2= batches of 100, 3= batches of 1000,etc...)
@@ -199,6 +201,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 		$linesCount = 0;
 
 		for ($i = $this->getLimit(); $i >= 0; $i--) {
+			usleep(rand(0, $this->maxIntervalBetweenFiles ));
 			$file = $log->query($baseQuery)
 					->equals('source', static::$type)
 					->notExists('process_time')
