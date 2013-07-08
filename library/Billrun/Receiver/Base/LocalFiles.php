@@ -103,7 +103,10 @@ abstract class Billrun_Receiver_Base_LocalFiles extends Billrun_Receiver {
 	 */
 	private function isFileProcessed($filename, $type) {
 		$log = $this->db->getCollection(self::log_table);
-		$resource = $log->query()->equals('source', $type)->equals('file', $filename);
+		$resource = $log->query(array('source' => $type, '$or' => array(
+					array('file' => $filename),
+					array('file_name' => $filename)
+				)))->cursor()->limit(1);
 		return $resource->count() > 0;
 	}
 
