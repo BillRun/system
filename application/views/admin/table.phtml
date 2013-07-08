@@ -1,6 +1,3 @@
-<?php
-$key = 'name';
-?>
 <div class="container component">
 	<h1><?php echo $this->title; ?></h1>
 	<?php if ($this->title == 'Rates' || $this->title == 'Plans') : ?>
@@ -30,9 +27,9 @@ $key = 'name';
 			foreach ($this->columns as $h) {
 				$data = $item->get($h);
 				print '<td>';
-				if (isset($key) && $h == $key) {
+				if (isset($edit_key) && $h == $edit_key) {
 					$url = $this->baseUrl . '/admin/edit?type=' . strtolower($this->title) . '&id=' . $item['_id'];
-					print '<a href="#myModal" data-remote="'. $url .'" role="button" data-toggle="modal">' . $data . '</a>';
+					print '<a href="#popupModal" data-remote="'. $url .'" role="button" data-toggle="modal">' . $data . '</a>';
 				} else if (($h == 'from' || $h == 'to') && $data) {
 					// TODO: move he_IL to config
 					$d = new Zend_Date($data->sec, null, new Zend_Locale('he_IL'));
@@ -54,18 +51,18 @@ $key = 'name';
 	endif;
 	?>
 
-    <div class="modal fade hide" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal fade hide" id="popupModal" tabindex="-1" role="dialog" aria-labelledby="popupModalLabel" aria-hidden="true">
 		<div class="modal-header">
 			<button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
-			<h3 id="myModalLabel">Header</h3>
+			<h3 id="popupModalLabel"></h3>
 		</div>
 		<div class="modal-body">
 			
 		</div>
 		<div class="modal-footer">
 			<button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
-			<button class="btn btn-primary">Save changes</button>
-			<button class="btn btn-danger" data-toggle="dropdown">Update current</button>
+			<button id="save" class="btn btn-primary">Save changes</button>
+			<button id="apply" class="btn btn-danger" data-toggle="dropdown">Update current</button>
 		</div>
     </div>
 </div>

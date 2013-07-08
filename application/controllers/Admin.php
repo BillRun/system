@@ -42,7 +42,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	public function editAction() {
 		$coll = Billrun_Util::filter_var($this->getRequest()->get('type'), FILTER_SANITIZE_STRING);
 		$id = Billrun_Util::filter_var($this->getRequest()->get('id'), FILTER_SANITIZE_STRING);
-		
+
 		$collection = Billrun_Factory::db()->getCollection($coll);
 		if (!($collection instanceof Mongodloid_Collection)) {
 			return false;
@@ -54,10 +54,54 @@ class AdminController extends Yaf_Controller_Abstract {
 		$entity['_id'] = (string) $entity['_id'];
 		$entity['from'] = (new Zend_Date($entity['from']->sec))->toString('YYYY-MM-dd HH:mm:ss');
 		$entity['to'] = (new Zend_Date($entity['to']->sec))->toString('YYYY-MM-dd HH:mm:ss');
+
+		if (method_exists($this, $coll . 'DataLoad')) {
+			call_user_func_array(array($this, $coll . 'DataLoad'), array($collection, &$entity));
+		}
+
+		// passing values into the view
+		$this->getView()->entity = $entity;
+		$this->getView()->collectionName = $coll;
+		$this->getView()->protectedKeys = array(
+			'_id',
+//			'from',
+//			'to',
+		);
+	}
+	
+	public function saveAction() {
+		$data = (array) $this->getRequest()->get('data');
+		$id = Billrun_Util::filter_var($this->getRequest()->get('id'), FILTER_SANITIZE_STRING);
+		$coll = Billrun_Util::filter_var($this->getRequest()->get('coll'), FILTER_SANITIZE_STRING);
+		if (method_exists($this, $coll . 'BeforeDataSave')) {
+			call_user_func_array(array($this, $coll . 'BeforeDataSave'), array(&$data));
+		}
+
+		$from = new Zend_Date($data['from'], null, 'he-IL');
+		$to = new Zend_Date($data['to'], null, 'he-IL');
+	}
+
+
+	/**
+	 * 
+	 * @param type $collection
+	 * @param type $entity
+	 * @return type
+	 */
+	protected function ratesDataLoad($collection, &$entity) {
+		if (!isset($entity['rates'])) {
+			return;
+		}
 		
-		$this->getView()->entity = $entity; // passed the value into the view
-		$this->getView()->protectedValues = array('_id'); // passed the value into the view
-}
+		foreach ($entity['rates'] as $key => &$rate) {
+			if (isset($rate['plans'])) {
+				foreach ($rate['plans'] as &$plan) {
+					$data = $collection->getRef($plan);
+					$plan = $data->get('name');
+				}
+			}
+		}
+	}
 
 	/**
 	 * plans controller of admin
@@ -69,7 +113,7 @@ class AdminController extends Yaf_Controller_Abstract {
 			'to',
 			'_id',
 		);
-		$this->getView()->component = $this->setTableView('plans', $columns, array('creation_time' => -1));
+		$this->getView()->component = $this->setTableView('plans', $columns, array('creation_time' => -1), 'name');
 	}
 
 	/**
@@ -82,7 +126,7 @@ class AdminController extends Yaf_Controller_Abstract {
 			'to',
 			'_id',
 		);
-		$this->getView()->component = $this->setTableView('rates', $columns, array('creation_time' => -1));
+		$this->getView()->component = $this->setTableView('rates', $columns, array('creation_time' => -1), 'key');
 	}
 
 	/**
@@ -144,7 +188,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * @return string the render page (HTML)
 	 * @todo refactoring this function
 	 */
-	protected function setTableView($table, $columns = array(), $sort = array()) {
+	protected function setTableView($table, $columns = array(), $sort = array(), $edit_key = null) {
 		$page = (int) $this->getRequest()->get('page');
 		$size = (int) $this->getRequest()->get('listSize');
 
@@ -174,13 +218,13 @@ class AdminController extends Yaf_Controller_Abstract {
 			'size' => $session->$table->size,
 			'sort' => $sort,
 		);
-		
+
 		if ($table == 'rates' || $table == 'plans') {
 			$date = $this->getRequest()->getPost('dateFilter');
 			if (is_string($date)) {
 				$filterDate = new Zend_Date($date, null, new Zend_Locale('he_IL'));
 			}
-			
+
 			if (isset($filterDate)) {
 				$session->$table->filterDate = $filterDate;
 			} else if (!isset($session->$table->filterDate)) {
@@ -206,8 +250,9 @@ class AdminController extends Yaf_Controller_Abstract {
 			'offset' => $model->offset(),
 			'pagination' => $pagination,
 			'sizeList' => $sizeList,
+			'edit_key' => $edit_key,
 		);
-		
+
 		if ($table == 'rates' || $table == 'plans') {
 			$params['filterDate'] = $session->$table->filterDate;
 		}
@@ -247,5 +292,5 @@ class AdminController extends Yaf_Controller_Abstract {
 		$parameters['title'] = $this->title;
 		return $this->getView()->render($tpl . ".phtml", $parameters);
 	}
-	
+
 }
