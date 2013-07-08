@@ -39,7 +39,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 	public function load($params) {
 
 		if (!isset($params['imsi']) && !isset($params['IMSI']) && !isset($params['NDC_SN'])) {
-			Billrun_Factory::log()->log('Cannot identify Golan subscriber. Require phone or imsi to load. Current parameters: ' . print_R($params), Zend_Log::ALERT);
+			Billrun_Factory::log()->log('Cannot identify Golan subscriber. Require phone or imsi to load. Current parameters: ' . print_R($params,1), Zend_Log::ALERT);
 			return $this;
 		}
 
@@ -168,6 +168,15 @@ class Subscriber_Golan extends Billrun_Subscriber {
 	//@TODO change this function
 	static public function requestAccounts($page, $size, $time) {
 		$accounts = json_encode(array(
+			array(
+				'account_id' => 5642348,
+				'subscribers' => array(
+					array(
+						'subscriber_id' => 171910,
+						'plan' => 'LARGE',
+					),
+				)
+			),
 			array(
 				'account_id' => 4072863,
 				'subscribers' => array(

@@ -19,8 +19,8 @@ abstract class Billrun_Generator extends Billrun_Base {
 	 * @var string
 	 */
 	protected $export_directory;
-	protected $csvContent = '';
-	protected $csvPath;
+
+	static protected $type;
 
 	/**
 	 * constructor
@@ -34,36 +34,8 @@ abstract class Billrun_Generator extends Billrun_Base {
 		if (isset($options['export_directory'])) {
 			$this->export_directory = $options['export_directory'];
 		} else {
-			$this->export_directory = Billrun_Factory::config()->getConfigValue('ilds.export'); //__DIR__ . '/../files/';
+			$this->export_directory = Billrun_Factory::config()->getConfigValue(self::$type . '.export'); //__DIR__ . '/../files/';
 		}
-
-		if (isset($options['csv_filename'])) {
-			$this->csvPath = $this->export_directory . '/' . $options['csv_filename'] . '.csv';
-		} else {
-			$this->csvPath = $this->export_directory . '/' . $this->getStamp() . '.csv';
-		}
-
-		$this->loadCsv();
-	}
-
-	/**
-	 * load csv file to write the generating info into
-	 */
-	protected function loadCsv() {
-		if (file_exists($this->csvPath)) {
-			$this->csvContent = file_get_contents($this->csvPath);
-		}
-	}
-
-	/**
-	 * write row to csv file for generating info into in
-	 * 
-	 * @param string $row the row to write into
-	 * 
-	 * @return boolean true if succes to write info else false
-	 */
-	protected function csv($row) {
-		return file_put_contents($this->csvPath, $row, FILE_APPEND);
 	}
 
 	/**
