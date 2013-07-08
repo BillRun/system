@@ -39,7 +39,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 	public function load($params) {
 
 		if (!isset($params['imsi']) && !isset($params['IMSI']) && !isset($params['NDC_SN'])) {
-			Billrun_Factory::log()->log('Cannot identify Golan subscriber. Require phone or imsi to load. Current parameters: ' . print_R($params), Zend_Log::ALERT);
+			Billrun_Factory::log()->log('Cannot identify Golan subscriber. Require phone or imsi to load. Current parameters: ' . print_R($params,1), Zend_Log::ALERT);
 			return $this;
 		}
 
@@ -49,7 +49,9 @@ class Subscriber_Golan extends Billrun_Subscriber {
 			$params['DATETIME'] = $params['time'];
 		}
 
-		$data = $this->request($params);
+		$data = $this->request($params); // @todo uncomment this
+//		$data = array("account_id" => 7112968, "subscriber_id" => 116815, "plan" =>"SMALL"); // @todo remove this
+
 		if (is_array($data)) {
 			$this->data = $data;
 		} else {
@@ -167,6 +169,15 @@ class Subscriber_Golan extends Billrun_Subscriber {
 	static public function requestAccounts($page, $size, $time) {
 		$accounts = json_encode(array(
 			array(
+				'account_id' => 5642348,
+				'subscribers' => array(
+					array(
+						'subscriber_id' => 171910,
+						'plan' => 'LARGE',
+					),
+				)
+			),
+			array(
 				'account_id' => 4072863,
 				'subscribers' => array(
 					array(
@@ -231,6 +242,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 			'subscriber_id' => $this->subscriber_id,
 			'source' => 'billrun',
 			'type' => 'flat',
+			'usaget' => 'flat',
 			'unified_record_time' => new MongoDate(),
 			'flat_key' => $billrun_key,
 			'price_customer' => $this->getFlatPrice(),

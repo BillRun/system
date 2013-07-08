@@ -42,7 +42,7 @@ class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 
 			// load subscriber
 			$phone_number = $item->get('caller_phone_no');
-			$subscriber = Billrun_Factory::subscriber()->load(array('phone' => $phone_number, 'time' => $time));
+			$subscriber = Billrun_Factory::subscriber()->load(array('NDC_SN' => $phone_number, 'time' => $time));
 
 			if (!$subscriber) {
 				Billrun_Factory::log()->log("subscriber not found. phone:" . $phone_number . " time: " . $time, Zend_Log::INFO);
