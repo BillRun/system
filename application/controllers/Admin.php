@@ -39,6 +39,11 @@ class AdminController extends Yaf_Controller_Abstract {
 		}
 	}
 
+	/**
+	 * save controller
+	 * @return boolean
+	 * @todo move to model
+	 */
 	public function editAction() {
 		$coll = Billrun_Util::filter_var($this->getRequest()->get('type'), FILTER_SANITIZE_STRING);
 		$id = Billrun_Util::filter_var($this->getRequest()->get('id'), FILTER_SANITIZE_STRING);
@@ -68,7 +73,12 @@ class AdminController extends Yaf_Controller_Abstract {
 //			'to',
 		);
 	}
-	
+
+	/**
+	 * save controller
+	 * @return boolean
+	 * @todo move to model
+	 */
 	public function saveAction() {
 		$data = (array) $this->getRequest()->get('data');
 		$id = Billrun_Util::filter_var($this->getRequest()->get('id'), FILTER_SANITIZE_STRING);
@@ -77,28 +87,92 @@ class AdminController extends Yaf_Controller_Abstract {
 			call_user_func_array(array($this, $coll . 'BeforeDataSave'), array(&$data));
 		}
 
+		$collection = Billrun_Factory::db()->getCollection($coll);
+		if (!($collection instanceof Mongodloid_Collection)) {
+			return false;
+		}
+
+		$entity = $collection->findOne($id);
+
 		$from = new Zend_Date($data['from'], null, 'he-IL');
 		$to = new Zend_Date($data['to'], null, 'he-IL');
+
+		// close the old line
+		$currentTime = new MongoDate();
+		$entity->set('to', $currentTime);
+
+		// open new line
+		$currentTime->sec += 1;
+		$newEntity = new Mongodloid_Entity($data);
+		//convert dates into mongodate
+		$newEntity->set('from', $currentTime);
+		$newEntity->set('to', new MongoDate($to->getTimestamp()));
+		$saveStatus = $newEntity->save($collection);
+
+		$ret = array(
+			'status' => $saveStatus,
+			'closeLine' => $entity,
+			'newLine' => $newEntity,
+		);
+		// @TODO: need to load ajax view
+		// for now just die with json
+		die(json_encode($ret));
 	}
 
-
 	/**
+	 * method to convert plans ref into their name
+	 * triggered before present the rate entity for edit
 	 * 
-	 * @param type $collection
-	 * @param type $entity
+	 * @param Mongodloid collection $collection
+	 * @param array $entity
+	 * 
 	 * @return type
+	 * @todo move to model
 	 */
 	protected function ratesDataLoad($collection, &$entity) {
 		if (!isset($entity['rates'])) {
 			return;
 		}
-		
-		foreach ($entity['rates'] as $key => &$rate) {
+
+		foreach ($entity['rates'] as &$rate) {
 			if (isset($rate['plans'])) {
 				foreach ($rate['plans'] as &$plan) {
 					$data = $collection->getRef($plan);
 					$plan = $data->get('name');
 				}
+			}
+		}
+	}
+
+	/**
+	 * method to convert plans ref into their name
+	 * triggered before present the rate entity for edit
+	 * 
+	 * @param Mongodloid collection $collection
+	 * @param array $entity
+	 * 
+	 * @return void
+	 * @todo move to model
+	 */
+	protected function ratesDataSave($collection, &$entity) {
+		if (!isset($entity['rates'])) {
+			return;
+		}
+
+		$plansColl = Billrun_Factory::db()->plansCollection();
+		$currentDate = new MongoDate();
+		//convert plans
+		foreach ($entity['rates'] as &$rate) {
+			if (isset($rate['plans'])) {
+				$plans = array();
+				foreach ($rate['plans'] as &$plan) {
+					$planEntity = $plansColl->query('name', $plan)
+							->lessEq('from', $currentDate)
+							->greaterEq('to', $currentDate)
+							->cursor()->current();
+					$plans[] = $collection->createRef($planEntity);
+				}
+				$rate['plans'] = $plans;
 			}
 		}
 	}

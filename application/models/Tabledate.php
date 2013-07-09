@@ -40,7 +40,8 @@ class TabledateModel extends TableModel {
 	 * @return Mongo Cursor
 	 */
 	public function getData() {
-		$dateInput = new MongoDate($this->date->getTimestamp());;
+		$dateInput = new MongoDate($this->date->getTimestamp());
+
 		$resource = $this->collection->query()
 			->lessEq('from', $dateInput)
 			->greaterEq('to', $dateInput)
