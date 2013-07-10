@@ -14,7 +14,10 @@
  */
 class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 
+	protected $server_id = 1;
+	protected $server_count = 1;
 	protected $pricingField = 'price_customer';
+
 	/**
 	 *
 	 * @var boolean is customer price vatable by default
@@ -53,34 +56,36 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				->in('type', array('ggsn', 'smpp', 'smsc', 'nsn', 'tap3'))
 				->exists('customer_rate')
 				->notEq('customer_rate', FALSE)
+				->exists('account_id')
 				->exists('subscriber_id')
 				->notExists('price_customer')
-				->notExists('billrun')
 				->greaterEq('unified_record_time', $billrun_lower_bound_date) // move this check to rate calculation stage?
-				->cursor()->limit($this->limit);
+				->mod('account_id', $this->server_count, $this->server_id - 1)
+				->cursor()->sort(array('unified_record_time' => 1))
+				->limit($this->limit);
 	}
 
-	public function loadOpenBillrun($billrun, $account_id, $billrun_key) {
-		$billrun->load($account_id, $billrun_key);
+	public function loadOpenBillrun($billrun) {
+		$account_id = $billrun->getAccountId();
+		$billrun_key = $billrun->getBillrunKey();
 		if ($billrun->isValid()) {
 			if ($billrun->isOpen()) { // found billing is open
-				return $this;
+				return $billrun;
 			} else {
-				return $this->loadOpenBillrun($billrun, $account_id, Billrun_Util::getFollowingBillrunKey($billrun_key));
+				return $this->loadOpenBillrun($billrun->load($account_id, Billrun_Util::getFollowingBillrunKey($billrun_key)));
 			}
 		} else if ($billrun_key >= $this->runtime_billrun_key) {
 			return $billrun->create($account_id, $billrun_key);
 		} else { // billrun key is old
-			return $this->loadOpenBillrun($billrun, $account_id, Billrun_Util::getFollowingBillrunKey($billrun_key));
+			return $this->loadOpenBillrun($billrun->load($account_id, Billrun_Util::getFollowingBillrunKey($billrun_key)));
 		}
-		return $billrun;
 	}
 
 	protected function updateRow($row) {
 //		$rate = Billrun_Factory::db()->ratesCollection()->findOne(new Mongodloid_Id($row['customer_rate']));
 		$rate = $row->get('customer_rate');
 		$billrun_key = Billrun_Util::getBillrunKey($row['unified_record_time']->sec);
-		$subscriber_balance = Billrun_Factory::balance(array( 'subscriber_id' =>  $row['subscriber_id'],'billrun_key' => $billrun_key));
+		$subscriber_balance = Billrun_Factory::balance(array('subscriber_id' => $row['subscriber_id'], 'billrun_key' => $billrun_key));
 		if (!$subscriber_balance->isValid()) {
 			Billrun_Factory::log()->log("couldn't get balance for : " . print_r(array(
 					'subscriber_id' => $row['subscriber_id'],
@@ -93,8 +98,6 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			'account_id' => $subscriber_balance['account_id'],
 			'billrun_key' => $billrun_key,
 		);
-		$billrun = Billrun_Factory::billrun($billrun_params);
-		$this->loadOpenBillrun($billrun, $subscriber_balance['account_id'], $billrun_key);
 
 		//@TODO  change this to be configurable.
 		$pricingData = array();
@@ -109,8 +112,10 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 
 		if (isset($volume)) {
 			$pricingData = $this->getLinePricingData($volume, $usage_type, $rate, $subscriber_balance);
-			$this->updateSubscriberBalance($subscriber_balance, array($usage_class_prefix . $usage_type => $volume), $pricingData['price_customer']);
+			$this->updateSubscriberBalance($subscriber_balance, array($usage_class_prefix . $usage_type => $volume), $pricingData, $row);
 			$vatable = (!(isset($rate['vatable']) && !$rate['vatable']) || (!isset($rate['vatable']) && !$this->vatable));
+			$billrun = Billrun_Factory::billrun($billrun_params);
+			$this->loadOpenBillrun($billrun);
 			$billrun->update($subscriber_balance['subscriber_id'], array($usage_type => $volume), $pricingData, $row, $vatable);
 		} else {
 			//@TODO error?
@@ -131,6 +136,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			$item->collection($lines_coll);
 			$this->updateRow($item);
 			$this->writeLine($item);
+			$this->removeBalanceTx($item);
 			$this->data[] = $item;
 			//$this->updateLinePrice($item); //@TODO  this here to prevent divergance  between the priced lines and the subscriber's balance/billrun if the process fails in the middle.
 			Billrun_Factory::dispatcher()->trigger('afterPricingDataRow', array('data' => &$item));
@@ -141,23 +147,23 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	/**
 	 * execute write the calculation output into DB
 	 *
-	public function write() {
-		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteData', array('data' => $this->data));
-		$lines = Billrun_Factory::db()->linesCollection();
-		foreach ($this->data as $item) {
-			$item->save($lines);
-		}
-		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteData', array('data' => $this->data));
-	}
+	  public function write() {
+	  Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteData', array('data' => $this->data));
+	  $lines = Billrun_Factory::db()->linesCollection();
+	  foreach ($this->data as $item) {
+	  $item->save($lines);
+	  }
+	  Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteData', array('data' => $this->data));
+	  }
 
-	/**
+	  /**
 	 * execute write the calculation output into DB
 	 *
-	protected function updateLinePrice($line) {
-		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteLineData', array('data' => $this->data));
-		$line->save();
-		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteLineData', array('data' => $this->data));
-	}*/
+	  protected function updateLinePrice($line) {
+	  Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteLineData', array('data' => $this->data));
+	  $line->save();
+	  Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteLineData', array('data' => $this->data));
+	  } */
 
 	/**
 	 * Get pricing data for a given rate / subcriber.
@@ -169,7 +175,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 */
 	protected function getLinePricingData($volumeToPrice, $usageType, $rate, $subr) {
 		$typedRates = $rate['rates'][$usageType];
-		$accessPrice = isset($typedRates['access']) ? $typedRates['access'] : 0;	
+		$accessPrice = isset($typedRates['access']) ? $typedRates['access'] : 0;
 		$plan = Billrun_Factory::plan(array('data' => $subr['current_plan']));
 
 		if ($plan->isRateInSubPlan($rate, $subr, $usageType)) {
@@ -188,14 +194,16 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 
 		$price = $accessPrice;
 		//Billrun_Factory::log()->log("Rate : ".print_r($typedRates,1),  Zend_Log::DEBUG);
-		foreach( $typedRates['rate'] as $key => $currRate ) {
-			if(0 >= $volumeToPrice) { break; }//break if no volume left to price.
-			$volumeToPriceCurrentRating =  ($volumeToPrice - $currRate['to'] < 0) ? $volumeToPrice : $currRate['to']; // get the volume that needed to be priced for the current rating
-			$price += floatval((ceil( $volumeToPriceCurrentRating / $currRate['interval'] ) * $currRate['price']) ); // actually price the usage volume by the current 
+		foreach ($typedRates['rate'] as $key => $currRate) {
+			if (0 >= $volumeToPrice) {
+				break;
+			}//break if no volume left to price.
+			$volumeToPriceCurrentRating = ($volumeToPrice - $currRate['to'] < 0) ? $volumeToPrice : $currRate['to']; // get the volume that needed to be priced for the current rating
+			$price += floatval((ceil($volumeToPriceCurrentRating / $currRate['interval']) * $currRate['price'])); // actually price the usage volume by the current 
 			$volumeToPrice = $volumeToPrice - $volumeToPriceCurrentRating; //decressed the volume that was priced
 		}
 		$ret[$this->pricingField] = $price;
-		
+
 
 		return $ret;
 	}
@@ -206,15 +214,41 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @param type $counters the  counters to update
 	 * @param type $charge the changre to add of  the usage.
 	 */
-	protected function updateSubscriberBalance($sub, $counters, $charge) {
+	protected function updateSubscriberBalance($sub, $counters, &$pricingData, $row) {
 		$subRaw = $sub->getRawData();
-		//Billrun_Factory::log()->log("Raw Subscriber : ".print_r($subRaw,1),  Zend_Log::DEBUG);
+		$row_id = strval($row['_id']);
+		if (array_key_exists($row_id, $subRaw['tx'])) { // we're after a crash
+			$pricingData = $subRaw['tx'][$row_id]; // restore the pricingData from before the crash
+			return;
+		}
+		$subRaw['tx'][$row_id] = $pricingData;
 		foreach ($counters as $key => $value) {
 			$subRaw['balance']['totals'][$key]['usagev'] += $value;
 		}
-		$subRaw['balance']['cost'] += $charge;
+		$subRaw['balance']['cost'] += $pricingData[$this->pricingField];
 		$sub->setRawData($subRaw);
 		$sub->save(Billrun_Factory::db()->balancesCollection());
+	}
+
+	/**
+	 * removes the tx's from the subscriber's balance to save space.
+	 * @param type $row
+	 */
+	protected function removeBalanceTx($row) {
+		$balances_coll = Billrun_Factory::db()->balancesCollection();
+		$subscriber_id = $row['subscriber_id'];
+		$billrun_key = Billrun_Util::getBillrunKey($row['unified_record_time']->sec);
+		$query = array(
+			'billrun_month' => $billrun_key,
+			'subscriber_id' => $subscriber_id,
+		);
+		$values = array(
+			'$set' => array(
+				'tx' => array(
+				)
+			)
+		);
+		$balances_coll->update($query, $values);
 	}
 
 }
