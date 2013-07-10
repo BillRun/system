@@ -122,7 +122,7 @@ class Processor_Mergezonepackage extends Billrun_Processor_Base_Separator {
 							}
 						}
 						if ($row['zoneGroupEltId_zoneGroupId_zoneGroupClassName'] == 'ZGC_NATIONAL') {
-							$category = 'flat';
+							$category = 'base';
 						} else if ($row['zoneGroupEltId_zoneGroupId_zoneGroupClassName'] == 'ZGC_SPECIAL_SERVICES') {
 							$category = 'special';
 						}

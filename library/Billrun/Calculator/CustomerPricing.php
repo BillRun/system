@@ -111,7 +111,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			$pricingData = $this->getLinePricingData($volume, $usage_type, $rate, $subscriber_balance);
 			$this->updateSubscriberBalance($subscriber_balance, array($usage_class_prefix . $usage_type => $volume), $pricingData['price_customer']);
 			$vatable = (!(isset($rate['vatable']) && !$rate['vatable']) || (!isset($rate['vatable']) && !$this->vatable));
-			$billrun->update($subscriber_balance['subscriber_id'], array($usage_class_prefix . $usage_type => $volume), $pricingData, $row, $vatable);
+			$billrun->update($subscriber_balance['subscriber_id'], array($usage_type => $volume), $pricingData, $row, $vatable);
 		} else {
 			//@TODO error?
 		}

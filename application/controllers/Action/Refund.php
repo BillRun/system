@@ -36,7 +36,7 @@ class RefundAction extends Action_Base {
 		if (!empty($missing_fields)) {
 			$this->getController()->setOutput(array(
 				'status' => 0,
-				'error' => 'required field(s) missing: ' . implode(', ', $missing_fields),
+				'desc' => 'required field(s) missing: ' . implode(', ', $missing_fields),
 			));
 			return;
 		}
@@ -61,7 +61,7 @@ class RefundAction extends Action_Base {
 		if ($linesCollection->query('stamp', $post['stamp'])->count() > 0) {
 			$this->getController()->setOutput(array(
 				'status' => 0,
-				'error' => 'Transcation already exists in the DB',
+				'desc' => 'Transcation already exists in the DB',
 				'input' => $post,
 			));
 			return;
@@ -71,15 +71,16 @@ class RefundAction extends Action_Base {
 		if ($entity->save($linesCollection) === false) {
 			$this->getController()->setOutput(array(
 				'status' => 0,
-				'error' => 'failed to store into DB',
+				'desc' => 'failed to store into DB',
+				'input' => $post,
+			));
+		} else {
+			$this->getController()->setOutput(array(
+				'status' => 1,
+				'desc' => 'success',
 				'input' => $post,
 			));
 		}
-		$this->getController()->setOutput(array(
-			'status' => 1,
-			'desc' => 'success',
-			'input' => $post,
-		));
 	}
 
 }
