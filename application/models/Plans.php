@@ -1,0 +1,26 @@
+<?php
+
+/**
+ * @package         Billing
+ * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
+ * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ */
+
+/**
+ * Plans model class to pull data from database for plan collection
+ *
+ * @package  Models
+ * @subpackage Table
+ * @since    0.5
+ */
+class PlansModel extends TabledateModel {
+
+	public function __construct(array $params = array()) {
+		$params['collection'] = Billrun_Factory::db()->plans;
+		parent::__construct($params);
+	}
+	
+	public function save($id, $data) {
+		
+	}
+}

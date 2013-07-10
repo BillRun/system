@@ -116,6 +116,11 @@ class AdminController extends Yaf_Controller_Abstract {
 		$newEntity->set('from', $mongoCloseTime);
 		$newEntity->set('to', new MongoDate($to->add(125, Zend_Date::YEAR)->getTimestamp()));
 		$saveStatus = $newEntity->save($collection);
+		
+		if (method_exists($this, $coll . 'AfterDataSave')) {
+			call_user_func_array(array($this, $coll . 'AfterDataSave'), array($collection, &$newEntity));
+		}
+
 
 		$ret = array(
 			'status' => $saveStatus,
@@ -191,6 +196,21 @@ class AdminController extends Yaf_Controller_Abstract {
 		}
 		$entity['rates'] = $rates;
 
+	}
+
+	/**
+	 * method to save all related rates after save
+	 * 
+	 * @param Mongodloid_Collection $collection The collection to save to
+	 * @param Mongodolid_Entity $entity The entity to save
+	 * 
+	 * @return void
+	 * @todo move to model
+	 */
+	protected function plansAfterDataSave($collection, &$entity) {
+		$ratesColl = Billrun_Factory::db()->ratesCollection();
+		$planName = $entity->get('name');
+		$ratesColl->query('rates.call.plans', $entity->get('name'))
 	}
 
 	/**
