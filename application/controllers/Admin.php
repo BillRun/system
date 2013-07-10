@@ -94,7 +94,7 @@ class AdminController extends Yaf_Controller_Abstract {
 
 		$entity = $collection->findOne($id);
 
-		$from = new Zend_Date($data['from'], null, 'he-IL');
+//		$from = new Zend_Date($data['from'], null, 'he-IL');
 		$to = new Zend_Date($data['to'], null, 'he-IL');
 
 		// close the old line
@@ -102,8 +102,13 @@ class AdminController extends Yaf_Controller_Abstract {
 		$entity->set('to', $currentTime);
 
 		// open new line
-		$currentTime->sec += 1;
+		$currentTime->sec += 1; // todo make it more precise
 		$newEntity = new Mongodloid_Entity($data);
+		
+		if (method_exists($this, $coll . 'DataBeforeSave')) {
+			call_user_func_array(array($this, $coll . 'DataBeforeSave'), array($collection, &$newEntity));
+		}
+
 		//convert dates into mongodate
 		$newEntity->set('from', $currentTime);
 		$newEntity->set('to', new MongoDate($to->getTimestamp()));
@@ -111,9 +116,10 @@ class AdminController extends Yaf_Controller_Abstract {
 
 		$ret = array(
 			'status' => $saveStatus,
-			'closeLine' => $entity,
-			'newLine' => $newEntity,
+			'closeLine' => $entity->getRawData(),
+			'newLine' => $newEntity->getRawData(),
 		);
+		
 		// @TODO: need to load ajax view
 		// for now just die with json
 		die(json_encode($ret));
@@ -138,7 +144,9 @@ class AdminController extends Yaf_Controller_Abstract {
 			if (isset($rate['plans'])) {
 				foreach ($rate['plans'] as &$plan) {
 					$data = $collection->getRef($plan);
-					$plan = $data->get('name');
+					if ($data instanceof Mongodloid_Entity) {
+						$plan = $data->get('name');
+					}
 				}
 			}
 		}
@@ -146,7 +154,7 @@ class AdminController extends Yaf_Controller_Abstract {
 
 	/**
 	 * method to convert plans ref into their name
-	 * triggered before present the rate entity for edit
+	 * triggered before save the rate entity for edit
 	 * 
 	 * @param Mongodloid collection $collection
 	 * @param array $entity
@@ -154,27 +162,32 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * @return void
 	 * @todo move to model
 	 */
-	protected function ratesDataSave($collection, &$entity) {
+	protected function ratesDataBeforeSave($collection, &$entity) {
 		if (!isset($entity['rates'])) {
 			return;
 		}
 
 		$plansColl = Billrun_Factory::db()->plansCollection();
 		$currentDate = new MongoDate();
+		$rates = $entity->get('rates');
 		//convert plans
-		foreach ($entity['rates'] as &$rate) {
+		foreach ($rates as &$rate) {
 			if (isset($rate['plans'])) {
-				$plans = array();
-				foreach ($rate['plans'] as &$plan) {
+				$sourcePlans = (array) $rate['plans']; // this is array of strings (retreive from client)
+				$newRefPlans = array(); // this will be the new array of DBRefs
+				unset($rate['plans']);
+				foreach ($sourcePlans as &$plan) {
 					$planEntity = $plansColl->query('name', $plan)
 							->lessEq('from', $currentDate)
 							->greaterEq('to', $currentDate)
 							->cursor()->current();
-					$plans[] = $collection->createRef($planEntity);
+					$newRefPlans[] = $planEntity->createRef($plansColl);
 				}
-				$rate['plans'] = $plans;
+				$rate['plans'] = $newRefPlans;
 			}
 		}
+		$entity['rates'] = $rates;
+
 	}
 
 	/**
@@ -282,7 +295,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		if ($size) {
 			$session->$table->size = $size;
 		} else if (!isset($session->$table->size)) {
-			$session->$table->size = 100;
+			$session->$table->size = 1000;
 		}
 
 		// use for model
