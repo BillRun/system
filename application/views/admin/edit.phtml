@@ -40,6 +40,7 @@ print '</div>';
 	$('#save').click(function saveClick() {
 		$(this).attr('disabled', 'disabled');
 		$(this).unbind("click", saveClick);
+		console.log(_jsonData);
 		var _ajaxOpts = {
 			async:true,
 			cache:false,
@@ -48,7 +49,7 @@ print '</div>';
 			data: {
 				id: $('#form_id').html(),
 				coll: $('#form_coll').html(),
-				data: _jsonData
+				data: JSON.stringify(_jsonData)
 			},
 			success:function(data, textStatus, jqXHR) {
 				window.location.reload();

@@ -78,17 +78,21 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * save controller
 	 * @return boolean
 	 * @todo move to model
+	 * @todo protect the from and to to be continuely
 	 */
 	public function saveAction() {
-		$data = (array) $this->getRequest()->get('data');
+		$flatData = $this->getRequest()->get('data');
 		$id = Billrun_Util::filter_var($this->getRequest()->get('id'), FILTER_SANITIZE_STRING);
 		$coll = Billrun_Util::filter_var($this->getRequest()->get('coll'), FILTER_SANITIZE_STRING);
-		if (method_exists($this, $coll . 'BeforeDataSave')) {
-			call_user_func_array(array($this, $coll . 'BeforeDataSave'), array(&$data));
-		}
 
 		$collection = Billrun_Factory::db()->getCollection($coll);
 		if (!($collection instanceof Mongodloid_Collection)) {
+			return false;
+		}
+		
+		$data = @json_decode($flatData, true);
+		
+		if (empty($data) || empty($id) || empty($coll)) {
 			return false;
 		}
 
@@ -98,20 +102,19 @@ class AdminController extends Yaf_Controller_Abstract {
 		$to = new Zend_Date($data['to'], null, 'he-IL');
 
 		// close the old line
-		$currentTime = new MongoDate();
-		$entity->set('to', $currentTime);
+		$mongoCloseTime = new MongoDate($to->getTimestamp());
+		$entity->set('to', $mongoCloseTime);
 
 		// open new line
-		$currentTime->sec += 1; // todo make it more precise
 		$newEntity = new Mongodloid_Entity($data);
 		
-		if (method_exists($this, $coll . 'DataBeforeSave')) {
-			call_user_func_array(array($this, $coll . 'DataBeforeSave'), array($collection, &$newEntity));
+		if (method_exists($this, $coll . 'BeforeDataSave')) {
+			call_user_func_array(array($this, $coll . 'BeforeDataSave'), array($collection, &$newEntity));
 		}
 
-		//convert dates into mongodate
-		$newEntity->set('from', $currentTime);
-		$newEntity->set('to', new MongoDate($to->getTimestamp()));
+		// make the old close date the from date of the new record
+		$newEntity->set('from', $mongoCloseTime);
+		$newEntity->set('to', new MongoDate($to->add(125, Zend_Date::YEAR)->getTimestamp()));
 		$saveStatus = $newEntity->save($collection);
 
 		$ret = array(
@@ -162,7 +165,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * @return void
 	 * @todo move to model
 	 */
-	protected function ratesDataBeforeSave($collection, &$entity) {
+	protected function ratesBeforeDataSave($collection, &$entity) {
 		if (!isset($entity['rates'])) {
 			return;
 		}
