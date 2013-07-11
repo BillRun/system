@@ -44,7 +44,7 @@ use Billrun_Traits_FileSequenceChecking;
 
 		foreach ($data['data'] as $key => $row) {
 			if (preg_match('/^(?=62\.90\.|37\.26\.)/', $row['sgsn_address']) == 1) { // what is under IL IP's gateway - remove it from fraud
-				Billrun_Factory::log()->log('GGSN plugin skip the line ' . $row['stamp'] . 'have the IP ' . $row['sgsn_address'], Zend_Log::NOTICE);
+				Billrun_Factory::log()->log('GGSN plugin skip the line ' . $row['stamp'] . 'have the IP ' . $row['sgsn_address'], Zend_Log::INFO);
 				unset($data['data'][$key]);
 			}
 		}
