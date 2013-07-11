@@ -48,8 +48,10 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 
 		return $lines->query()
 				->in('type', array('nsn', 'ggsn', 'smsc', 'mmsc', 'smpp', 'tap3'))
-				->exists('customer_rate')->notEq('customer_rate', FALSE)
-				->notExists('subscriber_id')->cursor()->limit($this->limit);
+				->exists('customer_rate')
+				->notEq('customer_rate', FALSE)
+				->notExists('subscriber_id')
+				->cursor()->limit($this->limit);
 	}
 
 	/**
@@ -61,6 +63,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		$subscriber = $this->loadSubscriberForLine($row);
 
 		if (!$subscriber || !$subscriber->isValid()) {
+			
 			Billrun_Factory::log('Missing subscriber info for line with stamp : ' . $row->get('stamp'), Zend_Log::ALERT);
 			return;
 		}
@@ -117,8 +120,8 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	 * @param type $subscriber
 	 */
 	protected function createBalanceIfMissing($subscriber, $billrun_key, $plan_ref) {
-		$balance = Billrun_Factory::balance( array('subscriber_id' => $subscriber->subscriber_id, 'billrun_key' =>  $billrun_key) );
-		if (!$balance->isValid() ) {
+		$balance = Billrun_Factory::balance(array('subscriber_id' => $subscriber->subscriber_id, 'billrun_key' => $billrun_key));
+		if (!$balance->isValid()) {
 			$balance->create($billrun_key, $subscriber, $plan_ref);
 		}
 	}
@@ -130,9 +133,9 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	 */
 	protected function addPlanRef($row, $plan) {
 		$planObj = Billrun_Factory::plan(array('name' => $plan, 'time' => $row['unified_record_time']->sec));
-		if(!$planObj->get('_id')) {
-				Billrun_Factory::log("Couldn't get plan for CDR line : {$row['stamp']} with plan $plan", Zend_Log::ALERT);
-				return;
+		if (!$planObj->get('_id')) {
+			Billrun_Factory::log("Couldn't get plan for CDR line : {$row['stamp']} with plan $plan", Zend_Log::ALERT);
+			return;
 		}
 		$row['plan_ref'] = $planObj->createRef();
 		return $row->get('plan_ref', true);
