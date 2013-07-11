@@ -58,6 +58,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				->notEq('customer_rate', FALSE)
 				->exists('account_id')
 				->exists('subscriber_id')
+				->notEq('subscriber_id', FALSE)
 				->notExists('price_customer')
 				->greaterEq('unified_record_time', $billrun_lower_bound_date) // move this check to rate calculation stage?
 				->mod('account_id', $this->server_count, $this->server_id - 1)
