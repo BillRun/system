@@ -412,18 +412,20 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 	 * @return the updated log  trailer entry. 
 	 */
 	protected function updateBlockData($trailer,$header,$logTrailer) {
-		if(!isset($logTrailer['block_data'])) {
-			$logTrailer['block_data'] = array();
+		if(Billrun_Factory::config()->getConfigValue('nsn.processor.save_block_header',false)) {
+			if(!isset($logTrailer['block_data'])) {
+				$logTrailer['block_data'] = array();
+			}
+			if(!isset($logTrailer['batch'])) {
+				$logTrailer['batch'] = array();
+			}
+			if(!in_array($header['batch_seq_number'], $logTrailer['batch'])) {
+				$logTrailer['batch'][] = $header['batch_seq_number'];
+			}
+			$logTrailer['block_data'][] = array( 'last_record_number' => $trailer['last_record_number'],
+																'first_record_number' => $header['first_record_number'],
+																'seq_no' =>  $header['block_seq_number']); 
 		}
-		if(!isset($logTrailer['batch'])) {
-			$logTrailer['batch'] = array();
-		}
-		if(!in_array($header['batch_seq_number'], $logTrailer['batch'])) {
-			$logTrailer['batch'][] = $header['batch_seq_number'];
-		}
-		$logTrailer['block_data'][] = array( 'last_record_number' => $trailer['last_record_number'],
-															'first_record_number' => $header['first_record_number'],
-															'seq_no' =>  $header['block_seq_number']); 
 		return $logTrailer;
 	}
 }
