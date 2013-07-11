@@ -33,6 +33,20 @@ use Billrun_Traits_FileSequenceChecking;
 		$this->initParsing();
 		$this->addParsingMethods();
 	}
+	
+	public function beforeProcessorStore(Billrun_Processor $processor) {
+		// we will remove ggsn lines only on fraudserver 
+		if (Billrun_Factory::config()->getConfigValue('fraudAlerts.host', '') != gethostname()) {
+			return true;
+		}
+		$data = $processor->getData();
+
+		if (preg_match('/^(?=62\.90\.|37\.26\.)/', $data['sgsn_address']) == 1) { // what is under IL IP's gateway - remove it from fraud
+			Billrun_Factory::log()->log('GGSN plugin skip the line ' . $data['stamp'] . 'have the IP ' . $data['sgsn_address'], Zend_Log::NOTICE);
+			return false;
+		}
+		return true;
+	}
 
 	/**
 	 * back up retrived files that were processed to a third patry path.

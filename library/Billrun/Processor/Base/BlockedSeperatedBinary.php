@@ -34,9 +34,13 @@ abstract  class Billrun_Processor_Base_BlockedSeperatedBinary extends Billrun_Pr
 		
 		$this->data['trailer'] = $this->buildTrailer($this->data['trailer']);
 
-		Billrun_Factory::dispatcher()->trigger('afterProcessorParsing', array($this));
+		Billrun_Factory::dispatcher()->trigger('afterProcessorParsing', array(&$this));
 
-		Billrun_Factory::dispatcher()->trigger('beforeProcessorStore', array($this));
+		$ret = Billrun_Factory::dispatcher()->trigger('beforeProcessorStore', array($this));
+		if ($ret === false || in_array(false, $ret)) {
+			Billrun_Factory::log()->log("Billrun_Processor: before processing store return to skip this line " . $this->filePath, Zend_Log::ERR);
+			return TRUE;
+		}
 
 		if ($this->store() === FALSE) {
 			Billrun_Factory::log()->log("Billrun_Processor: cannot store the parser lines", Zend_Log::ERR);
