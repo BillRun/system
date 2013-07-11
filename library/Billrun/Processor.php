@@ -208,7 +208,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 		Billrun_Factory::dispatcher()->trigger('afterProcessorParsing', array(&$this));
 		$ret = Billrun_Factory::dispatcher()->trigger('beforeProcessorStore', array($this));
 		
-		if ($ret === false || in_array(false, $ret)) {
+		if ($ret === false || in_array(false, $ret, true)) {
 			Billrun_Factory::log()->log("Billrun_Processor: before processing store return to skip this line " . $this->filePath, Zend_Log::ERR);
 			return TRUE;
 		}
