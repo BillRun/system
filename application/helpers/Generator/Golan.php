@@ -61,20 +61,22 @@ class Generator_Golan extends Billrun_Generator {
 				$subscriber_lines_refs = $this->get_subscriber_lines_refs($subscriber);
 				foreach ($subscriber_lines_refs as $ref) {
 					$line = $lines_coll->getRef($ref);
-					$billing_record = $billing_records->addChild('BILLING_RECORD');
-					$billing_record->TIMEOFBILLING = $this->getGolanDate($line['unified_record_time']->sec);
-					$billing_record->TARIFFITEM = $this->getTariffItem($line);
-					$billing_record->CTXT_CALL_OUT_DESTINATIONPNB = $this->getCalledNo($line); //@todo maybe save dest_no in all processors and use it here
-					$billing_record->CTXT_CALL_IN_CLI = $this->getCallerNo($line); //@todo maybe save it in all processors and use it here
-					$billing_record->CHARGEDURATIONINSEC = $this->getUsageVolume($line);
-					$billing_record->CHARGE = $this->getCharge($line);
-					$billing_record->CREDIT = $this->getCredit($line);
-					$billing_record->TARIFFKIND = $this->getTariffKind($line);
-					$billing_record->TTAR_ACCESSPRICE1 = $this->getAccessPrice($line);
-					$billing_record->TTAR_SAMPLEDELAYINSEC1 = $this->getInterval($line);
-					$billing_record->TTAR_SAMPPRICE1 = $this->getRate($line);
-					$billing_record->INTERNATIONAL = $this->getIntlFlag($line);
-					$billing_record->DISCOUNT_USAGE = $this->getDiscountUsage($line);
+					if (!$line->isEmpty()) {
+						$billing_record = $billing_records->addChild('BILLING_RECORD');
+						$billing_record->TIMEOFBILLING = $this->getGolanDate($line['unified_record_time']->sec);
+						$billing_record->TARIFFITEM = $this->getTariffItem($line);
+						$billing_record->CTXT_CALL_OUT_DESTINATIONPNB = $this->getCalledNo($line); //@todo maybe save dest_no in all processors and use it here
+						$billing_record->CTXT_CALL_IN_CLI = $this->getCallerNo($line); //@todo maybe save it in all processors and use it here
+						$billing_record->CHARGEDURATIONINSEC = $this->getUsageVolume($line);
+						$billing_record->CHARGE = $this->getCharge($line);
+						$billing_record->CREDIT = $this->getCredit($line);
+						$billing_record->TARIFFKIND = $this->getTariffKind($line);
+						$billing_record->TTAR_ACCESSPRICE1 = $this->getAccessPrice($line);
+						$billing_record->TTAR_SAMPLEDELAYINSEC1 = $this->getInterval($line);
+						$billing_record->TTAR_SAMPPRICE1 = $this->getRate($line);
+						$billing_record->INTERNATIONAL = $this->getIntlFlag($line);
+						$billing_record->DISCOUNT_USAGE = $this->getDiscountUsage($line);
+					}
 				}
 
 				$subscriber_gift_usage = $subscriber_inf->addChild('SUBSCRIBER_GIFT_USAGE');
@@ -302,7 +304,7 @@ class Generator_Golan extends Billrun_Generator {
 						$roaming_entry->addChild('UNITS', $usage_totals['usagev']);
 						$roaming_entry->addChild('COST_WITHOUTVAT', $usage_totals['cost']);
 						$roaming_entry->addChild('VAT', $this->displayVAT($zone['vat']));
-						$roaming_entry->addChild('VAT_COST',  floatval($roaming_entry->COST_WITHOUTVAT) * floatval($roaming_entry->VAT) / 100);
+						$roaming_entry->addChild('VAT_COST', floatval($roaming_entry->COST_WITHOUTVAT) * floatval($roaming_entry->VAT) / 100);
 						$roaming_entry->addChild('TOTAL_COST', floatval($roaming_entry->COST_WITHOUTVAT) + floatval($roaming_entry->VAT_COST));
 						$roaming_entry->addChild('TYPE_OF_BILLING', strtoupper($usage_type));
 //						$roaming_entry->addChild('TYPE_OF_BILLING_CHAR', ?);
@@ -369,6 +371,13 @@ class Generator_Golan extends Billrun_Generator {
 		}
 	}
 
+	/**
+	 * 
+	 * @param type $fileName
+	 * @param type $xmlContent
+	 * @return type
+	 * @todo do not override files?
+	 */
 	protected function createXml($fileName, $xmlContent) {
 		$path = $this->export_directory . '/' . $fileName . '.xml';
 		return file_put_contents($path, $xmlContent);
@@ -382,7 +391,9 @@ class Generator_Golan extends Billrun_Generator {
 	protected function get_subscriber_lines_refs($subscriber) {
 		$refs = array();
 		foreach ($subscriber['lines'] as $lines_by_usage_type) {
-			$refs = array_merge($refs, $lines_by_usage_type["refs"]);
+			if (is_array($lines_by_usage_type["refs"])) {
+				$refs = array_merge($refs, $lines_by_usage_type["refs"]);
+			}
 		}
 		return $refs;
 	}
