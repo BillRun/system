@@ -45,33 +45,21 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * @todo move to model
 	 */
 	public function editAction() {
-		$coll = Billrun_Util::filter_var($this->getRequest()->get('type'), FILTER_SANITIZE_STRING);
+		$coll = Billrun_Util::filter_var($this->getRequest()->get('coll'), FILTER_SANITIZE_STRING);
 		$id = Billrun_Util::filter_var($this->getRequest()->get('id'), FILTER_SANITIZE_STRING);
+		$type = Billrun_Util::filter_var($this->getRequest()->get('type'), FILTER_SANITIZE_STRING);
 
-		$collection = Billrun_Factory::db()->getCollection($coll);
-		if (!($collection instanceof Mongodloid_Collection)) {
-			return false;
-		}
-
-		$entity = $collection->findOne($id, true);
-
-		// convert mongo values into javascript values
-		$entity['_id'] = (string) $entity['_id'];
-		$entity['from'] = (new Zend_Date($entity['from']->sec))->toString('YYYY-MM-dd HH:mm:ss');
-		$entity['to'] = (new Zend_Date($entity['to']->sec))->toString('YYYY-MM-dd HH:mm:ss');
-
-		if (method_exists($this, $coll . 'DataLoad')) {
-			call_user_func_array(array($this, $coll . 'DataLoad'), array($collection, &$entity));
+		$model = self::getModel($coll);
+		$entity = $model->getItem($id);
+		if ($type == 'close_and_new' && is_subclass_of($model, "TabledateModel") && !$model->isReplacable($entity)) {
+			die("There's already a newer entity with this key");
 		}
 
 		// passing values into the view
 		$this->getView()->entity = $entity;
 		$this->getView()->collectionName = $coll;
-		$this->getView()->protectedKeys = array(
-			'_id',
-//			'from',
-//			'to',
-		);
+		$this->getView()->type = $type;
+		$this->getView()->protectedKeys = $model->getProtectedKeys($type);
 	}
 
 	/**
@@ -84,118 +72,38 @@ class AdminController extends Yaf_Controller_Abstract {
 		$flatData = $this->getRequest()->get('data');
 		$id = Billrun_Util::filter_var($this->getRequest()->get('id'), FILTER_SANITIZE_STRING);
 		$coll = Billrun_Util::filter_var($this->getRequest()->get('coll'), FILTER_SANITIZE_STRING);
+		$type = Billrun_Util::filter_var($this->getRequest()->get('type'), FILTER_SANITIZE_STRING);
+
+		$model = self::getModel($coll);
 
 		$collection = Billrun_Factory::db()->getCollection($coll);
 		if (!($collection instanceof Mongodloid_Collection)) {
 			return false;
 		}
-		
+
 		$data = @json_decode($flatData, true);
-		
+
 		if (empty($data) || empty($id) || empty($coll)) {
 			return false;
 		}
 
-		$entity = $collection->findOne($id);
+		$params = array_merge($data, array('_id' => new MongoId($id)));
 
-//		$from = new Zend_Date($data['from'], null, 'he-IL');
-		$to = new Zend_Date($data['to'], null, 'he-IL');
-
-		// close the old line
-		$mongoCloseTime = new MongoDate($to->getTimestamp());
-		$entity->set('to', $mongoCloseTime);
-
-		// open new line
-		$newEntity = new Mongodloid_Entity($data);
-		
-		if (method_exists($this, $coll . 'BeforeDataSave')) {
-			call_user_func_array(array($this, $coll . 'BeforeDataSave'), array($collection, &$newEntity));
+		if ($type == 'update') {
+			$saveStatus = $model->save($params);
+		} else if ($type == 'close_and_new') {
+			$saveStatus = $model->closeAndNew($params);
 		}
 
-		// make the old close date the from date of the new record
-		$newEntity->set('from', $mongoCloseTime);
-		$newEntity->set('to', new MongoDate($to->add(125, Zend_Date::YEAR)->getTimestamp()));
-		$saveStatus = $newEntity->save($collection);
-		
-		if (method_exists($this, $coll . 'AfterDataSave')) {
-			call_user_func_array(array($this, $coll . 'AfterDataSave'), array($collection, &$newEntity));
-		}
+//		$ret = array(
+//			'status' => $saveStatus,
+//			'closeLine' => $entity->getRawData(),
+//			'newLine' => $newEntity->getRawData(),
+//		);
 
-
-		$ret = array(
-			'status' => $saveStatus,
-			'closeLine' => $entity->getRawData(),
-			'newLine' => $newEntity->getRawData(),
-		);
-		
 		// @TODO: need to load ajax view
 		// for now just die with json
 		die(json_encode($ret));
-	}
-
-	/**
-	 * method to convert plans ref into their name
-	 * triggered before present the rate entity for edit
-	 * 
-	 * @param Mongodloid collection $collection
-	 * @param array $entity
-	 * 
-	 * @return type
-	 * @todo move to model
-	 */
-	protected function ratesDataLoad($collection, &$entity) {
-		if (!isset($entity['rates'])) {
-			return;
-		}
-
-		foreach ($entity['rates'] as &$rate) {
-			if (isset($rate['plans'])) {
-				foreach ($rate['plans'] as &$plan) {
-					$data = $collection->getRef($plan);
-					if ($data instanceof Mongodloid_Entity) {
-						$plan = $data->get('name');
-					}
-				}
-			}
-		}
-	}
-
-	/**
-	 * method to convert plans ref into their name
-	 * triggered before save the rate entity for edit
-	 * 
-	 * @param Mongodloid collection $collection
-	 * @param array $entity
-	 * 
-	 * @return void
-	 * @todo move to model
-	 */
-	protected function ratesBeforeDataSave($collection, &$entity) {
-		if (!isset($entity['rates'])) {
-			return;
-		}
-
-		$plansColl = Billrun_Factory::db()->plansCollection();
-		$currentDate = new MongoDate();
-		$rates = $entity->get('rates');
-		//convert plans
-		foreach ($rates as &$rate) {
-			if (isset($rate['plans'])) {
-				$sourcePlans = (array) $rate['plans']; // this is array of strings (retreive from client)
-				$newRefPlans = array(); // this will be the new array of DBRefs
-				unset($rate['plans']);
-				foreach ($sourcePlans as &$plan) {
-					$planEntity = $plansColl->query('name', $plan)
-							->lessEq('from', $currentDate)
-							->greaterEq('to', $currentDate)
-							->cursor()->current();
-					$newRefPlans[] = $planEntity->createRef($plansColl);
-				}
-				$rate['plans'] = $newRefPlans;
-			}
-		}
-		$entity['rates'] = $rates;
-
 	}
 
 	/**
@@ -210,7 +118,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	protected function plansAfterDataSave($collection, &$entity) {
 		$ratesColl = Billrun_Factory::db()->ratesCollection();
 		$planName = $entity->get('name');
-		$ratesColl->query('rates.call.plans', $entity->get('name'))
+		$ratesColl->query('rates.call.plans', $entity->get('name'));
 	}
 
 	/**
@@ -223,7 +131,7 @@ class AdminController extends Yaf_Controller_Abstract {
 			'to',
 			'_id',
 		);
-		$this->getView()->component = $this->setTableView('plans', $columns, array('creation_time' => -1), 'name');
+		$this->getView()->component = $this->setTableView('plans', $columns, array('creation_time' => -1));
 	}
 
 	/**
@@ -236,7 +144,7 @@ class AdminController extends Yaf_Controller_Abstract {
 			'to',
 			'_id',
 		);
-		$this->getView()->component = $this->setTableView('rates', $columns, array('creation_time' => -1), 'key');
+		$this->getView()->component = $this->setTableView('rates', $columns, array('creation_time' => -1));
 	}
 
 	/**
@@ -401,6 +309,15 @@ class AdminController extends Yaf_Controller_Abstract {
 		$parameters['active'] = $this->getRequest()->getActionName();
 		$parameters['title'] = $this->title;
 		return $this->getView()->render($tpl . ".phtml", $parameters);
+	}
+
+	public static function getModel($collection_name) {
+		$model_name = ucfirst($collection_name) . "Model";
+		if (class_exists($model_name)) {
+			return new $model_name;
+		} else {
+			die("Error loading model");
+		}
 	}
 
 }

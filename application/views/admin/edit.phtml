@@ -13,6 +13,7 @@ foreach ($protected as $k => $v) {
 	print '<span class="label label-info">' . $k . '</span>'
 		. '<span id="form' . $k . '"class="label label-inverse">' . $v . '</span>';
 }
+print '<span id="form_type" class="hidden">' . $this->type . '</span>';
 print '<span id="form_coll" class="hidden">' . $this->collectionName . '</span>';
 print '</div>';
 ?>
@@ -49,6 +50,7 @@ print '</div>';
 			data: {
 				id: $('#form_id').html(),
 				coll: $('#form_coll').html(),
+				type: $('#form_type').html(),
 				data: JSON.stringify(_jsonData)
 			},
 			success:function(data, textStatus, jqXHR) {

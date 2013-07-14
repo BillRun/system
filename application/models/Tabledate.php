@@ -21,7 +21,8 @@ class TabledateModel extends TableModel {
 	 * @var Zend_Date
 	 */
 	protected $date;
-	
+	protected $search_key;
+
 	/**
 	 * constructor
 	 * 
@@ -33,7 +34,7 @@ class TabledateModel extends TableModel {
 			$this->date = $params['date'];
 		}
 	}
-	
+
 	/**
 	 * Get the data resource
 	 * 
@@ -43,11 +44,65 @@ class TabledateModel extends TableModel {
 		$dateInput = new MongoDate($this->date->getTimestamp());
 
 		$resource = $this->collection->query()
-			->lessEq('from', $dateInput)
-			->greaterEq('to', $dateInput)
-			->cursor()->sort($this->sort)->skip($this->offset())->limit($this->size);
+				->lessEq('from', $dateInput)
+				->greaterEq('to', $dateInput)
+				->cursor()->sort($this->sort)->skip($this->offset())->limit($this->size);
 		return $resource;
 	}
 
+	public function getItem($id) {
+		$entity = parent::getItem($id);
+		$entity['from'] = (new Zend_Date($entity['from']->sec))->toString('YYYY-MM-dd HH:mm:ss');
+		$entity['to'] = (new Zend_Date($entity['to']->sec))->toString('YYYY-MM-dd HH:mm:ss');
+		return $entity;
+	}
+
+	/**
+	 * Check if a new entity could replace it
+	 * @param type $param
+	 */
+	public function isReplacable($entity) {
+		$to_date = new MongoDate(strtotime($entity['to']));
+		if (!$to_date) {
+			die("date error");
+		}
+		$result = $this->collection
+			->query($this->search_key, $entity[$this->search_key])
+			->cursor()
+			->sort(array('to' => -1))
+			->limit(1)
+			->current();
+		return strval($result['_id']) == strval($entity['_id']);
+	}
+
+	public function getProtectedKeys($type) {
+		$parent_protected = parent::getProtectedKeys($type);
+		if ($type == 'update') {
+			return array_merge($parent_protected, array("from", "to"));
+		} else {
+			return $parent_protected;
+		}
+	}
+
+	public function closeAndNew($params) {
+		//			$from = new Zend_Date($data['from'], null, 'he-IL');
+		$new_from = new Zend_Date($params['from'], null, 'he-IL');
+		if ($new_from->getTimestamp() < time()) {
+			$new_from = new Zend_Date(null, null, 'he-IL');
+		}
+
+		// close the old line
+		$mongoCloseTime = new MongoDate($new_from->getTimestamp() - 1);
+		$closed_data = $params;
+		unset($closed_data['from']);
+		$closed_data['to'] = $mongoCloseTime;
+		$this->save($closed_data);
+
+		// open new line
+		unset($params['_id']);
+		$params['from'] = new MongoDate($new_from->getTimestamp());
+		$params['to'] = new MongoDate($new_from->add(125, Zend_Date::YEAR)->getTimestamp());
+		return $this->save($params);
+	}
 
 }

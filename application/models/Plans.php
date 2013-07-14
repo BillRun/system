@@ -18,9 +18,7 @@ class PlansModel extends TabledateModel {
 	public function __construct(array $params = array()) {
 		$params['collection'] = Billrun_Factory::db()->plans;
 		parent::__construct($params);
+		$this->search_key = "name";
 	}
 	
-	public function save($id, $data) {
-		
-	}
 }

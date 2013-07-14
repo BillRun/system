@@ -8,12 +8,17 @@
 					<span class="add-on"><i class="icon-th"></i></span>
 				</div>
 				<span><button type="submit" class="btn">Submit</button></span>
+				<script type="text/javascript">
+					var url_prefix = <?php echo json_encode($this->baseUrl . '/admin/edit?coll=' . strtolower($this->title) . '&id='); ?>;
+				</script>
+				<span><a id='update_current' data-type="update" href="#popupModal" class="btn btn-danger" data-toggle="modal" role="button" data-remote="">Update current</a></span>
+				<span><a id='close_and_new' data-type="close_and_new" href="#popupModal" class="btn btn-primary" data-toggle="modal" role="button" data-remote="">Close & new</a></span>
 			</form>
 		</div>
 		<?php
 	endif;
 	if (isset($this->data) && $this->data instanceof Mongodloid_Cursor) :
-		print '<table class="table table-striped table-bordered">';
+		print '<table id="data_table" class="table table-striped table-bordered">';
 		print '<thead><tr><th>#</th>';
 		foreach ($this->columns as $h) {
 			print '<th>' . $h . '</th>';
@@ -23,13 +28,13 @@
 		$c = $this->offset;
 		foreach ($this->data as $item) {
 			print '<tr>';
-			print '<td><label class="checkbox">#' . ($c + 1) . '&nbsp;<input value="" type="checkbox" id="chk' . $c++ . '"/></label></td>';
+			print '<td><label class="checkbox">#' . ($c + 1) . '&nbsp;<input value="' . $item['_id'] . '" type="checkbox" id="chk' . $c++ . '"/></label></td>';
 			foreach ($this->columns as $h) {
 				$data = $item->get($h);
 				print '<td>';
 				if (isset($edit_key) && $h == $edit_key) {
 					$url = $this->baseUrl . '/admin/edit?type=' . strtolower($this->title) . '&id=' . $item['_id'];
-					print '<a href="#popupModal" data-remote="'. $url .'" role="button" data-toggle="modal">' . $data . '</a>';
+					print '<a href="#popupModal" data-remote="' . $url . '" role="button" data-toggle="modal">' . $data . '</a>';
 				} else if (($h == 'from' || $h == 'to') && $data) {
 					// TODO: move he_IL to config
 					$d = new Zend_Date($data->sec, null, new Zend_Locale('he_IL'));
@@ -57,12 +62,12 @@
 			<h3 id="popupModalLabel"></h3>
 		</div>
 		<div class="modal-body">
-			
+
 		</div>
 		<div class="modal-footer">
 			<button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
 			<button id="save" class="btn btn-primary">Save changes</button>
-			<button id="apply" class="btn btn-danger" data-toggle="dropdown">Update current</button>
+			<!--<button id="apply" class="btn btn-danger" data-toggle="dropdown">Update current</button>-->
 		</div>
     </div>
 </div>

@@ -67,11 +67,10 @@ class TableModel {
 		if (isset($params['size'])) {
 			$this->size = $params['size'];
 		}
-		
+
 		if (isset($params['sort'])) {
 			$this->sort = $params['sort'];
 		}
-
 	}
 
 	/**
@@ -83,7 +82,7 @@ class TableModel {
 		$resource = $this->collection->query()->cursor()->sort($this->sort)->skip($this->offset())->limit($this->size);
 		return $resource;
 	}
-	
+
 	/**
 	 * Get whole data count
 	 * 
@@ -97,14 +96,14 @@ class TableModel {
 		}
 		return $this->_count;
 	}
-	
+
 	public function getPagesCount() {
 		return (int) ceil($this->count() / $this->size);
 	}
-	
+
 	public function offset() {
 		if ($this->page > 0) {
-			$offset = ($this->page-1) * $this->size;
+			$offset = ($this->page - 1) * $this->size;
 			if ($offset > $this->count()) {
 				$offset = 0;
 			}
@@ -113,6 +112,7 @@ class TableModel {
 		}
 		return $offset;
 	}
+
 	/**
 	 * get the pager data
 	 * 
@@ -126,7 +126,7 @@ class TableModel {
 		);
 		return $ret;
 	}
-	
+
 	public function printPager($print = false) {
 
 		if ($this->getPagesCount() > 1) {
@@ -183,14 +183,14 @@ class TableModel {
 			}
 
 			$ret .= '</ul></div>';
-			
+
 			if ($print) {
 				print $ret;
 			}
 			return $ret;
 		}
 	}
-	
+
 	public function printSizeList($print = false) {
 		$ret = '<div id="listSize" class="btn-group">
 				<button class="btn btn-danger dropdown-toggle" data-toggle="dropdown">' . $this->size . ' <span class="caret"></span></button>
@@ -209,16 +209,40 @@ class TableModel {
 		return $ret;
 	}
 
-	public function update($data) {
-		
+	public function getItem($id) {
+		if (!($this->collection instanceof Mongodloid_Collection)) {
+			return false;
+		}
+
+		$entity = $this->collection->findOne($id, true);
+
+		// convert mongo values into javascript values
+		$entity['_id'] = (string) $entity['_id'];
+
+		return $entity;
 	}
 
-	public function insert($data) {
-		
+	public function save($params) {
+//		if (method_exists($this, $coll . 'BeforeDataSave')) {
+//			call_user_func_array(array($this, $coll . 'BeforeDataSave'), array($collection, &$newEntity));
+//		}
+		if (isset($params['_id'])) {
+			$entity = $this->collection->findOne($params['_id']);
+			foreach ($params as $key => $value) {
+				$entity[$key] = $value;
+			}
+		} else {
+			$entity = new Mongodloid_Entity($params);
+		}
+		$entity->save($this->collection);
+//		if (method_exists($this, $coll . 'AfterDataSave')) {
+//			call_user_func_array(array($this, $coll . 'AfterDataSave'), array($collection, &$newEntity));
+//		}
+		return $entity;
 	}
 
-	public function closeUpdate($data) {
-		
+	public function getProtectedKeys($type) {
+		return array("_id");
 	}
 
 }
