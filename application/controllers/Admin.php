@@ -93,6 +93,8 @@ class AdminController extends Yaf_Controller_Abstract {
 			$saveStatus = $model->save($params);
 		} else if ($type == 'close_and_new') {
 			$saveStatus = $model->closeAndNew($params);
+		} else if ($type == 'duplicate') {
+			$saveStatus = $model->duplicate($params);
 		}
 
 //		$ret = array(

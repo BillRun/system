@@ -50,6 +50,12 @@ class TableModel {
 	protected $_count = null;
 
 	/**
+	 *
+	 * @var string the main key field name (e.g. "name" for plans)
+	 */
+	protected $search_key;
+
+	/**
 	 * constructor
 	 * 
 	 * @param array $params of parameters to preset the object

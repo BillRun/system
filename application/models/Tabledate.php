@@ -21,7 +21,6 @@ class TabledateModel extends TableModel {
 	 * @var Zend_Date
 	 */
 	protected $date;
-	protected $search_key;
 
 	/**
 	 * constructor
@@ -78,10 +77,11 @@ class TabledateModel extends TableModel {
 	public function getProtectedKeys($type) {
 		$parent_protected = parent::getProtectedKeys($type);
 		if ($type == 'update') {
-			return array_merge($parent_protected, array("from", "to"));
-		} else {
-			return $parent_protected;
+			return array_merge($parent_protected, array("from", "to", $this->search_key));
+		} else if ($type == 'close_and_new') {
+			return array_merge($parent_protected, array($this->search_key));
 		}
+		return $parent_protected;
 	}
 
 	public function closeAndNew($params) {
@@ -102,6 +102,19 @@ class TabledateModel extends TableModel {
 		unset($params['_id']);
 		$params['from'] = new MongoDate($new_from->getTimestamp());
 		$params['to'] = new MongoDate($new_from->add(125, Zend_Date::YEAR)->getTimestamp());
+		return $this->save($params);
+	}
+
+	public function duplicate($params) {
+		$old_entity = $this->collection->findOne($params['_id']);
+		if ($old_entity[$this->search_key] == $params[$this->search_key]) {
+			die(json_encode("Please choose another key name"));
+		}
+		unset($params['_id']);
+		$from = new Zend_Date($params['from'], null, 'he-IL');
+		$to = new Zend_Date($params['to'], null, 'he-IL');
+		$params['from'] = new MongoDate($from->getTimestamp());
+		$params['to'] = new MongoDate($to->getTimestamp());
 		return $this->save($params);
 	}
 
