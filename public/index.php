@@ -17,6 +17,6 @@ if (!isset($_SERVER['HTTP_USER_AGENT'])) {
 }
 try {
 	$app->bootstrap()->run();
-} catch(Exception $e){
-	Billrun_Factory::log()->log("Crashed When running... exception details are as follow : \n".print_r($e,1), Zend_Log::CRIT);			
+} catch (Exception $e) {
+	Billrun_Factory::log()->log("Crashed When running... exception details are as follow : \n" . print_r($e, 1), Zend_Log::CRIT);
 }
