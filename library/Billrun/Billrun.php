@@ -33,6 +33,8 @@ class Billrun_Billrun {
 	 */
 	public function load($account_id, $billrun_key) {
 		$billrun_coll = Billrun_Factory::db()->billrunCollection();
+		$this->account_id = $account_id;
+		$this->billrun_key = $billrun_key;
 		$this->data = $billrun_coll->query(array(
 					'account_id' => $account_id,
 					'billrun_key' => $billrun_key,
@@ -336,7 +338,7 @@ class Billrun_Billrun {
 					case "intl":
 						$category_key = "intl";
 						break;
-					case "default":
+					default:
 						$category_key = "base";
 						break;
 				}
