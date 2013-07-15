@@ -88,10 +88,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		$billrun_key = Billrun_Util::getBillrunKey($row['unified_record_time']->sec);
 		$subscriber_balance = Billrun_Factory::balance(array('subscriber_id' => $row['subscriber_id'], 'billrun_key' => $billrun_key));
 		if (!$subscriber_balance->isValid()) {
-			Billrun_Factory::log()->log("couldn't get balance for : " . print_r(array(
-					'subscriber_id' => $row['subscriber_id'],
-					'billrun_month' => $billrun_key
-					), 1), Zend_Log::DEBUG);
+			Billrun_Factory::log()->log("couldn't get balance for :	'subscriber_id' => {$row['subscriber_id']},	'billrun_month' => {$billrun_key}", Zend_Log::DEBUG);
 			return;
 		}
 
