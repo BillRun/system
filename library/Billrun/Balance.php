@@ -28,11 +28,10 @@ class Billrun_Balance implements ArrayAccess {
 	 */
 	protected $data = array();
 
-
-	public function __construct( $options = array() ) {
-		if(isset($options['subscriber_id']) && isset($options['billrun_key'])) {
-				$this->load($options['subscriber_id'], $options['billrun_key']);
-		}			
+	public function __construct($options = array()) {
+		if (isset($options['subscriber_id']) && isset($options['billrun_key'])) {
+			$this->load($options['subscriber_id'], $options['billrun_key']);
+		}
 	}
 
 	/**
@@ -40,7 +39,7 @@ class Billrun_Balance implements ArrayAccess {
 	 */
 	public function __set($name, $value) {
 		//if (array_key_exists($name, $this->data)) {
-			$this->data[$name] = $value;
+		$this->data[$name] = $value;
 		//}
 		return $this->data[$name];
 	}
@@ -56,7 +55,7 @@ class Billrun_Balance implements ArrayAccess {
 		return $this->data->get($name);
 		//}
 	}
-	
+
 	/**
 	 * Pass function calls to the mongo entity that is used to hold  our data.
 	 * @param type $name the name of the called funtion
@@ -64,21 +63,21 @@ class Billrun_Balance implements ArrayAccess {
 	 * @return mixed what ever the  mongo entity returns
 	 */
 	public function __call($name, $arguments) {
-		return call_user_func_array(array($this->data,$name), $arguments);
+		return call_user_func_array(array($this->data, $name), $arguments);
 	}
 
 	/**
 	 * method to save balance details
 	 */
-	public function load( $subscriberId, $billrunKey = NULL ) {
-		
+	public function load($subscriberId, $billrunKey = NULL) {
+
 		$billrunKey = !$billrunKey ? Billrun_Util::getNextChargeKey(time()) : $billrunKey;
-		
+
 		$this->data = Billrun_Factory::db()->balancesCollection()->query(array(
-						'subscriber_id' => $subscriberId, 
-						'billrun_month' => $billrunKey
-					 ))->cursor()->current();	
-		
+				'subscriber_id' => $subscriberId,
+				'billrun_month' => $billrunKey
+			))->cursor()->current();
+
 		$this->data->collection(Billrun_Factory::db()->balancesCollection());
 	}
 
@@ -89,14 +88,13 @@ class Billrun_Balance implements ArrayAccess {
 		return $this->data->save(Billrun_Factory::db()->balancesCollection());
 	}
 
-	
 	/**
 	 * method to check if the loaded balance is valid
 	 */
 	public function isValid() {
 		return count($this->data->getRawData()) > 0;
 	}
-	
+
 	/**
 	 * Create a new subscriber in a given month and load it (if none exists).
 	 * @param type $billrun_month
@@ -105,18 +103,18 @@ class Billrun_Balance implements ArrayAccess {
 	 * @param type $account_id
 	 * @return boolean
 	 */
-	public function create($billrunKey, $subscriber, $plan_ref) {		
+	public function create($billrunKey, $subscriber, $plan_ref) {
 		$ret = FALSE;
-		
-		if(!$this->isExists( $subscriber->subscriber_id,  $billrunKey )) {
-			Billrun_Factory::log('Adding subscriber ' .  $subscriber->subscriber_id . ' to balances collection', Zend_Log::INFO);
+
+		if (!$this->isExists($subscriber->subscriber_id, $billrunKey)) {
+			Billrun_Factory::log('Adding subscriber ' . $subscriber->subscriber_id . ' to balances collection', Zend_Log::INFO);
 			$newSubscriber = new Mongodloid_Entity(self::getEmptySubscriberEntry($billrunKey, $subscriber->account_id, $subscriber->subscriber_id, $plan_ref));
 			$newSubscriber->collection(Billrun_Factory::db()->balancesCollection());
 			$newSubscriber->save();
 			$ret = TRUE;
-		} 
-		
-		$this->load($subscriber->subscriber_id,  $billrunKey);
+		}
+
+		$this->load($subscriber->subscriber_id, $billrunKey);
 		return $ret;
 	}
 
@@ -134,46 +132,53 @@ class Billrun_Balance implements ArrayAccess {
 			'account_id' => $account_id,
 			'subscriber_id' => $subscriber_id,
 			'current_plan' => $plan_ref,
-			'balance' =>  self::getEmptyBalance(),				
+			'balance' => self::getEmptyBalance("inter_roam_"),
+			'tx' => array(),
 		);
 	}
-	
+
 	/**
 	 * Check  if  a given  balnace exists.
 	 * @param type $subscriberId (optional)
 	 * @param type $billrunKey (optional)
 	 * @return boolean
 	 */
-	protected function isExists( $subscriberId, $billrunKey ) {	
-		
+	protected function isExists($subscriberId, $billrunKey) {
+
 		$blnce = Billrun_Factory::db()->balancesCollection()->query(array(
-						'subscriber_id' => $subscriberId, 
-						'billrun_month' => $billrunKey
-					 ))->cursor()->current();
-		
-		if(!count($blnce->getRawData())) {
+				'subscriber_id' => $subscriberId,
+				'billrun_month' => $billrunKey
+			))->cursor()->current();
+
+		if (!count($blnce->getRawData())) {
 			return FALSE;
 		}
 		return TRUE;
 	}
-	
-		/**
-	 * Get an empty balance structure
+
+	/**
+	 * * Get an empty balance structure
+	 * @param string $prefix if supplied, usage types with this prefix would also be included
 	 * @return array containing an empty balance structure.
 	 */
-	static public function getEmptyBalance() {
+	static public function getEmptyBalance($prefix = null) {
 		$ret = array(
 			'totals' => array(),
 			'cost' => 0,
 		);
-		$usage_types = array('call', 'incoming_call', 'sms', 'data', 'inter_roam_incoming_call', 'inter_roam_call', 'inter_roam_callback', 'inter_roam_sms', 'inter_roam_data', 'inter_roam_incoming_sms',);
+		$usage_types = array('call', 'sms', 'data', 'incoming_call', 'incoming_sms', 'mms'); //'inter_roam_incoming_call', 'inter_roam_call', 'inter_roam_callback', 'inter_roam_sms', 'inter_roam_data', 'inter_roam_incoming_sms',
+		if (!is_null($prefix)) {
+			foreach ($usage_types as $usage_type) {
+				$usage_types[] = $prefix . $usage_type;
+			}
+		}
 		foreach ($usage_types as $usage_type) {
 			$ret['totals'][$usage_type] = self::getEmptyUsageTypeTotals();
 		}
 		return $ret;
 	}
-	
-		/**
+
+	/**
 	 * Get an empty plan usage counters.
 	 * @return array containing an empty plan structure.
 	 */
@@ -183,7 +188,7 @@ class Billrun_Balance implements ArrayAccess {
 			'cost' => 0,
 		);
 	}
-		
+
 	//=============== ArrayAccess Implementation =============
 	public function offsetExists($offset) {
 		return isset($this->data[$offset]);
@@ -200,4 +205,5 @@ class Billrun_Balance implements ArrayAccess {
 	public function offsetUnset($offset) {
 		unset($this->data[$offset]);
 	}
+
 }

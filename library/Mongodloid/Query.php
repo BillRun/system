@@ -107,7 +107,7 @@ class Mongodloid_Query implements IteratorAggregate {
 			$param[1] = true;
 		else if ($name == 'notExists')
 			$param[1] = false;
-		else if ($name == 'mod' && $param[2])
+		else if ($name == 'mod' && isset($param[2]))
 			$param[1] = array($param[1], $param[2]);
 
 
