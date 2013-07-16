@@ -65,12 +65,7 @@ class TabledateModel extends TableModel {
 		if (!$to_date) {
 			die("date error");
 		}
-		$result = $this->collection
-			->query($this->search_key, $entity[$this->search_key])
-			->cursor()
-			->sort(array('to' => -1))
-			->limit(1)
-			->current();
+		$result = $this->getLastItem($entity[$this->search_key]);
 		return strval($result['_id']) == strval($entity['_id']);
 	}
 
@@ -78,7 +73,7 @@ class TabledateModel extends TableModel {
 		$to_date = strtotime($entity['to']);
 		return $to_date > time();
 	}
-	
+
 	public function startsInFuture($entity) {
 		$from_date = strtotime($entity['from']);
 		return $from_date > time();
@@ -143,6 +138,27 @@ class TabledateModel extends TableModel {
 			$params['to'] = new MongoDate(strtotime($params['to']));
 		}
 		parent::save($params);
+	}
+
+	public function remove($params) {
+		$entity = $this->collection->findOne($params['_id']);
+		$to = $entity['to'];
+		$key_name = $entity[$this->search_key];
+		$this->collection->remove($entity);
+		$last_item = $this->getLastItem($key_name);
+		$last_item['to'] = $to;
+		$last_item->save();
+	}
+
+	public function getLastItem($key_name) {
+		$result = $this->collection
+			->query($this->search_key, $key_name)
+			->cursor()
+			->sort(array('to' => -1))
+			->limit(1)
+			->current();
+		$result->collection($this->collection);
+		return $result;
 	}
 
 }
