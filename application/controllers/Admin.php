@@ -51,7 +51,7 @@ class AdminController extends Yaf_Controller_Abstract {
 
 		$model = self::getModel($coll);
 		$entity = $model->getItem($id);
-		if ($type == 'close_and_new' && is_subclass_of($model, "TabledateModel") && !$model->isReplacable($entity)) {
+		if ($type == 'close_and_new' && is_subclass_of($model, "TabledateModel") && !$model->isLast($entity)) {
 			die("There's already a newer entity with this key");
 		}
 
@@ -59,7 +59,59 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->getView()->entity = $entity;
 		$this->getView()->collectionName = $coll;
 		$this->getView()->type = $type;
-		$this->getView()->protectedKeys = $model->getProtectedKeys($type);
+		$this->getView()->protectedKeys = $model->getProtectedKeys($entity, $type);
+	}
+
+	public function confirmAction() {
+		$coll = Billrun_Util::filter_var($this->getRequest()->get('coll'), FILTER_SANITIZE_STRING);
+		$id = Billrun_Util::filter_var($this->getRequest()->get('id'), FILTER_SANITIZE_STRING);
+		$type = Billrun_Util::filter_var($this->getRequest()->get('type'), FILTER_SANITIZE_STRING);
+
+		$model = self::getModel($coll);
+		$entity = $model->getItem($id);
+		if ($type == 'remove') {
+			if (!$model->isLast($entity)) {
+				die("There's already a newer entity with this key");
+			} else if (is_subclass_of($model, "TabledateModel") && !$model->startsInFuture($entity)) {
+				die("Only future entities could be removed");
+			}
+		}
+
+		$this->getView()->entity = $entity;
+		$this->getView()->collectionName = $coll;
+		$this->getView()->type = $type;
+		$this->getView()->key = $entity[$model->search_key];
+		$this->getView()->id = $id;
+//		$this->getView()->component = $this->renderView('remove', array('entity' => $entity, 'collectionName' => $coll, 'type' => $type, 'key' => $entity[$model->search_key]));
+	}
+
+	/**
+	 * save controller
+	 * @return boolean
+	 * @todo move to model
+	 * @todo protect the from and to to be continuely
+	 */
+	public function removeAction() {
+		$id = Billrun_Util::filter_var($this->getRequest()->get('id'), FILTER_SANITIZE_STRING);
+		$coll = Billrun_Util::filter_var($this->getRequest()->get('coll'), FILTER_SANITIZE_STRING);
+		$type = Billrun_Util::filter_var($this->getRequest()->get('type'), FILTER_SANITIZE_STRING);
+
+		$model = self::getModel($coll);
+
+		$collection = Billrun_Factory::db()->getCollection($coll);
+		if (!($collection instanceof Mongodloid_Collection)) {
+			return false;
+		}
+
+		$params = array('_id' => new Mongodloid_Id($id));
+
+		if ($type == 'remove') {
+			$saveStatus = $model->remove($params);
+		}
+
+		// @TODO: need to load ajax view
+		// for now just die with json
+		die(json_encode($ret));
 	}
 
 	/**
@@ -102,7 +154,6 @@ class AdminController extends Yaf_Controller_Abstract {
 //			'closeLine' => $entity->getRawData(),
 //			'newLine' => $newEntity->getRawData(),
 //		);
-
 		// @TODO: need to load ajax view
 		// for now just die with json
 		die(json_encode($ret));
@@ -303,7 +354,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * @return string the render layout including the page (component)
 	 */
 	protected function render($tpl, array $parameters = array()) {
-		if ($tpl == 'edit') {
+		if ($tpl == 'edit' || $tpl == 'confirm') {
 			return parent::render($tpl, $parameters);
 		}
 		$tpl = 'index';

@@ -9,11 +9,13 @@
 				</div>
 				<span><button type="submit" class="btn">Submit</button></span>
 				<script type="text/javascript">
-					var url_prefix = <?php echo json_encode($this->baseUrl . '/admin/edit?coll=' . strtolower($this->title) . '&id='); ?>;
+					var edit_url_prefix = <?php echo json_encode($this->baseUrl . '/admin/edit?coll=' . strtolower($this->title) . '&id='); ?>;
+					var confirm_url_prefix = <?php echo json_encode($this->baseUrl . '/admin/confirm?coll=' . strtolower($this->title) . '&id='); ?>;
 				</script>
-				<span><a id='update_current' data-type="update" href="#popupModal" class="btn btn-danger" data-toggle="modal" role="button" data-remote="">Update current</a></span>
+				<span><a id='update_current' data-type="update" href="#popupModal" class="btn btn-warning" data-toggle="modal" role="button" data-remote="">Update current</a></span>
 				<span><a id='close_and_new' data-type="close_and_new" href="#popupModal" class="btn btn-primary" data-toggle="modal" role="button" data-remote="">Close & new</a></span>
 				<span><a id='duplicate' data-type="duplicate" href="#popupModal" class="btn btn-info" data-toggle="modal" role="button" data-remote="">Duplicate</a></span>
+				<span><a id='remove' data-type="remove" href="#confirmModal" class="btn btn-danger" data-toggle="modal" role="button" data-remote=""><i class="icon-remove"> </i>Remove</a></span>
 			</form>
 		</div>
 		<?php
@@ -66,8 +68,22 @@
 
 		</div>
 		<div class="modal-footer">
-			<button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
+			<button id="cancelPopup" class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
 			<button id="save" class="btn btn-primary">Save changes</button>
+			<!--<button id="apply" class="btn btn-danger" data-toggle="dropdown">Update current</button>-->
+		</div>
+    </div>
+
+    <div class="modal fade hide" id="confirmModal" tabindex="-2" role="dialog" aria-labelledby="confirmModalLabel" aria-hidden="true">
+		<div class="modal-header">
+			<button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+			<h3 id="confirmModalLabel"></h3>
+		</div>
+		<div class="modal-body">
+		</div>
+		<div class="modal-footer">
+			<button id="cancelConfirm" class="btn" data-dismiss="modal" aria-hidden="true">Cancel</button>
+			<button id="confirm" class="btn btn-primary">Remove</button>
 			<!--<button id="apply" class="btn btn-danger" data-toggle="dropdown">Update current</button>-->
 		</div>
     </div>

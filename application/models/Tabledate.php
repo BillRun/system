@@ -60,7 +60,7 @@ class TabledateModel extends TableModel {
 	 * Check if a new entity could replace it
 	 * @param type $param
 	 */
-	public function isReplacable($entity) {
+	public function isLast($entity) {
 		$to_date = new MongoDate(strtotime($entity['to']));
 		if (!$to_date) {
 			die("date error");
@@ -74,9 +74,22 @@ class TabledateModel extends TableModel {
 		return strval($result['_id']) == strval($entity['_id']);
 	}
 
-	public function getProtectedKeys($type) {
-		$parent_protected = parent::getProtectedKeys($type);
+	public function endsInFuture($entity) {
+		$to_date = strtotime($entity['to']);
+		return $to_date > time();
+	}
+	
+	public function startsInFuture($entity) {
+		$from_date = strtotime($entity['from']);
+		return $from_date > time();
+	}
+
+	public function getProtectedKeys($entity, $type) {
+		$parent_protected = parent::getProtectedKeys($entity, $type);
 		if ($type == 'update') {
+			if ($this->isLast($entity) && $this->endsInFuture($entity)) {
+				return array_merge($parent_protected, array("from", $this->search_key));
+			}
 			return array_merge($parent_protected, array("from", "to", $this->search_key));
 		} else if ($type == 'close_and_new') {
 			return array_merge($parent_protected, array($this->search_key));
@@ -106,9 +119,13 @@ class TabledateModel extends TableModel {
 	}
 
 	public function duplicate($params) {
-		$old_entity = $this->collection->findOne($params['_id']);
-		if ($old_entity[$this->search_key] == $params[$this->search_key]) {
-			die(json_encode("Please choose another key name"));
+		$key = $params[$this->search_key];
+		$count = $this->collection
+			->query($this->search_key, $key)
+			->count();
+
+		if ($count) {
+			die(json_encode("key already exists"));
 		}
 		unset($params['_id']);
 		$from = new Zend_Date($params['from'], null, 'he-IL');
@@ -116,6 +133,16 @@ class TabledateModel extends TableModel {
 		$params['from'] = new MongoDate($from->getTimestamp());
 		$params['to'] = new MongoDate($to->getTimestamp());
 		return $this->save($params);
+	}
+
+	public function save($params) {
+		if (isset($params['from'])) {
+			$params['from'] = new MongoDate(strtotime($params['from']));
+		}
+		if (isset($params['to'])) {
+			$params['to'] = new MongoDate(strtotime($params['to']));
+		}
+		parent::save($params);
 	}
 
 }

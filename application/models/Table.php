@@ -53,7 +53,7 @@ class TableModel {
 	 *
 	 * @var string the main key field name (e.g. "name" for plans)
 	 */
-	protected $search_key;
+	public $search_key;
 
 	/**
 	 * constructor
@@ -228,6 +228,11 @@ class TableModel {
 		return $entity;
 	}
 
+	public function remove($params) {
+		$id = $params['_id'];
+		return $this->collection->remove($id);
+	}
+	
 	public function save($params) {
 //		if (method_exists($this, $coll . 'BeforeDataSave')) {
 //			call_user_func_array(array($this, $coll . 'BeforeDataSave'), array($collection, &$newEntity));
@@ -247,7 +252,7 @@ class TableModel {
 		return $entity;
 	}
 
-	public function getProtectedKeys($type) {
+	public function getProtectedKeys($entity, $type) {
 		return array("_id");
 	}
 

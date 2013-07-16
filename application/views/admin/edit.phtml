@@ -1,5 +1,4 @@
 <?php
-
 $protected = array();
 $entity = $this->entity;
 
@@ -45,7 +44,7 @@ print '</div>';
 		var _ajaxOpts = {
 			async:true,
 			cache:false,
-//			dataType:'json',
+			//			dataType:'json',
 			type:'POST',
 			data: {
 				id: $('#form_id').html(),
@@ -54,6 +53,12 @@ print '</div>';
 				data: JSON.stringify(_jsonData)
 			},
 			success:function(data, textStatus, jqXHR) {
+				if (data!='null') {
+					alert(data);
+					$('#save').removeAttr("disabled");
+					$('#save').bind("click", saveClick);
+					return;
+				}
 				window.location.reload();
 			},
 			error:function(jqXHR, textStatus, errorThrown) {
