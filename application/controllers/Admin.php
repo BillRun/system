@@ -60,6 +60,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->getView()->collectionName = $coll;
 		$this->getView()->type = $type;
 		$this->getView()->protectedKeys = $model->getProtectedKeys($entity, $type);
+		$this->getView()->hiddenKeys = $model->getHiddenKeys($entity, $type);
 	}
 
 	public function confirmAction() {
@@ -142,7 +143,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$params = array_merge($data, array('_id' => new MongoId($id)));
 
 		if ($type == 'update') {
-			$saveStatus = $model->save($params);
+			$saveStatus = $model->update($params);
 		} else if ($type == 'close_and_new') {
 			$saveStatus = $model->closeAndNew($params);
 		} else if ($type == 'duplicate') {
@@ -156,7 +157,7 @@ class AdminController extends Yaf_Controller_Abstract {
 //		);
 		// @TODO: need to load ajax view
 		// for now just die with json
-		die(json_encode($ret));
+		die(json_encode($saveStatus));
 	}
 
 	/**

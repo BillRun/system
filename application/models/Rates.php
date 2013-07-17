@@ -69,7 +69,7 @@ class RatesModel extends TabledateModel {
 
 		$plansColl = Billrun_Factory::db()->plansCollection();
 		$currentDate = new MongoDate();
-		$rates = $data->get('rates');
+		$rates = $data['rates'];
 		//convert plans
 		foreach ($rates as &$rate) {
 			if (isset($rate['plans'])) {

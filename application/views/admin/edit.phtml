@@ -1,9 +1,12 @@
 <?php
 $protected = array();
-$entity = $this->entity;
+$entity = $this->entity->getRawData();
 
 foreach ($this->protectedKeys as $key) {
 	$protected[$key] = $entity[$key];
+	unset($entity[$key]);
+}
+foreach ($this->hiddenKeys as $key) {
 	unset($entity[$key]);
 }
 

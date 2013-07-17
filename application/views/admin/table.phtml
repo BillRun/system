@@ -1,20 +1,25 @@
 <div class="container component">
 	<h1><?php echo $this->title; ?></h1>
-	<?php if ($this->title == 'Rates' || $this->title == 'Plans') : ?>
+	<?php if ($this->title == 'Rates' || $this->title == 'Plans' || $this->title == 'Lines') : ?>
 		<div class="toolbar">
 			<form action="" method="post">
-				<div class="input-append date" id="datetimepicker" data-date="<?php echo $this->filterDate->toString('YYYY-MM-dd HH:mm:ss'); ?>" data-date-format="yyyy-MM-dd hh:mm:ss">
-					<input name="dateFilter" class="span2" size="16" type="text" value="<?php echo $this->filterDate->toString('YYYY-MM-dd HH:mm:ss'); ?>">
-					<span class="add-on"><i class="icon-th"></i></span>
-				</div>
-				<span><button type="submit" class="btn">Submit</button></span>
+				<?php if ($this->title == 'Rates' || $this->title == 'Plans') : ?>
+					<div class="input-append date" id="datetimepicker" data-date="<?php echo $this->filterDate->toString('YYYY-MM-dd HH:mm:ss'); ?>" data-date-format="yyyy-MM-dd hh:mm:ss">
+						<input name="dateFilter" class="span2" size="16" type="text" value="<?php echo $this->filterDate->toString('YYYY-MM-dd HH:mm:ss'); ?>">
+						<span class="add-on"><i class="icon-th"></i></span>
+					</div>
+					<span><button type="submit" class="btn">Submit</button></span>
+				<?php endif; ?>
 				<script type="text/javascript">
 					var edit_url_prefix = <?php echo json_encode($this->baseUrl . '/admin/edit?coll=' . strtolower($this->title) . '&id='); ?>;
 					var confirm_url_prefix = <?php echo json_encode($this->baseUrl . '/admin/confirm?coll=' . strtolower($this->title) . '&id='); ?>;
 				</script>
+
 				<span><a id='update_current' data-type="update" href="#popupModal" class="btn btn-warning" data-toggle="modal" role="button" data-remote="">Update current</a></span>
-				<span><a id='close_and_new' data-type="close_and_new" href="#popupModal" class="btn btn-primary" data-toggle="modal" role="button" data-remote="">Close & new</a></span>
-				<span><a id='duplicate' data-type="duplicate" href="#popupModal" class="btn btn-info" data-toggle="modal" role="button" data-remote="">Duplicate</a></span>
+				<?php if ($this->title == 'Rates' || $this->title == 'Plans') : ?>
+					<span><a id='close_and_new' data-type="close_and_new" href="#popupModal" class="btn btn-primary" data-toggle="modal" role="button" data-remote="">Close & new</a></span>
+					<span><a id='duplicate' data-type="duplicate" href="#popupModal" class="btn btn-info" data-toggle="modal" role="button" data-remote="">Duplicate</a></span>
+				<?php endif; ?>
 				<span><a id='remove' data-type="remove" href="#confirmModal" class="btn btn-danger" data-toggle="modal" role="button" data-remote=""><i class="icon-remove"> </i>Remove</a></span>
 			</form>
 		</div>
@@ -38,7 +43,7 @@
 				if (isset($edit_key) && $h == $edit_key) {
 					$url = $this->baseUrl . '/admin/edit?type=' . strtolower($this->title) . '&id=' . $item['_id'];
 					print '<a href="#popupModal" data-remote="' . $url . '" role="button" data-toggle="modal">' . $data . '</a>';
-				} else if (($h == 'from' || $h == 'to' || $h =='unified_record_time') && $data) {
+				} else if (($h == 'from' || $h == 'to' || $h == 'unified_record_time') && $data) {
 					// TODO: move he_IL to config
 					$d = new Zend_Date($data->sec, null, new Zend_Locale('he_IL'));
 					echo $d->getIso();

@@ -220,7 +220,7 @@ class TableModel {
 			return false;
 		}
 
-		$entity = $this->collection->findOne($id, true);
+		$entity = $this->collection->findOne($id);
 
 		// convert mongo values into javascript values
 		$entity['_id'] = (string) $entity['_id'];
@@ -233,7 +233,7 @@ class TableModel {
 		return $this->collection->remove($id);
 	}
 	
-	public function save($params) {
+	public function update($params) {
 //		if (method_exists($this, $coll . 'BeforeDataSave')) {
 //			call_user_func_array(array($this, $coll . 'BeforeDataSave'), array($collection, &$newEntity));
 //		}
@@ -254,6 +254,10 @@ class TableModel {
 
 	public function getProtectedKeys($entity, $type) {
 		return array("_id");
+	}
+	
+	public function getHiddenKeys($entity, $type) {
+		return array();
 	}
 
 }

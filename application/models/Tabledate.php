@@ -104,13 +104,13 @@ class TabledateModel extends TableModel {
 		$closed_data = $params;
 		unset($closed_data['from']);
 		$closed_data['to'] = $mongoCloseTime;
-		$this->save($closed_data);
+		$this->update($closed_data);
 
 		// open new line
 		unset($params['_id']);
 		$params['from'] = new MongoDate($new_from->getTimestamp());
 		$params['to'] = new MongoDate($new_from->add(125, Zend_Date::YEAR)->getTimestamp());
-		return $this->save($params);
+		return $this->update($params);
 	}
 
 	public function duplicate($params) {
@@ -127,17 +127,17 @@ class TabledateModel extends TableModel {
 		$to = new Zend_Date($params['to'], null, 'he-IL');
 		$params['from'] = new MongoDate($from->getTimestamp());
 		$params['to'] = new MongoDate($to->getTimestamp());
-		return $this->save($params);
+		return $this->update($params);
 	}
 
-	public function save($params) {
+	public function update($params) {
 		if (isset($params['from'])) {
 			$params['from'] = new MongoDate(strtotime($params['from']));
 		}
 		if (isset($params['to'])) {
 			$params['to'] = new MongoDate(strtotime($params['to']));
 		}
-		parent::save($params);
+		parent::update($params);
 	}
 
 	public function remove($params) {

@@ -15,17 +15,11 @@
  */
 class LinesModel extends TableModel {
 
-//	/**
-//	 * constructor
-//	 * 
-//	 * @param array $params of parameters to preset the object
-//	 */
-//	public function __construct(array $params = array()) {
-//		parent::__construct($params);
-//		if (isset($params['date'])) {
-//			$this->date = $params['date'];
-//		}
-//	}
+	public function __construct(array $params = array()) {
+		$params['collection'] = Billrun_Factory::db()->lines;
+		parent::__construct($params);
+		$this->search_key = "stamp";
+	}
 
 	/**
 	 * Get the data resource
@@ -35,6 +29,70 @@ class LinesModel extends TableModel {
 	public function getData() {
 		$resource = $this->collection->query()->cursor()->sort($this->sort)->skip($this->offset())->limit($this->size);
 		return $resource;
+	}
+
+	public function getProtectedKeys($entity, $type) {
+		$parent_protected = parent::getProtectedKeys($entity, $type);
+		if ($type == 'update') {
+			return array_merge($parent_protected, array("type", "account_id", "subscriber_id", "billrun_ref", "file", "header_stamp", "imsi", "source", "stamp", "unified_record_time", "usaget", "billrun", $this->search_key));
+		}
+		return $parent_protected;
+	}
+
+	/**
+	 * @param Mongodloid collection $collection
+	 * @param array $entity
+	 * 
+	 * @return type
+	 * @todo move to model
+	 */
+	public function getItem($id) {
+
+		$entity = parent::getItem($id);
+
+		if (isset($entity['unified_record_time'])) {
+			$entity['unified_record_time'] = (new Zend_Date($entity['unified_record_time']->sec, null, new Zend_Locale('he_IL')))->getIso();
+		}
+		if (isset($entity['customer_rate'])) {
+			$data = $entity->get('customer_rate', false);
+			if ($data instanceof Mongodloid_Entity) {
+				$entity['customer_rate'] = $data->get('key');
+			}
+		}
+		if (isset($entity['billrun_ref'])) {
+			$data = $entity->get('billrun_ref', false);
+			if ($data instanceof Mongodloid_Entity) {
+				$entity['billrun_ref'] = $data->get('billrun_key');
+			}
+		}
+
+		return $entity;
+	}
+
+	public function getHiddenKeys($entity, $type) {
+		$hidden_keys = array_merge(parent::getHiddenKeys($entity, $type), array("plan_ref"));
+		return $hidden_keys;
+	}
+
+	public function update($data) {
+		$currentDate = new MongoDate();
+		if (isset($data['customer_rate'])) {
+			$ratesColl = Billrun_Factory::db()->ratesCollection();
+			$rateEntity = $ratesColl->query('key', $data['customer_rate'])
+					->lessEq('from', $currentDate)
+					->greaterEq('to', $currentDate)
+					->cursor()->current();
+			$data['customer_rate'] = $rateEntity->createRef($ratesColl);
+		}
+		if (isset($data['plan'])) {
+			$plansColl = Billrun_Factory::db()->plansCollection();
+			$planEntity = $plansColl->query('name', $data['plan'])
+					->lessEq('from', $currentDate)
+					->greaterEq('to', $currentDate)
+					->cursor()->current();
+			$data['plan_ref'] = $planEntity->createRef($plansColl);
+		}
+		parent::update($data);
 	}
 
 }
