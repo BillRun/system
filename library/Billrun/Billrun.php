@@ -14,8 +14,13 @@
  */
 class Billrun_Billrun {
 
+	protected $account_id;
+	protected $billrun_key;
+
 	public function __construct($options = array()) {
 		if (isset($options['account_id']) && isset($options['billrun_key'])) {
+			$this->account_id = $options['account_id'];
+			$this->billrun_key = $options['billrun_key'];
 			$this->load($options['account_id'], $options['billrun_key']);
 		}
 	}
@@ -28,6 +33,8 @@ class Billrun_Billrun {
 	 */
 	public function load($account_id, $billrun_key) {
 		$billrun_coll = Billrun_Factory::db()->billrunCollection();
+		$this->account_id = $account_id;
+		$this->billrun_key = $billrun_key;
 		$this->data = $billrun_coll->query(array(
 					'account_id' => $account_id,
 					'billrun_key' => $billrun_key,
@@ -40,6 +47,7 @@ class Billrun_Billrun {
 	/**
 	 * Create a new billrun record for a subscriber
 	 * @param type $subscriber
+	 * @todo load billrun by raw data (function needed) in order to avoid unnecessary query
 	 */
 	public function create($account_id, $billrun_key) {
 		$billrun = new Mongodloid_Entity($this->getAccountEmptyBillrunEntry($account_id, $billrun_key));
@@ -105,71 +113,111 @@ class Billrun_Billrun {
 	}
 
 	/**
-	 * Get an empty billrun subscriber entry structure.
-	 * @return Array tan empty billrun subscriber entry structure.
+	 * Get an empty billrun subscriber entry
+	 * @return Array an empty billrun subscriber entry
 	 */
 	public function getEmptySubscriberBillrunEntry($subscriber_id) {
 		return array(
 			'sub_id' => $subscriber_id,
 			'costs' => array(
-				'flat' => 0,
-				'over_plan' => 0,
-				'out_plan_vatable' => 0,
-				'out_plan_vat_free' => 0,
+				'flat' => $this->getVATTypes(),
+				'over_plan' => $this->getVATTypes(),
+				'out_plan' => $this->getVATTypes(),
+				'manual' => array(
+					'charge' => $this->getVATTypes(),
+					'refund' => $this->getVATTypes()
+				),
 			),
 			'lines' => array(
 				'call' => array(
-					'refs' => array(
-					),
+					'refs' => null,
 				),
 				'sms' => array(
-					'refs' => array(
-					),
+					'refs' => null,
 				),
 				'data' => array(
-					'counters' => array(
-					),
-					'refs' => array(
-					),
+					'counters' => array(),
+					'refs' => null,
+				),
+				'flat' => array(
+					'refs' => null,
+				),
+				'mms' => array(
+					'refs' => null,
+				),
+				'manual' => array(
+					'refs' => null,
 				),
 			),
 			'breakdown' => array(
-				'flat' => array(
-				),
-				'over_plan' => array(
-				),
-				'intl' => array(
-				),
-				'special' => array(
-				),
-				'roaming' => array(
+				'in_plan' => $this->getCategories(),
+				'over_plan' => $this->getCategories(),
+				'out_plan' => $this->getCategories(),
+				'manual' => array(
+					'charge' => array(),
+					'refund' => array(),
 				),
 			),
 		);
 	}
 
+	protected function getVATTypes() {
+		return array(
+			'vatable' => 0,
+			'vat_free' => 0,
+		);
+	}
+
+	protected function getCategories() {
+		return array(
+			'base' => array(),
+			'intl' => array(),
+			'special' => array(),
+			'roaming' => array(),
+		);
+	}
+
 	/**
-	 * Add pricing and usaaage counters to the billrun breakdown.
+	 * Add pricing and usage counters to the billrun breakdown.
 	 * @param type $key
 	 * @param type $usage_type
 	 * @param type $volume
 	 */
-	static public function addToBreakdown(&$breakdown_raw, $breakdown_key, $zone_key, $vatable, $counters = array(), $charge = null) {
-		if (!isset($breakdown_raw[$breakdown_key][$zone_key])) {
-			$breakdown_raw[$breakdown_key][$zone_key] = Billrun_Balance::getEmptyBalance();
-		}
-		if (!empty($counters)) {
-			$breakdown_raw[$breakdown_key][$zone_key]['totals'][key($counters)]['usagev']+=current($counters);
-			$breakdown_raw[$breakdown_key][$zone_key]['totals'][key($counters)]['cost']+=$charge;
-			if ($breakdown_key != 'flat') {
-				$breakdown_raw[$breakdown_key][$zone_key]['cost']+=$charge;
+	static public function addToBreakdown(&$subscriberRaw, $plan_key, $category_key, $zone_key, $vatable, $counters = array(), $pricingData = array()) {
+		$breakdown_raw = $subscriberRaw['breakdown'];
+		if ($plan_key != 'manual') {
+			if (!isset($breakdown_raw[$plan_key][$category_key][$zone_key])) {
+				$breakdown_raw[$plan_key][$category_key][$zone_key] = Billrun_Balance::getEmptyBalance();
 			}
-		} else if ($breakdown_key == 'flat') {
-			$breakdown_raw[$breakdown_key][$zone_key]['cost'] = $charge;
+			if (!empty($counters)) {
+				if (!empty($pricingData) && isset($pricingData['over_plan']) && $pricingData['over_plan'] < current($counters)) {
+					$volume_priced = $pricingData['over_plan'];
+					if (!isset($breakdown_raw['in_plan'][$category_key][$zone_key])) {
+						$breakdown_raw['in_plan'][$category_key][$zone_key] = Billrun_Balance::getEmptyBalance();
+					}
+					$breakdown_raw['in_plan'][$category_key][$zone_key]['totals'][key($counters)]['usagev']+=current($counters) - $volume_priced; // add partial usage to flat
+				} else {
+					$volume_priced = current($counters);
+				}
+				$breakdown_raw[$plan_key][$category_key][$zone_key]['totals'][key($counters)]['usagev']+=$volume_priced;
+				$breakdown_raw[$plan_key][$category_key][$zone_key]['totals'][key($counters)]['cost']+=$pricingData['price_customer'];
+				if ($plan_key != 'in_plan') {
+					$breakdown_raw[$plan_key][$category_key][$zone_key]['cost']+=$pricingData['price_customer'];
+				}
+			} else if ($zone_key == 'service') {
+				$breakdown_raw[$plan_key][$category_key][$zone_key]['cost'] += $pricingData['price_customer'];
+			}
+			if (!isset($breakdown_raw[$plan_key][$category_key][$zone_key]['vat'])) {
+				$breakdown_raw[$plan_key][$category_key][$zone_key]['vat'] = ($vatable ? floatval(Billrun_Factory::config()->getConfigValue('pricing.vat', 0.18)) : 0); //@TODO we assume here that all the lines would be vatable or all vat-free
+			}
+		} else {
+			if (isset($breakdown_raw[$plan_key][$category_key][$zone_key])) {
+				$breakdown_raw[$plan_key][$category_key][$zone_key]+=$pricingData['price_customer'];
+			} else {
+				$breakdown_raw[$plan_key][$category_key][$zone_key] = $pricingData['price_customer'];
+			}
 		}
-		if (!isset($breakdown_raw[$breakdown_key][$zone_key]['vat'])) {
-			$breakdown_raw[$breakdown_key][$zone_key]['vat'] = ($vatable ? Billrun_Factory::config()->getConfigValue('pricing.vat', '0.18'): 0); //@TODO we assume here that all the lines would be vatable or all vat-free
-		}
+		$subscriberRaw['breakdown'] = $breakdown_raw;
 	}
 
 	/**
@@ -177,7 +225,15 @@ class Billrun_Billrun {
 	 * @return string the billrun key. 
 	 */
 	public function getBillrunKey() {
-		return $this->data->get('billrun_key');
+		return $this->billrun_key;
+	}
+
+	/**
+	 * Get the key of the current billrun
+	 * @return string the billrun key. 
+	 */
+	public function getAccountId() {
+		return $this->account_id;
 	}
 
 	/**
@@ -189,46 +245,56 @@ class Billrun_Billrun {
 	 * @param type $vatable
 	 */
 	public function update($subscriber_id, $counters, $pricingData, $row, $vatable) {
-		$billrun_key = $this->getBillrunKey();
 		if (!$this->exists($subscriber_id)) {
 			$this->addSubscriber($subscriber_id);
 		}
 
-		$subscriberRaw = $this->getSubRawData($subscriber_id);
-
-		// update costs
-		if (isset($pricingData['over_plan']) && $pricingData['over_plan']) {
-			$subscriberRaw['costs']['over_plan'] += $pricingData['price_customer'];
-		} else if (isset($pricingData['out_plan']) && $pricingData['out_plan']) {
-			if ($vatable) {
-				$subscriberRaw['costs']['out_plan_vatable'] += $pricingData['price_customer'];
-			} else {
-				$subscriberRaw['costs']['out_plan_vat_free'] += $pricingData['price_customer'];
-			}
-		} else if ($row['type'] == 'flat') {
-			$subscriberRaw['costs']['flat'] = $pricingData['price_customer'];
-		}
-
-		if (!($row['type'] == 'flat')) {
-			$rate = $row['customer_rate'];
+		if ($row['type'] == 'credit') {
+			$usage_type = 'manual';
+		} else {
 			switch ($row['usaget']) {
 				case 'call':
 				case 'incoming_call':
 					$usage_type = 'call';
 					break;
 				case 'sms':
+				case 'incoming_sms':
 					$usage_type = 'sms';
 					break;
 				case 'data':
 					$usage_type = 'data';
 					break;
+				case 'mms':
+					$usage_type = 'mms';
+					break;
+				case 'flat':
+					$usage_type = 'flat';
+					break;
 				default:
 					$usage_type = 'call';
 					break;
 			}
+		}
 
-			// update lines refs
-			$subscriberRaw['lines'][$usage_type]['refs'][] = $row->createRef();
+		$row_ref = $row->createRef();
+		if (!$this->refExists($subscriber_id, $usage_type, $row_ref)) {
+			$subscriberRaw = $this->getSubRawData($subscriber_id);
+
+			// update costs
+			$vat_key = ($vatable ? "vatable" : "vat_free");
+			if (isset($pricingData['over_plan']) && $pricingData['over_plan']) {
+				$subscriberRaw['costs']['over_plan'][$vat_key] += $pricingData['price_customer'];
+			} else if (isset($pricingData['out_plan']) && $pricingData['out_plan']) {
+				$subscriberRaw['costs']['out_plan'][$vat_key] += $pricingData['price_customer'];
+			} else if ($row['type'] == 'flat') {
+				$subscriberRaw['costs']['flat'][$vat_key] += $pricingData['price_customer'];
+			} else if ($row['type'] == 'credit') {
+				$subscriberRaw['costs']['manual'][$row['charge_type']][$vat_key] += $pricingData['price_customer'];
+			}
+
+			if ($row['type'] != 'flat') {
+				$rate = $row['customer_rate'];
+			}
 
 			// update data counters
 			if ($usage_type == 'data') {
@@ -239,35 +305,56 @@ class Billrun_Billrun {
 					$subscriberRaw['lines']['data']['counters'][$date_key] = $row['usagev'];
 				}
 			}
-		}
 
-		// update breakdown
-		if (!isset($pricingData['over_plan']) && !isset($pricingData['out_plan'])) { // in plan
-			$breakdown_key = 'flat';
-			$zone_key = $billrun_key;
-		} else if (isset($pricingData['over_plan']) && $pricingData['over_plan']) {
-			$breakdown_key = 'over_plan';
-		} else {
-			$category = $rate['rates'][$row['usaget']]['category'];
-			switch ($category) {
-				case "roaming":
-					$breakdown_key = "roaming";
-					$zone_key = $row['serving_network'];
-					break;
-				case "special":
-					$breakdown_key = "special";
-					break;
-				default:
-					$breakdown_key = "intl";
-					break;
+			// update lines refs
+			$subscriberRaw['lines'][$usage_type]['refs'][] = $row_ref;
+
+			// update breakdown
+			if ($row['type'] == 'credit') {
+				$plan_key = 'manual';
+				$zone_key = $row['reason'];
 			}
-		}
-		if (!isset($zone_key)) {
-			$zone_key = $row['customer_rate']['key'];
-		}
-		self::addToBreakdown($subscriberRaw['breakdown'], $breakdown_key, $zone_key, $vatable, $counters, $pricingData['price_customer']);
+			if (!isset($pricingData['over_plan']) && !isset($pricingData['out_plan'])) { // in plan
+				$plan_key = 'in_plan';
+				if ($row['type'] == 'flat') {
+					$zone_key = 'service';
+				}
+			} else if (isset($pricingData['over_plan']) && $pricingData['over_plan']) { // over plan
+				$plan_key = 'over_plan';
+			} else { // out plan
+				$plan_key = "out_plan";
+			}
 
-		$this->setSubRawData($subscriber_id, $subscriberRaw);
+			if (isset($rate['rates'][$row['usaget']]['category'])) {
+				$category = $rate['rates'][$row['usaget']]['category'];
+				switch ($category) {
+					case "roaming":
+						$category_key = "roaming";
+						$zone_key = $row['serving_network'];
+						break;
+					case "special":
+						$category_key = "special";
+						break;
+					case "intl":
+						$category_key = "intl";
+						break;
+					default:
+						$category_key = "base";
+						break;
+				}
+			} else if ($row['type'] == 'credit') {
+				$category_key = $row['reason'];
+			} else {
+				$category_key = "base";
+			}
+
+			if (!isset($zone_key)) {
+				$zone_key = $row['customer_rate']['key'];
+			}
+			self::addToBreakdown($subscriberRaw, $plan_key, $category_key, $zone_key, $vatable, $counters, $pricingData);
+
+			$this->setSubRawData($subscriber_id, $subscriberRaw);
+		}
 		$this->setStamp($row);
 	}
 
@@ -282,6 +369,7 @@ class Billrun_Billrun {
 		$current = $line->getRawData();
 		$added_values = array(
 			'billrun' => $this->getBillrunKey(),
+			'billrun_ref' => $this->data->createRef(),
 		);
 
 		$newData = array_merge($current, $added_values);
@@ -338,13 +426,32 @@ class Billrun_Billrun {
 	protected function setSubRawData($subscriber_id, $subscriber_raw) {
 		foreach ($this->data->get('subs') as $key => $sub_entry) {
 			if ($sub_entry['sub_id'] == $subscriber_id) {
-				$this->data->set('subs.'.$key, $subscriber_raw);
+				$this->data->set('subs.' . $key, $subscriber_raw);
 				$this->data->save(Billrun_Factory::db()->billrunCollection());
 				return true;
 			}
 		}
 		return false;
-		
+	}
+
+	protected function refExists($subscriber_id, $usage_type, $row_ref) {
+		$billrun_coll = Billrun_Factory::db()->billrunCollection();
+		$result = $billrun_coll->query(array(
+					'account_id' => $this->getAccountId(),
+					'billrun_key' => $this->getBillrunKey(),
+					'subs' => array(
+						'$elemMatch' => array(
+							'sub_id'=> $subscriber_id,
+							'lines.' . $usage_type . '.refs' => array(
+								'$in' => array(
+									$row_ref
+								)
+							)
+						)
+					)
+				))
+				->cursor()->current();
+		return !$result->isEmpty();
 	}
 
 }

@@ -21,6 +21,42 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 
 	const VAT_VALUE = 1.17;
 
+	static protected $type = 'ilds';
+	protected $csvContent = '';
+	protected $csvPath;
+
+	public function __construct($options) {
+		parent::__construct($options);
+
+		if (isset($options['csv_filename'])) {
+			$this->csvPath = $this->export_directory . '/' . $options['csv_filename'] . '.csv';
+		} else {
+			$this->csvPath = $this->export_directory . '/' . $this->getStamp() . '.csv';
+		}
+
+		$this->loadCsv();
+	}
+
+	/**
+	 * load csv file to write the generating info into
+	 */
+	protected function loadCsv() {
+		if (file_exists($this->csvPath)) {
+			$this->csvContent = file_get_contents($this->csvPath);
+		}
+	}
+
+	/**
+	 * write row to csv file for generating info into in
+	 * 
+	 * @param string $row the row to write into
+	 * 
+	 * @return boolean true if succes to write info else false
+	 */
+	protected function csv($row) {
+		return file_put_contents($this->csvPath, $row, FILE_APPEND);
+	}
+
 	/**
 	 * load the container the need to be generate
 	 */
