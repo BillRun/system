@@ -73,11 +73,11 @@ class Processor_Mergerates extends Billrun_Processor_Base_Separator {
 //		$row['header_stamp'] = $this->data['header']['stamp'];
 		$row['file'] = basename($this->filePath);
 		$row['process_time'] = date(self::base_dateformat);
-		
+
 		if (Billrun_Util::startsWith($row['accessTypeName'], "AC_ROAM_CALLBACK")) { //@TODO change this check when there is a way to detect callback as the usage type
 			$row['kind'] = "A";
 		}
-		
+
 		Billrun_Factory::dispatcher()->trigger('afterDataParsing', array(&$row, $this));
 		$this->data['data'][] = $row;
 		return $row;
@@ -147,13 +147,21 @@ class Processor_Mergerates extends Billrun_Processor_Base_Separator {
 							'interval' => (int) ( $row['tinf_sampDelayInSec0'] ? ($row['tinf_sampDelayInSec0'] ) : 1  ) * $intervalMultiplier,
 						) ),
 				);
+				if (isset($row['zoneOrItem']) && Billrun_Util::startsWith($row['zoneOrItem'], 'KT_')) {
+					$category = "intl";
+				} else if (isset($row['accessTypeName']) && Billrun_Util::startsWith($row['accessTypeName'], 'AC_ROAM_')) {
+					$category = "roaming";
+				}
+				if (isset($category)) {
+					$value['category'] = $category;
+				}
 				if ($row['kind'] == 'C') { // add access price for calls
 					$value['access'] = (double) $row['tinf_accessPrice0'];
 				}
 				$entityRates = $entity['rates'];
 				$entityRates[$rateType] = $value;
 				$entity['rates'] = $entityRates;
-				if ($row['zoneOrItem'] != 'UNRATED' && isset($record_type) ) {
+				if ($row['zoneOrItem'] != 'UNRATED' && isset($record_type)) {
 					$entity->set("params.record_type", $record_type);
 				}
 				$entity->save($rates);
@@ -177,7 +185,7 @@ class Processor_Mergerates extends Billrun_Processor_Base_Separator {
 				return;
 			}
 			$row['zoneOrItem'] = $row['accessTypeName'];
-			$entity['vat_excluded'] = true;
+			$entity['vatable'] = false;
 			$entity['key'] = $row['zoneOrItem'];
 			unset($entity['_id']);
 		}

@@ -37,6 +37,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		$this->subscriber = Billrun_Factory::subscriber();
 		$this->balances = Billrun_Factory::db()->balancesCollection();
 		$this->plans = Billrun_Factory::db()->plansCollection();
+		$this->lines_coll = Billrun_Factory::db()->linesCollection();
 	}
 
 	/**
@@ -55,6 +56,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	 * write the calculation into DB
 	 */
 	protected function updateRow($row) {
+		$row->collection($this->lines_coll);
 		//Billrun_Factory::log('Load line ' . $row->get('stamp'), Zend_Log::INFO);
 		$subscriber = $this->loadSubscriberForLine($row);
 
@@ -64,11 +66,20 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		}
 
 		foreach ($subscriber->getAvailableFields() as $field) {
+			if (is_numeric($subscriber->{$field})) {
+				$subscriber->{$field} = intval($subscriber->{$field}); // remove this conversion when Vitali changes the output of the CRM to integers
+			}
 			$subscriber_field = $subscriber->{$field};
 			$row[$field] = $subscriber_field;
 		}
-		$this->addPlanRef($row, $subscriber->plan);
-		$this->createBalanceIfMissing($subscriber, Billrun_Util::getNextChargeKey($row->get('unified_record_time')->sec), $row['plan_ref']);
+
+		$plan_ref = $this->addPlanRef($row, $subscriber->plan);
+		if (is_null($plan_ref)) {
+			Billrun_Factory::log('No plan found for subscriber ' . $subscriber->subscriber_id, Zend_Log::ALERT);
+			return;
+		}
+		$billrun_key = Billrun_Util::getBillrunKey($row->get('unified_record_time')->sec);
+		$this->createBalanceIfMissing($subscriber, $billrun_key, $plan_ref);
 	}
 
 	/**
@@ -123,7 +134,8 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 				Billrun_Factory::log("Couldn't get plan for CDR line : {$row['stamp']} with plan $plan", Zend_Log::ALERT);
 				return;
 		}
-		$row['plan_ref'] = $planObj->get('_id')->getMongoID();
+		$row['plan_ref'] = $planObj->createRef();
+		return $row->get('plan_ref', true);
 	}
 
 }

@@ -28,13 +28,15 @@ class Billrun_Plan {
 	 * @param array $params array of parmeters (plan name & time)
 	 */
 	public function __construct(array $params = array()) {
-		if ((!isset($params['name']) || !isset($params['time'])) && (!isset($params['id'])) ) {
+		if ((!isset($params['name']) || !isset($params['time'])) && (!isset($params['id'])) && (!isset($params['data'])) ) {
 			//throw an error
-			throw new Exception("plan  constructor  was called  without the appropiate paramters , got : ". print_r($params,1));
+			throw new Exception("plan constructor was called  without the appropiate paramters , got : ". print_r($params,1));
 		}
-		
-		if(isset($params['id'])) {
+		if(isset($params['data'])) {
+			$this->data =  $params['data'];
+		} else if(isset($params['id'])) {
 			$this->data = Billrun_Factory::db()->plansCollection()->findOne($params['id']) ;
+			$this->data->collection(Billrun_Factory::db()->plansCollection());
 		} else {
 			$date = new MongoDate($params['time']);
 			$this->data = Billrun_Factory::db()->plansCollection()
@@ -48,6 +50,7 @@ class Billrun_Plan {
 					->lessEq('from', $date)			
 					->cursor()
 					->current();
+			$this->data->collection(Billrun_Factory::db()->plansCollection());
 		}
 
 	}
@@ -75,7 +78,7 @@ class Billrun_Plan {
 	public function isRateInSubPlan($rate, $sub, $type) {
 		return isset($rate['rates'][$type]['plans']) &&
 			is_array($rate['rates'][$type]['plans']) &&
-			in_array($sub['current_plan'], $rate['rates'][$type]['plans']);
+			in_array($sub->get('current_plan',true), $rate['rates'][$type]['plans']);
 	}
 
 	/**
@@ -86,11 +89,11 @@ class Billrun_Plan {
 	 */
 	public function usageLeftInPlan($subscriberBalance, $usagetype = 'call') {
 
-		if (!isset($subscriberBalance['usage_counters'][$usagetype])) {
-			throw new Exception("Inproper usage counter requested : $usagetype from subscriber balance : " . print_r($subscriberBalance, 1));
+		if (!isset($subscriberBalance['totals'][$usagetype]['usagev'])) {
+			throw new Exception("Inproper usage counter requested : $usagetype from subscriber : " . print_r($subscriber, 1));
 		}
 
-		/*if ( ($this->getRef() != $subscriber['current_plan']) ) {
+		/*if ( ($this->getRef() != $subscriberBalance['current_plan']) ) {
 			throw new Exception("Couldn't load plan for subscriber : " . print_r($subscriber, 1));
 		}*/
 		$usageLeft = 0;
@@ -98,32 +101,32 @@ class Billrun_Plan {
 			if ($this->get('include')[$usagetype] == 'UNLIMITED') {
 				return PHP_INT_MAX;
 			}
-			$usageLeft = $this->get('include')[$usagetype] - $subscriberBalance['usage_counters'][$usagetype];
+			$usageLeft = $this->get('include')[$usagetype] - $subscriberBalance['totals'][$usagetype]['usagev'];
 		}
 		return floatval($usageLeft < 0 ? 0 : $usageLeft);
 	}
+	
 	/**
-	 * Get the DB reference for the current plan. 
-	 * @return type
+	 * Get the price of the current plan.
+	 * @return float the price  of the plan without VAT.
 	 */
-	public function getRef() {
-		return $this->data->getId();
+	public function getPrice() {
+		return $this->get('price');
+	}
+	
+	/**
+	 * create  a DB reference to the current plan
+	 * @param type $collection (optional) the collection to use to create the reference.
+	 * @return MongoDBRef the refernce to current plan.
+	 */
+	public function createRef($collection = false ) {
+		$collection =$collection ? $collection : 
+					($this->data->collection() ? $this->data->collection() : Billrun_Factory::db()->plansCollection() );
+		return $this->data->createRef( $collection );
 	}
 
-	
-	public  function getEmptyPlanCounters() {
-		return array(
-					'call' => 0,
-					'incoming_call' => 0,
-					'sms' => 0,
-					'mms' => 0,
-					'data' => 0,
-					'inter_roam_incoming_call' => 0,
-					'inter_roam_call' => 0,
-					'inter_roam_callback' => 0,
-					'inter_roam_sms' => 0,
-					'inter_roam_data' => 0,
-					'inter_roam_incoming_sms' => 0,
-			);
+	static public function getPlanRef($name, $plan_date = null) {
+		return self::get($name, $plan_date)->createRef(Billrun_Factory::db()->plansCollection());
 	}
+	
 }
