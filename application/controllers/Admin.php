@@ -179,10 +179,10 @@ class AdminController extends Yaf_Controller_Abstract {
 	 */
 	public function plansAction() {
 		$columns = array(
-			'name',
-			'from',
-			'to',
-			'_id',
+			'name' => 'Name',
+			'from' => 'From',
+			'to' => 'To',
+			'_id' => 'Id',
 		);
 		$this->getView()->component = $this->setTableView('plans', $columns, array('creation_time' => -1));
 	}
@@ -192,12 +192,33 @@ class AdminController extends Yaf_Controller_Abstract {
 	 */
 	public function ratesAction() {
 		$columns = array(
-			'key',
-			'from',
-			'to',
-			'_id',
+			'key' => 'Key',
+			'from' => 'From',
+			'to' => 'To',
+			'_id' => 'Id',
 		);
 		$this->getView()->component = $this->setTableView('rates', $columns, array('creation_time' => -1));
+	}
+
+	/**
+	 * lines controller of admin
+	 */
+	public function linesAction() {
+		$columns = array(
+			'type' => 'Type',
+//			'file',
+			'account_id' =>'Account id',
+			'subscriber_id' => 'Subscriber id',
+			'usaget' => 'Usage type',
+			'usagev' => 'Amount',
+			'plan' => 'Plan',
+//			'customer_rate',
+			'price_customer' => 'Price',
+			'billrun_key' => 'Billrun',
+			'unified_record_time' => 'Time',
+			'_id' => 'Id',
+		);
+		$this->getView()->component = $this->setTableView('lines', $columns, array('creation_time' => -1));
 	}
 
 	/**
