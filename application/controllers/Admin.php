@@ -244,12 +244,12 @@ class AdminController extends Yaf_Controller_Abstract {
 	 */
 	public function logAction() {
 		$columns = array(
-			'source',
-			'type',
-			'file_name',
-			'received_time',
-			'process_time',
-			'_id',
+			'source' => 'Source',
+			'type' => 'Type',
+			'file_name' => 'Filename',
+			'received_time' => 'Date received',
+			'process_time' => 'Date processed',
+			'_id' => 'Id',
 		);
 		$this->getView()->component = $this->setTableView('log', $columns, array('received_time' => -1));
 	}

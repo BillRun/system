@@ -234,14 +234,26 @@ class TableModel {
 	}
 	
 	public function update($params) {
+		
 //		if (method_exists($this, $coll . 'BeforeDataSave')) {
 //			call_user_func_array(array($this, $coll . 'BeforeDataSave'), array($collection, &$newEntity));
 //		}
 		if (isset($params['_id'])) {
 			$entity = $this->collection->findOne($params['_id']);
-			foreach ($params as $key => $value) {
-				$entity[$key] = $value;
+			$protected_keys = $this->getProtectedKeys($entity, "update");
+			$hidden_keys = $this->getHiddenKeys($entity, "update");
+			$raw_data = $entity->getRawData();
+			$new_data = array();
+			foreach ($protected_keys as $value) {
+				$new_data[$value] = $raw_data[$value];
 			}
+			foreach ($hidden_keys as $value) {
+				$new_data[$value] = $raw_data[$value];
+			}
+			foreach ($params as $key => $value) {
+				$new_data[$key] = $value;
+			}
+			$entity->setRawData($new_data);
 		} else {
 			$entity = new Mongodloid_Entity($params);
 		}
