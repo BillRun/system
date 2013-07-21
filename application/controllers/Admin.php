@@ -231,14 +231,18 @@ class AdminController extends Yaf_Controller_Abstract {
 	 */
 	public function eventsAction() {
 		$columns = array(
-			'creation_time',
-			'event_type',
-			'imsi',
-			'source',
-			'threshold',
-			'units',
-			'value',
-			'_id',
+			'creation_time' => 'Creation time',
+			'event_type' => 'Event type',
+			'imsi' => 'IMSI',
+			'msisdn' => 'MSISDN',
+			'source' => 'Source',
+			'threshold' => 'Threshold',
+			'units' => 'Units',
+			'value' => 'Value',
+			'notify_time' => 'Notify time',
+			'email_sent' => 'Email sent',
+			'priority' => 'Priority',
+			'_id' => 'Id',
 		);
 		$this->getView()->component = $this->setTableView('events', $columns, array('creation_time' => -1));
 	}
@@ -317,8 +321,8 @@ class AdminController extends Yaf_Controller_Abstract {
 			'sort' => $sort,
 		);
 
-		if ($table == 'lines') {
-			$criteria_tpl = 'lines';
+		if ($table == 'lines' || $table == 'events') {
+			$criteria_tpl = 'events';
 		} else {
 			$criteria_tpl = 'date';
 		}
