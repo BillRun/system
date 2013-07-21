@@ -27,13 +27,13 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	 * 
 	 * @var int
 	 */
-	protected $page = 0;
+	protected $page = 1;
 
 	/**
 	 * 
 	 * @var int
 	 */
-	protected $size = 10000;
+	protected $size = 200;
 
 	/**
 	 *
@@ -95,66 +95,78 @@ EOT;
 	 * load the data to aggregate
 	 */
 	public function load() {
-		$date = Billrun_Util::getLastChargeTime(true);
-		$this->data = Subscriber_Golan::getList($this->page, $this->size, $date);
-
-		Billrun_Factory::log()->log("aggregator entities loaded: " . count($this->data), Zend_Log::INFO);
-
-		Billrun_Factory::dispatcher()->trigger('afterAggregatorLoadData', array('aggregator' => $this));
+//		$date = date(Billrun_Base::base_dateformat, Billrun_Util::getLastChargeTime(true));
+//		$subscriber = Billrun_Factory::subscriber();
+//		$this->data = $subscriber->getList($this->page, $this->size, $date);
+//
+//		Billrun_Factory::log()->log("aggregator entities loaded: " . count($this->data), Zend_Log::INFO);
+//
+//		Billrun_Factory::dispatcher()->trigger('afterAggregatorLoadData', array('aggregator' => $this));
 	}
 
 	/**
 	 * execute aggregate
 	 */
 	public function aggregate() {
-		// @TODO trigger before aggregate
-		Billrun_Factory::dispatcher()->trigger('beforeAggregate', array($this->data, &$this));
+		$date = date(Billrun_Base::base_dateformat, Billrun_Util::getLastChargeTime(true));
+		$subscriber = Billrun_Factory::subscriber();
 
-		$billrun_key = $this->getStamp();
+		while ($this->data = $subscriber->getList($this->page, $this->size, $date)) {
+			Billrun_Factory::dispatcher()->trigger('afterAggregatorLoadData', array('aggregator' => $this));
+			Billrun_Factory::log()->log("Page " . $this->page . " loaded with " . count($this->data) . " entities.", Zend_Log::INFO);
 
-		foreach ($this->data as $account_id => $account) {
-			//TODO refactor this to use the Billrun_Factory ??
-			$billrun = Billrun_Factory::billrun(array( 'account_id' => $account_id, 'billrun_key' => $billrun_key ));
-			if (!$billrun->isValid()) {
-				$billrun->create($account_id, $billrun_key);
-			}
-			if ($billrun->isOpen()) { // open billrun
-				foreach ($account as $subscriber) {
-					Billrun_Factory::dispatcher()->trigger('beforeAggregateLine', array(&$subscriber, &$this));
-					$account_id = $subscriber->account_id;
-					$subscriber_id = $subscriber->subscriber_id;
+			// @TODO trigger before aggregate
+			Billrun_Factory::dispatcher()->trigger('beforeAggregate', array($this->data, &$this));
+			$billrun_key = $this->getStamp();
 
-					try {
-						$flat_price = $subscriber->getFlatPrice();
-						Billrun_Factory::log('Adding flat to subscriber ' . $subscriber_id, Zend_Log::INFO);
-						$flat_entry = new Mongodloid_Entity($subscriber->getFlatEntry($billrun_key));
-						$flat_entry->collection($this->lines);
-						$flat_entry->save();
-					} catch (Exception $e) {
-						Billrun_Factory::log()->log("Flat line already exists for subscriber " . $subscriber_id . " for billrun " . $billrun_key, Zend_Log::NOTICE);
-					}
-
-					if (!$billrun->exists($subscriber_id)) {
-						$billrun->addSubscriber($subscriber_id);
-					}
-					try {
-						$plan = $flat_entry['current_plan'];
-						$billrun->update($subscriber_id, array(), array('price_customer' => $flat_price), $flat_entry, $plan['vatable']);
-					} catch (Exception $e) {
-						Billrun_Factory::log()->log("Flat costs already exist in billrun collection for subscriber " . $subscriber_id . " for billrun " . $billrun_key, Zend_Log::NOTICE);
-					}
+			foreach ($this->data as $account_id => $account) {
+				//TODO refactor this to use the Billrun_Factory ??
+				$billrun = Billrun_Factory::billrun(array('account_id' => $account_id, 'billrun_key' => $billrun_key));
+				if (!$billrun->isValid()) {
+					$billrun->create($account_id, $billrun_key);
 				}
-				$billrun->close();
-			} else {
-				Billrun_Factory::log('Billrun ' . $billrun_key . " already closed for account " . $account_id, Zend_Log::NOTICE);
+				if ($billrun->isOpen()) { // open billrun
+					foreach ($account as $subscriber) {
+						Billrun_Factory::dispatcher()->trigger('beforeAggregateLine', array(&$subscriber, &$this));
+						$account_id = $subscriber->account_id;
+						$subscriber_id = $subscriber->subscriber_id;
+
+						try {
+							$flat_price = $subscriber->getFlatPrice();
+							Billrun_Factory::log('Adding flat to subscriber ' . $subscriber_id, Zend_Log::INFO);
+							$flat_entry = new Mongodloid_Entity($subscriber->getFlatEntry($billrun_key));
+							$flat_entry->collection($this->lines);
+							$flat_entry->save();
+						} catch (Exception $e) {
+							Billrun_Factory::log()->log("Flat line already exists for subscriber " . $subscriber_id . " for billrun " . $billrun_key, Zend_Log::NOTICE);
+						}
+
+						if (!$billrun->exists($subscriber_id)) {
+							$billrun->addSubscriber($subscriber_id);
+						}
+						try {
+							$plan = $flat_entry['current_plan'];
+							$billrun->update($subscriber_id, array(), array('price_customer' => $flat_price), $flat_entry, $plan['vatable']);
+						} catch (Exception $e) {
+							Billrun_Factory::log()->log("Flat costs already exist in billrun collection for subscriber " . $subscriber_id . " for billrun " . $billrun_key, Zend_Log::NOTICE);
+						}
+					}
+					$billrun->close();
+				} else {
+					Billrun_Factory::log('Billrun ' . $billrun_key . " already closed for account " . $account_id, Zend_Log::NOTICE);
+				}
 			}
+
+			//		Billrun_Factory::dispatcher()->trigger('beforeAggregateSaveLine', array(&$save_data, &$this));
+			// @TODO trigger after aggregate
+			Billrun_Factory::dispatcher()->trigger('afterAggregate', array($this->data, &$this));
+
+			$this->page++;
 		}
-//		Billrun_Factory::dispatcher()->trigger('beforeAggregateSaveLine', array(&$save_data, &$this));
-		// @TODO trigger after aggregate
-		Billrun_Factory::dispatcher()->trigger('afterAggregate', array($this->data, &$this));
 	}
 
 	protected function save($data) {
+		
 	}
 
 	/**
