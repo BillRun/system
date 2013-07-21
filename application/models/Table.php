@@ -135,10 +135,10 @@ class TableModel {
 
 	public function printPager($print = false) {
 
-		if ($this->getPagesCount() > 1) {
+		if (($last_page = $this->getPagesCount()) > 1) {
 			$current = $this->page;
 			$count = $this->count();
-
+			
 			// TODO: move it to config
 			$range = 5;
 
@@ -156,8 +156,8 @@ class TableModel {
 			if ($min < 1) {
 				$min = 1;
 			}
-			if ($max > $count) {
-				$max = $count;
+			if ($max > $last_page) {
+				$max = $last_page;
 			}
 
 			$ret = '<div class="pagination pagination-right">'
@@ -180,7 +180,7 @@ class TableModel {
 				$ret .= '<li><a href="?page=' . $i . '">' . $i . '</a></li>';
 			}
 
-			if ($current == $count) {
+			if ($current == $last_page) {
 				$ret .= '<li class="disabled"><a href="javascript:void(0);">Next</a></li>'
 					. '<li class="disabled"><a href="javascript:void(0);">Last</a></li>';
 			} else {

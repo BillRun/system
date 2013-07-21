@@ -232,7 +232,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	}
 
 	/**
-	 * removes the tx's from the subscriber's balance to save space.
+	 * removes the transactions from the subscriber's balance to save space.
 	 * @param type $row
 	 */
 	protected function removeBalanceTx($row) {

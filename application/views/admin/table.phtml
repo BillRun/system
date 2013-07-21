@@ -1,30 +1,12 @@
+<script type="text/javascript">
+			var coll = <?php echo json_encode(strtolower($this->title)); ?>;
+		</script>
 <div class="container component">
 	<h1><?php echo $this->title; ?></h1>
-	<?php if ($this->title == 'Rates' || $this->title == 'Plans' || $this->title == 'Lines') : ?>
-		<div class="toolbar">
-			<form action="" method="post">
-				<?php if ($this->title == 'Rates' || $this->title == 'Plans') : ?>
-					<div class="input-append date" id="datetimepicker" data-date="<?php echo $this->filterDate->toString('YYYY-MM-dd HH:mm:ss'); ?>" data-date-format="yyyy-MM-dd hh:mm:ss">
-						<input name="dateFilter" class="span2" size="16" type="text" value="<?php echo $this->filterDate->toString('YYYY-MM-dd HH:mm:ss'); ?>">
-						<span class="add-on"><i class="icon-th"></i></span>
-					</div>
-					<span><button type="submit" class="btn">Submit</button></span>
-				<?php endif; ?>
-				<script type="text/javascript">
-					var edit_url_prefix = <?php echo json_encode($this->baseUrl . '/admin/edit?coll=' . strtolower($this->title) . '&id='); ?>;
-					var confirm_url_prefix = <?php echo json_encode($this->baseUrl . '/admin/confirm?coll=' . strtolower($this->title) . '&id='); ?>;
-				</script>
-
-				<span><a id='update_current' data-type="update" href="#popupModal" class="btn btn-warning" data-toggle="modal" role="button" data-remote="">Update current</a></span>
-				<?php if ($this->title == 'Rates' || $this->title == 'Plans') : ?>
-					<span><a id='close_and_new' data-type="close_and_new" href="#popupModal" class="btn btn-primary" data-toggle="modal" role="button" data-remote="">Close & new</a></span>
-					<span><a id='duplicate' data-type="duplicate" href="#popupModal" class="btn btn-info" data-toggle="modal" role="button" data-remote="">Duplicate</a></span>
-				<?php endif; ?>
-				<span><a id='remove' data-type="remove" href="#confirmModal" class="btn btn-danger" data-toggle="modal" role="button" data-remote=""><i class="icon-remove"> </i>Remove</a></span>
-			</form>
-		</div>
-		<?php
-	endif;
+	<?php
+	if (isset($criteria_tpl)) {
+		$this->display($criteria_tpl . '.phtml', array());
+	}
 	if (isset($this->data) && $this->data instanceof Mongodloid_Cursor) :
 		print '<table id="data_table" class="table table-striped table-bordered">';
 		print '<thead><tr><th>#</th>';
@@ -75,7 +57,6 @@
 		<div class="modal-footer">
 			<button id="cancelPopup" class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
 			<button id="save" class="btn btn-primary">Save changes</button>
-			<!--<button id="apply" class="btn btn-danger" data-toggle="dropdown">Update current</button>-->
 		</div>
     </div>
 
@@ -89,7 +70,6 @@
 		<div class="modal-footer">
 			<button id="cancelConfirm" class="btn" data-dismiss="modal" aria-hidden="true">Cancel</button>
 			<button id="confirm" class="btn btn-primary">Remove</button>
-			<!--<button id="apply" class="btn btn-danger" data-toggle="dropdown">Update current</button>-->
 		</div>
     </div>
 </div>

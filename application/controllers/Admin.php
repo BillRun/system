@@ -65,24 +65,28 @@ class AdminController extends Yaf_Controller_Abstract {
 
 	public function confirmAction() {
 		$coll = Billrun_Util::filter_var($this->getRequest()->get('coll'), FILTER_SANITIZE_STRING);
-		$id = Billrun_Util::filter_var($this->getRequest()->get('id'), FILTER_SANITIZE_STRING);
+		$ids = Billrun_Util::filter_var($this->getRequest()->get('id'), FILTER_SANITIZE_STRING);
 		$type = Billrun_Util::filter_var($this->getRequest()->get('type'), FILTER_SANITIZE_STRING);
 
 		$model = self::getModel($coll);
-		$entity = $model->getItem($id);
-		if ($type == 'remove') {
+
+		if ($type == 'remove' && $coll != 'lines') {
+			$entity = $model->getItem($ids);
+			$this->getView()->entity = $entity;
+			$this->getView()->key = $entity[$model->search_key];
 			if (!$model->isLast($entity)) {
 				die("There's already a newer entity with this key");
 			} else if (is_subclass_of($model, "TabledateModel") && !$model->startsInFuture($entity)) {
 				die("Only future entities could be removed");
 			}
+		} else {
+			$this->getView()->key = "the selected lines";
 		}
 
-		$this->getView()->entity = $entity;
+
 		$this->getView()->collectionName = $coll;
 		$this->getView()->type = $type;
-		$this->getView()->key = $entity[$model->search_key];
-		$this->getView()->id = $id;
+		$this->getView()->ids = $ids;
 //		$this->getView()->component = $this->renderView('remove', array('entity' => $entity, 'collectionName' => $coll, 'type' => $type, 'key' => $entity[$model->search_key]));
 	}
 
@@ -93,7 +97,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * @todo protect the from and to to be continuely
 	 */
 	public function removeAction() {
-		$id = Billrun_Util::filter_var($this->getRequest()->get('id'), FILTER_SANITIZE_STRING);
+		$ids = explode(",", Billrun_Util::filter_var($this->getRequest()->get('ids'), FILTER_SANITIZE_STRING));
 		$coll = Billrun_Util::filter_var($this->getRequest()->get('coll'), FILTER_SANITIZE_STRING);
 		$type = Billrun_Util::filter_var($this->getRequest()->get('type'), FILTER_SANITIZE_STRING);
 
@@ -104,7 +108,9 @@ class AdminController extends Yaf_Controller_Abstract {
 			return false;
 		}
 
-		$params = array('_id' => new Mongodloid_Id($id));
+		foreach ($ids as $id) {
+			$params['_id']['_id']['$in'][] = new MongoId($id);
+		}
 
 		if ($type == 'remove') {
 			$saveStatus = $model->remove($params);
@@ -112,7 +118,7 @@ class AdminController extends Yaf_Controller_Abstract {
 
 		// @TODO: need to load ajax view
 		// for now just die with json
-		die(json_encode($ret));
+		die(json_encode(null));
 	}
 
 	/**
@@ -207,13 +213,11 @@ class AdminController extends Yaf_Controller_Abstract {
 	public function linesAction() {
 		$columns = array(
 			'type' => 'Type',
-//			'file',
-			'account_id' =>'Account id',
+			'account_id' => 'Account id',
 			'subscriber_id' => 'Subscriber id',
 			'usaget' => 'Usage type',
 			'usagev' => 'Amount',
 			'plan' => 'Plan',
-//			'customer_rate',
 			'price_customer' => 'Price',
 			'billrun_key' => 'Billrun',
 			'unified_record_time' => 'Time',
@@ -246,6 +250,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$columns = array(
 			'source' => 'Source',
 			'type' => 'Type',
+			'retrieved_from' => 'Retrieved from',
 			'file_name' => 'Filename',
 			'received_time' => 'Date received',
 			'process_time' => 'Date processed',
@@ -312,6 +317,12 @@ class AdminController extends Yaf_Controller_Abstract {
 			'sort' => $sort,
 		);
 
+		if ($table == 'lines') {
+			$criteria_tpl = 'lines';
+		} else {
+			$criteria_tpl = 'date';
+		}
+
 		if ($table == 'rates' || $table == 'plans') {
 			$date = $this->getRequest()->getPost('dateFilter');
 			if (is_string($date)) {
@@ -326,6 +337,16 @@ class AdminController extends Yaf_Controller_Abstract {
 
 			$options['date'] = $session->$table->filterDate;
 			$model = new TabledateModel($options);
+		} else if ($table == 'lines') {
+			$garbage = $this->getRequest()->getPost('garbage');
+			if (is_string($garbage) && $garbage == "on") {
+				$session->$table->garbage = $garbage;
+			} else if (!isset($session->$table->garbage)) {
+				$session->$table->garbage = "off";
+			} // else it will take what already in the session
+
+//			$options['garbage'] = $session->$table->garbage;
+			$model = new LinesModel($options);
 		} else {
 			$model = new TableModel($options);
 		}
@@ -344,6 +365,7 @@ class AdminController extends Yaf_Controller_Abstract {
 			'pagination' => $pagination,
 			'sizeList' => $sizeList,
 			'edit_key' => $edit_key,
+			'criteria_tpl' => $criteria_tpl,
 		);
 
 		if ($table == 'rates' || $table == 'plans') {
