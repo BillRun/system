@@ -44,7 +44,7 @@ class Billrun_Calculator_NationalRoamingPricing extends Billrun_Calculator_Whole
 		$pricingData = array();
 
 		if (isset($row['usagev'])) {
-			$pricingData = $this->getLinePricingData($row['usagev'], $row['usaget'], $this->nrCarrier, $zoneKey); //$this->priceLine($volume, $usage_type, $rate, $subscriber);
+			$pricingData = $this->getLinePricingData($row['usagev'], $row['usaget'], $this->nrCarrier, $zoneKey);
 			$row->setRawData(array_merge($row->getRawData(), $pricingData));
 		}	
 	}

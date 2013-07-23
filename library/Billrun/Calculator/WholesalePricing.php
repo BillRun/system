@@ -22,12 +22,10 @@ class Billrun_Calculator_WholesalePricing extends Billrun_Calculator_Wholesale {
 
 		return $lines->query(array(
 								'type'=> 'nsn',
-								'$or' => array(
-									array( 'record_type' => '11', 'out_circuit_group_name' => array('$ne' => '')),
-									array('record_type' => '12', 'in_circut_group_name' => array('$ne' => '')),
-								)
+								 'record_type' => array('$in' =>  array('11','12','08','09'),),
 						))				
-						->exists('carir')->notEq('carir',null)->exists('usaget')->notExists($this->pricingField)->cursor()->limit($this->limit);
+						->exists(Billrun_Calculator_Carrier::DEF_CALC_DB_FIELD)->notEq(Billrun_Calculator_Carrier::DEF_CALC_DB_FIELD,null)
+						->exists('usaget')->notExists($this->pricingField)->cursor()->limit($this->limit);
 	}
 
 	protected function updateRow($row) {
@@ -36,7 +34,7 @@ class Billrun_Calculator_WholesalePricing extends Billrun_Calculator_Wholesale {
 		$row->collection(Billrun_Factory::db()->linesCollection());
 		
 		if (isset($row['usagev']) && $zoneKey) {
-			$pricingData = $this->getLinePricingData($row['usagev'], $row['usaget'], $row['carir'], $zoneKey); //$this->priceLine($volume, $usage_type, $rate, $subscriber);
+			$pricingData = $this->getLinePricingData($row['usagev'], $row['usaget'], $row['carir'], $zoneKey,isset($row['peak']) ? $row['peak'] : null ); //$this->priceLine($volume, $usage_type, $rate, $subscriber);
 			$row->setRawData(array_merge($row->getRawData(), $pricingData));
 		}	
 	}

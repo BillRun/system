@@ -21,8 +21,10 @@ abstract class Billrun_Calculator_Wholesale extends Billrun_Calculator {
 	 * @param type $subr the  subscriber that generated the usage.
 	 * @return type
 	 */
-	protected function getLinePricingData($volumeToPrice, $usageType, $carrier, $zoneKey , $peak = null) {
-		$typedRates = $peak != null ? $carrier['zones'][$zoneKey][$usageType][$peak ? 'peak' : 'off_peak'] : $carrier['zones'][$zoneKey][$usageType];
+	protected function getLinePricingData($volumeToPrice, $usageType, $carrier, $zoneKey , $peak) {
+		$typedRates =  isset($carrier['zones'][$zoneKey][$usageType][$peak ? 'peak' : 'off_peak']) ?
+									$carrier['zones'][$zoneKey][$usageType][$peak ? 'peak' : 'off_peak'] : 
+									$carrier['zones'][$zoneKey][$usageType];
 		if(!$typedRates['rate'] || !is_array($typedRates['rate'])) {
 			Billrun_Factory::log()->log(print_r($carrier,1),Zend_Log::DEBUG);
 		}

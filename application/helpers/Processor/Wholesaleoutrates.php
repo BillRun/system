@@ -188,9 +188,13 @@ class Processor_Wholesaleoutrates extends Billrun_Processor_Base_Separator {
 	 * @return type
 	 */
 	protected function getZoneRate($entity, $rateRow) {
-		$currentRates = isset($entity['zones']['wsaleZoneName']) ? $entity['zones']['wsaleZoneName'] : array();
-		
-		return array($rateRow['wsaleZoneName'] => array_merge_recursive($currentRates, $this->getRate($rateRow)));
+		$currentRates = isset($entity['zones'][$rateRow['wsaleZoneName']]) ? $entity['zones'][$rateRow['wsaleZoneName']] : array();
+		foreach($this->getRate($rateRow) as $key => $value) {
+			if( $value ) {
+				$currentRates[$key] = isset($currentRates[$key]) ? array_merge($currentRates[$key], $value) : $value;
+			}
+		}
+		return array($rateRow['wsaleZoneName'] => $currentRates);
 	}
 	
 	/**
@@ -199,7 +203,7 @@ class Processor_Wholesaleoutrates extends Billrun_Processor_Base_Separator {
 	 * @return type
 	 */
 	protected function translateTime($timePeriod) {
-		return $timePeriod == "BLUE" ? 'off_peak' : ($timePeriod == "RED" ? 'peak' : 'all');
+		return $timePeriod == "RED" ? 'peak' : ($timePeriod == "BLUE" ? 'off_peak' : 'all');
 	}
 
 }

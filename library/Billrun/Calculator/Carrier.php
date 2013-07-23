@@ -63,11 +63,15 @@ class Billrun_Calculator_Carrier extends Billrun_Calculator {
 	 * @return Mongodloid_Entity the  carrier object in the DB.
 	 */
 	protected function detectCarrierOut($row) {	
-		return Billrun_Factory::db()->carriersCollection()->query(array(
-				'identifiction.group_name' => array(
-					'$in'=> array(substr($row['out_circuit_group_name'], 0, 4))
-				)
-			))->cursor()->current();
+		$query = array('identifiction.group_name' => array(
+						'$in'=> array(substr($row['out_circuit_group_name'], 0, 4))
+					));
+		if(in_array($row['record_type'],array('08','09'))) {
+				$query = array('identifiction.sms_centre' => array(
+						'$in'=> array(substr($row['sms_centre'],0,5))
+					));
+		}
+		return Billrun_Factory::db()->carriersCollection()->query($query)->cursor()->current();
 	}
 
 	/**
@@ -76,11 +80,15 @@ class Billrun_Calculator_Carrier extends Billrun_Calculator {
 	 * @return Mongodloid_Entity the carrier object in the DB.	
 	 */
 	protected function detectCarrierIn($row) {
-		return Billrun_Factory::db()->carriersCollection()->query(array(
-				'identifiction.group_name' => array(
-					'$in'=> array(substr($row['in_circuit_group_name'], 0, 4))
-				)
-			))->cursor()->current();
+		$query = array('identifiction.group_name' => array(
+						'$in'=> array(substr($row['in_circuit_group_name'], 0, 4))
+					));
+		if(in_array($row['record_type'],array('08','09'))) {
+				$query = array('identifiction.sms_centre' => array(
+						'$in'=> array(substr($row['sms_centre'],0,5))
+					));
+		}
+		return Billrun_Factory::db()->carriersCollection()->query($query)->cursor()->current();
 	}
 
 }
