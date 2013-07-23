@@ -20,6 +20,8 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * @var string 
 	 */
 	protected $title = null;
+	protected $session = null;
+	protected $model = null;
 
 	/**
 	 * method to control and navigate the user to the right view
@@ -108,8 +110,12 @@ class AdminController extends Yaf_Controller_Abstract {
 			return false;
 		}
 
-		foreach ($ids as $id) {
-			$params['_id']['_id']['$in'][] = new MongoId($id);
+		if (count($ids) == 1) {
+			$params['_id'] = $ids[0];
+		} else {
+			foreach ($ids as $id) {
+				$params['_id']['_id']['$in'][] = new MongoId($id);
+			}
 		}
 
 		if ($type == 'remove') {
@@ -163,7 +169,7 @@ class AdminController extends Yaf_Controller_Abstract {
 //		);
 		// @TODO: need to load ajax view
 		// for now just die with json
-		die(json_encode($saveStatus));
+		die(json_encode(null));
 	}
 
 	/**
@@ -185,66 +191,111 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * plans controller of admin
 	 */
 	public function plansAction() {
-		$columns = array(
-			'name' => 'Name',
-			'from' => 'From',
-			'to' => 'To',
-			'_id' => 'Id',
-		);
-		$this->getView()->component = $this->setTableView('plans', $columns, array('creation_time' => -1));
+		$this->forward("tabledate", array('table' => 'plans'));
+		return false;
 	}
 
 	/**
 	 * rates controller of admin
 	 */
 	public function ratesAction() {
-		$columns = array(
-			'key' => 'Key',
-			'from' => 'From',
-			'to' => 'To',
-			'_id' => 'Id',
+		$this->forward("tabledate", array('table' => 'rates'));
+		return false;
+	}
+
+	public function tabledateAction() {
+		$table = $this->_request->getParam("table");
+		$session = $this->getSession($table);
+		$date = $this->getVar($session, 'dateFilter');
+		if (is_string($date)) {
+			$dateFilter = new Zend_Date($date, null, new Zend_Locale('he_IL'));
+		}
+
+		if (isset($dateFilter)) {
+			$session->dateFilter = $dateFilter;
+		} else if (!isset($session->dateFilter)) {
+			$session->dateFilter = new Zend_Date(null, null, new Zend_Locale('he_IL'));
+		} // else it will take what already in the session
+
+		$options['date'] = $session->dateFilter;
+
+		$dateInput = new MongoDate($options['date']->getTimestamp());
+
+		$query['$and'] = array(
+			array(
+				'from' => array(
+					'$lt' => $dateInput,
+				),
+				'to' => array(
+					'$gt' => $dateInput,
+				),
+			)
 		);
-		$this->getView()->component = $this->setTableView('rates', $columns, array('creation_time' => -1));
+		$this->getView()->component = $this->buildComponent($table, $query, array('creation_time' => -1), $options);
 	}
 
 	/**
 	 * lines controller of admin
 	 */
 	public function linesAction() {
-		$columns = array(
-			'type' => 'Type',
-			'account_id' => 'Account id',
-			'subscriber_id' => 'Subscriber id',
-			'usaget' => 'Usage type',
-			'usagev' => 'Amount',
-			'plan' => 'Plan',
-			'price_customer' => 'Price',
-			'billrun_key' => 'Billrun',
-			'unified_record_time' => 'Time',
-			'_id' => 'Id',
-		);
-		$this->getView()->component = $this->setTableView('lines', $columns, array('creation_time' => -1));
+		$session = $this->getSession('lines');
+		$garbage = $this->getVar($session, "garbage", "off");
+		$query = array();
+		if ($garbage == "on") {
+			$rates_coll = Billrun_Factory::db()->ratesCollection();
+			$unrated_rate = $rates_coll->query("key", "UNRATED")->cursor()->current()->createRef($rates_coll);
+			$month_ago = new MongoDate(strtotime("1 month ago"));
+			$query['$or'] = array(
+				array('customer_rate' => $unrated_rate), // customer rate is "UNRATED"
+				array('subscriber_id' => false), // or subscriber not found
+				array('$and' => array(// old unpriced records which should've been priced
+						array('customer_rate' => array(
+								'$exists' => true,
+								'$nin' => array(
+									false, $unrated_rate
+								),
+						)),
+						array('subscriber_id' => array(
+								'$exists' => true,
+								'$ne' => false,
+						)),
+						array('unified_record_time' => array(
+								'$lt' => $month_ago
+						)),
+						array('price_customer' => array(
+								'$exists' => false
+						)),
+				)),
+			);
+		}
+
+		$sort = array('unified_record_time' => -1);
+
+		$this->getView()->component = $this->buildComponent('lines', $query, $sort);
 	}
 
 	/**
 	 * events controller of admin
 	 */
 	public function eventsAction() {
-		$columns = array(
-			'creation_time' => 'Creation time',
-			'event_type' => 'Event type',
-			'imsi' => 'IMSI',
-			'msisdn' => 'MSISDN',
-			'source' => 'Source',
-			'threshold' => 'Threshold',
-			'units' => 'Units',
-			'value' => 'Value',
-			'notify_time' => 'Notify time',
-			'email_sent' => 'Email sent',
-			'priority' => 'Priority',
-			'_id' => 'Id',
-		);
-		$this->getView()->component = $this->setTableView('events', $columns, array('creation_time' => -1));
+//		$columns = array(
+//			'creation_time' => 'Creation time',
+//			'event_type' => 'Event type',
+//			'imsi' => 'IMSI',
+//			'msisdn' => 'MSISDN',
+//			'source' => 'Source',
+//			'threshold' => 'Threshold',
+//			'units' => 'Units',
+//			'value' => 'Value',
+//			'notify_time' => 'Notify time',
+//			'email_sent' => 'Email sent',
+//			'priority' => 'Priority',
+//			'_id' => 'Id',
+//		);
+//		$this->getView()->component = $this->setTableView('events', $columns, array('creation_time' => -1));
+		$query = array();
+		$sort = array();
+		$this->getView()->component = $this->buildComponent('events', $query, $sort);
 	}
 
 	/**
@@ -290,100 +341,35 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * @return string the render page (HTML)
 	 * @todo refactoring this function
 	 */
-	protected function setTableView($table, $columns = array(), $sort = array(), $edit_key = null) {
-		$page = (int) $this->getRequest()->get('page');
-		$size = (int) $this->getRequest()->get('listSize');
+	protected function getTableViewParams($filter_query = array()) {
 
-		$session = Yaf_session::getInstance();
-		$session->start();
-
-		if (!isset($session->$table)) {
-			$session->$table = new stdClass();
-		}
-
-		if ($page) {
-			$session->$table->page = $page;
-		} else if (!isset($session->$table->page)) {
-			$session->$table->page = 0;
-		}
-
-		if ($size) {
-			$session->$table->size = $size;
-		} else if (!isset($session->$table->size)) {
-			$session->$table->size = 1000;
-		}
-
-		// use for model
-		$options = array(
-			'collection' => $table,
-			'page' => $session->$table->page,
-			'size' => $session->$table->size,
-			'sort' => $sort,
-		);
-
-		if ($table == 'lines' || $table == 'events') {
-			$criteria_tpl = 'events';
-		} else {
-			$criteria_tpl = 'date';
-		}
-
-		if ($table == 'rates' || $table == 'plans') {
-			$date = $this->getRequest()->getPost('dateFilter');
-			if (is_string($date)) {
-				$filterDate = new Zend_Date($date, null, new Zend_Locale('he_IL'));
-			}
-
-			if (isset($filterDate)) {
-				$session->$table->filterDate = $filterDate;
-			} else if (!isset($session->$table->filterDate)) {
-				$session->$table->filterDate = new Zend_Date(null, null, new Zend_Locale('he_IL'));
-			} // else it will take what already in the session
-
-			$options['date'] = $session->$table->filterDate;
-			$model = new TabledateModel($options);
-		} else if ($table == 'lines') {
-			$garbage = $this->getRequest()->getPost('garbage');
-			if (is_string($garbage) && $garbage == "on") {
-				$session->$table->garbage = $garbage;
-			} else if (!isset($session->$table->garbage)) {
-				$session->$table->garbage = "off";
-			} // else it will take what already in the session
-
-//			$options['garbage'] = $session->$table->garbage;
-			$model = new LinesModel($options);
-		} else {
-			$model = new TableModel($options);
-		}
-
-		$data = $model->getData();
-		// TODO: use ready pager/paginiation class (zend? joomla?) with auto print
-		$pagination = $model->printPager();
-		$sizeList = $model->printSizeList();
-		$title = ucfirst($table);
+		$data = $this->model->getData($filter_query);
+		$columns = $this->model->getTableColumns();
+		$edit_key = $this->model->getEditKey();
+		$pagination = $this->model->printPager();
+		$sizeList = $this->model->printSizeList();
 
 		$params = array(
 			'data' => $data,
-			'title' => $title,
 			'columns' => $columns,
-			'offset' => $model->offset(),
+			'edit_key' => $edit_key,
 			'pagination' => $pagination,
 			'sizeList' => $sizeList,
-			'edit_key' => $edit_key,
-			'criteria_tpl' => $criteria_tpl,
 		);
 
-		if ($table == 'rates' || $table == 'plans') {
-			$params['filterDate'] = $session->$table->filterDate;
-		}
-		$this->title = $title;
-
-		$ret = $this->renderView('table', $params);
-
-		return $ret;
+		return $params;
 	}
 
 	protected function createFilterToolbar() {
-		
+
+		$params['criteria_tpl'] = $this->model->toolbar();
+//		if ($table == 'lines' || $table == 'events') {
+//			$params['criteria_tpl'] = 'events';
+//		} else {
+//			$criteria_tpl = 'date';
+//		}
+
+		return $params;
 	}
 
 	// choose columns
@@ -412,13 +398,86 @@ class AdminController extends Yaf_Controller_Abstract {
 		return $this->getView()->render($tpl . ".phtml", $parameters);
 	}
 
-	public static function getModel($collection_name) {
-		$model_name = ucfirst($collection_name) . "Model";
-		if (class_exists($model_name)) {
-			return new $model_name;
-		} else {
-			die("Error loading model");
+	public function getModel($collection_name, $options = array()) {
+		if (is_null($this->model)) {
+			$model_name = ucfirst($collection_name) . "Model";
+			if (class_exists($model_name)) {
+				$this->model = new $model_name($options);
+			} else {
+				die("Error loading model");
+			}
 		}
+		return $this->model;
+	}
+
+	protected function buildComponent($table, $filter_query, $sort = array(), $options = array()) {
+		$this->title = ucfirst($table);
+
+		$page = (int) $this->getRequest()->get('page');
+		$size = (int) $this->getRequest()->get('listSize');
+
+		$session = $this->getSession($table);
+
+		if ($page) {
+			$session->page = $page;
+		} else if (!isset($session->page)) {
+			$session->page = 0;
+		}
+
+		if ($size) {
+			$session->size = $size;
+		} else if (!isset($session->size)) {
+			$session->size = 1000;
+		}
+
+		// use for model
+		$options = array_merge($options, array(
+			'collection' => $table,
+			'page' => $session->page,
+			'size' => $session->size,
+			'sort' => $sort,
+			));
+
+		$model = self::getModel($table, $options);
+
+		// TODO: use ready pager/paginiation class (zend? joomla?) with auto print
+		$params = array(
+			'title' => $this->title,
+		);
+
+		$params = array_merge($options, $params, $this->getTableViewParams($filter_query), $this->createFilterToolbar($table, $sort));
+
+		$ret = $this->renderView('table', $params);
+		return $ret;
+	}
+
+	/**
+	 * 
+	 * @param string $table the table name
+	 */
+	protected function getSession($table) {
+		$session = Yaf_session::getInstance();
+		$session->start();
+
+		if (!isset($session->$table)) {
+			$session->$table = new stdClass();
+		}
+		return $session->$table;
+	}
+
+	/**
+	 * Gets a variable from the request (POST) / session and sets it to the session if found
+	 * @param Object $session the session object
+	 * @param string $var the variable name
+	 */
+	protected function getVar($session, $var, $default = null) {
+		$request = $this->getRequest();
+		if (is_string($request->getPost($var))) {
+			$session->$var = $request->getPost($var);
+		} else if (!isset($session->$var)) {
+			$session->$var = $default;
+		}
+		return $session->$var;
 	}
 
 }

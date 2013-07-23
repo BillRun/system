@@ -24,9 +24,6 @@ class LinesModel extends TableModel {
 	public function __construct(array $params = array()) {
 		$params['collection'] = Billrun_Factory::db()->lines;
 		parent::__construct($params);
-		if (isset($params['garbage']) && $params['garbage'] == 'on') {
-			$this->garbage = true;
-		}
 		$this->search_key = "stamp";
 	}
 
@@ -94,40 +91,32 @@ class LinesModel extends TableModel {
 		parent::update($data);
 	}
 
-	public function getData() {
-		$query = array();
-		if ($this->garbage) {
-			$rates_coll = Billrun_Factory::db()->ratesCollection();
-			$unrated_rate = $rates_coll->query("key", "UNRATED")->cursor()->current()->createRef($rates_coll);
-			$month_ago = new MongoDate(strtotime("1 month ago"));
-			$query['$or'] = array(
-				array('customer_rate' => $unrated_rate), // customer rate is "UNRATED"
-				array('subscriber_id' => false), // or subscriber not found
-				array('$and' => array(// old unpriced records which should've been priced
-						array('customer_rate' => array(
-								'$exists' => true,
-								'$nin' => array(
-									false, $unrated_rate
-								),
-						)),
-						array('subscriber_id' => array(
-							'$exists' => true,
-							'$ne' => false,
-						)),
-						array('unified_record_time' => array(
-							'$lt' => $month_ago
-						)),
-						array('price_customer' => array(
-							'$exists' => false
-						)),
-				)),
-			);
-		}
-		$cursor = $this->collection->query($query)->cursor();
+	public function getData($filter_query) {
+		$cursor = $this->collection->query($filter_query)->cursor();
 		$this->_count = $cursor->count();
 		$resource = $cursor->sort($this->sort)->skip($this->offset())->limit($this->size);
 		return $resource;
 	}
 
-}
+	public function getTableColumns() {
+		$columns = array(
+			'type' => 'Type',
+			'account_id' => 'Account id',
+			'subscriber_id' => 'Subscriber id',
+			'usaget' => 'Usage type',
+			'usagev' => 'Amount',
+			'plan' => 'Plan',
+			'price_customer' => 'Price',
+			'billrun_key' => 'Billrun',
+			'unified_record_time' => 'Time',
+			'_id' => 'Id',
+		);
+		return $columns;
+	}
 	
+	public function toolbar() {
+		return 'events';
+	}
+
+}
+

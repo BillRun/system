@@ -20,5 +20,15 @@ class PlansModel extends TabledateModel {
 		parent::__construct($params);
 		$this->search_key = "name";
 	}
-	
+
+	public function getTableColumns() {
+		$columns = array(
+			'name' => 'Name',
+			'from' => 'From',
+			'to' => 'To',
+			'_id' => 'Id',
+		);
+		return $columns;
+	}
+
 }

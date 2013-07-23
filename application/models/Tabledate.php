@@ -39,13 +39,10 @@ class TabledateModel extends TableModel {
 	 * 
 	 * @return Mongo Cursor
 	 */
-	public function getData() {
-		$dateInput = new MongoDate($this->date->getTimestamp());
-
-		$resource = $this->collection->query()
-				->lessEq('from', $dateInput)
-				->greaterEq('to', $dateInput)
-				->cursor()->sort($this->sort)->skip($this->offset())->limit($this->size);
+	public function getData($filter_query) {
+		$cursor = $this->collection->query($filter_query)->cursor();
+		$this->_count = $cursor->count();
+		$resource = $cursor->sort($this->sort)->skip($this->offset())->limit($this->size);
 		return $resource;
 	}
 
@@ -101,12 +98,12 @@ class TabledateModel extends TableModel {
 
 		// close the old line
 		$mongoCloseTime = new MongoDate($new_from->getTimestamp() - 1);
-		$closed_data = $params;
-		unset($closed_data['from']);
+		$closed_data = $this->collection->findOne($params['_id'])->getRawData();
 		$closed_data['to'] = $mongoCloseTime;
 		$this->update($closed_data);
 
 		// open new line
+		$params[$this->search_key] = $closed_data[$this->search_key];
 		unset($params['_id']);
 		$params['from'] = new MongoDate($new_from->getTimestamp());
 		$params['to'] = new MongoDate($new_from->add(125, Zend_Date::YEAR)->getTimestamp());
@@ -131,23 +128,25 @@ class TabledateModel extends TableModel {
 	}
 
 	public function update($params) {
-		if (isset($params['from'])) {
+		if (isset($params['from']) && !$params['from'] instanceof MongoDate) {
 			$params['from'] = new MongoDate(strtotime($params['from']));
 		}
-		if (isset($params['to'])) {
+		if (isset($params['to']) && !$params['to'] instanceof MongoDate) {
 			$params['to'] = new MongoDate(strtotime($params['to']));
 		}
-		parent::update($params);
+		return parent::update($params);
 	}
 
 	public function remove($params) {
 		$entity = $this->collection->findOne($params['_id']);
-		$to = $entity['to'];
-		$key_name = $entity[$this->search_key];
-		$this->collection->remove($entity);
-		$last_item = $this->getLastItem($key_name);
-		$last_item['to'] = $to;
-		$last_item->save();
+		if (!$entity->isEmpty()) {
+			$to = $entity['to'];
+			$key_name = $entity[$this->search_key];
+			$this->collection->remove($entity);
+			$last_item = $this->getLastItem($key_name);
+			$last_item['to'] = $to;
+			$last_item->save();
+		}
 	}
 
 	public function getLastItem($key_name) {
@@ -159,6 +158,17 @@ class TabledateModel extends TableModel {
 			->current();
 		$result->collection($this->collection);
 		return $result;
+	}
+
+	public function getFilterFields() {
+		$parent_filter = parent::getFilterFields();
+		return array_merge($parent_filter, array(
+				$this->search_key => 'text',
+			));
+	}
+
+	public function toolbar() {
+		return 'date';
 	}
 
 }

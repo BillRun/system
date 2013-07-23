@@ -38,8 +38,8 @@ class RatesModel extends TabledateModel {
 		if (!isset($entity['rates'])) {
 			return;
 		}
-
-		foreach ($entity['rates'] as &$rate) {
+		$raw_data = $entity->getRawData();
+		foreach ($raw_data['rates'] as &$rate) {
 			if (isset($rate['plans'])) {
 				foreach ($rate['plans'] as &$plan) {
 					$data = $this->collection->getRef($plan);
@@ -49,6 +49,7 @@ class RatesModel extends TabledateModel {
 				}
 			}
 		}
+		$entity->setRawData($raw_data);
 		return $entity;
 	}
 
@@ -63,31 +64,40 @@ class RatesModel extends TabledateModel {
 	 * @todo move to model
 	 */
 	public function update($data) {
-		if (!isset($data['rates'])) {
-			return;
+		if (isset($data['rates'])) {
+			$plansColl = Billrun_Factory::db()->plansCollection();
+			$currentDate = new MongoDate();
+			$rates = $data['rates'];
+			//convert plans
+			foreach ($rates as &$rate) {
+				if (isset($rate['plans'])) {
+					$sourcePlans = (array) $rate['plans']; // this is array of strings (retreive from client)
+					$newRefPlans = array(); // this will be the new array of DBRefs
+					unset($rate['plans']);
+					foreach ($sourcePlans as &$plan) {
+						$planEntity = $plansColl->query('name', $plan)
+								->lessEq('from', $currentDate)
+								->greaterEq('to', $currentDate)
+								->cursor()->current();
+						$newRefPlans[] = $planEntity->createRef($plansColl);
+					}
+					$rate['plans'] = $newRefPlans;
+				}
+			}
+			$data['rates'] = $rates;
 		}
 
-		$plansColl = Billrun_Factory::db()->plansCollection();
-		$currentDate = new MongoDate();
-		$rates = $data['rates'];
-		//convert plans
-		foreach ($rates as &$rate) {
-			if (isset($rate['plans'])) {
-				$sourcePlans = (array) $rate['plans']; // this is array of strings (retreive from client)
-				$newRefPlans = array(); // this will be the new array of DBRefs
-				unset($rate['plans']);
-				foreach ($sourcePlans as &$plan) {
-					$planEntity = $plansColl->query('name', $plan)
-							->lessEq('from', $currentDate)
-							->greaterEq('to', $currentDate)
-							->cursor()->current();
-					$newRefPlans[] = $planEntity->createRef($plansColl);
-				}
-				$rate['plans'] = $newRefPlans;
-			}
-		}
-		$data['rates'] = $rates;
-		parent::update($data);
+		return parent::update($data);
+	}
+
+	public function getTableColumns() {
+		$columns = array(
+			'key' => 'Key',
+			'from' => 'From',
+			'to' => 'To',
+			'_id' => 'Id',
+		);
+		return $columns;
 	}
 
 }

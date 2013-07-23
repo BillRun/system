@@ -84,8 +84,8 @@ class TableModel {
 	 * 
 	 * @return Mongo Cursor
 	 */
-	public function getData() {
-		$resource = $this->collection->query()->cursor()->sort($this->sort)->skip($this->offset())->limit($this->size);
+	public function getData($filter_query = array()) {
+		$resource = $this->collection->query($filter_query)->cursor()->sort($this->sort)->skip($this->offset())->limit($this->size);
 		return $resource;
 	}
 
@@ -270,6 +270,14 @@ class TableModel {
 	
 	public function getHiddenKeys($entity, $type) {
 		return array();
+	}
+	
+	public function getFilterFields() {
+		return array();
+	}
+	
+	public function getEditKey() {
+		return null;
 	}
 
 }
