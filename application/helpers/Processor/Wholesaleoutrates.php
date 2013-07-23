@@ -18,7 +18,7 @@
 class Processor_Wholesaleoutrates extends Billrun_Processor_Base_Separator {
 
 	/**
-	 * the type of the object
+	 * The type of the object
 	 *
 	 * @var string
 	 */
@@ -40,7 +40,7 @@ class Processor_Wholesaleoutrates extends Billrun_Processor_Base_Separator {
 	}
 
 	/**
-	 * method to parse the data
+	 * Method to parse the data
 	 */
 	protected function parse() {
 		if (!is_resource($this->fileHandler)) {
@@ -56,7 +56,7 @@ class Processor_Wholesaleoutrates extends Billrun_Processor_Base_Separator {
 	}
 
 	/**
-	 * method to parse data
+	 * Method to parse data
 	 * 
 	 * @param array $line data line
 	 * 
@@ -94,7 +94,7 @@ class Processor_Wholesaleoutrates extends Billrun_Processor_Base_Separator {
 			if ($row['carrier'] == 'GOLAN') {
 				continue;
 			}
-			$row['carrier'] = preg_replace("/_IN$/", "", preg_replace("/_OUT$/", "", $row['carrier']));
+			$row['carrier'] =  preg_replace("/_OUT$/", "", $row['carrier']);
 			$zone = Billrun_Factory::db()->ratesCollection()->query(array('key' => $row['wsaleZoneName']))->cursor()->current();
 			// todo check if rate already exists, if so, close row and open new row
 //			if ($row['accessTypeName'] == 'AC_ROAM_INCOMING1') {
@@ -159,28 +159,47 @@ class Processor_Wholesaleoutrates extends Billrun_Processor_Base_Separator {
 		if ($rateType == 'call') { // add access price for calls
 			$value['access'] = (double) $rateRow['accessPrice'];
 		}
-		return array(
-				$rateType => ($rateRow['carrier'] == 'BEZEQ_OUT' && $rateRow['timePeriod'] != 'ALL' ? array($this->translateTime($rateRow['timePeriod']) => $value) : $value )
+		return array( //added peak/off peak for bezeq carriers
+				$rateType => (	preg_match("/BEZEQ/",$rateRow['carrier']) && $rateRow['timePeriod'] != 'ALL' ? 
+									array($this->translateTime($rateRow['timePeriod']) => $value) : 
+									$value )
 			);
 	}
 
+	/**
+	 * TODO
+	 * @param type $rateRow
+	 * @return \Mongodloid_Entity
+	 */
 	protected function createANewCarrier($rateRow) {
 		return new Mongodloid_Entity(array(
 				'key' => $rateRow['carrier'],
 				'from' => new MongoDate(),
 				'to' => new MongoDate(),
 				'prefixes' => array(),
-				'zones' => array('none' => array()),
+				'zones' => array('incoming' => array()),
 			));
 	}
-
+	
+	/**
+	 * TODO
+	 * @param type $entity
+	 * @param type $rateRow
+	 * @return type
+	 */
 	protected function getZoneRate($entity, $rateRow) {
 		$currentRates = isset($entity['zones']['wsaleZoneName']) ? $entity['zones']['wsaleZoneName'] : array();
-		return array($rateRow['wsaleZoneName'] => array_merge($currentRates, $this->getRate($rateRow)));
+		
+		return array($rateRow['wsaleZoneName'] => array_merge_recursive($currentRates, $this->getRate($rateRow)));
 	}
-
+	
+	/**
+	 * TODO
+	 * @param type $timePeriod
+	 * @return type
+	 */
 	protected function translateTime($timePeriod) {
-		return $timePeriod == "BLUE" ? 'off_peak' : ($timePeriod == "BLUE" ? 'peak' : 'all');
+		return $timePeriod == "BLUE" ? 'off_peak' : ($timePeriod == "RED" ? 'peak' : 'all');
 	}
 
 }

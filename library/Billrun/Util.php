@@ -197,5 +197,5 @@ class Billrun_Util {
 				->greaterEq('to', $mongo_date)
 				->cursor()->current()->get('vat');
 	}
-
+	
 }

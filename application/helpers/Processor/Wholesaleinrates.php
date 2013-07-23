@@ -86,13 +86,13 @@ class Processor_Wholesaleinrates extends Billrun_Processor_Base_Separator {
 		$this->data['stored_data'] = array();
 
 		foreach ($this->data['data'] as $key => $row) {
-					$row['carrier'] = preg_replace("/_OUT$/", "", preg_replace("/_IN$/", "", $row['carrier']));
+				$row['carrier'] =  preg_replace("/_IN$/", "", $row['carrier']);
 				$entity = $carriers->query(array('key' => $row['carrier']))->cursor()->current();
 				if(!$entity->getId()) {
 					$entity = $this->createANewCarrier($row);
 				}
 				
-				$entity['zones'] = array_merge($entity['zones'], array( 'none' => array_merge($entity['zones']['none'], $this->getRate($row)) ) );
+				$entity['zones'] = array_merge($entity['zones'], array( 'incoming' => array_merge($entity['zones']['incoming'], $this->getRate($row)) ) );
 								
 				$entity->collection($carriers);								
 				$entity->save($carriers);
@@ -109,15 +109,15 @@ class Processor_Wholesaleinrates extends Billrun_Processor_Base_Separator {
 			case 'WTC_V':
 			case 'WTC_T':
 			case 'GTMOC':					
-				$rateType = 'incoming_call';				
+				$rateType = 'call';				
 				$unit = 'seconds';
 				break;			
 			case 'WTC_S':
-				$rateType = 'incoming_sms';
+				$rateType = 'sms';
 				$unit = 'counter';
 				break;
 			case 'WTC_M':
-				$rateType = 'incoming_mms';
+				$rateType = 'mms';
 				$unit = 'counter';
 				break;				
 			default:
@@ -146,7 +146,7 @@ class Processor_Wholesaleinrates extends Billrun_Processor_Base_Separator {
 					'from' => new MongoDate(),
 					'to' => new MongoDate(),
 					'prefixes' => array(),
-					'zones' => array('none' => array()),
+					'zones' => array('incoming' => array()),
 				
 				));
 	}

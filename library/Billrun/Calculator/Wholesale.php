@@ -21,13 +21,24 @@ abstract class Billrun_Calculator_Wholesale extends Billrun_Calculator {
 	 * @param type $subr the  subscriber that generated the usage.
 	 * @return type
 	 */
-	protected function getLinePricingData($volumeToPrice, $usageType, $carrier, $zoneKey) {
-		$typedRates = $carrier['zones'][$zoneKey][$usageType];
+	protected function getLinePricingData($volumeToPrice, $usageType, $carrier, $zoneKey , $peak = null) {
+		$typedRates = $peak != null ? $carrier['zones'][$zoneKey][$usageType][$peak ? 'peak' : 'off_peak'] : $carrier['zones'][$zoneKey][$usageType];
+		if(!$typedRates['rate'] || !is_array($typedRates['rate'])) {
+			Billrun_Factory::log()->log(print_r($carrier,1),Zend_Log::DEBUG);
+		}
 		$accessPrice = isset($typedRates['access']) ? $typedRates['access'] : 0;
 
-		$interval = $typedRates['rate']['interval'] ? $typedRates['rate']['interval'] : 1;
-		$ret[$this->pricingField] = $accessPrice + ( floatval((ceil($volumeToPrice / $interval) ) * $typedRates['rate']['price']) );
-
+		$price = $accessPrice;
+		//Billrun_Factory::log()->log("Rate : ".print_r($typedRates,1),  Zend_Log::DEBUG);
+		foreach ($typedRates['rate'] as $key => $currRate) {
+			if (0 >= $volumeToPrice) {
+				break;
+			}//break if no volume left to price.
+			$volumeToPriceCurrentRating = ($volumeToPrice - $currRate['to'] < 0) ? $volumeToPrice : $currRate['to']; // get the volume that needed to be priced for the current rating
+			$price += floatval((ceil($volumeToPriceCurrentRating / $currRate['interval']) * $currRate['price'])); // actually price the usage volume by the current 
+			$volumeToPrice = $volumeToPrice - $volumeToPriceCurrentRating; //decressed the volume that was priced
+		}
+		$ret[$this->pricingField] = $price;
 		return $ret;
 	}
 	
@@ -41,7 +52,11 @@ abstract class Billrun_Calculator_Wholesale extends Billrun_Calculator {
 		$line_time = $row->get('unified_record_time');
 
 		$rates = Billrun_Factory::db()->ratesCollection();
-		$zoneKey = 'none';
+		if($ocg == 0 || $ocg == 3060 || $ocg == 3061 ) {
+			$zoneKey = 'incoming';
+		} else {
+			$zoneKey= false;
+		}
 		
 		$called_number_prefixes = $this->getPrefixes($called_number);
 
@@ -89,55 +104,25 @@ abstract class Billrun_Calculator_Wholesale extends Billrun_Calculator {
 		);
 
 		$matched_rates = $rates->aggregate($base_match, $unwind, $sort, $match2);
-		if (empty($matched_rates)) {
+		if (!empty($matched_rates)) {
 			$zoneKey = reset($matched_rates)['key'];
 		}
 
 		return $zoneKey;
 	}
-
-	protected function getLineCarrier($row) {
-
-		$called_number = $row->get('called_number');
-		$ocg = $row->get('out_circuit_group');
-		$icg = $row->get('in_circuit_group');
-		$line_time = $row->get('unified_record_time');
-
-		$rates = Billrun_Factory::db()->carriersCollection();
-		$carrier = FALSE;
+	
 		
-		$called_number_prefixes = $this->getPrefixes($called_number);
-
-		$query = array(			
-				'params.prefix' => array(
-					'$in' => $called_number_prefixes,
-				),
-				'rates.' . $usage_type => array('$exists' => true),
-				'params.out_circuit_group' => array(
-					'$elemMatch' => array(
-						'from' => array(
-							'$lte' => $ocg,
-						),
-						'to' => array(
-							'$gte' => $ocg
-						)
-					)
-				),
-				'from' => array(
-					'$lte' => $line_time,
-				),
-				'to' => array(
-					'$gte' => $line_time,
-				),
-		);
-
-
-		$matchedCarrier = $rates->query($query)->cursor()->current();
-		if ($matchedCarrier->isValid()) {
-			$carrier = $matchedCarrier;
+	/**
+	 * get all the prefixes from a given number
+	 * @param type $str
+	 * @return type
+	 */
+	protected function getPrefixes($str) {
+		$prefixes = array();
+		for ($i = 0; $i < strlen($str); $i++) {
+			$prefixes[] = substr($str, 0, $i + 1);
 		}
-
-		return $carrier;
+		return $prefixes;
 	}
 	
 }

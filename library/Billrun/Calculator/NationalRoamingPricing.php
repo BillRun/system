@@ -13,39 +13,40 @@
  * @since    0.5
  */
 class Billrun_Calculator_NationalRoamingPricing extends Billrun_Calculator_Wholesale {
-
-	protected $pricingField = 'price_wholesale_extra';
+	const DEF_CALC_DB_FIELD = 'price_ws_nr';
+	
+	protected $pricingField = self::DEF_CALC_DB_FIELD;
+	
+	protected $nrCarrier = null;
+	
+	public function __construct($options = array()) {
+		parent::__construct($options);
+		$this->nrCarrier = Billrun_Factory::db()->carriersCollection()->query(array('key'=>'NR'))->cursor()->current();
+	}
 	
 	protected function getLines() {
 		$lines = Billrun_Factory::db()->linesCollection();
 
 		return $lines->query(array(
-						'out_circuit_group' => array(
-								'$gt' => "599",
-								'$lt' => "599",
-							),
-						 'in_circut_group' => array(
- 							'$gt' => "599",
-							'$lt' => "588",
-						 ),
-				))->in('type', array('nsn'))
-				->notExists($this->pricingField)->cursor()->limit($this->limit);
+								'type'=> 'nsn',
+								'$or' => array(
+									array( 'record_type' => '12', 'out_circuit_group_name' => array('$regex'=>'^RCEL')),
+									array('record_type' => '11', 'in_circut_group_name' => array('$regex'=>'^RCEL')),
+								)
+							))
+				->exists('usaget')->notExists($this->pricingField)->cursor()->limit($this->limit);
 	}
 
 	protected function updateRow($row) {
-		$carrier = $this->getLineCarrier($row);
+		$zoneKey = $this->getLineZone($row, $row['usaget']);
 		
 		//@TODO  change this  be be configurable.
 		$pricingData = array();
 
 		if (isset($row['usagev'])) {
-			$pricingData = $this->getLinePricingData($row['usagev'], $row['usaget'], $carrier, 'none'); //$this->priceLine($volume, $usage_type, $rate, $subscriber);
+			$pricingData = $this->getLinePricingData($row['usagev'], $row['usaget'], $this->nrCarrier, $zoneKey); //$this->priceLine($volume, $usage_type, $rate, $subscriber);
 			$row->setRawData(array_merge($row->getRawData(), $pricingData));
-		} else {
-			//@TODO error?
-		}		
+		}	
 	}
-
-
 }
 
