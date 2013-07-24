@@ -27,9 +27,7 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Pl
 
 	public function __construct($options = array()) {
 		parent::__construct($options);
-		if( isset($options['receiver']['out_of_seq_level'])) {
-			$this->outOfSequenceAlertLevel = $options['receiver']['out_of_seq_level'];
-		}
+		$this->outOfSequenceAlertLevel =  Billrun_Factory::config()->getConfigValue('ggsn.receiver.out_of_seq_level',$this->outOfSequenceAlertLevel);
 		
 		$this->ggsnConfig = (new Yaf_Config_Ini(Billrun_Factory::config()->getConfigValue('ggsn.config_path')))->toArray();
 		$this->initParsing();
