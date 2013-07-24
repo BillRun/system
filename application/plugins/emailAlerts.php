@@ -253,15 +253,16 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 			if ($val['alert']) {
 				$msg .= "ALERT! : didn't processed $name longer then the configured time" . PHP_EOL . PHP_EOL;
 			}
-		
-			$seq = $this->getFileSequenceData($val['last_received']['file_name'], $type);
-			$msg .= strtoupper($type) . " recevied Index : " . $seq['seq'] . " receving date : " . $val['last_received']['received_time'] . PHP_EOL;
+			if(Billrun_Factory::config()->getConfigValue('emailAlerts.processing.send_report_regularly', false ) ) {
+				$seq = $this->getFileSequenceData($val['last_received']['file_name'], $type);
+				$msg .= strtoupper($type) . " recevied Index : " . $seq['seq'] . " receving date : " . $val['last_received']['received_time'] . PHP_EOL;
+			}
 
 		}
-
-		return $this->sendMail("Processing status " . date(Billrun_Base::base_dateformat), $msg, Billrun_Factory::config()->getConfigValue('emailAlerts.processing.recipients', array()));
 		
-		return $msg;
+		return ($msg) ?
+				$this->sendMail("Processing status " . date(Billrun_Base::base_dateformat), $msg, Billrun_Factory::config()->getConfigValue('emailAlerts.processing.recipients', array())) :
+				false;
 	}
 
 	/**
