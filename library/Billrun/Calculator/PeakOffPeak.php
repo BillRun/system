@@ -25,7 +25,7 @@ class Billrun_Calculator_PeakOffPeak extends Billrun_Calculator {
 	 * @see Billrun_Calculator_Base_Rate
 	 * @var type 
 	 */
-	protected $linesQuery = array('type' => 'nsn', 'record_type'=> array('$in'=>array('08','09')),
+	protected $linesQuery = array('type' => 'nsn', 'record_type'=> array('$in'=>array('12','11')),
 								'$or' => array(	
 										array('in_circuit_group_name' => array('$regex' => '^\wBZ[QI]')),
 										array('out_circuit_group_name' => array('$regex' => '^\wBZ[QI]'))

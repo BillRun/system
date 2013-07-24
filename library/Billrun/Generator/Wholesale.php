@@ -55,6 +55,7 @@ class Billrun_Generator_Wholesale extends Billrun_Generator_Base_WholesaleReport
 		$results = Billrun_Factory::db()->linesCollection()->query(
 										array(
 											'type'=>'nsn',
+											'price_customer' => array('$exists' => true),
 											'unified_record_time' => array('$gte' => $timehorizons['start'], '$lt' => $timehorizons['end']  ),
 											'$or' => array(
 												array(	
@@ -89,5 +90,9 @@ class Billrun_Generator_Wholesale extends Billrun_Generator_Base_WholesaleReport
 										));
 		
 		return $results;
+	}
+
+	protected function priceForLine($line) {
+		return isset($value['price_provider']) ? $value['price_provider'] : 0;
 	}
 }

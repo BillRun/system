@@ -106,10 +106,22 @@ abstract class Billrun_Generator_Base_WholesaleReport extends Billrun_Generator 
 	 * @return array containing the ratiing  details.
 	 */
 	protected function tariffForLine($line) {
-		//TODO when  merged with the rating system.
-		return '';
+		//TODO allow for  multiple rates...		
+		return isset($line['customer_rate']['rates'][$line['usaget']]['rate'][0]['price']) ?  $line['customer_rate']['rates'][$line['usaget']]['rate'][0]['price'] : '';
 	}
 	
+	/**
+	 * get  the price for a given line.
+	 * @param type $line  the line to get the rate for.
+	 * @return float the price of the line.
+	 */
+	abstract protected function priceForLine($line);
+	
+	/**
+	 * Get the  textual representation of the product the cdr line represent.
+	 * @param type $line the cdr line
+	 * @return string the textual name  of the product that  was used.
+	 */
 	protected function productType($line) {
 		$ret = 'Calls';
 		if(preg_match('/^(?=972|)1800/', $line['called_number'])) {
@@ -175,7 +187,7 @@ abstract class Billrun_Generator_Base_WholesaleReport extends Billrun_Generator 
 																				strtotime($value['charging_end_time']) - strtotime($value['charging_start_time']) :
 																				$value['duration'];
 			$aggrGroup['tariff_per_product'] = $this->tariffForLine($value);
-			$aggrGroup['charge'] += isset($value['provider_price']) ? $value['provider_price'] : 0;
+			$aggrGroup['charge'] +=  $this->priceForLine($value);
 		}
 		Billrun_Factory::log()->log(print_r("Done aggregating",1),Zend_Log::DEBUG);
 		

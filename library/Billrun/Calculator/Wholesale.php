@@ -45,8 +45,11 @@ abstract class Billrun_Calculator_Wholesale extends Billrun_Calculator {
 	}
 	
 	/**
+	 * 
+	 * TODO remove
 	 * @see Billrun_Calculator_Rate::getLineRate
-	 */
+	 *
+	 *
 	protected function getLineZone($row, $usage_type) {
 
 		$called_number = $row->get('called_number');
@@ -54,7 +57,7 @@ abstract class Billrun_Calculator_Wholesale extends Billrun_Calculator {
 		$line_time = $row->get('unified_record_time');
 
 		$rates = Billrun_Factory::db()->ratesCollection();
-		if($ocg == 0 || $ocg == 3060 || $ocg == 3061 ) {
+		if( $this->isLineIncoming($row) ) {
 			$zoneKey = 'incoming';
 		} else {
 			$zoneKey= false;
@@ -112,7 +115,7 @@ abstract class Billrun_Calculator_Wholesale extends Billrun_Calculator {
 
 		return $zoneKey;
 	}
-	
+	*/
 		
 	/**
 	 * get all the prefixes from a given number
@@ -127,5 +130,14 @@ abstract class Billrun_Calculator_Wholesale extends Billrun_Calculator {
 		return $prefixes;
 	}
 	
+	/**
+	 * Check if the cdr line  is incoming line  or outgoing
+	 * @param type $row the line to check
+	 * @return boolean true if the line  is incoming  false otherwise
+	 */
+	protected function isLineIncoming($row) {
+		$ocg = $row->get('out_circuit_group');
+		return $ocg == 0 || $ocg == 3060 || $ocg == 3061 ;
+	}
 }
 

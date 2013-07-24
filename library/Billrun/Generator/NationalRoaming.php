@@ -42,6 +42,7 @@ class Billrun_Generator_NationalRoaming extends Billrun_Generator_Base_Wholesale
 		$results = Billrun_Factory::db()->linesCollection()->query(array(
 											'type'=>'nsn',
 											'record_type' => array('$in' => array("12","11")),
+											'price_nr' => array('$exists' => true),
 											'unified_record_time' => array( '$gt' => $timehorizons['start'] , '$lt' => $timehorizons['end'] ,),
 											'$or' => array( 
 														array(	"in_circuit_group_name" => array('$regex' => "$provider" ),
@@ -53,6 +54,10 @@ class Billrun_Generator_NationalRoaming extends Billrun_Generator_Base_Wholesale
 										));
 
 		return $results;
+	}
+
+	protected function priceForLine($line) {
+		return isset($value['price_nr']) ? $value['price_nr'] : 0;
 	}
 	
 }

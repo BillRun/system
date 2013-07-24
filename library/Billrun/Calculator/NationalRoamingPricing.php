@@ -13,7 +13,7 @@
  * @since    0.5
  */
 class Billrun_Calculator_NationalRoamingPricing extends Billrun_Calculator_Wholesale {
-	const DEF_CALC_DB_FIELD = 'price_ws_nr';
+	const DEF_CALC_DB_FIELD = 'price_nr';
 	
 	protected $pricingField = self::DEF_CALC_DB_FIELD;
 	
@@ -34,11 +34,11 @@ class Billrun_Calculator_NationalRoamingPricing extends Billrun_Calculator_Whole
 									array('record_type' => '11', 'in_circut_group_name' => array('$regex'=>'^RCEL')),
 								)
 							))
-				->exists('usaget')->notExists($this->pricingField)->cursor()->limit($this->limit);
+				->exists('customer_rate')->notExists($this->pricingField)->cursor()->limit($this->limit);
 	}
 
 	protected function updateRow($row) {
-		$zoneKey = $this->getLineZone($row, $row['usaget']);
+		$zoneKey = $this->isLineIncoming($row) ?  'incoming' : $row['customer_rate']['key'];
 		
 		//@TODO  change this  be be configurable.
 		$pricingData = array();
