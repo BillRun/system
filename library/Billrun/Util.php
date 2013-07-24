@@ -110,5 +110,36 @@ class Billrun_Util {
 		$datetime = strtotime($date_formatted);
 		return $datetime;
 	}
+	
+		/**
+	 * Send Email helper
+	 * @param type $subject the subject of the message.
+	 * @param type $body the body of the message
+	 * @param type $attachments (optional)
+	 * @return type
+	 */
+	public static function sendMail($subject, $body, $recipients = array(), $attachments = array()) {
+
+		$mailer = Billrun_Factory::mailer()->
+			setSubject($subject)->
+			setBodyText($body);
+
+		//add attachments
+		foreach ($attachments as $attachment) {
+			$mailer->addAttachment($attachment);
+		}
+		//set recipents
+		foreach ($recipients as $recipient) {
+			$mailer->addTo($recipient);
+		}
+		//send email
+		try {
+			$ret = $mailer->send();
+		} catch(Exception $e ) {
+			Billrun_Factory::log()->log("Failed when trying to send  email on alert results, Failed with : ".$e, Zend_Log::ERR);
+			$ret = FALSE;
+		}
+		return $ret;
+	}
 
 }

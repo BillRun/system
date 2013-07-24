@@ -80,14 +80,17 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 			
 			$ret = $this->notifyOnEvent($event);
 			if ($ret === FALSE) {
+				$this->sendEmailOnFailure($event, $ret);
 				//some connection failure - mark event as paused
 				$this->markEvent($event, FALSE);
-			} else if (isset($ret->success) && $ret->success) {
+			} else if (isset($ret['success']) && $ret['success']) {
 				$event['deposit_stamp'] = $event['stamps'][0]; // remember what event you sent to the remote server
 				$event['returned_value'] = (array) $ret;
 				$this->markEvent($event);
 				$this->markEventLines($event);
 
+			} else {
+				$this->sendEmailOnFailure($event, $ret);
 			}
 			
 			//Decrease the amount of alerts allowed in a single run if 0 is reached the break the loop.
@@ -102,6 +105,24 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		return $retValue;
 	}
 
+	/**
+	 * Send an  email alert on events that failed to notify the  remote RPC (CRM)
+	 * @param type $event the event that  was  suppose  to be passed to the RPC.
+	 * @param type $rpcRet the  remote rpc returned value
+	 */
+	protected function sendEmailOnFailure($event,$rpcRet) {
+		$msg = "Failed  when sending event to RPC". PHP_EOL;
+		$msg .= "Event : stamp : {$event['stamps'][0]} , imsi :  ".@$event['imsi']." ,  msisdn :  ".(@$event['msisdn']) . PHP_EOL;
+		$msg .= (isset($rpcRet['message']) ? "Message From RPC: " . $rpcRet['message'] : "No  failure  message  from the RPC.") .PHP_EOL;
+		$tmpStr ="";
+		foreach($rpcRet as $key => $val) {
+			$tmpStr .= " $key : $val,";
+		}
+		$msg .= "RPC Result : ". $tmpStr . PHP_EOL;
+		Billrun_Factory::log()->log($msg, Zend_Log::ALERT);
+		return Billrun_Util::sendMail("Failed Fraud Alert, " . date(Billrun_Base::base_dateformat), $msg, Billrun_Factory::config()->getConfigValue('fraudAlert.failed_alerts.recipients', array()) );
+	}
+	
 	/**
 	 * Method to send events to the appropiate hadling body. 
 	 * @param array $args the arguments to send to the remote server.
