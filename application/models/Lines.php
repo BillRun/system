@@ -91,7 +91,7 @@ class LinesModel extends TableModel {
 		parent::update($data);
 	}
 
-	public function getData($filter_query) {
+	public function getData($filter_query = array()) {
 		$cursor = $this->collection->query($filter_query)->cursor();
 		$this->_count = $cursor->count();
 		$resource = $cursor->sort($this->sort)->skip($this->offset())->limit($this->size);

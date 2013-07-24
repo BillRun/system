@@ -228,8 +228,7 @@ class TableModel {
 	}
 
 	public function remove($params) {
-		$id = $params['_id'];
-		return $this->collection->remove($id);
+		return $this->collection->remove($params);
 	}
 
 	public function update($params) {

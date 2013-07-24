@@ -39,7 +39,7 @@ class TabledateModel extends TableModel {
 	 * 
 	 * @return Mongo Cursor
 	 */
-	public function getData($filter_query) {
+	public function getData($filter_query = array()) {
 		$cursor = $this->collection->query($filter_query)->cursor();
 		$this->_count = $cursor->count();
 		$resource = $cursor->sort($this->sort)->skip($this->offset())->limit($this->size);
@@ -138,7 +138,7 @@ class TabledateModel extends TableModel {
 	}
 
 	public function remove($params) {
-		$entity = $this->collection->findOne($params['_id']);
+		$entity = $this->collection->query($params)->cursor()->current();
 		if (!$entity->isEmpty()) {
 			$to = $entity['to'];
 			$key_name = $entity[$this->search_key];

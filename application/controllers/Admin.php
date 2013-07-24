@@ -110,12 +110,8 @@ class AdminController extends Yaf_Controller_Abstract {
 			return false;
 		}
 
-		if (count($ids) == 1) {
-			$params['_id'] = $ids[0];
-		} else {
-			foreach ($ids as $id) {
-				$params['_id']['_id']['$in'][] = new MongoId($id);
-			}
+		foreach ($ids as $id) {
+			$params['_id']['$in'][] = new MongoId($id);
 		}
 
 		if ($type == 'remove') {
