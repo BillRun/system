@@ -137,7 +137,7 @@ class TableModel {
 
 		if (($count = $this->getPagesCount()) > 1) {
 			$current = $this->page;
-			
+
 			// TODO: move it to config
 			$range = 5;
 
@@ -231,9 +231,9 @@ class TableModel {
 		$id = $params['_id'];
 		return $this->collection->remove($id);
 	}
-	
+
 	public function update($params) {
-		
+
 //		if (method_exists($this, $coll . 'BeforeDataSave')) {
 //			call_user_func_array(array($this, $coll . 'BeforeDataSave'), array($collection, &$newEntity));
 //		}
@@ -266,17 +266,39 @@ class TableModel {
 	public function getProtectedKeys($entity, $type) {
 		return array("_id");
 	}
-	
+
 	public function getHiddenKeys($entity, $type) {
 		return array();
 	}
-	
+
 	public function getFilterFields() {
 		return array();
 	}
-	
+
 	public function getEditKey() {
 		return null;
+	}
+
+	public function applyFilter($filter_field, $value) {
+		if ($filter_field['input_type'] == 'number') {
+			if ($value != '') {
+				if ($filter_field['comparison'] == 'equals') {
+					return array(
+						$filter_field['key'] => intval($value),
+					);
+				}
+			}
+		} else if ($filter_field['input_type'] == 'date') {
+			if (is_string($value)) {
+				$value = new MongoDate((new Zend_Date($value, null, new Zend_Locale('he_IL')))->getTimestamp());
+				return array(
+					$filter_field['db_key'] => array(
+						$filter_field['comparison'] => $value
+					)
+				);
+			}
+		}
+		return false;
 	}
 
 }

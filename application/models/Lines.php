@@ -113,9 +113,83 @@ class LinesModel extends TableModel {
 		);
 		return $columns;
 	}
-	
+
 	public function toolbar() {
 		return 'events';
+	}
+
+	public function getFilterFields() {
+		$filter_fields = array(
+			'subscriber_id' => array(
+				'key' => 'subscriber_id',
+				'db_key' => 'subscriber_id',
+				'input_type' => 'number',
+				'comparison' => 'equals',
+				'display' => 'Subscriber id',
+				'default' => '',
+			),
+			'from' => array(
+				'key' => 'from',
+				'db_key' => 'unified_record_time',
+				'input_type' => 'date',
+				'comparison' => '$gte',
+				'display' => 'From',
+				'default' => (new Zend_Date(0, null, new Zend_Locale('he_IL')))->toString('YYYY-MM-dd HH:mm:ss'),
+			),
+			'to' => array(
+				'key' => 'to',
+				'db_key' => 'unified_record_time',
+				'input_type' => 'date',
+				'comparison' => '$lte',
+				'display' => 'To',
+				'default' => (new Zend_Date(null, null, new Zend_Locale('he_IL')))->toString('YYYY-MM-dd HH:mm:ss'),
+			),
+			'garbage' => array(
+				'key' => 'garbage',
+				'input_type' => 'boolean',
+				'comparison' => 'special',
+				'display' => 'Garbage lines',
+				'default' => 'off',
+			),
+		);
+		return array_merge($filter_fields, parent::getFilterFields());
+	}
+
+	public function applyFilter($filter_field, $value) {
+		if ($filter_field['comparison'] == 'special') {
+			if ($filter_field['input_type'] == 'boolean' && $filter_field['key'] == 'garbage') {
+				if (!is_null($value) && $value != $filter_field['default']) {
+					$rates_coll = Billrun_Factory::db()->ratesCollection();
+					$unrated_rate = $rates_coll->query("key", "UNRATED")->cursor()->current()->createRef($rates_coll);
+					$month_ago = new MongoDate(strtotime("1 month ago"));
+					return array(
+						'$or' => array(
+							array('customer_rate' => $unrated_rate), // customer rate is "UNRATED"
+							array('subscriber_id' => false), // or subscriber not found
+							array('$and' => array(// old unpriced records which should've been priced
+									array('customer_rate' => array(
+											'$exists' => true,
+											'$nin' => array(
+												false, $unrated_rate
+											),
+									)),
+									array('subscriber_id' => array(
+											'$exists' => true,
+											'$ne' => false,
+									)),
+									array('unified_record_time' => array(
+											'$lt' => $month_ago
+									)),
+									array('price_customer' => array(
+											'$exists' => false
+									)),
+							)),
+						));
+				}
+			}
+		} else {
+			return parent::applyFilter($filter_field, $value);
+		}
 	}
 
 }

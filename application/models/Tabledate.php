@@ -161,10 +161,39 @@ class TabledateModel extends TableModel {
 	}
 
 	public function getFilterFields() {
-		$parent_filter = parent::getFilterFields();
-		return array_merge($parent_filter, array(
-				$this->search_key => 'text',
-			));
+		$filter_fields = array(
+			'date' => array(
+				'key' => 'date',
+				'db_key' => array('from', 'to'),
+				'input_type' => 'date',
+				'comparison' => array('$lte', '$gte'),
+				'display' => 'Date',
+				'default' => (new Zend_Date(null, null, new Zend_Locale('he_IL')))->toString('YYYY-MM-dd HH:mm:ss'),
+			),
+		);
+		return array_merge($filter_fields, parent::getFilterFields());
+	}
+
+	public function applyFilter($filter_field, $value) {
+		if ($filter_field['input_type'] == 'date' && is_array($filter_field['db_key'])) {
+			if (is_string($value)) {
+				$value = new MongoDate((new Zend_Date($value, null, new Zend_Locale('he_IL')))->getTimestamp());
+				return array(
+					'$and' => array(
+						array(
+							$filter_field['db_key'][0] => array(
+								$filter_field['comparison'][0] => $value
+							),
+							$filter_field['db_key'][1] => array(
+								$filter_field['comparison'][1] => $value
+							),
+						),
+					),
+				);
+			}
+		} else {
+			return parent::applyFilter($filter_field, $value);
+		}
 	}
 
 	public function toolbar() {

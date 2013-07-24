@@ -205,71 +205,32 @@ class AdminController extends Yaf_Controller_Abstract {
 
 	public function tabledateAction() {
 		$table = $this->_request->getParam("table");
-		$session = $this->getSession($table);
-		$date = $this->getVar($session, 'dateFilter');
-		if (is_string($date)) {
-			$dateFilter = new Zend_Date($date, null, new Zend_Locale('he_IL'));
-		}
 
-		if (isset($dateFilter)) {
-			$session->dateFilter = $dateFilter;
-		} else if (!isset($session->dateFilter)) {
-			$session->dateFilter = new Zend_Date(null, null, new Zend_Locale('he_IL'));
-		} // else it will take what already in the session
-
-		$options['date'] = $session->dateFilter;
-
-		$dateInput = new MongoDate($options['date']->getTimestamp());
-
-		$query['$and'] = array(
-			array(
-				'from' => array(
-					'$lt' => $dateInput,
-				),
-				'to' => array(
-					'$gt' => $dateInput,
-				),
-			)
+		$sort = array('unified_record_time' => -1);
+		$options = array(
+			'collection' => $table,
+			'sort' => $sort,
 		);
-		$this->getView()->component = $this->buildComponent($table, $query, array('creation_time' => -1), $options);
+
+		$model = self::getModel($table, $options);
+		$query = $this->applyFilters($table);
+
+		$this->getView()->component = $this->buildComponent($table, $query, $sort);
 	}
 
 	/**
 	 * lines controller of admin
 	 */
 	public function linesAction() {
-		$session = $this->getSession('lines');
-		$garbage = $this->getVar($session, "garbage", "off");
-		$query = array();
-		if ($garbage == "on") {
-			$rates_coll = Billrun_Factory::db()->ratesCollection();
-			$unrated_rate = $rates_coll->query("key", "UNRATED")->cursor()->current()->createRef($rates_coll);
-			$month_ago = new MongoDate(strtotime("1 month ago"));
-			$query['$or'] = array(
-				array('customer_rate' => $unrated_rate), // customer rate is "UNRATED"
-				array('subscriber_id' => false), // or subscriber not found
-				array('$and' => array(// old unpriced records which should've been priced
-						array('customer_rate' => array(
-								'$exists' => true,
-								'$nin' => array(
-									false, $unrated_rate
-								),
-						)),
-						array('subscriber_id' => array(
-								'$exists' => true,
-								'$ne' => false,
-						)),
-						array('unified_record_time' => array(
-								'$lt' => $month_ago
-						)),
-						array('price_customer' => array(
-								'$exists' => false
-						)),
-				)),
-			);
-		}
-
+		$table = 'lines';
 		$sort = array('unified_record_time' => -1);
+		$options = array(
+			'collection' => $table,
+			'sort' => $sort,
+		);
+
+		$model = self::getModel($table, $options);
+		$query = $this->applyFilters($table);
 
 		$this->getView()->component = $this->buildComponent('lines', $query, $sort);
 	}
@@ -278,40 +239,34 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * events controller of admin
 	 */
 	public function eventsAction() {
-//		$columns = array(
-//			'creation_time' => 'Creation time',
-//			'event_type' => 'Event type',
-//			'imsi' => 'IMSI',
-//			'msisdn' => 'MSISDN',
-//			'source' => 'Source',
-//			'threshold' => 'Threshold',
-//			'units' => 'Units',
-//			'value' => 'Value',
-//			'notify_time' => 'Notify time',
-//			'email_sent' => 'Email sent',
-//			'priority' => 'Priority',
-//			'_id' => 'Id',
-//		);
-//		$this->getView()->component = $this->setTableView('events', $columns, array('creation_time' => -1));
-		$query = array();
-		$sort = array();
-		$this->getView()->component = $this->buildComponent('events', $query, $sort);
+		$table = "events";
+		$sort = array('creation_time' => -1);
+		$options = array(
+			'collection' => $table,
+			'sort' => $sort,
+		);
+
+		$model = self::getModel($table, $options);
+		$query = $this->applyFilters($table);
+
+		$this->getView()->component = $this->buildComponent($table, $query, $sort);
 	}
 
 	/**
 	 * log controller of admin
 	 */
 	public function logAction() {
-		$columns = array(
-			'source' => 'Source',
-			'type' => 'Type',
-			'retrieved_from' => 'Retrieved from',
-			'file_name' => 'Filename',
-			'received_time' => 'Date received',
-			'process_time' => 'Date processed',
-			'_id' => 'Id',
+		$table = "log";
+		$sort = array('received_time' => -1);
+		$options = array(
+			'collection' => $table,
+			'sort' => $sort,
 		);
-		$this->getView()->component = $this->setTableView('log', $columns, array('received_time' => -1));
+
+		$model = self::getModel($table, $options);
+		$query = $this->applyFilters($table);
+
+		$this->getView()->component = $this->buildComponent($table, $query, $sort);
 	}
 
 	/**
@@ -362,12 +317,7 @@ class AdminController extends Yaf_Controller_Abstract {
 
 	protected function createFilterToolbar() {
 
-		$params['criteria_tpl'] = $this->model->toolbar();
-//		if ($table == 'lines' || $table == 'events') {
-//			$params['criteria_tpl'] = 'events';
-//		} else {
-//			$criteria_tpl = 'date';
-//		}
+		$params['filter_fields'] = $this->model->getFilterFields();
 
 		return $params;
 	}
@@ -399,6 +349,10 @@ class AdminController extends Yaf_Controller_Abstract {
 	}
 
 	public function getModel($collection_name, $options = array()) {
+		$session = $this->getSession($collection_name);
+		$options['page'] = $this->getSetVar($session, "page", "page", 0);
+		$options['size'] = $this->getSetVar($session, "listSize", "size", 1000);
+
 		if (is_null($this->model)) {
 			$model_name = ucfirst($collection_name) . "Model";
 			if (class_exists($model_name)) {
@@ -413,36 +367,10 @@ class AdminController extends Yaf_Controller_Abstract {
 	protected function buildComponent($table, $filter_query, $sort = array(), $options = array()) {
 		$this->title = ucfirst($table);
 
-		$page = (int) $this->getRequest()->get('page');
-		$size = (int) $this->getRequest()->get('listSize');
-
-		$session = $this->getSession($table);
-
-		if ($page) {
-			$session->page = $page;
-		} else if (!isset($session->page)) {
-			$session->page = 0;
-		}
-
-		if ($size) {
-			$session->size = $size;
-		} else if (!isset($session->size)) {
-			$session->size = 1000;
-		}
-
-		// use for model
-		$options = array_merge($options, array(
-			'collection' => $table,
-			'page' => $session->page,
-			'size' => $session->size,
-			'sort' => $sort,
-			));
-
-		$model = self::getModel($table, $options);
-
 		// TODO: use ready pager/paginiation class (zend? joomla?) with auto print
 		$params = array(
 			'title' => $this->title,
+			'session' => $this->getSession($table),
 		);
 
 		$params = array_merge($options, $params, $this->getTableViewParams($filter_query), $this->createFilterToolbar($table, $sort));
@@ -468,16 +396,36 @@ class AdminController extends Yaf_Controller_Abstract {
 	/**
 	 * Gets a variable from the request (POST) / session and sets it to the session if found
 	 * @param Object $session the session object
-	 * @param string $var the variable name
+	 * @param string $source_name the variable name in the request
+	 * @param type $target_name the variable name in the session
+	 * @param type $default the default value for the variable
+	 * @return type
 	 */
-	protected function getVar($session, $var, $default = null) {
-		$request = $this->getRequest();
-		if (is_string($request->getPost($var))) {
-			$session->$var = $request->getPost($var);
-		} else if (!isset($session->$var)) {
-			$session->$var = $default;
+	protected function getSetVar($session, $source_name, $target_name = null, $default = null) {
+		if (is_null($target_name)) {
+			$target_name = $source_name;
 		}
-		return $session->$var;
+		$request = $this->getRequest();
+		if (is_string($request->getPost($source_name))) {
+			$session->$target_name = $request->getPost($source_name);
+		} else if (!isset($session->$target_name)) {
+			$session->$target_name = $default;
+		}
+		return $session->$target_name;
+	}
+
+	protected function applyFilters($table) {
+		$model = $this->model;
+		$session = $this->getSession($table);
+		$filter_fields = $model->getFilterFields();
+		$query = array();
+		foreach ($filter_fields as $filter_name => $filter_field) {
+			$value = $this->getSetVar($session, $filter_field['key'], $filter_field['key'], $filter_field['default']);
+			if ($filter = $model->applyFilter($filter_field, $value)) {
+				$query['$and'][] = $filter;
+			}
+		}
+		return $query;
 	}
 
 }
