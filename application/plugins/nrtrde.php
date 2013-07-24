@@ -2,6 +2,7 @@
 
 class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 
+	use Billrun_Traits_FileSequenceChecking;
 	/**
 	 * plugin name
 	 *
@@ -10,9 +11,19 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 	protected $name = 'nrtrde';
 
 	const time_format = 'YmdHis';
+	
+	public function __construct($options = array()) {
+		parent::__construct($options);
+		if( isset($options['receiver']['out_of_seq_level'])) {
+			$this->outOfSequenceAlertLevel = $options['receiver']['out_of_seq_level'];
+		}
+	}
 
-	public function beforeFTPReceive($ftp) {
-		return true;
+	public function beforeFTPReceive($receiver, $hostname) {
+		if ($receiver->getType() != $this->getName()) {
+			return;
+		}
+		$this->setFilesSequenceCheckForHost($hostname);
 	}
 
 	/**
@@ -53,8 +64,11 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 		return true;
 	}
 
-	public function afterFTPReceived($ftp, $files) {
-		return true;
+	public function afterFTPReceived($receiver, $filepaths, $hostname) {
+		if ($receiver->getType() != $this->getName()) {
+			return;
+		}
+		$this->checkFilesSeq($filepaths, $hostname);
 	}
 
 	/**

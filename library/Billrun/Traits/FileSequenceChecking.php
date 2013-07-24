@@ -18,6 +18,12 @@ trait Billrun_Traits_FileSequenceChecking {
 	 * @var Array of Billrun_Common_FileSequenceChecker.
 	 */
 	protected  $hostSequenceCheckers = array();
+	
+	/**
+	 * the Zend log levelto use for  files that are out of sequence.
+	 * @var int 
+	 */
+	protected $outOfSequenceAlertLevel =  Zend_Log::ALERT;
 
 	/**
 	 * Initilaize  sequence checker  for a given host if none exists.
@@ -70,7 +76,7 @@ trait Billrun_Traits_FileSequenceChecking {
 		}
 		//If there were any errors log them as high issues 
 		if($mailMsg) {
-			Billrun_Factory::log()->log($mailMsg,  Zend_Log::ALERT);
+			Billrun_Factory::log()->log($mailMsg, $this->outOfSequenceAlertLevel );
 		}
 	}
 

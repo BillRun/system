@@ -12,8 +12,7 @@
 class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plugin_Interface_IParser, Billrun_Plugin_Interface_IProcessor {
 
 	use Billrun_Traits_AsnParsing;
-
-use Billrun_Traits_FileSequenceChecking;
+	use Billrun_Traits_FileSequenceChecking;
 
 	const HEADER_LENGTH = 54;
 	const MAX_CHUNKLENGTH_LENGTH = 512;
@@ -28,7 +27,10 @@ use Billrun_Traits_FileSequenceChecking;
 
 	public function __construct($options = array()) {
 		parent::__construct($options);
-
+		if( isset($options['receiver']['out_of_seq_level'])) {
+			$this->outOfSequenceAlertLevel = $options['receiver']['out_of_seq_level'];
+		}
+		
 		$this->ggsnConfig = (new Yaf_Config_Ini(Billrun_Factory::config()->getConfigValue('ggsn.config_path')))->toArray();
 		$this->initParsing();
 		$this->addParsingMethods();
@@ -44,7 +46,7 @@ use Billrun_Traits_FileSequenceChecking;
 
 		foreach ($data['data'] as $key => $row) {
 			if (preg_match('/^(?=62\.90\.|37\.26\.)/', $row['sgsn_address']) == 1) { // what is under IL IP's gateway - remove it from fraud
-				Billrun_Factory::log()->log('GGSN plugin skip the line ' . $row['stamp'] . 'have the IP ' . $row['sgsn_address'], Zend_Log::INFO);
+				//Billrun_Factory::log()->log('GGSN plugin skip the line ' . $row['stamp'] . 'have the IP ' . $row['sgsn_address'], Zend_Log::INFO);
 				unset($data['data'][$key]);
 			}
 		}
