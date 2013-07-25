@@ -297,6 +297,15 @@ class TableModel {
 				);
 			}
 		}
+		else if ($filter_field['input_type'] == 'multiselect') {
+			if (is_array($value) && !in_array('all', $value)) {
+				return array(
+					$filter_field['db_key'] => array(
+						$filter_field['comparison'] => $value
+					)
+				);
+			}
+		}
 		return false;
 	}
 	

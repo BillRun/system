@@ -403,8 +403,9 @@ class AdminController extends Yaf_Controller_Abstract {
 			$target_name = $source_name;
 		}
 		$request = $this->getRequest();
-		if (is_string($request->getPost($source_name))) {
-			$session->$target_name = $request->getPost($source_name);
+		$var = $request->getPost($source_name);
+		if (is_string($var) || is_array($var)) {
+			$session->$target_name = $var;
 		} else if (!isset($session->$target_name)) {
 			$session->$target_name = $default;
 		}

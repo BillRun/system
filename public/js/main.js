@@ -32,4 +32,17 @@ $(function(){
 			event.preventDefault();
 		}
 	});
+	
+	$('.multiselect').multiselect({
+		//        includeSelectAllOption: true,
+		selectAllValue: 'all',
+		selectedClass: null
+	});
+	
+	$('#search-criteria').submit(function() {
+		if (!$("#type :selected").length) {
+			alert('You must choose at least one usage.');
+			return false;
+		}
+	});
 });

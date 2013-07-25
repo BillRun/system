@@ -127,6 +127,14 @@ class LinesModel extends TableModel {
 				'display' => 'Garbage lines',
 				'default' => 'off',
 			),
+			'account_id' => array(
+				'key' => 'account_id',
+				'db_key' => 'account_id',
+				'input_type' => 'number',
+				'comparison' => 'equals',
+				'display' => 'Account id',
+				'default' => '',
+			),
 			'subscriber_id' => array(
 				'key' => 'subscriber_id',
 				'db_key' => 'subscriber_id',
@@ -150,6 +158,15 @@ class LinesModel extends TableModel {
 				'comparison' => '$lte',
 				'display' => 'To',
 				'default' => (new Zend_Date(null, null, new Zend_Locale('he_IL')))->toString('YYYY-MM-dd HH:mm:ss'),
+			),
+			'usage' => array(
+				'key' => 'type',
+				'db_key' => 'usaget',
+				'input_type' => 'multiselect',
+				'comparison' => '$in',
+				'display' => 'Usage',
+				'values' => Billrun_Factory::config()->getConfigValue('admin_panel.line_usages'),
+				'default' => array('all')
 			),
 		);
 		return array_merge($filter_fields, parent::getFilterFields());
@@ -195,6 +212,9 @@ class LinesModel extends TableModel {
 	public function getFilterFieldsOrder() {
 		$filter_field_order = array(
 			0 => array(
+				'account_id' => array(
+					'width' => 2,
+				),
 				'subscriber_id' => array(
 					'width' => 2,
 				),
@@ -206,6 +226,9 @@ class LinesModel extends TableModel {
 				),
 			),
 			1 => array(
+				'usage' => array(
+					'width' => 2,
+				),
 				'garbage' => array(
 					'width' => 2,
 				),
