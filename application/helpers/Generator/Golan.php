@@ -83,7 +83,7 @@ class Generator_Golan extends Billrun_Generator {
 				$subscriber_gift_usage->GIFTID_GIFTCLASSNAME = "GC_GOLAN";
 				$flat_line = $lines_coll->getRef($subscriber['lines']['flat']['refs'][0]);
 				$flat_line->collection($lines_coll);
-				$subscriber_gift_usage->GIFTID_GIFTNAME = $flat_line['current_plan']['name'];
+				$subscriber_gift_usage->GIFTID_GIFTNAME = $flat_line['plan_ref']['name'];
 				$subscriber_gift_usage->TOTAL_FREE_COUNTER_COST = $subscriber['costs']['flat']['vatable'] + $subscriber['costs']['flat']['vat_free'];
 				//$subscriber_gift_usage->VOICE_COUNTERVALUEBEFBILL = ???;
 				//$subscriber_gift_usage->VOICE_FREECOUNTER = ???;
@@ -150,7 +150,7 @@ class Generator_Golan extends Billrun_Generator {
 				$breakdown_topic_over_plan = $subscriber_breakdown->addChild('BREAKDOWN_TOPIC');
 				$breakdown_topic_over_plan->addAttribute('name', 'GIFT_XXX_OUT_OF_USAGE');
 				$out_of_usage_entry = $breakdown_topic_over_plan->addChild('BREAKDOWN_ENTRY');
-//				$out_of_usage_entry->addChild('TITLE', 'SERVICE-GIFT-GC_GOLAN-' . current($subscriber['lines']['flat']['refs'])['current_plan']['name']);
+//				$out_of_usage_entry->addChild('TITLE', 'SERVICE-GIFT-GC_GOLAN-' . current($subscriber['lines']['flat']['refs'])['plan_ref']['name']);
 				$out_of_usage_entry->addChild('UNITS', 1);
 				$out_of_usage_entry->addChild('COST_WITHOUTVAT', $subscriber['breakdown']['in_plan']['base']['service']['cost']);
 				$out_of_usage_entry->addChild('VAT', $this->displayVAT($row['vat']));
@@ -166,7 +166,7 @@ class Generator_Golan extends Billrun_Generator {
 								$usagev = $subscriber['breakdown']['over_plan'][$category_key][$zone_name]['totals'][$type]['usagev'];
 								if ($usagev > 0) {
 									$out_of_usage_entry = $breakdown_topic_over_plan->addChild('BREAKDOWN_ENTRY');
-//									$out_of_usage_entry->addChild('TITLE', 'SERVICE-GIFT-GC_GOLAN-' . current($subscriber['lines']['flat']['refs'])['current_plan']['name']);
+//									$out_of_usage_entry->addChild('TITLE', 'SERVICE-GIFT-GC_GOLAN-' . current($subscriber['lines']['flat']['refs'])['plan_ref']['name']);
 									$out_of_usage_entry->addChild('UNITS', $usagev);
 									$out_of_usage_entry->addChild('COST_WITHOUTVAT', $subscriber['breakdown']['over_plan'][$category_key][$zone_name]['totals'][$type]['cost']);
 									$out_of_usage_entry->addChild('VAT', $this->displayVAT($zone['totals']['vat']));
@@ -187,7 +187,7 @@ class Generator_Golan extends Billrun_Generator {
 							$usagev = $subscriber['breakdown']['over_plan']['base'][$zone_name]['totals'][$type]['usagev'];
 							if ($usagev > 0) {
 								$out_of_usage_entry = $breakdown_topic_over_plan->addChild('BREAKDOWN_ENTRY');
-//								$out_of_usage_entry->addChild('TITLE', 'SERVICE-GIFT-GC_GOLAN-' . current($subscriber['lines']['flat']['refs'])['current_plan']['name']);
+//								$out_of_usage_entry->addChild('TITLE', 'SERVICE-GIFT-GC_GOLAN-' . current($subscriber['lines']['flat']['refs'])['plan_ref']['name']);
 								$out_of_usage_entry->addChild('UNITS', $usagev);
 								$out_of_usage_entry->addChild('COST_WITHOUTVAT', $subscriber['breakdown']['over_plan']['base'][$zone_name]['totals'][$type]['cost']);
 								$out_of_usage_entry->addChild('VAT', $this->displayVAT($zone['totals']['vat']));
@@ -225,7 +225,7 @@ class Generator_Golan extends Billrun_Generator {
 					foreach ($zone['totals'] as $usage_type => $usage_totals) {
 //						$out_of_usage_entry->addChild('TITLE', ?);
 						$international_entry = $breakdown_topic_international->addChild('BREAKDOWN_ENTRY');
-//						$international_entry->addChild('TITLE', 'SERVICE-GIFT-GC_GOLAN-' . current($subscriber['lines']['flat']['refs'])['current_plan']['name']);
+//						$international_entry->addChild('TITLE', 'SERVICE-GIFT-GC_GOLAN-' . current($subscriber['lines']['flat']['refs'])['plan_ref']['name']);
 						$international_entry->addChild('UNITS', $usage_totals['usagev']);
 						$international_entry->addChild('COST_WITHOUTVAT', $usage_totals['cost']);
 						$international_entry->addChild('VAT', $this->displayVAT($zone['vat']));
@@ -261,7 +261,7 @@ class Generator_Golan extends Billrun_Generator {
 					foreach ($zone['totals'] as $usage_type => $usage_totals) {
 //						$out_of_usage_entry->addChild('TITLE', ?);
 						$special_entry = $breakdown_topic_special->addChild('BREAKDOWN_ENTRY');
-//						$special_entry->addChild('TITLE', 'SERVICE-GIFT-GC_GOLAN-' . current($subscriber['lines']['flat']['refs'])['current_plan']['name']);
+//						$special_entry->addChild('TITLE', 'SERVICE-GIFT-GC_GOLAN-' . current($subscriber['lines']['flat']['refs'])['plan_ref']['name']);
 						$special_entry->addChild('UNITS', $usage_totals['usagev']);
 						$special_entry->addChild('COST_WITHOUTVAT', $usage_totals['cost']);
 						$special_entry->addChild('VAT', $this->displayVAT($zone['vat']));
@@ -300,7 +300,7 @@ class Generator_Golan extends Billrun_Generator {
 					foreach ($zone['totals'] as $usage_type => $usage_totals) {
 //						$out_of_usage_entry->addChild('TITLE', ?);
 						$roaming_entry = $subtopic_entry->addChild('BREAKDOWN_ENTRY');
-//						$roaming_entry->addChild('TITLE', 'SERVICE-GIFT-GC_GOLAN-' . current($subscriber['lines']['flat']['refs'])['current_plan']['name']);
+//						$roaming_entry->addChild('TITLE', 'SERVICE-GIFT-GC_GOLAN-' . current($subscriber['lines']['flat']['refs'])['plan_ref']['name']);
 						$roaming_entry->addChild('UNITS', $usage_totals['usagev']);
 						$roaming_entry->addChild('COST_WITHOUTVAT', $usage_totals['cost']);
 						$roaming_entry->addChild('VAT', $this->displayVAT($zone['vat']));
@@ -315,7 +315,7 @@ class Generator_Golan extends Billrun_Generator {
 				$breakdown_topic_charge->addAttribute('name', 'CHARGE_PER_CLI');
 				foreach ($subscriber['breakdown']['manual']['charge'] as $reason => $cost) {
 					$charge_entry = $breakdown_topic_charge->addChild('BREAKDOWN_ENTRY');
-					//						$charge_entry->addChild('TITLE', 'SERVICE-GIFT-GC_GOLAN-' . current($subscriber['lines']['flat']['refs'])['current_plan']['name']);
+					//						$charge_entry->addChild('TITLE', 'SERVICE-GIFT-GC_GOLAN-' . current($subscriber['lines']['flat']['refs'])['plan_ref']['name']);
 					$charge_entry->addChild('UNITS', 1);
 					$charge_entry->addChild('COST_WITHOUTVAT', $cost);
 					$charge_entry->addChild('VAT', $xml->TELECOM_INFORMATION->VAT_VALUE);
@@ -329,7 +329,7 @@ class Generator_Golan extends Billrun_Generator {
 				$breakdown_topic_refund->addAttribute('name', 'REFUND_PER_CLI');
 				foreach ($subscriber['breakdown']['manual']['refund'] as $reason => $cost) {
 					$refund_entry = $breakdown_topic_refund->addChild('BREAKDOWN_ENTRY');
-					//						$refund_entry->addChild('TITLE', 'SERVICE-GIFT-GC_GOLAN-' . current($subscriber['lines']['flat']['refs'])['current_plan']['name']);
+					//						$refund_entry->addChild('TITLE', 'SERVICE-GIFT-GC_GOLAN-' . current($subscriber['lines']['flat']['refs'])['plan_ref']['name']);
 					$refund_entry->addChild('UNITS', 1);
 					$refund_entry->addChild('COST_WITHOUTVAT', $cost);
 					$refund_entry->addChild('VAT', $xml->TELECOM_INFORMATION->VAT_VALUE);

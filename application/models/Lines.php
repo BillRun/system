@@ -61,6 +61,12 @@ class LinesModel extends TableModel {
 				$entity['billrun_ref'] = $data->get('billrun_key');
 			}
 		}
+		if (isset($entity['plan_ref'])) {
+			$data = $entity->get('plan_ref', false);
+			if ($data instanceof Mongodloid_Entity) {
+				$entity['plan'] = $data->get('name');
+			}
+		}
 
 		return $entity;
 	}
