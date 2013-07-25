@@ -106,8 +106,9 @@ abstract class Billrun_Generator_Base_WholesaleReport extends Billrun_Generator 
 	 * @return array containing the ratiing  details.
 	 */
 	protected function tariffForLine($line) {
+		$line->collection(Billrun_Factory::db()->linesCollection());
 		//TODO allow for  multiple rates...		
-		return isset($line['customer_rate']['rates'][$line['usaget']]['rate'][0]['price']) ?  $line['customer_rate']['rates'][$line['usaget']]['rate'][0]['price'] : '';
+		return  isset($line['carir']['zones'][$line['provider_zone']['key']][$line['usaget']]['rate']) ? $line['carir']['zones'][$line['provider_zone']['key']][$line['usaget']]['rate'][0]['price'] : '';
 	}
 	
 	/**
@@ -124,11 +125,11 @@ abstract class Billrun_Generator_Base_WholesaleReport extends Billrun_Generator 
 	 */
 	protected function productType($line) {
 		$ret = 'Calls';
-		if(preg_match('/^(?=972|)1800/', $line['called_number'])) {
-			$ret = "1800 calls";
+		if($line['provider_zone']['key'] == 'IL_TF') {
+			$ret = "1800 Calls";
 		}
 		if(preg_match('/^(?=972|)144$/', $line['called_number'])) {
-			$ret = "144 calls";
+			$ret = "144 Calls";
 		}
 
 		return $ret;

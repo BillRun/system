@@ -12,7 +12,7 @@
  * @package  calculator
  * @since    0.5
  */
-class Billrun_Calculator_NationalRoamingPricing extends Billrun_Calculator_Wholesale {
+class Billrun_Calculator_Wholesale_NationalRoamingPricing extends Billrun_Calculator_Wholesale {
 	const DEF_CALC_DB_FIELD = 'price_nr';
 	
 	protected $pricingField = self::DEF_CALC_DB_FIELD;
@@ -38,13 +38,16 @@ class Billrun_Calculator_NationalRoamingPricing extends Billrun_Calculator_Whole
 	}
 
 	protected function updateRow($row) {
-		$zoneKey = $this->isLineIncoming($row) ?  'incoming' : $row['customer_rate']['key'];
+		
 		
 		//@TODO  change this  be be configurable.
 		$pricingData = array();
+		$row->collection(Billrun_Factory::db()->linesCollection());
+		$zoneKey = $this->isLineIncoming($row) ?  'incoming' : $row['customer_rate']['key'];
 
-		if (isset($row['usagev'])) {
-			$pricingData = $this->getLinePricingData($row['usagev'], $row['usaget'], $this->nrCarrier, $zoneKey);
+		if (isset($row['usagev']) && $zoneKey ) {
+			$rates =  $this->getCarrierRateForZoneAndType($row['carir'], $zoneKey, $row['usaget'] );
+			$pricingData = $this->getLinePricingData($row['usagev'], $rates);
 			$row->setRawData(array_merge($row->getRawData(), $pricingData));
 		}	
 	}

@@ -12,6 +12,8 @@
  */
 abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 
+	const DEF_CALC_DB_FIELD = 'customer_rate';
+	
 	/**
 	 * the type of the object
 	 *
@@ -30,7 +32,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	 * The rating field to update in the CDR line.
 	 * @var string
 	 */
-	protected $ratingField = 'customer_rate';
+	protected $ratingField = self::DEF_CALC_DB_FIELD;
 
 	public function __construct($options = array()) {
 		parent::__construct($options);
@@ -60,5 +62,18 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	 * @return the Rate object that was loaded  from the DB  or false if the line shouldn't be rated.
 	 */
 	abstract protected function getLineRate($row, $usage_type);
+	
+	/**
+	 * Get an array of prefixes for a given number.
+	 * @param type $str the number to get  prefixes to.
+	 * @return Array the possible prefixes of the number.
+	 */
+	protected function getPrefixes($str) {
+		$prefixes = array();
+		for ($i = 0; $i < strlen($str); $i++) {
+			$prefixes[] = substr($str, 0, $i + 1);
+		}
+		return $prefixes;
+	}
 }
 

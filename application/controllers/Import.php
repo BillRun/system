@@ -21,7 +21,7 @@ class ImportController extends Yaf_Controller_Abstract {
 			));
 
 		$parser->setSeparator(",");
-		/*$import = Billrun_Processor::getInstance(array(
+		$import = Billrun_Processor::getInstance(array(
 				'type' => 'importzones',
 				'parser' => $parser,
 				'path' => '/home/eran/projects/encrypted/golan/rates/zone.csv'
@@ -73,7 +73,7 @@ class ImportController extends Yaf_Controller_Abstract {
 
 		$merge_intl_networks->setBackupPath(array()); // no backup
 		$importMapData = $merge_intl_networks->process();
-*/
+
 		$wholesale = Billrun_Processor::getInstance(array(
 				'type' => 'wholesaleoutrates',
 				'parser' => $parser,
@@ -101,12 +101,12 @@ class ImportController extends Yaf_Controller_Abstract {
 		$importWholesaleIn = $wholesalein->process();
 		
 		$this->getView()->title = "BillRun | The best open source billing system";
-		$this->getView()->content = "Data import count: " . count($importWholesaleZones);
-			/*. "<br />" . PHP_EOL
+		$this->getView()->content = "Data import count: " . count($importWholesaleZones)
+			. "<br />" . PHP_EOL
 			. "Data merge count: " . count($mergeData) . "<br />"
 			. "Data merge package count: " . count($mergePackageData) . "<br />"
 			. "Data merge package count: " . count($mergePackageData) . "<br />"
-			. "Merge intl. networks count: " . $importMapData . "<br />" . PHP_EOL;*/
+			. "Merge intl. networks count: " . $importMapData . "<br />" . PHP_EOL;
 		;
 	}
 

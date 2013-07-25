@@ -14,20 +14,32 @@ abstract class Billrun_Calculator_Wholesale extends Billrun_Calculator {
 
 	
 	/**
+	 * Array holding all the peak off peak times for a given day type, in hours of the day.
+	 * @param array $peakTimes
+	 */
+	protected $peakTimes = array(
+									'weekday' => array('start' => 9 , 'end' => 19),
+									'weekend' => array('start' => 0 , 'end' => -1),
+									'shortday' => array('start' => 9 , 'end' => 13),
+									'holyday' => array('start' => 0 , 'end' => -1)
+								);
+	
+	
+	public function __construct($options = array()) {
+		parent::__construct($options);
+		if (isset($options['peak_times'])) {
+			$this->peakTimes = $options['peak_times'];
+		}
+	}
+	
+	/**
 	 * Get pricing data for a given rate / subcriber.
 	 * @param type $volume The usage volume (seconds of call, count of SMS, bytes  of data)
 	 * @param type $usageType The type  of the usage (call/sms/data)
-	 * @param type $rate The rate of associated with the usage.
-	 * @param type $subr the  subscriber that generated the usage.
-	 * @return type
+	 * @param type $typedRates The rate of associated with the usage.
+	 * @return array containing  the pricing  fields to add to the cdr.
 	 */
-	protected function getLinePricingData($volumeToPrice, $usageType, $carrier, $zoneKey , $peak) {
-		$typedRates =  isset($carrier['zones'][$zoneKey][$usageType][$peak ? 'peak' : 'off_peak']) ?
-									$carrier['zones'][$zoneKey][$usageType][$peak ? 'peak' : 'off_peak'] : 
-									$carrier['zones'][$zoneKey][$usageType];
-		if(!$typedRates['rate'] || !is_array($typedRates['rate'])) {
-			Billrun_Factory::log()->log(print_r($carrier,1),Zend_Log::DEBUG);
-		}
+	protected function getLinePricingData($volumeToPrice, $typedRates) {	
 		$accessPrice = isset($typedRates['access']) ? $typedRates['access'] : 0;
 
 		$price = $accessPrice;
@@ -45,89 +57,26 @@ abstract class Billrun_Calculator_Wholesale extends Billrun_Calculator {
 	}
 	
 	/**
-	 * 
-	 * TODO remove
-	 * @see Billrun_Calculator_Rate::getLineRate
-	 *
-	 *
-	protected function getLineZone($row, $usage_type) {
-
-		$called_number = $row->get('called_number');
-		$ocg = $row->get('out_circuit_group');
-		$line_time = $row->get('unified_record_time');
-
-		$rates = Billrun_Factory::db()->ratesCollection();
-		if( $this->isLineIncoming($row) ) {
-			$zoneKey = 'incoming';
-		} else {
-			$zoneKey= false;
-		}
-		
-		$called_number_prefixes = $this->getPrefixes($called_number);
-
-		$base_match = array(
-			'$match' => array(
-				'params.prefix' => array(
-					'$in' => $called_number_prefixes,
-				),
-				'rates.' . $usage_type => array('$exists' => true),
-				'params.out_circuit_group' => array(
-					'$elemMatch' => array(
-						'from' => array(
-							'$lte' => $ocg,
-						),
-						'to' => array(
-							'$gte' => $ocg
-						)
-					)
-				),
-				'from' => array(
-					'$lte' => $line_time,
-				),
-				'to' => array(
-					'$gte' => $line_time,
-				),
-			)
-		);
-
-		$unwind = array(
-			'$unwind' => '$params.prefix',
-		);
-
-		$sort = array(
-			'$sort' => array(
-				'params.prefix' => -1,
-			),
-		);
-
-		$match2 = array(
-			'$match' => array(
-				'params.prefix' => array(
-					'$in' => $called_number_prefixes,
-				),
-			)
-		);
-
-		$matched_rates = $rates->aggregate($base_match, $unwind, $sort, $match2);
-		if (!empty($matched_rates)) {
-			$zoneKey = reset($matched_rates)['key'];
-		}
-
-		return $zoneKey;
-	}
-	*/
-		
-	/**
-	 * get all the prefixes from a given number
-	 * @param type $str
+	 * Get rates by type  and zone  from a given carrier
+	 * @param type $carrier
+	 * @param type $zoneKey
+	 * @param type $usageType
+	 * @param type $peak
 	 * @return type
 	 */
-	protected function getPrefixes($str) {
-		$prefixes = array();
-		for ($i = 0; $i < strlen($str); $i++) {
-			$prefixes[] = substr($str, 0, $i + 1);
+	function getCarrierRateForZoneAndType($carrier,$zoneKey,$usageType,$peak = false ) {
+		$typedRates = false;
+		if( isset($carrier['zones'][$zoneKey])) {
+			$typedRates =  $peak && isset($carrier['zones'][$zoneKey][$usageType][$peak]) ?
+										$carrier['zones'][$zoneKey][$usageType][$peak] : 
+										$carrier['zones'][$zoneKey][$usageType];
 		}
-		return $prefixes;
+		if(!$typedRates['rate'] || !is_array($typedRates['rate'])) {
+			Billrun_Factory::log()->log(print_r($zoneKey,1),Zend_Log::DEBUG);
+			Billrun_Factory::log()->log(print_r($carrier,1),Zend_Log::DEBUG);
+		}
+
+		return $typedRates;
 	}
 	
 	/**
@@ -138,6 +87,19 @@ abstract class Billrun_Calculator_Wholesale extends Billrun_Calculator {
 	protected function isLineIncoming($row) {
 		$ocg = $row->get('out_circuit_group');
 		return $ocg == 0 || $ocg == 3060 || $ocg == 3061 ;
+	}
+	
+	/**
+	 * Check if a given row is in peak time.
+	 * @param type $row the line to check if  it is in peak time.
+	 * @return true if the line time is in peak time for the given carrier
+	 */
+	protected function isPeak($row) {
+		$dayType = Billrun_HebrewCal::getDayType($row['unified_record_time']->sec);
+		$localoffset = date('Z',$row['unified_record_time']->sec);
+		$hour = (( ($row['unified_record_time']->sec + $localoffset) / 3600 ) % (24)) ;
+		//Billrun_Factory::log()->log($hour,Zend_Log::DEBUG);
+		return  ($hour - $this->peakTimes[$dayType]['start']) > 0 && $hour < $this->peakTimes[$dayType]['end'] ;
 	}
 }
 

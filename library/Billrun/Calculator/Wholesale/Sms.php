@@ -12,78 +12,47 @@
  * @package  calculator
  * @since    0.5
  */
-class Billrun_Calculator_Rate_Sms extends Billrun_Calculator_Rate {
+class Billrun_Calculator_Wholesale_Sms extends Billrun_Calculator_Wholesale {
 
-	/**
-	 * the type of the object
-	 *
-	 * @var string
-	 */
-	static protected $type = 'sms';
-
+	const DEF_CALC_DB_FIELD = 'provider_zone';
+	
+	protected $ratingField = self::DEF_CALC_DB_FIELD;	
 	/**
 	 * method to get calculator lines
 	 */
 	protected function getLines() {
 		$lines = Billrun_Factory::db()->linesCollection();
 
-		return $lines->query(array('$or' => array(
-						array('type' => array('$in' => array('smpp')), 'record_type' => '1', "cause_of_terminition" => "100", 'calling_number' => array('$in' => array('000000000002020', '000000000006060', '000000000007070'))),
-						array('type' => array('$in' => array('smsc')), 'record_type' => '1', 'calling_msc' => array('$ne' => '000000000000000'), "cause_of_terminition" => "100"),
-						array('type' => array('$in' => array('mmsc')), 'action' => array('$in' => array('S')), 'final_state' => 'S', 'mm_source_addr' => array('$regex' => '^\+\d+\/TYPE\s*=\s*.*golantelecom')),
-					),
-					$this->ratingField => array('$exists' => false)))
-				->cursor()->limit($this->limit);
+		return $lines->query()
+				->in('type', array('nsn'))				
+				->equals('usaget','sms')
+				->notExists($this->ratingField)->cursor()->limit($this->limit);
 	}
 
 	/**
-	 * Write the calculation into DB.
-	 * @param $row the line CDR to update. 
+	 * Write the calculation into DB
 	 */
 	protected function updateRow($row) {
 		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteRow', array('row' => $row));
 
+		$rate = $this->getLineZone($row, $row['usaget']);
+
 		$current = $row->getRawData();
-		$usage_type = $this->getLineUsageType($row);
-		$volume = $this->getLineVolume($row, $usage_type);
-		$rate = $this->getLineRate($row, $usage_type);
-		$added_values = array(
-			'usaget' => $usage_type,
-			'usagev' => $volume,
-			$this->ratingField => $rate? $rate->createRef() : $rate,
+		
+		$added_values = array(			
+			$this->ratingField => $rate ? $rate->createRef() : $rate,
 		);
+		
 		$newData = array_merge($current, $added_values);
 		$row->setRawData($newData);
-		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteRow', array('row' => $row));
-	}
-	
-	/**
-	 * @see Billrun_Calculator_Rate::getLineVolume
-	 */
-	protected function getLineVolume($row, $usage_type) {
-		return 1;
-	}
-	
-	/**
-	 * @see Billrun_Calculator_Rate::getLineUsageType
-	 */
-	protected function getLineUsageType($row) {
-		return $row['type'] == 'mmsc' ? 'mms' : 'sms';
-	}
 
-	/**
-	 * Identify if the row belong to calculator
-	 * 
-	 * @return boolean true if the row identify as belonging to the calculator, else false
-	 */
-	protected function identify($row) {
-		return true;
+		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteRow', array('row' => $row));
 	}
 
 	/**
 	 * @see Billrun_Calculator_Rate::getLineRate
 	 */
-	protected function getLineRate($row, $usage_type) {
+	protected function getLineZone($row, $usage_type) {
 		$called_number = preg_replace('/[^\d]/', '', preg_replace('/^0+/', '', ($row['type'] != 'mmsc' ? $row['called_msc'] : $row['recipent_addr'])));
 		$line_time = $row['unified_record_time'];
 
@@ -135,5 +104,17 @@ class Billrun_Calculator_Rate_Sms extends Billrun_Calculator_Rate {
 
 		return new Mongodloid_Entity(reset($matched_rates),$rates);
 	}
-
+	
+	/**
+	 * Get an array of prefixes for a given number.
+	 * @param type $str the number to get  prefixes to.
+	 * @return Array the possible prefixes of the number.
+	 */
+	protected function getPrefixes($str) {
+		$prefixes = array();
+		for ($i = 0; $i < strlen($str); $i++) {
+			$prefixes[] = substr($str, 0, $i + 1);
+		}
+		return $prefixes;
+	}
 }
