@@ -120,6 +120,13 @@ class LinesModel extends TableModel {
 
 	public function getFilterFields() {
 		$filter_fields = array(
+			'garbage' => array(
+				'key' => 'garbage',
+				'input_type' => 'boolean',
+				'comparison' => 'special',
+				'display' => 'Garbage lines',
+				'default' => 'off',
+			),
 			'subscriber_id' => array(
 				'key' => 'subscriber_id',
 				'db_key' => 'subscriber_id',
@@ -143,13 +150,6 @@ class LinesModel extends TableModel {
 				'comparison' => '$lte',
 				'display' => 'To',
 				'default' => (new Zend_Date(null, null, new Zend_Locale('he_IL')))->toString('YYYY-MM-dd HH:mm:ss'),
-			),
-			'garbage' => array(
-				'key' => 'garbage',
-				'input_type' => 'boolean',
-				'comparison' => 'special',
-				'display' => 'Garbage lines',
-				'default' => 'off',
 			),
 		);
 		return array_merge($filter_fields, parent::getFilterFields());
@@ -190,6 +190,28 @@ class LinesModel extends TableModel {
 		} else {
 			return parent::applyFilter($filter_field, $value);
 		}
+	}
+
+	public function getFilterFieldsOrder() {
+		$filter_field_order = array(
+			0 => array(
+				'subscriber_id' => array(
+					'width' => 2,
+				),
+				'from' => array(
+					'width' => 2,
+				),
+				'to' => array(
+					'width' => 2,
+				),
+			),
+			1 => array(
+				'garbage' => array(
+					'width' => 2,
+				),
+			),
+		);
+		return $filter_field_order;
 	}
 
 }

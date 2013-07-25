@@ -15,6 +15,7 @@ div#listSize {
 }
 .toolbar {
 	float:left;
+	width: 100%;
 }
 .date {
 	margin-bottom:0;

@@ -314,6 +314,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	protected function createFilterToolbar() {
 
 		$params['filter_fields'] = $this->model->getFilterFields();
+		$params['filter_fields_order'] = $this->model->getFilterFieldsOrder();
 
 		return $params;
 	}

@@ -299,5 +299,9 @@ class TableModel {
 		}
 		return false;
 	}
+	
+	public function getFilterFieldsOrder() {
+		return array();
+	}
 
 }
