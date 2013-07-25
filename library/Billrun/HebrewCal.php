@@ -108,14 +108,14 @@ class Billrun_HebrewCal {
 			unset($retArr['06/13']);
 		}
 
-		if (cal_from_jd(jewishtojd(8, 27, $year), CAL_JEWISH)['dow'] == 5) { // postpone Yom HaShoah
-			$retArr['08/25'] = $retArr['06/26'];
-			$retArr['08/26'] = $retArr['06/27'];
-			unset($retArr['06/27']);
-		} else if (cal_from_jd(jewishtojd(8, 27, $year), CAL_JEWISH)['dow'] == 0) { // prepone
-			$retArr['08/28'] = $retArr['06/27'];
-			$retArr['08/27'] = $retArr['06/26'];
-			unset($retArr['06/26']);
+		if (cal_from_jd(jewishtojd(8, 27, $year), CAL_JEWISH)['dow'] == 5) { // prepone Yom HaShoah
+			$retArr['08/25'] = $retArr['08/26'];
+			$retArr['08/26'] = $retArr['08/27'];
+			unset($retArr['08/27']);
+		} else if (cal_from_jd(jewishtojd(8, 27, $year), CAL_JEWISH)['dow'] == 0) { // postpone
+			$retArr['08/28'] = $retArr['08/27'];
+			$retArr['08/27'] = $retArr['08/26'];
+			unset($retArr['08/26']);
 		}
 
 		if (cal_from_jd(jewishtojd(9, 5, $year), CAL_JEWISH)['dow'] == 1) { // postpone Yom Hazikaron & Atzma'ut from Monday
@@ -137,8 +137,8 @@ class Billrun_HebrewCal {
 		}
 		
 		if (cal_from_jd(jewishtojd(9, 28, $year), CAL_JEWISH)['dow'] == 5) { // prepone Jerusalem day
-			$retArr['08/27'] = $retArr['06/28'];
-			unset($retArr['06/28']);
+			$retArr['08/27'] = $retArr['08/28'];
+			unset($retArr['08/28']);
 		}
 
 		return $retArr;
@@ -150,7 +150,7 @@ class Billrun_HebrewCal {
 	 * @return boolean true if the  date is a weekday false otherwise.
 	 */
 	public static function isRegularWorkday($unixtime) {
-		$dayType = self::getJewishDayType($unixtime);
+		$dayType = self::getDayType($unixtime);
 		return 'weekday' == $dayType || 'workday' == $dayType;
 	}
 
@@ -168,7 +168,7 @@ class Billrun_HebrewCal {
 		$weekends = $weekends ? $weekends : array('6' => 'weekend');
 		$holidays = $holidays ? $holidays : self::getHolidaysForYear($unixtime);
 		$jewishDate = preg_replace("/\/\d+$/", "", preg_replace("/(?=\b)([1-9])(?=\b)/", "0$1", self::getHebrewDate($unixtime)));
-		print_r($jewishDate . PHP_EOL);
+//		print_r($jewishDate . PHP_EOL);
 		$ret = 'weekday';
 		if (isset($holidays[$jewishDate])) {
 			$ret = $holidays[$jewishDate];
