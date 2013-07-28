@@ -31,4 +31,12 @@ class PlansModel extends TabledateModel {
 		return $columns;
 	}
 
+	public function getSortFields() {
+		$sort_fields = array(
+			'name' => 'Name',
+			'price' => 'Price',
+		);
+		return array_merge($sort_fields, parent::getSortFields());
+	}
+
 }

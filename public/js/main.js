@@ -40,7 +40,7 @@ $(function(){
 	});
 	
 	$('#search-criteria').submit(function() {
-		if (!$("#type :selected").length) {
+		if ($("#type").length && !$("#type :selected").length) {
 			alert('You must choose at least one usage.');
 			return false;
 		}

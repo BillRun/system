@@ -210,5 +210,14 @@ class TabledateModel extends TableModel {
 		);
 		return $filter_field_order;
 	}
+	
+	
+	public function getSortFields() {
+		$sort_fields = array(
+			'from' => 'From',
+			'to' => 'To',
+		);
+		return $sort_fields;
+	}
 
 }

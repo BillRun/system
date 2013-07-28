@@ -202,7 +202,8 @@ class AdminController extends Yaf_Controller_Abstract {
 	public function tabledateAction() {
 		$table = $this->_request->getParam("table");
 
-		$sort = array('unified_record_time' => -1);
+//		$sort = array('unified_record_time' => -1);
+		$sort = $this->applySort($table);
 		$options = array(
 			'collection' => $table,
 			'sort' => $sort,
@@ -211,7 +212,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$model = self::getModel($table, $options);
 		$query = $this->applyFilters($table);
 
-		$this->getView()->component = $this->buildComponent($table, $query, $sort);
+		$this->getView()->component = $this->buildComponent($table, $query);
 	}
 
 	/**
@@ -219,7 +220,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	 */
 	public function linesAction() {
 		$table = 'lines';
-		$sort = array('unified_record_time' => -1);
+		$sort = $this->applySort($table);
 		$options = array(
 			'collection' => $table,
 			'sort' => $sort,
@@ -228,7 +229,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$model = self::getModel($table, $options);
 		$query = $this->applyFilters($table);
 
-		$this->getView()->component = $this->buildComponent('lines', $query, $sort);
+		$this->getView()->component = $this->buildComponent('lines', $query);
 	}
 
 	/**
@@ -236,7 +237,8 @@ class AdminController extends Yaf_Controller_Abstract {
 	 */
 	public function eventsAction() {
 		$table = "events";
-		$sort = array('creation_time' => -1);
+//		$sort = array('creation_time' => -1);
+		$sort = $this->applySort($table);
 		$options = array(
 			'collection' => $table,
 			'sort' => $sort,
@@ -245,7 +247,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$model = self::getModel($table, $options);
 		$query = $this->applyFilters($table);
 
-		$this->getView()->component = $this->buildComponent($table, $query, $sort);
+		$this->getView()->component = $this->buildComponent($table, $query);
 	}
 
 	/**
@@ -253,7 +255,8 @@ class AdminController extends Yaf_Controller_Abstract {
 	 */
 	public function logAction() {
 		$table = "log";
-		$sort = array('received_time' => -1);
+//		$sort = array('received_time' => -1);
+		$sort = $this->applySort($table);
 		$options = array(
 			'collection' => $table,
 			'sort' => $sort,
@@ -262,7 +265,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$model = self::getModel($table, $options);
 		$query = $this->applyFilters($table);
 
-		$this->getView()->component = $this->buildComponent($table, $query, $sort);
+		$this->getView()->component = $this->buildComponent($table, $query);
 	}
 
 	/**
@@ -315,6 +318,7 @@ class AdminController extends Yaf_Controller_Abstract {
 
 		$params['filter_fields'] = $this->model->getFilterFields();
 		$params['filter_fields_order'] = $this->model->getFilterFieldsOrder();
+		$params['sort_fields'] = $this->model->getSortFields();
 
 		return $params;
 	}
@@ -361,7 +365,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		return $this->model;
 	}
 
-	protected function buildComponent($table, $filter_query, $sort = array(), $options = array()) {
+	protected function buildComponent($table, $filter_query, $options = array()) {
 		$this->title = ucfirst($table);
 
 		// TODO: use ready pager/paginiation class (zend? joomla?) with auto print
@@ -370,7 +374,7 @@ class AdminController extends Yaf_Controller_Abstract {
 			'session' => $this->getSession($table),
 		);
 
-		$params = array_merge($options, $params, $this->getTableViewParams($filter_query), $this->createFilterToolbar($table, $sort));
+		$params = array_merge($options, $params, $this->getTableViewParams($filter_query), $this->createFilterToolbar($table));
 
 		$ret = $this->renderView('table', $params);
 		return $ret;
@@ -424,6 +428,14 @@ class AdminController extends Yaf_Controller_Abstract {
 			}
 		}
 		return $query;
+	}
+
+	protected function applySort($table) {
+		$session = $this->getSession($table);
+		$sort_by = $this->getSetVar($session, 'sort_by', 'sort_by', '_id');
+		$order = $this->getSetVar($session, 'order', 'order', 'asc') == 'asc' ? 1: -1;
+		$sort = array($sort_by => $order);
+		return $sort;
 	}
 
 }

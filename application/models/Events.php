@@ -38,9 +38,26 @@ class EventsModel extends TableModel {
 		);
 		return $columns;
 	}
-	
+
 	public function toolbar() {
 		return 'events';
+	}
+
+	public function getSortFields() {
+		$sort_fields = array(
+			'creation_time' => 'Creation time',
+			'event_type' => 'Event type',
+			'imsi' => 'IMSI',
+			'msisdn' => 'MSISDN',
+			'source' => 'Source',
+			'threshold' => 'Threshold',
+			'units' => 'Units',
+			'value' => 'Value',
+			'notify_time' => 'Notify time',
+			'email_sent' => 'Email sent',
+			'priority' => 'Priority',
+		);
+		return $sort_fields;
 	}
 
 }

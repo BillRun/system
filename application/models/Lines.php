@@ -242,6 +242,20 @@ class LinesModel extends TableModel {
 		);
 		return $filter_field_order;
 	}
+	
+	public function getSortFields() {
+		return array(
+			'type' => 'Type',
+			'account_id' => 'Account id',
+			'subscriber_id' => 'Subscriber id',
+			'usaget' => 'Usage type',
+			'usagev' => 'Amount',
+			'plan' => 'Plan',
+			'price_customer' => 'Price',
+			'billrun_key' => 'Billrun',
+			'unified_record_time' => 'Time',
+		);
+	}
 
 }
 

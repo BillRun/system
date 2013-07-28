@@ -99,6 +99,13 @@ class RatesModel extends TabledateModel {
 		);
 		return $columns;
 	}
+	
+	public function getSortFields() {
+		$sort_fields = array(
+			'key' => 'Key',
+		);
+		return array_merge($sort_fields, parent::getSortFields());
+	}
 
 }
 

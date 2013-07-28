@@ -37,5 +37,17 @@ class LogModel extends TableModel {
 	public function toolbar() {
 		return 'log';
 	}
+	
+	public function getSortFields() {
+		$sort_fields = array(
+			'source' => 'Source',
+			'type' => 'Type',
+			'retrieved_from' => 'Retrieved from',
+			'file_name' => 'Filename',
+			'received_time' => 'Date received',
+			'process_time' => 'Date processed',
+		);
+		return $sort_fields;
+	}
 
 }

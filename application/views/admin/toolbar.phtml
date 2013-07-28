@@ -34,10 +34,26 @@
 				}
 				echo "</div></div>";
 			}
+			if (is_array($this->sort_fields)) {
+				echo "Sort by: <div class=\"control-group\">
+					<div class=\"controls form-inline\">
+					<select id=\"sort_by\" name=\"sort_by\">";
+				foreach ($this->sort_fields as $sort_field_key => $sort_field_display) {
+					echo "<option value=\"" . $sort_field_key . "\">" . $sort_field_display . "</option>";
+				}
+				echo "</select>
+					 <label class=\"radio inline\">
+					<input name=\"order\" value=\"asc\" type=\"radio\" checked=\"checked\"> Ascending order
+					</label>
+					 <label class=\"radio inline\">
+					<input name=\"order\" value=\"desc\" type=\"radio\"> Descending order
+					</label>
+					</div></div>";
+			}
 		}
-		if (!in_array(strtolower($this->title), array('events', 'log'))) :
 			?>
 			<span><button type="submit" class="btn">Submit</button></span>
+			<?php		if (!in_array(strtolower($this->title), array('events', 'log'))) : ?>
 			<script type="text/javascript">
 				var edit_url_prefix = <?php echo json_encode($this->baseUrl . '/admin/edit?coll=' . strtolower($this->title) . '&id='); ?>;
 				var confirm_url_prefix = <?php echo json_encode($this->baseUrl . '/admin/confirm?coll=' . strtolower($this->title) . '&id='); ?>;
