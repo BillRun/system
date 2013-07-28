@@ -32,9 +32,11 @@ trait Billrun_Traits_FileSequenceChecking {
 	protected function setFilesSequenceCheckForHost($hostname) {
 		if(!isset($this->hostSequenceCheckers[$hostname])) {
 			$this->hostSequenceCheckers[$hostname] = new Billrun_Common_FileSequenceChecker(array($this,'getFileSequenceData'), $hostname, $this->getName() );
-			$lastFile = $this->loadLastFileDataFromHost($hostname);
-			if($lastFile) {
-				$this->hostSequenceCheckers[$hostname]->addFileToSequence($lastFile);
+			$lastFiles = $this->loadLastFileDataForHost($hostname);
+			if(!empty($lastFiles)) {
+				foreach($lastFiles as $filename) {
+					$this->hostSequenceCheckers[$hostname]->addFileToSequence($filename);
+				}
 			}
 		}
 	}
@@ -89,23 +91,36 @@ trait Billrun_Traits_FileSequenceChecking {
 	 *						[date] => the file date.  
 	 */
 	public function getFileSequenceData($filename) {
-		return array(
+		return Billrun_Util::getFilenameData($this->getName(), $filename);
+		/*(array(
 				'seq' => Billrun_Util::regexFirstValue(Billrun_Factory::config()->getConfigValue($this->getName().".sequence_regex.seq","/(\d+)/"), $filename),
+				'zone' => Billrun_Util::regexFirstValue(Billrun_Factory::config()->getConfigValue($this->getName().".sequence_regex.zone","//"), $filename),
 				'date' =>Billrun_Util::regexFirstValue(Billrun_Factory::config()->getConfigValue($this->getName().".sequence_regex.date","/(20\d{6})/"), $filename),
 				'time' => Billrun_Util::regexFirstValue(Billrun_Factory::config()->getConfigValue($this->getName().".sequence_regex.time","/\D(\d{4,6})\D/"), $filename)	,
-			);
+			);*/
 	}
 	
 	/**
 	 * load the last sequence number for the files of the current type from the data base.
 	 */
-	protected function loadLastFileDataFromHost($hostname) {
+	protected function loadLastFileDataForHost($hostname) {
 		$log = Billrun_Factory::db()->logCollection();
-		$lastLogFile = $log->query()->equals('source', $this->getName())->exists('received_time')
-				->equals('retrieved_from', $hostname)->
-				cursor()->sort(array('_id' => -1))->limit(1)->current();
+		$lastLogFiles = $log->aggregate(array(
+							array('$match' => array(
+													'source'=> $this->getName(), 
+													'received_time' => array('$exists' => true),
+													'retrieved_from'=> $hostname,
+													),
+								),
+								array('$sort' => array('file_name' => -1)),
+								array('$group' => array('_id' => '$extra_data.zone', 'filename'=> array('$first' => '$file_name')))
+							));
 		
-		return isset($lastLogFile['file_name']) ? $lastLogFile['file_name'] : false;			
+		$retArr = array();
+		foreach($lastLogFiles as $file) {
+			$retArr = $file['filename'];
+		}
+		return $retArr;
 	}
 	
 	/**

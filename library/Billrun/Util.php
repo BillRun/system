@@ -141,5 +141,19 @@ class Billrun_Util {
 		}
 		return $ret;
 	}
+	
+	/**
+	 * Get the data the is stored in the file name.
+	 * @return an array containing the sequence data. ie:
+	 * 			array(seq => 00001, date => 20130101 )
+	 */
+	public static function getFilenameData($type, $filename) {
+		return array(
+			'seq' => Billrun_Util::regexFirstValue(Billrun_Factory::config()->getConfigValue($type . ".sequence_regex.seq", "/(\d+)/"), $filename),
+			'zone' => Billrun_Util::regexFirstValue(Billrun_Factory::config()->getConfigValue($type.".sequence_regex.zone","//"), $filename),
+			'date' => Billrun_Util::regexFirstValue(Billrun_Factory::config()->getConfigValue($type . ".sequence_regex.date", "/(20\d{4})/"), $filename),
+			'time' => Billrun_Util::regexFirstValue(Billrun_Factory::config()->getConfigValue($type . ".sequence_regex.time", "/\D(\d{4,6})\D/"), $filename),
+		);
+	}
 
 }
