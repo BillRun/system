@@ -14,7 +14,7 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 	
 	public function __construct($options = array()) {
 		parent::__construct($options);
-		$this->outOfSequenceAlertLevel =  Billrun_Factory::config()->getConfigValue('nrtrde.receiver.out_of_seq_level',$this->outOfSequenceAlertLevel);;
+		$this->outOfSequenceAlertLevel =  Billrun_Factory::config()->getConfigValue('nrtrde.receiver.out_of_seq_log_level',$this->outOfSequenceAlertLevel);;
 	}
 
 	public function beforeFTPReceive($receiver, $hostname) {
