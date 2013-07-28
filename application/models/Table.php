@@ -288,7 +288,7 @@ class TableModel {
 				}
 			}
 		} else if ($filter_field['input_type'] == 'date') {
-			if (is_string($value)) {
+			if (is_string($value) && Zend_Date::isDate($value, 'yyyy-MM-dd hh:mm:ss')) { //yyyy-MM-dd hh:mm:ss
 				$value = new MongoDate((new Zend_Date($value, null, new Zend_Locale('he_IL')))->getTimestamp());
 				return array(
 					$filter_field['db_key'] => array(
@@ -296,8 +296,7 @@ class TableModel {
 					)
 				);
 			}
-		}
-		else if ($filter_field['input_type'] == 'multiselect') {
+		} else if ($filter_field['input_type'] == 'multiselect') {
 			if (is_array($value) && !in_array('all', $value)) {
 				return array(
 					$filter_field['db_key'] => array(
@@ -308,7 +307,7 @@ class TableModel {
 		}
 		return false;
 	}
-	
+
 	public function getFilterFieldsOrder() {
 		return array();
 	}

@@ -163,7 +163,7 @@ class LinesModel extends TableModel {
 				'input_type' => 'date',
 				'comparison' => '$lte',
 				'display' => 'To',
-				'default' => (new Zend_Date(null, null, new Zend_Locale('he_IL')))->toString('YYYY-MM-dd HH:mm:ss'),
+				'default' => (new Zend_Date(strtotime("next year"), null, new Zend_Locale('he_IL')))->toString('YYYY-MM-dd HH:mm:ss'),
 			),
 			'usage' => array(
 				'key' => 'type',

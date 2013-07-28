@@ -351,7 +351,7 @@ class AdminController extends Yaf_Controller_Abstract {
 
 	public function getModel($collection_name, $options = array()) {
 		$session = $this->getSession($collection_name);
-		$options['page'] = $this->getSetVar($session, "page", "page", 0);
+		$options['page'] = $this->getSetVar($session, "page", "page", 1);
 		$options['size'] = $this->getSetVar($session, "listSize", "size", 1000);
 
 		if (is_null($this->model)) {
@@ -395,7 +395,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	}
 
 	/**
-	 * Gets a variable from the request (POST) / session and sets it to the session if found
+	 * Gets a variable from the request / session and sets it to the session if found
 	 * @param Object $session the session object
 	 * @param string $source_name the variable name in the request
 	 * @param type $target_name the variable name in the session
@@ -407,8 +407,15 @@ class AdminController extends Yaf_Controller_Abstract {
 			$target_name = $source_name;
 		}
 		$request = $this->getRequest();
-		$var = $request->getPost($source_name);
-		if (is_string($var) || is_array($var)) {
+		$new_search = $request->get("new_search") == "1";
+		$var = $request->get($source_name);
+		if ($new_search) {
+			if (is_string($var) || is_array($var)) {
+				$session->$target_name = $var;
+			} else {
+				$session->$target_name = $default;
+			}
+		} else if (is_string($var) || is_array($var)) {
 			$session->$target_name = $var;
 		} else if (!isset($session->$target_name)) {
 			$session->$target_name = $default;
@@ -433,7 +440,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	protected function applySort($table) {
 		$session = $this->getSession($table);
 		$sort_by = $this->getSetVar($session, 'sort_by', 'sort_by', '_id');
-		$order = $this->getSetVar($session, 'order', 'order', 'asc') == 'asc' ? 1: -1;
+		$order = $this->getSetVar($session, 'order', 'order', 'asc') == 'asc' ? 1 : -1;
 		$sort = array($sort_by => $order);
 		return $sort;
 	}
