@@ -2,19 +2,10 @@
  * bootstrap-multiselect.js 1.0.0
  * https://github.com/davidstutz/bootstrap-multiselect
  *
- * Copyright 2012 David Stutz
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Copyright 2012, 2013 David Stutz
+ * 
+ * Dual licensed under the BSD-3-Clause and the Apache License, Version 2.0.
+ * See the README.
  */
 !function($) {"use strict";// jshint ;_;
 
@@ -50,12 +41,19 @@
         this.$container = $(this.options.buttonContainer).append('<button type="button" class="multiselect dropdown-toggle ' + this.options.buttonClass + '" data-toggle="dropdown">' + this.options.buttonText(this.getSelected(), this.$select) + '</button>')
             .append('<ul class="multiselect-container dropdown-menu' + (this.options.dropRight ? ' pull-right' : '') + '"></ul>');
 
+        // Manually add button width if set.
         if (this.options.buttonWidth) {
             $('button', this.$container).css({
                 'width' : this.options.buttonWidth
             });
         }
-
+        
+        // Keep the tab index from the select.
+        var tabindex = this.$select.attr('tabindex');
+        if (tabindex) {
+            $('button', this.$container).attr('tabindex', tabindex);
+        }
+        
         // Set max height of dropdown menu to activate auto scrollbar.
         if (this.options.maxHeight) {
             // TODO: Add a class for this option to move the css declarations.
@@ -70,7 +68,9 @@
         if (this.options.enableFiltering || this.options.enableCaseInsensitiveFiltering) {
             this.buildFilter();
         }
-
+        
+        // Build select all if enabled.
+        this.buildSelectAll();
         this.buildDropdown();
         this.updateButtonText();
 
@@ -79,61 +79,71 @@
 
     Multiselect.prototype = {
 
-        defaults : {
+        defaults: {
             // Default text function will either print 'None selected' in case no
             // option is selected, or a list of the selected options up to a length of 3 selected options.
             // If more than 3 options are selected, the number of selected options is printed.
-            buttonText : function(options, select) {
+            buttonText: function(options, select) {
                 if (options.length == 0) {
-                    return 'None selected <b class="caret"></b>';
+                    return this.nonSelectedText + '<b class="caret"></b>';
                 }
                 else
                 if (options.length > 3) {
-                    return options.length + ' selected <b class="caret"></b>';
+                    return options.length + ' ' + this.nSelectedText + ' <b class="caret"></b>';
                 }
                 else {
                     var selected = '';
                     options.each(function() {
-                        var label = ($(this).attr('label') !== undefined) ? $(this).attr('label') : $(this).text();
+                        var label = ($(this).attr('label') !== undefined) ? $(this).attr('label') : $(this).html();
 
                         selected += label + ', ';
                     });
                     return selected.substr(0, selected.length - 2) + ' <b class="caret"></b>';
                 }
             },
+            // Like the buttonText option to update the title of the button.
+            buttonTitle: function(options, select) {
+                var selected = '';
+                options.each(function () {
+                    selected += $(this).text() + ', ';
+                });
+                return selected.substr(0, selected.length - 2);
+            },
             // Is triggered on change of the selected options.
             onChange : function(option, checked) {
 
             },
-            buttonClass : 'btn',
-            dropRight : false,
-            selectedClass : 'active',
-            buttonWidth : 'auto',
-            buttonContainer : '<div class="btn-group" />',
+            buttonClass: 'btn',
+            dropRight: false,
+            selectedClass: 'active',
+            buttonWidth: 'auto',
+            buttonContainer: '<div class="btn-group" />',
             // Maximum height of the dropdown menu.
             // If maximum height is exceeded a scrollbar will be displayed.
-            maxHeight : false,
-            includeSelectAllOption : false,
-            selectAllText : ' Select all',
-            selectAllValue : 'multiselect-all',
-            enableFiltering : false,
-            enableCaseInsensitiveFiltering : false,
-            filterPlaceholder : 'Search',
+            maxHeight: false,
+            includeSelectAllOption: false,
+            selectAllText: ' Select all',
+            selectAllValue: 'multiselect-all',
+            enableFiltering: false,
+            enableCaseInsensitiveFiltering: false,
+            filterPlaceholder: 'Search',
             // possible options: 'text', 'value', 'both'
-            filterBehavior : 'text',
-            preventInputChangeEvent: false
+            filterBehavior: 'text',
+            preventInputChangeEvent: false,
+            nonSelectedText: 'None selected',
+            nSelectedText: 'selected'
         },
 
-        constructor : Multiselect,
+        constructor: Multiselect,
 
         // Will build an dropdown element for the given option.
-        createOptionValue : function(element) {
+        createOptionValue: function(element) {
             if ($(element).is(':selected')) {
                 $(element).attr('selected', 'selected').prop('selected', true);
             }
 
             // Support the label attribute on options.
-            var label = $(element).attr('label') || $(element).text();
+            var label = $(element).attr('label') || $(element).html();
             var value = $(element).val();
             var inputType = this.options.multiple ? "checkbox" : "radio";
 
@@ -162,7 +172,7 @@
             }
         },
 
-        toggleActiveState : function(shouldBeActive) {
+        toggleActiveState: function(shouldBeActive) {
             if (this.$select.attr('disabled') == undefined) {
                 $('button.multiselect.dropdown-toggle', this.$container).removeClass('disabled');
             }
@@ -171,16 +181,18 @@
             }
         },
 
-        // Build the dropdown and bind event handling.
-        buildDropdown : function() {
+        // Add the select all option to the select.
+        buildSelectAll: function() {
             var alreadyHasSelectAll = this.$select[0][0] ? this.$select[0][0].value == this.options.selectAllValue : false;
 
-            // If options.includeSelectAllOption === true, add the include all
-            // checkbox.
+            // If options.includeSelectAllOption === true, add the include all checkbox.
             if (this.options.includeSelectAllOption && this.options.multiple && !alreadyHasSelectAll) {
                 this.$select.prepend('<option value="' + this.options.selectAllValue + '">' + this.options.selectAllText + '</option>');
             }
+        },
 
+        // Build the dropdown and bind event handling.
+        buildDropdown: function() {
             this.toggleActiveState();
 
             this.$select.children().each($.proxy(function(index, element) {
@@ -392,13 +404,13 @@
         },
 
         // Destroy - unbind - the plugin.
-        destroy : function() {
+        destroy: function() {
             this.$container.remove();
             this.$select.show();
         },
 
         // Refreshs the checked options based on the current state of the select.
-        refresh : function() {
+        refresh: function() {
             $('option', this.$select).each($.proxy(function(index, element) {
                 var $input = $('.multiselect-container li input', this.$container).filter(function() {
                     return $(this).val() == $(element).val();
@@ -431,7 +443,7 @@
         },
 
         // Select an option by its value.
-        select : function(value) {
+        select: function(value) {
             var $option = $('option', this.$select).filter(function() {
                 return $(this).val() == value;
             });
@@ -448,11 +460,11 @@
             $option.attr('selected', 'selected').prop('selected', true);
 
             this.updateButtonText();
-            this.options.onChange($option, checked);
+            this.options.onChange($option, true);
         },
 
         // Deselect an option by its value.
-        deselect : function(value) {
+        deselect: function(value) {
             var $option = $('option', this.$select).filter(function() {
                 return $(this).val() == value;
             });
@@ -469,10 +481,11 @@
             $option.removeAttr('selected').prop('selected', false);
 
             this.updateButtonText();
+            this.options.onChange($option, false);
         },
 
         // Rebuild the whole dropdown menu.
-        rebuild : function() {
+        rebuild: function() {
             $('.multiselect-container', this.$container).html('');
             this.buildDropdown(this.$select, this.options);
             this.updateButtonText();
@@ -484,25 +497,31 @@
         },
 
         // Get options by merging defaults and given options.
-        getOptions : function(options) {
+        getOptions: function(options) {
             return $.extend({}, this.defaults, options);
         },
 
-        updateButtonText : function() {
+        updateButtonText: function() {
             var options = this.getSelected();
+            
+            // First update the displayed button text.
             $('button', this.$container).html(this.options.buttonText(options, this.$select));
+            
+            // Now update the title attribute of the button.
+            $('button', this.$container).attr('title', this.options.buttonTitle(options, this.$select));
+            
         },
 
         // Get all selected options.
-        getSelected : function() {
+        getSelected: function() {
             return $('option:selected[value!="' + this.options.selectAllValue + '"]', this.$select);
         },
 
-        updateOriginalOptions : function() {
+        updateOriginalOptions: function() {
             this.originalOptions = this.$select.clone()[0].options;
         },
 
-        asyncFunction : function(callback, timeout, self) {
+        asyncFunction: function(callback, timeout, self) {
             var args = Array.prototype.slice.call(arguments, 3);
             return setTimeout(function() {
                 callback.apply(self || window, args);
