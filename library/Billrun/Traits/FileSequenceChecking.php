@@ -110,9 +110,10 @@ trait Billrun_Traits_FileSequenceChecking {
 													'source'=> $this->getName(), 
 													'received_time' => array('$exists' => true),
 													'retrieved_from'=> $hostname,
+													'extra_data' => array('$exists' => true),
 													),
 								),
-								array('$sort' => array('file_name' => -1)),
+								array('$sort' => array('extra_data.seq' => -1)),
 								array('$group' => array('_id' => '$extra_data.zone', 'filename'=> array('$first' => '$file_name')))
 							));
 		
