@@ -108,7 +108,15 @@ abstract class Billrun_Generator_Base_WholesaleReport extends Billrun_Generator 
 	protected function tariffForLine($line) {
 		$line->collection(Billrun_Factory::db()->linesCollection());
 		//TODO allow for  multiple rates...		
-		return  isset($line['carir']['zones'][$line['provider_zone']['key']][$line['usaget']]['rate']) ? $line['carir']['zones'][$line['provider_zone']['key']][$line['usaget']]['rate'][0]['price'] : '';
+		$rate = '';
+		if(isset($line['rates'][0]['rate']['price'])) {	
+			$rate =  $line['rates'][0]['rate']['price'];
+		}
+		if(isset($line['carir']['zones'][$line['provider_zone']['key']][$line['usaget']]['rate'])) {	
+			$rate =  $line['carir']['zones'][$line['provider_zone']['key']][$line['usaget']]['rate'][0]['price'];
+		}
+		return   $rate;
+		
 	}
 	
 	/**
@@ -124,12 +132,15 @@ abstract class Billrun_Generator_Base_WholesaleReport extends Billrun_Generator 
 	 * @return string the textual name  of the product that  was used.
 	 */
 	protected function productType($line) {
-		$ret = 'Calls';
+		$ret = ucfirst($line['usaget']);
+		if(isset($line['provider_zone']['key'])) {
+			$ret = $line['provider_zone']['key'] . " ".ucfirst($line['usaget']);
+		}
 		if($line['provider_zone']['key'] == 'IL_TF') {
-			$ret = "1800 Calls";
+			$ret = "1800 ". ucfirst($line['usaget']);
 		}
 		if(preg_match('/^(?=972|)144$/', $line['called_number'])) {
-			$ret = "144 Calls";
+			$ret = "144 ".ucfirst($line['usaget']);
 		}
 
 		return $ret;
@@ -156,7 +167,8 @@ abstract class Billrun_Generator_Base_WholesaleReport extends Billrun_Generator 
 								( ($value['record_type'] == "11" ||  $value['record_type'] == "12" ) && 
 								!preg_match("/".self::CELLCOM_ROAMING_REGEX."/", $value['in_circuit_group_name']) && 
 								$value['in_circuit_group_name'] != '' );*/
-			$isIncoming = !preg_match("/".$providerRegex."/", $value['out_circuit_group_name']);					
+			$value->collection(Billrun_Factory::db()->linesCollection());
+			$isIncoming = $value[Billrun_Calculator_Carrier::DEF_CALC_DB_FIELD]['key'] == 'GOLAN' || $value[Billrun_Calculator_Carrier::DEF_CALC_DB_FIELD]['key'] == 'NR'; //!preg_match("/".$providerRegex."/", $value['out_circuit_group_name']);					
 			
 			$lineConnectType = ($isIncoming ? substr($value['in_circuit_group_name'],0,1) : substr($value['out_circuit_group_name'],0,1));
 
@@ -184,9 +196,11 @@ abstract class Billrun_Generator_Base_WholesaleReport extends Billrun_Generator 
 			}
 			$aggrGroup = &$aggregate[$connectType][$aggrKey];
 			$aggrGroup['units']++;
+			if($value['usaget'] == 'call') {
 			$aggrGroup['minutes'] += ($value['charging_end_time'] && $value['charging_start_time']) ?
 																				strtotime($value['charging_end_time']) - strtotime($value['charging_start_time']) :
 																				$value['duration'];
+			}
 			$aggrGroup['tariff_per_product'] = $this->tariffForLine($value);
 			$aggrGroup['charge'] +=  $this->priceForLine($value);
 		}

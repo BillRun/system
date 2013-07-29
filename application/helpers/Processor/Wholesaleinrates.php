@@ -86,7 +86,7 @@ class Processor_Wholesaleinrates extends Billrun_Processor_Base_Separator {
 		$this->data['stored_data'] = array();
 
 		foreach ($this->data['data'] as $key => $row) {
-				$row['carrier'] =  preg_replace("/_IN$/", "", $row['carrier']);
+				$row['carrier'] = preg_replace("/_OUT$/", "", preg_replace("/_IN$/", "", $row['carrier']));
 				$entity = $carriers->query(array('key' => $row['carrier']))->cursor()->current();
 				if(!$entity->getId()) {
 					$entity = $this->createANewCarrier($row);

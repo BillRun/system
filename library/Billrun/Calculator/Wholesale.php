@@ -44,14 +44,17 @@ abstract class Billrun_Calculator_Wholesale extends Billrun_Calculator {
 
 		$price = $accessPrice;
 		//Billrun_Factory::log()->log("Rate : ".print_r($typedRates,1),  Zend_Log::DEBUG);
+		$rates = array();
 		foreach ($typedRates['rate'] as $key => $currRate) {
 			if (0 >= $volumeToPrice) {
 				break;
 			}//break if no volume left to price.
 			$volumeToPriceCurrentRating = ($volumeToPrice - $currRate['to'] < 0) ? $volumeToPrice : $currRate['to']; // get the volume that needed to be priced for the current rating
 			$price += floatval((ceil($volumeToPriceCurrentRating / $currRate['interval']) * $currRate['price'])); // actually price the usage volume by the current 
-			$volumeToPrice = $volumeToPrice - $volumeToPriceCurrentRating; //decressed the volume that was priced
+			$rates[] = array('rate'=> $currRate, 'volume' =>  $volumeToPriceCurrentRating);
+			$volumeToPrice = $volumeToPrice - $volumeToPriceCurrentRating; //decressed the volume that was priced			
 		}
+		$ret['rates'] = $rates;
 		$ret[$this->pricingField] = $price;
 		return $ret;
 	}
@@ -86,7 +89,7 @@ abstract class Billrun_Calculator_Wholesale extends Billrun_Calculator {
 	 */
 	protected function isLineIncoming($row) {
 		$ocg = $row->get('out_circuit_group');
-		return $ocg == 0 || $ocg == 3060 || $ocg == 3061 ;
+		return $ocg == 0 || $ocg == 3060 || $ocg == 3061 || ($ocg >= 1001 && $ocg <= 1209) ;
 	}
 	
 	/**

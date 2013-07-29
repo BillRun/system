@@ -66,6 +66,14 @@ class Billrun_Generator_Wholesale extends Billrun_Generator_Base_WholesaleReport
 														'record_type' => array('$in' => array("12")), 
 														"out_circuit_group_name" => array('$regex' => "$provider" ),
 													),
+												array(	
+														'record_type' => array('$in' => array("08")), 
+														"sms_centre" => array('$regex' => "^97258" ),
+													),
+												array(	
+														'record_type' => array('$in' => array("09")), 
+														"sms_centre" => array('$regex' => "^(?!97258)" ),
+													),
 												//SIP Calls
 												array(
 														'record_type' => array('$in' => array("01")), 

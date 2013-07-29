@@ -27,7 +27,7 @@ class Billrun_Calculator_Wholesale_Call extends Billrun_Calculator_Wholesale {
 		return $lines->query()
 				->in('type', array('nsn'))
 				->in('record_type', array('11','12'))
-				->exists('usaget')
+				->equals('usaget','call')
 				->notExists($this->ratingField)->cursor()->limit($this->limit);
 	}
 	

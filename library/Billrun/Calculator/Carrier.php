@@ -59,7 +59,7 @@ class Billrun_Calculator_Carrier extends Billrun_Calculator {
 
 	/**
 	 * Get the out going carrier for the line
-	 * @param type $row the  row to get  the  out going carrier to.
+	 * @param type $row the  row to get the out going carrier to.
 	 * @return Mongodloid_Entity the  carrier object in the DB.
 	 */
 	protected function detectCarrierOut($row) {	
@@ -76,7 +76,7 @@ class Billrun_Calculator_Carrier extends Billrun_Calculator {
 
 	/**
 	 * Get the incoming carrier for the line
-	 * @param type $row the  row to get  the incoming carrier to.
+	 * @param type $row the row to get  the incoming carrier to.
 	 * @return Mongodloid_Entity the carrier object in the DB.	
 	 */
 	protected function detectCarrierIn($row) {
