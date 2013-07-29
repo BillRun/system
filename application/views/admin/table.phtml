@@ -18,6 +18,7 @@
 
 		$c = $this->offset;
 		foreach ($this->data as $item) {
+//			$shani = $this->data->count();
 			print '<tr>';
 			print '<td><label class="checkbox">#' . ($c + 1) . '&nbsp;<input value="' . $item['_id'] . '" type="checkbox" id="chk' . $c++ . '"/></label></td>';
 			foreach (array_keys($this->columns) as $h) {

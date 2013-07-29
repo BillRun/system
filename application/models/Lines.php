@@ -166,13 +166,13 @@ class LinesModel extends TableModel {
 				'default' => (new Zend_Date(strtotime("next year"), null, new Zend_Locale('he_IL')))->toString('YYYY-MM-dd HH:mm:ss'),
 			),
 			'usage' => array(
-				'key' => 'type',
+				'key' => 'usage',
 				'db_key' => 'usaget',
 				'input_type' => 'multiselect',
 				'comparison' => '$in',
 				'display' => 'Usage',
 				'values' => Billrun_Factory::config()->getConfigValue('admin_panel.line_usages'),
-				'default' => array('all')
+				'default' => array(),
 			),
 		);
 		return array_merge($filter_fields, parent::getFilterFields());

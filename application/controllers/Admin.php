@@ -309,6 +309,7 @@ class AdminController extends Yaf_Controller_Abstract {
 			'edit_key' => $edit_key,
 			'pagination' => $pagination,
 			'sizeList' => $sizeList,
+			'offset' => $this->model->offset(),
 		);
 
 		return $params;
@@ -428,6 +429,9 @@ class AdminController extends Yaf_Controller_Abstract {
 		$session = $this->getSession($table);
 		$filter_fields = $model->getFilterFields();
 		$query = array();
+		if ($filter = $this->getManualFilters($table)) {
+			$query['$and'][] = $filter;
+		}
 		foreach ($filter_fields as $filter_name => $filter_field) {
 			$value = $this->getSetVar($session, $filter_field['key'], $filter_field['key'], $filter_field['default']);
 			if ($filter = $model->applyFilter($filter_field, $value)) {
@@ -443,6 +447,56 @@ class AdminController extends Yaf_Controller_Abstract {
 		$order = $this->getSetVar($session, 'order', 'order', 'asc') == 'asc' ? 1 : -1;
 		$sort = array($sort_by => $order);
 		return $sort;
+	}
+
+	public function getManualFilters($table) {
+		$query = false;
+		$session = $this->getSession($table);
+		$keys = $this->getSetVar($session, 'manual_key', 'manual_key');
+		$types = $this->getSetVar($session, 'manual_type', 'manual_type');
+		$operators = $this->getSetVar($session, 'manual_operator', 'manual_operator');
+		$values = $this->getSetVar($session, 'manual_value', 'manual_value');
+		for ($i = 0; $i < count($keys); $i++) {
+			if ($keys[$i]=='' || $values[$i]=='') {
+				continue;
+			}
+			switch ($types[$i]) {
+				case 'number':
+					$values[$i] = floatval($values[$i]);
+					break;
+				case  'date':
+					if (Zend_Date::isDate($values[$i], 'yyyy-MM-dd hh:mm:ss')) {
+						$values[$i] = new MongoDate((new Zend_Date($values[$i], null, new Zend_Locale('he_IL')))->getTimestamp());
+					}
+					else {
+						continue 2;
+					}
+				default:
+					break;
+			}
+			switch ($operators[$i]) {
+				case 'lt':
+					$operators[$i] = '$lt';
+					break;
+				case 'lte':
+					$operators[$i] = '$lte';
+					break;
+				case 'gt':
+					$operators[$i] = '$gt';
+					break;
+				case 'gte':
+					$operators[$i] = '$gte';
+					break;
+				case 'equals':
+					$operators[$i] = '$in';
+					$values[$i] = array($values[$i]);
+					break;
+				default:
+					break;
+			}
+			$query[$keys[$i]][$operators[$i]] = $values[$i];
+		}
+		return $query;
 	}
 
 }

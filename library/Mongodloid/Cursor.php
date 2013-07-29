@@ -38,8 +38,8 @@ class Mongodloid_Cursor implements Iterator,  Countable {
 		$this->_cursor->timeout($timeout);
 	}
 
-	public function count() {
-		return $this->_cursor->count(true);
+	public function count($foundOnly = true) {
+		return $this->_cursor->count($foundOnly);
 	}
 
 	public function current() {

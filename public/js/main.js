@@ -2,21 +2,21 @@ $('.date').datetimepicker({
 	format: 'yyyy-MM-dd hh:mm:ss',
 });
 
-$('body').on('hidden', '.modal', function () {
+$('body').on('hidden', '.modal', function() {
 	$(this).removeData('modal');
 });
 
-$(function(){
-	$("#update_current,#close_and_new,#duplicate").click(function(){
+$(function() {
+	$("#update_current,#close_and_new,#duplicate").click(function() {
 		var items_checked = $('#data_table :checked');
 		if (items_checked.length) {
 			$(this).data('remote', edit_url_prefix + items_checked.eq(0).val() + '&type=' + $(this).data('type'));
 		}
 	});
 
-	$("#remove").click(function(){
+	$("#remove").click(function() {
 		var items_checked = $('#data_table :checked');
-		var output = $.map(items_checked, function(n, i){
+		var output = $.map(items_checked, function(n, i) {
 			return n.value;
 		}).join(',');
 		if (items_checked.length) {
@@ -24,25 +24,37 @@ $(function(){
 		}
 	});
 
-	$("#popupModal, #confirmModal").on('show', function(event){
+	$("#popupModal, #confirmModal").on('show', function(event) {
 		var items_checked = $('#data_table :checked');
-		if (!items_checked.length || (items_checked.length!=1 && (coll!='lines' || $(this).attr('id')!='confirmModal'))) {
+		if (!items_checked.length || (items_checked.length != 1 && (coll != 'lines' || $(this).attr('id') != 'confirmModal'))) {
 			alert('Please check exactly one item from the list');
 			$(this).removeData('modal');
 			event.preventDefault();
 		}
 	});
-	
+
 	$('.multiselect').multiselect({
 		//        includeSelectAllOption: true,
 		selectAllValue: 'all',
 		selectedClass: null
 	});
-	
+
 	$('#search-criteria').submit(function() {
 		if ($("#type").length && !$("#type :selected").length) {
 			alert('You must choose at least one usage.');
 			return false;
 		}
+	});
+	$(".add-filter").on('click', function() {
+		$("#manual_filters>:last-child").clone(true, true).appendTo('#manual_filters');
+	});
+	$(".remove-filter").on('click', function() {
+		jQuery(this).parent().remove();
+	});
+	$("select[name='manual_type[]']").on('change', function() {
+		jQuery(this).siblings("input[name='manual_value[]'], .input-append.date").toggle();
+		jQuery(this).parent().find("input[name='manual_value[]']").prop('disabled', function (_, val) {
+			return ! val;
+		});
 	});
 });
