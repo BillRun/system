@@ -118,7 +118,7 @@ trait Billrun_Traits_FileSequenceChecking {
 		
 		$retArr = array();
 		foreach($lastLogFiles as $file) {
-			$retArr = $file['filename'];
+			$retArr[] = $file['filename'];
 		}
 		return $retArr;
 	}
