@@ -64,7 +64,7 @@ class Billrun_Calculator_Carrier extends Billrun_Calculator {
 	 */
 	protected function detectCarrierOut($row) {	
 		$query = array('identifiction.group_name' => array(
-						'$in'=> array(substr($row['out_circuit_group_name'], 0, 4))
+						'$in'=> array($this->getCarrierName($row['out_circuit_group_name']))
 					));
 		if(in_array($row['record_type'],array('08','09'))) {
 				$query = array('identifiction.sms_centre' => array(
@@ -81,7 +81,7 @@ class Billrun_Calculator_Carrier extends Billrun_Calculator {
 	 */
 	protected function detectCarrierIn($row) {
 		$query = array('identifiction.group_name' => array(
-						'$in'=> array(substr($row['in_circuit_group_name'], 0, 4))
+						'$in'=> array(getCarrierName($row['in_circuit_group_name']))
 					));
 		if(in_array($row['record_type'],array('08','09'))) {
 				$query = array('identifiction.sms_centre' => array(
@@ -89,6 +89,14 @@ class Billrun_Calculator_Carrier extends Billrun_Calculator {
 					));
 		}
 		return Billrun_Factory::db()->carriersCollection()->query($query)->cursor()->current();
+	}
+	/**
+	 * get the  carrier identifier  from the group name  fields
+	 * @param type $groupName the  group name to get the carrier identifer to.
+	 * @return string containing the carrier identifer.
+	 */
+	protected function getCarrierName($groupName) {
+		return substr($groupName, 0, min(4,strlen($groupName)));
 	}
 
 }
