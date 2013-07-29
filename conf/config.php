@@ -16,12 +16,15 @@
  * all the below code will be ignored
  */
 
+//!!!REMOVE WHEN DEBUGGING LOCALY!!!
+define('BILLRUN_CONFIG_PATH', APPLICATION_PATH . "/conf/prod.ini");
+
 if (!defined('BILLRUN_CONFIG_PATH')) {
 	$config = array(
 		'servers' => array(
 			'dev' => array('127.0.0.1', '127.0.1.1', '::1'),
 			'test' => array(),
-			'prod' => array('192.168.37.10', 'fraud.golan.local', '192.168.30.20','172.29.202.21'),
+			'prod' => array('192.168.37.10', 'fraud.golan.local', '192.168.30.20','172.29.202.21','billing1_hfa.gt.local'),
 		)
 	);
 
