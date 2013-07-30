@@ -205,7 +205,9 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 					if (isset($this->nsnConfig['fields'][$fieldDesc])) {
 							$length = intval(current($this->nsnConfig['fields'][$fieldDesc]), 10);
 							$data[$key] = $this->parseField(substr($line,$offset,$length), $this->nsnConfig['fields'][$fieldDesc]);
-							//Billrun_Factory::log()->log("Data $key : {$data[$key]}",Zend_log::DEBUG);
+							/*if($data['record_type'] == "12") {//DEBUG...
+								Billrun_Factory::log()->log("Data $key : {$data[$key]} , offset: ".  dechex($offset),Zend_log::DEBUG);
+							}*/
 							$offset += $length;
 					} else {
 						throw new Exception("Nsn:parse - Couldn't find field: $fieldDesc  ");
