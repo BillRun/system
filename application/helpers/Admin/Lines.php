@@ -42,5 +42,13 @@ class Lines {
 					</div>";
 		return $output;
 	}
+	
+	/**
+	 * Is the manual filter activated
+	 * @param type $param
+	 */
+	public function isManualFilter($session) {
+		return isset($session->manual_value) && count($session->manual_value)>0 && $session->manual_value[0]!='' && $session->manual_key[0]!='';
+	}
 
 }

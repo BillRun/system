@@ -1,7 +1,3 @@
-$('.date').datetimepicker({
-	format: 'yyyy-MM-dd hh:mm:ss',
-});
-
 $('body').on('hidden', '.modal', function() {
 	$(this).removeData('modal');
 });
@@ -46,15 +42,59 @@ $(function() {
 		}
 	});
 	$(".add-filter").on('click', function() {
-		$("#manual_filters>:last-child").clone(true, true).appendTo('#manual_filters');
+		addFilter(this);
 	});
 	$(".remove-filter").on('click', function() {
-		jQuery(this).parent().remove();
+		removeFilter(this);
 	});
 	$("select[name='manual_type[]']").on('change', function() {
-		jQuery(this).siblings("input[name='manual_value[]'], .input-append.date").toggle();
-		jQuery(this).parent().find("input[name='manual_value[]']").prop('disabled', function (_, val) {
-			return ! val;
-		});
+		type_changed(this)
+	});
+	$('.date').datetimepicker({
+		format: 'yyyy-MM-dd hh:mm:ss',
+	});
+	$(".advanced-options").on('click',function() {
+		$("#manual_filters").slideToggle();
+		$("i",this).toggleClass("icon-chevron-down icon-chevron-up");
 	});
 });
+
+function removeFilter(button) {
+	$(button).parent().remove();
+}
+
+function type_changed(sel) {
+	if ($(sel).val() == "date") {
+		$(sel).siblings("input[name='manual_value[]']").hide();
+		$(sel).siblings(".input-append.date").show();
+		$(sel).parent().find("input[name='manual_value[]']").prop('disabled', function(_, val) {
+			return !val;
+		});
+	}
+	else {
+		$(sel).siblings("input[name='manual_value[]']").show().prop('disabled', false);
+		$(sel).siblings(".input-append.date").hide();
+		$(sel).parent().find(".input-append.date>input[name='manual_value[]']").prop('disabled', true);
+	}
+}
+
+function addFilter(button) {
+	var cloned = $("#manual_filters>:last-child").clone().appendTo('#manual_filters');
+	cloned.find("select").each(function(i) {
+		var cloned_sel = $(this);
+		var original_sel = $("#manual_filters>div").eq(-2).find("select").eq(i);
+		cloned_sel.val(original_sel.val());
+	});
+	$('.date', cloned).datetimepicker({
+		format: 'yyyy-MM-dd hh:mm:ss',
+	});
+	$(".remove-filter", cloned).on('click', function() {
+		removeFilter(this);
+	});
+	$(".add-filter", cloned).on('click', function() {
+		addFilter(this);
+	});
+	$("select[name='manual_type[]']", cloned).on('change', function() {
+		type_changed(this);
+	});
+}
