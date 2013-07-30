@@ -143,6 +143,7 @@ class Processor_Wholesaleinrates extends Billrun_Processor_Base_Separator {
 	protected function createANewCarrier( $rateRow ) {
 		return new Mongodloid_Entity( array(
 					'key' => $rateRow['carrier'],
+					'name' => $rateRow['carrier'],
 					'from' => new MongoDate(),
 					'to' => new MongoDate(),
 					'prefixes' => array(),

@@ -13,11 +13,7 @@
 class Billrun_Generator_NationalRoaming extends Billrun_Generator_Base_WholesaleReport {
 		
 	public function __construct($options) {
-		parent::__construct(array_merge($options, array('report_type' => 'national_roaming')));
-		$this->providers['Golan'] = array('provider'=> '^(?=RCEL.*|)$');
-		$this->providers['All'] = array('provider'=> '.*');
-		$this->providers['Voice Mail'] = array('provider'=> '^VVOM');
-		
+		parent::__construct(array_merge($options, array('report_type' => 'national_roaming')));			
 	}
 	
 	/**
@@ -37,19 +33,16 @@ class Billrun_Generator_NationalRoaming extends Billrun_Generator_Base_Wholesale
 	/**
 	 * @see Billrun_Generator_Base_WholesaleReport::getCallLinesForProvider()
 	 */
-	protected function getCDRs($provider, $timehorizons) {
+	protected function getCDRs( $timehorizons) {
 
 		$results = Billrun_Factory::db()->linesCollection()->query(array(
 											'type'=>'nsn',
-											'record_type' => array('$in' => array("12","11")),
+											
 											Billrun_Calculator_Wholesale_NationalRoamingPricing::DEF_CALC_DB_FIELD => array('$exists' => true),
 											'unified_record_time' => array( '$gt' => $timehorizons['start'] , '$lt' => $timehorizons['end'] ,),
-											'$or' => array( 
-														array(	"in_circuit_group_name" => array('$regex' => "$provider" ),
-																"out_circuit_group_name" => array('$regex' => self::CELLCOM_ROAMING_REGEX  )),
-												
-														array(	"in_circuit_group_name" => array('$regex' => self::CELLCOM_ROAMING_REGEX  ),
-																"out_circuit_group_name" => array('$regex' => "$provider" ),),
+											'$or' => array( 							
+															array('record_type' => "12","out_circuit_group_name" => array('$regex' => self::CELLCOM_ROAMING_REGEX  )),												
+															array('record_type' =>"11",	"in_circuit_group_name" => array('$regex' => self::CELLCOM_ROAMING_REGEX  ),),
 											),		
 										));
 
@@ -57,7 +50,7 @@ class Billrun_Generator_NationalRoaming extends Billrun_Generator_Base_Wholesale
 	}
 
 	protected function priceForLine($line) {
-		return isset($value['price_nr']) ? $value['price_nr'] : 0;
+		return isset($line['price_nr']) ? $line['price_nr'] : 0;
 	}
 	
 }

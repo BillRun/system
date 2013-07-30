@@ -42,7 +42,7 @@ class Billrun_Calculator_Wholesale_Call extends Billrun_Calculator_Wholesale {
 		$current = $row->getRawData();
 		
 		$added_values = array(			
-			$this->ratingField => $rate ? $rate->createRef() : $rate,
+			$this->ratingField => $rate instanceof Mongodloid_Entity ? $rate->createRef() : $rate,
 		);
 		
 		$newData = array_merge($current, $added_values);
@@ -65,7 +65,9 @@ class Billrun_Calculator_Wholesale_Call extends Billrun_Calculator_Wholesale {
 		$rates = Billrun_Factory::db()->ratesCollection();
 		
 		$zoneKey= false;		
-		
+		 if($this->isLineIncoming($row)) {
+			 $zoneKey = 'incoming';
+		 }
 		$called_number_prefixes = $this->getPrefixes($called_number);
 
 		$base_match = array(

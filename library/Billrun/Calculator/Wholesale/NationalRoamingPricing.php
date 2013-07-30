@@ -17,21 +17,23 @@ class Billrun_Calculator_Wholesale_NationalRoamingPricing extends Billrun_Calcul
 	
 	protected $pricingField = self::DEF_CALC_DB_FIELD;
 	
-	protected $nrCarrier = null;
+	protected $nrCarriers = array();
 	
 	public function __construct($options = array()) {
 		parent::__construct($options);
-		$this->nrCarrier = Billrun_Factory::db()->carriersCollection()->query(array('key'=>'NR'))->cursor()->current();
+		foreach(Billrun_Factory::db()->carriersCollection()->query(array('key'=>'NR')) as $nrCarir) {
+			$nrCarir->collection(Billrun_Factory::db()->carriersCollection());
+			$this->nrCarriers[] = $nrCarir->createRef();
+		}
 	}
 	
 	protected function getLines() {
 		$lines = Billrun_Factory::db()->linesCollection();
-
 		return $lines->query(array(
 								'type'=> 'nsn',
 								'$or' => array(
-									array( 'record_type' => '12', 'out_circuit_group_name' => array('$regex'=>'^RCEL')),
-									array('record_type' => '11', 'in_circut_group_name' => array('$regex'=>'^RCEL')),
+									array( 'record_type' => '12', 'carir' => array('$in'=>$this->nrCarriers)),
+									array('record_type' => '11', 'carir_in' => array('$in'=>$this->nrCarriers)),
 								)
 							))
 				->exists('customer_rate')->notExists($this->pricingField)->cursor()->limit($this->limit);

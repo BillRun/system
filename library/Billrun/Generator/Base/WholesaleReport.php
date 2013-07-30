@@ -45,21 +45,6 @@ abstract class Billrun_Generator_Base_WholesaleReport extends Billrun_Generator 
 																		'Un' => 'Other',
 																	));
 		
-		$this->providers = Billrun_Factory::config()->getConfigValue( $this->reportType.'.reports.providers', 
-																	  array(
-																			'Bezeq' => array('provider'=> '^[4N]BZQ'),																			
-																			'Bezeq International Mapa' => array('provider'=> "^NBZI"),
-																			'Cellcom Mapa' => array('provider'=> "^NCEL"),
-																		  	'Cellcom' => array('provider'=> "^MCEL"),
-																			'Partner' => array('provider'=> "^MPRT"),
-																			'Partner Mapa' => array('provider'=> "^NPRT"),
-																			'Mirs' => array('provider'=> "^MMRS"),
-																			'Pelephone' => array('provider'=> "^MPEL"),
-																			'Netvision' => array('provider'=> "^NNTV"),
-																			'Hot Mapa' => array('provider'=> "^NHOT"),
-																			'Paltel'=>	array('provider'=> "^SPAL"),
-																		));
-		
 		$this->startDate = isset($options['start_date']) ?  strtotime($options['start_date']) : 
 							 (strlen($this->stamp) > 8 ? strtotime($this->stamp) : Billrun_Util::getLastChargeTime(true));
 		$this->endDate = isset($options['end_date']) ?  strtotime($options['end_date']) : strtotime(date('Ymt',$this->startDate));
@@ -74,15 +59,15 @@ abstract class Billrun_Generator_Base_WholesaleReport extends Billrun_Generator 
 		$timeHorizions['start'] = new MongoDate($this->startDate);
 		$timeHorizions['end'] = new MongoDate($this->endDate);
 		Billrun_Factory::log()->log("Start Date : ".date("Y-m-d",$this->startDate)." End Date : ".date("Y-m-d",$this->endDate),Zend_Log::DEBUG);
-		foreach($this->providers as $providerName => $val) {
-			Billrun_Factory::log()->log("Aggregating  $providerName NSN usage: ",Zend_Log::DEBUG);
-			$providerAggregation = $this->aggregate( $this->getCDRs($val['provider'], $timeHorizions ),$val['provider']);
+		//foreach($this->providers as $providerName => $val) {
+			//Billrun_Factory::log()->log("Aggregating  $providerName NSN usage: ",Zend_Log::DEBUG);
+			$providerResults = $this->aggregate( $this->getCDRs( $timeHorizions ));
 			
-			if( empty($providerAggregation) ) {
-				continue;
-			}
-			$providerResults[$providerName] = $providerAggregation; 
-		}
+//			if( empty($providerAggregation) ) {
+//				continue;
+//			}
+//			$providerResults[$providerName] = $providerAggregation; 
+//		}
 		return $providerResults;
 	}
 	
@@ -98,7 +83,7 @@ abstract class Billrun_Generator_Base_WholesaleReport extends Billrun_Generator 
 	/**
 	 *  Retrive the call CDR lines from the DB for a given provider.
 	 */
-	abstract protected function getCDRs($provider, $timehorizon);
+	abstract protected function getCDRs( $timehorizon );
 	
 	/**
 	 * get  Rates for a given line
@@ -112,8 +97,11 @@ abstract class Billrun_Generator_Base_WholesaleReport extends Billrun_Generator 
 		if(isset($line['rates'][0]['rate']['price'])) {	
 			$rate =  $line['rates'][0]['rate']['price'];
 		}
-		if(isset($line['carir']['zones'][$line['provider_zone']['key']][$line['usaget']]['rate'])) {	
-			$rate =  $line['carir']['zones'][$line['provider_zone']['key']][$line['usaget']]['rate'][0]['price'];
+		if($rate=='') {
+			$zone = isset($line['provider_zone']['key']) ? $line['provider_zone']['key'] : ( $line['provider_zone'] == 'incoming' ? 'incoming' : '');
+			if(isset($line['carir']['zones'][$line['provider_zone']['key']][$line['usaget']]['rate'])) {	
+				$rate =  $line['carir']['zones'][$line['provider_zone']['key']][$line['usaget']]['rate'][0]['price'];
+			}
 		}
 		return   $rate;
 		
@@ -135,10 +123,11 @@ abstract class Billrun_Generator_Base_WholesaleReport extends Billrun_Generator 
 		$ret = ucfirst($line['usaget']);
 		if(isset($line['provider_zone']['key'])) {
 			$ret = $line['provider_zone']['key'] . " ".ucfirst($line['usaget']);
+			if($line['provider_zone']['key'] == 'IL_TF') {
+				$ret = "1800 ". ucfirst($line['usaget']);
+			}
 		}
-		if($line['provider_zone']['key'] == 'IL_TF') {
-			$ret = "1800 ". ucfirst($line['usaget']);
-		}
+		
 		if(preg_match('/^(?=972|)144$/', $line['called_number'])) {
 			$ret = "144 ".ucfirst($line['usaget']);
 		}
@@ -151,27 +140,26 @@ abstract class Billrun_Generator_Base_WholesaleReport extends Billrun_Generator 
 	 * @param Mongodloid_Query $lines the CDR lines that were retrived from the DB.
 	 * @return array containing the lines values  aggreagted by type  and day.
 	 */
-	protected function aggregate( $lines, $providerRegex ) {
+	protected function aggregate( $lines ) {
 		Billrun_Factory::log()->log("Aggregating all the related CDRs, this can take awhile...",Zend_Log::DEBUG);
 		$aggregate = array();
 		$callReferences= array();
 		//Billrun_Factory::log()->log(print_r($lines->count(),1),Zend_Log::DEBUG);
 		foreach ($lines as $value) {
 			
-			if(isset($callReferences[$value['call_reference']])) { 
+			if(isset($callReferences[$value['call_reference'].$value['called_number']])) { 
 				continue;
 			}
-			$callReferences[$value['call_reference']] = true;
+			$callReferences[$value['call_reference'].$value['called_number']] = true;
 			
-			/*$isIncoming =	$value['record_type'] == "02" ||
-								( ($value['record_type'] == "11" ||  $value['record_type'] == "12" ) && 
-								!preg_match("/".self::CELLCOM_ROAMING_REGEX."/", $value['in_circuit_group_name']) && 
-								$value['in_circuit_group_name'] != '' );*/
 			$value->collection(Billrun_Factory::db()->linesCollection());
-			$isIncoming = $value[Billrun_Calculator_Carrier::DEF_CALC_DB_FIELD]['key'] == 'GOLAN' || $value[Billrun_Calculator_Carrier::DEF_CALC_DB_FIELD]['key'] == 'NR'; //!preg_match("/".$providerRegex."/", $value['out_circuit_group_name']);					
-			
+			$provider = $value[Billrun_Calculator_Carrier::DEF_CALC_DB_FIELD]['key'];
+			$isIncoming = $provider == 'GOLAN' || $provider == 'NR'; //!preg_match("/".$providerRegex."/", $value['out_circuit_group_name']);					
+			if($isIncoming) {
+				$provider = $value[Billrun_Calculator_Carrier::DEF_CALC_DB_FIELD."_in"]['key'];
+			}
 			$lineConnectType = ($isIncoming ? substr($value['in_circuit_group_name'],0,1) : substr($value['out_circuit_group_name'],0,1));
-
+			
 			if(!isset($this->types[$lineConnectType])) {
 				//Billrun_Factory::log()->log(print_r($value,1),Zend_Log::DEBUG);
 				//continue;
@@ -182,8 +170,8 @@ abstract class Billrun_Generator_Base_WholesaleReport extends Billrun_Generator 
 			$day = substr($value['call_reference_time'],0,8);
 			$aggrKey = $day.$isIncoming.$this->tariffForLine($value).$this->productType($value);
 			
-			if(!isset($aggregate[$connectType][$aggrKey])) {
-				$aggregate[$connectType][$aggrKey] =array(
+			if(!isset($aggregate[$provider][$connectType][$aggrKey])) {				
+				$aggregate[$provider][$connectType][$aggrKey] =array(
 											'day' => $day, 
 											'product' => $this->productType($value),
 											'units' => 0,
@@ -194,7 +182,7 @@ abstract class Billrun_Generator_Base_WholesaleReport extends Billrun_Generator 
 										);
 
 			}
-			$aggrGroup = &$aggregate[$connectType][$aggrKey];
+			$aggrGroup = &$aggregate[$provider][$connectType][$aggrKey];
 			$aggrGroup['units']++;
 			if($value['usaget'] == 'call') {
 			$aggrGroup['minutes'] += ($value['charging_end_time'] && $value['charging_start_time']) ?
@@ -203,19 +191,21 @@ abstract class Billrun_Generator_Base_WholesaleReport extends Billrun_Generator 
 			}
 			$aggrGroup['tariff_per_product'] = $this->tariffForLine($value);
 			$aggrGroup['charge'] +=  $this->priceForLine($value);
+			
 		}
 		Billrun_Factory::log()->log(print_r("Done aggregating",1),Zend_Log::DEBUG);
 		
 		// process aggregated data.
-		
-		foreach ($aggregate as $key => $connectType) {
-				$tmp = array();
-				ksort($connectType);
-				foreach ($connectType as $value) {
-					$value['minutes'] = $value['minutes']/60;
-					$tmp[]= $value;
-				}
-				$aggregate[$key] = $tmp;
+		foreach ($aggregate as $provider => $val) {
+			foreach ($aggregate[$provider] as $key => $connectType) {
+					$tmp = array();
+					ksort($connectType);
+					foreach ($connectType as $value) {
+						$value['minutes'] = $value['minutes']/60;
+						$tmp[]= $value;
+					}
+					$aggregate[$provider][$key] = $tmp;
+			}
 		}
 		return $aggregate;
 	}

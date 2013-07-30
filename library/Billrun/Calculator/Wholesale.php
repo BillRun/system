@@ -75,8 +75,9 @@ abstract class Billrun_Calculator_Wholesale extends Billrun_Calculator {
 										$carrier['zones'][$zoneKey][$usageType];
 		}
 		if(!$typedRates['rate'] || !is_array($typedRates['rate'])) {
-			Billrun_Factory::log()->log(print_r($zoneKey,1),Zend_Log::DEBUG);
-			Billrun_Factory::log()->log(print_r($carrier,1),Zend_Log::DEBUG);
+			//Billrun_Factory::log()->log(print_r($zoneKey,1),Zend_Log::DEBUG);
+			//Billrun_Factory::log()->log(print_r($carrier,1),Zend_Log::DEBUG);
+			Billrun_Factory::log()->log(print_r($typedRates,1),Zend_Log::DEBUG);
 		}
 
 		return $typedRates;

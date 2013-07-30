@@ -27,7 +27,7 @@ class Billrun_Calculator_Wholesale_WholesalePricing extends Billrun_Calculator_W
 								 'record_type' => array('$in' =>  array('11','12','08','09'),), //TODO move wholesale type to configuration
 						);
 	
-	
+	protected $count  =0 ;
 	
 	public function __construct($options = array()) {
 		parent::__construct($options);
@@ -40,15 +40,16 @@ class Billrun_Calculator_Wholesale_WholesalePricing extends Billrun_Calculator_W
 		$lines = Billrun_Factory::db()->linesCollection();
 
 		return $lines->query($this->linesQuery)	
-						->exists(Billrun_Calculator_Carrier::DEF_CALC_DB_FIELD)->notEq(Billrun_Calculator_Carrier::DEF_CALC_DB_FIELD,null)
-						->exists(Billrun_Calculator_Wholesale_Call::DEF_CALC_DB_FIELD)
+						->notEq(Billrun_Calculator_Carrier::DEF_CALC_DB_FIELD,null)->exists(Billrun_Calculator_Carrier::DEF_CALC_DB_FIELD)
+						->notEq(Billrun_Calculator_Wholesale_Call::DEF_CALC_DB_FIELD,false)->exists(Billrun_Calculator_Wholesale_Call::DEF_CALC_DB_FIELD)
+						->exists('usagev')
 						->notExists($this->pricingField)->cursor()->limit($this->limit);
 	}
 
 	protected function updateRow($row) {
 				
 		$pricingData = array();
-		$row->collection(Billrun_Factory::db()	->linesCollection());
+		$row->collection(Billrun_Factory::db()->linesCollection());
 		$zoneKey = ($this->isLineIncoming($row) ?  'incoming' : $row[Billrun_Calculator_Wholesale_Call::DEF_CALC_DB_FIELD]['key']);
 		
 	if (isset($row['usagev']) && $zoneKey) {
@@ -64,6 +65,8 @@ class Billrun_Calculator_Wholesale_WholesalePricing extends Billrun_Calculator_W
 				//todo add peak/off peak to the data.
 				$row->setRawData(array_merge($row->getRawData(), $pricingData));
 			}
+		} else {
+			//Billrun_Factory::log()->log($this->count++. "  : {$row['usagev']} && $zoneKey : ". print_r($row,1),Zend_Log::DEBUG);
 		}
 		
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteRow', array('row' => $row));

@@ -62,7 +62,12 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 	 * @see Billrun_Calculator_Rate::getLineVolume
 	 */
 	protected function getLineVolume($row, $usage_type) {
-		return $row['duration'];
+		if($usage_type == 'call' ) {
+				return  $row['duration'] ;
+		}
+		if($usage_type == 'sms' ) {
+			return 1;
+		}
 	}
 
 	/**

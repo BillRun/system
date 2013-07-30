@@ -30,6 +30,7 @@ class Billrun_Calculator_Carrier extends Billrun_Calculator {
 		if (isset($options['lines_query'])) {
 			$this->linesQuery = $options['lines_query'];
 		}
+		//TODO  add carrier caching...
 	}
 
 	protected function getLines() {
@@ -66,7 +67,7 @@ class Billrun_Calculator_Carrier extends Billrun_Calculator {
 		$query = array('identifiction.group_name' => array(
 						'$in'=> array($this->getCarrierName($row['out_circuit_group_name']))
 					));
-		if(in_array($row['record_type'],array('08','09'))) {
+		if(in_array($row['record_type'],array('08'))) {
 				$query = array('identifiction.sms_centre' => array(
 						'$in'=> array(substr($row['sms_centre'],0,5))
 					));
@@ -81,9 +82,9 @@ class Billrun_Calculator_Carrier extends Billrun_Calculator {
 	 */
 	protected function detectCarrierIn($row) {
 		$query = array('identifiction.group_name' => array(
-						'$in'=> array(getCarrierName($row['in_circuit_group_name']))
+						'$in'=> array($this->getCarrierName($row['in_circuit_group_name']))
 					));
-		if(in_array($row['record_type'],array('08','09'))) {
+		if(in_array($row['record_type'],array('09'))) {
 				$query = array('identifiction.sms_centre' => array(
 						'$in'=> array(substr($row['sms_centre'],0,5))
 					));
@@ -96,7 +97,8 @@ class Billrun_Calculator_Carrier extends Billrun_Calculator {
 	 * @return string containing the carrier identifer.
 	 */
 	protected function getCarrierName($groupName) {
-		return substr($groupName, 0, min(4,strlen($groupName)));
+		
+		return $groupName === "" ? ""  : substr($groupName, 0, min(4,strlen($groupName)));
 	}
 
 }

@@ -160,7 +160,7 @@ class Processor_Wholesaleoutrates extends Billrun_Processor_Base_Separator {
 			$value['access'] = (double) $rateRow['accessPrice'];
 		}
 		return array( //added peak/off peak for bezeq carriers
-				$rateType => (	preg_match("/IL_FIX/",$rateRow['wsaleZoneName']) && $rateRow['timePeriod'] != 'ALL' ? 
+				$rateType => (	preg_match("IL_FIX",$rateRow['wsaleZoneName']) && $rateRow['timePeriod'] != 'ALL' ? 
 									array($this->translateTime($rateRow['timePeriod']) => $value) : 
 									$value )
 			);
@@ -174,6 +174,7 @@ class Processor_Wholesaleoutrates extends Billrun_Processor_Base_Separator {
 	protected function createANewCarrier($rateRow) {
 		return new Mongodloid_Entity(array(
 				'key' => $rateRow['carrier'],
+				'name' => $rateRow['carrier'],
 				'from' => new MongoDate(),
 				'to' => new MongoDate(),
 				'prefixes' => array(),
