@@ -58,16 +58,14 @@ class Billrun_Calculator_Wholesale_Call extends Billrun_Calculator_Wholesale {
 	 */
 	protected function getLineZone($row, $usage_type) {
 
-		$called_number = $row->get('called_number');
-		$ocg = $row->get('out_circuit_group');
+		$called_number =  $this->isLineIncoming($row) ? $row->get('calling_number') :  $row->get('called_number') ;
+		$ocg = $this->isLineIncoming($row) ? $row->get('in_circuit_group') :  $row->get('out_circuit_group');
 		$line_time = $row->get('unified_record_time');
 
 		$rates = Billrun_Factory::db()->ratesCollection();
 		
 		$zoneKey= false;		
-		 if($this->isLineIncoming($row)) {
-			 $zoneKey = 'incoming';
-		 }
+
 		$called_number_prefixes = $this->getPrefixes($called_number);
 
 		$base_match = array(

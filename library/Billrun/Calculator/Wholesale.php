@@ -90,7 +90,7 @@ abstract class Billrun_Calculator_Wholesale extends Billrun_Calculator {
 	 */
 	protected function isLineIncoming($row) {
 		$ocg = $row->get('out_circuit_group');
-		return $ocg == 0 || $ocg == 3060 || $ocg == 3061 || ($ocg >= 1001 && $ocg <= 1209) ;
+		return $ocg == 0 || $ocg == 3060 || $ocg == 3061 || ($ocg >= 1001 && $ocg <= 1209) || $ocg == 152 ;
 	}
 	
 	/**

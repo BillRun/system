@@ -99,8 +99,8 @@ abstract class Billrun_Generator_Base_WholesaleReport extends Billrun_Generator 
 		}
 		if($rate=='') {
 			$zone = isset($line['provider_zone']['key']) ? $line['provider_zone']['key'] : ( $line['provider_zone'] == 'incoming' ? 'incoming' : '');
-			if(isset($line['carir']['zones'][$line['provider_zone']['key']][$line['usaget']]['rate'])) {	
-				$rate =  $line['carir']['zones'][$line['provider_zone']['key']][$line['usaget']]['rate'][0]['price'];
+			if(isset($line['carir']['zones'][$zone][$line['usaget']]['rate'])) {	
+				$rate =  $line['carir']['zones'][$zone][$line['usaget']]['rate'][0]['price'];
 			}
 		}
 		return   $rate;

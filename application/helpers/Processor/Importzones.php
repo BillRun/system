@@ -54,6 +54,7 @@ class Processor_ImportZones extends Billrun_Processor_Base_Separator {
 		}
 
 		$this->addUnrated();
+		$this->addGolan();
 
 		return true;
 	}
@@ -116,6 +117,14 @@ class Processor_ImportZones extends Billrun_Processor_Base_Separator {
 			if ($key=='UNRATED') {
 				$ret[$key]['key'] = $key;
 			}
+			if ($key=='GOLAN') {
+					$out_circuit_group = array(
+						array(
+							"from" => "00",
+							"to" => "152"
+						)
+					);
+			}
 			else if (!isset($ret[$key])) {
 				if (Billrun_Util::startsWith($row['zoneName'], "IL_ILD") || Billrun_Util::startsWith($row['zoneName'], "KT")) {
 					$out_circuit_group = array(
@@ -172,4 +181,9 @@ class Processor_ImportZones extends Billrun_Processor_Base_Separator {
 		$this->data['data'][] = $row;
 	}
 
+	protected function addGolan() {
+		$row = array();
+		$row['zoneName'] = "GOLAN";
+		$this->data['data'][] = $row;
+	}
 }
