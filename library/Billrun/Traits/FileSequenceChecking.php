@@ -31,13 +31,8 @@ trait Billrun_Traits_FileSequenceChecking {
 	 */
 	protected function setFilesSequenceCheckForHost($hostname) {
 		if(!isset($this->hostSequenceCheckers[$hostname])) {
-			$this->hostSequenceCheckers[$hostname] = new Billrun_Common_FileSequenceChecker(array($this,'getFileSequenceData'), $hostname, $this->getName() );
-			$lastFiles = $this->loadLastFileDataForHost($hostname);
-			if(!empty($lastFiles)) {
-				foreach($lastFiles as $filename) {
-					$this->hostSequenceCheckers[$hostname]->addFileToSequence($filename);
-				}
-			}
+			$granularity = Billrun_Factory::config()->getConfigValue($this->getName().'.receiver.sequencer_date_granularity',8);
+			$this->hostSequenceCheckers[$hostname] = new Billrun_Common_FileSequenceChecker(array($this,'getFileSequenceData'), $hostname, $this->getName(), $granularity );			
 		}
 	}
 
@@ -56,29 +51,39 @@ trait Billrun_Traits_FileSequenceChecking {
 		}
 		$mailMsg = FALSE;
 		
-		if($filepaths) {
-			foreach($filepaths as $path) {
-				$ret = $this->hostSequenceCheckers[$hostname]->addFileToSequence(basename($path));
-				if($ret) {
-					$mailMsg .= $ret . "\n";
-				}
-			}
-			$ret = $this->hostSequenceCheckers[$hostname]->hasSequenceMissing();
+		$lastFiles = $this->loadLastFilesForHost($hostname);
+		foreach($lastFiles as $name) {
+			$ret = $this->hostSequenceCheckers[$hostname]->addFileToSequence($name);
 			if($ret) {
-					$mailMsg .=  $this->getName()." Reciever : Received a file out of sequence from host : $hostname - for the following files : \n";
-					foreach($ret as $file) {
-						$mailMsg .= $file . "\n";
-					}
-			}
-		} else if ($this->hostSequenceCheckers[$hostname]->lastLogFile) {
-			$timediff = time()- strtotime($this->hostSequenceCheckers[$hostname]->lastLogFile['received_time']);
-			if($timediff > Billrun_Factory::config()->getConfigValue($this->getName().'.receiver.max_missing_file_wait',3600) ) {
-				$mailMsg = 'Didn`t received any new '.$this->getName().' files form host '.$hostname.' for more then '.$timediff .' Seconds';
+				$mailMsg .= $ret . "\n";
 			}
 		}
-		//If there were any errors log them as high issues 
+		$ret = $this->hostSequenceCheckers[$hostname]->hasSequenceMissing();
+		if($ret) {
+				$mailMsg .=  $this->getName()." Reciever : Received a file out of sequence from host : $hostname - for the following files : \n";
+				foreach($ret as $file) {
+					$mailMsg .= $file . "\n";
+				}
+		} 
+		
+		//If there were any errors log them
 		if($mailMsg) {
 			Billrun_Factory::log()->log($mailMsg, $this->outOfSequenceAlertLevel );
+		}
+		//marked the last  sequenced files
+		foreach($this->hostSequenceCheckers[$hostname]->getSequences() as  $sequence) {
+			$log = Billrun_Factory::db()->logCollection();				
+			$lastSeqeueced = $log->query(
+								array(	'source'=> $this->getName(), 
+										'file_name' => $sequence->getLast(),
+										'retrieved_from'=> $hostname, 
+										'last_sequenced' => array('$ne' => true))
+								)										
+							->cursor()->current();
+			if(count($lastSeqeueced->getRawData())) {
+				$lastSeqeueced['last_sequenced']  = true;
+				$lastSeqeueced->save( Billrun_Factory::db()->logCollection() );
+			}
 		}
 	}
 
@@ -91,35 +96,34 @@ trait Billrun_Traits_FileSequenceChecking {
 	 *						[date] => the file date.  
 	 */
 	public function getFileSequenceData($filename) {
-		return Billrun_Util::getFilenameData($this->getName(), $filename);
-		/*(array(
-				'seq' => Billrun_Util::regexFirstValue(Billrun_Factory::config()->getConfigValue($this->getName().".sequence_regex.seq","/(\d+)/"), $filename),
-				'zone' => Billrun_Util::regexFirstValue(Billrun_Factory::config()->getConfigValue($this->getName().".sequence_regex.zone","//"), $filename),
-				'date' =>Billrun_Util::regexFirstValue(Billrun_Factory::config()->getConfigValue($this->getName().".sequence_regex.date","/(20\d{6})/"), $filename),
-				'time' => Billrun_Util::regexFirstValue(Billrun_Factory::config()->getConfigValue($this->getName().".sequence_regex.time","/\D(\d{4,6})\D/"), $filename)	,
-			);*/
+		return Billrun_Util::getFilenameData($this->getName(), $filename);	
 	}
+
 	
 	/**
-	 * load the last sequence number for the files of the current type from the data base.
+	 * load the last  files of the current type from the data base that were  received from a given host.
 	 */
-	protected function loadLastFileDataForHost($hostname) {
+	protected function loadLastFilesForHost($hostname) {
 		$log = Billrun_Factory::db()->logCollection();
-		$lastLogFiles = $log->aggregate(array(
-							array('$match' => array(
-													'source'=> $this->getName(), 
-													'received_time' => array('$exists' => true),
-													'retrieved_from'=> $hostname,
-													'extra_data' => array('$exists' => true),
-													),
-								),
-								array('$sort' => array('extra_data.seq' => -1)),
-								array('$group' => array('_id' => '$extra_data.zone', 'filename'=> array('$first' => '$file_name')))
-							));
+		$lastSeqeueced = $log->query(
+									array(	'source'=> $this->getName(), 
+											'last_sequenced' => array('$exists'=> TRUE),											
+											'retrieved_from'=> $hostname, )
+									)										
+								->cursor()->sort(array('received_time' => -1))
+								->limit(1)->current();
+		$unsequencedWindow = intval(Billrun_Factory::config()->getConfigValue($this->getName().'.receiver.unsequenced_time_window',1800));
+		$lastLogFiles = $log->query(
+									array(	'source'=> $this->getName(), 
+											'received_time' => array(	'$lt' => date(Billrun_Base::base_dateformat,time()- $unsequencedWindow),
+																		'$gte' => isset($lastSeqeueced['received_time']) ? $lastSeqeueced['received_time'] : date(Billrun_Base::base_dateformat,0) ),
+											'retrieved_from'=> $hostname, )
+									)										
+								->cursor()->sort(array('_id' =>  -1));
 		
 		$retArr = array();
 		foreach($lastLogFiles as $file) {
-			$retArr[] = $file['filename'];
+			$retArr[] = $file['file_name'];
 		}
 		return $retArr;
 	}
