@@ -116,17 +116,15 @@ class Processor_ImportZones extends Billrun_Processor_Base_Separator {
 			$key = $row['zoneName'];
 			if ($key=='UNRATED') {
 				$ret[$key]['key'] = $key;
-			}
-			if ($key=='GOLAN') {
+			} else if (!isset($ret[$key])) {
+				if ($key=='GOLAN') {
 					$out_circuit_group = array(
 						array(
 							"from" => "00",
 							"to" => "152"
 						)
 					);
-			}
-			else if (!isset($ret[$key])) {
-				if (Billrun_Util::startsWith($row['zoneName'], "IL_ILD") || Billrun_Util::startsWith($row['zoneName'], "KT")) {
+				} else if (Billrun_Util::startsWith($row['zoneName'], "IL_ILD") || Billrun_Util::startsWith($row['zoneName'], "KT")) {
 					$out_circuit_group = array(
 						array(
 							"from" => "2000",

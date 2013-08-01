@@ -175,6 +175,7 @@ class Processor_Wholesaleoutrates extends Billrun_Processor_Base_Separator {
 		return new Mongodloid_Entity(array(
 				'key' => $rateRow['carrier'],
 				'name' => $rateRow['carrier'],
+				'currency' => 'ILS', //as defined by http://en.wikipedia.org/wiki/ISO_4217			
 				'from' => new MongoDate(),
 				'to' => new MongoDate(),
 				'prefixes' => array(),
