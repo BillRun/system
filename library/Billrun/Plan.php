@@ -72,7 +72,7 @@ class Billrun_Plan {
 	 * @param type $sub
 	 * @return boolean
 	 * @deprecated since version 0.1
-	 *		should be removed from here; 
+	 *		should be removed from here;
 	 *		the check of plan should be run on line not subscriber/balance
 	 */
 	public function isRateInSubPlan($rate, $sub, $type) {

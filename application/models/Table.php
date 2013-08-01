@@ -84,8 +84,8 @@ class TableModel {
 	 * 
 	 * @return Mongo Cursor
 	 */
-	public function getData() {
-		$resource = $this->collection->query()->cursor()->sort($this->sort)->skip($this->offset())->limit($this->size);
+	public function getData($filter_query = array()) {
+		$resource = $this->collection->query($filter_query)->cursor()->sort($this->sort)->skip($this->offset())->limit($this->size);
 		return $resource;
 	}
 
@@ -135,10 +135,9 @@ class TableModel {
 
 	public function printPager($print = false) {
 
-		if (($last_page = $this->getPagesCount()) > 1) {
+		if (($count = $this->getPagesCount()) > 1) {
 			$current = $this->page;
-			$count = $this->count();
-			
+
 			// TODO: move it to config
 			$range = 5;
 
@@ -149,15 +148,15 @@ class TableModel {
 				$current = 1;
 			}
 
-			if ($current > $count) {
-				$current = $count;
+			if ($current > $this->getPagesCount()) {
+				$current = $this->getPagesCount();
 			}
 
 			if ($min < 1) {
 				$min = 1;
 			}
-			if ($max > $last_page) {
-				$max = $last_page;
+			if ($max > $count) {
+				$max = $count;
 			}
 
 			$ret = '<div class="pagination pagination-right">'
@@ -180,7 +179,7 @@ class TableModel {
 				$ret .= '<li><a href="?page=' . $i . '">' . $i . '</a></li>';
 			}
 
-			if ($current == $last_page) {
+			if ($current == $count) {
 				$ret .= '<li class="disabled"><a href="javascript:void(0);">Next</a></li>'
 					. '<li class="disabled"><a href="javascript:void(0);">Last</a></li>';
 			} else {
@@ -229,12 +228,11 @@ class TableModel {
 	}
 
 	public function remove($params) {
-		$id = $params['_id'];
-		return $this->collection->remove($id);
+		return $this->collection->remove($params);
 	}
-	
+
 	public function update($params) {
-		
+
 //		if (method_exists($this, $coll . 'BeforeDataSave')) {
 //			call_user_func_array(array($this, $coll . 'BeforeDataSave'), array($collection, &$newEntity));
 //		}
@@ -267,8 +265,50 @@ class TableModel {
 	public function getProtectedKeys($entity, $type) {
 		return array("_id");
 	}
-	
+
 	public function getHiddenKeys($entity, $type) {
+		return array();
+	}
+
+	public function getFilterFields() {
+		return array();
+	}
+
+	public function getEditKey() {
+		return null;
+	}
+
+	public function applyFilter($filter_field, $value) {
+		if ($filter_field['input_type'] == 'number') {
+			if ($value != '') {
+				if ($filter_field['comparison'] == 'equals') {
+					return array(
+						$filter_field['key'] => intval($value),
+					);
+				}
+			}
+		} else if ($filter_field['input_type'] == 'date') {
+			if (is_string($value) && Zend_Date::isDate($value, 'yyyy-MM-dd hh:mm:ss')) { //yyyy-MM-dd hh:mm:ss
+				$value = new MongoDate((new Zend_Date($value, null, new Zend_Locale('he_IL')))->getTimestamp());
+				return array(
+					$filter_field['db_key'] => array(
+						$filter_field['comparison'] => $value
+					)
+				);
+			}
+		} else if ($filter_field['input_type'] == 'multiselect') {
+			if (is_array($value) && !empty($value)) {
+				return array(
+					$filter_field['db_key'] => array(
+						$filter_field['comparison'] => $value
+					)
+				);
+			}
+		}
+		return false;
+	}
+
+	public function getFilterFieldsOrder() {
 		return array();
 	}
 

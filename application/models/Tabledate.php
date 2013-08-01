@@ -39,13 +39,10 @@ class TabledateModel extends TableModel {
 	 * 
 	 * @return Mongo Cursor
 	 */
-	public function getData() {
-		$dateInput = new MongoDate($this->date->getTimestamp());
-
-		$resource = $this->collection->query()
-				->lessEq('from', $dateInput)
-				->greaterEq('to', $dateInput)
-				->cursor()->sort($this->sort)->skip($this->offset())->limit($this->size);
+	public function getData($filter_query = array()) {
+		$cursor = $this->collection->query($filter_query)->cursor();
+		$this->_count = $cursor->count();
+		$resource = $cursor->sort($this->sort)->skip($this->offset())->limit($this->size);
 		return $resource;
 	}
 
@@ -101,12 +98,12 @@ class TabledateModel extends TableModel {
 
 		// close the old line
 		$mongoCloseTime = new MongoDate($new_from->getTimestamp() - 1);
-		$closed_data = $params;
-		unset($closed_data['from']);
+		$closed_data = $this->collection->findOne($params['_id'])->getRawData();
 		$closed_data['to'] = $mongoCloseTime;
 		$this->update($closed_data);
 
 		// open new line
+		$params[$this->search_key] = $closed_data[$this->search_key];
 		unset($params['_id']);
 		$params['from'] = new MongoDate($new_from->getTimestamp());
 		$params['to'] = new MongoDate($new_from->add(125, Zend_Date::YEAR)->getTimestamp());
@@ -131,23 +128,25 @@ class TabledateModel extends TableModel {
 	}
 
 	public function update($params) {
-		if (isset($params['from'])) {
+		if (isset($params['from']) && !$params['from'] instanceof MongoDate) {
 			$params['from'] = new MongoDate(strtotime($params['from']));
 		}
-		if (isset($params['to'])) {
+		if (isset($params['to']) && !$params['to'] instanceof MongoDate) {
 			$params['to'] = new MongoDate(strtotime($params['to']));
 		}
-		parent::update($params);
+		return parent::update($params);
 	}
 
 	public function remove($params) {
-		$entity = $this->collection->findOne($params['_id']);
-		$to = $entity['to'];
-		$key_name = $entity[$this->search_key];
-		$this->collection->remove($entity);
-		$last_item = $this->getLastItem($key_name);
-		$last_item['to'] = $to;
-		$last_item->save();
+		$entity = $this->collection->query($params)->cursor()->current();
+		if (!$entity->isEmpty()) {
+			$to = $entity['to'];
+			$key_name = $entity[$this->search_key];
+			$this->collection->remove($entity);
+			$last_item = $this->getLastItem($key_name);
+			$last_item['to'] = $to;
+			$last_item->save();
+		}
 	}
 
 	public function getLastItem($key_name) {
@@ -159,6 +158,66 @@ class TabledateModel extends TableModel {
 			->current();
 		$result->collection($this->collection);
 		return $result;
+	}
+
+	public function getFilterFields() {
+		$filter_fields = array(
+			'date' => array(
+				'key' => 'date',
+				'db_key' => array('from', 'to'),
+				'input_type' => 'date',
+				'comparison' => array('$lte', '$gte'),
+				'display' => 'Date',
+				'default' => (new Zend_Date(null, null, new Zend_Locale('he_IL')))->toString('YYYY-MM-dd HH:mm:ss'),
+			),
+		);
+		return array_merge($filter_fields, parent::getFilterFields());
+	}
+
+	public function applyFilter($filter_field, $value) {
+		if ($filter_field['input_type'] == 'date' && is_array($filter_field['db_key'])) {
+			if (is_string($value)) {
+				$value = new MongoDate((new Zend_Date($value, null, new Zend_Locale('he_IL')))->getTimestamp());
+				return array(
+					'$and' => array(
+						array(
+							$filter_field['db_key'][0] => array(
+								$filter_field['comparison'][0] => $value
+							),
+							$filter_field['db_key'][1] => array(
+								$filter_field['comparison'][1] => $value
+							),
+						),
+					),
+				);
+			}
+		} else {
+			return parent::applyFilter($filter_field, $value);
+		}
+	}
+
+	public function toolbar() {
+		return 'date';
+	}
+	
+	public function getFilterFieldsOrder() {
+		$filter_field_order = array(
+			0 => array(
+				'date' => array(
+					'width' => 2,
+				),
+			),
+		);
+		return $filter_field_order;
+	}
+	
+	
+	public function getSortFields() {
+		$sort_fields = array(
+			'from' => 'From',
+			'to' => 'To',
+		);
+		return $sort_fields;
 	}
 
 }

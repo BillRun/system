@@ -20,6 +20,8 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * @var string 
 	 */
 	protected $title = null;
+	protected $session = null;
+	protected $model = null;
 
 	/**
 	 * method to control and navigate the user to the right view
@@ -109,7 +111,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		}
 
 		foreach ($ids as $id) {
-			$params['_id']['_id']['$in'][] = new MongoId($id);
+			$params['_id']['$in'][] = new MongoId($id);
 		}
 
 		if ($type == 'remove') {
@@ -163,7 +165,7 @@ class AdminController extends Yaf_Controller_Abstract {
 //		);
 		// @TODO: need to load ajax view
 		// for now just die with json
-		die(json_encode($saveStatus));
+		die(json_encode(null));
 	}
 
 	/**
@@ -185,82 +187,85 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * plans controller of admin
 	 */
 	public function plansAction() {
-		$columns = array(
-			'name' => 'Name',
-			'from' => 'From',
-			'to' => 'To',
-			'_id' => 'Id',
-		);
-		$this->getView()->component = $this->setTableView('plans', $columns, array('creation_time' => -1));
+		$this->forward("tabledate", array('table' => 'plans'));
+		return false;
 	}
 
 	/**
 	 * rates controller of admin
 	 */
 	public function ratesAction() {
-		$columns = array(
-			'key' => 'Key',
-			'from' => 'From',
-			'to' => 'To',
-			'_id' => 'Id',
+		$this->forward("tabledate", array('table' => 'rates'));
+		return false;
+	}
+
+	public function tabledateAction() {
+		$table = $this->_request->getParam("table");
+
+//		$sort = array('unified_record_time' => -1);
+		$sort = $this->applySort($table);
+		$options = array(
+			'collection' => $table,
+			'sort' => $sort,
 		);
-		$this->getView()->component = $this->setTableView('rates', $columns, array('creation_time' => -1));
+
+		$model = self::getModel($table, $options);
+		$query = $this->applyFilters($table);
+
+		$this->getView()->component = $this->buildComponent($table, $query);
 	}
 
 	/**
 	 * lines controller of admin
 	 */
 	public function linesAction() {
-		$columns = array(
-			'type' => 'Type',
-			'account_id' => 'Account id',
-			'subscriber_id' => 'Subscriber id',
-			'usaget' => 'Usage type',
-			'usagev' => 'Amount',
-			'plan' => 'Plan',
-			'price_customer' => 'Price',
-			'billrun_key' => 'Billrun',
-			'unified_record_time' => 'Time',
-			'_id' => 'Id',
+		$table = 'lines';
+		$sort = $this->applySort($table);
+		$options = array(
+			'collection' => $table,
+			'sort' => $sort,
 		);
-		$this->getView()->component = $this->setTableView('lines', $columns, array('creation_time' => -1));
+
+		$model = self::getModel($table, $options);
+		$query = $this->applyFilters($table);
+
+		$this->getView()->component = $this->buildComponent('lines', $query);
 	}
 
 	/**
 	 * events controller of admin
 	 */
 	public function eventsAction() {
-		$columns = array(
-			'creation_time' => 'Creation time',
-			'event_type' => 'Event type',
-			'imsi' => 'IMSI',
-			'msisdn' => 'MSISDN',
-			'source' => 'Source',
-			'threshold' => 'Threshold',
-			'units' => 'Units',
-			'value' => 'Value',
-			'notify_time' => 'Notify time',
-			'email_sent' => 'Email sent',
-			'priority' => 'Priority',
-			'_id' => 'Id',
+		$table = "events";
+//		$sort = array('creation_time' => -1);
+		$sort = $this->applySort($table);
+		$options = array(
+			'collection' => $table,
+			'sort' => $sort,
 		);
-		$this->getView()->component = $this->setTableView('events', $columns, array('creation_time' => -1));
+
+		$model = self::getModel($table, $options);
+		$query = $this->applyFilters($table);
+
+		$this->getView()->component = $this->buildComponent($table, $query);
 	}
 
 	/**
 	 * log controller of admin
 	 */
 	public function logAction() {
-		$columns = array(
-			'source' => 'Source',
-			'type' => 'Type',
-			'retrieved_from' => 'Retrieved from',
-			'file_name' => 'Filename',
-			'received_time' => 'Date received',
-			'process_time' => 'Date processed',
-			'_id' => 'Id',
+		$table = "log";
+//		$sort = array('received_time' => -1);
+		$sort = $this->applySort($table);
+		$options = array(
+			'collection' => $table,
+			'sort' => $sort,
 		);
-		$this->getView()->component = $this->setTableView('log', $columns, array('received_time' => -1));
+
+		$model = self::getModel($table, $options);
+		$query = $this->applyFilters($table);
+
+		$this->getView()->component = $this->buildComponent($table, $query);
 	}
 
 	/**
@@ -290,100 +295,33 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * @return string the render page (HTML)
 	 * @todo refactoring this function
 	 */
-	protected function setTableView($table, $columns = array(), $sort = array(), $edit_key = null) {
-		$page = (int) $this->getRequest()->get('page');
-		$size = (int) $this->getRequest()->get('listSize');
+	protected function getTableViewParams($filter_query = array()) {
 
-		$session = Yaf_session::getInstance();
-		$session->start();
-
-		if (!isset($session->$table)) {
-			$session->$table = new stdClass();
-		}
-
-		if ($page) {
-			$session->$table->page = $page;
-		} else if (!isset($session->$table->page)) {
-			$session->$table->page = 0;
-		}
-
-		if ($size) {
-			$session->$table->size = $size;
-		} else if (!isset($session->$table->size)) {
-			$session->$table->size = 1000;
-		}
-
-		// use for model
-		$options = array(
-			'collection' => $table,
-			'page' => $session->$table->page,
-			'size' => $session->$table->size,
-			'sort' => $sort,
-		);
-
-		if ($table == 'lines' || $table == 'events') {
-			$criteria_tpl = 'events';
-		} else {
-			$criteria_tpl = 'date';
-		}
-
-		if ($table == 'rates' || $table == 'plans') {
-			$date = $this->getRequest()->getPost('dateFilter');
-			if (is_string($date)) {
-				$filterDate = new Zend_Date($date, null, new Zend_Locale('he_IL'));
-			}
-
-			if (isset($filterDate)) {
-				$session->$table->filterDate = $filterDate;
-			} else if (!isset($session->$table->filterDate)) {
-				$session->$table->filterDate = new Zend_Date(null, null, new Zend_Locale('he_IL'));
-			} // else it will take what already in the session
-
-			$options['date'] = $session->$table->filterDate;
-			$model = new TabledateModel($options);
-		} else if ($table == 'lines') {
-			$garbage = $this->getRequest()->getPost('garbage');
-			if (is_string($garbage) && $garbage == "on") {
-				$session->$table->garbage = $garbage;
-			} else if (!isset($session->$table->garbage)) {
-				$session->$table->garbage = "off";
-			} // else it will take what already in the session
-
-//			$options['garbage'] = $session->$table->garbage;
-			$model = new LinesModel($options);
-		} else {
-			$model = new TableModel($options);
-		}
-
-		$data = $model->getData();
-		// TODO: use ready pager/paginiation class (zend? joomla?) with auto print
-		$pagination = $model->printPager();
-		$sizeList = $model->printSizeList();
-		$title = ucfirst($table);
+		$data = $this->model->getData($filter_query);
+		$columns = $this->model->getTableColumns();
+		$edit_key = $this->model->getEditKey();
+		$pagination = $this->model->printPager();
+		$sizeList = $this->model->printSizeList();
 
 		$params = array(
 			'data' => $data,
-			'title' => $title,
 			'columns' => $columns,
-			'offset' => $model->offset(),
+			'edit_key' => $edit_key,
 			'pagination' => $pagination,
 			'sizeList' => $sizeList,
-			'edit_key' => $edit_key,
-			'criteria_tpl' => $criteria_tpl,
+			'offset' => $this->model->offset(),
 		);
 
-		if ($table == 'rates' || $table == 'plans') {
-			$params['filterDate'] = $session->$table->filterDate;
-		}
-		$this->title = $title;
-
-		$ret = $this->renderView('table', $params);
-
-		return $ret;
+		return $params;
 	}
 
 	protected function createFilterToolbar() {
-		
+
+		$params['filter_fields'] = $this->model->getFilterFields();
+		$params['filter_fields_order'] = $this->model->getFilterFieldsOrder();
+		$params['sort_fields'] = $this->model->getSortFields();
+
+		return $params;
 	}
 
 	// choose columns
@@ -412,13 +350,153 @@ class AdminController extends Yaf_Controller_Abstract {
 		return $this->getView()->render($tpl . ".phtml", $parameters);
 	}
 
-	public static function getModel($collection_name) {
-		$model_name = ucfirst($collection_name) . "Model";
-		if (class_exists($model_name)) {
-			return new $model_name;
-		} else {
-			die("Error loading model");
+	public function getModel($collection_name, $options = array()) {
+		$session = $this->getSession($collection_name);
+		$options['page'] = $this->getSetVar($session, "page", "page", 1);
+		$options['size'] = $this->getSetVar($session, "listSize", "size", 1000);
+
+		if (is_null($this->model)) {
+			$model_name = ucfirst($collection_name) . "Model";
+			if (class_exists($model_name)) {
+				$this->model = new $model_name($options);
+			} else {
+				die("Error loading model");
+			}
 		}
+		return $this->model;
+	}
+
+	protected function buildComponent($table, $filter_query, $options = array()) {
+		$this->title = ucfirst($table);
+
+		// TODO: use ready pager/paginiation class (zend? joomla?) with auto print
+		$params = array(
+			'title' => $this->title,
+			'session' => $this->getSession($table),
+		);
+
+		$params = array_merge($options, $params, $this->getTableViewParams($filter_query), $this->createFilterToolbar($table));
+
+		$ret = $this->renderView('table', $params);
+		return $ret;
+	}
+
+	/**
+	 * 
+	 * @param string $table the table name
+	 */
+	protected function getSession($table) {
+		$session = Yaf_session::getInstance();
+		$session->start();
+
+		if (!isset($session->$table)) {
+			$session->$table = new stdClass();
+		}
+		return $session->$table;
+	}
+
+	/**
+	 * Gets a variable from the request / session and sets it to the session if found
+	 * @param Object $session the session object
+	 * @param string $source_name the variable name in the request
+	 * @param type $target_name the variable name in the session
+	 * @param type $default the default value for the variable
+	 * @return type
+	 */
+	protected function getSetVar($session, $source_name, $target_name = null, $default = null) {
+		if (is_null($target_name)) {
+			$target_name = $source_name;
+		}
+		$request = $this->getRequest();
+		$new_search = $request->get("new_search") == "1";
+		$var = $request->get($source_name);
+		if ($new_search) {
+			if (is_string($var) || is_array($var)) {
+				$session->$target_name = $var;
+			} else {
+				$session->$target_name = $default;
+			}
+		} else if (is_string($var) || is_array($var)) {
+			$session->$target_name = $var;
+		} else if (!isset($session->$target_name)) {
+			$session->$target_name = $default;
+		}
+		return $session->$target_name;
+	}
+
+	protected function applyFilters($table) {
+		$model = $this->model;
+		$session = $this->getSession($table);
+		$filter_fields = $model->getFilterFields();
+		$query = array();
+		if ($filter = $this->getManualFilters($table)) {
+			$query['$and'][] = $filter;
+		}
+		foreach ($filter_fields as $filter_name => $filter_field) {
+			$value = $this->getSetVar($session, $filter_field['key'], $filter_field['key'], $filter_field['default']);
+			if ($filter = $model->applyFilter($filter_field, $value)) {
+				$query['$and'][] = $filter;
+			}
+		}
+		return $query;
+	}
+
+	protected function applySort($table) {
+		$session = $this->getSession($table);
+		$sort_by = $this->getSetVar($session, 'sort_by', 'sort_by', '_id');
+		$order = $this->getSetVar($session, 'order', 'order', 'asc') == 'asc' ? 1 : -1;
+		$sort = array($sort_by => $order);
+		return $sort;
+	}
+
+	public function getManualFilters($table) {
+		$query = false;
+		$session = $this->getSession($table);
+		$keys = $this->getSetVar($session, 'manual_key', 'manual_key');
+		$types = $this->getSetVar($session, 'manual_type', 'manual_type');
+		$operators = $this->getSetVar($session, 'manual_operator', 'manual_operator');
+		$values = $this->getSetVar($session, 'manual_value', 'manual_value');
+		for ($i = 0; $i < count($keys); $i++) {
+			if ($keys[$i]=='' || $values[$i]=='') {
+				continue;
+			}
+			switch ($types[$i]) {
+				case 'number':
+					$values[$i] = floatval($values[$i]);
+					break;
+				case  'date':
+					if (Zend_Date::isDate($values[$i], 'yyyy-MM-dd hh:mm:ss')) {
+						$values[$i] = new MongoDate((new Zend_Date($values[$i], null, new Zend_Locale('he_IL')))->getTimestamp());
+					}
+					else {
+						continue 2;
+					}
+				default:
+					break;
+			}
+			switch ($operators[$i]) {
+				case 'lt':
+					$operators[$i] = '$lt';
+					break;
+				case 'lte':
+					$operators[$i] = '$lte';
+					break;
+				case 'gt':
+					$operators[$i] = '$gt';
+					break;
+				case 'gte':
+					$operators[$i] = '$gte';
+					break;
+				case 'equals':
+					$operators[$i] = '$in';
+					$values[$i] = array($values[$i]);
+					break;
+				default:
+					break;
+			}
+			$query[$keys[$i]][$operators[$i]] = $values[$i];
+		}
+		return $query;
 	}
 
 }
