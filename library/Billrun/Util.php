@@ -135,17 +135,17 @@ class Billrun_Util {
 	/**
 	 * method to receive billrun key by date
 	 * 
-	 * @param string $datetime the anchor datetime. can be all input types of strtotime function
+	 * @param int $timestamp a unix timestamp
 	 * @param int $dayofmonth the day of the month require to get; if omitted return config value
 	 * @return string date string of format YYYYmm
 	 */
-	public static function getBillrunKey($datetime, $dayofmonth = null) {
+	public static function getBillrunKey($timestamp, $dayofmonth = null) {
 		if (!$dayofmonth) {
 			$dayofmonth = Billrun_Factory::config()->getConfigValue('billrun.charging_day', 25);
 		}
-		$month = date("m", $datetime);
+		$month = date("m", $timestamp);
 		$format = "Y" . $month;
-		if (date("d", $datetime) < $dayofmonth) {
+		if (date("d", $timestamp) < $dayofmonth) {
 			$key = date($format);
 		} else {
 			$key = date($format, strtotime('+1 month'));

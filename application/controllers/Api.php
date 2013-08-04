@@ -41,13 +41,43 @@ class ApiController extends Yaf_Controller_Abstract {
 	protected function setActions() {
 		$this->actions = Billrun_Factory::config()->getConfigValue('api.actions', array());
 	}
-	
+
 	/**
 	 * default method of api. Just print api works
 	 */
 	public function indexAction() {
 		$this->setOutput('status', true);
 		$this->setOutput('message', "Billrun API works");
+	}
+
+	public function balanceAction() {
+		$request = $this->getRequest();
+		$account_id = $request->get("account_id");
+		$subscribers = $request->get("subscribers");
+		if (!is_numeric($account_id)) {
+			die();
+		}
+		if (is_string($subscribers)) {
+			$subscribers = explode(",", $subscribers);
+		}
+		else {
+			$subscribers = array();
+		}
+		
+		$options = array(
+			'type' => 'balance',
+			'account_id' => $account_id,
+			'subscribers' => $subscribers,
+		);
+		$generator = Billrun_Generator::getInstance($options);
+
+		if ($generator) {
+			$generator->load();
+			$balance = $generator->generate();
+			$this->getView()->balance = $balance->asXML();
+		} else {
+			$this->_controller->addOutput("Generator cannot be loaded");
+		}
 	}
 
 	/**
@@ -66,7 +96,7 @@ class ApiController extends Yaf_Controller_Abstract {
 			$this->output->$key = $value;
 			return true;
 		} else if (is_array($args[0])) {
-			foreach($args[0] as $key => $value) {
+			foreach ($args[0] as $key => $value) {
 				$this->setOutput($key, $value);
 			}
 			return true;
@@ -86,7 +116,7 @@ class ApiController extends Yaf_Controller_Abstract {
 		unset($this->output->$key);
 		return $value;
 	}
-	
+
 	/**
 	 * method to set how the api output method
 	 */
