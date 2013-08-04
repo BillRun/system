@@ -173,8 +173,8 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		$path = 'http://' . $host . '/' . $url . '?' . http_build_query($params);
 		//Billrun_Factory::log()->log($path, Zend_Log::DEBUG);
 		// @TODO: use Zend_Http_Client
-		$json = $this->send($path);
-
+//		$json = $this->send($path);
+		$json =  '{"9608027":{"subscribers":[{"subscriber_id":244739,"current_plan":"SMALL"}]}}'; // stub
 		if (!$json) {
 			return false;
 		}
@@ -188,8 +188,13 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		return $arr;
 	}
 
-	public function getList($page, $size, $time) {
-		$params = array('msisdn' => '', 'IMSI' => '', 'DATETIME' => $time, 'page' => $page, 'size' => $size);
+	public function getList($page, $size, $time, $acc_id = null) {
+		if (is_null($acc_id)) {
+			$params = array('msisdn' => '', 'IMSI' => '', 'DATETIME' => $time, 'page' => $page, 'size' => $size);
+		}
+		else {
+			$params = array('msisdn' => '', 'IMSI' => '', 'DATETIME' => $time, 'page' => $page, 'size' => $size, 'account_id' => $acc_id);
+		}
 		$accounts = $this->requestAccounts($params);
 		$subscriber_general_settings = Billrun_Config::getInstance()->getConfigValue('subscriber', array());
 		if (is_array($accounts) && !empty($accounts)) {

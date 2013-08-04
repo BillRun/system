@@ -124,9 +124,5 @@ class Billrun_Plan {
 					($this->data->collection() ? $this->data->collection() : Billrun_Factory::db()->plansCollection() );
 		return $this->data->createRef( $collection );
 	}
-
-	static public function getPlanRef($name, $plan_date = null) {
-		return self::get($name, $plan_date)->createRef(Billrun_Factory::db()->plansCollection());
-	}
 	
 }

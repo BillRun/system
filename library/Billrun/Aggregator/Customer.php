@@ -72,15 +72,15 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 function (account_id, billrun_key) {
     while (1) {
 	var targetCollection = db.billrun;
-        var cursor = targetCollection.find( {}, { invoice_id: 1 } ).sort( { invoice_id: -1 } ).limit(1);
+        var cursor = targetCollection.find({}, {invoice_id: 1}).sort({invoice_id: -1}).limit(1);
         var invoice_id = cursor.hasNext() ? cursor.next().invoice_id + 1 : $this->min_invoice_id;
-        targetCollection.update({'account_id': account_id, 'billrun_key': billrun_key, 'invoice_id': {\$exists:false}},{\$set: { 'invoice_id': invoice_id }});
+        targetCollection.update({'account_id': account_id, 'billrun_key': billrun_key, 'invoice_id': {\$exists:false}},{\$set: {'invoice_id': invoice_id}});
         var err = db.getLastErrorObj();
-        if( err && err.code ) {
-            if( err.code == 11000 /* dup key */ )
+        if (err && err.code) {
+            if (err.code == 11000) /* dup key */
                 continue;
             else
-                print( "unexpected error updating invoice_id: " + tojson( err ) );
+                print("unexpected error updating invoice_id: " + tojson(err));
         }
 		return invoice_id;
     }
@@ -95,8 +95,9 @@ EOT;
 	 * load the data to aggregate
 	 */
 	public function load() {
-		$date = Billrun_Util::getLastChargeTime(true);
-		$this->data = Subscriber_Golan::getList($this->page, $this->size, $date);
+		$date = Billrun_Util::getLastChargeTime();
+		$subscriber = Billrun_Factory::subscriber();
+		$this->data = $subscriber->getList($this->page, $this->size, $date);
 
 		Billrun_Factory::log()->log("aggregator entities loaded: " . count($this->data), Zend_Log::INFO);
 
@@ -113,10 +114,9 @@ EOT;
 		$billrun_key = $this->getStamp();
 
 		foreach ($this->data as $account_id => $account) {
-			//TODO refactor this to use the Billrun_Factory ??
-			$billrun = Billrun_Factory::billrun(array( 'account_id' => $account_id, 'billrun_key' => $billrun_key ));
+			$billrun = Billrun_Factory::billrun(array('account_id' => $account_id, 'billrun_key' => $billrun_key));
 			if (!$billrun->isValid()) {
-				$billrun->create($account_id, $billrun_key);
+				$billrun = Billrun_Factory::billrun(array('account_id' => $account_id, 'billrun_key' => $billrun_key, 'autoload' => false));
 			}
 			if ($billrun->isOpen()) { // open billrun
 				foreach ($account as $subscriber) {
@@ -124,24 +124,32 @@ EOT;
 					$account_id = $subscriber->account_id;
 					$subscriber_id = $subscriber->subscriber_id;
 
-					try {
-						$flat_price = $subscriber->getFlatPrice();
-						Billrun_Factory::log('Adding flat to subscriber ' . $subscriber_id, Zend_Log::INFO);
-						$flat_entry = new Mongodloid_Entity($subscriber->getFlatEntry($billrun_key));
-						$flat_entry->collection($this->lines);
+					$flat_price = $subscriber->getFlatPrice();
+					Billrun_Factory::log('Adding flat to subscriber ' . $subscriber_id, Zend_Log::INFO);
+					$flat_entry = new Mongodloid_Entity($subscriber->getFlatEntry($billrun_key));
+					$flat_entry->collection($this->lines);
+					try { // add flat to lines
 						$flat_entry->save();
 					} catch (Exception $e) {
 						Billrun_Factory::log()->log("Flat line already exists for subscriber " . $subscriber_id . " for billrun " . $billrun_key, Zend_Log::NOTICE);
 					}
-
 					if (!$billrun->exists($subscriber_id)) {
+						Billrun_Factory::log('Adding subscriber ' . $subscriber_id . ' to billrun collection', Zend_Log::INFO);
 						$billrun->addSubscriber($subscriber_id);
 					}
-					try {
-						$plan = $flat_entry['plan_ref'];
-						$billrun->update($subscriber_id, array(), array('price_customer' => $flat_price), $flat_entry, $plan['vatable']);
+					$plan = $flat_entry['plan_ref'];
+					$billrun->update($subscriber_id, array(), array('price_customer' => $flat_price), $flat_entry, $plan['vatable']);
+					try { // add flat to lines
+						$billrun->save();
 					} catch (Exception $e) {
 						Billrun_Factory::log()->log("Flat costs already exist in billrun collection for subscriber " . $subscriber_id . " for billrun " . $billrun_key, Zend_Log::NOTICE);
+					}
+					$flat_entry['billrun'] = $billrun->getBillrunKey();
+					$flat_entry['billrun_ref'] = $billrun->getRef();
+					try { // save billrun stamp to flat line to avoid another pricing
+						$flat_entry->save();
+					} catch (Exception $e) {
+						Billrun_Factory::log()->log("Could not add stamp for account " . $account_id . " for billrun " . $billrun_key, Zend_Log::NOTICE);
 					}
 				}
 				$billrun->close();

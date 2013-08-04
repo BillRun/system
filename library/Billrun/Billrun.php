@@ -16,12 +16,22 @@ class Billrun_Billrun {
 
 	protected $account_id;
 	protected $billrun_key;
+	protected $data;
 
 	public function __construct($options = array()) {
 		if (isset($options['account_id']) && isset($options['billrun_key'])) {
 			$this->account_id = $options['account_id'];
 			$this->billrun_key = $options['billrun_key'];
-			$this->load($options['account_id'], $options['billrun_key']);
+			if (isset($options['autoload']) && !$options['autoload']) {
+				if (isset($options['data']) && !$options['data']->isEmpty()) {
+					$this->data = $options['data'];
+				} else {
+					$this->data = new Mongodloid_Entity($this->getAccountEmptyBillrunEntry($this->account_id, $this->billrun_key));
+				}
+			} else {
+				$this->load();
+			}
+			$this->data->collection(Billrun_Factory::db()->billrunCollection());
 		}
 	}
 
@@ -31,30 +41,15 @@ class Billrun_Billrun {
 	 * @param type $billrun_key
 	 * @return \Billrun_Billrun
 	 */
-	public function load($account_id, $billrun_key) {
+	protected function load() {
 		$billrun_coll = Billrun_Factory::db()->billrunCollection();
-		$this->account_id = $account_id;
-		$this->billrun_key = $billrun_key;
 		$this->data = $billrun_coll->query(array(
-					'account_id' => $account_id,
-					'billrun_key' => $billrun_key,
+					'account_id' => $this->account_id,
+					'billrun_key' => $this->billrun_key,
 				))
 				->cursor()->current();
 		$this->data->collection($billrun_coll);
 		return $this;
-	}
-
-	/**
-	 * Create a new billrun record for a subscriber
-	 * @param type $subscriber
-	 * @todo load billrun by raw data (function needed) in order to avoid unnecessary query
-	 */
-	public function create($account_id, $billrun_key) {
-		$billrun = new Mongodloid_Entity($this->getAccountEmptyBillrunEntry($account_id, $billrun_key));
-		Billrun_Factory::log("Adding account " . $account_id . " with billrun key " . $billrun_key . " to billrun collection", Zend_Log::INFO);
-		$billrun->collection(Billrun_Factory::db()->billrunCollection());
-		$billrun->save();
-		return $this->load($account_id, $billrun_key);
 	}
 
 	/**
@@ -66,9 +61,6 @@ class Billrun_Billrun {
 		$subscribers = $this->data['subs'];
 		$subscribers[] = $this->getEmptySubscriberBillrunEntry($subscriber_id);
 		$this->data['subs'] = $subscribers;
-		Billrun_Factory::log('Adding subscriber ' . $subscriber_id . ' to billrun collection', Zend_Log::INFO);
-		$this->data->collection(Billrun_Factory::db()->billrunCollection());
-		$this->data->save();
 		return $this;
 	}
 
@@ -82,7 +74,7 @@ class Billrun_Billrun {
 	}
 
 	/**
-	 * method to check if the loaded billrun is valid
+	 * method to check if the billrun exists in billrun collection
 	 */
 	public function isValid() {
 		return count($this->data->getRawData()) > 0;
@@ -246,6 +238,7 @@ class Billrun_Billrun {
 	 */
 	public function update($subscriber_id, $counters, $pricingData, $row, $vatable) {
 		if (!$this->exists($subscriber_id)) {
+			Billrun_Factory::log('Adding subscriber ' . $subscriber_id . ' to billrun collection', Zend_Log::INFO);
 			$this->addSubscriber($subscriber_id);
 		}
 
@@ -355,7 +348,6 @@ class Billrun_Billrun {
 
 			$this->setSubRawData($subscriber_id, $subscriberRaw);
 		}
-		$this->setStamp($row);
 	}
 
 	/**
@@ -364,31 +356,14 @@ class Billrun_Billrun {
 	 * @param Mongodloid_Entity $line the billing line to update
 	 *
 	 * @return boolean true on success else false
-	 */
-	protected function setStamp($line) {
-		$current = $line->getRawData();
-		$added_values = array(
-			'billrun' => $this->getBillrunKey(),
-			'billrun_ref' => $this->data->createRef(),
-		);
-
-		$newData = array_merge($current, $added_values);
-		$line->setRawData($newData);
-		$line->save(Billrun_Factory::db()->linesCollection());
-		return true;
+	 */	
+	public function getRef() {
+		return $this->data->createRef();
 	}
 
-	/** TODO remove ...
-	  static public function getBillrun($account_id, $billrun_key) {
-	  $billrun = Billrun_Factory::billrun(array(
-	  'account_id' => $account_id,
-	  'billrun_key' => $billrun_key,
-	  ));
-	  return $billrun;
-	  } */
-
 	/**
-	 * Close the current billrun and create an invoice ID. 
+	 * Closes the current billrun by creating invoice ID and saves it.
+	 * Assumes closeBillrun function has been previously defined.
 	 */
 	public function close() {
 		$account_id = $this->data->getRawData()['account_id'];
@@ -400,7 +375,6 @@ class Billrun_Billrun {
 		} else {
 			Billrun_Factory::log()->log("Failed to create invoice for account " . $account_id, Zend_Log::INFO);
 		}
-//		$ret = Billrun_Factory::db()->execute("db.getLastErrorObj();");
 	}
 
 	/**
@@ -427,7 +401,6 @@ class Billrun_Billrun {
 		foreach ($this->data->get('subs') as $key => $sub_entry) {
 			if ($sub_entry['sub_id'] == $subscriber_id) {
 				$this->data->set('subs.' . $key, $subscriber_raw);
-				$this->data->save(Billrun_Factory::db()->billrunCollection());
 				return true;
 			}
 		}
@@ -441,7 +414,7 @@ class Billrun_Billrun {
 					'billrun_key' => $this->getBillrunKey(),
 					'subs' => array(
 						'$elemMatch' => array(
-							'sub_id'=> $subscriber_id,
+							'sub_id' => $subscriber_id,
 							'lines.' . $usage_type . '.refs' => array(
 								'$in' => array(
 									$row_ref
@@ -452,6 +425,51 @@ class Billrun_Billrun {
 				))
 				->cursor()->current();
 		return !$result->isEmpty();
+	}
+
+	/**
+	 * Saves the billrun document in the billrun collection
+	 */
+	public function save() {
+		$this->data->save(Billrun_Factory::db()->billrunCollection());
+		return $this;
+	}
+
+	/**
+	 * get the account's latest open billrun
+	 * @param int $account_id
+	 * @return mixed the billrun object or false if none found
+	 */
+	public static function getLastOpenBillrun($account_id) {
+		$billrun_coll = Billrun_Factory::db()->billrunCollection();
+		$data = $billrun_coll->query(array(
+				'account_id' => $account_id,
+				'invoice_id' => array(
+					'$exists' => false,
+				),
+			))
+			->cursor()
+			->sort(array('billrun_key' => -1))
+			->current();
+		if ($data->isEmpty()) { // no open billruns for the account
+			$data = $billrun_coll->query('account_id', $account_id)
+				->cursor()
+				->sort(array('billrun_key' => -1))
+				->current();
+			if ($data->isEmpty()) { // no billruns at all for account
+				$billrun_key = Billrun_Util::getBillrunKey(time());
+			} else {
+				$billrun_key = Billrun_Util::getFollowingBillrunKey($data['billrun_key']);
+			}
+			$billrun = Billrun_Factory::billrun(array('account_id' => $account_id, 'billrun_key' => $billrun_key, 'autoload' => false));
+		} else {
+			$billrun = Billrun_Factory::billrun(array('account_id' => $account_id, 'billrun_key' => $data['billrun_key'], 'autoload' => false, 'data' => $data));
+		}
+		return $billrun; // return the open billrun found
+	}
+	
+	public function getRawData() {
+		return $this->data;
 	}
 
 }
