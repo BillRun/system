@@ -160,7 +160,7 @@ class Processor_Wholesaleoutrates extends Billrun_Processor_Base_Separator {
 			$value['access'] = (double) $rateRow['accessPrice'];
 		}
 		return array( //added peak/off peak for bezeq carriers
-				$rateType => (	preg_match("IL_FIX",$rateRow['wsaleZoneName']) && $rateRow['timePeriod'] != 'ALL' ? 
+				$rateType => (	preg_match("/^IL_FIX/",$rateRow['wsaleZoneName']) && $rateRow['timePeriod'] != 'ALL' ? 
 									array($this->translateTime($rateRow['timePeriod']) => $value) : 
 									$value )
 			);
