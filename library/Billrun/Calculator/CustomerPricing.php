@@ -107,7 +107,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		$usage_type = $row['usaget'];
 		$volume = $row['usagev'];
 		if ($row['type'] == 'tap3') {
-			$usage_class_prefix = "inter_roam_";
+			$usage_class_prefix = "intl_roam_";
 		} else {
 			$usage_class_prefix = "";
 		}

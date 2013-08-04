@@ -132,7 +132,7 @@ class Billrun_Balance implements ArrayAccess {
 			'account_id' => $account_id,
 			'subscriber_id' => $subscriber_id,
 			'current_plan' => $plan_ref,
-			'balance' => self::getEmptyBalance("inter_roam_"),
+			'balance' => self::getEmptyBalance("intl_roam_"),
 			'tx' => array(),
 		);
 	}
@@ -166,7 +166,7 @@ class Billrun_Balance implements ArrayAccess {
 			'totals' => array(),
 			'cost' => 0,
 		);
-		$usage_types = array('call', 'sms', 'data', 'incoming_call', 'incoming_sms', 'mms'); //'inter_roam_incoming_call', 'inter_roam_call', 'inter_roam_callback', 'inter_roam_sms', 'inter_roam_data', 'inter_roam_incoming_sms',
+		$usage_types = array('call', 'sms', 'data', 'incoming_call', 'incoming_sms', 'mms'); //'intl_roam_incoming_call', 'intl_roam_call', 'intl_roam_callback', 'intl_roam_sms', 'intl_roam_data', 'intl_roam_incoming_sms',
 		if (!is_null($prefix)) {
 			foreach ($usage_types as $usage_type) {
 				$usage_types[] = $prefix . $usage_type;
