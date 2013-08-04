@@ -101,7 +101,7 @@ class Zend_Ftp_Directory_Iterator implements SeekableIterator, Countable, ArrayA
 					$this->_rows[$this->_pointer] = new Zend_Ftp_Directory($this->_dir . $row['name'] . '/', $this->_ftp);
 					break;
 				case '-': // File
-					$this->_rows[$this->_pointer] = new Zend_Ftp_File($this->_dir . $row['name'], $this->_ftp);
+					$this->_rows[$this->_pointer] = new Zend_Ftp_File($this->_dir . $row['name'], $this->_ftp, $row);
 					break;
 				case 'l': // Symlink
 				default:

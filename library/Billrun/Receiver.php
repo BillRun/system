@@ -43,6 +43,9 @@ abstract class Billrun_Receiver extends Billrun_Base {
 		if (isset($options['filename_regex'])) {
 			$this->filenameRegex = $options['filename_regex'];
 		}
+		if(isset($options['receiver']['limit']) && $options['receiver']['limit']) {
+			$this->setLimit($options['receiver']['limit']);
+		} 
 
 	}
 	

@@ -94,6 +94,7 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 			$ret = array();
 			$files = $this->ftp->getDirectory($config['remote_directory'])->getContents();
 			Billrun_Factory::log()->log("FTP: Starting to receive from remote host : $hostName", Zend_Log::DEBUG);
+			$count =0;
 			foreach ($files as $file) {
 				$extraData = array();
 				Billrun_Factory::log()->log("FTP: Found file " . $file->name . " on remote host", Zend_Log::DEBUG);
@@ -109,7 +110,8 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 					Billrun_Factory::dispatcher()->trigger('afterFTPFileReceived', array(&$received_path, $file, $this, $hostName, $extraData));
 					
 					if($this->logDB($received_path, $hostName , $extraData)) {
-						$ret[] = $received_path;						
+						$ret[] = $received_path;
+						$count++;//count the file as recieved
 						// delete the file after downloading and store it to processing queue
 						if( Billrun_Factory::config()->isProd() && (isset($config['delete_received']) && $config['delete_received'] ) ) {
 							Billrun_Factory::log()->log("FTP: Deleting file {$file->name} from remote host ", Zend_Log::DEBUG);
@@ -117,6 +119,9 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 						}
 					}
 					
+				}
+				if($count >= $this->limit) {
+					break;
 				}
 			}
 			return $ret;

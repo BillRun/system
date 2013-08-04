@@ -83,7 +83,7 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 	 */
 	public function beforeFTPFileReceived(&$file, $receiver, $hostName, &$extraData) {
 		if($receiver->getType() != $this->getName()) { return; } 
-		$extraData['month'] = date('Ym');
+		$extraData['month'] = date('Ym',strtotime($file->extraData['date']));
 	}
 
 	/**
