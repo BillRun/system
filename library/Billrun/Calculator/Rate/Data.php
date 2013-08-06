@@ -34,17 +34,6 @@ class Billrun_Calculator_Rate_Data extends Billrun_Calculator_Rate {
 	}
 
 	/**
-	 * method to get calculator lines
-	 */
-	protected function getLines() {
-		$lines = Billrun_Factory::db()->linesCollection();
-
-		return $lines->query()
-				->in('type', array('ggsn'))
-				->notExists($this->ratingField)->cursor()->limit($this->limit);
-	}
-
-	/**
 	 * write the calculation into DB
 	 */
 	protected function updateRow($row) {
@@ -63,6 +52,7 @@ class Billrun_Calculator_Rate_Data extends Billrun_Calculator_Rate {
 		$newData = array_merge($current, $added_values);
 		$row->setRawData($newData);
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteRow', array('row' => $row));
+		return true;
 	}
 
 	/**

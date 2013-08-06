@@ -553,7 +553,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 	protected function getQueueData() {
 		$queue_data = array();
 		foreach ($this->data['data'] as $row) { //@TODO use array_column instead
-			$queue_data[] = array('stamp'=> $row['stamp']);
+			$queue_data[] = array('stamp'=> $row['stamp'], 'type' => $row['type']);
 		}
 		return $queue_data;
 	}

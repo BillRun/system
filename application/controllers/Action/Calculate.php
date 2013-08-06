@@ -37,6 +37,7 @@ class CalculateAction extends Action_Base {
 			$this->_controller->addOutput("Writing calculated data.");
 			$calculator->write();
 			$this->_controller->addOutput("Calculation finished.");
+			$calculator->removeFromQueue();
 		} else {
 			$this->_controller->addOutput("Calculator cannot be loaded");
 		}

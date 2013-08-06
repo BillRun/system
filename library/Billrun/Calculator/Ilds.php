@@ -105,6 +105,7 @@ class Billrun_Calculator_Ilds extends Billrun_Calculator_Rate {
 		$row->setRawData($newData);
 
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteRow', array('row' => $row));
+		return true;
 	}
 
 	/**

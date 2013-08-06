@@ -216,12 +216,12 @@ class Mongodloid_Collection {
 	 * @param array $fields Optionally only return these fields
 	 * @param array $options An array of options to apply, such as remove the match document from the DB and return it
 	 * 
-	 * @return type the original document, or the modified document when new is set.
+	 * @return Mongodloid_Entity the original document, or the modified document when new is set.
 	 * @throws MongoResultException on failure
 	 * @see http://php.net/manual/en/mongocollection.findandmodify.php
 	 */
 	public function findAndModify(array $query, array $update = array(), array $fields = array(), array $options = array()) {
-		return $this->_collection->findAndModify($query, $update, $fields, $options);
+		return new Mongodloid_Entity($this->_collection->findAndModify($query, $update, $fields, $options), $this);
 	}
 
 	/**

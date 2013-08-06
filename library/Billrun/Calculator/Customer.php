@@ -44,30 +44,36 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	 * method to get calculator lines
 	 */
 	protected function getLines() {
-		$lines = Billrun_Factory::db()->linesCollection();
-
-		return $lines->query()
-				->in('type', array('nsn', 'ggsn', 'smsc', 'mmsc', 'smpp', 'tap3'))
-				->exists('customer_rate')
-				->notEq('customer_rate', FALSE)
-				->notExists('subscriber_id')
-				->cursor()->limit($this->limit);
+		$queue = Billrun_Factory::db()->queueCollection();
+		$query = self::getBaseQuery();
+		$query['type'] = array('$in' => array('nsn', 'ggsn', 'smsc', 'mmsc', 'smpp', 'tap3'));
+		$update = self::getBaseUpdate();
+		$i = 0;
+		$docs = array();
+		while ($i < $this->limit && ($doc = $queue->findAndModify($query, $update)) && !$doc->isEmpty()) {
+			$docs[] = $doc;
+			$i++;
+		}
+		return $docs;
 	}
 
 	/**
 	 * write the calculation into DB
 	 */
 	protected function updateRow($row) {
+		if (!isset($row['customer_rate']) || $row['customer_rate'] === false) {
+			return true; // move to next calculator
+		}
 		$row->collection($this->lines_coll);
 		//Billrun_Factory::log('Load line ' . $row->get('stamp'), Zend_Log::INFO);
 		$subscriber = $this->loadSubscriberForLine($row);
 
 		if (!$subscriber || !$subscriber->isValid()) {
-			foreach ($subscriber->getAvailableFields() as $field) {
-				$row[$field] = false;
-			}
+//			foreach ($subscriber->getAvailableFields() as $field) {
+//				$row[$field] = false;
+//			}
 			Billrun_Factory::log('Missing subscriber info for line with stamp : ' . $row->get('stamp'), Zend_Log::ALERT);
-			return;
+			return false;
 		}
 
 		foreach ($subscriber->getAvailableFields() as $field) {
@@ -81,10 +87,11 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		$plan_ref = $this->addPlanRef($row, $subscriber->plan);
 		if (is_null($plan_ref)) {
 			Billrun_Factory::log('No plan found for subscriber ' . $subscriber->subscriber_id, Zend_Log::ALERT);
-			return;
+			return false;
 		}
 		$billrun_key = Billrun_Util::getBillrunKey($row->get('unified_record_time')->sec);
 		$this->createBalanceIfMissing($subscriber, $billrun_key, $plan_ref);
+		return true;
 	}
 
 	/**
@@ -141,6 +148,23 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		}
 		$row['plan_ref'] = $planObj->createRef();
 		return $row->get('plan_ref', true);
+	}
+
+	static protected function getCalculatorQueueType() {
+		return self::$type;
+	}
+
+	protected function setCalculatorTag() {
+		$queue = Billrun_Factory::db()->queueCollection();
+		$calculator_tag = $this->getCalculatorQueueTag();
+		foreach ($this->data as $item) {
+			$query = array('stamp' => $item['stamp']);
+			$update = array('$set' => array($calculator_tag => true));
+			if (isset($item['account_id'])) {
+				$update['$set']['account_id'] = $item['account_id'];
+			}
+			$queue->update($query, $update);
+		}
 	}
 
 }

@@ -13,7 +13,7 @@
  * @since    0.5
  */
 class Billrun_Util {
-	
+
 	/**
 	 * method to filter user input
 	 * 
@@ -143,12 +143,11 @@ class Billrun_Util {
 		if (!$dayofmonth) {
 			$dayofmonth = Billrun_Factory::config()->getConfigValue('billrun.charging_day', 25);
 		}
-		$month = date("m", $timestamp);
-		$format = "Y" . $month;
+		$format = "Ym";
 		if (date("d", $timestamp) < $dayofmonth) {
-			$key = date($format);
+			$key = date($format, $timestamp);
 		} else {
-			$key = date($format, strtotime('+1 month'));
+			$key = date($format, strtotime('+1 month', $timestamp));
 		}
 		return $key;
 	}
@@ -188,7 +187,7 @@ class Billrun_Util {
 		$datetime = $billrun_key . $dayofmonth . "000000";
 		return strtotime('-1 second', strtotime($datetime));
 	}
-	
+
 	/**
 	 * returns the start timestamp of the input billing period
 	 * @param type $billrun_key
