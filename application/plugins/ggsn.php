@@ -36,6 +36,9 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Pl
 	
 	public function beforeProcessorStore(Billrun_Processor $processor) {
 		// we will remove ggsn lines only on fraudserver 
+		if ($processor->getType() != $this->getName()) {
+			return true;
+		}
 		if (!Billrun_Factory::config()->getConfigValue('ggsn.only_save_international', false) ) {
 			return true;
 		}
