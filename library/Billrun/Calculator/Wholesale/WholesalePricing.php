@@ -40,8 +40,8 @@ class Billrun_Calculator_Wholesale_WholesalePricing extends Billrun_Calculator_W
 		$lines = Billrun_Factory::db()->linesCollection();
 
 		return $lines->query($this->linesQuery)	
-						->notEq(Billrun_Calculator_Carrier::DEF_CALC_DB_FIELD,null)->exists(Billrun_Calculator_Carrier::DEF_CALC_DB_FIELD)
-						->notEq(Billrun_Calculator_Wholesale_Call::DEF_CALC_DB_FIELD,false)->exists(Billrun_Calculator_Wholesale_Call::DEF_CALC_DB_FIELD)
+						->notEq(Billrun_Calculator_Carrier::DEF_CALC_DB_FIELD,null)
+						->notEq(Billrun_Calculator_Wholesale_Call::DEF_CALC_DB_FIELD,false)
 						->exists('usagev')
 						->notExists($this->pricingField)->cursor()->limit($this->limit);
 	}
@@ -66,7 +66,7 @@ class Billrun_Calculator_Wholesale_WholesalePricing extends Billrun_Calculator_W
 				$row->setRawData(array_merge($row->getRawData(), $pricingData));
 			}
 		} else {
-			//Billrun_Factory::log()->log($this->count++. "  : {$row['usagev']} && $zoneKey : ". print_r($row,1),Zend_Log::DEBUG);
+			Billrun_Factory::log()->log($this->count++. "  : {$row['usagev']} && $zoneKey : ". print_r($row,1),Zend_Log::DEBUG);
 		}
 		
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteRow', array('row' => $row));
