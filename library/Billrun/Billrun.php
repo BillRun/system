@@ -182,7 +182,7 @@ class Billrun_Billrun {
 				$breakdown_raw[$plan_key][$category_key][$zone_key] = Billrun_Balance::getEmptyBalance();
 			}
 			if (!empty($counters)) {
-				if (!empty($pricingData) && isset($pricingData['over_plan']) && $pricingData['over_plan'] < current($counters)) {
+				if (!empty($pricingData) && isset($pricingData['over_plan']) && $pricingData['over_plan'] < current($counters)) { // volume is partially priced (in & over plan)
 					$volume_priced = $pricingData['over_plan'];
 					if (!isset($breakdown_raw['in_plan'][$category_key][$zone_key])) {
 						$breakdown_raw['in_plan'][$category_key][$zone_key] = Billrun_Balance::getEmptyBalance();
@@ -196,7 +196,7 @@ class Billrun_Billrun {
 				if ($plan_key != 'in_plan') {
 					$breakdown_raw[$plan_key][$category_key][$zone_key]['cost']+=$pricingData['price_customer'];
 				}
-			} else if ($zone_key == 'service') {
+			} else if ($zone_key == 'service') { // flat
 				$breakdown_raw[$plan_key][$category_key][$zone_key]['cost'] += $pricingData['price_customer'];
 			}
 			if (!isset($breakdown_raw[$plan_key][$category_key][$zone_key]['vat'])) {
