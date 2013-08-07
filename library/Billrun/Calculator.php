@@ -171,8 +171,6 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		return 'calculator_' . $calculator_type;
 	}
 
-	abstract static protected function getCalculatorQueueType();
-
 	protected function setCalculatorTag() {
 		$queue = Billrun_Factory::db()->queueCollection();
 		$calculator_tag = $this->getCalculatorQueueTag();

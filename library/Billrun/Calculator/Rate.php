@@ -75,7 +75,6 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 		}
 		return $prefixes;
 	}
-}
 
 	/**
 	 * method to receive the lines the calculator should take care
@@ -89,6 +88,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 		$update = self::getBaseUpdate();
 		$i=0;
 		$docs = array();
+		Billrun_Factory::log()->log(print_r($update,1),Zend_Log::DEBUG);
 		while ($i<$this->limit && ($doc = $queue->findAndModify($query, $update)) && !$doc->isEmpty()) {
 			$docs[] = $doc;
 			$i++;

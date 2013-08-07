@@ -16,25 +16,25 @@ class Billrun_Calculator_Wholesale_Nsn extends Billrun_Calculator_Wholesale {
 
 	const MAIN_DB_FIELD = 'provider_zone';
 	
+	
 	protected $ratingField = self::MAIN_DB_FIELD;	
 		
 	/**
 	 * method to get calculator lines
 	 */
 	protected function getLines() {
-		$lines = Billrun_Factory::db()->linesCollection();
-
-		return $lines->query()
-				->in('type', array('nsn'))
-				->in('record_type', array('11','12'))
-				->equals('usaget','call')
-				->notExists($this->ratingField)->cursor()->limit($this->limit);
+		$lines =  parent::getLines(array('type'=> 'nsn'));		
+		return $lines;
 	}
 	
 	/**
 	 * Write the calculation into DB
 	 */
 	protected function updateRow($row) {
+		if(!$this->isLineLegitimate($row)) {
+			return  true;
+		}
+
 		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteRow', array('row' => $row));
 
 		$rate = $this->getLineZone($row, $row['usaget']);
@@ -57,9 +57,9 @@ class Billrun_Calculator_Wholesale_Nsn extends Billrun_Calculator_Wholesale {
 	 *
 	 */
 	protected function getLineZone($row, $usage_type) {
-
-		$called_number =  $this->isLineIncoming($row) ? $row->get('calling_number') :  $row->get('called_number') ;
-		$ocg = $this->isLineIncoming($row) ? $row->get('in_circuit_group') :  $row->get('out_circuit_group');
+			
+		$called_number =  ($usage_type == 'call') ? $row->get('called_number') :  preg_replace('/[^\d]/', '', preg_replace('/^0+/', '', ( $row['called_number']))) ;
+		$carrier_cg = $this->isLineIncoming($row) ? $row->get('in_circuit_group') :  $row->get('out_circuit_group');
 		$line_time = $row->get('unified_record_time');
 
 		$rates = Billrun_Factory::db()->ratesCollection();
@@ -73,17 +73,7 @@ class Billrun_Calculator_Wholesale_Nsn extends Billrun_Calculator_Wholesale {
 				'params.prefix' => array(
 					'$in' => $called_number_prefixes,
 				),
-				'rates.' . $usage_type => array('$exists' => true),
-				'params.out_circuit_group' => array(
-					'$elemMatch' => array(
-						'from' => array(
-							'$lte' => $ocg,
-						),
-						'to' => array(
-							'$gte' => $ocg
-						)
-					)
-				),
+				'rates.' . $usage_type => array('$exists' => true),				
 				'from' => array(
 					'$lte' => $line_time,
 				),
@@ -92,6 +82,19 @@ class Billrun_Calculator_Wholesale_Nsn extends Billrun_Calculator_Wholesale {
 				),
 			)
 		);
+		
+		if($usage_type == 'call') {
+			$base_match['$match']['params.out_circuit_group'] = array(
+					'$elemMatch' => array(
+						'from' => array(
+							'$lte' => $carrier_cg,
+						),
+						'to' => array(
+							'$gte' => $carrier_cg
+						)
+					)
+				);
+		}
 
 		$unwind = array(
 			'$unwind' => '$params.prefix',
@@ -132,8 +135,13 @@ class Billrun_Calculator_Wholesale_Nsn extends Billrun_Calculator_Wholesale {
 		return $prefixes;
 	}
 
+	protected function isLineLegitimate($line) {
+		return	in_array($line['usaget'],array('call','sms')) &&
+				in_array($line['record_type'], array('11','12','08','09'));
+	}
+	
 	protected static function getCalculatorQueueType() {
-		
+		return self::MAIN_DB_FIELD;
 	}
 	
 }

@@ -11,13 +11,13 @@
  * @author eran
  */
 class Billrun_Calculator_Carrier extends Billrun_Calculator {
-	const DEF_CALC_DB_FIELD = 'carir';
+	const MAIN_DB_FIELD = 'carir';
 	
 	/**
 	 * The rating field to update in the CDR line.
 	 * @var string
 	 */
-	protected $ratingField = self::DEF_CALC_DB_FIELD;
+	protected $ratingField = self::MAIN_DB_FIELD;
 
 	/**
 	 * @see Billrun_Calculator_Base_Rate
@@ -34,10 +34,21 @@ class Billrun_Calculator_Carrier extends Billrun_Calculator {
 	}
 
 	protected function getLines() {
-		$lines = Billrun_Factory::db()->linesCollection();
+		/*$lines = Billrun_Factory::db()->linesCollection();
 
 		return $lines->query($this->linesQuery)
-				->notExists($this->ratingField)->cursor()->limit($this->limit);
+				->notExists($this->ratingField)->cursor()->limit($this->limit);*/
+		$queue = Billrun_Factory::db()->queueCollection();
+		$query = self::getBaseQuery();
+		$query['type'] = 'nsn';
+		$update = self::getBaseUpdate();
+		$i=0;
+		$docs = array();
+		while ($i<$this->limit && ($doc = $queue->findAndModify($query, $update)) && !$doc->isEmpty()) {
+			$docs[] = $doc;
+			$i++;
+		}
+		return $docs;
 	}
 
 	protected function updateRow($row) {
@@ -105,6 +116,10 @@ class Billrun_Calculator_Carrier extends Billrun_Calculator {
 	protected function getCarrierName($groupName) {
 		
 		return $groupName === "" ? ""  : substr($groupName, 0, min(4,strlen($groupName)));
+	}
+
+	protected static function getCalculatorQueueType() {
+		return self::MAIN_DB_FIELD;
 	}
 
 }

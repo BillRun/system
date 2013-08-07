@@ -153,10 +153,10 @@ abstract class Billrun_Generator_Base_WholesaleReport extends Billrun_Generator 
 			$callReferences[$value['call_reference'].$value['called_number']] = true;
 			
 			$value->collection(Billrun_Factory::db()->linesCollection());
-			$provider = $value[Billrun_Calculator_Carrier::DEF_CALC_DB_FIELD]['key'];
+			$provider = $value[Billrun_Calculator_Carrier::MAIN_DB_FIELD]['key'];
 			$isIncoming = $provider == 'GOLAN' || $provider == 'NR'; //!preg_match("/".$providerRegex."/", $value['out_circuit_group_name']);					
 			if($isIncoming) {
-				$provider = $value[Billrun_Calculator_Carrier::DEF_CALC_DB_FIELD."_in"]['key'];
+				$provider = $value[Billrun_Calculator_Carrier::MAIN_DB_FIELD."_in"]['key'];
 			}
 			$lineConnectType = ($isIncoming ? substr($value['in_circuit_group_name'],0,1) : substr($value['out_circuit_group_name'],0,1));
 			

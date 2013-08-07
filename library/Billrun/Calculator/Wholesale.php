@@ -106,5 +106,29 @@ abstract class Billrun_Calculator_Wholesale extends Billrun_Calculator {
 		//Billrun_Factory::log()->log($hour,Zend_Log::DEBUG);
 		return  ($hour - $this->peakTimes[$dayType]['start']) > 0 && $hour < $this->peakTimes[$dayType]['end'] ;
 	}
+	
+	protected static function getCalculatorQueueType() {
+		return static::MAIN_DB_FIELD;
+	}
+	
+	protected function getLines($localquery) {
+		/*$lines = Billrun_Factory::db()->linesCollection();
+
+		return $lines->query($this->linesQuery)
+				->notExists($this->ratingField)->cursor()->limit($this->limit);*/
+		$queue = Billrun_Factory::db()->queueCollection();
+		$query =  array_merge(self::getBaseQuery(),$localquery);
+		$update = self::getBaseUpdate();
+		$i=0;
+		$docs = array();
+		while ($i<$this->limit && ($doc = $queue->findAndModify($query, $update)) && !$doc->isEmpty()) {
+			$docs[] = $doc;
+			$i++;
+		}
+		return $docs;
+	}
+	
+	abstract protected function isLineLegitimate($line);
+	
 }
 

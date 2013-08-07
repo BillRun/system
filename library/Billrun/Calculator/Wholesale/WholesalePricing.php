@@ -14,9 +14,9 @@
  */
 class Billrun_Calculator_Wholesale_WholesalePricing extends Billrun_Calculator_Wholesale {
 	
-	const DEF_CALC_DB_FIELD = 'price_provider';
+	const MAIN_DB_FIELD = 'price_provider';
 	
-	protected $pricingField = self::DEF_CALC_DB_FIELD;
+	protected $pricingField = self::MAIN_DB_FIELD;
 	
 	/**
 	 * @see Billrun_Calculator_Base_Rate
@@ -37,20 +37,24 @@ class Billrun_Calculator_Wholesale_WholesalePricing extends Billrun_Calculator_W
 	}
 	
 	protected function getLines() {
-		$lines = Billrun_Factory::db()->linesCollection();
+		/*$lines = Billrun_Factory::db()->linesCollection();
 
 		return $lines->query($this->linesQuery)	
-						->notEq(Billrun_Calculator_Carrier::DEF_CALC_DB_FIELD,null)
-						->notEq(Billrun_Calculator_Wholesale_Call::DEF_CALC_DB_FIELD,false)
+						->notEq(Billrun_Calculator_Carrier::MAIN_DB_FIELD,null)
+						->notEq(Billrun_Calculator_Wholesale_Nsn::MAIN_DB_FIELD,false)
 						->exists('usagev')
-						->notExists($this->pricingField)->cursor()->limit($this->limit);
+						->notExists($this->pricingField)->cursor()->limit($this->limit);*/
+		$lines =  parent::getLines(array('type'=> 'nsn'));
+		return $lines;
 	}
 
 	protected function updateRow($row) {
-				
+		if(!$this->isLineLegitimate($row)) {
+			return  true;
+		}
 		$pricingData = array();
 		$row->collection(Billrun_Factory::db()->linesCollection());
-		$zoneKey = ($this->isLineIncoming($row) ?  'incoming' : $row[Billrun_Calculator_Wholesale_Call::DEF_CALC_DB_FIELD]['key']);
+		$zoneKey = ($this->isLineIncoming($row) ?  'incoming' : $row[Billrun_Calculator_Wholesale_Nsn::MAIN_DB_FIELD]['key']);
 		
 	if (isset($row['usagev']) && $zoneKey) {
 			$rates =  $this->getCarrierRateForZoneAndType(
@@ -75,5 +79,12 @@ class Billrun_Calculator_Wholesale_WholesalePricing extends Billrun_Calculator_W
 	protected function isLineIncoming($row) {
 		return $row['carir']['key'] == 'GOLAN'  ||  $row['carir']['key'] == 'NR';
 	}
+
+	protected function isLineLegitimate($line) {
+		return $line[Billrun_Calculator_Carrier::MAIN_DB_FIELD] != null &&
+				$line[Billrun_Calculator_Wholesale_Nsn::MAIN_DB_FIELD] != false &&
+				in_array($line['record_type'], array('11','12','08','09'));
+	}
+
 }
 

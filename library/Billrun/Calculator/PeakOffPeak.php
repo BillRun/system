@@ -56,7 +56,7 @@ class Billrun_Calculator_PeakOffPeak extends Billrun_Calculator {
 		$lines = Billrun_Factory::db()->linesCollection();
 
 		return $lines->query($this->linesQuery)
-				->exists(Billrun_Calculator_Carrier::DEF_CALC_DB_FIELD)
+				->exists(Billrun_Calculator_Carrier::MAIN_DB_FIELD)
 				->notExists($this->ratingField)->cursor()->limit($this->limit);
 	}
 

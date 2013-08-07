@@ -13,9 +13,9 @@
  * @since    0.5
  */
 class Billrun_Calculator_Wholesale_NationalRoamingPricing extends Billrun_Calculator_Wholesale {
-	const DEF_CALC_DB_FIELD = 'price_nr';
+	const MAIN_DB_FIELD = 'price_nr';
 	
-	protected $pricingField = self::DEF_CALC_DB_FIELD;
+	protected $pricingField = self::MAIN_DB_FIELD;
 	
 	protected $nrCarriers = array();
 	
@@ -28,7 +28,7 @@ class Billrun_Calculator_Wholesale_NationalRoamingPricing extends Billrun_Calcul
 	}
 	
 	protected function getLines() {
-		$lines = Billrun_Factory::db()->linesCollection();
+		/*$lines = Billrun_Factory::db()->linesCollection();
 		return $lines->query(array(
 								'type'=> 'nsn',
 								'$or' => array(
@@ -37,10 +37,16 @@ class Billrun_Calculator_Wholesale_NationalRoamingPricing extends Billrun_Calcul
 								)
 							))
 				->exists('customer_rate')->notExists($this->pricingField)->cursor()->limit($this->limit);
+		*/
+		$lines =  parent::getLines(array('type'=> 'nsn'));
+		return $lines;
 	}
 
 	protected function updateRow($row) {
-		
+		if(!$this->isLineLegitimate($row)) {
+			return  true;
+		}
+
 		
 		//@TODO  change this  be be configurable.
 		$pricingData = array();
@@ -53,5 +59,12 @@ class Billrun_Calculator_Wholesale_NationalRoamingPricing extends Billrun_Calcul
 			$row->setRawData(array_merge($row->getRawData(), $pricingData));
 		}	
 	}
+
+	protected function isLineLegitimate($line) {
+		return ($line['record_type'] == 12 &&  in_array($line['carir'], $this->nrCarriers)) ||
+				($line['record_type'] == 11  && in_array($line['carir_in'], $this->nrCarriers));
+	}
+	
+
 }
 
