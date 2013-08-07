@@ -22,6 +22,7 @@
 /**
  * @see Zend_Filter_Interface
  */
+require_once 'Zend/Filter/Interface.php';
 
 /**
  * @category   Zend
@@ -163,6 +164,7 @@ class Zend_Filter_PregReplace implements Zend_Filter_Interface
     public function filter($value)
     {
         if ($this->_matchPattern == null) {
+            require_once 'Zend/Filter/Exception.php';
             throw new Zend_Filter_Exception(get_class($this) . ' does not have a valid MatchPattern set.');
         }
 

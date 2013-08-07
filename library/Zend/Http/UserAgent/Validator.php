@@ -19,6 +19,7 @@
  * @license    http://framework.zend.com/license/new-bsd     New BSD License
  */
 
+require_once 'Zend/Http/UserAgent/Desktop.php';
 
 /**
  * Validator browser type matcher

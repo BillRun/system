@@ -66,6 +66,12 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				->limit($this->limit);
 	}
 
+	/**
+	 * gets an open billrun for subscriber with respect to the input billrun's billrun key
+	 * @param type $billrun
+	 * @param type $create
+	 * @return Billrun_Billrun returned billrun's billrun key is not less than the input billrun key
+	 */
 	public function loadOpenBillrun($billrun) {
 		$account_id = $billrun->getAccountId();
 		$billrun_key = $billrun->getBillrunKey();
@@ -73,17 +79,17 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			if ($billrun->isOpen()) { // found billing is open
 				return $billrun;
 			} else {
-				return $this->loadOpenBillrun($billrun->load($account_id, Billrun_Util::getFollowingBillrunKey($billrun_key)));
+				return $this->loadOpenBillrun(Billrun_Factory::billrun(array('account_id' => $account_id, 'billrun_key' => Billrun_Util::getFollowingBillrunKey($billrun_key))));
 			}
 		} else if ($billrun_key >= $this->runtime_billrun_key) {
-			return $billrun->create($account_id, $billrun_key);
+			Billrun_Factory::log("Adding account " . $account_id . " with billrun key " . $billrun_key . " to billrun collection", Zend_Log::INFO);
+			return Billrun_Factory::billrun(array('account_id' => $account_id, 'billrun_key' => $billrun_key, 'autoload' => false))->save();
 		} else { // billrun key is old
-			return $this->loadOpenBillrun($billrun->load($account_id, Billrun_Util::getFollowingBillrunKey($billrun_key)));
+			return $this->loadOpenBillrun(Billrun_Factory::billrun(array('account_id' => $account_id, 'billrun_key' => Billrun_Util::getFollowingBillrunKey($billrun_key))));
 		}
 	}
 
 	protected function updateRow($row) {
-//		$rate = Billrun_Factory::db()->ratesCollection()->findOne(new Mongodloid_Id($row['customer_rate']));
 		$rate = $row->get('customer_rate');
 		$billrun_key = Billrun_Util::getBillrunKey($row['unified_record_time']->sec);
 		$subscriber_balance = Billrun_Factory::balance(array('subscriber_id' => $row['subscriber_id'], 'billrun_key' => $billrun_key));
@@ -94,11 +100,6 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 					), 1), Zend_Log::DEBUG);
 			return;
 		}
-
-		$billrun_params = array(
-			'account_id' => $subscriber_balance['account_id'],
-			'billrun_key' => $billrun_key,
-		);
 
 		//@TODO  change this to be configurable.
 		$pricingData = array();
@@ -115,9 +116,14 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			$pricingData = $this->getLinePricingData($volume, $usage_type, $rate, $subscriber_balance);
 			$this->updateSubscriberBalance($subscriber_balance, array($usage_class_prefix . $usage_type => $volume), $pricingData, $row);
 			$vatable = (!(isset($rate['vatable']) && !$rate['vatable']) || (!isset($rate['vatable']) && !$this->vatable));
+			$billrun_params = array(
+				'account_id' => $subscriber_balance['account_id'],
+				'billrun_key' => $billrun_key,
+			);
 			$billrun = Billrun_Factory::billrun($billrun_params);
-			$this->loadOpenBillrun($billrun);
+			$billrun = $this->loadOpenBillrun($billrun);
 			$billrun->update($subscriber_balance['subscriber_id'], array($usage_type => $volume), $pricingData, $row, $vatable);
+			$billrun->save();
 		} else {
 			//@TODO error?
 		}
@@ -232,7 +238,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	}
 
 	/**
-	 * removes the tx's from the subscriber's balance to save space.
+	 * removes the transactions from the subscriber's balance to save space.
 	 * @param type $row
 	 */
 	protected function removeBalanceTx($row) {

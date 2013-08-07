@@ -116,7 +116,17 @@ class Mongodloid_Collection {
 	}
 
 	public function findOne($id, $want_array = false) {
-		$values = $this->_collection->findOne(array('_id' => ($id instanceof Mongodloid_Id ? $id->getMongoId() : $id) ));
+		if ($id instanceof Mongodloid_Id) {
+			$filter_id = $id->getMongoId();
+		} else if ($id instanceof MongoId) {
+			$filter_id = $id;
+		} else {
+			// probably a string
+			$filter_id = new MongoId((string) $id);
+		}
+
+		$values = $this->_collection->findOne(array('_id' => $filter_id ));
+		
 		if ($want_array)
 			return $values;
 

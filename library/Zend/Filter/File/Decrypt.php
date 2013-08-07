@@ -22,6 +22,7 @@
 /**
  * @see Zend_Filter_Decrypt
  */
+require_once 'Zend/Filter/Decrypt.php';
 
 /**
  * Decrypts a given file and stores the decrypted file content
@@ -73,6 +74,7 @@ class Zend_Filter_File_Decrypt extends Zend_Filter_Decrypt
     public function filter($value)
     {
         if (!file_exists($value)) {
+            require_once 'Zend/Filter/Exception.php';
             throw new Zend_Filter_Exception("File '$value' not found");
         }
 
@@ -81,11 +83,13 @@ class Zend_Filter_File_Decrypt extends Zend_Filter_Decrypt
         }
 
         if (file_exists($this->_filename) and !is_writable($this->_filename)) {
+            require_once 'Zend/Filter/Exception.php';
             throw new Zend_Filter_Exception("File '{$this->_filename}' is not writable");
         }
 
         $content = file_get_contents($value);
         if (!$content) {
+            require_once 'Zend/Filter/Exception.php';
             throw new Zend_Filter_Exception("Problem while reading file '$value'");
         }
 
@@ -93,6 +97,7 @@ class Zend_Filter_File_Decrypt extends Zend_Filter_Decrypt
         $result    = file_put_contents($this->_filename, $decrypted);
 
         if (!$result) {
+            require_once 'Zend/Filter/Exception.php';
             throw new Zend_Filter_Exception("Problem while writing file '{$this->_filename}'");
         }
 

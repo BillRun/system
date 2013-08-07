@@ -15,15 +15,16 @@
  * @category   Zend
  * @package    Zend_Mail
  * @subpackage Transport
- * @copyright  Copyright (c) 2005-2011 Zend Technologies USA Inc. (http://www.zend.com)
+ * @copyright  Copyright (c) 2005-2012 Zend Technologies USA Inc. (http://www.zend.com)
  * @license    http://framework.zend.com/license/new-bsd     New BSD License
- * @version    $Id: Abstract.php 23775 2011-03-01 17:25:24Z ralph $
+ * @version    $Id: Abstract.php 24593 2012-01-05 20:35:02Z matthew $
  */
 
 
 /**
  * @see Zend_Mime
  */
+require_once 'Zend/Mime.php';
 
 
 /**
@@ -33,7 +34,7 @@
  * @category   Zend
  * @package    Zend_Mail
  * @subpackage Transport
- * @copyright  Copyright (c) 2005-2011 Zend Technologies USA Inc. (http://www.zend.com)
+ * @copyright  Copyright (c) 2005-2012 Zend Technologies USA Inc. (http://www.zend.com)
  * @license    http://framework.zend.com/license/new-bsd     New BSD License
  */
 abstract class Zend_Mail_Transport_Abstract
@@ -183,6 +184,7 @@ abstract class Zend_Mail_Transport_Abstract
             /**
              * @see Zend_Mail_Transport_Exception
              */
+            require_once 'Zend/Mail/Transport/Exception.php';
             throw new Zend_Mail_Transport_Exception('Missing Zend_Mail object in _mail property');
         }
 
@@ -211,6 +213,7 @@ abstract class Zend_Mail_Transport_Abstract
             /**
              * @see Zend_Mail_Transport_Exception
              */
+            require_once 'Zend/Mail/Transport/Exception.php';
             throw new Zend_Mail_Exception('At least one mail header line is too long');
         }
     }
@@ -277,6 +280,7 @@ abstract class Zend_Mail_Transport_Abstract
             /**
              * @see Zend_Mail_Transport_Exception
              */
+            require_once 'Zend/Mail/Transport/Exception.php';
             throw new Zend_Mail_Transport_Exception('No body specified');
         }
 
@@ -315,6 +319,7 @@ abstract class Zend_Mail_Transport_Abstract
             /**
              * @see Zend_Mail_Transport_Exception
              */
+            require_once 'Zend/Mail/Transport/Exception.php';
             throw new Zend_Mail_Transport_Exception('Empty mail cannot be sent');
         }
 

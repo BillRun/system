@@ -1,0 +1,42 @@
+.navbar .nav>li{
+	line-height: 67px;
+}
+.component {
+	margin-top:50px;
+}
+.navbar .nav {
+	float:right
+}
+a.brand {
+	text-indent: 0 -999px;
+}
+div#listSize {
+	float:right;
+}
+.toolbar {
+	float:left;
+	width: 100%;
+}
+.date {
+	margin-bottom:0;
+}
+
+.json-editor .value {
+	width:400px;
+}
+
+.form_protect {
+	margin-left:30px;
+}
+.add-filter{
+	display: none;
+}
+div:last-of-type>.add-filter{
+	display: inline-block;
+}
+div:nth-of-type(n+5)>.add-filter{
+	display: none;
+}
+div:only-of-type>.remove-filter {
+	display: none;
+}

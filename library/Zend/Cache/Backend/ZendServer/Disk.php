@@ -22,8 +22,10 @@
 
 
 /** @see Zend_Cache_Backend_Interface */
+require_once 'Zend/Cache/Backend/Interface.php';
 
 /** @see Zend_Cache_Backend_ZendServer */
+require_once 'Zend/Cache/Backend/ZendServer.php';
 
 
 /**

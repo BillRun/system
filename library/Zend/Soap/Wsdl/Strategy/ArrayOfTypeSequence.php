@@ -22,6 +22,7 @@
 /**
  * @see Zend_Soap_Wsdl_Strategy_DefaultComplexType
  */
+require_once "Zend/Soap/Wsdl/Strategy/DefaultComplexType.php";
 
 /**
  * Zend_Soap_Wsdl_Strategy_ArrayOfTypeSequence

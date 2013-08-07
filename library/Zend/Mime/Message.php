@@ -23,10 +23,12 @@
 /**
  * Zend_Mime
  */
+require_once 'Zend/Mime.php';
 
 /**
  * Zend_Mime_Part
  */
+require_once 'Zend/Mime/Part.php';
 
 
 /**
@@ -240,6 +242,7 @@ class Zend_Mime_Message
      */
     public static function createFromMessage($message, $boundary, $EOL = Zend_Mime::LINEEND)
     {
+        require_once 'Zend/Mime/Decode.php';
         $parts = Zend_Mime_Decode::splitMessageStruct($message, $boundary, $EOL);
 
         $res = new self();

@@ -72,7 +72,7 @@ class Billrun_Plan {
 	 * @param type $sub
 	 * @return boolean
 	 * @deprecated since version 0.1
-	 *		should be removed from here; 
+	 *		should be removed from here;
 	 *		the check of plan should be run on line not subscriber/balance
 	 */
 	public function isRateInSubPlan($rate, $sub, $type) {
@@ -123,10 +123,6 @@ class Billrun_Plan {
 		$collection =$collection ? $collection : 
 					($this->data->collection() ? $this->data->collection() : Billrun_Factory::db()->plansCollection() );
 		return $this->data->createRef( $collection );
-	}
-
-	static public function getPlanRef($name, $plan_date = null) {
-		return self::get($name, $plan_date)->createRef(Billrun_Factory::db()->plansCollection());
 	}
 	
 }

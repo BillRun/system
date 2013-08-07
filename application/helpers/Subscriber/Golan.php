@@ -39,7 +39,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 	public function load($params) {
 
 		if (!isset($params['imsi']) && !isset($params['IMSI']) && !isset($params['NDC_SN'])) {
-			Billrun_Factory::log()->log('Cannot identify Golan subscriber. Require phone or imsi to load. Current parameters: ' . print_R($params,1), Zend_Log::ALERT);
+			Billrun_Factory::log()->log('Cannot identify Golan subscriber. Require phone or imsi to load. Current parameters: ' . print_R($params, 1), Zend_Log::ALERT);
 			return $this;
 		}
 
@@ -166,53 +166,49 @@ class Subscriber_Golan extends Billrun_Subscriber {
 	}
 
 	//@TODO change this function
-	static public function requestAccounts($page, $size, $time) {
-		$accounts = json_encode(array(
-			array(
-				'account_id' => 5642348,
-				'subscribers' => array(
-					array(
-						'subscriber_id' => 171910,
-						'plan' => 'LARGE',
-					),
-				)
-			),
-			array(
-				'account_id' => 4072863,
-				'subscribers' => array(
-					array(
-						'subscriber_id' => 155215,
-						'plan' => 'LARGE',
-					),
-				)
-			),
-			array(
-				'account_id' => 7112968,
-				'subscribers' => array(
-					array(
-						'subscriber_id' => 116815,
-						'plan' => 'SMALL',
-					),
-					array(
-						'subscriber_id' => 32443,
-						'plan' => 'SMALL',
-					),
-				),
-			)
-			));
-		return $accounts;
+	protected function requestAccounts($params) {
+		$host = Billrun_Factory::config()->getConfigValue('crm.server', '');
+		$url = Billrun_Factory::config()->getConfigValue('crm.url', '');
+
+		$path = 'http://' . $host . '/' . $url . '?' . http_build_query($params);
+		//Billrun_Factory::log()->log($path, Zend_Log::DEBUG);
+		// @TODO: use Zend_Http_Client
+//		$json = $this->send($path);
+		$json =  '{"9608027":{"subscribers":[{"subscriber_id":244739,"current_plan":"SMALL"}]}}'; // stub
+		if (!$json) {
+			return false;
+		}
+
+		$arr = @json_decode($json,true);
+
+		if (!is_array($arr) || empty($arr)) {
+			return false;
+		}
+
+		return $arr;
 	}
 
-	static public function getList($page, $size, $time) {
-		$accounts = json_decode(self::requestAccounts($page, $size, $time), 1);
-		$subscriber_general_settings = Billrun_Config::getInstance()->getConfigValue('subscriber', array());
-		foreach ($accounts as $account) {
-			foreach ($account['subscribers'] as $subscriber) {
-				$subscriber_settings = array_merge($subscriber_general_settings, array('time' => $time, 'data' => array_merge(array('account_id' => $account['account_id']), $subscriber)));
-				$ret_data[$account['account_id']][] = Billrun_Subscriber::getInstance($subscriber_settings);
-			}
+	public function getList($page, $size, $time, $acc_id = null) {
+		if (is_null($acc_id)) {
+			$params = array('msisdn' => '', 'IMSI' => '', 'DATETIME' => $time, 'page' => $page, 'size' => $size);
 		}
-		return $ret_data;
+		else {
+			$params = array('msisdn' => '', 'IMSI' => '', 'DATETIME' => $time, 'page' => $page, 'size' => $size, 'account_id' => $acc_id);
+		}
+		$accounts = $this->requestAccounts($params);
+		$subscriber_general_settings = Billrun_Config::getInstance()->getConfigValue('subscriber', array());
+		if (is_array($accounts) && !empty($accounts)) {
+			foreach ($accounts as $account_id => $account) {
+				foreach ($account['subscribers'] as $subscriber) {
+					$subscriber_settings = array_merge($subscriber_general_settings, array('time' => strtotime($time), 'data' => array('account_id' => intval($account_id), 'subscriber_id' => $subscriber['subscriber_id'], 'plan' => $subscriber['current_plan'])));
+					$ret_data[intval($account_id)][] = Billrun_Subscriber::getInstance($subscriber_settings);
+				}
+			}
+			return $ret_data;
+		}
+		else {
+			return null;
+		}
 	}
 
 	public function getPlan() {
@@ -246,7 +242,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 			'unified_record_time' => new MongoDate(),
 			'flat_key' => $billrun_key,
 			'price_customer' => $this->getFlatPrice(),
-			'current_plan' => $this->getPlan()->createRef(),
+			'plan_ref' => $this->getPlan()->createRef(),
 		);
 		$stamp = md5($flat_entry['account_id'] . $flat_entry['subscriber_id'] . $flat_entry['flat_key']);
 		$flat_entry['stamp'] = $stamp;

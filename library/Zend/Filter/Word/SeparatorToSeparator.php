@@ -22,6 +22,7 @@
 /**
  * @see Zend_Filter_PregReplace
  */
+require_once 'Zend/Filter/PregReplace.php';
 
 /**
  * @category   Zend
@@ -116,6 +117,7 @@ class Zend_Filter_Word_SeparatorToSeparator extends Zend_Filter_PregReplace
     protected function _separatorToSeparatorFilter($value)
     {
         if ($this->_searchSeparator == null) {
+            require_once 'Zend/Filter/Exception.php';
             throw new Zend_Filter_Exception('You must provide a search separator for this filter to work.');
         }
 

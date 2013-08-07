@@ -16,20 +16,22 @@
  * @category   Zend
  * @package    Zend_Mail
  * @subpackage Protocol
- * @copyright  Copyright (c) 2005-2011 Zend Technologies USA Inc. (http://www.zend.com)
+ * @copyright  Copyright (c) 2005-2012 Zend Technologies USA Inc. (http://www.zend.com)
  * @license    http://framework.zend.com/license/new-bsd     New BSD License
- * @version    $Id: Smtp.php 23775 2011-03-01 17:25:24Z ralph $
+ * @version    $Id: Smtp.php 24593 2012-01-05 20:35:02Z matthew $
  */
 
 
 /**
  * @see Zend_Mime
  */
+require_once 'Zend/Mime.php';
 
 
 /**
  * @see Zend_Mail_Protocol_Abstract
  */
+require_once 'Zend/Mail/Protocol/Abstract.php';
 
 
 /**
@@ -40,7 +42,7 @@
  * @category   Zend
  * @package    Zend_Mail
  * @subpackage Protocol
- * @copyright  Copyright (c) 2005-2011 Zend Technologies USA Inc. (http://www.zend.com)
+ * @copyright  Copyright (c) 2005-2012 Zend Technologies USA Inc. (http://www.zend.com)
  * @license    http://framework.zend.com/license/new-bsd     New BSD License
  */
 class Zend_Mail_Protocol_Smtp extends Zend_Mail_Protocol_Abstract
@@ -138,6 +140,7 @@ class Zend_Mail_Protocol_Smtp extends Zend_Mail_Protocol_Abstract
                     /**
                      * @see Zend_Mail_Protocol_Exception
                      */
+                    require_once 'Zend/Mail/Protocol/Exception.php';
                     throw new Zend_Mail_Protocol_Exception($config['ssl'] . ' is unsupported SSL type');
                     break;
             }
@@ -179,6 +182,7 @@ class Zend_Mail_Protocol_Smtp extends Zend_Mail_Protocol_Abstract
             /**
              * @see Zend_Mail_Protocol_Exception
              */
+            require_once 'Zend/Mail/Protocol/Exception.php';
             throw new Zend_Mail_Protocol_Exception('Cannot issue HELO to existing session');
         }
 
@@ -187,6 +191,7 @@ class Zend_Mail_Protocol_Smtp extends Zend_Mail_Protocol_Abstract
             /**
              * @see Zend_Mail_Protocol_Exception
              */
+            require_once 'Zend/Mail/Protocol/Exception.php';
             throw new Zend_Mail_Protocol_Exception(join(', ', $this->_validHost->getMessages()));
         }
 
@@ -202,6 +207,7 @@ class Zend_Mail_Protocol_Smtp extends Zend_Mail_Protocol_Abstract
                 /**
                  * @see Zend_Mail_Protocol_Exception
                  */
+                require_once 'Zend/Mail/Protocol/Exception.php';
                 throw new Zend_Mail_Protocol_Exception('Unable to connect via TLS');
             }
             $this->_ehlo($host);
@@ -247,6 +253,7 @@ class Zend_Mail_Protocol_Smtp extends Zend_Mail_Protocol_Abstract
             /**
              * @see Zend_Mail_Protocol_Exception
              */
+            require_once 'Zend/Mail/Protocol/Exception.php';
             throw new Zend_Mail_Protocol_Exception('A valid session has not been started');
         }
 
@@ -273,6 +280,7 @@ class Zend_Mail_Protocol_Smtp extends Zend_Mail_Protocol_Abstract
             /**
              * @see Zend_Mail_Protocol_Exception
              */
+            require_once 'Zend/Mail/Protocol/Exception.php';
             throw new Zend_Mail_Protocol_Exception('No sender reverse path has been supplied');
         }
 
@@ -297,6 +305,7 @@ class Zend_Mail_Protocol_Smtp extends Zend_Mail_Protocol_Abstract
             /**
              * @see Zend_Mail_Protocol_Exception
              */
+            require_once 'Zend/Mail/Protocol/Exception.php';
             throw new Zend_Mail_Protocol_Exception('No recipient forward path has been supplied');
         }
 
@@ -394,6 +403,7 @@ class Zend_Mail_Protocol_Smtp extends Zend_Mail_Protocol_Abstract
             /**
              * @see Zend_Mail_Protocol_Exception
              */
+            require_once 'Zend/Mail/Protocol/Exception.php';
             throw new Zend_Mail_Protocol_Exception('Already authenticated for this session');
         }
     }
