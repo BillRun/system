@@ -23,7 +23,7 @@ class Billrun_Calculator_Carrier extends Billrun_Calculator {
 	 * @see Billrun_Calculator_Base_Rate
 	 * @var type 
 	 */
-	protected $linesQuery = array('type' => 'nsn');
+	protected $linesQuery = array('type' => array('$in' => array('nsn')) );
 
 	public function __construct($options = array()) {
 		parent::__construct($options);
@@ -72,6 +72,9 @@ class Billrun_Calculator_Carrier extends Billrun_Calculator {
 						'$in'=> array(substr($row['sms_centre'],0,5))
 					));
 		}
+		if(in_array($row['record_type'],array('09'))) {
+				$query = array('key' => 'GOLAN');
+		}
 		return Billrun_Factory::db()->carriersCollection()->query($query)->cursor()->current();
 	}
 
@@ -88,6 +91,9 @@ class Billrun_Calculator_Carrier extends Billrun_Calculator {
 				$query = array('identifiction.sms_centre' => array(
 						'$in'=> array(substr($row['sms_centre'],0,5))
 					));
+		}
+		if(in_array($row['record_type'],array('09'))) {
+				$query = array('key' => 'GOLAN');
 		}
 		return Billrun_Factory::db()->carriersCollection()->query($query)->cursor()->current();
 	}

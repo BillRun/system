@@ -54,7 +54,7 @@ class Billrun_Calculator_Wholesale_WholesalePricing extends Billrun_Calculator_W
 		
 	if (isset($row['usagev']) && $zoneKey) {
 			$rates =  $this->getCarrierRateForZoneAndType(
-									$row['carir'], 
+									 $row[($this->isLineIncoming($row)) ?'carir_in' : 'carir'], 
 									$zoneKey, 
 									$row['usaget'], 
 									($this->isPeak($row) ? 'peak' : 'off_peak')
@@ -72,5 +72,8 @@ class Billrun_Calculator_Wholesale_WholesalePricing extends Billrun_Calculator_W
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteRow', array('row' => $row));
 	}	
 	
+	protected function isLineIncoming($row) {
+		return $row['carir']['key'] == 'GOLAN'  ||  $row['carir']['key'] == 'NR';
+	}
 }
 

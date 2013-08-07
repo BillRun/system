@@ -53,7 +53,7 @@ class Billrun_Calculator_Wholesale_Sms extends Billrun_Calculator_Wholesale {
 	 * @see Billrun_Calculator_Rate::getLineRate
 	 */
 	protected function getLineZone($row, $usage_type) {
-		$called_number = preg_replace('/[^\d]/', '', preg_replace('/^0+/', '', ($row['type'] != 'mmsc' ? $row['called_msc'] : $row['recipent_addr'])));
+		$called_number = preg_replace('/[^\d]/', '', preg_replace('/^0+/', '', ( $row['called_number'])));
 		$line_time = $row['unified_record_time'];
 
 		$rates = Billrun_Factory::db()->ratesCollection();
