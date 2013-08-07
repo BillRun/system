@@ -22,17 +22,6 @@ class Billrun_Calculator_Rate_Tap3 extends Billrun_Calculator_Rate {
 	static protected $type = 'tap3';
 
 	/**
-	 * method to get calculator lines
-	 */
-	protected function getLines() {
-		$lines = Billrun_Factory::db()->linesCollection();
-
-		return $lines->query()
-				->in('type', array(static::$type))
-				->notExists('customer_rate')->cursor()->limit($this->limit);
-	}
-
-	/**
 	 * write the calculation into DB.
 	 * @param $row the line CDR to update. 
 	 */
@@ -54,9 +43,9 @@ class Billrun_Calculator_Rate_Tap3 extends Billrun_Calculator_Rate {
 		$row->setRawData($newData);
 
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteRow', array('row' => $row));
+		return true;
 	}
-	
-	
+
 	/**
 	 * @see Billrun_Calculator_Rate::getLineVolume
 	 */
@@ -79,6 +68,7 @@ class Billrun_Calculator_Rate_Tap3 extends Billrun_Calculator_Rate {
 		}
 		return $volume;
 	}
+
 	/**
 	 * @see Billrun_Calculator_Rate::getLineUsageType
 	 */

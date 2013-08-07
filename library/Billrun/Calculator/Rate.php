@@ -36,7 +36,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 
 	public function __construct($options = array()) {
 		parent::__construct($options);
-		if(isset($options['calculator']['rate_mapping'])) {
+		if (isset($options['calculator']['rate_mapping'])) {
 			$this->rateMapping = $options['calculator']['rate_mapping'];
 			//Billrun_Factory::log()->log("receive options : ".print_r($this->rateMapping,1),  Zend_Log::DEBUG);
 		}
@@ -47,7 +47,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	 * @param $row the line to get  the volume for.
 	 * @param the line usage type
 	 */
-	abstract protected function getLineVolume($row, $usage_type); 
+	abstract protected function getLineVolume($row, $usage_type);
 
 	/**
 	 * Get the line usage type (SMS/Call/Data/etc..)
@@ -77,3 +77,27 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	}
 }
 
+	/**
+	 * method to receive the lines the calculator should take care
+	 * 
+	 * @return Mongodloid_Cursor Mongo cursor for iteration
+	 */
+	protected function getLines() {
+		$queue = Billrun_Factory::db()->queueCollection();
+		$query = self::getBaseQuery();
+		$query['type'] = static::$type;
+		$update = self::getBaseUpdate();
+		$i=0;
+		$docs = array();
+		while ($i<$this->limit && ($doc = $queue->findAndModify($query, $update)) && !$doc->isEmpty()) {
+			$docs[] = $doc;
+			$i++;
+		}
+		return $docs;
+	}
+
+	static protected function getCalculatorQueueType() {
+		return self::$type;
+	}
+
+}

@@ -22,20 +22,6 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 	static protected $type = "nsn";
 
 	/**
-	 * method to receive the lines the calculator should take care
-	 * 
-	 * @return Mongodloid_Cursor Mongo cursor for iteration
-	 */
-	protected function getLines() {
-
-		$lines = Billrun_Factory::db()->linesCollection();
-
-		return $lines->query()
-				->equals('type', static::$type)
-				->notExists($this->ratingField)->cursor()->limit($this->limit);
-	}
-
-	/**
 	 * Write the calculation into DB
 	 */
 	protected function updateRow($row) {
@@ -55,6 +41,7 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 		$row->setRawData($newData);
 
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteRow', array('row' => $row));
+		return true;
 	}
 	
 	/**
