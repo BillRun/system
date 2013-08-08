@@ -82,22 +82,14 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	 * @return Mongodloid_Cursor Mongo cursor for iteration
 	 */
 	protected function getLines() {
-		$queue = Billrun_Factory::db()->queueCollection();
-		$query = self::getBaseQuery();
-		$query['type'] = static::$type;
-		$update = self::getBaseUpdate();
-		$i=0;
-		$docs = array();
-		Billrun_Factory::log()->log(print_r($update,1),Zend_Log::DEBUG);
-		while ($i<$this->limit && ($doc = $queue->findAndModify($query, $update)) && !$doc->isEmpty()) {
-			$docs[] = $doc;
-			$i++;
-		}
-		return $docs;
+		return $this->getQueuedLines(array('type' => static::$type));
 	}
 
 	static protected function getCalculatorQueueType() {
 		return self::$type;
 	}
 
+	protected function isLineLegitimate($line) {
+		return $line['type'] == static::$type;
+	}
 }

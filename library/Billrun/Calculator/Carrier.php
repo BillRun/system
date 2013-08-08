@@ -38,17 +38,8 @@ class Billrun_Calculator_Carrier extends Billrun_Calculator {
 
 		return $lines->query($this->linesQuery)
 				->notExists($this->ratingField)->cursor()->limit($this->limit);*/
-		$queue = Billrun_Factory::db()->queueCollection();
-		$query = self::getBaseQuery();
-		$query['type'] = 'nsn';
-		$update = self::getBaseUpdate();
-		$i=0;
-		$docs = array();
-		while ($i<$this->limit && ($doc = $queue->findAndModify($query, $update)) && !$doc->isEmpty()) {
-			$docs[] = $doc;
-			$i++;
-		}
-		return $docs;
+		
+		return $this->getQueuedLines($this->linesQuery);
 	}
 
 	protected function updateRow($row) {
@@ -65,8 +56,9 @@ class Billrun_Calculator_Carrier extends Billrun_Calculator {
 		);
 		$newData = array_merge($current, $added_values);
 		$row->setRawData($newData);
-
+		
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteRow', array('row' => $row));
+		return true;
 	}
 
 	/**
@@ -103,7 +95,7 @@ class Billrun_Calculator_Carrier extends Billrun_Calculator {
 						'$in'=> array(substr($row['sms_centre'],0,5))
 					));
 		}
-		if(in_array($row['record_type'],array('09'))) {
+		if(in_array($row['record_type'],array('08'))) {
 				$query = array('key' => 'GOLAN');
 		}
 		return Billrun_Factory::db()->carriersCollection()->query($query)->cursor()->current();
@@ -122,5 +114,8 @@ class Billrun_Calculator_Carrier extends Billrun_Calculator {
 		return self::MAIN_DB_FIELD;
 	}
 
+	protected function isLineLegitimate($line) {
+		return $line['type'] == 'nsn' ;
+	}
 }
 

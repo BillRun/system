@@ -22,10 +22,7 @@ class Billrun_Calculator_Wholesale_WholesalePricing extends Billrun_Calculator_W
 	 * @see Billrun_Calculator_Base_Rate
 	 * @var type 
 	 */
-	protected $linesQuery =array(
-								'type'=> 'nsn',
-								 'record_type' => array('$in' =>  array('11','12','08','09'),), //TODO move wholesale type to configuration
-						);
+	protected $linesQuery =array('type'=> 'nsn',);
 	
 	protected $count  =0 ;
 	
@@ -44,19 +41,17 @@ class Billrun_Calculator_Wholesale_WholesalePricing extends Billrun_Calculator_W
 						->notEq(Billrun_Calculator_Wholesale_Nsn::MAIN_DB_FIELD,false)
 						->exists('usagev')
 						->notExists($this->pricingField)->cursor()->limit($this->limit);*/
-		$lines =  parent::getLines(array('type'=> 'nsn'));
+		$lines =  $this->getQueuedLines($this->linesQuery);
 		return $lines;
 	}
 
 	protected function updateRow($row) {
-		if(!$this->isLineLegitimate($row)) {
-			return  true;
-		}
+	
 		$pricingData = array();
 		$row->collection(Billrun_Factory::db()->linesCollection());
 		$zoneKey = ($this->isLineIncoming($row) ?  'incoming' : $row[Billrun_Calculator_Wholesale_Nsn::MAIN_DB_FIELD]['key']);
 		
-	if (isset($row['usagev']) && $zoneKey) {
+		if (isset($row['usagev']) && $zoneKey) {
 			$rates =  $this->getCarrierRateForZoneAndType(
 									 $row[($this->isLineIncoming($row)) ?'carir_in' : 'carir'], 
 									$zoneKey, 
@@ -71,19 +66,20 @@ class Billrun_Calculator_Wholesale_WholesalePricing extends Billrun_Calculator_W
 			}
 		} else {
 			Billrun_Factory::log()->log($this->count++. "  : {$row['usagev']} && $zoneKey : ". print_r($row,1),Zend_Log::DEBUG);
+			return false;
 		}
 		
-		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteRow', array('row' => $row));
+		return true;
 	}	
 	
 	protected function isLineIncoming($row) {
 		return $row['carir']['key'] == 'GOLAN'  ||  $row['carir']['key'] == 'NR';
 	}
 
-	protected function isLineLegitimate($line) {
-		return $line[Billrun_Calculator_Carrier::MAIN_DB_FIELD] != null &&
-				$line[Billrun_Calculator_Wholesale_Nsn::MAIN_DB_FIELD] != false &&
-				in_array($line['record_type'], array('11','12','08','09'));
+	protected function isLineLegitimate($line) {		
+		return ($line[Billrun_Calculator_Carrier::MAIN_DB_FIELD] !== null || $line[Billrun_Calculator_Carrier::MAIN_DB_FIELD ."_in"] !== null) &&
+				$line[Billrun_Calculator_Wholesale_Nsn::MAIN_DB_FIELD] !== false &&
+				in_array($line['record_type'], array('11','12','08','09')); //TODO move wholesale type to configuration
 	}
 
 }

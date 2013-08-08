@@ -57,20 +57,21 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	}
 
 	protected function getLines() {
-		$queue = Billrun_Factory::db()->queueCollection();
-		$query = self::getBaseQuery();
+//		$queue = Billrun_Factory::db()->queueCollection();
+//		$query = self::getBaseQuery();
+		$query = array();
 		$query['type'] = array('$in' => array('ggsn', 'smpp', 'smsc', 'nsn', 'tap3'));
 		$query['$or'][] = array('account_id' => array('$exists' => false));
 		$query['$or'][] = array('account_id' => array('$mod' => array($this->server_count, $this->server_id - 1)));
-		$update = self::getBaseUpdate();
-		$options = array('sort' => array('unified_record_time' => 1));
-		$i = 0;
-		$docs = array();
-		while ($i < $this->limit && ($doc = $queue->findAndModify($query, $update, array(), $options)) && !$doc->isEmpty()) {
-			$docs[] = $doc;
-			$i++;
-		}
-		return $docs;
+//		$update = self::getBaseUpdate();
+//		$options = array('sort' => array('unified_record_time' => 1));
+//		$i = 0;
+//		$docs = array();
+//		while ($i < $this->limit && ($doc = $queue->findAndModify($query, $update, array(), $options)) && !$doc->isEmpty()) {
+//			$docs[] = $doc;
+//			$i++;
+//		}
+		return $this->getQueuedLines($query);
 	}
 
 	/**
@@ -103,9 +104,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 
 	protected function updateRow($row) {
 		$rate = $row->get('customer_rate');
-		if (!isset($row['customer_rate']) || $row['customer_rate'] === false || isset($row['price_customer']) || $row['unified_record_time']->sec<$this->billrun_lower_bound_timestamp) { // nothing to price
-			return true; // move to next calculator
-		}
+		
 		$billrun_key = Billrun_Util::getBillrunKey($row['unified_record_time']->sec);
 		$subscriber_balance = Billrun_Factory::balance(array('subscriber_id' => $row['subscriber_id'], 'billrun_key' => $billrun_key));
 		if (!$subscriber_balance->isValid()) {
@@ -259,5 +258,8 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		return self::$type;
 	}
 
+	protected function isLineLegitimate($line) {
+		return isset($row['customer_rate']) && $row['customer_rate'] !== false && !isset($row['price_customer']) && $row['unified_record_time']->sec >= $this->billrun_lower_bound_timestamp; 
+	}
 }
 

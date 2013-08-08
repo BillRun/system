@@ -25,17 +25,17 @@ class Billrun_Calculator_Rate_Sms extends Billrun_Calculator_Rate {
 	 * method to get calculator lines
 	 */
 	protected function getLines() {
-		$queue = Billrun_Factory::db()->queueCollection();
+		/*$queue = Billrun_Factory::db()->queueCollection();
 		$query = self::getBaseQuery();
-		$query['type'] = array('$in' => array('smpp', 'smsc', 'mmsc'));
+		$query['type'] =array('$in' => array('smpp', 'smsc', 'mmsc'));
 		$update = self::getBaseUpdate();
 		$i = 0;
 		$docs = array();
 		while ($i < $this->limit && ($doc = $queue->findAndModify($query, $update)) && !$doc->isEmpty()) {
 			$docs[] = $doc;
 			$i++;
-		}
-		return $docs;
+		}*/
+		return $this->getQueuedLines(array('type' => array('$in' => array('smpp', 'smsc', 'mmsc'))));
 	}
 
 	/**
@@ -145,17 +145,8 @@ class Billrun_Calculator_Rate_Sms extends Billrun_Calculator_Rate {
 			return false;
 		}
 	}
-
-	/**
-	 * Get an array of prefixes for a given number.
-	 * @param type $str the number to get  prefixes to.
-	 * @return Array the possible prefixes of the number.
-	 */
-	protected function getPrefixes($str) {
-		$prefixes = array();
-		for ($i = 0; $i < strlen($str); $i++) {
-			$prefixes[] = substr($str, 0, $i + 1);
-		}
-		return $prefixes;
+	
+	protected function isLineLegitimate($line) {
+		return $line['type'] == 'smsc' || $line['type'] == 'mmsc' || $line['type'] == 'smpp';
 	}
 }

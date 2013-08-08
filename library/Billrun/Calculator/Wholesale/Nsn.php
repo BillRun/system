@@ -16,14 +16,13 @@ class Billrun_Calculator_Wholesale_Nsn extends Billrun_Calculator_Wholesale {
 
 	const MAIN_DB_FIELD = 'provider_zone';
 	
-	
 	protected $ratingField = self::MAIN_DB_FIELD;	
 		
 	/**
 	 * method to get calculator lines
 	 */
 	protected function getLines() {
-		$lines =  parent::getLines(array('type'=> 'nsn'));		
+		$lines =  $this->getQueuedLines(array('type'=> 'nsn'));		
 		return $lines;
 	}
 	
@@ -31,9 +30,6 @@ class Billrun_Calculator_Wholesale_Nsn extends Billrun_Calculator_Wholesale {
 	 * Write the calculation into DB
 	 */
 	protected function updateRow($row) {
-		if(!$this->isLineLegitimate($row)) {
-			return  true;
-		}
 
 		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteRow', array('row' => $row));
 
@@ -49,6 +45,7 @@ class Billrun_Calculator_Wholesale_Nsn extends Billrun_Calculator_Wholesale {
 		$row->setRawData($newData);
 
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteRow', array('row' => $row));
+		return true;
 	}
 
 	/**
@@ -59,7 +56,6 @@ class Billrun_Calculator_Wholesale_Nsn extends Billrun_Calculator_Wholesale {
 	protected function getLineZone($row, $usage_type) {
 			
 		$called_number =  ($usage_type == 'call') ? $row->get('called_number') :  preg_replace('/[^\d]/', '', preg_replace('/^0+/', '', ( $row['called_number']))) ;
-		$carrier_cg = $this->isLineIncoming($row) ? $row->get('in_circuit_group') :  $row->get('out_circuit_group');
 		$line_time = $row->get('unified_record_time');
 
 		$rates = Billrun_Factory::db()->ratesCollection();
@@ -84,6 +80,7 @@ class Billrun_Calculator_Wholesale_Nsn extends Billrun_Calculator_Wholesale {
 		);
 		
 		if($usage_type == 'call') {
+			$carrier_cg = $this->isLineIncoming($row) ? $row->get('in_circuit_group') :  $row->get('out_circuit_group');
 			$base_match['$match']['params.out_circuit_group'] = array(
 					'$elemMatch' => array(
 						'from' => array(
@@ -138,10 +135,6 @@ class Billrun_Calculator_Wholesale_Nsn extends Billrun_Calculator_Wholesale {
 	protected function isLineLegitimate($line) {
 		return	in_array($line['usaget'],array('call','sms')) &&
 				in_array($line['record_type'], array('11','12','08','09'));
-	}
-	
-	protected static function getCalculatorQueueType() {
-		return self::MAIN_DB_FIELD;
 	}
 	
 }

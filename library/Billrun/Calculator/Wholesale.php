@@ -67,7 +67,7 @@ abstract class Billrun_Calculator_Wholesale extends Billrun_Calculator {
 	 * @param type $peak
 	 * @return type
 	 */
-	function getCarrierRateForZoneAndType($carrier,$zoneKey,$usageType,$peak = false ) {
+	protected function getCarrierRateForZoneAndType($carrier,$zoneKey,$usageType,$peak = false ) {
 		$typedRates = false;
 		if( isset($carrier['zones'][$zoneKey])) {
 			$typedRates =  $peak && isset($carrier['zones'][$zoneKey][$usageType][$peak]) ?
@@ -110,25 +110,6 @@ abstract class Billrun_Calculator_Wholesale extends Billrun_Calculator {
 	protected static function getCalculatorQueueType() {
 		return static::MAIN_DB_FIELD;
 	}
-	
-	protected function getLines($localquery) {
-		/*$lines = Billrun_Factory::db()->linesCollection();
-
-		return $lines->query($this->linesQuery)
-				->notExists($this->ratingField)->cursor()->limit($this->limit);*/
-		$queue = Billrun_Factory::db()->queueCollection();
-		$query =  array_merge(self::getBaseQuery(),$localquery);
-		$update = self::getBaseUpdate();
-		$i=0;
-		$docs = array();
-		while ($i<$this->limit && ($doc = $queue->findAndModify($query, $update)) && !$doc->isEmpty()) {
-			$docs[] = $doc;
-			$i++;
-		}
-		return $docs;
-	}
-	
-	abstract protected function isLineLegitimate($line);
 	
 }
 

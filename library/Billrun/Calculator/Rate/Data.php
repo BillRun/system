@@ -21,7 +21,7 @@ class Billrun_Calculator_Rate_Data extends Billrun_Calculator_Rate {
 	 *
 	 * @var string
 	 */
-	static protected $type = 'data';
+	static protected $type = 'ggsn';
 
 	/**
 	 *@see Billrun_Calculator_Base_Rate

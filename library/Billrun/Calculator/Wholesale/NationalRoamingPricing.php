@@ -38,15 +38,11 @@ class Billrun_Calculator_Wholesale_NationalRoamingPricing extends Billrun_Calcul
 							))
 				->exists('customer_rate')->notExists($this->pricingField)->cursor()->limit($this->limit);
 		*/
-		$lines =  parent::getLines(array('type'=> 'nsn'));
+		$lines =  $this->getQueuedLines(array('type'=> 'nsn'));
 		return $lines;
 	}
 
 	protected function updateRow($row) {
-		if(!$this->isLineLegitimate($row)) {
-			return  true;
-		}
-
 		
 		//@TODO  change this  be be configurable.
 		$pricingData = array();
@@ -61,8 +57,8 @@ class Billrun_Calculator_Wholesale_NationalRoamingPricing extends Billrun_Calcul
 	}
 
 	protected function isLineLegitimate($line) {
-		return ($line['record_type'] == 12 &&  in_array($line['carir'], $this->nrCarriers)) ||
-				($line['record_type'] == 11  && in_array($line['carir_in'], $this->nrCarriers));
+		return ($line['record_type'] === "12" &&  in_array($line['carir'], $this->nrCarriers)) ||
+				($line['record_type'] === "11"  && in_array($line['carir_in'], $this->nrCarriers));
 	}
 	
 
