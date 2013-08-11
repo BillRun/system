@@ -103,18 +103,18 @@ class Billrun_Balance implements ArrayAccess {
 	 * @param type $account_id
 	 * @return boolean
 	 */
-	public function create($billrunKey, $subscriber, $plan_ref) {
+	public function create($billrunKey, $account_id, $subscriber_id, $plan_ref) {
 		$ret = FALSE;
 
-		if (!$this->isExists($subscriber->subscriber_id, $billrunKey)) {
-			Billrun_Factory::log('Adding subscriber ' . $subscriber->subscriber_id . ' to balances collection', Zend_Log::INFO);
-			$newSubscriber = new Mongodloid_Entity(self::getEmptySubscriberEntry($billrunKey, $subscriber->account_id, $subscriber->subscriber_id, $plan_ref));
+		if (!$this->isExists($subscriber_id, $billrunKey)) {
+			Billrun_Factory::log('Adding subscriber ' . $subscriber_id . ' to balances collection', Zend_Log::INFO);
+			$newSubscriber = new Mongodloid_Entity(self::getEmptySubscriberEntry($billrunKey, $account_id, $subscriber_id, $plan_ref));
 			$newSubscriber->collection(Billrun_Factory::db()->balancesCollection());
 			$newSubscriber->save();
 			$ret = TRUE;
 		}
 
-		$this->load($subscriber->subscriber_id, $billrunKey);
+		$this->load($subscriber_id, $billrunKey);
 		return $ret;
 	}
 
@@ -166,7 +166,7 @@ class Billrun_Balance implements ArrayAccess {
 			'totals' => array(),
 			'cost' => 0,
 		);
-		$usage_types = array('call', 'sms', 'data', 'incoming_call', 'incoming_sms', 'mms'); //'intl_roam_incoming_call', 'intl_roam_call', 'intl_roam_callback', 'intl_roam_sms', 'intl_roam_data', 'intl_roam_incoming_sms',
+		$usage_types = array('call', 'sms', 'data', 'incoming_call', 'incoming_sms', 'mms');
 		if (!is_null($prefix)) {
 			foreach ($usage_types as $usage_type) {
 				$usage_types[] = $prefix . $usage_type;

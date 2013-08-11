@@ -115,7 +115,7 @@ class Billrun_Billrun {
 				'flat' => $this->getVATTypes(),
 				'over_plan' => $this->getVATTypes(),
 				'out_plan' => $this->getVATTypes(),
-				'manual' => array(
+				'credit' => array(
 					'charge' => $this->getVATTypes(),
 					'refund' => $this->getVATTypes()
 				),
@@ -137,7 +137,7 @@ class Billrun_Billrun {
 				'mms' => array(
 					'refs' => null,
 				),
-				'manual' => array(
+				'credit' => array(
 					'refs' => null,
 				),
 			),
@@ -145,7 +145,7 @@ class Billrun_Billrun {
 				'in_plan' => $this->getCategories(),
 				'over_plan' => $this->getCategories(),
 				'out_plan' => $this->getCategories(),
-				'manual' => array(
+				'credit' => array(
 					'charge' => array(),
 					'refund' => array(),
 				),
@@ -177,7 +177,7 @@ class Billrun_Billrun {
 	 */
 	static public function addToBreakdown(&$subscriberRaw, $plan_key, $category_key, $zone_key, $vatable, $counters = array(), $pricingData = array()) {
 		$breakdown_raw = $subscriberRaw['breakdown'];
-		if ($plan_key != 'manual') {
+		if ($plan_key != 'credit') {
 			if (!isset($breakdown_raw[$plan_key][$category_key][$zone_key])) {
 				$breakdown_raw[$plan_key][$category_key][$zone_key] = Billrun_Balance::getEmptyBalance();
 			}
@@ -242,32 +242,7 @@ class Billrun_Billrun {
 			$this->addSubscriber($subscriber_id);
 		}
 
-		if ($row['type'] == 'credit') {
-			$usage_type = 'manual';
-		} else {
-			switch ($row['usaget']) {
-				case 'call':
-				case 'incoming_call':
-					$usage_type = 'call';
-					break;
-				case 'sms':
-				case 'incoming_sms':
-					$usage_type = 'sms';
-					break;
-				case 'data':
-					$usage_type = 'data';
-					break;
-				case 'mms':
-					$usage_type = 'mms';
-					break;
-				case 'flat':
-					$usage_type = 'flat';
-					break;
-				default:
-					$usage_type = 'call';
-					break;
-			}
-		}
+		$usage_type = $this->getGeneralUsageType($row['usaget']);
 
 		$row_ref = $row->createRef();
 		if (!$this->refExists($subscriber_id, $usage_type, $row_ref)) {
@@ -282,7 +257,7 @@ class Billrun_Billrun {
 			} else if ($row['type'] == 'flat') {
 				$subscriberRaw['costs']['flat'][$vat_key] += $pricingData['price_customer'];
 			} else if ($row['type'] == 'credit') {
-				$subscriberRaw['costs']['manual'][$row['charge_type']][$vat_key] += $pricingData['price_customer'];
+				$subscriberRaw['costs']['credit'][$row['credit_type']][$vat_key] += $pricingData['price_customer'];
 			}
 
 			if ($row['type'] != 'flat') {
@@ -304,10 +279,10 @@ class Billrun_Billrun {
 
 			// update breakdown
 			if ($row['type'] == 'credit') {
-				$plan_key = 'manual';
+				$plan_key = 'credit';
 				$zone_key = $row['reason'];
 			}
-			if (!isset($pricingData['over_plan']) && !isset($pricingData['out_plan'])) { // in plan
+			else if (!isset($pricingData['over_plan']) && !isset($pricingData['out_plan'])) { // in plan
 				$plan_key = 'in_plan';
 				if ($row['type'] == 'flat') {
 					$zone_key = 'service';
@@ -318,7 +293,9 @@ class Billrun_Billrun {
 				$plan_key = "out_plan";
 			}
 
-			if (isset($rate['rates'][$row['usaget']]['category'])) {
+			if ($row['type'] == 'credit') {
+				$category_key = $row['credit_type'];
+			} else if (isset($rate['rates'][$row['usaget']]['category'])) {
 				$category = $rate['rates'][$row['usaget']]['category'];
 				switch ($category) {
 					case "roaming":
@@ -335,8 +312,6 @@ class Billrun_Billrun {
 						$category_key = "base";
 						break;
 				}
-			} else if ($row['type'] == 'credit') {
-				$category_key = $row['reason'];
 			} else {
 				$category_key = "base";
 			}
@@ -356,7 +331,7 @@ class Billrun_Billrun {
 	 * @param Mongodloid_Entity $line the billing line to update
 	 *
 	 * @return boolean true on success else false
-	 */	
+	 */
 	public function getRef() {
 		return $this->data->createRef();
 	}
@@ -467,9 +442,34 @@ class Billrun_Billrun {
 		}
 		return $billrun; // return the open billrun found
 	}
-	
+
 	public function getRawData() {
 		return $this->data;
+	}
+
+	/**
+	 * 
+	 * @param string $specific_usage_type specific usage type (usually lines' 'usaget' field) such as 'call', 'incoming_call' etc.
+	 */
+	public static function getGeneralUsageType($specific_usage_type) {
+		switch ($specific_usage_type) {
+			case 'call':
+			case 'incoming_call':
+				return 'call';
+			case 'sms':
+			case 'incoming_sms':
+				return 'sms';
+			case 'data':
+				return 'data';
+			case 'mms':
+				return 'mms';
+			case 'flat':
+				return 'flat';
+			case 'credit':
+				return 'credit';
+			default:
+				return 'call';
+		}
 	}
 
 }

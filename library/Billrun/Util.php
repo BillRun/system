@@ -213,4 +213,8 @@ class Billrun_Util {
 				->cursor()->current()->get('vat');
 	}
 
+	public static function isTimestamp($timestamp) {
+		return ((string) (int) $timestamp === $timestamp) && ($timestamp <= PHP_INT_MAX) && ($timestamp >= ~PHP_INT_MAX);
+	}
+
 }

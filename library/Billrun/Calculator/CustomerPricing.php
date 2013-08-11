@@ -30,7 +30,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @var string
 	 */
 	protected $runtime_billrun_key;
-	
+
 	/**
 	 *
 	 * @var int timestamp
@@ -59,7 +59,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	protected function getLines() {
 		$queue = Billrun_Factory::db()->queueCollection();
 		$query = self::getBaseQuery();
-		$query['type'] = array('$in' => array('ggsn', 'smpp', 'smsc', 'nsn', 'tap3'));
+		$query['type'] = array('$in' => array('ggsn', 'smpp', 'smsc', 'nsn', 'tap3', 'credit'));
 		$query['$or'][] = array('account_id' => array('$exists' => false));
 		$query['$or'][] = array('account_id' => array('$mod' => array($this->server_count, $this->server_id - 1)));
 		$update = self::getBaseUpdate();
@@ -103,18 +103,10 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 
 	protected function updateRow($row) {
 		$rate = $row->get('customer_rate');
-		if (!isset($row['customer_rate']) || $row['customer_rate'] === false || isset($row['price_customer']) || $row['unified_record_time']->sec<$this->billrun_lower_bound_timestamp) { // nothing to price
+		if (!isset($row['customer_rate']) || $row['customer_rate'] === false || isset($row['price_customer']) || $row['unified_record_time']->sec < $this->billrun_lower_bound_timestamp) { // nothing to price
 			return true; // move to next calculator
 		}
 		$billrun_key = Billrun_Util::getBillrunKey($row['unified_record_time']->sec);
-		$subscriber_balance = Billrun_Factory::balance(array('subscriber_id' => $row['subscriber_id'], 'billrun_key' => $billrun_key));
-		if (!$subscriber_balance->isValid()) {
-			Billrun_Factory::log()->log("couldn't get balance for : " . print_r(array(
-					'subscriber_id' => $row['subscriber_id'],
-					'billrun_month' => $billrun_key
-					), 1), Zend_Log::ALERT);
-			return false;
-		}
 
 		//TODO  change this to be configurable.
 		$pricingData = array();
@@ -128,16 +120,30 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		}
 
 		if (isset($volume)) {
-			$pricingData = $this->getLinePricingData($volume, $usage_type, $rate, $subscriber_balance);
-			$this->updateSubscriberBalance($subscriber_balance, array($usage_class_prefix . $usage_type => $volume), $pricingData, $row);
+			if ($row['type'] == 'credit') {
+				$accessPrice = isset($rate['rates'][$usage_type]['access']) ? $rate['rates'][$usage_type]['access'] : 0;
+				$pricingData = array($this->pricingField => $accessPrice + $this->getPriceByRates($rate['rates'][$usage_type]['rate'], $volume));
+			} else {
+				$subscriber_balance = Billrun_Factory::balance(array('subscriber_id' => $row['subscriber_id'], 'billrun_key' => $billrun_key));
+				if (!$subscriber_balance->isValid()) {
+					Billrun_Factory::log()->log("couldn't get balance for : " . print_r(array(
+							'subscriber_id' => $row['subscriber_id'],
+							'billrun_month' => $billrun_key
+							), 1), Zend_Log::ALERT);
+					return false;
+				}
+				$pricingData = $this->getLinePricingData($volume, $usage_type, $rate, $subscriber_balance);
+				$this->updateSubscriberBalance($subscriber_balance, array($usage_class_prefix . $usage_type => $volume), $pricingData, $row);
+			}
+
 			$vatable = (!(isset($rate['vatable']) && !$rate['vatable']) || (!isset($rate['vatable']) && !$this->vatable));
 			$billrun_params = array(
-				'account_id' => $subscriber_balance['account_id'],
+				'account_id' => $row['account_id'],
 				'billrun_key' => $billrun_key,
 			);
 			$billrun = Billrun_Factory::billrun($billrun_params);
 			$billrun = $this->loadOpenBillrun($billrun);
-			$billrun->update($subscriber_balance['subscriber_id'], array($usage_type => $volume), $pricingData, $row, $vatable);
+			$billrun->update($row['subscriber_id'], array($usage_type => $volume), $pricingData, $row, $vatable);
 			$billrun->save();
 		} else {
 			Billrun_Factory::log()->log("Line with stamp " . $row['stamp'] . " is missing volume information", Zend_Log::ALERT);
@@ -155,13 +161,13 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @param mixed $subr the  subscriber that generated the usage.
 	 * @return Array the 
 	 */
-	protected function getLinePricingData($volumeToPrice, $usageType, $rate, $subr) {
+	protected function getLinePricingData($volumeToPrice, $usageType, $rate, $sub_balance) {
 		$typedRates = $rate['rates'][$usageType];
 		$accessPrice = isset($typedRates['access']) ? $typedRates['access'] : 0;
-		$plan = Billrun_Factory::plan(array('data' => $subr['current_plan']));
+		$plan = Billrun_Factory::plan(array('data' => $sub_balance['current_plan']));
 
-		if ($plan->isRateInSubPlan($rate, $subr, $usageType)) {
-			$volumeToPrice = $volumeToPrice - $plan->usageLeftInPlan($subr['balance'], $usageType);
+		if ($plan->isRateInSubPlan($rate, $sub_balance, $usageType)) {
+			$volumeToPrice = $volumeToPrice - $plan->usageLeftInPlan($sub_balance['balance'], $usageType);
 
 			if ($volumeToPrice < 0) {
 				$volumeToPrice = 0;
@@ -174,19 +180,33 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			$ret['out_plan'] = $volumeToPrice;
 		}
 
-		$price = $accessPrice;
+		$price = $accessPrice + $this->getPriceByRates($typedRates['rate'], $volumeToPrice);
 		//Billrun_Factory::log()->log("Rate : ".print_r($typedRates,1),  Zend_Log::DEBUG);
-		foreach ($typedRates['rate'] as $key => $currRate) {
-			if (0 >= $volumeToPrice) {
-				break;
-			}//break if no volume left to price.
-			$volumeToPriceCurrentRating = ($volumeToPrice - $currRate['to'] < 0) ? $volumeToPrice : $currRate['to']; // get the volume that needed to be priced for the current rating
-			$price += floatval((ceil($volumeToPriceCurrentRating / $currRate['interval']) * $currRate['price'])); // actually price the usage volume by the current 
-			$volumeToPrice = $volumeToPrice - $volumeToPriceCurrentRating; //decressed the volume that was priced
-		}
 		$ret[$this->pricingField] = $price;
 
 		return $ret;
+	}
+
+	protected function getPriceByRates($rates_arr, $volume) {
+		$price = 0;
+		foreach ($rates_arr as $currRate) {
+			if (0 == $volume) { // volume could be negative if it's a refund amount
+				break;
+			}//break if no volume left to price.
+			$volumeToPriceCurrentRating = ($volume - $currRate['to'] < 0) ? $volume : $currRate['to']; // get the volume that needed to be priced for the current rating
+			if (isset($currRate['ceil'])) {
+				$ceil = $currRate['ceil'];
+			} else {
+				$ceil = false;
+			}
+			if ($ceil) {
+				$price += floatval(ceil($volumeToPriceCurrentRating / $currRate['interval']) * $currRate['price']); // actually price the usage volume by the current 	
+			} else {
+				$price += floatval($volumeToPriceCurrentRating / $currRate['interval'] * $currRate['price']); // actually price the usage volume by the current 
+			}
+			$volume = $volume - $volumeToPriceCurrentRating; //decressed the volume that was priced
+		}
+		return $price;
 	}
 
 	/**

@@ -46,7 +46,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	protected function getLines() {
 		$queue = Billrun_Factory::db()->queueCollection();
 		$query = self::getBaseQuery();
-		$query['type'] = array('$in' => array('nsn', 'ggsn', 'smsc', 'mmsc', 'smpp', 'tap3'));
+		$query['type'] = array('$in' => array('nsn', 'ggsn', 'smsc', 'mmsc', 'smpp', 'tap3', 'credit'));
 		$update = self::getBaseUpdate();
 		$i = 0;
 		$docs = array();
@@ -61,7 +61,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	 * write the calculation into DB
 	 */
 	protected function updateRow($row) {
-		if (!isset($row['customer_rate']) || $row['customer_rate'] === false) {
+		if (!isset($row['customer_rate']) || $row['customer_rate'] === false || (isset($row['account_id']) && isset($row['subscriber_id']))) {
 			return true; // move to next calculator
 		}
 		$row->collection($this->lines_coll);
@@ -69,9 +69,6 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		$subscriber = $this->loadSubscriberForLine($row);
 
 		if (!$subscriber || !$subscriber->isValid()) {
-//			foreach ($subscriber->getAvailableFields() as $field) {
-//				$row[$field] = false;
-//			}
 			Billrun_Factory::log('Missing subscriber info for line with stamp : ' . $row->get('stamp'), Zend_Log::ALERT);
 			return false;
 		}
