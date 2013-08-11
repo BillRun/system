@@ -112,11 +112,11 @@ trait Billrun_Traits_FileSequenceChecking {
 									)										
 								->cursor()->sort(array('received_time' => -1))
 								->limit(1)->current();
-		$unsequencedWindow = intval(Billrun_Factory::config()->getConfigValue($this->getName().'.receiver.unsequenced_time_window',1800));
+		$unsequencedWindow =  time()- strtotime('-'. Billrun_Factory::config()->getConfigValue($this->getName().'.receiver.unsequenced_time_window','30 min'));
 		$lastLogFiles = $log->query(
 									array(	'source'=> $this->getName(), 
 											'received_time' => array(	'$lt' => date(Billrun_Base::base_dateformat,time()- $unsequencedWindow),
-																		'$gte' => isset($lastSeqeueced['received_time']) ? $lastSeqeueced['received_time'] : date(Billrun_Base::base_dateformat,0) ),
+																		'$gte' => isset($lastSeqeueced['received_time']) ? $lastSeqeueced['received_time'] : date(Billrun_Base::base_dateformat,time() - ($unsequencedWindow*2) ) ),
 											'retrieved_from'=> $hostname, )
 									)										
 								->cursor()->sort(array('_id' =>  -1));
