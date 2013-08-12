@@ -93,7 +93,7 @@ class Billrun_Billrun {
 	 * @param type $account_id the account id that the enery belongs to.
 	 * @return Array tan empty billrun account  structure.
 	 */
-	public function getAccountEmptyBillrunEntry($account_id, $billrun_key) {
+	public static function getAccountEmptyBillrunEntry($account_id, $billrun_key) {
 		$vat = Billrun_Util::getVAT(Billrun_Util::getEndTime($billrun_key));
 		return array(
 			'account_id' => $account_id,
@@ -108,64 +108,69 @@ class Billrun_Billrun {
 	 * Get an empty billrun subscriber entry
 	 * @return Array an empty billrun subscriber entry
 	 */
-	public function getEmptySubscriberBillrunEntry($subscriber_id) {
+	public static function getEmptySubscriberBillrunEntry($subscriber_id) {
 		return array(
 			'sub_id' => $subscriber_id,
 			'costs' => array(
-				'flat' => $this->getVATTypes(),
-				'over_plan' => $this->getVATTypes(),
-				'out_plan' => $this->getVATTypes(),
+				'flat' => self::getVATTypes(),
+				'over_plan' => self::getVATTypes(),
+				'out_plan' => self::getVATTypes(),
 				'credit' => array(
-					'charge' => $this->getVATTypes(),
-					'refund' => $this->getVATTypes()
+					'charge' => self::getVATTypes(),
+					'refund' => self::getVATTypes()
 				),
 			),
 			'lines' => array(
 				'call' => array(
-					'refs' => null,
+					'refs' => array(),
 				),
 				'sms' => array(
-					'refs' => null,
+					'refs' => array(),
 				),
 				'data' => array(
 					'counters' => array(),
-					'refs' => null,
+					'refs' => array(),
 				),
 				'flat' => array(
-					'refs' => null,
+					'refs' => array(),
 				),
 				'mms' => array(
-					'refs' => null,
+					'refs' => array(),
 				),
 				'credit' => array(
-					'refs' => null,
+					'refs' => array(),
 				),
 			),
 			'breakdown' => array(
-				'in_plan' => $this->getCategories(),
-				'over_plan' => $this->getCategories(),
-				'out_plan' => $this->getCategories(),
+				'in_plan' => self::getCategories(),
+				'over_plan' => self::getCategories(),
+				'out_plan' => self::getCategories(),
 				'credit' => array(
-					'charge' => array(),
-					'refund' => array(),
+					'charge' => new stdclass,
+					'refund' => new stdclass,
 				),
 			),
 		);
 	}
 
-	protected function getVATTypes() {
+	protected static function getVATTypes() {
 		return array(
 			'vatable' => 0,
 			'vat_free' => 0,
 		);
 	}
 
-	protected function getCategories() {
+	/**
+	 * 
+	 * @return type
+	 * @todo in order to save space, it may be unnecessary to initialize the billrun with categories.
+	 */
+	protected static function getCategories() {
 		return array(
-			'base' => array(),
-			'intl' => array(),
-			'special' => array(),
-			'roaming' => array(),
+			'base' => new stdclass,
+			'intl' => new stdclass,
+			'special' => new stdclass,
+			'roaming' => new stdclass,
 		);
 	}
 
@@ -445,31 +450,6 @@ class Billrun_Billrun {
 
 	public function getRawData() {
 		return $this->data;
-	}
-
-	/**
-	 * 
-	 * @param string $specific_usage_type specific usage type (usually lines' 'usaget' field) such as 'call', 'incoming_call' etc.
-	 */
-	public static function getGeneralUsageType($specific_usage_type) {
-		switch ($specific_usage_type) {
-			case 'call':
-			case 'incoming_call':
-				return 'call';
-			case 'sms':
-			case 'incoming_sms':
-				return 'sms';
-			case 'data':
-				return 'data';
-			case 'mms':
-				return 'mms';
-			case 'flat':
-				return 'flat';
-			case 'credit':
-				return 'credit';
-			default:
-				return 'call';
-		}
 	}
 
 }
