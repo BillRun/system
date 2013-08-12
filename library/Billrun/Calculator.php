@@ -230,38 +230,37 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		}
 	}
 	
-	protected function getQueuedLines($localquery) {
-		$id= md5( time() . rand(0,PHP_INT_MAX) . rand(0,PHP_INT_MAX). rand(0,PHP_INT_MAX). rand(0,PHP_INT_MAX)); //@TODO  make this  more unique!!!!
-		
+	protected function getQueuedLines($localquery) {			
 		$queue = Billrun_Factory::db()->queueCollection();
 		$query =  array_merge(static::getBaseQuery(),$localquery);
 		$update = static::getBaseUpdate();				
 
-//		$docs = array();		
-//		while ($i < $this->limit && ($doc = $queue->findAndModify($query, $update)) && !$doc->isEmpty()) {
-//			$docs[] = $doc;
-//			$i++;
-//		}
-//		return $docs;	
-		
-		$update['$set']['work_id'] = $id; 		
-		
-		$horizonline = new Mongodloid_Entity();
-		for($limit=$this->limit; $limit > 1 && $horizonline->isEmpty();$limit=intval(max(1,$limit/2)) ) {			
-			Billrun_Factory::log()->log("searching for limit of : $limit",Zend_Log::DEBUG);
-			$horizonline = $queue->query($query)->cursor()->sort(array('_id'=> 1))->skip($limit)->limit(1)->current();
+		$docs = array();
+		$i=0;
+		while ($i < $this->limit && ($doc = $queue->findAndModify($query, $update)) && !$doc->isEmpty()) {
+			$docs[] = $doc;
+			$i++;
 		}
-		
-		if(!$horizonline->isEmpty()) {
-			$query['$isolated'] = 1;//isolate the update
-			$query['_id'] = array('$lt' => $horizonline['_id']->getMongoID());
-			//Billrun_Factory::log()->log(print_r($query,1),Zend_Log::DEBUG);
-			$queue->update($query, $update, array('multiple'=> true));
-			
-			return $queue->query( array_merge($localquery,array('work_id' => $id)))->cursor();
-		} 
-
-		return array();
+		return $docs;	
+//		$id= md5( time() . rand(0,PHP_INT_MAX) . rand(0,PHP_INT_MAX). rand(0,PHP_INT_MAX). rand(0,PHP_INT_MAX)); //@TODO  make this  more unique!!!!		
+//		$update['$set']['work_id'] = $id; 		
+//		
+//		$horizonline = new Mongodloid_Entity();
+//		for($limit=$this->limit; $limit > 1 && $horizonline->isEmpty();$limit=intval(max(1,$limit/2)) ) {			
+//			Billrun_Factory::log()->log("searching for limit of : $limit",Zend_Log::DEBUG);
+//			$horizonline = $queue->query($query)->cursor()->sort(array('_id'=> 1))->skip($limit)->limit(1)->current();
+//		}
+//		
+//		if(!$horizonline->isEmpty()) {
+//			$query['$isolated'] = 1;//isolate the update
+//			$query['_id'] = array('$lt' => $horizonline['_id']->getMongoID());
+//			//Billrun_Factory::log()->log(print_r($query,1),Zend_Log::DEBUG);
+//			$queue->update($query, $update, array('multiple'=> true));
+//			
+//			return $queue->query( array_merge($localquery,array('work_id' => $id)))->cursor();
+//		} 
+//
+//		return array();
 	}
 	
 	abstract protected function isLineLegitimate($line);
