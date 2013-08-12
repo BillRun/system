@@ -82,7 +82,7 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 	 * alter the file name to match the month the file was recevied to prevent duplicate files.
 	 */
 	public function beforeFTPFileReceived(&$file, $receiver, $hostName, &$extraData) {
-		if($receiver->getType() != $this->getName()) { return; } 
+		if($receiver->getType() != $this->getName() || !$file->isFile()) { return; } 
 		$extraData['month'] = date('Ym',strtotime($file->extraData['date']));
 	}
 

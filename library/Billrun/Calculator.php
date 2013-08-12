@@ -235,7 +235,14 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		
 		$queue = Billrun_Factory::db()->queueCollection();
 		$query =  array_merge(static::getBaseQuery(),$localquery);
-		$update = static::getBaseUpdate();		
+		$update = static::getBaseUpdate();				
+
+//		$docs = array();		
+//		while ($i < $this->limit && ($doc = $queue->findAndModify($query, $update)) && !$doc->isEmpty()) {
+//			$docs[] = $doc;
+//			$i++;
+//		}
+//		return $docs;	
 		
 		$update['$set']['work_id'] = $id; 		
 		
@@ -253,7 +260,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 			
 			return $queue->query( array_merge($localquery,array('work_id' => $id)))->cursor();
 		} 
-		
+
 		return array();
 	}
 	
