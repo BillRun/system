@@ -17,6 +17,7 @@ class Billrun_Billrun {
 	protected $account_id;
 	protected $billrun_key;
 	protected $data;
+	protected static $runtime_billrun_key;
 
 	public function __construct($options = array()) {
 		if (isset($options['account_id']) && isset($options['billrun_key'])) {
@@ -128,7 +129,7 @@ class Billrun_Billrun {
 					'refs' => array(),
 				),
 				'data' => array(
-					'counters' => array(),
+					'counters' => new stdclass,
 					'refs' => array(),
 				),
 				'flat' => array(
@@ -234,103 +235,6 @@ class Billrun_Billrun {
 	}
 
 	/**
-	 * Update  
-	 * @param type $subscriber_id
-	 * @param type $counters
-	 * @param type $pricingData
-	 * @param type $row
-	 * @param type $vatable
-	 */
-	public function update($subscriber_id, $counters, $pricingData, $row, $vatable) {
-		if (!$this->exists($subscriber_id)) {
-			Billrun_Factory::log('Adding subscriber ' . $subscriber_id . ' to billrun collection', Zend_Log::INFO);
-			$this->addSubscriber($subscriber_id);
-		}
-
-		$usage_type = $this->getGeneralUsageType($row['usaget']);
-
-		$row_ref = $row->createRef();
-		if (!$this->refExists($subscriber_id, $usage_type, $row_ref)) {
-			$subscriberRaw = $this->getSubRawData($subscriber_id);
-
-			// update costs
-			$vat_key = ($vatable ? "vatable" : "vat_free");
-			if (isset($pricingData['over_plan']) && $pricingData['over_plan']) {
-				$subscriberRaw['costs']['over_plan'][$vat_key] += $pricingData['price_customer'];
-			} else if (isset($pricingData['out_plan']) && $pricingData['out_plan']) {
-				$subscriberRaw['costs']['out_plan'][$vat_key] += $pricingData['price_customer'];
-			} else if ($row['type'] == 'flat') {
-				$subscriberRaw['costs']['flat'][$vat_key] += $pricingData['price_customer'];
-			} else if ($row['type'] == 'credit') {
-				$subscriberRaw['costs']['credit'][$row['credit_type']][$vat_key] += $pricingData['price_customer'];
-			}
-
-			if ($row['type'] != 'flat') {
-				$rate = $row['customer_rate'];
-			}
-
-			// update data counters
-			if ($usage_type == 'data') {
-				$date_key = date("Ymd", $row['unified_record_time']->sec);
-				if (isset($subscriberRaw['lines']['data']['counters'][$date_key])) {
-					$subscriberRaw['lines']['data']['counters'][$date_key]+=$row['usagev'];
-				} else {
-					$subscriberRaw['lines']['data']['counters'][$date_key] = $row['usagev'];
-				}
-			}
-
-			// update lines refs
-			$subscriberRaw['lines'][$usage_type]['refs'][] = $row_ref;
-
-			// update breakdown
-			if ($row['type'] == 'credit') {
-				$plan_key = 'credit';
-				$zone_key = $row['reason'];
-			}
-			else if (!isset($pricingData['over_plan']) && !isset($pricingData['out_plan'])) { // in plan
-				$plan_key = 'in_plan';
-				if ($row['type'] == 'flat') {
-					$zone_key = 'service';
-				}
-			} else if (isset($pricingData['over_plan']) && $pricingData['over_plan']) { // over plan
-				$plan_key = 'over_plan';
-			} else { // out plan
-				$plan_key = "out_plan";
-			}
-
-			if ($row['type'] == 'credit') {
-				$category_key = $row['credit_type'];
-			} else if (isset($rate['rates'][$row['usaget']]['category'])) {
-				$category = $rate['rates'][$row['usaget']]['category'];
-				switch ($category) {
-					case "roaming":
-						$category_key = "roaming";
-						$zone_key = $row['serving_network'];
-						break;
-					case "special":
-						$category_key = "special";
-						break;
-					case "intl":
-						$category_key = "intl";
-						break;
-					default:
-						$category_key = "base";
-						break;
-				}
-			} else {
-				$category_key = "base";
-			}
-
-			if (!isset($zone_key)) {
-				$zone_key = $row['customer_rate']['key'];
-			}
-			self::addToBreakdown($subscriberRaw, $plan_key, $category_key, $zone_key, $vatable, $counters, $pricingData);
-
-			$this->setSubRawData($subscriber_id, $subscriberRaw);
-		}
-	}
-
-	/**
 	 * Update the billing line with stamp to avoid another pricing
 	 *
 	 * @param Mongodloid_Entity $line the billing line to update
@@ -345,9 +249,7 @@ class Billrun_Billrun {
 	 * Closes the current billrun by creating invoice ID and saves it.
 	 * Assumes closeBillrun function has been previously defined.
 	 */
-	public function close() {
-		$account_id = $this->data->getRawData()['account_id'];
-		$billrun_key = $this->getBillrunKey();
+	public static function close($account_id, $billrun_key) {
 		$closeBillrunCmd = "closeBillrun($account_id, '$billrun_key');";
 		$ret = Billrun_Factory::db()->execute($closeBillrunCmd);
 		if ($ret['ok']) {
@@ -452,4 +354,253 @@ class Billrun_Billrun {
 		return $this->data;
 	}
 
+	public static function updateBillrun($billrun_key, $account_id, $subscriber_id, $counters, $pricingData, $row, $vatable) {
+		$billrun_coll = Billrun_Factory::db()->billrunCollection();
+		$usage_type = self::getGeneralUsageType($row['usaget']);
+		$vat_key = ($vatable ? "vatable" : "vat_free");
+		$row_ref = $row->createRef();
+
+		$query = array(
+			'account_id' => $account_id,
+			'billrun_key' => $billrun_key,
+			'invoice_id' => array(
+				'$exists' => false,
+			),
+			'subs' => array(
+				'$elemMatch' => array(
+					'sub_id' => $subscriber_id,
+					'lines.' . $usage_type . '.refs' => array(
+						'$nin' => array(
+							$row_ref
+						)
+					)
+				)
+			),
+		);
+
+		$update = array();
+		$fields = array();
+		$options = array();
+
+		if (isset($pricingData['over_plan']) && $pricingData['over_plan']) {
+			$update['$inc']['subs.$.costs.over_plan.' . $vat_key] = $pricingData['price_customer'];
+		} else if (isset($pricingData['out_plan']) && $pricingData['out_plan']) {
+			$update['$inc']['subs.$.costs.out_plan.' . $vat_key] = $pricingData['price_customer'];
+		} else if ($row['type'] == 'flat') {
+			$update['$inc']['subs.$.costs.flat.' . $vat_key] = $pricingData['price_customer'];
+		} else if ($row['type'] == 'credit') {
+			$update['$inc']['subs.$.costs.credit.' . $row['credit_type'] . '.' . $vat_key] = $pricingData['price_customer'];
+		}
+
+		if ($row['type'] != 'flat') {
+			$rate = $row['customer_rate'];
+		}
+
+		// update data counters
+		if ($usage_type == 'data') {
+			$date_key = date("Ymd", $row['unified_record_time']->sec);
+			$update['$inc']['subs.$.lines.data.counters.' . $date_key] = $row['usagev'];
+		}
+
+		$update['$push']['subs.$.lines.' . $usage_type . '.refs'] = $row_ref;
+
+		// addToBreakdown
+		if ($row['type'] == 'credit') {
+			$plan_key = 'credit';
+			$zone_key = $row['reason'];
+		} else if (!isset($pricingData['over_plan']) && !isset($pricingData['out_plan'])) { // in plan
+			$plan_key = 'in_plan';
+			if ($row['type'] == 'flat') {
+				$zone_key = 'service';
+			}
+		} else if (isset($pricingData['over_plan']) && $pricingData['over_plan']) { // over plan
+			$plan_key = 'over_plan';
+		} else { // out plan
+			$plan_key = "out_plan";
+		}
+
+		if ($row['type'] == 'credit') {
+			$category_key = $row['credit_type'];
+		} else if (isset($rate['rates'][$row['usaget']]['category'])) {
+			$category = $rate['rates'][$row['usaget']]['category'];
+			switch ($category) {
+				case "roaming":
+					$category_key = "roaming";
+					$zone_key = $row['serving_network'];
+					break;
+				case "special":
+					$category_key = "special";
+					break;
+				case "intl":
+					$category_key = "intl";
+					break;
+				default:
+					$category_key = "base";
+					break;
+			}
+		} else {
+			$category_key = "base";
+		}
+
+		if (!isset($zone_key)) {
+			$zone_key = $row['customer_rate']['key'];
+		}
+
+		if ($plan_key != 'credit') {
+			if (!empty($counters)) {
+				if (!empty($pricingData) && isset($pricingData['over_plan']) && $pricingData['over_plan'] < current($counters)) { // volume is partially priced (in & over plan)
+					$volume_priced = $pricingData['over_plan'];
+					$update['$inc']['subs.$.breakdown.in_plan.' . $category_key . '.' . $zone_key . '.totals.' . key($counters) . '.usagev'] = current($counters) - $volume_priced; // add partial usage to flat
+				} else {
+					$volume_priced = current($counters);
+				}
+				$update['$inc']['subs.$.breakdown.' . $plan_key . '.' . $category_key . '.' . $zone_key . '.totals.' . key($counters) . '.usagev'] = $volume_priced;
+				$update['$inc']['subs.$.breakdown.' . $plan_key . '.' . $category_key . '.' . $zone_key . '.totals.' . key($counters) . '.cost'] = $pricingData['price_customer'];
+				if ($plan_key != 'in_plan') {
+					$update['$inc']['subs.$.breakdown.' . $plan_key . '.' . $category_key . '.' . $zone_key . '.cost'] = $pricingData['price_customer'];
+				}
+			} else if ($zone_key == 'service') { // flat
+				$update['$inc']['subs.$.breakdown.' . $plan_key . '.' . $category_key . '.' . $zone_key . '.cost'] = $pricingData['price_customer'];
+			}
+			$update['$set']['subs.$.breakdown.' . $plan_key . '.' . $category_key . '.' . $zone_key . '.vat'] = ($vatable ? floatval(Billrun_Factory::config()->getConfigValue('pricing.vat', 0.18)) : 0); //@TODO we assume here that all the lines would be vatable or all vat-free
+		} else {
+			$update['$inc']['subs.$.breakdown.' . $plan_key . '.' . $category_key . '.' . $zone_key] = $pricingData['price_customer'];
+		}
+
+		$doc = $billrun_coll->findAndModify($query, $update, $fields, $options);
+
+		// recovery
+//		if ($doc['ok'] || ($doc['ok'] && !$doc['updatedExisting'])) { // billrun document was not found
+		if ($doc->isEmpty()) { // billrun document was not found
+			$billrun = self::createBillrunIfNotExists($account_id, $billrun_key);
+			if ($billrun->isEmpty()) { // means that the billrun was created so we can retry updating it
+				return self::updateBillrun($billrun_key, $account_id, $subscriber_id, $counters, $pricingData, $row, $vatable);
+			} else if (self::addSubscriberIfNotExists($account_id, $subscriber_id, $billrun_key)) {
+				return self::updateBillrun($billrun_key, $account_id, $subscriber_id, $counters, $pricingData, $row, $vatable);
+			} else if (self::lineRefExists($account_id, $subscriber_id, $billrun_key, $usage_type, $row_ref)) {
+				Billrun_Factory::log()->log("Line with stamp " . $row['stamp'] . " already exists in billrun " . $billrun_key . " for account " . $account_id, Zend_Log::NOTICE);
+				return true;
+			} else {
+				if ($row['type']=='flat' || $billrun_key == self::$runtime_billrun_key) {
+					Billrun_Factory::log()->log("Current billrun is closed for account " . $account_id . " for billrun " . $billrun_key, Zend_Log::NOTICE);
+					return false;
+				} else {
+					return self::updateBillrun(self::$runtime_billrun_key, $account_id, $subscriber_id, $counters, $pricingData, $row, $vatable);
+				}
+			}
+		}
+		return $doc;
+	}
+
+	protected function lineRefExists($account_id, $subscriber_id, $billrun_key, $usage_type, $line_ref) {
+		$billrun_coll = Billrun_Factory::db()->billrunCollection();
+		$query = array(
+			'account_id' => $account_id,
+			'billrun_key' => $billrun_key,
+			'invoice_id' => array(
+				'$exists' => false,
+			),
+			'subs' => array(
+				'$elemMatch' => array(
+					'sub_id' => $subscriber_id,
+					'lines.' . $usage_type . '.refs' => array(
+						'$in' => array(
+							$line_ref
+						)
+					)
+				)
+			),
+		);
+		return ($billrun_coll->find($query)->count() > 0);
+	}
+
+	public static function createBillrunIfNotExists($account_id, $billrun_key) {
+		$billrun_coll = Billrun_Factory::db()->billrunCollection();
+		$query = array(
+			'account_id' => $account_id,
+			'billrun_key' => $billrun_key,
+		);
+		$update = array(
+			'$setOnInsert' => self::getAccountEmptyBillrunEntry($account_id, $billrun_key),
+		);
+		$options = array(
+			'upsert' => true,
+			'new' => false,
+		);
+		return $billrun_coll->findAndModify($query, $update, array(), $options);
+	}
+
+	protected function addSubscriberIfNotExists($account_id, $subscriber_id, $billrun_key) {
+		$billrun_coll = Billrun_Factory::db()->billrunCollection();
+		$query = array(
+			'account_id' => $account_id,
+			'billrun_key' => $billrun_key,
+			'$or' => array(
+				array(
+					'subs.sub_id' => array(
+						'$exists' => false,
+					),),
+				array(
+					'subs' => array(
+						'$not' => array(
+							'$elemMatch' => array(
+								'sub_id' => $subscriber_id,
+							),
+						),
+					),
+				),
+			),
+			'invoice_id' => array(
+				'$exists' => false,
+			),
+		);
+		$update = array(
+			'$push' => array(
+				'subs' => self::getEmptySubscriberBillrunEntry($subscriber_id),
+			),
+		);
+		$options = array(
+//			'new' => false,
+			'w' => 1,
+		);
+//		$output = $billrun_coll->update($query, $update, array(), $options);
+		$output = $billrun_coll->update($query, $update, $options);
+		if ($output['ok'] && $output['updatedExisting']) {
+			Billrun_Factory::log('Added subscriber ' . $subscriber_id . ' to billrun ' . $billrun_key, Zend_Log::INFO);
+			return true;
+		}
+		return false;
+	}
+
+	/**
+	 * 
+	 * @param string $specific_usage_type specific usage type (usually lines' 'usaget' field) such as 'call', 'incoming_call' etc.
+	 */
+	public static function getGeneralUsageType($specific_usage_type) {
+		switch ($specific_usage_type) {
+			case 'call':
+			case 'incoming_call':
+				return 'call';
+			case 'sms':
+			case 'incoming_sms':
+				return 'sms';
+			case 'data':
+				return 'data';
+			case 'mms':
+				return 'mms';
+			case 'flat':
+				return 'flat';
+			case 'credit':
+				return 'credit';
+			default:
+				return 'call';
+		}
+	}
+
+	static public function initRuntimeBillrunKey() {
+		self::$runtime_billrun_key = Billrun_Util::getBillrunKey(time());
+	}
+
 }
+
+Billrun_Billrun::initRuntimeBillrunKey();

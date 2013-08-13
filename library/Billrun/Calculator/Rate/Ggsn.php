@@ -72,7 +72,7 @@ class Billrun_Calculator_Rate_Ggsn extends Billrun_Calculator_Rate {
 	/**
 	 * @see Billrun_Calculator_Rate::getLineRate
 	 */
-	protected function getLineRate($row, $usag_type) {
+	protected function getLineRate($row, $usage_type) {
 		$line_time = $row['unified_record_time'];
 		if (preg_match('/^(?=62\.90\.|37\.26\.)/', $row['sgsn_address'])) {
 			$rate = Billrun_Factory::db()->ratesCollection()->query(

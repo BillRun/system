@@ -49,6 +49,12 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 
 	/**
 	 *
+	 * @var Mongodloid_Collection
+	 */
+	protected $billrun = null;
+
+	/**
+	 *
 	 * @var int invoice id to start from
 	 */
 	protected $min_invoice_id = 101;
@@ -67,11 +73,12 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 
 		$this->plans = Billrun_Factory::db()->plansCollection();
 		$this->lines = Billrun_Factory::db()->linesCollection();
+		$this->billrun = Billrun_Factory::db()->billrunCollection();
 
 		$closeBillrunFunc = <<<EOT
 function (account_id, billrun_key) {
     while (1) {
-	var targetCollection = db.billrun;
+		var targetCollection = db.billrun;
         var cursor = targetCollection.find({}, {invoice_id: 1}).sort({invoice_id: -1}).limit(1);
         var invoice_id = cursor.hasNext() ? cursor.next().invoice_id + 1 : $this->min_invoice_id;
         targetCollection.update({'account_id': account_id, 'billrun_key': billrun_key, 'invoice_id': {\$exists:false}},{\$set: {'invoice_id': invoice_id}});
@@ -114,52 +121,49 @@ EOT;
 		$billrun_key = $this->getStamp();
 
 		foreach ($this->data as $account_id => $account) {
-			$billrun = Billrun_Factory::billrun(array('account_id' => $account_id, 'billrun_key' => $billrun_key));
-			if (!$billrun->isValid()) {
-				$billrun = Billrun_Factory::billrun(array('account_id' => $account_id, 'billrun_key' => $billrun_key, 'autoload' => false));
-			}
-			if ($billrun->isOpen()) { // open billrun
-				foreach ($account as $subscriber) {
-					Billrun_Factory::dispatcher()->trigger('beforeAggregateLine', array(&$subscriber, &$this));
-					$account_id = $subscriber->account_id;
-					$subscriber_id = $subscriber->subscriber_id;
+			foreach ($account as $subscriber) {
+				Billrun_Factory::dispatcher()->trigger('beforeAggregateLine', array(&$subscriber, &$this));
+				$account_id = $subscriber->account_id;
+				$subscriber_id = $subscriber->subscriber_id;
 
-					$flat_price = $subscriber->getFlatPrice();
-					Billrun_Factory::log('Adding flat to subscriber ' . $subscriber_id, Zend_Log::INFO);
-					$flat_entry = new Mongodloid_Entity($subscriber->getFlatEntry($billrun_key));
-					$flat_entry->collection($this->lines);
-					try { // add flat to lines
-						$flat_entry->save();
-					} catch (Exception $e) {
-						Billrun_Factory::log()->log("Flat line already exists for subscriber " . $subscriber_id . " for billrun " . $billrun_key, Zend_Log::NOTICE);
-					}
-					if (!$billrun->exists($subscriber_id)) {
-						Billrun_Factory::log('Adding subscriber ' . $subscriber_id . ' to billrun collection', Zend_Log::INFO);
-						$billrun->addSubscriber($subscriber_id);
-					}
-					$plan = $flat_entry['plan_ref'];
-					$billrun->update($subscriber_id, array(), array('price_customer' => $flat_price), $flat_entry, $plan['vatable']);
-					try { // add flat to lines
-						$billrun->save();
-					} catch (Exception $e) {
-						Billrun_Factory::log()->log("Flat costs already exist in billrun collection for subscriber " . $subscriber_id . " for billrun " . $billrun_key, Zend_Log::NOTICE);
-					}
-					$flat_entry['billrun'] = $billrun->getBillrunKey();
-					$flat_entry['billrun_ref'] = $billrun->getRef();
-					try { // save billrun stamp to flat line to avoid another pricing
-						$flat_entry->save();
-					} catch (Exception $e) {
-						Billrun_Factory::log()->log("Could not add stamp for account " . $account_id . " for billrun " . $billrun_key, Zend_Log::NOTICE);
-					}
+				$flat_price = $subscriber->getFlatPrice();
+				Billrun_Factory::log('Adding flat to subscriber ' . $subscriber_id, Zend_Log::INFO);
+				$flat_line = $this->saveFlatLine($subscriber, $billrun_key);
+
+				$plan = $flat_line['plan_ref'];
+				if (!$billrun = Billrun_Billrun::updateBillrun($billrun_key, $account_id, $subscriber_id, array(), array('price_customer' => $flat_price), $flat_line, $plan['vatable'])) {
+					Billrun_Factory::log()->log("Flat costs already exist in billrun collection for subscriber " . $subscriber_id . " for billrun " . $billrun_key, Zend_Log::NOTICE);
+				} else if ($billrun instanceof Mongodloid_Entity) {
+					$flat_line['billrun_ref'] = $billrun->createRef($this->billrun);
+					$flat_line->save();
 				}
-				$billrun->close();
-			} else {
-				Billrun_Factory::log('Billrun ' . $billrun_key . " already closed for account " . $account_id, Zend_Log::NOTICE);
 			}
+			Billrun_Billrun::close($account_id, $billrun_key);
 		}
 //		Billrun_Factory::dispatcher()->trigger('beforeAggregateSaveLine', array(&$save_data, &$this));
 		// @TODO trigger after aggregate
 		Billrun_Factory::dispatcher()->trigger('afterAggregate', array($this->data, &$this));
+	}
+
+	protected function saveFlatLine($subscriber, $billrun_key) {
+		$account_id = $subscriber->account_id;
+		$subscriber_id = $subscriber->subscriber_id;
+		$flat_entry = new Mongodloid_Entity($subscriber->getFlatEntry($billrun_key));
+		$flat_entry->collection($this->lines);
+		$query = array(
+			'account_id' => $account_id,
+			'subscriber_id' => $subscriber_id,
+			'billrun_key' => $billrun_key,
+			'type' => 'flat',
+		);
+		$update = array(
+			'$setOnInsert' => $flat_entry->getRawData(),
+		);
+		$options = array(
+			'upsert' => true,
+			'new' => true,
+		);
+		return $this->lines->findAndModify($query, $update, array(), $options);
 	}
 
 	protected function save($data) {
@@ -188,3 +192,4 @@ EOT;
 	}
 
 }
+
