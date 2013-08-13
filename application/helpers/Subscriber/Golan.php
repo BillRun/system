@@ -174,7 +174,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		//Billrun_Factory::log()->log($path, Zend_Log::DEBUG);
 		// @TODO: use Zend_Http_Client
 //		$json = $this->send($path);
-		$json =  '{"1205035":{"subscribers":[{"subscriber_id":169319,"current_plan":"SMALL"}]}}'; // stub
+		$json =  '{"1205034":{"subscribers":[{"subscriber_id":169310,"current_plan":"SMALL"}]}}'; // stub
 		if (!$json) {
 			return false;
 		}
@@ -239,7 +239,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 			'type' => 'flat',
 			'usaget' => 'flat',
 			'unified_record_time' => new MongoDate(),
-			'flat_key' => $billrun_key,
+			'billrun_key' => $billrun_key,
 			'price_customer' => $this->getFlatPrice(),
 			'plan_ref' => $this->getPlan()->createRef(),
 		);
