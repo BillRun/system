@@ -44,16 +44,6 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	 * method to get calculator lines
 	 */
 	protected function getLines() {
-//		$queue = Billrun_Factory::db()->queueCollection();
-//		$query = self::getBaseQuery();
-//		$query['type'] = array('$in' => array('nsn', 'ggsn', 'smsc', 'mmsc', 'smpp', 'tap3'));
-//		$update = self::getBaseUpdate();
-//		$i = 0;
-//		$docs = array();
-//		while ($i < $this->limit && ($doc = $queue->findAndModify($query, $update)) && !$doc->isEmpty()) {
-//			$docs[] = $doc;
-//			$i++;
-//		}
 		return $this->getQueuedLines(array('type' => array('$in' => array('nsn', 'ggsn', 'smsc', 'mmsc', 'smpp', 'tap3'))));
 	}
 
@@ -145,10 +135,17 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		return $row->get('plan_ref', true);
 	}
 
+	/**
+	 * Get the  current  calculator type, to be used in the queue.
+	 * @return string the  type  of the calculator
+	 */
 	static protected function getCalculatorQueueType() {
 		return self::$type;
 	}
-
+	
+	/**
+	 * 
+	 */
 	protected function setCalculatorTag() {
 		$queue = Billrun_Factory::db()->queueCollection();
 		$calculator_tag = $this->getCalculatorQueueTag();
@@ -160,6 +157,18 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			}
 			$queue->update($query, $update);
 		}
+	}
+	
+	/**
+	 * @see Billrun_Calculator::isLineLegitimate
+	 */
+	protected function isLineLegitimate($line) {
+		foreach ($this->translateCustomerIdentToAPI as $key => $toKey) {
+			if(isset($line[$key])) {
+				return true;
+			}
+		}
+		return  false;
 	}
 
 }

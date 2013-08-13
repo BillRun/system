@@ -138,6 +138,17 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		return true;
 	}
 
+	/**
+	 * @TODO
+	 * @param type $billrun_key
+	 * @param type $account_id
+	 * @param type $subscriber_id
+	 * @param type $counters
+	 * @param type $pricingData
+	 * @param type $row
+	 * @param type $vatable
+	 * @return boolean
+	 */
 	protected function updateBillrun($billrun_key, $account_id, $subscriber_id, $counters, $pricingData, $row, $vatable) {
 		$billrun_coll = Billrun_Factory::db()->billrunCollection();
 		$usage_type = $this->getGeneralUsageType($row['usaget']);
@@ -273,7 +284,15 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		}
 		return true;
 	}
-
+	/**
+	 * @TODO
+	 * @param type $account_id
+	 * @param type $subscriber_id
+	 * @param type $billrun_key
+	 * @param type $usage_type
+	 * @param type $line_ref
+	 * @return boolean true if the line reference allready exists.
+	 */
 	protected function lineRefExists($account_id, $subscriber_id, $billrun_key, $usage_type, $line_ref) {
 		$billrun_coll = Billrun_Factory::db()->billrunCollection();
 		$query = array(
@@ -295,7 +314,13 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		);
 		return ($billrun_coll->find($query)->count() > 0);
 	}
-
+	
+	/**
+	 * @TODO
+	 * @param type $account_id
+	 * @param type $billrun_key
+	 * @return type
+	 */
 	protected function createBillrunIfNotExists($account_id, $billrun_key) {
 		$billrun_coll = Billrun_Factory::db()->billrunCollection();
 		$query = array(
@@ -513,14 +538,23 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		$balances_coll->update($query, $values);
 	}
 
+	/**
+	 * 
+	 */
 	static protected function getCalculatorQueueType() {
 		return self::$type;
 	}
 
+	/**
+	 * @see Billrun_Calculator::isLineLegitimate
+	 */
 	protected function isLineLegitimate($line) {
 		return isset($line['customer_rate']) && $line['customer_rate'] !== false && !isset($line['price_customer']) && $line['unified_record_time']->sec >= $this->billrun_lower_bound_timestamp; 
 	}
 
+	/**
+	 * 
+	 */
 	protected function setCalculatorTag() {
 		parent::setCalculatorTag();
 		foreach ($this->data as $item) {

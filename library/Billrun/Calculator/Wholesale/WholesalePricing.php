@@ -7,7 +7,7 @@
  */
 
 /**
- * Billing calculator for  pricing  billing lines with customer price.
+ * Billing calculator for  pricing  billing lines with wholesale price.
  *
  * @package  calculator
  * @since    0.5
@@ -33,18 +33,17 @@ class Billrun_Calculator_Wholesale_WholesalePricing extends Billrun_Calculator_W
 		}
 	}
 	
-	protected function getLines() {
-		/*$lines = Billrun_Factory::db()->linesCollection();
-
-		return $lines->query($this->linesQuery)	
-						->notEq(Billrun_Calculator_Carrier::MAIN_DB_FIELD,null)
-						->notEq(Billrun_Calculator_Wholesale_Nsn::MAIN_DB_FIELD,false)
-						->exists('usagev')
-						->notExists($this->pricingField)->cursor()->limit($this->limit);*/
+	/**
+	 * @see Billrun_Calculator::getLines
+	 */
+	protected function getLines() {	
 		$lines =  $this->getQueuedLines($this->linesQuery);
 		return $lines;
 	}
 
+	/**
+	 * @see Billrun_Calculator::updateRow
+	 */
 	protected function updateRow($row) {
 	
 		$pricingData = array();
@@ -74,10 +73,18 @@ class Billrun_Calculator_Wholesale_WholesalePricing extends Billrun_Calculator_W
 		return true;
 	}	
 	
+	/**
+	 * Check if the line direction is incoming to golan or outgoing from golan.
+	 * @param $row the  line to check.
+	 * @return true is the line  is incoming to golan.
+	 */
 	protected function isLineIncoming($row) {
 		return $row['carir']['key'] == 'GOLAN'  ||  $row['carir']['key'] == 'NR';
 	}
 
+	/**
+	 * @see Billrun_Calculator::isLineLegitimate()
+	 */
 	protected function isLineLegitimate($line) {		
 		return ($line[Billrun_Calculator_Carrier::MAIN_DB_FIELD] !== null || $line[Billrun_Calculator_Carrier::MAIN_DB_FIELD ."_in"] !== null) &&
 				$line[Billrun_Calculator_Wholesale_Nsn::MAIN_DB_FIELD] !== false &&

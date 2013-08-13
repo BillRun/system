@@ -112,6 +112,7 @@ abstract class Billrun_Calculator_Wholesale extends Billrun_Calculator {
 		//Billrun_Factory::log()->log($hour,Zend_Log::DEBUG);
 		return  ($hour - $this->peakTimes[$dayType]['start']) > 0 && $hour < $this->peakTimes[$dayType]['end'] ;
 	}
+	
 	/**
 	 * 
 	 * @return type

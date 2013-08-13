@@ -136,6 +136,9 @@ class Billrun_Calculator_Rate_Sms extends Billrun_Calculator_Rate {
 		}
 	}
 	
+	/**
+	 * @see Billrun_Calculator::isLineLegitimate
+	 */
 	protected function isLineLegitimate($line) {
 		return $line['type'] == 'smsc' || $line['type'] == 'mmsc' || $line['type'] == 'smpp';
 	}

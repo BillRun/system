@@ -169,6 +169,11 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		return $line;
 	}
 
+	/**
+	 * 
+	 * @param type $calculator_type
+	 * @return type
+	 */
 	static protected function getCalculatorQueueTag($calculator_type = null) {
 		if (is_null($calculator_type)) {
 			$calculator_type = static::getCalculatorQueueType();
@@ -264,6 +269,11 @@ abstract class Billrun_Calculator extends Billrun_Base {
 //		return array();
 	}
 	
+	/**
+	 * Check if a given line  can be handeld by  the calcualtor.
+	 * @param @line the line to check.
+	 * @return ture if the line  can be handled  by the  calculator  false otherwise.
+	 */
 	abstract protected function isLineLegitimate($line);
 	
 }

@@ -88,7 +88,10 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	static protected function getCalculatorQueueType() {
 		return self::$type;
 	}
-
+	
+	/**
+	 * @see Billrun_Calculator::isLineLegitimate
+	 */
 	protected function isLineLegitimate($line) {
 		return $line['type'] == static::$type;
 	}

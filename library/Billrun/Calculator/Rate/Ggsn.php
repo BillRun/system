@@ -95,18 +95,4 @@ class Billrun_Calculator_Rate_Ggsn extends Billrun_Calculator_Rate {
 		return FALSE;
 	}
 
-	protected function getLines() {
-		$queue = Billrun_Factory::db()->queueCollection();
-		$query = self::getBaseQuery();
-		$query['type'] = 'ggsn';
-		$update = self::getBaseUpdate();
-		$i = 0;
-		$docs = array();
-		while ($i < $this->limit && ($doc = $queue->findAndModify($query, $update)) && !$doc->isEmpty()) {
-			$docs[] = $doc;
-			$i++;
-		}
-		return $docs;
-	}
-
 }

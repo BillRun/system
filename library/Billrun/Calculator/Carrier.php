@@ -114,6 +114,9 @@ class Billrun_Calculator_Carrier extends Billrun_Calculator {
 		return self::MAIN_DB_FIELD;
 	}
 
+	/**
+	 * @see Billrun_Calculator::isLineLegitimate
+	 */
 	protected function isLineLegitimate($line) {
 		return $line['type'] == 'nsn' ;
 	}

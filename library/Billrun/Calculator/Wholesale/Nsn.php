@@ -7,7 +7,7 @@
  */
 
 /**
- * Billing calculator class for nsn records
+ * Billing wholesale calculator class for NSN records 
  *
  * @package  calculator
  * @since    0.5
@@ -136,6 +136,9 @@ class Billrun_Calculator_Wholesale_Nsn extends Billrun_Calculator_Wholesale {
 		return $prefixes;
 	}
 
+	/**
+	 * @see Billrun_Calculator::isLineLegitimate()
+	 */
 	protected function isLineLegitimate($line) {
 		return	in_array($line['usaget'],array('call','sms')) &&
 				in_array($line['record_type'], $this->wholesaleRecords );
