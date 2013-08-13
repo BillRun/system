@@ -144,8 +144,13 @@ abstract class Billrun_Generator_Base_WholesaleReport extends Billrun_Generator 
 		Billrun_Factory::log()->log("Aggregating all the related CDRs, this can take awhile...",Zend_Log::DEBUG);
 		$aggregate = array();
 		$callReferences= array();
+		$linesCount = 0;
+		$totalLinesCount = $lines->count();
 		//Billrun_Factory::log()->log(print_r($lines->count(),1),Zend_Log::DEBUG);
-		foreach ($lines as $value) {
+		foreach ($lines as $value) {			
+			if(($linesCount++) % 1000 == 0) {
+				Billrun_Factory::log()->log(print_r("aggregated : ". ($linesCount/$totalLinesCount*100) . "%" ,1),Zend_Log::DEBUG);
+			}
 			
 			if(isset($callReferences[$value['call_reference'].$value['called_number']])) { 
 				continue;

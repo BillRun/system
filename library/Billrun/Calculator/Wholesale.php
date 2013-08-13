@@ -24,11 +24,16 @@ abstract class Billrun_Calculator_Wholesale extends Billrun_Calculator {
 									'holyday' => array('start' => 0 , 'end' => -1)
 								);
 	
+	protected $wholesaleRecords = array('11','12','08','09');
 	
 	public function __construct($options = array()) {
 		parent::__construct($options);
 		if (isset($options['peak_times'])) {
 			$this->peakTimes = $options['peak_times'];
+		}
+		
+		if (isset($options['wholesale_records'])) {
+			$this->wholesaleRecords = $options['wholesale_records'];
 		}
 	}
 	
@@ -107,7 +112,10 @@ abstract class Billrun_Calculator_Wholesale extends Billrun_Calculator {
 		//Billrun_Factory::log()->log($hour,Zend_Log::DEBUG);
 		return  ($hour - $this->peakTimes[$dayType]['start']) > 0 && $hour < $this->peakTimes[$dayType]['end'] ;
 	}
-	
+	/**
+	 * 
+	 * @return type
+	 */
 	protected static function getCalculatorQueueType() {
 		return static::MAIN_DB_FIELD;
 	}

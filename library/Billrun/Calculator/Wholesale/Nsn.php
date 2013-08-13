@@ -17,6 +17,7 @@ class Billrun_Calculator_Wholesale_Nsn extends Billrun_Calculator_Wholesale {
 	const MAIN_DB_FIELD = 'provider_zone';
 	
 	protected $ratingField = self::MAIN_DB_FIELD;	
+			
 		
 	/**
 	 * method to get calculator lines
@@ -54,8 +55,9 @@ class Billrun_Calculator_Wholesale_Nsn extends Billrun_Calculator_Wholesale {
 	 *
 	 */
 	protected function getLineZone($row, $usage_type) {
-			
-		$called_number =  ($usage_type == 'call') ? $row->get('called_number') :  preg_replace('/[^\d]/', '', preg_replace('/^0+/', '', ( $row['called_number']))) ;
+		//TODO  change this  to be configurable.
+		$called_number =  ($usage_type == 'call') ? $row->get('called_number') :  preg_replace('/[^\d]/', '', preg_replace('/^0+/', '', ( $row['called_number'])));
+		
 		$line_time = $row->get('unified_record_time');
 
 		$rates = Billrun_Factory::db()->ratesCollection();
@@ -80,7 +82,7 @@ class Billrun_Calculator_Wholesale_Nsn extends Billrun_Calculator_Wholesale {
 		);
 		
 		if($usage_type == 'call') {
-			$carrier_cg = $this->isLineIncoming($row) ? $row->get('in_circuit_group') :  $row->get('out_circuit_group');
+			$carrier_cg = $row->get('out_circuit_group');
 			$base_match['$match']['params.out_circuit_group'] = array(
 					'$elemMatch' => array(
 						'from' => array(
@@ -125,6 +127,8 @@ class Billrun_Calculator_Wholesale_Nsn extends Billrun_Calculator_Wholesale {
 	 * @return type
 	 */
 	protected function getPrefixes($str) {
+		//TODO  change this  to be configurable.
+		$str = preg_replace("/^01\d/", "", $str );
 		$prefixes = array();
 		for ($i = 0; $i < strlen($str); $i++) {
 			$prefixes[] = substr($str, 0, $i + 1);
@@ -134,7 +138,7 @@ class Billrun_Calculator_Wholesale_Nsn extends Billrun_Calculator_Wholesale {
 
 	protected function isLineLegitimate($line) {
 		return	in_array($line['usaget'],array('call','sms')) &&
-				in_array($line['record_type'], array('11','12','08','09'));
+				in_array($line['record_type'], $this->wholesaleRecords );
 	}
 	
 }

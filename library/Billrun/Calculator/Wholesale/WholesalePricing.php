@@ -81,7 +81,7 @@ class Billrun_Calculator_Wholesale_WholesalePricing extends Billrun_Calculator_W
 	protected function isLineLegitimate($line) {		
 		return ($line[Billrun_Calculator_Carrier::MAIN_DB_FIELD] !== null || $line[Billrun_Calculator_Carrier::MAIN_DB_FIELD ."_in"] !== null) &&
 				$line[Billrun_Calculator_Wholesale_Nsn::MAIN_DB_FIELD] !== false &&
-				in_array($line['record_type'], array('11','12','08','09')); //TODO move wholesale type to configuration
+				in_array($line['record_type'], $this->wholesaleRecords);
 	}
 
 }
