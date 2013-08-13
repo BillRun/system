@@ -117,17 +117,21 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	 */
 	public function calc() {
 		Billrun_Factory::dispatcher()->trigger('beforeRateData', array('data' => $this->data));
+		$lines_coll = Billrun_Factory::db()->linesCollection();
 		foreach ($this->lines as $key => $item) {
 			$line = $this->pullLine($item);
 			if ($line) {
 				//Billrun_Factory::log()->log("Calcuating row : ".print_r($item,1),  Zend_Log::DEBUG);
 				Billrun_Factory::dispatcher()->trigger('beforeRateDataRow', array('data' => &$line));
-				if (!$this->updateRow($line)) {
-					unset($this->lines[$key]);
-					continue;
-				}
+				$line->collection($lines_coll);
+				if($this->isLineLegitimate($line)) {
+					if (!$this->updateRow($line)) {
+						unset($this->lines[$key]);
+						continue;
+					}
 				$this->writeLine($line);
 				$this->data[] = $line;
+				}				
 				Billrun_Factory::dispatcher()->trigger('afterRateDataRow', array('data' => &$line));
 			} else {
 				unset($this->lines[$key]);
@@ -161,6 +165,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		if ($line->isEmpty()) {
 			return false;
 		}
+		$line->collection(Billrun_Factory::db()->linesCollection());
 		return $line;
 	}
 
@@ -170,8 +175,6 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		}
 		return 'calculator_' . $calculator_type;
 	}
-
-	abstract static protected function getCalculatorQueueType();
 
 	protected function setCalculatorTag() {
 		$queue = Billrun_Factory::db()->queueCollection();
@@ -193,13 +196,13 @@ abstract class Billrun_Calculator extends Billrun_Base {
 			$query[$previous_calculator_tag] = true;
 		}
 		$current_calculator_queue_tag = self::getCalculatorQueueTag($calculator_type);
-		$orphand_time = strtotime("6 hours ago");
+		$orphand_time = strtotime(Billrun_Factory::config()->getConfigValue('queue.calculator.orphan_wait_time',"6 hours") . " ago");
 		$query['$and'][0]['$or'] = array(
 			array($current_calculator_queue_tag => array('$exists' => false)),
 			array($current_calculator_queue_tag => array(
-					'$exists' => true, '$lt' => new MongoDate($orphand_time)
+					'$ne' => true, '$lt' => new MongoDate($orphand_time)
 				))
-		);
+		);		
 		return $query;
 	}
 
@@ -227,5 +230,40 @@ abstract class Billrun_Calculator extends Billrun_Base {
 			}
 		}
 	}
+	
+	protected function getQueuedLines($localquery) {			
+		$queue = Billrun_Factory::db()->queueCollection();
+		$query =  array_merge(static::getBaseQuery(),$localquery);
+		$update = static::getBaseUpdate();				
 
+		$docs = array();
+		$i=0;
+		while ($i < $this->limit && ($doc = $queue->findAndModify($query, $update)) && !$doc->isEmpty()) {
+			$docs[] = $doc;
+			$i++;
+		}
+		return $docs;	
+//		$id= md5( time() . rand(0,PHP_INT_MAX) . rand(0,PHP_INT_MAX). rand(0,PHP_INT_MAX). rand(0,PHP_INT_MAX)); //@TODO  make this  more unique!!!!		
+//		$update['$set']['work_id'] = $id; 		
+//		
+//		$horizonline = new Mongodloid_Entity();
+//		for($limit=$this->limit; $limit > 1 && $horizonline->isEmpty();$limit=intval(max(1,$limit/2)) ) {			
+//			Billrun_Factory::log()->log("searching for limit of : $limit",Zend_Log::DEBUG);
+//			$horizonline = $queue->query($query)->cursor()->sort(array('_id'=> 1))->skip($limit)->limit(1)->current();
+//		}
+//		
+//		if(!$horizonline->isEmpty()) {
+//			$query['$isolated'] = 1;//isolate the update
+//			$query['_id'] = array('$lt' => $horizonline['_id']->getMongoID());
+//			//Billrun_Factory::log()->log(print_r($query,1),Zend_Log::DEBUG);
+//			$queue->update($query, $update, array('multiple'=> true));
+//			
+//			return $queue->query( array_merge($localquery,array('work_id' => $id)))->cursor();
+//		} 
+//
+//		return array();
+	}
+	
+	abstract protected function isLineLegitimate($line);
+	
 }

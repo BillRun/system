@@ -44,26 +44,24 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	 * method to get calculator lines
 	 */
 	protected function getLines() {
-		$queue = Billrun_Factory::db()->queueCollection();
-		$query = self::getBaseQuery();
-		$query['type'] = array('$in' => array('nsn', 'ggsn', 'smsc', 'mmsc', 'smpp', 'tap3', 'credit'));
-		$update = self::getBaseUpdate();
-		$i = 0;
-		$docs = array();
-		while ($i < $this->limit && ($doc = $queue->findAndModify($query, $update)) && !$doc->isEmpty()) {
-			$docs[] = $doc;
-			$i++;
-		}
-		return $docs;
+//		$queue = Billrun_Factory::db()->queueCollection();
+//		$query = self::getBaseQuery();
+//		$query['type'] = array('$in' => array('nsn', 'ggsn', 'smsc', 'mmsc', 'smpp', 'tap3'));
+//		$update = self::getBaseUpdate();
+//		$i = 0;
+//		$docs = array();
+//		while ($i < $this->limit && ($doc = $queue->findAndModify($query, $update)) && !$doc->isEmpty()) {
+//			$docs[] = $doc;
+//			$i++;
+//		}
+		return $this->getQueuedLines(array('type' => array('$in' => array('nsn', 'ggsn', 'smsc', 'mmsc', 'smpp', 'tap3'))));
 	}
 
 	/**
 	 * write the calculation into DB
 	 */
 	protected function updateRow($row) {
-		if (!isset($row['customer_rate']) || $row['customer_rate'] === false || (isset($row['account_id']) && isset($row['subscriber_id']))) {
-			return true; // move to next calculator
-		}
+	
 		$row->collection($this->lines_coll);
 		//Billrun_Factory::log('Load line ' . $row->get('stamp'), Zend_Log::INFO);
 		$subscriber = $this->loadSubscriberForLine($row);

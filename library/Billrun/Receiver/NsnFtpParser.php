@@ -2,7 +2,7 @@
 
 
 /**
- * @TODO change  placce in the directory structure Billrun/Receiver/ isn't the correct place!
+ * @TODO change place in the directory structure Billrun/Receiver/ isn't the correct place!
  * Parse out from an Nsn system.
  *
  * @author eran
@@ -17,7 +17,7 @@ class Billrun_Receiver_NsnFtpParser implements Zend_Ftp_Parser_IParser {
 	public function parseFileDirectoryListing($fileDirListing) {
 		$matches=array();		
 		if( preg_match('/^([\dF]+\.[\dF]+\:[\dF]+\s+[\dF]+\.[\dF]+\.[\dF]+)\s+([\dF]+\.[\dF]+\:[\dF]+\s+[\dF]+\.[\dF]+\.[\dF]+)\s+(\d+)\s+([\w\.]+)$/', $fileDirListing, $matches)) {
-			list($date, $unknown, $unknown1, $bytes,  $name) = $matches;
+			list($raw, $date, $unknown,  $bytes,  $name) = $matches;
 
 			return array(	
 							'date' => $date,

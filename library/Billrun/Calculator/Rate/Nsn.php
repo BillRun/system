@@ -48,13 +48,33 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 	 * @see Billrun_Calculator_Rate::getLineVolume
 	 */
 	protected function getLineVolume($row, $usage_type) {
-		return $row['duration'];
+		if($usage_type == 'call' ) {
+				return  $row['duration'] ;
+		}
+		if($usage_type == 'sms' ) {
+			return 1;
+		}
 	}
 
 	/**
 	 * @see Billrun_Calculator_Rate::getLineUsageType
 	 */	
 	protected function getLineUsageType($row) {
+		switch ($row['record_type']) {
+			case '08':
+			case '09':
+				return 'sms';
+				break;
+				
+			case '11':
+			case '12':
+			case '01':
+			case '02':				
+			default:				
+				return 'call';
+				break;
+
+		}
 		return 'call';
 	}
 
@@ -136,17 +156,5 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 		return $rate;
 	}
 
-	/**
-	 * get all the prefixes from a given number
-	 * @param type $str
-	 * @return type
-	 */
-	protected function getPrefixes($str) {
-		$prefixes = array();
-		for ($i = 0; $i < strlen($str); $i++) {
-			$prefixes[] = substr($str, 0, $i + 1);
-		}
-		return $prefixes;
-	}
-
+	
 }

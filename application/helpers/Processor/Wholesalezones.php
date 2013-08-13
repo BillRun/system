@@ -12,17 +12,16 @@
  * Billing processor for import data into rates collection
  *
  * @package    Processor
- * @subpackage ImportZones
+ * @subpackage Wholesalezones
  * @since      1.0
  */
-class Processor_ImportZones extends Billrun_Processor_Base_Separator {
-
-	/**
+class  Processor_Wholesalezones  extends Billrun_Processor_Base_Separator {
+		/**
 	 * the type of the object
 	 *
 	 * @var string
 	 */
-	static protected $type = 'importzones';
+	static protected $type = 'wholesalezones';
 
 	public function __construct($options) {
 		parent::__construct($options);
@@ -52,10 +51,6 @@ class Processor_ImportZones extends Billrun_Processor_Base_Separator {
 		while ($line = $this->getLine()) {
 			$this->parseData($line);
 		}
-
-		$this->addUnrated();
-		$this->addGolan();
-
 		return true;
 	}
 
@@ -86,7 +81,7 @@ class Processor_ImportZones extends Billrun_Processor_Base_Separator {
 			return false;
 		}
 
-		$rates = Billrun_Factory::db()->ratesCollection();
+		$rates = Billrun_Factory::db()->wholesaleratesCollection();
 
 		$data = $this->normalize($this->data['data']);
 		$this->data['stored_data'] = array();
@@ -114,35 +109,7 @@ class Processor_ImportZones extends Billrun_Processor_Base_Separator {
 				continue;
 			}*/
 			$key = $row['zoneName'];
-			if ($key=='UNRATED') {
-				$ret[$key]['key'] = $key;
-			} else if (!isset($ret[$key])) {
-				if ($key=='GOLAN') {
-					$out_circuit_group = array(
-						array(
-							"from" => "00",
-							"to" => "152"
-						)
-					);
-				} else if (Billrun_Util::startsWith($row['zoneName'], "IL_ILD") || Billrun_Util::startsWith($row['zoneName'], "KT")) {
-					$out_circuit_group = array(
-						array(
-							"from" => "2000",
-							"to" => "2101"
-						)
-					);
-				} else {
-					$out_circuit_group = array(
-						array(
-							"from" => "0",
-							"to" => "1999"
-						),
-						array(
-							"from" => "2102",
-							"to" => "99999999"
-						),
-					);
-				}
+			if (!isset($ret[$key])) {				
 				$ret[$key] = array(
 					'from' => new MongoDate(strtotime('2012-06-01T00:00:00+00:00')),
 					'to' => new MongoDate(strtotime('+100 years')),
@@ -173,15 +140,4 @@ class Processor_ImportZones extends Billrun_Processor_Base_Separator {
 		return $ret;
 	}
 
-	protected function addUnrated() {
-		$row = array();
-		$row['zoneName'] = "UNRATED";
-		$this->data['data'][] = $row;
-	}
-
-	protected function addGolan() {
-		$row = array();
-		$row['zoneName'] = "GOLAN";
-		$this->data['data'][] = $row;
-	}
 }

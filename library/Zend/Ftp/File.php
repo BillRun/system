@@ -29,17 +29,26 @@ class Zend_Ftp_File {
 	 * @var int
 	 */
 	protected $_mode = null;
-
+	
+	/**
+	 * The transfer mode for this file
+	 * 
+	 * @var int
+	 */
+	protected $_extraData = null;
 	/**
 	 * Instantiate an FTP file
 	 * 
 	 * @param string $path The full remote path to the file
 	 * @param Zend_Ftp $ftp The FTP connection
 	 */
-	public function __construct($path, $ftp) {
+	public function __construct($path, $ftp, $extraData = FALSE) {
 		$this->_path = $path;
 		$this->_ftp = $ftp;
 		$this->_name = basename($this->path);
+		if($extraData) {
+			$this->_extraData = $extraData;
+		}
 	}
 
 	/**
@@ -54,6 +63,8 @@ class Zend_Ftp_File {
 				return $this->_name;
 			case 'path':
 				return $this->_path;
+			case 'extraData':
+				return $this->_extraData;
 		}
 		throw new Zend_Ftp_Directory_Exception('Unknown property "' . $name . '"');
 	}

@@ -30,7 +30,6 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @var string
 	 */
 	protected $runtime_billrun_key;
-
 	/**
 	 *
 	 * @var int timestamp
@@ -57,24 +56,26 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	}
 
 	protected function getLines() {
-		$queue = Billrun_Factory::db()->queueCollection();
-		$query = self::getBaseQuery();
-		$query['type'] = array('$in' => array('ggsn', 'smpp', 'smsc', 'nsn', 'tap3', 'credit'));
+//		$queue = Billrun_Factory::db()->queueCollection();
+//		$query = self::getBaseQuery();
+		$query = array();
+		$query['type'] = array('$in' => array('ggsn', 'smpp', 'smsc', 'nsn', 'tap3'));
 		$query['$or'][] = array('account_id' => array('$exists' => false));
 		$query['$or'][] = array('account_id' => array('$mod' => array($this->server_count, $this->server_id - 1)));
-		$update = self::getBaseUpdate();
-		$options = array('sort' => array('unified_record_time' => 1));
-		$i = 0;
-		$docs = array();
-		while ($i < $this->limit && ($doc = $queue->findAndModify($query, $update, array(), $options)) && !$doc->isEmpty()) {
-			$docs[] = $doc;
-			$i++;
-		}
-		return $docs;
+//		$update = self::getBaseUpdate();
+//		$options = array('sort' => array('unified_record_time' => 1));
+//		$i = 0;
+//		$docs = array();
+//		while ($i < $this->limit && ($doc = $queue->findAndModify($query, $update, array(), $options)) && !$doc->isEmpty()) {
+//			$docs[] = $doc;
+//			$i++;
+//		}
+		return $this->getQueuedLines($query);
 	}
 
 	/**
 	 * execute the calculation process
+	 * @TODO this function mighh  be a duplicate of  @see Billrun_Calculator::calc() do we really  need the diffrence  between Rate/Pricing?
 	 */
 	public function calc() {
 		Billrun_Factory::dispatcher()->trigger('beforePricingData', array('data' => $this->data));
@@ -85,12 +86,14 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				Billrun_Factory::dispatcher()->trigger('beforePricingDataRow', array('data' => &$line));
 				//Billrun_Factory::log()->log("Calcuating row : ".print_r($item,1),  Zend_Log::DEBUG);
 				$line->collection($lines_coll);
-				if (!$this->updateRow($line)) {
-					unset($this->lines[$key]);
-					continue;
+				if($this->isLineLegitimate($line)) {
+					if (!$this->updateRow($line)) {
+						unset($this->lines[$key]);
+						continue;
+					}
+					$this->writeLine($line);
+					$this->data[] = $line;
 				}
-				$this->writeLine($line);
-				$this->data[] = $line;
 				//$this->updateLinePrice($item); //@TODO  this here to prevent divergance  between the priced lines and the subscriber's balance/billrun if the process fails in the middle.
 				Billrun_Factory::dispatcher()->trigger('afterPricingDataRow', array('data' => &$line));
 			} else {
@@ -102,9 +105,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 
 	protected function updateRow($row) {
 		$rate = $row->get('customer_rate');
-		if (!isset($row['customer_rate']) || $row['customer_rate'] === false || $row['unified_record_time']->sec < $this->billrun_lower_bound_timestamp) { // nothing to price
-			return true; // move to next calculator
-		}
+		
 		$billrun_key = Billrun_Util::getBillrunKey($row['unified_record_time']->sec);
 
 		//TODO  change this to be configurable.
@@ -125,9 +126,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			} else {
 				$pricingData = $this->updateSubscriberBalance(array($usage_class_prefix . $usage_type => $volume), $row, $billrun_key, $usage_type, $rate, $volume);
 			}
-
 			$vatable = (!(isset($rate['vatable']) && !$rate['vatable']) || (!isset($rate['vatable']) && !$this->vatable));
-
 			if (!$this->updateBillrun($billrun_key, $row['account_id'], $row['subscriber_id'], array($usage_type => $volume), $pricingData, $row, $vatable)) {
 				return false;
 			}
@@ -375,7 +374,6 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				return 'call';
 		}
 	}
-
 	/**
 	 * Get pricing data for a given rate / subcriber.
 	 * @param int $volume The usage volume (seconds of call, count of SMS, bytes  of data)
@@ -384,13 +382,13 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @param mixed $subr the  subscriber that generated the usage.
 	 * @return Array the 
 	 */
-	protected function getLinePricingData($volumeToPrice, $usageType, $rate, $sub_balance) {
+	protected function getLinePricingData($volumeToPrice, $usageType, $rate, $subr) {
 		$typedRates = $rate['rates'][$usageType];
 		$accessPrice = isset($typedRates['access']) ? $typedRates['access'] : 0;
-		$plan = Billrun_Factory::plan(array('data' => $sub_balance['current_plan']));
+		$plan = Billrun_Factory::plan(array('data' => $subr['current_plan']));
 
-		if ($plan->isRateInSubPlan($rate, $sub_balance, $usageType)) {
-			$volumeToPrice = $volumeToPrice - $plan->usageLeftInPlan($sub_balance['balance'], $usageType);
+		if ($plan->isRateInSubPlan($rate, $subr, $usageType)) {
+			$volumeToPrice = $volumeToPrice - $plan->usageLeftInPlan($subr['balance'], $usageType);
 
 			if ($volumeToPrice < 0) {
 				$volumeToPrice = 0;
@@ -431,7 +429,6 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		}
 		return $price;
 	}
-
 	/**
 	 * Update the subsciber balance for a given usage.
 	 * @param type $sub the subscriber. 
@@ -518,6 +515,10 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 
 	static protected function getCalculatorQueueType() {
 		return self::$type;
+	}
+
+	protected function isLineLegitimate($line) {
+		return isset($line['customer_rate']) && $line['customer_rate'] !== false && !isset($line['price_customer']) && $line['unified_record_time']->sec >= $this->billrun_lower_bound_timestamp; 
 	}
 
 	protected function setCalculatorTag() {

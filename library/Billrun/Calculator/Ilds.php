@@ -50,7 +50,7 @@ class Billrun_Calculator_Ilds extends Billrun_Calculator_Rate {
 	 * @return Mongodloid_Cursor Mongo cursor for iteration
 	 */
 	protected function getLines() {
-		
+		//@TODO  change to the  queue system....
 		$lines = Billrun_Factory::db()->linesCollection();
 
 		$query = $lines->query()

@@ -14,14 +14,14 @@
  * @since    0.5
  *
  */
-class Billrun_Calculator_Rate_Data extends Billrun_Calculator_Rate {
+class Billrun_Calculator_Rate_Ggsn extends Billrun_Calculator_Rate {
 
 	/**
 	 * the type of the object
 	 *
 	 * @var string
 	 */
-	static protected $type = 'data';
+	static protected $type = 'ggsn';
 
 	/**
 	 * @see Billrun_Calculator_Base_Rate
