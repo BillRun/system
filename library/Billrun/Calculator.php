@@ -60,7 +60,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 			$this->limit = $options['calculator']['limit'];
 		}
 
-		
+
 		if (isset($options['months_limit'])) {
 			$this->months_limit = $options['months_limit'];
 		}
@@ -115,15 +115,23 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	/**
 	 * execute the calculation process
 	 */
-	public function calc() {		
+	public function calc() {
 		Billrun_Factory::dispatcher()->trigger('beforeRateData', array('data' => $this->data));
-		foreach ($this->lines as $item) {
-			//Billrun_Factory::log()->log("Calcuating row : ".print_r($item,1),  Zend_Log::DEBUG);
-			Billrun_Factory::dispatcher()->trigger('beforeRateDataRow', array('data' => &$item));
-			$this->updateRow($item);
-			$this->writeLine($item);
-			$this->data[] = $item;
-			Billrun_Factory::dispatcher()->trigger('afterRateDataRow', array('data' => &$item));
+		foreach ($this->lines as $key => $item) {
+			$line = $this->pullLine($item);
+			if ($line) {
+				//Billrun_Factory::log()->log("Calcuating row : ".print_r($item,1),  Zend_Log::DEBUG);
+				Billrun_Factory::dispatcher()->trigger('beforeRateDataRow', array('data' => &$line));
+				if (!$this->updateRow($line)) {
+					unset($this->lines[$key]);
+					continue;
+				}
+				$this->writeLine($line);
+				$this->data[] = $line;
+				Billrun_Factory::dispatcher()->trigger('afterRateDataRow', array('data' => &$line));
+			} else {
+				unset($this->lines[$key]);
+			}
 		}
 		Billrun_Factory::dispatcher()->trigger('afterRateData', array('data' => $this->data));
 	}
@@ -135,15 +143,89 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteData', array('data' => $this->data));
 		//no need  the  line is now  written right after update
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteData', array('data' => $this->data));
+		$this->setCalculatorTag();
 	}
 
 	/**
 	 * Save a modified line to the lines collection.
 	 */
 	public function writeLine($line) {
-		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteLine', array('data' => $line));		
-		$line->save( Billrun_Factory::db()->linesCollection());
+		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteLine', array('data' => $line));
+		$line->save(Billrun_Factory::db()->linesCollection());
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteLine', array('data' => $line));
+	}
+
+	protected function pullLine($queue_line) {
+		$line = Billrun_Factory::db()->linesCollection()->query('stamp', $queue_line['stamp'])
+				->cursor()->current();
+		if ($line->isEmpty()) {
+			return false;
+		}
+		return $line;
+	}
+
+	static protected function getCalculatorQueueTag($calculator_type = null) {
+		if (is_null($calculator_type)) {
+			$calculator_type = static::getCalculatorQueueType();
+		}
+		return 'calculator_' . $calculator_type;
+	}
+
+	abstract static protected function getCalculatorQueueType();
+
+	protected function setCalculatorTag() {
+		$queue = Billrun_Factory::db()->queueCollection();
+		$calculator_tag = $this->getCalculatorQueueTag();
+		foreach ($this->data as $item) {
+			$query = array('stamp' => $item['stamp']);
+			$update = array('$set' => array($calculator_tag => true));
+			$queue->update($query, $update);
+		}
+	}
+
+	static protected function getBaseQuery() {
+		$calculators_queue_order = Billrun_Factory::config()->getConfigValue("queue.calculators");
+		$calculator_type = static::getCalculatorQueueType();
+		$queue_id = array_search($calculator_type, $calculators_queue_order);
+		if ($queue_id > 0) {
+			$previous_calculator_type = $calculators_queue_order[$queue_id - 1];
+			$previous_calculator_tag = self::getCalculatorQueueTag($previous_calculator_type);
+			$query[$previous_calculator_tag] = true;
+		}
+		$current_calculator_queue_tag = self::getCalculatorQueueTag($calculator_type);
+		$orphand_time = strtotime("6 hours ago");
+		$query['$and'][0]['$or'] = array(
+			array($current_calculator_queue_tag => array('$exists' => false)),
+			array($current_calculator_queue_tag => array(
+					'$exists' => true, '$lt' => new MongoDate($orphand_time)
+				))
+		);
+		return $query;
+	}
+
+	static protected function getBaseUpdate() {
+		$current_calculator_queue_tag = self::getCalculatorQueueTag();
+		$update = array(
+			'$set' => array(
+				$current_calculator_queue_tag => new MongoDate(),
+			)
+		);
+		return $update;
+	}
+
+	public final function removeFromQueue() {
+		$calculators_queue_order = Billrun_Factory::config()->getConfigValue("queue.calculators");
+		$calculator_type = static::getCalculatorQueueType();
+		$queue_id = array_search($calculator_type, $calculators_queue_order);
+		end($calculators_queue_order);
+		if ($queue_id == key($calculators_queue_order)) { // last calculator
+			Billrun_Factory::log()->log("Removing lines from queue", Zend_Log::INFO);
+			$queue = Billrun_Factory::db()->queueCollection();
+			foreach ($this->data as $item) {
+				$query = array('stamp' => $item['stamp']);
+				$queue->remove($query);
+			}
+		}
 	}
 
 }

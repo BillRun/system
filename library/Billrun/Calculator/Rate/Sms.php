@@ -25,15 +25,17 @@ class Billrun_Calculator_Rate_Sms extends Billrun_Calculator_Rate {
 	 * method to get calculator lines
 	 */
 	protected function getLines() {
-		$lines = Billrun_Factory::db()->linesCollection();
-
-		return $lines->query(array('$or' => array(
-						array('type' => array('$in' => array('smpp')), 'record_type' => '1', "cause_of_terminition" => "100", 'calling_number' => array('$in' => array('000000000002020', '000000000006060', '000000000007070'))),
-						array('type' => array('$in' => array('smsc')), 'record_type' => '1', 'calling_msc' => array('$ne' => '000000000000000'), "cause_of_terminition" => "100"),
-						array('type' => array('$in' => array('mmsc')), 'action' => array('$in' => array('S')), 'final_state' => 'S', 'mm_source_addr' => array('$regex' => '^\+\d+\/TYPE\s*=\s*.*golantelecom')),
-					),
-					$this->ratingField => array('$exists' => false)))
-				->cursor()->limit($this->limit);
+		$queue = Billrun_Factory::db()->queueCollection();
+		$query = self::getBaseQuery();
+		$query['type'] = array('$in' => array('smpp', 'smsc', 'mmsc'));
+		$update = self::getBaseUpdate();
+		$i = 0;
+		$docs = array();
+		while ($i < $this->limit && ($doc = $queue->findAndModify($query, $update)) && !$doc->isEmpty()) {
+			$docs[] = $doc;
+			$i++;
+		}
+		return $docs;
 	}
 
 	/**
@@ -50,20 +52,21 @@ class Billrun_Calculator_Rate_Sms extends Billrun_Calculator_Rate {
 		$added_values = array(
 			'usaget' => $usage_type,
 			'usagev' => $volume,
-			$this->ratingField => $rate? $rate->createRef() : $rate,
+			$this->ratingField => $rate ? $rate->createRef() : $rate,
 		);
 		$newData = array_merge($current, $added_values);
 		$row->setRawData($newData);
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteRow', array('row' => $row));
+		return true;
 	}
-	
+
 	/**
 	 * @see Billrun_Calculator_Rate::getLineVolume
 	 */
 	protected function getLineVolume($row, $usage_type) {
 		return 1;
 	}
-	
+
 	/**
 	 * @see Billrun_Calculator_Rate::getLineUsageType
 	 */
@@ -84,57 +87,65 @@ class Billrun_Calculator_Rate_Sms extends Billrun_Calculator_Rate {
 	 * @see Billrun_Calculator_Rate::getLineRate
 	 */
 	protected function getLineRate($row, $usage_type) {
-		$called_number = preg_replace('/[^\d]/', '', preg_replace('/^0+/', '', ($row['type'] != 'mmsc' ? $row['called_msc'] : $row['recipent_addr'])));
-		$line_time = $row['unified_record_time'];
+		if (($row['type'] == 'smpp' && $row['record_type'] == '1' && $row["cause_of_terminition"] == "100" && in_array($row['calling_number'], array('000000000002020', '000000000006060', '000000000007070'))) ||
+			($row['type'] == 'smsc' && $row['record_type'] == '1' && $row["cause_of_terminition"] == "100" && $row["calling_msc"] != "000000000000000" ) ||
+			($row['type'] == 'mmsc' && in_array('S', $row['action']) && $row['final_state'] == 'S' && preg_match('^\+\d+\/TYPE\s*=\s*.*golantelecom', $row['mm_source_addr']))
+		) {
+			$called_number = preg_replace('/[^\d]/', '', preg_replace('/^0+/', '', ($row['type'] != 'mmsc' ? $row['called_msc'] : $row['recipent_addr'])));
+			$line_time = $row['unified_record_time'];
 
-		$rates = Billrun_Factory::db()->ratesCollection();
-		//Billrun_Factory::log()->log("row : ".print_r($row ,1),  Zend_Log::DEBUG);
+			$rates = Billrun_Factory::db()->ratesCollection();
+			//Billrun_Factory::log()->log("row : ".print_r($row ,1),  Zend_Log::DEBUG);
 //		$type = $row['type'] == 'mmsc' ? 'mms' : 'sms';
-		$called_number_prefixes = $this->getPrefixes($called_number);
-		//Billrun_Factory::log()->log("prefixes  for $called_number : ".print_r($called_number_prefixes ,1),  Zend_Log::DEBUG);
-		$base_match = array(
-			'$match' => array(
-				'params.prefix' => array(
-					'$in' => $called_number_prefixes,
-				),
-				"rates.$usage_type" => array(
-					'$exists' => true
-				),
-				"from" => array(
-					'$lte' => $line_time
-				),
-				"to" => array(
-					'$gte' => $line_time
-				),
-			)
-		);
+			$called_number_prefixes = $this->getPrefixes($called_number);
+			//Billrun_Factory::log()->log("prefixes  for $called_number : ".print_r($called_number_prefixes ,1),  Zend_Log::DEBUG);
+			$base_match = array(
+				'$match' => array(
+					'params.prefix' => array(
+						'$in' => $called_number_prefixes,
+					),
+					"rates.$usage_type" => array(
+						'$exists' => true
+					),
+					"from" => array(
+						'$lte' => $line_time
+					),
+					"to" => array(
+						'$gte' => $line_time
+					),
+				)
+			);
 
-		$unwind = array(
-			'$unwind' => '$params.prefix',
-		);
+			$unwind = array(
+				'$unwind' => '$params.prefix',
+			);
 
-		$sort = array(
-			'$sort' => array(
-				'params.prefix' => -1,
-			),
-		);
-
-		$match2 = array(
-			'$match' => array(
-				'params.prefix' => array(
-					'$in' => $called_number_prefixes,
+			$sort = array(
+				'$sort' => array(
+					'params.prefix' => -1,
 				),
-			)
-		);
+			);
 
-		$matched_rates = $rates->aggregate($base_match, $unwind, $sort, $match2);
-		//Billrun_Factory::log()->log("rates : ".print_r($matched_rates ,1),  Zend_Log::DEBUG);
-		if (empty($matched_rates)) {
-			return FALSE;
+			$match2 = array(
+				'$match' => array(
+					'params.prefix' => array(
+						'$in' => $called_number_prefixes,
+					),
+				)
+			);
+
+			$matched_rates = $rates->aggregate($base_match, $unwind, $sort, $match2);
+			//Billrun_Factory::log()->log("rates : ".print_r($matched_rates ,1),  Zend_Log::DEBUG);
+			if (empty($matched_rates)) {
+				return FALSE;
+			}
+
+			return new Mongodloid_Entity(reset($matched_rates), $rates);
+		} else {
+			return false;
 		}
-
-		return new Mongodloid_Entity(reset($matched_rates),$rates);
 	}
+
 	/**
 	 * Get an array of prefixes for a given number.
 	 * @param type $str the number to get  prefixes to.
@@ -147,4 +158,5 @@ class Billrun_Calculator_Rate_Sms extends Billrun_Calculator_Rate {
 		}
 		return $prefixes;
 	}
+
 }

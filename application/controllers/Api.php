@@ -50,36 +50,6 @@ class ApiController extends Yaf_Controller_Abstract {
 		$this->setOutput('message', "Billrun API works");
 	}
 
-	public function balanceAction() {
-		$request = $this->getRequest();
-		$account_id = $request->get("account_id");
-		$subscribers = $request->get("subscribers");
-		if (!is_numeric($account_id)) {
-			die();
-		}
-		if (is_string($subscribers)) {
-			$subscribers = explode(",", $subscribers);
-		}
-		else {
-			$subscribers = array();
-		}
-		
-		$options = array(
-			'type' => 'balance',
-			'account_id' => $account_id,
-			'subscribers' => $subscribers,
-		);
-		$generator = Billrun_Generator::getInstance($options);
-
-		if ($generator) {
-			$generator->load();
-			$balance = $generator->generate();
-			$this->getView()->balance = $balance->asXML();
-		} else {
-			$this->_controller->addOutput("Generator cannot be loaded");
-		}
-	}
-
 	/**
 	 * method to set view output
 	 * 
@@ -90,15 +60,18 @@ class ApiController extends Yaf_Controller_Abstract {
 	 */
 	public function setOutput() {
 		$args = func_get_args();
-		if (count($args) == 2) {
-			$key = $args[0];
-			$value = $args[1];
-			$this->output->$key = $value;
-			return true;
-		} else if (is_array($args[0])) {
+		$num_args = count($args);
+		if (is_array($args[0])) {
 			foreach ($args[0] as $key => $value) {
 				$this->setOutput($key, $value);
 			}
+			return true;
+		} else if ($num_args == 1) {
+			$this->output = $args[0];
+		} else if ($num_args == 2) {
+			$key = $args[0];
+			$value = $args[1];
+			$this->output->$key = $value;
 			return true;
 		}
 		return false;
@@ -119,9 +92,12 @@ class ApiController extends Yaf_Controller_Abstract {
 
 	/**
 	 * method to set how the api output method
+	 * @param callable $output_method The callable to be called.
 	 */
 	protected function setOutputMethod() {
-		$this->getView()->outputMethod = Billrun_Factory::config()->getConfigValue('api.outputMethod');
+		$action = $this->getRequest()->getActionName();
+		$output_methods = Billrun_Factory::config()->getConfigValue('api.outputMethod');
+		$this->getView()->outputMethod = $output_methods[$action];
 	}
 
 }
