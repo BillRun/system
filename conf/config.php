@@ -17,7 +17,7 @@
  */
 
 //!!!REMOVE WHEN DEBUGGING LOCALY!!!
-//define('BILLRUN_CONFIG_PATH', APPLICATION_PATH . "/conf/prod.ini");
+define('BILLRUN_CONFIG_PATH', APPLICATION_PATH . "/conf/prod.ini");
 
 if (!defined('BILLRUN_CONFIG_PATH')) {
 	$config = array(
