@@ -175,7 +175,7 @@ class Generator_Golan extends Billrun_Generator {
 			$out_of_usage_entry = $breakdown_topic_over_plan->addChild('BREAKDOWN_ENTRY');
 //				$out_of_usage_entry->addChild('TITLE', 'SERVICE-GIFT-GC_GOLAN-' . current($subscriber['lines']['flat']['refs'])['plan_ref']['name']);
 			$out_of_usage_entry->addChild('UNITS', 1);
-			$out_of_usage_entry->addChild('COST_WITHOUTVAT', $subscriber['breakdown']['in_plan']['base']['service']['cost']);
+			$out_of_usage_entry->addChild('COST_WITHOUTVAT', isset($subscriber['breakdown']['in_plan']['base']['service']['cost'])? $subscriber['breakdown']['in_plan']['base']['service']['cost'] : 0);
 			$out_of_usage_entry->addChild('VAT', $this->displayVAT($row['vat']));
 			$out_of_usage_entry->addChild('VAT_COST', floatval($out_of_usage_entry->COST_WITHOUTVAT) * floatval($out_of_usage_entry->VAT) / 100);
 			$out_of_usage_entry->addChild('TOTAL_COST', floatval($out_of_usage_entry->COST_WITHOUTVAT) + floatval($out_of_usage_entry->VAT_COST));
@@ -540,7 +540,7 @@ class Generator_Golan extends Billrun_Generator {
 					if ($tele_service_code == '11') {
 						return $line['basicCallInformation']['Desination']['CalledNumber'];
 					} else if ($tele_service_code == '22') {
-						return $line['basicCallInformation']['Desination']['DialedDigits']; // @todo check with sefi
+						return isset($line['basicCallInformation']['Desination']['DialedDigits']) ? $line['basicCallInformation']['Desination']['DialedDigits'] : $line['basicCallInformation']['Desination']['CalledNumber']; // @todo check with sefi
 					}
 				}
 				break;
@@ -635,10 +635,14 @@ EOI;
 	 * @param array $subscriber the subscriber billrun entry
 	 */
 	protected function getPlanName($subscriber) {
-		$lines_coll = Billrun_Factory::db()->linesCollection();
-		$flat_line = $lines_coll->getRef($subscriber['lines']['flat']['refs'][0]);
-		$flat_line->collection($lines_coll);
-		return $flat_line['plan_ref']['name'];
+		if (isset($subscriber['lines']['flat']['refs'][0])) {
+			$lines_coll = Billrun_Factory::db()->linesCollection();
+			$flat_line = $lines_coll->getRef($subscriber['lines']['flat']['refs'][0]);
+			$flat_line->collection($lines_coll);
+			return $flat_line['plan_ref']['name'];
+		} else {
+			return '';
+		}
 	}
 
 	/**
@@ -653,12 +657,11 @@ EOI;
 	protected function billingLinesNeeded($subscriber_id) {
 		return true;
 	}
-	
+
 	protected function getZoneTotalsFieldByUsage($zone, $field, $usage_type) {
 		if (isset($zone['totals'][$usage_type][$field])) {
 			return $zone['totals'][$usage_type][$field];
-		}
-		else {
+		} else {
 			return 0;
 		}
 	}

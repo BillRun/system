@@ -122,7 +122,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 
 			$vatable = (!(isset($rate['vatable']) && !$rate['vatable']) || (!isset($rate['vatable']) && !$this->vatable));
 
-			if (!$billrun = Billrun_Billrun::updateBillrun($billrun_key, $row['account_id'], $row['subscriber_id'], array($usage_type => $volume), $pricingData, $row, $vatable)) {
+			if (!$billrun = Billrun_Billrun::updateBillrun($billrun_key, array($usage_type => $volume), $pricingData, $row, $vatable)) {
 				return false;
 			} else if ($billrun instanceof Mongodloid_Entity) {
 				$billrun_info['billrun_key'] = $billrun['billrun_key'];
@@ -138,7 +138,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 
 	/**
 	 * Get pricing data for a given rate / subcriber.
-	 * @param int $volume The usage volume (seconds of call, count of SMS, bytes  of data)
+	 * @param int $volumeToPrice The usage volume (seconds of call, count of SMS, bytes  of data)
 	 * @param string $usageType The type  of the usage (call/sms/data)
 	 * @param mixed $rate The rate of associated with the usage.
 	 * @param mixed $subr the  subscriber that generated the usage.
@@ -170,6 +170,12 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		return $ret;
 	}
 
+	/**
+	 * Calculates the price for the given volume (w/o access price)
+	 * @param array $rates_arr the "rate" array of a rate entry
+	 * @param int $volume The usage volume (seconds of call, count of SMS, bytes  of data)
+	 * @return int the calculated price
+	 */
 	protected function getPriceByRates($rates_arr, $volume) {
 		$price = 0;
 		foreach ($rates_arr as $currRate) {
@@ -193,10 +199,14 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	}
 
 	/**
-	 * Update the subsciber balance for a given usage.
-	 * @param type $sub the subscriber. 
-	 * @param type $counters the  counters to update
-	 * @param type $charge the changre to add of  the usage.
+	 * Update the subscriber balance for a given usage.
+	 * @param array $counters the counters to update
+	 * @param Mongodloid_Entity $row the input line
+	 * @param string $billrun_key the billrun key at the row time
+	 * @param string $usageType The type  of the usage (call/sms/data)
+	 * @param mixed $rate The rate of associated with the usage.
+	 * @param int $volume The usage volume (seconds of call, count of SMS, bytes  of data)
+	 * @return mixed array with the pricing data on success, false otherwise
 	 */
 	protected function updateSubscriberBalance($counters, $row, $billrun_key, $usage_type, $rate, $volume) {
 		$subscriber_balance = Billrun_Factory::balance(array('subscriber_id' => $row['subscriber_id'], 'billrun_key' => $billrun_key));

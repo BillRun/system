@@ -127,6 +127,10 @@ EOT;
 				$subscriber_id = $subscriber->subscriber_id;
 
 				$flat_price = $subscriber->getFlatPrice();
+				if (is_null($flat_price)) {
+					Billrun_Factory::log()->log("Couldn't find flat price for subscriber " . $subscriber_id . " for billrun " . $billrun_key, Zend_Log::ALERT);
+					continue;
+				}
 				Billrun_Factory::log('Adding flat to subscriber ' . $subscriber_id, Zend_Log::INFO);
 				$flat_entry = new Mongodloid_Entity($subscriber->getFlatEntry($billrun_key));
 				$flat_entry->collection($this->lines);
@@ -138,7 +142,7 @@ EOT;
 				}
 
 				$plan = $flat_entry['plan_ref'];
-				if (!$billrun = Billrun_Billrun::updateBillrun($billrun_key, $account_id, $subscriber_id, array(), array('price_customer' => $flat_price), $flat_entry, $plan['vatable'])) {
+				if (!$billrun = Billrun_Billrun::updateBillrun($billrun_key, array(), array('price_customer' => $flat_price), $flat_entry, $plan['vatable'])) {
 					Billrun_Factory::log()->log("Flat costs already exist in billrun collection for subscriber " . $subscriber_id . " for billrun " . $billrun_key, Zend_Log::NOTICE);
 				} else if ($billrun instanceof Mongodloid_Entity) {
 					$flat_entry['billrun_ref'] = $billrun->createRef($this->billrun);
