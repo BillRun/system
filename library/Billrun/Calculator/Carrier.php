@@ -110,6 +110,9 @@ class Billrun_Calculator_Carrier extends Billrun_Calculator {
 		return $groupName === "" ? ""  : substr($groupName, 0, min(4,strlen($groupName)));
 	}
 
+	/**
+	 * @see Billrun_Calculator::getCalculatorQueueType
+	 */
 	protected static function getCalculatorQueueType() {
 		return self::MAIN_DB_FIELD;
 	}

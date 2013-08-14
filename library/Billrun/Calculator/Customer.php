@@ -136,8 +136,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	}
 
 	/**
-	 * Get the  current  calculator type, to be used in the queue.
-	 * @return string the  type  of the calculator
+	 * @see Billrun_Calculator::getCalculatorQueueType
 	 */
 	static protected function getCalculatorQueueType() {
 		return self::$type;

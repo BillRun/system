@@ -539,7 +539,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	}
 
 	/**
-	 * 
+	 * @see Billrun_Calculator::getCalculatorQueueType
 	 */
 	static protected function getCalculatorQueueType() {
 		return self::$type;

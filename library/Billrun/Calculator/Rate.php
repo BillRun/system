@@ -84,7 +84,10 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	protected function getLines() {
 		return $this->getQueuedLines(array('type' => static::$type));
 	}
-
+	
+	/**
+	 * @see Billrun_Calculator::getCalculatorQueueType
+	 */
 	static protected function getCalculatorQueueType() {
 		return self::$type;
 	}

@@ -65,15 +65,6 @@ class Billrun_Calculator_Rate_Sms extends Billrun_Calculator_Rate {
 	}
 
 	/**
-	 * Identify if the row belong to calculator
-	 * 
-	 * @return boolean true if the row identify as belonging to the calculator, else false
-	 */
-	protected function identify($row) {
-		return true;
-	}
-
-	/**
 	 * @see Billrun_Calculator_Rate::getLineRate
 	 */
 	protected function getLineRate($row, $usage_type) {

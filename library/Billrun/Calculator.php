@@ -104,15 +104,6 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	abstract protected function updateRow($row);
 
 	/**
-	 * identify if the row belong to calculator
-	 * 
-	 * @return boolean true if the row identify as belonging to the calculator, else false
-	 */
-	protected function identify($row) {
-		return true;
-	}
-
-	/**
 	 * execute the calculation process
 	 */
 	public function calc() {
@@ -269,6 +260,13 @@ abstract class Billrun_Calculator extends Billrun_Base {
 //		return array();
 	}
 	
+	/**
+	 * Get the  current  calculator type, to be used in the queue.
+	 * @return string the  type  of the calculator
+	 */
+	abstract protected static function getCalculatorQueueType();
+
+
 	/**
 	 * Check if a given line  can be handeld by  the calcualtor.
 	 * @param @line the line to check.
