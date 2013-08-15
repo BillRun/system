@@ -1,7 +1,7 @@
 <?php
 
 /**
- * @package         Billing
+ * @package         Mongodloid
  * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
  * @license         GNU General Public License version 2 or later; see LICENSE.txt
  */
@@ -163,17 +163,17 @@ class Mongodloid_Entity implements ArrayAccess {
 	}
 
 	public function get() {
-		if (func_num_args()==0) {
+		if (func_num_args() == 0) {
 			return $this->_values;
 		}
 		$key = func_get_arg(0);
-		
+
 		if ($key == '_id') {
 			return $this->getId();
 		}
 
 		$lazyload = func_num_args() > 1 ? func_get_arg(1) : false;
-		
+
 		$key = preg_replace('@\\[([^\\]]+)\\]@', '.$1', $key);
 		$result = $this->_values;
 
@@ -206,7 +206,7 @@ class Mongodloid_Entity implements ArrayAccess {
 
 		return $result[$key];
 	}
-	
+
 	/**
 	 * method to create MongoDBRef from the current entity
 	 * 
@@ -223,7 +223,7 @@ class Mongodloid_Entity implements ArrayAccess {
 		}
 		return $this->collection()->createRef($this->getRawData());
 	}
-	
+
 	/**
 	 * method to load DB reference object
 	 * 
@@ -300,7 +300,7 @@ class Mongodloid_Entity implements ArrayAccess {
 	public function offsetUnset($offset) {
 		unset($this->_values[$offset]);
 	}
-	
+
 	public function isEmpty() {
 		return empty($this->_values);
 	}

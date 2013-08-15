@@ -1,7 +1,7 @@
 <?php
 
 /**
- * @package         Billing
+ * @package         Mongodloid
  * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
  * @license         GNU General Public License version 2 or later; see LICENSE.txt
  */
@@ -15,7 +15,7 @@ class Mongodloid_Db {
 		$this->_db = $db;
 		$this->_connection = $connection;
 	}
-	
+
 	public function getCollection($name) {
 		if (!isset($this->_collections[$name]) || !$this->_collections[$name])
 			$this->_collections[$name] = new Mongodloid_Collection($this->_db->selectCollection($name), $this);
