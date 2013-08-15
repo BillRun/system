@@ -1,7 +1,5 @@
 <?php
 
-require_once 'application/helpers/Subscriber/Golan.php';
-
 /**
  * @package         Billing
  * @copyright       Copyright (C) 2012 S.D.O.C. LTD. All rights reserved.
@@ -46,7 +44,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	 * @var Mongodloid_Collection
 	 */
 	protected $lines = null;
-
+	
 	/**
 	 *
 	 * @var Mongodloid_Collection
@@ -127,6 +125,10 @@ EOT;
 				$subscriber_id = $subscriber->subscriber_id;
 
 				$flat_price = $subscriber->getFlatPrice();
+				if (is_null($flat_price)) {
+					Billrun_Factory::log()->log("Couldn't find flat price for subscriber " . $subscriber_id . " for billrun " . $billrun_key, Zend_Log::ALERT);
+					continue;
+				}
 				Billrun_Factory::log('Adding flat to subscriber ' . $subscriber_id, Zend_Log::INFO);
 				$flat_line = $this->saveFlatLine($subscriber, $billrun_key);
 
@@ -192,4 +194,3 @@ EOT;
 	}
 
 }
-

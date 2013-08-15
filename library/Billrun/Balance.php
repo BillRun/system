@@ -105,13 +105,22 @@ class Billrun_Balance implements ArrayAccess {
 	 */
 	public function create($billrunKey, $subscriber, $plan_ref) {
 		$ret = FALSE;
-
-		if (!$this->isExists($subscriber->subscriber_id, $billrunKey)) {
-			Billrun_Factory::log('Adding subscriber ' . $subscriber->subscriber_id . ' to balances collection', Zend_Log::INFO);
-			$newSubscriber = new Mongodloid_Entity(self::getEmptySubscriberEntry($billrunKey, $subscriber->account_id, $subscriber->subscriber_id, $plan_ref));
-			$newSubscriber->collection(Billrun_Factory::db()->balancesCollection());
-			$newSubscriber->save();
-			$ret = TRUE;
+		$balances_coll = Billrun_Factory::db()->balancesCollection();
+		$query = array(
+			'subscriber_id' => $subscriber->subscriber_id,
+			'billrun_month' => $billrunKey,
+		);
+		$update = array(
+		'$setOnInsert' => self::getEmptySubscriberEntry($billrunKey, $subscriber->account_id, $subscriber->subscriber_id, $plan_ref),
+		);
+		$options = array(
+			"upsert" => true,
+			"w" => 1,
+		);
+		$output = $balances_coll->update($query, $update, $options);
+		if ($output['ok'] && isset($output['upserted'])) {
+			Billrun_Factory::log('Added subscriber ' . $subscriber->subscriber_id . ' to balances collection', Zend_Log::INFO);
+			$ret = true;
 		}
 
 		$this->load($subscriber->subscriber_id, $billrunKey);
