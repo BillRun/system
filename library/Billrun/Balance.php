@@ -111,14 +111,14 @@ class Billrun_Balance implements ArrayAccess {
 			'billrun_month' => $billrunKey,
 		);
 		$update = array(
-			'$setOnInsert' => self::getEmptySubscriberEntry($billrunKey, $subscriber->account_id, $subscriber->subscriber_id, $plan_ref),
+		'$setOnInsert' => self::getEmptySubscriberEntry($billrunKey, $subscriber->account_id, $subscriber->subscriber_id, $plan_ref),
 		);
 		$options = array(
-			'upsert' => true,
-			'new' => false,
+			"upsert" => true,
+			"w" => 1,
 		);
-		$output = $balances_coll->findAndModify($query, $update, array(), $options);
-		if ($output->isEmpty()) {
+		$output = $balances_coll->update($query, $update, $options);
+		if ($output['ok'] && isset($output['upserted'])) {
 			Billrun_Factory::log('Added subscriber ' . $subscriber->subscriber_id . ' to balances collection', Zend_Log::INFO);
 			$ret = true;
 		}
