@@ -133,7 +133,7 @@ EOT;
 				$flat_line = $this->saveFlatLine($subscriber, $billrun_key);
 
 				$plan = $flat_line['plan_ref'];
-				if (!$billrun = Billrun_Billrun::updateBillrun($billrun_key, $account_id, $subscriber_id, array(), array('price_customer' => $flat_price), $flat_line, $plan['vatable'])) {
+				if (!$billrun = Billrun_Billrun::updateBillrun($billrun_key, array(), array('price_customer' => $flat_price), $flat_line, $plan['vatable'])) {
 					Billrun_Factory::log()->log("Flat costs already exist in billrun collection for subscriber " . $subscriber_id . " for billrun " . $billrun_key, Zend_Log::NOTICE);
 				} else if ($billrun instanceof Mongodloid_Entity) {
 					$flat_line['billrun_ref'] = $billrun->createRef($this->billrun);
