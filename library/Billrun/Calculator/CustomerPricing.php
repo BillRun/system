@@ -235,7 +235,8 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			$update['$set']['balance.totals.' . $key . '.usagev'] = $old_usage + $value;
 		}
 		$update['$set']['balance.cost'] = $subRaw['balance']['cost'] + $pricingData[$this->pricingField];
-		$ret = $balances->update($query, $update, array('w' => 1));
+		$options = array('w' => 1);
+		$ret = $balances->update($query, $update, $options);
 		if (!($ret['ok'] && $ret['updatedExisting'])) { // failed because of different totals (could be that another server with another line raised the totals). Need to calculate pricingData from the beginning
 			$this->updateSubscriberBalance($counters, $row, $billrun_key, $usage_type, $rate, $volume);
 		}

@@ -1,7 +1,5 @@
 <?php
 
-require_once 'application/helpers/Subscriber/Golan.php';
-
 /**
  * @package         Billing
  * @copyright       Copyright (C) 2012 S.D.O.C. LTD. All rights reserved.
