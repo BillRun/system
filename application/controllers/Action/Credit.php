@@ -36,8 +36,8 @@ class CreditAction extends Action_Base {
 			'vatable' => '1',
 		);
 
-//		$post = $this->getRequest()->getPost(); // finally uncomment this
-		$post = $this->getRequest()->getQuery();
+		$post = $this->getRequest()->getPost(); // finally uncomment this
+//		$post = $this->getRequest()->getQuery();
 		$filtered_post = array();
 
 		foreach ($required_fields as $field) {
@@ -78,16 +78,13 @@ class CreditAction extends Action_Base {
 			$filtered_post['credit_type'] = $filtered_post['charge_type'];
 			unset($filtered_post['charge_type']);
 		}
-//		var_dump($filtered_post['credit_type']);
 		if ($filtered_post['credit_type'] != 'charge' && $filtered_post['credit_type'] != 'refund') {
-//			echo "1dfgdfg";
 			$this->getController()->setOutput(array(array(
 					'status' => 0,
 					'desc' => 'credit_type could be either "charge" or "refund"',
 			)));
 			return;
 		}
-//		echo "2dfdfd";
 
 		$amount_without_vat = Billrun_Util::filter_var($filtered_post['amount_without_vat'], FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
 		if (!is_numeric($filtered_post['amount_without_vat']) || $amount_without_vat === false) {
