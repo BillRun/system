@@ -133,6 +133,7 @@ class CreditAction extends Action_Base {
 
 		$filtered_post['source'] = 'api';
 		$filtered_post['usaget'] = $filtered_post['type'] = 'credit';
+		ksort($filtered_post);
 		$filtered_post['stamp'] = Billrun_Util::generateArrayStamp($filtered_post);
 
 		$filtered_post['process_time'] = Billrun_Util::generateCurrentTime();
