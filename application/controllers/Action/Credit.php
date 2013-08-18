@@ -36,8 +36,9 @@ class CreditAction extends Action_Base {
 			'vatable' => '1',
 		);
 
-		$post = $this->getRequest()->getPost(); // finally uncomment this
+//		$post = $this->getRequest()->getPost();
 //		$post = $this->getRequest()->getQuery();
+		$post = $this->getRequest()->getRequest(); // supports GET / POST requests
 		$filtered_post = array();
 
 		foreach ($required_fields as $field) {
