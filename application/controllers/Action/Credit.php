@@ -97,6 +97,15 @@ class CreditAction extends Action_Base {
 			$filtered_post['amount_without_vat'] = floatval($filtered_post['amount_without_vat']);
 		}
 
+		if (is_string($filtered_post['reason'])) {
+			$filtered_post['reason'] = preg_replace('/[^a-zA-Z0-9-_]+/', '_', $filtered_post['reason']); // removes unwanted characters from the string (especially dollar sign and dots) as they are not allowed as mongo keys
+		} else {
+			$this->getController()->setOutput(array(array(
+					'status' => 0,
+					'desc' => 'reason error',
+			)));
+			return;
+		}
 
 		$filtered_post['account_id'] = (int) $filtered_post['account_id'];
 		$filtered_post['subscriber_id'] = (int) $filtered_post['subscriber_id'];
