@@ -140,8 +140,10 @@ class Billrun_Billrun {
 				'over_plan' => self::getCategories(),
 				'out_plan' => self::getCategories(),
 				'credit' => array(
-					'charge' => new stdclass,
-					'refund' => new stdclass,
+					'charge_vatable' => new stdclass,
+					'charge_vat_free' => new stdclass,
+					'refund_vatable' => new stdclass,
+					'refund_vat_free' => new stdclass,
 				),
 			),
 		);
@@ -326,9 +328,10 @@ class Billrun_Billrun {
 	 * Returns the breakdown keys for the row
 	 * @param Mongodloid_Entity $row the row to insert to the billrun
 	 * @param array $pricingData the output array from updateSubscriberBalance function
+	 * @param boolean $vatable is the line vatable or not
 	 * @return array an array containing the plan, category & zone keys respectively
 	 */
-	protected static function getBreakdownKeys($row, $pricingData) {
+	protected static function getBreakdownKeys($row, $pricingData, $vatable) {
 		if ($row['type'] != 'flat') {
 			$rate = $row['customer_rate'];
 		}
@@ -347,7 +350,7 @@ class Billrun_Billrun {
 		}
 
 		if ($row['type'] == 'credit') {
-			$category_key = $row['credit_type'];
+			$category_key = $row['credit_type'] . "_" . ($vatable? "vatable" : "vat_free");
 		} else if (isset($rate['rates'][$row['usaget']]['category'])) {
 			$category = $rate['rates'][$row['usaget']]['category'];
 			switch ($category) {
@@ -423,15 +426,15 @@ class Billrun_Billrun {
 		$account_id = $row['account_id'];
 		$subscriber_id = $row['subscriber_id'];
 		$billrun_coll = Billrun_Factory::db()->billrunCollection();
-		$fields = array();
-		$options = array();
 
 		$usage_type = self::getGeneralUsageType($row['usaget']);
 		$row_ref = $row->createRef();
-		list($plan_key, $category_key, $zone_key) = self::getBreakdownKeys($row, $pricingData);
+		list($plan_key, $category_key, $zone_key) = self::getBreakdownKeys($row, $pricingData, $vatable);
 
 		$query = self::getMatchingBillrunQuery($account_id, $billrun_key, $subscriber_id, $usage_type, $row_ref);
 		$update = array_merge_recursive(self::getUpdateCostsQuery($pricingData, $row, $vatable), self::getUpdateDataCountersQuery($usage_type, $row), self::getPushLineQuery($usage_type, $row_ref), self::getUpdateBreakdownQuery($counters, $pricingData, $vatable, $plan_key, $category_key, $zone_key));
+		$fields = array();
+		$options = array();
 
 		$doc = $billrun_coll->findAndModify($query, $update, $fields, $options);
 
@@ -447,7 +450,7 @@ class Billrun_Billrun {
 				return true;
 			} else {
 				if ($row['type'] == 'flat' || $billrun_key == self::$runtime_billrun_key) { // if it's a flat line we don't want to advance the billrun key
-					Billrun_Factory::log()->log("Current billrun is closed for account " . $account_id . " for billrun " . $billrun_key, Zend_Log::NOTICE);
+					Billrun_Factory::log()->log("Billrun " . $billrun_key . " is closed for account " . $account_id, Zend_Log::ALERT);
 					return false;
 				} else {
 					return self::updateBillrun(self::$runtime_billrun_key, $counters, $pricingData, $row, $vatable);

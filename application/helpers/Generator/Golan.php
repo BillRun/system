@@ -149,13 +149,13 @@ class Generator_Golan extends Billrun_Generator {
 			$subscriber_sumup->TOTAL_ABOVE_GIFT = floatval($subscriber['costs']['over_plan']['vatable'] + $subscriber['costs']['out_plan']['vatable']); // vatable over/out plan cost
 			$subscriber_sumup->TOTAL_OUTSIDE_GIFT_VAT = floatval($subscriber['costs']['out_plan']['vatable']);
 			$subscriber_sumup->TOTAL_MANUAL_CORRECTION_CHARGE = floatval($subscriber['costs']['credit']['charge']['vatable']);
-			$subscriber_sumup->TOTAL_MANUAL_CORRECTION_CREDIT = floatval($subscriber['costs']['credit']['refund']['vatable']);
+			$subscriber_sumup->TOTAL_MANUAL_CORRECTION_CREDIT = -floatval($subscriber['costs']['credit']['refund']['vatable']);
 			$subscriber_sumup->TOTAL_MANUAL_CORRECTION = floatval($subscriber_sumup->TOTAL_MANUAL_CORRECTION_CHARGE) + floatval($subscriber_sumup->TOTAL_MANUAL_CORRECTION_CREDIT);
 			$subscriber_sumup->TOTAL_OUTSIDE_GIFT_NOVAT = floatval($subscriber['costs']['out_plan']['vat_free']);
-			$total_vatable = floatval($subscriber_flat_costs['vatable'] + $subscriber['costs']['over_plan']['vatable'] + $subscriber['costs']['out_plan']['vatable'] + $subscriber['costs']['credit']['charge']['vatable'] + $subscriber['costs']['credit']['refund']['vatable']);
-			$total_vat_free = floatval($subscriber_flat_costs['vat_free'] + $subscriber['costs']['over_plan']['vat_free'] + $subscriber['costs']['out_plan']['vat_free'] + $subscriber['costs']['credit']['charge']['vat_free'] + $subscriber['costs']['credit']['refund']['vat_free']);
+			$total_vatable = floatval($subscriber_flat_costs['vatable'] + $subscriber['costs']['over_plan']['vatable'] + $subscriber['costs']['out_plan']['vatable'] + $subscriber['costs']['credit']['charge']['vatable'] - $subscriber['costs']['credit']['refund']['vatable']);
+			$total_vat_free = floatval($subscriber_flat_costs['vat_free'] + $subscriber['costs']['over_plan']['vat_free'] + $subscriber['costs']['out_plan']['vat_free'] + $subscriber['costs']['credit']['charge']['vat_free'] - $subscriber['costs']['credit']['refund']['vat_free']);
 			$subscriber_sumup->TOTAL_VAT = floatval($row->get('vat') * $total_vatable);
-			$subscriber_sumup->TOTAL_CHARGE_NO_VAT = $total_vatable + $total_vat_free; // non_vatable_total+vatable_total
+			$subscriber_sumup->TOTAL_CHARGE_NO_VAT = $total_vatable + $total_vat_free;
 			$subscriber_sumup->TOTAL_CHARGE = floatval($subscriber_sumup->TOTAL_CHARGE_NO_VAT) + floatval($subscriber_sumup->TOTAL_VAT);
 
 			$invoice_total_gift+= floatval($subscriber_sumup->TOTAL_GIFT);
@@ -336,7 +336,7 @@ class Generator_Golan extends Billrun_Generator {
 
 			$breakdown_topic_charge = $subscriber_breakdown->addChild('BREAKDOWN_TOPIC');
 			$breakdown_topic_charge->addAttribute('name', 'CHARGE_PER_CLI');
-			foreach ($subscriber['breakdown']['credit']['charge'] as $reason => $cost) {
+			foreach ($subscriber['breakdown']['credit']['charge_vatable'] as $reason => $cost) {
 				$charge_entry = $breakdown_topic_charge->addChild('BREAKDOWN_ENTRY');
 				//						$charge_entry->addChild('TITLE', 'SERVICE-GIFT-GC_GOLAN-' . current($subscriber['lines']['flat']['refs'])['plan_ref']['name']);
 				$charge_entry->addChild('UNITS', 1);
@@ -347,15 +347,37 @@ class Generator_Golan extends Billrun_Generator {
 //					$charge_entry->addChild('TYPE_OF_BILLING', strtoupper($type));
 //						$charge_entry->addChild('TYPE_OF_BILLING_CHAR', ?);
 			}
+			foreach ($subscriber['breakdown']['credit']['charge_vat_free'] as $reason => $cost) {
+				$charge_entry = $breakdown_topic_charge->addChild('BREAKDOWN_ENTRY');
+				//						$charge_entry->addChild('TITLE', 'SERVICE-GIFT-GC_GOLAN-' . current($subscriber['lines']['flat']['refs'])['plan_ref']['name']);
+				$charge_entry->addChild('UNITS', 1);
+				$charge_entry->addChild('COST_WITHOUTVAT', $cost);
+				$charge_entry->addChild('VAT', 0);
+				$charge_entry->addChild('VAT_COST', floatval($charge_entry->COST_WITHOUTVAT) * floatval($charge_entry->VAT) / 100);
+				$charge_entry->addChild('TOTAL_COST', floatval($charge_entry->COST_WITHOUTVAT) + floatval($charge_entry->VAT_COST));
+//					$charge_entry->addChild('TYPE_OF_BILLING', strtoupper($type));
+//						$charge_entry->addChild('TYPE_OF_BILLING_CHAR', ?);
+			}
 
 			$breakdown_topic_refund = $subscriber_breakdown->addChild('BREAKDOWN_TOPIC');
 			$breakdown_topic_refund->addAttribute('name', 'REFUND_PER_CLI');
-			foreach ($subscriber['breakdown']['credit']['refund'] as $reason => $cost) {
+			foreach ($subscriber['breakdown']['credit']['refund_vatable'] as $reason => $cost) {
 				$refund_entry = $breakdown_topic_refund->addChild('BREAKDOWN_ENTRY');
 				//						$refund_entry->addChild('TITLE', 'SERVICE-GIFT-GC_GOLAN-' . current($subscriber['lines']['flat']['refs'])['plan_ref']['name']);
 				$refund_entry->addChild('UNITS', 1);
 				$refund_entry->addChild('COST_WITHOUTVAT', $cost);
 				$refund_entry->addChild('VAT', $xml->TELECOM_INFORMATION->VAT_VALUE);
+				$refund_entry->addChild('VAT_COST', floatval($refund_entry->COST_WITHOUTVAT) * floatval($refund_entry->VAT) / 100);
+				$refund_entry->addChild('TOTAL_COST', floatval($refund_entry->COST_WITHOUTVAT) + floatval($refund_entry->VAT_COST));
+//					$refund_entry->addChild('TYPE_OF_BILLING', strtoupper($type));
+//						$refund_entry->addChild('TYPE_OF_BILLING_CHAR', ?);
+			}
+			foreach ($subscriber['breakdown']['credit']['refund_vat_free'] as $reason => $cost) {
+				$refund_entry = $breakdown_topic_refund->addChild('BREAKDOWN_ENTRY');
+				//						$refund_entry->addChild('TITLE', 'SERVICE-GIFT-GC_GOLAN-' . current($subscriber['lines']['flat']['refs'])['plan_ref']['name']);
+				$refund_entry->addChild('UNITS', 1);
+				$refund_entry->addChild('COST_WITHOUTVAT', $cost);
+				$refund_entry->addChild('VAT', 0);
 				$refund_entry->addChild('VAT_COST', floatval($refund_entry->COST_WITHOUTVAT) * floatval($refund_entry->VAT) / 100);
 				$refund_entry->addChild('TOTAL_COST', floatval($refund_entry->COST_WITHOUTVAT) + floatval($refund_entry->VAT_COST));
 //					$refund_entry->addChild('TYPE_OF_BILLING', strtoupper($type));
@@ -540,7 +562,7 @@ class Generator_Golan extends Billrun_Generator {
 					if ($tele_service_code == '11') {
 						return $line['basicCallInformation']['Desination']['CalledNumber'];
 					} else if ($tele_service_code == '22') {
-						return isset($line['basicCallInformation']['Desination']['DialedDigits']) ? $line['basicCallInformation']['Desination']['DialedDigits'] : $line['basicCallInformation']['Desination']['CalledNumber']; // @todo check with sefi
+						return isset($line['basicCallInformation']['Desination']['DialedDigits']) ? $line['basicCallInformation']['Desination']['DialedDigits'] : $line['basicCallInformation']['Desination']['CalledNumber']; // @todo check with sefi. reference: db.lines.count({'BasicServiceUsedList.BasicServiceUsed.BasicService.BasicServiceCode.TeleServiceCode':"22",record_type:'9','basicCallInformation.Desination.DialedDigits':{$exists:false}});
 					}
 				}
 				break;

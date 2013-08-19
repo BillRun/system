@@ -174,7 +174,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		//Billrun_Factory::log()->log($path, Zend_Log::DEBUG);
 		// @TODO: use Zend_Http_Client
 //		$json = $this->send($path);
-		$json =  '{"1205035":{"subscribers":[{"subscriber_id":169319,"current_plan":"SMALL"}]}}'; // stub
+		$json =  '{"6052390":{"subscribers":[{"subscriber_id":1,"current_plan":"LARGE"}]}}'; // stub
 		if (!$json) {
 			return false;
 		}
