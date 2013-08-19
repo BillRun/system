@@ -44,7 +44,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	 * @var Mongodloid_Collection
 	 */
 	protected $lines = null;
-	
+
 	/**
 	 *
 	 * @var Mongodloid_Collection
@@ -123,21 +123,28 @@ EOT;
 				Billrun_Factory::dispatcher()->trigger('beforeAggregateLine', array(&$subscriber, &$this));
 				$account_id = $subscriber->account_id;
 				$subscriber_id = $subscriber->subscriber_id;
+				$plan_name = $subscriber->plan;
+				if (is_null($plan_name)) {
+					$subscriber_status = "closed";
+					Billrun_Billrun::setSubscriberStatus($account_id, $subscriber_id, $billrun_key, $subscriber_status);
+				} else {
+					$subscriber_status = "open";
+					$flat_price = $subscriber->getFlatPrice();
+					if (is_null($flat_price)) {
+						Billrun_Factory::log()->log("Couldn't find flat price for subscriber " . $subscriber_id . " for billrun " . $billrun_key, Zend_Log::ALERT);
+						continue;
+					}
+					Billrun_Factory::log('Adding flat to subscriber ' . $subscriber_id, Zend_Log::INFO);
+					$flat_line = $this->saveFlatLine($subscriber, $billrun_key);
 
-				$flat_price = $subscriber->getFlatPrice();
-				if (is_null($flat_price)) {
-					Billrun_Factory::log()->log("Couldn't find flat price for subscriber " . $subscriber_id . " for billrun " . $billrun_key, Zend_Log::ALERT);
-					continue;
-				}
-				Billrun_Factory::log('Adding flat to subscriber ' . $subscriber_id, Zend_Log::INFO);
-				$flat_line = $this->saveFlatLine($subscriber, $billrun_key);
-
-				$plan = $flat_line['plan_ref'];
-				if (!$billrun = Billrun_Billrun::updateBillrun($billrun_key, array(), array('price_customer' => $flat_price), $flat_line, $plan['vatable'])) {
-					Billrun_Factory::log()->log("Flat costs already exist in billrun collection for subscriber " . $subscriber_id . " for billrun " . $billrun_key, Zend_Log::NOTICE);
-				} else if ($billrun instanceof Mongodloid_Entity) {
-					$flat_line['billrun_ref'] = $billrun->createRef($this->billrun);
-					$flat_line->save();
+					$plan = $flat_line['plan_ref'];
+					if (!$billrun = Billrun_Billrun::updateBillrun($billrun_key, array(), array('price_customer' => $flat_price), $flat_line, $plan['vatable'], $subscriber_status)) {
+						Billrun_Factory::log()->log("Flat costs already exist in billrun collection for subscriber " . $subscriber_id . " for billrun " . $billrun_key, Zend_Log::NOTICE);
+					} else if ($billrun instanceof Mongodloid_Entity) {
+						Billrun_Billrun::setSubscriberStatus($account_id, $subscriber_id, $billrun_key, $subscriber_status);
+						$flat_line['billrun_ref'] = $billrun->createRef($this->billrun);
+						$flat_line->save();
+					}
 				}
 			}
 			Billrun_Billrun::close($account_id, $billrun_key);

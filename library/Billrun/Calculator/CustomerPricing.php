@@ -14,8 +14,6 @@
  */
 class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 
-	protected $server_id = 1;
-	protected $server_count = 1;
 	protected $pricingField = 'price_customer';
 	static protected $type = "pricing";
 
@@ -50,20 +48,8 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	}
 
 	protected function getLines() {
-//		$queue = Billrun_Factory::db()->queueCollection();
-//		$query = self::getBaseQuery();
 		$query = array();
-		$query['type'] = array('$in' => array('ggsn', 'smpp', 'smsc', 'nsn', 'tap3'));
-		$query['$or'][] = array('account_id' => array('$exists' => false));
-		$query['$or'][] = array('account_id' => array('$mod' => array($this->server_count, $this->server_id - 1)));
-//		$update = self::getBaseUpdate();
-//		$options = array('sort' => array('unified_record_time' => 1));
-//		$i = 0;
-//		$docs = array();
-//		while ($i < $this->limit && ($doc = $queue->findAndModify($query, $update, array(), $options)) && !$doc->isEmpty()) {
-//			$docs[] = $doc;
-//			$i++;
-//		}
+		$query['type'] = array('$in' => array('ggsn', 'smpp', 'smsc', 'nsn', 'tap3', 'credit'));
 		return $this->getQueuedLines($query);
 	}
 
@@ -86,8 +72,8 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 						continue;
 					}
 					$this->writeLine($line);
-					$this->data[] = $line;
 				}
+				$this->data[] = $line;
 				//$this->updateLinePrice($item); //@TODO  this here to prevent divergance  between the priced lines and the subscriber's balance/billrun if the process fails in the middle.
 				Billrun_Factory::dispatcher()->trigger('afterPricingDataRow', array('data' => &$line));
 			} else {

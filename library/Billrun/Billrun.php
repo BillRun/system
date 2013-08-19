@@ -140,8 +140,10 @@ class Billrun_Billrun {
 				'over_plan' => self::getCategories(),
 				'out_plan' => self::getCategories(),
 				'credit' => array(
-					'charge' => new stdclass,
-					'refund' => new stdclass,
+					'charge_vatable' => new stdclass,
+					'charge_vat_free' => new stdclass,
+					'refund_vatable' => new stdclass,
+					'refund_vat_free' => new stdclass,
 				),
 			),
 		);
@@ -242,32 +244,59 @@ class Billrun_Billrun {
 	}
 
 	/**
-	 * Returns a query that produces a valid billrun (if exists) for insertion
-	 * @param type $account_id
-	 * @param type $billrun_key
+	 * Returns a query that matches the billrun parameters supplied
+	 * @param int $account_id the account id
+	 * @param int $billrun_key the billrun key
+	 * @param int $subscriber_id the subscriber id
+	 * @return array the query
+	 */
+	protected static function getMatchingBillrunQuery($account_id, $billrun_key, $subscriber_id = null) {
+		$query = array(
+			'account_id' => $account_id,
+			'billrun_key' => $billrun_key,
+		);
+		if (!is_null($subscriber_id)) {
+			$query['subs'] = array(
+				'$elemMatch' => array(
+					'sub_id' => $subscriber_id,
+				)
+			);
+		}
+		return $query;
+	}
+
+	/**
+	 * Get a query that returns open billrun only
+	 * @return array the query
+	 */
+	protected static function getOpenBillrunQuery() {
+		$query = array(
+			'invoice_id' => array(
+				'$exists' => false,
+			),
+		);
+		return $query;
+	}
+
+	/**
+	 * Get a query that produces a billrun that does not include the input line
 	 * @param type $subscriber_id
 	 * @param string $usage_type the general usage type of the line (output of getGeneralUsageType function)
 	 * @param MongoDBRef $row_ref the reference of the line we wish to insert
 	 * @return array the query
 	 */
-	protected static function getMatchingBillrunQuery($account_id, $billrun_key, $subscriber_id, $usage_type, $row_ref) {
-		return array(
-			'account_id' => $account_id,
-			'billrun_key' => $billrun_key,
-			'invoice_id' => array(
-				'$exists' => false,
-			),
-			'subs' => array(
-				'$elemMatch' => array(
-					'sub_id' => $subscriber_id,
-					'lines.' . $usage_type . '.refs' => array(
-						'$nin' => array(
-							$row_ref
-						)
+	protected static function getDistinctLinesBillrunQuery($subscriber_id, $usage_type, $row_ref) {
+		$query['subs'] = array(
+			'$elemMatch' => array(
+				'sub_id' => $subscriber_id,
+				'lines.' . $usage_type . '.refs' => array(
+					'$nin' => array(
+						$row_ref
 					)
 				)
-			),
+			)
 		);
+		return $query;
 	}
 
 	/**
@@ -309,6 +338,20 @@ class Billrun_Billrun {
 	}
 
 	/**
+	 * Returns the subscriber status update query
+	 * @param string $subscriber_status the subscriber status
+	 * @return array the subscriber status update query
+	 */
+	protected static function getUpdateSubscriberStatusQuery($subscriber_status) {
+		if (!is_null($subscriber_status)) {
+			$update['$set']['subs.$.subscriber_status'] = $subscriber_status;
+		} else {
+			$update = array();
+		}
+		return $update;
+	}
+
+	/**
 	 * Returns the push to lines update query
 	 * @param string $usage_type the general usage type of the line (output of getGeneralUsageType function)
 	 * @param MongoDBRef $row_ref the reference of the line we wish to insert
@@ -326,9 +369,10 @@ class Billrun_Billrun {
 	 * Returns the breakdown keys for the row
 	 * @param Mongodloid_Entity $row the row to insert to the billrun
 	 * @param array $pricingData the output array from updateSubscriberBalance function
+	 * @param boolean $vatable is the line vatable or not
 	 * @return array an array containing the plan, category & zone keys respectively
 	 */
-	protected static function getBreakdownKeys($row, $pricingData) {
+	protected static function getBreakdownKeys($row, $pricingData, $vatable) {
 		if ($row['type'] != 'flat') {
 			$rate = $row['customer_rate'];
 		}
@@ -347,7 +391,7 @@ class Billrun_Billrun {
 		}
 
 		if ($row['type'] == 'credit') {
-			$category_key = $row['credit_type'];
+			$category_key = $row['credit_type'] . "_" . ($vatable ? "vatable" : "vat_free");
 		} else if (isset($rate['rates'][$row['usaget']]['category'])) {
 			$category = $rate['rates'][$row['usaget']]['category'];
 			switch ($category) {
@@ -411,8 +455,6 @@ class Billrun_Billrun {
 	/**
 	 * Updates the billrun costs, lines & breakdown with the input line if the line is not already included in it
 	 * @param string $billrun_key the billrun_key to insert into the billrun
-	 * @param int $account_id the account id
-	 * @param int $subscriber_id the subscriber id
 	 * @param array $counters keys - usage type. values - amount of usage. Currently supports only arrays of one element
 	 * @param array $pricingData the output array from updateSubscriberBalance function
 	 * @param Mongodloid_Entity $row the input line
@@ -423,15 +465,15 @@ class Billrun_Billrun {
 		$account_id = $row['account_id'];
 		$subscriber_id = $row['subscriber_id'];
 		$billrun_coll = Billrun_Factory::db()->billrunCollection();
-		$fields = array();
-		$options = array();
 
 		$usage_type = self::getGeneralUsageType($row['usaget']);
 		$row_ref = $row->createRef();
-		list($plan_key, $category_key, $zone_key) = self::getBreakdownKeys($row, $pricingData);
+		list($plan_key, $category_key, $zone_key) = self::getBreakdownKeys($row, $pricingData, $vatable);
 
-		$query = self::getMatchingBillrunQuery($account_id, $billrun_key, $subscriber_id, $usage_type, $row_ref);
+		$query = array_merge_recursive(self::getMatchingBillrunQuery($account_id, $billrun_key), self::getOpenBillrunQuery(), self::getDistinctLinesBillrunQuery($subscriber_id, $usage_type, $row_ref));
 		$update = array_merge_recursive(self::getUpdateCostsQuery($pricingData, $row, $vatable), self::getUpdateDataCountersQuery($usage_type, $row), self::getPushLineQuery($usage_type, $row_ref), self::getUpdateBreakdownQuery($counters, $pricingData, $vatable, $plan_key, $category_key, $zone_key));
+		$fields = array();
+		$options = array();
 
 		$doc = $billrun_coll->findAndModify($query, $update, $fields, $options);
 
@@ -445,13 +487,44 @@ class Billrun_Billrun {
 			} else if (self::lineRefExists($account_id, $subscriber_id, $billrun_key, $usage_type, $row_ref)) {
 				Billrun_Factory::log()->log("Line with stamp " . $row['stamp'] . " already exists in billrun " . $billrun_key . " for account " . $account_id, Zend_Log::NOTICE);
 				return true;
+			} else if ($row['type'] == 'flat' || $billrun_key == self::$runtime_billrun_key) { // if it's a flat line we don't want to advance the billrun key
+				Billrun_Factory::log()->log("Billrun " . $billrun_key . " is closed for account " . $account_id, Zend_Log::ALERT);
+				return false;
 			} else {
-				if ($row['type'] == 'flat' || $billrun_key == self::$runtime_billrun_key) { // if it's a flat line we don't want to advance the billrun key
-					Billrun_Factory::log()->log("Current billrun is closed for account " . $account_id . " for billrun " . $billrun_key, Zend_Log::NOTICE);
-					return false;
-				} else {
-					return self::updateBillrun(self::$runtime_billrun_key, $counters, $pricingData, $row, $vatable);
-				}
+				return self::updateBillrun(self::$runtime_billrun_key, $counters, $pricingData, $row, $vatable);
+			}
+		}
+		return $doc;
+	}
+
+	/**
+	 * Updates the billrun costs, lines & breakdown with the input line if the line is not already included in it
+	 * @param int $account_id the account id
+	 * @param int $subscriber_id the subscriber id
+	 * @param string $billrun_key the billrun_key to insert into the billrun
+	 * @param string $status the status of the subscriber
+	 * @return mixed Mongodloid_Entity when the insert was successful, true when the line already exists in a billrun and false otherwise
+	 */
+	public static function setSubscriberStatus($account_id, $subscriber_id, $billrun_key, $status) {
+		$billrun_coll = Billrun_Factory::db()->billrunCollection();
+
+		$query = array_merge_recursive(self::getMatchingBillrunQuery($account_id, $billrun_key, $subscriber_id), self::getOpenBillrunQuery());
+		$update = self::getUpdateSubscriberStatusQuery($status);
+		$fields = array();
+		$options = array();
+
+		$doc = $billrun_coll->findAndModify($query, $update, $fields, $options);
+
+		// recovery
+		if ($doc->isEmpty()) { // billrun document was not found
+			$billrun = self::createBillrunIfNotExists($account_id, $billrun_key);
+			if ($billrun->isEmpty()) { // means that the billrun was created so we can retry updating it
+				return self::setSubscriberStatus($account_id, $subscriber_id, $billrun_key, $status);
+			} else if (self::addSubscriberIfNotExists($account_id, $subscriber_id, $billrun_key)) {
+				return self::setSubscriberStatus($account_id, $subscriber_id, $billrun_key, $status);
+			} else {
+				Billrun_Factory::log()->log("Billrun " . $billrun_key . " is closed for account " . $account_id, Zend_Log::ALERT);
+				return false;
 			}
 		}
 		return $doc;
