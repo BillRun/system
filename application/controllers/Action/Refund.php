@@ -57,6 +57,7 @@ class RefundAction extends Action_Base {
 		
 		$post['stamp'] = Billrun_Util::generateArrayStamp($post);
 		$post['process_time'] = Billrun_Util::generateCurrentTime();
+		$post['price_customer'] = floatval($post['amount_without_vat']);
 		$post['unified_record_time'] = new MongoDate($post['credit_time'] ." ".date("P") );
 		
 		$linesCollection = Billrun_Factory::db()->linesCollection();
