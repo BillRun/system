@@ -115,14 +115,14 @@ abstract class Billrun_Calculator extends Billrun_Base {
 				//Billrun_Factory::log()->log("Calcuating row : ".print_r($item,1),  Zend_Log::DEBUG);
 				Billrun_Factory::dispatcher()->trigger('beforeRateDataRow', array('data' => &$line));
 				$line->collection($lines_coll);
-				if($this->isLineLegitimate($line)) {
+				if ($this->isLineLegitimate($line)) {
 					if (!$this->updateRow($line)) {
 						unset($this->lines[$key]);
 						continue;
 					}
-				$this->writeLine($line);
+					$this->writeLine($line);
+				}
 				$this->data[] = $line;
-				}				
 				Billrun_Factory::dispatcher()->trigger('afterRateDataRow', array('data' => &$line));
 			} else {
 				unset($this->lines[$key]);
@@ -192,13 +192,13 @@ abstract class Billrun_Calculator extends Billrun_Base {
 			$query[$previous_calculator_tag] = true;
 		}
 		$current_calculator_queue_tag = self::getCalculatorQueueTag($calculator_type);
-		$orphand_time = strtotime(Billrun_Factory::config()->getConfigValue('queue.calculator.orphan_wait_time',"6 hours") . " ago");
+		$orphand_time = strtotime(Billrun_Factory::config()->getConfigValue('queue.calculator.orphan_wait_time', "6 hours") . " ago");
 		$query['$and'][0]['$or'] = array(
 			array($current_calculator_queue_tag => array('$exists' => false)),
 			array($current_calculator_queue_tag => array(
 					'$ne' => true, '$lt' => new MongoDate($orphand_time)
 				))
-		);		
+		);
 		return $query;
 	}
 
@@ -226,19 +226,19 @@ abstract class Billrun_Calculator extends Billrun_Base {
 			}
 		}
 	}
-	
-	protected function getQueuedLines($localquery) {			
+
+	protected function getQueuedLines($localquery) {
 		$queue = Billrun_Factory::db()->queueCollection();
-		$query =  array_merge(static::getBaseQuery(),$localquery);
-		$update = static::getBaseUpdate();				
+		$query = array_merge(static::getBaseQuery(), $localquery);
+		$update = static::getBaseUpdate();
 
 		$docs = array();
-		$i=0;
+		$i = 0;
 		while ($i < $this->limit && ($doc = $queue->findAndModify($query, $update)) && !$doc->isEmpty()) {
 			$docs[] = $doc;
 			$i++;
 		}
-		return $docs;	
+		return $docs;
 //		$id= md5( time() . rand(0,PHP_INT_MAX) . rand(0,PHP_INT_MAX). rand(0,PHP_INT_MAX). rand(0,PHP_INT_MAX)); //@TODO  make this  more unique!!!!		
 //		$update['$set']['work_id'] = $id; 		
 //		
@@ -259,7 +259,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 //
 //		return array();
 	}
-	
+
 	/**
 	 * Get the  current  calculator type, to be used in the queue.
 	 * @return string the  type  of the calculator
@@ -273,5 +273,4 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	 * @return ture if the line  can be handled  by the  calculator  false otherwise.
 	 */
 	abstract protected function isLineLegitimate($line);
-	
 }
