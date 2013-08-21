@@ -214,6 +214,6 @@ class Billrun_Util {
 	}
 
 	public static function isTimestamp($timestamp) {
-		return ((string) (int) $timestamp === $timestamp) && ($timestamp <= PHP_INT_MAX) && ($timestamp >= ~PHP_INT_MAX);
+		return ((string) (int) $timestamp === strval($timestamp)) && ($timestamp <= PHP_INT_MAX) && ($timestamp >= ~PHP_INT_MAX);
 	}
 }

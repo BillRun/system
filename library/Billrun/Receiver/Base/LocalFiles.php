@@ -57,13 +57,13 @@ abstract class Billrun_Receiver_Base_LocalFiles extends Billrun_Receiver {
 		}
 		$files = scandir($this->srcPath);
 		$ret = array();
-		foreach ($files as $file) {
-			$path = $this->srcPath . DIRECTORY_SEPARATOR . $file;
-			if (!$this->isFileValid($file, $path) || $this->isFileReceived($file, $type) || is_dir($path)) {
+		foreach ($files as $filename) {
+			$path = $this->srcPath . DIRECTORY_SEPARATOR . $filename;
+			if (!$this->isFileValid($filename, $path) || $this->isFileReceived($filename, $type) || is_dir($path)) {
 				continue;
 			}
-			Billrun_Factory::log()->log("Billrun_Receiver_Base_LocalFiles::receive - handle file {$file}", Zend_Log::DEBUG);
-			$path = $this->handleFile($path, $file);
+			Billrun_Factory::log()->log("Billrun_Receiver_Base_LocalFiles::receive - handle file {$filename}", Zend_Log::DEBUG);
+			$path = $this->handleFile($path, $filename);
 			if (!$path) {
 				Billrun_Factory::log()->log("NOTICE : Couldn't relocate file from  $path.", Zend_Log::NOTICE);
 				continue;
