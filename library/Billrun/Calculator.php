@@ -221,6 +221,15 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		return $update;
 	}
 
+	static protected function getBaseOptions() {
+		$options = array(
+			"sort" => array(
+				"_id" => -1,
+			),
+		);
+		return $options;
+	}
+
 	public final function removeFromQueue() {
 		$calculators_queue_order = Billrun_Factory::config()->getConfigValue("queue.calculators");
 		$calculator_type = static::getCalculatorQueueType();
@@ -240,10 +249,12 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		$queue = Billrun_Factory::db()->queueCollection();
 		$query = array_merge(static::getBaseQuery(), $localquery);
 		$update = static::getBaseUpdate();
+		$fields = array();
+		$options = static::getBaseOptions();
 
 		$docs = array();
 		$i = 0;
-		while ($i < $this->limit && ($doc = $queue->findAndModify($query, $update)) && !$doc->isEmpty()) {
+		while ($i < $this->limit && ($doc = $queue->findAndModify($query, $update, $fields, $options)) && !$doc->isEmpty()) {
 			$docs[] = $doc;
 			$i++;
 		}
