@@ -16,7 +16,7 @@
  * all the below code will be ignored
  */
 
-//define('BILLRUN_CONFIG_PATH', APPLICATION_PATH . "/conf/test.ini");
+define('BILLRUN_CONFIG_PATH', APPLICATION_PATH . "/conf/prod.ini");
 
 
 if (!defined('BILLRUN_CONFIG_PATH')) {
