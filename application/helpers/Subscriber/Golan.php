@@ -173,8 +173,8 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		$path = 'http://' . $host . '/' . $url . '?' . http_build_query($params);
 		//Billrun_Factory::log()->log($path, Zend_Log::DEBUG);
 		// @TODO: use Zend_Http_Client
-//		$json = $this->send($path);
-		$json =  '{"6052390":{"subscribers":[{"subscriber_id":1,"current_plan":"LARGE"}]}}'; // stub
+		$json = $this->send($path);
+//		$json =  '{"6052390":{"subscribers":[{"subscriber_id":1,"current_plan":"LARGE"}]}}'; // stub
 		if (!$json) {
 			return false;
 		}
@@ -200,7 +200,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		if (is_array($accounts) && !empty($accounts)) {
 			foreach ($accounts as $account_id => $account) {
 				foreach ($account['subscribers'] as $subscriber) {
-					$subscriber_settings = array_merge($subscriber_general_settings, array('time' => strtotime($time), 'data' => array('account_id' => intval($account_id), 'subscriber_id' => $subscriber['subscriber_id'], 'plan' => $subscriber['current_plan'])));
+					$subscriber_settings = array_merge($subscriber_general_settings, array('time' => strtotime($time), 'data' => array('account_id' => intval($account_id), 'subscriber_id' => $subscriber['subscriber_id'], 'plan' => $subscriber['plan'])));
 					$ret_data[intval($account_id)][] = Billrun_Subscriber::getInstance($subscriber_settings);
 				}
 			}
