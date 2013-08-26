@@ -229,52 +229,56 @@ class Mongodloid_Collection {
 
 	/**
 	 * Method to create auto increment of document
-	 * To use this method require counters collection, created by the next command:
+	 * To use this method require counters collection (see create.ini)
 	 * 
 	 * @param string $id the id of the document to auto increment
+	 * @param int $min_id the first value if no value exists
+	 * 
 	 * @return int the incremented value
 	 */
-	public function createAutoInc($oid, $min_id) {
-		$counters_coll = Billrun_Factory::db()->countersCollection();
+	public function createAutoInc($oid, $min_id = 1) {
+		// TODO check if succeed
+		$countersColl = $this->_db->getCollection('counters');
+		$collection_name = $this->getName();
+		// get last seq
+		$lastSeq = $countersColl->query('coll', $collection_name)->cursor()->sort(array('seq' => -1))->limit(1)->current()->get('seq');
+		// try to set last seq
+		while (1) {
+			$lastSeq++;
+			$insert = array(
+				'coll' => $collection_name,
+				'oid' => $oid,
+				'seq' => $lastSeq
+			);
+
+			try {
+				$ret = $countersColl->insert($insert, array('w' => 1));
+			} catch (MongoCursorException $e) {
+				if ($e->getCode() == 11000) {
+					// duplicate - need to check if oid already exists
+					$ret = $this->getAutoInc($oid);
+					if (empty($ret) || !is_numeric($ret)) {
+						// if oid not exists - probably someone insert same seq at the same time
+						// let's try to insert same oid with next seq
+						continue;
+					}
+					$lastSeq = $ret;
+					break;
+				}
+			}
+			break;
+		}
+		return $lastSeq;
+	}
+
+	public function getAutoInc($oid) {
+		$countersColl = $this->_db->getCollection('counters');
 		$collection_name = $this->getName();
 		$query = array(
 			'coll' => $collection_name,
 			'oid' => $oid,
 		);
-		$update = array(
-			'$setOnInsert' => array(
-				'coll' => $collection_name,
-				'oid' => $oid,
-			),
-		);
-		$options = array(
-			'upsert' => true,
-		);
-		$this->update($query, $update, $options);
-		$closeBillrunFunc = <<<EOT
-		function (coll_name, oid, min_seq) {
-			var targetCollection = db._counters;
-			while (1) {
-				var cursor = targetCollection.find({'coll_name': coll_name}, {'seq': 1}).sort({'seq': -1}).limit(1);
-				var seq = cursor.hasNext() ? cursor.next().seq + 1 : min_seq;
-				targetCollection.update({'coll': coll_name, 'oid': oid, 'seq':{\$exists:false}},{\$set: {'seq': seq}, \$setOnInsert: {'coll': coll_name, 'oid': oid, 'seq': seq}}, {upsert: true});
-				var err = db.getLastErrorObj();
-				if (err && err.code) {
-					if (err.code == 11000) /* dup key */
-						continue;
-					else
-						print("unexpected error updating invoice_id: " + tojson(err));
-				}
-				return seq;
-			}
-		}
-EOT;
-		$save_function_command = "db.system.js.save({_id : \"closeBillrun\" , value : $closeBillrunFunc})";
-		Billrun_Factory::db()->execute($save_function_command);
-
-//		insert id + inc_id + coll + ttl;
-//		coll = current collection;
-//		if can't insert check if exists already and return
+		return $countersColl->query($query)->cursor()->limit(1)->current()->get('seq');
 	}
 
 }

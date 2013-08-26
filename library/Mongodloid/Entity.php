@@ -312,15 +312,30 @@ class Mongodloid_Entity implements ArrayAccess {
 	 * @param string $id the id of the document to auto increment
 	 * 
 	 */
-	public function createAutoInc($field, $refCollection = null) {
+	public function createAutoInc($field, $min_id = 1, $refCollection = null) {
+		
+		// check if already set auto increment for the field
+		$value = $this->get($field);
+		if ($value) {
+			return $value;
+		}
+
+		// check if collection exists for the entity
 		if (!is_null($refCollection)) {
 			$this->collection($refCollection);
 		} else if (!$this->collection()) {
 			return;
 		}
-		// TODO: check if id exists
-		$inc = $this->collection()->createAutoInc();
+
+		// check if id exists (cannot create auto increment without id)
+		$id = $this->getId();
+		if (!$id) {
+			return;
+		}
+
+		$inc = $this->collection()->createAutoInc($id->getMongoID(), $min_id);
 		$this->set($field, $inc);
+		return $inc;
 	}
 
 }
