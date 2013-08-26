@@ -309,7 +309,9 @@ class Mongodloid_Entity implements ArrayAccess {
 	 * Method to create auto increment of document
 	 * To use this method require counters collection, created by the next command:
 	 * 
-	 * @param string $id the id of the document to auto increment
+	 * @param string $field the field to set the auto increment
+	 * @param int $min_id the default value to use for the first value
+	 * @param Mongodloid_Collection $refCollection the collection to reference to 
 	 * 
 	 */
 	public function createAutoInc($field, $min_id = 1, $refCollection = null) {
