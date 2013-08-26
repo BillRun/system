@@ -28,6 +28,12 @@ class Billrun_Log extends Zend_Log {
 	 */
 	protected $stamp = '';
 
+    /**
+     * Class constructor.  Create a new logger
+     *
+     * @param Zend_Log_Writer_Abstract|null  $writer  default writer
+     * @return void
+     */
     public function __construct(Zend_Log_Writer_Abstract $writer = null) {
 		parent::__construct($writer);
 		$this->stamp = substr(md5($_SERVER['REQUEST_TIME']), 0, 7);
