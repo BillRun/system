@@ -283,28 +283,7 @@ class Mongodloid_Entity implements ArrayAccess {
 
 		return $this->collection()->remove($this);
 	}
-
-	//=============== ArrayAccess Implementation =============
-	public function offsetExists($offset) {
-		return isset($this->_values[$offset]);
-	}
-
-	public function offsetGet($offset) {
-		return $this->get($offset);
-	}
-
-	public function offsetSet($offset, $value) {
-		return $this->set($offset, $value, true);
-	}
-
-	public function offsetUnset($offset) {
-		unset($this->_values[$offset]);
-	}
-
-	public function isEmpty() {
-		return empty($this->_values);
-	}
-
+	
 	/**
 	 * Method to create auto increment of document
 	 * To use this method require counters collection, created by the next command:
@@ -338,6 +317,27 @@ class Mongodloid_Entity implements ArrayAccess {
 		$inc = $this->collection()->createAutoInc($id->getMongoID(), $min_id);
 		$this->set($field, $inc);
 		return $inc;
+	}
+
+	//=============== ArrayAccess Implementation =============
+	public function offsetExists($offset) {
+		return isset($this->_values[$offset]);
+	}
+
+	public function offsetGet($offset) {
+		return $this->get($offset);
+	}
+
+	public function offsetSet($offset, $value) {
+		return $this->set($offset, $value, true);
+	}
+
+	public function offsetUnset($offset) {
+		unset($this->_values[$offset]);
+	}
+
+	public function isEmpty() {
+		return empty($this->_values);
 	}
 
 }
