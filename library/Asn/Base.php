@@ -37,7 +37,7 @@ class Asn_Base {
 	}
 
 	/**
-	 * get the data ofan ASN object as an nested array.
+	 * Get the data ofan ASN object as an nested array.
 	 * @param @rootObj the ASN object to get the data from.
 	 * @return Array containing the object  and it`s nested childrens data.
 	 */

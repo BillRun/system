@@ -1,5 +1,4 @@
 <?php
-
 /**
  * @package         Billing
  * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
@@ -53,7 +52,6 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 * @var boolean
 	 */
 	protected $bulkInsert = 0;
-
 	/**
 	 * the file path to process on
 	 * @var file path
@@ -71,19 +69,18 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 */
 	protected $line_numbers = false;
 
+
 	/**
 	 * current processed line number
 	 * @var boolean 
 	 */
 	protected $current_line = 0;
-
 	/**
 	 * the backup sequence file number digits granularity 
 	 * (1=batches of 10 files  in each directory, 2= batches of 100, 3= batches of 1000,etc...)
 	 * @param integer
 	 */
 	protected $backup_seq_granularity = self::BACKUP_FILE_SEQUENCE_GRANULARITY;
-
 	/**
 	 * constructor - load basic options
 	 *
@@ -120,11 +117,9 @@ abstract class Billrun_Processor extends Billrun_Base {
 		if (isset($options['processor']['limit']) && $options['processor']['limit']) {
 			$this->setLimit($options['processor']['limit']);
 		}
-
 		if (isset($options['processor']['backup_granularity']) && $options['processor']['backup_granularity']) {
 			$this->backup_seq_granularity = $options['processor']['backup_granularity'];
 		}
-
 		if (isset($options['bulkInsert'])) {
 			$this->bulkInsert = $options['bulkInsert'];
 		}
@@ -143,11 +138,9 @@ abstract class Billrun_Processor extends Billrun_Base {
 		if (!isset($this->data['data'])) {
 			$this->data['data'] = array();
 		}
-
 		$this->data['data'][] = $row;
 		return true;
 	}
-
 	public function getParser() {
 		return $this->parser;
 	}
@@ -177,6 +170,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 
 		return TRUE;
 	}
+
 
 	/**
 	 * method to run over all the files received which did not have been processed
@@ -255,13 +249,10 @@ abstract class Billrun_Processor extends Billrun_Base {
 			Billrun_Factory::log()->log("Billrun_Processor: cannot log parsing action" . $this->filePath, Zend_Log::WARN);
 			return FALSE;
 		}
-
 		Billrun_Factory::dispatcher()->trigger('afterProcessorStore', array($this));
-
 		$this->backup();
 
 		Billrun_Factory::dispatcher()->trigger('afterProcessorBackup', array($this, &$this->filePath));
-
 		return count($this->data['data']);
 	}
 
@@ -425,6 +416,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 		}
 	}
 
+
 	/**
 	 * method to backup the processed file
 	 * @param string $path  the path to backup the file to.
@@ -445,7 +437,6 @@ abstract class Billrun_Processor extends Billrun_Base {
 				$path . DIRECTORY_SEPARATOR . $this->filename
 		));
 	}
-
 	/**
 	 * Get the data the is stored in the file name.
 	 * @return an array containing the sequence data. ie:

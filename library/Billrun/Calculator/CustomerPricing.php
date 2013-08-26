@@ -118,6 +118,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			Billrun_Factory::log()->log("Line with stamp " . $row['stamp'] . " is missing volume information", Zend_Log::ALERT);
 			return false;
 		}
+
 		$row->setRawData(array_merge($row->getRawData(), $pricingData));
 		return true;
 	}
@@ -152,6 +153,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		$price = $accessPrice + $this->getPriceByRates($typedRates['rate'], $volumeToPrice);
 		//Billrun_Factory::log()->log("Rate : ".print_r($typedRates,1),  Zend_Log::DEBUG);
 		$ret[$this->pricingField] = $price;
+
 
 		return $ret;
 	}

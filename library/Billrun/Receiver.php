@@ -98,7 +98,7 @@ abstract class Billrun_Receiver extends Billrun_Base {
 		$log = Billrun_Factory::db()->logCollection();
 		$query = array();
 		Billrun_Factory::dispatcher()->trigger('alertisFileReceivedQuery', array(&$query, $type, $this));
-		$resource = $log->query($query)->equals('source', $type)->equals('file_name', $filename);
+		$resource = $log->query($query)->equals('source', $type)->equals('file_name', $filename)->cursor()->limit(1);
 		return $resource->count() > 0;
 	}
 	

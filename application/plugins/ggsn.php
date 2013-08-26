@@ -347,12 +347,16 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Pl
 			},
 			'timezone' => function ($data) {
 				$smode =unpack('c*', $data);
-				//$timeSaving=intval($smode[2] < 3 ? $smode[2] : 0 );
-				//time zone offset is repesented  by  multiples of  15 minutes.
-				$quarterOffset = intval($smode[1]);
-				$h = str_pad(intval($quarterOffset/4), 2 ,"0", STR_PAD_LEFT); // calc the offset hours
-				$m = str_pad(($quarterOffset%4)*15, 2, "0", STR_PAD_LEFT); // calc the offset minutes
-				return  (($quarterOffset > 0) ? "+" : "-") . "$h:$m" ;
+				//$timeSaving=intval( $smode[2] & 0x3 );
+				//time zone offset is repesented by multiples of 15 minutes.
+				$quarterOffset = intval($smode[1] & 0xAF);
+				if(abs($quarterOffset) <= 52) {//data sanity check less then 13hours  offset
+					$h = str_pad(abs(intval($quarterOffset/4)), 2 ,"0", STR_PAD_LEFT); // calc the offset hours
+					$m = str_pad(abs(($quarterOffset%4)*15), 2, "0", STR_PAD_LEFT); // calc the offset minutes
+					return  (($quarterOffset > 0) ? "+" : "-") . "$h:$m" ;
+				}
+				//Billrun_Factory::log()->log($data. " : ". print_r($smode,1),Zend_Log::DEBUG );
+				return false;
 			},
 			'ch_ch_selection_mode' => function($data) {
 				$smode = intval(implode('.', unpack('C', $data)));
