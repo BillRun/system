@@ -49,8 +49,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 			$params['DATETIME'] = $params['time'];
 		}
 
-		$data = $this->request($params); // @todo uncomment this
-//		$data = array("account_id" => 7112968, "subscriber_id" => 116815, "plan" =>"SMALL"); // @todo remove this
+		$data = $this->request($params);
 
 		if (is_array($data)) {
 			$this->data = $data;

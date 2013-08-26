@@ -96,7 +96,7 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 			->equals('subscriber_id', "$subscriber_id")
 			->notExists('billrun_excluded')
 			// todo check how to use hint with 2 indexes
-			->cursor()->hint(array('source' => 1))
+			->cursor()->hint(array('subscriber_id' => 1))
 			->sort(array('unified_record_time' => 1));
 			
 		foreach ($resource as $entity) {

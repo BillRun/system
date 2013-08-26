@@ -35,7 +35,7 @@ class Billrun_Parser_KeyedSeparated extends Billrun_Parser_Separator {
 		$lastKey = false;
 		for ($i=0; isset($brokenLine[$i]); $i++) {
 			if($i%2) {
-				$keyedRecord[$lastKey] = $this->unescape( $brokenLine[$i], $this->getSeparator());
+				$keyedRecord[$lastKey] = utf8_encode($this->unescape( $brokenLine[$i], $this->getSeparator()));
 			} else {
 				$lastKey = $brokenLine[$i];
 			}
