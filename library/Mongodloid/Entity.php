@@ -305,4 +305,22 @@ class Mongodloid_Entity implements ArrayAccess {
 		return empty($this->_values);
 	}
 
+	/**
+	 * Method to create auto increment of document
+	 * To use this method require counters collection, created by the next command:
+	 * 
+	 * @param string $id the id of the document to auto increment
+	 * 
+	 */
+	public function createAutoInc($field, $refCollection = null) {
+		if (!is_null($refCollection)) {
+			$this->collection($refCollection);
+		} else if (!$this->collection()) {
+			return;
+		}
+		// TODO: check if id exists
+		$inc = $this->collection()->createAutoInc();
+		$this->set($field, $inc);
+	}
+
 }

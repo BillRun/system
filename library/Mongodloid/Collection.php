@@ -17,7 +17,7 @@ class Mongodloid_Collection {
 		$this->_collection = $collection;
 		$this->_db = $db;
 	}
-	
+
 	public function update($query, $values, $options = array()) {
 		return $this->_collection->update($query, $values, $options);
 	}
@@ -102,8 +102,8 @@ class Mongodloid_Collection {
 			$filter_id = new MongoId((string) $id);
 		}
 
-		$values = $this->_collection->findOne(array('_id' => $filter_id ));
-		
+		$values = $this->_collection->findOne(array('_id' => $filter_id));
+
 		if ($want_array)
 			return $values;
 
@@ -173,7 +173,7 @@ class Mongodloid_Collection {
 		}
 		return new Mongodloid_Entity($this->_collection->getDBRef($ref));
 	}
-	
+
 	/**
 	 * method to create Mongo DB reference object
 	 * 
@@ -213,7 +213,7 @@ class Mongodloid_Collection {
 	public function batchInsert(array $a, array $options = array()) {
 		return $this->_collection->batchInsert($a, $options);
 	}
-	
+
 	/**
 	 * method to insert document
 	 * 
@@ -225,6 +225,56 @@ class Mongodloid_Collection {
 	 */
 	public function insert($a, array $options = array()) {
 		return $this->_collection->insert($a, $options);
+	}
+
+	/**
+	 * Method to create auto increment of document
+	 * To use this method require counters collection, created by the next command:
+	 * 
+	 * @param string $id the id of the document to auto increment
+	 * @return int the incremented value
+	 */
+	public function createAutoInc($oid, $min_id) {
+		$counters_coll = Billrun_Factory::db()->countersCollection();
+		$collection_name = $this->getName();
+		$query = array(
+			'coll' => $collection_name,
+			'oid' => $oid,
+		);
+		$update = array(
+			'$setOnInsert' => array(
+				'coll' => $collection_name,
+				'oid' => $oid,
+			),
+		);
+		$options = array(
+			'upsert' => true,
+		);
+		$this->update($query, $update, $options);
+		$closeBillrunFunc = <<<EOT
+		function (coll_name, oid, min_seq) {
+			var targetCollection = db._counters;
+			while (1) {
+				var cursor = targetCollection.find({'coll_name': coll_name}, {'seq': 1}).sort({'seq': -1}).limit(1);
+				var seq = cursor.hasNext() ? cursor.next().seq + 1 : min_seq;
+				targetCollection.update({'coll': coll_name, 'oid': oid, 'seq':{\$exists:false}},{\$set: {'seq': seq}, \$setOnInsert: {'coll': coll_name, 'oid': oid, 'seq': seq}}, {upsert: true});
+				var err = db.getLastErrorObj();
+				if (err && err.code) {
+					if (err.code == 11000) /* dup key */
+						continue;
+					else
+						print("unexpected error updating invoice_id: " + tojson(err));
+				}
+				return seq;
+			}
+		}
+EOT;
+		$save_function_command = "db.system.js.save({_id : \"closeBillrun\" , value : $closeBillrunFunc})";
+		Billrun_Factory::db()->execute($save_function_command);
+
+//		insert id + inc_id + coll + ttl;
+//		coll = current collection;
+//		if can't insert check if exists already and return
 	}
 
 }
