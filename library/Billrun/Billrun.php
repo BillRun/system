@@ -172,13 +172,11 @@ class Billrun_Billrun {
 
 	/**
 	 * Closes the current billrun by creating invoice ID and saves it.
-	 * Assumes closeBillrun function has been previously defined.
 	 */
-	public static function close($account_id, $billrun_key) {
-		$closeBillrunCmd = "closeBillrun($account_id, '$billrun_key');";
-		$ret = Billrun_Factory::db()->execute($closeBillrunCmd);
-		if ($ret['ok']) {
-			Billrun_Factory::log()->log("Created invoice " . $ret['retval'] . " for account " . $account_id, Zend_Log::INFO);
+	public static function close($account_id, $billrun_key, $min_id) {
+		$billrun = self::createBillrunIfNotExists($account_id, $billrun_key);
+		if (is_null($ret = $billrun->createAutoInc("invoice_id", $min_id))) {
+			Billrun_Factory::log()->log("Created invoice " . $ret . " for account " . $account_id, Zend_Log::INFO);
 		} else {
 			Billrun_Factory::log()->log("Failed to create invoice for account " . $account_id, Zend_Log::INFO);
 		}

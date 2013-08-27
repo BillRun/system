@@ -237,14 +237,21 @@ class Mongodloid_Collection {
 	 * @return int the incremented value
 	 */
 	public function createAutoInc($oid, $min_id = 1) {
+		// set first seq + don't manually increment the seq
 		// TODO check if succeed
 		$countersColl = $this->_db->getCollection('counters');
 		$collection_name = $this->getName();
-		// get last seq
-		$lastSeq = $countersColl->query('coll', $collection_name)->cursor()->sort(array('seq' => -1))->limit(1)->current()->get('seq');
+
 		// try to set last seq
 		while (1) {
-			$lastSeq++;
+			// get last seq
+			$lastSeq = $countersColl->query('coll', $collection_name)->cursor()->sort(array('seq' => -1))->limit(1)->current()->get('seq');
+			if (is_null($lastSeq)) {
+				$lastSeq = $min_id;
+			}
+			else {
+				$lastSeq++;
+			}
 			$insert = array(
 				'coll' => $collection_name,
 				'oid' => $oid,

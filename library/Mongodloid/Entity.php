@@ -156,9 +156,9 @@ class Mongodloid_Entity implements ArrayAccess {
 
 		$result = $value;
 
-		if (!$dontSend && $this->getId())
+		if (!$dontSend && $this->getId()) {
 			$this->update(array('$set' => array($real_key => $value)));
-
+		}
 		return $this;
 	}
 
@@ -283,7 +283,7 @@ class Mongodloid_Entity implements ArrayAccess {
 
 		return $this->collection()->remove($this);
 	}
-	
+
 	/**
 	 * Method to create auto increment of document
 	 * To use this method require counters collection, created by the next command:
@@ -291,10 +291,10 @@ class Mongodloid_Entity implements ArrayAccess {
 	 * @param string $field the field to set the auto increment
 	 * @param int $min_id the default value to use for the first value
 	 * @param Mongodloid_Collection $refCollection the collection to reference to 
-	 * 
+	 * @return mixed the auto increment value or void on error
 	 */
 	public function createAutoInc($field, $min_id = 1, $refCollection = null) {
-		
+
 		// check if already set auto increment for the field
 		$value = $this->get($field);
 		if ($value) {
