@@ -237,8 +237,7 @@ class Mongodloid_Collection {
 	 * @return int the incremented value
 	 */
 	public function createAutoInc($oid, $min_id = 1) {
-		// set first seq + don't manually increment the seq
-		// TODO check if succeed
+
 		$countersColl = $this->_db->getCollection('counters');
 		$collection_name = $this->getName();
 
@@ -248,8 +247,7 @@ class Mongodloid_Collection {
 			$lastSeq = $countersColl->query('coll', $collection_name)->cursor()->sort(array('seq' => -1))->limit(1)->current()->get('seq');
 			if (is_null($lastSeq)) {
 				$lastSeq = $min_id;
-			}
-			else {
+			} else {
 				$lastSeq++;
 			}
 			$insert = array(
