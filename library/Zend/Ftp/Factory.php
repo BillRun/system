@@ -116,7 +116,6 @@ class Zend_Ftp_Factory {
 			Zend_Ftp_Factory::$registeredTypes[$family][$type] :
 			'Zend_Ftp_' . ucfirst($family) . '_' . ucfirst(strtolower($type));
 
-		Billrun_Factory::log()->Log($className,Zend_Log::DEBUG);
 		$class = new ReflectionClass($className);
 		return $class->newInstanceArgs($params);
 	}

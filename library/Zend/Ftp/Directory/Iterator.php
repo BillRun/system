@@ -1,6 +1,6 @@
 <?php
 
-class Zend_Ftp_Directory_Iterator implements SeekableIterator, Countable, ArrayAccess {
+class Zend_Ftp_Directory_Iterator implements Zend_Ftp_Directory_IIterator {
 
 	/**
 	 * The directory
@@ -53,23 +53,12 @@ class Zend_Ftp_Directory_Iterator implements SeekableIterator, Countable, ArrayA
 	public function __construct($dir, $ftp) {
 		$this->_dir = $dir;
 		$this->_ftp = $ftp;
-
-		$lines = @ftp_rawlist($this->_ftp->getConnection(), $this->_dir);
+		$lines = @ftp_rawlist($this->_ftp->getConnection(), $this->_dir->path);
 
 		if (!is_array($lines)) {
 			return false;
 		}
-		
-		$parser = Zend_Ftp_Factory::getParser($this->_ftp->getSysType());
-		
-		foreach ($lines as $line) {
-			$fileData = $parser->parseFileDirectoryListing($line);	
-			if ($fileData['type'] != 'l') {
-				$this->_data[] = $fileData;
-			}		
-		}
-
-		$this->_count = count($this->_data);
+		$this->processDirectoryData($lines);
 	}
 
 	
@@ -98,10 +87,10 @@ class Zend_Ftp_Directory_Iterator implements SeekableIterator, Countable, ArrayA
 			$row = $this->_data[$this->_pointer];
 			switch ($row['type']) {
 				case 'd': // Directory
-					$this->_rows[$this->_pointer] = new Zend_Ftp_Directory($this->_dir . $row['name'] . '/', $this->_ftp);
+					$this->_rows[$this->_pointer] = new Zend_Ftp_Directory($this->_dir->path . $row['name'] . '/', $this->_ftp);
 					break;
 				case '-': // File
-					$this->_rows[$this->_pointer] = new Zend_Ftp_File($this->_dir . $row['name'], $this->_ftp, $row);
+					$this->_rows[$this->_pointer] = new Zend_Ftp_File($this->_dir->path . $row['name'], $this->_ftp, $row);
 					break;
 				case 'l': // Symlink
 				default:
@@ -224,4 +213,20 @@ class Zend_Ftp_Directory_Iterator implements SeekableIterator, Countable, ArrayA
 		return $row;
 	}
 
+	/**
+	 * process the data returned from a directory content listing.
+	 * @param type $lines the lines  that  were returned from the directoryt file listing
+	 */
+	protected function processDirectoryData($lines) {			
+		
+		$parser = Zend_Ftp_Factory::getParser($this->_ftp->getSysType());
+		foreach ($lines as $line) {
+			$fileData = $parser->parseFileDirectoryListing($line);	
+			if ($fileData['type'] != 'l') {
+				$this->_data[] = $fileData;
+			}		
+		}
+
+		$this->_count = count($this->_data);
+	}
 }

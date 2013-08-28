@@ -7,7 +7,7 @@
  *
  * @author eran
  */
-class Billrun_Receiver_NsnFtpParser implements Zend_Ftp_Parser_IParser {
+class Zend_Ftp_Parser_NsnFtpParser implements Zend_Ftp_Parser_IParser {
 	
 	/**
 	 * extract the file data for a directory listing of the file

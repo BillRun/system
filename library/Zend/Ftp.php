@@ -442,10 +442,9 @@ class Zend_Ftp {
 	 */
 	public function getSysType() {
 		if(!$this->_connection) {
-			throw new Exception("System ftype  can only be checked after a successful contection is made");
+			throw new Exception("System type can only be checked after a successful contection is made");
 		}		
-		$ret = @ftp_systype($this->_connection);
-		Billrun_Factory::log()->Log($ret,Zend_Log::DEBUG);
+		$ret = @ftp_systype($this->_connection);		
 		return $ret ? $ret : Zend_Ftp::UNKNOWN_SYSTEM_TYPE;
 		
 	}
