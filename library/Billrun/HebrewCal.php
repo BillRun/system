@@ -6,85 +6,94 @@
  * @license         GNU General Public License version 2 or later; see LICENSE.txt
  */
 
+define('HEBCAL_WEEKDAY', 'weekday');
+define('HEBCAL_WEEKEND', 'weekend');
+define('HEBCAL_WORKDAY', 'workday');
+define('HEBCAL_HOLIDAY', 'holiday');
+define('HEBCAL_SHORTDAY', 'shortday');
+
 /**
  * Billing generic time utils class
+ * 
  * @TODO extract this class to from the billrun to a seperate library
- * @package  Billrun_HebrewTimeUtils
+ * 
+ * @package  Billrun Hebrew Calendar
  * @since    0.5
  */
 class Billrun_HebrewCal {
 
-	public static $STANDARD_YEAR_HOLIDAYS = array(
+	public static $STANDARD_YEAR_HEBCAL_HOLIDAYS = array(
 		// Rosh Hashanah
-		'13/29' => 'shortday', // rush ahshanna evening
-		'01/01' => 'holiday', //rush ahshanna
-		'01/02' => 'holiday', //rush ahshanna
-		//Yum kippur
-		'01/09' => 'shortday', //yum kipur evening
-		'01/10' => 'holiday', //yum kipur
-		//Soukott
-		'01/14' => 'shortday', //sukott evening
-		'01/15' => 'holiday', //sukott
-		'01/16' => 'holiday', //sukott
-		'01/17' => 'holiday', //sukott
-		'01/18' => 'holiday', //sukott
-		'01/19' => 'holiday', //sukott
-		'01/20' => 'holiday', //sukott
-		'01/21' => 'holiday', //sukott
-		'01/22' => 'workday', //Simchat Torah
-		//Hanukka
-		'03/25' => 'workday', //Hanukka
-		'03/26' => 'workday', //Hanukka
-		'03/27' => 'workday', //Hanukka
-		'03/28' => 'workday', //Hanukka
-		'03/29' => 'workday', //Hanukka
-		'03/30' => 'workday', //Hanukka
-		'04/01' => 'workday', //Hanukka
-		'04/02' => 'workday', //Hanukka
-		//Tu besvaht
-		'04/15' => 'workday', //Tu besvaht
-		//Purim
-		'06/13' => 'workday', //Purim evening
-		'06/14' => 'holiday', //Purim or...
-		//Pesaach
-		'08/14' => 'shortday', //Pesaach evening
-		'08/15' => 'holiday', //Pesaach
-		'08/16' => 'holiday', //Pesaach
-		'08/17' => 'holiday', //Pesaach
-		'08/18' => 'holiday', //Pesaach
-		'08/19' => 'holiday', //Pesaach
-		'08/20' => 'holiday', //Pesaach
-		'08/21' => 'holiday', //Pesaach
+		'13/29' => HEBCAL_SHORTDAY, // Rosh ahshanna evening
+		'01/01' => HEBCAL_HOLIDAY, // Rosh ahshanna
+		'01/02' => HEBCAL_HOLIDAY, // Rosh ahshanna
+		//Yum Kippur
+		'01/09' => HEBCAL_SHORTDAY, // yum kipur evening
+		'01/10' => HEBCAL_HOLIDAY, // yum kipur
+		// Soukott
+		'01/14' => HEBCAL_SHORTDAY, // sukott evening
+		'01/15' => HEBCAL_HOLIDAY, // sukott
+		'01/16' => HEBCAL_HOLIDAY, // sukott
+		'01/17' => HEBCAL_HOLIDAY, // sukott
+		'01/18' => HEBCAL_HOLIDAY, // sukott
+		'01/19' => HEBCAL_HOLIDAY, // sukott
+		'01/20' => HEBCAL_HOLIDAY, // sukott
+		'01/21' => HEBCAL_HOLIDAY, // sukott
+		'01/22' => HEBCAL_WORKDAY, // Simchat Torah
+		// Hanukka
+		'03/25' => HEBCAL_WORKDAY, // Hanukka
+		'03/26' => HEBCAL_WORKDAY, // Hanukka
+		'03/27' => HEBCAL_WORKDAY, // Hanukka
+		'03/28' => HEBCAL_WORKDAY, // Hanukka
+		'03/29' => HEBCAL_WORKDAY, // Hanukka
+		'03/30' => HEBCAL_WORKDAY, // Hanukka
+		'04/01' => HEBCAL_WORKDAY, // Hanukka
+		'04/02' => HEBCAL_WORKDAY, // Hanukka
+		// Tu Besvaht
+		'04/15' => HEBCAL_WORKDAY, // Tu besvaht
+		// Purim
+		'06/13' => HEBCAL_WORKDAY, // Purim evening
+		'06/14' => HEBCAL_HOLIDAY, // Purim or...
+		// Pesaach
+		'08/14' => HEBCAL_SHORTDAY, // Pesaach evening
+		'08/15' => HEBCAL_HOLIDAY, // Pesaach
+		'08/16' => HEBCAL_HOLIDAY, // Pesaach
+		'08/17' => HEBCAL_HOLIDAY, // Pesaach
+		'08/18' => HEBCAL_HOLIDAY, // Pesaach
+		'08/19' => HEBCAL_HOLIDAY, // Pesaach
+		'08/20' => HEBCAL_HOLIDAY, // Pesaach
+		'08/21' => HEBCAL_HOLIDAY, // Pesaach
 		// Yom HaShoah
-		'08/26' => 'workday', // Yom HaShoah evening
-		'08/27' => 'workday', // Yom HaShoah
+		'08/26' => HEBCAL_WORKDAY, // Yom HaShoah evening
+		'08/27' => HEBCAL_WORKDAY, // Yom HaShoah
 		// Yom Hazikaron
-		'09/03' => 'workday', // Yom Hazikaron evening
-		'09/04' => 'workday', // Yom Hazikaron
+		'09/03' => HEBCAL_WORKDAY, // Yom Hazikaron evening
+		'09/04' => HEBCAL_WORKDAY, // Yom Hazikaron
 		// Yom Ha'atzmaut
-		'09/05' => 'workday', // Yom Ha'atzmaut
+		'09/05' => HEBCAL_WORKDAY, // Yom Ha'atzmaut
 		//Lag Baommer
-		'09/17' => 'workday', // Lag Baommer evening
-		'09/18' => 'workday', // Lag Baommer
+		'09/17' => HEBCAL_WORKDAY, // Lag Baommer evening
+		'09/18' => HEBCAL_WORKDAY, // Lag Baommer
 		// Jerusalem day
-		'09/28' => 'workday', // Jerusalem day
-		//Shavoout
-		'10/05' => 'shortday', //shavoout evening
-		'10/06' => 'holiday', //shavoout
-		//Tu Beahav
-		'12/15' => 'workday', //Tu Beahav
+		'09/28' => HEBCAL_WORKDAY, // Jerusalem day
+		// Shavoout
+		'10/05' => HEBCAL_SHORTDAY, // Shavoout evening
+		'10/06' => HEBCAL_HOLIDAY, // Shavoout
+		// Tu Beahav
+		'12/15' => HEBCAL_WORKDAY, // Tu Beahav
 	);
 
 	/**
+	 * Method to get the holidays off all year
 	 * 
-	 * @param type $unixtime
-	 * @param type $isLeapYear
+	 * @param int $unixtime the date to check.
 	 * @param type $walledCity
-	 * @param type $isAbroad used to calculate Hag Sheni
+	 * @param type $isAbroad used to calculate Hag Sheni. Not implemented yet
+	 * 
 	 * @return string
 	 */
 	public static function getHolidaysForYear($unixtime, $walledCity = false, $isAbroad = false) {
-		$retArr = self::$STANDARD_YEAR_HOLIDAYS;
+		$retArr = self::$STANDARD_YEAR_HEBCAL_HOLIDAYS;
 		list($month, $day, $year) = self::getHebrewDate($unixtime, true);
 		$isLeapYear = self::isLeapYear($unixtime);
 		if ($isLeapYear) {
@@ -135,7 +144,7 @@ class Billrun_HebrewCal {
 			$retArr['09/04'] = $retArr['09/05'];
 			unset($retArr['09/05']);
 		}
-		
+
 		if (cal_from_jd(jewishtojd(9, 28, $year), CAL_JEWISH)['dow'] == 5) { // prepone Jerusalem day
 			$retArr['08/27'] = $retArr['08/28'];
 			unset($retArr['08/28']);
@@ -146,44 +155,51 @@ class Billrun_HebrewCal {
 
 	/**
 	 * Check if a certain date is a regular weekday or a weekend/holiday
+	 * 
 	 * @param type $unixtime the  date to check for
+	 * 
 	 * @return boolean true if the  date is a weekday false otherwise.
 	 */
 	public static function isRegularWorkday($unixtime) {
 		$dayType = self::getDayType($unixtime);
-		return 'weekday' == $dayType || 'workday' == $dayType;
+		return HEBCAL_WEEKDAY == $dayType || HEBCAL_WORKDAY == $dayType;
 	}
 
 	/**
 	 * Get the type  of the day a given time  is in.
 	 * (defaults to jewish calander)
-	 * @param type $unixtime the date to check.
+	 * 
+	 * @param int $unixtime the date to check.
+	 * @param boolean $weekends 
+	 * @param boolean $holidays 
+	 * 
 	 * @return string 
-	 * 			'weekday' => a regular weekday.
-	 * 			'shortday' =>  a short week day.
-	 * 			'holiday' => and holiday.
-	 * 			'weekend' => well weekend.
+	 * 			HEBCAL_WEEKDAY => a regular weekday.
+	 * 			HEBCAL_SHORTDAY =>  a short week day.
+	 * 			HEBCAL_HOLIDAY => and holiday.
+	 * 			HEBCAL_WEEKEND => well weekend.
 	 */
 	public static function getDayType($unixtime, $weekends = false, $holidays = false) {
-		$weekends = $weekends ? $weekends : array('6' => 'weekend');
+		$weekends = $weekends ? $weekends : array('6' => HEBCAL_WEEKEND);
 		$holidays = $holidays ? $holidays : self::getHolidaysForYear($unixtime);
 		$jewishDate = preg_replace("/\/\d+$/", "", preg_replace("/(?=\b)([1-9])(?=\b)/", "0$1", self::getHebrewDate($unixtime)));
-//		print_r($jewishDate . PHP_EOL);
-		$ret = 'weekday';
+
 		if (isset($holidays[$jewishDate])) {
-			$ret = $holidays[$jewishDate];
+			return $holidays[$jewishDate];
 		}
-		if ($ret != 'holiday' && isset($weekends[date('w', $unixtime)])) {
-			$ret = $weekends[date('w', $unixtime)];
+		if (isset($weekends[date('w', $unixtime)])) {
+			return $weekends[date('w', $unixtime)];
 		}
 
-		return $ret;
+		return HEBCAL_WEEKDAY;
 	}
 
 	/**
 	 * Get the hebrew date for a given unixtime.
+	 * 
 	 * @param type $unixtime
 	 * @param type $asArray ((optional) default to false)
+	 * 
 	 * @return type The jewish date as a string in the form "month/day/year"
 	 */
 	public static function getHebrewDate($unixtime, $asArray = false) {
