@@ -179,7 +179,7 @@ class Processor_Mergerates extends Billrun_Processor_Base_Separator {
 		//foreach ($this->data['data'] as &$row) {
 		if (isset($row['accessTypeName']) && $row['accessTypeName'] != 'Regular' && $row['accessTypeName'] != 'Callback') {
 			if ($row['zoneOrItem'] == '') {
-				Billrun_Factory::log('Found empty zone name. Treating as \'ROAM_ALL_DEST\' zone.', Zend_Log::ALERT);
+				Billrun_Factory::log('Found empty zone name. Treating as \'ROAM_ALL_DEST\' zone.', Zend_Log::NOTICE);
 			}
 			if (Billrun_Factory::db()->ratesCollection()->query(array('key' => $row['accessTypeName']))->cursor()->current()->getId()) {
 				return;
