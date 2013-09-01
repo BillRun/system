@@ -244,10 +244,12 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		$options = static::getBaseOptions();
 
 		$docs = array();
-		$i = 0;
-		while ($i < $this->limit && ($doc = $queue->findAndModify($query, $update, $fields, $options)) && !$doc->isEmpty()) {
-			$docs[] = $doc;
-			$i++;
+		$qlines =  $queue->query($query)->cursor()->limit( $this->limit );
+		foreach($qlines as $qline) {
+			$doc = $queue->findAndModify(array_merge( array('stamp' => $qline['stamp']), $query), $update, $fields, $options);
+			if(!$doc->isEmpty()) {
+				$docs[] = $doc;		
+			}
 		}
 		return $docs;
 //		$id= md5( time() . rand(0,PHP_INT_MAX) . rand(0,PHP_INT_MAX). rand(0,PHP_INT_MAX). rand(0,PHP_INT_MAX)); //@TODO  make this  more unique!!!!		
