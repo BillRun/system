@@ -69,20 +69,21 @@ trait Billrun_Traits_FileSequenceChecking {
 		//If there were any errors log them
 		if($mailMsg) {
 			Billrun_Factory::log()->log($mailMsg, $this->outOfSequenceAlertLevel );
-		}
-		//marked the last  sequenced files
-		foreach($this->hostSequenceCheckers[$hostname]->getSequences() as  $sequence) {
-			$log = Billrun_Factory::db()->logCollection();				
-			$lastSeqeueced = $log->query(
-								array(	'source'=> $this->getName(), 
-										'file_name' => $sequence->getLast(),
-										'retrieved_from'=> $hostname, 
-										'last_sequenced' => array('$ne' => true))
-								)										
-							->cursor()->current();
-			if(count($lastSeqeueced->getRawData())) {
-				$lastSeqeueced['last_sequenced']  = true;
-				$lastSeqeueced->save( Billrun_Factory::db()->logCollection() );
+		} else {
+			//marked the last  sequenced files
+			foreach($this->hostSequenceCheckers[$hostname]->getSequences() as  $sequence) {
+				$log = Billrun_Factory::db()->logCollection();				
+				$lastSeqeueced = $log->query(
+									array(	'source'=> $this->getName(), 
+											'file_name' => $sequence->getLast(),
+											'retrieved_from'=> $hostname, 
+											'last_sequenced' => array('$ne' => true))
+									)										
+								->cursor()->current();
+				if(count($lastSeqeueced->getRawData())) {
+					$lastSeqeueced['last_sequenced']  = true;
+					$lastSeqeueced->save( Billrun_Factory::db()->logCollection() );
+				}
 			}
 		}
 	}
@@ -105,18 +106,22 @@ trait Billrun_Traits_FileSequenceChecking {
 	 */
 	protected function loadLastFilesForHost($hostname) {
 		$log = Billrun_Factory::db()->logCollection();
+		$unsequencedWindow =  time()- strtotime('-'. Billrun_Factory::config()->getConfigValue($this->getName().'.receiver.unsequenced_time_window','30 min'));
+		$sequencedWindowMulti =   Billrun_Factory::config()->getConfigValue($this->getName().'.receiver.sequenced_time_window_multi',2);
 		$lastSeqeueced = $log->query(
-									array(	'source'=> $this->getName(), 
+									array(	
+											'source'=> $this->getName(), 
 											'last_sequenced' => array('$exists'=> TRUE),											
-											'retrieved_from'=> $hostname, )
+											'retrieved_from'=> $hostname, 
+											'received_time' => array( '$gte' => date(Billrun_Base::base_dateformat,time() - ($unsequencedWindow * $sequencedWindowMulti * 2) ) ),
+										)
 									)										
 								->cursor()->sort(array('received_time' => -1))
-								->limit(1)->current();
-		$unsequencedWindow =  time()- strtotime('-'. Billrun_Factory::config()->getConfigValue($this->getName().'.receiver.unsequenced_time_window','30 min'));
+								->limit(1)->current();		
 		$lastLogFiles = $log->query(
 									array(	'source'=> $this->getName(), 
-											'received_time' => array(	'$lt' => date(Billrun_Base::base_dateformat,time()- $unsequencedWindow),
-																		'$gte' => isset($lastSeqeueced['received_time']) ? $lastSeqeueced['received_time'] : date(Billrun_Base::base_dateformat,time() - ($unsequencedWindow*2) ) ),
+											'received_time' => array(	'$lt' => date(Billrun_Base::base_dateformat,time() - $unsequencedWindow),
+																		'$gte' => isset($lastSeqeueced['received_time']) ? $lastSeqeueced['received_time'] : date(Billrun_Base::base_dateformat,time() - ($unsequencedWindow * $sequencedWindowMulti) ) ),
 											'retrieved_from'=> $hostname, )
 									)										
 								->cursor()->sort(array('_id' =>  -1));
