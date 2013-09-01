@@ -54,7 +54,7 @@ class Billrun_Receiver_Relocate extends Billrun_Receiver_Base_LocalFiles {
 		$ret = $this->moveFiles ? (copy($srcPath, $newPath) && unlink($srcPath)) : copy($srcPath, $newPath);
 		if ($this->preserve_timestamps) {
 			$timestamp = filemtime($srcPath);
-			$this->setFileModificationTime($newPath, $timestamp);
+			Billrun_Util::setFileModificationTime($newPath, $timestamp);
 		}
 		Billrun_Factory::dispatcher()->trigger('afterRelocateFileHandling', array($this, &$srcPath, &$newPath, $filename, $ret));
 		return $ret ? $newPath : FALSE;
