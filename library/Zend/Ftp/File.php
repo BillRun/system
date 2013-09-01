@@ -29,13 +29,14 @@ class Zend_Ftp_File {
 	 * @var int
 	 */
 	protected $_mode = null;
-	
+
 	/**
 	 * The transfer mode for this file
 	 * 
 	 * @var int
 	 */
 	protected $_extraData = null;
+
 	/**
 	 * Instantiate an FTP file
 	 * 
@@ -46,7 +47,7 @@ class Zend_Ftp_File {
 		$this->_path = $path;
 		$this->_ftp = $ftp;
 		$this->_name = basename($this->path);
-		if($extraData) {
+		if ($extraData) {
 			$this->_extraData = $extraData;
 		}
 	}
@@ -112,7 +113,7 @@ class Zend_Ftp_File {
 		if (substr($path, -1) != '/') {
 			$path = $path . '/';
 		}
-		
+
 		return $this->saveToFile($path . basename($this->_name), $mode, $offset, $autoRecover);
 	}
 
@@ -130,13 +131,13 @@ class Zend_Ftp_File {
 			$mode = ($this->_mode === null ? $this->_ftp->determineMode($this->_path) : $this->_mode);
 		}
 		$get = @ftp_get($this->_ftp->getConnection(), $file, $this->_path, $mode, $offset);
-		
+
 		// retry ftp get if declared
 		if ($get === FALSE && $autoRecover) {
 			$this->_ftp->disconnect();
 			$get = @ftp_get($this->_ftp->getConnection(), $file, $this->_path, $mode, $offset);
 		}
-		
+
 		if ($get === false) {
 			//throw new Zend_Ftp_File_Exception('Unable to save file "' . $this->path . '"')
 			return false;
@@ -229,6 +230,23 @@ class Zend_Ftp_File {
 	 */
 	public function exists() {
 		// Unfinished
+	}
+
+	/**
+	 * 
+	 * @return int the last modified time as a Unix timestamp
+	 */
+	public function getModificationTime() {
+		$timestamp = @ftp_mdtm($this->_ftp->getConnection(), $this->_path);
+		if ($timestamp == -1) {
+			// try to get the timestamp by the file extra data
+			if (isset($this->extraData['date']) && $this->extraData['date']!=-1) {
+				$timestamp = $this->extraData['date'];
+			} else {
+				return false;
+			}
+		}
+		return $timestamp;
 	}
 
 }
