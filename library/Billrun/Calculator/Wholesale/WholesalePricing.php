@@ -63,7 +63,7 @@ class Billrun_Calculator_Wholesale_WholesalePricing extends Billrun_Calculator_W
 				//todo add peak/off peak to the data.
 				$row->setRawData(array_merge($row->getRawData(), $pricingData));
 			} else {
-				Billrun_Factory::log()->log( " Failed finding rate for row : ". print_r($row,1),Zend_Log::DEBUG);
+				Billrun_Factory::log()->log( " Failed finding rate for row : ". print_r($row['stamp'],1),Zend_Log::DEBUG);
 			}
 		} else {
 			Billrun_Factory::log()->log($this->count++. " no usagev or zone : {$row['usagev']} && $zoneKey : ". print_r($row,1),Zend_Log::DEBUG);
