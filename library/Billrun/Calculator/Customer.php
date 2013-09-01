@@ -164,7 +164,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	protected function isLineLegitimate($line) {
 		foreach ($this->translateCustomerIdentToAPI as $key => $toKey) {
 			if(isset($line[$key])) {
-				return (isset($line['customer_rate']) && $line['customer_rate']) ;
+				return (isset($line['customer_rate']) && $line['customer_rate']) ;//it  depend on customer rate to detect if the line is incoming or outgoing.
 			}
 		}
 		return  false;
