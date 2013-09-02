@@ -117,7 +117,7 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 				if ($this->preserve_timestamps) {
 					$timestamp = $file->getModificationTime();
 					if ($timestamp !== FALSE) {
-						$this->setFileModificationTime($received_path, $timestamp);
+						Billrun_Util::setFileModificationTime($received_path, $timestamp);
 					}
 				}
 				Billrun_Factory::dispatcher()->trigger('afterFTPFileReceived', array(&$received_path, $file, $this, $hostName, $extraData));

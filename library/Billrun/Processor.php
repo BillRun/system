@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package         Billing
  * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
@@ -52,6 +53,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 * @var boolean
 	 */
 	protected $bulkInsert = 0;
+
 	/**
 	 * the file path to process on
 	 * @var file path
@@ -69,18 +71,25 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 */
 	protected $line_numbers = false;
 
-
 	/**
 	 * current processed line number
 	 * @var boolean 
 	 */
 	protected $current_line = 0;
+
 	/**
 	 * the backup sequence file number digits granularity 
 	 * (1=batches of 10 files  in each directory, 2= batches of 100, 3= batches of 1000,etc...)
 	 * @param integer
 	 */
 	protected $backup_seq_granularity = self::BACKUP_FILE_SEQUENCE_GRANULARITY;
+
+	/**
+	 *
+	 * @var boolean whether to preserve the modification timestamps of the files being backed up
+	 */
+	protected $preserve_timestamps = true;
+
 	/**
 	 * constructor - load basic options
 	 *
@@ -94,7 +103,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 			$this->loadFile($options['path']);
 		}
 
-		if (isset($options['parser']) && $options['parser']!='none') {
+		if (isset($options['parser']) && $options['parser'] != 'none') {
 			$this->setParser($options['parser']);
 		}
 		if (isset($options['processor']['line_numbers'])) {
@@ -123,6 +132,9 @@ abstract class Billrun_Processor extends Billrun_Base {
 		if (isset($options['bulkInsert'])) {
 			$this->bulkInsert = $options['bulkInsert'];
 		}
+		if (isset($options['processor']['preserve_timestamps'])) {
+			$this->preserve_timestamps = $options['processor']['preserve_timestamps'];
+		}
 	}
 
 	/**
@@ -141,6 +153,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 		$this->data['data'][] = $row;
 		return true;
 	}
+
 	public function getParser() {
 		return $this->parser;
 	}
@@ -171,7 +184,6 @@ abstract class Billrun_Processor extends Billrun_Base {
 		return TRUE;
 	}
 
-
 	/**
 	 * method to run over all the files received which did not have been processed
 	 */
@@ -188,7 +200,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 		);
 		$linesCount = 0;
 
-		for ($i = $this->getLimit(); $i >= 0; $i--) {
+		for ($i = $this->getLimit(); $i > 0; $i--) {
 			$file = $log->query($baseQuery)
 					->equals('source', static::$type)
 					->notExists('process_time')
@@ -416,7 +428,6 @@ abstract class Billrun_Processor extends Billrun_Base {
 		}
 	}
 
-
 	/**
 	 * method to backup the processed file
 	 * @param string $path  the path to backup the file to.
@@ -433,10 +444,18 @@ abstract class Billrun_Processor extends Billrun_Base {
 		if (!file_exists($path)) {
 			@mkdir($path, 0777, true);
 		}
-		return @call_user_func_array($callback, array($this->filePath,
-				$path . DIRECTORY_SEPARATOR . $this->filename
+		$target_path = $path . DIRECTORY_SEPARATOR . $this->filename;
+		$ret = @call_user_func_array($callback, array(
+				$this->filePath,
+				$target_path,
 		));
+		if ($callback == 'copy' && $this->preserve_timestamps) {
+			$timestamp = filemtime($this->filePath);
+			Billrun_Util::setFileModificationTime($target_path, $timestamp);
+		}
+		return $ret;
 	}
+
 	/**
 	 * Get the data the is stored in the file name.
 	 * @return an array containing the sequence data. ie:
@@ -491,7 +510,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 		}
 		return true;
 	}
-	
+
 	protected function bulkAddToQueue($queue_data) {
 		$queue = Billrun_Factory::db()->queueCollection();
 		try {
@@ -527,7 +546,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 			}
 		}
 	}
-	
+
 	protected function addToQueue($queue_data) {
 		$queue = Billrun_Factory::db()->queueCollection();
 		foreach ($queue_data as $row) {
@@ -540,11 +559,11 @@ abstract class Billrun_Processor extends Billrun_Base {
 			}
 		}
 	}
-	
+
 	protected function getQueueData() {
 		$queue_data = array();
 		foreach ($this->data['data'] as $row) { //@TODO use array_column instead
-			$queue_data[] = array('stamp'=> $row['stamp'], 'type' => $row['type']);
+			$queue_data[] = array('stamp' => $row['stamp'], 'type' => $row['type']);
 		}
 		return $queue_data;
 	}

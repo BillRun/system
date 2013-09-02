@@ -119,8 +119,5 @@ abstract class Billrun_Receiver extends Billrun_Base {
 		//igonore hidden files
 		return preg_match( ( $this->filenameRegex ? $this->filenameRegex : "/^[^\.]/" ), $filename);
 	}
-	
-	protected function setFileModificationTime($received_path, $timestamp) {
-		return touch($received_path, $timestamp);
-	}
+
 }

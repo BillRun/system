@@ -216,4 +216,8 @@ class Billrun_Util {
 	public static function isTimestamp($timestamp) {
 		return ((string) (int) $timestamp === strval($timestamp)) && ($timestamp <= PHP_INT_MAX) && ($timestamp >= ~PHP_INT_MAX);
 	}
+	
+	public static function setFileModificationTime($received_path, $timestamp) {
+		return touch($received_path, $timestamp);
+	}
 }
