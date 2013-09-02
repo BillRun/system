@@ -13,50 +13,52 @@
  * @since    0.5
  */
 class Billrun_Calculator_Wholesale_NationalRoamingPricing extends Billrun_Calculator_Wholesale {
+
 	const MAIN_DB_FIELD = 'price_nr';
-	
+
 	protected $pricingField = self::MAIN_DB_FIELD;
-	
 	protected $nrCarriers = array();
-	
+
 	public function __construct($options = array()) {
 		parent::__construct($options);
-		foreach(Billrun_Factory::db()->carriersCollection()->query(array('key'=>'NR')) as $nrCarir) {
+		foreach (Billrun_Factory::db()->carriersCollection()->query(array('key' => 'NR')) as $nrCarir) {
 			$nrCarir->collection(Billrun_Factory::db()->carriersCollection());
 			$this->nrCarriers[] = $nrCarir->createRef();
 		}
 	}
-	
+
 	/**
 	 * @see Billrun_Calculator::getLines
 	 */
 	protected function getLines() {
-		$lines =  $this->getQueuedLines(array('type'=> 'nsn'));
+		$lines = $this->getQueuedLines(array('type' => 'nsn'));
 		return $lines;
 	}
 
 	protected function updateRow($row) {
-		
+
 		//@TODO  change this  be be configurable.
 		$pricingData = array();
 		$row->collection(Billrun_Factory::db()->linesCollection());
-		$zoneKey = $this->isLineIncoming($row) ?  'incoming' : $row['customer_rate']['key'];
+		$zoneKey = $this->isLineIncoming($row) ? 'incoming' : $this->loadDBRef($row->get('customer_rate', true))['key'];
 
-		if (isset($row['usagev']) && $zoneKey ) {
-			$rates =  $this->getCarrierRateForZoneAndType($row['carir'], $zoneKey, $row['usaget'] );
+		if (isset($row['usagev']) && $zoneKey) {
+			$rates = $this->getCarrierRateForZoneAndType($this->loadDBRef($row->get('carir', true)), $zoneKey, $row['usaget']);
+			if (!$rates) {
+				return false;
+			}
 			$pricingData = $this->getLinePricingData($row['usagev'], $rates);
 			$row->setRawData(array_merge($row->getRawData(), $pricingData));
-		}	
+		}
 	}
 
 	/**
 	 * @see Billrun_Calculator::isLineLegitimate()
 	 */
 	protected function isLineLegitimate($line) {
-		return ($line['record_type'] === "12" &&  in_array($line['carir'], $this->nrCarriers)) ||
-				($line['record_type'] === "11"  && in_array($line['carir_in'], $this->nrCarriers));
+		return ($line['record_type'] === "12" && in_array($line->get('carir', true), $this->nrCarriers)) ||
+			($line['record_type'] === "11" && in_array($line->get('carir_in', true), $this->nrCarriers));
 	}
-	
 
 }
 
