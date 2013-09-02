@@ -215,7 +215,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	static protected function getBaseOptions() {
 		$options = array(
 			"sort" => array(
-				"_id" => -1,
+				"_id" => 1,
 			),
 		);
 		return $options;
