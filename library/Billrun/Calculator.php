@@ -187,7 +187,7 @@ abstract class	Billrun_Calculator extends Billrun_Base {
 		$queue = Billrun_Factory::db()->queueCollection();
 		$calculator_tag = $this->getCalculatorQueueTag();
 		//foreach ($this->data as $item) {
-		$query = array('hash' => $this->workHash , $calculator_tag => $this->signedMicrotime );//array('stamp' => $item['stamp']);
+		$query = array('hash' => $this->workHash , $calculator_tag => new MongoDate($this->signedMicrotime) );//array('stamp' => $item['stamp']);
 		$update = array('$set' => array($calculator_tag => true));
 		$queue->update($query, $update,array('multiple'=> true));
 		//}
@@ -206,13 +206,14 @@ abstract class	Billrun_Calculator extends Billrun_Base {
 		$orphand_time = strtotime(Billrun_Factory::config()->getConfigValue('queue.calculator.orphan_wait_time', "6 hours") . " ago") ;
 		$query['$and'][0]['$or'] = array(
 			array($current_calculator_queue_tag => array('$exists' => false)),
-			array($current_calculator_queue_tag => array(
+/*			array($current_calculator_queue_tag => array(
 					'$ne' => true, '$lt' => $orphand_time
 				)),
-/*			array($current_calculator_queue_tag => array(
+ 
+ */
+			array($current_calculator_queue_tag => array(
 					'$ne' => true, '$lt' => new MongoDate($orphand_time)
 				))
- */
 		);
 		return $query;
 	}
@@ -222,7 +223,7 @@ abstract class	Billrun_Calculator extends Billrun_Base {
 		$this->signedMicrotime = microtime(true);
 		$update = array(
 			'$set' => array(
-				$current_calculator_queue_tag => $this->signedMicrotime,
+				$current_calculator_queue_tag => new MongoDate($this->signedMicrotime),
 			)
 		);
 		return $update;
@@ -281,7 +282,7 @@ abstract class	Billrun_Calculator extends Billrun_Base {
 		//Billrun_Factory::log()->log(print_r($query,1),Zend_Log::DEBUG);
 		$queue->update($query, $update, array('multiple'=> true));
 		
-		$foundLines = $queue->query( array_merge($localquery,array('hash' => $this->workHash , $current_calculator_queue_tag => $this->signedMicrotime )))->cursor();	
+		$foundLines = $queue->query( array_merge($localquery,array('hash' => $this->workHash , $current_calculator_queue_tag => new MongoDate($this->signedMicrotime) )))->cursor();	
 		foreach($foundLines as $line) {
 			$retLines[] = $line;
 		}
