@@ -50,7 +50,11 @@ class Billrun_Calculator_Wholesale_NationalRoamingPricing extends Billrun_Calcul
 			}
 			$pricingData = $this->getLinePricingData($row['usagev'], $rates);
 			$row->setRawData(array_merge($row->getRawData(), $pricingData));
+		} else {
+			Billrun_Factory::log()->log( " No usagev or zone : {$row['usagev']} && $zoneKey for line with stamp: " . $row['stamp'], Zend_Log::NOTICE);
+			return false;
 		}
+		return true;
 	}
 
 	/**
