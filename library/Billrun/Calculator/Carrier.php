@@ -37,10 +37,6 @@ class Billrun_Calculator_Carrier extends Billrun_Calculator {
 	}
 
 	protected function getLines() {
-		/* $lines = Billrun_Factory::db()->linesCollection();
-
-		  return $lines->query($this->linesQuery)
-		  ->notExists($this->ratingField)->cursor()->limit($this->limit); */
 
 		return $this->getQueuedLines(
 				$this->linesQuery);
@@ -71,14 +67,14 @@ class Billrun_Calculator_Carrier extends Billrun_Calculator {
 	 */
 	protected function detectCarrierOut($row) {
 		foreach ($this->carriers as $carrier) {
-			if (in_array($row['record_type'], array('09'))) {
+			if ( $row['record_type'] == '09' ) {
 				if ($carrier['key'] != 'GOLAN') {
 					continue;
 				} else {
 					return $carrier;
 				}
 			}
-			if (isset( $carrier['identifiction']['sms_centre'] ) && in_array($row['record_type'], array('08')) ) {
+			if ( $row['record_type'] == '08' && isset( $carrier['identifiction']['sms_centre'] ) ) {
 				if (!in_array(substr($row['sms_centre'], 0, 5), $carrier['identifiction']['sms_centre'])) {
 					continue;
 				} else {
@@ -98,14 +94,14 @@ class Billrun_Calculator_Carrier extends Billrun_Calculator {
 	 */
 	protected function detectCarrierIn($row) {
 		foreach ($this->carriers as $carrier) {
-			if (in_array($row['record_type'], array('08'))) {
+			if ( $row['record_type'] == '08') {
 				if ($carrier['key'] != 'GOLAN') {
 					continue;
 				} else {
 					return $carrier;
 				}
 			}
-			if (isset( $carrier['identifiction']['sms_centre'] ) && in_array($row['record_type'], array('09')) ) {
+			if ( $row['record_type'] == '09' && isset( $carrier['identifiction']['sms_centre'] )) {
 				if (!in_array(substr($row['sms_centre'], 0, 5), $carrier['identifiction']['sms_centre'])) {
 					continue;
 				} else {
