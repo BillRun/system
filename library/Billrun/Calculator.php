@@ -207,7 +207,10 @@ abstract class	Billrun_Calculator extends Billrun_Base {
 		$query['$and'][0]['$or'] = array(
 			array($current_calculator_queue_tag => array('$exists' => false)),
 			array($current_calculator_queue_tag => array(
-					'$ne' => true, '$lt' => $orphand_time
+					'$or' =>	array(
+									array('$ne' => true, '$lt' => $orphand_time),
+									array('$ne' => true, '$lt' => MongoDate($orphand_time)),
+							)
 				))
 		);
 		return $query;
@@ -266,21 +269,24 @@ abstract class	Billrun_Calculator extends Billrun_Base {
 //		return $docs;				 					
 
 		$horizonline = new Mongodloid_Entity();
-		for($limit=$this->limit; $limit > 1 && $horizonline->isEmpty();$limit=intval(max(1,$limit/2)) ) {			
+		for( $limit=$this->limit; $limit > 1 && $horizonline->isEmpty(); $limit=intval(max(1,$limit/2)) ) {			
 			Billrun_Factory::log()->log("searching for limit of : $limit",Zend_Log::DEBUG);
 			$horizonline = $queue->query($query)->cursor()->sort(array('_id'=> 1))->skip($limit)->limit(1)->current();
 		}		
 		
 		if(!$horizonline->isEmpty()) {
-			$query['$isolated'] = 1;//isolate the update
-			$this->workHash= md5( time() . rand(0,PHP_INT_MAX) );
-			$update['$set']['hash'] = $this->workHash;
 			$query['_id'] = array( '$lt' => $horizonline['_id']->getMongoID() );
-			//Billrun_Factory::log()->log(print_r($query,1),Zend_Log::DEBUG);
-			$queue->update($query, $update, array('multiple'=> true));			
-			return $queue->query( array_merge($localquery,array('hash' => $this->workHash , $current_calculator_queue_tag => $this->signedMicrotime )))->cursor();
+		} else if($this->limit != 0 ) {
+			return array();
 		}
-		return array();
+		
+		$query['$isolated'] = 1;//isolate the update
+		$this->workHash = md5( time() . rand(0,PHP_INT_MAX) );
+		$update['$set']['hash'] = $this->workHash;
+		//Billrun_Factory::log()->log(print_r($query,1),Zend_Log::DEBUG);
+		$queue->update($query, $update, array('multiple'=> true));			
+		return $queue->query( array_merge($localquery,array('hash' => $this->workHash , $current_calculator_queue_tag => $this->signedMicrotime )))->cursor();	
+
 	}
 
 	/**
