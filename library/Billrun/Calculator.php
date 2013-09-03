@@ -209,7 +209,7 @@ abstract class	Billrun_Calculator extends Billrun_Base {
 			array($current_calculator_queue_tag => array(
 					'$or' =>	array(
 									array('$ne' => true, '$lt' => $orphand_time),
-									array('$ne' => true, '$lt' => MongoDate($orphand_time)),
+									array('$ne' => true, '$lt' => new MongoDate($orphand_time)),
 							)
 				))
 		);
