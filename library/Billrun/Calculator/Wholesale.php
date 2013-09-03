@@ -119,9 +119,6 @@ abstract class Billrun_Calculator_Wholesale extends Billrun_Calculator {
 	protected static function getCalculatorQueueType() {
 		return static::MAIN_DB_FIELD;
 	}
-	
-}
-
 
 	protected function loadDBRef($db_ref) {
 		if (MongoDBRef::isRef($db_ref)) {
