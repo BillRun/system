@@ -166,14 +166,14 @@ abstract class Billrun_Processor extends Billrun_Base {
 	public function setBackupPath($paths) {
 		$paths = is_array($paths) ? $paths : explode(',', $paths);
 		$this->backupPaths = array();
-		// in case the path is not exists but we can't create it
+// in case the path is not exists but we can't create it
 
 		foreach ($paths as $path) {
 			if (!file_exists($path) && !@mkdir($path, 0777, true)) {
 				Billrun_Factory::log()->log("Can't create backup path or is not a directory " . $path, Zend_Log::WARN);
 				return FALSE;
 			}
-			// in case the path exists but it's a file
+// in case the path exists but it's a file
 			if (!is_dir($path)) {
 				Billrun_Factory::log()->log("The path " . $path . " is not directory", Zend_Log::WARN);
 				return FALSE;
@@ -201,24 +201,29 @@ abstract class Billrun_Processor extends Billrun_Base {
 		$linesCount = 0;
 
 		for ($i = $this->getLimit(); $i > 0; $i--) {
-			$file = $log->query($baseQuery)
-					->equals('source', static::$type)
-					->notExists('process_time')
-					->cursor()->sort(array('received_time' => 1))
-					->limit(1)->current();
-			if (!$file || !$file->getID()) {
-				break;
+			if ($this->isQueueFull()) {
+				Billrun_Factory::log()->log("Billrun_Processor: queue size is too big", Zend_Log::INFO);
+				return $linesCount;
+			} else {
+				$file = $log->query($baseQuery)
+						->equals('source', static::$type)
+						->notExists('process_time')
+						->cursor()->sort(array('received_time' => 1))
+						->limit(1)->current();
+				if (!$file || !$file->getID()) {
+					break;
+				}
+				$this->markStartProcessing($file);
+				$this->setStamp($file->getID());
+				$this->loadFile($file->get('path'), $file->get('retrieved_from'));
+				$processedLinesCount = $this->process();
+				if (FALSE !== $processedLinesCount) {
+					$linesCount += $processedLinesCount;
+					$file->collection($log);
+					$file->set('process_time', date(self::base_dateformat));
+				}
+				$this->init();
 			}
-			$this->markStartProcessing($file);
-			$this->setStamp($file->getID());
-			$this->loadFile($file->get('path'), $file->get('retrieved_from'));
-			$processedLinesCount = $this->process();
-			if (FALSE !== $processedLinesCount) {
-				$linesCount += $processedLinesCount;
-				$file->collection($log);
-				$file->set('process_time', date(self::base_dateformat));
-			}
-			$this->init();
 		}
 
 		return $linesCount;
@@ -241,31 +246,35 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 * @return mixed
 	 */
 	public function process() {
-
-		Billrun_Factory::dispatcher()->trigger('beforeProcessorParsing', array($this));
-
-		if ($this->parse() === FALSE) {
-			Billrun_Factory::log()->log("Billrun_Processor: cannot parse " . $this->filePath, Zend_Log::ERR);
+		if ($this->isQueueFull()) {
+			Billrun_Factory::log()->log("Billrun_Processor: queue size is too big", Zend_Log::INFO);
 			return FALSE;
+		} else {
+			Billrun_Factory::dispatcher()->trigger('beforeProcessorParsing', array($this));
+
+			if ($this->parse() === FALSE) {
+				Billrun_Factory::log()->log("Billrun_Processor: cannot parse " . $this->filePath, Zend_Log::ERR);
+				return FALSE;
+			}
+
+			Billrun_Factory::dispatcher()->trigger('afterProcessorParsing', array($this));
+			Billrun_Factory::dispatcher()->trigger('beforeProcessorStore', array($this));
+
+			if ($this->store() === FALSE) {
+				Billrun_Factory::log()->log("Billrun_Processor: cannot store the parser lines " . $this->filePath, Zend_Log::ERR);
+				return FALSE;
+			}
+
+			if ($this->logDB() === FALSE) {
+				Billrun_Factory::log()->log("Billrun_Processor: cannot log parsing action" . $this->filePath, Zend_Log::WARN);
+				return FALSE;
+			}
+			Billrun_Factory::dispatcher()->trigger('afterProcessorStore', array($this));
+			$this->backup();
+
+			Billrun_Factory::dispatcher()->trigger('afterProcessorBackup', array($this, &$this->filePath));
+			return count($this->data['data']);
 		}
-
-		Billrun_Factory::dispatcher()->trigger('afterProcessorParsing', array($this));
-		Billrun_Factory::dispatcher()->trigger('beforeProcessorStore', array($this));
-
-		if ($this->store() === FALSE) {
-			Billrun_Factory::log()->log("Billrun_Processor: cannot store the parser lines " . $this->filePath, Zend_Log::ERR);
-			return FALSE;
-		}
-
-		if ($this->logDB() === FALSE) {
-			Billrun_Factory::log()->log("Billrun_Processor: cannot log parsing action" . $this->filePath, Zend_Log::WARN);
-			return FALSE;
-		}
-		Billrun_Factory::dispatcher()->trigger('afterProcessorStore', array($this));
-		$this->backup();
-
-		Billrun_Factory::dispatcher()->trigger('afterProcessorBackup', array($this, &$this->filePath));
-		return count($this->data['data']);
 	}
 
 	/**
@@ -315,8 +324,8 @@ abstract class Billrun_Processor extends Billrun_Base {
 			}
 			return $resource->save($log, true);
 		} else {
-			// backward compatibility
-			// old method of processing => receiver did not logged, so it's the first time the file logged into DB
+// backward compatibility
+// old method of processing => receiver did not logged, so it's the first time the file logged into DB
 			$entity = new Mongodloid_Entity($trailer);
 			if ($log->query('stamp', $entity->get('stamp'))->count() > 0) {
 				Billrun_Factory::log()->log("Billrun_Processor::logDB - DUPLICATE! trying to insert duplicate log file with stamp of : {$entity->get('stamp')}", Zend_Log::NOTICE);
@@ -333,7 +342,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 */
 	protected function store() {
 		if (!isset($this->data['data'])) {
-			// raise error
+// raise error
 			return false;
 		}
 
@@ -566,6 +575,11 @@ abstract class Billrun_Processor extends Billrun_Base {
 			$queue_data[] = array('stamp' => $row['stamp'], 'type' => $row['type']);
 		}
 		return $queue_data;
+	}
+
+	protected function isQueueFull() {
+		$queue_max_size = Billrun_Factory::config()->getConfigValue("queue.max_size");
+		return Billrun_Factory::db()->queueCollection()->count() >= $queue_max_size;
 	}
 
 }
