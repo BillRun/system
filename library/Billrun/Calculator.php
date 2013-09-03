@@ -12,7 +12,7 @@
  * @package  calculator
  * @since    0.5
  */
-abstract class Billrun_Calculator extends Billrun_Base {
+abstract class	Billrun_Calculator extends Billrun_Base {
 
 	/**
 	 * the type of the object
@@ -47,7 +47,18 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	 * @var int calculation period in months
 	 */
 	protected $months_limit = null;
+	
+	/**
+	 * The  time that  the queue lines were signed in for this calculator run.
+	 * @var type 
+	 */
+	protected $signedMicrotime = 0;
 
+	/**
+	 * The work hash that this calculator used.
+	 * @var type 
+	 */
+	protected $workHash = 0;
 	/**
 	 * constructor of the class
 	 * 
@@ -175,11 +186,11 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	protected function setCalculatorTag() {
 		$queue = Billrun_Factory::db()->queueCollection();
 		$calculator_tag = $this->getCalculatorQueueTag();
-		foreach ($this->data as $item) {
-			$query = array('stamp' => $item['stamp']);
-			$update = array('$set' => array($calculator_tag => true));
-			$queue->update($query, $update);
-		}
+		//foreach ($this->data as $item) {
+		$query = array('hash' => $this->workHash , $calculator_tag => $this->signedMicrotime );//array('stamp' => $item['stamp']);
+		$update = array('$set' => array($calculator_tag => true));
+		$queue->update($query, $update);
+		//}
 	}
 
 	static protected function getBaseQuery() {
@@ -192,21 +203,25 @@ abstract class Billrun_Calculator extends Billrun_Base {
 			$query[$previous_calculator_tag] = true;
 		}
 		$current_calculator_queue_tag = self::getCalculatorQueueTag($calculator_type);
-		$orphand_time = strtotime(Billrun_Factory::config()->getConfigValue('queue.calculator.orphan_wait_time', "6 hours") . " ago");
+		$orphand_time =  strtotime(Billrun_Factory::config()->getConfigValue('queue.calculator.orphan_wait_time', "6 hours") . " ago") ;
 		$query['$and'][0]['$or'] = array(
 			array($current_calculator_queue_tag => array('$exists' => false)),
 			array($current_calculator_queue_tag => array(
-					'$ne' => true, '$lt' => new MongoDate($orphand_time)
+					'$or' =>	array(
+									array('$ne' => true, '$lt' => $orphand_time),
+									array('$ne' => true, '$lt' => new MongoDate($orphand_time)),
+							)
 				))
 		);
 		return $query;
 	}
 
-	static protected function getBaseUpdate() {
+	protected function getBaseUpdate() {
 		$current_calculator_queue_tag = self::getCalculatorQueueTag();
+		$this->signedMicrotime = microtime(true);
 		$update = array(
 			'$set' => array(
-				$current_calculator_queue_tag => new MongoDate(),
+				$current_calculator_queue_tag => $this->signedMicrotime,
 			)
 		);
 		return $update;
@@ -239,38 +254,39 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	protected function getQueuedLines($localquery) {
 		$queue = Billrun_Factory::db()->queueCollection();
 		$query = array_merge(static::getBaseQuery(), $localquery);
-		$update = static::getBaseUpdate();
-		$fields = array();
-		$options = static::getBaseOptions();
-
-		$docs = array();
-		$qlines =  $queue->query($query)->cursor()->limit( $this->limit );
-		foreach($qlines as $qline) {
-			$doc = $queue->findAndModify(array_merge( array('stamp' => $qline['stamp']), $query), $update, $fields, $options);
-			if(!$doc->isEmpty()) {
-				$docs[] = $doc;		
-			}
-		}
-		return $docs;
-//		$id= md5( time() . rand(0,PHP_INT_MAX) . rand(0,PHP_INT_MAX). rand(0,PHP_INT_MAX). rand(0,PHP_INT_MAX)); //@TODO  make this  more unique!!!!		
-//		$update['$set']['work_id'] = $id; 		
-//		
-//		$horizonline = new Mongodloid_Entity();
-//		for($limit=$this->limit; $limit > 1 && $horizonline->isEmpty();$limit=intval(max(1,$limit/2)) ) {			
-//			Billrun_Factory::log()->log("searching for limit of : $limit",Zend_Log::DEBUG);
-//			$horizonline = $queue->query($query)->cursor()->sort(array('_id'=> 1))->skip($limit)->limit(1)->current();
+		$update = $this->getBaseUpdate();
+//		$fields = array();
+//		$options = static::getBaseOptions();
+		$current_calculator_queue_tag = $this->getCalculatorQueueTag();
+//		$docs = array();
+//		$qlines =  $queue->query($query)->cursor()->limit( $this->limit );
+//		foreach($qlines as $qline) {
+//			$doc = $queue->findAndModify(array_merge( array('stamp' => $qline['stamp']), $query), $update, $fields, $options);
+//			if(!$doc->isEmpty()) {
+//				$docs[] = $doc;		
+//			}
 //		}
-//		
-//		if(!$horizonline->isEmpty()) {
-//			$query['$isolated'] = 1;//isolate the update
-//			$query['_id'] = array('$lt' => $horizonline['_id']->getMongoID());
-//			//Billrun_Factory::log()->log(print_r($query,1),Zend_Log::DEBUG);
-//			$queue->update($query, $update, array('multiple'=> true));
-//			
-//			return $queue->query( array_merge($localquery,array('work_id' => $id)))->cursor();
-//		} 
-//
-//		return array();
+//		return $docs;				 					
+
+		$horizonline = new Mongodloid_Entity();
+		for( $limit=$this->limit; $limit > 1 && $horizonline->isEmpty(); $limit=intval(max(1,$limit/2)) ) {			
+			Billrun_Factory::log()->log("searching for limit of : $limit",Zend_Log::DEBUG);
+			$horizonline = $queue->query($query)->cursor()->sort(array('_id'=> 1))->skip($limit)->limit(1)->current();
+		}		
+		
+		if(!$horizonline->isEmpty()) {
+			$query['_id'] = array( '$lt' => $horizonline['_id']->getMongoID() );
+		} else if($this->limit != 0 ) {
+			return array();
+		}
+		
+		$query['$isolated'] = 1;//isolate the update
+		$this->workHash = md5( time() . rand(0,PHP_INT_MAX) );
+		$update['$set']['hash'] = $this->workHash;
+		//Billrun_Factory::log()->log(print_r($query,1),Zend_Log::DEBUG);
+		$queue->update($query, $update, array('multiple'=> true));			
+		return $queue->query( array_merge($localquery,array('hash' => $this->workHash , $current_calculator_queue_tag => $this->signedMicrotime )))->cursor();	
+
 	}
 
 	/**

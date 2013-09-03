@@ -12,6 +12,7 @@
  */
 abstract class Billrun_Calculator_Wholesale extends Billrun_Calculator {
 
+	
 	/**
 	 * Array holding all the peak off peak times for a given day type, in hours of the day.
 	 * @param array $peakTimes
@@ -24,18 +25,17 @@ abstract class Billrun_Calculator_Wholesale extends Billrun_Calculator {
 	);
 	protected $wholesaleRecords = array('11', '12', '08', '09');
 	protected $dbrefs = array();
-
 	public function __construct($options = array()) {
 		parent::__construct($options);
 		if (isset($options['peak_times'])) {
 			$this->peakTimes = $options['peak_times'];
 		}
-
+		
 		if (isset($options['wholesale_records'])) {
 			$this->wholesaleRecords = $options['wholesale_records'];
 		}
 	}
-
+	
 	/**
 	 * Get pricing data for a given rate / subcriber.
 	 * @param type $volume The usage volume (seconds of call, count of SMS, bytes  of data)
@@ -62,7 +62,7 @@ abstract class Billrun_Calculator_Wholesale extends Billrun_Calculator {
 		$ret[$this->pricingField] = $price;
 		return $ret;
 	}
-
+	
 	/**
 	 * Get rates by type  and zone  from a given carrier
 	 * @param type $carrier
@@ -88,7 +88,7 @@ abstract class Billrun_Calculator_Wholesale extends Billrun_Calculator {
 
 		return $typedRates;
 	}
-
+	
 	/**
 	 * Check if the cdr line  is incoming line  or outgoing
 	 * @param type $row the line to check
@@ -97,9 +97,9 @@ abstract class Billrun_Calculator_Wholesale extends Billrun_Calculator {
 	protected function isLineIncoming($row) {
 		$ocg = $row->get('out_circuit_group');
 		$ocgn = $row->get('out_circuit_group_name');
-		return $ocg == 0 || $ocg == 3060 || $ocg == 3061 || preg_match("/^RCEL/", $ocgn) || $ocg == 152;
+		return $ocg == 0 || $ocg == 3060 || $ocg == 3061 || preg_match("/^RCEL/",$ocgn) || $ocg == 152 ;
 	}
-
+	
 	/**
 	 * Check if a given row is in peak time.
 	 * @param type $row the line to check if  it is in peak time.
@@ -112,13 +112,15 @@ abstract class Billrun_Calculator_Wholesale extends Billrun_Calculator {
 		//Billrun_Factory::log()->log($hour,Zend_Log::DEBUG);
 		return ($hour - $this->peakTimes[$dayType]['start']) > 0 && $hour < $this->peakTimes[$dayType]['end'];
 	}
-
+	
 	/**
 	 * @see Billrun_Calculator::getCalculatorQueueType
 	 */
 	protected static function getCalculatorQueueType() {
 		return static::MAIN_DB_FIELD;
 	}
+	
+}
 
 
 	protected function loadDBRef($db_ref) {
