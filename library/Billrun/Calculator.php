@@ -187,9 +187,9 @@ abstract class	Billrun_Calculator extends Billrun_Base {
 		$queue = Billrun_Factory::db()->queueCollection();
 		$calculator_tag = $this->getCalculatorQueueTag();
 		//foreach ($this->data as $item) {
-		$query = array('hash' => $this->workHash , $calculator_tag => $this->signedMicrotime );//array('stamp' => $item['stamp']);
+		$query = array('hash' => $this->workHash , $calculator_tag => new MongoDate($this->signedMicrotime) );//array('stamp' => $item['stamp']);
 		$update = array('$set' => array($calculator_tag => true));
-		$queue->update($query, $update);
+		$queue->update($query, $update,array('multiple'=> true));
 		//}
 	}
 
@@ -203,14 +203,16 @@ abstract class	Billrun_Calculator extends Billrun_Base {
 			$query[$previous_calculator_tag] = true;
 		}
 		$current_calculator_queue_tag = self::getCalculatorQueueTag($calculator_type);
-		$orphand_time =  strtotime(Billrun_Factory::config()->getConfigValue('queue.calculator.orphan_wait_time', "6 hours") . " ago") ;
+		$orphand_time = strtotime(Billrun_Factory::config()->getConfigValue('queue.calculator.orphan_wait_time', "6 hours") . " ago") ;
 		$query['$and'][0]['$or'] = array(
 			array($current_calculator_queue_tag => array('$exists' => false)),
+/*			array($current_calculator_queue_tag => array(
+					'$ne' => true, '$lt' => $orphand_time
+				)),
+ 
+ */
 			array($current_calculator_queue_tag => array(
-					'$or' =>	array(
-									array('$ne' => true, '$lt' => $orphand_time),
-									array('$ne' => true, '$lt' => new MongoDate($orphand_time)),
-							)
+					'$ne' => true, '$lt' => new MongoDate($orphand_time)
 				))
 		);
 		return $query;
@@ -221,7 +223,7 @@ abstract class	Billrun_Calculator extends Billrun_Base {
 		$this->signedMicrotime = microtime(true);
 		$update = array(
 			'$set' => array(
-				$current_calculator_queue_tag => $this->signedMicrotime,
+				$current_calculator_queue_tag => new MongoDate($this->signedMicrotime),
 			)
 		);
 		return $update;
@@ -258,35 +260,33 @@ abstract class	Billrun_Calculator extends Billrun_Base {
 //		$fields = array();
 //		$options = static::getBaseOptions();
 		$current_calculator_queue_tag = $this->getCalculatorQueueTag();
-//		$docs = array();
-//		$qlines =  $queue->query($query)->cursor()->limit( $this->limit );
-//		foreach($qlines as $qline) {
-//			$doc = $queue->findAndModify(array_merge( array('stamp' => $qline['stamp']), $query), $update, $fields, $options);
-//			if(!$doc->isEmpty()) {
-//				$docs[] = $doc;		
-//			}
-//		}
-//		return $docs;				 					
+		$retLines = array();
+				 					
+		if($this->limit != 0 ) {
+			$horizonline = new Mongodloid_Entity();
+			for( $limit=$this->limit; $limit > 1 && $horizonline->isEmpty(); $limit=intval(max(1,$limit/2)) ) {			
+				Billrun_Factory::log()->log("searching for limit of : $limit",Zend_Log::DEBUG);
+				$horizonline = $queue->query($query)->cursor()->sort(array('_id'=> 1))->skip($limit)->limit(1)->current();
+			}		
 
-		$horizonline = new Mongodloid_Entity();
-		for( $limit=$this->limit; $limit > 1 && $horizonline->isEmpty(); $limit=intval(max(1,$limit/2)) ) {			
-			Billrun_Factory::log()->log("searching for limit of : $limit",Zend_Log::DEBUG);
-			$horizonline = $queue->query($query)->cursor()->sort(array('_id'=> 1))->skip($limit)->limit(1)->current();
-		}		
-		
-		if(!$horizonline->isEmpty()) {
-			$query['_id'] = array( '$lt' => $horizonline['_id']->getMongoID() );
-		} else if($this->limit != 0 ) {
-			return array();
+			if(!$horizonline->isEmpty()) {
+				$query['_id'] = array( '$lt' => $horizonline['_id']->getMongoID() );
+			} else {
+				return $retLines;
+			}
 		}
 		
-		$query['$isolated'] = 1;//isolate the update
+		//$query['$isolated'] = 1;//isolate the update
 		$this->workHash = md5( time() . rand(0,PHP_INT_MAX) );
 		$update['$set']['hash'] = $this->workHash;
 		//Billrun_Factory::log()->log(print_r($query,1),Zend_Log::DEBUG);
-		$queue->update($query, $update, array('multiple'=> true));			
-		return $queue->query( array_merge($localquery,array('hash' => $this->workHash , $current_calculator_queue_tag => $this->signedMicrotime )))->cursor();	
-
+		$queue->update($query, $update, array('multiple'=> true));
+		
+		$foundLines = $queue->query( array_merge($localquery,array('hash' => $this->workHash , $current_calculator_queue_tag => new MongoDate($this->signedMicrotime) )))->cursor();	
+		foreach($foundLines as $line) {
+			$retLines[] = $line;
+		}
+		return $retLines;
 	}
 
 	/**

@@ -92,7 +92,7 @@ class Billrun_Balance implements ArrayAccess {
 	 * method to check if the loaded balance is valid
 	 */
 	public function isValid() {
-		return count($this->data->getRawData()) > 0;
+		return !is_array($this->data) && count($this->data->getRawData()) > 0;
 	}
 
 	/**

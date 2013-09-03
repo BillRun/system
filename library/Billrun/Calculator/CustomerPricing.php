@@ -197,7 +197,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 */
 	protected function updateSubscriberBalance($counters, $row, $billrun_key, $usage_type, $rate, $volume) {
 		$subscriber_balance = Billrun_Factory::balance(array('subscriber_id' => $row['subscriber_id'], 'billrun_key' => $billrun_key));
-		if (!$subscriber_balance->isValid()) {
+		if (!$subscriber_balance  || !$subscriber_balance->isValid()) {
 			Billrun_Factory::log()->log("couldn't get balance for : " . print_r(array(
 					'subscriber_id' => $row['subscriber_id'],
 					'billrun_month' => $billrun_key
@@ -262,7 +262,9 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @see Billrun_Calculator::isLineLegitimate
 	 */
 	protected function isLineLegitimate($line) {
-		return isset($line['customer_rate']) && $line['customer_rate'] !== false && !isset($line['price_customer']) && $line['unified_record_time']->sec >= $this->billrun_lower_bound_timestamp; 
+		return	isset($line['customer_rate']) && $line['customer_rate'] !== false && 
+				isset($line['subscriber_id']) && $line['subscriber_id'] !== false &&
+				!isset($line['price_customer']) && $line['unified_record_time']->sec >= $this->billrun_lower_bound_timestamp; 
 	}
 
 	/**
