@@ -78,7 +78,7 @@ class Billrun_Calculator_Carrier extends Billrun_Calculator {
 					return $carrier;
 				}
 			}
-			if (in_array($row['record_type'], array('08'))) {
+			if (isset( $carrier['identifiction']['sms_centre'] ) && in_array($row['record_type'], array('08')) ) {
 				if (!in_array(substr($row['sms_centre'], 0, 5), $carrier['identifiction']['sms_centre'])) {
 					continue;
 				} else {
@@ -105,7 +105,7 @@ class Billrun_Calculator_Carrier extends Billrun_Calculator {
 					return $carrier;
 				}
 			}
-			if (in_array($row['record_type'], array('09'))) {
+			if (isset( $carrier['identifiction']['sms_centre'] ) && in_array($row['record_type'], array('09')) ) {
 				if (!in_array(substr($row['sms_centre'], 0, 5), $carrier['identifiction']['sms_centre'])) {
 					continue;
 				} else {
