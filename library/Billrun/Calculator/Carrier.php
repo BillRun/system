@@ -140,7 +140,10 @@ class Billrun_Calculator_Carrier extends Billrun_Calculator {
 
 	protected function setCarriers() {
 		$coll = Billrun_Factory::db()->carriersCollection();
-		$this->carriers = $coll->query();
+		$this->carriers = array();
+		foreach($coll->query() as $carrier) {
+			$this->carriers[] =$carrier;
+		}
 	}
 
 }
