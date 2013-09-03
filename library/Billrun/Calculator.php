@@ -263,14 +263,24 @@ abstract class	Billrun_Calculator extends Billrun_Base {
 //				$docs[] = $doc;		
 //			}
 //		}
-//		return $docs;
-		$this->workHash= md5( time() . rand(0,PHP_INT_MAX) );
-		$update['$set']['hash'] = $this->workHash; 			
-		$query['$isolated'] = 1;//isolate the update
+//		return $docs;				 					
 
-		//Billrun_Factory::log()->log(print_r($query,1),Zend_Log::DEBUG);
-		$queue->update($query, $update, array('multiple'=> true));			
-		return $queue->query( array_merge($localquery,array('hash' => $this->workHash , $current_calculator_queue_tag => $this->signedMicrotime )))->cursor();
+		$horizonline = new Mongodloid_Entity();
+		for($limit=$this->limit; $limit > 1 && $horizonline->isEmpty();$limit=intval(max(1,$limit/2)) ) {			
+			Billrun_Factory::log()->log("searching for limit of : $limit",Zend_Log::DEBUG);
+			$horizonline = $queue->query($query)->cursor()->sort(array('_id'=> 1))->skip($limit)->limit(1)->current();
+		}		
+		
+		if(!$horizonline->isEmpty()) {
+			$query['$isolated'] = 1;//isolate the update
+			$this->workHash= md5( time() . rand(0,PHP_INT_MAX) );
+			$update['$set']['hash'] = $this->workHash;
+			$query['_id'] = array( '$lt' => $horizonline['_id']->getMongoID() );
+			//Billrun_Factory::log()->log(print_r($query,1),Zend_Log::DEBUG);
+			$queue->update($query, $update, array('multiple'=> true));			
+			return $queue->query( array_merge($localquery,array('hash' => $this->workHash , $current_calculator_queue_tag => $this->signedMicrotime )))->cursor();
+		}
+		return array();
 	}
 
 	/**
