@@ -45,6 +45,7 @@ class Billrun_Calculator_Wholesale_NationalRoamingPricing extends Billrun_Calcul
 		if (isset($row['usagev']) && $zoneKey) {
 			$rates = $this->getCarrierRateForZoneAndType($this->loadDBRef($row->get('carir', true)), $zoneKey, $row['usaget']);
 			if (!$rates) {
+				Billrun_Factory::log()->log(" Failed finding rate for row : " . print_r($row['stamp'], 1), Zend_Log::DEBUG);
 				return false;
 			}
 			$pricingData = $this->getLinePricingData($row['usagev'], $rates);
