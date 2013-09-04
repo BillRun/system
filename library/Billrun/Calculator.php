@@ -186,11 +186,14 @@ abstract class	Billrun_Calculator extends Billrun_Base {
 	protected function setCalculatorTag() {
 		$queue = Billrun_Factory::db()->queueCollection();
 		$calculator_tag = $this->getCalculatorQueueTag();
-		//foreach ($this->data as $item) {
-		$query = array('hash' => $this->workHash , $calculator_tag => $this->signedMicrotime );//array('stamp' => $item['stamp']);
+		$stamps = array();
+		foreach ($this->data as $item) {
+			$stamps[] = $item['stamp'];
+		}
+		$query = array( 'stamp' => array( '$in' => $stamps ), 'hash' => $this->workHash , $calculator_tag => $this->signedMicrotime,);//array('stamp' => $item['stamp']);
 		$update = array('$set' => array($calculator_tag => true));
 		$queue->update($query, $update,array('multiple'=> true));
-		//}
+		
 	}
 
 	static protected function getBaseQuery() {
@@ -241,10 +244,12 @@ abstract class	Billrun_Calculator extends Billrun_Base {
 		if ($queue_id == key($calculators_queue_order)) { // last calculator
 			Billrun_Factory::log()->log("Removing lines from queue", Zend_Log::INFO);
 			$queue = Billrun_Factory::db()->queueCollection();
+			$stamps = array();
 			foreach ($this->data as $item) {
-				$query = array('stamp' => $item['stamp']);
-				$queue->remove($query);
+				$stamps[] = $item['stamp'];
 			}
+			$query = array('stamp' => array( '$in' => $stamps ) );
+			$queue->remove($query);
 		}
 	}
 
