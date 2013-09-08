@@ -83,6 +83,7 @@ class Billrun_Calculator_Wholesale_WholesalePricing extends Billrun_Calculator_W
 	 */
 	protected function isLineLegitimate($line) {
 		return $line['type'] == 'nsn' && 
+				$line->get('provider_zone', true) &&
 				($line->get(Billrun_Calculator_Carrier::MAIN_DB_FIELD,true) !== null && $line->get(Billrun_Calculator_Carrier::MAIN_DB_FIELD . "_in",true) != null) &&
 				$line->get(Billrun_Calculator_Wholesale_Nsn::MAIN_DB_FIELD,true) != false &&	in_array($line['record_type'], $this->wholesaleRecords);
 	}

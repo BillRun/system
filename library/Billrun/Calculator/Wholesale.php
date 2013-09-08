@@ -97,7 +97,7 @@ abstract class Billrun_Calculator_Wholesale extends Billrun_Calculator {
 	protected function isLineIncoming($row) {
 		$ocg = $row->get('out_circuit_group');
 		$ocgn = $row->get('out_circuit_group_name');
-		return $ocg == 0 || $ocg == 3060 || $ocg == 3061 || preg_match("/^RCEL/", $ocgn) || $ocg == 152;
+		return $ocg == 0 || $ocg == 3060 || $ocg == 3061 ||  $ocg == 3050 || $ocg == 3051 || preg_match("/^RCEL/", $ocgn) || $ocg == 152;
 	}
 
 	/**

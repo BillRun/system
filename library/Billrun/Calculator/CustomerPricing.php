@@ -60,24 +60,21 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	public function calc() {
 		Billrun_Factory::dispatcher()->trigger('beforePricingData', array('data' => $this->data));
 		$lines_coll = Billrun_Factory::db()->linesCollection();
-		foreach ($this->lines as $key => $item) {
-			$line = $this->pullLine($item);
+		
+		$lines = $this->pullLines($this->lines);
+		foreach ($lines as $key => $line) {
 			if ($line) {
 				Billrun_Factory::dispatcher()->trigger('beforePricingDataRow', array('data' => &$line));
 				//Billrun_Factory::log()->log("Calcuating row : ".print_r($item,1),  Zend_Log::DEBUG);
 				$line->collection($lines_coll);
-				if($this->isLineLegitimate($line)) {
+				if ($this->isLineLegitimate($line)) {
 					if (!$this->updateRow($line)) {
-						unset($this->lines[$key]);
 						continue;
 					}
-					$this->writeLine($line);
 				}
 				$this->data[] = $line;
 				//$this->updateLinePrice($item); //@TODO  this here to prevent divergance  between the priced lines and the subscriber's balance/billrun if the process fails in the middle.
 				Billrun_Factory::dispatcher()->trigger('afterPricingDataRow', array('data' => &$line));
-			} else {
-				unset($this->lines[$key]);
 			}
 		}
 		Billrun_Factory::dispatcher()->trigger('afterPricingData', array('data' => $this->data));
@@ -85,7 +82,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 
 	protected function updateRow($row) {
 		$rate = $row->get('customer_rate');
-		
+
 		$billrun_key = Billrun_Util::getBillrunKey($row['unified_record_time']->sec);
 
 		//TODO  change this to be configurable.
@@ -110,7 +107,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			$vatable = (!(isset($rate['vatable']) && !$rate['vatable']) || (!isset($rate['vatable']) && !$this->vatable));
 			if (!$billrun = Billrun_Billrun::updateBillrun($billrun_key, array($usage_type => $volume), $pricingData, $row, $vatable)) {
 				return false;
-			} else if ($billrun instanceof Mongodloid_Entity) {
+			} else {
 				$billrun_info['billrun_key'] = $billrun['billrun_key'];
 				$billrun_info['billrun_ref'] = $billrun->createRef(Billrun_Factory::db()->billrunCollection());
 			}
@@ -185,6 +182,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		}
 		return $price;
 	}
+
 	/**
 	 * Update the subscriber balance for a given usage.
 	 * @param array $counters the counters to update
@@ -197,7 +195,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 */
 	protected function updateSubscriberBalance($counters, $row, $billrun_key, $usage_type, $rate, $volume) {
 		$subscriber_balance = Billrun_Factory::balance(array('subscriber_id' => $row['subscriber_id'], 'billrun_key' => $billrun_key));
-		if (!$subscriber_balance  || !$subscriber_balance->isValid()) {
+		if (!$subscriber_balance || !$subscriber_balance->isValid()) {
 			Billrun_Factory::log()->log("couldn't get balance for : " . print_r(array(
 					'subscriber_id' => $row['subscriber_id'],
 					'billrun_month' => $billrun_key
@@ -262,9 +260,9 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @see Billrun_Calculator::isLineLegitimate
 	 */
 	protected function isLineLegitimate($line) {
-		return	isset($line['customer_rate']) && $line['customer_rate'] !== false && 
-				isset($line['subscriber_id']) && $line['subscriber_id'] !== false &&
-				!isset($line['price_customer']) && $line['unified_record_time']->sec >= $this->billrun_lower_bound_timestamp; 
+		return isset($line['customer_rate']) && $line['customer_rate'] !== false &&
+			isset($line['subscriber_id']) && $line['subscriber_id'] !== false &&
+			!isset($line['price_customer']) && $line['unified_record_time']->sec >= $this->billrun_lower_bound_timestamp;
 	}
 
 	/**

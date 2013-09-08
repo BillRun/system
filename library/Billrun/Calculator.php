@@ -12,7 +12,7 @@
  * @package  calculator
  * @since    0.5
  */
-abstract class	Billrun_Calculator extends Billrun_Base {
+abstract class Billrun_Calculator extends Billrun_Base {
 
 	/**
 	 * the type of the object
@@ -47,7 +47,6 @@ abstract class	Billrun_Calculator extends Billrun_Base {
 	 * @var int calculation period in months
 	 */
 	protected $months_limit = null;
-	
 	/**
 	 * The  time that  the queue lines were signed in for this calculator run.
 	 * @var type 
@@ -118,14 +117,13 @@ abstract class	Billrun_Calculator extends Billrun_Base {
 	 * execute the calculation process
 	 */
 	public function calc() {
-		Billrun_Factory::dispatcher()->trigger('beforeRateData', array('data' => $this->data));
+		Billrun_Factory::dispatcher()->trigger('beforeCalculateData', array('data' => $this->data));
 		$lines_coll = Billrun_Factory::db()->linesCollection();
-		
 		$lines = $this->pullLines($this->lines);
 		foreach ($lines as $key => $line) {
 			if ($line) {
 				//Billrun_Factory::log()->log("Calcuating row : ".print_r($line,1),  Zend_Log::DEBUG);
-				Billrun_Factory::dispatcher()->trigger('beforeRateDataRow', array('data' => &$line));
+				Billrun_Factory::dispatcher()->trigger('beforeCalculateDataRow', array('data' => &$line));
 				$line->collection($lines_coll);
 				if ($this->isLineLegitimate($line)) {
 					if (!$this->updateRow($line)) {
@@ -133,10 +131,10 @@ abstract class	Billrun_Calculator extends Billrun_Base {
 					}
 				}
 				$this->data[] = $line;
-				Billrun_Factory::dispatcher()->trigger('afterRateDataRow', array('data' => &$line));
+				Billrun_Factory::dispatcher()->trigger('afterCalculateDataRow', array('data' => &$line));
 			}
 		}
-		Billrun_Factory::dispatcher()->trigger('afterRateData', array('data' => $this->data));
+		Billrun_Factory::dispatcher()->trigger('afterCalculateData', array('data' => $this->data));
 	}
 
 	/**
@@ -220,10 +218,9 @@ abstract class	Billrun_Calculator extends Billrun_Base {
 		foreach ($this->data as $item) {
 			$stamps[] = $item['stamp'];
 		}
-		$query = array( 'stamp' => array( '$in' => $stamps ), 'hash' => $this->workHash , $calculator_tag => $this->signedMicrotime,);//array('stamp' => $item['stamp']);
+		$query = array('stamp' => array('$in' => $stamps), 'hash' => $this->workHash, $calculator_tag => $this->signedMicrotime,); //array('stamp' => $item['stamp']);
 		$update = array('$set' => array($calculator_tag => true));
-		$queue->update($query, $update,array('multiple'=> true));
-		
+		$queue->update($query, $update, array('multiple' => true));
 	}
 
 	/**
@@ -240,7 +237,7 @@ abstract class	Billrun_Calculator extends Billrun_Base {
 			$query[$previous_calculator_tag] = true;
 		}
 		$current_calculator_queue_tag = self::getCalculatorQueueTag($calculator_type);
-		$orphand_time = strtotime(Billrun_Factory::config()->getConfigValue('queue.calculator.orphan_wait_time', "6 hours") . " ago") ;
+		$orphand_time = strtotime(Billrun_Factory::config()->getConfigValue('queue.calculator.orphan_wait_time', "6 hours") . " ago");
 		$query['$and'][0]['$or'] = array(
 			array($current_calculator_queue_tag => array('$exists' => false)),
 			array($current_calculator_queue_tag => array(
@@ -316,23 +313,22 @@ abstract class	Billrun_Calculator extends Billrun_Base {
 		if($this->limit != 0 ) {
 			$hq = $queue->query($query)->cursor()->sort(array('_id'=> 1))->limit($this->limit);
 			$horizonlineCount = $hq->count(true);
-			$horizonline = $hq->skip( abs($horizonlineCount -1) )->limit(1)->current();
-			Billrun_Factory::log()->log("current limit : ".$horizonlineCount,Zend_Log::DEBUG);	
-			if(!$horizonline->isEmpty()) {
-				$query['_id'] = array( '$lte' => $horizonline['_id']->getMongoID() );
+			$horizonline = $hq->skip(abs($horizonlineCount - 1))->limit(1)->current();
+			Billrun_Factory::log()->log("current limit : " . $horizonlineCount, Zend_Log::DEBUG);
+			if (!$horizonline->isEmpty()) {
+				$query['_id'] = array('$lte' => $horizonline['_id']->getMongoID());
 			} else {
 				return $retLines;
 			}
 		}
-		
-		$query['$isolated'] = 1;//isolate the update
-		$this->workHash = md5( time() . rand(0,PHP_INT_MAX) );
+		$query['$isolated'] = 1; //isolate the update
+		$this->workHash = md5(time() . rand(0, PHP_INT_MAX));
 		$update['$set']['hash'] = $this->workHash;
 		//Billrun_Factory::log()->log(print_r($query,1),Zend_Log::DEBUG);
-		$queue->update($query, $update, array('multiple'=> true));
-		
-		$foundLines = $queue->query( array_merge($localquery,array('hash' => $this->workHash , $current_calculator_queue_tag => $this->signedMicrotime )))->cursor();	
-		foreach($foundLines as $line) {
+		$queue->update($query, $update, array('multiple' => true));
+
+		$foundLines = $queue->query(array_merge($localquery, array('hash' => $this->workHash, $current_calculator_queue_tag => $this->signedMicrotime)))->cursor();
+		foreach ($foundLines as $line) {
 			$retLines[] = $line;
 		}
 		return $retLines;
