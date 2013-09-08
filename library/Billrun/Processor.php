@@ -589,8 +589,8 @@ abstract class Billrun_Processor extends Billrun_Base {
 	}
 
 	protected function isQueueFull() {
-		$queue_max_size = Billrun_Factory::config()->getConfigValue("queue.max_size");
-		return Billrun_Factory::db()->queueCollection()->count() >= $queue_max_size;
+		$queue_max_size = Billrun_Factory::config()->getConfigValue("queue.max_size", 999999999);
+		return (Billrun_Factory::db()->queueCollection()->count() >= $queue_max_size);
 	}
 
 }
