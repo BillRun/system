@@ -120,6 +120,11 @@ abstract class Billrun_Calculator_Wholesale extends Billrun_Calculator {
 		return static::MAIN_DB_FIELD;
 	}
 
+	/**
+	 * Load a DB reference  an keep it cached for this instance.
+	 * @param type $db_ref the  DBRef object to load
+	 * @return boolean|mixed the requested object  referenced by the DBRef (cached or from the DB) or false it the object couldn't be found.
+	 */
 	protected function loadDBRef($db_ref) {
 		if (MongoDBRef::isRef($db_ref)) {
 			$coll_name = $db_ref['$ref'];

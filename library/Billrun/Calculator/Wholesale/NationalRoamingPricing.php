@@ -31,7 +31,7 @@ class Billrun_Calculator_Wholesale_NationalRoamingPricing extends Billrun_Calcul
 	 * @see Billrun_Calculator::getLines
 	 */
 	protected function getLines() {
-		$lines = $this->getQueuedLines(array('type' => 'nsn'));
+		$lines = $this->getQueuedLines(array()); //array('type' => 'nsn')
 		return $lines;
 	}
 
@@ -61,7 +61,8 @@ class Billrun_Calculator_Wholesale_NationalRoamingPricing extends Billrun_Calcul
 	 * @see Billrun_Calculator::isLineLegitimate()
 	 */
 	protected function isLineLegitimate($line) {
-		return ($line['record_type'] === "12" && in_array($line->get('carir', true), $this->nrCarriers)) ||
+		return $line['type'] == 'nsn' && 
+			($line['record_type'] === "12" && in_array($line->get('carir', true), $this->nrCarriers)) ||
 			($line['record_type'] === "11" && in_array($line->get('carir_in', true), $this->nrCarriers));
 	}
 

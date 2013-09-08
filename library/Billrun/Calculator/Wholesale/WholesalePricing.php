@@ -36,7 +36,7 @@ class Billrun_Calculator_Wholesale_WholesalePricing extends Billrun_Calculator_W
 	 * @see Billrun_Calculator::getLines
 	 */
 	protected function getLines() {
-		$lines = $this->getQueuedLines($this->linesQuery);
+		$lines = $this->getQueuedLines(array());
 		return $lines;
 	}
 
@@ -82,9 +82,10 @@ class Billrun_Calculator_Wholesale_WholesalePricing extends Billrun_Calculator_W
 	 * @see Billrun_Calculator::isLineLegitimate()
 	 */
 	protected function isLineLegitimate($line) {
-		return ($line[Billrun_Calculator_Carrier::MAIN_DB_FIELD] !== null && $line[Billrun_Calculator_Carrier::MAIN_DB_FIELD . "_in"] !== null) &&
-			$line[Billrun_Calculator_Wholesale_Nsn::MAIN_DB_FIELD] !== false &&
-			in_array($line['record_type'], $this->wholesaleRecords);
+		return	$line['type'] == 'nsn' && 
+				($line[Billrun_Calculator_Carrier::MAIN_DB_FIELD] !== null && $line[Billrun_Calculator_Carrier::MAIN_DB_FIELD . "_in"] !== null) &&
+				$line[Billrun_Calculator_Wholesale_Nsn::MAIN_DB_FIELD] !== false &&
+				in_array($line['record_type'], $this->wholesaleRecords);
 	}
 
 }
