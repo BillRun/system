@@ -98,7 +98,8 @@ class LinesModel extends TableModel {
 	}
 
 	public function getData($filter_query = array()) {
-		$cursor = $this->collection->query($filter_query)->cursor();
+		$limit = Billrun_Factory::config()->getConfigValue('admin_panel.lines.limit',1000000);
+		$cursor = $this->collection->query($filter_query)->cursor()->limit($limit);
 		$this->_count = $cursor->count();
 		$resource = $cursor->sort($this->sort)->skip($this->offset())->limit($this->size);
 		return $resource;

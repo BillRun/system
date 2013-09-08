@@ -24,8 +24,9 @@ class Processor_Mergezonepackage extends Billrun_Processor_Base_Separator {
 	 */
 	static protected $type = 'mergerates';
 	static protected $nsoftPLanToGolanPlan = array(
-		'SMALL' => array('ZG_HAVILA_SMS', 'ZG_HAVILA_VOICE', 'ZG_HAVILA_MMS'),
-		'LARGE' => array('ZG_HAVILA_SMS', 'ZG_HAVILA_VOICE', 'ZG_HAVILA_MMS', 'ZG_HAVILA_HOOL', 'ZG_NATIONAL'),
+		'SMALL' => array('ZG_HAVILA_SMS', 'ZG_HAVILA_VOICE'),
+		'LARGE' => array('ZG_HAVILA_SMS', 'ZG_HAVILA_VOICE', 'ZG_HAVILA_MMS'),
+		'BIRTHDAY' => array('ZG_HAVILA_SMS', 'ZG_HAVILA_VOICE_IL'),
 	);
 	static protected $typesTranslation = array(
 		'M' => 'sms',

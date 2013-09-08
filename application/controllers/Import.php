@@ -24,7 +24,8 @@ class ImportController extends Yaf_Controller_Abstract {
 		$import = Billrun_Processor::getInstance(array(
 				'type' => 'importzones',
 				'parser' => $parser,
-				'path' => '/home/eran/projects/encrypted/golan/rates/zone.csv'
+				'path' => '/home/shani/Documents/S.D.O.C/BillRun/backups/zone.csv'
+			
 			));
 
 		if ($import === FALSE) {
@@ -37,7 +38,7 @@ class ImportController extends Yaf_Controller_Abstract {
 		$merge = Billrun_Processor::getInstance(array(
 				'type' => 'mergerates',
 				'parser' => $parser,
-				'path' => '/home/eran/projects/encrypted/golan/rates/tariff_v2_filtered.csv'
+				'path' => '/home/shani/Documents/S.D.O.C/BillRun/backups/tariff_v2_filtered.csv'
 			));
 
 		if ($merge === FALSE) {
@@ -50,7 +51,7 @@ class ImportController extends Yaf_Controller_Abstract {
 		$mergePackage = Billrun_Processor::getInstance(array(
 				'type' => 'mergezonepackage',
 				'parser' => $parser,
-				'path' => '/home/eran/projects/encrypted/golan/rates/zone_group_element.csv'
+				'path' => '/home/shani/Documents/S.D.O.C/BillRun/backups/zone_group_element.csv'
 			));
 
 		if ($mergePackage === FALSE) {
@@ -60,11 +61,10 @@ class ImportController extends Yaf_Controller_Abstract {
 		$mergePackage->setBackupPath(array()); // no backup
 		$mergePackageData = $mergePackage->process();
 
-
 		$merge_intl_networks = Billrun_Processor::getInstance(array(
 				'type' => 'mergeintlnetworks',
 				'parser' => $parser,
-				'path' => '/home/eran/projects/encrypted/golan/rates/mobile_network.csv'
+				'path' => '/home/shani/Documents/S.D.O.C/BillRun/backups/mobile_network.csv'
 			));
 
 		if ($merge_intl_networks === FALSE) {
@@ -77,7 +77,7 @@ class ImportController extends Yaf_Controller_Abstract {
 		$wholesale = Billrun_Processor::getInstance(array(
 				'type' => 'wholesaleoutrates',
 				'parser' => $parser,
-				'path' => '/home/eran/projects/encrypted/golan/rates/wholesale/wsalein_tariff_out_v2.csv'
+				'path' => '/home/shani/Documents/S.D.O.C/BillRun/backups/wholesale/wsalein_tariff_out_v2.csv'
 			));
 
 		if ($wholesale === FALSE) {
@@ -90,7 +90,7 @@ class ImportController extends Yaf_Controller_Abstract {
 		$wholesalein = Billrun_Processor::getInstance(array(
 				'type' => 'wholesaleinrates',
 				'parser' => $parser,
-				'path' => '/home/eran/projects/encrypted/golan/rates/wholesale/wsalein_tariff_in_v2.csv'
+				'path' => '/home/shani/Documents/S.D.O.C/BillRun/backups/wholesale/wsalein_tariff_in_v2.csv'
 			));
 
 		if ($wholesalein === FALSE) {
