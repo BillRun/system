@@ -38,8 +38,7 @@ class Billrun_Calculator_Carrier extends Billrun_Calculator {
 
 	protected function getLines() {
 
-		return $this->getQueuedLines(
-				$this->linesQuery);
+		return $this->getQueuedLines(array());
 	}
 
 	protected function updateRow($row) {
@@ -135,7 +134,7 @@ class Billrun_Calculator_Carrier extends Billrun_Calculator {
 	 * @see Billrun_Calculator::isLineLegitimate
 	 */
 	protected function isLineLegitimate($line) {
-		return $line ['type'] == 'nsn';
+		return $line['type'] == 'nsn';
 	}
 
 	protected function setCarriers() {

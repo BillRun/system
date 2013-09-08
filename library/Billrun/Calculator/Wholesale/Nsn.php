@@ -23,7 +23,7 @@ class Billrun_Calculator_Wholesale_Nsn extends Billrun_Calculator_Wholesale {
 	 * method to get calculator lines
 	 */
 	protected function getLines() {
-		$lines =  $this->getQueuedLines(array('type'=> 'nsn'));		
+		$lines =  $this->getQueuedLines(array());		//array('type'=> 'nsn')
 		return $lines;
 	}
 	
@@ -140,7 +140,8 @@ class Billrun_Calculator_Wholesale_Nsn extends Billrun_Calculator_Wholesale {
 	 * @see Billrun_Calculator::isLineLegitimate()
 	 */
 	protected function isLineLegitimate($line) {
-		return	in_array($line['usaget'],array('call','sms')) &&
+		return	$line['type'] == 'nsn' &&
+				in_array($line['usaget'],array('call','sms')) &&
 				in_array($line['record_type'], $this->wholesaleRecords );
 	}
 	

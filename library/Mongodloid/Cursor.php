@@ -16,7 +16,8 @@ class Mongodloid_Cursor implements Iterator, Countable {
 	}
 
 	public function count($foundOnly = true) {
-		return $this->_cursor->count($foundOnly);
+	
+		return  $this->_cursor->count($foundOnly);
 	}
 
 	public function current() {

@@ -459,7 +459,7 @@ class Billrun_Billrun {
 	 * @param array $pricingData the output array from updateSubscriberBalance function
 	 * @param Mongodloid_Entity $row the input line
 	 * @param boolean $vatable is the line vatable or not
-	 * @return mixed Mongodloid_Entity when the insert was successful, true when the line already exists in a billrun and false otherwise
+	 * @return Mongodloid_Entity the billrun doc of the line, false if no such billrun exists
 	 */
 	public static function updateBillrun($billrun_key, $counters, $pricingData, $row, $vatable) {
 		$account_id = $row['account_id'];
@@ -479,14 +479,13 @@ class Billrun_Billrun {
 
 		// recovery
 		if ($doc->isEmpty()) { // billrun document was not found
-			$billrun = self::createBillrunIfNotExists($account_id, $billrun_key);
-			if ($billrun->isEmpty()) { // means that the billrun was created so we can retry updating it
+			if (($billrun = self::createBillrunIfNotExists($account_id, $billrun_key)) && $billrun->isEmpty()) { // means that the billrun was created so we can retry updating it
 				return self::updateBillrun($billrun_key, $counters, $pricingData, $row, $vatable);
 			} else if (self::addSubscriberIfNotExists($account_id, $subscriber_id, $billrun_key)) {
 				return self::updateBillrun($billrun_key, $counters, $pricingData, $row, $vatable);
-			} else if (self::lineRefExists($account_id, $subscriber_id, $billrun_key, $usage_type, $row_ref)) {
+			} else if (($doc = self::getLineBillrun($account_id, $subscriber_id, $billrun_key, $usage_type, $row_ref)) && !$doc->isEmpty()) {
 				Billrun_Factory::log()->log("Line with stamp " . $row['stamp'] . " already exists in billrun " . $billrun_key . " for account " . $account_id, Zend_Log::NOTICE);
-				return true;
+				return $doc;
 			} else if ($row['type'] == 'flat' || $billrun_key == self::$runtime_billrun_key) { // if it's a flat line we don't want to advance the billrun key
 				Billrun_Factory::log()->log("Billrun " . $billrun_key . " is closed for account " . $account_id, Zend_Log::ALERT);
 				return false;
@@ -537,9 +536,9 @@ class Billrun_Billrun {
 	 * @param string $billrun_key the billrun key
 	 * @param string $usage_type the general usage type of the line (output of getGeneralUsageType function)
 	 * @param MongoDBRef $line_ref the reference of the line
-	 * @return boolean true when the line exists in the billrun, otherwise returns false
+	 * @return Mongodloid_Entity the relevant billrun document
 	 */
-	protected static function lineRefExists($account_id, $subscriber_id, $billrun_key, $usage_type, $line_ref) {
+	protected static function getLineBillrun($account_id, $subscriber_id, $billrun_key, $usage_type, $line_ref) {
 		$billrun_coll = Billrun_Factory::db()->billrunCollection();
 		$query = array(
 			'account_id' => $account_id,
@@ -558,7 +557,7 @@ class Billrun_Billrun {
 				)
 			),
 		);
-		return ($billrun_coll->find($query)->count() > 0);
+		return $billrun_coll->query($query)->cursor()->current();
 	}
 
 	/**
