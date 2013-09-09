@@ -26,6 +26,7 @@ class Processor_Mergezonepackage extends Billrun_Processor_Base_Separator {
 	static protected $nsoftPLanToGolanPlan = array(
 		'SMALL' => array('ZG_HAVILA_SMS', 'ZG_HAVILA_VOICE', 'ZG_HAVILA_MMS'),
 		'LARGE' => array('ZG_HAVILA_SMS', 'ZG_HAVILA_VOICE', 'ZG_HAVILA_MMS', 'ZG_HAVILA_HOOL', 'ZG_NATIONAL'),
+		'BIRTHDAY' => array('ZG_HAVILA_SMS', 'ZG_HAVILA_VOICE'),
 	);
 	static protected $typesTranslation = array(
 		'M' => 'sms',
@@ -112,7 +113,8 @@ class Processor_Mergezonepackage extends Billrun_Processor_Base_Separator {
 						$rowRates = $entity['rates'];
 						$plans = isset($rowRates[$type]['plans']) ? $rowRates[$type]['plans'] : array();
 						foreach (self::$nsoftPLanToGolanPlan as $planName => $nsoftVal) {
-							if (in_array($row['zoneGroupEltId_zoneGroupId_zoneGroupName'], $nsoftVal)) {
+							if (in_array($row['zoneGroupEltId_zoneGroupId_zoneGroupName'], $nsoftVal) ||  
+								$type == 'data' && $planName != 'BIRTHDAY' ) {// data is included in all plans and all rates
 								$plan_ref = Billrun_Factory::plan(array('name' => $planName, 'time' => time()))->createRef();
 								if ($plan_ref) {
 									if (!in_array($plan_ref, $plans)) {
