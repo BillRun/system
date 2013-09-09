@@ -14,6 +14,13 @@
  */
 class Billrun_Connection extends Mongodloid_Connection {
 
+	/**
+	 * create instance of the connection db
+	 * 
+	 * @param MongoDB $newDb The PHP Driver MongoDb instance
+	 * 
+	 * @return Mongodloid_Db instance
+	 */
 	protected function createInstance($newDb) {
 		return new Billrun_Db($newDb, $this);
 	}

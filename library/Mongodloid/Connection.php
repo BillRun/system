@@ -37,6 +37,13 @@ class Mongodloid_Connection {
 		return $this->_dbs[$db];
 	}
 	
+	/**
+	 * create instance of the connection db
+	 * 
+	 * @param MongoDB $newDb The PHP Driver MongoDb instance
+	 * 
+	 * @return Mongodloid_Db instance
+	 */
 	protected function createInstance($newDb) {
 		return new Mongodloid_Db($newDb, $this);
 	}
