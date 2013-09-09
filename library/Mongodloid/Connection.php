@@ -56,7 +56,7 @@ class Mongodloid_Connection {
 			return;
 
 		// this can throw an Exception
-		$this->_connection = new MongoClient($this->_server ? $this->_server : 'localhost:27017', $options);
+		$this->_connection = new MongoClient($this->_server ? $this->_server : 'mongodb://localhost:27017', $options);
 
 		$this->_connected = true;
 	}
