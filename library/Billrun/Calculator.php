@@ -142,7 +142,6 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	 */
 	public function write() {
 		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteData', array('data' => $this->data));
-		//no need  the  line is now  written right after update @TODO now that we do use queue shuold the lines wirte be here?
 		foreach($this->data as $line) {
 			$this->writeLine($line);
 		}
@@ -173,11 +172,8 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		}
 		//Billrun_Factory::log()->log("stamps : ".print_r($stamps,1),Zend_Log::DEBUG);
 		$lines = Billrun_Factory::db()->linesCollection()
-					->query()->in('stamp', $stamps );
-		//Billrun_Factory::log()->log("Lines : ".print_r($lines->count(),1),Zend_Log::DEBUG);	
-		if ( !$lines->count(true) ) {
-			return array();
-		}
+					->query()->in('stamp', $stamps )->cursor();
+		//Billrun_Factory::log()->log("Lines : ".print_r($lines->count(),1),Zend_Log::DEBUG);			
 		return $lines;
 	}
 
@@ -304,18 +300,16 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		$queue = Billrun_Factory::db()->queueCollection();
 		$query = array_merge(static::getBaseQuery(), $localquery);
 		$update = $this->getBaseUpdate();
-//		$fields = array();
-//		$options = static::getBaseOptions();
 		$current_calculator_queue_tag = $this->getCalculatorQueueTag();
 		$retLines = array();
 				 				
-		//if THere limit to the calculator set an updating limit.
+		//if Theres limit set to the calculator set an updating limit.
 		if($this->limit != 0 ) {
 			$hq = $queue->query($query)->cursor()->sort(array('_id'=> 1))->limit($this->limit);
 			$horizonlineCount = $hq->count(true);
-			$horizonline = $hq->skip(abs($horizonlineCount - 1))->limit(1)->current();
-			Billrun_Factory::log()->log("current limit : " . $horizonlineCount, Zend_Log::DEBUG);
+			$horizonline = $hq->skip(abs($horizonlineCount - 1))->limit(1)->current();			
 			if (!$horizonline->isEmpty()) {
+				Billrun_Factory::log()->log("Loading limit : " . $horizonlineCount, Zend_Log::DEBUG);
 				$query['_id'] = array('$lte' => $horizonline['_id']->getMongoID());
 			} else {
 				return $retLines;
@@ -324,7 +318,6 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		$query['$isolated'] = 1; //isolate the update
 		$this->workHash = md5(time() . rand(0, PHP_INT_MAX));
 		$update['$set']['hash'] = $this->workHash;
-		//Billrun_Factory::log()->log(print_r($query,1),Zend_Log::DEBUG);
 		$queue->update($query, $update, array('multiple' => true));
 
 		$foundLines = $queue->query(array_merge($localquery, array('hash' => $this->workHash, $current_calculator_queue_tag => $this->signedMicrotime)))->cursor();
