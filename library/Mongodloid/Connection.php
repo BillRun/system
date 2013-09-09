@@ -23,7 +23,7 @@ class Mongodloid_Connection {
 	 * 
 	 * @return Billrun_Db instance
 	 */
-	public function getDB($db, $user = false , $pass = false, array $options = array()) {
+	public function getDB($db, $user = false , $pass = false, array $options = array("connect" => TRUE)) {
 		if (!isset($this->_dbs[$db]) || !$this->_dbs[$db]) {
 			$this->forceConnect($options);
 			$newDb = $this->_connection->selectDB($db);
@@ -51,12 +51,12 @@ class Mongodloid_Connection {
 	/**
 	 * 	@throws MongoConnectionException
 	 */
-	public function forceConnect(array $options = array()) {
+	public function forceConnect(array $options = array("connect" => TRUE)) {
 		if ($this->_connected)
 			return;
 
 		// this can throw an Exception
-		$this->_connection = new MongoClient($this->_server ? $this->_server : 'localhost:27017', array());
+		$this->_connection = new MongoClient($this->_server ? $this->_server : 'localhost:27017', $options);
 
 		$this->_connected = true;
 	}
