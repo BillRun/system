@@ -23,20 +23,20 @@ class Mongodloid_Connection {
 	 * 
 	 * @return Billrun_Db instance
 	 */
-	public function getDB($db, $user = false , $pass = false, array $options = array("connect" => TRUE)) {
+	public function getDB($db, $user = false, $pass = false, array $options = array("connect" => TRUE)) {
 		if (!isset($this->_dbs[$db]) || !$this->_dbs[$db]) {
 			$this->forceConnect($options);
 			$newDb = $this->_connection->selectDB($db);
-			if($user) {
-				$newDb->authenticate($user,$pass);
+			if ($user) {
+				$newDb->authenticate($user, $pass);
 			}
-			
+
 			$this->_dbs[$db] = $this->createInstance($newDb);
 		}
 
 		return $this->_dbs[$db];
 	}
-	
+
 	/**
 	 * create instance of the connection db
 	 * 
@@ -86,7 +86,7 @@ class Mongodloid_Connection {
 		} else {
 			$server_port = $server . ':' . $port;
 		}
-		
+
 		settype($persistent, 'boolean');
 
 		if (!isset(self::$instances[$server_port]) || !self::$instances[$server_port]) {
