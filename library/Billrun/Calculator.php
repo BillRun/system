@@ -120,7 +120,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		Billrun_Factory::dispatcher()->trigger('beforeCalculateData', array('data' => $this->data));
 		$lines_coll = Billrun_Factory::db()->linesCollection();
 		$lines = $this->pullLines($this->lines);
-		foreach ($lines as $key => $line) {
+		foreach ($lines as $line) {
 			if ($line) {
 				//Billrun_Factory::log()->log("Calcuating row : ".print_r($line,1),  Zend_Log::DEBUG);
 				Billrun_Factory::dispatcher()->trigger('beforeCalculateDataRow', array('data' => &$line));

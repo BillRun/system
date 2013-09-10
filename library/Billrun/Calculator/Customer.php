@@ -27,6 +27,18 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	 */
 	protected $translateCustomerIdentToAPI = array();
 
+	/**
+	 *
+	 * @var Billrun_Subscriber 
+	 */
+	protected $subscriber;
+
+	/**
+	 * array of Billrun_Subscriber
+	 * @var array
+	 */
+	protected $subscribers;
+
 	public function __construct($options = array()) {
 		parent::__construct($options);
 
@@ -47,19 +59,29 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		return $this->getQueuedLines(array('type' => array('$in' => array('nsn', 'ggsn', 'smsc', 'mmsc', 'smpp', 'tap3', 'credit'))));
 	}
 
+	protected function subscribersByStamp() {
+		if (!isset($this->subscribers_by_stamp) || !$this->subscribers_by_stamp) {
+			$subs_by_stamp = array();
+			foreach ($this->subscribers as $sub) {
+				$subs_by_stamp[$sub->stamp] = $sub;
+			}
+			$this->subscribers = $subs_by_stamp;
+			$this->subscribers_by_stamp = true;
+		}
+	}
+
 	/**
 	 * write the calculation into DB
 	 */
 	protected function updateRow($row) {
-	
+		$this->subscribersByStamp();
 		$row->collection($this->lines_coll);
 		//Billrun_Factory::log('Load line ' . $row->get('stamp'), Zend_Log::INFO);
-		$subscriber = $this->loadSubscriberForLine($row);
-
-		if (!$subscriber || !$subscriber->isValid()) {
-			Billrun_Factory::log('Missing subscriber info for line with stamp : ' . $row->get('stamp'), Zend_Log::ALERT);
-			return false;
-		}
+		$subscriber = $this->subscribers[$row['stamp']];
+			if (!$subscriber || !$subscriber->isValid()) {
+				Billrun_Factory::log('Missing subscriber info for line with stamp : ' . $row->get('stamp'), Zend_Log::ALERT);
+				return false;
+			}
 
 		foreach ($subscriber->getAvailableFields() as $field) {
 			if (is_numeric($subscriber->{$field})) {
@@ -80,24 +102,39 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	}
 
 	/**
+	 * 
+	 * @param type $queueLines
+	 * @return type
+	 * @todo consider moving isLineLegitimate to here if possible
+	 */
+	protected function pullLines($queueLines) {
+		$lines = parent::pullLines($queueLines);
+		$this->subscribers = $this->loadSubscribers($lines);
+		return $lines;
+	}
+
+	protected function loadSubscribers($rows) {
+		$params = array();
+		foreach ($rows as $key => $row) {
+			$line_params = $this->getIdentityParams($row);
+			if (count($line_params) == 0) {
+				Billrun_Factory::log('Couldn\'t identify caller for line of stamp ' . $row->get('stamp'), Zend_Log::ALERT);
+			} else if ($this->isLineLegitimate($row)) {
+				$line_params['time'] = date(Billrun_Base::base_dateformat, $row->get('unified_record_time')->sec);
+				$line_params['stamp'] = $row->get('stamp');
+				$params[] = $line_params;
+			}
+		}
+		return $this->subscriber->getSubscribersByParams($params);
+	}
+
+	/**
 	 * Load a subscriber for a given CDR line.
 	 * @param type $row
 	 * @return type
 	 */
 	protected function loadSubscriberForLine($row) {
-
-		// @TODO: move the iteration code snippet into function; this is the reason we load the item to class property
-
-		$params = array();
-		foreach ($this->translateCustomerIdentToAPI as $key => $toKey) {
-
-			if ($row->get($key)) {
-				$params[$toKey['toKey']] = preg_replace($toKey['clearRegex'], '', $row->get($key));
-				//$this->subscriberNumber = $params[$toKey['toKey']];
-				Billrun_Factory::log("found indetification from {$key} to : " . $toKey['toKey'] . ' with value :' . $params[$toKey['toKey']], Zend_Log::DEBUG);
-				break;
-			}
-		}
+		$params = $this->getIdentityParams($row);
 
 		if (count($params) == 0) {
 			Billrun_Factory::log('Couldn\'t identify caller for line of stamp ' . $row->get('stamp'), Zend_Log::ALERT);
@@ -107,6 +144,19 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		$params['time'] = date(Billrun_Base::base_dateformat, $row->get('unified_record_time')->sec);
 
 		return $this->subscriber->load($params);
+	}
+
+	protected function getIdentityParams($row) {
+		$params = array();
+		foreach ($this->translateCustomerIdentToAPI as $key => $toKey) {
+			if ($row->get($key)) {
+				$params[$toKey['toKey']] = preg_replace($toKey['clearRegex'], '', $row->get($key));
+				//$this->subscriberNumber = $params[$toKey['toKey']];
+				Billrun_Factory::log("found identification from {$key} to : " . $toKey['toKey'] . ' with value :' . $params[$toKey['toKey']], Zend_Log::DEBUG);
+				break;
+			}
+		}
+		return $params;
 	}
 
 	/**
@@ -141,7 +191,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	static protected function getCalculatorQueueType() {
 		return self::$type;
 	}
-	
+
 	/**
 	 * 
 	 */
@@ -157,17 +207,17 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			$queue->update($query, $update);
 		}
 	}
-	
+
 	/**
 	 * @see Billrun_Calculator::isLineLegitimate
 	 */
 	protected function isLineLegitimate($line) {
 		foreach ($this->translateCustomerIdentToAPI as $key => $toKey) {
-			if( isset($line[$key]) && strlen($line[$key]) ) {
-				return (isset($line['customer_rate']) && $line['customer_rate']) ;//it  depend on customer rate to detect if the line is incoming or outgoing.
+			if (isset($line[$key]) && strlen($line[$key])) {
+				return (isset($line['customer_rate']) && $line->get('customer_rate', true)); //it  depend on customer rate to detect if the line is incoming or outgoing.
 			}
 		}
-		return  false;
+		return false;
 	}
 
 }

@@ -22,6 +22,9 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		parent::__construct($options);
 		if (isset($options['data'])) {
 			$this->data = $options['data'];
+			if (isset($options['data']['stamp'])) {
+				$this->stamp = $options['data']['stamp'];
+			}
 		}
 		if (isset($options['time'])) {
 			$this->time = $options['time'];
@@ -90,7 +93,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		$path = 'http://' . $host . '/' . $url . '?' . http_build_query($params);
 		//Billrun_Factory::log()->log($path, Zend_Log::DEBUG);
 		// @TODO: use Zend_Http_Client
-		$json = $this->send($path);
+		$json = self::send($path);
 
 		if (!$json) {
 			return false;
@@ -128,7 +131,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 	 * 
 	 * @todo use Zend_Http_Client
 	 */
-	protected function send($url) {
+	static protected function send($url, $post_data = null) {
 		// create a new cURL resource
 		$ch = curl_init();
 
@@ -137,7 +140,11 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		curl_setopt($ch, CURLOPT_HEADER, FALSE);
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
 		curl_setopt($ch, CURLOPT_USERPWD, 'eranu:free');
-
+		if (isset($post_data)) {
+			curl_setopt($ch, CURLOPT_POST, true);
+			curl_setopt($ch, CURLOPT_POSTFIELDS, $post_data);
+			curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: text/plain'));
+		}
 		// grab URL and pass it to the browser
 		$output = curl_exec($ch);
 
@@ -172,13 +179,13 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		$path = 'http://' . $host . '/' . $url . '?' . http_build_query($params);
 		//Billrun_Factory::log()->log($path, Zend_Log::DEBUG);
 		// @TODO: use Zend_Http_Client
-		$json = $this->send($path);
+		$json = self::send($path);
 //		$json =  '{"6052390":{"subscribers":[{"subscriber_id":1,"current_plan":"LARGE"}]}}'; // stub
 		if (!$json) {
 			return false;
 		}
 
-		$arr = @json_decode($json,true);
+		$arr = @json_decode($json, true);
 
 		if (!is_array($arr) || empty($arr)) {
 			return false;
@@ -190,8 +197,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 	public function getList($page, $size, $time, $acc_id = null) {
 		if (is_null($acc_id)) {
 			$params = array('msisdn' => '', 'IMSI' => '', 'DATETIME' => $time, 'page' => $page, 'size' => $size);
-		}
-		else {
+		} else {
 			$params = array('msisdn' => '', 'IMSI' => '', 'DATETIME' => $time, 'page' => $page, 'size' => $size, 'account_id' => $acc_id);
 		}
 		$accounts = $this->requestAccounts($params);
@@ -204,8 +210,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 				}
 			}
 			return $ret_data;
-		}
-		else {
+		} else {
 			return null;
 		}
 	}
@@ -245,6 +250,55 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		$stamp = md5($flat_entry['account_id'] . $flat_entry['subscriber_id'] . $flat_entry['billrun_key']);
 		$flat_entry['stamp'] = $stamp;
 		return $flat_entry;
+	}
+
+	static public function getSubscribersByParams($params_arr) {
+		$subscribers = array();
+		foreach ($params_arr as $key => &$params) {
+			if (!isset($params['imsi']) && !isset($params['IMSI']) && !isset($params['NDC_SN'])) {
+				Billrun_Factory::log()->log('Cannot identify Golan subscriber. Require phone or imsi to load. Current parameters: ' . print_R($params, 1), Zend_Log::ALERT);
+				unset($params_arr[$key]);
+			} else if (!isset($params['time'])) {
+				$params['DATETIME'] = date(Billrun_Base::base_dateformat);
+			} else {
+				$params['DATETIME'] = $params['time'];
+			}
+		}
+		$list = self::requestList($params_arr);
+
+		if (is_array($list) && !empty($list)) {
+			$subscriberSettings = Billrun_Factory::config()->getConfigValue('subscriber', array());
+			foreach ($list as $stamp => $item) {
+				if (is_array($item)) {
+					$subscribers[$stamp] = new self(array_merge(array('data' => $item),$subscriberSettings));
+				} else {
+					//TODO what is the output when subscriber was not found?
+//				Billrun_Factory::log()->log('Failed to load Golan subscriber data', Zend_Log::ALERT);
+				}
+			}
+		}
+		return $subscribers;
+	}
+
+	static public function requestList($params) {
+		$host = Billrun_Factory::config()->getConfigValue('provider.rpc.server', '');
+		$url = Billrun_Factory::config()->getConfigValue('provider.rpc.bulk_url', '');
+
+		$path = 'http://' . $host . '/' . $url;
+		//Billrun_Factory::log()->log($path, Zend_Log::DEBUG);
+		// @TODO: use Zend_Http_Client
+		$json = self::send($path, json_encode($params));
+
+		if (!$json) {
+			return false;
+		}
+
+		$arr = @json_decode($json, true);
+		if (!is_array($arr) || empty($arr)) {
+			return false;
+		}
+
+		return $arr;
 	}
 
 }
