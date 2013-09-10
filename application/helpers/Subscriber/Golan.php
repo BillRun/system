@@ -267,6 +267,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		$list = self::requestList($params_arr);
 
 		if (is_array($list) && !empty($list)) {
+			Billrun_Factory::log()->log('customer API responded with ' . count($list) . ' results', Zend_Log::INFO);
 			$subscriberSettings = Billrun_Factory::config()->getConfigValue('subscriber', array());
 			foreach ($list as $stamp => $item) {
 				if (is_array($item)) {
@@ -276,6 +277,9 @@ class Subscriber_Golan extends Billrun_Subscriber {
 //				Billrun_Factory::log()->log('Failed to load Golan subscriber data', Zend_Log::ALERT);
 				}
 			}
+		}
+		else {
+			Billrun_Factory::log()->log('customer API responded with no results', Zend_Log::INFO);
 		}
 		return $subscribers;
 	}

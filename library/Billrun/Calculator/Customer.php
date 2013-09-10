@@ -39,11 +39,20 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	 */
 	protected $subscribers;
 
+	/**
+	 * Whether or not to use the subscriber bulk API method
+	 * @var boolean
+	 */
+	protected $bulk = true;
+
 	public function __construct($options = array()) {
 		parent::__construct($options);
 
 		if (isset($options['calculator']['customer_identification_translation'])) {
 			$this->translateCustomerIdentToAPI = $options['calculator']['customer_identification_translation'];
+		}
+		if (isset($options['calculator']['bulk'])) {
+			$this->bulk = $options['calculator']['bulk'];
 		}
 
 		$this->subscriber = Billrun_Factory::subscriber();
@@ -63,7 +72,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		if (!isset($this->subscribers_by_stamp) || !$this->subscribers_by_stamp) {
 			$subs_by_stamp = array();
 			foreach ($this->subscribers as $sub) {
-				$subs_by_stamp[$sub->stamp] = $sub;
+				$subs_by_stamp[$sub->getStamp()] = $sub;
 			}
 			$this->subscribers = $subs_by_stamp;
 			$this->subscribers_by_stamp = true;
@@ -74,14 +83,18 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	 * write the calculation into DB
 	 */
 	protected function updateRow($row) {
-		$this->subscribersByStamp();
 		$row->collection($this->lines_coll);
-		//Billrun_Factory::log('Load line ' . $row->get('stamp'), Zend_Log::INFO);
-		$subscriber = $this->subscribers[$row['stamp']];
-			if (!$subscriber || !$subscriber->isValid()) {
-				Billrun_Factory::log('Missing subscriber info for line with stamp : ' . $row->get('stamp'), Zend_Log::ALERT);
-				return false;
-			}
+		if ($this->bulk) {
+			$this->subscribersByStamp();
+			$subscriber = $this->subscribers[$row['stamp']];
+		}
+		else {
+			$subscriber = $this->loadSubscriberForLine($row);
+		}
+		if (!$subscriber || !$subscriber->isValid()) {
+			Billrun_Factory::log('Missing subscriber info for line with stamp : ' . $row->get('stamp'), Zend_Log::ALERT);
+			return false;
+		}
 
 		foreach ($subscriber->getAvailableFields() as $field) {
 			if (is_numeric($subscriber->{$field})) {
@@ -109,7 +122,9 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	 */
 	protected function pullLines($queueLines) {
 		$lines = parent::pullLines($queueLines);
-		$this->subscribers = $this->loadSubscribers($lines);
+		if ($this->bulk) { // load all the subscribers in one call
+			$this->subscribers = $this->loadSubscribers($lines);
+		}
 		return $lines;
 	}
 
@@ -142,7 +157,8 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		}
 
 		$params['time'] = date(Billrun_Base::base_dateformat, $row->get('unified_record_time')->sec);
-
+		$params['stamp'] = $row->get('stamp');
+		
 		return $this->subscriber->load($params);
 	}
 
