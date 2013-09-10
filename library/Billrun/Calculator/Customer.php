@@ -51,7 +51,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	 * write the calculation into DB
 	 */
 	protected function updateRow($row) {
-	
+
 		$row->collection($this->lines_coll);
 		//Billrun_Factory::log('Load line ' . $row->get('stamp'), Zend_Log::INFO);
 		$subscriber = $this->loadSubscriberForLine($row);
@@ -141,7 +141,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	static protected function getCalculatorQueueType() {
 		return self::$type;
 	}
-	
+
 	/**
 	 * 
 	 */
@@ -157,17 +157,19 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			$queue->update($query, $update);
 		}
 	}
-	
+
 	/**
 	 * @see Billrun_Calculator::isLineLegitimate
 	 */
 	protected function isLineLegitimate($line) {
-		foreach ($this->translateCustomerIdentToAPI as $key => $toKey) {
-			if( isset($line[$key]) && strlen($line[$key]) ) {
-				return (isset($line['customer_rate']) && $line['customer_rate']) ;//it  depend on customer rate to detect if the line is incoming or outgoing.
+		if ($line['usagev'] != 0) {
+			foreach ($this->translateCustomerIdentToAPI as $key => $toKey) {
+				if (isset($line[$key]) && strlen($line[$key])) {
+					return (isset($line['customer_rate']) && $line['customer_rate']); //it  depend on customer rate to detect if the line is incoming or outgoing.
+				}
 			}
 		}
-		return  false;
+		return false;
 	}
 
 }
