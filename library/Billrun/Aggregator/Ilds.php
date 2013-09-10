@@ -42,19 +42,27 @@ class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 				continue;
 			}
 
-			// load subscriber
-			$phone_number = $item->get('caller_phone_no');
-			$subscriber = golan_subscriber::get($phone_number, $time);
-
-			if (!$subscriber) {
-				$this->log->log("subscriber not found. phone:" . $phone_number . " time: " . $time, Zend_Log::INFO);
-				continue;
+			if (!$item->get('account_id') || !$item->get('subscriver_id')) {
+				// load subscriber
+				$phone_number = $item->get('caller_phone_no');
+				$subscriber = golan_subscriber::get($phone_number, $time);
+				if (!$subscriber) {
+					$this->log->log("subscriber not found. phone:" . $phone_number . " time: " . $time, Zend_Log::INFO);
+					continue;
+				}
+			} else {
+				$subscriber = array(
+					'account_id' => $item->get('account_id'),
+					'id' => $item->get('subscriver_id'),
+				);
 			}
 
+
 			$subscriber_id = $subscriber['id'];
+			$account_id = $subscriber['account_id'];
 			
 			// update billing line with billrun stamp
-			if (!$this->updateBillingLine($subscriber_id, $item)) {
+			if (!$this->updateBillingLine($subscriber_id, $account_id, $item)) {
 				$this->log->log("subscriber " . $subscriber_id . " cannot update billing line", Zend_Log::INFO);
 				continue;
 			}
@@ -183,9 +191,10 @@ class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 	 *
 	 * @return boolean true on success else false
 	 */
-	protected function updateBillingLine($subscriber_id, $line) {
+	protected function updateBillingLine($subscriber_id, $account_id, $line) {
 		$current = $line->getRawData();
 		$added_values = array(
+			'account_id' => $account_id,
 			'subscriber_id' => $subscriber_id,
 			'billrun' => $this->getStamp(),
 		);
