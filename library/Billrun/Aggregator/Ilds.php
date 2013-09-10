@@ -42,7 +42,7 @@ class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 				continue;
 			}
 
-			if (!$item->get('account_id') || !$item->get('subscriver_id')) {
+			if (!$item->get('account_id') || !$item->get('subscriber_id')) {
 				// load subscriber
 				$phone_number = $item->get('caller_phone_no');
 				$subscriber = golan_subscriber::get($phone_number, $time);
