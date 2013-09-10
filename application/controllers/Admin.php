@@ -375,7 +375,7 @@ class AdminController extends Yaf_Controller_Abstract {
 			'session' => $this->getSession($table),
 		);
 
-		$params = array_merge($options, $params, $this->getTableViewParams($filter_query), $this->createFilterToolbar($table));
+		$params = array_merge($options, $params, $this->getTableViewParams($filter_query), $this->createFilterToolbar());
 
 		$ret = $this->renderView('table', $params);
 		return $ret;
