@@ -49,11 +49,17 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 	 */
 	protected function getLineVolume($row, $usage_type) {
 		if ($usage_type == 'call') {
-			return $row['duration'];
+			if (isset($row['duration'])) {
+				return $row['duration'];
+			}
+			else if ($row['record_type']=='31') { // terminated call
+				return 0;
+			}
 		}
 		if ($usage_type == 'sms') {
 			return 1;
 		}
+		return null;
 	}
 
 	/**
@@ -68,6 +74,7 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 			case '12':
 			case '01':
 			case '02':
+			case '31':
 			default:
 				return 'call';
 		}
