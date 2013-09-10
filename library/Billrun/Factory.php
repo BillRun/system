@@ -92,7 +92,7 @@ class Billrun_Factory {
 	 * 
 	 * @return Billrun_Log
 	 */
-	static public function log() {
+	public static function log() {
 		if (!self::$log) {
 			self::$log = Billrun_Log::getInstance();
 		}
@@ -116,7 +116,7 @@ class Billrun_Factory {
 	 * 
 	 * @return Billrun_Config
 	 */
-	static public function config() {
+	public static function config() {
 		if (!self::$config) {
 			self::$config = Billrun_Config::getInstance();
 		}
@@ -129,7 +129,7 @@ class Billrun_Factory {
 	 * 
 	 * @return Billrun_Db
 	 */
-	static public function db(array $options = array()) {
+	public static function db(array $options = array()) {
 		if (empty($options)) {
 			$options = Billrun_Factory::config()->getConfigValue('db'); // the stdclass force it to return object
 		}
@@ -149,7 +149,7 @@ class Billrun_Factory {
 	 * 
 	 * @return Billrun_Cache
 	 */
-	static public function cache() {
+	public static function cache() {
 		if (!self::$cache) {
 			$args = self::config()->getConfigValue('cache', array());
 			if (empty($args)) {
@@ -166,7 +166,7 @@ class Billrun_Factory {
 	 * 
 	 * @return Billrun_Db
 	 */
-	static public function mailer() {
+	public static function mailer() {
 		try {
 			$mail = new Zend_Mail();
 			//TODO set common configuration.
@@ -186,7 +186,7 @@ class Billrun_Factory {
 	 * 
 	 * @return Billrun_Dispatcher
 	 */
-	static public function dispatcher() {
+	public static function dispatcher() {
 		if (!self::$dispatcher) {
 			self::$dispatcher = Billrun_Dispatcher::getInstance();
 		}
@@ -199,7 +199,7 @@ class Billrun_Factory {
 	 * 
 	 * @return Billrun_Chain
 	 */
-	static public function chain() {
+	public static function chain() {
 		if (!self::$chain) {
 			self::$chain = Billrun_Dispatcher::getInstance(array('type' => 'chain'));
 		}
@@ -212,7 +212,7 @@ class Billrun_Factory {
 	 * 
 	 * @return Billrun_Subscriber
 	 */
-	static public function subscriber() {
+	public static function subscriber() {
 		if (!self::$subscriber) {
 			$subscriberSettings = self::config()->getConfigValue('subscriber', array());
 			self::$subscriber = Billrun_Subscriber::getInstance($subscriberSettings);
@@ -226,7 +226,7 @@ class Billrun_Factory {
 	 * 
 	 * @return Billrun_Balance
 	 */
-	static public function balance( $params = array() ) {
+	public static function balance( $params = array() ) {
 		/*
 		 * No caching for now as we need updated data  each time (as more then once calculator  can run at the same time).
 		$stamp = md5(serialize($params));
@@ -244,7 +244,7 @@ class Billrun_Factory {
 	 * 
 	 * @return Billrun_Subscriber
 	 */
-	static public function tariff() {
+	public static function tariff() {
 		if (!self::$tariff) {
 			$tariffSettings = self::config()->getConfigValue('tariff', array());
 			self::$tariff = Billrun_Tariff::getInstance($tariffSettings);
@@ -258,7 +258,7 @@ class Billrun_Factory {
 	 * 
 	 * @return Billrun_Plan
 	 */
-	static public function plan($params) {
+	public static function plan($params) {
 
 		// unique stamp per plan
 		$stamp = md5(serialize($params));
@@ -275,7 +275,7 @@ class Billrun_Factory {
 	 * 
 	 * @return Billrun_Billrun
 	 */
-	static public function billrun($params = array()) {
+	public static function billrun($params = array()) {
 		$billrunSettings = self::config()->getConfigValue('billrun', array());
 		return new Billrun_Billrun(array_merge($billrunSettings, $params));
 	}
