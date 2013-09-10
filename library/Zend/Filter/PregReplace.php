@@ -56,7 +56,7 @@ class Zend_Filter_PregReplace implements Zend_Filter_Interface
      *
      * @return bool
      */
-    static public function isUnicodeSupportEnabled()
+    public static function isUnicodeSupportEnabled()
     {
         if (self::$_unicodeSupportEnabled === null) {
             self::_determineUnicodeSupport();

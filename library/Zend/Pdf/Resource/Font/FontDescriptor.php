@@ -77,7 +77,7 @@ class Zend_Pdf_Resource_Font_FontDescriptor
      * @return Zend_Pdf_Element_Dictionary
      * @throws Zend_Pdf_Exception
      */
-    static public function factory(Zend_Pdf_Resource_Font $font, Zend_Pdf_FileParser_Font_OpenType $fontParser, $embeddingOptions)
+    public static function factory(Zend_Pdf_Resource_Font $font, Zend_Pdf_FileParser_Font_OpenType $fontParser, $embeddingOptions)
     {
         /* The font descriptor object contains the rest of the font metrics and
          * the information about the embedded font program (if applicible).

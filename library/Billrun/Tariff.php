@@ -113,7 +113,7 @@ class Billrun_Tariff {
 	 * 
 	 * @return type
 	 */
-	static public function getInstance(array $options = array()) {
+	public static function getInstance(array $options = array()) {
 		if (!isset(self::$instance)) {
 			self::$instance = new self($options);
 		}
