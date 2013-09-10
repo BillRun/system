@@ -47,6 +47,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	 * @var int calculation period in months
 	 */
 	protected $months_limit = null;
+
 	/**
 	 * The  time that  the queue lines were signed in for this calculator run.
 	 * @var type 
@@ -58,6 +59,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	 * @var type 
 	 */
 	protected $workHash = 0;
+
 	/**
 	 * constructor of the class
 	 * 
@@ -143,8 +145,8 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	public function write() {
 		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteData', array('data' => $this->data));
 		//no need  the  line is now  written right after update @TODO now that we do use queue shuold the lines wirte be here?
-		foreach($this->data as $line) {
-			$this->writeLine($line);
+		foreach ($this->data as $key => $line) {
+			$this->writeLine($line, $key);
 		}
 		//Update the queue lines
 		$this->setCalculatorTag();
@@ -155,12 +157,16 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	/**
 	 * Save a modified line to the lines collection.
 	 */
-	public function writeLine($line) {
+	public function writeLine($line, $dataKey) {
 		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteLine', array('data' => $line));
 		$line->save(Billrun_Factory::db()->linesCollection());
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteLine', array('data' => $line));
+		if (!isset($line['usagev']) || $line['usagev'] === 0) {
+			$this->removeLineFromQueue($line);
+			unset($this->data[$dataKey]);
+		}
 	}
-	
+
 	/**
 	 * 
 	 * @param type $queueLines
@@ -173,9 +179,9 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		}
 		//Billrun_Factory::log()->log("stamps : ".print_r($stamps,1),Zend_Log::DEBUG);
 		$lines = Billrun_Factory::db()->linesCollection()
-					->query()->in('stamp', $stamps );
+				->query()->in('stamp', $stamps);
 		//Billrun_Factory::log()->log("Lines : ".print_r($lines->count(),1),Zend_Log::DEBUG);	
-		if ( !$lines->count(true) ) {
+		if (!$lines->count(true)) {
 			return array();
 		}
 		return $lines;
@@ -290,9 +296,16 @@ abstract class Billrun_Calculator extends Billrun_Base {
 			foreach ($this->data as $item) {
 				$stamps[] = $item['stamp'];
 			}
-			$query = array('stamp' => array( '$in' => $stamps ) );
+			$query = array('stamp' => array('$in' => $stamps));
 			$queue->remove($query);
 		}
+	}
+
+	protected function removeLineFromQueue($line) {
+		$query = array(
+			'stamp' => $line['stamp'],
+		);
+		Billrun_Factory::db()->queueCollection()->remove($query);
 	}
 
 	/**
@@ -308,10 +321,10 @@ abstract class Billrun_Calculator extends Billrun_Base {
 //		$options = static::getBaseOptions();
 		$current_calculator_queue_tag = $this->getCalculatorQueueTag();
 		$retLines = array();
-				 				
+
 		//if THere limit to the calculator set an updating limit.
-		if($this->limit != 0 ) {
-			$hq = $queue->query($query)->cursor()->sort(array('_id'=> 1))->limit($this->limit);
+		if ($this->limit != 0) {
+			$hq = $queue->query($query)->cursor()->sort(array('_id' => 1))->limit($this->limit);
 			$horizonlineCount = $hq->count(true);
 			$horizonline = $hq->skip(abs($horizonlineCount - 1))->limit(1)->current();
 			Billrun_Factory::log()->log("current limit : " . $horizonlineCount, Zend_Log::DEBUG);
@@ -339,7 +352,6 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	 * @return string the  type  of the calculator
 	 */
 	abstract protected static function getCalculatorQueueType();
-
 
 	/**
 	 * Check if a given line  can be handeld by  the calcualtor.
