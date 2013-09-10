@@ -59,7 +59,7 @@ class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 				Billrun_Factory::log()->log("subscriber " . $subscriber['id'] . " already in line " . $item->get('stamp'), Zend_Log::INFO);
 				$subscriber = array(
 					'account_id' => $item->get('account_id'),
-					'id' => $item->get('subscriver_id'),
+					'id' => $item->get('subscriber_id'),
 				);
 			}
 
@@ -224,12 +224,14 @@ class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 	 */
 	public function load() {
 
+		$min_time = (string) date('Ymd000000', strtotime('3 months ago'));
 		$lines = Billrun_Factory::db()->linesCollection();
 		$this->data = $lines->query(array(
 					'$or' => array(
 						array('source' => 'ilds'),
 						array('source' => 'api', 'type' => 'refund', 'reason' => 'ILDS_DEPOSIT')
-					)
+					),
+					'call_start_dt' => array('$gte' => $min_time),
 				))
 				->notExists('billrun')
 				//->exists('price_provider')
