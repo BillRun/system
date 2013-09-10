@@ -315,7 +315,8 @@ abstract class Billrun_Calculator extends Billrun_Base {
 //		$options = static::getBaseOptions();
 		$current_calculator_queue_tag = $this->getCalculatorQueueTag();
 		$retLines = array();
-		//if THere limit to the calculator set an updating limit.
+		
+		//if There limit to the calculator set an updating limit.
 		if ($this->limit != 0) {
 			$hq = $queue->query($query)->cursor()->sort(array('_id' => 1))->limit($this->limit);
 			$horizonlineCount = $hq->count(true);
