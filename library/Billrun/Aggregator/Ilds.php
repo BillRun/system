@@ -56,6 +56,7 @@ class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 					continue;
 				}
 			} else {
+				Billrun_Factory::log()->log("subscriber " . $subscriber['id'] . " already in line " . $item->get('stamp'), Zend_Log::INFO);
 				$subscriber = array(
 					'account_id' => $item->get('account_id'),
 					'id' => $item->get('subscriver_id'),
