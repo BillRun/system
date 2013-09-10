@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * @package         Billing
  * @copyright       Copyright (C) 2012 S.D.O.C. LTD. All rights reserved.
@@ -69,15 +69,21 @@ class Billrun_Responder_018 extends Billrun_Responder_Base_Ilds {
 	
 	protected function updateHeader($line, $logLine) {
 		$line = parent::updateHeader($line, $logLine);
-		$line = $this->switchNamesInLine("XFN", "GOLA", $line);
+		$line = $this->switchNamesInLine("XFN ", "GOLA", $line);
 		return $line;
 	}
 	
 	
 	protected function updateTrailer($logLine) {
-		$logLine['total_charge'] = $this->totalChargeAmount;
-		$logLine['total_rec_no'] = $this->linesCount;
-		$logLine['total_err_rec_no'] = $this->linesErrors;
+		if(isset($logLine['trailer'])) {
+		    $trailer = &$logLine['trailer'];
+		} else {
+		    $trailer = &$logLine;
+		}
+		
+		$trailer['total_charge'] = $this->totalChargeAmount;
+		$trailer['total_rec_no'] = $this->linesCount;
+		$trailer['total_err_rec_no'] = $this->linesErrors;
 		$line = parent::updateTrailer($logLine);
 		return $line;
 	}

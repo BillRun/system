@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * @package         Billing
  * @copyright       Copyright (C) 2012 S.D.O.C. LTD. All rights reserved.
@@ -32,12 +32,13 @@ abstract class Billrun_Responder_Base_Ilds extends Billrun_Responder_Base_LocalD
 	protected function processFileForResponse($filePath, $logLine) {
 		$logLine = $logLine->getRawData();
 		$this->linesCount = $this->linesErrors = $this->totalChargeAmount = 0;
-		
-		$dbLines = $this->db->getCollection(self::lines_table)->query()->equals('file', $this->getFilenameFromLogLine($logLine));
+
+		$linesCollection = Billrun_Factory::db()->linesCollection();
+		$dbLines = $linesCollection->query()->equals('file', $this->getFilenameFromLogLine($logLine));
 
 		//run only after the lines were processed by the billrun.
 		if ($dbLines->count() == 0 || /* TODO fix this db query  find a way to query the $dbLines results insted */ 
-			$this->db->getCollection(self::lines_table)->query()->equals('file',$this->getFilenameFromLogLine($logLine))->exists('billrun')->count() == 0) {
+			$linesCollection->query()->equals('file',$this->getFilenameFromLogLine($logLine))->exists('billrun')->count() == 0) {
 			return false;
 		}
 
@@ -113,8 +114,9 @@ abstract class Billrun_Responder_Base_Ilds extends Billrun_Responder_Base_LocalD
 	 */
 	protected function updateTrailer($logLine) {
 		$line = "";
+		$trailer = (isset($logLine['trailer']) ? $logLine['trailer'] : $logLine);
 		foreach ($this->trailer_structure as $key => $val) {
-			$data = (isset($logLine[$key]) ? $logLine[$key] : "");
+			$data = (isset($trailer[$key]) ? $trailer[$key] : "");
 			$line .= sprintf($val,$data);
 		}
 
@@ -132,10 +134,10 @@ abstract class Billrun_Responder_Base_Ilds extends Billrun_Responder_Base_LocalD
 	protected function switchNamesInLine($name1, $name2, $line) {
 			$ourSign = base64_encode($name1.$name2);
 			return str_replace($ourSign, $name1,
-									str_replace($name1, $name2, 
-										str_replace($name2, $ourSign, $line)
-									)
-								);
+					    str_replace($name1, $name2, 
+						    str_replace($name2, $ourSign, $line)
+					    )
+				    );
 	}
 	
 	/**

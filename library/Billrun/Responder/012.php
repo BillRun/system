@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * @package         Billing
  * @copyright       Copyright (C) 2012 S.D.O.C. LTD. All rights reserved.
@@ -70,10 +70,16 @@ class Billrun_Responder_012 extends Billrun_Responder_Base_Ilds {
 	}
 
 	protected function updateTrailer($logLine) {
-		$logLine['file_type'] = "MABAL_R";
-		$logLine['total_charge'] = $this->totalChargeAmount;
-		$logLine['total_rec_no'] =  $this->linesCount;
-		$logLine['total_err_rec_no'] =  $this->linesErrors;
+		if(isset($logLine['trailer'])) {
+		    $trailer = &$logLine['trailer'];
+		} else {
+		    $trailer = &$logLine;
+		}
+		
+		$trailer['file_type'] = "MABAL_R";
+		$trailer['total_charge'] = $this->totalChargeAmount;
+		$trailer['total_rec_no'] =  $this->linesCount;
+		$trailer['total_err_rec_no'] =  $this->linesErrors;
 		$line = parent::updateTrailer($logLine);
 //		$line.= sprintf("%015s", $this->totalChargeAmount);
 //		$line.= sprintf("%6s", $this->linesCount);

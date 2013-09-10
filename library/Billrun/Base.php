@@ -15,49 +15,6 @@
 abstract class Billrun_Base {
 
 	/**
-	 * the database we are working on
-	 *
-	 * @var db resource
-	 */
-	protected $db = null;
-
-	/**
-	 * the stamp of the aggregator
-	 * used for mark the aggregation
-	 *
-	 * @var db resource
-	 */
-	protected $stamp = null;
-
-	/**
-	 * the log of the system
-	 *
-	 * @var Billrun_Log
-	 */
-	protected $log;
-
-	/**
-	 * the configuration of the system
-	 *
-	 * @var YAF_Config
-	 */
-	protected $config;
-
-	/**
-	 * dispatcher of the plugin system
-	 *
-	 * @var dispatcher class
-	 */
-	protected $dispatcher;
-
-	/**
-	 * chain dispatcher of the plugin system
-	 *
-	 * @var dispatcher class
-	 */
-	protected $chain;
-
-	/**
 	 * the type of the object
 	 *
 	 * @var string
@@ -65,54 +22,36 @@ abstract class Billrun_Base {
 	static protected $type = 'base';
 
 	/**
-	 * constant of log collection name
+	 * Stamp of the object
+	 * Used to make the object unique
+	 *
+	 * @var string
 	 */
+	protected $stamp = null;
 
-	const log_table = 'log';
-
-	/**
-	 * constant of lines collection name
-	 */
-	const lines_table = 'lines';
-
-	/**
-	 * constant of billrun collection name
-	 */
-	const billrun_table = 'billrun';
-
-	/**
-	 * constant of events collection name
-	 */
-	const events_table = 'events';
-	
 	/**
 	 * constant for base date format
 	 */
-	const base_dateformat = 'Y-m-d h:i:s';
+	const base_dateformat = 'Y-m-d H:i:s';
 
+	/**
+	 * Limit iterator
+	 * used to limit the count of row to calc on.
+	 * 0 or less means no limit
+	 *
+	 * @var int
+	 */
+	protected $limit = 10000;
+	
 	/**
 	 * constructor
 	 * 
 	 * @param array $options
-	 * @todo use factory for all basic instances (config, log, db, etc)
 	 */
 	public function __construct($options = array()) {
-		if (isset($options['config'])) {
-			$this->config = $options['config'];
-		} else {
-			$this->config = Yaf_Application::app()->getConfig();
-		}
-
-		if (isset($options['log'])) {
-			$this->log = $options['log'];
-		} else {
-			$this->log = Billrun_Log::getInstance();
-		}
-
-		if (isset($options['db'])) {
-			$this->setDB($options['db']);
-		} else {
-			$this->setDB(Billrun_Db::getInstance());
+		
+		if (isset($options['type'])) {
+			static::$type = $options['type'];
 		}
 
 		if (isset($options['stamp']) && $options['stamp']) {
@@ -121,34 +60,10 @@ abstract class Billrun_Base {
 			$this->setStamp(uniqid(get_class($this)));
 		}
 
-		if (isset($options['dispatcher'])) {
-			$this->dispatcher = $options['dispatcher'];
-		} else {
-			$this->dispatcher = Billrun_Dispatcher::getInstance();
-		}
+		if(isset($options['limit']) && $options['limit']) {
+			$this->setLimit($options['limit']);
+		} 
 		
-		if (isset($options['chain'])) {
-			$this->chain = $options['chain'];
-		} else {
-			$this->chain = Billrun_Dispatcher::getInstance(array('type' => 'chain'));
-		}
-		
-		if (isset($options['type'])) {
-			static::$type = $options['type'];
-		}
-
-	}
-
-	/**
-	 * set database of the basic object
-	 *
-	 * @param resource $db the database instance to set
-	 *
-	 * @return mixed self instance
-	 */
-	public function setDB($db) {
-		$this->db = $db;
-		return $this;
 	}
 
 	/**
@@ -173,6 +88,37 @@ abstract class Billrun_Base {
 	public function getStamp() {
 		return $this->stamp;
 	}
+	
+	
+	/**
+	 * Set running limit for the current instance
+	 * used differently by each inheriteing class
+	 * 
+	 * @param string $limit the limit to set
+	 *
+	 * @return mixed self instance
+	 */
+	public function setLimit($limit) {
+		$this->limit = $limit;
+		return $this;
+	}
+
+	/**
+	 * Get the current instance limit
+	 *
+	 * @return string the limit of the object
+	 */
+	public function getLimit() {
+		return $this->limit;
+	}
+	
+	/**
+	 * Get the type name of the current object.
+	 * @return string conatining the current.
+	 */
+	public function getType() {
+		return static::$type;
+	}
 
 	/**
 	 * Loose coupling of objects in the system
@@ -193,20 +139,23 @@ abstract class Billrun_Base {
 		$config_type = Yaf_Application::app()->getConfig()->{$type};
 		$called_class = get_called_class();
 		
-		if ($config_type && 
-			isset($config_type->{$called_class::$type}) && 
-			isset($config_type->{$called_class::$type}->type)) {
-			$class_type = $config_type[$called_class::$type]['type'];
-			$args = array_merge($args, $config_type->toArray());
-			$args['type'] = $type;
-		} else {
-			$class_type = $type;
+		if($called_class && Billrun_Factory::config()->getConfigValue($called_class)) {
+			$args = array_merge( Billrun_Factory::config()->getConfigValue($called_class)->toArray(),$args);
 		}
 		
+		$class_type = $type;
+		if ( $config_type ) {
+			$args = array_merge( $config_type->toArray(),$args);
+			if( isset($config_type->{$called_class::$type}) &&
+				isset($config_type->{$called_class::$type}->type)) {
+				$class_type = $config_type[$called_class::$type]['type'];
+				$args['type'] = $type;
+			} 
+		} 
 		$class = $called_class . '_' . ucfirst($class_type);
 		return new $class($args);
 	}
-	
+
 	/**
 	 * method to get config value
 	 * 
@@ -216,21 +165,8 @@ abstract class Billrun_Base {
 	 * @deprecated since version 1.0
 	 */
 	public function getConfigValue($keys, $defVal) {
-		$this->log->log("Billrun_Base::getConfigValue is deprecated; please use Billrun_Config::getConfigValue through factory::config()", Zend_Log::DEBUG);
-		$currConf = $this->config;
-
-		if (!is_array($keys)) {
-			$path = explode(".", $keys);
-		}
-
-		foreach ($path as $key) {
-			if (!isset($currConf[$key])) {
-				return $defVal;
-			}
-			$currConf = $currConf[$key];
-		}
-
-		return $currConf;
+		Billrun_Factory::log()->log("Billrun_Base::getConfigValue is deprecated; please use Billrun_Config::getConfigValue through factory::config()", Zend_Log::DEBUG);
+		return Billrun_Factory::config()->getConfigValue($keys, $defVal);
 	}
 
 }

@@ -1,7 +1,7 @@
 <?php
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012 S.D.O.C. LTD. All rights reserved.
  * @license         GNU General Public License version 2 or later; see LICENSE.txt
  */
 
@@ -9,7 +9,7 @@
  * Billing 013 Responder file processor
  *
  * @package  Billing
- * @since    0.5
+ * @since    1.0
  */
 class Billrun_Responder_014 extends Billrun_Responder_Base_Ilds {
 
@@ -75,8 +75,7 @@ class Billrun_Responder_014 extends Billrun_Responder_Base_Ilds {
 
 	protected function processFileForResponse($filePath, $logLine) {
 		$tmpLogLine = $logLine->getRawData();
-		//only response if some lines werent processed
-		$unprocessDBLines = $this->db->getCollection(self::lines_table)->query()->notExists('billrun')->equals('file', $this->getFilenameFromLogLine($tmpLogLine));
+		$unprocessDBLines = Billrun_Factory::db()->linesCollection()->query()->notExists('billrun')->equals('file',$this->getFilenameFromLogLine($tmpLogLine));
 		//run only if theres promlematic lines in the file.
 		if ($unprocessDBLines->count() == 0) {
 			return false;
@@ -103,11 +102,16 @@ class Billrun_Responder_014 extends Billrun_Responder_Base_Ilds {
 	}
 	
 	protected function updateTrailer($logLine) {
-		$logLine['file_received_date'] = date('Ymd');
-		$logLine['file_received_time'] = date('His');
-		$logLine['total_rec_no'] = $this->linesCount;
-		$logLine['total_valid_rec_no'] = ($this->linesCount - $this->linesErrors);
-		$logLine['total_err_rec_no'] = $this->linesErrors;
+		if(isset($logLine['trailer'])) {
+		    $trailer = &$logLine['trailer'];
+		} else {
+		    $trailer = &$logLine;
+		}
+		$trailer['file_received_date'] = date('Ymd');
+		$trailer['file_received_time'] = date('His');
+		$trailer['total_rec_no'] = $this->linesCount;
+		$trailer['total_valid_rec_no'] = ($this->linesCount - $this->linesErrors);
+		$trailer['total_err_rec_no'] = $this->linesErrors;
 		$line = parent::updateTrailer($logLine);
 
 		return $line;
@@ -122,14 +126,16 @@ class Billrun_Responder_014 extends Billrun_Responder_Base_Ilds {
 		return $responseFilename;
 	}
 
-		protected function getHeaderStateCode($headerLine,$logLine) {
-		if($logLine['file_type'] != "CDR") {
+	protected function getHeaderStateCode($headerLine,$logLine) {
+		$logHeader =  isset($logLine['header']) ? $logLine['header'] : $logLine;
+		
+		if( $logHeader['file_type'] != "CDR" ) {
 			return 1;
 		}
-		if($logLine['sending_company_id'] != "MBZ") {
+		if($logHeader['sending_company_id'] != "MBZ" ) {
 			return 2;
 		}
-		if(!is_numeric($logLine['sequence_no']) ) {
+		if( !is_numeric($logHeader['sequence_no']) ) {
 			return 3;
 		}
 		if(!date_create_from_format("YmdHis",substr($headerLine, 26,14)) ) {

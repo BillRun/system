@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * @package         Billing
  * @copyright       Copyright (C) 2012 S.D.O.C. LTD. All rights reserved.
@@ -28,7 +28,7 @@ abstract class Billrun_Responder_Base_LocalDir extends Billrun_Responder_Base_Fi
 		if (isset($options['export-path']) &&  true !== $options['export-path']) {
 			$this->exportDir = $options['export-path'];
 		} else {
-			$this->exportDir = $this->config->response->export->path;
+			$this->exportDir = Billrun_Factory::config()->getConfigValue('response.export.path', './');
 			$this->exportFromConfig = true;
 		}
 	}
@@ -46,6 +46,8 @@ abstract class Billrun_Responder_Base_LocalDir extends Billrun_Responder_Base_Fi
 			return FALSE;
 		}
 		parent::respondAFile($responseFilePath, $fileName, $logLine);
+		Billrun_Factory::log()->log("Placed response at : $exportPath", Zend_Log::DEBUG);
+		
 		return $exportPath;
 	}
 

@@ -1,6 +1,13 @@
 <?php
 
 class Zend_Ftp {
+	
+	/**
+	 * The value of  an Unkown system type.
+	 */
+
+	const UNKNOWN_SYSTEM_TYPE = 'unknown';
+	
 	/**
 	 * ASCII transfer mode
 	 */
@@ -101,6 +108,13 @@ class Zend_Ftp {
 	 */
 	protected $_asciiTypes = array('txt', 'html', 'htm', 'php', 'phtml');
 
+	/**
+	 * The connected system type  returned by ftp_systype() or 'unknown' if the 
+	 * 
+	 * @var array
+	 */
+	protected $_systype = Zend_Ftp::UNKNOWN_SYSTEM_TYPE;
+	
 	/**
 	 * Instantiate
 	 * 
@@ -342,8 +356,16 @@ class Zend_Ftp {
 	 */
 	public function __destruct() {
 		if ($this->_connection !== null) {
-			@ftp_close($this->_connection);
+			$this->disconnect();
 		}
+	}
+	
+	public function disconnect() {
+		$ret = @ftp_close($this->_connection);
+		if (!is_null($this->_connection)) {
+			$this->_connection = null;
+		}
+		return $ret;
 	}
 
 	/**
@@ -362,7 +384,17 @@ class Zend_Ftp {
 
 		return $this;
 	}
+	/**
+	 * Delete a file from the ftp server
+	 * 
+	 * @param string $path The path to the file or directory to delete
+	 * @return bool TRUE if the file/directory deletion was successful.
+	 */
+	public function delete($path) {
+		$res = @ftp_delete($this->_connection, $path);
 
+		return $res;
+	}
 	/**
 	 * Converts string permissions into octal format
 	 * 
@@ -402,6 +434,19 @@ class Zend_Ftp {
 	 */
 	public static function connect($host, $username, $password, $port = 21, $timeout = 90) {
 		return new self($host, $username, $password, $port, $timeout);
+	}
+	
+	/**
+	 * Get the currently connected system type.
+	 * @return string identifing the currently connected system type (ie. unix/windows/unkown...)
+	 */
+	public function getSysType() {
+		if(!$this->_connection) {
+			throw new Exception("System ftype  can only be checked after a successful contection is made");
+		}
+		$ret = @ftp_systype($this->_connection);
+		return $ret ? $ret : Zend_Ftp::UNKNOWN_SYSTEM_TYPE;
+		
 	}
 
 }

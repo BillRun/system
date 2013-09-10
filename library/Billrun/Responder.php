@@ -1,7 +1,7 @@
 <?php
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012 S.D.O.C. LTD. All rights reserved.
  * @license         GNU General Public License version 2 or later; see LICENSE.txt
  */
 
@@ -9,7 +9,7 @@
  * Billing abstract receiver class
  *
  * @package  Billing
- * @since    0.5
+ * @since    1.0
  */
 abstract class Billrun_Responder extends Billrun_Base {
 
@@ -36,12 +36,12 @@ abstract class Billrun_Responder extends Billrun_Base {
 			$this->workspace = Billrun_Factory::config()->getConfigValue('response.workspace');
 		}
 		
-		if (isset($options['backup_path'])) {
-			$this->backupPaths = $options['backup_path'];
+		/*if (isset($options['backup'])) {
+			$this->workspace = $options['backup'];
 		} else {
 			$defBackup = Billrun_Factory::config()->getConfigValue('response.backup');
-			$this->backupPaths = Billrun_Factory::config()->getConfigValue(static::$type.'.backup', $defBackup);
-		}
+			$this->workspace = Billrun_Factory::config()->getConfigValue(static::$type.'.backup', $defBackup);
+		}*/
 	}
 
 	/**
@@ -55,7 +55,7 @@ abstract class Billrun_Responder extends Billrun_Base {
 	 * An hack function to handlw the to type of filename saving in the log collection.
 	 * @return string the logline file name
 	 */
-	function getFilenameFromLogLine($logLine) {
+	protected function getFilenameFromLogLine($logLine) {
 		return isset($logLine['file']) ? $logLine['file'] : $logLine['file_name'];
 		
 	}

@@ -30,18 +30,18 @@ class Billrun_Log extends Zend_Log {
 
 		return self::$instances[$stamp];
 	}
-	
-    /**
-     * Log a message at a priority
-     *
-     * @param  string   $message   Message to log
-     * @param  integer  $priority  Priority of message
-     * @param  mixed    $extras    Extra information to log in event
-     * @return void
-     * @throws Zend_Log_Exception
-     */
-    public function log($message, $priority = Zend_Log::DEBUG, $extras = null) {
+
+	/**
+	 * Log a message at a priority
+	 *
+	 * @param  string   $message   Message to log
+	 * @param  integer  $priority  Priority of message
+	 * @param  mixed    $extras    Extra information to log in event
+	 * @return void
+	 * @throws Zend_Log_Exception
+	 */
+	public function log($message, $priority = Zend_Log::DEBUG, $extras = null) {
 		parent::log($message, $priority, $extras);
 	}
-	
+
 }

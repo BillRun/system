@@ -59,25 +59,20 @@ class Zend_Ftp_Directory_Iterator implements SeekableIterator, Countable, ArrayA
 		if (!is_array($lines)) {
 			return false;
 		}
-
+		
+		$parser = Zend_Ftp_Factory::getParser($this->_ftp->getSysType());
+		
 		foreach ($lines as $line) {
-			preg_match('/^([\-dl])([rwx\-]+)\s+(\d+)\s+(\w+)\s+(\w+)\s+(\d+)\s+(\w+\s+\d+\s+[\d\:]+)\s+(.*)$/', $line, $matches);
-
-			list($trash, $type, $permissions, $unknown, $owner, $group, $bytes, $date, $name) = $matches;
-
-			if ($type != 'l') {
-				$this->_data[] = array(
-					'type' => $type,
-					'permissions' => $permissions,
-					'bytes' => $bytes,
-					'name' => $name,
-				);
-			}
+			$fileData = $parser->parseFileDirectoryListing($line);	
+			if ($fileData['type'] != 'l') {
+				$this->_data[] = $fileData;
+			}		
 		}
 
 		$this->_count = count($this->_data);
 	}
 
+	
 	/**
 	 * Rewind the pointer, required by Iterator
 	 * 

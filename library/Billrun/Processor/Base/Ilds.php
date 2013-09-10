@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 
 /**
  * @package         Billing
@@ -20,13 +20,30 @@ class Billrun_Processor_Base_Ilds extends Billrun_Processor {
 	 * @var string
 	 */
 	static protected $type = 'ilds';
+
+	/**
+	 * The default timezone
+	 *
+	 * @var string
+	 */
+	protected $defTimeOffset = '+03:00';
+	
+	
+	public function __construct($options) {
+		parent::__construct($options);
+		if(isset($options['time_offset'])) {
+			$this->defTimeOffset = $options['time_offset'];
+		} else {
+			$this->defTimeOffset = date('P');
+		}
+	}
 	
 	/**
 	 * method to parse the data
 	 */
 	protected function parse() {
 		if (!is_resource($this->fileHandler)) {
-			$this->log->log("Resource is not configured well", Zend_Log::ERR);
+			Billrun_Factory::log()->log("Resource is not configured well", Zend_Log::ERR);
 			return false;
 		}
 
@@ -37,7 +54,7 @@ class Billrun_Processor_Base_Ilds extends Billrun_Processor {
 			switch ($record_type) {
 				case 'H': // header
 					if (isset($this->data['header'])) {
-						$this->log->log("double header", Zend_Log::ERR);
+						Billrun_Factory::log()->log("double header", Zend_Log::ERR);
 						return false;
 					}
 
@@ -49,13 +66,13 @@ class Billrun_Processor_Base_Ilds extends Billrun_Processor {
 					$header['source'] = self::$type;
 					$header['type'] = static::$type;
 					$header['file'] = basename($this->filePath);
-					$header['process_time'] = date('Y-m-d h:i:s');
+					$header['process_time'] = date(self::base_dateformat);
 					$this->data['header'] = $header;
 
 					break;
 				case 'T': //trailer
 					if (isset($this->data['trailer'])) {
-						$this->log->log("double trailer", Zend_Log::ERR);
+						Billrun_Factory::log()->log("double trailer", Zend_Log::ERR);
 						return false;
 					}
 
@@ -68,13 +85,13 @@ class Billrun_Processor_Base_Ilds extends Billrun_Processor {
 					$trailer['type'] = static::$type;
 					$trailer['header_stamp'] = $this->data['header']['stamp'];
 					$trailer['file'] = basename($this->filePath);
-					$trailer['process_time'] = date('Y-m-d h:i:s');
+					$trailer['process_time'] = date(self::base_dateformat);
 					$this->data['trailer'] = $trailer;
 
 					break;
 				case 'D': //data
 					if (!isset($this->data['header'])) {
-						$this->log->log("No header found", Zend_Log::ERR);
+						Billrun_Factory::log()->log("No header found", Zend_Log::ERR);
 						return false;
 					}
 
@@ -87,7 +104,8 @@ class Billrun_Processor_Base_Ilds extends Billrun_Processor {
 					$row['type'] = static::$type;
 					$row['header_stamp'] = $this->data['header']['stamp'];
 					$row['file'] = basename($this->filePath);
-					$row['process_time'] = date('Y-m-d h:i:s');
+					$row['process_time'] = date(self::base_dateformat);
+					$row['unified_record_time'] = new MongoDate(  Billrun_Util::dateTimeConvertShortToIso( $row['call_start_dt'] ,$this->defTimeOffset ) );
 					// hot fix cause this field contain iso-8859-8
 					if (isset($row['country_desc'])) {
 						$row['country_desc'] = mb_convert_encoding($row['country_desc'], 'UTF-8', 'ISO-8859-8');

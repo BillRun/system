@@ -18,19 +18,24 @@ class Asn_Object extends Asn_Base {
 	protected $dataLength = false;
 	protected $typeId = null;
 	protected $asnData = null;
+	protected $flags = null;
 
-	function __construct($data = false, $type = false) {
+	function __construct($data = false, $type = false , $flags = false) {
 		if (false !== $data) {
 			$this->asnData = $data;
 		}
 		if (false !== $type) {
 			$this->typeId = $type;
 		}
+		
+		if (false !== $flags) {
+			$this->flags = $flags;
+		}
 
 		if ($this->isConstructed()) {
 			//the object is constructed from smaller objects
 			$this->parsedData = array();
-			while (strlen($data) > 0) {
+			while ( isset($data[0]) ) {
 				$this->parsedData[] = $this->newClassFromData($data);
 			}
 		} else {
@@ -72,7 +77,7 @@ class Asn_Object extends Asn_Base {
 	 * @return boolean which will be true if the corrent object is constructed false otherwise.
 	 */
 	public function isConstructed() {
-		return $this->typeId & Asn_Markers::ASN_CONSTRUCTOR;
+		return $this->flags & Asn_Markers::ASN_CONSTRUCTOR;
 	}
 
 	/**

@@ -1,4 +1,5 @@
-﻿<?php
+<?php
+
 /**
  * @package         Billing
  * @copyright       Copyright (C) 2012 S.D.O.C. LTD. All rights reserved.
@@ -10,15 +11,16 @@
  *
  * @package  Billing
  * @since    1.0
+ * @deprecated since version 0.2; use Billrun_Receiver_Relocate
  */
 class Billrun_Receiver_Files extends Billrun_Receiver {
 
 	/**
-	 * the type of the object
+	 * Type of object
 	 *
 	 * @var string
 	 */
-	static protected $type = 'files';
+	static protected $type = 'ilds';
 
 	public function __construct($options) {
 		parent::__construct($options);
@@ -26,34 +28,36 @@ class Billrun_Receiver_Files extends Billrun_Receiver {
 		if (isset($options['workspace'])) {
 			$this->workspace = $options['workspace'];
 		} else {
-			$this->workspace = $this->config->ilds->path;
+			$this->workspace = Billrun_Factory::config()->getConfigValue('ilds.workspace', './workspace/');
 		}
 	}
 
 	/**
-	 * general function to receive
+	 * General function to receive
 	 *
 	 * @return array list of files received
 	 */
 	public function receive() {
-		$ret = array();
-		foreach ($this->config->ilds->providers->toArray() as $type) {
+
+		foreach (Billrun_Factory::config()->getConfigValue('ilds.providers', array()) as $type) {
 			if (!file_exists($this->workspace . DIRECTORY_SEPARATOR . $type)) {
-				$this->log->log("NOTICE : SKIPPING $type !!! directory " . $this->workspace . DIRECTORY_SEPARATOR . $type . " not found!!", Zend_Log::NOTICE);
+				Billrun_Factory::log()->log("NOTICE : SKIPPING $type !!! directory " . $this->workspace . DIRECTORY_SEPARATOR . $type . " not found!!", Zend_Log::NOTICE);
 				continue;
 			}
+
 			$files = scandir($this->workspace . DIRECTORY_SEPARATOR . $type);
 			$ret = array();
+			static::$type = $type;
 			foreach ($files as $file) {
 				$path = $this->workspace . DIRECTORY_SEPARATOR . $type . DIRECTORY_SEPARATOR . $file;
-				if (is_dir($path) || $this->isFileProcessed($file, $type)) {
+				if (is_dir($path) || $this->isFileReceived($file, $type) || !$this->isFileValid($file, $path)) {
 					continue;
 				}
 
 				$this->logDB($path);
 				$ret[] = $path;
-				$this->processFile($path, $type);
 			}
+			$this->processType($type);
 		}
 		return $ret;
 	}
@@ -63,35 +67,34 @@ class Billrun_Receiver_Files extends Billrun_Receiver {
 	 * @param $filePath  Path to the filethat needs processing.
 	 * @param $type  the type of the ILD.
 	 */
-	private function processFile($filePath, $type) {
+	private function processType($type) {
 
 		$options = array(
 			'type' => $type,
-			'path' => $filePath,
-			'parser' => Billrun_Parser::getInstance(array('type' => 'fixed')),
-			'db' => $this->db,
+			//'path' => $filePath,
+			'parser' => 'fixed',
 		);
 
 		$processor = Billrun_Processor::getInstance($options);
 		if ($processor) {
-			$processor->process();
+			$processor->process_files();
 		} else {
-			$this->log->log("error with loading processor", Zend_log::ERR);
+			Billrun_Factory::log()->log("error with loading processor", Zend_log::ERR);
 			return false;
 		}
 
 		$data = $processor->getData();
 
-		$this->log->log("Process type: " . $type, Zend_log::INFO);
-		$this->log->log("file path: " . $filePath, Zend_log::INFO);
-		$this->log->log((isset($data['data']) ? "import lines: " . count($data['data']) : "no data received"), Zend_log::INFO);
+		Billrun_Factory::log()->log("Process type: " . $type, Zend_log::INFO);
+		//	Billrun_Factory::log()->log("file path: " . $filePath, Zend_log::INFO);
+		Billrun_Factory::log()->log((isset($data['data']) ? "import lines: " . count($data['data']) : "no data received"), Zend_log::INFO);
 	}
 
 	/**
 	 * method to check if the file already processed
 	 */
-	private function isFileProcessed($filename, $type) {
-		$log = $this->db->getCollection(self::log_table);
+	protected function isFileReceived($filename, $type) {
+		$log = Billrun_Factory::db()->logCollection();
 		$resource = $log->query(array(
 					'$or' => array(
 						array('type' => $type), 

@@ -5,9 +5,7 @@
  * @copyright       Copyright (C) 2012 S.D.O.C. LTD. All rights reserved.
  * @license         GNU General Public License version 2 or later; see LICENSE.txt
  */
-
-class Mongodloid_Collection
-{
+class Mongodloid_Collection {
 
 	private $_collection;
 	private $_db;
@@ -15,39 +13,32 @@ class Mongodloid_Collection
 	const UNIQUE = 1;
 	const DROP_DUPLICATES = 2;
 
-	public function __construct(MongoCollection $collection, Mongodloid_DB $db)
-	{
+	public function __construct(MongoCollection $collection, Mongodloid_DB $db) {
 		$this->_collection = $collection;
 		$this->_db = $db;
 	}
 
-	public function update($query, $values, $options = array())
-	{
+	public function update($query, $values, $options = array()) {
 		return $this->_collection->update($query, $values, $options);
 	}
 
-	public function getName()
-	{
+	public function getName() {
 		return $this->_collection->getName();
 	}
 
-	public function dropIndexes()
-	{
+	public function dropIndexes() {
 		return $this->_collection->deleteIndexes();
 	}
 
-	public function dropIndex($field)
-	{
+	public function dropIndex($field) {
 		return $this->_collection->deleteIndex($field);
 	}
 
-	public function ensureUniqueIndex($fields, $dropDups = false)
-	{
+	public function ensureUniqueIndex($fields, $dropDups = false) {
 		return $this->ensureIndex($fields, $dropDups ? self::DROP_DUPLICATES : self::UNIQUE);
 	}
 
-	public function ensureIndex($fields, $params = array())
-	{
+	public function ensureIndex($fields, $params = array()) {
 		if (!is_array($fields))
 			$fields = array($fields => 1);
 
@@ -64,13 +55,11 @@ class Mongodloid_Collection
 		return $this->_collection->ensureIndex($fields, $ps);
 	}
 
-	public function getIndexedFields()
-	{
+	public function getIndexedFields() {
 		$indexes = $this->getIndexes();
 
 		$fields = array();
-		foreach ($indexes as $index)
-		{
+		foreach ($indexes as $index) {
 			$keys = array_keys($index->get('key'));
 			foreach ($keys as $key)
 				$fields[] = $key;
@@ -79,27 +68,23 @@ class Mongodloid_Collection
 		return $fields;
 	}
 
-	public function getIndexes()
-	{
+	public function getIndexes() {
 		$indexCollection = $this->_db->getCollection('system.indexes');
 		return $indexCollection->query('ns', $this->_db->getName() . '.' . $this->getName());
 	}
 
-	public function query()
-	{
+	public function query() {
 		$query = new Mongodloid_Query($this);
-		if (func_num_args())
-		{
+		if (func_num_args()) {
 			$query = call_user_func_array(array($query, 'query'), func_get_args());
 		}
 		return $query;
 	}
 
-	public function save(Mongodloid_Entity $entity, $save = false, $w =1)
-	{
+	public function save(Mongodloid_Entity $entity, $save = false, $w = 1) {
 		$data = $entity->getRawData();
 
-		$result = $this->_collection->save($entity->getRawData(),array('save'=>$save, 'w' => $w));
+		$result = $this->_collection->save($entity->getRawData(), array('save' => $save, 'w' => $w));
 		if (!$result)
 			return false;
 
@@ -107,8 +92,7 @@ class Mongodloid_Collection
 		return true;
 	}
 
-	public function findOne($id, $want_array = false)
-	{
+	public function findOne($id, $want_array = false) {
 		$values = $this->_collection->findOne(array('_id' => $id->getMongoId()));
 		if ($want_array)
 			return $values;
@@ -116,45 +100,51 @@ class Mongodloid_Collection
 		return new Mongodloid_Entity($values, $this);
 	}
 
-	public function drop()
-	{
+	public function drop() {
 		return $this->_collection->drop();
 	}
 
-	public function count()
-	{
+	public function count() {
 		return $this->_collection->count();
 	}
 
-	public function clear()
-	{
+	public function clear() {
 		return $this->remove(array());
 	}
 
-	public function remove($query)
-	{
+	public function remove($query) {
 		if ($query instanceOf Mongodloid_Entity)
 			$query = $query->getId();
 
-		if ($query instanceOf Mongodloid_ID)
+		if ($query instanceOf Mongodloid_Id)
 			$query = array('_id' => $query->getMongoId());
 
 		return $this->_collection->remove($query);
 	}
 
-	public function find($query)
-	{
+	public function find($query) {
 		return $this->_collection->find($query);
 	}
-	
+
 	public function aggregate() {
+		$timeout = $this->getTimeout();
+		$this->setTimeout(-1);
 		$args = func_get_args();
 		$result = call_user_func_array(array($this->_collection, 'aggregate'), $args);
+		$this->setTimeout($timeout);
 		if (!isset($result['ok']) || !$result['ok']) {
 			throw new Mongodloid_Exception('aggregate failed with the following error: ' . $result['code'] . ' - ' . $result['errmsg']);
 			return false;
 		}
 		return $result['result'];
+	}
+
+	public function setTimeout($timeout) {
+		MongoCursor::$timeout = (int) $timeout;
+	}
+
+	public function getTimeout() {
+		return MongoCursor::$timeout;
 	}
 
 }

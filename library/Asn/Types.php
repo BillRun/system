@@ -7,7 +7,7 @@
  */
 
 /**
- * This class holds a mappingto  all the types there is in ASN specifications to classes.
+ * This class holds a mapping to all the types there is in ASN specifications to classes.
  *
  * @package  ASN
  * @since    1.0

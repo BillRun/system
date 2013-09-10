@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 
 /**
  * @package         Billing
@@ -20,36 +20,51 @@ class Billrun_Calculator_Ilds extends Billrun_Calculator {
 	 * @var string
 	 */
 	static protected $type = "ilds";
-
+	
 	/**
-	 * execute the calculation process
+	 * method to receive the lines the calculator should take care
+	 * 
+	 * @return Mongodloid_Cursor Mongo cursor for iteration
+	 */
+	protected function getLines() {
+		
+		$lines = Billrun_Factory::db()->linesCollection();
+
+		return $lines->query()
+			->equals('source', static::$type)
+			->notExists('price_customer');
+//			->notExists('price_provider'); // @todo: check how to do or between 2 not exists		
+	}
+	
+	/**
+	 * Execute the calculation process
 	 */
 	public function calc() {
 
-		$this->dispatcher->trigger('beforeCalculateData', array('data' => $this->data));
+		Billrun_Factory::dispatcher()->trigger('beforeCalculateData', array('data' => $this->data));
 		foreach ($this->data as $item) {
 			$this->updateRow($item);
 		}
-		$this->dispatcher->trigger('afterCalculateData', array('data' => $this->data));
+		Billrun_Factory::dispatcher()->trigger('afterCalculateData', array('data' => $this->data));
 	}
 
 	/**
-	 * execute write down the calculation output
+	 * Execute write down the calculation output
 	 */
 	public function write() {
-		$this->dispatcher->trigger('beforeCalculatorWriteData', array('data' => $this->data));
-		$lines = $this->db->getCollection(self::lines_table);
+		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteData', array('data' => $this->data));
+		$lines = Billrun_Factory::db()->linesCollection();
 		foreach ($this->data as $item) {
 			$item->save($lines);
 		}
-		$this->dispatcher->trigger('afterCalculatorWriteData', array('data' => $this->data));
+		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteData', array('data' => $this->data));
 	}
 
 	/**
-	 * write the calculation into DB
+	 * Write the calculation into DB
 	 */
 	protected function updateRow($row) {
-		$this->dispatcher->trigger('beforeCalculatorWriteRow', array('row' => $row));
+		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteRow', array('row' => $row));
 
 		$current = $row->getRawData();
 		$charge = $this->calcChargeLine($row->get('type'), $row->get('call_charge'));
@@ -60,11 +75,11 @@ class Billrun_Calculator_Ilds extends Billrun_Calculator {
 		$newData = array_merge($current, $added_values);
 		$row->setRawData($newData);
 
-		$this->dispatcher->trigger('afterCalculatorWriteRow', array('row' => $row));
+		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteRow', array('row' => $row));
 	}
 
 	/**
-	 * method to calculate the charge from flat rate
+	 * Method to calculate the charge from flat rate
 	 *
 	 * @param string $type the type of the charge (depend on provider)
 	 * @param double $charge the amount of charge

@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * @package         Billing
  * @copyright       Copyright (C) 2012 S.D.O.C. LTD. All rights reserved.
@@ -50,8 +50,8 @@ class Billrun_Responder_019 extends Billrun_Responder_Base_Ilds {
 		$this->trailer_structure = array(
 			'record_type' => '%1s',
 			'file_type' => '%-15s',
-			'sending_company_id' => '%-10s',
 			'receiving_company_id' => '%-10s',
+			'sending_company_id' => '%-10s',
 			'sequence_no' => '%6s',
 			'file_creation_date' => '%12s',
 			'sum_of_number' => '%015s', 
@@ -73,14 +73,20 @@ class Billrun_Responder_019 extends Billrun_Responder_Base_Ilds {
 		$line.=$now->format("YmdHi");
 		$line.= $this->getHeaderErrors($logLine);
 		$line = preg_replace("/^HCDR  /", "HCDR_R", $line);
+		$line = $this->switchNamesInLine("TLZ ", "GOL", $line);
 		return $line;
 	}
 	
 	protected function updateTrailer($logLine) {
-		$logLine['file_type'] = "CDR_R";
-		$logLine['total_charge']=$this->totalChargeAmount;
-		$logLine['total_err_rec_no']= $this->linesErrors;
-		$logLine['sum_of_number']= $this->phoneNumbersSum*1000;
+		if(isset($logLine['trailer'])) {
+		    $trailer = &$logLine['trailer'];
+		} else {
+		    $trailer = &$logLine;
+		}
+		$trailer['file_type'] = "CDR_R";
+		$trailer['total_charge']=$this->totalChargeAmount;
+		$trailer['total_err_rec_no']= $this->linesErrors;
+		$trailer['sum_of_number']= $this->phoneNumbersSum*1000;
 		$line = parent::updateTrailer($logLine);
 		return $line;
 	}

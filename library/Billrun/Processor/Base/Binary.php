@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 
 /**
  * @package         Billing
@@ -26,13 +26,13 @@ abstract class Billrun_Processor_Base_Binary extends Billrun_Processor {
 	 * @param $data  the header record data.
 	 * @return Array an array to be used as the header data record.
 	 */
-	protected function buildHeader($data) {
+	public function buildHeader($data) {
 		$header = array();
-		$header['data'] = utf8_encode($data);
+		$header['data'] = $data ? $this->getParser()->parseHeader($data) : $data;
 		$header['type'] = static::$type;
 		$header['file'] = basename($this->filePath);
 		$header['stamp'] = md5(serialize($header));
-		$header['process_time'] = date('Y-m-d h:i:s');
+		$header['process_time'] = date(self::base_dateformat);
 
 		return $header;
 	}
@@ -42,15 +42,18 @@ abstract class Billrun_Processor_Base_Binary extends Billrun_Processor {
 	 * @param $data the raw row data
 	 * @return Array that conatins all the parsed and processed data.
 	 */
-	protected function buildDataRow($data) {
-		$this->parser->setLine($data);
-		$row = $this->parser->parse();
-		if ($row) {
+	public function buildDataRow($data) {
+		$row = false;
+		$this->getParser()->setLine($data);
+		$rawRow = $this->getParser()->parse();
+		if ($rawRow) {
+			$row = $this->filterFields($rawRow);
 			$row['type'] = static::$type;
+			$row['source'] = self::$type;
 			$row['header_stamp'] = $this->data['header']['stamp'];
 			$row['file'] = basename($this->filePath);
 			$row['stamp'] = md5(serialize($row));
-			$row['process_time'] = date('Y-m-d h:i:s');
+			$row['process_time'] = date(self::base_dateformat);
 		}
 		return $row;
 	}
@@ -60,16 +63,40 @@ abstract class Billrun_Processor_Base_Binary extends Billrun_Processor {
 	 * @param $data  the trailer record data.
 	 * @return Array an array to be used as the trailer data record.
 	 */
-	protected function buildTrailer($data) {
+	public function buildTrailer($data) {
 		$trailer = array();
-		$trailer['data'] = utf8_encode($data);
+		$trailer['data'] = ($data && !is_array($data)) ? $this->getParser()->parseTrailer($data) : $data;
 		$trailer['type'] = static::$type;
 		$trailer['header_stamp'] = $this->data['header']['stamp'];
 		$trailer['file'] = basename($this->filePath);
 		$trailer['stamp'] = md5(serialize($trailer));
-		$trailer['process_time'] = date('Y-m-d h:i:s');
+		$trailer['process_time'] = date(self::base_dateformat);
 		
 		return $trailer;
 	}
 
+	/**
+	 * filter the record row data fields from the records
+	 * (The required field can be written in the config using <type>.fields_filter)
+	 * @param Array		$rawRow the full data record row.
+	 * @return Array	the record row with filtered only the requierd fields in it  
+	 *					or if no filter is defined in the configuration the full data record.
+	 */
+	protected function filterFields($rawRow) {
+		$row = array();
+		
+		$requiredFields = Billrun_Factory::config()->getConfigValue( static::$type.'.fields_filter',array(),'array');
+		if(!empty($requiredFields)) {
+			foreach($requiredFields as $field) {
+				if(isset($rawRow[$field])) {
+					$row[$field] = $rawRow[$field];
+				}
+			}
+		} else {
+			return $rawRow;
+		}
+		
+		return $row;
+	}
+	
 }

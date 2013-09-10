@@ -34,7 +34,7 @@ abstract class Billrun_Generator extends Billrun_Base {
 		if (isset($options['export_directory'])) {
 			$this->export_directory = $options['export_directory'];
 		} else {
-			$this->export_directory = $this->config->ilds->export; //__DIR__ . '/../files/';
+			$this->export_directory = Billrun_Factory::config()->getConfigValue('ilds.export'); //__DIR__ . '/../files/';
 		}
 
 		if (isset($options['csv_filename'])) {
@@ -69,7 +69,7 @@ abstract class Billrun_Generator extends Billrun_Base {
 	/**
 	 * load the container the need to be generate
 	 */
-	abstract public function load($initData = true);
+	abstract public function load();
 
 	/**
 	 * execute the generate action
