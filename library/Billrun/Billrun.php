@@ -658,7 +658,7 @@ class Billrun_Billrun {
 	/**
 	 * initializes the runtime billrun key of the class
 	 */
-	public static function initRuntimeBillrunKey() {
+	static public function initRuntimeBillrunKey() {
 		self::$runtime_billrun_key = Billrun_Util::getBillrunKey(time());
 	}
 

@@ -138,7 +138,7 @@ class Zend_Log_Writer_Mail extends Zend_Log_Writer_Abstract
      * @param  array|Zend_Config $config
      * @return Zend_Log_Writer_Mail
      */
-    public static function factory($config)
+    static public function factory($config)
     {
         $config = self::_parseConfig($config);
         $mail = self::_constructMailFromConfig($config);

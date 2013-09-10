@@ -132,7 +132,7 @@ abstract class Billrun_Base {
 	 *
 	 * @return mixed the bridge class
 	 */
-	public static function getInstance() {
+	static public function getInstance() {
 		$args = func_get_args();
 		
 		$stamp = md5(serialize($args));

@@ -170,7 +170,7 @@ class Billrun_Balance implements ArrayAccess {
 	 * @param string $prefix if supplied, usage types with this prefix would also be included
 	 * @return array containing an empty balance structure.
 	 */
-	public static function getEmptyBalance($prefix = null) {
+	static public function getEmptyBalance($prefix = null) {
 		$ret = array(
 			'totals' => array(),
 			'cost' => 0,
@@ -191,7 +191,7 @@ class Billrun_Balance implements ArrayAccess {
 	 * Get an empty plan usage counters.
 	 * @return array containing an empty plan structure.
 	 */
-	public static function getEmptyUsageTypeTotals() {
+	static public function getEmptyUsageTypeTotals() {
 		return array(
 			'usagev' => 0,
 			'cost' => 0,

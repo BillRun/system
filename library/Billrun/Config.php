@@ -56,7 +56,7 @@ class Billrun_Config {
 	/**
 	 * method to get the instance of the class (singleton)
 	 */
-	public static function getInstance() {
+	static public function getInstance() {
 		if (is_null(self::$instance)) {
 			$config = Yaf_Application::app()->getConfig();
 			self::$instance = new self($config);

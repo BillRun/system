@@ -124,7 +124,7 @@ class Zend_Log_Writer_Syslog extends Zend_Log_Writer_Abstract
      * @param  array|Zend_Config $config
      * @return Zend_Log_Writer_Syslog
      */
-    public static function factory($config)
+    static public function factory($config)
     {
         return new self(self::_parseConfig($config));
     }
