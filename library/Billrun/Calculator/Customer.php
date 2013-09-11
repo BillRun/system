@@ -86,7 +86,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		$row->collection($this->lines_coll);
 		if ($this->bulk) {
 			$this->subscribersByStamp();
-			$subscriber = $this->subscribers[$row['stamp']];
+			$subscriber = isset($this->subscribers[$row['stamp']]) ? $this->subscribers[$row['stamp']] : FALSE ;
 		}
 		else {
 			$subscriber = $this->loadSubscriberForLine($row);
@@ -168,7 +168,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			if ($row->get($key)) {
 				$params[$toKey['toKey']] = preg_replace($toKey['clearRegex'], '', $row->get($key));
 				//$this->subscriberNumber = $params[$toKey['toKey']];
-				Billrun_Factory::log("found identification from {$key} to : " . $toKey['toKey'] . ' with value :' . $params[$toKey['toKey']], Zend_Log::DEBUG);
+				Billrun_Factory::log("found identification for row : {$row['stamp']} from {$key} to " . $toKey['toKey'] . ' with value :' . $params[$toKey['toKey']], Zend_Log::DEBUG);
 				break;
 			}
 		}

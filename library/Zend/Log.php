@@ -136,7 +136,7 @@ class Zend_Log
             throw new Zend_Log_Exception('Configuration must be an array or instance of Zend_Config');
         }
 
-        $log = new self;
+        $log = new static;
 
         if (array_key_exists('timestampFormat', $config)) {
             if (null != $config['timestampFormat'] && '' != $config['timestampFormat']) {

@@ -19,6 +19,11 @@ class Billrun_Calculator_Wholesale_Nsn extends Billrun_Calculator_Wholesale {
 	protected $ratingField = self::MAIN_DB_FIELD;	
 			
 		
+	public function __construct($options = array()) {
+		parent::__construct($options);
+		$this->loadRates();
+	}
+	
 	/**
 	 * method to get calculator lines
 	 */
@@ -33,9 +38,9 @@ class Billrun_Calculator_Wholesale_Nsn extends Billrun_Calculator_Wholesale {
 	protected function updateRow($row) {
 
 		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteRow', array('row' => $row));
-
+		//Billrun_Factory::log()->log("Line start : getLineZone  start : ".microtime(true));
 		$rate = $this->getLineZone($row, $row['usaget']);
-
+		//Billrun_Factory::log()->log(" getLineZone  end : ".microtime(true));
 		$current = $row->getRawData();
 		
 		$added_values = array(			
@@ -44,7 +49,7 @@ class Billrun_Calculator_Wholesale_Nsn extends Billrun_Calculator_Wholesale {
 		
 		$newData = array_merge($current, $added_values);
 		$row->setRawData($newData);
-
+		//Billrun_Factory::log()->log("Line end : ".microtime(true));
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteRow', array('row' => $row));
 		return true;
 	}
@@ -56,15 +61,50 @@ class Billrun_Calculator_Wholesale_Nsn extends Billrun_Calculator_Wholesale {
 	 */
 	protected function getLineZone($row, $usage_type) {
 		//TODO  change this  to be configurable.
-		$called_number =  ($usage_type == 'call') ? $row->get('called_number') :  preg_replace('/[^\d]/', '', preg_replace('/^0+/', '', ( $row['called_number'])));
-		
+		if ($usage_type == 'call') {
+			$called_number = $row->get('called_number');
+		} else {
+			$called_number = preg_replace('/[^\d]/', '', preg_replace('/^0+/', '', ( $row['called_number'])));
+			if (strlen($called_number) < 10) {
+				$called_number = preg_replace('/^(?!972)/', '972', $called_number);
+			}
+		}
+
+//		Billrun_Factory::log()->log($called_number);
 		$line_time = $row->get('unified_record_time');
 
-		$rates = Billrun_Factory::db()->ratesCollection();
-		
-		$zoneKey= false;		
-
 		$called_number_prefixes = $this->getPrefixes($called_number);
+		$carrier_cg = $row->get('out_circuit_group');
+		$matchedRate = false;
+		if ($usage_type == 'call') {
+			foreach ($called_number_prefixes as $prefix) {
+				if (isset($this->rates[$prefix])) {
+					foreach ($this->rates[$prefix] as $rate) {
+						if ($rate['from'] <= $line_time && $rate['to'] >= $line_time) {
+							foreach ($rate['params']['out_circuit_group'] as $groups) {
+								if ($groups['from'] <= $carrier_cg && $groups['to'] >= $carrier_cg) {
+									$matchedRate = $rate;
+								}
+							}
+						}
+					}
+				}
+			}
+		} else {
+			foreach ($called_number_prefixes as $prefix) {
+				if (isset($this->rates[$prefix])) {
+					foreach ($this->rates[$prefix] as $rate) {
+						if ($rate['from'] <= $line_time && $rate['to'] >= $line_time) {
+							$matchedRate = $rate;
+						}
+					}
+				}
+			}
+		}
+		return $matchedRate;
+/*
+ 		$rates = Billrun_Factory::db()->ratesCollection();		
+		$zoneKey= false;		
 
 		$base_match = array(
 			'$match' => array(
@@ -117,8 +157,32 @@ class Billrun_Calculator_Wholesale_Nsn extends Billrun_Calculator_Wholesale {
 		if (!empty($matched_rates)) {
 			$zoneKey =new Mongodloid_Entity(reset($matched_rates),$rates);
 		}
+		if( $matchedRate['key'] != $zoneKey['key']) {
+			Billrun_Factory::log()->log("NO MATCH !!!! : " . print_r($row->getRawData(),1). " current rate : " .print_r($matchedRate->getRawData(),1) . "  :  " . print_r($zoneKey->getRawData(),1));
+		}
 
 		return $zoneKey;
+*/
+	}
+
+	
+	/**
+	 * load the ggsn rates to be used later.
+	 */
+	protected function loadRates() {
+		$rates = Billrun_Factory::db()->ratesCollection()->query()->cursor();
+		$this->rates = array();
+		foreach ($rates as $rate) {
+			$rate->collection(Billrun_Factory::db()->ratesCollection());
+			if (isset($rate['params']['prefix'])) {
+				foreach ($rate['params']['prefix'] as $prefix) {
+					$this->rates[$prefix][] = $rate;
+				}
+			} else {
+				$this->rates['noprefix'][] = $rate;
+			}
+		}
+		Billrun_Factory::log()->log("Loaded " . count($this->rates) . " rates");
 	}
 
 	/**
@@ -128,7 +192,7 @@ class Billrun_Calculator_Wholesale_Nsn extends Billrun_Calculator_Wholesale {
 	 */
 	protected function getPrefixes($str) {
 		//TODO  change this  to be configurable.
-		$str = preg_replace("/^01\d/", "", $str );
+		$str = preg_replace("/^01\d/", "", $str);
 		$prefixes = array();
 		for ($i = 0; $i < strlen($str); $i++) {
 			$prefixes[] = substr($str, 0, $i + 1);
@@ -140,9 +204,9 @@ class Billrun_Calculator_Wholesale_Nsn extends Billrun_Calculator_Wholesale {
 	 * @see Billrun_Calculator::isLineLegitimate()
 	 */
 	protected function isLineLegitimate($line) {
-		return	$line['type'] == 'nsn' &&
-				in_array($line['usaget'],array('call','sms')) &&
-				in_array($line['record_type'], $this->wholesaleRecords );
+		return $line['type'] == 'nsn' &&
+			in_array($line['usaget'], array('call', 'sms')) &&
+			in_array($line['record_type'], $this->wholesaleRecords);
 	}
 	
 }

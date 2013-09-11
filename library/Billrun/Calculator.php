@@ -47,7 +47,6 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	 * @var int calculation period in months
 	 */
 	protected $months_limit = null;
-
 	/**
 	 * The  time that  the queue lines were signed in for this calculator run.
 	 * @var type 
@@ -59,7 +58,6 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	 * @var type 
 	 */
 	protected $workHash = 0;
-
 	/**
 	 * constructor of the class
 	 * 
@@ -166,7 +164,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 			unset($this->data[$dataKey]);
 		}
 	}
-
+	
 	/**
 	 * 
 	 * @param type $queueLines
@@ -179,11 +177,8 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		}
 		//Billrun_Factory::log()->log("stamps : ".print_r($stamps,1),Zend_Log::DEBUG);
 		$lines = Billrun_Factory::db()->linesCollection()
-				->query()->in('stamp', $stamps);
-		//Billrun_Factory::log()->log("Lines : ".print_r($lines->count(),1),Zend_Log::DEBUG);	
-		if (!$lines->count(true)) {
-			return array();
-		}
+					->query()->in('stamp', $stamps )->cursor();
+		//Billrun_Factory::log()->log("Lines : ".print_r($lines->count(),1),Zend_Log::DEBUG);			
 		return $lines;
 	}
 
@@ -307,7 +302,6 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		);
 		Billrun_Factory::db()->queueCollection()->remove($query);
 	}
-
 	/**
 	 * 
 	 * @param type $localquery
@@ -321,8 +315,8 @@ abstract class Billrun_Calculator extends Billrun_Base {
 //		$options = static::getBaseOptions();
 		$current_calculator_queue_tag = $this->getCalculatorQueueTag();
 		$retLines = array();
-
-		//if THere limit to the calculator set an updating limit.
+		
+		//if There limit to the calculator set an updating limit.
 		if ($this->limit != 0) {
 			$hq = $queue->query($query)->cursor()->sort(array('_id' => 1))->limit($this->limit);
 			$horizonlineCount = $hq->count(true);
@@ -352,6 +346,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	 * @return string the  type  of the calculator
 	 */
 	abstract protected static function getCalculatorQueueType();
+
 
 	/**
 	 * Check if a given line  can be handeld by  the calcualtor.

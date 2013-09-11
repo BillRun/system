@@ -93,19 +93,7 @@ class Billrun_Calculator_Rate_Ggsn extends Billrun_Calculator_Rate {
 	 */
 	protected function getLineRate($row, $usage_type) {
 		$line_time = $row['unified_record_time'];
-		if (preg_match('/^(?=62\.90\.|37\.26\.)/', $row['sgsn_address'])) {
-//			$rate = Billrun_Factory::db()->ratesCollection()->query(
-//					array_merge(
-//						$this->rateKeyMapping, array(
-//					'from' => array(
-//						'$lte' => $line_time,
-//					),
-//					'to' => array(
-//						'$gte' => $line_time,
-//					),
-//						)
-//				))->cursor()->current();
-			
+		if (preg_match('/^(?=62\.90\.|37\.26\.)/', $row['sgsn_address'])) {		
 			$rate  = new Mongodloid_Entity();
 			foreach ($this->rates as $key => $value) {
 				if( $value['from'] <= $line_time &&  $line_time <= $value['to'] ) {
