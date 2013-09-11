@@ -61,30 +61,30 @@ class Billrun_Calculator_Wholesale_Nsn extends Billrun_Calculator_Wholesale {
 	 */
 	protected function getLineZone($row, $usage_type) {
 		//TODO  change this  to be configurable.
-		if($usage_type == 'call') {
-			$called_number =  $row->get('called_number');
+		if ($usage_type == 'call') {
+			$called_number = $row->get('called_number');
 		} else {
-			$called_number =  preg_replace('/[^\d]/', '', preg_replace('/^0+/', '', ( $row['called_number'])));
-			if(strlen($called_number) < 10) {
-				$called_number = preg_replace('/^(?!972)/','972',$called_number );
+			$called_number = preg_replace('/[^\d]/', '', preg_replace('/^0+/', '', ( $row['called_number'])));
+			if (strlen($called_number) < 10) {
+				$called_number = preg_replace('/^(?!972)/', '972', $called_number);
 			}
 		}
-		
+
 //		Billrun_Factory::log()->log($called_number);
 		$line_time = $row->get('unified_record_time');
 
 		$called_number_prefixes = $this->getPrefixes($called_number);
 		$carrier_cg = $row->get('out_circuit_group');
 		$matchedRate = false;
-		if($usage_type == 'call') {			
+		if ($usage_type == 'call') {
 			foreach ($called_number_prefixes as $prefix) {
-				if(  isset($this->rates[$prefix]) ) {
-					foreach ($this->rates[$prefix] as $rate) {	
-						if($rate['from'] <= $line_time && $rate['to'] >= $line_time ) {				
-							foreach ($rate['params']['out_circuit_group'] as $groups) {			
-								if(	$groups['from'] <= $carrier_cg && $groups['to'] >=  $carrier_cg ) {
-									 $matchedRate = $rate;
-								}	
+				if (isset($this->rates[$prefix])) {
+					foreach ($this->rates[$prefix] as $rate) {
+						if ($rate['from'] <= $line_time && $rate['to'] >= $line_time) {
+							foreach ($rate['params']['out_circuit_group'] as $groups) {
+								if ($groups['from'] <= $carrier_cg && $groups['to'] >= $carrier_cg) {
+									$matchedRate = $rate;
+								}
 							}
 						}
 					}
@@ -92,16 +92,16 @@ class Billrun_Calculator_Wholesale_Nsn extends Billrun_Calculator_Wholesale {
 			}
 		} else {
 			foreach ($called_number_prefixes as $prefix) {
-				if(  isset($this->rates[$prefix]) ) {
-					foreach ($this->rates[$prefix] as $rate) {	
-						if($rate['from'] <= $line_time && $rate['to'] >= $line_time ) {			
-								$matchedRate = $rate;
+				if (isset($this->rates[$prefix])) {
+					foreach ($this->rates[$prefix] as $rate) {
+						if ($rate['from'] <= $line_time && $rate['to'] >= $line_time) {
+							$matchedRate = $rate;
 						}
 					}
 				}
-			}			
+			}
 		}
-	 	return $matchedRate;
+		return $matchedRate;
 /*
  		$rates = Billrun_Factory::db()->ratesCollection();		
 		$zoneKey= false;		
@@ -172,20 +172,19 @@ class Billrun_Calculator_Wholesale_Nsn extends Billrun_Calculator_Wholesale {
 	protected function loadRates() {
 		$rates = Billrun_Factory::db()->ratesCollection()->query()->cursor();
 		$this->rates = array();
-		foreach ($rates as  $rate) {
+		foreach ($rates as $rate) {
 			$rate->collection(Billrun_Factory::db()->ratesCollection());
-			if(isset($rate['params']['prefix'])){				
-				foreach ($rate['params']['prefix'] as $prefix ) {
+			if (isset($rate['params']['prefix'])) {
+				foreach ($rate['params']['prefix'] as $prefix) {
 					$this->rates[$prefix][] = $rate;
 				}
 			} else {
 				$this->rates['noprefix'][] = $rate;
 			}
-				
 		}
-		Billrun_Factory::log()->log("Loaded " . count($this->rates) ." rates");
-	}	
-	
+		Billrun_Factory::log()->log("Loaded " . count($this->rates) . " rates");
+	}
+
 	/**
 	 * get all the prefixes from a given number
 	 * @param type $str
@@ -193,7 +192,7 @@ class Billrun_Calculator_Wholesale_Nsn extends Billrun_Calculator_Wholesale {
 	 */
 	protected function getPrefixes($str) {
 		//TODO  change this  to be configurable.
-		$str = preg_replace("/^01\d/", "", $str );		
+		$str = preg_replace("/^01\d/", "", $str);
 		$prefixes = array();
 		for ($i = 0; $i < strlen($str); $i++) {
 			$prefixes[] = substr($str, 0, $i + 1);
@@ -205,9 +204,9 @@ class Billrun_Calculator_Wholesale_Nsn extends Billrun_Calculator_Wholesale {
 	 * @see Billrun_Calculator::isLineLegitimate()
 	 */
 	protected function isLineLegitimate($line) {
-		return	$line['type'] == 'nsn' &&
-				in_array($line['usaget'],array('call','sms')) &&
-				in_array($line['record_type'], $this->wholesaleRecords );
+		return $line['type'] == 'nsn' &&
+			in_array($line['usaget'], array('call', 'sms')) &&
+			in_array($line['record_type'], $this->wholesaleRecords);
 	}
 	
 }
