@@ -324,11 +324,11 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		//if There limit to the calculator set an updating limit.
 		if ($this->limit != 0) {
 			Billrun_Factory::log()->log('Looking for the last available line in the queue', Zend_Log::DEBUG);
-			/*if(isset($querydata['hint'])) {
+			if(isset($querydata['hint'])) {
 				$hq = $queue->query($query)->cursor()->hint(array($querydata['hint']=>1))->sort(array('_id' => 1))->limit($this->limit);
-			} else {*/
+			} else {
 				$hq = $queue->query($query)->cursor()->sort(array('_id' => 1))->limit($this->limit);
-			//}
+			}
 			$horizonlineCount = $hq->count(true);
 			$horizonline = $hq->skip(abs($horizonlineCount - 1))->limit(1)->current();
 			Billrun_Factory::log()->log("current limit : " . $horizonlineCount, Zend_Log::DEBUG);
