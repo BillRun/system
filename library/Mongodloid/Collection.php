@@ -21,6 +21,9 @@ class Mongodloid_Collection {
 	}
 
 	public function update($query, $values, $options = array()) {
+		if (!isset($options['w'])) {
+			$options['w'] = $this->w;
+		}
 		return $this->_collection->update($query, $values, $options);
 	}
 
@@ -217,6 +220,9 @@ class Mongodloid_Collection {
 	 * @see http://php.net/manual/en/mongocollection.batchinsert.php
 	 */
 	public function batchInsert(array $a, array $options = array()) {
+		if (!isset($options['w'])) {
+			$options['w'] = $this->w;
+		}
 		return $this->_collection->batchInsert($a, $options);
 	}
 
@@ -230,6 +236,9 @@ class Mongodloid_Collection {
 	 * @see http://www.php.net/manual/en/mongocollection.insert.php
 	 */
 	public function insert($a, array $options = array()) {
+		if (!isset($options['w'])) {
+			$options['w'] = $this->w;
+		}
 		return $this->_collection->insert($a, $options);
 	}
 
