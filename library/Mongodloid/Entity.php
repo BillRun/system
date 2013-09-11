@@ -144,7 +144,7 @@ class Mongodloid_Entity implements ArrayAccess {
 		$data = array(
 				'_id' => $this->getId()->getMongoID()
 		);
-		return $this->_collection->update($data, $fields, $this->w);
+		return $this->_collection->update($data, $fields, array('w' => $this->w));
 	}
 
 	public function set($key, $value, $dontSend = false) {
