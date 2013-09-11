@@ -111,7 +111,7 @@ class Billrun_Balance implements ArrayAccess {
 			'billrun_month' => $billrunKey,
 		);
 		$update = array(
-		'$setOnInsert' => self::getEmptySubscriberEntry($billrunKey, $subscriber->account_id, $subscriber->subscriber_id, $plan_ref),
+			'$setOnInsert' => self::getEmptySubscriberEntry($billrunKey, $subscriber->account_id, $subscriber->subscriber_id, $plan_ref),
 		);
 		$options = array(
 			"upsert" => true,
