@@ -11,6 +11,8 @@ class Mongodloid_Entity implements ArrayAccess {
 	private $_collection;
 
 	const POPFIRST = 1;
+	
+	protected $w = 0;
 
 	private $_atomics = array(
 		'inc',
@@ -139,9 +141,10 @@ class Mongodloid_Entity implements ArrayAccess {
 		if (!$this->collection())
 			throw new Mongodloid_Exception('You need to specify the collection');
 
-		return $this->_collection->update(array(
+		$data = array(
 				'_id' => $this->getId()->getMongoID()
-				), $fields);
+		);
+		return $this->_collection->update($data, $fields, $this->w);
 	}
 
 	public function set($key, $value, $dontSend = false) {
@@ -257,13 +260,16 @@ class Mongodloid_Entity implements ArrayAccess {
 		$this->_values = unserialize(serialize($data));
 	}
 
-	public function save($collection = null, $save = false, $w = 1) {
+	public function save($collection = null, $save = false, $w = null) {
 		if ($collection instanceOf Mongodloid_Collection)
 			$this->collection($collection);
 
 		if (!$this->collection())
 			throw new Mongodloid_Exception('You need to specify the collection');
 
+		if (is_null($w)) {
+			$w = $this->w;
+		}
 		return $this->collection()->save($this, array('save' => $save, 'w' => $w));
 	}
 

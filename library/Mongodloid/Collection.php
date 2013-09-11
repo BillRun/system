@@ -12,6 +12,8 @@ class Mongodloid_Collection {
 
 	const UNIQUE = 1;
 	const DROP_DUPLICATES = 2;
+	
+	protected $w = 0;
 
 	public function __construct(MongoCollection $collection, Mongodloid_DB $db) {
 		$this->_collection = $collection;
@@ -81,9 +83,13 @@ class Mongodloid_Collection {
 		return $query;
 	}
 
-	public function save(Mongodloid_Entity $entity, $save = false, $w = 1) {
+	public function save(Mongodloid_Entity $entity, $save = false, $w = null) {
 		$data = $entity->getRawData();
 
+		if (is_null($w)) {
+			$w = $this->w;
+		}
+		
 		$result = $this->_collection->save($data, array('save' => $save, 'w' => $w));
 		if (!$result)
 			return false;
