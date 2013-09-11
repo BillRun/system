@@ -143,10 +143,11 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	public function write() {
 		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteData', array('data' => $this->data));
 		//no need  the  line is now  written right after update @TODO now that we do use queue shuold the lines wirte be here?
+		Billrun_Factory::log()->log("Writing lines to lines collection...", Zend_Log::DEBUG);
 		foreach ($this->data as $key => $line) {
 			$this->writeLine($line, $key);
 		}
-		//Update the queue lines
+		Billrun_Factory::log()->log("Updating queue calculator flag...", Zend_Log::DEBUG);
 		$this->setCalculatorTag();
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteData', array('data' => $this->data));
 
@@ -318,6 +319,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		
 		//if There limit to the calculator set an updating limit.
 		if ($this->limit != 0) {
+			Billrun_Factory::log()->log('Looking for the last available line in the queue', Zend_Log::DEBUG);
 			$hq = $queue->query($query)->cursor()->sort(array('_id' => 1))->limit($this->limit);
 			$horizonlineCount = $hq->count(true);
 			$horizonline = $hq->skip(abs($horizonlineCount - 1))->limit(1)->current();
