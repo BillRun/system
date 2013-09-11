@@ -616,7 +616,7 @@ class Billrun_Billrun {
 				'subs' => self::getEmptySubscriberBillrunEntry($subscriber_id),
 			),
 		);
-		$output = $billrun_coll->update($query, $update, $options);
+		$output = $billrun_coll->update($query, $update);
 		if ($output['ok'] && $output['updatedExisting']) {
 			Billrun_Factory::log('Added subscriber ' . $subscriber_id . ' to billrun ' . $billrun_key, Zend_Log::INFO);
 			return true;
