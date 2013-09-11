@@ -115,7 +115,6 @@ class Billrun_Balance implements ArrayAccess {
 		);
 		$options = array(
 			"upsert" => true,
-			"w" => 1,
 		);
 		$output = $balances_coll->update($query, $update, $options);
 		if ($output['ok'] && isset($output['upserted'])) {
