@@ -503,7 +503,6 @@ abstract class Billrun_Processor extends Billrun_Base {
 		try {
 			$bulkOptions = array(
 				'continueOnError' => true,
-				'j' => true,
 				'wtimeout' => 300000,
 				'timeout' => 300000,
 			);
@@ -530,7 +529,6 @@ abstract class Billrun_Processor extends Billrun_Base {
 		try {
 			$bulkOptions = array(
 				'continueOnError' => true,
-				'j' => true,
 				'wtimeout' => 300000,
 				'timeout' => 300000,
 			);
