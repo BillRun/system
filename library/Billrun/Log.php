@@ -36,7 +36,7 @@ class Billrun_Log extends Zend_Log {
      */
     public function __construct(Zend_Log_Writer_Abstract $writer = null) {
 		parent::__construct($writer);
-		$this->stamp = substr(md5($_SERVER['REQUEST_TIME']), 0, 7);
+		$this->stamp = substr(md5($_SERVER['REQUEST_TIME'] . rand(0, 100)), 0, 7);
 	}
 	
 	public static function getInstance(array $options = array()) {
