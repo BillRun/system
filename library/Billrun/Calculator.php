@@ -320,31 +320,35 @@ abstract class Billrun_Calculator extends Billrun_Base {
 //		$options = static::getBaseOptions();
 		$current_calculator_queue_tag = $this->getCalculatorQueueTag();
 		$retLines = array();
-		
-		//if There limit to the calculator set an updating limit.
-		if ($this->limit != 0) {
-			Billrun_Factory::log()->log('Looking for the last available line in the queue', Zend_Log::DEBUG);
-			if(isset($querydata['hint'])) {
-				$hq = $queue->query($query)->cursor()->hint(array($querydata['hint']=>1))->sort(array('_id' => 1))->limit($this->limit);
-			} else {
-				$hq = $queue->query($query)->cursor()->sort(array('_id' => 1))->limit($this->limit);
+		$horizonlineCount = 0;
+		do {
+			//if There limit to the calculator set an updating limit.
+			if ($this->limit != 0) {
+				Billrun_Factory::log()->log('Looking for the last available line in the queue', Zend_Log::DEBUG);
+				if(isset($querydata['hint'])) {
+					$hq = $queue->query($query)->cursor()->hint(array($querydata['hint']=>1))->sort(array('_id' => 1))->limit($this->limit);
+				} else {
+					$hq = $queue->query($query)->cursor()->sort(array('_id' => 1))->limit($this->limit);
+				}
+				$horizonlineCount = $hq->count(true);
+				$horizonline = $hq->skip(abs($horizonlineCount - 1))->limit(1)->current();
+				Billrun_Factory::log()->log("current limit : " . $horizonlineCount, Zend_Log::DEBUG);
+				if (!$horizonline->isEmpty()) {
+					$query['_id'] = array('$lte' => $horizonline['_id']->getMongoID());
+				} else {
+					return $retLines;
+				}
 			}
-			$horizonlineCount = $hq->count(true);
-			$horizonline = $hq->skip(abs($horizonlineCount - 1))->limit(1)->current();
-			Billrun_Factory::log()->log("current limit : " . $horizonlineCount, Zend_Log::DEBUG);
-			if (!$horizonline->isEmpty()) {
-				$query['_id'] = array('$lte' => $horizonline['_id']->getMongoID());
-			} else {
-				return $retLines;
-			}
-		}
-		$query['$isolated'] = 1; //isolate the update
-		$this->workHash = md5(time() . rand(0, PHP_INT_MAX));
-		$update['$set']['hash'] = $this->workHash;
-		//Billrun_Factory::log()->log(print_r($query,1),Zend_Log::DEBUG);
-		$queue->update($query, $update, array('multiple' => true));
+			
+			$query['$isolated'] = 1; //isolate the update
+			$this->workHash = md5(time() . rand(0, PHP_INT_MAX));
+			$update['$set']['hash'] = $this->workHash;
+			//Billrun_Factory::log()->log(print_r($query,1),Zend_Log::DEBUG);
+			$queue->update($query, $update, array('multiple' => true));
 
-		$foundLines = $queue->query(array_merge($localquery, array('hash' => $this->workHash, $current_calculator_queue_tag => $this->signedMicrotime)))->cursor()->hint(array('hash' =>1));
+			$foundLines = $queue->query(array_merge($localquery, array('hash' => $this->workHash, $current_calculator_queue_tag => $this->signedMicrotime)))->cursor()->hint(array('hash' =>1));
+		} while ($horizonlineCount != 0 && $foundLines->count() == 0 );
+		
 		foreach ($foundLines as $line) {
 			$retLines[] = $line;
 		}

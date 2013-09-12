@@ -208,7 +208,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		$balances = Billrun_Factory::db()->balancesCollection();
 		$subRaw = $subscriber_balance->getRawData();
 		$stamp = strval($row['stamp']);
-		if (array_key_exists($stamp, $subRaw['tx'])) { // we're after a crash
+		if (isset($subRaw['tx']) && array_key_exists($stamp, $subRaw['tx'])) { // we're after a crash
 			$pricingData = $subRaw['tx'][$stamp]; // restore the pricingData from before the crash
 			return $pricingData;
 		}
