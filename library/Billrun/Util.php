@@ -147,7 +147,7 @@ class Billrun_Util {
 		if (date("d", $timestamp) < $dayofmonth) {
 			$key = date($format, $timestamp);
 		} else {
-			$key = date($format, strtotime('+1 month', $timestamp));
+			$key = date($format, strtotime('+1 day', strtotime('last day of this month', $timestamp)));
 		}
 		return $key;
 	}
