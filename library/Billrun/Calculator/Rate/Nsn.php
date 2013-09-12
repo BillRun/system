@@ -22,6 +22,17 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 	static protected $type = "nsn";
 
 	/**
+	 * array of rates for pre-processing
+	 * @var array
+	 */
+	protected $rates = array();
+
+	public function __construct($options = array()) {
+		parent::__construct($options);
+		$this->loadRates();
+	}
+
+	/**
 	 * Write the calculation into DB
 	 */
 	protected function updateRow($row) {
@@ -51,8 +62,7 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 		if ($usage_type == 'call') {
 			if (isset($row['duration'])) {
 				return $row['duration'];
-			}
-			else if ($row['record_type']=='31') { // terminated call
+			} else if ($row['record_type'] == '31') { // terminated call
 				return 0;
 			}
 		}
@@ -91,73 +101,53 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 		$ocg = $row->get('out_circuit_group');
 		$icg = $row->get('in_circuit_group');
 		$line_time = $row->get('unified_record_time');
-
-		$rates = Billrun_Factory::db()->ratesCollection();
-		$rate = FALSE;
+		$matchedRate = false;
 
 		if ($record_type == "01" || //MOC call
 			($record_type == "11" && ($icg == "1001" || $icg == "1006" || ($icg >= "1201" && $icg <= "1209")) &&
 			($ocg != '3051' && $ocg != '3050') && ($ocg != '3061' && $ocg != '3060'))// Roaming on Cellcom and the call is not to a voice mail
 		) {
 			$called_number_prefixes = $this->getPrefixes($called_number);
-
-			$base_match = array(
-				'$match' => array(
-					'params.prefix' => array(
-						'$in' => $called_number_prefixes,
-					),
-					'rates.' . $usage_type => array('$exists' => true),
-					'params.out_circuit_group' => array(
-						'$elemMatch' => array(
-							'from' => array(
-								'$lte' => $ocg,
-							),
-							'to' => array(
-								'$gte' => $ocg
-							)
-						)
-					),
-					'from' => array(
-						'$lte' => $line_time,
-					),
-					'to' => array(
-						'$gte' => $line_time,
-					),
-				)
-			);
-
-			$unwind = array(
-				'$unwind' => '$params.prefix',
-			);
-
-			$sort = array(
-				'$sort' => array(
-					'params.prefix' => -1,
-				),
-			);
-
-			$match2 = array(
-				'$match' => array(
-					'params.prefix' => array(
-						'$in' => $called_number_prefixes,
-					),
-				)
-			);
-
-			$matched_rates = $rates->aggregate($base_match, $unwind, $sort, $match2);
-
-			if (empty($matched_rates)) {
-				$base_match = array(
-					'$match' => array(
-						'key' => 'UNRATED',
-					),
-				);
-				$matched_rates = $rates->aggregate($base_match);
+			foreach ($called_number_prefixes as $prefix) {
+				if (isset($this->rates[$prefix])) {
+					foreach ($this->rates[$prefix] as $rate) {
+						if (isset($rate['rates'][$usage_type])) {
+							if ($rate['from'] <= $line_time && $rate['to'] >= $line_time) {
+								foreach ($rate['params']['out_circuit_group'] as $groups) {
+									if ($groups['from'] <= $ocg && $groups['to'] >= $ocg) {
+										$matchedRate = $rate;
+										break 3;
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+			if (!$matchedRate) {
+				$matchedRate = $this->rates['UNRATED'];
 			}
 
-			$rate = new Mongodloid_Entity(reset($matched_rates), $rates);
 		}
-		return $rate;
+
+		return $matchedRate;
+	}
+
+	protected function loadRates() {
+		$rates = Billrun_Factory::db()->ratesCollection()->query()->cursor();
+		$this->rates = array();
+		foreach ($rates as $rate) {
+			$rate->collection(Billrun_Factory::db()->ratesCollection());
+			if (isset($rate['params']['prefix'])) {
+				foreach ($rate['params']['prefix'] as $prefix) {
+					$this->rates[$prefix][] = $rate;
+				}
+			} else if ($rate['key'] == 'UNRATED') {
+				$this->rates['UNRATED'] = $rate;
+			} else {
+				$this->rates['noprefix'][] = $rate;
+			}
+		}
 	}
 
 }
