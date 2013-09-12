@@ -245,7 +245,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		);
 		$values = array(
 			'$unset' => array(
-				'tx' => array(strval($row['stamp']))
+				'tx.' . $row['stamp'] => 1
 			)
 		);
 		$balances_coll->update($query, $values);
