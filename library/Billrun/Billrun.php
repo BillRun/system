@@ -485,7 +485,7 @@ class Billrun_Billrun {
 				Billrun_Factory::log()->log("Line with stamp " . $row['stamp'] . " already exists in billrun " . $billrun_key . " for account " . $account_id, Zend_Log::NOTICE);
 				return $doc;
 			} else if ($row['type'] == 'flat' || $billrun_key == self::$runtime_billrun_key) { // if it's a flat line we don't want to advance the billrun key
-				Billrun_Factory::log()->log("Billrun " . $billrun_key . " is closed for account " . $account_id, Zend_Log::ALERT);
+				Billrun_Factory::log()->log("Billrun " . $billrun_key . " is closed for account " . $account_id . ". Stamp: " . $row['stamp'], Zend_Log::ALERT); // a guess
 				return false;
 			} else {
 				return self::updateBillrun(self::$runtime_billrun_key, $counters, $pricingData, $row, $vatable);
