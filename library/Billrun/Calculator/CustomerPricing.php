@@ -194,7 +194,8 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @return mixed array with the pricing data on success, false otherwise
 	 */
 	protected function updateSubscriberBalance($counters, $row, $billrun_key, $usage_type, $rate, $volume) {
-		$subscriber_balance = Billrun_Factory::balance(array('subscriber_id' => $row['subscriber_id'], 'billrun_key' => $billrun_key));
+		$balance_unique_key = array('subscriber_id' => $row['subscriber_id'], 'billrun_key' => $billrun_key);
+		$subscriber_balance = Billrun_Factory::balance($balance_unique_key);
 		if (!$subscriber_balance || !$subscriber_balance->isValid()) {
 			Billrun_Factory::log()->log("couldn't get balance for : " . print_r(array(
 					'subscriber_id' => $row['subscriber_id'],
@@ -211,7 +212,9 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			$pricingData = $subRaw['tx'][$stamp]; // restore the pricingData from before the crash
 			return $pricingData;
 		}
-		$query = array('_id' => $subRaw['_id']);
+		$balance_unique_key['billrun_month'] = $balance_unique_key['billrun_key'];
+		unset($balance_unique_key['billrun_key']);
+		$query = $balance_unique_key;
 		$update = array();
 		$update['$set']['tx'][$stamp] = $pricingData;
 		foreach ($counters as $key => $value) {
@@ -241,9 +244,8 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			'subscriber_id' => $subscriber_id,
 		);
 		$values = array(
-			'$set' => array(
-				'tx' => array(
-				)
+			'$unset' => array(
+				'tx' => array(strval($row['stamp']))
 			)
 		);
 		$balances_coll->update($query, $values);
