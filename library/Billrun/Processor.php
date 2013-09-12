@@ -351,15 +351,15 @@ abstract class Billrun_Processor extends Billrun_Base {
 		$queue_data = $this->getQueueData();
 		if ($this->bulkInsert) {
 			settype($this->bulkInsert, 'int');
-			if (!$this->bulkAddToQueue($queue_data)) {
-				return false;
-			}
 			if (!$this->bulkAddToCollection($lines)) {
 				return false;
 			}
+			if (!$this->bulkAddToQueue($queue_data)) {
+				return false;
+			}
 		} else {
-			$this->addToQueue($queue_data);
 			$this->addToCollection($lines);
+			$this->addToQueue($queue_data);
 		}
 
 		return true;
@@ -514,10 +514,10 @@ abstract class Billrun_Processor extends Billrun_Base {
 			}
 		} catch (Exception $e) {
 			Billrun_Factory::log()->log("Processor store " . basename($this->filePath) . " failed on bulk insert with the next message: " . $e->getCode() . ": " . $e->getMessage(), Zend_Log::NOTICE);
-			
-			if($e->getCode() == "11000") {
-				Billrun_Factory::log()->log("Processor store " . basename($this->filePath) . " to queue failed on bulk insert on duplicate stamp." , Zend_Log::NOTICE);
-				return  $this->addToCollection($collection);
+
+			if ($e->getCode() == "11000") {
+				Billrun_Factory::log()->log("Processor store " . basename($this->filePath) . " to queue failed on bulk insert on duplicate stamp.", Zend_Log::NOTICE);
+				return $this->addToCollection($collection);
 			}
 			return false;
 		}
@@ -539,12 +539,12 @@ abstract class Billrun_Processor extends Billrun_Base {
 			}
 		} catch (Exception $e) {
 			Billrun_Factory::log()->log("Processor store " . basename($this->filePath) . " to queue failed on bulk insert with the next message: " . $e->getCode() . ": " . $e->getMessage(), Zend_Log::NOTICE);
-			
-			if($e->getCode() == "11000" ) {
-				Billrun_Factory::log()->log("Processor store " . basename($this->filePath) . " to queue failed on bulk insert on duplicate stamp." , Zend_Log::NOTICE);
+
+			if ($e->getCode() == "11000") {
+				Billrun_Factory::log()->log("Processor store " . basename($this->filePath) . " to queue failed on bulk insert on duplicate stamp.", Zend_Log::NOTICE);
 				return $this->addToQueue($queue_data);
 			}
-			
+
 			return false;
 		}
 		return true;

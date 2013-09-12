@@ -33,7 +33,7 @@ class smsPlugin extends Billrun_Plugin_BillrunPluginBase {
 				Billrun_Factory::log()->log("Failed when trying to create directory : $path" , Zend_Log::ERR);
 			}
 		}
-		Billrun_Factory::log()->log(" saving retrived files to third party at : $path" , Zend_Log::DEBUG);
+		Billrun_Factory::log()->log(" saving retrieved files to third party at : $path" , Zend_Log::DEBUG);
 		foreach($filepaths as $srcPath) {
 			if(!copy($srcPath, $path .DIRECTORY_SEPARATOR. basename($srcPath))) {
 				Billrun_Factory::log()->log(" Failed when trying to save file : ".  basename($srcPath)." to third party path : $path" , Zend_Log::ERR);
