@@ -473,8 +473,12 @@ class Billrun_Billrun {
 		$fields = array();
 		$options = array();
 
-		$doc = $billrun_coll->findAndModify($query, $update, $fields, $options);
-
+		try {
+			$doc = $billrun_coll->findAndModify($query, $update, $fields, $options);
+		} catch(Exception  $e) {
+			Billrun_Factory::log()->log("Billrun " . $billrun_key . " had a problem when updating " . $account_id . ". on  Stamp: " . $row['stamp']. ' with error :'. $e->getMessage(), Zend_Log::ALERT); // a guess
+			return false;
+		}
 		// recovery
 		if ($doc->isEmpty()) { // billrun document was not found
 			if (($billrun = self::createBillrunIfNotExists($account_id, $billrun_key)) && $billrun->isEmpty()) { // means that the billrun was created so we can retry updating it
