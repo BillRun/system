@@ -14,6 +14,8 @@
  */
 abstract class Billrun_Calculator extends Billrun_Base {
 
+	const CALCULATOR_QUEUE_PREFIX = 'calculator_';
+	
 	/**
 	 * the type of the object
 	 *
@@ -184,8 +186,8 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	}
 
 	/**
-	 * 
-	 * @param type $queue_line
+	 * Retrive the actual CDR line for a given queue line.
+	 * @param type $queue_line the queue line to retrive  it`s CDR line.
 	 * @return boolean
 	 */
 	protected function pullLine($queue_line) {
@@ -207,7 +209,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		if (is_null($calculator_type)) {
 			$calculator_type = static::getCalculatorQueueType();
 		}
-		return 'calculator_' . $calculator_type;
+		return static::CALCULATOR_QUEUE_PREFIX . $calculator_type;
 	}
 
 	/**
@@ -237,17 +239,19 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		if ($queue_id > 0) {
 			$previous_calculator_type = $calculators_queue_order[$queue_id - 1];
 			$previous_calculator_tag = self::getCalculatorQueueTag($previous_calculator_type);
-			$query[$previous_calculator_tag] = true;
+			$query[$previous_calculator_tag] = true;			
 			$queryData['hint'] = $previous_calculator_tag;
 		}
 		$current_calculator_queue_tag = self::getCalculatorQueueTag($calculator_type);
 		$orphand_time = strtotime(Billrun_Factory::config()->getConfigValue('queue.calculator.orphan_wait_time', "6 hours") . " ago");
 		$query['$and'][0]['$or'] = array(
 			array($current_calculator_queue_tag => array('$exists' => false)),
+			array($current_calculator_queue_tag => false),
 			array($current_calculator_queue_tag => array(
 					'$ne' => true, '$lt' => $orphand_time
 				)),
 		);
+		///$queryData['hint'] = $current_calculator_queue_tag; //TODO  integraate  once  all the queue lines  have  been changed to the new method. (calc_tag == false at the start)
 		$queryData['query'] = $query;
 		return $queryData;
 	}
@@ -284,13 +288,24 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	 * 
 	 */
 	public final function removeFromQueue() {
+		$queue = Billrun_Factory::db()->queueCollection();
 		$calculators_queue_order = Billrun_Factory::config()->getConfigValue("queue.calculators");
 		$calculator_type = static::getCalculatorQueueType();
-		$queue_id = array_search($calculator_type, $calculators_queue_order);
+		$queue_id = array_search($calculator_type, $calculators_queue_order);		
 		end($calculators_queue_order);
+		
+		// remove  reclaculated lines.
+		foreach ($this->lines as $queueLine) {
+			if(isset($queueLine['final_calc']) && ($queueLine['final_calc']  == $queue_id ) ) {
+				$queueLine->collection($queue);
+				$queueLine->remove();				
+			}
+		}
+
+		// remove   end of queue  stack calculator
 		if ($queue_id == key($calculators_queue_order)) { // last calculator
 			Billrun_Factory::log()->log("Removing lines from queue", Zend_Log::INFO);
-			$queue = Billrun_Factory::db()->queueCollection();
+
 			$stamps = array();
 			foreach ($this->data as $item) {
 				$stamps[] = $item['stamp'];
