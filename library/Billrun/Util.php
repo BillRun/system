@@ -204,7 +204,7 @@ class Billrun_Util {
 	 * @param type $timestamp
 	 * @return real the VAT at the current timestamp
 	 */
-	public static function getVAT($timestamp) {
+	public static function getVATAtDate($timestamp) {
 		$mongo_date = new MongoDate($timestamp);
 		return Billrun_Factory::db()->ratesCollection()
 				->query('key', 'VAT')
