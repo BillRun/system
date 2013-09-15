@@ -21,12 +21,6 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 	 */
 	static protected $type = "nsn";
 
-	/**
-	 * array of rates for pre-processing
-	 * @var array
-	 */
-	protected $rates = array();
-
 	public function __construct($options = array()) {
 		parent::__construct($options);
 		$this->loadRates();
@@ -131,23 +125,6 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 		}
 
 		return $matchedRate;
-	}
-
-	protected function loadRates() {
-		$rates = Billrun_Factory::db()->ratesCollection()->query()->cursor();
-		$this->rates = array();
-		foreach ($rates as $rate) {
-			$rate->collection(Billrun_Factory::db()->ratesCollection());
-			if (isset($rate['params']['prefix'])) {
-				foreach ($rate['params']['prefix'] as $prefix) {
-					$this->rates[$prefix][] = $rate;
-				}
-			} else if ($rate['key'] == 'UNRATED') {
-				$this->rates['UNRATED'] = $rate;
-			} else {
-				$this->rates['noprefix'][] = $rate;
-			}
-		}
 	}
 
 }
