@@ -298,9 +298,9 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		$calculator_type = static::getCalculatorQueueType();
 		$queue_id = array_search($calculator_type, $calculators_queue_order);
 		end($calculators_queue_order);
-		// remove  reclaculated lines.
-		foreach ($this->lines as $queueLine) {
-			if (isset($queueLine['final_calc']) && ($queueLine['final_calc'] == $queue_id )) {
+		// remove  reclaculated lines.		
+		foreach ($this->lines as $queueLine) {			
+			if (isset($queueLine['final_calc']) && ($queueLine['final_calc'] == $calculator_type )) {	
 				$queueLine->collection($queue);
 				$queueLine->remove();
 			}
