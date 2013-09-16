@@ -245,18 +245,17 @@ abstract class Billrun_Calculator extends Billrun_Base {
 			$previous_calculator_type = $calculators_queue_order[$queue_id - 1];
 			$previous_calculator_tag = self::getCalculatorQueueTag($previous_calculator_type);
 			$query[$previous_calculator_tag] = true;
-			$queryData['hint'] = $previous_calculator_tag;
+			//$queryData['hint'] = $previous_calculator_tag;
 		}
 		$current_calculator_queue_tag = self::getCalculatorQueueTag($calculator_type);
 		$orphand_time = strtotime(Billrun_Factory::config()->getConfigValue('queue.calculator.orphan_wait_time', "6 hours") . " ago");
 		$query['$and'][0]['$or'] = array(
-			array($current_calculator_queue_tag => array('$exists' => false)),
 			array($current_calculator_queue_tag => false),
 			array($current_calculator_queue_tag => array(
 					'$ne' => true, '$lt' => $orphand_time
 				)),
 		);
-		///$queryData['hint'] = $current_calculator_queue_tag; //TODO  integraate  once  all the queue lines  have  been changed to the new method. (calc_tag == false at the start)
+		$queryData['hint'] = $current_calculator_queue_tag;
 		$queryData['query'] = $query;
 		return $queryData;
 	}
