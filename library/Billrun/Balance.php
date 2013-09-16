@@ -141,7 +141,7 @@ class Billrun_Balance implements ArrayAccess {
 			'subscriber_id' => $subscriber_id,
 			'current_plan' => $plan_ref,
 			'balance' => self::getEmptyBalance("intl_roam_"),
-			'tx' => array(),
+			'tx' => new stdclass,
 		);
 	}
 
