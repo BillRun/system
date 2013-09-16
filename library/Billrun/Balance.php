@@ -92,7 +92,7 @@ class Billrun_Balance implements ArrayAccess {
 	 * method to check if the loaded balance is valid
 	 */
 	public function isValid() {
-		return count($this->data->getRawData()) > 0;
+		return !is_array($this->data) && count($this->data->getRawData()) > 0;
 	}
 
 	/**
@@ -111,11 +111,10 @@ class Billrun_Balance implements ArrayAccess {
 			'billrun_month' => $billrunKey,
 		);
 		$update = array(
-		'$setOnInsert' => self::getEmptySubscriberEntry($billrunKey, $subscriber->account_id, $subscriber->subscriber_id, $plan_ref),
+			'$setOnInsert' => self::getEmptySubscriberEntry($billrunKey, $subscriber->account_id, $subscriber->subscriber_id, $plan_ref),
 		);
 		$options = array(
 			"upsert" => true,
-			"w" => 1,
 		);
 		$output = $balances_coll->update($query, $update, $options);
 		if ($output['ok'] && isset($output['upserted'])) {

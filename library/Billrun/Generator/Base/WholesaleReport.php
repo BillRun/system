@@ -141,7 +141,7 @@ abstract class Billrun_Generator_Base_WholesaleReport extends Billrun_Generator 
 	 * @return array containing the lines values  aggreagted by type  and day.
 	 */
 	protected function aggregate( $lines ) {
-		Billrun_Factory::log()->log("Aggregating all the related CDRs, this can take awhile...",Zend_Log::DEBUG);
+		Billrun_Factory::log()->log("Aggregating all the related CDRs, this can take a while...",Zend_Log::DEBUG);
 		$aggregate = array();
 		$callReferences= array();
 		$linesCount = 0;

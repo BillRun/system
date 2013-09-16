@@ -12,25 +12,51 @@ class Mongodloid_Connection {
 	protected $_persistent = false;
 	protected $_server = '';
 	protected $_dbs = array();
+	protected static $instances;
 
-	public function getDB($db) {
+	/**
+	 * Method to get database instance
+	 * 
+	 * @param string $db the datainstace name
+	 * @param string $user user to authenticate
+	 * @param string $pass password to authenticate
+	 * 
+	 * @return Billrun_Db instance
+	 */
+	public function getDB($db, $user = false, $pass = false, array $options = array("connect" => TRUE)) {
 		if (!isset($this->_dbs[$db]) || !$this->_dbs[$db]) {
-			$this->forceConnect();
-			$this->_dbs[$db] = new Mongodloid_DB($this->_connection->selectDB($db), $this);
+			$this->forceConnect($options);
+			$newDb = $this->_connection->selectDB($db);
+			if ($user) {
+				$newDb->authenticate($user, $pass);
+			}
+
+			$this->_dbs[$db] = $this->createInstance($newDb);
 		}
 
 		return $this->_dbs[$db];
 	}
 
 	/**
+	 * create instance of the connection db
+	 * 
+	 * @param MongoDB $newDb The PHP Driver MongoDb instance
+	 * 
+	 * @return Mongodloid_Db instance
+	 */
+	protected function createInstance($newDb) {
+		return new Mongodloid_Db($newDb, $this);
+	}
+
+	/**
 	 * 	@throws MongoConnectionException
 	 */
-	public function forceConnect() {
+	public function forceConnect(array $options = array("connect" => TRUE)) {
 		if ($this->_connected)
 			return;
 
 		// this can throw an Exception
-		$this->_connection = new Mongo($this->_server ? $this->_server : 'localhost:27017', array());
+		$this->_connection = new MongoClient($this->_server ? $this->_server : 'mongodb://localhost:27017', $options);
 
 		$this->_connected = true;
 	}
@@ -43,35 +69,31 @@ class Mongodloid_Connection {
 		return $this->_persistent;
 	}
 
+	/**
+	 * Singleton database connection
+	 * 
+	 * @param string $server
+	 * @param string $port the port of the connection
+	 * @param boolean $persistent set if the connection is persistent
+	 * 
+	 * @return Billrun_Connection
+	 */
 	public static function getInstance($server = '', $port = '', $persistent = false) {
-		static $instances;
 
-		if (!$instances) {
-			$instances = array();
+
+		if (empty($port)) {
+			$server_port = $server;
+		} else {
+			$server_port = $server . ':' . $port;
 		}
 
-		if (is_bool($server)) {
-			$persistent = $server;
-			$server = $port = '';
+		settype($persistent, 'boolean');
+
+		if (!isset(self::$instances[$server_port]) || !self::$instances[$server_port]) {
+			self::$instances[$server_port] = new static($server_port, $persistent);
 		}
 
-		if (is_bool($port)) {
-			$persistent = $port;
-			$port = '';
-		}
-
-		if (is_numeric($port) && $port) {
-			$server .= ':' . $port;
-		}
-
-		$persistent = (bool) $persistent;
-		$server = (string) $server;
-
-		if (!isset($instances[$server]) || !$instances[$server]) {
-			$instances[$server] = new Mongodloid_Connection($server, $persistent);
-		}
-
-		return $instances[$server];
+		return self::$instances[$server_port];
 	}
 
 	protected function __construct($server = '', $persistent = false) {

@@ -11,12 +11,11 @@ class Mongodloid_Cursor implements Iterator, Countable {
 
 	public function __construct(MongoCursor $cursor) {
 		$this->_cursor = $cursor;
-		$timeout = Billrun_Factory::config()->getConfigValue('db.timeout', 3600000); // default 60 minutes
-		$this->_cursor->timeout($timeout);
 	}
 
 	public function count($foundOnly = true) {
-		return $this->_cursor->count($foundOnly);
+	
+		return  $this->_cursor->count($foundOnly);
 	}
 
 	public function current() {

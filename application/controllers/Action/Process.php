@@ -40,7 +40,7 @@ class ProcessAction extends Action_Base {
 		$this->_controller->addOutput("Processor loaded");
 
 		if ($processor) {
-			$this->_controller->addOutput("Starting to process. This action can take awhile...");
+			$this->_controller->addOutput("Starting to process. This action can take a while...");
 
 			// buffer all action output
 			ob_start();

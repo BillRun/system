@@ -147,7 +147,7 @@ class Billrun_Util {
 		if (date("d", $timestamp) < $dayofmonth) {
 			$key = date($format, $timestamp);
 		} else {
-			$key = date($format, strtotime('+1 month', $timestamp));
+			$key = date($format, strtotime('+1 day', strtotime('last day of this month', $timestamp)));
 		}
 		return $key;
 	}
@@ -204,7 +204,7 @@ class Billrun_Util {
 	 * @param type $timestamp
 	 * @return real the VAT at the current timestamp
 	 */
-	public static function getVAT($timestamp) {
+	public static function getVATAtDate($timestamp) {
 		$mongo_date = new MongoDate($timestamp);
 		return Billrun_Factory::db()->ratesCollection()
 				->query('key', 'VAT')
@@ -215,5 +215,9 @@ class Billrun_Util {
 
 	public static function isTimestamp($timestamp) {
 		return ((string) (int) $timestamp === strval($timestamp)) && ($timestamp <= PHP_INT_MAX) && ($timestamp >= ~PHP_INT_MAX);
+	}
+	
+	public static function setFileModificationTime($received_path, $timestamp) {
+		return touch($received_path, $timestamp);
 	}
 }

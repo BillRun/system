@@ -11,8 +11,9 @@
  * @author eran
  */
 class Billrun_Calculator_Carrier extends Billrun_Calculator {
+
 	const MAIN_DB_FIELD = 'carir';
-	
+
 	/**
 	 * The rating field to update in the CDR line.
 	 * @var string
@@ -23,62 +24,66 @@ class Billrun_Calculator_Carrier extends Billrun_Calculator {
 	 * @see Billrun_Calculator_Base_Rate
 	 * @var type 
 	 */
-	protected $linesQuery = array('type' => array('$in' => array('nsn')) );
+	protected $linesQuery = array('type' => array('$in' => array('nsn')));
+	protected $carriers = null;
 
 	public function __construct($options = array()) {
 		parent::__construct($options);
 		if (isset($options['lines_query'])) {
 			$this->linesQuery = $options['lines_query'];
 		}
-		//TODO  add carrier caching...
+
+		$this->setCarriers();
 	}
 
 	protected function getLines() {
-		/*$lines = Billrun_Factory::db()->linesCollection();
 
-		return $lines->query($this->linesQuery)
-				->notExists($this->ratingField)->cursor()->limit($this->limit);*/
-		
-		return $this->getQueuedLines($this->linesQuery);
+		return $this->getQueuedLines(array());
 	}
 
 	protected function updateRow($row) {
 		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteRow', array('row' => $row));
-
 		$carrierOut = $this->detectCarrierOut($row);
 		$carrierIn = $this->detectCarrierIn($row);
-
 		$current = $row->getRawData();
 
 		$added_values = array(
 			$this->ratingField => $carrierOut ? $carrierOut->createRef(Billrun_Factory::db()->carriersCollection()) : $carrierOut,
 			$this->ratingField . '_in' => $carrierIn ? $carrierIn->createRef(Billrun_Factory::db()->carriersCollection()) : $carrierIn,
 		);
+
 		$newData = array_merge($current, $added_values);
 		$row->setRawData($newData);
-		
+
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteRow', array('row' => $row));
 		return true;
 	}
 
 	/**
-	 * Get the out going carrier for the line
+	 * Get the outgoing carrier for the line
 	 * @param type $row the  row to get the out going carrier to.
 	 * @return Mongodloid_Entity the  carrier object in the DB.
 	 */
-	protected function detectCarrierOut($row) {	
-		$query = array('identifiction.group_name' => array(
-						'$in'=> array($this->getCarrierName($row['out_circuit_group_name']))
-					));
-		if(in_array($row['record_type'],array('08'))) {
-				$query = array('identifiction.sms_centre' => array(
-						'$in'=> array(substr($row['sms_centre'],0,5))
-					));
+	protected function detectCarrierOut($row) {
+		foreach ($this->carriers as $carrier) {
+			if ( $row['record_type'] == '09' ) {
+				if ($carrier['key'] != 'GOLAN') {
+					continue;
+				} else {
+					return $carrier;
+				}
+			}
+			if ( $row['record_type'] == '08' && isset( $carrier['identifiction']['sms_centre'] ) ) {
+				if (!in_array(substr($row['sms_centre'], 0, 5), $carrier['identifiction']['sms_centre'])) {
+					continue;
+				} else {
+					return $carrier;
+				}
+			}
+			if (is_array($carrier['identifiction']['group_name']) && in_array($this->getCarrierName($row['out_circuit_group_name']), $carrier['identifiction']['group_name'])) {
+				return $carrier;
+			}
 		}
-		if(in_array($row['record_type'],array('09'))) {
-				$query = array('key' => 'GOLAN');
-		}
-		return Billrun_Factory::db()->carriersCollection()->query($query)->cursor()->current();
 	}
 
 	/**
@@ -87,29 +92,40 @@ class Billrun_Calculator_Carrier extends Billrun_Calculator {
 	 * @return Mongodloid_Entity the carrier object in the DB.	
 	 */
 	protected function detectCarrierIn($row) {
-		$query = array('identifiction.group_name' => array(
-						'$in'=> array($this->getCarrierName($row['in_circuit_group_name']))
-					));
-		if(in_array($row['record_type'],array('09'))) {
-				$query = array('identifiction.sms_centre' => array(
-						'$in'=> array(substr($row['sms_centre'],0,5))
-					));
+		foreach ($this->carriers as $carrier) {
+			if ( $row['record_type'] == '08') {
+				if ($carrier['key'] != 'GOLAN') {
+					continue;
+				} else {
+					return $carrier;
+				}
+			}
+			if ( $row['record_type'] == '09' && isset( $carrier['identifiction']['sms_centre'] )) {
+				if (!in_array(substr($row['sms_centre'], 0, 5), $carrier['identifiction']['sms_centre'])) {
+					continue;
+				} else {
+					return $carrier;
+				}
+			}
+			if (is_array($carrier['identifiction']['group_name']) && in_array($this->getCarrierName($row['in_circuit_group_name']), $carrier['identifiction']['group_name'])) {
+				return $carrier;
+			}
 		}
-		if(in_array($row['record_type'],array('08'))) {
-				$query = array('key' => 'GOLAN');
-		}
-		return Billrun_Factory::db()->carriersCollection()->query($query)->cursor()->current();
 	}
+
 	/**
 	 * get the  carrier identifier  from the group name  fields
 	 * @param type $groupName the  group name to get the carrier identifer to.
 	 * @return string containing the carrier identifer.
 	 */
 	protected function getCarrierName($groupName) {
-		
-		return $groupName === "" ? ""  : substr($groupName, 0, min(4,strlen($groupName)));
+
+		return $groupName === "" ? "" : substr($groupName, 0, min(4, strlen($groupName)));
 	}
 
+	/**
+	 * @see Billrun_Calculator::getCalculatorQueueType
+	 */
 	protected static function getCalculatorQueueType() {
 		return self::MAIN_DB_FIELD;
 	}
@@ -118,7 +134,16 @@ class Billrun_Calculator_Carrier extends Billrun_Calculator {
 	 * @see Billrun_Calculator::isLineLegitimate
 	 */
 	protected function isLineLegitimate($line) {
-		return $line['type'] == 'nsn' ;
+		return $line['type'] == 'nsn';
 	}
+
+	protected function setCarriers() {
+		$coll = Billrun_Factory::db()->carriersCollection();
+		$this->carriers = array();
+		foreach($coll->query() as $carrier) {
+			$this->carriers[] =$carrier;
+		}
+	}
+
 }
 

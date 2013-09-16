@@ -65,35 +65,11 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		if (isset($options['size']) && $options['size']) {
 			$this->size = $options['size'];
 		}
-		if (isset($options['aggregator']['min_invoice_id'])) {
-			$this->min_invoice_id = $options['aggregator']['min_invoice_id'];
-		}
 
 		$this->plans = Billrun_Factory::db()->plansCollection();
 		$this->lines = Billrun_Factory::db()->linesCollection();
 		$this->billrun = Billrun_Factory::db()->billrunCollection();
 
-		$closeBillrunFunc = <<<EOT
-function (account_id, billrun_key) {
-    while (1) {
-		var targetCollection = db.billrun;
-        var cursor = targetCollection.find({}, {invoice_id: 1}).sort({invoice_id: -1}).limit(1);
-        var invoice_id = cursor.hasNext() ? cursor.next().invoice_id + 1 : $this->min_invoice_id;
-        targetCollection.update({'account_id': account_id, 'billrun_key': billrun_key, 'invoice_id': {\$exists:false}},{\$set: {'invoice_id': invoice_id}});
-        var err = db.getLastErrorObj();
-        if (err && err.code) {
-            if (err.code == 11000) /* dup key */
-                continue;
-            else
-                print("unexpected error updating invoice_id: " + tojson(err));
-        }
-		return invoice_id;
-    }
-}
-EOT;
-		$save_function_command = "db.system.js.save({_id : \"closeBillrun\" , value : $closeBillrunFunc})";
-
-		Billrun_Factory::db()->execute($save_function_command);
 	}
 
 	/**
@@ -140,14 +116,14 @@ EOT;
 					$plan = $flat_line['plan_ref'];
 					if (!$billrun = Billrun_Billrun::updateBillrun($billrun_key, array(), array('price_customer' => $flat_price), $flat_line, $plan['vatable'], $subscriber_status)) {
 						Billrun_Factory::log()->log("Flat costs already exist in billrun collection for subscriber " . $subscriber_id . " for billrun " . $billrun_key, Zend_Log::NOTICE);
-					} else if ($billrun instanceof Mongodloid_Entity) {
+					} else {
 						Billrun_Billrun::setSubscriberStatus($account_id, $subscriber_id, $billrun_key, $subscriber_status);
 						$flat_line['billrun_ref'] = $billrun->createRef($this->billrun);
 						$flat_line->save();
 					}
 				}
 			}
-			Billrun_Billrun::close($account_id, $billrun_key);
+			Billrun_Billrun::close($account_id, $billrun_key, $this->min_invoice_id);
 		}
 //		Billrun_Factory::dispatcher()->trigger('beforeAggregateSaveLine', array(&$save_data, &$this));
 		// @TODO trigger after aggregate
