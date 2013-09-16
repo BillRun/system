@@ -211,7 +211,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	/**
 	 * 
 	 */
-	protected function setCalculatorTag() {
+	protected function setCalculatorTag($query = array(), $update = array()) {
 		$queue = Billrun_Factory::db()->queueCollection();
 		$calculator_tag = $this->getCalculatorQueueTag();
 		foreach ($this->data as $item) {

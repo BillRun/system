@@ -137,7 +137,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 						continue;
 					}
 				}
-				$this->data[] = $line;
+				$this->data[$line['stamp']] = $line;
 				Billrun_Factory::dispatcher()->trigger('afterCalculateDataRow', array('data' => &$line));
 			}
 		}
@@ -220,15 +220,15 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	/**
 	 * Mark the claculation as finished in the queue.
 	 */
-	protected function setCalculatorTag() {
+	protected function setCalculatorTag($query = array(), $update = array()) {
 		$queue = Billrun_Factory::db()->queueCollection();
 		$calculator_tag = $this->getCalculatorQueueTag();
 		$stamps = array();
 		foreach ($this->data as $item) {
 			$stamps[] = $item['stamp'];
 		}
-		$query = array('stamp' => array('$in' => $stamps), 'hash' => $this->workHash, $calculator_tag => $this->signedMicrotime,); //array('stamp' => $item['stamp']);
-		$update = array('$set' => array($calculator_tag => true));
+		$query = array_merge($query,array('stamp' => array('$in' => $stamps), 'hash' => $this->workHash, $calculator_tag => $this->signedMicrotime)); //array('stamp' => $item['stamp']);
+		$update = array_merge($update,array('$set' => array($calculator_tag => true)));
 		$queue->update($query, $update, array('multiple' => true));
 	}
 
@@ -300,7 +300,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		end($calculators_queue_order);
 		// remove  reclaculated lines.		
 		foreach ($this->lines as $queueLine) {			
-			if (isset($queueLine['final_calc']) && ($queueLine['final_calc'] == $calculator_type )) {	
+			if (isset($queueLine['final_calc']) && ($queueLine['final_calc'] == $calculator_type ) && $this->data[$queueLine['stamp']]) {	
 				$queueLine->collection($queue);
 				$queueLine->remove();
 			}
