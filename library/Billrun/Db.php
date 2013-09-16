@@ -46,11 +46,11 @@ class Billrun_Db extends Mongodloid_Db {
 		} else {
 			$conn = Billrun_Connection::getInstance($config['host']);
 		}
-		
+
 		if (!isset($config['options'])) {
 			return $conn->getDB($config['name'], $config['user'], $config['password']);
 		}
-		
+
 		return $conn->getDB($config['name'], $config['user'], $config['password'], $config['options']);
 	}
 

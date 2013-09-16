@@ -21,24 +21,24 @@ class Billrun_Log extends Zend_Log {
 	 * @var array
 	 */
 	protected static $instances = array();
-	
+
 	/**
 	 * stamp of the run (added to separate processes while running to the same log file)
 	 * @var string
 	 */
 	protected $stamp = '';
 
-    /**
-     * Class constructor.  Create a new logger
-     *
-     * @param Zend_Log_Writer_Abstract|null  $writer  default writer
-     * @return void
-     */
-    public function __construct(Zend_Log_Writer_Abstract $writer = null) {
+	/**
+	 * Class constructor.  Create a new logger
+	 *
+	 * @param Zend_Log_Writer_Abstract|null  $writer  default writer
+	 * @return void
+	 */
+	public function __construct(Zend_Log_Writer_Abstract $writer = null) {
 		parent::__construct($writer);
 		$this->stamp = substr(md5($_SERVER['REQUEST_TIME'] . rand(0, 100)), 0, 7);
 	}
-	
+
 	public static function getInstance(array $options = array()) {
 
 		$stamp = md5(serialize($options));
@@ -66,7 +66,7 @@ class Billrun_Log extends Zend_Log {
 		if ($this->stamp) {
 			$message = '[' . $this->stamp . '] ' . $message;
 		}
-		
+
 		parent::log($message, $priority, $extras);
 	}
 

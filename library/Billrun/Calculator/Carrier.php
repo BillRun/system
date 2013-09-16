@@ -66,14 +66,14 @@ class Billrun_Calculator_Carrier extends Billrun_Calculator {
 	 */
 	protected function detectCarrierOut($row) {
 		foreach ($this->carriers as $carrier) {
-			if ( $row['record_type'] == '09' ) {
+			if ($row['record_type'] == '09') {
 				if ($carrier['key'] != 'GOLAN') {
 					continue;
 				} else {
 					return $carrier;
 				}
 			}
-			if ( $row['record_type'] == '08' && isset( $carrier['identifiction']['sms_centre'] ) ) {
+			if ($row['record_type'] == '08' && isset($carrier['identifiction']['sms_centre'])) {
 				if (!in_array(substr($row['sms_centre'], 0, 5), $carrier['identifiction']['sms_centre'])) {
 					continue;
 				} else {
@@ -93,14 +93,14 @@ class Billrun_Calculator_Carrier extends Billrun_Calculator {
 	 */
 	protected function detectCarrierIn($row) {
 		foreach ($this->carriers as $carrier) {
-			if ( $row['record_type'] == '08') {
+			if ($row['record_type'] == '08') {
 				if ($carrier['key'] != 'GOLAN') {
 					continue;
 				} else {
 					return $carrier;
 				}
 			}
-			if ( $row['record_type'] == '09' && isset( $carrier['identifiction']['sms_centre'] )) {
+			if ($row['record_type'] == '09' && isset($carrier['identifiction']['sms_centre'])) {
 				if (!in_array(substr($row['sms_centre'], 0, 5), $carrier['identifiction']['sms_centre'])) {
 					continue;
 				} else {
@@ -140,8 +140,8 @@ class Billrun_Calculator_Carrier extends Billrun_Calculator {
 	protected function setCarriers() {
 		$coll = Billrun_Factory::db()->carriersCollection();
 		$this->carriers = array();
-		foreach($coll->query() as $carrier) {
-			$this->carriers[] =$carrier;
+		foreach ($coll->query() as $carrier) {
+			$this->carriers[] = $carrier;
 		}
 	}
 

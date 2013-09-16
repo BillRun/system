@@ -22,7 +22,7 @@ class Billrun_Calculator_Rate_Ggsn extends Billrun_Calculator_Rate {
 	 * @var string
 	 */
 	static protected $type = 'ggsn';
-	
+
 	/**
 	 *
 	 * @var type 
@@ -75,14 +75,14 @@ class Billrun_Calculator_Rate_Ggsn extends Billrun_Calculator_Rate {
 	protected function getLineUsageType($row) {
 		return 'data';
 	}
-	
+
 	/**
 	 * load the ggsn rates to be used later.
 	 */
 	protected function loadRates() {
-		$rates = Billrun_Factory::db()->ratesCollection()->query( $this->rateKeyMapping	);
+		$rates = Billrun_Factory::db()->ratesCollection()->query($this->rateKeyMapping);
 		$this->rates = array();
-		foreach ($rates as  $value) {
+		foreach ($rates as $value) {
 			$value->collection(Billrun_Factory::db()->ratesCollection());
 			$this->rates[] = $value;
 		}
@@ -93,17 +93,17 @@ class Billrun_Calculator_Rate_Ggsn extends Billrun_Calculator_Rate {
 	 */
 	protected function getLineRate($row, $usage_type) {
 		$line_time = $row['unified_record_time'];
-		if (preg_match('/^(?=62\.90\.|37\.26\.)/', $row['sgsn_address'])) {		
-			$rate  = new Mongodloid_Entity();
+		if (preg_match('/^(?=62\.90\.|37\.26\.)/', $row['sgsn_address'])) {
+			$rate = new Mongodloid_Entity();
 			foreach ($this->rates as $key => $value) {
-				if( $value['from'] <= $line_time &&  $line_time <= $value['to'] ) {
+				if ($value['from'] <= $line_time && $line_time <= $value['to']) {
 					$rate = $value;
 				}
 			}
-			if (!$rate->isEmpty()) {				
+			if (!$rate->isEmpty()) {
 				return $rate;
 			} else {
-				Billrun_Factory::log()->log("Couldnt find rate for row : ".print_r($row['stamp'],1),  Zend_Log::DEBUG);
+				Billrun_Factory::log()->log("Couldnt find rate for row : " . print_r($row['stamp'], 1), Zend_Log::DEBUG);
 			}
 		}
 		//Billrun_Factory::log()->log("International row : ".print_r($row,1),  Zend_Log::DEBUG);

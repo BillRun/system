@@ -86,9 +86,8 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		$row->collection($this->lines_coll);
 		if ($this->bulk) {
 			$this->subscribersByStamp();
-			$subscriber = isset($this->subscribers[$row['stamp']]) ? $this->subscribers[$row['stamp']] : FALSE ;
-		}
-		else {
+			$subscriber = isset($this->subscribers[$row['stamp']]) ? $this->subscribers[$row['stamp']] : FALSE;
+		} else {
 			$subscriber = $this->loadSubscriberForLine($row);
 		}
 		if (!$subscriber || !$subscriber->isValid()) {
@@ -158,7 +157,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 
 		$params['time'] = date(Billrun_Base::base_dateformat, $row->get('unified_record_time')->sec);
 		$params['stamp'] = $row->get('stamp');
-		
+
 		return $this->subscriber->load($params);
 	}
 
@@ -231,7 +230,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		if (isset($line['usagev']) && $line['usagev'] !== 0) {
 			foreach ($this->translateCustomerIdentToAPI as $key => $toKey) {
 				if (isset($line[$key]) && strlen($line[$key])) {
-				return (isset($line['customer_rate']) && $line->get('customer_rate', true)); //it  depend on customer rate to detect if the line is incoming or outgoing.
+					return (isset($line['customer_rate']) && $line->get('customer_rate', true)); //it  depend on customer rate to detect if the line is incoming or outgoing.
 				}
 			}
 		}

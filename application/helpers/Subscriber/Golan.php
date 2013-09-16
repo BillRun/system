@@ -271,14 +271,13 @@ class Subscriber_Golan extends Billrun_Subscriber {
 			$subscriberSettings = Billrun_Factory::config()->getConfigValue('subscriber', array());
 			foreach ($list as $stamp => $item) {
 				if (is_array($item)) {
-					$subscribers[$stamp] = new self(array_merge(array('data' => $item),$subscriberSettings));
+					$subscribers[$stamp] = new self(array_merge(array('data' => $item), $subscriberSettings));
 				} else {
 					//TODO what is the output when subscriber was not found?
 //				Billrun_Factory::log()->log('Failed to load Golan subscriber data', Zend_Log::ALERT);
 				}
 			}
-		}
-		else {
+		} else {
 			$message = 'Customer API responded with no results';
 		}
 		Billrun_Factory::log()->log($message . ". Proceeding with calculation...", Zend_Log::INFO);

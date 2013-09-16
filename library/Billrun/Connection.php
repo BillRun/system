@@ -25,5 +25,4 @@ class Billrun_Connection extends Mongodloid_Connection {
 		return new Billrun_Db($newDb, $this);
 	}
 
-
 }

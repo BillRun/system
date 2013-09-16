@@ -49,14 +49,14 @@ class Billrun_Calculator_Rate_Sms extends Billrun_Calculator_Rate {
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteRow', array('row' => $row));
 		return true;
 	}
-	
+
 	/**
 	 * @see Billrun_Calculator_Rate::getLineVolume
 	 */
 	protected function getLineVolume($row, $usage_type) {
 		return 1;
 	}
-	
+
 	/**
 	 * @see Billrun_Calculator_Rate::getLineUsageType
 	 */
@@ -126,11 +126,12 @@ class Billrun_Calculator_Rate_Sms extends Billrun_Calculator_Rate {
 			return false;
 		}
 	}
-	
+
 	/**
 	 * @see Billrun_Calculator::isLineLegitimate
 	 */
 	protected function isLineLegitimate($line) {
 		return $line['type'] == 'smsc' || $line['type'] == 'mmsc' || $line['type'] == 'smpp';
 	}
+
 }

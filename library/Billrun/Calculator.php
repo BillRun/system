@@ -15,6 +15,7 @@
 abstract class Billrun_Calculator extends Billrun_Base {
 
 	const CALCULATOR_QUEUE_PREFIX = 'calculator_';
+
 	/**
 	 * the type of the object
 	 *
@@ -22,26 +23,26 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	 */
 	static protected $type = 'calculator';
 
-    /**
-     * the container data of the calculator
-     * @var Mongodloid_Cursor the data container
-     */
-    protected $data = array();
+	/**
+	 * the container data of the calculator
+	 * @var Mongodloid_Cursor the data container
+	 */
+	protected $data = array();
 
-    /**
-     * The lines to rate
-     * @var array
-     */
-    protected $lines = array();
+	/**
+	 * The lines to rate
+	 * @var array
+	 */
+	protected $lines = array();
 
-    /**
-     * Limit iterator
-     * used to limit the count of row to calc on.
-     * 0 or less means no limit
-     *
-     * @var int
-     */
-    protected $limit = 1000000;
+	/**
+	 * Limit iterator
+	 * used to limit the count of row to calc on.
+	 * 0 or less means no limit
+	 *
+	 * @var int
+	 */
+	protected $limit = 1000000;
 
 	/**
 	 *
@@ -49,22 +50,24 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	 */
 	protected $months_limit = null;
 
-    /**
-     * The  time that  the queue lines were signed in for this calculator run.
-     * @var type 
-     */
-    protected $signedMicrotime = 0;
+	/**
+	 * The  time that  the queue lines were signed in for this calculator run.
+	 * @var type 
+	 */
+	protected $signedMicrotime = 0;
 
 	/**
 	 * The work hash that this calculator used.
 	 * @var type 
 	 */
 	protected $workHash = 0;
-    /**
-     * array of rates for pre-processing
-     * @var array
-     */
-    protected $rates = array();
+
+	/**
+	 * array of rates for pre-processing
+	 * @var array
+	 */
+	protected $rates = array();
+
 	/**
 	 * constructor of the class
 	 * 
@@ -157,7 +160,6 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		Billrun_Factory::log()->log("Updating queue calculator flag...", Zend_Log::DEBUG);
 		$this->setCalculatorTag();
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteData', array('data' => $this->data));
-
 	}
 
 	/**
@@ -172,7 +174,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 			unset($this->data[$dataKey]);
 		}
 	}
-	
+
 	/**
 	 * 
 	 * @param type $queueLines
@@ -185,7 +187,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		}
 		//Billrun_Factory::log()->log("stamps : ".print_r($stamps,1),Zend_Log::DEBUG);
 		$lines = Billrun_Factory::db()->linesCollection()
-					->query()->in('stamp', $stamps)->cursor();
+				->query()->in('stamp', $stamps)->cursor();
 		//Billrun_Factory::log()->log("Lines : ".print_r($lines->count(),1),Zend_Log::DEBUG);			
 		return $lines;
 	}
@@ -227,8 +229,8 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		foreach ($this->data as $item) {
 			$stamps[] = $item['stamp'];
 		}
-		$query = array_merge($query,array('stamp' => array('$in' => $stamps), 'hash' => $this->workHash, $calculator_tag => $this->signedMicrotime)); //array('stamp' => $item['stamp']);
-		$update = array_merge($update,array('$set' => array($calculator_tag => true)));
+		$query = array_merge($query, array('stamp' => array('$in' => $stamps), 'hash' => $this->workHash, $calculator_tag => $this->signedMicrotime)); //array('stamp' => $item['stamp']);
+		$update = array_merge($update, array('$set' => array($calculator_tag => true)));
 		$queue->update($query, $update, array('multiple' => true));
 	}
 
@@ -298,8 +300,8 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		$queue_id = array_search($calculator_type, $calculators_queue_order);
 		end($calculators_queue_order);
 		// remove  reclaculated lines.		
-		foreach ($this->lines as $queueLine) {			
-			if (isset($queueLine['final_calc']) && ($queueLine['final_calc'] == $calculator_type ) && $this->data[$queueLine['stamp']]) {	
+		foreach ($this->lines as $queueLine) {
+			if (isset($queueLine['final_calc']) && ($queueLine['final_calc'] == $calculator_type ) && $this->data[$queueLine['stamp']]) {
 				$queueLine->collection($queue);
 				$queueLine->remove();
 			}
@@ -323,6 +325,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		);
 		Billrun_Factory::db()->queueCollection()->remove($query);
 	}
+
 	/**
 	 * 
 	 * @param type $localquery
@@ -342,8 +345,8 @@ abstract class Billrun_Calculator extends Billrun_Base {
 			//if There limit to the calculator set an updating limit.
 			if ($this->limit != 0) {
 				Billrun_Factory::log()->log('Looking for the last available line in the queue', Zend_Log::DEBUG);
-                if (isset($querydata['hint'])) {
-                    $hq = $queue->query($query)->cursor()->hint(array($querydata['hint'] => 1))->sort(array('_id' => 1))->limit($this->limit);
+				if (isset($querydata['hint'])) {
+					$hq = $queue->query($query)->cursor()->hint(array($querydata['hint'] => 1))->sort(array('_id' => 1))->limit($this->limit);
 				} else {
 					$hq = $queue->query($query)->cursor()->sort(array('_id' => 1))->limit($this->limit);
 				}
@@ -356,37 +359,37 @@ abstract class Billrun_Calculator extends Billrun_Base {
 					return $retLines;
 				}
 			}
-			
+
 			$query['$isolated'] = 1; //isolate the update
 			$this->workHash = md5(time() . rand(0, PHP_INT_MAX));
 			$update['$set']['hash'] = $this->workHash;
 			//Billrun_Factory::log()->log(print_r($query,1),Zend_Log::DEBUG);
 			$queue->update($query, $update, array('multiple' => true));
 
-            $foundLines = $queue->query(array_merge($localquery, array('hash' => $this->workHash, $current_calculator_queue_tag => $this->signedMicrotime)))->cursor()->hint(array('hash' => 1));
-        } while ($horizonlineCount != 0 && $foundLines->count() == 0);
-		
+			$foundLines = $queue->query(array_merge($localquery, array('hash' => $this->workHash, $current_calculator_queue_tag => $this->signedMicrotime)))->cursor()->hint(array('hash' => 1));
+		} while ($horizonlineCount != 0 && $foundLines->count() == 0);
+
 		foreach ($foundLines as $line) {
 			$retLines[] = $line;
 		}
 		return $retLines;
-    }
+	}
 
-    protected function loadRates() {
-        $rates = Billrun_Factory::db()->ratesCollection()->query()->cursor();
-        $this->rates = array();
-        foreach ($rates as $rate) {
-            $rate->collection(Billrun_Factory::db()->ratesCollection());
-            if (isset($rate['params']['prefix'])) {
-                foreach ($rate['params']['prefix'] as $prefix) {
-                    $this->rates[$prefix][] = $rate;
-                }
-            } else if ($rate['key'] == 'UNRATED') {
-                $this->rates['UNRATED'] = $rate;
-            } else {
-                $this->rates['noprefix'][] = $rate;
-            }
-        }
+	protected function loadRates() {
+		$rates = Billrun_Factory::db()->ratesCollection()->query()->cursor();
+		$this->rates = array();
+		foreach ($rates as $rate) {
+			$rate->collection(Billrun_Factory::db()->ratesCollection());
+			if (isset($rate['params']['prefix'])) {
+				foreach ($rate['params']['prefix'] as $prefix) {
+					$this->rates[$prefix][] = $rate;
+				}
+			} else if ($rate['key'] == 'UNRATED') {
+				$this->rates['UNRATED'] = $rate;
+			} else {
+				$this->rates['noprefix'][] = $rate;
+			}
+		}
 	}
 
 	/**
@@ -394,7 +397,6 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	 * @return string the  type  of the calculator
 	 */
 	abstract protected static function getCalculatorQueueType();
-
 
 	/**
 	 * Check if a given line  can be handeld by  the calcualtor.

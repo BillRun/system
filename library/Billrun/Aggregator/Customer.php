@@ -69,7 +69,6 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		$this->plans = Billrun_Factory::db()->plansCollection();
 		$this->lines = Billrun_Factory::db()->linesCollection();
 		$this->billrun = Billrun_Factory::db()->billrunCollection();
-
 	}
 
 	/**

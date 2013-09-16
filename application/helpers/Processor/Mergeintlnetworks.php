@@ -125,107 +125,107 @@
  */
 class Processor_Mergeintlnetworks extends Billrun_Processor_Base_Separator {
 
-    /**
-     * the type of the object
-     *
-     * @var string
-     */
-    static protected $type = 'mergeintl';
+	/**
+	 * the type of the object
+	 *
+	 * @var string
+	 */
+	static protected $type = 'mergeintl';
 //	static protected $nsoftPLanToGolanPlan = array(
 //		'SMALL' => array('ZG_HAVILA_SMS', 'ZG_HAVILA_VOICE', 'ZG_HAVILA_MMS'),
 //		'LARGE' => array('ZG_HAVILA_SMS', 'ZG_HAVILA_VOICE', 'ZG_HAVILA_MMS', 'ZG_HAVILA_HOOL', 'ZG_NATIONAL'),
 //	);
-    static protected $mappingFields = array(
-        'call' => 'mnAccessType',
-        'callback' => 'mnAccessTypeForCallback',
-        'incoming_call' => 'mnAccessTypeForInCall',
-        'data' => 'accessTypeForData',
-        'sms' => 'mnAccessTypeForSms',
+	static protected $mappingFields = array(
+		'call' => 'mnAccessType',
+		'callback' => 'mnAccessTypeForCallback',
+		'incoming_call' => 'mnAccessTypeForInCall',
+		'data' => 'accessTypeForData',
+		'sms' => 'mnAccessTypeForSms',
 //		'incoming_sms' => 'UNRATED',
-    );
+	);
 
-    public function __construct($options) {
-        parent::__construct($options);
-        $header = $this->getLine();
-        $this->parser->setStructure($header);
-    }
+	public function __construct($options) {
+		parent::__construct($options);
+		$header = $this->getLine();
+		$this->parser->setStructure($header);
+	}
 
-    /**
-     * we do not need to log
-     * 
-     * @return boolean true
-     */
-    public function logDB() {
-        return TRUE;
-    }
+	/**
+	 * we do not need to log
+	 * 
+	 * @return boolean true
+	 */
+	public function logDB() {
+		return TRUE;
+	}
 
-    /**
-     * method to parse the data
-     */
-    protected function parse() {
-        if (!is_resource($this->fileHandler)) {
-            Billrun_Factory::log()->log("Resource is not configured well", Zend_Log::ERR);
-            return false;
-        }
+	/**
+	 * method to parse the data
+	 */
+	protected function parse() {
+		if (!is_resource($this->fileHandler)) {
+			Billrun_Factory::log()->log("Resource is not configured well", Zend_Log::ERR);
+			return false;
+		}
 
 
-        while ($line = $this->getLine()) {
-            $this->parseData($line);
-        }
+		while ($line = $this->getLine()) {
+			$this->parseData($line);
+		}
 
-        return true;
-    }
+		return true;
+	}
 
-    /**
-     * method to parse data
-     * 
-     * @param array $line data line
-     * 
-     * @return array the data array
-     */
-    protected function parseData($line) {
+	/**
+	 * method to parse data
+	 * 
+	 * @param array $line data line
+	 * 
+	 * @return array the data array
+	 */
+	protected function parseData($line) {
 
-        $this->parser->setLine($line);
-        Billrun_Factory::dispatcher()->trigger('beforeDataParsing', array(&$line, $this));
-        $row = $this->parser->parse();
-        Billrun_Factory::dispatcher()->trigger('afterDataParsing', array(&$row, $this));
-        $this->data['data'][] = $row;
-        return $row;
-    }
+		$this->parser->setLine($line);
+		Billrun_Factory::dispatcher()->trigger('beforeDataParsing', array(&$line, $this));
+		$row = $this->parser->parse();
+		Billrun_Factory::dispatcher()->trigger('afterDataParsing', array(&$row, $this));
+		$this->data['data'][] = $row;
+		return $row;
+	}
 
-    protected function store() {
-        if (!isset($this->data['data'])) {
-            // raise error
-            return false;
-        }
+	protected function store() {
+		if (!isset($this->data['data'])) {
+			// raise error
+			return false;
+		}
 
-        $rates = Billrun_Factory::db()->ratesCollection();
+		$rates = Billrun_Factory::db()->ratesCollection();
 
-        $this->data['stored_data'] = array();
+		$this->data['stored_data'] = array();
 
-        foreach ($this->data['data'] as $key => $row) {
-            foreach (self::$mappingFields as $type => $field) {
-                if (isset($row[$field])) {
-                    $rate = $rates->query('key', $row[$field])->cursor()->current();
+		foreach ($this->data['data'] as $key => $row) {
+			foreach (self::$mappingFields as $type => $field) {
+				if (isset($row[$field])) {
+					$rate = $rates->query('key', $row[$field])->cursor()->current();
 
-                    if ($rate->getId()) {
-                        $rate->collection($rates);
-                        $serving_networks = isset($rate['params']['serving_networks']) ? $rate['params']['serving_networks'] : array();
-                        $serving_networks[] = $row['PLMN'];
-                        $rate->set('params.serving_networks', $serving_networks);
+					if ($rate->getId()) {
+						$rate->collection($rates);
+						$serving_networks = isset($rate['params']['serving_networks']) ? $rate['params']['serving_networks'] : array();
+						$serving_networks[] = $row['PLMN'];
+						$rate->set('params.serving_networks', $serving_networks);
 
-                        $rate->save($rates);
-                        $this->data['stored_data'][] = $row;
-                    } else {
-                        echo $row[$field] . " zone not found" . PHP_EOL . "<br />";
-                    }
-                } else if ($field == 'UNRATED') {
-                    echo $row['PLMN'] . " $field not found" . PHP_EOL . "<br />";
-                }
-            }
-        }
+						$rate->save($rates);
+						$this->data['stored_data'][] = $row;
+					} else {
+						echo $row[$field] . " zone not found" . PHP_EOL . "<br />";
+					}
+				} else if ($field == 'UNRATED') {
+					echo $row['PLMN'] . " $field not found" . PHP_EOL . "<br />";
+				}
+			}
+		}
 
-        return true;
-    }
+		return true;
+	}
 
 }
