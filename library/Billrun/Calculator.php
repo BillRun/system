@@ -185,7 +185,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		}
 		//Billrun_Factory::log()->log("stamps : ".print_r($stamps,1),Zend_Log::DEBUG);
 		$lines = Billrun_Factory::db()->linesCollection()
-					->query()->in('stamp', $stamps)->cursor();
+					->query()->in('stamp', $stamps)->cursor()->sort(array('unified_record_time'=> 1));
 		//Billrun_Factory::log()->log("Lines : ".print_r($lines->count(),1),Zend_Log::DEBUG);			
 		return $lines;
 	}
@@ -249,7 +249,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		}
 		$current_calculator_queue_tag = self::getCalculatorQueueTag($calculator_type);
 		$orphand_time = strtotime(Billrun_Factory::config()->getConfigValue('queue.calculator.orphan_wait_time', "6 hours") . " ago");
-		$query['$and'][0]['$or'] = array(
+		$query['$or'] = array(
 			array($current_calculator_queue_tag => false),
 			array($current_calculator_queue_tag => array(
 					'$ne' => true, '$lt' => $orphand_time
@@ -299,7 +299,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		end($calculators_queue_order);
 		// remove  reclaculated lines.		
 		foreach ($this->lines as $queueLine) {			
-			if (isset($queueLine['final_calc']) && ($queueLine['final_calc'] == $calculator_type ) && $this->data[$queueLine['stamp']]) {	
+			if (isset($queueLine['final_calc']) && ($queueLine['final_calc'] == $calculator_type ) && isset($this->data[$queueLine['stamp']])) {	
 				$queueLine->collection($queue);
 				$queueLine->remove();
 			}
@@ -363,7 +363,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 			//Billrun_Factory::log()->log(print_r($query,1),Zend_Log::DEBUG);
 			$queue->update($query, $update, array('multiple' => true));
 
-            $foundLines = $queue->query(array_merge($localquery, array('hash' => $this->workHash, $current_calculator_queue_tag => $this->signedMicrotime)))->cursor()->hint(array('hash' => 1));
+            $foundLines = $queue->query(array_merge($localquery, array('hash' => $this->workHash, $current_calculator_queue_tag => $this->signedMicrotime)))->cursor()->sort(array('unified_record_time'=> 1));
         } while ($horizonlineCount != 0 && $foundLines->count() == 0);
 		
 		foreach ($foundLines as $line) {
