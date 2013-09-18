@@ -260,7 +260,7 @@ class Billrun_Billrun {
 	 * @param int $subscriber_id the subscriber id
 	 * @return array the query
 	 */
-	protected static function getMatchingBillrunQuery($account_id, $billrun_key, $subscriber_id = null) {
+	public static function getMatchingBillrunQuery($account_id, $billrun_key, $subscriber_id = null) {
 		$query = array(
 			'account_id' => $account_id,
 			'billrun_key' => $billrun_key,

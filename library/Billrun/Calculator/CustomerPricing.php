@@ -116,8 +116,9 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			if (!$billrun = Billrun_Billrun::updateBillrun($billrun_key, array($usage_type => $volume), $pricingData, $row, $vatable)) {
 				return false;
 			} else {
-				$billrun_info['billrun_key'] = $billrun['billrun_key'];
-				$billrun_info['billrun_ref'] = $billrun->createRef(Billrun_Factory::db()->billrunCollection());
+				$pricingData['billrun'] = $billrun['billrun_key'];
+//				$billrun_info['billrun_key'] = $billrun['billrun_key'];
+//				$billrun_info['billrun_ref'] = $billrun->createRef(Billrun_Factory::db()->billrunCollection());
 			}
 		} else {
 			Billrun_Factory::log()->log("Line with stamp " . $row['stamp'] . " is missing volume information", Zend_Log::ALERT);
@@ -269,6 +270,26 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		);
 		$balances_coll->update($query, $values);
 	}
+	
+	/**
+	 * removes the db ref from the subscriber's billrun to save space.
+	 * 
+	 * @param type $item
+	 */
+	protected function removeLinesRefs($item) {
+		$billrun_coll = Billrun_Factory::db()->billrunCollection();
+		$billrun_key = $item['billrun'];
+		$account_id = $item['account_id'];
+		$subscriber_id = $item['subscriber_id'];
+		$query = Billrun_Billrun::getMatchingBillrunQuery($account_id, $billrun_key, $subscriber_id);
+		$values = array(
+			'$pull' => array(
+				'lines.' . Billrun_Billrun::getGeneralUsageType($item['usaget']) . '.refs' => 1
+			)
+		);
+		$billrun_coll->update($query, $values);
+
+	}
 
 	/**
 	 * @see Billrun_Calculator::getCalculatorQueueType
@@ -293,6 +314,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		parent::setCalculatorTag();
 		foreach ($this->data as $item) {
 			$this->removeBalanceTx($item); // we can safely remove the transactions after the lines have left the current queue
+			$this->removeLinesRefs($item); // we can safely remove the transactions after the lines have left the current queue
 		}
 	}
 
