@@ -494,8 +494,10 @@ class Billrun_Billrun {
 		// recovery
 		if ($doc->isEmpty()) { // billrun document was not found
 			if (($billrun = self::createBillrunIfNotExists($account_id, $billrun_key)) && $billrun->isEmpty()) { // means that the billrun was created so we can retry updating it
+				Billrun_Factory::log()->log("Account " . $account_id . " has been added to billrun " . $billrun_key, Zend_Log::DEBUG);
 				return self::updateBillrun($billrun_key, $counters, $pricingData, $row, $vatable);
 			} else if (self::addSubscriberIfNotExists($account_id, $subscriber_id, $billrun_key)) {
+				Billrun_Factory::log()->log("Subscriber " . $subscriber_id . " has been added to billrun " . $billrun_key, Zend_Log::DEBUG);
 				return self::updateBillrun($billrun_key, $counters, $pricingData, $row, $vatable);
 			} else if (($doc = self::getLineBillrun($account_id, $subscriber_id, $billrun_key, $usage_type, $row_ref)) && !$doc->isEmpty()) {
 				Billrun_Factory::log()->log("Line with stamp " . $row['stamp'] . " already exists in billrun " . $billrun_key . " for account " . $account_id, Zend_Log::NOTICE);
@@ -507,6 +509,7 @@ class Billrun_Billrun {
 				return self::updateBillrun(self::$runtime_billrun_key, $counters, $pricingData, $row, $vatable);
 			}
 		}
+		Billrun_Factory::log()->log("Line with stamp " . $row['stamp'] . " has been added to billrun " . $billrun_key, Zend_Log::DEBUG);
 		return $doc;
 	}
 
