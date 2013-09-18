@@ -22,9 +22,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @var boolean is customer price vatable by default
 	 */
 	protected $vatable = true;
-
 	protected $plans = array();
-
 
 	/**
 	 *
@@ -66,24 +64,24 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		Billrun_Factory::dispatcher()->trigger('beforePricingData', array('data' => $this->data));
 		$lines_coll = Billrun_Factory::db()->linesCollection();
 
-        $lines = $this->pullLines($this->lines);
-        foreach ($lines as $key => $line) {
-            if ($line) {
-                Billrun_Factory::dispatcher()->trigger('beforePricingDataRow', array('data' => &$line));
-                //Billrun_Factory::log()->log("Calcuating row : ".print_r($item,1),  Zend_Log::DEBUG);
-                $line->collection($lines_coll);
-                if ($this->isLineLegitimate($line)) {
-                    if (!$this->updateRow($line)) {
-                        continue;
-                    }
-                }
-                $this->data[$line['stamp']] = $line;
-                //$this->updateLinePrice($item); //@TODO  this here to prevent divergance  between the priced lines and the subscriber's balance/billrun if the process fails in the middle.
-                Billrun_Factory::dispatcher()->trigger('afterPricingDataRow', array('data' => &$line));
-            }
-        }
-        Billrun_Factory::dispatcher()->trigger('afterPricingData', array('data' => $this->data));
-    }
+		$lines = $this->pullLines($this->lines);
+		foreach ($lines as $key => $line) {
+			if ($line) {
+				Billrun_Factory::dispatcher()->trigger('beforePricingDataRow', array('data' => &$line));
+				//Billrun_Factory::log()->log("Calcuating row : ".print_r($item,1),  Zend_Log::DEBUG);
+				$line->collection($lines_coll);
+				if ($this->isLineLegitimate($line)) {
+					if (!$this->updateRow($line)) {
+						continue;
+					}
+				}
+				$this->data[$line['stamp']] = $line;
+				//$this->updateLinePrice($item); //@TODO  this here to prevent divergance  between the priced lines and the subscriber's balance/billrun if the process fails in the middle.
+				Billrun_Factory::dispatcher()->trigger('afterPricingDataRow', array('data' => &$line));
+			}
+		}
+		Billrun_Factory::dispatcher()->trigger('afterPricingData', array('data' => $this->data));
+	}
 
 	protected function updateRow($row) {
 		$rate = $this->getRowRate($row);
@@ -217,8 +215,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 						'billrun_month' => $billrun_key
 							), 1), Zend_Log::ALERT);
 			return false;
-		}
-		else {
+		} else {
 			Billrun_Factory::log()->log("Found balance " . $billrun_key . " for subscriber " . $row['subscriber_id'], Zend_Log::DEBUG);
 		}
 
@@ -270,7 +267,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		);
 		$balances_coll->update($query, $values);
 	}
-	
+
 	/**
 	 * removes the db ref from the subscriber's billrun to save space.
 	 * 
@@ -281,14 +278,15 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		$billrun_key = $item['billrun'];
 		$account_id = $item['account_id'];
 		$subscriber_id = $item['subscriber_id'];
+		$row_ref = $item->createRef();
+				
 		$query = Billrun_Billrun::getMatchingBillrunQuery($account_id, $billrun_key, $subscriber_id);
 		$values = array(
 			'$pull' => array(
-				'lines.' . Billrun_Billrun::getGeneralUsageType($item['usaget']) . '.refs' => 1
+				'subs.$.lines.' . Billrun_Billrun::getGeneralUsageType($item['usaget']) . '.refs' => $row_ref,
 			)
 		);
 		$billrun_coll->update($query, $values);
-
 	}
 
 	/**
@@ -304,7 +302,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	protected function isLineLegitimate($line) {
 		return isset($line['customer_rate']) && $line['customer_rate'] !== false &&
 				isset($line['subscriber_id']) && $line['subscriber_id'] !== false &&
-				!isset($line['price_customer']) && $line['unified_record_time']->sec >= $this->billrun_lower_bound_timestamp;
+				$line['unified_record_time']->sec >= $this->billrun_lower_bound_timestamp;
 	}
 
 	/**
@@ -313,8 +311,10 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	protected function setCalculatorTag() {
 		parent::setCalculatorTag();
 		foreach ($this->data as $item) {
-			$this->removeBalanceTx($item); // we can safely remove the transactions after the lines have left the current queue
-			$this->removeLinesRefs($item); // we can safely remove the transactions after the lines have left the current queue
+			if ($this->isLineLegitimate($item)) {
+				$this->removeBalanceTx($item); // we can safely remove the transactions after the lines have left the current queue
+				$this->removeLinesRefs($item); // we can safely remove the transactions after the lines have left the current queue
+			}
 		}
 	}
 
