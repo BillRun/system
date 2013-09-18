@@ -206,10 +206,10 @@ abstract class Billrun_Processor extends Billrun_Base {
 				return $linesCount;
 			} else {
 				$file = $log->query($baseQuery)
-						->equals('source', static::$type)
-						->notExists('process_time')
-						->cursor()->sort(array('received_time' => 1))
-						->limit(1)->current();
+								->equals('source', static::$type)
+								->notExists('process_time')
+								->cursor()->sort(array('received_time' => 1))
+								->limit(1)->current();
 				if (!$file || !$file->getID()) {
 					break;
 				}
@@ -455,8 +455,8 @@ abstract class Billrun_Processor extends Billrun_Base {
 		}
 		$target_path = $path . DIRECTORY_SEPARATOR . $this->filename;
 		$ret = @call_user_func_array($callback, array(
-				$this->filePath,
-				$target_path,
+					$this->filePath,
+					$target_path,
 		));
 		if ($callback == 'copy' && $this->preserve_timestamps) {
 			$timestamp = filemtime($this->filePath);
@@ -582,10 +582,10 @@ abstract class Billrun_Processor extends Billrun_Base {
 		$queue_data = array();
 		$empty_calcs = array();
 		foreach (Billrun_Factory::config()->getConfigValue("queue.calculators") as $value) {
-			$empty_calcs[Billrun_Calculator::CALCULATOR_QUEUE_PREFIX.$value] = false;
+			$empty_calcs[Billrun_Calculator::CALCULATOR_QUEUE_PREFIX . $value] = false;
 		}
 		foreach ($this->data['data'] as $row) { //@TODO use array_column instead
-			$queue_data[] = array_merge( array('stamp' => $row['stamp'], 'type' => $row['type'],), $empty_calcs );
+			$queue_data[] = array_merge(array('stamp' => $row['stamp'], 'type' => $row['type'], 'unified_record_time' => $row['unified_record_time']), $empty_calcs);
 		}
 		return $queue_data;
 	}

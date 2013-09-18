@@ -343,15 +343,15 @@ abstract class Billrun_Calculator extends Billrun_Base {
 			if ($this->limit != 0) {
 				Billrun_Factory::log()->log('Looking for the last available line in the queue', Zend_Log::DEBUG);
                 if (isset($querydata['hint'])) {
-                    $hq = $queue->query($query)->cursor()->hint(array($querydata['hint'] => 1))->sort(array('_id' => 1))->limit($this->limit);
+                    $hq = $queue->query($query)->cursor()->hint(array($querydata['hint'] => 1))->sort(array('unified_record_time' => 1))->limit($this->limit);
 				} else {
-					$hq = $queue->query($query)->cursor()->sort(array('_id' => 1))->limit($this->limit);
+					$hq = $queue->query($query)->cursor()->sort(array('unified_record_time' => 1))->limit($this->limit);
 				}
 				$horizonlineCount = $hq->count(true);
 				$horizonline = $hq->skip(abs($horizonlineCount - 1))->limit(1)->current();
 				Billrun_Factory::log()->log("current limit : " . $horizonlineCount, Zend_Log::DEBUG);
 				if (!$horizonline->isEmpty()) {
-					$query['_id'] = array('$lte' => $horizonline['_id']->getMongoID());
+					$query['unified_record_time'] = array('$lte' => $horizonline['unified_record_time']);
 				} else {
 					return $retLines;
 				}

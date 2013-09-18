@@ -55,8 +55,15 @@ class Mongodloid_Connection {
 		if ($this->_connected)
 			return;
 
+		if (isset($options['readPreference'])) {
+			$read_preference = $options['readPreference'];
+			unset($options['readPreference']);
+		}
+		
 		// this can throw an Exception
 		$this->_connection = new MongoClient($this->_server ? $this->_server : 'mongodb://localhost:27017', $options);
+		
+		$this->_connection->setReadPreference($read_preference);
 
 		$this->_connected = true;
 	}
