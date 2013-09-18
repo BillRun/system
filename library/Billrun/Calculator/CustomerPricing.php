@@ -77,7 +77,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
                         continue;
                     }
                 }
-                $this->data[] = $line;
+                $this->data[$line['stamp']] = $line;
                 //$this->updateLinePrice($item); //@TODO  this here to prevent divergance  between the priced lines and the subscriber's balance/billrun if the process fails in the middle.
                 Billrun_Factory::dispatcher()->trigger('afterPricingDataRow', array('data' => &$line));
             }
