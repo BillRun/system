@@ -230,7 +230,8 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		if (isset($line['usagev']) && $line['usagev'] !== 0) {
 			foreach ($this->translateCustomerIdentToAPI as $key => $toKey) {
 				if (isset($line[$key]) && strlen($line[$key])) {
-					return (isset($line['customer_rate']) && $line->get('customer_rate', true)); //it  depend on customer rate to detect if the line is incoming or outgoing.
+					$customer_rate = $line->get('customer_rate', true);
+					return (isset($customer_rate) && $customer_rate); //it  depend on customer rate to detect if the line is incoming or outgoing.
 				}
 			}
 		}

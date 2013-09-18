@@ -90,7 +90,6 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 
 		//TODO  change this to be configurable.
 		$pricingData = array();
-		$billrun_info = array();
 
 		$usage_type = $row['usaget'];
 		$volume = $row['usagev'];
@@ -269,27 +268,6 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	}
 
 	/**
-	 * removes the db ref from the subscriber's billrun to save space.
-	 * 
-	 * @param type $item
-	 */
-	protected function removeLinesRefs($item) {
-		$billrun_coll = Billrun_Factory::db()->billrunCollection();
-		$billrun_key = $item['billrun'];
-		$account_id = $item['account_id'];
-		$subscriber_id = $item['subscriber_id'];
-		$row_ref = $item->createRef();
-				
-		$query = Billrun_Billrun::getMatchingBillrunQuery($account_id, $billrun_key, $subscriber_id);
-		$values = array(
-			'$pull' => array(
-				'subs.$.lines.' . Billrun_Billrun::getGeneralUsageType($item['usaget']) . '.refs' => $row_ref,
-			)
-		);
-		$billrun_coll->update($query, $values);
-	}
-
-	/**
 	 * @see Billrun_Calculator::getCalculatorQueueType
 	 */
 	static protected function getCalculatorQueueType() {
@@ -300,7 +278,8 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @see Billrun_Calculator::isLineLegitimate
 	 */
 	protected function isLineLegitimate($line) {
-		return isset($line['customer_rate']) && $line['customer_rate'] !== false &&
+		$customer_rate = $line->get('customer_rate', true);
+		return isset($customer_rate) && $customer_rate !== false &&
 				isset($line['subscriber_id']) && $line['subscriber_id'] !== false &&
 				$line['unified_record_time']->sec >= $this->billrun_lower_bound_timestamp;
 	}
@@ -313,7 +292,6 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		foreach ($this->data as $item) {
 			if ($this->isLineLegitimate($item)) {
 				$this->removeBalanceTx($item); // we can safely remove the transactions after the lines have left the current queue
-				$this->removeLinesRefs($item); // we can safely remove the transactions after the lines have left the current queue
 			}
 		}
 	}
