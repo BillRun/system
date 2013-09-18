@@ -580,10 +580,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 
 	protected function getQueueData() {
 		$queue_data = array();
-		$empty_calcs = array();
-		foreach (Billrun_Factory::config()->getConfigValue("queue.calculators") as $value) {
-			$empty_calcs[Billrun_Calculator::CALCULATOR_QUEUE_PREFIX . $value] = false;
-		}
+		$empty_calcs = array('calc_name' => false, 'calc_time' => false);
 		foreach ($this->data['data'] as $row) { //@TODO use array_column instead
 			$queue_data[] = array_merge(array('stamp' => $row['stamp'], 'type' => $row['type'], 'unified_record_time' => $row['unified_record_time']), $empty_calcs);
 		}

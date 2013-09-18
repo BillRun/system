@@ -14,7 +14,7 @@
  */
 abstract class Billrun_Calculator extends Billrun_Base {
 
-	const CALCULATOR_QUEUE_PREFIX = 'calculator_';
+	const CALCULATOR_QUEUE_PREFIX = 'calc_';
 	/**
 	 * the type of the object
 	 *
@@ -206,29 +206,17 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	}
 
 	/**
-	 * 
-	 * @param type $calculator_type
-	 * @return type
-	 */
-	static protected function getCalculatorQueueTag($calculator_type = null) {
-		if (is_null($calculator_type)) {
-			$calculator_type = static::getCalculatorQueueType();
-		}
-		return static::CALCULATOR_QUEUE_PREFIX . $calculator_type;
-	}
-
-	/**
-	 * Mark the claculation as finished in the queue.
+	 * Mark the calculation as finished in the queue.
 	 */
 	protected function setCalculatorTag($query = array(), $update = array()) {
 		$queue = Billrun_Factory::db()->queueCollection();
-		$calculator_tag = $this->getCalculatorQueueTag();
+		$calculator_tag = static::getCalculatorQueueType();
 		$stamps = array();
 		foreach ($this->data as $item) {
 			$stamps[] = $item['stamp'];
 		}
-		$query = array_merge($query,array('stamp' => array('$in' => $stamps), 'hash' => $this->workHash, $calculator_tag => $this->signedMicrotime)); //array('stamp' => $item['stamp']);
-		$update = array_merge($update,array('$set' => array($calculator_tag => true)));
+		$query = array_merge($query,array('stamp' => array('$in' => $stamps), 'hash' => $this->workHash, 'calc_time' => $this->signedMicrotime)); //array('stamp' => $item['stamp']);
+		$update = array_merge($update,array('$set' => array('calc_name' => $calculator_tag, 'calc_time' => false)));
 		$queue->update($query, $update, array('multiple' => true));
 	}
 
@@ -237,25 +225,24 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	 * @return array
 	 */
 	static protected function getBaseQuery() {
-		$calculators_queue_order = Billrun_Factory::config()->getConfigValue("queue.calculators");
+		$queue_calculators = Billrun_Factory::config()->getConfigValue("queue.calculators");
 		$calculator_type = static::getCalculatorQueueType();
 		$queryData = array();
-		$queue_id = array_search($calculator_type, $calculators_queue_order);
+		$queue_id = array_search($calculator_type, $queue_calculators);
+		$previous_calculator = false;
 		if ($queue_id > 0) {
-			$previous_calculator_type = $calculators_queue_order[$queue_id - 1];
-			$previous_calculator_tag = self::getCalculatorQueueTag($previous_calculator_type);
-			$query[$previous_calculator_tag] = true;
+			$previous_calculator = $queue_calculators[$queue_id - 1];
 			//$queryData['hint'] = $previous_calculator_tag;
 		}
-		$current_calculator_queue_tag = self::getCalculatorQueueTag($calculator_type);
 		$orphand_time = strtotime(Billrun_Factory::config()->getConfigValue('queue.calculator.orphan_wait_time', "6 hours") . " ago");
+		$query['$and'][0]['calc_name'] = $previous_calculator;
 		$query['$and'][0]['$or'] = array(
-			array($current_calculator_queue_tag => false),
-			array($current_calculator_queue_tag => array(
+			array('calc_time' => false),
+			array('calc_time' => array(
 					'$ne' => true, '$lt' => $orphand_time
 				)),
 		);
-		$queryData['hint'] = $current_calculator_queue_tag;
+//		$queryData['hint'] = $current_calculator_queue_tag;
 		$queryData['query'] = $query;
 		return $queryData;
 	}
@@ -265,11 +252,10 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	 * @return array
 	 */
 	protected function getBaseUpdate() {
-		$current_calculator_queue_tag = self::getCalculatorQueueTag();
 		$this->signedMicrotime = microtime(true);
 		$update = array(
 			'$set' => array(
-				$current_calculator_queue_tag => $this->signedMicrotime,
+				'calc_time' => $this->signedMicrotime,
 			)
 		);
 		return $update;
@@ -293,20 +279,20 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	 */
 	public final function removeFromQueue() {
 		$queue = Billrun_Factory::db()->queueCollection();
-		$calculators_queue_order = Billrun_Factory::config()->getConfigValue("queue.calculators");
+		$queue_calculators = Billrun_Factory::config()->getConfigValue("queue.calculators");
 		$calculator_type = static::getCalculatorQueueType();
-		$queue_id = array_search($calculator_type, $calculators_queue_order);
-		end($calculators_queue_order);
-		// remove  reclaculated lines.		
-		foreach ($this->lines as $queueLine) {			
-			if (isset($queueLine['final_calc']) && ($queueLine['final_calc'] == $calculator_type ) && $this->data[$queueLine['stamp']]) {	
+		$queue_id = array_search($calculator_type, $queue_calculators);
+		end($queue_calculators);
+//		 remove  recalculated lines.		
+		foreach ($this->lines as $queueLine) {
+			if (isset($queueLine['final_calc']) && ($queueLine['final_calc'] == $calculator_type ) && $this->data[$queueLine['stamp']]) {
 				$queueLine->collection($queue);
 				$queueLine->remove();
 			}
 		}
 
-		// remove   end of queue  stack calculator
-		if ($queue_id == key($calculators_queue_order)) { // last calculator
+		// remove end of queue stack calculator
+		if ($queue_id == key($queue_calculators)) { // last calculator
 			Billrun_Factory::log()->log("Removing lines from queue", Zend_Log::INFO);
 			$stamps = array();
 			foreach ($this->data as $item) {
@@ -335,7 +321,6 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		$update = $this->getBaseUpdate();
 //		$fields = array();
 //		$options = static::getBaseOptions();
-		$current_calculator_queue_tag = $this->getCalculatorQueueTag();
 		$retLines = array();
 		$horizonlineCount = 0;
 		do {
@@ -363,7 +348,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 			//Billrun_Factory::log()->log(print_r($query,1),Zend_Log::DEBUG);
 			$queue->update($query, $update, array('multiple' => true));
 
-            $foundLines = $queue->query(array_merge($localquery, array('hash' => $this->workHash, $current_calculator_queue_tag => $this->signedMicrotime)))->cursor()->hint(array('hash' => 1));
+            $foundLines = $queue->query(array_merge($localquery, array('hash' => $this->workHash, 'calc_time' => $this->signedMicrotime)))->cursor()->hint(array('hash' => 1));
         } while ($horizonlineCount != 0 && $foundLines->count() == 0);
 		
 		foreach ($foundLines as $line) {

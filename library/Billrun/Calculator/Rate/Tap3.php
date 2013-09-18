@@ -26,6 +26,9 @@ class Billrun_Calculator_Rate_Tap3 extends Billrun_Calculator_Rate {
 	 * @param $row the line CDR to update. 
 	 */
 	protected function updateRow($row) {
+		if ($row['stamp']!='3ea5d84a13fdce844348ed30cf8c71ef') {
+			return false;
+		}
 		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteRow', array('row' => $row));
 
 		$current = $row->getRawData();
@@ -107,15 +110,12 @@ class Billrun_Calculator_Rate_Tap3 extends Billrun_Calculator_Rate {
 	 * @see Billrun_Calculator_Rate::getLineRate
 	 */
 	protected function getLineRate($row, $usage_type) {
-		//$header = $this->getLineHeader($row); @TODO should this be removed? 2013/06
-		$rates = Billrun_Factory::db()->ratesCollection();
-		$log = Billrun_Factory::db()->logCollection();
+		//$header = $this->getLineHeader($row); @TODO should this be removed? 2013/06	
 		$line_time = $row['unified_record_time'];
 		$serving_network = $row['serving_network'];
 
 		if (!is_null($serving_network)) {
 			$rates = Billrun_Factory::db()->ratesCollection();
-
 			if (isset($usage_type)) {
 				$filter_array = array(
 					'params.serving_networks' => array(
@@ -124,9 +124,9 @@ class Billrun_Calculator_Rate_Tap3 extends Billrun_Calculator_Rate {
 					'rates.' . $usage_type => array(
 						'$exists' => true,
 					),
-					'from' => array(
-						'$lte' => $line_time,
-					),
+//					'from' => array(
+//						'$lte' => $line_time,
+//					),
 					'to' => array(
 						'$gte' => $line_time,
 					),
