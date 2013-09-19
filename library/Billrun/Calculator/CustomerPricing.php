@@ -145,6 +145,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		$subscriber_current_plan = $this->getBalancePlan($sub_balance);
 		$plan = Billrun_Factory::plan(array('data' => $subscriber_current_plan));
 
+		$ret = array();
 		if ($plan->isRateInSubPlan($rate, $sub_balance, $usageType)) {
 			$volumeToPrice = $volumeToPrice - $plan->usageLeftInPlan($sub_balance['balance'], $usageType);
 
@@ -166,6 +167,28 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 
 		return $ret;
 	}
+	
+	/**
+	 * Override parent calculator to save changes with update (not save)
+	 */
+	public function writeLine($line, $dataKey) {
+		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteLine', array('data' => $line));
+		$save = array();
+		$saveProperties = array ('price_customer', 'billrun', 'over_plan', 'in_plan', 'out_plan');
+		foreach ($saveProperties as $p) {
+			if (isset($line[$p])) {
+				$save[$p] = $line[$p];
+			}
+		}
+		$where = array('stamp' => $line['stamp']);
+		Billrun_Factory::db()->linesCollection()->update($where, $save);
+		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteLine', array('data' => $line));
+		if (!isset($line['usagev']) || $line['usagev'] === 0) {
+			$this->removeLineFromQueue($line);
+			unset($this->data[$dataKey]);
+		}
+	}
+
 
 	/**
 	 * Calculates the price for the given volume (w/o access price)
