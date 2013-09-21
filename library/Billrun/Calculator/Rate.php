@@ -97,5 +97,28 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	protected function isLineLegitimate($line) {
 		return $line['type'] == static::$type;
 	}
+	
+	/**
+	 * Override parent calculator to save changes with update (not save)
+	 */
+	public function writeLine($line, $dataKey) {
+		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteLine', array('data' => $line));
+		$save = array();
+		$saveProperties = array ($this->ratingField, 'usaget', 'usagev');
+		foreach ($saveProperties as $p) {
+			if (!is_null($val = $line->get($p, true))) {
+				$save[$p] = $val;
+			}
+		}
+		$where = array('stamp' => $line['stamp']);
+		Billrun_Factory::db()->linesCollection()->update($where, $save);
+		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteLine', array('data' => $line));
+		if (!isset($line['usagev']) || $line['usagev'] === 0) {
+			$this->removeLineFromQueue($line);
+			unset($this->data[$dataKey]);
+		}
+	}
+
+
 
 }

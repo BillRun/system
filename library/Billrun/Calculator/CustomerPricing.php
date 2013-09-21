@@ -174,10 +174,10 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	public function writeLine($line, $dataKey) {
 		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteLine', array('data' => $line));
 		$save = array();
-		$saveProperties = array ('price_customer', 'billrun', 'over_plan', 'in_plan', 'out_plan');
+		$saveProperties = array ($this->pricingField, 'billrun', 'over_plan', 'in_plan', 'out_plan');
 		foreach ($saveProperties as $p) {
-			if (isset($line[$p])) {
-				$save[$p] = $line[$p];
+			if (!is_null($val = $line->get($p, true))) {
+				$save[$p] = $val;
 			}
 		}
 		$where = array('stamp' => $line['stamp']);
