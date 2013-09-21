@@ -175,7 +175,7 @@ class Mongodloid_Entity implements ArrayAccess {
 			return $this->getId();
 		}
 
-		$lazyload = func_num_args() > 1 ? func_get_arg(1) : false;
+		$disableLazyLoad = func_num_args() > 1 ? func_get_arg(1) : false;
 
 		$key = preg_replace('@\\[([^\\]]+)\\]@', '.$1', $key);
 		$result = $this->_values;
@@ -197,7 +197,7 @@ class Mongodloid_Entity implements ArrayAccess {
 			return null;
 		}
 
-		if (!$lazyload) {
+		if (!$disableLazyLoad) {
 			//lazy load MongoId Ref objects or MongoDBRef
 			//http://docs.mongodb.org/manual/reference/database-references/
 			if ($result[$key] instanceof MongoId && $this->collection()) {
