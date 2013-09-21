@@ -104,7 +104,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	public function writeLine($line, $dataKey) {
 		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteLine', array('data' => $line));
 		$save = array();
-		$saveProperties = array ($this->ratingField, 'usaget', 'usagev');
+		$saveProperties = array($this->ratingField, 'usaget', 'usagev');
 		foreach ($saveProperties as $p) {
 			if (!is_null($val = $line->get($p, true))) {
 				$save[$p] = $val;
