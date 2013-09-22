@@ -115,10 +115,8 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteLine', array('data' => $line));
 		if (!isset($line['usagev']) || $line['usagev'] === 0) {
 			$this->removeLineFromQueue($line);
-			unset($this->data[$dataKey]);
+			unset($this->lines[$line['stamp']]);
 		}
 	}
-
-
 
 }
