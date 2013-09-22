@@ -177,7 +177,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		$saveProperties = array($this->pricingField, 'billrun', 'over_plan', 'in_plan', 'out_plan');
 		foreach ($saveProperties as $p) {
 			if (!is_null($val = $line->get($p, true))) {
-				$save[$p] = $val;
+				$save['$set'][$p] = $val;
 			}
 		}
 		$where = array('stamp' => $line['stamp']);

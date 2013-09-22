@@ -107,7 +107,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 		$saveProperties = array($this->ratingField, 'usaget', 'usagev');
 		foreach ($saveProperties as $p) {
 			if (!is_null($val = $line->get($p, true))) {
-				$save[$p] = $val;
+				$save['$set'][$p] = $val;
 			}
 		}
 		$where = array('stamp' => $line['stamp']);

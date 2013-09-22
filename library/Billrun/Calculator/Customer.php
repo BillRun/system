@@ -122,7 +122,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		$saveProperties = Billrun_Factory::subscriber()->getAvailableFields();
 		foreach ($saveProperties as $p) {
 			if (!is_null($val = $line->get($p, true))) {
-				$save[$p] = $val;
+				$save['$set'][$p] = $val;
 			}
 		}
 		$where = array('stamp' => $line['stamp']);
