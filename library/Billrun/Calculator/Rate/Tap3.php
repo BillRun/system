@@ -124,9 +124,9 @@ class Billrun_Calculator_Rate_Tap3 extends Billrun_Calculator_Rate {
 					'rates.' . $usage_type => array(
 						'$exists' => true,
 					),
-//					'from' => array(
-//						'$lte' => $line_time,
-//					),
+					'from' => array(
+						'$lte' => $line_time,
+					),
 					'to' => array(
 						'$gte' => $line_time,
 					),
