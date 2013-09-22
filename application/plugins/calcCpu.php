@@ -41,10 +41,12 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase  {
 				Billrun_Factory::log($entity['stamp'] . ' customered');
 				$customerCalc->updateRow($entity);
 			}
+			
 //			if ($customerPricingCalc->isLineLegitimate($entity)) {
 //				Billrun_Factory::log($entity['stamp'] . ' priced');
 //				$customerPricingCalc->updateRow($entity);
 //			}
+			
 			$line = $entity->getRawData();
 		}
 	}
