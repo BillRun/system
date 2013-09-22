@@ -148,15 +148,15 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		return $lines;
 	}
 
-	protected function loadSubscribers($rows) {
+	public function loadSubscribers($rows) {
 		$params = array();
-		foreach ($rows as $key => $row) {
+		foreach ($rows as $row) {
 			$line_params = $this->getIdentityParams($row);
 			if (count($line_params) == 0) {
-				Billrun_Factory::log('Couldn\'t identify caller for line of stamp ' . $row->get('stamp'), Zend_Log::ALERT);
+				Billrun_Factory::log('Couldn\'t identify caller for line of stamp ' . $row['stamp'], Zend_Log::ALERT);
 			} else if ($this->isLineLegitimate($row)) {
-				$line_params['time'] = date(Billrun_Base::base_dateformat, $row->get('unified_record_time')->sec);
-				$line_params['stamp'] = $row->get('stamp');
+				$line_params['time'] = date(Billrun_Base::base_dateformat, $row['unified_record_time']->sec);
+				$line_params['stamp'] = $row['stamp'];
 				$params[] = $line_params;
 			}
 		}
