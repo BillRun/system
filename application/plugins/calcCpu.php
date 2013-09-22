@@ -28,7 +28,7 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase  {
 			'autoload' => 0,
 			'calculator' => array('bulk' => 0),
 		);
-		$customerCalc = new Billrun_Calculator_Customer($options);
+//		$customerCalc = new Billrun_Calculator_Customer($options);
 //		$customerPricingCalc = new Billrun_Calculator_CustomerPricing($options);
 		$data = &$processor->getData();
 		foreach ($data['data'] as &$line) {
@@ -37,16 +37,14 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase  {
 			if ($rate->isLineLegitimate($entity)) {
 				$rate->updateRow($entity);
 			}
-			if ($customerCalc->isLineLegitimate($entity)) {
-				Billrun_Factory::log($entity['stamp'] . ' customered');
-				$customerCalc->updateRow($entity);
-			}
-			
+//			if ($customerCalc->isLineLegitimate($entity)) {
+//				Billrun_Factory::log($entity['stamp'] . ' customered');
+//				$customerCalc->updateRow($entity);
+//			}
 //			if ($customerPricingCalc->isLineLegitimate($entity)) {
 //				Billrun_Factory::log($entity['stamp'] . ' priced');
 //				$customerPricingCalc->updateRow($entity);
 //			}
-			
 			$line = $entity->getRawData();
 		}
 	}
