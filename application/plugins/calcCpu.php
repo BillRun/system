@@ -26,27 +26,42 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase  {
 		Billrun_Factory::log('Plugin calc cpu triggered');
 		$options = array(
 			'autoload' => 0,
-//			'calculator' => array('bulk' => 0),
 		);
-		$customerCalc = Billrun_Calculator::getInstance(array_merge($options, array('type' => 'customer')));
-//		$customerPricingCalc = new Billrun_Calculator_CustomerPricing($options);
+		
 		$data = &$processor->getData();
-		$customerCalc->loadSubscribers($data['data']);
 		foreach ($data['data'] as &$line) {
 			$entity = new Mongodloid_Entity($line);
 			$rate = Billrun_Calculator_Rate::getRateCalculator($entity, $options);
 			if ($rate->isLineLegitimate($entity)) {
 				$rate->updateRow($entity);
 			}
+			$line = $entity->getRawData();
+		}
+		
+		$customerAPISettings = Billrun_Factory::config()->getConfigValue('customer.calculator.customer_identification_translation', array());
+		$customerOptions = array(
+			'type' => 'customer',
+			'calculator' => array(
+				'customer_identification_translation' => $customerAPISettings,
+				'bulk' => 0,
+			),
+		);
+		$customerCalc = Billrun_Calculator::getInstance(array_merge($options, $customerOptions));
+		$customerCalc->loadSubscribers($data['data']);
+		foreach ($data['data'] as &$line) {
+			$entity = new Mongodloid_Entity($line);
 			if ($customerCalc->isLineLegitimate($entity)) {
-				Billrun_Factory::log($entity['stamp'] . ' customered');
 				$customerCalc->updateRow($entity);
 			}
+			$line = $entity->getRawData();
+		}
+
+//		// @TODO: make customer price calc in the same way
+//		$customerPricingCalc = new Billrun_Calculator_CustomerPricing($options);
 //			if ($customerPricingCalc->isLineLegitimate($entity)) {
 //				Billrun_Factory::log($entity['stamp'] . ' priced');
 //				$customerPricingCalc->updateRow($entity);
 //			}
-			$line = $entity->getRawData();
-		}
+
 	}
 }

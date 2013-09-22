@@ -185,8 +185,8 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	protected function getIdentityParams($row) {
 		$params = array();
 		foreach ($this->translateCustomerIdentToAPI as $key => $toKey) {
-			if ($row->get($key)) {
-				$params[$toKey['toKey']] = preg_replace($toKey['clearRegex'], '', $row->get($key));
+			if (isset($row[$key])) {
+				$params[$toKey['toKey']] = preg_replace($toKey['clearRegex'], '', $row[$key]);
 				//$this->subscriberNumber = $params[$toKey['toKey']];
 				Billrun_Factory::log("found identification for row : {$row['stamp']} from {$key} to " . $toKey['toKey'] . ' with value :' . $params[$toKey['toKey']], Zend_Log::DEBUG);
 				break;
@@ -251,7 +251,8 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		if (isset($line['usagev']) && $line['usagev'] !== 0) {
 			foreach ($this->translateCustomerIdentToAPI as $key => $toKey) {
 				if (isset($line[$key]) && strlen($line[$key])) {
-					$customer_rate = $line->get('customer_rate', true);
+//					$customer_rate = $line->get('customer_rate', true);
+					$customer_rate = $line['customer_rate'];
 					return (isset($customer_rate) && $customer_rate); //it  depend on customer rate to detect if the line is incoming or outgoing.
 				}
 			}
