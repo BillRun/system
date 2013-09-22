@@ -191,13 +191,6 @@ abstract class Billrun_Processor extends Billrun_Base {
 
 		$log = Billrun_Factory::db()->logCollection();
 
-		$adoptThreshold = strtotime('-' . $this->orphandFilesAdoptionTime);
-		$baseQuery = array(
-			'$or' => array(
-				array('start_process_time' => array('$exists' => false)),
-				array('start_process_time' => array('$lt' => new MongoDate($adoptThreshold))),
-			),
-		);
 		$linesCount = 0;
 
 		for ($i = $this->getLimit(); $i > 0; $i--) {
@@ -205,15 +198,10 @@ abstract class Billrun_Processor extends Billrun_Base {
 				Billrun_Factory::log()->log("Billrun_Processor: queue size is too big", Zend_Log::INFO);
 				return $linesCount;
 			} else {
-				$file = $log->query($baseQuery)
-								->equals('source', static::$type)
-								->notExists('process_time')
-								->cursor()->sort(array('received_time' => 1))
-								->limit(1)->current();
-				if (!$file || !$file->getID()) {
+				$file = $this->getFileForProcessing();
+				if ($file->isEmpty()) {
 					break;
 				}
-				$this->markStartProcessing($file);
 				$this->setStamp($file->getID());
 				$this->loadFile($file->get('path'), $file->get('retrieved_from'));
 				$processedLinesCount = $this->process();
@@ -456,9 +444,9 @@ abstract class Billrun_Processor extends Billrun_Base {
 		}
 		$target_path = $path . DIRECTORY_SEPARATOR . $this->filename;
 		$ret = @call_user_func_array($callback, array(
-					$this->filePath,
-					$target_path,
-		));
+				$this->filePath,
+				$target_path,
+			));
 		if ($callback == 'copy' && $this->preserve_timestamps) {
 			$timestamp = filemtime($this->filePath);
 			Billrun_Util::setFileModificationTime($target_path, $timestamp);
@@ -480,15 +468,36 @@ abstract class Billrun_Processor extends Billrun_Base {
 	}
 
 	/**
-	 * mark a file in the log  collection  as being processed.
-	 * @param $file the file to mark as being processed.
-	 * @return  TRUE on sucessful update false otherwise
+	 * mark a file in the log collection as being processed and return it
+	 * @return Mongodloid_Entity the file to process on sucessful update false otherwise
 	 */
-	protected function markStartProcessing($file) {
+	protected function getFileForProcessing() {
 		$log = Billrun_Factory::db()->logCollection();
+		$adoptThreshold = strtotime('-' . $this->orphandFilesAdoptionTime);
+		$query = array(
+			'$or' => array(
+				array('start_process_time' => array('$exists' => false)),
+				array('start_process_time' => array('$lt' => new MongoDate($adoptThreshold))),
+			),
+			'source' => static::$type,
+			'process_time' => array(
+				'$exists' => false,
+			),
+		);
+		$update = array(
+			'$set' => array(
+				'start_process_time' => new MongoDate(time()),
+			),
+		);
+		$options = array(
+			'sort' => array(
+				'received_time' => 1,
+			),
+			'new' => true,
+		);
+		$file = $log->findAndModify($query, $update, array(), $options);
 		$file->collection($log);
-		$file->set('start_process_time', new MongoDate(time()));
-		return $file->save($log, true);
+		return $file;
 	}
 
 	public function fgetsIncrementLine($file_handler) {
@@ -581,10 +590,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 
 	protected function getQueueData() {
 		$queue_data = array();
-		$empty_calcs = array();
-		foreach (Billrun_Factory::config()->getConfigValue("queue.calculators") as $value) {
-			$empty_calcs[Billrun_Calculator::CALCULATOR_QUEUE_PREFIX . $value] = false;
-		}
+		$empty_calcs = array('calc_name' => false, 'calc_time' => false);
 		foreach ($this->data['data'] as $row) { //@TODO use array_column instead
 			$queue_data[] = array_merge(array('stamp' => $row['stamp'], 'type' => $row['type'], 'unified_record_time' => $row['unified_record_time']), $empty_calcs);
 		}
