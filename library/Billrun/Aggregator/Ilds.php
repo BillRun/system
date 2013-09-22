@@ -52,11 +52,11 @@ class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 				$phone_number = $item->get('caller_phone_no');
 				$subscriber = golan_subscriber::get($phone_number, $time);
 				if (!$subscriber) {
-					Billrun_Factory::log()->log("subscriber not found. phone:" . $phone_number . " time: " . $time, Zend_Log::INFO);
+					Billrun_Factory::log()->log("phone number has not necessary details: account_id & subscriber_id", Zend_Log::INFO);
 					continue;
 				}
 			} else {
-				Billrun_Factory::log()->log("subscriber " . $subscriber['id'] . " already in line " . $item->get('stamp'), Zend_Log::INFO);
+				Billrun_Factory::log()->log("subscriber " . $item->get('subscriber_id') . " already in line " . $item->get('stamp'), Zend_Log::INFO);
 				$subscriber = array(
 					'account_id' => $item->get('account_id'),
 					'id' => $item->get('subscriber_id'),
