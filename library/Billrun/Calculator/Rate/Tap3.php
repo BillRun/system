@@ -25,7 +25,7 @@ class Billrun_Calculator_Rate_Tap3 extends Billrun_Calculator_Rate {
 	 * write the calculation into DB.
 	 * @param $row the line CDR to update. 
 	 */
-	protected function updateRow($row) {
+	public function updateRow($row) {
 		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteRow', array('row' => $row));
 
 		$current = $row->getRawData();

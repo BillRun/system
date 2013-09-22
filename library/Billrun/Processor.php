@@ -259,6 +259,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 
 			Billrun_Factory::dispatcher()->trigger('afterProcessorParsing', array($this));
 			Billrun_Factory::dispatcher()->trigger('beforeProcessorStore', array($this));
+			print_R($this->data[0]);die;
 
 			if ($this->store() === FALSE) {
 				Billrun_Factory::log()->log("Billrun_Processor: cannot store the parser lines " . $this->filePath, Zend_Log::ERR);

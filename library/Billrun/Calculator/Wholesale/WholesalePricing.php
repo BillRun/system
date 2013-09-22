@@ -43,7 +43,7 @@ class Billrun_Calculator_Wholesale_WholesalePricing extends Billrun_Calculator_W
 	/**
 	 * @see Billrun_Calculator::updateRow
 	 */
-	protected function updateRow($row) {
+	public function updateRow($row) {
 		$pricingData = array();
 		$row->collection(Billrun_Factory::db()->linesCollection());
 		$zoneKey = ($this->isLineIncoming($row) ? 'incoming' : $this->loadDBRef($row->get(Billrun_Calculator_Wholesale_Nsn::MAIN_DB_FIELD,true))['key']);
@@ -81,7 +81,7 @@ class Billrun_Calculator_Wholesale_WholesalePricing extends Billrun_Calculator_W
 	/**
 	 * @see Billrun_Calculator::isLineLegitimate()
 	 */
-	protected function isLineLegitimate($line) {
+	public function isLineLegitimate($line) {
 		return $line['type'] == 'nsn' && 
 				$line->get('provider_zone', true) &&
 				($line->get(Billrun_Calculator_Carrier::MAIN_DB_FIELD,true) !== null && $line->get(Billrun_Calculator_Carrier::MAIN_DB_FIELD . "_in",true) != null) &&

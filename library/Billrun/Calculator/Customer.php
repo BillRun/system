@@ -82,7 +82,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	/**
 	 * write the calculation into DB
 	 */
-	protected function updateRow($row) {
+	public function updateRow($row) {
 		$row->collection($this->lines_coll);
 		if ($this->bulk) {
 			$this->subscribersByStamp();
@@ -247,7 +247,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	/**
 	 * @see Billrun_Calculator::isLineLegitimate
 	 */
-	protected function isLineLegitimate($line) {
+	public function isLineLegitimate($line) {
 		if (isset($line['usagev']) && $line['usagev'] !== 0) {
 			foreach ($this->translateCustomerIdentToAPI as $key => $toKey) {
 				if (isset($line[$key]) && strlen($line[$key])) {

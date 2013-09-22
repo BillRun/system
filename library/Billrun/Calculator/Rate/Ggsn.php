@@ -43,7 +43,7 @@ class Billrun_Calculator_Rate_Ggsn extends Billrun_Calculator_Rate {
 	/**
 	 * write the calculation into DB
 	 */
-	protected function updateRow($row) {
+	public function updateRow($row) {
 		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteRow', array('row' => $row));
 
 		$current = $row->getRawData();

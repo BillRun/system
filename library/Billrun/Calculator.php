@@ -118,7 +118,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	/**
 	 * write the calculation into DB
 	 */
-	abstract protected function updateRow($row);
+	abstract public function updateRow($row);
 
 	/**
 	 * execute the calculation process

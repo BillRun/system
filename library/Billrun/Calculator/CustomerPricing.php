@@ -31,6 +31,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	protected $billrun_lower_bound_timestamp;
 
 	public function __construct($options = array()) {
+		$autoload = $options['autoload'];
 		$options['autoload'] = false;
 		parent::__construct($options);
 
@@ -45,7 +46,9 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		}
 		$this->billrun_lower_bound_timestamp = is_null($this->months_limit) ? 0 : strtotime($this->months_limit . " months ago");
 		// set months limit
-		$this->load();
+		if ($autoload) {
+			$this->load();
+		}
 		$this->loadRates();
 		$this->loadPlans();
 	}
@@ -83,7 +86,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		Billrun_Factory::dispatcher()->trigger('afterPricingData', array('data' => $this->data));
 	}
 
-	protected function updateRow($row) {
+	public function updateRow($row) {
 		$rate = $this->getRowRate($row);
 
 		$billrun_key = Billrun_Util::getBillrunKey($row['unified_record_time']->sec);
@@ -300,7 +303,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	/**
 	 * @see Billrun_Calculator::isLineLegitimate
 	 */
-	protected function isLineLegitimate($line) {
+	public function isLineLegitimate($line) {
 		$customer_rate = $line->get('customer_rate', true);
 		return isset($customer_rate) && $customer_rate !== false &&
 				isset($line['subscriber_id']) && $line['subscriber_id'] !== false &&
