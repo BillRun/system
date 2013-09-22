@@ -14,15 +14,17 @@
  */
 class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 
-	protected $pricingField = 'price_customer';
-	static protected $type = "pricing";
+    protected $pricingField = 'price_customer';
+    static protected $type = "pricing";
 
 	/**
 	 *
 	 * @var boolean is customer price vatable by default
 	 */
 	protected $vatable = true;
+
 	protected $plans = array();
+
 
 	/**
 	 *
@@ -72,10 +74,11 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				$line->collection($lines_coll);
 				if ($this->isLineLegitimate($line)) {
 					if (!$this->updateRow($line)) {
+						unset($this->lines[$line['stamp']]);
 						continue;
 					}
-				}
-				$this->data[$line['stamp']] = $line;
+					$this->data[$line['stamp']] = $line;
+				}				
 				//$this->updateLinePrice($item); //@TODO  this here to prevent divergance  between the priced lines and the subscriber's balance/billrun if the process fails in the middle.
 				Billrun_Factory::dispatcher()->trigger('afterPricingDataRow', array('data' => &$line));
 			}
@@ -117,6 +120,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 //				$billrun_info['billrun_key'] = $billrun['billrun_key'];
 //				$billrun_info['billrun_ref'] = $billrun->createRef(Billrun_Factory::db()->billrunCollection());
 			}
+
 		} else {
 			Billrun_Factory::log()->log("Line with stamp " . $row['stamp'] . " is missing volume information", Zend_Log::ALERT);
 			return false;
@@ -145,6 +149,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		$subscriber_current_plan = $this->getBalancePlan($sub_balance);
 		$plan = Billrun_Factory::plan(array('data' => $subscriber_current_plan));
 
+		$ret = array();
 		if ($plan->isRateInSubPlan($rate, $sub_balance, $usageType)) {
 			$volumeToPrice = $volumeToPrice - $plan->usageLeftInPlan($sub_balance['balance'], $usageType);
 
@@ -166,6 +171,28 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 
 		return $ret;
 	}
+	
+	/**
+	 * Override parent calculator to save changes with update (not save)
+	 */
+	public function writeLine($line, $dataKey) {
+		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteLine', array('data' => $line));
+		$save = array();
+		$saveProperties = array($this->pricingField, 'billrun', 'over_plan', 'in_plan', 'out_plan');
+		foreach ($saveProperties as $p) {
+			if (!is_null($val = $line->get($p, true))) {
+				$save['$set'][$p] = $val;
+			}
+		}
+		$where = array('stamp' => $line['stamp']);
+		Billrun_Factory::db()->linesCollection()->update($where, $save);
+		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteLine', array('data' => $line));
+		if (!isset($line['usagev']) || $line['usagev'] === 0) {
+			$this->removeLineFromQueue($line);
+			unset($this->data[$dataKey]);
+		}
+	}
+
 
 	/**
 	 * Calculates the price for the given volume (w/o access price)
@@ -214,7 +241,8 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 						'billrun_month' => $billrun_key
 							), 1), Zend_Log::ALERT);
 			return false;
-		} else {
+		}
+		else {
 			Billrun_Factory::log()->log("Found balance " . $billrun_key . " for subscriber " . $row['subscriber_id'], Zend_Log::DEBUG);
 		}
 

@@ -112,6 +112,27 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		$this->createBalanceIfMissing($subscriber, $billrun_key, $plan_ref);
 		return true;
 	}
+	
+	/**
+	 * Override parent calculator to save changes with update (not save)
+	 */
+	public function writeLine($line, $dataKey) {
+		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteLine', array('data' => $line));
+		$save = array();
+		$saveProperties = Billrun_Factory::subscriber()->getAvailableFields();
+		foreach ($saveProperties as $p) {
+			if (!is_null($val = $line->get($p, true))) {
+				$save['$set'][$p] = $val;
+			}
+		}
+		$where = array('stamp' => $line['stamp']);
+		Billrun_Factory::db()->linesCollection()->update($where, $save);
+		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteLine', array('data' => $line));
+		if (!isset($line['usagev']) || $line['usagev'] === 0) {
+			$this->removeLineFromQueue($line);
+			unset($this->data[$dataKey]);
+		}
+	}
 
 	/**
 	 * 
@@ -212,10 +233,10 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	 */
 	protected function setCalculatorTag($query = array(), $update = array()) {
 		$queue = Billrun_Factory::db()->queueCollection();
-		$calculator_tag = $this->getCalculatorQueueTag();
+		$calculator_tag = static::getCalculatorQueueType();
 		foreach ($this->data as $item) {
 			$query = array('stamp' => $item['stamp']);
-			$update = array('$set' => array($calculator_tag => true));
+			$update = array('$set' => array('calc_name' => $calculator_tag, 'calc_time' => false));
 			if (isset($item['account_id'])) {
 				$update['$set']['account_id'] = $item['account_id'];
 			}

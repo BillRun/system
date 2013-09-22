@@ -58,8 +58,10 @@ abstract class Billrun_Calculator_Wholesale extends Billrun_Calculator {
 			$rates[] = array('rate' => $currRate, 'volume' => $volumeToPriceCurrentRating);
 			$volumeToPrice = $volumeToPrice - $volumeToPriceCurrentRating; //decressed the volume that was priced			
 		}
-		$ret['rates'] = $rates;
-		$ret[$this->pricingField] = $price;
+		$ret = array(
+			'rates' => $rates,
+			$this->pricingField => $price
+		);
 		return $ret;
 	}
 
