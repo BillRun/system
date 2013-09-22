@@ -14,15 +14,17 @@
  */
 class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 
-	protected $pricingField = 'price_customer';
-	static protected $type = "pricing";
+    protected $pricingField = 'price_customer';
+    static protected $type = "pricing";
 
 	/**
 	 *
 	 * @var boolean is customer price vatable by default
 	 */
 	protected $vatable = true;
+
 	protected $plans = array();
+
 
 	/**
 	 *
@@ -117,6 +119,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 //				$billrun_info['billrun_key'] = $billrun['billrun_key'];
 //				$billrun_info['billrun_ref'] = $billrun->createRef(Billrun_Factory::db()->billrunCollection());
 			}
+
 		} else {
 			Billrun_Factory::log()->log("Line with stamp " . $row['stamp'] . " is missing volume information", Zend_Log::ALERT);
 			return false;
@@ -237,7 +240,8 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 						'billrun_month' => $billrun_key
 							), 1), Zend_Log::ALERT);
 			return false;
-		} else {
+		}
+		else {
 			Billrun_Factory::log()->log("Found balance " . $billrun_key . " for subscriber " . $row['subscriber_id'], Zend_Log::DEBUG);
 		}
 
