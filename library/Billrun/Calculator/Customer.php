@@ -20,7 +20,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	 *
 	 * @var string
 	 */
-	static protected $type = "ilds";
+	static protected $type = "Customer";
 	
 	/**
 	 * method to receive the lines the calculator should take care
@@ -30,10 +30,13 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	protected function getLines() {
 		$lines = Billrun_Factory::db()->linesCollection();
 
-		return $lines->query()
-			->equals('source', static::$type)
-			->notExists('account_id')
-			->notExists('subscriber_id');
+		return $lines->query(array(
+					'source' => 'ilds',
+					'$or' => array(
+						array('account_id' => array('$exists' => false)),
+						array('subscriber_id' => array('$exists' => false))
+					)
+		));
 	}
 
 	/**
@@ -50,27 +53,12 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			$time = $row->get('call_start_dt');
 			$phone_number = $row->get('caller_phone_no');
 		}
-		// @TODO make it configurable
-		$previous_month = date("Ymt235959", strtotime("previous month"));
 
-		if ($time > $previous_month) {
-			Billrun_Factory::log()->log("time frame is not till the end of previous month " . $time . "; continue to the next line", Zend_Log::INFO);
+		// load subscriber
+		$subscriber = golan_subscriber::get($phone_number, $time);
+		if (!$subscriber) {
+			Billrun_Factory::log()->log("subscriber not found. phone:" . $phone_number . " time: " . $time, Zend_Log::INFO);
 			return false;
-		}
-
-		if (!$row->get('account_id') || !$row->get('subscriber_id')) {
-			// load subscriber
-			$subscriber = golan_subscriber::get($phone_number, $time);
-			if (!$subscriber) {
-				Billrun_Factory::log()->log("subscriber not found. phone:" . $phone_number . " time: " . $time, Zend_Log::INFO);
-				return false;
-			}
-		} else {
-			Billrun_Factory::log()->log("subscriber " . $row->get('subscriber_id') . " already in line " . $row->get('stamp'), Zend_Log::INFO);
-			$subscriber = array(
-				'account_id' => $row->get('account_id'),
-				'id' => $row->get('subscriber_id'),
-			);
 		}
 		
 		$current = $row->getRawData();
@@ -101,7 +89,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		foreach ($this->data as $item) {
 			// update billing line with billrun stamp
 			if (!$this->updateRow($item)) {
-				Billrun_Factory::log()->log("subscriber " . $subscriber_id . " cannot update billing line", Zend_Log::INFO);
+				Billrun_Factory::log()->log("phone number:" .$item->get('caller_phone_no'). " cannot update billing line", Zend_Log::INFO);
 				continue;
 			}
 		}
