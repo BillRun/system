@@ -292,6 +292,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		$path = 'http://' . $host . '/' . $url;
 		//Billrun_Factory::log()->log($path, Zend_Log::DEBUG);
 		// @TODO: use Zend_Http_Client
+		Billrun_Factory::log()->log('Querying customer API with ' . count($params) . ' subscribers', Zend_Log::INFO);
 		$json = self::send($path, json_encode($params));
 
 		if (!$json) {

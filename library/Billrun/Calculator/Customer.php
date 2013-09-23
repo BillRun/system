@@ -84,7 +84,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	 */
 	public function updateRow($row) {
 		$row->collection($this->lines_coll);
-		if ($this->bulk) {
+		if ($this->isBulk()) {
 			$this->subscribersByStamp();
 			$subscriber = isset($this->subscribers[$row['stamp']]) ? $this->subscribers[$row['stamp']] : FALSE;
 		} else {
