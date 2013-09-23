@@ -62,16 +62,13 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		}
 		
 		$current = $row->getRawData();
-		$added_values = array();
 		
 		if (!isset($subscriber['id']) || !isset($subscriber['account_id'])) {
-			Billrun_Factory::log()->log("subscriber or account_id not found. phone:" . $phone_number . " time: " . $time, Zend_Log::WARN);
+			Billrun_Factory::log()->log("subscriber_id or account_id not found. phone:" . $phone_number . " time: " . $time, Zend_Log::WARN);
 			return false;
 		}
 		
-		$added_values['subscriber_id'] = $subscriber['id'];
-		$added_values['account_id'] = $subscriber['account_id'];
-
+		$added_values = array('subscriber_id' => $subscriber['id'], 'account_id' => $subscriber['account_id']);
 		$newData = array_merge($current, $added_values);
 		$row->setRawData($newData);
 		return true;
