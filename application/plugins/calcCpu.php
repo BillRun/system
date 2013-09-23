@@ -23,18 +23,20 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 	protected $name = 'calcCpu';
 
 	public function beforeProcessorStore($processor) {
-		Billrun_Factory::log('Plugin calc cpu triggered');
+		Billrun_Factory::log('Plugin calc cpu triggered', Zend_Log::INFO);
 		$options = array(
 			'autoload' => 0,
 		);
 
 		$data = &$processor->getData();
+		Billrun_Factory::log('Plugin calc cpu rate', Zend_Log::INFO);
 		foreach ($data['data'] as &$line) {
 			$entity = new Mongodloid_Entity($line);
 			$rate = Billrun_Calculator_Rate::getRateCalculator($entity, $options);
 			if ($rate->isLineLegitimate($entity)) {
 				$rate->updateRow($entity);
 			}
+			$processor->setQueueRowStep($entity['stamp'], 'rate');
 			$line = $entity->getRawData();
 		}
 
@@ -47,10 +49,15 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 		if ($customerCalc->isBulk()) {
 			$customerCalc->loadSubscribers($data['data']);
 		}
+		Billrun_Factory::log('Plugin calc cpu customer', Zend_Log::INFO);
 		foreach ($data['data'] as &$line) {
 			$entity = new Mongodloid_Entity($line);
 			if ($customerCalc->isLineLegitimate($entity)) {
-				$customerCalc->updateRow($entity);
+				if ($customerCalc->updateRow($entity) !== FALSE) {
+					$processor->setQueueRowStep($entity['stamp'], 'customer');
+				}
+			} else {
+				$processor->setQueueRowStep($entity['stamp'], 'customer');
 			}
 			$line = $entity->getRawData();
 		}
@@ -61,6 +68,7 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 //				Billrun_Factory::log($entity['stamp'] . ' priced');
 //				$customerPricingCalc->updateRow($entity);
 //			}
+		Billrun_Factory::log('Plugin calc cpu end', Zend_Log::INFO);
 	}
 
 }
