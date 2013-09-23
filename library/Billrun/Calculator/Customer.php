@@ -151,8 +151,9 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	public function isBulk() {
 		return $this->bulk;
 	}
-
+	
 	public function loadSubscribers($rows) {
+		$this->subscribers_by_stamp = false;
 		$params = array();
 		foreach ($rows as $row) {
 			$line_params = $this->getIdentityParams($row);

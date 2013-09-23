@@ -265,7 +265,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 			}
 		}
 		$list = self::requestList($params_arr);
-
+		
 		if (is_array($list) && !empty($list)) {
 			$message = 'Customer API responded with ' . count($list) . ' results';
 			$subscriberSettings = Billrun_Factory::config()->getConfigValue('subscriber', array());
