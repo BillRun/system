@@ -34,6 +34,7 @@ class CalculateAction extends Action_Base {
 		if ($calculator) {
 			$this->_controller->addOutput("Starting to calculate. This action can take awhile...");
 			$calculator->calc();
+			
 			$this->_controller->addOutput("Writing calculated data.");
 			$calculator->write();
 			$this->_controller->addOutput("Calculation finished.");
