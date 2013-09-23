@@ -349,7 +349,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 			if (!$this->bulkAddToCollection($lines)) {
 				return false;
 			}
-			if (!$this->bulkAddToQueue($queue_data)) {
+			if (!$this->bulkAddToQueue()) {
 				return false;
 			}
 		} else {
