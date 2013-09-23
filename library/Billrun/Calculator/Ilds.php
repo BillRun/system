@@ -5,7 +5,6 @@
  * @copyright       Copyright (C) 2012 S.D.O.C. LTD. All rights reserved.
  * @license         GNU General Public License version 2 or later; see LICENSE.txt
  */
-require_once __DIR__ . '/../../../application/golan/' . 'subscriber.php';
 
 /**
  * Billing calculator class for ilds records
@@ -47,78 +46,6 @@ class Billrun_Calculator_Ilds extends Billrun_Calculator {
 			$this->updateRow($item);
 		}
 		Billrun_Factory::dispatcher()->trigger('afterCalculateData', array('data' => $this->data));
-	}
-	
-	/**
-	 * update the billing line with stamp to avoid another aggregation
-	 *
-	 * @param int $subscriber_id the subscriber id to update
-	 * @param Mongodloid_Entity $line the billing line to update
-	 *
-	 * @return boolean true on success else false
-	 */
-	protected function updateBillingLine($subscriber, $line) {
-		if (isset($subscriber['id'])) {
-			$subscriber_id = $subscriber['id'];
-		} else {
-			// todo: alert to log
-			return false;
-		}
-		$current = $line->getRawData();
-		$added_values = array(
-			'account_id' => $subscriber['account_id'],
-			'subscriber_id' => $subscriber_id,
-		);
-		
-		if (isset($subscriber['account_id'])) {
-			$added_values['account_id'] = $subscriber['account_id'];
-		}
-
-		$newData = array_merge($current, $added_values);
-		$line->setRawData($newData);
-		return true;
-	}
-	
-	public function  update_subscriber_details() {
-		foreach ($this->data as $item) {
-			if($item['source'] == 'api' && $item['type'] == 'refund') {
-				$time = date("YmtHis", $item->get('unified_record_time')->sec);
-				$phone_number = $item->get('NDC_SN');
-			} else  {
-				$time = $item->get('call_start_dt');
-				$phone_number = $item->get('caller_phone_no');				
-			}
-			// @TODO make it configurable
-			$previous_month = date("Ymt235959", strtotime("previous month"));
-
-			if ($time > $previous_month) {
-				Billrun_Factory::log()->log("time frame is not till the end of previous month " . $time . "; continue to the next line", Zend_Log::INFO);
-				continue;
-			}
-			
-			if (!$item->get('account_id') || !$item->get('subscriber_id')) {
-				// load subscriber
-				$subscriber = golan_subscriber::get($phone_number, $time);
-				if (!$subscriber) {
-					Billrun_Factory::log()->log("subscriber not found. phone:" . $phone_number . " time: " . $time, Zend_Log::INFO);
-					continue;
-				}
-			} else {
-				Billrun_Factory::log()->log("subscriber " . $item->get('subscriber_id') . " already in line " . $item->get('stamp'), Zend_Log::INFO);
-				$subscriber = array(
-					'account_id' => $item->get('account_id'),
-					'id' => $item->get('subscriber_id'),
-				);
-			}
-			
-			$subscriber_id = $subscriber['id'];
-			
-			// update billing line with billrun stamp
-			if (!$this->updateBillingLine($subscriber, $item)) {
-				Billrun_Factory::log()->log("subscriber " . $subscriber_id . " cannot update billing line", Zend_Log::INFO);
-				continue;
-			}
-		}
 	}
 
 	/**
