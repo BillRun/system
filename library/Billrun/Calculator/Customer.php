@@ -112,7 +112,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		$this->createBalanceIfMissing($subscriber, $billrun_key, $plan_ref);
 		return true;
 	}
-	
+
 	/**
 	 * Override parent calculator to save changes with update (not save)
 	 */
@@ -143,9 +143,13 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	protected function pullLines($queueLines) {
 		$lines = parent::pullLines($queueLines);
 		if ($this->bulk) { // load all the subscribers in one call
-			$this->subscribers = $this->loadSubscribers($lines);
+			$this->loadSubscribers($lines);
 		}
 		return $lines;
+	}
+	
+	public function isBulk() {
+		return $this->bulk;
 	}
 
 	public function loadSubscribers($rows) {
@@ -160,7 +164,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 				$params[] = $line_params;
 			}
 		}
-		return $this->subscriber->getSubscribersByParams($params);
+		$this->subscribers = $this->subscriber->getSubscribersByParams($params);
 	}
 
 	/**
@@ -251,8 +255,12 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		if (isset($line['usagev']) && $line['usagev'] !== 0) {
 			foreach ($this->translateCustomerIdentToAPI as $key => $toKey) {
 				if (isset($line[$key]) && strlen($line[$key])) {
-//					$customer_rate = $line->get('customer_rate', true);
-					$customer_rate = $line['customer_rate'];
+					if (is_array($line)) {
+						$customer_rate = $line['customer_rate'];
+					} else {
+						$customer_rate = $line->get('customer_rate', true);
+					}
+//					$customer_rate = $line['customer_rate'];
 					return (isset($customer_rate) && $customer_rate); //it  depend on customer rate to detect if the line is incoming or outgoing.
 				}
 			}
