@@ -181,7 +181,7 @@ class Processor_ImportZones extends Billrun_Processor_Base_Separator {
 		}
 
 		foreach ($ret as $value) {
-			if ($value['key'] == "IL_FIX" || $value['key'] == "IL_MOBILE") {
+			if ($value['key'] == "IL_FIX" || $value['key'] == "IL_MOBILE" || $value['key'] == "IL_PIKUD_OREF") {
 				$params_dup = array();
 				$il_prefix = "972";
 				foreach ($value['params']['prefix'] as $prefix) {
