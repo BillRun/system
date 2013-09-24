@@ -26,9 +26,6 @@ class Billrun_Calculator_Rate_Tap3 extends Billrun_Calculator_Rate {
 	 * @param $row the line CDR to update. 
 	 */
 	protected function updateRow($row) {
-		if ($row['stamp']!='3ea5d84a13fdce844348ed30cf8c71ef') {
-			return false;
-		}
 		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteRow', array('row' => $row));
 
 		$current = $row->getRawData();
