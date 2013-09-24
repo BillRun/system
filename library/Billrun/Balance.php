@@ -76,7 +76,7 @@ class Billrun_Balance implements ArrayAccess {
 		$this->data = Billrun_Factory::db()->balancesCollection()->query(array(
 				'subscriber_id' => $subscriberId,
 				'billrun_month' => $billrunKey
-			))->cursor()->current();
+			))->cursor()->limit(1)->current();
 
 		$this->data->collection(Billrun_Factory::db()->balancesCollection());
 	}

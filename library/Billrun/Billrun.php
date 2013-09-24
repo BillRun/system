@@ -55,7 +55,7 @@ class Billrun_Billrun {
 							'account_id' => $this->account_id,
 							'billrun_key' => $this->billrun_key,
 						))
-						->cursor()->current();
+						->cursor()->limit(1)->current();
 		$this->data->collection($billrun_coll);
 		return $this;
 	}
@@ -574,7 +574,7 @@ class Billrun_Billrun {
 				)
 			),
 		);
-		return $billrun_coll->query($query)->cursor()->current();
+		return $billrun_coll->query($query)->cursor()->limit(1)->current();
 	}
 
 	/**
