@@ -121,7 +121,6 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 			if (!$matchedRate) {
 				$matchedRate = $this->rates['UNRATED'];
 			}
-
 		}
 
 		return $matchedRate;
