@@ -33,7 +33,12 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	protected $billrun_lower_bound_timestamp;
 
 	public function __construct($options = array()) {
-		$autoload = $options['autoload'];
+		if (isset($options['autoload'])) {
+			$autoload = $options['autoload'];
+		} else {
+			$autoload = true;
+		}
+
 		$options['autoload'] = false;
 		parent::__construct($options);
 
