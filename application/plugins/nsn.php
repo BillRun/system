@@ -215,6 +215,9 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 				}
 			}
 			$data['unified_record_time'] = new MongoDate(Billrun_Util::dateTimeConvertShortToIso((string)$data['call_reference_time'],self::DEFAULT_TIME_OFFSET));
+			if( isset($data['charging_end_time']) && isset($data['charging_start_time']) ) {
+				$data['duration'] = strtotime($data['charging_end_time']) - strtotime($data['charging_start_time']);
+			}
 		} 
 		$parser->setLastParseLength( $data['record_length'] );
 		
