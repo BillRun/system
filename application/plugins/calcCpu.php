@@ -36,7 +36,7 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 			if ($rate->isLineLegitimate($entity)) {
 				$rate->updateRow($entity);
 			}
-			$processor->setQueueRowStep($entity['stamp'], 'rate');
+				$processor->setQueueRowStep($entity['stamp'], 'rate');
 			$line = $entity->getRawData();
 		}
 
@@ -52,7 +52,10 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 		Billrun_Factory::log('Plugin calc cpu customer', Zend_Log::INFO);
 		foreach ($data['data'] as &$line) {
 			$entity = new Mongodloid_Entity($line);
-			if ($customerCalc->isLineLegitimate($entity)) {
+			if (!isset($entity['usagev']) || $entity['usagev'] === 0) {
+				$processor->unsetQueueRow($entity['stamp']);
+			}
+			else if ($customerCalc->isLineLegitimate($entity)) {
 				if ($customerCalc->updateRow($entity) !== FALSE) {
 					$processor->setQueueRowStep($entity['stamp'], 'customer');
 				}
