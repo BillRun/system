@@ -287,19 +287,18 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 					$val = '';
 					for($i=0; $i < $length ; ++$i) {
 						$byteVal = ord($data[$i]);
-						$left = $byteVal & 0xF;
-						$right = $byteVal >> 4;
-						$digit =  $left == 0xA ? "*" : 
-									($left == 0xB ? "#" :
+						for($j = 0; $j < 2 ; $j++, $byteVal=$byteVal >> 4) {
+							$left = $byteVal & 0xF;
+							$digit =  $left == 0xB ? '*' : 
+									($left == 0xC ? '#' :
+									($left == 0xA ? 'a' :
+									($left == 0xF ? '' :
 									($left > 0xC ? dechex($left-2) :
-									 $left));
-						$digitRight =  $right == 0xA ? "*" : 
-									($right == 0xB ? "#" :
-									($right > 0xC ? dechex($right-2) :
-									 $right));
-						$val .=  $digit . $digitRight;
+									 $left))));
+							$val .= $digit;
+						}
 					}
-					$retValue = str_replace('d','',$val);
+					$retValue = $val;
 				break;
 				
 			case 'long':
