@@ -22,6 +22,7 @@
 /**
  * @see Zend_Mime
  */
+require_once 'Zend/Mime.php';
 
 /**
  * @category   Zend

@@ -22,21 +22,10 @@ class Billrun_Calculator_Rate_Tap3 extends Billrun_Calculator_Rate {
 	static protected $type = 'tap3';
 
 	/**
-	 * method to get calculator lines
-	 */
-	protected function getLines() {
-		$lines = Billrun_Factory::db()->linesCollection();
-
-		return $lines->query()
-				->in('type', array(static::$type))
-				->notExists('customer_rate')->cursor()->limit($this->limit);
-	}
-
-	/**
 	 * write the calculation into DB.
 	 * @param $row the line CDR to update. 
 	 */
-	protected function updateRow($row) {
+	public function updateRow($row) {
 		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteRow', array('row' => $row));
 
 		$current = $row->getRawData();
@@ -48,15 +37,15 @@ class Billrun_Calculator_Rate_Tap3 extends Billrun_Calculator_Rate {
 		$added_values = array(
 			'usaget' => $usage_type,
 			'usagev' => $volume,
-			'customer_rate' => ($rate !== FALSE ? $rate->getMongoID() : $rate),
+			$this->ratingField => $rate ? $rate->createRef() : $rate,
 		);
 		$newData = array_merge($current, $added_values);
 		$row->setRawData($newData);
 
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteRow', array('row' => $row));
+		return true;
 	}
-	
-	
+
 	/**
 	 * @see Billrun_Calculator_Rate::getLineVolume
 	 */
@@ -79,6 +68,7 @@ class Billrun_Calculator_Rate_Tap3 extends Billrun_Calculator_Rate {
 		}
 		return $volume;
 	}
+
 	/**
 	 * @see Billrun_Calculator_Rate::getLineUsageType
 	 */
@@ -121,12 +111,7 @@ class Billrun_Calculator_Rate_Tap3 extends Billrun_Calculator_Rate {
 		$rates = Billrun_Factory::db()->ratesCollection();
 		$log = Billrun_Factory::db()->logCollection();
 		$line_time = $row['unified_record_time'];
-
-		if (isset($row['LocationInformation']['GeographicalLocation']['ServingNetwork'])) {
-			$serving_network = $row['LocationInformation']['GeographicalLocation']['ServingNetwork'];
-		} else {
-			$serving_network = $log->query(array('source' => static::$type, 'header.stamp' => $row['header_stamp']))->cursor()->current()->get('header.data.header.sending_source');
-		}
+		$serving_network = $row['serving_network'];
 
 		if (!is_null($serving_network)) {
 			$rates = Billrun_Factory::db()->ratesCollection();
@@ -148,7 +133,8 @@ class Billrun_Calculator_Rate_Tap3 extends Billrun_Calculator_Rate {
 				);
 				$rate = $rates->query($filter_array)->cursor()->current();
 				if ($rate->getId()) {
-					return $rate->get('_id');
+					$rate->collection(Billrun_Factory::db()->ratesCollection());
+					return $rate;
 				}
 			}
 		}

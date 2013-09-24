@@ -21,8 +21,10 @@
  */
 
 /** Zend_Soap_Server */
+require_once 'Zend/Soap/Server.php';
 
 /** Zend_Soap_Client */
+require_once 'Zend/Soap/Client.php';
 
 if (extension_loaded('soap')) {
 

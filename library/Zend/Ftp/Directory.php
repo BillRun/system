@@ -67,7 +67,7 @@ class Zend_Ftp_Directory {
 	public function getContents() {
 		if ($this->_contents === null) {
 			$this->_changeToDir();
-			$this->_contents = new Zend_Ftp_Directory_Iterator($this->_path, $this->_ftp);
+			$this->_contents = new Zend_Ftp_Directory_Iterator($this, $this->_ftp);
 		}
 
 		return $this->_contents;

@@ -36,7 +36,7 @@ abstract class Billrun_Receiver_Base_LocalFiles extends Billrun_Receiver {
 
 		if (isset($options['path'])) {
 			$this->srcPath = $options['path'];
-		} else if( isset($options['receiver']) && isset($options['receiver']['path'])) {
+		} else if (isset($options['receiver']) && isset($options['receiver']['path'])) {
 			$this->srcPath = $options['receiver']['path'];
 		}
 	}
@@ -57,6 +57,7 @@ abstract class Billrun_Receiver_Base_LocalFiles extends Billrun_Receiver {
 		}
 		$files = scandir($this->srcPath);
 		$ret = array();
+		$receivedCount = 0;
 		foreach ($files as $file) {
 			$path = $this->srcPath . DIRECTORY_SEPARATOR . $file;
 			if (!$this->isFileValid($file, $path) || $this->isFileReceived($file, $type) || is_dir($path)) {
@@ -68,8 +69,14 @@ abstract class Billrun_Receiver_Base_LocalFiles extends Billrun_Receiver {
 				Billrun_Factory::log()->log("NOTICE : Couldn't relocate file from  $path.", Zend_Log::NOTICE);
 				continue;
 			}
-			$this->logDB($path);
-			$ret[] = $path;
+
+			if ($this->logDB($path) !== FALSE) {
+				$ret[] = $path;
+
+				if ((++$receivedCount) >= $this->limit) {
+					break;
+				}
+			}
 		}
 
 		Billrun_Factory::dispatcher()->trigger('afterLocalFilesReceived', array($this, $ret));

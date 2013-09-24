@@ -82,8 +82,8 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 	 * alter the file name to match the month the file was recevied to prevent duplicate files.
 	 */
 	public function beforeFTPFileReceived(&$file, $receiver, $hostName, &$extraData) {
-		if($receiver->getType() != $this->getName()) { return; } 
-		$extraData['month'] = date('Ym');
+		if($receiver->getType() != $this->getName() || !$file->isFile()) { return; } 
+		$extraData['month'] = date('Ym',strtotime($file->extraData['date']));
 	}
 
 	/**
@@ -205,7 +205,9 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 					if (isset($this->nsnConfig['fields'][$fieldDesc])) {
 							$length = intval(current($this->nsnConfig['fields'][$fieldDesc]), 10);
 							$data[$key] = $this->parseField(substr($line,$offset,$length), $this->nsnConfig['fields'][$fieldDesc]);
-							//Billrun_Factory::log()->log("Data $key : {$data[$key]}",Zend_log::DEBUG);
+							/*if($data['record_type'] == "12") {//DEBUG...
+								Billrun_Factory::log()->log("Data $key : {$data[$key]} , offset: ".  dechex($offset),Zend_log::DEBUG);
+							}*/
 							$offset += $length;
 					} else {
 						throw new Exception("Nsn:parse - Couldn't find field: $fieldDesc  ");
@@ -213,6 +215,9 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 				}
 			}
 			$data['unified_record_time'] = new MongoDate(Billrun_Util::dateTimeConvertShortToIso((string)$data['call_reference_time'],self::DEFAULT_TIME_OFFSET));
+			if( isset($data['charging_end_time']) && isset($data['charging_start_time']) ) {
+				$data['duration'] = strtotime($data['charging_end_time']) - strtotime($data['charging_start_time']);
+			}
 		} 
 		$parser->setLastParseLength( $data['record_length'] );
 		
@@ -285,19 +290,18 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 					$val = '';
 					for($i=0; $i < $length ; ++$i) {
 						$byteVal = ord($data[$i]);
-						$left = $byteVal & 0xF;
-						$right = $byteVal >> 4;
-						$digit =  $left == 0xA ? "*" : 
-									($left == 0xB ? "#" :
+						for($j = 0; $j < 2 ; $j++, $byteVal=$byteVal >> 4) {
+							$left = $byteVal & 0xF;
+							$digit =  $left == 0xB ? '*' : 
+									($left == 0xC ? '#' :
+									($left == 0xA ? 'a' :
+									($left == 0xF ? '' :
 									($left > 0xC ? dechex($left-2) :
-									 $left));
-						$digitRight =  $right == 0xA ? "*" : 
-									($right == 0xB ? "#" :
-									($right > 0xC ? dechex($right-2) :
-									 $right));
-						$val .=  $digit . $digitRight;
+									 $left))));
+							$val .= $digit;
+						}
 					}
-					$retValue = str_replace('d','',$val);
+					$retValue = $val;
 				break;
 				
 			case 'long':
@@ -412,18 +416,20 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 	 * @return the updated log  trailer entry. 
 	 */
 	protected function updateBlockData($trailer,$header,$logTrailer) {
-		if(!isset($logTrailer['block_data'])) {
-			$logTrailer['block_data'] = array();
+		if(Billrun_Factory::config()->getConfigValue('nsn.processor.save_block_header',false)) {
+			if(!isset($logTrailer['block_data'])) {
+				$logTrailer['block_data'] = array();
+			}
+			if(!isset($logTrailer['batch'])) {
+				$logTrailer['batch'] = array();
+			}
+			if(!in_array($header['batch_seq_number'], $logTrailer['batch'])) {
+				$logTrailer['batch'][] = $header['batch_seq_number'];
+			}
+			$logTrailer['block_data'][] = array( 'last_record_number' => $trailer['last_record_number'],
+																'first_record_number' => $header['first_record_number'],
+																'seq_no' =>  $header['block_seq_number']); 
 		}
-		if(!isset($logTrailer['batch'])) {
-			$logTrailer['batch'] = array();
-		}
-		if(!in_array($header['batch_seq_number'], $logTrailer['batch'])) {
-			$logTrailer['batch'][] = $header['batch_seq_number'];
-		}
-		$logTrailer['block_data'][] = array( 'last_record_number' => $trailer['last_record_number'],
-															'first_record_number' => $header['first_record_number'],
-															'seq_no' =>  $header['block_seq_number']); 
 		return $logTrailer;
 	}
 }

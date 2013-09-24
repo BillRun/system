@@ -21,6 +21,7 @@
 
 
 /** Zend_Pdf_Element */
+require_once 'Zend/Pdf/Element.php';
 
 
 /**
@@ -56,11 +57,13 @@ class Zend_Pdf_Element_Array extends Zend_Pdf_Element
         if ($val !== null  &&  is_array($val)) {
             foreach ($val as $element) {
                 if (!$element instanceof Zend_Pdf_Element) {
+                    require_once 'Zend/Pdf/Exception.php';
                     throw new Zend_Pdf_Exception('Array elements must be Zend_Pdf_Element objects');
                 }
                 $this->items[] = $element;
             }
         } else if ($val !== null){
+            require_once 'Zend/Pdf/Exception.php';
             throw new Zend_Pdf_Exception('Argument must be an array');
         }
     }
@@ -73,6 +76,7 @@ class Zend_Pdf_Element_Array extends Zend_Pdf_Element
      * @throws Zend_Pdf_Exception
      */
     public function __get($property) {
+        require_once 'Zend/Pdf/Exception.php';
         throw new Zend_Pdf_Exception('Undefined property: Zend_Pdf_Element_Array::$' . $property);
     }
 
@@ -85,6 +89,7 @@ class Zend_Pdf_Element_Array extends Zend_Pdf_Element
      * @throws Zend_Pdf_Exception
      */
     public function __set($property, $value) {
+        require_once 'Zend/Pdf/Exception.php';
         throw new Zend_Pdf_Exception('Undefined property: Zend_Pdf_Element_Array::$' . $property);
     }
 

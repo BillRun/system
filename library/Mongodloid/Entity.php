@@ -1,32 +1,9 @@
 <?php
 
 /**
-  Copyright (c) 2009, Valentin Golev
-  All rights reserved.
-
-  Redistribution and use in source and binary forms, with or without modification,
-  are permitted provided that the following conditions are met:
-
- * Redistributions of source code must retain the above copyright notice,
-  this list of conditions and the following disclaimer.
-
- * Redistributions in binary form must reproduce the above copyright notice,
-  this list of conditions and the following disclaimer in the documentation
-  and/or other materials provided with the distribution.
-
- * The names of contributors may not be used to endorse or promote products
-  derived from this software without specific prior written permission.
-
-  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-  DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
-  ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-  ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * @package         Mongodloid
+ * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
+ * @license         GNU General Public License version 2 or later; see LICENSE.txt
  */
 class Mongodloid_Entity implements ArrayAccess {
 
@@ -34,6 +11,8 @@ class Mongodloid_Entity implements ArrayAccess {
 	private $_collection;
 
 	const POPFIRST = 1;
+	
+	protected $w = 0;
 
 	private $_atomics = array(
 		'inc',
@@ -162,9 +141,10 @@ class Mongodloid_Entity implements ArrayAccess {
 		if (!$this->collection())
 			throw new Mongodloid_Exception('You need to specify the collection');
 
-		return $this->_collection->update(array(
+		$data = array(
 				'_id' => $this->getId()->getMongoID()
-				), $fields);
+		);
+		return $this->_collection->update($data, $fields, array('w' => $this->w));
 	}
 
 	public function set($key, $value, $dontSend = false) {
@@ -179,20 +159,23 @@ class Mongodloid_Entity implements ArrayAccess {
 
 		$result = $value;
 
-		if (!$dontSend && $this->getId())
+		if (!$dontSend && $this->getId()) {
 			$this->update(array('$set' => array($real_key => $value)));
-
+		}
 		return $this;
 	}
 
 	public function get() {
-		if (func_num_args()==0) {
+		if (func_num_args() == 0) {
 			return $this->_values;
 		}
 		$key = func_get_arg(0);
-			
-		if ($key == '_id')
+
+		if ($key == '_id') {
 			return $this->getId();
+		}
+
+		$disableLazyLoad = func_num_args() > 1 ? func_get_arg(1) : false;
 
 		$key = preg_replace('@\\[([^\\]]+)\\]@', '.$1', $key);
 		$result = $this->_values;
@@ -214,12 +197,48 @@ class Mongodloid_Entity implements ArrayAccess {
 			return null;
 		}
 
-		//lazy load MongoId Ref objects
-		if ($result[$key] instanceof MongoId && $this->collection()) {
-			$result[$key] = $this->collection()->findOne($result[$key]['$id']);
+		if (!$disableLazyLoad) {
+			//lazy load MongoId Ref objects or MongoDBRef
+			//http://docs.mongodb.org/manual/reference/database-references/
+			if ($result[$key] instanceof MongoId && $this->collection()) {
+				$result[$key] = $this->collection()->findOne($result[$key]['$id']);
+			} else if (MongoDBRef::isRef($result[$key])) {
+				$result[$key] = $this->loadRef($result[$key]);
+			}
 		}
 
 		return $result[$key];
+	}
+
+	/**
+	 * method to create MongoDBRef from the current entity
+	 * 
+	 * @param Mongodloid_Collection $refCollection the collection to reference to
+	 * 
+	 * @return mixed MongoDBRef if succeed, else false
+	 * @todo check if the current id exists in the collection
+	 */
+	public function createRef($refCollection = null) {
+		if (!is_null($refCollection)) {
+			$this->collection($refCollection);
+		} else if (!$this->collection()) {
+			return;
+		}
+		return $this->collection()->createRef($this->getRawData());
+	}
+
+	/**
+	 * method to load DB reference object
+	 * 
+	 * @param string $key the key of the current object which reference to another object
+	 * 
+	 * @return array the raw data of the reference object
+	 */
+	protected function loadRef($key) {
+		if (!$this->collection()) {
+			return;
+		}
+		return $this->_collection->getRef($key);
 	}
 
 	public function getId() {
@@ -241,13 +260,16 @@ class Mongodloid_Entity implements ArrayAccess {
 		$this->_values = unserialize(serialize($data));
 	}
 
-	public function save($collection = null, $save = false, $w = 1) {
+	public function save($collection = null, $save = false, $w = null) {
 		if ($collection instanceOf Mongodloid_Collection)
 			$this->collection($collection);
 
 		if (!$this->collection())
 			throw new Mongodloid_Exception('You need to specify the collection');
 
+		if (is_null($w)) {
+			$w = $this->w;
+		}
 		return $this->collection()->save($this, array('save' => $save, 'w' => $w));
 	}
 
@@ -268,6 +290,41 @@ class Mongodloid_Entity implements ArrayAccess {
 		return $this->collection()->remove($this);
 	}
 
+	/**
+	 * Method to create auto increment of document
+	 * To use this method require counters collection, created by the next command:
+	 * 
+	 * @param string $field the field to set the auto increment
+	 * @param int $min_id the default value to use for the first value
+	 * @param Mongodloid_Collection $refCollection the collection to reference to 
+	 * @return mixed the auto increment value or void on error
+	 */
+	public function createAutoInc($field, $min_id = 1, $refCollection = null) {
+
+		// check if already set auto increment for the field
+		$value = $this->get($field);
+		if ($value) {
+			return $value;
+		}
+
+		// check if collection exists for the entity
+		if (!is_null($refCollection)) {
+			$this->collection($refCollection);
+		} else if (!$this->collection()) {
+			return;
+		}
+
+		// check if id exists (cannot create auto increment without id)
+		$id = $this->getId();
+		if (!$id) {
+			return;
+		}
+
+		$inc = $this->collection()->createAutoInc($id->getMongoID(), $min_id);
+		$this->set($field, $inc);
+		return $inc;
+	}
+
 	//=============== ArrayAccess Implementation =============
 	public function offsetExists($offset) {
 		return isset($this->_values[$offset]);
@@ -283,6 +340,10 @@ class Mongodloid_Entity implements ArrayAccess {
 
 	public function offsetUnset($offset) {
 		unset($this->_values[$offset]);
+	}
+
+	public function isEmpty() {
+		return empty($this->_values);
 	}
 
 }

@@ -1,32 +1,9 @@
 <?php
 
 /**
-Copyright (c) 2009, Valentin Golev
-All rights reserved.
-
-Redistribution and use in source and binary forms, with or without modification,
-are permitted provided that the following conditions are met:
-
-    * Redistributions of source code must retain the above copyright notice,
-      this list of conditions and the following disclaimer.
-
-    * Redistributions in binary form must reproduce the above copyright notice,
-      this list of conditions and the following disclaimer in the documentation
-      and/or other materials provided with the distribution.
-
-    * The names of contributors may not be used to endorse or promote products
-      derived from this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
-ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * @package         Mongodloid
+ * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
+ * @license         GNU General Public License version 2 or later; see LICENSE.txt
  */
 class Mongodloid_Collection {
 
@@ -35,6 +12,8 @@ class Mongodloid_Collection {
 
 	const UNIQUE = 1;
 	const DROP_DUPLICATES = 2;
+	
+	protected $w = 0;
 
 	public function __construct(MongoCollection $collection, Mongodloid_DB $db) {
 		$this->_collection = $collection;
@@ -42,6 +21,9 @@ class Mongodloid_Collection {
 	}
 
 	public function update($query, $values, $options = array()) {
+		if (!isset($options['w'])) {
+			$options['w'] = $this->w;
+		}
 		return $this->_collection->update($query, $values, $options);
 	}
 
@@ -104,10 +86,14 @@ class Mongodloid_Collection {
 		return $query;
 	}
 
-	public function save(Mongodloid_Entity $entity, $save = false, $w = 1) {
+	public function save(Mongodloid_Entity $entity, $save = false, $w = null) {
 		$data = $entity->getRawData();
 
-		$result = $this->_collection->save($entity->getRawData(), array('save' => $save, 'w' => $w));
+		if (is_null($w)) {
+			$w = $this->w;
+		}
+		
+		$result = $this->_collection->save($data, array('save' => $save, 'w' => $w));
 		if (!$result)
 			return false;
 
@@ -116,7 +102,17 @@ class Mongodloid_Collection {
 	}
 
 	public function findOne($id, $want_array = false) {
-		$values = $this->_collection->findOne(array('_id' => ($id instanceof Mongodloid_Id ? $id->getMongoId() : $id) ));
+		if ($id instanceof Mongodloid_Id) {
+			$filter_id = $id->getMongoId();
+		} else if ($id instanceof MongoId) {
+			$filter_id = $id;
+		} else {
+			// probably a string
+			$filter_id = new MongoId((string) $id);
+		}
+
+		$values = $this->_collection->findOne(array('_id' => $filter_id));
+
 		if ($want_array)
 			return $values;
 
@@ -168,6 +164,141 @@ class Mongodloid_Collection {
 
 	public function getTimeout() {
 		return MongoCursor::$timeout;
+	}
+
+	/**
+	 * method to load Mongo DB reference object
+	 * 
+	 * @param MongoDBRef $ref the reference object
+	 * 
+	 * @return array
+	 */
+	public function getRef($ref) {
+		if (!MongoDBRef::isRef($ref)) {
+			return;
+		}
+		if (!($ref['$id'] instanceof MongoId)) {
+			$ref['$id'] = new MongoId($ref['$id']);
+		}
+		return new Mongodloid_Entity($this->_collection->getDBRef($ref));
+	}
+
+	/**
+	 * method to create Mongo DB reference object
+	 * 
+	 * @param array $a raw data of object to create reference to itself; later on you can use the return value to store in other collection
+	 * 
+	 * @return MongoDBRef
+	 */
+	public function createRef($a) {
+		return $this->_collection->createDBRef($a);
+	}
+
+	/**
+	 * Update a document and return it
+	 * 
+	 * @param array $query The query criteria to search for
+	 * @param array $update The update criteria
+	 * @param array $fields Optionally only return these fields
+	 * @param array $options An array of options to apply, such as remove the match document from the DB and return it
+	 * 
+	 * @return Mongodloid_Entity the original document, or the modified document when new is set.
+	 * @throws MongoResultException on failure
+	 * @see http://php.net/manual/en/mongocollection.findandmodify.php
+	 */
+	public function findAndModify(array $query, array $update = array(), array $fields = array(), array $options = array()) {
+		return new Mongodloid_Entity($this->_collection->findAndModify($query, $update, $fields, $options), $this);
+	}
+
+	/**
+	 * method to bulk insert of multiple documents
+	 * 
+	 * @param array $a array or object. If an object is used, it may not have protected or private properties
+	 * @param array $options options for the inserts.; see php documentation
+	 * 
+	 * @return mixed If the w parameter is set to acknowledge the write, returns an associative array with the status of the inserts ("ok") and any error that may have occurred ("err"). Otherwise, returns TRUE if the batch insert was successfully sent, FALSE otherwise
+	 * @see http://php.net/manual/en/mongocollection.batchinsert.php
+	 */
+	public function batchInsert(array $a, array $options = array()) {
+		if (!isset($options['w'])) {
+			$options['w'] = $this->w;
+		}
+		return $this->_collection->batchInsert($a, $options);
+	}
+
+	/**
+	 * method to insert document
+	 * 
+	 * @param array $a array or object. If an object is used, it may not have protected or private properties
+	 * @param array $options the options for the insert; see php documentation
+	 * 
+	 * @return mixed Returns an array containing the status of the insertion if the "w" option is set. Otherwise, returns TRUE if the inserted array is not empty
+	 * @see http://www.php.net/manual/en/mongocollection.insert.php
+	 */
+	public function insert($a, array $options = array()) {
+		if (!isset($options['w'])) {
+			$options['w'] = $this->w;
+		}
+		return $this->_collection->insert($a, $options);
+	}
+
+	/**
+	 * Method to create auto increment of document
+	 * To use this method require counters collection (see create.ini)
+	 * 
+	 * @param string $id the id of the document to auto increment
+	 * @param int $min_id the first value if no value exists
+	 * 
+	 * @return int the incremented value
+	 */
+	public function createAutoInc($oid, $min_id = 1) {
+
+		$countersColl = $this->_db->getCollection('counters');
+		$collection_name = $this->getName();
+
+		// try to set last seq
+		while (1) {
+			// get last seq
+			$lastSeq = $countersColl->query('coll', $collection_name)->cursor()->sort(array('seq' => -1))->limit(1)->current()->get('seq');
+			if (is_null($lastSeq)) {
+				$lastSeq = $min_id;
+			} else {
+				$lastSeq++;
+			}
+			$insert = array(
+				'coll' => $collection_name,
+				'oid' => $oid,
+				'seq' => $lastSeq
+			);
+
+			try {
+				$ret = $countersColl->insert($insert, array('w' => 1));
+			} catch (MongoCursorException $e) {
+				if ($e->getCode() == 11000) {
+					// duplicate - need to check if oid already exists
+					$ret = $this->getAutoInc($oid);
+					if (empty($ret) || !is_numeric($ret)) {
+						// if oid not exists - probably someone insert same seq at the same time
+						// let's try to insert same oid with next seq
+						continue;
+					}
+					$lastSeq = $ret;
+					break;
+				}
+			}
+			break;
+		}
+		return $lastSeq;
+	}
+
+	public function getAutoInc($oid) {
+		$countersColl = $this->_db->getCollection('counters');
+		$collection_name = $this->getName();
+		$query = array(
+			'coll' => $collection_name,
+			'oid' => $oid,
+		);
+		return $countersColl->query($query)->cursor()->limit(1)->current()->get('seq');
 	}
 
 }

@@ -21,9 +21,15 @@
  */
 
 /** Internally used classes */
+require_once 'Zend/Pdf/Element/Array.php';
+require_once 'Zend/Pdf/Element/Dictionary.php';
+require_once 'Zend/Pdf/Element/Name.php';
+require_once 'Zend/Pdf/Element/Numeric.php';
+require_once 'Zend/Pdf/Element/String.php';
 
 
 /** Zend_Pdf_Resource_Font */
+require_once 'Zend/Pdf/Resource/Font.php';
 
 /**
  * Adobe PDF CIDFont font object implementation
@@ -280,6 +286,7 @@ abstract class Zend_Pdf_Resource_Font_CidFont extends Zend_Pdf_Resource_Font
          *
          * Throw an exception.
          */
+        require_once 'Zend/Pdf/Exception.php';
         throw new Zend_Pdf_Exception('CIDFont PDF objects could not be used as the operand of the text drawing operators');
     }
 
@@ -304,6 +311,7 @@ abstract class Zend_Pdf_Resource_Font_CidFont extends Zend_Pdf_Resource_Font
          *
          * Throw an exception.
          */
+        require_once 'Zend/Pdf/Exception.php';
         throw new Zend_Pdf_Exception('CIDFont PDF objects could not be used as the operand of the text drawing operators');
     }
 
@@ -414,6 +422,7 @@ abstract class Zend_Pdf_Resource_Font_CidFont extends Zend_Pdf_Resource_Font
          *
          * Throw an exception.
          */
+        require_once 'Zend/Pdf/Exception.php';
         throw new Zend_Pdf_Exception('CIDFont PDF objects could not be used as the operand of the text drawing operators');
     }
 
@@ -435,6 +444,7 @@ abstract class Zend_Pdf_Resource_Font_CidFont extends Zend_Pdf_Resource_Font
          *
          * Throw an exception.
          */
+        require_once 'Zend/Pdf/Exception.php';
         throw new Zend_Pdf_Exception('CIDFont PDF objects could not be used as the operand of the text drawing operators');
     }
 
@@ -455,6 +465,7 @@ abstract class Zend_Pdf_Resource_Font_CidFont extends Zend_Pdf_Resource_Font
          *
          * Throw an exception.
          */
+        require_once 'Zend/Pdf/Exception.php';
         throw new Zend_Pdf_Exception('CIDFont PDF objects could not be used as the operand of the text drawing operators');
     }
 
@@ -475,6 +486,7 @@ abstract class Zend_Pdf_Resource_Font_CidFont extends Zend_Pdf_Resource_Font
          *
          * Throw an exception.
          */
+        require_once 'Zend/Pdf/Exception.php';
         throw new Zend_Pdf_Exception('CIDFont PDF objects could not be used as the operand of the text drawing operators');
     }
 }

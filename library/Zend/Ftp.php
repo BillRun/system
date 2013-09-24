@@ -199,7 +199,7 @@ class Zend_Ftp {
 
 		$this->_connect();
 
-		return new Zend_Ftp_Directory($filename, $this);
+		return Zend_Ftp_Factory::getDirecotry( $this->getSysType(), array($filename, $this));
 	}
 
 	/**
@@ -302,7 +302,7 @@ class Zend_Ftp {
 		if ($this->_currentDirectory === null) {
 			$this->_connect();
 
-			$this->_currentDirectory = new Zend_Ftp_Directory($this->_currentPath, $this);
+			$this->_currentDirectory = Zend_Ftp_Factory::getDirecotry( $this->getSysType(), array($this->_currentPath, $this));
 		}
 
 		return $this->_currentDirectory;
@@ -442,9 +442,9 @@ class Zend_Ftp {
 	 */
 	public function getSysType() {
 		if(!$this->_connection) {
-			throw new Exception("System ftype  can only be checked after a successful contection is made");
-		}
-		$ret = @ftp_systype($this->_connection);
+			throw new Exception("System type can only be checked after a successful contection is made");
+		}		
+		$ret = @ftp_systype($this->_connection);		
 		return $ret ? $ret : Zend_Ftp::UNKNOWN_SYSTEM_TYPE;
 		
 	}

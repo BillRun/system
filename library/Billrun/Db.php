@@ -41,8 +41,17 @@ class Billrun_Db extends Mongodloid_Db {
 	 * @return Billrun_Db instance of the Database
 	 */
 	static public function getInstance($config) {
-		$conn = Billrun_Connection::getInstance($config['host'], $config['port']);
-		return $conn->getDB($config['name'], $config['user'], $config['password']);
+		if (isset($config['port'])) {
+			$conn = Billrun_Connection::getInstance($config['host'], $config['port']);
+		} else {
+			$conn = Billrun_Connection::getInstance($config['host']);
+		}
+		
+		if (!isset($config['options'])) {
+			return $conn->getDB($config['name'], $config['user'], $config['password']);
+		}
+		
+		return $conn->getDB($config['name'], $config['user'], $config['password'], $config['options']);
 	}
 
 	/**
@@ -89,6 +98,10 @@ class Billrun_Db extends Mongodloid_Db {
 			return $this->collections[$name];
 		}
 		Billrun_Factory::log()->log('Collection or property' . $name . ' did not found in the DB layer', Zend_Log::ALERT);
+	}
+
+	public function execute($code, $args = array()) {
+		return $this->command(array('$eval' => $code, 'args' => $args));
 	}
 
 }

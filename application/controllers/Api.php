@@ -41,13 +41,12 @@ class ApiController extends Yaf_Controller_Abstract {
 	protected function setActions() {
 		$this->actions = Billrun_Factory::config()->getConfigValue('api.actions', array());
 	}
-	
+
 	/**
 	 * default method of api. Just print api works
 	 */
 	public function indexAction() {
-		$this->setOutput('status', true);
-		$this->setOutput('message', "Billrun API works");
+		$this->setOutput(array(array('status' => true, 'message' => 'Billrun API works')));
 	}
 
 	/**
@@ -60,15 +59,18 @@ class ApiController extends Yaf_Controller_Abstract {
 	 */
 	public function setOutput() {
 		$args = func_get_args();
-		if (count($args) == 2) {
+		$num_args = count($args);
+		if (is_array($args[0])) {
+			foreach ($args[0] as $key => $value) {
+				$this->setOutput($key, $value);
+			}
+			return true;
+		} else if ($num_args == 1) {
+			$this->output = $args[0];
+		} else if ($num_args == 2) {
 			$key = $args[0];
 			$value = $args[1];
 			$this->output->$key = $value;
-			return true;
-		} else if (is_array($args[0])) {
-			foreach($args[0] as $key => $value) {
-				$this->setOutput($key, $value);
-			}
 			return true;
 		}
 		return false;
@@ -86,12 +88,21 @@ class ApiController extends Yaf_Controller_Abstract {
 		unset($this->output->$key);
 		return $value;
 	}
-	
+
 	/**
 	 * method to set how the api output method
+	 * @param callable $output_method The callable to be called.
 	 */
 	protected function setOutputMethod() {
-		$this->getView()->outputMethod = Billrun_Factory::config()->getConfigValue('api.outputMethod');
+		$action = $this->getRequest()->getActionName();
+		$output_methods = Billrun_Factory::config()->getConfigValue('api.outputMethod');
+		if (is_null($output_methods[$action])) {
+			echo("No output method defined");
+			Billrun_Factory::log()->log('No output method defined in credit api', Zend_Log::ALERT);
+		}
+		else {
+			$this->getView()->outputMethod = $output_methods[$action];
+		}
 	}
 
 }

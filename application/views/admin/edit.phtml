@@ -1,0 +1,75 @@
+<?php
+$protected = array();
+$entity = $this->entity->getRawData();
+
+foreach ($this->protectedKeys as $key) {
+	$protected[$key] = $entity[$key];
+	unset($entity[$key]);
+}
+foreach ($this->hiddenKeys as $key) {
+	unset($entity[$key]);
+}
+
+print '<div class="form_protect">';
+foreach ($protected as $k => $v) {
+	print '<span class="label label-info">' . $k . '</span>'
+		. '<span id="form' . $k . '"class="label label-inverse">' . $v . '</span>';
+}
+print '<span id="form_type" class="hidden">' . $this->type . '</span>';
+print '<span id="form_coll" class="hidden">' . $this->collectionName . '</span>';
+print '</div>';
+?>
+<script type="text/javascript">
+	var entityJson = <?php echo json_encode($entity); ?>;
+	var _jsonData = entityJson;
+	var opt = {
+		change: function(data) {
+			/* called on every change */
+			_jsonData = data;
+		},
+		propertyclick: function(path) { /* called when a property is clicked with the JS path to that property */
+			jsonPath = JSON.parse(path);
+			var protectedKeys = <?php echo json_encode($this->protectedKeys); ?>;
+			for (p in jsonPath) {
+				if ($.inArray(jsonPath[p], protectedKeys) !== -1) {
+					$('input[title="' + jsonPath[p] + '"]').attr('disabled', 'disabled');
+				}
+			}
+		}
+	};
+	/* opt.propertyElement = '<textarea>'; */ // element of the property field, <input> is default
+	/* opt.valueElement = '<textarea>'; */  // element of the value field, <input> is default
+	var _jsonEditor = $('#jsondiv').jsonEditor(entityJson, opt);
+	$('#save').click(function saveClick() {
+		$(this).attr('disabled', 'disabled');
+		$(this).unbind("click", saveClick);
+		console.log(_jsonData);
+		var _ajaxOpts = {
+			async:true,
+			cache:false,
+			//			dataType:'json',
+			type:'POST',
+			data: {
+				id: $('#form_id').html(),
+				coll: $('#form_coll').html(),
+				type: $('#form_type').html(),
+				data: JSON.stringify(_jsonData)
+			},
+			success:function(data, textStatus, jqXHR) {
+				if (data!='null') {
+					alert(data);
+					$('#save').removeAttr("disabled");
+					$('#save').bind("click", saveClick);
+					return;
+				}
+				window.location.reload();
+			},
+			error:function(jqXHR, textStatus, errorThrown) {
+				alert('some error occured');
+			}
+		};
+		$.ajax('<?php echo $this->baseUrl; ?>/admin/save', _ajaxOpts);
+	});
+</script>
+
+<div id="jsondiv" class="json-editor"></div>

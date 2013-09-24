@@ -25,6 +25,7 @@ class ImportController extends Yaf_Controller_Abstract {
 				'type' => 'importzones',
 				'parser' => $parser,
 				'path' => '/home/shani/Documents/S.D.O.C/BillRun/backups/zone.csv'
+			
 			));
 
 		if ($import === FALSE) {
@@ -60,7 +61,6 @@ class ImportController extends Yaf_Controller_Abstract {
 		$mergePackage->setBackupPath(array()); // no backup
 		$mergePackageData = $mergePackage->process();
 
-
 		$merge_intl_networks = Billrun_Processor::getInstance(array(
 				'type' => 'mergeintlnetworks',
 				'parser' => $parser,
@@ -74,8 +74,34 @@ class ImportController extends Yaf_Controller_Abstract {
 		$merge_intl_networks->setBackupPath(array()); // no backup
 		$importMapData = $merge_intl_networks->process();
 
+		$wholesale = Billrun_Processor::getInstance(array(
+				'type' => 'wholesaleoutrates',
+				'parser' => $parser,
+				'path' => '/home/shani/Documents/S.D.O.C/BillRun/backups/wholesale/wsalein_tariff_out_v2.csv'
+			));
+
+		if ($wholesale === FALSE) {
+			exit('cannot load import processor'. PHP_EOL);
+		}
+
+		$wholesale->setBackupPath(array()); // no backup
+		$importWholesaleZones = $wholesale->process();
+		
+		$wholesalein = Billrun_Processor::getInstance(array(
+				'type' => 'wholesaleinrates',
+				'parser' => $parser,
+				'path' => '/home/shani/Documents/S.D.O.C/BillRun/backups/wholesale/wsalein_tariff_in_v2.csv'
+			));
+
+		if ($wholesalein === FALSE) {
+			exit('cannot load import processor'. PHP_EOL);
+		}
+
+		$wholesalein->setBackupPath(array()); // no backup
+		$importWholesaleIn = $wholesalein->process();
+		
 		$this->getView()->title = "BillRun | The best open source billing system";
-		$this->getView()->content = "Data import count: " . count($importData)
+		$this->getView()->content = "Data import count: " . count($importWholesaleZones)
 			. "<br />" . PHP_EOL
 			. "Data merge count: " . count($mergeData) . "<br />"
 			. "Data merge package count: " . count($mergePackageData) . "<br />"

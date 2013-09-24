@@ -21,54 +21,67 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 	 */
 	static protected $type = "nsn";
 
-	/**
-	 * method to receive the lines the calculator should take care
-	 * 
-	 * @return Mongodloid_Cursor Mongo cursor for iteration
-	 */
-	protected function getLines() {
-
-		$lines = Billrun_Factory::db()->linesCollection();
-
-		return $lines->query()
-				->equals('type', static::$type)
-				->notExists($this->ratingField)->cursor()->limit($this->limit);
+	public function __construct($options = array()) {
+		parent::__construct($options);
+		$this->loadRates();
 	}
 
 	/**
 	 * Write the calculation into DB
 	 */
-	protected function updateRow($row) {
+	public function updateRow($row) {
 		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteRow', array('row' => $row));
-
 		$usage_type = $this->getLineUsageType($row);
 		$volume = $this->getLineVolume($row, $usage_type);
 		$rate = $this->getLineRate($row, $usage_type);
 
 		$current = $row->getRawData();
 
-		$rate_reference = array(
+		$added_values = array(
 			'usaget' => $usage_type,
 			'usagev' => $volume,
-			$this->ratingField => $rate,
+			$this->ratingField => $rate ? $rate->createRef() : $rate,
 		);
-		$newData = array_merge($current, $rate_reference);
+		$newData = array_merge($current, $added_values);
 		$row->setRawData($newData);
 
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteRow', array('row' => $row));
+		return true;
 	}
-	
+
 	/**
 	 * @see Billrun_Calculator_Rate::getLineVolume
 	 */
 	protected function getLineVolume($row, $usage_type) {
-		return $row['duration'];
+		if ($usage_type == 'call') {
+			if (isset($row['duration'])) {
+				return $row['duration'];
+			} else if ($row['record_type'] == '31') { // terminated call
+				return 0;
+			}
+		}
+		if ($usage_type == 'sms') {
+			return 1;
+		}
+		return null;
 	}
 
 	/**
 	 * @see Billrun_Calculator_Rate::getLineUsageType
-	 */	
+	 */
 	protected function getLineUsageType($row) {
+		switch ($row['record_type']) {
+			case '08':
+			case '09':
+				return 'sms';
+			case '11':
+			case '12':
+			case '01':
+			case '02':
+			case '31':
+			default:
+				return 'call';
+		}
 		return 'call';
 	}
 
@@ -82,85 +95,36 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 		$ocg = $row->get('out_circuit_group');
 		$icg = $row->get('in_circuit_group');
 		$line_time = $row->get('unified_record_time');
-
-		$rates = Billrun_Factory::db()->ratesCollection();
-		$rateId = FALSE;
+		$matchedRate = false;
 
 		if ($record_type == "01" || //MOC call
-			($record_type == "11" && ($icg == "1001" || $icg == "1006" || ($icg >= "1201" && $icg <= "1209")) && ($ocg != '3051' && $ocg != '3050'))// Roaming on Cellcom and the call is not to a voice mail
+			($record_type == "11" && ($icg == "1001" || $icg == "1006" || ($icg >= "1201" && $icg <= "1209")) &&
+			($ocg != '3051' && $ocg != '3050') && ($ocg != '3061' && $ocg != '3060'))// Roaming on Cellcom and the call is not to a voice mail
 		) {
 			$called_number_prefixes = $this->getPrefixes($called_number);
-
-			$base_match = array(
-				'$match' => array(
-					'params.prefix' => array(
-						'$in' => $called_number_prefixes,
-					),
-					'rates.' . $usage_type => array('$exists' => true),
-					'params.out_circuit_group' => array(
-						'$elemMatch' => array(
-							'from' => array(
-								'$lte' => $ocg,
-							),
-							'to' => array(
-								'$gte' => $ocg
-							)
-						)
-					),
-					'from' => array(
-						'$lte' => $line_time,
-					),
-					'to' => array(
-						'$gte' => $line_time,
-					),
-				)
-			);
-
-			$unwind = array(
-				'$unwind' => '$params.prefix',
-			);
-
-			$sort = array(
-				'$sort' => array(
-					'params.prefix' => -1,
-				),
-			);
-
-			$match2 = array(
-				'$match' => array(
-					'params.prefix' => array(
-						'$in' => $called_number_prefixes,
-					),
-				)
-			);
-
-			$matched_rates = $rates->aggregate($base_match, $unwind, $sort, $match2);
-
-			if (empty($matched_rates)) {
-				$base_match = array(
-					'$match' => array(
-						'key' => 'UNRATED',
-					),
-				);
-				$matched_rates = $rates->aggregate($base_match);
+			foreach ($called_number_prefixes as $prefix) {
+				if (isset($this->rates[$prefix])) {
+					foreach ($this->rates[$prefix] as $rate) {
+						if (isset($rate['rates'][$usage_type])) {
+							if ($rate['from'] <= $line_time && $rate['to'] >= $line_time) {
+								foreach ($rate['params']['out_circuit_group'] as $groups) {
+									if ($groups['from'] <= $ocg && $groups['to'] >= $ocg) {
+										$matchedRate = $rate;
+										break 3;
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+			if (!$matchedRate) {
+				$matchedRate = $this->rates['UNRATED'];
 			}
 
-			$rateId = reset($matched_rates)['_id'];
 		}
-		return $rateId;
-	}
 
-	/**
-	 * get all the prefixes from a given number
-	 * @param type $str
-	 * @return type
-	 */
-	protected function getPrefixes($str) {
-		$prefixes = array();
-		for ($i = 0; $i < strlen($str); $i++) {
-			$prefixes[] = substr($str, 0, $i + 1);
-		}
-		return $prefixes;
+		return $matchedRate;
 	}
 
 }

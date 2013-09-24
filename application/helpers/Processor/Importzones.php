@@ -54,7 +54,9 @@ class Processor_ImportZones extends Billrun_Processor_Base_Separator {
 		}
 
 		$this->addUnrated();
-
+		$this->addGolan();
+		$this->addVAT();
+		$this->addCreditRates();
 		return true;
 	}
 
@@ -108,16 +110,44 @@ class Processor_ImportZones extends Billrun_Processor_Base_Separator {
 		$data[] = array('zoneName' => '$DEFAULT'); // does not exist in zone
 		foreach ($data as $row) {
 			$row['rates'] = array();
-			/*if (!isset($row['zoneName']) || $row['zoneName']=='ROAM_ALL_DEST' || $row['zoneName']=='$DEFAULT' || $row['zoneName']=='ALL_DESTINATION') {
-				print_R($row);
-				continue;
-			}*/
+			/* if (!isset($row['zoneName']) || $row['zoneName']=='ROAM_ALL_DEST' || $row['zoneName']=='$DEFAULT' || $row['zoneName']=='ALL_DESTINATION') {
+			  print_R($row);
+			  continue;
+			  } */
 			$key = $row['zoneName'];
-			if ($key=='UNRATED') {
+			if ($key == 'UNRATED') {
 				$ret[$key]['key'] = $key;
-			}
-			else if (!isset($ret[$key])) {
-				if (Billrun_Util::startsWith($row['zoneName'], "IL_ILD") || Billrun_Util::startsWith($row['zoneName'], "KT")) {
+			} else if ($key == 'VAT') {
+				$ret[$key]['key'] = $key;
+				$ret[$key]['vat'] = 0.18;
+				$ret[$key]['from'] = new MongoDate(1338508800);
+				$ret[$key]['to'] = new MongoDate(4531055365);
+			} else if (Billrun_Util::startsWith($key, "CREDIT")) {
+				$ret[$key]['key'] = $key;
+				$ret[$key]['from'] = new MongoDate(1338508800);
+				$ret[$key]['to'] = new MongoDate(4531055365);
+				$ret[$key]['vatable'] = $row['zoneName'] == 'CREDIT_VATABLE';
+				$ret[$key]['rates']['credit'] = array(
+					'unit' => 'seconds',
+					'rate' => array(
+						array(
+							'to' => 2147483647,
+							'price' => 1,
+							'interval' => 1,
+							'ceil' => false,
+						),
+					),
+					'category' => 'base',
+				);
+			} else if (!isset($ret[$key])) {
+				if ($key == 'GOLAN') {
+					$out_circuit_group = array(
+						array(
+							"from" => "00",
+							"to" => "152"
+						)
+					);
+				} else if (Billrun_Util::startsWith($row['zoneName'], "IL_ILD") || Billrun_Util::startsWith($row['zoneName'], "KT")) {
 					$out_circuit_group = array(
 						array(
 							"from" => "2000",
@@ -137,11 +167,11 @@ class Processor_ImportZones extends Billrun_Processor_Base_Separator {
 					);
 				}
 				$ret[$key] = array(
-					'from' => new MongoDate(strtotime('2013-01-01T00:00:00+00:00')),
+					'from' => new MongoDate(strtotime('2012-06-01T00:00:00+00:00')),
 					'to' => new MongoDate(strtotime('+100 years')),
 					'key' => $row['zoneName'],
 					'params' => array(
-						'prefix' => (isset( $row['prefix'] ) ?  array( $row['prefix'] ) : array() ),
+						'prefix' => (isset($row['prefix']) ? array($row['prefix']) : array() ),
 						'out_circuit_group' => $out_circuit_group
 					),
 				);
@@ -162,7 +192,7 @@ class Processor_ImportZones extends Billrun_Processor_Base_Separator {
 				$ret[$value['key']]['params']['prefix'] = array_merge($value['params']['prefix'], $params_dup);
 			}
 		}
-		
+
 		return $ret;
 	}
 
@@ -170,6 +200,34 @@ class Processor_ImportZones extends Billrun_Processor_Base_Separator {
 		$row = array();
 		$row['zoneName'] = "UNRATED";
 		$this->data['data'][] = $row;
+	}
+
+	protected function addGolan() {
+		$row = array();
+		$row['zoneName'] = "GOLAN";
+		$this->data['data'][] = $row;
+	}
+
+//	protected function addCredit() {
+//		$row = array();
+//		$row['zoneName'] = 
+//		$row['from'] = 
+//	}
+
+	protected function addVAT() {
+		$row = array();
+		$row['from'] = new MongoDate(1338508800);
+		$row['to'] = new MongoDate(4531055365);
+		$row['zoneName'] = 'VAT';
+		$this->data['data'][] = $row;
+	}
+
+	protected function addCreditRates() {
+		foreach (array('CREDIT_VATABLE', 'CREDIT_VAT_FREE') as $value) {
+			$row = array();
+			$row['zoneName'] = $value;
+			$this->data['data'][] = $row;
+		}
 	}
 
 }

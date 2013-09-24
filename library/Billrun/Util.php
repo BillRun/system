@@ -15,6 +15,22 @@
 class Billrun_Util {
 
 	/**
+	 * method to filter user input
+	 * 
+	 * @param mixed $input Value to filter
+	 * @param int $filter The ID of the filter to apply. The manual page lists the available filters
+	 * @param mixed $option [Optional] Associative array of options or bitwise disjunction of flags.
+	 * 
+	 * @return mixed the filtered data, or FALSE if the filter fails
+	 * 
+	 * @see http://www.php.net/manual/en/function.filter-var.php
+	 * @see http://www.php.net/manual/en/filter.filters.php
+	 */
+	public static function filter_var($input, $filter = FILTER_DEFAULT, $options = array()) {
+		return filter_var($input, $filter, $options);
+	}
+
+	/**
 	 * method to receive full datetime of last billrun time
 	 * 
 	 * @param boolean $return_timestamp set this on if you need timestamp instead of string
@@ -36,8 +52,7 @@ class Billrun_Util {
 		}
 		return $time;
 	}
-	
-	
+
 	public static function joinSubArraysOnKey($arrays, $depth = 1, $key = false) {
 
 		if ($depth == 0 || !is_array($arrays)) {
@@ -59,7 +74,7 @@ class Billrun_Util {
 		}
 		return $retArr;
 	}
-	
+
 	/**
 	 * generate array stamp
 	 * @param array $ar array to generate the stamp from
@@ -68,7 +83,7 @@ class Billrun_Util {
 	public static function generateArrayStamp($ar) {
 		return md5(serialize($ar));
 	}
-	
+
 	/**
 	 * generate current time from the base time date format
 	 * 
@@ -77,7 +92,7 @@ class Billrun_Util {
 	public static function generateCurrentTime() {
 		return date(Billrun_Base::base_dateformat);
 	}
-	
+
 	/**
 	 * Get the first value that match to a regex
 	 * @param $pattern the regex pattern
@@ -92,7 +107,7 @@ class Billrun_Util {
 		}
 		return (isset($matches[$resIndex])) ? $matches[$resIndex] : FALSE;
 	}
-	
+
 	/**
 	 * method to convert short datetime (20090213145327) into ISO-8601 format (2009-02-13T14:53:27+01:00)
 	 * the method can be relative to timezone offset
@@ -116,26 +131,32 @@ class Billrun_Util {
 	public static function startsWith($haystack, $needle) {
 		return !strncmp($haystack, $needle, strlen($needle));
 	}
-	
+
 	/**
-	 * method to receive next billrun key
+	 * method to receive billrun key by date
 	 * 
-	 * @param string $datetime the anchor datetime. can be all input types of strtotime function
+	 * @param int $timestamp a unix timestamp
 	 * @param int $dayofmonth the day of the month require to get; if omitted return config value
 	 * @return string date string of format YYYYmm
 	 */
-	public static function getNextChargeKey($datetime, $dayofmonth = null) {
+	public static function getBillrunKey($timestamp, $dayofmonth = null) {
 		if (!$dayofmonth) {
 			$dayofmonth = Billrun_Factory::config()->getConfigValue('billrun.charging_day', 25);
 		}
-		$month = date("m", $datetime);
-		$format = "Y" . $month;
-		if (date("d", $datetime) < $dayofmonth) {
-			$key = date($format);
+		$format = "Ym";
+		if (date("d", $timestamp) < $dayofmonth) {
+			$key = date($format, $timestamp);
 		} else {
-			$key = date($format, strtotime('+1 month'));
+			$key = date($format, strtotime('+1 day', strtotime('last day of this month', $timestamp)));
 		}
 		return $key;
+	}
+
+	public static function getFollowingBillrunKey($billrun_key) {
+		$datetime = $billrun_key . "01000000";
+		$month_later = strtotime('+1 month', strtotime($datetime));
+		$ret = date("Ym", $month_later);
+		return $ret;
 	}
 
 	/**
@@ -152,8 +173,51 @@ class Billrun_Util {
 			'EUR' => 4.78,
 			'USD' => 3.68,
 		);
-		
-		return $value * ($conversion[$from]/$conversion[$to]);
+
+		return $value * ($conversion[$from] / $conversion[$to]);
 	}
 
+	/**
+	 * returns the end timestamp of the input billing period
+	 * @param type $billrun_key
+	 * @return type int
+	 */
+	public static function getEndTime($billrun_key) {
+		$dayofmonth = Billrun_Factory::config()->getConfigValue('billrun.charging_day', 25);
+		$datetime = $billrun_key . $dayofmonth . "000000";
+		return strtotime('-1 second', strtotime($datetime));
+	}
+
+	/**
+	 * returns the start timestamp of the input billing period
+	 * @param type $billrun_key
+	 * @return type int
+	 */
+	public static function getStartTime($billrun_key) {
+		$dayofmonth = Billrun_Factory::config()->getConfigValue('billrun.charging_day', 25);
+		$datetime = $billrun_key . $dayofmonth . "000000";
+		return strtotime('-1 month', strtotime($datetime));
+	}
+
+	/**
+	 * 
+	 * @param type $timestamp
+	 * @return real the VAT at the current timestamp
+	 */
+	public static function getVATAtDate($timestamp) {
+		$mongo_date = new MongoDate($timestamp);
+		return Billrun_Factory::db()->ratesCollection()
+				->query('key', 'VAT')
+				->lessEq('from', $mongo_date)
+				->greaterEq('to', $mongo_date)
+				->cursor()->current()->get('vat');
+	}
+
+	public static function isTimestamp($timestamp) {
+		return ((string) (int) $timestamp === strval($timestamp)) && ($timestamp <= PHP_INT_MAX) && ($timestamp >= ~PHP_INT_MAX);
+	}
+	
+	public static function setFileModificationTime($received_path, $timestamp) {
+		return touch($received_path, $timestamp);
+	}
 }

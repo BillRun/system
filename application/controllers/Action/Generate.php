@@ -38,7 +38,9 @@ class GenerateAction extends Action_Base {
 			$this->_controller->addOutput("Loading data to Generate...");
 			$generator->load();
 			$this->_controller->addOutput("Starting to Generate. This action can take awhile...");
-			 $results = $generator->generate();
+			$generator->generate();
+			$this->_controller->addOutput("Finished generating.");
+			/* $results = $generator->generate();
 			$this->_controller->addOutput("Finish to Generate. This action can take awhile...");
 			if( method_exists($generator,'getTemplate') && $generator->getTemplate()) {
 				$template = ($generator->getTemplate()[0] == '/' ? "" : 'cli/generator/') .$generator->getTemplate();
@@ -47,7 +49,7 @@ class GenerateAction extends Action_Base {
 					fwrite($fd, $this->getView()->render($template,$report));
 					fclose($fd);	
 				}				
-			}
+			}*/
 		} else {
 			$this->_controller->addOutput("Aggregator cannot be loaded");
 		}

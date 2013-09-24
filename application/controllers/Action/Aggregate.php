@@ -24,6 +24,8 @@ class AggregateAction extends Action_Base {
 		$possibleOptions = array(
 			'type' => false,
 			'stamp' => false,
+			'page' => true,
+			'size' => true,
 		);
 		
 		if (($options = $this->_controller->getInstanceOptions($possibleOptions)) === FALSE) {
@@ -37,7 +39,7 @@ class AggregateAction extends Action_Base {
 		if ($aggregator) {
 			$this->_controller->addOutput("Loading data to Aggregate...");
 			$aggregator->load();
-			$this->_controller->addOutput("Starting to Aggregate. This action can take awhile...");
+			$this->_controller->addOutput("Starting to Aggregate. This action can take a while...");
 			$aggregator->aggregate();
 			$this->_controller->addOutput("Finish to Aggregate.");
 		} else {

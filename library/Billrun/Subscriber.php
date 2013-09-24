@@ -51,7 +51,7 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 		}
 		return null;
 	}
-	
+
 	/**
 	 * method to receive public properties of the subscriber
 	 * 
@@ -90,21 +90,26 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 	 * method to delete subsbscriber entity
 	 */
 	abstract public function delete();
-	
+
 	/**
 	 * method to check if the subscriber is valid
 	 */
 	abstract public function isValid();
-	
-	
+
 	/**
 	 * Get subscriber balance information for the current month.
 	 * @param type $subscriberId (optional)
 	 * @param type $billrunKey (optional)
 	 * @return boolean
 	 */
-	public function getBalance() {		
+	public function getBalance() {
 		return Billrun_Factory::balance()->load($this->data['subscriber_id'], Billrun_Util::getNextChargeKey(time()));
 	}
+
+	/**
+	 * get the (paged) current account(s) plans by time
+	 */
+	abstract public function getList($page, $size, $time, $acc_id = null);
 	
+	abstract static public function getSubscribersByParams($params);
 }

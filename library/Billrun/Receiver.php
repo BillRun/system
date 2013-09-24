@@ -28,8 +28,14 @@ abstract class Billrun_Receiver extends Billrun_Base {
 	 * @var string
 	 */
 	protected $workspace;
+	
+	/**
+	 *
+	 * @var boolean whether to preserve the modification timestamps of the received files
+	 */
+	protected $preserve_timestamps = true;
 
-		/**
+	/**
 	 * A regular expression to identify the files that should be downloaded
 	 * 
 	 * @param string
@@ -43,6 +49,12 @@ abstract class Billrun_Receiver extends Billrun_Base {
 		if (isset($options['filename_regex'])) {
 			$this->filenameRegex = $options['filename_regex'];
 		}
+		if(isset($options['receiver']['limit']) && $options['receiver']['limit']) {
+			$this->setLimit($options['receiver']['limit']);
+		} 
+		if(isset($options['receiver']['preserve_timestamps'])) {
+			$this->preserve_timestamps = $options['receiver']['preserve_timestamps'];
+		} 
 
 	}
 	
@@ -95,7 +107,7 @@ abstract class Billrun_Receiver extends Billrun_Base {
 		$log = Billrun_Factory::db()->logCollection();
 		$query = array();
 		Billrun_Factory::dispatcher()->trigger('alertisFileReceivedQuery', array(&$query, $type, $this));
-		$resource = $log->query($query)->equals('source', $type)->equals('file_name', $filename);
+		$resource = $log->query($query)->equals('source', $type)->equals('file_name', $filename)->cursor()->limit(1);
 		return $resource->count() > 0;
 	}
 	
@@ -107,4 +119,5 @@ abstract class Billrun_Receiver extends Billrun_Base {
 		//igonore hidden files
 		return preg_match( ( $this->filenameRegex ? $this->filenameRegex : "/^[^\.]/" ), $filename);
 	}
+
 }

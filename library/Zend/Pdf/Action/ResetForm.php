@@ -21,6 +21,7 @@
  */
 
 /** Zend_Pdf_Action */
+require_once 'Zend/Pdf/Action.php';
 
 
 /**
