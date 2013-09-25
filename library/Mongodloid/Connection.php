@@ -27,14 +27,15 @@ class Mongodloid_Connection {
 	 */
 	public function getDB($db, $user = false, $pass = false, array $options = array("connect" => TRUE)) {
 		if (!isset($this->_dbs[$db]) || !$this->_dbs[$db]) {
-			$this->forceConnect($options);
-			$newDb = $this->_connection->selectDB($db);
 			if ($user) {
 				$this->username = $user;
 			}
 			if ($pass) {
 				$this->password = $pass;
 			}
+			$options['db'] = $db;
+			$this->forceConnect($options);
+			$newDb = $this->_connection->selectDB($db);
 
 			$this->_dbs[$db] = $this->createInstance($newDb);
 		}
