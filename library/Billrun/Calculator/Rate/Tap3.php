@@ -109,7 +109,6 @@ class Billrun_Calculator_Rate_Tap3 extends Billrun_Calculator_Rate {
 	protected function getLineRate($row, $usage_type) {
 		//$header = $this->getLineHeader($row); @TODO should this be removed? 2013/06
 		$rates = Billrun_Factory::db()->ratesCollection();
-		$log = Billrun_Factory::db()->logCollection();
 		$line_time = $row['unified_record_time'];
 		$serving_network = $row['serving_network'];
 

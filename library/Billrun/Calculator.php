@@ -308,6 +308,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		);
 		Billrun_Factory::db()->queueCollection()->remove($query);
 	}
+	
 	/**
 	 * 
 	 * @param type $localquery

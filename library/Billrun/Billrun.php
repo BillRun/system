@@ -491,10 +491,11 @@ class Billrun_Billrun {
 			Billrun_Factory::log()->log("Billrun " . $billrun_key . " had a problem when updating " . $account_id . ". on  Stamp: " . $row['stamp'] . ' with error :' . $e->getMessage(), Zend_Log::ALERT); // a guess
 			return false;
 		}
-		// recovery
+
 		if ($doc->isEmpty()) { // billrun document was not found
 			if (($billrun = self::createBillrunIfNotExists($account_id, $billrun_key)) && $billrun->isEmpty()) { // means that the billrun was created so we can retry updating it
 				Billrun_Factory::log()->log("Account " . $account_id . " has been added to billrun " . $billrun_key, Zend_Log::DEBUG);
+				self::addSubscriberIfNotExists($account_id, $subscriber_id, $billrun_key);
 				return self::updateBillrun($billrun_key, $counters, $pricingData, $row, $vatable);
 			} else if (self::addSubscriberIfNotExists($account_id, $subscriber_id, $billrun_key)) {
 				Billrun_Factory::log()->log("Subscriber " . $subscriber_id . " has been added to billrun " . $billrun_key, Zend_Log::DEBUG);

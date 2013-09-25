@@ -13,6 +13,8 @@ class Mongodloid_Connection {
 	protected $_server = '';
 	protected $_dbs = array();
 	protected static $instances;
+	protected $username = '';
+	protected $password = '';
 
 	/**
 	 * Method to get database instance
@@ -28,7 +30,10 @@ class Mongodloid_Connection {
 			$this->forceConnect($options);
 			$newDb = $this->_connection->selectDB($db);
 			if ($user) {
-				$newDb->authenticate($user, $pass);
+				$this->username = $user;
+			}
+			if ($pass) {
+				$this->password = $pass;
 			}
 
 			$this->_dbs[$db] = $this->createInstance($newDb);
@@ -58,6 +63,14 @@ class Mongodloid_Connection {
 		if (isset($options['readPreference'])) {
 			$read_preference = $options['readPreference'];
 			unset($options['readPreference']);
+		}
+		
+		if (!empty($this->username)) {
+			$options['username'] = $this->username;
+		}
+		
+		if (!empty($this->password)) {
+			$options['password'] = $this->password;
 		}
 		
 		// this can throw an Exception
