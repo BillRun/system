@@ -35,7 +35,7 @@ class Billrun_Calculator_Wholesale_NationalRoamingPricing extends Billrun_Calcul
 		return $lines;
 	}
 
-	protected function updateRow($row) {
+	public function updateRow($row) {
 
 		//@TODO  change this  be be configurable.
 		$pricingData = array();
@@ -61,7 +61,7 @@ class Billrun_Calculator_Wholesale_NationalRoamingPricing extends Billrun_Calcul
 	/**
 	 * @see Billrun_Calculator::isLineLegitimate()
 	 */
-	protected function isLineLegitimate($line) {
+	public function isLineLegitimate($line) {
 		return	$line['type'] == 'nsn' && 
 				$line->get(Billrun_Calculator_Wholesale_Nsn::MAIN_DB_FIELD, true) &&
 				(	($line['record_type'] === "12" && in_array($line->get('carir', true), $this->nrCarriers)) ||

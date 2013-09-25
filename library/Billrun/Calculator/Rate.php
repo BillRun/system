@@ -26,6 +26,8 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	 * @var array
 	 */
 	protected $rateMapping = array();
+	
+	protected static $calcs = array();
 
 	/**
 	 * The rating field to update in the CDR line.
@@ -94,7 +96,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	/**
 	 * @see Billrun_Calculator::isLineLegitimate
 	 */
-	protected function isLineLegitimate($line) {
+	public function isLineLegitimate($line) {
 		return $line['type'] == static::$type;
 	}
 	
@@ -117,6 +119,15 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 			$this->removeLineFromQueue($line);
 			unset($this->lines[$line['stamp']]);
 		}
+	}
+	
+	public static function getRateCalculator($line, array $options = array()) {
+		$type = $line['type'];
+		if (!isset(self::$calcs[$type])) {
+			$class = 'Billrun_Calculator_Rate_' . ucfirst($type);
+			self::$calcs[$type] = new $class($options);
+		}
+		return self::$calcs[$type];
 	}
 
 }

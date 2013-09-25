@@ -29,7 +29,7 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 	/**
 	 * Write the calculation into DB
 	 */
-	protected function updateRow($row) {
+	public function updateRow($row) {
 		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteRow', array('row' => $row));
 		$usage_type = $this->getLineUsageType($row);
 		$volume = $this->getLineVolume($row, $usage_type);

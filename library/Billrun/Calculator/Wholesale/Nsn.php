@@ -35,7 +35,7 @@ class Billrun_Calculator_Wholesale_Nsn extends Billrun_Calculator_Wholesale {
 	/**
 	 * Write the calculation into DB
 	 */
-	protected function updateRow($row) {
+	public function updateRow($row) {
 
 		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteRow', array('row' => $row));
 		//Billrun_Factory::log()->log("Line start : getLineZone  start : ".microtime(true));
@@ -203,7 +203,7 @@ class Billrun_Calculator_Wholesale_Nsn extends Billrun_Calculator_Wholesale {
 	/**
 	 * @see Billrun_Calculator::isLineLegitimate()
 	 */
-	protected function isLineLegitimate($line) {
+	public function isLineLegitimate($line) {
 		return $line['type'] == 'nsn' &&
 			in_array($line['usaget'], array('call', 'sms')) &&
 			in_array($line['record_type'], $this->wholesaleRecords);

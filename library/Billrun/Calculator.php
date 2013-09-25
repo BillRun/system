@@ -117,7 +117,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	/**
 	 * write the calculation into DB
 	 */
-	abstract protected function updateRow($row);
+	abstract public function updateRow($row);
 
 	/**
 	 * execute the calculation process
@@ -308,6 +308,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		);
 		Billrun_Factory::db()->queueCollection()->remove($query);
 	}
+	
 	/**
 	 * 
 	 * @param type $localquery

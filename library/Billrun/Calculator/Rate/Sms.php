@@ -32,7 +32,7 @@ class Billrun_Calculator_Rate_Sms extends Billrun_Calculator_Rate {
 	 * Write the calculation into DB.
 	 * @param $row the line CDR to update. 
 	 */
-	protected function updateRow($row) {
+	public function updateRow($row) {
 		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteRow', array('row' => $row));
 
 		$current = $row->getRawData();
@@ -130,7 +130,7 @@ class Billrun_Calculator_Rate_Sms extends Billrun_Calculator_Rate {
 	/**
 	 * @see Billrun_Calculator::isLineLegitimate
 	 */
-	protected function isLineLegitimate($line) {
+	public function isLineLegitimate($line) {
 		return $line['type'] == 'smsc' || $line['type'] == 'mmsc' || $line['type'] == 'smpp';
 	}
 }

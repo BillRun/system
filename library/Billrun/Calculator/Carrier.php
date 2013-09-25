@@ -41,7 +41,7 @@ class Billrun_Calculator_Carrier extends Billrun_Calculator {
 		return $this->getQueuedLines(array());
 	}
 
-	protected function updateRow($row) {
+	public function updateRow($row) {
 		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteRow', array('row' => $row));
 		$carrierOut = $this->detectCarrierOut($row);
 		$carrierIn = $this->detectCarrierIn($row);
@@ -133,7 +133,7 @@ class Billrun_Calculator_Carrier extends Billrun_Calculator {
 	/**
 	 * @see Billrun_Calculator::isLineLegitimate
 	 */
-	protected function isLineLegitimate($line) {
+	public function isLineLegitimate($line) {
 		return $line['type'] == 'nsn';
 	}
 

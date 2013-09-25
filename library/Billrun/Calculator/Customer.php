@@ -82,9 +82,9 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	/**
 	 * write the calculation into DB
 	 */
-	protected function updateRow($row) {
+	public function updateRow($row) {
 		$row->collection($this->lines_coll);
-		if ($this->bulk) {
+		if ($this->isBulk()) {
 			$this->subscribersByStamp();
 			$subscriber = isset($this->subscribers[$row['stamp']]) ? $this->subscribers[$row['stamp']] : FALSE;
 		} else {
@@ -112,7 +112,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		$this->createBalanceIfMissing($subscriber, $billrun_key, $plan_ref);
 		return true;
 	}
-	
+
 	/**
 	 * Override parent calculator to save changes with update (not save)
 	 */
@@ -143,24 +143,29 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	protected function pullLines($queueLines) {
 		$lines = parent::pullLines($queueLines);
 		if ($this->bulk) { // load all the subscribers in one call
-			$this->subscribers = $this->loadSubscribers($lines);
+			$this->loadSubscribers($lines);
 		}
 		return $lines;
 	}
-
-	protected function loadSubscribers($rows) {
+	
+	public function isBulk() {
+		return $this->bulk;
+	}
+	
+	public function loadSubscribers($rows) {
+		$this->subscribers_by_stamp = false;
 		$params = array();
-		foreach ($rows as $key => $row) {
+		foreach ($rows as $row) {
 			$line_params = $this->getIdentityParams($row);
 			if (count($line_params) == 0) {
-				Billrun_Factory::log('Couldn\'t identify caller for line of stamp ' . $row->get('stamp'), Zend_Log::ALERT);
+				Billrun_Factory::log('Couldn\'t identify caller for line of stamp ' . $row['stamp'], Zend_Log::ALERT);
 			} else if ($this->isLineLegitimate($row)) {
-				$line_params['time'] = date(Billrun_Base::base_dateformat, $row->get('unified_record_time')->sec);
-				$line_params['stamp'] = $row->get('stamp');
+				$line_params['time'] = date(Billrun_Base::base_dateformat, $row['unified_record_time']->sec);
+				$line_params['stamp'] = $row['stamp'];
 				$params[] = $line_params;
 			}
 		}
-		return $this->subscriber->getSubscribersByParams($params);
+		$this->subscribers = $this->subscriber->getSubscribersByParams($params);
 	}
 
 	/**
@@ -185,8 +190,8 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	protected function getIdentityParams($row) {
 		$params = array();
 		foreach ($this->translateCustomerIdentToAPI as $key => $toKey) {
-			if ($row->get($key)) {
-				$params[$toKey['toKey']] = preg_replace($toKey['clearRegex'], '', $row->get($key));
+			if (isset($row[$key])) {
+				$params[$toKey['toKey']] = preg_replace($toKey['clearRegex'], '', $row[$key]);
 				//$this->subscriberNumber = $params[$toKey['toKey']];
 				Billrun_Factory::log("found identification for row : {$row['stamp']} from {$key} to " . $toKey['toKey'] . ' with value :' . $params[$toKey['toKey']], Zend_Log::DEBUG);
 				break;
@@ -247,11 +252,16 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	/**
 	 * @see Billrun_Calculator::isLineLegitimate
 	 */
-	protected function isLineLegitimate($line) {
+	public function isLineLegitimate($line) {
 		if (isset($line['usagev']) && $line['usagev'] !== 0) {
 			foreach ($this->translateCustomerIdentToAPI as $key => $toKey) {
 				if (isset($line[$key]) && strlen($line[$key])) {
-					$customer_rate = $line->get('customer_rate', true);
+					if (is_array($line)) {
+						$customer_rate = $line['customer_rate'];
+					} else {
+						$customer_rate = $line->get('customer_rate', true);
+					}
+//					$customer_rate = $line['customer_rate'];
 					return (isset($customer_rate) && $customer_rate); //it  depend on customer rate to detect if the line is incoming or outgoing.
 				}
 			}

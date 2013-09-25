@@ -25,7 +25,7 @@ class Billrun_Calculator_Rate_Tap3 extends Billrun_Calculator_Rate {
 	 * write the calculation into DB.
 	 * @param $row the line CDR to update. 
 	 */
-	protected function updateRow($row) {
+	public function updateRow($row) {
 		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteRow', array('row' => $row));
 
 		$current = $row->getRawData();
@@ -107,12 +107,14 @@ class Billrun_Calculator_Rate_Tap3 extends Billrun_Calculator_Rate {
 	 * @see Billrun_Calculator_Rate::getLineRate
 	 */
 	protected function getLineRate($row, $usage_type) {
-		//$header = $this->getLineHeader($row); @TODO should this be removed? 2013/06	
+		//$header = $this->getLineHeader($row); @TODO should this be removed? 2013/06
+		$rates = Billrun_Factory::db()->ratesCollection();
 		$line_time = $row['unified_record_time'];
 		$serving_network = $row['serving_network'];
 
 		if (!is_null($serving_network)) {
 			$rates = Billrun_Factory::db()->ratesCollection();
+
 			if (isset($usage_type)) {
 				$filter_array = array(
 					'params.serving_networks' => array(

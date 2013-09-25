@@ -92,7 +92,7 @@ class Billrun_Calculator_Ilds extends Billrun_Calculator_Rate {
 	/**
 	 * Write the calculation into DB
 	 */
-	protected function updateRow($row) {
+	public function updateRow($row) {
 		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteRow', array('row' => $row));
 
 		$current = $row->getRawData();

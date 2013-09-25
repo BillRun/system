@@ -48,6 +48,12 @@ abstract class Billrun_Processor extends Billrun_Base {
 	protected $data = array('data' => array());
 
 	/**
+	 * the container work on
+	 * @var array
+	 */
+	protected $queue_data = array();
+	
+	/**
 	 * flag indicate to make bulk insert into database
 	 * 
 	 * @var boolean
@@ -246,6 +252,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 			}
 
 			Billrun_Factory::dispatcher()->trigger('afterProcessorParsing', array($this));
+			$this->prepareQueue();
 			Billrun_Factory::dispatcher()->trigger('beforeProcessorStore', array($this));
 
 			if ($this->store() === FALSE) {
@@ -342,7 +349,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 			if (!$this->bulkAddToCollection($lines)) {
 				return false;
 			}
-			if (!$this->bulkAddToQueue($queue_data)) {
+			if (!$this->bulkAddToQueue()) {
 				return false;
 			}
 		} else {
@@ -533,8 +540,9 @@ abstract class Billrun_Processor extends Billrun_Base {
 		return true;
 	}
 
-	protected function bulkAddToQueue($queue_data) {
+	protected function bulkAddToQueue() {
 		$queue = Billrun_Factory::db()->queueCollection();
+		$queue_data = array_values($this->queue_data);
 		try {
 			$bulkOptions = array(
 				'continueOnError' => true,
@@ -587,15 +595,64 @@ abstract class Billrun_Processor extends Billrun_Base {
 		}
 	}
 
-	protected function getQueueData() {
-		$queue_data = array();
-		$empty_calcs = array('calc_name' => false, 'calc_time' => false);
-		foreach ($this->data['data'] as $row) { //@TODO use array_column instead
-			$queue_data[] = array_merge(array('stamp' => $row['stamp'], 'type' => $row['type'], 'unified_record_time' => $row['unified_record_time']), $empty_calcs);
+	/**
+	 * prepare the queue before insert
+	 */
+	protected function prepareQueue() {
+		foreach ($this->data['data'] as $row) {
+			$row = array(
+				'stamp' => $row['stamp'], 
+				'type' => $row['type'], 
+				'unified_record_time' => $row['unified_record_time'], 
+				'calc_name' => false, 
+				'calc_time' => false
+			);
+			$this->setQueueRow($row);
 		}
-		return $queue_data;
+	}
+	
+	/**
+	 * get the queue data
+	 * 
+	 * @return array
+	 */
+	public function getQueueData() {
+		return $this->queue_data;
+	}
+	
+	/**
+	 * set queue row
+	 * @param array $row
+	 */
+	public function setQueueRow($row) {
+		$this->queue_data[$row['stamp']] = $row;
 	}
 
+	/**
+	 * set queue row step
+	 * this method enable to step forward or backword queue step
+	 * 
+	 * @param string $stamp
+	 * @param string $step
+	 */
+	public function setQueueRowStep($stamp, $step) {
+		$this->queue_data[$stamp]['calc_name'] = $step;
+	}
+
+	/**
+	 * unset row from the queue to disable it from inserted to DB queue collection
+	 * 
+	 * @param string $stamp the row (to unset) stamp
+	 */
+	public function unsetQueueRow($stamp) {
+		unset($this->queue_data[$stamp]);
+	}
+
+	/**
+	 * method to check if the queue is full (depend on configuration queue.max_size)
+	 * 
+	 * @return boolean true if full else false
+	 */
 	protected function isQueueFull() {
 		$queue_max_size = Billrun_Factory::config()->getConfigValue("queue.max_size", 999999999);
 		return (Billrun_Factory::db()->queueCollection()->count() >= $queue_max_size);
