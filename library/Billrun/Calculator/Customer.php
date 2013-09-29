@@ -109,7 +109,9 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			return false;
 		}
 		$billrun_key = Billrun_Util::getBillrunKey($row->get('unified_record_time')->sec);
-		$this->createBalanceIfMissing($subscriber, $billrun_key, $plan_ref);
+		if (!$this->createBalanceIfMissing($subscriber, $billrun_key, $plan_ref)) {
+			return false;
+		}
 		return true;
 	}
 
@@ -147,11 +149,11 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		}
 		return $lines;
 	}
-	
+
 	public function isBulk() {
 		return $this->bulk;
 	}
-	
+
 	public function loadSubscribers($rows) {
 		$this->subscribers_by_stamp = false;
 		$params = array();
@@ -201,14 +203,15 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	}
 
 	/**
-	 * Create a subscriber  entry if none exists. 
+	 * Create a subscriber entry if none exists. Uses an update query only if the balance doesn't exist
 	 * @param type $subscriber
 	 */
 	protected function createBalanceIfMissing($subscriber, $billrun_key, $plan_ref) {
 		$balance = Billrun_Factory::balance(array('subscriber_id' => $subscriber->subscriber_id, 'billrun_key' => $billrun_key));
-		if (!$balance->isValid()) {
-			$balance->create($billrun_key, $subscriber, $plan_ref);
+		if ($balance->isValid() || Billrun_Balance::createBalanceIfMissing($subscriber, $billrun_key, $plan_ref)) {
+			return true;
 		}
+		return false;
 	}
 
 	/**
