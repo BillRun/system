@@ -453,14 +453,14 @@ class Generator_Golan extends Billrun_Generator {
 
 	protected function getCharge($line) {
 		if (!($line['type'] == 'credit' && isset($line['credit_type']) && $line['credit_type'] == 'refund')) {
-			return abs($line['cprice']);
+			return abs($line['price_customer']);
 		}
 		return 0;
 	}
 
 	protected function getCredit($line) {
 		if ($line['type'] == 'credit' && isset($line['credit_type']) && $line['credit_type'] == 'refund') {
-			return abs($line['cprice']);
+			return abs($line['price_customer']);
 		}
 		return 0;
 	}
