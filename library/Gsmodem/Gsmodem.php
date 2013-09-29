@@ -155,6 +155,13 @@ class Gsmodem_Gsmodem  {
 	}
 	
 	/**
+	 * Retrive the modem phone number
+	 */
+	public function getModemNumber() {
+		return ""; //TODO implement
+	}
+	
+	/**
 	 * Check if the current instance is  valid  and  can be used.
 	 * @return	TRUE if  you can use this instance ,
 	 *			FALSE if some problem occured and  you better of using  another one (if this  happens too much yell at you sysadmin... :P)
