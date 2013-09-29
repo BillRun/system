@@ -144,7 +144,7 @@ class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 		// @TODO trigger before update row
 
 		$current = $billrun->getRawData();
-		$added_charge = $line->get('price_customer');
+		$added_charge = $line->get('aprice');
 
 		if (!is_numeric($added_charge)) {
 			//raise an error
@@ -213,8 +213,8 @@ class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 		$this->data = $lines->query()
 				->equals('source', 'ilds')
 				->notExists('billrun')
-				->exists('price_provider')
-				->exists('price_customer')
+				->exists('pprice')
+				->exists('aprice')
 				->cursor()->hint(array('source' => 1));
 
 		Billrun_Factory::log()->log("aggregator entities loaded: " . $this->data->count(), Zend_Log::INFO);

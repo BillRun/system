@@ -14,7 +14,7 @@
  */
 class Billrun_Calculator_Wholesale_WholesalePricing extends Billrun_Calculator_Wholesale {
 
-	const MAIN_DB_FIELD = 'price_provider';
+	const MAIN_DB_FIELD = 'pprice';
 
 	protected $pricingField = self::MAIN_DB_FIELD;
 
@@ -50,7 +50,7 @@ class Billrun_Calculator_Wholesale_WholesalePricing extends Billrun_Calculator_W
 
 		if (isset($row['usagev']) && $zoneKey) {	
 			$rates = $this->getCarrierRateForZoneAndType(
-				$this->loadDBRef($row->get($this->isLineIncoming($row) ? 'carir_in' : 'carir',true)), $zoneKey, $row['usaget'], ($this->isPeak($row) ? 'peak' : 'off_peak')
+				$this->loadDBRef($row->get($this->isLineIncoming($row) ? 'wscin' : 'wsc',true)), $zoneKey, $row['usaget'], ($this->isPeak($row) ? 'peak' : 'off_peak')
 			);
 			if ($rates) {
 				$pricingData = $this->getLinePricingData($row['usagev'], $rates);
@@ -74,7 +74,7 @@ class Billrun_Calculator_Wholesale_WholesalePricing extends Billrun_Calculator_W
 	 * @return true is the line  is incoming to golan.
 	 */
 	protected function isLineIncoming($row) {
-		$carir = $this->loadDBRef($row->get('carir',true));
+		$carir = $this->loadDBRef($row->get('wsc',true));
 		return $carir['key'] == 'GOLAN' || $carir['key'] == 'NR';
 	}
 
@@ -83,7 +83,7 @@ class Billrun_Calculator_Wholesale_WholesalePricing extends Billrun_Calculator_W
 	 */
 	public function isLineLegitimate($line) {
 		return $line['type'] == 'nsn' && 
-				$line->get('provider_zone', true) &&
+				$line->get('pzone', true) &&
 				($line->get(Billrun_Calculator_Carrier::MAIN_DB_FIELD,true) !== null && $line->get(Billrun_Calculator_Carrier::MAIN_DB_FIELD . "_in",true) != null) &&
 				$line->get(Billrun_Calculator_Wholesale_Nsn::MAIN_DB_FIELD,true) != false &&	in_array($line['record_type'], $this->wholesaleRecords);
 	}

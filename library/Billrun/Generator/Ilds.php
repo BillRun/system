@@ -132,7 +132,7 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 					$billing_record->CTXT_CALL_OUT_DESTINATIONPNB = $line['called_no'];
 					$billing_record->CTXT_CALL_IN_CLI = $line['caller_phone_no'];
 					$billing_record->CHARGEDURATIONINSEC = $line['chrgbl_call_dur'];
-					$billing_record->CHARGE = $line['price_customer'];
+					$billing_record->CHARGE = $line['aprice'];
 					$billing_record->TARIFFKIND = 'Call';
 					$billing_record->INTERNATIONAL = '1';
 					$billing_record->ILD = $line['type'];

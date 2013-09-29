@@ -244,7 +244,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 			'usaget' => 'flat',
 			'urt' => new MongoDate(),
 			'billrun_key' => $billrun_key,
-			'price_customer' => $this->getFlatPrice(),
+			'aprice' => $this->getFlatPrice(),
 			'plan_ref' => $this->getPlan()->createRef(),
 		);
 		$stamp = md5($flat_entry['account_id'] . $flat_entry['subscriber_id'] . $flat_entry['billrun_key']);

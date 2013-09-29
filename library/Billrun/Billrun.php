@@ -318,13 +318,13 @@ class Billrun_Billrun {
 	protected static function getUpdateCostsQuery($pricingData, $row, $vatable) {
 		$vat_key = ($vatable ? "vatable" : "vat_free");
 		if (isset($pricingData['over_plan']) && $pricingData['over_plan']) {
-			$update['$inc']['subs.$.costs.over_plan.' . $vat_key] = $pricingData['price_customer'];
+			$update['$inc']['subs.$.costs.over_plan.' . $vat_key] = $pricingData['aprice'];
 		} else if (isset($pricingData['out_plan']) && $pricingData['out_plan']) {
-			$update['$inc']['subs.$.costs.out_plan.' . $vat_key] = $pricingData['price_customer'];
+			$update['$inc']['subs.$.costs.out_plan.' . $vat_key] = $pricingData['aprice'];
 		} else if ($row['type'] == 'flat') {
-			$update['$inc']['subs.$.costs.flat.' . $vat_key] = $pricingData['price_customer'];
+			$update['$inc']['subs.$.costs.flat.' . $vat_key] = $pricingData['aprice'];
 		} else if ($row['type'] == 'credit') {
-			$update['$inc']['subs.$.costs.credit.' . $row['credit_type'] . '.' . $vat_key] = $pricingData['price_customer'];
+			$update['$inc']['subs.$.costs.credit.' . $row['credit_type'] . '.' . $vat_key] = $pricingData['aprice'];
 		} else {
 			$update = array();
 		}
@@ -384,7 +384,7 @@ class Billrun_Billrun {
 	 */
 	protected static function getBreakdownKeys($row, $pricingData, $vatable) {
 		if ($row['type'] != 'flat') {
-			$rate = $row['customer_rate'];
+			$rate = $row['arate'];
 		}
 		if ($row['type'] == 'credit') {
 			$plan_key = 'credit';
@@ -424,7 +424,7 @@ class Billrun_Billrun {
 		}
 
 		if (!isset($zone_key)) {
-			$zone_key = $row['customer_rate']['key'];
+			$zone_key = $row['arate']['key'];
 		}
 		return array($plan_key, $category_key, $zone_key);
 	}
@@ -448,16 +448,16 @@ class Billrun_Billrun {
 					$volume_priced = current($counters);
 				}
 				$update['$inc']['subs.$.breakdown.' . $plan_key . '.' . $category_key . '.' . $zone_key . '.totals.' . key($counters) . '.usagev'] = $volume_priced;
-				$update['$inc']['subs.$.breakdown.' . $plan_key . '.' . $category_key . '.' . $zone_key . '.totals.' . key($counters) . '.cost'] = $pricingData['price_customer'];
+				$update['$inc']['subs.$.breakdown.' . $plan_key . '.' . $category_key . '.' . $zone_key . '.totals.' . key($counters) . '.cost'] = $pricingData['aprice'];
 				if ($plan_key != 'in_plan') {
-					$update['$inc']['subs.$.breakdown.' . $plan_key . '.' . $category_key . '.' . $zone_key . '.cost'] = $pricingData['price_customer'];
+					$update['$inc']['subs.$.breakdown.' . $plan_key . '.' . $category_key . '.' . $zone_key . '.cost'] = $pricingData['aprice'];
 				}
 			} else if ($zone_key == 'service') { // flat
-				$update['$inc']['subs.$.breakdown.' . $plan_key . '.' . $category_key . '.' . $zone_key . '.cost'] = $pricingData['price_customer'];
+				$update['$inc']['subs.$.breakdown.' . $plan_key . '.' . $category_key . '.' . $zone_key . '.cost'] = $pricingData['aprice'];
 			}
 			$update['$set']['subs.$.breakdown.' . $plan_key . '.' . $category_key . '.' . $zone_key . '.vat'] = ($vatable ? floatval(Billrun_Factory::config()->getConfigValue('pricing.vat', 0.18)) : 0); //@TODO we assume here that all the lines would be vatable or all vat-free
 		} else {
-			$update['$inc']['subs.$.breakdown.' . $plan_key . '.' . $category_key . '.' . $zone_key] = $pricingData['price_customer'];
+			$update['$inc']['subs.$.breakdown.' . $plan_key . '.' . $category_key . '.' . $zone_key] = $pricingData['aprice'];
 		}
 		return $update;
 	}

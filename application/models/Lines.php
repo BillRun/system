@@ -49,10 +49,10 @@ class LinesModel extends TableModel {
 		if (isset($entity['urt'])) {
 			$entity['urt'] = (new Zend_Date($entity['urt']->sec, null, new Zend_Locale('he_IL')))->getIso();
 		}
-		if (isset($entity['customer_rate'])) {
-			$data = $entity->get('customer_rate', false);
+		if (isset($entity['arate'])) {
+			$data = $entity->get('arate', false);
 			if ($data instanceof Mongodloid_Entity) {
-				$entity['customer_rate'] = $data->get('key');
+				$entity['arate'] = $data->get('key');
 			}
 		}
 		if (isset($entity['billrun_ref'])) {
@@ -78,13 +78,13 @@ class LinesModel extends TableModel {
 
 	public function update($data) {
 		$currentDate = new MongoDate();
-		if (isset($data['customer_rate'])) {
+		if (isset($data['arate'])) {
 			$ratesColl = Billrun_Factory::db()->ratesCollection();
-			$rateEntity = $ratesColl->query('key', $data['customer_rate'])
+			$rateEntity = $ratesColl->query('key', $data['arate'])
 					->lessEq('from', $currentDate)
 					->greaterEq('to', $currentDate)
 					->cursor()->current();
-			$data['customer_rate'] = $rateEntity->createRef($ratesColl);
+			$data['arate'] = $rateEntity->createRef($ratesColl);
 		}
 		if (isset($data['plan'])) {
 			$plansColl = Billrun_Factory::db()->plansCollection();
@@ -113,7 +113,7 @@ class LinesModel extends TableModel {
 			'usaget' => 'Usage type',
 			'usagev' => 'Amount',
 			'plan' => 'Plan',
-			'price_customer' => 'Price',
+			'aprice' => 'Price',
 			'billrun' => 'Billrun',
 			'urt' => 'Time',
 			'_id' => 'Id',
@@ -188,10 +188,10 @@ class LinesModel extends TableModel {
 					$month_ago = new MongoDate(strtotime("1 month ago"));
 					return array(
 						'$or' => array(
-							array('customer_rate' => $unrated_rate), // customer rate is "UNRATED"
+							array('arate' => $unrated_rate), // customer rate is "UNRATED"
 							array('subscriber_id' => false), // or subscriber not found
 							array('$and' => array(// old unpriced records which should've been priced
-									array('customer_rate' => array(
+									array('arate' => array(
 											'$exists' => true,
 											'$nin' => array(
 												false, $unrated_rate
@@ -204,7 +204,7 @@ class LinesModel extends TableModel {
 									array('urt' => array(
 											'$lt' => $month_ago
 									)),
-									array('price_customer' => array(
+									array('aprice' => array(
 											'$exists' => false
 									)),
 							)),
@@ -252,7 +252,7 @@ class LinesModel extends TableModel {
 			'usaget' => 'Usage type',
 			'usagev' => 'Amount',
 			'plan' => 'Plan',
-			'price_customer' => 'Price',
+			'aprice' => 'Price',
 			'billrun_key' => 'Billrun',
 			'urt' => 'Time',
 		);

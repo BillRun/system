@@ -14,7 +14,7 @@
  */
 class Billrun_Calculator_Wholesale_Nsn extends Billrun_Calculator_Wholesale {
 
-	const MAIN_DB_FIELD = 'provider_zone';
+	const MAIN_DB_FIELD = 'pzone';
 	
 	protected $ratingField = self::MAIN_DB_FIELD;	
 			

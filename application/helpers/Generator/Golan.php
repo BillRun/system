@@ -453,42 +453,42 @@ class Generator_Golan extends Billrun_Generator {
 
 	protected function getCharge($line) {
 		if (!($line['type'] == 'credit' && isset($line['credit_type']) && $line['credit_type'] == 'refund')) {
-			return abs($line['price_customer']);
+			return abs($line['aprice']);
 		}
 		return 0;
 	}
 
 	protected function getCredit($line) {
 		if ($line['type'] == 'credit' && isset($line['credit_type']) && $line['credit_type'] == 'refund') {
-			return abs($line['price_customer']);
+			return abs($line['aprice']);
 		}
 		return 0;
 	}
 
 	protected function getAccessPrice($line) {
-		if (isset($line['usaget']) && isset($line['customer_rate']['rates'][$line['usaget']]['access'])) {
-			return $line['customer_rate']['rates'][$line['usaget']]['access'];
+		if (isset($line['usaget']) && isset($line['arate']['rates'][$line['usaget']]['access'])) {
+			return $line['arate']['rates'][$line['usaget']]['access'];
 		}
 		return 0;
 	}
 
 	protected function getInterval($line) {
-		if (isset($line['usaget']) && isset($line['customer_rate']['rates'][$line['usaget']]['rate']['interval'])) {
-			return $line['customer_rate']['rates'][$line['usaget']]['rate']['interval'];
+		if (isset($line['usaget']) && isset($line['arate']['rates'][$line['usaget']]['rate']['interval'])) {
+			return $line['arate']['rates'][$line['usaget']]['rate']['interval'];
 		}
 		return 0;
 	}
 
 	protected function getRate($line) {
-		if (isset($line['usaget']) && isset($line['customer_rate']['rates'][$line['usaget']]['rate']['price'])) {
-			return $line['customer_rate']['rates'][$line['usaget']]['rate']['price'];
+		if (isset($line['usaget']) && isset($line['arate']['rates'][$line['usaget']]['rate']['price'])) {
+			return $line['arate']['rates'][$line['usaget']]['rate']['price'];
 		}
 		return 0;
 	}
 
 	protected function getIntlFlag($line) {
-		if (isset($line['usaget']) && isset($line['customer_rate']['rates'][$line['usaget']]['category'])) {
-			$category = $line['customer_rate']['rates'][$line['usaget']]['category'];
+		if (isset($line['usaget']) && isset($line['arate']['rates'][$line['usaget']]['category'])) {
+			$category = $line['arate']['rates'][$line['usaget']]['category'];
 			if ($category == 'intl' || $category == 'roaming') {
 				return 1;
 			}
@@ -521,8 +521,8 @@ class Generator_Golan extends Billrun_Generator {
 	}
 
 	protected function getTariffItem($line) {
-		if (isset($line['customer_rate']['key'])) {
-			return $line['customer_rate']['key']; //@todo they may expect ROAM_ALL_DEST / $DEFAULT etc. which we don't keep
+		if (isset($line['arate']['key'])) {
+			return $line['arate']['key']; //@todo they may expect ROAM_ALL_DEST / $DEFAULT etc. which we don't keep
 		} else if ($line['type'] == 'credit' && isset($line['reason'])) {
 			return $line['reason'];
 		} else {

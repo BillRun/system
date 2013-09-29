@@ -14,7 +14,7 @@
  */
 class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 
-	protected $pricingField = 'price_customer';
+	protected $pricingField = 'aprice';
 	static protected $type = "pricing";
 
 	/**
@@ -319,8 +319,8 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @see Billrun_Calculator::isLineLegitimate
 	 */
 	public function isLineLegitimate($line) {
-		$customer_rate = $line->get('customer_rate', true);
-		return isset($customer_rate) && $customer_rate !== false &&
+		$arate = $line->get('arate', true);
+		return isset($arate) && $arate !== false &&
 				isset($line['subscriber_id']) && $line['subscriber_id'] !== false &&
 				$line['urt']->sec >= $this->billrun_lower_bound_timestamp;
 	}
@@ -360,12 +360,12 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @param type $db_ref
 	 */
 	protected function getRowRate($row) {
-		$raw_rate = $row->get('customer_rate', true);
+		$raw_rate = $row->get('arate', true);
 		$id_str = strval($raw_rate['$id']);
 		if (isset($this->rates[$id_str])) {
 			return $this->rates[$id_str];
 		} else {
-			return $row->get('customer_rate', false);
+			return $row->get('arate', false);
 		}
 	}
 
@@ -379,7 +379,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		if (isset($this->plans[$id_str])) {
 			return $this->plans[$id_str];
 		} else {
-			return $sub_balance->get('customer_rate', false);
+			return $sub_balance->get('arate', false);
 		}
 	}
 
