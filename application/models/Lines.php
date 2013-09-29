@@ -114,7 +114,7 @@ class LinesModel extends TableModel {
 			'usagev' => 'Amount',
 			'plan' => 'Plan',
 			'price_customer' => 'Price',
-			'billrun_key' => 'Billrun',
+			'billrun' => 'Billrun',
 			'urt' => 'Time',
 			'_id' => 'Id',
 		);
