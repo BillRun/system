@@ -66,17 +66,14 @@ class Billrun_Balance implements ArrayAccess {
 		return call_user_func_array(array($this->data, $name), $arguments);
 	}
 
-	/**
-	 * method to save balance details
-	 */
 	public function load($subscriberId, $billrunKey = NULL) {
 
-		$billrunKey = !$billrunKey ? Billrun_Util::getNextChargeKey(time()) : $billrunKey;
+		$billrunKey = !$billrunKey ? Billrun_Util::getBillrunKey(time()) : $billrunKey;
 
 		$this->data = Billrun_Factory::db()->balancesCollection()->query(array(
-				'subscriber_id' => $subscriberId,
-				'billrun_month' => $billrunKey
-			))->cursor()->current();
+					'subscriber_id' => $subscriberId,
+					'billrun_month' => $billrunKey
+				))->cursor()->current();
 
 		$this->data->collection(Billrun_Factory::db()->balancesCollection());
 	}
@@ -104,25 +101,42 @@ class Billrun_Balance implements ArrayAccess {
 	 * @return boolean
 	 */
 	public function create($billrunKey, $subscriber, $plan_ref) {
-		$ret = FALSE;
+		$ret = self::createBalanceIfMissing($subscriber->account_id, $subscriber->subscriber_id, $billrunKey, $plan_ref);
+		$this->load($subscriber->subscriber_id, $billrunKey);
+		return $ret;
+	}
+
+	public static function createBalanceIfMissing($account_id, $subscriber_id, $billrun_key, $plan_ref) {
+		$ret = false;
 		$balances_coll = Billrun_Factory::db()->balancesCollection();
 		$query = array(
-			'subscriber_id' => $subscriber->subscriber_id,
-			'billrun_month' => $billrunKey,
+			'subscriber_id' => $subscriber_id,
+			'billrun_month' => $billrun_key,
 		);
 		$update = array(
-			'$setOnInsert' => self::getEmptySubscriberEntry($billrunKey, $subscriber->account_id, $subscriber->subscriber_id, $plan_ref),
+			'$setOnInsert' => self::getEmptySubscriberEntry($billrun_key, $account_id, $subscriber_id, $plan_ref),
 		);
 		$options = array(
-			"upsert" => true,
+			'upsert' => true,
+			'w' => 1,
 		);
 		$output = $balances_coll->update($query, $update, $options);
-		if ($output['ok'] && isset($output['upserted'])) {
-			Billrun_Factory::log('Added subscriber ' . $subscriber->subscriber_id . ' to balances collection', Zend_Log::INFO);
-			$ret = true;
-		}
 
-		$this->load($subscriber->subscriber_id, $billrunKey);
+		if ($output['ok']) {
+			if (isset($output['updatedExisting']) && $output['updatedExisting']) {
+				$ret = true;
+			}
+			elseif (isset($output['upserted'])) {
+				$ret = true;
+				Billrun_Factory::log('Added subscriber ' . $subscriber_id . ' to balances collection', Zend_Log::INFO);
+			}
+			else {
+				Billrun_Factory::log('Error creating balance ' . $billrun_key . ' for subscriber ' . $subscriber_id, Zend_Log::ALERT);
+			}
+		}
+		else {
+			Billrun_Factory::log('Couldn\'t update balance ' . $billrun_key . ' for subscriber ' . $subscriber_id, Zend_Log::ALERT);
+		}
 		return $ret;
 	}
 
@@ -154,9 +168,9 @@ class Billrun_Balance implements ArrayAccess {
 	protected function isExists($subscriberId, $billrunKey) {
 
 		$blnce = Billrun_Factory::db()->balancesCollection()->query(array(
-				'subscriber_id' => $subscriberId,
-				'billrun_month' => $billrunKey
-			))->cursor()->current();
+					'subscriber_id' => $subscriberId,
+					'billrun_month' => $billrunKey
+				))->cursor()->current();
 
 		if (!count($blnce->getRawData())) {
 			return FALSE;

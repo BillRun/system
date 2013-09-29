@@ -14,17 +14,15 @@
  */
 class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 
-    protected $pricingField = 'price_customer';
-    static protected $type = "pricing";
+	protected $pricingField = 'price_customer';
+	static protected $type = "pricing";
 
 	/**
 	 *
 	 * @var boolean is customer price vatable by default
 	 */
 	protected $vatable = true;
-
 	protected $plans = array();
-
 
 	/**
 	 *
@@ -86,7 +84,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 						continue;
 					}
 					$this->data[$line['stamp']] = $line;
-				}				
+				}
 				//$this->updateLinePrice($item); //@TODO  this here to prevent divergance  between the priced lines and the subscriber's balance/billrun if the process fails in the middle.
 				Billrun_Factory::dispatcher()->trigger('afterPricingDataRow', array('data' => &$line));
 			}
@@ -95,9 +93,19 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	}
 
 	public function updateRow($row) {
+		$plan_ref = $this->addPlanRef($row, $row['plan']);
+		if (is_null($plan_ref)) {
+			Billrun_Factory::log('No plan found for subscriber ' . $row['subscriber_id'], Zend_Log::ALERT);
+			return false;
+		}
+		$billrun_key = Billrun_Util::getBillrunKey($row->get('unified_record_time')->sec);
+		if (!($balance = $this->createBalanceIfMissing($row['account_id'], $row['subscriber_id'], $billrun_key, $plan_ref))) {
+			return false;
+		}
+		else if ($balance===true) {
+			$balance = null;
+		}
 		$rate = $this->getRowRate($row);
-
-		$billrun_key = Billrun_Util::getBillrunKey($row['unified_record_time']->sec);
 
 		//TODO  change this to be configurable.
 		$pricingData = array();
@@ -115,7 +123,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				$accessPrice = isset($rate['rates'][$usage_type]['access']) ? $rate['rates'][$usage_type]['access'] : 0;
 				$pricingData = array($this->pricingField => $accessPrice + $this->getPriceByRates($rate['rates'][$usage_type]['rate'], $volume));
 			} else {
-				$pricingData = $this->updateSubscriberBalance(array($usage_class_prefix . $usage_type => $volume), $row, $billrun_key, $usage_type, $rate, $volume);
+				$pricingData = $this->updateSubscriberBalance(array($usage_class_prefix . $usage_type => $volume), $row, $billrun_key, $usage_type, $rate, $volume, $balance);
 			}
 			if (!$pricingData) { // balance wasn't found
 				return false;
@@ -128,7 +136,6 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 //				$billrun_info['billrun_key'] = $billrun['billrun_key'];
 //				$billrun_info['billrun_ref'] = $billrun->createRef(Billrun_Factory::db()->billrunCollection());
 			}
-
 		} else {
 			Billrun_Factory::log()->log("Line with stamp " . $row['stamp'] . " is missing volume information", Zend_Log::ALERT);
 			return false;
@@ -175,18 +182,16 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		$price = $accessPrice + $this->getPriceByRates($typedRates['rate'], $volumeToPrice);
 		//Billrun_Factory::log()->log("Rate : ".print_r($typedRates,1),  Zend_Log::DEBUG);
 		$ret[$this->pricingField] = $price;
-
-
 		return $ret;
 	}
-	
+
 	/**
 	 * Override parent calculator to save changes with update (not save)
 	 */
 	public function writeLine($line, $dataKey) {
 		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteLine', array('data' => $line));
 		$save = array();
-		$saveProperties = array($this->pricingField, 'billrun', 'over_plan', 'in_plan', 'out_plan');
+		$saveProperties = array($this->pricingField, 'billrun', 'over_plan', 'in_plan', 'out_plan', 'plan_ref');
 		foreach ($saveProperties as $p) {
 			if (!is_null($val = $line->get($p, true))) {
 				$save['$set'][$p] = $val;
@@ -200,7 +205,6 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			unset($this->data[$dataKey]);
 		}
 	}
-
 
 	/**
 	 * Calculates the price for the given volume (w/o access price)
@@ -240,17 +244,18 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @param int $volume The usage volume (seconds of call, count of SMS, bytes  of data)
 	 * @return mixed array with the pricing data on success, false otherwise
 	 */
-	protected function updateSubscriberBalance($counters, $row, $billrun_key, $usage_type, $rate, $volume) {
+	protected function updateSubscriberBalance($counters, $row, $billrun_key, $usage_type, $rate, $volume, $subscriber_balance = null) {
 		$balance_unique_key = array('subscriber_id' => $row['subscriber_id'], 'billrun_key' => $billrun_key);
-		$subscriber_balance = Billrun_Factory::balance($balance_unique_key);
+		if (is_null($subscriber_balance)) {
+			$subscriber_balance = Billrun_Factory::balance($balance_unique_key);
+		}
 		if (!$subscriber_balance || !$subscriber_balance->isValid()) {
 			Billrun_Factory::log()->log("couldn't get balance for : " . print_r(array(
 						'subscriber_id' => $row['subscriber_id'],
 						'billrun_month' => $billrun_key
 							), 1), Zend_Log::ALERT);
 			return false;
-		}
-		else {
+		} else {
 			Billrun_Factory::log()->log("Found balance " . $billrun_key . " for subscriber " . $row['subscriber_id'], Zend_Log::DEBUG);
 		}
 
@@ -375,6 +380,34 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			return $this->plans[$id_str];
 		} else {
 			return $sub_balance->get('customer_rate', false);
+		}
+	}
+
+	/**
+	 * Add plan reference to line
+	 * @param Mongodloid_Entity $row
+	 * @param string $plan
+	 */
+	protected function addPlanRef($row, $plan) {
+		$planObj = Billrun_Factory::plan(array('name' => $plan, 'time' => $row['unified_record_time']->sec));
+		if (!$planObj->get('_id')) {
+			Billrun_Factory::log("Couldn't get plan for CDR line : {$row['stamp']} with plan $plan", Zend_Log::ALERT);
+			return;
+		}
+		$row['plan_ref'] = $planObj->createRef();
+		return $row->get('plan_ref', true);
+	}
+
+	/**
+	 * Create a subscriber entry if none exists. Uses an update query only if the balance doesn't exist
+	 * @param type $subscriber
+	 */
+	protected function createBalanceIfMissing($account_id, $subscriber_id, $billrun_key, $plan_ref) {
+		$balance = Billrun_Factory::balance(array('subscriber_id' => $subscriber_id, 'billrun_key' => $billrun_key));
+		if ($balance->isValid()) {
+			return $balance;
+		} else {
+			return Billrun_Balance::createBalanceIfMissing($account_id, $subscriber_id, $billrun_key, $plan_ref);
 		}
 	}
 
