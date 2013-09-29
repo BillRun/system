@@ -102,16 +102,6 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			$subscriber_field = $subscriber->{$field};
 			$row[$field] = $subscriber_field;
 		}
-
-		$plan_ref = $this->addPlanRef($row, $subscriber->plan);
-		if (is_null($plan_ref)) {
-			Billrun_Factory::log('No plan found for subscriber ' . $subscriber->subscriber_id, Zend_Log::ALERT);
-			return false;
-		}
-		$billrun_key = Billrun_Util::getBillrunKey($row->get('unified_record_time')->sec);
-		if (!$this->createBalanceIfMissing($subscriber, $billrun_key, $plan_ref)) {
-			return false;
-		}
 		return true;
 	}
 
@@ -200,33 +190,6 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			}
 		}
 		return $params;
-	}
-
-	/**
-	 * Create a subscriber entry if none exists. Uses an update query only if the balance doesn't exist
-	 * @param type $subscriber
-	 */
-	protected function createBalanceIfMissing($subscriber, $billrun_key, $plan_ref) {
-		$balance = Billrun_Factory::balance(array('subscriber_id' => $subscriber->subscriber_id, 'billrun_key' => $billrun_key));
-		if ($balance->isValid() || Billrun_Balance::createBalanceIfMissing($subscriber, $billrun_key, $plan_ref)) {
-			return true;
-		}
-		return false;
-	}
-
-	/**
-	 * Add plan reference to line
-	 * @param Mongodloid_Entity $row
-	 * @param string $plan
-	 */
-	protected function addPlanRef($row, $plan) {
-		$planObj = Billrun_Factory::plan(array('name' => $plan, 'time' => $row['unified_record_time']->sec));
-		if (!$planObj->get('_id')) {
-			Billrun_Factory::log("Couldn't get plan for CDR line : {$row['stamp']} with plan $plan", Zend_Log::ALERT);
-			return;
-		}
-		$row['plan_ref'] = $planObj->createRef();
-		return $row->get('plan_ref', true);
 	}
 
 	/**

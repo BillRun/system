@@ -101,21 +101,20 @@ class Billrun_Balance implements ArrayAccess {
 	 * @return boolean
 	 */
 	public function create($billrunKey, $subscriber, $plan_ref) {
-		$ret = self::createBalanceIfMissing($subscriber, $billrunKey, $plan_ref);
-
+		$ret = self::createBalanceIfMissing($subscriber->account_id, $subscriber->subscriber_id, $billrunKey, $plan_ref);
 		$this->load($subscriber->subscriber_id, $billrunKey);
 		return $ret;
 	}
 
-	public static function createBalanceIfMissing($subscriber, $billrun_key, $plan_ref) {
+	public static function createBalanceIfMissing($account_id, $subscriber_id, $billrun_key, $plan_ref) {
 		$ret = false;
 		$balances_coll = Billrun_Factory::db()->balancesCollection();
 		$query = array(
-			'subscriber_id' => $subscriber->subscriber_id,
+			'subscriber_id' => $subscriber_id,
 			'billrun_month' => $billrun_key,
 		);
 		$update = array(
-			'$setOnInsert' => self::getEmptySubscriberEntry($billrun_key, $subscriber->account_id, $subscriber->subscriber_id, $plan_ref),
+			'$setOnInsert' => self::getEmptySubscriberEntry($billrun_key, $account_id, $subscriber_id, $plan_ref),
 		);
 		$options = array(
 			'upsert' => true,
@@ -129,14 +128,14 @@ class Billrun_Balance implements ArrayAccess {
 			}
 			elseif (isset($output['upserted'])) {
 				$ret = true;
-				Billrun_Factory::log('Added subscriber ' . $subscriber->subscriber_id . ' to balances collection', Zend_Log::INFO);
+				Billrun_Factory::log('Added subscriber ' . $subscriber_id . ' to balances collection', Zend_Log::INFO);
 			}
 			else {
-				Billrun_Factory::log('Error creating balance ' . $billrun_key . ' for subscriber ' . $subscriber->subscriber_id, Zend_Log::ALERT);
+				Billrun_Factory::log('Error creating balance ' . $billrun_key . ' for subscriber ' . $subscriber_id, Zend_Log::ALERT);
 			}
 		}
 		else {
-			Billrun_Factory::log('Couldn\'t update balance ' . $billrun_key . ' for subscriber ' . $subscriber->subscriber_id, Zend_Log::ALERT);
+			Billrun_Factory::log('Couldn\'t update balance ' . $billrun_key . ' for subscriber ' . $subscriber_id, Zend_Log::ALERT);
 		}
 		return $ret;
 	}
