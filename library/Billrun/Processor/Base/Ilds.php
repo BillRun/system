@@ -102,7 +102,7 @@ class Billrun_Processor_Base_Ilds extends Billrun_Processor {
 					// @todo: trigger after row parse (including $header, $row)
 					$row['source'] = self::$type;
 					$row['type'] = static::$type;
-					$row['header_stamp'] = $this->data['header']['stamp'];
+//					$row['header_stamp'] = $this->data['header']['stamp'];
 					$row['file'] = basename($this->filePath);
 					$row['process_time'] = date(self::base_dateformat);
 					$row['urt'] = new MongoDate(  Billrun_Util::dateTimeConvertShortToIso( $row['call_start_dt'] ,$this->defTimeOffset ) );

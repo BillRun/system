@@ -109,7 +109,7 @@ abstract class Billrun_Processor_Base_SeparatorFieldLines extends Billrun_Proces
 			// @todo: trigger after row parse (including $header, $row)
 			$row['source'] = self::$type;
 			$row['type'] = static::$type;
-			$row['header_stamp'] = $this->data['header']['stamp'];
+//			$row['header_stamp'] = $this->data['header']['stamp'];
 			$row['file'] = basename($this->filePath);
 			$row['process_time'] = date(self::base_dateformat);
 			if ($this->line_numbers) {
