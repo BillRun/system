@@ -98,7 +98,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			Billrun_Factory::log('No plan found for subscriber ' . $row['subscriber_id'], Zend_Log::ALERT);
 			return false;
 		}
-		$billrun_key = Billrun_Util::getBillrunKey($row->get('unified_record_time')->sec);
+		$billrun_key = Billrun_Util::getBillrunKey($row->get('urt')->sec);
 		if (!($balance = $this->createBalanceIfMissing($row['account_id'], $row['subscriber_id'], $billrun_key, $plan_ref))) {
 			return false;
 		}
@@ -295,7 +295,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	protected function removeBalanceTx($row) {
 		$balances_coll = Billrun_Factory::db()->balancesCollection();
 		$subscriber_id = $row['subscriber_id'];
-		$billrun_key = Billrun_Util::getBillrunKey($row['unified_record_time']->sec);
+		$billrun_key = Billrun_Util::getBillrunKey($row['urt']->sec);
 		$query = array(
 			'billrun_month' => $billrun_key,
 			'subscriber_id' => $subscriber_id,
@@ -322,7 +322,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		$customer_rate = $line->get('customer_rate', true);
 		return isset($customer_rate) && $customer_rate !== false &&
 				isset($line['subscriber_id']) && $line['subscriber_id'] !== false &&
-				$line['unified_record_time']->sec >= $this->billrun_lower_bound_timestamp;
+				$line['urt']->sec >= $this->billrun_lower_bound_timestamp;
 	}
 
 	/**
@@ -389,7 +389,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @param string $plan
 	 */
 	protected function addPlanRef($row, $plan) {
-		$planObj = Billrun_Factory::plan(array('name' => $plan, 'time' => $row['unified_record_time']->sec));
+		$planObj = Billrun_Factory::plan(array('name' => $plan, 'time' => $row['urt']->sec));
 		if (!$planObj->get('_id')) {
 			Billrun_Factory::log("Couldn't get plan for CDR line : {$row['stamp']} with plan $plan", Zend_Log::ALERT);
 			return;

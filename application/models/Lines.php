@@ -30,7 +30,7 @@ class LinesModel extends TableModel {
 	public function getProtectedKeys($entity, $type) {
 		$parent_protected = parent::getProtectedKeys($entity, $type);
 		if ($type == 'update') {
-			return array_merge($parent_protected, array("type", "account_id", "subscriber_id", "billrun_ref", "file", "header_stamp", "imsi", "source", "stamp", "unified_record_time", "usaget", "billrun"));
+			return array_merge($parent_protected, array("type", "account_id", "subscriber_id", "billrun_ref", "file", "header_stamp", "imsi", "source", "stamp", "urt", "usaget", "billrun"));
 		}
 		return $parent_protected;
 	}
@@ -46,8 +46,8 @@ class LinesModel extends TableModel {
 
 		$entity = parent::getItem($id);
 
-		if (isset($entity['unified_record_time'])) {
-			$entity['unified_record_time'] = (new Zend_Date($entity['unified_record_time']->sec, null, new Zend_Locale('he_IL')))->getIso();
+		if (isset($entity['urt'])) {
+			$entity['urt'] = (new Zend_Date($entity['urt']->sec, null, new Zend_Locale('he_IL')))->getIso();
 		}
 		if (isset($entity['customer_rate'])) {
 			$data = $entity->get('customer_rate', false);
@@ -115,7 +115,7 @@ class LinesModel extends TableModel {
 			'plan' => 'Plan',
 			'price_customer' => 'Price',
 			'billrun_key' => 'Billrun',
-			'unified_record_time' => 'Time',
+			'urt' => 'Time',
 			'_id' => 'Id',
 		);
 		return $columns;
@@ -152,7 +152,7 @@ class LinesModel extends TableModel {
 			),
 			'from' => array(
 				'key' => 'from',
-				'db_key' => 'unified_record_time',
+				'db_key' => 'urt',
 				'input_type' => 'date',
 				'comparison' => '$gte',
 				'display' => 'From',
@@ -160,7 +160,7 @@ class LinesModel extends TableModel {
 			),
 			'to' => array(
 				'key' => 'to',
-				'db_key' => 'unified_record_time',
+				'db_key' => 'urt',
 				'input_type' => 'date',
 				'comparison' => '$lte',
 				'display' => 'To',
@@ -201,7 +201,7 @@ class LinesModel extends TableModel {
 											'$exists' => true,
 											'$ne' => false,
 									)),
-									array('unified_record_time' => array(
+									array('urt' => array(
 											'$lt' => $month_ago
 									)),
 									array('price_customer' => array(
@@ -254,7 +254,7 @@ class LinesModel extends TableModel {
 			'plan' => 'Plan',
 			'price_customer' => 'Price',
 			'billrun_key' => 'Billrun',
-			'unified_record_time' => 'Time',
+			'urt' => 'Time',
 		);
 	}
 

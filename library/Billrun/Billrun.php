@@ -339,7 +339,7 @@ class Billrun_Billrun {
 	 */
 	protected static function getUpdateDataCountersQuery($usage_type, $row) {
 		if ($usage_type == 'data') {
-			$date_key = date("Ymd", $row['unified_record_time']->sec);
+			$date_key = date("Ymd", $row['urt']->sec);
 			$update['$inc']['subs.$.lines.data.counters.' . $date_key] = $row['usagev'];
 		} else {
 			$update = array();

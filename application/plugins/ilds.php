@@ -32,7 +32,7 @@ class ildsPlugin extends Billrun_Plugin_BillrunPluginFraud {
 				'event_stamp' => array('$exists' => false),
 				'deposit_stamp' => array('$exists' => false),
 //				'call_start_dt' => array('$gte' => $charge_time),
-				'unified_record_time' => array('$gte' => new MongoDate($charge_time)),
+				'urt' => array('$gte' => new MongoDate($charge_time)),
 				'price_customer' => array('$exists' => true),
 				'billrun' => array('$exists' => false),
 			),

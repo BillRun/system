@@ -242,7 +242,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 			'source' => 'billrun',
 			'type' => 'flat',
 			'usaget' => 'flat',
-			'unified_record_time' => new MongoDate(),
+			'urt' => new MongoDate(),
 			'billrun_key' => $billrun_key,
 			'price_customer' => $this->getFlatPrice(),
 			'plan_ref' => $this->getPlan()->createRef(),

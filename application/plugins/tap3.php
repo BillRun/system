@@ -151,7 +151,7 @@ class tap3Plugin extends Billrun_Plugin_BillrunPluginBase implements Billrun_Plu
 	protected function surfaceCDRFields(&$cdrLine) {
 		if (isset($cdrLine['basicCallInformation']['CallEventStartTimeStamp']['localTimeStamp'])) {
 			$offset = $this->currentFileHeader['networkInfo']['UtcTimeOffsetInfoList'][$cdrLine['basicCallInformation']['CallEventStartTimeStamp']['TimeOffsetCode']];
-			$cdrLine['unified_record_time'] = new MongoDate(Billrun_Util::dateTimeConvertShortToIso($cdrLine['basicCallInformation']['CallEventStartTimeStamp']['localTimeStamp'], $offset));
+			$cdrLine['urt'] = new MongoDate(Billrun_Util::dateTimeConvertShortToIso($cdrLine['basicCallInformation']['CallEventStartTimeStamp']['localTimeStamp'], $offset));
 		}
 
 		if (isset($cdrLine['basicCallInformation']['chargeableSubscriber']['simChargeableSubscriber']['imsi'])) {

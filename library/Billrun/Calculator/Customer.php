@@ -152,7 +152,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			if (count($line_params) == 0) {
 				Billrun_Factory::log('Couldn\'t identify caller for line of stamp ' . $row['stamp'], Zend_Log::ALERT);
 			} else if ($this->isLineLegitimate($row)) {
-				$line_params['time'] = date(Billrun_Base::base_dateformat, $row['unified_record_time']->sec);
+				$line_params['time'] = date(Billrun_Base::base_dateformat, $row['urt']->sec);
 				$line_params['stamp'] = $row['stamp'];
 				$params[] = $line_params;
 			}
@@ -173,7 +173,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			return;
 		}
 
-		$params['time'] = date(Billrun_Base::base_dateformat, $row->get('unified_record_time')->sec);
+		$params['time'] = date(Billrun_Base::base_dateformat, $row->get('urt')->sec);
 		$params['stamp'] = $row->get('stamp');
 
 		return $this->subscriber->load($params);

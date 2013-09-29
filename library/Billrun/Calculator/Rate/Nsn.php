@@ -94,7 +94,7 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 		$called_number = $row->get('called_number');
 		$ocg = $row->get('out_circuit_group');
 		$icg = $row->get('in_circuit_group');
-		$line_time = $row->get('unified_record_time');
+		$line_time = $row->get('urt');
 		$matchedRate = false;
 
 		if ($record_type == "01" || //MOC call

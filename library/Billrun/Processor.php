@@ -603,7 +603,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 			$row = array(
 				'stamp' => $row['stamp'], 
 				'type' => $row['type'], 
-				'unified_record_time' => $row['unified_record_time'], 
+				'urt' => $row['urt'], 
 				'calc_name' => false, 
 				'calc_time' => false
 			);

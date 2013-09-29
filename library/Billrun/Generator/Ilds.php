@@ -97,7 +97,7 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 			->notExists('billrun_excluded')
 			// todo check how to use hint with 2 indexes
 			->cursor()->hint(array('subscriber_id' => 1))
-			->sort(array('unified_record_time' => 1));
+			->sort(array('urt' => 1));
 			
 		foreach ($resource as $entity) {
 			$ret[] = $entity->getRawData();

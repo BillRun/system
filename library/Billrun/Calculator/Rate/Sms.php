@@ -73,7 +73,7 @@ class Billrun_Calculator_Rate_Sms extends Billrun_Calculator_Rate {
 			($row['type'] == 'mmsc' && ('S' == $row['action']) && $row['final_state'] == 'S' && preg_match('/^\+\d+\/TYPE\s*=\s*.*golantelecom/', $row['mm_source_addr']))
 		) {
 			$called_number = preg_replace('/[^\d]/', '', preg_replace('/^0+/', '', ($row['type'] != 'mmsc' ? $row['called_msc'] : $row['recipent_addr'])));
-			$line_time = $row['unified_record_time'];
+			$line_time = $row['urt'];
 
 			$rates = Billrun_Factory::db()->ratesCollection();
 			//Billrun_Factory::log()->log("row : ".print_r($row ,1),  Zend_Log::DEBUG);

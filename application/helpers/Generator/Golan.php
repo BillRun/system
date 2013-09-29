@@ -87,7 +87,7 @@ class Generator_Golan extends Billrun_Generator {
 					$line = $lines_coll->getRef($ref);
 					if (!$line->isEmpty()) {
 						$billing_record = $billing_records->addChild('BILLING_RECORD');
-						$billing_record->TIMEOFBILLING = $this->getGolanDate($line['unified_record_time']->sec);
+						$billing_record->TIMEOFBILLING = $this->getGolanDate($line['urt']->sec);
 						$billing_record->TARIFFITEM = $this->getTariffItem($line);
 						$billing_record->CTXT_CALL_OUT_DESTINATIONPNB = $this->getCalledNo($line); //@todo maybe save dest_no in all processors and use it here
 						$billing_record->CTXT_CALL_IN_CLI = $this->getCallerNo($line); //@todo maybe save it in all processors and use it here
@@ -453,14 +453,14 @@ class Generator_Golan extends Billrun_Generator {
 
 	protected function getCharge($line) {
 		if (!($line['type'] == 'credit' && isset($line['credit_type']) && $line['credit_type'] == 'refund')) {
-			return abs($line['price_customer']);
+			return abs($line['cprice']);
 		}
 		return 0;
 	}
 
 	protected function getCredit($line) {
 		if ($line['type'] == 'credit' && isset($line['credit_type']) && $line['credit_type'] == 'refund') {
-			return abs($line['price_customer']);
+			return abs($line['cprice']);
 		}
 		return 0;
 	}

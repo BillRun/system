@@ -151,7 +151,7 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 					'called_number' => array('$regex' => '^(?=10[^1]|1016|016|97216)....'),
 					'duration' => array('$gt' => 0),
 					//@TODO  switch to unified time once you have the time to test it
-					//'unified_record_time' => array('$gt' => $charge_time),
+					//'urt' => array('$gt' => $charge_time),
 					'charging_start_time' => array('$gte' => $fromDate),
 				),
 			),
@@ -225,7 +225,7 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 					}
 				}
 			}
-			$data['unified_record_time'] = new MongoDate(Billrun_Util::dateTimeConvertShortToIso((string) $data['call_reference_time'], self::DEFAULT_TIME_OFFSET));
+			$data['urt'] = new MongoDate(Billrun_Util::dateTimeConvertShortToIso((string) $data['call_reference_time'], self::DEFAULT_TIME_OFFSET));
 		}
 		if (isset($data['in_circuit_group_name']) && preg_match("/^RCEL/", $data['in_circuit_group_name']) && strlen($data['called_number']) > 10 && substr($data['called_number'], 0, 2) == "10") {
 			$data['called_number'] = substr($data['called_number'], 2);
