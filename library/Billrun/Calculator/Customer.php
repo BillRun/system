@@ -208,8 +208,8 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		foreach ($this->data as $item) {
 			$query = array('stamp' => $item['stamp']);
 			$update = array('$set' => array('calc_name' => $calculator_tag, 'calc_time' => false));
-			if (isset($item['account_id'])) {
-				$update['$set']['account_id'] = $item['account_id'];
+			if (isset($item['aid'])) {
+				$update['$set']['aid'] = $item['aid'];
 			}
 			$queue->update($query, $update);
 		}

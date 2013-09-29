@@ -103,7 +103,7 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 	 * @return boolean
 	 */
 	public function getBalance() {
-		return Billrun_Factory::balance()->load($this->data['subscriber_id'], Billrun_Util::getNextChargeKey(time()));
+		return Billrun_Factory::balance()->load($this->data['sid'], Billrun_Util::getNextChargeKey(time()));
 	}
 
 	/**

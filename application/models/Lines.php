@@ -30,7 +30,7 @@ class LinesModel extends TableModel {
 	public function getProtectedKeys($entity, $type) {
 		$parent_protected = parent::getProtectedKeys($entity, $type);
 		if ($type == 'update') {
-			return array_merge($parent_protected, array("type", "account_id", "subscriber_id", "billrun_ref", "file", "header_stamp", "imsi", "source", "stamp", "urt", "usaget", "billrun"));
+			return array_merge($parent_protected, array("type", "aid", "sid", "billrun_ref", "file", "header_stamp", "imsi", "source", "stamp", "urt", "usaget", "billrun"));
 		}
 		return $parent_protected;
 	}
@@ -108,8 +108,8 @@ class LinesModel extends TableModel {
 	public function getTableColumns() {
 		$columns = array(
 			'type' => 'Type',
-			'account_id' => 'Account id',
-			'subscriber_id' => 'Subscriber id',
+			'aid' => 'Account id',
+			'sid' => 'Subscriber id',
 			'usaget' => 'Usage type',
 			'usagev' => 'Amount',
 			'plan' => 'Plan',
@@ -134,17 +134,17 @@ class LinesModel extends TableModel {
 				'display' => 'Garbage lines',
 				'default' => 'off',
 			),
-			'account_id' => array(
-				'key' => 'account_id',
-				'db_key' => 'account_id',
+			'aid' => array(
+				'key' => 'aid',
+				'db_key' => 'aid',
 				'input_type' => 'number',
 				'comparison' => 'equals',
 				'display' => 'Account id',
 				'default' => '',
 			),
-			'subscriber_id' => array(
-				'key' => 'subscriber_id',
-				'db_key' => 'subscriber_id',
+			'sid' => array(
+				'key' => 'sid',
+				'db_key' => 'sid',
 				'input_type' => 'number',
 				'comparison' => 'equals',
 				'display' => 'Subscriber id',
@@ -189,7 +189,7 @@ class LinesModel extends TableModel {
 					return array(
 						'$or' => array(
 							array('arate' => $unrated_rate), // customer rate is "UNRATED"
-							array('subscriber_id' => false), // or subscriber not found
+							array('sid' => false), // or subscriber not found
 							array('$and' => array(// old unpriced records which should've been priced
 									array('arate' => array(
 											'$exists' => true,
@@ -197,7 +197,7 @@ class LinesModel extends TableModel {
 												false, $unrated_rate
 											),
 									)),
-									array('subscriber_id' => array(
+									array('sid' => array(
 											'$exists' => true,
 											'$ne' => false,
 									)),
@@ -219,10 +219,10 @@ class LinesModel extends TableModel {
 	public function getFilterFieldsOrder() {
 		$filter_field_order = array(
 			0 => array(
-				'account_id' => array(
+				'aid' => array(
 					'width' => 2,
 				),
-				'subscriber_id' => array(
+				'sid' => array(
 					'width' => 2,
 				),
 				'from' => array(
@@ -247,8 +247,8 @@ class LinesModel extends TableModel {
 	public function getSortFields() {
 		return array(
 			'type' => 'Type',
-			'account_id' => 'Account id',
-			'subscriber_id' => 'Subscriber id',
+			'aid' => 'Account id',
+			'sid' => 'Subscriber id',
 			'usaget' => 'Usage type',
 			'usagev' => 'Amount',
 			'plan' => 'Plan',

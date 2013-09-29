@@ -180,7 +180,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		//Billrun_Factory::log()->log($path, Zend_Log::DEBUG);
 		// @TODO: use Zend_Http_Client
 		$json = self::send($path);
-//		$json =  '{"6052390":{"subscribers":[{"subscriber_id":1,"current_plan":"LARGE"}]}}'; // stub
+//		$json =  '{"6052390":{"subscribers":[{"sid":1,"current_plan":"LARGE"}]}}'; // stub
 		if (!$json) {
 			return false;
 		}
@@ -203,10 +203,10 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		$accounts = $this->requestAccounts($params);
 		$subscriber_general_settings = Billrun_Config::getInstance()->getConfigValue('subscriber', array());
 		if (is_array($accounts) && !empty($accounts)) {
-			foreach ($accounts as $account_id => $account) {
+			foreach ($accounts as $aid => $account) {
 				foreach ($account['subscribers'] as $subscriber) {
-					$subscriber_settings = array_merge($subscriber_general_settings, array('time' => strtotime($time), 'data' => array('account_id' => intval($account_id), 'subscriber_id' => $subscriber['subscriber_id'], 'plan' => $subscriber['plan'])));
-					$ret_data[intval($account_id)][] = Billrun_Subscriber::getInstance($subscriber_settings);
+					$subscriber_settings = array_merge($subscriber_general_settings, array('time' => strtotime($time), 'data' => array('aid' => intval($aid), 'sid' => $subscriber['sid'], 'plan' => $subscriber['plan'])));
+					$ret_data[intval($aid)][] = Billrun_Subscriber::getInstance($subscriber_settings);
 				}
 			}
 			return $ret_data;
@@ -237,8 +237,8 @@ class Subscriber_Golan extends Billrun_Subscriber {
 	 */
 	public function getFlatEntry($billrun_key) {
 		$flat_entry = array(
-			'account_id' => $this->account_id,
-			'subscriber_id' => $this->subscriber_id,
+			'aid' => $this->aid,
+			'sid' => $this->sid,
 			'source' => 'billrun',
 			'type' => 'flat',
 			'usaget' => 'flat',
@@ -247,7 +247,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 			'aprice' => $this->getFlatPrice(),
 			'plan_ref' => $this->getPlan()->createRef(),
 		);
-		$stamp = md5($flat_entry['account_id'] . $flat_entry['subscriber_id'] . $flat_entry['billrun_key']);
+		$stamp = md5($flat_entry['aid'] . $flat_entry['sid'] . $flat_entry['billrun_key']);
 		$flat_entry['stamp'] = $stamp;
 		return $flat_entry;
 	}

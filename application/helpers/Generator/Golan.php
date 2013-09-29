@@ -38,8 +38,8 @@ class Generator_Golan extends Billrun_Generator {
 			$invoice_id = $row->get('invoice_id');
 			$this->createXml($invoice_id, $xml->asXML());
 			$this->setFileStamp($row, $invoice_id);
-			Billrun_Factory::log()->log("invoice file " . $invoice_id . " created for account " . $row->get('account_id'), Zend_Log::INFO);
-//			$this->addRowToCsv($invoice_id, $row->get('account_id'), $total, $total_ilds);
+			Billrun_Factory::log()->log("invoice file " . $invoice_id . " created for account " . $row->get('aid'), Zend_Log::INFO);
+//			$this->addRowToCsv($invoice_id, $row->get('aid'), $total, $total_ilds);
 		}
 	}
 
@@ -61,27 +61,27 @@ class Generator_Golan extends Billrun_Generator {
 		$invoice_total_charge_no_vat = 0;
 		$invoice_total_charge = 0;
 		$billrun_key = $row->get('billrun_key');
-		$account_id = $row->get('account_id');
-		Billrun_Factory::log()->log("xml account " . $account_id, Zend_Log::INFO);
+		$aid = $row->get('aid');
+		Billrun_Factory::log()->log("xml account " . $aid, Zend_Log::INFO);
 		// @todo refactoring the xml generation to another class
 		$xml = $this->basic_xml();
 		$xml->TELECOM_INFORMATION->VAT_VALUE = $this->displayVAT($row['vat']);
-		$xml->INV_CUSTOMER_INFORMATION->CUSTOMER_CONTACT->EXTERNALACCOUNTREFERENCE = $account_id;
+		$xml->INV_CUSTOMER_INFORMATION->CUSTOMER_CONTACT->EXTERNALACCOUNTREFERENCE = $aid;
 
 		foreach ($row->get('subs') as $subscriber) {
-			$subscriber_id = $subscriber['sub_id'];
+			$sid = $subscriber['sid'];
 			$subscriber_flat_costs = $this->getFlatCosts($subscriber);
 			if (!is_array($subscriber_flat_costs) || empty($subscriber_flat_costs)) {
-				Billrun_Factory::log('Missing flat costs for subscriber ' . $subscriber_id, Zend_Log::ALERT);
+				Billrun_Factory::log('Missing flat costs for subscriber ' . $sid, Zend_Log::ALERT);
 				continue;
 			}
 
 			$subscriber_inf = $xml->addChild('SUBSCRIBER_INF');
-			$subscriber_inf->SUBSCRIBER_DETAILS->SUBSCRIBER_ID = $row->get('subscriber_id');
+			$subscriber_inf->SUBSCRIBER_DETAILS->SUBSCRIBER_ID = $row->get('sid');
 
 			$billing_records = $subscriber_inf->addChild('BILLING_LINES');
 
-			if ($this->billingLinesNeeded($subscriber_id)) {
+			if ($this->billingLinesNeeded($sid)) {
 				$subscriber_lines_refs = $this->get_subscriber_lines_refs($subscriber);
 				foreach ($subscriber_lines_refs as $ref) {
 					$line = $lines_coll->getRef($ref);
@@ -610,7 +610,7 @@ EOI;
 			->query('billrun_key', $this->stamp)
 			->exists('invoice_id')
 			->notExists('invoice_file')
-			->mod('account_id', $this->server_count, $this->server_id - 1)
+			->mod('aid', $this->server_count, $this->server_id - 1)
 			->cursor();
 
 		Billrun_Factory::log()->log("aggregator entities loaded: " . $this->data->count(), Zend_Log::INFO);
@@ -676,7 +676,7 @@ EOI;
 		return $subscriber['costs']['flat'];
 	}
 
-	protected function billingLinesNeeded($subscriber_id) {
+	protected function billingLinesNeeded($sid) {
 		return true;
 	}
 
