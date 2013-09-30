@@ -222,7 +222,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			if (isset($currRate['ceil'])) {
 				$ceil = $currRate['ceil'];
 			} else {
-				$ceil = false;
+				$ceil = true;
 			}
 			if ($ceil) {
 				$price += floatval(ceil($volumeToPriceCurrentRating / $currRate['interval']) * $currRate['price']); // actually price the usage volume by the current 	
