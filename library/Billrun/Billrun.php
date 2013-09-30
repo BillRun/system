@@ -188,9 +188,9 @@ class Billrun_Billrun {
 	public static function close($aid, $billrun_key, $min_id) {
 		$billrun = self::createBillrunIfNotExists($aid, $billrun_key);
 		if (is_null($ret = $billrun->createAutoInc("invoice_id", $min_id))) {
-			Billrun_Factory::log()->log("Created invoice " . $ret . " for account " . $aid, Zend_Log::INFO);
-		} else {
 			Billrun_Factory::log()->log("Failed to create invoice for account " . $aid, Zend_Log::INFO);
+		} else {
+			Billrun_Factory::log()->log("Created invoice " . $ret . " for account " . $aid, Zend_Log::INFO);
 		}
 	}
 
@@ -268,7 +268,7 @@ class Billrun_Billrun {
 		if (!is_null($sid)) {
 			$query['subs'] = array(
 				'$elemMatch' => array(
-					'sub_id' => $sid,
+					'sid' => $sid,
 				)
 			);
 		}
@@ -298,7 +298,7 @@ class Billrun_Billrun {
 	protected static function getDistinctLinesBillrunQuery($sid, $usage_type, $row_ref) {
 		$query['subs'] = array(
 			'$elemMatch' => array(
-				'sub_id' => $sid,
+				'sid' => $sid,
 				'lines.' . $usage_type . '.refs' => array(
 					'$nin' => array(
 						$row_ref
@@ -566,7 +566,7 @@ class Billrun_Billrun {
 			),
 			'subs' => array(
 				'$elemMatch' => array(
-					'sub_id' => $sid,
+					'sid' => $sid,
 					'lines.' . $usage_type . '.refs' => array(
 						'$in' => array(
 							$line_ref
@@ -614,14 +614,14 @@ class Billrun_Billrun {
 			'billrun_key' => $billrun_key,
 			'$or' => array(
 				array(
-					'subs.sub_id' => array(
+					'subs.sid' => array(
 						'$exists' => false,
 					),),
 				array(
 					'subs' => array(
 						'$not' => array(
 							'$elemMatch' => array(
-								'sub_id' => $sid,
+								'sid' => $sid,
 							),
 						),
 					),

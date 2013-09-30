@@ -59,24 +59,23 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 
 	public function __construct($options = array()) {
 		parent::__construct($options);
-		if (isset($options['page']) && $options['page']) {
-			$this->page = $options['page'];
+		if (isset($options['aggregator']['page']) && $options['aggregator']['page']) {
+			$this->page = $options['aggregator']['page'];
 		}
-		if (isset($options['size']) && $options['size']) {
-			$this->size = $options['size'];
+		if (isset($options['aggregator']['size']) && $options['aggregator']['size']) {
+			$this->size = $options['aggregator']['size'];
 		}
 
 		$this->plans = Billrun_Factory::db()->plansCollection();
 		$this->lines = Billrun_Factory::db()->linesCollection();
 		$this->billrun = Billrun_Factory::db()->billrunCollection();
-
 	}
 
 	/**
 	 * load the data to aggregate
 	 */
 	public function load() {
-		$date = Billrun_Util::getLastChargeTime();
+		$date = date(Billrun_Base::base_dateformat, strtotime(Billrun_Util::getLastChargeTime()));
 		$subscriber = Billrun_Factory::subscriber();
 		$this->data = $subscriber->getList($this->page, $this->size, $date);
 

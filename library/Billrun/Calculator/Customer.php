@@ -95,12 +95,12 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			return false;
 		}
 
-		foreach ($subscriber->getAvailableFields() as $field) {
-			if (is_numeric($subscriber->{$field})) {
-				$subscriber->{$field} = intval($subscriber->{$field}); // remove this conversion when Vitali changes the output of the CRM to integers
+		foreach (array_keys($subscriber->getAvailableFields()) as $key) {
+			if (is_numeric($subscriber->{$key})) {
+				$subscriber->{$key} = intval($subscriber->{$key}); // remove this conversion when Vitali changes the output of the CRM to integers
 			}
-			$subscriber_field = $subscriber->{$field};
-			$row[$field] = $subscriber_field;
+			$subscriber_field = $subscriber->{$key};
+			$row[$key] = $subscriber_field;
 		}
 		return true;
 	}
@@ -111,7 +111,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	public function writeLine($line, $dataKey) {
 		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteLine', array('data' => $line));
 		$save = array();
-		$saveProperties = Billrun_Factory::subscriber()->getAvailableFields();
+		$saveProperties = array_keys(Billrun_Factory::subscriber()->getAvailableFields());
 		foreach ($saveProperties as $p) {
 			if (!is_null($val = $line->get($p, true))) {
 				$save['$set'][$p] = $val;
@@ -157,7 +157,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 				$params[] = $line_params;
 			}
 		}
-		$this->subscribers = $this->subscriber->getSubscribersByParams($params);
+		$this->subscribers = $this->subscriber->getSubscribersByParams($params, $this->subscriber->getAvailableFields());
 	}
 
 	/**
