@@ -117,47 +117,6 @@ class Billrun_Billrun {
 	public static function getEmptySubscriberBillrunEntry($sid) {
 		return array(
 			'sid' => $sid,
-			'costs' => array(
-				'flat' => self::getVATTypes(),
-				'over_plan' => self::getVATTypes(),
-				'out_plan' => self::getVATTypes(),
-				'credit' => array(
-					'charge' => self::getVATTypes(),
-					'refund' => self::getVATTypes()
-				),
-			),
-			'lines' => array(
-				'call' => array(
-					'refs' => array(),
-				),
-				'sms' => array(
-					'refs' => array(),
-				),
-				'data' => array(
-					'counters' => new stdclass,
-					'refs' => array(),
-				),
-				'flat' => array(
-					'refs' => array(),
-				),
-				'mms' => array(
-					'refs' => array(),
-				),
-				'credit' => array(
-					'refs' => array(),
-				),
-			),
-			'breakdown' => array(
-				'in_plan' => self::getCategories(),
-				'over_plan' => self::getCategories(),
-				'out_plan' => self::getCategories(),
-				'credit' => array(
-					'charge_vatable' => new stdclass,
-					'charge_vat_free' => new stdclass,
-					'refund_vatable' => new stdclass,
-					'refund_vat_free' => new stdclass,
-				),
-			),
 		);
 	}
 
@@ -536,6 +495,7 @@ class Billrun_Billrun {
 		if ($doc->isEmpty()) { // billrun document was not found
 			$billrun = self::createBillrunIfNotExists($aid, $billrun_key);
 			if ($billrun->isEmpty()) { // means that the billrun was created so we can retry updating it
+				self::addSubscriberIfNotExists($aid, $sid, $billrun_key);
 				return self::setSubscriberStatus($aid, $sid, $billrun_key, $status);
 			} else if (self::addSubscriberIfNotExists($aid, $sid, $billrun_key)) {
 				return self::setSubscriberStatus($aid, $sid, $billrun_key, $status);

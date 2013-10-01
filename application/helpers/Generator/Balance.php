@@ -88,12 +88,12 @@ class Generator_Balance extends Generator_Golan {
 		$plan_name = $this->getPlanName($subscriber);
 		if (!$plan_name) {
 			//@error
-			return;
+			return array();
 		}
 		$planObj = Billrun_Factory::plan(array('name' => $plan_name, 'time' => strtotime($this->date)));
 		if (!$planObj->get('_id')) {
 			Billrun_Factory::log("Couldn't get plan $plan_name data", Zend_Log::ALERT);
-			return;
+			return array();
 		}
 		$plan_price = $planObj->get('price');
 		return array('vatable' => $plan_price, 'vat_free' => 0);
