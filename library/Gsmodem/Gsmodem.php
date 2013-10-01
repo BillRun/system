@@ -28,11 +28,15 @@ class Gsmodem_Gsmodem  {
 	
 	
 	static protected $atCmdMap = array(
-							'call' => 'ATD%0%',
-							'answer' => 'ATA',
-							'hangup' => 'ATH',	
-							'reset' => 'ATZ',
-							'register' => 'AT+CREG=%0%',
+							'call' => 'D%0%',
+							'answer' => 'A',
+							'hangup' => 'H',	
+							'reset' => 'Z',
+							'register' => '+COPS=%0%',
+							'register_reporting' => '+CREG=%0%',
+							'incoming_call_id' => '+CLIP=%0%',		
+							'get_error' => '+CEER',
+							'get_number' => '+CNUM'
 						);
 
 	static protected $resultsMap = array( 
@@ -58,10 +62,17 @@ class Gsmodem_Gsmodem  {
 	 */
 	protected $state = null;
 	
+	/**
+	 * the current phone number.
+	 * @var string 
+	 */
+	protected $number = false;
+	
 	public function __construct($pathToDevice) {
 		if(isset($pathToDevice)) {
 			$this->deviceFD = @fopen($pathToDevice, 'r+');	
 			$this->state = new Gsmodem_ModemState();
+			$this->initModem();
 		}
 		
 	}
@@ -120,14 +131,17 @@ class Gsmodem_Gsmodem  {
 	 * Register to the GSM  network
 	 */
 	public function registerToNet() {
-		$this->doCmd($this->getATcmd('register',array(0)), true);
+		Billrun_Factory::log("Registering to network");
+		$res = $this->doCmd($this->getATcmd('register',array(0)), true, false);		
+		
 	}
 	
 	/**
 	 * unregistyer from the GSM network (go off line)
 	 */
 	public function unregisterFromNet() {
-		$this->doCmd($this->getATcmd('register',array(5)), true);
+		Billrun_Factory::log("Unregistering to network");
+		$this->doCmd($this->getATcmd('register',array(2)), true);
 	}	
 	
 	/**
@@ -157,8 +171,17 @@ class Gsmodem_Gsmodem  {
 	/**
 	 * Retrive the modem phone number
 	 */
-	public function getModemNumber() {
-		return ""; //TODO implement
+	public function getModemNumber() {		
+		if(!$this->number) {
+			$matches = array();
+			$this->number = preg_match('/.+\"(\d+)\".+/', $this->doCmd($this->getATcmd('get_number'), true, false), $matches ) > 0  ? $matches[1] : false;
+		}
+		
+		return $this->number;
+	}
+	
+	public function setNumber($number) {
+		$this->number =$number;
 	}
 	
 	/**
@@ -170,6 +193,16 @@ class Gsmodem_Gsmodem  {
 		return $this->deviceFD != FALSE;
 	}
 	
+	/**
+	 * Initialize the modem settings.
+	 */
+	public function initModem() {
+		$this->hangUp();
+		$this->doCmd($this->getATcmd('incoming_call_id',array(1)), true, false);
+		$this->doCmd($this->getATcmd('register_reporting',array(2)), true, false);
+	}
+
+
 	//----------------------------- PROTECTED ----------------------------------
 	
 	/**
@@ -179,11 +212,11 @@ class Gsmodem_Gsmodem  {
 	 * @return string the AT string to pass to the modem inorder to execute the command.
 	 */
 	protected function getATcmd($command,$params =array()) {
-		$cmdStr = self::$atCmdMap[$command];
+		$cmdStr = 'AT' . self::$atCmdMap[$command];
 		foreach ($params as $key => $value) {
 			$cmdStr = preg_replace('/%'.$key.'%/', $value, $cmdStr);
 		}
-		return $cmdStr . ";\n";
+		return  $cmdStr . ";\n";
 	}
 	
 	/**
@@ -191,17 +224,21 @@ class Gsmodem_Gsmodem  {
 	 * @param type $waitTime thwe amount of time to wait for the result.
 	 * @return string|boolean the result/message string we got  from the modem or false if the waiting timed out.
 	 */
-	protected function getResult($waitTime = PHP_INT_MAX) {
+	protected function getResult($waitTime = PHP_INT_MAX, $translate = true) {
 		$res =  FALSE;
 		$callResult = "";
 		stream_set_blocking($this->deviceFD,FALSE);
-		while (($callResult .=  fread($this->deviceFD,4096)) || --$waitTime  > 0) {	
-		
-			if( isset(self::$resultsMap[trim($callResult)])) {
-					//Billrun_Factory::log()->log(trim($callResult),  Zend_Log::DEBUG);
+		while (( $newData = fread($this->deviceFD,4096)) || --$waitTime  > 0) {	
+			$callResult .= $newData ;
+			//Billrun_Factory::log()->log(trim($callResult),  Zend_Log::DEBUG);
+			if( $translate && isset(self::$resultsMap[trim($callResult)])) {
+					
 					$this->state->gotResult(trim($callResult));
 					$res = self::$resultsMap[trim($callResult)];
 					break;
+			} else if(!$translate && $callResult && !$newData ){
+				$res = $callResult;
+				break;
 			}
 			sleep(1);
 		}
@@ -216,13 +253,13 @@ class Gsmodem_Gsmodem  {
 	 * @return mixed	FALSE if the there was a problem to issue the command 
 	 *					or if the $getReesult flag is true  the  value that was returned by the modem.
 	 */
-	protected function doCmd($cmd,$getResult = true) {
+	protected function doCmd($cmd,$getResult = true, $translate = true) {
 		$this->clearBuffer();
 		$res = fwrite($this->deviceFD, $cmd) > 0 && !$getResult;
 		fflush($this->deviceFD);	
 		$this->state->issuedCommand($cmd);
 		
-		return $getResult ?  trim($this->getResult()) :  $res > 0  ;
+		return $getResult ?  trim($this->getResult(PHP_INT_MAX, $translate)) :  $res > 0  ;
 	}
 	
 	/**
@@ -233,6 +270,11 @@ class Gsmodem_Gsmodem  {
 		fread($this->deviceFD,4096);
 		stream_set_blocking($this->deviceFD,TRUE);		
 
+	}
+	
+	protected function getValueFromResult($resultKey,$result) {
+		$matches = array();
+		return preg_match("/.+\+$resultKey:\s*(.+)$/", $result, $matches ) > 0  ? split(",", $matches[1]) : false;
 	}
 	
 }

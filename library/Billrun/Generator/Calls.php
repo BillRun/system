@@ -9,12 +9,19 @@
 /**
  * Billing call generator class
  * Make and  receive call  base on several  parameters
-  *
+ *
  * @package  Billing
  * @since    0.5
  */
 class Billrun_Generator_Calls extends Billrun_Generator {
-	
+
+	const TYPE_REGULAR = 'regular';
+	const TYPE_BUSY = 'busy';
+	const TYPE_VOICE_MAIL = 'voice_mail';
+	const TYPE_NO_ANSWER = 'no_answer';
+	const MIN_MILLI_RESOLUTION = 1000;
+	const BUSY_WAIT_TIME = 5;
+
 	/**
 	 * the type of the object
 	 *
@@ -22,8 +29,10 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 	 */
 	static protected $type = 'calls';
 
-	
-	protected $calls = array();
+	/**
+	 * The script to generate calls by.
+	 */
+	protected $testScript = array();
 
 	/**
 	 * The calling device.
@@ -33,132 +42,141 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 
 	public function __construct($options) {
 		parent::__construct($options);
-		if(isset($options['path_to_calling_devices'])) {
+		if (isset($options['path_to_calling_devices'])) {
 			foreach ($options['path_to_calling_devices'] as $value) {
-				$this->modemDevices[] = new Gsmodem_Gsmodem($value);	
+				$modem = new Gsmodem_Gsmodem($value['device']);
+				if ($modem->isValid()) {
+					$modem->registerToNet();
+					if (isset($value['number'])) {
+						$modem->setNumber($value['number']);
+					}
+					$this->modemDevices[] = $modem;
+				}
 			}
 		}
 	}
-	
+
 	/**
 	 * Generate the calls as defined in the configuration.
 	 */
-	public function generate() {	
-		$isCalling= $this->getConfig('direction') == 'calling';
-		$callsMade = array();			
-		$callsBehavior= Billrun_Factory::config()->getConfigValue(($isCalling ? 'calls.calling_behavior' :'calls.answering_behavior' ) ,array($this->options));
-		$callsIdx = 0;
-
-		if($this->modemDevice && $this->modemDevice->isValid()) {
-			//make the calls and remember their results
-			for($i=0; $i < $this->getConfig('times'); $i++) {
-				$behavior = $callsBehavior[$callsIdx];
-				Billrun_Factory::log()->log(print_r($behavior,1),  Zend_Log::DEBUG);
-				$call = $this->getEmptyCall($isCalling ? 'calling' : 'answering');
-				if( $isCalling ) {
-					$this->makeACall($call, $this->getConfig('number_to_call', $behavior));
-				} else {
-					$this->waitForCall(	$call, $this->getConfigValue('should_answer', $behavior), $this->getConfig('ignore_call' ,$behavior) );
+	public function generate() {
+		if (count($this->modemDevices) > 0) {
+			while (1) {
+				if ($this->isConfigUpdated($this->testScript)) {
+					$this->load();
 				}
-
-				if($call['calling_result'] == Gsmodem_Gsmodem::CONNECTED ) {
-					$this->HandleCall($call, $this->getConfig('call_wait_time',$behavior));
-				}
-				$call['execution_end_time'] = date("YmdTHis");
-				$callsMade[] = $call;
-				
-				sleep($this->getConfig('interval'));
-				if(isset($callsBehavior[$callsIdx+1])) {
-					$callsIdx++;
-				}
-			}	
-			
-		Billrun_Factory::log()->log(print_r($callsMade,1),  Zend_Log::DEBUG);
-		$this->save($callsMade);
-
+				$this->actOnScript($this->testScript['test_script']);
+			}
 		} else {
-			Billrun_Factory::log()->log("couldn't use specified device : {$this->options['path_to_calling_device']}",  Zend_Log::INFO);
+			Billrun_Factory::log("No active modem devices.", Zend_Log::NOTICE);
 		}
 	}
-	
+
 	/**
 	 * Load the script
-	 */	
+	 */
 	public function load() {
-		//@TODO load the script from the DB
-		$this->testScript = array(
-			array('time'=> "00:00:00",'from' => '0580000001', 'to' => '0580000002' ,'duration' => 10 , 'type'=> 'regular'),
-			array('time'=> "00:01:00",'from' => '0580000003', 'to' => '0580000004' ,'duration' => 15, 'type'=> 'busy'),
-			array('time'=> "00:02:00",'from' => '0580000002', 'to' => '0580000001' ,'duration' => 35, 'type'=> 'voice_mail'),
-			array('time'=> "00:03:00",'from' => '0580000004', 'to' => '0580000003' ,'duration' => 80, 'type'=> 'no_answer'),
-		);
+		//@TODO siwtch to a file configuration method?
+//		db.config.insert({key:'call_generator',unified_record_time:ISODate('2013-09-30T01:01:00Z'),test_script:[
+//			{'time':'00:00:00', 'from':'0586792924', 'to':'0547371030', 'duration':10, 'action_type':'regular'},
+//			{'time':'00:00:00', 'from':'0586792924', 'to':'0547371030', 'duration':15, 'action_type':'voice_mail'},
+//			{'time':'00:00:00', 'from':'0586792924', 'to':'0547371030', 'duration':35, 'action_type':'busy'},
+//			{'time':'00:00:00', 'from':'0586792924', 'to':'0547371030', 'duration':80, 'action_type':'no_answer'},
+//		]});
+
+		$testConfig = Billrun_Factory::db()->configCollection()->query(array('key' => 'call_generator'))->cursor()->sort(array('unified_record_time' => -1))->limit(1)->current();
+		if (!$testConfig->isEmpty()) {
+			$this->testScript = $testConfig->getRawData();
+			//@TODO FOR DEBUG REMOVE !
+			$offset = 1;
+			foreach ($this->testScript['test_script'] as &$value) {
+				$value['time'] = date("H:i:s", strtotime("+{$offset} minutes"));
+				$offset+=2;
+			}
+			//@TODO FOR DEBUG END
+		}
+		Billrun_Factory::log("got script : " . print_r($this->testScript, 1));
 	}
+
 	/**
-	 * 
-	 * @param type $script
+	 * Act on a given script
+	 * @param array $script the script to act on.
 	 */
 	protected function actOnScript($script) {
-		while(1) {
-			$action = $this->waitForNextAction($script);
-			if($action) {
+		$action = $this->waitForNextAction($script);
+		if ($action) {
+			if (!pcntl_fork()) {
 				$this->scriptAction($action);
+				exit(0);
 			}
 		}
 	}
 
-
 	/**
-	 * 
-	 * @param type $script
+	 * Wait  until the next action time has reached.
+	 * @param array $script the scrip actions list.
 	 */
 	protected function waitForNextAction($script) {
-		$actionCount =  count($script);
-		$idx = 0;
-		while(	$script[$idx % $actionCount] <=  date("H:i:s") || 
-				(	!$this->isConnectedModemNumber($script[$idx % $actionCount]['from']) && 
-					!$this->isConnectedModemNumber($script[$idx % $actionCount]['to']) )) {
-			$idx++;
-		} 
-		$action = $script[$idx % $actionCount];
-		while($script[$idx % $actionCount] > date("H:i:s")) {};
+		$action = FALSE;
+		foreach ($script as $scriptAction) {
+			if ($scriptAction['time'] > date("H:i:s") &&
+				$this->isConnectedModemNumber(array($scriptAction['from'], $scriptAction['to']))) {
+				$action = $scriptAction;
+				break;
+			}
+		}
+		if ($action) {
+			Billrun_Factory::log("Got action of type : {$action['action_type']} the should be run at : {$action['time']}, Waiting... ");
+			while ($action['time'] >= date("H:i:s")) {
+				usleep(static::MIN_MILLI_RESOLUTION / 4);
+			};
+			Billrun_Factory::log("Done Waiting.");
+		}
 		return $action;
 	}
-	
+
 	/**
-	 * TODO
-	 * @param type $action
+	 * Do a script action.
+	 * @param array $action the action to do.
 	 */
 	protected function scriptAction($action) {
-		$isCalling= $this->isConnectedModemNumber($action['from']) != FALSE;
-		$device = $this->isConnectedModemNumber( $action[$isCalling ? 'from' : 'to'] );
+		Billrun_Factory::log("Acting on action of type : {$action['action_type']}");
+		$isCalling = $this->isConnectedModemNumber($action['from']) != false;
+		$device = $this->getConnectedModemByNumber($action[$isCalling ? 'from' : 'to']);
 		//make the calls and remember their results
 		$call = $this->getEmptyCall();
 
-		if( $isCalling ) {
+		if ($isCalling) {
+			if ($action['action_type'] == static::TYPE_BUSY) {
+				sleep(static::BUSY_WAIT_TIME);
+			}
 			$this->makeACall($device, $call, $action['to']);
 		} else {
-			if($action['type'] != 'busy') {
-				$this->waitForCall($device,	$call, $action['type'] );
+			if ($action['action_type'] != static::TYPE_BUSY) {
+				$this->waitForCall($device, $call, $action['action_type']);
 			} else {
-				$this->callToBusyNumber($device , $duration);
+				$this->callToBusyNumber($device, $action['duration']);
 			}
 		}
 
-		if($call['calling_result'] == Gsmodem_Gsmodem::CONNECTED ) {
-			$this->HandleCall($device , $call, $this->$action['duration']);
+		if ($call['calling_result'] == Gsmodem_Gsmodem::CONNECTED) {
+			$this->HandleCall($device, $call, $action['duration']);
 		}
 		//$call['execution_end_time'] = date("YmdTHis");
 		$this->save($action, $call, $isCalling);
-	}	
+	}
 
 	/**
 	 * Make a call as defiend  by the configuration.
 	 * @param type $callRecord the  call record to save to the DB.
 	 * @return mixed the call record with the data regarding making the call.
 	 */
-	protected function makeACall($device , &$callRecord, $numberToCall) {
+	protected function makeACall($device, &$callRecord, $numberToCall) {
+		Billrun_Factory::log("Making  a call to  {$numberToCall}");
+		$callRecord['execution_start_time'] = new MongoDate();
+		;
 		$callRecord['calling_result'] = $device->call($numberToCall);
-		$callRecord['called_number'] =$numberToCall;
+		$callRecord['called_number'] = $numberToCall;
 
 		return $callRecord['calling_result'];
 	}
@@ -168,49 +186,49 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 	 * @param mixed $callRecord  the call record to save to the DB.
 	 * @return mixed the call record with the data regarding the incoming call.
 	 */
-	protected function waitForCall($device, &$callRecord , $callType) {
-		
-		if($device->waitForCall() !== FALSE) {
-			if($callType == '') {				
+	protected function waitForCall($device, &$callRecord, $callType) {
+		Billrun_Factory::log("Waiting for a call of type {$callType}");
+		if ($device->waitForCall() !== FALSE) {
+			if ($callType == '') {
 				$callRecord['calling_result'] = $device->answer();
-				
-			} elseif($callType == '') {				
-				 $device->waitForRingToEnd();
-				 $callRecord['calling_result'] = 'ignored';
-				 
-			} else {				
-				$callRecord['calling_result'] =  $device->hangUp() ;	
-			}	
+			} elseif ($callType == '') {
+				$device->waitForRingToEnd();
+				$callRecord['calling_result'] = 'ignored';
+			} else {
+				$callRecord['calling_result'] = $device->hangUp();
+			}
 		}
-		
-		return $callRecord['calling_result']; 
+
+		return $callRecord['calling_result'];
 	}
-	
+
 	/**
-	 * TODO 
+	 * Call to a assigned  number to keep the line busy.
 	 */
 	protected function callToBusyNumber($device, $duration) {
+		Billrun_Factory::log("Calling to busy number : " . $this->getConfig('busy_number'));
 		$call = array();
 		$ret = $this->makeACall($device, $call, $this->getConfig('busy_number'));
 
-		if($ret == Gsmodem_Gsmodem::CONNECTED ) {
+		if ($ret == Gsmodem_Gsmodem::CONNECTED) {
 			$this->HandleCall($device, $call, $duration);
 		}
 	}
-	
+
 	/**
 	 * Handle an active call.
 	 * @param type $callRecord the call record to save to the DB.
 	 */
-	protected  function HandleCall($device, &$callRecord, $waitTime) {
-		$callRecord['call_start_time'] = date("YmdTHis");
+	protected function HandleCall($device, &$callRecord, $waitTime) {
+		Billrun_Factory::log("Handling and active call.");
+		$callRecord['call_start_time'] = new MongoDate();
 		$callRecord['end_result'] = $device->waitForCallToEnd($waitTime);
-		if($callRecord['end_result'] == Gsmodem_Gsmodem::NO_RESPONSE) {
+		if ($callRecord['end_result'] == Gsmodem_Gsmodem::NO_RESPONSE) {
 			$device->hangUp();
-			$callRecord['end_result'] = 'hang_up';						
+			$callRecord['end_result'] = 'hang_up';
 		}
-		$callRecord['call_end_time'] = date("YmdTHis");
-		$callRecord['duration'] = strtotime($callRecord['call_end_time'] ) - strtotime($callRecord['call_start_time']);		
+		$callRecord['call_end_time'] = new MongoDate();
+		$callRecord['duration'] = strtotime($callRecord['call_end_time']) - strtotime($callRecord['call_start_time']);
 	}
 
 	/**
@@ -218,63 +236,116 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 	 * @return Array representing the call record with initailized values. 
 	 */
 	protected function getEmptyCall() {
-		return array(	
-						'execution_start_time' => date("YmdTHis"),
-						'calling_result' => 'no_call',
-						'call_start_time' => null,
-						'end_result' => 'no_call',
-						'call_end_time' => null,
-						'duration' => 0,
-						'execution_end_time' => null,
-					 );
+		return array(
+			'execution_start_time' => new MongoDate(),
+			'calling_result' => 'no_call',
+			'call_start_time' => null,
+			'end_result' => 'no_call',
+			'call_end_time' => null,
+			'duration' => 0,
+			'execution_end_time' => null,
+		);
 	}
-	
+
 	/**
-	 * Save calls made/received to DB.
+	 * Save q call made/received to  the DB.
 	 * @param Array $calls containing the call recrods of the calls  that where made/received
 	 * @return boolean
 	 */
-	protected function save($action, $call , $isCalling) {
-		
-		$lines = Billrun_Factory::db()->generatedCallsCollection();
-		$row['source'] = 'generator';			
-		$row['unified_record_time'] = new MongoDate(strtotime($row['call_start_time']  ? $row['call_start_time'] : $row['execution_start_time']));
-		$row['type'] = static::$type;
-		if(!($lines->query(array('stamp'=> $row['stamp'] ) )->cursor()->hasNext() ) )  {				
-			$entity = new Mongodloid_Entity($row);
-			$entity->save($lines, true);
-		} else {
-			Billrun_Factory::log()->log("Calls Generator save failed on stamp : {$row['stamp']}", Zend_Log::NOTICE);
+	protected function save($action, $call, $isCalling) {
+		$call['execution_end_time'] = new MongoDate();
+		$direction = $isCalling ? 'caller' : 'callee';
+		$commonRec = array_merge($action, array('test_id' => $this->getConfig('test_id'), 'date' => date('Ymd'), 'source' => 'generator', 'type' => 'generated_call'));
+		$commonRec['stamp'] = md5(serialize($commonRec));
+		$callData = array();
+		foreach ($call as $key => $value) {
+			$callData["{$direction}_{$key}"] = $value;
+		}
+		if ($isCalling) {
+			$callData['unified_record_time'] = $call['call_start_time'] ? $call['call_start_time'] : $call['execution_start_time'];
 		}
 
-		return true;
+		return $this->safeSave(array('type' => 'generated_call', 'stamp' => $commonRec['stamp']), $callData, array_merge($callData, $commonRec));
 	}
-	
+
 	/**
 	 * Get config value for a given call instance and allow  for configuration overide.
 	 * @param string $name the config  key  to look for
 	 * @param array $callConfig the configuration override.
 	 * @return mixed the config value in the override  or if it not found the config value in the general configuration 
-	 *			or FALSE if no value  was found to the config key.
+	 * 			or FALSE if no value  was found to the config key.
 	 */
 	protected function getConfig($configKey, $callInstanceConfig = array()) {
-		 return isset($callInstanceConfig[$configKey]) ? $callInstanceConfig[$configKey] :
-				Billrun_Factory::config()->getConfigValue($this->getType().'.'.$configKey, FALSE, 'string');		
+		return Billrun_Factory::config()->getLocalInstanceConfig($this->getType() . '.' . $configKey, $callInstanceConfig, FALSE, 'string');
 	}
-	
+
+	/**
+	 * Check if the configuration has been updated.
+	 */
+	protected function isConfigUpdated($currentConfig) {
+		$retVal = Billrun_Factory::db()->configCollection()->query(array('key' => 'call_generator',
+				'unified_record_time' => array('$gt' => $currentConfig['unified_record_time']))
+			)->cursor()->limit(1)->current();
+		return !$retVal->isEmpty();
+	}
+
+	/**
+	 * Check is a given number is one of the connected modems.
+	 * @param type $numbers the  numbers  to check.
+	 * @return boolean true is the on of the numbers  belongs to one of the connected modems false otherwise.
+	 */
+	protected function isConnectedModemNumber($numbers) {
+		$numbers = is_array($numbers) ? $numbers : array($numbers);
+		foreach ($numbers as $number) {
+			if ($this->getConnectedModemByNumber($number) != FALSE) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	/**
 	 * Check if a number is one of the connected modem numbers.
 	 * @param type $number the number to check.
 	 * @return boolean|mixed the modem instace that has the number or false if none of the modem matches. 
 	 */
-	protected function isConnectedModemNumber($number) {
-		foreach ($this->modemDevices as $value) {
-			if($value->getModemNumber() == $number) {
-				return $value;
+	protected function getConnectedModemByNumber($number) {
+		foreach ($this->modemDevices as $modem) {
+			//Billrun_Factory::log('quering for modem number');
+			if ($modem->getModemNumber() == $number) {
+				return $modem;
 			}
 		}
-		return FALSE;
+		return false;
 	}
-	
-}
 
+	/**
+	 * Save  with  findAndModifiy  to safely handle  concurrent db access.
+	 * @param type $query the query to find the item to save.
+	 * @param type $updateData the  data  to update the item with if  it exists in the DB
+	 * @param type $newData the  data to create the  item in the  db  with
+	 * @return boolean true  if the  save was successful  false otherwise.
+	 */
+	protected function safeSave($query, $updateData, $newData) {
+		$linesCollec = Billrun_Factory::db()->linesCollection();
+		if (!($ret = $linesCollec->findAndModify(	$query, 
+													array('$setOnInsert' => $newData), 
+													array(), 
+													array('upsert' => true, 'new' => true)) ) || $ret->isEmpty()) {
+
+			if (!($ret = $linesCollec->findAndModify(	$query, 
+														array('$set' => $updateData), 
+														array(), 
+														array('upsert' => false, 'new' => true)) ) || $ret->isEmpty()) {
+
+				Billrun_Factory::log('Failed when trying to save : ' . print_r($updateData, 1));
+				return false;
+				
+			}
+		}
+
+		Billrun_Factory::log('Successfully saved : ' . print_r($updateData, 1));
+		return true;
+	}
+
+}

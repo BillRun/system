@@ -63,6 +63,19 @@ class Billrun_Config {
 		}
 		return self::$instance;
 	}
+	
+	/**
+	 * Get config value for a given call instance and allow  for configuration overide.
+	 * @param string $name the config  key  to look for
+	 * @param array $callConfig the configuration override.
+	 * @param string the default return type.
+	 * @return mixed the config value in the override  or if it not found the config value in the general configuration 
+	 * 			or FALSE if no value  was found to the config key.
+	 */
+	public function getLocalInstanceConfig($configKey, $instanceConfig = array(), $defaultValue = FALSE, $defaultType ='string') {
+		return	isset($instanceConfig[$configKey]) ? $instanceConfig[$configKey] :
+				$this->getConfigValue($configKey, $defaultValue, $defaultType);
+	}
 
 	/**
 	 * method to get config value

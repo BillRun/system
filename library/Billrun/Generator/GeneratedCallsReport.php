@@ -16,7 +16,7 @@
  */
 class Billrun_Generator_GeneratedCallsReport extends Billrun_Generator {
 	protected $subscriber = "";
-	protected $calledNumber = "";
+	protected $callingNumber = "";
 	protected $from;
 	protected $to;
 	
@@ -28,10 +28,10 @@ class Billrun_Generator_GeneratedCallsReport extends Billrun_Generator {
 		if($options['subscriber_id']) {
 			$this->subscriber = $options['subscriber_id'];
 		}
-		if($options['called_number']) {
-			$this->calledNumber = $options['called_number'];
+		if($options['number']) {
+			$this->callingNumber = $options['number'];
 		}
-		$this->from = isset($options['from_date']) ? strtotime($options['from_date']) : time()-(24*3600);
+		$this->from = isset($options['from_date']) ? strtotime($options['from_date']) : time()-(48*3600);
 	
 		$this->to = isset($options['to_date']) ? strtotime($options['to_date']) : time();
 	}
@@ -47,6 +47,7 @@ class Billrun_Generator_GeneratedCallsReport extends Billrun_Generator {
 		
 		foreach($this->calls as $row) {
 			$rowData = $row->getRawData();
+			Billrun_Factory::log("call: ". print_r($rowData,1));
 			if($rowData['call_start_time']) {
 				$subscriberLines[intval($rowData['unified_record_time']->sec/2)]['generated'] = $rowData;
 			}
@@ -60,6 +61,7 @@ class Billrun_Generator_GeneratedCallsReport extends Billrun_Generator {
 		$report['summary'] = $this->printSummaryReport($subscriberLines, $callResults);
 		$report['from']	 = $this->from;
 		$report['to']	 = $this->to;
+		
 		return array(date("YmdHi").".xml" => $report);
 	}
 	
@@ -89,9 +91,44 @@ class Billrun_Generator_GeneratedCallsReport extends Billrun_Generator {
 	}
 
 	public function load() {
-		//load CDRs recieved
-		$query =array(	'type' => 'nsn',
-						'called_number' => array('$regex' => (string) $this->calledNumber ),
+	
+		$this->mergeBillingLines($this->subscriber);
+		//load calls made
+		$callsQuery =array(	'type' => 'generated_call',
+							'from' =>  array('$regex' => (string) $this->callingNumber ),
+							'$or' => array( 
+								array( 'unified_record_time' => array( 													
+													'$lte'=> new MongoDate($this->to) ,
+													'$gt' => new MongoDate($this->from) )
+								)			
+							)
+					);
+		$this->calls =  Billrun_Factory::db()->linesCollection()
+							->query($callsQuery)->cursor();		
+
+		
+	}
+	
+	protected function mergeBillingLines($sub) {
+		$neededFields = array();
+		$billingLines = $this->retriveSubscriberBillingLines($sub);
+		foreach ($billingLines as $bLine) {
+			$data = array();
+			foreach ($neededFields as $key) {
+				$data['billing_'.$key] = $bLine[$key];
+			}
+			
+			 Billrun_Factory::db()->linesCollection()->upate(array('type'=>'generated_call',
+															 'to' => array('$regex' => (string) $bLine['called_number'] ),
+															 'unified_record_time' => array('$lte' => $bLines['unified_record_time']->sec+3,
+																							'$gte' => $bLines['unified_record_time']->sec-3)
+															 ),array('$set'=> $data));
+		}
+	}
+	
+	protected function retriveSubscriberBillingLines($sub) {
+		//TODO use API
+		$query =array(	'type' => 'nsn',						
 						'subscriber_id' => (string) $this->subscriber, 
 						'unified_record_time' => array(
 													 '$lte'=> new MongoDate($this->to) ,
@@ -101,22 +138,10 @@ class Billrun_Generator_GeneratedCallsReport extends Billrun_Generator {
 			$this->lines =  Billrun_Factory::db()->linesCollection()
 								->query($query);		
 		}
-		
-		//load calls made
-		$callsQuery =array(	'type' => 'calls',
-							'called_number' =>  array('$regex' => (string) $this->calledNumber ),
-							'$or' => array( 
-								array( 'unified_record_time' => array( 													
-													'$lte'=> new MongoDate($this->to) ,
-													'$gt' => new MongoDate($this->from) )
-								),
-								array('unified_record_time' => array( '$exists' => FALSE )),				
-							)
-					);
-		if($this->subscriber) {
-			$this->calls =  Billrun_Factory::db()->linesCollection()
-								->query($callsQuery);		
+		$retData = array();
+		foreach ($this->lines as $value) {
+			$retData[] = $value->getRawData();
 		}
-		
+		return $retData;
 	}
 }

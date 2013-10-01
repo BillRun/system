@@ -88,6 +88,46 @@ class ApiController extends Yaf_Controller_Abstract {
 		unset($this->output->$key);
 		return $value;
 	}
+	
+	/**
+	 * method to sync the options received from cli with the possible options
+	 * if options is mandatory and not received return false
+	 * 
+	 * @param type $possibleOptions
+	 * 
+	 * @return mixed array of options if all mandatory options received, else false
+	 */
+	public function getInstanceOptions($possibleOptions = null) {
+		if (is_null($possibleOptions)) {
+			$possibleOptions = array(
+				'type' => false,
+				'stamp' => false,
+				'path' => "./",
+				'parser' => 'fixed');
+		}
+		
+		$options = array();
+		foreach($this->getRequest()->getRequest() as $key =>  $val) {
+			$options[$key] = $val;			
+		}
+
+
+		foreach ($possibleOptions as $key => $defVal) {			
+			if (empty($options[$key])) {
+				if (!$defVal) {
+					$this->addOutput("Error: No $key selected");
+					return false;
+				} else if (true !== $defVal) {
+					$options[$key] = $defVal;
+				} else {
+					unset($options[$key]);
+				}
+			}
+		}
+
+		return $options;
+	}
+	
 
 	/**
 	 * method to set how the api output method
