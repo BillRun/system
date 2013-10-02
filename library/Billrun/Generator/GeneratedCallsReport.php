@@ -43,7 +43,7 @@ class Billrun_Generator_GeneratedCallsReport extends Billrun_Generator {
 		foreach($this->calls as $row) {
 			$rowData = $row->getRawData();
 			$callResults[$rowData['caller_end_result']][] = $rowData;
-			$subscriberLines[] = $rowData;
+			$subscriberLines[] = $rowData; //TODO filter the filed to only return relevent fields
 		}
 		
 		//print_r($subscriberLines);
