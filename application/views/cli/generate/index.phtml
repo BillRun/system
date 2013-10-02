@@ -1,0 +1,21 @@
+{
+	"CallGeneratorReport" : {
+		"From" : "<?= date(Billrun_Base::base_dateformat,$from) ?>" ,
+		"To" : "<?= date(Billrun_Base::base_dateformat, $to) ?>",
+		"Summary" : {
+			"Missed" : "<?= $summary['missed'] ?>",
+			"DurationDifference" : "<?= $summary['duration_diff'] ?>",
+			"CallTypes" : {
+				 <?php foreach ($summary['calls_types'] as $key => $value) {	?>
+					"<?= ucfirst($key) ?>" : "<?= $value ?>",
+				<?php } ?>
+			}
+		},
+		"Comparison" : {
+			<?php foreach ($cdr_calls_comparison as $key => $value) {	?>
+					<?= json_encode($value) ?> 
+		<?php } ?>
+		}
+		
+	}
+}

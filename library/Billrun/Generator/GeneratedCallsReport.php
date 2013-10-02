@@ -38,26 +38,16 @@ class Billrun_Generator_GeneratedCallsReport extends Billrun_Generator {
 	
 	public function generate() {
 		$subscriberLines = array();
-		$callResults = array();
-		
-		foreach($this->lines as $row) {
-			$rowData = $row->getRawData();
-			$subscriberLines[intval($rowData['unified_record_time']->sec/2)]['cdr'] = $rowData;
-		}
+		$callResults = array();	
 		
 		foreach($this->calls as $row) {
 			$rowData = $row->getRawData();
-			Billrun_Factory::log("call: ". print_r($rowData,1));
-			if($rowData['call_start_time']) {
-				$subscriberLines[intval($rowData['unified_record_time']->sec/2)]['generated'] = $rowData;
-			}
-			$callResults[$rowData['direction']."_".$rowData['calling_result']."_AND_".$rowData['end_result']][] = $rowData;
+			$callResults[$rowData['caller_end_result']][] = $rowData;
+			$subscriberLines[] = $rowData;
 		}
 		
-		print_r($subscriberLines);
+		//print_r($subscriberLines);
 		$report['cdr_calls_comparison'] = $subscriberLines;
-		print_r($callResults);
-		$report['generated_breakdown'] = $callResults;
 		$report['summary'] = $this->printSummaryReport($subscriberLines, $callResults);
 		$report['from']	 = $this->from;
 		$report['to']	 = $this->to;
@@ -65,18 +55,20 @@ class Billrun_Generator_GeneratedCallsReport extends Billrun_Generator {
 		return array(date("YmdHi").".xml" => $report);
 	}
 	
-	public function getTemplate() {
-		return 'generated_calls_report.phtml';
-	}
-	
+	/**
+	 * 
+	 * @param type $subscriberLines
+	 * @param type $callResults
+	 * @return type
+	 */
 	protected function printSummaryReport($subscriberLines,$callResults) {
 		$summary = array();
 		$missed =0;
 		$durationDiff = 0;
 		foreach($subscriberLines as $line) {
-			if(isset($line['generated']) != isset($line['cdr']) ) {
+			if(isset($line['callee_duration']) != isset($line['billing_duration']) ) {
 				$missed++;
-			} else if($line['generated']['duration'] != $line['cdr']['duration'] ){
+			} else if(isset($line['callee_duration']) && $line['callee_duration'] != $line['billing_duration']){
 				$durationDiff++;
 			}
 		}
@@ -90,6 +82,9 @@ class Billrun_Generator_GeneratedCallsReport extends Billrun_Generator {
 		return $summary;
 	}
 
+	/**
+	 * 
+	 */
 	public function load() {
 	
 		$this->mergeBillingLines($this->subscriber);
@@ -109,23 +104,33 @@ class Billrun_Generator_GeneratedCallsReport extends Billrun_Generator {
 		
 	}
 	
+	/**
+	 * 
+	 * @param type $sub
+	 */
 	protected function mergeBillingLines($sub) {
 		$neededFields = array();
 		$billingLines = $this->retriveSubscriberBillingLines($sub);
+		Billrun_Factory::log()->log("Sub lines : " . print_r($billingLines,1), Zend_Log::DEBUG);
 		foreach ($billingLines as $bLine) {
 			$data = array();
 			foreach ($neededFields as $key) {
 				$data['billing_'.$key] = $bLine[$key];
 			}
 			
-			 Billrun_Factory::db()->linesCollection()->upate(array('type'=>'generated_call',
+			Billrun_Factory::log()->log(print_r( Billrun_Factory::db()->linesCollection()->upate(array('type'=>'generated_call',
 															 'to' => array('$regex' => (string) $bLine['called_number'] ),
 															 'unified_record_time' => array('$lte' => $bLines['unified_record_time']->sec+3,
 																							'$gte' => $bLines['unified_record_time']->sec-3)
-															 ),array('$set'=> $data));
+															 ),array('$set'=> $data)) ,1) );
 		}
 	}
 	
+	/**
+	 * 
+	 * @param type $sub
+	 * @return type
+	 */
 	protected function retriveSubscriberBillingLines($sub) {
 		//TODO use API
 		$query =array(	'type' => 'nsn',						

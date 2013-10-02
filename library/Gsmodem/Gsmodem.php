@@ -72,7 +72,9 @@ class Gsmodem_Gsmodem  {
 		if(isset($pathToDevice)) {
 			$this->deviceFD = @fopen($pathToDevice, 'r+');	
 			$this->state = new Gsmodem_ModemState();
-			$this->initModem();
+			if($this->isValid()) {
+				$this->initModem();
+			}
 		}
 		
 	}
@@ -226,9 +228,10 @@ class Gsmodem_Gsmodem  {
 	 */
 	protected function getResult($waitTime = PHP_INT_MAX, $translate = true) {
 		$res =  FALSE;
-		$callResult = "";
+		$callResult = "";		
 		stream_set_blocking($this->deviceFD,FALSE);
-		while (( $newData = fread($this->deviceFD,4096)) || --$waitTime  > 0) {	
+		$startTime = microtime(true);
+		while (( $newData = fread($this->deviceFD,4096)) || $waitTime > microtime(true) - $startTime ) {	
 			$callResult .= $newData ;
 			//Billrun_Factory::log()->log(trim($callResult),  Zend_Log::DEBUG);
 			if( $translate && isset(self::$resultsMap[trim($callResult)])) {
@@ -240,7 +243,8 @@ class Gsmodem_Gsmodem  {
 				$res = $callResult;
 				break;
 			}
-			sleep(1);
+			//wait  for additional input from the device.
+			usleep(10);
 		}
 
 		return $res;
