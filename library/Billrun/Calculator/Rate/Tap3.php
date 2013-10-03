@@ -147,7 +147,7 @@ class Billrun_Calculator_Rate_Tap3 extends Billrun_Calculator_Rate {
 	 * @return Object representing the file header of the line.
 	 */
 	protected function getLineHeader($line) {
-		return Billrun_Factory::db()->logCollection()->query(array('header.stamp' => $line['header_stamp']))->cursor()->current();
+		return Billrun_Factory::db()->logCollection()->query(array('header.stamp' => $line['log_stamp']))->cursor()->current();
 	}
 
 }

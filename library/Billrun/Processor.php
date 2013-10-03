@@ -95,6 +95,12 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 * @var boolean whether to preserve the modification timestamps of the files being backed up
 	 */
 	protected $preserve_timestamps = true;
+	
+	/**
+	 *
+	 * @var string the stamp of the processed entry in log collection
+	 */
+	protected $file_stamp = null;
 
 	/**
 	 * constructor - load basic options
@@ -209,6 +215,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 					break;
 				}
 				$this->setStamp($file->getID());
+				$this->setFileStamp($file);
 				$this->loadFile($file->get('path'), $file->get('retrieved_from'));
 				$processedLinesCount = $this->process();
 				if (FALSE !== $processedLinesCount) {
@@ -656,6 +663,14 @@ abstract class Billrun_Processor extends Billrun_Base {
 	protected function isQueueFull() {
 		$queue_max_size = Billrun_Factory::config()->getConfigValue("queue.max_size", 999999999);
 		return (Billrun_Factory::db()->queueCollection()->count() >= $queue_max_size);
+	}
+	
+	protected function setFileStamp($file) {
+		$this->file_stamp = $file['stamp'];
+	}
+	
+	protected function getFileStamp() {
+		return $this->file_stamp;
 	}
 
 }
