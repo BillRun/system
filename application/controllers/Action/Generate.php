@@ -15,6 +15,8 @@
  */
 class GenerateAction extends Action_Base {
 
+	const GENERATOR_OUTPUT_DIR = "files";
+	
 	/**
 	 * method to execute the generate process
 	 * it's called automatically by the cli main controller
@@ -40,11 +42,10 @@ class GenerateAction extends Action_Base {
 			$this->_controller->addOutput("Starting to Generate. This action can take awhile...");
 			$results = $generator->generate();
 			$this->_controller->addOutput("Generating output files..");
-			if($results) {
+			if(is_array($results)) {
 				$this->generateFiles($results, $generator);
-			}
-			$this->_controller->addOutput("Finish to Generate. This action can take awhile...");
-			
+			}		
+			$this->_controller->addOutput("Finish to Generate.");
 		} else {
 			$this->_controller->addOutput("Generator cannot be loaded");
 		}
@@ -52,10 +53,12 @@ class GenerateAction extends Action_Base {
 	
 	protected function generateFiles($resultFiles,$generator) {
 		foreach ($resultFiles as $name => $report) {
-			$this->_controller->addOutput("Generating file $name");
-			$fd = fopen("files/$name","w+");//@TODO change the  output  dir to be configurable.
-			$templateName = method_exists($generator,'getTemplate') ? $generator->getTemplate($name) : false;
-			fwrite($fd, $this->getView()->render($this->getTemplate($templateName),$report));
+			$templateName = $this->getTemplate( method_exists($generator,'getTemplate') ? $generator->getTemplate($name) : false );
+			$fname = date('Ymd'). "_" . $name ."." . preg_replace('/\.[^.]*$/', "", preg_replace('/^[^.]*\./', "", $templateName));
+			$this->_controller->addOutput("Generating file $fname");
+			$fd = fopen(static::GENERATOR_OUTPUT_DIR. DIRECTORY_SEPARATOR.$fname,"w+");//@TODO change the  output  dir to be configurable.
+			
+			fwrite($fd, $this->getView()->render($templateName,array('data'=>$report)));
 			fclose($fd);	
 			}				
 	}

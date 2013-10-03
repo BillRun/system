@@ -70,6 +70,10 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 	 * Generate the calls as defined in the configuration.
 	 */
 	public function generate() {
+		if(!isset($this->testScript['test_script'])) {
+			Billrun_Factory::log("No test script configured!", Zend_Log::NOTICE);
+			return false;
+		}
 		if (count($this->modemDevices) > 0) {
 			while ($this->isWorking) {
 				if ($this->isConfigUpdated($this->testScript)) {
@@ -80,6 +84,7 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 		} else {
 			Billrun_Factory::log("No active modem devices.", Zend_Log::NOTICE);
 		}
+		return true;
 	}
 
 	/**
@@ -162,7 +167,7 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 			$this->makeACall($device, $call, $action['to']);
 		} else {
 			if ($action['action_type'] != static::TYPE_BUSY) {
-				$this->waitForCall($device, $call, $action['action_type']);
+				$this->waitForCall($device, $call, $action['action_type'], $action['duration'] + static::BUSY_WAIT_TIME );
 			} else {
 				$this->callToBusyNumber($device, $action['duration']);
 				$call['calling_result'] = 'busy';
@@ -182,11 +187,10 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 	 * @return mixed the call record with the data regarding making the call.
 	 */
 	protected function makeACall($device, &$callRecord, $numberToCall) {
-		Billrun_Factory::log("Making  a call to  {$numberToCall}");
+		Billrun_Factory::log("Making a call to  {$numberToCall}");
 		$callRecord['execution_start_time'] = new MongoDate(time());
-		;
-		$callRecord['calling_result'] = $device->call($numberToCall);
 		$callRecord['called_number'] = $numberToCall;
+		$callRecord['calling_result'] = $device->call($numberToCall);
 
 		return $callRecord['calling_result'];
 	}
@@ -196,9 +200,9 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 	 * @param mixed $callRecord  the call record to save to the DB.
 	 * @return mixed the call record with the data regarding the incoming call.
 	 */
-	protected function waitForCall($device, &$callRecord, $callType) {
+	protected function waitForCall($device, &$callRecord, $callType, $duration) {
 		Billrun_Factory::log("Waiting for a call of type {$callType}");
-		if ($device->waitForCall() !== FALSE) {
+		if ($device->waitForCall($duration) !== FALSE) {
 			switch ($callType) {
 				default:
 				case 'regular':
@@ -213,7 +217,7 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 						$callRecord['calling_result'] = $device->hangUp();
 					break;
 			}
-		}
+		} 
 
 		return $callRecord['calling_result'];
 	}
@@ -236,7 +240,7 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 	 * @param type $callRecord the call record to save to the DB.
 	 */
 	protected function HandleCall($device, &$callRecord, $waitTime, $hangup  = true) {
-		Billrun_Factory::log("Handling and active call.");
+		Billrun_Factory::log("Handling an active call.");
 		$callRecord['call_start_time'] = new MongoDate(time());
 		$callRecord['end_result'] = $device->waitForCallToEnd($hangup ? $waitTime : $waitTime + static::BUSY_WAIT_TIME*2);
 		if ($callRecord['end_result'] == Gsmodem_Gsmodem::NO_RESPONSE ) {
@@ -245,7 +249,7 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 		} 
 
 		$callRecord['call_end_time'] = new MongoDate(time());
-		$callRecord['duration'] = strtotime($callRecord['call_end_time']) - strtotime($callRecord['call_start_time']);
+		$callRecord['duration'] = $callRecord['call_end_time']->sec - $callRecord['call_start_time']->sec;
 	}
 
 	/**
@@ -345,10 +349,12 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 	 */
 	protected function safeSave($query, $updateData, $newData) {
 		$linesCollec = Billrun_Factory::db()->linesCollection();
+		$varifiyField = array_keys($updateData)[0];
 		if (!($ret = $linesCollec->findAndModify(	$query, 
 													array('$setOnInsert' => $newData), 
 													array(), 
-													array('upsert' => true, 'new' => true)) ) || $ret->isEmpty()) {
+													array('upsert' => true, 'new' => true)) )|| 
+				!isset($ret->getRawData()[$varifiyField]) || $ret->getRawData()[$varifiyField] != $updateData[$varifiyField] ) {
 
 			if (!($ret = $linesCollec->findAndModify(	$query, 
 														array('$set' => $updateData), 
@@ -361,7 +367,7 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 			}
 		}
 
-		Billrun_Factory::log('Successfully saved : ' . print_r($updateData, 1));
+		Billrun_Factory::log('Successfully saved : ' . print_r($ret->getRawData(), 1));
 		return true;
 	}
 

@@ -31,11 +31,16 @@ class Billrun_Generator_CallingScript extends Billrun_Generator {
 	 */
 	protected $scriptType = self::TYPE_REGULAR;
 	
-
+	protected $numbers = array("0586325444","0586792924"); //'',
+	
+	
 	public function __construct($options) {
 		parent::__construct($options);
 		if (isset($options['script_type'])) {
 			$this->scriptType = $options['script_type'];
+		}
+		if (isset($options['numbers'])) {
+			$this->numbers = split(",",$options['numbers']);
 		}
 	}
 
@@ -44,17 +49,23 @@ class Billrun_Generator_CallingScript extends Billrun_Generator {
 	 */
 	public function generate() {
 		$durations = array(10,15,35,80,180);
-		$types = array('regular','busy','no_answer','voice_mail');
-		$numbers = array('0586792924','0547371030');
+		$types = array('regular'=> 420,'busy' => 250 ,'no_answer' => 250 ,'voice_mail' => 250);
+		
 		$sides = array('callee','caller');
-
+		
+		if(!isset($types[$this->scriptType])) {
+			Billrun_Factory::log("The call type {$this->scriptType} isn't a legal type.");
+			return false;
+		}
+		
 		$offset = 60;
 		$actions = array();
-		for($i = 0; $i < 420; $i++) {
+		$numbersCont = count($this->numbers);
+		for($i = 0; $i < $types[$this->scriptType]; $i++) {
 		  $action = array();
 		  $action['time'] = date('H:i:s',$offset);
-		  $action['from'] = $numbers[($i/count($numbers)) % count($numbers)];
-		  $action['to'] = $numbers[(1+ $i - ($i/count($numbers))) % count($numbers)];
+		  $action['from'] = $this->numbers[($i/$numbersCont) % $numbersCont];
+		  $action['to'] = $this->numbers[(1+ $i - ($i/$numbersCont)) % $numbersCont];
 		  $action['duration'] = ( $this->scriptType == 'voice_mail' ?  1.5  : $durations[$i %  count($durations)] );
 		  $action['hangup'] = $sides[$i % count($sides)];
 		  $action['action_type'] = $this->scriptType;
@@ -67,7 +78,7 @@ class Billrun_Generator_CallingScript extends Billrun_Generator {
 	}
 
 	public function getTemplate($param= null) {
-		return 'json_dump.phtml';
+		return 'json_dump.json.phtml';
 	}
 	
 	/**

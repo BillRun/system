@@ -34,9 +34,12 @@ class Gsmodem_Gsmodem  {
 							'reset' => 'Z',
 							'register' => '+COPS=%0%',
 							'register_reporting' => '+CREG=%0%',
+							'register_status' => '+CREG?',
 							'incoming_call_id' => '+CLIP=%0%',		
 							'get_error' => '+CEER',
-							'get_number' => '+CNUM'
+							'get_number' => '+CNUM',
+							'echo_mode' => 'E%0%',
+							'reset' => 'Z'
 						);
 
 	static protected $resultsMap = array( 
@@ -85,7 +88,7 @@ class Gsmodem_Gsmodem  {
 	 * @return type
 	 */
 	public function call($number) {		
-		
+		$this->hangUp();
 		return $this->doCmd($this->getATcmd('call', array($number)));		
 	}
 	
@@ -134,7 +137,8 @@ class Gsmodem_Gsmodem  {
 	 */
 	public function registerToNet() {
 		Billrun_Factory::log("Registering to network");
-		$res = $this->doCmd($this->getATcmd('register',array(0)), true, false);		
+		$res = $this->doCmd($this->getATcmd('register',array(0)), true, false);	
+		return $this->getValueFromResult('CREG', $res);
 		
 	}
 	
@@ -199,9 +203,19 @@ class Gsmodem_Gsmodem  {
 	 * Initialize the modem settings.
 	 */
 	public function initModem() {
-		$this->hangUp();
-		$this->doCmd($this->getATcmd('incoming_call_id',array(1)), true, false);
-		$this->doCmd($this->getATcmd('register_reporting',array(2)), true, false);
+		
+		$this->doCmd($this->getATcmd('reset',array()), false, false);
+		sleep(1);
+		$this->doCmd($this->getATcmd('echo_mode',array(0)), false, false);
+		sleep(1);
+		$this->doCmd("AT+CVHU=0 ;\r", true);
+		$this->hangUp();		
+		$this->doCmd($this->getATcmd('incoming_call_id',array(1)), true);
+		$this->doCmd($this->getATcmd('register_reporting',array(2)), true);
+	}
+	
+	public function getState() {
+		return $this->state->getState();
 	}
 
 
@@ -218,7 +232,7 @@ class Gsmodem_Gsmodem  {
 		foreach ($params as $key => $value) {
 			$cmdStr = preg_replace('/%'.$key.'%/', $value, $cmdStr);
 		}
-		return  $cmdStr . ";\n";
+		return  $cmdStr . ";\r";
 	}
 	
 	/**
@@ -234,19 +248,27 @@ class Gsmodem_Gsmodem  {
 		while (( $newData = fread($this->deviceFD,4096)) || $waitTime > microtime(true) - $startTime ) {	
 			$callResult .= $newData ;
 			//Billrun_Factory::log()->log(trim($callResult),  Zend_Log::DEBUG);
-			if( $translate && isset(self::$resultsMap[trim($callResult)])) {
-					
-					$this->state->gotResult(trim($callResult));
-					$res = self::$resultsMap[trim($callResult)];
+			if( preg_match("/\n/",$callResult) ) {
+				if( $translate ) {
+					foreach (split("\n",$callResult) as $value) {
+						//Billrun_Factory::log()->log(trim($value),  Zend_Log::DEBUG);
+						if(isset(self::$resultsMap[trim($value)])) {
+							Billrun_Factory::log()->log(trim($value),  Zend_Log::DEBUG);
+							$this->state->gotResult(trim($value));
+							$res = self::$resultsMap[trim($value)];
+							break 2;
+						}
+					}
+					$callResult = "";
+				} else {
+					$res = $callResult;
+					$this->state->gotResult(trim($res));
 					break;
-			} else if(!$translate && $callResult && !$newData ){
-				$res = $callResult;
-				break;
+				}
 			}
 			//wait  for additional input from the device.
-			usleep(10);
+			usleep(100);
 		}
-
 		return $res;
 	}
 	
@@ -276,9 +298,21 @@ class Gsmodem_Gsmodem  {
 
 	}
 	
+	/**
+	 * 
+	 * @param type $resultKey
+	 * @param type $result
+	 * @return type
+	 */
 	protected function getValueFromResult($resultKey,$result) {
 		$matches = array();
-		return preg_match("/.+\+$resultKey:\s*(.+)$/", $result, $matches ) > 0  ? split(",", $matches[1]) : false;
+		$values = array();
+		foreach (split("\n",$result) as $value) {
+			if(($match = preg_match("/.+\+$resultKey:\s*(.+)$/", $value, $matches ) > 0  ? split(",", $matches[1]) : false )) {
+				$values[] = $match;
+			}
+		}
+		return empty($values) ? $values : false;
 	}
 	
 }

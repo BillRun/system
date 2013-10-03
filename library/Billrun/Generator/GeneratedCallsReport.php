@@ -52,7 +52,7 @@ class Billrun_Generator_GeneratedCallsReport extends Billrun_Generator {
 		$report['from']	 = $this->from;
 		$report['to']	 = $this->to;
 		
-		return array(date("YmdHi").".xml" => $report);
+		return array("call_matching_report" => $report);
 	}
 	
 	/**

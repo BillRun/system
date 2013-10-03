@@ -1,30 +1,30 @@
 <<?= "?" ?>xml version="1.0" encoding="UTF-16" ?>
 <CallGeneratorReport>
-	<From><?= date(Billrun_Base::base_dateformat,$from) ?></From>
-	<To><?= date(Billrun_Base::base_dateformat, $to) ?></To>
+	<From><?= date(Billrun_Base::base_dateformat,$data['from']) ?></From>
+	<To><?= date(Billrun_Base::base_dateformat, $data['to']) ?></To>
 	<Summary>
-		<Missed><?= $summary['missed'] ?></Missed>
-		<DurationDifference><?= $summary['duration_diff'] ?></DurationDifference>
+		<Missed><?= $data['summary']['missed'] ?></Missed>
+		<DurationDifference><?= $data['summary']['duration_diff'] ?></DurationDifference>
 		<CallTypes>
-			<?php foreach ($summary['calls_types'] as $key => $value) {	?>
+			<?php foreach ($data['summary']['calls_types'] as $key => $value) {	?>
 				<<?= ucfirst($key) ?>><?= $value ?></<?= ucfirst($key) ?>>
 			<?php } ?>
 		</CallTypes>
 	<Summary>
 	<Comparison>
-		<?php foreach ($cdr_calls_comparison as $key => $value) {	?>
+		<?php foreach ($data['cdr_calls_comparison'] as $key => $compr) {	?>
 		<CallComparison>
 			<CallTime><?= date(Billrun_Base::base_dateformat,$key*2)?></CallTime>
 			<Generated>
-				<?php if (isset($cdr_calls_comparison[$key]['generated'])) {					
-						 foreach ($cdr_calls_comparison[$key]['generated'] as $key => $value) {	?>
+				<?php if (isset($compr['generated'])) {					
+						 foreach ($compr['generated'] as $key => $value) {	?>
 						<<?= ucfirst($key) ?>><?= $value ?></<?= ucfirst($key) ?>>
 					<?php } 
 					} ?>								
 			</Generated>
 			<CDR>
-				<?php if (isset($cdr_calls_comparison[$key]['cdr'])) {
-						 foreach ($cdr_calls_comparison[$key]['cdr'] as $key => $value) {	?>
+				<?php if (isset($compr['cdr'])) {
+						 foreach ($compr['cdr'] as $key => $value) {	?>
 						<<?= ucfirst($key) ?>><?= $value ?></<?= ucfirst($key) ?>>
 					<?php } 
 					 } ?>
@@ -33,7 +33,7 @@
 		<?php } ?>
 	</Comparison>
 	<CallsBreakdown>
-		<?php foreach ($generated_breakdown as $key => $value) { ?>
+		<?php foreach ($data['generated_breakdown'] as $key => $value) { ?>
 			<<?= ucfirst($key) ?>><?= count($value )?></<?= ucfirst($key) ?>>
 		<?php } ?>
 	</CallsBreakdown>

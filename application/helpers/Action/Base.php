@@ -41,6 +41,10 @@ abstract class Action_Base extends Yaf_Action_Abstract {
 			$template =  strtolower(preg_replace("/Controller$/","", get_class($this->_controller))). DIRECTORY_SEPARATOR.
 						 strtolower(preg_replace("/Action$/","", get_class($this))). DIRECTORY_SEPARATOR.
 						 $name;
+			if(!file_exists($template) && !file_exists(APPLICATION_PATH."/application/views/".$template)) {
+				$template = strtolower(preg_replace("/Controller$/","", get_class($this->_controller))). DIRECTORY_SEPARATOR.
+						 $name;
+			}
 		}
 		return $template;
 	}
