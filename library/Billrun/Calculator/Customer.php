@@ -21,6 +21,20 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	 * @var string
 	 */
 	static protected $type = "Customer";
+	public $subscriberSettings = array();
+	
+	public function __construct($options = array()) {
+		$this->subscriberSettings = self::config()->getConfigValue('customer', array());
+		
+		if (!isset($this->subscriberSettings['calculator']['subscriber_identification_translation']) 
+			|| !isset($this->subscriberSettings['calculator']['subscriber']['time_feild_name'])
+			|| !isset($this->subscriberSettings['calculator']['subscriber']['subscriber_id_feild_name'])) {
+			return false;
+		}
+		
+		$time = $this->subscriberSettings['calculator']['subscriber']['time_feild_name'];
+	}
+	
 	
 	/**
 	 * method to receive the lines the calculator should take care
@@ -47,81 +61,55 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	 * @return boolean true on success else false
 	 */
 	protected function updateRow($row) {
-		$imsi = null;
-		$phone_number = null;
-		
 		if ($row['source'] == 'api' && $row['type'] == 'refund') {
 			$time = date("YmtHis", $row->get('unified_record_time')->sec);
-			
-			if($row->get('NDC_SN')) {
-				$phone_number = $row->get('NDC_SN');
-				$time = $row->get('call_start_dt');
-			}
-			else {
-				$imsi = $row->get('imsi');
-				$time = $row->get('callEventStartTimeStamp');
-			}
-			
-		} else {	
-			if($row->get('NDC_SN')) {
-				$phone_number = $row->get('caller_phone_no');
-				$time = $row->get('call_start_dt');
-			}
-			else {
-				$imsi = $row->get('imsi');
-				$time = $row->get('callEventStartTimeStamp');
-			}
 		}
 
+		$customer_identification = array();
+		$customer_identification[$this->subscriberSettings['calculator']['subscriber_identification_translation']] = $row->get($this->subscriberSettings['calculator']['subscriber_identification_translation']);
+		
 		// load subscriber
-		$subscriber = golan_subscriber::get($time, $phone_number, $imsi);
+		$subscriber = golan_subscriber::get($customer_identification ,$time);
 		
 		if (!$subscriber) {
 			if (!isset($row['subscriber_not_found']) || (isset($row['subscriber_not_found']) && $row['subscriber_not_found'] == false)) {
-				$msg = "Failed  when sending event to subscriber_plan_by_date.rpc.php". PHP_EOL . "subscriber not found, phone_number: ". $phone_number . "imsi: ". $imsi;
+				$msg = "Failed  when sending event to subscriber_plan_by_date.rpc.php". PHP_EOL . "subscriber not found, ". key($customer_identification) ." : ".$customer_identification[key($customer_identification)];
 				$this->sendEmailOnFailure($msg);
 				
-				// update all rows with same subscriber detials - subscriber_not_found:true
+				// subscriber_not_found:true, update all rows with same subscriber detials
+				$status = true;
+				$result = $this->update_same_subscriber($status, $customer_identification, $subscriber);
+			}
+			
+			Billrun_Factory::log()->log("subscriber not found ". key($customer_identification) ." : ".$customer_identification[key($customer_identification)] . $time, Zend_Log::INFO);
+			return false;
+		}
+		
+		if (!isset($subscriber[$this->subscriberSettings['calculator']['subscriber_id']]) || !isset($subscriber['account_id'])) {
+			if (!isset($row['subscriber_not_found']) || (isset($row['subscriber_not_found']) && $row['subscriber_not_found'] == false)) {
+				$msg = "Did not receive one of necessary params ". print_r($subscriber). PHP_EOL .key($customer_identification) ." : ".$customer_identification[key($customer_identification)];
+				$this->sendEmailOnFailure($msg);
+				
+				// subscriber_not_found:true, update all rows with same subscriber detials
 				$status = true;
 				$result = $this->update_same_subscriber($status, $imsi, $phone_number);
 			}
 			
-			Billrun_Factory::log()->log("subscriber not found. phone:" . $phone_number . " imsi: ". $imsi. " time: " . $time, Zend_Log::INFO);
+			Billrun_Factory::log()->log("subscriber_id or account_id not found. phone: " . key($customer_identification) ." : ".$customer_identification[key($customer_identification)] . $time, Zend_Log::WARN);
 			return false;
 		}
 		
 		if (isset($row['subscriber_not_found']) && $row['subscriber_not_found'] == true) {
-			// update all rows with same subscriber detials - subscriber_not_found:false
+			// subscriber_not_found:false, update all rows with same subscriber detials
 			$status = false;
-			$result = $this->update_same_subscriber($status, $imsi, $phone_number);
+			$result = $this->update_same_subscriber($status, $customer_identification, $subscriber);
 		}
 		
 		$current = $row->getRawData();
-		
-		$subscriber_id = $subscriber['subscriber_id'];
-		if(empty($imsi)) {
-			$subscriber_id = $subscriber['id'];
-		}
-		
-		if (!isset($subscriber_id) || !isset($subscriber['account_id'])) {
-			if (!isset($row['subscriber_not_found']) || (isset($row['subscriber_not_found']) && $row['subscriber_not_found'] == false)) {
-				$msg = "Did not receive one of necessary params - phone_number: ". $phone_number . "imsi: ". $imsi. PHP_EOL;
-				$this->sendEmailOnFailure($msgi);
-				
-				// update all rows with this imsi - imsi_not_found:true
-				$status = true;
-				$result = $this->update_same_subscriber($status, $imsi, $phone_number);
-			}
-			
-			Billrun_Factory::log()->log("subscriber_id or account_id not found. phone:" . $phone_number . " imsi: ". $imsi. " time: " . $time, Zend_Log::WARN);
-			return false;
-		}
-		
+		$subscriber_id = $subscriber[$this->subscriberSettings['calculator']['subscriber_id']];
 		$added_values = array('subscriber_id' => $subscriber_id, 'account_id' => $subscriber['account_id']);
 		$newData = array_merge($current, $added_values);
 		$row->setRawData($newData);
-		
-		print_r($newData);
 		
 		return true;
 	}
@@ -139,22 +127,13 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		}
 	}
 	
-	protected function update_same_subscriber($status, $imsi, $phone_number) {
+	protected function update_same_subscriber($status, $customer_identification, $subscriber) {
 		$lines = Billrun_Factory::db()->linesCollection();
-		
-		if (!empty($imsi)) {
-			$val = $imsi;
-			$key = 'imsi';
-		}
-		else {
-			$val = $phone_number;
-			$key = 'caller_phone_no';
-		}
 		
 		$rows = array();
 		$results = $lines->query(array(
 						'source' => 'nrtrde',
-						$key => $val
+						key($customer_identification) => $customer_identification[key($customer_identification)]
 					));
 		
 		if(empty($results)) {
@@ -162,7 +141,14 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		}
 		
 		foreach ($results as $result) {
-			$added_values = array('subscriber_not_found' => $status);
+			$added_values = array();
+			$added_values['subscriber_not_found'] = $status;
+			
+			if (isset($subscriber['account_id']) && !empty($subscriber['account_id']) && isset($subscriber['subscriber_id']) && !empty($subscriber['subscriber_id'])) {
+				$added_values['account_id'] = $subscriber['account_id'];
+				$added_values['subscriber_id'] = $subscriber['subscriber_id'];
+			}
+			
 			$result_a = $result->getRawData();
 			$newData = array_merge($result_a, $added_values);
 			$result->setRawData($newData);
