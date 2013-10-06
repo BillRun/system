@@ -57,9 +57,6 @@ class Generator_Golan extends Billrun_Generator {
 		$invoice_total_manual_correction_credit = 0;
 		$invoice_total_manual_correction_charge = 0;
 		$invoice_total_outside_gift_novat = 0;
-		$invoice_total_vat = 0;
-		$invoice_total_charge_no_vat = 0;
-		$invoice_total_charge = 0;
 		$billrun_key = $row->get('billrun_key');
 		$aid = $row->get('aid');
 		Billrun_Factory::log()->log("xml account " . $aid, Zend_Log::INFO);
@@ -156,11 +153,9 @@ class Generator_Golan extends Billrun_Generator {
 			$subscriber_sumup->TOTAL_MANUAL_CORRECTION_CREDIT = -floatval(isset($subscriber['costs']['credit']['refund']['vatable']) ? $subscriber['costs']['credit']['refund']['vatable'] : 0);
 			$subscriber_sumup->TOTAL_MANUAL_CORRECTION = floatval($subscriber_sumup->TOTAL_MANUAL_CORRECTION_CHARGE) + floatval($subscriber_sumup->TOTAL_MANUAL_CORRECTION_CREDIT);
 			$subscriber_sumup->TOTAL_OUTSIDE_GIFT_NOVAT = floatval((isset($subscriber['costs']['out_plan']['vat_free']) ? $subscriber['costs']['out_plan']['vat_free'] : 0));
-			$total_vatable = floatval((isset($subscriber_flat_costs['vatable']) ? $subscriber_flat_costs['vatable'] : 0) + (isset($subscriber['costs']['over_plan']['vatable']) ? $subscriber['costs']['over_plan']['vatable'] : 0) + (isset($subscriber['costs']['out_plan']['vatable']) ? $subscriber['costs']['out_plan']['vatable'] : 0) + (isset($subscriber['costs']['credit']['charge']['vatable']) ? $subscriber['costs']['credit']['charge']['vatable'] : 0) - (isset($subscriber['costs']['credit']['refund']['vatable']) ? $subscriber['costs']['credit']['refund']['vatable'] : 0));
-			$total_vat_free = floatval((isset($subscriber_flat_costs['vat_free']) ? $subscriber_flat_costs['vat_free'] : 0) + (isset($subscriber['costs']['over_plan']['vat_free']) ? $subscriber['costs']['over_plan']['vat_free'] : 0) + (isset($subscriber['costs']['out_plan']['vat_free']) ? $subscriber['costs']['out_plan']['vat_free'] : 0) + (isset($subscriber['costs']['credit']['charge']['vat_free']) ? $subscriber['costs']['credit']['charge']['vat_free'] : 0) - (isset($subscriber['costs']['credit']['refund']['vat_free']) ? $subscriber['costs']['credit']['refund']['vat_free'] : 0));
-			$subscriber_sumup->TOTAL_VAT = floatval($row->get('vat') * $total_vatable);
-			$subscriber_sumup->TOTAL_CHARGE_NO_VAT = $total_vatable + $total_vat_free;
-			$subscriber_sumup->TOTAL_CHARGE = floatval($subscriber_sumup->TOTAL_CHARGE_NO_VAT) + floatval($subscriber_sumup->TOTAL_VAT);
+			$subscriber_sumup->TOTAL_VAT = $subscriber['totals']['after_vat']-$subscriber['totals']['before_vat'];
+			$subscriber_sumup->TOTAL_CHARGE_NO_VAT = $subscriber['totals']['before_vat'];
+			$subscriber_sumup->TOTAL_CHARGE = $subscriber['totals']['after_vat'];
 
 			$invoice_total_gift+= floatval($subscriber_sumup->TOTAL_GIFT);
 			$invoice_total_above_gift+= floatval($subscriber_sumup->TOTAL_ABOVE_GIFT);
@@ -169,9 +164,6 @@ class Generator_Golan extends Billrun_Generator {
 			$invoice_total_manual_correction_credit += floatval($subscriber_sumup->TOTAL_MANUAL_CORRECTION_CREDIT);
 			$invoice_total_manual_correction_charge += floatval($subscriber_sumup->TOTAL_MANUAL_CORRECTION_CHARGE);
 			$invoice_total_outside_gift_novat +=floatval($subscriber_sumup->TOTAL_OUTSIDE_GIFT_NOVAT);
-			$invoice_total_vat+=floatval($subscriber_sumup->TOTAL_VAT);
-			$invoice_total_charge_no_vat+=floatval($subscriber_sumup->TOTAL_CHARGE_NO_VAT);
-			$invoice_total_charge +=floatval($subscriber_sumup->TOTAL_CHARGE);
 
 			$subscriber_breakdown = $subscriber_inf->addChild('SUBSCRIBER_BREAKDOWN');
 			$breakdown_topic_over_plan = $subscriber_breakdown->addChild('BREAKDOWN_TOPIC');
@@ -412,7 +404,7 @@ class Generator_Golan extends Billrun_Generator {
 		$inv_invoice_total->addChild('FROM_PERIOD', date('Y/m/d', Billrun_Util::getStartTime($billrun_key)));
 		$inv_invoice_total->addChild('TO_PERIOD', date('Y/m/d', Billrun_Util::getEndTime($billrun_key)));
 		$inv_invoice_total->addChild('SUBSCRIBER_COUNT', count($row->get('subs')));
-		$inv_invoice_total->addChild('TOTAL_CHARGE', $invoice_total_charge);
+		$inv_invoice_total->addChild('TOTAL_CHARGE', $row['totals']['after_vat']);
 		$inv_invoice_total->addChild('TOTAL_CREDIT', $invoice_total_manual_correction_credit);
 		$gifts = $inv_invoice_total->addChild('GIFTS');
 		$invoice_sumup = $inv_invoice_total->addChild('INVOICE_SUMUP');
@@ -423,9 +415,9 @@ class Generator_Golan extends Billrun_Generator {
 		$invoice_sumup->addChild('TOTAL_MANUAL_CORRECTION_CREDIT', $invoice_total_manual_correction_credit);
 		$invoice_sumup->addChild('TOTAL_MANUAL_CORRECTION_CHARGE', $invoice_total_manual_correction_charge);
 		$invoice_sumup->addChild('TOTAL_OUTSIDE_GIFT_NOVAT', $invoice_total_outside_gift_novat);
-		$invoice_sumup->addChild('TOTAL_VAT', $invoice_total_vat);
-		$invoice_sumup->addChild('TOTAL_CHARGE_NO_VAT', $invoice_total_charge_no_vat);
-		$invoice_sumup->addChild('TOTAL_CHARGE', $invoice_total_charge);
+		$invoice_sumup->addChild('TOTAL_VAT', $row['totals']['after_vat']-$subscriber['totals']['before_vat']);
+		$invoice_sumup->addChild('TOTAL_CHARGE_NO_VAT', $row['totals']['before_vat']);
+		$invoice_sumup->addChild('TOTAL_CHARGE', $row['totals']['after_vat']);
 		return $xml;
 	}
 

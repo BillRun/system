@@ -89,11 +89,7 @@ class Billrun_Billrun {
 	 * @return Array tan empty billrun account  structure.
 	 */
 	public function getAccountEmptyBillrunEntry($aid, $billrun_key) {
-		$billrun_end_time = Billrun_Util::getEndTime($billrun_key);
-		$vat = self::getVATAtDate($billrun_end_time);
-		if (is_null($vat)) {
-			$vat = floatval(Billrun_Factory::config()->getConfigValue('pricing.vat', 0.18));
-		}
+		$vat = self::getVATByBillrunKey($billrun_key);
 		return array(
 			'aid' => $aid,
 			'subs' => array(
@@ -101,6 +97,15 @@ class Billrun_Billrun {
 			'vat' => $vat,
 			'billrun_key' => $billrun_key,
 		);
+	}
+
+	protected static function getVATByBillrunKey($billrun_key) {
+		$billrun_end_time = Billrun_Util::getEndTime($billrun_key);
+		$vat = self::getVATAtDate($billrun_end_time);
+		if (is_null($vat)) {
+			$vat = floatval(Billrun_Factory::config()->getConfigValue('pricing.vat', 0.18));
+		}
+		return $vat;
 	}
 
 	protected static function getVATAtDate($timestamp) {
@@ -291,6 +296,30 @@ class Billrun_Billrun {
 	}
 
 	/**
+	 * Returns the increment totals update query
+	 * @param array $pricingData the output array from updateSubscriberBalance function
+	 * @param string $billrun_key the billrun_key to insert into the billrun
+	 * @param boolean $vatable is the line vatable or not
+	 */
+	protected static function getUpdateTotalsQuery($pricingData, $billrun_key, $vatable) {
+		if ($vatable) {
+			$update['$inc']['subs.$.totals.vatable'] = $pricingData['aprice'];
+			$update['$inc']['totals.vatable'] = $pricingData['aprice'];
+			$vat = self::getVATByBillrunKey($billrun_key);
+			$price_after_vat = $pricingData['aprice'] + $pricingData['aprice'] * $vat;
+		} else {
+			$price_after_vat = $pricingData['aprice'];
+		}
+
+		$update['$inc']['subs.$.totals.before_vat'] = $pricingData['aprice'];
+		$update['$inc']['subs.$.totals.after_vat'] = $price_after_vat;
+		$update['$inc']['totals.before_vat'] = $pricingData['aprice'];
+		$update['$inc']['totals.after_vat'] = $price_after_vat;
+
+		return $update;
+	}
+
+	/**
 	 * Returns the increment data counters update query
 	 * @param string $usage_type the general usage type of the line (output of getGeneralUsageType function)
 	 * @param Mongodloid_Entity $row the row to insert to the billrun
@@ -440,7 +469,7 @@ class Billrun_Billrun {
 		list($plan_key, $category_key, $zone_key) = self::getBreakdownKeys($row, $pricingData, $vatable);
 
 		$query = array_merge_recursive(self::getMatchingBillrunQuery($aid, $billrun_key), self::getOpenBillrunQuery(), self::getDistinctLinesBillrunQuery($sid, $usage_type, $row_ref));
-		$update = array_merge_recursive(self::getUpdateCostsQuery($pricingData, $row, $vatable), self::getUpdateDataCountersQuery($usage_type, $row), self::getPushLineQuery($usage_type, $row_ref), self::getUpdateBreakdownQuery($counters, $pricingData, $vatable, $plan_key, $category_key, $zone_key));
+		$update = array_merge_recursive(self::getUpdateCostsQuery($pricingData, $row, $vatable), self::getUpdateDataCountersQuery($usage_type, $row), self::getPushLineQuery($usage_type, $row_ref), self::getUpdateBreakdownQuery($counters, $pricingData, $vatable, $plan_key, $category_key, $zone_key), self::getUpdateTotalsQuery($pricingData, $billrun_key, $vatable));
 		$fields = array();
 		$options = array();
 
