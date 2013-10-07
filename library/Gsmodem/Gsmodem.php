@@ -14,8 +14,6 @@
  */
 class Gsmodem_Gsmodem  {
 
-	//-------------------------- CONSTANTS / STATICS ---------------------------
-	
 	const CONNECTED = "connected";
 	const NO_ANSWER = "no_answer";
 	const CALL_DISCONNECTED = "call_disconnected";
@@ -25,31 +23,6 @@ class Gsmodem_Gsmodem  {
 	const RINGING = 'ringing';
 	const HANG_UP = 'hang_up';
 	const HANGING_UP = 'hanging_up';
-	
-	
-	static protected $atCmdMap = array(
-							'call' => 'D%0%',
-							'answer' => 'A',
-							'hangup' => 'H',	
-							'reset' => 'Z',
-							'register' => '+COPS=%0%',
-							'register_reporting' => '+CREG=%0%',
-							'register_status' => '+CREG?',
-							'incoming_call_id' => '+CLIP=%0%',		
-							'get_error' => '+CEER',
-							'get_number' => '+CNUM',
-							'echo_mode' => 'E%0%',
-							'reset' => 'Z'
-						);
-
-	static protected $resultsMap = array( 
-							'NO ANSWER' => self::NO_ANSWER,
-							'BUSY' => self::BUSY,
-							'ERROR' => self::UNKNOWN,
-							'NO CARRIER' => self::CALL_DISCONNECTED,	
-							'OK' => self::CONNECTED,
-							'RING' => self::RINGING,					
-					);
 	
 	//--------------------------------------------------------------------------
 	
@@ -71,15 +44,14 @@ class Gsmodem_Gsmodem  {
 	 */
 	protected $number = false;
 	
-	public function __construct($pathToDevice) {
+	public function __construct($pathToDevice, $stateMapper = false) {
 		if(isset($pathToDevice)) {
 			$this->deviceFD = @fopen($pathToDevice, 'r+');	
-			$this->state = new Gsmodem_ModemState();
+			$this->state = $stateMapper ? new Gsmodem_ModemState( Gsmodem_StateMapping::IDLE_STATE ,$stateMapper) : new Gsmodem_ModemState();			
 			if($this->isValid()) {
 				$this->initModem();
 			}
-		}
-		
+		}		
 	}
 	
 	/**
@@ -89,7 +61,9 @@ class Gsmodem_Gsmodem  {
 	 */
 	public function call($number) {		
 		$this->hangUp();
-		return $this->doCmd($this->getATcmd('call', array($number)));		
+		$ret =  $this->doCmd($this->getATcmd('call', array($number)), true, true, true, 20);		
+
+		return $ret;
 	}
 	
 	/**
@@ -98,7 +72,7 @@ class Gsmodem_Gsmodem  {
 	 */
 	public function hangUp() {
 		return  $this->state->getState() != Gsmodem_StateMapping::IDLE_STATE && 
-				$this->doCmd($this->getATcmd('hangup')) ? self::HANGING_UP : self::UNKNOWN;						
+				$this->doCmd($this->getATcmd('hangup'), true, true, false, 20) ? self::HANGING_UP : self::UNKNOWN;						
 	}
 	
 	/**
@@ -107,11 +81,14 @@ class Gsmodem_Gsmodem  {
 	 * @return boolean|string FALSE  if the waiting timedout  or the call result if  the call was ended
 	 */
 	public function waitForCallToEnd($waitTime = PHP_INT_MAX) {
+		Billrun_Factory::log("Waiting for call to end for $waitTime seconds");
 		$lastResult= FALSE;
-		 while ( ($this->state->getState() == Gsmodem_StateMapping::IN_CALL_STATE || $this->state->getState() == Gsmodem_StateMapping::OUT_CALL_STATE)) {
-			if( ($lastResult = $this->getResult($waitTime) ) == FALSE) {
-				break;				
-			}
+		$startTime = microtime(true);
+		 while (($waitTime > microtime(true) - $startTime) && 
+				($this->state->getState() == Gsmodem_StateMapping::IN_CALL_STATE || $this->state->getState() == Gsmodem_StateMapping::OUT_CALL_STATE)) {
+			 
+			$lastResult = $this->getResult(0.15);
+			
 		}
 		return $lastResult;
 	}
@@ -123,10 +100,12 @@ class Gsmodem_Gsmodem  {
 	 */
 	public function waitForRingToEnd($waitTime = PHP_INT_MAX) {
 		$lastResult= FALSE;
-		while($this->state->getState() == Gsmodem_StateMapping::RINGING_STATE ) {
-			if( ($lastResult = $this->getResult($waitTime) ) == FALSE) {
-				break;				
-			}
+		$startTime = microtime(true);
+		while(	($waitTime > microtime(true) - $startTime) && 
+				$this->state->getState() == Gsmodem_StateMapping::RINGING_STATE ) {
+			
+				 $lastResult = $this->getResult(0.15);
+				 
 		}
 		
 		return $lastResult != FALSE;
@@ -157,8 +136,8 @@ class Gsmodem_Gsmodem  {
 	 */
 	public function waitForCall($waitTime = PHP_INT_MAX) {		
 		$startTime = time();
-		while($waitTime > time() - $startTime) {
-			 $lastResult = $this->getResult($waitTime);
+		while($waitTime > time() - $startTime ) {
+			 $lastResult = $this->getResult(0.15);
 			if($this->state->getState() == Gsmodem_StateMapping::RINGING_STATE) {
 				return $lastResult;
 			}
@@ -171,7 +150,7 @@ class Gsmodem_Gsmodem  {
 	 * @return 
 	 */
 	public function answer() {
-		return $this->doCmd($this->getATcmd('answer'),true);
+		return $this->doCmd($this->getATcmd('answer'), true, true, true, 20);
 	}
 	
 	/**
@@ -214,10 +193,13 @@ class Gsmodem_Gsmodem  {
 		$this->doCmd($this->getATcmd('register_reporting',array(2)), true);
 	}
 	
+	/**
+	 * Get the current modem state.
+	 * @return type
+	 */
 	public function getState() {
 		return $this->state->getState();
 	}
-
 
 	//----------------------------- PROTECTED ----------------------------------
 	
@@ -228,7 +210,7 @@ class Gsmodem_Gsmodem  {
 	 * @return string the AT string to pass to the modem inorder to execute the command.
 	 */
 	protected function getATcmd($command,$params =array()) {
-		$cmdStr = 'AT' . self::$atCmdMap[$command];
+		$cmdStr = 'AT' . $this->state->getCmdMapping()[$command];
 		foreach ($params as $key => $value) {
 			$cmdStr = preg_replace('/%'.$key.'%/', $value, $cmdStr);
 		}
@@ -240,9 +222,10 @@ class Gsmodem_Gsmodem  {
 	 * @param type $waitTime thwe amount of time to wait for the result.
 	 * @return string|boolean the result/message string we got  from the modem or false if the waiting timed out.
 	 */
-	protected function getResult($waitTime = PHP_INT_MAX, $translate = true) {
+	protected function getResult($waitTime = PHP_INT_MAX, $translate = true, $waitForStateChange = false) {
 		$res =  FALSE;
-		$callResult = "";		
+		$callResult = "";	
+		$beginningState = $this->getState();
 		stream_set_blocking($this->deviceFD,FALSE);
 		$startTime = microtime(true);
 		while (( $newData = fread($this->deviceFD,4096)) || $waitTime > microtime(true) - $startTime ) {	
@@ -252,11 +235,13 @@ class Gsmodem_Gsmodem  {
 				if( $translate ) {
 					foreach (split("\n",$callResult) as $value) {
 						//Billrun_Factory::log()->log(trim($value),  Zend_Log::DEBUG);
-						if(isset(self::$resultsMap[trim($value)])) {
-							Billrun_Factory::log()->log(trim($value),  Zend_Log::DEBUG);
+						if(isset($this->state->getResultMapping()[trim($value)])) {
+							//Billrun_Factory::log()->log(trim($value),  Zend_Log::DEBUG);
 							$this->state->gotResult(trim($value));
-							$res = self::$resultsMap[trim($value)];
-							break 2;
+							$res = $this->state->getResultMapping()[trim($value)];
+							if(!$waitForStateChange || $this->getState() != $beginningState) {								
+								break 2;
+							}
 						}
 					}
 					$callResult = "";
@@ -267,7 +252,7 @@ class Gsmodem_Gsmodem  {
 				}
 			}
 			//wait  for additional input from the device.
-			usleep(100);
+			usleep(50);
 		}
 		return $res;
 	}
@@ -279,17 +264,17 @@ class Gsmodem_Gsmodem  {
 	 * @return mixed	FALSE if the there was a problem to issue the command 
 	 *					or if the $getReesult flag is true  the  value that was returned by the modem.
 	 */
-	protected function doCmd($cmd,$getResult = true, $translate = true) {
+	protected function doCmd($cmd,$getResult = true, $translate = true, $stateChange = false,$waitTime = PHP_INT_MAX) {
 		$this->clearBuffer();
 		$res = fwrite($this->deviceFD, $cmd) > 0 && !$getResult;
 		fflush($this->deviceFD);	
 		$this->state->issuedCommand($cmd);
 		
-		return $getResult ?  trim($this->getResult(PHP_INT_MAX, $translate)) :  $res > 0  ;
+		return $getResult ?  trim($this->getResult($waitTime, $translate, $stateChange)) :  $res > 0  ;
 	}
 	
 	/**
-	 * clear the modem buffer.
+	 * Clear the modem buffer.
 	 */
 	protected function clearBuffer() {
 		stream_set_blocking($this->deviceFD,FALSE);
@@ -299,7 +284,7 @@ class Gsmodem_Gsmodem  {
 	}
 	
 	/**
-	 * 
+	 * Retrive an array containing the values that ws returned in the result.
 	 * @param type $resultKey
 	 * @param type $result
 	 * @return type

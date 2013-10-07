@@ -54,7 +54,7 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 		parent::__construct($options);
 		if (isset($options['path_to_calling_devices'])) {
 			foreach ($options['path_to_calling_devices'] as $value) {
-				$modem = new Gsmodem_Gsmodem($value['device']);
+				$modem = new Gsmodem_Gsmodem($value['device'],(isset($value['statemapping']) ? new $value['statemapping']() : false));
 				if ($modem->isValid()) {
 					$modem->registerToNet();
 					if (isset($value['number'])) {
@@ -96,17 +96,35 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 		if (!$testConfig->isEmpty()) {
 			$this->testScript = $testConfig->getRawData();
 			$this->testId = $this->testScript['test_id'];
-			//@TODO FOR DEBUG REMOVE !
+			/*//@TODO FOR DEBUG REMOVE !
 			$offset = 1;
 			foreach ($this->testScript['test_script'] as &$value) {
 				$value['time'] = date("H:i:s", strtotime("+{$offset} minutes"));
 				$offset+=1;
 			}
 			//@TODO FOR DEBUG END
+			 */
 		}
 		//Billrun_Factory::log("got script : " . print_r($this->testScript, 1));
 	}
 
+	/**
+	 * reset all connected modems
+	 */
+	protected function resetProcessing() {
+//		Billrun_Factory::log("Waiting for the calls to end...");
+//		$status = 0;
+//		foreach ($this->pids as $pid) {
+//			pcntl_s($pid, $status);
+//		}			
+//		Billrun_Factory::log("Calls ended.");
+		$this->pids = array();
+		foreach($this->modemDevices as $device) {
+			$device->hangUp();
+		}
+		
+	}
+	
 	/**
 	 * Act on a given script
 	 * @param array $script the script to act on.
@@ -115,15 +133,19 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 		$action = $this->waitForNextAction($script);
 		if ($action) {
 			//check if the number  speciifed in the action is one of the connected modems if so  act on the action.
+			$this->resetProcessing();
 			foreach( array('from' => true, 'to' => false) as $key => $isCalling ) {
 				if($this->isConnectedModemNumber($action[$key]) != false) {
-					if (!pcntl_fork()) {
+					if (!($pid = pcntl_fork())) {
 						$this->scriptAction($action,$isCalling);
 						exit(0);
 					}
+					$this->pids[] = $pid;
 				}
 			}
+			
 		}
+		
 	}
 
 	/**
@@ -174,11 +196,12 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 			}
 		}
 
-		if ($call['calling_result'] == Gsmodem_Gsmodem::CONNECTED) {
+		if ($call['calling_result'] == Gsmodem_StateMapping::IN_CALL_STATE ||$call['calling_result'] == Gsmodem_StateMapping::OUT_CALL_STATE ) {
 			$this->HandleCall($device, $call, $action['duration'], (($action['hangup'] == 'caller') == $isCalling) );
 		}
 		//$call['execution_end_time'] = date("YmdTHis");
 		$this->save($action, $call, $isCalling);
+		Billrun_Factory::log("Done acting on action of type : {$action['action_type']} for number : ".$device->getModemNumber());
 	}
 
 	/**
@@ -190,7 +213,8 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 		Billrun_Factory::log("Making a call to  {$numberToCall}");
 		$callRecord['execution_start_time'] = new MongoDate(time());
 		$callRecord['called_number'] = $numberToCall;
-		$callRecord['calling_result'] = $device->call($numberToCall);
+		$device->call($numberToCall);
+		$callRecord['calling_result'] = $device->getState();
 
 		return $callRecord['calling_result'];
 	}
@@ -206,7 +230,8 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 			switch ($callType) {
 				default:
 				case 'regular':
-						$callRecord['calling_result'] = $device->answer();
+						$device->answer();
+						$callRecord['calling_result'] = $device->getState();
 					break;
 				case 'no_answer':
 				case 'voice_mail':					
@@ -214,7 +239,8 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 						$callRecord['calling_result'] = 'ignored';
 					break;
 				case 'hangup' :
-						$callRecord['calling_result'] = $device->hangUp();
+						$device->hangUp();
+						$callRecord['calling_result'] = 'hang_up';
 					break;
 			}
 		} 
@@ -230,8 +256,8 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 		$call = array();
 		$ret = $this->makeACall($device, $call, $this->getConfig('busy_number'));
 
-		if ($ret == Gsmodem_Gsmodem::CONNECTED) {
-			$this->HandleCall($device, $call, $duration);
+		if ($ret == Gsmodem_StateMapping::OUT_CALL_STATE) {
+			$this->HandleCall($device, $call, $duration, true);
 		}
 	}
 
@@ -242,11 +268,13 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 	protected function HandleCall($device, &$callRecord, $waitTime, $hangup  = true) {
 		Billrun_Factory::log("Handling an active call.");
 		$callRecord['call_start_time'] = new MongoDate(time());
-		$callRecord['end_result'] = $device->waitForCallToEnd($hangup ? $waitTime : $waitTime + static::BUSY_WAIT_TIME*2);
-		if ($callRecord['end_result'] == Gsmodem_Gsmodem::NO_RESPONSE ) {
+		$ret = $device->waitForCallToEnd($hangup ? $waitTime : $waitTime + static::BUSY_WAIT_TIME*2);
+		if ($ret == Gsmodem_Gsmodem::NO_RESPONSE ) {
 				$device->hangUp();
 				$callRecord['end_result'] = 'hang_up';
-		} 
+		}  else {
+			$callRecord['end_result'] = $device->getState();
+		}
 
 		$callRecord['call_end_time'] = new MongoDate(time());
 		$callRecord['duration'] = $callRecord['call_end_time']->sec - $callRecord['call_start_time']->sec;
@@ -367,7 +395,7 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 			}
 		}
 
-		Billrun_Factory::log('Successfully saved : ' . print_r($ret->getRawData(), 1));
+		Billrun_Factory::log('Successfully saved.');
 		return true;
 	}
 

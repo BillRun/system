@@ -19,7 +19,8 @@ class Billrun_Generator_CallingScript extends Billrun_Generator {
 	const TYPE_BUSY = 'busy';
 	const TYPE_VOICE_MAIL = 'voice_mail';
 	const TYPE_NO_ANSWER = 'no_answer';
-
+	
+	const MINIMUM_TIME_BETWEEN_CALLS = 10;
 
 	/**
 	 * The script to generate calls by.
@@ -70,7 +71,7 @@ class Billrun_Generator_CallingScript extends Billrun_Generator {
 		  $action['hangup'] = $sides[$i % count($sides)];
 		  $action['action_type'] = $this->scriptType;
 
-		 $offset = 60 * ceil( ($offset + $action['duration']) / 60 );
+		 $offset = 60 * ceil( ($offset + $action['duration']+self::MINIMUM_TIME_BETWEEN_CALLS) / 60 );
 		 $actions[] = $action;
 		}
 

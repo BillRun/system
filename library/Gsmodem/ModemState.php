@@ -15,6 +15,42 @@
  */
 class Gsmodem_ModemState {
 	
+	const CONNECTED = "connected";
+	const NO_ANSWER = "no_answer";
+	const CALL_DISCONNECTED = "call_disconnected";
+	const BUSY = "busy";
+	const UNKNOWN = "unknown";
+	const NO_RESPONSE = "";
+	const RINGING = 'ringing';
+	const HANG_UP = 'hang_up';
+	const HANGING_UP = 'hanging_up';
+	
+	
+	 protected $atCmdMap = array(
+							'call' => 'D%0%',
+							'answer' => 'A',
+							'hangup' => 'H',	
+							'reset' => 'Z',
+							'register' => '+COPS=%0%',
+							'register_reporting' => '+CREG=%0%',
+							'register_status' => '+CREG?',
+							'incoming_call_id' => '+CLIP=%0%',		
+							'get_error' => '+CEER',
+							'get_number' => '+CNUM',
+							'echo_mode' => 'E%0%',
+							'reset' => 'Z'
+						);
+
+	protected $resultsMap = array( 
+							'NO ANSWER' => self::NO_ANSWER,
+							'BUSY' => self::BUSY,
+							'ERROR' => self::UNKNOWN,
+							'NO CARRIER' => self::CALL_DISCONNECTED,	
+							'OK' => self::CONNECTED,	
+							"VOICE CALL: BEGIN" => self::CONNECTED,
+							'RING' => self::RINGING,					
+					);
+	
 	/**
 	 * Hold the current state fo the modem  as it mapped be the mapping class
 	 * @var mixed
@@ -62,4 +98,11 @@ class Gsmodem_ModemState {
 		return $this->state;
 	}
 		
+	public function getCmdMapping() {
+		return $this ->atCmdMap;
+	}
+	
+	public function getResultMapping() {
+		return $this->resultsMap;
+	}
 }

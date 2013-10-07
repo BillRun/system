@@ -12,7 +12,8 @@
  * @package  Gsmodem
  * @since    0.1
  */
-class Gsmodem_StateMapping {
+class Gsmodem_StateMapping {	
+	
 	/**
 	 * Possible modem states
 	 */
@@ -48,6 +49,8 @@ class Gsmodem_StateMapping {
 		),
 		self::RINGING_STATE => array(
 			'RING' => self::RINGING_STATE,
+			'NO CARRIER' => self::IDLE_STATE,
+			'ERROR' => self::IDLE_STATE
 		),
 		self::ANSWERING_STATE => array(
 			'OK' => self::IN_CALL_STATE,
@@ -108,7 +111,6 @@ class Gsmodem_StateMapping {
 		$newState = $currentState;
 		$stateMap = $this->commandToStateMapping[$currentState];
 		foreach ($stateMap as $key => $val) {
-
 			if (preg_match("/" . $key . "/i", trim($command))) {
 				$newState = $val;
 			}
