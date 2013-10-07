@@ -59,7 +59,7 @@ class Billrun_Generator_CallingScript extends Billrun_Generator {
 			return false;
 		}
 		
-		$offset = 60;
+		$offset =(int) strtotime("09:00:00") % 86400 ;
 		$actions = array();
 		$numbersCont = count($this->numbers);
 		for($i = 0; $i < $types[$this->scriptType]; $i++) {
