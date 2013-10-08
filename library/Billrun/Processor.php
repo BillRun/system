@@ -524,7 +524,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 			);
 			$offset = 0;
 			while ($insert_count = count($insert = array_slice($this->data['data'], $offset, $this->bulkInsert, true))) {
-				Billrun_Factory::log()->log("Processor bulk insert " . basename($this->filePath) . " from: " . $offset . ' count: ' . $insert_count, Zend_Log::DEBUG);
+				Billrun_Factory::log()->log("Processor bulk insert to lines " . basename($this->filePath) . " from: " . $offset . ' count: ' . $insert_count, Zend_Log::DEBUG);
 				$collection->batchInsert($insert, $bulkOptions);
 				$offset += $this->bulkInsert;
 			}
@@ -550,7 +550,8 @@ abstract class Billrun_Processor extends Billrun_Base {
 				'timeout' => 300000,
 			);
 			$offset = 0;
-			while (count($insert = array_slice($queue_data, $offset, $this->bulkInsert, true))) {
+			while ($insert_count = count($insert = array_slice($queue_data, $offset, $this->bulkInsert, true))) {
+				Billrun_Factory::log()->log("Processor bulk insert to queue " . basename($this->filePath) . " from: " . $offset . ' count: ' . $insert_count, Zend_Log::DEBUG);
 				$queue->batchInsert($insert, $bulkOptions);
 				$offset += $this->bulkInsert;
 			}
