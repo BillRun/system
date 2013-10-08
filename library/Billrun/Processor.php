@@ -229,6 +229,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 */
 	protected function init() {
 		$this->data = array('data' => array());
+		$this->queue_data = array();
 		if (is_resource($this->fileHandler)) {
 			fclose($this->fileHandler);
 		}
