@@ -113,7 +113,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 					$flat_line = $this->saveFlatLine($subscriber, $billrun_key);
 
 					$plan = $flat_line['plan_ref'];
-					if (!$billrun = Billrun_Billrun::updateBillrun($billrun_key, array(), array('aprice' => $flat_price), $flat_line, $plan['vatable'], $subscriber_status)) {
+					if (!$billrun = Billrun_Billrun::updateBillrun($billrun_key, array(), array('aprice' => $flat_price), $flat_line, $plan['vatable'])) {
 						Billrun_Factory::log()->log("Flat costs already exist in billrun collection for subscriber " . $sid . " for billrun " . $billrun_key, Zend_Log::NOTICE);
 					} else {
 						Billrun_Billrun::setSubscriberStatus($aid, $sid, $billrun_key, $subscriber_status);
