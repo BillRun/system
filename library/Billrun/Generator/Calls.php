@@ -333,7 +333,7 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 	 */
 	protected function isConfigUpdated($currentConfig) {
 		$retVal = Billrun_Factory::db()->configCollection()->query(array('key' => 'call_generator',
-				'unified_record_time' => array('$gt' => $currentConfig['unified_record_time']))
+				'unified_record_time' => array('$gt' => $currentConfig['unified_record_time'],'$lte' => time()))
 			)->cursor()->limit(1)->current();
 		return !$retVal->isEmpty();
 	}

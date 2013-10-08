@@ -46,7 +46,7 @@ class Billrun_Generator_GeneratedCallsReport extends Billrun_Generator {
 			$subscriberLines[] = $rowData; //TODO filter the filed to only return relevent fields
 		}
 		
-		//print_r($subscriberLines);
+
 		$report['cdr_calls_comparison'] = $subscriberLines;
 		$report['summary'] = $this->printSummaryReport($subscriberLines, $callResults);
 		$report['from']	 = $this->from;
@@ -109,20 +109,24 @@ class Billrun_Generator_GeneratedCallsReport extends Billrun_Generator {
 	 * @param type $sub
 	 */
 	protected function mergeBillingLines($sub) {
-		$neededFields = array();
+		$neededFields = array('called_number','subscriber_id','account_id','duration','price_customer');
 		$billingLines = $this->retriveSubscriberBillingLines($sub);
-		Billrun_Factory::log()->log("Sub lines : " . print_r($billingLines,1), Zend_Log::DEBUG);
+		//Billrun_Factory::log()->log("Sub lines : " . print_r($billingLines,1), Zend_Log::DEBUG);
 		foreach ($billingLines as $bLine) {
+			Billrun_Factory::log()->log("line : " . print_r($bLine,1), Zend_Log::DEBUG);
 			$data = array();
 			foreach ($neededFields as $key) {
-				$data['billing_'.$key] = $bLine[$key];
+				if(isset($bLine[$key])) {
+					$data['billing_'.$key] = $bLine[$key];
+				}
 			}
-			
-			Billrun_Factory::log()->log(print_r( Billrun_Factory::db()->linesCollection()->upate(array('type'=>'generated_call',
+			 Billrun_Factory::db()->linesCollection()->update(array('type'=>'generated_call',
+															 'from' => array('$regex' => (string) $bLine['calling_number'] ),
 															 'to' => array('$regex' => (string) $bLine['called_number'] ),
-															 'unified_record_time' => array('$lte' => $bLines['unified_record_time']->sec+3,
-																							'$gte' => $bLines['unified_record_time']->sec-3)
-															 ),array('$set'=> $data)) ,1) );
+															 'unified_record_time' => array('$lte' => new MongoDate($bLine['unified_record_time']->sec+5),
+																							'$gte' => new MongoDate($bLine['unified_record_time']->sec-5))
+															 ),array('$set'=> $data));
+
 		}
 	}
 	
@@ -133,20 +137,16 @@ class Billrun_Generator_GeneratedCallsReport extends Billrun_Generator {
 	 */
 	protected function retriveSubscriberBillingLines($sub) {
 		//TODO use API
-		$query =array(	'type' => 'nsn',						
-						'subscriber_id' => (string) $this->subscriber, 
-						'unified_record_time' => array(
-													 '$lte'=> new MongoDate($this->to) ,
-													'$gt' => new MongoDate($this->from) ) 
-			);
-		if($this->subscriber) {
-			$this->lines =  Billrun_Factory::db()->linesCollection()
-								->query($query);		
-		}
-		$retData = array();
-		foreach ($this->lines as $value) {
-			$retData[] = $value->getRawData();
-		}
-		return $retData;
+		$options = array(
+			'type' => 'SubscriberUsage',
+			'subscriber_id' => (string) $this->subscriber,
+			'from' => date("Y-m-d H:i:s",$this->from),
+			'to' => date("Y-m-d H:i:s",$this->to),
+		);
+		$generator = Billrun_Generator::getInstance($options);
+		$generator->load();
+		$results = $generator->generate();
+		
+		return $results['lines'];
 	}
 }
