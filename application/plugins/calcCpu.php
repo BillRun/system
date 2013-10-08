@@ -39,7 +39,8 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 				$processor->setQueueRowStep($entity['stamp'], 'rate');
 			$line = $entity->getRawData();
 		}
-
+		
+		Billrun_Factory::log('Plugin calc cpu customer', Zend_Log::INFO);
 		$customerAPISettings = Billrun_Factory::config()->getConfigValue('customer.calculator', array());
 		$customerOptions = array(
 			'type' => 'customer',
@@ -49,7 +50,6 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 		if ($customerCalc->isBulk()) {
 			$customerCalc->loadSubscribers($data['data']);
 		}
-		Billrun_Factory::log('Plugin calc cpu customer', Zend_Log::INFO);
 		foreach ($data['data'] as &$line) {
 			$entity = new Mongodloid_Entity($line);
 			if (!isset($entity['usagev']) || $entity['usagev'] === 0) {
