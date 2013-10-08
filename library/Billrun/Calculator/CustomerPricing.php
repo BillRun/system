@@ -253,7 +253,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			Billrun_Factory::log()->log("couldn't get balance for : " . print_r(array(
 						'subscriber_id' => $row['subscriber_id'],
 						'billrun_month' => $billrun_key
-							), 1), Zend_Log::ALERT);
+							), 1), Zend_Log::INFO);
 			return false;
 		} else {
 			Billrun_Factory::log()->log("Found balance " . $billrun_key . " for subscriber " . $row['subscriber_id'], Zend_Log::DEBUG);
