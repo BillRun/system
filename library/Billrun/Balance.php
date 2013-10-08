@@ -108,7 +108,15 @@ class Billrun_Balance implements ArrayAccess {
 		$this->load($subscriber->subscriber_id, $billrunKey);
 		return $ret;
 	}
-
+	
+	/**
+	 * Create a new balance  for a subscriber  in a given billrun
+	 * @param type $account_id the account ID  of the subscriber.
+	 * @param type $subscriber_id the subscriber ID.
+	 * @param type $billrun_key the  billrun key that the balance refer to.
+	 * @param type $plan_ref the subscriber plan.
+	 * @return boolean true  if the creation was sucessful false otherwise.
+	 */
 	public static function createBalanceIfMissing($account_id, $subscriber_id, $billrun_key, $plan_ref) {
 		$ret = false;
 		$balances_coll = Billrun_Factory::db()->balancesCollection();
@@ -121,25 +129,19 @@ class Billrun_Balance implements ArrayAccess {
 		);
 		$options = array(
 			'upsert' => true,
+			'new' => true,
 			'w' => 1,
 		);
-		$output = $balances_coll->update($query, $update, $options);
-		if ($output['ok']) {
-			if (isset($output['updatedExisting']) && $output['updatedExisting']) {
+		
+		$output = $balances_coll->findAndModify($query, $update, array(), $options, true);
+		
+		if ($output) {
+			Billrun_Factory::log('Added subscriber ' . $subscriber_id . ' to balances collection', Zend_Log::INFO);
 			$ret = true;
+		} else {
+			Billrun_Factory::log('Error creating balance ' . $billrun_key . ' for subscriber ' . $subscriber_id, Zend_Log::ALERT);
 		}
 
-			elseif (isset($output['upserted'])) {
-				$ret = true;
-				Billrun_Factory::log('Added subscriber ' . $subscriber_id . ' to balances collection', Zend_Log::INFO);
-			}
-			else {
-				Billrun_Factory::log('Error creating balance ' . $billrun_key . ' for subscriber ' . $subscriber_id, Zend_Log::ALERT);
-			}
-		}
-		else {
-			Billrun_Factory::log('Couldn\'t update balance ' . $billrun_key . ' for subscriber ' . $subscriber_id, Zend_Log::ALERT);
-		}
 		return $ret;
 	}
 

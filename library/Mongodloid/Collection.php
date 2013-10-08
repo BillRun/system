@@ -206,8 +206,19 @@ class Mongodloid_Collection {
 	 * @throws MongoResultException on failure
 	 * @see http://php.net/manual/en/mongocollection.findandmodify.php
 	 */
-	public function findAndModify(array $query, array $update = array(), array $fields = array(), array $options = array()) {
-		return new Mongodloid_Entity($this->_collection->findAndModify($query, $update, $fields, $options), $this);
+	public function findAndModify(array $query, array $update = array(), array $fields = array(), array $options = array(), $asCommand = false) {
+		$ret = FALSE;
+		if(!$asCommand) {
+			$ret = new Mongodloid_Entity($this->_collection->findAndModify($query, $update, $fields, $options), $this);
+		} else {
+			return new Mongodloid_Entity($this->_db->command(array_merge(array(
+						'findAndModify' => $this->getName(),
+						'query' => $query,
+						'update' => $update,
+						'fields' => $fields,
+					),$options)));
+		}		
+		return $ret;
 	}
 
 	/**
