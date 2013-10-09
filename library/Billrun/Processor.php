@@ -210,6 +210,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 				Billrun_Factory::log()->log("Billrun_Processor: queue size is too big", Zend_Log::INFO);
 				return $linesCount;
 			} else {
+				$this->init();
 				$file = $this->getFileForProcessing();
 				if ($file->isEmpty()) {
 					break;
@@ -223,7 +224,6 @@ abstract class Billrun_Processor extends Billrun_Base {
 					$file->collection($log);
 					$file->set('process_time', date(self::base_dateformat));
 				}
-				$this->init();
 			}
 		}
 

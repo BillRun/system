@@ -380,8 +380,12 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 		if (!$this->fileStats) {
 			$this->fileStats = fstat($fileHandle);
 		}
-		return feof($fileHandle) ||
+		$process_finished = feof($fileHandle) ||
 				ftell($fileHandle) + self::TRAILER_LENGTH >= $this->fileStats['size'];
+		if ($process_finished) {
+			$this->fileStats = null;
+		}
+		return $process_finished;
 	}
 
 	/**
