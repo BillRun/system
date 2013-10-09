@@ -180,7 +180,11 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		//Billrun_Factory::log()->log($path, Zend_Log::DEBUG);
 		// @TODO: use Zend_Http_Client
 		$json = self::send($path);
-//		$json =  '{"1011681":{"subscribers":[{"subscriber_id":"400553","plan":"LARGE"}]}}'; // stub
+//		$json =  '{'
+//				. '"7849648":{"subscribers":[{"subscriber_id":"398725","plan":"LARGE"}]},'
+//				. '"7403720":{"subscribers":[{"subscriber_id":"421063","plan":"LARGE"}]},'
+//				. '"1888610":{"subscribers":[{"subscriber_id":"342721","plan":"SMALL"}]}'
+//				. '}'; // stub
 		if (!$json) {
 			return false;
 		}

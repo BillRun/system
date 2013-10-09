@@ -16,14 +16,32 @@
  */
 class Generator_Golancsv extends Billrun_Generator {
 
-	/**
-	 * The VAT value (TODO get from outside/config).
-	 */
-	const VAT_VALUE = 1.17;
+	protected $accountsCsvPath;
+	protected $subscribersCsvPath;
 
-	static protected $type = 'golancsv';
-	protected $csvContent = '';
-	protected $csvPath;
+	/**
+	 *
+	 * @var array cache of subscribers rows to write to the file
+	 */
+	protected $subscribersRows = array();
+
+	/**
+	 *
+	 * @var array cache of accounts rows to write to the file
+	 */
+	protected $accountRows = array();
+
+	/**
+	 *
+	 * @var array the accounts file header
+	 */
+	protected $accountsFields = array();
+
+	/**
+	 *
+	 * @var array the subscribers file header
+	 */
+	protected $subscribersFields = array();
 
 	/**
 	 *
@@ -32,35 +50,117 @@ class Generator_Golancsv extends Billrun_Generator {
 	protected $blockSize = 5000;
 
 	public function __construct($options) {
+		self::$type = 'golancsv';
 		parent::__construct($options);
 
-		if (isset($options['csv_filename'])) {
-			$this->csvPath = $this->export_directory . '/' . $options['csv_filename'] . '.csv';
+		if (isset($options['accounts_csv_filename'])) {
+			$this->accountsCsvPath = $this->export_directory . '/' . $options['account_csv_filename'] . '.csv';
 		} else {
-			$this->csvPath = $this->export_directory . '/' . $this->getStamp() . '.csv';
+			$this->accountsCsvPath = $this->export_directory . '/accounts_' . $this->getStamp() . '.csv';
 		}
-
-		$this->loadCsv();
-	}
-
-	/**
-	 * load csv file to write the generating info into
-	 */
-	protected function loadCsv() {
-		if (file_exists($this->csvPath)) {
-			$this->csvContent = file_get_contents($this->csvPath);
+		if (isset($options['subscribers_csv_filename'])) {
+			$this->subscribersCsvPath = $this->export_directory . '/' . $options['subscriber_csv_filename'] . '.csv';
+		} else {
+			$this->subscribersCsvPath = $this->export_directory . '/subscribers_' . $this->getStamp() . '.csv';
 		}
+		if (isset($options['blockSize'])) {
+			$this->blockSize = $options['blockSize'];
+		}
+		if (!file_exists(dirname($this->accountsCsvPath))) {
+			mkdir(dirname($this->accountsCsvPath), 0777, true);
+		} else if (file_exists($this->accountsCsvPath)) {
+			unlink($this->accountsCsvPath);
+		}
+		if (!file_exists(dirname($this->subscribersCsvPath))) {
+			mkdir(dirname($this->subscribersCsvPath), 0777, true);
+		} else if (file_exists($this->subscribersCsvPath)) {
+			unlink($this->subscribersCsvPath);
+		}
+		$this->accountsFields = array(
+			'GTSerialNumber',
+			'XmlIndicator',
+			'TotalChargeVat',
+			'InvoiceNumber',
+			'TotalFlat',
+			'TotalExtraOverPackage',
+//			'TotalExtraOutOfPackage',
+			'ManualCorrection',
+			'ManualCorrectionCredit',
+			'ManualCorrectionCharge',
+			'OutsidePackageNoVatTap3',
+			'TotalVat',
+			'TotalCharge',
+			'CountActiveCli'
+		);
+		$this->subscribersFields = array(
+			'serialNumber',
+			'GTSerialNumber',
+			'subscriber_id',
+			'TotalChargeVat',
+			'XmlIndicator',
+			'TotalFlat',
+			'TotalExtraOverPackage',
+//			'TotalExtraOutOfPackage',
+			'ManualCorrection',
+			'ManualCorrectionCredit',
+			'ManualCorrectionCharge',
+			'OutsidePackageNoVatTap3',
+			'TotalVat',
+			'TotalCharge',
+			'isAccountActive',
+			'curPackage',
+			'nextPackage',
+			'TotalChargeVatData',
+			'CountOfKb'
+		);
 	}
 
 	/**
 	 * write row to csv file for generating info into in
 	 * 
-	 * @param string $row the row to write into
+	 * @param string $path the path to append into
+	 * @param string $str the content to write
 	 * 
 	 * @return boolean true if succes to write info else false
 	 */
-	protected function csv($row) {
-		return file_put_contents($this->csvPath, $row, FILE_APPEND);
+	protected function writeToFile($path, $str) {
+		return file_put_contents($path, $str, FILE_APPEND);
+	}
+
+	protected function addSubscriberRow($row) {
+		$this->subscribersRows[] = $row;
+	}
+
+	protected function addAccountRow($row) {
+		$this->accountRows[] = $row;
+	}
+
+	protected function writeHeaders() {
+		$accounts_header = implode($this->accountsFields, ",") . PHP_EOL;
+		$subscribers_header = implode($this->subscribersFields, ",") . PHP_EOL;
+
+		$this->writeToFile($this->accountsCsvPath, $accounts_header);
+		$this->writeToFile($this->subscribersCsvPath, $subscribers_header);
+	}
+
+	protected function writeRowsToCsv() {
+		$seperator = ',';
+		$accounts_str = '';
+		$subscribers_str = '';
+		foreach ($this->accountRows as $row) {
+			foreach ($this->accountsFields as $field_name) {
+				$accounts_str.=$row[$field_name] . $seperator;
+			}
+			$accounts_str = trim($accounts_str, ",") . PHP_EOL;
+		}
+		foreach ($this->subscribersRows as $row) {
+			foreach ($this->subscribersFields as $field_name) {
+				$subscribers_str.=$row[$field_name] . $seperator;
+			}
+			$subscribers_str = trim($subscribers_str, ",") . PHP_EOL;
+		}
+		$this->writeToFile($this->accountsCsvPath, $accounts_str);
+		$this->writeToFile($this->subscribersCsvPath, $subscribers_str);
 	}
 
 	/**
@@ -84,24 +184,27 @@ class Generator_Golancsv extends Billrun_Generator {
 	 */
 	public function generate() {
 		// generate xml
-		if (!$this->data->isEmpty()) {
-			$this->writeHeader();
+		if ($this->data->count()) {
+			$this->writeHeaders();
 		}
 		$this->create();
-
-		// generate csv
-//		$this->csv();
 	}
 
 	protected function create() {
 		// use $this->export_directory
-		$short_format_date = 'd/m/Y';
+		$num_accounts = $this->data->count();
+		$accounts_counter = 0;
 		foreach ($this->data as $account) {
+			$subscribers_counter = 0;
+			$accounts_counter++;
 			$vat = isset($account['vat']) ? $account['vat'] : floatval(Billrun_Factory::config()->getConfigValue('pricing.vat', 0.18));
 			$acc_row = array();
-			$acc_row['TotalFlat'] = 0;
 			$acc_row['TotalChargeVat'] = $this->getAccountTotalChargeVat($account);
+			$acc_row['InvoiceNumber'] = $account['invoice_id'];
+			$acc_row['TotalCharge'] = $acc_row['TotalVat'] = $acc_row['OutsidePackageNoVatTap3'] = $acc_row['ManualCorrection'] = $acc_row['ManualCorrectionCharge'] = $acc_row['ManualCorrectionCredit'] = $acc_row['TotalExtraOverPackage'] = $acc_row['TotalFlat'] = 0;
 			foreach ($account['subs'] as $subscriber) {
+				$subscribers_counter++;
+				$sub_row['serialNumber'] = $subscribers_counter;
 				$acc_row['GTSerialNumber'] = $sub_row['GTSerialNumber'] = $account['aid'];
 				$sub_row['subscriber_id'] = $subscriber['sid'];
 				$sub_row['TotalChargeVat'] = $this->getSubscriberTotalChargeVat($subscriber);
@@ -120,11 +223,16 @@ class Generator_Golancsv extends Billrun_Generator {
 				$sub_row['nextPackage'] = $this->getNextPackage($subscriber);
 				$sub_row['TotalChargeVatData'] = $this->getTotalChargeVatData($subscriber, $vat);
 				$sub_row['CountOfKb'] = $this->getCountOfKb($subscriber);
+				$this->addSubscriberRow($sub_row);
 			}
 			$acc_row['CountActiveCli'] = count($account['subs']);
-			Billrun_Factory::log()->log("invoice id created " . $invoice_id . " for the account", Zend_Log::INFO);
+//			Billrun_Factory::log()->log("invoice id created " . $invoice_id . " for the account", Zend_Log::INFO);
 
-			$this->addRowToCsv($sub_row);
+			$this->addAccountRow($acc_row);
+			if ($accounts_counter >= $this->blockSize || $accounts_counter >= $num_accounts) {
+				$this->writeRowsToCsv();
+				$accounts_counter = 0;
+			}
 		}
 	}
 
@@ -181,7 +289,7 @@ class Generator_Golancsv extends Billrun_Generator {
 	 * @return type
 	 */
 	protected function getCurPackage($subscriber) {
-		return;
+		return '';
 	}
 
 	protected function getNextPackage($subscriber) {
@@ -197,6 +305,16 @@ class Generator_Golancsv extends Billrun_Generator {
 				(isset($subscriber['breakdown']['over_plan']['base']['INTERNET_BILL_BY_VOLUME']['totals']['data']['cost']) ? $subscriber['breakdown']['over_plan']['base']['INTERNET_BILL_BY_VOLUME']['totals']['data']['cost'] : 0) +
 				(isset($subscriber['breakdown']['out_plan']['base']['INTERNET_BILL_BY_VOLUME']['totals']['data']['cost']) ? $subscriber['breakdown']['out_plan']['base']['INTERNET_BILL_BY_VOLUME']['totals']['data']['cost'] : 0);
 		return $price_before_vat * (1 + $vat);
+	}
+
+	protected function getCountOfKb($subscriber) {
+		$countOfKb = 0;
+		if (isset($subscriber['lines']['data']['counters']) && is_array($subscriber['lines']['data']['counters'])) {
+			foreach ($subscriber['lines']['data']['counters'] as $data_by_day) {
+				$countOfKb+=current($data_by_day);
+			}
+		}
+		return $countOfKb;
 	}
 
 	/**
@@ -249,62 +367,6 @@ class Generator_Golancsv extends Billrun_Generator {
 
 	protected function getVatFreeOverPlan($subscriber) {
 		return isset($subscriber['costs']['over_plan']['vat_free']) ? $subscriber['costs']['over_plan']['vat_free'] : 0;
-	}
-
-	protected function addRowToCsv($invoice_id, $aid, $total, $cost_ilds) {
-		//empty costs for each of the providers
-		foreach (array('012', '013', '014', '015', '018', '019') as $key) {
-			if (!isset($cost_ilds[$key])) {
-				$cost_ilds[$key] = 0;
-			}
-		}
-
-		ksort($cost_ilds);
-		$seperator = ',';
-		$row = $invoice_id . $seperator . $aid . $seperator .
-				$total . $seperator . ($total * self::VAT_VALUE) . $seperator . implode($seperator, $cost_ilds) . PHP_EOL;
-		$this->csv($row);
-	}
-
-	protected function createXml($fileName, $xmlContent) {
-		$path = $this->export_directory . '/' . $fileName . '.xml';
-		return file_put_contents($path, $xmlContent);
-	}
-
-	protected function saveInvoiceId($aid, $invoice_id) {
-		$billrun = Billrun_Factory::db()->billrunCollection();
-
-		$resource = $billrun->query()
-				->equals('stamp', $this->getStamp())
-				->equals('aid', (string) $aid)
-//			->notExists('invoice_id')
-		;
-
-		foreach ($resource as $billrun_line) {
-			$data = $billrun_line->getRawData();
-			if (!isset($data['invoice_id'])) {
-				$data['invoice_id'] = $invoice_id;
-				$billrun_line->setRawData($data);
-				$billrun_line->save($billrun);
-			} else {
-				$invoice_id = $data['invoice_id'];
-			}
-		}
-
-		return $invoice_id;
-	}
-
-	protected function createInvoiceId() {
-		$invoices = Billrun_Factory::db()->billrunCollection();
-		// @TODO: need to the level of the invoice type
-		$resource = $invoices->query()->cursor()->sort(array('invoice_id' => -1))->limit(1);
-		foreach ($resource as $e) {
-			// demi loop
-		}
-		if (isset($e['invoice_id'])) {
-			return (string) ($e['invoice_id'] + 1); // convert to string cause mongo cannot store bigint
-		}
-		return '3100000000';
 	}
 
 }

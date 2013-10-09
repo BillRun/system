@@ -326,7 +326,7 @@ class Billrun_Billrun {
 	 * @return array the increment data counters query
 	 */
 	protected static function getUpdateDataCountersQuery($usage_type, $row) {
-		if ($usage_type == 'data') {
+		if ($usage_type == 'data' && $row['type'] != 'tap3') {
 			$date_key = date("Ymd", $row['urt']->sec);
 			$update['$inc']['subs.$.lines.data.counters.' . $date_key] = $row['usagev'];
 		} else {

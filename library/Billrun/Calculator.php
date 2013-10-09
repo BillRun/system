@@ -348,7 +348,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 			//Billrun_Factory::log()->log(print_r($query,1),Zend_Log::DEBUG);
 			$queue->update($query, $update, array('multiple' => true));
 
-            $foundLines = $queue->query(array_merge($localquery, array('hash' => $this->workHash, 'calc_time' => $this->signedMicrotime)))->cursor()->sort(array('urt'=> 1))->hint(array('hash' => 1));
+            $foundLines = $queue->query(array_merge($localquery, array('hash' => $this->workHash, 'calc_time' => $this->signedMicrotime)))->cursor()->sort(array('urt'=> 1));
         } while ($horizonlineCount != 0 && $foundLines->count() == 0);
 		
 		foreach ($foundLines as $line) {
