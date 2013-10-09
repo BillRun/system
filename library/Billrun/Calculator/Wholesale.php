@@ -52,7 +52,8 @@ abstract class Billrun_Calculator_Wholesale extends Billrun_Calculator {
 		foreach ($typedRates['rate'] as $key => $currRate) {
 			if (0 >= $volumeToPrice) {
 				break;
-			}//break if no volume left to price.
+			}
+			//break if no volume left to price.
 			$volumeToPriceCurrentRating = ($volumeToPrice - $currRate['to'] < 0) ? $volumeToPrice : $currRate['to']; // get the volume that needed to be priced for the current rating
 			$price += floatval((ceil($volumeToPriceCurrentRating / $currRate['interval']) * $currRate['price'])); // actually price the usage volume by the current 
 			$rates[] = array('rate' => $currRate, 'volume' => $volumeToPriceCurrentRating);
