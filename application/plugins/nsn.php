@@ -227,6 +227,9 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 			}
 			$data['urt'] = new MongoDate(Billrun_Util::dateTimeConvertShortToIso((string) $data['call_reference_time'], self::DEFAULT_TIME_OFFSET));
 		}
+		if( isset($data['charging_end_time']) && isset($data['charging_start_time']) ) {
+			$data['duration'] = strtotime($data['charging_end_time']) - strtotime($data['charging_start_time']);
+		}
 		if (isset($data['in_circuit_group_name']) && preg_match("/^RCEL/", $data['in_circuit_group_name']) && strlen($data['called_number']) > 10 && substr($data['called_number'], 0, 2) == "10") {
 			$data['called_number'] = substr($data['called_number'], 2);
 		}
@@ -307,20 +310,19 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 			case 'phone_number' :
 				$val = '';
 				for ($i = 0; $i < $length; ++$i) {
-					$byteVal = ord($data[$i]);
-					$left = $byteVal & 0xF;
-					$right = $byteVal >> 4;
-					$digit = $left == 0xA ? "*" :
-							($left == 0xB ? "#" :
-									($left > 0xC ? dechex($left - 2) :
-											$left));
-					$digitRight = $right == 0xA ? "*" :
-							($right == 0xB ? "#" :
-									($right > 0xC ? dechex($right - 2) :
-											$right));
-					$val .= $digit . $digitRight;
-				}
-				$retValue = str_replace('d', '', $val);
+						$byteVal = ord($data[$i]);
+						for($j = 0; $j < 2 ; $j++, $byteVal=$byteVal >> 4) {
+						$left = $byteVal & 0xF;
+							$digit =  $left == 0xB ? '*' : 
+									($left == 0xC ? '#' :
+									($left == 0xA ? 'a' :
+									($left == 0xF ? '' :
+									($left > 0xC ? dechex($left-2) :
+									 $left))));
+							$val .= $digit;
+						}
+					}
+					$retValue = $val;
 				break;
 
 			case 'long':

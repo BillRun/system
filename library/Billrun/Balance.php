@@ -71,9 +71,9 @@ class Billrun_Balance implements ArrayAccess {
 		$billrunKey = !$billrunKey ? Billrun_Util::getBillrunKey(time()) : $billrunKey;
 
 		$this->data = Billrun_Factory::db()->balancesCollection()->query(array(
-					'sid' => $subscriberId,
-					'billrun_month' => $billrunKey
-				))->cursor()->current();
+				'sid' => $subscriberId,
+				'billrun_month' => $billrunKey
+			))->cursor()->limit(1)->current();
 
 		$this->data->collection(Billrun_Factory::db()->balancesCollection());
 	}
@@ -105,7 +105,15 @@ class Billrun_Balance implements ArrayAccess {
 		$this->load($subscriber->sid, $billrunKey);
 		return $ret;
 	}
-
+	
+	/**
+	 * Create a new balance  for a subscriber  in a given billrun
+	 * @param type $account_id the account ID  of the subscriber.
+	 * @param type $subscriber_id the subscriber ID.
+	 * @param type $billrun_key the  billrun key that the balance refer to.
+	 * @param type $plan_ref the subscriber plan.
+	 * @return boolean true  if the creation was sucessful false otherwise.
+	 */
 	public static function createBalanceIfMissing($aid, $sid, $billrun_key, $plan_ref) {
 		$ret = false;
 		$balances_coll = Billrun_Factory::db()->balancesCollection();
@@ -118,25 +126,19 @@ class Billrun_Balance implements ArrayAccess {
 		);
 		$options = array(
 			'upsert' => true,
+			'new' => true,
 			'w' => 1,
 		);
-		$output = $balances_coll->update($query, $update, $options);
+		
+		$output = $balances_coll->findAndModify($query, $update, array(), $options, true);
+		
+		if ($output) {
+			Billrun_Factory::log('Added subscriber ' . $sid . ' to balances collection', Zend_Log::INFO);
+			$ret = true;
+		} else {
+			Billrun_Factory::log('Error creating balance ' . $billrun_key . ' for subscriber ' . $sid, Zend_Log::ALERT);
+		}
 
-		if ($output['ok']) {
-			if (isset($output['updatedExisting']) && $output['updatedExisting']) {
-				$ret = true;
-			}
-			elseif (isset($output['upserted'])) {
-				$ret = true;
-				Billrun_Factory::log('Added subscriber ' . $sid . ' to balances collection', Zend_Log::INFO);
-			}
-			else {
-				Billrun_Factory::log('Error creating balance ' . $billrun_key . ' for subscriber ' . $sid, Zend_Log::ALERT);
-			}
-		}
-		else {
-			Billrun_Factory::log('Couldn\'t update balance ' . $billrun_key . ' for subscriber ' . $sid, Zend_Log::ALERT);
-		}
 		return $ret;
 	}
 

@@ -222,7 +222,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			if (isset($currRate['ceil'])) {
 				$ceil = $currRate['ceil'];
 			} else {
-				$ceil = false;
+				$ceil = true;
 			}
 			if ($ceil) {
 				$price += floatval(ceil($volumeToPriceCurrentRating / $currRate['interval']) * $currRate['price']); // actually price the usage volume by the current 	
@@ -253,7 +253,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			Billrun_Factory::log()->log("couldn't get balance for : " . print_r(array(
 						'sid' => $row['sid'],
 						'billrun_month' => $billrun_key
-							), 1), Zend_Log::ALERT);
+							), 1), Zend_Log::INFO);
 			return false;
 		} else {
 			Billrun_Factory::log()->log("Found balance " . $billrun_key . " for subscriber " . $row['sid'], Zend_Log::DEBUG);
