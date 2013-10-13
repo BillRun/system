@@ -327,8 +327,8 @@ abstract class Billrun_Processor extends Billrun_Base {
 			}
 			return $resource->save($log, true);
 		} else {
-// backward compatibility
-// old method of processing => receiver did not logged, so it's the first time the file logged into DB
+			// backward compatibility
+			// old method of processing => receiver did not logged, so it's the first time the file logged into DB
 			$entity = new Mongodloid_Entity($trailer);
 			if ($log->query('stamp', $entity->get('stamp'))->count() > 0) {
 				Billrun_Factory::log()->log("Billrun_Processor::logDB - DUPLICATE! trying to insert duplicate log file with stamp of : {$entity->get('stamp')}", Zend_Log::NOTICE);
@@ -524,6 +524,10 @@ abstract class Billrun_Processor extends Billrun_Base {
 
 	protected function bulkAddToCollection($collection) {
 		settype($this->bulkInsert, 'int');
+		$lines_data = $this->data['data'];
+		Billrun_Factory::log()->log("Reordering lines  by stamp...", Zend_Log::DEBUG);
+		uasort($lines_data, function($a,$b){return strcmp($a['stamp'],$b['stamp']);});
+		Billrun_Factory::log()->log("Done reordering lines  by stamp.", Zend_Log::DEBUG);
 		try {
 			$bulkOptions = array(
 				'continueOnError' => true,
@@ -531,7 +535,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 				'timeout' => 300000,
 			);
 			$offset = 0;
-			while ($insert_count = count($insert = array_slice($this->data['data'], $offset, $this->bulkInsert, true))) {
+			while ($insert_count = count($insert = array_slice($lines_data, $offset, $this->bulkInsert, true))) {
 				Billrun_Factory::log()->log("Processor bulk insert to lines " . basename($this->filePath) . " from: " . $offset . ' count: ' . $insert_count, Zend_Log::DEBUG);
 				$collection->batchInsert($insert, $bulkOptions);
 				$offset += $this->bulkInsert;
@@ -551,6 +555,9 @@ abstract class Billrun_Processor extends Billrun_Base {
 	protected function bulkAddToQueue() {
 		$queue = Billrun_Factory::db()->queueCollection();
 		$queue_data = array_values($this->queue_data);
+		Billrun_Factory::log()->log("Reordering Q lines  by stamp...", Zend_Log::DEBUG);
+		uasort($queue_data, function($a,$b){return strcmp($a['stamp'],$b['stamp']);});
+		Billrun_Factory::log()->log("Done reordering Q lines  by stamp.", Zend_Log::DEBUG);
 		try {
 			$bulkOptions = array(
 				'continueOnError' => true,
