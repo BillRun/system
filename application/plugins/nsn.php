@@ -227,7 +227,8 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 			}
 			$data['urt'] = new MongoDate(Billrun_Util::dateTimeConvertShortToIso((string) $data['call_reference_time'], self::DEFAULT_TIME_OFFSET));
 		}
-		if( isset($data['charging_end_time']) && isset($data['charging_start_time']) ) {
+		if( isset($data['charging_end_time']) && isset($data['charging_start_time']) && 
+			( strtotime($data['charging_end_time']) > 0 && strtotime($data['charging_start_time'] ) > 0) ) {
 			$data['duration'] = strtotime($data['charging_end_time']) - strtotime($data['charging_start_time']);
 		}
 		if (isset($data['in_circuit_group_name']) && preg_match("/^RCEL/", $data['in_circuit_group_name']) && strlen($data['called_number']) > 10 && substr($data['called_number'], 0, 2) == "10") {
