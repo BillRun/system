@@ -202,7 +202,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	public function tabledateAction() {
 		$table = $this->_request->getParam("table");
 
-//		$sort = array('unified_record_time' => -1);
+//		$sort = array('urt' => -1);
 		$sort = $this->applySort($table);
 		$options = array(
 			'collection' => $table,

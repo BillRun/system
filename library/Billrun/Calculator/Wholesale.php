@@ -60,7 +60,7 @@ abstract class Billrun_Calculator_Wholesale extends Billrun_Calculator {
 			$volumeToPrice = $volumeToPrice - $volumeToPriceCurrentRating; //decressed the volume that was priced			
 		}
 		$ret = array(
-			'rates' => $rates,
+			'prate' => $rates,
 			$this->pricingField => $price
 		);
 		return $ret;
@@ -109,9 +109,9 @@ abstract class Billrun_Calculator_Wholesale extends Billrun_Calculator {
 	 * @return true if the line time is in peak time for the given carrier
 	 */
 	protected function isPeak($row) {
-		$dayType = Billrun_HebrewCal::getDayType($row['unified_record_time']->sec);
-		$localoffset = date('Z', $row['unified_record_time']->sec);
-		$hour = (( ($row['unified_record_time']->sec + $localoffset) / 3600 ) % (24));
+		$dayType = Billrun_HebrewCal::getDayType($row['urt']->sec);
+		$localoffset = date('Z', $row['urt']->sec);
+		$hour = (( ($row['urt']->sec + $localoffset) / 3600 ) % (24));
 		//Billrun_Factory::log()->log($hour,Zend_Log::DEBUG);
 		return ($hour - $this->peakTimes[$dayType]['start']) > 0 && $hour < $this->peakTimes[$dayType]['end'];
 	}

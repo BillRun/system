@@ -160,8 +160,8 @@ class Subscriber_Golan extends Billrun_Subscriber {
 	 */
 	public function isValid() {
 		$validFields = true;
-		foreach ($this->getAvailableFields() as $field) {
-			if (!isset($this->data[$field]) || is_null($this->data[$field])) {
+		foreach (array_keys($this->getAvailableFields()) as $key) {
+			if (!isset($this->data[$key]) || is_null($this->data[$key])) {
 				$validFields = false;
 				break;
 			}
@@ -173,14 +173,18 @@ class Subscriber_Golan extends Billrun_Subscriber {
 
 	//@TODO change this function
 	protected function requestAccounts($params) {
-		$host = Billrun_Factory::config()->getConfigValue('crm.server', '');
+		$host = Billrun_Factory::config()->getConfigValue('provider.rpc.server', '');
 		$url = Billrun_Factory::config()->getConfigValue('crm.url', '');
 
 		$path = 'http://' . $host . '/' . $url . '?' . http_build_query($params);
 		//Billrun_Factory::log()->log($path, Zend_Log::DEBUG);
 		// @TODO: use Zend_Http_Client
 		$json = self::send($path);
-//		$json =  '{"6052390":{"subscribers":[{"subscriber_id":1,"current_plan":"LARGE"}]}}'; // stub
+//		$json =  '{'
+//				. '"7849648":{"subscribers":[{"subscriber_id":"398725","plan":"LARGE"}]},'
+//				. '"7403720":{"subscribers":[{"subscriber_id":"421063","plan":"LARGE"}]},'
+//				. '"1888610":{"subscribers":[{"subscriber_id":"342721","plan":"SMALL"}]}'
+//				. '}'; // stub
 		if (!$json) {
 			return false;
 		}
@@ -203,10 +207,10 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		$accounts = $this->requestAccounts($params);
 		$subscriber_general_settings = Billrun_Config::getInstance()->getConfigValue('subscriber', array());
 		if (is_array($accounts) && !empty($accounts)) {
-			foreach ($accounts as $account_id => $account) {
+			foreach ($accounts as $aid => $account) {
 				foreach ($account['subscribers'] as $subscriber) {
-					$subscriber_settings = array_merge($subscriber_general_settings, array('time' => strtotime($time), 'data' => array('account_id' => intval($account_id), 'subscriber_id' => $subscriber['subscriber_id'], 'plan' => $subscriber['plan'])));
-					$ret_data[intval($account_id)][] = Billrun_Subscriber::getInstance($subscriber_settings);
+					$subscriber_settings = array_merge($subscriber_general_settings, array('time' => strtotime($time), 'data' => array('aid' => intval($aid), 'sid' => intval($subscriber['subscriber_id']), 'plan' => $subscriber['plan'])));
+					$ret_data[intval($aid)][] = Billrun_Subscriber::getInstance($subscriber_settings);
 				}
 			}
 			return $ret_data;
@@ -237,22 +241,22 @@ class Subscriber_Golan extends Billrun_Subscriber {
 	 */
 	public function getFlatEntry($billrun_key) {
 		$flat_entry = array(
-			'account_id' => $this->account_id,
-			'subscriber_id' => $this->subscriber_id,
+			'aid' => $this->aid,
+			'sid' => $this->sid,
 			'source' => 'billrun',
 			'type' => 'flat',
 			'usaget' => 'flat',
-			'unified_record_time' => new MongoDate(),
+			'urt' => new MongoDate(),
 			'billrun_key' => $billrun_key,
-			'price_customer' => $this->getFlatPrice(),
+			'aprice' => $this->getFlatPrice(),
 			'plan_ref' => $this->getPlan()->createRef(),
 		);
-		$stamp = md5($flat_entry['account_id'] . $flat_entry['subscriber_id'] . $flat_entry['billrun_key']);
+		$stamp = md5($flat_entry['aid'] . $flat_entry['sid'] . $flat_entry['billrun_key']);
 		$flat_entry['stamp'] = $stamp;
 		return $flat_entry;
 	}
 
-	static public function getSubscribersByParams($params_arr) {
+	static public function getSubscribersByParams($params_arr, $availableFields) {
 		$subscribers = array();
 		foreach ($params_arr as $key => &$params) {
 			if (!isset($params['imsi']) && !isset($params['IMSI']) && !isset($params['NDC_SN'])) {
@@ -265,12 +269,19 @@ class Subscriber_Golan extends Billrun_Subscriber {
 			}
 		}
 		$list = self::requestList($params_arr);
-		
+
 		if (is_array($list) && !empty($list)) {
 			$message = 'Customer API responded with ' . count($list) . ' results';
 			$subscriberSettings = Billrun_Factory::config()->getConfigValue('subscriber', array());
 			foreach ($list as $stamp => $item) {
 				if (is_array($item)) {
+					foreach ($availableFields as $key => $field) {
+						if (isset($item[$field])) {
+							$temp = $item[$field];
+							unset($item[$field]);
+							$item[$key] = $temp;
+						}
+					}
 					$subscribers[$stamp] = new self(array_merge(array('data' => $item),$subscriberSettings));
 				} else {
 					//TODO what is the output when subscriber was not found?

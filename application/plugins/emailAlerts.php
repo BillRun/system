@@ -263,7 +263,7 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase  {
 	 */
 	protected function generateMailCSV($filepath, $events) {
 		$fp = fopen($filepath, 'w');
-		$header = array('creation_time', 'account_id', 'NDC_SN', 'imsi', 'event_type', 'value', 'subscriber_id', 'deposit_result', 'success');
+		$header = array('creation_time', 'aid', 'NDC_SN', 'imsi', 'event_type', 'value', 'sid', 'deposit_result', 'success');
 		fputcsv($fp, $header);
 		foreach ($events as $event) {
 			$csvEvent = array();

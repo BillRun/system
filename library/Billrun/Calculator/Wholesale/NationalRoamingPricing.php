@@ -43,7 +43,7 @@ class Billrun_Calculator_Wholesale_NationalRoamingPricing extends Billrun_Calcul
 		$zoneKey = $this->isLineIncoming($row) ? 'incoming' : $this->loadDBRef($row->get(Billrun_Calculator_Wholesale_Nsn::MAIN_DB_FIELD, true))['key'];
 
 		if (isset($row['usagev']) && $zoneKey) {
-			$carir = $this->loadDBRef($row->get(in_array($row->get('carir', true), $this->nrCarriers) ? 'carir' : 'carir_in', true));
+			$carir = $this->loadDBRef($row->get(in_array($row->get('wsc', true), $this->nrCarriers) ? 'wsc' : 'wscin', true));
 			$rates = $this->getCarrierRateForZoneAndType($carir, $zoneKey, $row['usaget']);
 			if (!$rates) {
 				Billrun_Factory::log()->log(" Failed finding rate for row : " . print_r($row['stamp'], 1), Zend_Log::DEBUG);
@@ -64,8 +64,8 @@ class Billrun_Calculator_Wholesale_NationalRoamingPricing extends Billrun_Calcul
 	public function isLineLegitimate($line) {
 		return	$line['type'] == 'nsn' && 
 				$line->get(Billrun_Calculator_Wholesale_Nsn::MAIN_DB_FIELD, true) &&
-				(	($line['record_type'] === "12" && in_array($line->get('carir', true), $this->nrCarriers)) ||
-					($line['record_type'] === "11" && in_array($line->get('carir_in', true), $this->nrCarriers)) );
+				(	($line['record_type'] === "12" && in_array($line->get('wsc', true), $this->nrCarriers)) ||
+					($line['record_type'] === "11" && in_array($line->get('wscin', true), $this->nrCarriers)) );
 	}
 
 }

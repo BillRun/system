@@ -48,12 +48,12 @@ abstract class Billrun_Aggregator extends Billrun_Base {
 	/**
 	 * update the billing line with stamp to avoid another aggregation
 	 *
-	 * @param int $subscriber_id the subscriber id to update
+	 * @param int $sid the subscriber id to update
 	 * @param Mongodloid_Entity $line the billing line to update
 	 *
 	 * @return boolean true on success else false
 	 */
-	abstract protected function updateBillingLine($subscriber_id, $item);
+	abstract protected function updateBillingLine($sid, $item);
 
 	/**
 	 * method to update the billrun by the billing line (row)

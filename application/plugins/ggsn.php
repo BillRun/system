@@ -210,7 +210,7 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Pl
 			array(
 				'$match' => array(
 					//@TODO  switch to unified time once you have the time to test it
-					'unified_record_time' => array('$gte' => new MongoDate($charge_time)),
+					'urt' => array('$gte' => new MongoDate($charge_time)),
 //					'record_opening_time' => array('$gt' => $charge_time),
 					'deposit_stamp' => array('$exists' => false),
 					'event_stamp' => array('$exists' => false),
@@ -278,7 +278,7 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Pl
 			}			
 			//convert to unified time GMT  time.
 			$timeOffset = (isset($cdrLine['ms_timezone']) ? $cdrLine['ms_timezone'] : date('P') );
-			$cdrLine['unified_record_time'] = new MongoDate(  Billrun_Util::dateTimeConvertShortToIso( $cdrLine['record_opening_time'], $timeOffset ) );
+			$cdrLine['urt'] = new MongoDate(  Billrun_Util::dateTimeConvertShortToIso( $cdrLine['record_opening_time'], $timeOffset ) );
 		} else {
 			Billrun_Factory::log()->log("couldn't find  definition for {$type}", Zend_Log::INFO);
 		}

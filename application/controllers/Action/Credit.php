@@ -120,14 +120,22 @@ class CreditAction extends Action_Base {
 			return $this->setError('reason error', $credit_row);
 		}
 
-		$filtered_request['account_id'] = (int) $filtered_request['account_id'];
-		$filtered_request['subscriber_id'] = (int) $filtered_request['subscriber_id'];
-		if ($filtered_request['account_id'] == 0 || $filtered_request['subscriber_id'] == 0) {
+		if (isset($filtered_request['account_id'])) {
+			$filtered_request['aid'] = (int) $filtered_request['account_id'];
+			unset($filtered_request['account_id']);
+		}
+		
+		if (isset($filtered_request['subscriber_id'])) {
+			$filtered_request['sid'] = (int) $filtered_request['subscriber_id'];
+			unset($filtered_request['subscriber_id']);
+		}
+		
+				if ($filtered_request['aid'] == 0 || $filtered_request['sid'] == 0) {
 			return $this->setError('account, subscriber ids must be positive integers', $credit_row);
 		}
 
 		if (Billrun_Util::isTimestamp(strval($filtered_request['credit_time']))) {
-			$filtered_request['unified_record_time'] = (int) $filtered_request['credit_time'];
+			$filtered_request['urt'] = (int) $filtered_request['credit_time'];
 			unset($filtered_request['credit_time']);
 		} else {
 			return $this->setError('credit_time is not a valid time stamp', $credit_row);

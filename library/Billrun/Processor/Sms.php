@@ -92,7 +92,7 @@ class  Billrun_Processor_Sms extends Billrun_Processor_Base_SeparatorFieldLines 
 					}
 
 				}
-				$row['unified_record_time'] =	new MongoDate($datetime->format('U'));
+				$row['urt'] =	new MongoDate($datetime->format('U'));
 			}
 			return $row;
 	}

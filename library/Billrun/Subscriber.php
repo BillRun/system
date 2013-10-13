@@ -68,7 +68,7 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 	 * @return mixed if data field  accessible return data field, else null
 	 */
 	public function __get($name) {
-		if (in_array($name, $this->availableFields) && array_key_exists($name, $this->data)) {
+		if (array_key_exists($name, $this->availableFields) && array_key_exists($name, $this->data)) {
 			return $this->data[$name];
 		}
 		return null;
@@ -103,7 +103,7 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 	 * @return boolean
 	 */
 	public function getBalance() {
-		return Billrun_Factory::balance()->load($this->data['subscriber_id'], Billrun_Util::getNextChargeKey(time()));
+		return Billrun_Factory::balance()->load($this->data['sid'], Billrun_Util::getNextChargeKey(time()));
 	}
 
 	/**
@@ -111,5 +111,5 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 	 */
 	abstract public function getList($page, $size, $time, $acc_id = null);
 	
-	abstract static public function getSubscribersByParams($params);
+	abstract static public function getSubscribersByParams($params, $availableFields);
 }

@@ -29,8 +29,8 @@ class Billrun_Balance implements ArrayAccess {
 	protected $data = array();
 
 	public function __construct($options = array()) {
-		if (isset($options['subscriber_id']) && isset($options['billrun_key'])) {
-			$this->load($options['subscriber_id'], $options['billrun_key']);
+		if (isset($options['sid']) && isset($options['billrun_key'])) {
+			$this->load($options['sid'], $options['billrun_key']);
 		}
 	}
 
@@ -66,15 +66,12 @@ class Billrun_Balance implements ArrayAccess {
 		return call_user_func_array(array($this->data, $name), $arguments);
 	}
 
-	/**
-	 * method to save balance details
-	 */
 	public function load($subscriberId, $billrunKey = NULL) {
 
 		$billrunKey = !$billrunKey ? Billrun_Util::getBillrunKey(time()) : $billrunKey;
 
 		$this->data = Billrun_Factory::db()->balancesCollection()->query(array(
-				'subscriber_id' => $subscriberId,
+				'sid' => $subscriberId,
 				'billrun_month' => $billrunKey
 			))->cursor()->limit(1)->current();
 
@@ -98,14 +95,14 @@ class Billrun_Balance implements ArrayAccess {
 	/**
 	 * Create a new subscriber in a given month and load it (if none exists).
 	 * @param type $billrun_month
-	 * @param type $subscriber_id
+	 * @param type $sid
 	 * @param type $plan
-	 * @param type $account_id
+	 * @param type $aid
 	 * @return boolean
 	 */
 	public function create($billrunKey, $subscriber, $plan_ref) {
-		$ret = self::createBalanceIfMissing($subscriber->account_id, $subscriber->subscriber_id, $billrunKey, $plan_ref);
-		$this->load($subscriber->subscriber_id, $billrunKey);
+		$ret = self::createBalanceIfMissing($subscriber->aid, $subscriber->sid, $billrunKey, $plan_ref);
+		$this->load($subscriber->sid, $billrunKey);
 		return $ret;
 	}
 	
@@ -117,15 +114,15 @@ class Billrun_Balance implements ArrayAccess {
 	 * @param type $plan_ref the subscriber plan.
 	 * @return boolean true  if the creation was sucessful false otherwise.
 	 */
-	public static function createBalanceIfMissing($account_id, $subscriber_id, $billrun_key, $plan_ref) {
+	public static function createBalanceIfMissing($aid, $sid, $billrun_key, $plan_ref) {
 		$ret = false;
 		$balances_coll = Billrun_Factory::db()->balancesCollection();
 		$query = array(
-			'subscriber_id' => $subscriber_id,
+			'sid' => $sid,
 			'billrun_month' => $billrun_key,
 		);
 		$update = array(
-			'$setOnInsert' => self::getEmptySubscriberEntry($billrun_key, $account_id, $subscriber_id, $plan_ref),
+			'$setOnInsert' => self::getEmptySubscriberEntry($billrun_key, $aid, $sid, $plan_ref),
 		);
 		$options = array(
 			'upsert' => true,
@@ -136,10 +133,10 @@ class Billrun_Balance implements ArrayAccess {
 		$output = $balances_coll->findAndModify($query, $update, array(), $options, true);
 		
 		if ($output) {
-			Billrun_Factory::log('Added subscriber ' . $subscriber_id . ' to balances collection', Zend_Log::INFO);
+			Billrun_Factory::log('Added subscriber ' . $sid . ' to balances collection', Zend_Log::INFO);
 			$ret = true;
 		} else {
-			Billrun_Factory::log('Error creating balance ' . $billrun_key . ' for subscriber ' . $subscriber_id, Zend_Log::ALERT);
+			Billrun_Factory::log('Error creating balance ' . $billrun_key . ' for subscriber ' . $sid, Zend_Log::ALERT);
 		}
 
 		return $ret;
@@ -148,16 +145,16 @@ class Billrun_Balance implements ArrayAccess {
 	/**
 	 * get a new subscriber array to be place in the DB.
 	 * @param type $billrun_month
-	 * @param type $account_id
-	 * @param type $subscriber_id
+	 * @param type $aid
+	 * @param type $sid
 	 * @param type $current_plan
 	 * @return type
 	 */
-	public function getEmptySubscriberEntry($billrun_month, $account_id, $subscriber_id, $plan_ref) {
+	public function getEmptySubscriberEntry($billrun_month, $aid, $sid, $plan_ref) {
 		return array(
 			'billrun_month' => $billrun_month,
-			'account_id' => $account_id,
-			'subscriber_id' => $subscriber_id,
+			'aid' => $aid,
+			'sid' => $sid,
 			'current_plan' => $plan_ref,
 			'balance' => self::getEmptyBalance("intl_roam_"),
 			'tx' => new stdclass,
@@ -173,9 +170,9 @@ class Billrun_Balance implements ArrayAccess {
 	protected function isExists($subscriberId, $billrunKey) {
 
 		$blnce = Billrun_Factory::db()->balancesCollection()->query(array(
-				'subscriber_id' => $subscriberId,
-				'billrun_month' => $billrunKey
-			))->cursor()->current();
+					'sid' => $subscriberId,
+					'billrun_month' => $billrunKey
+				))->cursor()->current();
 
 		if (!count($blnce->getRawData())) {
 			return FALSE;

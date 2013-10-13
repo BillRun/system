@@ -191,11 +191,11 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 			return array('deposit_result' => 1,
 				'transaction_status' => 000,
 				'phase' => NULL,
-				'subscriber_id' => 1337,
+				'sid' => 1337,
 				'NDC_SN' => $query_args['NDC_SN'],
 				'IMSI' => $query_args['IMSI'],
 				'SECOND_IMSI' => $query_args['IMSI'],
-				'account_id' => 1337,
+				'aid' => 1337,
 				'SMS' => 1,
 				'EMAIL' => 1,
 				'success' => 1);

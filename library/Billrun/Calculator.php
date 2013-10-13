@@ -184,7 +184,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		}
 		//Billrun_Factory::log()->log("stamps : ".print_r($stamps,1),Zend_Log::DEBUG);
 		$lines = Billrun_Factory::db()->linesCollection()
-					->query()->in('stamp', $stamps)->cursor()->sort(array('unified_record_time'=> 1));
+					->query()->in('stamp', $stamps)->cursor()->sort(array('urt'=> 1));
 		//Billrun_Factory::log()->log("Lines : ".print_r($lines->count(),1),Zend_Log::DEBUG);			
 		return $lines;
 	}
@@ -328,15 +328,15 @@ abstract class Billrun_Calculator extends Billrun_Base {
 			if ($this->limit != 0) {
 				Billrun_Factory::log()->log('Looking for the last available line in the queue', Zend_Log::DEBUG);
                 if (isset($querydata['hint'])) {
-                    $hq = $queue->query($query)->cursor()->hint(array($querydata['hint'] => 1))->sort(array('unified_record_time' => 1))->limit($this->limit);
+                    $hq = $queue->query($query)->cursor()->hint(array($querydata['hint'] => 1))->sort(array('urt' => 1))->limit($this->limit);
 				} else {
-					$hq = $queue->query($query)->cursor()->sort(array('unified_record_time' => 1))->limit($this->limit);
+					$hq = $queue->query($query)->cursor()->sort(array('urt' => 1))->limit($this->limit);
 				}
 				$horizonlineCount = $hq->count(true);
 				$horizonline = $hq->skip(abs($horizonlineCount - 1))->limit(1)->current();
 				Billrun_Factory::log()->log("current limit : " . $horizonlineCount, Zend_Log::DEBUG);
 				if (!$horizonline->isEmpty()) {
-					$query['unified_record_time'] = array('$lte' => $horizonline['unified_record_time']);
+					$query['urt'] = array('$lte' => $horizonline['urt']);
 				} else {
 					return $retLines;
 				}
@@ -348,7 +348,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 			//Billrun_Factory::log()->log(print_r($query,1),Zend_Log::DEBUG);
 			$queue->update($query, $update, array('multiple' => true));
 
-            $foundLines = $queue->query(array_merge($localquery, array('hash' => $this->workHash, 'calc_time' => $this->signedMicrotime)))->cursor()->sort(array('unified_record_time'=> 1))->hint(array('hash' => 1));
+            $foundLines = $queue->query(array_merge($localquery, array('hash' => $this->workHash, 'calc_time' => $this->signedMicrotime)))->cursor()->sort(array('urt'=> 1));
         } while ($horizonlineCount != 0 && $foundLines->count() == 0);
 		
 		foreach ($foundLines as $line) {

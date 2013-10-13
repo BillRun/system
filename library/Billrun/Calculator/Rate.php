@@ -12,7 +12,7 @@
  */
 abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 
-	const DEF_CALC_DB_FIELD = 'customer_rate';
+	const DEF_CALC_DB_FIELD = 'arate';
 
 	/**
 	 * the type of the object

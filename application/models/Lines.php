@@ -30,7 +30,7 @@ class LinesModel extends TableModel {
 	public function getProtectedKeys($entity, $type) {
 		$parent_protected = parent::getProtectedKeys($entity, $type);
 		if ($type == 'update') {
-			return array_merge($parent_protected, array("type", "account_id", "subscriber_id", "billrun_ref", "file", "header_stamp", "imsi", "source", "stamp", "unified_record_time", "usaget", "billrun"));
+			return array_merge($parent_protected, array("type", "aid", "sid", "billrun_ref", "file", "log_stamp", "imsi", "source", "stamp", "urt", "usaget", "billrun"));
 		}
 		return $parent_protected;
 	}
@@ -46,13 +46,13 @@ class LinesModel extends TableModel {
 
 		$entity = parent::getItem($id);
 
-		if (isset($entity['unified_record_time'])) {
-			$entity['unified_record_time'] = (new Zend_Date($entity['unified_record_time']->sec, null, new Zend_Locale('he_IL')))->getIso();
+		if (isset($entity['urt'])) {
+			$entity['urt'] = (new Zend_Date($entity['urt']->sec, null, new Zend_Locale('he_IL')))->getIso();
 		}
-		if (isset($entity['customer_rate'])) {
-			$data = $entity->get('customer_rate', false);
+		if (isset($entity['arate'])) {
+			$data = $entity->get('arate', false);
 			if ($data instanceof Mongodloid_Entity) {
-				$entity['customer_rate'] = $data->get('key');
+				$entity['arate'] = $data->get('key');
 			}
 		}
 		if (isset($entity['billrun_ref'])) {
@@ -78,13 +78,13 @@ class LinesModel extends TableModel {
 
 	public function update($data) {
 		$currentDate = new MongoDate();
-		if (isset($data['customer_rate'])) {
+		if (isset($data['arate'])) {
 			$ratesColl = Billrun_Factory::db()->ratesCollection();
-			$rateEntity = $ratesColl->query('key', $data['customer_rate'])
+			$rateEntity = $ratesColl->query('key', $data['arate'])
 					->lessEq('from', $currentDate)
 					->greaterEq('to', $currentDate)
 					->cursor()->current();
-			$data['customer_rate'] = $rateEntity->createRef($ratesColl);
+			$data['arate'] = $rateEntity->createRef($ratesColl);
 		}
 		if (isset($data['plan'])) {
 			$plansColl = Billrun_Factory::db()->plansCollection();
@@ -108,16 +108,14 @@ class LinesModel extends TableModel {
 	public function getTableColumns() {
 		$columns = array(
 			'type' => 'Type',
-			'account_id' => 'Account id',
-			'subscriber_id' => 'Subscriber id',
-			'calling_number' => 'Calling number',
-			'called_number' => 'Called number',
+			'aid' => 'Account id',
+			'sid' => 'Subscriber id',
 			'usaget' => 'Usage type',
-			'usagev' => 'Amount (Byte/Sec)',
+			'usagev' => 'Amount',
 			'plan' => 'Plan',
-			'price_customer' => 'Price',
-			'billrun_key' => 'Billrun',
-			'unified_record_time' => 'Time',
+			'aprice' => 'Price',
+			'billrun' => 'Billrun',
+			'urt' => 'Time',
 			'_id' => 'Id',
 		);
 		return $columns;
@@ -136,17 +134,17 @@ class LinesModel extends TableModel {
 				'display' => 'Garbage lines',
 				'default' => 'off',
 			),
-			'account_id' => array(
-				'key' => 'account_id',
-				'db_key' => 'account_id',
+			'aid' => array(
+				'key' => 'aid',
+				'db_key' => 'aid',
 				'input_type' => 'number',
 				'comparison' => 'equals',
 				'display' => 'Account id',
 				'default' => '',
 			),
-			'subscriber_id' => array(
-				'key' => 'subscriber_id',
-				'db_key' => 'subscriber_id',
+			'sid' => array(
+				'key' => 'sid',
+				'db_key' => 'sid',
 				'input_type' => 'number',
 				'comparison' => 'equals',
 				'display' => 'Subscriber id',
@@ -154,7 +152,7 @@ class LinesModel extends TableModel {
 			),
 			'from' => array(
 				'key' => 'from',
-				'db_key' => 'unified_record_time',
+				'db_key' => 'urt',
 				'input_type' => 'date',
 				'comparison' => '$gte',
 				'display' => 'From',
@@ -162,7 +160,7 @@ class LinesModel extends TableModel {
 			),
 			'to' => array(
 				'key' => 'to',
-				'db_key' => 'unified_record_time',
+				'db_key' => 'urt',
 				'input_type' => 'date',
 				'comparison' => '$lte',
 				'display' => 'To',
@@ -190,23 +188,23 @@ class LinesModel extends TableModel {
 					$month_ago = new MongoDate(strtotime("1 month ago"));
 					return array(
 						'$or' => array(
-							array('customer_rate' => $unrated_rate), // customer rate is "UNRATED"
-							array('subscriber_id' => false), // or subscriber not found
+							array('arate' => $unrated_rate), // customer rate is "UNRATED"
+							array('sid' => false), // or subscriber not found
 							array('$and' => array(// old unpriced records which should've been priced
-									array('customer_rate' => array(
+									array('arate' => array(
 											'$exists' => true,
 											'$nin' => array(
 												false, $unrated_rate
 											),
 									)),
-									array('subscriber_id' => array(
+									array('sid' => array(
 											'$exists' => true,
 											'$ne' => false,
 									)),
-									array('unified_record_time' => array(
+									array('urt' => array(
 											'$lt' => $month_ago
 									)),
-									array('price_customer' => array(
+									array('aprice' => array(
 											'$exists' => false
 									)),
 							)),
@@ -221,10 +219,10 @@ class LinesModel extends TableModel {
 	public function getFilterFieldsOrder() {
 		$filter_field_order = array(
 			0 => array(
-				'account_id' => array(
+				'aid' => array(
 					'width' => 2,
 				),
-				'subscriber_id' => array(
+				'sid' => array(
 					'width' => 2,
 				),
 				'from' => array(
@@ -249,14 +247,14 @@ class LinesModel extends TableModel {
 	public function getSortFields() {
 		return array(
 			'type' => 'Type',
-			'account_id' => 'Account id',
-			'subscriber_id' => 'Subscriber id',
+			'aid' => 'Account id',
+			'sid' => 'Subscriber id',
 			'usaget' => 'Usage type',
 			'usagev' => 'Amount',
 			'plan' => 'Plan',
-			'price_customer' => 'Price',
+			'aprice' => 'Price',
 			'billrun_key' => 'Billrun',
-			'unified_record_time' => 'Time',
+			'urt' => 'Time',
 		);
 	}
 
