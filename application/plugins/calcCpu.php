@@ -22,8 +22,14 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 */
 	protected $name = 'calcCpu';
 
+	/**
+	 *
+	 * @var array rows that were priced by the plugin in customer pricing stage
+	 */
+	protected $priced_rows = array();
+
 	public function beforeProcessorStore($processor) {
-		Billrun_Factory::log('Plugin calc cpu triggered', Zend_Log::INFO);
+		Billrun_Factory::log('Plugin calc cpu triggered before processor store', Zend_Log::INFO);
 		$options = array(
 			'autoload' => 0,
 		);
@@ -36,11 +42,11 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 			if ($rate->isLineLegitimate($entity)) {
 				$rate->updateRow($entity);
 			}
-				$processor->setQueueRowStep($entity['stamp'], 'rate');
+			$processor->setQueueRowStep($entity['stamp'], 'rate');
 			$line = $entity->getRawData();
 		}
-		
-		Billrun_Factory::log('Plugin calc cpu customer', Zend_Log::INFO);
+
+		Billrun_Factory::log('Plugin calc cpu customer.', Zend_Log::INFO);
 		$customerAPISettings = Billrun_Factory::config()->getConfigValue('customer.calculator', array());
 		$customerOptions = array(
 			'type' => 'customer',
@@ -54,8 +60,7 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$entity = new Mongodloid_Entity($line);
 			if (!isset($entity['usagev']) || $entity['usagev'] === 0) {
 				$processor->unsetQueueRow($entity['stamp']);
-			}
-			else if ($customerCalc->isLineLegitimate($entity)) {
+			} else if ($customerCalc->isLineLegitimate($entity)) {
 				if ($customerCalc->updateRow($entity) !== FALSE) {
 					$processor->setQueueRowStep($entity['stamp'], 'customer');
 				}
@@ -64,14 +69,33 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 			}
 			$line = $entity->getRawData();
 		}
-
-//		// @TODO: make customer price calc in the same way
-//		$customerPricingCalc = new Billrun_Calculator_CustomerPricing($options);
-//			if ($customerPricingCalc->isLineLegitimate($entity)) {
-//				Billrun_Factory::log($entity['stamp'] . ' priced');
-//				$customerPricingCalc->updateRow($entity);
-//			}
+		
+		Billrun_Factory::log('Plugin calc cpu customer pricing', Zend_Log::INFO);
+		$customerPricingCalc = Billrun_Calculator::getInstance(array('type' => 'customerPricing', 'autoload' => false));
+		$queue_data = $processor->getQueueData();
+		foreach ($data['data'] as &$line) {
+			if (isset($queue_data[$line['stamp']]) && $queue_data[$line['stamp']]['calc_name']=='customer') {
+				$entity = new Mongodloid_Entity($line);
+				if ($customerPricingCalc->isLineLegitimate($entity)) {
+					if ($customerPricingCalc->updateRow($entity) !== FALSE) {
+						$processor->setQueueRowStep($entity['stamp'], 'pricing');
+						$this->priced_rows[] = $entity;
+					}
+				} else {
+					$processor->setQueueRowStep($entity['stamp'], 'pricing');
+				}
+				$line = $entity->getRawData();
+			}
+		}
 		Billrun_Factory::log('Plugin calc cpu end', Zend_Log::INFO);
+	}
+	
+	public function afterProcessorStore($processor) {
+		Billrun_Factory::log('Plugin calc cpu triggered after processor store', Zend_Log::INFO);
+		$customerPricingCalc = Billrun_Calculator::getInstance(array('type' => 'customerPricing', 'autoload' => false));
+		foreach ($this->priced_rows as $row) {
+			$customerPricingCalc->removeBalanceTx($row);
+		}
 	}
 
 }

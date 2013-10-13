@@ -66,7 +66,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 
 	/**
 	 * execute the calculation process
-	 * @TODO this function mighh  be a duplicate of  @see Billrun_Calculator::calc() do we really  need the diffrence  between Rate/Pricing?
+	 * @TODO this function mighh  be a duplicate of  @see Billrun_Calculator::calc() do we really  need the diffrence  between Rate/Pricing? (they differ in the plugins triggered)
 	 */
 	public function calc() {
 		Billrun_Factory::dispatcher()->trigger('beforePricingData', array('data' => $this->data));
@@ -272,7 +272,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		unset($balance_unique_key['billrun_key']);
 		$query = $balance_unique_key;
 		$update = array();
-		$update['$set']['tx'][$stamp] = $pricingData;
+		$update['$set']['tx.' . $stamp] = $pricingData;
 		foreach ($counters as $key => $value) {
 			$old_usage = $subRaw['balance']['totals'][$key]['usagev'];
 			$query['balance.totals.' . $key . '.usagev'] = $old_usage;
@@ -293,7 +293,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * removes the transactions from the subscriber's balance to save space.
 	 * @param type $row
 	 */
-	protected function removeBalanceTx($row) {
+	public function removeBalanceTx($row) {
 		$balances_coll = Billrun_Factory::db()->balancesCollection();
 		$sid = $row['sid'];
 		$billrun_key = Billrun_Util::getBillrunKey($row['urt']->sec);
