@@ -21,18 +21,20 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	 * @var string
 	 */
 	static protected $type = "Customer";
-	public $subscriberSettings = array();
+	protected $subscriberSettings = array();
+	static protected $time;
 	
 	public function __construct($options = array()) {
-		$this->subscriberSettings = self::config()->getConfigValue('customer', array());
+		parent::__construct($options);
+		$this->subscriberSettings = Billrun_Factory::config()->getConfigValue('customer', array());
 		
 		if (!isset($this->subscriberSettings['calculator']['subscriber_identification_translation']) 
 			|| !isset($this->subscriberSettings['calculator']['subscriber']['time_feild_name'])
-			|| !isset($this->subscriberSettings['calculator']['subscriber']['subscriber_id_feild_name'])) {
+			|| !isset($this->subscriberSettings['calculator']['subscriber']['subscriber_id_feild_name_crm'])) {
 			return false;
 		}
 		
-		$time = $this->subscriberSettings['calculator']['subscriber']['time_feild_name'];
+		self::$time = $this->subscriberSettings['calculator']['subscriber']['time_feild_name'];
 	}
 	
 	
@@ -43,7 +45,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	 */
 	protected function getLines() {
 		$lines = Billrun_Factory::db()->linesCollection();
-
+		
 		return $lines->query(array(
 					'source' => 'nrtrde',
 					'$or' => array(
@@ -66,14 +68,15 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		}
 
 		$customer_identification = array();
-		$customer_identification[$this->subscriberSettings['calculator']['subscriber_identification_translation']] = $row->get($this->subscriberSettings['calculator']['subscriber_identification_translation']);
+		$customer_identification['key'][$this->subscriberSettings['calculator']['subscriber_identification_translation']] = $row->get($this->subscriberSettings['calculator']['subscriber_identification_translation']);
+		$customer_identification['time'][self::$time] = $row->get(self::$time);
 		
 		// load subscriber
-		$subscriber = golan_subscriber::get($customer_identification ,$time);
+		$subscriber = golan_subscriber::get($customer_identification);
 		
 		if (!$subscriber) {
 			if (!isset($row['subscriber_not_found']) || (isset($row['subscriber_not_found']) && $row['subscriber_not_found'] == false)) {
-				$msg = "Failed  when sending event to subscriber_plan_by_date.rpc.php". PHP_EOL . "subscriber not found, ". key($customer_identification) ." : ".$customer_identification[key($customer_identification)];
+				$msg = "Failed  when sending event to subscriber_plan_by_date.rpc.php - sent: ". PHP_EOL . print_r($customer_identification, true). PHP_EOL ." returned: NULL";
 				$this->sendEmailOnFailure($msg);
 				
 				// subscriber_not_found:true, update all rows with same subscriber detials
@@ -81,21 +84,21 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 				$result = $this->update_same_subscriber($status, $customer_identification, $subscriber);
 			}
 			
-			Billrun_Factory::log()->log("subscriber not found ". key($customer_identification) ." : ".$customer_identification[key($customer_identification)] . $time, Zend_Log::INFO);
+			Billrun_Factory::log()->log("No subscriber returned". print_r($customer_identification, true), Zend_Log::INFO);
 			return false;
 		}
 		
-		if (!isset($subscriber[$this->subscriberSettings['calculator']['subscriber_id']]) || !isset($subscriber['account_id'])) {
+		if (!isset($subscriber[$this->subscriberSettings['calculator']['subscriber']['subscriber_id_feild_name_crm']]) || !isset($subscriber['account_id'])) {
 			if (!isset($row['subscriber_not_found']) || (isset($row['subscriber_not_found']) && $row['subscriber_not_found'] == false)) {
-				$msg = "Did not receive one of necessary params ". print_r($subscriber). PHP_EOL .key($customer_identification) ." : ".$customer_identification[key($customer_identification)];
+				$msg = "Error on returned result - sent: ". print_r($customer_identification, true) . PHP_EOL . " returned: " .print_r($subscriber, true);
 				$this->sendEmailOnFailure($msg);
 				
 				// subscriber_not_found:true, update all rows with same subscriber detials
 				$status = true;
-				$result = $this->update_same_subscriber($status, $imsi, $phone_number);
+				$result = $this->update_same_subscriber($status, $customer_identification, $subscriber);
 			}
 			
-			Billrun_Factory::log()->log("subscriber_id or account_id not found. phone: " . key($customer_identification) ." : ".$customer_identification[key($customer_identification)] . $time, Zend_Log::WARN);
+			Billrun_Factory::log()->log("Error on returned result - sent: ". print_r($customer_identification, true) . PHP_EOL . " returned: " .print_r($subscriber, true), Zend_Log::WARN);
 			return false;
 		}
 		
@@ -106,7 +109,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		}
 		
 		$current = $row->getRawData();
-		$subscriber_id = $subscriber[$this->subscriberSettings['calculator']['subscriber_id']];
+		$subscriber_id = $subscriber[$this->subscriberSettings['calculator']['subscriber']['subscriber_id_feild_name_crm']];
 		$added_values = array('subscriber_id' => $subscriber_id, 'account_id' => $subscriber['account_id']);
 		$newData = array_merge($current, $added_values);
 		$row->setRawData($newData);
@@ -121,7 +124,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		foreach ($this->data as $item) {
 			// update billing line with billrun stamp
 			if (!$this->updateRow($item)) {
-				Billrun_Factory::log()->log("phone number:" .$item->get('caller_phone_no'). " cannot update billing line", Zend_Log::INFO);
+				Billrun_Factory::log()->log("cannot update billing line", Zend_Log::INFO);
 				continue;
 			}
 		}
