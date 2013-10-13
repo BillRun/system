@@ -89,11 +89,12 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 						$this->priced_rows[] = $entity;
 					}
 				} else {
+					// if this is last calculator, remove from queue
 					if ($queue_calculators[count($queue_calculators)-1] == 'pricing') {
 						$processor->unsetQueueRow($entity['stamp']);
 					} else {
 						$processor->setQueueRowStep($entity['stamp'], 'pricing');
-					}
+						}
 				}
 				$line = $entity->getRawData();
 			}
