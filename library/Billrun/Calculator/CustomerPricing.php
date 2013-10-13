@@ -273,7 +273,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		unset($balance_unique_key['billrun_key']);
 		$query = $balance_unique_key;
 		$update = array();
-		$update['$set']['tx'][$stamp] = $pricingData;
+		$update['$set']['tx.' . $stamp] = $pricingData;
 		foreach ($counters as $key => $value) {
 			$old_usage = $subRaw['balance']['totals'][$key]['usagev'];
 			$query['balance.totals.' . $key . '.usagev'] = $old_usage;
