@@ -10,23 +10,23 @@
  * This is a plguin to provide NSN support to the billing system.
  */
 class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plugin_Interface_IParser, Billrun_Plugin_Interface_IProcessor {
-	
+
 	use Billrun_Traits_FileSequenceChecking;
-	
+
 	/**
 	 * plugin name
 	 *
 	 * @var string
 	 */
 	protected $name = 'nsn';
-	
+
 	const HEADER_LENGTH = 41;
 	const TRAILER_LENGTH = 24;
 	const MAX_CHUNKLENGTH_LENGTH = 8196;
 	const RECORD_ALIGNMENT = 0x1ff0;
-	
+
 	protected $fileStats = null;
-	
+
 	public function __construct(array $options = array()) {
 		$this->nsnConfig = (new Yaf_Config_Ini(Billrun_Factory::config()->getConfigValue('nsn.config_path')))->toArray();
 	}
@@ -51,9 +51,8 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 		}
 	}
 
-	
 	/////////////////////////////////////////////// Reciver //////////////////////////////////////
-	
+
 	/**
 	 * Setup the sequence checker.
 	 * @param type $receiver
@@ -66,7 +65,7 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 		}
 		$this->setFilesSequenceCheckForHost($hostname);
 	}
-	
+
 	/**
 	 * (dispatcher hook)
 	 * Check recieved file sequences
@@ -81,7 +80,7 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 		}
 		$this->checkFilesSeq($filepaths, $hostname);
 	}
-	
+
 	/**
 	 * (dispatcher hook)
 	 * alter the file name to match the month the file was recevied to prevent duplicate files.
@@ -106,6 +105,7 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 		//check if the file was received more then an hour ago.
 		$query['extra_data.month'] = array('$gt' => date('Ym', strtotime('previous month')));
 	}
+
 	/**
 	 * @see Billrun_Plugin_BillrunPluginFraud::handlerCollect
 	 */
@@ -127,11 +127,10 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 		foreach ($dailyAlerts as &$val) {
 			$val['threshold'] = $dailyThreshold;
 		}
-		
+
 		return array_merge($monthlyAlerts, $dailyAlerts);
-		
 	}
-	
+
 	/**
 	 * Detect calls that exceed a certain duration threshold
 	 * @param type $fromDate the date that from which a call is a valid call to aggregate (formated : 'YmdHis') 
@@ -140,49 +139,49 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 	 */
 	protected function detectDurationExcceders($fromDate, $threshold) {
 		$aggregateQuery = array(
-				array(
-					'$match' => array(
-						'type' => 'nsn',
-					),
+			array(
+				'$match' => array(
+					'type' => 'nsn',
 				),
-				array(
-					'$match' => array(
-						'event_stamp' => array('$exists' => false),
+			),
+			array(
+				'$match' => array(
+					'event_stamp' => array('$exists' => false),
 					'record_type' => array('$in' => array('01', '11')),
-						'called_number' => array('$regex' => '^(?=10[^1]|1016|016|97216)....'),
+					'called_number' => array('$regex' => '^(?=10[^1]|1016|016|97216)....'),
 					'duration' => array('$gt' => 0),
-						//@TODO  switch to unified time once you have the time to test it
-						//'unified_record_time' => array('$gt' => $charge_time),
-						'charging_start_time' => array('$gte' => $fromDate),
-					),
+					//@TODO  switch to unified time once you have the time to test it
+					//'urt' => array('$gt' => $charge_time),
+					'charging_start_time' => array('$gte' => $fromDate),
 				),
-				array(
+			),
+			array(
 				'$group' => array(
 					'_id' => array('imsi' => '$calling_imsi', 'msisdn' => '$calling_number'),
-						'duration' => array('$sum' => '$duration'),
+					'duration' => array('$sum' => '$duration'),
 					'lines_stamps' => array('$addToSet' => '$stamp'),
-					),
 				),
-				array(
-					'$project' => array(
-							'_id' => 0,
-							'imsi' => '$_id.imsi',
-							'msisdn' => '$_id.msisdn',
-							'value' => '$duration',
-							'lines_stamps' => 1,
+			),
+			array(
+				'$project' => array(
+					'_id' => 0,
+					'imsi' => '$_id.imsi',
+					'msisdn' => '$_id.msisdn',
+					'value' => '$duration',
+					'lines_stamps' => 1,
 				),
-				),
-				array(
-					'$match' => array(
+			),
+			array(
+				'$match' => array(
 					'value' => array('$gte' => $threshold),
-					),
 				),
+			),
 		);
 
 		$linesCol = Billrun_Factory::db()->linesCollection();
 		return $linesCol->aggregate($aggregateQuery);
 	}
-	
+
 	/**
 	 * @see Billrun_Plugin_BillrunPluginFraud::addAlertData 
 	 */
@@ -191,9 +190,10 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 		$event['event_type'] = 'MABAL_016';
 		return $event;
 	}
-	
+
 	////////////////////////////////////////////// Parser ///////////////////////////////////////////
 	const DEFAULT_TIME_OFFSET = "+03:00";
+
 	/**
 	 * @see Billrun_Plugin_Interface_IParser::parseData
 	 */
@@ -201,7 +201,7 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 		if ($type != $this->getName()) {
 			return FALSE;
 		}
-		
+
 		$data = array();
 		$offset = 0;
 
@@ -214,18 +214,18 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 			foreach ($this->nsnConfig[$data['record_type']] as $key => $fieldDesc) {
 				if ($fieldDesc) {
 					if (isset($this->nsnConfig['fields'][$fieldDesc])) {
-							$length = intval(current($this->nsnConfig['fields'][$fieldDesc]), 10);
+						$length = intval(current($this->nsnConfig['fields'][$fieldDesc]), 10);
 						$data[$key] = $this->parseField(substr($line, $offset, $length), $this->nsnConfig['fields'][$fieldDesc]);
 						/* if($data['record_type'] == "12") {//DEBUG...
-								Billrun_Factory::log()->log("Data $key : {$data[$key]} , offset: ".  dechex($offset),Zend_log::DEBUG);
+						  Billrun_Factory::log()->log("Data $key : {$data[$key]} , offset: ".  dechex($offset),Zend_log::DEBUG);
 						  } */
-							$offset += $length;
+						$offset += $length;
 					} else {
 						throw new Exception("Nsn:parse - Couldn't find field: $fieldDesc  ");
 					}
 				}
 			}
-			$data['unified_record_time'] = new MongoDate(Billrun_Util::dateTimeConvertShortToIso((string) $data['call_reference_time'], self::DEFAULT_TIME_OFFSET));
+			$data['urt'] = new MongoDate(Billrun_Util::dateTimeConvertShortToIso((string) $data['call_reference_time'], self::DEFAULT_TIME_OFFSET));
 		}
 		if( isset($data['charging_end_time']) && isset($data['charging_start_time']) ) {
 			$data['duration'] = strtotime($data['charging_end_time']) - strtotime($data['charging_start_time']);
@@ -235,11 +235,11 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 		}
 
 		$parser->setLastParseLength($data['record_length']);
-		
+
 		//@TODO add unifiom field translation. ('record_opening_time',etc...)
 		return isset($this->nsnConfig[$data['record_type']]) ? $data : false;
 	}
-	
+
 	/**
 	 * @see Billrun_Plugin_Interface_IParser::parseSingleField
 	 */
@@ -250,7 +250,7 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 
 		return $this->parseField($data, $fileDesc);
 	}
-	
+
 	/**
 	 * @see Billrun_Plugin_Interface_IParser::parseHeader
 	 */
@@ -258,7 +258,7 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 		if ($type != $this->getName()) {
 			return FALSE;
 		}
-		
+
 		$header = array();
 		foreach ($this->nsnConfig['block_header'] as $key => $fieldDesc) {
 			$fieldStruct = $this->nsnConfig['fields'][$fieldDesc];
@@ -269,7 +269,7 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 
 		return $header;
 	}
-	
+
 	/**
 	 * @see Billrun_Plugin_Interface_IParser::parseTrailer
 	 */
@@ -298,17 +298,17 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 		$type = key($fileDesc);
 		$length = $fileDesc[$type];
 		$retValue = '';
-		
+
 		switch ($type) {
 			case 'decimal' :
-					$retValue = 0;
+				$retValue = 0;
 				for ($i = $length - 1; $i >= 0; --$i) {
-						$retValue = ord($data[$i]) + ($retValue << 8);
-					}
+					$retValue = ord($data[$i]) + ($retValue << 8);
+				}
 				break;
-				
+
 			case 'phone_number' :
-					$val = '';
+				$val = '';
 				for ($i = 0; $i < $length; ++$i) {
 						$byteVal = ord($data[$i]);
 						for($j = 0; $j < 2 ; $j++, $byteVal=$byteVal >> 4) {
@@ -324,52 +324,52 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 					}
 					$retValue = $val;
 				break;
-				
+
 			case 'long':
-					$retValue = 0;
+				$retValue = 0;
 				for ($i = $length - 1; $i >= 0; --$i) {
 					$retValue = bcadd(bcmul($retValue, 256), ord($data[$i]));
-					}
+				}
 				break;
-				
+
 			case 'hex' :
 				$retValue = '';
 				for ($i = $length - 1; $i >= 0; --$i) {
-						$retValue .= dechex(ord($data[$i]));
-					}
+					$retValue .= dechex(ord($data[$i]));
+				}
 				break;
 			case 'reveresed_bcd_encode' :
-					
+
 			case 'datetime':
 			case 'bcd_encode' :
 			case 'bcd_number' :
-					$retValue = '';
+				$retValue = '';
 				for ($i = $length - 1; $i >= 0; --$i) {
-						$byteVal = ord($data[$i]);
+					$byteVal = ord($data[$i]);
 					$retValue .= ((($byteVal >> 4) < 10) ? ($byteVal >> 4) : '' ) . ((($byteVal & 0xF) < 10) ? ($byteVal & 0xF) : '');
-					}
+				}
 				if ($type == 'bcd_number') {
 					$retValue = intval($retValue, 10);
-					}
+				}
 				if ('reveresed_bcd_encode' == $type) {
-						$retValue = strrev($retValue);
-					}
+					$retValue = strrev($retValue);
+				}
 				break;
-					
+
 			case 'format_ver' :
 				$retValue = $data[0] . $data[1] . ord($data[2]) . '.' . ord($data[3]) . '-' . ord($data[4]);
 				break;
-			
+
 			case 'ascii':
 				$retValue = preg_replace("/\W/", "", substr($data, 0, $length));
 				break;
 		}
-		
+
 		return $retValue;
 	}
 
 	//////////////////////////////////////////// Processor //////////////////////////////////////
-	
+
 	/**
 	 * @see Billrun_Plugin_Interface_IProcessor::isProcessingFinished
 	 */
@@ -380,10 +380,14 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 		if (!$this->fileStats) {
 			$this->fileStats = fstat($fileHandle);
 		}
-		return feof($fileHandle) ||
+		$process_finished = feof($fileHandle) ||
 				ftell($fileHandle) + self::TRAILER_LENGTH >= $this->fileStats['size'];
+		if ($process_finished) {
+			$this->fileStats = null;
+		}
+		return $process_finished;
 	}
-	
+
 	/**
 	 * Retrive the sequence data  for a ggsn file
 	 * @param type $type the type of the file being processed
@@ -397,8 +401,7 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 		}
 		return $this->getFileSequenceData($filename);
 	}
-	
-	
+
 	/**
 	 * @see Billrun_Plugin_Interface_IProcessor::processData
 	 */
@@ -413,7 +416,7 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 		if (isset($header['data_length_in_block']) && !feof($fileHandle)) {
 			$bytes = fread($fileHandle, $header['data_length_in_block'] - self::HEADER_LENGTH);
 		}
-		
+
 		do {
 			$row = $processor->buildDataRow($bytes);
 			if ($row) {
@@ -421,20 +424,20 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 			}
 			$bytes = substr($bytes, $processor->getParser()->getLastParseLength());
 		} while (isset($bytes[self::TRAILER_LENGTH + 1]));
-		
+
 		$trailer = $processor->getParser()->parseTrailer($bytes);
 		//align the readhead
 		if ((self::RECORD_ALIGNMENT - $header['data_length_in_block']) > 0) {
 			fread($fileHandle, (self::RECORD_ALIGNMENT - $header['data_length_in_block']));
 		}
-		
+
 		//add trailer data
 		$processorData = &$processor->getData();
 		$processorData['trailer'] = $this->updateBlockData($trailer, $header, $processorData['trailer']);
 
 		return true;
 	}
-	
+
 	/**
 	 * Add block related data from the processor to the log DB collection entry.
 	 * @param type $trailer the block header data
@@ -454,11 +457,12 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 				$logTrailer['batch'][] = $header['batch_seq_number'];
 			}
 			$logTrailer['block_data'][] = array('last_record_number' => $trailer['last_record_number'],
-																'first_record_number' => $header['first_record_number'],
+				'first_record_number' => $header['first_record_number'],
 				'seq_no' => $header['block_seq_number']);
 		}
 		return $logTrailer;
 	}
+
 }
 
 ?>

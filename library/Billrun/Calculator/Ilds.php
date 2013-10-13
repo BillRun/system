@@ -55,8 +55,8 @@ class Billrun_Calculator_Ilds extends Billrun_Calculator_Rate {
 
 		$query = $lines->query()
 			->equals('source', static::$type)
-			->notExists('price_customer');
-//			->notExists('price_provider'); // @todo: check how to do or between 2 not exists		
+			->notExists('aprice');
+//			->notExists('pprice'); // @todo: check how to do or between 2 not exists		
 		
 		if ($this->limit > 0) {
 			$query->cursor()->limit($this->limit);
@@ -98,8 +98,8 @@ class Billrun_Calculator_Ilds extends Billrun_Calculator_Rate {
 		$current = $row->getRawData();
 		$charge = $this->calcChargeLine($row->get('type'), $row->get('call_charge'));
 		$added_values = array(
-			'price_customer' => $charge,
-			'price_provider' => $charge,
+			'aprice' => $charge,
+			'pprice' => $charge,
 		);
 		$newData = array_merge($current, $added_values);
 		$row->setRawData($newData);

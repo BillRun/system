@@ -59,24 +59,23 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 
 	public function __construct($options = array()) {
 		parent::__construct($options);
-		if (isset($options['page']) && $options['page']) {
-			$this->page = $options['page'];
+		if (isset($options['aggregator']['page']) && $options['aggregator']['page']) {
+			$this->page = $options['aggregator']['page'];
 		}
-		if (isset($options['size']) && $options['size']) {
-			$this->size = $options['size'];
+		if (isset($options['aggregator']['size']) && $options['aggregator']['size']) {
+			$this->size = $options['aggregator']['size'];
 		}
 
 		$this->plans = Billrun_Factory::db()->plansCollection();
 		$this->lines = Billrun_Factory::db()->linesCollection();
 		$this->billrun = Billrun_Factory::db()->billrunCollection();
-
 	}
 
 	/**
 	 * load the data to aggregate
 	 */
 	public function load() {
-		$date = Billrun_Util::getLastChargeTime();
+		$date = date(Billrun_Base::base_dateformat, strtotime(Billrun_Util::getLastChargeTime()));
 		$subscriber = Billrun_Factory::subscriber();
 		$this->data = $subscriber->getList($this->page, $this->size, $date);
 
@@ -94,36 +93,36 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 
 		$billrun_key = $this->getStamp();
 
-		foreach ($this->data as $account_id => $account) {
+		foreach ($this->data as $aid => $account) {
 			foreach ($account as $subscriber) {
 				Billrun_Factory::dispatcher()->trigger('beforeAggregateLine', array(&$subscriber, &$this));
-				$account_id = $subscriber->account_id;
-				$subscriber_id = $subscriber->subscriber_id;
+				$aid = $subscriber->aid;
+				$sid = $subscriber->sid;
 				$plan_name = $subscriber->plan;
 				if (is_null($plan_name)) {
 					$subscriber_status = "closed";
-					Billrun_Billrun::setSubscriberStatus($account_id, $subscriber_id, $billrun_key, $subscriber_status);
+					Billrun_Billrun::setSubscriberStatus($aid, $sid, $billrun_key, $subscriber_status);
 				} else {
 					$subscriber_status = "open";
 					$flat_price = $subscriber->getFlatPrice();
 					if (is_null($flat_price)) {
-						Billrun_Factory::log()->log("Couldn't find flat price for subscriber " . $subscriber_id . " for billrun " . $billrun_key, Zend_Log::ALERT);
+						Billrun_Factory::log()->log("Couldn't find flat price for subscriber " . $sid . " for billrun " . $billrun_key, Zend_Log::ALERT);
 						continue;
 					}
-					Billrun_Factory::log('Adding flat to subscriber ' . $subscriber_id, Zend_Log::INFO);
+					Billrun_Factory::log('Adding flat to subscriber ' . $sid, Zend_Log::INFO);
 					$flat_line = $this->saveFlatLine($subscriber, $billrun_key);
 
 					$plan = $flat_line['plan_ref'];
-					if (!$billrun = Billrun_Billrun::updateBillrun($billrun_key, array(), array('price_customer' => $flat_price), $flat_line, $plan['vatable'], $subscriber_status)) {
-						Billrun_Factory::log()->log("Flat costs already exist in billrun collection for subscriber " . $subscriber_id . " for billrun " . $billrun_key, Zend_Log::NOTICE);
+					if (!$billrun = Billrun_Billrun::updateBillrun($billrun_key, array(), array('aprice' => $flat_price), $flat_line, $plan['vatable'])) {
+						Billrun_Factory::log()->log("Flat costs already exist in billrun collection for subscriber " . $sid . " for billrun " . $billrun_key, Zend_Log::NOTICE);
 					} else {
-						Billrun_Billrun::setSubscriberStatus($account_id, $subscriber_id, $billrun_key, $subscriber_status);
+						Billrun_Billrun::setSubscriberStatus($aid, $sid, $billrun_key, $subscriber_status);
 						$flat_line['billrun_ref'] = $billrun->createRef($this->billrun);
 						$flat_line->save();
 					}
 				}
 			}
-			Billrun_Billrun::close($account_id, $billrun_key, $this->min_invoice_id);
+			Billrun_Billrun::close($aid, $billrun_key, $this->min_invoice_id);
 		}
 //		Billrun_Factory::dispatcher()->trigger('beforeAggregateSaveLine', array(&$save_data, &$this));
 		// @TODO trigger after aggregate
@@ -131,13 +130,13 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	}
 
 	protected function saveFlatLine($subscriber, $billrun_key) {
-		$account_id = $subscriber->account_id;
-		$subscriber_id = $subscriber->subscriber_id;
+		$aid = $subscriber->aid;
+		$sid = $subscriber->sid;
 		$flat_entry = new Mongodloid_Entity($subscriber->getFlatEntry($billrun_key));
 		$flat_entry->collection($this->lines);
 		$query = array(
-			'account_id' => $account_id,
-			'subscriber_id' => $subscriber_id,
+			'aid' => $aid,
+			'sid' => $sid,
 			'billrun_key' => $billrun_key,
 			'type' => 'flat',
 		);
@@ -157,11 +156,11 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 
 	/**
 	 *
-	 * @param type $subscriber_id
+	 * @param type $sid
 	 * @param type $item
 	 * @deprecated update of billing line is done in customer pricing stage
 	 */
-	protected function updateBillingLine($subscriber_id, $item) {
+	protected function updateBillingLine($sid, $item) {
 		
 	}
 

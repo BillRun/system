@@ -98,9 +98,9 @@ abstract class Billrun_Generator_Base_WholesaleReport extends Billrun_Generator 
 			$rate =  $line['rates'][0]['rate']['price'];
 		}
 		if($rate=='') {
-			$zone = isset($line['provider_zone']['key']) ? $line['provider_zone']['key'] : ( $line['provider_zone'] == 'incoming' ? 'incoming' : '');
-			if(isset($line['carir']['zones'][$zone][$line['usaget']]['rate'])) {	
-				$rate =  $line['carir']['zones'][$zone][$line['usaget']]['rate'][0]['price'];
+			$zone = isset($line['pzone']['key']) ? $line['pzone']['key'] : ( $line['pzone'] == 'incoming' ? 'incoming' : '');
+			if(isset($line['wsc']['zones'][$zone][$line['usaget']]['rate'])) {	
+				$rate =  $line['wsc']['zones'][$zone][$line['usaget']]['rate'][0]['price'];
 			}
 		}
 		return   $rate;
@@ -121,9 +121,9 @@ abstract class Billrun_Generator_Base_WholesaleReport extends Billrun_Generator 
 	 */
 	protected function productType($line) {
 		$ret = ucfirst($line['usaget']);
-		if(isset($line['provider_zone']['key'])) {
-			$ret = $line['provider_zone']['key'] . " ".ucfirst($line['usaget']);
-			if($line['provider_zone']['key'] == 'IL_TF') {
+		if(isset($line['pzone']['key'])) {
+			$ret = $line['pzone']['key'] . " ".ucfirst($line['usaget']);
+			if($line['pzone']['key'] == 'IL_TF') {
 				$ret = "1800 ". ucfirst($line['usaget']);
 			}
 		}

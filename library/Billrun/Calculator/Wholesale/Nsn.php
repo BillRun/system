@@ -14,7 +14,7 @@
  */
 class Billrun_Calculator_Wholesale_Nsn extends Billrun_Calculator_Wholesale {
 
-	const MAIN_DB_FIELD = 'provider_zone';
+	const MAIN_DB_FIELD = 'pzone';
 	
 	protected $ratingField = self::MAIN_DB_FIELD;	
 			
@@ -71,7 +71,7 @@ class Billrun_Calculator_Wholesale_Nsn extends Billrun_Calculator_Wholesale {
 		}
 
 //		Billrun_Factory::log()->log($called_number);
-		$line_time = $row->get('unified_record_time');
+		$line_time = $row->get('urt');
 
 		$called_number_prefixes = $this->getPrefixes($called_number);
 		$carrier_cg = $row->get('out_circuit_group');

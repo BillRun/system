@@ -12,7 +12,7 @@
  */
 class Billrun_Calculator_Carrier extends Billrun_Calculator {
 
-	const MAIN_DB_FIELD = 'carir';
+	const MAIN_DB_FIELD = 'wsc';
 
 	/**
 	 * The rating field to update in the CDR line.

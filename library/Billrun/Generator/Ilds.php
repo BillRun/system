@@ -85,7 +85,7 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 //		$this->csv();
 	}
 
-	protected function get_subscriber_lines($subscriber_id) {
+	protected function get_subscriber_lines($sid) {
 		$lines = Billrun_Factory::db()->linesCollection();
 
 		$ret = array();
@@ -93,11 +93,11 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 		$resource = $lines->query()
 			->equals('source', 'ilds')
 			->equals('billrun', $this->getStamp())
-			->equals('subscriber_id', "$subscriber_id")
+			->equals('sid', "$sid")
 			->notExists('billrun_excluded')
 			// todo check how to use hint with 2 indexes
-			->cursor()->hint(array('subscriber_id' => 1))
-			->sort(array('unified_record_time' => 1));
+			->cursor()->hint(array('sid' => 1))
+			->sort(array('urt' => 1));
 			
 		foreach ($resource as $entity) {
 			$ret[] = $entity->getRawData();
@@ -110,13 +110,13 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 		// use $this->export_directory
 		$short_format_date = 'd/m/Y';
 		foreach ($this->data as $row) {
-			Billrun_Factory::log()->log("xml account " . $row->get('account_id'), Zend_Log::INFO);
+			Billrun_Factory::log()->log("xml account " . $row->get('aid'), Zend_Log::INFO);
 			// @todo refactoring the xml generation to another class
 			$xml = $this->basic_xml();
 			$xml->TELECOM_INFORMATION->LASTTIMECDRPROCESSED = date('Y-m-d h:i:s');
 			$xml->TELECOM_INFORMATION->VAT_VALUE = '17';
 			$xml->TELECOM_INFORMATION->COMPANY_NAME_IN_ENGLISH = 'GOLAN';
-			$xml->INV_CUSTOMER_INFORMATION->CUSTOMER_CONTACT->EXTERNALACCOUNTREFERENCE = $row->get('account_id');
+			$xml->INV_CUSTOMER_INFORMATION->CUSTOMER_CONTACT->EXTERNALACCOUNTREFERENCE = $row->get('aid');
 			;
 			$total_ilds = array();
 			foreach ($row->get('subscribers') as $id => $subscriber) {
@@ -132,7 +132,7 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 					$billing_record->CTXT_CALL_OUT_DESTINATIONPNB = $line['called_no'];
 					$billing_record->CTXT_CALL_IN_CLI = $line['caller_phone_no'];
 					$billing_record->CHARGEDURATIONINSEC = $line['chrgbl_call_dur'];
-					$billing_record->CHARGE = $line['price_customer'];
+					$billing_record->CHARGE = $line['aprice'];
 					$billing_record->TARIFFKIND = 'Call';
 					$billing_record->INTERNATIONAL = '1';
 					$billing_record->ILD = $line['type'];
@@ -157,7 +157,7 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 				// TODO create file with the xml content and file name of invoice number (ILD000123...)
 			}
 
-			$invoice_id = $this->saveInvoiceId($row->get('account_id'), $this->createInvoiceId());
+			$invoice_id = $this->saveInvoiceId($row->get('aid'), $this->createInvoiceId());
 			// update billrun with the invoice id
 			$xml->INV_INVOICE_TOTAL->INVOICE_NUMBER = $invoice_id;
 			$xml->INV_INVOICE_TOTAL->INVOICE_DATE = date($short_format_date);
@@ -182,11 +182,11 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 			Billrun_Factory::log()->log("invoice id created " . $invoice_id . " for the account", Zend_Log::INFO);
 			$this->createXml($invoice_id, $xml->asXML());
 
-			$this->addRowToCsv($invoice_id, $row->get('account_id'), $total, $total_ilds);
+			$this->addRowToCsv($invoice_id, $row->get('aid'), $total, $total_ilds);
 		}
 	}
 
-	protected function addRowToCsv($invoice_id, $account_id, $total, $cost_ilds) {
+	protected function addRowToCsv($invoice_id, $aid, $total, $cost_ilds) {
 		//empty costs for each of the providers
 		foreach (array('012', '013', '014', '015', '018', '019') as $key) {
 			if (!isset($cost_ilds[$key])) {
@@ -196,7 +196,7 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 
 		ksort($cost_ilds);
 		$seperator = ',';
-		$row = $invoice_id . $seperator . $account_id . $seperator .
+		$row = $invoice_id . $seperator . $aid . $seperator .
 			$total . $seperator . ($total * self::VAT_VALUE) . $seperator . implode($seperator, $cost_ilds) . PHP_EOL;
 		$this->csv($row);
 	}
@@ -206,12 +206,12 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 		return file_put_contents($path, $xmlContent);
 	}
 
-	protected function saveInvoiceId($account_id, $invoice_id) {
+	protected function saveInvoiceId($aid, $invoice_id) {
 		$billrun = Billrun_Factory::db()->billrunCollection();
 
 		$resource = $billrun->query()
 			->equals('stamp', $this->getStamp())
-			->equals('account_id', (string) $account_id)
+			->equals('aid', (string) $aid)
 //			->notExists('invoice_id')
 		;
 

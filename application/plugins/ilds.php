@@ -32,8 +32,8 @@ class ildsPlugin extends Billrun_Plugin_BillrunPluginFraud {
 				'event_stamp' => array('$exists' => false),
 				'deposit_stamp' => array('$exists' => false),
 //				'call_start_dt' => array('$gte' => $charge_time),
-				'unified_record_time' => array('$gte' => new MongoDate($charge_time)),
-				'price_customer' => array('$exists' => true),
+				'urt' => array('$gte' => new MongoDate($charge_time)),
+				'aprice' => array('$exists' => true),
 				'billrun' => array('$exists' => false),
 			),
 		);
@@ -42,7 +42,7 @@ class ildsPlugin extends Billrun_Plugin_BillrunPluginFraud {
 			'$group' => array(
 				"_id" => '$caller_phone_no',
 				'msisdn' => array('$first' => '$caller_phone_no'),
-				"total" => array('$sum' => '$price_customer'),
+				"total" => array('$sum' => '$aprice'),
 				'lines_stamps' => array('$addToSet' => '$stamp'),
 			),
 		);

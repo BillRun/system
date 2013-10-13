@@ -19,7 +19,6 @@ abstract class Billrun_Generator extends Billrun_Base {
 	 * @var string
 	 */
 	protected $export_directory;
-
 	static protected $type;
 
 	/**

@@ -27,7 +27,7 @@
 				if (isset($edit_key) && $h == $edit_key) {
 					$url = $this->baseUrl . '/admin/edit?type=' . strtolower($this->title) . '&id=' . $item['_id'];
 					print '<a href="#popupModal" data-remote="' . $url . '" role="button" data-toggle="modal">' . $data . '</a>';
-				} else if (($h == 'from' || $h == 'to' || $h == 'unified_record_time' || $h == 'notify_time') && $data) {
+				} else if (($h == 'from' || $h == 'to' || $h == 'urt' || $h == 'notify_time') && $data) {
 					// TODO: move he_IL to config
 					$d = new Zend_Date($data->sec, null, new Zend_Locale('he_IL'));
 					echo $d->getIso();

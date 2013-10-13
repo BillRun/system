@@ -95,12 +95,12 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			return false;
 		}
 
-		foreach ($subscriber->getAvailableFields() as $field) {
-			if (is_numeric($subscriber->{$field})) {
-				$subscriber->{$field} = intval($subscriber->{$field}); // remove this conversion when Vitali changes the output of the CRM to integers
+		foreach (array_keys($subscriber->getAvailableFields()) as $key) {
+			if (is_numeric($subscriber->{$key})) {
+				$subscriber->{$key} = intval($subscriber->{$key}); // remove this conversion when Vitali changes the output of the CRM to integers
 			}
-			$subscriber_field = $subscriber->{$field};
-			$row[$field] = $subscriber_field;
+			$subscriber_field = $subscriber->{$key};
+			$row[$key] = $subscriber_field;
 		}
 		return true;
 	}
@@ -111,7 +111,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	public function writeLine($line, $dataKey) {
 		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteLine', array('data' => $line));
 		$save = array();
-		$saveProperties = Billrun_Factory::subscriber()->getAvailableFields();
+		$saveProperties = array_keys(Billrun_Factory::subscriber()->getAvailableFields());
 		foreach ($saveProperties as $p) {
 			if (!is_null($val = $line->get($p, true))) {
 				$save['$set'][$p] = $val;
@@ -152,12 +152,12 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			if (count($line_params) == 0) {
 				Billrun_Factory::log('Couldn\'t identify caller for line of stamp ' . $row['stamp'], Zend_Log::ALERT);
 			} else if ($this->isLineLegitimate($row)) {
-				$line_params['time'] = date(Billrun_Base::base_dateformat, $row['unified_record_time']->sec);
+				$line_params['time'] = date(Billrun_Base::base_dateformat, $row['urt']->sec);
 				$line_params['stamp'] = $row['stamp'];
 				$params[] = $line_params;
 			}
 		}
-		$this->subscribers = $this->subscriber->getSubscribersByParams($params);
+		$this->subscribers = $this->subscriber->getSubscribersByParams($params, $this->subscriber->getAvailableFields());
 	}
 
 	/**
@@ -173,7 +173,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			return;
 		}
 
-		$params['time'] = date(Billrun_Base::base_dateformat, $row->get('unified_record_time')->sec);
+		$params['time'] = date(Billrun_Base::base_dateformat, $row->get('urt')->sec);
 		$params['stamp'] = $row->get('stamp');
 
 		return $this->subscriber->load($params);
@@ -208,8 +208,8 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		foreach ($this->data as $item) {
 			$query = array('stamp' => $item['stamp']);
 			$update = array('$set' => array('calc_name' => $calculator_tag, 'calc_time' => false));
-			if (isset($item['account_id'])) {
-				$update['$set']['account_id'] = $item['account_id'];
+			if (isset($item['aid'])) {
+				$update['$set']['aid'] = $item['aid'];
 			}
 			$queue->update($query, $update);
 		}
@@ -223,12 +223,12 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			foreach ($this->translateCustomerIdentToAPI as $key => $toKey) {
 				if (isset($line[$key]) && strlen($line[$key])) {
 					if (is_array($line)) {
-						$customer_rate = $line['customer_rate'];
+						$arate = $line['arate'];
 					} else {
-						$customer_rate = $line->get('customer_rate', true);
+						$arate = $line->get('arate', true);
 					}
-//					$customer_rate = $line['customer_rate'];
-					return (isset($customer_rate) && $customer_rate); //it  depend on customer rate to detect if the line is incoming or outgoing.
+//					$arate = $line['arate'];
+					return (isset($arate) && $arate); //it  depend on customer rate to detect if the line is incoming or outgoing.
 				}
 			}
 		}

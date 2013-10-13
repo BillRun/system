@@ -53,7 +53,7 @@ abstract class Billrun_Processor_Base_Binary extends Billrun_Processor {
 			$row['type'] = static::$type;
 			$row['source'] = self::$type;
 			$row['file'] = basename($this->filePath);
-			$row['header_stamp'] = $this->data['header']['stamp'];
+			$row['log_stamp'] = $this->getFileStamp();
 			$row['process_time'] = date(self::base_dateformat);
 		}
 		return $row;

@@ -109,7 +109,7 @@ class Billrun_Calculator_Rate_Tap3 extends Billrun_Calculator_Rate {
 	protected function getLineRate($row, $usage_type) {
 		//$header = $this->getLineHeader($row); @TODO should this be removed? 2013/06
 		$rates = Billrun_Factory::db()->ratesCollection();
-		$line_time = $row['unified_record_time'];
+		$line_time = $row['urt'];
 		$serving_network = $row['serving_network'];
 
 		if (!is_null($serving_network)) {
@@ -147,7 +147,7 @@ class Billrun_Calculator_Rate_Tap3 extends Billrun_Calculator_Rate {
 	 * @return Object representing the file header of the line.
 	 */
 	protected function getLineHeader($line) {
-		return Billrun_Factory::db()->logCollection()->query(array('header.stamp' => $line['header_stamp']))->cursor()->current();
+		return Billrun_Factory::db()->logCollection()->query(array('header.stamp' => $line['log_stamp']))->cursor()->current();
 	}
 
 }
