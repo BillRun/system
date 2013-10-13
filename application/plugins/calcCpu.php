@@ -73,12 +73,19 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 		Billrun_Factory::log('Plugin calc cpu customer pricing', Zend_Log::INFO);
 		$customerPricingCalc = Billrun_Calculator::getInstance(array('type' => 'customerPricing', 'autoload' => false));
 		$queue_data = $processor->getQueueData();
+		$queue_calculators = Billrun_Factory::config()->getConfigValue("queue.calculators");
+
 		foreach ($data['data'] as &$line) {
 			if (isset($queue_data[$line['stamp']]) && $queue_data[$line['stamp']]['calc_name']=='customer') {
 				$entity = new Mongodloid_Entity($line);
 				if ($customerPricingCalc->isLineLegitimate($entity)) {
 					if ($customerPricingCalc->updateRow($entity) !== FALSE) {
-						$processor->setQueueRowStep($entity['stamp'], 'pricing');
+						// if this is last calculator, remove from queue
+						if ($queue_calculators[count($queue_calculators)-1] == 'pricing') {
+							$processor->unsetQueueRow($entity['stamp']);
+						} else {
+							$processor->setQueueRowStep($entity['stamp'], 'pricing');
+						}
 						$this->priced_rows[] = $entity;
 					}
 				} else {
