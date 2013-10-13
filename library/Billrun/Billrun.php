@@ -162,7 +162,7 @@ class Billrun_Billrun {
 	 * 
 	 * @param type $sid
 	 * @return mixed
-	 * @todo used only in current balance API. Needs refactoring
+	 * @todo Needs refactoring
 	 */
 	protected function getSubRawData($sid) {
 		foreach ($this->data->get('subs') as $sub_entry) {
@@ -277,6 +277,7 @@ class Billrun_Billrun {
 	 * Returns the increment costs update query
 	 * @param array $pricingData the output array from updateSubscriberBalance function
 	 * @param Mongodloid_Entity $row the row to insert to the billrun
+	 * @param boolean $vatable is the row vatable
 	 * @return array the increment costs query
 	 */
 	protected static function getUpdateCostsQuery($pricingData, $row, $vatable) {
@@ -457,9 +458,10 @@ class Billrun_Billrun {
 	 * @param array $pricingData the output array from updateSubscriberBalance function
 	 * @param Mongodloid_Entity $row the input line
 	 * @param boolean $vatable is the line vatable or not
+	 * @param Billrun_Billrun $billrun whether to update to memory (to billrun) or to the db.
 	 * @return Mongodloid_Entity the billrun doc of the line, false if no such billrun exists
 	 */
-	public static function updateBillrun($billrun_key, $counters, $pricingData, $row, $vatable) {
+	public static function updateBillrun($billrun_key, $counters, $pricingData, $row, $vatable, $billrun = null) {
 		$aid = $row['aid'];
 		$sid = $row['sid'];
 		$billrun_coll = Billrun_Factory::db()->billrunCollection();
@@ -468,38 +470,43 @@ class Billrun_Billrun {
 		$row_ref = $row->createRef();
 		list($plan_key, $category_key, $zone_key) = self::getBreakdownKeys($row, $pricingData, $vatable);
 
-		$query = array_merge_recursive(self::getMatchingBillrunQuery($aid, $billrun_key), self::getOpenBillrunQuery(), self::getDistinctLinesBillrunQuery($sid, $usage_type, $row_ref));
-		$update = array_merge_recursive(self::getUpdateCostsQuery($pricingData, $row, $vatable), self::getUpdateDataCountersQuery($usage_type, $row), self::getPushLineQuery($usage_type, $row_ref), self::getUpdateBreakdownQuery($counters, $pricingData, $vatable, $plan_key, $category_key, $zone_key), self::getUpdateTotalsQuery($pricingData, $billrun_key, $vatable));
-		$fields = array();
-		$options = array();
+		if (is_null($billrun)) {
+			$query = array_merge_recursive(self::getMatchingBillrunQuery($aid, $billrun_key), self::getOpenBillrunQuery(), self::getDistinctLinesBillrunQuery($sid, $usage_type, $row_ref));
+			$update = array_merge_recursive(self::getUpdateCostsQuery($pricingData, $row, $vatable), self::getUpdateDataCountersQuery($usage_type, $row), self::getPushLineQuery($usage_type, $row_ref), self::getUpdateBreakdownQuery($counters, $pricingData, $vatable, $plan_key, $category_key, $zone_key), self::getUpdateTotalsQuery($pricingData, $billrun_key, $vatable));
+			$fields = array();
+			$options = array();
 
-		try {
-			$doc = $billrun_coll->findAndModify($query, $update, $fields, $options);
-		} catch (Exception $e) {
-			Billrun_Factory::log()->log("Billrun " . $billrun_key . " had a problem when updating " . $aid . ". on  Stamp: " . $row['stamp'] . ' with error :' . $e->getMessage(), Zend_Log::ALERT); // a guess
-			return false;
-		}
-
-		if ($doc->isEmpty()) { // billrun document was not found
-			if (($billrun = self::createBillrunIfNotExists($aid, $billrun_key)) && $billrun->isEmpty()) { // means that the billrun was created so we can retry updating it
-				Billrun_Factory::log()->log("Account " . $aid . " has been added to billrun " . $billrun_key, Zend_Log::DEBUG);
-				self::addSubscriberIfNotExists($aid, $sid, $billrun_key);
-				return self::updateBillrun($billrun_key, $counters, $pricingData, $row, $vatable);
-			} else if (self::addSubscriberIfNotExists($aid, $sid, $billrun_key)) {
-				Billrun_Factory::log()->log("Subscriber " . $sid . " has been added to billrun " . $billrun_key, Zend_Log::DEBUG);
-				return self::updateBillrun($billrun_key, $counters, $pricingData, $row, $vatable);
-			} else if (($doc = self::getLineBillrun($aid, $sid, $billrun_key, $usage_type, $row_ref)) && !$doc->isEmpty()) {
-				Billrun_Factory::log()->log("Line with stamp " . $row['stamp'] . " already exists in billrun " . $billrun_key . " for account " . $aid, Zend_Log::NOTICE);
-				return $doc;
-			} else if ($row['type'] == 'flat' || $billrun_key == self::$runtime_billrun_key) { // if it's a flat line we don't want to advance the billrun key
-				Billrun_Factory::log()->log("Billrun " . $billrun_key . " is closed for account " . $aid . ". Stamp: " . $row['stamp'], Zend_Log::ALERT); // a guess
+			try {
+				$doc = $billrun_coll->findAndModify($query, $update, $fields, $options);
+			} catch (Exception $e) {
+				Billrun_Factory::log()->log("Billrun " . $billrun_key . " had a problem when updating " . $aid . ". on  Stamp: " . $row['stamp'] . ' with error :' . $e->getMessage(), Zend_Log::ALERT); // a guess
 				return false;
-			} else {
-				return self::updateBillrun(self::$runtime_billrun_key, $counters, $pricingData, $row, $vatable);
 			}
+
+			if ($doc->isEmpty()) { // billrun document was not found
+				if (($billrun = self::createBillrunIfNotExists($aid, $billrun_key)) && $billrun->isEmpty()) { // means that the billrun was created so we can retry updating it
+					Billrun_Factory::log()->log("Account " . $aid . " has been added to billrun " . $billrun_key, Zend_Log::DEBUG);
+					self::addSubscriberIfNotExists($aid, $sid, $billrun_key);
+					return self::updateBillrun($billrun_key, $counters, $pricingData, $row, $vatable);
+				} else if (self::addSubscriberIfNotExists($aid, $sid, $billrun_key)) {
+					Billrun_Factory::log()->log("Subscriber " . $sid . " has been added to billrun " . $billrun_key, Zend_Log::DEBUG);
+					return self::updateBillrun($billrun_key, $counters, $pricingData, $row, $vatable);
+				} else if (($doc = self::getLineBillrun($aid, $sid, $billrun_key, $usage_type, $row_ref)) && !$doc->isEmpty()) {
+					Billrun_Factory::log()->log("Line with stamp " . $row['stamp'] . " already exists in billrun " . $billrun_key . " for account " . $aid, Zend_Log::NOTICE);
+					return $doc;
+				} else if ($row['type'] == 'flat' || $billrun_key == self::$runtime_billrun_key) { // if it's a flat line we don't want to advance the billrun key
+					Billrun_Factory::log()->log("Billrun " . $billrun_key . " is closed for account " . $aid . ". Stamp: " . $row['stamp'], Zend_Log::ALERT); // a guess
+					return false;
+				} else {
+					return self::updateBillrun(self::$runtime_billrun_key, $counters, $pricingData, $row, $vatable);
+				}
+			}
+			Billrun_Factory::log()->log("Line with stamp " . $row['stamp'] . " has been added to billrun " . $billrun_key, Zend_Log::DEBUG);
+			return $doc;
+		} else { // update to memory
+			$sraw = $billrun->getSubRawData($sid);
+			$billrun->updateCosts($pricingData, $row, $vatable, $sraw);
 		}
-		Billrun_Factory::log()->log("Line with stamp " . $row['stamp'] . " has been added to billrun " . $billrun_key, Zend_Log::DEBUG);
-		return $doc;
 	}
 
 	/**
@@ -520,7 +527,7 @@ class Billrun_Billrun {
 
 		$doc = $billrun_coll->findAndModify($query, $update, $fields, $options);
 
-		// recovery
+// recovery
 		if ($doc->isEmpty()) { // billrun document was not found
 			$billrun = self::createBillrunIfNotExists($aid, $billrun_key);
 			if ($billrun->isEmpty()) { // means that the billrun was created so we can retry updating it
@@ -571,7 +578,7 @@ class Billrun_Billrun {
 	 * Creates a billrun document in billrun collection if it doesn't already exist
 	 * @param int $aid the account id
 	 * @param int $billrun_key the billrun key
-	 * @return Mongodloid_Entity the matching billrun document (new or existing)
+	 * @return mixed Mongodloid_Entity when the matching billrun document exists, false when inserted
 	 */
 	public static function createBillrunIfNotExists($aid, $billrun_key) {
 		$billrun_coll = Billrun_Factory::db()->billrunCollection();
@@ -664,6 +671,42 @@ class Billrun_Billrun {
 	 */
 	static public function initRuntimeBillrunKey() {
 		self::$runtime_billrun_key = Billrun_Util::getBillrunKey(time());
+	}
+
+	/**
+	 * Updates the billrun costs
+	 * @param array $pricingData the output array from updateSubscriberBalance function
+	 * @param Mongodloid_Entity $row the row to insert to the billrun
+	 * @param boolean $vatable is the row vatable
+	 * @param array $sraw the subscriber raw data
+	 */
+	protected function updateCosts($pricingData, $row, $vatable, &$sraw) {
+		$vat_key = ($vatable ? "vatable" : "vat_free");
+		if (isset($pricingData['over_plan']) && $pricingData['over_plan']) {
+			if (!isset($sraw['costs']['over_plan'][$vat_key])) {
+				$sraw['costs']['over_plan'][$vat_key] = $pricingData['aprice'];
+			} else {
+				$sraw['costs']['over_plan'][$vat_key] += $pricingData['aprice'];
+			}
+		} else if (isset($pricingData['out_plan']) && $pricingData['out_plan']) {
+			if (!isset($sraw['costs']['over_plan'][$vat_key])) {
+				$sraw['costs']['out_plan'][$vat_key] = $pricingData['aprice'];
+			} else {
+				$sraw['costs']['out_plan'][$vat_key] += $pricingData['aprice'];
+			}
+		} else if ($row['type'] == 'flat') {
+			if (!isset($sraw['costs']['over_plan'][$vat_key])) {
+				$sraw['costs']['flat'][$vat_key] = $pricingData['aprice'];
+			} else {
+				$sraw['costs']['flat'][$vat_key] += $pricingData['aprice'];
+			}
+		} else if ($row['type'] == 'credit') {
+			if (!isset($sraw['costs']['over_plan'][$vat_key])) {
+				$sraw['costs']['credit'][$row['credit_type']][$vat_key] = $pricingData['aprice'];
+			} else {
+				$sraw['costs']['credit'][$row['credit_type']][$vat_key] += $pricingData['aprice'];
+			}
+		}
 	}
 
 }
