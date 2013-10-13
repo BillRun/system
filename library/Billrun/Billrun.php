@@ -505,7 +505,7 @@ class Billrun_Billrun {
 			return $doc;
 		} else { // update to memory
 			$sraw = $billrun->getSubRawData($sid);
-			$billrun->updateCosts($pricingData, $row, $vatable, $sraw);
+			$billrun->updateCosts($pricingData, $row, $vatable, $sraw); // according to self::getUpdateCostsQuery
 		}
 	}
 

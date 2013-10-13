@@ -111,9 +111,9 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 				$sid = $subscriber->sid;
 				$plan_name = $subscriber->plan;
 
-				if (isset($this->options['live_billrun_update']) && $this->options['live_billrun_update']) {
+				if (!isset($this->options['live_billrun_update']) || !$this->options['live_billrun_update']) {
 					$subscriber_lines = $this->getSubscriberLines($sid);
-					$subscriber_billrun = Billrun_Billrun::createBillrunIfNotExists($aid, $billrun_key);
+					Billrun_Billrun::createBillrunIfNotExists($aid, $billrun_key);
 					$params = array(
 						'aid' => $aid,
 						'billrun_key' => $billrun_key,
@@ -135,6 +135,8 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 							$vatable = (!(isset($rate['vatable']) && !$rate['vatable']) || (!isset($rate['vatable']) && !$this->vatable));
 							Billrun_Billrun::updateBillrun($billrun_key, array($line['usaget'] => $line['usagev']), $pricingData, $line, $vatable, $subscriber_billrun);
 						}
+						// @TODO: save the subscriber to billrun
+						// @TODO: add flat (maybe unified with old approach)
 					}
 				} else {
 					if (is_null($plan_name)) {
