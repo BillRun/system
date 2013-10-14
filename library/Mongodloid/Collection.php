@@ -167,6 +167,19 @@ class Mongodloid_Collection {
 	}
 
 	/**
+	 * method to set read preference of collection connection
+	 * 
+	 * @param string $read_preference The read preference mode: MongoClient::RP_PRIMARY, MongoClient::RP_PRIMARY_PREFERRED, MongoClient::RP_SECONDARY, MongoClient::RP_SECONDARY_PREFERRED, or MongoClient::RP_NEAREST.
+	 * @param array $tags An array of zero or more tag sets, where each tag set is itself an array of criteria used to match tags on replica set members.
+	 * 
+	 * @return boolean TRUE on success, or FALSE otherwise.
+	 * @throws Emits E_WARNING if either parameter is invalid, or if one or more tag sets are provided with the MongoClient::RP_PRIMARY read preference mode.
+	 */
+	public function setReadPreference($read_preference, array $tags = array()) {
+		return $this->_collection->setReadPreference($read_preference, $tags);
+	}
+		
+	/**
 	 * method to load Mongo DB reference object
 	 * 
 	 * @param MongoDBRef $ref the reference object

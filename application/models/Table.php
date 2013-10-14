@@ -64,6 +64,7 @@ class TableModel {
 
 		if (isset($params['collection'])) {
 			$this->collection = call_user_func(array(Billrun_Factory::db(), $params['collection'] . 'Collection'));
+			$this->collection->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
 		}
 
 		if (isset($params['page'])) {
