@@ -29,12 +29,12 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		$this->subscriberSettings = Billrun_Factory::config()->getConfigValue('customer', array());
 		
 		if (!isset($this->subscriberSettings['calculator']['subscriber_identification_translation']) 
-			|| !isset($this->subscriberSettings['calculator']['subscriber']['time_feild_name'])
-			|| !isset($this->subscriberSettings['calculator']['subscriber']['subscriber_id_feild_name_crm'])) {
+			|| !isset($this->subscriberSettings['calculator']['subscriber']['time_field_name'])
+			|| !isset($this->subscriberSettings['calculator']['subscriber']['subscriber_id_field_name_crm'])) {
 			return false;
 		}
 		
-		self::$time = $this->subscriberSettings['calculator']['subscriber']['time_feild_name'];
+		self::$time = $this->subscriberSettings['calculator']['subscriber']['time_field_name'];
 	}
 	
 	
@@ -88,7 +88,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			return false;
 		}
 		
-		if (!isset($subscriber[$this->subscriberSettings['calculator']['subscriber']['subscriber_id_feild_name_crm']]) || !isset($subscriber['account_id'])) {
+		if (!isset($subscriber[$this->subscriberSettings['calculator']['subscriber']['subscriber_id_field_name_crm']]) || !isset($subscriber['account_id'])) {
 			if (!isset($row['subscriber_not_found']) || (isset($row['subscriber_not_found']) && $row['subscriber_not_found'] == false)) {
 				$msg = "Error on returned result - sent: ". print_r($customer_identification, true) . PHP_EOL . " returned: " .print_r($subscriber, true);
 				$this->sendEmailOnFailure($msg);
@@ -109,7 +109,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		}
 		
 		$current = $row->getRawData();
-		$subscriber_id = $subscriber[$this->subscriberSettings['calculator']['subscriber']['subscriber_id_feild_name_crm']];
+		$subscriber_id = $subscriber[$this->subscriberSettings['calculator']['subscriber']['subscriber_id_field_name_crm']];
 		$added_values = array('subscriber_id' => $subscriber_id, 'account_id' => $subscriber['account_id']);
 		$newData = array_merge($current, $added_values);
 		$row->setRawData($newData);
