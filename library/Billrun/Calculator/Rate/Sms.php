@@ -8,7 +8,7 @@
 
 /**
  * Billing calculator class for SMS records
- *
+ * (TODO  refactor  this to there different classes (MMSC/SMPP/SMSC) and then abstract it)
  * @package  calculator
  * @since    0.5
  */
@@ -21,6 +21,14 @@ class Billrun_Calculator_Rate_Sms extends Billrun_Calculator_Rate {
 	 */
 	static protected $type = 'sms';
 
+	/**
+	 * regex filters to do on the  number  that was received from the CDR.
+	 *
+	 * @var string
+	 */
+	protected $legitimateNumberFilters = array('/^0+/','/[^\d]/');	
+	
+	
 	/**
 	 * method to get calculator lines
 	 */
@@ -65,14 +73,22 @@ class Billrun_Calculator_Rate_Sms extends Billrun_Calculator_Rate {
 	}
 
 	/**
+	 * Check if a given line should be rated.
+	 * @param type $row
+	 * @return type
+	 */
+	protected function shouldLineBeRated($row) {
+		return ($row['type'] == 'smpp' && $row['record_type'] == '1' && $row["cause_of_terminition"] == "100" && in_array($row['calling_number'], array('000000000002020', '000000000006060', '000000000007070'))) ||
+			($row['type'] == 'smsc' && $row['record_type'] == '1' && $row["cause_of_terminition"] == "100" && $row["calling_msc"] != "000000000000000" ) ||
+			($row['type'] == 'mmsc' && ('S' == $row['action']) && $row['final_state'] == 'S' && preg_match('/^\+\d+\/TYPE\s*=\s*.*golantelecom/', $row['mm_source_addr']));
+	}
+	
+	/**
 	 * @see Billrun_Calculator_Rate::getLineRate
 	 */
 	protected function getLineRate($row, $usage_type) {
-		if (($row['type'] == 'smpp' && $row['record_type'] == '1' && $row["cause_of_terminition"] == "100" && in_array($row['calling_number'], array('000000000002020', '000000000006060', '000000000007070'))) ||
-			($row['type'] == 'smsc' && $row['record_type'] == '1' && $row["cause_of_terminition"] == "100" && $row["calling_msc"] != "000000000000000" ) ||
-			($row['type'] == 'mmsc' && ('S' == $row['action']) && $row['final_state'] == 'S' && preg_match('/^\+\d+\/TYPE\s*=\s*.*golantelecom/', $row['mm_source_addr']))
-		) {
-			$called_number = preg_replace('/[^\d]/', '', preg_replace('/^0+/', '', ($row['type'] != 'mmsc' ? $row['called_msc'] : $row['recipent_addr'])));
+		if ( $this->shouldLineBeRated($row) ) {
+			$called_number = $this->extractNumber($row);
 			$line_time = $row['urt'];
 
 			$rates = Billrun_Factory::db()->ratesCollection();
@@ -132,5 +148,14 @@ class Billrun_Calculator_Rate_Sms extends Billrun_Calculator_Rate {
 	 */
 	public function isLineLegitimate($line) {
 		return $line['type'] == 'smsc' || $line['type'] == 'mmsc' || $line['type'] == 'smpp';
+	}
+	
+	protected function extractNumber($row) {
+		$str = ($row['type'] != 'mmsc' ? $row['called_msc'] : $row['recipent_addr']);
+		foreach ($this->legitimateNumberFilters as $filter) {
+			$str = preg_replace( $filter, '', $str );
+		}
+		return $str;
+		//return preg_replace('/[^\d]/', '', preg_replace('/^0+/', '', ($row['type'] != 'mmsc' ? $row['called_msc'] : $row['recipent_addr'])));
 	}
 }

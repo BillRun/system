@@ -11,12 +11,19 @@
  *
  * @package  calculator
  */
-class Billrun_Calculator_Rate_Smsc extends Billrun_Calculator_Rate_Sms {
+class Billrun_Calculator_Rate_Mmsc extends Billrun_Calculator_Rate_Sms {
+	/**
+	 * @see Billrun_Calculator_Rate::getLineUsageType
+	 */
+	protected function getLineUsageType($row) {
+		return  'mms';
+	}
+
 	/**
 	 * @see Billrun_Calculator::isLineLegitimate
 	 */
 	public function isLineLegitimate($line) {
-		return $line['type'] == 'smsc' ;
+		return  $line['type'] == 'mmsc' ;
 	}
 	
 	/**
@@ -25,6 +32,10 @@ class Billrun_Calculator_Rate_Smsc extends Billrun_Calculator_Rate_Sms {
 	 * @return type
 	 */
 	protected function shouldLineBeRated($row) {
-		return  $row['record_type'] == '1' && $row["cause_of_terminition"] == "100" && $row["calling_msc"] != "000000000000000" ;
+		return  ('S' == $row['action']) && $row['final_state'] == 'S' && preg_match('/^\+\d+\/TYPE\s*=\s*.*golantelecom/', $row['mm_source_addr']);
+	}
+	
+	protected function extractNumber($row) {
+		return preg_replace('/[^\d]/', '', preg_replace('/^0+/', '', ($row['recipent_addr'])));
 	}
 }
