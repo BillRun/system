@@ -71,6 +71,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	
 	public function __construct($options = array()) {
 		parent::__construct($options);
+		$options = array_merge_recursive($options,$options['cmd_opts']);
 		if (isset($options['aggregator']['page']) && $options['aggregator']['page']) {
 			$this->page = $options['aggregator']['page'];
 		}
@@ -88,7 +89,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		$this->plans = Billrun_Factory::db()->plansCollection();
 		$this->lines = Billrun_Factory::db()->linesCollection();
 		$this->billrun = Billrun_Factory::db()->billrunCollection();
-		
+
 		$this->loadRates();
 	}
 
@@ -140,6 +141,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 					} else {
 						$subscriber_billrun->addSubscriber($sid);
 						$subscriber_lines = $this->getSubscriberLines($sid);
+						Billrun_Factory::log("Processing subscriber Lines $sid");
 						foreach ($subscriber_lines as $line) {
 							$pricingData = array('aprice' => $line['aprice']);
 							if (isset($line['over_plan'])) {
@@ -151,11 +153,13 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 							$vatable = (!(isset($rate['vatable']) && !$rate['vatable']) || (!isset($rate['vatable']) && !$this->vatable));
 							Billrun_Billrun::updateBillrun($billrun_key, array($line['usaget'] => $line['usagev']), $pricingData, $line, $vatable, $subscriber_billrun);
 						}
+						Billrun_Factory::log("Saving subscriber subscriber $sid");
 						$subscriber_billrun->save();
 						// @TODO: save the subscriber to billrun
 						// @TODO: add flat (maybe unified with old approach)
 					}
 				} //else {
+				//add the subscriber plan for next month
 				if (is_null($plan_name)) {
 					$subscriber_status = "closed";
 					Billrun_Billrun::setSubscriberStatus($aid, $sid, $billrun_key, $subscriber_status);
