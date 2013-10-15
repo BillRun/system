@@ -68,7 +68,7 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 	 * @return mixed if data field  accessible return data field, else null
 	 */
 	public function __get($name) {
-		if (array_key_exists($name, $this->availableFields) && array_key_exists($name, $this->data)) {
+		if (in_array($name, $this->availableFields) && array_key_exists($name, $this->data)) {
 			return $this->data[$name];
 		}
 		return null;

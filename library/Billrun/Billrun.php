@@ -59,6 +59,15 @@ class Billrun_Billrun {
 		$this->data->collection($billrun_coll);
 		return $this;
 	}
+	
+	/**
+	 * Save the current billrun
+	 * @param type $param
+	 * @return type
+	 */
+	public function save() {
+		return isset($this->data) ? $this->data->save() : false;
+	}
 
 	/**
 	 * Add a subscriber to the current billrun entry.
@@ -509,8 +518,9 @@ class Billrun_Billrun {
 		}
 	}
 
+	
 	/**
-	 * Updates the billrun costs, lines & breakdown with the input line if the line is not already included in it
+	 * @TODO
 	 * @param int $aid the account id
 	 * @param int $sid the subscriber id
 	 * @param string $billrun_key the billrun_key to insert into the billrun
