@@ -34,11 +34,13 @@ class Billrun_Billrun {
 					$this->data = $options['data'];
 				} else {
 					$this->data = new Mongodloid_Entity($this->getAccountEmptyBillrunEntry($this->aid, $this->billrun_key));
-				}
+				} 
 			} else {
 				$this->load();
 			}
 			$this->data->collection(Billrun_Factory::db()->billrunCollection());
+		} else {
+			Billrun_Factory::log()->log("Returning an empty billrun!",Zend_Log::NOTICE);
 		}
 	}
 
@@ -66,6 +68,7 @@ class Billrun_Billrun {
 	 * @return type
 	 */
 	public function save() {
+		
 		return isset($this->data) ? $this->data->save() : false;
 	}
 
@@ -174,9 +177,11 @@ class Billrun_Billrun {
 	 * @todo Needs refactoring
 	 */
 	protected function getSubRawData($sid) {
-		foreach ($this->data->get('subs') as $sub_entry) {
-			if ($sub_entry['sid'] == $sid) {
-				return $sub_entry;
+		if($this->data) {
+			foreach ($this->data['subs'] as $sub_entry) {
+				if ($sub_entry['sid'] == $sid) {
+					return $sub_entry;
+				}
 			}
 		}
 		return false;

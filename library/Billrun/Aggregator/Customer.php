@@ -248,7 +248,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 				'$exists' => false,
 			),
 		);
-		return $this->lines->query($query)->cursor();
+		return $this->lines->query($query)->cursor()->hint(array('sid'=> 1));
 	}
 
 	protected function loadRates() {
