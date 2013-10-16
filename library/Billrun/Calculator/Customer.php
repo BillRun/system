@@ -28,9 +28,9 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		parent::__construct($options);
 		$this->subscriberSettings = Billrun_Factory::config()->getConfigValue('customer', array());
 		
-		if (!isset($this->subscriberSettings['calculator']['subscriber_identification_translation']) 
+		if (!isset($this->subscriberSettings['calculator']['subscriber']['identification_translation']) 
 			|| !isset($this->subscriberSettings['calculator']['subscriber']['time_field_name'])
-			|| !isset($this->subscriberSettings['calculator']['subscriber']['subscriber_id_field_name_crm'])) {
+			|| !isset($this->subscriberSettings['calculator']['subscriber']['subscriber_id_feild_name'])) {
 			return false;
 		}
 		
@@ -51,9 +51,9 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 					'$or' => array(
 						array('account_id' => array('$exists' => false)),
 						array('subscriber_id' => array('$exists' => false))
-					),
-					'callEventStartTimeStamp' => array('$gt' => '20130929022502'),
-		))->cursor()->limit('500');
+					)
+					//'callEventStartTimeStamp' => array('$gt' => '20130929022502'),
+		));//->cursor()->limit('500');
 	}
 
 	/**
@@ -68,7 +68,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		}
 
 		$customer_identification = array();
-		$customer_identification['key'][$this->subscriberSettings['calculator']['subscriber_identification_translation']] = $row->get($this->subscriberSettings['calculator']['subscriber_identification_translation']);
+		$customer_identification['key'][$this->subscriberSettings['calculator']['subscriber']['identification_translation']] = $row->get($this->subscriberSettings['calculator']['subscriber']['identification_translation']);
 		$customer_identification['time'][self::$time] = $row->get(self::$time);
 		
 		// load subscriber
@@ -78,6 +78,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			if (!isset($row['subscriber_not_found']) || (isset($row['subscriber_not_found']) && $row['subscriber_not_found'] == false)) {
 				$msg = "Failed  when sending event to subscriber_plan_by_date.rpc.php - sent: ". PHP_EOL . print_r($customer_identification, true). PHP_EOL ." returned: NULL";
 				$this->sendEmailOnFailure($msg);
+				$this->sendSmsOnFailure("Failed  when sending event to subscriber-plan-by-date.rpc.php, null returned, see email for more details");
 				
 				// subscriber_not_found:true, update all rows with same subscriber detials
 				$status = true;
@@ -92,6 +93,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			if (!isset($row['subscriber_not_found']) || (isset($row['subscriber_not_found']) && $row['subscriber_not_found'] == false)) {
 				$msg = "Error on returned result - sent: ". print_r($customer_identification, true) . PHP_EOL . " returned: " .print_r($subscriber, true);
 				$this->sendEmailOnFailure($msg);
+				$this->sendSmsOnFailure("Error on returned result from subscriber-plan-by-date.rpc.php, see email for more details");
 				
 				// subscriber_not_found:true, update all rows with same subscriber detials
 				$status = true;
@@ -162,6 +164,10 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	protected function sendEmailOnFailure($msg) {
 		Billrun_Factory::log()->log($msg, Zend_Log::ALERT);
 		return Billrun_Util::sendMail("Failed Fraud Alert, subscriber not found" . date(Billrun_Base::base_dateformat), $msg, Billrun_Factory::config()->getConfigValue('fraudAlert.failed_alerts.recipients', array()) );
+	}
+	
+	protected function sendSmsOnFailure($msg) {
+		return Billrun_Util::sendSms($msg);
 	}
 	
 	/**

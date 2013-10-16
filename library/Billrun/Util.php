@@ -155,5 +155,24 @@ class Billrun_Util {
 			'time' => Billrun_Util::regexFirstValue(Billrun_Factory::config()->getConfigValue($type . ".sequence_regex.time", "/\D(\d{4,6})\D/"), $filename),
 		);
 	}
+	
+	/**
+	 * Send SMS helper
+	 * @param type $recipient - recipient number
+	 * @param type $massege - body massege
+	 * @return type
+	 */
+	public static function sendSms($massege) {
+		$smser = Billrun_Factory::smser($massege);
+
+		//send sms
+		try {
+			$ret = $smser->send();
+		} catch(Exception $e ) {
+			Billrun_Factory::log()->log("Failed when trying to send  sms on alert results, Failed with : ".$e, Zend_Log::ERR);
+			$ret = FALSE;
+		}
+		return $ret;
+	}
 
 }

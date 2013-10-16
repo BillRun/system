@@ -57,6 +57,13 @@ class Billrun_Factory {
 	protected static $chain = null;
 
 	/**
+	 * Smser instance
+	 * 
+	 * @var Billrun Smser
+	 */
+	protected static $smser = null;
+	
+	/**
 	 * method to retrieve the log instance and can send automatically to msg to log
 	 * 
 	 * @param string [Optional] $message message to log
@@ -170,6 +177,31 @@ class Billrun_Factory {
 		}
 
 		return self::$chain;
+	}
+	
+	static public function smser($massege) {
+		try {
+			if (!self::$smser) {
+				$sms = self::$smser = new Billrun_Sms();
+			}
+			else {
+				$sms = new Billrun_Sms();	
+			}
+			
+			$sms->massege = $massege;
+			$sms_config_params = Billrun_Factory::config()->getConfigValue('sms');
+			
+			$sms->from = $sms_config_params['from'];
+			$sms->smsc_user = $sms_config_params['smsc_user'];
+			$sms->smsc_pwd = $sms_config_params['smsc_pwd'];
+			$sms->recipients = $sms_config_params['recipients'];
+			$sms->smsc_provisoning = $sms_config_params['smsc_provisoning'];
+		
+			return $sms;
+		} catch (Exception $e) {
+			self::log("Can't instantiat sms object. Please check your settings", Zend_Log::ALERT);
+			return false;
+		}
 	}
 
 }
