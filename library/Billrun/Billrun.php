@@ -188,6 +188,27 @@ class Billrun_Billrun {
 	}
 
 	/**
+	 * 
+	 * @param type $sid
+	 * @return mixed
+	 * @todo Needs refactoring
+	 */
+	protected function setSubRawData($sid,$rawData) {
+		if($this->data) {
+			$data = $this->data->getRawData();
+			foreach ($data['subs'] as &$sub_entry) {
+				if ($sub_entry['sid'] == $sid) {
+					$sub_entry = $rawData;
+					$this->data->setRawData($data);
+					return true;
+				}
+			}
+			$data['subs'][] = $rawData;
+		}
+		return false;
+	}
+	
+	/**
 	 * get the account's latest open billrun
 	 * @param int $aid
 	 * @return mixed the billrun object or false if none found
@@ -426,7 +447,7 @@ class Billrun_Billrun {
 			$category_key = "base";
 		}
 
-		if (!isset($zone_key)) {
+		if ( !isset($zone_key) ) {
 			$zone_key = $row['arate']['key'];
 		}
 		return array($plan_key, $category_key, $zone_key);
@@ -465,6 +486,68 @@ class Billrun_Billrun {
 		return $update;
 	}
 
+	
+	/**
+	 * Add pricing and usage counters to the billrun breakdown.
+	 * @param array $counters keys - usage type. values - amount of usage. Currently supports only arrays of one element
+	 * @param array $pricingData the output array from updateSubscriberBalance function
+	 * @param boolean $vatable is the line vatable or not
+	 * @param string $plan_key the plan key to be used under breakdown key
+	 * @param string $category_key the category key to be used under plan key
+	 * @param string $zone_key the zone key to be used under category key
+	 */
+	protected function addLineToSubscriber( $counters, $row, $pricingData, $vatable, &$sraw ) {
+		$usage_type = self::getGeneralUsageType($row['usaget']);
+		list($plan_key, $category_key, $zone_key) = self::getBreakdownKeys($row, $pricingData, $vatable);
+		$zone = &$sraw['breakdown'][$plan_key][$category_key][$zone_key];
+		if ($plan_key != 'credit') {
+			if (!empty($counters)) {
+				if (!empty($pricingData) && isset($pricingData['over_plan']) && $pricingData['over_plan'] < current($counters)) { // volume is partially priced (in & over plan)
+					$volume_priced = $pricingData['over_plan'];
+					$planZone = &$sraw['breakdown']['in_plan'][$category_key][$zone_key];
+					$planZone['totals'][key($counters)]['usagev'] = 
+								(isset($planZone['totals'][key($counters)]['usagev']) ? $planZone['totals'][key($counters)]['usagev'] : 0) + current($counters) - $volume_priced; // add partial usage to flat
+				} else {
+					$volume_priced = current($counters);
+				}
+				$zone['totals'][key($counters)]['usagev'] = (isset($zone['totals'][key($counters)]['usagev']) ? $zone['totals'][key($counters)]['usagev'] : 0) + $volume_priced;
+				$zone['totals'][key($counters)]['cost'] = (isset($zone['totals'][key($counters)]['cost']) ? $zone['totals'][key($counters)]['cost'] : 0) +  $pricingData['aprice'];
+
+			} 
+			if ($plan_key != 'in_plan') {
+				$zone['cost'] = (isset($zone['cost'] ) ? $zone['cost'] : 0) + $pricingData['aprice'];
+			}
+			$zone['vat'] = ($vatable ? floatval(Billrun_Factory::config()->getConfigValue('pricing.vat', 0.18)) : 0); //@TODO we assume here that all the lines would be vatable or all vat-free
+		} else {
+				$zone = $pricingData['aprice'];
+		}
+		$sraw['lines'][$usage_type]['refs'][] = $row->createRef();		
+	}	
+	
+		/**
+	 * Returns the increment totals update query
+	 * @param array $pricingData the output array from updateSubscriberBalance function
+	 * @param string $billrun_key the billrun_key to insert into the billrun
+	 * @param boolean $vatable is the line vatable or not
+	 */
+	protected function updateTotals($pricingData, $billrun_key, $vatable, &$sraw) {
+		$rawData= $this->data->getRawData();
+		if ($vatable) {
+			$sraw['totals']['vatable'] = (isset($sraw['totals']['vatable']) ?  $sraw['totals']['vatable'] : 0) + $pricingData['aprice'];
+			$rawData['totals']['vatable'] = $pricingData['aprice'];
+			$vat = self::getVATByBillrunKey($billrun_key);
+			$price_after_vat = $pricingData['aprice'] + $pricingData['aprice'] * $vat;
+		} else {
+			$price_after_vat = $pricingData['aprice'];
+		}
+
+		$sraw['totals']['before_vat'] = (isset($sraw['totals']['before_vat']) ? $sraw['totals']['before_vat'] : 0 ) + $pricingData['aprice'];
+		$sraw['totals']['after_vat'] = (isset($sraw['totals']['after_vat']) ? $sraw['totals']['after_vat'] : 0 ) + $price_after_vat;
+		$rawData['totals']['before_vat'] = $pricingData['aprice'];
+		$rawData['totals']['after_vat'] = $price_after_vat;
+		$this->data->setRawData($rawData);
+	}
+	
 	/**
 	 * Updates the billrun costs, lines & breakdown with the input line if the line is not already included in it
 	 * @param string $billrun_key the billrun_key to insert into the billrun
@@ -519,7 +602,11 @@ class Billrun_Billrun {
 			return $doc;
 		} else { // update to memory
 			$sraw = $billrun->getSubRawData($sid);
+			$billrun->addLineToSubscriber($counters, $row, $pricingData, $vatable, $sraw); 
 			$billrun->updateCosts($pricingData, $row, $vatable, $sraw); // according to self::getUpdateCostsQuery
+			$billrun->updateTotals($pricingData, $billrun_key, $vatable, $sraw);
+			$billrun->setSubRawData($sid, $sraw);
+			
 		}
 	}
 

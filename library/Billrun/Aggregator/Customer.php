@@ -71,12 +71,16 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	
 	public function __construct($options = array()) {
 		parent::__construct($options);
-		$options = array_merge_recursive($options,$options['cmd_opts']);
 		if (isset($options['aggregator']['page']) && $options['aggregator']['page']) {
 			$this->page = $options['aggregator']['page'];
+		} else if (isset($options['page']) && $options['page']) {
+			$this->page = $options['page'];
+			
 		}
 		if (isset($options['aggregator']['size']) && $options['aggregator']['size']) {
 			$this->size = $options['aggregator']['size'];
+		} else if (isset($options['size']) && $options['size']) {
+			$this->size = $options['size'];
 		}
 		if (isset($options['aggregator']['vatable'])) {
 			$this->vatable = $options['aggregator']['vatable'];
@@ -143,17 +147,22 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 						$subscriber_lines = $this->getSubscriberLines($sid);
 						Billrun_Factory::log("Processing subscriber Lines $sid");
 						foreach ($subscriber_lines as $line) {
+							$line->collection(Billrun_Factory::db()->linesCollection());
 							$pricingData = array('aprice' => $line['aprice']);
 							if (isset($line['over_plan'])) {
 								$pricingData['over_plan'] = $line['over_plan'];
 							} else if (isset($line['out_plan'])) {
 								$pricingData['out_plan'] = $line['out_plan'];
 							}
+							$line['billrun'] = $billrun_key;
 							$rate = $this->getRowRate($line);
 							$vatable = (!(isset($rate['vatable']) && !$rate['vatable']) || (!isset($rate['vatable']) && !$this->vatable));
 							Billrun_Billrun::updateBillrun($billrun_key, array($line['usaget'] => $line['usagev']), $pricingData, $line, $vatable, $subscriber_billrun);
+							$line->save();
 						}
+						
 						Billrun_Factory::log("Saving subscriber subscriber $sid");
+						//save  the billrun
 						$subscriber_billrun->save();
 						// @TODO: save the subscriber to billrun
 						// @TODO: add flat (maybe unified with old approach)
@@ -178,7 +187,8 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 						Billrun_Factory::log()->log("Flat costs already exist in billrun collection for subscriber " . $sid . " for billrun " . $billrun_key, Zend_Log::NOTICE);
 					} else {
 						Billrun_Billrun::setSubscriberStatus($aid, $sid, $billrun_key, $subscriber_status);
-						$flat_line['billrun_ref'] = $billrun->createRef($this->billrun);
+						$flat_line['billrun'] =  $billrun_key;
+						//$flat_line['billrun_ref'] = $billrun->createRef($this->billrun);						
 						$flat_line->save();
 					}
 				}

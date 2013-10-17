@@ -143,6 +143,7 @@ abstract class Billrun_Base {
 		if (isset($args['type'])) {
 			$type = $args['type'];
 			$args = array();
+			Billrun_Factory::log()->log('Depratected approach of Billrun_Base::getInstance: ' . $type,Zend_Log::INFO);
 		} else {
 			$type = $args[0]['type'];
 			unset($args[0]['type']);
