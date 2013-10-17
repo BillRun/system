@@ -254,6 +254,9 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 			'urt' => array(
 				'$lt' => $end_time,
 			),
+			'aprice' => array(
+				'$exists' => true,
+			),
 			'billrun' => array(
 				'$exists' => false,
 			),

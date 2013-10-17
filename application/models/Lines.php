@@ -112,6 +112,8 @@ class LinesModel extends TableModel {
 			'sid' => 'Subscriber id',
 			'usaget' => 'Usage type',
 			'usagev' => 'Amount',
+			'calling_number' => 'Calling Number',
+			'called_number' => 'Called Number',
 			'plan' => 'Plan',
 			'aprice' => 'Price',
 			'billrun' => 'Billrun',

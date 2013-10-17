@@ -717,7 +717,7 @@ class Billrun_Billrun {
 	 * @param boolean $vatable is the row vatable
 	 * @param array $sraw the subscriber raw data
 	 */
-	protected function updateCosts($pricingData, $row, $vatable, $sid, $billrun_key) {
+	protected function updateCosts($pricingData, $row, $vatable, $sid) {
 		$sraw = $this->getSubRawData($sid);
 		$vat_key = ($vatable ? "vatable" : "vat_free");
 		if (isset($pricingData['over_plan']) && $pricingData['over_plan']) {
@@ -767,17 +767,16 @@ class Billrun_Billrun {
 				if (!empty($pricingData) && isset($pricingData['over_plan']) && $pricingData['over_plan'] < current($counters)) { // volume is partially priced (in & over plan)
 					$volume_priced = $pricingData['over_plan'];
 					$planZone = &$sraw['breakdown']['in_plan'][$category_key][$zone_key];
-					$planZone['totals'][key($counters)]['usagev'] = 
-								(isset($planZone['totals'][key($counters)]['usagev']) ? $planZone['totals'][key($counters)]['usagev'] : 0) + current($counters) - $volume_priced; // add partial usage to flat
+					$planZone['totals'][key($counters)]['usagev'] =  $this->getFieldVal( $planZone,array('totals',key($counters),'usagev'),0) + current($counters) - $volume_priced; // add partial usage to flat
 				} else {
 					$volume_priced = current($counters);
 				}
-				$zone['totals'][key($counters)]['usagev'] = (isset($zone['totals'][key($counters)]['usagev']) ? $zone['totals'][key($counters)]['usagev'] : 0) + $volume_priced;
-				$zone['totals'][key($counters)]['cost'] = (isset($zone['totals'][key($counters)]['cost']) ? $zone['totals'][key($counters)]['cost'] : 0) +  $pricingData['aprice'];
+				$zone['totals'][key($counters)]['usagev'] =  $this->getFieldVal($zone,array('totals',key($counters),'usagev'), 0) + $volume_priced;
+				$zone['totals'][key($counters)]['cost'] =  $this->getFieldVal($zone,array('totals',key($counters),'cost'), 0) +  $pricingData['aprice'];
 
 			} 
 			if ($plan_key != 'in_plan') {
-				$zone['cost'] = (isset($zone['cost'] ) ? $zone['cost'] : 0) + $pricingData['aprice'];
+				$zone['cost'] = $this->getFieldVal($zone,array('cost'), 0) + $pricingData['aprice'];
 			}
 			$zone['vat'] = ($vatable ? floatval(Billrun_Factory::config()->getConfigValue('pricing.vat', 0.18)) : 0); //@TODO we assume here that all the lines would be vatable or all vat-free
 		} else {
@@ -785,19 +784,19 @@ class Billrun_Billrun {
 		}
 		if ($usage_type == 'data' && $row['type'] != 'tap3') {
 			$date_key = date("Ymd", $row['urt']->sec);
-			$sraw['lines'][$usage_type]['counters'][$date_key] = (isset($sraw['lines'][$usage_type]['counters'][$date_key]) ? $sraw['lines'][$usage_type]['counters'][$date_key] : 0) + $row['usagev'];
+			$sraw['lines'][$usage_type]['counters'][$date_key] =  $this->getFieldVal($sraw,array('lines',$usage_type,'counters',$date_key), 0) + $row['usagev'];
 		} 
 		$sraw['lines'][$usage_type]['refs'][] = $row->createRef();
 		
 		if ($vatable) {
-			$sraw['totals']['vatable'] = ( isset($sraw['totals']['vatable']) ? $sraw['totals']['vatable'] : 0 ) + $pricingData['aprice'];
+			$sraw['totals']['vatable'] =  $this->getFieldVal($sraw,array('totals','vatable'), 0 ) + $pricingData['aprice'];
 			$price_after_vat = $pricingData['aprice'] + ($pricingData['aprice'] *  self::getVATByBillrunKey($billrun_key));
 		} else {
 			$price_after_vat = $pricingData['aprice'];
 		}
 
-		$sraw['totals']['before_vat'] = (isset($sraw['totals']['before_vat']) ? $sraw['totals']['before_vat'] : 0 ) + $pricingData['aprice'];
-		$sraw['totals']['after_vat'] = (isset($sraw['totals']['after_vat']) ? $sraw['totals']['after_vat'] : 0 ) + $price_after_vat;
+		$sraw['totals']['before_vat'] = $this->getFieldVal($sraw,array('totals','before_vat'),0 ) + $pricingData['aprice'];
+		$sraw['totals']['after_vat'] = $this->getFieldVal($sraw, array('totals','after_vat'), 0 ) + $price_after_vat;
 				
 		$this->setSubRawData($sid, $sraw);
 	}	
@@ -819,12 +818,22 @@ class Billrun_Billrun {
 		} else {
 			$price_after_vat = $pricingData['aprice'];
 		}
-		$rawData['totals']['before_vat'] = (isset($rawData['totals']['before_vat']) ? $rawData['totals']['before_vat'] : 0 ) + $pricingData['aprice'];
-		$rawData['totals']['after_vat'] = (isset($rawData['totals']['after_vat'])? $rawData['totals']['after_vat'] : 0) + $price_after_vat;
+		$rawData['totals']['before_vat'] =  $this->getFieldVal($rawData,array('totals','before_vat'),0 ) + $pricingData['aprice'];
+		$rawData['totals']['after_vat'] =  $this->getFieldVal($rawData,array('totals','after_vat'), 0) + $price_after_vat;
 		
 		$this->data->setRawData($rawData);
 	}
-	
+
+	protected function getFieldVal($arr,$fields,$defVal) {
+		$base = $arr;
+		foreach ($fields as $field) {
+			if(!isset($base[$field])) {
+				return $defVal;
+			}
+			$base = $base[$field];
+		}
+		return $base;
+	}
 
 }
 
