@@ -206,12 +206,12 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		$flat_entry = new Mongodloid_Entity($subscriber->getFlatEntry($billrun_key));
 		$flat_entry->collection($this->lines);
 		$query = array(
+			'stamp' => $flat_entry['stamp'],
 			'aid' => $aid,
+			'sid' => $sid,			
 			'billrun_key' => $billrun_key,
-			'$and' => array(
-				array('sid' => $sid,
-				'type' => 'flat'),
-				),
+			'type' => 'flat',
+
 		);
 		$update = array(
 			'$setOnInsert' => $flat_entry->getRawData(),
