@@ -448,7 +448,8 @@ class Billrun_Billrun {
 		}
 
 		if ( !isset($zone_key) ) {
-			$zone_key = $row['arate']['key'];
+			//$zone_key = $row['arate']['key'];
+			$zone_key = self::getRowRate($row)['key'];
 		}
 		return array($plan_key, $category_key, $zone_key);
 	}
@@ -833,6 +834,22 @@ class Billrun_Billrun {
 			$base = $base[$field];
 		}
 		return $base;
+	}
+	
+	static protected $rates = array();
+	/**
+	 * HACK TO MAKE THE BILLLRUN FASTER
+	 * gets an array which represents a db ref (includes '$ref' & '$id' keys)
+	 * @param type $db_ref
+	 */
+	protected static function getRowRate($row) {
+		$raw_rate = $row->get('arate', true);
+		$id_str = strval($raw_rate['$id']);
+		if (isset(self::$rates[$id_str])) {
+			return $self::$rates[$id_str];
+		} else {
+			return $row->get('arate', false);
+		}
 	}
 
 }
