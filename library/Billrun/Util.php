@@ -159,17 +159,19 @@ class Billrun_Util {
 	/**
 	 * Send SMS helper
 	 * @param type $recipient - recipient number
-	 * @param type $massege - body massege
+	 * @param type $message - body message
 	 * @return type
 	 */
-	public static function sendSms($massege) {
-		$smser = Billrun_Factory::smser($massege);
+	public static function sendSms($message, $recipients) {
+		$smser = Billrun_Factory::smser($message);
 
 		//send sms
 		try {
+			//set recipents
+			$smser->recipients = $recipients;
 			$ret = $smser->send();
-		} catch(Exception $e ) {
-			Billrun_Factory::log()->log("Failed when trying to send  sms on alert results, Failed with : ".$e, Zend_Log::ERR);
+		} catch (Exception $e) {
+			Billrun_Factory::log()->log("Failed when trying to send  sms on alert results, Failed with : " . $e, Zend_Log::ERR);
 			$ret = FALSE;
 		}
 		return $ret;

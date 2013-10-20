@@ -179,24 +179,22 @@ class Billrun_Factory {
 		return self::$chain;
 	}
 	
-	static public function smser($massege) {
+	static public function smser($message) {
 		try {
 			if (!self::$smser) {
 				$sms = self::$smser = new Billrun_Sms();
+			} else {
+				$sms = new Billrun_Sms();
 			}
-			else {
-				$sms = new Billrun_Sms();	
-			}
-			
-			$sms->massege = $massege;
+
+			$sms->message = $message;
 			$sms_config_params = Billrun_Factory::config()->getConfigValue('sms');
-			
+
 			$sms->from = $sms_config_params['from'];
-			$sms->smsc_user = $sms_config_params['smsc_user'];
-			$sms->smsc_pwd = $sms_config_params['smsc_pwd'];
-			$sms->recipients = $sms_config_params['recipients'];
-			$sms->smsc_provisoning = $sms_config_params['smsc_provisoning'];
-		
+			$sms->user = $sms_config_params['user'];
+			$sms->pwd = $sms_config_params['pwd'];
+			$sms->provisoning = $sms_config_params['provisoning'];
+
 			return $sms;
 		} catch (Exception $e) {
 			self::log("Can't instantiat sms object. Please check your settings", Zend_Log::ALERT);
