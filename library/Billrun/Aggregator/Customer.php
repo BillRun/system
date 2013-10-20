@@ -207,8 +207,8 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		$flat_entry->collection($this->lines);
 		$query = array(
 			'aid' => $aid,
-			'sid' => $sid,
 			'billrun_key' => $billrun_key,
+			'sid' => $sid,
 			'type' => 'flat',
 		);
 		$update = array(
