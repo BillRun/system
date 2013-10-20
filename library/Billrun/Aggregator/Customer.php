@@ -181,15 +181,14 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 					}
 					Billrun_Factory::log('Adding flat to subscriber ' . $sid, Zend_Log::INFO);
 					$flat_line = $this->saveFlatLine($subscriber, $billrun_key);
-
 					$plan = $flat_line['plan_ref'];
 					if (!$billrun = Billrun_Billrun::updateBillrun($billrun_key, array(), array('aprice' => $flat_price), $flat_line, $plan['vatable'])) {
 						Billrun_Factory::log()->log("Flat costs already exist in billrun collection for subscriber " . $sid . " for billrun " . $billrun_key, Zend_Log::NOTICE);
 					} else {
 						Billrun_Billrun::setSubscriberStatus($aid, $sid, $billrun_key, $subscriber_status);
 						$flat_line['billrun'] =  $billrun_key;
-						//$flat_line['billrun_ref'] = $billrun->createRef($this->billrun);						
-						$flat_line->save();
+						//$flat_line['billrun_ref'] = $billrun->createRef($this->billrun);	
+						$flat_line->save($this->lines);
 					}
 				}
 				//}
@@ -219,7 +218,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 			'upsert' => true,
 			'new' => true,
 		);
-		return $this->lines->findAndModify($query, $update, array(), $options);
+		return $this->lines->findAndModify($query, $update, array(), $options, true);
 	}
 
 	protected function save($data) {
