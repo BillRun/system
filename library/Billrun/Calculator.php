@@ -59,6 +59,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	 * @var type 
 	 */
 	protected $workHash = 0;
+	
     /**
      * array of rates for pre-processing
      * @var array

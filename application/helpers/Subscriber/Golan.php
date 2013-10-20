@@ -207,10 +207,13 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		$accounts = $this->requestAccounts($params);
 		$subscriber_general_settings = Billrun_Config::getInstance()->getConfigValue('subscriber', array());
 		if (is_array($accounts) && !empty($accounts)) {
+			$ret_data = array();
 			foreach ($accounts as $aid => $account) {
-				foreach ($account['subscribers'] as $subscriber) {
-					$subscriber_settings = array_merge($subscriber_general_settings, array('time' => strtotime($time), 'data' => array('aid' => intval($aid), 'sid' => intval($subscriber['subscriber_id']), 'plan' => $subscriber['plan'])));
-					$ret_data[intval($aid)][] = Billrun_Subscriber::getInstance($subscriber_settings);
+				if(isset($account['subscribers'])) {
+					foreach ($account['subscribers'] as $subscriber) {
+						$subscriber_settings = array_merge($subscriber_general_settings, array('time' => strtotime($time), 'data' => array('aid' => intval($aid), 'sid' => intval($subscriber['subscriber_id']), 'plan' => $subscriber['plan'])));
+						$ret_data[intval($aid)][] = Billrun_Subscriber::getInstance($subscriber_settings);
+						}
 				}
 			}
 			return $ret_data;

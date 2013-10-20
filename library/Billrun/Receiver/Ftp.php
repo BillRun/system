@@ -100,9 +100,10 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 	protected function receiveFromHost($hostName, $config) {
 		$ret = array();
 		$files = $this->ftp->getDirectory($config['remote_directory'])->getContents();
+		
 		Billrun_Factory::log()->log("FTP: Starting to receive from remote host : $hostName", Zend_Log::DEBUG);
 		$count = 0;
-		foreach ($files as $file) {
+		foreach ($this->sortByFileDate($files) as $file) {
 			$extraData = array();
 			Billrun_Factory::log()->log("FTP: Found file " . $file->name . " on remote host", Zend_Log::DEBUG);
 			Billrun_Factory::dispatcher()->trigger('beforeFTPFileReceived', array(&$file, $this, $hostName, &$extraData));
@@ -137,6 +138,27 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 			}
 		}
 		return $ret;
+	}
+	
+	/**
+	 * Sort an array of files returned by the ftp  by the  file date  and  file name
+	 * @param type $files the ftp  directrory iterator
+	 * @return type
+	 */
+	protected function sortByFileDate($files) {
+		if(!is_array($files)) {
+			$files = iterator_to_array($files);
+		}
+		usort($files, function ($a,$b) {			
+			if($a->isFile() && $b->isFile() && 
+				isset($a->extraData['date']) && isset($b->extraData['date'])) {		
+				return ($a->extraData['date'] - $b->extraData['date']) + (strcmp($a->name,$b->name) * 0.1);
+			}
+			
+			return strcmp($a->name,$b->name);
+		});
+		
+		return $files;
 	}
 
 	/**
