@@ -727,19 +727,19 @@ class Billrun_Billrun {
 				$sraw['costs']['over_plan'][$vat_key] += $pricingData['aprice'];
 			}
 		} else if (isset($pricingData['out_plan']) && $pricingData['out_plan']) {
-			if (!isset($sraw['costs']['over_plan'][$vat_key])) {
+			if (!isset($sraw['costs']['out_plan'][$vat_key])) {
 				$sraw['costs']['out_plan'][$vat_key] = $pricingData['aprice'];
 			} else {
 				$sraw['costs']['out_plan'][$vat_key] += $pricingData['aprice'];
 			}
 		} else if ($row['type'] == 'flat') {
-			if (!isset($sraw['costs']['over_plan'][$vat_key])) {
+			if (!isset($sraw['costs']['flat'][$vat_key])) {
 				$sraw['costs']['flat'][$vat_key] = $pricingData['aprice'];
 			} else {
 				$sraw['costs']['flat'][$vat_key] += $pricingData['aprice'];
 			}
 		} else if ($row['type'] == 'credit') {
-			if (!isset($sraw['costs']['over_plan'][$vat_key])) {
+			if (!isset($sraw['costs']['credit'][$row['credit_type']][$vat_key])) {
 				$sraw['costs']['credit'][$row['credit_type']][$vat_key] = $pricingData['aprice'];
 			} else {
 				$sraw['costs']['credit'][$row['credit_type']][$vat_key] += $pricingData['aprice'];
