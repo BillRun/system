@@ -179,7 +179,7 @@ class Billrun_Factory {
 		return self::$chain;
 	}
 	
-	static public function smser($message) {
+	static public function smser() {
 		try {
 			if (!self::$smser) {
 				$sms = self::$smser = new Billrun_Sms();
@@ -187,7 +187,6 @@ class Billrun_Factory {
 				$sms = new Billrun_Sms();
 			}
 
-			$sms->message = $message;
 			$sms_config_params = Billrun_Factory::config()->getConfigValue('sms');
 
 			$sms->from = $sms_config_params['from'];

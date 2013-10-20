@@ -40,7 +40,7 @@ class Billrun_Sms {
 	 */
 	public function send() {
 		if (empty($this->data['message']) || empty($this->data['recipients'])) {
-			Billrun_Factory::log()->log("can not send the sms, there are missing params - txt: " . $this->data['message'] . " recipients: " . print_r($this->data['recipients']) . " from: " . $this->data['from'], Zend_Log::WARN);
+			Billrun_Factory::log()->log("can not send the sms, there are missing params - txt: " . $this->data['message'] . " recipients: " . print_r($this->data['recipients'], TRUE) . " from: " . $this->data['from'], Zend_Log::WARN);
 			return false;
 		}
 
