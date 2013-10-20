@@ -845,11 +845,10 @@ class Billrun_Billrun {
 	protected static function getRowRate($row) {
 		$raw_rate = $row->get('arate', true);
 		$id_str = strval($raw_rate['$id']);
-		if (isset(self::$rates[$id_str])) {
-			return $self::$rates[$id_str];
-		} else {
-			return $row->get('arate', false);
+		if (!isset(self::$rates[$id_str])) {
+			 self::$rates[$id_str] = $row->get('arate', false);
 		}
+		return self::$rates[$id_str];
 	}
 
 }
