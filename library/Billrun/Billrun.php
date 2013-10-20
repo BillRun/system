@@ -408,7 +408,8 @@ class Billrun_Billrun {
 	 */
 	protected static function getBreakdownKeys($row, $pricingData, $vatable) {
 		if ($row['type'] != 'flat') {
-			$rate = $row['arate'];
+			//$rate = $row['arate'];
+			$rate = self::getRowRate($row);
 		}
 		if ($row['type'] == 'credit') {
 			$plan_key = 'credit';
@@ -837,6 +838,7 @@ class Billrun_Billrun {
 	}
 	
 	static protected $rates = array();
+	
 	/**
 	 * HACK TO MAKE THE BILLLRUN FASTER
 	 * gets an array which represents a db ref (includes '$ref' & '$id' keys)
