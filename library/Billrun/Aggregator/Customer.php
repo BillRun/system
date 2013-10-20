@@ -208,8 +208,10 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		$query = array(
 			'aid' => $aid,
 			'billrun_key' => $billrun_key,
-			'sid' => $sid,
-			'type' => 'flat',
+			'$and' => array(
+				array('sid' => $sid,
+				'type' => 'flat'),
+				),
 		);
 		$update = array(
 			'$setOnInsert' => $flat_entry->getRawData(),
@@ -218,7 +220,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 			'upsert' => true,
 			'new' => true,
 		);
-		return $this->lines->findAndModify($query, $update, array(), $options, true);
+		return $this->lines->findAndModify($query, $update, array(), $options);
 	}
 
 	protected function save($data) {
