@@ -36,11 +36,11 @@ class CreditAction extends Action_Base {
 
 		$entity = new Mongodloid_Entity($parsed_row);
 		if ($this->insertToQueue($entity) === false) {
-			return $this->setError('failed to store into DB', $request);
+			return $this->setError('failed to store into DB queue', $request);
 		}
 
 		if ($entity->save($linesCollection) === false) {
-			return $this->setError('failed to store into DB', $request);
+			return $this->setError('failed to store into DB lines', $request);
 		} else {
 			$this->getController()->setOutput(array(array(
 					'status' => 1,
@@ -48,6 +48,7 @@ class CreditAction extends Action_Base {
 					'stamp' => $entity['stamp'],
 					'input' => $request,
 			)));
+			Billrun_Factory::log()->log("Executed refund Sucessfully", Zend_Log::INFO);
 			return true;
 		}
 	}
@@ -167,6 +168,7 @@ class CreditAction extends Action_Base {
 	}
 
 	function setError($error_message, $input = null) {
+		Billrun_Factory::log()->log("Sending Error : {$error_message}",Zend_Log::NOTICE);
 		$output = array(
 			'status' => 0,
 			'desc' => $error_message,
