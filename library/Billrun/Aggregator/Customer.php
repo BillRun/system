@@ -73,13 +73,15 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		parent::__construct($options);
 		if (isset($options['aggregator']['page']) && $options['aggregator']['page']) {
 			$this->page = $options['aggregator']['page'];
-		} else if (isset($options['page']) && $options['page']) {
+		} 
+		if (isset($options['page']) && $options['page']) {
 			$this->page = $options['page'];
 			
 		}
 		if (isset($options['aggregator']['size']) && $options['aggregator']['size']) {
 			$this->size = $options['aggregator']['size'];
-		} else if (isset($options['size']) && $options['size']) {
+		} 
+		if (isset($options['size']) && $options['size']) {
 			$this->size = $options['size'];
 		}
 		if (isset($options['aggregator']['vatable'])) {
