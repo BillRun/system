@@ -136,7 +136,7 @@ class CreditAction extends Action_Base {
 		}
 
 		if (Billrun_Util::isTimestamp(strval($filtered_request['credit_time']))) {
-			$filtered_request['urt'] = (int) $filtered_request['credit_time'];
+			$filtered_request['urt'] = new MongoDate((int) $filtered_request['credit_time']);
 			unset($filtered_request['credit_time']);
 		} else {
 			return $this->setError('credit_time is not a valid time stamp', $credit_row);
