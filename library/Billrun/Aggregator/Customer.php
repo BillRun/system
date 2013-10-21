@@ -149,6 +149,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 						$subscriber_lines = $this->getSubscriberLines($sid);
 						Billrun_Factory::log("Processing subscriber Lines $sid");
 						foreach ($subscriber_lines as $line) {
+							Billrun_Factory::log("Processing subscriber Line for $sid : ".  microtime(true));
 							$line->collection(Billrun_Factory::db()->linesCollection());
 							$pricingData = array('aprice' => $line['aprice']);
 							if (isset($line['over_plan'])) {
@@ -161,6 +162,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 							$vatable = (!(isset($rate['vatable']) && !$rate['vatable']) || (!isset($rate['vatable']) && !$this->vatable));
 							Billrun_Billrun::updateBillrun($billrun_key, array($line['usaget'] => $line['usagev']), $pricingData, $line, $vatable, $subscriber_billrun);
 							$line->save();
+							Billrun_Factory::log("Done Processing subscriber Line for $sid : ".  microtime(true));
 						}
 						
 						Billrun_Factory::log("Saving subscriber subscriber $sid");

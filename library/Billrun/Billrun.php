@@ -111,13 +111,16 @@ class Billrun_Billrun {
 		);
 	}
 
+	protected static $vatsByBillrun = array();
 	protected static function getVATByBillrunKey($billrun_key) {
-		$billrun_end_time = Billrun_Util::getEndTime($billrun_key);
-		$vat = self::getVATAtDate($billrun_end_time);
-		if (is_null($vat)) {
-			$vat = floatval(Billrun_Factory::config()->getConfigValue('pricing.vat', 0.18));
+		if(!isset(self::$vatsByBillrun[$billrun_key])) {
+			$billrun_end_time = Billrun_Util::getEndTime($billrun_key);
+			self::$vatsByBillrun[$billrun_key] = self::getVATAtDate($billrun_end_time);
+			if (is_null(self::$vatsByBillrun[$billrun_key])) {
+				self::$vatsByBillrun[$billrun_key] = floatval(Billrun_Factory::config()->getConfigValue('pricing.vat', 0.18));
+			}
 		}
-		return $vat;
+		return self::$vatsByBillrun[$billrun_key];
 	}
 
 	protected static function getVATAtDate($timestamp) {
@@ -177,13 +180,11 @@ class Billrun_Billrun {
 	 * @todo Needs refactoring
 	 */
 	protected function getSubRawData($sid) {
-		if($this->data) {
 			foreach ($this->data['subs'] as $sub_entry) {
 				if ($sub_entry['sid'] == $sid) {
 					return $sub_entry;
 				}
 			}
-		}
 		return false;
 	}
 
@@ -194,17 +195,15 @@ class Billrun_Billrun {
 	 * @todo Needs refactoring
 	 */
 	protected function setSubRawData($sid,$rawData) {
-		if($this->data) {
-			$data = $this->data->getRawData();
-			foreach ($data['subs'] as &$sub_entry) {
-				if ($sub_entry['sid'] == $sid) {
-					$sub_entry = $rawData;
-					$this->data->setRawData($data);
-					return true;
-				}
+		$data = $this->data->getRawData();
+		foreach ($data['subs'] as &$sub_entry) {
+			if ($sub_entry['sid'] == $sid) {
+				$sub_entry = $rawData;
+				$this->data->setRawData($data);
+				return true;
 			}
-			$data['subs'][] = $rawData;
 		}
+		$data['subs'][] = $rawData;
 		return false;
 	}
 	
@@ -498,16 +497,17 @@ class Billrun_Billrun {
 	 * @param Billrun_Billrun $billrun whether to update to memory (to billrun) or to the db.
 	 * @return Mongodloid_Entity the billrun doc of the line, false if no such billrun exists
 	 */
-	public static function updateBillrun($billrun_key, $counters, $pricingData, $row, $vatable, $billrun = null) {
+	public static function updateBillrun($billrun_key, $counters, $pricingData, $row, $vatable, $billrun = null) {		
 		$aid = $row['aid'];
 		$sid = $row['sid'];
-		$billrun_coll = Billrun_Factory::db()->billrunCollection();
 
-		$usage_type = self::getGeneralUsageType($row['usaget']);
-		$row_ref = $row->createRef();
 		list($plan_key, $category_key, $zone_key) = self::getBreakdownKeys($row, $pricingData, $vatable);
-
+		
 		if (is_null($billrun)) {
+			$billrun_coll = Billrun_Factory::db()->billrunCollection();
+			$usage_type = self::getGeneralUsageType($row['usaget']);
+			$row_ref = $row->createRef();
+
 			$query = array_merge_recursive(self::getMatchingBillrunQuery($aid, $billrun_key), self::getOpenBillrunQuery(), self::getDistinctLinesBillrunQuery($sid, $usage_type, $row_ref));
 			$update = array_merge_recursive(self::getUpdateCostsQuery($pricingData, $row, $vatable), self::getUpdateDataCountersQuery($usage_type, $row), self::getPushLineQuery($usage_type, $row_ref), self::getUpdateBreakdownQuery($counters, $pricingData, $vatable, $plan_key, $category_key, $zone_key), self::getUpdateTotalsQuery($pricingData, $billrun_key, $vatable));
 			$fields = array();
@@ -760,10 +760,12 @@ class Billrun_Billrun {
 	 * @param string $billrun_key the billrun_key of the billrun
 	 */
 	protected function addLineToSubscriber( $counters, $row, $pricingData, $vatable, $sid , $billrun_key) {
+
 		$sraw = $this->getSubRawData($sid);
 		$usage_type = self::getGeneralUsageType($row['usaget']);
 		list($plan_key, $category_key, $zone_key) = self::getBreakdownKeys($row, $pricingData, $vatable);
 		$zone = &$sraw['breakdown'][$plan_key][$category_key][$zone_key];
+
 		if ($plan_key != 'credit') {
 			if (!empty($counters)) {
 				if (!empty($pricingData) && isset($pricingData['over_plan']) && $pricingData['over_plan'] < current($counters)) { // volume is partially priced (in & over plan)
@@ -774,8 +776,7 @@ class Billrun_Billrun {
 					$volume_priced = current($counters);
 				}
 				$zone['totals'][key($counters)]['usagev'] =  $this->getFieldVal($zone,array('totals',key($counters),'usagev'), 0) + $volume_priced;
-				$zone['totals'][key($counters)]['cost'] =  $this->getFieldVal($zone,array('totals',key($counters),'cost'), 0) +  $pricingData['aprice'];
-
+				$zone['totals'][key($counters)]['cost'] =  $this->getFieldVal($zone['totals'][key($counters)],array('cost'), 0) +  $pricingData['aprice'];
 			} 
 			if ($plan_key != 'in_plan') {
 				$zone['cost'] = $this->getFieldVal($zone,array('cost'), 0) + $pricingData['aprice'];
@@ -784,23 +785,24 @@ class Billrun_Billrun {
 		} else {
 				$zone = $pricingData['aprice'];
 		}
+
 		if ($usage_type == 'data' && $row['type'] != 'tap3') {
 			$date_key = date("Ymd", $row['urt']->sec);
 			$sraw['lines'][$usage_type]['counters'][$date_key] =  $this->getFieldVal($sraw,array('lines',$usage_type,'counters',$date_key), 0) + $row['usagev'];
 		} 
+
 		$sraw['lines'][$usage_type]['refs'][] = $row->createRef();
-		
 		if ($vatable) {
 			$sraw['totals']['vatable'] =  $this->getFieldVal($sraw,array('totals','vatable'), 0 ) + $pricingData['aprice'];
 			$price_after_vat = $pricingData['aprice'] + ($pricingData['aprice'] *  self::getVATByBillrunKey($billrun_key));
 		} else {
 			$price_after_vat = $pricingData['aprice'];
 		}
-
 		$sraw['totals']['before_vat'] = $this->getFieldVal($sraw,array('totals','before_vat'),0 ) + $pricingData['aprice'];
-		$sraw['totals']['after_vat'] = $this->getFieldVal($sraw, array('totals','after_vat'), 0 ) + $price_after_vat;
-				
+		$sraw['totals']['after_vat'] = $this->getFieldVal($sraw['totals'], array('after_vat'), 0 ) + $price_after_vat;
+			
 		$this->setSubRawData($sid, $sraw);
+
 	}	
 	
 	/**
@@ -821,7 +823,7 @@ class Billrun_Billrun {
 			$price_after_vat = $pricingData['aprice'];
 		}
 		$rawData['totals']['before_vat'] =  $this->getFieldVal($rawData,array('totals','before_vat'),0 ) + $pricingData['aprice'];
-		$rawData['totals']['after_vat'] =  $this->getFieldVal($rawData,array('totals','after_vat'), 0) + $price_after_vat;
+		$rawData['totals']['after_vat'] =  $this->getFieldVal($rawData['totals'],array('after_vat'), 0) + $price_after_vat;
 		
 		$this->data->setRawData($rawData);
 	}
