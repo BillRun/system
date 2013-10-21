@@ -541,8 +541,10 @@ class Billrun_Billrun {
 			Billrun_Factory::log()->log("Line with stamp " . $row['stamp'] . " has been added to billrun " . $billrun_key, Zend_Log::DEBUG);
 			return $doc;
 		} else { // update to memory
-			$billrun->addLineToSubscriber($counters, $row, $pricingData, $vatable, $sid, $billrun_key); 
-			$billrun->updateCosts($pricingData, $row, $vatable, $sid); // according to self::getUpdateCostsQuery
+			$sraw = $billrun->getSubRawData($sid);
+			$billrun->addLineToSubscriber($counters, $row, $pricingData, $vatable, $sid, $billrun_key,$sraw); 
+			$billrun->updateCosts($pricingData, $row, $vatable, $sid,$sraw); // according to self::getUpdateCostsQuery
+			$billrun->setSubRawData($sid, $sraw);
 			$billrun->updateTotals($pricingData, $billrun_key, $vatable);		
 		}
 	}
@@ -719,8 +721,8 @@ class Billrun_Billrun {
 	 * @param boolean $vatable is the row vatable
 	 * @param array $sraw the subscriber raw data
 	 */
-	protected function updateCosts($pricingData, $row, $vatable, $sid) {
-		$sraw = $this->getSubRawData($sid);
+	protected function updateCosts($pricingData, $row, $vatable, $sid, &$sraw) {
+		
 		$vat_key = ($vatable ? "vatable" : "vat_free");
 		if (isset($pricingData['over_plan']) && $pricingData['over_plan']) {
 			if (!isset($sraw['costs']['over_plan'][$vat_key])) {
@@ -748,7 +750,6 @@ class Billrun_Billrun {
 			}
 		}		
 		
-		$this->setSubRawData($sid, $sraw);
 	}
 	
 	/**
@@ -759,9 +760,8 @@ class Billrun_Billrun {
 	 * @param $sid the subscriber id.
 	 * @param string $billrun_key the billrun_key of the billrun
 	 */
-	protected function addLineToSubscriber( $counters, $row, $pricingData, $vatable, $sid , $billrun_key) {
-
-		$sraw = $this->getSubRawData($sid);
+	protected function addLineToSubscriber( $counters, $row, $pricingData, $vatable, $sid , $billrun_key, &$sraw) {
+	
 		$usage_type = self::getGeneralUsageType($row['usaget']);
 		list($plan_key, $category_key, $zone_key) = self::getBreakdownKeys($row, $pricingData, $vatable);
 		$zone = &$sraw['breakdown'][$plan_key][$category_key][$zone_key];
@@ -785,13 +785,13 @@ class Billrun_Billrun {
 		} else {
 				$zone = $pricingData['aprice'];
 		}
-
+		$sraw['lines'][$usage_type]['refs'][] = $row->createRef();
 		if ($usage_type == 'data' && $row['type'] != 'tap3') {
 			$date_key = date("Ymd", $row['urt']->sec);
-			$sraw['lines'][$usage_type]['counters'][$date_key] =  $this->getFieldVal($sraw,array('lines',$usage_type,'counters',$date_key), 0) + $row['usagev'];
+			$sraw['lines'][$usage_type]['counters'][$date_key] =  $this->getFieldVal($sraw['lines'][$usage_type],array('counters',$date_key), 0) + $row['usagev'];
 		} 
 
-		$sraw['lines'][$usage_type]['refs'][] = $row->createRef();
+		
 		if ($vatable) {
 			$sraw['totals']['vatable'] =  $this->getFieldVal($sraw,array('totals','vatable'), 0 ) + $pricingData['aprice'];
 			$price_after_vat = $pricingData['aprice'] + ($pricingData['aprice'] *  self::getVATByBillrunKey($billrun_key));
@@ -799,10 +799,7 @@ class Billrun_Billrun {
 			$price_after_vat = $pricingData['aprice'];
 		}
 		$sraw['totals']['before_vat'] = $this->getFieldVal($sraw,array('totals','before_vat'),0 ) + $pricingData['aprice'];
-		$sraw['totals']['after_vat'] = $this->getFieldVal($sraw['totals'], array('after_vat'), 0 ) + $price_after_vat;
-			
-		$this->setSubRawData($sid, $sraw);
-
+		$sraw['totals']['after_vat'] = $this->getFieldVal($sraw['totals'], array('after_vat'), 0 ) + $price_after_vat;			
 	}	
 	
 	/**
