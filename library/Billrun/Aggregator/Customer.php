@@ -188,9 +188,6 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 						Billrun_Factory::log()->log("Flat costs already exist in billrun collection for subscriber " . $sid . " for billrun " . $billrun_key, Zend_Log::NOTICE);
 					} else {
 						Billrun_Billrun::setSubscriberStatus($aid, $sid, $billrun_key, $subscriber_status);
-						$flat_line['billrun'] = $billrun_key;
-						//$flat_line['billrun_ref'] = $billrun->createRef($this->billrun);	
-						$flat_line->save($this->lines);
 					}
 				}
 				//}
