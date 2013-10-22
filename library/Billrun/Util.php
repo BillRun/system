@@ -163,12 +163,15 @@ class Billrun_Util {
 	 * @return type
 	 */
 	public static function sendSms($message, $recipients) {
-		$smser = Billrun_Factory::smser($message);
+		$smser = Billrun_Factory::smser();
 
 		//send sms
 		try {
 			//set recipents
 			$smser->recipients = $recipients;
+			//set message
+			$smser->message = $message;
+			
 			$ret = $smser->send();
 		} catch (Exception $e) {
 			Billrun_Factory::log()->log("Failed when trying to send  sms on alert results, Failed with : " . $e, Zend_Log::ERR);
