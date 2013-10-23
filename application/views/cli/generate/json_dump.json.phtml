@@ -1,0 +1,11 @@
+db.config.insert({key:'call_generator',unified_record_time:ISODate('<?= date('Y-m-d\TH:i:s\Z') ?>'),
+	from:ISODate('<?= date('Y-m-d\TH:i:s\Z',$data['from'])?>'),
+	to:ISODate('<?= date('Y-m-d\TH:i:s\Z',$data['to'])?>'),
+	test_id : "<?= $data['test_id'] ?>", 
+	test_script : [
+<?php foreach($data['actions'] as $action) {
+		echo(json_encode($action) . ",".PHP_EOL);
+	}
+	?>
+]});
+	
