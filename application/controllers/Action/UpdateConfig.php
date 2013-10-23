@@ -24,22 +24,22 @@ class UpdateconfigAction extends Action_Base {
 		Billrun_Factory::log()->log("Execute Update Config", Zend_Log::INFO);
 		$request = $this->getRequest()->getRequest(); // supports GET / POST requests
 		$configCol = Billrun_Factory::db()->configCollection();		
+		$entity = new Mongodloid_Entity($this->parseData($request),$configCol);		
 		
-		$entity = new Mongodloid_Entity($this->parseData($request),$configCol);
-		Billrun_Factory::log()->log('1 : ' .print_r($entity,1), Zend_Log::ERR);
 		if ($entity->isEmpty() || $entity->save($configCol) === false) {
 			return $this->setError('Failed to store configuration into DB', $request);
-		} else {
-			$this->removeOldEnteries($entity['key']);
-			$this->getController()->setOutput(array(array(
-					'status' => 1,
-					'desc' => 'success',
-					'stamp' => $entity['stamp'],
-					'input' => $request,
-			)));
-			return true;
 		}
+		
+		$this->removeOldEnteries($entity['key']);
+		$this->getController()->setOutput(array(array(
+				'status' => 1,
+				'desc' => 'success',
+				'stamp' => $entity['stamp'],
+				'input' => $request,
+		)));
+
 		Billrun_Factory::log()->log("Executed Update Config", Zend_Log::INFO);
+		return true;
 	}
 
 	/**
@@ -48,7 +48,7 @@ class UpdateconfigAction extends Action_Base {
 	 * @return \MongoDate
 	 */
 	protected function parseData($request) {
-		$data = json_decode($request['data']); //json_decode($request);		
+		$data = json_decode($request['data'],true); 
 		return $data;
 	}
 	
@@ -65,7 +65,7 @@ class UpdateconfigAction extends Action_Base {
 	}
 	
 	function setError($error_message, $input = null) {
-		Billrun_Factory::log()->log('Got Error : '. $error_message. ' ,with input of : ' .print_r($input,1), Zend_Log::ERR);
+		Billrun_Factory::log()->log('Got Error : '. $error_message. ' , with input of : ' .print_r($input,1), Zend_Log::ERR);
 		$output = array(
 			'status' => 0,
 			'desc' => $error_message,
