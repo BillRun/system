@@ -32,8 +32,19 @@ class Billrun_Generator_CallingScript extends Billrun_Generator {
 	 */
 	protected $scriptType = self::TYPE_REGULAR;
 	
-	protected $numbers = array("0586325444","0586792924"); //'',
+	/**
+	 *
+	 * @var type 
+	 */
+	protected $numbers = array("0586325444","0586792924"); 
 	
+	/**
+	 *
+	 * @var type 
+	 */
+	protected $durations = array(10,15,35,80,180);
+	
+	protected $callcount = 18000;
 	
 	public function __construct($options) {
 		parent::__construct($options);
@@ -42,6 +53,9 @@ class Billrun_Generator_CallingScript extends Billrun_Generator {
 		}
 		if (isset($options['numbers'])) {
 			$this->numbers = split(",",$options['numbers']);
+		}		
+		if (isset($options['durations'])) {
+			$this->numbers = split(",",$options['durations']);
 		}
 	}
 
@@ -49,7 +63,6 @@ class Billrun_Generator_CallingScript extends Billrun_Generator {
 	 * Generate the calls as defined in the configuration.
 	 */
 	public function generate() {
-		$durations = array(10,15,35,80,180);
 		$types = array('regular'=> 420,'busy' => 250 ,'no_answer' => 250 ,'voice_mail' => 250);
 		
 		$sides = array('callee','caller');
@@ -59,7 +72,7 @@ class Billrun_Generator_CallingScript extends Billrun_Generator {
 			return false;
 		}
 		
-		$offset =(int) strtotime("09:00:00") % 86400 ;
+		$offset =(int) strtotime("12:00:00") % 86400 ;
 		$actions = array();
 		$numbersCont = count($this->numbers);
 		for($i = 0; $i < $types[$this->scriptType]; $i++) {
@@ -67,7 +80,7 @@ class Billrun_Generator_CallingScript extends Billrun_Generator {
 		  $action['time'] = date('H:i:s',$offset);
 		  $action['from'] = $this->numbers[($i/$numbersCont) % $numbersCont];
 		  $action['to'] = $this->numbers[(1+ $i - ($i/$numbersCont)) % $numbersCont];
-		  $action['duration'] = ( $this->scriptType == 'voice_mail' ?  1.5  : $durations[$i %  count($durations)] );
+		  $action['duration'] = ( $this->scriptType == 'voice_mail' ?  1.5  : $this->durations[$i %  count($this->durations)] );
 		  $action['hangup'] = $sides[$i % count($sides)];
 		  $action['action_type'] = $this->scriptType;
 
@@ -75,7 +88,16 @@ class Billrun_Generator_CallingScript extends Billrun_Generator {
 		 $actions[] = $action;
 		}
 
-		return array("{$this->scriptType}.json.dump" => array('actions' => $actions , 'test_id' => $this->testId));
+		$startDay = strtotime(date('Ymd 00:00:00'));
+		$endDay = strtotime(date('Ymd 00:00:00',time()+(86400 * ($this->callcount / $types[$this->scriptType])) ));
+		$config = array('actions' => $actions , 'test_id' => $this->testId , 'from' => $startDay , 'to' => $endDay );
+		
+		if($this->options['to_remote']) {
+			foreach ($this->options['generator']['remote_servers_url'] as $host) {
+				$this->updateRemoteCallGen($config, $host);
+			}
+		}
+		return array("{$this->scriptType}.json.dump" => $config);
 	}
 
 	public function getTemplate($param= null) {
@@ -87,6 +109,15 @@ class Billrun_Generator_CallingScript extends Billrun_Generator {
 	 */
 	public function load() {
 
+	}
+	
+	public function updateRemoteCallGen($config,$host) {
+		
+		$client = new Zend_Http_Client($host);
+		$client->setParameterPost( array( 'data'  => json_encode($config) ) );
+		$response = $client->request('POST');
+		
+		return $response;
 	}
 
 }

@@ -21,6 +21,7 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 	const TYPE_NO_ANSWER = 'no_answer';
 	const MIN_MILLI_RESOLUTION = 1000;
 	const BUSY_WAIT_TIME = 5;
+	const WAITING_SLEEP_TIME = 1;
 
 	/**
 	 * the type of the object
@@ -40,9 +41,14 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 	protected $testId = false;
 
 	/**
-	 * The  state of the call generator.
+	 * The state of the call generator.
 	 */
 	protected $isWorking = true;	
+
+	protected $activeCall = false;	
+	protected $activeAction = false;	
+	protected $activeCallingState = false;	
+
 	
 	/**
 	 * The calling device.
@@ -76,10 +82,16 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 		}
 		if (count($this->modemDevices) > 0) {
 			while ($this->isWorking) {
+				//update  the  configuration if needed
 				if ($this->isConfigUpdated($this->testScript)) {
 					$this->load();
 				}
-				$this->actOnScript($this->testScript['test_script']);
+				//if  it time to take action do it  else wait for  a few seconds and check again.
+				if( time() > $this->testScript['from']->sec && time() < $this->testScript['to']->sec ) {
+					$this->actOnScript($this->testScript['test_script']);
+				} else {
+					sleep(self::WAITING_SLEEP_TIME);
+				}
 			}
 		} else {
 			Billrun_Factory::log("No active modem devices.", Zend_Log::NOTICE);
@@ -91,7 +103,7 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 	 * Load the script
 	 */
 	public function load() {
-
+		Billrun_Factory::log()->log("Loading latest Configuration.");
 		$testConfig = Billrun_Factory::db()->configCollection()->query(array('key' => 'call_generator'))->cursor()->sort(array('unified_record_time' => -1))->limit(1)->current();
 		if (!$testConfig->isEmpty()) {
 			$this->testScript = $testConfig->getRawData();
@@ -107,18 +119,31 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 		}
 		//Billrun_Factory::log("got script : " . print_r($this->testScript, 1));
 	}
+	
+	protected function handleChildSignals($signo) {
+		switch ($signo) {
+			case SIGTERM:            
+				$this->activeCall['end_result'] = 'call_killed';
+				$this->save($this->activeAction, $this->activeCall, $this->activeCallingState);
+				exit(-1);
+			default:
+				break;
+		}
+	}
 
 	/**
 	 * reset all connected modems
 	 */
-	protected function resetProcessing() {
-//		Billrun_Factory::log("Waiting for the calls to end...");
-//		$status = 0;
-//		foreach ($this->pids as $pid) {
-//			pcntl_s($pid, $status);
-//		}			
-//		Billrun_Factory::log("Calls ended.");
+	protected function resetModems() {
+		Billrun_Factory::log("Killing existing calls..");
+		if(!empty($this->pids)) {
+			foreach ($this->pids as $pid) {
+				posix_kill($pid, SIGTERM);
+			}			
+		}
 		$this->pids = array();
+		Billrun_Factory::log("Calls killed.");
+
 		foreach($this->modemDevices as $device) {
 			$device->hangUp();
 		}
@@ -133,10 +158,12 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 		$action = $this->waitForNextAction($script);
 		if ($action) {
 			//check if the number  speciifed in the action is one of the connected modems if so  act on the action.
-			$this->resetProcessing();
+			$this->resetModems();
 			foreach( array('from' => true, 'to' => false) as $key => $isCalling ) {
 				if($this->isConnectedModemNumber($action[$key]) != false) {
 					if (!($pid = pcntl_fork())) {
+						pcntl_signal(SIGTERM, array($this,'handleChildSignals'));
+						pcntl_signal(SIGABRT, array($this,'handleChildSignals'));
 						$this->scriptAction($action,$isCalling);
 						exit(0);
 					}
@@ -181,10 +208,13 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 		$device = $this->getConnectedModemByNumber($action[$isCalling ? 'from' : 'to']);
 		//make the calls and remember their results
 		$call = $this->getEmptyCall();
-
+		$this->activeCall = &$call;
+		$this->activeAction = $action;
+		$this->activeCallingState = $isCalling;
+		
 		if ($isCalling) {
 			if ($action['action_type'] == static::TYPE_BUSY) {
-				sleep( Billrun_Factory::config('calls.busy_wait_time', static::BUSY_WAIT_TIME,'int') );
+				sleep( intval(Billrun_Factory::config()->getConfigValue('calls.busy_wait_time', static::BUSY_WAIT_TIME)) );
 			}
 			$this->makeACall($device, $call, $action['to']);
 		} else {
@@ -268,7 +298,7 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 	protected function HandleCall($device, &$callRecord, $waitTime, $hangup  = true) {
 		Billrun_Factory::log("Handling an active call.");
 		$callRecord['call_start_time'] = new MongoDate(time());
-		$ret = $device->waitForCallToEnd($hangup ? $waitTime : $waitTime + static::BUSY_WAIT_TIME*2);
+		$ret = $device->waitForCallToEnd($hangup ? $waitTime : $waitTime + static::BUSY_WAIT_TIME);
 		if ($ret == Gsmodem_Gsmodem::NO_RESPONSE ) {
 				$device->hangUp();
 				$callRecord['end_result'] = 'hang_up';
@@ -332,9 +362,9 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 	 * Check if the configuration has been updated.
 	 */
 	protected function isConfigUpdated($currentConfig) {
-		$retVal = Billrun_Factory::db()->configCollection()->query(array('key' => 'call_generator',
-				'unified_record_time' => array('$gt' => $currentConfig['unified_record_time'],'$lte' => time()))
-			)->cursor()->limit(1)->current();
+		$retVal = Billrun_Factory::db()->configCollection()->query(array('key' => 'call_generator',			
+				'unified_record_time' => array('$gt' => $currentConfig['unified_record_time'] ,'$lt' =>  new MongoDate(time()) )
+			))->cursor()->limit(1)->current();
 		return !$retVal->isEmpty();
 	}
 
@@ -398,5 +428,4 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 		Billrun_Factory::log('Successfully saved.');
 		return true;
 	}
-
 }

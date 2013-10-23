@@ -7,3 +7,4 @@ workspace
 mongo/*.json
 *~
 exports
+/nbproject/private/
