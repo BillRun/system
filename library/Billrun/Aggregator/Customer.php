@@ -104,6 +104,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	public function load() {
 		$date = date(Billrun_Base::base_dateformat, strtotime(Billrun_Util::getLastChargeTime()));
 		$subscriber = Billrun_Factory::subscriber();
+		Billrun_Factory::log()->log("Loading page " . $this->page . " of size " . $this->size, Zend_Log::INFO);
 		$this->data = $subscriber->getList($this->page, $this->size, $date);
 
 		Billrun_Factory::log()->log("aggregator entities loaded: " . count($this->data), Zend_Log::INFO);
@@ -146,6 +147,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 					} else {
 						$subscriber_billrun->addSubscriber($sid);
 						$subscriber_lines = $this->getSubscriberLines($sid);
+						$subscriber_aggregated_data = $this->getSubscriberDataLines($sid);
 //						Billrun_Factory::log()->log("Found " . count($subscriber_lines) . " lines.", Zend_Log::DEBUG);
 						Billrun_Factory::log("Processing subscriber Lines $sid");
 						foreach ($subscriber_lines as $line) {
@@ -164,8 +166,8 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 							$line->save();
 							//Billrun_Factory::log("Done Processing subscriber Line for $sid : ".  microtime(true));
 						}
-
-						Billrun_Factory::log("Saving subscriber subscriber $sid");
+						
+						Billrun_Factory::log("Saving subscriber $sid");
 						//save  the billrun
 						$subscriber_billrun->save();
 					}
@@ -259,8 +261,54 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 			'billrun' => array(
 				'$exists' => false,
 			),
+			'type' => array(
+				'$ne' => 'ggsn',
+			),
 		);
-		return $this->lines->query($query)->cursor()->hint(array('sid' => 1));
+		$cursor = $this->lines->query($query)->cursor()->hint(array('sid' => 1));
+		$results = array();
+		foreach ($cursor as $entity) {
+			$results[] = $entity;
+		}
+		return $results;
+	}
+
+	protected function getSubscriberDataLines($sid) {
+		$match = array(
+			'$match' => array(
+				'sid' => $sid,
+				"type" => "ggsn",
+			)
+		);
+
+		$group = array(
+			'$group' => array(
+				'_id' => array(
+					'urt' => array(
+						'$substr' => array(
+							'$record_opening_time',
+							0,
+							8,
+						),
+					),
+					'rate' => '$arate',
+				),
+				'counters' => array(
+					'$sum' => '$usagev',
+				),
+				'over_plan' => array(
+					'$sum' => '$over_plan',
+				),
+				'out_plan' => array(
+					'$sum' => '$out_plan',
+				),
+				'lines' => array(
+					'$push' => '$_id',
+				),
+			),
+		);
+		$agg = $this->lines->aggregate($match, $group);
+		return $agg;
 	}
 
 	protected function loadRates() {
