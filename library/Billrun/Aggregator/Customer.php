@@ -62,6 +62,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	 * @var boolean is customer price vatable by default
 	 */
 	protected $vatable = true;
+	protected $rates;
 
 	/**
 	 *
@@ -146,8 +147,9 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 						continue;
 					} else {
 						$subscriber_billrun->addSubscriber($sid);
+						Billrun_Factory::log()->log("Querying subscriber " . $sid . " for lines...", Zend_Log::DEBUG);
 						$subscriber_lines = $this->getSubscriberLines($sid);
-						$subscriber_aggregated_data = $this->getSubscriberDataLines($sid);
+						Billrun_Factory::log()->log("Querying subscriber " . $sid . " for ggsn lines...", Zend_Log::DEBUG);
 //						Billrun_Factory::log()->log("Found " . count($subscriber_lines) . " lines.", Zend_Log::DEBUG);
 						Billrun_Factory::log("Processing subscriber Lines $sid");
 						foreach ($subscriber_lines as $line) {
@@ -166,7 +168,9 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 							$line->save();
 							//Billrun_Factory::log("Done Processing subscriber Line for $sid : ".  microtime(true));
 						}
-						
+						$subscriber_aggregated_data = $this->getSubscriberDataLines($sid);
+						$subscriber_billrun->updateAggregatedData($sid, $billrun_key, $subscriber_aggregated_data);
+
 						Billrun_Factory::log("Saving subscriber $sid");
 						//save  the billrun
 						$subscriber_billrun->save();
@@ -274,10 +278,25 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	}
 
 	protected function getSubscriberDataLines($sid) {
-		$match = array(
+		$end_time = new MongoDate(Billrun_Util::getEndTime($this->getStamp()));
+
+		$match_hint = array(
 			'$match' => array(
 				'sid' => $sid,
+		));
+		
+		$match = array(
+			'$match' => array(
 				"type" => "ggsn",
+				'urt' => array(
+					'$lt' => $end_time,
+				),
+				'aprice' => array(
+					'$exists' => true,
+				),
+				'billrun' => array(
+					'$exists' => false,
+				),
 			)
 		);
 
@@ -291,7 +310,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 							8,
 						),
 					),
-					'rate' => '$arate',
+					'arate' => '$arate',
 				),
 				'counters' => array(
 					'$sum' => '$usagev',
@@ -302,12 +321,52 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 				'out_plan' => array(
 					'$sum' => '$out_plan',
 				),
+				'in_plan_aprice' => array(
+					'$sum' => array(
+						'$cond' => array(
+							array(
+								'$and' => array(
+									array(
+										'$lt' => array('$over_plan', 0),
+									),
+									array(
+										'$lt' => array('$out_plan', 0),
+									),
+								),
+							),
+							'$aprice',
+							0,
+						),
+					),
+				),
+				'over_plan_aprice' => array(
+					'$sum' => array(
+						'$cond' => array(
+							array(
+								'$gt' => array('$over_plan', 0),
+							),
+							'$aprice',
+							0,
+						),
+					),
+				),
+				'out_plan_aprice' => array(
+					'$sum' => array(
+						'$cond' => array(
+							array(
+								'$gt' => array('$out_plan', 0),
+							),
+							'$aprice',
+							0,
+						),
+					),
+				),
 				'lines' => array(
 					'$push' => '$_id',
 				),
 			),
 		);
-		$agg = $this->lines->aggregate($match, $group);
+		$agg = $this->lines->aggregate($match_hint, $match, $group);
 		return $agg;
 	}
 
