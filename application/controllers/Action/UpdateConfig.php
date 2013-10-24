@@ -48,7 +48,11 @@ class UpdateconfigAction extends Action_Base {
 	 * @return \MongoDate
 	 */
 	protected function parseData($request) {
-		$data = json_decode($request['data'],true); 
+		$data = json_decode($request['data'],true);
+		$data['unified_record_time'] = new MongoDate(time());
+		$data['key'] = 'call_generator';
+		$data['from'] = new MongoDate($data['from']);
+		$data['to'] = new MongoDate($data['to']);
 		return $data;
 	}
 	
