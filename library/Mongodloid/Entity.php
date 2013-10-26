@@ -11,7 +11,7 @@ class Mongodloid_Entity implements ArrayAccess {
 	private $_collection;
 
 	const POPFIRST = 1;
-	
+
 	protected $w = 0;
 
 	private $_atomics = array(
@@ -142,7 +142,7 @@ class Mongodloid_Entity implements ArrayAccess {
 			throw new Mongodloid_Exception('You need to specify the collection');
 
 		$data = array(
-				'_id' => $this->getId()->getMongoID()
+			'_id' => $this->getId()->getMongoID()
 		);
 		return $this->_collection->update($data, $fields, array('w' => $this->w));
 	}
@@ -252,12 +252,24 @@ class Mongodloid_Entity implements ArrayAccess {
 		return $this->_values;
 	}
 
-	public function setRawData($data) {
+	/**
+	 * 
+	 * @param array $data
+	 * @param boolean $safe
+	 * @throws Mongodloid_Exception
+	 * @todo consider defaulting $safe to false because most of the time this is the behavior we want
+	 */
+	public function setRawData($data, $safe = true) {
 		if (!is_array($data))
 			throw new Mongodloid_Exception('Data must be an array!');
 
 		// prevent from making a link
-		$this->_values = unserialize(serialize($data));
+		if ($safe) {
+			$this->_values = unserialize(serialize($data));
+		}
+		else {
+			$this->_values = $data;
+		}
 	}
 
 	public function save($collection = null, $save = false, $w = null) {

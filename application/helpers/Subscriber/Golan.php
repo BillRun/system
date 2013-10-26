@@ -183,7 +183,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 //		$json =  '{'
 //				. '"7849648":{"subscribers":[{"subscriber_id":"398725","plan":"LARGE"}]},'
 //				. '"7403720":{"subscribers":[{"subscriber_id":"421063","plan":"LARGE"}]},'
-//				. '"1888610":{"subscribers":[{"subscriber_id":"342721","plan":"SMALL"}]}'
+//				. '"3206401":{"subscribers":[{"subscriber_id":"410669","plan":"LARGE"}]}'
 //				. '}'; // stub
 		if (!$json) {
 			return false;

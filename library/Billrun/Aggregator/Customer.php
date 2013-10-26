@@ -62,6 +62,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	 * @var boolean is customer price vatable by default
 	 */
 	protected $vatable = true;
+	protected $rates;
 
 	/**
 	 *
@@ -73,14 +74,14 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		parent::__construct($options);
 		if (isset($options['aggregator']['page']) && $options['aggregator']['page']) {
 			$this->page = $options['aggregator']['page'];
-		} 
+		}
 		if (isset($options['page']) && $options['page']) {
 			$this->page = $options['page'];
 			
 		}
 		if (isset($options['aggregator']['size']) && $options['aggregator']['size']) {
 			$this->size = $options['aggregator']['size'];
-		} 
+		}
 		if (isset($options['size']) && $options['size']) {
 			$this->size = $options['size'];
 		}
@@ -105,6 +106,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	public function load() {
 		$date = date(Billrun_Base::base_dateformat, strtotime(Billrun_Util::getLastChargeTime()));
 		$subscriber = Billrun_Factory::subscriber();
+		Billrun_Factory::log()->log("Loading page " . $this->page . " of size " . $this->size, Zend_Log::INFO);
 		$this->data = $subscriber->getList($this->page, $this->size, $date);
 
 		Billrun_Factory::log()->log("aggregator entities loaded: " . count($this->data), Zend_Log::INFO);
@@ -123,8 +125,8 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 
 		foreach ($this->data as $accid => $account) {
 			foreach ($account as $subscriber) {
-				if(	!Billrun_Factory::config()->isProd()){
-					if(	$this->testAcc && is_array($this->testAcc) && 
+				if (!Billrun_Factory::config()->isProd()) {
+					if ($this->testAcc && is_array($this->testAcc) &&
 						!in_array($accid, $this->testAcc)) {
 							//Billrun_Factory::log("Moving on nothing to see here... , account Id : $accid");
 							continue 2;
@@ -134,7 +136,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 				$aid = $subscriber->aid;
 				$sid = $subscriber->sid;
 				$plan_name = $subscriber->plan;
-				if (!isset($this->options['live_billrun_update']) || !$this->options['live_billrun_update']) {
+				if (empty($this->options['live_billrun_update'])) {
 					Billrun_Billrun::createBillrunIfNotExists($aid, $billrun_key);
 					$params = array(
 						'aid' => $aid,
@@ -146,11 +148,14 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 						continue;
 					} else {
 						$subscriber_billrun->addSubscriber($sid);
+						Billrun_Factory::log()->log("Querying subscriber " . $sid . " for lines...", Zend_Log::DEBUG);
 						$subscriber_lines = $this->getSubscriberLines($sid);
+						Billrun_Factory::log()->log("Querying subscriber " . $sid . " for ggsn lines...", Zend_Log::DEBUG);
+//						Billrun_Factory::log()->log("Found " . count($subscriber_lines) . " lines.", Zend_Log::DEBUG);
 						Billrun_Factory::log("Processing subscriber Lines $sid");
 						foreach ($subscriber_lines as $line) {
 							//Billrun_Factory::log("Processing subscriber Line for $sid : ".  microtime(true));
-							$line->collection(Billrun_Factory::db()->linesCollection());
+							$line->collection($this->lines);
 							$pricingData = array('aprice' => $line['aprice']);
 							if (isset($line['over_plan'])) {
 								$pricingData['over_plan'] = $line['over_plan'];
@@ -164,12 +169,12 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 							$line->save();
 							//Billrun_Factory::log("Done Processing subscriber Line for $sid : ".  microtime(true));
 						}
+						$subscriber_aggregated_data = $this->getSubscriberDataLines($sid);
+						$subscriber_billrun->updateAggregatedData($sid, $billrun_key, $subscriber_aggregated_data);
 						$subscriber_billrun->updateTotals();
-						Billrun_Factory::log("Saving subscriber subscriber $sid");
+						Billrun_Factory::log("Saving subscriber $sid");
 						//save  the billrun
 						$subscriber_billrun->save();
-						// @TODO: save the subscriber to billrun
-						// @TODO: add flat (maybe unified with old approach)
 					}
 				} //else {
 				//add the subscriber plan for next month
@@ -190,9 +195,10 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 						Billrun_Factory::log()->log("Flat costs already exist in billrun collection for subscriber " . $sid . " for billrun " . $billrun_key, Zend_Log::NOTICE);
 					} else {
 						Billrun_Billrun::setSubscriberStatus($aid, $sid, $billrun_key, $subscriber_status);
-						$flat_line['billrun'] =  $billrun_key;
+						//TODO Ask shani why was this removed.
+						//$flat_line['billrun'] =  $billrun_key;
 						//$flat_line['billrun_ref'] = $billrun->createRef($this->billrun);	
-						$flat_line->save($this->lines);
+						//$flat_line->save($this->lines);
 					}
 				}
 				//}
@@ -212,7 +218,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		$query = array(
 			'stamp' => $flat_entry['stamp'],
 			'aid' => $aid,
-			'sid' => $sid,			
+			'sid' => $sid,
 			'billrun_key' => $billrun_key,
 			'type' => 'flat',
 
@@ -265,8 +271,109 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 			'billrun' => array(
 				'$exists' => false,
 			),
+			'type' => array(
+				'$ne' => 'ggsn',
+			),
 		);
-		return $this->lines->query($query)->cursor()->hint(array('sid'=> 1));
+		$cursor = $this->lines->query($query)->cursor()->hint(array('sid' => 1));
+		$results = array();
+		foreach ($cursor as $entity) {
+			$results[] = $entity;
+		}
+		return $results;
+	}
+
+	protected function getSubscriberDataLines($sid) {
+		$end_time = new MongoDate(Billrun_Util::getEndTime($this->getStamp()));
+
+		$match_hint = array(
+			'$match' => array(
+				'sid' => $sid,
+		));
+		
+		$match = array(
+			'$match' => array(
+				"type" => "ggsn",
+				'urt' => array(
+					'$lt' => $end_time,
+				),
+				'aprice' => array(
+					'$exists' => true,
+				),
+				'billrun' => array(
+					'$exists' => false,
+				),
+			)
+		);
+
+		$group = array(
+			'$group' => array(
+				'_id' => array(
+					'urt' => array(
+						'$substr' => array(
+							'$record_opening_time',
+							0,
+							8,
+						),
+					),
+					'arate' => '$arate',
+				),
+				'counters' => array(
+					'$sum' => '$usagev',
+				),
+				'over_plan' => array(
+					'$sum' => '$over_plan',
+				),
+				'out_plan' => array(
+					'$sum' => '$out_plan',
+				),
+				'in_plan_aprice' => array(
+					'$sum' => array(
+						'$cond' => array(
+							array(
+								'$and' => array(
+									array(
+										'$lt' => array('$over_plan', 0),
+									),
+									array(
+										'$lt' => array('$out_plan', 0),
+									),
+								),
+							),
+							'$aprice',
+							0,
+						),
+					),
+				),
+				'over_plan_aprice' => array(
+					'$sum' => array(
+						'$cond' => array(
+							array(
+								'$gt' => array('$over_plan', 0),
+							),
+							'$aprice',
+							0,
+						),
+					),
+				),
+				'out_plan_aprice' => array(
+					'$sum' => array(
+						'$cond' => array(
+							array(
+								'$gt' => array('$out_plan', 0),
+							),
+							'$aprice',
+							0,
+						),
+					),
+				),
+				'lines' => array(
+					'$push' => '$_id',
+				),
+			),
+		);
+		$agg = $this->lines->aggregate($match_hint, $match, $group);
+		return $agg;
 	}
 
 	protected function loadRates() {
