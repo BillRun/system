@@ -512,7 +512,7 @@ class Billrun_Billrun {
 			$query = array_merge_recursive(self::getMatchingBillrunQuery($aid, $billrun_key), self::getOpenBillrunQuery(), self::getDistinctLinesBillrunQuery($sid, $usage_type, $row_ref));
 			$update = array_merge_recursive(self::getUpdateCostsQuery($pricingData, $row, $vatable), self::getUpdateDataCountersQuery($usage_type, $row), self::getPushLineQuery($usage_type, $row_ref), self::getUpdateBreakdownQuery($counters, $pricingData, $vatable, $plan_key, $category_key, $zone_key), self::getUpdateTotalsQuery($pricingData, $billrun_key, $vatable));
 			$fields = array();
-			$options = array();
+			$options = array('new'=> true);
 
 			try {
 				$doc = $billrun_coll->findAndModify($query, $update, $fields, $options);
@@ -889,6 +889,7 @@ class Billrun_Billrun {
 		*/
 		$newTotals = array('before_vat'=> 0, 'after_vat'=>0, 'vatable' => 0);
 	   foreach ($this->data['subs'] as $sub) {
+		   //Billrun_Factory::log(print_r($sub));
 		   $newTotals['before_vat'] += $sub['totals']['before_vat']; 
 		   $newTotals['after_vat'] +=  $sub['totals']['before_vat']; 
 		   $newTotals['vatable'] +=  $sub['totals']['vatable']; 
