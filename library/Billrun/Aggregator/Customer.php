@@ -138,7 +138,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 						'billrun_key' => $billrun_key,
 					);
 					$account_billrun = Billrun_Factory::billrun($params);
-					foreach ($account as $subscriber) {
+					foreach ($account as &$subscriber) {
 						$aid = $subscriber->aid;
 						$sid = $subscriber->sid;
 						$plan_name = $subscriber->plan;
@@ -179,9 +179,16 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 					}
 				}
 				$account_billrun->save();
+				if ($account_billrun) {
+					$account_billrun->updateTotals();
+					Billrun_Factory::log("Saving account $accid");
+					//save  the billrun
+					$account_billrun->save();
+					$account_billrun = false;
+				}
 			}
 
-			foreach ($account as $subscriber) {
+			foreach ($account as &$subscriber) {
 				Billrun_Factory::dispatcher()->trigger('beforeAggregateLine', array(&$subscriber, &$this));
 				$aid = $subscriber->aid;
 				$sid = $subscriber->sid;
@@ -210,15 +217,6 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 					}
 				}
 				//}
-			}
-			if (empty($this->options['live_billrun_update'])) {
-				if ($account_billrun) {
-					$account_billrun->updateTotals();
-					Billrun_Factory::log("Saving account $accid");
-					//save  the billrun
-					$account_billrun->save();
-					$account_billrun = false;
-				}
 			}
 
 			Billrun_Billrun::close($accid, $billrun_key, $this->min_invoice_id);
