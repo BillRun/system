@@ -164,7 +164,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 							$line->save();
 							//Billrun_Factory::log("Done Processing subscriber Line for $sid : ".  microtime(true));
 						}
-						
+						$subscriber_billrun->updateTotals();
 						Billrun_Factory::log("Saving subscriber subscriber $sid");
 						//save  the billrun
 						$subscriber_billrun->save();

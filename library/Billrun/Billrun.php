@@ -545,7 +545,7 @@ class Billrun_Billrun {
 			$billrun->addLineToSubscriber($counters, $row, $pricingData, $vatable, $sid, $billrun_key,$sraw); 
 			$billrun->updateCosts($pricingData, $row, $vatable, $sid,$sraw); // according to self::getUpdateCostsQuery
 			$billrun->setSubRawData($sid, $sraw);
-			$billrun->updateTotals($pricingData, $billrun_key, $vatable);		
+			//$billrun->updateTotals($pricingData, $billrun_key, $vatable);		
 		}
 	}
 
@@ -568,7 +568,7 @@ class Billrun_Billrun {
 
 		$doc = $billrun_coll->findAndModify($query, $update, $fields, $options);
 
-// recovery
+		// recovery
 		if ($doc->isEmpty()) { // billrun document was not found
 			$billrun = self::createBillrunIfNotExists($aid, $billrun_key);
 			if ($billrun->isEmpty()) { // means that the billrun was created so we can retry updating it
@@ -803,15 +803,11 @@ class Billrun_Billrun {
 	}	
 	
 	/**
-	 * Add pricing  data to the account totals.
-	 * @param array $pricingData the output array from updateSubscriberBalance function
-	 * @param string $billrun_key the billrun_key to insert into the billrun
-	 * @param boolean $vatable is the line vatable or not
-	 * @param sraw
+	 * Add pricing  data from the subscribers to the account totals.
 	 */
-	protected function updateTotals($pricingData, $billrun_key, $vatable ) {
+	public function updateTotals( ) {
 		$rawData= $this->data->getRawData();
-		
+		/*
 		if ($vatable) {
 			$rawData['totals']['vatable'] = $pricingData['aprice'];
 			$vat = self::getVATByBillrunKey($billrun_key);
@@ -821,7 +817,15 @@ class Billrun_Billrun {
 		}
 		$rawData['totals']['before_vat'] =  $this->getFieldVal($rawData,array('totals','before_vat'),0 ) + $pricingData['aprice'];
 		$rawData['totals']['after_vat'] =  $this->getFieldVal($rawData['totals'],array('after_vat'), 0) + $price_after_vat;
-		
+		$rawData['totals']['vatable'] = $pricingData['aprice'];
+		*/
+		$newTotals = array('before_vat'=> 0, 'after_vat'=>0, 'vatable' => 0);
+	   foreach ($this->data['subs'] as $sub) {
+		   $newTotals['before_vat'] += $sub['totals']['before_vat']; 
+		   $newTotals['after_vat'] +=  $sub['totals']['before_vat']; 
+		   $newTotals['vatable'] +=  $sub['totals']['vatable']; 
+	   }
+	   $rawData['totals'] = $newTotals;
 		$this->data->setRawData($rawData);
 	}
 
