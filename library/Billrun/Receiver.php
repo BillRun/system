@@ -28,7 +28,7 @@ abstract class Billrun_Receiver extends Billrun_Base {
 	 * @var string
 	 */
 	protected $workspace;
-	
+
 	/**
 	 *
 	 * @var boolean whether to preserve the modification timestamps of the received files
@@ -41,23 +41,21 @@ abstract class Billrun_Receiver extends Billrun_Base {
 	 * @param string
 	 */
 	protected $filenameRegex = '/.*/';
-	
-	
+
 	public function __construct($options = array()) {
 		parent::__construct($options);
-						
+
 		if (isset($options['filename_regex'])) {
 			$this->filenameRegex = $options['filename_regex'];
 		}
-		if(isset($options['receiver']['limit']) && $options['receiver']['limit']) {
+		if (isset($options['receiver']['limit']) && $options['receiver']['limit']) {
 			$this->setLimit($options['receiver']['limit']);
-		} 
-		if(isset($options['receiver']['preserve_timestamps'])) {
+		}
+		if (isset($options['receiver']['preserve_timestamps'])) {
 			$this->preserve_timestamps = $options['receiver']['preserve_timestamps'];
-		} 
-
+		}
 	}
-	
+
 	/**
 	 * general function to receive
 	 *
@@ -70,7 +68,7 @@ abstract class Billrun_Receiver extends Billrun_Base {
 	 * 
 	 * @todo refactoring this method
 	 */
-	protected function logDB($path, $remoteHost = null, $extraData = false ) {
+	protected function logDB($path, $remoteHost = null, $extraData = false) {
 		$log = Billrun_Factory::db()->logCollection();
 
 		$log_data = array(
@@ -78,12 +76,12 @@ abstract class Billrun_Receiver extends Billrun_Base {
 			'path' => $path,
 			'file_name' => basename($path),
 		);
-		
+
 		if (!is_null($remoteHost)) {
 			$log_data['retrieved_from'] = $remoteHost;
 		}
-		
-		if($extraData) {
+
+		if ($extraData) {
 			$log_data['extra_data'] = $extraData;
 		}
 
@@ -103,11 +101,20 @@ abstract class Billrun_Receiver extends Billrun_Base {
 	/**
 	 * method to check if the file already processed
 	 */
-	protected function isFileReceived($filename, $type) {
+	protected function isFileReceived($filename, $type, $more_fields = array()) {
 		$log = Billrun_Factory::db()->logCollection();
-		$query = array();
+		
+		$query = array(
+			'source' => $type,
+			'file_name' => $filename,
+		);
+
+		if (!empty($more_fields)) {
+			$query = array_merge($query, $more_fields);
+		}
+		
 		Billrun_Factory::dispatcher()->trigger('alertisFileReceivedQuery', array(&$query, $type, $this));
-		$resource = $log->query($query)->equals('source', $type)->equals('file_name', $filename)->cursor()->limit(1);
+		$resource = $log->query($query)->cursor()->limit(1);
 		return $resource->count() > 0;
 	}
 	
@@ -117,7 +124,7 @@ abstract class Billrun_Receiver extends Billrun_Base {
 	 */
 	protected function isFileValid($filename, $path) {
 		//igonore hidden files
-		return preg_match( ( $this->filenameRegex ? $this->filenameRegex : "/^[^\.]/" ), $filename);
+		return preg_match(( $this->filenameRegex ? $this->filenameRegex : "/^[^\.]/"), $filename);
 	}
 
 }

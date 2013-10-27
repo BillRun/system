@@ -107,7 +107,11 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 			$extraData = array();
 			Billrun_Factory::log()->log("FTP: Found file " . $file->name . " on remote host", Zend_Log::DEBUG);
 			Billrun_Factory::dispatcher()->trigger('beforeFTPFileReceived', array(&$file, $this, $hostName, &$extraData));
-			if ($file->isFile() && $this->isFileValid($file->name, $file->path)) {
+			$isFileReceivedMoreFields = array('retrieved_from' => $hostName);
+			if ($extraData) {
+				$isFileReceivedMoreFields['extra_data'] = $extraData;
+			}
+			if ($file->isFile() && $this->isFileValid($file->name, $file->path) && !$this->isFileReceived($file->name, static::$type, $isFileReceivedMoreFields)) {
 				Billrun_Factory::log()->log("FTP: Download file " . $file->name . " from remote host", Zend_Log::INFO);
 				$targetPath = $this->workspace;
 				if (substr($targetPath, -1) != '/') {
@@ -177,3 +181,4 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 	}
 
 }
+

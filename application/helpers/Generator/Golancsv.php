@@ -266,7 +266,6 @@ class Generator_Golancsv extends Billrun_Generator {
 
 	protected function getTotalVat($subscriber) {
 		return $this->getTotalAfterVat($subscriber) - $this->getTotalBeforeVat($subscriber);
-		;
 	}
 
 	protected function getTotalCharge($subscriber) {

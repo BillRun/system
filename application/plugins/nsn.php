@@ -92,19 +92,19 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 		$extraData['month'] = date('Ym', strtotime($file->extraData['date']));
 	}
 
-	/**
-	 *  (dispatcher hook)
-	 *  @param $query the query to prform on the DB to detect is the file was received.
-	 *  @param $type the type of file to check
-	 *  @param $receiver the reciver instance.
-	 */
-	public function alertisFileReceivedQuery(&$query, $type, $receiver) {
-		if ($type != $this->getName()) {
-			return;
-		}
-		//check if the file was received more then an hour ago.
-		$query['extra_data.month'] = array('$gt' => date('Ym', strtotime('previous month')));
-	}
+//	/**
+//	 *  (dispatcher hook)
+//	 *  @param $query the query to prform on the DB to detect is the file was received.
+//	 *  @param $type the type of file to check
+//	 *  @param $receiver the reciver instance.
+//	 */
+//	public function alertisFileReceivedQuery(&$query, $type, $receiver) {
+//		if ($type != $this->getName()) {
+//			return;
+//		}
+//		//check if the file was received more then an hour ago.
+//		$query['extra_data.month'] = array('$gt' => date('Ym', strtotime('previous month')));
+//	}
 
 	/**
 	 * @see Billrun_Plugin_BillrunPluginFraud::handlerCollect
