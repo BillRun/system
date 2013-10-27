@@ -16,6 +16,8 @@
  */
 class Generator_Golancsv extends Billrun_Generator {
 
+	const BYTES_IN_KB = 1024;
+	
 	protected $accountsCsvPath;
 	protected $subscribersCsvPath;
 
@@ -314,7 +316,7 @@ class Generator_Golancsv extends Billrun_Generator {
 				$countOfKb+=$data_by_day;
 			}
 		}
-		return $countOfKb;
+		return $countOfKb/static::BYTES_IN_KB;
 	}
 
 	/**

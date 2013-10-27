@@ -891,7 +891,7 @@ class Billrun_Billrun {
 	   foreach ($this->data['subs'] as $sub) {
 		   //Billrun_Factory::log(print_r($sub));
 		   $newTotals['before_vat'] += $sub['totals']['before_vat']; 
-		   $newTotals['after_vat'] +=  $sub['totals']['before_vat']; 
+		   $newTotals['after_vat'] +=  $sub['totals']['after_vat']; 
 		   $newTotals['vatable'] +=  $sub['totals']['vatable']; 
 	   }
 	   $rawData['totals'] = $newTotals;
