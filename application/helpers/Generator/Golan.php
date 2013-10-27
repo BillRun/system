@@ -25,9 +25,17 @@ class Generator_Golan extends Billrun_Generator {
 	public function __construct($options) {
 		self::$type = 'golan';
 		parent::__construct($options);
+		if(isset($options['generator']['ids'])) {
+			$this->server_id = intval($options['generator']['ids']);
+		}
+		
+		if(isset($options['generator']['count'])) {
+			$this->server_count = intval($options['generator']['count']);
+		}
 	}
 
 	public function generate() {
+		Billrun_Factory::log("Generating invoices  with  server id of : {$this->server_id} out of : {$this->server_count}");
 		$this->createXmlFiles();
 	}
 
