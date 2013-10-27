@@ -923,7 +923,7 @@ class Billrun_Billrun {
 	 */
 	protected static function getRateById($id) {
 		if (!isset(self::$rates[$id])) {
-			self::$rates[$id] = MongoDBRef::create('rates', new MongoId($id));
+			self::$rates[$id] = Billrun_Factory::db()->ratesCollection()->findOne($id);
 		}
 		return self::$rates[$id];
 	}
