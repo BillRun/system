@@ -48,7 +48,7 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 			$this->workspace = $options['workspace'];
 		}
 
-		
+
 		Zend_Ftp_Factory::registerParserType(Zend_Ftp::UNKNOWN_SYSTEM_TYPE, 'Zend_Ftp_Parser_NsnFtpParser');
 		Zend_Ftp_Factory::registerInteratorType(Zend_Ftp::UNKNOWN_SYSTEM_TYPE, 'Zend_Ftp_Directory_NsnIterator');
 		Zend_Ftp_Factory::registerFileType(Zend_Ftp::UNKNOWN_SYSTEM_TYPE, 'Zend_Ftp_File_NsnCDRFile');
@@ -100,7 +100,7 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 	protected function receiveFromHost($hostName, $config) {
 		$ret = array();
 		$files = $this->ftp->getDirectory($config['remote_directory'])->getContents();
-		
+
 		Billrun_Factory::log()->log("FTP: Starting to receive from remote host : $hostName", Zend_Log::DEBUG);
 		$count = 0;
 		foreach ($this->sortByFileDate($files) as $file) {
@@ -109,12 +109,19 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 			Billrun_Factory::dispatcher()->trigger('beforeFTPFileReceived', array(&$file, $this, $hostName, &$extraData));
 			if ($file->isFile() && $this->isFileValid($file->name, $file->path)) {
 				Billrun_Factory::log()->log("FTP: Download file " . $file->name . " from remote host", Zend_Log::INFO);
-				if ($file->saveToPath($this->workspace, null, 0, true) === FALSE) { // the last arg declare try to recover on failure
+				$targetPath = $this->workspace;
+				if (substr($targetPath, -1) != '/') {
+					$targetPath .= '/';
+				}
+				$targetPath.=date("Ym") . DIRECTORY_SEPARATOR . substr(md5(serialize($config)), 0, 7) . DIRECTORY_SEPARATOR;
+				if (!file_exists($targetPath)) {
+					mkdir($targetPath, 0777, true);
+				}
+				if ($file->saveToPath($targetPath, null, 0, true) === FALSE) { // the last arg declare try to recover on failure
 					Billrun_Factory::log()->log("FTP: failed to download " . $file->name . " from remote host", Zend_Log::ALERT);
 					continue;
 				}
-
-				$received_path = $this->workspace . $file->name;
+				$received_path = $targetPath . $file->name;
 				if ($this->preserve_timestamps) {
 					$timestamp = $file->getModificationTime();
 					if ($timestamp !== FALSE) {
@@ -139,25 +146,25 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 		}
 		return $ret;
 	}
-	
+
 	/**
 	 * Sort an array of files returned by the ftp  by the  file date  and  file name
 	 * @param type $files the ftp  directrory iterator
 	 * @return type
 	 */
 	protected function sortByFileDate($files) {
-		if(!is_array($files)) {
+		if (!is_array($files)) {
 			$files = iterator_to_array($files);
 		}
-		usort($files, function ($a,$b) {			
-			if($a->isFile() && $b->isFile() && 
-				isset($a->extraData['date']) && isset($b->extraData['date'])) {		
-				return ($a->extraData['date'] - $b->extraData['date']) + (strcmp($a->name,$b->name) * 0.1);
-			}
-			
-			return strcmp($a->name,$b->name);
-		});
-		
+		usort($files, function ($a, $b) {
+					if ($a->isFile() && $b->isFile() &&
+							isset($a->extraData['date']) && isset($b->extraData['date'])) {
+						return ($a->extraData['date'] - $b->extraData['date']) + (strcmp($a->name, $b->name) * 0.1);
+					}
+
+					return strcmp($a->name, $b->name);
+				});
+
 		return $files;
 	}
 

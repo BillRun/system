@@ -113,7 +113,6 @@ class Zend_Ftp_File {
 		if (substr($path, -1) != '/') {
 			$path = $path . '/';
 		}
-
 		return $this->saveToFile($path . basename($this->_name), $mode, $offset, $autoRecover);
 	}
 
