@@ -62,14 +62,14 @@ class Billrun_Billrun {
 		$this->data->collection($billrun_coll);
 		return $this;
 	}
-
+	
 	/**
 	 * Save the current billrun
 	 * @param type $param
 	 * @return type
 	 */
 	public function save() {
-
+		
 		return isset($this->data) ? $this->data->save() : false;
 	}
 
@@ -113,7 +113,6 @@ class Billrun_Billrun {
 	}
 
 	protected static $vatsByBillrun = array();
-
 	protected static function getVATByBillrunKey($billrun_key) {
 		if (!isset(self::$vatsByBillrun[$billrun_key])) {
 			$billrun_end_time = Billrun_Util::getEndTime($billrun_key);
@@ -182,11 +181,11 @@ class Billrun_Billrun {
 	 * @todo Needs refactoring
 	 */
 	protected function getSubRawData($sid) {
-		foreach ($this->data['subs'] as $sub_entry) {
-			if ($sub_entry['sid'] == $sid) {
-				return $sub_entry;
+			foreach ($this->data['subs'] as $sub_entry) {
+				if ($sub_entry['sid'] == $sid) {
+					return $sub_entry;
+				}
 			}
-		}
 		return false;
 	}
 
@@ -208,7 +207,7 @@ class Billrun_Billrun {
 		$data['subs'][] = $rawData;
 		return false;
 	}
-
+	
 	/**
 	 * get the account's latest open billrun
 	 * @param int $aid
@@ -504,7 +503,7 @@ class Billrun_Billrun {
 		$sid = $row['sid'];
 
 		list($plan_key, $category_key, $zone_key) = self::getBreakdownKeys($row, $pricingData, $vatable);
-
+		
 		if (is_null($billrun)) {
 			$billrun_coll = Billrun_Factory::db()->billrunCollection();
 			$usage_type = self::getGeneralUsageType($row['usaget']);
@@ -513,7 +512,7 @@ class Billrun_Billrun {
 			$query = array_merge_recursive(self::getMatchingBillrunQuery($aid, $billrun_key), self::getOpenBillrunQuery(), self::getDistinctLinesBillrunQuery($sid, $usage_type, $row_ref));
 			$update = array_merge_recursive(self::getUpdateCostsQuery($pricingData, $row, $vatable), self::getUpdateDataCountersQuery($usage_type, $row), self::getPushLineQuery($usage_type, $row_ref), self::getUpdateBreakdownQuery($counters, $pricingData, $vatable, $plan_key, $category_key, $zone_key), self::getUpdateTotalsQuery($pricingData, $billrun_key, $vatable));
 			$fields = array();
-			$options = array();
+			$options = array('new'=> true);
 
 			try {
 				$doc = $billrun_coll->findAndModify($query, $update, $fields, $options);
@@ -547,7 +546,7 @@ class Billrun_Billrun {
 			$billrun->addLineToSubscriber($counters, $row, $pricingData, $vatable, $sid, $billrun_key, $sraw);
 			$billrun->updateCosts($pricingData, $row, $vatable, $sid, $sraw); // according to self::getUpdateCostsQuery
 			$billrun->setSubRawData($sid, $sraw);
-			$billrun->updateTotals($pricingData, $billrun_key, $vatable);
+			//$billrun->updateTotals($pricingData, $billrun_key, $vatable);		
 		}
 	}
 
@@ -566,18 +565,18 @@ class Billrun_Billrun {
 				$all_lines[] = $mongo_id;
 				$refs[] = MongoDBRef::create('lines', $mongo_id);
 			}
-			$sraw['lines']['data']['refs'] = array_merge($this->getFieldVal($sraw, array('lines','data','refs'), array()), $refs);
+			$sraw['lines']['data']['refs'] = array_merge($this->getFieldVal($sraw['lines']['data']['refs'], array()), $refs);
 			$arate = self::getRateById(strval($agg_data['_id']['arate']['$id']));
 			if (empty($arate['key'])) {
 				continue;
 			}
 			$arate_key = $arate['key'];
-			$breakdown_data['in_plan'][$arate_key]['usagev'] = $this->getFieldVal($breakdown_data, array('in_plan', $arate_key, 'usagev'), 0) + $agg_data['counters'] - $agg_data['over_plan'] - $agg_data['out_plan'];
-			$breakdown_data['over_plan'][$arate_key]['usagev'] = $this->getFieldVal($breakdown_data, array('over_plan', $arate_key, 'usagev'), 0) + $agg_data['over_plan'];
-			$breakdown_data['out_plan'][$arate_key]['usagev'] = $this->getFieldVal($breakdown_data, array('out_plan', $arate_key, 'usagev'), 0) + $agg_data['out_plan'];
-			$breakdown_data['in_plan'][$arate_key]['cost'] = $this->getFieldVal($breakdown_data['in_plan'][$arate_key], array('cost'), 0) + $agg_data['in_plan_aprice'];
-			$breakdown_data['over_plan'][$arate_key]['cost'] = $this->getFieldVal($breakdown_data['over_plan'][$arate_key], array('cost'), 0) + $agg_data['over_plan_aprice'];
-			$breakdown_data['out_plan'][$arate_key]['cost'] = $this->getFieldVal($breakdown_data['out_plan'][$arate_key], array('cost'), 0) + $agg_data['out_plan_aprice'];
+			$breakdown_data['in_plan'][$arate_key]['usagev'] = $this->getFieldVal($breakdown_data['in_plan'][$arate_key]['usagev'], 0) + $agg_data['counters'] - $agg_data['over_plan'] - $agg_data['out_plan'];
+			$breakdown_data['over_plan'][$arate_key]['usagev'] = $this->getFieldVal($breakdown_data['over_plan'][$arate_key]['usagev'], 0) + $agg_data['over_plan'];
+			$breakdown_data['out_plan'][$arate_key]['usagev'] = $this->getFieldVal($breakdown_data['out_plan'][$arate_key]['usagev'], 0) + $agg_data['out_plan'];
+			$breakdown_data['in_plan'][$arate_key]['cost'] = $this->getFieldVal($breakdown_data['in_plan'][$arate_key]['cost'], 0) + $agg_data['in_plan_aprice'];
+			$breakdown_data['over_plan'][$arate_key]['cost'] = $this->getFieldVal($breakdown_data['over_plan'][$arate_key]['cost'], 0) + $agg_data['over_plan_aprice'];
+			$breakdown_data['out_plan'][$arate_key]['cost'] = $this->getFieldVal($breakdown_data['out_plan'][$arate_key]['cost'], 0) + $agg_data['out_plan_aprice'];
 			$vatable_costs['in_plan']+=$agg_data['in_plan_aprice'];
 			$vatable_costs['over_plan']+=$agg_data['over_plan_aprice'];
 			$vatable_costs['out_plan']+=$agg_data['out_plan_aprice'];
@@ -586,34 +585,34 @@ class Billrun_Billrun {
 		}
 		foreach ($breakdown_data as $plan_key => $plan_data) {
 			foreach ($plan_data as $rate_key => $rate_data) {
-				$sraw['breakdown'][$plan_key]['base'][$rate_key]['totals']['data']['usagev'] = $this->getFieldVal($sraw, array('breakdown', $plan_key, 'base', $rate_key, 'totals', 'data', 'usagev'), 0) + $rate_data['usagev'];
-				$sraw['breakdown'][$plan_key]['base'][$rate_key]['totals']['data']['cost'] = $this->getFieldVal($sraw['breakdown'][$plan_key]['base'][$rate_key]['totals']['data'], array('cost'), 0) + $rate_data['cost'];
-				$sraw['breakdown'][$plan_key]['base'][$rate_key]['cost'] = $this->getFieldVal($sraw['breakdown'][$plan_key]['base'][$rate_key], array('cost'), 0) + $sraw['breakdown'][$plan_key]['base'][$rate_key]['totals']['data']['cost'];
+				$sraw['breakdown'][$plan_key]['base'][$rate_key]['totals']['data']['usagev'] = $this->getFieldVal($sraw['breakdown'][$plan_key]['base'][$rate_key]['totals']['data']['usagev'], 0) + $rate_data['usagev'];
+				$sraw['breakdown'][$plan_key]['base'][$rate_key]['totals']['data']['cost'] = $this->getFieldVal($sraw['breakdown'][$plan_key]['base'][$rate_key]['totals']['data']['cost'], 0) + $rate_data['cost'];
+				$sraw['breakdown'][$plan_key]['base'][$rate_key]['cost'] = $this->getFieldVal($sraw['breakdown'][$plan_key]['base'][$rate_key]['cost'], 0) + $sraw['breakdown'][$plan_key]['base'][$rate_key]['totals']['data']['cost'];
 				$sraw['breakdown'][$plan_key]['base'][$rate_key]['vat'] = floatval($this->vat);
 			}
 		}
-		$sraw['costs']['flat']['vatable'] = $this->getFieldVal($sraw, array('costs','flat','vatable'), 0) + $vatable_costs['in_plan'];
-		$sraw['costs']['over_plan']['vatable'] = $this->getFieldVal($sraw, array('costs','over_plan','vatable'), 0) + $vatable_costs['over_plan'];
-		$sraw['costs']['out_plan']['vatable'] = $this->getFieldVal($sraw, array('costs','out_plan','vatable'), 0) + $vatable_costs['out_plan'];
+		$sraw['costs']['flat']['vatable'] = $this->getFieldVal($sraw['costs']['flat']['vatable'], 0) + $vatable_costs['in_plan'];
+		$sraw['costs']['over_plan']['vatable'] = $this->getFieldVal($sraw['costs']['over_plan']['vatable'], 0) + $vatable_costs['over_plan'];
+		$sraw['costs']['out_plan']['vatable'] = $this->getFieldVal($sraw['costs']['out_plan']['vatable'], 0) + $vatable_costs['out_plan'];
 		
 		$total_vatable = $sraw['costs']['flat']['vatable'] + $sraw['costs']['over_plan']['vatable'] + $sraw['costs']['out_plan']['vatable'];
 		$price_after_vat = ($total_vatable) + ($total_vatable) * $this->vat;
-		$sraw['totals']['vatable'] = $this->getFieldVal($sraw, array('totals','vatable'), 0) + $total_vatable;
-		$sraw['totals']['before_vat'] = $this->getFieldVal($sraw['totals'], array('before_vat'), 0) + $total_vatable;
-		$sraw['totals']['after_vat'] = $this->getFieldVal($sraw['totals'], array('after_vat'), 0) + $price_after_vat;
+		$sraw['totals']['vatable'] = $this->getFieldVal($sraw['totals']['vatable'], 0) + $total_vatable;
+		$sraw['totals']['before_vat'] = $this->getFieldVal($sraw['totals']['before_vat'], 0) + $total_vatable;
+		$sraw['totals']['after_vat'] = $this->getFieldVal($sraw['totals']['after_vat'], 0) + $price_after_vat;
 		$this->setSubRawData($sid, $sraw);
 		
 		$rawData = $this->data->getRawData();
-		$rawData['totals']['vatable'] = $this->getFieldVal($rawData, array('totals','vatable'), 0) + $total_vatable;
-		$rawData['totals']['before_vat'] = $this->getFieldVal($rawData['totals'], array('before_vat'), 0) + $total_vatable;
-		$rawData['totals']['after_vat'] = $this->getFieldVal($rawData['totals'], array('after_vat'), 0) + $price_after_vat;
+		$rawData['totals']['vatable'] = $this->getFieldVal($rawData['totals']['vatable'], 0) + $total_vatable;
+		$rawData['totals']['before_vat'] = $this->getFieldVal($rawData['totals']['before_vat'], 0) + $total_vatable;
+		$rawData['totals']['after_vat'] = $this->getFieldVal($rawData['totals']['after_vat'], 0) + $price_after_vat;
 		$this->data->setRawData($rawData, false);
 		
 		$query = array('_id' => array('$in' => $all_lines));
 		$update = array('$set' => array('billrun' => $billrun_key));
 		Billrun_Factory::db()->linesCollection()->update($query, $update, array('multiple' => true));
 	}
-
+	
 	/**
 	 * @TODO
 	 * @param int $aid the account id
@@ -776,7 +775,6 @@ class Billrun_Billrun {
 	 */
 	static public function initRuntimeBillrunKey() {
 		self::$runtime_billrun_key = Billrun_Util::getBillrunKey(time());
-		
 	}
 
 	/**
@@ -787,7 +785,7 @@ class Billrun_Billrun {
 	 * @param array $sraw the subscriber raw data
 	 */
 	protected function updateCosts($pricingData, $row, $vatable, $sid, &$sraw) {
-
+		
 		$vat_key = ($vatable ? "vatable" : "vat_free");
 		if (isset($pricingData['over_plan']) && $pricingData['over_plan']) {
 			if (!isset($sraw['costs']['over_plan'][$vat_key])) {
@@ -814,8 +812,9 @@ class Billrun_Billrun {
 				$sraw['costs']['credit'][$row['credit_type']][$vat_key] += $pricingData['aprice'];
 			}
 		}
+		
 	}
-
+	
 	/**
 	 * Add pricing and usage counters to the subscriber billrun breakdown.
 	 * @param array $counters keys - usage type. values - amount of usage. Currently supports only arrays of one element
@@ -825,7 +824,7 @@ class Billrun_Billrun {
 	 * @param string $billrun_key the billrun_key of the billrun
 	 */
 	protected function addLineToSubscriber($counters, $row, $pricingData, $vatable, $sid, $billrun_key, &$sraw) {
-
+	
 		$usage_type = self::getGeneralUsageType($row['usaget']);
 		list($plan_key, $category_key, $zone_key) = self::getBreakdownKeys($row, $pricingData, $vatable);
 		$zone = &$sraw['breakdown'][$plan_key][$category_key][$zone_key];
@@ -835,37 +834,37 @@ class Billrun_Billrun {
 				if (isset($pricingData['over_plan']) && $pricingData['over_plan'] < current($counters)) { // volume is partially priced (in & over plan)
 					$volume_priced = $pricingData['over_plan'];
 					$planZone = &$sraw['breakdown']['in_plan'][$category_key][$zone_key];
-					$planZone['totals'][key($counters)]['usagev'] = $this->getFieldVal($planZone, array('totals', key($counters), 'usagev'), 0) + current($counters) - $volume_priced; // add partial usage to flat
+					$planZone['totals'][key($counters)]['usagev'] = $this->getFieldVal($planZone['totals'][key($counters)]['usagev'], 0) + current($counters) - $volume_priced; // add partial usage to flat
 				} else {
 					$volume_priced = current($counters);
 				}
-				$zone['totals'][key($counters)]['usagev'] = $this->getFieldVal($zone, array('totals', key($counters), 'usagev'), 0) + $volume_priced;
-				$zone['totals'][key($counters)]['cost'] = $this->getFieldVal($zone['totals'][key($counters)], array('cost'), 0) + $pricingData['aprice'];
+				$zone['totals'][key($counters)]['usagev'] = $this->getFieldVal($zone['totals'][key($counters)]['usagev'], 0) + $volume_priced;
+				$zone['totals'][key($counters)]['cost'] = $this->getFieldVal($zone['totals'][key($counters)]['cost'], 0) + $pricingData['aprice'];
 			}
 			if ($plan_key != 'in_plan') {
-				$zone['cost'] = $this->getFieldVal($zone, array('cost'), 0) + $pricingData['aprice'];
+				$zone['cost'] = $this->getFieldVal($zone['cost'], 0) + $pricingData['aprice'];
 			}
 			$zone['vat'] = ($vatable ? floatval($this->vat) : 0); //@TODO we assume here that all the lines would be vatable or all vat-free
 		} else {
-			$zone = $pricingData['aprice'];
+				$zone = $pricingData['aprice'];
 		}
 		$sraw['lines'][$usage_type]['refs'][] = $row->createRef();
 		if ($usage_type == 'data' && $row['type'] != 'tap3') {
 			$date_key = date("Ymd", $row['urt']->sec);
-			$sraw['lines'][$usage_type]['counters'][$date_key] = $this->getFieldVal($sraw['lines'][$usage_type], array('counters', $date_key), 0) + $row['usagev'];
+			$sraw['lines'][$usage_type]['counters'][$date_key] = $this->getFieldVal($sraw['lines'][$usage_type]['counters'][$date_key], 0) + $row['usagev'];
 		}
 
-
+		
 		if ($vatable) {
-			$sraw['totals']['vatable'] = $this->getFieldVal($sraw, array('totals', 'vatable'), 0) + $pricingData['aprice'];
+			$sraw['totals']['vatable'] = $this->getFieldVal($sraw['totals']['vatable'], 0) + $pricingData['aprice'];
 			$price_after_vat = $pricingData['aprice'] + ($pricingData['aprice'] * self::getVATByBillrunKey($billrun_key));
 		} else {
 			$price_after_vat = $pricingData['aprice'];
 		}
-		$sraw['totals']['before_vat'] = $this->getFieldVal($sraw, array('totals', 'before_vat'), 0) + $pricingData['aprice'];
-		$sraw['totals']['after_vat'] = $this->getFieldVal($sraw['totals'], array('after_vat'), 0) + $price_after_vat;
+		$sraw['totals']['before_vat'] = $this->getFieldVal($sraw['totals']['before_vat'], 0) + $pricingData['aprice'];
+		$sraw['totals']['after_vat'] = $this->getFieldVal($sraw['totals']['after_vat'], 0) + $price_after_vat;
 	}
-
+	
 	/**
 	 * Add pricing  data to the account totals.
 	 * @param array $pricingData the output array from updateSubscriberBalance function
@@ -873,9 +872,10 @@ class Billrun_Billrun {
 	 * @param boolean $vatable is the line vatable or not
 	 * @param sraw
 	 */
-	protected function updateTotals($pricingData, $billrun_key, $vatable) {
-		$rawData = $this->data->getRawData();
-
+	public function updateTotals( ) {
+		$rawData= $this->data->getRawData();
+		/*
+		
 		if ($vatable) {
 			$rawData['totals']['vatable'] = $pricingData['aprice'];
 			$vat = self::getVATByBillrunKey($billrun_key);
@@ -883,25 +883,29 @@ class Billrun_Billrun {
 		} else {
 			$price_after_vat = $pricingData['aprice'];
 		}
-		$rawData['totals']['before_vat'] = $this->getFieldVal($rawData, array('totals', 'before_vat'), 0) + $pricingData['aprice'];
-		$rawData['totals']['after_vat'] = $this->getFieldVal($rawData['totals'], array('after_vat'), 0) + $price_after_vat;
-
-		$this->data->setRawData($rawData, false);
+		$rawData['totals']['before_vat'] =  $this->getFieldVal($rawData,array('totals','before_vat'),0 ) + $pricingData['aprice'];
+		$rawData['totals']['after_vat'] =  $this->getFieldVal($rawData['totals'],array('after_vat'), 0) + $price_after_vat;
+		$rawData['totals']['vatable'] = $pricingData['aprice'];
+		*/
+		$newTotals = array('before_vat'=> 0, 'after_vat'=>0, 'vatable' => 0);
+	   foreach ($this->data['subs'] as $sub) {
+		   //Billrun_Factory::log(print_r($sub));
+		   $newTotals['before_vat'] += $sub['totals']['before_vat']; 
+		   $newTotals['after_vat'] +=  $sub['totals']['after_vat']; 
+		   $newTotals['vatable'] +=  $sub['totals']['vatable']; 
+	   }
+	   $rawData['totals'] = $newTotals;
+		$this->data->setRawData($rawData);
 	}
 
-	protected function getFieldVal($arr, $fields, $defVal) {
-		$base = $arr;
-		foreach ($fields as $field) {
-			if (!isset($base[$field])) {
-				return $defVal;
-			}
-			$base = $base[$field];
+	protected function getFieldVal(&$field, $defVal) {
+		if(isset($field)) {
+			return $field;
 		}
-		return $base;
+		return $defVal;
 	}
-
-	static protected $rates = array();
-
+	
+	static protected $rates = array();	
 	/**
 	 * HACK TO MAKE THE BILLLRUN FASTER
 	 * gets an array which represents a db ref (includes '$ref' & '$id' keys)
@@ -911,8 +915,7 @@ class Billrun_Billrun {
 		$raw_rate = $row->get('arate', true);
 		$id_str = strval($raw_rate['$id']);
 		return self::getRateById($id_str);
-	}
-	
+		}
 	/**
 	 * 
 	 * @param string $id hexadecimal id of rate

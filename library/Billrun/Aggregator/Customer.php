@@ -69,7 +69,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	 * @var boolean is customer price vatable by default
 	 */
 	protected $testAcc = false;
-
+	
 	public function __construct($options = array()) {
 		parent::__construct($options);
 		if (isset($options['aggregator']['page']) && $options['aggregator']['page']) {
@@ -77,6 +77,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		}
 		if (isset($options['page']) && $options['page']) {
 			$this->page = $options['page'];
+			
 		}
 		if (isset($options['aggregator']['size']) && $options['aggregator']['size']) {
 			$this->size = $options['aggregator']['size'];
@@ -88,10 +89,10 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 			$this->vatable = $options['aggregator']['vatable'];
 		}
 
-		if (isset($options['aggregator']['test_accounts'])) {
+			if (isset($options['aggregator']['test_accounts'])) {
 			$this->testAcc = $options['aggregator']['test_accounts'];
 		}
-
+		
 		$this->plans = Billrun_Factory::db()->plansCollection();
 		$this->lines = Billrun_Factory::db()->linesCollection();
 		$this->billrun = Billrun_Factory::db()->billrunCollection();
@@ -119,63 +120,82 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	public function aggregate() {
 		// @TODO trigger before aggregate
 		Billrun_Factory::dispatcher()->trigger('beforeAggregate', array($this->data, &$this));
-
+		$account_billrun = false;
 		$billrun_key = $this->getStamp();
 
 		foreach ($this->data as $accid => $account) {
-			foreach ($account as $subscriber) {
-				if (!Billrun_Factory::config()->isProd()) {
-					if ($this->testAcc && is_array($this->testAcc) &&
-							!in_array($accid, $this->testAcc)) {
+			if (!Billrun_Factory::config()->isProd()) {
+				if ($this->testAcc && is_array($this->testAcc) && !in_array($accid, $this->testAcc)) {
 						//Billrun_Factory::log("Moving on nothing to see here... , account Id : $accid");
-						continue 2;
-					}
+						continue ;
 				}
+			}
+			//Billrun_Factory::log(microtime(true));
+			if (empty($this->options['live_billrun_update'])) {
+					Billrun_Billrun::createBillrunIfNotExists($accid, $billrun_key);
+					$params = array(
+						'aid' => $accid,
+						'billrun_key' => $billrun_key,
+					);
+					$account_billrun = Billrun_Factory::billrun($params);
+					foreach ($account as &$subscriber) {
+						$aid = $subscriber->aid;
+						$sid = $subscriber->sid;
+						$plan_name = $subscriber->plan;
+						if ( $account_billrun ) {
+							if ($account_billrun->exists($sid)) {
+								Billrun_Factory::log()->log("Billrun already exists for " . $sid . " for billrun " . $billrun_key, Zend_Log::ALERT);
+								continue;
+							} else {
+								$updatedLines = array();
+								$account_billrun->addSubscriber($sid);
+								Billrun_Factory::log()->log("Querying subscriber " . $sid . " for lines...", Zend_Log::DEBUG);
+								$subscriber_lines = $this->getSubscriberLines($sid);
+		//						Billrun_Factory::log()->log("Found " . count($subscriber_lines) . " lines.", Zend_Log::DEBUG);
+								Billrun_Factory::log("Processing subscriber Lines $sid");
+								foreach ($subscriber_lines as &$line) {
+									//Billrun_Factory::log("Processing subscriber Line for $sid : ".  microtime(true));
+									$line->collection($this->lines);
+									$pricingData = array('aprice' => $line['aprice']);
+									if (isset($line['over_plan'])) {
+										$pricingData['over_plan'] = $line['over_plan'];
+									} else if (isset($line['out_plan'])) {
+										$pricingData['out_plan'] = $line['out_plan'];
+									}
+									//$line['billrun'] = $billrun_key;
+									$rate = $this->getRowRate($line);
+									$vatable = (!(isset($rate['vatable']) && !$rate['vatable']) || (!isset($rate['vatable']) && !$this->vatable));
+									Billrun_Billrun::updateBillrun($billrun_key, array($line['usaget'] => $line['usagev']), $pricingData, $line, $vatable, $account_billrun);
+									//Billrun_Factory::log("Done Processing subscriber Line for $sid : ".  microtime(true));
+									$updatedLines[] = $line['stamp'];
+								}
+								Billrun_Factory::log()->log("Querying subscriber " . $sid . " for ggsn lines...", Zend_Log::DEBUG);
+								$subscriber_aggregated_data = $this->getSubscriberDataLines($sid);
+								$account_billrun->updateAggregatedData($sid, $billrun_key, $subscriber_aggregated_data);
+								$this->lines->update(	array('stamp' => array('$in' => $updatedLines)),
+														array('$set'=>array('billrun'=>$billrun_key)),
+														array('multi'=>true));
+							}
+						} else {
+							Billrun_Factory::log()->log("Couldn't load account  for $accid and Billrun $billrun_key",Zend_Log::NOTICE);
+						}
+				}
+				
+				if ($account_billrun) {
+					$account_billrun->updateTotals();
+					Billrun_Factory::log("Saving account $accid");
+					//save  the billrun
+					$account_billrun->save();
+					$account_billrun = false;
+				}
+			}
+
+			foreach ($account as &$subscriber) {
 				Billrun_Factory::dispatcher()->trigger('beforeAggregateLine', array(&$subscriber, &$this));
 				$aid = $subscriber->aid;
 				$sid = $subscriber->sid;
 				$plan_name = $subscriber->plan;
-				if (empty($this->options['live_billrun_update'])) {
-					Billrun_Billrun::createBillrunIfNotExists($aid, $billrun_key);
-					$params = array(
-						'aid' => $aid,
-						'billrun_key' => $billrun_key,
-					);
-					$subscriber_billrun = Billrun_Factory::billrun($params);
-					if ($subscriber_billrun->exists($sid)) {
-						Billrun_Factory::log()->log("Billrun already exists for " . $sid . " for billrun " . $billrun_key, Zend_Log::ALERT);
-						continue;
-					} else {
-						$subscriber_billrun->addSubscriber($sid);
-						Billrun_Factory::log()->log("Querying subscriber " . $sid . " for lines...", Zend_Log::DEBUG);
-						$subscriber_lines = $this->getSubscriberLines($sid);
-						Billrun_Factory::log()->log("Querying subscriber " . $sid . " for ggsn lines...", Zend_Log::DEBUG);
-//						Billrun_Factory::log()->log("Found " . count($subscriber_lines) . " lines.", Zend_Log::DEBUG);
-						Billrun_Factory::log("Processing subscriber Lines $sid");
-						foreach ($subscriber_lines as $line) {
-							//Billrun_Factory::log("Processing subscriber Line for $sid : ".  microtime(true));
-							$line->collection($this->lines);
-							$pricingData = array('aprice' => $line['aprice']);
-							if (isset($line['over_plan'])) {
-								$pricingData['over_plan'] = $line['over_plan'];
-							} else if (isset($line['out_plan'])) {
-								$pricingData['out_plan'] = $line['out_plan'];
-							}
-							$line['billrun'] = $billrun_key;
-							$rate = $this->getRowRate($line);
-							$vatable = (!(isset($rate['vatable']) && !$rate['vatable']) || (!isset($rate['vatable']) && !$this->vatable));
-							Billrun_Billrun::updateBillrun($billrun_key, array($line['usaget'] => $line['usagev']), $pricingData, $line, $vatable, $subscriber_billrun);
-							$line->save();
-							//Billrun_Factory::log("Done Processing subscriber Line for $sid : ".  microtime(true));
-						}
-						$subscriber_aggregated_data = $this->getSubscriberDataLines($sid);
-						$subscriber_billrun->updateAggregatedData($sid, $billrun_key, $subscriber_aggregated_data);
-
-						Billrun_Factory::log("Saving subscriber $sid");
-						//save  the billrun
-						$subscriber_billrun->save();
-					}
-				} //else {
+				 //else {
 				//add the subscriber plan for next month
 				if (is_null($plan_name)) {
 					$subscriber_status = "closed";
@@ -198,7 +218,10 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 				}
 				//}
 			}
+
 			Billrun_Billrun::close($accid, $billrun_key, $this->min_invoice_id);
+
+
 		}
 //		Billrun_Factory::dispatcher()->trigger('beforeAggregateSaveLine', array(&$save_data, &$this));
 		// @TODO trigger after aggregate
@@ -216,6 +239,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 			'sid' => $sid,
 			'billrun_key' => $billrun_key,
 			'type' => 'flat',
+
 		);
 		$update = array(
 			'$setOnInsert' => $flat_entry->getRawData(),
@@ -280,14 +304,19 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	protected function getSubscriberDataLines($sid) {
 		$end_time = new MongoDate(Billrun_Util::getEndTime($this->getStamp()));
 
-		$match_hint = array(
+		$match_sid = array(
 			'$match' => array(
 				'sid' => $sid,
+		));
+
+		$match_type = array(
+			'$match' => array(
+				"type" => "ggsn",
 		));
 		
 		$match = array(
 			'$match' => array(
-				"type" => "ggsn",
+			//	"type" => "ggsn",
 				'urt' => array(
 					'$lt' => $end_time,
 				),
@@ -366,7 +395,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 				),
 			),
 		);
-		$agg = $this->lines->aggregate($match_hint, $match, $group);
+		$agg = $this->lines->aggregate($match_sid, $match_type, $match, $group);
 		return $agg;
 	}
 
