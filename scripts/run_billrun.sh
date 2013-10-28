@@ -1,5 +1,11 @@
 #!/bin/bash
 
+###  script arguments as follow:
+###  1) stamp id of the billrun
+###  2) size of the page
+###  3) amount  of  concurrent billruns  to  run (in one   host)
+###  4) page to start from, the first is 0 (zero)
+
 iam="`whoami`";
 if [ $1 ]; then
         month=$1;
@@ -13,9 +19,9 @@ if [ $2 ]; then
         size=$2;
 fi
 
-instences=15;
+instances=15;
 if [ $3 ]; then
-        instences=$3;
+        instances=$3;
 fi
 
 start_instance=0;
@@ -28,7 +34,7 @@ if [ $iam != "billrun" ]; then
         exit;
 fi
 
-for i in `seq 1 $instences`; do
+for i in `seq 1 $instances`; do
         page=`expr $start_instance \+ $i`;
         echo php -t /var/www/billrun/ /var/www/billrun/public/index.php  -a --type customer --stamp $month --page $page --size $size &
         echo sleep 5;
