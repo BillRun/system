@@ -163,6 +163,8 @@ class Generator_Golancsv extends Billrun_Generator {
 		}
 		$this->writeToFile($this->accountsCsvPath, $accounts_str);
 		$this->writeToFile($this->subscribersCsvPath, $subscribers_str);
+		$this->accountRows = array();
+		$this->subscribersRows = array();
 	}
 
 	/**
