@@ -77,6 +77,9 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 
 	public function __construct($options = array()) {
 		parent::__construct($options);
+
+		ini_set('mongo.native_long', 1); //Set mongo  to use  long int  for  all aggregated integer data.
+
 		if (isset($options['aggregator']['page']) && $options['aggregator']['page']) {
 			$this->page = $options['aggregator']['page'];
 		}
@@ -147,11 +150,11 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 					'billrun_key' => $billrun_key,
 				);
 				$account_billrun = Billrun_Factory::billrun($params);
-				foreach ($account as &$subscriber) {
-					$aid = $subscriber->aid;
-					$sid = $subscriber->sid;
-					$plan_name = $subscriber->plan;
-					if ($account_billrun) {
+				if ($account_billrun) {
+					foreach ($account as &$subscriber) {
+						$aid = $subscriber->aid;
+						$sid = $subscriber->sid;
+						$plan_name = $subscriber->plan;
 						if ($account_billrun->exists($sid)) {
 							Billrun_Factory::log()->log("Billrun already exists for " . $sid . " for billrun " . $billrun_key, Zend_Log::ALERT);
 							continue;
@@ -179,21 +182,18 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 								$updatedLines[] = $line['stamp'];
 							}
 							Billrun_Factory::log()->log("Querying subscriber " . $sid . " for ggsn lines...", Zend_Log::DEBUG);
-							$subscriber_aggregated_data = $this->getSubscriberDataLines($sid);
+							$subscriber_aggregated_data = $this->getSubscriberDataLines($sid, $billrun_key);
 							$account_billrun->updateAggregatedData($sid, $billrun_key, $subscriber_aggregated_data);
 							$this->lines->update(array('stamp' => array('$in' => $updatedLines)), array('$set' => array('billrun' => $billrun_key)), array('multi' => true));
 						}
-					} else {
-						Billrun_Factory::log()->log("Couldn't load account  for $accid and Billrun $billrun_key", Zend_Log::NOTICE);
 					}
-				}
-
-				if ($account_billrun) {
 					$account_billrun->updateTotals();
 					Billrun_Factory::log("Saving account $accid");
 					//save  the billrun
 					$account_billrun->save();
 					$account_billrun = false;
+				} else {
+					Billrun_Factory::log()->log("Couldn't load account  for $accid and Billrun $billrun_key", Zend_Log::NOTICE);
 				}
 			}
 
@@ -313,7 +313,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		return $results;
 	}
 
-	protected function getSubscriberDataLines($sid) {
+	protected function getSubscriberDataLines($sid, $billrun_key) {
 		$end_time = new MongoDate(Billrun_Util::getEndTime($this->getStamp()));
 
 		$match_sid = array(
@@ -335,11 +335,18 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 				'aprice' => array(
 					'$exists' => true,
 				),
-				'billrun' => array(
-					'$exists' => false,
-				),
 			)
 		);
+
+		if ($this->allowOverride) {
+			$match['$match']['$or'] = array(
+				array('billrun' => array('$exists' => false)),
+				array('billrun' => $billrun_key),
+			);
+		} else {
+			$match['$match']['billrun'] = array('$exists' => false);
+		}
+
 
 		$group = array(
 			'$group' => array(
