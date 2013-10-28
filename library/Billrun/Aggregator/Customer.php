@@ -130,6 +130,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 						continue ;
 				}
 			}
+			//Billrun_Factory::log()->log("Updating Accoount : " . print_r($account),Zend_Log::DEBUG);			
 			//Billrun_Factory::log(microtime(true));
 			if (empty($this->options['live_billrun_update'])) {
 					Billrun_Billrun::createBillrunIfNotExists($accid, $billrun_key);
@@ -162,7 +163,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 									} else if (isset($line['out_plan'])) {
 										$pricingData['out_plan'] = $line['out_plan'];
 									}
-									//$line['billrun'] = $billrun_key;
+
 									$rate = $this->getRowRate($line);
 									$vatable = (!(isset($rate['vatable']) && !$rate['vatable']) || (!isset($rate['vatable']) && !$this->vatable));
 									Billrun_Billrun::updateBillrun($billrun_key, array($line['usaget'] => $line['usagev']), $pricingData, $line, $vatable, $account_billrun);
@@ -190,6 +191,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 				}
 			}
 
+			Billrun_Factory::log()->log("Updating  flat  line  for  Accoount :  $accid , which  has ".count($account) ." subscribers ",Zend_Log::INFO);
 			foreach ($account as &$subscriber) {
 				Billrun_Factory::dispatcher()->trigger('beforeAggregateLine', array(&$subscriber, &$this));
 				$aid = $subscriber->aid;
@@ -200,6 +202,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 				if (is_null($plan_name)) {
 					$subscriber_status = "closed";
 					Billrun_Billrun::setSubscriberStatus($aid, $sid, $billrun_key, $subscriber_status);
+					Billrun_Factory::log()->log("Closed subscriber $sid.",Zend_Log::INFO);
 				} else {
 					$subscriber_status = "open";
 					$flat_price = $subscriber->getFlatPrice();
