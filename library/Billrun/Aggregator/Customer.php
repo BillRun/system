@@ -70,6 +70,11 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	 */
 	protected $testAcc = false;
 	
+	/**
+	 * @var boolean allow billrun to recompute  marked line (as long as they have the  same billrun_key)
+	 */
+	protected $allowOverride = false;	
+	
 	public function __construct($options = array()) {
 		parent::__construct($options);
 		if (isset($options['aggregator']['page']) && $options['aggregator']['page']) {
@@ -89,8 +94,12 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 			$this->vatable = $options['aggregator']['vatable'];
 		}
 
-			if (isset($options['aggregator']['test_accounts'])) {
+		if (isset($options['aggregator']['test_accounts'])) {
 			$this->testAcc = $options['aggregator']['test_accounts'];
+		}
+		
+		if (isset($options['aggregator']['allow_override'])) {
+			$this->allowOverride = $options['aggregator']['allow_override'];
 		}
 		
 		$this->plans = Billrun_Factory::db()->plansCollection();
@@ -151,7 +160,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 								$updatedLines = array();
 								$account_billrun->addSubscriber($sid);
 								Billrun_Factory::log()->log("Querying subscriber " . $sid . " for lines...", Zend_Log::DEBUG);
-								$subscriber_lines = $this->getSubscriberLines($sid);
+								$subscriber_lines = $this->getSubscriberLines($sid, $billrun_key);
 		//						Billrun_Factory::log()->log("Found " . count($subscriber_lines) . " lines.", Zend_Log::DEBUG);
 								Billrun_Factory::log("Processing subscriber Lines $sid");
 								foreach ($subscriber_lines as &$line) {
@@ -279,7 +288,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		
 	}
 
-	protected function getSubscriberLines($sid) {
+	protected function getSubscriberLines($sid, $billrun_key) {
 		$end_time = new MongoDate(Billrun_Util::getEndTime($this->getStamp()));
 		$query = array(
 			'sid' => $sid,
@@ -288,14 +297,20 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 			),
 			'aprice' => array(
 				'$exists' => true,
-			),
-			'billrun' => array(
-				'$exists' => false,
-			),
+			),			
 			'type' => array(
 				'$ne' => 'ggsn',
 			),
 		);
+		if($this->allowOverride) {
+			Billrun_Factory::log("Overriding!!!!!");
+			$query['$or'] = array(				
+				array('billrun' => array('$exists' => false) ),
+				array('billrun' => $billrun_key),
+			);
+		} else {
+			$query['billrun'] = array('$exists' => false);
+		}
 		$cursor = $this->lines->query($query)->cursor()->hint(array('sid' => 1));
 		$results = array();
 		foreach ($cursor as $entity) {
