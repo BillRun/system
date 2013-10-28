@@ -233,9 +233,8 @@ class Generator_Golancsv extends Billrun_Generator {
 //			Billrun_Factory::log()->log("invoice id created " . $invoice_id . " for the account", Zend_Log::INFO);
 
 			$this->addAccountRow($acc_row);
-			if ($accounts_counter >= $this->blockSize || $accounts_counter >= $num_accounts) {
+			if ((($accounts_counter%$this->blockSize) == 0) || ($accounts_counter >= $num_accounts)) {
 				$this->writeRowsToCsv();
-				$accounts_counter = 0;
 			}
 		}
 	}
