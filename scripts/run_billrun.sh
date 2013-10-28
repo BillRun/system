@@ -36,7 +36,7 @@ fi
 
 for i in `seq 1 $instances`; do
         page=`expr $start_instance \+ $i`;
-        echo php -t /var/www/billrun/ /var/www/billrun/public/index.php  -a --type customer --stamp $month --page $page --size $size &
+        php -t /var/www/billrun/ /var/www/billrun/public/index.php  -a --type customer --stamp $month --page $page --size $size &
         echo sleep 5;
 done
 
