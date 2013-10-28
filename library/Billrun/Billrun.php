@@ -595,7 +595,7 @@ class Billrun_Billrun {
 		$sraw['costs']['over_plan']['vatable'] = $this->getFieldVal($sraw['costs']['over_plan']['vatable'], 0) + $vatable_costs['over_plan'];
 		$sraw['costs']['out_plan']['vatable'] = $this->getFieldVal($sraw['costs']['out_plan']['vatable'], 0) + $vatable_costs['out_plan'];
 		
-		$total_vatable = $sraw['costs']['flat']['vatable'] + $sraw['costs']['over_plan']['vatable'] + $sraw['costs']['out_plan']['vatable'];
+		$total_vatable = $vatable_costs['in_plan'] + $vatable_costs['over_plan'] + $vatable_costs['out_plan'];
 		$price_after_vat = ($total_vatable) + ($total_vatable) * $this->vat;
 		$sraw['totals']['vatable'] = $this->getFieldVal($sraw['totals']['vatable'], 0) + $total_vatable;
 		$sraw['totals']['before_vat'] = $this->getFieldVal($sraw['totals']['before_vat'], 0) + $total_vatable;
