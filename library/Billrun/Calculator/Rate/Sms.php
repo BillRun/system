@@ -26,9 +26,13 @@ class Billrun_Calculator_Rate_Sms extends Billrun_Calculator_Rate {
 	 *
 	 * @var string
 	 */
-	protected $legitimateNumberFilters = array('/^0+/','/[^\d]/');	
-	
-	
+	protected $legitimateNumberFilters = array('/^0+/', '/[^\d]/');
+
+	public function __construct($options = array()) {
+		parent::__construct($options);
+		$this->loadRates();
+	}
+
 	/**
 	 * method to get calculator lines
 	 */
@@ -57,14 +61,14 @@ class Billrun_Calculator_Rate_Sms extends Billrun_Calculator_Rate {
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteRow', array('row' => $row));
 		return true;
 	}
-	
+
 	/**
 	 * @see Billrun_Calculator_Rate::getLineVolume
 	 */
 	protected function getLineVolume($row, $usage_type) {
 		return 1;
 	}
-	
+
 	/**
 	 * @see Billrun_Calculator_Rate::getLineUsageType
 	 */
@@ -79,83 +83,52 @@ class Billrun_Calculator_Rate_Sms extends Billrun_Calculator_Rate {
 	 */
 	protected function shouldLineBeRated($row) {
 		return ($row['type'] == 'smpp' && $row['record_type'] == '1' && $row["cause_of_terminition"] == "100" && in_array($row['calling_number'], array('000000000002020', '000000000006060', '000000000007070'))) ||
-			($row['type'] == 'smsc' && $row['record_type'] == '1' && $row["cause_of_terminition"] == "100" && $row["calling_msc"] != "000000000000000" ) ||
-			($row['type'] == 'mmsc' && ('S' == $row['action']) && $row['final_state'] == 'S' && preg_match('/^\+\d+\/TYPE\s*=\s*.*golantelecom/', $row['mm_source_addr']));
+				($row['type'] == 'smsc' && $row['record_type'] == '1' && $row["cause_of_terminition"] == "100" && $row["calling_msc"] != "000000000000000" ) ||
+				($row['type'] == 'mmsc' && ('S' == $row['action']) && $row['final_state'] == 'S' && preg_match('/^\+\d+\/TYPE\s*=\s*.*golantelecom/', $row['mm_source_addr']));
 	}
-	
+
 	/**
 	 * @see Billrun_Calculator_Rate::getLineRate
 	 */
 	protected function getLineRate($row, $usage_type) {
-		if ( $this->shouldLineBeRated($row) ) {
+		if ($this->shouldLineBeRated($row)) {
+			$matchedRate = false;
 			$called_number = $this->extractNumber($row);
 			$line_time = $row['urt'];
 
-			$rates = Billrun_Factory::db()->ratesCollection();
-			//Billrun_Factory::log()->log("row : ".print_r($row ,1),  Zend_Log::DEBUG);
-//		$type = $row['type'] == 'mmsc' ? 'mms' : 'sms';
 			$called_number_prefixes = $this->getPrefixes($called_number);
-			//Billrun_Factory::log()->log("prefixes  for $called_number : ".print_r($called_number_prefixes ,1),  Zend_Log::DEBUG);
-			$base_match = array(
-				'$match' => array(
-					'params.prefix' => array(
-						'$in' => $called_number_prefixes,
-					),
-					"rates.$usage_type" => array(
-						'$exists' => true
-					),
-					"from" => array(
-						'$lte' => $line_time
-					),
-					"to" => array(
-						'$gte' => $line_time
-					),
-				)
-			);
-
-			$unwind = array(
-				'$unwind' => '$params.prefix',
-			);
-
-			$sort = array(
-				'$sort' => array(
-					'params.prefix' => -1,
-				),
-			);
-
-			$match2 = array(
-				'$match' => array(
-					'params.prefix' => array(
-						'$in' => $called_number_prefixes,
-					),
-				)
-			);
-
-			$matched_rates = $rates->aggregate($base_match, $unwind, $sort, $match2);
-			//Billrun_Factory::log()->log("rates : ".print_r($matched_rates ,1),  Zend_Log::DEBUG);
-			if (empty($matched_rates)) {
-				return FALSE;
+			foreach ($called_number_prefixes as $prefix) {
+				if (isset($this->rates[$prefix])) {
+					foreach ($this->rates[$prefix] as $rate) {
+						if (isset($rate['rates'][$usage_type])) {
+							if ($rate['from'] <= $line_time && $rate['to'] >= $line_time) {
+								$matchedRate = $rate;
+								break 2;
+							}
+						}
+					}
+				}
 			}
-
-			return new Mongodloid_Entity(reset($matched_rates), $rates);
+			return $matchedRate;
 		} else {
 			return false;
 		}
 	}
-	
+
 	/**
 	 * @see Billrun_Calculator::isLineLegitimate
 	 */
 	public function isLineLegitimate($line) {
 		return $line['type'] == 'smsc' || $line['type'] == 'mmsc' || $line['type'] == 'smpp';
 	}
-	
+
 	protected function extractNumber($row) {
 		$str = ($row['type'] != 'mmsc' ? $row['called_msc'] : $row['recipent_addr']);
 		foreach ($this->legitimateNumberFilters as $filter) {
-			$str = preg_replace( $filter, '', $str );
+			$str = preg_replace($filter, '', $str);
 		}
 		return $str;
 		//return preg_replace('/[^\d]/', '', preg_replace('/^0+/', '', ($row['type'] != 'mmsc' ? $row['called_msc'] : $row['recipent_addr'])));
 	}
+
 }
