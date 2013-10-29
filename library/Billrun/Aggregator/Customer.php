@@ -184,7 +184,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 							Billrun_Factory::log()->log("Querying subscriber " . $sid . " for ggsn lines...", Zend_Log::DEBUG);
 							$subscriber_aggregated_data = $this->getSubscriberDataLines($sid, $billrun_key);
 							$account_billrun->updateAggregatedData($sid, $billrun_key, $subscriber_aggregated_data);
-							$this->lines->update(array('stamp' => array('$in' => $updatedLines)), array('$set' => array('billrun' => $billrun_key)), array('multi' => true));
+							$this->lines->update(array('stamp' => array('$in' => $updatedLines)), array('$set' => array('billrun' => $billrun_key)), array('multiple' => true));
 						}
 					}
 					$account_billrun->updateTotals();
