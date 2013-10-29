@@ -25,6 +25,6 @@ class Billrun_Calculator_Rate_Smsc extends Billrun_Calculator_Rate_Sms {
 	 * @return type
 	 */
 	protected function shouldLineBeRated($row) {
-		return  $row['record_type'] == '1' && $row["cause_of_terminition"] == "100" && $row["calling_msc"] != "000000000000000" ;
+		return  $row['record_type'] == '1' && $row["cause_of_terminition"] == "100" && preg_match("/^0*9725[82]/",$row["calling_msc"]) ;
 	}
 }

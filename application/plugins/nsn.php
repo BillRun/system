@@ -225,7 +225,7 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 					}
 				}
 			}
-			$data['urt'] = new MongoDate(Billrun_Util::dateTimeConvertShortToIso((string) $data['call_reference_time'], self::DEFAULT_TIME_OFFSET));
+			$data['urt'] = new MongoDate(Billrun_Util::dateTimeConvertShortToIso((string) (isset($data['charging_start_time']) ? isset($data['charging_start_time']) : $data['call_reference_time']), self::DEFAULT_TIME_OFFSET));
 		}
 		if( isset($data['charging_end_time']) && isset($data['charging_start_time']) && 
 			( strtotime($data['charging_end_time']) > 0 && strtotime($data['charging_start_time'] ) > 0) ) {
