@@ -47,7 +47,7 @@ class Billrun_Sms {
 		}
 
 		$language = '2';
-		$encoded_text = $this->sms__unicode($this->data['message']);
+		$encoded_text = $this->sms_unicode($this->data['message']);
 		if (!empty($this->data['message']) && empty($encoded_text)) {
 			$encoded_text = urlencode($this->data['message']);
 			$language = '1';

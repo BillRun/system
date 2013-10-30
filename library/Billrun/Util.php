@@ -159,7 +159,7 @@ class Billrun_Util {
 
 	/**
 	 * Send SMS helper
-	 * @param type $recipient - recipient number
+	 * @param type $recipient recipient number
 	 * @param type $message - body message
 	 * @return type
 	 */
@@ -190,19 +190,24 @@ class Billrun_Util {
 	 * @param string $url
 	 * @param string $data
 	 * @param string $method
-	 * @return array or boolean
+	 * @return array or FALSE on failure
 	 */
-	public static function sendRequest($url, $data, $method = 'POST') {
-		if ($method != 'POST' || $method != 'GET' || empty($data) || empty($url)) {
+	public static function sendRequest($url, array $data, $method = 'POST', array $headers = array('Accept-encoding' => 'deflate')) {
+		if (($method != 'POST' && $method != 'GET') || empty($data) || empty($url)) {
 			Billrun_Factory::log()->log("Bad parameters: url - ".$url." data - ".$data." method: ".$method, Zend_Log::ERR);
 			return FALSE;
 		}
 
+		if(!defined("Zend_Http_Client::".$method)) {
+			return FALSE;
+		}
+		
+		$method = constant(Zend_Http_Client . "::" . $method);
 		$curl = new Zend_Http_Client_Adapter_Curl();
 		$client = new Zend_Http_Client($url);
-		$client->setHeaders(array('Accept-encoding' => 'deflate'));
+		$client->setHeaders($headers);
 		$client->setAdapter($curl);
-		$client->setMethod(Zend_Http_Client::$method);
+		$client->setMethod($method);
 
 		if ($method == 'POST') {
 			$client->setParameterPost($data);
