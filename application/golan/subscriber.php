@@ -82,7 +82,7 @@ class golan_subscriber {
 	}
 
 	static function send($path, $params) {
-		$output = Billrun_Util::sendCurlRequest($params, $path, 'GET');
+		$output = Billrun_Util::sendRequest($path, $params, 'GET');
 
 		return $output;
 	}
