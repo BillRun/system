@@ -205,13 +205,21 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	protected function setCalculatorTag($query = array(), $update = array()) {
 		$queue = Billrun_Factory::db()->queueCollection();
 		$calculator_tag = static::getCalculatorQueueType();
-		foreach ($this->data as $item) {
-			$query = array('stamp' => $item['stamp']);
-			$update = array('$set' => array('calc_name' => $calculator_tag, 'calc_time' => false));
-			if (isset($item['aid'])) {
-				$update['$set']['aid'] = $item['aid'];
+		$advance_stamps = array();
+		foreach ($this->lines as $stamp => $item) {
+			if (!isset($item['aid'])) {
+				$advance_stamps[] = $stamp;
+			} else {
+				$query = array('stamp' => $stamp);
+				$update = array('$set' => array('calc_name' => $calculator_tag, 'calc_time' => false, 'aid' => $item['aid']));
+				$queue->update($query, $update);
 			}
-			$queue->update($query, $update);
+		}
+
+		if (!empty($advance_stamps)) {
+			$query = array('stamp' => array('$in' => $advance_stamps));
+			$update = array('$set' => array('calc_name' => $calculator_tag, 'calc_time' => false));
+			$queue->update($query, $update, array('multiple' => true));
 		}
 	}
 

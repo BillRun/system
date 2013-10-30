@@ -346,7 +346,6 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 			$match['$match']['billrun'] = array('$exists' => false);
 		}
 
-
 		$group = array(
 			'$group' => array(
 				'_id' => array(
