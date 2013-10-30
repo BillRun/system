@@ -42,7 +42,7 @@ class Billrun_Util {
 		if ($depth == 0 || !is_array($arrays)) {
 			return $arrays;
 		}
-		//	print_r($arrays);
+
 		$retArr = array();
 		foreach ($arrays as $subKey => $subArray) {
 			if ($key) {
@@ -184,12 +184,12 @@ class Billrun_Util {
 		}
 		return $ret;
 	}
-
+	
 	/**
-	 * 
-	 * @param string $url
-	 * @param string $data
-	 * @param string $method
+	 * Send Curl request to the CRM
+	 * @param string $url - url of the CRM
+	 * @param string $data - parameters for the request
+	 * @param string $method - should be POST or GET
 	 * @return array or FALSE on failure
 	 */
 	public static function sendRequest($url, array $data, $method = 'POST', array $headers = array('Accept-encoding' => 'deflate')) {
