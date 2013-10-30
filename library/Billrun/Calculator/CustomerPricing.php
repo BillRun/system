@@ -93,18 +93,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	}
 
 	public function updateRow($row) {
-		$plan_ref = $this->addPlanRef($row, $row['plan']);
-		if (is_null($plan_ref)) {
-			Billrun_Factory::log('No plan found for subscriber ' . $row['sid'], Zend_Log::ALERT);
-			return false;
-		}
 		$billrun_key = Billrun_Util::getBillrunKey($row->get('urt')->sec);
-		if (!($balance = $this->createBalanceIfMissing($row['aid'], $row['sid'], $billrun_key, $plan_ref))) {
-			return false;
-		}
-		else if ($balance===true) {
-			$balance = null;
-		}
 		$rate = $this->getRowRate($row);
 
 		//TODO  change this to be configurable.
@@ -123,12 +112,22 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				$accessPrice = isset($rate['rates'][$usage_type]['access']) ? $rate['rates'][$usage_type]['access'] : 0;
 				$pricingData = array($this->pricingField => $accessPrice + $this->getPriceByRates($rate['rates'][$usage_type]['rate'], $volume));
 			} else {
+				$plan_ref = $this->addPlanRef($row, $row['plan']);
+				if (is_null($plan_ref)) {
+					Billrun_Factory::log('No plan found for subscriber ' . $row['sid'], Zend_Log::ALERT);
+					return false;
+				}
+				if (!($balance = $this->createBalanceIfMissing($row['aid'], $row['sid'], $billrun_key, $plan_ref))) {
+					return false;
+				} else if ($balance === true) {
+					$balance = null;
+				}
 				$pricingData = $this->updateSubscriberBalance(array($usage_class_prefix . $usage_type => $volume), $row, $billrun_key, $usage_type, $rate, $volume, $balance);
 			}
 			if (!$pricingData) { // balance wasn't found
 				return false;
 			}
-			if(isset($this->options['live_billrun_update']) && $this->options['live_billrun_update']) {
+			if (isset($this->options['live_billrun_update']) && $this->options['live_billrun_update']) {
 				$vatable = (!(isset($rate['vatable']) && !$rate['vatable']) || (!isset($rate['vatable']) && !$this->vatable));
 				if (!$billrun = Billrun_Billrun::updateBillrun($billrun_key, array($usage_type => $volume), $pricingData, $row, $vatable)) {
 					return false;
@@ -277,7 +276,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		foreach ($counters as $key => $value) {
 			$old_usage = $subRaw['balance']['totals'][$key]['usagev'];
 			$query['balance.totals.' . $key . '.usagev'] = $old_usage;
-			$update['$set']['balance.totals.' . $key . '.usagev'] = $old_usage + $value;			
+			$update['$set']['balance.totals.' . $key . '.usagev'] = $old_usage + $value;
 			$pricingData['usagesb'] = $old_usage;
 		}
 		$update['$set']['balance.cost'] = $subRaw['balance']['cost'] + $pricingData[$this->pricingField];
