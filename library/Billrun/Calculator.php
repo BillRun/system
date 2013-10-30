@@ -72,7 +72,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	 * 
 	 * @var boolean
 	 */
-	protected $autosort = false;
+	protected $autosort = true;
 	
 	/**
 	 * constructor of the class
