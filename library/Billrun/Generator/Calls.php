@@ -104,7 +104,7 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 	 */
 	public function load() {
 		Billrun_Factory::log()->log("Loading latest Configuration.");
-		$testConfig = Billrun_Factory::db()->configCollection()->query(array('key' => 'call_generator'))->cursor()->sort(array('unified_record_time' => -1))->limit(1)->current();
+		$testConfig = Billrun_Factory::db()->configCollection()->query(array('key' => 'call_generator'))->cursor()->sort(array('urt' => -1))->limit(1)->current();
 		if (!$testConfig->isEmpty()) {
 			$this->testScript = $testConfig->getRawData();
 			$this->testId = $this->testScript['test_id'];
@@ -221,7 +221,7 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 			if ($action['action_type'] != static::TYPE_BUSY) {
 				$this->waitForCall($device, $call, $action['action_type'], $action['duration'] + static::BUSY_WAIT_TIME );
 			} else {
-				$this->callToBusyNumber($device, $action['duration']);
+				$this->callToBusyNumber($device, $action['duration'],$action['busy_number']);
 				$call['calling_result'] = 'busy';
 			}
 		}
@@ -230,6 +230,7 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 			$this->HandleCall($device, $call, $action['duration'], (($action['hangup'] == 'caller') == $isCalling) );
 		}
 		//$call['execution_end_time'] = date("YmdTHis");
+		$call['estimated_price'] = $call['duration'] * $action['rate'];
 		$this->save($action, $call, $isCalling);
 		Billrun_Factory::log("Done acting on action of type : {$action['action_type']} for number : ".$device->getModemNumber());
 	}
@@ -241,9 +242,9 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 	 */
 	protected function makeACall($device, &$callRecord, $numberToCall) {
 		Billrun_Factory::log("Making a call to  {$numberToCall}");
-		$callRecord['execution_start_time'] = new MongoDate(time());
 		$callRecord['called_number'] = $numberToCall;
 		$device->call($numberToCall);
+		$callRecord['execution_start_time'] = new MongoDate(time());
 		$callRecord['calling_result'] = $device->getState();
 
 		return $callRecord['calling_result'];
@@ -281,10 +282,10 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 	/**
 	 * Call to a assigned  number to keep the line busy.
 	 */
-	protected function callToBusyNumber($device, $duration) {
+	protected function callToBusyNumber($device, $duration, $number) {
 		Billrun_Factory::log("Calling to busy number : " . $this->getConfig('busy_number'));
 		$call = array();
-		$ret = $this->makeACall($device, $call, $this->getConfig('busy_number'));
+		$ret = $this->makeACall($device, $call, $number);
 
 		if ($ret == Gsmodem_StateMapping::OUT_CALL_STATE) {
 			$this->HandleCall($device, $call, $duration, true);
@@ -341,7 +342,7 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 			$callData["{$direction}_{$key}"] = $value;
 		}
 		if ($isCalling) {
-			$callData['unified_record_time'] = $call['call_start_time'] ? $call['call_start_time'] : $call['execution_start_time'];
+			$callData['urt'] = $call['call_start_time'] ? $call['call_start_time'] : $call['execution_start_time'];
 		}
 
 		return $this->safeSave(array('type' => 'generated_call', 'stamp' => $commonRec['stamp']), $callData, array_merge($callData, $commonRec));
@@ -363,7 +364,7 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 	 */
 	protected function isConfigUpdated($currentConfig) {
 		$retVal = Billrun_Factory::db()->configCollection()->query(array('key' => 'call_generator',			
-				'unified_record_time' => array('$gt' => $currentConfig['unified_record_time'] ,'$lt' =>  new MongoDate(time()) )
+				'urt' => array('$gt' => $currentConfig['urt'] ,'$lt' =>  new MongoDate(time()) )
 			))->cursor()->limit(1)->current();
 		return !$retVal->isEmpty();
 	}

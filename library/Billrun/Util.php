@@ -220,4 +220,16 @@ class Billrun_Util {
 	public static function setFileModificationTime($received_path, $timestamp) {
 		return touch($received_path, $timestamp);
 	}
+	/**
+	 * Get a value of a field that is not sure to be set return the defVal if the value isn't set
+	 * @param type $field
+	 * @param type $defVal
+	 * @return type
+	 */
+	public static function getFieldVal(&$field, $defVal) {
+		if(isset($field)) {
+			return $field;
+		}
+		return $defVal;
+	}
 }

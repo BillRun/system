@@ -41,36 +41,10 @@ class GenerateAction extends Action_Base {
 			$generator->load();
 			$this->_controller->addOutput("Starting to Generate. This action can take awhile...");
 			$results = $generator->generate();
-			$this->_controller->addOutput("Generating output files..");
-			if(is_array($results) ){
-				if(isset($options['out']) && $options['out']) {
-					$this->generateFiles($results, $generator,$options['out']);
-				} else {
-					$this->_controller->display('index');
-				}	
-			}
 			$this->_controller->addOutput("Finish to Generate.");
 		} else {
 			$this->_controller->addOutput("Generator cannot be loaded");
 		}
-	}
-	
-	/**
-	 * 
-	 * @param type $resultFiles
-	 * @param type $generator
-	 * @param type $outputDir
-	 */
-	protected function generateFiles($resultFiles,$generator,$outputDir = GenerateAction::GENERATOR_OUTPUT_DIR) {
-		foreach ($resultFiles as $name => $report) {
-			$templateName = $this->getTemplate( method_exists($generator,'getTemplate') ? $generator->getTemplate($name) : false );
-			$fname = date('Ymd'). "_" . $name ."." . preg_replace('/\.[^.]*$/', "", preg_replace('/^[^.]*\./', "", $templateName));
-			$this->_controller->addOutput("Generating file $fname");
-			$fd = fopen($outputDir. DIRECTORY_SEPARATOR.$fname,"w+");//@TODO change the  output  dir to be configurable.
-			
-			fwrite($fd, $this->getView()->render($templateName,array('data'=>$report)));
-			fclose($fd);	
-			}				
 	}
 
 }

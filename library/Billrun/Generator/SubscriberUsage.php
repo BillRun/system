@@ -45,7 +45,7 @@ class Billrun_Generator_SubscriberUsage extends Billrun_Generator {
 	 * Generate the calls as defined in the configuration.
 	 */
 	public function generate() {
-		Billrun_Factory::log(print_r($this->subscriberId,1));
+		//Billrun_Factory::log(print_r($this->subscriberId,1));
 
 		$subscriberLines = array();
 		foreach ($this->lines as $value) {
@@ -57,21 +57,13 @@ class Billrun_Generator_SubscriberUsage extends Billrun_Generator {
 	}
 	
 	/**
-	 * 
-	 * @param type $param
-	 * @return string
-	 */
-	public function getTemplate($param= null) {
-		return 'json.json.phtml';
-	}
-	
-	/**
 	 * Load the script
 	 */
 	public function load() {
+
 		$this->lines = Billrun_Factory::db()->linesCollection()->query(array(
-																'subscriber_id'=> (int) $this->subscriberId, 
-																'unified_record_time' => array(
+																'sid'=> (int) $this->subscriberId, 
+																'urt' => array(
 																		'$gte' => $this->from,
 																		'$lte' => $this->to,
 																	)
