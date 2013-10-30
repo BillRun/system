@@ -162,6 +162,8 @@ abstract class Billrun_Calculator extends Billrun_Base {
 
 	/**
 	 * Save a modified line to the lines collection.
+	 * @param Mongodloid_Entity $line the line to write
+	 * @param mixed $dataKey the line key in the calculator's data container
 	 */
 	public function writeLine($line, $dataKey) {
 		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteLine', array('data' => $line));
@@ -207,6 +209,8 @@ abstract class Billrun_Calculator extends Billrun_Base {
 
 	/**
 	 * Mark the calculation as finished in the queue.
+	 * @param array $query additional query parameters to the queue
+	 * @param array $update additional fields to update in the queue
 	 */
 	protected function setCalculatorTag($query = array(), $update = array()) {
 		$queue = Billrun_Factory::db()->queueCollection();
@@ -221,7 +225,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	}
 
 	/**
-	 * 
+	 * Get the base query to get lines from the queue for the current calculator
 	 * @return array
 	 */
 	static protected function getBaseQuery() {
@@ -248,7 +252,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	}
 
 	/**
-	 * 
+	 * Get the base query to mark a working process in the queue
 	 * @return array
 	 */
 	protected function getBaseUpdate() {
@@ -261,21 +265,21 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		return $update;
 	}
 
-	/**
-	 * 
-	 * @return array
-	 */
-	static protected function getBaseOptions() {
-		$options = array(
-			"sort" => array(
-				"_id" => 1,
-			),
-		);
-		return $options;
-	}
+//	/**
+//	 * 
+//	 * @return array
+//	 */
+//	static protected function getBaseOptions() {
+//		$options = array(
+//			"sort" => array(
+//				"_id" => 1,
+//			),
+//		);
+//		return $options;
+//	}
 
 	/**
-	 * 
+	 * Remove lines from the queue if the current calculator is the last one or if final_calc is set for a queue line and equals the current calculator
 	 */
 	public final function removeFromQueue() {
 		$queue = Billrun_Factory::db()->queueCollection();
@@ -286,10 +290,6 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		// remove  recalculated lines.	
 		$stamps = array();
 		foreach ($this->lines as $queueLine) {			
-			if (isset($queueLine['final_calc']) && ($queueLine['final_calc'] == $calculator_type ) && isset($this->data[$queueLine['stamp']])) {	
-				$queueLine->collection($queue);
-				$queueLine->remove();
-			}
 			if (($queue_id == key($queue_calculators)) || (isset($queueLine['final_calc']) && ($queueLine['final_calc'] == $calculator_type ))) {	
 				$stamps[] = $queueLine['stamp'];
 			}
@@ -303,6 +303,10 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		}
 	}
 
+	/**
+	 * Remove a particular line from the queue
+	 * @param type $line the line to be removed
+	 */
 	protected function removeLineFromQueue($line) {
 		$query = array(
 			'stamp' => $line['stamp'],
@@ -311,9 +315,9 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	}
 	
 	/**
-	 * 
-	 * @param type $localquery
-	 * @return array
+	 * Get the queue lines for the current calculator
+	 * @param array $localquery the specific calculator filter query (usually on 'type' field)
+	 * @return array the queue lines
 	 */
 	protected function getQueuedLines($localquery) {
 		$queue = Billrun_Factory::db()->queueCollection();
@@ -358,6 +362,9 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		return $retLines;
     }
 
+	/**
+	 * Caches the rates in the memory for fast computations
+	 */
     protected function loadRates() {
         $rates = Billrun_Factory::db()->ratesCollection()->query()->cursor();
         $this->rates = array();
