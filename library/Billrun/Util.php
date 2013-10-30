@@ -165,8 +165,8 @@ class Billrun_Util {
 	 */
 	public static function sendSms($message, $recipients) {
 		$smser = Billrun_Factory::smser();
-		
-		if(empty($recipients)) {
+
+		if (empty($recipients)) {
 			return FALSE;
 		}
 
@@ -187,12 +187,17 @@ class Billrun_Util {
 
 	/**
 	 * 
-	 * @param type $url
-	 * @param type $data
-	 * @param type $method
+	 * @param string $url
+	 * @param string $data
+	 * @param string $method
 	 * @return array or boolean
 	 */
 	public static function sendRequest($url, $data, $method = 'POST') {
+		if ($method != 'POST' || $method != 'GET' || empty($data) || empty($url)) {
+			Billrun_Factory::log()->log("Bad parameters: url - ".$url." data - ".$data." method: ".$method, Zend_Log::ERR);
+			return FALSE;
+		}
+
 		$curl = new Zend_Http_Client_Adapter_Curl();
 		$client = new Zend_Http_Client($url);
 		$client->setHeaders(array('Accept-encoding' => 'deflate'));
@@ -200,9 +205,9 @@ class Billrun_Util {
 		$client->setMethod(Zend_Http_Client::$method);
 
 		if ($method == 'POST') {
-			$client->setParameterPost($post_fields);
+			$client->setParameterPost($data);
 		} else {
-			$client->setParameterGet($params);
+			$client->setParameterGet($data);
 		}
 
 		$response = $client->request();

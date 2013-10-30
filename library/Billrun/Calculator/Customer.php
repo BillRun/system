@@ -51,9 +51,8 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 					'$or' => array(
 						array('account_id' => array('$exists' => false)),
 						array('subscriber_id' => array('$exists' => false))
-					)
-					//'callEventStartTimeStamp' => array('$gt' => '20130929022502'),
-		));//->cursor()->limit('500');
+					), 'callEventStartTimeStamp' => array('$gt' => '20130929022502'),
+		))->cursor()->limit('500');
 	}
 
 	/**
