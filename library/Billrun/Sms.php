@@ -13,16 +13,18 @@
  * @since    1.0
  */
 class Billrun_Sms {
-	/*	 * #@+
-	 * @access protected
-	 */
-
 	/**
 	 * data
 	 * @var array
 	 */
 	protected $data = array();
-
+	
+	/**
+	 * rv
+	 * @var array
+	 */
+	protected $rv = array();
+	
 	public function __set($name, $value) {
 		if ($name == array()) {
 			$this->data[$name][] = $value;
@@ -60,20 +62,19 @@ class Billrun_Sms {
 
 			$sms_result = file_get_contents($url);
 			$exploded = explode(',', $sms_result);
-			$rv[] = array(
-				'error-code' => (empty($exploded[0]) ? 'error' : 'success'),
-				'cause-code' => $exploded[1],
-				'error-description' => $exploded[2],
-				'tid' => $exploded[3],
-			);
+			
+			$this->rv['error-code'] = (empty($exploded[0]) ? 'error' : 'success');
+			$this->rv['cause-code'] = $exploded[1];
+			$this->rv['error-description'] = $exploded[2];
+			$this->rv['tid'] = $exploded[3];
 
 			Billrun_Factory::log()->log("phone:$recipient,encoded_text:$encoded_text,url:$url,result," . json_encode($rv), Zend_Log::INFO);
 		}
 
-		return $rv;
+		return $this;
 	}
 
-	public static function sms__unicode($message) {
+	public static function sms_unicode($message) {
 		$latin = @iconv('UTF-8', 'ISO-8859-1', $message);
 		if (strcmp($latin, $message)) {
 			$arr = unpack('H*hex', @iconv('UTF-8', 'UCS-2BE', $message));

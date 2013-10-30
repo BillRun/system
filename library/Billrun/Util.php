@@ -179,5 +179,30 @@ class Billrun_Util {
 		}
 		return $ret;
 	}
+	
+	public static function sendCurlRequest($fields, $url, $method) {	
+		$curl = new Zend_Http_Client_Adapter_Curl();
+		$client = new Zend_Http_Client($url);
+		$client->setHeaders(array('Accept-encoding' => 'deflate'));
+		$client->setAdapter($curl);
+		$client->setMethod(Zend_Http_Client::$method);
+		
+		if($method == 'POST') {
+			$client->setParameterPost($post_fields);
+		}
+		else {
+				$client->setParameterGet($params);
+		}
+
+		$response = $client->request();
+		$output = $response->getBody();
+
+		if (empty($output)) {
+			Billrun_Factory::log()->log("Bad RPC result: ".print_r($response, TRUE)." Parameters sent: ".$params, Zend_Log::WARN);
+			return FALSE;
+		}
+		
+		return $output;
+	}
 
 }

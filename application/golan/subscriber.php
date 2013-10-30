@@ -82,18 +82,7 @@ class golan_subscriber {
 	}
 
 	static function send($path, $params) {
-		$curl = new Zend_Http_Client_Adapter_Curl();
-		$client = new Zend_Http_Client($path);
-		$client->setHeaders(array('Accept-encoding' => 'deflate'));
-		$client->setAdapter($curl);
-		$client->setMethod(Zend_Http_Client::GET);
-		$client->setParameterGet($params);
-		$response = $client->request();
-		$output = $response->getBody();
-
-		if (empty($output)) {
-			Billrun_Factory::log()->log("Bad RPC result: ".print_r($response, TRUE)." Parameters sent: ".$params, Zend_Log::WARN);
-		}
+		$output = Billrun_Util::sendCurlRequest($params, $path, 'GET');
 
 		return $output;
 	}

@@ -260,10 +260,12 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 
 		}
 		
-		return ($msg) ?
-				$this->sendMail("Processing status " . date(Billrun_Base::base_dateformat), $msg, Billrun_Factory::config()->getConfigValue('emailAlerts.processing.recipients', array())).
-				$this->sendSms($msg, Billrun_Factory::config()->getConfigValue('smsAlerts.processing.recipients', array())):
-				false;
+		if(!$msg) {
+			return false;
+		}
+
+		return $this->sendMail("Processing status " . date(Billrun_Base::base_dateformat), $msg, Billrun_Factory::config()->getConfigValue('emailAlerts.processing.recipients', array())).
+		$this->sendSms($msg, Billrun_Factory::config()->getConfigValue('smsAlerts.processing.recipients', array()));
 	}
 
 	/**
