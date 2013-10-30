@@ -60,7 +60,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 
 	protected function getLines() {
 		$query = array();
-		$query['type'] = array('$in' => array('ggsn', 'smpp', 'smsc', 'nsn', 'tap3', 'credit'));
+		$query['type'] = array('$in' => array('ggsn', 'smpp', 'mmsc', 'smsc', 'nsn', 'tap3', 'credit'));
 		return $this->getQueuedLines($query);
 	}
 
