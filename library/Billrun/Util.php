@@ -186,7 +186,11 @@ class Billrun_Util {
 	}
 
 	/**
-	 * Sends POST/GET request to the CRM 
+	 * 
+	 * @param type $url
+	 * @param type $data
+	 * @param type $method
+	 * @return array or boolean
 	 */
 	public static function sendRequest($url, $data, $method = 'POST') {
 		$curl = new Zend_Http_Client_Adapter_Curl();
