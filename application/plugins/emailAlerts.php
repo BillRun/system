@@ -263,10 +263,9 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 
 		$email_recipients = Billrun_Factory::config()->getConfigValue('emailAlerts.processing.recipients', array());
-		$sms_recipients = Billrun_Factory::config()->getConfigValue('smsAlerts.processing.recipients', array());
 		$date = date(Billrun_Base::base_dateformat);
 
-		return $this->sendMail("Processing status " . $date, $msg, $email_recipients) . $this->sendSms($msg, $sms_recipients);
+		return $this->sendMail("Processing status " . $date, $msg, $email_recipients);
 	}
 
 	/**
@@ -280,15 +279,6 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$recipients = $this->isDryRun ? array('eran', 'ofer') : array_merge($this->commonRecipients, $recipients);
 
 		return Billrun_Util::sendMail($subject, $body, $recipients, $attachments);
-	}
-
-	/**
-	 * Send Sms helper
-	 * @param $msg message of the sms.
-	 * @return type
-	 */
-	protected function sendSms($msg, $recipients = array()) {
-		return Billrun_Util::sendSms($msg, $recipients);
 	}
 
 	/**

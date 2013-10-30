@@ -184,7 +184,7 @@ class Billrun_Util {
 		}
 		return $ret;
 	}
-	
+
 	/**
 	 * Send Curl request to the CRM
 	 * @param string $url - url of the CRM
@@ -194,14 +194,14 @@ class Billrun_Util {
 	 */
 	public static function sendRequest($url, array $data, $method = 'POST', array $headers = array('Accept-encoding' => 'deflate')) {
 		if (($method != 'POST' && $method != 'GET') || empty($data) || empty($url)) {
-			Billrun_Factory::log()->log("Bad parameters: url - ".$url." data - ".$data." method: ".$method, Zend_Log::ERR);
+			Billrun_Factory::log()->log("Bad parameters: url - " . $url . " data - " . $data . " method: " . $method, Zend_Log::ERR);
 			return FALSE;
 		}
 
-		if(!defined("Zend_Http_Client::".$method)) {
+		if (!defined("Zend_Http_Client::" . $method)) {
 			return FALSE;
 		}
-		
+
 		$method = constant(Zend_Http_Client . "::" . $method);
 		$curl = new Zend_Http_Client_Adapter_Curl();
 		$client = new Zend_Http_Client($url);
