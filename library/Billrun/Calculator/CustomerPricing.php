@@ -193,7 +193,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	public function writeLine($line, $dataKey) {
 		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteLine', array('data' => $line));
 		$save = array();
-		$saveProperties = array($this->pricingField, 'billrun', 'over_plan', 'in_plan', 'out_plan', 'plan_ref');
+		$saveProperties = array($this->pricingField, 'billrun', 'over_plan', 'in_plan', 'out_plan', 'plan_ref', 'usagesb');
 		foreach ($saveProperties as $p) {
 			if (!is_null($val = $line->get($p, true))) {
 				$save['$set'][$p] = $val;
@@ -277,7 +277,8 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		foreach ($counters as $key => $value) {
 			$old_usage = $subRaw['balance']['totals'][$key]['usagev'];
 			$query['balance.totals.' . $key . '.usagev'] = $old_usage;
-			$update['$set']['balance.totals.' . $key . '.usagev'] = $old_usage + $value;
+			$update['$set']['balance.totals.' . $key . '.usagev'] = $old_usage + $value;			
+			$pricingData['usagesb'] = $old_usage;
 		}
 		$update['$set']['balance.cost'] = $subRaw['balance']['cost'] + $pricingData[$this->pricingField];
 		$options = array('w' => 1);

@@ -133,7 +133,7 @@ class Billrun_Balance implements ArrayAccess {
 		$output = $balances_coll->findAndModify($query, $update, array(), $options, true);
 		
 		if ($output) {
-			Billrun_Factory::log('Added subscriber ' . $sid . ' to balances collection', Zend_Log::INFO);
+			Billrun_Factory::log('Added balance ' . $billrun_key . ' to subscriber ' . $sid, Zend_Log::INFO);
 			$ret = true;
 		} else {
 			Billrun_Factory::log('Error creating balance ' . $billrun_key . ' for subscriber ' . $sid, Zend_Log::ALERT);
