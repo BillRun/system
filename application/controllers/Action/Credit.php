@@ -112,7 +112,13 @@ class CreditAction extends Action_Base {
 		if (!is_numeric($filtered_request['amount_without_vat']) || $amount_without_vat === false) {
 			return $this->setError('amount_without_vat is not a number', $credit_row);
 		} else {
-			$filtered_request['amount_without_vat'] = floatval($amount_without_vat);
+
+			// TODO: Temporary conversion. Remove it once they send negative values!
+			if ($filtered_request['credit_type'] == 'refund' && floatval($amount_without_vat) > 0) {
+				$filtered_request['amount_without_vat'] = -floatval($amount_without_vat);
+			} else {
+				$filtered_request['amount_without_vat'] = floatval($amount_without_vat);
+			}
 		}
 
 		if (is_string($filtered_request['reason'])) {
@@ -125,13 +131,13 @@ class CreditAction extends Action_Base {
 			$filtered_request['aid'] = (int) $filtered_request['account_id'];
 			unset($filtered_request['account_id']);
 		}
-		
+
 		if (isset($filtered_request['subscriber_id'])) {
 			$filtered_request['sid'] = (int) $filtered_request['subscriber_id'];
 			unset($filtered_request['subscriber_id']);
 		}
-		
-				if ($filtered_request['aid'] == 0 || $filtered_request['sid'] == 0) {
+
+		if ($filtered_request['aid'] == 0 || $filtered_request['sid'] == 0) {
 			return $this->setError('account, subscriber ids must be positive integers', $credit_row);
 		}
 
@@ -164,17 +170,17 @@ class CreditAction extends Action_Base {
 			return false;
 		} else {
 			return $queue->insert(array(
-					'stamp' => $entity['stamp'],
-					'type' => $entity['type'],
-					'urt' => $entity['urt'],
-					'calc_name' => false,
-					'calc_time' => false,
-				));
+						'stamp' => $entity['stamp'],
+						'type' => $entity['type'],
+						'urt' => $entity['urt'],
+						'calc_name' => false,
+						'calc_time' => false,
+			));
 		}
 	}
 
 	function setError($error_message, $input = null) {
-		Billrun_Factory::log()->log("Sending Error : {$error_message}",Zend_Log::NOTICE);
+		Billrun_Factory::log()->log("Sending Error : {$error_message}", Zend_Log::NOTICE);
 		$output = array(
 			'status' => 0,
 			'desc' => $error_message,
