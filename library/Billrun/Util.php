@@ -203,14 +203,14 @@ class Billrun_Util {
 			return FALSE;
 		}
 
-		$zendmethod = constant("Zend_Http_Client::" . $method);
+		$zendMethod = constant("Zend_Http_Client::" . $method);
 		$curl = new Zend_Http_Client_Adapter_Curl();
 		$client = new Zend_Http_Client($url);
 		$client->setHeaders($headers);
 		$client->setAdapter($curl);
 		$client->setMethod($method);
 
-		if ($zendmethod == Zend_Http_Client::POST) {
+		if ($zendMethod == Zend_Http_Client::POST) {
 			$client->setParameterPost($data);
 		} else {
 			$client->setParameterGet($data);
