@@ -163,7 +163,13 @@ class CreditAction extends Action_Base {
 			Billrun_Factory::log()->log('Queue collection is not defined', Zend_Log::ALERT);
 			return false;
 		} else {
-			return $queue->insert(array('stamp' => $entity['stamp'], 'type' => $entity['type']));
+			return $queue->insert(array(
+					'stamp' => $entity['stamp'],
+					'type' => $entity['type'],
+					'urt' => $entity['urt'],
+					'calc_name' => false,
+					'calc_time' => false,
+				));
 		}
 	}
 
