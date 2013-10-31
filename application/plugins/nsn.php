@@ -89,7 +89,7 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 		if ($receiver->getType() != $this->getName() || !$file->isFile()) {
 			return;
 		}
-		$extraData['month'] = date('Ym', strtotime($file->extraData['date']));
+		$extraData['month'] = date('Ym', $file->extraData['date']);
 	}
 
 //	/**

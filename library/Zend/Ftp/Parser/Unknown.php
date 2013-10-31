@@ -18,7 +18,7 @@ class Zend_Ftp_Parser_Unknown implements Zend_Ftp_Parser_IParser {
 		if( preg_match('/^.*\s+(.*)$/', $fileDirListing, $matches) ) {
 			list( $name ) = $matches;
 			return array(
-							'date' => date('d/m/Y H:i:s'),
+							'date' => time(),
 							'bytes' => 0,
 							'name' => $name,
 							'permissions' =>  "rwxrwxrwx" ,

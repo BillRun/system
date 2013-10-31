@@ -18,7 +18,7 @@ class Zend_Ftp_Parser_Unix implements Zend_Ftp_Parser_IParser {
 			list($trash, $type, $permissions, $unknown, $owner, $group, $bytes, $date, $name) = $matches;
 			$time_guess = date_create_from_format("YM d H:i", date('Y') . $date)->format('U');
 			if ($time_guess > time()) {
-				$time_guess = strtotime("last year", $time_guess);
+				$time_guess = (new DateTime())->setTimestamp($time_guess)->sub(new DateInterval('P01Y'))->format('U'); // subtract 1 year
 			}
 			return array(
 				'date' => $time_guess,
