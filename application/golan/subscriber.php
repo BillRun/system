@@ -82,7 +82,7 @@ class golan_subscriber {
 	}
 
 	static function send($path, $params) {
-		$output = Billrun_Util::sendRequest($path, $params, 'GET');
+		$output = Billrun_Util::sendRequest($path, $params, Zend_Http_Client::GET);
 
 		return $output;
 	}

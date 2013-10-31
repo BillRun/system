@@ -192,8 +192,8 @@ class Billrun_Util {
 	 * @param string $method - should be POST or GET
 	 * @return array or FALSE on failure
 	 */
-	public static function sendRequest($url, array $data, $method = 'POST', array $headers = array('Accept-encoding' => 'deflate')) {
-		if (($method != 'POST' && $method != 'GET') || empty($data) || empty($url)) {
+	public static function sendRequest($url, array $data, $method = Zend_Http_Client::POST, array $headers = array('Accept-encoding' => 'deflate')) {
+		if (empty($data) || empty($url)) {
 			Billrun_Factory::log()->log("Bad parameters: url - " . $url . " data - " . $data . " method: " . $method, Zend_Log::ERR);
 			return FALSE;
 		}
@@ -209,7 +209,7 @@ class Billrun_Util {
 		$client->setAdapter($curl);
 		$client->setMethod($method);
 
-		if ($method == 'POST') {
+		if ($method == Zend_Http_Client::POST) {
 			$client->setParameterPost($data);
 		} else {
 			$client->setParameterGet($data);

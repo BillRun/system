@@ -184,7 +184,7 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		Billrun_Log::getInstance()->log("fraudAlertsPlugin::notifyRemoteServer URL: " . $url, Zend_Log::INFO);
 
 		if (!$this->isDryRun) {
-			$output = Billrun_Util::sendRequest($url, $post_fields, 'POST');
+			$output = Billrun_Util::sendRequest($url, $post_fields, Zend_Http_Client::POST);
 			
 			Billrun_Log::getInstance()->log("fraudAlertsPlugin::notifyRemoteServer response: " . $output, Zend_Log::INFO);
 			
