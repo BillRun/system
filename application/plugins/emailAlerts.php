@@ -37,26 +37,25 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @var arrary
 	 */
 	protected $commonRecipients = array();
-	
-	
+
 	public function __construct($options = array(
 	)) {
 
 		$this->isDryRun = isset($options['dryRun']) ?
-			$options['dryRun'] :
-			Billrun_Factory::config()->getConfigValue('emailAlerts.dry_run', false);
+				$options['dryRun'] :
+				Billrun_Factory::config()->getConfigValue('emailAlerts.dry_run', false);
 
 		$this->alertTypes = isset($options['alertTypes']) ?
-			$options['alertTypes'] :
-			Billrun_Factory::config()->getConfigValue('emailAlerts.alert.types', array('nrtrde', 'ggsn', 'deposit', 'ilds', 'nsn'));
+				$options['alertTypes'] :
+				Billrun_Factory::config()->getConfigValue('emailAlerts.alert.types', array('nrtrde', 'ggsn', 'deposit', 'ilds', 'nsn'));
 
 		$this->processingTypes = isset($options['processingTypes']) ?
-			$options['processingTypes'] :
-			Billrun_Factory::config()->getConfigValue('emailAlerts.processing.types', array('nrtrde', 'ggsn', 'nsn', 'tap3'));
-		
+				$options['processingTypes'] :
+				Billrun_Factory::config()->getConfigValue('emailAlerts.processing.types', array('nrtrde', 'ggsn', 'nsn', 'tap3'));
+
 		$this->commonRecipients = isset($options['recipients']) ?
-			$options['recipients'] :
-			Billrun_Factory::config()->getConfigValue('emailAlerts.recipients', array());
+				$options['recipients'] :
+				Billrun_Factory::config()->getConfigValue('emailAlerts.recipients', array());
 
 		$this->startTime = time();
 	}
@@ -84,13 +83,13 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		if (!Billrun_Factory::config()->getConfigValue('emailAlerts.alerts.active', true)) {
 			return $retValue;
 		}
-		
+
 		$logs = $this->gatherLogs($this->processingTypes);
-		foreach ($logs as $key => $log) {			
+		foreach ($logs as $key => $log) {
 			$logArr[$key] = $log;
 		}
 		$postMsg = $this->getProcessingSummary($logArr);
-				
+
 		//Aggregate the  events by imsi  taking only the first one.
 		$events = $this->gatherEvents($this->alertTypes);
 
@@ -154,12 +153,12 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$aggregateLogs = array();
 		foreach ($types as $type) {
 			$aggregateLogs[$type]['last_processed'] = Billrun_Factory::db()->logCollection()->
-					query(array('source' => $type, 'process_time' => array('$exists' => true)))->cursor()->
-					sort(array('process_time' => -1, '_id' => -1))->limit(1)->current();
-			if($received) {
+							query(array('source' => $type, 'process_time' => array('$exists' => true)))->cursor()->
+							sort(array('process_time' => -1, '_id' => -1))->limit(1)->current();
+			if ($received) {
 				$aggregateLogs[$type]['last_received'] = Billrun_Factory::db()->logCollection()->
-						query(array('source' => $type, 'received_time' => array('$exists' => true)))->cursor()->
-						sort(array('received_time' => -1, '_id' => -1))->limit(1)->current();
+								query(array('source' => $type, 'received_time' => array('$exists' => true)))->cursor()->
+								sort(array('received_time' => -1, '_id' => -1))->limit(1)->current();
 			}
 		}
 		return $aggregateLogs;
@@ -193,8 +192,8 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 
 		$msg = "Count of failed: $failed" . PHP_EOL
-			. "Count of success: $successful" . PHP_EOL
-			. PHP_EOL . $postMsg . PHP_EOL
+				. "Count of success: $successful" . PHP_EOL
+				. PHP_EOL . $postMsg . PHP_EOL
 		;
 
 		if ($failed || $successful) {
@@ -205,7 +204,7 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$attachment = array();
 		}
 
-		$ret = $this->sendMail("NRTRDE status " . date(Billrun_Base::base_dateformat), $msg, Billrun_Factory::config()->getConfigValue('emailAlerts.alerts.recipients', array()), $attachment );
+		$ret = $this->sendMail("NRTRDE status " . date(Billrun_Base::base_dateformat), $msg, Billrun_Factory::config()->getConfigValue('emailAlerts.alerts.recipients', array()), $attachment);
 
 		if (count($attachment) && file_exists($attachmentPath)) {
 			@unlink($attachmentPath);
@@ -225,15 +224,15 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 
 			if (isset($val['last_processed'])) {
 				$seq = $this->getFileSequenceData($val['last_processed']['file_name'], $type);
-				$msg .= strtoupper($type) . " last processed Index: " . $seq['seq'] 
-					. " processing date: " . $val['last_processed']['process_time'] . PHP_EOL;
+				$msg .= strtoupper($type) . " last processed Index: " . $seq['seq']
+						. " processing date: " . $val['last_processed']['process_time'] . PHP_EOL;
 			} else {
 				$msg .= strtoupper($type) . " no processed files " . PHP_EOL;
 			}
 		}
 		return $msg;
 	}
-	
+
 	/**
 	 * send  processing results by email.
 	 */
@@ -253,16 +252,20 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 			if ($val['alert']) {
 				$msg .= "ALERT! : didn't processed $name longer then the configured time" . PHP_EOL . PHP_EOL;
 			}
-			if(Billrun_Factory::config()->getConfigValue('emailAlerts.processing.send_report_regularly', false ) ) {
+			if (Billrun_Factory::config()->getConfigValue('emailAlerts.processing.send_report_regularly', false)) {
 				$seq = $this->getFileSequenceData($val['last_received']['file_name'], $type);
 				$msg .= strtoupper($type) . " recevied Index : " . $seq['seq'] . " receving date : " . $val['last_received']['received_time'] . PHP_EOL;
 			}
-
 		}
-		
-		return ($msg) ?
-				$this->sendMail("Processing status " . date(Billrun_Base::base_dateformat), $msg, Billrun_Factory::config()->getConfigValue('emailAlerts.processing.recipients', array())) :
-				false;
+
+		if (!$msg) {
+			return false;
+		}
+
+		$email_recipients = Billrun_Factory::config()->getConfigValue('emailAlerts.processing.recipients', array());
+		$date = date(Billrun_Base::base_dateformat);
+
+		return $this->sendMail("Processing status " . $date, $msg, $email_recipients);
 	}
 
 	/**
@@ -274,7 +277,7 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 */
 	protected function sendMail($subject, $body, $recipients = array(), $attachments = array()) {
 		$recipients = $this->isDryRun ? array('eran', 'ofer') : array_merge($this->commonRecipients, $recipients);
-			
+
 		return Billrun_Util::sendMail($subject, $body, $recipients, $attachments);
 	}
 
@@ -292,8 +295,8 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$csvEvent = array();
 			foreach ($header as $fieldKey) {
 				$csvEvent[$fieldKey] = isset($event['returned_value']) && isset($event['returned_value'][$fieldKey]) ?
-					$event['returned_value'][$fieldKey] :
-					( isset($event[$fieldKey]) ? $event[$fieldKey] : "");
+						$event['returned_value'][$fieldKey] :
+						( isset($event[$fieldKey]) ? $event[$fieldKey] : "");
 			}
 
 			fputcsv($fp, $csvEvent);
