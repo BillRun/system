@@ -238,34 +238,31 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 */
 	protected function sendProcessingSummary($logs) {
 		Billrun_Log::getInstance()->log("Generate Processing result to email", Zend_Log::INFO);
-
-		$msg = "";
+		$emailMsg = "";
 		foreach ($logs as $type => $val) {
 			$name = strtoupper($type);
 			if (!isset($val['last_received'])) {
-				$msg .= strtoupper($type) . " no files were processed or recevied";
+				$emailMsg .= strtoupper($type) . " no files were processed or recevied";
 				continue;
-			}
-			if ($val['warning']) {
-				$msg .= "WARNNING! : it seems the server stopped processing $name" . PHP_EOL . PHP_EOL;
-			}
-			if ($val['alert']) {
-				$msg .= "ALERT! : didn't processed $name longer then the configured time" . PHP_EOL . PHP_EOL;
-			}
-			if (Billrun_Factory::config()->getConfigValue('emailAlerts.processing.send_report_regularly', false)) {
+			} if ($val['warning']) {
+				$smsMsg = "WARNNING! : it seems the server stopped processing $name";
+				$emailMsg .= $smsMsg . PHP_EOL . PHP_EOL;
+				$this->sendSmsOnFailure($smsMsg);
+			} if ($val['alert']) {
+				$smsMsg = "ALERT! : didn't processed $name longer then the configured time";
+				$emailMsg .= $smsMsg . PHP_EOL . PHP_EOL;
+				$this->sendSmsOnFailure($smsMsg);
+			} if (Billrun_Factory::config()->getConfigValue('emailAlerts.processing.send_report_regularly', false)) {
 				$seq = $this->getFileSequenceData($val['last_received']['file_name'], $type);
-				$msg .= strtoupper($type) . " recevied Index : " . $seq['seq'] . " receving date : " . $val['last_received']['received_time'] . PHP_EOL;
+				$emailMsg .= strtoupper($type) . " recevied Index : " . $seq['seq'] . " receving date : " . $val['last_received']['received_time'] . PHP_EOL;
 			}
 		}
-
-		if (!$msg) {
+		if (!$emailMsg) {
 			return false;
 		}
-
 		$email_recipients = Billrun_Factory::config()->getConfigValue('emailAlerts.processing.recipients', array());
 		$date = date(Billrun_Base::base_dateformat);
-
-		return $this->sendMail("Processing status " . $date, $msg, $email_recipients);
+		return $this->sendMail("Processing status " . $date, $emailMsg, $email_recipients);
 	}
 
 	/**
@@ -279,6 +276,16 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$recipients = $this->isDryRun ? array('eran', 'ofer') : array_merge($this->commonRecipients, $recipients);
 
 		return Billrun_Util::sendMail($subject, $body, $recipients, $attachments);
+	}
+	
+	/**
+	 * Sends warning sms to the recipients
+	 * @param string $msg
+	 * @return array
+	 */
+	protected function sendSmsOnFailure($msg) {
+		$recipients = Billrun_Factory::config()->getConfigValue('smsAlerts.processing.recipients', array());
+		return Billrun_Util::sendSms($msg, $recipients);
 	}
 
 	/**
