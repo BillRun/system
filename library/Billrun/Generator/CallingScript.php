@@ -178,7 +178,7 @@ class Billrun_Generator_CallingScript extends Billrun_Generator {
 			$fname = date('Ymd'). "_" . $name .".json";
 			Billrun_Factory::log("Generating file $fname");
 			$fd = fopen($outputDir. DIRECTORY_SEPARATOR.$fname,"w+");//@TODO change the  output  dir to be configurable.
-			fwrite($fd, "db.config.insert({key:'call_generator',unified_record_time:ISODate('". date('Y-m-d\TH:i:s\Z')."'),");
+			fwrite($fd, "db.config.insert({key:'call_generator',urt:ISODate('". date('Y-m-d\TH:i:s\Z')."'),");
 			fwrite($fd, "from:ISODate('". date('Y-m-d\TH:i:s\Z',$report['from']) ."'),");
 			fwrite($fd, "to:ISODate('". date('Y-m-d\TH:i:s\Z',$report['to']) ."'),");
 			fwrite($fd, "test_id :'{$report['test_id']}'," );

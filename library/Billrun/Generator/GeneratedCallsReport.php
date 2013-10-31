@@ -15,6 +15,9 @@
  * @since    0.5
  */
 class Billrun_Generator_GeneratedCallsReport extends Billrun_Generator {
+	
+	const ALLOWED_TIME_DIVEATION = 5;
+	
 	protected $subscriber = "";
 	protected $callingNumber = "";
 	protected $from;
@@ -39,19 +42,11 @@ class Billrun_Generator_GeneratedCallsReport extends Billrun_Generator {
 	}
 	
 	public function generate() {
-		$subscriberLines = array();
-		$callResults = array();	
-		
-		foreach($this->calls as $row) {
-			$rowData = $row->getRawData();
-			$callResults[$rowData['caller_end_result']][] = $rowData;
-			$subscriberLines[] = $rowData; //TODO filter the filed to only return relevent fields
-		}
-		
-
-		$report['summary'] = $this->printSDetailedReport($this->calls,$this->billingCalls['unmatched_lines']);
-		$report['from']	 = $this->from;
-		$report['to']	 = $this->to;	
+	
+		$report['details'] = $this->printSDetailedReport($this->calls,$this->billingCalls['unmatched_lines']);
+		$report['summary'] = $this->printSummaryReport($this->calls,$this->billingCalls['unmatched_lines']);
+		$report['from']	 = date("Y-m-d H:i:s", $this->from);
+		$report['to']	 = date("Y-m-d H:i:s", $this->to);	
 		$reports =  array("call_matching_report" => $report);
 		if(isset($this->options['out']) && $this->options['out']) {
 			$this->generateFiles($reports, $this->options['out']);
@@ -88,7 +83,7 @@ class Billrun_Generator_GeneratedCallsReport extends Billrun_Generator {
 				'billing_charging_end_time' => 'billing_charging_end_time',
 				'billing_arate' => 'billing_rate',
 				'billing_aprice' => 'billing_price',
-			);			
+			);
 			$callingRecordFilter = array(
 				'call_id' => 'generator_id',
 				'caller_execution_start_time' => 'generator_calling_time',
@@ -103,18 +98,17 @@ class Billrun_Generator_GeneratedCallsReport extends Billrun_Generator {
 				'callee_estimated_price' => 'generator_estimated_price',
 			);			
 			$record = array_merge( $this->filterArray($callingRecordFilter, $line),  $this->filterArray($billingRecordFilter, $line) );			
-			print_r($record);
-			$record['time_offset'] = Billrun_Util::getFieldVal($line['callee_duration'],0) - Billrun_Util::getFieldVal($line['usagev'],0);
-			$record['charge_offest'] = Billrun_Util::getFieldVal($line['callee_cost'],0) - Billrun_Util::getFieldVal($line['aprice'],0);
-			$record['rate_offest'] = Billrun_Util::getFieldVal($line['rate'],0) - Billrun_Util::getFieldVal($line['rate'],0);
+			$record['time_offset'] = Billrun_Util::getFieldVal($line['callee_duration'],0) - Billrun_Util::getFieldVal($line['billing_usagev'],0);
+			$record['charge_offest'] = Billrun_Util::getFieldVal($line['callee_cost'],0) - Billrun_Util::getFieldVal($line['billing_aprice'],0);
+			$record['rate_offest'] = Billrun_Util::getFieldVal($line['rate'],0) - Billrun_Util::getFieldVal($line['billling_arate'],0);
 			$record['start_time_offest'] = Billrun_Util::getFieldVal($line['callee_call_start_time']->sec,0) - strtotime( Billrun_Util::getFieldVal($line['billing_charging_start_time'],'') );
-			$record['end_time_offest'] = Billrun_Util::getFieldVal($line['callee_call_end_time'],0) - strtotime(Billrun_Util::getFieldVal($line['billing_charging_end_time'],''));
+			$record['end_time_offest'] = Billrun_Util::getFieldVal($line['callee_call_end_time']->sec,0) - strtotime(Billrun_Util::getFieldVal($line['billing_charging_end_time'],''));
 			$record['call_recoding_diff'] =	isset($line['billing_urt'])  ? 0 : 1 ;
 			$record['called_number_diff'] = Billrun_Util::getFieldVal($line['to'],'') != Billrun_Util::getFieldVal($line['billing_called_number'],'') ? 1 : 0;
-			$record['correctness'] = (
-										$record['start_time_offest']  == 0 && $record['end_time_offest'] ==	0 &&
+			$record['correctness'] = ( // Check that the  call is corrent
+										abs($record['start_time_offest']) <= 5 && abs($record['end_time_offest']) <= 5 &&
 										$record['call_recoding_diff']  == 0 && $record['called_number_diff'] == 0 &&
-										$record['charge_offest'] == 0 &&$record['time_offset'] == 0
+										abs($record['charge_offest']) <= 0.3 && abs($record['time_offset']) <= 1 
 									) ? 0 : 1;
 			
 			return $record;
@@ -123,9 +117,8 @@ class Billrun_Generator_GeneratedCallsReport extends Billrun_Generator {
 	protected function filterArray($filter,$arr) {
 		$ret = array();
 		foreach ($filter as $key => $value) {
-			if(isset($arr[$key])) {
-				$ret[$value] = $arr[$key];
-			}
+				$val = Billrun_Util::getFieldVal($arr[$key],'');			
+				$ret[$value] =  $val instanceof MongoDate ? date("Y-m-d H:i:s",$val->sec): $val;
 		}
 		return $ret;
 	}
@@ -137,15 +130,77 @@ class Billrun_Generator_GeneratedCallsReport extends Billrun_Generator {
 	 * @return type
 	 */
 	protected function printSummaryReport($subscriberLines,$unmachedLines) {
+		$summary=array(
+					'generator' => array('duration'=>0,'price'=> 0, 'busy'=> 0,'regular' => 0, 'voice_mail' => 0 , 'no_answer' => 0,'rate'=> 0),
+					'billing' => array('duration'=>0,'price'=> 0, 'busy'=> 0,'regular' => 0, 'voice_mail' => 0 , 'no_answer' => 0,'rate'=> 0),
+					'offset' => array('duration'=>0,'price'=> 0, 'busy'=> 0,'regular' => 0, 'voice_mail' => 0 , 'no_answer' => 0,'rate'=> 0),
+					'offset_pecentage' => array('duration'=>0,'price'=> 0, 'busy'=> 0,'regular' => 0, 'voice_mail' => 0 , 'no_answer' => 0,'rate'=> 0),
+					'generator_standard_deviation' => array('duration'=>0,'price'=> 0, 'busy'=> 0,'regular' => 0, 'voice_mail' => 0 , 'no_answer' => 0,'rate'=> 0),
+					'billing_standard_deviation' => array('duration'=>0,'price'=> 0, 'busy'=> 0,'regular' => 0, 'voice_mail' => 0 , 'no_answer' => 0,'rate'=> 0),
+			);
+		$allLines = array_merge($unmachedLines,$subscriberLines);
+		foreach ( $allLines as $key => $value) {
+			if(isset($value['action_type'])) {
+				$summary['generator']['duration'] += $value['callee_duration'];
+				$summary['generator']['price'] += Billrun_Util::getFieldVal($value['callee_price'],0);
+				$summary['generator'][$value['action_type']] += 1;			
+				$summary['generator']['rate'] += floatval(Billrun_Util::getFieldVal($value['rate'],0));	
+			}
 		
-		Billrun_Factory::log()->log("From the CDR records : Had $missed call that weren't found in the calling records and $durationDiff with missmatching duration", Zend_Log::DEBUG);
-		foreach ($callResults as $key => $value) {
-			$summary['calls_types'][$key] = count($value);
-			Billrun_Factory::log()->log("Had ". count($value). " calls that were : $key", Zend_Log::DEBUG);
+			if(isset($value['billing_usagev'])) {
+				$summary['billing']['duration'] +=  Billrun_Util::getFieldVal($value['billing_usagev'],0) ;
+				$summary['billing']['price'] +=  Billrun_Util::getFieldVal($value['billing_aprice'],0);			
+				$summary['billing'][Billrun_Util::getFieldVal($value['action_type'],'regular')] +=  1;			
+				$summary['billing']['rate'] +=  0;			
+			}
 		}
+		$summary['offset']['duration'] =  $summary['generator']['duration'] - $summary['billing']['duration'];
+		$summary['offset']['price'] =  $summary['generator']['price'] - $summary['billing']['price'];						
+		$summary['offset']['rate'] =  $summary['generator']['rate'] - $summary['billing']['rate'];
+		foreach (array('busy','regular', 'voice_mail' , 'no_answer') as  $value) {
+			$summary['offset'][$value] =  $summary['generator'][$value] - $summary['billing'][$value];
+		}
+		
+		$summary['offset_pecentage']['duration'] = (float) @( 100 * $summary['offset']['duration'] / $summary['generator']['duration'] );
+		$summary['offset_pecentage']['price'] = (float) @( 100 * $summary['offset']['price'] / $summary['generator']['price'] );						
+		$summary['offset_pecentage']['rate'] = (float) @( 100 * $summary['offset']['rate'] / $summary['generator']['rate'] );
+		foreach (array('busy','regular', 'voice_mail' , 'no_answer') as  $value) {
+			$summary['offset_pecentage'][$value] = (float)@( 100 * $summary['offset'][$value] / $summary['generator'][$value] );
+		}
+		//TODO calculate standard  deviation
+		$summary['generator_standard_deviation'] = $this->calcStandardDev($allLines, array('callee_duration' => 'duration','callee_price' => 'price','rate' => 'rate'));
+		$summary['billing_standard_deviation'] =$this->calcStandardDev($allLines, array('billing_usagev'=> 'duration','billing_aprice' => 'price','billing_arate' => 'rate'));
 		return $summary;
 	}
 
+	
+	protected function calcStandardDev($array,$fields) {
+		$avgs = array();
+		$diveations = array();
+		$count = 0;
+		foreach ( $array as $value) {
+			foreach ($fields as $field => $toField) {				
+				$avgs[$field] = Billrun_Util::getFieldVal($avgs[$field],0) + (float)(Billrun_Util::getFieldVal($value[$field],0));
+			}			
+			$count++;
+		}
+		
+		foreach ( $avgs as &$val ) {
+			$val = (float) ($val / $count);
+		}
+		
+		foreach ( $array as $value) {		
+			foreach ($fields as $field => $toField) {
+				$diveations[$toField] = Billrun_Util::getFieldVal($diveations[$toField],0) + pow( floatval(Billrun_Util::getFieldVal($value[$field],0)) - $avgs[$field],2);
+			}			
+		}
+		foreach ( $diveations as  &$val1 ) {
+			$val1 = sqrt($val1 / $count);
+		}
+		
+		return $diveations;
+	}
+	
 	/**
 	 * 
 	 */
@@ -155,15 +210,15 @@ class Billrun_Generator_GeneratedCallsReport extends Billrun_Generator {
 		//load calls made
 		$callsQuery =array(	'type' => 'generated_call',
 							'from' =>  array('$regex' => (string) $this->callingNumber ),
-							 'urt' => array( 													
-													'$lte'=> new MongoDate($this->to) ,
-													'$gt' => new MongoDate($this->from) 
-												 )
+							'urt' => array( 													
+										'$lte'=> new MongoDate($this->to) ,
+										'$gt' => new MongoDate($this->from) 
+									 )
 					);
-		$this->calls =  Billrun_Factory::db()->linesCollection()
-							->query($callsQuery)->cursor();		
-
-		
+		$this->calls = array();
+		foreach (Billrun_Factory::db()->linesCollection()->query($callsQuery) as  $value) {
+			$this->calls[] = $value->getRawData();
+		}		
 	}
 	
 	/**
@@ -171,14 +226,14 @@ class Billrun_Generator_GeneratedCallsReport extends Billrun_Generator {
 	 * @param type $sub
 	 */
 	protected function mergeBillingLines($sub) {
-		$neededFields = array('called_number','subscriber_id','account_id','duration','price_customer');
+		$neededFields = array('called_number','calling_number','usagev','aprice','charging_start_time','charging_end_time','arate','urt','stamp');
 		$billingLines = $this->retriveSubscriberBillingLines($sub);
 		
-		$retBLines = array('raw_lines' => $billingLines, 'unmached_lines' => array());
+		$retBLines = array('raw_lines' => $billingLines, 'unmatched_lines' => array());
 		//Billrun_Factory::log()->log("Sub lines : " . print_r($billingLines,1), Zend_Log::DEBUG);
 		foreach ($billingLines as $bLine) {
 			if($bLine['type'] != "nsn") { continue; }
-			Billrun_Factory::log()->log("line : " . print_r($bLine,1), Zend_Log::DEBUG);
+			
 			$data = array();
 			foreach ($neededFields as $key) {
 				if(isset($bLine[$key])) {
@@ -186,14 +241,17 @@ class Billrun_Generator_GeneratedCallsReport extends Billrun_Generator {
 				}
 			}			
 			$updateResults =  Billrun_Factory::db()->linesCollection()->update(array('type'=>'generated_call',
-																'from' => array('$regex' => (string)"/". $bLine['calling_number'] ."/"),
-																'to' => array('$regex' => (string)"/". $bLine['called_number'] ."/" ),
-																'urt' => array('$lte' => new MongoDate($bLine['urt']->sec+5),
-																			   '$gte' => new MongoDate($bLine['urt']->sec-5))
-																),array('$set'=> $data));
+																'from' => array('$regex' => preg_replace("/^972/","",$bLine['calling_number']) ),
+																'to' => array('$regex' => preg_replace("/^972/","",$bLine['called_number']) ),
+																'urt' => array('$lte' => new MongoDate($bLine['urt']->sec + self::ALLOWED_TIME_DIVEATION),
+																			   '$gte' => new MongoDate($bLine['urt']->sec - self::ALLOWED_TIME_DIVEATION))
+																),array('$set'=> $data),array('w'=>1));
 			
 			if (!($updateResults['ok'] && $updateResults['updatedExisting'])) {
 				$retBLines['unmatched_lines'][] = $data;
+			} else {
+				Billrun_Factory::log()->log("line : " . print_r($bLine,1), Zend_Log::DEBUG);
+				Billrun_Factory::log()->log("line : " . print_r($updateResults,1), Zend_Log::DEBUG);
 			}
 		}
 		return $retBLines;
@@ -209,6 +267,7 @@ class Billrun_Generator_GeneratedCallsReport extends Billrun_Generator {
 		$options = array(
 			'type' => 'SubscriberUsage',
 			'subscriber_id' => (string) $this->subscriber,
+			'calling_number' => (string) $this->callingNumber,
 			'from' => date("Y-m-d H:i:s",$this->from),
 			'to' => date("Y-m-d H:i:s",$this->to),
 		);
@@ -229,10 +288,10 @@ class Billrun_Generator_GeneratedCallsReport extends Billrun_Generator {
 		foreach ($resultFiles as $name => $report) {
 			$fname = date('Ymd'). "_" . $name .".json";
 			Billrun_Factory::log("Generating file $fname");
-			$fd = fopen($outputDir. DIRECTORY_SEPARATOR.$fname,"w+");//@TODO change the  output  dir to be configurable.
-			
-			fwrite($fd, json_encode($report));
+			$fd = fopen($outputDir. DIRECTORY_SEPARATOR.$fname,"w+");
+			fwrite($fd, json_encode($report,JSON_PRETTY_PRINT));
 			fclose($fd);	
+			
 			}				
 	}
 	

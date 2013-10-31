@@ -29,6 +29,7 @@ class Billrun_Generator_SubscriberUsage extends Billrun_Generator {
 	
 
 	public function __construct($options) {
+
 		parent::__construct($options);
 		if (isset($options['subscriber_id'])) {
 			$this->subscriberId = $options['subscriber_id'];
@@ -39,6 +40,7 @@ class Billrun_Generator_SubscriberUsage extends Billrun_Generator {
 		if (isset($options['to'])) {
 			$this->to = new MongoDate(strtotime($options['to']));
 		}
+
 	}
 
 	/**
@@ -51,7 +53,7 @@ class Billrun_Generator_SubscriberUsage extends Billrun_Generator {
 		foreach ($this->lines as $value) {
 			$subscriberLines[] = $value->getRawData();
 		}
-		
+		Billrun_Factory::log(print_r($subscriberLines,1));
 		//Billrun_Factory::log(print_r($subscriberLines,1));
 		return array('lines' => $subscriberLines );
 	}
