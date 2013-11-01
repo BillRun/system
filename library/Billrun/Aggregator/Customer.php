@@ -296,7 +296,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 				'$ne' => 'ggsn',
 			),
 		);
-		if ($this->allowOverride) {			
+		if ($this->allowOverride) {
 			$query['$or'] = array(
 				array('billrun' => array('$exists' => false)),
 				array('billrun' => $billrun_key),

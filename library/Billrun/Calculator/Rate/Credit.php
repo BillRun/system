@@ -29,13 +29,13 @@ class Billrun_Calculator_Rate_Credit extends Billrun_Calculator_Rate {
 		$usage_type = $this->getLineUsageType($row);
 		$volume = $this->getLineVolume($row, $usage_type);
 		$rate = $this->getLineRate($row, $usage_type);
-		
+
 		$current = $row->getRawData();
 
 		$added_values = array(
 			'usaget' => $usage_type,
 			'usagev' => $volume,
-			$this->ratingField => $rate? $rate->createRef() : $rate,
+			$this->ratingField => $rate ? $rate->createRef() : $rate,
 		);
 		$newData = array_merge($current, $added_values);
 		$row->setRawData($newData);
@@ -43,7 +43,7 @@ class Billrun_Calculator_Rate_Credit extends Billrun_Calculator_Rate {
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteRow', array('row' => $row));
 		return true;
 	}
-	
+
 	/**
 	 * @see Billrun_Calculator_Rate::getLineVolume
 	 */
@@ -53,7 +53,7 @@ class Billrun_Calculator_Rate_Credit extends Billrun_Calculator_Rate {
 
 	/**
 	 * @see Billrun_Calculator_Rate::getLineUsageType
-	 */	
+	 */
 	protected function getLineUsageType($row) {
 		return 'credit';
 	}
@@ -63,12 +63,12 @@ class Billrun_Calculator_Rate_Credit extends Billrun_Calculator_Rate {
 	 */
 	protected function getLineRate($row, $usage_type) {
 		$rates = Billrun_Factory::db()->ratesCollection();
-		
+
 		$vat = $row['vatable'];
-		$query = array('key' => $vat? "CREDIT_VATABLE" : "CREDIT_VAT_FREE");
+		$query = array('key' => $vat ? "CREDIT_VATABLE" : "CREDIT_VAT_FREE");
 		$rate = $rates->query($query)->cursor()->current();
 		$rate->collection($rates);
-		
+
 		return $rate;
 	}
 
