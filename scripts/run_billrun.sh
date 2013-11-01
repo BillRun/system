@@ -8,6 +8,11 @@
 ###  5) the sleep time between each concurrent process
 
 iam="`whoami`";
+if [ $iam != "billrun" ]; then
+        echo "must run under billrun user not : " $iam;
+        exit;
+fi
+
 if [ $1 ]; then
         month=$1;
 else
@@ -33,11 +38,6 @@ fi
 sleeptime=5;
 if [ $5 ]; then
         sleeptime=$5;
-fi
-
-if [ $iam != "billrun" ]; then
-        echo "must run under billrun user not : " $iam;
-        exit;
 fi
 
 for i in `seq 1 $instances`; do
