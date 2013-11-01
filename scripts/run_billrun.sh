@@ -3,7 +3,7 @@
 ###  script arguments as follow:
 ###  1) stamp id of the billrun
 ###  2) size of the page
-###  3) amount  of  concurrent billruns  to  run (in one   host)
+###  3) amount  of  concurrent billruns  to  run (in one host)
 ###  4) page to start from, the first is 0 (zero)
 
 iam="`whoami`";
