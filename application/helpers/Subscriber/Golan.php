@@ -209,19 +209,19 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		if (is_array($accounts) && !empty($accounts)) {
 			$ret_data = array();
 			foreach ($accounts as $aid => $account) {
-				if(isset($account['subscribers'])) {
+				if (isset($account['subscribers'])) {
 					foreach ($account['subscribers'] as $subscriber) {
 						$concat = array(
-							'time' => strtotime($time), 
+							'time' => strtotime($time),
 							'data' => array(
-								'aid' => intval($aid), 
+								'aid' => intval($aid),
 								'sid' => intval($subscriber['subscriber_id']),
 								'plan' => isset($subscriber['plan']) ? $subscriber['plan'] : null,
 							),
 						);
 						$subscriber_settings = array_merge($subscriber_general_settings, $concat);
 						$ret_data[intval($aid)][] = Billrun_Subscriber::getInstance($subscriber_settings);
-						}
+					}
 				}
 			}
 			return $ret_data;
@@ -293,14 +293,13 @@ class Subscriber_Golan extends Billrun_Subscriber {
 							$item[$key] = $temp;
 						}
 					}
-					$subscribers[$stamp] = new self(array_merge(array('data' => $item),$subscriberSettings));
+					$subscribers[$stamp] = new self(array_merge(array('data' => $item), $subscriberSettings));
 				} else {
 					//TODO what is the output when subscriber was not found?
 //				Billrun_Factory::log()->log('Failed to load Golan subscriber data', Zend_Log::ALERT);
 				}
 			}
-		}
-		else {
+		} else {
 			$message = 'Customer API responded with no results';
 		}
 		Billrun_Factory::log()->log($message . ". Proceeding with calculation...", Zend_Log::INFO);
