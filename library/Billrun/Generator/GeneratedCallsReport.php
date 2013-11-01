@@ -151,7 +151,7 @@ class Billrun_Generator_GeneratedCallsReport extends Billrun_Generator {
 				$summary['billing']['duration'] +=  Billrun_Util::getFieldVal($value['billing_usagev'],0) ;
 				$summary['billing']['price'] +=  Billrun_Util::getFieldVal($value['billing_aprice'],0);			
 				$summary['billing'][Billrun_Util::getFieldVal($value['action_type'],'regular')] +=  1;			
-				$summary['billing']['rate'] +=  0;			
+				$summary['billing']['rate'] +=  Billrun_Util::getFieldVal($value['billing_arate'],0);						
 			}
 		}
 		$summary['offset']['duration'] =  $summary['generator']['duration'] - $summary['billing']['duration'];
@@ -243,8 +243,8 @@ class Billrun_Generator_GeneratedCallsReport extends Billrun_Generator {
 			$updateResults =  Billrun_Factory::db()->linesCollection()->update(array('type'=>'generated_call',
 																'from' => array('$regex' => preg_replace("/^972/","",$bLine['calling_number']) ),
 																'to' => array('$regex' => preg_replace("/^972/","",$bLine['called_number']) ),
-																'urt' => array('$lte' => new MongoDate($bLine['urt']->sec + self::ALLOWED_TIME_DIVEATION),
-																			   '$gte' => new MongoDate($bLine['urt']->sec - self::ALLOWED_TIME_DIVEATION))
+																'urt' => array('$lte' => new MongoDate($bLine['urt']['sec'] + self::ALLOWED_TIME_DIVEATION),
+																			   '$gte' => new MongoDate($bLine['urt']['sec'] - self::ALLOWED_TIME_DIVEATION))
 																),array('$set'=> $data),array('w'=>1));
 			
 			if (!($updateResults['ok'] && $updateResults['updatedExisting'])) {
@@ -264,7 +264,7 @@ class Billrun_Generator_GeneratedCallsReport extends Billrun_Generator {
 	 */
 	protected function retriveSubscriberBillingLines($sub) {
 		//TODO use API
-		$options = array(
+/*		$options = array(
 			'type' => 'SubscriberUsage',
 			'subscriber_id' => (string) $this->subscriber,
 			'calling_number' => (string) $this->callingNumber,
@@ -273,9 +273,18 @@ class Billrun_Generator_GeneratedCallsReport extends Billrun_Generator {
 		);
 		$generator = Billrun_Generator::getInstance($options);
 		$generator->load();
-		$results = $generator->generate();
-		
-		return $results['lines'];
+		$results = $generator->generate();*/
+		$url = $this->options['billing_api_url']."/apigenerate/?type=SubscriberUsage&stamp={$this->stamp}&subscriber_id={$this->subscriber}]&from='".  urlencode(date("Y-m-d H:i:s",$this->from))."'&to=".  urlencode(date("Y-m-d H:i:s",$this->to));
+		$curlFd = curl_init($url);
+		curl_setopt($curlFd, CURLOPT_RETURNTRANSFER, TRUE);
+		$results = json_decode(curl_exec($curlFd),JSON_OBJECT_AS_ARRAY);
+		foreach ($results as &$value) {
+			if($value['type'] != 'nsn' || $value['usaget'] != 'call') {
+				unset($value);
+			}
+			$value['arate'] = $value['arate']['call']['rate'][0]['price'];
+		}
+		return $results;
 	}
 	
 	/**

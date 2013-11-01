@@ -53,7 +53,6 @@ class Billrun_Generator_SubscriberUsage extends Billrun_Generator {
 		foreach ($this->lines as $value) {
 			$subscriberLines[] = $value->getRawData();
 		}
-		Billrun_Factory::log(print_r($subscriberLines,1));
 		//Billrun_Factory::log(print_r($subscriberLines,1));
 		return array('lines' => $subscriberLines );
 	}
@@ -63,14 +62,19 @@ class Billrun_Generator_SubscriberUsage extends Billrun_Generator {
 	 */
 	public function load() {
 
-		$this->lines = Billrun_Factory::db()->linesCollection()->query(array(
+		$lines = Billrun_Factory::db()->linesCollection()->query(array(
 																'sid'=> (int) $this->subscriberId, 
 																'urt' => array(
 																		'$gte' => $this->from,
 																		'$lte' => $this->to,
 																	)
 													))->cursor();
-		
+		$this->lines = array();
+		foreach($lines as $line) {
+			$line->collection(Billrun_Factory::db()->linesCollection());
+			$line['arate']= $line['arate']['rates'];
+			$this->lines[] = $line;
+		}
 		
 	}
 
