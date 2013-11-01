@@ -1,11 +1,11 @@
 #!/bin/bash
 
 ###  script arguments as follow:
-###  1) stamp id of the billrun
-###  2) size of the page
-###  3) amount  of  concurrent billruns  to  run (in one host)
-###  4) page to start from, the first is 0 (zero)
-###  5) the sleep time between each concurrent process
+###  1) stamp id of the billrun (mandatory)
+###  2) size of the page. default: 10000
+###  3) amount  of  concurrent billruns  to  run (in one host). default: 15
+###  4) page to start from, the first is 0 (zero). default: 0
+###  5) the sleep time between each concurrent process. default: 5
 
 iam="`whoami`";
 if [ $iam != "billrun" ]; then
@@ -43,7 +43,7 @@ fi
 for i in `seq 1 $instances`; do
         page=`expr $start_instance \+ $i`;
         php -t /var/www/billrun/ /var/www/billrun/public/index.php  -a --type customer --stamp $month --page $page --size $size &
-        echo sleep $sleeptime;
+        sleep $sleeptime;
 done
 
 exit;
