@@ -211,7 +211,15 @@ class Subscriber_Golan extends Billrun_Subscriber {
 			foreach ($accounts as $aid => $account) {
 				if(isset($account['subscribers'])) {
 					foreach ($account['subscribers'] as $subscriber) {
-						$subscriber_settings = array_merge($subscriber_general_settings, array('time' => strtotime($time), 'data' => array('aid' => intval($aid), 'sid' => intval($subscriber['subscriber_id']), 'plan' => $subscriber['plan'])));
+						$concat = array(
+							'time' => strtotime($time), 
+							'data' => array(
+								'aid' => intval($aid), 
+								'sid' => intval($subscriber['subscriber_id']),
+								'plan' => isset($subscriber['plan']) ? $subscriber['plan'] : null,
+							),
+						);
+						$subscriber_settings = array_merge($subscriber_general_settings, $concat);
 						$ret_data[intval($aid)][] = Billrun_Subscriber::getInstance($subscriber_settings);
 						}
 				}
