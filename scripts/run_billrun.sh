@@ -5,6 +5,7 @@
 ###  2) size of the page
 ###  3) amount  of  concurrent billruns  to  run (in one host)
 ###  4) page to start from, the first is 0 (zero)
+###  5) the sleep time between each concurrent process
 
 iam="`whoami`";
 if [ $1 ]; then
@@ -29,6 +30,11 @@ if [ $4 ]; then
         start_instance=$4;
 fi
 
+sleeptime=5;
+if [ $5 ]; then
+        sleeptime=$5;
+fi
+
 if [ $iam != "billrun" ]; then
         echo "must run under billrun user not : " $iam;
         exit;
@@ -37,7 +43,7 @@ fi
 for i in `seq 1 $instances`; do
         page=`expr $start_instance \+ $i`;
         php -t /var/www/billrun/ /var/www/billrun/public/index.php  -a --type customer --stamp $month --page $page --size $size &
-        echo sleep 5;
+        echo sleep $sleeptime;
 done
 
 exit;
