@@ -281,7 +281,13 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		}
 		$update['$set']['balance.cost'] = $subRaw['balance']['cost'] + $pricingData[$this->pricingField];
 		$options = array('w' => 1);
+		if (key($counters) == 'data') {
+			ini_set('mongo.native_long', 1);
+		}
 		$ret = $balances->update($query, $update, $options);
+		if (key($counters) == 'data') {
+			ini_set('mongo.native_long', 0);
+		}
 		if (!($ret['ok'] && $ret['updatedExisting'])) { // failed because of different totals (could be that another server with another line raised the totals). Need to calculate pricingData from the beginning
 			Billrun_Factory::log()->log("Concurrent write to balance " . $billrun_key . " of subscriber " . $row['sid'] . ". Retrying...", Zend_Log::DEBUG);
 			$pricingData = $this->updateSubscriberBalance($counters, $row, $billrun_key, $usage_type, $rate, $volume);
