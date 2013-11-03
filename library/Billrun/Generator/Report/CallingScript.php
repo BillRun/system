@@ -13,14 +13,18 @@
  * @package  Billing
  * @since    0.5
  */
-class Billrun_Generator_CallingScript extends Billrun_Generator {
+class Billrun_Generator_Report_CallingScript extends Billrun_Generator_Report {
 
 	const TYPE_REGULAR = 'regular';
 	const TYPE_BUSY = 'busy';
 	const TYPE_VOICE_MAIL = 'voice_mail';
 	const TYPE_NO_ANSWER = 'no_answer';
 	
+	// The minimoum time to wait between calls  in seconds.
 	const MINIMUM_TIME_BETWEEN_CALLS = 10;
+	
+	// The time to  wait  between concecative script type in seconds.
+	const SCRIPT_TYPES_SEPERATION = 600;
 	
 	const CALLEE = 'callee';
 	const CALLER = 'caller';
@@ -35,7 +39,7 @@ class Billrun_Generator_CallingScript extends Billrun_Generator {
 	/**
 	 * The test identification.
 	 */
-	protected $scriptType = self::TYPE_REGULAR;
+	protected $scriptTypes = self::TYPE_REGULAR;
 	
 	/**
 	 *
@@ -55,7 +59,7 @@ class Billrun_Generator_CallingScript extends Billrun_Generator {
 	public function __construct($options) {
 		parent::__construct($options);
 		if (isset($options['script_type'])) {
-			$this->scriptType = $options['script_type'];
+			$this->scriptTypes = split(",",$options['script_type']);
 		}
 		if (isset($options['numbers'])) {
 			$this->numbers = split(",",$options['numbers']);
@@ -85,14 +89,20 @@ class Billrun_Generator_CallingScript extends Billrun_Generator {
 						'busy' => array( 'daily' => 100, 'total_count' => 100, 'rate' => 0) ,
 						'no_answer' => array( 'daily' => 100, 'total_count' => 100, 'rate' => 0) ,
 						'voice_mail' => array( 'daily' => 50, 'total_count' => 50, 'rate' => 0));
+		$aggDaily = 0;
+		$aggCount = 0;
 		
-		if(!isset($types[$this->scriptType])) {
-			Billrun_Factory::log("The call type {$this->scriptType} isn't a legal type.");
-			return false;
+		foreach ($this->scriptTypes as $type) {
+			if(!isset($types[$type])) {
+				Billrun_Factory::log("The call type {$type} that was  defined in ". join(",",$this->scriptTypes)." isn't a legal type.");
+				return false;
+			}
+			$aggCount += $types[$type]['total_count'];
+			$aggDaily += $types[$type]['daily'];
 		}
 		
 		$actions = $this->generateDailyScript(array(
-												'script_type' => $this->scriptType,
+												'script_type' => $this->scriptTypes,
 												'numbers' => $this->numbers,
 												'durations' => $this->durations,
 												'types' => $types,
@@ -100,7 +110,7 @@ class Billrun_Generator_CallingScript extends Billrun_Generator {
 											));
 
 		$startDay = strtotime(date('Ymd 00:00:00'),isset($this->startTestAt) ? $this->startTestA : time());
-		$endDay = strtotime(date('Ymd 00:00:00',$startDay+(86400 * ($types[$this->scriptType]['total_count'] / $types[$this->scriptType]['daily'] )) ) );
+		$endDay = strtotime(date('Ymd 00:00:00',$startDay+(86400 * ( $aggCount / $aggDaily )) ) );
 		$config = array('actions' => $actions , 'test_id' => $this->testId , 'from' => $startDay , 'to' => $endDay );
 		
 		if(!empty($this->options['to_remote'])) {
@@ -110,7 +120,7 @@ class Billrun_Generator_CallingScript extends Billrun_Generator {
 		}
 		
 		if(isset($this->options['out']) && $this->options['out']) {
-			$this->generateFiles(array("{$this->scriptType}.json.dump" => $config), $this->options['out']);
+			$this->generateFiles(array(join("_",$this->scriptTypes).'.json.dump' => $config), $this->options['out']);
 		}
 		return $config;
 	}	
@@ -130,62 +140,65 @@ class Billrun_Generator_CallingScript extends Billrun_Generator {
 		
 		return $response;
 	}
-	
+	/**
+	 * Ceate a repetative daily script run.
+	 * @param type $params
+	 * @return type
+	 */
 	public function generateDailyScript($params) {
 		$offset =(int) strtotime($params['daily_start_time']) % 86400 ;
-		$scriptType = $params['script_type'];
-		$typeData = $params['types'][$scriptType];
+		
 		
 		$actions = array();
 		$sides = array(self::CALLEE, self::CALLER);
 		$callId = 0;
 		$numbersCont = count($params['numbers']);
-		for($i = 0; $i < $typeData['daily']; $i++) {
-		  $action = array();
-		  $action['time'] = date('H:i:s',$offset);
-		  $action['from'] = $params['numbers'][($i/$numbersCont) % $numbersCont];
-		  $action['to'] =  ( $scriptType == 'voice_mail' ? $this->voiceMailNumber : $params['numbers'][(1+ $i - ($i/$numbersCont)) % $numbersCont]);
-		  
-		  if($scriptType == 'busy') {
-			  $action['busy_number'] = $numbersCont <= 2 ? $this->busyNumber : $params['numbers'][(2+ $i - ($i/$numbersCont)) % $numbersCont];
-		  }
-		  $action['duration'] = ( $scriptType == self::TYPE_VOICE_MAIL ?  self::VOIVE_MAIL_DURATION :
-									($scriptType == self::TYPE_NO_ANSWER ? self::NO_ANSWER_DURATION  :
-									$params['durations'][$i %  count($params['durations'])] ) );
-		  
-		  $action['hangup'] = $sides[$i % count($sides)];
-		  $action['action_type'] = $scriptType;
-		  $action['rate'] = $typeData['rate'];
-		  $action['call_id'] = $callId++;
+		foreach($params['script_type'] as  $scriptType  ) {
+			$typeData = $params['types'][$scriptType];
+			for($i = 0; $i < $typeData['daily']; $i++) {
+			  $action = array();
+			  $action['time'] = date('H:i:s',$offset);
+			  $action['from'] = $params['numbers'][($i/$numbersCont) % $numbersCont];
+			  $action['to'] =  ( $scriptType == 'voice_mail' ? $this->voiceMailNumber : $params['numbers'][(1+ $i - ($i/$numbersCont)) % $numbersCont]);
 
-		 $offset = 60 * ceil( ($offset + $action['duration']+self::MINIMUM_TIME_BETWEEN_CALLS) / 60 );
-		 $actions[] = $action;
-		 
+			  if($scriptType == 'busy') {
+				  $action['busy_number'] = $numbersCont <= 2 ? $this->busyNumber : $params['numbers'][(2+ $i - ($i/$numbersCont)) % $numbersCont];
+			  }
+			  $action['duration'] = ( $scriptType == self::TYPE_VOICE_MAIL ?  self::VOIVE_MAIL_DURATION :
+										($scriptType == self::TYPE_NO_ANSWER ? self::NO_ANSWER_DURATION  :
+										$params['durations'][$i %  count($params['durations'])] ) );
+
+			  $action['hangup'] = $sides[$i % count($sides)];
+			  $action['action_type'] = $scriptType;
+			  $action['rate'] = $typeData['rate'];
+			  $action['call_id'] = $callId++;
+
+			 $offset = 60 * ceil( ($offset + $action['duration']+self::MINIMUM_TIME_BETWEEN_CALLS) / 60 );
+			 $actions[] = $action;
+
+			}
+			$offset = 60 * ceil( ($offset + self::SCRIPT_TYPES_SEPERATION + self::MINIMUM_TIME_BETWEEN_CALLS) / 60 );
+			if($offset > 86400) {
+				Billrun_Factory::Log('The  scripts must  fit into a 24 hours cycle. please seperate the  test scripts  to different tests. ');
+				return false;
+			}
 		}
 		
 		return $actions;
 	}
-
+	
 	
 	/**
-	 * 
-	 * @param type $resultFiles
-	 * @param type $generator
-	 * @param type $outputDir
+	 * @see Billrun_Generator_Report::writeToFile( &$fd, &$report )
 	 */
-	protected function generateFiles($resultFiles,$outputDir = GenerateAction::GENERATOR_OUTPUT_DIR) {
-		foreach ($resultFiles as $name => $report) {
-			$fname = date('Ymd'). "_" . $name .".json";
-			Billrun_Factory::log("Generating file $fname");
-			$fd = fopen($outputDir. DIRECTORY_SEPARATOR.$fname,"w+");//@TODO change the  output  dir to be configurable.
-			fwrite($fd, "db.config.insert({key:'call_generator',urt:ISODate('". date('Y-m-d\TH:i:s\Z')."'),");
+	function writeToFile( &$fd, &$report ) {
+		fwrite($fd, "db.config.insert({key:'call_generator',urt:ISODate('". date('Y-m-d\TH:i:s\Z')."'),");
 			fwrite($fd, "from:ISODate('". date('Y-m-d\TH:i:s\Z',$report['from']) ."'),");
 			fwrite($fd, "to:ISODate('". date('Y-m-d\TH:i:s\Z',$report['to']) ."'),");
 			fwrite($fd, "test_id :'{$report['test_id']}'," );
-			fwrite($fd, "test_script : [" );
-			fwrite($fd, json_encode($report['actions']));
-			fwrite($fd, "-]});" );
-			fclose($fd);	
-			}				
+			fwrite($fd, "test_script : \n" );
+			fwrite($fd, json_encode($report['actions'],JSON_PRETTY_PRINT));
+			fwrite($fd, "\n});" );
 	}
+		
 }

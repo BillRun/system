@@ -14,7 +14,7 @@
  * @package  Billing
  * @since    0.5
  */
-class Billrun_Generator_GeneratedCallsReport extends Billrun_Generator {
+class Billrun_Generator_Report_GeneratedCalls extends Billrun_Generator_Report {
 	
 	const ALLOWED_TIME_DIVEATION = 5;
 	
@@ -263,17 +263,7 @@ class Billrun_Generator_GeneratedCallsReport extends Billrun_Generator {
 	 * @return type
 	 */
 	protected function retriveSubscriberBillingLines($sub) {
-		//TODO use API
-/*		$options = array(
-			'type' => 'SubscriberUsage',
-			'subscriber_id' => (string) $this->subscriber,
-			'calling_number' => (string) $this->callingNumber,
-			'from' => date("Y-m-d H:i:s",$this->from),
-			'to' => date("Y-m-d H:i:s",$this->to),
-		);
-		$generator = Billrun_Generator::getInstance($options);
-		$generator->load();
-		$results = $generator->generate();*/
+		
 		$url = $this->options['billing_api_url']."/apigenerate/?type=SubscriberUsage&stamp={$this->stamp}&subscriber_id={$this->subscriber}]&from='".  urlencode(date("Y-m-d H:i:s",$this->from))."'&to=".  urlencode(date("Y-m-d H:i:s",$this->to));
 		$curlFd = curl_init($url);
 		curl_setopt($curlFd, CURLOPT_RETURNTRANSFER, TRUE);
@@ -288,21 +278,9 @@ class Billrun_Generator_GeneratedCallsReport extends Billrun_Generator {
 	}
 	
 	/**
-	 * 
-	 * @param type $resultFiles
-	 * @param type $generator
-	 * @param type $outputDir
+	 * @see Billrun_Generator_Report::writeToFile( &$fd, &$report )
 	 */
-	protected function generateFiles($resultFiles,$outputDir = GenerateAction::GENERATOR_OUTPUT_DIR) {
-		foreach ($resultFiles as $name => $report) {
-			$fname = date('Ymd'). "_" . $name .".json";
-			Billrun_Factory::log("Generating file $fname");
-			$fd = fopen($outputDir. DIRECTORY_SEPARATOR.$fname,"w+");
-			fwrite($fd, json_encode($report,JSON_PRETTY_PRINT));
-			fclose($fd);	
-			
-			}				
+	function writeToFile( &$fd, &$report ) {
+		fwrite($fd, json_encode($report, JSON_PRETTY_PRINT));
 	}
-	
-	
 }
