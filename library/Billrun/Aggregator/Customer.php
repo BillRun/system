@@ -115,7 +115,8 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	 * load the data to aggregate
 	 */
 	public function load() {
-		$date = date(Billrun_Base::base_dateformat, strtotime(Billrun_Util::getLastChargeTime()));
+		$billrun_key = $this->getStamp();
+		$date = date(Billrun_Base::base_dateformat, Billrun_Util::getActiveSubscribersDate($billrun_key));
 		$subscriber = Billrun_Factory::subscriber();
 		Billrun_Factory::log()->log("Loading page " . $this->page . " of size " . $this->size, Zend_Log::INFO);
 		$this->data = $subscriber->getList($this->page, $this->size, $date);

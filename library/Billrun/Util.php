@@ -220,4 +220,15 @@ class Billrun_Util {
 	public static function setFileModificationTime($received_path, $timestamp) {
 		return touch($received_path, $timestamp);
 	}
+	
+	/**
+	 * Returns the date to check against when querying flats for a billrun
+	 * @param type $billrun_key
+	 * @return type
+	 */
+	public static function getActiveSubscribersDate($billrun_key) {
+		$dayofmonth = Billrun_Factory::config()->getConfigValue('billrun.charging_day', 25);
+		$datetime = $billrun_key . $dayofmonth . "000000";
+		return strtotime($datetime);
+	}
 }
