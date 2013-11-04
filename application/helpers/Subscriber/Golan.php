@@ -183,7 +183,10 @@ class Subscriber_Golan extends Billrun_Subscriber {
 //		$json =  '{'
 //				. '"7849648":{"subscribers":[{"subscriber_id":"398725","plan":"LARGE"}]},'
 //				. '"7403720":{"subscribers":[{"subscriber_id":"421063","plan":"LARGE"}]},'
-//				. '"3206401":{"subscribers":[{"subscriber_id":"410669","plan":"LARGE"}]}'
+//				. '"4171195":{"subscribers":[{"subscriber_id":"199701","plan":"SMALL"},{"subscriber_id":"199700","plan":"SMALL"},{"subscriber_id":"199699","plan":"BIRTHDAY"},{"subscriber_id":"199698","plan":"SMALL"}]}'
+//				. '"6054918":{"subscribers":[{"subscriber_id":"39","plan":"SMALL"},{"subscriber_id":"153","plan":"SMALL"},{"subscriber_id":"63155","plan":"LARGE"},{"subscriber_id":"230991","plan":"SMALL"}]}'
+//				. '"6676268":{"subscribers":[{"subscriber_id":"348861","plan":"SMALL"},{"subscriber_id":"348864","plan":"SMALL"}]}'
+//				. '"3770450":{"subscribers":[{"subscriber_id":"493138","plan":"LARGE"},{"subscriber_id":"493139","plan":"LARGE"}]}'
 //				. '}'; // stub
 		if (!$json) {
 			return false;
@@ -205,28 +208,33 @@ class Subscriber_Golan extends Billrun_Subscriber {
 			$params = array('msisdn' => '', 'IMSI' => '', 'DATETIME' => $time, 'page' => $page, 'size' => $size, 'account_id' => $acc_id);
 		}
 		$accounts = $this->requestAccounts($params);
-		$subscriber_general_settings = Billrun_Config::getInstance()->getConfigValue('subscriber', array());
-		if (is_array($accounts) && !empty($accounts)) {
-			$ret_data = array();
-			foreach ($accounts as $aid => $account) {
-				if (isset($account['subscribers'])) {
-					foreach ($account['subscribers'] as $subscriber) {
-						$concat = array(
-							'time' => strtotime($time),
-							'data' => array(
-								'aid' => intval($aid),
-								'sid' => intval($subscriber['subscriber_id']),
-								'plan' => isset($subscriber['plan']) ? $subscriber['plan'] : null,
-							),
-						);
-						$subscriber_settings = array_merge($subscriber_general_settings, $concat);
-						$ret_data[intval($aid)][] = Billrun_Subscriber::getInstance($subscriber_settings);
+		if (isset($accounts['success']) && $accounts['success'] === FALSE) {
+			Billrun_Factory::log()->log('No accounts for page ' . $page . ' of size ' . $size . ' at date ' . $time, Zend_Log::INFO);
+			return array();
+		} else {
+			$subscriber_general_settings = Billrun_Config::getInstance()->getConfigValue('subscriber', array());
+			if (is_array($accounts) && !empty($accounts)) {
+				$ret_data = array();
+				foreach ($accounts as $aid => $account) {
+					if (isset($account['subscribers'])) {
+						foreach ($account['subscribers'] as $subscriber) {
+							$concat = array(
+								'time' => strtotime($time),
+								'data' => array(
+									'aid' => intval($aid),
+									'sid' => intval($subscriber['subscriber_id']),
+									'plan' => isset($subscriber['plan_name']) ? $subscriber['plan_name'] : null,
+								),
+							);
+							$subscriber_settings = array_merge($subscriber_general_settings, $concat);
+							$ret_data[intval($aid)][] = Billrun_Subscriber::getInstance($subscriber_settings);
+						}
 					}
 				}
+				return $ret_data;
+			} else {
+				return null;
 			}
-			return $ret_data;
-		} else {
-			return null;
 		}
 	}
 
