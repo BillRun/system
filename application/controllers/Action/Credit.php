@@ -19,7 +19,7 @@ class CreditAction extends Action_Base {
 	 * it's called automatically by the api main controller
 	 */
 	public function execute() {
-		Billrun_Factory::log()->log("Execute refund", Zend_Log::INFO);
+		Billrun_Factory::log()->log("Execute credit", Zend_Log::INFO);
 		$request = $this->getRequest()->getRequest(); // supports GET / POST requests
 
 		$parsed_row = $this->parseRow($request);
@@ -27,20 +27,19 @@ class CreditAction extends Action_Base {
 			return;
 		}
 
-
-
 		$linesCollection = Billrun_Factory::db()->linesCollection();
 		if ($linesCollection->query('stamp', $parsed_row['stamp'])->count() > 0) {
 			return $this->setError('Transaction already exists in the DB', $request);
 		}
 
 		$entity = new Mongodloid_Entity($parsed_row);
-		if ($this->insertToQueue($entity) === false) {
-			return $this->setError('failed to store into DB queue', $request);
-		}
 
 		if ($entity->save($linesCollection) === false) {
 			return $this->setError('failed to store into DB lines', $request);
+		}
+
+		if ($this->insertToQueue($entity) === false) {
+			return $this->setError('failed to store into DB queue', $request);
 		} else {
 			$this->getController()->setOutput(array(array(
 					'status' => 1,
@@ -48,7 +47,7 @@ class CreditAction extends Action_Base {
 					'stamp' => $entity['stamp'],
 					'input' => $request,
 			)));
-			Billrun_Factory::log()->log("Executed refund Sucessfully", Zend_Log::INFO);
+			Billrun_Factory::log()->log("Added credit line " . $entity['stamp'], Zend_Log::INFO);
 			return true;
 		}
 	}
