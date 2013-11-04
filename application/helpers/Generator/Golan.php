@@ -21,17 +21,40 @@ class Generator_Golan extends Billrun_Generator {
 	protected $server_id = 1;
 	protected $server_count = 1;
 	protected $data = null;
+	protected $extras_start_date;
+	protected $extras_end_date;
+	protected $flat_start_date;
+	protected $flat_end_date;
 
 	public function __construct($options) {
 		self::$type = 'golan';
 		parent::__construct($options);
-		if(isset($options['generator']['ids'])) {
+		if (isset($options['generator']['ids'])) {
 			$this->server_id = intval($options['generator']['ids']);
 		}
-		
-		if(isset($options['generator']['count'])) {
+
+		if (isset($options['generator']['count'])) {
 			$this->server_count = intval($options['generator']['count']);
 		}
+	}
+
+	public function load() {
+		$billrun = Billrun_Factory::db()->billrunCollection();
+
+		$this->data = $billrun
+				->query('billrun_key', $this->stamp)
+				->exists('invoice_id')
+				->notExists('invoice_file')
+				->mod('aid', $this->server_count, $this->server_id - 1)
+				->cursor();
+
+		Billrun_Factory::log()->log("aggregator entities loaded: " . $this->data->count(), Zend_Log::INFO);
+
+		$this->extras_start_date = date('Y/m/d', Billrun_Util::getStartTime($this->stamp));
+		$this->extras_end_date = date('Y/m/d', Billrun_Util::getEndTime($this->stamp));
+		$this->flat_start_date = date('Y/m/d', strtotime('+ 1 month', Billrun_Util::getStartTime($this->stamp)));
+		$this->flat_end_date = date('Y/m/d', strtotime('+ 1 month', Billrun_Util::getEndTime($this->stamp)));
+		Billrun_Factory::dispatcher()->trigger('afterGeneratorLoadData', array('generator' => $this));
 	}
 
 	public function generate() {
@@ -162,9 +185,9 @@ class Generator_Golan extends Billrun_Generator {
 			$subscriber_sumup->TOTAL_MANUAL_CORRECTION_CREDIT = floatval(isset($subscriber['costs']['credit']['refund']['vatable']) ? $subscriber['costs']['credit']['refund']['vatable'] : 0) + floatval(isset($subscriber['costs']['credit']['refund']['vat_free']) ? $subscriber['costs']['credit']['refund']['vat_free'] : 0);
 			$subscriber_sumup->TOTAL_MANUAL_CORRECTION = floatval($subscriber_sumup->TOTAL_MANUAL_CORRECTION_CHARGE) + floatval($subscriber_sumup->TOTAL_MANUAL_CORRECTION_CREDIT);
 			$subscriber_sumup->TOTAL_OUTSIDE_GIFT_NOVAT = floatval((isset($subscriber['costs']['out_plan']['vat_free']) ? $subscriber['costs']['out_plan']['vat_free'] : 0));
-			$subscriber_before_vat = isset($subscriber['totals']['before_vat'])? $subscriber['totals']['before_vat'] : 0;
-			$subscriber_after_vat = isset($subscriber['totals']['after_vat'])? $subscriber['totals']['after_vat'] : 0;
-			$subscriber_sumup->TOTAL_VAT = $subscriber_after_vat-$subscriber_before_vat;
+			$subscriber_before_vat = isset($subscriber['totals']['before_vat']) ? $subscriber['totals']['before_vat'] : 0;
+			$subscriber_after_vat = isset($subscriber['totals']['after_vat']) ? $subscriber['totals']['after_vat'] : 0;
+			$subscriber_sumup->TOTAL_VAT = $subscriber_after_vat - $subscriber_before_vat;
 			$subscriber_sumup->TOTAL_CHARGE_NO_VAT = $subscriber_before_vat;
 			$subscriber_sumup->TOTAL_CHARGE = $subscriber_after_vat;
 
@@ -415,8 +438,12 @@ class Generator_Golan extends Billrun_Generator {
 		$inv_invoice_total->addChild('FROM_PERIOD', date('Y/m/d', Billrun_Util::getStartTime($billrun_key)));
 		$inv_invoice_total->addChild('TO_PERIOD', date('Y/m/d', Billrun_Util::getEndTime($billrun_key)));
 		$inv_invoice_total->addChild('SUBSCRIBER_COUNT', count($row->get('subs')));
-		$account_before_vat = isset($row['totals']['before_vat'])? $row['totals']['before_vat'] : 0;
-		$account_after_vat = isset($row['totals']['after_vat'])? $row['totals']['after_vat'] : 0;
+		$inv_invoice_total->addChild('CUR_MONTH_CADENCE_START', $this->extras_start_date);
+		$inv_invoice_total->addChild('CUR_MONTH_CADENCE_END', $this->extras_end_date);
+		$inv_invoice_total->addChild('NEXT_MONTH_CADENCE_START', $this->flat_start_date);
+		$inv_invoice_total->addChild('NEXT_MONTH_CADENCE_END', $this->flat_end_date);
+		$account_before_vat = isset($row['totals']['before_vat']) ? $row['totals']['before_vat'] : 0;
+		$account_after_vat = isset($row['totals']['after_vat']) ? $row['totals']['after_vat'] : 0;
 		$inv_invoice_total->addChild('TOTAL_CHARGE', $account_after_vat);
 		$inv_invoice_total->addChild('TOTAL_CREDIT', $invoice_total_manual_correction_credit);
 		$gifts = $inv_invoice_total->addChild('GIFTS');
@@ -428,7 +455,7 @@ class Generator_Golan extends Billrun_Generator {
 		$invoice_sumup->addChild('TOTAL_MANUAL_CORRECTION_CREDIT', $invoice_total_manual_correction_credit);
 		$invoice_sumup->addChild('TOTAL_MANUAL_CORRECTION_CHARGE', $invoice_total_manual_correction_charge);
 		$invoice_sumup->addChild('TOTAL_OUTSIDE_GIFT_NOVAT', $invoice_total_outside_gift_novat);
-		$invoice_sumup->addChild('TOTAL_VAT', $account_after_vat-$account_before_vat);
+		$invoice_sumup->addChild('TOTAL_VAT', $account_after_vat - $account_before_vat);
 		$invoice_sumup->addChild('TOTAL_CHARGE_NO_VAT', $account_before_vat);
 		$invoice_sumup->addChild('TOTAL_CHARGE', $account_after_vat);
 		return $xml;
@@ -634,21 +661,6 @@ class Generator_Golan extends Billrun_Generator {
 </INVOICE>
 EOI;
 		return simplexml_load_string($xml);
-	}
-
-	public function load() {
-		$billrun = Billrun_Factory::db()->billrunCollection();
-
-		$this->data = $billrun
-				->query('billrun_key', $this->stamp)
-				->exists('invoice_id')
-				->notExists('invoice_file')
-				->mod('aid', $this->server_count, $this->server_id - 1)
-				->cursor();
-
-		Billrun_Factory::log()->log("aggregator entities loaded: " . $this->data->count(), Zend_Log::INFO);
-
-		Billrun_Factory::dispatcher()->trigger('afterGeneratorLoadData', array('generator' => $this));
 	}
 
 	protected function setFileStamp($line, $filename) {
