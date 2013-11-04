@@ -26,6 +26,8 @@ class Billrun_Generator_Report_CallingScript extends Billrun_Generator_Report {
 	// The time to  wait  between concecative script type in seconds.
 	const SCRIPT_TYPES_SEPERATION = 600;
 	
+	const REGULAR_CALL_RATE = 0.00254237;
+	
 	const CALLEE = 'callee';
 	const CALLER = 'caller';
 	const VOIVE_MAIL_DURATION = 1.5;
@@ -85,7 +87,7 @@ class Billrun_Generator_Report_CallingScript extends Billrun_Generator_Report {
 	 * Generate the calls as defined in the configuration.
 	 */
 	public function generate() {
-		$types = array(	'regular'=> array( 'daily' => 420, 'total_count' => 18900 , 'rate' => 0.015),
+		$types = array(	'regular'=> array( 'daily' => 420, 'total_count' => 18900 , 'rate' => self::REGULAR_CALL_RATE),
 						'busy' => array( 'daily' => 100, 'total_count' => 100, 'rate' => 0) ,
 						'no_answer' => array( 'daily' => 100, 'total_count' => 100, 'rate' => 0) ,
 						'voice_mail' => array( 'daily' => 50, 'total_count' => 50, 'rate' => 0));
