@@ -15,7 +15,7 @@ class tap3Plugin extends Billrun_Plugin_BillrunPluginBase implements Billrun_Plu
 
 	use Billrun_Traits_AsnParsing;
 
-	use Billrun_Traits_FileSequenceChecking;
+use Billrun_Traits_FileSequenceChecking;
 
 	protected $name = 'tap3';
 	protected $nsnConfig = false;
@@ -162,12 +162,33 @@ class tap3Plugin extends Billrun_Plugin_BillrunPluginBase implements Billrun_Plu
 			$cdrLine['imsi'] = $cdrLine['basicCallInformation']['GprsChargeableSubscriber']['chargeableSubscriber']['simChargeableSubscriber']['imsi'];
 		}
 
-		if (isset($cdrLine['basicCallInformation']['chargeableSubscriber']['simChargeableSubscriber']['msisdn'])) {
-			$cdrLine['calling_number'] = $cdrLine['basicCallInformation']['chargeableSubscriber']['simChargeableSubscriber']['msisdn'];
+		if (isset($cdrLine['BasicServiceUsedList']['BasicServiceUsed']['BasicService']['BasicServiceCode']['TeleServiceCode']) && isset($cdrLine['record_type'])) {
+			$tele_service_code = $cdrLine['BasicServiceUsedList']['BasicServiceUsed']['BasicService']['BasicServiceCode']['TeleServiceCode'];
+			$record_type = $cdrLine['record_type'];
+			if ($record_type == '9') {
+				if ($tele_service_code == '11') {
+					$cdrLine['called_number'] = $cdrLine['basicCallInformation']['Desination']['CalledNumber'];
+				} else if ($tele_service_code == '22') {
+					if (isset($cdrLine['basicCallInformation']['Desination']['DialedDigits'])) {
+						$cdrLine['called_number'] = $cdrLine['basicCallInformation']['Desination']['DialedDigits'];
+					}
+					else if (isset($cdrLine['basicCallInformation']['Desination']['CalledNumber'])) { // @todo check with sefi. reference: db.lines.count({'BasicServiceUsedList.BasicServiceUsed.BasicService.BasicServiceCode.TeleServiceCode':"22",record_type:'9','basicCallInformation.Desination.DialedDigits':{$exists:false}});)
+						$cdrLine['called_number'] = $cdrLine['basicCallInformation']['Desination']['CalledNumber'];
+					}
+				}
+			}
 		}
 
 		if (isset($cdrLine['basicCallInformation']['GprsChargeableSubscriber']['chargeableSubscriber']['simChargeableSubscriber']['msisdn'])) {
 			$cdrLine['calling_number'] = $cdrLine['basicCallInformation']['GprsChargeableSubscriber']['chargeableSubscriber']['simChargeableSubscriber']['msisdn'];
+		} else if (isset($cdrLine['basicCallInformation']['chargeableSubscriber']['simChargeableSubscriber']['msisdn'])) {
+			$cdrLine['calling_number'] = $cdrLine['basicCallInformation']['chargeableSubscriber']['simChargeableSubscriber']['msisdn'];
+		} else if (isset($cdrLine['BasicServiceUsedList']['BasicServiceUsed']['BasicService']['BasicServiceCode']['TeleServiceCode']) && isset($cdrLine['record_type'])) {
+			if ($record_type == 'a' && ($tele_service_code == '11' || $tele_service_code == '21')) {
+				if (isset($cdrLine['basicCallInformation']['callOriginator']['callingNumber'])) { // for some calls (incoming?) there's no calling number
+					$cdrLine['calling_number'] = $cdrLine['basicCallInformation']['callOriginator']['callingNumber'];
+				}
+			}
 		}
 
 		if (isset($cdrLine['LocationInformation']['GeographicalLocation']['ServingNetwork'])) {

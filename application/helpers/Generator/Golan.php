@@ -200,7 +200,7 @@ class Generator_Golan extends Billrun_Generator {
 //									$out_of_usage_entry->addChild('TITLE', 'SERVICE-GIFT-GC_GOLAN-' . current($subscriber['lines']['flat']['refs'])['plan_ref']['name']);
 									$out_of_usage_entry->addChild('UNITS', $usagev);
 									$out_of_usage_entry->addChild('COST_WITHOUTVAT', $this->getZoneTotalsFieldByUsage($zone, 'cost', $type));
-									$out_of_usage_entry->addChild('VAT', $this->displayVAT($zone['totals']['vat']));
+									$out_of_usage_entry->addChild('VAT', $this->displayVAT($zone['vat']));
 									$out_of_usage_entry->addChild('VAT_COST', floatval($out_of_usage_entry->COST_WITHOUTVAT) * floatval($out_of_usage_entry->VAT) / 100);
 									$out_of_usage_entry->addChild('TOTAL_COST', floatval($out_of_usage_entry->COST_WITHOUTVAT) + floatval($out_of_usage_entry->VAT_COST));
 									$out_of_usage_entry->addChild('TYPE_OF_BILLING', strtoupper($type));
@@ -223,7 +223,7 @@ class Generator_Golan extends Billrun_Generator {
 //								$out_of_usage_entry->addChild('TITLE', 'SERVICE-GIFT-GC_GOLAN-' . current($subscriber['lines']['flat']['refs'])['plan_ref']['name']);
 								$out_of_usage_entry->addChild('UNITS', $usagev);
 								$out_of_usage_entry->addChild('COST_WITHOUTVAT', $this->getZoneTotalsFieldByUsage($zone, 'cost', $type));
-								$out_of_usage_entry->addChild('VAT', $this->displayVAT($zone['totals']['vat']));
+								$out_of_usage_entry->addChild('VAT', $this->displayVAT($zone['vat']));
 								$out_of_usage_entry->addChild('VAT_COST', floatval($out_of_usage_entry->COST_WITHOUTVAT) * floatval($out_of_usage_entry->VAT) / 100);
 								$out_of_usage_entry->addChild('TOTAL_COST', floatval($out_of_usage_entry->COST_WITHOUTVAT) + floatval($out_of_usage_entry->VAT_COST));
 								$out_of_usage_entry->addChild('TYPE_OF_BILLING', strtoupper($type));
@@ -564,10 +564,13 @@ class Generator_Golan extends Billrun_Generator {
 			case "nsn":
 				return $line['called_number'];
 			case "tap3":
+				//TODO: use calling_number field when all cdrs have been processed by the updated tap3 plugin
 				$tele_service_code = $line['BasicServiceUsedList']['BasicServiceUsed']['BasicService']['BasicServiceCode']['TeleServiceCode'];
 				$record_type = $line['record_type'];
 				if ($record_type == 'a' && ($tele_service_code == '11' || $tele_service_code == '21')) {
-					return $line['basicCallInformation']['callOriginator']['callingNumber'];
+					if (isset($line['basicCallInformation']['callOriginator']['callingNumber'])) { // for some calls (incoming?) there's no calling number
+						return $line['basicCallInformation']['callOriginator']['callingNumber'];
+					}
 				}
 				break;
 			case "smsc":
@@ -585,6 +588,7 @@ class Generator_Golan extends Billrun_Generator {
 			case "nsn":
 				return $line['called_number'];
 			case "tap3":
+				//TODO: use called_number field when all cdrs have been processed by the updated tap3 plugin
 				$tele_service_code = $line['BasicServiceUsedList']['BasicServiceUsed']['BasicService']['BasicServiceCode']['TeleServiceCode'];
 				$record_type = $line['record_type'];
 				if ($record_type == '9') {
