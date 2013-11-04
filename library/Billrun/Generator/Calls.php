@@ -90,7 +90,7 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 				if( time() > $this->testScript['from']->sec && time() < $this->testScript['to']->sec ) {
 					$this->actOnScript($this->testScript['test_script']);
 				} else {
-					Billrun_Factory::log("Waiting for test  time frame... current time : ".time()." , test is set from :".$this->testScript['from']->sec . " to : ".$this->testScript['to']->sec , Zend_Log::DEBUG);
+					Billrun_Factory::log("Waiting for test time frame... current time : ".time()." , test is set from :".$this->testScript['from']->sec . " to : ".$this->testScript['to']->sec , Zend_Log::DEBUG);
 					sleep(self::WAITING_SLEEP_TIME);
 				}
 			}
@@ -186,7 +186,7 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 			}
 		}
 		if ($action) {
-			Billrun_Factory::log("Got action of type : {$action['action_type']} the should be run at : {$action['time']}, Waiting... ");
+			Billrun_Factory::log("Got action  {$action['call_id']} of type : {$action['action_type']} the should be run at : {$action['time']}, Waiting... ");
 			while ($action['time'] >= date("H:i:s")) {
 				usleep(static::MIN_MILLI_RESOLUTION / 4);
 				if(((microtime(true)*1000 % 1000) == 0) && $this->isConfigUpdated($this->testScript)) {//check configuration update  every second.
