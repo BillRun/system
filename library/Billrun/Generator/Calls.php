@@ -160,7 +160,7 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 						pcntl_signal(SIGTERM, array($this,'handleChildSignals'));
 						pcntl_signal(SIGABRT, array($this,'handleChildSignals'));
 						$this->scriptAction($action,$isCalling);
-						exit(0);
+						die();
 					}
 					$this->pids[] = $pid;
 				}
