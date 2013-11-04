@@ -205,7 +205,7 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 	 * @param boolean $isCalling is the action  is for the calling side.
 	 */
 	protected function scriptAction($action, $isCalling) {
-		Billrun_Factory::log("Acting on action of type : {$action['action_type']}");
+		Billrun_Factory::log("Acting on action of type : {$action['action_type']}, with id of :{$action['call_id']}");
 		$device = $this->getConnectedModemByNumber($action[$isCalling ? 'from' : 'to']);
 		//make the calls and remember their results
 		$call = $this->getEmptyCall();
