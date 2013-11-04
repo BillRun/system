@@ -142,6 +142,7 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 
 		foreach($this->modemDevices as $device) {
 			$device->hangUp();
+			$device->initModem();
 		}
 		sleep(1);
 	}
