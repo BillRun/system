@@ -90,6 +90,7 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 				if( time() > $this->testScript['from']->sec && time() < $this->testScript['to']->sec ) {
 					$this->actOnScript($this->testScript['test_script']);
 				} else {
+					Billrun_Factory::log("Waiting for test  time frame... current time : ".time()." , test is set from :".$this->testScript['from']->sec . " to : ".$this->testScript['to']->sec , Zend_Log::DEBUG);
 					sleep(self::WAITING_SLEEP_TIME);
 				}
 			}
@@ -108,14 +109,6 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 		if (!$testConfig->isEmpty()) {
 			$this->testScript = $testConfig->getRawData();
 			$this->testId = $this->testScript['test_id'];
-			/*//@TODO FOR DEBUG REMOVE !
-			$offset = 1;
-			foreach ($this->testScript['test_script'] as &$value) {
-				$value['time'] = date("H:i:s", strtotime("+{$offset} minutes"));
-				$offset+=1;
-			}
-			//@TODO FOR DEBUG END
-			 */
 		}
 		//Billrun_Factory::log("got script : " . print_r($this->testScript, 1));
 	}
@@ -156,8 +149,9 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 	 */
 	protected function actOnScript($script) {
 		$action = $this->waitForNextAction($script);
+		$this->pingManagmentServer($action);
 		if ($action) {
-			//check if the number  speciifed in the action is one of the connected modems if so  act on the action.
+			//Check if the number speciifed in the action is one of the connected modems if so  act on the action.
 			$this->resetModems();
 			foreach( array('from' => true, 'to' => false) as $key => $isCalling ) {
 				if($this->isConnectedModemNumber($action[$key]) != false) {
@@ -184,14 +178,18 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 		foreach ($script as $scriptAction) {
 			if ($scriptAction['time'] > date("H:i:s") &&
 				$this->isConnectedModemNumber(array($scriptAction['from'], $scriptAction['to']))) {
-				$action = $scriptAction;
-				break;
+					$action = $scriptAction;
+					break;
 			}
 		}
 		if ($action) {
 			Billrun_Factory::log("Got action of type : {$action['action_type']} the should be run at : {$action['time']}, Waiting... ");
 			while ($action['time'] >= date("H:i:s")) {
 				usleep(static::MIN_MILLI_RESOLUTION / 4);
+				if($this->isConfigUpdated($this->testScript)) {
+					Billrun_Factory::log("configuration updated aborting action.");
+					return false;
+				}
 			};
 			Billrun_Factory::log("Done Waiting.");
 		}
@@ -333,6 +331,7 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 	 * @return boolean
 	 */
 	protected function save($action, $call, $isCalling) {
+		Billrun_Factory::log("Saving call.");
 		$call['execution_end_time'] = new MongoDate(time());
 		$direction = $isCalling ? 'caller' : 'callee';
 		$commonRec = array_merge($action, array('test_id' => $this->testId, 'date' => date('Ymd'), 'source' => 'generator', 'type' => 'generated_call'));
@@ -344,8 +343,11 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 		if ($isCalling) {
 			$callData['urt'] = $call['call_start_time'] ? $call['call_start_time'] : $call['execution_start_time'];
 		}
-
-		return $this->safeSave(array('type' => 'generated_call', 'stamp' => $commonRec['stamp']), $callData, array_merge($callData, $commonRec));
+		if( ($ret = $this->safeSave(array('type' => 'generated_call', 'stamp' => $commonRec['stamp']), $callData, array_merge($callData, $commonRec))) ) {
+			Billrun_Factory::log('Successfully saved.');
+		}
+		
+		return $ret;
 	}
 
 	/**
@@ -363,6 +365,7 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 	 * Check if the configuration has been updated.
 	 */
 	protected function isConfigUpdated($currentConfig) {
+		Billrun_Factory::log("Checking configuration update  relative to: ".date("Y-m-d H:i:s",  $currentConfig['urt']->sec));
 		$retVal = Billrun_Factory::db()->configCollection()->query(array('key' => 'call_generator',			
 				'urt' => array('$gt' => $currentConfig['urt'] ,'$lt' =>  new MongoDate(time()) )
 			))->cursor()->limit(1)->current();
@@ -424,9 +427,21 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 				return false;
 				
 			}
-		}
-
-		Billrun_Factory::log('Successfully saved.');
+		}		
 		return true;
+	}
+	
+	/**
+	 * Register the call generator to the management server.
+	 * @param $action the current/next action that will be done by the call generator.
+	 */
+	protected function pingManagmentServer($action) {
+		//@TODO change to Zend_Http client
+		$client = curl_init($this->options['management_server_url'] . $this->options['register_to_management_path']);
+		$post_fields = array('data' => json_encode(array('timestamp' => time(),'next_action' => $action)));
+		curl_setopt($client, CURLOPT_POST, TRUE);
+		curl_setopt($client, CURLOPT_POSTFIELDS, $post_fields);
+		curl_setopt($client, CURLOPT_RETURNTRANSFER, TRUE);
+		curl_exec($client);
 	}
 }
