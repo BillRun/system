@@ -118,7 +118,8 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 			case SIGTERM:            
 				$this->activeCall['end_result'] = 'call_killed';
 				$this->save($this->activeAction, $this->activeCall, $this->activeCallingState);
-				exit(-1);
+				Billrun_Factory::log("Killed from outside");
+				die();
 			default:
 				break;
 		}
@@ -186,7 +187,7 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 			Billrun_Factory::log("Got action of type : {$action['action_type']} the should be run at : {$action['time']}, Waiting... ");
 			while ($action['time'] >= date("H:i:s")) {
 				usleep(static::MIN_MILLI_RESOLUTION / 4);
-				if($this->isConfigUpdated($this->testScript)) {
+				if(((microtime(true)*1000 % 1000) == 0) && $this->isConfigUpdated($this->testScript)) {//check configuration update  every second.
 					Billrun_Factory::log("configuration updated aborting action.");
 					return false;
 				}
@@ -366,8 +367,10 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 	 */
 	protected function isConfigUpdated($currentConfig) {
 		Billrun_Factory::log("Checking configuration update  relative to: ".date("Y-m-d H:i:s",  $currentConfig['urt']->sec));
+		$currTime = new MongoDate(time());	
 		$retVal = Billrun_Factory::db()->configCollection()->query(array('key' => 'call_generator',			
-				'urt' => array('$gt' => $currentConfig['urt'] ,'$lt' =>  new MongoDate(time()) )
+				'urt' => array(	'$gt' => $currentConfig['urt'] ,
+								/*'$lte' =>  $currTime*/ ) //@TODO add top limit to loaded configuration
 			))->cursor()->limit(1)->current();
 		return !$retVal->isEmpty();
 	}
@@ -437,7 +440,7 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 	 */
 	protected function pingManagmentServer($action) {
 		//@TODO change to Zend_Http client
-		$client = curl_init($this->options['management_server_url'] . $this->options['register_to_management_path']);
+		$client = curl_init($this->options['generator']['management_server_url'] . $this->options['generator']['register_to_management_path']);
 		$post_fields = array('data' => json_encode(array('timestamp' => time(),'next_action' => $action)));
 		curl_setopt($client, CURLOPT_POST, TRUE);
 		curl_setopt($client, CURLOPT_POSTFIELDS, $post_fields);
