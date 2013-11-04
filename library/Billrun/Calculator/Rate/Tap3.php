@@ -21,6 +21,11 @@ class Billrun_Calculator_Rate_Tap3 extends Billrun_Calculator_Rate {
 	 */
 	static protected $type = 'tap3';
 
+	public function __construct($options = array()) {
+		parent::__construct($options);
+		$this->loadRates();
+	}
+
 	/**
 	 * write the calculation into DB.
 	 * @param $row the line CDR to update. 
@@ -107,38 +112,49 @@ class Billrun_Calculator_Rate_Tap3 extends Billrun_Calculator_Rate {
 	 * @see Billrun_Calculator_Rate::getLineRate
 	 */
 	protected function getLineRate($row, $usage_type) {
-		//$header = $this->getLineHeader($row); @TODO should this be removed? 2013/06
-		$rates = Billrun_Factory::db()->ratesCollection();
 		$line_time = $row['urt'];
 		$serving_network = $row['serving_network'];
+		$matchedRate = false;
+		$prefix_length_matched = 0;
 
 		if (!is_null($serving_network)) {
-			$rates = Billrun_Factory::db()->ratesCollection();
+			$call_number = isset($row['called_number']) ? $row->get('called_number') : (isset($row['calling_number']) ? $row->get('calling_number') : NULL);
+			if ($call_number) {
+				$call_number = preg_replace("/^[^1-9]*/", "", $call_number);
+				$call_number_prefixes = $this->getPrefixes($call_number);
+			}
+			$potential_rates = array();
+			if (isset($this->rates['by_names'][$serving_network])) {
+				$potential_rates = $this->rates['by_names'][$serving_network];
+			}
+			if (!empty($this->rates['by_regex'])) {
+				foreach ($this->rates['by_regex'] as $regex => $regex_rates) {
+					if (preg_match($regex, $serving_network)) {
+						$potential_rates = array_merge($potential_rates, $regex_rates);
+					}
+				}
+			}
 
-			if (isset($usage_type)) {
-				$filter_array = array(
-					'params.serving_networks' => array(
-						'$in' => array($serving_network),
-					),
-					'rates.' . $usage_type => array(
-						'$exists' => true,
-					),
-					'from' => array(
-						'$lte' => $line_time,
-					),
-					'to' => array(
-						'$gte' => $line_time,
-					),
-				);
-				$rate = $rates->query($filter_array)->cursor()->current();
-				if ($rate->getId()) {
-					$rate->collection(Billrun_Factory::db()->ratesCollection());
-					return $rate;
+			foreach ($potential_rates as $rate) {
+				if (isset($rate['rates'][$usage_type])) {
+					if ($rate['from'] <= $line_time && $rate['to'] >= $line_time) {
+						if (!$matchedRate || (is_array($rate['params']['serving_networks']) && !$prefix_length_matched)) { // array of serving networks is stronger then regex of serving_networks
+							$matchedRate = $rate;
+						}
+						if (isset($call_number_prefixes) && !empty($rate['params']['prefix'])) {
+							foreach ($call_number_prefixes as $prefix) {
+								if (in_array($prefix, $rate['params']['prefix']) && strlen($prefix) > $prefix_length_matched) {
+									$prefix_length_matched = strlen($prefix);
+									$matchedRate = $rate;
+								}
+							}
+						}
+					}
 				}
 			}
 		}
 
-		return false;
+		return $matchedRate;
 	}
 
 	/**
@@ -148,6 +164,28 @@ class Billrun_Calculator_Rate_Tap3 extends Billrun_Calculator_Rate {
 	 */
 	protected function getLineHeader($line) {
 		return Billrun_Factory::db()->logCollection()->query(array('header.stamp' => $line['log_stamp']))->cursor()->current();
+	}
+
+	/**
+	 * Caches the rates in the memory for fast computations
+	 */
+	protected function loadRates() {
+		$query = array(
+			'params.serving_networks' => array(
+				'$exists' => true,
+			),
+		);
+		$rates = Billrun_Factory::db()->ratesCollection()->query($query)->cursor();
+		foreach ($rates as $rate) {
+			$rate->collection(Billrun_Factory::db()->ratesCollection());
+			if (is_array($rate['params']['serving_networks'])) {
+				foreach ($rate['params']['serving_networks'] as $serving_network) {
+					$this->rates['by_names'][$serving_network][] = $rate;
+				}
+			} else if (is_string($rate['params']['serving_networks'])) {
+				$this->rates['by_regex'][$rate['params']['serving_networks']][] = $rate;
+			}
+		}
 	}
 
 }
