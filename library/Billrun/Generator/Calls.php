@@ -366,7 +366,7 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 	 * Check if the configuration has been updated.
 	 */
 	protected function isConfigUpdated($currentConfig) {
-		Billrun_Factory::log("Checking configuration update  relative to: ".date("Y-m-d H:i:s",  $currentConfig['urt']->sec));
+		//Billrun_Factory::log("Checking configuration update  relative to: ".date("Y-m-d H:i:s",  $currentConfig['urt']->sec));
 		$currTime = new MongoDate(time());	
 		$retVal = Billrun_Factory::db()->configCollection()->query(array('key' => 'call_generator',			
 				'urt' => array(	'$gt' => $currentConfig['urt'] ,
