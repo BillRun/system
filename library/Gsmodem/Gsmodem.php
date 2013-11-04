@@ -61,7 +61,7 @@ class Gsmodem_Gsmodem  {
 	 */
 	public function call($number) {		
 		$this->hangUp();
-		$ret =  $this->doCmd($this->getATcmd('call', array($number)), true, true, true, 20);		
+		$ret =  $this->doCmd($this->getATcmd('call', array($number)), true, true, true, 30);		
 
 		return $ret;
 	}
@@ -72,7 +72,7 @@ class Gsmodem_Gsmodem  {
 	 */
 	public function hangUp() {
 		return  $this->state->getState() != Gsmodem_StateMapping::IDLE_STATE && 
-				$this->doCmd($this->getATcmd('hangup'), true, true, false, 20) ? self::HANGING_UP : self::UNKNOWN;						
+				$this->doCmd($this->getATcmd('hangup'), true, true, false, 30) ? self::HANGING_UP : self::UNKNOWN;						
 	}
 	
 	/**

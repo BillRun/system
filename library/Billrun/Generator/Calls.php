@@ -156,7 +156,7 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 		if ($action) {
 			//Check if the number speciifed in the action is one of the connected modems if so  act on the action.
 			$this->resetModems();
-			foreach( array('from' => true, 'to' => false) as $key => $isCalling ) {
+			foreach( array('to' => false,'from' => true) as $key => $isCalling ) {
 				if($this->isConnectedModemNumber($action[$key]) != false) {
 					if (!($pid = pcntl_fork())) {
 						pcntl_signal(SIGTERM, array($this,'handleChildSignals'));
@@ -218,7 +218,7 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 				sleep( intval(Billrun_Factory::config()->getConfigValue('calls.busy_wait_time', static::BUSY_WAIT_TIME)) );
 			}
 			$this->makeACall($device, $call, $action['to']);
-		} else {
+		} else {			
 			if ($action['action_type'] != static::TYPE_BUSY) {
 				$this->waitForCall($device, $call, $action['action_type'], $action['duration'] + static::BUSY_WAIT_TIME );
 			} else {
@@ -442,7 +442,9 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 	 */
 	protected function pingManagmentServer($action) {
 		//@TODO change to Zend_Http client
-		$client = curl_init($this->options['generator']['management_server_url'] . $this->options['generator']['register_to_management_path']);
+		$url =$this->options['generator']['management_server_url'] . $this->options['generator']['register_to_management_path'];
+		Billrun_Factory::log("Pinging managment server at : $url");
+		$client = curl_init($url);
 		$post_fields = array('data' => json_encode(array('timestamp' => time(),'next_action' => $action)));
 		curl_setopt($client, CURLOPT_POST, TRUE);
 		curl_setopt($client, CURLOPT_POSTFIELDS, $post_fields);

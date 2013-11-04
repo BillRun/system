@@ -108,7 +108,7 @@ class Billrun_Generator_Report_CallingScript extends Billrun_Generator_Report {
 												'numbers' => $this->numbers,
 												'durations' => $this->durations,
 												'types' => $types,
-												'daily_start_time' => '12:00:00',
+												'daily_start_time' => isset($this->options['start_calls_time']) ? $this->options['start_calls_time'] : '00:10:00',
 											));
 
 		$startDay = strtotime(date('Ymd 00:00:00'),isset($this->startTestAt) ? $this->startTestA : time());
