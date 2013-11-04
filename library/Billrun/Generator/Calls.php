@@ -20,7 +20,7 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 	const TYPE_VOICE_MAIL = 'voice_mail';
 	const TYPE_NO_ANSWER = 'no_answer';
 	const MIN_MILLI_RESOLUTION = 1000;
-	const BUSY_WAIT_TIME = 5;
+	const BUSY_WAIT_TIME = 10;
 	const WAITING_SLEEP_TIME = 1;
 
 	/**
