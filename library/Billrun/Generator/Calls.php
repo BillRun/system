@@ -130,9 +130,11 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 	 */
 	protected function resetModems() {
 		Billrun_Factory::log("Killing existing calls..");
+		$status = array();
 		if(!empty($this->pids)) {
 			foreach ($this->pids as $pid) {
 				posix_kill($pid, SIGTERM);
+				pcntl_waitpid($pid, $status);
 			}			
 		}
 		$this->pids = array();
