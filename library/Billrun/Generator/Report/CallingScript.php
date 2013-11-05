@@ -21,7 +21,7 @@ class Billrun_Generator_Report_CallingScript extends Billrun_Generator_Report {
 	const TYPE_NO_ANSWER = 'no_answer';
 	
 	// The minimoum time to wait between calls  in seconds.
-	const MINIMUM_TIME_BETWEEN_CALLS = 10;
+	const MINIMUM_TIME_BETWEEN_CALLS = 30;
 	
 	// The time to  wait  between concecative script type in seconds.
 	const SCRIPT_TYPES_SEPERATION = 600;
@@ -114,15 +114,16 @@ class Billrun_Generator_Report_CallingScript extends Billrun_Generator_Report {
 		$startDay = strtotime(date('Ymd 00:00:00'),isset($this->startTestAt) ? $this->startTestA : time());
 		$endDay = strtotime(date('Ymd 00:00:00',$startDay+(86400 * ( $aggCount / $aggDaily )) ) );
 		$config = array('actions' => $actions , 'test_id' => $this->testId , 'from' => $startDay , 'to' => $endDay );
-		
-		if(!empty($this->options['to_remote'])) {
-			foreach ($this->options['generator']['remote_servers_url'] as $host) {
-				$this->updateRemoteCallGen($config, $host);
+		if($actions) {
+			if(!empty($this->options['to_remote'])) {
+				foreach ($this->options['generator']['remote_servers_url'] as $host) {
+					$this->updateRemoteCallGen($config, $host);
+				}
 			}
-		}
-		
-		if(isset($this->options['out']) && $this->options['out']) {
-			$this->generateFiles(array(join("_",$this->scriptTypes).'.json.dump' => $config), $this->options['out']);
+
+			if(isset($this->options['out']) && $this->options['out']) {
+				$this->generateFiles(array(join("_",$this->scriptTypes).'.json.dump' => $config), $this->options['out']);
+			}
 		}
 		return $config;
 	}	
@@ -134,6 +135,12 @@ class Billrun_Generator_Report_CallingScript extends Billrun_Generator_Report {
 
 	}
 	
+	/**
+	 * 
+	 * @param type $config
+	 * @param type $host
+	 * @return type
+	 */
 	public function updateRemoteCallGen($config,$host) {
 		
 		$client = new Zend_Http_Client($host);
@@ -148,8 +155,7 @@ class Billrun_Generator_Report_CallingScript extends Billrun_Generator_Report {
 	 * @return type
 	 */
 	public function generateDailyScript($params) {
-		$offset =(int) strtotime($params['daily_start_time']) % 86400 ;
-		
+		$startOffset = $offset =(int) strtotime($params['daily_start_time']) % 86400 ;
 		
 		$actions = array();
 		$sides = array(self::CALLEE, self::CALLER);
@@ -180,15 +186,14 @@ class Billrun_Generator_Report_CallingScript extends Billrun_Generator_Report {
 
 			}
 			$offset = 60 * ceil( ($offset + self::SCRIPT_TYPES_SEPERATION + self::MINIMUM_TIME_BETWEEN_CALLS) / 60 );
-			if($offset > 86400) {
-				Billrun_Factory::Log('The  scripts must  fit into a 24 hours cycle. please seperate the  test scripts  to different tests. ');
+			if($offset - $startOffset > 86400) {
+				Billrun_Factory::Log('The script must fit into a 24 hours cycle. please seperate the  test scripts  to different tests. '.$offset);
 				return false;
 			}
 		}
 		
 		return $actions;
 	}
-	
 	
 	/**
 	 * @see Billrun_Generator_Report::writeToFile( &$fd, &$report )

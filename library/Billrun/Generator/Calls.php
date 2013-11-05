@@ -21,6 +21,7 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 	const TYPE_NO_ANSWER = 'no_answer';
 	const MIN_MILLI_RESOLUTION = 1000;
 	const BUSY_WAIT_TIME = 10;
+	const WAIT_TIME_PADDING = 20;
 	const WAITING_SLEEP_TIME = 1;
 
 	/**
@@ -221,7 +222,7 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 			$this->makeACall($device, $call, $action['to']);
 		} else {			
 			if ($action['action_type'] != static::TYPE_BUSY) {
-				$this->waitForCall($device, $call, $action['action_type'], $action['duration'] + static::BUSY_WAIT_TIME );
+				$this->waitForCall($device, $call, $action['action_type'], $action['duration'] + static::WAIT_TIME_PADDING );
 			} else {
 				$this->callToBusyNumber($device, $action['duration'],$action['busy_number']);
 				$call['calling_result'] = 'busy';
@@ -301,7 +302,7 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 	protected function HandleCall($device, &$callRecord, $waitTime, $hangup  = true) {
 		Billrun_Factory::log("Handling an active call.");
 		$callRecord['call_start_time'] = new MongoDate(time());
-		$ret = $device->waitForCallToEnd($hangup ? $waitTime : $waitTime + static::BUSY_WAIT_TIME);
+		$ret = $device->waitForCallToEnd($hangup ? $waitTime : $waitTime + static::WAIT_TIME_PADDING);
 		if ($ret == Gsmodem_Gsmodem::NO_RESPONSE ) {
 				$device->hangUp();
 				$callRecord['end_result'] = 'hang_up';

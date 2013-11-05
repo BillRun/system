@@ -23,6 +23,8 @@ class Gsmodem_Gsmodem  {
 	const RINGING = 'ringing';
 	const HANG_UP = 'hang_up';
 	const HANGING_UP = 'hanging_up';
+
+	const COMMAND_RESPONSE_TIME = 30; // the amount of seconds to wait  for a response from the modem to a given command.
 	
 	//--------------------------------------------------------------------------
 	
@@ -61,7 +63,7 @@ class Gsmodem_Gsmodem  {
 	 */
 	public function call($number) {		
 		$this->hangUp();
-		$ret =  $this->doCmd($this->getATcmd('call', array($number)), true, true, true, 30);		
+		$ret =  $this->doCmd($this->getATcmd('call', array($number)), true, true, true, self::COMMAND_RESPONSE_TIME);		
 
 		return $ret;
 	}
@@ -72,7 +74,7 @@ class Gsmodem_Gsmodem  {
 	 */
 	public function hangUp() {
 		return  $this->state->getState() != Gsmodem_StateMapping::IDLE_STATE && 
-				$this->doCmd($this->getATcmd('hangup'), true, true, false, 30) ? self::HANGING_UP : self::UNKNOWN;						
+				$this->doCmd($this->getATcmd('hangup'), true, true, false, self::COMMAND_RESPONSE_TIME) ? self::HANGING_UP : self::UNKNOWN;						
 	}
 	
 	/**
@@ -150,7 +152,7 @@ class Gsmodem_Gsmodem  {
 	 * @return 
 	 */
 	public function answer() {
-		return $this->doCmd($this->getATcmd('answer'), true, true, true, 20);
+		return $this->doCmd($this->getATcmd('answer'), true, true, true, self::COMMAND_RESPONSE_TIME);
 	}
 	
 	/**
