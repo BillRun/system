@@ -185,8 +185,8 @@ class Generator_Golan extends Billrun_Generator {
 			$subscriber_sumup->TOTAL_MANUAL_CORRECTION_CREDIT = floatval(isset($subscriber['costs']['credit']['refund']['vatable']) ? $subscriber['costs']['credit']['refund']['vatable'] : 0) + floatval(isset($subscriber['costs']['credit']['refund']['vat_free']) ? $subscriber['costs']['credit']['refund']['vat_free'] : 0);
 			$subscriber_sumup->TOTAL_MANUAL_CORRECTION = floatval($subscriber_sumup->TOTAL_MANUAL_CORRECTION_CHARGE) + floatval($subscriber_sumup->TOTAL_MANUAL_CORRECTION_CREDIT);
 			$subscriber_sumup->TOTAL_OUTSIDE_GIFT_NOVAT = floatval((isset($subscriber['costs']['out_plan']['vat_free']) ? $subscriber['costs']['out_plan']['vat_free'] : 0));
-			$subscriber_before_vat = isset($subscriber['totals']['before_vat']) ? $subscriber['totals']['before_vat'] : 0;
-			$subscriber_after_vat = isset($subscriber['totals']['after_vat']) ? $subscriber['totals']['after_vat'] : 0;
+			$subscriber_before_vat = $this->getSubscriberTotalBeforeVat($subscriber);
+			$subscriber_after_vat = $this->getSubscriberTotalAfterVat($subscriber);
 			$subscriber_sumup->TOTAL_VAT = $subscriber_after_vat - $subscriber_before_vat;
 			$subscriber_sumup->TOTAL_CHARGE_NO_VAT = $subscriber_before_vat;
 			$subscriber_sumup->TOTAL_CHARGE = $subscriber_after_vat;
@@ -442,8 +442,8 @@ class Generator_Golan extends Billrun_Generator {
 		$inv_invoice_total->addChild('CUR_MONTH_CADENCE_END', $this->extras_end_date);
 		$inv_invoice_total->addChild('NEXT_MONTH_CADENCE_START', $this->flat_start_date);
 		$inv_invoice_total->addChild('NEXT_MONTH_CADENCE_END', $this->flat_end_date);
-		$account_before_vat = isset($row['totals']['before_vat']) ? $row['totals']['before_vat'] : 0;
-		$account_after_vat = isset($row['totals']['after_vat']) ? $row['totals']['after_vat'] : 0;
+		$account_before_vat = $this->getAccTotalBeforeVat($row);
+		$account_after_vat =  $this->getAccTotalAfterVat($row);
 		$inv_invoice_total->addChild('TOTAL_CHARGE', $account_after_vat);
 		$inv_invoice_total->addChild('TOTAL_CREDIT', $invoice_total_manual_correction_credit);
 		$gifts = $inv_invoice_total->addChild('GIFTS');
@@ -740,6 +740,32 @@ EOI;
 		} else {
 			return 0;
 		}
+	}
+	
+	/**
+	 * 
+	 * @param array $subscriber subscriber entry from billrun collection
+	 * @return int
+	 */
+	protected function getSubscriberTotalBeforeVat($subscriber) {
+		return isset($subscriber['totals']['before_vat']) ? $subscriber['totals']['before_vat'] : 0;
+	}
+	
+	/**
+	 * 
+	 * @param array $subscriber subscriber entry from billrun collection
+	 * @return int
+	 */
+	protected function getSubscriberTotalAfterVat($subscriber) {
+		return isset($subscriber['totals']['after_vat']) ? $subscriber['totals']['after_vat'] : 0;
+	}
+	
+	protected function getAccTotalBeforeVat($row) {
+		return isset($row['totals']['before_vat']) ? $row['totals']['before_vat'] : 0;
+	}
+	
+	protected function getAccTotalAfterVat($row) {
+		return isset($row['totals']['after_vat']) ? $row['totals']['after_vat'] : 0;
 	}
 
 }

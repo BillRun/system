@@ -53,15 +53,20 @@ class Generator_Balance extends Generator_Golan {
 	}
 
 	public function load() {
-		$billrun = Billrun_Billrun::getLastOpenBillrun($this->aid);
-		$this->date = date(Billrun_Base::base_dateformat);
+		$now = time();
+		$this->date = date(Billrun_Base::base_dateformat, $now);
 		$subscriber = Billrun_Factory::subscriber();
-		$this->account_data = current($subscriber->getList(2, 1, $this->date, $this->aid));
-
+		$this->account_data = current($subscriber->getList(0, 1, $this->date, $this->aid));
+		$this->billrun_key = Billrun_Util::getBillrunKey($now);
+		$billrun_start_date = Billrun_Util::getStartTime($this->billrun_key);
+		$billrun_params = array(
+			'aid' => $this->aid,
+			'billrun_key' => $this->billrun_key,
+			'autoload' => false,
+		);
+		$billrun = Billrun_Factory::billrun($billrun_params);
 		foreach ($this->account_data as $subscriber) {
-			if (!$billrun->exists($subscriber->sid)) {
-				$billrun->addSubscriber($subscriber->sid);
-			}
+			$billrun->addSubscriberLines($subscriber->sid, false, $billrun_start_date);
 		}
 
 		$this->data = $billrun->getRawData();
@@ -116,6 +121,36 @@ class Generator_Balance extends Generator_Golan {
 			}
 		}
 		return $plan_name;
+	}
+
+	/**
+	 * 
+	 * @see Generator_Golan::getSubTotalBeforeVat
+	 */
+	protected function getSubscriberTotalBeforeVat($subscriber) {
+		return parent::getSubscriberTotalBeforeVat($subscriber) + $this->getFlatCosts($subscriber)['vatable'];
+	}
+
+	/**
+	 * 
+	 * @see Generator_Golan::getSubTotalAfterVat
+	 */
+	protected function getSubscriberTotalAfterVat($subscriber) {
+		$before_vat = $this->getSubscriberTotalBeforeVat($subscriber);
+		return $before_vat + $before_vat * Billrun_Billrun::getVATByBillrunKey($this->billrun_key);
+	}
+	
+	protected function getAccTotalBeforeVat($row) {
+		$before_vat = 0;
+		foreach ($row['subs'] as $subscriber) {
+			$before_vat+=$this->getSubscriberTotalBeforeVat($subscriber);
+		}
+		return $before_vat;
+	}
+	
+	protected function getAccTotalAfterVat($row) {
+		$before_vat = $this->getAccTotalBeforeVat($row);
+		return $before_vat + $before_vat * Billrun_Billrun::getVATByBillrunKey($this->billrun_key);
 	}
 
 }

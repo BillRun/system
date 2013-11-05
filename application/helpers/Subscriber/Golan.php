@@ -180,13 +180,13 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		//Billrun_Factory::log()->log($path, Zend_Log::DEBUG);
 		// @TODO: use Zend_Http_Client
 		$json = self::send($path);
-//		$json =  '{'
-//				. '"7849648":{"subscribers":[{"subscriber_id":"398725","plan":"LARGE"}]},'
-//				. '"7403720":{"subscribers":[{"subscriber_id":"421063","plan":"LARGE"}]},'
-//				. '"4171195":{"subscribers":[{"subscriber_id":"199701","plan":"SMALL"},{"subscriber_id":"199700","plan":"SMALL"},{"subscriber_id":"199699","plan":"BIRTHDAY"},{"subscriber_id":"199698","plan":"SMALL"}]}'
-//				. '"6054918":{"subscribers":[{"subscriber_id":"39","plan":"SMALL"},{"subscriber_id":"153","plan":"SMALL"},{"subscriber_id":"63155","plan":"LARGE"},{"subscriber_id":"230991","plan":"SMALL"}]}'
-//				. '"6676268":{"subscribers":[{"subscriber_id":"348861","plan":"SMALL"},{"subscriber_id":"348864","plan":"SMALL"}]}'
-//				. '"3770450":{"subscribers":[{"subscriber_id":"493138","plan":"LARGE"},{"subscriber_id":"493139","plan":"LARGE"}]}'
+//		$json = '{'
+//				. '"7849648":{"subscribers":[{"subscriber_id":"398725","plan_name":"LARGE"}]},'
+//				. '"7403720":{"subscribers":[{"subscriber_id":"421063","plan_name":"LARGE"}]},'
+//				. '"4171195":{"subscribers":[{"subscriber_id":"199701","plan_name":"SMALL"},{"subscriber_id":"199700","plan_name":"SMALL"},{"subscriber_id":"199699","plan_name":"BIRTHDAY"},{"subscriber_id":"199698","plan_name":"SMALL"}]}'
+//				. '"6054918":{"subscribers":[{"subscriber_id":"39","plan_name":"SMALL"},{"subscriber_id":"153","plan_name":"SMALL"},{"subscriber_id":"63155","plan_name":"LARGE"},{"subscriber_id":"230991","plan_name":"SMALL"}]}'
+//				. '"6676268":{"subscribers":[{"subscriber_id":"348861","plan_name":"SMALL"},{"subscriber_id":"348864","plan_name":"SMALL"}]}'
+//				. '"3770450":{"subscribers":[{"subscriber_id":"493138","plan_name":"LARGE"},{"subscriber_id":"493139","plan_name":"LARGE"}]}'
 //				. '}'; // stub
 		if (!$json) {
 			return false;
