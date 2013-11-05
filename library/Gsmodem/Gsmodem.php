@@ -25,6 +25,7 @@ class Gsmodem_Gsmodem  {
 	const HANGING_UP = 'hanging_up';
 
 	const COMMAND_RESPONSE_TIME = 30; // the amount of seconds to wait  for a response from the modem to a given command.
+	const RESPONSIVE_RESULTS_TIMEOUT = 0.2; 
 	
 	//--------------------------------------------------------------------------
 	
@@ -89,7 +90,7 @@ class Gsmodem_Gsmodem  {
 		 while (($waitTime > microtime(true) - $startTime) && 
 				($this->state->getState() == Gsmodem_StateMapping::IN_CALL_STATE || $this->state->getState() == Gsmodem_StateMapping::OUT_CALL_STATE)) {
 			 
-			$lastResult = $this->getResult(0.15);
+			$lastResult = $this->getResult(static::RESPONSIVE_RESULTS_TIMEOUT);
 			
 		}
 		return $lastResult;
@@ -106,7 +107,7 @@ class Gsmodem_Gsmodem  {
 		while(	($waitTime > microtime(true) - $startTime) && 
 				$this->state->getState() == Gsmodem_StateMapping::RINGING_STATE ) {
 			
-				 $lastResult = $this->getResult(0.15);
+				 $lastResult = $this->getResult(static::RESPONSIVE_RESULTS_TIMEOUT);
 				 
 		}
 		
@@ -139,7 +140,7 @@ class Gsmodem_Gsmodem  {
 	public function waitForCall($waitTime = PHP_INT_MAX) {		
 		$startTime = time();
 		while($waitTime > time() - $startTime ) {
-			 $lastResult = $this->getResult(0.15);
+			 $lastResult = $this->getResult(static::RESPONSIVE_RESULTS_TIMEOUT);
 			if($this->state->getState() == Gsmodem_StateMapping::RINGING_STATE) {
 				return $lastResult;
 			}

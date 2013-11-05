@@ -21,7 +21,7 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 	const TYPE_NO_ANSWER = 'no_answer';
 	const MIN_MILLI_RESOLUTION = 1000;
 	const BUSY_WAIT_TIME = 10;
-	const WAIT_TIME_PADDING = 20;
+	const WAIT_TIME_PADDING = 10;
 	const WAITING_SLEEP_TIME = 1;
 
 	/**
@@ -63,8 +63,9 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 			foreach ($options['path_to_calling_devices'] as $value) {
 				$modem = new Gsmodem_Gsmodem($value['device'],(isset($value['statemapping']) ? new $value['statemapping']() : false));
 				if ($modem->isValid()) {
+					Billrun_Factory::log("Initializing  modem  at dev : {$value['device']} with number {$value['number']}.");
 					$modem->registerToNet();
-					if (isset($value['number'])) {
+					if (isset($value['number'])) {						
 						$modem->setNumber($value['number']);
 					}
 					$this->modemDevices[] = $modem;
@@ -144,8 +145,7 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 		foreach($this->modemDevices as $device) {
 			$device->hangUp();
 			$device->initModem();
-		}
-		sleep(1);
+		}		
 	}
 	
 	/**
@@ -207,7 +207,7 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 	 * @param boolean $isCalling is the action  is for the calling side.
 	 */
 	protected function scriptAction($action, $isCalling) {
-		Billrun_Factory::log("Acting on action of type : {$action['action_type']}, with id of :{$action['call_id']}");
+		Billrun_Factory::log("Acting on action of type : {$action['action_type']}, with id of :{$action['call_id']}  from ");
 		$device = $this->getConnectedModemByNumber($action[$isCalling ? 'from' : 'to']);
 		//make the calls and remember their results
 		$call = $this->getEmptyCall();
