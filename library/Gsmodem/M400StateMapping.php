@@ -41,6 +41,7 @@ class Gsmodem_M400StateMapping  extends Gsmodem_StateMapping {
 		),
 		self::ANSWERING_STATE => array(
 			'VOICE CALL: BEGIN' => self::IN_CALL_STATE,
+			'OK' => self::IN_CALL_STATE,
 			'NO CARRIER' => self::IDLE_STATE,			
 			'ERROR' => self::IDLE_STATE,
 		),
