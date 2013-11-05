@@ -207,7 +207,7 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 	 * @param boolean $isCalling is the action  is for the calling side.
 	 */
 	protected function scriptAction($action, $isCalling) {
-		Billrun_Factory::log("Acting on action of type : {$action['action_type']}, with id of :{$action['call_id']}  from ");
+		Billrun_Factory::log("Acting on action of type : {$action['action_type']}, with id of :{$action['call_id']} , from  {$action['from']} to {$action['to']} , is calling: {$isCalling}");
 		$device = $this->getConnectedModemByNumber($action[$isCalling ? 'from' : 'to']);
 		//make the calls and remember their results
 		$call = $this->getEmptyCall();
@@ -387,7 +387,7 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 	protected function isConnectedModemNumber($numbers) {
 		$numbers = is_array($numbers) ? $numbers : array($numbers);
 		foreach ($numbers as $number) {
-			if ($this->getConnectedModemByNumber($number) != FALSE) {
+			if ($this->getConnectedModemByNumber($number) != false) {
 				return true;
 			}
 		}
