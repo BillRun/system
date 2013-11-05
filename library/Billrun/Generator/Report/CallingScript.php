@@ -160,17 +160,18 @@ class Billrun_Generator_Report_CallingScript extends Billrun_Generator_Report {
 		$actions = array();
 		$sides = array(self::CALLEE, self::CALLER);
 		$callId = 0;
-		$numbersCont = count($params['numbers']);
+		$numbersCount = count($params['numbers']);
 		foreach($params['script_type'] as  $scriptType  ) {
 			$typeData = $params['types'][$scriptType];
 			for($i = 0; $i < $typeData['daily']; $i++) {
 			  $action = array();
 			  $action['time'] = date('H:i:s',$offset);
-			  $action['from'] = $params['numbers'][($i/$numbersCont) % $numbersCont];
-			  $action['to'] =  ( $scriptType == 'voice_mail' ? $this->voiceMailNumber : $params['numbers'][(1+ $i - ($i/$numbersCont)) % $numbersCont]);
+			  $action['from'] = $params['numbers'][($i/$numbersCount) % $numbersCount];
+			  $numbersToCall = array_values(array_diff($params['numbers'], array($action['from'])));			  
+			  $action['to'] =  ( $scriptType == 'voice_mail' ? $this->voiceMailNumber : $numbersToCall[ $i % ($numbersCount-1)]);
 
 			  if($scriptType == 'busy') {
-				  $action['busy_number'] = $numbersCont <= 2 ? $this->busyNumber : $params['numbers'][(2+ $i - ($i/$numbersCont)) % $numbersCont];
+				  $action['busy_number'] = $numbersCount <= 2 ? $this->busyNumber : $numbersToCall[(1 + $i) % ($numbersCount-1)];
 			  }
 			  $action['duration'] = ( $scriptType == self::TYPE_VOICE_MAIL ?  self::VOIVE_MAIL_DURATION :
 										($scriptType == self::TYPE_NO_ANSWER ? self::NO_ANSWER_DURATION  :
