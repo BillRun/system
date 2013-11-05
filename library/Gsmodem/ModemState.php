@@ -97,6 +97,11 @@ class Gsmodem_ModemState {
 	public function getState() {
 		return $this->state;
 	}
+	
+	public function setState($state) {
+		return $this->state = $state;
+	}
+
 		
 	public function getCmdMapping() {
 		return $this ->atCmdMap;

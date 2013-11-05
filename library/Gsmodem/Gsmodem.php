@@ -194,11 +194,12 @@ class Gsmodem_Gsmodem  {
 		$this->hangUp();		
 		$this->doCmd($this->getATcmd('incoming_call_id',array(1)), true);
 		$this->doCmd($this->getATcmd('register_reporting',array(2)), true);
+		$this->state->setState(Gsmodem_StateMapping::IDLE_STATE);
 	}
 	
 	/**
 	 * Get the current modem state.
-	 * @return type
+	 * @return \ModemState the  modem state object
 	 */
 	public function getState() {
 		return $this->state->getState();
