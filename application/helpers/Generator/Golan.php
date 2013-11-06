@@ -50,10 +50,6 @@ class Generator_Golan extends Billrun_Generator {
 
 		Billrun_Factory::log()->log("aggregator entities loaded: " . $this->data->count(), Zend_Log::INFO);
 
-		$this->extras_start_date = date('Y/m/d', Billrun_Util::getStartTime($this->stamp));
-		$this->extras_end_date = date('Y/m/d', Billrun_Util::getEndTime($this->stamp));
-		$this->flat_start_date = date('Y/m/d', strtotime('+ 1 month', Billrun_Util::getStartTime($this->stamp)));
-		$this->flat_end_date = date('Y/m/d', strtotime('+ 1 month', Billrun_Util::getEndTime($this->stamp)));
 		Billrun_Factory::dispatcher()->trigger('afterGeneratorLoadData', array('generator' => $this));
 	}
 
@@ -438,12 +434,12 @@ class Generator_Golan extends Billrun_Generator {
 		$inv_invoice_total->addChild('FROM_PERIOD', date('Y/m/d', Billrun_Util::getStartTime($billrun_key)));
 		$inv_invoice_total->addChild('TO_PERIOD', date('Y/m/d', Billrun_Util::getEndTime($billrun_key)));
 		$inv_invoice_total->addChild('SUBSCRIBER_COUNT', count($row->get('subs')));
-		$inv_invoice_total->addChild('CUR_MONTH_CADENCE_START', $this->extras_start_date);
-		$inv_invoice_total->addChild('CUR_MONTH_CADENCE_END', $this->extras_end_date);
-		$inv_invoice_total->addChild('NEXT_MONTH_CADENCE_START', $this->flat_start_date);
-		$inv_invoice_total->addChild('NEXT_MONTH_CADENCE_END', $this->flat_end_date);
+		$inv_invoice_total->addChild('CUR_MONTH_CADENCE_START', $this->getExtrasStartDate());
+		$inv_invoice_total->addChild('CUR_MONTH_CADENCE_END', $this->getExtrasEndDate());
+		$inv_invoice_total->addChild('NEXT_MONTH_CADENCE_START', $this->getFlatStartDate());
+		$inv_invoice_total->addChild('NEXT_MONTH_CADENCE_END', $this->getFlatEndDate());
 		$account_before_vat = $this->getAccTotalBeforeVat($row);
-		$account_after_vat =  $this->getAccTotalAfterVat($row);
+		$account_after_vat = $this->getAccTotalAfterVat($row);
 		$inv_invoice_total->addChild('TOTAL_CHARGE', $account_after_vat);
 		$inv_invoice_total->addChild('TOTAL_CREDIT', $invoice_total_manual_correction_credit);
 		$gifts = $inv_invoice_total->addChild('GIFTS');
@@ -741,7 +737,7 @@ EOI;
 			return 0;
 		}
 	}
-	
+
 	/**
 	 * 
 	 * @param array $subscriber subscriber entry from billrun collection
@@ -750,7 +746,7 @@ EOI;
 	protected function getSubscriberTotalBeforeVat($subscriber) {
 		return isset($subscriber['totals']['before_vat']) ? $subscriber['totals']['before_vat'] : 0;
 	}
-	
+
 	/**
 	 * 
 	 * @param array $subscriber subscriber entry from billrun collection
@@ -759,13 +755,29 @@ EOI;
 	protected function getSubscriberTotalAfterVat($subscriber) {
 		return isset($subscriber['totals']['after_vat']) ? $subscriber['totals']['after_vat'] : 0;
 	}
-	
+
 	protected function getAccTotalBeforeVat($row) {
 		return isset($row['totals']['before_vat']) ? $row['totals']['before_vat'] : 0;
 	}
-	
+
 	protected function getAccTotalAfterVat($row) {
 		return isset($row['totals']['after_vat']) ? $row['totals']['after_vat'] : 0;
+	}
+
+	protected function getExtrasStartDate() {
+		return date('Y/m/d', Billrun_Util::getStartTime($this->stamp));
+	}
+	
+	protected function getExtrasEndDate() {
+		return date('Y/m/d', Billrun_Util::getEndTime($this->stamp));
+	}
+	
+	protected function getFlatStartDate() {
+		return date('Y/m/d', strtotime('+ 1 month', Billrun_Util::getStartTime($this->stamp)));
+	}
+	
+	protected function getFlatEndDate() {
+		return date('Y/m/d', strtotime('+ 1 month', Billrun_Util::getEndTime($this->stamp)));
 	}
 
 }

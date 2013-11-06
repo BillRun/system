@@ -50,22 +50,23 @@ class Generator_Balance extends Generator_Golan {
 		if (isset($options['subscribers']) && $options['subscribers']) {
 			$this->setSubscribers($options['subscribers']);
 		}
+		$this->now = time();
+		$this->stamp = Billrun_Util::getBillrunKey($this->now);
 	}
 
 	public function load() {
-		$now = time();
-		$this->date = date(Billrun_Base::base_dateformat, $now);
+		$this->date = date(Billrun_Base::base_dateformat, $this->now);
 		$subscriber = Billrun_Factory::subscriber();
 		$this->account_data = array();
 		$res = $subscriber->getList(0, 1, $this->date, $this->aid);
 		if (!empty($res)) {
 			$this->account_data = current($res);
 		}
-		$this->billrun_key = Billrun_Util::getBillrunKey($now);
-		$billrun_start_date = Billrun_Util::getStartTime($this->billrun_key);
+
+		$billrun_start_date = Billrun_Util::getStartTime($this->stamp);
 		$billrun_params = array(
 			'aid' => $this->aid,
-			'billrun_key' => $this->billrun_key,
+			'billrun_key' => $this->stamp,
 			'autoload' => false,
 		);
 		$billrun = Billrun_Factory::billrun($billrun_params);
@@ -141,9 +142,9 @@ class Generator_Balance extends Generator_Golan {
 	 */
 	protected function getSubscriberTotalAfterVat($subscriber) {
 		$before_vat = $this->getSubscriberTotalBeforeVat($subscriber);
-		return $before_vat + $before_vat * Billrun_Billrun::getVATByBillrunKey($this->billrun_key);
+		return $before_vat + $before_vat * Billrun_Billrun::getVATByBillrunKey($this->stamp);
 	}
-	
+
 	protected function getAccTotalBeforeVat($row) {
 		$before_vat = 0;
 		foreach ($row['subs'] as $subscriber) {
@@ -151,10 +152,10 @@ class Generator_Balance extends Generator_Golan {
 		}
 		return $before_vat;
 	}
-	
+
 	protected function getAccTotalAfterVat($row) {
 		$before_vat = $this->getAccTotalBeforeVat($row);
-		return $before_vat + $before_vat * Billrun_Billrun::getVATByBillrunKey($this->billrun_key);
+		return $before_vat + $before_vat * Billrun_Billrun::getVATByBillrunKey($this->stamp);
 	}
 
 }
