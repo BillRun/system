@@ -111,8 +111,8 @@ class Billrun_Generator_Report_CallingScript extends Billrun_Generator_Report {
 												'daily_start_time' => isset($this->options['start_calls_time']) ? $this->options['start_calls_time'] : '00:10:00',
 											));
 
-		$startDay = strtotime(date('Ymd 00:00:00'),isset($this->startTestAt) ? $this->startTestAt: time());
-		$endDay = strtotime(date('Ymd 00:00:00',$startDay+(86400 * ( $aggCount / $aggDaily )) ) );
+		$startDay = strtotime( date('Ymd 00:00:00',isset($this->startTestAt) ? $this->startTestAt: time()) );
+		$endDay = strtotime( date('Ymd 00:00:00',$startDay+(86400 * ( $aggCount / $aggDaily )) ) );
 		$config = array('actions' => $actions , 'test_id' => $this->testId , 'from' => $startDay , 'to' => $endDay );
 		if($actions) {
 			if(!empty($this->options['to_remote'])) {
@@ -200,9 +200,10 @@ class Billrun_Generator_Report_CallingScript extends Billrun_Generator_Report {
 	 * @see Billrun_Generator_Report::writeToFile( &$fd, &$report )
 	 */
 	function writeToFile( &$fd, &$report ) {
-		fwrite($fd, "db.config.insert({key:'call_generator',urt:ISODate('". date('Y-m-d\TH:i:s\Z')."'),");
-			fwrite($fd, "from:ISODate('". date('Y-m-d\TH:i:s\Z',$report['from']) ."'),");
-			fwrite($fd, "to:ISODate('". date('Y-m-d\TH:i:s\Z',$report['to']) ."'),");
+			$urt = $report['from'] > time() ? $report['from'] : time(); 
+			fwrite($fd, "db.config.insert({key:'call_generator',urt:ISODate('". date('Y-m-d H:i:sP',$urt)."'),");
+			fwrite($fd, "from:ISODate('". date('Y-m-d H:i:sP',$report['from']) ."'),");
+			fwrite($fd, "to:ISODate('". date('Y-m-d H:i:sP',$report['to']) ."'),");
 			fwrite($fd, "test_id :'{$report['test_id']}'," );
 			fwrite($fd, "test_script : \n" );
 			fwrite($fd, json_encode($report['actions'],JSON_PRETTY_PRINT));
