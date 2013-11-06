@@ -242,7 +242,7 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 		if(!empty($numberFilter) ) {
 			$found = false;
 			foreach($numberFilter as  $number) {
-				if(preg_match($number, $data['calling_number']) || preg_match($number, $data['called_number'])) {
+				if(isset($data['calling_number']) && preg_match($number, $data['calling_number']) || isset($data['called_number']) && preg_match($number, $data['called_number'])) {
 					$found =true;
 					break ;
 				}
