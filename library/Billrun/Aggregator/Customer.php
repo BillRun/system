@@ -136,12 +136,16 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 			//Billrun_Factory::log()->log("Updating Accoount : " . print_r($account),Zend_Log::DEBUG);			
 			//Billrun_Factory::log(microtime(true));
 			if (empty($this->options['live_billrun_update'])) {
+				Billrun_Factory::log()->log("Creating empty billrun " . $billrun_key . " for account " . $accid, Zend_Log::DEBUG);
 				Billrun_Billrun::createBillrunIfNotExists($accid, $billrun_key);
+				Billrun_Factory::log()->log("Finished creating empty billrun " . $billrun_key . " for account " . $accid, Zend_Log::DEBUG);
 				$params = array(
 					'aid' => $accid,
 					'billrun_key' => $billrun_key,
 				);
+				Billrun_Factory::log()->log("Loading billrun " . $billrun_key . " for account " . $accid, Zend_Log::DEBUG);
 				$account_billrun = Billrun_Factory::billrun($params);
+				Billrun_Factory::log()->log("Finished loading billrun " . $billrun_key . " for account " . $accid, Zend_Log::DEBUG);
 				if ($account_billrun) {
 					foreach ($account as $subscriber) {
 						$account_billrun->addSubscriberLines($subscriber->sid, true);
@@ -149,6 +153,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 					//save  the billrun
 					Billrun_Factory::log("Saving account $accid");
 					$account_billrun->save();
+					Billrun_Factory::log("Finished saving account $accid");
 				} else {
 					Billrun_Factory::log()->log("Couldn't load account  for $accid and Billrun $billrun_key", Zend_Log::NOTICE);
 				}
@@ -164,27 +169,38 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 				//add the subscriber plan for next month
 				if (is_null($plan_name) || $plan_name=="NULL") {
 					$subscriber_status = "closed";
+					Billrun_Factory::log("Setting subscriber $sid status to $subscriber_status", Zend_log::DEBUG);
 					Billrun_Billrun::setSubscriberStatus($aid, $sid, $billrun_key, $subscriber_status);
+					Billrun_Factory::log("Finished setting subscriber $sid status to $subscriber_status", Zend_log::DEBUG);
 					Billrun_Factory::log()->log("Closed subscriber $sid.", Zend_Log::INFO);
 				} else {
 					$subscriber_status = "open";
+					Billrun_Factory::log("Getting flat price for subscriber $sid", Zend_log::DEBUG);
 					$flat_price = $subscriber->getFlatPrice();
+					Billrun_Factory::log("Finished getting flat price for subscriber $sid", Zend_log::DEBUG);
 					if (is_null($flat_price)) {
 						Billrun_Factory::log()->log("Couldn't find flat price for subscriber " . $sid . " for billrun " . $billrun_key, Zend_Log::ALERT);
 						continue;
 					}
 					Billrun_Factory::log('Adding flat to subscriber ' . $sid, Zend_Log::INFO);
 					$flat_line = $this->saveFlatLine($subscriber, $billrun_key);
+					Billrun_Factory::log('Finished adding flat to subscriber ' . $sid, Zend_Log::DEBUG);
 					$plan = $subscriber->getPlan();
+					Billrun_Factory::log('Saving flat line of subscriber ' . $sid, Zend_Log::DEBUG);
 					if (!$billrun = Billrun_Billrun::updateBillrun($billrun_key, array(), array('aprice' => $flat_price), $flat_line, $plan->get('vatable'))) {
 						Billrun_Factory::log()->log("Flat costs already exist in billrun collection for subscriber " . $sid . " for billrun " . $billrun_key, Zend_Log::NOTICE);
 					} else {
+						Billrun_Factory::log('Finished saving flat line of subscriber ' . $sid, Zend_Log::DEBUG);
+						Billrun_Factory::log("Setting subscriber $sid status to $subscriber_status", Zend_log::DEBUG);
 						Billrun_Billrun::setSubscriberStatus($aid, $sid, $billrun_key, $subscriber_status);
+						Billrun_Factory::log("Finished setting subscriber $sid status to $subscriber_status", Zend_log::DEBUG);
 					}
 				}
 				//}
 			}
+			Billrun_Factory::log("Closing billrun $billrun_key for account $accid", Zend_log::DEBUG);
 			Billrun_Billrun::close($accid, $billrun_key, $this->min_invoice_id);
+			Billrun_Factory::log("Finished closing billrun $billrun_key for account $accid", Zend_log::DEBUG);
 		}
 //		Billrun_Factory::dispatcher()->trigger('beforeAggregateSaveLine', array(&$save_data, &$this));
 		// @TODO trigger after aggregate

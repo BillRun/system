@@ -581,7 +581,10 @@ class Billrun_Billrun {
 			'out_plan' => 0,
 		);
 		$all_lines = array();
+		Billrun_Factory::log("Processing aggregated data lines for subscriber $sid...", Zend_log::DEBUG);
+		$num_lines = 0;
 		foreach ($subscriber_aggregated_data as $agg_data) {
+			$num_lines++;
 			$refs = array();
 			foreach ($agg_data['lines'] as $mongo_id) {
 				$all_lines[] = $mongo_id;
@@ -605,6 +608,7 @@ class Billrun_Billrun {
 			//counters: 'data' => usagev
 			$sraw['lines']['data']['counters'][$agg_data['_id']['urt']] = $agg_data['counters'];
 		}
+		Billrun_Factory::log("Finished processing subscriber $sid aggregated data lines. Total: $num_lines", Zend_log::DEBUG);
 		foreach ($breakdown_data as $plan_key => $plan_data) {
 			foreach ($plan_data as $rate_key => $rate_data) {
 				$sraw['breakdown'][$plan_key]['base'][$rate_key]['totals']['data']['usagev'] = $this->getFieldVal($sraw['breakdown'][$plan_key]['base'][$rate_key]['totals']['data']['usagev'], 0) + $rate_data['usagev'];
@@ -974,8 +978,10 @@ class Billrun_Billrun {
 		Billrun_Factory::log()->log("Querying subscriber " . $sid . " for lines...", Zend_Log::DEBUG);
 		$subscriber_lines = $this->getSubscriberLines($sid, $start_time);
 		//						Billrun_Factory::log()->log("Found " . count($subscriber_lines) . " lines.", Zend_Log::DEBUG);
+		$num_lines = 0;
 		Billrun_Factory::log("Processing subscriber Lines $sid");
 		foreach ($subscriber_lines as &$line) {
+			$num_lines++;
 			//Billrun_Factory::log("Processing subscriber Line for $sid : ".  microtime(true));
 			$line->collection($this->lines);
 			$pricingData = array('aprice' => $line['aprice']);
@@ -991,12 +997,18 @@ class Billrun_Billrun {
 			//Billrun_Factory::log("Done Processing subscriber Line for $sid : ".  microtime(true));
 			$updatedLines[] = $line['_id']->getMongoId();
 		}
+		Billrun_Factory::log("Finished processing subscriber $sid lines. Total: $num_lines", Zend_log::DEBUG);
 		Billrun_Factory::log()->log("Querying subscriber " . $sid . " for ggsn lines...", Zend_Log::DEBUG);
 		$subscriber_aggregated_data = $this->getSubscriberDataLines($sid, $start_time);
+		Billrun_Factory::log()->log("Finished querying subscriber " . $sid . " for ggsn lines", Zend_Log::DEBUG);
+		Billrun_Factory::log("Processing data lines for subscriber $sid", Zend_Log::DEBUG);
 		$data_lines_ids = $this->updateAggregatedData($sid, $subscriber_aggregated_data);
+		Billrun_Factory::log("Finished processing data lines for subscriber $sid", Zend_Log::DEBUG);
 		if ($update_lines) {
+			Billrun_Factory::log("Updating subscriber $sid lines with billrun stamp", Zend_Log::DEBUG);
 			$updatedLines = array_merge($updatedLines, $data_lines_ids);
 			$this->lines->update(array('_id' => array('$in' => $updatedLines)), array('$set' => array('billrun' => $this->billrun_key)), array('multiple' => true));
+			Billrun_Factory::log("Finished updating subscriber $sid lines with billrun stamp", Zend_Log::DEBUG);
 		}
 		$this->updateTotals();
 	}
@@ -1031,11 +1043,15 @@ class Billrun_Billrun {
 		} else {
 			$query['billrun'] = array('$exists' => false);
 		}
+		Billrun_Factory::log()->log("Querying for subscriber " . $sid . " lines", Zend_Log::DEBUG);
 		$cursor = $this->lines->query($query)->cursor()->hint(array('sid' => 1));
+		Billrun_Factory::log()->log("Finished querying for subscriber " . $sid . " lines", Zend_Log::DEBUG);
 		$results = array();
+		Billrun_Factory::log()->log("Saving subscriber " . $sid . " lines to array", Zend_Log::DEBUG);
 		foreach ($cursor as $entity) {
 			$results[] = $entity;
 		}
+		Billrun_Factory::log()->log("Finished saving subscriber " . $sid . " lines to array", Zend_Log::DEBUG);
 		return $results;
 	}
 
