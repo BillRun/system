@@ -233,7 +233,7 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 			$this->HandleCall($device, $call, $action['duration'], (($action['hangup'] == 'caller') == $isCalling) );
 		}
 		//$call['execution_end_time'] = date("YmdTHis");
-		$call['estimated_price'] = $call['duration'] * $action['rate'];
+		$call['estimated_price'] = 0;//$call['duration'] * $action['rate']; //TODO  maybe use  the billing   getPriceData?
 		$this->save($action, $call, $isCalling);
 		Billrun_Factory::log("Done acting on action of type : {$action['action_type']} for number : ".$device->getModemNumber());
 	}

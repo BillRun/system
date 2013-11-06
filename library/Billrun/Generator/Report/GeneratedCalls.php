@@ -145,7 +145,7 @@ class Billrun_Generator_Report_GeneratedCalls extends Billrun_Generator_Report {
 		$allLines = array_merge($unmachedLines,$subscriberLines);
 		foreach ( $allLines as $key => $value) {
 			if(isset($value['action_type'])) {
-				$summary['generator']['duration'] += $value['callee_duration'];
+				$summary['generator']['duration'] += Billrun_Util::getFieldVal($value['callee_duration'],0);
 				$summary['generator']['price'] += Billrun_Util::getFieldVal($value['callee_price'],0);
 				$summary['generator'][$value['action_type']] += 1;			
 				$summary['generator']['rate'] += floatval(Billrun_Util::getFieldVal($value['rate'],0));	
