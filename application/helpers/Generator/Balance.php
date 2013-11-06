@@ -56,7 +56,11 @@ class Generator_Balance extends Generator_Golan {
 		$now = time();
 		$this->date = date(Billrun_Base::base_dateformat, $now);
 		$subscriber = Billrun_Factory::subscriber();
-		$this->account_data = current($subscriber->getList(0, 1, $this->date, $this->aid));
+		$this->account_data = array();
+		$res = $subscriber->getList(0, 1, $this->date, $this->aid);
+		if (!empty($res)) {
+			$this->account_data = current($res);
+		}
 		$this->billrun_key = Billrun_Util::getBillrunKey($now);
 		$billrun_start_date = Billrun_Util::getStartTime($this->billrun_key);
 		$billrun_params = array(

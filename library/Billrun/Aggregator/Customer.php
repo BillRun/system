@@ -75,10 +75,10 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 
 		ini_set('mongo.native_long', 1); //Set mongo  to use  long int  for  all aggregated integer data.
 
-		if (isset($options['aggregator']['page']) && $options['aggregator']['page']) {
+		if (isset($options['aggregator']['page']) && is_numeric($options['aggregator']['page'])) {
 			$this->page = $options['aggregator']['page'];
 		}
-		if (isset($options['page']) && $options['page']) {
+		if (isset($options['page']) && is_numeric($options['page'])) {
 			$this->page = $options['page'];
 		}
 		if (isset($options['aggregator']['size']) && $options['aggregator']['size']) {
@@ -162,7 +162,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 				$plan_name = $subscriber->plan;
 				//else {
 				//add the subscriber plan for next month
-				if (is_null($plan_name)) {
+				if (is_null($plan_name) || $plan_name=="NULL") {
 					$subscriber_status = "closed";
 					Billrun_Billrun::setSubscriberStatus($aid, $sid, $billrun_key, $subscriber_status);
 					Billrun_Factory::log()->log("Closed subscriber $sid.", Zend_Log::INFO);
