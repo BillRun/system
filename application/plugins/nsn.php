@@ -238,6 +238,17 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 		$parser->setLastParseLength($data['record_length']);
 
 		//@TODO add unifiom field translation. ('record_opening_time',etc...)
+		$numberFilter = Billrun_Factory::config()->getConfigValue('nsn.processor.number_filter',array());
+		if(!empty($numberFilter) ) {
+			$found = false;
+			foreach($numberFilter as  $number) {
+				if(preg_match($number, $data['calling_number']) || preg_match($number, $data['called_number'])) {
+					$found =true;
+					break ;
+				}
+			}
+			if(!$found) { return false; }
+		}
 		return isset($this->nsnConfig[$data['record_type']]) ? $data : false;
 	}
 
