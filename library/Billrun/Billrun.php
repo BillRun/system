@@ -914,9 +914,9 @@ class Billrun_Billrun {
 		$newTotals = array('before_vat' => 0, 'after_vat' => 0, 'vatable' => 0);
 		foreach ($this->data['subs'] as $sub) {
 			//Billrun_Factory::log(print_r($sub));
-			$newTotals['before_vat'] += $sub['totals']['before_vat'];
-			$newTotals['after_vat'] += $sub['totals']['after_vat'];
-			$newTotals['vatable'] += $sub['totals']['vatable'];
+			$newTotals['before_vat'] += $this->getFieldVal($sub['totals']['before_vat'], 0);
+			$newTotals['after_vat'] += $this->getFieldVal($sub['totals']['after_vat'], 0);
+			$newTotals['vatable'] += $this->getFieldVal($sub['totals']['vatable'], 0);
 		}
 		$rawData['totals'] = $newTotals;
 		$this->data->setRawData($rawData);
@@ -1000,15 +1000,15 @@ class Billrun_Billrun {
 			$updatedLines[] = $line['stamp'];
 		}
 		Billrun_Factory::log("Finished processing subscriber $sid lines. Total: $num_lines", Zend_log::DEBUG);
-		Billrun_Factory::log()->log("Querying subscriber " . $sid . " for ggsn lines...", Zend_Log::DEBUG);
-		$subscriber_aggregated_data = $this->getSubscriberDataLines($sid, $start_time);
-		Billrun_Factory::log()->log("Finished querying subscriber " . $sid . " for ggsn lines", Zend_Log::DEBUG);
-		Billrun_Factory::log("Processing data lines for subscriber $sid", Zend_Log::DEBUG);
-		$data_lines_stamps = $this->updateAggregatedData($sid, $subscriber_aggregated_data);
-		Billrun_Factory::log("Finished processing data lines for subscriber $sid", Zend_Log::DEBUG);
+//		Billrun_Factory::log()->log("Querying subscriber " . $sid . " for ggsn lines...", Zend_Log::DEBUG);
+//		$subscriber_aggregated_data = $this->getSubscriberDataLines($sid, $start_time);
+//		Billrun_Factory::log()->log("Finished querying subscriber " . $sid . " for ggsn lines", Zend_Log::DEBUG);
+//		Billrun_Factory::log("Processing data lines for subscriber $sid", Zend_Log::DEBUG);
+//		$data_lines_stamps = $this->updateAggregatedData($sid, $subscriber_aggregated_data);
+//		Billrun_Factory::log("Finished processing data lines for subscriber $sid", Zend_Log::DEBUG);
 		if ($update_lines) {
 			Billrun_Factory::log("Updating subscriber $sid lines with billrun stamp", Zend_Log::DEBUG);
-			$updatedLines = array_merge($updatedLines, $data_lines_stamps);
+//			$updatedLines = array_merge($updatedLines, $data_lines_stamps);
 			asort($updatedLines);
 			$this->lines->update(array('_id' => array('$in' => $updatedLines)), array('$set' => array('billrun' => $this->billrun_key)), array('multiple' => true));
 			Billrun_Factory::log("Finished updating subscriber $sid lines with billrun stamp", Zend_Log::DEBUG);
@@ -1034,9 +1034,9 @@ class Billrun_Billrun {
 			'aprice' => array(
 				'$exists' => true,
 			),
-			'type' => array(
-				'$ne' => 'ggsn',
-			),
+//			'type' => array(
+//				'$ne' => 'ggsn',
+//			),
 		);
 		if ($this->allowOverride) {
 			$query['$or'] = array(
