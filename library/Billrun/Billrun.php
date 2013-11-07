@@ -970,21 +970,16 @@ class Billrun_Billrun {
 	 * @param type $update_lines
 	 * @return type
 	 */
-	public function addSubscriberLines($sid, $update_lines = false, $start_time = 0) {
-		if ($this->exists($sid)) {
-			Billrun_Factory::log()->log("Billrun " . $this->billrun_key . " already exists for subscriber " . $sid, Zend_Log::ALERT);
-			return;
-		}
+	public function addLines($update_lines = false, $start_time = 0) {
 		$updatedLines = array();
-		$this->addSubscriber($sid);
-		Billrun_Factory::log()->log("Querying subscriber " . $sid . " for lines...", Zend_Log::DEBUG);
-		$subscriber_lines = $this->getSubscriberLines($sid, $start_time);
-		//						Billrun_Factory::log()->log("Found " . count($subscriber_lines) . " lines.", Zend_Log::DEBUG);
+		Billrun_Factory::log()->log("Querying account " . $this->aid . " for lines...", Zend_Log::DEBUG);
+		$account_lines = $this->getAccountLines($this->aid, $start_time);
+		//						Billrun_Factory::log()->log("Found " . count($account_lines) . " lines.", Zend_Log::DEBUG);
 		$num_lines = 0;
-		Billrun_Factory::log("Processing subscriber Lines $sid");
-		foreach ($subscriber_lines as &$line) {
+		Billrun_Factory::log("Processing account Lines $this->aid");
+		foreach ($account_lines as &$line) {
 			$num_lines++;
-			//Billrun_Factory::log("Processing subscriber Line for $sid : ".  microtime(true));
+			//Billrun_Factory::log("Processing account Line for $sid : ".  microtime(true));
 			$line->collection($this->lines);
 			$pricingData = array('aprice' => $line['aprice']);
 			if (isset($line['over_plan'])) {
@@ -996,10 +991,10 @@ class Billrun_Billrun {
 			$rate = $this->getRowRate($line);
 			$vatable = (!(isset($rate['vatable']) && !$rate['vatable']) || (!isset($rate['vatable']) && !$this->vatable));
 			Billrun_Billrun::updateBillrun($this->billrun_key, array($line['usaget'] => $line['usagev']), $pricingData, $line, $vatable, $this);
-			//Billrun_Factory::log("Done Processing subscriber Line for $sid : ".  microtime(true));
+			//Billrun_Factory::log("Done Processing account Line for $sid : ".  microtime(true));
 			$updatedLines[] = $line['stamp'];
 		}
-		Billrun_Factory::log("Finished processing subscriber $sid lines. Total: $num_lines", Zend_log::DEBUG);
+		Billrun_Factory::log("Finished processing account $this->aid lines. Total: $num_lines", Zend_log::DEBUG);
 //		Billrun_Factory::log()->log("Querying subscriber " . $sid . " for ggsn lines...", Zend_Log::DEBUG);
 //		$subscriber_aggregated_data = $this->getSubscriberDataLines($sid, $start_time);
 //		Billrun_Factory::log()->log("Finished querying subscriber " . $sid . " for ggsn lines", Zend_Log::DEBUG);
@@ -1007,11 +1002,11 @@ class Billrun_Billrun {
 //		$data_lines_stamps = $this->updateAggregatedData($sid, $subscriber_aggregated_data);
 //		Billrun_Factory::log("Finished processing data lines for subscriber $sid", Zend_Log::DEBUG);
 		if ($update_lines) {
-			Billrun_Factory::log("Updating subscriber $sid lines with billrun stamp", Zend_Log::DEBUG);
+			Billrun_Factory::log("Updating account $this->aid lines with billrun stamp", Zend_Log::DEBUG);
 //			$updatedLines = array_merge($updatedLines, $data_lines_stamps);
 			asort($updatedLines);
 			$this->lines->update(array('_id' => array('$in' => $updatedLines)), array('$set' => array('billrun' => $this->billrun_key)), array('multiple' => true));
-			Billrun_Factory::log("Finished updating subscriber $sid lines with billrun stamp", Zend_Log::DEBUG);
+			Billrun_Factory::log("Finished updating account $this->aid lines with billrun stamp", Zend_Log::DEBUG);
 		}
 		$this->updateTotals();
 	}
@@ -1055,6 +1050,48 @@ class Billrun_Billrun {
 			$results[] = $entity;
 		}
 		Billrun_Factory::log()->log("Finished saving subscriber " . $sid . " lines to array", Zend_Log::DEBUG);
+		return $results;
+	}
+	
+	/**
+	 * 
+	 * @param type $aid
+	 * @param int $start_time unix timestamp
+	 * @return type
+	 */
+	protected function getAccountLines($aid, $start_time = 0) {
+		$start_time = new MongoDate($start_time);
+		$end_time = new MongoDate(Billrun_Util::getEndTime($this->billrun_key));
+		$query = array(
+			'aid' => $aid,
+			'urt' => array(
+				'$lte' => $end_time,
+				'$gte' => $start_time,
+			),
+			'aprice' => array(
+				'$exists' => true,
+			),
+//			'type' => array(
+//				'$ne' => 'ggsn',
+//			),
+		);
+		if ($this->allowOverride) {
+			$query['$or'] = array(
+				array('billrun' => array('$exists' => false)),
+				array('billrun' => $this->billrun_key),
+			);
+		} else {
+			$query['billrun'] = array('$exists' => false);
+		}
+		Billrun_Factory::log()->log("Querying for account " . $aid . " lines", Zend_Log::DEBUG);
+		$cursor = $this->lines->query($query)->cursor()->hint(array('sid' => 1));
+		Billrun_Factory::log()->log("Finished querying for account " . $aid . " lines", Zend_Log::DEBUG);
+		$results = array();
+		Billrun_Factory::log()->log("Saving account " . $aid . " lines to array", Zend_Log::DEBUG);
+		foreach ($cursor as $entity) {
+			$results[] = $entity;
+		}
+		Billrun_Factory::log()->log("Finished saving account " . $aid . " lines to array", Zend_Log::DEBUG);
 		return $results;
 	}
 

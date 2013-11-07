@@ -231,6 +231,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 						}
 					}
 				}
+				asort($ret_data); // maybe this will help the aid index to stay in memory
 				return $ret_data;
 			} else {
 				return null;

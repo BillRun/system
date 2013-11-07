@@ -148,8 +148,13 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 				Billrun_Factory::log()->log("Finished loading billrun " . $billrun_key . " for account " . $accid, Zend_Log::DEBUG);
 				if ($account_billrun) {
 					foreach ($account as $subscriber) {
-						$account_billrun->addSubscriberLines($subscriber->sid, true);
+						if ($account_billrun->exists($subscriber->sid)) {
+							Billrun_Factory::log()->log("Billrun " . $billrun_key . " already exists for subscriber " . $subscriber->sid, Zend_Log::ALERT);
+							continue;
+						}
+						$account_billrun->addSubscriber($subscriber->sid);
 					}
+					$account_billrun->addLines(true);
 					//save  the billrun
 					Billrun_Factory::log("Saving account $accid");
 					$account_billrun->save();
@@ -167,7 +172,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 				$plan_name = $subscriber->plan;
 				//else {
 				//add the subscriber plan for next month
-				if (is_null($plan_name) || $plan_name=="NULL") {
+				if (is_null($plan_name) || $plan_name == "NULL") {
 					$subscriber_status = "closed";
 					Billrun_Factory::log("Setting subscriber $sid status to $subscriber_status", Zend_log::DEBUG);
 					Billrun_Billrun::setSubscriberStatus($aid, $sid, $billrun_key, $subscriber_status);
