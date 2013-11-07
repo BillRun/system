@@ -51,7 +51,7 @@ class Billrun_Generator_Report_GeneratedCalls extends Billrun_Generator_Report {
 		$report['summary'] = $this->printSummaryReport($this->calls,$this->billingCalls['unmatched_lines']);
 		$report['from']	 = date("Y-m-d H:i:s", $this->from);
 		$report['to']	 = date("Y-m-d H:i:s", $this->to);	
-		$reports =  array("call_matching_report" => $report);
+		$reports =  array("call_matching_report.csv" => $report);
 		if(isset($this->options['out']) && $this->options['out']) {
 			$this->generateFiles($reports, $this->options['out']);
 		}
@@ -146,7 +146,7 @@ class Billrun_Generator_Report_GeneratedCalls extends Billrun_Generator_Report {
 		foreach ( $allLines as $key => $value) {
 			if(isset($value['action_type'])) {
 				$summary['generator']['duration'] += Billrun_Util::getFieldVal($value['callee_duration'],0);
-				$summary['generator']['price'] += Billrun_Util::getFieldVal($value['callee_price'],0);
+				$summary['generator']['price'] += 0;//Billrun_Util::getFieldVal($value['callee_price'],0);
 				$summary['generator'][$value['action_type']] += 1;			
 				$summary['generator']['rate'] += floatval(Billrun_Util::getFieldVal($value['rate'],0));	
 			}
@@ -285,6 +285,19 @@ class Billrun_Generator_Report_GeneratedCalls extends Billrun_Generator_Report {
 	 * @see Billrun_Generator_Report::writeToFile( &$fd, &$report )
 	 */
 	function writeToFile( &$fd, &$report ) {
-		fwrite($fd, json_encode($report, JSON_PRETTY_PRINT));
+		foreach ($report as $key => $section) {			
+			fputcsv($fd, array($key, is_array($section) ? '' : $section) );
+			if(is_array($section)) {
+				fputcsv($fd, array_merge( ($key != 'details' ? array(""): array()) , array_keys($section[key($section)]) ) );
+				foreach ($section as $Skey => $fields) {
+					fputcsv($fd, array_merge(($key != 'details' ? array($Skey): array()),$fields));
+				}
+			}
+
+			
+			
+		}
+		
+		//fwrite($fd, json_encode($report, JSON_PRETTY_PRINT));
 	}
 }

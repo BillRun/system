@@ -23,7 +23,7 @@ abstract class Billrun_Generator_Report extends Billrun_Generator {
 	 */
 	protected function generateFiles($resultFiles, $outputDir = GenerateAction::GENERATOR_OUTPUT_DIR) {
 		foreach ($resultFiles as $name => $report) {
-			$fname = date('Ymd') . "_" . $name . ".json";
+			$fname = date('Ymd') . "_" . $name ;
 			Billrun_Factory::log("Generating file $fname");
 			$fd = fopen($outputDir . DIRECTORY_SEPARATOR . $fname, "w+");
 			$this->writeToFile($fd, $report);
