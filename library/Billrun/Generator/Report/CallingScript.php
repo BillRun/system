@@ -33,6 +33,8 @@ class Billrun_Generator_Report_CallingScript extends Billrun_Generator_Report {
 	const VOIVE_MAIL_DURATION = 1.5;
 	const NO_ANSWER_DURATION = 10;
 
+	const CONCURRENT_CONFIG_ENTRIES = 5;
+	
 	/**
 	 * The script to generate calls by.
 	 */
@@ -125,6 +127,9 @@ class Billrun_Generator_Report_CallingScript extends Billrun_Generator_Report {
 				$this->generateFiles(array(join("_",$this->scriptTypes).'.json.dump' => $config), $this->options['out']);
 			}
 		}
+		if(Billrun_Util::getFieldVal($this->options['update_config'],false)) {
+			$this->updateConfig($config);
+		}
 		return $config;
 	}	
 	
@@ -210,4 +215,36 @@ class Billrun_Generator_Report_CallingScript extends Billrun_Generator_Report {
 			fwrite($fd, "\n});" );
 	}
 		
+	
+	public function updateConfig($data) {
+		Billrun_Factory::log()->log("Updating Config", Zend_Log::INFO);
+		$data['key'] = 'call_generator';
+		$data['urt'] = new MongoDate($data['from'] > time() ? $data['from'] : time()); 
+		$data['from'] = new MongoDate($data['from']);
+		$data['to'] = new MongoDate($data['to']);
+		$configCol = Billrun_Factory::db()->configCollection();		
+		$entity = new Mongodloid_Entity($data,$configCol);		
+		
+		if ($entity->isEmpty() || $entity->save($configCol) === false) {
+			Billrun_Factory::log()->log('Failed to store configuration into DB',Zend_Log::ALERT);
+			return false;
+		}
+		
+		$this->removeOldEnteries($entity['key']);
+		
+		Billrun_Factory::log()->log("Updated Config", Zend_Log::INFO);
+		return true;
+	}
+	
+	/**
+	 * Remove old config entries
+	 * @param type $keythe  key to remove old entries for.
+	 */
+	protected function removeOldEnteries($key) {
+		$oldEntries = Billrun_Factory::db()->configCollection()->query(array('key' => $key))->cursor()->sort(array('urt'=>-1))->skip(static::CONCURRENT_CONFIG_ENTRIES);
+		foreach ($oldEntries as $entry) {
+			$entry->collection(Billrun_Factory::db()->configCollection());
+			$entry->remove();
+		}
+	}
 }
