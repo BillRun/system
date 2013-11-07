@@ -140,7 +140,7 @@ class CliController extends Yaf_Controller_Abstract {
 		
 		foreach ($possibleOptions as $key => $defVal) {
 			$options[$key] = $this->options->getOption($key);
-			if (empty($options[$key])) {
+			if (is_null($options[$key])) {
 				if (!$defVal) {
 					$this->addOutput("Error: No $key selected");
 					return false;
