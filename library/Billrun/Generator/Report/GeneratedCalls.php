@@ -122,7 +122,7 @@ class Billrun_Generator_Report_GeneratedCalls extends Billrun_Generator_Report {
 		$ret = array();
 		foreach ($filter as $key => $value) {
 				$val = Billrun_Util::getFieldVal($arr[$key],'');			
-				$ret[$value] =  $val instanceof MongoDate ? date("Y-m-d H:i:s",$val->sec): $val;
+				$ret[$value] = strstr($value,"_time") ? date("Y-m-d H:i:s",$val instanceof MongoDate ? $val->sec : strtotime($val) ) : $val;
 		}
 		return $ret;
 	}
@@ -214,13 +214,13 @@ class Billrun_Generator_Report_GeneratedCalls extends Billrun_Generator_Report {
 		//load calls made
 		$callsQuery =array(	'type' => 'generated_call',
 							'from' =>  array('$regex' => (string) $this->callingNumber ),
-							'urt' => array( 													
-										'$lte'=> new MongoDate($this->to) ,
-										'$gt' => new MongoDate($this->from) 
+							'urt' => array(
+										'$gt' => new MongoDate($this->from),
+										'$lte'=> new MongoDate($this->to),										
 									 )
 					);
 		$this->calls = array();
-		foreach (Billrun_Factory::db()->linesCollection()->query($callsQuery) as  $value) {
+		foreach (Billrun_Factory::db()->linesCollection()->query($callsQuery) as $value) {
 			$this->calls[] = $value->getRawData();
 		}		
 	}
@@ -244,6 +244,7 @@ class Billrun_Generator_Report_GeneratedCalls extends Billrun_Generator_Report {
 					$data['billing_'.$key] = $bLine[$key];
 				}
 			}			
+			
 			$updateResults =  Billrun_Factory::db()->linesCollection()->update(array('type'=>'generated_call',
 																'from' => array('$regex' => preg_replace("/^972/","",$bLine['calling_number']) ),
 																'to' => array('$regex' => preg_replace("/^972/","",$bLine['called_number']) ),
