@@ -1042,7 +1042,7 @@ class Billrun_Billrun {
 			$query['billrun'] = array('$exists' => false);
 		}
 		Billrun_Factory::log()->log("Querying for subscriber " . $sid . " lines", Zend_Log::DEBUG);
-		$cursor = $this->lines->query($query)->cursor()->hint(array('sid' => 1));
+		$cursor = $this->lines->query($query)->cursor();
 		Billrun_Factory::log()->log("Finished querying for subscriber " . $sid . " lines", Zend_Log::DEBUG);
 		$results = array();
 		Billrun_Factory::log()->log("Saving subscriber " . $sid . " lines to array", Zend_Log::DEBUG);
@@ -1084,7 +1084,7 @@ class Billrun_Billrun {
 			$query['billrun'] = array('$exists' => false);
 		}
 		Billrun_Factory::log()->log("Querying for account " . $aid . " lines", Zend_Log::DEBUG);
-		$cursor = $this->lines->query($query)->cursor()->hint(array('sid' => 1));
+		$cursor = $this->lines->query($query)->cursor();
 		Billrun_Factory::log()->log("Finished querying for account " . $aid . " lines", Zend_Log::DEBUG);
 		$results = array();
 		Billrun_Factory::log()->log("Saving account " . $aid . " lines to array", Zend_Log::DEBUG);
