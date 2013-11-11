@@ -247,7 +247,8 @@ class Billrun_Generator_Report_GeneratedCalls extends Billrun_Generator_Report {
 					$data['billing_'.$key] = $bLine[$key];
 				}
 			}			
-			
+			Billrun_Factory::log()->log("to : " .date("Y-m-d H:i:s",$bLine['urt']['sec'] + $this->billingTimeOffset + self::ALLOWED_TIME_DIVEATION), Zend_Log::DEBUG);
+			Billrun_Factory::log()->log("from : " . date("Y-m-d H:i:s",$bLine['urt']['sec'] + $this->billingTimeOffset - self::ALLOWED_TIME_DIVEATION), Zend_Log::DEBUG);
 			$updateResults =  Billrun_Factory::db()->linesCollection()->update(array('type'=>'generated_call',
 																'from' => array('$regex' => preg_replace("/^972/","",$bLine['calling_number']) ),
 																'to' => array('$regex' => preg_replace("/^972/","",$bLine['called_number']) ),
