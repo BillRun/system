@@ -212,15 +212,18 @@ class Billrun_Generator_Report_GeneratedCalls extends Billrun_Generator_Report {
 	
 		$this->billingCalls = $this->mergeBillingLines($this->subscriber);
 		//load calls made
-		$callsQuery =array(	'type' => 'generated_call',
-							'from' =>  array('$regex' => (string) $this->callingNumber ),
+		Billrun_Factory::log()->log(date("Y-m-d H:i:s",$this->from));
+		Billrun_Factory::log()->log(date("Y-m-d H:i:s",$this->to));
+		$callsQuery =array(	'type' => 'generated_call',							
 							'urt' => array(
 										'$gt' => new MongoDate($this->from),
 										'$lte'=> new MongoDate($this->to),										
-									 )
+									 ),
+							'from' =>  array('$regex' => (string) $this->callingNumber ),
 					);
 		$this->calls = array();
-		foreach (Billrun_Factory::db()->linesCollection()->query($callsQuery) as $value) {
+		$cursor = Billrun_Factory::db()->linesCollection()->query($callsQuery)->cursor();
+		foreach ($cursor as $value) {
 			$this->calls[] = $value->getRawData();
 		}		
 	}
@@ -255,8 +258,8 @@ class Billrun_Generator_Report_GeneratedCalls extends Billrun_Generator_Report {
 			if (!($updateResults['ok'] && $updateResults['updatedExisting'])) {
 				$retBLines['unmatched_lines'][] = $data;
 			} else {
-				Billrun_Factory::log()->log("line : " . print_r($bLine,1), Zend_Log::DEBUG);
-				Billrun_Factory::log()->log("line : " . print_r($updateResults,1), Zend_Log::DEBUG);
+			//	Billrun_Factory::log()->log("line : " . print_r($bLine,1), Zend_Log::DEBUG);
+			//	Billrun_Factory::log()->log("line : " . print_r($updateResults,1), Zend_Log::DEBUG);
 			}
 		}
 		return $retBLines;
@@ -270,6 +273,7 @@ class Billrun_Generator_Report_GeneratedCalls extends Billrun_Generator_Report {
 	protected function retriveSubscriberBillingLines($sub) {
 		
 		$url = $this->options['billing_api_url']."/apigenerate/?type=SubscriberUsage&stamp={$this->stamp}&subscriber_id={$this->subscriber}]&from='".  urlencode(date("Y-m-d H:i:s",$this->from))."'&to=".  urlencode(date("Y-m-d H:i:s",$this->to));
+		Billrun_Factory::log()->log("Quering billing  with : $url");
 		$curlFd = curl_init($url);
 		curl_setopt($curlFd, CURLOPT_RETURNTRANSFER, TRUE);
 		$results = json_decode(curl_exec($curlFd),JSON_OBJECT_AS_ARRAY);
@@ -288,7 +292,7 @@ class Billrun_Generator_Report_GeneratedCalls extends Billrun_Generator_Report {
 	function writeToFile( &$fd, &$report ) {
 		foreach ($report as $key => $section) {			
 			fputcsv($fd, array($key, is_array($section) ? '' : $section) );
-			if(is_array($section)) {
+			if(!empty($section) && is_array($section)) {
 				fputcsv($fd, array_merge( ($key != 'details' ? array(""): array()) , array_keys($section[key($section)]) ) );
 				foreach ($section as $Skey => $fields) {
 					fputcsv($fd, array_merge(($key != 'details' ? array($Skey): array()),$fields));
