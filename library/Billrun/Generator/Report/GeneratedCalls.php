@@ -272,7 +272,7 @@ class Billrun_Generator_Report_GeneratedCalls extends Billrun_Generator_Report {
 	 */
 	protected function retriveSubscriberBillingLines($sub) {
 		
-		$url = $this->options['billing_api_url']."/apigenerate/?type=SubscriberUsage&stamp={$this->stamp}&subscriber_id={$this->subscriber}&from='".  urlencode(date("Y-m-d H:i:s",$this->from))."'&to=".  urlencode(date("Y-m-d H:i:s",$this->to));
+		$url = $this->options['billing_api_url']."/apigenerate/?type=SubscriberUsage&stamp={$this->stamp}&subscriber_id={$this->subscriber}&from=".  urlencode(date("Y-m-d H:i:s",$this->from))."&to=".  urlencode(date("Y-m-d H:i:s",$this->to));
 		Billrun_Factory::log()->log("Quering billing  with : $url");
 		$curlFd = curl_init($url);
 		curl_setopt($curlFd, CURLOPT_RETURNTRANSFER, TRUE);
@@ -283,7 +283,6 @@ class Billrun_Generator_Report_GeneratedCalls extends Billrun_Generator_Report {
 			}
 			$value['arate'] = $value['arate']['call']['rate'][0]['price'];
 		}
-		Billrun_Factory::log()->log("Results : ".print_r($results,1));
 		return $results;
 	}
 	
