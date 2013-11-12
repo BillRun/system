@@ -249,7 +249,7 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 		Billrun_Factory::log("Making a call to  {$numberToCall}");
 		$callRecord['called_number'] = $numberToCall;
 		$device->call($numberToCall);
-		$callRecord['execution_start_time'] = new MongoDate(time());
+		$callRecord['execution_start_time'] = new MongoDate(round(microtime(true)));
 		$callRecord['calling_result'] = $device->getState();
 
 		return $callRecord['calling_result'];
@@ -303,7 +303,7 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 	 */
 	protected function HandleCall($device, &$callRecord, $waitTime, $hangup  = true) {
 		Billrun_Factory::log("Handling an active call.");
-		$callRecord['call_start_time'] = new MongoDate(time());
+		$callRecord['call_start_time'] = new MongoDate( round(microtime(true)) );
 		$ret = $device->waitForCallToEnd($hangup ? $waitTime : $waitTime + static::WAIT_TIME_PADDING);
 		if ($ret == Gsmodem_Gsmodem::NO_RESPONSE ) {
 				$device->hangUp();
@@ -312,7 +312,7 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 			$callRecord['end_result'] = $device->getState();
 		}
 
-		$callRecord['call_end_time'] = new MongoDate(time());
+		$callRecord['call_end_time'] = new MongoDate(round(microtime(true)));
 		$callRecord['duration'] = $callRecord['call_end_time']->sec - $callRecord['call_start_time']->sec;
 	}
 
@@ -322,7 +322,7 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 	 */
 	protected function getEmptyCall() {
 		return array(
-			'execution_start_time' => new MongoDate(time()),
+			'execution_start_time' => new MongoDate(round(microtime(true))),
 			'calling_result' => 'no_call',
 			'call_start_time' => null,
 			'end_result' => 'no_call',
@@ -339,7 +339,7 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 	 */
 	protected function save($action, $call, $isCalling) {
 		Billrun_Factory::log("Saving call.");
-		$call['execution_end_time'] = new MongoDate(time());
+		$call['execution_end_time'] = new MongoDate(round(microtime(true)));
 		$direction = $isCalling ? 'caller' : 'callee';
 		$commonRec = array_merge($action, array('test_id' => $this->testId, 'date' => date('Ymd'), 'source' => 'generator', 'type' => 'generated_call'));
 		$commonRec['stamp'] = md5(serialize($commonRec));
@@ -373,7 +373,7 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 	 */
 	protected function isConfigUpdated($currentConfig) {
 		//Billrun_Factory::log("Checking configuration update  relative to: ".date("Y-m-d H:i:s",  $currentConfig['urt']->sec));
-		$currTime = new MongoDate(time());	
+		$currTime = new MongoDate(round(microtime(true)));	
 		$retVal = Billrun_Factory::db()->configCollection()->query(array('key' => 'call_generator',			
 				'urt' => array(	'$gt' => $currentConfig['urt'] ,
 								/*'$lte' =>  $currTime*/ ) //@TODO add top limit to loaded configuration
