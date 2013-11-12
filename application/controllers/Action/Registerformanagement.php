@@ -40,6 +40,7 @@ class RegisterformanagementAction extends Action_Base {
 	 */
 	protected function parseData($request) {
 		$data = json_decode($request['data'],true);
+		$data['receieved_timestamp'] = time();
 		return $data;
 	}
 	
