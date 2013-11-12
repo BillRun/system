@@ -212,8 +212,6 @@ class Billrun_Generator_Report_GeneratedCalls extends Billrun_Generator_Report {
 	
 		$this->billingCalls = $this->mergeBillingLines($this->subscriber);
 		//load calls made
-		Billrun_Factory::log()->log(date("Y-m-d H:i:s",$this->from));
-		Billrun_Factory::log()->log(date("Y-m-d H:i:s",$this->to));
 		$callsQuery =array(	'type' => 'generated_call',							
 							'urt' => array(
 										'$gt' => new MongoDate($this->from),

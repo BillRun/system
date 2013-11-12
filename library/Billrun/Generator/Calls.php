@@ -180,6 +180,8 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 	 */
 	protected function waitForNextAction($script) {
 		$action = FALSE;
+		usort($script, function($a,$b) { return strcmp($a['time'], $b['time']);});
+		
 		foreach ($script as $scriptAction) {
 			if ($scriptAction['time'] > date("H:i:s") &&
 				$this->isConnectedModemNumber(array($scriptAction['from'], $scriptAction['to']))) {
