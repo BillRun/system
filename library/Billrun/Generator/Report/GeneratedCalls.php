@@ -212,7 +212,8 @@ class Billrun_Generator_Report_GeneratedCalls extends Billrun_Generator_Report {
 	
 		$this->billingCalls = $this->mergeBillingLines($this->subscriber);
 		//load calls made
-		$callsQuery =array(	'type' => 'generated_call',							
+		$callsQuery =array(	'type' => 'generated_call',
+							'callee_call_start_time' => array('$gt'=> new MongoData(0) ),
 							'urt' => array(
 										'$gt' => new MongoDate($this->from),
 										'$lte'=> new MongoDate($this->to),										
@@ -250,6 +251,7 @@ class Billrun_Generator_Report_GeneratedCalls extends Billrun_Generator_Report {
 			$updateResults =  Billrun_Factory::db()->linesCollection()->update(array('type'=>'generated_call',
 																'from' => array('$regex' => preg_replace("/^972/","",$bLine['calling_number']) ),
 																'to' => array('$regex' => preg_replace("/^972/","",$bLine['called_number']) ),
+																'callee_call_start_time' => array('$gt'=> new MongoData(0) ),
 																'urt' => array('$lte' => new MongoDate($bLine['urt']['sec'] + $this->billingTimeOffset + self::ALLOWED_TIME_DIVEATION),
 																			   '$gte' => new MongoDate($bLine['urt']['sec'] + $this->billingTimeOffset - self::ALLOWED_TIME_DIVEATION))
 																),array('$set'=> $data),array('w'=>1));
