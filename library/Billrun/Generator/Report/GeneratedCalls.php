@@ -16,7 +16,7 @@
  */
 class Billrun_Generator_Report_GeneratedCalls extends Billrun_Generator_Report {
 	
-	const ALLOWED_TIME_DIVEATION = 5;
+	const ALLOWED_TIME_DIVEATION = 10;
 	
 	protected $subscriber = "";
 	protected $callingNumber = "";
