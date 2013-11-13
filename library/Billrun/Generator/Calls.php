@@ -181,9 +181,9 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 	protected function waitForNextAction($script) {
 		$action = FALSE;
 		usort($script, function($a,$b) { return strcmp($a['time'], $b['time']);});
-		
+		$currentTime = date("H:i:s");
 		foreach ($script as $scriptAction) {
-			if ($scriptAction['time'] > date("H:i:s") &&
+			if ($scriptAction['time'] > $currentTime &&
 				$this->isConnectedModemNumber(array($scriptAction['from'], $scriptAction['to']))) {
 					$action = $scriptAction;
 					break;
@@ -305,7 +305,7 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 		Billrun_Factory::log("Handling an active call.");
 		$callRecord['call_start_time'] = new MongoDate( round(microtime(true)) );
 		$ret = $device->waitForCallToEnd($hangup ? $waitTime : $waitTime + static::WAIT_TIME_PADDING);
-		$callRecord['call_end_time'] = new MongoDate(floor(microtime(true)));
+		$callRecord['call_end_time'] = new MongoDate( round(microtime(true)) );
 		if ($ret == Gsmodem_Gsmodem::NO_RESPONSE ) {
 				$device->hangUp();
 				$callRecord['end_result'] = 'hang_up';
