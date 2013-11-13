@@ -93,9 +93,11 @@ class Billrun_Billrun {
 	 * @return \Billrun_Billrun the current instance  of the billrun entry.
 	 * @todo used only in current balance API. Needs refactoring
 	 */
-	public function addSubscriber($sid) {
+	public function addSubscriber($sid, $current_plan_ref) {
 		$subscribers = $this->data['subs'];
-		$subscribers[] = $this->getEmptySubscriberBillrunEntry($sid);
+		$subscriber_entry = $this->getEmptySubscriberBillrunEntry($sid);
+		$subscriber_entry['current_plan'] = $current_plan_ref;
+		$subscribers[] = $subscriber_entry;
 		$this->data['subs'] = $subscribers;
 		return $this;
 	}
@@ -193,7 +195,6 @@ class Billrun_Billrun {
 	 * 
 	 * @param type $sid
 	 * @return mixed
-	 * @todo Needs refactoring
 	 */
 	protected function getSubRawData($sid) {
 		foreach ($this->data['subs'] as $sub_entry) {
@@ -208,7 +209,6 @@ class Billrun_Billrun {
 	 * 
 	 * @param type $sid
 	 * @return mixed
-	 * @todo Needs refactoring
 	 */
 	protected function setSubRawData($sid, $rawData) {
 		$data = $this->data->getRawData();
@@ -517,9 +517,8 @@ class Billrun_Billrun {
 		$aid = $row['aid'];
 		$sid = $row['sid'];
 
-		list($plan_key, $category_key, $zone_key) = self::getBreakdownKeys($row, $pricingData, $vatable);
-
 		if (is_null($billrun)) {
+			list($plan_key, $category_key, $zone_key) = self::getBreakdownKeys($row, $pricingData, $vatable);
 			$billrun_coll = Billrun_Factory::db()->billrunCollection();
 			$usage_type = self::getGeneralUsageType($row['usaget']);
 			$row_ref = $row->createRef();
@@ -558,7 +557,7 @@ class Billrun_Billrun {
 			return $doc;
 		} else { // update to memory
 			$sraw = $billrun->getSubRawData($sid);
-			$billrun->addLineToSubscriber($counters, $row, $pricingData, $vatable, $sid, $billrun_key, $sraw);
+			$billrun->addLineToSubscriber($counters, $row, $pricingData, $vatable, $billrun_key, $sraw);
 			$billrun->updateCosts($pricingData, $row, $vatable, $sid, $sraw); // according to self::getUpdateCostsQuery
 			$billrun->setSubRawData($sid, $sraw);
 			//$billrun->updateTotals($pricingData, $billrun_key, $vatable);		
@@ -844,10 +843,10 @@ class Billrun_Billrun {
 	 * @param array $counters keys - usage type. values - amount of usage. Currently supports only arrays of one element
 	 * @param array $pricingData the output array from updateSubscriberBalance function
 	 * @param boolean $vatable is the line vatable or not
-	 * @param $sid the subscriber id.
 	 * @param string $billrun_key the billrun_key of the billrun
+	 * @param array $sraw the subscriber's billrun entry
 	 */
-	protected function addLineToSubscriber($counters, $row, $pricingData, $vatable, $sid, $billrun_key, &$sraw) {
+	protected function addLineToSubscriber($counters, $row, $pricingData, $vatable, $billrun_key, &$sraw) {
 
 		$usage_type = self::getGeneralUsageType($row['usaget']);
 		list($plan_key, $category_key, $zone_key) = self::getBreakdownKeys($row, $pricingData, $vatable);
@@ -875,7 +874,9 @@ class Billrun_Billrun {
 		$sraw['lines'][$usage_type]['refs'][] = $row->createRef();
 		if ($usage_type == 'data' && $row['type'] != 'tap3') {
 			$date_key = date("Ymd", $row['urt']->sec);
-			$sraw['lines'][$usage_type]['counters'][$date_key] = $this->getFieldVal($sraw['lines'][$usage_type]['counters'][$date_key], 0) + $row['usagev'];
+			$sraw['lines'][$usage_type]['counters'][$date_key]['usagev'] = $this->getFieldVal($sraw['lines'][$usage_type]['counters'][$date_key]['usagev'], 0) + $row['usagev'];
+			$sraw['lines'][$usage_type]['counters'][$date_key]['aprice'] = $this->getFieldVal($sraw['lines'][$usage_type]['counters'][$date_key]['aprice'], 0) + $row['aprice'];
+			$sraw['lines'][$usage_type]['counters'][$date_key]['plan_flag'] = $this->getDayPlanFlagByDataRow($row, $this->getFieldVal($sraw['lines'][$usage_type]['counters'][$date_key]['plan_flag'], 'in'));
 		}
 
 
@@ -887,6 +888,30 @@ class Billrun_Billrun {
 		}
 		$sraw['totals']['before_vat'] = $this->getFieldVal($sraw['totals']['before_vat'], 0) + $pricingData['aprice'];
 		$sraw['totals']['after_vat'] = $this->getFieldVal($sraw['totals']['after_vat'], 0) + $price_after_vat;
+	}
+
+	protected function getDayPlanFlagByDataRow($row, $current_flag = 'in') {
+		$levels = array(
+			'in' => 0,
+			'over' => 1,
+			'partial' => 2,
+			'out' => 3
+		);
+		if (isset($row['over_plan'])) {
+			if (($row['usagev'] - $row['over_plan']) > 0) {
+				$plan_flag = 'partial';
+			} else {
+				$plan_flag = 'over';
+			}
+		} else if (isset($row['out_plan'])) {
+			$plan_flag = 'out';
+		} else {
+			$plan_flag = 'in';
+		}
+		if ($levels[$plan_flag] <= $levels[$current_flag]) {
+			return $current_flag;
+		}
+		return $plan_flag;
 	}
 
 	/**
@@ -1005,7 +1030,7 @@ class Billrun_Billrun {
 			Billrun_Factory::log("Updating account $this->aid lines with billrun stamp", Zend_Log::DEBUG);
 //			$updatedLines = array_merge($updatedLines, $data_lines_stamps);
 			asort($updatedLines);
-			$this->lines->update(array('_id' => array('$in' => $updatedLines)), array('$set' => array('billrun' => $this->billrun_key)), array('multiple' => true));
+			$this->lines->update(array('stamp' => array('$in' => $updatedLines)), array('$set' => array('billrun' => $this->billrun_key)), array('multiple' => true));
 			Billrun_Factory::log("Finished updating account $this->aid lines with billrun stamp", Zend_Log::DEBUG);
 		}
 		$this->updateTotals();
@@ -1052,7 +1077,7 @@ class Billrun_Billrun {
 		Billrun_Factory::log()->log("Finished saving subscriber " . $sid . " lines to array", Zend_Log::DEBUG);
 		return $results;
 	}
-	
+
 	/**
 	 * 
 	 * @param type $aid
@@ -1083,8 +1108,14 @@ class Billrun_Billrun {
 		} else {
 			$query['billrun'] = array('$exists' => false);
 		}
+
+		$hint = array(
+			'aid' => 1,
+			'urt' => 1,
+		);
+
 		Billrun_Factory::log()->log("Querying for account " . $aid . " lines", Zend_Log::DEBUG);
-		$cursor = $this->lines->query($query)->cursor();
+		$cursor = $this->lines->query($query)->cursor()->hint($hint);
 		Billrun_Factory::log()->log("Finished querying for account " . $aid . " lines", Zend_Log::DEBUG);
 		$results = array();
 		Billrun_Factory::log()->log("Saving account " . $aid . " lines to array", Zend_Log::DEBUG);

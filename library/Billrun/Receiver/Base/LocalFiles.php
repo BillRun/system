@@ -53,7 +53,7 @@ abstract class Billrun_Receiver_Base_LocalFiles extends Billrun_Receiver {
 		$type = static::$type;
 		if (!file_exists($this->srcPath)) {
 			Billrun_Factory::log()->log("NOTICE : SKIPPING $type !!! directory " . $this->srcPath . " not found!!", Zend_Log::NOTICE);
-			return FALSE;
+			return array();
 		}
 		$files = scandir($this->srcPath);
 		$ret = array();

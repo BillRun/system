@@ -71,8 +71,19 @@ class Generator_Balance extends Generator_Golan {
 		);
 		$billrun = Billrun_Factory::billrun($billrun_params);
 		foreach ($this->account_data as $subscriber) {
-			$billrun->addSubscriberLines($subscriber->sid, false, $billrun_start_date);
+			if ($billrun->exists($subscriber->sid)) {
+				Billrun_Factory::log()->log("Billrun " . $this->stamp . " already exists for subscriber " . $subscriber->sid, Zend_Log::ALERT);
+				continue;
+			}
+			$current_plan_name = $subscriber->plan;
+			if (is_null($current_plan_name) || $current_plan_name == "NULL") {
+				Billrun_Factory::log()->log("Null current plan for subscriber $subscriber->sid", Zend_Log::ALERT);
+				$billrun->addSubscriber($subscriber->sid, null);
+			} else {
+				$billrun->addSubscriber($subscriber->sid, $subscriber->getPlan()->createRef());
+			}
 		}
+		$billrun->addLines(false, $billrun_start_date);
 
 		$this->data = $billrun->getRawData();
 	}
@@ -95,12 +106,12 @@ class Generator_Balance extends Generator_Golan {
 	 * @return array
 	 */
 	protected function getFlatCosts($subscriber) {
-		$plan_name = $this->getPlanName($subscriber);
+		$plan_name = $this->getNextPlanName($subscriber);
 		if (!$plan_name) {
 			//@error
 			return array();
 		}
-		$planObj = Billrun_Factory::plan(array('name' => $plan_name, 'time' => strtotime($this->date)));
+		$planObj = Billrun_Factory::plan(array('name' => $plan_name, 'time' => Billrun_Util::getStartTime(Billrun_Util::getFollowingBillrunKey($this->stamp))));
 		if (!$planObj->get('_id')) {
 			Billrun_Factory::log("Couldn't get plan $plan_name data", Zend_Log::ALERT);
 			return array();
@@ -117,11 +128,14 @@ class Generator_Balance extends Generator_Golan {
 	 * 
 	 * @param array $subscriber subscriber entry from billrun collection
 	 */
-	protected function getPlanName($subscriber) {
+	protected function getNextPlanName($subscriber) {
 		$plan_name = false;
 		foreach ($this->account_data as $sub) {
 			if ($sub->sid == $subscriber['sid']) {
-				$plan_name = $sub->plan;
+				$next_plan = $sub->getNextPlanName();
+				if (!is_null($next_plan) && $next_plan != "NULL") {
+					$plan_name = $next_plan;
+				}
 				break;
 			}
 		}
