@@ -231,4 +231,55 @@ class Billrun_Util {
 		$datetime = $billrun_key . $dayofmonth . "000000";
 		return strtotime($datetime);
 	}
+	
+	/**
+	 * convert bytes to requested foramt
+	 * @param string $bytes
+	 * @param string $unit
+	 * @param int $decimals
+	 * @return string size in requested foramt
+	 */
+	public static function byteFormat($bytes, $unit = "", $decimals = 2) {
+		$units = array('B' => 0, 'KB' => 1, 'MB' => 2, 'GB' => 3, 'TB' => 4, 
+				'PB' => 5, 'EB' => 6, 'ZB' => 7, 'YB' => 8);
+
+		$value = 0;
+		if ($bytes > 0) {
+			// Generate automatic prefix by bytes 
+			// If wrong prefix given
+			if (!array_key_exists($unit, $units)) {
+				$pow = floor(log($bytes)/log(1024));
+				$unit = array_search($pow, $units);
+			}
+
+			// Calculate byte value by prefix
+			$value = ($bytes/pow(1024,floor($units[$unit])));
+		}
+
+		// If decimals is not numeric or decimals is less than 0 
+		// then set default value
+		if (!is_numeric($decimals) || $decimals < 0) {
+			$decimals = 2;
+		}
+
+		// Format output
+		if(!empty($value))
+			return sprintf('%.' . $decimals . 'f', $value);
+		
+		return FALSE;
+	}
+	
+	/**
+	 * convert megabytes to bytes
+	 * @param string $megabytes
+	 * @return string size in bytes
+	 */
+	public static function megabytesToBytesFormat($megabytes) {
+		// Format output
+		if(!empty($megabytes)) {
+			return $megabytes * pow(1024,2);
+		}
+		
+		return FALSE;
+	}
 }
