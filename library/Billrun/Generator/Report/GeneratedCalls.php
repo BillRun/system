@@ -27,7 +27,7 @@ class Billrun_Generator_Report_GeneratedCalls extends Billrun_Generator_Report {
 	protected $calls = null;
 	protected $billingCalls = null;
 	protected $billingTimeOffset = -140;
-	protected $allowedTimeDiveation = static::ALLOWED_TIME_DIVEATION;
+	protected $allowedTimeDiveation = 10;
 	
 
 	public function __construct($options) {
