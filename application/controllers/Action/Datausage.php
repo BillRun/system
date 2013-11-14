@@ -28,7 +28,7 @@ class DatausageAction extends Action_Base {
 		}
 
 		$balances = new BalancesModel();
-		$results = $balances->getLines($request['gift'], $request['data_usage'], $request['from_account_id'], $request['to_account_id'], $request['billrun']);
+		$results = $balances->getBalancesVolume($request['gift'], $request['data_usage'], $request['from_account_id'], $request['to_account_id'], $request['billrun']);
 		if (empty($results)) {
 			Billrun_Factory::log()->log('Some error happen, no result, received parameters: ' . print_r($request, true), Zend_Log::ERR);
 			return;

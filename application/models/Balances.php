@@ -26,7 +26,7 @@ class BalancesModel extends TableModel {
 	 * 
 	 * @return Mongodloid_Cursor Mongo cursor for iteration
 	 */
-	public function getLines($gift, $data_usage, $from_account_id, $to_account_id, $billrun) {
+	public function getBalancesVolume($gift, $data_usage, $from_account_id, $to_account_id, $billrun) {
 		$params['name'] = $gift;
 		$params['time'] = Billrun_Util::getStartTime($billrun);
 		$plan_id = Billrun_Factory::plan($params);
