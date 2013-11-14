@@ -279,6 +279,20 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Pl
 			//convert to unified time GMT  time.
 			$timeOffset = (isset($cdrLine['ms_timezone']) ? $cdrLine['ms_timezone'] : date('P') );
 			$cdrLine['urt'] = new MongoDate(  Billrun_Util::dateTimeConvertShortToIso( $cdrLine['record_opening_time'], $timeOffset ) );
+			if( is_array($cdrLine['rating_group']) ) {
+				$fbc_uplink_volume = $fbc_downlink_volume = 0;
+				foreach ($cdrLine['rating_group'] as $key => $rateVal) {
+					if($rateVal != 10) {
+						$fbc_uplink_volume += $cdrLine['fbc_uplink_volume'][$key];
+						$fbc_downlink_volume += $cdrLine['fbc_downlink_volume'][$key];
+					}
+				}			
+				$cdrLine['fbc_uplink_volume'] = $fbc_uplink_volume;
+				$cdrLine['fbc_downlink_volume'] = $fbc_downlink_volume;
+				$cdrLine['rating_group'] = 0;
+			} else if($cdrLine['rating_group'] == 10) {
+					return false;
+			}
 		} else {
 			Billrun_Factory::log()->log("couldn't find  definition for {$type}", Zend_Log::INFO);
 		}
@@ -435,4 +449,108 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Pl
 		return $this->getFileSequenceData($filename);
 	}
 
+	
+		/**
+	 * Get specific data from an asn.1 structure  based on configuration
+	 * @param type $data the ASN.1 data struture
+	 * @param type $config the configuration of the data to retrive.
+	 * @return Array an array containing flatten asn.1 data keyed by the configuration.
+	 * @todo Merge this  function with the ASNParing  function
+	 */
+	protected function getASNDataByConfig( $data, $config , $fields ) {
+		$dataArr = Asn_Base::getDataArray( $data, true ,true);
+		$valueArr= array();
+		foreach($config as $key => $val) {			
+			$tmpVal = $this->parseASNData(explode(',', $val), $dataArr, $fields);
+			if( $tmpVal !== FALSE ) {
+				$valueArr[$key] = $tmpVal;
+			}			
+		}
+		return count($valueArr) ? $valueArr : false;
+	}
+	
+	/**
+	 * convert the actual data we got from the ASN record to a readable information
+	 * @param $struct 
+	 * @param $asnData the parsed ASN.1 recrod.
+	 * @param $fields TODO
+	 * @return Array conatining the fields in the ASN record converted to readableformat and keyed by they're use.
+	 * @todo Merge this  function with the ASNParing  function
+	 */
+	protected function parseASNData($struct, $asnData, $fields) {
+		$matches = array();
+		if(  preg_match("/\[(\w+)\]/",$struct[0],$matches) || !is_array($asnData) ) {
+			$ret = false;
+			if(!isset($matches[1]) || !$matches[1] || !isset($fields[$matches[1]])) {
+				Billrun_Factory::log()->log(" couldn't digg into : {$struct[0]} struct : ". print_r($struct,1) . " data : " . print_r($asnData,1) , Zend_Log::DEBUG);				
+			} else {			
+				$ret = $this->parseField( $fields[$matches[1]], $asnData );
+			}
+			return $ret;
+		}
+		
+		foreach ($struct as $val) {
+			if(($val == "*" || $val == "+" || $val == "-"|| $val ==".") ) {  // This is  here to handle cascading  data arrays
+				 if (isset($asnData[0]) ) {// Taking as an assumption there will never be a 0 key in the ASN types 
+					$newStruct = $struct;
+					array_shift($newStruct);
+					$sum = null;
+					foreach($asnData as $subData) {						
+						$sum = $this->doParsingAction($val, $this->parseASNData($newStruct, $subData, $fields) , $sum);
+					}
+					return $sum;
+				} else  { 
+					$val = next($struct);
+					array_shift($struct);
+				}
+			}
+			if (isset($asnData[$val])) {										
+					$newStruct = $struct;
+					array_shift($newStruct);
+					return $this->parseASNData($newStruct, $asnData[$val], $fields);
+			} 
+		}
+
+		return false;
+	}
+	
+	/**
+	 * An hack to ahndle casacing  arrays  of  a given field
+	 * @param type $action
+	 * @param type $data
+	 * @param type $prevVal
+	 * @return string
+	 */
+	protected function doParsingAction($action,$data, $prevVal = null) {
+		$ret = $prevVal ;
+		switch ($action) {
+			case "+":
+					if($prevVal == null) {
+						$ret = 0;
+					}
+					$ret += $data;
+				break;
+			case "-":
+					if($prevVal == null) {
+						$ret = 0;
+					}
+					$ret -= $data;
+				break;
+			case "*":
+				if($prevVal == null) {
+						$ret = array();
+					}
+					$ret[] = $data;
+				break;
+			default:
+			case ".":
+					if($prevVal == null) {
+						$ret = "";
+					}
+					$ret .= "," . $data;
+				break;
+		}
+		return $ret;
+	}
+	
 }
