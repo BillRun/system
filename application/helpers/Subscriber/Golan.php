@@ -16,6 +16,7 @@
 class Subscriber_Golan extends Billrun_Subscriber {
 
 	protected $plan = null;
+	protected $next_plan = null;
 	protected $time = null;
 
 	public function __construct($options = array()) {
@@ -179,15 +180,9 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		$path = 'http://' . $host . '/' . $url . '?' . http_build_query($params);
 		//Billrun_Factory::log()->log($path, Zend_Log::DEBUG);
 		// @TODO: use Zend_Http_Client
+//		$path .= "&account_id=4171195";
+//		$path .= "&account_id=6054918";
 		$json = self::send($path);
-//		$json = '{'
-//				. '"7849648":{"subscribers":[{"subscriber_id":"398725","plan_name":"LARGE"}]},'
-//				. '"7403720":{"subscribers":[{"subscriber_id":"421063","plan_name":"LARGE"}]},'
-//				. '"4171195":{"subscribers":[{"subscriber_id":"199701","plan_name":"SMALL"},{"subscriber_id":"199700","plan_name":"SMALL"},{"subscriber_id":"199699","plan_name":"BIRTHDAY"},{"subscriber_id":"199698","plan_name":"SMALL"}]}'
-//				. '"6054918":{"subscribers":[{"subscriber_id":"39","plan_name":"SMALL"},{"subscriber_id":"153","plan_name":"SMALL"},{"subscriber_id":"63155","plan_name":"LARGE"},{"subscriber_id":"230991","plan_name":"SMALL"}]}'
-//				. '"6676268":{"subscribers":[{"subscriber_id":"348861","plan_name":"SMALL"},{"subscriber_id":"348864","plan_name":"SMALL"}]}'
-//				. '"3770450":{"subscribers":[{"subscriber_id":"493138","plan_name":"LARGE"},{"subscriber_id":"493139","plan_name":"LARGE"}]}'
-//				. '}'; // stub
 		if (!$json) {
 			return false;
 		}
@@ -223,7 +218,8 @@ class Subscriber_Golan extends Billrun_Subscriber {
 								'data' => array(
 									'aid' => intval($aid),
 									'sid' => intval($subscriber['subscriber_id']),
-									'plan' => isset($subscriber['plan_name']) ? $subscriber['plan_name'] : null,
+									'plan' => isset($subscriber['curr_plan']) ? $subscriber['curr_plan'] : null,
+									'next_plan' => isset($subscriber['next_plan']) ? $subscriber['next_plan'] : null,
 								),
 							);
 							$subscriber_settings = array_merge($subscriber_general_settings, $concat);
@@ -250,8 +246,23 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		return $this->plan;
 	}
 
+	public function getNextPlan() {
+		if (is_null($this->next_plan)) {
+			if (is_null($this->getNextPlanName())) {
+				$this->next_plan = null;
+			} else {
+				$params = array(
+					'name' => $this->getNextPlanName(),
+					'time' => Billrun_Util::getStartTime(Billrun_Util::getFollowingBillrunKey(Billrun_Util::getBillrunKey($this->time))),
+				);
+				$this->next_plan = new Billrun_Plan($params);
+			}
+		}
+		return $this->next_plan;
+	}
+
 	public function getFlatPrice() {
-		return $this->getPlan()->getPrice();
+		return $this->getNextPlan()->getPrice();
 	}
 
 	/**
@@ -269,7 +280,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 			'urt' => new MongoDate(),
 			'billrun_key' => $billrun_key,
 			'aprice' => $this->getFlatPrice(),
-			'plan_ref' => $this->getPlan()->createRef(),
+			'plan_ref' => $this->getNextPlan()->createRef(),
 		);
 		$stamp = md5($flat_entry['aid'] . $flat_entry['sid'] . $flat_entry['billrun_key']);
 		$flat_entry['stamp'] = $stamp;
@@ -335,6 +346,14 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		}
 
 		return $arr;
+	}
+
+	public function getNextPlanName() {
+		if (isset($this->data['next_plan'])) {
+			return $this->data['next_plan'];
+		} else {
+			return null;
+		}
 	}
 
 }

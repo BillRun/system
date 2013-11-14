@@ -64,9 +64,10 @@ class Generator_Golan extends Billrun_Generator {
 			$xml = $this->getXML($row);
 			//			$row->{'xml'} = $xml->asXML();
 			$invoice_id = $row->get('invoice_id');
-			$this->createXml($invoice_id, $xml->asXML());
-			$this->setFileStamp($row, $invoice_id);
-			Billrun_Factory::log()->log("invoice file " . $invoice_id . " created for account " . $row->get('aid'), Zend_Log::INFO);
+			$invoice_filename = $row['billrun_key'] . '_' . $row['aid'] . '_' . $invoice_id;
+			$this->createXml($invoice_filename, $xml->asXML());
+			$this->setFileStamp($row, $invoice_filename);
+			Billrun_Factory::log()->log("invoice file " . $invoice_filename . " created for account " . $row->get('aid'), Zend_Log::INFO);
 //			$this->addRowToCsv($invoice_id, $row->get('aid'), $total, $total_ilds);
 		}
 	}
@@ -108,24 +109,27 @@ class Generator_Golan extends Billrun_Generator {
 
 			if ($this->billingLinesNeeded($sid)) {
 				$subscriber_lines_refs = $this->get_subscriber_lines_refs($subscriber);
+				$subscriber_aggregated_data = $this->get_subscriber_aggregated_data_lines($subscriber);
 				foreach ($subscriber_lines_refs as $ref) {
 					$line = $lines_coll->getRef($ref);
 					if (!$line->isEmpty()) {
+						$line->collection($lines_coll);
 						$billing_record = $billing_records->addChild('BILLING_RECORD');
-						$billing_record->TIMEOFBILLING = $this->getGolanDate($line['urt']->sec);
-						$billing_record->TARIFFITEM = $this->getTariffItem($line);
-						$billing_record->CTXT_CALL_OUT_DESTINATIONPNB = $this->getCalledNo($line); //@todo maybe save dest_no in all processors and use it here
-						$billing_record->CTXT_CALL_IN_CLI = $this->getCallerNo($line); //@todo maybe save it in all processors and use it here
-						$billing_record->CHARGEDURATIONINSEC = $this->getUsageVolume($line);
-						$billing_record->CHARGE = $this->getCharge($line);
-						$billing_record->CREDIT = $this->getCredit($line);
-						$billing_record->TARIFFKIND = $this->getTariffKind($line);
-						$billing_record->TTAR_ACCESSPRICE1 = $this->getAccessPrice($line);
-						$billing_record->TTAR_SAMPLEDELAYINSEC1 = $this->getInterval($line);
-						$billing_record->TTAR_SAMPPRICE1 = $this->getRate($line);
-						$billing_record->INTERNATIONAL = $this->getIntlFlag($line);
-						$billing_record->DISCOUNT_USAGE = $this->getDiscountUsage($line);
+						$this->updateBillingRecord($billing_record, $this->getGolanDate($line['urt']->sec), $this->getTariffItem($line, $subscriber), $this->getCalledNo($line), $this->getCallerNo($line), $this->getUsageVolume($line), $this->getCharge($line), $this->getCredit($line), $this->getTariffKind($line['usaget']), $this->getAccessPrice($line), $this->getInterval($line), $this->getRate($line), $this->getIntlFlag($line), $this->getDiscountUsage($line));
 					}
+				}
+				foreach ($subscriber_aggregated_data as $line) {
+					$billing_record = $billing_records->addChild('BILLING_RECORD');
+					$this->updateBillingRecord($billing_record, $line['day'], $line['rate_key'], '', '', $line['usage_volume'], $line['aprice'], 0, $line['tariff_kind'], 0, $line['interval'], $line['rate_price'], 0, $line['discount_usage']);
+
+					/* ine = array();
+					  $aggregated_line['day'] = date_create_from_format("Ymd", $day)->format('Y/m/d H:i:s');
+					  $aggregated_lines['rate_key'] = 'INTERNET_BILL_BY_VOLUME';
+					  $aggregated_lines['usage_volume'] = $this->bytesToKB($data_by_day['usagev']);
+					  $aggregated_lines['aprice'] = $this->bytesToKB($data_by_day['aprice']);
+					  $aggregated_lines['tariff_kind'] = $this->getTariffKind('data');
+					  $aggregated_lines['discount_usage'] = $this->getDiscountUsageByPlanFlag($data_by_day['plan_flag']);
+					  } */
 				}
 			}
 
@@ -199,7 +203,7 @@ class Generator_Golan extends Billrun_Generator {
 			$breakdown_topic_over_plan = $subscriber_breakdown->addChild('BREAKDOWN_TOPIC');
 			$breakdown_topic_over_plan->addAttribute('name', 'GIFT_XXX_OUT_OF_USAGE');
 			$out_of_usage_entry = $breakdown_topic_over_plan->addChild('BREAKDOWN_ENTRY');
-//				$out_of_usage_entry->addChild('TITLE', 'SERVICE-GIFT-GC_GOLAN-' . current($subscriber['lines']['flat']['refs'])['plan_ref']['name']);
+			$out_of_usage_entry->addChild('TITLE', 'SERVICE-GIFT-GC_GOLAN-' . $this->getNextPlanName($subscriber));
 			$out_of_usage_entry->addChild('UNITS', 1);
 			$out_of_usage_entry->addChild('COST_WITHOUTVAT', isset($subscriber['breakdown']['in_plan']['base']['service']['cost']) ? $subscriber['breakdown']['in_plan']['base']['service']['cost'] : 0);
 			$out_of_usage_entry->addChild('VAT', $this->displayVAT($row['vat']));
@@ -216,7 +220,7 @@ class Generator_Golan extends Billrun_Generator {
 								$usagev = $this->getZoneTotalsFieldByUsage($zone, 'usagev', $type);
 								if ($usagev > 0) {
 									$out_of_usage_entry = $breakdown_topic_over_plan->addChild('BREAKDOWN_ENTRY');
-//									$out_of_usage_entry->addChild('TITLE', 'SERVICE-GIFT-GC_GOLAN-' . current($subscriber['lines']['flat']['refs'])['plan_ref']['name']);
+									$out_of_usage_entry->addChild('TITLE', $this->getBreakdownEntryTitle($this->getTariffKind($type), $zone_name));
 									$out_of_usage_entry->addChild('UNITS', $usagev);
 									$out_of_usage_entry->addChild('COST_WITHOUTVAT', $this->getZoneTotalsFieldByUsage($zone, 'cost', $type));
 									$out_of_usage_entry->addChild('VAT', $this->displayVAT($zone['vat']));
@@ -231,27 +235,28 @@ class Generator_Golan extends Billrun_Generator {
 				}
 			}
 
-			if (isset($subscriber['breakdown']['over_plan']['base']) && is_array($subscriber['breakdown']['over_plan']['base'])) {
-				foreach ($subscriber['breakdown']['over_plan']['base'] as $zone_name => $zone) {
-					if ($zone_name != 'service') {
-//						$out_of_usage_entry->addChild('TITLE', ?);
-						foreach (array('call', 'sms', 'data', 'incoming_call', 'mms', 'incoming_sms') as $type) {
-							$usagev = $this->getZoneTotalsFieldByUsage($zone, 'usagev', $type);
-							if ($usagev > 0) {
-								$out_of_usage_entry = $breakdown_topic_over_plan->addChild('BREAKDOWN_ENTRY');
-//								$out_of_usage_entry->addChild('TITLE', 'SERVICE-GIFT-GC_GOLAN-' . current($subscriber['lines']['flat']['refs'])['plan_ref']['name']);
-								$out_of_usage_entry->addChild('UNITS', $usagev);
-								$out_of_usage_entry->addChild('COST_WITHOUTVAT', $this->getZoneTotalsFieldByUsage($zone, 'cost', $type));
-								$out_of_usage_entry->addChild('VAT', $this->displayVAT($zone['vat']));
-								$out_of_usage_entry->addChild('VAT_COST', floatval($out_of_usage_entry->COST_WITHOUTVAT) * floatval($out_of_usage_entry->VAT) / 100);
-								$out_of_usage_entry->addChild('TOTAL_COST', floatval($out_of_usage_entry->COST_WITHOUTVAT) + floatval($out_of_usage_entry->VAT_COST));
-								$out_of_usage_entry->addChild('TYPE_OF_BILLING', strtoupper($type));
-//								$out_of_usage_entry->addChild('TYPE_OF_BILLING_CHAR', ?);
-							}
-						}
-					}
-				}
-			}
+////		Duplicate code?
+//			if (isset($subscriber['breakdown']['over_plan']['base']) && is_array($subscriber['breakdown']['over_plan']['base'])) {
+//				foreach ($subscriber['breakdown']['over_plan']['base'] as $zone_name => $zone) {
+//					if ($zone_name != 'service') {
+////						$out_of_usage_entry->addChild('TITLE', ?);
+//						foreach (array('call', 'sms', 'data', 'incoming_call', 'mms', 'incoming_sms') as $type) {
+//							$usagev = $this->getZoneTotalsFieldByUsage($zone, 'usagev', $type);
+//							if ($usagev > 0) {
+//								$out_of_usage_entry = $breakdown_topic_over_plan->addChild('BREAKDOWN_ENTRY');
+////								$out_of_usage_entry->addChild('TITLE', 'SERVICE-GIFT-GC_GOLAN-' . current($subscriber['lines']['flat']['refs'])['plan_ref']['name']);
+//								$out_of_usage_entry->addChild('UNITS', $usagev);
+//								$out_of_usage_entry->addChild('COST_WITHOUTVAT', $this->getZoneTotalsFieldByUsage($zone, 'cost', $type));
+//								$out_of_usage_entry->addChild('VAT', $this->displayVAT($zone['vat']));
+//								$out_of_usage_entry->addChild('VAT_COST', floatval($out_of_usage_entry->COST_WITHOUTVAT) * floatval($out_of_usage_entry->VAT) / 100);
+//								$out_of_usage_entry->addChild('TOTAL_COST', floatval($out_of_usage_entry->COST_WITHOUTVAT) + floatval($out_of_usage_entry->VAT_COST));
+//								$out_of_usage_entry->addChild('TYPE_OF_BILLING', strtoupper($type));
+////								$out_of_usage_entry->addChild('TYPE_OF_BILLING_CHAR', ?);
+//							}
+//						}
+//					}
+//				}
+//			}
 
 			$breakdown_topic_international = $subscriber_breakdown->addChild('BREAKDOWN_TOPIC');
 			$breakdown_topic_international->addAttribute('name', 'INTERNATIONAL');
@@ -276,11 +281,11 @@ class Generator_Golan extends Billrun_Generator {
 					}
 				}
 			}
-			foreach ($subscriber_intl as $zone) {
+			foreach ($subscriber_intl as $zone_name => $zone) {
 				foreach ($zone['totals'] as $usage_type => $usage_totals) {
 //						$out_of_usage_entry->addChild('TITLE', ?);
 					$international_entry = $breakdown_topic_international->addChild('BREAKDOWN_ENTRY');
-//						$international_entry->addChild('TITLE', 'SERVICE-GIFT-GC_GOLAN-' . current($subscriber['lines']['flat']['refs'])['plan_ref']['name']);
+					$international_entry->addChild('TITLE', $this->getBreakdownEntryTitle($this->getTariffKind($usage_type), $zone_name));
 					$international_entry->addChild('UNITS', $usage_totals['usagev']);
 					$international_entry->addChild('COST_WITHOUTVAT', $usage_totals['cost']);
 					$international_entry->addChild('VAT', $this->displayVAT($zone['vat']));
@@ -314,11 +319,11 @@ class Generator_Golan extends Billrun_Generator {
 					}
 				}
 			}
-			foreach ($subscriber_special as $zone) {
+			foreach ($subscriber_special as $zone_name => $zone) {
 				foreach ($zone['totals'] as $usage_type => $usage_totals) {
 //						$out_of_usage_entry->addChild('TITLE', ?);
 					$special_entry = $breakdown_topic_special->addChild('BREAKDOWN_ENTRY');
-//						$special_entry->addChild('TITLE', 'SERVICE-GIFT-GC_GOLAN-' . current($subscriber['lines']['flat']['refs'])['plan_ref']['name']);
+					$special_entry->addChild('TITLE', $this->getBreakdownEntryTitle($this->getTariffKind($usage_type), $zone_name));
 					$special_entry->addChild('UNITS', $usage_totals['usagev']);
 					$special_entry->addChild('COST_WITHOUTVAT', $usage_totals['cost']);
 					$special_entry->addChild('VAT', $this->displayVAT($zone['vat']));
@@ -359,7 +364,7 @@ class Generator_Golan extends Billrun_Generator {
 				foreach ($zone['totals'] as $usage_type => $usage_totals) {
 //						$out_of_usage_entry->addChild('TITLE', ?);
 					$roaming_entry = $subtopic_entry->addChild('BREAKDOWN_ENTRY');
-//						$roaming_entry->addChild('TITLE', 'SERVICE-GIFT-GC_GOLAN-' . current($subscriber['lines']['flat']['refs'])['plan_ref']['name']);
+					$roaming_entry->addChild('TITLE', $this->getBreakdownEntryTitle($usage_type, "ROAM_ALL_DEST"));
 					$roaming_entry->addChild('UNITS', $usage_totals['usagev']);
 					$roaming_entry->addChild('COST_WITHOUTVAT', $usage_totals['cost']);
 					$roaming_entry->addChild('VAT', $this->displayVAT($zone['vat']));
@@ -375,7 +380,7 @@ class Generator_Golan extends Billrun_Generator {
 			if (isset($subscriber['breakdown']['credit']['charge_vatable']) && is_array($subscriber['breakdown']['credit']['charge_vatable'])) {
 				foreach ($subscriber['breakdown']['credit']['charge_vatable'] as $reason => $cost) {
 					$charge_entry = $breakdown_topic_charge->addChild('BREAKDOWN_ENTRY');
-					//						$charge_entry->addChild('TITLE', 'SERVICE-GIFT-GC_GOLAN-' . current($subscriber['lines']['flat']['refs'])['plan_ref']['name']);
+					$charge_entry->addChild('TITLE', $this->getBreakdownEntryTitle($this->getTariffKind("credit"), $reason));
 					$charge_entry->addChild('UNITS', 1);
 					$charge_entry->addChild('COST_WITHOUTVAT', $cost);
 					$charge_entry->addChild('VAT', $xml->TELECOM_INFORMATION->VAT_VALUE);
@@ -388,7 +393,7 @@ class Generator_Golan extends Billrun_Generator {
 			if (isset($subscriber['breakdown']['credit']['charge_vat_free']) && is_array($subscriber['breakdown']['credit']['charge_vat_free'])) {
 				foreach ($subscriber['breakdown']['credit']['charge_vat_free'] as $reason => $cost) {
 					$charge_entry = $breakdown_topic_charge->addChild('BREAKDOWN_ENTRY');
-					//						$charge_entry->addChild('TITLE', 'SERVICE-GIFT-GC_GOLAN-' . current($subscriber['lines']['flat']['refs'])['plan_ref']['name']);
+					$charge_entry->addChild('TITLE', $this->getBreakdownEntryTitle($this->getTariffKind("credit"), $reason));
 					$charge_entry->addChild('UNITS', 1);
 					$charge_entry->addChild('COST_WITHOUTVAT', $cost);
 					$charge_entry->addChild('VAT', 0);
@@ -404,7 +409,7 @@ class Generator_Golan extends Billrun_Generator {
 			if (isset($subscriber['breakdown']['credit']['refund_vatable']) && is_array($subscriber['breakdown']['credit']['refund_vatable'])) {
 				foreach ($subscriber['breakdown']['credit']['refund_vatable'] as $reason => $cost) {
 					$refund_entry = $breakdown_topic_refund->addChild('BREAKDOWN_ENTRY');
-					//						$refund_entry->addChild('TITLE', 'SERVICE-GIFT-GC_GOLAN-' . current($subscriber['lines']['flat']['refs'])['plan_ref']['name']);
+					$refund_entry->addChild('TITLE', $this->getBreakdownEntryTitle($this->getTariffKind("credit"), $reason));
 					$refund_entry->addChild('UNITS', 1);
 					$refund_entry->addChild('COST_WITHOUTVAT', $cost);
 					$refund_entry->addChild('VAT', $xml->TELECOM_INFORMATION->VAT_VALUE);
@@ -417,7 +422,7 @@ class Generator_Golan extends Billrun_Generator {
 			if (isset($subscriber['breakdown']['credit']['refund_vat_free']) && is_array($subscriber['breakdown']['credit']['refund_vat_free'])) {
 				foreach ($subscriber['breakdown']['credit']['refund_vat_free'] as $reason => $cost) {
 					$refund_entry = $breakdown_topic_refund->addChild('BREAKDOWN_ENTRY');
-					//						$refund_entry->addChild('TITLE', 'SERVICE-GIFT-GC_GOLAN-' . current($subscriber['lines']['flat']['refs'])['plan_ref']['name']);
+					$refund_entry->addChild('TITLE', $this->getBreakdownEntryTitle($this->getTariffKind("credit"), $reason));
 					$refund_entry->addChild('UNITS', 1);
 					$refund_entry->addChild('COST_WITHOUTVAT', $cost);
 					$refund_entry->addChild('VAT', 0);
@@ -431,6 +436,7 @@ class Generator_Golan extends Billrun_Generator {
 
 		$inv_invoice_total = $xml->addChild('INV_INVOICE_TOTAL');
 		$inv_invoice_total->addChild('INVOICE_NUMBER', $row->get('invoice_id'));
+		$inv_invoice_total->addChild('FIRST_GENERATION_TIME', $this->getFlatStartDate());
 		$inv_invoice_total->addChild('FROM_PERIOD', date('Y/m/d', Billrun_Util::getStartTime($billrun_key)));
 		$inv_invoice_total->addChild('TO_PERIOD', date('Y/m/d', Billrun_Util::getEndTime($billrun_key)));
 		$inv_invoice_total->addChild('SUBSCRIBER_COUNT', count($row->get('subs')));
@@ -477,13 +483,38 @@ class Generator_Golan extends Billrun_Generator {
 	protected function get_subscriber_lines_refs($subscriber) {
 		$refs = array();
 		if (isset($subscriber['lines'])) {
-			foreach ($subscriber['lines'] as $lines_by_usage_type) {
-				if (isset($lines_by_usage_type["refs"]) && is_array($lines_by_usage_type["refs"])) {
+			foreach ($subscriber['lines'] as $usage_type => $lines_by_usage_type) {
+				if ($usage_type != 'data' && isset($lines_by_usage_type["refs"]) && is_array($lines_by_usage_type["refs"])) {
 					$refs = array_merge($refs, $lines_by_usage_type["refs"]);
 				}
 			}
 		}
 		return $refs;
+	}
+
+	/**
+	 * 
+	 * @param array $subscriber subscriber billrun entry
+	 * @return type
+	 */
+	protected function get_subscriber_aggregated_data_lines($subscriber) {
+		$data_rate = $this->getDataRate();
+		$aggregated_lines = array();
+		if (isset($subscriber['lines']['data']['counters'])) {
+			foreach ($subscriber['lines']['data']['counters'] as $day => $data_by_day) {
+				$aggregated_line = array();
+				$aggregated_line['day'] = date_create_from_format("Ymd", $day)->format('Y/m/d H:i:s');
+				$aggregated_line['rate_key'] = $data_rate['key'];
+				$aggregated_line['usage_volume'] = $this->bytesToKB($data_by_day['usagev']);
+				$aggregated_line['aprice'] = $this->bytesToKB($data_by_day['aprice']);
+				$aggregated_line['tariff_kind'] = $this->getTariffKind('data');
+				$aggregated_line['interval'] = $this->getIntervalByRate($data_rate, 'data');
+				$aggregated_line['rate_price'] = $this->getPriceByRate($data_rate, 'data');
+				$aggregated_line['discount_usage'] = $this->getDiscountUsageByPlanFlag($data_by_day['plan_flag']);
+				$aggregated_lines[] = $aggregated_line;
+			}
+		}
+		return $aggregated_lines;
 	}
 
 	protected function getUsageVolume($line) {
@@ -526,14 +557,22 @@ class Generator_Golan extends Billrun_Generator {
 
 	protected function getInterval($line) {
 		if (isset($line['usaget']) && $line->get('arate', true) && ($arate = $line['arate']) && isset($arate['rates'][$line['usaget']]['rate']['interval'])) {
-			return $arate['rates'][$line['usaget']]['rate']['interval'];
+			return $this->getIntervalByRate($arate, $line['usaget']);
 		}
 		return 0;
 	}
 
+	protected function getIntervalByRate($rate, $usage_type) {
+		return $rate['rates'][$usage_type]['rate'][0]['interval'];
+	}
+	
+	protected function getPriceByRate($rate, $usage_type) {
+		return $rate['rates'][$usage_type]['rate'][0]['price'];
+	}
+
 	protected function getRate($line) {
 		if (isset($line['usaget']) && $line->get('arate', true) && ($arate = $line['arate']) && isset($arate['rates'][$line['usaget']]['rate']['price'])) {
-			return $arate['rates'][$line['usaget']]['rate']['price'];
+			return $this->getPriceByRate($arate, $line['usaget']);
 		}
 		return 0;
 	}
@@ -548,35 +587,35 @@ class Generator_Golan extends Billrun_Generator {
 		return 0;
 	}
 
-	protected function getTariffKind($line) {
-		switch ($line['type']) {
-			case 'refund':
-			case 'charge':
+	protected function getTariffKind($usage_type) {
+		switch ($usage_type) {
+			case 'call':
+				return 'Call';
+			case 'data':
+				return 'Internet Access';
+			case 'sms':
+				return 'SMS';
+			case 'incoming_call':
+				return 'Incoming Call';
+			case 'mms':
+				return 'MMS';
+			case 'incoming_sms': // in theory...
+				return 'Incoming SMS';
+			case 'credit':
 			case 'flat':
 				return 'Service';
 			default:
-				switch ($line['usage_type']) {
-					case 'call':
-						return 'Call';
-					case 'data':
-						return 'Internet Access';
-					case 'sms':
-						return 'SMS';
-					case 'incoming_call':
-						return 'Incoming Call';
-					case 'incoming_sms': // in theory...
-						return 'Incoming SMS';
-					default:
-						return '';
-				}
+				return '';
 		}
 	}
 
-	protected function getTariffItem($line) {
+	protected function getTariffItem($line, $subscriber) {
 		if ($line->get('arate', true) && ($arate = $line['arate']) && isset($arate['key'])) {
 			return $arate['key']; //@todo they may expect ROAM_ALL_DEST / $DEFAULT etc. which we don't keep
 		} else if ($line['type'] == 'credit' && isset($line['reason'])) {
 			return $line['reason'];
+		} else if ($line['type'] == 'flat') {
+			return 'GIFT-GC_GOLAN-' . $this->getNextPlanName($subscriber);
 		} else {
 			return '';
 		}
@@ -585,7 +624,7 @@ class Generator_Golan extends Billrun_Generator {
 	protected function getCallerNo($line) {
 		switch ($line['type']) {
 			case "nsn":
-				return $line['called_number'];
+				return $line['calling_number'];
 			case "tap3":
 				//TODO: use calling_number field when all cdrs have been processed by the updated tap3 plugin
 				$tele_service_code = $line['BasicServiceUsedList']['BasicServiceUsed']['BasicService']['BasicServiceCode']['TeleServiceCode'];
@@ -635,12 +674,29 @@ class Generator_Golan extends Billrun_Generator {
 	}
 
 	protected function getDiscountUsage($line) {
-		if (isset($line['over_plan']) || isset($line['out_plan'])) {
-			return 'DISCOUNT_NONE';
-		} else if ($line['type'] == 'flat') {
-			return 'DISCOUNT_PARTIAL';
+		if (isset($line['out_plan'])) {
+			$plan_flag = 'out';
+		} else if (isset($line['over_plan']) && (($line['usagev'] - $line['over_plan']) == 0)) {
+			$plan_flag = 'over';
+		} else if ($line['type'] == 'flat' || (isset($line['over_plan']) && (($line['usagev'] - $line['over_plan']) > 0))) {
+			$plan_flag = 'partial';
 		} else {
-			return 'DISCOUNT_FULL';
+			$plan_flag = 'in';
+		}
+		return $this->getDiscountUsageByPlanFlag($plan_flag);
+	}
+
+	protected function getDiscountUsageByPlanFlag($plan_flag) {
+		switch ($plan_flag) {
+			case 'over':
+				return 'DISCOUNT_OUT';
+			case 'out':
+				return 'DISCOUNT_NONE';
+			case 'partial':
+				return 'DISCOUNT_PARTIAL';
+			case 'in':
+			default:
+				return 'DISCOUNT_FULL';
 		}
 	}
 
@@ -698,6 +754,21 @@ EOI;
 	 * @param array $subscriber the subscriber billrun entry
 	 */
 	protected function getPlanName($subscriber) {
+		if (isset($subscriber['current_plan'])) {
+			$plans = Billrun_Factory::db()->plansCollection();
+			$plan = $plans->getRef($subscriber['current_plan']);
+			$plan_name = $plan['name'];
+		} else {
+			$plan_name = '';
+		}
+		return $plan_name;
+	}
+
+	/**
+	 * 
+	 * @param array $subscriber the subscriber billrun entry
+	 */
+	protected function getNextPlanName($subscriber) {
 		$plan_name = '';
 		if (isset($subscriber['lines']['flat']['refs'][0])) {
 			$lines_coll = Billrun_Factory::db()->linesCollection();
@@ -765,19 +836,58 @@ EOI;
 	}
 
 	protected function getExtrasStartDate() {
-		return date('Y/m/d', Billrun_Util::getStartTime($this->stamp));
+		return date('d/m/Y', Billrun_Util::getStartTime($this->stamp));
 	}
-	
+
 	protected function getExtrasEndDate() {
-		return date('Y/m/d', Billrun_Util::getEndTime($this->stamp));
+		return date('d/m/Y', Billrun_Util::getEndTime($this->stamp));
 	}
-	
+
 	protected function getFlatStartDate() {
-		return date('Y/m/d', strtotime('+ 1 month', Billrun_Util::getStartTime($this->stamp)));
+		return date('d/m/Y', strtotime('+ 1 month', Billrun_Util::getStartTime($this->stamp)));
 	}
-	
+
 	protected function getFlatEndDate() {
-		return date('Y/m/d', strtotime('+ 1 month', Billrun_Util::getEndTime($this->stamp)));
+		return date('d/m/Y', strtotime('+ 1 month', Billrun_Util::getEndTime($this->stamp)));
+	}
+
+	protected function getBreakdownEntryTitle($taarif_kind, $rate_key) {
+		return str_replace(' ', '_', strtoupper($taarif_kind . '-' . $rate_key));
+	}
+
+	protected function updateBillingRecord($billing_record, $golan_date, $tariff_item, $called_number, $caller_number, $volume, $charge, $credit, $tariff_kind, $access_price, $interval, $rate, $intl_flag, $discount_usage) {
+		$billing_record->TIMEOFBILLING = $golan_date;
+		$billing_record->TARIFFITEM = $tariff_item;
+		$billing_record->CTXT_CALL_OUT_DESTINATIONPNB = $called_number; //@todo maybe save dest_no in all processors and use it here
+		$billing_record->CTXT_CALL_IN_CLI = $caller_number; //@todo maybe save it in all processors and use it here
+		$billing_record->CHARGEDURATIONINSEC = $volume;
+		$billing_record->CHARGE = $charge;
+		$billing_record->CREDIT = $credit;
+		$billing_record->TARIFFKIND = $tariff_kind;
+		$billing_record->TTAR_ACCESSPRICE1 = $access_price;
+		$billing_record->TTAR_SAMPLEDELAYINSEC1 = $interval;
+		$billing_record->TTAR_SAMPPRICE1 = $rate;
+		$billing_record->INTERNATIONAL = $intl_flag;
+		$billing_record->DISCOUNT_USAGE = $discount_usage;
+	}
+
+	protected function getDataRate() {
+		$rates = Billrun_Factory::db()->ratesCollection();
+		$query = array(
+			'key' => 'INTERNET_BILL_BY_VOLUME',
+			'from' => array(
+				'$lte' => new MongoDate(Billrun_Util::getStartTime($this->stamp)),
+			),
+			'to' => array(
+				'$gte' => new MongoDate(Billrun_Util::getStartTime($this->stamp)),
+			),
+		);
+		return $rates->query($query)->cursor()->current();
 	}
 
 }
+
+/*
+ * <DISCOUNT_USAGE>DISCOUNT_OUT</DISCOUNT_USAGE> over_plan
+ * DISCOUNT_NONE out_plan
+ */

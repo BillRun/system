@@ -107,7 +107,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	 */
 	public function load() {
 		$billrun_key = $this->getStamp();
-		$date = date(Billrun_Base::base_dateformat, Billrun_Util::getActiveSubscribersDate($billrun_key));
+		$date = date(Billrun_Base::base_dateformat, Billrun_Util::getEndTime($billrun_key));
 		$subscriber = Billrun_Factory::subscriber();
 		Billrun_Factory::log()->log("Loading page " . $this->page . " of size " . $this->size, Zend_Log::INFO);
 		$this->data = $subscriber->getList($this->page, $this->size, $date);
@@ -152,11 +152,20 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 							Billrun_Factory::log()->log("Billrun " . $billrun_key . " already exists for subscriber " . $subscriber->sid, Zend_Log::ALERT);
 							continue;
 						}
-						$account_billrun->addSubscriber($subscriber->sid);
+						$current_plan_name = $subscriber->plan;
+						if (is_null($current_plan_name) || $current_plan_name == "NULL") {
+							Billrun_Factory::log()->log("Null current plan for subscriber $subscriber->sid", Zend_Log::ALERT);
+							$account_billrun->addSubscriber($subscriber->sid, null);
+						} else {
+							$account_billrun->addSubscriber($subscriber->sid, $subscriber->getPlan()->createRef());
+						}
 					}
 					$account_billrun->addLines(true);
 					//save  the billrun
 					Billrun_Factory::log("Saving account $accid");
+//					$shani = print_r($account_billrun->getRawData(), true);
+//					file_put_contents("/home/shani/Desktop/aabb", $shani);
+//					die;
 					$account_billrun->save();
 					Billrun_Factory::log("Finished saving account $accid");
 				} else {
@@ -169,10 +178,10 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 				Billrun_Factory::dispatcher()->trigger('beforeAggregateLine', array(&$subscriber, &$this));
 				$aid = $subscriber->aid;
 				$sid = $subscriber->sid;
-				$plan_name = $subscriber->plan;
+				$next_plan_name = $subscriber->getNextPlanName();
 				//else {
 				//add the subscriber plan for next month
-				if (is_null($plan_name) || $plan_name == "NULL") {
+				if (is_null($next_plan_name) || $next_plan_name == "NULL") {
 					$subscriber_status = "closed";
 					Billrun_Factory::log("Setting subscriber $sid status to $subscriber_status", Zend_log::DEBUG);
 					Billrun_Billrun::setSubscriberStatus($aid, $sid, $billrun_key, $subscriber_status);
@@ -190,7 +199,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 					Billrun_Factory::log('Adding flat to subscriber ' . $sid, Zend_Log::INFO);
 					$flat_line = $this->saveFlatLine($subscriber, $billrun_key);
 					Billrun_Factory::log('Finished adding flat to subscriber ' . $sid, Zend_Log::DEBUG);
-					$plan = $subscriber->getPlan();
+					$plan = $subscriber->getNextPlan();
 					Billrun_Factory::log('Saving flat line of subscriber ' . $sid, Zend_Log::DEBUG);
 					if (!$billrun = Billrun_Billrun::updateBillrun($billrun_key, array(), array('aprice' => $flat_price), $flat_line, $plan->get('vatable'))) {
 						Billrun_Factory::log()->log("Flat costs already exist in billrun collection for subscriber " . $sid . " for billrun " . $billrun_key, Zend_Log::NOTICE);
