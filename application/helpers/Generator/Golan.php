@@ -36,6 +36,7 @@ class Generator_Golan extends Billrun_Generator {
 		if (isset($options['generator']['count'])) {
 			$this->server_count = intval($options['generator']['count']);
 		}
+		$this->lines_coll = Billrun_Factory::db()->linesCollection();
 	}
 
 	public function load() {
@@ -78,7 +79,6 @@ class Generator_Golan extends Billrun_Generator {
 	 * @return SimpleXMLElement the invoice in xml format
 	 */
 	protected function getXML($row) {
-		$lines_coll = Billrun_Factory::db()->linesCollection();
 		$invoice_total_gift = 0;
 		$invoice_total_above_gift = 0;
 		$invoice_total_outside_gift_vat = 0;
@@ -108,12 +108,11 @@ class Generator_Golan extends Billrun_Generator {
 			$billing_records = $subscriber_inf->addChild('BILLING_LINES');
 
 			if ($this->billingLinesNeeded($sid)) {
-				$subscriber_lines_refs = $this->get_subscriber_lines_refs($subscriber);
+				$subscriber_lines = $this->get_subscriber_lines($subscriber);
 				$subscriber_aggregated_data = $this->get_subscriber_aggregated_data_lines($subscriber);
-				foreach ($subscriber_lines_refs as $ref) {
-					$line = $lines_coll->getRef($ref);
+				foreach ($subscriber_lines as $line) {
 					if (!$line->isEmpty()) {
-						$line->collection($lines_coll);
+						$line->collection($this->lines_coll);
 						$billing_record = $billing_records->addChild('BILLING_RECORD');
 						$this->updateBillingRecord($billing_record, $this->getGolanDate($line['urt']->sec), $this->getTariffItem($line, $subscriber), $this->getCalledNo($line), $this->getCallerNo($line), $this->getUsageVolume($line), $this->getCharge($line), $this->getCredit($line), $this->getTariffKind($line['usaget']), $this->getAccessPrice($line), $this->getInterval($line), $this->getRate($line), $this->getIntlFlag($line), $this->getDiscountUsage($line));
 					}
@@ -475,21 +474,47 @@ class Generator_Golan extends Billrun_Generator {
 		return file_put_contents($path, $xmlContent);
 	}
 
+//	/**
+//	 * 
+//	 * @param array $subscriber subscriber billrun entry
+//	 * @return type
+//	 */
+//	protected function get_subscriber_lines_refs($subscriber) {
+//		$refs = array();
+//		if (isset($subscriber['lines'])) {
+//			foreach ($subscriber['lines'] as $usage_type => $lines_by_usage_type) {
+//				if ($usage_type != 'data' && isset($lines_by_usage_type["refs"]) && is_array($lines_by_usage_type["refs"])) {
+//					$refs = array_merge($refs, $lines_by_usage_type["refs"]);
+//				}
+//			}
+//		}
+//		return $refs;
+//	}
+
 	/**
 	 * 
 	 * @param array $subscriber subscriber billrun entry
 	 * @return type
 	 */
-	protected function get_subscriber_lines_refs($subscriber) {
-		$refs = array();
-		if (isset($subscriber['lines'])) {
-			foreach ($subscriber['lines'] as $usage_type => $lines_by_usage_type) {
-				if ($usage_type != 'data' && isset($lines_by_usage_type["refs"]) && is_array($lines_by_usage_type["refs"])) {
-					$refs = array_merge($refs, $lines_by_usage_type["refs"]);
-				}
-			}
-		}
-		return $refs;
+	protected function get_subscriber_lines($subscriber) {
+		$start_time = new MongoDate(0);
+		$end_time = new MongoDate(Billrun_Util::getEndTime($this->stamp));
+		$query = array(
+			'sid' => $subscriber['sid'],
+			'urt' => array(
+				'$lte' => $end_time,
+				'$gte' => $start_time,
+			),
+			'aprice' => array(
+				'$exists' => true,
+			),
+			'billrun' => $this->stamp,
+			'type' => array(
+				'$ne' => 'ggsn',
+			),
+		);
+		$lines = $this->lines_coll->query($query)->cursor();
+		return $lines;
 	}
 
 	/**
@@ -565,7 +590,7 @@ class Generator_Golan extends Billrun_Generator {
 	protected function getIntervalByRate($rate, $usage_type) {
 		return $rate['rates'][$usage_type]['rate'][0]['interval'];
 	}
-	
+
 	protected function getPriceByRate($rate, $usage_type) {
 		return $rate['rates'][$usage_type]['rate'][0]['price'];
 	}
@@ -676,9 +701,9 @@ class Generator_Golan extends Billrun_Generator {
 	protected function getDiscountUsage($line) {
 		if (isset($line['out_plan'])) {
 			$plan_flag = 'out';
-		} else if (isset($line['over_plan']) && (($line['usagev'] - $line['over_plan']) == 0)) {
+		} else if (isset($line['over_plan']) && ($line['usagev'] == $line['over_plan'])) {
 			$plan_flag = 'over';
-		} else if ($line['type'] == 'flat' || (isset($line['over_plan']) && (($line['usagev'] - $line['over_plan']) > 0))) {
+		} else if ($line['type'] == 'flat' || (isset($line['over_plan']) && ($line['usagev'] > $line['over_plan']))) {
 			$plan_flag = 'partial';
 		} else {
 			$plan_flag = 'in';
@@ -771,10 +796,9 @@ EOI;
 	protected function getNextPlanName($subscriber) {
 		$plan_name = '';
 		if (isset($subscriber['lines']['flat']['refs'][0])) {
-			$lines_coll = Billrun_Factory::db()->linesCollection();
-			$flat_line = $lines_coll->getRef($subscriber['lines']['flat']['refs'][0]);
+			$flat_line = $this->lines_coll->getRef($subscriber['lines']['flat']['refs'][0]);
 			if ($flat_line) {
-				$flat_line->collection($lines_coll);
+				$flat_line->collection($this->lines_coll);
 				$plan = $flat_line['plan_ref'];
 				if (!$plan->isEmpty() && isset($plan['name'])) {
 					$plan_name = $plan['name'];

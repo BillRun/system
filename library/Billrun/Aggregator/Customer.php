@@ -163,9 +163,6 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 					$account_billrun->addLines(true);
 					//save  the billrun
 					Billrun_Factory::log("Saving account $accid");
-//					$shani = print_r($account_billrun->getRawData(), true);
-//					file_put_contents("/home/shani/Desktop/aabb", $shani);
-//					die;
 					$account_billrun->save();
 					Billrun_Factory::log("Finished saving account $accid");
 				} else {

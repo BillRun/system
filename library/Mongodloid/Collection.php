@@ -141,7 +141,7 @@ class Mongodloid_Collection {
 		return $this->_collection->remove($query);
 	}
 
-	public function find($query) {
+	public function find($query, $fields = array()) {
 		return $this->_collection->find($query);
 	}
 

@@ -127,7 +127,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			if (!$pricingData) { // balance wasn't found
 				return false;
 			}
-			if (isset($this->options['live_billrun_update']) && $this->options['live_billrun_update']) {
+			if (Billrun_Billrun::isLiveUpdate()) {
 				$vatable = (!(isset($rate['vatable']) && !$rate['vatable']) || (!isset($rate['vatable']) && !$this->vatable));
 				if (!$billrun = Billrun_Billrun::updateBillrun($billrun_key, array($usage_type => $volume), $pricingData, $row, $vatable)) {
 					return false;
@@ -179,7 +179,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		} else {
 			$ret['out_plan'] = $volumeToPrice;
 		}
-
+		
 		$price = $accessPrice + $this->getPriceByRates($typedRates['rate'], $volumeToPrice);
 		//Billrun_Factory::log()->log("Rate : ".print_r($typedRates,1),  Zend_Log::DEBUG);
 		$ret[$this->pricingField] = $price;

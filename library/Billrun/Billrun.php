@@ -18,6 +18,7 @@ class Billrun_Billrun {
 	protected $billrun_key;
 	protected $data;
 	protected static $runtime_billrun_key;
+	protected static $live_update;
 	protected static $vatAtDates = array();
 
 	/**
@@ -847,7 +848,6 @@ class Billrun_Billrun {
 	 * @param array $sraw the subscriber's billrun entry
 	 */
 	protected function addLineToSubscriber($counters, $row, $pricingData, $vatable, $billrun_key, &$sraw) {
-
 		$usage_type = self::getGeneralUsageType($row['usaget']);
 		list($plan_key, $category_key, $zone_key) = self::getBreakdownKeys($row, $pricingData, $vatable);
 		$zone = &$sraw['breakdown'][$plan_key][$category_key][$zone_key];
@@ -871,7 +871,9 @@ class Billrun_Billrun {
 		} else {
 			$zone = $pricingData['aprice'];
 		}
-		$sraw['lines'][$usage_type]['refs'][] = $row->createRef();
+		if (self::isLiveUpdate()) {
+			$sraw['lines'][$usage_type]['refs'][] = $row->createRef();
+		}
 		if ($usage_type == 'data' && $row['type'] != 'tap3') {
 			$date_key = date("Ymd", $row['urt']->sec);
 			$sraw['lines'][$usage_type]['counters'][$date_key]['usagev'] = $this->getFieldVal($sraw['lines'][$usage_type]['counters'][$date_key]['usagev'], 0) + $row['usagev'];
@@ -1239,6 +1241,13 @@ class Billrun_Billrun {
 		);
 		$agg = $this->lines->aggregate($match_sid, $match_type, $match, $group);
 		return $agg;
+	}
+
+	public static function isLiveUpdate() {
+		if (!isset(self::$live_update)) {
+			self::$live_update = Billrun_Factory::config()->getConfigValue('billrun.live_update', false);
+		}
+		return self::$live_update;
 	}
 
 }
