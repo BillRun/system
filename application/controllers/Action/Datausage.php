@@ -27,7 +27,8 @@ class DatausageAction extends Action_Base {
 			return;
 		}
 
-		$results = $this->getLines($request['gift'], $request['data_usage'], $request['from_account_id'], $request['to_account_id'], $request['billrun']);
+		$balances = new BalancesModel();
+		$results = $balances->getLines($request['gift'], $request['data_usage'], $request['from_account_id'], $request['to_account_id'], $request['billrun']);
 		if (empty($results)) {
 			Billrun_Factory::log()->log('Some error happen, no result, received parameters: ' . print_r($request, true), Zend_Log::ERR);
 			return;
@@ -45,33 +46,7 @@ class DatausageAction extends Action_Base {
 				'subscribers_count' => $counter,
 				'output' => $accounts,
 		)));
-
-		//print_r(array('status' => 1,'desc' => 'success','subscribers_count' => $counter,'output' => $accounts));
 		
 		return true;
 	}
-
-	/**
-	 * method to receive the balances lines that over requested date usage
-	 * 
-	 * @return Mongodloid_Cursor Mongo cursor for iteration
-	 */
-	protected function getLines($gift, $data_usage, $from_account_id, $to_account_id, $billrun) {
-		$params['name'] = $gift;
-		$params['time'] = Billrun_Util::getStartTime($billrun);
-		$plan_id = Billrun_Factory::plan($params);
-		$id = $plan_id->get('_id')->getMongoID();
-		
-		$balances = Billrun_Factory::db()->balancesCollection();
-		$data_usage_bytes = Billrun_Util::megabytesToBytesFormat($data_usage);
-		
-		return $balances->query(array(
-					'balance.totals.data.usagev' => array('$gt' => $data_usage_bytes),
-					'billrun_month' => $billrun,
-					'current_plan'=> Billrun_Factory::db()->plansCollection()->createRef($id),
-					'aid' => array('$gt' => (int)$from_account_id),
-					'aid' => array('$lt' => (int)$to_account_id),
-		));
-	}
-
 }
