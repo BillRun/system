@@ -27,6 +27,7 @@ class Billrun_Generator_Report_GeneratedCalls extends Billrun_Generator_Report {
 	protected $calls = null;
 	protected $billingCalls = null;
 	protected $billingTimeOffset = -140;
+	protected $allowedTimeDiveation = static::ALLOWED_TIME_DIVEATION;
 	
 
 	public function __construct($options) {
@@ -39,6 +40,10 @@ class Billrun_Generator_Report_GeneratedCalls extends Billrun_Generator_Report {
 		}
 		if(isset($options['billing_time_offset'])) {
 			$this->billingTimeOffset = $options['billing_time_offset'];
+		}
+		
+		if(isset($options['allowed_time_dievation'])) {
+			$this->allowedTimeDiveation = $options['allowed_time_dievation'];
 		}
 		$this->from = isset($options['from_date']) ? strtotime($options['from_date']) : time()-(48*3600);
 	
@@ -252,8 +257,8 @@ class Billrun_Generator_Report_GeneratedCalls extends Billrun_Generator_Report {
 																'from' => array('$regex' => preg_replace("/^972/","",$bLine['calling_number']) ),
 																'to' => array('$regex' => preg_replace("/^972/","",$bLine['called_number']) ),
 																'callee_call_start_time' => array('$gt'=> new MongoDate(0) ),
-																'urt' => array('$lte' => new MongoDate($bLine['urt']['sec'] + $this->billingTimeOffset + self::ALLOWED_TIME_DIVEATION),
-																			   '$gte' => new MongoDate($bLine['urt']['sec'] + $this->billingTimeOffset - self::ALLOWED_TIME_DIVEATION))
+																'urt' => array('$lte' => new MongoDate($bLine['urt']['sec'] + $this->billingTimeOffset + $this->allowedTimeDiveation),
+																			   '$gte' => new MongoDate($bLine['urt']['sec'] + $this->billingTimeOffset - $this->allowedTimeDiveation))
 																),array('$set'=> $data),array('w'=>1));
 			
 			if (!($updateResults['ok'] && $updateResults['updatedExisting'])) {
