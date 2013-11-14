@@ -291,7 +291,8 @@ class Generator_Golancsv extends Billrun_Generator {
 	 * @return type
 	 */
 	protected function getCurPackage($subscriber) {
-		return '';
+		$current_plan = Billrun_Factory::db()->plansCollection()->getRef($subscriber['current_plan']);
+		return $current_plan['name'];
 	}
 
 	protected function getNextPackage($subscriber) {
@@ -313,7 +314,7 @@ class Generator_Golancsv extends Billrun_Generator {
 		$countOfKb = 0;
 		if (isset($subscriber['lines']['data']['counters']) && is_array($subscriber['lines']['data']['counters'])) {
 			foreach ($subscriber['lines']['data']['counters'] as $data_by_day) {
-				$countOfKb+=$data_by_day;
+				$countOfKb+=$data_by_day['usagev'];
 			}
 		}
 		return $countOfKb/static::BYTES_IN_KB;
