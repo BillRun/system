@@ -59,5 +59,5 @@ class Billrun_Receiver_Relocate extends Billrun_Receiver_Base_LocalFiles {
 		Billrun_Factory::dispatcher()->trigger('afterRelocateFileHandling', array($this, &$srcPath, &$newPath, $filename, $ret));
 		return $ret ? $newPath : FALSE;
 	}
-
+	
 }
