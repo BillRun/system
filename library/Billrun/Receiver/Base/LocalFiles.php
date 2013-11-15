@@ -77,8 +77,6 @@ abstract class Billrun_Receiver_Base_LocalFiles extends Billrun_Receiver {
 			return array();
 		}
 		$files = $this->getFiles($this->srcPath, $this->sort, $this->order);
-		print_R($files);
-		die;
 		$ret = array();
 		$receivedCount = 0;
 		foreach ($files as $file) {
