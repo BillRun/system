@@ -26,7 +26,7 @@ abstract class Billrun_Receiver_Base_LocalFiles extends Billrun_Receiver {
 	 * @var type 
 	 */
 	protected $srcPath = null;
-	
+
 	/**
 	 * sort of the file receiving (name, date or size)
 	 * 
@@ -40,7 +40,6 @@ abstract class Billrun_Receiver_Base_LocalFiles extends Billrun_Receiver {
 	 */
 	protected $order = 'asc';
 
-
 	public function __construct($options) {
 		parent::__construct($options);
 
@@ -53,15 +52,14 @@ abstract class Billrun_Receiver_Base_LocalFiles extends Billrun_Receiver {
 		} else if (isset($options['receiver']['path'])) {
 			$this->srcPath = $options['receiver']['path'];
 		}
-		
+
 		if (isset($options['receiver']['sort'])) {
 			$this->sort = $options['receiver']['sort'];
 		}
-		
+
 		if (isset($options['receiver']['order'])) {
 			$this->order = $options['receiver']['order'];
 		}
-
 	}
 
 	/**
@@ -79,7 +77,8 @@ abstract class Billrun_Receiver_Base_LocalFiles extends Billrun_Receiver {
 			return array();
 		}
 		$files = $this->getFiles($this->srcPath, $this->sort, $this->order);
-		print_R($files);die;
+		print_R($files);
+		die;
 		$ret = array();
 		$receivedCount = 0;
 		foreach ($files as $file) {
@@ -140,7 +139,7 @@ abstract class Billrun_Receiver_Base_LocalFiles extends Billrun_Receiver {
 					if ($order == 'desc') {
 						krsort($files);
 					} else {
-						ksort($files);						
+						ksort($files);
 					}
 				}
 				break;
