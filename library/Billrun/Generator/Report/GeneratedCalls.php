@@ -260,7 +260,6 @@ class Billrun_Generator_Report_GeneratedCalls extends Billrun_Generator_Report {
 			$updateResults =  Billrun_Factory::db()->linesCollection()->update(array('type'=>'generated_call',
 																'from' => array('$regex' => preg_replace("/^972/","",$bLine['calling_number']) ),
 																'to' => array('$regex' => preg_replace("/^972/","",$bLine['called_number']) ),
-																'callee_call_start_time' => array('$gt'=> new MongoDate(0) ),
 																'urt' => array('$lte' => new MongoDate($bLine['urt']['sec'] + $this->billingTimeOffset + $this->allowedTimeDiveation),
 																			   '$gte' => new MongoDate($bLine['urt']['sec'] + $this->billingTimeOffset - $this->allowedTimeDiveation))
 																),array('$set'=> $data),array('w'=>1));
