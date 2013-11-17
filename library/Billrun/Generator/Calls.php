@@ -236,6 +236,8 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 
 		if ($call['calling_result'] == Gsmodem_StateMapping::IN_CALL_STATE ||$call['calling_result'] == Gsmodem_StateMapping::OUT_CALL_STATE ) {
 			$this->HandleCall($device, $call, $action['duration'], (($action['hangup'] == 'caller') == $isCalling) );
+		} else if($action['action_type'] == static::TYPE_REGULAR) {
+			Billrun_Factory::log("Failed on action of type : {$action['action_type']} when using modem  with number : ".$device->getModemNumber(),Zend_Log::ERR);
 		}
 		//$call['execution_end_time'] = date("YmdTHis");
 		$call['estimated_price'] = 0;//$call['duration'] * $action['rate']; //TODO  maybe use  the billing  getPriceData?
