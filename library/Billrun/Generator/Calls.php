@@ -90,12 +90,14 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 				}
 				//if  it time to take action do it  else wait for  a few seconds and check again.
 				if( time() > $this->testScript['from']->sec && time() < $this->testScript['to']->sec ) {
-					$this->actOnScript($this->testScript['test_script']);
+					$actionDone = $this->actOnScript($this->testScript['test_script']);
+					$this->isWorking = $actionDone != FALSE;
 				} else {
 					Billrun_Factory::log("Waiting for test time frame... current time : ".time()." , test is set from :".$this->testScript['from']->sec . " to : ".$this->testScript['to']->sec , Zend_Log::DEBUG);
 					sleep(self::WAITING_SLEEP_TIME);
 				}
 			}
+			Billrun_Factory::log("no action found. exiting...", Zend_Log::NOTICE);
 		} else {
 			Billrun_Factory::log("No active modem devices.", Zend_Log::NOTICE);
 		}
@@ -172,7 +174,7 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 			}
 			
 		}
-		
+		return $action;
 	}
 
 	/**
