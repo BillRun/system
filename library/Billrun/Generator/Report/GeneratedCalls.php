@@ -218,11 +218,15 @@ class Billrun_Generator_Report_GeneratedCalls extends Billrun_Generator_Report {
 		$this->billingCalls = $this->mergeBillingLines($this->subscriber);
 		//load calls made
 		$callsQuery =array(	'type' => 'generated_call',
-							'callee_call_start_time' => array('$gt'=> new MongoDate(0) ),
+							
 							'urt' => array(
 										'$gt' => new MongoDate($this->from),
 										'$lte'=> new MongoDate($this->to),										
 									 ),
+							'$or' => array(
+								array('callee_call_start_time' => array('$gt'=> new MongoDate(0) )),
+								array('billing_urt' => array('$gt'=> new MongoDate(0) )),
+							),
 							'from' =>  array('$regex' => (string) $this->callingNumber ),
 					);
 		$this->calls = array();
