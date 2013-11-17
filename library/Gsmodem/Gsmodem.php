@@ -190,11 +190,22 @@ class Gsmodem_Gsmodem  {
 		sleep(1);
 		$this->doCmd($this->getATcmd('echo_mode',array(0)), false, false);
 		sleep(1);
-		$this->doCmd("AT+CVHU=0 ;\r", true);
+		$this->doCmd("AT+CFUN=1 ;\r", true);
+		$this->resetModem();
+	}
+	
+	
+	/**
+	 * Initialize the modem settings.
+	 */
+	public function resetModem() {
+		$ret = true;
+		$ret &= $this->doCmd("AT+CVHU=0 ;\r", true,true,false,  static::COMMAND_RESPONSE_TIME);
 		$this->hangUp();		
-		$this->doCmd($this->getATcmd('incoming_call_id',array(1)), true);
-		$this->doCmd($this->getATcmd('register_reporting',array(2)), true);
+		$ret &= $this->doCmd($this->getATcmd('incoming_call_id',array(1)), true ,true,false, static::COMMAND_RESPONSE_TIME);
+		$ret &= $this->doCmd($this->getATcmd('register_reporting',array(2)), true ,true,false, static::COMMAND_RESPONSE_TIME);
 		$this->state->setState(Gsmodem_StateMapping::IDLE_STATE);
+		return $ret;
 	}
 	
 	/**
