@@ -226,7 +226,7 @@ class Billrun_Generator_Report_GeneratedCalls extends Billrun_Generator_Report {
 							'from' =>  array('$regex' => (string) $this->callingNumber ),
 					);
 		$this->calls = array();
-		$cursor = Billrun_Factory::db()->linesCollection()->query($callsQuery)->cursor();
+		$cursor = Billrun_Factory::db()->linesCollection()->query($callsQuery)->cursor()->sort(array('urt'=>1));
 		foreach ($cursor as $value) {
 			$this->calls[] = $value->getRawData();
 		}		
