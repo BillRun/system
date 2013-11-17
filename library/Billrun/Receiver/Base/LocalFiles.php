@@ -119,6 +119,8 @@ abstract class Billrun_Receiver_Base_LocalFiles extends Billrun_Receiver {
 		$files = array();
 		switch ($sort) {
 			case 'date':
+			case 'time':
+			case 'datetime':
 			case 'size':
 				if ($sort == 'size') {
 					$callback = 'filesize';
