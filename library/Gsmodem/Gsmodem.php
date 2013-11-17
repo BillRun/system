@@ -200,10 +200,10 @@ class Gsmodem_Gsmodem  {
 	 */
 	public function resetModem() {
 		$ret = true;
-		$ret &= $this->doCmd("AT+CVHU=0 ;\r", true,true,false,  static::COMMAND_RESPONSE_TIME);
+		$ret &= $this->doCmd("AT+CVHU=0 ;\r", true,true,false,  static::COMMAND_RESPONSE_TIME) != FALSE;
 		$this->hangUp();		
-		$ret &= $this->doCmd($this->getATcmd('incoming_call_id',array(1)), true ,true,false, static::COMMAND_RESPONSE_TIME);
-		$ret &= $this->doCmd($this->getATcmd('register_reporting',array(2)), true ,true,false, static::COMMAND_RESPONSE_TIME);
+		$ret &= $this->doCmd($this->getATcmd('incoming_call_id',array(1)), true ,true,false, static::COMMAND_RESPONSE_TIME) != FALSE;
+		$ret &= $this->doCmd($this->getATcmd('register_reporting',array(2)), true ,true,false, static::COMMAND_RESPONSE_TIME) != FALSE;
 		$this->state->setState(Gsmodem_StateMapping::IDLE_STATE);
 		return $ret;
 	}
