@@ -226,6 +226,8 @@ class Billrun_Generator_Report_CallingScript extends Billrun_Generator_Report {
 	
 	public function updateConfig($data) {
 		Billrun_Factory::log()->log("Updating Config", Zend_Log::INFO);
+		$data['test_script'] = $data['actions'];
+		unset($data['actions']);
 		$data['key'] = 'call_generator';
 		$data['urt'] = new MongoDate($data['from'] > time() ? $data['from'] : time()); 
 		$data['from'] = new MongoDate($data['from']);
