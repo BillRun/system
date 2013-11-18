@@ -139,7 +139,7 @@ class Gsmodem_Gsmodem  {
 	public function waitForCall($waitTime = PHP_INT_MAX) {		
 		$startTime = time();
 		while($waitTime > time() - $startTime ) {
-			 $lastResult = $this->getResult(static::RESPONSIVE_RESULTS_TIMEOUT);
+			 $lastResult = $this->getResult(static::RESPONSIVE_RESULTS_TIMEOUT*2);
 			if($this->state->getState() == Gsmodem_StateMapping::RINGING_STATE) {
 				return $lastResult;
 			}
