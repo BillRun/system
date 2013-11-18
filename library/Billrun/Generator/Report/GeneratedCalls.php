@@ -99,6 +99,7 @@ class Billrun_Generator_Report_GeneratedCalls extends Billrun_Generator_Report {
 				'callee_duration' => 'generator_duration',
 				'callee_call_start_time' => 'generator_call_start_time',
 				'callee_call_end_time' => 'generator_call_end_time',
+				'callee_end_result' => 'end_status',
 				'from' => 'generator_calling_number',
 				'to' => 'generator_dialed_number',
 				'to' => 'generator_called_number',
@@ -223,10 +224,10 @@ class Billrun_Generator_Report_GeneratedCalls extends Billrun_Generator_Report {
 										'$gt' => new MongoDate($this->from),
 										'$lte'=> new MongoDate($this->to),										
 									 ),
-							'$or' => array(
-								array('callee_call_start_time' => array('$gt'=> new MongoDate(0) )),
-								array('billing_urt' => array('$gt'=> new MongoDate(0) )),
-							),
+							//'$or' => array(
+							//	array('callee_call_start_time' => array('$gt'=> new MongoDate(0) )),
+							//	array('billing_urt' => array('$gt'=> new MongoDate(0) )),
+							//),
 							'from' =>  array('$regex' => (string) $this->callingNumber ),
 					);
 		$this->calls = array();
