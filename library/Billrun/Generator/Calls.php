@@ -83,7 +83,7 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 			Billrun_Factory::log("No test script configured!", Zend_Log::NOTICE);
 			return false;
 		}
-		if (count($this->modemDevices) > 0) {
+		if (count($this->modemDevices)  == count($this->options['path_to_calling_devices'])) {
 			while ($this->isWorking) {
 				//update  the  configuration if needed
 				if ($this->isConfigUpdated($this->testScript)) {
@@ -100,7 +100,7 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 			}
 			Billrun_Factory::log("no action found. exiting...", Zend_Log::NOTICE);
 		} else {
-			Billrun_Factory::log("No active modem devices.", Zend_Log::NOTICE);
+			Billrun_Factory::log("Not all configured modem devices are active.", Zend_Log::NOTICE);
 		}
 		return true;
 	}

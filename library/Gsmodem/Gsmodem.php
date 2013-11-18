@@ -25,7 +25,7 @@ class Gsmodem_Gsmodem  {
 	const HANGING_UP = 'hanging_up';
 
 	const COMMAND_RESPONSE_TIME = 30; // the amount of seconds to wait  for a response from the modem to a given command.
-	const RESPONSIVE_RESULTS_TIMEOUT = 0.25; 
+	const RESPONSIVE_RESULTS_TIMEOUT = 0.5; 
 	
 	//--------------------------------------------------------------------------
 	
