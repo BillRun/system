@@ -145,7 +145,7 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 		Billrun_Factory::log("Calls killed.");
 
 		foreach($this->modemDevices as $device) {
-			if(!$device->resetModem()) {
+			if($device->hangUp() == Gsmodem_Gsmodem::UNKNOWN) {
 				Billrun_Factory::log()->log("Failed when trying to reset the modem with number:". $device->getModemNumber(),Zend_Log::ERR);
 			}
 		}		
