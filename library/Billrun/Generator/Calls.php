@@ -194,15 +194,7 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 			}
 		}
 		if ($action) {
-			Billrun_Factory::log("Got action  {$action['call_id']} of type : {$action['action_type']} the should be run at : {$action['time']}, Waiting... ");
-		/*	if(strtotime($action['time']) - time() > static::RESET_MODEM_WINDOW) {
-				Billrun_Factory::log("We have time... Reseting modems...");
-				foreach($this->modemDevices as $device) {
-					if( FALSE === $device->resetModem()) {
-						Billrun_Factory::log()->log("Failed when trying to reset the modem with number:". $device->getModemNumber(),Zend_Log::ERR);
-					}
-				}
-			}*/
+			Billrun_Factory::log("Got action  {$action['call_id']} of type : {$action['action_type']} the should be run at : {$action['time']}, Waiting... ");		
 			while ($action['time'] >= date("H:i:s")) {
 				usleep(static::MIN_MILLI_RESOLUTION / 4);
 				if(((microtime(true)*1000 % 1000) == 0) && $this->isConfigUpdated($this->testScript)) {//check configuration update  every second.
@@ -251,6 +243,9 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 		//$call['execution_end_time'] = date("YmdTHis");
 		$call['estimated_price'] = 0;//$call['duration'] * $action['rate']; //TODO  maybe use  the billing  getPriceData?
 		$this->save($action, $call, $isCalling);
+		if( FALSE === $device->resetModem()) {
+			Billrun_Factory::log()->log("Failed when trying to reset the modem with number:". $device->getModemNumber(),Zend_Log::ERR);
+		}
 		Billrun_Factory::log("Done acting on action of type : {$action['action_type']} for number : ".$device->getModemNumber());
 	}
 
