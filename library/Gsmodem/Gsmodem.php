@@ -74,8 +74,7 @@ class Gsmodem_Gsmodem  {
 	 * @return TRUE if the command  was sent OK false otherwise.
 	 */
 	public function hangUp() {
-		return  $this->state->getState() != Gsmodem_StateMapping::IDLE_STATE && 
-				$this->doCmd($this->getATcmd('hangup'), true, true, false, self::COMMAND_RESPONSE_TIME) ? self::HANGING_UP : self::UNKNOWN;						
+		return $this->doCmd($this->getATcmd('hangup'), true, true, false, self::COMMAND_RESPONSE_TIME) != FALSE;
 	}
 	
 	/**
