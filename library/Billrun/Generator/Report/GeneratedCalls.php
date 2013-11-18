@@ -56,7 +56,7 @@ class Billrun_Generator_Report_GeneratedCalls extends Billrun_Generator_Report {
 		$report['summary'] = $this->printSummaryReport($this->calls,$this->billingCalls['unmatched_lines']);
 		$report['from']	 = date("Y-m-d H:i:s", $this->from);
 		$report['to']	 = date("Y-m-d H:i:s", $this->to);	
-		$reports =  array("call_matching_report.csv" => $report);
+		$reports =  array($this->subscriber."_call_matching_report.csv" => $report);
 		if(isset($this->options['out']) && $this->options['out']) {
 			$this->generateFiles($reports, $this->options['out']);
 		}
