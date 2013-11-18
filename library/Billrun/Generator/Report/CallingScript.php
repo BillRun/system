@@ -83,6 +83,7 @@ class Billrun_Generator_Report_CallingScript extends Billrun_Generator_Report {
 		if (isset($options['busy_number'])) {
 			$this->busyNumber = $options['busy_number'];
 		}
+		
 	}
 
 	/**
@@ -104,14 +105,17 @@ class Billrun_Generator_Report_CallingScript extends Billrun_Generator_Report {
 			$aggCount += $types[$type]['total_count'];
 			$aggDaily += $types[$type]['daily'];
 		}
-		
-		$actions = $this->generateDailyScript(array(
+		$options =array(
 												'script_type' => $this->scriptTypes,
 												'numbers' => $this->numbers,
 												'durations' => $this->durations,
 												'types' => $types,
 												'daily_start_time' => isset($this->options['start_calls_time']) ? $this->options['start_calls_time'] : '00:10:00',
-											));
+											);
+		if(isset($this->options['total_call_count'])) {
+			$options['total_call_count'] = $this->options['total_call_count'];
+		}
+		$actions = $this->generateDailyScript($options);
 
 		$startDay = strtotime( date('Ymd 00:00:00',isset($this->startTestAt) ? $this->startTestAt: time()) );
 		$endDay = strtotime( date('Ymd 00:00:00',$startDay+(86400 * ( $aggCount / $aggDaily )) ) );
@@ -165,8 +169,12 @@ class Billrun_Generator_Report_CallingScript extends Billrun_Generator_Report {
 		$actions = array();
 		$sides = array(self::CALLEE, self::CALLER);
 		$callId = 0;
+		$callsCount = 0; 
 		$numbersCount = count($params['numbers']);
 		foreach($params['script_type'] as  $scriptType  ) {
+			if(isset($params['total_call_count']) && $params['total_call_count'] < $callsCount) {
+				break;
+			}
 			$typeData = $params['types'][$scriptType];
 			for($i = 0; $i < $typeData['daily']; $i++) {
 			  $action = array();
@@ -189,7 +197,7 @@ class Billrun_Generator_Report_CallingScript extends Billrun_Generator_Report {
 
 			 $offset = 60 * ceil( ($offset + $action['duration']+self::MINIMUM_TIME_BETWEEN_CALLS) / 60 );
 			 $actions[] = $action;
-
+			 $callsCount++;
 			}
 			$offset = 60 * ceil( ($offset + self::SCRIPT_TYPES_SEPERATION + self::MINIMUM_TIME_BETWEEN_CALLS) / 60 );
 			if($offset - $startOffset > 86400) {
