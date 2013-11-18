@@ -224,10 +224,11 @@ class Billrun_Generator_Report_GeneratedCalls extends Billrun_Generator_Report {
 										'$gt' => new MongoDate($this->from),
 										'$lte'=> new MongoDate($this->to),										
 									 ),
-							//'$or' => array(
+							'$or' => array(
 							//	array('callee_call_start_time' => array('$gt'=> new MongoDate(0) )),
-							//	array('billing_urt' => array('$gt'=> new MongoDate(0) )),
-							//),
+								array('billing_urt' => array('$gt'=> new MongoDate(0) )),
+								array('caller_end_result' => array('$ne'=> 'no_call' )),
+							),
 							'from' =>  array('$regex' => (string) $this->callingNumber ),
 					);
 		$this->calls = array();
