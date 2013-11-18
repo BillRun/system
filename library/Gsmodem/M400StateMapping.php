@@ -47,6 +47,8 @@ class Gsmodem_M400StateMapping  extends Gsmodem_StateMapping {
 		),
 		self::HANGING_UP_STATE => array(
 			'OK' => self::IDLE_STATE,
+			'RING' => self::RINGING_STATE,
+			'ERROR' => self::IDLE_STATE,
 		),
 		self::IDLE_STATE => array(
 			'ERROR' => self::IDLE_STATE,
