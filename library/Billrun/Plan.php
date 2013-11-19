@@ -21,6 +21,7 @@ class Billrun_Plan {
 	 */
 	protected $data = null;
 	protected static $plans = array();
+	protected $plan_ref = array();
 
 	/**
 	 * constructor
@@ -100,7 +101,7 @@ class Billrun_Plan {
 	protected function getPlanByNameAndTime($name, $time) {
 		if (isset(self::$plans['by_name'][$name])) {
 			foreach (self::$plans['by_name'][$name] as $planTimes) {
-				if ($planTimes['from']<=$time && (!isset($planTimes['to']) || is_null($planTimes['to']) || $planTimes['to']>=$time)) {
+				if ($planTimes['from'] <= $time && (!isset($planTimes['to']) || is_null($planTimes['to']) || $planTimes['to'] >= $time)) {
 					return $planTimes['plan'];
 				}
 			}
@@ -128,10 +129,10 @@ class Billrun_Plan {
 	 * 		should be removed from here;
 	 * 		the check of plan should be run on line not subscriber/balance
 	 */
-	public function isRateInSubPlan($rate, $sub, $type) {
+	public function isRateInSubPlan($rate, $type) {
 		return isset($rate['rates'][$type]['plans']) &&
 				is_array($rate['rates'][$type]['plans']) &&
-				in_array($sub->get('current_plan', true), $rate['rates'][$type]['plans']);
+				in_array($this->createRef(), $rate['rates'][$type]['plans']);
 	}
 
 	/**
@@ -173,9 +174,16 @@ class Billrun_Plan {
 	 * @return MongoDBRef the refernce to current plan.
 	 */
 	public function createRef($collection = false) {
-		$collection = $collection ? $collection :
-				($this->data->collection() ? $this->data->collection() : Billrun_Factory::db()->plansCollection() );
-		return $this->data->createRef($collection);
+		if (count($this->plan_ref) == 0) {
+			$collection = $collection ? $collection :
+					($this->data->collection() ? $this->data->collection() : Billrun_Factory::db()->plansCollection() );
+			$this->plan_ref = $this->data->createRef($collection);
+		}
+		return $this->plan_ref;
+	}
+
+	public function isUnlimited($usage_type) {
+		return isset($this->data['include'][$usage_type]) && $this->data['include'][$usage_type] == "UNLIMITED";
 	}
 
 }
