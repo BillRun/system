@@ -44,6 +44,7 @@ class Gsmodem_StateMapping {
 		self::CALLING_STATE => array(
 			'OK' => self::OUT_CALL_STATE,
 			'ERROR' => self::IDLE_STATE,
+			'NO CARRIER' => self::IDLE_STATE,
 			'RING' => self::RINGING_STATE,
 			'BUSY' => self::IDLE_STATE,
 		),

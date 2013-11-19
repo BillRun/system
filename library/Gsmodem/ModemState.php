@@ -38,7 +38,6 @@ class Gsmodem_ModemState {
 							'get_error' => '+CEER',
 							'get_number' => '+CNUM',
 							'echo_mode' => 'E%0%',
-							'reset' => 'Z'
 						);
 
 	protected $resultsMap = array( 
