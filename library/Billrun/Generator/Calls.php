@@ -239,13 +239,14 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 			$this->HandleCall($device, $call, $action['duration'], (($action['hangup'] == 'caller') == $isCalling) );
 		} else if($action['action_type'] == static::TYPE_REGULAR) {
 			Billrun_Factory::log("Failed on action of type : {$action['action_type']} when using modem  with number : ".$device->getModemNumber(),Zend_Log::ERR);
+			if( FALSE === $device->initModem()) {
+				Billrun_Factory::log()->log("Failed when trying to reset the modem with number:". $device->getModemNumber(),Zend_Log::ERR);
+			}
 		}
 		//$call['execution_end_time'] = date("YmdTHis");
 		$call['estimated_price'] = 0;//$call['duration'] * $action['rate']; //TODO  maybe use  the billing  getPriceData?
 		$this->save($action, $call, $isCalling);
-		if( FALSE === $device->resetModem()) {
-			Billrun_Factory::log()->log("Failed when trying to reset the modem with number:". $device->getModemNumber(),Zend_Log::ERR);
-		}
+		
 		Billrun_Factory::log("Done acting on action of type : {$action['action_type']} for number : ".$device->getModemNumber());
 	}
 
