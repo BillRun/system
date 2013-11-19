@@ -16,7 +16,7 @@ class Billrun_Calculator_Rate_Smpp extends Billrun_Calculator_Rate_Sms {
 	protected $legitimateValues = array(
 									'cause_of_terminition' => "100",
 									'record_type' => '1',
-									'calling_number' => array('000000000002020', '000000000006060', '000000000007070'),
+									'called_number' => array('000000000002020', '000000000006060', '000000000007070'),
 								);
 
 
