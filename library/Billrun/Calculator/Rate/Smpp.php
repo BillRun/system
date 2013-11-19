@@ -16,14 +16,14 @@ class Billrun_Calculator_Rate_Smpp extends Billrun_Calculator_Rate_Sms {
 	protected $legitimateValues = array(
 									'cause_of_terminition' => "100",
 									'record_type' => '1',
-									'called_number' => array('000000000002020', '000000000006060', '000000000007070'),
+									'called_number' => array('000000000002020', '000000000006060', '000000000007070','000000000005060','000000000002040'),
 								);
 
 
 	public function __construct($options = array()) {
 		parent::__construct($options);
-		if(isset($options['legitimate_values']) && $options['legitimate_values']) {
-			$this->legitimateValues = $options['legitimate_values'];
+		if(isset($options['calculator']['legitimate_values']) && $options['calculator']['legitimate_values']) {
+			$this->legitimateValues = $options['calculator']['legitimate_values'];
 		}
 	}
 	
