@@ -118,7 +118,7 @@ class LinesModel extends TableModel {
 			'aprice' => 'Price',
 			'billrun' => 'Billrun',
 			'urt' => 'Time',
-			'_id' => 'Id',
+//			'_id' => 'Id',
 		);
 		return $columns;
 	}
