@@ -29,7 +29,10 @@ class Billrun_Balance implements ArrayAccess {
 	protected $data = array();
 
 	public function __construct($options = array()) {
-		if (isset($options['sid']) && isset($options['billrun_key'])) {
+		if (isset($options['data'])) {
+			$this->data = $options['data'];
+		}
+		else if (isset($options['sid']) && isset($options['billrun_key'])) {
 			$this->load($options['sid'], $options['billrun_key']);
 		}
 	}
@@ -150,7 +153,7 @@ class Billrun_Balance implements ArrayAccess {
 	 * @param type $current_plan
 	 * @return type
 	 */
-	public function getEmptySubscriberEntry($billrun_month, $aid, $sid, $plan_ref) {
+	public static function getEmptySubscriberEntry($billrun_month, $aid, $sid, $plan_ref) {
 		return array(
 			'billrun_month' => $billrun_month,
 			'aid' => $aid,

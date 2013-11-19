@@ -69,7 +69,7 @@ class Billrun_Factory {
 	 * @var Billrun Balance
 	 */
 	protected static $balance = null;
-	
+
 	/**
 	 * Tariff instance
 	 * 
@@ -96,7 +96,7 @@ class Billrun_Factory {
 		if (!self::$log) {
 			self::$log = Billrun_Log::getInstance();
 		}
-		
+
 		$args = func_get_args();
 		if (count($args) > 0) {
 			$message = (string) $args[0];
@@ -133,10 +133,10 @@ class Billrun_Factory {
 		if (empty($options)) {
 			$options = Billrun_Factory::config()->getConfigValue('db'); // the stdclass force it to return object
 		}
-		
+
 		// unique stamp per db connection
 		$stamp = md5(serialize($options));
-		
+
 		if (!isset(self::$db[$stamp])) {
 			self::$db[$stamp] = Billrun_Db::getInstance($options);
 		}
@@ -220,23 +220,23 @@ class Billrun_Factory {
 
 		return self::$subscriber;
 	}
-	
+
 	/**
 	 * method to retrieve a balance instance
 	 * 
 	 * @return Billrun_Balance
 	 */
-	static public function balance( $params = array() ) {
+	static public function balance($params = array()) {
 		/*
 		 * No caching for now as we need updated data  each time (as more then once calculator  can run at the same time).
-		$stamp = md5(serialize($params));
-		
-		if (!isset(self::$balance[$stamp])) {
-			$balanceSettings = self::config()->getConfigValue('balance', array());
-			self::$balance[$stamp] = new Billrun_Balance( array_merge($balanceSettings,$params) );
-		}*/
+		  $stamp = md5(serialize($params));
+
+		  if (!isset(self::$balance[$stamp])) {
+		  $balanceSettings = self::config()->getConfigValue('balance', array());
+		  self::$balance[$stamp] = new Billrun_Balance( array_merge($balanceSettings,$params) );
+		  } */
 		$balanceSettings = self::config()->getConfigValue('balance', array());
-		return new Billrun_Balance( array_merge($balanceSettings,$params) );
+		return new Billrun_Balance(array_merge($balanceSettings, $params));
 	}
 
 	/**
@@ -260,14 +260,16 @@ class Billrun_Factory {
 	 */
 	static public function plan($params) {
 
-		// unique stamp per plan
-		$stamp = md5(serialize($params));
-		
-		if (!isset(self::$plan[$stamp])) {
-			self::$plan[$stamp] = new Billrun_Plan($params);
-		}
+		if (!isset($params['disableCache']) || !$params['disableCache']) {
+			// unique stamp per plan
+			$stamp = Billrun_Util::generateArrayStamp($params);
 
-		return self::$plan[$stamp];
+			if (!isset(self::$plan[$stamp])) {
+				self::$plan[$stamp] = new Billrun_Plan($params);
+			}
+			return self::$plan[$stamp];
+		}
+		return new Billrun_Plan($params);
 	}
 
 	/**

@@ -531,7 +531,7 @@ class Generator_Golan extends Billrun_Generator {
 				$aggregated_line['day'] = date_create_from_format("Ymd", $day)->format('Y/m/d H:i:s');
 				$aggregated_line['rate_key'] = $data_rate['key'];
 				$aggregated_line['usage_volume'] = $this->bytesToKB($data_by_day['usagev']);
-				$aggregated_line['aprice'] = $this->bytesToKB($data_by_day['aprice']);
+				$aggregated_line['aprice'] = $data_by_day['aprice'];
 				$aggregated_line['tariff_kind'] = $this->getTariffKind('data');
 				$aggregated_line['interval'] = $this->getIntervalByRate($data_rate, 'data');
 				$aggregated_line['rate_price'] = $this->getPriceByRate($data_rate, 'data');
@@ -592,11 +592,17 @@ class Generator_Golan extends Billrun_Generator {
 	}
 
 	protected function getPriceByRate($rate, $usage_type) {
-		return $rate['rates'][$usage_type]['rate'][0]['price'];
+		if (isset($rate['rates'][$usage_type]['rate'][0]['price'])) {
+			if (in_array($usage_type, array('call', 'data', 'incoming_call')) && isset($rate['rates'][$usage_type]['rate'][0]['interval']) && $rate['rates'][$usage_type]['rate'][0]['interval'] == 1) {
+				return $rate['rates'][$usage_type]['rate'][0]['price'] * ($usage_type == 'data' ? 1024 : 60);
+			}
+			return $rate['rates'][$usage_type]['rate'][0]['price'];
+		}
+		return 0;
 	}
 
 	protected function getRate($line) {
-		if (isset($line['usaget']) && $line->get('arate', true) && ($arate = $line['arate']) && isset($arate['rates'][$line['usaget']]['rate']['price'])) {
+		if (isset($line['usaget']) && $line->get('arate', true) && ($arate = $line['arate'])) {
 			return $this->getPriceByRate($arate, $line['usaget']);
 		}
 		return 0;

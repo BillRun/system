@@ -106,7 +106,10 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 		Billrun_Factory::log('Plugin calc cpu triggered after processor store', Zend_Log::INFO);
 		$customerPricingCalc = Billrun_Calculator::getInstance(array('type' => 'customerPricing', 'autoload' => false));
 		foreach ($this->priced_rows as $row) {
-			$customerPricingCalc->removeBalanceTx($row);
+			if ($customerPricingCalc->isLineLegitimate($row) && !empty($row['tx_saved'])) {
+				unset($row['tx_saved']);
+				$customerPricingCalc->removeBalanceTx($row);
+			}
 		}
 	}
 
