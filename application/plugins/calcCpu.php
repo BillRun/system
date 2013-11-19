@@ -24,9 +24,9 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 
 	/**
 	 *
-	 * @var array rows that were priced by the plugin in customer pricing stage
+	 * @var array rows that inserted a transaction to balances
 	 */
-	protected $priced_rows = array();
+	protected $tx_saved_rows = array();
 
 	public function beforeProcessorStore($processor) {
 		Billrun_Factory::log('Plugin calc cpu triggered before processor store', Zend_Log::INFO);
@@ -69,47 +69,47 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 			}
 			$line = $entity->getRawData();
 		}
-		
+
 		Billrun_Factory::log('Plugin calc cpu customer pricing', Zend_Log::INFO);
 		$customerPricingCalc = Billrun_Calculator::getInstance(array('type' => 'customerPricing', 'autoload' => false));
 		$queue_data = $processor->getQueueData();
 		$queue_calculators = Billrun_Factory::config()->getConfigValue("queue.calculators");
 
 		foreach ($data['data'] as &$line) {
-			if (isset($queue_data[$line['stamp']]) && $queue_data[$line['stamp']]['calc_name']=='customer') {
+			if (isset($queue_data[$line['stamp']]) && $queue_data[$line['stamp']]['calc_name'] == 'customer') {
 				$entity = new Mongodloid_Entity($line);
 				if ($customerPricingCalc->isLineLegitimate($entity)) {
 					if ($customerPricingCalc->updateRow($entity) !== FALSE) {
 						// if this is last calculator, remove from queue
-						if ($queue_calculators[count($queue_calculators)-1] == 'pricing') {
+						if ($queue_calculators[count($queue_calculators) - 1] == 'pricing') {
 							$processor->unsetQueueRow($entity['stamp']);
 						} else {
 							$processor->setQueueRowStep($entity['stamp'], 'pricing');
 						}
-						$this->priced_rows[] = $entity;
+					}
+					if (!empty($entity['tx_saved'])) {
+						$this->tx_saved_rows[] = $entity;
+						unset($entity['tx_saved']);
 					}
 				} else {
 					// if this is last calculator, remove from queue
-					if ($queue_calculators[count($queue_calculators)-1] == 'pricing') {
+					if ($queue_calculators[count($queue_calculators) - 1] == 'pricing') {
 						$processor->unsetQueueRow($entity['stamp']);
 					} else {
 						$processor->setQueueRowStep($entity['stamp'], 'pricing');
-						}
+					}
 				}
 				$line = $entity->getRawData();
 			}
 		}
 		Billrun_Factory::log('Plugin calc cpu end', Zend_Log::INFO);
 	}
-	
+
 	public function afterProcessorStore($processor) {
 		Billrun_Factory::log('Plugin calc cpu triggered after processor store', Zend_Log::INFO);
 		$customerPricingCalc = Billrun_Calculator::getInstance(array('type' => 'customerPricing', 'autoload' => false));
-		foreach ($this->priced_rows as $row) {
-			if ($customerPricingCalc->isLineLegitimate($row) && !empty($row['tx_saved'])) {
-				unset($row['tx_saved']);
-				$customerPricingCalc->removeBalanceTx($row);
-			}
+		foreach ($this->tx_saved_rows as $row) {
+			$customerPricingCalc->removeBalanceTx($row);
 		}
 	}
 
