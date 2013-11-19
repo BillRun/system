@@ -22,6 +22,12 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @var boolean is customer price vatable by default
 	 */
 	protected $vatable = true;
+
+	/**
+	 * Save unlimited usages to balances
+	 * @var boolean
+	 */
+	protected $unlimited_to_balances = true;
 	protected $plans = array();
 
 	/**
@@ -54,6 +60,9 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		}
 		if (isset($options['calculator']['months_limit'])) {
 			$this->months_limit = $options['calculator']['months_limit'];
+		}
+		if (isset($options['calculator']['unlimited_to_balances'])) {
+			$this->unlimited_to_balances = (boolean) ($options['calculator']['unlimited_to_balances']);
 		}
 		$this->billrun_lower_bound_timestamp = is_null($this->months_limit) ? 0 : strtotime($this->months_limit . " months ago");
 		// set months limit
@@ -247,9 +256,15 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		}
 
 		if ($this->isUsageUnlimited($rate, $usage_type, $plan)) {
-			$balance = $this->increaseSubscriberBalance($counters, $billrun_key, $row['aid'], $row['sid'], $plan_ref);
-			$pricingData = $this->getLinePricingData($volume, $usage_type, $rate, $balance);
-			$pricingData['usagesb'] = $balance['balance']['totals'][key($counters)]['usagev'];
+			if ($this->unlimited_to_balances) {
+				$balance = $this->increaseSubscriberBalance($counters, $billrun_key, $row['aid'], $row['sid'], $plan_ref);
+				$pricingData = $this->getLinePricingData($volume, $usage_type, $rate, $balance);
+				$pricingData['usagesb'] = $balance['balance']['totals'][key($counters)]['usagev'];
+			} else {
+				$balance = new Mongodloid_Entity(Billrun_Balance::getEmptySubscriberEntry($billrun_key, $row['aid'], $row['sid'], $plan_ref));
+				$balance = Billrun_Factory::balance(array('data' => $balance));
+				$pricingData = $this->getLinePricingData($volume, $usage_type, $rate, $balance);
+			}
 		} else {
 			$balance_unique_key = array('sid' => $row['sid'], 'billrun_key' => $billrun_key);
 			if (!($balance = $this->createBalanceIfMissing($row['aid'], $row['sid'], $billrun_key, $plan_ref))) {
