@@ -267,6 +267,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			}
 		} else {
 			$balance_unique_key = array('sid' => $row['sid'], 'billrun_key' => $billrun_key);
+			Billrun_Factory::log()->log("Create empty balance " . $billrun_key . " if not exists for subscriber " . $row['sid'], Zend_Log::DEBUG);
 			if (!($balance = $this->createBalanceIfMissing($row['aid'], $row['sid'], $billrun_key, $plan_ref))) {
 				return false;
 			} else if ($balance === true) {
@@ -274,6 +275,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			}
 
 			if (is_null($balance)) {
+				Billrun_Factory::log()->log("Searching for balance " . $billrun_key . " for subscriber " . $row['sid'], Zend_Log::DEBUG);
 				$balance = Billrun_Factory::balance($balance_unique_key);
 			}
 			if (!$balance || !$balance->isValid()) {
@@ -309,6 +311,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			if (key($counters) == 'data') {
 				ini_set('mongo.native_long', 1);
 			}
+			Billrun_Factory::log()->log("Updating balance " . $billrun_key . " of subscriber " . $row['sid'], Zend_Log::DEBUG);
 			$ret = $this->balances->update($query, $update, $options);
 			if (key($counters) == 'data') {
 				ini_set('mongo.native_long', 0);
@@ -331,6 +334,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		if (key($counters) == 'data') {
 			ini_set('mongo.native_long', 1);
 		}
+		Billrun_Factory::log()->log("Increasing subscriber $sid balance " . $billrun_key, Zend_Log::DEBUG);
 		$balance = $this->balances->findAndModify($query, $update, array(), array());
 		if (key($counters) == 'data') {
 			ini_set('mongo.native_long', 0);
