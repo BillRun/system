@@ -190,7 +190,7 @@ class Billrun_Generator_Report_CallingScript extends Billrun_Generator_Report {
 										($scriptType == self::TYPE_NO_ANSWER ? self::NO_ANSWER_DURATION  :
 										$params['durations'][$i %  count($params['durations'])] ) );
 
-			  $action['hangup'] = $sides[$i % count($sides)];
+			  $action['hangup'] = ($scriptType == self::TYPE_VOICE_MAIL ? self::CALLER : $sides[$i % count($sides)]);
 			  $action['action_type'] = $scriptType;
 			  $action['rate'] = $typeData['rate'];
 			  $action['call_id'] = $callId++;
