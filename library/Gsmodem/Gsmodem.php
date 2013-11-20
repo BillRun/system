@@ -186,10 +186,9 @@ class Gsmodem_Gsmodem  {
 	public function initModem() {
 		
 		$this->doCmd($this->getATcmd('reset',array()), false, false);
-		sleep(1);
+		sleep(2);
 		$this->doCmd($this->getATcmd('echo_mode',array(0)), false, false);
-		sleep(1);
-		$this->doCmd("AT+CFUN=1 ;\r", true);		
+		sleep(2);
 		$this->doCmd($this->getATcmd('register_reporting',array(2)), true ,true,false, static::COMMAND_RESPONSE_TIME);
 		$this->doCmd($this->getATcmd('incoming_call_id',array(1)), true ,true,false, static::COMMAND_RESPONSE_TIME);
 		$this->resetModem();
