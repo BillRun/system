@@ -102,6 +102,13 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 */
 	protected $file_stamp = null;
 
+	
+	/**
+	 *
+	 * @var string SHould the bluk inserted lines be ordered before  the actuall  insert is done.
+	 */
+	protected $orderLinesBeforeInsert = false;
+	
 	/**
 	 * constructor - load basic options
 	 *
@@ -146,6 +153,10 @@ abstract class Billrun_Processor extends Billrun_Base {
 		}
 		if (isset($options['processor']['preserve_timestamps'])) {
 			$this->preserve_timestamps = $options['processor']['preserve_timestamps'];
+		}
+		
+		if(isset($options['processor']['order_lines_before_insert']) ) {
+			$this->orderLinesBeforeInsert = $options['processor']['order_lines_before_insert'];
 		}
 	}
 
@@ -527,9 +538,13 @@ abstract class Billrun_Processor extends Billrun_Base {
 	protected function bulkAddToCollection($collection) {
 		settype($this->bulkInsert, 'int');
 		$lines_data = $this->data['data'];
-		Billrun_Factory::log()->log("Reordering lines  by stamp...", Zend_Log::DEBUG);
-		uasort($lines_data, function($a,$b){return strcmp($a['stamp'],$b['stamp']);});
-		Billrun_Factory::log()->log("Done reordering lines  by stamp.", Zend_Log::DEBUG);
+		
+		if($this->orderLinesBeforeInsert) {
+			Billrun_Factory::log()->log("Reordering lines  by stamp...", Zend_Log::DEBUG);
+			uasort($lines_data, function($a,$b){return strcmp($a['stamp'],$b['stamp']);});
+			Billrun_Factory::log()->log("Done reordering lines  by stamp.", Zend_Log::DEBUG);
+		}
+		
 		try {
 			$bulkOptions = array(
 				'continueOnError' => true,
@@ -557,9 +572,11 @@ abstract class Billrun_Processor extends Billrun_Base {
 	protected function bulkAddToQueue() {
 		$queue = Billrun_Factory::db()->queueCollection();
 		$queue_data = array_values($this->queue_data);
-		Billrun_Factory::log()->log("Reordering Q lines  by stamp...", Zend_Log::DEBUG);
-		uasort($queue_data, function($a,$b){return strcmp($a['stamp'],$b['stamp']);});
-		Billrun_Factory::log()->log("Done reordering Q lines  by stamp.", Zend_Log::DEBUG);
+		if($this->orderLinesBeforeInsert) {
+			Billrun_Factory::log()->log("Reordering Q lines  by stamp...", Zend_Log::DEBUG);
+			uasort($queue_data, function($a,$b){return strcmp($a['stamp'],$b['stamp']);});
+			Billrun_Factory::log()->log("Done reordering Q lines  by stamp.", Zend_Log::DEBUG);
+		}
 		try {
 			$bulkOptions = array(
 				'continueOnError' => true,
