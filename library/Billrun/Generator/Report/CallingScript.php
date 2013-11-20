@@ -33,7 +33,7 @@ class Billrun_Generator_Report_CallingScript extends Billrun_Generator_Report {
 	const VOIVE_MAIL_DURATION = 1.5;
 	const NO_ANSWER_DURATION = 10;
 
-	const CONCURRENT_CONFIG_ENTRIES = 5;
+	const CONCURRENT_CONFIG_ENTRIES = 50;
 	
 	/**
 	 * The script to generate calls by.
@@ -251,7 +251,7 @@ class Billrun_Generator_Report_CallingScript extends Billrun_Generator_Report {
 	 * @param type $keythe  key to remove old entries for.
 	 */
 	protected function removeOldEnteries($key) {
-		$oldEntries = Billrun_Factory::db()->configCollection()->query(array('key' => $key))->cursor()->sort(array('urt'=>-1))->skip(static::CONCURRENT_CONFIG_ENTRIES);
+		$oldEntries = Billrun_Factory::db()->configCollection()->query(array('key' => $key))->cursor()->sort(array('from' => -1,'urt'=>-1))->skip(static::CONCURRENT_CONFIG_ENTRIES);
 		foreach ($oldEntries as $entry) {
 			$entry->collection(Billrun_Factory::db()->configCollection());
 			$entry->remove();
