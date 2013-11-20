@@ -70,7 +70,7 @@ class Billrun_Balance implements ArrayAccess {
 	}
 
 	public function load($subscriberId, $billrunKey = NULL) {
-
+		Billrun_Factory::log()->log("Trying to load balance " . $billrunKey . " for subscriber " . $subscriberId, Zend_Log::DEBUG);
 		$billrunKey = !$billrunKey ? Billrun_Util::getBillrunKey(time()) : $billrunKey;
 
 		$this->data = Billrun_Factory::db()->balancesCollection()->query(array(
@@ -132,7 +132,7 @@ class Billrun_Balance implements ArrayAccess {
 			'new' => true,
 			'w' => 1,
 		);
-		
+		Billrun_Factory::log()->log("Create empty balance " . $billrun_key . " if not exists for subscriber " . $sid, Zend_Log::DEBUG);
 		$output = $balances_coll->findAndModify($query, $update, array(), $options, true);
 		
 		if ($output) {
