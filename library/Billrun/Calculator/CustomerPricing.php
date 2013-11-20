@@ -118,7 +118,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		$usage_type = $row['usaget'];
 		$balance_totals_key = $this->getBalanceTotalsKey($row['type'], $usage_type);
 		$volume = $row['usagev'];
-
+		
 		if (isset($volume)) {
 			if ($row['type'] == 'credit') {
 				$accessPrice = isset($rate['rates'][$usage_type]['access']) ? $rate['rates'][$usage_type]['access'] : 0;
@@ -336,12 +336,8 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			ini_set('mongo.native_long', 0);
 		}
 		if ($balance->isEmpty()) {
-			$balance = Billrun_Balance::getEmptySubscriberEntry($billrun_key, $aid, $sid, $plan_ref);
-			$balance['balance']['totals'][$key]['usagev'] = $value;
-			$this->balances->insert($balance);
-			Billrun_Factory::log('Added balance ' . $billrun_key . ' to subscriber ' . $sid, Zend_Log::INFO);
-			$balance['balance']['totals'][$key]['usagev'] = 0;
-			$balance = new Mongodloid_Entity($balance);
+			Billrun_Balance::createBalanceIfMissing($aid, $sid, $billrun_key, $plan_ref);
+			return $this->increaseSubscriberBalance($counters, $billrun_key, $aid, $sid, $plan_ref);
 		} else {
 			Billrun_Factory::log()->log("Found balance " . $billrun_key . " for subscriber " . $sid, Zend_Log::DEBUG);
 		}
@@ -353,7 +349,6 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @param type $row
 	 */
 	public function removeBalanceTx($row) {
-		$balances_coll = Billrun_Factory::db()->balancesCollection();
 		$sid = $row['sid'];
 		$billrun_key = Billrun_Util::getBillrunKey($row['urt']->sec);
 		$query = array(
@@ -365,7 +360,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				'tx.' . $row['stamp'] => 1
 			)
 		);
-		$balances_coll->update($query, $values);
+		$this->balances->update($query, $values);
 	}
 
 	/**
@@ -379,8 +374,8 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @see Billrun_Calculator::isLineLegitimate
 	 */
 	public function isLineLegitimate($line) {
-		$arate = $line->get('arate', true);
-		return isset($arate) && $arate !== false &&
+		$arate = $this->getRateByRef($line->get('arate', true));
+		return !is_null($arate) && (empty($arate['skip_calc']) || !in_array(self::$type, $arate['skip_calc'])) &&
 				isset($line['sid']) && $line['sid'] !== false &&
 				$line['urt']->sec >= $this->billrun_lower_bound_timestamp;
 	}
@@ -420,13 +415,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @param type $db_ref
 	 */
 	protected function getRowRate($row) {
-		$raw_rate = $row->get('arate', true);
-		$id_str = strval($raw_rate['$id']);
-		if (isset($this->rates[$id_str])) {
-			return $this->rates[$id_str];
-		} else {
-			return $row->get('arate', false);
-		}
+		return $this->getRateByRef($row->get('arate', true));
 	}
 
 	/**
@@ -434,13 +423,27 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @param type $db_ref
 	 */
 	protected function getBalancePlan($sub_balance) {
-		$raw_plan = $sub_balance->get('current_plan', true);
-		$id_str = strval($raw_plan['$id']);
-		if (isset($this->plans[$id_str])) {
-			return $this->plans[$id_str];
-		} else {
-			return $sub_balance->get('arate', false);
+		return $this->getPlanByRef($sub_balance->get('current_plan', true));
+	}
+
+	protected function getPlanByRef($plan_ref) {
+		if (isset($plan_ref['$id'])) {
+			$id_str = strval($plan_ref['$id']);
+			if (isset($this->plans[$id_str])) {
+				return $this->plans[$id_str];
+			}
 		}
+		return null;
+	}
+
+	protected function getRateByRef($rate_ref) {
+		if (isset($rate_ref['$id'])) {
+			$id_str = strval($rate_ref['$id']);
+			if (isset($this->rates[$id_str])) {
+				return $this->rates[$id_str];
+			}
+		}
+		return null;
 	}
 
 	/**
