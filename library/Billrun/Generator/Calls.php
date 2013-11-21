@@ -111,7 +111,7 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 	 */
 	public function load() {
 		Billrun_Factory::log()->log("Loading latest Configuration.");
-		$testConfig = Billrun_Factory::db()->configCollection()->query(array('key' => 'call_generator','from'=> array('$gt'=> new MongDate(time())) ))->cursor()->sort(array('urt' => -1))->limit(1)->current();
+		$testConfig = Billrun_Factory::db()->configCollection()->query(array('key' => 'call_generator','from'=> array('$gt'=> new MongoDate(time())) ))->cursor()->sort(array('urt' => -1))->limit(1)->current();
 		if (!$testConfig->isEmpty()) {
 			$this->testScript = $testConfig->getRawData();
 			$this->testId = $this->testScript['test_id'];
@@ -383,7 +383,7 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 	protected function isConfigUpdated($currentConfig) {
 		//Billrun_Factory::log("Checking configuration update  relative to: ".date("Y-m-d H:i:s",  $currentConfig['urt']->sec));
 		$currTime = new MongoDate(time());	
-		$retVal = Billrun_Factory::db()->configCollection()->query(array('key' => 'call_generator','from'=> array('$gt'=> new MongDate(time())),			
+		$retVal = Billrun_Factory::db()->configCollection()->query(array('key' => 'call_generator','from'=> array('$gt'=> new MongoDate(time())),			
 				'urt' => array(	'$gt' => $currentConfig['urt'] ,'$lte' =>  $currTime ) //@TODO add top limit to loaded configuration
 			))->cursor()->limit(1)->current();
 		return !$retVal->isEmpty();
