@@ -132,7 +132,11 @@ abstract class Billrun_Receiver_Base_LocalFiles extends Billrun_Receiver {
 					while (false !== ($file = readdir($handle))) {
 						if ($file != "." && $file != "..") {
 							$key = call_user_func_array($callback, array($path . '/' . $file));
-							$files[$key] = $file;
+							if (isset($files[$key])) {
+								$files[$key . $file] = $file;
+							} else {
+								$files[$key] = $file;								
+							}
 						}
 					}
 					closedir($handle);
