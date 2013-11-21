@@ -81,6 +81,7 @@ abstract class Billrun_Receiver_Base_LocalFiles extends Billrun_Receiver {
 		$receivedCount = 0;
 		foreach ($files as $file) {
 			$path = $this->srcPath . DIRECTORY_SEPARATOR . $file;
+			Billrun_Factory::log('Check if file ' . $file . ' is valid and not yet received', Zend_Log::INFO);
 			if (!$this->isFileValid($file, $path) || $this->isFileReceived($file, $type) || is_dir($path)) {
 				continue;
 			}
