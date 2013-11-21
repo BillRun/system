@@ -384,7 +384,7 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 		//Billrun_Factory::log("Checking configuration update  relative to: ".date("Y-m-d H:i:s",  $currentConfig['urt']->sec));
 		$currTime = new MongoDate(time());	
 		$retVal = Billrun_Factory::db()->configCollection()->query(array('key' => 'call_generator','from'=> array('$lt'=> new MongoDate(time())),			
-				'urt' => array(	'$gt' => $currentConfig['urt'] ,'$lte' =>  $currTime ) //@TODO add top limit to loaded configuration
+				'urt' => array(	'$gt' => $currentConfig['urt'] /* ,'$lte' =>  $currTime */) //@TODO add top limit to loaded configuration
 			))->cursor()->limit(1)->current();
 		return !$retVal->isEmpty();
 	}
