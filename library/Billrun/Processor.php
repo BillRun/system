@@ -527,9 +527,9 @@ abstract class Billrun_Processor extends Billrun_Base {
 	protected function bulkAddToCollection($collection) {
 		settype($this->bulkInsert, 'int');
 		$lines_data = $this->data['data'];
-//		Billrun_Factory::log()->log("Reordering lines  by stamp...", Zend_Log::DEBUG);
-//		uasort($lines_data, function($a,$b){return strcmp($a['stamp'],$b['stamp']);});
-//		Billrun_Factory::log()->log("Done reordering lines  by stamp.", Zend_Log::DEBUG);
+		Billrun_Factory::log()->log("Reordering lines  by stamp...", Zend_Log::DEBUG);
+		uasort($lines_data, function($a,$b){return strcmp($a['stamp'],$b['stamp']);});
+		Billrun_Factory::log()->log("Done reordering lines  by stamp.", Zend_Log::DEBUG);
 		try {
 			$bulkOptions = array(
 				'continueOnError' => true,
@@ -557,9 +557,9 @@ abstract class Billrun_Processor extends Billrun_Base {
 	protected function bulkAddToQueue() {
 		$queue = Billrun_Factory::db()->queueCollection();
 		$queue_data = array_values($this->queue_data);
-//		Billrun_Factory::log()->log("Reordering Q lines  by stamp...", Zend_Log::DEBUG);
-//		uasort($queue_data, function($a,$b){return strcmp($a['stamp'],$b['stamp']);});
-//		Billrun_Factory::log()->log("Done reordering Q lines  by stamp.", Zend_Log::DEBUG);
+		Billrun_Factory::log()->log("Reordering Q lines  by stamp...", Zend_Log::DEBUG);
+		uasort($queue_data, function($a,$b){return strcmp($a['stamp'],$b['stamp']);});
+		Billrun_Factory::log()->log("Done reordering Q lines  by stamp.", Zend_Log::DEBUG);
 		try {
 			$bulkOptions = array(
 				'continueOnError' => true,
