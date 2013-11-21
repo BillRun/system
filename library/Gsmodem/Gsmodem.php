@@ -35,6 +35,12 @@ class Gsmodem_Gsmodem  {
 	 */
 	protected $deviceFD = FALSE;
 
+	
+	/**
+	 * Hold the modem file descriptor.
+	 * @var resource 
+	 */
+	protected $pathToDevice = FALSE;
 	/**
 	 * Hold the state that thmodem is at (@see Gsmodem_ModemState)
 	 * @var \Gsmodem_ModemState 
@@ -48,8 +54,9 @@ class Gsmodem_Gsmodem  {
 	protected $number = false;
 	
 	public function __construct($pathToDevice, $stateMapper = false) {
+		$this->pathToDevice= $pathToDevice;
 		if(isset($pathToDevice)) {
-			$this->deviceFD = @fopen($pathToDevice, 'r+');	
+			$this->deviceFD = @fopen($this->pathToDevice, 'r+');	
 			$this->state = $stateMapper ? new Gsmodem_ModemState( Gsmodem_StateMapping::IDLE_STATE ,$stateMapper) : new Gsmodem_ModemState();			
 			if($this->isValid()) {
 				$this->initModem();
@@ -202,7 +209,8 @@ class Gsmodem_Gsmodem  {
 		$ret = true;
 		$ret &= $this->doCmd("AT+CVHU=0 ;\r", true,true,false,  static::COMMAND_RESPONSE_TIME) != FALSE;
 		$this->hangUp();
-		$this->state->setState(Gsmodem_StateMapping::IDLE_STATE);
+		sleep(1);
+		//$this->state->setState(Gsmodem_StateMapping::IDLE_STATE);
 		return $ret;
 	}
 	

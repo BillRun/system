@@ -96,9 +96,17 @@ class Gsmodem_StateMapping {
 	 * @return  The resulting state after the result was recevied.
 	 */
 	public function getStateForResult($currentState, $result) {
-		$newState = isset($this->resultToStateMapping[$currentState][$result]) ?
+		$newState = $currentState;
+		$stateMap = $this->resultToStateMapping[$currentState];
+		foreach ($stateMap as $key => $val) {
+			if (preg_match("/" . $key . "/i", trim($result))) {
+				$newState = $val;
+				break;
+			}
+		}
+		/*$newState = isset($this->resultToStateMapping[$currentState][$result]) ?
 			$this->resultToStateMapping[$currentState][$result] : $currentState;
-
+		*/
 		return $newState;
 	}
 

@@ -52,6 +52,7 @@ class Gsmodem_M400StateMapping  extends Gsmodem_StateMapping {
 		),
 		self::IDLE_STATE => array(
 			'ERROR' => self::IDLE_STATE,
+			'+CLIP:' => self::RINGING_STATE,
 			'RING' => self::RINGING_STATE,
 		),
 	);
