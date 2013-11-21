@@ -34,7 +34,9 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 		$usage_type = $this->getLineUsageType($row);
 		$volume = $this->getLineVolume($row, $usage_type);
 		$rate = $this->getLineRate($row, $usage_type);
-
+		if (isset($rate['key']) && $rate['key']=="UNRATED") {
+			return false;
+		}
 		$current = $row->getRawData();
 
 		$added_values = array(
