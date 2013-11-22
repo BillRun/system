@@ -5,7 +5,7 @@
 ###  2) size of the page. default: 8000
 ###  3) amount  of  concurrent billruns  to  run (in one host). default: 15
 ###  4) page to start from, the first is 0 (zero). default: 0
-###  5) sleep time (seconds) between each concurrent process. default: 5
+###  5) sleep time (seconds) between each concurrent process. default: 120
 
 iam="`whoami`";
 if [ $iam != "billrun" ]; then
@@ -36,7 +36,7 @@ if [ $4 ]; then
         start_instance=$4;
 fi
 
-sleeptime=5;
+sleeptime=120;
 if [ $5 ]; then
         sleeptime=$5;
 fi
