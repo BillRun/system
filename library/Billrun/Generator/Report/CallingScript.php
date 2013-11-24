@@ -21,10 +21,10 @@ class Billrun_Generator_Report_CallingScript extends Billrun_Generator_Report {
 	const TYPE_NO_ANSWER = 'no_answer';
 	
 	// The minimoum time to wait between calls  in seconds.
-	const MINIMUM_TIME_BETWEEN_CALLS = 30;
+	const MINIMUM_TIME_BETWEEN_CALLS = 90;
 	
 	// The time to  wait  between concecative script type in seconds.
-	const SCRIPT_TYPES_SEPERATION = 600;
+	const SCRIPT_TYPES_SEPERATION = 900;
 	
 	const REGULAR_CALL_RATE = 0.00254237;
 	
