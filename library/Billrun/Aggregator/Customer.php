@@ -158,7 +158,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 						}
 						$current_plan_name = $subscriber->plan;
 						if (is_null($current_plan_name) || $current_plan_name == "NULL") {
-							Billrun_Factory::log()->log("Null current plan for subscriber $subscriber->sid", Zend_Log::ALERT);
+							Billrun_Factory::log()->log("Null current plan for subscriber $subscriber->sid", Zend_Log::INFO);
 							$account_billrun->addSubscriber($subscriber->sid, null);
 						} else {
 							$account_billrun->addSubscriber($subscriber->sid, $subscriber->getPlan()->createRef());
