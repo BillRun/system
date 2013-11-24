@@ -46,7 +46,7 @@ class Billrun_Billrun {
 				if (isset($options['data']) && !$options['data']->isEmpty()) {
 					$this->data = $options['data'];
 				} else {
-					$this->data = new Mongodloid_Entity($this->getAccountEmptyBillrunEntry($this->aid, $this->billrun_key));
+					$this->resetBillrun($this->aid, $this->billrun_key);
 				}
 			} else {
 				$this->load();
@@ -707,7 +707,7 @@ class Billrun_Billrun {
 	 * Creates a billrun document in billrun collection if it doesn't already exist
 	 * @param int $aid the account id
 	 * @param int $billrun_key the billrun key
-	 * @return mixed Mongodloid_Entity when the matching billrun document exists, false when inserted
+	 * @return Mongodloid_Entity the matching billrun document
 	 */
 	public static function createBillrunIfNotExists($aid, $billrun_key) {
 		$billrun_coll = Billrun_Factory::db()->billrunCollection();
@@ -1248,6 +1248,14 @@ class Billrun_Billrun {
 			self::$live_update = Billrun_Factory::config()->getConfigValue('billrun.live_update', false);
 		}
 		return self::$live_update;
+	}
+	
+	public function allowOverride() {
+		return $this->allowOverride;
+	}
+	
+	public function resetBillrun($account_id, $billrun_key) {
+		$this->data = new Mongodloid_Entity($this->getAccountEmptyBillrunEntry($account_id, $billrun_key));
 	}
 
 }

@@ -137,8 +137,12 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 			//Billrun_Factory::log(microtime(true));
 			if (empty($this->options['live_billrun_update'])) {
 				Billrun_Factory::log()->log("Creating empty billrun " . $billrun_key . " for account " . $accid, Zend_Log::DEBUG);
-				Billrun_Billrun::createBillrunIfNotExists($accid, $billrun_key);
+				$billrun = Billrun_Billrun::createBillrunIfNotExists($accid, $billrun_key);
 				Billrun_Factory::log()->log("Finished creating empty billrun " . $billrun_key . " for account " . $accid, Zend_Log::DEBUG);
+				if (!$billrun->isEmpty()) {
+					Billrun_Factory::log()->log("Billrun " . $billrun_key . " already exists for account " . $accid, Zend_Log::ALERT);
+					continue;
+				}
 				$params = array(
 					'aid' => $accid,
 					'billrun_key' => $billrun_key,
