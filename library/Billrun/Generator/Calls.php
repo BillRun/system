@@ -160,7 +160,7 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 	protected function actOnScript($script) {
 		$action = $this->waitForNextAction($script);		
 		if ($action) {
-			$this->pingManagmentServer($action);
+			$this->pingManagmentServer($action,"pre_fork");
 			//Check if the number speciifed in the action is one of the connected modems if so  act on the action.
 			$this->resetModems();
 			foreach( array('to' => false,'from' => true) as $key => $isCalling ) {
@@ -242,7 +242,10 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 			Billrun_Factory::log("Failed on action of type : {$action['action_type']} when using modem  with number : ".$device->getModemNumber(),Zend_Log::ERR);
 			if( !$isCalling && FALSE === $device->initModem()) {
 				Billrun_Factory::log()->log("Failed when trying to reset the modem with number:". $device->getModemNumber(),Zend_Log::ERR);
+			} else {
+				$device->registerToNet();
 			}
+			$this->pingManagmentServer($action,"failed");
 		}
 		//$call['execution_end_time'] = date("YmdTHis");
 		$call['estimated_price'] = 0;//$call['duration'] * $action['rate']; //TODO  maybe use  the billing  getPriceData?
@@ -452,12 +455,12 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 	 * Register the call generator to the management server.
 	 * @param $action the current/next action that will be done by the call generator.
 	 */
-	protected function pingManagmentServer($action) {
+	protected function pingManagmentServer($action,$state) {
 		//@TODO change to Zend_Http client
 		$url =$this->options['generator']['management_server_url'] . $this->options['generator']['register_to_management_path'];
 		Billrun_Factory::log("Pinging managment server at : $url");
 		$client = curl_init($url);
-		$post_fields = array('data' => json_encode(array('timestamp' => time(),'next_action' => $action)));
+		$post_fields = array('data' => json_encode(array('timestamp' => time(),'action' => $action,'state'=> $sate)));
 		curl_setopt($client, CURLOPT_POST, TRUE);
 		curl_setopt($client, CURLOPT_POSTFIELDS, $post_fields);
 		curl_setopt($client, CURLOPT_RETURNTRANSFER, TRUE);
