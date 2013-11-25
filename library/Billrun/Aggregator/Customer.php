@@ -137,8 +137,12 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 			//Billrun_Factory::log(microtime(true));
 			if (empty($this->options['live_billrun_update'])) {
 				Billrun_Factory::log()->log("Creating empty billrun " . $billrun_key . " for account " . $accid, Zend_Log::DEBUG);
-				Billrun_Billrun::createBillrunIfNotExists($accid, $billrun_key);
+				$billrun = Billrun_Billrun::createBillrunIfNotExists($accid, $billrun_key);
 				Billrun_Factory::log()->log("Finished creating empty billrun " . $billrun_key . " for account " . $accid, Zend_Log::DEBUG);
+				if (!$billrun->isEmpty()) {
+					Billrun_Factory::log()->log("Billrun " . $billrun_key . " already exists for account " . $accid, Zend_Log::ALERT);
+					continue;
+				}
 				$params = array(
 					'aid' => $accid,
 					'billrun_key' => $billrun_key,
@@ -154,7 +158,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 						}
 						$current_plan_name = $subscriber->plan;
 						if (is_null($current_plan_name) || $current_plan_name == "NULL") {
-							Billrun_Factory::log()->log("Null current plan for subscriber $subscriber->sid", Zend_Log::ALERT);
+							Billrun_Factory::log()->log("Null current plan for subscriber $subscriber->sid", Zend_Log::INFO);
 							$account_billrun->addSubscriber($subscriber->sid, null);
 						} else {
 							$account_billrun->addSubscriber($subscriber->sid, $subscriber->getPlan()->createRef());

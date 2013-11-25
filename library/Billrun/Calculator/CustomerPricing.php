@@ -118,7 +118,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		$usage_type = $row['usaget'];
 		$balance_totals_key = $this->getBalanceTotalsKey($row['type'], $usage_type);
 		$volume = $row['usagev'];
-		
+
 		if (isset($volume)) {
 			if ($row['type'] == 'credit') {
 				$accessPrice = isset($rate['rates'][$usage_type]['access']) ? $rate['rates'][$usage_type]['access'] : 0;

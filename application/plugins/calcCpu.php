@@ -38,11 +38,14 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 		Billrun_Factory::log('Plugin calc cpu rate', Zend_Log::INFO);
 		foreach ($data['data'] as &$line) {
 			$entity = new Mongodloid_Entity($line);
-			$rate = Billrun_Calculator_Rate::getRateCalculator($entity, $options);
-			if ($rate->isLineLegitimate($entity)) {
-				$rate->updateRow($entity);
+			$rateCalc = Billrun_Calculator_Rate::getRateCalculator($entity, $options);
+			if ($rateCalc->isLineLegitimate($entity)) {
+				if ($rateCalc->updateRow($entity) !== FALSE) {
+					$processor->setQueueRowStep($entity['stamp'], 'rate');
+				}
+			} else {
+				$processor->setQueueRowStep($entity['stamp'], 'rate');
 			}
-			$processor->setQueueRowStep($entity['stamp'], 'rate');
 			$line = $entity->getRawData();
 		}
 
@@ -53,21 +56,24 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 			'calculator' => $customerAPISettings,
 		);
 		$customerCalc = Billrun_Calculator::getInstance(array_merge($options, $customerOptions));
+		$queue_data = $processor->getQueueData();
 		if ($customerCalc->isBulk()) {
 			$customerCalc->loadSubscribers($data['data']);
 		}
 		foreach ($data['data'] as &$line) {
-			$entity = new Mongodloid_Entity($line);
-			if (!isset($entity['usagev']) || $entity['usagev'] === 0) {
-				$processor->unsetQueueRow($entity['stamp']);
-			} else if ($customerCalc->isLineLegitimate($entity)) {
-				if ($customerCalc->updateRow($entity) !== FALSE) {
+			if (isset($queue_data[$line['stamp']]) && $queue_data[$line['stamp']]['calc_name'] == 'rate') {
+				$entity = new Mongodloid_Entity($line);
+				if (!isset($entity['usagev']) || $entity['usagev'] === 0) {
+					$processor->unsetQueueRow($entity['stamp']);
+				} else if ($customerCalc->isLineLegitimate($entity)) {
+					if ($customerCalc->updateRow($entity) !== FALSE) {
+						$processor->setQueueRowStep($entity['stamp'], 'customer');
+					}
+				} else {
 					$processor->setQueueRowStep($entity['stamp'], 'customer');
 				}
-			} else {
-				$processor->setQueueRowStep($entity['stamp'], 'customer');
+				$line = $entity->getRawData();
 			}
-			$line = $entity->getRawData();
 		}
 
 		Billrun_Factory::log('Plugin calc cpu customer pricing', Zend_Log::INFO);
