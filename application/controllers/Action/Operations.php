@@ -21,7 +21,7 @@ class OperationsAction extends Action_Base {
 	 * it's called automatically by the api main controller
 	 */
 	public function execute() {
-		Billrun_Factory::log()->log("Execute State Action", Zend_Log::INFO);
+		Billrun_Factory::log()->log("Execute Operations Action", Zend_Log::INFO);
 		$request = $this->getRequest()->getRequest(); // supports GET / POST requests		
 		$data = $this->parseData($request);
 		switch($data['action']) {
@@ -31,7 +31,7 @@ class OperationsAction extends Action_Base {
 		
 			
 		}
-		Billrun_Factory::log()->log("Executed State Action", Zend_Log::INFO);
+		Billrun_Factory::log()->log("Executed Operations Action", Zend_Log::INFO);
 		return true;
 	}
 
