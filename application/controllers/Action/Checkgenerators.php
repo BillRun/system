@@ -58,8 +58,8 @@ class CheckgeneratorsAction extends Action_Base {
 
 	protected function isInActivePeriod() {
 		$config = $configCol->query(array('key'=> 'call_generator'))->cursor()->sort(array('urt'=> -1))->limit(1)->current();
-		usort($script, function($a,$b) { return strcmp($a['time'], $b['time']);});
 		$script = $config['test_script'];
+		usort($script, function($a,$b) { return strcmp($a['time'], $b['time']);});
 		foreach ($script as $scriptAction) {
 			if ($scriptAction['time'] > date("H:i:s") &&
 				$this->isConnectedModemNumber(array($scriptAction['from'], $scriptAction['to']))) {
@@ -75,6 +75,7 @@ class CheckgeneratorsAction extends Action_Base {
 	 */
 	protected function handleFailures($ip,$generatorData) {
 		if(Billrun_Util::getFieldVal($generatorData['state'],'start') == 'failed') {
+			Billrun_Factory::log()->log("Reseting  generator at : $ip .", Zend_Log::WARN);
 			$gen = Billrun_Generator::getInstance(array('type'=>'state'));
 			$gen->stop();
 			if(!pcntl_fork()) {
