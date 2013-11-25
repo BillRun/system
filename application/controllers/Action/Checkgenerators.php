@@ -24,10 +24,12 @@ class CheckgeneratorsAction extends Action_Base {
 	 *
 	 */
 	public function execute() {
+		Billrun_Factory::log()->log("Executing Operations Action", Zend_Log::INFO);
 		$configCol = Billrun_Factory::db()->configCollection();
 		
 		$mangement = $configCol->query(array('key'=> 'call_generator_management'))->cursor()->current();
-		foreach ($mangement['generators'] as $ip => $generatorData) {
+		
+		foreach (Billrun_Util::getFieldVal($mangement->generators,array()) as $ip => $generatorData) {
 			if($this->isInActivePeriod()) {
 				if( time() - $generatorData['recieved_timestamp'] > static::RECEIVED_TIME_OFFSET_WARNING ) {
 					Billrun_Factory::log()->log("Warning :  $ip didn't reported for more then an ".static::RECEIVED_TIME_OFFSET_WARNING." seconds",Zend_Log::WARN);
@@ -45,7 +47,11 @@ class CheckgeneratorsAction extends Action_Base {
 			if(abs($generatorData['timestamp'] - $generatorData['recieved_timestamp']) > static::TIME_OFFEST_ALERT ) {
 				Billrun_Factory::log()->log("ALERT! :  $ip clock seem to be out of sync  by: ". $generatorData['timestamp'] - $generatorData['recieved_timestamp']. " seconds",Zend_Log::ALERT);
 			}
+			if(Billrun_Util::getFieldVal($generatorData['state'],'start') == 'failed') {
+				$this->handleFailures($ip, $generatorData);
+			}
 		}
+		Billrun_Factory::log()->log("Finished Executeing Operations Action", Zend_Log::INFO);
 		return true;
 
 	}
@@ -61,5 +67,28 @@ class CheckgeneratorsAction extends Action_Base {
 			}
 		}
 		return false;
+	}
+	/**
+	 * stop all generators  and  restart  a failing  one.
+	 * @param type $ip the IP  of the  failed  generator
+	 * @param type $generatorData the data of the failed  generator.
+	 */
+	protected function handleFailures($ip,$generatorData) {
+		if(Billrun_Util::getFieldVal($generatorData['state'],'start') == 'failed') {
+			$gen = Billrun_Generator::getInstance(array('type'=>'state'));
+			$gen->stop();
+			if(!pcntl_fork()) {
+				sleep(5);
+				$url = "http://$ip/api/operations/?action=restartModems";
+				$client = curl_init($url);
+				$post_fields = array('data' => json_encode(array('action' => 'restartModems')));
+				curl_setopt($client, CURLOPT_POST, TRUE);
+				curl_setopt($client, CURLOPT_POSTFIELDS, $post_fields);
+				curl_setopt($client, CURLOPT_RETURNTRANSFER, TRUE);
+				curl_exec($client);
+				sleep(10);
+				$gen->start();
+			}
+		}
 	}
 }

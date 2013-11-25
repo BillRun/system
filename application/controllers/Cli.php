@@ -41,6 +41,7 @@ class CliController extends Yaf_Controller_Abstract {
 				'e|E|respond' => 'Respond to files that were processed',
 				'l|L|alert' => 'Process and detect alerts',
 				'h|H|help' => 'Displays usage information.',
+				't|T|checkgenerators' => 'Check the configuration and  the remote generators',
 				'type-s' => 'Process: Ild type to use',
 				'stamp-s' => 'Process: Stamp to use for this run',
 				'path-s' => 'Process: Path of the process file',

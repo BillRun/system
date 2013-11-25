@@ -7,12 +7,12 @@
  */
 
 /**
- * Credit action class
+ * THis  calls   enable  local operation to be  doe  through the http api
  *
  * @package  Action
  * @since    0.5
  */
-class StateAction extends Action_Base {
+class OperationsAction extends Action_Base {
 
 	const CONCURRENT_CONFIG_ENTRIES = 5;
 	
@@ -28,12 +28,7 @@ class StateAction extends Action_Base {
 			case 'resetModems':
 					$this->setOutput($this->resetModems());
 				break;
-			case 'stop':
-				$this->setOutput($this->stop($data));
-				break;
-			case 'start':
-				$this->setOutput($this->start($data));
-				break;
+		
 			
 		}
 		Billrun_Factory::log()->log("Executed State Action", Zend_Log::INFO);
@@ -56,22 +51,5 @@ class StateAction extends Action_Base {
 		$this->stop();
 		system(APPLICATION_PATH."/scripts/reset_modems.sh");
 	}
-	
-	/**
-	 * 
-	 * @param type $param
-	 */
-	protected function stop($param = false) {
-		$configCol = Billrun_Factory::db()->configCollection();
-		$configCol->update(array('$query' => array('key'=>'call_generator'),'sort'=>  array('urt'=> -1)),array('$set'=>array('state'=> 'stop','urt' => new MongoDate(time()))));
-	}
-	
-	/**
-	 * 
-	 * @param type $param
-	 */
-	protected function start($param = false) {
-		$configCol = Billrun_Factory::db()->configCollection();
-		$configCol->update(array('$query' => array('key'=>'call_generator'),'sort'=>  array('urt'=> -1)),array('$set'=>array('state'=> 'start','urt' => new MongoDate(time()))));
-	}
+
 }

@@ -115,6 +115,7 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 		if (!$testConfig->isEmpty()) {
 			$this->testScript = $testConfig->getRawData();
 			$this->testId = $this->testScript['test_id'];
+			$this->isWorking = Billrun_Util::getFieldVal($this->testScript['test_id'], 'start') == 'start';
 		}
 		//Billrun_Factory::log("got script : " . print_r($this->testScript, 1));
 	}
