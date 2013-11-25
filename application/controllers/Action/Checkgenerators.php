@@ -79,7 +79,7 @@ class CheckgeneratorsAction extends Action_Base {
 			$gen = Billrun_Generator::getInstance(array('type'=>'state'));
 			$gen->stop();
 			if(!pcntl_fork()) {
-				sleep(5);
+				sleep(30);
 				$url = "http://$ip/api/operations/?action=restartModems";
 				$client = curl_init($url);
 				$post_fields = array('data' => json_encode(array('action' => 'restartModems')));
@@ -87,8 +87,10 @@ class CheckgeneratorsAction extends Action_Base {
 				curl_setopt($client, CURLOPT_POSTFIELDS, $post_fields);
 				curl_setopt($client, CURLOPT_RETURNTRANSFER, TRUE);
 				curl_exec($client);
-				sleep(10);
+				sleep(30);
 				$gen->start();
+				Billrun_Factory::log()->log("Finished Reseting  generator at : $ip .", Zend_Log::WARN);
+				die();
 			}
 		}
 	}
