@@ -71,7 +71,7 @@ class Generator_Balance extends Generator_Golan {
 		);
 		$billrun = Billrun_Factory::billrun($billrun_params);
 		foreach ($this->account_data as $subscriber) {
-			if ($billrun->exists($subscriber->sid)) {
+			if ($billrun->subscriberExists($subscriber->sid)) {
 				Billrun_Factory::log()->log("Billrun " . $this->stamp . " already exists for subscriber " . $subscriber->sid, Zend_Log::ALERT);
 				continue;
 			}

@@ -94,10 +94,25 @@ class Billrun_Billrun {
 	 * @return \Billrun_Billrun the current instance  of the billrun entry.
 	 * @todo used only in current balance API. Needs refactoring
 	 */
-	public function addSubscriber($sid, $current_plan_ref) {
+	public function addSubscriber($subscriber, $status) {
+		$current_plan_name = $subscriber->plan;
+		if (is_null($current_plan_name) || $current_plan_name == "NULL") {
+			Billrun_Factory::log()->log("Null current plan for subscriber $subscriber->sid", Zend_Log::INFO);
+			$current_plan_ref = null;
+		} else {
+			$current_plan_ref = $subscriber->getPlan()->createRef();
+		}
+		$next_plan = $subscriber->getNextPlan();
+		if (is_null($next_plan)) {
+			$next_plan_ref = null;
+		} else {
+			$next_plan_ref = $next_plan->createRef();
+		}
 		$subscribers = $this->data['subs'];
-		$subscriber_entry = $this->getEmptySubscriberBillrunEntry($sid);
+		$subscriber_entry = $this->getEmptySubscriberBillrunEntry($subscriber->sid);
+		$subscriber_entry['subscriber_status'] = $status;
 		$subscriber_entry['current_plan'] = $current_plan_ref;
+		$subscriber_entry['next_plan'] = $next_plan_ref;
 		$subscribers[] = $subscriber_entry;
 		$this->data['subs'] = $subscribers;
 		return $this;
@@ -109,8 +124,18 @@ class Billrun_Billrun {
 	 * @return boolean TRUE  is  the subscriber  exists in the current billrun entry FALSE otherwise.
 	 * @todo used only in current balance API. Needs refactoring
 	 */
-	public function exists($sid) {
+	public function subscriberExists($sid) {
 		return $this->getSubRawData($sid) != false;
+	}
+
+	public static function exists($aid, $billrun_key) {
+		$billrun_coll = Billrun_Factory::db()->billrunCollection();
+		$data = $billrun_coll->query(array(
+							'aid' => $aid,
+							'billrun_key' => $billrun_key,
+						))
+						->cursor()->limit(1)->current();
+		return !$data->isEmpty();
 	}
 
 	/**
@@ -864,7 +889,7 @@ class Billrun_Billrun {
 				$zone['totals'][key($counters)]['usagev'] = $this->getFieldVal($zone['totals'][key($counters)]['usagev'], 0) + $volume_priced;
 				$zone['totals'][key($counters)]['cost'] = $this->getFieldVal($zone['totals'][key($counters)]['cost'], 0) + $pricingData['aprice'];
 			}
-			if ($plan_key != 'in_plan') {
+			if ($plan_key != 'in_plan' || $zone_key == 'service') {
 				$zone['cost'] = $this->getFieldVal($zone['cost'], 0) + $pricingData['aprice'];
 			}
 			$zone['vat'] = ($vatable ? floatval($this->vat) : 0); //@TODO we assume here that all the lines would be vatable or all vat-free
@@ -880,7 +905,6 @@ class Billrun_Billrun {
 			$sraw['lines'][$usage_type]['counters'][$date_key]['aprice'] = $this->getFieldVal($sraw['lines'][$usage_type]['counters'][$date_key]['aprice'], 0) + $row['aprice'];
 			$sraw['lines'][$usage_type]['counters'][$date_key]['plan_flag'] = $this->getDayPlanFlagByDataRow($row, $this->getFieldVal($sraw['lines'][$usage_type]['counters'][$date_key]['plan_flag'], 'in'));
 		}
-
 
 		if ($vatable) {
 			$sraw['totals']['vatable'] = $this->getFieldVal($sraw['totals']['vatable'], 0) + $pricingData['aprice'];
@@ -957,6 +981,7 @@ class Billrun_Billrun {
 	}
 
 	static protected $rates = array();
+	static protected $plans = array();
 
 	/**
 	 * HACK TO MAKE THE BILLLRUN FASTER
@@ -981,12 +1006,33 @@ class Billrun_Billrun {
 		return self::$rates[$id];
 	}
 
+	/**
+	 * 
+	 * @param string $id hexadecimal id of rate
+	 * @return type
+	 */
+	protected static function getPlanById($id) {
+		if (!isset(self::$plans[$id])) {
+			self::$plans[$id] = Billrun_Factory::db()->plansCollection()->findOne($id);
+		}
+		return self::$plans[$id];
+	}
+
 	public static function loadRates() {
 		$rates_coll = Billrun_Factory::db()->ratesCollection();
 		$rates = $rates_coll->query()->cursor();
 		foreach ($rates as $rate) {
 			$rate->collection($rates_coll);
 			self::$rates[strval($rate->getId())] = $rate;
+		}
+	}
+	
+	public static function loadPlans() {
+		$plans_coll = Billrun_Factory::db()->ratesCollection();
+		$plans = $plans_coll->query()->cursor();
+		foreach ($plans as $plan) {
+			$plan->collection($plans_coll);
+			self::$plans[strval($plan->getId())] = $plan;
 		}
 	}
 
@@ -1001,7 +1047,7 @@ class Billrun_Billrun {
 		$updatedLines = array();
 		Billrun_Factory::log()->log("Querying account " . $this->aid . " for lines...", Zend_Log::DEBUG);
 		$account_lines = $this->getAccountLines($this->aid, $start_time);
-		//						Billrun_Factory::log()->log("Found " . count($account_lines) . " lines.", Zend_Log::DEBUG);
+//		Billrun_Factory::log()->log("Found " . count($account_lines) . " lines.", Zend_Log::DEBUG);
 		$num_lines = 0;
 		Billrun_Factory::log("Processing account Lines $this->aid");
 		foreach ($account_lines as &$line) {
@@ -1015,9 +1061,14 @@ class Billrun_Billrun {
 				$pricingData['out_plan'] = $line['out_plan'];
 			}
 
-			$rate = $this->getRowRate($line);
-			$vatable = (!(isset($rate['vatable']) && !$rate['vatable']) || (!isset($rate['vatable']) && !$this->vatable));
-			Billrun_Billrun::updateBillrun($this->billrun_key, array($line['usaget'] => $line['usagev']), $pricingData, $line, $vatable, $this);
+			if ($line['type'] != 'flat') {
+				$rate = $this->getRowRate($line);
+				$vatable = (!(isset($rate['vatable']) && !$rate['vatable']) || (!isset($rate['vatable']) && !$this->vatable));
+				Billrun_Billrun::updateBillrun($this->billrun_key, array($line['usaget'] => $line['usagev']), $pricingData, $line, $vatable, $this);
+			} else {
+				$plan = self::getPlanById(strval($line->get('plan_ref',true)['$id']));
+				Billrun_Billrun::updateBillrun($this->billrun_key, array(), array('aprice' => $line['aprice']), $line, $plan->get('vatable'), $this);
+			}
 			//Billrun_Factory::log("Done Processing account Line for $sid : ".  microtime(true));
 			$updatedLines[] = $line['stamp'];
 		}
@@ -1249,11 +1300,11 @@ class Billrun_Billrun {
 		}
 		return self::$live_update;
 	}
-	
+
 	public function allowOverride() {
 		return $this->allowOverride;
 	}
-	
+
 	public function resetBillrun($account_id, $billrun_key) {
 		$this->data = new Mongodloid_Entity($this->getAccountEmptyBillrunEntry($account_id, $billrun_key));
 	}
@@ -1262,3 +1313,4 @@ class Billrun_Billrun {
 
 Billrun_Billrun::initRuntimeBillrunKey();
 Billrun_Billrun::loadRates();
+Billrun_Billrun::loadPlans();
