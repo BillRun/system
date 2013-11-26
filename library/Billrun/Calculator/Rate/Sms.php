@@ -30,6 +30,9 @@ class Billrun_Calculator_Rate_Sms extends Billrun_Calculator_Rate {
 
 	public function __construct($options = array()) {
 		parent::__construct($options);
+		if(isset($options['calculator']['legitimate_number_filters'])) {
+			$this->legitimateNumberFilters = $options['calculator']['legitimate_number_filters'];
+		}
 		$this->loadRates();
 	}
 
@@ -122,6 +125,11 @@ class Billrun_Calculator_Rate_Sms extends Billrun_Calculator_Rate {
 		return $line['type'] == 'smsc' || $line['type'] == 'mmsc' || $line['type'] == 'smpp';
 	}
 
+	/**
+	 * Extract the number from the cdr line.
+	 * @param type $row the cdr line
+	 * @return type
+	 */
 	protected function extractNumber($row) {
 		$str = ($row['type'] != 'mmsc' ? $row['called_number'] : $row['recipent_addr']);
 		foreach ($this->legitimateNumberFilters as $filter) {
