@@ -69,6 +69,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			return false;
 		}
 		
+                Billrun_Factory::log()->log("update line: ". $row->get('stamp') ." subscriber_id: ".$subscriber['id'].", account_id: ". $subscriber['account_id'], Zend_Log::INFO);
 		$added_values = array('subscriber_id' => $subscriber['id'], 'account_id' => $subscriber['account_id']);
 		$newData = array_merge($current, $added_values);
 		$row->setRawData($newData);
