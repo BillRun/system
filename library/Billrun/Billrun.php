@@ -1142,10 +1142,10 @@ class Billrun_Billrun {
 		$end_time = new MongoDate(Billrun_Util::getEndTime($this->billrun_key));
 		$query = array(
 			'aid' => $aid,
-//			'urt' => array(
-//				'$lte' => $end_time,
+			'urt' => array(
+				'$lte' => $end_time,
 //				'$gte' => $start_time,
-//			),
+			),
 //			'aprice' => array(
 //				'$exists' => true,
 //			),
