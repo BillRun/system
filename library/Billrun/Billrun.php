@@ -1050,7 +1050,7 @@ class Billrun_Billrun {
 //		Billrun_Factory::log()->log("Found " . count($account_lines) . " lines.", Zend_Log::DEBUG);
 		$num_lines = 0;
 		Billrun_Factory::log("Processing account Lines $this->aid");
-		foreach ($account_lines as &$line) {
+		foreach ($account_lines as $line) {
 			$num_lines++;
 			//Billrun_Factory::log("Processing account Line for $sid : ".  microtime(true));
 			$line->collection($this->lines);
@@ -1167,13 +1167,14 @@ class Billrun_Billrun {
 		Billrun_Factory::log()->log("Querying for account " . $aid . " lines", Zend_Log::DEBUG);
 		$cursor = $this->lines->query($query)->cursor()->hint($hint);
 		Billrun_Factory::log()->log("Finished querying for account " . $aid . " lines", Zend_Log::DEBUG);
-		$results = array();
-		Billrun_Factory::log()->log("Saving account " . $aid . " lines to array", Zend_Log::DEBUG);
-		foreach ($cursor as $entity) {
-			$results[] = $entity;
-		}
-		Billrun_Factory::log()->log("Finished saving account " . $aid . " lines to array", Zend_Log::DEBUG);
-		return $results;
+//		$results = array();
+//		Billrun_Factory::log()->log("Saving account " . $aid . " lines to array", Zend_Log::DEBUG);
+//		foreach ($cursor as $entity) {
+//			$results[] = $entity;
+//		}
+//		Billrun_Factory::log()->log("Finished saving account " . $aid . " lines to array", Zend_Log::DEBUG);
+//		return $results;
+		return $cursor;
 	}
 
 	/**
