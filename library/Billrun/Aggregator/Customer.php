@@ -181,6 +181,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 			Billrun_Billrun::close($accid, $billrun_key, $this->min_invoice_id);
 			Billrun_Factory::log("Finished closing billrun $billrun_key for account $accid", Zend_log::DEBUG);
 		}
+		Billrun_Factory::log("Finished iterating page $this->page of size $this->size", Zend_log::DEBUG);
 //		Billrun_Factory::dispatcher()->trigger('beforeAggregateSaveLine', array(&$save_data, &$this));
 		// @TODO trigger after aggregate
 		Billrun_Factory::dispatcher()->trigger('afterAggregate', array($this->data, &$this));

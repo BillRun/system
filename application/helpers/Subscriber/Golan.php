@@ -277,6 +277,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 			'aid' => $this->aid,
 			'sid' => $this->sid,
 			'source' => 'billrun',
+			'billrun' => '000000',
 			'type' => 'flat',
 			'usaget' => 'flat',
 			'urt' => new MongoDate($billrun_end_time),

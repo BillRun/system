@@ -1026,7 +1026,7 @@ class Billrun_Billrun {
 			self::$rates[strval($rate->getId())] = $rate;
 		}
 	}
-	
+
 	public static function loadPlans() {
 		$plans_coll = Billrun_Factory::db()->ratesCollection();
 		$plans = $plans_coll->query()->cursor();
@@ -1066,7 +1066,7 @@ class Billrun_Billrun {
 				$vatable = (!(isset($rate['vatable']) && !$rate['vatable']) || (!isset($rate['vatable']) && !$this->vatable));
 				Billrun_Billrun::updateBillrun($this->billrun_key, array($line['usaget'] => $line['usagev']), $pricingData, $line, $vatable, $this);
 			} else {
-				$plan = self::getPlanById(strval($line->get('plan_ref',true)['$id']));
+				$plan = self::getPlanById(strval($line->get('plan_ref', true)['$id']));
 				Billrun_Billrun::updateBillrun($this->billrun_key, array(), array('aprice' => $line['aprice']), $line, $plan->get('vatable'), $this);
 			}
 			//Billrun_Factory::log("Done Processing account Line for $sid : ".  microtime(true));
@@ -1142,24 +1142,21 @@ class Billrun_Billrun {
 		$end_time = new MongoDate(Billrun_Util::getEndTime($this->billrun_key));
 		$query = array(
 			'aid' => $aid,
-			'urt' => array(
-				'$lte' => $end_time,
-				'$gte' => $start_time,
-			),
-			'aprice' => array(
-				'$exists' => true,
-			),
+//			'urt' => array(
+//				'$lte' => $end_time,
+//				'$gte' => $start_time,
+//			),
+//			'aprice' => array(
+//				'$exists' => true,
+//			),
 //			'type' => array(
 //				'$ne' => 'ggsn',
 //			),
 		);
 		if ($this->allowOverride) {
-			$query['$or'] = array(
-				array('billrun' => array('$exists' => false)),
-				array('billrun' => $this->billrun_key),
-			);
+			$query['billrun']['$in'] = array('000000', $this->billrun_key);
 		} else {
-			$query['billrun'] = array('$exists' => false);
+			$query['billrun'] = '000000';
 		}
 
 		$hint = array(

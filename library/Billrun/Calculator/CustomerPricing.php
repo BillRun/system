@@ -139,6 +139,9 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 					//$billrun_info['billrun_ref'] = $billrun->createRef(Billrun_Factory::db()->billrunCollection());
 				}
 			}
+			else {
+				$pricingData['billrun'] = "000000";
+			}
 		} else {
 			Billrun_Factory::log()->log("Line with stamp " . $row['stamp'] . " is missing volume information", Zend_Log::ALERT);
 			return false;
