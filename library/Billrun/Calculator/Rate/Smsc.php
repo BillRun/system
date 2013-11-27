@@ -12,6 +12,21 @@
  * @package  calculator
  */
 class Billrun_Calculator_Rate_Smsc extends Billrun_Calculator_Rate_Sms {
+	
+	protected $prefixTranslation = array();
+	protected $legitimateValues = array(
+									'cause_of_terminition' => "100",
+									'record_type' => '1',
+									'calling_msc' => "^0*9725[82]",
+								);
+	
+	public function __construct($options = array()) {
+		parent::__construct($options);
+		
+		if(isset($options['calculator']['prefix_translation'])) {
+			$this->prefixTranslation = $options['calculator']['prefix_translation'];
+		}
+	}
 	/**
 	 * @see Billrun_Calculator::isLineLegitimate
 	 */
@@ -25,6 +40,36 @@ class Billrun_Calculator_Rate_Smsc extends Billrun_Calculator_Rate_Sms {
 	 * @return type
 	 */
 	protected function shouldLineBeRated($row) {
-		return  $row['record_type'] == '1' && $row["cause_of_terminition"] == "100" && preg_match("/^0*9725[82]/",$row["calling_msc"]) ;
+		//return  $row['record_type'] == '1' && $row["cause_of_terminition"] == "100" && preg_match("/^0*9725[82]/",$row["calling_msc"]) ;
+		foreach ($this->legitimateValues as $key => $value) {
+			if( is_array($value) ) {				
+				foreach ($value as $regex) {
+					if(!preg_match("/".$regex."/", $row[$key])) {
+						return false;
+					}
+				}
+			} else if(!preg_match("/".$value."/", $row[$key])) {
+					return false;
+			}
+		}
+		return true;
+	}
+	
+	protected function extractNumber($row) {
+		$str =  $row['called_number'];
+		
+		foreach ($this->prefixTranslation as $from => $to ) {
+			//Billrun_Factory::log()->log("Checking a match to $from at $str", Zend_Log::DEBUG);
+			if(preg_match("/".$from."/", $str)) {
+				Billrun_Factory::log()->log("Found a match to $from translating it $to", Zend_Log::DEBUG);
+				$str = preg_replace("/".$from."/", $to, $str);
+			}
+		}
+		
+		foreach ($this->legitimateNumberFilters as $filter) {
+			$str = preg_replace($filter, '', $str);
+		}		
+		return $str;
+		//return preg_replace('/[^\d]/', '', preg_replace('/^0+/', '', ($row['type'] != 'mmsc' ? $row['called_msc'] : $row['recipent_addr'])));
 	}
 }

@@ -14,7 +14,7 @@
  * put the above line in the head of this file and then create configuration.ini in application/conf directory
  * all the below code will be ignored
  */
-define('BILLRUN_CONFIG_PATH', APPLICATION_PATH . "/conf/prod.ini");
+//define('BILLRUN_CONFIG_PATH', APPLICATION_PATH . "/conf/prod.ini");
 
 
 if (!defined('BILLRUN_CONFIG_PATH')) {

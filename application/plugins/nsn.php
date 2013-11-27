@@ -192,7 +192,6 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 	}
 
 	////////////////////////////////////////////// Parser ///////////////////////////////////////////
-	const DEFAULT_TIME_OFFSET = "+03:00";
 
 	/**
 	 * @see Billrun_Plugin_Interface_IParser::parseData
@@ -225,12 +224,18 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 					}
 				}
 			}
-			$data['urt'] = new MongoDate(Billrun_Util::dateTimeConvertShortToIso((string) (isset($data['charging_start_time']) && $data['charging_start_time']  ? $data['charging_start_time'] : $data['call_reference_time']), self::DEFAULT_TIME_OFFSET));
+			$data['urt'] = new MongoDate(Billrun_Util::dateTimeConvertShortToIso((string) (isset($data['charging_start_time']) && $data['charging_start_time']  ? $data['charging_start_time'] : $data['call_reference_time']), date("P")));
+		}
+				
+		//Use the  actual charing time duration instead of the  duration  that  was set by the switch
+		if(isset($data['duration'])) {
+			$data['org_dur'] = $data['duration'];// save the original duration.
 		}
 		if( isset($data['charging_end_time']) && isset($data['charging_start_time']) && 
-			( strtotime($data['charging_end_time']) > 0 && strtotime($data['charging_start_time'] ) > 0) ) {
-			$data['duration'] = strtotime($data['charging_end_time']) - strtotime($data['charging_start_time']);
+			( strtotime($data['charging_end_time']) > 0 && strtotime($data['charging_start_time'] ) > 0) ) {			
+			$data['duration'] = strtotime($data['charging_end_time']) - strtotime($data['charging_start_time']);			
 		}
+		//Remove  the  "10" in front of the national call with an international prefix
 		if (isset($data['in_circuit_group_name']) && preg_match("/^RCEL/", $data['in_circuit_group_name']) && strlen($data['called_number']) > 10 && substr($data['called_number'], 0, 2) == "10") {
 			$data['called_number'] = substr($data['called_number'], 2);
 		}
@@ -339,8 +344,8 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 					$retValue .= dechex(ord($data[$i]));
 				}
 				break;
+				
 			case 'reveresed_bcd_encode' :
-
 			case 'datetime':
 			case 'bcd_encode' :
 			case 'bcd_number' :
@@ -364,6 +369,13 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 			case 'ascii':
 				$retValue = preg_replace("/\W/", "", substr($data, 0, $length));
 				break;
+			
+			case 'call_reference':
+				$retValue = strrev(implode(unpack("h*", substr($data,0,2)))). strrev(implode(unpack("h*", substr($data,2,2)))). strrev(implode(unpack("h*", substr($data,4,1))));
+				
+				break;
+			default:
+				$retValue = implode(unpack($type, $data));
 		}
 
 		return $retValue;

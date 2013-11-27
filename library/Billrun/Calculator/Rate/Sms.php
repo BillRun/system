@@ -30,6 +30,9 @@ class Billrun_Calculator_Rate_Sms extends Billrun_Calculator_Rate {
 
 	public function __construct($options = array()) {
 		parent::__construct($options);
+		if(isset($options['calculator']['legitimate_number_filters'])) {
+			$this->legitimateNumberFilters = $options['calculator']['legitimate_number_filters'];
+		}
 		$this->loadRates();
 	}
 
@@ -82,7 +85,7 @@ class Billrun_Calculator_Rate_Sms extends Billrun_Calculator_Rate {
 	 * @return type
 	 */
 	protected function shouldLineBeRated($row) {
-		return ($row['type'] == 'smpp' && $row['record_type'] == '1' && $row["cause_of_terminition"] == "100" && in_array($row['calling_number'], array('000000000002020', '000000000006060', '000000000007070'))) ||
+		return ($row['type'] == 'smpp' && $row['record_type'] == '1' && $row["cause_of_terminition"] == "100" && in_array($row['called_number'], array('000000000002020', '000000000006060', '000000000007070'))) ||
 			($row['type'] == 'smsc' && $row['record_type'] == '1' && $row["cause_of_terminition"] == "100" && preg_match("/^0*9725[82]/",$row["calling_msc"]) ) ||
 			($row['type'] == 'mmsc' && ('S' == $row['action']) && $row['final_state'] == 'S' && preg_match('/^\+\d+\/TYPE\s*=\s*.*golantelecom/', $row['mm_source_addr']));
 	}
@@ -122,6 +125,11 @@ class Billrun_Calculator_Rate_Sms extends Billrun_Calculator_Rate {
 		return $line['type'] == 'smsc' || $line['type'] == 'mmsc' || $line['type'] == 'smpp';
 	}
 
+	/**
+	 * Extract the number from the cdr line.
+	 * @param type $row the cdr line
+	 * @return type
+	 */
 	protected function extractNumber($row) {
 		$str = ($row['type'] != 'mmsc' ? $row['called_number'] : $row['recipent_addr']);
 		foreach ($this->legitimateNumberFilters as $filter) {
