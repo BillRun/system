@@ -192,7 +192,6 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 	}
 
 	////////////////////////////////////////////// Parser ///////////////////////////////////////////
-	const DEFAULT_TIME_OFFSET = "+03:00";
 
 	/**
 	 * @see Billrun_Plugin_Interface_IParser::parseData
@@ -225,7 +224,7 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 					}
 				}
 			}
-			$data['urt'] = new MongoDate(Billrun_Util::dateTimeConvertShortToIso((string) (isset($data['charging_start_time']) && $data['charging_start_time']  ? $data['charging_start_time'] : $data['call_reference_time']), self::DEFAULT_TIME_OFFSET));
+			$data['urt'] = new MongoDate(Billrun_Util::dateTimeConvertShortToIso((string) (isset($data['charging_start_time']) && $data['charging_start_time']  ? $data['charging_start_time'] : $data['call_reference_time']), date("P")));
 		}
 				
 		//Use the  actual charing time duration instead of the  duration  that  was set by the switch
