@@ -125,8 +125,9 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		Billrun_Factory::dispatcher()->trigger('beforeAggregate', array($this->data, &$this));
 		$account_billrun = false;
 		$billrun_key = $this->getStamp();
-
+		$billruns_count = 0;
 		foreach ($this->data as $accid => $account) {
+			Billrun_Factory::log('Current account index: ' . ++$billruns_count, Zend_log::DEBUG);
 			if (!Billrun_Factory::config()->isProd()) {
 				if ($this->testAcc && is_array($this->testAcc) && !in_array($accid, $this->testAcc)) {
 					//Billrun_Factory::log("Moving on nothing to see here... , account Id : $accid");
@@ -136,103 +137,61 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 			//Billrun_Factory::log()->log("Updating Accoount : " . print_r($account),Zend_Log::DEBUG);			
 			//Billrun_Factory::log(microtime(true));
 			if (empty($this->options['live_billrun_update'])) {
-				Billrun_Factory::log()->log("Creating empty billrun " . $billrun_key . " for account " . $accid, Zend_Log::DEBUG);
-				$billrun = Billrun_Billrun::createBillrunIfNotExists($accid, $billrun_key);
-				Billrun_Factory::log()->log("Finished creating empty billrun " . $billrun_key . " for account " . $accid, Zend_Log::DEBUG);
-				if (!$billrun->isEmpty()) {
+				if (Billrun_Billrun::exists($accid, $billrun_key)) {
 					Billrun_Factory::log()->log("Billrun " . $billrun_key . " already exists for account " . $accid, Zend_Log::ALERT);
 					continue;
 				}
 				$params = array(
 					'aid' => $accid,
 					'billrun_key' => $billrun_key,
+					'autoload' => false,
 				);
-				Billrun_Factory::log()->log("Loading billrun " . $billrun_key . " for account " . $accid, Zend_Log::DEBUG);
 				$account_billrun = Billrun_Factory::billrun($params);
-				Billrun_Factory::log()->log("Finished loading billrun " . $billrun_key . " for account " . $accid, Zend_Log::DEBUG);
-				if ($account_billrun) {
-					foreach ($account as $subscriber) {
-						if ($account_billrun->exists($subscriber->sid)) {
-							Billrun_Factory::log()->log("Billrun " . $billrun_key . " already exists for subscriber " . $subscriber->sid, Zend_Log::ALERT);
-							continue;
-						}
-						$current_plan_name = $subscriber->plan;
-						if (is_null($current_plan_name) || $current_plan_name == "NULL") {
-							Billrun_Factory::log()->log("Null current plan for subscriber $subscriber->sid", Zend_Log::INFO);
-							$account_billrun->addSubscriber($subscriber->sid, null);
-						} else {
-							$account_billrun->addSubscriber($subscriber->sid, $subscriber->getPlan()->createRef());
-						}
-					}
-					$account_billrun->addLines(true);
-					//save  the billrun
-					Billrun_Factory::log("Saving account $accid");
-					$account_billrun->save();
-					Billrun_Factory::log("Finished saving account $accid");
-				} else {
-					Billrun_Factory::log()->log("Couldn't load account  for $accid and Billrun $billrun_key", Zend_Log::NOTICE);
-				}
-			}
-
-			Billrun_Factory::log()->log("Updating  flat  line  for  Accoount :  $accid , which  has " . count($account) . " subscribers ", Zend_Log::INFO);
-			foreach ($account as &$subscriber) {
-				Billrun_Factory::dispatcher()->trigger('beforeAggregateLine', array(&$subscriber, &$this));
-				$aid = $subscriber->aid;
-				$sid = $subscriber->sid;
-				$next_plan_name = $subscriber->getNextPlanName();
-				//else {
-				//add the subscriber plan for next month
-				if (is_null($next_plan_name) || $next_plan_name == "NULL") {
-					$subscriber_status = "closed";
-					Billrun_Factory::log("Setting subscriber $sid status to $subscriber_status", Zend_log::DEBUG);
-					Billrun_Billrun::setSubscriberStatus($aid, $sid, $billrun_key, $subscriber_status);
-					Billrun_Factory::log("Finished setting subscriber $sid status to $subscriber_status", Zend_log::DEBUG);
-					Billrun_Factory::log()->log("Closed subscriber $sid.", Zend_Log::INFO);
-				} else {
-					$subscriber_status = "open";
-					Billrun_Factory::log("Getting flat price for subscriber $sid", Zend_log::DEBUG);
-					$flat_price = $subscriber->getFlatPrice();
-					Billrun_Factory::log("Finished getting flat price for subscriber $sid", Zend_log::DEBUG);
-					if (is_null($flat_price)) {
-						Billrun_Factory::log()->log("Couldn't find flat price for subscriber " . $sid . " for billrun " . $billrun_key, Zend_Log::ALERT);
+				foreach ($account as $subscriber) {
+					$sid = $subscriber->sid;
+					if ($account_billrun->subscriberExists($sid)) {
+						Billrun_Factory::log()->log("Billrun " . $billrun_key . " already exists for subscriber " . $sid, Zend_Log::ALERT);
 						continue;
 					}
-					Billrun_Factory::log('Adding flat to subscriber ' . $sid, Zend_Log::INFO);
-					$flat_line = $this->saveFlatLine($subscriber, $billrun_key);
-					Billrun_Factory::log('Finished adding flat to subscriber ' . $sid, Zend_Log::DEBUG);
-					$plan = $subscriber->getNextPlan();
-					Billrun_Factory::log('Saving flat line of subscriber ' . $sid, Zend_Log::DEBUG);
-					if (!$billrun = Billrun_Billrun::updateBillrun($billrun_key, array(), array('aprice' => $flat_price), $flat_line, $plan->get('vatable'))) {
-						Billrun_Factory::log()->log("Flat costs already exist in billrun collection for subscriber " . $sid . " for billrun " . $billrun_key, Zend_Log::NOTICE);
+					$next_plan_name = $subscriber->getNextPlanName();
+					if (is_null($next_plan_name) || $next_plan_name == "NULL") {
+						$subscriber_status = "closed";
 					} else {
-						Billrun_Factory::log('Finished saving flat line of subscriber ' . $sid, Zend_Log::DEBUG);
-						Billrun_Factory::log("Setting subscriber $sid status to $subscriber_status", Zend_log::DEBUG);
-						Billrun_Billrun::setSubscriberStatus($aid, $sid, $billrun_key, $subscriber_status);
-						Billrun_Factory::log("Finished setting subscriber $sid status to $subscriber_status", Zend_log::DEBUG);
+						$subscriber_status = "open";
+						Billrun_Factory::log("Getting flat price for subscriber $sid", Zend_log::DEBUG);
+						$flat_price = $subscriber->getFlatPrice();
+						Billrun_Factory::log("Finished getting flat price for subscriber $sid", Zend_log::DEBUG);
+						if (is_null($flat_price)) {
+							Billrun_Factory::log()->log("Couldn't find flat price for subscriber " . $sid . " for billrun " . $billrun_key, Zend_Log::ALERT);
+							continue;
+						}
+						Billrun_Factory::log('Adding flat line to subscriber ' . $sid, Zend_Log::INFO);
+						$this->saveFlatLine($subscriber, $billrun_key);
+						Billrun_Factory::log('Finished adding flat line to subscriber ' . $sid, Zend_Log::DEBUG);
 					}
+					$account_billrun->addSubscriber($subscriber, $subscriber_status);
 				}
-				//}
+				$account_billrun->addLines(true);
+				//save  the billrun
+				Billrun_Factory::log("Saving account $accid");
+				$account_billrun->save();
+				Billrun_Factory::log("Finished saving account $accid");
 			}
 			Billrun_Factory::log("Closing billrun $billrun_key for account $accid", Zend_log::DEBUG);
 			Billrun_Billrun::close($accid, $billrun_key, $this->min_invoice_id);
 			Billrun_Factory::log("Finished closing billrun $billrun_key for account $accid", Zend_log::DEBUG);
 		}
+		Billrun_Factory::log("Finished iterating page $this->page of size $this->size", Zend_log::DEBUG);
 //		Billrun_Factory::dispatcher()->trigger('beforeAggregateSaveLine', array(&$save_data, &$this));
 		// @TODO trigger after aggregate
 		Billrun_Factory::dispatcher()->trigger('afterAggregate', array($this->data, &$this));
 	}
 
 	protected function saveFlatLine($subscriber, $billrun_key) {
-		$aid = $subscriber->aid;
-		$sid = $subscriber->sid;
 		$flat_entry = new Mongodloid_Entity($subscriber->getFlatEntry($billrun_key));
 		$flat_entry->collection($this->lines);
 		$query = array(
 			'stamp' => $flat_entry['stamp'],
-			'aid' => $aid,
-			'sid' => $sid,
-			'billrun' => $billrun_key,
-			'type' => 'flat',
 		);
 		$update = array(
 			'$setOnInsert' => $flat_entry->getRawData(),

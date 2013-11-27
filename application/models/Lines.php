@@ -98,7 +98,7 @@ class LinesModel extends TableModel {
 	}
 
 	public function getData($filter_query = array()) {
-		$limit = Billrun_Factory::config()->getConfigValue('admin_panel.lines.limit',1000000);
+		$limit = Billrun_Factory::config()->getConfigValue('admin_panel.lines.limit',10000);
 		$cursor = $this->collection->query($filter_query)->cursor()->limit($limit);
 		$this->_count = $cursor->count();
 		$resource = $cursor->sort($this->sort)->skip($this->offset())->limit($this->size);
@@ -158,7 +158,7 @@ class LinesModel extends TableModel {
 				'input_type' => 'date',
 				'comparison' => '$gte',
 				'display' => 'From',
-				'default' => (new Zend_Date(0, null, new Zend_Locale('he_IL')))->toString('YYYY-MM-dd HH:mm:ss'),
+				'default' => (new Zend_Date(strtotime('2013-01-01'), null, new Zend_Locale('he_IL')))->toString('YYYY-MM-dd HH:mm:ss'),
 			),
 			'to' => array(
 				'key' => 'to',
@@ -166,7 +166,7 @@ class LinesModel extends TableModel {
 				'input_type' => 'date',
 				'comparison' => '$lte',
 				'display' => 'To',
-				'default' => (new Zend_Date(strtotime("next year"), null, new Zend_Locale('he_IL')))->toString('YYYY-MM-dd HH:mm:ss'),
+				'default' => (new Zend_Date(strtotime("next month"), null, new Zend_Locale('he_IL')))->toString('YYYY-MM-dd HH:mm:ss'),
 			),
 			'usage' => array(
 				'key' => 'usage',

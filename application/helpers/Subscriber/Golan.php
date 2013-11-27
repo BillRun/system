@@ -181,7 +181,8 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		//Billrun_Factory::log()->log($path, Zend_Log::DEBUG);
 		// @TODO: use Zend_Http_Client
 //		$path .= "&account_id=4171195";
-//		$path .= "&account_id=6054918";
+//		$path .= "&account_id=11588";
+//		$path .= "&account_id=9522194";
 		$json = self::send($path);
 		if (!$json) {
 			return false;
@@ -271,18 +272,19 @@ class Subscriber_Golan extends Billrun_Subscriber {
 	 * @return array
 	 */
 	public function getFlatEntry($billrun_key) {
+		$billrun_end_time = Billrun_Util::getEndTime($billrun_key);
 		$flat_entry = array(
 			'aid' => $this->aid,
 			'sid' => $this->sid,
 			'source' => 'billrun',
+			'billrun' => '000000',
 			'type' => 'flat',
 			'usaget' => 'flat',
-			'urt' => new MongoDate(),
-			'billrun_key' => $billrun_key,
+			'urt' => new MongoDate($billrun_end_time),
 			'aprice' => $this->getFlatPrice(),
 			'plan_ref' => $this->getNextPlan()->createRef(),
 		);
-		$stamp = md5($flat_entry['aid'] . $flat_entry['sid'] . $flat_entry['billrun_key']);
+		$stamp = md5($flat_entry['aid'] . $flat_entry['sid'] . $billrun_end_time);
 		$flat_entry['stamp'] = $stamp;
 		return $flat_entry;
 	}

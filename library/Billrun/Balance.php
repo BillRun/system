@@ -199,6 +199,8 @@ class Billrun_Balance implements ArrayAccess {
 				$usage_types[] = $prefix . $usage_type;
 			}
 		}
+		$usage_types[] = "out_plan_call";
+		$usage_types[] = "out_plan_sms";
 		foreach ($usage_types as $usage_type) {
 			$ret['totals'][$usage_type] = self::getEmptyUsageTypeTotals();
 		}

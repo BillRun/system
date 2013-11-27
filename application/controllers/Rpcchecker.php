@@ -53,6 +53,50 @@ class RPCCheckerController extends Yaf_Controller_Abstract {
 				),
 			),
 			array(
+				'account_id' => 8819919,
+				'date' => '2013-10-24 23:59:59',
+				'subscribers' => array(
+					'353861' => array(
+						'curr_plan' => 'LARGE',
+						'next_plan' => 'LARGE'
+					),
+				),
+			),
+			array(
+				'account_id' => 6780631,
+				'date' => '2013-10-24 23:59:59',
+				'subscribers' => array(
+					'261230' => array(
+						'curr_plan' => 'LARGE',
+						'next_plan' => 'LARGE'
+					),
+				),
+			),
+			array(
+				'account_id' => 539316,
+				'date' => '2013-10-24 23:59:59',
+				'subscribers' => array(
+					'385960' => array(
+						'curr_plan' => 'SMALL',
+						'next_plan' => 'SMALL'
+					),
+				),
+			),
+			array(
+				'account_id' => 3582697,
+				'date' => '2013-10-24 23:59:59',
+				'subscribers' => array(
+					'496954' => array(
+						'curr_plan' => 'LARGE',
+						'next_plan' => 'LARGE'
+					),
+					'496953' => array(
+						'curr_plan' => 'LARGE',
+						'next_plan' => 'LARGE'
+					),
+				),
+			),
+			array(
 				'account_id' => 3515736,
 				'date' => '2013-10-24 23:59:59',
 				'subscribers' => array(
@@ -226,6 +270,40 @@ class RPCCheckerController extends Yaf_Controller_Abstract {
 			return false;
 		}
 		return true;
+	}
+
+	public function byimsitestAction() {
+		$working_dir = "/home/shani/Documents/S.D.O.C/BillRun/Files/Docs/Tests/";
+		$row = 1;
+		if (($handle = fopen($working_dir . "billing_crm_diff_with_sid_and_imsi-1.csv", "r")) !== FALSE) {
+			while (($data = fgetcsv($handle, 0, "\t")) !== FALSE) {
+				error_log($row);
+				if ($row++ == 1) {
+					continue;
+				}
+				$this->subscriber = Billrun_Factory::subscriber();
+				$params['time'] = "2013-10-24 23:59:59";
+				$params['IMSI'] = $data[5];
+				$params_arr[] = array('time' => $params['time'], 'DATETIME' => $params['time'], 'IMSI' => $params['IMSI']);
+				$details = $this->subscriber->load($params);
+				$data['normal_plan'] = $details->plan;
+				
+				$newCsvData[$data[4]] = $data;
+			}
+			fclose($handle);
+
+
+			$list = Subscriber_Golan::requestList($params_arr);
+			foreach ($list as $arr) {
+				$newCsvData[$arr['subscriber_id']]['bulk_plan'] = $arr['plan'];
+			}
+
+			$handle = fopen('/tmp/result.csv', 'w');
+			foreach ($newCsvData as $line) {
+				fputcsv($handle, $line);
+			}
+			fclose($handle);
+		}
 	}
 
 }

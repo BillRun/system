@@ -116,7 +116,6 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		$pricingData = array();
 
 		$usage_type = $row['usaget'];
-		$balance_totals_key = $this->getBalanceTotalsKey($row['type'], $usage_type);
 		$volume = $row['usagev'];
 
 		if (isset($volume)) {
@@ -124,7 +123,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				$accessPrice = isset($rate['rates'][$usage_type]['access']) ? $rate['rates'][$usage_type]['access'] : 0;
 				$pricingData = array($this->pricingField => $accessPrice + $this->getPriceByRates($rate['rates'][$usage_type]['rate'], $volume));
 			} else {
-				$pricingData = $this->updateSubscriberBalance(array($balance_totals_key => $volume), $row, $billrun_key, $usage_type, $rate, $volume);
+				$pricingData = $this->updateSubscriberBalance($row, $billrun_key, $usage_type, $rate, $volume);
 			}
 			if (!$pricingData) {
 				return false;
@@ -138,6 +137,8 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 					//$billrun_info['billrun_key'] = $billrun['billrun_key'];
 					//$billrun_info['billrun_ref'] = $billrun->createRef(Billrun_Factory::db()->billrunCollection());
 				}
+			} else {
+				$pricingData['billrun'] = "000000";
 			}
 		} else {
 			Billrun_Factory::log()->log("Line with stamp " . $row['stamp'] . " is missing volume information", Zend_Log::ALERT);
@@ -247,13 +248,15 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @param int $volume The usage volume (seconds of call, count of SMS, bytes  of data)
 	 * @return mixed array with the pricing data on success, false otherwise
 	 */
-	protected function updateSubscriberBalance($counters, $row, $billrun_key, $usage_type, $rate, $volume) {
+	protected function updateSubscriberBalance($row, $billrun_key, $usage_type, $rate, $volume) {
 		$plan = Billrun_Factory::plan(array('name' => $row['plan'], 'time' => $row['urt']->sec, 'disableCache' => true));
 		$plan_ref = $plan->createRef();
 		if (is_null($plan_ref)) {
 			Billrun_Factory::log('No plan found for subscriber ' . $row['sid'], Zend_Log::ALERT);
 			return false;
 		}
+		$balance_totals_key = $this->getBalanceTotalsKey($row['type'], $usage_type, $plan, $rate);
+		$counters = array($balance_totals_key => $volume);
 
 		if ($this->isUsageUnlimited($rate, $usage_type, $plan)) {
 			if ($this->unlimited_to_balances) {
@@ -316,7 +319,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			}
 			if (!($ret['ok'] && $ret['updatedExisting'])) { // failed because of different totals (could be that another server with another line raised the totals). Need to calculate pricingData from the beginning
 				Billrun_Factory::log()->log("Concurrent write to balance " . $billrun_key . " of subscriber " . $row['sid'] . ". Retrying...", Zend_Log::DEBUG);
-				$pricingData = $this->updateSubscriberBalance($counters, $row, $billrun_key, $usage_type, $rate, $volume);
+				$pricingData = $this->updateSubscriberBalance($row, $billrun_key, $usage_type, $rate, $volume);
 			}
 			Billrun_Factory::log()->log("Line with stamp " . $row['stamp'] . " was written to balance " . $billrun_key . " for subscriber " . $row['sid'], Zend_Log::DEBUG);
 			$row['tx_saved'] = true; // indication for transaction existence in balances. Won't & shouldn't be saved to the db.
@@ -486,11 +489,15 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		return $plan->isRateInSubPlan($rate, $usage_type) && $plan->isUnlimited($usage_type);
 	}
 
-	protected function getBalanceTotalsKey($type, $usage_type) {
-		if ($type == 'tap3') {
-			$usage_class_prefix = "intl_roam_";
+	protected function getBalanceTotalsKey($type, $usage_type, $plan, $rate) {
+		if ($type != 'tap3') {
+			if (($usage_type == "call" || $usage_type == "sms") && !$plan->isRateInSubPlan($rate, $usage_type)) {
+				$usage_class_prefix = "out_plan_";
+			} else {
+				$usage_class_prefix = "";
+			}
 		} else {
-			$usage_class_prefix = "";
+			$usage_class_prefix = "intl_roam_";
 		}
 		return $usage_class_prefix . $usage_type;
 	}
