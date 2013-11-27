@@ -53,6 +53,50 @@ class RPCCheckerController extends Yaf_Controller_Abstract {
 				),
 			),
 			array(
+				'account_id' => 8819919,
+				'date' => '2013-10-24 23:59:59',
+				'subscribers' => array(
+					'353861' => array(
+						'curr_plan' => 'LARGE',
+						'next_plan' => 'LARGE'
+					),
+				),
+			),
+			array(
+				'account_id' => 6780631,
+				'date' => '2013-10-24 23:59:59',
+				'subscribers' => array(
+					'261230' => array(
+						'curr_plan' => 'LARGE',
+						'next_plan' => 'LARGE'
+					),
+				),
+			),
+			array(
+				'account_id' => 539316,
+				'date' => '2013-10-24 23:59:59',
+				'subscribers' => array(
+					'385960' => array(
+						'curr_plan' => 'SMALL',
+						'next_plan' => 'SMALL'
+					),
+				),
+			),
+			array(
+				'account_id' => 3582697,
+				'date' => '2013-10-24 23:59:59',
+				'subscribers' => array(
+					'496954' => array(
+						'curr_plan' => 'LARGE',
+						'next_plan' => 'LARGE'
+					),
+					'496953' => array(
+						'curr_plan' => 'LARGE',
+						'next_plan' => 'LARGE'
+					),
+				),
+			),
+			array(
 				'account_id' => 3515736,
 				'date' => '2013-10-24 23:59:59',
 				'subscribers' => array(
