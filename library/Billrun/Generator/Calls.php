@@ -147,11 +147,10 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 		$this->pids = array();
 		Billrun_Factory::log("Calls killed.");
 
-		foreach($this->modemDevices as $device) {
-			$device->initModem();
-			/*if($device->resetModem() == FALSE) {
+		foreach($this->modemDevices as $device) {			
+			if($device->resetModem() == FALSE || $device->registerToNet() == FALSE) {
 				Billrun_Factory::log()->log("Failed when trying to reset the modem with number:". $device->getModemNumber(),Zend_Log::ERR);
-			}*/
+			}
 		}		
 	}
 	

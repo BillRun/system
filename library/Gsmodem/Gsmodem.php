@@ -320,10 +320,11 @@ class Gsmodem_Gsmodem  {
 		$matches = array();
 		$values = array();
 		foreach (split("\n",$result) as $value) {
-			if(($match = preg_match("/.+\+$resultKey:\s*(.+)$/", $value, $matches ) > 0  ? split(",", $matches[1]) : false )) {
+			if(($match = preg_match("/^\s*\+{0,1}$resultKey:\s*(.+)$/", $value, $matches ) > 0  ? split(",", $matches[1]) : false )) {
 				$values[] = $match;
 			}
 		}
+		Billrun_Factory::log()->log(print_r($values,1),  Zend_Log::DEBUG);
 		return empty($values) ? $values : false;
 	}
 	
