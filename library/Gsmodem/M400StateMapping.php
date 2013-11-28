@@ -28,7 +28,7 @@ class Gsmodem_M400StateMapping  extends Gsmodem_StateMapping {
 			'NO CARRIER' => self::IDLE_STATE,
 		),
 		self::CALLING_STATE => array(
-			'VOICE CALL: BEGIN' => self::OUT_CALL_STATE,
+			'VOICE CALL\: BEGIN' => self::OUT_CALL_STATE,
 			'NO CARRIER' => self::IDLE_STATE,
 			'ERROR' => self::IDLE_STATE,
 			'RING' => self::RINGING_STATE,
@@ -40,7 +40,7 @@ class Gsmodem_M400StateMapping  extends Gsmodem_StateMapping {
 			'MISSED_CALL' => self::IDLE_STATE,
 		),
 		self::ANSWERING_STATE => array(
-			'VOICE CALL: BEGIN' => self::IN_CALL_STATE,
+			'VOICE CALL\: BEGIN' => self::IN_CALL_STATE,
 			'OK' => self::IN_CALL_STATE,
 			'NO CARRIER' => self::IDLE_STATE,			
 			'ERROR' => self::IDLE_STATE,
@@ -52,7 +52,7 @@ class Gsmodem_M400StateMapping  extends Gsmodem_StateMapping {
 		),
 		self::IDLE_STATE => array(
 			'ERROR' => self::IDLE_STATE,
-			'+CLIP:' => self::RINGING_STATE,
+			'\+CLIP\:' => self::RINGING_STATE,
 			'RING' => self::RINGING_STATE,
 		),
 	);
