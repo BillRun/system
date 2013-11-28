@@ -129,8 +129,12 @@ class Gsmodem_Gsmodem  {
 		$startTime = microtime(true);
 		do {
 			$res = $this->getResult(self::RESPONSIVE_RESULTS_TIMEOUT,false);
-			$ret = Billrun_Util::getFieldVal($this->getValueFromResult('CREG', $res)[0][0],false) == 1;			
-		} while ((self::COMMAND_RESPONSE_TIME > microtime(true) - $startTime) || $ret);
+			$ret = Billrun_Util::getFieldVal($this->getValueFromResult('CREG', $res)[0][0],false);
+			Billrun_Factory::log("$ret");
+			if($ret == 5) {
+				$this->doCmd($this->getATcmd('register',array(0)), true, false);	
+			}
+		} while ((self::COMMAND_RESPONSE_TIME > microtime(true) - $startTime) || $ret == 1);
 		$this->state->setState(Gsmodem_StateMapping::IDLE_STATE);
 		return $ret;
 		
