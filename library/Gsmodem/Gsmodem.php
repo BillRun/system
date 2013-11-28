@@ -208,6 +208,7 @@ class Gsmodem_Gsmodem  {
 		sleep(2);
 		$this->doCmd($this->getATcmd('echo_mode',array(0)), false, false);
 		sleep(1);
+		$this->doCmd("AT S7=45 S0=0 L1 V1 X4 &c1 E1 Q0 ;\r\n", true,true,false,  static::COMMAND_RESPONSE_TIME);
 		$this->doCmd("AT+CFUN=0 ;\r\n", true,true,false,  static::COMMAND_RESPONSE_TIME);
 		sleep(1);
 		$this->doCmd("AT+CFUN=1 ;\r\n", true,true,false,  static::COMMAND_RESPONSE_TIME);
