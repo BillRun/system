@@ -328,13 +328,13 @@ class Gsmodem_Gsmodem  {
 	protected function getValueFromResult($resultKey,$result) {
 		$matches = array();
 		$values = array();
-		Billrun_Factory::log()->log($result,  Zend_Log::DEBUG);
+		//Billrun_Factory::log()->log($result,  Zend_Log::DEBUG);
 		foreach (split("\n",$result) as $value) {
 			if(($match = (preg_match("/^\s*\+{0,1}$resultKey:\s*(.+)$/", $value, $matches ) > 0  ? split(",", $matches[1]) : false ) )) {
 				$values[] = $match;
 			}
 		}
-		Billrun_Factory::log()->log(print_r($values,1),  Zend_Log::DEBUG);
+		//Billrun_Factory::log()->log(print_r($values,1),  Zend_Log::DEBUG);
 		return !empty($values) ? $values : false;
 	}
 	
