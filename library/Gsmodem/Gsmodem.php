@@ -208,6 +208,7 @@ class Gsmodem_Gsmodem  {
 	public function resetModem() {
 		$ret = true;
 		$ret &= $this->doCmd("AT+CVHU=0 ;\r", true,true,false,  static::COMMAND_RESPONSE_TIME) != FALSE;
+		sleep(1);
 		$this->hangUp();
 		sleep(1);
 		//$this->state->setState(Gsmodem_StateMapping::IDLE_STATE);
