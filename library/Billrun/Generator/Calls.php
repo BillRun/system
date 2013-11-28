@@ -66,7 +66,7 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 				$modem = new Gsmodem_Gsmodem($value['device'],(isset($value['statemapping']) ? new $value['statemapping']() : false));
 				if ($modem->isValid()) {
 					Billrun_Factory::log("Initializing  modem  at dev : {$value['device']} with number {$value['number']}.");
-					$modem->registerToNet();
+					//$modem->registerToNet();
 					if (isset($value['number'])) {						
 						$modem->setNumber($value['number']);
 					}
@@ -148,7 +148,7 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 		Billrun_Factory::log("Calls killed.");
 
 		foreach($this->modemDevices as $device) {			
-			if($device->resetModem() == FALSE || $device->registerToNet() == FALSE) {
+			if($device->resetModem() == FALSE ) {
 				Billrun_Factory::log()->log("Failed when trying to reset the modem with number:". $device->getModemNumber(),Zend_Log::ERR);
 			}
 		}		

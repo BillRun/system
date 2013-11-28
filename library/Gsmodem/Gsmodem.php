@@ -224,7 +224,7 @@ class Gsmodem_Gsmodem  {
 		$ret = true;
 		$ret &= $this->doCmd("AT+CVHU=0 ;\r\n", true,true,false,  static::COMMAND_RESPONSE_TIME) != FALSE;
 		$ret &= $this->hangUp() != FALSE;
-		//$ret &= $this->registerToNet() != FALSE;
+		$ret &= $this->registerToNet() != FALSE;
 		return $ret;
 	}
 	
