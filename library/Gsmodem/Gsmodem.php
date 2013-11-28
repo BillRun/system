@@ -130,7 +130,7 @@ class Gsmodem_Gsmodem  {
 		do {
 			$res = $this->getResult(self::RESPONSIVE_RESULTS_TIMEOUT,false);
 			$ret = Billrun_Util::getFieldVal($this->getValueFromResult('CREG', $res)[0][0],false);
-			Billrun_Factory::log("$ret");
+			//Billrun_Factory::log("$ret");
 			if($ret == 5) {
 				$this->doCmd($this->getATcmd('register',array(0)), true, false);	
 			}

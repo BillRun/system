@@ -64,8 +64,9 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 		if (isset($options['path_to_calling_devices'])) {
 			foreach ($options['path_to_calling_devices'] as $value) {
 				$modem = new Gsmodem_Gsmodem($value['device'],(isset($value['statemapping']) ? new $value['statemapping']() : false));
+				Billrun_Factory::log("Initializing  modem  at dev : {$value['device']} with number {$value['number']}.");
 				if ($modem->isValid()) {
-					Billrun_Factory::log("Initializing  modem  at dev : {$value['device']} with number {$value['number']}.");
+					
 					//$modem->registerToNet();
 					if (isset($value['number'])) {						
 						$modem->setNumber($value['number']);
