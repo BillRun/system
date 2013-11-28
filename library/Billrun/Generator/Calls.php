@@ -241,14 +241,16 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 			$this->HandleCall($device, $call, $action['duration'], (($action['hangup'] == 'caller') == $isCalling) );
 		} else if($action['action_type'] == static::TYPE_REGULAR) {
 			Billrun_Factory::log("Failed on action of type : {$action['action_type']} when using modem  with number : ".$device->getModemNumber(),Zend_Log::ERR);
-			if( !$isCalling && FALSE === $device->initModem()) {
-				Billrun_Factory::log()->log("Failed when trying to reset the modem with number:". $device->getModemNumber(),Zend_Log::ERR);
-			} else {
-				//make sure  the modem is registered to the network
-				sleep(1);
-				$device->unregisterFromNet();
-				sleep(5);
-				$device->registerToNet();
+			if( !$isCalling ) {
+				if(FALSE === $device->initModem()) {
+					Billrun_Factory::log()->log("Failed when trying to reset the modem with number:". $device->getModemNumber(),Zend_Log::ERR);
+				} else {
+					//make sure  the modem is registered to the network
+					sleep(1);
+					$device->unregisterFromNet();
+					sleep(5);
+					$device->registerToNet();
+				}
 			}
 			$this->pingManagmentServer($action,"failed");
 		}
