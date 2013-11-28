@@ -126,10 +126,11 @@ class Gsmodem_Gsmodem  {
 	public function registerToNet() {
 		Billrun_Factory::log("Registering to network");
 		$ret = $res = $this->doCmd($this->getATcmd('register',array(0)), true, false);	
-		//$res = $this->getResult(5);
-		//do {
-		//$ret = $this->getValueFromResult('CREG', $res);			
-		//} while (empty($ret));
+		$startTime = microtime(true);
+		do {
+			$res = $this->getResult(self::RESPONSIVE_RESULTS_TIMEOUT);
+			$ret = Billrun_Util::getFieldVal($this->getValueFromResult('CREG', $res)[0][0],false) == 1;			
+		} while ((self::COMMAND_RESPONSE_TIME > microtime(true) - $startTime) || $ret);
 		$this->state->setState(Gsmodem_StateMapping::IDLE_STATE);
 		return $ret;
 		
