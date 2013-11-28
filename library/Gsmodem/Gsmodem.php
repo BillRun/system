@@ -263,12 +263,13 @@ class Gsmodem_Gsmodem  {
 			$callResult .= $newData ;
 			//Billrun_Factory::log()->log(trim($callResult),  Zend_Log::DEBUG);
 			if( preg_match("/\n/",$callResult) ) {
+				$this->state->gotResult(trim($res));
 				if( $translate ) {
 					foreach (split("\n",$callResult) as $value) {
 						//Billrun_Factory::log()->log(trim($value),  Zend_Log::DEBUG);
 						if(isset($this->state->getResultMapping()[trim($value)])) {
 							//Billrun_Factory::log()->log(trim($value),  Zend_Log::DEBUG);
-							$this->state->gotResult(trim($value));
+							//$this->state->gotResult(trim($value));
 							$res = $this->state->getResultMapping()[trim($value)];
 							if(!$waitForStateChange || $this->getState() != $beginningState) {								
 								break 2;
@@ -278,7 +279,6 @@ class Gsmodem_Gsmodem  {
 					$callResult = "";
 				} else {
 					$res = $callResult;
-					$this->state->gotResult(trim($res));
 					break;
 				}
 			}
@@ -323,6 +323,7 @@ class Gsmodem_Gsmodem  {
 	protected function getValueFromResult($resultKey,$result) {
 		$matches = array();
 		$values = array();
+		Billrun_Factory::log()->log($result,  Zend_Log::DEBUG);
 		foreach (split("\n",$result) as $value) {
 			if(($match = (preg_match("/^\s*\+{0,1}$resultKey:\s*(.+)$/", $value, $matches ) > 0  ? split(",", $matches[1]) : false ) )) {
 				$values[] = $match;
