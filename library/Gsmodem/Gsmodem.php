@@ -129,8 +129,7 @@ class Gsmodem_Gsmodem  {
 		$startTime = microtime(true);
 		do {
 			$res = $this->getResult(self::RESPONSIVE_RESULTS_TIMEOUT,false);
-			$tmp = $this->getValueFromResult('CREG', $res);
-			$ret = Billrun_Util::getFieldVal($tmp[0][0],false);
+			$ret = Billrun_Util::getFieldVal($this->getValueFromResult('CREG', $res)[0][0],false);
 			Billrun_Factory::log("$ret");
 			if($ret == 5) {
 				$this->doCmd($this->getATcmd('register',array(0)), true, false);	
@@ -336,7 +335,7 @@ class Gsmodem_Gsmodem  {
 			}
 		}
 		Billrun_Factory::log()->log(print_r($values,1),  Zend_Log::DEBUG);
-		return empty($values) ? $values : false;
+		return !empty($values) ? $values : false;
 	}
 	
 }
