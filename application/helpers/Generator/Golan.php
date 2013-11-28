@@ -25,6 +25,9 @@ class Generator_Golan extends Billrun_Generator {
 	protected $extras_end_date;
 	protected $flat_start_date;
 	protected $flat_end_date;
+	protected $rates;
+	protected $plans;
+	protected $data_rate;
 
 	public function __construct($options) {
 		self::$type = 'golan';
@@ -37,6 +40,8 @@ class Generator_Golan extends Billrun_Generator {
 			$this->server_count = intval($options['generator']['count']);
 		}
 		$this->lines_coll = Billrun_Factory::db()->linesCollection();
+		$this->loadRates();
+		$this->loadPlans();
 	}
 
 	public function load() {
@@ -497,17 +502,17 @@ class Generator_Golan extends Billrun_Generator {
 	 * @return type
 	 */
 	protected function get_subscriber_lines($subscriber) {
-		$start_time = new MongoDate(0);
-		$end_time = new MongoDate(Billrun_Util::getEndTime($this->stamp));
+//		$start_time = new MongoDate(0);
+//		$end_time = new MongoDate(Billrun_Util::getEndTime($this->stamp));
 		$query = array(
 			'sid' => $subscriber['sid'],
-			'urt' => array(
-				'$lte' => $end_time,
-				'$gte' => $start_time,
-			),
-			'aprice' => array(
-				'$exists' => true,
-			),
+//			'urt' => array(
+//				'$lte' => $end_time,
+//				'$gte' => $start_time,
+//			),
+//			'aprice' => array(
+//				'$exists' => true,
+//			),
 			'billrun' => $this->stamp,
 			'type' => array(
 				'$ne' => 'ggsn',
@@ -523,18 +528,17 @@ class Generator_Golan extends Billrun_Generator {
 	 * @return type
 	 */
 	protected function get_subscriber_aggregated_data_lines($subscriber) {
-		$data_rate = $this->getDataRate();
 		$aggregated_lines = array();
 		if (isset($subscriber['lines']['data']['counters'])) {
 			foreach ($subscriber['lines']['data']['counters'] as $day => $data_by_day) {
 				$aggregated_line = array();
 				$aggregated_line['day'] = date_create_from_format("Ymd", $day)->format('Y/m/d H:i:s');
-				$aggregated_line['rate_key'] = $data_rate['key'];
+				$aggregated_line['rate_key'] = $this->data_rate['key'];
 				$aggregated_line['usage_volume'] = $this->bytesToKB($data_by_day['usagev']);
 				$aggregated_line['aprice'] = $data_by_day['aprice'];
 				$aggregated_line['tariff_kind'] = $this->getTariffKind('data');
-				$aggregated_line['interval'] = $this->getIntervalByRate($data_rate, 'data');
-				$aggregated_line['rate_price'] = $this->getPriceByRate($data_rate, 'data');
+				$aggregated_line['interval'] = $this->getIntervalByRate($this->data_rate, 'data');
+				$aggregated_line['rate_price'] = $this->getPriceByRate($this->data_rate, 'data');
 				$aggregated_line['discount_usage'] = $this->getDiscountUsageByPlanFlag($data_by_day['plan_flag']);
 				$aggregated_lines[] = $aggregated_line;
 			}
@@ -574,14 +578,16 @@ class Generator_Golan extends Billrun_Generator {
 	}
 
 	protected function getAccessPrice($line) {
-		if (isset($line['usaget']) && $line->get('arate', true) && ($arate = $line['arate']) && isset($arate['rates'][$line['usaget']]['access'])) {
+		$arate = $this->getRowRate($line);
+		if (isset($line['usaget']) && isset($arate['rates'][$line['usaget']]['access'])) {
 			return $arate['rates'][$line['usaget']]['access'];
 		}
 		return 0;
 	}
 
 	protected function getInterval($line) {
-		if (isset($line['usaget']) && $line->get('arate', true) && ($arate = $line['arate']) && isset($arate['rates'][$line['usaget']]['rate']['interval'])) {
+		$arate = $this->getRowRate($line);
+		if (isset($line['usaget']) && isset($arate['rates'][$line['usaget']]['rate']['interval'])) {
 			return $this->getIntervalByRate($arate, $line['usaget']);
 		}
 		return 0;
@@ -602,14 +608,55 @@ class Generator_Golan extends Billrun_Generator {
 	}
 
 	protected function getRate($line) {
-		if (isset($line['usaget']) && $line->get('arate', true) && ($arate = $line['arate'])) {
+		$arate = $this->getRowRate($line);
+		if (isset($line['usaget']) && $arate) {
 			return $this->getPriceByRate($arate, $line['usaget']);
 		}
 		return 0;
 	}
 
+	/**
+	 * Get a rate from the row
+	 * @param Mongodloid_Entity the row to get rate from
+	 * @return Mongodloid_Entity the rate of the row
+	 */
+	protected function getRowRate($row) {
+		$rate = false;
+		$raw_rate = $row->get('arate', true);
+		if ($raw_rate) {
+			$id_str = strval($raw_rate['$id']);
+			$rate = $this->getRateById($id_str);
+		}
+		return $rate;
+	}
+
+	/**
+	 * Get a rate by hexadecimal id
+	 * @param string $id hexadecimal id of rate (taken from Mongo ID)
+	 * @return Mongodloid_Entity the corresponding rate
+	 */
+	protected function getRateById($id) {
+		if (!isset($this->rates[$id])) {
+			$this->rates[$id] = Billrun_Factory::db()->ratesCollection()->findOne($id);
+		}
+		return $this->rates[$id];
+	}
+
+	/**
+	 * Get a rate by hexadecimal id
+	 * @param string $id hexadecimal id of rate (taken from Mongo ID)
+	 * @return Mongodloid_Entity the corresponding rate
+	 */
+	protected function getPlanById($id) {
+		if (!isset($this->plans[$id])) {
+			$this->plans[$id] = Billrun_Factory::db()->plansCollection()->findOne($id);
+		}
+		return $this->plans[$id];
+	}
+
 	protected function getIntlFlag($line) {
-		if (isset($line['usaget']) && $line->get('arate', true) && ($arate = $line['arate']) && isset($arate['rates'][$line['usaget']]['category'])) {
+		$arate = $this->getRowRate($line);
+		if (isset($line['usaget']) && isset($arate['rates'][$line['usaget']]['category'])) {
 			$category = $arate['rates'][$line['usaget']]['category'];
 			if ($category == 'intl' || $category == 'roaming') {
 				return 1;
@@ -641,7 +688,8 @@ class Generator_Golan extends Billrun_Generator {
 	}
 
 	protected function getTariffItem($line, $subscriber) {
-		if ($line->get('arate', true) && ($arate = $line['arate']) && isset($arate['key'])) {
+		$arate = $this->getRowRate($line);
+		if (isset($arate['key'])) {
 			return $arate['key']; //@todo they may expect ROAM_ALL_DEST / $DEFAULT etc. which we don't keep
 		} else if ($line['type'] == 'credit' && isset($line['reason'])) {
 			return $line['reason'];
@@ -785,14 +833,14 @@ EOI;
 	 * @param array $subscriber the subscriber billrun entry
 	 */
 	protected function getPlanName($subscriber) {
-		if (isset($subscriber['current_plan'])) {
-			$plans = Billrun_Factory::db()->plansCollection();
-			$plan = $plans->getRef($subscriber['current_plan']);
-			$plan_name = $plan['name'];
+		$current_plan_ref = $subscriber['current_plan'];
+		if (MongoDBRef::isRef($current_plan_ref)) {
+			$current_plan = $this->getPlanById(strval($current_plan_ref['$id']));
+			$current_plan_name = $current_plan['name'];
 		} else {
-			$plan_name = '';
+			$current_plan_name = '';
 		}
-		return $plan_name;
+		return $current_plan_name;
 	}
 
 	/**
@@ -800,18 +848,14 @@ EOI;
 	 * @param array $subscriber the subscriber billrun entry
 	 */
 	protected function getNextPlanName($subscriber) {
-		$plan_name = '';
-		if (isset($subscriber['lines']['flat']['refs'][0])) {
-			$flat_line = $this->lines_coll->getRef($subscriber['lines']['flat']['refs'][0]);
-			if ($flat_line) {
-				$flat_line->collection($this->lines_coll);
-				$plan = $flat_line['plan_ref'];
-				if (!$plan->isEmpty() && isset($plan['name'])) {
-					$plan_name = $plan['name'];
-				}
-			}
+		$next_plan_ref = $subscriber['next_plan'];
+		if (MongoDBRef::isRef($next_plan_ref)) {
+			$next_plan = $this->getPlanById(strval($next_plan_ref['$id']));
+			$next_plan_name = $next_plan['name'];
+		} else {
+			$next_plan_name = '';
 		}
-		return $plan_name;
+		return $next_plan_name;
 	}
 
 	/**
@@ -913,6 +957,31 @@ EOI;
 			),
 		);
 		return $rates->query($query)->cursor()->current();
+	}
+
+	/**
+	 * Load all rates from db into memory
+	 */
+	protected function loadRates() {
+		$rates_coll = Billrun_Factory::db()->ratesCollection();
+		$rates = $rates_coll->query()->cursor();
+		foreach ($rates as $rate) {
+			$rate->collection($rates_coll);
+			$this->rates[strval($rate->getId())] = $rate;
+		}
+		$this->data_rate = $this->getDataRate();
+	}
+
+	/**
+	 * Load all rates from db into memory
+	 */
+	protected function loadPlans() {
+		$plans_coll = Billrun_Factory::db()->plansCollection();
+		$plans = $plans_coll->query()->cursor();
+		foreach ($plans as $plan) {
+			$plan->collection($plans_coll);
+			$this->plans[strval($plan->getId())] = $plan;
+		}
 	}
 
 }

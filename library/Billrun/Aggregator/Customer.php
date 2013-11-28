@@ -178,7 +178,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 				Billrun_Factory::log("Finished saving account $accid");
 			}
 			Billrun_Factory::log("Closing billrun $billrun_key for account $accid", Zend_log::DEBUG);
-			Billrun_Billrun::close($accid, $billrun_key, $this->min_invoice_id);
+			$account_billrun->close($accid, $billrun_key, $this->min_invoice_id);
 			Billrun_Factory::log("Finished closing billrun $billrun_key for account $accid", Zend_log::DEBUG);
 		}
 		Billrun_Factory::log("Finished iterating page $this->page of size $this->size", Zend_log::DEBUG);
@@ -187,6 +187,12 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		Billrun_Factory::dispatcher()->trigger('afterAggregate', array($this->data, &$this));
 	}
 
+	/**
+	 * Creates and saves a flat line to the db
+	 * @param Billrun_Subscriber $subscriber the subscriber to create a flat line to
+	 * @param string $billrun_key the billrun for which to add the flat line
+	 * @return array the inserted line or the old one if it already exists
+	 */
 	protected function saveFlatLine($subscriber, $billrun_key) {
 		$flat_entry = new Mongodloid_Entity($subscriber->getFlatEntry($billrun_key));
 		$flat_entry->collection($this->lines);
@@ -228,6 +234,9 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		
 	}
 
+	/**
+	 * Load all rates from db into memory
+	 */
 	protected function loadRates() {
 		$rates_coll = Billrun_Factory::db()->ratesCollection();
 		$rates = $rates_coll->query()->cursor();
@@ -238,8 +247,10 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	}
 
 	/**
-	 * gets an array which represents a db ref (includes '$ref' & '$id' keys)
-	 * @param type $db_ref
+	 * HACK TO MAKE THE BILLLRUN FASTER
+	 * Get a rate from the row
+	 * @param Mongodloid_Entity the row to get rate from
+	 * @return Mongodloid_Entity the rate of the row
 	 */
 	protected function getRowRate($row) {
 		$raw_rate = $row->get('arate', true);
