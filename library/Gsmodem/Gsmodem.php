@@ -196,16 +196,14 @@ class Gsmodem_Gsmodem  {
 		
 		$this->doCmd($this->getATcmd('reset',array()), false, false);
 		$this->state->setState(Gsmodem_StateMapping::IDLE_STATE);
-		sleep(5);
-		$this->doCmd($this->getATcmd('echo_mode',array(0)), false, false);
-		sleep(5);
-		$this->doCmd("AT+CFUN=0 ;\r\n", true,true,false,  static::COMMAND_RESPONSE_TIME);
 		sleep(2);
+		$this->doCmd($this->getATcmd('echo_mode',array(0)), false, false);
+		sleep(1);
+		$this->doCmd("AT+CFUN=0 ;\r\n", true,true,false,  static::COMMAND_RESPONSE_TIME);
+		sleep(1);
 		$this->doCmd("AT+CFUN=1 ;\r\n", true,true,false,  static::COMMAND_RESPONSE_TIME);
 		$this->doCmd($this->getATcmd('register_reporting',array(2)), true ,true,false, static::COMMAND_RESPONSE_TIME);
-		sleep(1);
 		$this->doCmd($this->getATcmd('incoming_call_id',array(1)), true ,true,false, static::COMMAND_RESPONSE_TIME);
-		sleep(1);
 		$this->resetModem();
 	}
 	
