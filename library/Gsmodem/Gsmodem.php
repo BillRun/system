@@ -134,7 +134,7 @@ class Gsmodem_Gsmodem  {
 			if($ret == 5) {
 				$this->doCmd($this->getATcmd('register',array(0)), true, false);	
 			}
-		} while ((self::COMMAND_RESPONSE_TIME > microtime(true) - $startTime) || $ret == 1);
+		} while ((self::COMMAND_RESPONSE_TIME > microtime(true) - $startTime) && $ret != 1);
 		$this->state->setState(Gsmodem_StateMapping::IDLE_STATE);
 		return $ret;
 		
