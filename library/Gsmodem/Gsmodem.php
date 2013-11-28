@@ -24,7 +24,7 @@ class Gsmodem_Gsmodem  {
 	const HANG_UP = 'hang_up';
 	const HANGING_UP = 'hanging_up';
 
-	const COMMAND_RESPONSE_TIME = 40; // the amount of seconds to wait  for a response from the modem to a given command.
+	const COMMAND_RESPONSE_TIME = 30; // the amount of seconds to wait  for a response from the modem to a given command.
 	const RESPONSIVE_RESULTS_TIMEOUT = 0.5; 
 	
 	//--------------------------------------------------------------------------
@@ -126,6 +126,7 @@ class Gsmodem_Gsmodem  {
 	public function registerToNet() {
 		Billrun_Factory::log("Registering to network");
 		$res = $this->doCmd($this->getATcmd('register',array(0)), true, false);	
+		$this->state->setState(Gsmodem_StateMapping::IDLE_STATE);
 		return $this->getValueFromResult('CREG', $res);
 		
 	}
@@ -136,6 +137,7 @@ class Gsmodem_Gsmodem  {
 	public function unregisterFromNet() {
 		Billrun_Factory::log("Unregistering to network");
 		$this->doCmd($this->getATcmd('register',array(2)), true);
+		$this->state->setState(Gsmodem_StateMapping::IDLE_STATE);
 	}	
 	
 	/**
@@ -193,6 +195,7 @@ class Gsmodem_Gsmodem  {
 	public function initModem() {
 		
 		$this->doCmd($this->getATcmd('reset',array()), false, false);
+		$this->state->setState(Gsmodem_StateMapping::IDLE_STATE);
 		sleep(5);
 		$this->doCmd($this->getATcmd('echo_mode',array(0)), false, false);
 		sleep(5);
@@ -213,10 +216,7 @@ class Gsmodem_Gsmodem  {
 	public function resetModem() {
 		$ret = true;
 		$ret &= $this->doCmd("AT+CVHU=0 ;\r\n", true,true,false,  static::COMMAND_RESPONSE_TIME) != FALSE;
-		sleep(1);
-		$this->hangUp();
-		sleep(1);
-		//$this->state->setState(Gsmodem_StateMapping::IDLE_STATE);
+		$this->hangUp();		
 		return $ret;
 	}
 	

@@ -226,6 +226,8 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 		if ($isCalling) {
 			if ($action['action_type'] == static::TYPE_BUSY) {
 				sleep( intval(Billrun_Factory::config()->getConfigValue('calls.busy_wait_time', static::BUSY_WAIT_TIME)) );
+			} else {
+				sleep(5);
 			}
 			$this->makeACall($device, $call, $action['to']);
 		} else {			
@@ -280,6 +282,7 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 	 */
 	protected function waitForCall($device, &$callRecord, $callType, $duration) {
 		Billrun_Factory::log("Waiting for a call of type {$callType}");
+		$device->registerToNet();
 		if ($device->waitForCall($duration) !== FALSE) {
 			switch ($callType) {
 				default:
