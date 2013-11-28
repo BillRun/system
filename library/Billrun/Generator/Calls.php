@@ -244,6 +244,10 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 			if( !$isCalling && FALSE === $device->initModem()) {
 				Billrun_Factory::log()->log("Failed when trying to reset the modem with number:". $device->getModemNumber(),Zend_Log::ERR);
 			} else {
+				//make sure  the modem is registered to the network
+				sleep(1);
+				$device->unregisterFromNet();
+				sleep(5);
 				$device->registerToNet();
 			}
 			$this->pingManagmentServer($action,"failed");
