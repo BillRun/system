@@ -465,7 +465,7 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 		$url =$this->options['generator']['management_server_url'] . $this->options['generator']['register_to_management_path'];
 		Billrun_Factory::log("Pinging managment server at : $url");
 		$client = curl_init($url);
-		$post_fields = array('data' => json_encode(array('timestamp' => time(),'action' => $action,'state'=> $sate)));
+		$post_fields = array('data' => json_encode(array('timestamp' => time(),'action' => $action,'state'=> $state)));
 		curl_setopt($client, CURLOPT_POST, TRUE);
 		curl_setopt($client, CURLOPT_POSTFIELDS, $post_fields);
 		curl_setopt($client, CURLOPT_RETURNTRANSFER, TRUE);
