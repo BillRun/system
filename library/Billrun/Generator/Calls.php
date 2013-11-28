@@ -196,7 +196,7 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 			}
 		}
 		if ($action) {
-			Billrun_Factory::log("Got action  {$action['call_id']} of type : {$action['action_type']} the should be run at : {$action['time']}, Waiting... ");		
+			Billrun_Factory::log("Got action  {$action['call_id']} of type : {$action['action_type']} from  {$action['from']} to {$action['to']} that should be run at : {$action['time']}, Waiting... ");		
 			while ($action['time'] >= date("H:i:s")) {
 				usleep(static::MIN_MILLI_RESOLUTION / 4);
 				if(((microtime(true)*1000 % 1000) == 0) && $this->isConfigUpdated($this->testScript)) {//check configuration update  every second.
@@ -241,7 +241,7 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 			$this->HandleCall($device, $call, $action['duration'], (($action['hangup'] == 'caller') == $isCalling) );
 		} else if($action['action_type'] == static::TYPE_REGULAR) {
 			Billrun_Factory::log("Failed on action of type : {$action['action_type']} when using modem  with number : ".$device->getModemNumber(),Zend_Log::ERR);
-			if( !$isCalling ) {
+			if( !$isCalling  /*||  $call['calling_result'] == Gsmodem_StateMapping::IDLE_STATE */) {
 				if(FALSE === $device->initModem()) {
 					Billrun_Factory::log()->log("Failed when trying to reset the modem with number:". $device->getModemNumber(),Zend_Log::ERR);
 				} else {
