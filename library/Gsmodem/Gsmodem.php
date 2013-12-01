@@ -133,6 +133,8 @@ class Gsmodem_Gsmodem  {
 			$ret = Billrun_Util::getFieldVal($this->getValueFromResult('CREG', $res)[0][0],false);
 			//Billrun_Factory::log("$ret");
 			if($ret == 5) {
+				Billrun_Factory::log("Registaered on  a roaming  network  trying to register  to golan...");
+				$this->unregisterFromNet();
 				$this->doCmd($this->getATcmd('register_extended',array(1,2,42508)), true, false);//@TODO	Move this  behavior to configuration.
 			}
 		} while ((self::COMMAND_RESPONSE_TIME > microtime(true) - $startTime) && $ret != 1);
