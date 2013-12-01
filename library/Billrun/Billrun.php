@@ -26,7 +26,7 @@ class Billrun_Billrun {
 	 * @var boolean allow billrun to recompute  marked line (as long as they have the  same billrun_key)
 	 */
 	protected $allowOverride = false;
-
+	
 	/**
 	 * lines collection
 	 * @var Mongodloid_Collection 
@@ -1086,6 +1086,7 @@ class Billrun_Billrun {
 	 * Add all lines of the account to the billrun object
 	 * @param boolean $update_lines whether to set the billrun key as the billrun stamp of the lines
 	 * @param int $start_time lower bound date to get lines from. A unix timestamp 
+	 * @return array the stamps of the lines used to create the billrun
 	 */
 	public function addLines($update_lines = false, $start_time = 0) {
 		$updatedLines = array();
@@ -1131,6 +1132,7 @@ class Billrun_Billrun {
 			Billrun_Factory::log("Finished updating account $this->aid lines with billrun stamp", Zend_Log::DEBUG);
 		}
 		$this->updateTotals();
+		return $updatedLines;
 	}
 
 	/**
