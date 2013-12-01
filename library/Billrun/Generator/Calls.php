@@ -149,12 +149,13 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 
 		foreach($this->modemDevices as $device) {			
 			if(!$device->isRegisteredToNet()) {
+				Billrun_Factory::log()->log("Not connected to network trying to reset the modem with number: ". $device->getModemNumber(),Zend_Log::INFO);
 				if($device->resetModem() == FALSE ) {
-					Billrun_Factory::log()->log("Failed when trying to reset the modem with number:". $device->getModemNumber(),Zend_Log::ERR);
+					Billrun_Factory::log()->log("Failed when trying to reset the modem with number: ". $device->getModemNumber(),Zend_Log::ERR);
 				}
 			}
 			if($device->hangUp() == FALSE ) {
-				Billrun_Factory::log()->log("Failed when trying to hangup the modem with number:". $device->getModemNumber(),Zend_Log::ERR);
+				Billrun_Factory::log()->log("Failed when trying to hangup the modem with number: ". $device->getModemNumber(),Zend_Log::ERR);
 			}
 			
 		}		
@@ -468,13 +469,17 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 	 */
 	protected function pingManagmentServer($action,$state) {
 		//@TODO change to Zend_Http client
-		$url =$this->options['generator']['management_server_url'] . $this->options['generator']['register_to_management_path'];
-		Billrun_Factory::log("Pinging managment server at : $url");
-		$client = curl_init($url);
-		$post_fields = array('data' => json_encode(array('timestamp' => time(),'action' => $action,'state'=> $state)));
-		curl_setopt($client, CURLOPT_POST, TRUE);
-		curl_setopt($client, CURLOPT_POSTFIELDS, $post_fields);
-		curl_setopt($client, CURLOPT_RETURNTRANSFER, TRUE);
-		curl_exec($client);
+		try {
+			$url =$this->options['generator']['management_server_url'] . $this->options['generator']['register_to_management_path'];
+			Billrun_Factory::log("Pinging managment server at : $url");
+			$client = curl_init($url);
+			$post_fields = array('data' => json_encode(array('timestamp' => time(),'action' => $action,'state'=> $state)));
+			curl_setopt($client, CURLOPT_POST, TRUE);
+			curl_setopt($client, CURLOPT_POSTFIELDS, $post_fields);
+			curl_setopt($client, CURLOPT_RETURNTRANSFER, TRUE);
+			curl_exec($client);
+		} catch(\Exception $e) {
+			Billrun_Factory::log("Comunication with the management  server has  failed...  with :".$e->getMessage(),Zend_Log::ALERT);
+		}
 	}
 }
