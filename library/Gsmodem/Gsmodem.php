@@ -126,14 +126,14 @@ class Gsmodem_Gsmodem  {
 	public function registerToNet() {
 		Billrun_Factory::log("Registering to network");
 		$ret = FALSE;
-		$res = $this->doCmd($this->getATcmd('register',array(0)), true, false);	
+		$res = $this->doCmd($this->getATcmd('register',array(2)), true, false);	
 		$startTime = microtime(true);
 		do {
 			$res = $this->getResult(self::RESPONSIVE_RESULTS_TIMEOUT,false);
 			$ret = Billrun_Util::getFieldVal($this->getValueFromResult('CREG', $res)[0][0],false);
 			//Billrun_Factory::log("$ret");
 			if($ret == 5) {
-				$this->doCmd($this->getATcmd('register',array(0)), true, false);	
+				$this->doCmd($this->getATcmd('register',array(2)), true, false);	
 			}
 		} while ((self::COMMAND_RESPONSE_TIME > microtime(true) - $startTime) && $ret != 1);
 		$this->state->setState(Gsmodem_StateMapping::IDLE_STATE);
@@ -159,7 +159,7 @@ class Gsmodem_Gsmodem  {
 	 */
 	public function unregisterFromNet() {
 		Billrun_Factory::log("Unregistering to network");
-		$this->doCmd($this->getATcmd('register',array(2)), true);
+		$this->doCmd($this->getATcmd('register',array(0)), true);
 		$this->state->setState(Gsmodem_StateMapping::IDLE_STATE);
 	}	
 	
