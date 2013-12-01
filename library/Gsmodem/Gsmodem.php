@@ -149,7 +149,7 @@ class Gsmodem_Gsmodem  {
 	public function isRegisteredToNet() {	
 		$res = $this->doCmd($this->getATcmd('register_status'), true, false,false,self::COMMAND_RESPONSE_TIME);	
 		Billrun_Factory::log("$res");
-		$ret = Billrun_Util::getFieldVal($this->getValueFromResult('CREG', $res)[0][0],false) == 1;	
+		$ret = Billrun_Util::getFieldVal($this->getValueFromResult('CREG', $res)[0][1],false) == 1;	
 		return $ret;
 		
 	}
