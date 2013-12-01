@@ -156,7 +156,6 @@ class CreditAction extends Action_Base {
 
 		$filtered_request['source'] = 'api';
 		$filtered_request['usaget'] = $filtered_request['type'] = 'credit';
-		$filtered_request['billrun'] = '000000';
 		ksort($filtered_request);
 		$filtered_request['stamp'] = Billrun_Util::generateArrayStamp($filtered_request);
 

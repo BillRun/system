@@ -89,6 +89,7 @@ class Billrun_Billrun {
 	/**
 	 * Add a subscriber to the current billrun entry.
 	 * @param Billrun_Subscriber $subscriber
+	 * @param string $status
 	 * @return Billrun_Billrun the current instance of the billrun entry.
 	 */
 	public function addSubscriber($subscriber, $status) {
