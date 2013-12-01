@@ -125,7 +125,8 @@ class Gsmodem_Gsmodem  {
 	 */
 	public function registerToNet() {
 		Billrun_Factory::log("Registering to network");
-		$ret = $res = $this->doCmd($this->getATcmd('register',array(0)), true, false);	
+		$ret = FALSE;
+		$res = $this->doCmd($this->getATcmd('register',array(0)), true, false);	
 		$startTime = microtime(true);
 		do {
 			$res = $this->getResult(self::RESPONSIVE_RESULTS_TIMEOUT,false);
@@ -136,6 +137,19 @@ class Gsmodem_Gsmodem  {
 			}
 		} while ((self::COMMAND_RESPONSE_TIME > microtime(true) - $startTime) && $ret != 1);
 		$this->state->setState(Gsmodem_StateMapping::IDLE_STATE);
+		return $ret;
+		
+	}
+	
+	
+	/**
+	 * Check if the modem is registered correctly to the GSM  network.
+	 * @return true  if it is  false otherwise.
+	 */
+	public function isRegisteredToNet() {	
+		$res = $this->doCmd($this->getATcmd('register_status'), true, false,false,self::COMMAND_RESPONSE_TIME);	
+		Billrun_Factory::log("$res");
+		$ret = Billrun_Util::getFieldVal($this->getValueFromResult('CREG', $res)[0][0],false) == 1;	
 		return $ret;
 		
 	}
@@ -202,7 +216,6 @@ class Gsmodem_Gsmodem  {
 	 * Initialize the modem settings.
 	 */
 	public function initModem() {
-		
 		$this->doCmd($this->getATcmd('reset',array()), false, false);
 		$this->state->setState(Gsmodem_StateMapping::IDLE_STATE);
 		sleep(2);

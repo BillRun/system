@@ -63,10 +63,9 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 		parent::__construct($options);
 		if (isset($options['path_to_calling_devices'])) {
 			foreach ($options['path_to_calling_devices'] as $value) {
-				$modem = new Gsmodem_Gsmodem($value['device'],(isset($value['statemapping']) ? new $value['statemapping']() : false));
 				Billrun_Factory::log("Initializing  modem  at dev : {$value['device']} with number {$value['number']}.");
-				if ($modem->isValid()) {
-					
+				$modem = new Gsmodem_Gsmodem($value['device'],(isset($value['statemapping']) ? new $value['statemapping']() : false));			
+				if ($modem->isValid()) {					
 					//$modem->registerToNet();
 					if (isset($value['number'])) {						
 						$modem->setNumber($value['number']);
@@ -134,9 +133,9 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 	}
 
 	/**
-	 * reset all connected modems
+	 * reset all connected modems and  kill all  active processes.
 	 */
-	protected function resetModems() {
+	protected function resetState() {
 		Billrun_Factory::log("Killing existing calls..");
 		$status = array();
 		if(!empty($this->pids)) {
@@ -149,9 +148,15 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 		Billrun_Factory::log("Calls killed.");
 
 		foreach($this->modemDevices as $device) {			
-			if($device->resetModem() == FALSE ) {
-				Billrun_Factory::log()->log("Failed when trying to reset the modem with number:". $device->getModemNumber(),Zend_Log::ERR);
+			if(!$device->isRegisteredToNet()) {
+				if($device->resetModem() == FALSE ) {
+					Billrun_Factory::log()->log("Failed when trying to reset the modem with number:". $device->getModemNumber(),Zend_Log::ERR);
+				}
 			}
+			if($device->hangUp() == FALSE ) {
+				Billrun_Factory::log()->log("Failed when trying to hangup the modem with number:". $device->getModemNumber(),Zend_Log::ERR);
+			}
+			
 		}		
 	}
 	
@@ -164,7 +169,7 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 		if ($action) {
 			$this->pingManagmentServer($action,"pre_fork");
 			//Check if the number speciifed in the action is one of the connected modems if so  act on the action.
-			$this->resetModems();
+			$this->resetState();
 			foreach( array('to' => false,'from' => true) as $key => $isCalling ) {
 				if($this->isConnectedModemNumber($action[$key]) != false) {
 					if (!($pid = pcntl_fork())) {
