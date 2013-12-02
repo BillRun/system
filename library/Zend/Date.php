@@ -20,14 +20,6 @@
  */
 
 /**
- * Include needed Date classes
- */
-require_once 'Zend/Date/DateObject.php';
-require_once 'Zend/Locale.php';
-require_once 'Zend/Locale/Format.php';
-require_once 'Zend/Locale/Math.php';
-
-/**
  * @category  Zend
  * @package   Zend_Date
  * @copyright  Copyright (c) 2005-2012 Zend Technologies USA Inc. (http://www.zend.com)
@@ -248,13 +240,11 @@ class Zend_Date extends Zend_Date_DateObject
                 switch($name) {
                     case 'format_type' :
                         if ((strtolower($value) != 'php') && (strtolower($value) != 'iso')) {
-                            require_once 'Zend/Date/Exception.php';
                             throw new Zend_Date_Exception("Unknown format type ($value) for dates, only 'iso' and 'php' supported", 0, null, $value);
                         }
                         break;
                     case 'fix_dst' :
                         if (!is_bool($value)) {
-                            require_once 'Zend/Date/Exception.php';
                             throw new Zend_Date_Exception("'fix_dst' has to be boolean", 0, null, $value);
                         }
                         break;
@@ -269,7 +259,6 @@ class Zend_Date extends Zend_Date_DateObject
                             parent::$_cache = null;
                         } else {
                             if (!$value instanceof Zend_Cache_Core) {
-                                require_once 'Zend/Date/Exception.php';
                                 throw new Zend_Date_Exception("Instance of Zend_Cache expected");
                             }
 
@@ -283,7 +272,6 @@ class Zend_Date extends Zend_Date_DateObject
                             parent::$_defaultOffset = 0;
                         } else {
                             if (!$value instanceof Zend_TimeSync_Protocol) {
-                                require_once 'Zend/Date/Exception.php';
                                 throw new Zend_Date_Exception("Instance of Zend_TimeSync expected");
                             }
 
@@ -295,7 +283,6 @@ class Zend_Date extends Zend_Date_DateObject
                 self::$_options[$name] = $value;
             }
             else {
-                require_once 'Zend/Date/Exception.php';
                 throw new Zend_Date_Exception("Unknown option: $name = $value");
             }
         }
@@ -2249,7 +2236,6 @@ class Zend_Date extends Zend_Date_DateObject
                     return $this->_assign($calc, $this->mktime(0, 0, 0, 1 + $parsed['month'], 1 + $parsed['day'], 1970 + $parsed['year'], true),
                                                  $this->mktime(0, 0, 0, 1 + $month,           1 + $day,           1970 + $year,           true), $hour);
                 } catch (Zend_Locale_Exception $e) {
-                    require_once 'Zend/Date/Exception.php';
                     throw new Zend_Date_Exception($e->getMessage(), 0, $e, $date);
                 }
                 break;

@@ -15,18 +15,18 @@
 class ImportController extends Yaf_Controller_Abstract {
 
 	public function indexAction() {
+		die();
 		$parser = Billrun_Parser::getInstance(array(
 				'type' => 'separator',
 				'separator' => ",",
-			));
+		));
 
 		$parser->setSeparator(",");
 		$import = Billrun_Processor::getInstance(array(
 				'type' => 'importzones',
 				'parser' => $parser,
 				'path' => '/home/shani/Documents/S.D.O.C/BillRun/backups/zone.csv'
-			
-			));
+		));
 
 		if ($import === FALSE) {
 			exit('cannot load import processor');
@@ -39,7 +39,7 @@ class ImportController extends Yaf_Controller_Abstract {
 				'type' => 'mergerates',
 				'parser' => $parser,
 				'path' => '/home/shani/Documents/S.D.O.C/BillRun/backups/tariff_v2_filtered.csv'
-			));
+		));
 
 		if ($merge === FALSE) {
 			exit('cannot load merge processor');
@@ -52,7 +52,7 @@ class ImportController extends Yaf_Controller_Abstract {
 				'type' => 'mergezonepackage',
 				'parser' => $parser,
 				'path' => '/home/shani/Documents/S.D.O.C/BillRun/backups/zone_group_element.csv'
-			));
+		));
 
 		if ($mergePackage === FALSE) {
 			exit('cannot load merge processor');
@@ -65,7 +65,7 @@ class ImportController extends Yaf_Controller_Abstract {
 				'type' => 'mergeintlnetworks',
 				'parser' => $parser,
 				'path' => '/home/shani/Documents/S.D.O.C/BillRun/backups/mobile_network.csv'
-			));
+		));
 
 		if ($merge_intl_networks === FALSE) {
 			exit('cannot load import processor');
@@ -78,28 +78,28 @@ class ImportController extends Yaf_Controller_Abstract {
 				'type' => 'wholesaleoutrates',
 				'parser' => $parser,
 				'path' => '/home/shani/Documents/S.D.O.C/BillRun/backups/wholesale/wsalein_tariff_out_v2.csv'
-			));
+		));
 
 		if ($wholesale === FALSE) {
-			exit('cannot load import processor'. PHP_EOL);
+			exit('cannot load import processor' . PHP_EOL);
 		}
 
 		$wholesale->setBackupPath(array()); // no backup
 		$importWholesaleZones = $wholesale->process();
-		
+
 		$wholesalein = Billrun_Processor::getInstance(array(
 				'type' => 'wholesaleinrates',
 				'parser' => $parser,
 				'path' => '/home/shani/Documents/S.D.O.C/BillRun/backups/wholesale/wsalein_tariff_in_v2.csv'
-			));
+		));
 
 		if ($wholesalein === FALSE) {
-			exit('cannot load import processor'. PHP_EOL);
+			exit('cannot load import processor' . PHP_EOL);
 		}
 
 		$wholesalein->setBackupPath(array()); // no backup
 		$importWholesaleIn = $wholesalein->process();
-		
+
 		$this->getView()->title = "BillRun | The best open source billing system";
 		$this->getView()->content = "Data import count: " . count($importWholesaleZones)
 			. "<br />" . PHP_EOL
@@ -108,6 +108,42 @@ class ImportController extends Yaf_Controller_Abstract {
 			. "Data merge package count: " . count($mergePackageData) . "<br />"
 			. "Merge intl. networks count: " . $importMapData . "<br />" . PHP_EOL;
 		;
+	}
+
+	public function csvAction() {
+		$path = ''; // TODO: setup by config cli input
+		if (!file_exists($path) || is_dir($path)) {
+			Billrun_Factory::log("file not exists or path is directory");
+			return FALSE;
+		}
+
+		if (($handle = fopen($path, "r")) !== FALSE) {
+			$delimiter = "\t"; // TODO: setup by config cli input
+			$limit = 0; // TODO: setup by config cli input
+			$enclosure = '"'; // TODO: setup by config cli input
+			$escape = '\\'; // TODO: setup by config cli input
+			$uri = 'http://rp01.gt/api/credit'; // TODO: setup by config cli input
+			$curl = new Zend_Http_Client_Adapter_Curl();
+			$client = new Zend_Http_Client($uri);
+			$client->setAdapter($curl);
+			$client->setMethod(Zend_Http_Client::POST);
+			while (($data = fgetcsv($handle, $limit, $delimiter)) !== FALSE) {
+				$urt = new Zend_Date(strtotime($data[2]), 'he_IL');
+				$send = array(
+					'account_id' => $data[0],
+					'subscriber_id' => $data[1],
+					'credit_time' => $urt->getTimestamp(),
+					'reason' => 'CRM-CHARGE_SMS_300-BILLRUN_201310',
+					'credit_type' => 'charge',
+					'amount_without_vat' => $data[3],
+				);
+				$client->setParameterPost($send);
+				$response = $client->request();
+				print $response->getBody();
+				Billrun_Factory::log("API response with: " . print_R($response->getBody(), true) . "<br />");
+			}
+		}
+		die(" end...");
 	}
 
 }

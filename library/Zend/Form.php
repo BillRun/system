@@ -1846,7 +1846,6 @@ class Zend_Form implements Iterator, Countable, Zend_Validate_Interface
         }
 
         if (!class_exists($class)) {
-            require_once 'Zend/Loader.php';
             Zend_Loader::loadClass($class);
         }
         $this->_displayGroups[$name] = new $class(
