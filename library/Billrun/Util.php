@@ -272,4 +272,20 @@ class Billrun_Util {
 		
 		return FALSE;
 	}
+	
+	public static function sendMail($subject, $body, $recipients, $attachments = array()) {
+		$mailer = Billrun_Factory::mailer()->
+			setSubject($subject)->
+			setBodyText($body);
+		//add attachments
+		foreach ($attachments as $attachment) {
+			$mailer->addAttachment($attachment);
+		}
+		//set recipents
+		foreach ($recipients as $recipient) {
+			$mailer->addTo($recipient);
+		}
+		//sen email
+		return $mailer->send();
+	}
 }
