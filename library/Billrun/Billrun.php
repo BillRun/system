@@ -1041,7 +1041,8 @@ class Billrun_Billrun {
 	 */
 	protected static function getRateById($id) {
 		if (!isset(self::$rates[$id])) {
-			self::$rates[$id] = Billrun_Factory::db()->ratesCollection()->findOne($id);
+			$rates_coll = Billrun_Factory::db()->ratesCollection();
+			self::$rates[$id] = $rates_coll->findOne($id);
 		}
 		return self::$rates[$id];
 	}
@@ -1063,7 +1064,7 @@ class Billrun_Billrun {
 	 */
 	public static function loadRates() {
 		$rates_coll = Billrun_Factory::db()->ratesCollection();
-		$rates = $rates_coll->query()->cursor();
+		$rates = $rates_coll->query()->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
 		foreach ($rates as $rate) {
 			$rate->collection($rates_coll);
 			self::$rates[strval($rate->getId())] = $rate;
@@ -1074,8 +1075,8 @@ class Billrun_Billrun {
 	 * Load all plans from db into memory
 	 */
 	public static function loadPlans() {
-		$plans_coll = Billrun_Factory::db()->ratesCollection();
-		$plans = $plans_coll->query()->cursor();
+		$plans_coll = Billrun_Factory::db()->plansCollection();
+		$plans = $plans_coll->query()->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
 		foreach ($plans as $plan) {
 			$plan->collection($plans_coll);
 			self::$plans[strval($plan->getId())] = $plan;
@@ -1213,7 +1214,7 @@ class Billrun_Billrun {
 		);
 
 		Billrun_Factory::log()->log("Querying for account " . $aid . " lines", Zend_Log::DEBUG);
-		$cursor = $this->lines->query($query)->cursor()->hint($hint);
+		$cursor = $this->lines->query($query)->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED)->hint($hint);
 		Billrun_Factory::log()->log("Finished querying for account " . $aid . " lines", Zend_Log::DEBUG);
 //		$results = array();
 //		Billrun_Factory::log()->log("Saving account " . $aid . " lines to array", Zend_Log::DEBUG);

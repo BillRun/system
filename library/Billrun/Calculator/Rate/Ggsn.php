@@ -80,10 +80,11 @@ class Billrun_Calculator_Rate_Ggsn extends Billrun_Calculator_Rate {
 	 * load the ggsn rates to be used later.
 	 */
 	protected function loadRates() {
-		$rates = Billrun_Factory::db()->ratesCollection()->query($this->rateKeyMapping);
+		$rates_coll = Billrun_Factory::db()->ratesCollection();
+		$rates = $rates_coll->query($this->rateKeyMapping)->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
 		$this->rates = array();
 		foreach ($rates as $value) {
-			$value->collection(Billrun_Factory::db()->ratesCollection());
+			$value->collection($rates_coll);
 			$this->rates[] = $value;
 		}
 	}

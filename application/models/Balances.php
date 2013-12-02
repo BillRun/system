@@ -39,7 +39,7 @@ class BalancesModel extends TableModel {
 					'current_plan'=> Billrun_Factory::db()->plansCollection()->createRef($id),
 					'aid' => array('$gt' => (int)$from_account_id),
 					'aid' => array('$lt' => (int)$to_account_id),
-		));
+		))->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
 	}
 
 }

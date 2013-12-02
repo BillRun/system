@@ -83,7 +83,7 @@ class LinesModel extends TableModel {
 			$rateEntity = $ratesColl->query('key', $data['arate'])
 					->lessEq('from', $currentDate)
 					->greaterEq('to', $currentDate)
-					->cursor()->current();
+					->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED)->current();
 			$data['arate'] = $rateEntity->createRef($ratesColl);
 		}
 		if (isset($data['plan'])) {
@@ -91,7 +91,7 @@ class LinesModel extends TableModel {
 			$planEntity = $plansColl->query('name', $data['plan'])
 					->lessEq('from', $currentDate)
 					->greaterEq('to', $currentDate)
-					->cursor()->current();
+					->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED)->current();
 			$data['plan_ref'] = $planEntity->createRef($plansColl);
 		}
 		parent::update($data);
@@ -186,7 +186,7 @@ class LinesModel extends TableModel {
 			if ($filter_field['input_type'] == 'boolean' && $filter_field['key'] == 'garbage') {
 				if (!is_null($value) && $value != $filter_field['default']) {
 					$rates_coll = Billrun_Factory::db()->ratesCollection();
-					$unrated_rate = $rates_coll->query("key", "UNRATED")->cursor()->current()->createRef($rates_coll);
+					$unrated_rate = $rates_coll->query("key", "UNRATED")->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED)->current()->createRef($rates_coll);
 					$month_ago = new MongoDate(strtotime("1 month ago"));
 					return array(
 						'$or' => array(

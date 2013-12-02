@@ -14,8 +14,7 @@ class Mongodloid_Cursor implements Iterator, Countable {
 	}
 
 	public function count($foundOnly = true) {
-	
-		return  $this->_cursor->count($foundOnly);
+		return $this->_cursor->count($foundOnly);
 	}
 
 	public function current() {
@@ -68,6 +67,11 @@ class Mongodloid_Cursor implements Iterator, Countable {
 
 	public function explain() {
 		return $this->_cursor->explain();
+	}
+
+	public function setReadPreference($read_preference, array $tags = array()) {
+		$this->_cursor->setReadPreference($read_preference, $tags);
+		return $this;
 	}
 
 }

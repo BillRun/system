@@ -84,7 +84,7 @@ class Billrun_Calculator_Rate_Credit extends Billrun_Calculator_Rate {
 				'$in' => array('CREDIT_VATABLE', 'CREDIT_VAT_FREE'),
 			),
 		);
-		$rates = $rates_coll->query($query)->cursor();
+		$rates = $rates_coll->query($query)->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
 		$this->rates = array();
 		foreach ($rates as $rate) {
 			$rate->collection($rates_coll);

@@ -15,7 +15,7 @@
  * @subpackage Balance
  * @since      1.0
  */
-class Generator_Balance extends Generator_Golan {
+class Generator_Balance extends Generator_Golanxml {
 
 	/**
 	 * Account for which to get the current balance
@@ -51,6 +51,7 @@ class Generator_Balance extends Generator_Golan {
 			$this->setSubscribers($options['subscribers']);
 		}
 		$this->now = time();
+//		$this->now = strtotime("60 days ago");
 		$this->stamp = Billrun_Util::getBillrunKey($this->now);
 	}
 
@@ -75,13 +76,13 @@ class Generator_Balance extends Generator_Golan {
 				Billrun_Factory::log()->log("Billrun " . $this->stamp . " already exists for subscriber " . $subscriber->sid, Zend_Log::ALERT);
 				continue;
 			}
-			$current_plan_name = $subscriber->plan;
-			if (is_null($current_plan_name) || $current_plan_name == "NULL") {
-				Billrun_Factory::log()->log("Null current plan for subscriber $subscriber->sid", Zend_Log::ALERT);
-				$billrun->addSubscriber($subscriber->sid, null);
+			$next_plan_name = $subscriber->getNextPlanName();
+			if (is_null($next_plan_name) || $next_plan_name == "NULL") {
+				$subscriber_status = "closed";
 			} else {
-				$billrun->addSubscriber($subscriber->sid, $subscriber->getPlan()->createRef());
+				$subscriber_status = "open";
 			}
+			$billrun->addSubscriber($subscriber, $subscriber_status);
 		}
 		$billrun->addLines(false, $billrun_start_date);
 

@@ -69,7 +69,7 @@ class Billrun_Plan {
 								)
 							))
 							->lessEq('from', $date)
-							->cursor()
+							->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED)
 							->current();
 					$this->data->collection(Billrun_Factory::db()->plansCollection());
 				}
@@ -79,7 +79,7 @@ class Billrun_Plan {
 
 	protected function initPlans() {
 		$plans_coll = Billrun_Factory::db()->plansCollection();
-		$plans = $plans_coll->query()->cursor();
+		$plans = $plans_coll->query()->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
 		foreach ($plans as $plan) {
 			$plan->collection($plans_coll);
 			self::$plans['by_id'][strval($plan->getId())] = $plan;

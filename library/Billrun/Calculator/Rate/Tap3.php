@@ -175,9 +175,10 @@ class Billrun_Calculator_Rate_Tap3 extends Billrun_Calculator_Rate {
 				'$exists' => true,
 			),
 		);
-		$rates = Billrun_Factory::db()->ratesCollection()->query($query)->cursor();
+		$rates_coll = Billrun_Factory::db()->ratesCollection();
+		$rates = $rates_coll->query($query)->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
 		foreach ($rates as $rate) {
-			$rate->collection(Billrun_Factory::db()->ratesCollection());
+			$rate->collection($rates_coll);
 			if (is_array($rate['params']['serving_networks'])) {
 				foreach ($rate['params']['serving_networks'] as $serving_network) {
 					$this->rates['by_names'][$serving_network][] = $rate;

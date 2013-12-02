@@ -11,12 +11,12 @@
 /**
  * Golan invoices generator
  *
- * @todo this class should be called Generator_Golanxml and inherit from abstract class Generator_Golan
+ * @todo this class should inherit from abstract class Generator_Golan
  * @package    Generator
- * @subpackage Golan
+ * @subpackage Golanxml
  * @since      1.0
  */
-class Generator_Golan extends Billrun_Generator {
+class Generator_Golanxml extends Billrun_Generator {
 
 	protected $server_id = 1;
 	protected $server_count = 1;
@@ -30,7 +30,7 @@ class Generator_Golan extends Billrun_Generator {
 	protected $data_rate;
 
 	public function __construct($options) {
-		self::$type = 'golan';
+		self::$type = 'golanxml';
 		parent::__construct($options);
 		if (isset($options['generator']['ids'])) {
 			$this->server_id = intval($options['generator']['ids']);
@@ -518,7 +518,7 @@ class Generator_Golan extends Billrun_Generator {
 				'$ne' => 'ggsn',
 			),
 		);
-		$lines = $this->lines_coll->query($query)->cursor();
+		$lines = $this->lines_coll->query($query)->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
 		return $lines;
 	}
 
@@ -637,7 +637,8 @@ class Generator_Golan extends Billrun_Generator {
 	 */
 	protected function getRateById($id) {
 		if (!isset($this->rates[$id])) {
-			$this->rates[$id] = Billrun_Factory::db()->ratesCollection()->findOne($id);
+			$rates = Billrun_Factory::db()->ratesCollection();
+			$this->rates[$id] = $rates->findOne($id);
 		}
 		return $this->rates[$id];
 	}
@@ -649,7 +650,8 @@ class Generator_Golan extends Billrun_Generator {
 	 */
 	protected function getPlanById($id) {
 		if (!isset($this->plans[$id])) {
-			$this->plans[$id] = Billrun_Factory::db()->plansCollection()->findOne($id);
+			$plans_coll = Billrun_Factory::db()->plansCollection();
+			$this->plans[$id] = $plans_coll->findOne($id);
 		}
 		return $this->plans[$id];
 	}
@@ -956,7 +958,7 @@ EOI;
 				'$gte' => new MongoDate(Billrun_Util::getStartTime($this->stamp)),
 			),
 		);
-		return $rates->query($query)->cursor()->current();
+		return $rates->query($query)->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED)->current();
 	}
 
 	/**
@@ -964,7 +966,7 @@ EOI;
 	 */
 	protected function loadRates() {
 		$rates_coll = Billrun_Factory::db()->ratesCollection();
-		$rates = $rates_coll->query()->cursor();
+		$rates = $rates_coll->query()->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
 		foreach ($rates as $rate) {
 			$rate->collection($rates_coll);
 			$this->rates[strval($rate->getId())] = $rate;
@@ -977,7 +979,7 @@ EOI;
 	 */
 	protected function loadPlans() {
 		$plans_coll = Billrun_Factory::db()->plansCollection();
-		$plans = $plans_coll->query()->cursor();
+		$plans = $plans_coll->query()->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
 		foreach ($plans as $plan) {
 			$plan->collection($plans_coll);
 			$this->plans[strval($plan->getId())] = $plan;
