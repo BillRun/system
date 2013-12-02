@@ -51,8 +51,6 @@ class Generator_Balance extends Generator_Golanxml {
 			$this->setSubscribers($options['subscribers']);
 		}
 		$this->now = time();
-//		$this->now = strtotime("60 days ago");
-		$this->stamp = Billrun_Util::getBillrunKey($this->now);
 	}
 
 	public function load() {
@@ -171,6 +169,27 @@ class Generator_Balance extends Generator_Golanxml {
 	protected function getAccTotalAfterVat($row) {
 		$before_vat = $this->getAccTotalBeforeVat($row);
 		return $before_vat + $before_vat * Billrun_Billrun::getVATByBillrunKey($this->stamp);
+	}
+
+	protected function get_subscriber_lines($subscriber) {
+		$start_time = new MongoDate(Billrun_Util::getStartTime($this->stamp));
+		$end_time = new MongoDate($this->now);
+		$query = array(
+			'sid' => $subscriber['sid'],
+			'urt' => array(
+//				'$lte' => $end_time, // not necessary for production
+				'$gte' => $start_time, // necessary if the previous billrun was not created yet
+			),
+//			'aprice' => array(
+//				'$exists' => true,
+//			),
+//			'billrun' => "000000", // not necessary for production because urt $gte is used
+			'type' => array(
+				'$ne' => 'ggsn',
+			),
+		);
+		$lines = $this->lines_coll->query($query)->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
+		return $lines;
 	}
 
 }
