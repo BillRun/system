@@ -182,14 +182,8 @@ class Billrun_Generator_Report_GeneratedCalls extends Billrun_Generator_Report {
 			$summary['offset_pecentage'][$value] = (float)@( 100 * $summary['offset'][$value] / $summary['generator'][$value] );
 		}
 		//TODO calculate standard  deviation
-		$genDevi = $this->calcStandardDev($allLines, array('callee_duration' => 'duration','callee_price' => 'price','rate' => 'rate'));
-		$summary['generator_standard_deviation']['duration'] = $genDevi['duration']; 
-		$summary['generator_standard_deviation']['price'] = $genDevi['price'];
-		$summary['generator_standard_deviation']['rate'] = $genDevi['rate'];
-		$bilDevi = $this->calcStandardDev($allLines, array('billing_usagev'=> 'duration','billing_aprice' => 'price','billing_arate' => 'rate'));
-		$summary['billing_standard_deviation']['duration'] = $bilDevi['duration'];
-		$summary['billing_standard_deviation']['price'] = $bilDevi['price'];
-		$summary['billing_standard_deviation']['rate'] = $bilDevi['rate'];
+		$summary['generator_standard_deviation'] =  array_merge( $summary['generator_standard_deviation'],$this->calcStandardDev($allLines, array('callee_duration' => 'duration','callee_price' => 'price','rate' => 'rate')) );		
+		$summary['billing_standard_deviation'] = array_merge( $summary['billing_standard_deviation'] ,$this->calcStandardDev($allLines, array('billing_usagev'=> 'duration','billing_aprice' => 'price','billing_arate' => 'rate')) );
 		return $summary;
 	}
 
