@@ -248,15 +248,15 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 			$this->HandleCall($device, $call, $action['duration'], (($action['hangup'] == 'caller') == $isCalling) );
 		} else if($action['action_type'] == static::TYPE_REGULAR) {
 			Billrun_Factory::log("Failed on action of type : {$action['action_type']} when using modem  with number : ".$device->getModemNumber(),Zend_Log::ERR);
-			if( !$isCalling  /*||  $call['calling_result'] == Gsmodem_StateMapping::IDLE_STATE */) {
-				if(FALSE === $device->initModem()) {
-					Billrun_Factory::log()->log("Failed when trying to reset the modem with number:". $device->getModemNumber(),Zend_Log::ERR);
-				} else {
-					//make sure  the modem is registered to the network				
-					sleep(5);
-					$device->registerToNet();
-				}
-			}
+//			if( !$isCalling  /*||  $call['calling_result'] == Gsmodem_StateMapping::IDLE_STATE */) {
+//				if(FALSE === $device->initModem()) {
+//					Billrun_Factory::log()->log("Failed when trying to reset the modem with number:". $device->getModemNumber(),Zend_Log::ERR);
+//				} else {
+//					//make sure  the modem is registered to the network				
+//					sleep(5);
+//					$device->registerToNet();
+//				}
+//			}
 			$this->pingManagmentServer($action,"failed");
 		}
 		//$call['execution_end_time'] = date("YmdTHis");

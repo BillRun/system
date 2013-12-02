@@ -272,7 +272,7 @@ class Billrun_Generator_Report_GeneratedCalls extends Billrun_Generator_Report {
 			
 			if (!($updateResults['ok'] && $updateResults['updatedExisting'])) {
 				$retBLines['unmatched_lines'][] = $data;
-			} else {
+			} else {//from billing matched tyo aline in the generator
 			//	Billrun_Factory::log()->log("line : " . print_r($bLine,1), Zend_Log::DEBUG);
 			//	Billrun_Factory::log()->log("line : " . print_r($updateResults,1), Zend_Log::DEBUG);
 			}
