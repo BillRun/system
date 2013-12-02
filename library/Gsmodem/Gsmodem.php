@@ -131,7 +131,6 @@ class Gsmodem_Gsmodem  {
 		do {
 			$res = $this->getResult(self::RESPONSIVE_RESULTS_TIMEOUT,false);
 			$ret = Billrun_Util::getFieldVal($this->getValueFromResult('CREG', $res)[0][0],false);
-			//Billrun_Factory::log("$ret");
 			if($ret == 5) {
 				Billrun_Factory::log("Registaered on  a roaming  network  trying to register  to golan...");
 				$this->unregisterFromNet();
@@ -150,7 +149,6 @@ class Gsmodem_Gsmodem  {
 	 */
 	public function isRegisteredToNet() {	
 		$res = $this->doCmd($this->getATcmd('register_status'), true, false,false,self::COMMAND_RESPONSE_TIME);	
-		Billrun_Factory::log("$res");
 		$ret = Billrun_Util::getFieldVal($this->getValueFromResult('CREG', $res)[0][1],false) == 1;	
 		return $ret;
 		
