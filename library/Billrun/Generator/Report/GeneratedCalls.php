@@ -117,7 +117,7 @@ class Billrun_Generator_Report_GeneratedCalls extends Billrun_Generator_Report {
 			$record['end_time_offest'] = Billrun_Util::getFieldVal($line['callee_call_end_time']->sec,0) - strtotime(Billrun_Util::getFieldVal($line['billing_charging_end_time'],''));
 			$record['call_recoding_diff'] =	isset($line['billing_urt'])  ? 0 : 1 ;
 			$record['called_number_diff'] = Billrun_Util::getFieldVal($line['to'],'') != Billrun_Util::getFieldVal($line['billing_called_number'],'') ? 1 : 0;
-			$record['correctness'] = ( // Check that the  call is corrent
+			$record['correctness'] = $record['called_end_status'] == 'no_call' ^ ( // Check that the  call is corrent
 										abs($record['start_time_offest']) <= 5 && abs($record['end_time_offest']) <= 5 &&
 										$record['call_recoding_diff']  == 0 && $record['called_number_diff'] == 0 &&
 										abs($record['charge_offest']) <= 0.3 && abs($record['time_offset']) <= 1 
@@ -237,7 +237,7 @@ class Billrun_Generator_Report_GeneratedCalls extends Billrun_Generator_Report {
 							'$or' => array(
 							//	array('callee_call_start_time' => array('$gt'=> new MongoDate(0) )),
 								array('billing_urt' => array('$gt'=> new MongoDate(0) )),
-								array('caller_end_result' => array('$ne'=> 'no_call' )),
+								//array('caller_end_result' => array('$ne'=> 'no_call' )),
 							),
 							'from' =>  array('$regex' => (string) $this->callingNumber ),
 					);
