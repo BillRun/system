@@ -239,6 +239,7 @@ class Gsmodem_Gsmodem  {
 	public function resetModem() {
 		$ret = true;
 		$ret &= $this->doCmd("AT+CVHU=0 ;\r\n", true,true,false,  static::COMMAND_RESPONSE_TIME) != FALSE;
+		$ret &= $this->doCmd("AT+CVHUP ;\r\n", true,true,false,  static::COMMAND_RESPONSE_TIME) != FALSE;
 		$ret &= $this->hangUp() != FALSE;
 		$ret &= $this->registerToNet() != FALSE;
 		return $ret;

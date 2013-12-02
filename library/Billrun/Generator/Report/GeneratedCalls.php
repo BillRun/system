@@ -143,12 +143,12 @@ class Billrun_Generator_Report_GeneratedCalls extends Billrun_Generator_Report {
 	 */
 	protected function printSummaryReport($subscriberLines,$unmachedLines) {
 		$summary=array(
-					'generator' => array('duration'=>0,'price'=> 0, 'busy'=> 0,'regular' => 0, 'voice_mail' => 0 , 'no_answer' => 0,'rate'=> 0),
-					'billing' => array('duration'=>0,'price'=> 0, 'busy'=> 0,'regular' => 0, 'voice_mail' => 0 , 'no_answer' => 0,'rate'=> 0),
-					'offset' => array('duration'=>0,'price'=> 0, 'busy'=> 0,'regular' => 0, 'voice_mail' => 0 , 'no_answer' => 0,'rate'=> 0),
-					'offset_pecentage' => array('duration'=>0,'price'=> 0, 'busy'=> 0,'regular' => 0, 'voice_mail' => 0 , 'no_answer' => 0,'rate'=> 0),
-					'generator_standard_deviation' => array('duration'=>0,'price'=> 0, 'busy'=> 0,'regular' => 0, 'voice_mail' => 0 , 'no_answer' => 0,'rate'=> 0),
-					'billing_standard_deviation' => array('duration'=>0,'price'=> 0, 'busy'=> 0,'regular' => 0, 'voice_mail' => 0 , 'no_answer' => 0,'rate'=> 0),
+					'generator' => array('duration'=>0,'price'=> 0, 'busy'=> 0,'regular' => 0, 'voice_mail' => 0 , 'no_answer' => 0,'rate'=> 0,'out_of_boounds' => 0),
+					'billing' => array('duration'=>0,'price'=> 0, 'busy'=> 0,'regular' => 0, 'voice_mail' => 0 , 'no_answer' => 0,'rate'=> 0,'out_of_boounds' => 0),
+					'offset' => array('duration'=>0,'price'=> 0, 'busy'=> 0,'regular' => 0, 'voice_mail' => 0 , 'no_answer' => 0,'rate'=> 0,'out_of_boounds' => 0),
+					'offset_pecentage' => array('duration'=>0,'price'=> 0, 'busy'=> 0,'regular' => 0, 'voice_mail' => 0 , 'no_answer' => 0,'rate'=> 0,'out_of_boounds' => 0),
+					'generator_standard_deviation' => array('duration'=>0,'price'=> 0, 'busy'=> 0,'regular' => 0, 'voice_mail' => 0 , 'no_answer' => 0,'rate'=> 0,'out_of_boounds' => 0),
+					'billing_standard_deviation' => array('duration'=>0,'price'=> 0, 'busy'=> 0,'regular' => 0, 'voice_mail' => 0 , 'no_answer' => 0,'rate'=> 0,'out_of_boounds' => 0),
 			);
 		$allLines = array_merge($unmachedLines,$subscriberLines);
 		foreach ( $allLines as $key => $value) {
@@ -157,13 +157,15 @@ class Billrun_Generator_Report_GeneratedCalls extends Billrun_Generator_Report {
 				$summary['generator']['price'] += 0;//Billrun_Util::getFieldVal($value['callee_price'],0);
 				$summary['generator'][$value['action_type']] += 1;			
 				$summary['generator']['rate'] += floatval(Billrun_Util::getFieldVal($value['rate'],0));	
+				$summary['generator']['out_of_bounds'] += Billrun_Util::getFieldVal($value['correctness'],0);
 			}
 		
 			if(isset($value['billing_usagev'])) {
 				$summary['billing']['duration'] +=  Billrun_Util::getFieldVal($value['billing_usagev'],0) ;
 				$summary['billing']['price'] +=  Billrun_Util::getFieldVal($value['billing_aprice'],0);			
 				$summary['billing'][Billrun_Util::getFieldVal($value['action_type'],'regular')] +=  1;			
-				$summary['billing']['rate'] +=  Billrun_Util::getFieldVal($value['billing_arate'],0);						
+				$summary['billing']['rate'] +=  Billrun_Util::getFieldVal($value['billing_arate'],0);
+				$summary['billing']['out_of_bounds'] += Billrun_Util::getFieldVal($value['correctness'],0);
 			}
 		}
 		$summary['offset']['duration'] =  $summary['generator']['duration'] - $summary['billing']['duration'];
@@ -180,8 +182,14 @@ class Billrun_Generator_Report_GeneratedCalls extends Billrun_Generator_Report {
 			$summary['offset_pecentage'][$value] = (float)@( 100 * $summary['offset'][$value] / $summary['generator'][$value] );
 		}
 		//TODO calculate standard  deviation
-		$summary['generator_standard_deviation'] = $this->calcStandardDev($allLines, array('callee_duration' => 'duration','callee_price' => 'price','rate' => 'rate'));
-		$summary['billing_standard_deviation'] =$this->calcStandardDev($allLines, array('billing_usagev'=> 'duration','billing_aprice' => 'price','billing_arate' => 'rate'));
+		$genDevi = $this->calcStandardDev($allLines, array('callee_duration' => 'duration','callee_price' => 'price','rate' => 'rate'));
+		$summary['generator_standard_deviation']['duration'] = $genDevi['duration']; 
+		$summary['generator_standard_deviation']['price'] = $genDevi['price'];
+		$summary['generator_standard_deviation']['rate'] = $genDevi['rate'];
+		$bilDevi = $this->calcStandardDev($allLines, array('billing_usagev'=> 'duration','billing_aprice' => 'price','billing_arate' => 'rate'));
+		$summary['billing_standard_deviation']['duration'] = $bilDevi['duration'];
+		$summary['billing_standard_deviation']['price'] = $bilDevi['price'];
+		$summary['billing_standard_deviation']['rate'] = $bilDevi['rate'];
 		return $summary;
 	}
 
