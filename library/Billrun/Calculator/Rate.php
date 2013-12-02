@@ -26,7 +26,6 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	 * @var array
 	 */
 	protected $rateMapping = array();
-	
 	protected static $calcs = array();
 
 	/**
@@ -99,7 +98,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	public function isLineLegitimate($line) {
 		return $line['type'] == static::$type;
 	}
-	
+
 	/**
 	 * Override parent calculator to save changes with update (not save)
 	 */
@@ -120,10 +119,23 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 			unset($this->lines[$line['stamp']]);
 		}
 	}
-	
+
+	/**
+	 * load calculator rate by line type
+	 * 
+	 * @param array $line the line properties
+	 * @param array $options options to load
+	 * 
+	 * @return Billrun calculator rate class
+	 */
 	public static function getRateCalculator($line, array $options = array()) {
 		$type = $line['type'];
 		if (!isset(self::$calcs[$type])) {
+			// @TODO: use always the first condition for all types - it will load the config values by default
+			if ($type === 'smsc' || $type === 'smpp') {
+				$configOptions = Billrun_Factory::config()->getConfigValue('Rate_' . ucfirst($type));
+				$options = array_merge($options, $configOptions);
+			}
 			$class = 'Billrun_Calculator_Rate_' . ucfirst($type);
 			self::$calcs[$type] = new $class($options);
 		}
