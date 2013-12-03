@@ -153,7 +153,7 @@ class Billrun_Generator_Report_GeneratedCalls extends Billrun_Generator_Report {
 		//$allLines = array_merge($unmachedLines,$subscriberLines);
 		foreach ( $allLines as $key => $value) {
 			if(Billrun_Util::getFieldVal($value['generator_call_type'],false)) {
-				$summary['generator']['duration'] += Billrun_Util::getFieldVal($value['callee_duration'],0);
+				$summary['generator']['duration'] += ( Billrun_Util::getFieldVal($value['caller_end_status'],'') == 'hang_up'  ? Billrun_Util::getFieldVal($value['caller_duration'],0) : Billrun_Util::getFieldVal($value['callee_duration'],0));
 				$summary['generator']['price'] += 0;//Billrun_Util::getFieldVal($value['generator_estimated_price'],0);
 				$summary['generator'][$value['generator_call_type']] += 1;			
 				$summary['generator']['rate'] += floatval(Billrun_Util::getFieldVal($value['generator_rate'],0));	
