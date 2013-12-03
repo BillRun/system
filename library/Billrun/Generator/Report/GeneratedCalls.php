@@ -143,12 +143,12 @@ class Billrun_Generator_Report_GeneratedCalls extends Billrun_Generator_Report {
 	 */
 	protected function printSummaryReport($subscriberLines,$unmachedLines) {
 		$summary=array(
-					'generator' => array('duration'=>0,'price'=> 0, 'busy'=> 0,'regular' => 0, 'voice_mail' => 0 , 'no_answer' => 0,'rate'=> 0,'out_of_boounds' => 0),
-					'billing' => array('duration'=>0,'price'=> 0, 'busy'=> 0,'regular' => 0, 'voice_mail' => 0 , 'no_answer' => 0,'rate'=> 0,'out_of_boounds' => 0),
-					'offset' => array('duration'=>0,'price'=> 0, 'busy'=> 0,'regular' => 0, 'voice_mail' => 0 , 'no_answer' => 0,'rate'=> 0,'out_of_boounds' => 0),
-					'offset_pecentage' => array('duration'=>0,'price'=> 0, 'busy'=> 0,'regular' => 0, 'voice_mail' => 0 , 'no_answer' => 0,'rate'=> 0,'out_of_boounds' => 0),
-					'generator_standard_deviation' => array('duration'=>0,'price'=> 0, 'busy'=> 0,'regular' => 0, 'voice_mail' => 0 , 'no_answer' => 0,'rate'=> 0,'out_of_boounds' => 0),
-					'billing_standard_deviation' => array('duration'=>0,'price'=> 0, 'busy'=> 0,'regular' => 0, 'voice_mail' => 0 , 'no_answer' => 0,'rate'=> 0,'out_of_boounds' => 0),
+					'generator' => array('duration'=>0,'price'=> 0, 'busy'=> 0,'regular' => 0, 'voice_mail' => 0 , 'no_answer' => 0,'rate'=> 0,'out_of_bounds' => 0),
+					'billing' => array('duration'=>0,'price'=> 0, 'busy'=> 0,'regular' => 0, 'voice_mail' => 0 , 'no_answer' => 0,'rate'=> 0,'out_of_bounds' => 0),
+					'offset' => array('duration'=>0,'price'=> 0, 'busy'=> 0,'regular' => 0, 'voice_mail' => 0 , 'no_answer' => 0,'rate'=> 0,'out_of_bounds' => 0),
+					'offset_pecentage' => array('duration'=>0,'price'=> 0, 'busy'=> 0,'regular' => 0, 'voice_mail' => 0 , 'no_answer' => 0,'rate'=> 0,'out_of_bounds' => 0),
+					'generator_standard_deviation' => array('duration'=>0,'price'=> 0, 'busy'=> 0,'regular' => 0, 'voice_mail' => 0 , 'no_answer' => 0,'rate'=> 0,'out_of_bounds' => 0),
+					'billing_standard_deviation' => array('duration'=>0,'price'=> 0, 'busy'=> 0,'regular' => 0, 'voice_mail' => 0 , 'no_answer' => 0,'rate'=> 0,'out_of_bounds' => 0),
 			);
 		$allLines = array_merge($unmachedLines,$subscriberLines);
 		foreach ( $allLines as $key => $value) {
@@ -171,6 +171,7 @@ class Billrun_Generator_Report_GeneratedCalls extends Billrun_Generator_Report {
 		$summary['offset']['duration'] =  $summary['generator']['duration'] - $summary['billing']['duration'];
 		$summary['offset']['price'] =  $summary['generator']['price'] - $summary['billing']['price'];						
 		$summary['offset']['rate'] =  $summary['generator']['rate'] - $summary['billing']['rate'];
+		$summary['offset']['out_of_bounds'] =  $summary['generator']['out_of_bounds'] - $summary['billing']['out_of_bounds'];
 		foreach (array('busy','regular', 'voice_mail' , 'no_answer') as  $value) {
 			$summary['offset'][$value] =  $summary['generator'][$value] - $summary['billing'][$value];
 		}
@@ -178,6 +179,7 @@ class Billrun_Generator_Report_GeneratedCalls extends Billrun_Generator_Report {
 		$summary['offset_pecentage']['duration'] = (float) @( 100 * $summary['offset']['duration'] / $summary['generator']['duration'] );
 		$summary['offset_pecentage']['price'] = (float) @( 100 * $summary['offset']['price'] / $summary['generator']['price'] );						
 		$summary['offset_pecentage']['rate'] = (float) @( 100 * $summary['offset']['rate'] / $summary['generator']['rate'] );
+		$summary['offset_pecentage']['out_of_bounds'] = (float) @( 100 * $summary['offset']['out_of_bounds'] / $summary['generator']['out_of_bounds'] );
 		foreach (array('busy','regular', 'voice_mail' , 'no_answer') as  $value) {
 			$summary['offset_pecentage'][$value] = (float)@( 100 * $summary['offset'][$value] / $summary['generator'][$value] );
 		}

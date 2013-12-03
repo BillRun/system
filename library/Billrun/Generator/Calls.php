@@ -24,7 +24,7 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 	const BUSY_WAIT_TIME = 10;
 	const WAIT_TIME_PADDING = 10;
 	const WAITING_SLEEP_TIME = 1;
-	const RESET_MODEM_WINDOW = 200;
+	const RESET_MODEM_WINDOW = 60;
 
 	/**
 	 * the type of the object
@@ -84,6 +84,9 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 			Billrun_Factory::log("No test script configured!", Zend_Log::NOTICE);
 			return false;
 		}
+		
+		sleep(static::RESET_MODEM_WINDOW);//wait for the modem to register to the network properly.
+		
 		if (count($this->modemDevices)  == count($this->options['path_to_calling_devices'])) {
 			while ($this->isWorking) {
 				//update  the  configuration if needed
