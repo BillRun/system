@@ -34,6 +34,11 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 			'autoload' => 0,
 		);
 
+		$remove_duplicates = Billrun_Factory::config()->getConfigValue('calcCpu.remove_duplicates', true);
+		if ($remove_duplicates) {
+			$this->removeDuplicates($processor);
+		}
+
 		$data = &$processor->getData();
 		Billrun_Factory::log('Plugin calc cpu rate', Zend_Log::INFO);
 		foreach ($data['data'] as &$line) {
@@ -116,6 +121,26 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$customerPricingCalc = Billrun_Calculator::getInstance(array('type' => 'customerPricing', 'autoload' => false));
 		foreach ($this->tx_saved_rows as $row) {
 			$customerPricingCalc->removeBalanceTx($row);
+		}
+	}
+
+	protected function removeDuplicates($processor) {
+		$lines_coll = Billrun_Factory::db()->linesCollection();
+		$data = &$processor->getData();
+		foreach ($data['data'] as $key => $line) {
+			$stamps[$line['stamp']] = $key;
+		}
+		$query = array(
+			'stamp' => array(
+				'$in' => array_keys($stamps),
+			),
+		);
+		$existing_lines = $lines_coll->query($query)->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
+		foreach ($existing_lines as $line) {
+			$stamp = $line['stamp'];
+			Billrun_Factory::log('Plugin calc cpu skips duplicate line ' . $stamp, Zend_Log::ALERT);
+			unset($data['data'][$stamps[$stamp]]);
+			$processor->unsetQueueRow($stamp);
 		}
 	}
 
