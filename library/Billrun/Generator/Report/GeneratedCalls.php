@@ -152,7 +152,7 @@ class Billrun_Generator_Report_GeneratedCalls extends Billrun_Generator_Report {
 			);
 		//$allLines = array_merge($unmachedLines,$subscriberLines);
 		foreach ( $allLines as $key => $value) {
-			if(isset($value['action_type'])) {
+			if(Billrun_Util::getFieldVal($value['generator_call_type'],false)) {
 				$summary['generator']['duration'] += Billrun_Util::getFieldVal($value['callee_duration'],0);
 				$summary['generator']['price'] += 0;//Billrun_Util::getFieldVal($value['generator_estimated_price'],0);
 				$summary['generator'][$value['generator_call_type']] += 1;			
@@ -160,7 +160,7 @@ class Billrun_Generator_Report_GeneratedCalls extends Billrun_Generator_Report {
 				$summary['generator']['out_of_bounds'] += Billrun_Util::getFieldVal($value['correctness'],0);
 			}
 		
-			if(isset($value['billing_usagev'])) {
+			if(Billrun_Util::getFieldVal($value['billing_stamp'],false)) {
 				$summary['billing']['duration'] +=  Billrun_Util::getFieldVal($value['billing_duration'],0) ;
 				$summary['billing']['price'] +=  Billrun_Util::getFieldVal($value['billing_price'],0);			
 				$summary['billing'][Billrun_Util::getFieldVal($value['action_type'],'regular')] +=  1;			
