@@ -82,7 +82,7 @@ class Billrun_Generator_Report_GeneratedCalls extends Billrun_Generator_Report {
 		usort($report, function($a,$b) { 
 			$valA = Billrun_Util::getFieldVal($a['generator_call_start_time'],Billrun_Util::getFieldVal($a['billing_charging_start_time'],PHP_INT_MAX));
 			$valB = Billrun_Util::getFieldVal($b['generator_call_start_time'],Billrun_Util::getFieldVal($b['billing_charging_start_time'],PHP_INT_MAX));
-			return  $valA < $valB;						
+			return  strcmp($valA,$valB);						
 		});
 		return $report;
 	}
