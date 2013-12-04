@@ -25,7 +25,7 @@ class Gsmodem_Gsmodem  {
 	const HANGING_UP = 'hanging_up';
 
 	const COMMAND_RESPONSE_TIME = 30; // the amount of seconds to wait  for a response from the modem to a given command.
-	const RESPONSIVE_RESULTS_TIMEOUT = 0.5; 
+	const RESPONSIVE_RESULTS_TIMEOUT = 0.2; 
 	
 	//--------------------------------------------------------------------------
 	
@@ -126,7 +126,7 @@ class Gsmodem_Gsmodem  {
 	public function registerToNet() {
 		Billrun_Factory::log("Registering to network");
 		$ret = FALSE;
-		$res = $this->doCmd($this->getATcmd('register',array(0)), true, false);	
+		$res = $this->doCmd($this->getATcmd('register',array(0)), true, false, false ,self::COMMAND_RESPONSE_TIME);	
 		$startTime = microtime(true);
 		do {
 			$res = $this->getResult(self::RESPONSIVE_RESULTS_TIMEOUT,false);
@@ -134,7 +134,7 @@ class Gsmodem_Gsmodem  {
 			if($ret == 5) {
 				Billrun_Factory::log("Registaered on  a roaming  network  trying to register  to golan...");
 				$this->unregisterFromNet();
-				$this->doCmd($this->getATcmd('register_extended',array(1,2,42508)), true, false);//@TODO	Move this  behavior to configuration.
+				$this->doCmd($this->getATcmd('register_extended',array(1,2,42508)), true, false, false ,self::COMMAND_RESPONSE_TIME);//@TODO	Move this  behavior to configuration.
 			}
 		} while ((self::COMMAND_RESPONSE_TIME > microtime(true) - $startTime) && $ret != 1);
 		$this->state->setState(Gsmodem_StateMapping::IDLE_STATE);
@@ -198,7 +198,10 @@ class Gsmodem_Gsmodem  {
 		
 		return $this->number;
 	}
-	
+	/**
+	 * Set the modem number.
+	 * @param type $number
+	 */
 	public function setNumber($number) {
 		$this->number =$number;
 	}
@@ -216,17 +219,16 @@ class Gsmodem_Gsmodem  {
 	 * Initialize the modem settings.
 	 */
 	public function initModem() {
-		$this->doCmd($this->getATcmd('reset',array()), false, false);
+		//$this->doCmd($this->getATcmd('reset',array()), false, false);		
+		//sleep(2);
+		//$this->doCmd($this->getATcmd('echo_mode',array(0)), true, false);
+		//$this->doCmd('AT+CRESET; \r', true, false,false,  static::COMMAND_RESPONSE_TIME);
+		//$this->doCmd("AT+CFUN=0 ;\r", true,true,false,  static::COMMAND_RESPONSE_TIME);
+		//$this->doCmd("AT+CFUN=1 ;\r", true,true,false,  static::COMMAND_RESPONSE_TIME);
+		//$this->doCmd($this->getATcmd('register_reporting',array(2)), true ,true,false, static::COMMAND_RESPONSE_TIME);
+		//$this->doCmd($this->getATcmd('incoming_call_id',array(1)), true ,true,false, static::COMMAND_RESPONSE_TIME);
+		$this->doCmd($this->state->getCmdMapping()['init_comands']);
 		$this->state->setState(Gsmodem_StateMapping::IDLE_STATE);
-		sleep(2);
-		$this->doCmd($this->getATcmd('echo_mode',array(0)), false, false);
-		sleep(1);
-		$this->doCmd("AT S7=45 S0=0 L1 V1 X4 &c1 E1 Q0 ;\r\n", true,true,false,  static::COMMAND_RESPONSE_TIME);
-		$this->doCmd("AT+CFUN=0 ;\r\n", true,true,false,  static::COMMAND_RESPONSE_TIME);
-		sleep(1);
-		$this->doCmd("AT+CFUN=1 ;\r\n", true,true,false,  static::COMMAND_RESPONSE_TIME);
-		$this->doCmd($this->getATcmd('register_reporting',array(2)), true ,true,false, static::COMMAND_RESPONSE_TIME);
-		$this->doCmd($this->getATcmd('incoming_call_id',array(1)), true ,true,false, static::COMMAND_RESPONSE_TIME);
 		$this->resetModem();
 	}
 	
@@ -235,10 +237,10 @@ class Gsmodem_Gsmodem  {
 	 * Initialize the modem settings.
 	 */
 	public function resetModem() {
-		$ret = true;
-		$ret &= $this->doCmd("AT+CVHU=0 ;\r\n", true,true,false,  static::COMMAND_RESPONSE_TIME) != FALSE;
-		$ret &= $this->doCmd("AT+CVHUP ;\r\n", true,true,false,  static::COMMAND_RESPONSE_TIME) != FALSE;
-		$ret &= $this->hangUp() != FALSE;
+		$ret = $this->doCmd($this->state->getCmdMapping()['reset_comands']);
+		//$ret &= $this->doCmd("AT+CVHU=0 ;\r", true,true,false,  static::COMMAND_RESPONSE_TIME) != FALSE;
+		//$ret &= $this->doCmd("AT+CVHUP ;\r", true,true,false,  static::COMMAND_RESPONSE_TIME) != FALSE;
+		//$ret &= $this->hangUp() != FALSE;
 		$ret &= $this->registerToNet() != FALSE;
 		return $ret;
 	}
@@ -259,7 +261,7 @@ class Gsmodem_Gsmodem  {
 	 * @param type $params the parameters  we should passto the command (phone number,baud value, etc..)
 	 * @return string the AT string to pass to the modem inorder to execute the command.
 	 */
-	protected function getATcmd($command,$params =array()) {
+	protected function getATcmd($command,$params =array()) {		
 		$cmdStr = 'AT' . $this->state->getCmdMapping()[$command];
 		foreach ($params as $key => $value) {
 			$cmdStr = preg_replace('/%'.$key.'%/', $value, $cmdStr);
@@ -283,13 +285,13 @@ class Gsmodem_Gsmodem  {
 			$callResult .= $newData ;
 			//Billrun_Factory::log()->log(trim($callResult),  Zend_Log::DEBUG);
 			if( preg_match("/\n/",$callResult) ) {
-				$this->state->gotResult(trim($res));
+				foreach (split("\n",$callResult) as $value) {
+					$this->state->gotResult($value);
+				}
 				if( $translate ) {
 					foreach (split("\n",$callResult) as $value) {
 						//Billrun_Factory::log()->log(trim($value),  Zend_Log::DEBUG);
 						if(isset($this->state->getResultMapping()[trim($value)])) {
-							//Billrun_Factory::log()->log(trim($value),  Zend_Log::DEBUG);
-							//$this->state->gotResult(trim($value));
 							$res = $this->state->getResultMapping()[trim($value)];
 							if(!$waitForStateChange || $this->getState() != $beginningState) {								
 								break 2;
@@ -317,11 +319,22 @@ class Gsmodem_Gsmodem  {
 	 */
 	protected function doCmd($cmd,$getResult = true, $translate = true, $stateChange = false,$waitTime = PHP_INT_MAX) {
 		$this->clearBuffer();
-		$res = fwrite($this->deviceFD, $cmd) > 0 && !$getResult;
-		fflush($this->deviceFD);	
-		$this->state->issuedCommand($cmd);
 		
-		return $getResult ?  trim($this->getResult($waitTime, $translate, $stateChange)) :  $res > 0  ;
+		if(is_array($cmd)) {
+			$res = TRUE;
+			foreach($cmd as $command => $getResult) {
+				$res &= $this->doCmd($command, $getResult, $getResult, false, $waitTime) != FALSE || !$getResult;
+				if(!$getResult) {sleep(2);}
+			}
+			return $res;
+		} else {
+
+			$res = fwrite($this->deviceFD, $cmd) > 0 && !$getResult;
+			fflush($this->deviceFD);	
+			$this->state->issuedCommand($cmd);
+
+			return $getResult ?  trim($this->getResult($waitTime, $translate, $stateChange)) :  $res > 0  ;
+		}
 	}
 	
 	/**

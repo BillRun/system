@@ -89,6 +89,11 @@ class Gsmodem_StateMapping {
 	);
 
 	//--------------------------------------------------------------------------
+	
+	public function __construct() {
+		
+	}
+	
 	/**
 	 *  Get the next state for a given result  that was received form the mode when in $currentState.
 	 * @param type $currentState the state that the result was given in.
@@ -99,7 +104,7 @@ class Gsmodem_StateMapping {
 		$newState = $currentState;
 		$stateMap = $this->resultToStateMapping[$currentState];
 		foreach ($stateMap as $key => $val) {
-			if (preg_match("/" . $key . "/i", trim($result))) {
+			if (preg_match("/" . $key . "/i", $result)) {
 				$newState = $val;
 				break;
 			}

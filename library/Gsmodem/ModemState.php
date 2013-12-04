@@ -39,6 +39,20 @@ class Gsmodem_ModemState {
 							'get_error' => '+CEER',
 							'get_number' => '+CNUM',
 							'echo_mode' => 'E%0%',
+							'init_commands' =>  array(
+								'ATZ ;\r' => false,
+								'ATE1 ;\r' => true,
+								'AT+CRESET; \r' => true,
+								'AT+CFUN=0 ;\r' => true,
+								'AT+CFUN=1 ;\r' => true,
+								'AT+CREG=2 ;\r' => true,
+								'AT+CLIP=1 ;\r' => true,
+							),
+							'reset_commands' => array(
+								"AT+CVHU=0 ;\r" => true,
+								"AT+CVHUP ;\r"=> true,
+								'ATH ;\r' => true,
+							),
 						);
 
 	protected $resultsMap = array( 
@@ -109,5 +123,21 @@ class Gsmodem_ModemState {
 	
 	public function getResultMapping() {
 		return $this->resultsMap;
+	}
+		
+	/**
+	 * 
+	 * @param type $result
+	 * @return type
+	 */
+	public function getMappedResult($result) {
+		$ret = FALSE;
+		foreach ($this->resultsMap as $key => $value) {
+			if (preg_match("/" . $key . "/i", $result)) {
+				$$ret = $val;
+				break;
+			}
+		}
+		return $ret;
 	}
 }
