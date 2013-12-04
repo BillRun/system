@@ -608,9 +608,11 @@ class Billrun_Billrun {
 			return $doc;
 		} else { // update to memory
 			$sraw = $billrun->getSubRawData($sid);
-			$billrun->addLineToSubscriber($counters, $row, $pricingData, $vatable, $billrun_key, $sraw);
-			$billrun->updateCosts($pricingData, $row, $vatable, $sraw); // according to self::getUpdateCostsQuery
-			$billrun->setSubRawData($sraw);
+			if ($sraw) { // it could be that this sid hasn't been returned on active_subscribers...
+				$billrun->addLineToSubscriber($counters, $row, $pricingData, $vatable, $billrun_key, $sraw);
+				$billrun->updateCosts($pricingData, $row, $vatable, $sraw); // according to self::getUpdateCostsQuery
+				$billrun->setSubRawData($sraw);
+			}
 			//$billrun->updateTotals($pricingData, $billrun_key, $vatable);		
 		}
 	}
