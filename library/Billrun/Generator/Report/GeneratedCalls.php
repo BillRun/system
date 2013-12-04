@@ -51,8 +51,8 @@ class Billrun_Generator_Report_GeneratedCalls extends Billrun_Generator_Report {
 	}
 	
 	public function generate() {
-	
-		$report['details'] = $this->printSDetailedReport($this->calls,$this->billingCalls['unmatched_lines']);
+		//get the  compared lines  and order them by date
+		$report['details'] = $this->printSDetailedReport($this->calls,$this->billingCalls['unmatched_lines']);		
 		$report['summary'] = $this->printSummaryReport($report['details']);
 		$report['from']	 = date("Y-m-d H:i:s", $this->from);
 		$report['to']	 = date("Y-m-d H:i:s", $this->to);	
@@ -79,6 +79,11 @@ class Billrun_Generator_Report_GeneratedCalls extends Billrun_Generator_Report {
 		foreach($unmatchedBillingLines as $line) {			
 			$report[] = $this->detailedReportLine($line);
 		}
+		usort($report, function($a,$b) { 
+			$valA = Billrun_Util::getFieldVal($a['generator_call_start_time'],Billrun_Util::getFieldVal($a['billing_charging_start_time'],PHP_INT_MAX));
+			$valB = Billrun_Util::getFieldVal($b['generator_call_start_time'],Billrun_Util::getFieldVal($b['billing_charging_start_time'],PHP_INT_MAX));
+			return  $valA < $valB;						
+		});
 		return $report;
 	}
 	
@@ -321,12 +326,8 @@ class Billrun_Generator_Report_GeneratedCalls extends Billrun_Generator_Report {
 				foreach ($section as $Skey => $fields) {
 					fputcsv($fd, array_merge(($key != 'details' ? array($Skey): array()),$fields));
 				}
-			}
-
-			
-			
+			}	
 		}
 		
-		//fwrite($fd, json_encode($report, JSON_PRETTY_PRINT));
 	}
 }
