@@ -94,8 +94,7 @@ class Billrun_Generator_Report_GeneratedCalls extends Billrun_Generator_Report {
 				'billing_aprice' => 'billing_price',
 			);
 			$callingRecordFilter = array(
-				'call_id' => 'generator_id',
-				'caller_execution_start_time' => 'generator_calling_time',
+				'call_id' => 'generator_id',				
 				'callee_duration' => 'callee_duration',
 				'caller_duration' => 'caller_duration',
 				'callee_call_start_time' => 'generator_call_start_time',
@@ -105,6 +104,7 @@ class Billrun_Generator_Report_GeneratedCalls extends Billrun_Generator_Report {
 				'from' => 'generator_calling_number',
 				'to' => 'generator_dialed_number',
 				'to' => 'generator_called_number',
+				'caller_execution_start_time' => 'generator_calling_time',
 				'action_type' => 'generator_call_type',
 				'rate' => 'generator_rate',
 				'callee_estimated_price' => 'generator_estimated_price',

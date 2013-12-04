@@ -21,7 +21,7 @@ class Billrun_Generator_Report_CallingScript extends Billrun_Generator_Report {
 	const TYPE_NO_ANSWER = 'no_answer';
 	
 	// The minimoum time to wait between calls  in seconds.
-	const MINIMUM_TIME_BETWEEN_CALLS = 90;
+	const MINIMUM_TIME_BETWEEN_CALLS = 60;
 	
 	// The time to  wait  between concecative script type in seconds.
 	const SCRIPT_TYPES_SEPERATION = 900;
@@ -112,8 +112,8 @@ class Billrun_Generator_Report_CallingScript extends Billrun_Generator_Report {
 												'types' => $types,
 												'daily_start_time' => isset($this->options['start_calls_time']) ? $this->options['start_calls_time'] : '00:10:00',
 											);
-		if(isset($this->options['total_call_count'])) {
-			$options['total_call_count'] = $this->options['total_call_count'];
+		if(isset($this->options['total_calls_count'])) {
+			$options['total_calls_count'] = $this->options['total_calls_count'];
 		}
 		$actions = $this->generateDailyScript($options);
 
@@ -172,7 +172,7 @@ class Billrun_Generator_Report_CallingScript extends Billrun_Generator_Report {
 		$callsCount = 0; 
 		$numbersCount = count($params['numbers']);
 		foreach($params['script_type'] as  $scriptType  ) {
-			if(isset($params['total_call_count']) && $params['total_call_count'] < $callsCount) {
+			if(isset($params['total_calls_count']) && $params['total_calls_count'] < $callsCount) {
 				break;
 			}
 			$typeData = $params['types'][$scriptType];
