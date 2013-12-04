@@ -18,25 +18,25 @@ class Billrun_Generator_Report_GeneratedCalls extends Billrun_Generator_Report {
 	
 	const ALLOWED_TIME_DIVEATION = 10;
 	
-	protected $subscriber = "";
-	protected $callingNumber = "";
+	protected $subscribers = array();
+	protected $callingNumbers = array();
 	protected $from;
 	protected $to;
 	
 	protected $lines = null;		
 	protected $calls = null;
 	protected $billingCalls = null;
-	protected $billingTimeOffset = -140;
+	protected $billingTimeOffset = 0;
 	protected $allowedTimeDiveation = 10;
 	
 
 	public function __construct($options) {
 		parent::__construct($options);
 		if(isset($options['subscriber_id'])) {
-			$this->subscriber = $options['subscriber_id'];
+			$this->subscribers = split(",",$options['subscriber_id']);
 		}
 		if(isset($options['number'])) {
-			$this->callingNumber = $options['number'];
+			$this->callingNumbers = split(",",$options['numbers']);
 		}
 		if(isset($options['billing_time_offset'])) {
 			$this->billingTimeOffset = $options['billing_time_offset'];
@@ -56,7 +56,7 @@ class Billrun_Generator_Report_GeneratedCalls extends Billrun_Generator_Report {
 		$report['summary'] = $this->printSummaryReport($report['details']);
 		$report['from']	 = date("Y-m-d H:i:s", $this->from);
 		$report['to']	 = date("Y-m-d H:i:s", $this->to);	
-		$reports =  array($this->subscriber."_call_matching_report.csv" => $report);
+		$reports =  array(join("_",$this->subscribers)."_call_matching_report.csv" => $report);
 		if(isset($this->options['out']) && $this->options['out']) {
 			$this->generateFiles($reports, $this->options['out']);
 		}
@@ -118,7 +118,7 @@ class Billrun_Generator_Report_GeneratedCalls extends Billrun_Generator_Report {
 			$record['call_recoding_diff'] =	isset($line['billing_urt'])  ? 0 : 1 ;
 			$record['called_number_diff'] = Billrun_Util::getFieldVal($line['to'],'') != Billrun_Util::getFieldVal($line['billing_called_number'],'') ? 1 : 0;
 			$record['correctness'] = $record['called_end_status'] == 'no_call' ^ ( // Check that the  call is corrent
-										abs($record['start_time_offest']) <= 5 && abs($record['end_time_offest']) <= 5 &&
+										abs($record['start_time_offest']) <= 1.5 && abs($record['end_time_offest']) <= 1.5 &&
 										$record['call_recoding_diff']  == 0 && $record['called_number_diff'] == 0 &&
 										abs($record['charge_offest']) <= 0.3 && abs($record['time_offset']) <= 1 
 									) ? 0 : 1;
@@ -221,27 +221,34 @@ class Billrun_Generator_Report_GeneratedCalls extends Billrun_Generator_Report {
 	 * 
 	 */
 	public function load() {
-	
-		$this->billingCalls = $this->mergeBillingLines($this->subscriber);
+
+		$this->billingCalls= array();
+		foreach($this->subscribers as $subscriber) {
+			$this->billingCalls = array_merge($this->billingCalls,$this->mergeBillingLines($subscriber));
+		}
+		
 		//load calls made
-		$callsQuery =array(	'type' => 'generated_call',
-							
-							'urt' => array(
-										'$gt' => new MongoDate($this->from),
-										'$lte'=> new MongoDate($this->to),										
-									 ),
-							//'$or' => array(
-							//	array('callee_call_start_time' => array('$gt'=> new MongoDate(0) )),
-							//	array('billing_urt' => array('$gt'=> new MongoDate(0) )),
-								//array('caller_end_result' => array('$ne'=> 'no_call' )),
-							//),
-							'from' =>  array('$regex' => (string) $this->callingNumber ),
-					);
 		$this->calls = array();
-		$cursor = Billrun_Factory::db()->linesCollection()->query($callsQuery)->cursor()->sort(array('urt'=>1));
-		foreach ($cursor as $value) {
-			$this->calls[] = $value->getRawData();
-		}		
+		foreach($this->callingNumbers as $number) {
+			$callsQuery =array(	'type' => 'generated_call',
+
+								'urt' => array(
+											'$gt' => new MongoDate($this->from),
+											'$lte'=> new MongoDate($this->to),										
+										 ),
+								//'$or' => array(
+								//	array('callee_call_start_time' => array('$gt'=> new MongoDate(0) )),
+								//	array('billing_urt' => array('$gt'=> new MongoDate(0) )),
+									//array('caller_end_result' => array('$ne'=> 'no_call' )),
+								//),
+								'from' =>  array('$regex' => (string) $number ),
+						);
+		
+			$cursor = Billrun_Factory::db()->linesCollection()->query($callsQuery)->cursor()->sort(array('urt'=>1));
+			foreach ($cursor as $value) {
+				$this->calls[] = $value->getRawData();
+			}
+		}
 	}
 	
 	/**
@@ -289,7 +296,7 @@ class Billrun_Generator_Report_GeneratedCalls extends Billrun_Generator_Report {
 	 */
 	protected function retriveSubscriberBillingLines($sub) {
 		
-		$url = $this->options['billing_api_url']."/apigenerate/?type=SubscriberUsage&stamp={$this->stamp}&subscriber_id={$this->subscriber}&from=".  urlencode(date("Y-m-d H:i:s",$this->from))."&to=".  urlencode(date("Y-m-d H:i:s",$this->to));
+		$url = $this->options['billing_api_url']."/apigenerate/?type=SubscriberUsage&stamp={$this->stamp}&subscriber_id={$sub}&from=".  urlencode(date("Y-m-d H:i:s",$this->from))."&to=".  urlencode(date("Y-m-d H:i:s",$this->to));
 		Billrun_Factory::log()->log("Quering billing  with : $url");
 		$curlFd = curl_init($url);
 		curl_setopt($curlFd, CURLOPT_RETURNTRANSFER, TRUE);
