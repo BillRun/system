@@ -141,7 +141,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 				return false;
 			}
 		}
-		// @TODO trigger before aggregate
+// @TODO trigger before aggregate
 		Billrun_Factory::dispatcher()->trigger('beforeAggregate', array($this->data, &$this));
 		$account_billrun = false;
 		$billrun_key = $this->getStamp();
@@ -150,12 +150,12 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 			Billrun_Factory::log('Current account index: ' . ++$billruns_count, Zend_log::DEBUG);
 			if (!Billrun_Factory::config()->isProd()) {
 				if ($this->testAcc && is_array($this->testAcc) && !in_array($accid, $this->testAcc)) {
-					//Billrun_Factory::log("Moving on nothing to see here... , account Id : $accid");
+//Billrun_Factory::log("Moving on nothing to see here... , account Id : $accid");
 					continue;
 				}
 			}
-			//Billrun_Factory::log()->log("Updating Accoount : " . print_r($account),Zend_Log::DEBUG);			
-			//Billrun_Factory::log(microtime(true));
+//Billrun_Factory::log()->log("Updating Accoount : " . print_r($account),Zend_Log::DEBUG);			
+//Billrun_Factory::log(microtime(true));
 			if (empty($this->options['live_billrun_update'])) {
 				if (Billrun_Billrun::exists($accid, $billrun_key)) {
 					Billrun_Factory::log()->log("Billrun " . $billrun_key . " already exists for account " . $accid, Zend_Log::ALERT);
@@ -167,6 +167,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 					'autoload' => false,
 				);
 				$account_billrun = Billrun_Factory::billrun($params);
+				$flat_lines = array();
 				foreach ($account as $subscriber) {
 					$sid = $subscriber->sid;
 					if ($account_billrun->subscriberExists($sid)) {
@@ -186,21 +187,21 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 							continue;
 						}
 						Billrun_Factory::log('Adding flat line to subscriber ' . $sid, Zend_Log::INFO);
-						$this->saveFlatLine($subscriber, $billrun_key);
+						$flat_lines[] = $this->saveFlatLine($subscriber, $billrun_key);
 						Billrun_Factory::log('Finished adding flat line to subscriber ' . $sid, Zend_Log::DEBUG);
 					}
 					$account_billrun->addSubscriber($subscriber, $subscriber_status);
 				}
 				if ($this->write_stamps_to_file) {
-					$stamps = $account_billrun->addLines(false);
+					$stamps = $account_billrun->addLines(false, 0, $flat_lines);
 					if (!empty($stamps)) {
 						$stamps_str = implode("\n", $stamps) . "\n";
 						file_put_contents($this->file_path, $stamps_str, FILE_APPEND);
 					}
 				} else {
-					$account_billrun->addLines(true);
+					$account_billrun->addLines(true, 0, $flat_lines);
 				}
-				//save  the billrun
+//save  the billrun
 				Billrun_Factory::log("Saving account $accid");
 				$account_billrun->save();
 				Billrun_Factory::log("Finished saving account $accid");
@@ -212,7 +213,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		$end_msg = "Finished iterating page $this->page of size $this->size";
 		Billrun_Factory::log($end_msg, Zend_log::DEBUG);
 //		Billrun_Factory::dispatcher()->trigger('beforeAggregateSaveLine', array(&$save_data, &$this));
-		// @TODO trigger after aggregate
+// @TODO trigger after aggregate
 		Billrun_Factory::dispatcher()->trigger('afterAggregate', array($this->data, &$this));
 		$this->sendEndMail($end_msg);
 	}
@@ -222,6 +223,28 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		Billrun_Util::sendMail($msg, "", $recipients);
 	}
 
+//	/**
+//	 * Creates and saves a flat line to the db
+//	 * @param Billrun_Subscriber $subscriber the subscriber to create a flat line to
+//	 * @param string $billrun_key the billrun for which to add the flat line
+//	 * @return array the inserted line or the old one if it already exists
+//	 */
+//	protected function saveFlatLine($subscriber, $billrun_key) {
+//		$flat_entry = new Mongodloid_Entity($subscriber->getFlatEntry($billrun_key));
+//		$flat_entry->collection($this->lines);
+//		$query = array(
+//			'stamp' => $flat_entry['stamp'],
+//		);
+//		$update = array(
+//			'$setOnInsert' => $flat_entry->getRawData(),
+//		);
+//		$options = array(
+//			'upsert' => true,
+//			'new' => true,
+//		);
+//		return $this->lines->findAndModify($query, $update, array(), $options);
+//	}
+
 	/**
 	 * Creates and saves a flat line to the db
 	 * @param Billrun_Subscriber $subscriber the subscriber to create a flat line to
@@ -229,19 +252,26 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	 * @return array the inserted line or the old one if it already exists
 	 */
 	protected function saveFlatLine($subscriber, $billrun_key) {
-		$flat_entry = new Mongodloid_Entity($subscriber->getFlatEntry($billrun_key));
-		$flat_entry->collection($this->lines);
-		$query = array(
-			'stamp' => $flat_entry['stamp'],
-		);
-		$update = array(
-			'$setOnInsert' => $flat_entry->getRawData(),
-		);
-		$options = array(
-			'upsert' => true,
-			'new' => true,
-		);
-		return $this->lines->findAndModify($query, $update, array(), $options);
+		$flat_entry = $subscriber->getFlatEntry($billrun_key);
+		if (!$this->write_stamps_to_file) {
+			try {
+				$query = array(
+					'stamp' => $flat_entry['stamp'],
+				);
+				$update = array(
+					'$setOnInsert' => $flat_entry,
+				);
+				$options = array(
+					'w' => 1,
+				);
+				$this->lines->update($query, $update, $options);
+			} catch (Exception $e) {
+				Billrun_Factory::log("Flat line already exists for subscriber " . $subscriber->sid . " for billrun " . $billrun_key, Zend_log::ALERT);
+			}
+		} else {
+			$this->lines->insert($flat_entry);
+		}
+		return new Mongodloid_Entity($flat_entry);
 	}
 
 	protected function save($data) {
