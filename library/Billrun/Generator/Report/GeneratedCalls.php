@@ -32,10 +32,10 @@ class Billrun_Generator_Report_GeneratedCalls extends Billrun_Generator_Report {
 
 	public function __construct($options) {
 		parent::__construct($options);
-		if(isset($options['subscriber_id'])) {
-			$this->subscribers = split(",",$options['subscriber_id']);
+		if(isset($options['subscribers'])) {
+			$this->subscribers = split(",",$options['subscribers']);
 		}
-		if(isset($options['number'])) {
+		if(isset($options['numbers'])) {
 			$this->callingNumbers = split(",",$options['numbers']);
 		}
 		if(isset($options['billing_time_offset'])) {
