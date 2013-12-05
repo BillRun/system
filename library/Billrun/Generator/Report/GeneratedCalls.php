@@ -131,7 +131,7 @@ class Billrun_Generator_Report_GeneratedCalls extends Billrun_Generator_Report {
 			$record['rate_offest'] = Billrun_Util::getFieldVal($line['rate'],0) - Billrun_Util::getFieldVal($line['billling_arate'],0);
 			$record['call_recoding_diff'] =	isset($line['billing_urt'])  ? 0 : 1 ;
 			$record['called_number_diff'] = Billrun_Util::getFieldVal($line['to'],'') != Billrun_Util::getFieldVal($line['billing_called_number'],'') ? 1 : 0;
-			$record['correctness'] = $record['called_end_status'] == 'no_call' ^ ( // Check that the  call is corrent
+			$record['correctness'] = $record['caller_end_status'] == 'no_call' ^ ( // Check that the  call is corrent
 										abs($record['start_time_offest']) <= 1.5 && abs($record['end_time_offest']) <= 1.5 &&
 										$record['call_recoding_diff']  == 0 && $record['called_number_diff'] == 0 &&
 										abs($record['charge_offest']) <= 0.3 && abs($record['time_offset']) <= 1 
