@@ -17,6 +17,7 @@ class BalanceAction extends Action_Base {
 	public function execute() {
 		$request = $this->getRequest();
 		$aid = $request->get("aid");
+		$stamp = Billrun_Util::getBillrunKey(time());
 		$subscribers = $request->get("subscribers");
 		if (!is_numeric($aid)) {
 			die();
@@ -31,6 +32,7 @@ class BalanceAction extends Action_Base {
 			'type' => 'balance',
 			'aid' => $aid,
 			'subscribers' => $subscribers,
+			'stamp' => $stamp,
 		);
 		$generator = Billrun_Generator::getInstance($options);
 

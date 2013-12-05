@@ -15,7 +15,7 @@
  * @subpackage Balance
  * @since      1.0
  */
-class Generator_Balance extends Generator_Golan {
+class Generator_Balance extends Generator_Golanxml {
 
 	/**
 	 * Account for which to get the current balance
@@ -51,7 +51,6 @@ class Generator_Balance extends Generator_Golan {
 			$this->setSubscribers($options['subscribers']);
 		}
 		$this->now = time();
-		$this->stamp = Billrun_Util::getBillrunKey($this->now);
 	}
 
 	public function load() {
@@ -75,13 +74,13 @@ class Generator_Balance extends Generator_Golan {
 				Billrun_Factory::log()->log("Billrun " . $this->stamp . " already exists for subscriber " . $subscriber->sid, Zend_Log::ALERT);
 				continue;
 			}
-			$current_plan_name = $subscriber->plan;
-			if (is_null($current_plan_name) || $current_plan_name == "NULL") {
-				Billrun_Factory::log()->log("Null current plan for subscriber $subscriber->sid", Zend_Log::ALERT);
-				$billrun->addSubscriber($subscriber->sid, null);
+			$next_plan_name = $subscriber->getNextPlanName();
+			if (is_null($next_plan_name) || $next_plan_name == "NULL") {
+				$subscriber_status = "closed";
 			} else {
-				$billrun->addSubscriber($subscriber->sid, $subscriber->getPlan()->createRef());
+				$subscriber_status = "open";
 			}
+			$billrun->addSubscriber($subscriber, $subscriber_status);
 		}
 		$billrun->addLines(false, $billrun_start_date);
 
@@ -170,6 +169,27 @@ class Generator_Balance extends Generator_Golan {
 	protected function getAccTotalAfterVat($row) {
 		$before_vat = $this->getAccTotalBeforeVat($row);
 		return $before_vat + $before_vat * Billrun_Billrun::getVATByBillrunKey($this->stamp);
+	}
+
+	protected function get_subscriber_lines($subscriber) {
+		$start_time = new MongoDate(Billrun_Util::getStartTime($this->stamp));
+		$end_time = new MongoDate($this->now);
+		$query = array(
+			'sid' => $subscriber['sid'],
+			'urt' => array(
+//				'$lte' => $end_time, // not necessary for production
+				'$gte' => $start_time, // necessary if the previous billrun was not created yet
+			),
+//			'aprice' => array(
+//				'$exists' => true,
+//			),
+//			'billrun' => "000000", // not necessary for production because urt $gte is used
+			'type' => array(
+				'$ne' => 'ggsn',
+			),
+		);
+		$lines = $this->lines_coll->query($query)->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
+		return $lines;
 	}
 
 }

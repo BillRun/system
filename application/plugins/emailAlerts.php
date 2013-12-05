@@ -240,19 +240,7 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase  {
 	protected function sendMail($subject, $body, $recipients = array(), $attachments = array()) {
 		$recipients = $this->isDryRun ? array('eran', 'ofer') :
 			Billrun_Factory::config()->getConfigValue('emailAlerts.recipients', $recipients);
-		$mailer = Billrun_Factory::mailer()->
-			setSubject($subject)->
-			setBodyText($body);
-		//add attachments
-		foreach ($attachments as $attachment) {
-			$mailer->addAttachment($attachment);
-		}
-		//set recipents
-		foreach ($recipients as $recipient) {
-			$mailer->addTo($recipient);
-		}
-		//sen email
-		return $mailer->send();
+		return Billrun_Util::sendMail($subject, $body, $recipients, $attachments);
 	}
 
 	/**

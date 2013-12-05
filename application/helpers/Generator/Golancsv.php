@@ -17,7 +17,7 @@
 class Generator_Golancsv extends Billrun_Generator {
 
 	const BYTES_IN_KB = 1024;
-	
+
 	protected $accountsCsvPath;
 	protected $subscribersCsvPath;
 
@@ -174,11 +174,11 @@ class Generator_Golancsv extends Billrun_Generator {
 		$billrun = Billrun_Factory::db()->billrunCollection();
 
 		$this->data = $billrun
-				->query('billrun_key', $this->stamp)
-				->exists('invoice_id')
-				->cursor();
+						->query('billrun_key', $this->stamp)
+						->exists('invoice_id')
+						->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
 
-		Billrun_Factory::log()->log("aggregator entities loaded: " . $this->data->count(), Zend_Log::INFO);
+		Billrun_Factory::log()->log("generator entities loaded: " . $this->data->count(), Zend_Log::INFO);
 
 		Billrun_Factory::dispatcher()->trigger('afterGeneratorLoadData', array('generator' => $this));
 	}
@@ -233,7 +233,7 @@ class Generator_Golancsv extends Billrun_Generator {
 //			Billrun_Factory::log()->log("invoice id created " . $invoice_id . " for the account", Zend_Log::INFO);
 
 			$this->addAccountRow($acc_row);
-			if ((($accounts_counter%$this->blockSize) == 0) || ($accounts_counter >= $num_accounts)) {
+			if ((($accounts_counter % $this->blockSize) == 0) || ($accounts_counter >= $num_accounts)) {
 				$this->writeRowsToCsv();
 			}
 		}
@@ -249,6 +249,24 @@ class Generator_Golancsv extends Billrun_Generator {
 
 	protected function getTotalExtraOverPackage($subscriber) {
 		return $this->getVatableOverPlan($subscriber) + $this->getVatFreeOverPlan($subscriber);
+	}
+
+	/**
+	 * 
+	 * @param type $subscriber
+	 * @todo function is not ready yet
+	 */
+	protected function getTotalExtraOutOfPackage($subscriber) {
+		$total = 0;
+		if (!empty($subscriber['breakdown']['out_plan'])) {
+			foreach ($subscriber['breakdown']['out_plan'] as $category_name => $category) {
+				if ($category_name != 'roaming') {
+					foreach ($category as $zone) {
+						$total+=$zone['cost'];
+					}
+				}
+			}
+		}
 	}
 
 	protected function getManualCorrectionCredit($subscriber) {
@@ -289,6 +307,7 @@ class Generator_Golancsv extends Billrun_Generator {
 	 * We cannot get the lines from balances as it's not necessarily the correct previous plan
 	 * @param type $subscriber
 	 * @return type
+	 * @todo use plans cache
 	 */
 	protected function getCurPackage($subscriber) {
 		$current_plan = Billrun_Factory::db()->plansCollection()->getRef($subscriber['current_plan']);
@@ -317,7 +336,7 @@ class Generator_Golancsv extends Billrun_Generator {
 				$countOfKb+=$data_by_day['usagev'];
 			}
 		}
-		return $countOfKb/static::BYTES_IN_KB;
+		return $countOfKb / static::BYTES_IN_KB;
 	}
 
 	/**

@@ -170,10 +170,11 @@ class Billrun_Calculator_Wholesale_Nsn extends Billrun_Calculator_Wholesale {
 	 * load the ggsn rates to be used later.
 	 */
 	protected function loadRates() {
-		$rates = Billrun_Factory::db()->ratesCollection()->query()->cursor();
+		$rates_coll = Billrun_Factory::db()->ratesCollection();
+		$rates = $rates_coll->query()->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
 		$this->rates = array();
 		foreach ($rates as $rate) {
-			$rate->collection(Billrun_Factory::db()->ratesCollection());
+			$rate->collection($rates_coll);
 			if (isset($rate['params']['prefix'])) {
 				foreach ($rate['params']['prefix'] as $prefix) {
 					$this->rates[$prefix][] = $rate;

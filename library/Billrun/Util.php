@@ -206,11 +206,12 @@ class Billrun_Util {
 	 */
 	public static function getVATAtDate($timestamp) {
 		$mongo_date = new MongoDate($timestamp);
-		return Billrun_Factory::db()->ratesCollection()
+		$rates_coll = Billrun_Factory::db()->ratesCollection();
+		return $rates_coll
 				->query('key', 'VAT')
 				->lessEq('from', $mongo_date)
 				->greaterEq('to', $mongo_date)
-				->cursor()->current()->get('vat');
+				->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED)->current()->get('vat');
 	}
 
 	public static function isTimestamp($timestamp) {
@@ -270,5 +271,21 @@ class Billrun_Util {
 		}
 		
 		return FALSE;
+	}
+	
+	public static function sendMail($subject, $body, $recipients, $attachments = array()) {
+		$mailer = Billrun_Factory::mailer()->
+			setSubject($subject)->
+			setBodyText($body);
+		//add attachments
+		foreach ($attachments as $attachment) {
+			$mailer->addAttachment($attachment);
+		}
+		//set recipents
+		foreach ($recipients as $recipient) {
+			$mailer->addTo($recipient);
+		}
+		//sen email
+		return $mailer->send();
 	}
 }

@@ -11,15 +11,15 @@
 /**
  * Golan invoices generator
  *
- * @todo this class should be called Generator_Golanxml and inherit from abstract class Generator_Golan
+ * @todo this class should inherit from abstract class Generator_Golan
  * @package    Generator
- * @subpackage Golan
+ * @subpackage Golanxml
  * @since      1.0
  */
-class Generator_Golan extends Billrun_Generator {
+class Generator_Golanxml extends Billrun_Generator {
 
-	protected $server_id = 1;
-	protected $server_count = 1;
+	protected $offset = 0;
+	protected $size = 10000;
 	protected $data = null;
 	protected $extras_start_date;
 	protected $extras_end_date;
@@ -28,16 +28,16 @@ class Generator_Golan extends Billrun_Generator {
 	protected $rates;
 	protected $plans;
 	protected $data_rate;
+	protected $lines_coll;
 
 	public function __construct($options) {
-		self::$type = 'golan';
+		self::$type = 'golanxml';
 		parent::__construct($options);
-		if (isset($options['generator']['ids'])) {
-			$this->server_id = intval($options['generator']['ids']);
+		if (isset($options['page'])) {
+			$this->offset = intval($options['page']);
 		}
-
-		if (isset($options['generator']['count'])) {
-			$this->server_count = intval($options['generator']['count']);
+		if (isset($options['size'])) {
+			$this->size = intval($options['size']);
 		}
 		$this->lines_coll = Billrun_Factory::db()->linesCollection();
 		$this->loadRates();
@@ -46,21 +46,23 @@ class Generator_Golan extends Billrun_Generator {
 
 	public function load() {
 		$billrun = Billrun_Factory::db()->billrunCollection();
-
+		Billrun_Factory::log()->log('Loading ' . $this->size . ' billrun documents with offset ' . $this->offset, Zend_Log::INFO);
 		$this->data = $billrun
 				->query('billrun_key', $this->stamp)
 				->exists('invoice_id')
 				->notExists('invoice_file')
-				->mod('aid', $this->server_count, $this->server_id - 1)
-				->cursor();
+				->cursor()
+				->sort(array("aid" => 1))
+				->skip($this->offset * $this->size)
+				->limit($this->size);
 
-		Billrun_Factory::log()->log("aggregator entities loaded: " . $this->data->count(), Zend_Log::INFO);
+		Billrun_Factory::log()->log("aggregator documents loaded: " . $this->data->count(), Zend_Log::INFO);
 
 		Billrun_Factory::dispatcher()->trigger('afterGeneratorLoadData', array('generator' => $this));
 	}
 
 	public function generate() {
-		Billrun_Factory::log("Generating invoices  with  server id of : {$this->server_id} out of : {$this->server_count}");
+		Billrun_Factory::log('Generating invoices...', Zend_log::INFO);
 		$this->createXmlFiles();
 	}
 
@@ -70,7 +72,7 @@ class Generator_Golan extends Billrun_Generator {
 			$xml = $this->getXML($row);
 			//			$row->{'xml'} = $xml->asXML();
 			$invoice_id = $row->get('invoice_id');
-			$invoice_filename = $row['billrun_key'] . '_' . $row['aid'] . '_' . $invoice_id;
+			$invoice_filename = $row['billrun_key'] . '_' . $row['aid'] . '_' . $invoice_id . '.xml';
 			$this->createXml($invoice_filename, $xml->asXML());
 			$this->setFileStamp($row, $invoice_filename);
 			Billrun_Factory::log()->log("invoice file " . $invoice_filename . " created for account " . $row->get('aid'), Zend_Log::INFO);
@@ -475,7 +477,7 @@ class Generator_Golan extends Billrun_Generator {
 	 * @todo do not override files?
 	 */
 	protected function createXml($fileName, $xmlContent) {
-		$path = $this->export_directory . '/' . $fileName . '.xml';
+		$path = $this->export_directory . '/' . $fileName;
 		return file_put_contents($path, $xmlContent);
 	}
 
@@ -518,7 +520,7 @@ class Generator_Golan extends Billrun_Generator {
 				'$ne' => 'ggsn',
 			),
 		);
-		$lines = $this->lines_coll->query($query)->cursor();
+		$lines = $this->lines_coll->query($query)->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
 		return $lines;
 	}
 
@@ -637,7 +639,8 @@ class Generator_Golan extends Billrun_Generator {
 	 */
 	protected function getRateById($id) {
 		if (!isset($this->rates[$id])) {
-			$this->rates[$id] = Billrun_Factory::db()->ratesCollection()->findOne($id);
+			$rates = Billrun_Factory::db()->ratesCollection();
+			$this->rates[$id] = $rates->findOne($id);
 		}
 		return $this->rates[$id];
 	}
@@ -649,7 +652,8 @@ class Generator_Golan extends Billrun_Generator {
 	 */
 	protected function getPlanById($id) {
 		if (!isset($this->plans[$id])) {
-			$this->plans[$id] = Billrun_Factory::db()->plansCollection()->findOne($id);
+			$plans_coll = Billrun_Factory::db()->plansCollection();
+			$this->plans[$id] = $plans_coll->findOne($id);
 		}
 		return $this->plans[$id];
 	}
@@ -727,7 +731,9 @@ class Generator_Golan extends Billrun_Generator {
 	protected function getCalledNo($line) {
 		switch ($line['type']) {
 			case "nsn":
-				return $line['called_number'];
+			case "smsc":
+			case "smpp": //@todo check smpp
+				return $this->beautifyPhoneNumber($line['called_number']);
 			case "tap3":
 				//TODO: use called_number field when all cdrs have been processed by the updated tap3 plugin
 				$tele_service_code = $line['BasicServiceUsedList']['BasicServiceUsed']['BasicService']['BasicServiceCode']['TeleServiceCode'];
@@ -740,9 +746,6 @@ class Generator_Golan extends Billrun_Generator {
 					}
 				}
 				break;
-			case "smsc":
-			case "smpp": //@todo check smpp
-				return $line['called_number'];
 			case "mmsc":
 				//@todo recipent_addr field is not the pure called number
 				break;
@@ -956,7 +959,7 @@ EOI;
 				'$gte' => new MongoDate(Billrun_Util::getStartTime($this->stamp)),
 			),
 		);
-		return $rates->query($query)->cursor()->current();
+		return $rates->query($query)->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED)->current();
 	}
 
 	/**
@@ -964,7 +967,7 @@ EOI;
 	 */
 	protected function loadRates() {
 		$rates_coll = Billrun_Factory::db()->ratesCollection();
-		$rates = $rates_coll->query()->cursor();
+		$rates = $rates_coll->query()->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
 		foreach ($rates as $rate) {
 			$rate->collection($rates_coll);
 			$this->rates[strval($rate->getId())] = $rate;
@@ -977,11 +980,26 @@ EOI;
 	 */
 	protected function loadPlans() {
 		$plans_coll = Billrun_Factory::db()->plansCollection();
-		$plans = $plans_coll->query()->cursor();
+		$plans = $plans_coll->query()->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
 		foreach ($plans as $plan) {
 			$plan->collection($plans_coll);
 			$this->plans[strval($plan->getId())] = $plan;
 		}
+	}
+
+	protected function beautifyPhoneNumber($phone_number) {
+		$separator = "-";
+		$phone_number = intval($phone_number);
+		if (substr($phone_number, 0, 3) == "972") {
+			$phone_number = intval(substr($phone_number, 3));
+		}
+		$length = strlen($phone_number);
+		if ($length == 8) {
+			$phone_number = "0" . substr($phone_number, 0, 1) . $separator . substr($phone_number, 1);
+		} else if ($length == 9) {
+			$phone_number = "0" . substr($phone_number, 0, 2) . $separator . substr($phone_number, 2);
+		}
+		return $phone_number;
 	}
 
 }

@@ -264,9 +264,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				$pricingData = $this->getLinePricingData($volume, $usage_type, $rate, $balance);
 				$pricingData['usagesb'] = $balance['balance']['totals'][key($counters)]['usagev'];
 			} else {
-				$balance = new Mongodloid_Entity(Billrun_Balance::getEmptySubscriberEntry($billrun_key, $row['aid'], $row['sid'], $plan_ref));
-				$balance = Billrun_Factory::balance(array('data' => $balance));
-				$pricingData = $this->getLinePricingData($volume, $usage_type, $rate, $balance);
+				$pricingData = array($this->pricingField => 0);
 			}
 		} else {
 			$balance_unique_key = array('sid' => $row['sid'], 'billrun_key' => $billrun_key);
@@ -399,7 +397,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 
 	protected function loadRates() {
 		$rates_coll = Billrun_Factory::db()->ratesCollection();
-		$rates = $rates_coll->query()->cursor();
+		$rates = $rates_coll->query()->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
 		foreach ($rates as $rate) {
 			$rate->collection($rates_coll);
 			$this->rates[strval($rate->getId())] = $rate;
@@ -408,7 +406,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 
 	protected function loadPlans() {
 		$plans_coll = Billrun_Factory::db()->plansCollection();
-		$plans = $plans_coll->query()->cursor();
+		$plans = $plans_coll->query()->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
 		foreach ($plans as $plan) {
 			$plan->collection($plans_coll);
 			$this->plans[strval($plan->getId())] = $plan;

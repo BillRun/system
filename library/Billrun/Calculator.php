@@ -73,7 +73,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	 * @var boolean
 	 */
 	protected $autosort = true;
-	
+
 	/**
 	 * constructor of the class
 	 * 
@@ -142,7 +142,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		$lines = $this->pullLines($this->lines);
 		foreach ($lines as $line) {
 			if ($line) {
-				Billrun_Factory::log()->log("Calcuating row : " . $line['stamp'],  Zend_Log::DEBUG);
+				Billrun_Factory::log()->log("Calcuating row : " . $line['stamp'], Zend_Log::DEBUG);
 				Billrun_Factory::dispatcher()->trigger('beforeCalculateDataRow', array('data' => &$line));
 				$line->collection($lines_coll);
 				if ($this->isLineLegitimate($line)) {
@@ -200,12 +200,12 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		}
 		//Billrun_Factory::log()->log("stamps : ".print_r($stamps,1),Zend_Log::DEBUG);
 		$lines = Billrun_Factory::db()->linesCollection()
-				->query()->in('stamp', $stamps)->cursor();
-		
+						->query()->in('stamp', $stamps)->cursor();
+
 		if ($this->autosort) {
 			$lines->sort(array('urt' => 1));
 		}
-		
+
 		//Billrun_Factory::log()->log("Lines : ".print_r($lines->count(),1),Zend_Log::DEBUG);			
 		return $lines;
 	}
@@ -217,7 +217,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	 */
 	protected function pullLine($queue_line) {
 		$line = Billrun_Factory::db()->linesCollection()->query('stamp', $queue_line['stamp'])
-				->cursor()->current();
+						->cursor()->current();
 		if ($line->isEmpty()) {
 			return false;
 		}
@@ -383,11 +383,10 @@ abstract class Billrun_Calculator extends Billrun_Base {
 			$queue->update($query, $update, array('multiple' => true));
 
 			$foundLines = $queue->query(array_merge($localquery, array('hash' => $this->workHash, 'calc_time' => $this->signedMicrotime)))->cursor();
-			
+
 			if ($this->autosort) {
 				$foundLines->sort(array('urt' => 1));
 			}
-
 		} while ($horizonlineCount != 0 && $foundLines->count() == 0);
 
 		foreach ($foundLines as $line) {
@@ -400,10 +399,11 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	 * Caches the rates in the memory for fast computations
 	 */
 	protected function loadRates() {
-		$rates = Billrun_Factory::db()->ratesCollection()->query()->cursor();
+		$rates_coll = Billrun_Factory::db()->ratesCollection();
+		$rates = Billrun_Factory::db()->ratesCollection()->query()->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
 		$this->rates = array();
 		foreach ($rates as $rate) {
-			$rate->collection(Billrun_Factory::db()->ratesCollection());
+			$rate->collection($rates_coll);
 			if (isset($rate['params']['prefix'])) {
 				foreach ($rate['params']['prefix'] as $prefix) {
 					$this->rates[$prefix][] = $rate;

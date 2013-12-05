@@ -78,7 +78,7 @@ class RatesModel extends TabledateModel {
 						$planEntity = $plansColl->query('name', $plan)
 								->lessEq('from', $currentDate)
 								->greaterEq('to', $currentDate)
-								->cursor()->current();
+								->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED)->current();
 						$newRefPlans[] = $planEntity->createRef($plansColl);
 					}
 					$rate['plans'] = $newRefPlans;

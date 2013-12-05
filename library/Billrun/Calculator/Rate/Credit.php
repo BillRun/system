@@ -21,6 +21,11 @@ class Billrun_Calculator_Rate_Credit extends Billrun_Calculator_Rate {
 	 */
 	static protected $type = "credit";
 
+	public function __construct($options = array()) {
+		parent::__construct($options);
+		$this->loadRates();
+	}
+
 	/**
 	 * Write the calculation into DB
 	 */
@@ -62,27 +67,29 @@ class Billrun_Calculator_Rate_Credit extends Billrun_Calculator_Rate {
 	 * @see Billrun_Calculator_Rate::getLineRate
 	 */
 	protected function getLineRate($row, $usage_type) {
-		$rates = Billrun_Factory::db()->ratesCollection();
 
-		$vat = $row['vatable'];
-		$query = array('key' => $vat ? "CREDIT_VATABLE" : "CREDIT_VAT_FREE");
-		$rate = $rates->query($query)->cursor()->current();
-		$rate->collection($rates);
+		$rate_key = $row['vatable'] ? "CREDIT_VATABLE" : "CREDIT_VAT_FREE";
+		$rate = $this->rates[$rate_key];
 
 		return $rate;
 	}
 
 	/**
-	 * get all the prefixes from a given number
-	 * @param type $str
-	 * @return type
+	 * Caches the rates in the memory for fast computations
 	 */
-	protected function getPrefixes($str) {
-		$prefixes = array();
-		for ($i = 0; $i < strlen($str); $i++) {
-			$prefixes[] = substr($str, 0, $i + 1);
+	protected function loadRates() {
+		$rates_coll = Billrun_Factory::db()->ratesCollection();
+		$query = array(
+			'key' => array(
+				'$in' => array('CREDIT_VATABLE', 'CREDIT_VAT_FREE'),
+			),
+		);
+		$rates = $rates_coll->query($query)->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
+		$this->rates = array();
+		foreach ($rates as $rate) {
+			$rate->collection($rates_coll);
+			$this->rates[$rate['key']] = $rate;
 		}
-		return $prefixes;
 	}
 
 }
