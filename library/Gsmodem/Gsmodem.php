@@ -323,8 +323,9 @@ class Gsmodem_Gsmodem  {
 		if(is_array($cmd)) {
 			$res = TRUE;
 			foreach($cmd as $command => $getResult) {
-				$res &= $this->doCmd($command, $getResult, $getResult, false, $waitTime) != FALSE || !$getResult;
-				if(!$getResult) {sleep(2);}
+				Billrun_Factory::log("$command");
+				$res &= $this->doCmd($command, $getResult, $getResult, false,  static::COMMAND_RESPONSE_TIME) != FALSE || !$getResult;
+				if(!$getResult) {sleep(5);}
 			}
 			return $res;
 		} else {
