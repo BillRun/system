@@ -40,18 +40,18 @@ class Gsmodem_ModemState {
 							'get_number' => '+CNUM',
 							'echo_mode' => 'E%0%',
 							'init_commands' =>  array(
-								'ATZ ;\r' => false,
-								'ATE1 ;\r' => false,
-								'AT+CRESET; \r' => false,
-								'AT+CFUN=0 ;\r' => false,
-								'AT+CFUN=1 ;\r' => false,
-								'AT+CREG=2 ;\r' => true,
-								'AT+CLIP=1 ;\r' => true,
+								"ATZ ;\r" => false,
+								"ATE1 ;\r" => false,
+								"AT+CRESET; \r" => false,
+								"AT+CFUN=0 ;\r" => true,
+								"AT+CFUN=1 ;\r" => true,
+								"AT+CREG=2 ;\r" => true,
+								"AT+CLIP=1 ;\r" => true,
 							),
 							'reset_commands' => array(
 								"AT+CVHU=0 ;\r" => true,
 								"AT+CVHUP ;\r"=> true,
-								'ATH ;\r' => true,
+								"ATH ;\r" => true,
 							),
 						);
 
