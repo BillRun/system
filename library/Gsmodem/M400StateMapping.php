@@ -58,7 +58,7 @@ class Gsmodem_M400StateMapping  extends Gsmodem_StateMapping {
 	);
 	
 	public function __construct() {
-		super();
+		parent::__construct();
 		$this->commandToStateMapping[static::IN_CALL_STATE]['AT\+CVHUP'] = static::HANGING_UP_STATE;
 		$this->commandToStateMapping[static::ANSWERING_STATE]['AT\+CVHUP'] = static::HANGING_UP_STATE;
 		$this->commandToStateMapping[static::CALLING_STATE]['AT\+CVHUP'] = static::HANGING_UP_STATE;
