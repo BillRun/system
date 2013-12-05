@@ -316,7 +316,7 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 	 * Call to a assigned  number to keep the line busy.
 	 */
 	protected function callToBusyNumber($device, $duration, $number) {
-		Billrun_Factory::log("Calling to busy number : " . $this->getConfig('busy_number'));
+		Billrun_Factory::log("Calling to busy number : " . $number);
 		$call = array();
 		$ret = $this->makeACall($device, $call, $number);
 
