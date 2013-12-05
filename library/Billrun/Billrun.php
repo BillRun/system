@@ -613,6 +613,9 @@ class Billrun_Billrun {
 				$billrun->updateCosts($pricingData, $row, $vatable, $sraw); // according to self::getUpdateCostsQuery
 				$billrun->setSubRawData($sraw);
 			}
+			else {
+				Billrun_Factory::log("Subscriber $sid is not active yet has lines", Zend_log::ALERT);
+			}
 			//$billrun->updateTotals($pricingData, $billrun_key, $vatable);		
 		}
 	}

@@ -141,7 +141,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 				return false;
 			}
 		}
-// @TODO trigger before aggregate
+		// @TODO trigger before aggregate
 		Billrun_Factory::dispatcher()->trigger('beforeAggregate', array($this->data, &$this));
 		$account_billrun = false;
 		$billrun_key = $this->getStamp();
@@ -150,12 +150,12 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 			Billrun_Factory::log('Current account index: ' . ++$billruns_count, Zend_log::DEBUG);
 			if (!Billrun_Factory::config()->isProd()) {
 				if ($this->testAcc && is_array($this->testAcc) && !in_array($accid, $this->testAcc)) {
-//Billrun_Factory::log("Moving on nothing to see here... , account Id : $accid");
+					//Billrun_Factory::log("Moving on nothing to see here... , account Id : $accid");
 					continue;
 				}
 			}
-//Billrun_Factory::log()->log("Updating Accoount : " . print_r($account),Zend_Log::DEBUG);			
-//Billrun_Factory::log(microtime(true));
+			//Billrun_Factory::log()->log("Updating Accoount : " . print_r($account),Zend_Log::DEBUG);			
+			//Billrun_Factory::log(microtime(true));
 			if (empty($this->options['live_billrun_update'])) {
 				if (Billrun_Billrun::exists($accid, $billrun_key)) {
 					Billrun_Factory::log()->log("Billrun " . $billrun_key . " already exists for account " . $accid, Zend_Log::ALERT);
@@ -201,7 +201,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 				} else {
 					$account_billrun->addLines(true, 0, $flat_lines);
 				}
-//save  the billrun
+				//save  the billrun
 				Billrun_Factory::log("Saving account $accid");
 				$account_billrun->save();
 				Billrun_Factory::log("Finished saving account $accid");
@@ -212,8 +212,8 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		}
 		$end_msg = "Finished iterating page $this->page of size $this->size";
 		Billrun_Factory::log($end_msg, Zend_log::DEBUG);
-//		Billrun_Factory::dispatcher()->trigger('beforeAggregateSaveLine', array(&$save_data, &$this));
-// @TODO trigger after aggregate
+		//		Billrun_Factory::dispatcher()->trigger('beforeAggregateSaveLine', array(&$save_data, &$this));
+		// @TODO trigger after aggregate
 		Billrun_Factory::dispatcher()->trigger('afterAggregate', array($this->data, &$this));
 		$this->sendEndMail($end_msg);
 	}
@@ -329,7 +329,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 
 	protected function initStampsDir() {
 		@mkdir($this->stamps_dir, 0777, true);
-		$this->file_path = $this->stamps_dir . '/' . $this->page;
+		$this->file_path = $this->stamps_dir . '/' . $this->size . '.' . $this->page;
 		@unlink($this->file_path);
 		@touch($this->file_path);
 		return is_file($this->file_path);
