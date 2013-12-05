@@ -41,7 +41,7 @@ class Gsmodem_ModemState {
 							'echo_mode' => 'E%0%',
 							'init_commands' =>  array(
 								'ATZ ;\r' => false,
-								'ATE1 ;\r' => true,
+								'ATE1 ;\r' => false,
 								'AT+CRESET; \r' => true,
 								'AT+CFUN=0 ;\r' => true,
 								'AT+CFUN=1 ;\r' => true,
