@@ -88,7 +88,7 @@ class Billrun_Generator_Report_GeneratedCalls extends Billrun_Generator_Report {
 	}
 	
 	protected function detailedReportLine($line) {
-			$isCallerHanugup = Billrun_Util::getFieldVal($record['caller_end_status'],'') == 'hang_up';
+			$isCallerHanugup = Billrun_Util::getFieldVal($line['caller_end_status'],'') == 'hang_up';
 			$billingRecordFilter = array(
 				'billing_stamp' => 'billing_stamp',			
 				'billing_calling_number' => 'billing_calling_number',
@@ -126,7 +126,7 @@ class Billrun_Generator_Report_GeneratedCalls extends Billrun_Generator_Report {
 				$record['end_time_offest'] = Billrun_Util::getFieldVal($line['caller_call_end_time']->sec,0) - strtotime(Billrun_Util::getFieldVal($line['billing_charging_end_time'],''));			
 			}
 
-			$record['time_offset'] = Billrun_Util::getFieldVal($line['generator_duration'],0) - Billrun_Util::getFieldVal($line['billing_usagev'],0);
+			$record['time_offset'] = Billrun_Util::getFieldVal($record['generator_duration'],0) - Billrun_Util::getFieldVal($line['billing_usagev'],0);
 			$record['charge_offest'] = Billrun_Util::getFieldVal($line['callee_cost'],0) - Billrun_Util::getFieldVal($line['billing_aprice'],0);
 			$record['rate_offest'] = Billrun_Util::getFieldVal($line['rate'],0) - Billrun_Util::getFieldVal($line['billling_arate'],0);
 			$record['call_recoding_diff'] =	isset($line['billing_urt'])  ? 0 : 1 ;
