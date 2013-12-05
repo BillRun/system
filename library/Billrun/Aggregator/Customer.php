@@ -207,7 +207,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 				Billrun_Factory::log("Finished saving account $accid");
 			}
 			Billrun_Factory::log("Closing billrun $billrun_key for account $accid", Zend_log::DEBUG);
-			$account_billrun->close($accid, $billrun_key, $this->min_invoice_id);
+			$account_billrun->close($this->min_invoice_id);
 			Billrun_Factory::log("Finished closing billrun $billrun_key for account $accid", Zend_log::DEBUG);
 		}
 		$end_msg = "Finished iterating page $this->page of size $this->size";
