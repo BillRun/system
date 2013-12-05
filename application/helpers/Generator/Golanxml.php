@@ -693,12 +693,12 @@ class Generator_Golanxml extends Billrun_Generator {
 
 	protected function getTariffItem($line, $subscriber) {
 		$arate = $this->getRowRate($line);
-		if (isset($arate['key'])) {
-			return $arate['key']; //@todo they may expect ROAM_ALL_DEST / $DEFAULT etc. which we don't keep
+		if ($line['type'] == 'flat') {
+			return 'GIFT-GC_GOLAN-' . $this->getNextPlanName($subscriber);
 		} else if ($line['type'] == 'credit' && isset($line['reason'])) {
 			return $line['reason'];
-		} else if ($line['type'] == 'flat') {
-			return 'GIFT-GC_GOLAN-' . $this->getNextPlanName($subscriber);
+		} else if (isset($arate['key'])) {
+			return $arate['key']; //@todo they may expect ROAM_ALL_DEST / $DEFAULT etc. which we don't keep
 		} else {
 			return '';
 		}
