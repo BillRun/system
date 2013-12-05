@@ -24,7 +24,7 @@ class Gsmodem_Gsmodem  {
 	const HANG_UP = 'hang_up';
 	const HANGING_UP = 'hanging_up';
 
-	const COMMAND_RESPONSE_TIME = 30; // the amount of seconds to wait  for a response from the modem to a given command.
+	const COMMAND_RESPONSE_TIME = 15; // the amount of seconds to wait  for a response from the modem to a given command.
 	const RESPONSIVE_RESULTS_TIMEOUT = 0.2; 
 	
 	//--------------------------------------------------------------------------
@@ -218,15 +218,7 @@ class Gsmodem_Gsmodem  {
 	/**
 	 * Initialize the modem settings.
 	 */
-	public function initModem() {
-		//$this->doCmd($this->getATcmd('reset',array()), false, false);		
-		//sleep(2);
-		//$this->doCmd($this->getATcmd('echo_mode',array(0)), true, false);
-		//$this->doCmd('AT+CRESET; \r', true, false,false,  static::COMMAND_RESPONSE_TIME);
-		//$this->doCmd("AT+CFUN=0 ;\r", true,true,false,  static::COMMAND_RESPONSE_TIME);
-		//$this->doCmd("AT+CFUN=1 ;\r", true,true,false,  static::COMMAND_RESPONSE_TIME);
-		//$this->doCmd($this->getATcmd('register_reporting',array(2)), true ,true,false, static::COMMAND_RESPONSE_TIME);
-		//$this->doCmd($this->getATcmd('incoming_call_id',array(1)), true ,true,false, static::COMMAND_RESPONSE_TIME);
+	public function initModem() {		
 		$this->doCmd($this->state->getCmdMapping()['init_commands']);
 		$this->state->setState(Gsmodem_StateMapping::IDLE_STATE);
 		$this->resetModem();
@@ -237,10 +229,7 @@ class Gsmodem_Gsmodem  {
 	 * Initialize the modem settings.
 	 */
 	public function resetModem() {
-		$ret = $this->doCmd($this->state->getCmdMapping()['reset_commands']);
-		//$ret &= $this->doCmd("AT+CVHU=0 ;\r", true,true,false,  static::COMMAND_RESPONSE_TIME) != FALSE;
-		//$ret &= $this->doCmd("AT+CVHUP ;\r", true,true,false,  static::COMMAND_RESPONSE_TIME) != FALSE;
-		//$ret &= $this->hangUp() != FALSE;
+		$ret = $this->doCmd($this->state->getCmdMapping()['reset_commands']);	
 		$ret &= $this->registerToNet() != FALSE;
 		return $ret;
 	}
