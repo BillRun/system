@@ -198,7 +198,7 @@ class Billrun_Generator_Report_GeneratedCalls extends Billrun_Generator_Report {
 			$summary['offset_pecentage'][$value] = (float)@( 100 * $summary['offset'][$value] / $summary['generator'][$value] );
 		}
 		//TODO calculate standard  deviation
-		$summary['generator_standard_deviation'] =  array_merge( $summary['generator_standard_deviation'],$this->calcStandardDev($allLines, array('callee_duration' => 'duration','generator_price' => 'price','generator_rate' => 'rate')) );		
+		$summary['generator_standard_deviation'] =  array_merge( $summary['generator_standard_deviation'],$this->calcStandardDev($allLines, array('generator_duration' => 'duration','generator_price' => 'price','generator_rate' => 'rate')) );		
 		$summary['billing_standard_deviation'] = array_merge( $summary['billing_standard_deviation'] ,$this->calcStandardDev($allLines, array('billing_duration'=> 'duration','billing_price' => 'price','billing_rate' => 'rate')) );
 		return $summary;
 	}
