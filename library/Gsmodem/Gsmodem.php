@@ -227,7 +227,7 @@ class Gsmodem_Gsmodem  {
 		//$this->doCmd("AT+CFUN=1 ;\r", true,true,false,  static::COMMAND_RESPONSE_TIME);
 		//$this->doCmd($this->getATcmd('register_reporting',array(2)), true ,true,false, static::COMMAND_RESPONSE_TIME);
 		//$this->doCmd($this->getATcmd('incoming_call_id',array(1)), true ,true,false, static::COMMAND_RESPONSE_TIME);
-		$this->doCmd($this->state->getCmdMapping()['init_comands']);
+		$this->doCmd($this->state->getCmdMapping()['init_commands']);
 		$this->state->setState(Gsmodem_StateMapping::IDLE_STATE);
 		$this->resetModem();
 	}
@@ -237,7 +237,7 @@ class Gsmodem_Gsmodem  {
 	 * Initialize the modem settings.
 	 */
 	public function resetModem() {
-		$ret = $this->doCmd($this->state->getCmdMapping()['reset_comands']);
+		$ret = $this->doCmd($this->state->getCmdMapping()['reset_commands']);
 		//$ret &= $this->doCmd("AT+CVHU=0 ;\r", true,true,false,  static::COMMAND_RESPONSE_TIME) != FALSE;
 		//$ret &= $this->doCmd("AT+CVHUP ;\r", true,true,false,  static::COMMAND_RESPONSE_TIME) != FALSE;
 		//$ret &= $this->hangUp() != FALSE;
