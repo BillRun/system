@@ -18,6 +18,12 @@
  */
 class Generator_Golanxml extends Billrun_Generator {
 
+	/**
+	 * the type of the object
+	 *
+	 * @var string
+	 */
+	protected static $type = 'golanxml';
 	protected $offset = 0;
 	protected $size = 10000;
 	protected $data = null;
@@ -31,7 +37,6 @@ class Generator_Golanxml extends Billrun_Generator {
 	protected $lines_coll;
 
 	public function __construct($options) {
-		self::$type = 'golanxml';
 		parent::__construct($options);
 		if (isset($options['page'])) {
 			$this->offset = intval($options['page']);
@@ -50,7 +55,7 @@ class Generator_Golanxml extends Billrun_Generator {
 		$this->data = $billrun
 				->query('billrun_key', $this->stamp)
 				->exists('invoice_id')
-				->notExists('invoice_file')
+//				->notExists('invoice_file')
 				->cursor()
 				->sort(array("aid" => 1))
 				->skip($this->offset * $this->size)
@@ -68,11 +73,13 @@ class Generator_Golanxml extends Billrun_Generator {
 
 	protected function createXmlFiles() {
 		// use $this->export_directory
+		$i=1;
 		foreach ($this->data as $row) {
+			Billrun_Factory::log('Current index ' . $i++);
 			$xml = $this->getXML($row);
 			//			$row->{'xml'} = $xml->asXML();
 			$invoice_id = $row->get('invoice_id');
-			$invoice_filename = $row['billrun_key'] . '_' . $row['aid'] . '_' . $invoice_id . '.xml';
+			$invoice_filename = $row['billrun_key'] . '_' . str_pad($row['aid'], 9, '0', STR_PAD_LEFT) . '_' . str_pad($invoice_id, 11, '0', STR_PAD_LEFT) . '.xml';
 			$this->createXml($invoice_filename, $xml->asXML());
 			$this->setFileStamp($row, $invoice_filename);
 			Billrun_Factory::log()->log("invoice file " . $invoice_filename . " created for account " . $row->get('aid'), Zend_Log::INFO);
@@ -105,7 +112,7 @@ class Generator_Golanxml extends Billrun_Generator {
 			$sid = $subscriber['sid'];
 			$subscriber_flat_costs = $this->getFlatCosts($subscriber);
 			if (!is_array($subscriber_flat_costs) || empty($subscriber_flat_costs)) {
-				Billrun_Factory::log('Missing flat costs for subscriber ' . $sid, Zend_Log::ALERT);
+				Billrun_Factory::log('Missing flat costs for subscriber ' . $sid, Zend_Log::INFO);
 				continue;
 			}
 
@@ -522,7 +529,11 @@ class Generator_Golanxml extends Billrun_Generator {
 				'$ne' => 'ggsn',
 			),
 		);
-		$lines = $this->lines_coll->query($query)->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
+		if (rand(0, 99) >= $this->loadBalanced) {
+			$lines = $this->lines_coll->query($query)->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
+		} else {
+			$lines = $this->lines_coll->query($query)->cursor();
+		}
 		return $lines;
 	}
 

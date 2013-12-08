@@ -15,11 +15,23 @@
 abstract class Billrun_Generator extends Billrun_Base {
 
 	/**
+	 * the type of the object
+	 *
+	 * @var string
+	 */
+	static protected $type = 'generator';
+	
+	/**
 	 * the directory where the generator store files
 	 * @var string
 	 */
 	protected $export_directory;
-	static protected $type;
+	
+	/**
+	 * load balanced between db primary and slave
+	 * @var int
+	 */
+	protected $loadBalanced = 0;
 
 	/**
 	 * constructor
@@ -33,9 +45,11 @@ abstract class Billrun_Generator extends Billrun_Base {
 		if (isset($options['export_directory'])) {
 			$this->export_directory = $options['export_directory'] . DIRECTORY_SEPARATOR . $this->stamp;
 		} else {
-			$this->export_directory = Billrun_Factory::config()->getConfigValue(self::$type . '.export') . DIRECTORY_SEPARATOR . $this->stamp; //__DIR__ . '/../files/';
+			$this->export_directory = Billrun_Factory::config()->getConfigValue(static::$type . '.export') . DIRECTORY_SEPARATOR . $this->stamp; //__DIR__ . '/../files/';
 		}
 		
+		$this->loadBalanced = Billrun_Factory::config()->getConfigValue('generate.loadBalanced', 0);
+
 		if (!file_exists($this->export_directory)) {
 			mkdir($this->export_directory);
 		}
