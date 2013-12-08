@@ -107,7 +107,6 @@ class Billrun_Generator_Report_GeneratedCalls extends Billrun_Generator_Report {
 				'caller_end_result' => 'caller_end_status',
 				'callee_end_result' => 'called_end_status',				
 				'from' => 'generator_calling_number',
-				'to' => 'generator_dialed_number',
 				'to' => 'generator_called_number',
 				'caller_execution_start_time' => 'generator_calling_time',
 				'action_type' => 'generator_call_type',
@@ -131,7 +130,7 @@ class Billrun_Generator_Report_GeneratedCalls extends Billrun_Generator_Report {
 			$record['rate_offest'] = Billrun_Util::getFieldVal($line['rate'],0) - Billrun_Util::getFieldVal($line['billling_arate'],0);
 			$record['call_recoding_diff'] =	isset($line['billing_urt'])  ? 0 : 1 ;
 			$record['called_number_diff'] = Billrun_Util::getFieldVal($line['to'],'') != Billrun_Util::getFieldVal($line['billing_called_number'],'') ? 1 : 0;
-			$record['correctness'] = $record['caller_end_status'] == 'no_call' ^ ( // Check that the  call is corrent
+			$record['correctness'] = ($record['caller_end_status'] == 'no_call' && $record['called_end_status'] == 'no_call')^ ( // Check that the  call is corrent
 										abs($record['start_time_offest']) <= 1.5 && abs($record['end_time_offest']) <= 1.5 &&
 										$record['call_recoding_diff']  == 0 && $record['called_number_diff'] == 0 &&
 										abs($record['charge_offest']) <= 0.3 && abs($record['time_offset']) <= 1 
@@ -284,8 +283,7 @@ class Billrun_Generator_Report_GeneratedCalls extends Billrun_Generator_Report {
 					$data['billing_'.$key] = $bLine[$key];
 				}
 			}			
-			//Billrun_Factory::log()->log("to : " .date("Y-m-d H:i:s",$bLine['urt']['sec'] + $this->billingTimeOffset + self::ALLOWED_TIME_DIVEATION), Zend_Log::DEBUG);
-			//Billrun_Factory::log()->log("from : " . date("Y-m-d H:i:s",$bLine['urt']['sec'] + $this->billingTimeOffset - self::ALLOWED_TIME_DIVEATION), Zend_Log::DEBUG);
+			
 			$updateResults =  Billrun_Factory::db()->linesCollection()->update(array('type'=>'generated_call',
 																'from' => array('$regex' => preg_replace("/^972/","",$bLine['calling_number']) ),
 																'to' => array('$regex' => preg_replace("/^972/","",$bLine['called_number']) ),
@@ -295,10 +293,7 @@ class Billrun_Generator_Report_GeneratedCalls extends Billrun_Generator_Report {
 			
 			if (!($updateResults['ok'] && $updateResults['updatedExisting'])) {
 				$retBLines['unmatched_lines'][] = $data;
-			} else {//from billing matched tyo aline in the generator
-			//	Billrun_Factory::log()->log("line : " . print_r($bLine,1), Zend_Log::DEBUG);
-			//	Billrun_Factory::log()->log("line : " . print_r($updateResults,1), Zend_Log::DEBUG);
-			}
+			} 
 		}
 		return $retBLines;
 	}
