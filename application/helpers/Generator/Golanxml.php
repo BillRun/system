@@ -515,7 +515,9 @@ class Generator_Golanxml extends Billrun_Generator {
 //			'aprice' => array(
 //				'$exists' => true,
 //			),
-			'billrun' => "000000",
+			'billrun' => array(
+				'$in' => array('000000', $this->stamp),
+			),
 			'type' => array(
 				'$ne' => 'ggsn',
 			),
