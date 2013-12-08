@@ -184,21 +184,11 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		Billrun_Log::getInstance()->log("fraudAlertsPlugin::notifyRemoteServer URL: " . $url, Zend_Log::INFO);
 
 		if (!$this->isDryRun) {
-			$client = curl_init($url);
-			curl_setopt($client, CURLOPT_POST, TRUE);
-			curl_setopt($client, CURLOPT_POSTFIELDS, $post_fields);
-			curl_setopt($client, CURLOPT_RETURNTRANSFER, TRUE);
-			$response = curl_exec($client);
-			curl_close($client);
-
-			if ($response === FALSE || empty($response)) {
-				Billrun_Log::getInstance()->log("fraudAlertsPlugin::notifyRemoteServer connection failure or empty response.", Zend_Log::ERR);
-				return FALSE;
-			}
+			$output = Billrun_Util::sendRequest($url, $post_fields, Zend_Http_Client::POST);
 			
-			Billrun_Log::getInstance()->log("fraudAlertsPlugin::notifyRemoteServer response: " . $response, Zend_Log::INFO);
+			Billrun_Log::getInstance()->log("fraudAlertsPlugin::notifyRemoteServer response: " . $output, Zend_Log::INFO);
 			
-			$ret = json_decode($response,true);
+			$ret = json_decode($output,true);
 			
 			if (is_null($ret)) {
 				Billrun_Log::getInstance()->log("fraudAlertsPlugin::notifyRemoteServer response is empty, null or not json string: ", Zend_Log::ERR);
