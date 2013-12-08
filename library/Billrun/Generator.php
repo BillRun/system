@@ -31,9 +31,9 @@ abstract class Billrun_Generator extends Billrun_Base {
 		parent::__construct($options);
 
 		if (isset($options['export_directory'])) {
-			$this->export_directory = $options['export_directory'];
+			$this->export_directory = $options['export_directory'] . DIRECTORY_SEPARATOR . $this->stamp;
 		} else {
-			$this->export_directory = Billrun_Factory::config()->getConfigValue(self::$type . '.export'); //__DIR__ . '/../files/';
+			$this->export_directory = Billrun_Factory::config()->getConfigValue(self::$type . '.export') . DIRECTORY_SEPARATOR . $this->stamp; //__DIR__ . '/../files/';
 		}
 		
 		if (!file_exists($this->export_directory)) {
