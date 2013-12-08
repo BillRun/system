@@ -18,6 +18,12 @@
  */
 class Generator_Golanxml extends Billrun_Generator {
 
+	/**
+	 * the type of the object
+	 *
+	 * @var string
+	 */
+	protected static $type = 'golanxml';
 	protected $offset = 0;
 	protected $size = 10000;
 	protected $data = null;
@@ -31,7 +37,6 @@ class Generator_Golanxml extends Billrun_Generator {
 	protected $lines_coll;
 
 	public function __construct($options) {
-		self::$type = 'golanxml';
 		parent::__construct($options);
 		if (isset($options['page'])) {
 			$this->offset = intval($options['page']);
@@ -522,7 +527,11 @@ class Generator_Golanxml extends Billrun_Generator {
 				'$ne' => 'ggsn',
 			),
 		);
-		$lines = $this->lines_coll->query($query)->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
+		if (rand(0, 99) >= $this->loadBalanced) {
+			$lines = $this->lines_coll->query($query)->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
+		} else {
+			$lines = $this->lines_coll->query($query)->cursor();
+		}
 		return $lines;
 	}
 
