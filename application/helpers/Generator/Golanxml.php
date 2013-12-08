@@ -56,7 +56,7 @@ class Generator_Golanxml extends Billrun_Generator {
 				->query('billrun_key', $this->stamp)
 				->exists('invoice_id')
 //				->notExists('invoice_file')
-				->cursor()->timeout(-1)
+				->cursor()->timeout(-1)->immmortal()
 				->sort(array("aid" => 1))
 				->skip($this->offset * $this->size)
 				->limit($this->size);
