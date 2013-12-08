@@ -85,7 +85,7 @@ class Generator_Golancsv extends Billrun_Generator {
 			'InvoiceNumber',
 			'TotalFlat',
 			'TotalExtraOverPackage',
-//			'TotalExtraOutOfPackage',
+			'TotalExtraOutOfPackage',
 			'ManualCorrection',
 			'ManualCorrectionCredit',
 			'ManualCorrectionCharge',
@@ -102,7 +102,7 @@ class Generator_Golancsv extends Billrun_Generator {
 			'XmlIndicator',
 			'TotalFlat',
 			'TotalExtraOverPackage',
-//			'TotalExtraOutOfPackage',
+			'TotalExtraOutOfPackage',
 			'ManualCorrection',
 			'ManualCorrectionCredit',
 			'ManualCorrectionCharge',
@@ -215,7 +215,7 @@ class Generator_Golancsv extends Billrun_Generator {
 				$acc_row['XmlIndicator'] = $sub_row['XmlIndicator'] = $this->getXmlIndicator($account);
 				$acc_row['TotalFlat'] += $sub_row['TotalFlat'] = $this->getTotalFlat($subscriber);
 				$acc_row['TotalExtraOverPackage'] += $sub_row['TotalExtraOverPackage'] = $this->getTotalExtraOverPackage($subscriber);
-//				$acc_row['TotalExtraOutOfPackage'] += $sub_row['TotalExtraOutOfPackage'] = $this->getTotalExtraOutOfPackage($subscriber); // we don't have this value for instant retrieval
+				$acc_row['TotalExtraOutOfPackage'] += $sub_row['TotalExtraOutOfPackage'] = $this->getTotalExtraOutOfPackage($subscriber);
 				$acc_row['ManualCorrectionCredit'] += $sub_row['ManualCorrectionCredit'] = $this->getManualCorrectionCredit($subscriber);
 				$acc_row['ManualCorrectionCharge'] += $sub_row['ManualCorrectionCharge'] = $this->getManualCorrectionCharge($subscriber);
 				$acc_row['ManualCorrection'] += $sub_row['ManualCorrection'] = $sub_row['ManualCorrectionCredit'] + $sub_row['ManualCorrectionCharge'];
@@ -254,19 +254,9 @@ class Generator_Golancsv extends Billrun_Generator {
 	/**
 	 * 
 	 * @param type $subscriber
-	 * @todo function is not ready yet
 	 */
 	protected function getTotalExtraOutOfPackage($subscriber) {
-		$total = 0;
-		if (!empty($subscriber['breakdown']['out_plan'])) {
-			foreach ($subscriber['breakdown']['out_plan'] as $category_name => $category) {
-				if ($category_name != 'roaming') {
-					foreach ($category as $zone) {
-						$total+=$zone['cost'];
-					}
-				}
-			}
-		}
+		return floatval(isset($subscriber['costs']['out_plan']['vatable']) ? $subscriber['costs']['out_plan']['vatable'] : 0);
 	}
 
 	protected function getManualCorrectionCredit($subscriber) {
