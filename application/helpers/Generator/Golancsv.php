@@ -205,7 +205,7 @@ class Generator_Golancsv extends Billrun_Generator {
 			$acc_row = array();
 			$acc_row['TotalChargeVat'] = $this->getAccountTotalChargeVat($account);
 			$acc_row['InvoiceNumber'] = $account['invoice_id'];
-			$acc_row['TotalCharge'] = $acc_row['TotalVat'] = $acc_row['OutsidePackageNoVatTap3'] = $acc_row['ManualCorrection'] = $acc_row['ManualCorrectionCharge'] = $acc_row['ManualCorrectionCredit'] = $acc_row['TotalExtraOverPackage'] = $acc_row['TotalFlat'] = 0;
+			$acc_row['TotalCharge'] = $acc_row['TotalVat'] = $acc_row['OutsidePackageNoVatTap3'] = $acc_row['ManualCorrection'] = $acc_row['ManualCorrectionCharge'] = $acc_row['ManualCorrectionCredit'] = $acc_row['TotalExtraOverPackage'] = $acc_row['TotalExtraOutOfPackage'] = $acc_row['TotalFlat'] = 0;
 			foreach ($account['subs'] as $subscriber) {
 				$subscribers_counter++;
 				$sub_row['serialNumber'] = $subscribers_counter;
