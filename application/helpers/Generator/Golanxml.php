@@ -82,11 +82,11 @@ class Generator_Golanxml extends Billrun_Generator {
 			Billrun_Factory::log('Current index ' . $i++);
 			$xml = $this->getXML($row);
 			//			$row->{'xml'} = $xml->asXML();
-			$invoice_id = $row->get('invoice_id');
+			$invoice_id = $row['invoice_id'];
 			$invoice_filename = $row['billrun_key'] . '_' . str_pad($row['aid'], 9, '0', STR_PAD_LEFT) . '_' . str_pad($invoice_id, 11, '0', STR_PAD_LEFT) . '.xml';
 			$this->createXml($invoice_filename, $xml->asXML());
 			$this->setFileStamp($row, $invoice_filename);
-			Billrun_Factory::log()->log("invoice file " . $invoice_filename . " created for account " . $row->get('aid'), Zend_Log::INFO);
+			Billrun_Factory::log()->log("invoice file " . $invoice_filename . " created for account " . $row['aid'], Zend_Log::INFO);
 //			$this->addRowToCsv($invoice_id, $row->get('aid'), $total, $total_ilds);
 		}
 	}
@@ -104,15 +104,15 @@ class Generator_Golanxml extends Billrun_Generator {
 		$invoice_total_manual_correction_credit = 0;
 		$invoice_total_manual_correction_charge = 0;
 		$invoice_total_outside_gift_novat = 0;
-		$billrun_key = $row->get('billrun_key');
-		$aid = $row->get('aid');
+		$billrun_key = $row['billrun_key'];
+		$aid = $row['aid'];
 		Billrun_Factory::log()->log("xml account " . $aid, Zend_Log::INFO);
 		// @todo refactoring the xml generation to another class
 		$xml = $this->basic_xml();
 		$xml->TELECOM_INFORMATION->VAT_VALUE = $this->displayVAT($row['vat']);
 		$xml->INV_CUSTOMER_INFORMATION->CUSTOMER_CONTACT->EXTERNALACCOUNTREFERENCE = $aid;
 
-		foreach ($row->get('subs') as $subscriber) {
+		foreach ($row['subs'] as $subscriber) {
 			$sid = $subscriber['sid'];
 			$subscriber_flat_costs = $this->getFlatCosts($subscriber);
 			if (!is_array($subscriber_flat_costs) || empty($subscriber_flat_costs)) {
@@ -121,7 +121,7 @@ class Generator_Golanxml extends Billrun_Generator {
 			}
 
 			$subscriber_inf = $xml->addChild('SUBSCRIBER_INF');
-			$subscriber_inf->SUBSCRIBER_DETAILS->SUBSCRIBER_ID = $row->get('sid');
+			$subscriber_inf->SUBSCRIBER_DETAILS->SUBSCRIBER_ID = $row['sid'];
 
 			$billing_records = $subscriber_inf->addChild('BILLING_LINES');
 
@@ -452,11 +452,11 @@ class Generator_Golanxml extends Billrun_Generator {
 		}
 
 		$inv_invoice_total = $xml->addChild('INV_INVOICE_TOTAL');
-		$inv_invoice_total->addChild('INVOICE_NUMBER', $row->get('invoice_id'));
+		$inv_invoice_total->addChild('INVOICE_NUMBER', $row['invoice_id']);
 		$inv_invoice_total->addChild('FIRST_GENERATION_TIME', $this->getFlatStartDate());
 		$inv_invoice_total->addChild('FROM_PERIOD', date('Y/m/d', Billrun_Util::getStartTime($billrun_key)));
 		$inv_invoice_total->addChild('TO_PERIOD', date('Y/m/d', Billrun_Util::getEndTime($billrun_key)));
-		$inv_invoice_total->addChild('SUBSCRIBER_COUNT', count($row->get('subs')));
+		$inv_invoice_total->addChild('SUBSCRIBER_COUNT', count($row['subs']));
 		$inv_invoice_total->addChild('CUR_MONTH_CADENCE_START', $this->getExtrasStartDate());
 		$inv_invoice_total->addChild('CUR_MONTH_CADENCE_END', $this->getExtrasEndDate());
 		$inv_invoice_total->addChild('NEXT_MONTH_CADENCE_START', $this->getFlatStartDate());
@@ -641,7 +641,7 @@ class Generator_Golanxml extends Billrun_Generator {
 	 */
 	protected function getRowRate($row) {
 		$rate = false;
-		$raw_rate = $row->get('arate', true);
+		$raw_rate = $row['arate'];
 		if ($raw_rate) {
 			$id_str = strval($raw_rate['$id']);
 			$rate = $this->getRateById($id_str);
