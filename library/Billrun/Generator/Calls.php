@@ -136,7 +136,8 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 	}
 
 	/**
-	 * reset all connected modems and  kill all  active processes.
+	 * Reset all connected modems and  kill all  active processes.
+	 * @returns true  if the  state  was  reseted currectly  false otherwise.
 	 */
 	protected function resetState() {
 		Billrun_Factory::log("Killing existing calls..");
@@ -149,19 +150,24 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 		}
 		$this->pids = array();
 		Billrun_Factory::log("Calls killed.");
-
+		
+		$ret = true;
 		foreach($this->modemDevices as $device) {			
 			if(!$device->isRegisteredToNet()) {
 				Billrun_Factory::log()->log("Not connected to network trying to reset the modem with number: ". $device->getModemNumber(),Zend_Log::INFO);
 				if($device->resetModem() == FALSE ) {
-					Billrun_Factory::log()->log("Failed when trying to reset the modem with number: ". $device->getModemNumber(),Zend_Log::ERR);
+					Billrun_Factory::log()->log("Failed when trying to reset the modem with number: ". $device->getModemNumber() . " Reinitilinzing the modem",Zend_Log::ERR);
+					$device->initModem(true);
+					$ret = false;
 				}
-			}
-			if($device->hangUp() == FALSE ) {
-				Billrun_Factory::log()->log("Failed when trying to hangup the modem with number: ". $device->getModemNumber(),Zend_Log::ERR);
+			} else {
+				if($device->hangUp() == FALSE ) {
+					Billrun_Factory::log()->log("Failed when trying to hangup the modem with number: ". $device->getModemNumber(),Zend_Log::ERR);
+				}
 			}
 			
 		}		
+		return $ret;
 	}
 	
 	/**
@@ -173,7 +179,9 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 		if ($action) {
 			$this->pingManagmentServer($action,"pre_fork");
 			//Check if the number speciifed in the action is one of the connected modems if so  act on the action.
-			$this->resetState();
+			if(!$this->resetState() ) {
+				return FALSE;//couldn't  reset the modem/operation state fail on the current action and  exit  the current process
+			}
 			foreach( array('to' => false,'from' => true) as $key => $isCalling ) {
 				if($this->isConnectedModemNumber($action[$key]) != false) {
 					if (!($pid = pcntl_fork())) {

@@ -218,8 +218,11 @@ class Gsmodem_Gsmodem  {
 	/**
 	 * Initialize the modem settings.
 	 */
-	public function initModem() {		
+	public function initModem($fullInit = false) {		
 		$this->doCmd($this->state->getCmdMapping()['init_commands']);
+		if($fullInit) {
+			$this->doCmd($this->state->getCmdMapping()['full_init_commands']);
+		}
 		$this->state->setState(Gsmodem_StateMapping::IDLE_STATE);
 		$this->resetModem();
 	}

@@ -48,6 +48,9 @@ class Gsmodem_ModemState {
 								"AT+CREG=2 ;\r" => true,
 								"AT+CLIP=1 ;\r" => true,
 							),
+							'full_init_commands' =>  array(
+								"AT+CRESET; \r" => false,
+								),
 							'reset_commands' => array(
 								"AT+CVHU=0 ;\r" => true,
 								"AT+CVHUP ;\r"=> true,
