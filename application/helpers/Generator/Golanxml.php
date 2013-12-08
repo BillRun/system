@@ -105,7 +105,7 @@ class Generator_Golanxml extends Billrun_Generator {
 			$sid = $subscriber['sid'];
 			$subscriber_flat_costs = $this->getFlatCosts($subscriber);
 			if (!is_array($subscriber_flat_costs) || empty($subscriber_flat_costs)) {
-				Billrun_Factory::log('Missing flat costs for subscriber ' . $sid, Zend_Log::ALERT);
+				Billrun_Factory::log('Missing flat costs for subscriber ' . $sid, Zend_Log::INFO);
 				continue;
 			}
 
