@@ -371,7 +371,7 @@ class Generator_Golanxml extends Billrun_Generator {
 //						$out_of_usage_entry->addChild('TITLE', ?);
 					$roaming_entry = $subtopic_entry->addChild('BREAKDOWN_ENTRY');
 					$roaming_entry->addChild('TITLE', $this->getBreakdownEntryTitle($usage_type, "ROAM_ALL_DEST"));
-					$roaming_entry->addChild('UNITS', $usage_totals['usagev']);
+					$roaming_entry->addChild('UNITS', $usage_type=="data"? $this->bytesToKB($usage_totals['usagev']) : $usage_totals['usagev']);
 					$roaming_entry->addChild('COST_WITHOUTVAT', $usage_totals['cost']);
 					$roaming_entry->addChild('VAT', $this->displayVAT($zone['vat']));
 					$roaming_entry->addChild('VAT_COST', floatval($roaming_entry->COST_WITHOUTVAT) * floatval($roaming_entry->VAT) / 100);
@@ -515,7 +515,7 @@ class Generator_Golanxml extends Billrun_Generator {
 //			'aprice' => array(
 //				'$exists' => true,
 //			),
-			'billrun' => $this->stamp,
+			'billrun' => "000000",
 			'type' => array(
 				'$ne' => 'ggsn',
 			),
