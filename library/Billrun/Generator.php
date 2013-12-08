@@ -35,6 +35,10 @@ abstract class Billrun_Generator extends Billrun_Base {
 		} else {
 			$this->export_directory = Billrun_Factory::config()->getConfigValue(self::$type . '.export'); //__DIR__ . '/../files/';
 		}
+		
+		if (!file_exists($this->export_directory)) {
+			mkdir($this->export_directory);
+		}
 	}
 
 	/**
