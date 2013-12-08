@@ -52,7 +52,7 @@ class Generator_Golanxml extends Billrun_Generator {
 	public function load() {
 		$billrun = Billrun_Factory::db()->billrunCollection();
 		Billrun_Factory::log()->log('Loading ' . $this->size . ' billrun documents with offset ' . $this->offset, Zend_Log::INFO);
-		$this->data = $billrun
+		$resource = $billrun
 				->query('billrun_key', $this->stamp)
 				->exists('invoice_id')
 //				->notExists('invoice_file')
@@ -61,6 +61,10 @@ class Generator_Golanxml extends Billrun_Generator {
 				->skip($this->offset * $this->size)
 				->limit($this->size);
 
+		// @TODO - there is issue with the timeout; need to be fixed
+		foreach($resource as $row) {
+			$this->data[$row['stamp']] = $row;
+		}
 		Billrun_Factory::log()->log("aggregator documents loaded: " . $this->data->count(), Zend_Log::INFO);
 
 		Billrun_Factory::dispatcher()->trigger('afterGeneratorLoadData', array('generator' => $this));
