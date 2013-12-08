@@ -930,7 +930,7 @@ class Billrun_Billrun {
 			}
 			$zone['vat'] = ($vatable ? floatval($this->vat) : 0); //@TODO we assume here that all the lines would be vatable or all vat-free
 		} else {
-			$zone = $pricingData['aprice'];
+			$zone += $pricingData['aprice'];
 		}
 		if (self::isLiveUpdate()) {
 			$sraw['lines'][$usage_type]['refs'][] = $row->createRef();
