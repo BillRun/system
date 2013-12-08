@@ -42,14 +42,14 @@ class Gsmodem_ModemState {
 							'init_commands' =>  array(
 								"ATZ ;\r" => false,
 								"ATE1 ;\r" => false,
-								//"AT+CRESET; \r" => true,
 								"AT+CFUN=0 ;\r" => true,
 								"AT+CFUN=1 ;\r" => true,
 								"AT+CREG=2 ;\r" => true,
 								"AT+CLIP=1 ;\r" => true,
 							),
 							'full_init_commands' =>  array(
-								"AT+CRESET; \r" => false,
+								"AT+FUN=6 ; \r" => true,
+								"AT+CRESET ; \r" => false,
 								),
 							'reset_commands' => array(
 								"AT+CVHU=0 ;\r" => true,
