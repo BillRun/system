@@ -147,7 +147,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		$billrun_key = $this->getStamp();
 		$billruns_count = 0;
 		foreach ($this->data as $accid => $account) {
-			Billrun_Factory::dispatcher()->trigger('beforeAggregateAccount', array($account, &$this));
+			Billrun_Factory::dispatcher()->trigger('beforeAggregateAccount', array($accid, $account, &$this));
 			Billrun_Factory::log('Current account index: ' . ++$billruns_count, Zend_log::DEBUG);
 			if (!Billrun_Factory::config()->isProd()) {
 				if ($this->testAcc && is_array($this->testAcc) && !in_array($accid, $this->testAcc)) {
@@ -209,11 +209,11 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 				$account_billrun->save();
 				Billrun_Factory::log("Finished saving account $accid");
 			}
-			Billrun_Factory::dispatcher()->trigger('aggregateBeforeCloseAccountBillrun', array($account, $account_billrun, &$this));
+			Billrun_Factory::dispatcher()->trigger('aggregateBeforeCloseAccountBillrun', array($accid, $account, $account_billrun, &$this));
 			Billrun_Factory::log("Closing billrun $billrun_key for account $accid", Zend_log::DEBUG);
 			$account_billrun->close($accid, $billrun_key, $this->min_invoice_id);
 			Billrun_Factory::log("Finished closing billrun $billrun_key for account $accid", Zend_log::DEBUG);
-			Billrun_Factory::dispatcher()->trigger('afterAggregateAccount', array($account, $account_billrun, &$this));
+			Billrun_Factory::dispatcher()->trigger('afterAggregateAccount', array($accid, $account, $account_billrun, &$this));
 		}
 		$end_msg = "Finished iterating page $this->page of size $this->size";
 		Billrun_Factory::log($end_msg, Zend_log::DEBUG);
