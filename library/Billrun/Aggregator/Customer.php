@@ -193,7 +193,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 						Billrun_Factory::log('Finished adding flat line to subscriber ' . $sid, Zend_Log::DEBUG);
 					}
 					$account_billrun->addSubscriber($subscriber, $subscriber_status);
-					Billrun_Factory::dispatcher()->trigger('beforeAggregateSubscriber', array($subscriber, $account_billrun, &$this));
+					Billrun_Factory::dispatcher()->trigger('afterAggregateSubscriber', array($subscriber, $account_billrun, &$this));
 				}
 				if ($this->write_stamps_to_file) {
 					$stamps = $account_billrun->addLines(false, 0, $flat_lines);
