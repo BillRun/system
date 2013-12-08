@@ -26,7 +26,7 @@ class Generator_Golanxml extends Billrun_Generator {
 	protected static $type = 'golanxml';
 	protected $offset = 0;
 	protected $size = 10000;
-	protected $data = null;
+	protected $data = array();
 	protected $extras_start_date;
 	protected $extras_end_date;
 	protected $flat_start_date;
@@ -63,7 +63,7 @@ class Generator_Golanxml extends Billrun_Generator {
 
 		// @TODO - there is issue with the timeout; need to be fixed
 		foreach($resource as $row) {
-			$this->data[$row['stamp']] = $row;
+			$this->data[] = $row;
 		}
 		Billrun_Factory::log()->log("aggregator documents loaded: " . $this->data->count(), Zend_Log::INFO);
 
