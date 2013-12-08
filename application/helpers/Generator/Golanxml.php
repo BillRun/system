@@ -641,7 +641,7 @@ class Generator_Golanxml extends Billrun_Generator {
 	 */
 	protected function getRowRate($row) {
 		$rate = false;
-		$raw_rate = $row['arate'];
+		$raw_rate = $row->get('arate', true);
 		if ($raw_rate) {
 			$id_str = strval($raw_rate['$id']);
 			$rate = $this->getRateById($id_str);
