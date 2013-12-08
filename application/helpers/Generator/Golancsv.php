@@ -20,6 +20,7 @@ class Generator_Golancsv extends Billrun_Generator {
 
 	protected $accountsCsvPath;
 	protected $subscribersCsvPath;
+	protected $plans;
 
 	/**
 	 *
@@ -115,6 +116,8 @@ class Generator_Golancsv extends Billrun_Generator {
 			'TotalChargeVatData',
 			'CountOfKb'
 		);
+
+		$this->loadPlans();
 	}
 
 	/**
@@ -300,16 +303,25 @@ class Generator_Golancsv extends Billrun_Generator {
 	 * @todo use plans cache
 	 */
 	protected function getCurPackage($subscriber) {
-		$current_plan = Billrun_Factory::db()->plansCollection()->getRef($subscriber['current_plan']);
-		return $current_plan['name'];
+		$current_plan_ref = $subscriber['current_plan'];
+		if (MongoDBRef::isRef($current_plan_ref)) {
+			$current_plan = $this->getPlanById(strval($current_plan_ref['$id']));
+			$current_plan_name = $current_plan['name'];
+		} else {
+			$current_plan_name = 'NO_GIFT';
+		}
+		return $current_plan_name;
 	}
 
 	protected function getNextPackage($subscriber) {
-		$plan_name = $this->getPlanName($subscriber);
-		if ($plan_name == '') {
-			$plan_name = 'NO_GIFT';
+		$next_plan_ref = $subscriber['next_plan'];
+		if (MongoDBRef::isRef($next_plan_ref)) {
+			$next_plan = $this->getPlanById(strval($next_plan_ref['$id']));
+			$next_plan_name = $next_plan['name'];
+		} else {
+			$next_plan_name = 'NO_GIFT';
 		}
-		return $plan_name;
+		return $next_plan_name;
 	}
 
 	protected function getTotalChargeVatData($subscriber, $vat) {
@@ -379,6 +391,31 @@ class Generator_Golancsv extends Billrun_Generator {
 
 	protected function getVatFreeOverPlan($subscriber) {
 		return isset($subscriber['costs']['over_plan']['vat_free']) ? $subscriber['costs']['over_plan']['vat_free'] : 0;
+	}
+
+	/**
+	 * Get a rate by hexadecimal id
+	 * @param string $id hexadecimal id of rate (taken from Mongo ID)
+	 * @return Mongodloid_Entity the corresponding rate
+	 */
+	protected function getPlanById($id) {
+		if (!isset($this->plans[$id])) {
+			$plans_coll = Billrun_Factory::db()->plansCollection();
+			$this->plans[$id] = $plans_coll->findOne($id);
+		}
+		return $this->plans[$id];
+	}
+
+	/**
+	 * Load all rates from db into memory
+	 */
+	protected function loadPlans() {
+		$plans_coll = Billrun_Factory::db()->plansCollection();
+		$plans = $plans_coll->query()->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
+		foreach ($plans as $plan) {
+			$plan->collection($plans_coll);
+			$this->plans[strval($plan->getId())] = $plan;
+		}
 	}
 
 }
