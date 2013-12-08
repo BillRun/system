@@ -73,11 +73,13 @@ class Generator_Golanxml extends Billrun_Generator {
 
 	protected function createXmlFiles() {
 		// use $this->export_directory
+		$i=1;
 		foreach ($this->data as $row) {
+			Billrun_Factory::log('Current index ' . $i++);
 			$xml = $this->getXML($row);
 			//			$row->{'xml'} = $xml->asXML();
 			$invoice_id = $row->get('invoice_id');
-			$invoice_filename = $row['billrun_key'] . '_' . $row['aid'] . '_' . $invoice_id . '.xml';
+			$invoice_filename = $row['billrun_key'] . '_' . str_pad($row['aid'], 9, '0', STR_PAD_LEFT) . '_' . str_pad($invoice_id, 11, '0', STR_PAD_LEFT) . '.xml';
 			$this->createXml($invoice_filename, $xml->asXML());
 			$this->setFileStamp($row, $invoice_filename);
 			Billrun_Factory::log()->log("invoice file " . $invoice_filename . " created for account " . $row->get('aid'), Zend_Log::INFO);
