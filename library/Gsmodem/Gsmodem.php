@@ -94,10 +94,8 @@ class Gsmodem_Gsmodem  {
 		$lastResult= FALSE;
 		$startTime = microtime(true);
 		 while (($waitTime > microtime(true) - $startTime) && 
-				($this->state->getState() == Gsmodem_StateMapping::IN_CALL_STATE || $this->state->getState() == Gsmodem_StateMapping::OUT_CALL_STATE)) {
-			 
-			$lastResult = $this->getResult(static::RESPONSIVE_RESULTS_TIMEOUT);
-			
+				($this->state->getState() == Gsmodem_StateMapping::IN_CALL_STATE || $this->state->getState() == Gsmodem_StateMapping::OUT_CALL_STATE)) {			 
+			$lastResult = $this->getResult(static::RESPONSIVE_RESULTS_TIMEOUT);			
 		}
 		return $lastResult;
 	}

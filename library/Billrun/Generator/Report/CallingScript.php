@@ -102,7 +102,7 @@ class Billrun_Generator_Report_CallingScript extends Billrun_Generator_Report {
 				Billrun_Factory::log("The call type {$type} that was  defined in ". join(",",$this->scriptTypes)." isn't a legal type.");
 				return false;
 			}
-			$aggCount += $types[$type]['total_count'];
+			$aggCount += $types[$type]['total_count'] * Billrun_Util::getFieldVal($this->options['fail_pecentage_multiplier'],1);
 			$aggDaily += $types[$type]['daily'];
 		}
 		$options =array(
@@ -114,6 +114,7 @@ class Billrun_Generator_Report_CallingScript extends Billrun_Generator_Report {
 											);
 		if(isset($this->options['total_calls_count'])) {
 			$options['total_calls_count'] = $this->options['total_calls_count'];
+			$aggCount = $this->options['total_calls_count'];
 		}
 		$actions = $this->generateDailyScript($options);
 
