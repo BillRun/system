@@ -169,13 +169,13 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 		$base_match = array(
 			'$match' => array(
 				'source' => 'nrtrde',
+				'unified_record_time' => array('$gte' => new MongoDate($charge_time)),
 			)
 		);
 		$where = array(
 			'$match' => array(
 				'record_type' => 'MOC',
-				'connectedNumber' => array('$regex' => '^972'),
-				'unified_record_time' => array('$gte' => new MongoDate($charge_time)),
+				'connectedNumber' => array('$regex' => '^972'),				
 				'event_stamp' => array('$exists' => false),
 				'deposit_stamp' => array('$exists' => false),
 				'callEventDurationRound' => array('$gt' => 0), // not sms
@@ -256,7 +256,7 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 		unset($project['$project']['sms_out']);
 		$where['$match']['connectedNumber']['$regex'] = '^972';
 		$timeWindow = strtotime("-" . Billrun_Factory::config()->getConfigValue('nrtrde.hourly.timespan', '3h'));
-		$where['$match']['unified_record_time'] = array('$gt' => new MongoDate($timeWindow));
+		$base_match['$match']['unified_record_time'] = array('$gt' => new MongoDate($timeWindow));
 		$group['$group']['sms_hourly'] = array('$sum' => 1);
 		$having['$match']['sms_hourly'] = array('$gte' => Billrun_Factory::config()->getConfigValue('nrtrde.hourly.thresholds.smsout_israel', 100, 'int'));
 		$project['$project']['sms_hourly'] = 1;
@@ -270,7 +270,7 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 		unset($having['$match']['sms_hourly']);
 		unset($project['$project']['sms_hourly']);
 		$where['$match']['connectedNumber']['$regex'] = '^(?!972)';
-//		$where['$match']['unified_record_time'] = array('$gt' => new MongoDate($timeWindow));
+//		$base_match['$match']['unified_record_time'] = array('$gt' => new MongoDate($timeWindow));
 		$group['$group']['sms_hourly_nonisrael'] = array('$sum' => 1);
 		$having['$match']['sms_hourly_nonisrael'] = array('$gte' => Billrun_Factory::config()->getConfigValue('nrtrde.hourly.thresholds.smsout_nonisrael', 30, 'int'));		
 		$project['$project']['sms_hourly_nonisrael'] = 1;
@@ -282,7 +282,7 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 		unset($group['$group']['sms_hourly_nonisrael']);
 		unset($having['$match']['sms_hourly_nonisrael']);
 		unset($project['$project']['sms_hourly_nonisrael']);
-//		$where['$match']['unified_record_time'] = array('$gt' => new MongoDate($timeWindow));
+//		$base_match['$match']['unified_record_time'] = array('$gt' => new MongoDate($timeWindow));
 		$where['$match']['callEventDurationRound'] = array('$gt' => 0);
 		$group['$group']['moc_nonisrael_hourly'] = array('$sum' => '$callEventDurationRound');
 		$having['$match']['moc_nonisrael_hourly'] = array('$gte' => Billrun_Factory::config()->getConfigValue('nrtrde.hourly.thresholds.mocnonisrael', 3000));
@@ -296,7 +296,7 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 		unset($having['$match']['moc_nonisrael_hourly']);
 		unset($project['$project']['moc_nonisrael_hourly']);
 		$where['$match']['connectedNumber']['$regex'] = '^972';
-//		$where['$match']['unified_record_time'] = array('$gt' => new MongoDate($timeWindow));		
+//		$base_match['$match']['unified_record_time'] = array('$gt' => new MongoDate($timeWindow));		
 		$group['$group']['moc_israel_hourly'] = array('$sum' => '$callEventDurationRound');
 		$having['$match']['moc_israel_hourly'] = array('$gte' => Billrun_Factory::config()->getConfigValue('nrtrde.hourly.thresholds.mocisrael', 7200));
 		$project['$project']['moc_israel_hourly'] = 1;
