@@ -173,6 +173,10 @@ class Billrun_Billrun {
 		}
 		return self::$vatsByBillrun[$billrun_key];
 	}
+	
+	public function getBillrunKey() {
+		return $this->billrun_key;
+	}
 
 	/**
 	 * Get the VAT value for some unix timestamp
@@ -1100,6 +1104,7 @@ class Billrun_Billrun {
 //		Billrun_Factory::log()->log("Found " . count($account_lines) . " lines.", Zend_Log::DEBUG);
 		Billrun_Factory::log("Processing account Lines $this->aid");
 		$updatedLines = array_merge($this->processLines($account_lines), $this->processLines($flat_lines));
+		$updateLinesStamps = array_keys($updatedLines);
 		Billrun_Factory::log("Finished processing account $this->aid lines. Total: " . count($updatedLines), Zend_log::DEBUG);
 //		Billrun_Factory::log()->log("Querying subscriber " . $sid . " for ggsn lines...", Zend_Log::DEBUG);
 //		$subscriber_aggregated_data = $this->getSubscriberDataLines($sid, $start_time);
@@ -1110,8 +1115,8 @@ class Billrun_Billrun {
 		if ($update_lines) {
 			Billrun_Factory::log("Updating account $this->aid lines with billrun stamp", Zend_Log::DEBUG);
 //			$updatedLines = array_merge($updatedLines, $data_lines_stamps);
-			asort($updatedLines);
-			$this->lines->update(array('stamp' => array('$in' => $updatedLines)), array('$set' => array('billrun' => $this->billrun_key)), array('multiple' => true));
+			asort($updateLinesStamps);
+			$this->lines->update(array('stamp' => array('$in' => $updateLinesStamps)), array('$set' => array('billrun' => $this->billrun_key)), array('multiple' => true));
 			Billrun_Factory::log("Finished updating account $this->aid lines with billrun stamp", Zend_Log::DEBUG);
 		}
 		$this->updateTotals();
@@ -1139,7 +1144,7 @@ class Billrun_Billrun {
 				Billrun_Billrun::updateBillrun($this->billrun_key, array(), array('aprice' => $line['aprice']), $line, $plan->get('vatable'), $this);
 			}
 			//Billrun_Factory::log("Done Processing account Line for $sid : ".  microtime(true));
-			$updatedLines[] = $line['stamp'];
+			$updatedLines[$line['stamp']] = $line;
 		}
 		return $updatedLines;
 	}
@@ -1226,8 +1231,12 @@ class Billrun_Billrun {
 			'urt' => 1,
 		);
 
+		$sort = array(
+			'sid' => 1,
+			'urt' => 1,
+		);
 		Billrun_Factory::log()->log("Querying for account " . $aid . " lines", Zend_Log::DEBUG);
-		$cursor = $this->lines->query($query)->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED)->hint($hint);
+		$cursor = $this->lines->query($query)->cursor()->sort($sort)->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED)->hint($hint);
 		Billrun_Factory::log()->log("Finished querying for account " . $aid . " lines", Zend_Log::DEBUG);
 //		$results = array();
 //		Billrun_Factory::log()->log("Saving account " . $aid . " lines to array", Zend_Log::DEBUG);

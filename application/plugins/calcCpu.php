@@ -143,5 +143,27 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$processor->unsetQueueRow($stamp);
 		}
 	}
+	
+	/**
+	 * extend the customer aggregator to generate the invoice right after the aggregator finished
+	 * 
+	 * @param int                 $accid account id
+	 * @param account             $account account subscribers details
+	 * @param Billrun_Billrun     $account_billrun the billrun data of the account
+	 * @param array               $lines the lines that was aggregated
+	 * @param Billrun_Aggregator  $aggregator the aggregator class that fired the event
+	 * 
+	 * @return void
+	 */
+	public function afterAggregateAccount($accid, $account, Billrun_Billrun $account_billrun, $lines, Billrun_Aggregator $aggregator) {
+		$options = array(
+			'type'  => 'golanxml',
+			'stamp' => $account_billrun->getBillrunKey(),
+		);
+		
+		$generator = Billrun_Generator::getInstance($options);
+		$generator->createXmlInvoice($account_billrun->getRawData(), $lines);
+		
+	}
 
 }
