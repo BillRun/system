@@ -51,7 +51,7 @@ abstract class Billrun_Generator extends Billrun_Base {
 		$this->loadBalanced = Billrun_Factory::config()->getConfigValue('generate.loadBalanced', 0);
 
 		if (!file_exists($this->export_directory)) {
-			mkdir($this->export_directory);
+			mkdir($this->export_directory, 0777, true);
 		}
 	}
 
