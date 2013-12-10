@@ -25,7 +25,7 @@ class RegisterformanagementAction extends Action_Base {
 		$request = $this->getRequest()->getRequest(); // supports GET / POST requests
 		$data = $this->parseData($request);
 		$configCol = Billrun_Factory::db()->configCollection();
-		$config = $configCol->findAndModify(array('key'=> 'call_generator_management'),array('$set'=>array('generators.'.$remoteIp => $data)),array(),array('upsert'=>1));		
+		$config = $configCol->findAndModify(array('key'=> 'call_generator_management'),array('$set'=>array('generators.'.preg_replace(".","_",$remoteIp) => $data)),array(),array('upsert'=>1));		
 		if(abs($data['timestamp']-time()) > 30) {
 			$this->setError("Time stamp out of sync.",$data);
 			Billrun_Factory::log()->log("Alert! : Generator $remoteIp clock is out of sync!", Zend_Log::ALERT);
