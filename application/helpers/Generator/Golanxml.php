@@ -62,7 +62,7 @@ class Generator_Golanxml extends Billrun_Generator {
 				->limit($this->size);
 
 		// @TODO - there is issue with the timeout; need to be fixed
-		foreach($resource as $row) {
+		foreach ($resource as $row) {
 			$this->data[] = $row;
 		}
 		Billrun_Factory::log()->log("aggregator documents loaded: " . count($this->data), Zend_Log::INFO);
@@ -77,7 +77,7 @@ class Generator_Golanxml extends Billrun_Generator {
 
 	protected function createXmlFiles() {
 		// use $this->export_directory
-		$i=1;
+		$i = 1;
 		foreach ($this->data as $row) {
 			Billrun_Factory::log('Current index ' . $i++);
 			$xml = $this->getXML($row);
@@ -382,7 +382,7 @@ class Generator_Golanxml extends Billrun_Generator {
 //						$out_of_usage_entry->addChild('TITLE', ?);
 					$roaming_entry = $subtopic_entry->addChild('BREAKDOWN_ENTRY');
 					$roaming_entry->addChild('TITLE', $this->getBreakdownEntryTitle($usage_type, "ROAM_ALL_DEST"));
-					$roaming_entry->addChild('UNITS', $usage_type=="data"? $this->bytesToKB($usage_totals['usagev']) : $usage_totals['usagev']);
+					$roaming_entry->addChild('UNITS', $usage_type == "data" ? $this->bytesToKB($usage_totals['usagev']) : $usage_totals['usagev']);
 					$roaming_entry->addChild('COST_WITHOUTVAT', $usage_totals['cost']);
 					$roaming_entry->addChild('VAT', $this->displayVAT($zone['vat']));
 					$roaming_entry->addChild('VAT_COST', floatval($roaming_entry->COST_WITHOUTVAT) * floatval($roaming_entry->VAT) / 100);
@@ -571,6 +571,7 @@ class Generator_Golanxml extends Billrun_Generator {
 				case 'call':
 				case 'incoming_call':
 				case 'sms':
+				case 'mms':
 				case 'incoming_sms':
 					return $line['usagev'];
 				case 'data':
@@ -749,8 +750,12 @@ class Generator_Golanxml extends Billrun_Generator {
 		switch ($line['type']) {
 			case "nsn":
 			case "smsc":
+			case "mmsc":
 			case "smpp": //@todo check smpp
-				return $this->beautifyPhoneNumber($line['called_number']);
+				if (isset($line['called_number'])) { // mmsc might not have called_number
+					return $this->beautifyPhoneNumber($line['called_number']);
+				}
+				break;
 			case "tap3":
 				//TODO: use called_number field when all cdrs have been processed by the updated tap3 plugin
 				$tele_service_code = $line['BasicServiceUsedList']['BasicServiceUsed']['BasicService']['BasicServiceCode']['TeleServiceCode'];
@@ -762,9 +767,6 @@ class Generator_Golanxml extends Billrun_Generator {
 						return isset($line['basicCallInformation']['Desination']['DialedDigits']) ? $line['basicCallInformation']['Desination']['DialedDigits'] : $line['basicCallInformation']['Desination']['CalledNumber']; // @todo check with sefi. reference: db.lines.count({'BasicServiceUsedList.BasicServiceUsed.BasicService.BasicServiceCode.TeleServiceCode':"22",record_type:'9','basicCallInformation.Desination.DialedDigits':{$exists:false}});
 					}
 				}
-				break;
-			case "mmsc":
-				//@todo recipent_addr field is not the pure called number
 				break;
 			default:
 				break;
