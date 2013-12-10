@@ -48,17 +48,17 @@ class OperationsAction extends Action_Base {
 		return $data;
 	}
 	/**
-	 * 
+	 * reset the connected modems
 	 */
 	protected function resetModems() {
-		system(APPLICATION_PATH."/scripts/resetModems");
+		return system(APPLICATION_PATH."/scripts/resetModems");
 	}
 	
 	/**
-	 * 
+	 * reboot the system
 	 */
 	protected function reboot() {
-		system(APPLICATION_PATH."/scripts/reboot");
+		return system(APPLICATION_PATH."/scripts/reboot");
 	}
 
 }
