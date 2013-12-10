@@ -25,11 +25,13 @@ class CheckgeneratorsAction extends Action_Base {
 	 *
 	 */
 	public function execute() {
-		Billrun_Factory::log()->log("Executing Operations Action", Zend_Log::INFO);
+		Billrun_Factory::log()->log("Executing check generator Action", Zend_Log::INFO);
 		$configCol = Billrun_Factory::db()->configCollection();
 		
 		$mangement = $configCol->query(array('key'=> 'call_generator_management'))->cursor()->current();
-		
+		if($mangement->isEmpty()) {
+			Billrun_Factory::log()->log("ALERT! : No generator registered yet..",Zend_Log::ALERT);					
+		}
 		foreach (Billrun_Util::getFieldVal($mangement->generators,array()) as $ip => $generatorData) {
 			if($this->isInActivePeriod()) {
 				if( time() - $generatorData['recieved_timestamp'] > static::RECEIVED_TIME_OFFSET_WARNING ) {
@@ -39,6 +41,7 @@ class CheckgeneratorsAction extends Action_Base {
 					Billrun_Factory::log()->log("ALERT! :  $ip didn't reported for more then an ".static::RECEIVED_TIME_OFFSET_ALERT." seconds",Zend_Log::ALERT);
 				}				
 				if(time() - $generatorData['recieved_timestamp'] > static::RECEIVED_TIME_OFFSET_RESET && date("H:i:00") > $generatorData['next_action']['time']) {
+					Billrun_Factory::log()->log("ALERT! :  $ip didn't reported for more then an ".static::RECEIVED_TIME_OFFSET_ALERT." seconds Reseting the modems",Zend_Log::ALERT);
 					$this->handleFailures($ip, $generatorData);
 				}
 			}
@@ -52,7 +55,7 @@ class CheckgeneratorsAction extends Action_Base {
 				//$this->handleFailures($ip, $generatorData);
 			}
 		}
-		Billrun_Factory::log()->log("Finished Executeing Operations Action", Zend_Log::INFO);
+		Billrun_Factory::log()->log("Finished Executeing check generator Action", Zend_Log::INFO);
 		return true;
 
 	}
