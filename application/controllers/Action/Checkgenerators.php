@@ -67,15 +67,15 @@ class CheckgeneratorsAction extends Action_Base {
 	}
 
 	protected function isInActivePeriod() {
-		$config = $configCol->query(array('key'=> 'call_generator'))->cursor()->sort(array('urt'=> -1))->limit(1)->current();
+		$config = Billrun_Factory::db()->configCollection()->query(array('key'=> 'call_generator'))->cursor()->sort(array('urt'=> -1))->limit(1)->current();
 		$script = $config['test_script'];
-		usort($script, function($a,$b) { return strcmp($a['time'], $b['time']);});
-		foreach ($script as $scriptAction) {
-			if ($scriptAction['time'] > date("H:i:s") &&
-				$this->isConnectedModemNumber(array($scriptAction['from'], $scriptAction['to']))) {
-					return true;
-			}
-		}
+		usort($script, function($a,$b) { return strcmp($a['call_id'], $b['call_id']);});
+		$start = strtotime(reset($script));
+		$end = strtotime(end($script)) - $start;
+		$current = time() - $start;
+		if ($end > $current ) {
+			return true;
+		}		
 		return false;
 	}
 	
