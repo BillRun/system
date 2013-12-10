@@ -48,8 +48,7 @@ class OperationsAction extends Action_Base {
 	 * 
 	 */
 	protected function resetModems() {
-		$this->stop();
-		system(APPLICATION_PATH."/scripts/reset_modems.sh");
+		system(APPLICATION_PATH."/scripts/resetModems");
 	}
 
 }
