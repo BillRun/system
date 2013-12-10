@@ -177,7 +177,7 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 	protected function actOnScript($script) {
 		$action = $this->waitForNextAction($script);		
 		if ($action) {
-			$this->pingManagmentServer($action,"pre_fork");
+			//$this->pingManagmentServer($action,"pre_fork");
 			//Check if the number speciifed in the action is one of the connected modems if so  act on the action.
 			if(!$this->resetState() ) {
 				return FALSE;//couldn't  reset the modem/operation state fail on the current action and  exit  the current process
@@ -187,7 +187,9 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 					if (!($pid = pcntl_fork())) {
 						pcntl_signal(SIGTERM, array($this,'handleChildSignals'));
 						pcntl_signal(SIGABRT, array($this,'handleChildSignals'));
-						$this->scriptAction($action,$isCalling);
+						if($this->scriptAction($action,$isCalling)) {
+							$this->pingManagmentServer($action, "success" );
+						}
 						die();
 					}
 					$this->pids[] = $pid;
@@ -232,9 +234,10 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 	 * @param array $action the action to do.
 	 * @param boolean $isCalling is the action  is for the calling side.
 	 */
-	protected function scriptAction($action, $isCalling) {
+	protected function scriptAction($action, $isCalling) {		
 		Billrun_Factory::log("Acting on action of type : {$action['action_type']}, with id of :{$action['call_id']} , from  {$action['from']} to {$action['to']} , is calling: {$isCalling}");
 		$device = $this->getConnectedModemByNumber($action[$isCalling ? 'from' : 'to']);
+		$ret = false;
 		//make the calls and remember their results
 		$call = $this->getEmptyCall();
 		$this->activeCall = &$call;
@@ -257,15 +260,16 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 
 		if ($call['calling_result'] == Gsmodem_StateMapping::IN_CALL_STATE ||$call['calling_result'] == Gsmodem_StateMapping::OUT_CALL_STATE ) {
 			$this->HandleCall($device, $call, $action['duration'], (($action['hangup'] == 'caller') == $isCalling) );
+			$ret = true;
 		} else if($action['action_type'] == static::TYPE_REGULAR) {
 			Billrun_Factory::log("Failed on action of type : {$action['action_type']} when using modem  with number : ".$device->getModemNumber() . " got  result of {$call['calling_result']}.",Zend_Log::ERR);
-			$device->hangUp();
-			$this->pingManagmentServer($action,"failed");
-		}
+			$device->hangUp();			
+		} 
 		//$call['execution_end_time'] = date("YmdTHis");
 		$call['estimated_price'] = 0;//$call['duration'] * $action['rate']; //TODO  maybe use  the billing  getPriceData?
 		$this->save($action, $call, $isCalling);		
 		Billrun_Factory::log("Done acting on action of type : {$action['action_type']} for number : ".$device->getModemNumber());
+		return $ret;
 	}
 
 	/**
