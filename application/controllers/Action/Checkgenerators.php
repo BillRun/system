@@ -91,7 +91,7 @@ class CheckgeneratorsAction extends Action_Base {
 			$gen->stop();
 			$url = "http://$ip/api/operations/?action=restartModems";
 			$this->delayedHTTP($url);
-			sleep(60);
+			sleep(20);
 			$gen->start();
 			Billrun_Factory::log()->log("Finished Reseting  generator at : $ip .", Zend_Log::WARN);
 		}
@@ -103,7 +103,7 @@ class CheckgeneratorsAction extends Action_Base {
 		$gen->stop();
 		$url = "http://$ip/api/operations/?action=reboot";
 		$this->delayedHTTP($url);
-		sleep(60);
+		sleep(20);
 		$gen->start();
 		Billrun_Factory::log()->log("Finished Rebooting  generator at : $ip .", Zend_Log::WARN);
 	}
@@ -111,7 +111,7 @@ class CheckgeneratorsAction extends Action_Base {
 
 
 	protected function delayedHTTP($url) {		
-		if(!pcntl_fork()) {
+		//if(!pcntl_fork()) {
 			$gen = Billrun_Generator::getInstance(array('type'=>'state'));
 			sleep(30);			
 			$client = curl_init($url);
@@ -119,10 +119,8 @@ class CheckgeneratorsAction extends Action_Base {
 			curl_setopt($client, CURLOPT_POST, TRUE);
 			curl_setopt($client, CURLOPT_POSTFIELDS, $post_fields);
 			curl_setopt($client, CURLOPT_RETURNTRANSFER, TRUE);
-			curl_exec($client);				
-			sleep(20);
-			$gen->start();				
-			die();
-		}
+			return curl_exec($client);				
+		//	die();
+		///}
 	}
 }
