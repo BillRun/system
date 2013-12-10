@@ -28,6 +28,9 @@ class OperationsAction extends Action_Base {
 			case 'resetModems':
 					$this->setOutput($this->resetModems());
 				break;
+			case 'reboot':
+					$this->setOutput($this->reboot());
+				break;
 		
 			
 		}
@@ -49,6 +52,13 @@ class OperationsAction extends Action_Base {
 	 */
 	protected function resetModems() {
 		system(APPLICATION_PATH."/scripts/resetModems");
+	}
+	
+	/**
+	 * 
+	 */
+	protected function reboot() {
+		system(APPLICATION_PATH."/scripts/reboot");
 	}
 
 }

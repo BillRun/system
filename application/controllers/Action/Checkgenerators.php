@@ -18,8 +18,9 @@ class CheckgeneratorsAction extends Action_Base {
 	const TIME_OFFEST_WARRNING =5;
 	const TIME_OFFEST_ALERT =7;
 	const RECEIVED_TIME_OFFSET_WARNING = 300;
-	const RECEIVED_TIME_OFFSET_ALERT = 600;
-	const RECEIVED_TIME_OFFSET_RESET = 700;
+	const RECEIVED_TIME_OFFSET_ALERT = 500;
+	const RECEIVED_TIME_OFFSET_RESET = 600;
+	const RECEIVED_TIME_OFFSET_REBOOT = 900;
 	
 	/**
 	 *
@@ -42,8 +43,12 @@ class CheckgeneratorsAction extends Action_Base {
 					Billrun_Factory::log()->log("ALERT! :  $ip didn't reported for more then an ".static::RECEIVED_TIME_OFFSET_ALERT." seconds",Zend_Log::ALERT);
 				}				
 				if(time() - $generatorData['recieved_timestamp'] > static::RECEIVED_TIME_OFFSET_RESET ) {
-					Billrun_Factory::log()->log("ALERT! :  $ip didn't reported for more then an ".static::RECEIVED_TIME_OFFSET_ALERT." seconds Reseting the modems",Zend_Log::ALERT);
+					Billrun_Factory::log()->log("ALERT! :  $ip didn't reported for more then an ".static::RECEIVED_TIME_OFFSET_RESET." seconds Reseting the modems",Zend_Log::ALERT);
 					$this->handleFailures($ip, $generatorData);
+				}				
+				if(time() - $generatorData['recieved_timestamp'] > static::RECEIVED_TIME_OFFSET_REBOOT ) {
+					Billrun_Factory::log()->log("ALERT! :  $ip didn't reported for more then an ".static::RECEIVED_TIME_OFFSET_REBOOT." seconds Reseting the modems",Zend_Log::ALERT);
+					$this->rebootGenerator($ip, $generatorData);
 				}
 			}
 			if(abs($generatorData['timestamp'] - $generatorData['recieved_timestamp']) > static::TIME_OFFEST_WARRNING ) {
@@ -84,20 +89,40 @@ class CheckgeneratorsAction extends Action_Base {
 			Billrun_Factory::log()->log("Reseting  generator at : $ip .", Zend_Log::WARN);
 			$gen = Billrun_Generator::getInstance(array('type'=>'state'));
 			$gen->stop();
-			if(!pcntl_fork()) {
-				sleep(30);
-				$url = "http://$ip/api/operations/?action=restartModems";
-				$client = curl_init($url);
-				$post_fields = array('data' => json_encode(array('action' => 'restartModems')));
-				curl_setopt($client, CURLOPT_POST, TRUE);
-				curl_setopt($client, CURLOPT_POSTFIELDS, $post_fields);
-				curl_setopt($client, CURLOPT_RETURNTRANSFER, TRUE);
-				curl_exec($client);
-				sleep(20);
-				$gen->start();
-				Billrun_Factory::log()->log("Finished Reseting  generator at : $ip .", Zend_Log::WARN);
-				die();
-			}
+			$url = "http://$ip/api/operations/?action=restartModems";
+			$this->delayedHTTP($url);
+			sleep(60);
+			$gen->start();
+			Billrun_Factory::log()->log("Finished Reseting  generator at : $ip .", Zend_Log::WARN);
+		}
+	}
+	
+	protected function rebootGenerator($ip,$generatorData) {
+		Billrun_Factory::log()->log("Rebooting  generator at : $ip .", Zend_Log::WARN);
+		$gen = Billrun_Generator::getInstance(array('type'=>'state'));
+		$gen->stop();
+		$url = "http://$ip/api/operations/?action=reboot";
+		$this->delayedHTTP($url);
+		sleep(60);
+		$gen->start();
+		Billrun_Factory::log()->log("Finished Rebooting  generator at : $ip .", Zend_Log::WARN);
+	}
+		
+
+
+	protected function delayedHTTP($url) {		
+		if(!pcntl_fork()) {
+			$gen = Billrun_Generator::getInstance(array('type'=>'state'));
+			sleep(30);			
+			$client = curl_init($url);
+			$post_fields = array('data' => json_encode(array('action' => 'restartModems')));
+			curl_setopt($client, CURLOPT_POST, TRUE);
+			curl_setopt($client, CURLOPT_POSTFIELDS, $post_fields);
+			curl_setopt($client, CURLOPT_RETURNTRANSFER, TRUE);
+			curl_exec($client);				
+			sleep(20);
+			$gen->start();				
+			die();
 		}
 	}
 }
