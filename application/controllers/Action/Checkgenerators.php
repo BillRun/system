@@ -34,7 +34,7 @@ class CheckgeneratorsAction extends Action_Base {
 			Billrun_Factory::log()->log("ALERT! : No generator registered yet..",Zend_Log::ALERT);					
 		}
 		foreach (Billrun_Util::getFieldVal($mangement['generators'],array()) as $ip => $generatorData) {
-			$ip = preg_replace("_", ".", $ip);
+			$ip = preg_replace("/_/", ".", $ip);
 			if(!$this->isInActivePeriod()) {
 				if( time() - $generatorData['recieved_timestamp'] > static::RECEIVED_TIME_OFFSET_WARNING ) {
 					Billrun_Factory::log()->log("Warning :  $ip didn't reported for more then an ".static::RECEIVED_TIME_OFFSET_WARNING." seconds",Zend_Log::WARN);
