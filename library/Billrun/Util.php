@@ -272,4 +272,33 @@ class Billrun_Util {
 		
 		return FALSE;
 	}
+        
+        /**
+	 * Calculates the price for the given volume (w/o access price)
+	 * @param array $rate the "rate" array of a rate entry
+	 * @param int $volume The usage volume (seconds of call, count of SMS, bytes  of data)
+	 * @return int the calculated price
+	 */
+	public static function getPriceByRates($rate, $usage_type, $volume) {
+		$price = 0;
+                $rates_arr = $rate['rates'][$usage_type]['rate'];
+		foreach ($rates_arr as $currRate) {
+			if (0 == $volume) { // volume could be negative if it's a refund amount
+				break;
+			}//break if no volume left to price.
+			$volumeToPriceCurrentRating = ($volume - $currRate['to'] < 0) ? $volume : $currRate['to']; // get the volume that needed to be priced for the current rating
+			if (isset($currRate['ceil'])) {
+				$ceil = $currRate['ceil'];
+			} else {
+				$ceil = true;
+			}
+			if ($ceil) {
+				$price += floatval(ceil($volumeToPriceCurrentRating / $currRate['interval']) * $currRate['price']); // actually price the usage volume by the current 	
+			} else {
+				$price += floatval($volumeToPriceCurrentRating / $currRate['interval'] * $currRate['price']); // actually price the usage volume by the current 
+			}
+			$volume = $volume - $volumeToPriceCurrentRating; //decressed the volume that was priced
+		}
+		return $price;
+	}
 }

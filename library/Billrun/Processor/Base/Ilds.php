@@ -104,8 +104,10 @@ class Billrun_Processor_Base_Ilds extends Billrun_Processor {
 					$row['type'] = static::$type;
 					$row['log_stamp'] = $this->getFileStamp();
 					$row['file'] = basename($this->filePath);
-					$row['process_time'] = date(self::base_dateformat);
-					$row['urt'] = new MongoDate(  Billrun_Util::dateTimeConvertShortToIso( $row['call_start_dt'] ,$this->defTimeOffset ) );
+					$row['process_time'] = date(self::base_dateformat); 
+                                        
+                                        $urt = Billrun_Factory::config()->getConfigValue('016.process.callstart.identification_translation');   
+					$row['urt'] = new MongoDate( Billrun_Util::dateTimeConvertShortToIso(substr(date("Y"), 0, 2).$row[$urt] ,$this->defTimeOffset ) );
 					// hot fix cause this field contain iso-8859-8
 					if (isset($row['country_desc'])) {
 						$row['country_desc'] = mb_convert_encoding($row['country_desc'], 'UTF-8', 'ISO-8859-8');
