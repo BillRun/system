@@ -113,9 +113,53 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 				$line = $entity->getRawData();
 			}
 		}
+		$this->wholeSaleCalculators($data, $processor);
 		Billrun_Factory::log('Plugin calc cpu end', Zend_Log::INFO);
 	}
 
+	/**
+	 * calculate all wholesale calculators in CPU
+	 * 
+	 * @param array $data the lines to run the calculate for
+	 */
+	protected function wholeSaleCalculators(&$data, $processor, $queue_calculators) {
+		$customerCarrier = Billrun_Calculator::getInstance(array('type' => 'carrier'));
+		$customerWholesaleNsn = Billrun_Calculator::getInstance(array('type' => 'Wholesale_Nsn'));
+		$customerWholesalePricing = Billrun_Calculator::getInstance(array('type' => 'Wholesale_WholesalePricing'));
+		$customerWholesaleNationalRoamingPricing = Billrun_Calculator::getInstance(array('type' => 'Wholesale_NationalRoamingPricing'));
+		
+		foreach ($data['data'] as &$line) {
+			if (in_array($queue_calculators, 'wsc') && $customerCarrier->isLineLegitimate($line)) {
+				$customerCarrier->updateRow($line);
+			}
+			$processor->setQueueRowStep($line['stamp'], 'wsc');
+			
+			if (in_array($queue_calculators, 'pzone') && $customerWholesaleNsn->isLineLegitimate($line)) {
+				$customerWholesaleNsn->updateRow($line);
+			}
+			
+			$processor->setQueueRowStep($line['stamp'], 'pzone');
+			
+			if (in_array($queue_calculators, 'pprice') && $customerWholesalePricing->isLineLegitimate($line)) {
+				$customerWholesalePricing->updateRow($line);
+			}
+			
+			$processor->setQueueRowStep($line['stamp'], 'pprice');
+			
+			if (in_array($queue_calculators, 'price_nr') && $customerWholesalePricing->isLineLegitimate($line)) {
+				$customerWholesaleNationalRoamingPricing->updateRow($line);
+			}
+			
+			if ($queue_calculators[count($queue_calculators) - 1] == 'price_nr') {
+				$processor->unsetQueueRow($line);
+			} else {
+				$processor->setQueueRowStep($line['stamp'], 'price_nr');
+			}
+			
+			
+		}
+	}
+	
 	public function afterProcessorStore($processor) {
 		Billrun_Factory::log('Plugin calc cpu triggered after processor store', Zend_Log::INFO);
 		$customerPricingCalc = Billrun_Calculator::getInstance(array('type' => 'customerPricing', 'autoload' => false));
