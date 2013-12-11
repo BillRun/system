@@ -18,9 +18,10 @@ abstract class Billrun_Calculator_Wholesale extends Billrun_Calculator {
 	 */
 	protected $peakTimes = array(
 		'weekday' => array('start' => 9, 'end' => 19),
+		'workday' => array('start' => 9, 'end' => 19),
 		'weekend' => array('start' => 0, 'end' => -1),
 		'shortday' => array('start' => 9, 'end' => 13),
-		'holyday' => array('start' => 0, 'end' => -1)
+		'holiday' => array('start' => 0, 'end' => -1),
 	);
 	protected $wholesaleRecords = array('11', '12', '08', '09');
 	protected $dbrefs = array();
