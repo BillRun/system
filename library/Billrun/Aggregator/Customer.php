@@ -196,31 +196,31 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 					Billrun_Factory::dispatcher()->trigger('afterAggregateSubscriber', array($subscriber, $account_billrun, &$this));
 				}
 				if ($this->write_stamps_to_file) {
-					$stamps = $account_billrun->addLines(false, 0, $flat_lines);
-					if (!empty($stamps)) {
-						$stamps_str = implode("\n", $stamps) . "\n";
+					$lines = $account_billrun->addLines(false, 0, $flat_lines);
+					if (!empty($lines)) {
+						$stamps_str = implode("\n", array_keys($lines)) . "\n";
 						file_put_contents($this->file_path, $stamps_str, FILE_APPEND);
 					}
 				} else {
-					$account_billrun->addLines(true, 0, $flat_lines);
+					$lines = $account_billrun->addLines(true, 0, $flat_lines);
 				}
 				//save  the billrun
 				Billrun_Factory::log("Saving account $accid");
 				$account_billrun->save();
 				Billrun_Factory::log("Finished saving account $accid");
 			}
-			Billrun_Factory::dispatcher()->trigger('aggregateBeforeCloseAccountBillrun', array($accid, $account, $account_billrun, &$this));
+			Billrun_Factory::dispatcher()->trigger('aggregateBeforeCloseAccountBillrun', array($accid, $account, $account_billrun, $lines, &$this));
 			Billrun_Factory::log("Closing billrun $billrun_key for account $accid", Zend_log::DEBUG);
 			$account_billrun->close($this->min_invoice_id);
 			Billrun_Factory::log("Finished closing billrun $billrun_key for account $accid", Zend_log::DEBUG);
-			Billrun_Factory::dispatcher()->trigger('afterAggregateAccount', array($accid, $account, $account_billrun, &$this));
+			Billrun_Factory::dispatcher()->trigger('afterAggregateAccount', array($accid, $account, $account_billrun, $lines, &$this));
 		}
 		$end_msg = "Finished iterating page $this->page of size $this->size";
 		Billrun_Factory::log($end_msg, Zend_log::DEBUG);
 		//		Billrun_Factory::dispatcher()->trigger('beforeAggregateSaveLine', array(&$save_data, &$this));
 		// @TODO trigger after aggregate
 		Billrun_Factory::dispatcher()->trigger('afterAggregate', array($this->data, &$this));
-		$this->sendEndMail($end_msg);
+//		$this->sendEndMail($end_msg);
 	}
 
 	protected function sendEndMail($msg) {

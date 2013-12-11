@@ -62,6 +62,7 @@ class Generator_Golanxml extends Billrun_Generator {
 				->limit($this->size);
 
 		// @TODO - there is issue with the timeout; need to be fixed
+		//         meanwhile, let's pull the lines right after the query
 		foreach ($resource as $row) {
 			$this->data[] = $row;
 		}
@@ -72,23 +73,30 @@ class Generator_Golanxml extends Billrun_Generator {
 
 	public function generate() {
 		Billrun_Factory::log('Generating invoices...', Zend_log::INFO);
-		$this->createXmlFiles();
-	}
-
-	protected function createXmlFiles() {
 		// use $this->export_directory
 		$i = 1;
 		foreach ($this->data as $row) {
 			Billrun_Factory::log('Current index ' . $i++);
-			$xml = $this->getXML($row);
-			//			$row->{'xml'} = $xml->asXML();
-			$invoice_id = $row['invoice_id'];
-			$invoice_filename = $row['billrun_key'] . '_' . str_pad($row['aid'], 9, '0', STR_PAD_LEFT) . '_' . str_pad($invoice_id, 11, '0', STR_PAD_LEFT) . '.xml';
-			$this->createXml($invoice_filename, $xml->asXML());
-			$this->setFileStamp($row, $invoice_filename);
-			Billrun_Factory::log()->log("invoice file " . $invoice_filename . " created for account " . $row['aid'], Zend_Log::INFO);
-//			$this->addRowToCsv($invoice_id, $row->get('aid'), $total, $total_ilds);
+			$this->createXmlInvoice($row);
 		}
+	}
+
+	/**
+	 * create xml invoice
+	 * can be called from outside
+	 * 
+	 * @param Mongodloid_Entity $row billrun collection document
+	 * @param array $lines array of lines to get into the xml
+	 */
+	public function createXmlInvoice($row, $lines = null) {
+		$xml = $this->getXML($row, $lines);
+//		$row->{'xml'} = $xml->asXML();
+		$invoice_id = $row->get('invoice_id');
+		$invoice_filename = $row['billrun_key'] . '_' . $row['aid'] . '_' . $invoice_id . '.xml';
+		$this->createXmlFile($invoice_filename, $xml->asXML());
+		$this->setFileStamp($row, $invoice_filename);
+		Billrun_Factory::log()->log("invoice file " . $invoice_filename . " created for account " . $row->get('aid'), Zend_Log::INFO);
+//		$this->addRowToCsv($invoice_id, $row->get('aid'), $total, $total_ilds);
 	}
 
 	/**
@@ -96,7 +104,7 @@ class Generator_Golanxml extends Billrun_Generator {
 	 * @param Mongodloid_Entity $row
 	 * @return SimpleXMLElement the invoice in xml format
 	 */
-	protected function getXML($row) {
+	protected function getXML($row, $lines = null) {
 		$invoice_total_gift = 0;
 		$invoice_total_above_gift = 0;
 		$invoice_total_outside_gift_vat = 0;
@@ -121,13 +129,19 @@ class Generator_Golanxml extends Billrun_Generator {
 			}
 
 			$subscriber_inf = $xml->addChild('SUBSCRIBER_INF');
-			$subscriber_inf->SUBSCRIBER_DETAILS->SUBSCRIBER_ID = $row['sid'];
+			$subscriber_inf->SUBSCRIBER_DETAILS->SUBSCRIBER_ID = $subscriber['sid'];
 
 			$billing_records = $subscriber_inf->addChild('BILLING_LINES');
 
 			if ($this->billingLinesNeeded($sid)) {
-				$subscriber_lines = $this->get_subscriber_lines($subscriber);
-				$subscriber_aggregated_data = $this->get_subscriber_aggregated_data_lines($subscriber);
+				if (is_null($lines)) {
+					$subscriber_lines = $this->get_subscriber_lines($subscriber);
+				} else {
+					$func = function($line) use ($sid) {
+						return $line['sid']==$sid;
+					};
+					$subscriber_lines = array_filter($lines, $func);
+				}
 				foreach ($subscriber_lines as $line) {
 					if (!$line->isEmpty()) {
 						$line->collection($this->lines_coll);
@@ -135,6 +149,7 @@ class Generator_Golanxml extends Billrun_Generator {
 						$this->updateBillingRecord($billing_record, $this->getGolanDate($line['urt']->sec), $this->getTariffItem($line, $subscriber), $this->getCalledNo($line), $this->getCallerNo($line), $this->getUsageVolume($line), $this->getCharge($line), $this->getCredit($line), $this->getTariffKind($line['usaget']), $this->getAccessPrice($line), $this->getInterval($line), $this->getRate($line), $this->getIntlFlag($line), $this->getDiscountUsage($line));
 					}
 				}
+				$subscriber_aggregated_data = $this->get_subscriber_aggregated_data_lines($subscriber);
 				foreach ($subscriber_aggregated_data as $line) {
 					$billing_record = $billing_records->addChild('BILLING_RECORD');
 					$this->updateBillingRecord($billing_record, $line['day'], $line['rate_key'], '', '', $line['usage_volume'], $line['aprice'], 0, $line['tariff_kind'], 0, $line['interval'], $line['rate_price'], 0, $line['discount_usage']);
@@ -382,7 +397,7 @@ class Generator_Golanxml extends Billrun_Generator {
 //						$out_of_usage_entry->addChild('TITLE', ?);
 					$roaming_entry = $subtopic_entry->addChild('BREAKDOWN_ENTRY');
 					$roaming_entry->addChild('TITLE', $this->getBreakdownEntryTitle($usage_type, "ROAM_ALL_DEST"));
-					$roaming_entry->addChild('UNITS', $usage_type == "data" ? $this->bytesToKB($usage_totals['usagev']) : $usage_totals['usagev']);
+					$roaming_entry->addChild('UNITS', ($usage_type == "data" ? $this->bytesToKB($usage_totals['usagev']) : $usage_totals['usagev']));
 					$roaming_entry->addChild('COST_WITHOUTVAT', $usage_totals['cost']);
 					$roaming_entry->addChild('VAT', $this->displayVAT($zone['vat']));
 					$roaming_entry->addChild('VAT_COST', floatval($roaming_entry->COST_WITHOUTVAT) * floatval($roaming_entry->VAT) / 100);
@@ -487,7 +502,7 @@ class Generator_Golanxml extends Billrun_Generator {
 	 * @return type
 	 * @todo do not override files?
 	 */
-	protected function createXml($fileName, $xmlContent) {
+	protected function createXmlFile($fileName, $xmlContent) {
 		$path = $this->export_directory . '/' . $fileName;
 		return file_put_contents($path, $xmlContent);
 	}
