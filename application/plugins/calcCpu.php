@@ -122,44 +122,48 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * 
 	 * @param array $data the lines to run the calculate for
 	 */
-	protected function wholeSaleCalculators(&$data, $processor, $queue_calculators) {
-		$customerCarrier = Billrun_Calculator::getInstance(array('type' => 'carrier'));
-		$customerWholesaleNsn = Billrun_Calculator::getInstance(array('type' => 'Wholesale_Nsn'));
-		$customerWholesalePricing = Billrun_Calculator::getInstance(array('type' => 'Wholesale_WholesalePricing'));
-		$customerWholesaleNationalRoamingPricing = Billrun_Calculator::getInstance(array('type' => 'Wholesale_NationalRoamingPricing'));
-		
+	protected function wholeSaleCalculators(&$data, $processor) {
+		$queue_calculators = Billrun_Factory::config()->getConfigValue("queue.calculators");
+		$customerCarrier = Billrun_Calculator::getInstance(array('type' => 'carrier', 'autoload' => false));
+		$customerWholesaleNsn = Billrun_Calculator::getInstance(array('type' => 'Wholesale_Nsn', 'autoload' => false));
+		$customerWholesalePricing = Billrun_Calculator::getInstance(array('type' => 'Wholesale_WholesalePricing', 'autoload' => false));
+		$customerWholesaleNationalRoamingPricing = Billrun_Calculator::getInstance(array('type' => 'Wholesale_NationalRoamingPricing', 'autoload' => false));
+		$queue_data = $processor->getQueueData();
+		$previous_stage = $queue_calculators[array_search('wsc', $queue_calculators)-1]; //TODO what if wsc is the first stage?
 		foreach ($data['data'] as &$line) {
-			if (in_array($queue_calculators, 'wsc') && $customerCarrier->isLineLegitimate($line)) {
-				$customerCarrier->updateRow($line);
+			if (isset($queue_data[$line['stamp']]) && $queue_data[$line['stamp']]['calc_name'] == $previous_stage) {
+				$entity = new Mongodloid_Entity($line);
+				if (in_array('wsc', $queue_calculators) && $customerCarrier->isLineLegitimate($entity)) {
+					$customerCarrier->updateRow($entity);
+				}
+				$processor->setQueueRowStep($line['stamp'], 'wsc');
+
+				if (in_array('pzone', $queue_calculators) && $customerWholesaleNsn->isLineLegitimate($entity)) {
+					$customerWholesaleNsn->updateRow($entity);
+				}
+
+				$processor->setQueueRowStep($line['stamp'], 'pzone');
+
+				if (in_array('pprice', $queue_calculators) && $customerWholesalePricing->isLineLegitimate($entity)) {
+					$customerWholesalePricing->updateRow($entity);
+				}
+
+				$processor->setQueueRowStep($line['stamp'], 'pprice');
+
+				if (in_array('price_nr', $queue_calculators) && $customerWholesaleNationalRoamingPricing->isLineLegitimate($entity)) {
+					$customerWholesaleNationalRoamingPricing->updateRow($entity);
+				}
+
+				if ($queue_calculators[count($queue_calculators) - 1] == 'price_nr') {
+					$processor->unsetQueueRow($line['stamp']);
+				} else {
+					$processor->setQueueRowStep($line['stamp'], 'price_nr');
+				}
+				$line = $entity->getRawData();
 			}
-			$processor->setQueueRowStep($line['stamp'], 'wsc');
-			
-			if (in_array($queue_calculators, 'pzone') && $customerWholesaleNsn->isLineLegitimate($line)) {
-				$customerWholesaleNsn->updateRow($line);
-			}
-			
-			$processor->setQueueRowStep($line['stamp'], 'pzone');
-			
-			if (in_array($queue_calculators, 'pprice') && $customerWholesalePricing->isLineLegitimate($line)) {
-				$customerWholesalePricing->updateRow($line);
-			}
-			
-			$processor->setQueueRowStep($line['stamp'], 'pprice');
-			
-			if (in_array($queue_calculators, 'price_nr') && $customerWholesalePricing->isLineLegitimate($line)) {
-				$customerWholesaleNationalRoamingPricing->updateRow($line);
-			}
-			
-			if ($queue_calculators[count($queue_calculators) - 1] == 'price_nr') {
-				$processor->unsetQueueRow($line);
-			} else {
-				$processor->setQueueRowStep($line['stamp'], 'price_nr');
-			}
-			
-			
 		}
 	}
-	
+
 	public function afterProcessorStore($processor) {
 		Billrun_Factory::log('Plugin calc cpu triggered after processor store', Zend_Log::INFO);
 		$customerPricingCalc = Billrun_Calculator::getInstance(array('type' => 'customerPricing', 'autoload' => false));
@@ -187,7 +191,7 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$processor->unsetQueueRow($stamp);
 		}
 	}
-	
+
 	/**
 	 * extend the customer aggregator to generate the invoice right after the aggregator finished
 	 * 
@@ -201,13 +205,12 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 */
 	public function afterAggregateAccount($accid, $account, Billrun_Billrun $account_billrun, $lines, Billrun_Aggregator $aggregator) {
 		$options = array(
-			'type'  => 'golanxml',
+			'type' => 'golanxml',
 			'stamp' => $account_billrun->getBillrunKey(),
 		);
-		
+
 		$generator = Billrun_Generator::getInstance($options);
 		$generator->createXmlInvoice($account_billrun->getRawData(), $lines);
-		
 	}
 
 }

@@ -37,7 +37,6 @@ class Billrun_Calculator_Carrier extends Billrun_Calculator {
 	}
 
 	protected function getLines() {
-
 		return $this->getQueuedLines(array());
 	}
 
