@@ -180,9 +180,10 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		$path = 'http://' . $host . '/' . $url . '?' . http_build_query($params);
 		//Billrun_Factory::log()->log($path, Zend_Log::DEBUG);
 		// @TODO: use Zend_Http_Client
-//		$path .= "&account_id=4171195";
-//		$path .= "&account_id=11588";
-//		$path .= "&account_id=9522194";
+//		$path .= "&account_id=4171195"; // Shani
+//		$path .= "&account_id=9073496"; // Ofer
+//		$path .= "&account_id=5236445";
+//		$path .= "&account_id=9387173";
 		$json = self::send($path);
 		if (!$json) {
 			return false;
@@ -283,6 +284,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 			'urt' => new MongoDate($billrun_end_time),
 			'aprice' => $this->getFlatPrice(),
 			'plan_ref' => $this->getNextPlan()->createRef(),
+			'process_time' => date(Billrun_Base::base_dateformat),
 		);
 		$stamp = md5($flat_entry['aid'] . $flat_entry['sid'] . $billrun_end_time);
 		$flat_entry['stamp'] = $stamp;
