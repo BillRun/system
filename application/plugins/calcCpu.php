@@ -113,7 +113,9 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 				$line = $entity->getRawData();
 			}
 		}
-//		$this->wholeSaleCalculators($data, $processor);
+		if(Billrun_Factory::config()->getConfigValue('calcCpu.wholesale_claculators', true)) {
+			$this->wholeSaleCalculators($data, $processor);
+		}
 		Billrun_Factory::log('Plugin calc cpu end', Zend_Log::INFO);
 	}
 
@@ -123,6 +125,7 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @param array $data the lines to run the calculate for
 	 */
 	protected function wholeSaleCalculators(&$data, $processor) {
+		Billrun_Factory::log('Plugin calc cpu wholesale calculators', Zend_Log::INFO);
 		$queue_calculators = Billrun_Factory::config()->getConfigValue("queue.calculators");
 		$customerCarrier = Billrun_Calculator::getInstance(array('type' => 'carrier', 'autoload' => false));
 		$customerWholesaleNsn = Billrun_Calculator::getInstance(array('type' => 'Wholesale_Nsn', 'autoload' => false));
@@ -137,7 +140,7 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 					$customerCarrier->updateRow($entity);
 				}
 				$processor->setQueueRowStep($line['stamp'], 'wsc');
-
+				
 				if (in_array('pzone', $queue_calculators) && $customerWholesaleNsn->isLineLegitimate($entity)) {
 					$customerWholesaleNsn->updateRow($entity);
 				}
