@@ -12,6 +12,8 @@
  */
 class Billrun_Generator_Wholesale extends Billrun_Generator_Base_WholesaleReport {
 
+	static protected $type = 'wholesale';
+	
 	public function __construct($options) {
 		parent::__construct(array_merge($options, array('report_type' => 'wholesale')));
 
