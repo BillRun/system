@@ -487,6 +487,9 @@ class AdminController extends Yaf_Controller_Abstract {
 				case 'gte':
 					$operators[$i] = '$gte';
 					break;
+				case 'ne':
+					$operators[$i] = '$ne';
+					break;
 				case 'equals':
 					$operators[$i] = '$in';
 					$values[$i] = array($values[$i]);
