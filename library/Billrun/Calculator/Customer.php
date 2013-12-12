@@ -56,7 +56,6 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		}
 
 		$this->subscriber = Billrun_Factory::subscriber();
-		$this->balances = Billrun_Factory::db()->balancesCollection();
 		$this->plans = Billrun_Factory::db()->plansCollection();
 		$this->lines_coll = Billrun_Factory::db()->linesCollection();
 	}
