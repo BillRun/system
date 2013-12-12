@@ -26,10 +26,10 @@ class OperationsAction extends Action_Base {
 		$data = $this->parseData($request);
 		switch($request['action']) {
 			case 'resetModems':
-					$this->setOutput($this->resetModems());
+					$this->getController()->setOutput($this->resetModems());
 				break;
 			case 'reboot':
-					$this->setOutput($this->reboot());
+					$this->getController()->setOutput($this->reboot());
 				break;
 		
 			
