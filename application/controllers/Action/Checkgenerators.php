@@ -17,9 +17,9 @@ class CheckgeneratorsAction extends Action_Base {
 
 	const TIME_OFFEST_WARRNING =5;
 	const TIME_OFFEST_ALERT =7;
-	const RECEIVED_TIME_OFFSET_WARNING = 300;
-	const RECEIVED_TIME_OFFSET_ALERT = 500;
-	const RECEIVED_TIME_OFFSET_RESET = 600;
+	const RECEIVED_TIME_OFFSET_WARNING = 250;
+	const RECEIVED_TIME_OFFSET_ALERT = 350;
+	const RECEIVED_TIME_OFFSET_RESET = 500;
 	const RECEIVED_TIME_OFFSET_REBOOT = 900;
 	
 	/**
@@ -92,8 +92,8 @@ class CheckgeneratorsAction extends Action_Base {
 	 * @param type $generatorData the data of the failed  generator.
 	 */
 	protected function handleFailures($ip,$generatorData) {		
-		if(Billrun_Util::getFieldVal($generatorData['state'],'start') == 'failed') {
-			Billrun_Factory::db()->configCollection()->findAndModify(array('key'=> 'call_generator_management'),array('$set'=>array('generators.'.preg_replace("/\./","_",$ip).'last_reset' => time())),array(),array('upsert'=>1));		
+	//	if(Billrun_Util::getFieldVal($generatorData['state'],'start') == 'failed') {
+			Billrun_Factory::db()->configCollection()->findAndModify(array('key'=> 'call_generator_management'),array('$set'=>array('generators.'.preg_replace("/\./","_",$ip).'.last_reset' => time())),array(),array('upsert'=>1));		
 			Billrun_Factory::log()->log("Reseting  generator at : $ip .", Zend_Log::WARN);
 			$gen = Billrun_Generator::getInstance(array('type'=>'state'));
 			$gen->stop();
@@ -102,11 +102,11 @@ class CheckgeneratorsAction extends Action_Base {
 			sleep(20);
 			$gen->start();
 			Billrun_Factory::log()->log("Finished Reseting  generator at : $ip .", Zend_Log::WARN);
-		}
+	//	}
 	}
 	
 	protected function rebootGenerator($ip,$generatorData) {
-					Billrun_Factory::db()->configCollection()->findAndModify(array('key'=> 'call_generator_management'),array('$set'=>array('generators.'.preg_replace("/\./","_",$ip).'last_reboot' => time())),array(),array('upsert'=>1));		
+					Billrun_Factory::db()->configCollection()->findAndModify(array('key'=> 'call_generator_management'),array('$set'=>array('generators.'.preg_replace("/\./","_",$ip).'.last_reboot' => time())),array(),array('upsert'=>1));		
 		Billrun_Factory::log()->log("Rebooting  generator at : $ip .", Zend_Log::WARN);
 		$gen = Billrun_Generator::getInstance(array('type'=>'state'));
 		$gen->stop();
