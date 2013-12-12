@@ -36,15 +36,24 @@ class CheckgeneratorsAction extends Action_Base {
 		foreach (Billrun_Util::getFieldVal($mangement['generators'],array()) as $ip => $generatorData) {
 			$ip = preg_replace("/_/", ".", $ip);
 			if(!$this->isInActivePeriod()) {
-				if(time() - $generatorData['receieved_timestamp'] > static::RECEIVED_TIME_OFFSET_REBOOT ) {
+				$inactiveTime = min( array( 
+									time() - Billrun_Util::getFieldVal ($generatorData['last_reboot'], 0), 
+									time() - Billrun_Util::getFieldVal ($generatorData['last_reset'], 0), 
+									time() - $generatorData['receieved_timestamp']) 
+								);
+
+				if( $inactiveTime > static::RECEIVED_TIME_OFFSET_REBOOT ) {
 					Billrun_Factory::log()->log("ALERT! :  $ip didn't reported for more then an ".static::RECEIVED_TIME_OFFSET_REBOOT." seconds, Rebooting...",Zend_Log::ALERT);
 					$this->rebootGenerator($ip, $generatorData);
-				} else 	if(time() - $generatorData['receieved_timestamp'] > static::RECEIVED_TIME_OFFSET_RESET ) {
+				} else 
+				if( $inactiveTime > static::RECEIVED_TIME_OFFSET_RESET ) {
 					Billrun_Factory::log()->log("ALERT! :  $ip didn't reported for more then an ".static::RECEIVED_TIME_OFFSET_RESET." seconds Reseting the modems",Zend_Log::ALERT);
 					$this->handleFailures($ip, $generatorData);
-				} else if( time() - $generatorData['receieved_timestamp'] > static::RECEIVED_TIME_OFFSET_ALERT ) {
+				} else 
+				if( $inactiveTime > static::RECEIVED_TIME_OFFSET_ALERT ) {
 					Billrun_Factory::log()->log("ALERT! :  $ip didn't reported for more then an ".static::RECEIVED_TIME_OFFSET_ALERT." seconds",Zend_Log::ALERT);
-				} else 	if( time() - $generatorData['receieved_timestamp'] > static::RECEIVED_TIME_OFFSET_WARNING ) {
+				} else 
+				if( $inactiveTime > static::RECEIVED_TIME_OFFSET_WARNING ) {					
 					Billrun_Factory::log()->log("Warning :  $ip didn't reported for more then an ".static::RECEIVED_TIME_OFFSET_WARNING." seconds",Zend_Log::WARN);
 				}
 				
@@ -82,8 +91,9 @@ class CheckgeneratorsAction extends Action_Base {
 	 * @param type $ip the IP  of the  failed  generator
 	 * @param type $generatorData the data of the failed  generator.
 	 */
-	protected function handleFailures($ip,$generatorData) {
+	protected function handleFailures($ip,$generatorData) {		
 		if(Billrun_Util::getFieldVal($generatorData['state'],'start') == 'failed') {
+			Billrun_Factory::db()->configCollection()->findAndModify(array('key'=> 'call_generator_management'),array('$set'=>array('generators.'.preg_replace("/\./","_",$ip).'last_reset' => time())),array(),array('upsert'=>1));		
 			Billrun_Factory::log()->log("Reseting  generator at : $ip .", Zend_Log::WARN);
 			$gen = Billrun_Generator::getInstance(array('type'=>'state'));
 			$gen->stop();
@@ -96,6 +106,7 @@ class CheckgeneratorsAction extends Action_Base {
 	}
 	
 	protected function rebootGenerator($ip,$generatorData) {
+					Billrun_Factory::db()->configCollection()->findAndModify(array('key'=> 'call_generator_management'),array('$set'=>array('generators.'.preg_replace("/\./","_",$ip).'last_reboot' => time())),array(),array('upsert'=>1));		
 		Billrun_Factory::log()->log("Rebooting  generator at : $ip .", Zend_Log::WARN);
 		$gen = Billrun_Generator::getInstance(array('type'=>'state'));
 		$gen->stop();
