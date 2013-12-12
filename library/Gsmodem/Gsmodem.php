@@ -71,7 +71,7 @@ class Gsmodem_Gsmodem  {
 	 */
 	public function call($number) {		
 		$this->hangUp();
-		$ret =  $this->doCmd($this->getATcmd('call', array($number)), true, true, true, self::COMMAND_RESPONSE_TIME);		
+		$ret =  $this->doCmd($this->getATcmd('call', array($number)), true, true, true, self::COMMAND_RESPONSE_TIME * 2);		
 
 		return $ret;
 	}
