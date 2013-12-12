@@ -36,20 +36,18 @@ class CheckgeneratorsAction extends Action_Base {
 		foreach (Billrun_Util::getFieldVal($mangement['generators'],array()) as $ip => $generatorData) {
 			$ip = preg_replace("/_/", ".", $ip);
 			if(!$this->isInActivePeriod()) {
-				if( time() - $generatorData['receieved_timestamp'] > static::RECEIVED_TIME_OFFSET_WARNING ) {
-					Billrun_Factory::log()->log("Warning :  $ip didn't reported for more then an ".static::RECEIVED_TIME_OFFSET_WARNING." seconds",Zend_Log::WARN);
-				}
-				if( time() - $generatorData['receieved_timestamp'] > static::RECEIVED_TIME_OFFSET_ALERT ) {
-					Billrun_Factory::log()->log("ALERT! :  $ip didn't reported for more then an ".static::RECEIVED_TIME_OFFSET_ALERT." seconds",Zend_Log::ALERT);
-				}				
-				if(time() - $generatorData['receieved_timestamp'] > static::RECEIVED_TIME_OFFSET_RESET ) {
+				if(time() - $generatorData['receieved_timestamp'] > static::RECEIVED_TIME_OFFSET_REBOOT ) {
+					Billrun_Factory::log()->log("ALERT! :  $ip didn't reported for more then an ".static::RECEIVED_TIME_OFFSET_REBOOT." seconds, Rebooting...",Zend_Log::ALERT);
+					$this->rebootGenerator($ip, $generatorData);
+				} else 	if(time() - $generatorData['receieved_timestamp'] > static::RECEIVED_TIME_OFFSET_RESET ) {
 					Billrun_Factory::log()->log("ALERT! :  $ip didn't reported for more then an ".static::RECEIVED_TIME_OFFSET_RESET." seconds Reseting the modems",Zend_Log::ALERT);
 					$this->handleFailures($ip, $generatorData);
-				}				
-				if(time() - $generatorData['receieved_timestamp'] > static::RECEIVED_TIME_OFFSET_REBOOT ) {
-					Billrun_Factory::log()->log("ALERT! :  $ip didn't reported for more then an ".static::RECEIVED_TIME_OFFSET_REBOOT." seconds Reseting the modems",Zend_Log::ALERT);
-					$this->rebootGenerator($ip, $generatorData);
+				} else if( time() - $generatorData['receieved_timestamp'] > static::RECEIVED_TIME_OFFSET_ALERT ) {
+					Billrun_Factory::log()->log("ALERT! :  $ip didn't reported for more then an ".static::RECEIVED_TIME_OFFSET_ALERT." seconds",Zend_Log::ALERT);
+				} else 	if( time() - $generatorData['receieved_timestamp'] > static::RECEIVED_TIME_OFFSET_WARNING ) {
+					Billrun_Factory::log()->log("Warning :  $ip didn't reported for more then an ".static::RECEIVED_TIME_OFFSET_WARNING." seconds",Zend_Log::WARN);
 				}
+				
 			}
 			if(abs($generatorData['timestamp'] - $generatorData['receieved_timestamp']) > static::TIME_OFFEST_WARRNING ) {
 				Billrun_Factory::log()->log("Warning :  $ip clock  seem to be out of sync  by: ". $generatorData['timestamp'] - $generatorData['receieved_timestamp']. " seconds",Zend_Log::WARN);

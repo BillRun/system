@@ -45,12 +45,14 @@ class OperationsAction extends Action_Base {
 	 */
 	protected function parseData($request) {
 		$data = json_decode($request['data'],true);
+		Billrun_Factory::log()->log("Received Data : ". print_r($data), Zend_Log::DEBUG);
 		return $data;
 	}
 	/**
 	 * reset the connected modems
 	 */
 	protected function resetModems() {
+		Billrun_Factory::log()->log("Reseting  the modems", Zend_Log::INFO);
 		return system(APPLICATION_PATH."/scripts/resetModems");
 	}
 	
@@ -58,6 +60,7 @@ class OperationsAction extends Action_Base {
 	 * reboot the system
 	 */
 	protected function reboot() {
+		Billrun_Factory::log()->log("Rebooting...", Zend_Log::INFO);
 		return system(APPLICATION_PATH."/scripts/reboot");
 	}
 
