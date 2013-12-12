@@ -146,13 +146,13 @@ class Generator_Golanxml extends Billrun_Generator {
 					if (!$line->isEmpty()) {
 						$line->collection($this->lines_coll);
 						$billing_record = $billing_records->addChild('BILLING_RECORD');
-						$this->updateBillingRecord($billing_record, $this->getDate($line), $this->getTariffItem($line, $subscriber), $this->getCalledNo($line), $this->getCallerNo($line), $this->getUsageVolume($line), $this->getCharge($line), $this->getCredit($line), $this->getTariffKind($line['usaget']), $this->getAccessPrice($line), $this->getInterval($line), $this->getRate($line), $this->getIntlFlag($line), $this->getDiscountUsage($line));
+						$this->updateBillingRecord($billing_record, $this->getDate($line), $this->getTariffItem($line, $subscriber), $this->getCalledNo($line), $this->getCallerNo($line), $this->getUsageVolume($line), $this->getCharge($line), $this->getCredit($line), $this->getTariffKind($line['usaget']), $this->getAccessPrice($line), $this->getInterval($line), $this->getRate($line), $this->getIntlFlag($line), $this->getDiscountUsage($line), $this->getRoaming($line), $this->getServingNetwork($line));
 					}
 				}
 				$subscriber_aggregated_data = $this->get_subscriber_aggregated_data_lines($subscriber);
 				foreach ($subscriber_aggregated_data as $line) {
 					$billing_record = $billing_records->addChild('BILLING_RECORD');
-					$this->updateBillingRecord($billing_record, $line['day'], $line['rate_key'], '', '', $line['usage_volume'], $line['aprice'], 0, $line['tariff_kind'], 0, $line['interval'], $line['rate_price'], 0, $line['discount_usage']);
+					$this->updateBillingRecord($billing_record, $line['day'], $line['rate_key'], '', '', $line['usage_volume'], $line['aprice'], 0, $line['tariff_kind'], 0, $line['interval'], $line['rate_price'], 0, $line['discount_usage'], 0, '');
 
 					/* ine = array();
 					  $aggregated_line['day'] = date_create_from_format("Ymd", $day)->format('Y/m/d H:i:s');
@@ -396,7 +396,7 @@ class Generator_Golanxml extends Billrun_Generator {
 				foreach ($zone['totals'] as $usage_type => $usage_totals) {
 //						$out_of_usage_entry->addChild('TITLE', ?);
 					$roaming_entry = $subtopic_entry->addChild('BREAKDOWN_ENTRY');
-					$roaming_entry->addChild('TITLE', $this->getBreakdownEntryTitle($usage_type, "ROAM_ALL_DEST"));
+					$roaming_entry->addChild('TITLE', $this->getBreakdownEntryTitle($usage_type, $this->getNsoftRoamingRate($usage_type)));
 					$roaming_entry->addChild('UNITS', ($usage_type == "data" ? $this->bytesToKB($usage_totals['usagev']) : $usage_totals['usagev']));
 					$roaming_entry->addChild('COST_WITHOUTVAT', $usage_totals['cost']);
 					$roaming_entry->addChild('VAT', $this->displayVAT($zone['vat']));
@@ -590,7 +590,12 @@ class Generator_Golanxml extends Billrun_Generator {
 				case 'incoming_sms':
 					return $line['usagev'];
 				case 'data':
-					return $this->bytesToKB($line['usagev']);
+//					if ($line['type'] == 'tap3') {
+//						$arate = $this->getRowRate($line); 
+//						return $this->bytesToKB($line['usagev'], $arate['rates']['data']['rate'][0]['interval']);
+//					} else {
+						return $this->bytesToKB($line['usagev']);
+//					}
 				default:
 					break;
 			}
@@ -636,6 +641,9 @@ class Generator_Golanxml extends Billrun_Generator {
 		if (isset($rate['rates'][$usage_type]['rate'][0]['price'])) {
 			if (in_array($usage_type, array('call', 'data', 'incoming_call')) && isset($rate['rates'][$usage_type]['rate'][0]['interval']) && $rate['rates'][$usage_type]['rate'][0]['interval'] == 1) {
 				return $rate['rates'][$usage_type]['rate'][0]['price'] * ($usage_type == 'data' ? 1024 : 60);
+			}
+			if ($usage_type == 'data' && $rate['rates'][$usage_type]['category'] == 'roaming') {
+				return $rate['rates'][$usage_type]['rate'][0]['price'] * 1048576 / $rate['rates'][$usage_type]['rate'][0]['interval'];
 			}
 			return $rate['rates'][$usage_type]['rate'][0]['price'];
 		}
@@ -725,73 +733,65 @@ class Generator_Golanxml extends Billrun_Generator {
 	}
 
 	protected function getTariffItem($line, $subscriber) {
-		$arate = $this->getRowRate($line);
+		$tariffItem = '';
 		if ($line['type'] == 'flat') {
-			return 'GIFT-GC_GOLAN-' . $this->getNextPlanName($subscriber);
+			$tariffItem = 'GIFT-GC_GOLAN-' . $this->getNextPlanName($subscriber);
 		} else if ($line['type'] == 'credit' && isset($line['reason'])) {
-			return $line['reason'];
-		} else if (isset($arate['key'])) {
-//			if ($line['type']=='tap3') {
-//				if (substr($arate['key'], 0, AC_ROAM_DATA)$line['type']) {
-//					
-//				}
-//			}
-			return $arate['key']; //@todo they may expect ROAM_ALL_DEST / $DEFAULT etc. which we don't keep
+			$tariffItem = $line['reason'];
 		} else {
-			return '';
+			if ($line['type'] == 'tap3') {
+				$tariffItem = $this->getNsoftRoamingRate($line['usaget']);
+			} else {
+				$arate = $this->getRowRate($line);
+				if (isset($arate['key'])) {
+					$tariffItem = $arate['key'];
+				}
+			}
 		}
+		return $tariffItem;
+	}
+
+	protected function getNsoftRate($line) {
+		
+	}
+
+	protected function getNsoftRoamingRate($usage_type) {
+		switch ($usage_type) {
+			case 'incoming_call':
+			case 'incoming_sms':
+				$rate = '$DEFAULT';
+				break;
+			case 'call':
+			case 'sms':
+			case 'mms': // a guess
+				$rate = 'ROAM_ALL_DEST';
+				break;
+			case 'data':
+				$rate = 'INTERNET_BILL_BY_VOLUME';
+				break;
+			default:
+				$rate = '';
+				break;
+		}
+		return $rate;
 	}
 
 	protected function getCallerNo($line) {
-		switch ($line['type']) {
-			case "nsn":
-				return $line['calling_number'];
-			case "tap3":
-				//TODO: use calling_number field when all cdrs have been processed by the updated tap3 plugin
-				$tele_service_code = $line['BasicServiceUsedList']['BasicServiceUsed']['BasicService']['BasicServiceCode']['TeleServiceCode'];
-				$record_type = $line['record_type'];
-				if ($record_type == 'a' && ($tele_service_code == '11' || $tele_service_code == '21')) {
-					if (isset($line['basicCallInformation']['callOriginator']['callingNumber'])) { // for some calls (incoming?) there's no calling number
-						return $line['basicCallInformation']['callOriginator']['callingNumber'];
-					}
-				}
-				break;
-			case "smsc":
-			case "smpp": //@todo didn't really check smpp records but they should be the same
-				return $line['calling_number'];
-				break;
-			default:
-				break;
+		$calling_number = '';
+		if (isset($line['calling_number'])) {
+			$calling_number = $line['calling_number'];
 		}
-		return '';
+		return $calling_number;
 	}
 
 	protected function getCalledNo($line) {
-		switch ($line['type']) {
-			case "nsn":
-			case "smsc":
-			case "mmsc":
-			case "smpp": //@todo check smpp
-				if (isset($line['called_number'])) { // mmsc might not have called_number
-					return $this->beautifyPhoneNumber($line['called_number']);
-				}
-				break;
-			case "tap3":
-				//TODO: use called_number field when all cdrs have been processed by the updated tap3 plugin
-				$tele_service_code = $line['BasicServiceUsedList']['BasicServiceUsed']['BasicService']['BasicServiceCode']['TeleServiceCode'];
-				$record_type = $line['record_type'];
-				if ($record_type == '9') {
-					if ($tele_service_code == '11') {
-						return $line['basicCallInformation']['Desination']['CalledNumber'];
-					} else if ($tele_service_code == '22') {
-						return isset($line['basicCallInformation']['Desination']['DialedDigits']) ? $line['basicCallInformation']['Desination']['DialedDigits'] : $line['basicCallInformation']['Desination']['CalledNumber']; // @todo check with sefi. reference: db.lines.count({'BasicServiceUsedList.BasicServiceUsed.BasicService.BasicServiceCode.TeleServiceCode':"22",record_type:'9','basicCallInformation.Desination.DialedDigits':{$exists:false}});
-					}
-				}
-				break;
-			default:
-				break;
+		$called_number = '';
+		if ($line['type'] == 'tap3') {
+			$called_number = $line['called_number'];
+		} else if (isset($line['called_number'])) { // mmsc might not have called_number
+			$called_number = $this->beautifyPhoneNumber($line['called_number']);
 		}
-		return '';
+		return $called_number;
 	}
 
 	protected function getDiscountUsage($line) {
@@ -851,10 +851,14 @@ EOI;
 	/**
 	 * 
 	 * @param int $bytes
-	 * @return int
+	 * @return int interval to ceil by in bytes
 	 */
-	protected function bytesToKB($bytes) {
-		return ceil($bytes / 1024);
+	protected function bytesToKB($bytes, $interval = null) {
+		$ret = ceil($bytes / 1024);
+//		if (!is_null($interval)) {
+//			$ret = ceil($value)
+//		}
+		return $ret;
 	}
 
 	/**
@@ -995,7 +999,7 @@ EOI;
 		return str_replace(' ', '_', strtoupper($taarif_kind . '-' . $rate_key));
 	}
 
-	protected function updateBillingRecord($billing_record, $golan_date, $tariff_item, $called_number, $caller_number, $volume, $charge, $credit, $tariff_kind, $access_price, $interval, $rate, $intl_flag, $discount_usage) {
+	protected function updateBillingRecord($billing_record, $golan_date, $tariff_item, $called_number, $caller_number, $volume, $charge, $credit, $tariff_kind, $access_price, $interval, $rate, $intl_flag, $discount_usage, $roaming, $serving_network) {
 		$billing_record->TIMEOFBILLING = $golan_date;
 		$billing_record->TARIFFITEM = $tariff_item;
 		$billing_record->CTXT_CALL_OUT_DESTINATIONPNB = $called_number; //@todo maybe save dest_no in all processors and use it here
@@ -1009,6 +1013,8 @@ EOI;
 		$billing_record->TTAR_SAMPPRICE1 = $rate;
 		$billing_record->INTERNATIONAL = $intl_flag;
 		$billing_record->DISCOUNT_USAGE = $discount_usage;
+		$billing_record->ROAMING = $roaming;
+		$billing_record->SERVINGPLMN = $serving_network;
 	}
 
 	protected function getDataRate() {
@@ -1063,6 +1069,14 @@ EOI;
 			$phone_number = "0" . substr($phone_number, 0, 2) . $separator . substr($phone_number, 2);
 		}
 		return $phone_number;
+	}
+
+	protected function getRoaming($line) {
+		return $line['type'] == 'tap3' ? 1 : 0;
+	}
+
+	protected function getServingNetwork($line) {
+		return isset($line['serving_network']) ? $line['serving_network'] : '';
 	}
 
 }
