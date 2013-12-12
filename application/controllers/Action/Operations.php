@@ -24,7 +24,7 @@ class OperationsAction extends Action_Base {
 		Billrun_Factory::log()->log("Execute Operations Action", Zend_Log::INFO);
 		$request = $this->getRequest()->getRequest(); // supports GET / POST requests		
 		$data = $this->parseData($request);
-		switch($data['action']) {
+		switch($request['action']) {
 			case 'resetModems':
 					$this->setOutput($this->resetModems());
 				break;
