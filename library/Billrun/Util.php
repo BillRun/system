@@ -123,7 +123,7 @@ class Billrun_Util {
 		} else {
 			$tz_offset = $offset;
 		}
-		$date_formatted = str_replace(' ', 'T', date(Billrun_Base::base_dateformat, strtotime($datetime))) . $tz_offset;
+		$date_formatted = str_replace(' ', 'T', date(Billrun_Base::base_dateformat, strtotime($datetime))) . $tz_offset; // Unnecessary code?
 		$datetime = strtotime($date_formatted);
 		return $datetime;
 	}

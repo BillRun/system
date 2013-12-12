@@ -92,7 +92,7 @@ class Generator_Golanxml extends Billrun_Generator {
 		$xml = $this->getXML($row, $lines);
 //		$row->{'xml'} = $xml->asXML();
 		$invoice_id = $row->get('invoice_id');
-		$invoice_filename = $row['billrun_key'] . '_' . $row['aid'] . '_' . $invoice_id . '.xml';
+		$invoice_filename = $row['billrun_key'] . '_' . str_pad($row['aid'], 9, '0', STR_PAD_LEFT) . '_' . str_pad($invoice_id, 11, '0', STR_PAD_LEFT) . '.xml';
 		$this->createXmlFile($invoice_filename, $xml->asXML());
 		$this->setFileStamp($row, $invoice_filename);
 		Billrun_Factory::log()->log("invoice file " . $invoice_filename . " created for account " . $row->get('aid'), Zend_Log::INFO);
@@ -138,15 +138,15 @@ class Generator_Golanxml extends Billrun_Generator {
 					$subscriber_lines = $this->get_subscriber_lines($subscriber);
 				} else {
 					$func = function($line) use ($sid) {
-						return $line['sid']==$sid;
-					};
+								return $line['sid'] == $sid;
+							};
 					$subscriber_lines = array_filter($lines, $func);
 				}
 				foreach ($subscriber_lines as $line) {
 					if (!$line->isEmpty()) {
 						$line->collection($this->lines_coll);
 						$billing_record = $billing_records->addChild('BILLING_RECORD');
-						$this->updateBillingRecord($billing_record, $this->getGolanDate($line['urt']->sec), $this->getTariffItem($line, $subscriber), $this->getCalledNo($line), $this->getCallerNo($line), $this->getUsageVolume($line), $this->getCharge($line), $this->getCredit($line), $this->getTariffKind($line['usaget']), $this->getAccessPrice($line), $this->getInterval($line), $this->getRate($line), $this->getIntlFlag($line), $this->getDiscountUsage($line));
+						$this->updateBillingRecord($billing_record, $this->getDate($line), $this->getTariffItem($line, $subscriber), $this->getCalledNo($line), $this->getCallerNo($line), $this->getUsageVolume($line), $this->getCharge($line), $this->getCredit($line), $this->getTariffKind($line['usaget']), $this->getAccessPrice($line), $this->getInterval($line), $this->getRate($line), $this->getIntlFlag($line), $this->getDiscountUsage($line));
 					}
 				}
 				$subscriber_aggregated_data = $this->get_subscriber_aggregated_data_lines($subscriber);
@@ -731,6 +731,11 @@ class Generator_Golanxml extends Billrun_Generator {
 		} else if ($line['type'] == 'credit' && isset($line['reason'])) {
 			return $line['reason'];
 		} else if (isset($arate['key'])) {
+//			if ($line['type']=='tap3') {
+//				if (substr($arate['key'], 0, AC_ROAM_DATA)$line['type']) {
+//					
+//				}
+//			}
 			return $arate['key']; //@todo they may expect ROAM_ALL_DEST / $DEFAULT etc. which we don't keep
 		} else {
 			return '';
@@ -861,8 +866,32 @@ EOI;
 		return $vat * 100;
 	}
 
-	protected function getGolanDate($datetime) {
-		return date('Y/m/d H:i:s', $datetime);
+	protected function getDate($line) {
+		$timsetamp = $line['urt']->sec;
+		if (isset($line['tzoffset'])) {
+			// TODO change this to regex
+			$tzoffset = $line['tzoffset'];
+			$sign = substr($tzoffset, 0, 1);
+			$hours = substr($tzoffset, 1, 2);
+			$minutes = substr($tzoffset, 3, 2);
+			$time = $hours . ' hours ' . $minutes . ' minutes';
+			if ($sign == "-") {
+				$time .= ' ago';
+			}
+			$timsetamp = strtotime($time, $timsetamp);
+		}
+		$zend_date = new Zend_Date($timsetamp);
+		$zend_date->setTimezone('UTC');
+		return $this->getGolanDate($zend_date);
+	}
+
+	/**
+	 * 
+	 * @param Zend_Date $date
+	 * @return type
+	 */
+	protected function getGolanDate($date) {
+		return $date->toString('YYYY/MM/dd HH:mm:ss');
 	}
 
 	/**
