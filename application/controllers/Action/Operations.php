@@ -53,15 +53,30 @@ class OperationsAction extends Action_Base {
 	 */
 	protected function resetModems() {
 		Billrun_Factory::log()->log("Reseting  the modems", Zend_Log::INFO);
-		return system(APPLICATION_PATH."/scripts/resetModems");
+		$path = APPLICATION_PATH."/scripts/resetModems";
+		return $this->runCommand($path);
 	}
 	
 	/**
 	 * reboot the system
 	 */
 	protected function reboot() {
-		Billrun_Factory::log()->log("Rebooting...", Zend_Log::INFO);
-		return system(APPLICATION_PATH."/scripts/reboot");
+		Billrun_Factory::log()->log("Trying to reboot the computer...", Zend_Log::INFO);
+		$path = APPLICATION_PATH."/scripts/reboot";
+		return $this->runCommand($path);
+	}
+	
+	/**
+	 * Run a command in the system.
+	 * @param type $path path to for the  command to run.
+	 * @return type FALSE if the command failed  the last line of the output  otherwise.
+	 */
+	protected function runCommand($path) {
+		$output = array();
+		Billrun_Factory::log()->log("Running : $path", Zend_Log::INFO);
+		$ret =  exec($path);
+		Billrun_Factory::log()->log("Command output : ".join("\n",$output), Zend_Log::DEBUG);
+		return $ret;
 	}
 
 }
