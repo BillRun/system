@@ -71,7 +71,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		}
 		$this->loadRates();
 		$this->loadPlans();
-		$this->balances = Billrun_Factory::db()->balancesCollection();
+		$this->balances = Billrun_Factory::db(array('name' => 'balances'))->balancesCollection();
 	}
 
 	protected function getLines() {
