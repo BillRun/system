@@ -43,7 +43,7 @@ class Billrun_Generator_Report_CallingScript extends Billrun_Generator_Report {
 	/**
 	 * The test identification.
 	 */
-	protected $scriptTypes = self::TYPE_REGULAR;
+	protected $scriptType = self::TYPE_REGULAR;
 	
 	/**
 	 *
@@ -55,7 +55,7 @@ class Billrun_Generator_Report_CallingScript extends Billrun_Generator_Report {
 	 *
 	 * @var type 
 	 */
-	protected $durations = array(10,15,35,80,180);
+	protected $durations = array(10=>0.2,15=>0.2,35=>0.2,80=>0.2,180=>0.2);
 	
 	protected $voiceMailNumber = "0547371030";
 	protected $busyNumber = "0547371030";
@@ -63,13 +63,13 @@ class Billrun_Generator_Report_CallingScript extends Billrun_Generator_Report {
 	public function __construct($options) {
 		parent::__construct($options);
 		if (isset($options['script_type'])) {
-			$this->scriptTypes = split(",",$options['script_type']);
+			$this->scriptType = is_array($options['script_type']) ? $options['script_type'] : split(",",$options['script_type']);
 		}
 		if (isset($options['numbers'])) {
-			$this->numbers = split(",",$options['numbers']);
+			$this->numbers = is_array($options['numbers']) ? $options['numbers'] : split(",",$options['numbers']);
 		}		
 		if (isset($options['durations'])) {
-			$this->numbers = split(",",$options['durations']);
+			$this->durations = is_array($options['durations']) ? $options['durations'] : split(",",$options['durations']);
 		}
 		
 		if (isset($options['start_test'])) {
@@ -97,18 +97,20 @@ class Billrun_Generator_Report_CallingScript extends Billrun_Generator_Report {
 		$aggDaily = 0;
 		$aggCount = 0;
 		
-		foreach ($this->scriptTypes as $type) {
+		foreach ($this->scriptType as $type) {
 			if(!isset($types[$type])) {
-				Billrun_Factory::log("The call type {$type} that was  defined in ". join(",",$this->scriptTypes)." isn't a legal type.");
+				Billrun_Factory::log("The call type {$type} that was  defined in ". join(",",$this->scriptType)." isn't a legal type.");
 				return false;
 			}
-			$aggCount += $types[$type]['total_count'] * Billrun_Util::getFieldVal($this->options['fail_pecentage_multiplier'],1);
+			$aggCount += $types[$type]['total_count']; //* Billrun_Util::getFieldVal($this->options['fail_pecentage_multiplier'],1);
 			$aggDaily += $types[$type]['daily'];
 		}
+		$durations =  $this->generateDurationsDivision($this->durations,$aggDaily);
+
 		$options =array(
-												'script_type' => $this->scriptTypes,
+												'script_type' => $this->scriptType,
 												'numbers' => $this->numbers,
-												'durations' => $this->durations,
+												'durations' => $durations,
 												'types' => $types,
 												'daily_start_time' => isset($this->options['start_calls_time']) ? $this->options['start_calls_time'] : '00:10:00',
 											);
@@ -120,7 +122,7 @@ class Billrun_Generator_Report_CallingScript extends Billrun_Generator_Report {
 
 		$startDay = strtotime( date('Ymd 00:00:00',isset($this->startTestAt) ? $this->startTestAt: time()) );
 		$endDay = strtotime( date('Ymd 00:00:00',$startDay+(86400 * ( $aggCount / $aggDaily )) ) );
-		$config = array('actions' => $actions , 'test_id' => $this->testId , 'from' => $startDay , 'to' => $endDay );
+		$config = array('actions' => $actions , 'test_id' => $this->testId , 'from' => $startDay , 'to' => $endDay , 'call_count' => $aggCount );
 		if($actions) {
 			if(!empty($this->options['to_remote'])) {
 				foreach ($this->options['generator']['remote_servers_url'] as $host) {
@@ -129,7 +131,7 @@ class Billrun_Generator_Report_CallingScript extends Billrun_Generator_Report {
 			}
 
 			if(isset($this->options['out']) && $this->options['out']) {
-				$this->generateFiles(array(join("_",$this->scriptTypes).'.json.dump' => $config), $this->options['out']);
+				$this->generateFiles(array(join("_",$this->scriptType).'.json.dump' => $config), $this->options['out']);
 			}
 		}
 		if(Billrun_Util::getFieldVal($this->options['update_config'],false)) {
@@ -144,6 +146,7 @@ class Billrun_Generator_Report_CallingScript extends Billrun_Generator_Report {
 	public function load() {
 
 	}
+	
 	
 	/**
 	 * 
@@ -247,6 +250,27 @@ class Billrun_Generator_Report_CallingScript extends Billrun_Generator_Report {
 		return true;
 	}
 	
+	/**
+	 * generate a call durations array  where the  duration a divided by  a given percentage.
+	 * @param type $durations an array  conatining the durations  and the  precentage  of them to apper.
+	 * @param type $dailyCallsCount the  tootal  calls  that will be done  per day.
+	 * @return array with randomaly distributaed calls
+	 */
+	protected function generateDurationsDivision( $durations, $dailyCallsCount ) {
+		$dividedDurations = array();
+		foreach($durations as $dur => $precent ) {
+			$durations[$dur] = ($dailyCallsCount * $precent);
+		}		
+		while( count($dividedDurations) < $dailyCallsCount )
+		foreach ($durations as $dur => &$value) {		
+			if($value-- >= 0) {
+				$dividedDurations[] = $dur;
+			}
+		}
+		return $dividedDurations;
+	}
+
+
 	/**
 	 * Remove old config entries
 	 * @param type $keythe  key to remove old entries for.

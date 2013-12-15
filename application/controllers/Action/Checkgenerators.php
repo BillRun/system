@@ -36,17 +36,21 @@ class CheckgeneratorsAction extends Action_Base {
 		foreach (Billrun_Util::getFieldVal($mangement['generators'],array()) as $ip => $generatorData) {
 			$ip = preg_replace("/_/", ".", $ip);
 			if(!$this->isInActivePeriod()) {
-				$inactiveTime = min( array( 
-									time() - Billrun_Util::getFieldVal ($generatorData['last_reboot'], 0), 
+				$inactiveTime = time() - $generatorData['receieved_timestamp'];
+				$lastReset = min( array( 
 									time() - Billrun_Util::getFieldVal ($generatorData['last_reset'], 0), 
-									time() - $generatorData['receieved_timestamp']) 
-								);
+									$inactiveTime
+							) );
+				$lastReboot = min( array( 
+									time() - Billrun_Util::getFieldVal ($generatorData['last_reboot'], 0), 
+									$inactiveTime
+								) );
 
-				if( $inactiveTime > static::RECEIVED_TIME_OFFSET_REBOOT ) {
+				if( $lastReboot > static::RECEIVED_TIME_OFFSET_REBOOT ) {
 					Billrun_Factory::log()->log("ALERT! :  $ip didn't reported for more then an ".static::RECEIVED_TIME_OFFSET_REBOOT." seconds, Rebooting...",Zend_Log::ALERT);
 					$this->rebootGenerator($ip, $generatorData);
 				} else 
-				if( $inactiveTime > static::RECEIVED_TIME_OFFSET_RESET ) {
+				if( $lastReset > static::RECEIVED_TIME_OFFSET_RESET ) {
 					Billrun_Factory::log()->log("ALERT! :  $ip didn't reported for more then an ".static::RECEIVED_TIME_OFFSET_RESET." seconds Reseting the modems",Zend_Log::ALERT);
 					$this->handleFailures($ip, $generatorData);
 				} else 
