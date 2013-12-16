@@ -94,7 +94,7 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 					$this->load();
 				}
 				//if  it time to take action do it  else wait for  a few seconds and check again.
-				if( time() > $this->testScript['from']->sec && time() < $this->testScript['to']->sec ) {
+				if( time() > $this->testScript['from']->sec && $this->testScript['call_count'] > $this->scriptFinshedCallsCount($this->testScript) ) {
 					$actionDone = $this->actOnScript($this->testScript['test_script']);
 					$this->isWorking = $actionDone != FALSE;
 				} else {
@@ -488,5 +488,14 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 		} catch(\Exception $e) {
 			Billrun_Factory::log("Comunication with the management  server has  failed...  with :".$e->getMessage(),Zend_Log::ALERT);
 		}
+	}
+	
+	/**
+	 * count the  call that where done for a given script
+	 * @param type $script
+	 * @return type
+	 */
+	protected function scriptFinshedCallsCount($script) {
+		return Billrun_Factory::db()->linesCollection()->query(array('type'=> 'generated_call','urt'=> array('$gt' => new MongoDate($script['from']), 'test_id'=> $script['test_id'])))->cursor()->count(true);
 	}
 }
