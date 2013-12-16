@@ -112,7 +112,7 @@ class Billrun_Generator_Report_CallingScript extends Billrun_Generator_Report {
 												'numbers' => $this->numbers,
 												'durations' => $durations,
 												'types' => $types,
-												'daily_start_time' => iisset($this->startTestAt) ? date('H:i:s',$this->startTestAt) : '00:10:00',
+												'daily_start_time' => isset($this->startTestAt) ? date('H:i:s',$this->startTestAt) : '00:10:00',
 											);
 		if(isset($this->options['total_calls_count'])) {
 			$options['total_calls_count'] = $this->options['total_calls_count'];
