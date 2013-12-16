@@ -594,7 +594,7 @@ class Generator_Golanxml extends Billrun_Generator {
 //						$arate = $this->getRowRate($line); 
 //						return $this->bytesToKB($line['usagev'], $arate['rates']['data']['rate'][0]['interval']);
 //					} else {
-						return $this->bytesToKB($line['usagev']);
+					return $this->bytesToKB($line['usagev']);
 //					}
 				default:
 					break;
@@ -627,7 +627,7 @@ class Generator_Golanxml extends Billrun_Generator {
 
 	protected function getInterval($line) {
 		$arate = $this->getRowRate($line);
-		if (isset($line['usaget']) && isset($arate['rates'][$line['usaget']]['rate']['interval'])) {
+		if (isset($line['usaget']) && isset($arate['rates'][$line['usaget']]['rate'][0]['interval'])) {
 			return $this->getIntervalByRate($arate, $line['usaget']);
 		}
 		return 0;
@@ -854,10 +854,11 @@ EOI;
 	 * @return int interval to ceil by in bytes
 	 */
 	protected function bytesToKB($bytes, $interval = null) {
-		$ret = ceil($bytes / 1024);
-//		if (!is_null($interval)) {
-//			$ret = ceil($value)
-//		}
+		$bytes_to_price = $bytes;
+		if (!is_null($interval)) {
+			$bytes_to_price = ceil($bytes / $interval) * $interval;
+		}
+		$ret = ceil($bytes_to_price / 1024);
 		return $ret;
 	}
 
@@ -883,9 +884,11 @@ EOI;
 				$time .= ' ago';
 			}
 			$timsetamp = strtotime($time, $timsetamp);
+			$zend_date = new Zend_Date($timsetamp);
+			$zend_date->setTimezone('UTC');
+		} else {
+			$zend_date = new Zend_Date($timsetamp);
 		}
-		$zend_date = new Zend_Date($timsetamp);
-		$zend_date->setTimezone('UTC');
 		return $this->getGolanDate($zend_date);
 	}
 
