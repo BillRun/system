@@ -13,6 +13,7 @@
  * @since    1.0
  * @todo refactoring to general subscriber http class
  */
+
 class Subscriber_Golan extends Billrun_Subscriber {
 
 	protected $plan = null;
@@ -183,7 +184,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 //		$path .= "&account_id=4171195"; // Shani
 //		$path .= "&account_id=9073496"; // Ofer
 //		$path .= "&account_id=5236445";
-//		$path .= "&account_id=9387173";
+//		$path .= "&account_id=7236490";
 		$json = self::send($path);
 		if (!$json) {
 			return false;
@@ -229,7 +230,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 						}
 					}
 				}
-				asort($ret_data); // maybe this will help the aid index to stay in memory
+				ksort($ret_data); // maybe this will help the aid index to stay in memory
 				return $ret_data;
 			} else {
 				return null;
