@@ -112,7 +112,7 @@ class Billrun_Generator_Report_CallingScript extends Billrun_Generator_Report {
 												'numbers' => $this->numbers,
 												'durations' => $durations,
 												'types' => $types,
-												'daily_start_time' => isset($this->options['start_calls_time']) ? $this->options['start_calls_time'] : '00:10:00',
+												'daily_start_time' => iisset($this->startTestAt) ? date('H:i:s',$this->startTestAt) : '00:10:00',
 											);
 		if(isset($this->options['total_calls_count'])) {
 			$options['total_calls_count'] = $this->options['total_calls_count'];
@@ -120,8 +120,8 @@ class Billrun_Generator_Report_CallingScript extends Billrun_Generator_Report {
 		}
 		$actions = $this->generateDailyScript($options);
 
-		$startDay = strtotime( date('Ymd 00:00:00',isset($this->startTestAt) ? $this->startTestAt: time()) );
-		$endDay = strtotime( date('Ymd 00:00:00',$startDay+(86400 * ( $aggCount / $aggDaily )) ) );
+		$startDay = strtotime( date('Ymd H:i:s',isset($this->startTestAt) ? $this->startTestAt: time()) );
+		$endDay = strtotime( date('Ymd H:i:s',$startDay+(86400 * ( $aggCount / $aggDaily )) ) );
 		$config = array('actions' => $actions , 'test_id' => $this->testId , 'from' => $startDay , 'to' => $endDay , 'call_count' => $aggCount );
 		if($actions) {
 			if(!empty($this->options['to_remote'])) {

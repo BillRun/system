@@ -42,7 +42,7 @@ class Gsmodem_ModemState {
 							'init_commands' =>  array(
 								"ATZ ;\r" => false,
 								"ATE1 ;\r" => false,
-								"AT+CFUN=0 ;\r" => true,
+								//"AT+CFUN=0 ;\r" => true,
 								"AT+CFUN=1 ;\r" => true,
 								"AT+CREG=2 ;\r" => true,
 								"AT+CLIP=1 ;\r" => true,

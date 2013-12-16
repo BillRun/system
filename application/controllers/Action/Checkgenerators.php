@@ -18,9 +18,9 @@ class CheckgeneratorsAction extends Action_Base {
 	const TIME_OFFEST_WARRNING =5;
 	const TIME_OFFEST_ALERT =7;
 	const RECEIVED_TIME_OFFSET_WARNING = 250;
-	const RECEIVED_TIME_OFFSET_ALERT = 350;
-	const RECEIVED_TIME_OFFSET_RESET = 500;
-	const RECEIVED_TIME_OFFSET_REBOOT = 900;
+	const RECEIVED_TIME_OFFSET_ALERT = 350;	
+	const RECEIVED_TIME_OFFSET_REBOOT = 600;
+	const RECEIVED_TIME_OFFSET_RESET = 780;
 	
 	/**
 	 *
@@ -45,15 +45,15 @@ class CheckgeneratorsAction extends Action_Base {
 									time() - Billrun_Util::getFieldVal ($generatorData['last_reboot'], 0), 
 									$inactiveTime
 								) );
-
-				if( $lastReboot > static::RECEIVED_TIME_OFFSET_REBOOT ) {
-					Billrun_Factory::log()->log("ALERT! :  $ip didn't reported for more then an ".static::RECEIVED_TIME_OFFSET_REBOOT." seconds, Rebooting...",Zend_Log::ALERT);
-					$this->rebootGenerator($ip, $generatorData);
-				} else 
+				
 				if( $lastReset > static::RECEIVED_TIME_OFFSET_RESET ) {
 					Billrun_Factory::log()->log("ALERT! :  $ip didn't reported for more then an ".static::RECEIVED_TIME_OFFSET_RESET." seconds Reseting the modems",Zend_Log::ALERT);
 					$this->handleFailures($ip, $generatorData);
 				} else 
+				if( $lastReboot > static::RECEIVED_TIME_OFFSET_REBOOT ) {
+					Billrun_Factory::log()->log("ALERT! :  $ip didn't reported for more then an ".static::RECEIVED_TIME_OFFSET_REBOOT." seconds, Rebooting...",Zend_Log::ALERT);
+					$this->rebootGenerator($ip, $generatorData);
+				} else 					
 				if( $inactiveTime > static::RECEIVED_TIME_OFFSET_ALERT ) {
 					Billrun_Factory::log()->log("ALERT! :  $ip didn't reported for more then an ".static::RECEIVED_TIME_OFFSET_ALERT." seconds",Zend_Log::ALERT);
 				} else 
@@ -110,7 +110,7 @@ class CheckgeneratorsAction extends Action_Base {
 	}
 	
 	protected function rebootGenerator($ip,$generatorData) {
-					Billrun_Factory::db()->configCollection()->findAndModify(array('key'=> 'call_generator_management'),array('$set'=>array('generators.'.preg_replace("/\./","_",$ip).'.last_reboot' => time())),array(),array('upsert'=>1));		
+		Billrun_Factory::db()->configCollection()->findAndModify(array('key'=> 'call_generator_management'),array('$set'=>array('generators.'.preg_replace("/\./","_",$ip).'.last_reboot' => time())),array(),array('upsert'=>1));		
 		Billrun_Factory::log()->log("Rebooting  generator at : $ip .", Zend_Log::WARN);
 		$gen = Billrun_Generator::getInstance(array('type'=>'state'));
 		$gen->stop();
@@ -123,10 +123,10 @@ class CheckgeneratorsAction extends Action_Base {
 		
 
 
-	protected function delayedHTTP($url) {		
+	protected function delayedHTTP($url,$delay = 30) {		
 		//if(!pcntl_fork()) {
 			$gen = Billrun_Generator::getInstance(array('type'=>'state'));
-			sleep(30);			
+			sleep($delay);			
 			$client = curl_init($url);
 			$post_fields = array('data' => json_encode(array('action' => 'restartModems')));
 			curl_setopt($client, CURLOPT_POST, TRUE);
