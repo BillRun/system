@@ -55,6 +55,12 @@ class Billrun_Generator_Report_CallingScript extends Billrun_Generator_Report {
 	 *
 	 * @var type 
 	 */
+	protected $activeDays = array(0,1,2,3,4); 
+	
+	/**
+	 *
+	 * @var type 
+	 */
 	protected $durations = array(10=>0.2,15=>0.2,35=>0.2,80=>0.2,180=>0.2);
 	
 	protected $voiceMailNumber = "0547371030";
@@ -70,6 +76,10 @@ class Billrun_Generator_Report_CallingScript extends Billrun_Generator_Report {
 		}		
 		if (isset($options['durations'])) {
 			$this->durations = is_array($options['durations']) ? $options['durations'] : split(",",$options['durations']);
+		}
+		
+		if (isset($options['active_days'])) {
+			$this->activeDays = is_array($options['active_days']) ? $options['active_days'] : split(",",$options['active_days']);
 		}
 		
 		if (isset($options['start_test'])) {
@@ -121,8 +131,8 @@ class Billrun_Generator_Report_CallingScript extends Billrun_Generator_Report {
 		$actions = $this->generateDailyScript($options);
 
 		$startDay = strtotime( date('Ymd H:i:s',isset($this->startTestAt) ? $this->startTestAt: time()) );
-		$endDay = strtotime( date('Ymd H:i:s',$startDay+(86400 * ( $aggCount / $aggDaily )) ) );
-		$config = array('actions' => $actions , 'test_id' => $this->testId."_".date("His",time())  , 'from' => $startDay , 'to' => $endDay , 'call_count' => $aggCount );
+		$endDay = strtotime( date('Ymd H:i:s',$startDay+(86400 * ( $aggCount / $aggDaily ) * (7 / max(count($this->activeDays),7)) ) ) );
+		$config = array('actions' => $actions , 'test_id' => $this->testId."_".date("His",time())  , 'from' => $startDay , 'to' => $endDay , 'call_count' => $aggCount,  'active_days' =>  $this->activeDays );
 		if($actions) {
 			if(!empty($this->options['to_remote'])) {
 				foreach ($this->options['generator']['remote_servers_url'] as $host) {
