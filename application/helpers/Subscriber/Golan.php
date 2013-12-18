@@ -88,7 +88,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 	 */
 	protected function request($params) {
 
-		$host = Billrun_Factory::config()->getConfigValue('provider.rpc.server', '');
+		$host = self::getRpcServer();
 		$url = Billrun_Factory::config()->getConfigValue('provider.rpc.url', '');
 		$datetime_format = Billrun_Base::base_dateformat; // 'Y-m-d H:i:s';
 
@@ -175,7 +175,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 
 	//@TODO change this function
 	protected function requestAccounts($params) {
-		$host = Billrun_Factory::config()->getConfigValue('provider.rpc.server', '');
+		$host = self::getRpcServer();
 		$url = Billrun_Factory::config()->getConfigValue('crm.url', '');
 
 		$path = 'http://' . $host . '/' . $url . '?' . http_build_query($params);
@@ -332,7 +332,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 	}
 
 	static public function requestList($params) {
-		$host = Billrun_Factory::config()->getConfigValue('provider.rpc.server', '');
+		$host = self::getRpcServer();
 		$url = Billrun_Factory::config()->getConfigValue('provider.rpc.bulk_url', '');
 
 		$path = 'http://' . $host . '/' . $url;
@@ -359,6 +359,26 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		} else {
 			return null;
 		}
+	}
+	
+	/**
+	 * Get the rpc server from config
+	 * 
+	 * @return string the host or ip of the server
+	 */
+	static protected function getRpcServer() {
+		$hosts = Billrun_Factory::config()->getConfigValue('provider.rpc.server', '');
+		if (empty($hosts)) {
+			return false;
+		}
+		
+		if (!is_array($hosts)) {
+			// probably string
+			return $hosts;
+		}
+		
+		// if it's array rand between servers
+		return $hosts[rand(0, count($hosts)-1)];
 	}
 
 }
