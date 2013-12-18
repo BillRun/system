@@ -143,7 +143,7 @@ class Generator_Golanxml extends Billrun_Generator {
 					$subscriber_lines = array_filter($lines, $func);
 				}
 				foreach ($subscriber_lines as $line) {
-					if (!$line->isEmpty()) {
+					if (!$line->isEmpty() && $line['type']!='ggsn') {
 						$line->collection($this->lines_coll);
 						$billing_record = $billing_records->addChild('BILLING_RECORD');
 						$this->updateBillingRecord($billing_record, $this->getDate($line), $this->getTariffItem($line, $subscriber), $this->getCalledNo($line), $this->getCallerNo($line), $this->getUsageVolume($line), $this->getCharge($line), $this->getCredit($line), $this->getTariffKind($line['usaget']), $this->getAccessPrice($line), $this->getInterval($line), $this->getRate($line), $this->getIntlFlag($line), $this->getDiscountUsage($line), $this->getRoaming($line), $this->getServingNetwork($line));
@@ -548,10 +548,20 @@ class Generator_Golanxml extends Billrun_Generator {
 				'$ne' => 'ggsn',
 			),
 		);
+
+//		$hint = array(
+//			'sid' => 1,
+//			'urt' => 1,
+//		);
+
+		$sort = array(
+			'sid' => 1,
+			'urt' => 1,
+		);
+
+		$lines = $this->lines_coll->query($query)->cursor()->sort($sort);
 		if (rand(0, 99) >= $this->loadBalanced) {
-			$lines = $this->lines_coll->query($query)->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
-		} else {
-			$lines = $this->lines_coll->query($query)->cursor();
+			$lines = $lines->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
 		}
 		return $lines;
 	}
@@ -566,7 +576,7 @@ class Generator_Golanxml extends Billrun_Generator {
 		if (isset($subscriber['lines']['data']['counters'])) {
 			foreach ($subscriber['lines']['data']['counters'] as $day => $data_by_day) {
 				$aggregated_line = array();
-				$aggregated_line['day'] = date_create_from_format("Ymd", $day)->format('Y/m/d H:i:s');
+				$aggregated_line['day'] = date_create_from_format("Ymd", $day)->format('Y/m/d 00:00:00');
 				$aggregated_line['rate_key'] = $this->data_rate['key'];
 				$aggregated_line['usage_volume'] = $this->bytesToKB($data_by_day['usagev']);
 				$aggregated_line['aprice'] = $data_by_day['aprice'];
