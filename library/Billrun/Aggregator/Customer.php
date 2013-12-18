@@ -220,12 +220,14 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		//		Billrun_Factory::dispatcher()->trigger('beforeAggregateSaveLine', array(&$save_data, &$this));
 		// @TODO trigger after aggregate
 		Billrun_Factory::dispatcher()->trigger('afterAggregate', array($this->data, &$this));
-//		$this->sendEndMail($end_msg);
+		$this->sendEndMail($end_msg);
 	}
 
 	protected function sendEndMail($msg) {
 		$recipients = Billrun_Factory::config()->getConfigValue('emailAlerts.alerts.recipients');
-		Billrun_Util::sendMail($msg, "", $recipients);
+		if ($recipients) {
+			Billrun_Util::sendMail("BillRun customer aggregate page finished", $msg, "", $recipients);
+		}
 	}
 
 //	/**

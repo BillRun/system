@@ -73,6 +73,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	 * @var boolean
 	 */
 	protected $autosort = true;
+	protected $queue_coll = null;
 
 	/**
 	 * constructor of the class
@@ -98,6 +99,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		if (isset($options['autosort'])) {
 			$this->autosort = $options['autosort'];
 		}
+		$this->queue_coll = Billrun_Factory::db()->queueCollection();
 	}
 
 	/**
@@ -231,7 +233,6 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	 * @param array $update additional fields to update in the queue
 	 */
 	protected function setCalculatorTag($query = array(), $update = array()) {
-		$queue = Billrun_Factory::db()->queueCollection();
 		$calculator_tag = static::getCalculatorQueueType();
 		$stamps = array();
 		foreach ($this->lines as $item) {
@@ -239,7 +240,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		}
 		$query = array_merge($query, array('stamp' => array('$in' => $stamps), 'hash' => $this->workHash, 'calc_time' => $this->signedMicrotime)); //array('stamp' => $item['stamp']);
 		$update = array_merge($update, array('$set' => array('calc_name' => $calculator_tag, 'calc_time' => false)));
-		$queue->update($query, $update, array('multiple' => true));
+		$this->queue_coll->update($query, $update, array('multiple' => true));
 	}
 
 	/**
