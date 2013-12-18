@@ -16,7 +16,8 @@
 class BalancesModel extends TableModel {
 
 	public function __construct(array $params = array()) {
-		$params['collection'] = Billrun_Factory::db(array('name' => 'balances'))->balances;
+		$params['collection'] = 'balances';
+                $params['db'] = 'balances';
 		parent::__construct($params);
 		$this->search_key = "stamp";
 	}
