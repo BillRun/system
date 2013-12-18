@@ -236,7 +236,8 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 			$data['duration'] = strtotime($data['charging_end_time']) - strtotime($data['charging_start_time']);			
 		}
 		//Remove  the  "10" in front of the national call with an international prefix
-		if (isset($data['out_circuit_group']) && in_array($data['out_circuit_group'], array('2100', '2101', '2499')) && strlen($data['called_number']) > 10 && substr($data['called_number'], 0, 2) == "10") {
+//		if (isset($data['out_circuit_group']) && in_array($data['out_circuit_group'], array('2100', '2101', '2499')) && strlen($data['called_number']) > 10 && substr($data['called_number'], 0, 2) == "10") {
+		if (isset($data['in_circuit_group_name']) && preg_match("/^RCEL/", $data['in_circuit_group_name']) && strlen($data['called_number']) > 10 && substr($data['called_number'], 0, 2) == "10") {
 			$data['called_number'] = substr($data['called_number'], 2);
 		}
 
