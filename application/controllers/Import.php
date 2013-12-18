@@ -15,6 +15,7 @@
 class ImportController extends Yaf_Controller_Abstract {
 
 	public function indexAction() {
+		die("If you wish to import remove the \"die\"");
 		$parser = Billrun_Parser::getInstance(array(
 				'type' => 'separator',
 				'separator' => ",",

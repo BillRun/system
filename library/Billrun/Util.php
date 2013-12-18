@@ -123,7 +123,7 @@ class Billrun_Util {
 		} else {
 			$tz_offset = $offset;
 		}
-		$date_formatted = str_replace(' ', 'T', date(Billrun_Base::base_dateformat, strtotime($datetime))) . $tz_offset;
+		$date_formatted = str_replace(' ', 'T', date(Billrun_Base::base_dateformat, strtotime($datetime))) . $tz_offset; // Unnecessary code?
 		$datetime = strtotime($date_formatted);
 		return $datetime;
 	}
@@ -272,8 +272,24 @@ class Billrun_Util {
 		
 		return FALSE;
 	}
-        
-        /**
+	
+	public static function sendMail($subject, $body, $recipients, $attachments = array()) {
+		$mailer = Billrun_Factory::mailer()->
+			setSubject($subject)->
+			setBodyText($body);
+		//add attachments
+		foreach ($attachments as $attachment) {
+			$mailer->addAttachment($attachment);
+		}
+		//set recipents
+		foreach ($recipients as $recipient) {
+			$mailer->addTo($recipient);
+		}
+		//sen email
+		return $mailer->send();
+	}
+
+    /**
 	 * Calculates the price for the given volume (w/o access price)
 	 * @param array $rate the "rate" array of a rate entry
 	 * @param int $volume The usage volume (seconds of call, count of SMS, bytes  of data)

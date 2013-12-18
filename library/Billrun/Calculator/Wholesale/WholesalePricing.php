@@ -50,7 +50,7 @@ class Billrun_Calculator_Wholesale_WholesalePricing extends Billrun_Calculator_W
 
 		if (isset($row['usagev']) && $zoneKey) {	
 			$rates = $this->getCarrierRateForZoneAndType(
-				$this->loadDBRef($row->get($this->isLineIncoming($row) ? 'wscin' : 'wsc',true)), $zoneKey, $row['usaget'], ($this->isPeak($row) ? 'peak' : 'off_peak')
+				$this->loadDBRef($row->get($this->isLineIncoming($row) ? 'wsc_in' : 'wsc',true)), $zoneKey, $row['usaget'], ($this->isPeak($row) ? 'peak' : 'off_peak')
 			);
 			if ($rates) {
 				$pricingData = $this->getLinePricingData($row['usagev'], $rates);

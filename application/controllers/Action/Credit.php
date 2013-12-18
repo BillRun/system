@@ -32,6 +32,8 @@ class CreditAction extends Action_Base {
 			return $this->setError('Transaction already exists in the DB', $request);
 		}
 
+		$parsed_row['process_time'] = date(Billrun_Base::base_dateformat);
+		
 		$entity = new Mongodloid_Entity($parsed_row);
 
 		if ($entity->save($linesCollection) === false) {

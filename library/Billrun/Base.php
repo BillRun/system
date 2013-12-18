@@ -134,7 +134,7 @@ abstract class Billrun_Base {
 	 */
 	static public function getInstance() {
 		$args = func_get_args();
-		
+
 		$stamp = md5(serialize($args));
 		if (isset(self::$instance[$stamp])) {
 			return self::$instance[$stamp];

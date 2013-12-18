@@ -18,9 +18,15 @@
  */
 class Generator_Golanxml extends Billrun_Generator {
 
-	protected $server_id = 1;
-	protected $server_count = 1;
-	protected $data = null;
+	/**
+	 * the type of the object
+	 *
+	 * @var string
+	 */
+	protected static $type = 'golanxml';
+	protected $offset = 0;
+	protected $size = 10000;
+	protected $data = array();
 	protected $extras_start_date;
 	protected $extras_end_date;
 	protected $flat_start_date;
@@ -28,16 +34,15 @@ class Generator_Golanxml extends Billrun_Generator {
 	protected $rates;
 	protected $plans;
 	protected $data_rate;
+	protected $lines_coll;
 
 	public function __construct($options) {
-		self::$type = 'golanxml';
 		parent::__construct($options);
-		if (isset($options['generator']['ids'])) {
-			$this->server_id = intval($options['generator']['ids']);
+		if (isset($options['page'])) {
+			$this->offset = intval($options['page']);
 		}
-
-		if (isset($options['generator']['count'])) {
-			$this->server_count = intval($options['generator']['count']);
+		if (isset($options['size'])) {
+			$this->size = intval($options['size']);
 		}
 		$this->lines_coll = Billrun_Factory::db()->linesCollection();
 		$this->loadRates();
@@ -46,36 +51,52 @@ class Generator_Golanxml extends Billrun_Generator {
 
 	public function load() {
 		$billrun = Billrun_Factory::db()->billrunCollection();
-
-		$this->data = $billrun
+		Billrun_Factory::log()->log('Loading ' . $this->size . ' billrun documents with offset ' . $this->offset, Zend_Log::INFO);
+		$resource = $billrun
 				->query('billrun_key', $this->stamp)
 				->exists('invoice_id')
-				->notExists('invoice_file')
-				->mod('aid', $this->server_count, $this->server_id - 1)
-				->cursor();
+//				->notExists('invoice_file')
+				->cursor()->timeout(-1)
+				->sort(array("aid" => 1))
+				->skip($this->offset * $this->size)
+				->limit($this->size);
 
-		Billrun_Factory::log()->log("aggregator entities loaded: " . $this->data->count(), Zend_Log::INFO);
+		// @TODO - there is issue with the timeout; need to be fixed
+		//         meanwhile, let's pull the lines right after the query
+		foreach ($resource as $row) {
+			$this->data[] = $row;
+		}
+		Billrun_Factory::log()->log("aggregator documents loaded: " . count($this->data), Zend_Log::INFO);
 
 		Billrun_Factory::dispatcher()->trigger('afterGeneratorLoadData', array('generator' => $this));
 	}
 
 	public function generate() {
-		Billrun_Factory::log("Generating invoices  with  server id of : {$this->server_id} out of : {$this->server_count}");
-		$this->createXmlFiles();
+		Billrun_Factory::log('Generating invoices...', Zend_log::INFO);
+		// use $this->export_directory
+		$i = 1;
+		foreach ($this->data as $row) {
+			Billrun_Factory::log('Current index ' . $i++);
+			$this->createXmlInvoice($row);
+		}
 	}
 
-	protected function createXmlFiles() {
-		// use $this->export_directory
-		foreach ($this->data as $row) {
-			$xml = $this->getXML($row);
-			//			$row->{'xml'} = $xml->asXML();
-			$invoice_id = $row->get('invoice_id');
-			$invoice_filename = $row['billrun_key'] . '_' . $row['aid'] . '_' . $invoice_id;
-			$this->createXml($invoice_filename, $xml->asXML());
-			$this->setFileStamp($row, $invoice_filename);
-			Billrun_Factory::log()->log("invoice file " . $invoice_filename . " created for account " . $row->get('aid'), Zend_Log::INFO);
-//			$this->addRowToCsv($invoice_id, $row->get('aid'), $total, $total_ilds);
-		}
+	/**
+	 * create xml invoice
+	 * can be called from outside
+	 * 
+	 * @param Mongodloid_Entity $row billrun collection document
+	 * @param array $lines array of lines to get into the xml
+	 */
+	public function createXmlInvoice($row, $lines = null) {
+		$xml = $this->getXML($row, $lines);
+//		$row->{'xml'} = $xml->asXML();
+		$invoice_id = $row->get('invoice_id');
+		$invoice_filename = $row['billrun_key'] . '_' . str_pad($row['aid'], 9, '0', STR_PAD_LEFT) . '_' . str_pad($invoice_id, 11, '0', STR_PAD_LEFT) . '.xml';
+		$this->createXmlFile($invoice_filename, $xml->asXML());
+		$this->setFileStamp($row, $invoice_filename);
+		Billrun_Factory::log()->log("invoice file " . $invoice_filename . " created for account " . $row->get('aid'), Zend_Log::INFO);
+//		$this->addRowToCsv($invoice_id, $row->get('aid'), $total, $total_ilds);
 	}
 
 	/**
@@ -83,7 +104,7 @@ class Generator_Golanxml extends Billrun_Generator {
 	 * @param Mongodloid_Entity $row
 	 * @return SimpleXMLElement the invoice in xml format
 	 */
-	protected function getXML($row) {
+	protected function getXML($row, $lines = null) {
 		$invoice_total_gift = 0;
 		$invoice_total_above_gift = 0;
 		$invoice_total_outside_gift_vat = 0;
@@ -91,40 +112,47 @@ class Generator_Golanxml extends Billrun_Generator {
 		$invoice_total_manual_correction_credit = 0;
 		$invoice_total_manual_correction_charge = 0;
 		$invoice_total_outside_gift_novat = 0;
-		$billrun_key = $row->get('billrun_key');
-		$aid = $row->get('aid');
+		$billrun_key = $row['billrun_key'];
+		$aid = $row['aid'];
 		Billrun_Factory::log()->log("xml account " . $aid, Zend_Log::INFO);
 		// @todo refactoring the xml generation to another class
 		$xml = $this->basic_xml();
 		$xml->TELECOM_INFORMATION->VAT_VALUE = $this->displayVAT($row['vat']);
 		$xml->INV_CUSTOMER_INFORMATION->CUSTOMER_CONTACT->EXTERNALACCOUNTREFERENCE = $aid;
 
-		foreach ($row->get('subs') as $subscriber) {
+		foreach ($row['subs'] as $subscriber) {
 			$sid = $subscriber['sid'];
 			$subscriber_flat_costs = $this->getFlatCosts($subscriber);
 			if (!is_array($subscriber_flat_costs) || empty($subscriber_flat_costs)) {
-				Billrun_Factory::log('Missing flat costs for subscriber ' . $sid, Zend_Log::ALERT);
+				Billrun_Factory::log('Missing flat costs for subscriber ' . $sid, Zend_Log::INFO);
 				continue;
 			}
 
 			$subscriber_inf = $xml->addChild('SUBSCRIBER_INF');
-			$subscriber_inf->SUBSCRIBER_DETAILS->SUBSCRIBER_ID = $row->get('sid');
+			$subscriber_inf->SUBSCRIBER_DETAILS->SUBSCRIBER_ID = $subscriber['sid'];
 
 			$billing_records = $subscriber_inf->addChild('BILLING_LINES');
 
 			if ($this->billingLinesNeeded($sid)) {
-				$subscriber_lines = $this->get_subscriber_lines($subscriber);
-				$subscriber_aggregated_data = $this->get_subscriber_aggregated_data_lines($subscriber);
+				if (is_null($lines)) {
+					$subscriber_lines = $this->get_subscriber_lines($subscriber);
+				} else {
+					$func = function($line) use ($sid) {
+								return $line['sid'] == $sid;
+							};
+					$subscriber_lines = array_filter($lines, $func);
+				}
 				foreach ($subscriber_lines as $line) {
 					if (!$line->isEmpty()) {
 						$line->collection($this->lines_coll);
 						$billing_record = $billing_records->addChild('BILLING_RECORD');
-						$this->updateBillingRecord($billing_record, $this->getGolanDate($line['urt']->sec), $this->getTariffItem($line, $subscriber), $this->getCalledNo($line), $this->getCallerNo($line), $this->getUsageVolume($line), $this->getCharge($line), $this->getCredit($line), $this->getTariffKind($line['usaget']), $this->getAccessPrice($line), $this->getInterval($line), $this->getRate($line), $this->getIntlFlag($line), $this->getDiscountUsage($line));
+						$this->updateBillingRecord($billing_record, $this->getDate($line), $this->getTariffItem($line, $subscriber), $this->getCalledNo($line), $this->getCallerNo($line), $this->getUsageVolume($line), $this->getCharge($line), $this->getCredit($line), $this->getTariffKind($line['usaget']), $this->getAccessPrice($line), $this->getInterval($line), $this->getRate($line), $this->getIntlFlag($line), $this->getDiscountUsage($line), $this->getRoaming($line), $this->getServingNetwork($line));
 					}
 				}
+				$subscriber_aggregated_data = $this->get_subscriber_aggregated_data_lines($subscriber);
 				foreach ($subscriber_aggregated_data as $line) {
 					$billing_record = $billing_records->addChild('BILLING_RECORD');
-					$this->updateBillingRecord($billing_record, $line['day'], $line['rate_key'], '', '', $line['usage_volume'], $line['aprice'], 0, $line['tariff_kind'], 0, $line['interval'], $line['rate_price'], 0, $line['discount_usage']);
+					$this->updateBillingRecord($billing_record, $line['day'], $line['rate_key'], '', '', $line['usage_volume'], $line['aprice'], 0, $line['tariff_kind'], 0, $line['interval'], $line['rate_price'], 0, $line['discount_usage'], 0, '');
 
 					/* ine = array();
 					  $aggregated_line['day'] = date_create_from_format("Ymd", $day)->format('Y/m/d H:i:s');
@@ -368,8 +396,8 @@ class Generator_Golanxml extends Billrun_Generator {
 				foreach ($zone['totals'] as $usage_type => $usage_totals) {
 //						$out_of_usage_entry->addChild('TITLE', ?);
 					$roaming_entry = $subtopic_entry->addChild('BREAKDOWN_ENTRY');
-					$roaming_entry->addChild('TITLE', $this->getBreakdownEntryTitle($usage_type, "ROAM_ALL_DEST"));
-					$roaming_entry->addChild('UNITS', $usage_totals['usagev']);
+					$roaming_entry->addChild('TITLE', $this->getBreakdownEntryTitle($usage_type, $this->getNsoftRoamingRate($usage_type)));
+					$roaming_entry->addChild('UNITS', ($usage_type == "data" ? $this->bytesToKB($usage_totals['usagev']) : $usage_totals['usagev']));
 					$roaming_entry->addChild('COST_WITHOUTVAT', $usage_totals['cost']);
 					$roaming_entry->addChild('VAT', $this->displayVAT($zone['vat']));
 					$roaming_entry->addChild('VAT_COST', floatval($roaming_entry->COST_WITHOUTVAT) * floatval($roaming_entry->VAT) / 100);
@@ -439,11 +467,11 @@ class Generator_Golanxml extends Billrun_Generator {
 		}
 
 		$inv_invoice_total = $xml->addChild('INV_INVOICE_TOTAL');
-		$inv_invoice_total->addChild('INVOICE_NUMBER', $row->get('invoice_id'));
+		$inv_invoice_total->addChild('INVOICE_NUMBER', $row['invoice_id']);
 		$inv_invoice_total->addChild('FIRST_GENERATION_TIME', $this->getFlatStartDate());
 		$inv_invoice_total->addChild('FROM_PERIOD', date('Y/m/d', Billrun_Util::getStartTime($billrun_key)));
 		$inv_invoice_total->addChild('TO_PERIOD', date('Y/m/d', Billrun_Util::getEndTime($billrun_key)));
-		$inv_invoice_total->addChild('SUBSCRIBER_COUNT', count($row->get('subs')));
+		$inv_invoice_total->addChild('SUBSCRIBER_COUNT', count($row['subs']));
 		$inv_invoice_total->addChild('CUR_MONTH_CADENCE_START', $this->getExtrasStartDate());
 		$inv_invoice_total->addChild('CUR_MONTH_CADENCE_END', $this->getExtrasEndDate());
 		$inv_invoice_total->addChild('NEXT_MONTH_CADENCE_START', $this->getFlatStartDate());
@@ -474,8 +502,8 @@ class Generator_Golanxml extends Billrun_Generator {
 	 * @return type
 	 * @todo do not override files?
 	 */
-	protected function createXml($fileName, $xmlContent) {
-		$path = $this->export_directory . '/' . $fileName . '.xml';
+	protected function createXmlFile($fileName, $xmlContent) {
+		$path = $this->export_directory . '/' . $fileName;
 		return file_put_contents($path, $xmlContent);
 	}
 
@@ -513,12 +541,18 @@ class Generator_Golanxml extends Billrun_Generator {
 //			'aprice' => array(
 //				'$exists' => true,
 //			),
-			'billrun' => $this->stamp,
+			'billrun' => array(
+				'$in' => array('000000', $this->stamp),
+			),
 			'type' => array(
 				'$ne' => 'ggsn',
 			),
 		);
-		$lines = $this->lines_coll->query($query)->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
+		if (rand(0, 99) >= $this->loadBalanced) {
+			$lines = $this->lines_coll->query($query)->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
+		} else {
+			$lines = $this->lines_coll->query($query)->cursor();
+		}
 		return $lines;
 	}
 
@@ -552,10 +586,16 @@ class Generator_Golanxml extends Billrun_Generator {
 				case 'call':
 				case 'incoming_call':
 				case 'sms':
+				case 'mms':
 				case 'incoming_sms':
 					return $line['usagev'];
 				case 'data':
+//					if ($line['type'] == 'tap3') {
+//						$arate = $this->getRowRate($line); 
+//						return $this->bytesToKB($line['usagev'], $arate['rates']['data']['rate'][0]['interval']);
+//					} else {
 					return $this->bytesToKB($line['usagev']);
+//					}
 				default:
 					break;
 			}
@@ -587,7 +627,7 @@ class Generator_Golanxml extends Billrun_Generator {
 
 	protected function getInterval($line) {
 		$arate = $this->getRowRate($line);
-		if (isset($line['usaget']) && isset($arate['rates'][$line['usaget']]['rate']['interval'])) {
+		if (isset($line['usaget']) && isset($arate['rates'][$line['usaget']]['rate'][0]['interval'])) {
 			return $this->getIntervalByRate($arate, $line['usaget']);
 		}
 		return 0;
@@ -601,6 +641,9 @@ class Generator_Golanxml extends Billrun_Generator {
 		if (isset($rate['rates'][$usage_type]['rate'][0]['price'])) {
 			if (in_array($usage_type, array('call', 'data', 'incoming_call')) && isset($rate['rates'][$usage_type]['rate'][0]['interval']) && $rate['rates'][$usage_type]['rate'][0]['interval'] == 1) {
 				return $rate['rates'][$usage_type]['rate'][0]['price'] * ($usage_type == 'data' ? 1024 : 60);
+			}
+			if ($usage_type == 'data' && $rate['rates'][$usage_type]['category'] == 'roaming') {
+				return $rate['rates'][$usage_type]['rate'][0]['price'] * 1048576 / $rate['rates'][$usage_type]['rate'][0]['interval'];
 			}
 			return $rate['rates'][$usage_type]['rate'][0]['price'];
 		}
@@ -690,68 +733,65 @@ class Generator_Golanxml extends Billrun_Generator {
 	}
 
 	protected function getTariffItem($line, $subscriber) {
-		$arate = $this->getRowRate($line);
-		if (isset($arate['key'])) {
-			return $arate['key']; //@todo they may expect ROAM_ALL_DEST / $DEFAULT etc. which we don't keep
+		$tariffItem = '';
+		if ($line['type'] == 'flat') {
+			$tariffItem = 'GIFT-GC_GOLAN-' . $this->getNextPlanName($subscriber);
 		} else if ($line['type'] == 'credit' && isset($line['reason'])) {
-			return $line['reason'];
-		} else if ($line['type'] == 'flat') {
-			return 'GIFT-GC_GOLAN-' . $this->getNextPlanName($subscriber);
+			$tariffItem = $line['reason'];
 		} else {
-			return '';
+			if ($line['type'] == 'tap3') {
+				$tariffItem = $this->getNsoftRoamingRate($line['usaget']);
+			} else {
+				$arate = $this->getRowRate($line);
+				if (isset($arate['key'])) {
+					$tariffItem = $arate['key'];
+				}
+			}
 		}
+		return $tariffItem;
+	}
+
+	protected function getNsoftRate($line) {
+		
+	}
+
+	protected function getNsoftRoamingRate($usage_type) {
+		switch ($usage_type) {
+			case 'incoming_call':
+			case 'incoming_sms':
+				$rate = '$DEFAULT';
+				break;
+			case 'call':
+			case 'sms':
+			case 'mms': // a guess
+				$rate = 'ROAM_ALL_DEST';
+				break;
+			case 'data':
+				$rate = 'INTERNET_BILL_BY_VOLUME';
+				break;
+			default:
+				$rate = '';
+				break;
+		}
+		return $rate;
 	}
 
 	protected function getCallerNo($line) {
-		switch ($line['type']) {
-			case "nsn":
-				return $line['calling_number'];
-			case "tap3":
-				//TODO: use calling_number field when all cdrs have been processed by the updated tap3 plugin
-				$tele_service_code = $line['BasicServiceUsedList']['BasicServiceUsed']['BasicService']['BasicServiceCode']['TeleServiceCode'];
-				$record_type = $line['record_type'];
-				if ($record_type == 'a' && ($tele_service_code == '11' || $tele_service_code == '21')) {
-					if (isset($line['basicCallInformation']['callOriginator']['callingNumber'])) { // for some calls (incoming?) there's no calling number
-						return $line['basicCallInformation']['callOriginator']['callingNumber'];
-					}
-				}
-				break;
-			case "smsc":
-			case "smpp": //@todo didn't really check smpp records but they should be the same
-				return $line['calling_number'];
-				break;
-			default:
-				break;
+		$calling_number = '';
+		if (isset($line['calling_number'])) {
+			$calling_number = $line['calling_number'];
 		}
-		return '';
+		return $calling_number;
 	}
 
 	protected function getCalledNo($line) {
-		switch ($line['type']) {
-			case "nsn":
-				return $line['called_number'];
-			case "tap3":
-				//TODO: use called_number field when all cdrs have been processed by the updated tap3 plugin
-				$tele_service_code = $line['BasicServiceUsedList']['BasicServiceUsed']['BasicService']['BasicServiceCode']['TeleServiceCode'];
-				$record_type = $line['record_type'];
-				if ($record_type == '9') {
-					if ($tele_service_code == '11') {
-						return $line['basicCallInformation']['Desination']['CalledNumber'];
-					} else if ($tele_service_code == '22') {
-						return isset($line['basicCallInformation']['Desination']['DialedDigits']) ? $line['basicCallInformation']['Desination']['DialedDigits'] : $line['basicCallInformation']['Desination']['CalledNumber']; // @todo check with sefi. reference: db.lines.count({'BasicServiceUsedList.BasicServiceUsed.BasicService.BasicServiceCode.TeleServiceCode':"22",record_type:'9','basicCallInformation.Desination.DialedDigits':{$exists:false}});
-					}
-				}
-				break;
-			case "smsc":
-			case "smpp": //@todo check smpp
-				return $line['called_number'];
-			case "mmsc":
-				//@todo recipent_addr field is not the pure called number
-				break;
-			default:
-				break;
+		$called_number = '';
+		if ($line['type'] == 'tap3') {
+			$called_number = $line['called_number'];
+		} else if (isset($line['called_number'])) { // mmsc might not have called_number
+			$called_number = $this->beautifyPhoneNumber($line['called_number']);
 		}
-		return '';
+		return $called_number;
 	}
 
 	protected function getDiscountUsage($line) {
@@ -811,10 +851,15 @@ EOI;
 	/**
 	 * 
 	 * @param int $bytes
-	 * @return int
+	 * @return int interval to ceil by in bytes
 	 */
-	protected function bytesToKB($bytes) {
-		return ceil($bytes / 1024);
+	protected function bytesToKB($bytes, $interval = null) {
+		$bytes_to_price = $bytes;
+		if (!is_null($interval)) {
+			$bytes_to_price = ceil($bytes / $interval) * $interval;
+		}
+		$ret = ceil($bytes_to_price / 1024);
+		return $ret;
 	}
 
 	/**
@@ -826,8 +871,34 @@ EOI;
 		return $vat * 100;
 	}
 
-	protected function getGolanDate($datetime) {
-		return date('Y/m/d H:i:s', $datetime);
+	protected function getDate($line) {
+		$timsetamp = $line['urt']->sec;
+		if (isset($line['tzoffset'])) {
+			// TODO change this to regex
+			$tzoffset = $line['tzoffset'];
+			$sign = substr($tzoffset, 0, 1);
+			$hours = substr($tzoffset, 1, 2);
+			$minutes = substr($tzoffset, 3, 2);
+			$time = $hours . ' hours ' . $minutes . ' minutes';
+			if ($sign == "-") {
+				$time .= ' ago';
+			}
+			$timsetamp = strtotime($time, $timsetamp);
+			$zend_date = new Zend_Date($timsetamp);
+			$zend_date->setTimezone('UTC');
+		} else {
+			$zend_date = new Zend_Date($timsetamp);
+		}
+		return $this->getGolanDate($zend_date);
+	}
+
+	/**
+	 * 
+	 * @param Zend_Date $date
+	 * @return type
+	 */
+	protected function getGolanDate($date) {
+		return $date->toString('YYYY/MM/dd HH:mm:ss');
 	}
 
 	/**
@@ -931,7 +1002,7 @@ EOI;
 		return str_replace(' ', '_', strtoupper($taarif_kind . '-' . $rate_key));
 	}
 
-	protected function updateBillingRecord($billing_record, $golan_date, $tariff_item, $called_number, $caller_number, $volume, $charge, $credit, $tariff_kind, $access_price, $interval, $rate, $intl_flag, $discount_usage) {
+	protected function updateBillingRecord($billing_record, $golan_date, $tariff_item, $called_number, $caller_number, $volume, $charge, $credit, $tariff_kind, $access_price, $interval, $rate, $intl_flag, $discount_usage, $roaming, $serving_network) {
 		$billing_record->TIMEOFBILLING = $golan_date;
 		$billing_record->TARIFFITEM = $tariff_item;
 		$billing_record->CTXT_CALL_OUT_DESTINATIONPNB = $called_number; //@todo maybe save dest_no in all processors and use it here
@@ -945,6 +1016,8 @@ EOI;
 		$billing_record->TTAR_SAMPPRICE1 = $rate;
 		$billing_record->INTERNATIONAL = $intl_flag;
 		$billing_record->DISCOUNT_USAGE = $discount_usage;
+		$billing_record->ROAMING = $roaming;
+		$billing_record->SERVINGPLMN = $serving_network;
 	}
 
 	protected function getDataRate() {
@@ -984,6 +1057,29 @@ EOI;
 			$plan->collection($plans_coll);
 			$this->plans[strval($plan->getId())] = $plan;
 		}
+	}
+
+	protected function beautifyPhoneNumber($phone_number) {
+		$separator = "-";
+		$phone_number = intval($phone_number);
+		if (substr($phone_number, 0, 3) == "972") {
+			$phone_number = intval(substr($phone_number, 3));
+		}
+		$length = strlen($phone_number);
+		if ($length == 8) {
+			$phone_number = "0" . substr($phone_number, 0, 1) . $separator . substr($phone_number, 1);
+		} else if ($length == 9) {
+			$phone_number = "0" . substr($phone_number, 0, 2) . $separator . substr($phone_number, 2);
+		}
+		return $phone_number;
+	}
+
+	protected function getRoaming($line) {
+		return $line['type'] == 'tap3' ? 1 : 0;
+	}
+
+	protected function getServingNetwork($line) {
+		return isset($line['serving_network']) ? $line['serving_network'] : '';
 	}
 
 }

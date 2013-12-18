@@ -147,6 +147,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		$billrun_key = $this->getStamp();
 		$billruns_count = 0;
 		foreach ($this->data as $accid => $account) {
+			Billrun_Factory::dispatcher()->trigger('beforeAggregateAccount', array($accid, $account, &$this));
 			Billrun_Factory::log('Current account index: ' . ++$billruns_count, Zend_log::DEBUG);
 			if (!Billrun_Factory::config()->isProd()) {
 				if ($this->testAcc && is_array($this->testAcc) && !in_array($accid, $this->testAcc)) {
@@ -167,7 +168,9 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 					'autoload' => false,
 				);
 				$account_billrun = Billrun_Factory::billrun($params);
+				$flat_lines = array();
 				foreach ($account as $subscriber) {
+					Billrun_Factory::dispatcher()->trigger('beforeAggregateSubscriber', array($subscriber, $account_billrun, &$this));
 					$sid = $subscriber->sid;
 					if ($account_billrun->subscriberExists($sid)) {
 						Billrun_Factory::log()->log("Billrun " . $billrun_key . " already exists for subscriber " . $sid, Zend_Log::ALERT);
@@ -186,34 +189,66 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 							continue;
 						}
 						Billrun_Factory::log('Adding flat line to subscriber ' . $sid, Zend_Log::INFO);
-						$this->saveFlatLine($subscriber, $billrun_key);
+						$flat_lines[] = $this->saveFlatLine($subscriber, $billrun_key);
 						Billrun_Factory::log('Finished adding flat line to subscriber ' . $sid, Zend_Log::DEBUG);
 					}
 					$account_billrun->addSubscriber($subscriber, $subscriber_status);
+					Billrun_Factory::dispatcher()->trigger('afterAggregateSubscriber', array($subscriber, $account_billrun, &$this));
 				}
 				if ($this->write_stamps_to_file) {
-					$stamps = $account_billrun->addLines(false);
-					if (!empty($stamps)) {
-						$stamps_str = implode("\n", $stamps) . "\n";
+					$lines = $account_billrun->addLines(false, 0, $flat_lines);
+					if (!empty($lines)) {
+						$stamps_str = implode("\n", array_keys($lines)) . "\n";
 						file_put_contents($this->file_path, $stamps_str, FILE_APPEND);
 					}
 				} else {
-					$account_billrun->addLines(true);
+					$lines = $account_billrun->addLines(true, 0, $flat_lines);
 				}
 				//save  the billrun
 				Billrun_Factory::log("Saving account $accid");
 				$account_billrun->save();
 				Billrun_Factory::log("Finished saving account $accid");
 			}
+			Billrun_Factory::dispatcher()->trigger('aggregateBeforeCloseAccountBillrun', array($accid, $account, $account_billrun, $lines, &$this));
 			Billrun_Factory::log("Closing billrun $billrun_key for account $accid", Zend_log::DEBUG);
-			$account_billrun->close($accid, $billrun_key, $this->min_invoice_id);
+			$account_billrun->close($this->min_invoice_id);
 			Billrun_Factory::log("Finished closing billrun $billrun_key for account $accid", Zend_log::DEBUG);
+			Billrun_Factory::dispatcher()->trigger('afterAggregateAccount', array($accid, $account, $account_billrun, $lines, &$this));
 		}
-		Billrun_Factory::log("Finished iterating page $this->page of size $this->size", Zend_log::DEBUG);
-//		Billrun_Factory::dispatcher()->trigger('beforeAggregateSaveLine', array(&$save_data, &$this));
+		$end_msg = "Finished iterating page $this->page of size $this->size";
+		Billrun_Factory::log($end_msg, Zend_log::DEBUG);
+		//		Billrun_Factory::dispatcher()->trigger('beforeAggregateSaveLine', array(&$save_data, &$this));
 		// @TODO trigger after aggregate
 		Billrun_Factory::dispatcher()->trigger('afterAggregate', array($this->data, &$this));
+//		$this->sendEndMail($end_msg);
 	}
+
+	protected function sendEndMail($msg) {
+		$recipients = Billrun_Factory::config()->getConfigValue('emailAlerts.alerts.recipients');
+		Billrun_Util::sendMail($msg, "", $recipients);
+	}
+
+//	/**
+//	 * Creates and saves a flat line to the db
+//	 * @param Billrun_Subscriber $subscriber the subscriber to create a flat line to
+//	 * @param string $billrun_key the billrun for which to add the flat line
+//	 * @return array the inserted line or the old one if it already exists
+//	 */
+//	protected function saveFlatLine($subscriber, $billrun_key) {
+//		$flat_entry = new Mongodloid_Entity($subscriber->getFlatEntry($billrun_key));
+//		$flat_entry->collection($this->lines);
+//		$query = array(
+//			'stamp' => $flat_entry['stamp'],
+//		);
+//		$update = array(
+//			'$setOnInsert' => $flat_entry->getRawData(),
+//		);
+//		$options = array(
+//			'upsert' => true,
+//			'new' => true,
+//		);
+//		return $this->lines->findAndModify($query, $update, array(), $options);
+//	}
 
 	/**
 	 * Creates and saves a flat line to the db
@@ -222,19 +257,26 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	 * @return array the inserted line or the old one if it already exists
 	 */
 	protected function saveFlatLine($subscriber, $billrun_key) {
-		$flat_entry = new Mongodloid_Entity($subscriber->getFlatEntry($billrun_key));
-		$flat_entry->collection($this->lines);
-		$query = array(
-			'stamp' => $flat_entry['stamp'],
-		);
-		$update = array(
-			'$setOnInsert' => $flat_entry->getRawData(),
-		);
-		$options = array(
-			'upsert' => true,
-			'new' => true,
-		);
-		return $this->lines->findAndModify($query, $update, array(), $options);
+		$flat_entry = $subscriber->getFlatEntry($billrun_key);
+		if (!$this->write_stamps_to_file) {
+			try {
+				$query = array(
+					'stamp' => $flat_entry['stamp'],
+				);
+				$update = array(
+					'$setOnInsert' => $flat_entry,
+				);
+				$options = array(
+					'w' => 1,
+				);
+				$this->lines->update($query, $update, $options);
+			} catch (Exception $e) {
+				Billrun_Factory::log("Flat line already exists for subscriber " . $subscriber->sid . " for billrun " . $billrun_key, Zend_log::ALERT);
+			}
+		} else {
+			$this->lines->insert($flat_entry);
+		}
+		return new Mongodloid_Entity($flat_entry);
 	}
 
 	protected function save($data) {
@@ -292,7 +334,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 
 	protected function initStampsDir() {
 		@mkdir($this->stamps_dir, 0777, true);
-		$this->file_path = $this->stamps_dir . '/' . $this->page;
+		$this->file_path = $this->stamps_dir . '/' . $this->size . '.' . $this->page;
 		@unlink($this->file_path);
 		@touch($this->file_path);
 		return is_file($this->file_path);

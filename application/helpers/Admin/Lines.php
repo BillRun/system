@@ -4,9 +4,10 @@ class Lines {
 
 	public static function getFilterRow($key = null, $type = null, $operator = null, $value = null) {
 		$operators = array(
+			'equals' => 'Equals',
+			'ne' => 'Not equals',
 			'lt' => 'Less than',
 			'lte' => 'Less than or equals',
-			'equals' => 'Equals',
 			'gt' => 'Greater than',
 			'gte' => 'Greater than or equals',
 		);

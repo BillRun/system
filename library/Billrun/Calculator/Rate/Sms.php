@@ -126,7 +126,7 @@ class Billrun_Calculator_Rate_Sms extends Billrun_Calculator_Rate {
 	}
 
 	/**
-	 * Extract the number from the cdr line.
+	 * Extract the number from the cdr line using a given checks and transformation  inorder to use it for  finding its rate.
 	 * @param type $row the cdr line
 	 * @return type
 	 */
@@ -136,7 +136,6 @@ class Billrun_Calculator_Rate_Sms extends Billrun_Calculator_Rate {
 			$str = preg_replace($filter, '', $str);
 		}
 		return $str;
-		//return preg_replace('/[^\d]/', '', preg_replace('/^0+/', '', ($row['type'] != 'mmsc' ? $row['called_msc'] : $row['recipent_addr'])));
 	}
 
 }

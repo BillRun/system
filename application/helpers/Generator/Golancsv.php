@@ -17,9 +17,10 @@
 class Generator_Golancsv extends Billrun_Generator {
 
 	const BYTES_IN_KB = 1024;
-	
+
 	protected $accountsCsvPath;
 	protected $subscribersCsvPath;
+	protected $plans;
 
 	/**
 	 *
@@ -85,7 +86,7 @@ class Generator_Golancsv extends Billrun_Generator {
 			'InvoiceNumber',
 			'TotalFlat',
 			'TotalExtraOverPackage',
-//			'TotalExtraOutOfPackage',
+			'TotalExtraOutOfPackage',
 			'ManualCorrection',
 			'ManualCorrectionCredit',
 			'ManualCorrectionCharge',
@@ -102,7 +103,7 @@ class Generator_Golancsv extends Billrun_Generator {
 			'XmlIndicator',
 			'TotalFlat',
 			'TotalExtraOverPackage',
-//			'TotalExtraOutOfPackage',
+			'TotalExtraOutOfPackage',
 			'ManualCorrection',
 			'ManualCorrectionCredit',
 			'ManualCorrectionCharge',
@@ -115,6 +116,8 @@ class Generator_Golancsv extends Billrun_Generator {
 			'TotalChargeVatData',
 			'CountOfKb'
 		);
+
+		$this->loadPlans();
 	}
 
 	/**
@@ -174,11 +177,11 @@ class Generator_Golancsv extends Billrun_Generator {
 		$billrun = Billrun_Factory::db()->billrunCollection();
 
 		$this->data = $billrun
-				->query('billrun_key', $this->stamp)
-				->exists('invoice_id')
-				->cursor();
+						->query('billrun_key', $this->stamp)
+						->exists('invoice_id')
+						->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
 
-		Billrun_Factory::log()->log("aggregator entities loaded: " . $this->data->count(), Zend_Log::INFO);
+		Billrun_Factory::log()->log("generator entities loaded: " . $this->data->count(), Zend_Log::INFO);
 
 		Billrun_Factory::dispatcher()->trigger('afterGeneratorLoadData', array('generator' => $this));
 	}
@@ -205,7 +208,7 @@ class Generator_Golancsv extends Billrun_Generator {
 			$acc_row = array();
 			$acc_row['TotalChargeVat'] = $this->getAccountTotalChargeVat($account);
 			$acc_row['InvoiceNumber'] = $account['invoice_id'];
-			$acc_row['TotalCharge'] = $acc_row['TotalVat'] = $acc_row['OutsidePackageNoVatTap3'] = $acc_row['ManualCorrection'] = $acc_row['ManualCorrectionCharge'] = $acc_row['ManualCorrectionCredit'] = $acc_row['TotalExtraOverPackage'] = $acc_row['TotalFlat'] = 0;
+			$acc_row['TotalCharge'] = $acc_row['TotalVat'] = $acc_row['OutsidePackageNoVatTap3'] = $acc_row['ManualCorrection'] = $acc_row['ManualCorrectionCharge'] = $acc_row['ManualCorrectionCredit'] = $acc_row['TotalExtraOverPackage'] = $acc_row['TotalExtraOutOfPackage'] = $acc_row['TotalFlat'] = 0;
 			foreach ($account['subs'] as $subscriber) {
 				$subscribers_counter++;
 				$sub_row['serialNumber'] = $subscribers_counter;
@@ -215,7 +218,7 @@ class Generator_Golancsv extends Billrun_Generator {
 				$acc_row['XmlIndicator'] = $sub_row['XmlIndicator'] = $this->getXmlIndicator($account);
 				$acc_row['TotalFlat'] += $sub_row['TotalFlat'] = $this->getTotalFlat($subscriber);
 				$acc_row['TotalExtraOverPackage'] += $sub_row['TotalExtraOverPackage'] = $this->getTotalExtraOverPackage($subscriber);
-//				$acc_row['TotalExtraOutOfPackage'] += $sub_row['TotalExtraOutOfPackage'] = $this->getTotalExtraOutOfPackage($subscriber); // we don't have this value for instant retrieval
+				$acc_row['TotalExtraOutOfPackage'] += $sub_row['TotalExtraOutOfPackage'] = $this->getTotalExtraOutOfPackage($subscriber);
 				$acc_row['ManualCorrectionCredit'] += $sub_row['ManualCorrectionCredit'] = $this->getManualCorrectionCredit($subscriber);
 				$acc_row['ManualCorrectionCharge'] += $sub_row['ManualCorrectionCharge'] = $this->getManualCorrectionCharge($subscriber);
 				$acc_row['ManualCorrection'] += $sub_row['ManualCorrection'] = $sub_row['ManualCorrectionCredit'] + $sub_row['ManualCorrectionCharge'];
@@ -233,7 +236,7 @@ class Generator_Golancsv extends Billrun_Generator {
 //			Billrun_Factory::log()->log("invoice id created " . $invoice_id . " for the account", Zend_Log::INFO);
 
 			$this->addAccountRow($acc_row);
-			if ((($accounts_counter%$this->blockSize) == 0) || ($accounts_counter >= $num_accounts)) {
+			if ((($accounts_counter % $this->blockSize) == 0) || ($accounts_counter >= $num_accounts)) {
 				$this->writeRowsToCsv();
 			}
 		}
@@ -249,6 +252,14 @@ class Generator_Golancsv extends Billrun_Generator {
 
 	protected function getTotalExtraOverPackage($subscriber) {
 		return $this->getVatableOverPlan($subscriber) + $this->getVatFreeOverPlan($subscriber);
+	}
+
+	/**
+	 * 
+	 * @param type $subscriber
+	 */
+	protected function getTotalExtraOutOfPackage($subscriber) {
+		return floatval(isset($subscriber['costs']['out_plan']['vatable']) ? $subscriber['costs']['out_plan']['vatable'] : 0);
 	}
 
 	protected function getManualCorrectionCredit($subscriber) {
@@ -289,18 +300,28 @@ class Generator_Golancsv extends Billrun_Generator {
 	 * We cannot get the lines from balances as it's not necessarily the correct previous plan
 	 * @param type $subscriber
 	 * @return type
+	 * @todo use plans cache
 	 */
 	protected function getCurPackage($subscriber) {
-		$current_plan = Billrun_Factory::db()->plansCollection()->getRef($subscriber['current_plan']);
-		return $current_plan['name'];
+		$current_plan_ref = $subscriber['current_plan'];
+		if (MongoDBRef::isRef($current_plan_ref)) {
+			$current_plan = $this->getPlanById(strval($current_plan_ref['$id']));
+			$current_plan_name = $current_plan['name'];
+		} else {
+			$current_plan_name = 'NO_GIFT';
+		}
+		return $current_plan_name;
 	}
 
 	protected function getNextPackage($subscriber) {
-		$plan_name = $this->getPlanName($subscriber);
-		if ($plan_name == '') {
-			$plan_name = 'NO_GIFT';
+		$next_plan_ref = $subscriber['next_plan'];
+		if (MongoDBRef::isRef($next_plan_ref)) {
+			$next_plan = $this->getPlanById(strval($next_plan_ref['$id']));
+			$next_plan_name = $next_plan['name'];
+		} else {
+			$next_plan_name = 'NO_GIFT';
 		}
-		return $plan_name;
+		return $next_plan_name;
 	}
 
 	protected function getTotalChargeVatData($subscriber, $vat) {
@@ -317,7 +338,7 @@ class Generator_Golancsv extends Billrun_Generator {
 				$countOfKb+=$data_by_day['usagev'];
 			}
 		}
-		return $countOfKb/static::BYTES_IN_KB;
+		return $countOfKb / static::BYTES_IN_KB;
 	}
 
 	/**
@@ -370,6 +391,31 @@ class Generator_Golancsv extends Billrun_Generator {
 
 	protected function getVatFreeOverPlan($subscriber) {
 		return isset($subscriber['costs']['over_plan']['vat_free']) ? $subscriber['costs']['over_plan']['vat_free'] : 0;
+	}
+
+	/**
+	 * Get a rate by hexadecimal id
+	 * @param string $id hexadecimal id of rate (taken from Mongo ID)
+	 * @return Mongodloid_Entity the corresponding rate
+	 */
+	protected function getPlanById($id) {
+		if (!isset($this->plans[$id])) {
+			$plans_coll = Billrun_Factory::db()->plansCollection();
+			$this->plans[$id] = $plans_coll->findOne($id);
+		}
+		return $this->plans[$id];
+	}
+
+	/**
+	 * Load all rates from db into memory
+	 */
+	protected function loadPlans() {
+		$plans_coll = Billrun_Factory::db()->plansCollection();
+		$plans = $plans_coll->query()->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
+		foreach ($plans as $plan) {
+			$plan->collection($plans_coll);
+			$this->plans[strval($plan->getId())] = $plan;
+		}
 	}
 
 }

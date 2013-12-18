@@ -71,7 +71,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		}
 		$this->loadRates();
 		$this->loadPlans();
-		$this->balances = Billrun_Factory::db()->balancesCollection();
+		$this->balances = Billrun_Factory::db(array('name' => 'balances'))->balancesCollection();
 	}
 
 	protected function getLines() {
@@ -264,9 +264,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				$pricingData = $this->getLinePricingData($volume, $usage_type, $rate, $balance);
 				$pricingData['usagesb'] = $balance['balance']['totals'][key($counters)]['usagev'];
 			} else {
-				$balance = new Mongodloid_Entity(Billrun_Balance::getEmptySubscriberEntry($billrun_key, $row['aid'], $row['sid'], $plan_ref));
-				$balance = Billrun_Factory::balance(array('data' => $balance));
-				$pricingData = $this->getLinePricingData($volume, $usage_type, $rate, $balance);
+				$pricingData = array($this->pricingField => 0);
 			}
 		} else {
 			$balance_unique_key = array('sid' => $row['sid'], 'billrun_key' => $billrun_key);

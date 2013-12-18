@@ -99,7 +99,7 @@ class LinesModel extends TableModel {
 
 	public function getData($filter_query = array()) {
 		$limit = Billrun_Factory::config()->getConfigValue('admin_panel.lines.limit',10000);
-		$cursor = $this->collection->query($filter_query)->cursor()->limit($limit);
+		$cursor = $this->collection->query($filter_query)->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED)->limit($limit);
 		$this->_count = $cursor->count();
 		$resource = $cursor->sort($this->sort)->skip($this->offset())->limit($this->size);
 		return $resource;

@@ -90,14 +90,12 @@ abstract class Billrun_Generator_Base_WholesaleReport extends Billrun_Generator 
 	 * @param type $line  the line to get the rate for.
 	 * @return array containing the ratiing  details.
 	 */
-	protected function tariffForLine($line) {
-		$line->collection(Billrun_Factory::db()->linesCollection());
-		//TODO allow for  multiple rates...		
-		$rate = '';
-		if(isset($line['rates'][0]['rate']['price'])) {	
-			$rate =  $line['rates'][0]['rate']['price'];
+	protected function tariffForLine($line,$rate = false) {		
+		if(false !== $rate) {	
+			$rate =  $rate;
 		}
-		if($rate=='') {
+		if($rate == false) {
+			$line->collection(Billrun_Factory::db()->linesCollection());
 			$zone = isset($line['pzone']['key']) ? $line['pzone']['key'] : ( $line['pzone'] == 'incoming' ? 'incoming' : '');
 			if(isset($line['wsc']['zones'][$zone][$line['usaget']]['rate'])) {	
 				$rate =  $line['wsc']['zones'][$zone][$line['usaget']]['rate'][0]['price'];
@@ -173,31 +171,33 @@ abstract class Billrun_Generator_Base_WholesaleReport extends Billrun_Generator 
 			$connectType =  $this->types[$lineConnectType];
 			
 			$day = substr($value['call_reference_time'],0,8);
-			$aggrKey = $day.$isIncoming.$this->tariffForLine($value).$this->productType($value);
-			
-			if(!isset($aggregate[$provider][$connectType][$aggrKey])) {				
-				$aggregate[$provider][$connectType][$aggrKey] =array(
-											'day' => $day, 
-											'product' => $this->productType($value),
-											'units' => 0,
-											'minutes' => 0,
-											'tariff_per_product' => '',
-											'charge' => 0,
-											'direction' => ( $isIncoming ? 'TG' : 'FG'),
-										);
+			//foreach($value['prate'] as  $prate => $pvolume) {
+				$aggrKey = $day.$isIncoming.$this->tariffForLine($value/*,$prate*/).$this->productType($value);
 
-			}
-			$aggrGroup = &$aggregate[$provider][$connectType][$aggrKey];
-			$aggrGroup['units']++;
-			if($value['usaget'] == 'call') {
-			$aggrGroup['minutes'] += ($value['charging_end_time'] && $value['charging_start_time']) ?
+				if(!isset($aggregate[$provider][$connectType][$aggrKey])) {				
+					$aggregate[$provider][$connectType][$aggrKey] =array(
+												'day' => $day, 
+												'product' => $this->productType($value),
+												'units' => 0,
+												'minutes' => 0,
+												'tariff_per_product' => '',
+												'charge' => 0,
+												'direction' => ( $isIncoming ? 'TG' : 'FG'),
+											);
+
+				}
+				$aggrGroup = &$aggregate[$provider][$connectType][$aggrKey];
+				$aggrGroup['units']++;
+				if($value['usaget'] == 'call') {
+					$aggrGroup['minutes'] +=($value['charging_end_time'] && $value['charging_start_time']) ?
 																				strtotime($value['charging_end_time']) - strtotime($value['charging_start_time']) :
 																				$value['duration'];
+				}
+				$aggrGroup['tariff_per_product'] = $this->tariffForLine($value/*,$prate*/);
+				$aggrGroup['charge'] +=  $this->priceForLine($value);
 			}
-			$aggrGroup['tariff_per_product'] = $this->tariffForLine($value);
-			$aggrGroup['charge'] +=  $this->priceForLine($value);
 			
-		}
+		//}
 		Billrun_Factory::log()->log(print_r("Done aggregating",1),Zend_Log::DEBUG);
 		
 		// process aggregated data.
