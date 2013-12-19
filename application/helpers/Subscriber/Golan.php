@@ -367,7 +367,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 	 * @return string the host or ip of the server
 	 */
 	static protected function getRpcServer() {
-		$hosts = Billrun_Factory::config()->getConfigValue('provider.rpc.server', '');
+		$hosts = Billrun_Factory::config()->getConfigValue('provider.rpc.server', array());
 		if (empty($hosts)) {
 			return false;
 		}
