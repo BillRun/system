@@ -373,7 +373,7 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 	 * @return boolean
 	 */
 	protected function save($action, $call, $isCalling, $stage='call_done') {
-		Billrun_Factory::log("Saving call.");
+		//Billrun_Factory::log("Saving call.");
 		$call['execution_end_time'] = new MongoDate(round(microtime(true)));
 		$direction = $isCalling ? 'caller' : 'callee';
 		$commonRec = array_merge($action, array('test_id' => $this->testId, 'date' => date('Ymd'), 'source' => 'generator', 'type' => 'generated_call'));
@@ -454,12 +454,12 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 	 */
 	protected function safeSave($query, $updateData, $newData) {
 		$linesCollec = Billrun_Factory::db()->linesCollection();
-		$varifiyField = array_keys($updateData)[0];
+		//$varifiyField = array_keys($updateData)[0];
 		if (!($ret = $linesCollec->findAndModify(	$query, 
 													array('$setOnInsert' => $newData), 
 													array(), 
-													array('upsert' => true, 'new' => true)) )|| 
-				!isset($ret->getRawData()[$varifiyField]) || $ret->getRawData()[$varifiyField] != $updateData[$varifiyField] ) {
+													array('upsert' => true, 'new' => true)) ) || 
+			$ret->isEmpty() || count(array_diff( $updateData, $ret->getRawData() )) ) {
 
 			if (!($ret = $linesCollec->findAndModify(	$query, 
 														array('$set' => $updateData), 
