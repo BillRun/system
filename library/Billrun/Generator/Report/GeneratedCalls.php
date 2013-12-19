@@ -118,14 +118,14 @@ class Billrun_Generator_Report_GeneratedCalls extends Billrun_Generator_Report {
 			$record['end_time_offest'] = Billrun_Util::getFieldVal($line['callee_call_end_time']->sec,0) - strtotime(Billrun_Util::getFieldVal($line['billing_charging_end_time'],''));
 			
 			if($isCallerHanugup) {
-				$record['crashed'] = Billrun_Util::getFieldVal($line['stage'],'call_done') != 'call_done' ? 1 : 0;
 				$record['generator_duration'] = Billrun_Util::getFieldVal($line['caller_duration'],Billrun_Util::getFieldVal($line['callee_duration'],0));
 				$record['generator_call_start_time'] = date("Y-m-d H:i:s",Billrun_Util::getFieldVal($line['caller_call_start_time']->sec,Billrun_Util::getFieldVal($line['callee_call_start_time']->sec,0)));
 				$record['generator_call_end_time'] = date("Y-m-d H:i:s", Billrun_Util::getFieldVal($line['caller_call_end_time']->sec,Billrun_Util::getFieldVal($line['callee_call_end_time']->sec,0)));
 				$record['start_time_offest'] = Billrun_Util::getFieldVal($line['caller_call_start_time']->sec,0) - strtotime( Billrun_Util::getFieldVal($line['billing_charging_start_time'],'') );
 				$record['end_time_offest'] = Billrun_Util::getFieldVal($line['caller_call_end_time']->sec,0) - strtotime(Billrun_Util::getFieldVal($line['billing_charging_end_time'],''));			
 			}
-
+			
+			$record['crashed'] = Billrun_Util::getFieldVal($line['stage'],'call_done') != 'call_done' ? 1 : 0;
 			$record['time_offset'] = Billrun_Util::getFieldVal($record['generator_duration'],0) - Billrun_Util::getFieldVal($line['billing_usagev'],0);
 			$record['charge_offest'] = Billrun_Util::getFieldVal($line['callee_cost'],0) - Billrun_Util::getFieldVal($line['billing_aprice'],0);
 			$record['rate_offest'] = Billrun_Util::getFieldVal($line['rate'],0) - Billrun_Util::getFieldVal($line['billling_arate'],0);
