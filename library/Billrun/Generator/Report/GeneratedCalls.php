@@ -166,7 +166,8 @@ class Billrun_Generator_Report_GeneratedCalls extends Billrun_Generator_Report {
 		//$allLines = array_merge($unmachedLines,$subscriberLines);
 		foreach ( $allLines as $key => $value) {
 
-			if(!Billrun_Util::getFieldVal($this->options['summaries_crashed_lines'],false) && $value['stage'] != 'call_done') {
+			if(!Billrun_Util::getFieldVal($this->options['summaries_crashed_lines'],false) && 
+				Billrun_Util::getFieldVal($value['stage'],'call_done') != 'call_done') {
 				continue;
 			}
 			
