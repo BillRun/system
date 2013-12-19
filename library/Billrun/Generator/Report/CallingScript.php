@@ -132,7 +132,7 @@ class Billrun_Generator_Report_CallingScript extends Billrun_Generator_Report {
 
 		$startDay = strtotime( date('Ymd H:i:s',isset($this->startTestAt) ? $this->startTestAt: time()) );
 		$endDay = strtotime( date('Ymd H:i:s',$startDay+(86400 * ( $aggCount / $aggDaily ) * (7 / max(count($this->activeDays),7)) ) ) );
-		$config = array('actions' => $actions , 'test_id' => $this->testId."_".date("His",time())  , 'from' => $startDay , 'to' => $endDay , 'call_count' => $aggCount,  'active_days' =>  $this->activeDays );
+		$config = array('actions' => $actions , 'test_id' => $this->testId."_".time()  , 'from' => $startDay , 'to' => $endDay , 'call_count' => $aggCount,  'active_days' =>  $this->activeDays );
 		if($actions) {
 			if(!empty($this->options['to_remote'])) {
 				foreach ($this->options['generator']['remote_servers_url'] as $host) {

@@ -165,6 +165,11 @@ class Billrun_Generator_Report_GeneratedCalls extends Billrun_Generator_Report {
 			);
 		//$allLines = array_merge($unmachedLines,$subscriberLines);
 		foreach ( $allLines as $key => $value) {
+
+			if(!Billrun_Util::getFieldVal($this->options['summaries_crashed_lines'],false) && $value['stage'] != 'call_done') {
+				continue;
+			}
+			
 			if(Billrun_Util::getFieldVal($value['generator_call_type'],false) && $value['called_end_status'] != 'no_call') {
 				$summary['generator']['duration'] += Billrun_Util::getFieldVal($value['generator_duration'],0);
 				$summary['generator']['price'] += 0;//Billrun_Util::getFieldVal($value['generator_estimated_price'],0);
@@ -199,6 +204,7 @@ class Billrun_Generator_Report_GeneratedCalls extends Billrun_Generator_Report {
 		//TODO calculate standard  deviation
 		$summary['generator_standard_deviation'] =  array_merge( $summary['generator_standard_deviation'],$this->calcStandardDev($allLines, array('generator_duration' => 'duration','generator_price' => 'price','generator_rate' => 'rate')) );		
 		$summary['billing_standard_deviation'] = array_merge( $summary['billing_standard_deviation'] ,$this->calcStandardDev($allLines, array('billing_duration'=> 'duration','billing_price' => 'price','billing_rate' => 'rate')) );
+		
 		return $summary;
 	}
 

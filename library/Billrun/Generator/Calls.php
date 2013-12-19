@@ -459,7 +459,7 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 													array('$setOnInsert' => $newData), 
 													array(), 
 													array('upsert' => true, 'new' => true)) ) || 
-			$ret->isEmpty() || count(array_diff( $updateData, $ret->getRawData() )) ) {
+			$ret->isEmpty() || count(array_diff( $newData, $ret->getRawData() )) ) {
 
 			if (!($ret = $linesCollec->findAndModify(	$query, 
 														array('$set' => $updateData), 
