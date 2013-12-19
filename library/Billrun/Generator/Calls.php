@@ -128,7 +128,7 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 		switch ($signo) {
 			case SIGTERM:            
 				$this->activeCall['end_result'] = 'call_killed';
-				$this->save($this->activeAction, $this->activeCall, $this->activeCallingState);
+				$this->save($this->activeAction, $this->activeCall, $this->activeCallingState,'call_killed');
 				Billrun_Factory::log("Killed from outside");
 				die();
 			default:
@@ -245,7 +245,7 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 		$this->activeAction = $action;
 		$this->activeCallingState = $isCalling;
 		
-		$this->save($action, $call, $isCalling);
+		$this->save($action, $call, $isCalling,'before_call');
 		if ($isCalling) {
 			if ($action['action_type'] == static::TYPE_BUSY) {
 				sleep( intval(Billrun_Factory::config()->getConfigValue('calls.busy_wait_time', static::BUSY_WAIT_TIME)) );
@@ -260,7 +260,7 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 			}
 		}
 		
-		$this->save($action, $call, $isCalling);
+		$this->save($action, $call, $isCalling,'handling_call');
 		if ($call['calling_result'] == Gsmodem_StateMapping::IN_CALL_STATE ||$call['calling_result'] == Gsmodem_StateMapping::OUT_CALL_STATE ) {
 			$this->HandleCall($device, $call, $action['duration'], (($action['hangup'] == 'caller') == $isCalling) );
 			$ret = true;
@@ -270,7 +270,7 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 		} 
 		//$call['execution_end_time'] = date("YmdTHis");
 		//$call['estimated_price'] = $call['duration'] * $action['rate']; //TODO  maybe use  the billing  getPriceData?
-		$this->save($action, $call, $isCalling);		
+		$this->save($action, $call, $isCalling,'call_done');		
 		Billrun_Factory::log("Done acting on action of type : {$action['action_type']} for number : ".$device->getModemNumber());
 		return $ret;
 	}
@@ -372,13 +372,13 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 	 * @param Array $calls containing the call recrods of the calls  that where made/received
 	 * @return boolean
 	 */
-	protected function save($action, $call, $isCalling) {
+	protected function save($action, $call, $isCalling, $stage='call_done') {
 		Billrun_Factory::log("Saving call.");
 		$call['execution_end_time'] = new MongoDate(round(microtime(true)));
 		$direction = $isCalling ? 'caller' : 'callee';
 		$commonRec = array_merge($action, array('test_id' => $this->testId, 'date' => date('Ymd'), 'source' => 'generator', 'type' => 'generated_call'));
 		$commonRec['stamp'] = md5(serialize($commonRec));
-		$callData = array();
+		$callData = array('stage' => $stage);
 		foreach ($call as $key => $value) {
 			$callData["{$direction}_{$key}"] = $value;
 		}
