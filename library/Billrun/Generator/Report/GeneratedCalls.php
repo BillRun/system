@@ -118,6 +118,7 @@ class Billrun_Generator_Report_GeneratedCalls extends Billrun_Generator_Report {
 			$record['end_time_offest'] = Billrun_Util::getFieldVal($line['callee_call_end_time']->sec,0) - strtotime(Billrun_Util::getFieldVal($line['billing_charging_end_time'],''));
 			
 			if($isCallerHanugup) {
+				$record['crashed'] = Billrun_Util::getFieldVal($line['stage'],'call_done') != 'call_done' ? 1 : 0;
 				$record['generator_duration'] = Billrun_Util::getFieldVal($line['caller_duration'],Billrun_Util::getFieldVal($line['callee_duration'],0));
 				$record['generator_call_start_time'] = date("Y-m-d H:i:s",Billrun_Util::getFieldVal($line['caller_call_start_time']->sec,Billrun_Util::getFieldVal($line['callee_call_start_time']->sec,0)));
 				$record['generator_call_end_time'] = date("Y-m-d H:i:s", Billrun_Util::getFieldVal($line['caller_call_end_time']->sec,Billrun_Util::getFieldVal($line['callee_call_end_time']->sec,0)));
