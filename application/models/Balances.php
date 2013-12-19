@@ -38,8 +38,7 @@ class BalancesModel extends TableModel {
 					'balance.totals.data.usagev' => array('$gt' => $data_usage_bytes),
 					'billrun_month' => $billrun,
 					'current_plan'=> Billrun_Factory::db()->plansCollection()->createRef($id),
-					'aid' => array('$gt' => (int)$from_account_id),
-					'aid' => array('$lt' => (int)$to_account_id),
+					'aid' => array('$gte' => (int)$from_account_id, '$lte' => (int)$to_account_id),
 		))->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
 	}
 
