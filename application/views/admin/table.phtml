@@ -29,8 +29,9 @@
 					print '<a href="#popupModal" data-remote="' . $url . '" role="button" data-toggle="modal">' . $data . '</a>';
 				} else if (($h == 'from' || $h == 'to' || $h == 'urt' || $h == 'notify_time') && $data) {
 					// TODO: move he_IL to config
+					// TODO: take care of TAP3 (timezone)
 					$d = new Zend_Date($data->sec, null, new Zend_Locale('he_IL'));
-					echo $d->getIso();
+					echo $d->get(Zend_Date::DATETIME_MEDIUM);
 				} else {
 					print $data;
 				}
