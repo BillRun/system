@@ -14,7 +14,6 @@ if (!isset($_SERVER['HTTP_USER_AGENT'])) {
 } else {
 	if (!defined('APPLICATION_ENV')) {
 		$env = getenv('APPLICATION_ENV');
-		define('APPLICATION_ENV', $env);
 	}
 }
 
@@ -22,7 +21,9 @@ if (!isset($env)) {
 	die('Environment did not setup!');
 }
 
-define('BILLRUN_CONFIG_PATH', APPLICATION_PATH . "/conf/" . $env . ".ini");
+define('APPLICATION_ENV', $env);
+
+define('BILLRUN_CONFIG_PATH', APPLICATION_PATH . "/conf/" . APPLICATION_ENV . ".ini");
 
 // TODO build one config ini with declaration for each environment
 $app = new Yaf_Application(BILLRUN_CONFIG_PATH);
