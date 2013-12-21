@@ -7,25 +7,8 @@
  */
 defined('APPLICATION_PATH') || define("APPLICATION_PATH", dirname(__DIR__));
 
-// TODO: move this into bootstrap
-if (!isset($_SERVER['HTTP_USER_AGENT'])) {
-	$envOpts = getopt('', array('environment:'));
-	$env = isset($envOpts['environment'])?$envOpts['environment']:null;
-} else {
-	if (!defined('APPLICATION_ENV')) {
-		$env = getenv('APPLICATION_ENV');
-	}
-}
+require_once(APPLICATION_PATH . DIRECTORY_SEPARATOR . 'conf' . DIRECTORY_SEPARATOR . 'config.php');
 
-if (!isset($env)) {
-	die('Environment did not setup!');
-}
-
-define('APPLICATION_ENV', $env);
-
-define('BILLRUN_CONFIG_PATH', APPLICATION_PATH . "/conf/" . APPLICATION_ENV . ".ini");
-
-// TODO build one config ini with declaration for each environment
 $app = new Yaf_Application(BILLRUN_CONFIG_PATH);
 
 try {

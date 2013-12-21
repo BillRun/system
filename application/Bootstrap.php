@@ -13,6 +13,12 @@
  * @since    0.5
  */
 class Bootstrap extends Yaf_Bootstrap_Abstract {
+	
+	public function _initEnvironment(Yaf_Dispatcher $dispatcher) {
+		if (!isset($_SERVER['HTTP_USER_AGENT'])) {
+			Yaf_Application::app()->getDispatcher()->setDefaultController('Cli');
+		}
+	}
 
 	public function _initPlugin(Yaf_Dispatcher $dispatcher) {
 
