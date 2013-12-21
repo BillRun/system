@@ -51,6 +51,7 @@ class CliController extends Yaf_Controller_Abstract {
 				'environment-s' => 'Set the  Environment to dev/test/prod temporarly (for a single run)',
 				'page-s' => 'the  page to aggregate',
 				'size-s' => 'the size of the page to aggregate',
+				'env|environment' => 'Environment of the running command',
 			);
 
 			$this->options = new Zend_Console_Getopt($input);
