@@ -94,8 +94,7 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 					$this->load();
 				}
 				//if  it time to take action do it  else wait for  a few seconds and check again.
-				if( time() > $this->testScript['from']->sec && intval($this->testScript['call_count']) > $this->scriptFinshedCallsCount($this->testScript) &&
-					in_array(date("w"),Billrun_Util::getFieldVal($this->testScript['active_days'],array(0,1,2,3,4,5,6)) ) ) {
+				if( $this->shouldTestBeActive($this->testScript) ) {
 						$actionDone = $this->actOnScript($this->testScript['test_script']);
 						$this->isWorking = $actionDone != FALSE;
 				} else {
@@ -496,7 +495,7 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 			Billrun_Factory::log("Comunication with the management  server has  failed...  with :".$e->getMessage(),Zend_Log::ALERT);
 		}
 	}
-	
+	//TODO move to  a test class
 	/**
 	 * count the  call that where done for a given script
 	 * @param type $script
@@ -504,5 +503,24 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 	 */
 	protected function scriptFinshedCallsCount($script) {
 		return Billrun_Factory::db()->linesCollection()->query(array('type'=> 'generated_call','urt'=> array('$gt' => new MongoDate($script['from']), 'test_id'=> $script['test_id'])))->cursor()->count(true);
+	}
+	
+	/**
+	 * Check if a test is finished.
+	 * @param type $script
+	 * @return type
+	 */
+	protected function isTestFinished($script) {
+		return intval($script['call_count']) < $this->scriptFinshedCallsCount($testScript);
+	}
+	
+	/**
+	 * check if a given  test script should  be perfoemed 
+	 * @param type $testScript the  test script to check
+	 * @return boolean true  if the  test should run  false otherwise
+	 */
+	protected function shouldTestBeActive($testScript) {
+		return time() > $testScript['from']->sec && !$this->isTestFinished($testScript) &&
+				in_array(date("w"),Billrun_Util::getFieldVal($testScript['active_days'],array(0,1,2,3,4,5,6)) );
 	}
 }

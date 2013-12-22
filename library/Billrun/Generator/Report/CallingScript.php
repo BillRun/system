@@ -132,7 +132,7 @@ class Billrun_Generator_Report_CallingScript extends Billrun_Generator_Report {
 
 		$startDay = strtotime( date('Ymd H:i:s',isset($this->startTestAt) ? $this->startTestAt: time()) );
 		$endDay = strtotime( date('Ymd H:i:s',$startDay+(86400 * ( $aggCount / $aggDaily ) * (7 / max(count($this->activeDays),7)) ) ) );
-		$config = array('actions' => $actions , 'test_id' => $this->testId."_".time()  , 'from' => $startDay , 'to' => $endDay , 'call_count' => $aggCount,  'active_days' =>  $this->activeDays );
+		$config = array('actions' => $actions , 'test_id' => $this->testId."_".time()  , 'from' => $startDay , 'to' => $endDay , 'call_count' => $aggCount,  'active_days' =>  $this->activeDays ,'state'=> 'start');
 		if($actions) {
 			if(!empty($this->options['to_remote'])) {
 				foreach ($this->options['generator']['remote_servers_url'] as $host) {
@@ -254,7 +254,7 @@ class Billrun_Generator_Report_CallingScript extends Billrun_Generator_Report {
 			return false;
 		}
 		
-		$this->removeOldEnteries($entity['key']);
+		$this->removeOldEnteries($entity['key'],$data['from'],$data['to']);
 		
 		Billrun_Factory::log()->log("Updated Config", Zend_Log::INFO);
 		return true;
@@ -285,11 +285,14 @@ class Billrun_Generator_Report_CallingScript extends Billrun_Generator_Report {
 	 * Remove old config entries
 	 * @param type $keythe  key to remove old entries for.
 	 */
-	protected function removeOldEnteries($key) {
-		$oldEntries = Billrun_Factory::db()->configCollection()->query(array('key' => $key))->cursor()->sort(array('from' => -1,'urt'=>-1))->skip(static::CONCURRENT_CONFIG_ENTRIES);
+	protected function removeOldEnteries($key,$from , $to) {
+		$oldEntries = Billrun_Factory::db()->configCollection()->query(array('key' => $key))->cursor()->sort(array('urt'=>-1))->skip(static::CONCURRENT_CONFIG_ENTRIES);
 		foreach ($oldEntries as $entry) {
 			$entry->collection(Billrun_Factory::db()->configCollection());
 			$entry->remove();
 		}
+		
+		return Billrun_Factory::db()->configCollection()->remove(array('key' => $key, 'from' => array('$gte' => $from, '$lte' => $to)));
+		
 	}
 }
