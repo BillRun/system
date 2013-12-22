@@ -32,34 +32,41 @@ class CompareController extends Yaf_Controller_Abstract {
 	protected $ignore_ggsn_calling_number = true;
 	protected $ignore_non_tap3_serving_network = true;
 	protected $ignore_tap3_records = true;
+	protected $compare_only_special_prices = true;
+	protected $ignore_mms_called_number = true;
+	protected $phone_numbers_strict_comparison = false;
+	protected $ignore_daylight_saving_time_lines = true;
+	protected $ignore_IL_ILD = true;
 
 	public function indexAction() {
 		$this->subscriber = Billrun_Factory::subscriber();
+		$this->compareAccounts();
+		die();
+	}
+
+	public function compareAccounts() {
 		$this->initParticipants();
-		$this->loadFiles();
+		$this->loadFiles("201311", 9073496);
 		$this->loadSubscribers();
 		$this->matchSubscribers();
 		$this->printResults();
 //		$this->compare();
-		die();
 	}
 
-	public function xmls() {
-		
+	public function getFilePathByPattern($folder_to_search, $pattern) {
+		$file_path = '';
+		$matches = glob($folder_to_search . DIRECTORY_SEPARATOR . $pattern);
+		if ($matches) {
+			$file_path = $matches[0];
+		}
+		return $file_path;
 	}
 
 	protected function initParticipants() {
-		$this->source = new Participant();
-		$this->target = new Participant();
-		$this->source->name = 'nsoft';
+		$this->source = new NsoftParticipant();
+		$this->target = new BillrunParticipant();
 		$this->source->xmls_path = '/home/shani/projects/billrun/files/invoices/Checks/nsoft/';
-		$this->target->name = 'billrun';
 		$this->target->xmls_path = '/home/shani/projects/billrun/files/invoices/Checks/billrun/';
-		//comment both lines at the end
-		$this->source->xmls_path.= "invoice_20131126_9073496_0012691552.xml";
-		$this->target->xmls_path.= "201311_009073496_00000000104.xml";
-//		$this->source->xmls_path.= "";
-//		$this->target->xmls_path.= "201311_004171195_00000000105.xml";
 	}
 
 	protected function compare() {
@@ -75,10 +82,13 @@ class CompareController extends Yaf_Controller_Abstract {
 		}
 	}
 
-	protected function loadFiles() {
-		$this->source->xml = simplexml_load_file($this->source->xmls_path);
-		$this->target->xml = simplexml_load_file($this->target->xmls_path);
-		$this->billrun_key = "201311"; //TODO get it from the filename
+	protected function loadFiles($billrun_key, $account_id) {
+		$source_pattern = $this->source->getInvoicePathPattern($billrun_key, $account_id);
+		$source_filename = $this->getFilePathByPattern($this->source->xmls_path, $source_pattern);
+		$this->source->loadFile($source_filename);
+		$target_pattern = $this->target->getInvoicePathPattern($billrun_key, $account_id);
+		$target_filename = $this->getFilePathByPattern($this->target->xmls_path, $target_pattern);
+		$this->target->loadFile($target_filename);
 	}
 
 	protected function loadSubscribers() {
@@ -138,16 +148,17 @@ class CompareController extends Yaf_Controller_Abstract {
 		$this->printMissingSubscribers();
 		$this->printMissingLines();
 		$this->printDifferencesInLines();
+		$this->printDifferencesInTotals();
 	}
 
 	protected function getUniqueLinesData(Participant $sub, $sub_id) {
 		$subscriber_lines = array();
 		foreach ($sub->xml->SUBSCRIBER_INF[$sub_id]->BILLING_LINES->BILLING_RECORD as $billing_line) {
 			if ((string) $billing_line->TARIFFKIND != 'Call' || (int) $billing_line->CHARGEDURATIONINSEC) {
-				if (isset($subscriber_lines[(string) $billing_line->TIMEOFBILLING])) {
+				if (isset($subscriber_lines[(string) $billing_line->TIMEOFBILLING]) && !((string) $billing_line->TARIFFITEM == "INTERNET_BILL_BY_VOLUME" && (string) $billing_line->ROAMING == "0")) {
 					$this->displayMsg("Skipping same date key $billing_line->TIMEOFBILLING");
 				}
-				if ($this->ignore_tap3_records && $billing_line->ROAMING == "1") {
+				if (($this->ignore_daylight_saving_time_lines && substr(strval($billing_line->TIMEOFBILLING), 0, 10) < "2013/10/27") || ($this->ignore_tap3_records && $billing_line->ROAMING == "1") || ($this->ignore_IL_ILD && $billing_line->TARIFFITEM == "IL_ILD")) {
 					continue;
 				}
 				$value = $this->getUniqueLine($billing_line);
@@ -160,12 +171,22 @@ class CompareController extends Yaf_Controller_Abstract {
 					}
 					$key = substr(strval($billing_line->TIMEOFBILLING), 0, 10);
 				} else {
+//					if ($this->fix_daylight_saving_time_bug && $sub->name == "billrun" && substr(strval($billing_line->TIMEOFBILLING), 0, 10) < "2013/10/27") {
+//						$key = date("Y/m/d H:i:s", strtotime("-1 hour", strtotime(strval($billing_line->TIMEOFBILLING))));
+//					} else {
 					$key = strval($billing_line->TIMEOFBILLING);
+//					}
 				}
-				if ($billing_line->ROAMING == "0" && $this->ignore_non_tap3_serving_network) {
-					if (isset($value['serving_network'])) {
-						unset($value['serving_network']);
-					}
+				if ($this->ignore_non_tap3_serving_network && isset($value['roaming']) && $value['roaming'] == "0" && isset($value['serving_network'])) {
+					unset($value['serving_network']);
+				}
+				if ($this->compare_only_special_prices && isset($value['DISCOUNT_USAGE']) && $value['DISCOUNT_USAGE'] != 'DISCOUNT_NONE') {
+					unset($value['DISCOUNT_USAGE']);
+					unset($value['charge']);
+					unset($value['credit']);
+				}
+				if ($this->ignore_mms_called_number && isset($value['usaget']) && $value['usaget'] == 'MMS') {
+					unset($value['called_number']);
 				}
 				$subscriber_lines[$key] = $value;
 			}
@@ -183,7 +204,7 @@ class CompareController extends Yaf_Controller_Abstract {
 	}
 
 	protected function getUniqueLine($billing_line) {
-		$calling_number = preg_replace('/^\+?0*972/', '',(string) $billing_line->CTXT_CALL_IN_CLI);
+		$calling_number = preg_replace('/^\+?0*972/', '', (string) $billing_line->CTXT_CALL_IN_CLI);
 		return array(
 			'arate' => (string) $billing_line->TARIFFITEM,
 			'called_number' => (string) $billing_line->CTXT_CALL_OUT_DESTINATIONPNB,
@@ -221,7 +242,7 @@ class CompareController extends Yaf_Controller_Abstract {
 					$line2 = $target_lines[$line_key];
 					if (is_array($line2)) {
 						foreach ($line1 as $key => $value) {
-							if ($this->different($value, $line2[$key])) {
+							if ($this->different($value, $line2[$key], $key)) {
 								$this->displayMsg('Lines with key ' . $line_key . ' differ in ' . $key . ': ' . $value . ' (' . $this->source->name . ') / ' . $line2[$key] . ' (' . $this->target->name . ')');
 							}
 						}
@@ -233,12 +254,18 @@ class CompareController extends Yaf_Controller_Abstract {
 		}
 	}
 
-	protected function different($value1, $value2) {
-		if (is_numeric($value1) && is_numeric($value2)) {
-			return $this->big_difference($value1, $value2);
-		} else {
-			return $value1 != $value2;
+	protected function different($value1, $value2, $key = null) {
+		if ($value1 == $value2) {
+			return false;
 		}
+		if ($key == 'called_number') {
+			if (!$this->phone_numbers_strict_comparison) {
+				return strpos($value1, $value2) === false && strpos($value2, $value1) === false;
+			}
+		} else if (is_numeric($value1) && is_numeric($value2)) {
+			return $this->big_difference($value1, $value2);
+		}
+		return true;
 	}
 
 	/**
@@ -261,28 +288,21 @@ class CompareController extends Yaf_Controller_Abstract {
 		foreach ($this->source->subs as $source_id => $source_sub) {
 			if (isset($this->subs_mappings[$source_id]) && isset($this->target->subs[$this->subs_mappings[$source_id]]['unique_lines_data'])) {
 				$target_sub = $this->target->subs[$this->subs_mappings[$source_id]];
-				$target_lines = $target_sub['unique_lines_data'];
-				$source_diff = array_diff_key($source_sub['unique_lines_data'], $target_lines);
-				if ($source_diff) {
-					$this->displayMsg($this->target->name . ' subscriber ' . $target_sub['identity'] . ' is missing ' . count($source_diff) . ' lines.');
-				}
-				$target_diff = array_diff_key($target_lines, $source_sub['unique_lines_data']);
-				if ($target_diff) {
-					$this->displayMsg($this->source->name . ' subscriber ' . $source_sub['identity'] . ' is missing ' . count($target_diff) . ' lines.');
-				}
+				$this->printSubscribersMissingLines($source_sub, $target_sub, $this->target->name);
+				$this->printSubscribersMissingLines($target_sub, $source_sub, $this->source->name);
 			}
 		}
-//		foreach ($this->target->subs as $target_id => $target_sub) {
-//			$source_id = array_search($target_id, $this->subs_mappings);
-//			if ($source_id !== false && isset($this->source->subs[$source_id]['unique_lines_data'])) {
-//				$source_sub = $this->source->subs[$source_id];
-//				$source_lines = $source_sub['unique_lines_data'];
-//				$target_diff = array_diff_key($target_sub['unique_lines_data'], $source_lines);
-//				if ($target_diff) {
-//					echo $this->source->name . ' subscriber ' . $source_sub['identity'] . ' is missing ' . count($target_diff) . ' lines.';
-//				}
-//			}
-//		}
+	}
+
+	protected function printSubscribersMissingLines($sub1, $sub2, $participant2_name) {
+		$sub1_diff = array_diff_key($sub1['unique_lines_data'], $sub2['unique_lines_data']);
+		if ($sub1_diff) {
+			$msg = $participant2_name . ' subscriber ' . ($participant2_name == "billrun" ? $sub2['identity'] : $sub1['identity']) . ' is missing ' . count($sub1_diff) . ' lines:';
+			foreach ($sub1_diff as $key => $line) {
+				$msg.='</br>' . $key;
+			}
+			$this->displayMsg($msg);
+		}
 	}
 
 	protected function printMissingSubscribers() {
@@ -300,13 +320,48 @@ class CompareController extends Yaf_Controller_Abstract {
 		echo $msg . "</br>";
 	}
 
+	protected function printDifferencesInTotals() {
+		$source_total_charge = floatval($this->source->xml->INV_INVOICE_TOTAL->TOTAL_CHARGE);
+		$target_total_charge = floatval($this->target->xml->INV_INVOICE_TOTAL->TOTAL_CHARGE);
+		if ($this->different($source_total_charge, $target_total_charge)) {
+			$this->displayMsg('Total charge is different: ' . $this->source->name . ': ' . $source_total_charge . '. ' . $this->target->name . ': ' . $target_total_charge);
+		}
+	}
+
 }
 
-class Participant {
+abstract class Participant {
 
 	public $xml;
 	public $name;
 	public $xmls_path;
 	public $subs;
 
+	abstract public function getInvoicePathPattern($billrun_key, $account_id);
+
+	public function loadFile($filename) {
+		$this->xml = simplexml_load_file($filename);
+	}
+
 }
+
+class NsoftParticipant extends Participant {
+
+	public $name = 'nsoft';
+
+	public function getInvoicePathPattern($billrun_key, $account_id) {
+		return 'invoice_' . $billrun_key . '*_' . $account_id . '_*.xml';
+	}
+
+}
+
+class BillrunParticipant extends Participant {
+
+	public $name = 'billrun';
+
+	public function getInvoicePathPattern($billrun_key, $account_id) {
+		return $billrun_key . '*_*' . $account_id . '_*.xml';
+	}
+
+}
+
