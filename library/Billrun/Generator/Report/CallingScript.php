@@ -55,7 +55,7 @@ class Billrun_Generator_Report_CallingScript extends Billrun_Generator_Report {
 	 *
 	 * @var type 
 	 */
-	protected $activeDays = array(0,1,2,3,4); 
+	protected $activeDays = array(0,1,2,3,4,5,6); 
 	
 	/**
 	 *
