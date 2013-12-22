@@ -1,0 +1,17 @@
+server {
+        root /path/to/vhost/public;
+        index index.php index.html index.htm;
+        server_name localhost;
+        client_max_body_size 20M;
+        location / {
+                try_files $uri $uri/ /index.php?$args;
+        }
+
+        location ~ .*.php$ {
+            fastcgi_pass  127.0.0.1:9000;
+            fastcgi_index index.php;
+            include fastcgi_params;
+            fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        }
+
+}
