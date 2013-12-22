@@ -537,7 +537,7 @@ class Generator_Golanxml extends Billrun_Generator {
 		);
 
 		$lines = $this->lines_coll->query($query)->cursor()->sort($sort);
-		if (rand(0, 99) >= $this->loadBalanced) {
+		if (rand(1, 100) >= $this->loadBalanced) {
 			$lines = $lines->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
 		}
 		return $lines;
