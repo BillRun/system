@@ -143,7 +143,7 @@ class Generator_Golanxml extends Billrun_Generator {
 					$subscriber_lines = array_filter($lines, $func);
 				}
 				foreach ($subscriber_lines as $line) {
-					if (!$line->isEmpty() && $line['type']!='ggsn') {
+					if (!$line->isEmpty() && $line['type'] != 'ggsn') {
 						$line->collection($this->lines_coll);
 						$billing_record = $billing_records->addChild('BILLING_RECORD');
 						$this->updateBillingRecord($billing_record, $this->getDate($line), $this->getTariffItem($line, $subscriber), $this->getCalledNo($line), $this->getCallerNo($line), $this->getUsageVolume($line), $this->getCharge($line), $this->getCredit($line), $this->getTariffKind($line['usaget']), $this->getAccessPrice($line), $this->getInterval($line), $this->getRate($line), $this->getIntlFlag($line), $this->getDiscountUsage($line), $this->getRoaming($line), $this->getServingNetwork($line));
@@ -211,7 +211,8 @@ class Generator_Golanxml extends Billrun_Generator {
 
 			$subscriber_sumup = $subscriber_inf->addChild('SUBSCRIBER_SUMUP');
 			$subscriber_sumup->TOTAL_GIFT = floatval($subscriber_gift_usage->TOTAL_FREE_COUNTER_COST);
-			$subscriber_sumup->TOTAL_ABOVE_GIFT = floatval((isset($subscriber['costs']['over_plan']['vatable']) ? $subscriber['costs']['over_plan']['vatable'] : 0) + (isset($subscriber['costs']['out_plan']['vatable']) ? $subscriber['costs']['out_plan']['vatable'] : 0)); // vatable over/out plan cost
+//			$subscriber_sumup->TOTAL_ABOVE_GIFT = floatval((isset($subscriber['costs']['over_plan']['vatable']) ? $subscriber['costs']['over_plan']['vatable'] : 0) + (isset($subscriber['costs']['out_plan']['vatable']) ? $subscriber['costs']['out_plan']['vatable'] : 0)); // vatable over/out plan cost
+			$subscriber_sumup->TOTAL_ABOVE_GIFT = floatval((isset($subscriber['costs']['over_plan']['vatable']) ? $subscriber['costs']['over_plan']['vatable'] : 0)); // vatable overplan cost
 			$subscriber_sumup->TOTAL_OUTSIDE_GIFT_VAT = floatval(isset($subscriber['costs']['out_plan']['vatable']) ? $subscriber['costs']['out_plan']['vatable'] : 0);
 			$subscriber_sumup->TOTAL_MANUAL_CORRECTION_CHARGE = floatval(isset($subscriber['costs']['credit']['charge']['vatable']) ? $subscriber['costs']['credit']['charge']['vatable'] : 0) + floatval(isset($subscriber['costs']['credit']['charge']['vat_free']) ? $subscriber['costs']['credit']['charge']['vat_free'] : 0);
 			$subscriber_sumup->TOTAL_MANUAL_CORRECTION_CREDIT = floatval(isset($subscriber['costs']['credit']['refund']['vatable']) ? $subscriber['costs']['credit']['refund']['vatable'] : 0) + floatval(isset($subscriber['costs']['credit']['refund']['vat_free']) ? $subscriber['costs']['credit']['refund']['vat_free'] : 0);
@@ -243,52 +244,28 @@ class Generator_Golanxml extends Billrun_Generator {
 			$out_of_usage_entry->addChild('TOTAL_COST', floatval($out_of_usage_entry->COST_WITHOUTVAT) + floatval($out_of_usage_entry->VAT_COST));
 			$out_of_usage_entry->addChild('TYPE_OF_BILLING', 'GIFT');
 //				$out_of_usage_entry->addChild('TYPE_OF_BILLING_CHAR', ?);
-			if (isset($subscriber['breakdown']['over_plan']) && is_array($subscriber['breakdown']['over_plan'])) {
-				foreach ($subscriber['breakdown']['over_plan'] as $category_key => $category) {
-					foreach ($category as $zone_name => $zone) {
-						if ($zone_name != 'service') {
+			$over_plan_base = isset($subscriber['breakdown']['over_plan']['base']) && is_array($subscriber['breakdown']['over_plan']['base']) ? $subscriber['breakdown']['over_plan']['base'] : array();
+			$out_plan_base = isset($subscriber['breakdown']['out_plan']['base']) && is_array($subscriber['breakdown']['out_plan']['base']) ? $subscriber['breakdown']['out_plan']['base'] : array();
+			$over_out_plan_base = array_merge_recursive($over_plan_base, $out_plan_base);
+			foreach ($over_out_plan_base as $zone_name => $zone) {
+				if ($zone_name != 'service') {
 //							$out_of_usage_entry->addChild('TITLE', ?);
-							foreach (array('call', 'sms', 'data', 'incoming_call', 'mms', 'incoming_sms') as $type) {
-								$usagev = $this->getZoneTotalsFieldByUsage($zone, 'usagev', $type);
-								if ($usagev > 0) {
-									$out_of_usage_entry = $breakdown_topic_over_plan->addChild('BREAKDOWN_ENTRY');
-									$out_of_usage_entry->addChild('TITLE', $this->getBreakdownEntryTitle($this->getTariffKind($type), $zone_name));
-									$out_of_usage_entry->addChild('UNITS', $usagev);
-									$out_of_usage_entry->addChild('COST_WITHOUTVAT', $this->getZoneTotalsFieldByUsage($zone, 'cost', $type));
-									$out_of_usage_entry->addChild('VAT', $this->displayVAT($zone['vat']));
-									$out_of_usage_entry->addChild('VAT_COST', floatval($out_of_usage_entry->COST_WITHOUTVAT) * floatval($out_of_usage_entry->VAT) / 100);
-									$out_of_usage_entry->addChild('TOTAL_COST', floatval($out_of_usage_entry->COST_WITHOUTVAT) + floatval($out_of_usage_entry->VAT_COST));
-									$out_of_usage_entry->addChild('TYPE_OF_BILLING', strtoupper($type));
+					foreach (array('call', 'sms', 'data', 'incoming_call', 'mms', 'incoming_sms') as $type) {
+						$usagev = $this->getZoneTotalsFieldByUsage($zone, 'usagev', $type);
+						if ($usagev > 0) {
+							$out_of_usage_entry = $breakdown_topic_over_plan->addChild('BREAKDOWN_ENTRY');
+							$out_of_usage_entry->addChild('TITLE', $this->getBreakdownEntryTitle($this->getTariffKind($type), $zone_name));
+							$out_of_usage_entry->addChild('UNITS', ($type == "data" ? $this->bytesToKB($usagev) : $usagev));
+							$out_of_usage_entry->addChild('COST_WITHOUTVAT', $this->getZoneTotalsFieldByUsage($zone, 'cost', $type));
+							$out_of_usage_entry->addChild('VAT', $this->displayVAT($this->getZoneVat($zone)));
+							$out_of_usage_entry->addChild('VAT_COST', floatval($out_of_usage_entry->COST_WITHOUTVAT) * floatval($out_of_usage_entry->VAT) / 100);
+							$out_of_usage_entry->addChild('TOTAL_COST', floatval($out_of_usage_entry->COST_WITHOUTVAT) + floatval($out_of_usage_entry->VAT_COST));
+							$out_of_usage_entry->addChild('TYPE_OF_BILLING', strtoupper($type));
 //									$out_of_usage_entry->addChild('TYPE_OF_BILLING_CHAR', ?);
-								}
-							}
 						}
 					}
 				}
 			}
-
-////		Duplicate code?
-//			if (isset($subscriber['breakdown']['over_plan']['base']) && is_array($subscriber['breakdown']['over_plan']['base'])) {
-//				foreach ($subscriber['breakdown']['over_plan']['base'] as $zone_name => $zone) {
-//					if ($zone_name != 'service') {
-////						$out_of_usage_entry->addChild('TITLE', ?);
-//						foreach (array('call', 'sms', 'data', 'incoming_call', 'mms', 'incoming_sms') as $type) {
-//							$usagev = $this->getZoneTotalsFieldByUsage($zone, 'usagev', $type);
-//							if ($usagev > 0) {
-//								$out_of_usage_entry = $breakdown_topic_over_plan->addChild('BREAKDOWN_ENTRY');
-////								$out_of_usage_entry->addChild('TITLE', 'SERVICE-GIFT-GC_GOLAN-' . current($subscriber['lines']['flat']['refs'])['plan_ref']['name']);
-//								$out_of_usage_entry->addChild('UNITS', $usagev);
-//								$out_of_usage_entry->addChild('COST_WITHOUTVAT', $this->getZoneTotalsFieldByUsage($zone, 'cost', $type));
-//								$out_of_usage_entry->addChild('VAT', $this->displayVAT($zone['vat']));
-//								$out_of_usage_entry->addChild('VAT_COST', floatval($out_of_usage_entry->COST_WITHOUTVAT) * floatval($out_of_usage_entry->VAT) / 100);
-//								$out_of_usage_entry->addChild('TOTAL_COST', floatval($out_of_usage_entry->COST_WITHOUTVAT) + floatval($out_of_usage_entry->VAT_COST));
-//								$out_of_usage_entry->addChild('TYPE_OF_BILLING', strtoupper($type));
-////								$out_of_usage_entry->addChild('TYPE_OF_BILLING_CHAR', ?);
-//							}
-//						}
-//					}
-//				}
-//			}
 
 			$breakdown_topic_international = $subscriber_breakdown->addChild('BREAKDOWN_TOPIC');
 			$breakdown_topic_international->addAttribute('name', 'INTERNATIONAL');
@@ -960,7 +937,23 @@ EOI;
 
 	protected function getZoneTotalsFieldByUsage($zone, $field, $usage_type) {
 		if (isset($zone['totals'][$usage_type][$field])) {
-			return $zone['totals'][$usage_type][$field];
+			if (is_array($zone['totals'][$usage_type][$field])) {
+				return array_sum($zone['totals'][$usage_type][$field]);
+			} else {
+				return $zone['totals'][$usage_type][$field];
+			}
+		} else {
+			return 0;
+		}
+	}
+
+	protected function getZoneVat($zone) {
+		if (isset($zone['vat'])) {
+			if (is_array($zone['vat'])) {
+				return current($zone['vat']);
+			} else {
+				return $zone['vat'];
+			}
 		} else {
 			return 0;
 		}
