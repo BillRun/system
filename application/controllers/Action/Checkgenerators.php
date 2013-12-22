@@ -123,12 +123,12 @@ class CheckgeneratorsAction extends Action_Base {
 		
 
 
-	protected function delayedHTTP($url,$delay = 30) {		
+	protected function delayedHTTP($url,$delay = 30,$data = array()) {		
 		//if(!pcntl_fork()) {
 			$gen = Billrun_Generator::getInstance(array('type'=>'state'));
 			sleep($delay);			
 			$client = curl_init($url);
-			$post_fields = array('data' => json_encode(array('action' => 'restartModems')));
+			$post_fields = array('data' => json_encode($data));
 			curl_setopt($client, CURLOPT_POST, TRUE);
 			curl_setopt($client, CURLOPT_POSTFIELDS, $post_fields);
 			curl_setopt($client, CURLOPT_RETURNTRANSFER, TRUE);
