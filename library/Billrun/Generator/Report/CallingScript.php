@@ -285,14 +285,14 @@ class Billrun_Generator_Report_CallingScript extends Billrun_Generator_Report {
 	 * Remove old config entries
 	 * @param type $keythe  key to remove old entries for.
 	 */
-	protected function removeOldEnteries($key,$from , $to,$urt) {
+	protected function removeOldEnteries($key,$from , $to, $urt) {
 		$oldEntries = Billrun_Factory::db()->configCollection()->query(array('key' => $key))->cursor()->sort(array('urt'=>-1))->skip(static::CONCURRENT_CONFIG_ENTRIES);
 		foreach ($oldEntries as $entry) {
 			$entry->collection(Billrun_Factory::db()->configCollection());
 			$entry->remove();
 		}
 		
-		return Billrun_Factory::db()->configCollection()->remove(array('key' => $key, 'from' => array('$gte' => $from, '$lte' => $to),$urt => array('$lt'=> $urt)));
+		return Billrun_Factory::db()->configCollection()->remove(array('key' => $key, 'from' => array('$gte' => $from, '$lte' => $to),'$urt' => array('$lt'=> $urt)));
 		
 	}
 }
