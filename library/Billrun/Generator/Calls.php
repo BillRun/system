@@ -94,12 +94,15 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 					$this->load();
 				}
 				//if  it time to take action do it  else wait for  a few seconds and check again.
-				if( time() > $this->testScript['from']->sec && $this->testScript['call_count'] > $this->scriptFinshedCallsCount($this->testScript) &&
+				if( time() > $this->testScript['from']->sec && intval($this->testScript['call_count']) > $this->scriptFinshedCallsCount($this->testScript) &&
 					in_array(date("w"),Billrun_Util::getFieldVal($this->testScript['active_days'],array(0,1,2,3,4,5,6)) ) ) {
 						$actionDone = $this->actOnScript($this->testScript['test_script']);
 						$this->isWorking = $actionDone != FALSE;
 				} else {
-					Billrun_Factory::log("Waiting for test time frame... current time : ".date("Y-m-d H:i:s")." , test is set from :".date("Y-m-d H:i:s",$this->testScript['from']->sec) . " and should run at the following days : ". join(",", Billrun_Util::getFieldVal($this->testScript['active_days'],array(0,1,2,3,4,5,6)) ) , Zend_Log::DEBUG);
+					if(intval($this->testScript['call_count']) > $this->scriptFinshedCallsCount($this->testScript)) {
+						Billrun_Factory::log("Test : {$this->testScript['test_id']} is  finised.", Zend_Log::INFO);
+					} 
+					Billrun_Factory::log("Waiting for next test time frame... current time : ".date("Y-m-d H:i:s")." , test is set from :".date("Y-m-d H:i:s",$this->testScript['from']->sec) . " and should run at the following days : ". join(",", Billrun_Util::getFieldVal($this->testScript['active_days'],array(0,1,2,3,4,5,6)) ) , Zend_Log::INFO);
 					sleep(self::WAITING_SLEEP_TIME);
 				}
 			}
