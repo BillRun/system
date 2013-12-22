@@ -269,6 +269,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 					'$setOnInsert' => $flat_entry,
 				);
 				$options = array(
+					'upsert' => 1,
 					'w' => 1,
 				);
 				$this->lines->update($query, $update, $options);
