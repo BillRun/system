@@ -113,7 +113,7 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 				$line = $entity->getRawData();
 			}
 		}
-		if(Billrun_Factory::config()->getConfigValue('calcCpu.wholesale_calculators', true)) {
+		if (Billrun_Factory::config()->getConfigValue('calcCpu.wholesale_calculators', true)) {
 			$this->wholeSaleCalculators($data, $processor);
 		}
 		Billrun_Factory::log('Plugin calc cpu end', Zend_Log::INFO);
@@ -132,7 +132,7 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$customerWholesalePricing = Billrun_Calculator::getInstance(array('type' => 'Wholesale_WholesalePricing', 'autoload' => false));
 		$customerWholesaleNationalRoamingPricing = Billrun_Calculator::getInstance(array('type' => 'Wholesale_NationalRoamingPricing', 'autoload' => false));
 		$queue_data = $processor->getQueueData();
-		$previous_stage = $queue_calculators[array_search('wsc', $queue_calculators)-1]; //TODO what if wsc is the first stage?
+		$previous_stage = $queue_calculators[array_search('wsc', $queue_calculators) - 1]; //TODO what if wsc is the first stage?
 		foreach ($data['data'] as &$line) {
 			if (isset($queue_data[$line['stamp']]) && $queue_data[$line['stamp']]['calc_name'] == $previous_stage) {
 				$entity = new Mongodloid_Entity($line);
@@ -140,7 +140,7 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 					$customerCarrier->updateRow($entity);
 				}
 				$processor->setQueueRowStep($line['stamp'], 'wsc');
-				
+
 				if (in_array('pzone', $queue_calculators) && $customerWholesaleNsn->isLineLegitimate($entity)) {
 					$customerWholesaleNsn->updateRow($entity);
 				}
@@ -178,20 +178,23 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 	protected function removeDuplicates($processor) {
 		$lines_coll = Billrun_Factory::db()->linesCollection();
 		$data = &$processor->getData();
+		$stamps = array();
 		foreach ($data['data'] as $key => $line) {
 			$stamps[$line['stamp']] = $key;
 		}
-		$query = array(
-			'stamp' => array(
-				'$in' => array_keys($stamps),
-			),
-		);
-		$existing_lines = $lines_coll->query($query)->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
-		foreach ($existing_lines as $line) {
-			$stamp = $line['stamp'];
-			Billrun_Factory::log('Plugin calc cpu skips duplicate line ' . $stamp, Zend_Log::ALERT);
-			unset($data['data'][$stamps[$stamp]]);
-			$processor->unsetQueueRow($stamp);
+		if ($stamps) {
+			$query = array(
+				'stamp' => array(
+					'$in' => array_keys($stamps),
+				),
+			);
+			$existing_lines = $lines_coll->query($query)->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
+			foreach ($existing_lines as $line) {
+				$stamp = $line['stamp'];
+				Billrun_Factory::log('Plugin calc cpu skips duplicate line ' . $stamp, Zend_Log::ALERT);
+				unset($data['data'][$stamps[$stamp]]);
+				$processor->unsetQueueRow($stamp);
+			}
 		}
 	}
 
