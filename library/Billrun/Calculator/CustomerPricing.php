@@ -303,6 +303,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				$old_usage = $subRaw['balance']['totals'][$key]['usagev'];
 				$query['balance.totals.' . $key . '.usagev'] = $old_usage;
 				$update['$set']['balance.totals.' . $key . '.usagev'] = $old_usage + $value;
+				$update['$inc']['balance.totals.' . $key . '.cost'] = $pricingData[$this->pricingField];
 				$pricingData['usagesb'] = $old_usage;
 			}
 			$update['$set']['balance.cost'] = $subRaw['balance']['cost'] + $pricingData[$this->pricingField];
