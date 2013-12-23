@@ -26,11 +26,14 @@ class UpdateconfigAction extends Action_Base {
 		$configCol = Billrun_Factory::db()->configCollection();		
 		$entity = new Mongodloid_Entity($this->parseData($request),$configCol);		
 		
+		
 		if ($entity->isEmpty() || $entity->save($configCol) === false) {
 			return $this->setError('Failed to store configuration into DB', $request);
+		} else {
+			$this->removeOldEnteries($entity['key'],$entity['from'],$entity['to'],$entity['urt']);
 		}
 		
-		$this->removeOldEnteries($entity['key'],$entity['from'],$entity['to'],$entity['urt']);
+		
 		$this->getController()->setOutput(array(array(
 				'status' => 1,
 				'desc' => 'success',
@@ -67,7 +70,7 @@ class UpdateconfigAction extends Action_Base {
 			$entry->remove();
 		}
 		
-		return Billrun_Factory::db()->configCollection()->remove(array('key' => $key, 'from' => array('$gte' => $from, '$lte' => $to),'$urt' => array('$lt'=> $urt)));
+		return Billrun_Factory::db()->configCollection()->remove(array('key' => $key, 'from' => array('$gte' => $from, '$lte' => $to),'urt' => array('$lt'=> $urt)));
 	}
 	
 	function setError($error_message, $input = null) {

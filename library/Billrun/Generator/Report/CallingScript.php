@@ -209,7 +209,7 @@ class Billrun_Generator_Report_CallingScript extends Billrun_Generator_Report {
 			  $action['rate'] = $typeData['rate'];
 			  $action['call_id'] = $callId++;
 
-			 $offset = 60 * ceil( ($offset + $action['duration']+self::MINIMUM_TIME_BETWEEN_CALLS) / 60 );
+			 $offset = 60 * ceil( ($offset + $action['duration'] + self::MINIMUM_TIME_BETWEEN_CALLS) / 60 );
 			 $actions[] = $action;
 			 $callsCount++;
 			}
@@ -292,7 +292,7 @@ class Billrun_Generator_Report_CallingScript extends Billrun_Generator_Report {
 			$entry->remove();
 		}
 		
-		return Billrun_Factory::db()->configCollection()->remove(array('key' => $key, 'from' => array('$gte' => $from, '$lte' => $to),'$urt' => array('$lt'=> $urt)));
+		return Billrun_Factory::db()->configCollection()->remove(array('key' => $key, 'from' => array('$gte' => $from, '$lte' => $to),'urt' => array('$lt'=> $urt)));
 		
 	}
 }
