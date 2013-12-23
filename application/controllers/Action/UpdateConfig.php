@@ -26,21 +26,22 @@ class UpdateconfigAction extends Action_Base {
 		$configCol = Billrun_Factory::db()->configCollection();		
 		$entity = new Mongodloid_Entity($this->parseData($request),$configCol);		
 		
-		
+		Billrun_Factory::log()->log("got : ".print_r($entity,1), Zend_Log::DEBUG);
 		if ($entity->isEmpty() || $entity->save($configCol) === false) {
 			return $this->setError('Failed to store configuration into DB', $request);
 		} else {
 			$this->removeOldEnteries($entity['key'],$entity['from'],$entity['to'],$entity['urt']);
-		}
-		
-		
-		$this->getController()->setOutput(array(array(
+			$this->getController()->setOutput(array(array(
 				'status' => 1,
 				'desc' => 'success',
 				'stamp' => $entity['stamp'],
 				'input' => $request,
 		)));
 
+		}
+		
+		
+		
 		Billrun_Factory::log()->log("Finished Executing Update Config", Zend_Log::INFO);
 		return true;
 	}
@@ -52,10 +53,11 @@ class UpdateconfigAction extends Action_Base {
 	 */
 	protected function parseData($request) {
 		$data = json_decode($request['data'],true);
-		$data['unified_record_time'] = new MongoDate(time());
+		$data['urt'] = new MongoDate(time());
 		$data['key'] = 'call_generator';
 		$data['from'] = new MongoDate($data['from']);
 		$data['to'] = new MongoDate($data['to']);
+		unset($data['_id']);
 		return $data;
 	}
 	
