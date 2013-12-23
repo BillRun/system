@@ -14,7 +14,7 @@
  */
 class UpdateconfigAction extends Action_Base {
 
-	const CONCURRENT_CONFIG_ENTRIES = 5;
+	const CONCURRENT_CONFIG_ENTRIES = 50;
 	
 	/**
 	 * method to execute the refund
@@ -30,7 +30,7 @@ class UpdateconfigAction extends Action_Base {
 			return $this->setError('Failed to store configuration into DB', $request);
 		}
 		
-		$this->removeOldEnteries($entity['key']);
+		$this->removeOldEnteries($entity['key'],$entity['from'],$entity['to'],$entity['urt']);
 		$this->getController()->setOutput(array(array(
 				'status' => 1,
 				'desc' => 'success',
@@ -60,12 +60,14 @@ class UpdateconfigAction extends Action_Base {
 	 * Remove old config entries
 	 * @param type $keythe  key to remove old entries for.
 	 */
-	protected function removeOldEnteries($key) {
-		$oldEntries = Billrun_Factory::db()->configCollection()->query(array('key' => $key))->cursor()->sort(array('unified_record_time'=>-1))->skip(static::CONCURRENT_CONFIG_ENTRIES);
+	protected function removeOldEnteries($key, $from , $to, $urt) {
+				$oldEntries = Billrun_Factory::db()->configCollection()->query(array('key' => $key))->cursor()->sort(array('urt'=>-1))->skip(static::CONCURRENT_CONFIG_ENTRIES);
 		foreach ($oldEntries as $entry) {
 			$entry->collection(Billrun_Factory::db()->configCollection());
 			$entry->remove();
 		}
+		
+		return Billrun_Factory::db()->configCollection()->remove(array('key' => $key, 'from' => array('$gte' => $from, '$lte' => $to),'$urt' => array('$lt'=> $urt)));
 	}
 	
 	function setError($error_message, $input = null) {
