@@ -92,6 +92,7 @@ class RetrievecallsAction extends Action_Base {
 	protected function saveGenetatedCalls($calls) {
 		$savedCalls = array();
 		foreach ($calls as $call) {
+			//TODO  merge calls from multiple servers			
 			unset($call['_id']);
 			try {
 				if( Billrun_Factory::db()->linesCollection()->save($call)) {

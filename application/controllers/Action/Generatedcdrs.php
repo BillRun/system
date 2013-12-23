@@ -18,7 +18,7 @@ class GeneratedcdrsAction extends Action_Base {
 	 *
 	 */
 	public function execute() {
-		Billrun_Factory::log()->log("Execute Update Config", Zend_Log::INFO);
+		Billrun_Factory::log()->log("Execute Generated CDRs Action", Zend_Log::INFO);
 		$request = $this->getRequest()->getRequest(); // supports GET / POST requests
 		$data = $this->parseData($request);
 		switch($request['action']) {
@@ -41,6 +41,7 @@ class GeneratedcdrsAction extends Action_Base {
 				break;
 			
 		}
+		Billrun_Factory::log()->log("Finished Executing Generated CDRs Action", Zend_Log::INFO);
 		return true;
 
 	}
@@ -56,16 +57,18 @@ class GeneratedcdrsAction extends Action_Base {
 	public function saveLinesToRemoteDB($dbCreds,$lines) {
 		$savedCalls = array();
 		foreach ($calls as $call) {
-			unset($call['_id']);
+			//TODO  merge calls from multiple servers
+			unset($call['_id']);			
 			try {
 				if( Billrun_Factory::db($data['remote_db'])->linesCollection()->save($call)) {
 					$savedCalls[] = $call;
 				}				
 			} catch( Exception $e) {
 				//TODO  catch duplicate and handle them.
+				Billrun_Factory::log()->log("Failed  when tryig to save call with stamp : {$call['stamp']}", Zend_Log::INFO);
 			}
 		}
-		return $saveCalls;
+		return $savedCalls;
 	}
 
 	
