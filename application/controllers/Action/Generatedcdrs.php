@@ -70,18 +70,19 @@ class GeneratedcdrsAction extends Action_Base {
 
 	public function saveLinesToRemoteDB($dbCreds,$calls	) {
 		$savedCalls = array();
+		$linesColl = Billrun_Factory::db($dbCreds)->linesCollection();
 		foreach ($calls as $call) {
 
 			unset($call['_id']);			
 			try {
-				if( Billrun_Factory::db($dbCreds['remote_db'])->linesCollection()->save($call)) {
+				if( $linesColl->save($call)) {
 					$savedCalls[] = $call;
 				}				
 			} catch( Exception $e) {
 				if($e->getCode() == "11000") {
-					$loadedCall = Billrun_Factory::db()->linesCollection()->query(array('stamp' => $call['stamp']))->cursor()->current();
+					$loadedCall = $linesColl->query(array('stamp' => $call['stamp']))->cursor()->current();
 					$loadedCall->setRawData( array_merge($call,$loadedCall->getRawData()) );
-					$loadedCall->save( Billrun_Factory::db()->linesCollection() );					
+					$loadedCall->save( $linesColl );					
 				} else {
 					Billrun_Factory::log()->log("Failed  when tryig to save call with stamp : {$call['stamp']}", Zend_Log::INFO);
 				}
