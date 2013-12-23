@@ -511,7 +511,7 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 	 * @return type
 	 */
 	protected function isTestFinished($script) {
-		return intval($script['call_count']) < $this->scriptFinshedCallsCount($testScript);
+		return intval($script['call_count']) < $this->scriptFinshedCallsCount($script);
 	}
 	
 	/**

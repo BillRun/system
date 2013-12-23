@@ -26,20 +26,17 @@ class UpdateconfigAction extends Action_Base {
 		$configCol = Billrun_Factory::db()->configCollection();		
 		$entity = new Mongodloid_Entity($this->parseData($request),$configCol);		
 		
-		Billrun_Factory::log()->log("got : ".print_r($entity,1), Zend_Log::DEBUG);
 		if ($entity->isEmpty() || $entity->save($configCol) === false) {
 			return $this->setError('Failed to store configuration into DB', $request);
-		} else {
-			$this->removeOldEnteries($entity['key'],$entity['from'],$entity['to'],$entity['urt']);
-			$this->getController()->setOutput(array(array(
-				'status' => 1,
-				'desc' => 'success',
-				'stamp' => $entity['stamp'],
-				'input' => $request,
-		)));
-
-		}
+		} 
 		
+		$this->removeOldEnteries($entity['key'],$entity['from'],$entity['to'],$entity['urt']);
+		$this->getController()->setOutput(array(array(
+			'status' => 1,
+			'desc' => 'success',
+			'stamp' => $entity['stamp'],
+			'input' => $request,
+		)));
 		
 		
 		Billrun_Factory::log()->log("Finished Executing Update Config", Zend_Log::INFO);

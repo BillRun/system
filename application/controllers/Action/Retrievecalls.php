@@ -91,8 +91,7 @@ class RetrievecallsAction extends Action_Base {
 	 */
 	protected function saveGenetatedCalls($calls) {
 		$savedCalls = array();
-		foreach ($calls as $call) {
-			//TODO  merge calls from multiple servers			
+		foreach ($calls as $call) {		
 			unset($call['_id']);
 			try {
 				if( Billrun_Factory::db()->linesCollection()->save($call)) {
@@ -100,10 +99,14 @@ class RetrievecallsAction extends Action_Base {
 				}
 				
 			} catch( Exception $e) {
-				//TODO  catch duplicate and handle them.
+				if($e->getCode() == "11000") {
+					$loadedCall = Billrun_Factory::db()->linesCollection()->query(array('stamp' => $call['stamp']))->cursor()->current();
+					$loadedCall->setRawData( array_merge($call,$loadedCall->getRawData()) );
+					$loadedCall->save( Billrun_Factory::db()->linesCollection() );					
+				}
 			}
 		}
-		return $saveCalls;
+		return $savedCalls;
 	}
 	
 	/**
