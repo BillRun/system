@@ -167,7 +167,7 @@ class Billrun_Generator_Report_CallingScript extends Billrun_Generator_Report {
 	public function updateRemoteCallGen($config,$host) {
 		
 		$client = new Zend_Http_Client($host);
-		$config['test_script'] = $data['actions'];
+		$config['test_script'] = $config['actions'];
 		unset($config['actions']);
 		$client->setParameterPost( array( 'data'  => json_encode($config) ) );
 		$response = $client->request('POST');
