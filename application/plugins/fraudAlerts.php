@@ -64,8 +64,10 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @param type $handler the caller handler.
 	 * @return type
 	 */
-	public function handlerNotify($handler) {
-
+	public function handlerNotify($handler, $options) {
+                if( $options['type'] != 'roaming') {
+                    return FALSE; 
+		}
 		$ret = $this->roamingNotify();
 
 		return $ret;

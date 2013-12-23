@@ -75,6 +75,9 @@ class depositPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * method to collect data which need to be handle by event
 	 */
 	public function handlerCollect($options) {
+                if( $options['type'] != 'roaming') { 
+                    return FALSE; 
+		}
 		Billrun_Factory::log()->log("Collect deposits fraud (deposits plugin)", Zend_Log::INFO);
 		$eventsCol = Billrun_Factory::db()->eventsCollection();
 		$timeWindow= strtotime("-" . Billrun_Factory::config()->getConfigValue('deposit.hourly.timespan','4 hours'));
