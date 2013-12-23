@@ -60,10 +60,13 @@ class GeneratedcdrsAction extends Action_Base {
 	
 	public function loadLocalLines($data) {
 		$localLines =  Billrun_Factory::db()->linesCollection()->query(array('type'=> 'generated_call',
-																			'urt' => array(
-																				'$gt' => new MongoDate($data['from']),
-																				'$lte' => new MongoDate(min($data['to'], time() - static::CALL_CLOSER_PADDING)),
-																			)
+																			'$or' => array(
+																					array('urt' => array(
+																						'$gt' => new MongoDate($data['from']),
+																						'$lte' => new MongoDate(min($data['to'], time() - static::CALL_CLOSER_PADDING)),
+																					)),
+																					array('urt' => array('$gt' => new MongoDate($data['from'])),'stage' => 'call_done'),
+																				)
 																	))->cursor();
 		return $localLines;
 	}

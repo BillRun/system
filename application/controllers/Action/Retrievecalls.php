@@ -79,7 +79,7 @@ class RetrievecallsAction extends Action_Base {
 		
 		$url = "http://$ip/api/generatedcdrs/?action=get_calls";
 		$lastCall = $this->lastRecordedCall();
-		$calls = json_decode($this->httpPost($url,array( 'from'=> Billrun_Util::getFieldVal($lastCall['urt']->sec,0), 'to' => time()), 0));//TODO  load the last  call in the DB
+		$calls = json_decode($this->httpPost($url,array( 'from'=> Billrun_Util::getFieldVal($lastCall['urt']->sec,0), 'to' => time()), 0));
 
 		return $calls;
 	}
@@ -113,7 +113,7 @@ class RetrievecallsAction extends Action_Base {
 	 * Get the last call that  was recorded in the DB.
 	 */
 	protected function lastRecordedCall() {
-		return Billrun_Factory::db()->linesCollection()->query(array('type'=> 'generated_call'))->cursor()->sort(array('urt' => -1))->limit(1)->current();
+		return Billrun_Factory::db()->linesCollection()->query(array('type'=> 'generated_call','caller_end_result'=> array('$exists'=>true),'callee_end_result'=> array('$exists'=>true)))->cursor()->sort(array('urt' => -1))->limit(1)->current();
 	}
 	
 	/**
