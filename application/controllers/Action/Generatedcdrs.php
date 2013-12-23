@@ -27,6 +27,7 @@ class GeneratedcdrsAction extends Action_Base {
 					$savedLines = $this->saveLinesToRemoteDB($data['remote_db'], $loadedLines);
 					$stamps = array_map(function($obj) {return $obj['stamp'];} , $savedLines);					
 					$removedLines =  $this->removeLocalLines($stamps);
+					$this->getController()->setOutput($removedLines);
 				break;
 
 			case 'get_calls':
@@ -58,14 +59,16 @@ class GeneratedcdrsAction extends Action_Base {
 	}
 	
 	public function loadLocalLines($data) {
-		$localLines = Billrun_Factory::db()->linesCollection()->query(array('type'=> 'generated_call','urt' => array(
-																		'$gt' => new MongoDate($data['from']),
-																		'$lte' => new MongoDate(min($data['to'], time() - static::CALL_CLOSER_PADDING)),
-																	)));
+		$localLines =  Billrun_Factory::db()->linesCollection()->query(array('type'=> 'generated_call',
+																			'urt' => array(
+																				'$gt' => new MongoDate($data['from']),
+																				'$lte' => new MongoDate(min($data['to'], time() - static::CALL_CLOSER_PADDING)),
+																			)
+																	))->cursor();
 		return $localLines;
 	}
 
-	public function saveLinesToRemoteDB($dbCreds,$calls) {
+	public function saveLinesToRemoteDB($dbCreds,$calls	) {
 		$savedCalls = array();
 		foreach ($calls as $call) {
 
