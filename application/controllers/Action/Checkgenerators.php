@@ -127,13 +127,18 @@ class CheckgeneratorsAction extends Action_Base {
 		//if(!pcntl_fork()) {
 			$gen = Billrun_Generator::getInstance(array('type'=>'state'));
 			sleep($delay);			
-			$client = curl_init($url);
-			$post_fields = array('data' => json_encode($data));
-			curl_setopt($client, CURLOPT_POST, TRUE);
-			curl_setopt($client, CURLOPT_POSTFIELDS, $post_fields);
-			curl_setopt($client, CURLOPT_RETURNTRANSFER, TRUE);
-			return curl_exec($client);				
+			//$client = curl_init($url);
+			//$post_fields = array('data' => json_encode($data));
+			//curl_setopt($client, CURLOPT_POST, TRUE);
+			//curl_setopt($client, CURLOPT_POSTFIELDS, $post_fields);
+			//curl_setopt($client, CURLOPT_RETURNTRANSFER, TRUE);
+			//return curl_exec($client);				
+			$client = new Zend_Http_Client($url);
+			$client->setParameterPost( array( 'data'  => json_encode($data) ) );
+			$response = $client->request('POST');
+			return $response;
 		//	die();
 		///}
 	}
+	
 }

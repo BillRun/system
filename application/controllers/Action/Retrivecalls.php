@@ -26,6 +26,7 @@ class RetrivecallsAction extends Action_Base {
 			Billrun_Factory::log()->log("ALERT! : No generator registered yet..",Zend_Log::ALERT);					
 		}
 		foreach (Billrun_Util::getFieldVal($mangement['generators'],array()) as $ip => $generatorData) {
+			$configCol->findAndModify(array('key'=> 'call_generator_management'),array('$set'=>array("generators.$ip.last_retrive" => new MongoDate(time()))) );
 			$ip = preg_replace("/_/", ".", $ip);
 			switch($this->options['action']) {
 				case 'sync_db' :
@@ -37,6 +38,7 @@ class RetrivecallsAction extends Action_Base {
 					$this->removeSavedCalls($savedCalls);
 					break;
 			}
+			
 		}
 		Billrun_Factory::log()->log("Finished Executeing call retriving from generator Action", Zend_Log::INFO);
 		return true;
@@ -61,8 +63,8 @@ class RetrivecallsAction extends Action_Base {
 	 * @return boolean
 	 */
 	protected function removeSavedCalls($savedCalls) {
-		$url = "http://$ip/api/operations/?action=gremove_calls";
-		$ret = json_decode($this->delayedHTTP($url,array( 'remote_db'=> Billrun_Factory::config()->getConfigValue('db'), 'calls_to_remove' => $savedCalls ), 0));
+		$url = "http://$ip/api/operations/?action=remove_calls";
+		$ret = json_decode($this->httpPost($url,array( 'remote_db'=> Billrun_Factory::config()->getConfigValue('db'), 'calls_to_remove' => $savedCalls ), 0));
 
 		return $ret;
 	}
@@ -75,7 +77,7 @@ class RetrivecallsAction extends Action_Base {
 		
 		$url = "http://$ip/api/operations/?action=get_calls";
 		$lastCall = $this->lastRecordedCall();
-		$calls = json_decode($this->delayedHTTP($url,array( 'from'=> Billrun_Util::getFieldVal($lastCall['urt']->sec,0), 'to' => time()), 0));//TODO  load the last  call in the DB
+		$calls = json_decode($this->httpPost($url,array( 'from'=> Billrun_Util::getFieldVal($lastCall['urt']->sec,0), 'to' => time()), 0));//TODO  load the last  call in the DB
 
 		return $calls;
 	}
@@ -116,20 +118,16 @@ class RetrivecallsAction extends Action_Base {
 	protected function syncThroughDb($ip) {		
 		$url = "http://$ip/api/operations/?action=sync_calls";
 		$lastCall = $this->lastRecordedCall();
-		return $this->delayedHTTP($url,array(
+		return $this->httpPost($url,array(
 										'remote_db'=> Billrun_Factory::config()->getConfigValue('db'),
 										'from'=> Billrun_Util::getFieldVal($lastCall['urt']->sec,0),'to' => time(),
-									), 0);
+									));
 	}
 
-	protected function delayedHTTP($url, $data = array(), $delay = 0) {		
-			$gen = Billrun_Generator::getInstance(array('type'=>'state'));
-			sleep($delay);			
-			$client = curl_init($url);
-			$post_fields = array('data' => json_encode($data));
-			curl_setopt($client, CURLOPT_POST, TRUE);
-			curl_setopt($client, CURLOPT_POSTFIELDS, $post_fields);
-			curl_setopt($client, CURLOPT_RETURNTRANSFER, TRUE);
-			return curl_exec($client);						
+	protected function httpPost($url, $data = array()) {				
+			$client = new Zend_Http_Client($host);
+			$client->setParameterPost( array( 'data'  => json_encode($data) ) );
+			$response = $client->request('POST');
+			return $response;
 	}
 }
