@@ -65,7 +65,7 @@ class RetrievecallsAction extends Action_Base {
 	 * @return boolean
 	 */
 	protected function removeSavedCalls($savedCalls) {
-		$url = "http://$ip/api/operations/?action=remove_calls";
+		$url = "http://$ip/api/cdrs/?action=remove_calls";
 		$ret = json_decode($this->httpPost($url,array( 'remote_db'=> Billrun_Factory::config()->getConfigValue('db'), 'calls_to_remove' => $savedCalls ), 0));
 
 		return $ret;
@@ -77,7 +77,7 @@ class RetrievecallsAction extends Action_Base {
 	 */
 	protected function getGenetatedCalls() {		
 		
-		$url = "http://$ip/api/operations/?action=get_calls";
+		$url = "http://$ip/api/cdrs/?action=get_calls";
 		$lastCall = $this->lastRecordedCall();
 		$calls = json_decode($this->httpPost($url,array( 'from'=> Billrun_Util::getFieldVal($lastCall['urt']->sec,0), 'to' => time()), 0));//TODO  load the last  call in the DB
 
@@ -118,7 +118,7 @@ class RetrievecallsAction extends Action_Base {
 	 * @return type
 	 */
 	protected function syncThroughDb($ip) {		
-		$url = "http://$ip/api/operations/?action=sync_calls";
+		$url = "http://$ip/api/cdrs/?action=sync_calls";
 		$lastCall = $this->lastRecordedCall();
 		return $this->httpPost($url,array(
 										'remote_db'=> Billrun_Factory::config()->getConfigValue('db'),
