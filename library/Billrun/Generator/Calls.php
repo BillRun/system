@@ -502,7 +502,7 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 	 * @return type
 	 */
 	protected function scriptFinshedCallsCount($script) {
-		return Billrun_Factory::db()->linesCollection()->query(array('type'=> 'generated_call','urt'=> array('$gt' => new MongoDate($script['from']), 'test_id'=> $script['test_id'])))->cursor()->count(true);
+		return Billrun_Factory::db()->linesCollection()->query(array('type'=> 'generated_call','urt'=> array('$gt' => $script['from'], 'test_id'=> $script['test_id'])))->cursor()->count(true);
 	}
 	
 	/**

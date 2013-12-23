@@ -59,19 +59,19 @@ class GeneratedcdrsAction extends Action_Base {
 	
 	public function loadLocalLines($data) {
 		$localLines = Billrun_Factory::db()->linesCollection()->query(array('type'=> 'generated_call','urt' => array(
-																		'$gt' => new MongoDate(strtotime($data['from'])),
-																		'$lte' => new MongoDate(min(strtotime($data['to'], time() - static::CALL_CLOSER_PADDING))),
+																		'$gt' => new MongoDate($data['from']),
+																		'$lte' => new MongoDate(min($data['to'], time() - static::CALL_CLOSER_PADDING)),
 																	)));
 		return $localLines;
 	}
 
-	public function saveLinesToRemoteDB($dbCreds,$lines) {
+	public function saveLinesToRemoteDB($dbCreds,$calls) {
 		$savedCalls = array();
 		foreach ($calls as $call) {
 
 			unset($call['_id']);			
 			try {
-				if( Billrun_Factory::db($data['remote_db'])->linesCollection()->save($call)) {
+				if( Billrun_Factory::db($dbCreds['remote_db'])->linesCollection()->save($call)) {
 					$savedCalls[] = $call;
 				}				
 			} catch( Exception $e) {
