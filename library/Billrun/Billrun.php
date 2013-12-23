@@ -928,6 +928,7 @@ class Billrun_Billrun {
 				}
 				$zone['totals'][key($counters)]['usagev'] = $this->getFieldVal($zone['totals'][key($counters)]['usagev'], 0) + $volume_priced;
 				$zone['totals'][key($counters)]['cost'] = $this->getFieldVal($zone['totals'][key($counters)]['cost'], 0) + $pricingData['aprice'];
+				$zone['totals'][key($counters)]['count'] = $this->getFieldVal($zone['totals'][key($counters)]['count'], 0) + 1;
 			}
 			if ($plan_key != 'in_plan' || $zone_key == 'service') {
 				$zone['cost'] = $this->getFieldVal($zone['cost'], 0) + $pricingData['aprice'];
