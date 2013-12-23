@@ -22,7 +22,7 @@ class GeneratedcdrsAction extends Action_Base {
 		$request = $this->getRequest()->getRequest(); // supports GET / POST requests
 		$data = $this->parseData($request);
 		switch($request['action']) {
-			 case 'sync_lines':
+			 case 'sync_calls':
 					$loadedLines = $this->loadLocalLines($data);
 					$savedLines = $this->saveLinesToRemoteDB($data['remote_db'], $loadedLines);
 					$stamps = array_map(function($obj) {return $obj['stamp'];} , $savedLines);					
@@ -44,6 +44,17 @@ class GeneratedcdrsAction extends Action_Base {
 		Billrun_Factory::log()->log("Finished Executing Generated CDRs Action", Zend_Log::INFO);
 		return true;
 
+	}
+	
+	/**
+	 * Parse the json data from the request and add need values to it.
+	 * @param type $request
+	 * @return \MongoDate
+	 */
+	protected function parseData($request) {
+		$data = json_decode($request['data'],true);
+
+		return $data;
 	}
 	
 	public function loadLocalLines($data) {
