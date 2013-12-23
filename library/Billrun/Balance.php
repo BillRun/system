@@ -192,6 +192,7 @@ class Billrun_Balance implements ArrayAccess {
 		$ret = array(
 			'totals' => array(),
 			'cost' => 0,
+			'count' => 0,
 		);
 		$usage_types = array('call', 'sms', 'data', 'incoming_call', 'incoming_sms', 'mms');
 		if (!is_null($prefix)) {
