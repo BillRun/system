@@ -13,7 +13,7 @@
  * @subpackage  Action
  * @since       1.0
  */
-class RetrivecallsAction extends Action_Base {
+class RetrievecallsAction extends Action_Base {
 	/**
 	 *
 	 */

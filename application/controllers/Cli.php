@@ -33,7 +33,7 @@ class CliController extends Yaf_Controller_Abstract {
 	protected function setOptions() {
 		try {
 			$input = array(
-				'r|R|receive' => 'Receive files and process them into database',
+				//'|receive' => 'Receive files and process them into database',
 				'p|P|process' => 'Process files into database',
 				'c|C|calc|calculate' => 'Calculate lines in database',
 				'a|A|aggregate' => 'Aggregate lines for billrun',
@@ -42,6 +42,7 @@ class CliController extends Yaf_Controller_Abstract {
 				'l|L|alert' => 'Process and detect alerts',
 				'h|H|help' => 'Displays usage information.',
 				't|T|checkgenerators' => 'Check the configuration and  the remote generators',
+				'r|R|retrievecalls' => 'Get calls from generators and insert them to the management DB',
 				'type-s' => 'Process: Ild type to use',
 				'stamp-s' => 'Process: Stamp to use for this run',
 				'path-s' => 'Process: Path of the process file',
