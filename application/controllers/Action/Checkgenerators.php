@@ -84,7 +84,7 @@ class CheckgeneratorsAction extends Action_Base {
 		$start = strtotime(reset($script));
 		$end = strtotime(end($script)) - $start;
 		$current = time() - $start;
-		if ($end > $current ) {
+		if ($end > $current && $current > 0) {
 			return true;
 		}		
 		return false;
