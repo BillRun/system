@@ -21,7 +21,7 @@ class UpdateconfigAction extends Action_Base {
 	 * it's called automatically by the api main controller
 	 */
 	public function execute() {
-		Billrun_Factory::log()->log("Execute Update Config", Zend_Log::INFO);
+		Billrun_Factory::log()->log("Executing Update Config", Zend_Log::INFO);
 		$request = $this->getRequest()->getRequest(); // supports GET / POST requests
 		$configCol = Billrun_Factory::db()->configCollection();		
 		$entity = new Mongodloid_Entity($this->parseData($request),$configCol);		
@@ -41,7 +41,7 @@ class UpdateconfigAction extends Action_Base {
 				'input' => $request,
 		)));
 
-		Billrun_Factory::log()->log("Executed Update Config", Zend_Log::INFO);
+		Billrun_Factory::log()->log("Finished Executing Update Config", Zend_Log::INFO);
 		return true;
 	}
 
@@ -64,7 +64,7 @@ class UpdateconfigAction extends Action_Base {
 	 * @param type $keythe  key to remove old entries for.
 	 */
 	protected function removeOldEnteries($key, $from , $to, $urt) {
-				$oldEntries = Billrun_Factory::db()->configCollection()->query(array('key' => $key))->cursor()->sort(array('urt'=>-1))->skip(static::CONCURRENT_CONFIG_ENTRIES);
+		$oldEntries = Billrun_Factory::db()->configCollection()->query(array('key' => $key))->cursor()->sort(array('urt'=>-1))->skip(static::CONCURRENT_CONFIG_ENTRIES);
 		foreach ($oldEntries as $entry) {
 			$entry->collection(Billrun_Factory::db()->configCollection());
 			$entry->remove();

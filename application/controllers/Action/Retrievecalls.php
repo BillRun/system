@@ -20,15 +20,17 @@ class RetrievecallsAction extends Action_Base {
 	public function execute() {
 		Billrun_Factory::log()->log("Executing  call retriving from generator Action", Zend_Log::INFO);
 		$configCol = Billrun_Factory::db()->configCollection();
-		
+		if (($options = $this->_controller->getInstanceOptions(array('type'=>false))) === FALSE) {
+			return;
+		}
 		$mangement = $configCol->query(array('key'=> 'call_generator_management'))->cursor()->current();
 		if($mangement->isEmpty()) {
 			Billrun_Factory::log()->log("ALERT! : No generator registered yet..",Zend_Log::ALERT);					
 		}
-		foreach (Billrun_Util::getFieldVal($mangement['generators'],array()) as $ip => $generatorData) {
+		foreach (Billrun_Util::getFieldVal($mangement->get('generators'),array()) as $ip => $generatorData) {
 			$configCol->findAndModify(array('key'=> 'call_generator_management'),array('$set'=>array("generators.$ip.last_retrive" => new MongoDate(time()))) );
 			$ip = preg_replace("/_/", ".", $ip);
-			switch($this->options['action']) {
+			switch($options['type']) {
 				case 'sync_db' :
 					$this->syncThroughDb($ip);
 					break;
@@ -125,7 +127,7 @@ class RetrievecallsAction extends Action_Base {
 	}
 
 	protected function httpPost($url, $data = array()) {				
-			$client = new Zend_Http_Client($host);
+			$client = new Zend_Http_Client($url);
 			$client->setParameterPost( array( 'data'  => json_encode($data) ) );
 			$response = $client->request('POST');
 			return $response;
