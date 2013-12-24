@@ -35,15 +35,18 @@ class CheckgeneratorsAction extends Action_Base {
 		}
 		foreach (Billrun_Util::getFieldVal($mangement['generators'],array()) as $ip => $generatorData) {
 			$ip = preg_replace("/_/", ".", $ip);
-			if(!$this->isInActivePeriod()) {
+			$activeTime =-$this->isInActivePeriod();
+			if($activeTime) {
 				$inactiveTime = time() - $generatorData['receieved_timestamp'];
 				$lastReset = min( array( 
 									time() - Billrun_Util::getFieldVal ($generatorData['last_reset'], 0), 
-									$inactiveTime
+									$inactiveTime,
+									$activeTime
 							) );
 				$lastReboot = min( array( 
 									time() - Billrun_Util::getFieldVal ($generatorData['last_reboot'], 0), 
-									$inactiveTime
+									$inactiveTime,
+									$activeTime
 								) );
 				
 				if( $lastReset > static::RECEIVED_TIME_OFFSET_RESET ) {
@@ -85,7 +88,7 @@ class CheckgeneratorsAction extends Action_Base {
 		$end = strtotime(end($script)) - $start;
 		$current = time() - $start;
 		if ($end > $current && $current > 0) {
-			return true;
+			return $current;
 		}		
 		return false;
 	}
