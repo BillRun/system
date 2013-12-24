@@ -131,9 +131,15 @@ class RetrievecallsAction extends Action_Base {
 	}
 
 	protected function httpPost($url, $data = array()) {				
-			$client = new Zend_Http_Client($url);
-			$client->setParameterPost( array( 'data'  => json_encode($data) ) );
-			$response = $client->request('POST');
-			return $response;
+			try  {
+				$client = new Zend_Http_Client($url);			
+				$client->setParameterPost( array( 'data'  => json_encode($data) ) );
+				$response = $client->request('POST');
+				return $response;
+			} catch ( Exception $e ) {
+				Billrun_Factory::log()->log("When trying to send request to {$ip} , Got exception : ".$e->getMessage(), Zend_Log::ERR);				
+				return false;
+			}
+
 	}
 }

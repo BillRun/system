@@ -37,7 +37,7 @@ class CheckgeneratorsAction extends Action_Base {
 			$ip = preg_replace("/_/", ".", $ip);
 			$activeTime =-$this->isInActivePeriod();
 			if($activeTime) {
-				$inactiveTime = time() - $generatorData['receieved_timestamp'];
+				$inactiveTime = min(array(time() - $generatorData['receieved_timestamp'],$activeTime));
 				$lastReset = min( array( 
 									time() - Billrun_Util::getFieldVal ($generatorData['last_reset'], 0), 
 									$inactiveTime,
@@ -127,19 +127,24 @@ class CheckgeneratorsAction extends Action_Base {
 
 
 	protected function delayedHTTP($url,$delay = 30,$data = array()) {		
-		//if(!pcntl_fork()) {
-			$gen = Billrun_Generator::getInstance(array('type'=>'state'));
+		//if(!pcntl_fork()) {			
 			sleep($delay);			
 			//$client = curl_init($url);
 			//$post_fields = array('data' => json_encode($data));
 			//curl_setopt($client, CURLOPT_POST, TRUE);
 			//curl_setopt($client, CURLOPT_POSTFIELDS, $post_fields);
 			//curl_setopt($client, CURLOPT_RETURNTRANSFER, TRUE);
-			//return curl_exec($client);				
-			$client = new Zend_Http_Client($url);
-			$client->setParameterPost( array( 'data'  => json_encode($data) ) );
-			$response = $client->request('POST');
-			return $response;
+			//return curl_exec($client);			
+			try {
+				$client = new Zend_Http_Client($url);
+				$client->setParameterPost( array( 'data'  => json_encode($data) ) );
+				$response = $client->request('POST');
+
+				return $response;
+			} catch ( Exception $e ) {
+				Billrun_Factory::log()->log("When trying to send request to {$ip} , Got exception : ".$e->getMessage(), Zend_Log::ERR);				
+				return false;
+			}
 		//	die();
 		///}
 	}
