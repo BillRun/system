@@ -86,10 +86,12 @@ class CheckgeneratorsAction extends Action_Base {
 		$script = $config['test_script'];
 		usort($script, function($a,$b) { return intval($a['call_id']) - intval($b['call_id']);});
 		$start = strtotime(reset($script)['time']);
-		$end = strtotime(end($script)['time']) - $start;
-		$current = time() - $start;
-		if ($end > $current && $current > 0) {
-			return $current;
+		$end = strtotime(end($script)['time']) ;
+		$endOffset = $end > $start  ? $end - $start : $end + 86400 - $start;
+		$currentOffset = time() - $start;
+		
+		if ($endOffset > $currentOffset && $currentOffset > 0) {
+			return $currentOffset;
 		}		
 		return false;
 	}
