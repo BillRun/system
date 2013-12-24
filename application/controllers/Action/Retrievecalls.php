@@ -50,15 +50,16 @@ class RetrievecallsAction extends Action_Base {
 	protected function isInActivePeriod() {
 		$config = Billrun_Factory::db()->configCollection()->query(array('key'=> 'call_generator'))->cursor()->sort(array('urt'=> -1))->limit(1)->current();
 		$script = $config['test_script'];
-		usort($script, function($a,$b) { return strcmp($a['call_id'], $b['call_id']);});
-		$start = strtotime(reset($script));
-		$end = strtotime(end($script)) - $start;
+		usort($script, function($a,$b) { return intval($a['call_id']) - intval($b['call_id']);});
+		$start = strtotime(reset($script)['time']);
+		$end = strtotime(end($script)['time']) - $start;
 		$current = time() - $start;
-		if ($end > $current ) {
-			return true;
+		if ($end > $current && $current > 0) {
+			return $current;
 		}		
 		return false;
 	}
+	
 	/**
 	 * 
 	 * @param type $savedCalls

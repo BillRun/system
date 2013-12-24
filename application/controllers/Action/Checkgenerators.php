@@ -33,9 +33,10 @@ class CheckgeneratorsAction extends Action_Base {
 		if($mangement->isEmpty()) {
 			Billrun_Factory::log()->log("ALERT! : No generator registered yet..",Zend_Log::ALERT);					
 		}
-		foreach (Billrun_Util::getFieldVal($mangement->get('generators'),array()) as $ip => $generatorData) {
+		foreach (Billrun_Util::getFieldVal($mangement->getRawData()['generators'],array()) as $ip => $generatorData) {
 			$ip = preg_replace("/_/", ".", $ip);
-			$activeTime =-$this->isInActivePeriod();
+			$activeTime = $this->isInActivePeriod();
+			
 			if($activeTime) {
 				$inactiveTime = min(array(time() - $generatorData['receieved_timestamp'],$activeTime));
 				$lastReset = min( array( 
@@ -83,7 +84,7 @@ class CheckgeneratorsAction extends Action_Base {
 	protected function isInActivePeriod() {
 		$config = Billrun_Factory::db()->configCollection()->query(array('key'=> 'call_generator'))->cursor()->sort(array('urt'=> -1))->limit(1)->current();
 		$script = $config['test_script'];
-		usort($script, function($a,$b) { return strcmp($a['call_id'], $b['call_id']);});
+		usort($script, function($a,$b) { return intval($a['call_id']) - intval($b['call_id']);});
 		$start = strtotime(reset($script)['time']);
 		$end = strtotime(end($script)['time']) - $start;
 		$current = time() - $start;
