@@ -128,14 +128,14 @@ class ImportController extends Yaf_Controller_Abstract {
 			$client->setAdapter($curl);
 			$client->setMethod(Zend_Http_Client::POST);
 			while (($data = fgetcsv($handle, $limit, $delimiter)) !== FALSE) {
-				$urt = new Zend_Date(strtotime($data[2]), 'he_IL');
+				$urt = new Zend_Date(strtotime($data[2] . " " . $data[3]), 'he_IL');
 				$send = array(
 					'account_id' => $data[0],
 					'subscriber_id' => $data[1],
 					'credit_time' => $urt->getTimestamp(),
-					'reason' => 'CRM-CHARGE_SMS_300-BILLRUN_201310',
-					'credit_type' => 'charge',
-					'amount_without_vat' => $data[3],
+					'amount_without_vat' => $data[4],
+					'reason' => $data[5],
+					'credit_type' => isset($data[6])?$data[6]:'refund',
 				);
 				$client->setParameterPost($send);
 				$response = $client->request();
