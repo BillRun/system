@@ -33,7 +33,7 @@ class CheckgeneratorsAction extends Action_Base {
 		if($mangement->isEmpty()) {
 			Billrun_Factory::log()->log("ALERT! : No generator registered yet..",Zend_Log::ALERT);					
 		}
-		foreach (Billrun_Util::getFieldVal($mangement['generators'],array()) as $ip => $generatorData) {
+		foreach (Billrun_Util::getFieldVal($mangement->generators,array()) as $ip => $generatorData) {
 			$ip = preg_replace("/_/", ".", $ip);
 			$activeTime =-$this->isInActivePeriod();
 			if($activeTime) {
@@ -84,8 +84,8 @@ class CheckgeneratorsAction extends Action_Base {
 		$config = Billrun_Factory::db()->configCollection()->query(array('key'=> 'call_generator'))->cursor()->sort(array('urt'=> -1))->limit(1)->current();
 		$script = $config['test_script'];
 		usort($script, function($a,$b) { return strcmp($a['call_id'], $b['call_id']);});
-		$start = strtotime(reset($script));
-		$end = strtotime(end($script)) - $start;
+		$start = strtotime(reset($script['time']));
+		$end = strtotime(end($script['time'])) - $start;
 		$current = time() - $start;
 		if ($end > $current && $current > 0) {
 			return $current;
@@ -129,13 +129,7 @@ class CheckgeneratorsAction extends Action_Base {
 	protected function delayedHTTP($url,$delay = 30,$data = array()) {		
 		//if(!pcntl_fork()) {			
 			sleep($delay);			
-			//$client = curl_init($url);
-			//$post_fields = array('data' => json_encode($data));
-			//curl_setopt($client, CURLOPT_POST, TRUE);
-			//curl_setopt($client, CURLOPT_POSTFIELDS, $post_fields);
-			//curl_setopt($client, CURLOPT_RETURNTRANSFER, TRUE);
-			//return curl_exec($client);			
-			try {
+						try {
 				$client = new Zend_Http_Client($url);
 				$client->setParameterPost( array( 'data'  => json_encode($data) ) );
 				$response = $client->request('POST');
