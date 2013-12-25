@@ -264,28 +264,14 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	 */
 	protected function saveFlatLine($subscriber, $billrun_key) {
 		$flat_entry = $subscriber->getFlatEntry($billrun_key);
-		if (!$this->write_stamps_to_file) {
-			try {
-				$query = array(
-					'stamp' => $flat_entry['stamp'],
-				);
-				$update = array(
-					'$setOnInsert' => $flat_entry,
-				);
-				$options = array(
-					'upsert' => 1,
-					'w' => 1,
-				);
-				$this->lines->update($query, $update, $options);
-			} catch (Exception $e) {
-				if ($e->getCode() == 11000) {
-					Billrun_Factory::log("Flat line already exists for subscriber " . $subscriber->sid . " for billrun " . $billrun_key, Zend_log::ALERT);
-				} else {
-					Billrun_Factory::log("Problem inserting flat line for subscriber " . $subscriber->sid . " for billrun " . $billrun_key . ". error message: " . $e->getMessage() . ". error code: " . $e->getCode(), Zend_log::ALERT);
-				}
+		try {
+			$this->lines->insert($flat_entry, array("w" => 1));
+		} catch (Exception $e) {
+			if ($e->getCode() == 11000) {
+				Billrun_Factory::log("Flat line already exists for subscriber " . $subscriber->sid . " for billrun " . $billrun_key, Zend_log::ALERT);
+			} else {
+				Billrun_Factory::log("Problem inserting flat line for subscriber " . $subscriber->sid . " for billrun " . $billrun_key . ". error message: " . $e->getMessage() . ". error code: " . $e->getCode(), Zend_log::ALERT);
 			}
-		} else {
-			$this->lines->insert($flat_entry);
 		}
 		return new Mongodloid_Entity($flat_entry);
 	}
