@@ -107,7 +107,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		if (isset($options['aggregator']['min_invoice_id'])) {
 			$this->min_invoice_id = $options['aggregator']['min_invoice_id'];
 		}
-		
+
 		if (isset($options['aggregator']['write_stamps_to_file']) && $options['aggregator']['write_stamps_to_file']) {
 			$this->write_stamps_to_file = $options['aggregator']['write_stamps_to_file'];
 			$this->stamps_dir = (isset($options['aggregator']['stamps_dir']) ? $options['aggregator']['stamps_dir'] : getcwd() . '/files/billrun_stamps') . '/' . $this->getStamp() . '/';
@@ -278,7 +278,11 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 				);
 				$this->lines->update($query, $update, $options);
 			} catch (Exception $e) {
-				Billrun_Factory::log("Flat line already exists for subscriber " . $subscriber->sid . " for billrun " . $billrun_key, Zend_log::ALERT);
+				if ($e->getCode() == 11000) {
+					Billrun_Factory::log("Flat line already exists for subscriber " . $subscriber->sid . " for billrun " . $billrun_key, Zend_log::ALERT);
+				} else {
+					Billrun_Factory::log("Problem inserting flat line for subscriber " . $subscriber->sid . " for billrun " . $billrun_key . ". error message: " . $e->getMessage() . ". error code: " . $e->getCode(), Zend_log::ALERT);
+				}
 			}
 		} else {
 			$this->lines->insert($flat_entry);
