@@ -1207,7 +1207,7 @@ class Billrun_Billrun {
 			'aid' => $aid,
 			'urt' => array(
 				'$lte' => $end_time,
-				'$gte' => $start_time,
+				'$gte' => $start_time, // needed for current balance
 			),
 //			'aprice' => array(
 //				'$exists' => true,

@@ -27,33 +27,75 @@ class CompareController extends Yaf_Controller_Abstract {
 	protected $target;
 	protected $subs_mappings;
 	protected $subscriber;
-	protected $billrun_key;
+	protected $billrun_key = "201312"; //TODO get it from the filename
 	protected $relative_error = 0.05;
 	protected $ignore_ggsn_calling_number = true;
 	protected $ignore_non_tap3_serving_network = true;
-	protected $ignore_tap3_records = true;
+	protected $ignore_tap3_records = false;
 	protected $compare_only_special_prices = true;
-	protected $ignore_mms_called_number = true;
+	protected $ignore_mms_called_number = false;
 	protected $phone_numbers_strict_comparison = false;
 	protected $ignore_daylight_saving_time_lines = true;
 	protected $ignore_IL_ILD = true;
+	protected $ggsn_bytes_gap_to_ignore = 1000;
+	protected $ignore_KT_USA_diff = true;
+	protected $ignore_INTERNAL_VOICE_MAIL_CALL_diff = true;
 
 	public function indexAction() {
 		$this->subscriber = Billrun_Factory::subscriber();
-		$this->compareAccounts();
+		$this->compareParticipants();
 		die();
 	}
 
-	public function compareAccounts() {
+	protected function processDir(Participant $p, $dir_path) {
+		$files = scandir($dir_path);
+		foreach ($files as $file) {
+			$billrun_key = Billrun_Util::regexFirstValue($p->billrun_key_regex, $file);
+			$account_id = Billrun_Util::regexFirstValue($p->account_id_regex, $file);
+			if ($billrun_key !== FALSE && $account_id !== FALSE) {
+				$p->processed_files[$billrun_key][intval($account_id)] = $file;
+			}
+		}
+	}
+
+	protected function processDirs() {
+		$this->processDir($this->source, $this->source->xmls_path);
+		$this->processDir($this->target, $this->source->xmls_path);
+	}
+
+	protected function compareParticipants() {
+		$this->processDirs();
+		$this->showMissingFiles($this->source, $this->target);
+		$this->showMissingFiles($this->target, $this->source);
+		foreach ($this->source->processed_files as $billrun_key => $billruns) {
+			foreach ($billruns as $account_id => $billrun) {
+				if (isset($p2->processed_files[$billrun_key][$account_id])) {
+					$this->compareBillruns($billrun_key, $account_id);
+				}
+			}
+		}
+	}
+
+	protected function showMissingFiles(Participant $p1, Participant $p2) {
+		foreach ($p1->processed_files as $billrun_key => $billruns) {
+			foreach ($billruns as $account_id => $billrun) {
+				if (!isset($p2->processed_files[$billrun_key][$account_id])) {
+					$this->displayMsg($p1->name . ' is missing billrun ' . $billrun_key . ' of account ' . $account_id);
+				}
+			}
+		}
+	}
+
+	protected function compareBillruns() {
 		$this->initParticipants();
-		$this->loadFiles("201311", 9073496);
+		$this->loadFiles($billrun_key, $account_id);
 		$this->loadSubscribers();
 		$this->matchSubscribers();
 		$this->printResults();
 //		$this->compare();
 	}
 
-	public function getFilePathByPattern($folder_to_search, $pattern) {
+	protected function getFilePathByPattern($folder_to_search, $pattern) {
 		$file_path = '';
 		$matches = glob($folder_to_search . DIRECTORY_SEPARATOR . $pattern);
 		if ($matches) {
@@ -65,8 +107,10 @@ class CompareController extends Yaf_Controller_Abstract {
 	protected function initParticipants() {
 		$this->source = new NsoftParticipant();
 		$this->target = new BillrunParticipant();
-		$this->source->xmls_path = '/home/shani/projects/billrun/files/invoices/Checks/nsoft/';
-		$this->target->xmls_path = '/home/shani/projects/billrun/files/invoices/Checks/billrun/';
+//		$this->source->xmls_path = '/home/shani/projects/billrun/files/invoices/Checks/nsoft/';
+//		$this->target->xmls_path = '/home/shani/projects/billrun/files/invoices/Checks/billrun/';
+		$this->source->xmls_path = '/home/shani/Documents/S.D.O.C/BillRun/backups/invoices_compare/7813888/nsoft/';
+		$this->target->xmls_path = '/home/shani/Documents/S.D.O.C/BillRun/backups/invoices_compare/7813888/blof/';
 	}
 
 	protected function compare() {
@@ -90,6 +134,11 @@ class CompareController extends Yaf_Controller_Abstract {
 		$target_filename = $this->getFilePathByPattern($this->target->xmls_path, $target_pattern);
 		$this->target->loadFile($target_filename);
 	}
+
+//	protected function loadFiles($billrun_key, $account_id) {
+//		$this->source->loadFile($this->source->xmls_path . '/account_balance.201312.172.29.202.12.xml');
+//		$this->target->loadFile($this->target->xmls_path . '/account_balance.201312.172.29.202.12.xml');
+//	}
 
 	protected function loadSubscribers() {
 		for ($id = 0; $id < $this->source->xml->SUBSCRIBER_INF->count(); $id++) {
@@ -155,13 +204,14 @@ class CompareController extends Yaf_Controller_Abstract {
 		$subscriber_lines = array();
 		foreach ($sub->xml->SUBSCRIBER_INF[$sub_id]->BILLING_LINES->BILLING_RECORD as $billing_line) {
 			if ((string) $billing_line->TARIFFKIND != 'Call' || (int) $billing_line->CHARGEDURATIONINSEC) {
-				if (isset($subscriber_lines[(string) $billing_line->TIMEOFBILLING]) && !((string) $billing_line->TARIFFITEM == "INTERNET_BILL_BY_VOLUME" && (string) $billing_line->ROAMING == "0")) {
-					$this->displayMsg("Skipping same date key $billing_line->TIMEOFBILLING");
-				}
 				if (($this->ignore_daylight_saving_time_lines && substr(strval($billing_line->TIMEOFBILLING), 0, 10) < "2013/10/27") || ($this->ignore_tap3_records && $billing_line->ROAMING == "1") || ($this->ignore_IL_ILD && $billing_line->TARIFFITEM == "IL_ILD")) {
 					continue;
 				}
 				$value = $this->getUniqueLine($billing_line);
+				$unique_key = strval($billing_line->TIMEOFBILLING) . '_' . substr($billing_line->CTXT_CALL_OUT_DESTINATIONPNB, -3);
+				if (isset($subscriber_lines[$unique_key]) && !((string) $billing_line->TARIFFITEM == "INTERNET_BILL_BY_VOLUME" && (string) $billing_line->ROAMING == "0")) {
+					$subscriber_lines[$unique_key]['number_of_records'] = isset($subscriber_lines[$unique_key]['number_of_records']) ? $subscriber_lines[$unique_key]['number_of_records'] ++ : 2;
+				}
 				if (substr($billing_line->TARIFFITEM, 0, 4) == "GIFT") { // gift lines all have the same date
 					$key = strval($billing_line->TARIFFITEM);
 					$value = isset($subscriber_lines[strval($billing_line->TARIFFITEM)]) ? $subscriber_lines[strval($billing_line->TARIFFITEM)]+=$value['charge'] : $value['charge'];
@@ -174,19 +224,25 @@ class CompareController extends Yaf_Controller_Abstract {
 //					if ($this->fix_daylight_saving_time_bug && $sub->name == "billrun" && substr(strval($billing_line->TIMEOFBILLING), 0, 10) < "2013/10/27") {
 //						$key = date("Y/m/d H:i:s", strtotime("-1 hour", strtotime(strval($billing_line->TIMEOFBILLING))));
 //					} else {
-					$key = strval($billing_line->TIMEOFBILLING);
+					$key = $unique_key;
 //					}
 				}
 				if ($this->ignore_non_tap3_serving_network && isset($value['roaming']) && $value['roaming'] == "0" && isset($value['serving_network'])) {
 					unset($value['serving_network']);
 				}
-				if ($this->compare_only_special_prices && isset($value['DISCOUNT_USAGE']) && $value['DISCOUNT_USAGE'] != 'DISCOUNT_NONE') {
+				if ($this->compare_only_special_prices && isset($value['DISCOUNT_USAGE']) && $value['DISCOUNT_USAGE'] != 'DISCOUNT_NONE' && $value['usaget'] != 'Service') {
 					unset($value['DISCOUNT_USAGE']);
 					unset($value['charge']);
 					unset($value['credit']);
 				}
 				if ($this->ignore_mms_called_number && isset($value['usaget']) && $value['usaget'] == 'MMS') {
 					unset($value['called_number']);
+				}
+				if ($value['usaget'] == 'Service') {
+					unset($value['interval']);
+					unset($value['rate_price']);
+					unset($value['intl']);
+					unset($value['DISCOUNT_USAGE']);
 				}
 				$subscriber_lines[$key] = $value;
 			}
@@ -242,7 +298,7 @@ class CompareController extends Yaf_Controller_Abstract {
 					$line2 = $target_lines[$line_key];
 					if (is_array($line2)) {
 						foreach ($line1 as $key => $value) {
-							if ($this->different($value, $line2[$key], $key)) {
+							if ($this->different($line1, $line2, $key)) {
 								$this->displayMsg('Lines with key ' . $line_key . ' differ in ' . $key . ': ' . $value . ' (' . $this->source->name . ') / ' . $line2[$key] . ' (' . $this->target->name . ')');
 							}
 						}
@@ -254,16 +310,39 @@ class CompareController extends Yaf_Controller_Abstract {
 		}
 	}
 
-	protected function different($value1, $value2, $key = null) {
+	protected function different($line1, $line2, $key = null) {
+		if (is_array($line1)) {
+			$value1 = $line1[$key];
+			$value2 = $line2[$key];
+		} else {
+			$value1 = $line1;
+			$value2 = $line2;
+		}
 		if ($value1 == $value2) {
 			return false;
 		}
-		if ($key == 'called_number') {
+		if ($key == 'arate') {
+			if ($this->ignore_KT_USA_diff && array_intersect(array("KT_USA_NEW", "KT_USA_FIX"), array($value1, $value2))) {
+				return false;
+			}
+			if ($this->ignore_INTERNAL_VOICE_MAIL_CALL_diff && array_intersect(array("INTERNAL_VOICE_MAIL_CALL", "IL_MOBILE"), array($value1, $value2))) {
+				return false;
+			}
+		} else if ($key == 'rate_price') {
+			if ($this->ignore_INTERNAL_VOICE_MAIL_CALL_diff && array_intersect(array("INTERNAL_VOICE_MAIL_CALL", "IL_MOBILE"), array($line1['arate'], $line2['arate']))) {
+				return false;
+			}
+		} else if ($key == 'called_number') {
 			if (!$this->phone_numbers_strict_comparison) {
 				return strpos($value1, $value2) === false && strpos($value2, $value1) === false;
 			}
-		} else if (is_numeric($value1) && is_numeric($value2)) {
-			return $this->big_difference($value1, $value2);
+		} else if ($key == 'usagev' && $line1['usaget'] == 'Internet Access' && $line1['roaming'] == '0') {
+			if (abs($value1 - $value2) <= $this->ggsn_bytes_gap_to_ignore) {
+				return false;
+			}
+		}
+		if (is_numeric($value1) && is_numeric($value2)) {
+			return $this->big_difference($value1, $value2, $key);
 		}
 		return true;
 	}
@@ -277,7 +356,7 @@ class CompareController extends Yaf_Controller_Abstract {
 	protected function big_difference($value1, $value2) {
 		if ($value2 != 0) {
 			$portion = $value1 / $value2;
-			return $portion > 1 + $this->relative_error || $portion < 1 - $this->relative_error;
+			return $portion > 1 + $this->relative_error / 100 || $portion < 1 - $this->relative_error / 100;
 		} else if ($value1 != 0) {
 			return $this->big_difference($value2, $value1);
 		}
@@ -299,7 +378,8 @@ class CompareController extends Yaf_Controller_Abstract {
 		if ($sub1_diff) {
 			$msg = $participant2_name . ' subscriber ' . ($participant2_name == "billrun" ? $sub2['identity'] : $sub1['identity']) . ' is missing ' . count($sub1_diff) . ' lines:';
 			foreach ($sub1_diff as $key => $line) {
-				$msg.='</br>' . $key;
+//				$msg.='</br>' . $key;
+				$msg.='</br>' . $key . ' ' . $line['usaget'] . ($line['roaming'] == "1" ? " (Tap3)" : "");
 			}
 			$this->displayMsg($msg);
 		}
@@ -336,6 +416,10 @@ abstract class Participant {
 	public $name;
 	public $xmls_path;
 	public $subs;
+	public $files;
+	public $billrun_key_regex;
+	public $account_id_regex;
+	public $processed_files;
 
 	abstract public function getInvoicePathPattern($billrun_key, $account_id);
 
@@ -348,6 +432,8 @@ abstract class Participant {
 class NsoftParticipant extends Participant {
 
 	public $name = 'nsoft';
+	public $billrun_key_regex = 'invoice_(\d{6})';
+	public $account_id_regex = 'invoice_\d+_(\d+)_\d+';
 
 	public function getInvoicePathPattern($billrun_key, $account_id) {
 		return 'invoice_' . $billrun_key . '*_' . $account_id . '_*.xml';
@@ -358,6 +444,8 @@ class NsoftParticipant extends Participant {
 class BillrunParticipant extends Participant {
 
 	public $name = 'billrun';
+	public $billrun_key_regex = '^(\d{6})';
+	public $account_id_regex = '\d+_0*(\d+)_\d+';
 
 	public function getInvoicePathPattern($billrun_key, $account_id) {
 		return $billrun_key . '*_*' . $account_id . '_*.xml';
