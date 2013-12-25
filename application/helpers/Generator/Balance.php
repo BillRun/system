@@ -69,6 +69,7 @@ class Generator_Balance extends Generator_Golanxml {
 			'autoload' => false,
 		);
 		$billrun = Billrun_Factory::billrun($billrun_params);
+		$flat_lines = array();
 		foreach ($this->account_data as $subscriber) {
 			if ($billrun->subscriberExists($subscriber->sid)) {
 				Billrun_Factory::log()->log("Billrun " . $this->stamp . " already exists for subscriber " . $subscriber->sid, Zend_Log::ALERT);
@@ -81,14 +82,15 @@ class Generator_Balance extends Generator_Golanxml {
 				$subscriber_status = "open";
 			}
 			$billrun->addSubscriber($subscriber, $subscriber_status);
+			$flat_lines[] = new Mongodloid_Entity($subscriber->getFlatEntry($this->stamp));
 		}
-		$billrun->addLines(false, $billrun_start_date);
+		$this->lines = $billrun->addLines(false, $billrun_start_date, $flat_lines);
 
 		$this->data = $billrun->getRawData();
 	}
 
 	public function generate() {
-		return $this->getXML($this->data);
+		return $this->getXML($this->data, $this->lines);
 	}
 
 	protected function setAccountId($aid) {
@@ -139,36 +141,6 @@ class Generator_Balance extends Generator_Golanxml {
 			}
 		}
 		return $plan_name;
-	}
-
-	/**
-	 * 
-	 * @see Generator_Golan::getSubTotalBeforeVat
-	 */
-	protected function getSubscriberTotalBeforeVat($subscriber) {
-		return parent::getSubscriberTotalBeforeVat($subscriber) + $this->getFlatCosts($subscriber)['vatable'];
-	}
-
-	/**
-	 * 
-	 * @see Generator_Golan::getSubTotalAfterVat
-	 */
-	protected function getSubscriberTotalAfterVat($subscriber) {
-		$before_vat = $this->getSubscriberTotalBeforeVat($subscriber);
-		return $before_vat + $before_vat * Billrun_Billrun::getVATByBillrunKey($this->stamp);
-	}
-
-	protected function getAccTotalBeforeVat($row) {
-		$before_vat = 0;
-		foreach ($row['subs'] as $subscriber) {
-			$before_vat+=$this->getSubscriberTotalBeforeVat($subscriber);
-		}
-		return $before_vat;
-	}
-
-	protected function getAccTotalAfterVat($row) {
-		$before_vat = $this->getAccTotalBeforeVat($row);
-		return $before_vat + $before_vat * Billrun_Billrun::getVATByBillrunKey($this->stamp);
 	}
 
 	protected function get_subscriber_lines($subscriber) {
