@@ -104,6 +104,10 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		if (isset($options['aggregator']['test_accounts'])) {
 			$this->testAcc = $options['aggregator']['test_accounts'];
 		}
+		if (isset($options['aggregator']['min_invoice_id'])) {
+			$this->min_invoice_id = $options['aggregator']['min_invoice_id'];
+		}
+		
 		if (isset($options['aggregator']['write_stamps_to_file']) && $options['aggregator']['write_stamps_to_file']) {
 			$this->write_stamps_to_file = $options['aggregator']['write_stamps_to_file'];
 			$this->stamps_dir = (isset($options['aggregator']['stamps_dir']) ? $options['aggregator']['stamps_dir'] : getcwd() . '/files/billrun_stamps') . '/' . $this->getStamp() . '/';
@@ -226,7 +230,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	protected function sendEndMail($msg) {
 		$recipients = Billrun_Factory::config()->getConfigValue('emailAlerts.alerts.recipients');
 		if ($recipients) {
-			Billrun_Util::sendMail("BillRun customer aggregate page finished", $msg, "", $recipients);
+			Billrun_Util::sendMail("BillRun customer aggregate page finished", $msg, $recipients);
 		}
 	}
 
