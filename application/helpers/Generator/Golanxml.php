@@ -845,7 +845,8 @@ EOI;
 		if (!is_null($interval)) {
 			$bytes_to_price = ceil($bytes / $interval) * $interval;
 		}
-		$ret = ceil($bytes_to_price / 1024);
+//		$ret = ceil($bytes_to_price / 1024); // we won't imitate nsoft here
+		$ret = $bytes_to_price / 1024;
 		return $ret;
 	}
 
