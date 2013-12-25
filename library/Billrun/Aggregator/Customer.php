@@ -105,7 +105,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 			$this->testAcc = $options['aggregator']['test_accounts'];
 		}
 		if (isset($options['aggregator']['min_invoice_id'])) {
-			$this->min_invoice_id = $options['aggregator']['min_invoice_id'];
+			$this->min_invoice_id = (int) $options['aggregator']['min_invoice_id'];
 		}
 
 		if (isset($options['aggregator']['write_stamps_to_file']) && $options['aggregator']['write_stamps_to_file']) {
