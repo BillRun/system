@@ -1233,7 +1233,7 @@ class Billrun_Billrun {
 		);
 
 		$sort = array(
-			'sid' => 1,
+			'aid' => 1,
 			'urt' => 1,
 		);
 		Billrun_Factory::log()->log("Querying for account " . $aid . " lines", Zend_Log::DEBUG);
