@@ -33,7 +33,7 @@ class CreditAction extends Action_Base {
 		}
 
 		$parsed_row['process_time'] = date(Billrun_Base::base_dateformat);
-		
+
 		$entity = new Mongodloid_Entity($parsed_row);
 
 		if ($entity->save($linesCollection) === false) {
@@ -240,6 +240,9 @@ class BulkCreditAction extends CreditAction {
 		$receiver = Billrun_Receiver::getInstance($options);
 		if ($receiver) {
 			$files = $receiver->receive();
+			if (!$files) {
+				return $this->setError('Couldn\'t receive file', $request);
+			}
 		} else {
 			return $this->setError('Receiver cannot be loaded', $request);
 		}
