@@ -60,34 +60,41 @@ class CompareController extends Yaf_Controller_Abstract {
 
 	protected function processDirs() {
 		$this->processDir($this->source, $this->source->xmls_path);
-		$this->processDir($this->target, $this->source->xmls_path);
+		$this->processDir($this->target, $this->target->xmls_path);
 	}
 
 	protected function compareParticipants() {
+		$this->initParticipants();
 		$this->processDirs();
 		$this->showMissingFiles($this->source, $this->target);
 		$this->showMissingFiles($this->target, $this->source);
 		foreach ($this->source->processed_files as $billrun_key => $billruns) {
 			foreach ($billruns as $account_id => $billrun) {
-				if (isset($p2->processed_files[$billrun_key][$account_id])) {
+				if (isset($this->target->processed_files[$billrun_key][$account_id])) {
 					$this->compareBillruns($billrun_key, $account_id);
+					$this->printDelimiter();
 				}
 			}
 		}
+	}
+
+	protected function printDelimiter() {
+		$this->displayMsg("################");
 	}
 
 	protected function showMissingFiles(Participant $p1, Participant $p2) {
 		foreach ($p1->processed_files as $billrun_key => $billruns) {
 			foreach ($billruns as $account_id => $billrun) {
 				if (!isset($p2->processed_files[$billrun_key][$account_id])) {
-					$this->displayMsg($p1->name . ' is missing billrun ' . $billrun_key . ' of account ' . $account_id);
+					$this->displayMsg($p2->name . ' is missing billrun ' . $billrun_key . ' of account ' . $account_id);
+					$this->printDelimiter();
 				}
 			}
 		}
 	}
 
-	protected function compareBillruns() {
-		$this->initParticipants();
+	protected function compareBillruns($billrun_key, $account_id) {
+		$this->displayMsg("Comparing billrun " . $billrun_key . " for account " . $account_id);
 		$this->loadFiles($billrun_key, $account_id);
 		$this->loadSubscribers();
 		$this->matchSubscribers();
@@ -107,10 +114,10 @@ class CompareController extends Yaf_Controller_Abstract {
 	protected function initParticipants() {
 		$this->source = new NsoftParticipant();
 		$this->target = new BillrunParticipant();
-//		$this->source->xmls_path = '/home/shani/projects/billrun/files/invoices/Checks/nsoft/';
-//		$this->target->xmls_path = '/home/shani/projects/billrun/files/invoices/Checks/billrun/';
-		$this->source->xmls_path = '/home/shani/Documents/S.D.O.C/BillRun/backups/invoices_compare/7813888/nsoft/';
-		$this->target->xmls_path = '/home/shani/Documents/S.D.O.C/BillRun/backups/invoices_compare/7813888/blof/';
+		$this->source->xmls_path = '/home/shani/projects/billrun/files/invoices/Checks/nsoft/';
+		$this->target->xmls_path = '/home/shani/projects/billrun/files/invoices/Checks/billrun/';
+//		$this->source->xmls_path = '/home/shani/Documents/S.D.O.C/BillRun/backups/invoices_compare/7813888/nsoft/';
+//		$this->target->xmls_path = '/home/shani/Documents/S.D.O.C/BillRun/backups/invoices_compare/7813888/blof/';
 	}
 
 	protected function compare() {
@@ -135,11 +142,6 @@ class CompareController extends Yaf_Controller_Abstract {
 		$this->target->loadFile($target_filename);
 	}
 
-//	protected function loadFiles($billrun_key, $account_id) {
-//		$this->source->loadFile($this->source->xmls_path . '/account_balance.201312.172.29.202.12.xml');
-//		$this->target->loadFile($this->target->xmls_path . '/account_balance.201312.172.29.202.12.xml');
-//	}
-
 	protected function loadSubscribers() {
 		for ($id = 0; $id < $this->source->xml->SUBSCRIBER_INF->count(); $id++) {
 			$this->loadSubscriber($this->source, $id);
@@ -152,27 +154,13 @@ class CompareController extends Yaf_Controller_Abstract {
 	protected function loadSubscriber(Participant $sub, $sub_id) {
 		$sub->subs[$sub_id]['identity'] = $this->getSubscriberIdentity($sub, $sub_id);
 		$sub->subs[$sub_id]['unique_lines_data'] = $this->getUniqueLinesData($sub, $sub_id);
+		$sub->subs[$sub_id]['current_plan'] = $this->getCurrentPlan($sub, $sub_id);
 	}
 
-//	protected function matchSubscribers() {
-//		$this->subs_mappings = array();
-//		foreach ($this->source->subs as $source_id => $source_sub) {
-//			foreach ($this->target->subs as $target_id => $target_sub) {
-//				$match_rank = count(array_intersect_key($source_sub['unique_lines_data'], $target_sub['unique_lines_data'])) / max(array(count($source_sub['unique_lines_data']), count($target_sub['unique_lines_data'])));
-//				$match_ranks[$match_rank] = array($source_id => $target_id); //TODO it could be overridden
-//			}
-//		}
-//		krsort($match_ranks);
-//		foreach ($match_ranks as $match) {
-//			$source_id = key($match);
-//			if (isset($this->subs_mappings[$source_id])) {
-//				continue;
-//			} else {
-//				$target_id = current($match);
-//				$this->subs_mappings[$source_id] = $target_id;
-//			}
-//		}
-//	}
+	protected function getCurrentPlan(Participant $p, $sub_id) {
+		return strval($p->xml->SUBSCRIBER_INF[$sub_id]->SUBSCRIBER_GIFT_USAGE->GIFTID_GIFTNAME);
+	}
+
 	protected function matchSubscribers() {
 		$this->subs_mappings = array();
 		foreach ($this->source->subs as $source_id => $source_sub) {
@@ -193,11 +181,51 @@ class CompareController extends Yaf_Controller_Abstract {
 	}
 
 	protected function printResults() {
-//		$aid = intval($xml->INV_CUSTOMER_INFORMATION->CUSTOMER_CONTACT->EXTERNALACCOUNTREFERENCE);
 		$this->printMissingSubscribers();
-		$this->printMissingLines();
-		$this->printDifferencesInLines();
+		$this->printSubscribersDifferences();
 		$this->printDifferencesInTotals();
+	}
+
+	protected function printSubscribersDifferences() {
+		foreach ($this->source->subs as $source_id => $source_sub) {
+			if (isset($this->subs_mappings[$source_id])) {
+				$target_sub = $this->target->subs[$this->subs_mappings[$source_id]];
+				$this->printDifferencesInPlans($source_sub, $target_sub);
+				if (isset($target_sub['unique_lines_data'])) {
+					$this->printMissingLines($source_sub, $target_sub);
+					$this->printDifferencesInLines($source_sub, $target_sub);
+				}
+			}
+		}
+	}
+
+	protected function printDifferencesInLines($sub1, $sub2) {
+		$source_lines = $sub1['unique_lines_data'];
+		$target_lines = $sub2['unique_lines_data'];
+		$intersection = array_intersect_key($source_lines, $target_lines);
+		foreach ($intersection as $line_key => $line1) {
+			$line2 = $target_lines[$line_key];
+			if (is_array($line2)) {
+				foreach ($line1 as $key => $value) {
+					if ($this->different($line1, $line2, $key)) {
+						$this->displayMsg('Lines with key ' . $line_key . ' differ in ' . $key . ': ' . $value . ' (' . $this->source->name . ') / ' . $line2[$key] . ' (' . $this->target->name . ')');
+					}
+				}
+			} else if ($this->different($line1, $line2)) {
+				$this->displayMsg('Lines with key ' . $line_key . ' differ in value: ' . $line1 . '(' . $this->source->name . ') / ' . $line2 . '(' . $this->target->name . ')');
+			}
+		}
+	}
+
+	protected function printMissingLines($sub1, $sub2) {
+		$this->printSubscribersMissingLines($sub1, $sub2, $this->target->name);
+		$this->printSubscribersMissingLines($sub2, $sub1, $this->source->name);
+	}
+
+	protected function printDifferencesInPlans($source_sub, $target_sub) {
+		if ($source_sub['current_plan'] != $target_sub['current_plan']) {
+			$this->displayMsg("Different current plan for subscriber " . $target_sub['identity'] . ': ' . $source_sub['current_plan'] . ' (' . $this->source->name . ') / ' . $target_sub['current_plan'] . ' (' . $this->target->name . ')');
+		}
 	}
 
 	protected function getUniqueLinesData(Participant $sub, $sub_id) {
@@ -238,7 +266,7 @@ class CompareController extends Yaf_Controller_Abstract {
 				if ($this->ignore_mms_called_number && isset($value['usaget']) && $value['usaget'] == 'MMS') {
 					unset($value['called_number']);
 				}
-				if ($value['usaget'] == 'Service') {
+				if (isset($value['usaget']) && $value['usaget'] == 'Service') {
 					unset($value['interval']);
 					unset($value['rate_price']);
 					unset($value['intl']);
@@ -285,29 +313,6 @@ class CompareController extends Yaf_Controller_Abstract {
 
 	protected function getMissingLines($lines1, $lines2) {
 		return array_diff($lines1, $lines2);
-	}
-
-	protected function printDifferencesInLines() {
-		foreach ($this->source->subs as $source_id => $source_sub) {
-			if (isset($this->subs_mappings[$source_id])) {
-				$source_lines = $source_sub['unique_lines_data'];
-				$target_sub = $this->target->subs[$this->subs_mappings[$source_id]];
-				$target_lines = $target_sub['unique_lines_data'];
-				$intersection = array_intersect_key($source_lines, $target_lines);
-				foreach ($intersection as $line_key => $line1) {
-					$line2 = $target_lines[$line_key];
-					if (is_array($line2)) {
-						foreach ($line1 as $key => $value) {
-							if ($this->different($line1, $line2, $key)) {
-								$this->displayMsg('Lines with key ' . $line_key . ' differ in ' . $key . ': ' . $value . ' (' . $this->source->name . ') / ' . $line2[$key] . ' (' . $this->target->name . ')');
-							}
-						}
-					} else if ($this->different($line1, $line2)) {
-						$this->displayMsg('Lines with key ' . $line_key . ' differ in value: ' . $line1 . '(' . $this->source->name . ') / ' . $line2 . '(' . $this->target->name . ')');
-					}
-				}
-			}
-		}
 	}
 
 	protected function different($line1, $line2, $key = null) {
@@ -361,16 +366,6 @@ class CompareController extends Yaf_Controller_Abstract {
 			return $this->big_difference($value2, $value1);
 		}
 		return false;
-	}
-
-	protected function printMissingLines() {
-		foreach ($this->source->subs as $source_id => $source_sub) {
-			if (isset($this->subs_mappings[$source_id]) && isset($this->target->subs[$this->subs_mappings[$source_id]]['unique_lines_data'])) {
-				$target_sub = $this->target->subs[$this->subs_mappings[$source_id]];
-				$this->printSubscribersMissingLines($source_sub, $target_sub, $this->target->name);
-				$this->printSubscribersMissingLines($target_sub, $source_sub, $this->source->name);
-			}
-		}
 	}
 
 	protected function printSubscribersMissingLines($sub1, $sub2, $participant2_name) {
@@ -432,8 +427,8 @@ abstract class Participant {
 class NsoftParticipant extends Participant {
 
 	public $name = 'nsoft';
-	public $billrun_key_regex = 'invoice_(\d{6})';
-	public $account_id_regex = 'invoice_\d+_(\d+)_\d+';
+	public $billrun_key_regex = '/invoice_(\d{6})/';
+	public $account_id_regex = '/invoice_\d+_(\d+)_\d+/';
 
 	public function getInvoicePathPattern($billrun_key, $account_id) {
 		return 'invoice_' . $billrun_key . '*_' . $account_id . '_*.xml';
@@ -444,8 +439,8 @@ class NsoftParticipant extends Participant {
 class BillrunParticipant extends Participant {
 
 	public $name = 'billrun';
-	public $billrun_key_regex = '^(\d{6})';
-	public $account_id_regex = '\d+_0*(\d+)_\d+';
+	public $billrun_key_regex = '/^(\d{6})/';
+	public $account_id_regex = '/\d+_0*(\d+)_\d+/';
 
 	public function getInvoicePathPattern($billrun_key, $account_id) {
 		return $billrun_key . '*_*' . $account_id . '_*.xml';
