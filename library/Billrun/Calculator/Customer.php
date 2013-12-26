@@ -56,7 +56,6 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		}
 
 		$this->subscriber = Billrun_Factory::subscriber();
-		$this->balances = Billrun_Factory::db()->balancesCollection();
 		$this->plans = Billrun_Factory::db()->plansCollection();
 		$this->lines_coll = Billrun_Factory::db()->linesCollection();
 	}
@@ -148,13 +147,15 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		$this->subscribers_by_stamp = false;
 		$params = array();
 		foreach ($rows as $row) {
-			$line_params = $this->getIdentityParams($row);
-			if (count($line_params) == 0) {
-				Billrun_Factory::log('Couldn\'t identify caller for line of stamp ' . $row['stamp'], Zend_Log::ALERT);
-			} else if ($this->isLineLegitimate($row)) {
-				$line_params['time'] = date(Billrun_Base::base_dateformat, $row['urt']->sec);
-				$line_params['stamp'] = $row['stamp'];
-				$params[] = $line_params;
+			if ($this->isLineLegitimate($row)) {
+				$line_params = $this->getIdentityParams($row);
+				if (count($line_params) == 0) {
+					Billrun_Factory::log('Couldn\'t identify caller for line of stamp ' . $row['stamp'], Zend_Log::ALERT);
+				} else {
+					$line_params['time'] = date(Billrun_Base::base_dateformat, $row['urt']->sec);
+					$line_params['stamp'] = $row['stamp'];
+					$params[] = $line_params;
+				}
 			}
 		}
 		$this->subscribers = $this->subscriber->getSubscribersByParams($params, $this->subscriber->getAvailableFields());

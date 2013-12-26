@@ -41,6 +41,7 @@ print '</div>';
 	/* opt.valueElement = '<textarea>'; */  // element of the value field, <input> is default
 	var _jsonEditor = $('#jsondiv').jsonEditor(entityJson, opt);
 	$('#save').unbind();
+	$('#save').removeAttr("disabled");
 	$('#save').click(function saveClick() {
 		$(this).attr('disabled', 'disabled');
 		$(this).unbind("click", saveClick);

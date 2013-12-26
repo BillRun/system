@@ -13,6 +13,7 @@
  * @since    1.0
  * @todo refactoring to general subscriber http class
  */
+
 class Subscriber_Golan extends Billrun_Subscriber {
 
 	protected $plan = null;
@@ -87,7 +88,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 	 */
 	protected function request($params) {
 
-		$host = Billrun_Factory::config()->getConfigValue('provider.rpc.server', '');
+		$host = self::getRpcServer();
 		$url = Billrun_Factory::config()->getConfigValue('provider.rpc.url', '');
 		$datetime_format = Billrun_Base::base_dateformat; // 'Y-m-d H:i:s';
 
@@ -174,15 +175,16 @@ class Subscriber_Golan extends Billrun_Subscriber {
 
 	//@TODO change this function
 	protected function requestAccounts($params) {
-		$host = Billrun_Factory::config()->getConfigValue('provider.rpc.server', '');
+		$host = self::getRpcServer();
 		$url = Billrun_Factory::config()->getConfigValue('crm.url', '');
 
 		$path = 'http://' . $host . '/' . $url . '?' . http_build_query($params);
 		//Billrun_Factory::log()->log($path, Zend_Log::DEBUG);
 		// @TODO: use Zend_Http_Client
-//		$path .= "&account_id=4171195";
-//		$path .= "&account_id=11588";
-//		$path .= "&account_id=9522194";
+//		$path .= "&account_id=4171195"; // Shani
+//		$path .= "&account_id=9073496"; // Ofer
+//		$path .= "&account_id=5236445";
+//		$path .= "&account_id=7236490";
 		$json = self::send($path);
 		if (!$json) {
 			return false;
@@ -228,7 +230,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 						}
 					}
 				}
-				asort($ret_data); // maybe this will help the aid index to stay in memory
+				ksort($ret_data); // maybe this will help the aid index to stay in memory
 				return $ret_data;
 			} else {
 				return null;
@@ -283,6 +285,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 			'urt' => new MongoDate($billrun_end_time),
 			'aprice' => $this->getFlatPrice(),
 			'plan_ref' => $this->getNextPlan()->createRef(),
+			'process_time' => date(Billrun_Base::base_dateformat),
 		);
 		$stamp = md5($flat_entry['aid'] . $flat_entry['sid'] . $billrun_end_time);
 		$flat_entry['stamp'] = $stamp;
@@ -329,7 +332,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 	}
 
 	static public function requestList($params) {
-		$host = Billrun_Factory::config()->getConfigValue('provider.rpc.server', '');
+		$host = self::getRpcServer();
 		$url = Billrun_Factory::config()->getConfigValue('provider.rpc.bulk_url', '');
 
 		$path = 'http://' . $host . '/' . $url;
@@ -356,6 +359,26 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		} else {
 			return null;
 		}
+	}
+	
+	/**
+	 * Get the rpc server from config
+	 * 
+	 * @return string the host or ip of the server
+	 */
+	static protected function getRpcServer() {
+		$hosts = Billrun_Factory::config()->getConfigValue('provider.rpc.server', array());
+		if (empty($hosts)) {
+			return false;
+		}
+		
+		if (!is_array($hosts)) {
+			// probably string
+			return $hosts;
+		}
+		
+		// if it's array rand between servers
+		return $hosts[rand(0, count($hosts)-1)];
 	}
 
 }

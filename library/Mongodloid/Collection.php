@@ -271,11 +271,11 @@ class Mongodloid_Collection {
 	 * To use this method require counters collection (see create.ini)
 	 * 
 	 * @param string $id the id of the document to auto increment
-	 * @param int $min_id the first value if no value exists
+	 * @param int $init_id the first value if no value exists
 	 * 
 	 * @return int the incremented value
 	 */
-	public function createAutoInc($oid, $min_id = 1) {
+	public function createAutoInc($oid, $init_id = 1) {
 
 		$countersColl = $this->_db->getCollection('counters');
 		$collection_name = $this->getName();
@@ -285,7 +285,7 @@ class Mongodloid_Collection {
 			// get last seq
 			$lastSeq = $countersColl->query('coll', $collection_name)->cursor()->sort(array('seq' => -1))->limit(1)->current()->get('seq');
 			if (is_null($lastSeq)) {
-				$lastSeq = $min_id;
+				$lastSeq = $init_id;
 			} else {
 				$lastSeq++;
 			}

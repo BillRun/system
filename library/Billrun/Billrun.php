@@ -26,7 +26,7 @@ class Billrun_Billrun {
 	 * @var boolean allow billrun to recompute  marked line (as long as they have the  same billrun_key)
 	 */
 	protected $allowOverride = false;
-	
+
 	/**
 	 * lines collection
 	 * @var Mongodloid_Collection 
@@ -172,6 +172,10 @@ class Billrun_Billrun {
 			}
 		}
 		return self::$vatsByBillrun[$billrun_key];
+	}
+	
+	public function getBillrunKey() {
+		return $this->billrun_key;
 	}
 
 	/**
@@ -608,9 +612,14 @@ class Billrun_Billrun {
 			return $doc;
 		} else { // update to memory
 			$sraw = $billrun->getSubRawData($sid);
-			$billrun->addLineToSubscriber($counters, $row, $pricingData, $vatable, $billrun_key, $sraw);
-			$billrun->updateCosts($pricingData, $row, $vatable, $sraw); // according to self::getUpdateCostsQuery
-			$billrun->setSubRawData($sraw);
+			if ($sraw) { // it could be that this sid hasn't been returned on active_subscribers...
+				$billrun->addLineToSubscriber($counters, $row, $pricingData, $vatable, $billrun_key, $sraw);
+				$billrun->updateCosts($pricingData, $row, $vatable, $sraw); // according to self::getUpdateCostsQuery
+				$billrun->setSubRawData($sraw);
+			}
+			else {
+				Billrun_Factory::log("Subscriber $sid is not active yet has lines", Zend_log::ALERT);
+			}
 			//$billrun->updateTotals($pricingData, $billrun_key, $vatable);		
 		}
 	}
@@ -919,13 +928,14 @@ class Billrun_Billrun {
 				}
 				$zone['totals'][key($counters)]['usagev'] = $this->getFieldVal($zone['totals'][key($counters)]['usagev'], 0) + $volume_priced;
 				$zone['totals'][key($counters)]['cost'] = $this->getFieldVal($zone['totals'][key($counters)]['cost'], 0) + $pricingData['aprice'];
+				$zone['totals'][key($counters)]['count'] = $this->getFieldVal($zone['totals'][key($counters)]['count'], 0) + 1;
 			}
 			if ($plan_key != 'in_plan' || $zone_key == 'service') {
 				$zone['cost'] = $this->getFieldVal($zone['cost'], 0) + $pricingData['aprice'];
 			}
 			$zone['vat'] = ($vatable ? floatval($this->vat) : 0); //@TODO we assume here that all the lines would be vatable or all vat-free
 		} else {
-			$zone = $pricingData['aprice'];
+			$zone += $pricingData['aprice'];
 		}
 		if (self::isLiveUpdate()) {
 			$sraw['lines'][$usage_type]['refs'][] = $row->createRef();
@@ -1089,15 +1099,34 @@ class Billrun_Billrun {
 	 * @param int $start_time lower bound date to get lines from. A unix timestamp 
 	 * @return array the stamps of the lines used to create the billrun
 	 */
-	public function addLines($update_lines = false, $start_time = 0) {
-		$updatedLines = array();
+	public function addLines($update_lines = false, $start_time = 0, $flat_lines = array()) {
 		Billrun_Factory::log()->log("Querying account " . $this->aid . " for lines...", Zend_Log::DEBUG);
-		$account_lines = $this->getAccountLines($this->aid, $start_time);
+		$account_lines = $this->getAccountLines($this->aid, $start_time, false);
 //		Billrun_Factory::log()->log("Found " . count($account_lines) . " lines.", Zend_Log::DEBUG);
-		$num_lines = 0;
 		Billrun_Factory::log("Processing account Lines $this->aid");
+		$updatedLines = array_merge($this->processLines($account_lines), $this->processLines($flat_lines));
+		$updateLinesStamps = array_keys($updatedLines);
+		Billrun_Factory::log("Finished processing account $this->aid lines. Total: " . count($updatedLines), Zend_log::DEBUG);
+//		Billrun_Factory::log()->log("Querying subscriber " . $sid . " for ggsn lines...", Zend_Log::DEBUG);
+//		$subscriber_aggregated_data = $this->getSubscriberDataLines($sid, $start_time);
+//		Billrun_Factory::log()->log("Finished querying subscriber " . $sid . " for ggsn lines", Zend_Log::DEBUG);
+//		Billrun_Factory::log("Processing data lines for subscriber $sid", Zend_Log::DEBUG);
+//		$data_lines_stamps = $this->updateAggregatedData($sid, $subscriber_aggregated_data);
+//		Billrun_Factory::log("Finished processing data lines for subscriber $sid", Zend_Log::DEBUG);
+		if ($update_lines) {
+			Billrun_Factory::log("Updating account $this->aid lines with billrun stamp", Zend_Log::DEBUG);
+//			$updatedLines = array_merge($updatedLines, $data_lines_stamps);
+			asort($updateLinesStamps);
+			$this->lines->update(array('stamp' => array('$in' => $updateLinesStamps)), array('$set' => array('billrun' => $this->billrun_key)), array('multiple' => true));
+			Billrun_Factory::log("Finished updating account $this->aid lines with billrun stamp", Zend_Log::DEBUG);
+		}
+		$this->updateTotals();
+		return $updatedLines;
+	}
+
+	protected function processLines($account_lines) {
+		$updatedLines = array();
 		foreach ($account_lines as $line) {
-			$num_lines++;
 			//Billrun_Factory::log("Processing account Line for $sid : ".  microtime(true));
 			$line->collection($this->lines);
 			$pricingData = array('aprice' => $line['aprice']);
@@ -1116,23 +1145,8 @@ class Billrun_Billrun {
 				Billrun_Billrun::updateBillrun($this->billrun_key, array(), array('aprice' => $line['aprice']), $line, $plan->get('vatable'), $this);
 			}
 			//Billrun_Factory::log("Done Processing account Line for $sid : ".  microtime(true));
-			$updatedLines[] = $line['stamp'];
+			$updatedLines[$line['stamp']] = $line;
 		}
-		Billrun_Factory::log("Finished processing account $this->aid lines. Total: $num_lines", Zend_log::DEBUG);
-//		Billrun_Factory::log()->log("Querying subscriber " . $sid . " for ggsn lines...", Zend_Log::DEBUG);
-//		$subscriber_aggregated_data = $this->getSubscriberDataLines($sid, $start_time);
-//		Billrun_Factory::log()->log("Finished querying subscriber " . $sid . " for ggsn lines", Zend_Log::DEBUG);
-//		Billrun_Factory::log("Processing data lines for subscriber $sid", Zend_Log::DEBUG);
-//		$data_lines_stamps = $this->updateAggregatedData($sid, $subscriber_aggregated_data);
-//		Billrun_Factory::log("Finished processing data lines for subscriber $sid", Zend_Log::DEBUG);
-		if ($update_lines) {
-			Billrun_Factory::log("Updating account $this->aid lines with billrun stamp", Zend_Log::DEBUG);
-//			$updatedLines = array_merge($updatedLines, $data_lines_stamps);
-			asort($updatedLines);
-			$this->lines->update(array('stamp' => array('$in' => $updatedLines)), array('$set' => array('billrun' => $this->billrun_key)), array('multiple' => true));
-			Billrun_Factory::log("Finished updating account $this->aid lines with billrun stamp", Zend_Log::DEBUG);
-		}
-		$this->updateTotals();
 		return $updatedLines;
 	}
 
@@ -1186,14 +1200,14 @@ class Billrun_Billrun {
 	 * @return Mongodloid_Cursor the mongo cursor used to iterate over the lines
 	 * @todo remove aid parameter
 	 */
-	protected function getAccountLines($aid, $start_time = 0) {
+	protected function getAccountLines($aid, $start_time = 0, $include_flats = true) {
 		$start_time = new MongoDate($start_time);
 		$end_time = new MongoDate(Billrun_Util::getEndTime($this->billrun_key));
 		$query = array(
 			'aid' => $aid,
 			'urt' => array(
 				'$lte' => $end_time,
-//				'$gte' => $start_time,
+				'$gte' => $start_time, // needed for current balance
 			),
 //			'aprice' => array(
 //				'$exists' => true,
@@ -1202,6 +1216,11 @@ class Billrun_Billrun {
 //				'$ne' => 'ggsn',
 //			),
 		);
+		if (!$include_flats) {
+			$query['type'] = array(
+				'$ne' => 'flat',
+			);
+		}
 		if ($this->allowOverride) {
 			$query['billrun']['$in'] = array('000000', $this->billrun_key);
 		} else {
@@ -1213,8 +1232,12 @@ class Billrun_Billrun {
 			'urt' => 1,
 		);
 
+		$sort = array(
+			'sid' => 1,
+			'urt' => 1,
+		);
 		Billrun_Factory::log()->log("Querying for account " . $aid . " lines", Zend_Log::DEBUG);
-		$cursor = $this->lines->query($query)->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED)->hint($hint);
+		$cursor = $this->lines->query($query)->cursor()->sort($sort)->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED)->hint($hint);
 		Billrun_Factory::log()->log("Finished querying for account " . $aid . " lines", Zend_Log::DEBUG);
 //		$results = array();
 //		Billrun_Factory::log()->log("Saving account " . $aid . " lines to array", Zend_Log::DEBUG);

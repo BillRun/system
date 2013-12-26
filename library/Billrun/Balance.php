@@ -73,19 +73,19 @@ class Billrun_Balance implements ArrayAccess {
 		Billrun_Factory::log()->log("Trying to load balance " . $billrunKey . " for subscriber " . $subscriberId, Zend_Log::DEBUG);
 		$billrunKey = !$billrunKey ? Billrun_Util::getBillrunKey(time()) : $billrunKey;
 
-		$this->data = Billrun_Factory::db()->balancesCollection()->query(array(
+		$this->data = Billrun_Factory::db(array('name' => 'balances'))->balancesCollection()->query(array(
 				'sid' => $subscriberId,
 				'billrun_month' => $billrunKey
 			))->cursor()->hint(array('sid' => 1, 'billrun_month' => 1))->limit(1)->current();
 
-		$this->data->collection(Billrun_Factory::db()->balancesCollection());
+		$this->data->collection(Billrun_Factory::db(array('name' => 'balances'))->balancesCollection());
 	}
 
 	/**
 	 * method to save balance details
 	 */
 	public function save() {
-		return $this->data->save(Billrun_Factory::db()->balancesCollection());
+		return $this->data->save(Billrun_Factory::db(array('name' => 'balances'))->balancesCollection());
 	}
 
 	/**
@@ -119,7 +119,7 @@ class Billrun_Balance implements ArrayAccess {
 	 */
 	public static function createBalanceIfMissing($aid, $sid, $billrun_key, $plan_ref) {
 		$ret = false;
-		$balances_coll = Billrun_Factory::db()->balancesCollection();
+		$balances_coll = Billrun_Factory::db(array('name' => 'balances'))->balancesCollection();
 		$query = array(
 			'sid' => $sid,
 			'billrun_month' => $billrun_key,
@@ -172,12 +172,12 @@ class Billrun_Balance implements ArrayAccess {
 	 */
 	protected function isExists($subscriberId, $billrunKey) {
 
-		$blnce = Billrun_Factory::db()->balancesCollection()->query(array(
+		$balance = Billrun_Factory::db(array('name' => 'balances'))->balancesCollection()->query(array(
 					'sid' => $subscriberId,
 					'billrun_month' => $billrunKey
 				))->cursor()->current();
 
-		if (!count($blnce->getRawData())) {
+		if (!count($balance->getRawData())) {
 			return FALSE;
 		}
 		return TRUE;
@@ -215,6 +215,7 @@ class Billrun_Balance implements ArrayAccess {
 		return array(
 			'usagev' => 0,
 			'cost' => 0,
+			'count' => 0,
 		);
 	}
 

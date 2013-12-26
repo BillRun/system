@@ -71,6 +71,7 @@ class Billrun_Receiver_Inline extends Billrun_Receiver {
 		$path = $this->handleFile();
 		if (!$path) {
 			Billrun_Factory::log()->log("NOTICE : Couldn't write file $this->filename.", Zend_Log::NOTICE);
+			return FALSE;
 		} else {
 			$this->logDB($path);
 			$ret[] = $path;

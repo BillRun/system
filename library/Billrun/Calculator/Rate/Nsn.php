@@ -100,8 +100,8 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 		$matchedRate = false;
 
 		if ($record_type == "01" || //MOC call
-				($record_type == "11" && ($icg == "1001" || $icg == "1006" || ($icg >= "1201" && $icg <= "1209")) &&
-				($ocg != '3051' && $ocg != '3050') && ($ocg != '3061' && $ocg != '3060'))// Roaming on Cellcom and the call is not to a voice mail
+			($record_type == "11" && ($icg == "1001" || $icg == "1006" || ($icg >= "1201" && $icg <= "1209")) &&
+				$ocg != '3060' && $ocg != '3061') // Roaming on Cellcom and not redirection
 		) {
 			$called_number_prefixes = $this->getPrefixes($called_number);
 			foreach ($called_number_prefixes as $prefix) {

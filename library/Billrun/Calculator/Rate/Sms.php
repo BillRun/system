@@ -12,7 +12,7 @@
  * @package  calculator
  * @since    0.5
  */
-class Billrun_Calculator_Rate_Sms extends Billrun_Calculator_Rate {
+abstract class Billrun_Calculator_Rate_Sms extends Billrun_Calculator_Rate {
 
 	/**
 	 * the type of the object
@@ -26,21 +26,20 @@ class Billrun_Calculator_Rate_Sms extends Billrun_Calculator_Rate {
 	 *
 	 * @var string
 	 */
-	protected $legitimateNumberFilters = array('/^0+/', '/[^\d]/');
+
+	/**
+	 * This array holds translation map that is needed inorder to match the numbers provided from the switch withthe values in the rates.
+	 * @var array 'regex_to_look_for_in_number' => 'replacment_string'
+	 */
+	protected $prefixTranslation = array(0 => array('^0+' => ''), 1 => array('[^\d]' => ''));
 
 	public function __construct($options = array()) {
 		parent::__construct($options);
-		if(isset($options['calculator']['legitimate_number_filters'])) {
-			$this->legitimateNumberFilters = $options['calculator']['legitimate_number_filters'];
+		if (isset($options['calculator']['prefix_translation'])) {
+			$this->prefixTranslation = $options['calculator']['prefix_translation'];
 		}
+		ksort($this->prefixTranslation);
 		$this->loadRates();
-	}
-
-	/**
-	 * method to get calculator lines
-	 */
-	protected function getLines() {
-		return $this->getQueuedLines(array('type' => array('$in' => array('smpp', 'smsc', 'mmsc'))));
 	}
 
 	/**
@@ -85,9 +84,9 @@ class Billrun_Calculator_Rate_Sms extends Billrun_Calculator_Rate {
 	 * @return type
 	 */
 	protected function shouldLineBeRated($row) {
-		return ($row['type'] == 'smpp' && $row['record_type'] == '1' && $row["cause_of_terminition"] == "100" && in_array($row['called_number'], array('000000000002020', '000000000006060', '000000000007070'))) ||
-			($row['type'] == 'smsc' && $row['record_type'] == '1' && $row["cause_of_terminition"] == "100" && preg_match("/^0*9725[82]/",$row["calling_msc"]) ) ||
-			($row['type'] == 'mmsc' && ('S' == $row['action']) && $row['final_state'] == 'S' && preg_match('/^\+\d+\/TYPE\s*=\s*.*golantelecom/', $row['mm_source_addr']));
+		return ($row['type'] == 'smpp' && $row['record_type'] == '1' && in_array($row['called_number'], array('000000000002020', '000000000006060', '000000000007070', '000000000005060', '000000000002040'))) ||
+				($row['type'] == 'smsc' && $row['record_type'] == '1' && $row["cause_of_terminition"] == "100" && preg_match("/^0*9725[82]/", $row["calling_msc"]) ) ||
+				($row['type'] == 'mmsc' && ('S' == $row['action']) && $row['final_state'] == 'S' && preg_match('/^\+\d+\/TYPE\s*=\s*.*golantelecom/', $row['mm_source_addr']));
 	}
 
 	/**
@@ -98,7 +97,6 @@ class Billrun_Calculator_Rate_Sms extends Billrun_Calculator_Rate {
 			$matchedRate = false;
 			$called_number = $this->extractNumber($row);
 			$line_time = $row['urt'];
-
 			$called_number_prefixes = $this->getPrefixes($called_number);
 			foreach ($called_number_prefixes as $prefix) {
 				if (isset($this->rates[$prefix])) {
@@ -126,17 +124,23 @@ class Billrun_Calculator_Rate_Sms extends Billrun_Calculator_Rate {
 	}
 
 	/**
-	 * Extract the number from the cdr line.
+	 * Extract the number from the cdr line using a given checks and transformation  inorder to use it for  finding its rate.
 	 * @param type $row the cdr line
 	 * @return type
 	 */
 	protected function extractNumber($row) {
-		$str = ($row['type'] != 'mmsc' ? $row['called_number'] : $row['recipent_addr']);
-		foreach ($this->legitimateNumberFilters as $filter) {
-			$str = preg_replace($filter, '', $str);
+		$str = (isset($row['called_number']) ? $row['called_number'] : "");
+
+		foreach ($this->prefixTranslation as $regex_group) {
+			foreach ($regex_group as $from => $to) {
+				if (preg_match("/" . $from . "/", $str)) {
+					$str = preg_replace("/" . $from . "/", $to, $str);
+					break;
+				}
+			}
 		}
+
 		return $str;
-		//return preg_replace('/[^\d]/', '', preg_replace('/^0+/', '', ($row['type'] != 'mmsc' ? $row['called_msc'] : $row['recipent_addr'])));
 	}
 
 }

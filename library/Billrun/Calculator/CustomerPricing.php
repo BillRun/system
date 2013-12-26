@@ -71,7 +71,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		}
 		$this->loadRates();
 		$this->loadPlans();
-		$this->balances = Billrun_Factory::db()->balancesCollection();
+		$this->balances = Billrun_Factory::db(array('name' => 'balances'))->balancesCollection();
 	}
 
 	protected function getLines() {
@@ -264,9 +264,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				$pricingData = $this->getLinePricingData($volume, $usage_type, $rate, $balance);
 				$pricingData['usagesb'] = $balance['balance']['totals'][key($counters)]['usagev'];
 			} else {
-				$balance = new Mongodloid_Entity(Billrun_Balance::getEmptySubscriberEntry($billrun_key, $row['aid'], $row['sid'], $plan_ref));
-				$balance = Billrun_Factory::balance(array('data' => $balance));
-				$pricingData = $this->getLinePricingData($volume, $usage_type, $rate, $balance);
+				$pricingData = array($this->pricingField => 0);
 			}
 		} else {
 			$balance_unique_key = array('sid' => $row['sid'], 'billrun_key' => $billrun_key);
@@ -305,6 +303,8 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				$old_usage = $subRaw['balance']['totals'][$key]['usagev'];
 				$query['balance.totals.' . $key . '.usagev'] = $old_usage;
 				$update['$set']['balance.totals.' . $key . '.usagev'] = $old_usage + $value;
+				$update['$inc']['balance.totals.' . $key . '.cost'] = $pricingData[$this->pricingField];
+				$update['$inc']['balance.totals.' . $key . '.count'] = 1;
 				$pricingData['usagesb'] = $old_usage;
 			}
 			$update['$set']['balance.cost'] = $subRaw['balance']['cost'] + $pricingData[$this->pricingField];
@@ -331,6 +331,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		$query = array('sid' => $sid, 'billrun_month' => $billrun_key);
 		foreach ($counters as $key => $value) {
 			$update['$inc']['balance.totals.' . $key . '.usagev'] = $value;
+			$update['$inc']['balance.totals.' . $key . '.count'] = 1;
 		}
 		if (key($counters) == 'data') {
 			ini_set('mongo.native_long', 1);

@@ -152,6 +152,7 @@ use Billrun_Traits_FileSequenceChecking;
 		if (isset($cdrLine['basicCallInformation']['CallEventStartTimeStamp']['localTimeStamp'])) {
 			$offset = $this->currentFileHeader['networkInfo']['UtcTimeOffsetInfoList'][$cdrLine['basicCallInformation']['CallEventStartTimeStamp']['TimeOffsetCode']];
 			$cdrLine['urt'] = new MongoDate(Billrun_Util::dateTimeConvertShortToIso($cdrLine['basicCallInformation']['CallEventStartTimeStamp']['localTimeStamp'], $offset));
+			$cdrLine['tzoffset'] =  $offset;
 		}
 
 		if (isset($cdrLine['basicCallInformation']['chargeableSubscriber']['simChargeableSubscriber']['imsi'])) {
