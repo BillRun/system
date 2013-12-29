@@ -215,6 +215,7 @@ class Billrun_Balance implements ArrayAccess {
 		return array(
 			'usagev' => 0,
 			'cost' => 0,
+			'count' => 0,
 		);
 	}
 

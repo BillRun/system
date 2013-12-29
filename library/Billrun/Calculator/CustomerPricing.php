@@ -303,6 +303,8 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				$old_usage = $subRaw['balance']['totals'][$key]['usagev'];
 				$query['balance.totals.' . $key . '.usagev'] = $old_usage;
 				$update['$set']['balance.totals.' . $key . '.usagev'] = $old_usage + $value;
+				$update['$inc']['balance.totals.' . $key . '.cost'] = $pricingData[$this->pricingField];
+				$update['$inc']['balance.totals.' . $key . '.count'] = 1;
 				$pricingData['usagesb'] = $old_usage;
 			}
 			$update['$set']['balance.cost'] = $subRaw['balance']['cost'] + $pricingData[$this->pricingField];
@@ -329,6 +331,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		$query = array('sid' => $sid, 'billrun_month' => $billrun_key);
 		foreach ($counters as $key => $value) {
 			$update['$inc']['balance.totals.' . $key . '.usagev'] = $value;
+			$update['$inc']['balance.totals.' . $key . '.count'] = 1;
 		}
 		if (key($counters) == 'data') {
 			ini_set('mongo.native_long', 1);

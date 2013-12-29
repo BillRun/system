@@ -928,6 +928,7 @@ class Billrun_Billrun {
 				}
 				$zone['totals'][key($counters)]['usagev'] = $this->getFieldVal($zone['totals'][key($counters)]['usagev'], 0) + $volume_priced;
 				$zone['totals'][key($counters)]['cost'] = $this->getFieldVal($zone['totals'][key($counters)]['cost'], 0) + $pricingData['aprice'];
+				$zone['totals'][key($counters)]['count'] = $this->getFieldVal($zone['totals'][key($counters)]['count'], 0) + 1;
 			}
 			if ($plan_key != 'in_plan' || $zone_key == 'service') {
 				$zone['cost'] = $this->getFieldVal($zone['cost'], 0) + $pricingData['aprice'];
@@ -1206,7 +1207,7 @@ class Billrun_Billrun {
 			'aid' => $aid,
 			'urt' => array(
 				'$lte' => $end_time,
-//				'$gte' => $start_time,
+				'$gte' => $start_time, // needed for current balance
 			),
 //			'aprice' => array(
 //				'$exists' => true,
@@ -1232,7 +1233,7 @@ class Billrun_Billrun {
 		);
 
 		$sort = array(
-			'sid' => 1,
+			'aid' => 1,
 			'urt' => 1,
 		);
 		Billrun_Factory::log()->log("Querying for account " . $aid . " lines", Zend_Log::DEBUG);
