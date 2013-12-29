@@ -621,7 +621,11 @@ class Generator_Golanxml extends Billrun_Generator {
 	}
 
 	protected function getIntervalByRate($rate, $usage_type) {
-		return $rate['rates'][$usage_type]['rate'][0]['interval'];
+		$interval = $rate['rates'][$usage_type]['rate'][0]['interval'];
+		if ($usage_type=='data' && $rate['rates'][$usage_type]['category']=='roaming') {
+			$interval = $interval / 1024;
+		}
+		return $interval;
 	}
 
 	protected function getPriceByRate($rate, $usage_type) {
@@ -774,7 +778,11 @@ class Generator_Golanxml extends Billrun_Generator {
 	protected function getCalledNo($line) {
 		$called_number = '';
 		if ($line['type'] == 'tap3') {
-			$called_number = $line['called_number'];
+			if ($line['usaget'] == 'incoming_call') {
+				$called_number = $line['calling_number'];
+			} else {
+				$called_number = $line['called_number'];
+			}
 		} else if (isset($line['called_number'])) { // mmsc might not have called_number
 			$called_number = $this->beautifyPhoneNumber($line['called_number']);
 		}

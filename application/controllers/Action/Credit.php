@@ -68,6 +68,7 @@ class CreditAction extends Action_Base {
 		// @TODO: take to config
 		$optional_fields = array(
 			'vatable' => '1',
+			'service_name' => '',
 		);
 		$filtered_request = array();
 
