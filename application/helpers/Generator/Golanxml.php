@@ -774,7 +774,11 @@ class Generator_Golanxml extends Billrun_Generator {
 	protected function getCalledNo($line) {
 		$called_number = '';
 		if ($line['type'] == 'tap3') {
-			$called_number = $line['called_number'];
+			if ($line['usaget'] == 'incoming_call') {
+				$called_number = $line['calling_number'];
+			} else {
+				$called_number = $line['called_number'];
+			}
 		} else if (isset($line['called_number'])) { // mmsc might not have called_number
 			$called_number = $this->beautifyPhoneNumber($line['called_number']);
 		}
