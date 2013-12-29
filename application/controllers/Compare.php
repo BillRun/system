@@ -424,8 +424,8 @@ class CompareController extends Yaf_Controller_Abstract {
 		}
 	}
 
-	protected function displayMsg($msg, $imporatnt = false) {
-		if ($imporatnt) {
+	protected function displayMsg($msg, $important = false) {
+		if ($important) {
 			echo '<b>' . $msg . '</b></br>';
 		} else {
 			echo $msg . '</br>';
