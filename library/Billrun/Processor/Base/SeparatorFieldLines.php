@@ -105,7 +105,7 @@ abstract class Billrun_Processor_Base_SeparatorFieldLines extends Billrun_Proces
 			$this->parser->setStructure($this->data_structure); // for the next iteration
 			$this->parser->setLine($line);
 			// @todo: trigger after row load (including $header, $row)
-			$row = $this->parser->parse();
+			$row = $this->filterFields($this->parser->parse());
 			// @todo: trigger after row parse (including $header, $row)
 			$row['source'] = self::$type;
 			$row['type'] = static::$type;
@@ -124,4 +124,31 @@ abstract class Billrun_Processor_Base_SeparatorFieldLines extends Billrun_Proces
 	 * @return true (by default) if the line is valid or false if theres some problem.
 	 */
 	abstract protected function isValidDataRecord($dataLine);
+	
+	/**
+	 * (@TODO  duplicate of Billrun_Processor_Base_Binary::filterFields merge both of them to the processor  when  time  are less daire!)
+	 * filter the record row data fields from the records
+	 * (The required field can be written in the config using <type>.fields_filter)
+	 * @param Array		$rawRow the full data record row.
+	 * @return Array	the record row with filtered only the requierd fields in it  
+	 *					or if no filter is defined in the configuration the full data record.
+	 */
+	protected function filterFields($rawRow) {
+		$stdFields = array('stamp');
+		$row = array();
+		
+		$requiredFields = Billrun_Factory::config()->getConfigValue( static::$type.'.fields_filter',array(),'array');		
+		if(!empty($requiredFields)) {
+			$passThruFields = array_merge($requiredFields,$stdFields);
+			foreach($passThruFields as $field) {
+				if(isset($rawRow[$field])) {
+					$row[$field] = $rawRow[$field];
+				}
+			}
+		} else {
+			return $rawRow;
+		}
+		
+		return $row;
+	}
 }
