@@ -621,7 +621,11 @@ class Generator_Golanxml extends Billrun_Generator {
 	}
 
 	protected function getIntervalByRate($rate, $usage_type) {
-		return $rate['rates'][$usage_type]['rate'][0]['interval'];
+		$interval = $rate['rates'][$usage_type]['rate'][0]['interval'];
+		if ($usage_type=='data' && $rate['rates'][$usage_type]['category']=='roaming') {
+			$interval = $interval / 1024;
+		}
+		return $interval;
 	}
 
 	protected function getPriceByRate($rate, $usage_type) {
