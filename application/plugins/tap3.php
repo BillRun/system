@@ -259,8 +259,8 @@ use Billrun_Traits_FileSequenceChecking;
 			if (in_array($record->getType(), $this->nsnConfig['config']['data_records'])) {
 				foreach ($record->getData() as $key => $data) {
 					$row = $processor->buildDataRow($data);
-					$row['file_rec_num'] = $key;
 					if ($row) {
+						$row['file_rec_num'] = $key;
 						$processorData['data'][] = $row;
 					}
 				}
