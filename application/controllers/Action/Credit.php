@@ -63,12 +63,12 @@ class CreditAction extends Action_Base {
 			'account_id',
 			'subscriber_id',
 			'credit_time',
+			'service_name',
 		);
 
 		// @TODO: take to config
 		$optional_fields = array(
 			'vatable' => '1',
-			'service_name' => '',
 		);
 		$filtered_request = array();
 
