@@ -481,7 +481,7 @@ class Billrun_Billrun {
 		}
 		if ($row['type'] == 'credit') {
 			$plan_key = 'credit';
-			$zone_key = $row['reason'];
+			$zone_key = $row['service_name'];
 		} else if (!isset($pricingData['over_plan']) && !isset($pricingData['out_plan'])) { // in plan
 			$plan_key = 'in_plan';
 			if ($row['type'] == 'flat') {

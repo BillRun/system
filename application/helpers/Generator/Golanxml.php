@@ -146,22 +146,13 @@ class Generator_Golanxml extends Billrun_Generator {
 					if (!$line->isEmpty() && $line['type'] != 'ggsn') {
 						$line->collection($this->lines_coll);
 						$billing_record = $billing_records->addChild('BILLING_RECORD');
-						$this->updateBillingRecord($billing_record, $this->getDate($line), $this->getTariffItem($line, $subscriber), $this->getCalledNo($line), $this->getCallerNo($line), $this->getUsageVolume($line), $this->getCharge($line), $this->getCredit($line), $this->getTariffKind($line['usaget']), $this->getAccessPrice($line), $this->getInterval($line), $this->getRate($line), $this->getIntlFlag($line), $this->getDiscountUsage($line), $this->getRoaming($line), $this->getServingNetwork($line));
+						$this->updateBillingRecord($billing_record, $this->getDate($line), $this->getTariffItem($line, $subscriber), $this->getCalledNo($line), $this->getCallerNo($line), $this->getUsageVolume($line), $this->getCharge($line), $this->getCredit($line), $this->getTariffKind($line['usaget']), $this->getAccessPrice($line), $this->getInterval($line), $this->getRate($line), $this->getIntlFlag($line), $this->getDiscountUsage($line), $this->getRoaming($line), $this->getServingNetwork($line), $this->getLineTypeOfBillingChar($line));
 					}
 				}
 				$subscriber_aggregated_data = $this->get_subscriber_aggregated_data_lines($subscriber);
 				foreach ($subscriber_aggregated_data as $line) {
 					$billing_record = $billing_records->addChild('BILLING_RECORD');
-					$this->updateBillingRecord($billing_record, $line['day'], $line['rate_key'], '', '', $line['usage_volume'], $line['aprice'], 0, $line['tariff_kind'], 0, $line['interval'], $line['rate_price'], 0, $line['discount_usage'], 0, '');
-
-					/* ine = array();
-					  $aggregated_line['day'] = date_create_from_format("Ymd", $day)->format('Y/m/d H:i:s');
-					  $aggregated_lines['rate_key'] = 'INTERNET_BILL_BY_VOLUME';
-					  $aggregated_lines['usage_volume'] = $this->bytesToKB($data_by_day['usagev']);
-					  $aggregated_lines['aprice'] = $this->bytesToKB($data_by_day['aprice']);
-					  $aggregated_lines['tariff_kind'] = $this->getTariffKind('data');
-					  $aggregated_lines['discount_usage'] = $this->getDiscountUsageByPlanFlag($data_by_day['plan_flag']);
-					  } */
+					$this->updateBillingRecord($billing_record, $line['day'], $line['rate_key'], '', '', $line['usage_volume'], $line['aprice'], 0, $line['tariff_kind'], 0, $line['interval'], $line['rate_price'], 0, $line['discount_usage'], 0, '', 'D');
 				}
 			}
 
@@ -622,7 +613,7 @@ class Generator_Golanxml extends Billrun_Generator {
 
 	protected function getIntervalByRate($rate, $usage_type) {
 		$interval = $rate['rates'][$usage_type]['rate'][0]['interval'];
-		if ($usage_type=='data' && $rate['rates'][$usage_type]['category']=='roaming') {
+		if ($usage_type == 'data' && $rate['rates'][$usage_type]['category'] == 'roaming') {
 			$interval = $interval / 1024;
 		}
 		return $interval;
@@ -727,8 +718,8 @@ class Generator_Golanxml extends Billrun_Generator {
 		$tariffItem = '';
 		if ($line['type'] == 'flat') {
 			$tariffItem = 'GIFT-GC_GOLAN-' . $this->getNextPlanName($subscriber);
-		} else if ($line['type'] == 'credit' && isset($line['reason'])) {
-			$tariffItem = $line['reason'];
+		} else if ($line['type'] == 'credit' && isset($line['service_name'])) {
+			$tariffItem = $line['service_name'];
 		} else {
 			if ($line['type'] == 'tap3') {
 				$tariffItem = $this->getNsoftRoamingRate($line['usaget']);
@@ -790,7 +781,7 @@ class Generator_Golanxml extends Billrun_Generator {
 	}
 
 	protected function getDiscountUsage($line) {
-		if (isset($line['out_plan'])) {
+		if (isset($line['out_plan']) || $line['type'] == 'credit') {
 			$plan_flag = 'out';
 		} else if (isset($line['over_plan']) && ($line['usagev'] == $line['over_plan'])) {
 			$plan_flag = 'over';
@@ -1014,7 +1005,7 @@ EOI;
 		return str_replace(' ', '_', strtoupper($taarif_kind . '-' . $rate_key));
 	}
 
-	protected function updateBillingRecord($billing_record, $golan_date, $tariff_item, $called_number, $caller_number, $volume, $charge, $credit, $tariff_kind, $access_price, $interval, $rate, $intl_flag, $discount_usage, $roaming, $serving_network) {
+	protected function updateBillingRecord($billing_record, $golan_date, $tariff_item, $called_number, $caller_number, $volume, $charge, $credit, $tariff_kind, $access_price, $interval, $rate, $intl_flag, $discount_usage, $roaming, $serving_network, $type_of_billing_char) {
 		$billing_record->TIMEOFBILLING = $golan_date;
 		$billing_record->TARIFFITEM = $tariff_item;
 		$billing_record->CTXT_CALL_OUT_DESTINATIONPNB = $called_number; //@todo maybe save dest_no in all processors and use it here
@@ -1030,6 +1021,7 @@ EOI;
 		$billing_record->DISCOUNT_USAGE = $discount_usage;
 		$billing_record->ROAMING = $roaming;
 		$billing_record->SERVINGPLMN = $serving_network;
+		$billing_record->TYPE_OF_BILLING_CHAR = $type_of_billing_char;
 	}
 
 	protected function getDataRate() {
@@ -1094,9 +1086,35 @@ EOI;
 		return isset($line['serving_network']) ? $line['serving_network'] : '';
 	}
 
-}
+	protected function getLineTypeOfBillingChar($line) {
+		$type = $line['type'];
+		$usaget = $line['usaget'];
+		$char = '';
+		if ($usaget == 'call') {
+			$char = 'S';
+		} else if ($usaget == 'sms') {
+			$char = 'T';
+		} else if ($type == 'credit') {
+			$credit_type = $line['credit_type'];
+			if ($credit_type == 'refund') {
+				$char = 'R';
+			} else if ($credit_type == 'charge') {
+				$char = 'C';
+			}
+		} else if ($type == 'tap3') {
+			if ($usaget == 'incoming_call') {
+				$char = 'I';
+			} else if ($usaget == 'data') {
+				$char = 'W';
+			}
+		} else if ($type == 'flat') {
+			$char = 'G';
+		} else if ($type == 'mmsc') {
+			$char = 'P';
+		} else if ($type == 'ggsn') {
+			$char = 'D';
+		}
+		return $char;
+	}
 
-/*
- * <DISCOUNT_USAGE>DISCOUNT_OUT</DISCOUNT_USAGE> over_plan
- * DISCOUNT_NONE out_plan
- */
+}
