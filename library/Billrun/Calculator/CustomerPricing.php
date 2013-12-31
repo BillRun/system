@@ -262,7 +262,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			if ($this->unlimited_to_balances) {
 				$balance = $this->increaseSubscriberBalance($counters, $billrun_key, $row['aid'], $row['sid'], $plan_ref);
 				$pricingData = $this->getLinePricingData($volume, $usage_type, $rate, $balance);
-				$pricingData['usagesb'] = $balance['balance']['totals'][$this->getUsage($counters)]['usagev'];
+				$pricingData['usagesb'] = $balance['balance']['totals'][$this->getUsageKey($counters)]['usagev'];
 			} else {
 				$pricingData = array($this->pricingField => 0);
 			}
@@ -309,7 +309,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			}
 			$update['$set']['balance.cost'] = $subRaw['balance']['cost'] + $pricingData[$this->pricingField];
 			$options = array('w' => 1);
-			$is_data_usage = $this->getUsage($counters) == 'data';
+			$is_data_usage = $this->getUsageKey($counters) == 'data';
 			if ($is_data_usage) {
 				$this->setMongoNativeLong(1);
 			}
@@ -328,7 +328,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		return $pricingData;
 	}
 
-	protected function getUsage($counters) {
+	protected function getUsageKey($counters) {
 		return key($counters); // array pointer will always point to the first key
 	}
 
@@ -346,7 +346,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			$update['$inc']['balance.totals.' . $key . '.usagev'] = $value;
 			$update['$inc']['balance.totals.' . $key . '.count'] = 1;
 		}
-		$is_data_usage = $this->getUsage($counters) == 'data';
+		$is_data_usage = $this->getUsageKey($counters) == 'data';
 		if ($is_data_usage) {
 			$this->setMongoNativeLong(1);
 		}
