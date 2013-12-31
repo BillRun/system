@@ -262,7 +262,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			if ($this->unlimited_to_balances) {
 				$balance = $this->increaseSubscriberBalance($counters, $billrun_key, $row['aid'], $row['sid'], $plan_ref);
 				$pricingData = $this->getLinePricingData($volume, $usage_type, $rate, $balance);
-				$pricingData['usagesb'] = $balance['balance']['totals'][key($counters)]['usagev'];
+				$pricingData['usagesb'] = $balance['balance']['totals'][$this->getUsage($counters)]['usagev'];
 			} else {
 				$pricingData = array($this->pricingField => 0);
 			}
@@ -309,13 +309,14 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			}
 			$update['$set']['balance.cost'] = $subRaw['balance']['cost'] + $pricingData[$this->pricingField];
 			$options = array('w' => 1);
-			if (key($counters) == 'data') {
-				ini_set('mongo.native_long', 1);
+			$is_data_usage = $this->getUsage($counters) == 'data';
+			if ($is_data_usage) {
+				$this->setMongoNativeLong(1);
 			}
 			Billrun_Factory::log()->log("Updating balance " . $billrun_key . " of subscriber " . $row['sid'], Zend_Log::DEBUG);
 			$ret = $this->balances->update($query, $update, $options);
-			if (key($counters) == 'data') {
-				ini_set('mongo.native_long', 0);
+			if ($is_data_usage) {
+				$this->setMongoNativeLong(0);
 			}
 			if (!($ret['ok'] && $ret['updatedExisting'])) { // failed because of different totals (could be that another server with another line raised the totals). Need to calculate pricingData from the beginning
 				Billrun_Factory::log()->log("Concurrent write to balance " . $billrun_key . " of subscriber " . $row['sid'] . ". Retrying...", Zend_Log::DEBUG);
@@ -327,19 +328,32 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		return $pricingData;
 	}
 
+	protected function getUsage($counters) {
+		return key($counters); // array pointer will always point to the first key
+	}
+
+	/**
+	 * 
+	 * @param int $status either 1 to turn on or 0 for off
+	 */
+	protected function setMongoNativeLong($status = 1) {
+		ini_set('mongo.native_long', $status);
+	}
+
 	protected function increaseSubscriberBalance($counters, $billrun_key, $aid, $sid, $plan_ref) {
 		$query = array('sid' => $sid, 'billrun_month' => $billrun_key);
 		foreach ($counters as $key => $value) {
 			$update['$inc']['balance.totals.' . $key . '.usagev'] = $value;
 			$update['$inc']['balance.totals.' . $key . '.count'] = 1;
 		}
-		if (key($counters) == 'data') {
-			ini_set('mongo.native_long', 1);
+		$is_data_usage = $this->getUsage($counters) == 'data';
+		if ($is_data_usage) {
+			$this->setMongoNativeLong(1);
 		}
 		Billrun_Factory::log()->log("Increasing subscriber $sid balance " . $billrun_key, Zend_Log::DEBUG);
 		$balance = $this->balances->findAndModify($query, $update, array(), array());
-		if (key($counters) == 'data') {
-			ini_set('mongo.native_long', 0);
+		if ($is_data_usage) {
+			$this->setMongoNativeLong(0);
 		}
 		if ($balance->isEmpty()) {
 			Billrun_Balance::createBalanceIfMissing($aid, $sid, $billrun_key, $plan_ref);
