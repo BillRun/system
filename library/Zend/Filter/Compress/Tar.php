@@ -57,7 +57,6 @@ class Zend_Filter_Compress_Tar extends Zend_Filter_Compress_CompressAbstract
     public function __construct($options = null)
     {
         if (!class_exists('Archive_Tar')) {
-            require_once 'Zend/Loader.php';
             try {
                 Zend_Loader::loadClass('Archive_Tar');
             } catch (Zend_Exception $e) {

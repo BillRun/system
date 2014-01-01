@@ -261,7 +261,6 @@ class Zend_Log
         $params    = isset($config[ $type .'Params' ]) ? $config[ $type .'Params' ] : array();
         $className = $this->getClassName($config, $type, $namespace);
         if (!class_exists($className)) {
-            require_once 'Zend/Loader.php';
             Zend_Loader::loadClass($className);
         }
 

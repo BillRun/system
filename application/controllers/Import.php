@@ -15,7 +15,7 @@
 class ImportController extends Yaf_Controller_Abstract {
 
 	public function indexAction() {
-		die("If you wish to import remove the \"die\"");
+		die();
 		$parser = Billrun_Parser::getInstance(array(
 				'type' => 'separator',
 				'separator' => ",",
@@ -109,6 +109,48 @@ class ImportController extends Yaf_Controller_Abstract {
 			. "Data merge package count: " . count($mergePackageData) . "<br />"
 			. "Merge intl. networks count: " . $importMapData . "<br />" . PHP_EOL;
 		;
+	}
+
+	public function csvAction() {
+		$path = '/home/shani/Desktop/refunds_201312.csv'; // TODO: setup by config cli input
+		if (!file_exists($path) || is_dir($path)) {
+			Billrun_Factory::log("file not exists or path is directory");
+			return FALSE;
+		}
+
+		if (($handle = fopen($path, "r")) !== FALSE) {
+			$delimiter = "\t"; // TODO: setup by config cli input
+			$limit = 0; // TODO: setup by config cli input
+			$enclosure = '"'; // TODO: setup by config cli input
+			$escape = '\\'; // TODO: setup by config cli input
+			$uri = 'http://billrun/api/bulkcredit'; // TODO: setup by config cli input
+			$curl = new Zend_Http_Client_Adapter_Curl();
+			$client = new Zend_Http_Client($uri);
+			$client->setAdapter($curl);
+			$client->setMethod(Zend_Http_Client::POST);
+			$send_arr = array();
+			while (($data = fgetcsv($handle, $limit, $delimiter)) !== FALSE) {
+				$urt = new Zend_Date(strtotime($data[2] . " " . $data[3]), 'he_IL');
+				$send = array(
+					'account_id' => $data[0],
+					'subscriber_id' => $data[1],
+					'credit_time' => $urt->getTimestamp(),
+					'amount_without_vat' => $data[4],
+					'reason' => $data[5],
+					'credit_type' => isset($data[6]) ? $data[6] : 'refund',
+				);
+				$send_arr[] = $send;
+			}
+			$params = array(
+				'operation' => 'credit',
+				'credits' => json_encode($send_arr),
+			);
+			$client->setParameterPost($params);
+			$response = $client->request();
+			print $response->getBody();
+			Billrun_Factory::log("API response with: " . print_R($response->getBody(), true) . "<br />");
+		}
+		die(" end...");
 	}
 
 }

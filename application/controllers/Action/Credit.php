@@ -63,12 +63,12 @@ class CreditAction extends Action_Base {
 			'account_id',
 			'subscriber_id',
 			'credit_time',
+			'service_name',
 		);
 
 		// @TODO: take to config
 		$optional_fields = array(
 			'vatable' => '1',
-			'service_name' => '',
 		);
 		$filtered_request = array();
 
@@ -124,9 +124,15 @@ class CreditAction extends Action_Base {
 		}
 
 		if (is_string($filtered_request['reason'])) {
-			$filtered_request['reason'] = preg_replace('/[^a-zA-Z0-9-_]+/', '_', $filtered_request['reason']); // removes unwanted characters from the string (especially dollar sign and dots) as they are not allowed as mongo keys
+			$filtered_request['reason'] = preg_replace('/[^a-zA-Z0-9-_]+/', '_', $filtered_request['reason']); // removes unwanted characters from the string (especially dollar sign and dots)
 		} else {
 			return $this->setError('reason error', $credit_row);
+		}
+
+		if (is_string($filtered_request['service_name'])) {
+			$filtered_request['service_name'] = preg_replace('/[^a-zA-Z0-9-_]+/', '_', $filtered_request['service_name']); // removes unwanted characters from the string (especially dollar sign and dots) as they are not allowed as mongo keys
+		} else {
+			return $this->setError('service_name error', $credit_row);
 		}
 
 		if (isset($filtered_request['account_id'])) {

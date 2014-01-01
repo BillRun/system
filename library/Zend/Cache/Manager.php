@@ -19,12 +19,6 @@
  * @version    $Id: Manager.php 24593 2012-01-05 20:35:02Z matthew $
  */
 
-/** @see Zend_Cache_Exception */
-require_once 'Zend/Cache/Exception.php';
-
-/** @see Zend_Cache */
-require_once 'Zend/Cache.php';
-
 /**
  * @category   Zend
  * @package    Zend_Cache

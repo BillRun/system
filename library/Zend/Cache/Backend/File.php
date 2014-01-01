@@ -20,16 +20,6 @@
  * @version    $Id: File.php 24844 2012-05-31 19:01:36Z rob $
  */
 
-/**
- * @see Zend_Cache_Backend_Interface
- */
-require_once 'Zend/Cache/Backend/ExtendedInterface.php';
-
-/**
- * @see Zend_Cache_Backend
- */
-require_once 'Zend/Cache/Backend.php';
-
 
 /**
  * @package    Zend_Cache

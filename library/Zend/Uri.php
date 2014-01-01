@@ -132,7 +132,6 @@ abstract class Zend_Uri
             }
         }
 
-        require_once 'Zend/Loader.php';
         try {
             Zend_Loader::loadClass($className);
         } catch (Exception $e) {
