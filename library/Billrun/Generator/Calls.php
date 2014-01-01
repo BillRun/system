@@ -342,14 +342,17 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 		Billrun_Factory::log("Handling an active call.");
 		$callRecord['call_start_time'] = new MongoDate( round(microtime(true)) );
 		$ret = $device->waitForCallToEnd($hangup ? $waitTime : $waitTime + static::WAIT_TIME_PADDING);
-		$callRecord['call_end_time'] = new MongoDate( round(microtime(true)) );
+
 		if ($ret == Gsmodem_Gsmodem::NO_RESPONSE ) {
 				$device->hangUp();
 				$callRecord['end_result'] = 'hang_up';
 		}  else {
 			$callRecord['end_result'] = $device->getState();
 		}
+		
+		$callRecord['call_end_time'] = new MongoDate( round(microtime(true)) );
 		$callRecord['duration'] = $callRecord['call_end_time']->sec - $callRecord['call_start_time']->sec;
+	
 	}
 
 	/**
