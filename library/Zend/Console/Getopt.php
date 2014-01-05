@@ -825,7 +825,7 @@ class Zend_Console_Getopt
         switch ($type) {
             case 'word':
                 if (preg_match('/\W/', $param)) {
-                    require_once 'Zend/Console/Getopt/Exception.php';
+                    // require_once 'Zend/Console/Getopt/Exception.php';
                     throw new Zend_Console_Getopt_Exception(
                         "Option \"$flag\" requires a single-word parameter, but was given \"$param\".",
                         $this->getUsageMessage());
@@ -833,7 +833,7 @@ class Zend_Console_Getopt
                 break;
             case 'integer':
                 if (preg_match('/\D/', $param)) {
-                    require_once 'Zend/Console/Getopt/Exception.php';
+                    // require_once 'Zend/Console/Getopt/Exception.php';
                     throw new Zend_Console_Getopt_Exception(
                         "Option \"$flag\" requires an integer parameter, but was given \"$param\".",
                         $this->getUsageMessage());
@@ -910,13 +910,13 @@ class Zend_Console_Getopt
             $mainFlag = $flags[0];
             foreach ($flags as $flag) {
                 if (empty($flag)) {
-                    require_once 'Zend/Console/Getopt/Exception.php';
+                    // require_once 'Zend/Console/Getopt/Exception.php';
                     throw new Zend_Console_Getopt_Exception(
                         "Blank flag not allowed in rule \"$ruleCode\".");
                 }
                 if (strlen($flag) == 1) {
                     if (isset($this->_ruleMap[$flag])) {
-                        require_once 'Zend/Console/Getopt/Exception.php';
+                        // require_once 'Zend/Console/Getopt/Exception.php';
                         throw new Zend_Console_Getopt_Exception(
                             "Option \"-$flag\" is being defined more than once.");
                     }
@@ -924,7 +924,7 @@ class Zend_Console_Getopt
                     $rule['alias'][] = $flag;
                 } else {
                     if (isset($this->_rules[$flag]) || isset($this->_ruleMap[$flag])) {
-                        require_once 'Zend/Console/Getopt/Exception.php';
+                        // require_once 'Zend/Console/Getopt/Exception.php';
                         throw new Zend_Console_Getopt_Exception(
                             "Option \"--$flag\" is being defined more than once.");
                     }
