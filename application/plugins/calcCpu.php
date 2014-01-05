@@ -176,6 +176,7 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 
 	protected function removeDuplicates($processor) {
+		Billrun_Factory::log('Plugin calc cpu remove duplicates', Zend_Log::INFO);
 		$lines_coll = Billrun_Factory::db()->linesCollection();
 		$data = &$processor->getData();
 		$stamps = array();
