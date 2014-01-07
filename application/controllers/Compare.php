@@ -473,6 +473,7 @@ class CompareController extends Yaf_Controller_Abstract {
 		} else {
 			echo $msg . '</br>';
 		}
+		echo PHP_EOL;
 	}
 
 	protected function printDifferencesInTotals() {
@@ -494,7 +495,7 @@ class CompareController extends Yaf_Controller_Abstract {
 			ssh2_auth_password($connection, 'shani', 'abhskk7458010');
 			$counter = 0;
 			while (($data = fgetcsv($handle, 0, ",")) !== FALSE) {
-				error_log( ++$counter);
+				error_log(++$counter);
 				if (is_numeric($data[0])) {
 					ssh2_scp_recv($connection, '/var/www/billrun/files/invoices/201312/' . $data[1], '/home/shani/projects/billrun/files/invoices/Checks/billrun/' . $data[1]);
 				}
@@ -508,7 +509,7 @@ class CompareController extends Yaf_Controller_Abstract {
 		if (($handle = fopen($working_dir . "billing_crm.201312.diff_result_files.csv", "r")) !== FALSE) {
 			$counter = 0;
 			while (($data = fgetcsv($handle, 0, ",")) !== FALSE) {
-				error_log( ++$counter);
+				error_log(++$counter);
 				if (is_numeric($data[2])) {
 					$invoice_filename = 'B' . str_pad($data[2], 7, "0", STR_PAD_LEFT) . '.xml';
 					copy('/mnt/nsoft/P_GOLAN/201312.01/' . $invoice_filename, '/home/shani/projects/billrun/files/invoices/Checks/nsoft/201312_' . $data[0] . '.xml	');

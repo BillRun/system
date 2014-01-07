@@ -44,6 +44,7 @@ class Generator_Golanxml extends Billrun_Generator {
 		if (isset($options['size'])) {
 			$this->size = intval($options['size']);
 		}
+
 		$this->lines_coll = Billrun_Factory::db()->linesCollection();
 		$this->loadRates();
 		$this->loadPlans();
@@ -501,18 +502,18 @@ class Generator_Golanxml extends Billrun_Generator {
 	 */
 	protected function get_subscriber_lines($subscriber) {
 //		$start_time = new MongoDate(0);
-//		$end_time = new MongoDate(Billrun_Util::getEndTime($this->stamp));
+		$end_time = new MongoDate(Billrun_Util::getEndTime($this->stamp));
 		$query = array(
 			'sid' => $subscriber['sid'],
-//			'urt' => array(
-//				'$lte' => $end_time,
+			'urt' => array(
+				'$lte' => $end_time, // to filter out next billrun lines
 //				'$gte' => $start_time,
-//			),
+			),
 //			'aprice' => array(
 //				'$exists' => true,
 //			),
 			'billrun' => array(
-				'$in' => array('000000', $this->stamp),
+				'$in' => array('000000', $this->stamp), // because the billrun stamp may have not changed yet from 000000
 			),
 			'type' => array(
 				'$ne' => 'ggsn',

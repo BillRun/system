@@ -145,7 +145,7 @@ class Generator_Balance extends Generator_Golanxml {
 
 	protected function get_subscriber_lines($subscriber) {
 		$start_time = new MongoDate(Billrun_Util::getStartTime($this->stamp));
-		$end_time = new MongoDate($this->now);
+//		$end_time = new MongoDate($this->now);
 		$query = array(
 			'sid' => $subscriber['sid'],
 			'urt' => array(
