@@ -182,7 +182,9 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 
 	protected function getIdentityParams($row) {
 		$params = array();
-		foreach ($this->translateCustomerIdentToAPI as $key => $toKey) {
+		$customer = $this->isOutgoingCall($row) ? "caller" : "callee";
+		$customer_identification_translation = $this->translateCustomerIdentToAPI[$customer];
+		foreach ($customer_identification_translation as $key => $toKey) {
 			if (isset($row[$key])) {
 				$params[$toKey['toKey']] = preg_replace($toKey['clearRegex'], '', $row[$key]);
 				//$this->subscriberNumber = $params[$toKey['toKey']];
@@ -229,19 +231,52 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	 */
 	public function isLineLegitimate($line) {
 		if (isset($line['usagev']) && $line['usagev'] !== 0) {
-			foreach ($this->translateCustomerIdentToAPI as $key => $toKey) {
-				if (isset($line[$key]) && strlen($line[$key])) {
-					if (is_array($line)) {
-						$arate = $line['arate'];
-					} else {
-						$arate = $line->get('arate', true);
+			if ($this->isCustomerable($line)) {
+				$customer = $this->isOutgoingCall($line) ? "caller" : "callee";
+				$customer_identification_translation = $this->translateCustomerIdentToAPI[$customer];
+				foreach ($customer_identification_translation as $key => $toKey) {
+					if (isset($line[$key]) && strlen($line[$key])) {
+						return true;
 					}
-//					$arate = $line['arate'];
-					return (isset($arate) && $arate); //it  depend on customer rate to detect if the line is incoming or outgoing.
 				}
 			}
 		}
 		return false;
+	}
+
+	protected function isCustomerable($line) {
+		if ($line['type'] == 'nsn') {
+			$record_type = $line['record_type'];
+			if ($record_type == '11' || $record_type == '12') {
+				$relevant_cg = $record_type == '11' ? $line['in_circuit_group'] : $line['out_circuit_group'];
+				if (!($relevant_cg == "1001" || $relevant_cg == "1006" || ($relevant_cg >= "1201" && $relevant_cg <= "1209"))) { // what about GOLAN IN direction (3060/3061)?
+					return false;
+				}
+			} else if (!in_array($record_type, array('01', '02'))) {
+				return false;
+			}
+		} else {
+			if (is_array($line)) {
+				$arate = $line['arate'];
+			} else {
+				$arate = $line->get('arate', true);
+			}
+			return (isset($arate) && $arate); // for non-nsn records we currently identify only outgoing usage, based on arate.
+		}
+		return true;
+	}
+
+	/**
+	 * It is assumed that the line is customerable
+	 * @param type $line
+	 * @return boolean
+	 */
+	protected function isOutgoingCall($line) {
+		$outgoing = true;
+		if ($line['type'] == 'nsn') {
+			$outgoing = in_array($line['record_type'], array('01', '11'));
+		}
+		return $outgoing;
 	}
 
 }
