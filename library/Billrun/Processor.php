@@ -634,15 +634,22 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 * prepare the queue before insert
 	 */
 	protected function prepareQueue() {
-		foreach ($this->data['data'] as $row) {
-			$row = array(
-				'stamp' => $row['stamp'], 
-				'type' => $row['type'], 
-				'urt' => $row['urt'], 
+		foreach ($this->data['data'] as $dataRow) {
+			$queueRow = array(
+				'stamp' => $dataRow['stamp'], 
+				'type' => $dataRow['type'], 
+				'urt' => $dataRow['urt'], 
 				'calc_name' => false, 
 				'calc_time' => false
 			);
-			$this->setQueueRow($row);
+			
+			$advancedProperties = Billrun_Factory::config()->getConfigValue("queue.advancedProperties", array('imsi', 'aid', 'sid', 'msisdn', 'called_number', 'calling_number'));
+			foreach ($advancedProperties as $property) {
+				if (isset($dataRow[$property])) {
+					$queueRow[$property] = $dataRow[$property];
+				}
+			}
+			$this->setQueueRow($queueRow);
 		}
 	}
 	

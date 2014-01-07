@@ -65,7 +65,13 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 		if ($customerCalc->isBulk()) {
 			$customerCalc->loadSubscribers($data['data']);
 		}
-		foreach ($data['data'] as &$line) {
+		$remove_garbage = Billrun_Factory::config()->getConfigValue('calcCpu.remove_garbage', false);
+		foreach ($data['data'] as $key => &$line) {
+			if ($remove_garbage) {
+				if ($line['type'] == 'ggsn' && isset($line['usagev']) && $line['usagev'] === 0) {
+					unset($data['data'][$key]);
+				}
+			}
 			if (isset($queue_data[$line['stamp']]) && $queue_data[$line['stamp']]['calc_name'] == 'rate') {
 				$entity = new Mongodloid_Entity($line);
 				if (!isset($entity['usagev']) || $entity['usagev'] === 0) {
