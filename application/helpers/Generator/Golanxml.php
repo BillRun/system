@@ -622,7 +622,7 @@ class Generator_Golanxml extends Billrun_Generator {
 	}
 
 	protected function getPriceByRate($rate, $usage_type) {
-		if (isset($rate['rates'][$usage_type]['rate'][0]['price'])) {
+		if (isset($rate['rates'][$usage_type]['rate'][0]['price']) && $usage_type != 'credit') {
 			if (in_array($usage_type, array('call', 'data', 'incoming_call')) && isset($rate['rates'][$usage_type]['rate'][0]['interval']) && $rate['rates'][$usage_type]['rate'][0]['interval'] == 1) {
 				return $rate['rates'][$usage_type]['rate'][0]['price'] * ($usage_type == 'data' ? 1024 : 60);
 			}
