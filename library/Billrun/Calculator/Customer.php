@@ -230,9 +230,9 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	 * @see Billrun_Calculator::isLineLegitimate
 	 */
 	public function isLineLegitimate($line) {
-		if (isset($line['usagev']) && $line['usagev'] !== 0) {
-			if ($this->isCustomerable($line)) {
-				$customer = $this->isOutgoingCall($line) ? "caller" : "callee";
+		if (isset($line['usagev']) && $line['usagev'] !== 0 && $this->isCustomerable($line)) {
+			$customer = $this->isOutgoingCall($line) ? "caller" : "callee";
+			if (isset($this->translateCustomerIdentToAPI[$customer])) {
 				$customer_identification_translation = $this->translateCustomerIdentToAPI[$customer];
 				foreach ($customer_identification_translation as $key => $toKey) {
 					if (isset($line[$key]) && strlen($line[$key])) {
@@ -249,9 +249,13 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			$record_type = $line['record_type'];
 			if ($record_type == '11' || $record_type == '12') {
 				$relevant_cg = $record_type == '11' ? $line['in_circuit_group'] : $line['out_circuit_group'];
-				if (!($relevant_cg == "1001" || $relevant_cg == "1006" || ($relevant_cg >= "1201" && $relevant_cg <= "1209"))) { // what about GOLAN IN direction (3060/3061)?
+				if (!($relevant_cg == "1001" || $relevant_cg == "1006" || ($relevant_cg >= "1201" && $relevant_cg <= "1209"))) {
 					return false;
 				}
+				if ($record_type == '11' && in_array($line['out_circuit_group'], array('3060', '3061'))) {
+					return false;
+				}
+				// what about GOLAN IN direction (3060/3061)?
 			} else if (!in_array($record_type, array('01', '02'))) {
 				return false;
 			}
