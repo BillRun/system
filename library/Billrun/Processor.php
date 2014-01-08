@@ -52,7 +52,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 * @var array
 	 */
 	protected $queue_data = array();
-	
+
 	/**
 	 * flag indicate to make bulk insert into database
 	 * 
@@ -95,20 +95,19 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 * @var boolean whether to preserve the modification timestamps of the files being backed up
 	 */
 	protected $preserve_timestamps = true;
-	
+
 	/**
 	 *
 	 * @var string the stamp of the processed entry in log collection
 	 */
 	protected $file_stamp = null;
 
-	
 	/**
 	 *
 	 * @var string SHould the bluk inserted lines be ordered before  the actuall  insert is done.
 	 */
 	protected $orderLinesBeforeInsert = false;
-	
+
 	/**
 	 * constructor - load basic options
 	 *
@@ -154,8 +153,8 @@ abstract class Billrun_Processor extends Billrun_Base {
 		if (isset($options['processor']['preserve_timestamps'])) {
 			$this->preserve_timestamps = $options['processor']['preserve_timestamps'];
 		}
-		
-		if(isset($options['processor']['order_lines_before_insert']) ) {
+
+		if (isset($options['processor']['order_lines_before_insert'])) {
 			$this->orderLinesBeforeInsert = $options['processor']['order_lines_before_insert'];
 		}
 	}
@@ -471,9 +470,9 @@ abstract class Billrun_Processor extends Billrun_Base {
 		}
 		$target_path = $path . DIRECTORY_SEPARATOR . $this->filename;
 		$ret = @call_user_func_array($callback, array(
-				$this->filePath,
-				$target_path,
-			));
+					$this->filePath,
+					$target_path,
+		));
 		if ($callback == 'copy' && $this->preserve_timestamps) {
 			$timestamp = filemtime($this->filePath);
 			Billrun_Util::setFileModificationTime($target_path, $timestamp);
@@ -538,13 +537,15 @@ abstract class Billrun_Processor extends Billrun_Base {
 	protected function bulkAddToCollection($collection) {
 		settype($this->bulkInsert, 'int');
 		$lines_data = $this->data['data'];
-		
-		if($this->orderLinesBeforeInsert) {
+
+		if ($this->orderLinesBeforeInsert) {
 			Billrun_Factory::log()->log("Reordering lines  by stamp...", Zend_Log::DEBUG);
-			uasort($lines_data, function($a,$b){return strcmp($a['stamp'],$b['stamp']);});
+			uasort($lines_data, function($a, $b) {
+						return strcmp($a['stamp'], $b['stamp']);
+					});
 			Billrun_Factory::log()->log("Done reordering lines  by stamp.", Zend_Log::DEBUG);
 		}
-		
+
 		try {
 			$bulkOptions = array(
 				'continueOnError' => true,
@@ -572,9 +573,11 @@ abstract class Billrun_Processor extends Billrun_Base {
 	protected function bulkAddToQueue() {
 		$queue = Billrun_Factory::db()->queueCollection();
 		$queue_data = array_values($this->queue_data);
-		if($this->orderLinesBeforeInsert) {
+		if ($this->orderLinesBeforeInsert) {
 			Billrun_Factory::log()->log("Reordering Q lines  by stamp...", Zend_Log::DEBUG);
-			uasort($queue_data, function($a,$b){return strcmp($a['stamp'],$b['stamp']);});
+			uasort($queue_data, function($a, $b) {
+						return strcmp($a['stamp'], $b['stamp']);
+					});
 			Billrun_Factory::log()->log("Done reordering Q lines  by stamp.", Zend_Log::DEBUG);
 		}
 		try {
@@ -636,23 +639,32 @@ abstract class Billrun_Processor extends Billrun_Base {
 	protected function prepareQueue() {
 		foreach ($this->data['data'] as $dataRow) {
 			$queueRow = array(
-				'stamp' => $dataRow['stamp'], 
-				'type' => $dataRow['type'], 
-				'urt' => $dataRow['urt'], 
-				'calc_name' => false, 
+				'stamp' => $dataRow['stamp'],
+				'type' => $dataRow['type'],
+				'urt' => $dataRow['urt'],
+				'calc_name' => false,
 				'calc_time' => false
 			);
-			
-			$advancedProperties = Billrun_Factory::config()->getConfigValue("queue.advancedProperties", array('imsi', 'aid', 'sid', 'msisdn', 'called_number', 'calling_number'));
-			foreach ($advancedProperties as $property) {
-				if (isset($dataRow[$property])) {
-					$queueRow[$property] = $dataRow[$property];
-				}
-			}
 			$this->setQueueRow($queueRow);
 		}
 	}
-	
+
+	public function addAdvancedPropertiesToQueue($data_lines) {
+		$queue_data = $this->getQueueData();
+		$advancedProperties = Billrun_Factory::config()->getConfigValue("queue.advancedProperties", array('imsi', 'aid', 'sid', 'msisdn', 'called_number', 'calling_number'));
+		foreach ($data_lines as $dataRow) {
+			$row_stamp = $dataRow['stamp'];
+			if (isset($queue_data[$row_stamp])) {
+				foreach ($advancedProperties as $property) {
+					if (isset($dataRow[$property])) {
+						$queue_data[$row_stamp][$property] = $dataRow[$property];
+					}
+				}
+				$this->setQueueRow($queue_data[$row_stamp]);
+			}
+		}
+	}
+
 	/**
 	 * get the queue data
 	 * 
@@ -661,7 +673,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 	public function getQueueData() {
 		return $this->queue_data;
 	}
-	
+
 	/**
 	 * set queue row
 	 * @param array $row
@@ -699,11 +711,11 @@ abstract class Billrun_Processor extends Billrun_Base {
 		$queue_max_size = Billrun_Factory::config()->getConfigValue("queue.max_size", 999999999);
 		return (Billrun_Factory::db()->queueCollection()->count() >= $queue_max_size);
 	}
-	
+
 	protected function setFileStamp($file) {
 		$this->file_stamp = $file['stamp'];
 	}
-	
+
 	protected function getFileStamp() {
 		return $this->file_stamp;
 	}
