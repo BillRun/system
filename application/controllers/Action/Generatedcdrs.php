@@ -83,11 +83,16 @@ class GeneratedcdrsAction extends Action_Base {
 				}				
 			} catch( Exception $e) {
 				if($e->getCode() == "11000") {
-					$loadedCall = $linesColl->query(array('stamp' => $call['stamp']))->cursor()->current();
-					$loadedCall->setRawData( array_merge($call,$loadedCall->getRawData()) );
-					$loadedCall->save( $linesColl );					
+					try {
+						$loadedCall = $linesColl->query(array('stamp' => $call['stamp']))->cursor()->current();
+						$loadedCall->setRawData( array_merge($call,$loadedCall->getRawData()) );
+						$loadedCall->save( $linesColl );					
+						$savedCalls[] = $call;
+					} catch( Exception $ie) {
+						Billrun_Factory::log()->log("Failed  when tryig to save call with stamp : {$call['stamp']}", Zend_Log::ERR);
+					}
 				} else {
-					Billrun_Factory::log()->log("Failed  when tryig to save call with stamp : {$call['stamp']}", Zend_Log::INFO);
+					Billrun_Factory::log()->log("Failed  when tryig to save call with stamp : {$call['stamp']}", Zend_Log::ERR);
 				}
 			}
 		}

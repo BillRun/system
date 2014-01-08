@@ -17,10 +17,10 @@ class CheckgeneratorsAction extends Action_Base {
 
 	const TIME_OFFEST_WARRNING =5;
 	const TIME_OFFEST_ALERT =7;
-	const RECEIVED_TIME_OFFSET_WARNING = 350;
-	const RECEIVED_TIME_OFFSET_ALERT = 500;	
-	const RECEIVED_TIME_OFFSET_REBOOT = 700;
-	const RECEIVED_TIME_OFFSET_RESET = 1000;
+	const RECEIVED_TIME_OFFSET_WARNING = 320;
+	const RECEIVED_TIME_OFFSET_ALERT = 380;	
+	const RECEIVED_TIME_OFFSET_REBOOT = 500;
+	const RECEIVED_TIME_OFFSET_RESET = 1200;
 	
 	/**
 	 *
@@ -38,15 +38,18 @@ class CheckgeneratorsAction extends Action_Base {
 			$activeTime = $this->isInActivePeriod();
 			
 			if($activeTime) {
+				$failedConnectionTime = min(array(time() - $generatorData['last_failed_connection'],$activeTime));
 				$inactiveTime = min(array(time() - $generatorData['receieved_timestamp'],$activeTime));
 				$lastReset = min( array( 
 									time() - Billrun_Util::getFieldVal ($generatorData['last_reset'], 0), 
 									$inactiveTime,
+									$failedConnectionTime,
 									$activeTime
 							) );
 				$lastReboot = min( array( 
 									time() - Billrun_Util::getFieldVal ($generatorData['last_reboot'], 0), 
 									$inactiveTime,
+									$failedConnectionTime,
 									$activeTime
 								) );
 				
@@ -108,7 +111,9 @@ class CheckgeneratorsAction extends Action_Base {
 			$gen = Billrun_Generator::getInstance(array('type'=>'state'));
 			$gen->stop();
 			$url = "http://$ip/api/operations/?action=restartModems";
-			$this->delayedHTTP($url);
+			if(!$this->delayedHTTP($url) ) {
+				Billrun_Factory::db()->configCollection()->findAndModify(array('key'=> 'call_generator_management'),array('$set'=>array('generators.'.preg_replace("/\./","_",$ip).'.last_failed_connection' => time())),array(),array('upsert'=>1));		
+			}
 			sleep(20);
 			$gen->start();
 			Billrun_Factory::log()->log("Finished Reseting  generator at : $ip .", Zend_Log::WARN);
@@ -121,7 +126,9 @@ class CheckgeneratorsAction extends Action_Base {
 		$gen = Billrun_Generator::getInstance(array('type'=>'state'));
 		$gen->stop();
 		$url = "http://$ip/api/operations/?action=reboot";
-		$this->delayedHTTP($url);
+		if(!$this->delayedHTTP($url) ) {
+			Billrun_Factory::db()->configCollection()->findAndModify(array('key'=> 'call_generator_management'),array('$set'=>array('generators.'.preg_replace("/\./","_",$ip).'.last_failed_connection' => time())),array(),array('upsert'=>1));		
+		}
 		sleep(20);
 		$gen->start();
 		Billrun_Factory::log()->log("Finished Rebooting  generator at : $ip .", Zend_Log::WARN);
@@ -139,7 +146,14 @@ class CheckgeneratorsAction extends Action_Base {
 
 				return $response;
 			} catch ( Exception $e ) {
-				Billrun_Factory::log()->log("When trying to send request to {$ip} , Got exception : ".$e->getMessage(), Zend_Log::ERR);				
+				Billrun_Factory::log()->log("When trying to send request to {$url} , Got exception : ".$e->getMessage(), Zend_Log::ERR);		
+				$mailer = Billrun_Factory::mailer();
+				$mailer->setSubject("Server isn't  connected to the network");
+				$mailer->setBodyText("Failed to connect with server at url $url");
+				foreach (Billrun_Factory::config()->getConfigValue('log.email.writerParams.to') as $email) {
+					$mailer->addTo($email);
+				}
+				
 				return false;
 			}
 		//	die();
