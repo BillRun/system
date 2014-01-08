@@ -657,17 +657,17 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 * @return true if succeed to add advanced properties, else false
 	 */
 	public function addAdvancedPropertiesToQueueRow($row) {
-		$queue_data = $this->getQueueData($row);
-		if ($queue_data === FALSE) {
+		$queue_row = $this->getQueueRow($row);
+		if ($queue_row === FALSE) {
 			return false;
 		}
 		$advancedProperties = Billrun_Factory::config()->getConfigValue("queue.advancedProperties", array('imsi', 'msisdn', 'called_number', 'calling_number'));
 		foreach ($advancedProperties as $property) {
 			if (isset($row[$property])) {
-				$queue_data[$property] = $row[$property];
+				$queue_row[$property] = $row[$property];
 			}
 		}
-		$this->setQueueRow($queue_data);
+		$this->setQueueRow($queue_row);
 		return true;
 	}
 

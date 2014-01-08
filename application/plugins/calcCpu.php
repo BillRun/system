@@ -42,7 +42,7 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$data = &$processor->getData();
 		Billrun_Factory::log('Plugin calc cpu rate', Zend_Log::INFO);
 		foreach ($data['data'] as &$line) {
-			$processor->addAdvancedPropertiesToQueueRow($data['data']);
+			$processor->addAdvancedPropertiesToQueueRow($line);
 			$entity = new Mongodloid_Entity($line);
 			$rateCalc = Billrun_Calculator_Rate::getRateCalculator($entity, $options);
 			if ($rateCalc->isLineLegitimate($entity)) {
