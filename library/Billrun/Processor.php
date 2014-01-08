@@ -649,20 +649,26 @@ abstract class Billrun_Processor extends Billrun_Base {
 		}
 	}
 
-	public function addAdvancedPropertiesToQueue($data_lines) {
-		$queue_data = $this->getQueueData();
-		$advancedProperties = Billrun_Factory::config()->getConfigValue("queue.advancedProperties", array('imsi', 'aid', 'sid', 'msisdn', 'called_number', 'calling_number'));
-		foreach ($data_lines as $dataRow) {
-			$row_stamp = $dataRow['stamp'];
-			if (isset($queue_data[$row_stamp])) {
-				foreach ($advancedProperties as $property) {
-					if (isset($dataRow[$property])) {
-						$queue_data[$row_stamp][$property] = $dataRow[$property];
-					}
-				}
-				$this->setQueueRow($queue_data[$row_stamp]);
+	/**
+	 * method to add advanced properties to row
+	 * 
+	 * @param Array $row data row from lines
+	 * 
+	 * @return true if succeed to add advanced properties, else false
+	 */
+	public function addAdvancedPropertiesToQueueRow($row) {
+		$queue_data = $this->getQueueData($row);
+		if ($queue_data === FALSE) {
+			return false;
+		}
+		$advancedProperties = Billrun_Factory::config()->getConfigValue("queue.advancedProperties", array('imsi', 'msisdn', 'called_number', 'calling_number'));
+		foreach ($advancedProperties as $property) {
+			if (isset($row[$property])) {
+				$queue_data[$property] = $row[$property];
 			}
 		}
+		$this->setQueueRow($queue_data);
+		return true;
 	}
 
 	/**
@@ -682,6 +688,23 @@ abstract class Billrun_Processor extends Billrun_Base {
 		$this->queue_data[$row['stamp']] = $row;
 	}
 
+	/**
+	 * get queue row
+	 * @param mixed $row if array will take the stamp from it, else bring the row by string stamp
+	 * 
+	 * return mixed the queue row if exists, else false
+	 */
+	public function getQueueRow($row) {
+		if (is_string($row) && isset($this->queue_data[$row])) {
+			return $this->queue_data[$row];
+		}
+		if (isset($this->queue_data[$row['stamp']])) {
+			return $this->queue_data[$row['stamp']];
+		}
+		return false;
+		
+	}
+	
 	/**
 	 * set queue row step
 	 * this method enable to step forward or backword queue step
