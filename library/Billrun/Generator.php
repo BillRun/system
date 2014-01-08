@@ -32,6 +32,12 @@ abstract class Billrun_Generator extends Billrun_Base {
 	 * @var int
 	 */
 	protected $loadBalanced = 0;
+	
+	/**
+	 * whether to auto create the export directory
+	 * @var boolean 
+	 */
+	protected $auto_create_dir = true;
 
 	/**
 	 * constructor
@@ -48,9 +54,13 @@ abstract class Billrun_Generator extends Billrun_Base {
 			$this->export_directory = Billrun_Factory::config()->getConfigValue(static::$type . '.export') . DIRECTORY_SEPARATOR . $this->stamp; //__DIR__ . '/../files/';
 		}
 		
+		if (isset($options['auto_create_dir'])) {
+			$this->auto_create_dir = $options['auto_create_dir'];
+		}
+		
 		$this->loadBalanced = Billrun_Factory::config()->getConfigValue('generate.loadBalanced', 0);
 
-		if (!file_exists($this->export_directory)) {
+		if ($this->auto_create_dir && !file_exists($this->export_directory)) {
 			mkdir($this->export_directory, 0777, true);
 		}
 	}
