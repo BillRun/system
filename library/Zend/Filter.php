@@ -22,7 +22,7 @@
 /**
  * @see Zend_Filter_Interface
  */
-require_once 'Zend/Filter/Interface.php';
+// require_once 'Zend/Filter/Interface.php';
 
 /**
  * @category   Zend
@@ -232,7 +232,7 @@ class Zend_Filter implements Zend_Filter_Interface
                 return $object->filter($value);
             }
         }
-        require_once 'Zend/Filter/Exception.php';
+        // require_once 'Zend/Filter/Exception.php';
         throw new Zend_Filter_Exception("Filter class not found from basename '$classBaseName'");
     }
 }

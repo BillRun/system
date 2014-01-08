@@ -42,6 +42,7 @@ class Generator_Balance extends Generator_Golanxml {
 	protected $date = null;
 
 	public function __construct($options) {
+		$options['auto_create_dir'] = false;
 		parent::__construct($options);
 		self::$type = 'balance';
 		if (isset($options['aid']) && $options['aid']) {
@@ -80,9 +81,9 @@ class Generator_Balance extends Generator_Golanxml {
 				$subscriber_status = "closed";
 			} else {
 				$subscriber_status = "open";
+				$flat_lines[] = new Mongodloid_Entity($subscriber->getFlatEntry($this->stamp));
 			}
 			$billrun->addSubscriber($subscriber, $subscriber_status);
-			$flat_lines[] = new Mongodloid_Entity($subscriber->getFlatEntry($this->stamp));
 		}
 		$this->lines = $billrun->addLines(false, $billrun_start_date, $flat_lines);
 
@@ -145,7 +146,7 @@ class Generator_Balance extends Generator_Golanxml {
 
 	protected function get_subscriber_lines($subscriber) {
 		$start_time = new MongoDate(Billrun_Util::getStartTime($this->stamp));
-		$end_time = new MongoDate($this->now);
+//		$end_time = new MongoDate($this->now);
 		$query = array(
 			'sid' => $subscriber['sid'],
 			'urt' => array(

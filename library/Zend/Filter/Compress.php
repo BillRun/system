@@ -22,7 +22,7 @@
 /**
  * @see Zend_Filter_Interface
  */
-require_once 'Zend/Filter/Interface.php';
+// require_once 'Zend/Filter/Interface.php';
 
 /**
  * Compresses a given string
@@ -105,7 +105,7 @@ class Zend_Filter_Compress implements Zend_Filter_Interface
 
         $this->_adapter = new $adapter($options);
         if (!$this->_adapter instanceof Zend_Filter_Compress_CompressInterface) {
-            require_once 'Zend/Filter/Exception.php';
+            // require_once 'Zend/Filter/Exception.php';
             throw new Zend_Filter_Exception("Compression adapter '" . $adapter . "' does not implement Zend_Filter_Compress_CompressInterface");
         }
         return $this->_adapter;
@@ -134,7 +134,7 @@ class Zend_Filter_Compress implements Zend_Filter_Interface
             return $this;
         }
         if (!is_string($adapter)) {
-            require_once 'Zend/Filter/Exception.php';
+            // require_once 'Zend/Filter/Exception.php';
             throw new Zend_Filter_Exception('Invalid adapter provided; must be string or instance of Zend_Filter_Compress_CompressInterface');
         }
         $this->_adapter = $adapter;
@@ -174,7 +174,7 @@ class Zend_Filter_Compress implements Zend_Filter_Interface
     {
         $adapter = $this->getAdapter();
         if (!method_exists($adapter, $method)) {
-            require_once 'Zend/Filter/Exception.php';
+            // require_once 'Zend/Filter/Exception.php';
             throw new Zend_Filter_Exception("Unknown method '{$method}'");
         }
 

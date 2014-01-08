@@ -42,6 +42,7 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$data = &$processor->getData();
 		Billrun_Factory::log('Plugin calc cpu rate', Zend_Log::INFO);
 		foreach ($data['data'] as &$line) {
+			$processor->addAdvancedPropertiesToQueueRow($line);
 			$entity = new Mongodloid_Entity($line);
 			$rateCalc = Billrun_Calculator_Rate::getRateCalculator($entity, $options);
 			if ($rateCalc->isLineLegitimate($entity)) {
@@ -65,7 +66,13 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 		if ($customerCalc->isBulk()) {
 			$customerCalc->loadSubscribers($data['data']);
 		}
-		foreach ($data['data'] as &$line) {
+		$remove_garbage = Billrun_Factory::config()->getConfigValue('calcCpu.remove_garbage', false);
+		foreach ($data['data'] as $key => &$line) {
+			if ($remove_garbage) {
+				if ($line['type'] == 'ggsn' && isset($line['usagev']) && $line['usagev'] === 0) {
+					unset($data['data'][$key]);
+				}
+			}
 			if (isset($queue_data[$line['stamp']]) && $queue_data[$line['stamp']]['calc_name'] == 'rate') {
 				$entity = new Mongodloid_Entity($line);
 				if (!isset($entity['usagev']) || $entity['usagev'] === 0) {
@@ -115,7 +122,7 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 		if (Billrun_Factory::config()->getConfigValue('calcCpu.wholesale_calculators', true)) {
 			$this->wholeSaleCalculators($data, $processor);
-		}
+		}		
 		Billrun_Factory::log('Plugin calc cpu end', Zend_Log::INFO);
 	}
 
@@ -176,6 +183,7 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 
 	protected function removeDuplicates($processor) {
+		Billrun_Factory::log('Plugin calc cpu remove duplicates', Zend_Log::INFO);
 		$lines_coll = Billrun_Factory::db()->linesCollection();
 		$data = &$processor->getData();
 		$stamps = array();

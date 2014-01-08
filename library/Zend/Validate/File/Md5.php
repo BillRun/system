@@ -22,7 +22,7 @@
 /**
  * @see Zend_Validate_File_Hash
  */
-require_once 'Zend/Validate/File/Hash.php';
+// require_once 'Zend/Validate/File/Hash.php';
 
 /**
  * Validator for the md5 hash of given files
@@ -72,7 +72,7 @@ class Zend_Validate_File_Md5 extends Zend_Validate_File_Hash
         } elseif (is_scalar($options)) {
             $options = array('hash1' => $options);
         } elseif (!is_array($options)) {
-            require_once 'Zend/Validate/Exception.php';
+            // require_once 'Zend/Validate/Exception.php';
             throw new Zend_Validate_Exception('Invalid options to validator provided');
         }
 
