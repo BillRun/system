@@ -90,8 +90,13 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			$subscriber = $this->loadSubscriberForLine($row);
 		}
 		if (!$subscriber || !$subscriber->isValid()) {
-			Billrun_Factory::log('Missing subscriber info for line with stamp : ' . $row->get('stamp'), Zend_Log::ALERT);
-			return false;
+			if ($this->isOutgoingCall($row)) {
+				Billrun_Factory::log('Missing subscriber info for line with stamp : ' . $row->get('stamp'), Zend_Log::ALERT);
+				return false;
+			} else {
+				Billrun_Factory::log('Missing subscriber info for line with stamp : ' . $row->get('stamp'), Zend_Log::DEBUG);
+				return true;
+			}
 		}
 
 		foreach (array_keys($subscriber->getAvailableFields()) as $key) {
