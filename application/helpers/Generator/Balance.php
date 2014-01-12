@@ -62,8 +62,12 @@ class Generator_Balance extends Generator_Golanxml {
 		if (!empty($res)) {
 			$this->account_data = current($res);
 		}
-
-		$billrun_start_date = Billrun_Util::getStartTime($this->stamp);
+		$previous_billrun_key = Billrun_Util::getPreviousBillrunKey($this->stamp);
+		if (Billrun_Billrun::exists($this->aid, $previous_billrun_key)) {
+			$start_time = 0; // maybe some lines are late (e.g. tap3)
+		} else {
+			$start_time = Billrun_Util::getStartTime($this->stamp); // to avoid getting lines of previous billruns
+		}
 		$billrun_params = array(
 			'aid' => $this->aid,
 			'billrun_key' => $this->stamp,
@@ -85,7 +89,7 @@ class Generator_Balance extends Generator_Golanxml {
 			}
 			$billrun->addSubscriber($subscriber, $subscriber_status);
 		}
-		$this->lines = $billrun->addLines(false, $billrun_start_date, $flat_lines);
+		$this->lines = $billrun->addLines(false, $start_time, $flat_lines);
 
 		$this->data = $billrun->getRawData();
 	}

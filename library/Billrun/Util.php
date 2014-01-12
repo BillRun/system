@@ -159,6 +159,13 @@ class Billrun_Util {
 		return $ret;
 	}
 
+	public static function getPreviousBillrunKey($billrun_key) {
+		$datetime = $billrun_key . "01000000";
+		$month_later = strtotime('-1 month', strtotime($datetime));
+		$ret = date("Ym", $month_later);
+		return $ret;
+	}
+
 	/**
 	 * convert corrency.  
 	 * (this  should  be change to somthing more dynamic)
