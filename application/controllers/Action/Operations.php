@@ -15,6 +15,7 @@
 class OperationsAction extends Action_Base {
 
 	const CONCURRENT_CONFIG_ENTRIES = 5;
+	const WAIT_FOR_CALL_TO_END = 30;
 	
 	/**
 	 * method to execute the refund
@@ -54,6 +55,10 @@ class OperationsAction extends Action_Base {
 	 */
 	protected function resetModems() {
 		Billrun_Factory::log()->log("Reseting  the modems", Zend_Log::INFO);
+		$startTime = time();
+		while(Billrun_Data_Call::getLastCallMade()->isActive() && time() - $startTime < static::WAIT_FOR_CALL_TO_END ) {
+			sleep(1);
+		}
 		$path = APPLICATION_PATH."/scripts/resetModems";
 		return $this->runCommand($path);
 	}
@@ -63,6 +68,10 @@ class OperationsAction extends Action_Base {
 	 */
 	protected function reboot() {
 		Billrun_Factory::log()->log("Trying to reboot the computer...", Zend_Log::INFO);
+		$startTime = time();
+		while(Billrun_Data_Call::getLastCallMade()->isActive() && time() - $startTime < static::WAIT_FOR_CALL_TO_END ) {
+			sleep(1);
+		}
 		$path = APPLICATION_PATH."/scripts/reboot";
 		return $this->runCommand($path);
 	}
