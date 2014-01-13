@@ -67,8 +67,15 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 				$modem = new Gsmodem_Gsmodem($value['device'],(isset($value['statemapping']) ? new $value['statemapping']() : false));			
 				if ($modem->isValid()) {					
 					//$modem->registerToNet();
-					if (isset($value['number'])) {						
-						$modem->setNumber($value['number']);
+					if(!$modem->getModemNumber()) {
+						if (isset($value['number'])) {						
+							$modem->setNumber($value['number']);
+						} else {
+							$imei = $modem->getImei();
+							if (isset($value['modem_number_mapping'][$imei])  ) {
+								$modem->setNumber($value['modem_number_mapping'][$imei]);
+							} 	
+						}
 					}
 					$this->modemDevices[] = $modem;
 				}

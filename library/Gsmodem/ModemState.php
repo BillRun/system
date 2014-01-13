@@ -38,6 +38,7 @@ class Gsmodem_ModemState {
 							'incoming_call_id' => '+CLIP=%0%',		
 							'get_error' => '+CEER',
 							'get_number' => '+CNUM',
+							'get_info' => 'I',
 							'echo_mode' => 'E%0%',
 							'init_commands' =>  array(
 								"ATZ ;\r" => false,

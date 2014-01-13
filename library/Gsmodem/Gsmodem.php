@@ -196,6 +196,15 @@ class Gsmodem_Gsmodem  {
 		
 		return $this->number;
 	}
+	
+	
+	/**
+	 * Retrive the modem IMEI 
+	 */
+	public function getImei() {		
+		return $this->getValueFromResult('IMEI', $this->doCmd($this->getATcmd('get_info'), true, false)) ;
+	}
+
 	/**
 	 * Set the modem number.
 	 * @param type $number
