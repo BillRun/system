@@ -234,28 +234,6 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		}
 	}
 
-//	/**
-//	 * Creates and saves a flat line to the db
-//	 * @param Billrun_Subscriber $subscriber the subscriber to create a flat line to
-//	 * @param string $billrun_key the billrun for which to add the flat line
-//	 * @return array the inserted line or the old one if it already exists
-//	 */
-//	protected function saveFlatLine($subscriber, $billrun_key) {
-//		$flat_entry = new Mongodloid_Entity($subscriber->getFlatEntry($billrun_key));
-//		$flat_entry->collection($this->lines);
-//		$query = array(
-//			'stamp' => $flat_entry['stamp'],
-//		);
-//		$update = array(
-//			'$setOnInsert' => $flat_entry->getRawData(),
-//		);
-//		$options = array(
-//			'upsert' => true,
-//			'new' => true,
-//		);
-//		return $this->lines->findAndModify($query, $update, array(), $options);
-//	}
-
 	/**
 	 * Creates and saves a flat line to the db
 	 * @param Billrun_Subscriber $subscriber the subscriber to create a flat line to

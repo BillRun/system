@@ -414,6 +414,9 @@ class Billrun_Billrun {
 					$volume_priced = $pricingData['over_plan'];
 					$planZone = &$sraw['breakdown']['in_plan'][$category_key][$zone_key];
 					$planZone['totals'][key($counters)]['usagev'] = $this->getFieldVal($planZone['totals'][key($counters)]['usagev'], 0) + current($counters) - $volume_priced; // add partial usage to flat
+					$planZone['totals'][key($counters)]['cost'] = $this->getFieldVal($planZone['totals'][key($counters)]['cost'], 0);
+					$planZone['totals'][key($counters)]['count'] = $this->getFieldVal($planZone['totals'][key($counters)]['count'], 0) + 1;
+					$planZone['vat'] = ($vatable ? floatval($this->vat) : 0); //@TODO we assume here that all the lines would be vatable or all vat-free
 				} else {
 					$volume_priced = current($counters);
 				}
@@ -618,7 +621,6 @@ class Billrun_Billrun {
 	protected function processLines($account_lines) {
 		$updatedLines = array();
 		foreach ($account_lines as $line) {
-			//Billrun_Factory::log("Processing account Line for $sid : ".  microtime(true));
 			$line->collection($this->lines);
 			$pricingData = array('aprice' => $line['aprice']);
 			if (isset($line['over_plan'])) {
