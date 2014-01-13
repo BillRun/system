@@ -54,6 +54,9 @@ class Billrun_Generator_Report_GeneratedCalls extends Billrun_Generator_Report {
 		//get the  compared lines  and order them by date
 		$report['details'] = $this->printSDetailedReport($this->calls,$this->billingCalls['unmatched_lines']);		
 		$report['summary'] = $this->printSummaryReport($report['details']);
+		if(Billrun_Util::getFieldVal($this->$options['only_summary'], false)) {
+			unset($report['details']);
+		}
 		$report['from']	 = date("Y-m-d H:i:s", $this->from);
 		$report['to']	 = date("Y-m-d H:i:s", $this->to);	
 		$reports =  array(join("_",$this->subscribers)."_call_matching_report.csv" => $report);
@@ -245,7 +248,7 @@ class Billrun_Generator_Report_GeneratedCalls extends Billrun_Generator_Report {
 
 		$this->billingCalls= array();
 		foreach($this->subscribers as $subscriber) {
-			$this->billingCalls = array_merge($this->billingCalls,$this->mergeBillingLines($subscriber));
+			$this->billingCalls = array_merge_recursive($this->billingCalls,$this->mergeBillingLines($subscriber));
 		}
 		
 		//load calls made
@@ -293,7 +296,7 @@ class Billrun_Generator_Report_GeneratedCalls extends Billrun_Generator_Report {
 			}			
 			
 			$updateResults =  Billrun_Factory::db()->linesCollection()->update(array('type'=>'generated_call',
-																'from' => array('$regex' => preg_replace("/^972/","",$bLine['calling_number']) ),
+																//'from' => array('$regex' => preg_replace("/^972/","",$bLine['calling_number']) ),
 																'to' => array('$regex' => preg_replace("/^972/","",$bLine['called_number']) ),
 																'urt' => array('$lte' => new MongoDate($bLine['urt']['sec'] + $this->billingTimeOffset + $this->allowedTimeDiveation),
 																			   '$gte' => new MongoDate($bLine['urt']['sec'] + $this->billingTimeOffset - $this->allowedTimeDiveation))
