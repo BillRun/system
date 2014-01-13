@@ -148,25 +148,25 @@ class Generator_Balance extends Generator_Golanxml {
 		return $plan_name;
 	}
 
-	protected function get_subscriber_lines($subscriber) {
-		$start_time = new MongoDate(Billrun_Util::getStartTime($this->stamp));
-//		$end_time = new MongoDate($this->now);
-		$query = array(
-			'sid' => $subscriber['sid'],
-			'urt' => array(
-//				'$lte' => $end_time, // not necessary for production
-				'$gte' => $start_time, // necessary if the previous billrun was not created yet
-			),
-//			'aprice' => array(
-//				'$exists' => true,
+//	protected function get_subscriber_lines($subscriber) {
+//		$start_time = new MongoDate(Billrun_Util::getStartTime($this->stamp));
+////		$end_time = new MongoDate($this->now);
+//		$query = array(
+//			'sid' => $subscriber['sid'],
+//			'urt' => array(
+////				'$lte' => $end_time, // not necessary for production
+//				'$gte' => $start_time, // necessary if the previous billrun was not created yet
 //			),
-//			'billrun' => "000000", // not necessary for production because urt $gte is used
-			'type' => array(
-				'$ne' => 'ggsn',
-			),
-		);
-		$lines = $this->lines_coll->query($query)->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
-		return $lines;
-	}
+////			'aprice' => array(
+////				'$exists' => true,
+////			),
+////			'billrun' => "000000", // not necessary for production because urt $gte is used
+//			'type' => array(
+//				'$ne' => 'ggsn',
+//			),
+//		);
+//		$lines = $this->lines_coll->query($query)->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
+//		return $lines;
+//	}
 
 }

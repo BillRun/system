@@ -120,7 +120,9 @@ class Generator_Golanxml extends Billrun_Generator {
 		$xml = $this->basic_xml();
 		$xml->TELECOM_INFORMATION->VAT_VALUE = $this->displayVAT($row['vat']);
 		$xml->INV_CUSTOMER_INFORMATION->CUSTOMER_CONTACT->EXTERNALACCOUNTREFERENCE = $aid;
-
+		if (is_null($lines) && (!isset($this->subscribers) || in_array(0, $this->subscribers))) {
+			$lines = $this->get_lines($row);
+		}
 		foreach ($row['subs'] as $subscriber) {
 			$sid = $subscriber['sid'];
 			$subscriber_flat_costs = $this->getFlatCosts($subscriber);
@@ -138,7 +140,7 @@ class Generator_Golanxml extends Billrun_Generator {
 
 			if ($this->billingLinesNeeded($sid)) {
 				if (is_null($lines)) {
-					$subscriber_lines = $this->get_subscriber_lines($subscriber);
+					$subscriber_lines = $this->get_lines($subscriber);
 				} else {
 					$func = function($line) use ($sid) {
 								return $line['sid'] == $sid;
@@ -474,8 +476,11 @@ class Generator_Golanxml extends Billrun_Generator {
 	 * @todo do not override files?
 	 */
 	protected function createXmlFile($fileName, $xmlContent) {
+		Billrun_Factory::log()->log("create xml file " . $fileName, Zend_Log::INFO);
 		$path = $this->export_directory . '/' . $fileName;
-		return file_put_contents($path, $xmlContent);
+		$ret = file_put_contents($path, $xmlContent);
+		Billrun_Factory::log()->log("create xml file " . $fileName . ' - finished', Zend_Log::INFO);
+		return $ret;
 	}
 
 //	/**
@@ -497,44 +502,52 @@ class Generator_Golanxml extends Billrun_Generator {
 
 	/**
 	 * 
-	 * @param array $subscriber subscriber billrun entry
+	 * @param array $entity account or subscriber document (billrun collection)
 	 * @return type
 	 */
-	protected function get_subscriber_lines($subscriber) {
+	protected function get_lines($entity) {
 //		$start_time = new MongoDate(0);
 		$end_time = new MongoDate(Billrun_Util::getEndTime($this->stamp));
-		$query = array(
-			'sid' => $subscriber['sid'],
+		if (isset($entity['aid'])) {
+			$field = 'aid';
+		} else if (isset($entity['sid'])) {
+			$field = 'sid';
+		} else {
+			// throw warning
+			return false;
+		}
+		
+		$filter = array(
+			$field => $entity[$field],
+		);
+		$query = array_merge($filter, array(
 			'urt' => array(
 				'$lte' => $end_time, // to filter out next billrun lines
-//				'$gte' => $start_time,
 			),
-//			'aprice' => array(
-//				'$exists' => true,
-//			),
 			'billrun' => array(
-				'$in' => array('000000', $this->stamp), // because the billrun stamp may have not changed yet from 000000
+				'$in' => array($this->stamp),
 			),
 			'type' => array(
 				'$ne' => 'ggsn',
 			),
-		);
-
-//		$hint = array(
-//			'sid' => 1,
-//			'urt' => 1,
-//		);
+		));
 
 		$sort = array(
-			'sid' => 1,
+			$field => 1,
 			'urt' => 1,
 		);
 
-		$lines = $this->lines_coll->query($query)->cursor()->sort($sort);
+		$lines = $this->lines_coll->query($query)->cursor()->sort($sort)->hint($sort);
 		if (rand(1, 100) >= $this->loadBalanced) {
 			$lines = $lines->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
 		}
-		return $lines;
+		Billrun_Factory::log()->log('Pulling lines of ' . $field . ' ' . $entity[$field], Zend_Log::INFO);
+		$ret = array();
+		foreach ($lines as $line) {
+			$ret[] = $line;
+		}
+		Billrun_Factory::log()->log('Pulling lines of ' . $field . ' ' . $entity[$field]. ' - finished', Zend_Log::INFO);
+		return $ret;
 	}
 
 	/**
