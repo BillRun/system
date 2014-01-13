@@ -23,9 +23,9 @@ class Billrun_Billrun {
 	protected static $vatsByBillrun = array();
 
 	/**
-	 * @var boolean allow billrun to recompute  marked line (as long as they have the  same billrun_key)
+	 * @var int allow billrun to recompute marked line (as long as they have the same billrun_key)
 	 */
-	protected $allowOverride = false;
+	protected $allowOverride = 0;
 
 	/**
 	 * lines collection
@@ -57,7 +57,7 @@ class Billrun_Billrun {
 			Billrun_Factory::log()->log("Returning an empty billrun!", Zend_Log::NOTICE);
 		}
 		if (isset($options['allow_override'])) {
-			$this->allowOverride = $options['allow_override'];
+			$this->allowOverride = (int) $options['allow_override'];
 		}
 		$this->lines = Billrun_Factory::db()->linesCollection();
 	}
@@ -173,7 +173,7 @@ class Billrun_Billrun {
 		}
 		return self::$vatsByBillrun[$billrun_key];
 	}
-	
+
 	public function getBillrunKey() {
 		return $this->billrun_key;
 	}
@@ -616,8 +616,7 @@ class Billrun_Billrun {
 				$billrun->addLineToSubscriber($counters, $row, $pricingData, $vatable, $billrun_key, $sraw);
 				$billrun->updateCosts($pricingData, $row, $vatable, $sraw); // according to self::getUpdateCostsQuery
 				$billrun->setSubRawData($sraw);
-			}
-			else {
+			} else {
 				Billrun_Factory::log("Subscriber $sid is not active yet has lines", Zend_log::ALERT);
 			}
 			//$billrun->updateTotals($pricingData, $billrun_key, $vatable);		
@@ -629,6 +628,7 @@ class Billrun_Billrun {
 	 * @param int $sid the subscriber id to update to
 	 * @param array $subscriber_aggregated_data the aggregated data received from getSubscriberDataLines function
 	 * @return array the subscriber's data lines' ids for the current billrun
+	 * @deprecated since version 1.0
 	 */
 	public function updateAggregatedData($sid, $subscriber_aggregated_data) {
 		$sraw = $this->getSubRawData($sid);
@@ -1173,7 +1173,7 @@ class Billrun_Billrun {
 //				'$ne' => 'ggsn',
 //			),
 		);
-		if ($this->allowOverride) {
+		if ($this->allowOverride == 1) {
 			$query['$or'] = array(
 				array('billrun' => array('$exists' => false)),
 				array('billrun' => $this->billrun_key),
@@ -1221,11 +1221,14 @@ class Billrun_Billrun {
 				'$ne' => 'flat',
 			);
 		}
-		if ($this->allowOverride) {
+		if ($this->allowOverride == 1) {
 			$query['billrun']['$in'] = array('000000', $this->billrun_key);
+		} else if ($this->allowOverride == 2) {
+			$query['billrun'] = $this->billrun_key;
 		} else {
 			$query['billrun'] = '000000';
 		}
+
 
 		$hint = array(
 			'aid' => 1,
@@ -1254,6 +1257,7 @@ class Billrun_Billrun {
 	 * @param int $sid the subscriber id
 	 * @param int $start_time lower bound date to get lines from. A unix timestamp
 	 * @return array the aggregated data lines
+	 * @deprecated since version 1.0
 	 */
 	protected function getSubscriberDataLines($sid, $start_time = 0) {
 		$start_time = new MongoDate($start_time);
@@ -1282,7 +1286,7 @@ class Billrun_Billrun {
 			)
 		);
 
-		if ($this->allowOverride) {
+		if ($this->allowOverride == 1) {
 			$match['$match']['$or'] = array(
 				array('billrun' => array('$exists' => false)),
 				array('billrun' => $this->billrun_key),
@@ -1377,7 +1381,7 @@ class Billrun_Billrun {
 
 	/**
 	 * Does the billrun allow overriding lines?
-	 * @return boolean true if allows overriding, false otherwise
+	 * @return int the allowOverride flag
 	 */
 	public function allowOverride() {
 		return $this->allowOverride;
