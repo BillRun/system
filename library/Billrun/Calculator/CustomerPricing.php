@@ -128,18 +128,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			if (!$pricingData) {
 				return false;
 			}
-			if (Billrun_Billrun::isLiveUpdate()) {
-				$vatable = (!(isset($rate['vatable']) && !$rate['vatable']) || (!isset($rate['vatable']) && !$this->vatable));
-				if (!$billrun = Billrun_Billrun::updateBillrun($billrun_key, array($usage_type => $volume), $pricingData, $row, $vatable)) {
-					return false;
-				} else {
-					$pricingData['billrun'] = $billrun['billrun_key'];
-					//$billrun_info['billrun_key'] = $billrun['billrun_key'];
-					//$billrun_info['billrun_ref'] = $billrun->createRef(Billrun_Factory::db()->billrunCollection());
-				}
-			} else {
-				$pricingData['billrun'] = "000000";
-			}
+			$pricingData['billrun'] = "000000";
 		} else {
 			Billrun_Factory::log()->log("Line with stamp " . $row['stamp'] . " is missing volume information", Zend_Log::ALERT);
 			return false;
