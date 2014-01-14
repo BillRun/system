@@ -20,7 +20,7 @@ require_once '../application/helpers/Admin/Lines.php';
 								<input id=\"" . $filter_field['key'] . "\" class=\"span" . $field_view['width'] . "\" name=\"" . $filter_field['key'] . "\" type=\"text\" value=\"" . (isset($this->session->$filter_field['key']) ? $this->session->$filter_field['key'] : $filter_field['default']) . "\">";
 					} else if ($filter_field['input_type'] == 'date') {
 						echo "&nbsp;<label class=\"control-label\">" . $filter_field['display'] . "</label>
-								<div class=\"input-append date\" id=\"datetimepicker\" data-date=\"" . $filter_field['default'] . "\" data-date-format=\"yyyy-MM-dd hh:mm:ss\">
+								<div class=\"input-append date\" id=\"datetimepicker_" . $filter_field['key']. "\" data-date=\"" . $filter_field['default'] . "\" data-date-format=\"yyyy-MM-dd hh:mm:ss\">
 								<input name=\"" . $filter_field['key'] . "\" class=\"controls-row span" . $field_view['width'] . "\" size=\"16\" type=\"text\" value=\"" . (isset($this->session->$filter_field['key']) ? $this->session->$filter_field['key'] : $filter_field['default']) . "\">
 								<span class=\"add-on\"><i class=\"icon-th\"></i></span>
 								</div>";
@@ -62,14 +62,14 @@ require_once '../application/helpers/Admin/Lines.php';
 		<div class=\"controls form-inline\">
 			 <select id=\"sort_by\" name=\"sort_by\">";
 				foreach ($this->sort_fields as $sort_field_key => $sort_field_display) {
-					echo "<option value=\"" . $sort_field_key . "\"" . (isset($this->session->sort_by) && $this->session->sort_by == $sort_field_key ? " selected" : "") . ">" . $sort_field_display . "</option>";
+					echo "<option value=\"" . $sort_field_key . "\"" . (isset($this->session->sort_by) && $this->session->sort_by == $sort_field_key ? " selected=\"selected\"" : "") . ">" . $sort_field_display . "</option>";
 				}
 				echo "</select>
 			<label class=\"radio inline\">
-                                <input name=\"order\" value=\"desc\" type=\"radio\"" . (isset($this->session->order) && $this->session->order == "desc" ? "checked" : "") . "> Descending order
+                                <input name=\"order\" value=\"desc\" type=\"radio\"" . (isset($this->session->order) && $this->session->order == "desc" ? "checked=\"checked\"" : "") . "> Descending order
 			</label>
 			<label class=\"radio inline\">
-                                <input name=\"order\" value=\"asc\" type=\"radio\"" . (isset($this->session->order) && $this->session->order == "desc" ? "" : "checked") . "> Ascending order
+                                <input name=\"order\" value=\"asc\" type=\"radio\"" . (isset($this->session->order) && $this->session->order == "desc" ? "" : "checked=\"checked\"") . "> Ascending order
 			</label>
 		</div></div>";
 			}

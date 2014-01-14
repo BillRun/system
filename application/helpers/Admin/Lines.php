@@ -37,7 +37,7 @@ class Lines {
 		}
 		$output.="</select>
 			<input name=\"manual_value[]\" class=\"span2\" type=\"text\" placeholder=\"value\" value=\"" . (!is_null($value) && $type != 'date' ? $value : "") . "\"" . ($type == 'date' ? " style=\"display:none;\" disabled" : "") . ">
-			<div class=\"input-append date\" id=\"datetimepicker\" data-date=\"" . (!is_null($value) && $type == 'date' ? $value : "") . "\" data-date-format=\"yyyy-MM-dd hh:mm:ss\"" . ($type == 'date' ? "" : " style=\"display:none;\"") . ">
+			<div class=\"input-append date\" id=\"datetimepicker_manual_operator\" data-date=\"" . (!is_null($value) && $type == 'date' ? $value : "") . "\" data-date-format=\"yyyy-MM-dd hh:mm:ss\"" . ($type == 'date' ? "" : " style=\"display:none;\"") . ">
 							<input name=\"manual_value[]\" class=\"controls-row span2\" size=\"16\" type=\"text\" value=\"" . (!is_null($value) && $type == 'date' ? $value : "") . "\"" . ($type == 'date' ? "" : " disabled") . ">
 							<span class=\"add-on\"><i class=\"icon-th\"></i></span>
 						</div>";
