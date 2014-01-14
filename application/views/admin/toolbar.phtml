@@ -1,4 +1,7 @@
-<?php require_once '../application/helpers/Admin/Lines.php'; ?>
+<?php
+// todo: remove this
+require_once '../application/helpers/Admin/Lines.php';
+?>
 <div class="toolbar">
 	<form id="search-criteria" action="" method="POST" class="form-vertical">
 		<?php
@@ -63,24 +66,23 @@
 				}
 				echo "</select>
 			<label class=\"radio inline\">
-				   <input name=\"order\" value=\"asc\" type=\"radio\"" . (isset($this->session->order) && $this->session->order == "desc" ? "" : " checked") . "> Ascending order
+                                <input name=\"order\" value=\"desc\" type=\"radio\"" . (isset($this->session->order) && $this->session->order == "desc" ? "checked" : "") . "> Descending order
 			</label>
 			<label class=\"radio inline\">
-				   <input name=\"order\" value=\"desc\" type=\"radio\"" . (isset($this->session->order) && $this->session->order == "desc" ? " checked" : "") . "> Descending order
+                                <input name=\"order\" value=\"asc\" type=\"radio\"" . (isset($this->session->order) && $this->session->order == "desc" ? "" : "checked") . "> Ascending order
 			</label>
 		</div></div>";
 			}
 		}
 		?>
 
-		<span><input type="hidden" name="new_search" value="1"><button type="submit" class="btn">Submit</button></span>
+		<span><input type="hidden" name="new_search" value="1"><button type="submit" class="btn btn-success"><i class="icon-search"> </i>Submit</button></span>
 		<?php if (!in_array(strtolower($this->title), array('events', 'log'))) : ?>
 			<script type="text/javascript">
 				var edit_url_prefix = <?php echo json_encode($this->baseUrl . '/admin/edit?coll=' . strtolower($this->title) . '&id='); ?>;
 				var confirm_url_prefix = <?php echo json_encode($this->baseUrl . '/admin/confirm?coll=' . strtolower($this->title) . '&id='); ?>;
 			</script>
 			<span class="pull-right">
-				<span><a id='update_current' data-type="update" href="#popupModal" class="btn btn-warning" data-toggle="modal" role="button" data-remote="">Update current</a></span>
 			<?php endif; ?>
 			<?php if (strtolower($this->title) == 'rates' || strtolower($this->title) == 'plans') : ?>
 				<span><a id='close_and_new' data-type="close_and_new" href="#popupModal" class="btn btn-primary" data-toggle="modal" role="button" data-remote="">Close & new</a></span>
@@ -88,8 +90,11 @@
 			<?php endif; ?>
 			<?php if (!in_array(strtolower($this->title), array('events', 'log'))) : ?>
 				<span><a id='remove' data-type="remove" href="#confirmModal" class="btn btn-danger" data-toggle="modal" role="button" data-remote=""><i class="icon-remove"> </i>Remove</a></span>
-			</span>
-		<?php endif; ?>
+			<?php endif; ?>
+			<?php if ($this->title == 'lines') : ?>
+				<span><a id='download' data-type="download" href="/admin/csvExport" class="btn btn-info"><i class="icon-download-alt"> </i>Export to CSV</a></span>
+			<?php endif; ?>
+		</span>
 
 	</form>
 </div>

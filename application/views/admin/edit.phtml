@@ -12,8 +12,12 @@ foreach ($this->hiddenKeys as $key) {
 
 print '<div class="form_protect">';
 foreach ($protected as $k => $v) {
-	print '<span class="label label-info">' . $k . '</span>'
-		. '<span id="form' . $k . '"class="label label-inverse">' . $v . '</span>';
+	print '<span class="label label-info">' . $k . '</span>';
+	if ($k == "log_stamp") {
+		print '<a href="#LogPopup" data-toggle="modal" data-remote=""><span id="form' . $k . '"class="label label-inverse">' . $v . '</span></a><br />';
+	} else {
+		print '<span id="form' . $k . '"class="label label-inverse">' . $v . '</span><br />';
+	}
 }
 print '<span id="form_type" class="hidden">' . $this->type . '</span>';
 print '<span id="form_coll" class="hidden">' . $this->collectionName . '</span>';
@@ -47,18 +51,18 @@ print '</div>';
 		$(this).unbind("click", saveClick);
 		console.log(_jsonData);
 		var _ajaxOpts = {
-			async:true,
-			cache:false,
+			async: true,
+			cache: false,
 			//			dataType:'json',
-			type:'POST',
+			type: 'POST',
 			data: {
 				id: $('#form_id').html(),
 				coll: $('#form_coll').html(),
 				type: $('#form_type').html(),
 				data: JSON.stringify(_jsonData)
 			},
-			success:function(data, textStatus, jqXHR) {
-				if (data!='null') {
+			success: function(data, textStatus, jqXHR) {
+				if (data != 'null') {
 					alert(data);
 					$('#save').removeAttr("disabled");
 					$('#save').bind("click", saveClick);
@@ -66,11 +70,17 @@ print '</div>';
 				}
 				window.location.reload();
 			},
-			error:function(jqXHR, textStatus, errorThrown) {
+			error: function(jqXHR, textStatus, errorThrown) {
 				alert('some error occured');
 			}
 		};
 		$.ajax('<?php echo $this->baseUrl; ?>/admin/save', _ajaxOpts);
+	});
+
+	$('#formlog_stamp').click(function() {
+		if ($('#formlog_stamp').html().length) {
+			$('#formlog_stamp').parent().data('remote', '<?php echo $this->baseUrl; ?>/admin/logDetails?type=logDetails&coll=log&stamp=' + $('#formlog_stamp').html());
+		}
 	});
 </script>
 

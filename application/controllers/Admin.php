@@ -168,6 +168,42 @@ class AdminController extends Yaf_Controller_Abstract {
 		die(json_encode(null));
 	}
 
+	public function logDetailsAction() {
+		$coll = Billrun_Util::filter_var($this->getRequest()->get('coll'), FILTER_SANITIZE_STRING);
+		$stamp = Billrun_Util::filter_var($this->getRequest()->get('stamp'), FILTER_SANITIZE_STRING);
+		$type = Billrun_Util::filter_var($this->getRequest()->get('type'), FILTER_SANITIZE_STRING);
+
+		$model = self::getModel($coll);
+		$entity = $model->getData(array("stamp" => $stamp));
+
+		// passing values into the view
+		$this->getView()->entity = $entity;
+		$this->getView()->protectedKeys = $model->getProtectedKeys($entity, $type);
+		$this->getView()->collectionName = $coll;
+		$this->getView()->type = $type;
+	}
+
+	public function csvExportAction() {
+		require_once '../application/helpers/Admin/Lines.php';
+		$session = $this->getSession('lines');
+
+		if (!empty($session->query)) {
+
+			$options = array(
+				'collection' => 'lines',
+				'sort' => array('urt' => 1),
+			);
+			$model = self::getModel('lines', $options);
+
+			$skip = Billrun_Factory::config()->getConfigValue('admin_panel.csv_export.skip', 0);
+			$size = Billrun_Factory::config()->getConfigValue('admin_panel.csv_export.size', 10000);
+			$params = array_merge($this->getTableViewParams($session->query, $skip, $size), $this->createFilterToolbar('lines'));
+			Lines::getCsvFile($params);
+		} else {
+			return false;
+		}
+	}
+
 	/**
 	 * method to save all related rates after save
 	 * 
@@ -226,8 +262,11 @@ class AdminController extends Yaf_Controller_Abstract {
 			'sort' => $sort,
 		);
 
-		$model = self::getModel($table, $options);
+		self::getModel($table, $options);
 		$query = $this->applyFilters($table);
+
+		$session = $this->getSession('lines');
+		$this->getSetVar($session, $query, 'query', $query);
 
 		$this->getView()->component = $this->buildComponent('lines', $query);
 	}
@@ -295,9 +334,13 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * @return string the render page (HTML)
 	 * @todo refactoring this function
 	 */
-	protected function getTableViewParams($filter_query = array()) {
+	protected function getTableViewParams($filter_query = array(), $skip = null, $size = null) {
 
-		$data = $this->model->getData($filter_query);
+		if (isset($skip) && !empty($size)) {
+			$data = $this->model->getData($filter_query, $skip, $size);
+		} else {
+			$data = $this->model->getData($filter_query);
+		}
 		$columns = $this->model->getTableColumns();
 		$edit_key = $this->model->getEditKey();
 		$pagination = $this->model->printPager();
@@ -340,12 +383,19 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * @return string the render layout including the page (component)
 	 */
 	protected function render($tpl, array $parameters = array()) {
-		if ($tpl == 'edit' || $tpl == 'confirm') {
+		if ($tpl == 'edit' || $tpl == 'confirm' || $tpl == 'logdetails') {
 			return parent::render($tpl, $parameters);
 		}
 		$tpl = 'index';
 		//check with active menu we are on
 		$parameters['active'] = $this->getRequest()->getActionName();
+		if ($this->getRequest()->getActionName() == "index") {
+			$parameters['active'] = "";
+		}
+		if ($this->getRequest()->getActionName() == "tabledate") {
+			$parameters['active'] = $this->_request->getParam("table");
+		}
+
 		$parameters['title'] = $this->title;
 		return $this->getView()->render($tpl . ".phtml", $parameters);
 	}
@@ -409,7 +459,12 @@ class AdminController extends Yaf_Controller_Abstract {
 		}
 		$request = $this->getRequest();
 		$new_search = $request->get("new_search") == "1";
-		$var = $request->get($source_name);
+		if (is_array($source_name)) {
+			$key = Billrun_Util::generateArrayStamp($source_name);
+		} else {
+			$key = $source_name;
+		}
+		$var = $request->get($key);
 		if ($new_search) {
 			if (is_string($var) || is_array($var)) {
 				$session->$target_name = $var;
@@ -457,24 +512,35 @@ class AdminController extends Yaf_Controller_Abstract {
 		$operators = $this->getSetVar($session, 'manual_operator', 'manual_operator');
 		$values = $this->getSetVar($session, 'manual_value', 'manual_value');
 		for ($i = 0; $i < count($keys); $i++) {
-			if ($keys[$i]=='' || $values[$i]=='') {
+			if ($keys[$i] == '' || $values[$i] == '') {
 				continue;
 			}
 			switch ($types[$i]) {
 				case 'number':
 					$values[$i] = floatval($values[$i]);
 					break;
-				case  'date':
+				case 'date':
 					if (Zend_Date::isDate($values[$i], 'yyyy-MM-dd hh:mm:ss')) {
 						$values[$i] = new MongoDate((new Zend_Date($values[$i], null, new Zend_Locale('he_IL')))->getTimestamp());
-					}
-					else {
+					} else {
 						continue 2;
 					}
 				default:
 					break;
 			}
 			switch ($operators[$i]) {
+				case 'starts_with':
+					$operators[$i] = '$regex';
+					$values[$i] = "^$values[$i]";
+					break;
+				case 'ends_with':
+					$operators[$i] = '$regex';
+					$values[$i] = "$values[$i]$";
+					break;
+				case 'like':
+					$operators[$i] = '$regex';
+					$values[$i] = "$values[$i]";
+					break;
 				case 'lt':
 					$operators[$i] = '$lt';
 					break;

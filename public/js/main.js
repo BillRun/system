@@ -3,7 +3,7 @@ $('body').on('hidden', '.modal', function() {
 });
 
 $(function() {
-	$("#update_current,#close_and_new,#duplicate").click(function() {
+	$("#close_and_new,#duplicate").click(function() {
 		var items_checked = $('#data_table :checked');
 		if (items_checked.length) {
 			$(this).data('remote', edit_url_prefix + items_checked.eq(0).val() + '&type=' + $(this).data('type'));
@@ -97,4 +97,21 @@ function addFilter(button) {
 	$("select[name='manual_type[]']", cloned).on('change', function() {
 		type_changed(this);
 	});
+}
+
+function update_current(obj){
+
+        var items_checked = $(obj).next("input[type=checkbox]");
+
+        if (items_checked.length) {
+                $(obj).data('remote', edit_url_prefix + items_checked.eq(0).val() + '&type=' + $(obj).data('type'));
+        }
+}
+
+function add_type(obj, types) {
+    var manual_type = $(obj).next();
+    if(manual_type.attr("name") == "manual_type[]") {
+        manual_type.remove();
+    }
+    $("<input type=\"hidden\" class=\"span2\" style=\"display:block;\" name=\"manual_type[]\" value=\"" + types[$(obj).val()]+ "\" />").insertAfter(obj);
 }

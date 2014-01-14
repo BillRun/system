@@ -33,11 +33,11 @@ class LogModel extends TableModel {
 		);
 		return $columns;
 	}
-	
+
 	public function toolbar() {
 		return 'log';
 	}
-	
+
 	public function getSortFields() {
 		$sort_fields = array(
 			'source' => 'Source',
@@ -48,6 +48,20 @@ class LogModel extends TableModel {
 			'process_time' => 'Date processed',
 		);
 		return $sort_fields;
+	}
+
+	public function getData($filter_query = array()) {
+		$cursor = $this->collection->query($filter_query)->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
+		$this->_count = $cursor->count();
+		return $cursor->current();
+	}
+
+	public function getProtectedKeys($entity, $type) {
+		$parent_protected = parent::getProtectedKeys($entity, $type);
+		if ($type == 'logDetails') {
+			return array_merge($parent_protected, array("path", "file_name", "stamp", "received_time"));
+		}
+		return $parent_protected;
 	}
 
 }

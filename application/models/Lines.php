@@ -55,16 +55,22 @@ class LinesModel extends TableModel {
 				$entity['arate'] = $data->get('key');
 			}
 		}
-		if (isset($entity['billrun_ref'])) {
-			$data = $entity->get('billrun_ref', false);
+		if (isset($entity['pzone'])) {
+			$data = $entity->get('pzone', false);
 			if ($data instanceof Mongodloid_Entity) {
-				$entity['billrun_ref'] = $data->get('billrun_key');
+				$entity['pzone'] = $data->get('key');
 			}
 		}
-		if (isset($entity['plan_ref'])) {
-			$data = $entity->get('plan_ref', false);
+		if (isset($entity['wsc'])) {
+			$data = $entity->get('wsc', false);
 			if ($data instanceof Mongodloid_Entity) {
-				$entity['plan'] = $data->get('name');
+				$entity['wsc'] = $data->get('key');
+			}
+		}
+		if (isset($entity['wsc_in'])) {
+			$data = $entity->get('wsc_in', false);
+			if ($data instanceof Mongodloid_Entity) {
+				$entity['wsc_in'] = $data->get('key');
 			}
 		}
 
@@ -97,11 +103,18 @@ class LinesModel extends TableModel {
 		parent::update($data);
 	}
 
-	public function getData($filter_query = array()) {
-		$limit = Billrun_Factory::config()->getConfigValue('admin_panel.lines.limit',10000);
+	public function getData($filter_query = array(), $skip = null, $size = null) {
+		if (empty($skip)) {
+			$skip = $this->offset();
+		}
+		if (empty($size)) {
+			$size = $this->size;
+		}
+
+		$limit = Billrun_Factory::config()->getConfigValue('admin_panel.lines.limit', 10000);
 		$cursor = $this->collection->query($filter_query)->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED)->limit($limit);
 		$this->_count = $cursor->count();
-		$resource = $cursor->sort($this->sort)->skip($this->offset())->limit($this->size);
+		$resource = $cursor->sort($this->sort)->skip($skip)->limit($size);
 		return $resource;
 	}
 
@@ -128,14 +141,16 @@ class LinesModel extends TableModel {
 	}
 
 	public function getFilterFields() {
+		$months = 6;
+		$billruns = array();
+		$billruns['000000'] = 'Current billrun';
+		for ($i = 1; $i <= $months; $months--) {
+			$date = date("Ym", strtotime("-$months month"));
+			$billruns["$date"] = $date;
+		}
+		rsort($billruns);
+
 		$filter_fields = array(
-			'garbage' => array(
-				'key' => 'garbage',
-				'input_type' => 'boolean',
-				'comparison' => 'special',
-				'display' => 'Garbage lines',
-				'default' => 'off',
-			),
 			'aid' => array(
 				'key' => 'aid',
 				'db_key' => 'aid',
@@ -177,13 +192,22 @@ class LinesModel extends TableModel {
 				'values' => Billrun_Factory::config()->getConfigValue('admin_panel.line_usages'),
 				'default' => array(),
 			),
+			'billrun' => array(
+				'key' => 'billrun',
+				'db_key' => 'billrun',
+				'input_type' => 'multiselect',
+				'comparison' => '$in',
+				'display' => 'Billrun',
+				'values' => $billruns,
+				'default' => "000000",
+			),
 		);
 		return array_merge($filter_fields, parent::getFilterFields());
 	}
 
 	public function applyFilter($filter_field, $value) {
 		if ($filter_field['comparison'] == 'special') {
-			if ($filter_field['input_type'] == 'boolean' && $filter_field['key'] == 'garbage') {
+			if ($filter_field['input_type'] == 'boolean') {
 				if (!is_null($value) && $value != $filter_field['default']) {
 					$rates_coll = Billrun_Factory::db()->ratesCollection();
 					$unrated_rate = $rates_coll->query("key", "UNRATED")->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED)->current()->createRef($rates_coll);
@@ -198,19 +222,19 @@ class LinesModel extends TableModel {
 											'$nin' => array(
 												false, $unrated_rate
 											),
-									)),
+										)),
 									array('sid' => array(
 											'$exists' => true,
 											'$ne' => false,
-									)),
+										)),
 									array('urt' => array(
 											'$lt' => $month_ago
-									)),
+										)),
 									array('aprice' => array(
 											'$exists' => false
-									)),
-							)),
-						));
+										)),
+								)),
+					));
 				}
 			}
 		} else {
@@ -238,16 +262,17 @@ class LinesModel extends TableModel {
 				'usage' => array(
 					'width' => 2,
 				),
-				'garbage' => array(
+				'billrun' => array(
 					'width' => 2,
 				),
 			),
 		);
 		return $filter_field_order;
 	}
-	
+
 	public function getSortFields() {
 		return array(
+			'urt' => 'Time',
 			'type' => 'Type',
 			'aid' => 'Account id',
 			'sid' => 'Subscriber id',
@@ -256,9 +281,7 @@ class LinesModel extends TableModel {
 			'plan' => 'Plan',
 			'aprice' => 'Price',
 			'billrun_key' => 'Billrun',
-			'urt' => 'Time',
 		);
 	}
 
 }
-
