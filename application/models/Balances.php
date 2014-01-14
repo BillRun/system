@@ -39,7 +39,7 @@ class BalancesModel extends TableModel {
 					'billrun_month' => $billrun,
 					'current_plan'=> Billrun_Factory::db()->plansCollection()->createRef($id),
 					'aid' => array('$gte' => (int)$from_account_id, '$lte' => (int)$to_account_id),
-		))->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED)->hint(array('aid' => 1))->limit(50000);
+		))->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED)->hint(array('aid' => 1, 'billrun_month'))->limit($this->size);
 	}
 
 }
