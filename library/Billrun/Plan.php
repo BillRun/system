@@ -41,13 +41,14 @@ class Billrun_Plan {
 				$this->initPlans();
 			}
 			if (isset($params['id'])) {
+				$id = $params['id'];
 				if ($id instanceof Mongodloid_Id) {
 					$filter_id = strval($id->getMongoId());
 				} else if ($id instanceof MongoId) {
 					$filter_id = strval($id);
 				} else {
 					// probably a string
-					$filter_id = $params['id'];
+					$filter_id = $id;
 				}
 				if ($plan = $this->getPlanById($filter_id)) {
 					$this->data = $plan;
@@ -166,6 +167,10 @@ class Billrun_Plan {
 	 */
 	public function getPrice() {
 		return $this->get('price');
+	}
+	
+	public function getName() {
+		return $this->get('name');
 	}
 
 	/**
