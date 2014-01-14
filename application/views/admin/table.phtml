@@ -8,7 +8,7 @@
 //		$this->display($criteria_tpl . '.phtml', array());
 //	}
 	$this->display('toolbar.phtml', array());
-        print '<div style="clear:both;"></div>';
+	print '<div style="clear:both;"></div>';
 	if (isset($this->data) && $this->data instanceof Mongodloid_Cursor) :
 		print '<section id="no-more-tables"><table id="data_table" class="table table-striped table-bordered table-no-more-tables">';
 		print '<thead><tr><th>#</th>';
@@ -24,32 +24,31 @@
 			print '<td data-title=\'#\'><label class="checkbox"><a onclick="update_current(this);" href="#popup" data-type="update" data-toggle="modal" role="button" data-remote="">#' . ($c + 1) . '</a>&nbsp;<input value="' . $item['_id'] . '" type="checkbox" id="chk' . $c++ . '"/></label></td>';
 			foreach ($this->columns as $h => $columnName) {
 				$data = $item->get($h);
-				print '<td data-title='.$columnName.'>';
+				print '<td data-title=' . $columnName . '>';
 				if (isset($edit_key) && $h == $edit_key) {
 					$url = $this->baseUrl . '/admin/edit?type=' . strtolower($this->title) . '&id=' . $item['_id'];
 					print '<a href="#popup" data-remote="' . $url . '" role="button" data-toggle="modal">' . $data . '</a>';
 				} else if (($h == 'from' || $h == 'to' || $h == 'urt' || $h == 'notify_time') && $data) {
 					// TODO: move he_IL to config 
-                                        if(!empty($item["tzoffset"])) {
-                                            // TODO change this to regex
-                                            $timsetamp = $item['urt']->sec;
-                                            $tzoffset = $item['tzoffset'];
-                                            $sign = substr($tzoffset, 0, 1);
-                                            $hours = substr($tzoffset, 1, 2);
-                                            $minutes = substr($tzoffset, 3, 2);
-                                            $time = $hours . ' hours ' . $minutes . ' minutes';
-                                            if ($sign == "-") {
-                                                    $time .= ' ago';
-                                            }
-                                            $timsetamp = strtotime($time, $timsetamp);
-                                            $zend_date = new Zend_Date($timsetamp);
-                                            $zend_date->setTimezone('UTC');
-                                            echo $zend_date->toString("d/M/Y H:m:s").$item['tzoffset'];
-                                        }
-                                        else {
-                                            $zend_date = new Zend_Date($data->sec);
-                                            echo $zend_date->toString("d/M/Y H:m:s");
-                                        }
+					if (!empty($item["tzoffset"])) {
+						// TODO change this to regex
+						$timsetamp = $item['urt']->sec;
+						$tzoffset = $item['tzoffset'];
+						$sign = substr($tzoffset, 0, 1);
+						$hours = substr($tzoffset, 1, 2);
+						$minutes = substr($tzoffset, 3, 2);
+						$time = $hours . ' hours ' . $minutes . ' minutes';
+						if ($sign == "-") {
+							$time .= ' ago';
+						}
+						$timsetamp = strtotime($time, $timsetamp);
+						$zend_date = new Zend_Date($timsetamp);
+						$zend_date->setTimezone('UTC');
+						echo $zend_date->toString("d/M/Y H:m:s") . $item['tzoffset'];
+					} else {
+						$zend_date = new Zend_Date($data->sec);
+						echo $zend_date->toString("d/M/Y H:m:s");
+					}
 				} else {
 					print $data;
 				}
@@ -93,18 +92,18 @@
 			<button id="confirm" class="btn btn-primary">Remove</button>
 		</div>
     </div>
-        
+
     <div class="modal fade hide" id="LogPopup" tabindex="-3" role="dialog" aria-labelledby="LogPopupLabel" aria-hidden="true">
         <div class="modal-header">
-                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
-                <h3 id="LogPopupLabel"></h3>
+			<button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+			<h3 id="LogPopupLabel"></h3>
         </div>
         <div class="modal-body">
 
         </div>
         <div class="modal-footer">
-                <button id="cancelLogPopup" class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
+			<button id="cancelLogPopup" class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
         </div>
     </div>
-        
+
 </div>
