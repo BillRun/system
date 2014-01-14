@@ -24,7 +24,7 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 	const BUSY_WAIT_TIME = 10;
 	const WAIT_TIME_PADDING = 10;
 	const WAITING_SLEEP_TIME = 1;
-	const RESET_MODEM_WINDOW = 60;
+	const RESET_MODEM_WINDOW = 10;
 
 	/**
 	 * the type of the object
