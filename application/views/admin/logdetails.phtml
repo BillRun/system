@@ -4,8 +4,10 @@ $protected = array();
 $entity = $this->entity->getRawData();
 
 foreach ($this->protectedKeys as $key) {
-	$protected[$key] = $entity[$key];
-	unset($entity[$key]);
+	if (isset($entity[$key])) {
+		$protected[$key] = $entity[$key];
+		unset($entity[$key]);
+	}
 }
 
 print '<div class="form_protect">';

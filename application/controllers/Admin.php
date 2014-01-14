@@ -22,6 +22,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	protected $title = null;
 	protected $session = null;
 	protected $model = null;
+	protected $baseUrl = null;
 
 	/**
 	 * method to control and navigate the user to the right view
@@ -397,6 +398,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		}
 
 		$parameters['title'] = $this->title;
+		$parameters['baseUrl'] = $this->baseUrl;
 		return $this->getView()->render($tpl . ".phtml", $parameters);
 	}
 
