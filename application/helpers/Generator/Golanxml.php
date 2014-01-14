@@ -99,7 +99,7 @@ class Generator_Golanxml extends Billrun_Generator {
 			$this->setFileStamp($row, $invoice_filename);
 			Billrun_Factory::log()->log("invoice file " . $invoice_filename . " created for account " . $row->get('aid'), Zend_Log::INFO);
 		} else {
-			Billrun_Factory::log()->log("Skipping filename $invoice_filename", Zend_Log::INFO);
+			Billrun_Factory::log()->log('Skipping filename ' . $invoice_filename, Zend_Log::INFO);
 		}
 //		$this->addRowToCsv($invoice_id, $row->get('aid'), $total, $total_ilds);
 	}
@@ -545,12 +545,12 @@ class Generator_Golanxml extends Billrun_Generator {
 		if (rand(1, 100) >= $this->loadBalanced) {
 			$lines = $lines->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
 		}
-		Billrun_Factory::log()->log('Pulling lines of ' . $field . ' ' . $entity[$field], Zend_Log::INFO);
+		Billrun_Factory::log()->log('Pulling lines of ' . $field . ' ' . $entity[$field], Zend_Log::DEBUG);
 		$ret = array();
 		foreach ($lines as $line) {
 			$ret[] = $line;
 		}
-		Billrun_Factory::log()->log('Pulling lines of ' . $field . ' ' . $entity[$field] . ' - finished', Zend_Log::INFO);
+		Billrun_Factory::log()->log('Pulling lines of ' . $field . ' ' . $entity[$field] . ' - finished', Zend_Log::DEBUG);
 		return $ret;
 	}
 
