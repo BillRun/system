@@ -39,7 +39,7 @@ class BalancesModel extends TableModel {
 					'billrun_month' => $billrun,
 					'balance.totals.data.usagev' => array('$gt' => $data_usage_bytes),
 					'current_plan'=> Billrun_Factory::db()->plansCollection()->createRef($id),
-		))->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED)->hint(array('aid' => 1, 'billrun_month'))->limit($this->size);
+		))->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED)->hint(array('aid' => 1, 'billrun_month' => 1))->limit($this->size);
 	}
 
 }
