@@ -90,13 +90,17 @@ class Generator_Golanxml extends Billrun_Generator {
 	 * @param array $lines array of lines to get into the xml
 	 */
 	public function createXmlInvoice($row, $lines = null) {
-		$xml = $this->getXML($row, $lines);
-//		$row->{'xml'} = $xml->asXML();
 		$invoice_id = $row->get('invoice_id');
 		$invoice_filename = $row['billrun_key'] . '_' . str_pad($row['aid'], 9, '0', STR_PAD_LEFT) . '_' . str_pad($invoice_id, 11, '0', STR_PAD_LEFT) . '.xml';
-		$this->createXmlFile($invoice_filename, $xml->asXML());
-		$this->setFileStamp($row, $invoice_filename);
-		Billrun_Factory::log()->log("invoice file " . $invoice_filename . " created for account " . $row->get('aid'), Zend_Log::INFO);
+		$invoice_file_path = $this->export_directory . '/' . $invoice_filename;
+		if (!file_exists($invoice_file_path)) {
+			$xml = $this->getXML($row, $lines);
+			$this->createXmlFile($invoice_filename, $xml->asXML());
+			$this->setFileStamp($row, $invoice_filename);
+			Billrun_Factory::log()->log("invoice file " . $invoice_filename . " created for account " . $row->get('aid'), Zend_Log::INFO);
+		} else {
+			Billrun_Factory::log()->log("Skipping filename $invoice_filename", Zend_Log::INFO);
+		}
 //		$this->addRowToCsv($invoice_id, $row->get('aid'), $total, $total_ilds);
 	}
 
@@ -516,7 +520,7 @@ class Generator_Golanxml extends Billrun_Generator {
 			// throw warning
 			return false;
 		}
-		
+
 		$filter = array(
 			$field => $entity[$field],
 		);
@@ -546,7 +550,7 @@ class Generator_Golanxml extends Billrun_Generator {
 		foreach ($lines as $line) {
 			$ret[] = $line;
 		}
-		Billrun_Factory::log()->log('Pulling lines of ' . $field . ' ' . $entity[$field]. ' - finished', Zend_Log::INFO);
+		Billrun_Factory::log()->log('Pulling lines of ' . $field . ' ' . $entity[$field] . ' - finished', Zend_Log::INFO);
 		return $ret;
 	}
 
