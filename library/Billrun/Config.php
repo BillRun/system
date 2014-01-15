@@ -109,7 +109,7 @@ class Billrun_Config {
 	 * @return string the environment (prod, test or dev)
 	 */
 	public function getEnv() {
-		return $this->getConfigValue(self::environment_field, 'dev');
+		return APPLICATION_ENV;
 	}
 
 	/**
@@ -120,6 +120,9 @@ class Billrun_Config {
 	 * @return boolean true if the environment is the one that supplied, else false
 	 */
 	public function checkEnv($env) {
+		if (is_array($env) && in_array($this->getEnv(), $env)) {
+			return true;
+		}
 		if ($this->getEnv() === $env) {
 			return true;
 		}
@@ -132,7 +135,7 @@ class Billrun_Config {
 	 * @return boolean true if it's production, else false
 	 */
 	public function isProd() {
-		if ($this->checkEnv('prod')) {
+		if ($this->checkEnv(array('prod', 'product', 'production'))) {
 			return true;
 		}
 		return false;
