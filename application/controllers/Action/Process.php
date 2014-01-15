@@ -20,7 +20,7 @@ class ProcessAction extends Action_Base {
 	 * it's called automatically by the cli main controller
 	 */
 	public function execute() {
-		
+
 		$possibleOptions = array(
 			'type' => false,
 			'parser' => false,

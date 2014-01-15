@@ -20,9 +20,9 @@ class CalculateAction extends Action_Base {
 	 * it's called automatically by the cli main controller
 	 */
 	public function execute() {
-		
+
 		$possibleOptions = array('type' => false);
-		
+
 		if (($options = $this->_controller->getInstanceOptions($possibleOptions)) === FALSE) {
 			return;
 		}
@@ -41,7 +41,6 @@ class CalculateAction extends Action_Base {
 		} else {
 			$this->_controller->addOutput("Calculator cannot be loaded");
 		}
-
 	}
 
 }

@@ -152,7 +152,7 @@ use Billrun_Traits_FileSequenceChecking;
 		if (isset($cdrLine['basicCallInformation']['CallEventStartTimeStamp']['localTimeStamp'])) {
 			$offset = $this->currentFileHeader['networkInfo']['UtcTimeOffsetInfoList'][$cdrLine['basicCallInformation']['CallEventStartTimeStamp']['TimeOffsetCode']];
 			$cdrLine['urt'] = new MongoDate(Billrun_Util::dateTimeConvertShortToIso($cdrLine['basicCallInformation']['CallEventStartTimeStamp']['localTimeStamp'], $offset));
-			$cdrLine['tzoffset'] =  $offset;
+			$cdrLine['tzoffset'] = $offset;
 		}
 
 		if (isset($cdrLine['basicCallInformation']['chargeableSubscriber']['simChargeableSubscriber']['imsi'])) {
@@ -172,8 +172,7 @@ use Billrun_Traits_FileSequenceChecking;
 				} else if ($tele_service_code == '22') {
 					if (isset($cdrLine['basicCallInformation']['Desination']['DialedDigits'])) {
 						$cdrLine['called_number'] = $cdrLine['basicCallInformation']['Desination']['DialedDigits'];
-					}
-					else if (isset($cdrLine['basicCallInformation']['Desination']['CalledNumber'])) { // @todo check with sefi. reference: db.lines.count({'BasicServiceUsedList.BasicServiceUsed.BasicService.BasicServiceCode.TeleServiceCode':"22",record_type:'9','basicCallInformation.Desination.DialedDigits':{$exists:false}});)
+					} else if (isset($cdrLine['basicCallInformation']['Desination']['CalledNumber'])) { // @todo check with sefi. reference: db.lines.count({'BasicServiceUsedList.BasicServiceUsed.BasicService.BasicServiceCode.TeleServiceCode':"22",record_type:'9','basicCallInformation.Desination.DialedDigits':{$exists:false}});)
 						$cdrLine['called_number'] = $cdrLine['basicCallInformation']['Desination']['CalledNumber'];
 					}
 				}
@@ -205,16 +204,16 @@ use Billrun_Traits_FileSequenceChecking;
 	protected function addParsingMethods() {
 		$newParsingMethods = array(
 			'raw_data' => function($data) {
-				return $this->utf8encodeArr($data);
-			},
+			return $this->utf8encodeArr($data);
+		},
 			'bcd_number' => function($fieldData) {
-				$ret = $this->parsingMethods['bcd_encode']($fieldData);
+			$ret = $this->parsingMethods['bcd_encode']($fieldData);
 
-				return preg_replace('/15$/', '', $ret);
-			},
+			return preg_replace('/15$/', '', $ret);
+		},
 			'time_offset_list' => function($data) {
-				return $this->parseTimeOffsetList($data);
-			},
+			return $this->parseTimeOffsetList($data);
+		},
 		);
 
 		$this->parsingMethods = array_merge($this->parsingMethods, $newParsingMethods);

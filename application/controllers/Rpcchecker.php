@@ -287,7 +287,7 @@ class RPCCheckerController extends Yaf_Controller_Abstract {
 				$params_arr[] = array('time' => $params['time'], 'DATETIME' => $params['time'], 'IMSI' => $params['IMSI']);
 				$details = $this->subscriber->load($params);
 				$data['normal_plan'] = $details->plan;
-				
+
 				$newCsvData[$data[4]] = $data;
 			}
 			fclose($handle);

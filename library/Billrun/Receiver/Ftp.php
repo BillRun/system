@@ -111,22 +111,22 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 			if ($extraData) {
 				$isFileReceivedMoreFields['extra_data'] = $extraData;
 			}
-			
+
 			if (!$file->isFile()) {
 				Billrun_Factory::log()->log("FTP: " . $file->name . " is not a file", Zend_Log::DEBUG);
 				continue;
 			}
-			
+
 			if (!$this->isFileValid($file->name, $file->path)) {
 				Billrun_Factory::log()->log("FTP: " . $file->name . " is not a valid file", Zend_Log::DEBUG);
 				continue;
 			}
-			
+
 			if ($this->isFileReceived($file->name, static::$type, $isFileReceivedMoreFields)) {
 				Billrun_Factory::log()->log("FTP: " . $file->name . " received already", Zend_Log::DEBUG);
 				continue;
 			}
-			
+
 			Billrun_Factory::log()->log("FTP: Download file " . $file->name . " from remote host", Zend_Log::INFO);
 			$targetPath = $this->workspace;
 			if (substr($targetPath, -1) != '/') {
@@ -175,13 +175,13 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 			$files = iterator_to_array($files);
 		}
 		usort($files, function ($a, $b) {
-					if ($a->isFile() && $b->isFile() &&
-							isset($a->extraData['date']) && isset($b->extraData['date'])) {
-						return ($a->extraData['date'] - $b->extraData['date']) + (strcmp($a->name, $b->name) * 0.1);
-					}
+			if ($a->isFile() && $b->isFile() &&
+				isset($a->extraData['date']) && isset($b->extraData['date'])) {
+				return ($a->extraData['date'] - $b->extraData['date']) + (strcmp($a->name, $b->name) * 0.1);
+			}
 
-					return strcmp($a->name, $b->name);
-				});
+			return strcmp($a->name, $b->name);
+		});
 
 		return $files;
 	}
@@ -195,4 +195,3 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 	}
 
 }
-

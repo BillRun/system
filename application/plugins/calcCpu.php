@@ -122,7 +122,7 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 		if (Billrun_Factory::config()->getConfigValue('calcCpu.wholesale_calculators', true)) {
 			$this->wholeSaleCalculators($data, $processor);
-		}		
+		}
 		Billrun_Factory::log('Plugin calc cpu end', Zend_Log::INFO);
 	}
 

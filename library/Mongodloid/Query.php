@@ -48,8 +48,8 @@ class Mongodloid_Query implements IteratorAggregate {
 				$func = $this->_operators[$matches['operator']];
 				if ($matches['operator'] == '%') {
 					$right = array_map(function($v) {
-							return (int) trim($v);
-						}, explode('==', $right));
+						return (int) trim($v);
+					}, explode('==', $right));
 				} else if ($matches['operator'] == 'EXISTS') {
 					$right = true;
 				} else if ($matches['operator'] == 'NOT EXISTS') {
@@ -91,11 +91,11 @@ class Mongodloid_Query implements IteratorAggregate {
 		if ($this->_mongoOperators[$name]) {
 			if (is_string($param[1])) {
 				$param[1] = array_map(function($v) {
-						$v = trim($v);
-						if (is_numeric($v))
-							return (float) $v;
-						return $v;
-					}, explode(',', trim($param[1], '()')));
+					$v = trim($v);
+					if (is_numeric($v))
+						return (float) $v;
+					return $v;
+				}, explode(',', trim($param[1], '()')));
 			}
 			return $this->query(array(
 					$param[0] => array(

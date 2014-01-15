@@ -40,15 +40,15 @@ abstract class Billrun_Plugin_BillrunPluginBase extends Billrun_Spl_Observer {
 		$this->name = $name;
 	}
 
-    /**
-     * Log a message at a priority the the main Billrun Log
-     *
-     * @param  string   $message   Message to log
-     * @param  integer  $priority  Priority of message
-     * @param  mixed    $extras    Extra information to log in event
-     * @return void
-     * @throws Zend_Log_Exception
-     */
+	/**
+	 * Log a message at a priority the the main Billrun Log
+	 *
+	 * @param  string   $message   Message to log
+	 * @param  integer  $priority  Priority of message
+	 * @param  mixed    $extras    Extra information to log in event
+	 * @return void
+	 * @throws Zend_Log_Exception
+	 */
 	protected function log($message, $priority, $extras = null) {
 		Billrun_Log::getInstance()->log($message, $priority, $extras);
 	}

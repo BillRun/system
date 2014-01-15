@@ -65,18 +65,18 @@ class Mongodloid_Connection {
 			$read_preference = $options['readPreference'];
 			unset($options['readPreference']);
 		}
-		
+
 		if (!empty($this->username)) {
 			$options['username'] = $this->username;
 		}
-		
+
 		if (!empty($this->password)) {
 			$options['password'] = $this->password;
 		}
-		
+
 		// this can throw an Exception
 		$this->_connection = new MongoClient($this->_server ? $this->_server : 'mongodb://localhost:27017', $options);
-		
+
 		$this->_connection->setReadPreference($read_preference);
 
 		$this->_connected = true;

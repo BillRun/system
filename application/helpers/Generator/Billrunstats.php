@@ -36,9 +36,9 @@ class Generator_Billrunstats extends Billrun_Generator {
 		$billrun = Billrun_Factory::db()->billrunCollection();
 
 		$this->data = $billrun
-						->query('billrun_key', $this->stamp)
-						->exists('invoice_id')
-						->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
+				->query('billrun_key', $this->stamp)
+				->exists('invoice_id')
+				->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
 
 		Billrun_Factory::log()->log("generator entities loaded: " . $this->data->count(), Zend_Log::INFO);
 

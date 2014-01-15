@@ -17,7 +17,7 @@ class BalancesModel extends TableModel {
 
 	public function __construct(array $params = array()) {
 		$params['collection'] = 'balances';
-                $params['db'] = 'balances';
+		$params['db'] = 'balances';
 		parent::__construct($params);
 		$this->search_key = "stamp";
 	}
@@ -33,12 +33,12 @@ class BalancesModel extends TableModel {
 		$plan_id = Billrun_Factory::plan($params);
 		$id = $plan_id->get('_id')->getMongoID();
 		$data_usage_bytes = Billrun_Util::megabytesToBytesFormat($data_usage);
-		
+
 		$query = array(
-					'aid' => array('$gte' => (int)$from_account_id, '$lte' => (int)$to_account_id),
-					'billrun_month' => $billrun,
-					'balance.totals.data.usagev' => array('$gt' => (float)$data_usage_bytes),
-					'current_plan'=> Billrun_Factory::db()->plansCollection()->createRef($id),
+			'aid' => array('$gte' => (int) $from_account_id, '$lte' => (int) $to_account_id),
+			'billrun_month' => $billrun,
+			'balance.totals.data.usagev' => array('$gt' => (float) $data_usage_bytes),
+			'current_plan' => Billrun_Factory::db()->plansCollection()->createRef($id),
 		);
 
 		return $this->collection->query($query)->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED)->hint(array('aid' => 1, 'billrun_month' => 1))->limit($this->size);

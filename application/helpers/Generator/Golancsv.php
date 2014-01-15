@@ -177,9 +177,9 @@ class Generator_Golancsv extends Billrun_Generator {
 		$billrun = Billrun_Factory::db()->billrunCollection();
 
 		$this->data = $billrun
-						->query('billrun_key', $this->stamp)
-						->exists('invoice_id')
-						->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
+				->query('billrun_key', $this->stamp)
+				->exists('invoice_id')
+				->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
 
 		Billrun_Factory::log()->log("generator entities loaded: " . $this->data->count(), Zend_Log::INFO);
 
@@ -264,12 +264,12 @@ class Generator_Golancsv extends Billrun_Generator {
 
 	protected function getManualCorrectionCredit($subscriber) {
 		return floatval(isset($subscriber['costs']['credit']['refund']['vatable']) ? $subscriber['costs']['credit']['refund']['vatable'] : 0) +
-				floatval(isset($subscriber['costs']['credit']['refund']['vat_free']) ? $subscriber['costs']['credit']['refund']['vat_free'] : 0);
+			floatval(isset($subscriber['costs']['credit']['refund']['vat_free']) ? $subscriber['costs']['credit']['refund']['vat_free'] : 0);
 	}
 
 	protected function getManualCorrectionCharge($subscriber) {
 		return floatval(isset($subscriber['costs']['credit']['charge']['vatable']) ? $subscriber['costs']['credit']['charge']['vatable'] : 0) +
-				floatval(isset($subscriber['costs']['credit']['charge']['vat_free']) ? $subscriber['costs']['credit']['charge']['vat_free'] : 0);
+			floatval(isset($subscriber['costs']['credit']['charge']['vat_free']) ? $subscriber['costs']['credit']['charge']['vat_free'] : 0);
 	}
 
 	protected function getOutsidePackageNoVatTap3($subscriber) {
@@ -326,8 +326,8 @@ class Generator_Golancsv extends Billrun_Generator {
 
 	protected function getTotalChargeVatData($subscriber, $vat) {
 		$price_before_vat = (isset($subscriber['breakdown']['in_plan']['base']['INTERNET_BILL_BY_VOLUME']['totals']['data']['cost']) ? $subscriber['breakdown']['in_plan']['base']['INTERNET_BILL_BY_VOLUME']['totals']['data']['cost'] : 0) +
-				(isset($subscriber['breakdown']['over_plan']['base']['INTERNET_BILL_BY_VOLUME']['totals']['data']['cost']) ? $subscriber['breakdown']['over_plan']['base']['INTERNET_BILL_BY_VOLUME']['totals']['data']['cost'] : 0) +
-				(isset($subscriber['breakdown']['out_plan']['base']['INTERNET_BILL_BY_VOLUME']['totals']['data']['cost']) ? $subscriber['breakdown']['out_plan']['base']['INTERNET_BILL_BY_VOLUME']['totals']['data']['cost'] : 0);
+			(isset($subscriber['breakdown']['over_plan']['base']['INTERNET_BILL_BY_VOLUME']['totals']['data']['cost']) ? $subscriber['breakdown']['over_plan']['base']['INTERNET_BILL_BY_VOLUME']['totals']['data']['cost'] : 0) +
+			(isset($subscriber['breakdown']['out_plan']['base']['INTERNET_BILL_BY_VOLUME']['totals']['data']['cost']) ? $subscriber['breakdown']['out_plan']['base']['INTERNET_BILL_BY_VOLUME']['totals']['data']['cost'] : 0);
 		return $price_before_vat * (1 + $vat);
 	}
 

@@ -46,11 +46,11 @@ class Billrun_Calculator_Wholesale_WholesalePricing extends Billrun_Calculator_W
 	public function updateRow($row) {
 		$pricingData = array();
 		$row->collection(Billrun_Factory::db()->linesCollection());
-		$zoneKey = ($this->isLineIncoming($row) ? 'incoming' : $this->loadDBRef($row->get(Billrun_Calculator_Wholesale_Nsn::MAIN_DB_FIELD,true))['key']);
+		$zoneKey = ($this->isLineIncoming($row) ? 'incoming' : $this->loadDBRef($row->get(Billrun_Calculator_Wholesale_Nsn::MAIN_DB_FIELD, true))['key']);
 
-		if (isset($row['usagev']) && $zoneKey) {	
+		if (isset($row['usagev']) && $zoneKey) {
 			$rates = $this->getCarrierRateForZoneAndType(
-				$this->loadDBRef($row->get($this->isLineIncoming($row) ? 'wsc_in' : 'wsc',true)), $zoneKey, $row['usaget'], ($this->isPeak($row) ? 'peak' : 'off_peak')
+				$this->loadDBRef($row->get($this->isLineIncoming($row) ? 'wsc_in' : 'wsc', true)), $zoneKey, $row['usaget'], ($this->isPeak($row) ? 'peak' : 'off_peak')
 			);
 			if ($rates) {
 				$pricingData = $this->getLinePricingData($row['usagev'], $rates);
@@ -74,7 +74,7 @@ class Billrun_Calculator_Wholesale_WholesalePricing extends Billrun_Calculator_W
 	 * @return true is the line  is incoming to golan.
 	 */
 	protected function isLineIncoming($row) {
-		$carir = $this->loadDBRef($row->get('wsc',true));
+		$carir = $this->loadDBRef($row->get('wsc', true));
 		return $carir['key'] == 'GOLAN' || $carir['key'] == 'NR';
 	}
 
@@ -82,11 +82,10 @@ class Billrun_Calculator_Wholesale_WholesalePricing extends Billrun_Calculator_W
 	 * @see Billrun_Calculator::isLineLegitimate()
 	 */
 	public function isLineLegitimate($line) {
-		return $line['type'] == 'nsn' && 
-				$line->get('pzone', true) &&
-				($line->get(Billrun_Calculator_Carrier::MAIN_DB_FIELD,true) !== null && $line->get(Billrun_Calculator_Carrier::MAIN_DB_FIELD . "_in",true) != null) &&
-				$line->get(Billrun_Calculator_Wholesale_Nsn::MAIN_DB_FIELD,true) != false &&	in_array($line['record_type'], $this->wholesaleRecords);
+		return $line['type'] == 'nsn' &&
+			$line->get('pzone', true) &&
+			($line->get(Billrun_Calculator_Carrier::MAIN_DB_FIELD, true) !== null && $line->get(Billrun_Calculator_Carrier::MAIN_DB_FIELD . "_in", true) != null) &&
+			$line->get(Billrun_Calculator_Wholesale_Nsn::MAIN_DB_FIELD, true) != false && in_array($line['record_type'], $this->wholesaleRecords);
 	}
 
 }
-

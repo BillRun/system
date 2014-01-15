@@ -20,14 +20,14 @@ class AggregateAction extends Action_Base {
 	 * it's called automatically by the cli main controller
 	 */
 	public function execute() {
-		
+
 		$possibleOptions = array(
 			'type' => false,
 			'stamp' => false,
 			'page' => true,
 			'size' => true,
 		);
-		
+
 		if (($options = $this->_controller->getInstanceOptions($possibleOptions)) === FALSE) {
 			return;
 		}

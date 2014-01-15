@@ -13,8 +13,8 @@
  * @subpackage Plugins
  * @since    0.5
  */
-class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase  {
-	
+class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
+
 	/**
 	 * plugin name
 	 *
@@ -28,7 +28,7 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase  {
 	 * @var timestamp
 	 */
 	protected $startTime;
-	
+
 	/**
 	 * Is the  Alert plugin in a dry run mode (doesn't  actually sends alerts)
 	 * @var timestamp
@@ -41,15 +41,15 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase  {
 		$this->isDryRun = isset($options['dryRun']) ?
 			$options['dryRun'] :
 			Billrun_Factory::config()->getConfigValue('emailAlerts.dry_run', false);
-		
+
 		$this->alertTypes = isset($options['alertTypes']) ?
 			$options['alertTypes'] :
-			Billrun_Factory::config()->getConfigValue('emailAlerts.alert.types', array( 'nrtrde','ggsn', 'deposit','ilds','nsn') );
-		
+			Billrun_Factory::config()->getConfigValue('emailAlerts.alert.types', array('nrtrde', 'ggsn', 'deposit', 'ilds', 'nsn'));
+
 		$this->processingTypes = isset($options['processingTypes']) ?
 			$options['processingTypes'] :
-			Billrun_Factory::config()->getConfigValue('emailAlerts.processing.types', array( 'nrtrde','ggsn','nsn','tap3') );
-		
+			Billrun_Factory::config()->getConfigValue('emailAlerts.processing.types', array('nrtrde', 'ggsn', 'nsn', 'tap3'));
+
 		$this->startTime = time();
 	}
 
@@ -77,7 +77,7 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase  {
 		//Aggregate the  events by imsi  taking only the first one.
 		$events = $this->gatherEvents($this->alertTypes);
 		foreach ($events as $event) {
-		//	Billrun_Log::getInstance()->log("emailAlerts::alertsNotify : ".print_r($event,1), Zend_Log::DEBUG);
+			//	Billrun_Log::getInstance()->log("emailAlerts::alertsNotify : ".print_r($event,1), Zend_Log::DEBUG);
 			$retValue[] = $event;
 		}
 		$this->sendAlertsResultsSummary($retValue, $postMsg);
@@ -105,14 +105,10 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase  {
 				$log['alert'] = strtotime($log['last_processed']['process_time']) - $alertTime < 0;
 			}
 			$retValue[$key] = $log;
-			
 		}
 		return $this->getProcessingSummary($retValue);
 	}
 
-		
-	
-		
 	/**
 	 * get handaled events from the DB.
 	 * @param Array $types the type (sources) of the events to gather.
@@ -126,10 +122,10 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase  {
 			'$where' => "this.deposit_stamp == this.stamp",
 		));
 
-		
+
 		return $events;
 	}
-	
+
 	/**
 	 * get handaled events from the DB.
 	 * @param Array $types the type (sources) of the events to gather.
@@ -148,7 +144,7 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase  {
 		//Billrun_Log::getInstance()->log("emailAlerts::alertsNotify : ".print_r($aggregateLogs,1), Zend_Log::DEBUG);
 		return $aggregateLogs;
 	}
-	
+
 	/**
 	 * Mark an specific event after email sent. 
 	 * @param type $event the event to mark as dealt with.
@@ -159,7 +155,7 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase  {
 			$event->save(Billrun_Factory::db()->eventsCollection());
 		}
 	}
-	
+
 	/**
 	 * send  alerts results by email.
 	 */
@@ -188,7 +184,7 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase  {
 			$attachment = array();
 		}
 
-		$ret = $this->sendMail("NRTRDE status " . date(Billrun_Base::base_dateformat), $msg, Billrun_Factory::config()->getConfigValue('emailAlerts.alerts.recipients', array()), $attachment );
+		$ret = $this->sendMail("NRTRDE status " . date(Billrun_Base::base_dateformat), $msg, Billrun_Factory::config()->getConfigValue('emailAlerts.alerts.recipients', array()), $attachment);
 
 		if (count($attachment) && file_exists($attachmentPath)) {
 			@unlink($attachmentPath);
@@ -196,7 +192,7 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase  {
 
 		return $ret;
 	}
-	
+
 	/**
 	 * send  processing results by email.
 	 */
@@ -218,7 +214,7 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase  {
 
 			if (isset($val['last_processed'])) {
 				$seq = $this->getFileSequenceData($val['last_processed']['file_name'], $type);
-				$msg .= strtoupper($type) . " last processed Index: " . $seq['seq'] 
+				$msg .= strtoupper($type) . " last processed Index: " . $seq['seq']
 					. " processing date: " . $val['last_processed']['process_time'] . PHP_EOL;
 			} else {
 				$msg .= strtoupper($type) . " no processed files " . PHP_EOL;
@@ -229,7 +225,7 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase  {
 //		return $this->sendMail("Processing status " . date(Billrun_Base::base_dateformat), $msg, Billrun_Factory::config()->getConfigValue('emailAlerts.processing.recipients', array()));
 		return $msg;
 	}
-	
+
 	/**
 	 * Send Email helper
 	 * @param type $subject the subject of the message.
@@ -268,11 +264,10 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase  {
 		$mime = new Zend_Mime_Part(file_get_contents($filepath));
 		$mime->filename = basename($filepath);
 		$mime->disposition = Zend_Mime::DISPOSITION_INLINE;
-		$mime->encoding    = Zend_Mime::ENCODING_BASE64;
+		$mime->encoding = Zend_Mime::ENCODING_BASE64;
 		return $mime;
 	}
-	
-	
+
 	/**
 	 * An helper function for the Billrun_Common_FileSequenceChecker  ( helper :) ) class.
 	 * Retrive the ggsn file date and sequence number
@@ -284,11 +279,12 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase  {
 	public function getFileSequenceData($filename, $type) {
 		return array(
 			'seq' => Billrun_Util::regexFirstValue(Billrun_Factory::config()->getConfigValue($type . ".sequence_regex.seq", "/(\d+)/"), $filename),
-			'zone' =>Billrun_Util::regexFirstValue(Billrun_Factory::config()->getConfigValue($type .".sequence_regex.zone","//"), $filename),			
+			'zone' => Billrun_Util::regexFirstValue(Billrun_Factory::config()->getConfigValue($type . ".sequence_regex.zone", "//"), $filename),
 			'date' => Billrun_Util::regexFirstValue(Billrun_Factory::config()->getConfigValue($type . ".sequence_regex.date", "/(20\d{6})/"), $filename),
 			'time' => Billrun_Util::regexFirstValue(Billrun_Factory::config()->getConfigValue($type . ".sequence_regex.time", "/\D(\d{4,6})\D/"), $filename),
 		);
 	}
+
 }
 
 ?>

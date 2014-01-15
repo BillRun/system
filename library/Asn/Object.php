@@ -20,14 +20,14 @@ class Asn_Object extends Asn_Base {
 	protected $asnData = null;
 	protected $flags = null;
 
-	function __construct($data = false, $type = false , $flags = false) {
+	function __construct($data = false, $type = false, $flags = false) {
 		if (false !== $data) {
 			$this->asnData = $data;
 		}
 		if (false !== $type) {
 			$this->typeId = $type;
 		}
-		
+
 		if (false !== $flags) {
 			$this->flags = $flags;
 		}
@@ -35,7 +35,7 @@ class Asn_Object extends Asn_Base {
 		if ($this->isConstructed()) {
 			//the object is constructed from smaller objects
 			$this->parsedData = array();
-			while ( isset($data[0]) ) {
+			while (isset($data[0])) {
 				$this->parsedData[] = $this->newClassFromData($data);
 			}
 		} else {
@@ -90,4 +90,3 @@ class Asn_Object extends Asn_Base {
 	}
 
 }
-

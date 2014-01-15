@@ -31,8 +31,7 @@ class Billrun_Balance implements ArrayAccess {
 	public function __construct($options = array()) {
 		if (isset($options['data'])) {
 			$this->data = $options['data'];
-		}
-		else if (isset($options['sid']) && isset($options['billrun_key'])) {
+		} else if (isset($options['sid']) && isset($options['billrun_key'])) {
 			$this->load($options['sid'], $options['billrun_key']);
 		}
 	}
@@ -108,7 +107,7 @@ class Billrun_Balance implements ArrayAccess {
 		$this->load($subscriber->sid, $billrunKey);
 		return $ret;
 	}
-	
+
 	/**
 	 * Create a new balance  for a subscriber  in a given billrun
 	 * @param type $account_id the account ID  of the subscriber.
@@ -134,7 +133,7 @@ class Billrun_Balance implements ArrayAccess {
 		);
 		Billrun_Factory::log()->log("Create empty balance " . $billrun_key . " if not exists for subscriber " . $sid, Zend_Log::DEBUG);
 		$output = $balances_coll->findAndModify($query, $update, array(), $options, true);
-		
+
 		if ($output) {
 			Billrun_Factory::log('Added balance ' . $billrun_key . ' to subscriber ' . $sid, Zend_Log::INFO);
 			$ret = true;
@@ -173,9 +172,9 @@ class Billrun_Balance implements ArrayAccess {
 	protected function isExists($subscriberId, $billrunKey) {
 
 		$balance = Billrun_Factory::db(array('name' => 'balances'))->balancesCollection()->query(array(
-					'sid' => $subscriberId,
-					'billrun_month' => $billrunKey
-				))->cursor()->current();
+				'sid' => $subscriberId,
+				'billrun_month' => $billrunKey
+			))->cursor()->current();
 
 		if (!count($balance->getRawData())) {
 			return FALSE;

@@ -63,13 +63,12 @@ class TableModel {
 	public function __construct(array $params = array()) {
 
 		if (isset($params['collection'])) {
-                        if(isset($params['db'])) {
-                            $this->collection = Billrun_Factory::db(array('name' => $params['db']))->balancesCollection();
-                        }
-                        else {
-                            $this->collection = call_user_func(array(Billrun_Factory::db(), $params['collection'] . 'Collection'));
+			if (isset($params['db'])) {
+				$this->collection = Billrun_Factory::db(array('name' => $params['db']))->balancesCollection();
+			} else {
+				$this->collection = call_user_func(array(Billrun_Factory::db(), $params['collection'] . 'Collection'));
 //                          $this->collection->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
-                        }
+			}
 		}
 
 		if (isset($params['page'])) {

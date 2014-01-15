@@ -12,7 +12,7 @@ class Mongodloid_Collection {
 
 	const UNIQUE = 1;
 	const DROP_DUPLICATES = 2;
-	
+
 	protected $w = 0;
 
 	public function __construct(MongoCollection $collection, Mongodloid_DB $db) {
@@ -92,7 +92,7 @@ class Mongodloid_Collection {
 		if (is_null($w)) {
 			$w = $this->w;
 		}
-		
+
 		$result = $this->_collection->save($data, array('save' => $save, 'w' => $w));
 		if (!$result)
 			return false;
@@ -178,7 +178,7 @@ class Mongodloid_Collection {
 	public function setReadPreference($read_preference, array $tags = array()) {
 		return $this->_collection->setReadPreference($read_preference, $tags);
 	}
-		
+
 	/**
 	 * method to load Mongo DB reference object
 	 * 
@@ -221,16 +221,16 @@ class Mongodloid_Collection {
 	 */
 	public function findAndModify(array $query, array $update = array(), array $fields = array(), array $options = array(), $asCommand = false) {
 		$ret = FALSE;
-		if(!$asCommand) {
+		if (!$asCommand) {
 			$ret = new Mongodloid_Entity($this->_collection->findAndModify($query, $update, $fields, $options), $this);
 		} else {
 			return new Mongodloid_Entity($this->_db->command(array_merge(array(
-						'findAndModify' => $this->getName(),
-						'query' => $query,
-						'update' => $update,
-						'fields' => $fields,
-					),$options)));
-		}		
+					'findAndModify' => $this->getName(),
+					'query' => $query,
+					'update' => $update,
+					'fields' => $fields,
+						), $options)));
+		}
 		return $ret;
 	}
 

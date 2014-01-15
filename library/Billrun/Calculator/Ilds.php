@@ -20,7 +20,7 @@ class Billrun_Calculator_Ilds extends Billrun_Calculator_Rate {
 	 * @var string
 	 */
 	static protected $type = "ilds";
-	
+
 	/**
 	 * load the data to run the calculator for
 	 * 
@@ -28,13 +28,13 @@ class Billrun_Calculator_Ilds extends Billrun_Calculator_Rate {
 	 * 
 	 */
 	public function load($initData = true) {
-		
+
 		if ($initData) {
 			$this->data = array();
 		}
 
 		$resource = $this->getLines();
-		
+
 		foreach ($resource as $entity) {
 			$this->data[] = $entity;
 		}
@@ -57,14 +57,14 @@ class Billrun_Calculator_Ilds extends Billrun_Calculator_Rate {
 			->equals('source', static::$type)
 			->notExists('aprice');
 //			->notExists('pprice'); // @todo: check how to do or between 2 not exists		
-		
+
 		if ($this->limit > 0) {
 			$query->cursor()->limit($this->limit);
 		}
-		
+
 		return $query;
 	}
-	
+
 	/**
 	 * Execute the calculation process
 	 */
@@ -129,7 +129,7 @@ class Billrun_Calculator_Ilds extends Billrun_Calculator_Rate {
 				$rating_charge = round($charge / 100, 2);
 				break;
 			case '014':
-			case '019':	
+			case '019':
 				$rating_charge = round($charge, 3);
 				break;
 			default:

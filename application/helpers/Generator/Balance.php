@@ -172,5 +172,5 @@ class Generator_Balance extends Generator_Golanxml {
 	protected function getInvoiceId($row) {
 		return '00000000000';
 	}
-	
+
 }

@@ -34,6 +34,7 @@ class Billrun_Processor_Json extends Billrun_Processor {
 	}
 
 	protected function logDB() {
+		
 	}
 
 }

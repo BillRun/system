@@ -92,9 +92,8 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 				$event['returned_value'] = $ret;
 				$this->markEvent($event);
 				$this->markEventLines($event);
-
 			}
-			
+
 			//Decrease the amount of alerts allowed in a single run if 0 is reached the break the loop.
 			$alertsLeft--;
 
@@ -181,7 +180,7 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 				Billrun_Log::getInstance()->log("fraudAlertsPlugin::notifyRemoteServer connection failure or empty response.", Zend_Log::ERR);
 				return FALSE;
 			}
-			
+
 			Billrun_Log::getInstance()->log("fraudAlertsPlugin::notifyRemoteServer response: " . $response, Zend_Log::INFO);
 			Billrun_Log::getInstance()->log("fraudAlertsPlugin::notifyRemoteServer decode: " . print_r(json_decode($response), 1), Zend_Log::INFO);
 
@@ -261,7 +260,7 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 			'notify_time' => array('$exists' => false),
 			'_id' => array('$in' => $event['id']),
 		);
-		
+
 		if (is_null($failure)) {
 			$events_update_set = array(
 				'$set' => array(
@@ -277,7 +276,7 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 					'deposit_stamp' => 'ERROR-' . date(Billrun_Base::base_dateformat),
 					'returned_value' => $failure,
 				),
-			);			
+			);
 		}
 		$update_options = array('multiple' => 1);
 		return $this->eventsCol->update($events_where, $events_update_set, $update_options);
@@ -302,7 +301,7 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		if ($msisdn) {
 			$lines_where['msisdn'] = $msisdn;
 		}
-		
+
 //		if (isset($event['effects'])) {
 //			$lines_where[$event['effects']['key']] = $event['effects']['filter'];
 //		} else {

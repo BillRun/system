@@ -10,7 +10,7 @@
  * @author eran
  */
 interface Billrun_Plugin_Interface_IAggrergator {
-
+	
 }
 
 ?>

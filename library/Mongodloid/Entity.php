@@ -13,7 +13,6 @@ class Mongodloid_Entity implements ArrayAccess {
 	const POPFIRST = 1;
 
 	protected $w = 0;
-
 	private $_atomics = array(
 		'inc',
 //		'set',
@@ -266,8 +265,7 @@ class Mongodloid_Entity implements ArrayAccess {
 		// prevent from making a link
 		if ($safe) {
 			$this->_values = unserialize(serialize($data));
-		}
-		else {
+		} else {
 			$this->_values = $data;
 		}
 	}

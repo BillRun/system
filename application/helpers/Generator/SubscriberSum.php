@@ -55,7 +55,7 @@ class Generator_SubscriberSum extends Billrun_Generator_AggregatedCsv {
 	protected function setCollection() {
 		$this->collection = Billrun_Factory::db()->billrun_statsCollection();
 	}
-	
+
 	protected function setFilename() {
 		$this->filename = "subscriber_sum.csv";
 	}

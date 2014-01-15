@@ -15,23 +15,22 @@
 class Billrun_Calculator_Wholesale_Nsn extends Billrun_Calculator_Wholesale {
 
 	const MAIN_DB_FIELD = 'pzone';
-	
-	protected $ratingField = self::MAIN_DB_FIELD;	
-			
-		
+
+	protected $ratingField = self::MAIN_DB_FIELD;
+
 	public function __construct($options = array()) {
 		parent::__construct($options);
 		$this->loadRates();
 	}
-	
+
 	/**
 	 * method to get calculator lines
 	 */
 	protected function getLines() {
-		$lines =  $this->getQueuedLines(array());		//array('type'=> 'nsn')
+		$lines = $this->getQueuedLines(array());  //array('type'=> 'nsn')
 		return $lines;
 	}
-	
+
 	/**
 	 * Write the calculation into DB
 	 */
@@ -42,11 +41,11 @@ class Billrun_Calculator_Wholesale_Nsn extends Billrun_Calculator_Wholesale {
 		$rate = $this->getLineZone($row, $row['usaget']);
 		//Billrun_Factory::log()->log(" getLineZone  end : ".microtime(true));
 		$current = $row->getRawData();
-		
-		$added_values = array(			
+
+		$added_values = array(
 			$this->ratingField => $rate instanceof Mongodloid_Entity ? $rate->createRef() : $rate,
 		);
-		
+
 		$newData = array_merge($current, $added_values);
 		$row->setRawData($newData);
 		//Billrun_Factory::log()->log("Line end : ".microtime(true));
@@ -102,70 +101,69 @@ class Billrun_Calculator_Wholesale_Nsn extends Billrun_Calculator_Wholesale {
 			}
 		}
 		return $matchedRate;
-/*
- 		$rates = Billrun_Factory::db()->ratesCollection();		
-		$zoneKey= false;		
+		/*
+		  $rates = Billrun_Factory::db()->ratesCollection();
+		  $zoneKey= false;
 
-		$base_match = array(
-			'$match' => array(
-				'params.prefix' => array(
-					'$in' => $called_number_prefixes,
-				),
-				'rates.' . $usage_type => array('$exists' => true),				
-				'from' => array(
-					'$lte' => $line_time,
-				),
-				'to' => array(
-					'$gte' => $line_time,
-				),
-			)
-		);
-		
-		if($usage_type == 'call') {
-			$carrier_cg = $row->get('out_circuit_group');
-			$base_match['$match']['params.out_circuit_group'] = array(
-					'$elemMatch' => array(
-						'from' => array(
-							'$lte' => $carrier_cg,
-						),
-						'to' => array(
-							'$gte' => $carrier_cg
-						)
-					)
-				);
-		}
+		  $base_match = array(
+		  '$match' => array(
+		  'params.prefix' => array(
+		  '$in' => $called_number_prefixes,
+		  ),
+		  'rates.' . $usage_type => array('$exists' => true),
+		  'from' => array(
+		  '$lte' => $line_time,
+		  ),
+		  'to' => array(
+		  '$gte' => $line_time,
+		  ),
+		  )
+		  );
 
-		$unwind = array(
-			'$unwind' => '$params.prefix',
-		);
+		  if($usage_type == 'call') {
+		  $carrier_cg = $row->get('out_circuit_group');
+		  $base_match['$match']['params.out_circuit_group'] = array(
+		  '$elemMatch' => array(
+		  'from' => array(
+		  '$lte' => $carrier_cg,
+		  ),
+		  'to' => array(
+		  '$gte' => $carrier_cg
+		  )
+		  )
+		  );
+		  }
 
-		$sort = array(
-			'$sort' => array(
-				'params.prefix' => -1,
-			),
-		);
+		  $unwind = array(
+		  '$unwind' => '$params.prefix',
+		  );
 
-		$match2 = array(
-			'$match' => array(
-				'params.prefix' => array(
-					'$in' => $called_number_prefixes,
-				),
-			)
-		);
+		  $sort = array(
+		  '$sort' => array(
+		  'params.prefix' => -1,
+		  ),
+		  );
 
-		$matched_rates = $rates->aggregate($base_match, $unwind, $sort, $match2);
-		if (!empty($matched_rates)) {
-			$zoneKey =new Mongodloid_Entity(reset($matched_rates),$rates);
-		}
-		if( $matchedRate['key'] != $zoneKey['key']) {
-			Billrun_Factory::log()->log("NO MATCH !!!! : " . print_r($row->getRawData(),1). " current rate : " .print_r($matchedRate->getRawData(),1) . "  :  " . print_r($zoneKey->getRawData(),1));
-		}
+		  $match2 = array(
+		  '$match' => array(
+		  'params.prefix' => array(
+		  '$in' => $called_number_prefixes,
+		  ),
+		  )
+		  );
 
-		return $zoneKey;
-*/
+		  $matched_rates = $rates->aggregate($base_match, $unwind, $sort, $match2);
+		  if (!empty($matched_rates)) {
+		  $zoneKey =new Mongodloid_Entity(reset($matched_rates),$rates);
+		  }
+		  if( $matchedRate['key'] != $zoneKey['key']) {
+		  Billrun_Factory::log()->log("NO MATCH !!!! : " . print_r($row->getRawData(),1). " current rate : " .print_r($matchedRate->getRawData(),1) . "  :  " . print_r($zoneKey->getRawData(),1));
+		  }
+
+		  return $zoneKey;
+		 */
 	}
 
-	
 	/**
 	 * load the ggsn rates to be used later.
 	 */
@@ -209,5 +207,5 @@ class Billrun_Calculator_Wholesale_Nsn extends Billrun_Calculator_Wholesale {
 			in_array($line['usaget'], array('call', 'sms')) &&
 			in_array($line['record_type'], $this->wholesaleRecords);
 	}
-	
+
 }

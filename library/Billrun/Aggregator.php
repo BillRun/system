@@ -15,26 +15,25 @@
 abstract class Billrun_Aggregator extends Billrun_Base {
 
 	protected $excludes = array();
-	
+
 	/**
 	 *
 	 * @var mixed The data container, should extend Traversable
 	 */
 	protected $data = null;
 
-
 	public function __construct($options = array()) {
 		parent::__construct($options);
-		
-		$configPath = Billrun_Factory::config()->getConfigValue($this->getType().'.billrun.config_path');
-		if($configPath) {
-			$config =  new Yaf_Config_Ini( $configPath );
-			if(isset($config->billrun->exclude)) {
+
+		$configPath = Billrun_Factory::config()->getConfigValue($this->getType() . '.billrun.config_path');
+		if ($configPath) {
+			$config = new Yaf_Config_Ini($configPath);
+			if (isset($config->billrun->exclude)) {
 				$this->excludes = $config->billrun->exclude->toArray();
 			}
 		}
 	}
-	
+
 	/**
 	 * execute aggregate
 	 */

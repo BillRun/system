@@ -15,10 +15,10 @@
  * @since    0.5
  */
 class Billrun_Generator_Ilds extends Billrun_Generator {
+
 	/**
 	 * The VAT value (TODO get from outside/config).
 	 */
-
 	const VAT_VALUE = 1.17;
 
 	static protected $type = 'ilds';
@@ -69,9 +69,8 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 			->notExists('invoice_id');
 
 		Billrun_Factory::log()->log("aggregator entities loaded: " . $this->data->count(), Zend_Log::INFO);
-		
-		Billrun_Factory::dispatcher()->trigger('afterGeneratorLoadData', array('generator' => $this));
 
+		Billrun_Factory::dispatcher()->trigger('afterGeneratorLoadData', array('generator' => $this));
 	}
 
 	/**
@@ -98,7 +97,7 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 			// todo check how to use hint with 2 indexes
 			->cursor()->hint(array('sid' => 1))
 			->sort(array('urt' => 1));
-			
+
 		foreach ($resource as $entity) {
 			$ret[] = $entity->getRawData();
 		}
@@ -166,7 +165,7 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 			$xml->INV_INVOICE_TOTAL->TO_PERIOD = date($short_format_date, strtotime('last day of previous month'));
 			$xml->INV_INVOICE_TOTAL->SUBSCRIBER_COUNT = count($row);
 			$xml->INV_INVOICE_TOTAL->INVOICE_TYPE = "ilds";
-				
+
 			$invoice_sumup = $xml->INV_INVOICE_TOTAL->addChild('INVOICE_SUMUP');
 			$total = 0;
 			foreach ($total_ilds as $ild => $total_ild_cost) {

@@ -35,7 +35,7 @@ abstract class Billrun_Base {
 	 * @var array
 	 */
 	static protected $instance = array();
-	
+
 	/**
 	 * constant for base date format
 	 */
@@ -49,14 +49,14 @@ abstract class Billrun_Base {
 	 * @var int
 	 */
 	protected $limit = 10000;
-	
+
 	/**
 	 * constructor
 	 * 
 	 * @param array $options
 	 */
 	public function __construct($options = array()) {
-		
+
 		if (isset($options['type'])) {
 			static::$type = $options['type'];
 		}
@@ -67,10 +67,9 @@ abstract class Billrun_Base {
 			$this->setStamp(uniqid(get_class($this)));
 		}
 
-		if(isset($options['limit']) && $options['limit']) {
+		if (isset($options['limit']) && $options['limit']) {
 			$this->setLimit($options['limit']);
-		} 
-		
+		}
 	}
 
 	/**
@@ -95,8 +94,7 @@ abstract class Billrun_Base {
 	public function getStamp() {
 		return $this->stamp;
 	}
-	
-	
+
 	/**
 	 * Set running limit for the current instance
 	 * used differently by each inheriteing class
@@ -118,7 +116,7 @@ abstract class Billrun_Base {
 	public function getLimit() {
 		return $this->limit;
 	}
-	
+
 	/**
 	 * Get the type name of the current object.
 	 * @return string conatining the current.
@@ -139,11 +137,11 @@ abstract class Billrun_Base {
 		if (isset(self::$instance[$stamp])) {
 			return self::$instance[$stamp];
 		}
-		
+
 		if (isset($args['type'])) {
 			$type = $args['type'];
 			$args = array();
-			Billrun_Factory::log()->log('Depratected approach of Billrun_Base::getInstance: ' . $type,Zend_Log::INFO);
+			Billrun_Factory::log()->log('Depratected approach of Billrun_Base::getInstance: ' . $type, Zend_Log::INFO);
 		} else {
 			$type = $args[0]['type'];
 			unset($args[0]['type']);
@@ -152,19 +150,19 @@ abstract class Billrun_Base {
 
 		$config_type = Yaf_Application::app()->getConfig()->{$type};
 		$called_class = get_called_class();
-		
-		if($called_class && Billrun_Factory::config()->getConfigValue($called_class)) {
-			$args = array_merge( Billrun_Factory::config()->getConfigValue($called_class)->toArray(),$args);
+
+		if ($called_class && Billrun_Factory::config()->getConfigValue($called_class)) {
+			$args = array_merge(Billrun_Factory::config()->getConfigValue($called_class)->toArray(), $args);
 		}
-		
+
 		$class_type = $type;
-		if ( $config_type ) {
-			$args = array_merge( $config_type->toArray(),$args);
-			if( isset($config_type->{$called_class::$type}) &&
+		if ($config_type) {
+			$args = array_merge($config_type->toArray(), $args);
+			if (isset($config_type->{$called_class::$type}) &&
 				isset($config_type->{$called_class::$type}->type)) {
 				$class_type = $config_type[$called_class::$type]['type'];
 				$args['type'] = $type;
-			} 
+			}
 		}
 		$class = $called_class . '_' . ucfirst($class_type);
 		if (!@class_exists($class, true)) {
@@ -180,7 +178,7 @@ abstract class Billrun_Base {
 			}
 			$class = $external_class;
 		}
-		
+
 		self::$instance[$stamp] = new $class($args);
 		return self::$instance[$stamp];
 	}

@@ -16,7 +16,7 @@
 class Asn_Base {
 
 	const USE_AUTOLOAD = false;
-	
+
 	/**
 	 * Parse an ASN.1 binary string.
 	 *
@@ -31,8 +31,8 @@ class Asn_Base {
 	public static function parseASNString($rawData) {
 		try {
 			return self::newClassFromData($rawData);
-		} catch ( Exception $e ) {
-			throw new Exception("Failed parsing data cause : ". $e);
+		} catch (Exception $e) {
+			throw new Exception("Failed parsing data cause : " . $e);
 		}
 	}
 
@@ -44,23 +44,23 @@ class Asn_Base {
 	public static function getDataArray($rootObj, $keepTypes = false, $mergeArrays = false) {
 		$retArr = array();
 		foreach ($rootObj->parsedData as $val) {
-			if($keepTypes) {
-				$typeKey = (($val instanceof Asn_Object ) ? $val->getType() : $rootObj->getType()) ;
-				$value =  ($val instanceof Asn_Object && $val->isConstructed()) ? self::getDataArray($val, $keepTypes,$mergeArrays) : $val->getData();
-				if($mergeArrays && isset($retArr[ $typeKey ]) ) {	
-					if( is_array( $retArr[ $typeKey ] )) {
-						if(!isset($retArr[ $typeKey ][0])) {
-							$retArr[ $typeKey ] = array($retArr[ $typeKey ]);
+			if ($keepTypes) {
+				$typeKey = (($val instanceof Asn_Object ) ? $val->getType() : $rootObj->getType());
+				$value = ($val instanceof Asn_Object && $val->isConstructed()) ? self::getDataArray($val, $keepTypes, $mergeArrays) : $val->getData();
+				if ($mergeArrays && isset($retArr[$typeKey])) {
+					if (is_array($retArr[$typeKey])) {
+						if (!isset($retArr[$typeKey][0])) {
+							$retArr[$typeKey] = array($retArr[$typeKey]);
 						}
-						array_push($retArr[ $typeKey ],$value);
+						array_push($retArr[$typeKey], $value);
 					} else {
-						$retArr[ $typeKey ] =array($retArr[ $typeKey ], $value);
+						$retArr[$typeKey] = array($retArr[$typeKey], $value);
 					}
 				} else {
-					$retArr[ $typeKey ] = $value;				
+					$retArr[$typeKey] = $value;
 				}
 			} else {
-				$retArr[] = ($val instanceof Asn_Object && $val->isConstructed()) ? self::getDataArray($val, $keepTypes,$mergeArrays) : $val->getData();
+				$retArr[] = ($val instanceof Asn_Object && $val->isConstructed()) ? self::getDataArray($val, $keepTypes, $mergeArrays) : $val->getData();
 			}
 		}
 		return $retArr;
@@ -73,17 +73,17 @@ class Asn_Base {
 	 */
 	protected static function newClassFromData(&$rawData) {
 		$tmpType = $offset = 0;
-		$flags =  ord($rawData[$offset++]); 
+		$flags = ord($rawData[$offset++]);
 		$type = $flags & Asn_Markers::ASN_EXTENSION_ID;
-		if(	($type & Asn_Markers::ASN_EXTENSION_ID) == 0x1F ) {
+		if (($type & Asn_Markers::ASN_EXTENSION_ID) == 0x1F) {
 			$type = 0;
-			do  {
+			do {
 				$tmpType = ord($rawData[$offset++]);
-				$type = ( $tmpType & 0x7F  ? $type << 7 : 0 ) + ( $tmpType & 0x7F ) ;
-			} while ( $tmpType & Asn_Markers::ASN_CONTEXT && ($tmpType & 0x7F) );
-		} 
+				$type = ( $tmpType & 0x7F ? $type << 7 : 0 ) + ( $tmpType & 0x7F );
+			} while ($tmpType & Asn_Markers::ASN_CONTEXT && ($tmpType & 0x7F));
+		}
 
-		$cls = self::getClassForType( $type, $flags );
+		$cls = self::getClassForType($type, $flags);
 		if (!$cls) {
 			print('Asn_Base::newClassFromData couldn`t create class!!');
 			return null;
@@ -133,7 +133,7 @@ class Asn_Base {
 		//$constructed = $type & Asn_Markers::ASN_CONSTRUCTOR;
 		$context = $flags & Asn_Markers::ASN_CONTEXT;
 		$type = $type & 0x1F; // strip out context
-		if (!$context && isset(Asn_Types::$TYPES[$type]) && class_exists(Asn_Types::$TYPES[$type],self::USE_AUTOLOAD)) {
+		if (!$context && isset(Asn_Types::$TYPES[$type]) && class_exists(Asn_Types::$TYPES[$type], self::USE_AUTOLOAD)) {
 			$cls = Asn_Types::$TYPES[$type];
 		} else {
 			//print("not detected : ". dechex($type)."\n");
@@ -145,4 +145,3 @@ class Asn_Base {
 	}
 
 }
-

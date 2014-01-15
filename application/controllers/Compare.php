@@ -571,4 +571,3 @@ class BillrunParticipant extends Participant {
 	}
 
 }
-

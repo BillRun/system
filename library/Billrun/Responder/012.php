@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package         Billing
  * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
@@ -12,7 +13,6 @@
  * @since    0.5
  */
 class Billrun_Responder_012 extends Billrun_Responder_Base_Ilds {
-
 
 	public function __construct(array $params = array()) {
 		parent::__construct($params);
@@ -63,7 +63,7 @@ class Billrun_Responder_012 extends Billrun_Responder_Base_Ilds {
 		$line = substr($line, 0, 49);
 		$now = date_create();
 		$line.=$now->format("YmdHi");
-		$line.= sprintf("%02s",$this->getHeaderStateCode($line, $logLine)); //TODO add problem detection.
+		$line.= sprintf("%02s", $this->getHeaderStateCode($line, $logLine)); //TODO add problem detection.
 		$line = $this->switchNamesInLine("GLN", "KVZ", $line);
 		$line = preg_replace("/MABAL  /", "MABAL_R", $line);
 		return $line;
@@ -72,8 +72,8 @@ class Billrun_Responder_012 extends Billrun_Responder_Base_Ilds {
 	protected function updateTrailer($logLine) {
 		$logLine['file_type'] = "MABAL_R";
 		$logLine['total_charge'] = $this->totalChargeAmount;
-		$logLine['total_rec_no'] =  $this->linesCount;
-		$logLine['total_err_rec_no'] =  $this->linesErrors;
+		$logLine['total_rec_no'] = $this->linesCount;
+		$logLine['total_err_rec_no'] = $this->linesErrors;
 		$line = parent::updateTrailer($logLine);
 //		$line.= sprintf("%015s", $this->totalChargeAmount);
 //		$line.= sprintf("%6s", $this->linesCount);
@@ -82,39 +82,36 @@ class Billrun_Responder_012 extends Billrun_Responder_Base_Ilds {
 	}
 
 	protected function processLineErrors($dbLine) {
-		if(!isset($dbLine['billrun']) || !$dbLine['billrun']) {
+		if (!isset($dbLine['billrun']) || !$dbLine['billrun']) {
 			$dbLine['record_status'] = '02';
 		}
 		return $dbLine;
 	}
 
 	protected function getResponseFilename($receivedFilename, $logLine) {
-		$responseFilename = preg_replace("/_MABAL_/i", "_MABAL_R_",
-								preg_replace("/_OUR_/i", "_GLN_",
-									preg_replace("/_GLN_/i", "_KVZ_", 
-										preg_replace("/_KVZ_/i", "_OUR_", $receivedFilename)
-									)
-								)
-							);
+		$responseFilename = preg_replace("/_MABAL_/i", "_MABAL_R_", preg_replace("/_OUR_/i", "_GLN_", preg_replace("/_GLN_/i", "_KVZ_", preg_replace("/_KVZ_/i", "_OUR_", $receivedFilename)
+				)
+			)
+		);
 		return $responseFilename;
 	}
-	
-	protected function getHeaderStateCode($headerLine,$logLine) {
-		if(substr($headerLine, 6,5) != "MABAL") {
+
+	protected function getHeaderStateCode($headerLine, $logLine) {
+		if (substr($headerLine, 6, 5) != "MABAL") {
 			return 1;
 		}
-		if(substr($headerLine, 18,3) != "KVZ") {
+		if (substr($headerLine, 18, 3) != "KVZ") {
 			return 2;
 		}
-		if(substr($headerLine, 28,3) != "GLN") {
+		if (substr($headerLine, 28, 3) != "GLN") {
 			return 3;
 		}
-		if(!is_numeric(substr($headerLine, 31,6)) ) {
+		if (!is_numeric(substr($headerLine, 31, 6))) {
 			return 4;
 		}
-		if(!date_create_from_format("YmdHi",substr($headerLine, 37,12)) ) {
+		if (!date_create_from_format("YmdHi", substr($headerLine, 37, 12))) {
 			return 5;
-		}		
+		}
 		//TOD add detection of  phone number sum and record sum errors
 		return 0;
 	}

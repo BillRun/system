@@ -20,7 +20,7 @@ require_once '../application/helpers/Admin/Lines.php';
 								<input id=\"" . $filter_field['key'] . "\" class=\"span" . $field_view['width'] . "\" name=\"" . $filter_field['key'] . "\" type=\"text\" value=\"" . (isset($this->session->$filter_field['key']) ? $this->session->$filter_field['key'] : $filter_field['default']) . "\">";
 					} else if ($filter_field['input_type'] == 'date') {
 						echo "&nbsp;<label class=\"control-label\">" . $filter_field['display'] . "</label>
-								<div class=\"input-append date\" id=\"datetimepicker_" . $filter_field['key']. "\" data-date=\"" . $filter_field['default'] . "\" data-date-format=\"yyyy-MM-dd hh:mm:ss\">
+								<div class=\"input-append date\" id=\"datetimepicker_" . $filter_field['key'] . "\" data-date=\"" . $filter_field['default'] . "\" data-date-format=\"yyyy-MM-dd hh:mm:ss\">
 								<input name=\"" . $filter_field['key'] . "\" class=\"controls-row span" . $field_view['width'] . "\" size=\"16\" type=\"text\" value=\"" . (isset($this->session->$filter_field['key']) ? $this->session->$filter_field['key'] : $filter_field['default']) . "\">
 								<span class=\"add-on\"><i class=\"icon-th\"></i></span>
 								</div>";

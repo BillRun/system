@@ -135,7 +135,7 @@ abstract class Billrun_Receiver_Base_LocalFiles extends Billrun_Receiver {
 							if (isset($files[$key])) {
 								$files[$key . $file] = $file;
 							} else {
-								$files[$key] = $file;								
+								$files[$key] = $file;
 							}
 						}
 					}

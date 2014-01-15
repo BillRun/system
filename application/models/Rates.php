@@ -99,7 +99,7 @@ class RatesModel extends TabledateModel {
 		);
 		return $columns;
 	}
-	
+
 	public function getSortFields() {
 		$sort_fields = array(
 			'key' => 'Key',
@@ -108,4 +108,3 @@ class RatesModel extends TabledateModel {
 	}
 
 }
-

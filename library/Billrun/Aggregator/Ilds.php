@@ -194,7 +194,7 @@ class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 			'sid' => $sid,
 			'billrun' => $this->getStamp(),
 		);
-		
+
 		if (isset($subscriber->aid)) {
 			$added_values['aid'] = $subscriber->aid;
 		}

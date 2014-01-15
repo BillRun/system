@@ -28,7 +28,7 @@ class Billrun_Processor_Sms extends Billrun_Processor_Base_SeparatorFieldLines {
 	protected function parse() {
 		$this->parser->setSeparator($this->structConfig['config']['separator']);
 		if (isset($this->structConfig['config']) && isset($this->structConfig['config']['add_filename_data_to_header']) &&
-				$this->structConfig['config']['add_filename_data_to_header']) {
+			$this->structConfig['config']['add_filename_data_to_header']) {
 			$this->data['header'] = array_merge($this->buildHeader(''), array_merge((isset($this->data['header']) ? $this->data['header'] : array()), $this->getFilenameData(basename($this->filePath))));
 		}
 
@@ -84,7 +84,7 @@ class Billrun_Processor_Sms extends Billrun_Processor_Base_SeparatorFieldLines {
 			} else {
 				if (isset($row[$this->structConfig['config']['date_field']])) {
 					$offset = (isset($this->structConfig['config']['date_offset']) && isset($row[$this->structConfig['config']['date_offset']]) ?
-									($row[$this->structConfig['config']['date_offset']] > 0 ? "+" : "" ) . $row[$this->structConfig['config']['date_offset']] : "00" ) . ':00';
+							($row[$this->structConfig['config']['date_offset']] > 0 ? "+" : "" ) . $row[$this->structConfig['config']['date_offset']] : "00" ) . ':00';
 					$datetime = DateTime::createFromFormat($this->structConfig['config']['date_format'], $row[$this->structConfig['config']['date_field']] . $offset);
 				}
 			}

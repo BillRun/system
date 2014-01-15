@@ -52,7 +52,7 @@ class Billrun_Calculator_Wholesale_NationalRoamingPricing extends Billrun_Calcul
 			$pricingData = $this->getLinePricingData($row['usagev'], $rates);
 			$row->setRawData(array_merge($row->getRawData(), $pricingData));
 		} else {
-			Billrun_Factory::log()->log( " No usagev or zone : {$row['usagev']} && $zoneKey for line with stamp: " . $row['stamp'], Zend_Log::NOTICE);
+			Billrun_Factory::log()->log(" No usagev or zone : {$row['usagev']} && $zoneKey for line with stamp: " . $row['stamp'], Zend_Log::NOTICE);
 			return false;
 		}
 		return true;
@@ -62,11 +62,10 @@ class Billrun_Calculator_Wholesale_NationalRoamingPricing extends Billrun_Calcul
 	 * @see Billrun_Calculator::isLineLegitimate()
 	 */
 	public function isLineLegitimate($line) {
-		return	$line['type'] == 'nsn' && 
-				$line->get(Billrun_Calculator_Wholesale_Nsn::MAIN_DB_FIELD, true) &&
-				(	($line['record_type'] === "12" && in_array($line->get('wsc', true), $this->nrCarriers)) ||
-					($line['record_type'] === "11" && in_array($line->get('wsc_in', true), $this->nrCarriers)) );
+		return $line['type'] == 'nsn' &&
+			$line->get(Billrun_Calculator_Wholesale_Nsn::MAIN_DB_FIELD, true) &&
+			( ($line['record_type'] === "12" && in_array($line->get('wsc', true), $this->nrCarriers)) ||
+			($line['record_type'] === "11" && in_array($line->get('wsc_in', true), $this->nrCarriers)) );
 	}
 
 }
-

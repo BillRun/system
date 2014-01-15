@@ -1,11 +1,11 @@
 <?php
 
-
 /**
  * This interface defines the interface needed to add parsing behavior to a plugin.
  * @author eran
  */
 interface Billrun_Plugin_Interface_IParser {
+
 	/**
 	 * Parse data from a files
 	 * @param type $type the name of the type that is being parsed.
@@ -21,7 +21,7 @@ interface Billrun_Plugin_Interface_IParser {
 	 * @param array $fieldDesc the field description array.
 	 * @param Billrun_Parser $parser the instance of the parser parsing the file.
 	 */
-	public function parseSingleField( $type, $data, Array $fieldDesc, Billrun_Parser  &$parser);
+	public function parseSingleField($type, $data, Array $fieldDesc, Billrun_Parser &$parser);
 
 	/**
 	 * Parse the header 
@@ -29,7 +29,7 @@ interface Billrun_Plugin_Interface_IParser {
 	 * @param type $data raw (unparsed) data of the header.
 	 * @param Billrun_Parser $parser the instance of the parser parsing the file.
 	 */
-	public function parseHeader($type, $data, Billrun_Parser  &$parser);
+	public function parseHeader($type, $data, Billrun_Parser &$parser);
 
 	/**
 	 * 
@@ -37,7 +37,7 @@ interface Billrun_Plugin_Interface_IParser {
 	 * @param type $data the raw data of the trailer.
 	 * @param Billrun_Parser $parser the instance of the parser parsing the file.
 	 */
-	public function parseTrailer( $type, $data, Billrun_Parser  &$parser);
+	public function parseTrailer($type, $data, Billrun_Parser &$parser);
 }
 
 ?>

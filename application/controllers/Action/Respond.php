@@ -25,7 +25,7 @@ class RespondAction extends Action_Base {
 			'type' => false,
 			'export-path' => true
 		);
-		
+
 		if (($options = $this->_controller->getInstanceOptions($possibleOptions)) === FALSE) {
 			return;
 		}

@@ -39,7 +39,7 @@ abstract class Billrun_Generator_AggregatedCsv extends Billrun_Generator_Csv {
 
 		Billrun_Factory::dispatcher()->trigger('afterGeneratorLoadData', array('generator' => $this));
 	}
-	
+
 	abstract protected function buildAggregationQuery();
 
 	abstract protected function setCollection();

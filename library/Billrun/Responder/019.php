@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package         Billing
  * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
@@ -15,7 +16,7 @@
 class Billrun_Responder_019 extends Billrun_Responder_Base_Ilds {
 
 	protected $phoneNumbersSum = 0;
-	
+
 	public function __construct(array $params = array()) {
 		parent::__construct($params);
 		self::$type = '019';
@@ -54,7 +55,7 @@ class Billrun_Responder_019 extends Billrun_Responder_Base_Ilds {
 			'receiving_company_id' => '%-10s',
 			'sequence_no' => '%6s',
 			'file_creation_date' => '%12s',
-			'sum_of_number' => '%015s', 
+			'sum_of_number' => '%015s',
 			'total_charge_sign2' => '%1s',
 			'total_charge2' => '%015s',
 			'total_charge_sign' => '%1s',
@@ -62,12 +63,12 @@ class Billrun_Responder_019 extends Billrun_Responder_Base_Ilds {
 			'total_err_rec_no' => '%06s',
 		);
 	}
-	
+
 	protected function updateHeader($line, $logLine) {
 //		$logLine['file_type'] = 'CDR_R';
 //		$logLine['file_sending_date'] =  date_create()->format("YmdHi");
 //		$logLine['file_status'] = '00'; //TODO
- 		$line = parent::updateHeader($line, $logLine);
+		$line = parent::updateHeader($line, $logLine);
 		$line = substr($line, 0, 54);
 		$now = date_create();
 		$line.=$now->format("YmdHi");
@@ -75,46 +76,43 @@ class Billrun_Responder_019 extends Billrun_Responder_Base_Ilds {
 		$line = preg_replace("/^HCDR  /", "HCDR_R", $line);
 		return $line;
 	}
-	
+
 	protected function updateTrailer($logLine) {
 		$logLine['file_type'] = "CDR_R";
-		$logLine['total_charge']=$this->totalChargeAmount;
-		$logLine['total_err_rec_no']= $this->linesErrors;
-		$logLine['sum_of_number']= $this->phoneNumbersSum*1000;
+		$logLine['total_charge'] = $this->totalChargeAmount;
+		$logLine['total_err_rec_no'] = $this->linesErrors;
+		$logLine['sum_of_number'] = $this->phoneNumbersSum * 1000;
 		$line = parent::updateTrailer($logLine);
 		return $line;
 	}
-	
+
 	protected function updateLine($dbLine, $logLine) {
-		$this->phoneNumbersSum += intval(substr($dbLine['caller_phone_no'],3));
+		$this->phoneNumbersSum += intval(substr($dbLine['caller_phone_no'], 3));
 		return parent::updateLine($dbLine, $logLine);
 	}
-	
+
 	protected function processLineErrors($dbLine) {
-		if(!isset($dbLine['billrun']) || !$dbLine['billrun']) {
-				$dbLine['record_status'] = '02';
+		if (!isset($dbLine['billrun']) || !$dbLine['billrun']) {
+			$dbLine['record_status'] = '02';
 		}
-		return  $dbLine;
+		return $dbLine;
 	}
 
 	protected function processFileForResponse($filePath, $logLine) {
-		$this->phoneNumbersSum= 0;
+		$this->phoneNumbersSum = 0;
 		return parent::processFileForResponse($filePath, $logLine);
 	}
-	
+
 	protected function getResponseFilename($receivedFilename, $logLine) {
-		$responseFilename = preg_replace("/_CDR_/i", "_CDR_R_",
-								preg_replace("/_OUR_/i", "_GOL_",
-									preg_replace("/_GOL_/i", "_TLZ_", 
-										preg_replace("/_TLZ_/i", "_OUR_", $receivedFilename)
-									)
-								)
-							);
+		$responseFilename = preg_replace("/_CDR_/i", "_CDR_R_", preg_replace("/_OUR_/i", "_GOL_", preg_replace("/_GOL_/i", "_TLZ_", preg_replace("/_TLZ_/i", "_OUR_", $receivedFilename)
+				)
+			)
+		);
 		return $responseFilename;
 	}
-
 
 	protected function getHeaderErrors($logLine) {
 		return "00"; //TODO require reporocessing the file should be done in the processor.
 	}
+
 }

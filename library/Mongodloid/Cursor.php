@@ -73,12 +73,12 @@ class Mongodloid_Cursor implements Iterator, Countable {
 		$this->_cursor->setReadPreference($read_preference, $tags);
 		return $this;
 	}
-	
+
 	public function timeout($ms) {
 		$this->_cursor->timeout($ms);
 		return $this;
 	}
-	
+
 	public function immortal($liveForever = true) {
 		$this->_cursor->immortal($liveForever);
 		return $this;

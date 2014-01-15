@@ -127,7 +127,7 @@ class CliController extends Yaf_Controller_Abstract {
 		}
 
 		$options = array();
-		
+
 		//Retrive  the command line  properties
 //		foreach($this->options->getRemainingArgs() as  $cmdLineArg) {
 //			$seperatedCmdStr = !strpos('=',$cmdLineArg) ? split("=", $cmdLineArg) : split(" ", $cmdLineArg);
@@ -137,7 +137,7 @@ class CliController extends Yaf_Controller_Abstract {
 //			}
 //			$options['cmd_opts'] = array_merge_recursive( (isset($options['cmd_opts']) ? $options['cmd_opts'] : array() ), $inLineOpt );
 //		}
-		
+
 		foreach ($possibleOptions as $key => $defVal) {
 			$options[$key] = $this->options->getOption($key);
 			if (is_null($options[$key])) {
@@ -151,7 +151,7 @@ class CliController extends Yaf_Controller_Abstract {
 				}
 			}
 		}
-		
+
 		return $options;
 	}
 

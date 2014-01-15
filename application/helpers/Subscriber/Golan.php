@@ -13,7 +13,6 @@
  * @since    1.0
  * @todo refactoring to general subscriber http class
  */
-
 class Subscriber_Golan extends Billrun_Subscriber {
 
 	protected $plan = null;
@@ -360,7 +359,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 			return null;
 		}
 	}
-	
+
 	/**
 	 * Get the rpc server from config
 	 * 
@@ -371,14 +370,14 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		if (empty($hosts)) {
 			return false;
 		}
-		
+
 		if (!is_array($hosts)) {
 			// probably string
 			return $hosts;
 		}
-		
+
 		// if it's array rand between servers
-		return $hosts[rand(0, count($hosts)-1)];
+		return $hosts[rand(0, count($hosts) - 1)];
 	}
 
 }

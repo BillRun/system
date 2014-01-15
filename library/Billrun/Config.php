@@ -31,7 +31,6 @@ class Billrun_Config {
 	/**
 	 * the environment field in config ini file
 	 */
-
 	const environment_field = 'environment';
 
 	/**
@@ -90,14 +89,14 @@ class Billrun_Config {
 			}
 			$currConf = $currConf[$key];
 		}
-		
+
 		if ($currConf instanceof Yaf_Config_Ini) {
 			$currConf = $currConf->toArray();
 		}
-		
-		if (isset($retType) && $retType ) {
+
+		if (isset($retType) && $retType) {
 			settype($currConf, $retType);
-		} else if (strtoupper($type = gettype($defVal)) != 'NULL' ) {
+		} else if (strtoupper($type = gettype($defVal)) != 'NULL') {
 			settype($currConf, $type);
 		}
 

@@ -26,7 +26,7 @@ class ReceiveAction extends Action_Base {
 			'path' => true,
 			'workspace' => true,
 		);
-		
+
 		if (($options = $this->_controller->getInstanceOptions($possibleOptions)) === FALSE) {
 			return;
 		}

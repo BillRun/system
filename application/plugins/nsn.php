@@ -224,16 +224,16 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 					}
 				}
 			}
-			$data['urt'] = new MongoDate(Billrun_Util::dateTimeConvertShortToIso((string) (isset($data['charging_start_time']) && $data['charging_start_time']  ? $data['charging_start_time'] : $data['call_reference_time']), date("P",strtotime($data['call_reference_time']))));
+			$data['urt'] = new MongoDate(Billrun_Util::dateTimeConvertShortToIso((string) (isset($data['charging_start_time']) && $data['charging_start_time'] ? $data['charging_start_time'] : $data['call_reference_time']), date("P", strtotime($data['call_reference_time']))));
 		}
-				
+
 		//Use the  actual charing time duration instead of the  duration  that  was set by the switch
-		if(isset($data['duration'])) {
-			$data['org_dur'] = $data['duration'];// save the original duration.
+		if (isset($data['duration'])) {
+			$data['org_dur'] = $data['duration']; // save the original duration.
 		}
-		if( isset($data['charging_end_time']) && isset($data['charging_start_time']) && 
-			( strtotime($data['charging_end_time']) > 0 && strtotime($data['charging_start_time'] ) > 0) ) {			
-			$data['duration'] = strtotime($data['charging_end_time']) - strtotime($data['charging_start_time']);			
+		if (isset($data['charging_end_time']) && isset($data['charging_start_time']) &&
+			( strtotime($data['charging_end_time']) > 0 && strtotime($data['charging_start_time']) > 0)) {
+			$data['duration'] = strtotime($data['charging_end_time']) - strtotime($data['charging_start_time']);
 		}
 		//Remove  the  "10" in front of the national call with an international prefix
 //		if (isset($data['in_circuit_group_name']) && preg_match("/^RCEL/", $data['in_circuit_group_name']) && strlen($data['called_number']) > 10 && substr($data['called_number'], 0, 2) == "10") { // will fail when in_circuit_group_name is empty / called_number length is exactly 10
@@ -317,19 +317,19 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 			case 'phone_number' :
 				$val = '';
 				for ($i = 0; $i < $length; ++$i) {
-						$byteVal = ord($data[$i]);
-						for($j = 0; $j < 2 ; $j++, $byteVal=$byteVal >> 4) {
+					$byteVal = ord($data[$i]);
+					for ($j = 0; $j < 2; $j++, $byteVal = $byteVal >> 4) {
 						$left = $byteVal & 0xF;
-							$digit =  $left == 0xB ? '*' : 
-									($left == 0xC ? '#' :
-									($left == 0xA ? 'a' :
+						$digit = $left == 0xB ? '*' :
+							($left == 0xC ? '#' :
+								($left == 0xA ? 'a' :
 									($left == 0xF ? '' :
-									($left > 0xC ? dechex($left-2) :
-									 $left))));
-							$val .= $digit;
-						}
+										($left > 0xC ? dechex($left - 2) :
+											$left))));
+						$val .= $digit;
 					}
-					$retValue = $val;
+				}
+				$retValue = $val;
 				break;
 
 			case 'long':
@@ -345,7 +345,7 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 					$retValue .= dechex(ord($data[$i]));
 				}
 				break;
-				
+
 			case 'reveresed_bcd_encode' :
 			case 'datetime':
 			case 'bcd_encode' :
@@ -370,10 +370,10 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 			case 'ascii':
 				$retValue = preg_replace("/\W/", "", substr($data, 0, $length));
 				break;
-			
+
 			case 'call_reference':
-				$retValue = strrev(implode(unpack("h*", substr($data,0,2)))). strrev(implode(unpack("h*", substr($data,2,2)))). strrev(implode(unpack("h*", substr($data,4,1))));
-				
+				$retValue = strrev(implode(unpack("h*", substr($data, 0, 2)))) . strrev(implode(unpack("h*", substr($data, 2, 2)))) . strrev(implode(unpack("h*", substr($data, 4, 1))));
+
 				break;
 			default:
 				$retValue = implode(unpack($type, $data));
@@ -395,7 +395,7 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 			$this->fileStats = fstat($fileHandle);
 		}
 		$process_finished = feof($fileHandle) ||
-				ftell($fileHandle) + self::TRAILER_LENGTH >= $this->fileStats['size'];
+			ftell($fileHandle) + self::TRAILER_LENGTH >= $this->fileStats['size'];
 		if ($process_finished) {
 			$this->fileStats = null;
 		}

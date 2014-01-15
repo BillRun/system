@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package         Billing
  * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
@@ -76,7 +77,7 @@ class Billrun_Responder_015 extends Billrun_Responder_Base_Ilds {
 	}
 
 	protected function processLineErrors($dbLine) {
-		if(!isset($dbLine['billrun']) || !$dbLine['billrun']) {
+		if (!isset($dbLine['billrun']) || !$dbLine['billrun']) {
 			$dbLine['record_status'] = '02';
 		}
 		return $dbLine;

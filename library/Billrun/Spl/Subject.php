@@ -66,4 +66,3 @@ class Billrun_Spl_Subject implements SplSubject {
 	}
 
 }
-

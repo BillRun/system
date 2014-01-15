@@ -12,9 +12,8 @@
  * @package  calculator
  */
 class Billrun_Calculator_Rate_Smpp extends Billrun_Calculator_Rate_Sms {
-	
+
 	static protected $type = 'smpp';
-	
 	protected $legitimateValues = array(
 //		'cause_of_terminition' => "100",
 		'record_type' => '1',

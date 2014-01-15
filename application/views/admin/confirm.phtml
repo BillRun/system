@@ -11,17 +11,17 @@ print '</div>';
 		$(this).attr('disabled', 'disabled');
 		$(this).unbind("click", confirmClick);
 		var _ajaxOpts = {
-			async:true,
-			cache:false,
+			async: true,
+			cache: false,
 			//			dataType:'json',
-			type:'POST',
+			type: 'POST',
 			data: {
 				ids: $('#form_ids').html(),
 				coll: $('#form_coll').html(),
 				type: $('#form_type').html(),
 			},
-			success:function(data, textStatus, jqXHR) {
-				if (data!='null') {
+			success: function(data, textStatus, jqXHR) {
+				if (data != 'null') {
 					alert(data);
 					$('#confirm').removeAttr("disabled");
 					$('#confirm').bind("click", confirmClick);
@@ -29,7 +29,7 @@ print '</div>';
 				}
 				window.location.reload();
 			},
-			error:function(jqXHR, textStatus, errorThrown) {
+			error: function(jqXHR, textStatus, errorThrown) {
 				alert('some error occured');
 			}
 		};

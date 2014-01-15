@@ -62,17 +62,18 @@ class Billrun_Tariff {
 		$args = func_get_args();
 		if (is_array($args[0])) {
 			$params = $args[0];
-			$searchValue = isset($params['searchValue']) ? $params['searchValue'] : array('$exists' => true );
+			$searchValue = isset($params['searchValue']) ? $params['searchValue'] : array('$exists' => true);
 			$searchField = isset($params['searchBy']) ? $params['searchBy'] : 'key';
 		} else {
-			@list($searchField,$searchValue) = $args;
-			$searchValue = $searchValue ? $params['searchBy'] : array('$exists' => true );
+			@list($searchField, $searchValue) = $args;
+			$searchValue = $searchValue ? $params['searchBy'] : array('$exists' => true);
 		}
 
 		$data = $this->rates->query()->equals($searchField, $searchValue)->cursor()->current();
 
 		return $data;
 	}
+
 	/**
 	 * get tariff rate
 	 */
@@ -83,7 +84,6 @@ class Billrun_Tariff {
 
 		return $data;
 	}
-	
 
 	/**
 	 * set the tariff rate
