@@ -209,9 +209,9 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 					$lines = $account_billrun->addLines(true, 0, $flat_lines);
 				}
 				//save  the billrun
-				Billrun_Factory::log("Saving account $accid");
+				Billrun_Factory::log('Saving account ' . $accid, Zend_Log::DEBUG);
 				$account_billrun->save();
-				Billrun_Factory::log("Finished saving account $accid");
+				Billrun_Factory::log('Finished saving account ' . $accid, Zend_Log::DEBUG);
 			}
 			Billrun_Factory::dispatcher()->trigger('aggregateBeforeCloseAccountBillrun', array($accid, $account, $account_billrun, $lines, &$this));
 			Billrun_Factory::log("Closing billrun $billrun_key for account $accid", Zend_log::DEBUG);
