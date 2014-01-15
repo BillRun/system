@@ -444,7 +444,7 @@ class Generator_Golanxml extends Billrun_Generator {
 		}
 
 		$inv_invoice_total = $xml->addChild('INV_INVOICE_TOTAL');
-		$inv_invoice_total->addChild('INVOICE_NUMBER', $row['invoice_id']);
+		$inv_invoice_total->addChild('INVOICE_NUMBER', $this->getInvoiceId($row));
 		$inv_invoice_total->addChild('FIRST_GENERATION_TIME', $this->getFlatStartDate());
 		$inv_invoice_total->addChild('FROM_PERIOD', date('Y/m/d', Billrun_Util::getStartTime($billrun_key)));
 		$inv_invoice_total->addChild('TO_PERIOD', date('Y/m/d', Billrun_Util::getEndTime($billrun_key)));
@@ -1135,6 +1135,10 @@ EOI;
 			$char = 'D';
 		}
 		return $char;
+	}
+	
+	protected function getInvoiceId($row) {
+		return $row['invoice_id'];
 	}
 
 }
