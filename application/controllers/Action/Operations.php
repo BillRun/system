@@ -15,7 +15,7 @@
 class OperationsAction extends Action_Base {
 
 	const CONCURRENT_CONFIG_ENTRIES = 5;
-	const WAIT_FOR_CALL_TO_END = 30;
+	const WAIT_FOR_CALL_TO_END = 90;
 	
 	/**
 	 * method to execute the refund
@@ -33,7 +33,12 @@ class OperationsAction extends Action_Base {
 			case 'reboot':
 					$this->getController()->setOutput($this->reboot());
 				break;
-		
+			case 'stop':
+					$this->getController()->setOutput($this->stop());
+				break;	
+			case 'start':
+					$this->getController()->setOutput($this->start());
+				break;
 			
 		}
 		Billrun_Factory::log()->log("Executed Operations Action", Zend_Log::INFO);
@@ -55,12 +60,16 @@ class OperationsAction extends Action_Base {
 	 */
 	protected function resetModems() {
 		Billrun_Factory::log()->log("Reseting  the modems", Zend_Log::INFO);
+		$this->stop();
 		$startTime = time();
 		while(Billrun_Data_Call::getLastCallMade()->isActive() && time() - $startTime < static::WAIT_FOR_CALL_TO_END ) {
 			sleep(1);
 		}
 		$path = APPLICATION_PATH."/scripts/resetModems";
-		return $this->runCommand($path);
+		$ret = $this->runCommand($path);
+		sleep(20);
+		$this->start();
+		return $ret;
 	}
 	
 	/**
@@ -68,14 +77,34 @@ class OperationsAction extends Action_Base {
 	 */
 	protected function reboot() {
 		Billrun_Factory::log()->log("Trying to reboot the computer...", Zend_Log::INFO);
+		$this->stop();
 		$startTime = time();
 		while(Billrun_Data_Call::getLastCallMade()->isActive() && time() - $startTime < static::WAIT_FOR_CALL_TO_END ) {
 			sleep(1);
 		}
 		$path = APPLICATION_PATH."/scripts/reboot";
-		return $this->runCommand($path);
+		$ret = $this->runCommand($path);
+		sleep(20);
+		$this->start();
+		return $ret;
+		
 	}
-	
+	/**
+	 * stop the exection of the current test.
+	 */
+	protected function stop() {
+		$gen = Billrun_Generator::getInstance(array('type'=>'state'));
+		$gen->stop();
+	}
+
+	/**
+	 * start  the  executuion of the current test.
+	 */
+	protected function start() {
+		$gen = Billrun_Generator::getInstance(array('type'=>'state'));
+		$gen->start();
+	}
+
 	/**
 	 * Run a command in the system.
 	 * @param type $path path to for the  command to run.

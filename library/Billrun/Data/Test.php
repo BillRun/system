@@ -50,7 +50,27 @@ class Billrun_Data_Test extends Billrun_Data {
 			))->cursor()->limit(1)->current();
 		return !$retVal->isEmpty();
 	}
-		
+	
+	/**
+	 * Check if the current time is an active time (actually  making calls) for the script
+	 * @return the time in second within the  active period  or false if not in active period.
+	 */
+	public function isInActivePeriod() {		
+		$script = $this->testScript;
+		if($this->shouldTestBeActive()) {
+			usort($script, function($a,$b) { return intval($a['call_id']) - intval($b['call_id']);});
+			$start = strtotime(reset($script)['time']);
+			$end = strtotime(end($script)['time']) ;
+			$endOffset = $end > $start  ? $end - $start : $end + 86400 - $start;
+			$currentOffset = time() - $start;
+
+			if ($endOffset > $currentOffset && $currentOffset > 0) {
+				return $currentOffset;
+			}
+		}
+		return false;
+	}
+	
 	/**
 	 * Check if a test is finished.
 	 * @param type $script
