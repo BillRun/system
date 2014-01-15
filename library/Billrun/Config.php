@@ -29,11 +29,6 @@ class Billrun_Config {
 	protected $config;
 
 	/**
-	 * the environment field in config ini file
-	 */
-	const environment_field = 'environment';
-
-	/**
 	 * constructor of the class
 	 * protected for converting this class to singleton design pattern
 	 */
