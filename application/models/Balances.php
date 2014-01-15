@@ -34,12 +34,15 @@ class BalancesModel extends TableModel {
 		$id = $plan_id->get('_id')->getMongoID();
 		$data_usage_bytes = Billrun_Util::megabytesToBytesFormat($data_usage);
 		
-		return $this->collection->query(array(
-					'balance.totals.data.usagev' => array('$gt' => $data_usage_bytes),
-					'billrun_month' => $billrun,
-					'current_plan'=> Billrun_Factory::db()->plansCollection()->createRef($id),
-					'aid' => array('$gte' => (int)$from_account_id, '$lte' => (int)$to_account_id),
-		))->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED)->hint(array('aid' => 1, 'billrun_month'))->limit($this->size);
+                $query = array(
+                            'balance.totals.data.usagev' => array('$gt' => $data_usage_bytes),
+                            'billrun_month' => $billrun,
+                            'current_plan'=> Billrun_Factory::db()->plansCollection()->createRef($id),
+                            'aid' => array('$gte' => (int)$from_account_id, '$lte' => (int)$to_account_id));
+                
+		$a = $this->collection->query($query)->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED)->hint(array('aid' => 1, 'billrun_month'))->limit($this->size);
+                
+                $b = "fasfas";
 	}
 
 }
