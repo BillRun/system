@@ -13,7 +13,7 @@ if (isset($_SERVER['HTTP_USER_AGENT'])) {
 	}
 } else {	
 	// command line
-	$envOpts = array_values(getopt('', array('env::', 'environment::')));
+	$envOpts = array_values(getopt('', array('env:', 'environment:')));
 	if (isset($envOpts[0])) {
 		$env = $envOpts[0];
 	}
