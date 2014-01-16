@@ -21,13 +21,13 @@
 		foreach ($this->data as $item) {
 //			$shani = $this->data->count();
 			print '<tr>';
-			print '<td data-title=\'#\'><label class="checkbox"><a onclick="update_current(this);" href="#popup" data-type="update" data-toggle="modal" role="button" data-remote="">#' . ($c + 1) . '</a>&nbsp;<input value="' . $item['_id'] . '" type="checkbox" id="chk' . $c++ . '"/></label></td>';
+			print '<td data-title=\'#\'><label class="checkbox"><a onclick="update_current(this);" href="#popupModal" data-type="update" data-toggle="modal" role="button" data-remote="">#' . ($c + 1) . '</a>&nbsp;<input value="' . $item['_id'] . '" type="checkbox" id="chk' . $c++ . '"/></label></td>';
 			foreach ($this->columns as $h => $columnName) {
 				$data = $item->get($h);
 				print '<td data-title=' . $columnName . '>';
 				if (isset($edit_key) && $h == $edit_key) {
 					$url = $this->baseUrl . '/admin/edit?type=' . strtolower($this->title) . '&id=' . $item['_id'];
-					print '<a href="#popup" data-remote="' . $url . '" role="button" data-toggle="modal">' . $data . '</a>';
+					print '<a href="#popupModal " data-remote="' . $url . '" role="button" data-toggle="modal">' . $data . '</a>';
 				} else if (($h == 'from' || $h == 'to' || $h == 'urt' || $h == 'notify_time') && $data) {
 					// TODO: move he_IL to config 
 					if (!empty($item["tzoffset"])) {
@@ -65,20 +65,6 @@
 		print "No data";
 	endif;
 	?>
-
-    <div class="modal fade hide" id="popup" tabindex="-1" role="dialog" aria-labelledby="popupLabel" aria-hidden="true">
-		<div class="modal-header">
-			<button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
-			<h3 id="popupLabel"></h3>
-		</div>
-		<div class="modal-body">
-
-		</div>
-		<div class="modal-footer">
-			<button id="cancelPopup" class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
-			<button id="save" class="btn btn-primary">Save changes</button>
-		</div>
-    </div>
 
     <div class="modal fade hide" id="confirmModal" tabindex="-2" role="dialog" aria-labelledby="confirmModalLabel" aria-hidden="true">
 		<div class="modal-header">
