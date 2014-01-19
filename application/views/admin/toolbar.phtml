@@ -69,10 +69,10 @@ require_once '../application/helpers/Admin/Lines.php';
 				}
 				echo "</select>
 			<label class=\"radio inline\">
-                                <input name=\"order\" value=\"desc\" type=\"radio\"" . (isset($this->session->order) && $this->session->order == "desc" ? "checked=\"checked\"" : "") . "> Descending order
+                                <input name=\"order\" value=\"desc\" type=\"radio\"" . (isset($this->session->order) && $this->session->order == "desc" ? "" : "checked=\"checked\"") . "> Descending order
 			</label>
 			<label class=\"radio inline\">
-                                <input name=\"order\" value=\"asc\" type=\"radio\"" . (isset($this->session->order) && $this->session->order == "desc" ? "" : "checked=\"checked\"") . "> Ascending order
+                                <input name=\"order\" value=\"asc\" type=\"radio\"" . (isset($this->session->order) && $this->session->order == "desc" ? "checked=\"checked\"" : "") . "> Ascending order
 			</label>
 		</div></div>";
 			}
