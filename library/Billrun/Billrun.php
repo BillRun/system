@@ -69,10 +69,10 @@ class Billrun_Billrun {
 	protected function load() {
 		$billrun_coll = Billrun_Factory::db()->billrunCollection();
 		$this->data = $billrun_coll->query(array(
-					'aid' => $this->aid,
-					'billrun_key' => $this->billrun_key,
-				))
-				->cursor()->limit(1)->current();
+							'aid' => $this->aid,
+							'billrun_key' => $this->billrun_key,
+						))
+						->cursor()->limit(1)->current();
 		$this->data->collection($billrun_coll);
 		return $this;
 	}
@@ -134,10 +134,10 @@ class Billrun_Billrun {
 	public static function exists($aid, $billrun_key) {
 		$billrun_coll = Billrun_Factory::db()->billrunCollection();
 		$data = $billrun_coll->query(array(
-					'aid' => $aid,
-					'billrun_key' => $billrun_key,
-				))
-				->cursor()->limit(1)->current();
+							'aid' => $aid,
+							'billrun_key' => $billrun_key,
+						))
+						->cursor()->limit(1)->current();
 		return !$data->isEmpty();
 	}
 
@@ -621,6 +621,9 @@ class Billrun_Billrun {
 	protected function processLines($account_lines) {
 		$updatedLines = array();
 		foreach ($account_lines as $line) {
+			if (isset($updatedLines[$line['stamp']])) { // temporary fix for https://jira.mongodb.org/browse/SERVER-9858
+				continue;
+			}
 			$line->collection($this->lines);
 			$pricingData = array('aprice' => $line['aprice']);
 			if (isset($line['over_plan'])) {
