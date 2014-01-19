@@ -266,7 +266,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		self::getModel($table, $options);
 		$query = $this->applyFilters($table);
 
-		$session = $this->getSession('lines');
+		$session = $this->getSession($table);
 		$this->getSetVar($session, $query, 'query', $query);
 
 		$this->getView()->component = $this->buildComponent('lines', $query);

@@ -148,7 +148,7 @@ class LinesModel extends TableModel {
 			$date = date("Ym", strtotime("-$months month"));
 			$billruns["$date"] = $date;
 		}
-		rsort($billruns);
+		krsort($billruns);
 
 		$filter_fields = array(
 			'aid' => array(
