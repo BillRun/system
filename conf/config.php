@@ -20,6 +20,7 @@ if (isset($_SERVER['HTTP_USER_AGENT'])) {
 }
 
 if (empty($env)) {
+	error_log('Environment did not setup!');
 	die('Environment did not setup!' . PHP_EOL);
 }
 
@@ -28,5 +29,6 @@ define('APPLICATION_ENV', $env);
 define('BILLRUN_CONFIG_PATH', APPLICATION_PATH . "/conf/" . APPLICATION_ENV . ".ini");
 
 if (!file_exists(BILLRUN_CONFIG_PATH)) {
+	error_log('Configuration file did not found');
 	die('Configuration file did not found');
 }
