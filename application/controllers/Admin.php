@@ -101,6 +101,9 @@ class AdminController extends Yaf_Controller_Abstract {
 	 */
 	public function removeAction() {
 		$ids = explode(",", Billrun_Util::filter_var($this->getRequest()->get('ids'), FILTER_SANITIZE_STRING));
+		if (!is_array($ids) || count($ids) == 0 || empty($ids)) {
+			return;
+		}
 		$coll = Billrun_Util::filter_var($this->getRequest()->get('coll'), FILTER_SANITIZE_STRING);
 		$type = Billrun_Util::filter_var($this->getRequest()->get('type'), FILTER_SANITIZE_STRING);
 
@@ -111,8 +114,9 @@ class AdminController extends Yaf_Controller_Abstract {
 			return false;
 		}
 
+		$params = array();
 		foreach ($ids as $id) {
-			$params['_id']['$in'][] = new MongoId($id);
+			$params['_id']['$in'][] = new MongoId((string) $id);
 		}
 
 		if ($type == 'remove') {
