@@ -29,7 +29,7 @@
 					$url = $this->baseUrl . '/admin/edit?type=' . strtolower($this->title) . '&id=' . $item['_id'];
 					print '<a href="#popupModal " data-remote="' . $url . '" role="button" data-toggle="modal">' . $data . '</a>';
 				} else if (($h == 'from' || $h == 'to' || $h == 'urt' || $h == 'notify_time') && $data) {
-					// TODO: move he_IL to config 
+					$dateFormat = "Y-m-d H:i:s";
 					if (!empty($item["tzoffset"])) {
 						// TODO change this to regex
 						$timsetamp = $item['urt']->sec;
@@ -44,10 +44,10 @@
 						$timsetamp = strtotime($time, $timsetamp);
 						$zend_date = new Zend_Date($timsetamp);
 						$zend_date->setTimezone('UTC');
-						echo $zend_date->toString("d/M/Y H:m:s") . $item['tzoffset'];
+						echo $zend_date->toString($dateFormat, 'php') . $item['tzoffset'];
 					} else {
 						$zend_date = new Zend_Date($data->sec);
-						echo $zend_date->toString("d/M/Y H:m:s");
+						echo $zend_date->toString($dateFormat, 'php');
 					}
 				} else {
 					print $data;
