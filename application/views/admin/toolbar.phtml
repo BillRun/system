@@ -47,19 +47,19 @@ require_once '../application/helpers/Admin/Lines.php';
 				echo "</div></div>";
 			}
 
-                        if (strtolower($this->title) == 'lines') :
-                            echo "<div><a href=\"javascript:void(0)\" class=\"advanced-options\" href=\"#\">Advanced options <i class=\"" . (Lines::isManualFilter($this->session) ? "icon-chevron-up" : "icon-chevron-down") . "\"></i></a></div>
+			if (strtolower($this->title) == 'lines') :
+				echo "<div><a href=\"javascript:void(0)\" class=\"advanced-options\" href=\"#\">Advanced options <i class=\"" . (Lines::isManualFilter($this->session) ? "icon-chevron-up" : "icon-chevron-down") . "\"></i></a></div>
                             <div id = \"manual_filters\"" . (Lines::isManualFilter($this->session) ? "" : " style=\"display:none;\"") . ">";
-                            if (Lines::isManualFilter($this->session)) {
-                                    for ($i = 0; $i < count($this->session->manual_key); $i++) {
-                                            echo Lines::getFilterRow($this->session->manual_key[$i], $this->session->manual_type[$i], $this->session->manual_operator[$i], $this->session->manual_value[$i]);
-                                    }
-                            } else {
-                                    echo Lines::getFilterRow(); // add first manual filter on load
-                            }
-                            echo "</div>";
-                        endif;
-                        
+				if (Lines::isManualFilter($this->session)) {
+					for ($i = 0; $i < count($this->session->manual_key); $i++) {
+						echo Lines::getFilterRow($this->session->manual_key[$i], $this->session->manual_type[$i], $this->session->manual_operator[$i], $this->session->manual_value[$i]);
+					}
+				} else {
+					echo Lines::getFilterRow(); // add first manual filter on load
+				}
+				echo "</div>";
+			endif;
+
 			if (is_array($this->sort_fields)) {
 				echo "Sort by: <div class=\"control-group\">
 		<div class=\"controls form-inline\">
@@ -69,10 +69,10 @@ require_once '../application/helpers/Admin/Lines.php';
 				}
 				echo "</select>
 			<label class=\"radio inline\">
-                                <input name=\"order\" value=\"desc\" type=\"radio\"" . (isset($this->session->order) && $this->session->order == "desc" ? "" : "checked=\"checked\"") . "> Descending order
+                                <input name=\"order\" value=\"desc\" type=\"radio\"" . (isset($this->session->order) && $this->session->order == "desc" ? "" : " checked=\"checked\"") . "> Descending order
 			</label>
 			<label class=\"radio inline\">
-                                <input name=\"order\" value=\"asc\" type=\"radio\"" . (isset($this->session->order) && $this->session->order == "desc" ? "checked=\"checked\"" : "") . "> Ascending order
+                                <input name=\"order\" value=\"asc\" type=\"radio\"" . (isset($this->session->order) && $this->session->order == "desc" ? " checked=\"checked\"" : "") . "> Ascending order
 			</label>
 		</div></div>";
 			}
