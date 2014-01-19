@@ -47,7 +47,7 @@ abstract class Billrun_Calculator_Rate_Sms extends Billrun_Calculator_Rate {
 	 * @param $row the line CDR to update. 
 	 */
 	public function updateRow($row) {
-		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteRow', array('row' => $row));
+		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteRow', array($row, $this));
 
 		$current = $row->getRawData();
 		$usage_type = $this->getLineUsageType($row);
@@ -60,7 +60,8 @@ abstract class Billrun_Calculator_Rate_Sms extends Billrun_Calculator_Rate {
 		);
 		$newData = array_merge($current, $added_values);
 		$row->setRawData($newData);
-		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteRow', array('row' => $row));
+		
+		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteRow', array($row, $this));
 		return true;
 	}
 
