@@ -12,6 +12,7 @@ if (!defined('APPLICATION_ENV')) {
 } else {
 	$env = APPLICATION_ENV;
 }
+// if APPLICATION_ENV not defined and the getenv not find the it (not through web server), let's take it by cli opt
 if (empty($env) && ($envs = getopt('', array('env:', 'environment:')))) {
 	$envOpts = array_values($envs);
 	if (isset($envOpts[0])) {
