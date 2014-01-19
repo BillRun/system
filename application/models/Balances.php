@@ -28,11 +28,13 @@ class BalancesModel extends TableModel {
 	 * @return Mongodloid_Cursor Mongo cursor for iteration
 	 */
 	public function getBalancesVolume($plan, $data_usage, $from_account_id, $to_account_id, $billrun) {
-		$params['name'] = $plan;
-		$params['time'] = Billrun_Util::getStartTime($billrun);
+		$params = array(
+			'name' => $plan,
+			'time' => Billrun_Util::getStartTime($billrun),
+		);
 		$plan_id = Billrun_Factory::plan($params);
 		$id = $plan_id->get('_id')->getMongoID();
-		$data_usage_bytes = Billrun_Util::megabytesToBytesFormat($data_usage);
+		$data_usage_bytes = Billrun_Util::megabytesToBytesFormat((int) $data_usage);
 
 		$query = array(
 			'aid' => array('$gte' => (int) $from_account_id, '$lte' => (int) $to_account_id),
@@ -40,7 +42,7 @@ class BalancesModel extends TableModel {
 			'balance.totals.data.usagev' => array('$gt' => (float) $data_usage_bytes),
 			'current_plan' => Billrun_Factory::db()->plansCollection()->createRef($id),
 		);
-
+//		print_R($query);die;
 		return $this->collection->query($query)->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED)->hint(array('aid' => 1, 'billrun_month' => 1))->limit($this->size);
 	}
 
