@@ -39,7 +39,7 @@ class GenerateAction extends Action_Base {
 		if ($generator) {
 			$this->_controller->addOutput("Loading data to Generate...");
 			$generator->load();
-			$this->_controller->addOutput("Starting to Generate. This action can take awhile...");
+			$this->_controller->addOutput("Starting to Generate. This action can take a while...");
 			$generator->generate();
 			$this->_controller->addOutput("Finished generating.");
 		} else {
