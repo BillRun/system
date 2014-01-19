@@ -6,14 +6,14 @@
  * @license         GNU General Public License version 2 or later; see LICENSE.txt
  */
 $env = null;
-if (isset($_SERVER['HTTP_USER_AGENT'])) {
-	// browser
-	if (!defined('APPLICATION_ENV')) {
-		$env = getenv('APPLICATION_ENV');
-	}
-} else {	
-	// command line
-	$envOpts = array_values(getopt('', array('env:', 'environment:')));
+
+if (!defined('APPLICATION_ENV')) {
+	$env = getenv('APPLICATION_ENV');
+} else {
+	$env = APPLICATION_ENV;
+}
+if (empty($env) && ($envs = getopt('', array('env:', 'environment:')))) {
+	$envOpts = array_values($envs);
 	if (isset($envOpts[0])) {
 		$env = $envOpts[0];
 	}
