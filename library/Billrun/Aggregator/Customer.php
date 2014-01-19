@@ -208,7 +208,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 				} else {
 					$lines = $account_billrun->addLines(true, 0, $flat_lines);
 				}
-				//save  the billrun
+				//save the billrun
 				Billrun_Factory::log("Saving account $accid");
 				$account_billrun->save();
 				Billrun_Factory::log("Finished saving account $accid");
