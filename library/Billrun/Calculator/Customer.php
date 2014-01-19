@@ -82,6 +82,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	 * write the calculation into DB
 	 */
 	public function updateRow($row) {
+		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteRow', array('row' => $row));
 		$row->collection($this->lines_coll);
 		if ($this->isBulk()) {
 			$this->subscribersByStamp();
@@ -101,6 +102,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			$subscriber_field = $subscriber->{$key};
 			$row[$key] = $subscriber_field;
 		}
+		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteRow', array('row' => $row));
 		return true;
 	}
 

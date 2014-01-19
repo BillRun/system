@@ -36,6 +36,7 @@ class Billrun_Calculator_Wholesale_NationalRoamingPricing extends Billrun_Calcul
 	}
 
 	public function updateRow($row) {
+		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteRow', array('row' => $row));
 
 		//@TODO  change this  be be configurable.
 		$pricingData = array();
@@ -55,6 +56,7 @@ class Billrun_Calculator_Wholesale_NationalRoamingPricing extends Billrun_Calcul
 			Billrun_Factory::log()->log(" No usagev or zone : {$row['usagev']} && $zoneKey for line with stamp: " . $row['stamp'], Zend_Log::NOTICE);
 			return false;
 		}
+		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteRow', array('row' => $row));
 		return true;
 	}
 
