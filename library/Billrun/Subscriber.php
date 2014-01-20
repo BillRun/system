@@ -111,5 +111,7 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 	 */
 	abstract public function getList($page, $size, $time, $acc_id = null);
 
+	abstract public function getListFromFile($file_path, $time);
+
 	abstract static public function getSubscribersByParams($params, $availableFields);
 }
