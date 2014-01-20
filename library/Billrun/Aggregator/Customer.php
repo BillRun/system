@@ -64,10 +64,6 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	protected $vatable = true;
 	protected $rates;
 
-	/**
-	 *
-	 * @var boolean is customer price vatable by default
-	 */
 	protected $testAcc = false;
 
 	/**
