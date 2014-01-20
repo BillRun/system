@@ -20,13 +20,13 @@ class Generator_Billrunstats extends Billrun_Generator {
 	 *
 	 * @var Mongodloid_Collection
 	 */
-	protected $billrun_stats_coll = null;
+	protected $billrunstats_coll = null;
 
 	public function __construct($options) {
 		self::$type = 'billrunstats';
 		$options['auto_create_dir'] = FALSE;
 		parent::__construct($options);
-		$this->billrun_stats_coll = Billrun_Factory::db()->billrun_statsCollection();
+		$this->billrunstats_coll = Billrun_Factory::db()->billrunstatsCollection();
 	}
 
 	/**
@@ -36,9 +36,9 @@ class Generator_Billrunstats extends Billrun_Generator {
 		$billrun = Billrun_Factory::db()->billrunCollection();
 
 		$this->data = $billrun
-				->query('billrun_key', $this->stamp)
-				->exists('invoice_id')
-				->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
+						->query('billrun_key', $this->stamp)
+						->exists('invoice_id')
+						->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
 
 		Billrun_Factory::log()->log("generator entities loaded: " . $this->data->count(), Zend_Log::INFO);
 
@@ -114,10 +114,20 @@ class Generator_Billrunstats extends Billrun_Generator {
 		}
 	}
 
+	/**
+	 * Adds a flattened record to the dbs
+	 * @param array $record
+	 */
 	protected function addFlatRecord($record) {
-		$this->billrun_stats_coll->insert($record);
+		$this->billrunstats_coll->insert($record);
 	}
 
+	/**
+	 * Returns an array value if it is set
+	 * @param mixed $field the array value
+	 * @param mixed $defVal the default value to return if $field is not set
+	 * @return mixed the array value if it is set, otherwise returns $defVal
+	 */
 	protected function getFieldVal(&$field, $defVal) {
 		if (isset($field)) {
 			return $field;
@@ -126,3 +136,24 @@ class Generator_Billrunstats extends Billrun_Generator {
 	}
 
 }
+
+//create table billrunstats(
+//aid INT NOT NULL, 
+//billrun_key varchar(10) NOT NULL, 
+//sid INT NOT NULL, 
+//subscriber_status varchar(100), 
+//current_plan varchar(100), 
+//next_plan varchar(100), 
+//sub_before_vat DECIMAL(64,25), 
+//day INT, 
+//plan varchar(100), 
+//category varchar(100), 
+//zone varchar(150), 
+//vat DECIMAL(5,5), 
+//usagev BIGINT,
+//usaget varchar(100), 
+//count INT, 
+//cost DECIMAL(64,25)
+//);
+//
+//mysqlimport --ignore-lines=1 --fields-optionally-enclosed-by='"' --fields-terminated-by=',' --lines-terminated-by='\n' --local test /home/shani/Desktop/subscribers.csv
