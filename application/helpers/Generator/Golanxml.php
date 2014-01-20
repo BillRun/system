@@ -35,6 +35,7 @@ class Generator_Golanxml extends Billrun_Generator {
 	protected $plans;
 	protected $data_rate;
 	protected $lines_coll;
+	protected $invoice_version = "1.0";
 
 	public function __construct($options) {
 		parent::__construct($options);
@@ -43,6 +44,9 @@ class Generator_Golanxml extends Billrun_Generator {
 		}
 		if (isset($options['size'])) {
 			$this->size = intval($options['size']);
+		}
+		if (isset($options['invoice_version'])) {
+			$this->invoice_version = $options['invoice_version'];
 		}
 
 		$this->lines_coll = Billrun_Factory::db()->linesCollection();
@@ -830,7 +834,7 @@ class Generator_Golanxml extends Billrun_Generator {
 	protected function basic_xml() {
 		$xml = <<<EOI
 <?xml version="1.0" encoding="UTF-8"?>
-<INVOICE>
+<INVOICE version="$this->invoice_version">
 	<TELECOM_INFORMATION>
 	</TELECOM_INFORMATION>
 	<INV_CUSTOMER_INFORMATION>
