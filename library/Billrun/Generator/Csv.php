@@ -21,7 +21,6 @@ abstract class Billrun_Generator_Csv extends Billrun_Generator {
 	protected $file_path = null;
 
 	public function __construct($options) {
-		self::$type = 'csv';
 		parent::__construct($options);
 		$this->setFilename();
 		$this->buildHeader();
@@ -60,11 +59,21 @@ abstract class Billrun_Generator_Csv extends Billrun_Generator {
 
 	protected function writeRows() {
 		$file_contents = "";
+		$counter = 0;
 		foreach ($this->data as $entity) {
+			$counter++;
 			if (!is_array($entity)) {
 				$entity = $entity->getRawData();
 			}
-			$file_contents .= implode($this->separator, $entity) . PHP_EOL;
+			foreach ($this->headers as $field_name) {
+				$file_contents .= (isset($entity[$field_name]) ? $entity[$field_name] : "") . $this->separator;
+			}
+			$file_contents .= PHP_EOL;
+			if ($counter == 50000) {
+				$this->writeToFile($file_contents);
+				$file_contents = "";
+				$counter = 0;
+			}
 		}
 		$this->writeToFile($file_contents);
 	}
