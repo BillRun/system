@@ -35,7 +35,7 @@ require_once '../application/helpers/Admin/Lines.php';
 								} else {
 									$selected = "";
 								}
-							} else if (in_array($value, $filter_field['default'])) {
+							} else if (is_array($filter_field['default']) && in_array($value, $filter_field['default'])) {
 								$selected = " selected";
 							} else {
 								$selected = "";
