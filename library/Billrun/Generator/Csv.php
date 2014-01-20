@@ -58,20 +58,22 @@ abstract class Billrun_Generator_Csv extends Billrun_Generator {
 	}
 
 	protected function writeRows() {
-		$file_contents = "";
+		$file_contents = '';
 		$counter = 0;
 		foreach ($this->data as $entity) {
 			$counter++;
+			$row_contents = '';
 			if (!is_array($entity)) {
 				$entity = $entity->getRawData();
 			}
 			foreach ($this->headers as $field_name) {
-				$file_contents .= (isset($entity[$field_name]) ? $entity[$field_name] : "") . $this->separator;
+				$row_contents.=(isset($entity[$field_name]) ? $entity[$field_name] : "") . $this->separator;
 			}
-			$file_contents .= PHP_EOL;
+
+			$file_contents .= trim($row_contents, $this->separator) . PHP_EOL;
 			if ($counter == 50000) {
 				$this->writeToFile($file_contents);
-				$file_contents = "";
+				$file_contents = '';
 				$counter = 0;
 			}
 		}
