@@ -16,9 +16,9 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Pl
 use Billrun_Traits_FileSequenceChecking;
 
 	const HEADER_LENGTH = 54;
-	const MAX_CHUNKLENGTH_LENGTH = 512;
+	const MAX_CHUNKLENGTH_LENGTH = 4096;
 	const FILE_READ_AHEAD_LENGTH = 16384;
-
+	const RECORD_PADDING = 8;
 	/**
 	 * plugin name
 	 *
@@ -265,7 +265,7 @@ use Billrun_Traits_FileSequenceChecking;
 		}
 
 		$asnObject = Asn_Base::parseASNString($data);
-		$parser->setLastParseLength($asnObject->getDataLength() + 8);
+		$parser->setLastParseLength( $asnObject->getDataLength() + self::RECORD_PADDING );
 
 		$type = $asnObject->getType();
 		$cdrLine = false;
@@ -366,7 +366,7 @@ use Billrun_Traits_FileSequenceChecking;
 			if (abs($quarterOffset) <= 52) {//data sanity check less then 13hours  offset
 				$h = str_pad(abs(intval($quarterOffset / 4)), 2, "0", STR_PAD_LEFT); // calc the offset hours
 				$m = str_pad(abs(($quarterOffset % 4) * 15), 2, "0", STR_PAD_LEFT); // calc the offset minutes
-				return (($quarterOffset > 0) ? "+" : "-") . "$h:$m";
+				return (($quarterOffset >= 0) ? "+" : "-") . "$h:$m";
 			}
 			//Billrun_Factory::log()->log($data. " : ". print_r($smode,1),Zend_Log::DEBUG );
 			return false;
@@ -406,18 +406,20 @@ use Billrun_Traits_FileSequenceChecking;
 		$processedData['header'] = $processor->buildHeader(fread($fileHandle, self::HEADER_LENGTH));
 
 		$bytes = null;
-		do {
-			if (!feof($fileHandle) && !isset($bytes[self::MAX_CHUNKLENGTH_LENGTH])) {
+		while(!feof($fileHandle)) {
+			if (!isset($bytes[self::MAX_CHUNKLENGTH_LENGTH])) {
 				$bytes .= fread($fileHandle, self::FILE_READ_AHEAD_LENGTH);
 			}
-
+			if(!isset($bytes[self::HEADER_LENGTH])) {
+				break;
+			}
 			$row = $processor->buildDataRow($bytes);
 			if ($row) {
 				$processedData['data'][] = $row;
 			}
-			//Billrun_Factory::log()->log( $processor->getParser()->getLastParseLength(),  Zend_Log::DEBUG);	
+			//Billrun_Factory::log()->log( $processor->getParser()->getLastParseLength(),  Zend_Log::DEBUG);
 			$bytes = substr($bytes, $processor->getParser()->getLastParseLength());
-		} while (isset($bytes[self::HEADER_LENGTH]));
+		} 
 
 		$processedData['trailer'] = $processor->buildTrailer($bytes);
 
