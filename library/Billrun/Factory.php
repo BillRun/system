@@ -179,26 +179,21 @@ class Billrun_Factory {
 		return self::$chain;
 	}
 	
-	static public function smser() {
-		try {
-			if (!self::$smser) {
-				$sms = self::$smser = new Billrun_Sms();
-			} else {
-				$sms = new Billrun_Sms();
-			}
-
-			$sms_config_params = Billrun_Factory::config()->getConfigValue('sms');
-
-			$sms->from = $sms_config_params['from'];
-			$sms->user = $sms_config_params['user'];
-			$sms->pwd = $sms_config_params['pwd'];
-			$sms->provisoning = $sms_config_params['provisoning'];
-
-			return $sms;
-		} catch (Exception $e) {
-			self::log("Can't instantiat sms object. Please check your settings", Zend_Log::ALERT);
-			return false;
+	/**
+	 * method to retrieve the a mailer instance
+	 * 
+	 * @return Billrun_Sms
+	 */
+	static public function smser($options = array()) {
+		if (empty($options)) {
+			$options = Billrun_Factory::config()->getConfigValue('sms');
 		}
+		$stamp = Billrun_Util::generateArrayStamp($options);
+		if (!isset(self::$smser[$stamp])) {
+			self::$smser[$stamp] = new Billrun_Sms($options);
+		}
+		
+		return $sms;
 	}
 
 }

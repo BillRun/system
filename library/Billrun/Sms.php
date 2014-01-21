@@ -13,18 +13,26 @@
  * @since    1.0
  */
 class Billrun_Sms {
+
 	/**
 	 * data
+	 * 
 	 * @var array
 	 */
 	protected $data = array();
-	
+
 	/**
-	 * rv
-	 * @var array
+	 * constructor
+	 * set options via magic method
+	 * 
+	 * @param type $options
 	 */
-	protected $rv = array();
-	
+	public function __construct($options = array()) {
+		foreach ($options as $key => $value) {
+			$this->{$key} = $value;
+		}
+	}
+
 	public function __set($name, $value) {
 		if ($name == array()) {
 			$this->data[$name][] = $value;
@@ -69,21 +77,21 @@ class Billrun_Sms {
 				'period' => $period,
 				'channel' => "SRV",
 			);
-			
+
 			$url = $this->data['provisoning'] . "?" . http_build_query($send_params);
 
 			// @todo: change to zend http client
 			$sms_result = file_get_contents($url);
 			$exploded = explode(',', $sms_result);
-			
+
 			$response = array(
 				'error-code' => (empty($exploded[0]) ? 'error' : 'success'),
 				'cause-code' => $exploded[1],
 				'error-description' => $exploded[2],
 				'tid' => $exploded[3],
 			);
-			
-			Billrun_Factory::log()->log("phone: " . $recipient  . " encoded_text: " . $text . " url: " . $url . " result" . print_R($response, 1), Zend_Log::INFO);
+
+			Billrun_Factory::log()->log("phone: " . $recipient . " encoded_text: " . $text . " url: " . $url . " result" . print_R($response, 1), Zend_Log::INFO);
 		}
 
 		return $this;
