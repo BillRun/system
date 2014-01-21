@@ -65,20 +65,20 @@ class Billrun_Sms {
 		$text = str_pad($encoded_text, 24, '+');
 		$period = 120;
 
-		foreach ($this->data['recipients'] as $recipient) {
+		foreach ($this->recipients as $recipient) {
 			$send_params = array(
 				'message' => $text,
 				'to' => $recipient,
-				'from' => $this->data['from'],
+				'from' => $this->from,
 				'language' => $language,
-				'username' => $this->data['user'],
-				'password' => $this->data['pwd'],
+				'username' => $this->user,
+				'password' => $this->pwd,
 				'acknowledge' => "false",
 				'period' => $period,
 				'channel' => "SRV",
 			);
 
-			$url = $this->data['provisoning'] . "?" . http_build_query($send_params);
+			$url = $this->provisioning . "?" . http_build_query($send_params);
 
 			// @todo: change to zend http client
 			$sms_result = file_get_contents($url);
