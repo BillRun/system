@@ -203,7 +203,9 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	}
 
 	/**
-	 * @todo: implement next calculator support (see inheritance method of calculator class)
+	 * 
+	 * @param type $query
+	 * @param type $update
 	 */
 	protected function setCalculatorTag($query = array(), $update = array()) {
 		$queue = Billrun_Factory::db()->queueCollection();
