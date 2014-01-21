@@ -406,8 +406,8 @@ use Billrun_Traits_FileSequenceChecking;
 		$processedData['header'] = $processor->buildHeader(fread($fileHandle, self::HEADER_LENGTH));
 
 		$bytes = null;
-		while(!feof($fileHandle)) {
-			if (!isset($bytes[self::MAX_CHUNKLENGTH_LENGTH])) {
+		while(true) {
+			if (!feof($fileHandle) && !isset($bytes[self::MAX_CHUNKLENGTH_LENGTH])) {
 				$bytes .= fread($fileHandle, self::FILE_READ_AHEAD_LENGTH);
 			}
 			if(!isset($bytes[self::HEADER_LENGTH])) {
@@ -418,7 +418,8 @@ use Billrun_Traits_FileSequenceChecking;
 				$processedData['data'][] = $row;
 			}
 			//Billrun_Factory::log()->log( $processor->getParser()->getLastParseLength(),  Zend_Log::DEBUG);
-			$bytes = substr($bytes, $processor->getParser()->getLastParseLength());
+			$advance = $processor->getParser()->getLastParseLength();
+			$bytes = substr($bytes, $advance <= 0 ? 1 : $advance);
 		} 
 
 		$processedData['trailer'] = $processor->buildTrailer($bytes);
