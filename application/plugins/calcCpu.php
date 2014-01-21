@@ -67,9 +67,11 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$customerCalc->loadSubscribers($data['data']);
 		}
 		$remove_garbage = Billrun_Factory::config()->getConfigValue('calcCpu.remove_garbage', false);
+		$garbage_counter = 0;
 		foreach ($data['data'] as $key => &$line) {
 			if ($remove_garbage) {
 				if ($line['type'] == 'ggsn' && isset($line['usagev']) && $line['usagev'] === 0) {
+					$garbage_counter++;
 					unset($data['data'][$key]);
 				}
 			}
@@ -87,6 +89,11 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 				$line = $entity->getRawData();
 			}
 		}
+		
+		$data['header']['garbage_lines'][] = array(
+			'reason' => 'usagev0',
+			'count' => $garbage_counter,
+		);
 
 		Billrun_Factory::log('Plugin calc cpu customer pricing', Zend_Log::INFO);
 		$customerPricingCalc = Billrun_Calculator::getInstance(array('type' => 'customerPricing', 'autoload' => false));
