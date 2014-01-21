@@ -366,7 +366,7 @@ use Billrun_Traits_FileSequenceChecking;
 			if (abs($quarterOffset) <= 52) {//data sanity check less then 13hours  offset
 				$h = str_pad(abs(intval($quarterOffset / 4)), 2, "0", STR_PAD_LEFT); // calc the offset hours
 				$m = str_pad(abs(($quarterOffset % 4) * 15), 2, "0", STR_PAD_LEFT); // calc the offset minutes
-				return (($quarterOffset >= 0) ? "+" : "-") . "$h:$m";
+				return (($quarterOffset > 0) ? "+" : "-") . "$h:$m";
 			}
 			//Billrun_Factory::log()->log($data. " : ". print_r($smode,1),Zend_Log::DEBUG );
 			return false;
