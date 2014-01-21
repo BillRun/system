@@ -47,28 +47,43 @@ class Billrun_Sms {
 		}
 
 		$language = '2';
-		$encoded_text = $this->sms_unicode($this->data['message']);
-		if (!empty($this->data['message']) && empty($encoded_text)) {
+		$unicode_text = $this->sms_unicode($this->data['message']);
+		if (!empty($this->data['message']) && empty($unicode_text)) {
 			$encoded_text = urlencode($this->data['message']);
 			$language = '1';
 		}
 
 		// Temporary - make sure is not 23 chars long
-		$encoded_text = str_pad($encoded_text, 24, '+');
+		$text = str_pad($encoded_text, 24, '+');
 		$period = 120;
 
 		foreach ($this->data['recipients'] as $recipient) {
-			$url = $this->data['provisoning'] . "?message=$encoded_text&to=" . $recipient . "&from=" . $this->data['from'] . "&language=$language&username=" . $this->data['user'] . "&password=" . $this->data['pwd'] . "&acknowledge=false&period=$period&channel=SRV";
+			$send_params = array(
+				'message' => $text,
+				'to' => $recipient,
+				'from' => $this->data['from'],
+				'language' => $language,
+				'username' => $this->data['user'],
+				'password' => $this->data['pwd'],
+				'acknowledge' => "false",
+				'period' => $period,
+				'channel' => "SRV",
+			);
+			
+			$url = $this->data['provisoning'] . "?" . http_build_query($send_params);
 
+			// @todo: change to zend http client
 			$sms_result = file_get_contents($url);
 			$exploded = explode(',', $sms_result);
 			
-			$this->rv['error-code'] = (empty($exploded[0]) ? 'error' : 'success');
-			$this->rv['cause-code'] = $exploded[1];
-			$this->rv['error-description'] = $exploded[2];
-			$this->rv['tid'] = $exploded[3];
-
-			Billrun_Factory::log()->log("phone:$recipient,encoded_text:$encoded_text,url:$url,result," . json_encode($rv), Zend_Log::INFO);
+			$response = array(
+				'error-code' => (empty($exploded[0]) ? 'error' : 'success'),
+				'cause-code' => $exploded[1],
+				'error-description' => $exploded[2],
+				'tid' => $exploded[3],
+			);
+			
+			Billrun_Factory::log()->log("phone: " . $recipient  . " encoded_text: " . $text . " url: " . $url . " result" . print_R($response, 1), Zend_Log::INFO);
 		}
 
 		return $this;
