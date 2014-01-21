@@ -145,7 +145,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		foreach ($lines as $line) {
 			if ($line) {
 				Billrun_Factory::log()->log("Calcuating row : " . $line['stamp'], Zend_Log::DEBUG);
-				Billrun_Factory::dispatcher()->trigger('beforeCalculateDataRow', array('data' => &$line));
+				Billrun_Factory::dispatcher()->trigger('beforeCalculateDataRow', array($line, $this));
 				$line->collection($lines_coll);
 				if ($this->isLineLegitimate($line)) {
 					if (!$this->updateRow($line)) {
@@ -154,7 +154,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 					}
 					$this->data[$line['stamp']] = $line;
 				}
-				Billrun_Factory::dispatcher()->trigger('afterCalculateDataRow', array('data' => &$line));
+				Billrun_Factory::dispatcher()->trigger('afterCalculateDataRow', array($line, $this));
 			}
 		}
 		Billrun_Factory::dispatcher()->trigger('afterCalculateData', array('data' => $this->data));
@@ -236,11 +236,18 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		$calculator_tag = static::getCalculatorQueueType();
 		$stamps = array();
 		foreach ($this->lines as $item) {
-			$stamps[] = $item['stamp'];
+			if (!isset($item['next_calc'])) {
+				$stamps[$calculator_tag] = $item['stamp'];
+			} else {
+				$stamps[(string) $item['next_calc']][] = $item['stamp'];
+				unset($item['next_calc']);
+			}
 		}
-		$query = array_merge($query, array('stamp' => array('$in' => $stamps), 'hash' => $this->workHash, 'calc_time' => $this->signedMicrotime)); //array('stamp' => $item['stamp']);
-		$update = array_merge($update, array('$set' => array('calc_name' => $calculator_tag, 'calc_time' => false)));
-		$this->queue_coll->update($query, $update, array('multiple' => true));
+		foreach ($stamps as $step => $update_stamps) {
+			$query = array_merge($query, array('stamp' => array('$in' => $update_stamps), 'hash' => $this->workHash, 'calc_time' => $this->signedMicrotime)); //array('stamp' => $item['stamp']);
+			$update = array_merge($update, array('$set' => array('calc_name' => $step, 'calc_time' => false)));
+			$this->queue_coll->update($query, $update, array('multiple' => true));
+		}
 	}
 
 	/**

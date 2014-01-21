@@ -18,6 +18,8 @@ class Subscriber_Golan extends Billrun_Subscriber {
 	protected $plan = null;
 	protected $next_plan = null;
 	protected $time = null;
+	protected $save_crm_output = false;
+	protected $crm_output_dir = null;
 
 	public function __construct($options = array()) {
 		parent::__construct($options);
@@ -29,6 +31,16 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		}
 		if (isset($options['time'])) {
 			$this->time = $options['time'];
+		}
+
+		if (isset($options['save_crm_output'])) {
+			$this->save_crm_output = $options['save_crm_output'];
+		}
+		if ($this->save_crm_output) {
+			$this->crm_output_dir = (isset($options['crm_output_dir']) ? $options['crm_output_dir'] : (getcwd() . '/files/crm_output/active_subscribers')) . '/' . date('Ymd') . '/';
+			if (!file_exists($this->crm_output_dir)) {
+				mkdir($this->crm_output_dir, 0777, true);
+			}
 		}
 		// pay attention that just availableFields array can be access from outside
 	}
@@ -185,6 +197,11 @@ class Subscriber_Golan extends Billrun_Subscriber {
 //		$path .= "&account_id=5236445";
 //		$path .= "&account_id=7236490";
 		$json = self::send($path);
+		if ($this->save_crm_output) {
+			$file_path = $this->crm_output_dir . md5($path) . '.json';
+			file_put_contents($file_path, $path . PHP_EOL);
+			file_put_contents($file_path, $json, FILE_APPEND);
+		}
 		if (!$json) {
 			return false;
 		}
@@ -205,14 +222,17 @@ class Subscriber_Golan extends Billrun_Subscriber {
 			$params = array('msisdn' => '', 'IMSI' => '', 'DATETIME' => $time, 'page' => $page, 'size' => $size, 'account_id' => $acc_id);
 		}
 		$accounts = $this->requestAccounts($params);
-		if (isset($accounts['success']) && $accounts['success'] === FALSE) {
-			Billrun_Factory::log()->log('No accounts for page ' . $page . ' of size ' . $size . ' at date ' . $time, Zend_Log::INFO);
+		return $this->parseActiveSubscribersOutput($accounts, strtotime($time));
+	}
+
+	protected function parseActiveSubscribersOutput($output_arr, $time) {
+		if (isset($output_arr['success']) && $output_arr['success'] === FALSE) {
 			return array();
 		} else {
 			$subscriber_general_settings = Billrun_Config::getInstance()->getConfigValue('subscriber', array());
-			if (is_array($accounts) && !empty($accounts)) {
+			if (is_array($output_arr) && !empty($output_arr)) {
 				$ret_data = array();
-				foreach ($accounts as $aid => $account) {
+				foreach ($output_arr as $aid => $account) {
 					if (isset($account['subscribers'])) {
 						foreach ($account['subscribers'] as $subscriber) {
 							$concat = array(
@@ -235,6 +255,15 @@ class Subscriber_Golan extends Billrun_Subscriber {
 				return null;
 			}
 		}
+	}
+
+	public function getListFromFile($file_path, $time) {
+		$json = @file_get_contents($file_path);
+		$arr = @json_decode($json, true);
+		if (!is_array($arr) || empty($arr)) {
+			return array();
+		}
+		return $this->parseActiveSubscribersOutput($arr, $time);
 	}
 
 	public function getPlan() {

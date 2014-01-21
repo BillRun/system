@@ -64,10 +64,6 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	protected $vatable = true;
 	protected $rates;
 
-	/**
-	 *
-	 * @var boolean is customer price vatable by default
-	 */
 	protected $testAcc = false;
 
 	/**
@@ -208,7 +204,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 				} else {
 					$lines = $account_billrun->addLines(true, 0, $flat_lines);
 				}
-				//save  the billrun
+				//save the billrun
 				Billrun_Factory::log('Saving account ' . $accid, Zend_Log::DEBUG);
 				$account_billrun->save();
 				Billrun_Factory::log('Finished saving account ' . $accid, Zend_Log::DEBUG);

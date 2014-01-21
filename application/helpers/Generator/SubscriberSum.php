@@ -53,7 +53,7 @@ class Generator_SubscriberSum extends Billrun_Generator_AggregatedCsv {
 	}
 
 	protected function setCollection() {
-		$this->collection = Billrun_Factory::db()->billrun_statsCollection();
+		$this->collection = Billrun_Factory::db()->billrunstatsCollection();
 	}
 
 	protected function setFilename() {

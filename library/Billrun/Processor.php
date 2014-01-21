@@ -714,6 +714,18 @@ abstract class Billrun_Processor extends Billrun_Base {
 	public function setQueueRowStep($stamp, $step) {
 		$this->queue_data[$stamp]['calc_name'] = $step;
 	}
+	
+	/**
+	 * get queue row step
+	 * 
+	 * @param string $stamp the row stamp
+	 * 
+	 * @return string the queue step
+	 */
+	public function getQueueRowStep($stamp) {
+		return $this->queue_data[$stamp]['calc_name'];
+	}
+
 
 	/**
 	 * unset row from the queue to disable it from inserted to DB queue collection
