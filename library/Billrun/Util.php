@@ -170,14 +170,8 @@ class Billrun_Util {
 			return FALSE;
 		}
 
-		//send sms
 		try {
-			//set recipents
-			$smser->recipients = $recipients;
-			//set message
-			$smser->message = $message;
-
-			$ret = $smser->send();
+			$ret = $smser->send($message, $recipients);
 		} catch (Exception $e) {
 			Billrun_Factory::log()->log("Failed when trying to send  sms on alert results, Failed with : " . $e, Zend_Log::ERR);
 			$ret = FALSE;
@@ -186,15 +180,17 @@ class Billrun_Util {
 	}
 
 	/**
-	 * Send Curl request to the CRM
-	 * @param string $url - url of the CRM
-	 * @param string $data - parameters for the request
-	 * @param string $method - should be POST or GET
+	 * Send curl request
+	 * 
+	 * @param string $url full path
+	 * @param string $data parameters for the request
+	 * @param string $method should be POST or GET
+	 * 
 	 * @return array or FALSE on failure
 	 */
-	public static function sendRequest($url, array $data, $method = Zend_Http_Client::POST, array $headers = array('Accept-encoding' => 'deflate')) {
-		if (empty($data) || empty($url)) {
-			Billrun_Factory::log()->log("Bad parameters: url - " . $url . " data - " . $data . " method: " . $method, Zend_Log::ERR);
+	public static function sendRequest($url, array $data = array(), $method = Zend_Http_Client::POST, array $headers = array('Accept-encoding' => 'deflate')) {
+		if (empty($url)) {
+			Billrun_Factory::log()->log("Bad parameters: url - " . $url . " method: " . $method, Zend_Log::ERR);
 			return FALSE;
 		}
 
@@ -210,10 +206,12 @@ class Billrun_Util {
 		$client->setAdapter($curl);
 		$client->setMethod($method);
 
-		if ($zendMethod == Zend_Http_Client::POST) {
-			$client->setParameterPost($data);
-		} else {
-			$client->setParameterGet($data);
+		if (!empty($data)) {
+			if ($zendMethod == Zend_Http_Client::POST) {
+				$client->setParameterPost($data);
+			} else {
+				$client->setParameterGet($data);
+			}
 		}
 
 		$response = $client->request();

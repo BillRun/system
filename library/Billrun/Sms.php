@@ -46,16 +46,19 @@ class Billrun_Sms {
 	}
 
 	/**
-	 * sends sms text
+	 * 
+	 * @param type $message
+	 * @param type $recipients
+	 * @return \Billrun_Sms|boolean
 	 */
-	public function send() {
+	public function send($message, $recipients) {
 		if (empty($this->data['message']) || empty($this->data['recipients'])) {
 			Billrun_Factory::log()->log("can not send the sms, there are missing params - txt: " . $this->data['message'] . " recipients: " . print_r($this->data['recipients'], TRUE) . " from: " . $this->data['from'], Zend_Log::WARN);
 			return false;
 		}
 
 		$language = '2';
-		$unicode_text = $this->sms_unicode($this->data['message']);
+		$unicode_text = $this->sms_unicode($message);
 		if (!empty($this->data['message']) && empty($unicode_text)) {
 			$encoded_text = urlencode($this->data['message']);
 			$language = '1';
@@ -65,7 +68,7 @@ class Billrun_Sms {
 		$text = str_pad($encoded_text, 24, '+');
 		$period = 120;
 
-		foreach ($this->recipients as $recipient) {
+		foreach ($recipients as $recipient) {
 			$send_params = array(
 				'message' => $text,
 				'to' => $recipient,
@@ -80,8 +83,7 @@ class Billrun_Sms {
 
 			$url = $this->provisioning . "?" . http_build_query($send_params);
 
-			// @todo: change to zend http client
-			$sms_result = file_get_contents($url);
+			$sms_result = Billrun_Util::sendRequest($url);
 			$exploded = explode(',', $sms_result);
 
 			$response = array(
@@ -91,10 +93,10 @@ class Billrun_Sms {
 				'tid' => $exploded[3],
 			);
 
-			Billrun_Factory::log()->log("phone: " . $recipient . " encoded_text: " . $text . " url: " . $url . " result" . print_R($response, 1), Zend_Log::INFO);
+			Billrun_Factory::log()->log("phone: " . $recipient . " encoded_text: " . $message . " url: " . $url . " result" . print_R($response, 1), Zend_Log::INFO);
 		}
 
-		return $this;
+		return $response['error-code'] == 'success' ? true : false;
 	}
 
 	public static function sms_unicode($message) {
