@@ -199,7 +199,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		$json = self::send($path);
 		if ($this->save_crm_output) {
 			$file_path = $this->crm_output_dir . md5($path) . '.json';
-			file_put_contents($file_path, $path . PHP_EOL);
+//			file_put_contents($file_path, $path . PHP_EOL);
 			file_put_contents($file_path, $json, FILE_APPEND);
 		}
 		if (!$json) {
