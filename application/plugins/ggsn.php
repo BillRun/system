@@ -307,9 +307,12 @@ use Billrun_Traits_FileSequenceChecking;
 		if ($this->getName() != $type) {
 			return FALSE;
 		}
-
-		$header = utf8_encode(base64_encode($data)); //$this->getASNDataByConfig($data, $this->ggsnConfig['header'], $this->ggsnConfig['fields']);		
-
+		$header['line_count'] = reset(unpack("N", substr($data,0x12,4)));
+		$header['next_file_number'] = reset(unpack("N", substr($data,0x16,4)));
+		//Billrun_Factory::log(print_r($header,1));
+		
+		$header['raw'] = utf8_encode(base64_encode($data));// Is  this  needed?
+		
 		return $header;
 	}
 
@@ -330,8 +333,8 @@ use Billrun_Traits_FileSequenceChecking;
 		if ($this->getName() != $type) {
 			return FALSE;
 		}
-
-		$trailer = utf8_encode(base64_encode($data)); //$this->getASNDataByConfig($data, $this->ggsnConfig['trailer'], $this->ggsnConfig['fields']);		
+		
+		$trailer = utf8_encode(base64_encode($data));// Is  this  needed?
 
 		return $trailer;
 	}
