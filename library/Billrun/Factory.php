@@ -132,10 +132,11 @@ class Billrun_Factory {
 	static public function db(array $options = array()) {
 		if (empty($options)) {
 			$options = Billrun_Factory::config()->getConfigValue('db'); // the stdclass force it to return object
-		} else if (isset($options['name']) && $options['name'] == 'balances' && count($options) == 1) {
+		} else if (isset($options['name']) && in_array($options['name'], array('balances', 'billrunstats')) && count($options) == 1) {
+			$name = $options['name'];
 			// move balances to different database
 			$options = Billrun_Factory::config()->getConfigValue('db');
-			$options['name'] = 'balances';
+			$options['name'] = $name;
 		}
 
 		// unique stamp per db connection

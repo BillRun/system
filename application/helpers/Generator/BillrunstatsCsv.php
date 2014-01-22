@@ -26,7 +26,7 @@ class Generator_BillrunstatsCsv extends Billrun_Generator_Csv {
 		self::$type = 'billrunstatscsv';
 //		$options['auto_create_dir'] = FALSE;
 		parent::__construct($options);
-		$this->billrunstats_coll = Billrun_Factory::db()->billrunstatsCollection();
+		$this->billrunstats_coll = Billrun_Factory::db(array('name' => 'billrunstats'))->billrunstatsCollection();
 	}
 
 	/**
