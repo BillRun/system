@@ -225,6 +225,11 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		return $this->parseActiveSubscribersOutput($accounts, strtotime($time));
 	}
 
+	/**
+	 * @param array $output_arr
+	 * @param int $time
+	 * @return array
+	 */
 	protected function parseActiveSubscribersOutput($output_arr, $time) {
 		if (isset($output_arr['success']) && $output_arr['success'] === FALSE) {
 			return array();
@@ -236,7 +241,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 					if (isset($account['subscribers'])) {
 						foreach ($account['subscribers'] as $subscriber) {
 							$concat = array(
-								'time' => strtotime($time),
+								'time' => $time,
 								'data' => array(
 									'aid' => intval($aid),
 									'sid' => intval($subscriber['subscriber_id']),
