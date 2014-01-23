@@ -33,12 +33,26 @@ class Generator_Golan016 extends Billrun_Generator_Csv_Fixed {
 	 */
         protected $logEntity;
         
+        /**
+	 *  Disable stamp export directory
+         * 
+	 * @var boolean
+	 */
+        protected $disable_stamp_export_directory = true;
+        
         /* data structure
 	 * @var array
 	 */
         static protected $data = array();
 
         public function __construct($options = array()) {
+            
+                $options['export_directory'] = Billrun_Factory::config()->getConfigValue('016.export');
+            
+                if ($this->disable_stamp_export_directory) {
+			$options['disable_stamp_export_directory'] = $this->disable_stamp_export_directory;
+		}
+                
 		parent::__construct($options);
         }
                 
@@ -126,7 +140,7 @@ class Generator_Golan016 extends Billrun_Generator_Csv_Fixed {
                     return FALSE;
                 }
                     
-		$path = Billrun_Factory::config()->getConfigValue('016.export.path') . '/' . self::$fileName . '.out';
+		$path = $this->export_directory . DIRECTORY_SEPARATOR . '/' . self::$fileName . '.out';
                 
 		if (file_put_contents($path, $xmlContent)) {
                     return self::$fileName;
