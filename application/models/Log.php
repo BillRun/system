@@ -50,7 +50,7 @@ class LogModel extends TableModel {
 		return $sort_fields;
 	}
 
-	public function getData($filter_query = array()) {
+	public function getDataByStamp($filter_query = array()) {
 		$cursor = $this->collection->query($filter_query)->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
 		$this->_count = $cursor->count();
 		return $cursor->current();
