@@ -327,8 +327,15 @@ class Billrun_Billrun {
 			$this->setSubRawData($sraw);
 		} else {
 			Billrun_Factory::log("Subscriber $sid is not active yet has lines", Zend_log::ALERT);
+			$subscriber_general_settings = Billrun_Config::getInstance()->getConfigValue('subscriber', array());
+			$null_subscriber_params = array(
+				'data' => array('aid' => $row['aid'], 'sid' => $sid, 'plan' => null, 'next_plan' => null,),
+			);
+			$subscriber_settings = array_merge($subscriber_general_settings, $null_subscriber_params);
+			$subscriber = Billrun_Subscriber::getInstance($subscriber_settings);
+			$this->addSubscriber($subscriber, "closed");
+			$this->updateBillrun($billrun_key, $counters, $pricingData, $row, $vatable);
 		}
-		//$billrun->updateTotals($pricingData, $billrun_key, $vatable);		
 	}
 
 	/**
