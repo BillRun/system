@@ -149,12 +149,9 @@ class CreditAction extends Action_Base {
 			return $this->setError('account, subscriber ids must be positive integers', $credit_row);
 		}
 
-		if (Billrun_Util::isTimestamp(strval($filtered_request['credit_time']))) {
-			$filtered_request['urt'] = new MongoDate((int) $filtered_request['credit_time']);
-			unset($filtered_request['credit_time']);
-		} else {
-			return $this->setError('credit_time is not a valid time stamp', $credit_row);
-		}
+		$credit_time = new Zend_Date($filtered_request['credit_time']);
+		$filtered_request['urt'] = new MongoDate($credit_time->getTimestamp());
+		unset($filtered_request['credit_time']);
 
 		$filtered_request['vatable'] = filter_var($filtered_request['vatable'], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
 		if (!is_null($filtered_request['vatable'])) {
