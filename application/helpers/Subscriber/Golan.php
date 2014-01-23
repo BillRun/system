@@ -37,10 +37,10 @@ class Subscriber_Golan extends Billrun_Subscriber {
 			$this->save_crm_output = $options['save_crm_output'];
 		}
 		if ($this->save_crm_output) {
-			$this->crm_output_dir = (isset($options['crm_output_dir']) ? $options['crm_output_dir'] : (getcwd() . '/files/crm_output/active_subscribers')) . '/' . date('Ymd') . '/';
-			if (!file_exists($this->crm_output_dir)) {
-				mkdir($this->crm_output_dir, 0777, true);
-			}
+//			$this->crm_output_dir = (isset($options['crm_output_dir']) ? $options['crm_output_dir'] : (getcwd() . '/files/crm_output/active_subscribers')) . '/' . date('Ymd') . '/';
+//			if (!file_exists($this->crm_output_dir)) {
+//				mkdir($this->crm_output_dir, 0777, true);
+//			}
 		}
 		// pay attention that just availableFields array can be access from outside
 	}
@@ -200,7 +200,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		if ($this->save_crm_output) {
 			$file_path = $this->crm_output_dir . md5($path) . '.json';
 //			file_put_contents($file_path, $path . PHP_EOL);
-			file_put_contents($file_path, $json, FILE_APPEND);
+//			file_put_contents($file_path, $json, FILE_APPEND);
 		}
 		if (!$json) {
 			return false;
@@ -225,6 +225,11 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		return $this->parseActiveSubscribersOutput($accounts, strtotime($time));
 	}
 
+	/**
+	 * @param array $output_arr
+	 * @param int $time
+	 * @return array
+	 */
 	protected function parseActiveSubscribersOutput($output_arr, $time) {
 		if (isset($output_arr['success']) && $output_arr['success'] === FALSE) {
 			return array();
@@ -236,7 +241,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 					if (isset($account['subscribers'])) {
 						foreach ($account['subscribers'] as $subscriber) {
 							$concat = array(
-								'time' => strtotime($time),
+								'time' => $time,
 								'data' => array(
 									'aid' => intval($aid),
 									'sid' => intval($subscriber['subscriber_id']),

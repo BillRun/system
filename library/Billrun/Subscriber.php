@@ -111,6 +111,9 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 	 */
 	abstract public function getList($page, $size, $time, $acc_id = null);
 
+	/**
+	 * get the list of active subscribers from a json file. Parse subscribers plans at the given time (unix timestamp)
+	 */
 	abstract public function getListFromFile($file_path, $time);
 
 	abstract static public function getSubscribersByParams($params, $availableFields);

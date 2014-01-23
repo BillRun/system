@@ -21,12 +21,13 @@ class Generator_Billrunstats extends Billrun_Generator {
 	 * @var Mongodloid_Collection
 	 */
 	protected $billrunstats_coll = null;
+	protected $ggsn_zone = 'INTERNET_BILL_BY_VOLUME';
 
 	public function __construct($options) {
 		self::$type = 'billrunstats';
 		$options['auto_create_dir'] = FALSE;
 		parent::__construct($options);
-		$this->billrunstats_coll = Billrun_Factory::db()->billrunstatsCollection();
+		$this->billrunstats_coll = Billrun_Factory::db(array('name' => 'billrunstats'))->billrunstatsCollection();
 	}
 
 	/**
@@ -67,6 +68,9 @@ class Generator_Billrunstats extends Billrun_Generator {
 						foreach ($sub_entry['breakdown'] as $flat_breakdown_record['plan'] => $categories) {
 							foreach ($categories as $flat_breakdown_record['category'] => $zones) {
 								foreach ($zones as $flat_breakdown_record['zone'] => $zone_totals) {
+									if ($flat_breakdown_record['zone'] == $this->ggsn_zone) {
+										continue; // it's taken from lines->data->counters
+									}
 									if ($flat_breakdown_record['plan'] != 'credit') {
 										if (isset($zone_totals['totals'])) {
 											$flat_breakdown_record['vat'] = $this->getFieldVal($zone_totals['vat'], $default_vat);
@@ -99,7 +103,7 @@ class Generator_Billrunstats extends Billrun_Generator {
 						foreach ($sub_entry['lines']['data']['counters'] as $flat_data_record['day'] => $counters) {
 							$flat_data_record['plan'] = $counters['plan_flag'] . '_plan';
 							$flat_data_record['category'] = 'base';
-							$flat_data_record['zone'] = 'INTERNET_BILL_BY_VOLUME';
+							$flat_data_record['zone'] = $this->ggsn_zone;
 							$flat_data_record['vat'] = $default_vat;
 							$flat_data_record['usagev'] = $counters['usagev'];
 							$flat_data_record['usaget'] = 'data';
