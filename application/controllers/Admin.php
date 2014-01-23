@@ -184,7 +184,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$type = Billrun_Util::filter_var($this->getRequest()->get('type'), FILTER_SANITIZE_STRING);
 
 		$model = self::getModel($coll);
-		$entity = $model->getData(array("stamp" => $stamp));
+		$entity = $model->getDataByStamp(array("stamp" => $stamp));
 
 		// passing values into the view
 		$this->getView()->entity = $entity;
