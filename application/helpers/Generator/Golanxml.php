@@ -58,7 +58,7 @@ class Generator_Golanxml extends Billrun_Generator {
 		$billrun = Billrun_Factory::db()->billrunCollection();
 		Billrun_Factory::log()->log('Loading ' . $this->size . ' billrun documents with offset ' . $this->offset, Zend_Log::INFO);
 		$resource = $billrun
-			->query('billrun_key', $this->stamp)
+				->query('billrun_key', $this->stamp)
 				->exists('invoice_id')
 //			->notExists('invoice_file')
 				->cursor()->timeout(-1)
@@ -134,11 +134,11 @@ class Generator_Golanxml extends Billrun_Generator {
 		foreach ($row['subs'] as $subscriber) {
 			$sid = $subscriber['sid'];
 			$subscriber_flat_costs = $this->getFlatCosts($subscriber);
-			if (!is_array($subscriber_flat_costs) || empty($subscriber_flat_costs)) {
-				Billrun_Factory::log('Missing flat costs for subscriber ' . $sid, Zend_Log::INFO);
-			}
-			if (is_null($subscriber['current_plan']) && is_null($subscriber['next_plan'])) {
+			if (is_null($subscriber['current_plan']) && is_null($subscriber['next_plan']) && !isset($subscriber['breakdown'])) {
 				continue;
+			}
+			if ($subscriber['subscriber_status'] == 'open' && (!is_array($subscriber_flat_costs) || empty($subscriber_flat_costs))) {
+				Billrun_Factory::log('Missing flat costs for subscriber ' . $sid, Zend_Log::INFO);
 			}
 
 			$subscriber_inf = $xml->addChild('SUBSCRIBER_INF');
@@ -487,7 +487,6 @@ class Generator_Golanxml extends Billrun_Generator {
 		Billrun_Factory::log()->log("create xml file " . $fileName, Zend_Log::INFO);
 		$path = $this->export_directory . '/' . $fileName;
 		$ret = file_put_contents($path, $xmlContent);
-		Billrun_Factory::log()->log("create xml file " . $fileName . ' - finished', Zend_Log::INFO);
 		return $ret;
 	}
 
