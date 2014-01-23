@@ -37,7 +37,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 			$this->save_crm_output = $options['save_crm_output'];
 		}
 		if ($this->save_crm_output) {
-			$this->crm_output_dir = (isset($options['crm_output_dir']) ? $options['crm_output_dir'] : (getcwd() . '/files/crm_output/active_subscribers')) . '/' . date('Ymd') . '/';
+			$this->crm_output_dir = (isset($options['crm_output_dir']) ? $options['crm_output_dir'] : (getcwd() . '/files/crm_output/billable_subscribers')) . '/' . date('Ymd') . '/';
 		}
 		// pay attention that just availableFields array can be access from outside
 	}
@@ -192,7 +192,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 //		$path .= "&account_id=4171195"; // Shani
 //		$path .= "&account_id=9073496"; // Ofer
 //		$path .= "&account_id=5236445";
-//		$path .= "&account_id=7236490";
+//		$path .= "&account_id=1416969";
 		$json = self::send($path);
 		if ($saveToFile) {
 			if (!file_exists($this->crm_output_dir)) {
