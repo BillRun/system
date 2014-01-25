@@ -129,7 +129,7 @@ class CreditAction extends Action_Base {
 			return $this->setError('reason error', $credit_row);
 		}
 
-		if (is_string($filtered_request['service_name'])) {
+		if (!empty($filtered_request['service_name']) && is_string($filtered_request['service_name'])) {
 			$filtered_request['service_name'] = preg_replace('/[^a-zA-Z0-9-_]+/', '_', $filtered_request['service_name']); // removes unwanted characters from the string (especially dollar sign and dots) as they are not allowed as mongo keys
 		} else {
 			return $this->setError('service_name error', $credit_row);
