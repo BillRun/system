@@ -226,6 +226,7 @@ class BulkCreditAction extends CreditAction {
 		}
 
 		$filename = md5(microtime()) . ".json";
+		$parsed_rows = array();
 		foreach ($credits as $credit) {
 			$parsed_row = $this->parseRow($credit);
 			if (is_null($parsed_row)) {
@@ -311,9 +312,10 @@ class BulkCreditAction extends CreditAction {
 			if ($details) {
 				$lines = Billrun_Factory::db()->linesCollection();
 				$query = array(
+					'type' => 'credit',
 					'file' => $filename,
 				);
-				$details = $lines->query($query)->cursor();
+				$details = $lines->query($query)->hint(array('type' => 1))->cursor();
 				$output['details'] = array();
 				foreach ($details as $row) {
 					$output['details'][] = $row->getRawData();
