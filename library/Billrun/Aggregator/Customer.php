@@ -63,7 +63,6 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	 */
 	protected $vatable = true;
 	protected $rates;
-
 	protected $testAcc = false;
 
 	/**
@@ -206,7 +205,10 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 				}
 				//save the billrun
 				Billrun_Factory::log('Saving account ' . $accid, Zend_Log::DEBUG);
-				$account_billrun->save();
+				if ($account_billrun->save() === false) {
+					Billrun_Factory::log('Error saving account ' . $accid, Zend_Log::ALERT);
+					continue;
+				}
 				Billrun_Factory::log('Finished saving account ' . $accid, Zend_Log::DEBUG);
 			}
 			Billrun_Factory::dispatcher()->trigger('aggregateBeforeCloseAccountBillrun', array($accid, $account, $account_billrun, $lines, &$this));

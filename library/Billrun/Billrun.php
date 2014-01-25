@@ -83,7 +83,15 @@ class Billrun_Billrun {
 	 * @return type
 	 */
 	public function save() {
-		return isset($this->data) ? $this->data->save() : false;
+		if (isset($this->data)) {
+			try {
+				$this->data->save();
+				return true;
+			} catch (Exception $ex) {
+				Billrun_Factory::log()->log('Error saving billrun document. Error code: ' . $ex->getCode() . '. Message: ' . $ex->getMessage(), Zend_Log::ERR);
+			}
+		}
+		return false;
 	}
 
 	/**
