@@ -218,7 +218,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 			Billrun_Factory::dispatcher()->trigger('afterAggregateAccount', array($accid, $account, $account_billrun, $lines, &$this));
 		}
 		$end_msg = "Finished iterating page $this->page of size $this->size";
-		Billrun_Factory::log($end_msg, Zend_log::DEBUG);
+		Billrun_Factory::log($end_msg, Zend_log::INFO);
 		//		Billrun_Factory::dispatcher()->trigger('beforeAggregateSaveLine', array(&$save_data, &$this));
 		// @TODO trigger after aggregate
 		Billrun_Factory::dispatcher()->trigger('afterAggregate', array($this->data, &$this));
