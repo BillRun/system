@@ -26,6 +26,7 @@ class Billrun_Billrun {
 	 * @var int allow billrun to recompute marked line (as long as they have the same billrun_key)
 	 */
 	protected $allowOverride = 0;
+	protected $updateStampChunk = 100000;
 
 	/**
 	 * lines collection
@@ -58,6 +59,9 @@ class Billrun_Billrun {
 		}
 		if (isset($options['allow_override'])) {
 			$this->allowOverride = (int) $options['allow_override'];
+		}
+		if (isset($options['update_stamps_chunk'])) {
+			$this->updateStampChunk = (int) $options['update_stamps_chunk'];
 		}
 		$this->lines = Billrun_Factory::db()->linesCollection();
 	}
@@ -626,7 +630,11 @@ class Billrun_Billrun {
 			Billrun_Factory::log("Updating account $this->aid lines with billrun stamp", Zend_Log::DEBUG);
 //			$updatedLines = array_merge($updatedLines, $data_lines_stamps);
 			asort($updateLinesStamps);
-			$this->lines->update(array('stamp' => array('$in' => $updateLinesStamps)), array('$set' => array('billrun' => $this->billrun_key)), array('multiple' => true));
+			$offset = 0;
+			while (count($stamps_chunk = array_slice($updateLinesStamps, $offset, $this->updateStampChunk))) {
+				$this->lines->update(array('stamp' => array('$in' => $stamps_chunk)), array('$set' => array('billrun' => $this->billrun_key)), array('multiple' => true));
+				$offset += $this->updateStampChunk;
+			}
 			Billrun_Factory::log("Finished updating account $this->aid lines with billrun stamp", Zend_Log::DEBUG);
 		}
 		$this->updateTotals();
