@@ -235,7 +235,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 			Billrun_Factory::dispatcher()->trigger('afterAggregateAccount', array($accid, $account, $account_billrun, $lines, &$this));
 		}
 		if ($billruns_count == count($this->data)) {
-			$end_msg = "Finished iterating page $this->page of size $this->size";
+			$end_msg = "Finished iterating page $this->page of size $this->size. Memory usage is " . memory_get_usage() / 1048576 . " MB";
 			Billrun_Factory::log($end_msg, Zend_log::INFO);
 			$this->sendEndMail($end_msg);
 		}
