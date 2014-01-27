@@ -160,7 +160,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		$billruns_count = 0;
 		foreach ($this->data as $accid => $account) {
 			if ($this->memory_limit > -1 && memory_get_usage() > $this->memory_limit) {
-				Billrun_Factory::log('Customer aggregator memory limit of ' . $this->memory_limit / 1048576 . 'M has reached. Exiting (page: ' . $this->page . ', size: ' . $this->size . ').', Zend_log::INFO);
+				Billrun_Factory::log('Customer aggregator memory limit of ' . $this->memory_limit / 1048576 . 'M has reached. Exiting (page: ' . $this->page . ', size: ' . $this->size . ').', Zend_log::ALERT);
 				break;
 			}
 			Billrun_Factory::dispatcher()->trigger('beforeAggregateAccount', array($accid, $account, &$this));
