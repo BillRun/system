@@ -81,7 +81,7 @@ class Generator_Golancsv extends Billrun_Generator {
 		}
 		$this->accountsFields = array(
 			'billrun_key',
-			'AccountId',
+			'AccountNumber',
 			'XmlIndicator',
 			'TotalChargeVat',
 			'InvoiceNumber',
@@ -98,7 +98,7 @@ class Generator_Golancsv extends Billrun_Generator {
 		);
 		$this->subscribersFields = array(
 			'billrun_key',
-			'AccountId',
+			'AccountNumber',
 			'subscriber_id',
 			'TotalChargeVat',
 			'XmlIndicator',
