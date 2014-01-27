@@ -52,36 +52,36 @@ class Billrun_Sms {
 	 * @return \Billrun_Sms|boolean
 	 */
 	public function send($message, $recipients) {
-		if (empty($this->data['message']) || empty($this->data['recipients'])) {
+		if (empty($message) || empty($recipients)) {
 			Billrun_Factory::log()->log("can not send the sms, there are missing params - txt: " . $this->data['message'] . " recipients: " . print_r($this->data['recipients'], TRUE) . " from: " . $this->data['from'], Zend_Log::WARN);
 			return false;
 		}
 
-		$language = '2';
 		$unicode_text = $this->sms_unicode($message);
-		if (!empty($this->data['message']) && empty($unicode_text)) {
-			$encoded_text = urlencode($this->data['message']);
+		if (!empty($message) && empty($unicode_text)) {
 			$language = '1';
+		} else {
+			$language = '2';
 		}
 
 		// Temporary - make sure is not 23 chars long
-		$text = str_pad($encoded_text, 24, '+');
+		$text = str_pad($message, 24, '+');
 		$period = 120;
 
 		foreach ($recipients as $recipient) {
 			$send_params = array(
 				'message' => $text,
 				'to' => $recipient,
-				'from' => $this->from,
+				'from' => $this->data['from'],
 				'language' => $language,
-				'username' => $this->user,
-				'password' => $this->pwd,
+				'username' => $this->data['user'],
+				'password' => $this->data['pwd'],
 				'acknowledge' => "false",
 				'period' => $period,
 				'channel' => "SRV",
 			);
 
-			$url = $this->provisioning . "?" . http_build_query($send_params);
+			$url = $this->data['provisioning'] . "?" . http_build_query($send_params);
 
 			$sms_result = Billrun_Util::sendRequest($url);
 			$exploded = explode(',', $sms_result);

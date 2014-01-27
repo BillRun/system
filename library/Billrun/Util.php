@@ -166,7 +166,7 @@ class Billrun_Util {
 	public static function sendSms($message, $recipients) {
 		$smser = Billrun_Factory::smser();
 
-		if (empty($recipients)) {
+		if (empty($recipients) || empty($message)) {
 			return FALSE;
 		}
 

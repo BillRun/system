@@ -193,7 +193,7 @@ class Billrun_Factory {
 			self::$smser[$stamp] = new Billrun_Sms($options);
 		}
 		
-		return $sms;
+		return self::$smser[$stamp];
 	}
 
 }

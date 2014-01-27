@@ -59,6 +59,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	 * @return boolean true on success else false
 	 */
 	protected function updateRow($row) {
+            
 		if ($row['source'] == 'api' && $row['type'] == 'refund') {
 			$time = date("YmtHis", $row->get('unified_record_time')->sec);
 		}
@@ -74,7 +75,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			if (!isset($row['subscriber_not_found']) || (isset($row['subscriber_not_found']) && $row['subscriber_not_found'] == false)) {
 				$msg = "Failed  when sending event to subscriber_plan_by_date.rpc.php - sent: " . PHP_EOL . print_r($customer_identification, true) . PHP_EOL . " returned: NULL";
 				$this->sendEmailOnFailure($msg);
-				$this->sendSmsOnFailure("Failed  when sending event to subscriber-plan-by-date.rpc.php, null returned, see email for more details");
+				$this->sendSmsOnFailure("Failed when sending event to subscriber-plan-by-date.rpc.php, null returned, see email for more details");
 
 				// subscriber_not_found:true, update all rows with same subscriber detials
 				$status = true;
