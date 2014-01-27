@@ -30,36 +30,17 @@ class ildsOneWayPlugin extends Billrun_Plugin_BillrunPluginBase {
 		foreach ($data['data'] as $line) {
 			$entity = new Mongodloid_Entity($line);
 			$line = $entity->getRawData();    
-                        $record_types = Billrun_Factory::config()->getConfigValue('016.one_way.identifications');
-                        
-                        $providers = array('992016' => 'ILD_NETV', '993016' => 'ILD_BEZ', '994016' => 'ILD_BEZIL', '995016' => 'ILD_SMILE', '997016' => 'ILD_HOT');
-                        if(in_array($line['record_type'], $record_types['record_type']) && preg_match($record_types['called_number'] ,substr($line['called_number'], 0, 6))) {
+			$record_types = Billrun_Factory::config()->getConfigValue('016.one_way.identifications');
 
-                                $line['charging_start_time'] = substr($line['charging_start_time'], 2);
-                                $line['charging_end_time'] = substr($line['charging_end_time'], 2);                                
-                                $line['prepaid'] = '0';
-                                $line['is_in_glti'] = '0';
-                                $line['origin_carrier'] = $providers[substr($line['called_number'], 0, 6)];
-                                $line['records_type'] = '000';
-                                $line['sampleDurationInSec'] = '1';
-                                
-                                $line['aprice'] = '1.4468'; // HACK ONLY FOR CHECKING !! REMOVE IT ON PRODUCTION -----------------------------------
-                                    
-                                if($line['usagev'] == '0') {
-                                    $line['records_type'] = '005';
-                                }
-                                else if(!$line['arate']) {
-                                    $line['records_type'] = '001';
-                                    $line['sampleDurationInSec'] = '0';
-                                }
-                                
-                                $result = $this->createRow($line);
-                                if(!empty($result)) {
-                                    $str .= $result;
-                                    
-                                    Billrun_Factory::log()->log("line stamp: ". $line['stamp'] ." file: ". $line['file'] ." was inserted to 016 one way process", Zend_Log::INFO);
-                                }
-                        }
+			if(in_array($line['record_type'], $record_types['record_type']) && preg_match($record_types['called_number'] ,substr($line['called_number'], 0, 6))) {
+
+					$result = $this->createRow($line);
+					if(!empty($result)) {
+						$str .= $result;
+
+						Billrun_Factory::log()->log("line stamp: ". $line['stamp'] ." file: ". $line['file'] ." was inserted to 016 one way process", Zend_Log::INFO);
+					}
+			}
 		}
                 
                 if(!empty($str)) {
@@ -78,6 +59,27 @@ class ildsOneWayPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 */
         public function createRow($row) {
 
+			$providers = array('992016' => '013', '993016' => 'ILD_BEZ', '994016' => '019', '995016' => '012', '997016' => 'ILD_HOT');
+			
+			$row['file'] = 'cdrFile:'. $row['file'] .' cdrNb:'.$row['record_number'];
+			$row['charging_start_time'] = substr($row['charging_start_time'], 2);
+			$row['charging_end_time'] = substr($row['charging_end_time'], 2);                                
+			$row['prepaid'] = '0';
+			$row['is_in_glti'] = '0';
+			$row['origin_carrier'] = $providers[substr($row['called_number'], 0, 6)];
+			$row['records_type'] = '000';
+			$row['sampleDurationInSec'] = '1';
+
+			$row['aprice'] = '1.4468'; // HACK ONLY FOR CHECKING !! REMOVE IT ON PRODUCTION -----------------------------------
+
+			if($row['usagev'] == '0') {
+				$row['records_type'] = '005';
+			}
+			else if(!$row['arate']) {
+				$row['records_type'] = '001';
+				$row['sampleDurationInSec'] = '0';
+			}
+								
             $str = '';
             $data_structure = $this->dataStructure();
             foreach ($data_structure as $column => $width) {
@@ -114,7 +116,7 @@ class ildsOneWayPlugin extends Billrun_Plugin_BillrunPluginBase {
         public function createTreatedFile($str) {
                 $fileName = date('Ymd', time());
                 
-		$path = Billrun_Factory::config()->getConfigValue('016_one_way.export.path') . '/' . $fileName . '.txt';
+		$path = Billrun_Factory::config()->getConfigValue('016_one_way.export.path') . '/' . $fileName . '.TXT';
                 
 		if (file_put_contents($path, $str)) {
                     return $fileName;
