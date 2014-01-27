@@ -71,6 +71,12 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	protected $write_stamps_to_file = false;
 
 	/**
+	 * Memory limit in bytes, after which the aggregation is stopped. Set to -1 for no limit.
+	 * @var int 
+	 */
+	protected $memory_limit = -1;
+
+	/**
 	 * @var boolean if $write_stamps_to_file is true, will be set to the stamps files directory
 	 */
 	protected $stamps_dir = null;
@@ -106,6 +112,13 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		if (isset($options['aggregator']['write_stamps_to_file']) && $options['aggregator']['write_stamps_to_file']) {
 			$this->write_stamps_to_file = $options['aggregator']['write_stamps_to_file'];
 			$this->stamps_dir = (isset($options['aggregator']['stamps_dir']) ? $options['aggregator']['stamps_dir'] : getcwd() . '/files/billrun_stamps') . '/' . $this->getStamp() . '/';
+		}
+		if (isset($options['aggregator']['memory_limit_in_mb'])) {
+			if ($options['aggregator']['memory_limit_in_mb'] > -1) {
+				$this->memory_limit = $options['aggregator']['memory_limit_in_mb'] * 1048576;
+			} else {
+				$this->memory_limit = $options['aggregator']['memory_limit_in_mb'];
+			}
 		}
 
 		$this->plans = Billrun_Factory::db()->plansCollection();
@@ -146,6 +159,10 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		$billrun_key = $this->getStamp();
 		$billruns_count = 0;
 		foreach ($this->data as $accid => $account) {
+			if ($this->memory_limit > -1 && memory_get_usage() > $this->memory_limit) {
+				Billrun_Factory::log('Customer aggregator memory limit of ' . $this->memory_limit / 1048576 . 'M has reached. Exiting (page: ' . $this->page . ', size: ' . $this->size . ').', Zend_log::INFO);
+				break;
+			}
 			Billrun_Factory::dispatcher()->trigger('beforeAggregateAccount', array($accid, $account, &$this));
 			Billrun_Factory::log('Current account index: ' . ++$billruns_count, Zend_log::DEBUG);
 			if (!Billrun_Factory::config()->isProd()) {
@@ -217,12 +234,14 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 			Billrun_Factory::log("Finished closing billrun $billrun_key for account $accid", Zend_log::DEBUG);
 			Billrun_Factory::dispatcher()->trigger('afterAggregateAccount', array($accid, $account, $account_billrun, $lines, &$this));
 		}
-		$end_msg = "Finished iterating page $this->page of size $this->size";
-		Billrun_Factory::log($end_msg, Zend_log::INFO);
-		//		Billrun_Factory::dispatcher()->trigger('beforeAggregateSaveLine', array(&$save_data, &$this));
+		if ($billruns_count == count($this->data)) {
+			$end_msg = "Finished iterating page $this->page of size $this->size";
+			Billrun_Factory::log($end_msg, Zend_log::INFO);
+			$this->sendEndMail($end_msg);
+		}
+
 		// @TODO trigger after aggregate
 		Billrun_Factory::dispatcher()->trigger('afterAggregate', array($this->data, &$this));
-		$this->sendEndMail($end_msg);
 	}
 
 	protected function sendEndMail($msg) {
