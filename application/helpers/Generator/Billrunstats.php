@@ -78,6 +78,8 @@ class Generator_Billrunstats extends Billrun_Generator {
 												$flat_breakdown_record['usagev'] = $usage_totals['usagev'];
 												$flat_breakdown_record['cost'] = $this->getFieldVal($usage_totals['cost'], 0);
 												$flat_breakdown_record['count'] = $this->getFieldVal($usage_totals['count'], 1);
+												$this->addFlatRecord($flat_breakdown_record);
+												unset($flat_breakdown_record['_id']);
 											}
 										} else {
 											$flat_breakdown_record['vat'] = $zone_totals['vat'];
@@ -85,6 +87,8 @@ class Generator_Billrunstats extends Billrun_Generator {
 											$flat_breakdown_record['usaget'] = 'flat';
 											$flat_breakdown_record['usagev'] = 1;
 											$flat_breakdown_record['count'] = 1;
+											$this->addFlatRecord($flat_breakdown_record);
+											unset($flat_breakdown_record['_id']);
 										}
 									} else {
 										$flat_breakdown_record['vat'] = $default_vat;
@@ -92,9 +96,9 @@ class Generator_Billrunstats extends Billrun_Generator {
 										$flat_breakdown_record['usaget'] = strpos($flat_breakdown_record['category'], 'charge') === 0 ? 'charge' : 'refund';
 										$flat_breakdown_record['usagev'] = 1;
 										$flat_breakdown_record['count'] = 1;
+										$this->addFlatRecord($flat_breakdown_record);
+										unset($flat_breakdown_record['_id']);
 									}
-									$this->addFlatRecord($flat_breakdown_record);
-									unset($flat_breakdown_record['_id']);
 								}
 							}
 						}
