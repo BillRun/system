@@ -66,8 +66,8 @@ abstract class Billrun_Generator_Csv extends Billrun_Generator {
 			if (!is_array($entity)) {
 				$entity = $entity->getRawData();
 			}
-			foreach ($this->headers as $field_name) {
-				$row_contents.=(isset($entity[$field_name]) ? $entity[$field_name] : "") . $this->separator;
+			foreach ($this->headers as $key => $field_name) {
+				$row_contents.=(isset($entity[$key]) ? $entity[$key] : "") . $this->separator;
 			}
 
 			$file_contents .= trim($row_contents, $this->separator) . PHP_EOL;
