@@ -21,16 +21,16 @@ class Generator_SubscriberSum extends Billrun_Generator_AggregatedCsv {
 	}
 
 	protected function buildHeader() {
-		$this->headers = array('plan', 'total_charge_subs', 'count_subs');
+		$this->headers = array('_id' => 'plan', 'sum' => 'total_charge_subs', 'subs_count' => 'count_subs');
 	}
 
 	protected function buildAggregationQuery() {
 		$match = array(
 			'$match' => array(
 				'billrun_key' => $this->stamp,
-				'current_plan' => array(
-					'$ne' => null,
-				),
+//				'current_plan' => array(
+//					'$ne' => null,
+//				),
 				'next_plan' => array(
 					'$ne' => null,
 				),
