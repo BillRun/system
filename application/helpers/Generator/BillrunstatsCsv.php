@@ -45,22 +45,22 @@ class Generator_BillrunstatsCsv extends Billrun_Generator_Csv {
 
 	protected function buildHeader() {
 		$this->headers = array(
-			'aid',
-			'billrun_key',
-			'sid',
-			'subscriber_status',
-			'current_plan',
-			' next_plan',
-			'sub_before_vat',
-			'day',
-			'plan',
-			'category',
-			'zone',
-			'vat',
-			'usagev',
-			'usaget',
-			'count',
-			'cost'
+			'aid' => 'aid',
+			'billrun_key' => 'billrun_key',
+			'sid' => 'sid',
+			'subscriber_status' => 'subscriber_status',
+			'current_plan' => 'current_plan',
+			'next_plan' => 'next_plan',
+			'sub_before_vat' => 'sub_before_vat',
+			'day' => 'day',
+			'plan' => 'plan',
+			'category' => 'category',
+			'zone' => 'zone',
+			'vat' => 'vat',
+			'usagev' => 'usagev',
+			'usaget' => 'usaget',
+			'count' => 'count',
+			'cost' => 'cost'
 		);
 	}
 
