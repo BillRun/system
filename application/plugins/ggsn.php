@@ -423,6 +423,7 @@ use Billrun_Traits_FileSequenceChecking;
 			}
 			$row = $processor->buildDataRow($bytes);
 			if ($row) {
+				$row['stamp'] = md5($bytes);
 				$processedData['data'][] = $row;
 			}
 			//Billrun_Factory::log()->log( $processor->getParser()->getLastParseLength(),  Zend_Log::DEBUG);
@@ -561,5 +562,6 @@ use Billrun_Traits_FileSequenceChecking;
 		}
 		return $ret;
 	}
+	
 
 }
