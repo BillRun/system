@@ -59,6 +59,7 @@ class Generator_Golanxml extends Billrun_Generator {
 		Billrun_Factory::log()->log('Loading ' . $this->size . ' billrun documents with offset ' . $this->offset, Zend_Log::INFO);
 		$resource = $billrun
 				->query('billrun_key', $this->stamp)
+//				->in('aid', array(2065512))
 				->exists('invoice_id')
 //			->notExists('invoice_file')
 				->cursor()->timeout(-1)
