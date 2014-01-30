@@ -280,11 +280,16 @@ use Billrun_Traits_FileSequenceChecking;
 			$cdrLine['urt'] = new MongoDate(Billrun_Util::dateTimeConvertShortToIso($cdrLine['record_opening_time'], $timeOffset));
 			if (is_array($cdrLine['rating_group'])) {
 				$fbc_uplink_volume = $fbc_downlink_volume = 0;
+				$cdrLine['org_fbc_uplink_volume'] = $cdrLine['fbc_uplink_volume'];
+				$cdrLine['org_fbc_downlink_volume'] =  $cdrLine['fbc_downlink_volume'];
+				$cdrLine['org_rating_group'] = $cdrLine['rating_group'];
+				
 				foreach ($cdrLine['rating_group'] as $key => $rateVal) {
-					if ($rateVal != 10) {
+					if (isset($this->ggsnConfig['rating_groups'][$rateVal]) ) {
 						$fbc_uplink_volume += $cdrLine['fbc_uplink_volume'][$key];
 						$fbc_downlink_volume += $cdrLine['fbc_downlink_volume'][$key];
-					}
+						
+					}					
 				}
 				$cdrLine['fbc_uplink_volume'] = $fbc_uplink_volume;
 				$cdrLine['fbc_downlink_volume'] = $fbc_downlink_volume;
@@ -418,6 +423,7 @@ use Billrun_Traits_FileSequenceChecking;
 			}
 			$row = $processor->buildDataRow($bytes);
 			if ($row) {
+				$row['stamp'] = md5($bytes);
 				$processedData['data'][] = $row;
 			}
 			//Billrun_Factory::log()->log( $processor->getParser()->getLastParseLength(),  Zend_Log::DEBUG);
@@ -556,5 +562,6 @@ use Billrun_Traits_FileSequenceChecking;
 		}
 		return $ret;
 	}
+	
 
 }
