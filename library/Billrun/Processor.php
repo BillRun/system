@@ -195,7 +195,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 				Billrun_Factory::log()->log("Can't create backup path or is not a directory " . $path, Zend_Log::WARN);
 				return FALSE;
 			}
-			
+
 			// in case the path exists but it's a file
 			if (!is_dir($path)) {
 				Billrun_Factory::log()->log("The path " . $path . " is not directory", Zend_Log::WARN);
@@ -715,7 +715,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 	public function setQueueRowStep($stamp, $step) {
 		$this->queue_data[$stamp]['calc_name'] = $step;
 	}
-	
+
 	/**
 	 * get queue row step
 	 * 
@@ -726,7 +726,6 @@ abstract class Billrun_Processor extends Billrun_Base {
 	public function getQueueRowStep($stamp) {
 		return $this->queue_data[$stamp]['calc_name'];
 	}
-
 
 	/**
 	 * unset row from the queue to disable it from inserted to DB queue collection

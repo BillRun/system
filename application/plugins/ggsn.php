@@ -19,6 +19,7 @@ use Billrun_Traits_FileSequenceChecking;
 	const MAX_CHUNKLENGTH_LENGTH = 4096;
 	const FILE_READ_AHEAD_LENGTH = 16384;
 	const RECORD_PADDING = 8;
+
 	/**
 	 * plugin name
 	 *
@@ -265,7 +266,7 @@ use Billrun_Traits_FileSequenceChecking;
 		}
 
 		$asnObject = Asn_Base::parseASNString($data);
-		$parser->setLastParseLength( $asnObject->getDataLength() + self::RECORD_PADDING );
+		$parser->setLastParseLength($asnObject->getDataLength() + self::RECORD_PADDING);
 
 		$type = $asnObject->getType();
 		$cdrLine = false;
@@ -281,15 +282,14 @@ use Billrun_Traits_FileSequenceChecking;
 			if (is_array($cdrLine['rating_group'])) {
 				$fbc_uplink_volume = $fbc_downlink_volume = 0;
 				$cdrLine['org_fbc_uplink_volume'] = $cdrLine['fbc_uplink_volume'];
-				$cdrLine['org_fbc_downlink_volume'] =  $cdrLine['fbc_downlink_volume'];
+				$cdrLine['org_fbc_downlink_volume'] = $cdrLine['fbc_downlink_volume'];
 				$cdrLine['org_rating_group'] = $cdrLine['rating_group'];
-				
+
 				foreach ($cdrLine['rating_group'] as $key => $rateVal) {
-					if (isset($this->ggsnConfig['rating_groups'][$rateVal]) ) {
+					if (isset($this->ggsnConfig['rating_groups'][$rateVal])) {
 						$fbc_uplink_volume += $cdrLine['fbc_uplink_volume'][$key];
 						$fbc_downlink_volume += $cdrLine['fbc_downlink_volume'][$key];
-						
-					}					
+					}
 				}
 				$cdrLine['fbc_uplink_volume'] = $fbc_uplink_volume;
 				$cdrLine['fbc_downlink_volume'] = $fbc_downlink_volume;
@@ -312,12 +312,12 @@ use Billrun_Traits_FileSequenceChecking;
 		if ($this->getName() != $type) {
 			return FALSE;
 		}
-		$header['line_count'] = reset(unpack("N", substr($data,0x12,4)));
-		$header['next_file_number'] = reset(unpack("N", substr($data,0x16,4)));
+		$header['line_count'] = reset(unpack("N", substr($data, 0x12, 4)));
+		$header['next_file_number'] = reset(unpack("N", substr($data, 0x16, 4)));
 		//Billrun_Factory::log(print_r($header,1));
-		
-		$header['raw'] = utf8_encode(base64_encode($data));// Is  this  needed?
-		
+
+		$header['raw'] = utf8_encode(base64_encode($data)); // Is  this  needed?
+
 		return $header;
 	}
 
@@ -338,8 +338,8 @@ use Billrun_Traits_FileSequenceChecking;
 		if ($this->getName() != $type) {
 			return FALSE;
 		}
-		
-		$trailer = utf8_encode(base64_encode($data));// Is  this  needed?
+
+		$trailer = utf8_encode(base64_encode($data)); // Is  this  needed?
 
 		return $trailer;
 	}
@@ -414,11 +414,11 @@ use Billrun_Traits_FileSequenceChecking;
 		$processedData['header'] = $processor->buildHeader(fread($fileHandle, self::HEADER_LENGTH));
 
 		$bytes = null;
-		while(true) {
+		while (true) {
 			if (!feof($fileHandle) && !isset($bytes[self::MAX_CHUNKLENGTH_LENGTH])) {
 				$bytes .= fread($fileHandle, self::FILE_READ_AHEAD_LENGTH);
 			}
-			if(!isset($bytes[self::HEADER_LENGTH])) {
+			if (!isset($bytes[self::HEADER_LENGTH])) {
 				break;
 			}
 			$row = $processor->buildDataRow($bytes);
@@ -429,7 +429,7 @@ use Billrun_Traits_FileSequenceChecking;
 			//Billrun_Factory::log()->log( $processor->getParser()->getLastParseLength(),  Zend_Log::DEBUG);
 			$advance = $processor->getParser()->getLastParseLength();
 			$bytes = substr($bytes, $advance <= 0 ? 1 : $advance);
-		} 
+		}
 
 		$processedData['trailer'] = $processor->buildTrailer($bytes);
 
@@ -562,6 +562,5 @@ use Billrun_Traits_FileSequenceChecking;
 		}
 		return $ret;
 	}
-	
 
 }

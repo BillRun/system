@@ -35,8 +35,8 @@ class Generator_BillrunstatsCsv extends Billrun_Generator_Csv {
 	public function load() {
 
 		$this->data = $this->billrunstats_coll
-						->query('billrun_key', $this->stamp)
-						->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
+				->query('billrun_key', $this->stamp)
+				->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
 
 		Billrun_Factory::log()->log("generator entities loaded: " . $this->data->count(), Zend_Log::INFO);
 

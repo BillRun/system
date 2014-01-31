@@ -89,7 +89,7 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 				$line = $entity->getRawData();
 			}
 		}
-		
+
 		$data['header']['garbage_lines'][] = array(
 			'reason' => 'usagev0',
 			'count' => $garbage_counter,

@@ -202,7 +202,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		}
 		//Billrun_Factory::log()->log("stamps : ".print_r($stamps,1),Zend_Log::DEBUG);
 		$lines = Billrun_Factory::db()->linesCollection()
-						->query()->in('stamp', $stamps)->cursor();
+				->query()->in('stamp', $stamps)->cursor();
 
 		if ($this->autosort) {
 			$lines->sort(array('urt' => 1));
@@ -219,7 +219,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	 */
 	protected function pullLine($queue_line) {
 		$line = Billrun_Factory::db()->linesCollection()->query('stamp', $queue_line['stamp'])
-						->cursor()->current();
+				->cursor()->current();
 		if ($line->isEmpty()) {
 			return false;
 		}

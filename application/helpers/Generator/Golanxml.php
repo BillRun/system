@@ -58,14 +58,14 @@ class Generator_Golanxml extends Billrun_Generator {
 		$billrun = Billrun_Factory::db()->billrunCollection();
 		Billrun_Factory::log()->log('Loading ' . $this->size . ' billrun documents with offset ' . $this->offset, Zend_Log::INFO);
 		$resource = $billrun
-				->query('billrun_key', $this->stamp)
+			->query('billrun_key', $this->stamp)
 //				->in('aid', array(2065512))
-				->exists('invoice_id')
+			->exists('invoice_id')
 //			->notExists('invoice_file')
-				->cursor()->timeout(-1)
-				->sort(array("aid" => 1))
-				->skip($this->offset * $this->size)
-				->limit($this->size);
+			->cursor()->timeout(-1)
+			->sort(array("aid" => 1))
+			->skip($this->offset * $this->size)
+			->limit($this->size);
 
 		// @TODO - there is issue with the timeout; need to be fixed
 		//         meanwhile, let's pull the lines right after the query
@@ -152,8 +152,8 @@ class Generator_Golanxml extends Billrun_Generator {
 					$subscriber_lines = $this->get_lines($subscriber);
 				} else {
 					$func = function($line) use ($sid) {
-								return $line['sid'] == $sid;
-							};
+						return $line['sid'] == $sid;
+					};
 					$subscriber_lines = array_filter($lines, $func);
 				}
 				foreach ($subscriber_lines as $line) {

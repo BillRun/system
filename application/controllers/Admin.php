@@ -118,7 +118,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		foreach ($ids as $id) {
 			$params['_id']['$in'][] = new MongoId((string) $id);
 		}
-		
+
 		// this is just insurance that the loop worked fine
 		if (empty($params)) {
 			return;
