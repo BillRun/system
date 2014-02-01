@@ -539,6 +539,7 @@ class AdminController extends Yaf_Controller_Abstract {
 				default:
 					break;
 			}
+			// TODO: decoupling to config of fields
 			switch ($operators[$i]) {
 				case 'starts_with':
 					$operators[$i] = '$regex';

@@ -3,6 +3,7 @@
 class Lines {
 
 	public static function getFilterRow($key = null, $type = null, $operator = null, $value = null) {
+		// @TODO: move to config
 		$operators = array(
 			'equals' => 'Equals',
 			'ne' => 'Not equals',
@@ -14,21 +15,13 @@ class Lines {
 			'ends_with' => 'Ends with',
 			'like' => 'Like',
 		);
-		$keys = array(
-			'type' => 'Type',
-			'called_number' => 'Called number',
-			'calling_number' => 'Calling number',
-			'aprice' => 'Aprice',
-			'usagev' => 'Usagev',
-			'usaget' => 'Usaget',
-			'file' => 'File name',
-		);
 
 		$types = Billrun_Factory::config()->getConfigValue('admin.advancedOptions.types');
+		$keys = array_keys($types);
 		$output = "<div class=\"controls controls-row\">
                                <select onchange='add_type(this, " . json_encode($types) . ")' name=\"manual_key[]\" class=\"span2\">";
-		foreach ($keys as $manual_key => $manual_key_display) {
-			$output.= "<option value=\"" . $manual_key . "\"" . ($key == $manual_key ? " selected" : "") . ">" . $manual_key_display . "</option>";
+		foreach ($keys as $manual_key) {
+			$output.= "<option value=\"" . $manual_key . "\"" . ($key == $manual_key ? " selected" : "") . ">" . $manual_key . "</option>";
 		}
 		$output.= "</select>
                                 <select name=\"manual_operator[]\" class=\"span2\">";
