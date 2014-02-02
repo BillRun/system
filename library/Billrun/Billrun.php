@@ -613,13 +613,13 @@ class Billrun_Billrun {
 	 * @return array the stamps of the lines used to create the billrun
 	 */
 	public function addLines($update_lines = false, $start_time = 0, $flat_lines = array()) {
-		Billrun_Factory::log()->log("Querying account " . $this->aid . " for lines...", Zend_Log::DEBUG);
+		Billrun_Factory::log()->log("Querying account " . $this->aid . " for lines...", Zend_Log::INFO);
 		$account_lines = $this->getAccountLines($this->aid, $start_time, false);
 //		Billrun_Factory::log()->log("Found " . count($account_lines) . " lines.", Zend_Log::DEBUG);
 		Billrun_Factory::log("Processing account Lines $this->aid");
 		$updatedLines = array_merge($this->processLines($account_lines), $this->processLines($flat_lines));
 		$updateLinesStamps = array_keys($updatedLines);
-		Billrun_Factory::log("Finished processing account $this->aid lines. Total: " . count($updatedLines), Zend_log::DEBUG);
+		Billrun_Factory::log("Finished processing account $this->aid lines. Total: " . count($updatedLines), Zend_log::INFO);
 //		Billrun_Factory::log()->log("Querying subscriber " . $sid . " for ggsn lines...", Zend_Log::DEBUG);
 //		$subscriber_aggregated_data = $this->getSubscriberDataLines($sid, $start_time);
 //		Billrun_Factory::log()->log("Finished querying subscriber " . $sid . " for ggsn lines", Zend_Log::DEBUG);
@@ -627,7 +627,7 @@ class Billrun_Billrun {
 //		$data_lines_stamps = $this->updateAggregatedData($sid, $subscriber_aggregated_data);
 //		Billrun_Factory::log("Finished processing data lines for subscriber $sid", Zend_Log::DEBUG);
 		if ($update_lines) {
-			Billrun_Factory::log("Updating account $this->aid lines with billrun stamp", Zend_Log::DEBUG);
+			Billrun_Factory::log("Updating account $this->aid lines with billrun stamp", Zend_Log::INFO);
 //			$updatedLines = array_merge($updatedLines, $data_lines_stamps);
 			asort($updateLinesStamps);
 			$offset = 0;
@@ -635,7 +635,7 @@ class Billrun_Billrun {
 				$this->lines->update(array('stamp' => array('$in' => $stamps_chunk)), array('$set' => array('billrun' => $this->billrun_key)), array('multiple' => true));
 				$offset += $this->updateStampChunk;
 			}
-			Billrun_Factory::log("Finished updating account $this->aid lines with billrun stamp", Zend_Log::DEBUG);
+			Billrun_Factory::log("Finished updating account $this->aid lines with billrun stamp", Zend_Log::INFO);
 		}
 		$this->updateTotals();
 		return $updatedLines;
@@ -715,9 +715,9 @@ class Billrun_Billrun {
 			'aid' => 1,
 			'urt' => 1,
 		);
-		Billrun_Factory::log()->log("Querying for account " . $aid . " lines", Zend_Log::DEBUG);
+		Billrun_Factory::log()->log("Querying for account " . $aid . " lines", Zend_Log::INFO);
 		$cursor = $this->lines->query($query)->cursor()->sort($sort)->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED)->hint($hint);
-		Billrun_Factory::log()->log("Finished querying for account " . $aid . " lines", Zend_Log::DEBUG);
+		Billrun_Factory::log()->log("Finished querying for account " . $aid . " lines", Zend_Log::INFO);
 //		$results = array();
 //		Billrun_Factory::log()->log("Saving account " . $aid . " lines to array", Zend_Log::DEBUG);
 //		foreach ($cursor as $entity) {
