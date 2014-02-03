@@ -7,7 +7,8 @@
  */
 
 /**
- * Fraud deposit plugin
+ * Wholesale line archiving plugin
+ * (TODO unify  this with  archive customer)
  *
  * @package  Application
  * @subpackage Plugins
@@ -29,6 +30,23 @@ class archiveWholesalePlugin extends Billrun_Plugin_BillrunPluginBase {
 	protected $dataWholesale = array();
 
 	/**
+	 * Limit  the  amount of line to handle in a single run.
+	 * @var int (default to 3,000,000)
+	 */
+	protected $limit = 5000000;
+
+	/**
+	 * this variable hold the time to start archiving  from.
+	 * @var type 
+	 */
+	protected $archvingHorizion = '-2 months';
+
+	public function __construct() {
+		$this->limit = Billrun_Factory::config()->getConfigValue('archive.wholesale.limit', $this->limit);
+		$this->archvingHorizion = Billrun_Factory::config()->getConfigValue('archive.wholesale.archiveFrom', $this->archvingHorizion);
+	}
+
+	/**
 	 * method to collect data which need to be handle by event
 	 */
 	public function handlerCollect($options) {
@@ -36,15 +54,15 @@ class archiveWholesalePlugin extends Billrun_Plugin_BillrunPluginBase {
 			return FALSE;
 		}
 
-		Billrun_Factory::log()->log("Collect archive - wholesale line that older then 2 monthes", Zend_Log::INFO);
+		Billrun_Factory::log()->log("Collect archive - wholesale line that older then {$this->archvingHorizion}", Zend_Log::INFO);
 		$lines = Billrun_Factory::db()->linesCollection();
 
 		$results = $lines->query(array(
-			'urt' => array('$lte' => new MongoDate(strtotime('-2 months'))), //TODO  move this to configuration
-			'arate' => false,
-			));
+				'urt' => array('$lte' => new MongoDate(strtotime($this->archvingHorizion))), //TODO  move this to configuration
+				'arate' => false,
+			))->cursor()->limit($this->limit);
 
-		Billrun_Factory::log()->log("archive found " . $results->cursor()->count() . " lines", Zend_Log::INFO);
+		Billrun_Factory::log()->log("archive found " . $results->count() . " lines", Zend_Log::INFO);
 		return $results;
 	}
 
@@ -68,13 +86,18 @@ class archiveWholesalePlugin extends Billrun_Plugin_BillrunPluginBase {
 		foreach ($items as $item) {
 			$current = $item->getRawData();
 			$options['w'] = 1;
-			$insertResult = $archive->insert($current, $options);
+			try {
+				$insertResult = $archive->insert($current, $options);
 
-			if ($insertResult['ok'] == 1) {
-				Billrun_Factory::log()->log("line with the stamp: " . $current['stamp'] . " inserted to the archive", Zend_Log::INFO);
-				$this->dataWholesale[] = $current;
-			} else {
-				Billrun_Factory::log()->log("Failed insert line with the stamp: " . $current['stamp'] . " to the archive", Zend_Log::ERR);
+				if ($insertResult['ok'] == 1) {
+					Billrun_Factory::log()->log("line with the stamp: " . $current['stamp'] . " inserted to the archive", Zend_Log::INFO);
+					$this->dataWholesale[] = $current;
+				} else {
+					Billrun_Factory::log()->log("Failed insert line with the stamp: " . $current['stamp'] . " to the archive", Zend_Log::ERR);
+				}
+			} catch (Exception $e) {
+				Billrun_Factory::log()->log("Failed insert line with the stamp: " . $current['stamp'] . " to the archive got Exception : " . $e->getCode() . " : " . $e->getMessage(), Zend_Log::ERR);
+				if ($e->getCode() == "11000") {	$this->dataWholesale[] = $current;	}
 			}
 		}
 		return TRUE;
@@ -95,7 +118,11 @@ class archiveWholesalePlugin extends Billrun_Plugin_BillrunPluginBase {
 			$lines = Billrun_Factory::db()->linesCollection();
 
 			foreach ($this->dataWholesale as $item) {
-				$result = $lines->remove($item);
+				try {
+					$result = $lines->remove($item);
+				} catch (Exception $e) {
+					Billrun_Factory::log()->log("Failed to remove line with the stamp: " . $item['stamp'] . " to the archive got Exception : " . $e->getCode() . " : " . $e->getMessage(), Zend_Log::ERR);
+				}
 			}
 		}
 		return TRUE;
