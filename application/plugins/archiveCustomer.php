@@ -40,7 +40,7 @@ class archiveCustomerPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$lines = Billrun_Factory::db()->linesCollection();
                 
                 $results = $lines->query(array(
-					'urt' => array('$lte' => new MongoDate (strtotime('-3 months'))),
+					'urt' => array('$lte' => new MongoDate (strtotime('-3 months'))), //TODO  move this  to configuration
                                         'billrun' => array('$exists' => true, '$ne' => '000000'),
                 ));
                                 

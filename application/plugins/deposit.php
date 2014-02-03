@@ -75,7 +75,7 @@ class depositPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * method to collect data which need to be handle by event
 	 */
 	public function handlerCollect($options) {
-                if( $options['type'] != 'roaming') { 
+		if( $options['type'] != 'roaming') { 
                     return FALSE; 
 		}
 		Billrun_Factory::log()->log("Collect deposits fraud (deposits plugin)", Zend_Log::INFO);
