@@ -14,6 +14,8 @@
  */
 abstract class Billrun_Receiver extends Billrun_Base {
 
+	use Billrun_Traits_FileActions;
+	
 	/**
 	 * Type of object
 	 *

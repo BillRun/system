@@ -12,8 +12,7 @@
 class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plugin_Interface_IParser, Billrun_Plugin_Interface_IProcessor {
 
 	use Billrun_Traits_AsnParsing;
-
-use Billrun_Traits_FileSequenceChecking;
+	use Billrun_Traits_FileSequenceChecking;
 
 	const HEADER_LENGTH = 54;
 	const MAX_CHUNKLENGTH_LENGTH = 4096;
@@ -30,26 +29,6 @@ use Billrun_Traits_FileSequenceChecking;
 		$this->ggsnConfig = (new Yaf_Config_Ini(Billrun_Factory::config()->getConfigValue('ggsn.config_path')))->toArray();
 		$this->initParsing();
 		$this->addParsingMethods();
-	}
-
-	/**
-	 * back up retrived files that were processed to a third patry path.
-	 * @param \Billrun_Processor $processor the processor instace contain the current processed file data. 
-	 */
-	public function afterProcessorStore(\Billrun_Processor $processor) {
-		if ($processor->getType() != $this->getName()) {
-			return;
-		}
-		$path = Billrun_Factory::config()->getConfigValue('ggsn.thirdparty.backup_path', false, 'string');
-		if (!$path)
-			return;
-		if ($processor->retrievedHostname) {
-			$path = $path . DIRECTORY_SEPARATOR . $processor->retrievedHostname;
-		}
-		Billrun_Factory::log()->log("Saving  file to third party at : $path", Zend_Log::INFO);
-		if (!$processor->backupToPath($path, true)) {
-			Billrun_Factory::log()->log("Couldn't  save file to third patry path at : $path", Zend_Log::ERR);
-		}
 	}
 
 	/////////////////////////////////////////  Alerts /////////////////////////////////////////
@@ -105,6 +84,18 @@ use Billrun_Traits_FileSequenceChecking;
 			return;
 		}
 		$this->checkFilesSeq($filepaths, $hostname);
+		
+		$path = Billrun_Factory::config()->getConfigValue($this->getName().'.thirdparty.backup_path', false, 'string');
+		if (!$path)	return;
+		if ($hostname) {
+			$path = $path . DIRECTORY_SEPARATOR . $hostname;
+		}
+		Billrun_Factory::log()->log("Saving files to third party at : $path", Zend_Log::INFO);
+		foreach ($filepaths as $filePath) {
+			if (!$receiver->backupToPath($filePath, $path, true , true)) {
+				Billrun_Factory::log()->log("Couldn't save file $filePath to third patry path at : $path", Zend_Log::ERR);
+			}
+		}
 	}
 
 	/**

@@ -31,26 +31,6 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 		$this->nsnConfig = (new Yaf_Config_Ini(Billrun_Factory::config()->getConfigValue('nsn.config_path')))->toArray();
 	}
 
-	/**
-	 * back up retrived files that were processed to a third patry path.
-	 * @param \Billrun_Processor $processor the processor instace contain the current processed file data. 
-	 */
-	public function afterProcessorStore(\Billrun_Processor $processor) {
-		if ($processor->getType() != $this->getName()) {
-			return;
-		}
-		$path = Billrun_Factory::config()->getConfigValue($this->getName() . '.thirdparty.backup_path', false, 'string');
-		if (!$path)
-			return;
-		if ($processor->retrievedHostname) {
-			$path = $path . DIRECTORY_SEPARATOR . $processor->retrievedHostname;
-		}
-		Billrun_Factory::log()->log("Saving  file to third party at : $path", Zend_Log::DEBUG);
-		if (!$processor->backupToPath($path, true)) {
-			Billrun_Factory::log()->log("Couldn't  save file to third patry path at : $path", Zend_Log::ERR);
-		}
-	}
-
 	/////////////////////////////////////////////// Reciver //////////////////////////////////////
 
 	/**
@@ -67,8 +47,8 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 	}
 
 	/**
-	 * (dispatcher hook)
-	 * Check recieved file sequences
+	 * (dispatcher hook) 
+	 * Check recieved file sequences and back them to a 3rd party.
 	 * @param type $receiver
 	 * @param type $filepaths
 	 * @param type $hostname
@@ -79,6 +59,19 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 			return;
 		}
 		$this->checkFilesSeq($filepaths, $hostname);
+		
+		$path = Billrun_Factory::config()->getConfigValue($this->getName().'.thirdparty.backup_path', false, 'string');
+		if (!$path)	return;
+		if ($hostname) {
+			$path = $path . DIRECTORY_SEPARATOR . $hostname;
+		}
+		Billrun_Factory::log()->log("Saving files to third party at : $path", Zend_Log::INFO);
+		foreach ($filepaths as $filePath) {
+			if (!$receiver->backupToPath($filePath, $path, true , true)) {
+				Billrun_Factory::log()->log("Couldn't save file $filePath to third patry path at : $path", Zend_Log::ERR);
+			}
+		}
+		
 	}
 
 	/**
