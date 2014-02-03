@@ -6,6 +6,8 @@ require_once '../application/helpers/Admin/Lines.php';
 <div class="toolbar">
 	<form id="search-criteria" action="" method="POST" class="form-vertical">
 		<?php
+//		print_R($this->filter_fields_order);
+//		print_R($this->filter_fields);die;
 		if (is_array($this->filter_fields_order) && is_array($this->filter_fields)) {
 			foreach ($this->filter_fields_order as $row_fields) {
 				echo "<div class=\"control-group\">
@@ -59,6 +61,7 @@ require_once '../application/helpers/Admin/Lines.php';
 					echo Lines::getFilterRow(); // add first manual filter on load
 				}
 				echo "</div>";
+			elseif (strtolower($this->title) == 'rates') :
 			endif;
 
 			if (is_array($this->sort_fields)) {

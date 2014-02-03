@@ -202,7 +202,7 @@ class TabledateModel extends TableModel {
 
 	public function getFilterFieldsOrder() {
 		$filter_field_order = array(
-			0 => array(
+			array(
 				'date' => array(
 					'width' => 2,
 				),

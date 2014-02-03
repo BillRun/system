@@ -93,6 +93,9 @@ class RatesModel extends TabledateModel {
 	public function getTableColumns() {
 		$columns = array(
 			'key' => 'Key',
+			't' => 'Type',
+			'unit' => 'Unit',
+			'tprice' => 'Price',
 			'from' => 'From',
 			'to' => 'To',
 			'_id' => 'Id',
@@ -106,5 +109,28 @@ class RatesModel extends TabledateModel {
 		);
 		return array_merge($sort_fields, parent::getSortFields());
 	}
+
+	/**
+	 * Get the data resource
+	 * 
+	 * @return Mongo Cursor
+	 */
+	public function getData($filter_query = array()) {
+		$cursor = $this->collection->query($filter_query)->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
+		$this->_count = $cursor->count();
+		$resource = $cursor->sort($this->sort)->skip($this->offset())->limit($this->size);
+		$ret = array();
+		foreach ($resource as $item) {
+			if ($item->get('rates')) {
+				foreach($item->get('rates') as $key => $rate) {
+					$ret[] = new Mongodloid_Entity(array_merge($item->getRawData(), array('t' => $key, 'tprice' => $rate['rate'][0]['price']), $rate));
+				}
+			} else {
+				$ret[] = $item;
+			}
+		}
+		return $ret;
+	}
+
 
 }
