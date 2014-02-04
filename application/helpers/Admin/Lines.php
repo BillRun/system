@@ -56,16 +56,16 @@ class Lines {
 	public static function getCsvFile($params) {
 
 		$data_output = array();
-		$daperator = ',';
+		$separator = ',';
 		$c = $params['offset'];
 
-		$data_output[] = '#' . $daperator;
+		$data_output[] = '#' . $separator;
 		foreach ($params['columns'] as $value) {
-			$data_output[] = $value . $daperator;
+			$data_output[] = $value . $separator;
 		}
 		$data_output[] = PHP_EOL;
 		foreach ($params['data'] as $item) {
-			$data_output[] = '#' . ($c + 1) . $daperator;
+			$data_output[] = '#' . ($c + 1) . $separator;
 			$c++;
 			foreach ($params['columns'] as $h => $columnName) {
 				$data = $item->get($h);
@@ -86,13 +86,13 @@ class Lines {
 						$timsetamp = strtotime($time, $timsetamp);
 						$zend_date = new Zend_Date($timsetamp);
 						$zend_date->setTimezone('UTC');
-						$data_output[] = $zend_date->toString("d/M/Y H:m:s") . $item['tzoffset'] . $daperator;
+						$data_output[] = $zend_date->toString("d/M/Y H:m:s") . $item['tzoffset'] . $separator;
 					} else {
 						$zend_date = new Zend_Date($data->sec);
-						$data_output[] = $zend_date->toString("d/M/Y H:m:s") . $daperator;
+						$data_output[] = $zend_date->toString("d/M/Y H:m:s") . $separator;
 					}
 				} else {
-					$data_output[] = $data . $daperator;
+					$data_output[] = $data . $separator;
 				}
 			}
 			$data_output[] = PHP_EOL;
