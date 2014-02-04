@@ -74,7 +74,6 @@ class Lines {
 					// TODO: move he_IL to config 
 					if (!empty($item["tzoffset"])) {
 						// TODO change this to regex
-						$timsetamp = $item['urt']->sec;
 						$tzoffset = $item['tzoffset'];
 						$sign = substr($tzoffset, 0, 1);
 						$hours = substr($tzoffset, 1, 2);
@@ -83,7 +82,7 @@ class Lines {
 						if ($sign == "-") {
 							$time .= ' ago';
 						}
-						$timsetamp = strtotime($time, $timsetamp);
+						$timsetamp = strtotime($time, $item['urt']->sec);
 						$zend_date = new Zend_Date($timsetamp);
 						$zend_date->setTimezone('UTC');
 						$data_output[] = $zend_date->toString("d/M/Y H:m:s") . $item['tzoffset'] . $separator;
