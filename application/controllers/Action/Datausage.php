@@ -41,7 +41,13 @@ class DatausageAction extends Action_Base {
 		$balances = new BalancesModel(array('size' => Billrun_Factory::config()->getConfigValue('balances.accounts.limit', 50000)));
 		$results = $balances->getBalancesVolume($request['plan'], $request['data_usage'], $request['from_account_id'], $request['to_account_id'], $request['billrun']);
 		if (empty($results)) {
-			Billrun_Factory::log()->log('Some error happen, no result, received parameters: ' . print_r($request, true), Zend_Log::ERR);
+			$msg = 'No result, received parameters: ' . print_r($request, true);
+			Billrun_Factory::log()->log('No result, received parameters: ' . print_r($request, true), Zend_Log::ERR);
+			$this->getController()->setOutput(array(array(
+					'status' => 0,
+					'desc' => 'failed',
+					'output' => $msg,
+			)));
 			return;
 		}
 

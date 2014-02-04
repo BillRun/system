@@ -295,5 +295,15 @@ class Billrun_Util {
 		//sen email
 		return $mailer->send();
 	}
+	
+	/**
+	 * Get an array field value or FALSE/Default value if the key  doesn't  exists in the array.
+	 * @param $field an array field
+	 * @param $default (Optional) the value to return if  the field  doesn't  exist in the array
+	 * @return the value in the field or the default value if the field doesn't exist.
+	 */
+	static public function getArrVal(&$field,$default =FALSE) {
+		return isset($field) ?  $field : $default;
+	}
 
 }
