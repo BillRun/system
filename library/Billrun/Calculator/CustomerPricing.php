@@ -241,6 +241,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @return mixed array with the pricing data on success, false otherwise
 	 */
 	protected function updateSubscriberBalance($row, $billrun_key, $usage_type, $rate, $volume) {
+		Billrun_Factory::dispatcher()->trigger('beforeUpdateSubscriberBalance', array($row, $billrun_key, $usage_type, $rate, $volume, $this));
 		$plan = Billrun_Factory::plan(array('name' => $row['plan'], 'time' => $row['urt']->sec, 'disableCache' => true));
 		$plan_ref = $plan->createRef();
 		if (is_null($plan_ref)) {
@@ -256,6 +257,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				$pricingData = $this->getLinePricingData($volume, $usage_type, $rate, $balance);
 				$pricingData['usagesb'] = $balance['balance']['totals'][$this->getUsageKey($counters)]['usagev'];
 			} else {
+				$balance = null;
 				$pricingData = array($this->pricingField => 0);
 			}
 		} else {
@@ -317,6 +319,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			Billrun_Factory::log()->log("Line with stamp " . $row['stamp'] . " was written to balance " . $billrun_key . " for subscriber " . $row['sid'], Zend_Log::DEBUG);
 			$row['tx_saved'] = true; // indication for transaction existence in balances. Won't & shouldn't be saved to the db.
 		}
+		Billrun_Factory::dispatcher()->trigger('afterUpdateSubscriberBalance', array($row, $balance, $usage_type, $rate, $volume, $this));
 		return $pricingData;
 	}
 
