@@ -123,12 +123,12 @@ class LinesModel extends TableModel {
 			'type' => 'Type',
 			'aid' => 'Account id',
 			'sid' => 'Subscriber id',
-			'usaget' => 'Usage type',
-			'usagev' => 'Amount',
 			'calling_number' => 'Calling Number',
 			'called_number' => 'Called Number',
 			'plan' => 'Plan',
-			'aprice' => 'Price',
+			'usaget' => 'Usage type',
+			'usagev' => 'Usage volume',
+			'aprice' => 'Charge',
 			'billrun' => 'Billrun',
 			'urt' => 'Time',
 //			'_id' => 'Id',
@@ -142,13 +142,15 @@ class LinesModel extends TableModel {
 
 	public function getFilterFields() {
 		$months = 6;
-		$billruns = array();
-		$billruns['000000'] = 'Current billrun';
+		$previous_billruns = array();
 		for ($i = 1; $i <= $months; $months--) {
 			$date = date("Ym", strtotime("-$months month"));
-			$billruns["$date"] = $date;
+			$previous_billruns["$date"] = $date;
 		}
-		krsort($billruns);
+		krsort($previous_billruns);
+		$current_billrun_key = '000000';
+		$current_billrun = array($current_billrun_key => 'Current billrun');
+		$billruns = $current_billrun + $previous_billruns;
 
 		$filter_fields = array(
 			'aid' => array(
@@ -199,7 +201,7 @@ class LinesModel extends TableModel {
 				'comparison' => '$in',
 				'display' => 'Billrun',
 				'values' => $billruns,
-				'default' => "000000",
+				'default' => $current_billrun_key,
 			),
 		);
 		return array_merge($filter_fields, parent::getFilterFields());

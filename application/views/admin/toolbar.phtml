@@ -6,6 +6,8 @@ require_once '../application/helpers/Admin/Lines.php';
 <div class="toolbar">
 	<form id="search-criteria" action="" method="POST" class="form-vertical">
 		<?php
+//		print_R($this->filter_fields_order);
+//		print_R($this->filter_fields);die;
 		if (is_array($this->filter_fields_order) && is_array($this->filter_fields)) {
 			foreach ($this->filter_fields_order as $row_fields) {
 				echo "<div class=\"control-group\">
@@ -19,6 +21,12 @@ require_once '../application/helpers/Admin/Lines.php';
 					} else if ($filter_field['input_type'] == 'number') {
 						echo "&nbsp;<label class=\"control-label\" for=\"" . $filter_field['key'] . "\">" . $filter_field['display'] . "</label>
 								<input id=\"" . $filter_field['key'] . "\" class=\"span" . $field_view['width'] . "\" name=\"" . $filter_field['key'] . "\" type=\"text\" value=\"" . (isset($this->session->$filter_field['key']) ? $this->session->$filter_field['key'] : $filter_field['default']) . "\">";
+					} else if ($filter_field['input_type'] == 'text') {
+						echo "&nbsp;<label class=\"control-label\" for=\"" . $filter_field['key'] . "\">" . $filter_field['display'] . "</label>
+								<input id=\"" . $filter_field['key'] . "\" class=\"span" . $field_view['width'] . "\" name=\"" . $filter_field['key'] 
+								. "\" type=\"text\" value=\"" 
+									. (isset($this->session->$filter_field['key']) ? $this->session->$filter_field['key'] : $filter_field['default']) 
+							. "\">";
 					} else if ($filter_field['input_type'] == 'date') {
 						echo "&nbsp;<label class=\"control-label\">" . $filter_field['display'] . "</label>
 								<div class=\"input-append date\" id=\"datetimepicker_" . $filter_field['key'] . "\" data-date=\"" . $filter_field['default'] . "\" data-date-format=\"yyyy-MM-dd hh:mm:ss\">
@@ -59,6 +67,7 @@ require_once '../application/helpers/Admin/Lines.php';
 					echo Lines::getFilterRow(); // add first manual filter on load
 				}
 				echo "</div>";
+			elseif (strtolower($this->title) == 'rates') :
 			endif;
 
 			if (is_array($this->sort_fields)) {

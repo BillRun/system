@@ -292,6 +292,14 @@ class TableModel {
 					);
 				}
 			}
+		} else if ($filter_field['input_type'] == 'text') {
+			if ($value != '') {
+				if ($filter_field['comparison'] == 'contains') {
+					return array(
+						$filter_field['db_key'] => array('$regex' => strval($value)),
+					);
+				}
+			}
 		} else if ($filter_field['input_type'] == 'date') {
 			if (is_string($value) && Zend_Date::isDate($value, 'yyyy-MM-dd hh:mm:ss')) { //yyyy-MM-dd hh:mm:ss
 				$value = new MongoDate((new Zend_Date($value, null, new Zend_Locale('he_IL')))->getTimestamp());

@@ -54,27 +54,23 @@ class Lines {
 	}
 
 	public static function getCsvFile($params) {
-
 		$data_output = array();
-		$daperator = ',';
+		$separator = ',';
 		$c = $params['offset'];
-
-		$data_output[] = '#' . $daperator;
-		foreach ($params['columns'] as $value) {
-			$data_output[] = $value . $daperator;
+		$row = array('#');
+		$columns_keys = array();
+		foreach ($params['columns'] as $k => $value) {
+			$columns_keys[] = $k;
+			$row[] = $value;
 		}
-		$data_output[] = PHP_EOL;
+		$data_output[] = implode($separator, $row);
 		foreach ($params['data'] as $item) {
-			$data_output[] = '#' . ($c + 1) . $daperator;
-			$c++;
-			foreach ($params['columns'] as $h => $columnName) {
+			$row = array($c++);
+			foreach ($columns_keys as $h) {
 				$data = $item->get($h);
-
 				if (($h == 'from' || $h == 'to' || $h == 'urt' || $h == 'notify_time') && $data) {
-					// TODO: move he_IL to config 
 					if (!empty($item["tzoffset"])) {
-						// TODO change this to regex
-						$timsetamp = $item['urt']->sec;
+						// TODO change this to regex; move it to utils
 						$tzoffset = $item['tzoffset'];
 						$sign = substr($tzoffset, 0, 1);
 						$hours = substr($tzoffset, 1, 2);
@@ -83,22 +79,22 @@ class Lines {
 						if ($sign == "-") {
 							$time .= ' ago';
 						}
-						$timsetamp = strtotime($time, $timsetamp);
+						$timsetamp = strtotime($time, $item['urt']->sec);
 						$zend_date = new Zend_Date($timsetamp);
 						$zend_date->setTimezone('UTC');
-						$data_output[] = $zend_date->toString("d/M/Y H:m:s") . $item['tzoffset'] . $daperator;
+						$row[] = $zend_date->toString("d/M/Y H:m:s") . $item['tzoffset'];
 					} else {
 						$zend_date = new Zend_Date($data->sec);
-						$data_output[] = $zend_date->toString("d/M/Y H:m:s") . $daperator;
+						$row[] = $zend_date->toString("d/M/Y H:m:s");
 					}
 				} else {
-					$data_output[] = $data . $daperator;
+					$row[] = $data;
 				}
 			}
-			$data_output[] = PHP_EOL;
+			$data_output[] = implode($separator, $row);
 		}
 
-		$output = implode("", $data_output);
+		$output = implode(PHP_EOL, $data_output);
 		header("Cache-Control: max-age=0");
 		header("Content-type: application/csv");
 		header("Content-Disposition: attachment; filename=csv_export.csv");

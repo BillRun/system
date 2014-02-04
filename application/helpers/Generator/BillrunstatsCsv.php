@@ -51,7 +51,7 @@ class Generator_BillrunstatsCsv extends Billrun_Generator_Csv {
 			'subscriber_status' => 'subscriber_status',
 			'current_plan' => 'current_plan',
 			'next_plan' => 'next_plan',
-			'sub_before_vat' => 'sub_before_vat',
+//			'sub_before_vat' => 'sub_before_vat',
 			'day' => 'day',
 			'plan' => 'plan',
 			'category' => 'category',

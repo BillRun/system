@@ -63,7 +63,7 @@ class Generator_Billrunstats extends Billrun_Generator {
 					$flat_data_record['subscriber_status'] = $flat_breakdown_record['subscriber_status'] = $sub_entry['subscriber_status'];
 					$flat_data_record['current_plan'] = $flat_breakdown_record['current_plan'] = is_null($sub_entry['current_plan']) ? null : Billrun_Factory::plan(array('id' => $sub_entry['current_plan']['$id']))->getName();
 					$flat_data_record['next_plan'] = $flat_breakdown_record['next_plan'] = is_null($sub_entry['next_plan']) ? null : Billrun_Factory::plan(array('id' => $sub_entry['next_plan']['$id']))->getName();
-					$flat_data_record['sub_before_vat'] = $flat_breakdown_record['sub_before_vat'] = isset($sub_entry['totals']['before_vat']) ? $sub_entry['totals']['before_vat'] : 0;
+//					$flat_data_record['sub_before_vat'] = $flat_breakdown_record['sub_before_vat'] = isset($sub_entry['totals']['before_vat']) ? $sub_entry['totals']['before_vat'] : 0;
 					if (isset($sub_entry['breakdown'])) {
 						foreach ($sub_entry['breakdown'] as $flat_breakdown_record['plan'] => $categories) {
 							foreach ($categories as $flat_breakdown_record['category'] => $zones) {
