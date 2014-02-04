@@ -254,7 +254,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			if ($this->unlimited_to_balances) {
 				$balance = $this->increaseSubscriberBalance($counters, $billrun_key, $row['aid'], $row['sid'], $plan_ref);
 				$pricingData = $this->getLinePricingData($volume, $usage_type, $rate, $balance);
-				$pricingData['usagesb'] = $balance['balance']['totals'][$this->getUsageKey($counters)]['usagev'];
+				$pricingData['usagesb'] = floatval($balance['balance']['totals'][$this->getUsageKey($counters)]['usagev']);
 			} else {
 				$pricingData = array($this->pricingField => 0);
 			}
@@ -297,7 +297,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				$update['$set']['balance.totals.' . $key . '.usagev'] = $old_usage + $value;
 				$update['$inc']['balance.totals.' . $key . '.cost'] = $pricingData[$this->pricingField];
 				$update['$inc']['balance.totals.' . $key . '.count'] = 1;
-				$pricingData['usagesb'] = $old_usage;
+				$pricingData['usagesb'] = floatval($old_usage);
 			}
 			$update['$set']['balance.cost'] = $subRaw['balance']['cost'] + $pricingData[$this->pricingField];
 			$options = array('w' => 1);
