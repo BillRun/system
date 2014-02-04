@@ -110,12 +110,68 @@ class RatesModel extends TabledateModel {
 		return array_merge($sort_fields, parent::getSortFields());
 	}
 
+	
+	public function getFilterFields() {
+		$filter_fields = array(
+//			'usage' => array(
+//				'key' => 'rates.$',
+//				'db_key' => 'rates.$',
+//				'input_type' => 'multiselect',
+//				'comparison' => 'exists',
+//				'display' => 'Usage',
+//				'values' => array('All', 'Call', 'SMS', 'Data'),
+//				'default' => array('All'),
+//			),
+			'key' => array(
+				'key' => 'key',
+				'db_key' => 'key',
+				'input_type' => 'text',
+				'comparison' => 'contains',
+				'display' => 'Key',
+//				'values' => array('All', 'Call', 'SMS', 'Data'),
+				'default' => '',
+			),
+			'prefix' => array(
+				'key' => 'prefix',
+				'db_key' => 'params.prefix',
+				'input_type' => 'text',
+				'comparison' => 'contains',
+				'display' => 'Prefix',
+//				'values' => array('All', 'Call', 'SMS', 'Data'),
+				'default' => '',
+			),
+		);
+		return array_merge($filter_fields, parent::getFilterFields());
+	}
+	
+	public function getFilterFieldsOrder() {
+		$filter_field_order = array(
+//			array(
+//				'usage' => array(
+//					'width' => 2,
+//				),
+//			),
+			array(
+				'key' => array(
+					'width' => 2,
+				),
+			),
+			array(
+				'prefix' => array(
+					'width' => 2,
+				),
+			),
+		);
+		return array_merge($filter_field_order, parent::getFilterFieldsOrder());
+	}
+	
 	/**
 	 * Get the data resource
 	 * 
 	 * @return Mongo Cursor
 	 */
 	public function getData($filter_query = array()) {
+//		print_R($filter_query);die;
 		$cursor = $this->collection->query($filter_query)->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
 		$this->_count = $cursor->count();
 		$resource = $cursor->sort($this->sort)->skip($this->offset())->limit($this->size);
