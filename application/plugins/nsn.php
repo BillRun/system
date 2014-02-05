@@ -22,8 +22,8 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 
 	const HEADER_LENGTH = 41;
 	const TRAILER_LENGTH = 24;
-	const MAX_CHUNKLENGTH_LENGTH = 8196;
-	const RECORD_ALIGNMENT = 0x1ff0;
+	const MAX_CHUNKLENGTH_LENGTH = 16384;
+	const RECORD_ALIGNMENT = 0x1ff0; //8176
 
 	protected $fileStats = null;
 
@@ -225,20 +225,21 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 				}
 			}
 			$data['urt'] = new MongoDate(Billrun_Util::dateTimeConvertShortToIso((string) (isset($data['charging_start_time']) && $data['charging_start_time'] ? $data['charging_start_time'] : $data['call_reference_time']), date("P", strtotime($data['call_reference_time']))));
-		}
-
-		//Use the  actual charing time duration instead of the  duration  that  was set by the switch
-		if (isset($data['duration'])) {
-			$data['org_dur'] = $data['duration']; // save the original duration.
-		}
-		if (isset($data['charging_end_time']) && isset($data['charging_start_time']) &&
-			( strtotime($data['charging_end_time']) > 0 && strtotime($data['charging_start_time']) > 0)) {
-			$data['duration'] = strtotime($data['charging_end_time']) - strtotime($data['charging_start_time']);
-		}
-		//Remove  the  "10" in front of the national call with an international prefix
-//		if (isset($data['in_circuit_group_name']) && preg_match("/^RCEL/", $data['in_circuit_group_name']) && strlen($data['called_number']) > 10 && substr($data['called_number'], 0, 2) == "10") { // will fail when in_circuit_group_name is empty / called_number length is exactly 10
-		if (isset($data['out_circuit_group']) && in_array($data['out_circuit_group'], array('2100', '2101', '2499')) && substr($data['called_number'], 0, 2) == "10") {
-			$data['called_number'] = substr($data['called_number'], 2);
+			//Use the  actual charing time duration instead of the  duration  that  was set by the switch
+			if (isset($data['duration'])) {
+				$data['org_dur'] = $data['duration']; // save the original duration.
+			}
+			if (isset($data['charging_end_time']) && isset($data['charging_start_time']) &&
+				( strtotime($data['charging_end_time']) > 0 && strtotime($data['charging_start_time']) > 0)) {
+				$data['duration'] = strtotime($data['charging_end_time']) - strtotime($data['charging_start_time']);
+			}
+			//Remove  the  "10" in front of the national call with an international prefix
+	//		if (isset($data['in_circuit_group_name']) && preg_match("/^RCEL/", $data['in_circuit_group_name']) && strlen($data['called_number']) > 10 && substr($data['called_number'], 0, 2) == "10") { // will fail when in_circuit_group_name is empty / called_number length is exactly 10
+			if (isset($data['out_circuit_group']) && in_array($data['out_circuit_group'], array('2100', '2101', '2499')) && substr($data['called_number'], 0, 2) == "10") {
+				$data['called_number'] = substr($data['called_number'], 2);
+			}
+		} else {
+			//Billrun_Factory::log()->log("unsupported NSN record type : {$data['record_type']}",Zend_log::DEBUG);
 		}
 
 		$parser->setLastParseLength($data['record_length']);
@@ -430,19 +431,23 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 		if (isset($header['data_length_in_block']) && !feof($fileHandle)) {
 			$bytes = fread($fileHandle, $header['data_length_in_block'] - self::HEADER_LENGTH);
 		}
-
-		do {
-			$row = $processor->buildDataRow($bytes);
-			if ($row) {
-				$processor->addDataRow($row);
-			}
-			$bytes = substr($bytes, $processor->getParser()->getLastParseLength());
-		} while (isset($bytes[self::TRAILER_LENGTH + 1]));
+		if(in_array($header['format_version'],$this->nsnConfig['block_config']['supported_versions'])) {
+			do {
+				$row = $processor->buildDataRow($bytes);
+				if ($row) {
+					$processor->addDataRow($row);
+				}
+				$bytes = substr($bytes, $processor->getParser()->getLastParseLength());
+			} while (isset($bytes[self::TRAILER_LENGTH + 1]));
+		} else {
+			Billrun_Factory::log()->log("Got NSN block with unsupported version :  {$header['format_version']} , block header data : ".print_r($header,1),Zend_log::CRIT);
+		}
 
 		$trailer = $processor->getParser()->parseTrailer($bytes);
 		//align the readhead
-		if ((self::RECORD_ALIGNMENT - $header['data_length_in_block']) > 0) {
-			fread($fileHandle, (self::RECORD_ALIGNMENT - $header['data_length_in_block']));
+		$alignment = self::RECORD_ALIGNMENT * max(1,$header['charging_block_size']);
+		if (($alignment - $header['data_length_in_block']) > 0) {
+			fread($fileHandle, ($alignment - $header['data_length_in_block']));
 		}
 
 		//add trailer data
