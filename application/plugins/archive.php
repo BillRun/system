@@ -7,8 +7,7 @@
  */
 
 /**
- * Wholesale line archiving plugin
- * (TODO unify  this with  archive customer)
+ * Archive lines plugin
  *
  * @package  Application
  * @subpackage Plugins
@@ -24,7 +23,8 @@ abstract class archivePlugin extends Billrun_Plugin_BillrunPluginBase {
 	protected $name = 'archive';
 
 	/**
-	 * the container dataWholesale of the archive
+	 * the container data of the archive
+	 * this will include the lines to move to archive
 	 * @var array
 	 */
 	protected $data = array();

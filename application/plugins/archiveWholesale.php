@@ -8,7 +8,6 @@
 
 /**
  * Wholesale line archiving plugin
- * (TODO unify  this with  archive customer)
  *
  * @package  Application
  * @subpackage Plugins
