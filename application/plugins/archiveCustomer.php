@@ -8,7 +8,7 @@
 
 /**
  * Customer lines archiving plugin
- * (TODO unify this logic with archive wholesale)
+ * 
  * @package  Application
  * @subpackage Plugins
  * @since    0.5
