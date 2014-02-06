@@ -13,7 +13,7 @@
  * @subpackage Plugins
  * @since    0.5
  */
-class archiveCustomerPlugin extends Billrun_Plugin_BillrunPluginBase {
+class archiveCustomerPlugin extends archivePlugin {
 
 	/**
 	 * plugin name
