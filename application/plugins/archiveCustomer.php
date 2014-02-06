@@ -23,18 +23,6 @@ class archiveCustomerPlugin extends Billrun_Plugin_BillrunPluginBase {
 	protected $name = 'archiveCustomer';
 
 	/**
-	 * the container dataCustomer of the archive
-	 * @var array
-	 */
-	protected $dataCustomer = array();
-
-	/**
-	 * this variable hold the time to start archiving  from.
-	 * @var type 
-	 */
-	protected $archivingHorizon = '-3 months';
-
-	/**
 	 * method to declare the archive scope data
 	 * 
 	 * @return array query to run. the results lines will be removed
