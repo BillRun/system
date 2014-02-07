@@ -14,8 +14,7 @@ foreach ($this->data as $item) {
 		} else if (($h == 'from' || $h == 'to' || $h == 'urt' || $h == 'notify_time') && $data) {
 			$dateFormat = "Y-m-d H:i:s";
 			if (!empty($item["tzoffset"])) {
-				// TODO change this to regex
-				$timsetamp = $item['urt']->sec;
+				// TODO change this to regex and move to method in model
 				$tzoffset = $item['tzoffset'];
 				$sign = substr($tzoffset, 0, 1);
 				$hours = substr($tzoffset, 1, 2);
@@ -24,8 +23,7 @@ foreach ($this->data as $item) {
 				if ($sign == "-") {
 					$time .= ' ago';
 				}
-				$timsetamp = strtotime($time, $timsetamp);
-				$zend_date = new Zend_Date($timsetamp);
+				$zend_date = new Zend_Date(strtotime($time, $item['urt']->sec));
 				$zend_date->setTimezone('UTC');
 				echo $zend_date->toString($dateFormat, 'php') . $item['tzoffset'];
 			} else {
