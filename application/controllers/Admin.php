@@ -255,7 +255,8 @@ class AdminController extends Yaf_Controller_Abstract {
 			'sort' => $sort,
 		);
 
-		$model = self::getModel($table, $options);
+		// set the model
+		self::getModel($table, $options);
 		$query = $this->applyFilters($table);
 
 		$this->getView()->component = $this->buildComponent($table, $query);
@@ -500,7 +501,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		}
 		foreach ($filter_fields as $filter_name => $filter_field) {
 			$value = $this->getSetVar($session, $filter_field['key'], $filter_field['key'], $filter_field['default']);
-			if ($filter = $model->applyFilter($filter_field, $value)) {
+			if (!empty($value) && $filter = $model->applyFilter($filter_field, $value)) {
 				$query['$and'][] = $filter;
 			}
 		}
