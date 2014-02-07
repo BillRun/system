@@ -94,8 +94,8 @@ class RatesModel extends TabledateModel {
 		$columns = array(
 			'key' => 'Key',
 			't' => 'Type',
-			'unit' => 'Unit',
 			'tprice' => 'Price',
+			'tduration' => 'Interval',
 			'from' => 'From',
 			'to' => 'To',
 			'_id' => 'Id',
@@ -179,7 +179,18 @@ class RatesModel extends TabledateModel {
 		foreach ($resource as $item) {
 			if ($item->get('rates')) {
 				foreach($item->get('rates') as $key => $rate) {
-					$ret[] = new Mongodloid_Entity(array_merge($item->getRawData(), array('t' => $key, 'tprice' => $rate['rate'][0]['price']), $rate));
+					$added_columns = array(
+						't' => $key,
+						'tprice' => $rate['rate'][0]['price'],
+					);
+					if (strpos($key, 'call') !== FALSE) {
+						$added_columns['tduration'] = Billrun_Util::durationFormat($rate['rate'][0]['interval']);
+					} else if ($key == 'data') {
+						$added_columns['tduration'] = Billrun_Util::byteFormat($rate['rate'][0]['interval'], '', 0, true);
+					} else {
+						$added_columns['tduration'] = $rate['rate'][0]['interval'];
+					}
+					$ret[] = new Mongodloid_Entity(array_merge($item->getRawData(), $added_columns, $rate));
 				}
 			} else {
 				$ret[] = $item;

@@ -230,13 +230,15 @@ class Billrun_Util {
 	}
 
 	/**
-	 * convert bytes to requested foramt
+	 * convert bytes to requested format
+	 * if no format supply will take the format that is closet to the bytes
+	 * 
 	 * @param string $bytes
 	 * @param string $unit
 	 * @param int $decimals
-	 * @return string size in requested foramt
+	 * @return string size in requested format
 	 */
-	public static function byteFormat($bytes, $unit = "", $decimals = 2) {
+	public static function byteFormat($bytes, $unit = "", $decimals = 2, $includeUnit = false) {
 		$units = array('B' => 0, 'KB' => 1, 'MB' => 2, 'GB' => 3, 'TB' => 4,
 			'PB' => 5, 'EB' => 6, 'ZB' => 7, 'YB' => 8);
 
@@ -260,11 +262,34 @@ class Billrun_Util {
 		}
 
 		// Format output
-		if (!empty($value))
+		if (!empty($value)) {
+			if ($includeUnit) {
+				return number_format($value, $decimals) . $unit;
+			}
 			return number_format($value, $decimals);
+		}
 
 		return FALSE;
 	}
+	
+	/**
+	 * convert seconds to requested format
+	 * 
+	 * @param string $bytes
+	 * 
+	 * @return string size in requested foramt
+	 * 
+	 * 60 sec => 1 min
+	 * 10 sec => 10 sec
+	 * 3400 sec => X minutes
+	 */
+	public static function durationFormat($seconds) {
+		if ($seconds> 3600) {
+			return gmdate('H:i:s', $seconds);
+		}
+		return gmdate('i:s', $seconds);
+	}
+
 
 	/**
 	 * convert megabytes to bytes
