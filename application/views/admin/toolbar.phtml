@@ -3,21 +3,20 @@
 require_once '../application/helpers/Admin/Lines.php';
 //print_R($this->session->order);die;
 ?>
-<div class="toolbar">
+<div class="toolbar toolbar-<?php echo strtolower($this->title); ?>">
 	<form id="search-criteria" action="" method="POST" class="form-vertical">
 		<?php
 //		print_R($this->filter_fields_order);
 //		print_R($this->filter_fields);die;
 		if (is_array($this->filter_fields_order) && is_array($this->filter_fields)) {
-			foreach ($this->filter_fields_order as $row_fields) {
-				echo "<div class=\"control-group\">
+			foreach ($this->filter_fields_order as $key => $row_fields) {
+				echo "<div class=\"control-group control-group" . $key . "\">
 							<div class=\"controls form-inline\">";
 				foreach ($row_fields as $filter_field_key => $field_view) {
 					$filter_field = $this->filter_fields[$filter_field_key];
 					if ($filter_field['input_type'] == 'boolean') {
-						echo "&nbsp;<label class=\"checkbox\">
-							<input class=\"span" . $field_view['width'] . "\" name=\"" . $filter_field['key'] . "\" type=\"checkbox\"" . (isset($this->session->$filter_field['key']) && $this->session->$filter_field['key'] == "on" ? " checked" : "") . ">" . $filter_field['display'] .
-						"</label>";
+						echo "<input class=\"span" . $field_view['width'] . "\" id=\"" . $filter_field['key'] . "\" name=\"" . $filter_field['key'] . "\" type=\"checkbox\"" . (isset($this->session->$filter_field['key']) && $this->session->$filter_field['key'] == "on" ? " value=\"1\" checked=\"checked\"" : "") . ">" 
+							. "<label class=\"checkbox\" for=\"" . $filter_field['key'] . "\">" . $filter_field['display'] . "</label>";
 					} else if ($filter_field['input_type'] == 'number') {
 						echo "&nbsp;<label class=\"control-label\" for=\"" . $filter_field['key'] . "\">" . $filter_field['display'] . "</label>
 								<input id=\"" . $filter_field['key'] . "\" class=\"span" . $field_view['width'] . "\" name=\"" . $filter_field['key'] . "\" type=\"text\" value=\"" . (isset($this->session->$filter_field['key']) ? $this->session->$filter_field['key'] : $filter_field['default']) . "\">";

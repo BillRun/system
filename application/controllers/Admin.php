@@ -241,11 +241,12 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * rates controller of admin
 	 */
 	public function ratesAction() {
-		$this->forward("tabledate", array('table' => 'rates'));
+		$this->forward("tabledate", array('table' => 'rates', 'showprefix' => $this->getRequest()->get('showprefix')));
 		return false;
 	}
 
 	public function tabledateAction() {
+		$showprefix = $this->_request->getParam("showprefix") == 'on'? 1 : 0;
 		$table = $this->_request->getParam("table");
 
 //		$sort = array('urt' => -1);
@@ -253,6 +254,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$options = array(
 			'collection' => $table,
 			'sort' => $sort,
+			'showprefix' => $showprefix,
 		);
 
 		// set the model
@@ -501,7 +503,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		}
 		foreach ($filter_fields as $filter_name => $filter_field) {
 			$value = $this->getSetVar($session, $filter_field['key'], $filter_field['key'], $filter_field['default']);
-			if (!empty($value) && $filter = $model->applyFilter($filter_field, $value)) {
+			if (!empty($value) && $filter_field['db_key'] != 'nofilter' && $filter = $model->applyFilter($filter_field, $value)) {
 				$query['$and'][] = $filter;
 			}
 		}

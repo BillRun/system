@@ -15,10 +15,18 @@
  */
 class RatesModel extends TabledateModel {
 
+	protected $showprefix;
+	
 	public function __construct(array $params = array()) {
 		$params['collection'] = Billrun_Factory::db()->rates;
 		parent::__construct($params);
 		$this->search_key = "key";
+		if (isset($params['showprefix'])) {
+			$this->showprefix = $params['showprefix'];
+			if ($this->size >50) {
+				$this->size = 50;
+			}
+		}
 	}
 
 	/**
@@ -91,15 +99,25 @@ class RatesModel extends TabledateModel {
 	}
 
 	public function getTableColumns() {
-		$columns = array(
-			'key' => 'Key',
-			't' => 'Type',
-			'tprice' => 'Price',
-			'tduration' => 'Interval',
-			'from' => 'From',
-			'to' => 'To',
-			'_id' => 'Id',
-		);
+		if ($this->showprefix) {
+			$columns = array(
+				'key' => 'Key',
+				'prefix' => 'Prefix',
+				'from' => 'From',
+				'to' => 'To',
+				'_id' => 'Id',
+			);
+		} else {
+			$columns = array(
+				'key' => 'Key',
+				't' => 'Type',
+				'tprice' => 'Price',
+				'tduration' => 'Interval',
+				'from' => 'From',
+				'to' => 'To',
+				'_id' => 'Id',
+			);
+		}
 		return $columns;
 	}
 
@@ -140,6 +158,13 @@ class RatesModel extends TabledateModel {
 //				'values' => array('All', 'Call', 'SMS', 'Data'),
 				'default' => '',
 			),
+			'showprefix' => array(
+				'key' => 'showprefix',
+				'db_key' => 'nofilter',
+				'input_type' => 'boolean',
+				'display' => 'Show prefix',
+				'default' => $this->showprefix? 'on' : '',
+			),
 		);
 		return array_merge($filter_fields, parent::getFilterFields());
 	}
@@ -162,7 +187,14 @@ class RatesModel extends TabledateModel {
 				),
 			),
 		);
-		return array_merge($filter_field_order, parent::getFilterFieldsOrder());
+		$post_filter_field = array(
+			array(
+				'showprefix' => array(
+					'width' => 2,
+				),
+			),
+		);
+		return array_merge($filter_field_order, parent::getFilterFieldsOrder(), $post_filter_field);
 	}
 	
 	/**
@@ -177,7 +209,7 @@ class RatesModel extends TabledateModel {
 		$resource = $cursor->sort($this->sort)->skip($this->offset())->limit($this->size);
 		$ret = array();
 		foreach ($resource as $item) {
-			if ($item->get('rates')) {
+			if ($item->get('rates') && !$this->showprefix) {
 				foreach($item->get('rates') as $key => $rate) {
 					$added_columns = array(
 						't' => $key,
@@ -191,6 +223,10 @@ class RatesModel extends TabledateModel {
 						$added_columns['tduration'] = $rate['rate'][0]['interval'];
 					}
 					$ret[] = new Mongodloid_Entity(array_merge($item->getRawData(), $added_columns, $rate));
+				}
+			} else if ($this->showprefix && isset($filter_query['$and'][0]['key'])) {
+				foreach ($item->get('params.prefix') as $prefix) {
+					$ret[] = new Mongodloid_Entity(array_merge($item->getRawData(), array('prefix' => $prefix)));
 				}
 			} else {
 				$ret[] = $item;
