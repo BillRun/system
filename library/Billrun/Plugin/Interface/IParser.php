@@ -1,8 +1,13 @@
 <?php
 
 /**
+ * @package         Billing
+ * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
+ * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ */
+
+/**
  * This interface defines the interface needed to add parsing behavior to a plugin.
- * @author eran
  */
 interface Billrun_Plugin_Interface_IParser {
 
@@ -39,5 +44,3 @@ interface Billrun_Plugin_Interface_IParser {
 	 */
 	public function parseTrailer($type, $data, Billrun_Parser &$parser);
 }
-
-?>
