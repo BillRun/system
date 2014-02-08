@@ -23,7 +23,7 @@ class RatesModel extends TabledateModel {
 		$this->search_key = "key";
 		if (isset($params['showprefix'])) {
 			$this->showprefix = $params['showprefix'];
-			if ($this->size >50) {
+			if ($this->size > 50 && $this->showprefix) {
 				$this->size = 50;
 			}
 		}
@@ -113,6 +113,7 @@ class RatesModel extends TabledateModel {
 				't' => 'Type',
 				'tprice' => 'Price',
 				'tduration' => 'Interval',
+				'taccess' => 'Access',
 				'from' => 'From',
 				'to' => 'To',
 				'_id' => 'Id',
@@ -214,6 +215,7 @@ class RatesModel extends TabledateModel {
 					$added_columns = array(
 						't' => $key,
 						'tprice' => $rate['rate'][0]['price'],
+						'taccess' => isset($rate['access']) ? $rate['access'] : 0,
 					);
 					if (strpos($key, 'call') !== FALSE) {
 						$added_columns['tduration'] = Billrun_Util::durationFormat($rate['rate'][0]['interval']);
