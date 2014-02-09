@@ -168,14 +168,6 @@ function update_current(obj){
         }
 }
 
-function add_type(obj, types) {
-    var manual_type = $(obj).next();
-    if(manual_type.attr("name") == "manual_type[]") {
-        manual_type.remove();
-    }
-    $("<input type=\"hidden\" class=\"span2\" style=\"display:block;\" name=\"manual_type[]\" value=\"" + types[$(obj).val()]+ "\" />").insertAfter(obj);
-}
-
 function isAPIAvailable() {
   // Check for the various File API support.
   if (window.File && window.FileReader && window.FileList && window.Blob) {

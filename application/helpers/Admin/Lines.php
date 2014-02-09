@@ -23,7 +23,7 @@ class Admin_Lines {
 		$types = self::getOptions();
 		$keys = array_keys($types);
 		$output = "<div class=\"controls controls-row\">
-                               <select onchange='add_type(this, " . json_encode($types) . ")' name=\"manual_key[]\" class=\"span2\">";
+                               <select name=\"manual_key[]\" class=\"span2\">";
 		foreach ($keys as $manual_key) {
 			$output.= "<option value=\"" . $manual_key . "\"" . ($key == $manual_key ? " selected" : "") . ">" . $manual_key . "</option>";
 		}
