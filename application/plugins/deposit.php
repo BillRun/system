@@ -32,6 +32,8 @@ class depositPlugin extends Billrun_Plugin_BillrunPluginBase {
 			return;
 		}
 		Billrun_Factory::log()->log("Marking down Alert For $pluginName", Zend_Log::INFO);
+		$priority = Billrun_Factory::config()->getConfigValue('alert.priority', array());
+
 		$ret = array();
 		$events = Billrun_Factory::db()->eventsCollection();
 		foreach ($items as &$item) {
@@ -42,6 +44,13 @@ class depositPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$newEvent = $this->addAlertData($event);
 			$newEvent['stamp'] = md5(serialize($newEvent));
 			$newEvent['creation_time'] = date(Billrun_Base::base_dateformat);
+			foreach ($priority as $key => $pri) {
+				$newEvent['priority'] = $key;
+				if ($event['event_type'] == $pri) {
+					break;
+				}
+			}
+
 			$item['event_stamp'] = $newEvent['stamp'];
 
 			$ret[] = $events->save($newEvent);
@@ -63,7 +72,7 @@ class depositPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$ret = array();
 		$eventsCol = Billrun_Factory::db()->eventsCollection();
 		foreach ($items as &$item) {
-			$eventsCol->update(array('_id' => array('$in' => $item['ids']),
+			$eventsCol->update(array('_id' => array('$in' => $item['events_ids']),
 				), array('$set' => array(
 					'event_stamp' => $item['_id'],
 				)
@@ -76,6 +85,9 @@ class depositPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * method to collect data which need to be handle by event
 	 */
 	public function handlerCollect($options) {
+		if ($options['type'] != 'roaming') {
+			return FALSE;
+		}
 		Billrun_Factory::log()->log("Collect deposits fraud (deposits plugin)", Zend_Log::INFO);
 		$eventsCol = Billrun_Factory::db()->eventsCollection();
 		$timeWindow = strtotime("-" . Billrun_Factory::config()->getConfigValue('deposit.hourly.timespan', '4 hours'));
@@ -84,7 +96,7 @@ class depositPlugin extends Billrun_Plugin_BillrunPluginBase {
 				'event_stamp' => array('$exists' => false),
 //				'deposit_stamp' => array('$exists'=> true),
 				'event_type' => array('$ne' => 'DEPOSITS'),
-				'nofity_time' => array('$gte' => $timeWindow)
+				'nofity_time' => array('$gte' => new MongoDate($timeWindow))
 			),
 		);
 		$group = array(
@@ -99,7 +111,7 @@ class depositPlugin extends Billrun_Plugin_BillrunPluginBase {
 		);
 		$project = array(
 			'$project' => array(
-				"_id" => 0,
+				"_id" => 1,
 				'deposits' => 1,
 				'events_ids' => 1,
 				'imsi' => 1,

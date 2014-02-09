@@ -59,15 +59,15 @@ use Billrun_Traits_FileSequenceChecking;
 	 * method to collect data which need to be handle by event
 	 */
 	public function handlerCollect($options) {
-		if ($options['type'] != 'roaming') {
-			return FALSE;
+		if( $options['type'] != 'roaming') { 
+			return FALSE; 
 		}
 		$lines = Billrun_Factory::db()->linesCollection();
-
+		
 		//@TODO  switch  these lines  once  you have the time to test it.
 		//$charge_time = new MongoDate($this->get_last_charge_time(true) - date_default_timezone_get() );
 		$charge_time = Billrun_Util::getLastChargeTime(true);
-
+		
 		$aggregateQuery = $this->getBaseAggregateQuery($charge_time);
 
 		Billrun_Factory::log()->log("ggsnPlugin::handlerCollect collecting monthly data exceeders", Zend_Log::DEBUG);
@@ -118,11 +118,12 @@ use Billrun_Traits_FileSequenceChecking;
 		$exceeders = array();
 		$timeWindow = strtotime("-" . Billrun_Factory::config()->getConfigValue('ggsn.hourly.timespan', '4 hours'));
 		$limit = floatval(Billrun_Factory::config()->getConfigValue('ggsn.hourly.thresholds.datalimit', 150000));
-		$aggregateQuery[1]['$match']['$and'] = array(array('record_opening_time' => array('$gte' => date('YmdHis', $timeWindow))),
-			array('record_opening_time' => $aggregateQuery[1]['$match']['record_opening_time']));
+	//	$aggregateQuery[1]['$match']['$and'] = array(array('record_opening_time' => array('$gte' => date('YmdHis', $timeWindow))),
+	//		array('record_opening_time' => $aggregateQuery[1]['$match']['record_opening_time']));
+		$aggregateQuery[1]['$match']['unified_record_time'] = array('$gte' => new MongoDate($timeWindow));
 
 		//unset($aggregateQuery[0]['$match']['sgsn_address']);
-		unset($aggregateQuery[1]['$match']['record_opening_time']);
+		//unset($aggregateQuery[1]['$match']['record_opening_time']);
 
 		$having = array(
 			'$match' => array(
@@ -205,17 +206,23 @@ use Billrun_Traits_FileSequenceChecking;
 		return array(
 			array(
 				'$match' => array(
-					'type' => 'ggsn'
+					'type' => 'ggsn',
+					'unified_record_time' => array('$gte' => new MongoDate($charge_time)),
 				)
 			),
 			array(
 				'$match' => array(
 					//@TODO  switch to unified time once you have the time to test it
-					'urt' => array('$gte' => new MongoDate($charge_time)),
+					'unified_record_time' => array('$gte' => new MongoDate($charge_time)),
 //					'record_opening_time' => array('$gt' => $charge_time),
 					'deposit_stamp' => array('$exists' => false),
 					'event_stamp' => array('$exists' => false),
+					
 					'sgsn_address' => array('$regex' => '^(?!62\.90\.|37\.26\.)'),
+					'$or' => array(
+						array('rating_group' => array( '$exists' => FALSE)),
+						array('rating_group' => 0)
+					),
 					'$or' => array(
 						array('fbc_downlink_volume' => array('$gt' => 0)),
 						array('fbc_uplink_volume' => array('$gt' => 0))
