@@ -251,6 +251,7 @@ class BulkCreditAction extends CreditAction {
 		} else {
 			return $this->setError('Receiver cannot be loaded', $request);
 		}
+		$this->processBulkCredit();
 		$this->getController()->setOutput(array(array(
 				'status' => 1,
 				'desc' => 'success',
@@ -259,6 +260,12 @@ class BulkCreditAction extends CreditAction {
 				'input' => $request,
 		)));
 		return true;
+	}
+	
+	protected function processBulkCredit() {
+		$env = Billrun_Factory::config()->getEnv();
+		$cmd = 'php -t ' . APPLICATION_PATH . ' ' . APPLICATION_PATH . '/public/index.php --environment ' . $env . ' --process --type credit --parser none';
+		Billrun_Util::forkProcessCli($cmd);
 	}
 
 	protected function queryCredit($request) {

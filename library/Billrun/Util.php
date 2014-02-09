@@ -320,5 +320,55 @@ class Billrun_Util {
 		//sen email
 		return $mailer->send();
 	}
+	
+	/**
+	 * method to fork process of PHP-Web (Apache/Nginx/FPM)
+	 * 
+	 * @param String $url the url to open
+	 * @param Array $params data sending to the new process
+	 * @params Boolean $post use POST to query string else use GET
+	 * 
+	 * @return Boolean true on success else FALSE
+	 */
+	public static function forkProcessWeb($url, $params, $post = false, $sleep = 0) {
+		$params['fork'] = 1;
+		if ($sleep) {
+			$params['SLEEP'] = (int) $sleep;
+		}
+		$forkUrl = self::getForkUrl();
+		$querystring = http_build_query($params);
+		if (!$post) {
+			$cmd = "wget -O /dev/null '" . $forkUrl . $url . "?" . $querystring .
+				"' > /dev/null & ";
+		} else {
+			$cmd = "wget -O /dev/null '" . $forkUrl . $url . "' --post-data '" . $querystring .
+				"' > /dev/null & ";
+		}
+
+//		echo $cmd . "<br />" . PHP_EOL;
+		if (system($cmd) === FALSE) {
+			error_log("Can't fork PHP process");
+			return false;
+		}
+		usleep(500000);
+		return true;
+	}
+
+	/**
+	 * method to fork process of PHP-Cli
+	 * 
+	 * @param String $cmd the command to run
+	 * @param String $cmd the command to run
+	 * 
+	 * @return Boolean true on success else FALSE
+	 */
+	public static function forkProcessCli($cmd) {
+		$syscmd = $cmd ." > /dev/null & ";
+		if (system($syscmd) === FALSE) {
+			error_log("Can't fork PHP process");
+			return false;
+		}
+		return true;
+	}
 
 }
