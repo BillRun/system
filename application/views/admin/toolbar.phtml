@@ -1,8 +1,3 @@
-<?php
-// todo: remove this
-require_once '../application/helpers/Admin/Lines.php';
-//print_R($this->session->order);die;
-?>
 <div class="toolbar toolbar-<?php echo strtolower($this->title); ?>">
 	<form id="search-criteria" action="" method="POST" class="form-vertical">
 		<?php
@@ -56,14 +51,14 @@ require_once '../application/helpers/Admin/Lines.php';
 			}
 
 			if (strtolower($this->title) == 'lines') :
-				echo "<div><a href=\"javascript:void(0)\" class=\"advanced-options\" href=\"#\">Advanced options <i class=\"" . (Lines::isManualFilter($this->session) ? "icon-chevron-up" : "icon-chevron-down") . "\"></i></a></div>
-                            <div id = \"manual_filters\"" . (Lines::isManualFilter($this->session) ? "" : " style=\"display:none;\"") . ">";
-				if (Lines::isManualFilter($this->session)) {
+				echo "<div><a href=\"javascript:void(0)\" class=\"advanced-options\" href=\"#\">Advanced options <i class=\"" . (Admin_Lines::isManualFilter($this->session) ? "icon-chevron-up" : "icon-chevron-down") . "\"></i></a></div>
+                            <div id = \"manual_filters\"" . (Admin_Lines::isManualFilter($this->session) ? "" : " style=\"display:none;\"") . ">";
+				if (Admin_Lines::isManualFilter($this->session)) {
 					for ($i = 0; $i < count($this->session->manual_key); $i++) {
-						echo Lines::getFilterRow($this->session->manual_key[$i], $this->session->manual_type[$i], $this->session->manual_operator[$i], $this->session->manual_value[$i]);
+						echo Admin_Lines::getFilterRow($this->session->manual_key[$i], $this->session->manual_type[$i], $this->session->manual_operator[$i], $this->session->manual_value[$i]);
 					}
 				} else {
-					echo Lines::getFilterRow(); // add first manual filter on load
+					echo Admin_Lines::getFilterRow(); // add first manual filter on load
 				}
 				echo "</div>";
 			elseif (strtolower($this->title) == 'rates') :

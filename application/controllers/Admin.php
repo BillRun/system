@@ -29,6 +29,8 @@ class AdminController extends Yaf_Controller_Abstract {
 	 */
 	public function init() {
 		$this->baseUrl = $this->getRequest()->getBaseUri();
+		Yaf_Loader::getInstance(APPLICATION_PATH . '/application/helpers')->registerLocalNamespace('Admin');
+
 	}
 
 	/**
@@ -194,7 +196,6 @@ class AdminController extends Yaf_Controller_Abstract {
 	}
 
 	public function csvExportAction() {
-		require_once '../application/helpers/Admin/Lines.php';
 		$session = $this->getSession('lines');
 
 		if (!empty($session->query)) {
@@ -208,7 +209,7 @@ class AdminController extends Yaf_Controller_Abstract {
 			$skip = Billrun_Factory::config()->getConfigValue('admin_panel.csv_export.skip', 0);
 			$size = Billrun_Factory::config()->getConfigValue('admin_panel.csv_export.size', 10000);
 			$params = array_merge($this->getTableViewParams($session->query, $skip, $size), $this->createFilterToolbar('lines'));
-			Lines::getCsvFile($params);
+			Admin_Lines::getCsvFile($params);
 		} else {
 			return false;
 		}
@@ -522,14 +523,14 @@ class AdminController extends Yaf_Controller_Abstract {
 		$query = false;
 		$session = $this->getSession($table);
 		$keys = $this->getSetVar($session, 'manual_key', 'manual_key');
-		$types = $this->getSetVar($session, 'manual_type', 'manual_type');
+		$types = Admin_Lines::getOptions();
 		$operators = $this->getSetVar($session, 'manual_operator', 'manual_operator');
 		$values = $this->getSetVar($session, 'manual_value', 'manual_value');
 		for ($i = 0; $i < count($keys); $i++) {
 			if ($keys[$i] == '' || $values[$i] == '') {
 				continue;
 			}
-			switch ($types[$i]) {
+			switch ($types[$keys[$i]]) {
 				case 'number':
 					$values[$i] = floatval($values[$i]);
 					break;

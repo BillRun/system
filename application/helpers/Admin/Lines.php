@@ -1,7 +1,11 @@
 <?php
 
-class Lines {
+class Admin_Lines {
 
+	public static function getOptions() {
+		return Billrun_Factory::config()->getConfigValue('admin.advancedOptions.types');
+	}
+	
 	public static function getFilterRow($key = null, $type = null, $operator = null, $value = null) {
 		// @TODO: move to config
 		$operators = array(
@@ -16,7 +20,7 @@ class Lines {
 			'like' => 'Like',
 		);
 
-		$types = Billrun_Factory::config()->getConfigValue('admin.advancedOptions.types');
+		$types = self::getOptions();
 		$keys = array_keys($types);
 		$output = "<div class=\"controls controls-row\">
                                <select onchange='add_type(this, " . json_encode($types) . ")' name=\"manual_key[]\" class=\"span2\">";
@@ -49,7 +53,7 @@ class Lines {
 	 * Is the manual filter activated
 	 * @param type $param
 	 */
-	static public function isManualFilter($session) {
+	public static function isManualFilter($session) {
 		return isset($session->manual_value) && count($session->manual_value) > 0 && $session->manual_value[0] != '' && $session->manual_key[0] != '';
 	}
 
