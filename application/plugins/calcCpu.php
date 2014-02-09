@@ -74,6 +74,8 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 					|| ($line['type'] == 'smsc' && isset($line['arate']) && $line['arate'] === false)
 					|| ($line['type'] == 'nsn' && isset($line['usaget']) && $line['usaget'] === 'sms')) {
 					$garbage_counter++;
+					$processor->unsetQueueRow($line['stamp']);
+					unset($queue_data[$line['stamp']]);
 					unset($data['data'][$key]);
 				}
 			}
