@@ -37,8 +37,6 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 
 	public function __construct($options = array(
 	)) {
-		parent::__construct($options);
-
 		$this->alertServer = isset($options['alertHost']) ?
 			$options['alertHost'] :
 			Billrun_Factory::config()->getConfigValue('fraudAlerts.alert.host', '127.0.0.1');
