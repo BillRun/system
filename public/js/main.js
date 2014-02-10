@@ -5,15 +5,15 @@ var checkItems = false;
 $(function() {
 	$("#close_and_new,#duplicate").click(function() {
 		var items_checked = $('#data_table :checked');
-                checkItems=true;
+		checkItems = true;
 		if (items_checked.length) {
 			$(this).data('remote', edit_url_prefix + items_checked.eq(0).val() + '&type=' + $(this).data('type'));
-		} 
+		}
 	});
 
 	$("#remove").click(function() {
 		var items_checked = $('#data_table :checked');
-                checkItems=true;
+		checkItems = true;
 		var output = $.map(items_checked, function(n, i) {
 			return n.value;
 		}).join(',');
@@ -21,53 +21,53 @@ $(function() {
 			$(this).data('remote', confirm_url_prefix + output + '&type=' + $(this).data('type'));
 		}
 	});
-	
-	$("#popupModal,#confirmModal").on('show', function(event) {           
-                 if(checkItems) {
-                    var items_checked = $('#data_table :checked');
-                    if (!items_checked.length || (items_checked.length != 1 && (coll != 'lines' || $(this).attr('id') != 'confirmModal'))) {
-                            alert('Please check exactly one item from the list');
-                            $(this).removeData('modal');
-                            event.preventDefault();
-                    }
-                }
+
+	$("#popupModal,#confirmModal").on('show', function(event) {
+		if (checkItems) {
+			var items_checked = $('#data_table :checked');
+			if (!items_checked.length || (items_checked.length != 1 && (coll != 'lines' || $(this).attr('id') != 'confirmModal'))) {
+				alert('Please check exactly one item from the list');
+				$(this).removeData('modal');
+				event.preventDefault();
+			}
+		}
 	});
-	
+
 	$("#uploadModal #upload").click(function(event) {
-		if(isAPIAvailable()) {
+		if (isAPIAvailable()) {
 			var files = $("#uploadModal #file-upload").get(0).files; // FileList object
 			var file = files[0];
 			var reader = new FileReader();
 			reader.readAsText(file);
-			reader.onload = function(event){
+			reader.onload = function(event) {
 				var csv = event.target.result;
 				var data = $.csv.toArrays(csv);
 				var header_line = data[0];
 				var headers = [];
 				var ret = [];
-				for(var item in header_line) {
+				for (var item in header_line) {
 					headers[item] = data[0][item];
 				}
 				var _c = 0;
 				var retRow;
-				for(var row in data) {
+				for (var row in data) {
 					if (row != 0) { // skip the first (header)
 						retRow = {};
-						for(var item in data[row]) {
+						for (var item in data[row]) {
 							retRow[headers[item]] = data[row][item];
 						}
 						ret[_c++] = retRow;
 					}
 				}
-				
+
 				var _credits = JSON.stringify(ret);
 				$.ajax({
 					url: '/api/bulkcredit',
 					type: "POST",
-					data: { operation: "credit", credits: _credits }
-				}).done(function( msg ) {
+					data: {operation: "credit", credits: _credits}
+				}).done(function(msg) {
 					obj = JSON.parse(msg);
-					if (obj.status=="1") { // success - print the file token
+					if (obj.status == "1") { // success - print the file token
 						$('#uploadModal #saveOutput').html('Success to upload. File token: ' + obj.stamp);
 					} else {
 						$('#uploadModal #saveOutput').html('Failed to upload. Reason as follow: ' + obj.desc);
@@ -82,9 +82,9 @@ $(function() {
 		}
 
 	});
-	
+
 	$("#uploadModal #file-upload").on('change', function(event) {
-		
+
 	});
 
 
@@ -113,9 +113,9 @@ $(function() {
 	$('.date').datetimepicker({
 		format: 'yyyy-MM-dd hh:mm:ss',
 	});
-	$(".advanced-options").on('click',function() {
+	$(".advanced-options").on('click', function() {
 		$("#manual_filters").slideToggle();
-		$("i",this).toggleClass("icon-chevron-down icon-chevron-up");
+		$("i", this).toggleClass("icon-chevron-down icon-chevron-up");
 	});
 });
 
@@ -159,34 +159,34 @@ function addFilter(button) {
 	});
 }
 
-function update_current(obj){
+function update_current(obj) {
 
-        var items_checked = $(obj).next("input[type=checkbox]");
-        checkItems=false;
-        if (items_checked.length) {
-                $(obj).data('remote', edit_url_prefix + items_checked.eq(0).val() + '&type=' + $(obj).data('type'));
-        }
+	var items_checked = $(obj).next("input[type=checkbox]");
+	checkItems = false;
+	if (items_checked.length) {
+		$(obj).data('remote', edit_url_prefix + items_checked.eq(0).val() + '&type=' + $(obj).data('type'));
+	}
 }
 
 function isAPIAvailable() {
-  // Check for the various File API support.
-  if (window.File && window.FileReader && window.FileList && window.Blob) {
-	// Great success! All the File APIs are supported.
-	return true;
-  } else {
-	// source: File API availability - http://caniuse.com/#feat=fileapi
-	// source: <output> availability - http://html5doctor.com/the-output-element/
-	document.writeln('The HTML5 APIs used in this form are only available in the following browsers:<br />');
-	// 6.0 File API & 13.0 <output>
-	document.writeln(' - Google Chrome: 13.0 or later<br />');
-	// 3.6 File API & 6.0 <output>
-	document.writeln(' - Mozilla Firefox: 6.0 or later<br />');
-	// 10.0 File API & 10.0 <output>
-	document.writeln(' - Internet Explorer: Not supported (partial support expected in 10.0)<br />');
-	// ? File API & 5.1 <output>
-	document.writeln(' - Safari: Not supported<br />');
-	// ? File API & 9.2 <output>
-	document.writeln(' - Opera: Not supported');
-	return false;
-  }
+	// Check for the various File API support.
+	if (window.File && window.FileReader && window.FileList && window.Blob) {
+		// Great success! All the File APIs are supported.
+		return true;
+	} else {
+		// source: File API availability - http://caniuse.com/#feat=fileapi
+		// source: <output> availability - http://html5doctor.com/the-output-element/
+		document.writeln('The HTML5 APIs used in this form are only available in the following browsers:<br />');
+		// 6.0 File API & 13.0 <output>
+		document.writeln(' - Google Chrome: 13.0 or later<br />');
+		// 3.6 File API & 6.0 <output>
+		document.writeln(' - Mozilla Firefox: 6.0 or later<br />');
+		// 10.0 File API & 10.0 <output>
+		document.writeln(' - Internet Explorer: Not supported (partial support expected in 10.0)<br />');
+		// ? File API & 5.1 <output>
+		document.writeln(' - Safari: Not supported<br />');
+		// ? File API & 9.2 <output>
+		document.writeln(' - Opera: Not supported');
+		return false;
+	}
 }
