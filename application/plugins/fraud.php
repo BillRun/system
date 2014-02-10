@@ -23,105 +23,117 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 	protected $name = 'fraud';
 
 	/**
-	 * Method to send balances to the fraud system.
+	 * Method to save balances events on the fraud system.
 	 * 
 	 * @param array $row
 	 * @param array $balance
-	 * @param string $usage_type
+	 * @param string $usage_type, can be - call, data, mms, sms
 	 * @param array $rate
 	 * @param string $volume
 	 * @param array $calculator
 	 * 
-	 * return array subscriber balance
 	 */
 	public function afterUpdateSubscriberBalance($row, $balance, $usage_type, $rate, $volume, $price, $calculator) {
-		
-		$usage_types = array('usagev' => $usage_type, 'cost' => NULL);
 		
 		$sub_balance = $balance->getRawData();
 		$sub_row = $row->getRawData();
 		$events = Billrun_Factory::db()->eventsCollection();
 		
-		$properties = array('call', 'data', /* 'incoming_call', 'incoming_sms', */ 'mms', 'out_plan_call', 'out_plan_sms', 'sms');
-
-		$sum = NULL;
+		$properties = array();
+		$properties = Billrun_Factory::config()->getConfigValue('fraud.usage_types');
 		
-		foreach ($usage_types as $filter_by => $usage_type) {
-			
-			foreach ($properties as $value) {
+		foreach ($properties as $value) {
 
-				if (empty($usage_type) || preg_match("/$usage_type/", $value) !== 0) {
-					$sum += $sub_balance['balance']['totals'][$value][$filter_by];
+			if (preg_match("/$usage_type/", $value) !== 0) {
+				$sum_usagev += $sub_balance['balance']['totals'][$value]['usagev'];
+			}
+
+			$sum_cost += $sub_balance['balance']['totals'][$value]['cost'];
+		}
+			
+		$usage_type_properties = array('call' => array('threshold_usagev' => Billrun_Factory::config()->getConfigValue('fraud.thresholds.call'), 'units' => 'SEC'),
+										'sms' => array('threshold_usagev' => Billrun_Factory::config()->getConfigValue('fraud.thresholds.sms'), 'units' => 'SMS'),
+										'mms' => array('threshold_usagev' => Billrun_Factory::config()->getConfigValue('fraud.thresholds.mms'), 'units' => 'NUMBER'),
+										'data' => array('threshold_usagev' => Billrun_Factory::config()->getConfigValue('fraud.thresholds.data'), 'units' => 'BYTES'));
+
+		$fraud_connection = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('fraud.db'))->eventsCollection();
+		$fraud_connection_options = array();
+		$fraud_connection_options['w'] = 1;
+		
+		$value = $row['usagev'];
+		$value_before = $sum_usagev;
+		// TODO !! check if small
+		if($usage_type == 'data') {
+			foreach ($usage_type_properties[$usage_type]['threshold_usagev'] as $threshold_plan => $threshold_name) {
+				
+				if($threshold_plan == 'small' && $row['plan'] != 'small') {
+					continue;
+				}
+				
+				$threshold_value = $usage_type_properties[$usage_type]['threshold_usagev'][$threshold_plan][$threshold_name];
+					
+				if(over_threshold($value_before, $value, $threshold_value)) {
+					$this->insert_fraud_event('usagev', $value, $value_before, $row, $threshold_value, $usage_type_properties[$usage_type]['units'], $threshold_name, $fraud_connection, $fraud_connection_options);
 				}
 			}
-
-			$newEvent = new Mongodloid_Entity();
-			$newEvent['creation_time'] = date(Billrun_Base::base_dateformat);
-			$newEvent['aid'] = $row['aid'];
-			$newEvent['sid'] = $row['sid'];
-			$newEvent['source'] = 'billing';
-			$newEvent['event_type'] = 'FP_NATIONAL2';
-			$newEvent['value_before'] = $sum;			
+		}
+		elseif(over_threshold($value_before, $value, $threshold)){
+			$this->insert_fraud_event('usagev', $value, $value_before, $row, $threshold, $usage_type_properties[$usage_type]['units'], 'FP_NATIONAL2', $fraud_connection, $fraud_connection_options);
+		}
 			
-			if($filter_by == 'usagev') {
-				$newEvent['value'] = $row['usagev'];
+		$current_plan_name = $row['plan'];
+
+		if(empty($current_plan_name)) {
+			$current_plan_name = 'NO_GIFT';
+		}
+
+		$threshold = Billrun_Factory::config()->getConfigValue('fraud.thresholds.cost.'.$current_plan_name);
+		$value_before = $sum_cost;
+		$value = $price;
+		
+		if(over_threshold($value_before, $value, $threshold)) {
+			$this->insert_fraud_event('cost', $value, $value_before, $row, $threshold, 'NIS', 'FP_NATIONAL1', $fraud_connection, $fraud_connection_options);
+		}
+	}
+	
+	public function insert_fraud_event($filter_by, $value, $value_before, $row, $threshold, $units, $event_type, $fraud_connection, $fraud_connection_options) {
+		
+		Billrun_Factory::log()->log('Marking down'. $event_type .'lines For fraud plugin', Zend_Log::INFO);
+		
+		$newEvent = new Mongodloid_Entity();
+		$newEvent['value_usagev'] = $row['usagev'];
+		$newEvent['value_usagev_before'] = $value_before;
+		$newEvent['creation_time'] = date(Billrun_Base::base_dateformat);
+		$newEvent['aid'] = $row['aid'];
+		$newEvent['sid'] = $row['sid'];
+		$newEvent['source'] = 'billing';
+		$newEvent['threshold_usagev'] = $threshold;
+		$newEvent['units'] = $units;
+		$newEvent['event_type'] = $event_type;	
+		$newEvent['stamp'] = md5(serialize($newEvent));
+
+		try {
+			$insertResult = $fraud_connection->insert($newEvent, $fraud_connection_options);
+
+			if ($insertResult['ok'] == 1) {
+				Billrun_Factory::log()->log("line with the stamp: " . $newEvent['stamp'] . " inserted to the fraud events", Zend_Log::INFO);
 			} else {
-				$newEvent['value'] = $price;
+				Billrun_Factory::log()->log("Failed insert line with the stamp: " . $newEvent['stamp'] . " to the fraud events", Zend_Log::WARN);
 			}
-
-			switch ($usage_type) {
-				case 'call':
-					$newEvent['threshold'] = Billrun_Factory::config()->getConfigValue('fraud.limits.call', 600000);
-					$newEvent['units'] = 'SEC';
-					break;
-
-				case 'sms':
-					$newEvent['threshold'] = Billrun_Factory::config()->getConfigValue('fraud.limits.sms', 6000);
-					$newEvent['units'] = 'SMS';
-					break;
-
-				case 'mms':
-					$newEvent['threshold'] = Billrun_Factory::config()->getConfigValue('fraud.limits.sms', 1000);
-					$newEvent['units'] = 'NUMBER';
-					break;
-
-				case 'data':
-					$newEvent['threshold'] = Billrun_Factory::config()->getConfigValue('fraud.limits.sms', 7516192768);
-					$newEvent['units'] = 'BYTES';
-					break;
-				
-				case NULL:
-				default:
-					if($filter_by != 'cost') {
-						continue;
-					}
-					
-					$current_plan_name = $row['plan'];
-
-					if(empty($current_plan_name)) {
-						$current_plan_name = 'NO_GIFT';
-					}
-
-					$newEvent['threshold'] = Billrun_Factory::config()->getConfigValue('fraud.limits.cost.'.$current_plan_name);
-					$newEvent['event_type'] = 'FP_NATIONAL1';
-					$newEvent['units'] = 'NIS';
-					break;
-			}
-
-//$current_plan_name = isset($current_plan_name)? $current_plan_name : '';
-//echo "\n current_plan_name: ".$current_plan_name."\n";
-//echo "\n price: ".$price."\n";
-//echo "\n filter_by: ".$filter_by. "\n usage_type: ".$usage_type."\n";
-//echo "\n VALUE: ". ($newEvent['value'] + $newEvent['value_before'] - $newEvent['value_before']). "\n LIMIT: ".$newEvent['threshold'];
-//echo "\n ----------------------------------------------------------------------------------------------------------------- \n";
-
-			if(($newEvent['value'] + $newEvent['value_before'] - $newEvent['value_before']) >= $newEvent['threshold']) {
-
-				$newEvent['stamp'] = md5(serialize($newEvent));
-				$events->save($newEvent);
-			}
+		} catch (Exception $e) {
+			Billrun_Factory::log()->log("Failed insert line with the stamp: " . $newEvent['stamp'] . " to the fraud events, got Exception : " . $e->getCode() . " : " . $e->getMessage(), Zend_Log::ERR);
+		}
+	}
+	
+	public function over_threshold($value_before, $value, $threshold) {
+		
+		$round_threshold = $threshold * ceil((log($value_before, $threshold)));
+		
+		if($value_before < $round_threshold && $round_threshold < $value_before + $value) {
+			return TRUE;
 		}
 		
+		return FALSE;
 	}
-
+	
 }
