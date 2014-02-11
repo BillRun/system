@@ -76,10 +76,11 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 			case '08':
 			case '09':
 				return 'sms';
-			case '11':
-			case '12':
-			case '01':
 			case '02':
+			case '12':
+				return 'incoming_call';
+			case '11':
+			case '01':
 			case '31':
 			default:
 				return 'call';
@@ -101,8 +102,7 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 
 		if ($record_type == "01" || //MOC call
 			($record_type == "11" && ($icg == "1001" || $icg == "1006" || ($icg >= "1201" && $icg <= "1209")) &&
-			$ocg != '3060' && $ocg != '3061') // Roaming on Cellcom and not redirection
-		) {
+			$ocg != '3060' && $ocg != '3061')) { // Roaming on Cellcom and not redirection
 			$called_number_prefixes = $this->getPrefixes($called_number);
 			foreach ($called_number_prefixes as $prefix) {
 				if (isset($this->rates[$prefix])) {
