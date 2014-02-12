@@ -196,7 +196,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	/**
 	 * @see Billrun_Calculator::getCalculatorQueueType
 	 */
-	static protected function getCalculatorQueueType() {
+	public static function getCalculatorQueueType() {
 		return self::$type;
 	}
 
@@ -228,7 +228,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	 * @see Billrun_Calculator::isLineLegitimate
 	 */
 	public function isLineLegitimate($line) {
-		if (isset($line['usagev']) && $line['usagev'] !== 0) {
+		if (isset($line['usagev']) && $line['usagev'] !== 0 && !isset($line['ild_prefix'])) {
 			foreach ($this->translateCustomerIdentToAPI as $key => $toKey) {
 				if (isset($line[$key]) && strlen($line[$key])) {
 					if (is_array($line)) {

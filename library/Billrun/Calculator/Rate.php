@@ -88,7 +88,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	/**
 	 * @see Billrun_Calculator::getCalculatorQueueType
 	 */
-	static protected function getCalculatorQueueType() {
+	public static function getCalculatorQueueType() {
 		return self::$type;
 	}
 

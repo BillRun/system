@@ -22,107 +22,112 @@ class ildsOneWayPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 */
 	protected $name = 'ildsOneWay';
 
-	public function afterProcessorStore($processor) {
-            
-                $str = '';
-                $data = $processor->getData();
-		Billrun_Factory::log('Plugin ildsOneWay', Zend_Log::INFO);
-		foreach ($data['data'] as $line) {
-			$entity = new Mongodloid_Entity($line);
-			$line = $entity->getRawData();    
-			$record_types = Billrun_Factory::config()->getConfigValue('016.one_way.identifications');
+	/**
+	 * Record types relevant for pricing.
+	 * @var array
+	 */
+	protected $record_types = null;
 
-			if(in_array($line['record_type'], $record_types['record_type']) && preg_match($record_types['called_number'] ,substr($line['called_number'], 0, 6))) {
+	/**
+	 * List of all possible provider names. Array key is the called_number prefix.
+	 * @var array 
+	 */
+	protected $providers = array('992' => '013', '993' => 'ILD_BEZ', '994' => '019', '995' => '012', '997' => 'ILD_HOT');
 
-					$result = $this->createRow($line);
-					if(!empty($result)) {
-						$str .= $result;
+	/**
+	 * the data structure of the output file, with each column's fixed width
+	 * @var array
+	 */
+	protected $data_structure = array(
+		'records_type' => 3,
+		'calling_number' => 15,
+		'charging_start_time' => 13,
+		'charging_end_time' => 13,
+		'called_number' => 18,
+		'is_in_glti' => 1,
+		'prepaid' => 1,
+		'usagev' => 10,
+		'sampleDurationInSec' => 8,
+		'aprice' => 10,
+		'origin_carrier' => 10,
+		'file' => 100,
+	);
 
-						Billrun_Factory::log()->log("line stamp: ". $line['stamp'] ." file: ". $line['file'] ." was inserted to 016 one way process", Zend_Log::INFO);
-					}
+	/**
+	 * The output filename 
+	 * @var string
+	 */
+	protected $filename = null;
+	protected $ild_prefix_field_name = "ild_prefix";
+
+	/**
+	 * The output file path
+	 * @var string
+	 */
+	protected $output_path = null;
+
+	public function __construct() {
+		$this->record_types = Billrun_Factory::config()->getConfigValue('016_one_way.identifications.record_types', array('30'));
+		$this->filename = date('Ymd', time()) . '.TXT';
+		$this->output_path = Billrun_Factory::config()->getConfigValue('016_one_way.export.path', 'var/www/billrun/workspace/016_one_way/Treated/') . DIRECTORY_SEPARATOR . $this->filename;
+	}
+
+	public function afterCalculatorWriteRow($row, $calculator) {
+		if ($calculator->getCalculatorQueueType() == 'rate' && $row['type'] == 'nsn' && in_array($row['record_type'], $this->record_types) && isset($row[$this->ild_prefix_field_name])) {
+			$result = $this->createRow($row);
+			if (!empty($result)) {
+				if (!$this->createTreatedFile($result)) {
+					Billrun_Factory::log()->log('Failed inserting 016 one way line with stamp: ' . $row['stamp'] . ' , time: ' . time(), Zend_Log::ERR);
+				} else {
+					Billrun_Factory::log()->log('line stamp: ' . $row['stamp'] . ' file: ' . $row['file'] . ' was inserted to 016 one way process', Zend_Log::INFO);
+				}
 			}
 		}
-                
-                if(!empty($str)) {
-                    $create_file = $this->createTreatedFile($str);
-                    
-                    if(!$create_file) {
-                        Billrun_Factory::log()->log("failed creating 016 one way file, time: ".time(), Zend_Log::ERR);
-                    }
-                    
-                    Billrun_Factory::log()->log("016 one way file ware created with the name: ".$create_file, Zend_Log::INFO);
-                }
 	}
-        
-        /**
+
+	/**
 	 * @see Billrun_Generator_Csv::createRow
 	 */
-        public function createRow($row) {
+	public function createRow($row) {
+		$res = $row->getRawData();
+		$res['file'] = 'cdrFile:' . $row['file'] . ' cdrNb:' . $row['record_number'];
+		$res['charging_start_time'] = substr($row['charging_start_time'], 2);
+		$res['charging_end_time'] = substr($row['charging_end_time'], 2);
+		$res['prepaid'] = '0';
+		$res['is_in_glti'] = '0';
+		$res['origin_carrier'] = $this->providers[$row[$this->ild_prefix_field_name]];
+		$res['records_type'] = '000';
+		$res['sampleDurationInSec'] = '1';
 
-			$providers = array('992016' => '013', '993016' => 'ILD_BEZ', '994016' => '019', '995016' => '012', '997016' => 'ILD_HOT');
-			
-			$row['file'] = 'cdrFile:'. $row['file'] .' cdrNb:'.$row['record_number'];
-			$row['charging_start_time'] = substr($row['charging_start_time'], 2);
-			$row['charging_end_time'] = substr($row['charging_end_time'], 2);                                
-			$row['prepaid'] = '0';
-			$row['is_in_glti'] = '0';
-			$row['origin_carrier'] = $providers[substr($row['called_number'], 0, 6)];
-			$row['records_type'] = '000';
-			$row['sampleDurationInSec'] = '1';
+		$res['aprice'] = Billrun_Calculator_CustomerPricing::getPriceByRate($row['arate'], $row['usaget'], $row['usagev']);
 
-			$row['aprice'] = '1.4468'; // HACK ONLY FOR CHECKING !! REMOVE IT ON PRODUCTION -----------------------------------
+		if ($row['usagev'] == '0') {
+			$res['records_type'] = '005';
+		} else if (!$row['arate']) {
+			$res['records_type'] = '001';
+			$res['sampleDurationInSec'] = '0';
+		}
 
-			if($row['usagev'] == '0') {
-				$row['records_type'] = '005';
-			}
-			else if(!$row['arate']) {
-				$row['records_type'] = '001';
-				$row['sampleDurationInSec'] = '0';
-			}
-								
-            $str = '';
-            $data_structure = $this->dataStructure();
-            foreach ($data_structure as $column => $width) {
-                $str .= str_pad($row[$column],$width," ",STR_PAD_LEFT);
-            }
-            
-            $str .= PHP_EOL;     
-            return $str;
-        }
-                
-        /*
-         * return the data structure
-         */
-        public function dataStructure() {
-            return array(
-                    'records_type' => 3,
-                    'calling_number' => 15,
-                    'charging_start_time' => 13,
-                    'charging_end_time' => 13,
-                    'called_number' => 18,
-                    'is_in_glti' => 1,
-                    'prepaid' => 1,
-                    'usagev' => 10,
-                    'sampleDurationInSec' => 8,
-                    'aprice' => 10,
-                    'origin_carrier' => 10,
-                    'file' => 100,
-               );
-        }
-        
-        /**
+		$str = '';
+		foreach ($this->data_structure as $column => $width) {
+			$str .= str_pad($res[$column], $width, " ", STR_PAD_LEFT);
+		}
+
+		$str .= PHP_EOL;
+		return $str;
+	}
+
+	/**
 	 * @see Billrun_Generator_Csv::createTreatedFile
 	 */
-        public function createTreatedFile($str) {
-                $fileName = date('Ymd', time());
-                
-		$path = Billrun_Factory::config()->getConfigValue('016_one_way.export.path') . '/' . $fileName . '.TXT';
-                
-		if (file_put_contents($path, $str)) {
-                    return $fileName;
-                }
-                
-                Billrun_Factory::log()->log("cannot put content of file: ". $fileName . "path: ". $path, Zend_Log::ERR);
-                return FALSE;
+	public function createTreatedFile($str) {
+		if (!is_dir(dirname($this->output_path))) {
+			mkdir(dirname($this->output_path), 0777, true);
+			if (!is_dir(dirname($this->output_path))) {
+				return false;
+			}
+		}
+		return file_put_contents($this->output_path, $str, FILE_APPEND);
 	}
+
 }
