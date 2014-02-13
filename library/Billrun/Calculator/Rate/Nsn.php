@@ -55,7 +55,7 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 	 * @see Billrun_Calculator_Rate::getLineVolume
 	 */
 	protected function getLineVolume($row, $usage_type) {
-		if ($usage_type == 'call') {
+		if (in_array($usage_type, array('call', 'incoming_call'))) {
 			if (isset($row['duration'])) {
 				return $row['duration'];
 			} else if ($row['record_type'] == '31') { // terminated call
@@ -81,7 +81,7 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 				return 'incoming_call';
 			case '11':
 			case '01':
-			case '31':
+			case '30':
 			default:
 				return 'call';
 		}
@@ -101,8 +101,8 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 		$matchedRate = false;
 
 		if ($record_type == "01" || //MOC call
-			($record_type == "11" && ($icg == "1001" || $icg == "1006" || ($icg >= "1201" && $icg <= "1209")) &&
-			$ocg != '3060' && $ocg != '3061')) { // Roaming on Cellcom and not redirection
+				($record_type == "11" && ($icg == "1001" || $icg == "1006" || ($icg >= "1201" && $icg <= "1209")) &&
+				$ocg != '3060' && $ocg != '3061')) { // Roaming on Cellcom and not redirection
 			$called_number_prefixes = $this->getPrefixes($called_number);
 			foreach ($called_number_prefixes as $prefix) {
 				if (isset($this->rates[$prefix])) {
