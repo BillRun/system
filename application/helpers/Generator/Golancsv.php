@@ -94,7 +94,9 @@ class Generator_Golancsv extends Billrun_Generator {
 			'OutsidePackageNoVatTap3',
 			'TotalVat',
 			'TotalCharge',
-			'CountActiveCli'
+			'CountActiveCli',
+			'kosherCount',
+			'TotalChargeVatRounded',
 		);
 		$this->subscribersFields = array(
 			'billrun_key',
@@ -115,7 +117,8 @@ class Generator_Golancsv extends Billrun_Generator {
 			'curPackage',
 			'nextPackage',
 			'TotalChargeVatData',
-			'CountOfKb'
+			'CountOfKb',
+			'isKosher',
 		);
 
 		$this->loadPlans();
@@ -206,10 +209,11 @@ class Generator_Golancsv extends Billrun_Generator {
 			$accounts_counter++;
 			$vat = isset($account['vat']) ? $account['vat'] : floatval(Billrun_Factory::config()->getConfigValue('pricing.vat', 0.18));
 			$acc_row = array();
-			$acc_row['TotalChargeVat'] = round($this->getAccountTotalChargeVat($account), 2);
+			$acc_row['TotalChargeVat'] = $this->getAccountTotalChargeVat($account);
+			$acc_row['TotalChargeVatRounded'] = round($this->getAccountTotalChargeVat($account), 2);
 			$acc_row['billrun_key'] = $this->stamp;
 			$acc_row['InvoiceNumber'] = $account['invoice_id'];
-			$acc_row['TotalCharge'] = $acc_row['TotalVat'] = $acc_row['OutsidePackageNoVatTap3'] = $acc_row['ManualCorrection'] = $acc_row['ManualCorrectionCharge'] = $acc_row['ManualCorrectionCredit'] = $acc_row['TotalExtraOverPackage'] = $acc_row['TotalExtraOutOfPackage'] = $acc_row['TotalFlat'] = 0;
+			$acc_row['TotalCharge'] = $acc_row['TotalVat'] = $acc_row['OutsidePackageNoVatTap3'] = $acc_row['ManualCorrection'] = $acc_row['ManualCorrectionCharge'] = $acc_row['ManualCorrectionCredit'] = $acc_row['TotalExtraOverPackage'] = $acc_row['TotalExtraOutOfPackage'] = $acc_row['TotalFlat'] = $acc_row['kosherCount'] = 0;
 			$acc_row['CountActiveCli'] = 0;
 			foreach ($account['subs'] as $subscriber) {
 				$sub_row['billrun_key'] = $this->stamp;
@@ -227,6 +231,7 @@ class Generator_Golancsv extends Billrun_Generator {
 				$acc_row['TotalVat'] += $sub_row['TotalVat'] = $this->getTotalVat($subscriber);
 				$acc_row['TotalCharge'] += $sub_row['TotalCharge'] = $this->getTotalCharge($subscriber);
 				$acc_row['CountActiveCli'] += $sub_row['isAccountActive'] = $this->getIsAccountActive($subscriber);
+				$acc_row['kosherCount'] += $sub_row['isKosher'] = $this->is_kosher($subscriber);
 				$sub_row['curPackage'] = $this->getCurPackage($subscriber);
 				$sub_row['nextPackage'] = $this->getNextPackage($subscriber);
 				$sub_row['TotalChargeVatData'] = $this->getTotalChargeVatData($subscriber, $vat);
@@ -290,6 +295,10 @@ class Generator_Golancsv extends Billrun_Generator {
 			$is_active = 1;
 		}
 		return $is_active;
+	}
+
+	protected function is_kosher($subscriber) {
+		return (isset($subscriber['kosher']) && $subscriber['kosher'] == "true") ? 1 : 0;
 	}
 
 	/**
