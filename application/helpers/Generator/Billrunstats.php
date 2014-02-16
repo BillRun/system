@@ -20,13 +20,14 @@ class Generator_Billrunstats extends Billrun_Generator {
 	 *
 	 * @var Mongodloid_Collection
 	 */
-	protected $billrun_stats_coll = null;
+	protected $billrunstats_coll = null;
+	protected $ggsn_zone = 'INTERNET_BILL_BY_VOLUME';
 
 	public function __construct($options) {
 		self::$type = 'billrunstats';
 		$options['auto_create_dir'] = FALSE;
 		parent::__construct($options);
-		$this->billrun_stats_coll = Billrun_Factory::db()->billrun_statsCollection();
+		$this->billrunstats_coll = Billrun_Factory::db(array('name' => 'billrunstats'))->billrunstatsCollection();
 	}
 
 	/**
@@ -36,9 +37,9 @@ class Generator_Billrunstats extends Billrun_Generator {
 		$billrun = Billrun_Factory::db()->billrunCollection();
 
 		$this->data = $billrun
-				->query('billrun_key', $this->stamp)
-				->exists('invoice_id')
-				->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
+						->query('billrun_key', $this->stamp)
+						->exists('invoice_id')
+						->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
 
 		Billrun_Factory::log()->log("generator entities loaded: " . $this->data->count(), Zend_Log::INFO);
 
@@ -62,11 +63,15 @@ class Generator_Billrunstats extends Billrun_Generator {
 					$flat_data_record['subscriber_status'] = $flat_breakdown_record['subscriber_status'] = $sub_entry['subscriber_status'];
 					$flat_data_record['current_plan'] = $flat_breakdown_record['current_plan'] = is_null($sub_entry['current_plan']) ? null : Billrun_Factory::plan(array('id' => $sub_entry['current_plan']['$id']))->getName();
 					$flat_data_record['next_plan'] = $flat_breakdown_record['next_plan'] = is_null($sub_entry['next_plan']) ? null : Billrun_Factory::plan(array('id' => $sub_entry['next_plan']['$id']))->getName();
-					$flat_data_record['sub_before_vat'] = $flat_breakdown_record['sub_before_vat'] = isset($sub_entry['totals']['before_vat']) ? $sub_entry['totals']['before_vat'] : 0;
+					$flat_data_record['kosher'] = $flat_breakdown_record['kosher'] = (($sub_entry['kosher'] == "true" || (is_bool($sub_entry['kosher']) && $sub_entry['kosher'])) ? 1 : 0);
+//					$flat_data_record['sub_before_vat'] = $flat_breakdown_record['sub_before_vat'] = isset($sub_entry['totals']['before_vat']) ? $sub_entry['totals']['before_vat'] : 0;
 					if (isset($sub_entry['breakdown'])) {
 						foreach ($sub_entry['breakdown'] as $flat_breakdown_record['plan'] => $categories) {
 							foreach ($categories as $flat_breakdown_record['category'] => $zones) {
 								foreach ($zones as $flat_breakdown_record['zone'] => $zone_totals) {
+									if ($flat_breakdown_record['zone'] == $this->ggsn_zone) {
+										continue; // it's taken from lines->data->counters
+									}
 									if ($flat_breakdown_record['plan'] != 'credit') {
 										if (isset($zone_totals['totals'])) {
 											$flat_breakdown_record['vat'] = $this->getFieldVal($zone_totals['vat'], $default_vat);
@@ -74,6 +79,8 @@ class Generator_Billrunstats extends Billrun_Generator {
 												$flat_breakdown_record['usagev'] = $usage_totals['usagev'];
 												$flat_breakdown_record['cost'] = $this->getFieldVal($usage_totals['cost'], 0);
 												$flat_breakdown_record['count'] = $this->getFieldVal($usage_totals['count'], 1);
+												$this->addFlatRecord($flat_breakdown_record);
+												unset($flat_breakdown_record['_id']);
 											}
 										} else {
 											$flat_breakdown_record['vat'] = $zone_totals['vat'];
@@ -81,6 +88,8 @@ class Generator_Billrunstats extends Billrun_Generator {
 											$flat_breakdown_record['usaget'] = 'flat';
 											$flat_breakdown_record['usagev'] = 1;
 											$flat_breakdown_record['count'] = 1;
+											$this->addFlatRecord($flat_breakdown_record);
+											unset($flat_breakdown_record['_id']);
 										}
 									} else {
 										$flat_breakdown_record['vat'] = $default_vat;
@@ -88,9 +97,9 @@ class Generator_Billrunstats extends Billrun_Generator {
 										$flat_breakdown_record['usaget'] = strpos($flat_breakdown_record['category'], 'charge') === 0 ? 'charge' : 'refund';
 										$flat_breakdown_record['usagev'] = 1;
 										$flat_breakdown_record['count'] = 1;
+										$this->addFlatRecord($flat_breakdown_record);
+										unset($flat_breakdown_record['_id']);
 									}
-									$this->addFlatRecord($flat_breakdown_record);
-									unset($flat_breakdown_record['_id']);
 								}
 							}
 						}
@@ -99,7 +108,7 @@ class Generator_Billrunstats extends Billrun_Generator {
 						foreach ($sub_entry['lines']['data']['counters'] as $flat_data_record['day'] => $counters) {
 							$flat_data_record['plan'] = $counters['plan_flag'] . '_plan';
 							$flat_data_record['category'] = 'base';
-							$flat_data_record['zone'] = 'INTERNET_BILL_BY_VOLUME';
+							$flat_data_record['zone'] = $this->ggsn_zone;
 							$flat_data_record['vat'] = $default_vat;
 							$flat_data_record['usagev'] = $counters['usagev'];
 							$flat_data_record['usaget'] = 'data';
@@ -114,10 +123,20 @@ class Generator_Billrunstats extends Billrun_Generator {
 		}
 	}
 
+	/**
+	 * Adds a flattened record to the dbs
+	 * @param array $record
+	 */
 	protected function addFlatRecord($record) {
-		$this->billrun_stats_coll->insert($record);
+		$this->billrunstats_coll->insert($record);
 	}
 
+	/**
+	 * Returns an array value if it is set
+	 * @param mixed $field the array value
+	 * @param mixed $defVal the default value to return if $field is not set
+	 * @return mixed the array value if it is set, otherwise returns $defVal
+	 */
 	protected function getFieldVal(&$field, $defVal) {
 		if (isset($field)) {
 			return $field;
@@ -126,3 +145,24 @@ class Generator_Billrunstats extends Billrun_Generator {
 	}
 
 }
+
+//create table billrunstats(
+//aid INT NOT NULL, 
+//billrun_key varchar(10) NOT NULL, 
+//sid INT NOT NULL, 
+//subscriber_status varchar(100), 
+//current_plan varchar(100), 
+//next_plan varchar(100), 
+//sub_before_vat DECIMAL(64,25), 
+//day INT, 
+//plan varchar(100), 
+//category varchar(100), 
+//zone varchar(150), 
+//vat DECIMAL(5,5), 
+//usagev BIGINT,
+//usaget varchar(100), 
+//count INT, 
+//cost DECIMAL(64,25)
+//);
+//
+//mysqlimport --ignore-lines=1 --fields-optionally-enclosed-by='"' --fields-terminated-by=',' --lines-terminated-by='\n' --local test /home/shani/Desktop/subscribers.csv

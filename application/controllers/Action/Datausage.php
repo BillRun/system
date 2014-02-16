@@ -24,7 +24,7 @@ class DatausageAction extends Action_Base {
 
 		$params = array('plan', 'data_usage', 'from_account_id', 'to_account_id', 'billrun');
 		foreach ($params as $param) {
-			if (empty($request[$param])) {
+			if (!isset($request[$param])) {
 				$msg = 'Missing required parameter: ' . $param;
 				Billrun_Factory::log()->log($msg, Zend_Log::ERR);
 				$this->getController()->setOutput(array(array(
@@ -32,6 +32,7 @@ class DatausageAction extends Action_Base {
 						'desc' => 'failed',
 						'output' => $msg,
 				)));
+				return;
 			}
 		}
 

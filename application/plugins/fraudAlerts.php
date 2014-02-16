@@ -31,12 +31,12 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 
 	/**
 	 * Is the  Alert plugin in a dry run mode (doesn't  actually sends alerts)
-	 * @var timestamp
+	 * @var boolean
 	 */
 	protected $isDryRun = false;
 
-	public function __construct(array $options = array()) {
-
+	public function __construct($options = array(
+	)) {
 		$this->alertServer = isset($options['alertHost']) ?
 			$options['alertHost'] :
 			Billrun_Factory::config()->getConfigValue('fraudAlerts.alert.host', '127.0.0.1');
@@ -64,8 +64,10 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @param type $handler the caller handler.
 	 * @return type
 	 */
-	public function handlerNotify($handler) {
-
+	public function handlerNotify($handler, $options) {
+		if ($options['type'] != 'roaming') {
+			return FALSE;
+		}
 		$ret = $this->roamingNotify();
 
 		return $ret;
@@ -82,16 +84,25 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		//Get the amount of alerts allow per run 0 means no limit (or a very high limit)
 		$alertsLeft = Billrun_Factory::config()->getConfigValue('fraudAlerts.alert_limit', 0);
 
+		$alertsFilter = Billrun_Factory::config()->getConfigValue('fraudAlerts.filter', array());
 		foreach ($events as $event) {
+			// check if alert is filter by configuration
+			if (!empty($alertsFilter) && !in_array($event['event_type'], $alertsFilter)) {
+				continue;
+			}
+
 			$ret = $this->notifyOnEvent($event);
 			if ($ret === FALSE) {
+				$this->sendEmailOnFailure($event, $ret);
 				//some connection failure - mark event as paused
 				$this->markEvent($event, FALSE);
 			} else if (isset($ret['success']) && $ret['success']) {
 				$event['deposit_stamp'] = $event['stamps'][0]; // remember what event you sent to the remote server
-				$event['returned_value'] = $ret;
+				$event['returned_value'] = (array) $ret;
 				$this->markEvent($event);
 				$this->markEventLines($event);
+			} else {
+				$this->sendEmailOnFailure($event, $ret);
 			}
 
 			//Decrease the amount of alerts allowed in a single run if 0 is reached the break the loop.
@@ -107,6 +118,24 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 
 	/**
+	 * Send an  email alert on events that failed to notify the  remote RPC (CRM)
+	 * @param type $event the event that  was  suppose  to be passed to the RPC.
+	 * @param type $rpcRet the  remote rpc returned value
+	 */
+	protected function sendEmailOnFailure($event, $rpcRet) {
+		$msg = "Failed  when sending event to RPC" . PHP_EOL;
+		$msg .= "Event : stamp : {$event['stamps'][0]} , imsi :  " . @$event['imsi'] . " ,  msisdn :  " . (@$event['msisdn']) . PHP_EOL;
+		$msg .= (isset($rpcRet['message']) ? "Message From RPC: " . $rpcRet['message'] : "No  failure  message  from the RPC.") . PHP_EOL;
+		$tmpStr = "";
+		foreach ($rpcRet as $key => $val) {
+			$tmpStr .= " $key : $val,";
+		}
+		$msg .= "RPC Result : " . $tmpStr . PHP_EOL;
+		Billrun_Factory::log()->log($msg, Zend_Log::ALERT);
+		return Billrun_Util::sendMail("Failed Fraud Alert, " . date(Billrun_Base::base_dateformat), $msg, Billrun_Factory::config()->getConfigValue('fraudAlert.failed_alerts.recipients', array()));
+	}
+
+	/**
 	 * Method to send events to the appropiate hadling body. 
 	 * @param array $args the arguments to send to the remote server.
 	 * @return mixed the response from the remote server after json decoding
@@ -115,12 +144,9 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		if (!(isset($args['imsi']) || isset($args['msisdn']))) {
 			Billrun_Log::getInstance()->log("fraudAlertsPlugin::notifyOnEvent cannot find IMSI nor NDC_SN", Zend_Log::NOTICE);
 		}
-		$alertsFilter = Billrun_Factory::config()->getConfigValue('fraudAlerts.filter', array());
-		if (!empty($alertsFilter) && !in_array($args['event_type'], $alertsFilter)) {
-			return FALSE;
-		}
 
-		if (!Billrun_Factory::config()->isProd()) {
+		$forceTest = Billrun_Factory::config()->getConfigValue('fraudAlerts.forceTest', FALSE);
+		if ($forceTest || !Billrun_Factory::config()->isProd()) {
 			$key = Billrun_Factory::config()->getConfigValue('fraudAlerts.alert.key', '');
 			$testData = Billrun_Factory::config()->getConfigValue('fraudAlerts.alert.testKeys', array());
 
@@ -133,7 +159,8 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		unset($args['deposit_stamp']);
 
 		//move field that are required to a specific array leave extra field in the old one.
-		$required_args = array('event_type' => 'event_type',
+		$required_args = array(
+			'event_type' => 'event_type',
 			'threshold' => 'threshold',
 			'usage' => 'value',
 			'units' => 'units',
@@ -169,32 +196,30 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		Billrun_Log::getInstance()->log("fraudAlertsPlugin::notifyRemoteServer URL: " . $url, Zend_Log::INFO);
 
 		if (!$this->isDryRun) {
-			$client = curl_init($url);
-			curl_setopt($client, CURLOPT_POST, TRUE);
-			curl_setopt($client, CURLOPT_POSTFIELDS, $post_fields);
-			curl_setopt($client, CURLOPT_RETURNTRANSFER, TRUE);
-			$response = curl_exec($client);
-			curl_close($client);
+			$output = Billrun_Util::sendRequest($url, $post_fields, Zend_Http_Client::POST);
 
-			if ($response === FALSE || empty($response)) {
-				Billrun_Log::getInstance()->log("fraudAlertsPlugin::notifyRemoteServer connection failure or empty response.", Zend_Log::ERR);
+			Billrun_Log::getInstance()->log("fraudAlertsPlugin::notifyRemoteServer response: " . $output, Zend_Log::INFO);
+
+			$ret = json_decode($output, true);
+
+			if (is_null($ret)) {
+				Billrun_Log::getInstance()->log("fraudAlertsPlugin::notifyRemoteServer response is empty, null or not json string: ", Zend_Log::ERR);
 				return FALSE;
 			}
 
-			Billrun_Log::getInstance()->log("fraudAlertsPlugin::notifyRemoteServer response: " . $response, Zend_Log::INFO);
-			Billrun_Log::getInstance()->log("fraudAlertsPlugin::notifyRemoteServer decode: " . print_r(json_decode($response), 1), Zend_Log::INFO);
+			Billrun_Log::getInstance()->log("fraudAlertsPlugin::notifyRemoteServer decode: " . print_r($ret, 1), Zend_Log::INFO);
 
-			return Zend_Json::decode($response);
+			return $ret;
 		} else {
 			Billrun_Log::getInstance()->log("fraudAlertsPlugin::notifyRemoteServer - Running in DRY RUN mode returning successful alert.", Zend_Log::INFO);
 			return array('deposit_result' => 1,
 				'transaction_status' => 000,
 				'phase' => NULL,
-				'sid' => 1337,
+				'subscriber_id' => 1337,
 				'NDC_SN' => $query_args['NDC_SN'],
 				'IMSI' => $query_args['IMSI'],
 				'SECOND_IMSI' => $query_args['IMSI'],
-				'aid' => 1337,
+				'account_id' => 1337,
 				'SMS' => 1,
 				'EMAIL' => 1,
 				'success' => 1);
@@ -214,21 +239,24 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 				'source' => array('$in' => $types)
 			),
 			), array(
-			'$sort' => array('imsi' => 1, 'msisdn' => 1)
+			'$sort' => array('priority' => 1)
 			), array(
 			'$group' => array(
 				'_id' => array('imsi' => '$imsi', 'msisdn' => '$msisdn'),
 				'id' => array('$addToSet' => '$_id'),
 				'imsi' => array('$first' => '$imsi'),
+				'msisdn' => array('$first' => '$msisdn'),
 				'value' => array('$first' => '$value'),
 				'event_type' => array('$first' => '$event_type'),
 				'units' => array('$first' => '$units'),
-				'msisdn' => array('$first' => '$msisdn'),
 				'threshold' => array('$first' => '$threshold'),
-				'deposit_stamp' => array('$first' => '$_id'),
+				'priority' => array('$first' => '$priority'),
+				//'deposit_stamp' => array('$first' => '$_id'),
 				'source' => array('$first' => '$source'),
 				'stamps' => array('$addToSet' => '$stamp'),
 			),
+			), array(
+			'$sort' => array('priority' => 1)
 			), array(
 			'$project' => array(
 				'_id' => 0,
@@ -238,7 +266,7 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 				'event_type' => 1,
 				'units' => 1,
 				'threshold' => 1,
-				'deposit_stamp' => 1,
+				//	'deposit_stamp' => 1,
 				'id' => 1,
 				'source' => 1,
 				'stamps' => 1,

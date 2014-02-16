@@ -16,8 +16,9 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Pl
 use Billrun_Traits_FileSequenceChecking;
 
 	const HEADER_LENGTH = 54;
-	const MAX_CHUNKLENGTH_LENGTH = 512;
+	const MAX_CHUNKLENGTH_LENGTH = 4096;
 	const FILE_READ_AHEAD_LENGTH = 16384;
+	const RECORD_PADDING = 8;
 
 	/**
 	 * plugin name
@@ -58,15 +59,15 @@ use Billrun_Traits_FileSequenceChecking;
 	 * method to collect data which need to be handle by event
 	 */
 	public function handlerCollect($options) {
-		if ($options['type'] != 'roaming') {
-			return FALSE;
+		if( $options['type'] != 'roaming') { 
+			return FALSE; 
 		}
 		$lines = Billrun_Factory::db()->linesCollection();
-
+		
 		//@TODO  switch  these lines  once  you have the time to test it.
 		//$charge_time = new MongoDate($this->get_last_charge_time(true) - date_default_timezone_get() );
 		$charge_time = Billrun_Util::getLastChargeTime(true);
-
+		
 		$aggregateQuery = $this->getBaseAggregateQuery($charge_time);
 
 		Billrun_Factory::log()->log("ggsnPlugin::handlerCollect collecting monthly data exceeders", Zend_Log::DEBUG);
@@ -117,11 +118,12 @@ use Billrun_Traits_FileSequenceChecking;
 		$exceeders = array();
 		$timeWindow = strtotime("-" . Billrun_Factory::config()->getConfigValue('ggsn.hourly.timespan', '4 hours'));
 		$limit = floatval(Billrun_Factory::config()->getConfigValue('ggsn.hourly.thresholds.datalimit', 150000));
-		$aggregateQuery[1]['$match']['$and'] = array(array('record_opening_time' => array('$gte' => date('YmdHis', $timeWindow))),
-			array('record_opening_time' => $aggregateQuery[1]['$match']['record_opening_time']));
+	//	$aggregateQuery[1]['$match']['$and'] = array(array('record_opening_time' => array('$gte' => date('YmdHis', $timeWindow))),
+	//		array('record_opening_time' => $aggregateQuery[1]['$match']['record_opening_time']));
+		$aggregateQuery[1]['$match']['unified_record_time'] = array('$gte' => new MongoDate($timeWindow));
 
 		//unset($aggregateQuery[0]['$match']['sgsn_address']);
-		unset($aggregateQuery[1]['$match']['record_opening_time']);
+		//unset($aggregateQuery[1]['$match']['record_opening_time']);
 
 		$having = array(
 			'$match' => array(
@@ -204,17 +206,23 @@ use Billrun_Traits_FileSequenceChecking;
 		return array(
 			array(
 				'$match' => array(
-					'type' => 'ggsn'
+					'type' => 'ggsn',
+					'unified_record_time' => array('$gte' => new MongoDate($charge_time)),
 				)
 			),
 			array(
 				'$match' => array(
 					//@TODO  switch to unified time once you have the time to test it
-					'urt' => array('$gte' => new MongoDate($charge_time)),
+					'unified_record_time' => array('$gte' => new MongoDate($charge_time)),
 //					'record_opening_time' => array('$gt' => $charge_time),
 					'deposit_stamp' => array('$exists' => false),
 					'event_stamp' => array('$exists' => false),
+					
 					'sgsn_address' => array('$regex' => '^(?!62\.90\.|37\.26\.)'),
+					'$or' => array(
+						array('rating_group' => array( '$exists' => FALSE)),
+						array('rating_group' => 0)
+					),
 					'$or' => array(
 						array('fbc_downlink_volume' => array('$gt' => 0)),
 						array('fbc_uplink_volume' => array('$gt' => 0))
@@ -265,7 +273,7 @@ use Billrun_Traits_FileSequenceChecking;
 		}
 
 		$asnObject = Asn_Base::parseASNString($data);
-		$parser->setLastParseLength($asnObject->getDataLength() + 8);
+		$parser->setLastParseLength($asnObject->getDataLength() + self::RECORD_PADDING);
 
 		$type = $asnObject->getType();
 		$cdrLine = false;
@@ -280,8 +288,12 @@ use Billrun_Traits_FileSequenceChecking;
 			$cdrLine['urt'] = new MongoDate(Billrun_Util::dateTimeConvertShortToIso($cdrLine['record_opening_time'], $timeOffset));
 			if (is_array($cdrLine['rating_group'])) {
 				$fbc_uplink_volume = $fbc_downlink_volume = 0;
+				$cdrLine['org_fbc_uplink_volume'] = $cdrLine['fbc_uplink_volume'];
+				$cdrLine['org_fbc_downlink_volume'] = $cdrLine['fbc_downlink_volume'];
+				$cdrLine['org_rating_group'] = $cdrLine['rating_group'];
+
 				foreach ($cdrLine['rating_group'] as $key => $rateVal) {
-					if ($rateVal != 10) {
+					if (isset($this->ggsnConfig['rating_groups'][$rateVal])) {
 						$fbc_uplink_volume += $cdrLine['fbc_uplink_volume'][$key];
 						$fbc_downlink_volume += $cdrLine['fbc_downlink_volume'][$key];
 					}
@@ -307,8 +319,11 @@ use Billrun_Traits_FileSequenceChecking;
 		if ($this->getName() != $type) {
 			return FALSE;
 		}
+		$header['line_count'] = reset(unpack("N", substr($data, 0x12, 4)));
+		$header['next_file_number'] = reset(unpack("N", substr($data, 0x16, 4)));
+		//Billrun_Factory::log(print_r($header,1));
 
-		$header = utf8_encode(base64_encode($data)); //$this->getASNDataByConfig($data, $this->ggsnConfig['header'], $this->ggsnConfig['fields']);		
+		$header['raw'] = utf8_encode(base64_encode($data)); // Is  this  needed?
 
 		return $header;
 	}
@@ -331,7 +346,7 @@ use Billrun_Traits_FileSequenceChecking;
 			return FALSE;
 		}
 
-		$trailer = utf8_encode(base64_encode($data)); //$this->getASNDataByConfig($data, $this->ggsnConfig['trailer'], $this->ggsnConfig['fields']);		
+		$trailer = utf8_encode(base64_encode($data)); // Is  this  needed?
 
 		return $trailer;
 	}
@@ -406,18 +421,22 @@ use Billrun_Traits_FileSequenceChecking;
 		$processedData['header'] = $processor->buildHeader(fread($fileHandle, self::HEADER_LENGTH));
 
 		$bytes = null;
-		do {
+		while (true) {
 			if (!feof($fileHandle) && !isset($bytes[self::MAX_CHUNKLENGTH_LENGTH])) {
 				$bytes .= fread($fileHandle, self::FILE_READ_AHEAD_LENGTH);
 			}
-
+			if (!isset($bytes[self::HEADER_LENGTH])) {
+				break;
+			}
 			$row = $processor->buildDataRow($bytes);
 			if ($row) {
+				$row['stamp'] = md5($bytes);
 				$processedData['data'][] = $row;
 			}
-			//Billrun_Factory::log()->log( $processor->getParser()->getLastParseLength(),  Zend_Log::DEBUG);	
-			$bytes = substr($bytes, $processor->getParser()->getLastParseLength());
-		} while (isset($bytes[self::HEADER_LENGTH]));
+			//Billrun_Factory::log()->log( $processor->getParser()->getLastParseLength(),  Zend_Log::DEBUG);
+			$advance = $processor->getParser()->getLastParseLength();
+			$bytes = substr($bytes, $advance <= 0 ? 1 : $advance);
+		}
 
 		$processedData['trailer'] = $processor->buildTrailer($bytes);
 

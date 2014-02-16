@@ -92,3 +92,20 @@ div:only-of-type>.remove-filter {
 .table-no-more-tables {
     max-width: 1190px;
 }
+
+input[type=checkbox] {
+	width:20px;
+}
+
+.toolbar-rates {
+	
+}
+.control-group {
+	height: 35px;
+}
+.toolbar-rates .control-group0,
+.toolbar-rates .control-group2 {
+	display: inline;
+	float:left;
+	margin-right: 10px;
+}

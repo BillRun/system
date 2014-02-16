@@ -35,6 +35,7 @@ class Generator_Golanxml extends Billrun_Generator {
 	protected $plans;
 	protected $data_rate;
 	protected $lines_coll;
+	protected $invoice_version = "1.0";
 
 	public function __construct($options) {
 		parent::__construct($options);
@@ -43,6 +44,9 @@ class Generator_Golanxml extends Billrun_Generator {
 		}
 		if (isset($options['size'])) {
 			$this->size = intval($options['size']);
+		}
+		if (isset($options['invoice_version'])) {
+			$this->invoice_version = $options['invoice_version'];
 		}
 
 		$this->lines_coll = Billrun_Factory::db()->linesCollection();
@@ -55,8 +59,9 @@ class Generator_Golanxml extends Billrun_Generator {
 		Billrun_Factory::log()->log('Loading ' . $this->size . ' billrun documents with offset ' . $this->offset, Zend_Log::INFO);
 		$resource = $billrun
 			->query('billrun_key', $this->stamp)
+//				->in('aid', array(2065512))
 			->exists('invoice_id')
-//				->notExists('invoice_file')
+//			->notExists('invoice_file')
 			->cursor()->timeout(-1)
 			->sort(array("aid" => 1))
 			->skip($this->offset * $this->size)
@@ -130,11 +135,11 @@ class Generator_Golanxml extends Billrun_Generator {
 		foreach ($row['subs'] as $subscriber) {
 			$sid = $subscriber['sid'];
 			$subscriber_flat_costs = $this->getFlatCosts($subscriber);
-			if (!is_array($subscriber_flat_costs) || empty($subscriber_flat_costs)) {
-				Billrun_Factory::log('Missing flat costs for subscriber ' . $sid, Zend_Log::INFO);
-			}
-			if (is_null($subscriber['current_plan']) && is_null($subscriber['next_plan'])) {
+			if (is_null($subscriber['current_plan']) && is_null($subscriber['next_plan']) && !isset($subscriber['breakdown'])) {
 				continue;
+			}
+			if ($subscriber['subscriber_status'] == 'open' && (!is_array($subscriber_flat_costs) || empty($subscriber_flat_costs))) {
+				Billrun_Factory::log('Missing flat costs for subscriber ' . $sid, Zend_Log::INFO);
 			}
 
 			$subscriber_inf = $xml->addChild('SUBSCRIBER_INF');
@@ -483,7 +488,6 @@ class Generator_Golanxml extends Billrun_Generator {
 		Billrun_Factory::log()->log("create xml file " . $fileName, Zend_Log::INFO);
 		$path = $this->export_directory . '/' . $fileName;
 		$ret = file_put_contents($path, $xmlContent);
-		Billrun_Factory::log()->log("create xml file " . $fileName . ' - finished', Zend_Log::INFO);
 		return $ret;
 	}
 
@@ -548,7 +552,7 @@ class Generator_Golanxml extends Billrun_Generator {
 		Billrun_Factory::log()->log('Pulling lines of ' . $field . ' ' . $entity[$field], Zend_Log::DEBUG);
 		$ret = array();
 		foreach ($lines as $line) {
-			$ret[] = $line;
+			$ret[$line['stamp']] = $line;
 		}
 		Billrun_Factory::log()->log('Pulling lines of ' . $field . ' ' . $entity[$field] . ' - finished', Zend_Log::DEBUG);
 		return $ret;
@@ -830,7 +834,7 @@ class Generator_Golanxml extends Billrun_Generator {
 	protected function basic_xml() {
 		$xml = <<<EOI
 <?xml version="1.0" encoding="UTF-8"?>
-<INVOICE>
+<INVOICE version="$this->invoice_version">
 	<TELECOM_INFORMATION>
 	</TELECOM_INFORMATION>
 	<INV_CUSTOMER_INFORMATION>

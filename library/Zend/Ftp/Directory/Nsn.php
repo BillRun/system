@@ -83,7 +83,7 @@ class Zend_Ftp_Directory_Nsn extends Zend_Ftp_Directory  implements Zend_Ftp_Dir
 		foreach ( $filesToUpdate as $id => $value ) {
 			if( $id > 0 && $value['state'] == static::FILE_STATE_FULL &&  isset($value['updated']) && $value['updated'] == true) {				
 				fseek( $outgoingFile , $id * static::OUTGOING_RECORD_SIZE );
-				$strTime = date('siHdmy', $value['time']).substr(date('Y',$value['time']),2,2);
+				$strTime = date('siHdmy', $value['time']).substr(date('Y',$value['time']),0,2);
 				fwrite( $outgoingFile, pack('H*', $strTime ), static::OUTGOING_RECORD_SIZE);			
 			}
 		}		

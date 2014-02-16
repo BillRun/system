@@ -13,9 +13,12 @@ foreach ($this->hiddenKeys as $key) {
 }
 
 print '<div class="form_protect">';
+if (isset($protected['log_stamp'])) {
+	$log_stamp = $protected['log_stamp'];
+}
 foreach ($protected as $k => $v) {
 	print '<span class="label label-info">' . $k . '</span>';
-	if ($k == "log_stamp") {
+	if ($k == "file") {
 		print '<a href="#LogPopup" data-toggle="modal" data-remote=""><span id="form' . $k . '"class="label label-inverse">' . $v . '</span></a><br />';
 	} else {
 		print '<span id="form' . $k . '"class="label label-inverse">' . $v . '</span><br />';
@@ -79,9 +82,9 @@ print '</div>';
 		$.ajax('<?php echo $this->baseUrl; ?>/admin/save', _ajaxOpts);
 	});
 
-	$('#formlog_stamp').click(function() {
-		if ($('#formlog_stamp').html().length) {
-			$('#formlog_stamp').parent().data('remote', '<?php echo $this->baseUrl; ?>/admin/logDetails?type=logDetails&coll=log&stamp=' + $('#formlog_stamp').html());
+	$('#formfile').click(function() {
+		if ($('#formfile').html().length) {
+			$('#formfile').parent().data('remote', '<?php echo $this->baseUrl; ?>/admin/logDetails?type=logDetails&coll=log&stamp=' + $('#formlog_stamp').html());
 		}
 	});
 </script>

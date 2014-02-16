@@ -41,7 +41,7 @@ class Billrun_Calculator_Carrier extends Billrun_Calculator {
 	}
 
 	public function updateRow($row) {
-		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteRow', array('row' => $row));
+		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteRow', array($row, $this));
 		$carrierOut = $this->detectCarrierOut($row);
 		$carrierIn = $this->detectCarrierIn($row);
 		$current = $row->getRawData();
@@ -54,7 +54,7 @@ class Billrun_Calculator_Carrier extends Billrun_Calculator {
 		$newData = array_merge($current, $added_values);
 		$row->setRawData($newData);
 
-		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteRow', array('row' => $row));
+		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteRow', array($row, $this));
 		return true;
 	}
 

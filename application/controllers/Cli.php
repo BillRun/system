@@ -47,7 +47,7 @@ class CliController extends Yaf_Controller_Abstract {
 				'export-path-s' => 'Respond: The path To export files',
 				'workspace-s' => 'The path to the workspace directory',
 				'parser-s' => 'Process: Parser type (default fixed)',
-				'backup' => 'Process: Backup path after the file processed (default ./backup)',				
+				'backup' => 'Process: Backup path after the file processed (default ./backup)',
 				'page-s' => 'the  page to aggregate',
 				'size-s' => 'the size of the page to aggregate',
 				'environment-s' => 'Environment of the running command',
@@ -89,7 +89,7 @@ class CliController extends Yaf_Controller_Abstract {
 		// add log to stdout when we are on cli
 		Billrun_Log::getInstance()->addWriter(new Zend_Log_Writer_Stream('php://stdout'));
 		$this->addOutput("Running Billrun from CLI!");
-		$this->addOutput("Runnning under : '" . Billrun_Factory::config()->getEnv() . "' configuration.");
+		$this->addOutput("Running under : '" . Billrun_Factory::config()->getEnv() . "' configuration.");
 
 
 		//Go through all actions and run the first one that was selected

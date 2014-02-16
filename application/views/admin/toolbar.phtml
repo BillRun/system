@@ -1,23 +1,26 @@
-<?php
-// todo: remove this
-require_once '../application/helpers/Admin/Lines.php';
-?>
-<div class="toolbar">
+<div class="toolbar toolbar-<?php echo strtolower($this->title); ?>">
 	<form id="search-criteria" action="" method="POST" class="form-vertical">
 		<?php
+//		print_R($this->filter_fields_order);
+//		print_R($this->filter_fields);die;
 		if (is_array($this->filter_fields_order) && is_array($this->filter_fields)) {
-			foreach ($this->filter_fields_order as $row_fields) {
-				echo "<div class=\"control-group\">
+			foreach ($this->filter_fields_order as $key => $row_fields) {
+				echo "<div class=\"control-group control-group" . $key . "\">
 							<div class=\"controls form-inline\">";
 				foreach ($row_fields as $filter_field_key => $field_view) {
 					$filter_field = $this->filter_fields[$filter_field_key];
 					if ($filter_field['input_type'] == 'boolean') {
-						echo "&nbsp;<label class=\"checkbox\">
-							<input class=\"span" . $field_view['width'] . "\" name=\"" . $filter_field['key'] . "\" type=\"checkbox\"" . (isset($this->session->$filter_field['key']) && $this->session->$filter_field['key'] == "on" ? " checked" : "") . ">" . $filter_field['display'] .
-						"</label>";
+						echo "<input class=\"span" . $field_view['width'] . "\" id=\"" . $filter_field['key'] . "\" name=\"" . $filter_field['key'] . "\" type=\"checkbox\"" . (isset($this->session->$filter_field['key']) && $this->session->$filter_field['key'] == "on" ? " value=\"1\" checked=\"checked\"" : "") . ">" 
+							. "<label class=\"checkbox\" for=\"" . $filter_field['key'] . "\">" . $filter_field['display'] . "</label>";
 					} else if ($filter_field['input_type'] == 'number') {
 						echo "&nbsp;<label class=\"control-label\" for=\"" . $filter_field['key'] . "\">" . $filter_field['display'] . "</label>
 								<input id=\"" . $filter_field['key'] . "\" class=\"span" . $field_view['width'] . "\" name=\"" . $filter_field['key'] . "\" type=\"text\" value=\"" . (isset($this->session->$filter_field['key']) ? $this->session->$filter_field['key'] : $filter_field['default']) . "\">";
+					} else if ($filter_field['input_type'] == 'text') {
+						echo "&nbsp;<label class=\"control-label\" for=\"" . $filter_field['key'] . "\">" . $filter_field['display'] . "</label>
+								<input id=\"" . $filter_field['key'] . "\" class=\"span" . $field_view['width'] . "\" name=\"" . $filter_field['key'] 
+								. "\" type=\"text\" value=\"" 
+									. (isset($this->session->$filter_field['key']) ? $this->session->$filter_field['key'] : $filter_field['default']) 
+							. "\">";
 					} else if ($filter_field['input_type'] == 'date') {
 						echo "&nbsp;<label class=\"control-label\">" . $filter_field['display'] . "</label>
 								<div class=\"input-append date\" id=\"datetimepicker_" . $filter_field['key'] . "\" data-date=\"" . $filter_field['default'] . "\" data-date-format=\"yyyy-MM-dd hh:mm:ss\">
@@ -34,7 +37,7 @@ require_once '../application/helpers/Admin/Lines.php';
 								} else {
 									$selected = "";
 								}
-							} else if (in_array($value, $filter_field['default'])) {
+							} else if (is_array($filter_field['default']) && in_array($value, $filter_field['default'])) {
 								$selected = " selected";
 							} else {
 								$selected = "";
@@ -47,16 +50,20 @@ require_once '../application/helpers/Admin/Lines.php';
 				echo "</div></div>";
 			}
 
-			echo "<div><a href=\"javascript:void(0)\" class=\"advanced-options\" href=\"#\">Advanced options <i class=\"" . (Lines::isManualFilter($this->session) ? "icon-chevron-up" : "icon-chevron-down") . "\"></i></a></div>
-			<div id = \"manual_filters\"" . (Lines::isManualFilter($this->session) ? "" : " style=\"display:none;\"") . ">";
-			if (Lines::isManualFilter($this->session)) {
-				for ($i = 0; $i < count($this->session->manual_key); $i++) {
-					echo Lines::getFilterRow($this->session->manual_key[$i], $this->session->manual_type[$i], $this->session->manual_operator[$i], $this->session->manual_value[$i]);
+			if (strtolower($this->title) == 'lines') :
+				echo "<div><a href=\"javascript:void(0)\" class=\"advanced-options\" href=\"#\">Advanced options <i class=\"" . (Admin_Lines::isManualFilter($this->session) ? "icon-chevron-up" : "icon-chevron-down") . "\"></i></a></div>
+                            <div id = \"manual_filters\"" . (Admin_Lines::isManualFilter($this->session) ? "" : " style=\"display:none;\"") . ">";
+				if (Admin_Lines::isManualFilter($this->session)) {
+					for ($i = 0; $i < count($this->session->manual_key); $i++) {
+						echo Admin_Lines::getFilterRow($this->session->manual_key[$i], $this->session->manual_type[$i], $this->session->manual_operator[$i], $this->session->manual_value[$i]);
+					}
+				} else {
+					echo Admin_Lines::getFilterRow(); // add first manual filter on load
 				}
-			} else {
-				echo Lines::getFilterRow(); // add first manual filter on load
-			}
-			echo "</div>";
+				echo "</div>";
+			elseif (strtolower($this->title) == 'rates') :
+			endif;
+
 			if (is_array($this->sort_fields)) {
 				echo "Sort by: <div class=\"control-group\">
 		<div class=\"controls form-inline\">
@@ -66,10 +73,10 @@ require_once '../application/helpers/Admin/Lines.php';
 				}
 				echo "</select>
 			<label class=\"radio inline\">
-                                <input name=\"order\" value=\"desc\" type=\"radio\"" . (isset($this->session->order) && $this->session->order == "desc" ? "checked=\"checked\"" : "") . "> Descending order
+                                <input name=\"order\" value=\"desc\" type=\"radio\"" . ((isset($this->session->order) && $this->session->order == "desc") ? " checked=\"checked\"" : "") . "> Descending order
 			</label>
 			<label class=\"radio inline\">
-                                <input name=\"order\" value=\"asc\" type=\"radio\"" . (isset($this->session->order) && $this->session->order == "desc" ? "" : "checked=\"checked\"") . "> Ascending order
+                                <input name=\"order\" value=\"asc\" type=\"radio\"" . ((isset($this->session->order) && $this->session->order == "desc") ? "" : " checked=\"checked\"") . "> Ascending order
 			</label>
 		</div></div>";
 			}
@@ -93,6 +100,7 @@ require_once '../application/helpers/Admin/Lines.php';
 			<?php endif; ?>
 			<?php if (strtolower($this->title) == 'lines') : ?>
 				<span><a id='download' data-type="download" href="/admin/csvExport" class="btn btn-info"><i class="icon-download-alt"> </i>Export to CSV</a></span>
+				<span><a id='upload' data-type="upload" href="#uploadModal" class="btn btn-primary" data-toggle="modal" role="button"><i class="icon-upload"> </i>Import</a></span>
 			<?php endif; ?>
 		</span>
 

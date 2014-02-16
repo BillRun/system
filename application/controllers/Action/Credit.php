@@ -129,7 +129,7 @@ class CreditAction extends Action_Base {
 			return $this->setError('reason error', $credit_row);
 		}
 
-		if (is_string($filtered_request['service_name'])) {
+		if (!empty($filtered_request['service_name']) && is_string($filtered_request['service_name'])) {
 			$filtered_request['service_name'] = preg_replace('/[^a-zA-Z0-9-_]+/', '_', $filtered_request['service_name']); // removes unwanted characters from the string (especially dollar sign and dots) as they are not allowed as mongo keys
 		} else {
 			return $this->setError('service_name error', $credit_row);
@@ -149,12 +149,9 @@ class CreditAction extends Action_Base {
 			return $this->setError('account, subscriber ids must be positive integers', $credit_row);
 		}
 
-		if (Billrun_Util::isTimestamp(strval($filtered_request['credit_time']))) {
-			$filtered_request['urt'] = new MongoDate((int) $filtered_request['credit_time']);
-			unset($filtered_request['credit_time']);
-		} else {
-			return $this->setError('credit_time is not a valid time stamp', $credit_row);
-		}
+		$credit_time = new Zend_Date($filtered_request['credit_time']);
+		$filtered_request['urt'] = new MongoDate($credit_time->getTimestamp());
+		unset($filtered_request['credit_time']);
 
 		$filtered_request['vatable'] = filter_var($filtered_request['vatable'], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
 		if (!is_null($filtered_request['vatable'])) {
@@ -198,134 +195,6 @@ class CreditAction extends Action_Base {
 		}
 		$this->getController()->setOutput(array($output));
 		return;
-	}
-
-}
-
-class BulkCreditAction extends CreditAction {
-
-	/**
-	 * method to execute the bulk credit
-	 * it's called automatically by the api main controller
-	 */
-	public function execute() {
-		$request = $this->getRequest()->getPost();
-//		$request = $this->getRequest()->getQuery();
-//		$request = $this->getRequest()->getRequest(); // supports GET / POST requests
-		if (isset($request['operation'])) {
-			if ($request['operation'] == 'credit') {
-				return $this->bulkCredit($request);
-			} else if ($request['operation'] == 'query') {
-				return $this->queryCredit($request);
-			}
-		}
-		return $this->setError('Unrecognized operation', $request);
-	}
-
-	protected function bulkCredit($request) {
-		$credits = json_decode($request['credits'], true);
-		if (!is_array($credits) || empty($credits)) {
-			return $this->setError('Input json is invalid', $request);
-		}
-
-		$filename = md5(microtime()) . ".json";
-		foreach ($credits as $credit) {
-			$parsed_row = $this->parseRow($credit);
-			if (is_null($parsed_row)) {
-				return;
-			}
-			$parsed_row['file'] = $filename;
-			$parsed_rows[] = $parsed_row;
-		}
-
-		$options = array(
-			'type' => 'credit',
-			'file_name' => $filename,
-			'file_content' => json_encode($parsed_rows),
-		);
-
-		$receiver = Billrun_Receiver::getInstance($options);
-		if ($receiver) {
-			$files = $receiver->receive();
-			if (!$files) {
-				return $this->setError('Couldn\'t receive file', $request);
-			}
-		} else {
-			return $this->setError('Receiver cannot be loaded', $request);
-		}
-		$this->getController()->setOutput(array(array(
-				'status' => 1,
-				'desc' => 'success',
-				'operation' => 'credit',
-				'stamp' => $options['file_name'],
-				'input' => $request,
-		)));
-		return true;
-	}
-
-	protected function queryCredit($request) {
-		if (isset($request['stamp'])) {
-			$filtered_request['stamp'] = $request['stamp'];
-		} else {
-			return $this->setError('Stamp is missing', $request);
-		}
-
-		if (!isset($request['details'])) {
-			$filtered_request['details'] = 0;
-		} else {
-			$filtered_request['details'] = filter_var($request['details'], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
-			if (!is_null($filtered_request['details'])) {
-				$filtered_request['details'] = (int) $filtered_request['details'];
-			} else {
-				return $this->setError('details could be either "0" or "1"', $request);
-			}
-		}
-		return $this->getFileStatus($filtered_request['stamp'], $filtered_request['details']);
-	}
-
-	protected function getFileStatus($filename, $details) {
-		$log = Billrun_Factory::db()->logCollection();
-		$query = array(
-			'file_name' => $filename,
-		);
-		$log_entry = $log->query($query)->cursor()->current();
-		if ($log_entry->isEmpty()) {
-			return $this->setError("File $filename not found");
-		}
-		$statuses = array(
-			0 => 'File received',
-			1 => 'In progress',
-			2 => 'Done processing',
-		);
-		if (isset($log_entry['process_time'])) {
-			$status = 2;
-		} else if (isset($log_entry['start_process_time'])) {
-			$status = 1;
-		} else {
-			$status = 0;
-		}
-		$output = array(
-			'status' => 1,
-			'desc' => $statuses[$status],
-			'operation' => 'query',
-			'stamp' => $filename,
-		);
-		if ($status == 2) {
-			if ($details) {
-				$lines = Billrun_Factory::db()->linesCollection();
-				$query = array(
-					'file' => $filename,
-				);
-				$details = $lines->query($query)->cursor();
-				$output['details'] = array();
-				foreach ($details as $row) {
-					$output['details'][] = $row->getRawData();
-				}
-				$output['count'] = count($output['details']);
-			}
-		}
-		$this->getController()->setOutput(array($output));
-		return true;
 	}
 
 }

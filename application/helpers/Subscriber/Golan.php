@@ -18,6 +18,9 @@ class Subscriber_Golan extends Billrun_Subscriber {
 	protected $plan = null;
 	protected $next_plan = null;
 	protected $time = null;
+	protected $save_crm_output = false;
+	protected $crm_output_dir = null;
+	protected $extraFields = array('kosher');
 
 	public function __construct($options = array()) {
 		parent::__construct($options);
@@ -29,6 +32,13 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		}
 		if (isset($options['time'])) {
 			$this->time = $options['time'];
+		}
+
+		if (isset($options['save_crm_output'])) {
+			$this->save_crm_output = $options['save_crm_output'];
+		}
+		if ($this->save_crm_output) {
+			$this->crm_output_dir = (isset($options['crm_output_dir']) ? $options['crm_output_dir'] : (getcwd() . '/files/crm_output/billable_subscribers')) . '/' . date('Ymd') . '/';
 		}
 		// pay attention that just availableFields array can be access from outside
 	}
@@ -173,7 +183,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 	}
 
 	//@TODO change this function
-	protected function requestAccounts($params) {
+	protected function requestAccounts($params, $saveToFile = false) {
 		$host = self::getRpcServer();
 		$url = Billrun_Factory::config()->getConfigValue('crm.url', '');
 
@@ -183,8 +193,17 @@ class Subscriber_Golan extends Billrun_Subscriber {
 //		$path .= "&account_id=4171195"; // Shani
 //		$path .= "&account_id=9073496"; // Ofer
 //		$path .= "&account_id=5236445";
-//		$path .= "&account_id=7236490";
+//		$path .= "&account_id=9999263";
 		$json = self::send($path);
+		if ($saveToFile) {
+			if (!file_exists($this->crm_output_dir)) {
+				mkdir($this->crm_output_dir, 0777, true);
+			}
+			$file_path = $this->crm_output_dir . time() . '_' . md5($path) . '.json';
+//			file_put_contents($file_path, $path . PHP_EOL);
+//			file_put_contents($file_path, $json, FILE_APPEND);
+			file_put_contents($file_path, $json);
+		}
 		if (!$json) {
 			return false;
 		}
@@ -204,19 +223,27 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		} else {
 			$params = array('msisdn' => '', 'IMSI' => '', 'DATETIME' => $time, 'page' => $page, 'size' => $size, 'account_id' => $acc_id);
 		}
-		$accounts = $this->requestAccounts($params);
-		if (isset($accounts['success']) && $accounts['success'] === FALSE) {
-			Billrun_Factory::log()->log('No accounts for page ' . $page . ' of size ' . $size . ' at date ' . $time, Zend_Log::INFO);
+		$accounts = $this->requestAccounts($params, is_null($acc_id) && $this->save_crm_output);
+		return $this->parseActiveSubscribersOutput($accounts, strtotime($time));
+	}
+
+	/**
+	 * @param array $output_arr
+	 * @param int $time
+	 * @return array
+	 */
+	protected function parseActiveSubscribersOutput($output_arr, $time) {
+		if (isset($output_arr['success']) && $output_arr['success'] === FALSE) {
 			return array();
 		} else {
 			$subscriber_general_settings = Billrun_Config::getInstance()->getConfigValue('subscriber', array());
-			if (is_array($accounts) && !empty($accounts)) {
+			if (is_array($output_arr) && !empty($output_arr)) {
 				$ret_data = array();
-				foreach ($accounts as $aid => $account) {
+				foreach ($output_arr as $aid => $account) {
 					if (isset($account['subscribers'])) {
 						foreach ($account['subscribers'] as $subscriber) {
 							$concat = array(
-								'time' => strtotime($time),
+								'time' => $time,
 								'data' => array(
 									'aid' => intval($aid),
 									'sid' => intval($subscriber['subscriber_id']),
@@ -224,6 +251,11 @@ class Subscriber_Golan extends Billrun_Subscriber {
 									'next_plan' => isset($subscriber['next_plan']) ? $subscriber['next_plan'] : null,
 								),
 							);
+							foreach (self::getExtraFieldsForBillrun() as $field) {
+								if (isset($subscriber[$field])) {
+									$concat['data'][$field] = $subscriber[$field];
+								}
+							}
 							$subscriber_settings = array_merge($subscriber_general_settings, $concat);
 							$ret_data[intval($aid)][] = Billrun_Subscriber::getInstance($subscriber_settings);
 						}
@@ -235,6 +267,15 @@ class Subscriber_Golan extends Billrun_Subscriber {
 				return null;
 			}
 		}
+	}
+
+	public function getListFromFile($file_path, $time) {
+		$json = @file_get_contents($file_path);
+		$arr = @json_decode($json, true);
+		if (!is_array($arr) || empty($arr)) {
+			return array();
+		}
+		return $this->parseActiveSubscribersOutput($arr, $time);
 	}
 
 	public function getPlan() {

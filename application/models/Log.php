@@ -50,7 +50,7 @@ class LogModel extends TableModel {
 		return $sort_fields;
 	}
 
-	public function getData($filter_query = array()) {
+	public function getDataByStamp($filter_query = array()) {
 		$cursor = $this->collection->query($filter_query)->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
 		$this->_count = $cursor->count();
 		return $cursor->current();
@@ -59,7 +59,8 @@ class LogModel extends TableModel {
 	public function getProtectedKeys($entity, $type) {
 		$parent_protected = parent::getProtectedKeys($entity, $type);
 		if ($type == 'logDetails') {
-			return array_merge($parent_protected, array("path", "file_name", "stamp", "received_time"));
+			$added_fields = array("source", "type", "path", "file_name", "stamp", "received_time", "retrieved_from", "process_time");
+			return array_merge($parent_protected, $added_fields);
 		}
 		return $parent_protected;
 	}

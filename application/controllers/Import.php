@@ -15,7 +15,7 @@
 class ImportController extends Yaf_Controller_Abstract {
 
 	public function indexAction() {
-		die();
+		die(); // don't enter this by mistake
 		$parser = Billrun_Parser::getInstance(array(
 				'type' => 'separator',
 				'separator' => ",",
@@ -111,7 +111,8 @@ class ImportController extends Yaf_Controller_Abstract {
 	}
 
 	public function csvAction() {
-		$path = '/home/shani/Desktop/refunds_201312.csv'; // TODO: setup by config cli input
+		die(); // don't enter this by mistake
+		$path = ''; // TODO: setup by config cli input
 		if (!file_exists($path) || is_dir($path)) {
 			Billrun_Factory::log("file not exists or path is directory");
 			return FALSE;
