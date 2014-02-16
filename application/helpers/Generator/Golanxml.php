@@ -36,6 +36,7 @@ class Generator_Golanxml extends Billrun_Generator {
 	protected $data_rate;
 	protected $lines_coll;
 	protected $invoice_version = "1.0";
+	protected $writer = null;
 
 	public function __construct($options) {
 		parent::__construct($options);
@@ -52,20 +53,31 @@ class Generator_Golanxml extends Billrun_Generator {
 		$this->lines_coll = Billrun_Factory::db()->linesCollection();
 		$this->loadRates();
 		$this->loadPlans();
+
+//		$this->writer = new XMLWriter(); //create a new xmlwriter object
+//		$this->writer->openURI('/home/shani/projects/billrun/files/invoices/201402/shani.xml');
+//		$this->writer->startDocument(); //create the document tag, you can specify the version and encoding here
+//		$this->writer->startElement("Customer"); //Create an element
+//		$this->writer->writeElement("id", "1");
+//		$this->writer->writeElement("name", "Oluwafemi"); //Write to the element
+//		$this->writer->writeElement("address", "Cresent Drive, TX");
+//		$this->writer->endElement(); //End the element
+//		$this->writer->flush(); //End the element
+//		die();
 	}
 
 	public function load() {
 		$billrun = Billrun_Factory::db()->billrunCollection();
 		Billrun_Factory::log()->log('Loading ' . $this->size . ' billrun documents with offset ' . $this->offset, Zend_Log::INFO);
 		$resource = $billrun
-			->query('billrun_key', $this->stamp)
+				->query('billrun_key', $this->stamp)
 //				->in('aid', array(2065512))
-			->exists('invoice_id')
+				->exists('invoice_id')
 //			->notExists('invoice_file')
-			->cursor()->timeout(-1)
-			->sort(array("aid" => 1))
-			->skip($this->offset * $this->size)
-			->limit($this->size);
+				->cursor()->timeout(-1)
+				->sort(array("aid" => 1))
+				->skip($this->offset * $this->size)
+				->limit($this->size);
 
 		// @TODO - there is issue with the timeout; need to be fixed
 		//         meanwhile, let's pull the lines right after the query
@@ -81,6 +93,7 @@ class Generator_Golanxml extends Billrun_Generator {
 		Billrun_Factory::log('Generating invoices...', Zend_log::INFO);
 		// use $this->export_directory
 		$i = 1;
+		$this->writer = new XMLWriter(); //create a new xmlwriter object
 		foreach ($this->data as $row) {
 			Billrun_Factory::log('Current index ' . $i++);
 			$this->createXmlInvoice($row);
@@ -99,6 +112,7 @@ class Generator_Golanxml extends Billrun_Generator {
 		$invoice_filename = $row['billrun_key'] . '_' . str_pad($row['aid'], 9, '0', STR_PAD_LEFT) . '_' . str_pad($invoice_id, 11, '0', STR_PAD_LEFT) . '.xml';
 		$invoice_file_path = $this->export_directory . '/' . $invoice_filename;
 		if (!file_exists($invoice_file_path)) {
+			$this->writer->openURI('/home/shani/projects/billrun/files/invoices/201402/shani.xml');
 			$xml = $this->getXML($row, $lines);
 			$this->createXmlFile($invoice_filename, $xml->asXML());
 			$this->setFileStamp($row, $invoice_filename);
@@ -126,8 +140,11 @@ class Generator_Golanxml extends Billrun_Generator {
 		$aid = $row['aid'];
 		Billrun_Factory::log()->log("xml account " . $aid, Zend_Log::INFO);
 		// @todo refactoring the xml generation to another class
-		$xml = $this->basic_xml();
-		$xml->TELECOM_INFORMATION->VAT_VALUE = $this->displayVAT($row['vat']);
+		$this->startInvoice();
+		$xml = $this->write_basic_header();
+		$this->writeVAT($row);
+		$this->EndInvoice();
+		$this->flushAndDie();		
 		$xml->INV_CUSTOMER_INFORMATION->CUSTOMER_CONTACT->EXTERNALACCOUNTREFERENCE = $aid;
 		if (is_null($lines) && (!isset($this->subscribers) || in_array(0, $this->subscribers))) {
 			$lines = $this->get_lines($row);
@@ -152,8 +169,8 @@ class Generator_Golanxml extends Billrun_Generator {
 					$subscriber_lines = $this->get_lines($subscriber);
 				} else {
 					$func = function($line) use ($sid) {
-						return $line['sid'] == $sid;
-					};
+								return $line['sid'] == $sid;
+							};
 					$subscriber_lines = array_filter($lines, $func);
 				}
 				foreach ($subscriber_lines as $line) {
@@ -846,6 +863,21 @@ EOI;
 		return simplexml_load_string($xml);
 	}
 
+	protected function write_basic_header() {
+		$xml = <<<EOI
+<?xml version="1.0" encoding="UTF-8"?>
+<INVOICE version="$this->invoice_version">
+	<TELECOM_INFORMATION>
+	</TELECOM_INFORMATION>
+	<INV_CUSTOMER_INFORMATION>
+		<CUSTOMER_CONTACT>
+		</CUSTOMER_CONTACT>
+	</INV_CUSTOMER_INFORMATION>
+</INVOICE>
+EOI;
+		return $this->writer->writeRaw($xml);
+	}
+
 	protected function setFileStamp($line, $filename) {
 		$current = $line->getRawData();
 		$added_values = array(
@@ -1143,6 +1175,17 @@ EOI;
 
 	protected function getInvoiceId($row) {
 		return $row['invoice_id'];
+	}
+	protected function writeVAT($billrun) {
+		$this->writer->startElement('TELECOM_INFORMATION');
+		$this->writer->writeElement('VAT_VALUE', $this->displayVAT($billrun['vat']));
+		$this->writer->endElement();
+	}
+	
+	protected function flushAndDie() {
+		$this->writer->endDocument();
+		$this->writer->flush();
+		die;
 	}
 
 }
