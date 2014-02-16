@@ -69,7 +69,7 @@ class ildsOneWayPlugin extends Billrun_Plugin_BillrunPluginBase {
 	public function __construct() {
 		$this->record_types = Billrun_Factory::config()->getConfigValue('016_one_way.identifications.record_types', array('30'));
 		$this->filename = date('Ymd', time()) . '.TXT';
-		$this->output_path = Billrun_Factory::config()->getConfigValue('016_one_way.export.path', 'var/www/billrun/workspace/016_one_way/Treated/') . DIRECTORY_SEPARATOR . $this->filename;
+		$this->output_path = Billrun_Factory::config()->getConfigValue('016_one_way.export.path', '/var/www/billrun/workspace/016_one_way/Treated/') . DIRECTORY_SEPARATOR . $this->filename;
 	}
 
 	public function afterCalculatorWriteRow($row, $calculator) {
