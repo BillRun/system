@@ -37,9 +37,9 @@ class Generator_Billrunstats extends Billrun_Generator {
 		$billrun = Billrun_Factory::db()->billrunCollection();
 
 		$this->data = $billrun
-				->query('billrun_key', $this->stamp)
-				->exists('invoice_id')
-				->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
+						->query('billrun_key', $this->stamp)
+						->exists('invoice_id')
+						->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
 
 		Billrun_Factory::log()->log("generator entities loaded: " . $this->data->count(), Zend_Log::INFO);
 
@@ -63,6 +63,7 @@ class Generator_Billrunstats extends Billrun_Generator {
 					$flat_data_record['subscriber_status'] = $flat_breakdown_record['subscriber_status'] = $sub_entry['subscriber_status'];
 					$flat_data_record['current_plan'] = $flat_breakdown_record['current_plan'] = is_null($sub_entry['current_plan']) ? null : Billrun_Factory::plan(array('id' => $sub_entry['current_plan']['$id']))->getName();
 					$flat_data_record['next_plan'] = $flat_breakdown_record['next_plan'] = is_null($sub_entry['next_plan']) ? null : Billrun_Factory::plan(array('id' => $sub_entry['next_plan']['$id']))->getName();
+					$flat_data_record['kosher'] = $flat_breakdown_record['kosher'] = (($sub_entry['kosher'] == "true" || (is_bool($sub_entry['kosher']) && $sub_entry['kosher'])) ? 1 : 0);
 //					$flat_data_record['sub_before_vat'] = $flat_breakdown_record['sub_before_vat'] = isset($sub_entry['totals']['before_vat']) ? $sub_entry['totals']['before_vat'] : 0;
 					if (isset($sub_entry['breakdown'])) {
 						foreach ($sub_entry['breakdown'] as $flat_breakdown_record['plan'] => $categories) {

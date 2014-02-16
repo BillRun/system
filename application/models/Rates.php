@@ -15,10 +15,18 @@
  */
 class RatesModel extends TabledateModel {
 
+	protected $showprefix;
+	
 	public function __construct(array $params = array()) {
 		$params['collection'] = Billrun_Factory::db()->rates;
 		parent::__construct($params);
 		$this->search_key = "key";
+		if (isset($params['showprefix'])) {
+			$this->showprefix = $params['showprefix'];
+			if ($this->size > 50 && $this->showprefix) {
+				$this->size = 50;
+			}
+		}
 	}
 
 	/**
@@ -35,21 +43,21 @@ class RatesModel extends TabledateModel {
 
 		$entity = parent::getItem($id);
 
-		if (!isset($entity['rates'])) {
-			return;
-		}
-		$raw_data = $entity->getRawData();
-		foreach ($raw_data['rates'] as &$rate) {
-			if (isset($rate['plans'])) {
-				foreach ($rate['plans'] as &$plan) {
-					$data = $this->collection->getRef($plan);
-					if ($data instanceof Mongodloid_Entity) {
-						$plan = $data->get('name');
+		if (isset($entity['rates'])) {
+			$raw_data = $entity->getRawData();
+			foreach ($raw_data['rates'] as &$rate) {
+				if (isset($rate['plans'])) {
+					foreach ($rate['plans'] as &$plan) {
+						$data = $this->collection->getRef($plan);
+						if ($data instanceof Mongodloid_Entity) {
+							$plan = $data->get('name');
+						}
 					}
 				}
 			}
+			$entity->setRawData($raw_data);
 		}
-		$entity->setRawData($raw_data);
+		
 		return $entity;
 	}
 
@@ -91,15 +99,26 @@ class RatesModel extends TabledateModel {
 	}
 
 	public function getTableColumns() {
-		$columns = array(
-			'key' => 'Key',
-			't' => 'Type',
-			'unit' => 'Unit',
-			'tprice' => 'Price',
-			'from' => 'From',
-			'to' => 'To',
-			'_id' => 'Id',
-		);
+		if ($this->showprefix) {
+			$columns = array(
+				'key' => 'Key',
+				'prefix' => 'Prefix',
+				'from' => 'From',
+				'to' => 'To',
+				'_id' => 'Id',
+			);
+		} else {
+			$columns = array(
+				'key' => 'Key',
+				't' => 'Type',
+				'tprice' => 'Price',
+				'tduration' => 'Interval',
+				'taccess' => 'Access',
+				'from' => 'From',
+				'to' => 'To',
+				'_id' => 'Id',
+			);
+		}
 		return $columns;
 	}
 
@@ -140,6 +159,13 @@ class RatesModel extends TabledateModel {
 //				'values' => array('All', 'Call', 'SMS', 'Data'),
 				'default' => '',
 			),
+			'showprefix' => array(
+				'key' => 'showprefix',
+				'db_key' => 'nofilter',
+				'input_type' => 'boolean',
+				'display' => 'Show prefix',
+				'default' => $this->showprefix? 'on' : '',
+			),
 		);
 		return array_merge($filter_fields, parent::getFilterFields());
 	}
@@ -162,7 +188,14 @@ class RatesModel extends TabledateModel {
 				),
 			),
 		);
-		return array_merge($filter_field_order, parent::getFilterFieldsOrder());
+		$post_filter_field = array(
+			array(
+				'showprefix' => array(
+					'width' => 2,
+				),
+			),
+		);
+		return array_merge($filter_field_order, parent::getFilterFieldsOrder(), $post_filter_field);
 	}
 	
 	/**
@@ -177,9 +210,25 @@ class RatesModel extends TabledateModel {
 		$resource = $cursor->sort($this->sort)->skip($this->offset())->limit($this->size);
 		$ret = array();
 		foreach ($resource as $item) {
-			if ($item->get('rates')) {
+			if ($item->get('rates') && !$this->showprefix) {
 				foreach($item->get('rates') as $key => $rate) {
-					$ret[] = new Mongodloid_Entity(array_merge($item->getRawData(), array('t' => $key, 'tprice' => $rate['rate'][0]['price']), $rate));
+					$added_columns = array(
+						't' => $key,
+						'tprice' => $rate['rate'][0]['price'],
+						'taccess' => isset($rate['access']) ? $rate['access'] : 0,
+					);
+					if (strpos($key, 'call') !== FALSE) {
+						$added_columns['tduration'] = Billrun_Util::durationFormat($rate['rate'][0]['interval']);
+					} else if ($key == 'data') {
+						$added_columns['tduration'] = Billrun_Util::byteFormat($rate['rate'][0]['interval'], '', 0, true);
+					} else {
+						$added_columns['tduration'] = $rate['rate'][0]['interval'];
+					}
+					$ret[] = new Mongodloid_Entity(array_merge($item->getRawData(), $added_columns, $rate));
+				}
+			} else if ($this->showprefix && isset($filter_query['$and'][0]['key'])) {
+				foreach ($item->get('params.prefix') as $prefix) {
+					$ret[] = new Mongodloid_Entity(array_merge($item->getRawData(), array('prefix' => $prefix)));
 				}
 			} else {
 				$ret[] = $item;

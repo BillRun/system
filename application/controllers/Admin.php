@@ -29,6 +29,8 @@ class AdminController extends Yaf_Controller_Abstract {
 	 */
 	public function init() {
 		$this->baseUrl = $this->getRequest()->getBaseUri();
+		Yaf_Loader::getInstance(APPLICATION_PATH . '/application/helpers')->registerLocalNamespace('Admin');
+
 	}
 
 	/**
@@ -194,7 +196,6 @@ class AdminController extends Yaf_Controller_Abstract {
 	}
 
 	public function csvExportAction() {
-		require_once '../application/helpers/Admin/Lines.php';
 		$session = $this->getSession('lines');
 
 		if (!empty($session->query)) {
@@ -208,7 +209,7 @@ class AdminController extends Yaf_Controller_Abstract {
 			$skip = Billrun_Factory::config()->getConfigValue('admin_panel.csv_export.skip', 0);
 			$size = Billrun_Factory::config()->getConfigValue('admin_panel.csv_export.size', 10000);
 			$params = array_merge($this->getTableViewParams($session->query, $skip, $size), $this->createFilterToolbar('lines'));
-			Lines::getCsvFile($params);
+			Admin_Lines::getCsvFile($params);
 		} else {
 			return false;
 		}
@@ -241,11 +242,12 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * rates controller of admin
 	 */
 	public function ratesAction() {
-		$this->forward("tabledate", array('table' => 'rates'));
+		$this->forward("tabledate", array('table' => 'rates', 'showprefix' => $this->getRequest()->get('showprefix')));
 		return false;
 	}
 
 	public function tabledateAction() {
+		$showprefix = $this->_request->getParam("showprefix") == 'on'? 1 : 0;
 		$table = $this->_request->getParam("table");
 
 //		$sort = array('urt' => -1);
@@ -253,9 +255,11 @@ class AdminController extends Yaf_Controller_Abstract {
 		$options = array(
 			'collection' => $table,
 			'sort' => $sort,
+			'showprefix' => $showprefix,
 		);
 
-		$model = self::getModel($table, $options);
+		// set the model
+		self::getModel($table, $options);
 		$query = $this->applyFilters($table);
 
 		$this->getView()->component = $this->buildComponent($table, $query);
@@ -500,7 +504,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		}
 		foreach ($filter_fields as $filter_name => $filter_field) {
 			$value = $this->getSetVar($session, $filter_field['key'], $filter_field['key'], $filter_field['default']);
-			if ($filter = $model->applyFilter($filter_field, $value)) {
+			if (!empty($value) && $filter_field['db_key'] != 'nofilter' && $filter = $model->applyFilter($filter_field, $value)) {
 				$query['$and'][] = $filter;
 			}
 		}
@@ -519,14 +523,14 @@ class AdminController extends Yaf_Controller_Abstract {
 		$query = false;
 		$session = $this->getSession($table);
 		$keys = $this->getSetVar($session, 'manual_key', 'manual_key');
-		$types = $this->getSetVar($session, 'manual_type', 'manual_type');
+		$types = Admin_Lines::getOptions();
 		$operators = $this->getSetVar($session, 'manual_operator', 'manual_operator');
 		$values = $this->getSetVar($session, 'manual_value', 'manual_value');
 		for ($i = 0; $i < count($keys); $i++) {
 			if ($keys[$i] == '' || $values[$i] == '') {
 				continue;
 			}
-			switch ($types[$i]) {
+			switch ($types[$keys[$i]]) {
 				case 'number':
 					$values[$i] = floatval($values[$i]);
 					break;

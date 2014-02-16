@@ -20,6 +20,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 	protected $time = null;
 	protected $save_crm_output = false;
 	protected $crm_output_dir = null;
+	protected $extraFields = array('kosher');
 
 	public function __construct($options = array()) {
 		parent::__construct($options);
@@ -192,7 +193,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 //		$path .= "&account_id=4171195"; // Shani
 //		$path .= "&account_id=9073496"; // Ofer
 //		$path .= "&account_id=5236445";
-//		$path .= "&account_id=1416969";
+//		$path .= "&account_id=9999263";
 		$json = self::send($path);
 		if ($saveToFile) {
 			if (!file_exists($this->crm_output_dir)) {
@@ -250,6 +251,11 @@ class Subscriber_Golan extends Billrun_Subscriber {
 									'next_plan' => isset($subscriber['next_plan']) ? $subscriber['next_plan'] : null,
 								),
 							);
+							foreach (self::getExtraFieldsForBillrun() as $field) {
+								if (isset($subscriber[$field])) {
+									$concat['data'][$field] = $subscriber[$field];
+								}
+							}
 							$subscriber_settings = array_merge($subscriber_general_settings, $concat);
 							$ret_data[intval($aid)][] = Billrun_Subscriber::getInstance($subscriber_settings);
 						}
