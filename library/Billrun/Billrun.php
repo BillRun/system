@@ -341,7 +341,7 @@ class Billrun_Billrun {
 			$this->updateCosts($pricingData, $row, $vatable, $sraw);
 			$this->setSubRawData($sraw);
 		} else {
-			Billrun_Factory::log("Subscriber $sid is not active yet has lines", Zend_log::ALERT);
+			Billrun_Factory::log("Subscriber $sid is not active, yet has lines", Zend_log::ALERT);
 			$subscriber_general_settings = Billrun_Config::getInstance()->getConfigValue('subscriber', array());
 			$null_subscriber_params = array(
 				'data' => array('aid' => $row['aid'], 'sid' => $sid, 'plan' => null, 'next_plan' => null,),
