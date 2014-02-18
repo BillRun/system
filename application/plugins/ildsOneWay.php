@@ -52,6 +52,12 @@ class ildsOneWayPlugin extends Billrun_Plugin_BillrunPluginBase {
 		'origin_carrier' => 10,
 		'file' => 100,
 	);
+	
+	/**
+	 * an access price that would be added to the final price
+	 * @var float
+	 */
+	protected $access_price;
 
 	/**
 	 * The output filename 
@@ -70,6 +76,7 @@ class ildsOneWayPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$this->record_types = Billrun_Factory::config()->getConfigValue('016_one_way.identifications.record_types', array('30'));
 		$this->filename = date('Ymd', time()) . '.TXT';
 		$this->output_path = Billrun_Factory::config()->getConfigValue('016_one_way.export.path', '/var/www/billrun/workspace/016_one_way/Treated/') . DIRECTORY_SEPARATOR . $this->filename;
+		$this->access_price = floatval(number_format(Billrun_Factory::config()->getConfigValue('016_one_way.access_price', 1.00), 2));
 	}
 
 	public function afterCalculatorWriteRow($row, $calculator) {
@@ -99,7 +106,7 @@ class ildsOneWayPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$res['records_type'] = '000';
 		$res['sampleDurationInSec'] = '1';
 
-		$res['aprice'] = Billrun_Calculator_CustomerPricing::getPriceByRate($row['arate'], $row['usaget'], $row['usagev']);
+		$res['aprice'] = $this->access_price + Billrun_Calculator_CustomerPricing::getPriceByRate($row['arate'], $row['usaget'], $row['usagev']);
 
 		if ($row['usagev'] == '0') {
 			$res['records_type'] = '005';
