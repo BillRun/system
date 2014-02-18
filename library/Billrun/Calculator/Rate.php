@@ -33,6 +33,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	 * @var string
 	 */
 	protected $ratingField = self::DEF_CALC_DB_FIELD;
+	protected $pricingField = Billrun_Calculator_CustomerPricing::DEF_CALC_DB_FIELD;
 
 	public function __construct($options = array()) {
 		parent::__construct($options);
@@ -105,7 +106,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	public function writeLine($line, $dataKey) {
 		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteLine', array('data' => $line));
 		$save = array();
-		$saveProperties = array($this->ratingField, 'usaget', 'usagev');
+		$saveProperties = array($this->ratingField, 'usaget', 'usagev', $this->pricingField);
 		foreach ($saveProperties as $p) {
 			if (!is_null($val = $line->get($p, true))) {
 				$save['$set'][$p] = $val;
