@@ -44,7 +44,7 @@ class Billrun_Calculator_Rate_016 extends Billrun_Calculator_Rate {
 			$this->data[] = $entity;
 		}
 
-		return $lines_arr;
+		return $this->data;
 	}
 
 	/**
@@ -81,8 +81,8 @@ class Billrun_Calculator_Rate_016 extends Billrun_Calculator_Rate {
 	 */
 	public function updateRow($row) {
 		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteRow', array('row' => $row));
-		$usage_type = $this->getLineUsageType(NULL);
-		$volume = $this->getLineVolume($row->get('call_start_time'), $row->get('call_end_time'));
+		$usage_type = $this->getLineUsageType($row);
+		$volume = $this->getLineVolume($row, $usage_type);
 
 		if (!$volume) {
 			Billrun_Factory::log()->log("wrong volume line. stamp:" . $row->get('stamp') . " call_start_time: " . $row->get('call_start_time') . " call_end_time: " . $row->get('call_end_time'), Zend_Log::ERR);
@@ -144,14 +144,16 @@ class Billrun_Calculator_Rate_016 extends Billrun_Calculator_Rate {
 	/**
 	 * @see Billrun_Calculator_Rate::getLineUsageType
 	 */
-	protected function getLineUsageType($rate) {
+	protected function getLineUsageType($row) {
 		return 'call';
 	}
 
 	/**
 	 * @see Billrun_Calculator_Rate::getLineVolume
 	 */
-	protected function getLineVolume($call_start_time, $call_end_time) {
+	protected function getLineVolume($row, $usage_type) {
+		$call_start_time = $row->get('call_start_time');
+		$call_end_time = $row->get('call_end_time');
 		if (empty($call_start_time) || empty($call_end_time))
 			return FALSE;
 

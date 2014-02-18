@@ -284,19 +284,6 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		return $update;
 	}
 
-//	/**
-//	 * 
-//	 * @return array
-//	 */
-//	static protected function getBaseOptions() {
-//		$options = array(
-//			"sort" => array(
-//				"_id" => 1,
-//			),
-//		);
-//		return $options;
-//	}
-
 	/**
 	 * Remove lines from the queue if the current calculator is the last one or if final_calc is set for a queue line and equals the current calculator
 	 */

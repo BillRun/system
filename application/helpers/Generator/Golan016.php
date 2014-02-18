@@ -142,7 +142,7 @@ class Generator_Golan016 extends Billrun_Generator_Csv_Fixed {
 			return FALSE;
 		}
 
-		$path = $this->export_directory . DIRECTORY_SEPARATOR . '/' . self::$fileName . '.out';
+		$path = $this->export_directory . DIRECTORY_SEPARATOR . '/' . substr(self::$fileName, 0, strpos(self::$fileName, '.new')) . '.out';
 
 		if (file_put_contents($path, $xmlContent)) {
 			return self::$fileName;

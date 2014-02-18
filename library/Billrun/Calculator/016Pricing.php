@@ -28,9 +28,16 @@ class Billrun_Calculator_016Pricing extends Billrun_Calculator {
 	 */
 	static protected $type = "016pricing";
 
+	/**
+	 * an access price that would be added to the final price
+	 * @var float
+	 */
+	protected $two_way_access_price;
+
 	public function __construct($options = array()) {
 		parent::__construct($options);
 		$this->loadRates();
+		$this->two_way_access_price = floatval(number_format(Billrun_Factory::config()->getConfigValue('016_two_way.access_price', 1.00), 2));
 	}
 
 	/**
@@ -52,7 +59,7 @@ class Billrun_Calculator_016Pricing extends Billrun_Calculator {
 			$this->data[] = $entity;
 		}
 
-		return $lines_arr;
+		return $this->data;
 	}
 
 	/**
@@ -107,7 +114,7 @@ class Billrun_Calculator_016Pricing extends Billrun_Calculator {
 			$pricingData = '0.0000';
 		} else {
 			$accessPrice = isset($rate['rates']['call']['access']) ? $rate['rates']['call']['access'] : 0;
-			$pricingData = $accessPrice + Billrun_Util::getPriceByRates($rate, 'call', $volume);
+			$pricingData = $this->two_way_access_price + $accessPrice + Billrun_Util::getPriceByRates($rate, 'call', $volume);
 
 			if ($pricingData === FALSE) {
 				Billrun_Factory::log()->log("fail calc charge line, stamp: " . $row->get('stamp'), Zend_Log::ERR);
