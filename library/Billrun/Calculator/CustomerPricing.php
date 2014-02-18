@@ -14,7 +14,9 @@
  */
 class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 
-	protected $pricingField = 'aprice';
+	const DEF_CALC_DB_FIELD = 'aprice';
+	
+	protected $pricingField = self::DEF_CALC_DB_FIELD;
 	static protected $type = "pricing";
 
 	/**

@@ -52,7 +52,7 @@ class ildsOneWayPlugin extends Billrun_Plugin_BillrunPluginBase {
 		'origin_carrier' => 10,
 		'file' => 100,
 	);
-	
+
 	/**
 	 * an access price that would be added to the final price
 	 * @var float
@@ -71,12 +71,21 @@ class ildsOneWayPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @var string
 	 */
 	protected $output_path = null;
+	
+	protected $pricingField = Billrun_Calculator_CustomerPricing::DEF_CALC_DB_FIELD;
+	
+	/**
+	 *
+	 * @var Mongodloid_Collection
+	 */
+	protected $lines_coll;
 
 	public function __construct() {
 		$this->record_types = Billrun_Factory::config()->getConfigValue('016_one_way.identifications.record_types', array('30'));
 		$this->filename = date('Ymd', time()) . '.TXT';
 		$this->output_path = Billrun_Factory::config()->getConfigValue('016_one_way.export.path', '/var/www/billrun/workspace/016_one_way/Treated/') . DIRECTORY_SEPARATOR . $this->filename;
 		$this->access_price = floatval(number_format(Billrun_Factory::config()->getConfigValue('016_one_way.access_price', 1.00), 2));
+		$this->lines_coll = Billrun_Factory::db()->linesCollection();
 	}
 
 	public function afterCalculatorWriteRow($row, $calculator) {
@@ -96,6 +105,7 @@ class ildsOneWayPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @see Billrun_Generator_Csv::createRow
 	 */
 	public function createRow($row) {
+		$row->collection($this->lines_coll);
 		$res = $row->getRawData();
 		$res['file'] = 'cdrFile:' . $row['file'] . ' cdrNb:' . $row['record_number'];
 		$res['charging_start_time'] = substr($row['charging_start_time'], 2);
@@ -106,7 +116,7 @@ class ildsOneWayPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$res['records_type'] = '000';
 		$res['sampleDurationInSec'] = '1';
 
-		$res['aprice'] = $this->access_price + Billrun_Calculator_CustomerPricing::getPriceByRate($row['arate'], $row['usaget'], $row['usagev']);
+		$row[$this->pricingField] = $res['aprice'] = $this->access_price + Billrun_Calculator_CustomerPricing::getPriceByRate($row['arate'], $row['usaget'], $row['usagev']);
 
 		if ($row['usagev'] == '0') {
 			$res['records_type'] = '005';
