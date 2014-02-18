@@ -241,7 +241,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @return mixed array with the pricing data on success, false otherwise
 	 */
 	protected function updateSubscriberBalance($row, $billrun_key, $usage_type, $rate, $volume) {
-		Billrun_Factory::dispatcher()->trigger('beforeUpdateSubscriberBalance', array($row, $billrun_key, $usage_type, $rate, $volume, $this));
+		Billrun_Factory::dispatcher()->trigger('beforeUpdateSubscriberBalance', array($row, $billrun_key, $this));
 		$plan = Billrun_Factory::plan(array('name' => $row['plan'], 'time' => $row['urt']->sec, 'disableCache' => true));
 		$plan_ref = $plan->createRef();
 		if (is_null($plan_ref)) {
@@ -314,12 +314,12 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			}
 			if (!($ret['ok'] && $ret['updatedExisting'])) { // failed because of different totals (could be that another server with another line raised the totals). Need to calculate pricingData from the beginning
 				Billrun_Factory::log()->log("Concurrent write to balance " . $billrun_key . " of subscriber " . $row['sid'] . ". Retrying...", Zend_Log::DEBUG);
-				$pricingData = $this->updateSubscriberBalance($row, $billrun_key, $usage_type, $rate, $volume);
+				return $this->updateSubscriberBalance($row, $billrun_key, $usage_type, $rate, $volume);
 			}
 			Billrun_Factory::log()->log("Line with stamp " . $row['stamp'] . " was written to balance " . $billrun_key . " for subscriber " . $row['sid'], Zend_Log::DEBUG);
 			$row['tx_saved'] = true; // indication for transaction existence in balances. Won't & shouldn't be saved to the db.
 		}
-		Billrun_Factory::dispatcher()->trigger('afterUpdateSubscriberBalance', array($row, $balance, $usage_type, $rate, $volume, $pricingData[$this->pricingField], $this));
+		Billrun_Factory::dispatcher()->trigger('afterUpdateSubscriberBalance', array($row, $balance, $pricingData[$this->pricingField], $this));
 		return $pricingData;
 	}
 
