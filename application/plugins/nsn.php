@@ -27,8 +27,16 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 
 	protected $fileStats = null;
 
+	/**
+	 * regex to identify calls originating from ILDS
+	 * @var String
+	 */
+	protected $ild_called_number_regex = null;
+
+
 	public function __construct(array $options = array()) {
 		$this->nsnConfig = (new Yaf_Config_Ini(Billrun_Factory::config()->getConfigValue('nsn.config_path')))->toArray();
+		$this->ild_called_number_regex = Billrun_Factory::config()->getConfigValue('016_one_way.identifications.called_number_regex');
 	}
 
 	/**
@@ -232,13 +240,17 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 			$data['org_dur'] = $data['duration']; // save the original duration.
 		}
 		if (isset($data['charging_end_time']) && isset($data['charging_start_time']) &&
-			( strtotime($data['charging_end_time']) > 0 && strtotime($data['charging_start_time']) > 0)) {
+				(strtotime($data['charging_end_time']) > 0 && strtotime($data['charging_start_time']) > 0)) {
 			$data['duration'] = strtotime($data['charging_end_time']) - strtotime($data['charging_start_time']);
 		}
 		//Remove  the  "10" in front of the national call with an international prefix
 //		if (isset($data['in_circuit_group_name']) && preg_match("/^RCEL/", $data['in_circuit_group_name']) && strlen($data['called_number']) > 10 && substr($data['called_number'], 0, 2) == "10") { // will fail when in_circuit_group_name is empty / called_number length is exactly 10
+
 		if (isset($data['out_circuit_group']) && in_array($data['out_circuit_group'], array('2100', '2101', '2499')) && substr($data['called_number'], 0, 2) == "10") {
 			$data['called_number'] = substr($data['called_number'], 2);
+		} else if (in_array($data['record_type'], array('30', '31')) && preg_match($this->ild_called_number_regex, $data['called_number'])) {
+			$data['ild_prefix'] = substr($data['called_number'], 0, 3);
+			$data['called_number'] = substr($data['called_number'], 3);
 		}
 
 		$parser->setLastParseLength($data['record_length']);
@@ -321,11 +333,11 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 					for ($j = 0; $j < 2; $j++, $byteVal = $byteVal >> 4) {
 						$left = $byteVal & 0xF;
 						$digit = $left == 0xB ? '*' :
-							($left == 0xC ? '#' :
-								($left == 0xA ? 'a' :
-									($left == 0xF ? '' :
-										($left > 0xC ? dechex($left - 2) :
-											$left))));
+								($left == 0xC ? '#' :
+										($left == 0xA ? 'a' :
+												($left == 0xF ? '' :
+														($left > 0xC ? dechex($left - 2) :
+																$left))));
 						$val .= $digit;
 					}
 				}
@@ -395,7 +407,7 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 			$this->fileStats = fstat($fileHandle);
 		}
 		$process_finished = feof($fileHandle) ||
-			ftell($fileHandle) + self::TRAILER_LENGTH >= $this->fileStats['size'];
+				ftell($fileHandle) + self::TRAILER_LENGTH >= $this->fileStats['size'];
 		if ($process_finished) {
 			$this->fileStats = null;
 		}
