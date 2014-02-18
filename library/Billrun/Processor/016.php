@@ -20,7 +20,7 @@ class Billrun_Processor_016 extends Billrun_Processor_Base_Ilds {
 	 * @var string
 	 */
 	static protected $type = '016';
-        
+
 	/**
 	 * (Override) Get the type of the currently parsed line.
 	 * @param $line  string containing the parsed line.
@@ -30,9 +30,9 @@ class Billrun_Processor_016 extends Billrun_Processor_Base_Ilds {
 	 * 		'T' => Tail
 	 */
 	protected function getLineType($line) {
-                $this->data['header'] = 'fake';  // Add fake beacause 016 has no header, we should not treat it in generate process
-                $this->data['trailer'] = 'fake'; // Add fake beacause 016 has no trailer, we should not treat it in generate process
-                return 'D';
+		$this->data['header'] = 'fake';  // Add fake beacause 016 has no header, we should not treat it in generate process
+		$this->data['trailer'] = 'fake'; // Add fake beacause 016 has no trailer, we should not treat it in generate process
+		return 'D';
 	}
 
 	public function __construct($options) {
@@ -51,7 +51,7 @@ class Billrun_Processor_016 extends Billrun_Processor_Base_Ilds {
 			'sampleDurationInSec' => 8,
 			'charge' => 10,
 			'origin_carrier' => 10,
-                        'origin_file_name' => 100,
+			'origin_file_name' => 100,
 		);
 
 		$this->header_structure = array();

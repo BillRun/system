@@ -19,34 +19,34 @@ class Billrun_Calculator_Rate_016 extends Billrun_Calculator_Rate {
 	 *
 	 * @var string
 	 */
-	static protected $type = "016";     
-	
-        public function __construct($options = array()) {
-            parent::__construct($options);
-            $this->loadRates();
+	static protected $type = "016";
+
+	public function __construct($options = array()) {
+		parent::__construct($options);
+		$this->loadRates();
 	}
-        
+
 	/**
 	 * method to receive the lines the calculator should take care
 	 * 
 	 * @return Mongodloid_Cursor Mongo cursor for iteration
 	 */
 	protected function getLines() {
-		
+
 		$lines = Billrun_Factory::db()->linesCollection();
 
 		$lines_arr = $lines->query()
-			->equals('source', 'ilds')
-                        ->equals('type', static::$type)
-			->notExists($this->ratingField);	
-                
-                foreach ($lines_arr as $entity) {
-                    $this->data[] = $entity;
+				->equals('source', 'ilds')
+				->equals('type', static::$type)
+				->notExists($this->ratingField);
+
+		foreach ($lines_arr as $entity) {
+			$this->data[] = $entity;
 		}
-                
-                return $lines_arr;
-	}  
-	
+
+		return $lines_arr;
+	}
+
 	/**
 	 * Execute the calculation process
 	 */
@@ -54,12 +54,12 @@ class Billrun_Calculator_Rate_016 extends Billrun_Calculator_Rate {
 
 		Billrun_Factory::dispatcher()->trigger('beforeCalculateData', array('data' => $this->data));
 
-		foreach ($this->data as $item) { 
-                    // update billing line with ratingField & duration
-                    if (!$this->updateRow($item)) {
-                            Billrun_Factory::log()->log("stamp:" . $item->get('stamp'). " cannot update billing line", Zend_Log::ERR);
-                            continue;
-                    }
+		foreach ($this->data as $item) {
+			// update billing line with ratingField & duration
+			if (!$this->updateRow($item)) {
+				Billrun_Factory::log()->log("stamp:" . $item->get('stamp') . " cannot update billing line", Zend_Log::ERR);
+				continue;
+			}
 		}
 		Billrun_Factory::dispatcher()->trigger('afterCalculateData', array('data' => $this->data));
 	}
@@ -80,24 +80,24 @@ class Billrun_Calculator_Rate_016 extends Billrun_Calculator_Rate {
 	 * Write the calculation into DB
 	 */
 	public function updateRow($row) {
-                Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteRow', array('row' => $row));
+		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteRow', array('row' => $row));
 		$usage_type = $this->getLineUsageType(NULL);
 		$volume = $this->getLineVolume($row->get('call_start_time'), $row->get('call_end_time'));
-                
-                if (!$volume) {
-                    Billrun_Factory::log()->log("wrong volume line. stamp:" . $row->get('stamp') . " call_start_time: " . $row->get('call_start_time'). " call_end_time: " . $row->get('call_end_time'), Zend_Log::ERR);
-                    return false;
-		}
-                
-		$rate = $this->getLineRate($row, $usage_type);
-		if (isset($rate['key']) && $rate['key']=="UNRATED") {
+
+		if (!$volume) {
+			Billrun_Factory::log()->log("wrong volume line. stamp:" . $row->get('stamp') . " call_start_time: " . $row->get('call_start_time') . " call_end_time: " . $row->get('call_end_time'), Zend_Log::ERR);
 			return false;
 		}
-                
+
+		$rate = $this->getLineRate($row, $usage_type);
+		if (isset($rate['key']) && $rate['key'] == "UNRATED") {
+			return false;
+		}
+
 		$current = $row->getRawData();
 
 		$added_values = array(
-                        'duration' => $volume,
+			'duration' => $volume,
 			$this->ratingField => $rate ? $rate->createRef() : $rate,
 		);
 		$newData = array_merge($current, $added_values);
@@ -106,65 +106,65 @@ class Billrun_Calculator_Rate_016 extends Billrun_Calculator_Rate {
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteRow', array('row' => $row));
 		return true;
 	}
-        
-        /**
+
+	/**
 	 * @see Billrun_Calculator_Rate::getLineRate
 	 */
 	protected function getLineRate($row, $usage_type) {
-            
+
 		$unformatted_called_number = $row->get('called_number');
-                $pos = strpos($unformatted_called_number, '016');
-                $called_number = substr($unformatted_called_number, $pos+3);
-                        
+		$pos = strpos($unformatted_called_number, '016');
+		$called_number = substr($unformatted_called_number, $pos + 3);
+
 		$line_time = $row->get('urt');
 		$matchedRate = false;
 
-                $called_number_prefixes = $this->getPrefixes($called_number);
-                foreach ($called_number_prefixes as $prefix) {
-                        if (isset($this->rates[$prefix])) {
-                                foreach ($this->rates[$prefix] as $rate) {
-                                        if (isset($rate['rates'][$usage_type])) {
-                                                if ($rate['from'] <= $line_time && $rate['to'] >= $line_time) {
-                                                        foreach ($rate['params']['out_circuit_group'] as $groups) {
-                                                                    $matchedRate = $rate;
-                                                                    break 3;
-                                                        }
-                                                }
-                                        }
-                                }
-                        }
-                }
-                if (!$matchedRate) {
-                        $matchedRate = $this->rates['UNRATED'];
-                }
+		$called_number_prefixes = $this->getPrefixes($called_number);
+		foreach ($called_number_prefixes as $prefix) {
+			if (isset($this->rates[$prefix])) {
+				foreach ($this->rates[$prefix] as $rate) {
+					if (isset($rate['rates'][$usage_type])) {
+						if ($rate['from'] <= $line_time && $rate['to'] >= $line_time) {
+							foreach ($rate['params']['out_circuit_group'] as $groups) {
+								$matchedRate = $rate;
+								break 3;
+							}
+						}
+					}
+				}
+			}
+		}
+		if (!$matchedRate) {
+			$matchedRate = $this->rates['UNRATED'];
+		}
 
-            return $matchedRate;
+		return $matchedRate;
 	}
-        
-        /**
+
+	/**
 	 * @see Billrun_Calculator_Rate::getLineUsageType
 	 */
 	protected function getLineUsageType($rate) {
-                return 'call';
+		return 'call';
 	}
-        
-        /**
+
+	/**
 	 * @see Billrun_Calculator_Rate::getLineVolume
 	 */
 	protected function getLineVolume($call_start_time, $call_end_time) {
-                if(empty($call_start_time) || empty($call_end_time))
-                    return FALSE;
+		if (empty($call_start_time) || empty($call_end_time))
+			return FALSE;
 
-                $date_hack = substr(date("Y"), 0, 2);
-                $start_time = strtotime($date_hack.$call_start_time);
-                $end_time = strtotime($date_hack.$call_end_time);
+		$date_hack = substr(date("Y"), 0, 2);
+		$start_time = strtotime($date_hack . $call_start_time);
+		$end_time = strtotime($date_hack . $call_end_time);
 
-                $duration = $end_time - $start_time;
+		$duration = $end_time - $start_time;
 
-                if($duration < 0 || $duration > 86400) // 86400 = 1 DAY
-                    return FALSE;
+		if ($duration < 0 || $duration > 86400) // 86400 = 1 DAY
+			return FALSE;
 
-                return $duration;
+		return $duration;
 	}
 
 }
