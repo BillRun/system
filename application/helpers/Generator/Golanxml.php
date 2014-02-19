@@ -37,6 +37,12 @@ class Generator_Golanxml extends Billrun_Generator {
 	protected $lines_coll;
 	protected $invoice_version = "1.0";
 
+	/**
+	 * fields to filter when pulling account lines
+	 * @var array 
+	 */
+	protected $filter_fields;
+
 	public function __construct($options) {
 		parent::__construct($options);
 		if (isset($options['page'])) {
@@ -52,20 +58,22 @@ class Generator_Golanxml extends Billrun_Generator {
 		$this->lines_coll = Billrun_Factory::db()->linesCollection();
 		$this->loadRates();
 		$this->loadPlans();
+
+		$this->filter_fields = array_map("intval", Billrun_Factory::config()->getConfigValue('billrun.filter_fields', array()));
 	}
 
 	public function load() {
 		$billrun = Billrun_Factory::db()->billrunCollection();
 		Billrun_Factory::log()->log('Loading ' . $this->size . ' billrun documents with offset ' . $this->offset, Zend_Log::INFO);
 		$resource = $billrun
-			->query('billrun_key', $this->stamp)
+				->query('billrun_key', $this->stamp)
 //				->in('aid', array(2065512))
-			->exists('invoice_id')
+				->exists('invoice_id')
 //			->notExists('invoice_file')
-			->cursor()->timeout(-1)
-			->sort(array("aid" => 1))
-			->skip($this->offset * $this->size)
-			->limit($this->size);
+				->cursor()->timeout(-1)
+				->sort(array("aid" => 1))
+				->skip($this->offset * $this->size)
+				->limit($this->size);
 
 		// @TODO - there is issue with the timeout; need to be fixed
 		//         meanwhile, let's pull the lines right after the query
@@ -152,8 +160,8 @@ class Generator_Golanxml extends Billrun_Generator {
 					$subscriber_lines = $this->get_lines($subscriber);
 				} else {
 					$func = function($line) use ($sid) {
-						return $line['sid'] == $sid;
-					};
+								return $line['sid'] == $sid;
+							};
 					$subscriber_lines = array_filter($lines, $func);
 				}
 				foreach ($subscriber_lines as $line) {
@@ -545,7 +553,7 @@ class Generator_Golanxml extends Billrun_Generator {
 			'urt' => 1,
 		);
 
-		$lines = $this->lines_coll->query($query)->cursor()->sort($sort)->hint($sort);
+		$lines = $this->lines_coll->query($query)->cursor()->fields($this->filter_fields)->sort($sort)->hint($sort);
 		if (rand(1, 100) >= $this->loadBalanced) {
 			$lines = $lines->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
 		}
