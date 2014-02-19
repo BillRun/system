@@ -49,6 +49,12 @@ class Generator_Golanxml extends Billrun_Generator {
 	 */
 	protected $writer = null;
 
+	/**
+	 * fields to filter when pulling account lines
+	 * @var array 
+	 */
+	protected $filter_fields;
+
 	public function __construct($options) {
 		parent::__construct($options);
 		if (isset($options['page'])) {
@@ -67,6 +73,8 @@ class Generator_Golanxml extends Billrun_Generator {
 		$this->lines_coll = Billrun_Factory::db()->linesCollection();
 		$this->loadRates();
 		$this->loadPlans();
+
+		$this->filter_fields = array_map("intval", Billrun_Factory::config()->getConfigValue('billrun.filter_fields', array()));
 		$this->writer = new XMLWriter(); //create a new xmlwriter object
 	}
 
@@ -75,10 +83,7 @@ class Generator_Golanxml extends Billrun_Generator {
 		Billrun_Factory::log()->log('Loading ' . $this->size . ' billrun documents with offset ' . $this->offset, Zend_Log::INFO);
 		$resource = $billrun
 				->query('billrun_key', $this->stamp)
-//				->in('aid', array(31999, 45100, 9349, 9825, 10629, 11031, 11078, 11202, 11369, 11761, 11772, 12104, 12296, 12304, 12678, 12751, 12785, 13039, 15250, 15287, 15355, 15485, 15903, 15966, 16104, 16218, 16248, 16437, 16471, 16615, 16617, 16831, 16851, 16943, 17225, 17305, 17760, 18068, 18247, 18249, 18654, 18661, 18673, 19039, 19203, 19255, 19381, 19448, 19809, 19974))
-//				->in('aid', array(4171195))
 				->exists('invoice_id')
-//			->notExists('invoice_file')
 				->cursor()->timeout(-1)
 				->sort(array("aid" => 1))
 				->skip($this->offset * $this->size)
@@ -600,7 +605,7 @@ class Generator_Golanxml extends Billrun_Generator {
 			'urt' => 1,
 		);
 
-		$lines = $this->lines_coll->query($query)->cursor()->sort($sort)->hint($sort);
+		$lines = $this->lines_coll->query($query)->cursor()->fields($this->filter_fields)->sort($sort)->hint($sort);
 		if (rand(1, 100) >= $this->loadBalanced) {
 			$lines = $lines->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
 		}

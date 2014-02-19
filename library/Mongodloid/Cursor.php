@@ -83,5 +83,10 @@ class Mongodloid_Cursor implements Iterator, Countable {
 		$this->_cursor->immortal($liveForever);
 		return $this;
 	}
+	
+	public function fields(array $fields) {
+		$this->_cursor->fields($fields);
+		return $this;
+	}
 
 }
