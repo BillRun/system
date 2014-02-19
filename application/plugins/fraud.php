@@ -5,6 +5,21 @@
  * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
  * @license         GNU General Public License version 2 or later; see LICENSE.txt
  */
+/**
+ * compatible for PHP 5.4
+ */
+if (!function_exists('array_column')):
+
+	function array_column(array $input, $column_key, $index_key = null) {
+
+		$result = array();
+		foreach ($input as $k => $v)
+			$result[$index_key ? $v[$index_key] : $k] = $v[$column_key];
+
+		return $result;
+	}
+
+endif;
 
 /**
  * Fraud plugin
@@ -32,10 +47,12 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @param string $volume
 	 * @param Billrun_Calculator $calculator
 	 * 
+	 * @return boolean in case we are on chain return true if all ok and chain can continue, else return false if require to stop the plugin chain
+	 * 
 	 */
 	public function afterUpdateSubscriberBalance($row, $balance, $rowPrice, $calculator) {
-		
-		// if not plan to row - cannot do anything
+
+		// if not plan to row - cannot do acannotnything
 		if (!isset($row['plan'])) {
 			Billrun_Factory::log("Fraud plugin - plan not exists for line " . $row['stamp'], Zend_Log::INFO);
 			return true;
@@ -45,82 +62,162 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		if ($row['type'] == 'tap3') {
 			return true;
 		}
-		
 
 		$thresholds = Billrun_Factory::config()->getConfigValue('fraud.thresholds', array());
 
 		foreach ($thresholds as $type => $limits) {
-			$method = $type . 'Check';
-			if (method_exists($this, $method)) {
-				call_user_func_array(array($this, $method), array($limits, $row, $balance, $rowPrice));
-			} else {
-				Billrun_Factory::log("Fraud plugin - method doesn't exists " . $method, Zend_Log::WARN);
+			switch ($type) {
+				case 'cost':
+					$this->costCheck($limits, $row, $balance, $rowPrice);
+					break;
+				case 'usage':
+					$this->usageCheck($limits, $row, $balance);
+					break;
+				default:
+					Billrun_Factory::log("Fraud plugin - method doesn't exists " . $method, Zend_Log::WARN);
+					break;
 			}
 		}
 
+		return true;
 	}
 
 	protected function costCheck($limits, $row, $balance, $rowPrice) {
-		$price_before = 0;// TODO sum all except TAP3
-		$price_after = $price_before + $price;
-		$this->checkLimits($limits, $row, $price_before, $price_after);
-	}
-
-	protected function usageCheck($limits, $row, $balance, $rowPrice) {
-		// if the limit is not for the line type
-		if (!isset($row['usaget']) || !isset($limits[$row['usaget']])) {
-			return true;
+		if ($rowPrice === 0) {
+			return;
 		}
 
+		if (isset($limits['usaget'])) {
+			$filterTypes = $limits['usaget'];
+		} else {
+			$filterTypes = false;
+		}
+
+		$price_before = $this->calculateCost($balance->balance, $filterTypes);
+		$price_after = $price_before + $rowPrice;
+		foreach ($limits['rules'] as $rule) {
+			$this->checkRule($rule, $row, $price_before, $price_after);
+		}
+	}
+
+	/**
+	 * method to calculate total cost by balance with option to exclude
+	 * 
+	 * @param Mongodloid_Entity  $balance  the balance details
+	 * @param array              $filter   filter the array by keys
+	 * 
+	 * @return int
+	 * 
+	 */
+	protected function calculateCost($balance, $filter = false) {
+		if (empty($balance) || !isset($balance['cost'])) {
+			return 0;
+		}
+		$costFieldName = 'cost';
+		$totalCost = $balance[$costFieldName];
+		if (!empty($filter)) {
+			return $this->sumBalance($balance, $filter, $costFieldName);
+		}
+		return $totalCost;
+
+	}
+
+	/**
+	 * method to sum balance of specific column (usage or cost) with option to filter by usage type
+	 * 
+	 * @param Mongodloid_Entity  $balance   the balance details
+	 * @param string             $sumField  the column field to sum
+	 * @param array              $filter    filter the array by keys
+	 * @return int
+	 */
+	protected function sumBalance($balance, $sumField, $filter = array()) {
+		if (count($filter) == 1) {
+			// if filter only one don't array make the array manipulation
+			return $balance['totals'][$filter[0]][$sumField];
+		}
+
+		if (!empty($filter)) {
+			$costArray = array_intersect_key($balance['totals'], array_combine($filter, $filter));
+		} else {
+			$costArray = $balance['totals'];
+		}
+
+		$totalArray = array_column($costArray, $sumField);
+		if (empty($totalArray)) {
+			return 0;
+		}
+
+		return array_sum($totalArray);
+	}
+
+	protected function usageCheck($limits, $row, $balance) {
+
+		if ($row['usagev'] === 0) {
+			return false;
+		}
+		
 		$usaget = $row['usaget'];
 
 		if (!isset($balance->balance['totals'][$usaget]['usagev'])) {
-			Billrun_Factory::log("Fraud plugin - balance not exists for subscriber " . $row['sid'], Zend_Log::INFO);
-			return true;
+			Billrun_Factory::log("Fraud plugin - balance not exists for subscriber " . $row['sid'] . ' usage type ' . $usaget, Zend_Log::INFO);
+			return false;
 		}
 		$balance_before_change = $balance->balance['totals'][$usaget]['usagev'];
 		$balance_after_change = $balance_before_change + $row['usagev'];
 
-		$this->checkLimits($limits, $row, $balance_before_change, $balance_after_change);
-		
-		return true;
-	}
-	
-	protected function checkLimits($limits, $row, $before, $after) {
-		foreach ($limits as $limit) {
-			// if the limit for specific plans
-			if (isset($limit['limitPlans']) &&
-				(is_array($limit['limitPlans']) && !in_array($row['plan'], $limit['limitPlans']))) {
-				continue;
-			}
-			
-			$threshold = $limit['threshold'];
-			$recurring = isset($limit['recurring']) && $limit['recurring'];
-			if ($this->isThresholdTriggered($before, $after, $threshold, $recurring)) {
-				// insert event
-				$name = $limit['name'];
-				Billrun_Factory::log("Fraud plugin - trigger event " . $row['stamp'] . ' with event name ' . $name, Zend_Log::INFO);
-			}
+		foreach ($limits['rules'] as $rule) {
+			return $this->checkRule($rule, $row, $balance_before_change, $balance_after_change);
 		}
 
+		return false;
+	}
+
+	/**
+	 * check if fraud rule triggered
+	 * 
+	 * @param array $rule the array rule of settings
+	 * @param array $row the row to check the rule
+	 * @param number $before the value before the change
+	 * @param number $after the value after the change
+	 * 
+	 * @return mixed return the rule array if succeed, else false
+	 */
+	protected function checkRule($rule, $row, $before, $after) {
+		// if the limit for specific type
+		if (!isset($row['usaget']) || (!empty($rule['usaget']) && !in_array($rule['usaget'], $row['usaget']))) {
+			return false;
+		}
+		// if the limit for specific plans
+		if (isset($rule['limitPlans']) &&
+			(is_array($rule['limitPlans']) && !in_array($row['plan'], $rule['limitPlans']))) {
+			return false;
+		}
+
+		$threshold = $rule['threshold'];
+		$recurring = isset($rule['recurring']) && $rule['recurring'];
+		if ($this->isThresholdTriggered($before, $after, $threshold, $recurring)) {
+			// insert event
+			Billrun_Factory::log("Fraud plugin - trigger event " . $row['stamp'] . ' with event name ' . $name, Zend_Log::INFO);
+			return $rule;
+		}
 	}
 
 	/**
 	 * method to check if threshold passed between two value
 	 * 
-	 * @param float $usage_before the usage before
-	 * @param float $usage_after the usage after
+	 * @param float $before the value before
+	 * @param float $after the value after
 	 * @param float $threshold the threshold to pass
 	 * @param boolean $recurring if true it will check with iterating of the threshold
 	 * 
 	 * @return boolean true if the threshold passed the value
 	 */
-	protected function isThresholdTriggered($usage_before, $usage_after, $threshold, $recurring = false) {
+	protected function isThresholdTriggered($before, $after, $threshold, $recurring = false) {
 		if ($recurring) {
-//			return (floor($usage_before / $threshold) < floor($usage_after / $threshold));
-			return ($usage_before % $threshold > $usage_after % $threshold || ($usage_after-$usage_before) > $threshold);
+			return (floor($before / $threshold) < floor($after / $threshold));
+//			return ($usage_before % $threshold > $usage_after % $threshold || ($usage_after-$usage_before) > $threshold);
 		}
-		return ($usage_before < $threshold) && ($threshold < $usage_after);
+		return ($before < $threshold) && ($threshold < $after);
 	}
 
 	protected function insert_fraud_event($value, $value_before, $row, $threshold, $units, $event_type, $fraud_connection, $fraud_connection_options) {
