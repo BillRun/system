@@ -55,30 +55,30 @@ use Billrun_Traits_FileSequenceChecking;
 
 	/////////////////////////////////////////  Alerts /////////////////////////////////////////
 
-	/**
-	 * method to collect data which need to be handle by event
-	 */
-	public function handlerCollect($options) {
-		if( $options['type'] != 'roaming') { 
-			return FALSE; 
-		}
-		$lines = Billrun_Factory::db()->linesCollection();
-		
-		//@TODO  switch  these lines  once  you have the time to test it.
-		//$charge_time = new MongoDate($this->get_last_charge_time(true) - date_default_timezone_get() );
-		$charge_time = Billrun_Util::getLastChargeTime(true);
-		
-		$aggregateQuery = $this->getBaseAggregateQuery($charge_time);
-
-		Billrun_Factory::log()->log("ggsnPlugin::handlerCollect collecting monthly data exceeders", Zend_Log::DEBUG);
-		$dataExceedersAlerts = $this->detectDataExceeders($lines, $aggregateQuery);
-		Billrun_Factory::log()->log("GGSN plugin of monthly usage fraud found " . count($dataExceedersAlerts) . " ", Zend_Log::INFO);
-		Billrun_Factory::log()->log("ggsnPlugin::handlerCollect collecting hourly data exceeders", Zend_Log::DEBUG);
-		$hourlyDataExceedersAlerts = $this->detectHourlyDataExceeders($lines, $aggregateQuery);
-		Billrun_Factory::log()->log("GGSN plugin of hourly usage fraud found " . count($hourlyDataExceedersAlerts) . " ", Zend_Log::INFO);
-
-		return array_merge($dataExceedersAlerts, $hourlyDataExceedersAlerts);
-	}
+//	/**
+//	 * method to collect data which need to be handle by event
+//	 */
+//	public function handlerCollect($options) {
+//		if( $options['type'] != 'roaming') { 
+//			return FALSE; 
+//		}
+//		$lines = Billrun_Factory::db()->linesCollection();
+//		
+//		//@TODO  switch  these lines  once  you have the time to test it.
+//		//$charge_time = new MongoDate($this->get_last_charge_time(true) - date_default_timezone_get() );
+//		$charge_time = Billrun_Util::getLastChargeTime(true);
+//		
+//		$aggregateQuery = $this->getBaseAggregateQuery($charge_time);
+//
+//		Billrun_Factory::log()->log("ggsnPlugin::handlerCollect collecting monthly data exceeders", Zend_Log::DEBUG);
+//		$dataExceedersAlerts = $this->detectDataExceeders($lines, $aggregateQuery);
+//		Billrun_Factory::log()->log("GGSN plugin of monthly usage fraud found " . count($dataExceedersAlerts) . " ", Zend_Log::INFO);
+//		Billrun_Factory::log()->log("ggsnPlugin::handlerCollect collecting hourly data exceeders", Zend_Log::DEBUG);
+//		$hourlyDataExceedersAlerts = $this->detectHourlyDataExceeders($lines, $aggregateQuery);
+//		Billrun_Factory::log()->log("GGSN plugin of hourly usage fraud found " . count($hourlyDataExceedersAlerts) . " ", Zend_Log::INFO);
+//
+//		return array_merge($dataExceedersAlerts, $hourlyDataExceedersAlerts);
+//	}
 
 	/**
 	 * Setup the sequence checker.
@@ -151,25 +151,25 @@ use Billrun_Traits_FileSequenceChecking;
 	 * @param type $aggregateQuery the general aggregate query.
 	 * @return Array containing all the exceeding events.
 	 */
-	protected function detectDataExceeders($lines, $aggregateQuery) {
-		$limit = floatval(Billrun_Factory::config()->getConfigValue('ggsn.thresholds.datalimit', 1000));
-		$dataThrs = array(
-			'$match' => array(
-				'$or' => array(
-					array('download' => array('$gte' => $limit)),
-					array('upload' => array('$gte' => $limit)),
-				),
-			),
-		);
-		$dataAlerts = $lines->aggregate(array_merge($aggregateQuery, array($dataThrs)));
-		foreach ($dataAlerts as &$alert) {
-			$alert['units'] = 'KB';
-			$alert['value'] = ($alert['download'] > $limit ? $alert['download'] : $alert['upload']);
-			$alert['threshold'] = $limit;
-			$alert['event_type'] = 'GGSN_DATA';
-		}
-		return $dataAlerts;
-	}
+//	protected function detectDataExceeders($lines, $aggregateQuery) {
+//		$limit = floatval(Billrun_Factory::config()->getConfigValue('ggsn.thresholds.datalimit', 1000));
+//		$dataThrs = array(
+//			'$match' => array(
+//				'$or' => array(
+//					array('download' => array('$gte' => $limit)),
+//					array('upload' => array('$gte' => $limit)),
+//				),
+//			),
+//		);
+//		$dataAlerts = $lines->aggregate(array_merge($aggregateQuery, array($dataThrs)));
+//		foreach ($dataAlerts as &$alert) {
+//			$alert['units'] = 'KB';
+//			$alert['value'] = ($alert['download'] > $limit ? $alert['download'] : $alert['upload']);
+//			$alert['threshold'] = $limit;
+//			$alert['event_type'] = 'GGSN_DATA';
+//		}
+//		return $dataAlerts;
+//	}
 
 	/**
 	 * detected data duration usage exceeders.
@@ -177,25 +177,25 @@ use Billrun_Traits_FileSequenceChecking;
 	 * @param type $aggregateQuery the general aggregate query.
 	 * @return Array containing all the exceeding  duration events.
 	 */
-	protected function detectDurationExceeders($lines, $aggregateQuery) {
-		$threshold = floatval(Billrun_Factory::config()->getConfigValue('ggsn.thresholds.duration', 2400));
-		unset($aggregateQuery[0]['$match']['$or']);
-
-		$durationThrs = array(
-			'$match' => array(
-				'duration' => array('$gte' => $threshold)
-			),
-		);
-
-		$durationAlert = $lines->aggregate(array_merge($aggregateQuery, array($durationThrs)));
-		foreach ($durationAlert as &$alert) {
-			$alert['units'] = 'SEC';
-			$alert['value'] = $alert['duration'];
-			$alert['threshold'] = $threshold;
-			$alert['event_type'] = 'GGSN_DATA_DURATION';
-		}
-		return $durationAlert;
-	}
+//	protected function detectDurationExceeders($lines, $aggregateQuery) {
+//		$threshold = floatval(Billrun_Factory::config()->getConfigValue('ggsn.thresholds.duration', 2400));
+//		unset($aggregateQuery[0]['$match']['$or']);
+//
+//		$durationThrs = array(
+//			'$match' => array(
+//				'duration' => array('$gte' => $threshold)
+//			),
+//		);
+//
+//		$durationAlert = $lines->aggregate(array_merge($aggregateQuery, array($durationThrs)));
+//		foreach ($durationAlert as &$alert) {
+//			$alert['units'] = 'SEC';
+//			$alert['value'] = $alert['duration'];
+//			$alert['threshold'] = $threshold;
+//			$alert['event_type'] = 'GGSN_DATA_DURATION';
+//		}
+//		return $durationAlert;
+//	}
 
 	/**
 	 * Get the base aggregation query.
