@@ -398,8 +398,8 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	/**
 	 * 
 	 */
-	protected function setCalculatorTag() {
-		parent::setCalculatorTag();
+	protected function setCalculatorTag($query = array(), $update = array()) {
+		parent::setCalculatorTag($query, $update);
 		foreach ($this->data as $item) {
 			if ($this->isLineLegitimate($item) && !empty($item['tx_saved'])) {
 				$this->removeBalanceTx($item); // we can safely remove the transactions after the lines have left the current queue
