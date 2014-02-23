@@ -205,7 +205,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	/**
 	 * @see Billrun_Calculator::getCalculatorQueueType
 	 */
-	public static function getCalculatorQueueType() {
+	protected function getCalculatorQueueType() {
 		return self::$type;
 	}
 
@@ -216,7 +216,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	 */
 	protected function setCalculatorTag($query = array(), $update = array()) {
 		$queue = Billrun_Factory::db()->queueCollection();
-		$calculator_tag = static::getCalculatorQueueType();
+		$calculator_tag = $this->getCalculatorQueueType();
 		$advance_stamps = array();
 		foreach ($this->lines as $stamp => $item) {
 			if (!isset($item['aid'])) {

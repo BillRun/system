@@ -319,8 +319,10 @@ use Billrun_Traits_FileSequenceChecking;
 		if ($this->getName() != $type) {
 			return FALSE;
 		}
-		$header['line_count'] = reset(unpack("N", substr($data, 0x12, 4)));
-		$header['next_file_number'] = reset(unpack("N", substr($data, 0x16, 4)));
+		$nx12Data = unpack("N", substr($data, 0x12, 4));
+		$header['line_count'] = reset($nx12Data);
+		$nx16Data = unpack("N", substr($data, 0x16, 4));
+		$header['next_file_number'] = reset($nx16Data);
 		//Billrun_Factory::log(print_r($header,1));
 
 		$header['raw'] = utf8_encode(base64_encode($data)); // Is  this  needed?
