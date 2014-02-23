@@ -78,7 +78,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 					$this->usageCheck($limits, $row, $balance);
 					break;
 				default:
-					Billrun_Factory::log("Fraud plugin - method doesn't exists " . $method, Zend_Log::WARN);
+					Billrun_Factory::log("Fraud plugin - method doesn't exists " . $type, Zend_Log::WARN);
 					break;
 			}
 		}
