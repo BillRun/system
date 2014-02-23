@@ -54,7 +54,8 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @return type
 	 */
 	public function handlerNotify($handler, $options) {
-                if( $options['type'] != 'roaming') {
+               
+		if( $options['type'] != 'roaming') {
                     return FALSE; 
 		}
 		$ret = $this->roamingNotify();
@@ -131,7 +132,7 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @return mixed the response from the remote server after json decoding
 	 */
 	protected function notifyOnEvent($args) {
-		if (!(isset($args['imsi']) || isset($args['msisdn']))) {
+		if (!(isset($args['imsi']) || isset($args['msisdn']) || isset($args['sid']) )) {
 			Billrun_Log::getInstance()->log("fraudAlertsPlugin::notifyOnEvent cannot find IMSI nor NDC_SN", Zend_Log::NOTICE);
 		}
 
@@ -142,6 +143,8 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 
 			$args['imsi'] = $testData[$key]['imsi'];
 			$args['msisdn'] = $testData[$key]['msisdn'];
+			$args['aid'] = $testData[$key]['aid'];
+			$args['sid'] = $testData[$key]['sid'];
 		}
 
 		//unset uneeded fields...
@@ -156,6 +159,8 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 			'units' => 'units',
 			'IMSI' => 'imsi',
 			'NDC_SN' => 'msisdn',
+			'ACCOUNT_ID' => 'aid',
+			'SUBSCRIBER_ID' => 'sid',
 		);
 
 		foreach ($required_args as $key => $argsKey) {
@@ -232,7 +237,7 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 			'$sort' => array('priority' => 1)
 			), array(
 			'$group' => array(
-				'_id' => array('imsi' => '$imsi', 'msisdn' => '$msisdn'),
+				'_id' => array('imsi' => '$imsi', 'msisdn' => '$msisdn' , 'aid'=> '$aid', 'sid'=> '$sid'),
 				'id' => array('$addToSet' => '$_id'),
 				'imsi' => array('$first' => '$imsi'),
 				'msisdn' => array('$first' => '$msisdn'),
@@ -246,12 +251,14 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 				'stamps' => array('$addToSet' => '$stamp'),
 			),
 			), array(
-			'$sort' => array('priority' => 1)
+				'$sort' => array('priority' => 1)
 			),	array(
 			'$project' => array(
 				'_id' => 0,
 				'imsi' => '$_id.imsi',
 				'msisdn' => '$_id.msisdn',
+				'aid' => '$_id.aid',
+				'sid' => '$_id.sid',
 				'value' => 1,
 				'event_type' => 1,
 				'units' => 1,
@@ -309,9 +316,13 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		Billrun_Log::getInstance()->log("Fraud alerts mark event lines " . $event['deposit_stamp'], Zend_Log::INFO);
 		$imsi = (isset($event['imsi']) && $event['imsi']) ? $event['imsi'] : null;
 		$msisdn = (isset($event['msisdn']) && $event['msisdn']) ? $event['msisdn'] : null;
-
+		$sid = (isset($event['sid']) && $event['sid']) ? $event['sid'] : null;
 		$lines_where = array();
 
+		if ($sid) {
+			$lines_where['sid'] = $sid;
+		}
+		
 		if ($imsi) {
 			$lines_where['imsi'] = $imsi;
 		}
@@ -330,8 +341,8 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$lines_where['process_time'] = array('$lt' => date(Billrun_Base::base_dateformat, $this->startTime));
 		$lines_where['deposit_stamp'] = array('$exists' => false);
 
-		if (!($imsi || $msisdn)) {
-			Billrun_Log::getInstance()->log("fraudAlertsPlugin::markEventLines cannot find IMSI nor NDC_SN on event, marking CDR lines with event_stamp of : " . print_r($event['stamps'], 1), Zend_Log::INFO);
+		if (!($imsi || $msisdn ||$sid )) {
+			Billrun_Log::getInstance()->log("fraudAlertsPlugin::markEventLines cannot find IMSI nor NDC_SN  or SID on event, marking CDR lines with event_stamp of : " . print_r($event['stamps'], 1), Zend_Log::INFO);
 			$lines_where['event_stamp'] = array('$in' => $event['stamps']);
 		}
 
