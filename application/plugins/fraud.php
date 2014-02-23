@@ -54,7 +54,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 
 		// if not plan to row - cannot do acannotnything
 		if (!isset($row['plan'])) {
-			Billrun_Factory::log("Fraud plugin - plan not exists for line " . $row['stamp'], Zend_Log::INFO);
+			Billrun_Factory::log("Fraud plugin - plan not exists for line " . $row['stamp'], Zend_Log::ERR);
 			return true;
 		}
 
@@ -152,7 +152,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 
 	protected function usageCheck($limits, $row, $balance) {
-
+		$ret = false;
 		if ($row['usagev'] === 0) {
 			return false;
 		}
@@ -167,10 +167,10 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$balance_after_change = $balance_before_change + $row['usagev'];
 
 		foreach ($limits['rules'] as $rule) {
-			return $this->checkRule($rule, $row, $balance_before_change, $balance_after_change);
+			$ret[] = $this->checkRule($rule, $row, $balance_before_change, $balance_after_change);
 		}
 
-		return false;
+		return $ret;
 	}
 
 	/**
@@ -185,12 +185,12 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 */
 	protected function checkRule($rule, $row, $before, $after) {
 		// if the limit for specific type
-		if (!isset($row['usaget']) || (!empty($rule['usaget']) && !in_array( $row['usaget'],$rule['usaget']))) {
+		if (!isset($row['usaget']) || (!empty($rule['usaget']) && !in_array( $row['usaget'],$rule['usaget']))) {			
 			return false;
 		}
 		// if the limit for specific plans
 		if (isset($rule['limitPlans']) &&
-			(is_array($rule['limitPlans']) && !in_array($row['plan'], $rule['limitPlans']))) {
+			(is_array($rule['limitPlans']) && !in_array(strtolower($row['plan']), $rule['limitPlans']))) {
 			return false;
 		}
 
