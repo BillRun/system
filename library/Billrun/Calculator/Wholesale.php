@@ -126,7 +126,7 @@ abstract class Billrun_Calculator_Wholesale extends Billrun_Calculator {
 	/**
 	 * @see Billrun_Calculator::getCalculatorQueueType
 	 */
-	protected static function getCalculatorQueueType() {
+	protected function getCalculatorQueueType() {
 		return static::MAIN_DB_FIELD;
 	}
 

@@ -125,7 +125,7 @@ class Billrun_Calculator_Carrier extends Billrun_Calculator {
 	/**
 	 * @see Billrun_Calculator::getCalculatorQueueType
 	 */
-	protected static function getCalculatorQueueType() {
+	protected function getCalculatorQueueType() {
 		return self::MAIN_DB_FIELD;
 	}
 
