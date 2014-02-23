@@ -152,7 +152,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 
 	protected function usageCheck($limits, $row, $balance) {
-		$ret = false;
+		$ret = array();
 		if ($row['usagev'] === 0) {
 			return false;
 		}
@@ -197,8 +197,8 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$threshold = $rule['threshold'];
 		$recurring = isset($rule['recurring']) && $rule['recurring'];
 		if ($this->isThresholdTriggered($before, $after, $threshold, $recurring)) {
+			Billrun_Factory::log("Fraud plugin - line stamp " . $row['stamp'] . ' trigger event ' .  $rule['name'], Zend_Log::CRIT);
 			$this->insert_fraud_event($after, $before, $row, $threshold, $rule['unit'], $rule['name']);
-			Billrun_Factory::log("Fraud plugin - trigger event " . $row['stamp'] . ' with event name ' .  $rule['name'], Zend_Log::CRIT);
 			return $rule;
 		}
 	}
@@ -221,11 +221,9 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		return ($before < $threshold) && ($threshold < $after);
 	}
 
-	protected function insert_fraud_event($value, $value_before, $row, $threshold, $units, $event_type, $fraud_connection = null, $fraud_connection_options = array()) {
+	protected function insert_fraud_event($value, $value_before, $row, $threshold, $units, $event_type) {
 
-		if(!$fraud_connection) {
-			$fraud_connection = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('fraud.db'))->eventsCollection();
-		}
+		$fraud_connection = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('fraud.db'))->eventsCollection();
 
 		$newEvent = new Mongodloid_Entity();
 		$newEvent['value'] = $value;
@@ -240,18 +238,21 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$newEvent['threshold'] = $threshold;
 		$newEvent['units'] = $units;
 		$newEvent['event_type'] = $event_type;
+		$newEvent['plan'] = $row['plan'];
 		$newEvent['stamp'] = md5(serialize($newEvent));
 		
 		try {
 			$insertResult = $fraud_connection->insert($newEvent, array('w' => 1));
 
 			if ($insertResult['ok'] == 1) {
-				Billrun_Factory::log()->log("line with the stamp: " . $newEvent['stamp'] . " inserted to the fraud events", Zend_Log::INFO);
+				Billrun_Factory::log()->log("Fraud plugin - Event stamp: " . $newEvent['stamp'] . " inserted to the fraud events", Zend_Log::INFO);
 			} else {
-				Billrun_Factory::log()->log("Failed insert line with the stamp: " . $newEvent['stamp'] . " to the fraud events", Zend_Log::WARN);
+				// @TODO: dump to file for durability
+				Billrun_Factory::log()->log("Fraud plugin - Failed insert line with the stamp: " . $newEvent['stamp'] . " to the fraud events", Zend_Log::WARN);
 			}
 		} catch (Exception $e) {
-			Billrun_Factory::log()->log("Failed insert line with the stamp: " . $newEvent['stamp'] . " to the fraud events, got Exception : " . $e->getCode() . " : " . $e->getMessage(), Zend_Log::ERR);
+			// @TODO: dump to file for durability
+			Billrun_Factory::log()->log("Fraud plugin - Failed insert line with the stamp: " . $newEvent['stamp'] . " to the fraud events, got Exception : " . $e->getCode() . " : " . $e->getMessage(), Zend_Log::ERR);
 		}
 	}
 
