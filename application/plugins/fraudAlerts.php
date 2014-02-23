@@ -118,8 +118,10 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$msg .= "Event : stamp : {$event['stamps'][0]} , imsi :  ".@$event['imsi']." ,  msisdn :  ".(@$event['msisdn']) . PHP_EOL;
 		$msg .= (isset($rpcRet['message']) ? "Message From RPC: " . $rpcRet['message'] : "No  failure  message  from the RPC.") .PHP_EOL;
 		$tmpStr ="";
-		foreach($rpcRet as $key => $val) {
-			$tmpStr .= " $key : $val,";
+		if(is_array($rpcRet)) {
+			foreach($rpcRet as $key => $val) {
+				$tmpStr .= " $key : $val,";
+			}
 		}
 		$msg .= "RPC Result : ". $tmpStr . PHP_EOL;
 		Billrun_Factory::log()->log($msg, Zend_Log::ALERT);
@@ -159,8 +161,9 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 			'units' => 'units',
 			'IMSI' => 'imsi',
 			'NDC_SN' => 'msisdn',
-			'ACCOUNT_ID' => 'aid',
-			'SUBSCRIBER_ID' => 'sid',
+			'account_id' => 'aid',
+			'subscriber_id' => 'sid',
+			'plan' => 'plan',
 		);
 
 		foreach ($required_args as $key => $argsKey) {
@@ -237,10 +240,11 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 			'$sort' => array('priority' => 1)
 			), array(
 			'$group' => array(
-				'_id' => array('imsi' => '$imsi', 'msisdn' => '$msisdn' , 'aid'=> '$aid', 'sid'=> '$sid'),
+				'_id' => array('imsi' => '$imsi', 'msisdn' => '$msisdn' , 'sid'=> '$sid'),
 				'id' => array('$addToSet' => '$_id'),
 				'imsi' => array('$first' => '$imsi'),
 				'msisdn' => array('$first' => '$msisdn'),
+				'aid' => array('$first' => '$aid'),
 				'value' => array('$first' => '$value'),
 				'event_type' => array('$first' => '$event_type'),
 				'units' => array('$first' => '$units'),
@@ -248,6 +252,7 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 				'priority' => array('$first' => '$priority'),
 				//'deposit_stamp' => array('$first' => '$_id'),
 				'source' => array('$first' => '$source'),
+				'plan' => array('$first' => '$plan'),
 				'stamps' => array('$addToSet' => '$stamp'),
 			),
 			), array(
@@ -257,8 +262,8 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 				'_id' => 0,
 				'imsi' => '$_id.imsi',
 				'msisdn' => '$_id.msisdn',
-				'aid' => '$_id.aid',
 				'sid' => '$_id.sid',
+				'aid' => 1,
 				'value' => 1,
 				'event_type' => 1,
 				'units' => 1,
@@ -267,6 +272,7 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 				'id' => 1,
 				'source' => 1,
 				'stamps' => 1,
+				'plan' => 1,
 			),
 			)
 		);
@@ -279,7 +285,7 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @param mixed $failure info on failure
 	 */
 	protected function markEvent($event, $failure = null) {
-		Billrun_Log::getInstance()->log("Fraud alerts mark event " . $event['deposit_stamp'], Zend_Log::INFO);
+		Billrun_Log::getInstance()->log("Fraud alerts mark event " . ($failure != null ? $event['stamp'] : $event['deposit_stamp'] ), Zend_Log::INFO);
 		//mark events as dealt with.
 		$events_where = array(
 			'notify_time' => array('$exists' => false),
