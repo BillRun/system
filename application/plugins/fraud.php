@@ -52,6 +52,10 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 */
 	public function afterUpdateSubscriberBalance($row, $balance, $rowPrice, $calculator) {
 
+		if (is_null($balance)) {
+			Billrun_Factory::log("Fraud plugin - balance is empty or not transfer to the plugin" . $row['stamp'] . ' | calculator ' . $calculator->getType(), Zend_Log::WARN);
+			return true;
+		}
 		// if not plan to row - cannot do acannotnything
 		if (!isset($row['plan'])) {
 			Billrun_Factory::log("Fraud plugin - plan not exists for line " . $row['stamp'], Zend_Log::ERR);
