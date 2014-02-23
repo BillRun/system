@@ -20,43 +20,43 @@ class Billrun_Generator_Csv_Fixed extends Billrun_Generator_Csv {
 	 * @var string
 	 */
 	static protected $type = 'fixed';
-        
-        /* data structure
+
+	/* data structure
 	 * @var array
 	 */
-        static protected $data_structure = array();
+	static protected $data_structure = array();
 
 	public function __construct($options) {
-            parent::__construct($options);
-            $this->data_structure = $this->dataStructure();
+		parent::__construct($options);
+		self::$data_structure = $this->dataStructure();
 	}
-        
-        /**
+
+	/**
 	 * @see Billrun_Generator_Csv::createRow
 	 */
-        public function createRow($row) {
-            
-            $str = '';
-            foreach ($this->data_structure as $column => $width) {
-                $str .= str_pad($row[$column],$width," ",STR_PAD_LEFT);
-            }
-            
-            $str .= PHP_EOL;     
-            return $str;
-        }
-        
-        /**
+	public function createRow($row) {
+
+		$str = '';
+		foreach (self::$data_structure as $column => $width) {
+			$str .= str_pad($row[$column], $width, " ", STR_PAD_LEFT);
+		}
+
+		$str .= PHP_EOL;
+		return $str;
+	}
+
+	/**
 	 * @see Billrun_Generator_Csv::createTreatedFile
 	 */
-        public function createTreatedFile($xmlContent) {
-            
-        }
-        
-        /**
+	public function createTreatedFile($xmlContent) {
+		
+	}
+
+	/**
 	 * @see Billrun_Generator_Csv::setGeneratedStamp
 	 */
-        public function setGeneratedStamp() {
-            
-        }
+	public function setGeneratedStamp() {
+		
+	}
 
 }

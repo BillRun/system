@@ -407,7 +407,9 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	 * Get the  current  calculator type, to be used in the queue.
 	 * @return string the  type  of the calculator
 	 */
-	abstract protected static function getCalculatorQueueType();
+	protected static function getCalculatorQueueType() {
+		
+	}
 
 	/**
 	 * Check if a given line  can be handeld by  the calcualtor.

@@ -43,7 +43,7 @@ class Generator_Golan016 extends Billrun_Generator_Csv_Fixed {
 	/* data structure
 	 * @var array
 	 */
-	static protected $data = array();
+	protected $data = array();
 
 	public function __construct($options = array()) {
 

@@ -84,7 +84,7 @@ class Billrun_Calculator_Rate_016 extends Billrun_Calculator_Rate {
 		$usage_type = $this->getLineUsageType($row);
 		$volume = $this->getLineVolume($row, $usage_type);
 
-		if (!$volume) {
+		if ($volume === false) {
 			Billrun_Factory::log()->log("wrong volume line. stamp:" . $row->get('stamp') . " call_start_time: " . $row->get('call_start_time') . " call_end_time: " . $row->get('call_end_time'), Zend_Log::ERR);
 			return false;
 		}
