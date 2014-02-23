@@ -233,8 +233,11 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$newEvent['creation_time'] = date(Billrun_Base::base_dateformat);
 		$newEvent['aid'] = $row['aid'];
 		$newEvent['sid'] = $row['sid'];
+		if(isset($row['imsi'])) {
+			$newEvent['imsi'] = $row['imsi'];
+		}
 		$newEvent['source'] = 'billing';
-		$newEvent['threshold_usagev'] = $threshold;
+		$newEvent['threshold'] = $threshold;
 		$newEvent['units'] = $units;
 		$newEvent['event_type'] = $event_type;
 		$newEvent['stamp'] = md5(serialize($newEvent));
