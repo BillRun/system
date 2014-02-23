@@ -332,7 +332,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		return $flat_entry;
 	}
 
-	static public function getSubscribersByParams($params_arr, $availableFields) {
+	public function getSubscribersByParams($params_arr, $availableFields) {
 		$subscribers = array();
 		foreach ($params_arr as $key => &$params) {
 			if (!isset($params['imsi']) && !isset($params['IMSI']) && !isset($params['NDC_SN'])) {
