@@ -197,6 +197,11 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 			(is_array($rule['limitPlans']) && !in_array(strtolower($row['plan']), $rule['limitPlans']))) {
 			return false;
 		}
+		// ignore subscribers :)
+		if (isset($rule['ignoreSubscribers']) &&
+			(is_array($rule['ignoreSubscribers']) && in_array($row['sid'], $rule['ignoreSubscribers']))) {
+			return false;
+		}
 
 		$threshold = $rule['threshold'];
 		$recurring = isset($rule['recurring']) && $rule['recurring'];
