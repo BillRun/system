@@ -26,6 +26,10 @@ class depositPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$event = new Mongodloid_Entity($item);
 			
 			unset($event['events_ids']);
+			if (isset($event['events_stamps'][0])) {
+				$firstStamp = $event['events_stamps'][0];
+				$newEvent['firststamp'] = $firstStamp; // to make the event stamp unique
+			}
 			unset($event['events_stamps']);
 			$newEvent = $this->addAlertData($event);
 			$newEvent['stamp']	= md5(serialize($newEvent));
