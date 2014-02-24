@@ -323,18 +323,28 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$imsi = (isset($event['imsi']) && $event['imsi']) ? $event['imsi'] : null;
 		$msisdn = (isset($event['msisdn']) && $event['msisdn']) ? $event['msisdn'] : null;
 		$sid = (isset($event['sid']) && $event['sid']) ? $event['sid'] : null;
+		// backward compatibility
+		$subscriber_id = (isset($event['subscriber_id']) && $event['subscriber_id']) ? $event['subscriber_id'] : null;
 		$lines_where = array();
 
-		if ($sid) {
+		if (isset($subscriber_id)) {
+			$lines_where['subscriber_id'] = $subscriber_id;
+			$hint = array('subscriber_id' => 1);
+		} else if (isset($sid)) { 
 			$lines_where['sid'] = $sid;
+			$hint = array('sid' => 1);
 		}
 		
 		if ($imsi) {
 			$lines_where['imsi'] = $imsi;
+			$hint = array('imsi' => 1);
 		}
 
 		if ($msisdn) {
 			$lines_where['msisdn'] = $msisdn;
+			if (!isset($hint)) {
+				$hint = array('msisdn' => 1);
+			}
 		}
 		
 //		if (isset($event['effects'])) {
@@ -354,7 +364,10 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 
 		// the update will done manually due to performance with collection update (not supported with hint)
 		// @TODO: when update command will suport hint will use update (see remark code after foreach loop)
-		$rows = $this->linesCol->query($lines_where)->cursor()->hint(array('imsi' => 1));
+		$rows = $this->linesCol->query($lines_where)->cursor();//->hint($hint);
+		if (isset($hint)) {
+			$rows->hint($hint);
+		}
 		foreach ($rows as $row) {
 			$row->collection($this->linesCol);
 			$row->set('deposit_stamp', $event['deposit_stamp']);
