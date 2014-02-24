@@ -202,7 +202,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$recurring = isset($rule['recurring']) && $rule['recurring'];
 		if ($this->isThresholdTriggered($before, $after, $threshold, $recurring)) {
 			Billrun_Factory::log("Fraud plugin - line stamp " . $row['stamp'] . ' trigger event ' .  $rule['name'], Zend_Log::CRIT);
-			$this->insert_fraud_event($after, $before, $row, $threshold, $rule['unit'], $rule['name']);
+			$this->insert_fraud_event($after, $before, $row, $threshold, $rule['unit'], $rule['name'], $recurring);
 			return $rule;
 		}
 	}
@@ -225,7 +225,18 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		return ($before < $threshold) && ($threshold < $after);
 	}
 
-	protected function insert_fraud_event($value, $value_before, $row, $threshold, $units, $event_type) {
+	/**
+	 * method to add the event to the events system
+	 * 
+	 * @param int $value value that trigger the event (after)
+	 * @param int $value_before the value before the event
+	 * @param Array $row the line row the trigger the event
+	 * @param int $threshold threshold
+	 * @param string $units the unit of the threshold
+	 * @param string $event_type the event type
+	 * @param bool $recurring is the event is recurring
+	 */
+	protected function insert_fraud_event($value, $value_before, $row, $threshold, $units, $event_type, $recurring = false) {
 
 		$fraud_connection = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('fraud.db'))->eventsCollection();
 
@@ -243,6 +254,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$newEvent['units'] = $units;
 		$newEvent['event_type'] = $event_type;
 		$newEvent['plan'] = $row['plan'];
+		$newEvent['recurring'] = $recurring;
 		$newEvent['stamp'] = md5(serialize($newEvent));
 		
 		try {
