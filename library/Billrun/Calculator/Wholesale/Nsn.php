@@ -203,7 +203,7 @@ class Billrun_Calculator_Wholesale_Nsn extends Billrun_Calculator_Wholesale {
 	 */
 	public function isLineLegitimate($line) {
 		return $line['type'] == 'nsn' &&
-			in_array($line['usaget'], array('call', 'sms')) &&
+			in_array($line['usaget'], array('call', 'sms', 'incoming_call')) &&
 			in_array($line['record_type'], $this->wholesaleRecords);
 	}
 

@@ -43,21 +43,21 @@ class RatesModel extends TabledateModel {
 
 		$entity = parent::getItem($id);
 
-		if (!isset($entity['rates'])) {
-			return;
-		}
-		$raw_data = $entity->getRawData();
-		foreach ($raw_data['rates'] as &$rate) {
-			if (isset($rate['plans'])) {
-				foreach ($rate['plans'] as &$plan) {
-					$data = $this->collection->getRef($plan);
-					if ($data instanceof Mongodloid_Entity) {
-						$plan = $data->get('name');
+		if (isset($entity['rates'])) {
+			$raw_data = $entity->getRawData();
+			foreach ($raw_data['rates'] as &$rate) {
+				if (isset($rate['plans'])) {
+					foreach ($rate['plans'] as &$plan) {
+						$data = $this->collection->getRef($plan);
+						if ($data instanceof Mongodloid_Entity) {
+							$plan = $data->get('name');
+						}
 					}
 				}
 			}
+			$entity->setRawData($raw_data);
 		}
-		$entity->setRawData($raw_data);
+		
 		return $entity;
 	}
 

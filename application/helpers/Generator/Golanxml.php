@@ -37,6 +37,24 @@ class Generator_Golanxml extends Billrun_Generator {
 	protected $lines_coll;
 	protected $invoice_version = "1.0";
 
+	/**
+	 * Flush XMLWriter every $flush_size billing lines
+	 * @var int
+	 */
+	protected $flush_size = 5000;
+
+	/**
+	 *
+	 * @var XMLWriter
+	 */
+	protected $writer = null;
+
+	/**
+	 * fields to filter when pulling account lines
+	 * @var array 
+	 */
+	protected $filter_fields;
+
 	public function __construct($options) {
 		parent::__construct($options);
 		if (isset($options['page'])) {
@@ -48,24 +66,28 @@ class Generator_Golanxml extends Billrun_Generator {
 		if (isset($options['invoice_version'])) {
 			$this->invoice_version = $options['invoice_version'];
 		}
+		if (isset($options['flush_size']) && is_numeric($options['flush_size'])) {
+			$this->flush_size = intval($options['flush_size']);
+		}
 
 		$this->lines_coll = Billrun_Factory::db()->linesCollection();
 		$this->loadRates();
 		$this->loadPlans();
+
+		$this->filter_fields = array_map("intval", Billrun_Factory::config()->getConfigValue('billrun.filter_fields', array()));
+		$this->writer = new XMLWriter(); //create a new xmlwriter object
 	}
 
 	public function load() {
 		$billrun = Billrun_Factory::db()->billrunCollection();
 		Billrun_Factory::log()->log('Loading ' . $this->size . ' billrun documents with offset ' . $this->offset, Zend_Log::INFO);
 		$resource = $billrun
-			->query('billrun_key', $this->stamp)
-//				->in('aid', array(2065512))
-			->exists('invoice_id')
-//			->notExists('invoice_file')
-			->cursor()->timeout(-1)
-			->sort(array("aid" => 1))
-			->skip($this->offset * $this->size)
-			->limit($this->size);
+				->query('billrun_key', $this->stamp)
+				->exists('invoice_id')
+				->cursor()->timeout(-1)
+				->sort(array("aid" => 1))
+				->skip($this->offset * $this->size)
+				->limit($this->size);
 
 		// @TODO - there is issue with the timeout; need to be fixed
 		//         meanwhile, let's pull the lines right after the query
@@ -99,8 +121,8 @@ class Generator_Golanxml extends Billrun_Generator {
 		$invoice_filename = $row['billrun_key'] . '_' . str_pad($row['aid'], 9, '0', STR_PAD_LEFT) . '_' . str_pad($invoice_id, 11, '0', STR_PAD_LEFT) . '.xml';
 		$invoice_file_path = $this->export_directory . '/' . $invoice_filename;
 		if (!file_exists($invoice_file_path)) {
-			$xml = $this->getXML($row, $lines);
-			$this->createXmlFile($invoice_filename, $xml->asXML());
+			$this->writer->openURI($invoice_file_path);
+			$this->writeXML($row, $lines);
 			$this->setFileStamp($row, $invoice_filename);
 			Billrun_Factory::log()->log("invoice file " . $invoice_filename . " created for account " . $row->get('aid'), Zend_Log::INFO);
 		} else {
@@ -114,7 +136,8 @@ class Generator_Golanxml extends Billrun_Generator {
 	 * @param Mongodloid_Entity $row
 	 * @return SimpleXMLElement the invoice in xml format
 	 */
-	protected function getXML($row, $lines = null) {
+	protected function writeXML($billrun, $lines = null) {
+		$this->writer->startDocument('1.0', 'UTF-8');
 		$invoice_total_gift = 0;
 		$invoice_total_above_gift = 0;
 		$invoice_total_outside_gift_vat = 0;
@@ -122,17 +145,18 @@ class Generator_Golanxml extends Billrun_Generator {
 		$invoice_total_manual_correction_credit = 0;
 		$invoice_total_manual_correction_charge = 0;
 		$invoice_total_outside_gift_novat = 0;
-		$billrun_key = $row['billrun_key'];
-		$aid = $row['aid'];
+		$billrun_key = $billrun['billrun_key'];
+		$aid = $billrun['aid'];
 		Billrun_Factory::log()->log("xml account " . $aid, Zend_Log::INFO);
 		// @todo refactoring the xml generation to another class
-		$xml = $this->basic_xml();
-		$xml->TELECOM_INFORMATION->VAT_VALUE = $this->displayVAT($row['vat']);
-		$xml->INV_CUSTOMER_INFORMATION->CUSTOMER_CONTACT->EXTERNALACCOUNTREFERENCE = $aid;
+
+		$this->startInvoice();
+		$this->write_basic_header($billrun);
+
 		if (is_null($lines) && (!isset($this->subscribers) || in_array(0, $this->subscribers))) {
-			$lines = $this->get_lines($row);
+			$lines = $this->get_lines($billrun);
 		}
-		foreach ($row['subs'] as $subscriber) {
+		foreach ($billrun['subs'] as $subscriber) {
 			$sid = $subscriber['sid'];
 			$subscriber_flat_costs = $this->getFlatCosts($subscriber);
 			if (is_null($subscriber['current_plan']) && is_null($subscriber['next_plan']) && !isset($subscriber['breakdown'])) {
@@ -142,113 +166,116 @@ class Generator_Golanxml extends Billrun_Generator {
 				Billrun_Factory::log('Missing flat costs for subscriber ' . $sid, Zend_Log::INFO);
 			}
 
-			$subscriber_inf = $xml->addChild('SUBSCRIBER_INF');
-			$subscriber_inf->SUBSCRIBER_DETAILS->SUBSCRIBER_ID = $subscriber['sid'];
+			$this->writer->startElement('SUBSCRIBER_INF');
+			$this->writer->startElement('SUBSCRIBER_DETAILS');
+			$this->writer->writeElement('SUBSCRIBER_ID', $subscriber['sid']);
+			$this->writer->endElement();
 
-			$billing_records = $subscriber_inf->addChild('BILLING_LINES');
+			$this->writeBillingLines($subscriber, $lines);
 
-			if ($this->billingLinesNeeded($sid)) {
-				if (is_null($lines)) {
-					$subscriber_lines = $this->get_lines($subscriber);
-				} else {
-					$func = function($line) use ($sid) {
-						return $line['sid'] == $sid;
-					};
-					$subscriber_lines = array_filter($lines, $func);
-				}
-				foreach ($subscriber_lines as $line) {
-					if (!$line->isEmpty() && $line['type'] != 'ggsn') {
-						$line->collection($this->lines_coll);
-						$billing_record = $billing_records->addChild('BILLING_RECORD');
-						$this->updateBillingRecord($billing_record, $this->getDate($line), $this->getTariffItem($line, $subscriber), $this->getCalledNo($line), $this->getCallerNo($line), $this->getUsageVolume($line), $this->getCharge($line), $this->getCredit($line), $this->getTariffKind($line['usaget']), $this->getAccessPrice($line), $this->getInterval($line), $this->getRate($line), $this->getIntlFlag($line), $this->getDiscountUsage($line), $this->getRoaming($line), $this->getServingNetwork($line), $this->getLineTypeOfBillingChar($line));
-					}
-				}
-				$subscriber_aggregated_data = $this->get_subscriber_aggregated_data_lines($subscriber);
-				foreach ($subscriber_aggregated_data as $line) {
-					$billing_record = $billing_records->addChild('BILLING_RECORD');
-					$this->updateBillingRecord($billing_record, $line['day'], $line['rate_key'], '', '', $line['usage_volume'], $line['aprice'], 0, $line['tariff_kind'], 0, $line['interval'], $line['rate_price'], 0, $line['discount_usage'], 0, '', 'D');
-				}
-			}
-
-			$subscriber_gift_usage = $subscriber_inf->addChild('SUBSCRIBER_GIFT_USAGE');
-			$subscriber_gift_usage->GIFTID_GIFTCLASSNAME = "GC_GOLAN";
-			$subscriber_gift_usage->GIFTID_GIFTNAME = $this->getPlanName($subscriber);
-			$subscriber_gift_usage->TOTAL_FREE_COUNTER_COST = (isset($subscriber_flat_costs['vatable']) ? $subscriber_flat_costs['vatable'] : 0) + (isset($subscriber_flat_costs['vat_free']) ? $subscriber_flat_costs['vat_free'] : 0);
-			//$subscriber_gift_usage->VOICE_COUNTERVALUEBEFBILL = ???;
-			//$subscriber_gift_usage->VOICE_FREECOUNTER = ???;
-			//$subscriber_gift_usage->VOICE_FREECOUNTERCOST = ???;
-			$subscriber_gift_usage->VOICE_FREEUSAGE = 0; // flat calls usage
-			$subscriber_gift_usage->VOICE_ABOVEFREECOST = 0; // over plan calls cost
-			$subscriber_gift_usage->VOICE_ABOVEFREEUSAGE = 0; // over plan calls usage
-			$subscriber_gift_usage->SMS_FREEUSAGE = 0; // flat sms usage
-			$subscriber_gift_usage->SMS_ABOVEFREECOST = 0; // over plan sms cost
-			$subscriber_gift_usage->SMS_ABOVEFREEUSAGE = 0; // over plan sms usage
-			$subscriber_gift_usage->DATA_FREEUSAGE = 0; // flat data usage
-			$subscriber_gift_usage->DATA_ABOVEFREECOST = 0; // over plan data cost
-			$subscriber_gift_usage->DATA_ABOVEFREEUSAGE = 0; // over plan data usage
-			$subscriber_gift_usage->MMS_FREEUSAGE = 0; // flat mms usage
-			$subscriber_gift_usage->MMS_ABOVEFREECOST = 0; // over plan mms cost
-			$subscriber_gift_usage->MMS_ABOVEFREEUSAGE = 0; // over plan mms usage
+			$this->writer->startElement('SUBSCRIBER_GIFT_USAGE');
+			$this->writer->writeElement('GIFTID_GIFTCLASSNAME', "GC_GOLAN");
+			$this->writer->writeElement('GIFTID_GIFTNAME', $this->getPlanName($subscriber));
+			$subscriber_gift_usage_TOTAL_FREE_COUNTER_COST = (isset($subscriber_flat_costs['vatable']) ? $subscriber_flat_costs['vatable'] : 0) + (isset($subscriber_flat_costs['vat_free']) ? $subscriber_flat_costs['vat_free'] : 0);
+			$this->writer->writeElement('TOTAL_FREE_COUNTER_COST', $subscriber_gift_usage_TOTAL_FREE_COUNTER_COST);
+			//$this->writer->writeElement('VOICE_COUNTERVALUEBEFBILL', ???);
+			//$this->writer->writeElement('VOICE_FREECOUNTER', ???);
+			//$this->writer->writeElement('VOICE_FREECOUNTERCOST', ???);
+			$subscriber_gift_usage_VOICE_FREEUSAGE = 0;
+			$subscriber_gift_usage_VOICE_ABOVEFREECOST = 0;
+			$subscriber_gift_usage_VOICE_ABOVEFREEUSAGE = 0;
+			$subscriber_gift_usage_SMS_FREEUSAGE = 0;
+			$subscriber_gift_usage_SMS_ABOVEFREECOST = 0;
+			$subscriber_gift_usage_SMS_ABOVEFREEUSAGE = 0;
+			$subscriber_gift_usage_DATA_FREEUSAGE = 0;
+			$subscriber_gift_usage_DATA_ABOVEFREECOST = 0;
+			$subscriber_gift_usage_DATA_ABOVEFREEUSAGE = 0;
+			$subscriber_gift_usage_MMS_FREEUSAGE = 0;
+			$subscriber_gift_usage_MMS_ABOVEFREECOST = 0;
+			$subscriber_gift_usage_MMS_ABOVEFREEUSAGE = 0;
 			if (isset($subscriber['breakdown']['over_plan']) && is_array($subscriber['breakdown']['over_plan'])) {
 				foreach ($subscriber['breakdown']['over_plan'] as $category) {
 					foreach ($category as $zone) {
-						$subscriber_gift_usage->VOICE_ABOVEFREECOST+=$this->getZoneTotalsFieldByUsage($zone, 'cost', 'call');
-						$subscriber_gift_usage->SMS_ABOVEFREECOST+=$this->getZoneTotalsFieldByUsage($zone, 'cost', 'sms');
-						$subscriber_gift_usage->DATA_ABOVEFREECOST+=$this->getZoneTotalsFieldByUsage($zone, 'cost', 'data');
-						$subscriber_gift_usage->MMS_ABOVEFREECOST+=$this->getZoneTotalsFieldByUsage($zone, 'cost', 'mms');
-						$subscriber_gift_usage->VOICE_ABOVEFREEUSAGE+= $this->getZoneTotalsFieldByUsage($zone, 'usagev', 'call');
-						$subscriber_gift_usage->SMS_ABOVEFREEUSAGE+= $this->getZoneTotalsFieldByUsage($zone, 'usagev', 'sms');
-						$subscriber_gift_usage->DATA_ABOVEFREEUSAGE+=$this->bytesToKB($this->getZoneTotalsFieldByUsage($zone, 'usagev', 'data'));
-						$subscriber_gift_usage->MMS_ABOVEFREEUSAGE+= $this->getZoneTotalsFieldByUsage($zone, 'usagev', 'mms');
+						$subscriber_gift_usage_VOICE_ABOVEFREECOST+=$this->getZoneTotalsFieldByUsage($zone, 'cost', 'call');
+						$subscriber_gift_usage_SMS_ABOVEFREECOST+=$this->getZoneTotalsFieldByUsage($zone, 'cost', 'sms');
+						$subscriber_gift_usage_DATA_ABOVEFREECOST+=$this->getZoneTotalsFieldByUsage($zone, 'cost', 'data');
+						$subscriber_gift_usage_MMS_ABOVEFREECOST+=$this->getZoneTotalsFieldByUsage($zone, 'cost', 'mms');
+						$subscriber_gift_usage_VOICE_ABOVEFREEUSAGE+= $this->getZoneTotalsFieldByUsage($zone, 'usagev', 'call');
+						$subscriber_gift_usage_SMS_ABOVEFREEUSAGE+= $this->getZoneTotalsFieldByUsage($zone, 'usagev', 'sms');
+						$subscriber_gift_usage_DATA_ABOVEFREEUSAGE+=$this->bytesToKB($this->getZoneTotalsFieldByUsage($zone, 'usagev', 'data'));
+						$subscriber_gift_usage_MMS_ABOVEFREEUSAGE+= $this->getZoneTotalsFieldByUsage($zone, 'usagev', 'mms');
 					}
 				}
 			}
 			if (isset($subscriber['breakdown']['in_plan']) && is_array($subscriber['breakdown']['in_plan'])) {
 				foreach ($subscriber['breakdown']['in_plan'] as $category) {
 					foreach ($category as $zone) {
-						$subscriber_gift_usage->VOICE_FREEUSAGE+=$this->getZoneTotalsFieldByUsage($zone, 'usagev', 'call');
-						$subscriber_gift_usage->SMS_FREEUSAGE+=$this->getZoneTotalsFieldByUsage($zone, 'usagev', 'sms');
-						$subscriber_gift_usage->DATA_FREEUSAGE+=$this->bytesToKB($this->getZoneTotalsFieldByUsage($zone, 'usagev', 'data'));
-						$subscriber_gift_usage->MMS_FREEUSAGE+=$this->getZoneTotalsFieldByUsage($zone, 'usagev', 'mms');
+						$subscriber_gift_usage_VOICE_FREEUSAGE+=$this->getZoneTotalsFieldByUsage($zone, 'usagev', 'call');
+						$subscriber_gift_usage_SMS_FREEUSAGE+=$this->getZoneTotalsFieldByUsage($zone, 'usagev', 'sms');
+						$subscriber_gift_usage_DATA_FREEUSAGE+=$this->bytesToKB($this->getZoneTotalsFieldByUsage($zone, 'usagev', 'data'));
+						$subscriber_gift_usage_MMS_FREEUSAGE+=$this->getZoneTotalsFieldByUsage($zone, 'usagev', 'mms');
 					}
 				}
 			}
+			$this->writer->writeElement('VOICE_FREEUSAGE', $subscriber_gift_usage_VOICE_FREEUSAGE);
+			$this->writer->writeElement('VOICE_ABOVEFREECOST', $subscriber_gift_usage_VOICE_ABOVEFREECOST);
+			$this->writer->writeElement('VOICE_ABOVEFREEUSAGE', $subscriber_gift_usage_VOICE_ABOVEFREEUSAGE);
+			$this->writer->writeElement('SMS_FREEUSAGE', $subscriber_gift_usage_SMS_FREEUSAGE);
+			$this->writer->writeElement('SMS_ABOVEFREECOST', $subscriber_gift_usage_SMS_ABOVEFREECOST);
+			$this->writer->writeElement('SMS_ABOVEFREEUSAGE', $subscriber_gift_usage_SMS_ABOVEFREEUSAGE);
+			$this->writer->writeElement('DATA_FREEUSAGE', $subscriber_gift_usage_DATA_FREEUSAGE);
+			$this->writer->writeElement('DATA_ABOVEFREECOST', $subscriber_gift_usage_DATA_ABOVEFREECOST);
+			$this->writer->writeElement('DATA_ABOVEFREEUSAGE', $subscriber_gift_usage_DATA_ABOVEFREEUSAGE);
+			$this->writer->writeElement('MMS_FREEUSAGE', $subscriber_gift_usage_MMS_FREEUSAGE);
+			$this->writer->writeElement('MMS_ABOVEFREECOST', $subscriber_gift_usage_MMS_ABOVEFREECOST);
+			$this->writer->writeElement('MMS_ABOVEFREEUSAGE', $subscriber_gift_usage_MMS_ABOVEFREEUSAGE);
+			$this->writer->endElement(); // end SUBSCRIBER_GIFT_USAGE
 
-			$subscriber_sumup = $subscriber_inf->addChild('SUBSCRIBER_SUMUP');
-			$subscriber_sumup->TOTAL_GIFT = floatval($subscriber_gift_usage->TOTAL_FREE_COUNTER_COST);
+			$this->writer->startElement('SUBSCRIBER_SUMUP');
+			$this->writer->writeElement('TOTAL_GIFT', $subscriber_gift_usage_TOTAL_FREE_COUNTER_COST);
 //			$subscriber_sumup->TOTAL_ABOVE_GIFT = floatval((isset($subscriber['costs']['over_plan']['vatable']) ? $subscriber['costs']['over_plan']['vatable'] : 0) + (isset($subscriber['costs']['out_plan']['vatable']) ? $subscriber['costs']['out_plan']['vatable'] : 0)); // vatable over/out plan cost
-			$subscriber_sumup->TOTAL_ABOVE_GIFT = floatval((isset($subscriber['costs']['over_plan']['vatable']) ? $subscriber['costs']['over_plan']['vatable'] : 0)); // vatable overplan cost
-			$subscriber_sumup->TOTAL_OUTSIDE_GIFT_VAT = floatval(isset($subscriber['costs']['out_plan']['vatable']) ? $subscriber['costs']['out_plan']['vatable'] : 0);
-			$subscriber_sumup->TOTAL_MANUAL_CORRECTION_CHARGE = floatval(isset($subscriber['costs']['credit']['charge']['vatable']) ? $subscriber['costs']['credit']['charge']['vatable'] : 0) + floatval(isset($subscriber['costs']['credit']['charge']['vat_free']) ? $subscriber['costs']['credit']['charge']['vat_free'] : 0);
-			$subscriber_sumup->TOTAL_MANUAL_CORRECTION_CREDIT = floatval(isset($subscriber['costs']['credit']['refund']['vatable']) ? $subscriber['costs']['credit']['refund']['vatable'] : 0) + floatval(isset($subscriber['costs']['credit']['refund']['vat_free']) ? $subscriber['costs']['credit']['refund']['vat_free'] : 0);
-			$subscriber_sumup->TOTAL_MANUAL_CORRECTION = floatval($subscriber_sumup->TOTAL_MANUAL_CORRECTION_CHARGE) + floatval($subscriber_sumup->TOTAL_MANUAL_CORRECTION_CREDIT);
-			$subscriber_sumup->TOTAL_OUTSIDE_GIFT_NOVAT = floatval((isset($subscriber['costs']['out_plan']['vat_free']) ? $subscriber['costs']['out_plan']['vat_free'] : 0));
+			$subscriber_sumup_TOTAL_ABOVE_GIFT = floatval((isset($subscriber['costs']['over_plan']['vatable']) ? $subscriber['costs']['over_plan']['vatable'] : 0));
+			$this->writer->writeElement('TOTAL_ABOVE_GIFT', $subscriber_sumup_TOTAL_ABOVE_GIFT); // vatable overplan cost
+			$subscriber_sumup_TOTAL_OUTSIDE_GIFT_VAT = floatval(isset($subscriber['costs']['out_plan']['vatable']) ? $subscriber['costs']['out_plan']['vatable'] : 0);
+			$this->writer->writeElement('TOTAL_OUTSIDE_GIFT_VAT', $subscriber_sumup_TOTAL_OUTSIDE_GIFT_VAT);
+			$subscriber_sumup_TOTAL_MANUAL_CORRECTION_CHARGE = floatval(isset($subscriber['costs']['credit']['charge']['vatable']) ? $subscriber['costs']['credit']['charge']['vatable'] : 0) + floatval(isset($subscriber['costs']['credit']['charge']['vat_free']) ? $subscriber['costs']['credit']['charge']['vat_free'] : 0);
+			$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_CHARGE', $subscriber_sumup_TOTAL_MANUAL_CORRECTION_CHARGE);
+			$subscriber_sumup_TOTAL_MANUAL_CORRECTION_CREDIT = floatval(isset($subscriber['costs']['credit']['refund']['vatable']) ? $subscriber['costs']['credit']['refund']['vatable'] : 0) + floatval(isset($subscriber['costs']['credit']['refund']['vat_free']) ? $subscriber['costs']['credit']['refund']['vat_free'] : 0);
+			$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_CREDIT', $subscriber_sumup_TOTAL_MANUAL_CORRECTION_CREDIT);
+			$subscriber_sumup_TOTAL_MANUAL_CORRECTION = floatval($subscriber_sumup_TOTAL_MANUAL_CORRECTION_CHARGE) + floatval($subscriber_sumup_TOTAL_MANUAL_CORRECTION_CREDIT);
+			$this->writer->writeElement('TOTAL_MANUAL_CORRECTION', $subscriber_sumup_TOTAL_MANUAL_CORRECTION);
+			$subscriber_sumup_TOTAL_OUTSIDE_GIFT_NOVAT = floatval((isset($subscriber['costs']['out_plan']['vat_free']) ? $subscriber['costs']['out_plan']['vat_free'] : 0));
+			$this->writer->writeElement('TOTAL_OUTSIDE_GIFT_NOVAT', $subscriber_sumup_TOTAL_OUTSIDE_GIFT_NOVAT);
 			$subscriber_before_vat = $this->getSubscriberTotalBeforeVat($subscriber);
 			$subscriber_after_vat = $this->getSubscriberTotalAfterVat($subscriber);
-			$subscriber_sumup->TOTAL_VAT = $subscriber_after_vat - $subscriber_before_vat;
-			$subscriber_sumup->TOTAL_CHARGE_NO_VAT = $subscriber_before_vat;
-			$subscriber_sumup->TOTAL_CHARGE = $subscriber_after_vat;
+			$this->writer->writeElement('TOTAL_VAT', $subscriber_after_vat - $subscriber_before_vat);
+			$this->writer->writeElement('TOTAL_CHARGE_NO_VAT', $subscriber_before_vat);
+			$this->writer->writeElement('TOTAL_CHARGE', $subscriber_after_vat);
 
-			$invoice_total_gift+= floatval($subscriber_sumup->TOTAL_GIFT);
-			$invoice_total_above_gift+= floatval($subscriber_sumup->TOTAL_ABOVE_GIFT);
-			$invoice_total_outside_gift_vat+= floatval($subscriber_sumup->TOTAL_OUTSIDE_GIFT_VAT);
-			$invoice_total_manual_correction += floatval($subscriber_sumup->TOTAL_MANUAL_CORRECTION);
-			$invoice_total_manual_correction_credit += floatval($subscriber_sumup->TOTAL_MANUAL_CORRECTION_CREDIT);
-			$invoice_total_manual_correction_charge += floatval($subscriber_sumup->TOTAL_MANUAL_CORRECTION_CHARGE);
-			$invoice_total_outside_gift_novat +=floatval($subscriber_sumup->TOTAL_OUTSIDE_GIFT_NOVAT);
+			$invoice_total_gift+= $subscriber_gift_usage_TOTAL_FREE_COUNTER_COST;
+			$invoice_total_above_gift+= $subscriber_sumup_TOTAL_ABOVE_GIFT;
+			$invoice_total_outside_gift_vat+= $subscriber_sumup_TOTAL_OUTSIDE_GIFT_VAT;
+			$invoice_total_manual_correction += $subscriber_sumup_TOTAL_MANUAL_CORRECTION;
+			$invoice_total_manual_correction_credit += $subscriber_sumup_TOTAL_MANUAL_CORRECTION_CREDIT;
+			$invoice_total_manual_correction_charge += $subscriber_sumup_TOTAL_MANUAL_CORRECTION_CHARGE;
+			$invoice_total_outside_gift_novat +=$subscriber_sumup_TOTAL_OUTSIDE_GIFT_NOVAT;
+			$this->writer->endElement(); // end SUBSCRIBER_SUMUP
 
-			$subscriber_breakdown = $subscriber_inf->addChild('SUBSCRIBER_BREAKDOWN');
-			$breakdown_topic_over_plan = $subscriber_breakdown->addChild('BREAKDOWN_TOPIC');
-			$breakdown_topic_over_plan->addAttribute('name', 'GIFT_XXX_OUT_OF_USAGE');
-			$out_of_usage_entry = $breakdown_topic_over_plan->addChild('BREAKDOWN_ENTRY');
-			$out_of_usage_entry->addChild('TITLE', 'SERVICE-GIFT-GC_GOLAN-' . $this->getNextPlanName($subscriber));
-			$out_of_usage_entry->addChild('UNITS', 1);
-			$out_of_usage_entry->addChild('COST_WITHOUTVAT', isset($subscriber['breakdown']['in_plan']['base']['service']['cost']) ? $subscriber['breakdown']['in_plan']['base']['service']['cost'] : 0);
-			$out_of_usage_entry->addChild('VAT', $this->displayVAT($row['vat']));
-			$out_of_usage_entry->addChild('VAT_COST', floatval($out_of_usage_entry->COST_WITHOUTVAT) * floatval($out_of_usage_entry->VAT) / 100);
-			$out_of_usage_entry->addChild('TOTAL_COST', floatval($out_of_usage_entry->COST_WITHOUTVAT) + floatval($out_of_usage_entry->VAT_COST));
-			$out_of_usage_entry->addChild('TYPE_OF_BILLING', 'GIFT');
-//				$out_of_usage_entry->addChild('TYPE_OF_BILLING_CHAR', ?);
+			$this->writer->startElement('SUBSCRIBER_BREAKDOWN');
+			$this->writer->startElement('BREAKDOWN_TOPIC');
+			$this->writer->writeAttribute('name', 'GIFT_XXX_OUT_OF_USAGE');
+			$this->writer->startElement('BREAKDOWN_ENTRY');
+			$this->writer->writeElement('TITLE', 'SERVICE-GIFT-GC_GOLAN-' . $this->getNextPlanName($subscriber));
+			$this->writer->writeElement('UNITS', 1);
+			$out_of_usage_entry_COST_WITHOUTVAT = isset($subscriber['breakdown']['in_plan']['base']['service']['cost']) ? $subscriber['breakdown']['in_plan']['base']['service']['cost'] : 0;
+			$this->writer->writeElement('COST_WITHOUTVAT', $out_of_usage_entry_COST_WITHOUTVAT);
+			$out_of_usage_entry_VAT = $this->displayVAT($billrun['vat']);
+			$this->writer->writeElement('VAT', $out_of_usage_entry_VAT);
+			$out_of_usage_entry_VAT_COST = $out_of_usage_entry_COST_WITHOUTVAT * $out_of_usage_entry_VAT / 100;
+			$this->writer->writeElement('VAT_COST', $out_of_usage_entry_VAT_COST);
+			$this->writer->writeElement('TOTAL_COST', $out_of_usage_entry_COST_WITHOUTVAT + $out_of_usage_entry_VAT_COST);
+			$this->writer->writeElement('TYPE_OF_BILLING', 'GIFT');
+			$this->writer->endElement();
 			$over_plan_base = isset($subscriber['breakdown']['over_plan']['base']) && is_array($subscriber['breakdown']['over_plan']['base']) ? $subscriber['breakdown']['over_plan']['base'] : array();
 			$out_plan_base = isset($subscriber['breakdown']['out_plan']['base']) && is_array($subscriber['breakdown']['out_plan']['base']) ? $subscriber['breakdown']['out_plan']['base'] : array();
 			$over_out_plan_base = array_merge_recursive($over_plan_base, $out_plan_base);
@@ -258,22 +285,26 @@ class Generator_Golanxml extends Billrun_Generator {
 					foreach (array('call', 'sms', 'data', 'incoming_call', 'mms', 'incoming_sms') as $type) {
 						$usagev = $this->getZoneTotalsFieldByUsage($zone, 'usagev', $type);
 						if ($usagev > 0) {
-							$out_of_usage_entry = $breakdown_topic_over_plan->addChild('BREAKDOWN_ENTRY');
-							$out_of_usage_entry->addChild('TITLE', $this->getBreakdownEntryTitle($this->getTariffKind($type), $zone_name));
-							$out_of_usage_entry->addChild('UNITS', ($type == "data" ? $this->bytesToKB($usagev) : $usagev));
-							$out_of_usage_entry->addChild('COST_WITHOUTVAT', $this->getZoneTotalsFieldByUsage($zone, 'cost', $type));
-							$out_of_usage_entry->addChild('VAT', $this->displayVAT($this->getZoneVat($zone)));
-							$out_of_usage_entry->addChild('VAT_COST', floatval($out_of_usage_entry->COST_WITHOUTVAT) * floatval($out_of_usage_entry->VAT) / 100);
-							$out_of_usage_entry->addChild('TOTAL_COST', floatval($out_of_usage_entry->COST_WITHOUTVAT) + floatval($out_of_usage_entry->VAT_COST));
-							$out_of_usage_entry->addChild('TYPE_OF_BILLING', strtoupper($type));
-//									$out_of_usage_entry->addChild('TYPE_OF_BILLING_CHAR', ?);
+							$this->writer->startElement('BREAKDOWN_ENTRY');
+							$this->writer->writeElement('TITLE', $this->getBreakdownEntryTitle($this->getTariffKind($type), $zone_name));
+							$this->writer->writeElement('UNITS', ($type == "data" ? $this->bytesToKB($usagev) : $usagev));
+							$out_of_usage_entry_COST_WITHOUTVAT = $this->getZoneTotalsFieldByUsage($zone, 'cost', $type);
+							$this->writer->writeElement('COST_WITHOUTVAT', $out_of_usage_entry_COST_WITHOUTVAT);
+							$out_of_usage_entry_VAT = $this->displayVAT($this->getZoneVat($zone));
+							$this->writer->writeElement('VAT', $out_of_usage_entry_VAT);
+							$out_of_usage_entry_VAT_COST = $out_of_usage_entry_COST_WITHOUTVAT * $out_of_usage_entry_VAT / 100;
+							$this->writer->writeElement('VAT_COST', $out_of_usage_entry_VAT_COST);
+							$this->writer->writeElement('TOTAL_COST', $out_of_usage_entry_COST_WITHOUTVAT + $out_of_usage_entry_VAT_COST);
+							$this->writer->writeElement('TYPE_OF_BILLING', strtoupper($type));
+							$this->writer->endElement();
 						}
 					}
 				}
 			}
+			$this->writer->endElement(); // end BREAKDOWN_TOPIC
 
-			$breakdown_topic_international = $subscriber_breakdown->addChild('BREAKDOWN_TOPIC');
-			$breakdown_topic_international->addAttribute('name', 'INTERNATIONAL');
+			$this->writer->startElement('BREAKDOWN_TOPIC');
+			$this->writer->writeAttribute('name', 'INTERNATIONAL');
 			$subscriber_intl = array();
 			if (isset($subscriber['breakdown']) && is_array($subscriber['breakdown'])) {
 				foreach ($subscriber['breakdown'] as $plan) {
@@ -297,21 +328,24 @@ class Generator_Golanxml extends Billrun_Generator {
 			}
 			foreach ($subscriber_intl as $zone_name => $zone) {
 				foreach ($zone['totals'] as $usage_type => $usage_totals) {
-//						$out_of_usage_entry->addChild('TITLE', ?);
-					$international_entry = $breakdown_topic_international->addChild('BREAKDOWN_ENTRY');
-					$international_entry->addChild('TITLE', $this->getBreakdownEntryTitle($this->getTariffKind($usage_type), $zone_name));
-					$international_entry->addChild('UNITS', $usage_totals['usagev']);
-					$international_entry->addChild('COST_WITHOUTVAT', $usage_totals['cost']);
-					$international_entry->addChild('VAT', $this->displayVAT($zone['vat']));
-					$international_entry->addChild('VAT_COST', floatval($international_entry->COST_WITHOUTVAT) * floatval($international_entry->VAT) / 100);
-					$international_entry->addChild('TOTAL_COST', floatval($international_entry->COST_WITHOUTVAT) + floatval($international_entry->VAT_COST));
-					$international_entry->addChild('TYPE_OF_BILLING', strtoupper($usage_type));
-//						$international_entry->addChild('TYPE_OF_BILLING_CHAR', ?);
+					$this->writer->startElement('BREAKDOWN_ENTRY');
+					$this->writer->writeElement('TITLE', $this->getBreakdownEntryTitle($this->getTariffKind($usage_type), $zone_name));
+					$this->writer->writeElement('UNITS', $usage_totals['usagev']);
+					$international_entry_COST_WITHOUTVAT = $usage_totals['cost'];
+					$this->writer->writeElement('COST_WITHOUTVAT', $international_entry_COST_WITHOUTVAT);
+					$international_entry_VAT = $this->displayVAT($zone['vat']);
+					$this->writer->writeElement('VAT', $international_entry_VAT);
+					$international_entry_VAT_COST = $international_entry_COST_WITHOUTVAT * $international_entry_VAT / 100;
+					$this->writer->writeElement('VAT_COST', $international_entry_VAT_COST);
+					$this->writer->writeElement('TOTAL_COST', $international_entry_COST_WITHOUTVAT + $international_entry_VAT_COST);
+					$this->writer->writeElement('TYPE_OF_BILLING', strtoupper($usage_type));
+					$this->writer->endElement();
 				}
 			}
+			$this->writer->endElement();
 
-			$breakdown_topic_special = $subscriber_breakdown->addChild('BREAKDOWN_TOPIC');
-			$breakdown_topic_special->addAttribute('name', 'SPECIAL_SERVICES');
+			$this->writer->startElement('BREAKDOWN_TOPIC');
+			$this->writer->writeAttribute('name', 'SPECIAL_SERVICES');
 			$subscriber_special = array();
 			if (isset($subscriber['breakdown']) && is_array($subscriber['breakdown'])) {
 				foreach ($subscriber['breakdown'] as $plan) {
@@ -335,21 +369,24 @@ class Generator_Golanxml extends Billrun_Generator {
 			}
 			foreach ($subscriber_special as $zone_name => $zone) {
 				foreach ($zone['totals'] as $usage_type => $usage_totals) {
-//						$out_of_usage_entry->addChild('TITLE', ?);
-					$special_entry = $breakdown_topic_special->addChild('BREAKDOWN_ENTRY');
-					$special_entry->addChild('TITLE', $this->getBreakdownEntryTitle($this->getTariffKind($usage_type), $zone_name));
-					$special_entry->addChild('UNITS', $usage_totals['usagev']);
-					$special_entry->addChild('COST_WITHOUTVAT', $usage_totals['cost']);
-					$special_entry->addChild('VAT', $this->displayVAT($zone['vat']));
-					$special_entry->addChild('VAT_COST', floatval($special_entry->COST_WITHOUTVAT) * floatval($special_entry->VAT) / 100);
-					$special_entry->addChild('TOTAL_COST', floatval($special_entry->COST_WITHOUTVAT) + floatval($special_entry->VAT_COST));
-					$special_entry->addChild('TYPE_OF_BILLING', strtoupper($usage_type));
-//						$special_entry->addChild('TYPE_OF_BILLING_CHAR', ?);
+					$this->writer->startElement('BREAKDOWN_ENTRY');
+					$this->writer->writeElement('TITLE', $this->getBreakdownEntryTitle($this->getTariffKind($usage_type), $zone_name));
+					$this->writer->writeElement('UNITS', $usage_totals['usagev']);
+					$special_entry_COST_WITHOUTVAT = $usage_totals['cost'];
+					$this->writer->writeElement('COST_WITHOUTVAT', $special_entry_COST_WITHOUTVAT);
+					$special_entry_VAT = $this->displayVAT($zone['vat']);
+					$this->writer->writeElement('VAT', $special_entry_VAT);
+					$special_entry_VAT_COST = $special_entry_COST_WITHOUTVAT * $special_entry_VAT / 100;
+					$this->writer->writeElement('VAT_COST', $special_entry_VAT_COST);
+					$this->writer->writeElement('TOTAL_COST', $special_entry_COST_WITHOUTVAT + $special_entry_VAT_COST);
+					$this->writer->writeElement('TYPE_OF_BILLING', strtoupper($usage_type));
+					$this->writer->endElement();
 				}
 			}
+			$this->writer->endElement();
 
-			$breakdown_topic_roaming = $subscriber_breakdown->addChild('BREAKDOWN_TOPIC');
-			$breakdown_topic_roaming->addAttribute('name', 'ROAMING');
+			$this->writer->startElement('BREAKDOWN_TOPIC');
+			$this->writer->writeAttribute('name', 'ROAMING');
 			$subscriber_roaming = array();
 			if (isset($subscriber['breakdown']) && is_array($subscriber['breakdown'])) {
 				foreach ($subscriber['breakdown'] as $plan) {
@@ -372,109 +409,132 @@ class Generator_Golanxml extends Billrun_Generator {
 				}
 			}
 			foreach ($subscriber_roaming as $zone_key => $zone) {
-				$subtopic_entry = $breakdown_topic_roaming->addChild('BREAKDOWN_SUBTOPIC');
-				$subtopic_entry->addAttribute("name", "");
-				$subtopic_entry->addAttribute("plmn", $zone_key);
+				$this->writer->startElement('BREAKDOWN_SUBTOPIC');
+				$this->writer->writeAttribute('name', '');
+				$this->writer->writeAttribute('plmn', $zone_key);
 				foreach ($zone['totals'] as $usage_type => $usage_totals) {
-//						$out_of_usage_entry->addChild('TITLE', ?);
-					$roaming_entry = $subtopic_entry->addChild('BREAKDOWN_ENTRY');
-					$roaming_entry->addChild('TITLE', $this->getBreakdownEntryTitle($usage_type, $this->getNsoftRoamingRate($usage_type)));
-					$roaming_entry->addChild('UNITS', ($usage_type == "data" ? $this->bytesToKB($usage_totals['usagev']) : $usage_totals['usagev']));
-					$roaming_entry->addChild('COST_WITHOUTVAT', $usage_totals['cost']);
-					$roaming_entry->addChild('VAT', $this->displayVAT($zone['vat']));
-					$roaming_entry->addChild('VAT_COST', floatval($roaming_entry->COST_WITHOUTVAT) * floatval($roaming_entry->VAT) / 100);
-					$roaming_entry->addChild('TOTAL_COST', floatval($roaming_entry->COST_WITHOUTVAT) + floatval($roaming_entry->VAT_COST));
-					$roaming_entry->addChild('TYPE_OF_BILLING', strtoupper($usage_type));
-//						$roaming_entry->addChild('TYPE_OF_BILLING_CHAR', ?);
+					$this->writer->startElement('BREAKDOWN_ENTRY');
+					$this->writer->writeElement('TITLE', $this->getBreakdownEntryTitle($usage_type, $this->getNsoftRoamingRate($usage_type)));
+					$this->writer->writeElement('UNITS', ($usage_type == "data" ? $this->bytesToKB($usage_totals['usagev']) : $usage_totals['usagev']));
+					$roaming_entry_COST_WITHOUTVAT = $usage_totals['cost'];
+					$this->writer->writeElement('COST_WITHOUTVAT', $roaming_entry_COST_WITHOUTVAT);
+					$roaming_entry_VAT = $this->displayVAT($zone['vat']);
+					$this->writer->writeElement('VAT', $roaming_entry_VAT);
+					$roaming_entry_VAT_COST = $roaming_entry_COST_WITHOUTVAT * $roaming_entry_VAT / 100;
+					$this->writer->writeElement('VAT_COST', $roaming_entry_VAT_COST);
+					$this->writer->writeElement('TOTAL_COST', $roaming_entry_COST_WITHOUTVAT + $roaming_entry_VAT_COST);
+					$this->writer->writeElement('TYPE_OF_BILLING', strtoupper($usage_type));
+					$this->writer->endElement();
 				}
+				$this->writer->endElement();
 			}
+			$this->writer->endElement();
 
-			$breakdown_topic_charge = $subscriber_breakdown->addChild('BREAKDOWN_TOPIC');
-			$breakdown_topic_charge->addAttribute('name', 'CHARGE_PER_CLI');
+			$this->writer->startElement('BREAKDOWN_TOPIC');
+			$this->writer->writeAttribute('name', 'CHARGE_PER_CLI');
 			if (isset($subscriber['breakdown']['credit']['charge_vatable']) && is_array($subscriber['breakdown']['credit']['charge_vatable'])) {
 				foreach ($subscriber['breakdown']['credit']['charge_vatable'] as $reason => $cost) {
-					$charge_entry = $breakdown_topic_charge->addChild('BREAKDOWN_ENTRY');
-					$charge_entry->addChild('TITLE', $this->getBreakdownEntryTitle($this->getTariffKind("credit"), $reason));
-					$charge_entry->addChild('UNITS', 1);
-					$charge_entry->addChild('COST_WITHOUTVAT', $cost);
-					$charge_entry->addChild('VAT', $xml->TELECOM_INFORMATION->VAT_VALUE);
-					$charge_entry->addChild('VAT_COST', floatval($charge_entry->COST_WITHOUTVAT) * floatval($charge_entry->VAT) / 100);
-					$charge_entry->addChild('TOTAL_COST', floatval($charge_entry->COST_WITHOUTVAT) + floatval($charge_entry->VAT_COST));
-//					$charge_entry->addChild('TYPE_OF_BILLING', strtoupper($type));
-//						$charge_entry->addChild('TYPE_OF_BILLING_CHAR', ?);
+					$this->writer->startElement('BREAKDOWN_ENTRY');
+					$this->writer->writeElement('TITLE', $this->getBreakdownEntryTitle($this->getTariffKind("credit"), $reason));
+					$this->writer->writeElement('UNITS', 1);
+					$charge_entry_COST_WITHOUTVAT = $cost;
+					$this->writer->writeElement('COST_WITHOUTVAT', $charge_entry_COST_WITHOUTVAT);
+					$charge_entry_VAT = $this->displayVAT($billrun['vat']);
+					$this->writer->writeElement('VAT', $charge_entry_VAT);
+					$charge_entry_VAT_COST = $charge_entry_COST_WITHOUTVAT * $charge_entry_VAT / 100;
+					$this->writer->writeElement('VAT_COST', $charge_entry_VAT_COST);
+					$this->writer->writeElement('TOTAL_COST', $charge_entry_COST_WITHOUTVAT + $charge_entry_VAT_COST);
+					$this->writer->endElement();
 				}
 			}
 			if (isset($subscriber['breakdown']['credit']['charge_vat_free']) && is_array($subscriber['breakdown']['credit']['charge_vat_free'])) {
 				foreach ($subscriber['breakdown']['credit']['charge_vat_free'] as $reason => $cost) {
-					$charge_entry = $breakdown_topic_charge->addChild('BREAKDOWN_ENTRY');
-					$charge_entry->addChild('TITLE', $this->getBreakdownEntryTitle($this->getTariffKind("credit"), $reason));
-					$charge_entry->addChild('UNITS', 1);
-					$charge_entry->addChild('COST_WITHOUTVAT', $cost);
-					$charge_entry->addChild('VAT', 0);
-					$charge_entry->addChild('VAT_COST', floatval($charge_entry->COST_WITHOUTVAT) * floatval($charge_entry->VAT) / 100);
-					$charge_entry->addChild('TOTAL_COST', floatval($charge_entry->COST_WITHOUTVAT) + floatval($charge_entry->VAT_COST));
-//					$charge_entry->addChild('TYPE_OF_BILLING', strtoupper($type));
-//						$charge_entry->addChild('TYPE_OF_BILLING_CHAR', ?);
+					$this->writer->startElement('BREAKDOWN_ENTRY');
+					$this->writer->writeElement('TITLE', $this->getBreakdownEntryTitle($this->getTariffKind("credit"), $reason));
+					$this->writer->writeElement('UNITS', 1);
+					$charge_entry_COST_WITHOUTVAT = $cost;
+					$this->writer->writeElement('COST_WITHOUTVAT', $charge_entry_COST_WITHOUTVAT);
+					$charge_entry_VAT = 0;
+					$this->writer->writeElement('VAT', $charge_entry_VAT);
+					$charge_entry_VAT_COST = $charge_entry_COST_WITHOUTVAT * $charge_entry_VAT / 100;
+					$this->writer->writeElement('VAT_COST', $charge_entry_VAT_COST);
+					$this->writer->writeElement('TOTAL_COST', $charge_entry_COST_WITHOUTVAT + $charge_entry_VAT_COST);
+					$this->writer->endElement();
 				}
 			}
+			$this->writer->endElement();
 
-			$breakdown_topic_refund = $subscriber_breakdown->addChild('BREAKDOWN_TOPIC');
-			$breakdown_topic_refund->addAttribute('name', 'REFUND_PER_CLI');
+			$this->writer->startElement('BREAKDOWN_TOPIC');
+			$this->writer->writeAttribute('name', 'REFUND_PER_CLI');
 			if (isset($subscriber['breakdown']['credit']['refund_vatable']) && is_array($subscriber['breakdown']['credit']['refund_vatable'])) {
 				foreach ($subscriber['breakdown']['credit']['refund_vatable'] as $reason => $cost) {
-					$refund_entry = $breakdown_topic_refund->addChild('BREAKDOWN_ENTRY');
-					$refund_entry->addChild('TITLE', $this->getBreakdownEntryTitle($this->getTariffKind("credit"), $reason));
-					$refund_entry->addChild('UNITS', 1);
-					$refund_entry->addChild('COST_WITHOUTVAT', $cost);
-					$refund_entry->addChild('VAT', $xml->TELECOM_INFORMATION->VAT_VALUE);
-					$refund_entry->addChild('VAT_COST', floatval($refund_entry->COST_WITHOUTVAT) * floatval($refund_entry->VAT) / 100);
-					$refund_entry->addChild('TOTAL_COST', floatval($refund_entry->COST_WITHOUTVAT) + floatval($refund_entry->VAT_COST));
-//					$refund_entry->addChild('TYPE_OF_BILLING', strtoupper($type));
-//						$refund_entry->addChild('TYPE_OF_BILLING_CHAR', ?);
+					$this->writer->startElement('BREAKDOWN_ENTRY');
+					$this->writer->writeElement('TITLE', $this->getBreakdownEntryTitle($this->getTariffKind("credit"), $reason));
+					$this->writer->writeElement('UNITS', 1);
+					$refund_entry_COST_WITHOUTVAT = $cost;
+					$this->writer->writeElement('COST_WITHOUTVAT', $refund_entry_COST_WITHOUTVAT);
+					$refund_entry_VAT = $this->displayVAT($billrun['vat']);
+					$this->writer->writeElement('VAT', $refund_entry_VAT);
+					$refund_entry_VAT_COST = $refund_entry_COST_WITHOUTVAT * $refund_entry_VAT / 100;
+					$this->writer->writeElement('VAT_COST', $refund_entry_VAT_COST);
+					$this->writer->writeElement('TOTAL_COST', $refund_entry_COST_WITHOUTVAT + $refund_entry_VAT_COST);
+					$this->writer->endElement();
 				}
 			}
 			if (isset($subscriber['breakdown']['credit']['refund_vat_free']) && is_array($subscriber['breakdown']['credit']['refund_vat_free'])) {
 				foreach ($subscriber['breakdown']['credit']['refund_vat_free'] as $reason => $cost) {
-					$refund_entry = $breakdown_topic_refund->addChild('BREAKDOWN_ENTRY');
-					$refund_entry->addChild('TITLE', $this->getBreakdownEntryTitle($this->getTariffKind("credit"), $reason));
-					$refund_entry->addChild('UNITS', 1);
-					$refund_entry->addChild('COST_WITHOUTVAT', $cost);
-					$refund_entry->addChild('VAT', 0);
-					$refund_entry->addChild('VAT_COST', floatval($refund_entry->COST_WITHOUTVAT) * floatval($refund_entry->VAT) / 100);
-					$refund_entry->addChild('TOTAL_COST', floatval($refund_entry->COST_WITHOUTVAT) + floatval($refund_entry->VAT_COST));
-//					$refund_entry->addChild('TYPE_OF_BILLING', strtoupper($type));
-//						$refund_entry->addChild('TYPE_OF_BILLING_CHAR', ?);
+					$this->writer->startElement('BREAKDOWN_ENTRY');
+					$this->writer->writeElement('TITLE', $this->getBreakdownEntryTitle($this->getTariffKind("credit"), $reason));
+					$this->writer->writeElement('UNITS', 1);
+					$refund_entry_COST_WITHOUTVAT = $cost;
+					$this->writer->writeElement('COST_WITHOUTVAT', $refund_entry_COST_WITHOUTVAT);
+					$refund_entry_VAT = 0;
+					$this->writer->writeElement('VAT', $refund_entry_VAT);
+					$refund_entry_VAT_COST = $refund_entry_COST_WITHOUTVAT * $refund_entry_VAT / 100;
+					$this->writer->writeElement('VAT_COST', $refund_entry_VAT_COST);
+					$this->writer->writeElement('TOTAL_COST', $refund_entry_COST_WITHOUTVAT + $refund_entry_VAT_COST);
+					$this->writer->endElement();
 				}
 			}
+			$this->writer->endElement(); // end BREAKDOWN_TOPIC
+			$this->writer->endElement(); // end SUBSCRIBER_BREAKDOWN
+			$this->writer->endElement(); // end SUBSCRIBER_INF
+			$this->writer->flush(true);
 		}
 
-		$inv_invoice_total = $xml->addChild('INV_INVOICE_TOTAL');
-		$inv_invoice_total->addChild('INVOICE_NUMBER', $this->getInvoiceId($row));
-		$inv_invoice_total->addChild('FIRST_GENERATION_TIME', $this->getFlatStartDate());
-		$inv_invoice_total->addChild('FROM_PERIOD', date('Y/m/d', Billrun_Util::getStartTime($billrun_key)));
-		$inv_invoice_total->addChild('TO_PERIOD', date('Y/m/d', Billrun_Util::getEndTime($billrun_key)));
-		$inv_invoice_total->addChild('SUBSCRIBER_COUNT', count($row['subs']));
-		$inv_invoice_total->addChild('CUR_MONTH_CADENCE_START', $this->getExtrasStartDate());
-		$inv_invoice_total->addChild('CUR_MONTH_CADENCE_END', $this->getExtrasEndDate());
-		$inv_invoice_total->addChild('NEXT_MONTH_CADENCE_START', $this->getFlatStartDate());
-		$inv_invoice_total->addChild('NEXT_MONTH_CADENCE_END', $this->getFlatEndDate());
-		$account_before_vat = $this->getAccTotalBeforeVat($row);
-		$account_after_vat = $this->getAccTotalAfterVat($row);
-		$inv_invoice_total->addChild('TOTAL_CHARGE', $account_after_vat);
-		$inv_invoice_total->addChild('TOTAL_CREDIT', $invoice_total_manual_correction_credit);
-		$gifts = $inv_invoice_total->addChild('GIFTS');
-		$invoice_sumup = $inv_invoice_total->addChild('INVOICE_SUMUP');
-		$invoice_sumup->addChild('TOTAL_GIFT', $invoice_total_gift);
-		$invoice_sumup->addChild('TOTAL_ABOVE_GIFT', $invoice_total_above_gift);
-		$invoice_sumup->addChild('TOTAL_OUTSIDE_GIFT_VAT', $invoice_total_outside_gift_vat);
-		$invoice_sumup->addChild('TOTAL_MANUAL_CORRECTION', $invoice_total_manual_correction);
-		$invoice_sumup->addChild('TOTAL_MANUAL_CORRECTION_CREDIT', $invoice_total_manual_correction_credit);
-		$invoice_sumup->addChild('TOTAL_MANUAL_CORRECTION_CHARGE', $invoice_total_manual_correction_charge);
-		$invoice_sumup->addChild('TOTAL_OUTSIDE_GIFT_NOVAT', $invoice_total_outside_gift_novat);
-		$invoice_sumup->addChild('TOTAL_VAT', $account_after_vat - $account_before_vat);
-		$invoice_sumup->addChild('TOTAL_CHARGE_NO_VAT', $account_before_vat);
-		$invoice_sumup->addChild('TOTAL_CHARGE', $account_after_vat);
-		return $xml;
+		$this->writer->startElement('INV_INVOICE_TOTAL');
+		$this->writer->writeElement('INVOICE_NUMBER', $this->getInvoiceId($billrun));
+		$this->writer->writeElement('FIRST_GENERATION_TIME', $this->getFlatStartDate());
+		$this->writer->writeElement('FROM_PERIOD', date('Y/m/d', Billrun_Util::getStartTime($billrun_key)));
+		$this->writer->writeElement('TO_PERIOD', date('Y/m/d', Billrun_Util::getEndTime($billrun_key)));
+		$this->writer->writeElement('SUBSCRIBER_COUNT', count($billrun['subs']));
+		$this->writer->writeElement('CUR_MONTH_CADENCE_START', $this->getExtrasStartDate());
+		$this->writer->writeElement('CUR_MONTH_CADENCE_END', $this->getExtrasEndDate());
+		$this->writer->writeElement('NEXT_MONTH_CADENCE_START', $this->getFlatStartDate());
+		$this->writer->writeElement('NEXT_MONTH_CADENCE_END', $this->getFlatEndDate());
+		$account_before_vat = $this->getAccTotalBeforeVat($billrun);
+		$account_after_vat = $this->getAccTotalAfterVat($billrun);
+		$this->writer->writeElement('TOTAL_CHARGE', $account_after_vat);
+		$this->writer->writeElement('TOTAL_CREDIT', $invoice_total_manual_correction_credit);
+		$this->writer->writeElement('GIFTS');
+		$this->writer->startElement('INVOICE_SUMUP');
+		$this->writer->writeElement('TOTAL_GIFT', $invoice_total_gift);
+		$this->writer->writeElement('TOTAL_ABOVE_GIFT', $invoice_total_above_gift);
+		$this->writer->writeElement('TOTAL_OUTSIDE_GIFT_VAT', $invoice_total_outside_gift_vat);
+		$this->writer->writeElement('TOTAL_MANUAL_CORRECTION', $invoice_total_manual_correction);
+		$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_CREDIT', $invoice_total_manual_correction_credit);
+		$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_CHARGE', $invoice_total_manual_correction_charge);
+		$this->writer->writeElement('TOTAL_OUTSIDE_GIFT_NOVAT', $invoice_total_outside_gift_novat);
+		$this->writer->writeElement('TOTAL_VAT', $account_after_vat - $account_before_vat);
+		$this->writer->writeElement('TOTAL_CHARGE_NO_VAT', $account_before_vat);
+		$this->writer->writeElement('TOTAL_CHARGE', $account_after_vat);
+		$this->writer->endElement(); // end INVOICE_SUMUP
+		$this->writer->endElement(); // end INV_INVOICE_TOTAL
+
+		$this->endInvoice();
+
+		$this->writer->endDocument();
+		$this->writer->flush(true);
 	}
 
 	/**
@@ -545,7 +605,7 @@ class Generator_Golanxml extends Billrun_Generator {
 			'urt' => 1,
 		);
 
-		$lines = $this->lines_coll->query($query)->cursor()->sort($sort)->hint($sort);
+		$lines = $this->lines_coll->query($query)->cursor()->fields($this->filter_fields)->sort($sort)->hint($sort);
 		if (rand(1, 100) >= $this->loadBalanced) {
 			$lines = $lines->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
 		}
@@ -757,10 +817,6 @@ class Generator_Golanxml extends Billrun_Generator {
 		return $tariffItem;
 	}
 
-	protected function getNsoftRate($line) {
-		
-	}
-
 	protected function getNsoftRoamingRate($usage_type) {
 		switch ($usage_type) {
 			case 'incoming_call':
@@ -831,19 +887,59 @@ class Generator_Golanxml extends Billrun_Generator {
 		}
 	}
 
-	protected function basic_xml() {
+	protected function write_basic_header($billrun) {
 		$xml = <<<EOI
-<?xml version="1.0" encoding="UTF-8"?>
-<INVOICE version="$this->invoice_version">
 	<TELECOM_INFORMATION>
+		<VAT_VALUE>{$this->displayVAT($billrun['vat'])}</VAT_VALUE>
 	</TELECOM_INFORMATION>
 	<INV_CUSTOMER_INFORMATION>
 		<CUSTOMER_CONTACT>
+			<EXTERNALACCOUNTREFERENCE>{$billrun['aid']}</EXTERNALACCOUNTREFERENCE>
 		</CUSTOMER_CONTACT>
-	</INV_CUSTOMER_INFORMATION>
-</INVOICE>
+	</INV_CUSTOMER_INFORMATION>	
 EOI;
-		return simplexml_load_string($xml);
+		return $this->writer->writeRaw($xml);
+	}
+
+	protected function writeBillingLines($subscriber, $lines) {
+		$sid = $subscriber['sid'];
+		$this->writer->startElement('BILLING_LINES');
+
+		if ($this->billingLinesNeeded($sid)) {
+			if (is_null($lines)) {
+				$subscriber_lines = $this->get_lines($subscriber);
+			} else {
+				$func = function($line) use ($sid) {
+							return $line['sid'] == $sid;
+						};
+				$subscriber_lines = array_filter($lines, $func);
+			}
+			$lines_counter = 0;
+			foreach ($subscriber_lines as $line) {
+				if (!$line->isEmpty() && $line['type'] != 'ggsn') {
+					$lines_counter++;
+					$line->collection($this->lines_coll);
+					$this->writeBillingRecord($this->getDate($line), $this->getTariffItem($line, $subscriber), $this->getCalledNo($line), $this->getCallerNo($line), $this->getUsageVolume($line), $this->getCharge($line), $this->getCredit($line), $this->getTariffKind($line['usaget']), $this->getAccessPrice($line), $this->getInterval($line), $this->getRate($line), $this->getIntlFlag($line), $this->getDiscountUsage($line), $this->getRoaming($line), $this->getServingNetwork($line), $this->getLineTypeOfBillingChar($line));
+					if ($lines_counter % $this->flush_size == 0) {
+						$this->writer->flush(true);
+					}
+				}
+			}
+			$subscriber_aggregated_data = $this->get_subscriber_aggregated_data_lines($subscriber);
+			foreach ($subscriber_aggregated_data as $line) {
+				$this->writeBillingRecord($line['day'], $line['rate_key'], '', '', $line['usage_volume'], $line['aprice'], 0, $line['tariff_kind'], 0, $line['interval'], $line['rate_price'], 0, $line['discount_usage'], 0, '', 'D');
+			}
+		}
+		$this->writer->endElement(); // end BILLING_LINES
+	}
+
+	protected function startInvoice() {
+		$this->writer->startElement('INVOICE');
+		$this->writer->writeAttribute('version', $this->invoice_version);
+	}
+
+	protected function endInvoice() {
+		$this->writer->endElement();
 	}
 
 	protected function setFileStamp($line, $filename) {
@@ -1029,23 +1125,25 @@ EOI;
 		return str_replace(' ', '_', strtoupper($taarif_kind . '-' . $rate_key));
 	}
 
-	protected function updateBillingRecord($billing_record, $golan_date, $tariff_item, $called_number, $caller_number, $volume, $charge, $credit, $tariff_kind, $access_price, $interval, $rate, $intl_flag, $discount_usage, $roaming, $serving_network, $type_of_billing_char) {
-		$billing_record->TIMEOFBILLING = $golan_date;
-		$billing_record->TARIFFITEM = $tariff_item;
-		$billing_record->CTXT_CALL_OUT_DESTINATIONPNB = $called_number; //@todo maybe save dest_no in all processors and use it here
-		$billing_record->CTXT_CALL_IN_CLI = $caller_number; //@todo maybe save it in all processors and use it here
-		$billing_record->CHARGEDURATIONINSEC = $volume;
-		$billing_record->CHARGE = $charge;
-		$billing_record->CREDIT = $credit;
-		$billing_record->TARIFFKIND = $tariff_kind;
-		$billing_record->TTAR_ACCESSPRICE1 = $access_price;
-		$billing_record->TTAR_SAMPLEDELAYINSEC1 = $interval;
-		$billing_record->TTAR_SAMPPRICE1 = $rate;
-		$billing_record->INTERNATIONAL = $intl_flag;
-		$billing_record->DISCOUNT_USAGE = $discount_usage;
-		$billing_record->ROAMING = $roaming;
-		$billing_record->SERVINGPLMN = $serving_network;
-		$billing_record->TYPE_OF_BILLING_CHAR = $type_of_billing_char;
+	protected function writeBillingRecord($golan_date, $tariff_item, $called_number, $caller_number, $volume, $charge, $credit, $tariff_kind, $access_price, $interval, $rate, $intl_flag, $discount_usage, $roaming, $serving_network, $type_of_billing_char) {
+		$this->writer->startElement('BILLING_RECORD');
+		$this->writer->writeElement('TIMEOFBILLING', $golan_date);
+		$this->writer->writeElement('TARIFFITEM', $tariff_item);
+		$this->writer->writeElement('CTXT_CALL_OUT_DESTINATIONPNB', $called_number); //@todo maybe save dest_no in all processors and use it here
+		$this->writer->writeElement('CTXT_CALL_IN_CLI', $caller_number); //@todo maybe save it in all processors and use it here
+		$this->writer->writeElement('CHARGEDURATIONINSEC', $volume);
+		$this->writer->writeElement('CHARGE', $charge);
+		$this->writer->writeElement('CREDIT', $credit);
+		$this->writer->writeElement('TARIFFKIND', $tariff_kind);
+		$this->writer->writeElement('TTAR_ACCESSPRICE1', $access_price);
+		$this->writer->writeElement('TTAR_SAMPLEDELAYINSEC1', $interval);
+		$this->writer->writeElement('TTAR_SAMPPRICE1', $rate);
+		$this->writer->writeElement('INTERNATIONAL', $intl_flag);
+		$this->writer->writeElement('DISCOUNT_USAGE', $discount_usage);
+		$this->writer->writeElement('ROAMING', $roaming);
+		$this->writer->writeElement('SERVINGPLMN', $serving_network);
+		$this->writer->writeElement('TYPE_OF_BILLING_CHAR', $type_of_billing_char);
+		$this->writer->endElement();
 	}
 
 	protected function getDataRate() {

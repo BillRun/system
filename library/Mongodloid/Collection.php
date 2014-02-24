@@ -263,7 +263,7 @@ class Mongodloid_Collection {
 		if (!isset($options['w'])) {
 			$options['w'] = $this->w;
 		}
-		return $this->_collection->insert($a, $options);
+		return $this->_collection->insert( ($a instanceof Mongodloid_Entity ? $a->getrawData() : $a), $options);
 	}
 
 	/**

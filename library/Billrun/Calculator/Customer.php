@@ -91,8 +91,13 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			$subscriber = $this->loadSubscriberForLine($row);
 		}
 		if (!$subscriber || !$subscriber->isValid()) {
-			Billrun_Factory::log('Missing subscriber info for line with stamp : ' . $row->get('stamp'), Zend_Log::ALERT);
-			return false;
+			if ($this->isOutgoingCall($row)) {
+				Billrun_Factory::log('Missing subscriber info for line with stamp : ' . $row->get('stamp'), Zend_Log::ALERT);
+				return false;
+			} else {
+				Billrun_Factory::log('Missing subscriber info for line with stamp : ' . $row->get('stamp'), Zend_Log::DEBUG);
+				return true;
+			}
 		}
 
 		foreach (array_keys($subscriber->getAvailableFields()) as $key) {
@@ -184,7 +189,9 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 
 	protected function getIdentityParams($row) {
 		$params = array();
-		foreach ($this->translateCustomerIdentToAPI as $key => $toKey) {
+		$customer = $this->isOutgoingCall($row) ? "caller" : "callee";
+		$customer_identification_translation = $this->translateCustomerIdentToAPI[$customer];
+		foreach ($customer_identification_translation as $key => $toKey) {
 			if (isset($row[$key])) {
 				$params[$toKey['toKey']] = preg_replace($toKey['clearRegex'], '', $row[$key]);
 				//$this->subscriberNumber = $params[$toKey['toKey']];
@@ -198,7 +205,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	/**
 	 * @see Billrun_Calculator::getCalculatorQueueType
 	 */
-	static protected function getCalculatorQueueType() {
+	public function getCalculatorQueueType() {
 		return self::$type;
 	}
 
@@ -209,7 +216,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	 */
 	protected function setCalculatorTag($query = array(), $update = array()) {
 		$queue = Billrun_Factory::db()->queueCollection();
-		$calculator_tag = static::getCalculatorQueueType();
+		$calculator_tag = $this->getCalculatorQueueType();
 		$advance_stamps = array();
 		foreach ($this->lines as $stamp => $item) {
 			if (!isset($item['aid'])) {
@@ -232,20 +239,57 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	 * @see Billrun_Calculator::isLineLegitimate
 	 */
 	public function isLineLegitimate($line) {
-		if (isset($line['usagev']) && $line['usagev'] !== 0) {
-			foreach ($this->translateCustomerIdentToAPI as $key => $toKey) {
-				if (isset($line[$key]) && strlen($line[$key])) {
-					if (is_array($line)) {
-						$arate = $line['arate'];
-					} else {
-						$arate = $line->get('arate', true);
+		if (isset($line['usagev']) && $line['usagev'] !== 0 && $this->isCustomerable($line)) {
+			$customer = $this->isOutgoingCall($line) ? "caller" : "callee";
+			if (isset($this->translateCustomerIdentToAPI[$customer])) {
+				$customer_identification_translation = $this->translateCustomerIdentToAPI[$customer];
+				foreach ($customer_identification_translation as $key => $toKey) {
+					if (isset($line[$key]) && strlen($line[$key])) {
+						return true;
 					}
-//					$arate = $line['arate'];
-					return (isset($arate) && $arate); //it  depend on customer rate to detect if the line is incoming or outgoing.
 				}
 			}
 		}
 		return false;
+	}
+
+	protected function isCustomerable($line) {
+		if ($line['type'] == 'nsn') {
+			$record_type = $line['record_type'];
+			if ($record_type == '11' || $record_type == '12') {
+				$relevant_cg = $record_type == '11' ? $line['in_circuit_group'] : $line['out_circuit_group'];
+				if (!($relevant_cg == "1001" || $relevant_cg == "1006" || ($relevant_cg >= "1201" && $relevant_cg <= "1209"))) {
+					return false;
+				}
+				if ($record_type == '11' && in_array($line['out_circuit_group'], array('3060', '3061'))) {
+					return false;
+				}
+				// what about GOLAN IN direction (3060/3061)?
+			} else if (!in_array($record_type, array('01', '02'))) {
+				return false;
+			}
+		} else {
+			if (is_array($line)) {
+				$arate = $line['arate'];
+			} else {
+				$arate = $line->get('arate', true);
+			}
+			return (isset($arate) && $arate); // for non-nsn records we currently identify only outgoing usage, based on arate.
+		}
+		return true;
+	}
+
+	/**
+	 * It is assumed that the line is customerable
+	 * @param type $line
+	 * @return boolean
+	 */
+	protected function isOutgoingCall($line) {
+		$outgoing = true;
+		if ($line['type'] == 'nsn') {
+			$outgoing = in_array($line['record_type'], array('01', '11'));
+		}
+		return $outgoing;
 	}
 
 }

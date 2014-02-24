@@ -35,6 +35,19 @@ class Billrun_Billrun {
 	protected $lines = null;
 
 	/**
+	 * fields to filter when pulling account lines
+	 * @var array 
+	 */
+	protected $filter_fields = array();
+
+	/**
+	 * whether to exclude the _id field when pulling account lines
+	 * @var boolean
+	 */
+	static protected $rates = array();
+	static protected $plans = array();
+
+	/**
 	 * 
 	 * @param type $options
 	 * @todo used only in current balance API. Needs refactoring
@@ -63,6 +76,9 @@ class Billrun_Billrun {
 		if (isset($options['update_stamps_chunk'])) {
 			$this->updateStampChunk = (int) $options['update_stamps_chunk'];
 		}
+		if (isset($options['filter_fields'])) {
+			$this->filter_fields = array_map("intval", $options['filter_fields']);
+		}
 		$this->lines = Billrun_Factory::db()->linesCollection();
 	}
 
@@ -73,10 +89,10 @@ class Billrun_Billrun {
 	protected function load() {
 		$billrun_coll = Billrun_Factory::db()->billrunCollection();
 		$this->data = $billrun_coll->query(array(
-					'aid' => $this->aid,
-					'billrun_key' => $this->billrun_key,
-				))
-				->cursor()->limit(1)->current();
+							'aid' => $this->aid,
+							'billrun_key' => $this->billrun_key,
+						))
+						->cursor()->limit(1)->current();
 		$this->data->collection($billrun_coll);
 		return $this;
 	}
@@ -123,6 +139,9 @@ class Billrun_Billrun {
 		$subscriber_entry['subscriber_status'] = $status;
 		$subscriber_entry['current_plan'] = $current_plan_ref;
 		$subscriber_entry['next_plan'] = $next_plan_ref;
+		foreach ($subscriber->getExtraFieldsForBillrun() as $field) {
+			$subscriber_entry[$field] = $subscriber->{$field};
+		}
 		$subscribers[] = $subscriber_entry;
 		$this->data['subs'] = $subscribers;
 		return $this;
@@ -146,10 +165,10 @@ class Billrun_Billrun {
 	public static function exists($aid, $billrun_key) {
 		$billrun_coll = Billrun_Factory::db()->billrunCollection();
 		$data = $billrun_coll->query(array(
-					'aid' => $aid,
-					'billrun_key' => $billrun_key,
-				))
-				->cursor()->limit(1)->current();
+							'aid' => $aid,
+							'billrun_key' => $billrun_key,
+						))
+						->cursor()->limit(1)->current();
 		return !$data->isEmpty();
 	}
 
@@ -338,7 +357,7 @@ class Billrun_Billrun {
 			$this->updateCosts($pricingData, $row, $vatable, $sraw);
 			$this->setSubRawData($sraw);
 		} else {
-			Billrun_Factory::log("Subscriber $sid is not active yet has lines", Zend_log::ALERT);
+			Billrun_Factory::log("Subscriber $sid is not active, yet has lines", Zend_log::ALERT);
 			$subscriber_general_settings = Billrun_Config::getInstance()->getConfigValue('subscriber', array());
 			$null_subscriber_params = array(
 				'data' => array('aid' => $row['aid'], 'sid' => $sid, 'plan' => null, 'next_plan' => null,),
@@ -542,9 +561,6 @@ class Billrun_Billrun {
 		return $defVal;
 	}
 
-	static protected $rates = array();
-	static protected $plans = array();
-
 	/**
 	 * HACK TO MAKE THE BILLLRUN FASTER
 	 * Get a rate from the row
@@ -716,7 +732,7 @@ class Billrun_Billrun {
 			'urt' => 1,
 		);
 		Billrun_Factory::log()->log("Querying for account " . $aid . " lines", Zend_Log::INFO);
-		$cursor = $this->lines->query($query)->cursor()->sort($sort)->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED)->hint($hint);
+		$cursor = $this->lines->query($query)->cursor()->fields($this->filter_fields)->sort($sort)->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED)->hint($hint);
 		Billrun_Factory::log()->log("Finished querying for account " . $aid . " lines", Zend_Log::INFO);
 //		$results = array();
 //		Billrun_Factory::log()->log("Saving account " . $aid . " lines to array", Zend_Log::DEBUG);

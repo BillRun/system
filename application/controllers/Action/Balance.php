@@ -38,10 +38,9 @@ class BalanceAction extends Action_Base {
 
 		if ($generator) {
 			$generator->load();
-			$balance = $generator->generate();
-//			$this->getView()->balance = $balance->asXML();
 			header('Content-type: text/xml');
-			$this->getController()->setOutput(array($balance->asXML(), true));
+			$generator->generate();
+			$this->getController()->setOutput(array(false, true)); // hack
 		} else {
 			$this->_controller->addOutput("Generator cannot be loaded");
 		}

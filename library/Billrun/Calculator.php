@@ -233,7 +233,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	 * @param array $update additional fields to update in the queue
 	 */
 	protected function setCalculatorTag($query = array(), $update = array()) {
-		$calculator_tag = static::getCalculatorQueueType();
+		$calculator_tag = $this->getCalculatorQueueType();
 		$stamps = array();
 		foreach ($this->lines as $item) {
 			$stamps[] = $item['stamp'];
@@ -247,9 +247,9 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	 * Get the base query to get lines from the queue for the current calculator
 	 * @return array
 	 */
-	static protected function getBaseQuery() {
+	protected function getBaseQuery() {
 		$queue_calculators = Billrun_Factory::config()->getConfigValue("queue.calculators");
-		$calculator_type = static::getCalculatorQueueType();
+		$calculator_type = $this->getCalculatorQueueType();
 		$queryData = array();
 		$queue_id = array_search($calculator_type, $queue_calculators);
 		$previous_calculator = false;
@@ -304,7 +304,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	public final function removeFromQueue() {
 		$queue = Billrun_Factory::db()->queueCollection();
 		$queue_calculators = Billrun_Factory::config()->getConfigValue("queue.calculators");
-		$calculator_type = static::getCalculatorQueueType();
+		$calculator_type = $this->getCalculatorQueueType();
 		$queue_id = array_search($calculator_type, $queue_calculators);
 		end($queue_calculators);
 		// remove  recalculated lines.	
@@ -341,7 +341,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	 */
 	protected function getQueuedLines($localquery) {
 		$queue = Billrun_Factory::db()->queueCollection();
-		$querydata = static::getBaseQuery();
+		$querydata = $this->getBaseQuery();
 		$query = array_merge($querydata['query'], $localquery);
 		$update = $this->getBaseUpdate();
 //		$fields = array();
@@ -421,8 +421,8 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	 * Get the  current  calculator type, to be used in the queue.
 	 * @return string the  type  of the calculator
 	 */
-	abstract protected static function getCalculatorQueueType();
-
+	abstract public function getCalculatorQueueType();
+		
 	/**
 	 * Check if a given line  can be handeld by  the calcualtor.
 	 * @param @line the line to check.
