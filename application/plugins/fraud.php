@@ -251,6 +251,8 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$newEvent['creation_time'] = date(Billrun_Base::base_dateformat);
 		$newEvent['aid'] = $row['aid'];
 		$newEvent['sid'] = $row['sid'];
+		// backward compatibility
+		$newEvent['subscriber_id'] = $row['sid'];
 		if(isset($row['imsi'])) {
 			$newEvent['imsi'] = $row['imsi'];
 		}
