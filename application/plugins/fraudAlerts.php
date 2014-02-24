@@ -337,7 +337,9 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		
 		if (isset($imsi)) {
 			$lines_where['imsi'] = $imsi;
-			$hint = array('imsi' => 1);
+			if (!isset($hint)) {
+				$hint = array('imsi' => 1);
+			}
 		}
 
 		if (isset($msisdn)) {
