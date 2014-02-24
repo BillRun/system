@@ -262,6 +262,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$newEvent['event_type'] = $event_type;
 		$newEvent['plan'] = $row['plan'];
 		$newEvent['recurring'] = $recurring;
+		$newEvent['line_stamp'] = $row['stamp'];;
 		$newEvent['stamp'] = md5(serialize($newEvent));
 		
 		try {
