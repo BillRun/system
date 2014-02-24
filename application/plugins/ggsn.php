@@ -9,11 +9,9 @@
 /**
  * This is a plguin to provide GGSN support to the billing system.
  */
-class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plugin_Interface_IParser, Billrun_Plugin_Interface_IProcessor {
+class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface_IParser, Billrun_Plugin_Interface_IProcessor {
 
-	use Billrun_Traits_AsnParsing;
-
-use Billrun_Traits_FileSequenceChecking;
+	use Billrun_Traits_AsnParsing, Billrun_Traits_FileSequenceChecking;
 
 	const HEADER_LENGTH = 54;
 	const MAX_CHUNKLENGTH_LENGTH = 4096;
@@ -54,7 +52,6 @@ use Billrun_Traits_FileSequenceChecking;
 	}
 
 	/////////////////////////////////////////  Alerts /////////////////////////////////////////
-
 //	/**
 //	 * method to collect data which need to be handle by event
 //	 */
@@ -114,36 +111,36 @@ use Billrun_Traits_FileSequenceChecking;
 	 * @param Array $aggregateQuery the standard query to aggregate data (see $this->getBaseAggregateQuery())
 	 * @return Array containing all the hourly data excceders.
 	 */
-	protected function detectHourlyDataExceeders($linesCol, $aggregateQuery) {
-		$exceeders = array();
-		$timeWindow = strtotime("-" . Billrun_Factory::config()->getConfigValue('ggsn.hourly.timespan', '4 hours'));
-		$limit = floatval(Billrun_Factory::config()->getConfigValue('ggsn.hourly.thresholds.datalimit', 150000));
-	//	$aggregateQuery[1]['$match']['$and'] = array(array('record_opening_time' => array('$gte' => date('YmdHis', $timeWindow))),
-	//		array('record_opening_time' => $aggregateQuery[1]['$match']['record_opening_time']));
-		$aggregateQuery[1]['$match']['unified_record_time'] = array('$gte' => new MongoDate($timeWindow));
-
-		//unset($aggregateQuery[0]['$match']['sgsn_address']);
-		//unset($aggregateQuery[1]['$match']['record_opening_time']);
-
-		$having = array(
-			'$match' => array(
-				'$or' => array(
-					array('download' => array('$gte' => $limit)),
-					array('upload' => array('$gte' => $limit)),
-				),
-			),
-		);
-
-		$alerts = $linesCol->aggregate(array_merge($aggregateQuery, array($having)));
-		foreach ($alerts as $alert) {
-			$alert['units'] = 'KB';
-			$alert['value'] = ($alert['download'] > $limit ? $alert['download'] : $alert['upload']);
-			$alert['threshold'] = $limit;
-			$alert['event_type'] = 'GGSN_HOURLY_DATA';
-			$exceeders[] = $alert;
-		}
-		return $exceeders;
-	}
+//	protected function detectHourlyDataExceeders($linesCol, $aggregateQuery) {
+//		$exceeders = array();
+//		$timeWindow = strtotime("-" . Billrun_Factory::config()->getConfigValue('ggsn.hourly.timespan', '4 hours'));
+//		$limit = floatval(Billrun_Factory::config()->getConfigValue('ggsn.hourly.thresholds.datalimit', 150000));
+//		//	$aggregateQuery[1]['$match']['$and'] = array(array('record_opening_time' => array('$gte' => date('YmdHis', $timeWindow))),
+//		//		array('record_opening_time' => $aggregateQuery[1]['$match']['record_opening_time']));
+//		$aggregateQuery[1]['$match']['unified_record_time'] = array('$gte' => new MongoDate($timeWindow));
+//
+//		//unset($aggregateQuery[0]['$match']['sgsn_address']);
+//		//unset($aggregateQuery[1]['$match']['record_opening_time']);
+//
+//		$having = array(
+//			'$match' => array(
+//				'$or' => array(
+//					array('download' => array('$gte' => $limit)),
+//					array('upload' => array('$gte' => $limit)),
+//				),
+//			),
+//		);
+//
+//		$alerts = $linesCol->aggregate(array_merge($aggregateQuery, array($having)));
+//		foreach ($alerts as $alert) {
+//			$alert['units'] = 'KB';
+//			$alert['value'] = ($alert['download'] > $limit ? $alert['download'] : $alert['upload']);
+//			$alert['threshold'] = $limit;
+//			$alert['event_type'] = 'GGSN_HOURLY_DATA';
+//			$exceeders[] = $alert;
+//		}
+//		return $exceeders;
+//	}
 
 	/**
 	 * Run arrgregation to find excess usgae of data.
@@ -202,66 +199,65 @@ use Billrun_Traits_FileSequenceChecking;
 	 * @param type $charge_time the charge time of the billrun (records will not be pull before that)
 	 * @return Array containing a standard PHP mongo aggregate query to retrive  ggsn entries by imsi.
 	 */
-	protected function getBaseAggregateQuery($charge_time) {
-		return array(
-			array(
-				'$match' => array(
-					'type' => 'ggsn',
-					'unified_record_time' => array('$gte' => new MongoDate($charge_time)),
-				)
-			),
-			array(
-				'$match' => array(
-					//@TODO  switch to unified time once you have the time to test it
-					'unified_record_time' => array('$gte' => new MongoDate($charge_time)),
-//					'record_opening_time' => array('$gt' => $charge_time),
-					'deposit_stamp' => array('$exists' => false),
-					'event_stamp' => array('$exists' => false),
-					
-					'sgsn_address' => array('$regex' => '^(?!62\.90\.|37\.26\.)'),
-					'$or' => array(
-						array('rating_group' => array( '$exists' => FALSE)),
-						array('rating_group' => 0)
-					),
-					'$or' => array(
-						array('fbc_downlink_volume' => array('$gt' => 0)),
-						array('fbc_uplink_volume' => array('$gt' => 0))
-					),
-				),
-			),
-			array(
-				'$group' => array(
-					"_id" => array('imsi' => '$served_imsi', 'msisdn' => '$served_msisdn'),
-					"download" => array('$sum' => '$fbc_downlink_volume'),
-					"upload" => array('$sum' => '$fbc_uplink_volume'),
-					"duration" => array('$sum' => '$duration'),
-					'lines_stamps' => array('$addToSet' => '$stamp'),
-				),
-			),
-			array(
-				'$project' => array(
-					'_id' => 0,
-					'download' => array('$multiply' => array('$download', 0.001)),
-					'upload' => array('$multiply' => array('$upload', 0.001)),
-					'duration' => 1,
-					'imsi' => '$_id.imsi',
-					'msisdn' => array('$substr' => array('$_id.msisdn', 5, 10)),
-					'lines_stamps' => 1,
-				),
-			),
-		);
-	}
+//	protected function getBaseAggregateQuery($charge_time) {
+//		return array(
+//			array(
+//				'$match' => array(
+//					'type' => 'ggsn',
+//					'unified_record_time' => array('$gte' => new MongoDate($charge_time)),
+//				)
+//			),
+//			array(
+//				'$match' => array(
+//					//@TODO  switch to unified time once you have the time to test it
+//					'unified_record_time' => array('$gte' => new MongoDate($charge_time)),
+////					'record_opening_time' => array('$gt' => $charge_time),
+//					'deposit_stamp' => array('$exists' => false),
+//					'event_stamp' => array('$exists' => false),
+//					'sgsn_address' => array('$regex' => '^(?!62\.90\.|37\.26\.)'),
+//					'$or' => array(
+//						array('rating_group' => array('$exists' => FALSE)),
+//						array('rating_group' => 0)
+//					),
+//					'$or' => array(
+//						array('fbc_downlink_volume' => array('$gt' => 0)),
+//						array('fbc_uplink_volume' => array('$gt' => 0))
+//					),
+//				),
+//			),
+//			array(
+//				'$group' => array(
+//					"_id" => array('imsi' => '$served_imsi', 'msisdn' => '$served_msisdn'),
+//					"download" => array('$sum' => '$fbc_downlink_volume'),
+//					"upload" => array('$sum' => '$fbc_uplink_volume'),
+//					"duration" => array('$sum' => '$duration'),
+//					'lines_stamps' => array('$addToSet' => '$stamp'),
+//				),
+//			),
+//			array(
+//				'$project' => array(
+//					'_id' => 0,
+//					'download' => array('$multiply' => array('$download', 0.001)),
+//					'upload' => array('$multiply' => array('$upload', 0.001)),
+//					'duration' => 1,
+//					'imsi' => '$_id.imsi',
+//					'msisdn' => array('$substr' => array('$_id.msisdn', 5, 10)),
+//					'lines_stamps' => 1,
+//				),
+//			),
+//		);
+//	}
 
 	/**
 	 * @see Billrun_Plugin_BillrunPluginFraud::addAlertData
 	 */
-	protected function addAlertData(&$event) {
-		$event['effects'] = array(
-			'key' => 'type',
-			'filter' => array('$in' => array('nrtrde', 'ggsn'))
-		);
-		return $event;
-	}
+//	protected function addAlertData(&$event) {
+//		$event['effects'] = array(
+//			'key' => 'type',
+//			'filter' => array('$in' => array('nrtrde', 'ggsn'))
+//		);
+//		return $event;
+//	}
 
 	///////////////////////////////////////////// Parser ////////////////////////////////////////////
 	/**
