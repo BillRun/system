@@ -121,7 +121,7 @@ class ildsOneWayPlugin extends Billrun_Plugin_BillrunPluginBase {
 		if ($row['usagev'] == '0') {
 			$res['records_type'] = '005';
 		} else if (!$row['arate']) {
-			$res['records_type'] = '001';
+			$res['records_type'] = '002';
 			$res['sampleDurationInSec'] = '0';
 		}
 
