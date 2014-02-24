@@ -397,6 +397,8 @@ abstract class Billrun_Calculator extends Billrun_Base {
 				}
 			} else if ($rate['key'] == 'UNRATED') {
 				$this->rates['UNRATED'] = $rate;
+			} else if ($rate['key'] == 'ILD_PREPAID') {
+				$this->rates['ILD_PREPAID'][] = $rate;
 			} else {
 				$this->rates['noprefix'][] = $rate;
 			}

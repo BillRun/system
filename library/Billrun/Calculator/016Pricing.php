@@ -34,17 +34,10 @@ class Billrun_Calculator_016Pricing extends Billrun_Calculator {
 	 */
 	protected $two_way_access_price;
 
-	/**
-	 * The charge when prepaid flag is on
-	 * @var float
-	 */
-	protected $two_way_prepaid_charge;
-
 	public function __construct($options = array()) {
 		parent::__construct($options);
 		$this->loadRates();
 		$this->two_way_access_price = floatval(number_format(Billrun_Factory::config()->getConfigValue('016_two_way.access_price', 1.00), 2));
-		$this->two_way_prepaid_charge = floatval(number_format(Billrun_Factory::config()->getConfigValue('016_two_way.prepaid_charge', 4.00), 2));
 	}
 
 	/**
@@ -121,11 +114,9 @@ class Billrun_Calculator_016Pricing extends Billrun_Calculator {
 			$pricingData = '0.0000';
 		} else if ($row['is_in_glti'] == '1') {
 			$pricingData = '0';
-		} else if ($row['prepaid'] == '1') {
-			$pricingData = $this->two_way_prepaid_charge;
 		} else {
 			$accessPrice = isset($rate['rates']['call']['access']) ? $rate['rates']['call']['access'] : 0;
-			$pricingData = $this->two_way_access_price + $accessPrice + Billrun_Util::getPriceByRates($rate, 'call', $volume);
+			$pricingData = ($rate['key'] == 'ILD_PREPAID' ? 0 : $this->two_way_access_price) + $accessPrice + Billrun_Util::getPriceByRates($rate, 'call', $volume);
 
 			if ($pricingData === FALSE) {
 				Billrun_Factory::log()->log("fail calc charge line, stamp: " . $row->get('stamp'), Zend_Log::ERR);

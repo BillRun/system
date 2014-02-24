@@ -119,15 +119,28 @@ class Billrun_Calculator_Rate_016 extends Billrun_Calculator_Rate {
 		$line_time = $row->get('urt');
 		$matchedRate = false;
 
-		$called_number_prefixes = $this->getPrefixes($called_number);
-		foreach ($called_number_prefixes as $prefix) {
-			if (isset($this->rates[$prefix])) {
-				foreach ($this->rates[$prefix] as $rate) {
+		if ($row['prepaid'] == '1') {
+			if (isset($this->rates['ILD_PREPAID'])) {
+				foreach ($this->rates['ILD_PREPAID'] as $rate) {
 					if (isset($rate['rates'][$usage_type])) {
 						if ($rate['from'] <= $line_time && $rate['to'] >= $line_time) {
-							foreach ($rate['params']['out_circuit_group'] as $groups) {
-								$matchedRate = $rate;
-								break 3;
+							$matchedRate = $rate;
+							break;
+						}
+					}
+				}
+			}
+		} else {
+			$called_number_prefixes = $this->getPrefixes($called_number);
+			foreach ($called_number_prefixes as $prefix) {
+				if (isset($this->rates[$prefix])) {
+					foreach ($this->rates[$prefix] as $rate) {
+						if (isset($rate['rates'][$usage_type])) {
+							if ($rate['from'] <= $line_time && $rate['to'] >= $line_time) {
+								foreach ($rate['params']['out_circuit_group'] as $groups) {
+									$matchedRate = $rate;
+									break 3;
+								}
 							}
 						}
 					}
