@@ -151,7 +151,6 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 	protected function sumBalance($balance, $sumField, $filter = array()) {
 		if (count($filter) == 1) {
 			// if filter only one don't array make the array manipulation
-			Billrun_Factory::log(print_r($filter, 1), Zend_Log::INFO);
 			return $balance['totals'][$filter[0]][$sumField];
 		}
 
@@ -220,7 +219,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$threshold = $rule['threshold'];
 		$recurring = isset($rule['recurring']) && $rule['recurring'];
 		if ($this->isThresholdTriggered($before, $after, $threshold, $recurring)) {
-			Billrun_Factory::log("Fraud plugin - line stamp " . $row['stamp'] . ' trigger event ' . $rule['name'], Zend_Log::CRIT);
+			Billrun_Factory::log("Fraud plugin - line stamp " . $row['stamp'] . ' trigger event ' . $rule['name'], Zend_Log::INFO);
 			$this->insert_fraud_event($after, $before, $row, $threshold, $rule['unit'], $rule['name'], $recurring);
 			return $rule;
 		}
