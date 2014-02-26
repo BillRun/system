@@ -220,7 +220,12 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$recurring = isset($rule['recurring']) && $rule['recurring'];
 		if ($this->isThresholdTriggered($before, $after, $threshold, $recurring)) {
 			Billrun_Factory::log("Fraud plugin - line stamp " . $row['stamp'] . ' trigger event ' . $rule['name'], Zend_Log::INFO);
-			$this->insert_fraud_event($after, $before, $row, $threshold, $rule['unit'], $rule['name'], $recurring);
+			if (isset($rule['priority'])) {
+				$priority = $rule['priority'];
+			} else {
+				$priority = null;
+			}
+			$this->insert_fraud_event($after, $before, $row, $threshold, $rule['unit'], $rule['name'], $priority, $recurring);
 			return $rule;
 		}
 	}
@@ -254,14 +259,13 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @param string $event_type the event type
 	 * @param bool $recurring is the event is recurring
 	 */
-	protected function insert_fraud_event($value, $value_before, $row, $threshold, $units, $event_type, $recurring = false) {
+	protected function insert_fraud_event($value, $value_before, $row, $threshold, $units, $event_type, $priority = null, $recurring = false) {
 
 		$fraud_connection = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('fraud.db'))->eventsCollection();
 
 		$newEvent = new Mongodloid_Entity();
 		$newEvent['value'] = $value;
 		$newEvent['value_before'] = $value_before;
-		$newEvent['creation_time'] = date(Billrun_Base::base_dateformat);
 		$newEvent['aid'] = $row['aid'];
 		$newEvent['sid'] = $row['sid'];
 		// backward compatibility
@@ -276,8 +280,16 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$newEvent['plan'] = $row['plan'];
 		$newEvent['recurring'] = $recurring;
 		$newEvent['line_stamp'] = $row['stamp'];
-		;
+		if (!is_null($priority)) {
+			$newEvent['priority'] = $priority;
+		} else if ($recurring) {
+			// as long as the value is greater the event priority should be high (the highest priority is 0)
+			$newEvent['priority'] = 100-floor($value/$threshold);
+		} else {
+			$newEvent['priority'] = 10;
+		}
 		$newEvent['stamp'] = md5(serialize($newEvent));
+		$newEvent['creation_time'] = date(Billrun_Base::base_dateformat);
 
 		try {
 			$insertResult = $fraud_connection->insert($newEvent, array('w' => 1));
