@@ -221,7 +221,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		if ($this->isThresholdTriggered($before, $after, $threshold, $recurring)) {
 			Billrun_Factory::log("Fraud plugin - line stamp " . $row['stamp'] . ' trigger event ' . $rule['name'], Zend_Log::INFO);
 			if (isset($rule['priority'])) {
-				$priority = $rule['priority'];
+				$priority = (int) $rule['priority'];
 			} else {
 				$priority = null;
 			}
