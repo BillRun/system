@@ -318,6 +318,9 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @param type $event the event that relate to the lines.
 	 */
 	protected function markEventLines($event) {
+		if($event['source'] == 'billing') { // HACK to prvent the fraud from trying to mark  the lines of an event  that originated in the billing system
+			return;
+		}
 		//mark deposit for the lines on the current imsi
 		Billrun_Log::getInstance()->log("Fraud alerts mark event lines " . $event['deposit_stamp'], Zend_Log::INFO);
 		$imsi = (isset($event['imsi']) && $event['imsi']) ? $event['imsi'] : null;
