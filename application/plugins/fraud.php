@@ -288,6 +288,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		} else {
 			$newEvent['priority'] = 10;
 		}
+		settype($newEvent['priority'], 'int');
 		$newEvent['stamp'] = md5(serialize($newEvent));
 		$newEvent['creation_time'] = date(Billrun_Base::base_dateformat);
 
