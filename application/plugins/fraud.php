@@ -281,14 +281,14 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$newEvent['recurring'] = $recurring;
 		$newEvent['line_stamp'] = $row['stamp'];
 		if (!is_null($priority)) {
-			$newEvent['priority'] = $priority;
+			$newEvent['priority'] = (int) $priority;
 		} else if ($recurring) {
 			// as long as the value is greater the event priority should be high (the highest priority is 0)
-			$newEvent['priority'] = 100-floor($value/$threshold);
+			$newEvent['priority'] = (int) 100-floor($value/$threshold);
 		} else {
 			$newEvent['priority'] = 10;
 		}
-		settype($newEvent['priority'], 'integer');
+
 		$newEvent['stamp'] = md5(serialize($newEvent));
 		$newEvent['creation_time'] = date(Billrun_Base::base_dateformat);
 
