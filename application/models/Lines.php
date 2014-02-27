@@ -20,11 +20,13 @@ class LinesModel extends TableModel {
 	 * @var boolean show garbage lines
 	 */
 	protected $garbage = false;
+	protected $lines_coll = null;
 
 	public function __construct(array $params = array()) {
 		$params['collection'] = Billrun_Factory::db()->lines;
 		parent::__construct($params);
 		$this->search_key = "stamp";
+		$this->lines_coll = Billrun_Factory::db()->linesCollection();
 	}
 
 	public function getProtectedKeys($entity, $type) {
@@ -87,17 +89,17 @@ class LinesModel extends TableModel {
 		if (isset($data['arate'])) {
 			$ratesColl = Billrun_Factory::db()->ratesCollection();
 			$rateEntity = $ratesColl->query('key', $data['arate'])
-					->lessEq('from', $currentDate)
-					->greaterEq('to', $currentDate)
-					->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED)->current();
+							->lessEq('from', $currentDate)
+							->greaterEq('to', $currentDate)
+							->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED)->current();
 			$data['arate'] = $rateEntity->createRef($ratesColl);
 		}
 		if (isset($data['plan'])) {
 			$plansColl = Billrun_Factory::db()->plansCollection();
 			$planEntity = $plansColl->query('name', $data['plan'])
-					->lessEq('from', $currentDate)
-					->greaterEq('to', $currentDate)
-					->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED)->current();
+							->lessEq('from', $currentDate)
+							->greaterEq('to', $currentDate)
+							->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED)->current();
 			$data['plan_ref'] = $planEntity->createRef($plansColl);
 		}
 		parent::update($data);
@@ -115,7 +117,18 @@ class LinesModel extends TableModel {
 		$cursor = $this->collection->query($filter_query)->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED)->limit($limit);
 		$this->_count = $cursor->count();
 		$resource = $cursor->sort($this->sort)->skip($skip)->limit($size);
-		return $resource;
+		$ret = array();
+		foreach ($resource as $item) {
+			$item->collection($this->lines_coll);
+			if ($arate = $this->getDBRefField($item, 'arate')) {
+				$item['arate'] = $arate['key'];
+				$item['arate_id'] = strval($arate['_id']);
+			} else {
+				$item['arate'] = $arate;
+			}
+			$ret[] = $item;
+		}
+		return $ret;
 	}
 
 	public function getTableColumns() {
@@ -125,6 +138,7 @@ class LinesModel extends TableModel {
 			'sid' => 'Subscriber id',
 			'calling_number' => 'Calling Number',
 			'called_number' => 'Called Number',
+			'arate' => 'Rate',
 			'plan' => 'Plan',
 			'usaget' => 'Usage type',
 			'usagev' => 'Usage volume',

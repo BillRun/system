@@ -7,7 +7,7 @@ $(function() {
 		var items_checked = $('#data_table :checked');
 		checkItems = true;
 		if (items_checked.length) {
-			$(this).data('remote', edit_url_prefix + items_checked.eq(0).val() + '&type=' + $(this).data('type'));
+			$(this).data('remote', '/admin/edit?coll=' + active_collection + '&id=' + items_checked.eq(0).val() + '&type=' + $(this).data('type'));
 		}
 	});
 
@@ -18,7 +18,7 @@ $(function() {
 			return n.value;
 		}).join(',');
 		if (items_checked.length) {
-			$(this).data('remote', confirm_url_prefix + output + '&type=' + $(this).data('type'));
+			$(this).data('remote', '/admin/confirm?coll=' + active_collection + '&id=' + output + '&type=' + $(this).data('type'));
 		}
 	});
 
@@ -160,11 +160,10 @@ function addFilter(button) {
 }
 
 function update_current(obj) {
-
-	var items_checked = $(obj).next("input[type=checkbox]");
+	var item_checked = $(obj).next("input[type=checkbox]");
 	checkItems = false;
-	if (items_checked.length) {
-		$(obj).data('remote', edit_url_prefix + items_checked.eq(0).val() + '&type=' + $(obj).data('type'));
+	if (item_checked.length) {
+		$(obj).data('remote', '/admin/edit?coll=' + active_collection + '&id=' + item_checked.eq(0).val() + '&type=' + $(obj).data('type'));
 	}
 }
 

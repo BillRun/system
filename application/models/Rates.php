@@ -16,7 +16,7 @@
 class RatesModel extends TabledateModel {
 
 	protected $showprefix;
-	
+
 	public function __construct(array $params = array()) {
 		$params['collection'] = Billrun_Factory::db()->rates;
 		parent::__construct($params);
@@ -26,8 +26,7 @@ class RatesModel extends TabledateModel {
 			if ($this->size > 50 && $this->showprefix) {
 				$this->size = 50;
 			}
-		}
-		else {
+		} else {
 			$this->showprefix = false;
 		}
 	}
@@ -60,7 +59,7 @@ class RatesModel extends TabledateModel {
 			}
 			$entity->setRawData($raw_data);
 		}
-		
+
 		return $entity;
 	}
 
@@ -87,9 +86,9 @@ class RatesModel extends TabledateModel {
 					unset($rate['plans']);
 					foreach ($sourcePlans as &$plan) {
 						$planEntity = $plansColl->query('name', $plan)
-								->lessEq('from', $currentDate)
-								->greaterEq('to', $currentDate)
-								->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED)->current();
+										->lessEq('from', $currentDate)
+										->greaterEq('to', $currentDate)
+										->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED)->current();
 						$newRefPlans[] = $planEntity->createRef($plansColl);
 					}
 					$rate['plans'] = $newRefPlans;
@@ -132,7 +131,6 @@ class RatesModel extends TabledateModel {
 		return array_merge($sort_fields, parent::getSortFields());
 	}
 
-	
 	public function getFilterFields() {
 		$filter_fields = array(
 //			'usage' => array(
@@ -167,12 +165,12 @@ class RatesModel extends TabledateModel {
 				'db_key' => 'nofilter',
 				'input_type' => 'boolean',
 				'display' => 'Show prefix',
-				'default' => $this->showprefix? 'on' : '',
+				'default' => $this->showprefix ? 'on' : '',
 			),
 		);
 		return array_merge($filter_fields, parent::getFilterFields());
 	}
-	
+
 	public function getFilterFieldsOrder() {
 		$filter_field_order = array(
 //			array(
@@ -200,7 +198,7 @@ class RatesModel extends TabledateModel {
 		);
 		return array_merge($filter_field_order, parent::getFilterFieldsOrder(), $post_filter_field);
 	}
-	
+
 	/**
 	 * Get the data resource
 	 * 
@@ -214,7 +212,7 @@ class RatesModel extends TabledateModel {
 		$ret = array();
 		foreach ($resource as $item) {
 			if ($item->get('rates') && !$this->showprefix) {
-				foreach($item->get('rates') as $key => $rate) {
+				foreach ($item->get('rates') as $key => $rate) {
 					$added_columns = array(
 						't' => $key,
 						'tprice' => $rate['rate'][0]['price'],
@@ -239,6 +237,5 @@ class RatesModel extends TabledateModel {
 		}
 		return $ret;
 	}
-
 
 }

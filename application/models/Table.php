@@ -165,13 +165,13 @@ class TableModel {
 			}
 
 			$ret = '<div class="pagination pagination-right">'
-				. '<ul>';
+					. '<ul>';
 			if ($current == 1) {
 				$ret .= '<li class="disabled"><a href="javascript:void(0);">First</a></li>'
-					. '<li class="disabled"><a href="javascript:void(0);">Prev</a></li>';
+						. '<li class="disabled"><a href="javascript:void(0);">Prev</a></li>';
 			} else {
 				$ret .= '<li><a href="?page=1">First</a></li>'
-					. '<li><a href="?page=' . ($current - 1) . '">Prev</a></li>';
+						. '<li><a href="?page=' . ($current - 1) . '">Prev</a></li>';
 			}
 
 			for ($i = $min; $i < $current; $i++) {
@@ -186,10 +186,10 @@ class TableModel {
 
 			if ($current == $count) {
 				$ret .= '<li class="disabled"><a href="javascript:void(0);">Next</a></li>'
-					. '<li class="disabled"><a href="javascript:void(0);">Last</a></li>';
+						. '<li class="disabled"><a href="javascript:void(0);">Last</a></li>';
 			} else {
 				$ret .= '<li><a href="?page=' . ($current + 1) . '">Next</a></li>'
-					. '<li><a href="?page=' . $count . '">Last</a></li>';
+						. '<li><a href="?page=' . $count . '">Last</a></li>';
 			}
 
 			$ret .= '</ul></div>';
@@ -323,6 +323,13 @@ class TableModel {
 
 	public function getFilterFieldsOrder() {
 		return array();
+	}
+
+	protected function getDBRefField($item, $field_name) {
+		if (($value = $item->get($field_name, true)) && MongoDBRef::isRef($value)) {
+			$value = Billrun_DBRef::getEntity($value);
+		}
+		return $value;
 	}
 
 }
