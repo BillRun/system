@@ -27,6 +27,9 @@ class RatesModel extends TabledateModel {
 				$this->size = 50;
 			}
 		}
+		else {
+			$this->showprefix = false;
+		}
 	}
 
 	/**
@@ -226,7 +229,7 @@ class RatesModel extends TabledateModel {
 					}
 					$ret[] = new Mongodloid_Entity(array_merge($item->getRawData(), $added_columns, $rate));
 				}
-			} else if ($this->showprefix && isset($filter_query['$and'][0]['key'])) {
+			} else if ($this->showprefix && (isset($filter_query['$and'][0]['key']) || isset($filter_query['$and'][0]['params.prefix']))) {
 				foreach ($item->get('params.prefix') as $prefix) {
 					$ret[] = new Mongodloid_Entity(array_merge($item->getRawData(), array('prefix' => $prefix)));
 				}

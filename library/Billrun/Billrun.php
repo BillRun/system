@@ -632,7 +632,7 @@ class Billrun_Billrun {
 		Billrun_Factory::log()->log("Querying account " . $this->aid . " for lines...", Zend_Log::INFO);
 		$account_lines = $this->getAccountLines($this->aid, $start_time, false);
 //		Billrun_Factory::log()->log("Found " . count($account_lines) . " lines.", Zend_Log::DEBUG);
-		Billrun_Factory::log("Processing account Lines $this->aid");
+		Billrun_Factory::log("Processing account Lines $this->aid", Zend_Log::INFO);
 		$updatedLines = array_merge($this->processLines($account_lines), $this->processLines($flat_lines));
 		$updateLinesStamps = array_keys($updatedLines);
 		Billrun_Factory::log("Finished processing account $this->aid lines. Total: " . count($updatedLines), Zend_log::INFO);

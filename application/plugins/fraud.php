@@ -38,6 +38,16 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 	protected $name = 'fraud';
 
 	/**
+	 * Rows before this time won't be considered as fraud
+	 * @var int
+	 */
+	protected $min_time;
+
+	public function __construct() {
+		$this->min_time = Billrun_Util::getStartTime(Billrun_Util::getBillrunKey(time()));
+	}
+
+	/**
 	 * Method to save fraud events on the fraud system once event triggered
 	 * 
 	 * @param array $row the line from lines collection
@@ -56,7 +66,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 			Billrun_Factory::log("Fraud plugin - balance is empty or not transfer to the plugin" . $row['stamp'] . ' | calculator ' . $calculator->getType(), Zend_Log::WARN);
 			return true;
 		}
-		// if not plan to row - cannot do acannotnything
+		// if not plan to row - cannot do anything
 		if (!isset($row['plan'])) {
 			Billrun_Factory::log("Fraud plugin - plan not exists for line " . $row['stamp'], Zend_Log::ERR);
 			return true;
@@ -64,6 +74,11 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 
 		// first check we are not on tap3, because we prevent intl fraud on nrtrde
 		if ($row['type'] == 'tap3') {
+			return true;
+		}
+
+		// check if row is too "old" to be considered as a fraud. TODO: consider lowering min_time in 1-2 days.
+		if ($row['urt']->sec <= $this->min_time) {
 			return true;
 		}
 
@@ -120,10 +135,9 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$costFieldName = 'cost';
 		$totalCost = $balance[$costFieldName];
 		if (!empty($filter)) {
-			return $this->sumBalance($balance,$costFieldName, $filter );
+			return $this->sumBalance($balance, $costFieldName, $filter);
 		}
 		return $totalCost;
-
 	}
 
 	/**
@@ -137,7 +151,6 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 	protected function sumBalance($balance, $sumField, $filter = array()) {
 		if (count($filter) == 1) {
 			// if filter only one don't array make the array manipulation
-			Billrun_Factory::log(print_r($filter,1), Zend_Log::INFO);
 			return $balance['totals'][$filter[0]][$sumField];
 		}
 
@@ -160,7 +173,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		if ($row['usagev'] === 0) {
 			return false;
 		}
-		
+
 		$usaget = $row['usaget'];
 
 		if (!isset($balance->balance['totals'][$usaget]['usagev'])) {
@@ -189,25 +202,30 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 */
 	protected function checkRule($rule, $row, $before, $after) {
 		// if the limit for specific type
-		if (!isset($row['usaget']) || (!empty($rule['usaget']) && !in_array( $row['usaget'],$rule['usaget']))) {			
+		if (!isset($row['usaget']) || (!empty($rule['usaget']) && !in_array($row['usaget'], $rule['usaget']))) {
 			return false;
 		}
 		// if the limit for specific plans
 		if (isset($rule['limitPlans']) &&
-			(is_array($rule['limitPlans']) && !in_array(strtolower($row['plan']), $rule['limitPlans']))) {
+				(is_array($rule['limitPlans']) && !in_array(strtolower($row['plan']), $rule['limitPlans']))) {
 			return false;
 		}
 		// ignore subscribers :)
 		if (isset($rule['ignoreSubscribers']) &&
-			(is_array($rule['ignoreSubscribers']) && in_array($row['sid'], $rule['ignoreSubscribers']))) {
+				(is_array($rule['ignoreSubscribers']) && in_array($row['sid'], $rule['ignoreSubscribers']))) {
 			return false;
 		}
 
 		$threshold = $rule['threshold'];
 		$recurring = isset($rule['recurring']) && $rule['recurring'];
 		if ($this->isThresholdTriggered($before, $after, $threshold, $recurring)) {
-			Billrun_Factory::log("Fraud plugin - line stamp " . $row['stamp'] . ' trigger event ' .  $rule['name'], Zend_Log::CRIT);
-			$this->insert_fraud_event($after, $before, $row, $threshold, $rule['unit'], $rule['name'], $recurring);
+			Billrun_Factory::log("Fraud plugin - line stamp " . $row['stamp'] . ' trigger event ' . $rule['name'], Zend_Log::INFO);
+			if (isset($rule['priority'])) {
+				$priority = (int) $rule['priority'];
+			} else {
+				$priority = null;
+			}
+			$this->insert_fraud_event($after, $before, $row, $threshold, $rule['unit'], $rule['name'], $priority, $recurring);
 			return $rule;
 		}
 	}
@@ -241,19 +259,18 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @param string $event_type the event type
 	 * @param bool $recurring is the event is recurring
 	 */
-	protected function insert_fraud_event($value, $value_before, $row, $threshold, $units, $event_type, $recurring = false) {
+	protected function insert_fraud_event($value, $value_before, $row, $threshold, $units, $event_type, $priority = null, $recurring = false) {
 
 		$fraud_connection = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('fraud.db'))->eventsCollection();
 
 		$newEvent = new Mongodloid_Entity();
 		$newEvent['value'] = $value;
 		$newEvent['value_before'] = $value_before;
-		$newEvent['creation_time'] = date(Billrun_Base::base_dateformat);
 		$newEvent['aid'] = $row['aid'];
 		$newEvent['sid'] = $row['sid'];
 		// backward compatibility
 		$newEvent['subscriber_id'] = $row['sid'];
-		if(isset($row['imsi'])) {
+		if (isset($row['imsi'])) {
 			$newEvent['imsi'] = $row['imsi'];
 		}
 		$newEvent['source'] = 'billing';
@@ -262,9 +279,19 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$newEvent['event_type'] = $event_type;
 		$newEvent['plan'] = $row['plan'];
 		$newEvent['recurring'] = $recurring;
-		$newEvent['line_stamp'] = $row['stamp'];;
+		$newEvent['line_stamp'] = $row['stamp'];
+		if (!is_null($priority)) {
+			$newEvent['priority'] = (int) $priority;
+		} else if ($recurring) {
+			// as long as the value is greater the event priority should be high (the highest priority is 0)
+			$newEvent['priority'] = (int) 100-floor($value/$threshold);
+		} else {
+			$newEvent['priority'] = 10;
+		}
+
 		$newEvent['stamp'] = md5(serialize($newEvent));
-		
+		$newEvent['creation_time'] = date(Billrun_Base::base_dateformat);
+
 		try {
 			$insertResult = $fraud_connection->insert($newEvent, array('w' => 1));
 

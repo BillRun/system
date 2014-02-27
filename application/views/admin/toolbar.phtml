@@ -10,7 +10,7 @@
 				foreach ($row_fields as $filter_field_key => $field_view) {
 					$filter_field = $this->filter_fields[$filter_field_key];
 					if ($filter_field['input_type'] == 'boolean') {
-						echo "<input class=\"span" . $field_view['width'] . "\" id=\"" . $filter_field['key'] . "\" name=\"" . $filter_field['key'] . "\" type=\"checkbox\"" . (isset($this->session->$filter_field['key']) && $this->session->$filter_field['key'] == "on" ? " value=\"1\" checked=\"checked\"" : "") . ">" 
+						echo "<input class=\"span" . $field_view['width'] . "\" id=\"" . $filter_field['key'] . "\" name=\"" . $filter_field['key'] . "\" type=\"checkbox\"" . (isset($this->session->$filter_field['key']) && $this->session->$filter_field['key'] == "on" ? " value=\"on\" checked=\"checked\"" : "") . ">" 
 							. "<label class=\"checkbox\" for=\"" . $filter_field['key'] . "\">" . $filter_field['display'] . "</label>";
 					} else if ($filter_field['input_type'] == 'number') {
 						echo "&nbsp;<label class=\"control-label\" for=\"" . $filter_field['key'] . "\">" . $filter_field['display'] . "</label>
