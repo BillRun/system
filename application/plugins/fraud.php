@@ -264,8 +264,8 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$fraud_connection = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('fraud.db'))->eventsCollection();
 
 		$newEvent = new Mongodloid_Entity();
-		$newEvent['value'] = $value;
-		$newEvent['value_before'] = $value_before;
+		$newEvent['value'] = (float) $value;
+		$newEvent['value_before'] = (float) $value_before;
 		$newEvent['aid'] = $row['aid'];
 		$newEvent['sid'] = $row['sid'];
 		// backward compatibility
