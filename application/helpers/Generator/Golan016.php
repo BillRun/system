@@ -137,18 +137,19 @@ class Generator_Golan016 extends Billrun_Generator_Csv_Fixed {
 	 * @see Billrun_Generator_Csv::createTreatedFile
 	 */
 	public function createTreatedFile($xmlContent) {
-		if (empty(self::$fileName)) {
+		
+		$treatedFile = substr(self::$fileName, 0, strpos(self::$fileName, '.new')) . '.out';
+		if (empty($treatedFile)) {
 			Billrun_Factory::log()->log("file name is empty, cannot generate the file:" . self::$fileName, Zend_Log::ERR);
 			return FALSE;
 		}
-
-		$path = $this->export_directory . DIRECTORY_SEPARATOR . '/' . substr(self::$fileName, 0, strpos(self::$fileName, '.new')) . '.out';
+		$path = $this->export_directory . DIRECTORY_SEPARATOR . $treatedFile;
 		Billrun_Factory::log()->log("Placing treated file at : $path", Zend_Log::DEBUG);
 		if (file_put_contents($path, $xmlContent)) {
-			return self::$fileName;
+			return $treatedFile;
 		}
 
-		Billrun_Factory::log()->log("cannot put content of file: " . self::$fileName . "path: " . $path, Zend_Log::ERR);
+		Billrun_Factory::log()->log("cannot put content of file: " . $treatedFile . "path: " . $path, Zend_Log::ERR);
 		return FALSE;
 	}
 
