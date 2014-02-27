@@ -143,7 +143,7 @@ class Generator_Golan016 extends Billrun_Generator_Csv_Fixed {
 		}
 
 		$path = $this->export_directory . DIRECTORY_SEPARATOR . '/' . substr(self::$fileName, 0, strpos(self::$fileName, '.new')) . '.out';
-
+		Billrun_Factory::log()->log("Placing treated file at : $path", Zend_Log::DEBUG);
 		if (file_put_contents($path, $xmlContent)) {
 			return self::$fileName;
 		}
