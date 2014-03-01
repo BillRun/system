@@ -274,7 +274,12 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$newEvent['imsi'] = $row['imsi'];
 		}
 		$newEvent['source'] = 'billing';
+		if ($recurring) {
+			// if it's recurring passed the current threshold
+			$newEvent['threshold'] = floor($value/$threshold)*$threshold;
+		} else {
 		$newEvent['threshold'] = $threshold;
+		}
 		$newEvent['units'] = $units;
 		$newEvent['event_type'] = $event_type;
 		$newEvent['plan'] = $row['plan'];
