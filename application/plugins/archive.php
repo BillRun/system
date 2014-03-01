@@ -88,7 +88,7 @@ abstract class archivePlugin extends Billrun_Plugin_BillrunPluginBase {
 				$insertResult = $archive->insert($current, $options);
 
 				if ($insertResult['ok'] == 1) {
-					Billrun_Factory::log()->log("line with the stamp: " . $current['stamp'] . " inserted to the archive", Zend_Log::INFO);
+					Billrun_Factory::log()->log("line with the stamp: " . $current['stamp'] . " inserted to the archive", Zend_Log::DEBUG);
 					$this->data[] = $current;
 				} else {
 					Billrun_Factory::log()->log("Failed insert line with the stamp: " . $current['stamp'] . " to the archive", Zend_Log::WARN);
