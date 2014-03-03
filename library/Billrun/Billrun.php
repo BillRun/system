@@ -18,15 +18,8 @@ class Billrun_Billrun {
 	protected $billrun_key;
 	protected $data;
 	protected static $runtime_billrun_key;
-	protected static $live_update;
 	protected static $vatAtDates = array();
 	protected static $vatsByBillrun = array();
-
-	/**
-	 * @var int allow billrun to recompute marked line (as long as they have the same billrun_key)
-	 */
-	protected $allowOverride = 0;
-	protected $updateStampChunk = 100000;
 
 	/**
 	 * lines collection
@@ -46,6 +39,12 @@ class Billrun_Billrun {
 	 */
 	static protected $rates = array();
 	static protected $plans = array();
+
+	/**
+	 * billrun collection
+	 * @var Mongodloid_Collection 
+	 */
+	protected $billrun_coll = null;
 
 	/**
 	 * 
@@ -70,16 +69,11 @@ class Billrun_Billrun {
 		} else {
 			Billrun_Factory::log()->log("Returning an empty billrun!", Zend_Log::NOTICE);
 		}
-		if (isset($options['allow_override'])) {
-			$this->allowOverride = (int) $options['allow_override'];
-		}
-		if (isset($options['update_stamps_chunk'])) {
-			$this->updateStampChunk = (int) $options['update_stamps_chunk'];
-		}
 		if (isset($options['filter_fields'])) {
 			$this->filter_fields = array_map("intval", $options['filter_fields']);
 		}
 		$this->lines = Billrun_Factory::db()->linesCollection();
+		$this->billrun_coll = Billrun_Factory::db()->billrunCollection();
 	}
 
 	/**
@@ -87,13 +81,12 @@ class Billrun_Billrun {
 	 * @return Billrun_Billrun
 	 */
 	protected function load() {
-		$billrun_coll = Billrun_Factory::db()->billrunCollection();
-		$this->data = $billrun_coll->query(array(
+		$this->data = $this->billrun_coll->query(array(
 							'aid' => $this->aid,
 							'billrun_key' => $this->billrun_key,
 						))
 						->cursor()->limit(1)->current();
-		$this->data->collection($billrun_coll);
+		$this->data->collection($this->billrun_coll);
 		return $this;
 	}
 
@@ -469,9 +462,6 @@ class Billrun_Billrun {
 		} else {
 			$zone += $pricingData['aprice'];
 		}
-		if (self::isLiveUpdate()) {
-			$sraw['lines'][$usage_type]['refs'][] = $row->createRef();
-		}
 		if ($usage_type == 'data' && $row['type'] != 'tap3') {
 			$date_key = date("Ymd", $row['urt']->sec);
 			$sraw['lines'][$usage_type]['counters'][$date_key]['usagev'] = $this->getFieldVal($sraw['lines'][$usage_type]['counters'][$date_key]['usagev'], 0) + $row['usagev'];
@@ -628,31 +618,12 @@ class Billrun_Billrun {
 	 * @param int $start_time lower bound date to get lines from. A unix timestamp 
 	 * @return array the stamps of the lines used to create the billrun
 	 */
-	public function addLines($update_lines = false, $start_time = 0, $flat_lines = array()) {
+	public function addLines($start_time = 0, $flat_lines = array()) {
 		Billrun_Factory::log()->log("Querying account " . $this->aid . " for lines...", Zend_Log::INFO);
 		$account_lines = $this->getAccountLines($this->aid, $start_time, false);
-//		Billrun_Factory::log()->log("Found " . count($account_lines) . " lines.", Zend_Log::DEBUG);
 		Billrun_Factory::log("Processing account Lines $this->aid", Zend_Log::INFO);
 		$updatedLines = array_merge($this->processLines($account_lines), $this->processLines($flat_lines));
-		$updateLinesStamps = array_keys($updatedLines);
 		Billrun_Factory::log("Finished processing account $this->aid lines. Total: " . count($updatedLines), Zend_log::INFO);
-//		Billrun_Factory::log()->log("Querying subscriber " . $sid . " for ggsn lines...", Zend_Log::DEBUG);
-//		$subscriber_aggregated_data = $this->getSubscriberDataLines($sid, $start_time);
-//		Billrun_Factory::log()->log("Finished querying subscriber " . $sid . " for ggsn lines", Zend_Log::DEBUG);
-//		Billrun_Factory::log("Processing data lines for subscriber $sid", Zend_Log::DEBUG);
-//		$data_lines_stamps = $this->updateAggregatedData($sid, $subscriber_aggregated_data);
-//		Billrun_Factory::log("Finished processing data lines for subscriber $sid", Zend_Log::DEBUG);
-		if ($update_lines) {
-			Billrun_Factory::log("Updating account $this->aid lines with billrun stamp", Zend_Log::INFO);
-//			$updatedLines = array_merge($updatedLines, $data_lines_stamps);
-			asort($updateLinesStamps);
-			$offset = 0;
-			while (count($stamps_chunk = array_slice($updateLinesStamps, $offset, $this->updateStampChunk))) {
-				$this->lines->update(array('stamp' => array('$in' => $stamps_chunk)), array('$set' => array('billrun' => $this->billrun_key)), array('multiple' => true));
-				$offset += $this->updateStampChunk;
-			}
-			Billrun_Factory::log("Finished updating account $this->aid lines with billrun stamp", Zend_Log::INFO);
-		}
 		$this->updateTotals();
 		return $updatedLines;
 	}
@@ -713,14 +684,8 @@ class Billrun_Billrun {
 				'$ne' => 'flat',
 			);
 		}
-		if ($this->allowOverride == 1) {
-			$query['billrun']['$in'] = array('000000', $this->billrun_key);
-		} else if ($this->allowOverride == 2) {
-			$query['billrun'] = $this->billrun_key;
-		} else {
-			$query['billrun'] = '000000';
-		}
 
+		$query['billrun'] = $this->billrun_key;
 
 		$hint = array(
 			'aid' => 1,
@@ -745,31 +710,35 @@ class Billrun_Billrun {
 	}
 
 	/**
-	 * Is billrun in live mode?
-	 * @return boolean true for live, false otherwise
-	 */
-	public static function isLiveUpdate() {
-		if (!isset(self::$live_update)) {
-			self::$live_update = Billrun_Factory::config()->getConfigValue('billrun.live_update', false);
-		}
-		return self::$live_update;
-	}
-
-	/**
-	 * Does the billrun allow overriding lines?
-	 * @return int the allowOverride flag
-	 */
-	public function allowOverride() {
-		return $this->allowOverride;
-	}
-
-	/**
 	 * Resets the billrun data
 	 * @param type $account_id
 	 * @param type $billrun_key
 	 */
 	public function resetBillrun($account_id, $billrun_key) {
 		$this->data = new Mongodloid_Entity($this->getAccountEmptyBillrunEntry($account_id, $billrun_key));
+	}
+
+	/**
+	 * Returns the minimum billrun key greater than all the billrun keys in billrun collection
+	 * @return string billrun_key
+	 * @todo create an appropriate index on billrun collection
+	 */
+	public static function getActiveBillrun() {
+		$now = time();
+		$sort = array(
+			'billrun_key' => -1,
+		);
+		$fields = array(
+			'billrun_key' => 1,
+		);
+		$last = Billrun_Factory::db()->billrunCollection()->query()->cursor()->limit(1)->fields($fields)->sort($sort)->current();
+		if ($last->isEmpty()) {
+			$active_billrun = Billrun_Util::getBillrunKey($now);
+		}
+		else {
+			$active_billrun = Billrun_Util::getFollowingBillrunKey($last['billrun_key']);
+		}
+		return $active_billrun;
 	}
 
 }

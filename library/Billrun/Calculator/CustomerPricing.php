@@ -15,7 +15,7 @@
 class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 
 	const DEF_CALC_DB_FIELD = 'aprice';
-	
+
 	protected $pricingField = self::DEF_CALC_DB_FIELD;
 	static protected $type = "pricing";
 
@@ -43,6 +43,24 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @var int timestamp
 	 */
 	protected $billrun_lower_bound_timestamp;
+
+	/**
+	 * Minimum possible billrun key for newly calculated lines
+	 * @var string 
+	 */
+	protected $active_billrun;
+
+	/**
+	 * End time of the active billrun (unix timestamp)
+	 * @var int
+	 */
+	protected $active_billrun_end_time;
+
+	/**
+	 * Second minimum possible billrun key for newly calculated lines
+	 * @var string
+	 */
+	protected $next_active_billrun;
 
 	public function __construct($options = array()) {
 		if (isset($options['autoload'])) {
@@ -74,6 +92,9 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		$this->loadRates();
 		$this->loadPlans();
 		$this->balances = Billrun_Factory::db(array('name' => 'balances'))->balancesCollection();
+		$this->active_billrun = Billrun_Billrun::getActiveBillrun();
+		$this->active_billrun_end_time = Billrun_Util::getEndTime($this->active_billrun);
+		$this->next_active_billrun = Billrun_Util::getFollowingBillrunKey($this->active_billrun);
 	}
 
 	protected function getLines() {
@@ -131,7 +152,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			if (!$pricingData) {
 				return false;
 			}
-			$pricingData['billrun'] = "000000";
+			$pricingData['billrun'] = $row['urt']->sec <= $this->active_billrun_end_time ? $this->active_billrun : $this->next_active_billrun;
 		} else {
 			Billrun_Factory::log()->log("Line with stamp " . $row['stamp'] . " is missing volume information", Zend_Log::ALERT);
 			return false;
@@ -276,9 +297,9 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			}
 			if (!$balance || !$balance->isValid()) {
 				Billrun_Factory::log()->log("couldn't get balance for : " . print_r(array(
-						'sid' => $row['sid'],
-						'billrun_month' => $billrun_key
-						), 1), Zend_Log::INFO);
+							'sid' => $row['sid'],
+							'billrun_month' => $billrun_key
+								), 1), Zend_Log::INFO);
 				return false;
 			} else {
 				Billrun_Factory::log()->log("Found balance " . $billrun_key . " for subscriber " . $row['sid'], Zend_Log::DEBUG);
@@ -394,8 +415,8 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	public function isLineLegitimate($line) {
 		$arate = $this->getRateByRef($line->get('arate', true));
 		return !is_null($arate) && (empty($arate['skip_calc']) || !in_array(self::$type, $arate['skip_calc'])) &&
-			isset($line['sid']) && $line['sid'] !== false &&
-			$line['urt']->sec >= $this->billrun_lower_bound_timestamp;
+				isset($line['sid']) && $line['sid'] !== false &&
+				$line['urt']->sec >= $this->billrun_lower_bound_timestamp;
 	}
 
 	/**

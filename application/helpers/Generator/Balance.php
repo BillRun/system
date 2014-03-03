@@ -89,7 +89,7 @@ class Generator_Balance extends Generator_Golanxml {
 			}
 			$billrun->addSubscriber($subscriber, $subscriber_status);
 		}
-		$this->lines = $billrun->addLines(false, $start_time, $flat_lines);
+		$this->lines = $billrun->addLines($start_time, $flat_lines);
 
 		$this->data = $billrun->getRawData();
 	}
