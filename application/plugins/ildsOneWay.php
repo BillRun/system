@@ -71,9 +71,8 @@ class ildsOneWayPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @var string
 	 */
 	protected $output_path = null;
-	
 	protected $pricingField = Billrun_Calculator_CustomerPricing::DEF_CALC_DB_FIELD;
-	
+
 	/**
 	 *
 	 * @var Mongodloid_Collection
@@ -116,7 +115,7 @@ class ildsOneWayPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$res['records_type'] = '000';
 		$res['sampleDurationInSec'] = '1';
 
-		$row[$this->pricingField] = $res['aprice'] = $this->access_price + number_format(Billrun_Calculator_CustomerPricing::getPriceByRate($row['arate'], $row['usaget'], $row['usagev']), 4);
+		$row[$this->pricingField] =  $res['aprice'] = number_format($this->access_price + Billrun_Calculator_CustomerPricing::getPriceByRate($row['arate'], $row['usaget'], $row['usagev']), 4);
 
 		if ($row['usagev'] == '0') {
 			$res['records_type'] = '005';
