@@ -162,7 +162,9 @@ class LinesModel extends TableModel {
 		$previous_billruns = array();
 		for ($i = 1; $i <= $months; $months--) {
 			$date = date("Ym", strtotime("-$months month"));
-			$previous_billruns["$date"] = $date;
+			if ($date >= '201401') {
+				$previous_billruns["$date"] = $date;
+			}
 		}
 		krsort($previous_billruns);
 		$current_billrun_key = '000000';
