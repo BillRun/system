@@ -61,6 +61,9 @@
 					echo Admin_Lines::getFilterRow(); // add first manual filter on load
 				}
 				echo "</div>";
+			elseif (strtolower($this->title) == 'rates') :
+			endif;
+			if (strtolower($this->title) == 'lines' || strtolower($this->title) == 'rates'):
 				echo "<div><div id=\"extra_columns\" class=\"controls form-inline\">"
 				. "&nbsp;<label class=\"control-label\">Display fields</label>
 						<select name=\"extra_columns[]\" class=\"multiselect\" multiple=\"multiple\">";
@@ -73,9 +76,7 @@
 				}
 				echo "</select>";
 				echo "</div></div>";
-			elseif (strtolower($this->title) == 'rates') :
 			endif;
-
 			if (is_array($this->sort_fields)) {
 				echo "Sort by: <div class=\"control-group\">
 		<div class=\"controls form-inline\">

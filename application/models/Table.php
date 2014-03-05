@@ -22,6 +22,12 @@ class TableModel {
 	protected $collection;
 
 	/**
+	 *
+	 * @var string The collection name
+	 */
+	protected $collection_name;
+
+	/**
 	 * the page number to pull; use as current page
 	 * 
 	 * @var int
@@ -54,7 +60,7 @@ class TableModel {
 	 * @var string the main key field name (e.g. "name" for plans)
 	 */
 	public $search_key;
-	
+
 	/**
 	 *
 	 * @var array extra columns to display in the table
@@ -75,6 +81,7 @@ class TableModel {
 				$this->collection = call_user_func(array(Billrun_Factory::db(), $params['collection'] . 'Collection'));
 //                          $this->collection->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
 			}
+			$this->collection_name = $params['collection'];
 		}
 
 		if (isset($params['page'])) {
@@ -88,7 +95,7 @@ class TableModel {
 		if (isset($params['sort'])) {
 			$this->sort = $params['sort'];
 		}
-		
+
 		if (isset($params['extra_columns'])) {
 			$this->extra_columns = $params['extra_columns'];
 		}
@@ -341,9 +348,19 @@ class TableModel {
 		}
 		return $value;
 	}
-	
+
 	public function getExtraColumns() {
-		return array();
+		$extra_columns = Billrun_Factory::config()->getConfigValue('admin_panel.' . $this->collection_name . '.extra_columns', array());
+		return $extra_columns;
+	}
+	
+	public function getTableColumns() {
+		$columns = Billrun_Factory::config()->getConfigValue('admin_panel.' . $this->collection_name . '.table_columns', array());
+		if (!empty($this->extra_columns)) {
+			$extra_columns = array_intersect_key($this->getExtraColumns(), array_fill_keys($this->extra_columns, ""));
+			$columns = array_merge($columns, $extra_columns);
+		}
+		return $columns;
 	}
 
 }

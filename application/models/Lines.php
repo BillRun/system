@@ -145,7 +145,6 @@ class LinesModel extends TableModel {
 			'aprice' => 'Charge',
 			'billrun' => 'Billrun',
 			'urt' => 'Time',
-//			'_id' => 'Id',
 		);
 		if (!empty($this->extra_columns)) {
 			$extra_columns = array_intersect_key($this->getExtraColumns(), array_fill_keys($this->extra_columns, ""));
@@ -302,11 +301,6 @@ class LinesModel extends TableModel {
 			'usaget' => 'Usage type',
 			'usagev' => 'Usage volume',
 		);
-	}
-
-	public function getExtraColumns() {
-		$extra_columns = Billrun_Factory::config()->getConfigValue('admin_panel.lines.extra_columns', array());
-		return $extra_columns;
 	}
 
 }

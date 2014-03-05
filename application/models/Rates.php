@@ -121,6 +121,10 @@ class RatesModel extends TabledateModel {
 				'_id' => 'Id',
 			);
 		}
+		if (!empty($this->extra_columns)) {
+			$extra_columns = array_intersect_key($this->getExtraColumns(), array_fill_keys($this->extra_columns, ""));
+			$columns = array_merge($columns, $extra_columns);
+		}
 		return $columns;
 	}
 
