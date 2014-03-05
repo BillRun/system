@@ -341,5 +341,9 @@ class TableModel {
 		}
 		return $value;
 	}
+	
+	public function getExtraColumns() {
+		return array();
+	}
 
 }
