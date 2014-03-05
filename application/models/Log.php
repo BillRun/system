@@ -51,7 +51,7 @@ class LogModel extends TableModel {
 	}
 
 	public function getDataByStamp($filter_query = array()) {
-		$cursor = $this->collection->query($filter_query)->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
+		$cursor = $this->collection->query($filter_query)->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
 		$this->_count = $cursor->count();
 		return $cursor->current();
 	}

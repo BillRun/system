@@ -218,7 +218,7 @@ class Billrun_Util {
 				->query('key', 'VAT')
 				->lessEq('from', $mongo_date)
 				->greaterEq('to', $mongo_date)
-				->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED)->current()->get('vat');
+				->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'))->current()->get('vat');
 	}
 
 	public static function isTimestamp($timestamp) {

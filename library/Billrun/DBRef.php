@@ -20,7 +20,7 @@ class Billrun_DBRef {
 	protected static function initCollection($collection_name) {
 		if (isset(self::$keys[$collection_name])) {
 			$coll = Billrun_Factory::db()->{$collection_name . "Collection"}();
-			$resource = $coll->query()->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
+			$resource = $coll->query()->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
 			foreach ($resource as $entity) {
 				$entity->collection($coll);
 				self::$entities[$collection_name]['by_id'][strval($entity->getId())] = $entity;

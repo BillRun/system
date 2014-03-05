@@ -183,7 +183,7 @@ class Generator_Golancsv extends Billrun_Generator {
 		$this->data = $billrun
 						->query('billrun_key', $this->stamp)
 						->exists('invoice_id')
-						->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
+						->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
 
 		Billrun_Factory::log()->log("generator entities loaded: " . $this->data->count(), Zend_Log::INFO);
 
@@ -416,7 +416,7 @@ class Generator_Golancsv extends Billrun_Generator {
 	 */
 	protected function loadPlans() {
 		$plans_coll = Billrun_Factory::db()->plansCollection();
-		$plans = $plans_coll->query()->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
+		$plans = $plans_coll->query()->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
 		foreach ($plans as $plan) {
 			$plan->collection($plans_coll);
 			$this->plans[strval($plan->getId())] = $plan;

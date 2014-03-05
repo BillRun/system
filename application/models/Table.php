@@ -79,7 +79,7 @@ class TableModel {
 				$this->collection = Billrun_Factory::db(array('name' => $params['db']))->balancesCollection();
 			} else {
 				$this->collection = call_user_func(array(Billrun_Factory::db(), $params['collection'] . 'Collection'));
-//                          $this->collection->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
+//                          $this->collection->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
 			}
 			$this->collection_name = $params['collection'];
 		}

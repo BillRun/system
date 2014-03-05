@@ -88,7 +88,7 @@ class RatesModel extends TabledateModel {
 						$planEntity = $plansColl->query('name', $plan)
 										->lessEq('from', $currentDate)
 										->greaterEq('to', $currentDate)
-										->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED)->current();
+										->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'))->current();
 						$newRefPlans[] = $planEntity->createRef($plansColl);
 					}
 					$rate['plans'] = $newRefPlans;
@@ -210,7 +210,7 @@ class RatesModel extends TabledateModel {
 	 */
 	public function getData($filter_query = array()) {
 //		print_R($filter_query);die;
-		$cursor = $this->collection->query($filter_query)->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
+		$cursor = $this->collection->query($filter_query)->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
 		$this->_count = $cursor->count();
 		$resource = $cursor->sort($this->sort)->skip($this->offset())->limit($this->size);
 		$ret = array();
