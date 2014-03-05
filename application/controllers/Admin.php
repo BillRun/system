@@ -30,7 +30,6 @@ class AdminController extends Yaf_Controller_Abstract {
 	public function init() {
 		$this->baseUrl = $this->getRequest()->getBaseUri();
 		Yaf_Loader::getInstance(APPLICATION_PATH . '/application/helpers')->registerLocalNamespace('Admin');
-
 	}
 
 	/**
@@ -242,12 +241,14 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * rates controller of admin
 	 */
 	public function ratesAction() {
-		$this->forward("tabledate", array('table' => 'rates', 'showprefix' => $this->getRequest()->get('showprefix')));
+		$session = $this->getSession("rates");
+		$show_prefix = $this->getSetVar($session, 'showprefix', 'showprefix', 0);
+		$this->forward("tabledate", array('table' => 'rates', 'showprefix' => $show_prefix));
 		return false;
 	}
 
 	public function tabledateAction() {
-		$showprefix = $this->_request->getParam("showprefix") == 'on'? 1 : 0;
+		$showprefix = $this->_request->getParam("showprefix") == 'on' ? 1 : 0;
 		$table = $this->_request->getParam("table");
 
 //		$sort = array('urt' => -1);
@@ -281,7 +282,7 @@ class AdminController extends Yaf_Controller_Abstract {
 
 		$session = $this->getSession($table);
 		$this->getSetVar($session, $query, 'query', $query);
-		
+
 		$this->getView()->component = $this->buildComponent('lines', $query);
 	}
 
