@@ -233,7 +233,10 @@ class RatesModel extends TabledateModel {
 				}
 			} else if ($this->showprefix && (isset($filter_query['$and'][0]['key']) || isset($filter_query['$and'][0]['params.prefix']))) {
 				foreach ($item->get('params.prefix') as $prefix) {
-					$ret[] = new Mongodloid_Entity(array_merge($item->getRawData(), array('prefix' => $prefix)));
+					$item_raw_data = $item->getRawData();
+					unset($item_raw_data['params']['prefix']); // to prevent high memory usage
+					$entity = new Mongodloid_Entity(array_merge($item_raw_data, array('prefix' => $prefix)));
+					$ret[] = $entity;
 				}
 			} else {
 				$ret[] = $item;
