@@ -147,6 +147,10 @@ class LinesModel extends TableModel {
 			'urt' => 'Time',
 //			'_id' => 'Id',
 		);
+		if (!empty($this->extra_columns)) {
+			$extra_columns = array_intersect_key($this->getExtraColumns(), array_fill_keys($this->extra_columns, ""));
+			$columns = array_merge($columns, $extra_columns);
+		}
 		return $columns;
 	}
 
@@ -288,16 +292,21 @@ class LinesModel extends TableModel {
 
 	public function getSortFields() {
 		return array(
+			'aid' => 'Account id',
+			'billrun_key' => 'Billrun',
+			'aprice' => 'Charge',
+			'plan' => 'Plan',
+			'sid' => 'Subscriber id',
 			'urt' => 'Time',
 			'type' => 'Type',
-			'aid' => 'Account id',
-			'sid' => 'Subscriber id',
 			'usaget' => 'Usage type',
-			'usagev' => 'Amount',
-			'plan' => 'Plan',
-			'aprice' => 'Price',
-			'billrun_key' => 'Billrun',
+			'usagev' => 'Usage volume',
 		);
+	}
+
+	public function getExtraColumns() {
+		$extra_columns = Billrun_Factory::config()->getConfigValue('admin_panel.lines.extra_columns', array());
+		return $extra_columns;
 	}
 
 }

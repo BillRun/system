@@ -54,6 +54,12 @@ class TableModel {
 	 * @var string the main key field name (e.g. "name" for plans)
 	 */
 	public $search_key;
+	
+	/**
+	 *
+	 * @var array extra columns to display in the table
+	 */
+	public $extra_columns;
 
 	/**
 	 * constructor
@@ -81,6 +87,10 @@ class TableModel {
 
 		if (isset($params['sort'])) {
 			$this->sort = $params['sort'];
+		}
+		
+		if (isset($params['extra_columns'])) {
+			$this->extra_columns = $params['extra_columns'];
 		}
 	}
 

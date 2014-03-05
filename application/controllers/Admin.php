@@ -281,7 +281,7 @@ class AdminController extends Yaf_Controller_Abstract {
 
 		$session = $this->getSession($table);
 		$this->getSetVar($session, $query, 'query', $query);
-
+		
 		$this->getView()->component = $this->buildComponent('lines', $query);
 	}
 
@@ -349,7 +349,6 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * @todo refactoring this function
 	 */
 	protected function getTableViewParams($filter_query = array(), $skip = null, $size = null) {
-
 		if (isset($skip) && !empty($size)) {
 			$data = $this->model->getData($filter_query, $skip, $size);
 		} else {
@@ -373,10 +372,10 @@ class AdminController extends Yaf_Controller_Abstract {
 	}
 
 	protected function createFilterToolbar() {
-
 		$params['filter_fields'] = $this->model->getFilterFields();
 		$params['filter_fields_order'] = $this->model->getFilterFieldsOrder();
 		$params['sort_fields'] = $this->model->getSortFields();
+		$params['extra_columns'] = $this->model->getExtraColumns();
 
 		return $params;
 	}
@@ -419,6 +418,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$session = $this->getSession($collection_name);
 		$options['page'] = $this->getSetVar($session, "page", "page", 1);
 		$options['size'] = $this->getSetVar($session, "listSize", "size", 1000);
+		$options['extra_columns'] = $this->getSetVar($session, "extra_columns", "extra_columns", array());
 
 		if (is_null($this->model)) {
 			$model_name = ucfirst($collection_name) . "Model";
@@ -439,7 +439,6 @@ class AdminController extends Yaf_Controller_Abstract {
 			'title' => $this->title,
 			'session' => $this->getSession($table),
 		);
-
 		$params = array_merge($options, $params, $this->getTableViewParams($filter_query), $this->createFilterToolbar($table));
 
 		$ret = $this->renderView('table', $params);

@@ -89,8 +89,16 @@ $(function() {
 
 
 
-	$('.multiselect').multiselect({
-		//        includeSelectAllOption: true,
+	$('#usage,#billrun').multiselect({
+		selectAllValue: 'all',
+		selectedClass: null
+	});
+
+	$('#extra_columns select').multiselect({
+		maxHeight: 250,
+		enableFiltering: true,
+		enableCaseInsensitiveFiltering: true,
+		includeSelectAllOption: true,
 		selectAllValue: 'all',
 		selectedClass: null
 	});

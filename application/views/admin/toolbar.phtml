@@ -10,17 +10,17 @@
 				foreach ($row_fields as $filter_field_key => $field_view) {
 					$filter_field = $this->filter_fields[$filter_field_key];
 					if ($filter_field['input_type'] == 'boolean') {
-						echo "<input class=\"span" . $field_view['width'] . "\" id=\"" . $filter_field['key'] . "\" name=\"" . $filter_field['key'] . "\" type=\"checkbox\"" . (isset($this->session->$filter_field['key']) && $this->session->$filter_field['key'] == "on" ? " value=\"on\" checked=\"checked\"" : "") . ">" 
-							. "<label class=\"checkbox\" for=\"" . $filter_field['key'] . "\">" . $filter_field['display'] . "</label>";
+						echo "<input class=\"span" . $field_view['width'] . "\" id=\"" . $filter_field['key'] . "\" name=\"" . $filter_field['key'] . "\" type=\"checkbox\"" . (isset($this->session->$filter_field['key']) && $this->session->$filter_field['key'] == "on" ? " value=\"on\" checked=\"checked\"" : "") . ">"
+						. "<label class=\"checkbox\" for=\"" . $filter_field['key'] . "\">" . $filter_field['display'] . "</label>";
 					} else if ($filter_field['input_type'] == 'number') {
 						echo "&nbsp;<label class=\"control-label\" for=\"" . $filter_field['key'] . "\">" . $filter_field['display'] . "</label>
 								<input id=\"" . $filter_field['key'] . "\" class=\"span" . $field_view['width'] . "\" name=\"" . $filter_field['key'] . "\" type=\"text\" value=\"" . (isset($this->session->$filter_field['key']) ? $this->session->$filter_field['key'] : $filter_field['default']) . "\">";
 					} else if ($filter_field['input_type'] == 'text') {
 						echo "&nbsp;<label class=\"control-label\" for=\"" . $filter_field['key'] . "\">" . $filter_field['display'] . "</label>
-								<input id=\"" . $filter_field['key'] . "\" class=\"span" . $field_view['width'] . "\" name=\"" . $filter_field['key'] 
-								. "\" type=\"text\" value=\"" 
-									. (isset($this->session->$filter_field['key']) ? $this->session->$filter_field['key'] : $filter_field['default']) 
-							. "\">";
+								<input id=\"" . $filter_field['key'] . "\" class=\"span" . $field_view['width'] . "\" name=\"" . $filter_field['key']
+						. "\" type=\"text\" value=\""
+						. (isset($this->session->$filter_field['key']) ? $this->session->$filter_field['key'] : $filter_field['default'])
+						. "\">";
 					} else if ($filter_field['input_type'] == 'date') {
 						echo "&nbsp;<label class=\"control-label\">" . $filter_field['display'] . "</label>
 								<div class=\"input-append date\" id=\"datetimepicker_" . $filter_field['key'] . "\" data-date=\"" . $filter_field['default'] . "\" data-date-format=\"yyyy-MM-dd hh:mm:ss\">
@@ -61,6 +61,18 @@
 					echo Admin_Lines::getFilterRow(); // add first manual filter on load
 				}
 				echo "</div>";
+				echo "<div><div id=\"extra_columns\" class=\"controls form-inline\">"
+				. "&nbsp;<label class=\"control-label\">Display fields</label>
+						<select name=\"extra_columns[]\" class=\"multiselect\" multiple=\"multiple\">";
+				foreach ($this->extra_columns as $value => $name) {
+					$selected = "";
+					if (is_array($this->session->extra_columns) && in_array($value, $this->session->extra_columns)) {
+						$selected = " selected";
+					}
+					echo "<option value=\"" . $value . "\"" . $selected . ">" . $name . "</option>";
+				}
+				echo "</select>";
+				echo "</div></div>";
 			elseif (strtolower($this->title) == 'rates') :
 			endif;
 
@@ -84,23 +96,23 @@
 		?>
 
 		<span><input type="hidden" name="new_search" value="1"><button type="submit" class="btn btn-success"><i class="icon-search"> </i>Submit</button></span>
-		<?php if (!in_array(strtolower($this->title), array('events', 'log'))) : ?>
+<?php if (!in_array(strtolower($this->title), array('events', 'log'))) : ?>
 			<script type="text/javascript">
 				var active_collection = '<?php echo strtolower($this->title); ?>';
 			</script>
 			<span class="pull-right">
 			<?php endif; ?>
-			<?php if (strtolower($this->title) == 'rates' || strtolower($this->title) == 'plans') : ?>
+<?php if (strtolower($this->title) == 'rates' || strtolower($this->title) == 'plans') : ?>
 				<span><a id='close_and_new' data-type="close_and_new" href="#popupModal" class="btn btn-primary" data-toggle="modal" role="button" data-remote="">Close & new</a></span>
 				<span><a id='duplicate' data-type="duplicate" href="#popupModal" class="btn btn-info" data-toggle="modal" role="button" data-remote="">Duplicate</a></span>
 			<?php endif; ?>
 			<?php if (!in_array(strtolower($this->title), array('events', 'log'))) : ?>
 				<span><a id='remove' data-type="remove" href="#confirmModal" class="btn btn-danger" data-toggle="modal" role="button" data-remote=""><i class="icon-remove"> </i>Remove</a></span>
 			<?php endif; ?>
-			<?php if (strtolower($this->title) == 'lines') : ?>
+<?php if (strtolower($this->title) == 'lines') : ?>
 				<span><a id='download' data-type="download" href="/admin/csvExport" class="btn btn-info"><i class="icon-download-alt"> </i>Export to CSV</a></span>
 				<span><a id='upload' data-type="upload" href="#uploadModal" class="btn btn-primary" data-toggle="modal" role="button"><i class="icon-upload"> </i>Import</a></span>
-			<?php endif; ?>
+<?php endif; ?>
 		</span>
 
 	</form>
