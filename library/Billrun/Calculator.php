@@ -401,7 +401,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	 */
 	protected function loadRates() {
 		$rates_coll = Billrun_Factory::db()->ratesCollection();
-		$rates = Billrun_Factory::db()->ratesCollection()->query()->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
+		$rates = Billrun_Factory::db()->ratesCollection()->query()->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
 		$this->rates = array();
 		foreach ($rates as $rate) {
 			$rate->collection($rates_coll);

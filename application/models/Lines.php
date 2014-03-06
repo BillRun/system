@@ -20,11 +20,13 @@ class LinesModel extends TableModel {
 	 * @var boolean show garbage lines
 	 */
 	protected $garbage = false;
+	protected $lines_coll = null;
 
 	public function __construct(array $params = array()) {
 		$params['collection'] = Billrun_Factory::db()->lines;
 		parent::__construct($params);
 		$this->search_key = "stamp";
+		$this->lines_coll = Billrun_Factory::db()->linesCollection();
 	}
 
 	public function getProtectedKeys($entity, $type) {
@@ -87,17 +89,17 @@ class LinesModel extends TableModel {
 		if (isset($data['arate'])) {
 			$ratesColl = Billrun_Factory::db()->ratesCollection();
 			$rateEntity = $ratesColl->query('key', $data['arate'])
-					->lessEq('from', $currentDate)
-					->greaterEq('to', $currentDate)
-					->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED)->current();
+							->lessEq('from', $currentDate)
+							->greaterEq('to', $currentDate)
+							->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'))->current();
 			$data['arate'] = $rateEntity->createRef($ratesColl);
 		}
 		if (isset($data['plan'])) {
 			$plansColl = Billrun_Factory::db()->plansCollection();
 			$planEntity = $plansColl->query('name', $data['plan'])
-					->lessEq('from', $currentDate)
-					->greaterEq('to', $currentDate)
-					->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED)->current();
+							->lessEq('from', $currentDate)
+							->greaterEq('to', $currentDate)
+							->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'))->current();
 			$data['plan_ref'] = $planEntity->createRef($plansColl);
 		}
 		parent::update($data);
@@ -112,10 +114,21 @@ class LinesModel extends TableModel {
 		}
 
 		$limit = Billrun_Factory::config()->getConfigValue('admin_panel.lines.limit', 10000);
-		$cursor = $this->collection->query($filter_query)->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED)->limit($limit);
+		$cursor = $this->collection->query($filter_query)->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'))->limit($limit);
 		$this->_count = $cursor->count();
 		$resource = $cursor->sort($this->sort)->skip($skip)->limit($size);
-		return $resource;
+		$ret = array();
+		foreach ($resource as $item) {
+			$item->collection($this->lines_coll);
+			if ($arate = $this->getDBRefField($item, 'arate')) {
+				$item['arate'] = $arate['key'];
+				$item['arate_id'] = strval($arate['_id']);
+			} else {
+				$item['arate'] = $arate;
+			}
+			$ret[] = $item;
+		}
+		return $ret;
 	}
 
 	public function getTableColumns() {
@@ -128,11 +141,15 @@ class LinesModel extends TableModel {
 			'plan' => 'Plan',
 			'usaget' => 'Usage type',
 			'usagev' => 'Usage volume',
+			'arate' => 'Rate',
 			'aprice' => 'Charge',
 			'billrun' => 'Billrun',
 			'urt' => 'Time',
-//			'_id' => 'Id',
 		);
+		if (!empty($this->extra_columns)) {
+			$extra_columns = array_intersect_key($this->getExtraColumns(), array_fill_keys($this->extra_columns, ""));
+			$columns = array_merge($columns, $extra_columns);
+		}
 		return $columns;
 	}
 
@@ -143,11 +160,15 @@ class LinesModel extends TableModel {
 	public function getFilterFields() {
 		$months = 6;
 		$previous_billruns = array();
-		for ($i = 1; $i <= $months; $months--) {
-			$date = date("Ym", strtotime("-$months month"));
-			$previous_billruns["$date"] = $date;
+		$timestamp = time();
+		for ($i = 1; $i <= $months; $i++) {
+			$timestamp = strtotime("1 month ago", $timestamp);
+			$billrun_key = Billrun_Util::getBillrunKey($timestamp);
+			if ($billrun_key >= '201401') {
+				$previous_billruns[$billrun_key] = $billrun_key;
+			}
 		}
-		krsort($previous_billruns);
+		arsort($previous_billruns);
 		$current_billrun_key = '000000';
 		$current_billrun = array($current_billrun_key => 'Current billrun');
 		$billruns = $current_billrun + $previous_billruns;
@@ -212,7 +233,7 @@ class LinesModel extends TableModel {
 			if ($filter_field['input_type'] == 'boolean') {
 				if (!is_null($value) && $value != $filter_field['default']) {
 					$rates_coll = Billrun_Factory::db()->ratesCollection();
-					$unrated_rate = $rates_coll->query("key", "UNRATED")->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED)->current()->createRef($rates_coll);
+					$unrated_rate = $rates_coll->query("key", "UNRATED")->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'))->current()->createRef($rates_coll);
 					$month_ago = new MongoDate(strtotime("1 month ago"));
 					return array(
 						'$or' => array(
@@ -274,15 +295,15 @@ class LinesModel extends TableModel {
 
 	public function getSortFields() {
 		return array(
+			'aid' => 'Account id',
+			'billrun_key' => 'Billrun',
+			'aprice' => 'Charge',
+			'plan' => 'Plan',
+			'sid' => 'Subscriber id',
 			'urt' => 'Time',
 			'type' => 'Type',
-			'aid' => 'Account id',
-			'sid' => 'Subscriber id',
 			'usaget' => 'Usage type',
-			'usagev' => 'Amount',
-			'plan' => 'Plan',
-			'aprice' => 'Price',
-			'billrun_key' => 'Billrun',
+			'usagev' => 'Usage volume',
 		);
 	}
 

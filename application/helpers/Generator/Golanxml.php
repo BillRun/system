@@ -607,7 +607,7 @@ class Generator_Golanxml extends Billrun_Generator {
 
 		$lines = $this->lines_coll->query($query)->cursor()->fields($this->filter_fields)->sort($sort)->hint($sort);
 		if (rand(1, 100) >= $this->loadBalanced) {
-			$lines = $lines->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
+			$lines = $lines->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
 		}
 		Billrun_Factory::log()->log('Pulling lines of ' . $field . ' ' . $entity[$field], Zend_Log::DEBUG);
 		$ret = array();
@@ -1157,7 +1157,7 @@ EOI;
 				'$gte' => new MongoDate(Billrun_Util::getStartTime($this->stamp)),
 			),
 		);
-		return $rates->query($query)->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED)->current();
+		return $rates->query($query)->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'))->current();
 	}
 
 	/**
@@ -1165,7 +1165,7 @@ EOI;
 	 */
 	protected function loadRates() {
 		$rates_coll = Billrun_Factory::db()->ratesCollection();
-		$rates = $rates_coll->query()->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
+		$rates = $rates_coll->query()->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
 		foreach ($rates as $rate) {
 			$rate->collection($rates_coll);
 			$this->rates[strval($rate->getId())] = $rate;
@@ -1178,7 +1178,7 @@ EOI;
 	 */
 	protected function loadPlans() {
 		$plans_coll = Billrun_Factory::db()->plansCollection();
-		$plans = $plans_coll->query()->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
+		$plans = $plans_coll->query()->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
 		foreach ($plans as $plan) {
 			$plan->collection($plans_coll);
 			$this->plans[strval($plan->getId())] = $plan;

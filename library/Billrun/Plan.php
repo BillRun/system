@@ -70,7 +70,7 @@ class Billrun_Plan {
 							)
 						))
 						->lessEq('from', $date)
-						->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED)
+						->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'))
 						->current();
 					$this->data->collection(Billrun_Factory::db()->plansCollection());
 				}
@@ -80,7 +80,7 @@ class Billrun_Plan {
 
 	protected function initPlans() {
 		$plans_coll = Billrun_Factory::db()->plansCollection();
-		$plans = $plans_coll->query()->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
+		$plans = $plans_coll->query()->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
 		foreach ($plans as $plan) {
 			$plan->collection($plans_coll);
 			self::$plans['by_id'][strval($plan->getId())] = $plan;

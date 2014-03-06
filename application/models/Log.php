@@ -21,19 +21,6 @@ class LogModel extends TableModel {
 		$this->search_key = "stamp";
 	}
 
-	public function getTableColumns() {
-		$columns = array(
-			'source' => 'Source',
-			'type' => 'Type',
-			'retrieved_from' => 'Retrieved from',
-			'file_name' => 'Filename',
-			'received_time' => 'Date received',
-			'process_time' => 'Date processed',
-			'_id' => 'Id',
-		);
-		return $columns;
-	}
-
 	public function toolbar() {
 		return 'log';
 	}
@@ -51,7 +38,7 @@ class LogModel extends TableModel {
 	}
 
 	public function getDataByStamp($filter_query = array()) {
-		$cursor = $this->collection->query($filter_query)->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
+		$cursor = $this->collection->query($filter_query)->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
 		$this->_count = $cursor->count();
 		return $cursor->current();
 	}
@@ -63,6 +50,31 @@ class LogModel extends TableModel {
 			return array_merge($parent_protected, $added_fields);
 		}
 		return $parent_protected;
+	}
+	
+	public function getFilterFields() {
+		$filter_fields = array(
+			'type' => array(
+				'key' => 'source',
+				'db_key' => 'source',
+				'input_type' => 'text',
+				'comparison' => 'contains',
+				'display' => 'Type',
+				'default' => '',
+			),
+		);
+		return array_merge($filter_fields, parent::getFilterFields());
+	}
+	
+	public function getFilterFieldsOrder() {
+		$filter_field_order = array(
+			0 => array(
+				'type' => array(
+					'width' => 1,
+				),
+			),
+		);
+		return $filter_field_order;
 	}
 
 }

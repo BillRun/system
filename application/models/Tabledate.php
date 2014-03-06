@@ -40,7 +40,7 @@ class TabledateModel extends TableModel {
 	 * @return Mongo Cursor
 	 */
 	public function getData($filter_query = array()) {
-		$cursor = $this->collection->query($filter_query)->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
+		$cursor = $this->collection->query($filter_query)->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
 		$this->_count = $cursor->count();
 		$resource = $cursor->sort($this->sort)->skip($this->offset())->limit($this->size);
 		return $resource;

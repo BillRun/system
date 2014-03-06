@@ -603,7 +603,7 @@ class Billrun_Billrun {
 	 */
 	public static function loadRates() {
 		$rates_coll = Billrun_Factory::db()->ratesCollection();
-		$rates = $rates_coll->query()->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
+		$rates = $rates_coll->query()->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
 		foreach ($rates as $rate) {
 			$rate->collection($rates_coll);
 			self::$rates[strval($rate->getId())] = $rate;
@@ -615,7 +615,7 @@ class Billrun_Billrun {
 	 */
 	public static function loadPlans() {
 		$plans_coll = Billrun_Factory::db()->plansCollection();
-		$plans = $plans_coll->query()->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
+		$plans = $plans_coll->query()->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
 		foreach ($plans as $plan) {
 			$plan->collection($plans_coll);
 			self::$plans[strval($plan->getId())] = $plan;
@@ -732,7 +732,7 @@ class Billrun_Billrun {
 			'urt' => 1,
 		);
 		Billrun_Factory::log()->log("Querying for account " . $aid . " lines", Zend_Log::INFO);
-		$cursor = $this->lines->query($query)->cursor()->fields($this->filter_fields)->sort($sort)->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED)->hint($hint);
+		$cursor = $this->lines->query($query)->cursor()->fields($this->filter_fields)->sort($sort)->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'))->hint($hint);
 		Billrun_Factory::log()->log("Finished querying for account " . $aid . " lines", Zend_Log::INFO);
 //		$results = array();
 //		Billrun_Factory::log()->log("Saving account " . $aid . " lines to array", Zend_Log::DEBUG);

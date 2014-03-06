@@ -207,12 +207,12 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 		// if the limit for specific plans
 		if (isset($rule['limitPlans']) &&
-				(is_array($rule['limitPlans']) && !in_array(strtolower($row['plan']), $rule['limitPlans']))) {
+			(is_array($rule['limitPlans']) && !in_array(strtolower($row['plan']), $rule['limitPlans']))) {
 			return false;
 		}
 		// ignore subscribers :)
 		if (isset($rule['ignoreSubscribers']) &&
-				(is_array($rule['ignoreSubscribers']) && in_array($row['sid'], $rule['ignoreSubscribers']))) {
+			(is_array($rule['ignoreSubscribers']) && in_array($row['sid'], $rule['ignoreSubscribers']))) {
 			return false;
 		}
 
@@ -274,7 +274,12 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$newEvent['imsi'] = $row['imsi'];
 		}
 		$newEvent['source'] = 'billing';
-		$newEvent['threshold'] = $threshold;
+		if ($recurring) {
+			// if it's recurring passed the current threshold
+			$newEvent['threshold'] = floor($value / $threshold) * $threshold;
+		} else {
+			$newEvent['threshold'] = $threshold;
+		}
 		$newEvent['units'] = $units;
 		$newEvent['event_type'] = $event_type;
 		$newEvent['plan'] = $row['plan'];
@@ -284,7 +289,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$newEvent['priority'] = (int) $priority;
 		} else if ($recurring) {
 			// as long as the value is greater the event priority should be high (the highest priority is 0)
-			$newEvent['priority'] = (int) 100-floor($value/$threshold);
+			$newEvent['priority'] = (int) 100 - floor($value / $threshold);
 		} else {
 			$newEvent['priority'] = 10;
 		}

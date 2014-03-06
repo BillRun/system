@@ -22,6 +22,12 @@ class TableModel {
 	protected $collection;
 
 	/**
+	 *
+	 * @var string The collection name
+	 */
+	protected $collection_name;
+
+	/**
 	 * the page number to pull; use as current page
 	 * 
 	 * @var int
@@ -56,6 +62,12 @@ class TableModel {
 	public $search_key;
 
 	/**
+	 *
+	 * @var array extra columns to display in the table
+	 */
+	public $extra_columns;
+
+	/**
 	 * constructor
 	 * 
 	 * @param array $params of parameters to preset the object
@@ -67,8 +79,9 @@ class TableModel {
 				$this->collection = Billrun_Factory::db(array('name' => $params['db']))->balancesCollection();
 			} else {
 				$this->collection = call_user_func(array(Billrun_Factory::db(), $params['collection'] . 'Collection'));
-//                          $this->collection->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
+//                          $this->collection->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
 			}
+			$this->collection_name = $params['collection'];
 		}
 
 		if (isset($params['page'])) {
@@ -81,6 +94,10 @@ class TableModel {
 
 		if (isset($params['sort'])) {
 			$this->sort = $params['sort'];
+		}
+
+		if (isset($params['extra_columns'])) {
+			$this->extra_columns = $params['extra_columns'];
 		}
 	}
 
@@ -165,13 +182,13 @@ class TableModel {
 			}
 
 			$ret = '<div class="pagination pagination-right">'
-				. '<ul>';
+					. '<ul>';
 			if ($current == 1) {
 				$ret .= '<li class="disabled"><a href="javascript:void(0);">First</a></li>'
-					. '<li class="disabled"><a href="javascript:void(0);">Prev</a></li>';
+						. '<li class="disabled"><a href="javascript:void(0);">Prev</a></li>';
 			} else {
 				$ret .= '<li><a href="?page=1">First</a></li>'
-					. '<li><a href="?page=' . ($current - 1) . '">Prev</a></li>';
+						. '<li><a href="?page=' . ($current - 1) . '">Prev</a></li>';
 			}
 
 			for ($i = $min; $i < $current; $i++) {
@@ -186,10 +203,10 @@ class TableModel {
 
 			if ($current == $count) {
 				$ret .= '<li class="disabled"><a href="javascript:void(0);">Next</a></li>'
-					. '<li class="disabled"><a href="javascript:void(0);">Last</a></li>';
+						. '<li class="disabled"><a href="javascript:void(0);">Last</a></li>';
 			} else {
 				$ret .= '<li><a href="?page=' . ($current + 1) . '">Next</a></li>'
-					. '<li><a href="?page=' . $count . '">Last</a></li>';
+						. '<li><a href="?page=' . $count . '">Last</a></li>';
 			}
 
 			$ret .= '</ul></div>';
@@ -323,6 +340,27 @@ class TableModel {
 
 	public function getFilterFieldsOrder() {
 		return array();
+	}
+
+	protected function getDBRefField($item, $field_name) {
+		if (($value = $item->get($field_name, true)) && MongoDBRef::isRef($value)) {
+			$value = Billrun_DBRef::getEntity($value);
+		}
+		return $value;
+	}
+
+	public function getExtraColumns() {
+		$extra_columns = Billrun_Factory::config()->getConfigValue('admin_panel.' . $this->collection_name . '.extra_columns', array());
+		return $extra_columns;
+	}
+	
+	public function getTableColumns() {
+		$columns = Billrun_Factory::config()->getConfigValue('admin_panel.' . $this->collection_name . '.table_columns', array());
+		if (!empty($this->extra_columns)) {
+			$extra_columns = array_intersect_key($this->getExtraColumns(), array_fill_keys($this->extra_columns, ""));
+			$columns = array_merge($columns, $extra_columns);
+		}
+		return $columns;
 	}
 
 }

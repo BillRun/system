@@ -16,7 +16,7 @@
 class RatesModel extends TabledateModel {
 
 	protected $showprefix;
-	
+
 	public function __construct(array $params = array()) {
 		$params['collection'] = Billrun_Factory::db()->rates;
 		parent::__construct($params);
@@ -26,8 +26,7 @@ class RatesModel extends TabledateModel {
 			if ($this->size > 50 && $this->showprefix) {
 				$this->size = 50;
 			}
-		}
-		else {
+		} else {
 			$this->showprefix = false;
 		}
 	}
@@ -60,7 +59,7 @@ class RatesModel extends TabledateModel {
 			}
 			$entity->setRawData($raw_data);
 		}
-		
+
 		return $entity;
 	}
 
@@ -87,9 +86,9 @@ class RatesModel extends TabledateModel {
 					unset($rate['plans']);
 					foreach ($sourcePlans as &$plan) {
 						$planEntity = $plansColl->query('name', $plan)
-								->lessEq('from', $currentDate)
-								->greaterEq('to', $currentDate)
-								->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED)->current();
+										->lessEq('from', $currentDate)
+										->greaterEq('to', $currentDate)
+										->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'))->current();
 						$newRefPlans[] = $planEntity->createRef($plansColl);
 					}
 					$rate['plans'] = $newRefPlans;
@@ -122,6 +121,10 @@ class RatesModel extends TabledateModel {
 				'_id' => 'Id',
 			);
 		}
+		if (!empty($this->extra_columns)) {
+			$extra_columns = array_intersect_key($this->getExtraColumns(), array_fill_keys($this->extra_columns, ""));
+			$columns = array_merge($columns, $extra_columns);
+		}
 		return $columns;
 	}
 
@@ -132,7 +135,6 @@ class RatesModel extends TabledateModel {
 		return array_merge($sort_fields, parent::getSortFields());
 	}
 
-	
 	public function getFilterFields() {
 		$filter_fields = array(
 //			'usage' => array(
@@ -167,12 +169,12 @@ class RatesModel extends TabledateModel {
 				'db_key' => 'nofilter',
 				'input_type' => 'boolean',
 				'display' => 'Show prefix',
-				'default' => $this->showprefix? 'on' : '',
+				'default' => $this->showprefix ? 'on' : '',
 			),
 		);
 		return array_merge($filter_fields, parent::getFilterFields());
 	}
-	
+
 	public function getFilterFieldsOrder() {
 		$filter_field_order = array(
 //			array(
@@ -200,7 +202,7 @@ class RatesModel extends TabledateModel {
 		);
 		return array_merge($filter_field_order, parent::getFilterFieldsOrder(), $post_filter_field);
 	}
-	
+
 	/**
 	 * Get the data resource
 	 * 
@@ -208,13 +210,13 @@ class RatesModel extends TabledateModel {
 	 */
 	public function getData($filter_query = array()) {
 //		print_R($filter_query);die;
-		$cursor = $this->collection->query($filter_query)->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
+		$cursor = $this->collection->query($filter_query)->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
 		$this->_count = $cursor->count();
 		$resource = $cursor->sort($this->sort)->skip($this->offset())->limit($this->size);
 		$ret = array();
 		foreach ($resource as $item) {
 			if ($item->get('rates') && !$this->showprefix) {
-				foreach($item->get('rates') as $key => $rate) {
+				foreach ($item->get('rates') as $key => $rate) {
 					$added_columns = array(
 						't' => $key,
 						'tprice' => $rate['rate'][0]['price'],
@@ -231,7 +233,10 @@ class RatesModel extends TabledateModel {
 				}
 			} else if ($this->showprefix && (isset($filter_query['$and'][0]['key']) || isset($filter_query['$and'][0]['params.prefix']))) {
 				foreach ($item->get('params.prefix') as $prefix) {
-					$ret[] = new Mongodloid_Entity(array_merge($item->getRawData(), array('prefix' => $prefix)));
+					$item_raw_data = $item->getRawData();
+					unset($item_raw_data['params']['prefix']); // to prevent high memory usage
+					$entity = new Mongodloid_Entity(array_merge($item_raw_data, array('prefix' => $prefix)));
+					$ret[] = $entity;
 				}
 			} else {
 				$ret[] = $item;
@@ -239,6 +244,5 @@ class RatesModel extends TabledateModel {
 		}
 		return $ret;
 	}
-
 
 }

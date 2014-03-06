@@ -207,7 +207,7 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 					'$in' => array_keys($stamps),
 				),
 			);
-			$existing_lines = $lines_coll->query($query)->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
+			$existing_lines = $lines_coll->query($query)->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
 			foreach ($existing_lines as $line) {
 				$stamp = $line['stamp'];
 				Billrun_Factory::log('Plugin calc cpu skips duplicate line ' . $stamp, Zend_Log::ALERT);
