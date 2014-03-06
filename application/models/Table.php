@@ -312,6 +312,9 @@ class TableModel {
 		} else if ($filter_field['input_type'] == 'text') {
 			if ($value != '') {
 				if ($filter_field['comparison'] == 'contains') {
+					if (isset($filter_field['case_type'])) {
+						$value = Admin_Table::convertValueByCaseType($value, $filter_field['case_type']);
+					}
 					return array(
 						$filter_field['db_key'] => array('$regex' => strval($value)),
 					);

@@ -152,8 +152,8 @@ class RatesModel extends TabledateModel {
 				'input_type' => 'text',
 				'comparison' => 'contains',
 				'display' => 'Key',
-//				'values' => array('All', 'Call', 'SMS', 'Data'),
 				'default' => '',
+				'case_type' => 'upper',
 			),
 			'prefix' => array(
 				'key' => 'prefix',
@@ -161,7 +161,6 @@ class RatesModel extends TabledateModel {
 				'input_type' => 'text',
 				'comparison' => 'contains',
 				'display' => 'Prefix',
-//				'values' => array('All', 'Call', 'SMS', 'Data'),
 				'default' => '',
 			),
 			'showprefix' => array(
