@@ -248,7 +248,8 @@ class AdminController extends Yaf_Controller_Abstract {
 	}
 
 	public function tabledateAction() {
-		$showprefix = $this->_request->getParam("showprefix") == 'on' ? 1 : 0;
+		$showprefix_param = $this->_request->getParam("showprefix");
+		$showprefix = $showprefix_param == 'on' && !$showprefix_param == '0' ? 1 : 0;
 		$table = $this->_request->getParam("table");
 
 //		$sort = array('urt' => -1);
