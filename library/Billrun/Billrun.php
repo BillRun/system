@@ -731,12 +731,16 @@ class Billrun_Billrun {
 		$fields = array(
 			'billrun_key' => 1,
 		);
+		$runtime_billrun_key = Billrun_Util::getBillrunKey($now);
 		$last = Billrun_Factory::db()->billrunCollection()->query()->cursor()->limit(1)->fields($fields)->sort($sort)->current();
 		if ($last->isEmpty()) {
-			$active_billrun = Billrun_Util::getBillrunKey($now);
-		}
-		else {
+			$active_billrun = $runtime_billrun_key;
+		} else {
 			$active_billrun = Billrun_Util::getFollowingBillrunKey($last['billrun_key']);
+			$billrun_start_time = Billrun_Util::getStartTime($active_billrun);
+			if ($now - $billrun_start_time > 5184000) { // more than two months diff (60*60*24*30*2)
+				$active_billrun = $runtime_billrun_key;
+			}
 		}
 		return $active_billrun;
 	}
