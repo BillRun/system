@@ -160,13 +160,15 @@ class LinesModel extends TableModel {
 	public function getFilterFields() {
 		$months = 6;
 		$previous_billruns = array();
-		for ($i = 1; $i <= $months; $months--) {
-			$date = date("Ym", strtotime("-$months month"));
-			if ($date >= '201401') {
-				$previous_billruns["$date"] = $date;
+		$timestamp = time();
+		for ($i = 1; $i <= $months; $i++) {
+			$timestamp = strtotime("1 month ago", $timestamp);
+			$billrun_key = Billrun_Util::getBillrunKey($timestamp);
+			if ($billrun_key >= '201401') {
+				$previous_billruns[$billrun_key] = $billrun_key;
 			}
 		}
-		krsort($previous_billruns);
+		arsort($previous_billruns);
 		$current_billrun_key = '000000';
 		$current_billrun = array($current_billrun_key => 'Current billrun');
 		$billruns = $current_billrun + $previous_billruns;
