@@ -73,10 +73,7 @@ trait Billrun_Traits_FileActions {
 		
 		$seqData = $this->getFilenameData($filename,$this->getType());
 		for ($i = 0; $i < count($backupPaths); $i++) {
-			$backupPath = $backupPaths[$i];
-			$backupPath .= ($retrievedHostname ? DIRECTORY_SEPARATOR . $retrievedHostname : ""); //If theres more then one host or the files were retrived from a named host backup under that host name
-			$backupPath .= DIRECTORY_SEPARATOR . ($seqData['date'] ? $seqData['date'] : date("Ym")); // if the file name has a date  save under that date else save under tthe current month
-			$backupPath .= ($seqData['seq'] ? DIRECTORY_SEPARATOR . substr($seqData['seq'], 0, - $this->backup_seq_granularity) : ""); // brak the date to sequence number with varing granularity
+			$backupPath = $this->generateBackupPath($backupPaths[$i],$seqData,$retrievedHostname);
 			$this->prepareBackupPath($backupPath);
 			if ($this->backupToPath($filePath,$backupPath, !($move && $i + 1 == count($backupPaths))) === TRUE) {
 				Billrun_Factory::log()->log("Success backup file " . $filePath . " to " . $backupPath, Zend_Log::INFO);
@@ -84,6 +81,21 @@ trait Billrun_Traits_FileActions {
 				Billrun_Factory::log()->log("Failed backup file " . $filePath . " to " . $backupPath, Zend_Log::INFO);
 			}
 		}
+	}
+	/**
+	 * Generate a backup path to a given file.
+	 * @param type $basePath the base of the backup path.
+	 * @param type $fileSeqData the file sequence data.
+	 * @param type $retrievedHostname the host the file was retrived from.
+	 * @return string the path to place the file in.
+	 */
+	public function generateBackupPath($basePath,$fileSeqData,$retrievedHostname = false) {
+			$basePath = $basePath;
+			$backupPath .= ($retrievedHostname ? DIRECTORY_SEPARATOR . $retrievedHostname : ""); //If theres more then one host or the files were retrived from a named host backup under that host name
+			$backupPath .= DIRECTORY_SEPARATOR . ($fileSeqData['date'] ? $fileSeqData['date'] : date("Ym")); // if the file name has a date  save under that date else save under tthe current month
+			$backupPath .= ($fileSeqData['seq'] ? DIRECTORY_SEPARATOR . substr($fileSeqData['seq'], 0, - $this->backup_seq_granularity) : ""); // brak the date to sequence number with varing granularity
+			
+			return $backupPath;
 	}
 
 	/**
@@ -119,7 +131,11 @@ trait Billrun_Traits_FileActions {
 		
 		return $ret;
 	}
-	
+	/**
+	 * Make sure the file can be coppied/moved to a given backup path.
+	 * @param type $paththe path to prepare for backup.
+	 * @return boolean
+	 */
 	protected function prepareBackupPath($path) {
 		if (!file_exists($path) && !@mkdir($path, 0777, true)) {
 				Billrun_Factory::log()->log("Can't create backup path or is not a directory " . $path, Zend_Log::WARN);
