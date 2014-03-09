@@ -68,6 +68,8 @@ class AdminController extends Yaf_Controller_Abstract {
 	}
 
 	public function confirmAction() {
+		if (!$this->allowed('read'))
+			return false;
 		$coll = Billrun_Util::filter_var($this->getRequest()->get('coll'), FILTER_SANITIZE_STRING);
 		$ids = Billrun_Util::filter_var($this->getRequest()->get('id'), FILTER_SANITIZE_STRING);
 		$type = Billrun_Util::filter_var($this->getRequest()->get('type'), FILTER_SANITIZE_STRING);
@@ -101,6 +103,8 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * @todo protect the from and to to be continuely
 	 */
 	public function removeAction() {
+		if (!$this->allowed('write'))
+			die(json_encode(null));
 		$ids = explode(",", Billrun_Util::filter_var($this->getRequest()->get('ids'), FILTER_SANITIZE_STRING));
 		if (!is_array($ids) || count($ids) == 0 || empty($ids)) {
 			return;
@@ -141,6 +145,8 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * @todo protect the from and to to be continuely
 	 */
 	public function saveAction() {
+		if (!$this->allowed('write'))
+			die(json_encode(null));
 		$flatData = $this->getRequest()->get('data');
 		$id = Billrun_Util::filter_var($this->getRequest()->get('id'), FILTER_SANITIZE_STRING);
 		$coll = Billrun_Util::filter_var($this->getRequest()->get('coll'), FILTER_SANITIZE_STRING);
@@ -233,7 +239,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * plans controller of admin
 	 */
 	public function plansAction() {
-		if (!$this->logged_in())
+		if (!$this->allowed('read'))
 			return false;
 		$this->forward("tabledate", array('table' => 'plans'));
 		return false;
@@ -243,7 +249,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * rates controller of admin
 	 */
 	public function ratesAction() {
-		if (!$this->logged_in())
+		if (!$this->allowed('read'))
 			return false;
 		$session = $this->getSession("rates");
 		$show_prefix = $this->getSetVar($session, 'showprefix', 'showprefix', 0);
@@ -315,12 +321,19 @@ class AdminController extends Yaf_Controller_Abstract {
 		return $ret;
 	}
 
-	protected function logged_in() {
+	protected function allowed($permission) {
 		$action = $this->getRequest()->getActionName();
 		$auth = Zend_Auth::getInstance();
-		if ($action != 'login' && !$auth->hasIdentity()) {
-			$this->forward('login', array('ret_action' => $action));
-			return false;
+		if ($action != 'login') {
+			if (!$auth->hasIdentity()) {
+				$this->forward('login', array('ret_action' => $action));
+				return false;
+			}
+			$user = Billrun_Factory::user($auth->getIdentity());
+			if (!$user->allowed($permission)) {
+				$this->forward('error');
+				return false;
+			}
 		}
 		return true;
 	}
@@ -329,7 +342,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * lines controller of admin
 	 */
 	public function linesAction() {
-		if (!$this->logged_in())
+		if (!$this->allowed('read'))
 			return false;
 
 		$table = 'lines';
@@ -348,10 +361,16 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->getView()->component = $this->buildComponent('lines', $query);
 	}
 
+	protected function errorAction() {
+		$this->getView()->component = $this->renderView('error');
+	}
+
 	/**
 	 * events controller of admin
 	 */
 	public function eventsAction() {
+		if (!$this->allowed('read'))
+			return false;
 		$table = "events";
 //		$sort = array('creation_time' => -1);
 		$sort = $this->applySort($table);
@@ -370,7 +389,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * log controller of admin
 	 */
 	public function logAction() {
-		if (!$this->logged_in())
+		if (!$this->allowed('read'))
 			return false;
 		$table = "log";
 //		$sort = array('received_time' => -1);
