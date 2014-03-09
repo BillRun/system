@@ -292,8 +292,7 @@ class AdminController extends Yaf_Controller_Abstract {
 			$adapter->setIdentity($username);
 			$adapter->setCredential($password);
 
-			$auth = Zend_Auth::getInstance();
-			$result = $auth->authenticate($adapter);
+			$result = $this->auth()->authenticate($adapter);
 
 			if ($result->isValid()) {
 				$ret_action = $this->getRequest()->get('ret_action');
@@ -320,10 +319,14 @@ class AdminController extends Yaf_Controller_Abstract {
 		$ret = $this->renderView('login', $params);
 		return $ret;
 	}
+	
+	protected function auth() {
+		return Zend_Auth::getInstance()->setStorage(new Zend_Auth_Storage_Yaf());
+	}
 
 	protected function allowed($permission) {
 		$action = $this->getRequest()->getActionName();
-		$auth = Zend_Auth::getInstance();
+		$auth = $this->auth();
 		if ($action != 'login') {
 			if (!$auth->hasIdentity()) {
 				$this->forward('login', array('ret_action' => $action));
