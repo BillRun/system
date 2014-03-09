@@ -324,5 +324,13 @@ class Mongodloid_Collection {
 		);
 		return $countersColl->query($query)->cursor()->limit(1)->current()->get('seq');
 	}
+	
+	/**
+	 * 
+	 * @return MongoCollection
+	 */
+	public function getMongoCollection() {
+		return $this->_collection;
+	}
 
 }

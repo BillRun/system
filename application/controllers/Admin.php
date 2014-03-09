@@ -233,6 +233,8 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * plans controller of admin
 	 */
 	public function plansAction() {
+		if (!$this->logged_in())
+			return false;
 		$this->forward("tabledate", array('table' => 'plans'));
 		return false;
 	}
@@ -241,6 +243,8 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * rates controller of admin
 	 */
 	public function ratesAction() {
+		if (!$this->logged_in())
+			return false;
 		$session = $this->getSession("rates");
 		$show_prefix = $this->getSetVar($session, 'showprefix', 'showprefix', 0);
 		$this->forward("tabledate", array('table' => 'rates', 'showprefix' => $show_prefix));
@@ -267,10 +271,67 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->getView()->component = $this->buildComponent($table, $query);
 	}
 
+	public function loginAction() {
+		$params = array_merge($this->getRequest()->getParams(), $this->getRequest()->getPost());
+		$db = Billrun_Factory::db()->usersCollection()->getMongoCollection();
+
+		$username = $this->getRequest()->get('username');
+		$password = $this->getRequest()->get('password');
+
+		if ($username != '') {
+			$adapter = new Zend_Auth_Adapter_MongoDb(
+					$db, 'username', 'password'
+			);
+
+			$adapter->setIdentity($username);
+			$adapter->setCredential($password);
+
+			$auth = Zend_Auth::getInstance();
+			$result = $auth->authenticate($adapter);
+
+			if ($result->isValid()) {
+				$ret_action = $this->getRequest()->get('ret_action');
+				if ($ret_action) {
+					$this->redirect($ret_action);
+					return false;
+				}
+				return true;
+			}
+		}
+
+		$this->getView()->component = $this->getLoginForm($params);
+	}
+
+	protected function getLoginForm($params) {
+		$this->title = "Login";
+
+		// TODO: use ready pager/paginiation class (zend? joomla?) with auto print
+		$params = array_merge(array(
+			'title' => $this->title,
+				), $params);
+//		$params = array_merge($options, $params, $this->getTableViewParams($filter_query), $this->createFilterToolbar($table));
+
+		$ret = $this->renderView('login', $params);
+		return $ret;
+	}
+
+	protected function logged_in() {
+		$action = $this->getRequest()->getActionName();
+		$auth = Zend_Auth::getInstance();
+		if ($action != 'login' && !$auth->hasIdentity()) {
+			$this->forward('login', array('ret_action' => $action));
+			return false;
+		}
+		return true;
+	}
+
 	/**
 	 * lines controller of admin
 	 */
 	public function linesAction() {
+		if (!$this->logged_in())
+			return false;
+
 		$table = 'lines';
 		$sort = $this->applySort($table);
 		$options = array(
@@ -309,6 +370,8 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * log controller of admin
 	 */
 	public function logAction() {
+		if (!$this->logged_in())
+			return false;
 		$table = "log";
 //		$sort = array('received_time' => -1);
 		$sort = $this->applySort($table);
