@@ -32,7 +32,7 @@ class LinesModel extends TableModel {
 	public function getProtectedKeys($entity, $type) {
 		$parent_protected = parent::getProtectedKeys($entity, $type);
 		if ($type == 'update') {
-			return array_merge($parent_protected, array("type", "aid", "sid", "billrun_ref", "file", "log_stamp", "imsi", "source", "stamp", "urt", "usaget", "billrun"));
+			return array_merge($parent_protected, array("type", "aid", "sid", "file", "log_stamp", "imsi", "source", "stamp", "urt", "usaget", "billrun"));
 		}
 		return $parent_protected;
 	}
