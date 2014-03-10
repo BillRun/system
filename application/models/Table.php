@@ -46,7 +46,7 @@ class TableModel {
 	 * 
 	 * @var array
 	 */
-	protected $sort;
+	protected $sort = array();
 
 	/**
 	 * the count of the page
@@ -295,6 +295,10 @@ class TableModel {
 	public function getFilterFields() {
 		return array();
 	}
+	
+	public function getSortFields() {
+		return array();
+	}
 
 	public function getEditKey() {
 		return null;
@@ -356,7 +360,7 @@ class TableModel {
 		$extra_columns = Billrun_Factory::config()->getConfigValue('admin_panel.' . $this->collection_name . '.extra_columns', array());
 		return $extra_columns;
 	}
-	
+
 	public function getTableColumns() {
 		$columns = Billrun_Factory::config()->getConfigValue('admin_panel.' . $this->collection_name . '.table_columns', array());
 		if (!empty($this->extra_columns)) {
@@ -364,6 +368,19 @@ class TableModel {
 			$columns = array_merge($columns, $extra_columns);
 		}
 		return $columns;
+	}
+
+	public function duplicate($params) {
+		$key = $params[$this->search_key];
+		$count = $this->collection
+				->query($this->search_key, $key)
+				->count();
+
+		if ($count) {
+			die(json_encode("key already exists"));
+		}
+		unset($params['_id']);
+		return $this->update($params);
 	}
 
 }

@@ -49,6 +49,8 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * @todo move to model
 	 */
 	public function editAction() {
+		if (!$this->allowed('read'))
+			return false;
 		$coll = Billrun_Util::filter_var($this->getRequest()->get('coll'), FILTER_SANITIZE_STRING);
 		$id = Billrun_Util::filter_var($this->getRequest()->get('id'), FILTER_SANITIZE_STRING);
 		$type = Billrun_Util::filter_var($this->getRequest()->get('type'), FILTER_SANITIZE_STRING);
@@ -76,7 +78,7 @@ class AdminController extends Yaf_Controller_Abstract {
 
 		$model = self::getModel($coll);
 
-		if ($type == 'remove' && $coll != 'lines') {
+		if ($type == 'remove' && !in_array($coll, array('lines', 'users'))) {
 			$entity = $model->getItem($ids);
 			$this->getView()->entity = $entity;
 			$this->getView()->key = $entity[$model->search_key];
@@ -86,7 +88,7 @@ class AdminController extends Yaf_Controller_Abstract {
 				die("Only future entities could be removed");
 			}
 		} else {
-			$this->getView()->key = "the selected lines";
+			$this->getView()->key = "the selected documents";
 		}
 
 
@@ -319,7 +321,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$ret = $this->renderView('login', $params);
 		return $ret;
 	}
-	
+
 	protected function auth() {
 		return Zend_Auth::getInstance()->setStorage(new Zend_Auth_Storage_Yaf());
 	}
@@ -333,7 +335,7 @@ class AdminController extends Yaf_Controller_Abstract {
 				return false;
 			}
 			$user = Billrun_Factory::user($auth->getIdentity());
-			if (!$user->allowed($permission)) {
+			if (!$user->valid() || !$user->allowed($permission)) {
 				$this->forward('error');
 				return false;
 			}
@@ -400,6 +402,23 @@ class AdminController extends Yaf_Controller_Abstract {
 		$options = array(
 			'collection' => $table,
 			'sort' => $sort,
+		);
+
+		$model = self::getModel($table, $options);
+		$query = $this->applyFilters($table);
+
+		$this->getView()->component = $this->buildComponent($table, $query);
+	}
+
+	/**
+	 * users controller of admin
+	 */
+	public function usersAction() {
+		if (!$this->allowed('admin'))
+			return false;
+		$table = "users";
+		$options = array(
+			'collection' => $table,
 		);
 
 		$model = self::getModel($table, $options);
