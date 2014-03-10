@@ -22,6 +22,10 @@ $(function() {
 		}
 	});
 
+	$("#new").click(function() {
+		$(this).data('remote', '/admin/edit?coll=' + active_collection + '&type=' + $(this).data('type'));
+	});
+
 	$("#popupModal,#confirmModal").on('show', function(event) {
 		if (checkItems) {
 			var items_checked = $('#data_table :checked');

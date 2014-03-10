@@ -25,7 +25,7 @@ class UsersModel extends TableModel {
 	public function toolbar() {
 		return 'users';
 	}
-	
+
 	public function getFilterFields() {
 		$filter_fields = array(
 			'username' => array(
@@ -39,7 +39,7 @@ class UsersModel extends TableModel {
 		);
 		return array_merge($filter_fields, parent::getFilterFields());
 	}
-	
+
 	public function getFilterFieldsOrder() {
 		$filter_field_order = array(
 			0 => array(
@@ -50,14 +50,14 @@ class UsersModel extends TableModel {
 		);
 		return $filter_field_order;
 	}
-	
+
 	public function getTableColumns() {
 		$columns = array(
 			'username' => 'Username',
 		);
 		return $columns;
 	}
-	
+
 	public function update($params) {
 		if (isset($params['password'])) {
 			if (!password_get_info($params['password'])['algo']) {
@@ -65,6 +65,15 @@ class UsersModel extends TableModel {
 			}
 		}
 		return parent::update($params);
+	}
+
+	public function getEmptyItem() {
+		return new Mongodloid_Entity(array(
+			'username' => '',
+			'password' => '',
+			'roles' => array(
+			),
+		));
 	}
 
 }

@@ -382,5 +382,9 @@ class TableModel {
 		unset($params['_id']);
 		return $this->update($params);
 	}
+	
+	public function getEmptyItem() {
+		return new Mongodloid_Entity();
+	}
 
 }

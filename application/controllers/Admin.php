@@ -56,7 +56,11 @@ class AdminController extends Yaf_Controller_Abstract {
 		$type = Billrun_Util::filter_var($this->getRequest()->get('type'), FILTER_SANITIZE_STRING);
 
 		$model = self::getModel($coll);
-		$entity = $model->getItem($id);
+		if ($type == 'new') {
+			$entity = $model->getEmptyItem();
+		} else {
+			$entity = $model->getItem($id);
+		}
 		if ($type == 'close_and_new' && is_subclass_of($model, "TabledateModel") && !$model->isLast($entity)) {
 			die("There's already a newer entity with this key");
 		}
@@ -150,9 +154,9 @@ class AdminController extends Yaf_Controller_Abstract {
 		if (!$this->allowed('write'))
 			die(json_encode(null));
 		$flatData = $this->getRequest()->get('data');
+		$type = Billrun_Util::filter_var($this->getRequest()->get('type'), FILTER_SANITIZE_STRING);
 		$id = Billrun_Util::filter_var($this->getRequest()->get('id'), FILTER_SANITIZE_STRING);
 		$coll = Billrun_Util::filter_var($this->getRequest()->get('coll'), FILTER_SANITIZE_STRING);
-		$type = Billrun_Util::filter_var($this->getRequest()->get('type'), FILTER_SANITIZE_STRING);
 
 		$model = self::getModel($coll);
 
@@ -163,17 +167,21 @@ class AdminController extends Yaf_Controller_Abstract {
 
 		$data = @json_decode($flatData, true);
 
-		if (empty($data) || empty($id) || empty($coll)) {
+		if (empty($data) || ($type != 'new' && empty($id)) || empty($coll)) {
 			return false;
 		}
 
-		$params = array_merge($data, array('_id' => new MongoId($id)));
+		if ($id) {
+			$params = array_merge($data, array('_id' => new MongoId($id)));
+		} else {
+			$params = $data;
+		}
 
 		if ($type == 'update') {
 			$saveStatus = $model->update($params);
 		} else if ($type == 'close_and_new') {
 			$saveStatus = $model->closeAndNew($params);
-		} else if ($type == 'duplicate') {
+		} else if (in_array($type, array('duplicate', 'new'))) {
 			$saveStatus = $model->duplicate($params);
 		}
 

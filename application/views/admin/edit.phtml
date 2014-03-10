@@ -1,16 +1,16 @@
 <?php
 $protected = array();
-$entity = $this->entity->getRawData();
+	$entity = $this->entity->getRawData();
 
-foreach ($this->protectedKeys as $key) {
-	if (isset($entity[$key])) {
-		$protected[$key] = $entity[$key];
+	foreach ($this->protectedKeys as $key) {
+		if (isset($entity[$key])) {
+			$protected[$key] = $entity[$key];
+			unset($entity[$key]);
+		}
+	}
+	foreach ($this->hiddenKeys as $key) {
 		unset($entity[$key]);
 	}
-}
-foreach ($this->hiddenKeys as $key) {
-	unset($entity[$key]);
-}
 
 print '<div class="form_protect">';
 if (isset($protected['log_stamp'])) {
