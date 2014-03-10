@@ -120,6 +120,10 @@ class AdminController extends Yaf_Controller_Abstract {
 
 		$model = self::getModel($coll);
 
+		if ($coll == 'users' && in_array(strval(Billrun_Factory::user()->getMongoId()), $ids)) { // user is not allowed to remove oneselfs
+			die(json_encode("Can't remove oneself"));
+		}
+
 		$collection = Billrun_Factory::db()->getCollection($coll);
 		if (!($collection instanceof Mongodloid_Collection)) {
 			return false;

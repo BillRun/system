@@ -29,7 +29,7 @@ $(function() {
 	$("#popupModal,#confirmModal").on('show', function(event) {
 		if (checkItems) {
 			var items_checked = $('#data_table :checked');
-			if (!items_checked.length || (items_checked.length != 1 && (coll != 'lines' || $(this).attr('id') != 'confirmModal'))) {
+			if (!items_checked.length || (items_checked.length != 1 && ($.inArray(coll, ['lines', 'users']) === -1 || $(this).attr('id') != 'confirmModal'))) {
 				alert('Please check exactly one item from the list');
 				$(this).removeData('modal');
 				event.preventDefault();

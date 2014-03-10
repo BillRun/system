@@ -42,5 +42,13 @@ class Billrun_User {
 	public function valid() {
 		return !$this->entity->isEmpty();
 	}
+	
+	public function getUsername() {
+		return $this->entity['username'];
+	}
+	
+	public function getMongoId() {
+		return $this->entity['_id'];
+	}
 
 }
