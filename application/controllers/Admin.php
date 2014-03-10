@@ -286,7 +286,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$username = $this->getRequest()->get('username');
 		$password = $this->getRequest()->get('password');
 
-		if ($username != '') {
+		if ($username != '' && !is_null($password)) {
 			$adapter = new Zend_Auth_Adapter_MongoDb(
 					$db, 'username', 'password'
 			);
