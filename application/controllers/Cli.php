@@ -47,7 +47,7 @@ class CliController extends Yaf_Controller_Abstract {
 				'export-path-s' => 'Respond: The path To export files',
 				'workspace-s' => 'The path to the workspace directory',
 				'parser-s' => 'Process: Parser type (default fixed)',
-				'backup' => 'Process: Backup path after the file processed (default ./backup)',				
+				'backup' => 'Process: Backup path after the file processed (default ./backup)',
 				'page-s' => 'the  page to aggregate',
 				'size-s' => 'the size of the page to aggregate',
 				'environment-s' => 'Environment of the running command',

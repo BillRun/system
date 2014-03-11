@@ -29,6 +29,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	 */
 	public function init() {
 		$this->baseUrl = $this->getRequest()->getBaseUri();
+		Yaf_Loader::getInstance(APPLICATION_PATH . '/application/helpers')->registerLocalNamespace('Admin');
 	}
 
 	/**
@@ -118,7 +119,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		foreach ($ids as $id) {
 			$params['_id']['$in'][] = new MongoId((string) $id);
 		}
-		
+
 		// this is just insurance that the loop worked fine
 		if (empty($params)) {
 			return;
@@ -194,7 +195,6 @@ class AdminController extends Yaf_Controller_Abstract {
 	}
 
 	public function csvExportAction() {
-		require_once '../application/helpers/Admin/Lines.php';
 		$session = $this->getSession('lines');
 
 		if (!empty($session->query)) {
@@ -208,7 +208,7 @@ class AdminController extends Yaf_Controller_Abstract {
 			$skip = Billrun_Factory::config()->getConfigValue('admin_panel.csv_export.skip', 0);
 			$size = Billrun_Factory::config()->getConfigValue('admin_panel.csv_export.size', 10000);
 			$params = array_merge($this->getTableViewParams($session->query, $skip, $size), $this->createFilterToolbar('lines'));
-			Lines::getCsvFile($params);
+			Admin_Lines::getCsvFile($params);
 		} else {
 			return false;
 		}
@@ -241,11 +241,15 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * rates controller of admin
 	 */
 	public function ratesAction() {
-		$this->forward("tabledate", array('table' => 'rates'));
+		$session = $this->getSession("rates");
+		$show_prefix = $this->getSetVar($session, 'showprefix', 'showprefix', 0);
+		$this->forward("tabledate", array('table' => 'rates', 'showprefix' => $show_prefix));
 		return false;
 	}
 
 	public function tabledateAction() {
+		$showprefix_param = $this->_request->getParam("showprefix");
+		$showprefix = $showprefix_param == 'on' && !$showprefix_param == '0' ? 1 : 0;
 		$table = $this->_request->getParam("table");
 
 //		$sort = array('urt' => -1);
@@ -253,9 +257,11 @@ class AdminController extends Yaf_Controller_Abstract {
 		$options = array(
 			'collection' => $table,
 			'sort' => $sort,
+			'showprefix' => $showprefix,
 		);
 
-		$model = self::getModel($table, $options);
+		// set the model
+		self::getModel($table, $options);
 		$query = $this->applyFilters($table);
 
 		$this->getView()->component = $this->buildComponent($table, $query);
@@ -345,7 +351,6 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * @todo refactoring this function
 	 */
 	protected function getTableViewParams($filter_query = array(), $skip = null, $size = null) {
-
 		if (isset($skip) && !empty($size)) {
 			$data = $this->model->getData($filter_query, $skip, $size);
 		} else {
@@ -369,10 +374,10 @@ class AdminController extends Yaf_Controller_Abstract {
 	}
 
 	protected function createFilterToolbar() {
-
 		$params['filter_fields'] = $this->model->getFilterFields();
 		$params['filter_fields_order'] = $this->model->getFilterFieldsOrder();
-		$params['sort_fields'] = $this->model->getSortFields();
+		$params['sort_fields'] = $this->model->getSortElements();
+		$params['extra_columns'] = $this->model->getExtraColumns();
 
 		return $params;
 	}
@@ -415,6 +420,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$session = $this->getSession($collection_name);
 		$options['page'] = $this->getSetVar($session, "page", "page", 1);
 		$options['size'] = $this->getSetVar($session, "listSize", "size", 1000);
+		$options['extra_columns'] = $this->getSetVar($session, "extra_columns", "extra_columns", array());
 
 		if (is_null($this->model)) {
 			$model_name = ucfirst($collection_name) . "Model";
@@ -435,7 +441,6 @@ class AdminController extends Yaf_Controller_Abstract {
 			'title' => $this->title,
 			'session' => $this->getSession($table),
 		);
-
 		$params = array_merge($options, $params, $this->getTableViewParams($filter_query), $this->createFilterToolbar($table));
 
 		$ret = $this->renderView('table', $params);
@@ -500,7 +505,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		}
 		foreach ($filter_fields as $filter_name => $filter_field) {
 			$value = $this->getSetVar($session, $filter_field['key'], $filter_field['key'], $filter_field['default']);
-			if ($filter = $model->applyFilter($filter_field, $value)) {
+			if (!empty($value) && $filter_field['db_key'] != 'nofilter' && $filter = $model->applyFilter($filter_field, $value)) {
 				$query['$and'][] = $filter;
 			}
 		}
@@ -509,9 +514,14 @@ class AdminController extends Yaf_Controller_Abstract {
 
 	protected function applySort($table) {
 		$session = $this->getSession($table);
-		$sort_by = $this->getSetVar($session, 'sort_by', 'sort_by', '_id');
-		$order = $this->getSetVar($session, 'order', 'order', 'asc') == 'asc' ? 1 : -1;
-		$sort = array($sort_by => $order);
+		$sort_by = $this->getSetVar($session, 'sort_by', 'sort_by');
+		if ($sort_by) {
+			$order = $this->getSetVar($session, 'order', 'order', 'asc') == 'asc' ? 1 : -1;
+			$sort = array($sort_by => $order);
+		}
+		else {
+			$sort = array();
+		}
 		return $sort;
 	}
 
@@ -519,14 +529,14 @@ class AdminController extends Yaf_Controller_Abstract {
 		$query = false;
 		$session = $this->getSession($table);
 		$keys = $this->getSetVar($session, 'manual_key', 'manual_key');
-		$types = $this->getSetVar($session, 'manual_type', 'manual_type');
+		$types = Admin_Lines::getOptions();
 		$operators = $this->getSetVar($session, 'manual_operator', 'manual_operator');
 		$values = $this->getSetVar($session, 'manual_value', 'manual_value');
 		for ($i = 0; $i < count($keys); $i++) {
 			if ($keys[$i] == '' || $values[$i] == '') {
 				continue;
 			}
-			switch ($types[$i]) {
+			switch ($types[$keys[$i]]) {
 				case 'number':
 					$values[$i] = floatval($values[$i]);
 					break;
@@ -539,6 +549,7 @@ class AdminController extends Yaf_Controller_Abstract {
 				default:
 					break;
 			}
+			// TODO: decoupling to config of fields
 			switch ($operators[$i]) {
 				case 'starts_with':
 					$operators[$i] = '$regex';

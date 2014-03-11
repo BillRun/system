@@ -168,7 +168,7 @@ class Billrun_Calculator_Wholesale_Nsn extends Billrun_Calculator_Wholesale {
 	 */
 	protected function loadRates() {
 		$rates_coll = Billrun_Factory::db()->ratesCollection();
-		$rates = $rates_coll->query()->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
+		$rates = $rates_coll->query()->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
 		$this->rates = array();
 		foreach ($rates as $rate) {
 			$rate->collection($rates_coll);
@@ -203,7 +203,7 @@ class Billrun_Calculator_Wholesale_Nsn extends Billrun_Calculator_Wholesale {
 	 */
 	public function isLineLegitimate($line) {
 		return $line['type'] == 'nsn' &&
-			in_array($line['usaget'], array('call', 'sms')) &&
+			in_array($line['usaget'], array('call', 'sms', 'incoming_call')) &&
 			in_array($line['record_type'], $this->wholesaleRecords);
 	}
 

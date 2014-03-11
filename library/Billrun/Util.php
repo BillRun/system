@@ -218,7 +218,7 @@ class Billrun_Util {
 				->query('key', 'VAT')
 				->lessEq('from', $mongo_date)
 				->greaterEq('to', $mongo_date)
-				->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED)->current()->get('vat');
+				->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'))->current()->get('vat');
 	}
 
 	public static function isTimestamp($timestamp) {
@@ -230,13 +230,15 @@ class Billrun_Util {
 	}
 
 	/**
-	 * convert bytes to requested foramt
+	 * convert bytes to requested format
+	 * if no format supply will take the format that is closet to the bytes
+	 * 
 	 * @param string $bytes
 	 * @param string $unit
 	 * @param int $decimals
-	 * @return string size in requested foramt
+	 * @return string size in requested format
 	 */
-	public static function byteFormat($bytes, $unit = "", $decimals = 2) {
+	public static function byteFormat($bytes, $unit = "", $decimals = 2, $includeUnit = false) {
 		$units = array('B' => 0, 'KB' => 1, 'MB' => 2, 'GB' => 3, 'TB' => 4,
 			'PB' => 5, 'EB' => 6, 'ZB' => 7, 'YB' => 8);
 
@@ -260,11 +262,34 @@ class Billrun_Util {
 		}
 
 		// Format output
-		if (!empty($value))
+		if (!empty($value)) {
+			if ($includeUnit) {
+				return number_format($value, $decimals) . $unit;
+			}
 			return number_format($value, $decimals);
+		}
 
 		return FALSE;
 	}
+	
+	/**
+	 * convert seconds to requested format
+	 * 
+	 * @param string $bytes
+	 * 
+	 * @return string size in requested foramt
+	 * 
+	 * 60 sec => 1 min
+	 * 10 sec => 10 sec
+	 * 3400 sec => X minutes
+	 */
+	public static function durationFormat($seconds) {
+		if ($seconds> 3600) {
+			return gmdate('H:i:s', $seconds);
+		}
+		return gmdate('i:s', $seconds);
+	}
+
 
 	/**
 	 * convert megabytes to bytes
@@ -294,6 +319,56 @@ class Billrun_Util {
 		}
 		//sen email
 		return $mailer->send();
+	}
+	
+	/**
+	 * method to fork process of PHP-Web (Apache/Nginx/FPM)
+	 * 
+	 * @param String $url the url to open
+	 * @param Array $params data sending to the new process
+	 * @params Boolean $post use POST to query string else use GET
+	 * 
+	 * @return Boolean true on success else FALSE
+	 */
+	public static function forkProcessWeb($url, $params, $post = false, $sleep = 0) {
+		$params['fork'] = 1;
+		if ($sleep) {
+			$params['SLEEP'] = (int) $sleep;
+		}
+		$forkUrl = self::getForkUrl();
+		$querystring = http_build_query($params);
+		if (!$post) {
+			$cmd = "wget -O /dev/null '" . $forkUrl . $url . "?" . $querystring .
+				"' > /dev/null & ";
+		} else {
+			$cmd = "wget -O /dev/null '" . $forkUrl . $url . "' --post-data '" . $querystring .
+				"' > /dev/null & ";
+		}
+
+//		echo $cmd . "<br />" . PHP_EOL;
+		if (system($cmd) === FALSE) {
+			error_log("Can't fork PHP process");
+			return false;
+		}
+		usleep(500000);
+		return true;
+	}
+
+	/**
+	 * method to fork process of PHP-Cli
+	 * 
+	 * @param String $cmd the command to run
+	 * @param String $cmd the command to run
+	 * 
+	 * @return Boolean true on success else FALSE
+	 */
+	public static function forkProcessCli($cmd) {
+		$syscmd = $cmd ." > /dev/null & ";
+		if (system($syscmd) === FALSE) {
+			error_log("Can't fork PHP process");
+			return false;
+		}
+		return true;
 	}
 
 }

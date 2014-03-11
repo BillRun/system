@@ -35,6 +35,12 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 	 */
 	protected $availableFields = array();
 
+	/**
+	 * extra fields 
+	 * @var array
+	 */
+	protected $extraFields = array();
+
 	public function __construct($options = array()) {
 		parent::__construct($options);
 		if (isset($options['availableFields'])) {
@@ -68,7 +74,7 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 	 * @return mixed if data field  accessible return data field, else null
 	 */
 	public function __get($name) {
-		if (array_key_exists($name, $this->availableFields) && array_key_exists($name, $this->data)) {
+		if ((array_key_exists($name, $this->availableFields) || in_array($name, $this->extraFields)) && array_key_exists($name, $this->data)) {
 			return $this->data[$name];
 		}
 		return null;
@@ -116,5 +122,14 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 	 */
 	abstract public function getListFromFile($file_path, $time);
 
-	abstract static public function getSubscribersByParams($params, $availableFields);
+	abstract public function getSubscribersByParams($params, $availableFields);
+
+	/**
+	 * Returns field names to be saved when creating billrun
+	 * @return array
+	 */
+	public function getExtraFieldsForBillrun() {
+		return $this->extraFields;
+	}
+
 }

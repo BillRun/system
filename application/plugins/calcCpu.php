@@ -70,8 +70,12 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$garbage_counter = 0;
 		foreach ($data['data'] as $key => &$line) {
 			if ($remove_garbage) {
-				if ($line['type'] == 'ggsn' && isset($line['usagev']) && $line['usagev'] === 0) {
+				if (($line['type'] == 'ggsn' && isset($line['usagev']) && $line['usagev'] === 0)
+					|| (in_array($line['type'], array('smsc', 'mmsc', 'smpp')) && isset($line['arate']) && $line['arate'] === false)
+					|| ($line['type'] == 'nsn' && isset($line['usaget']) && $line['usaget'] === 'sms')) {
 					$garbage_counter++;
+					$processor->unsetQueueRow($line['stamp']);
+					unset($queue_data[$line['stamp']]);
 					unset($data['data'][$key]);
 				}
 			}
@@ -89,7 +93,7 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 				$line = $entity->getRawData();
 			}
 		}
-		
+
 		$data['header']['garbage_lines'][] = array(
 			'reason' => 'usagev0',
 			'count' => $garbage_counter,
@@ -203,7 +207,7 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 					'$in' => array_keys($stamps),
 				),
 			);
-			$existing_lines = $lines_coll->query($query)->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
+			$existing_lines = $lines_coll->query($query)->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
 			foreach ($existing_lines as $line) {
 				$stamp = $line['stamp'];
 				Billrun_Factory::log('Plugin calc cpu skips duplicate line ' . $stamp, Zend_Log::ALERT);

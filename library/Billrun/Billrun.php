@@ -35,6 +35,19 @@ class Billrun_Billrun {
 	protected $lines = null;
 
 	/**
+	 * fields to filter when pulling account lines
+	 * @var array 
+	 */
+	protected $filter_fields = array();
+
+	/**
+	 * whether to exclude the _id field when pulling account lines
+	 * @var boolean
+	 */
+	static protected $rates = array();
+	static protected $plans = array();
+
+	/**
 	 * 
 	 * @param type $options
 	 * @todo used only in current balance API. Needs refactoring
@@ -62,6 +75,9 @@ class Billrun_Billrun {
 		}
 		if (isset($options['update_stamps_chunk'])) {
 			$this->updateStampChunk = (int) $options['update_stamps_chunk'];
+		}
+		if (isset($options['filter_fields'])) {
+			$this->filter_fields = array_map("intval", $options['filter_fields']);
 		}
 		$this->lines = Billrun_Factory::db()->linesCollection();
 	}
@@ -123,6 +139,9 @@ class Billrun_Billrun {
 		$subscriber_entry['subscriber_status'] = $status;
 		$subscriber_entry['current_plan'] = $current_plan_ref;
 		$subscriber_entry['next_plan'] = $next_plan_ref;
+		foreach ($subscriber->getExtraFieldsForBillrun() as $field) {
+			$subscriber_entry[$field] = $subscriber->{$field};
+		}
 		$subscribers[] = $subscriber_entry;
 		$this->data['subs'] = $subscribers;
 		return $this;
@@ -338,7 +357,7 @@ class Billrun_Billrun {
 			$this->updateCosts($pricingData, $row, $vatable, $sraw);
 			$this->setSubRawData($sraw);
 		} else {
-			Billrun_Factory::log("Subscriber $sid is not active yet has lines", Zend_log::ALERT);
+			Billrun_Factory::log("Subscriber $sid is not active, yet has lines", Zend_log::ALERT);
 			$subscriber_general_settings = Billrun_Config::getInstance()->getConfigValue('subscriber', array());
 			$null_subscriber_params = array(
 				'data' => array('aid' => $row['aid'], 'sid' => $sid, 'plan' => null, 'next_plan' => null,),
@@ -542,9 +561,6 @@ class Billrun_Billrun {
 		return $defVal;
 	}
 
-	static protected $rates = array();
-	static protected $plans = array();
-
 	/**
 	 * HACK TO MAKE THE BILLLRUN FASTER
 	 * Get a rate from the row
@@ -587,7 +603,7 @@ class Billrun_Billrun {
 	 */
 	public static function loadRates() {
 		$rates_coll = Billrun_Factory::db()->ratesCollection();
-		$rates = $rates_coll->query()->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
+		$rates = $rates_coll->query()->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
 		foreach ($rates as $rate) {
 			$rate->collection($rates_coll);
 			self::$rates[strval($rate->getId())] = $rate;
@@ -599,7 +615,7 @@ class Billrun_Billrun {
 	 */
 	public static function loadPlans() {
 		$plans_coll = Billrun_Factory::db()->plansCollection();
-		$plans = $plans_coll->query()->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
+		$plans = $plans_coll->query()->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
 		foreach ($plans as $plan) {
 			$plan->collection($plans_coll);
 			self::$plans[strval($plan->getId())] = $plan;
@@ -613,13 +629,13 @@ class Billrun_Billrun {
 	 * @return array the stamps of the lines used to create the billrun
 	 */
 	public function addLines($update_lines = false, $start_time = 0, $flat_lines = array()) {
-		Billrun_Factory::log()->log("Querying account " . $this->aid . " for lines...", Zend_Log::DEBUG);
+		Billrun_Factory::log()->log("Querying account " . $this->aid . " for lines...", Zend_Log::INFO);
 		$account_lines = $this->getAccountLines($this->aid, $start_time, false);
 //		Billrun_Factory::log()->log("Found " . count($account_lines) . " lines.", Zend_Log::DEBUG);
-		Billrun_Factory::log("Processing account Lines $this->aid");
+		Billrun_Factory::log("Processing account Lines $this->aid", Zend_Log::INFO);
 		$updatedLines = array_merge($this->processLines($account_lines), $this->processLines($flat_lines));
 		$updateLinesStamps = array_keys($updatedLines);
-		Billrun_Factory::log("Finished processing account $this->aid lines. Total: " . count($updatedLines), Zend_log::DEBUG);
+		Billrun_Factory::log("Finished processing account $this->aid lines. Total: " . count($updatedLines), Zend_log::INFO);
 //		Billrun_Factory::log()->log("Querying subscriber " . $sid . " for ggsn lines...", Zend_Log::DEBUG);
 //		$subscriber_aggregated_data = $this->getSubscriberDataLines($sid, $start_time);
 //		Billrun_Factory::log()->log("Finished querying subscriber " . $sid . " for ggsn lines", Zend_Log::DEBUG);
@@ -627,7 +643,7 @@ class Billrun_Billrun {
 //		$data_lines_stamps = $this->updateAggregatedData($sid, $subscriber_aggregated_data);
 //		Billrun_Factory::log("Finished processing data lines for subscriber $sid", Zend_Log::DEBUG);
 		if ($update_lines) {
-			Billrun_Factory::log("Updating account $this->aid lines with billrun stamp", Zend_Log::DEBUG);
+			Billrun_Factory::log("Updating account $this->aid lines with billrun stamp", Zend_Log::INFO);
 //			$updatedLines = array_merge($updatedLines, $data_lines_stamps);
 			asort($updateLinesStamps);
 			$offset = 0;
@@ -635,7 +651,7 @@ class Billrun_Billrun {
 				$this->lines->update(array('stamp' => array('$in' => $stamps_chunk)), array('$set' => array('billrun' => $this->billrun_key)), array('multiple' => true));
 				$offset += $this->updateStampChunk;
 			}
-			Billrun_Factory::log("Finished updating account $this->aid lines with billrun stamp", Zend_Log::DEBUG);
+			Billrun_Factory::log("Finished updating account $this->aid lines with billrun stamp", Zend_Log::INFO);
 		}
 		$this->updateTotals();
 		return $updatedLines;
@@ -715,9 +731,9 @@ class Billrun_Billrun {
 			'aid' => 1,
 			'urt' => 1,
 		);
-		Billrun_Factory::log()->log("Querying for account " . $aid . " lines", Zend_Log::DEBUG);
-		$cursor = $this->lines->query($query)->cursor()->sort($sort)->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED)->hint($hint);
-		Billrun_Factory::log()->log("Finished querying for account " . $aid . " lines", Zend_Log::DEBUG);
+		Billrun_Factory::log()->log("Querying for account " . $aid . " lines", Zend_Log::INFO);
+		$cursor = $this->lines->query($query)->cursor()->fields($this->filter_fields)->sort($sort)->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'))->hint($hint);
+		Billrun_Factory::log()->log("Finished querying for account " . $aid . " lines", Zend_Log::INFO);
 //		$results = array();
 //		Billrun_Factory::log()->log("Saving account " . $aid . " lines to array", Zend_Log::DEBUG);
 //		foreach ($cursor as $entity) {

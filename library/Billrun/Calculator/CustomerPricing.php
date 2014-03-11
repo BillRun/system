@@ -14,7 +14,9 @@
  */
 class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 
-	protected $pricingField = 'aprice';
+	const DEF_CALC_DB_FIELD = 'aprice';
+	
+	protected $pricingField = self::DEF_CALC_DB_FIELD;
 	static protected $type = "pricing";
 
 	/**
@@ -122,7 +124,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		if (isset($volume)) {
 			if ($row['type'] == 'credit') {
 				$accessPrice = isset($rate['rates'][$usage_type]['access']) ? $rate['rates'][$usage_type]['access'] : 0;
-				$pricingData = array($this->pricingField => $accessPrice + $this->getPriceByRates($rate['rates'][$usage_type]['rate'], $volume));
+				$pricingData = array($this->pricingField => $accessPrice + self::getPriceByRate($rate, $usage_type, $volume));
 			} else {
 				$pricingData = $this->updateSubscriberBalance($row, $billrun_key, $usage_type, $rate, $volume);
 			}
@@ -155,8 +157,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @return Array the 
 	 */
 	protected function getLinePricingData($volumeToPrice, $usageType, $rate, $sub_balance) {
-		$typedRates = $rate['rates'][$usageType];
-		$accessPrice = isset($typedRates['access']) ? $typedRates['access'] : 0;
+		$accessPrice = isset($rate['rates'][$usageType]['access']) ? $rate['rates'][$usageType]['access'] : 0;
 		$subscriber_current_plan = $this->getBalancePlan($sub_balance);
 		$plan = Billrun_Factory::plan(array('data' => $subscriber_current_plan, 'disableCache' => true));
 
@@ -175,7 +176,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			$ret['out_plan'] = $volumeToPrice;
 		}
 
-		$price = $accessPrice + $this->getPriceByRates($typedRates['rate'], $volumeToPrice);
+		$price = $accessPrice + self::getPriceByRate($rate, $usageType, $volumeToPrice);
 		//Billrun_Factory::log()->log("Rate : ".print_r($typedRates,1),  Zend_Log::DEBUG);
 		$ret[$this->pricingField] = $price;
 		return $ret;
@@ -204,11 +205,13 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 
 	/**
 	 * Calculates the price for the given volume (w/o access price)
-	 * @param array $rates_arr the "rate" array of a rate entry
+	 * @param array $rate the rate entry
+	 * @param string $usage_type the usage type
 	 * @param int $volume The usage volume (seconds of call, count of SMS, bytes  of data)
 	 * @return int the calculated price
 	 */
-	protected function getPriceByRates($rates_arr, $volume) {
+	public static function getPriceByRate($rate, $usage_type, $volume) {
+		$rates_arr = $rate['rates'][$usage_type]['rate'];
 		$price = 0;
 		foreach ($rates_arr as $currRate) {
 			if (0 == $volume) { // volume could be negative if it's a refund amount
@@ -241,6 +244,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @return mixed array with the pricing data on success, false otherwise
 	 */
 	protected function updateSubscriberBalance($row, $billrun_key, $usage_type, $rate, $volume) {
+		Billrun_Factory::dispatcher()->trigger('beforeUpdateSubscriberBalance', array($row, $billrun_key, $this));
 		$plan = Billrun_Factory::plan(array('name' => $row['plan'], 'time' => $row['urt']->sec, 'disableCache' => true));
 		$plan_ref = $plan->createRef();
 		if (is_null($plan_ref)) {
@@ -254,8 +258,9 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			if ($this->unlimited_to_balances) {
 				$balance = $this->increaseSubscriberBalance($counters, $billrun_key, $row['aid'], $row['sid'], $plan_ref);
 				$pricingData = $this->getLinePricingData($volume, $usage_type, $rate, $balance);
-				$pricingData['usagesb'] = $balance['balance']['totals'][$this->getUsageKey($counters)]['usagev'];
+				$pricingData['usagesb'] = floatval($balance['balance']['totals'][$this->getUsageKey($counters)]['usagev']);
 			} else {
+				$balance = null;
 				$pricingData = array($this->pricingField => 0);
 			}
 		} else {
@@ -271,9 +276,9 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			}
 			if (!$balance || !$balance->isValid()) {
 				Billrun_Factory::log()->log("couldn't get balance for : " . print_r(array(
-							'sid' => $row['sid'],
-							'billrun_month' => $billrun_key
-								), 1), Zend_Log::INFO);
+						'sid' => $row['sid'],
+						'billrun_month' => $billrun_key
+						), 1), Zend_Log::INFO);
 				return false;
 			} else {
 				Billrun_Factory::log()->log("Found balance " . $billrun_key . " for subscriber " . $row['sid'], Zend_Log::DEBUG);
@@ -297,7 +302,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				$update['$set']['balance.totals.' . $key . '.usagev'] = $old_usage + $value;
 				$update['$inc']['balance.totals.' . $key . '.cost'] = $pricingData[$this->pricingField];
 				$update['$inc']['balance.totals.' . $key . '.count'] = 1;
-				$pricingData['usagesb'] = $old_usage;
+				$pricingData['usagesb'] = floatval($old_usage);
 			}
 			$update['$set']['balance.cost'] = $subRaw['balance']['cost'] + $pricingData[$this->pricingField];
 			$options = array('w' => 1);
@@ -312,11 +317,12 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			}
 			if (!($ret['ok'] && $ret['updatedExisting'])) { // failed because of different totals (could be that another server with another line raised the totals). Need to calculate pricingData from the beginning
 				Billrun_Factory::log()->log("Concurrent write to balance " . $billrun_key . " of subscriber " . $row['sid'] . ". Retrying...", Zend_Log::DEBUG);
-				$pricingData = $this->updateSubscriberBalance($row, $billrun_key, $usage_type, $rate, $volume);
+				return $this->updateSubscriberBalance($row, $billrun_key, $usage_type, $rate, $volume);
 			}
 			Billrun_Factory::log()->log("Line with stamp " . $row['stamp'] . " was written to balance " . $billrun_key . " for subscriber " . $row['sid'], Zend_Log::DEBUG);
 			$row['tx_saved'] = true; // indication for transaction existence in balances. Won't & shouldn't be saved to the db.
 		}
+		Billrun_Factory::dispatcher()->trigger('afterUpdateSubscriberBalance', array($row, $balance, $pricingData[$this->pricingField], $this));
 		return $pricingData;
 	}
 
@@ -378,7 +384,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	/**
 	 * @see Billrun_Calculator::getCalculatorQueueType
 	 */
-	static protected function getCalculatorQueueType() {
+	public function getCalculatorQueueType() {
 		return self::$type;
 	}
 
@@ -388,15 +394,15 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	public function isLineLegitimate($line) {
 		$arate = $this->getRateByRef($line->get('arate', true));
 		return !is_null($arate) && (empty($arate['skip_calc']) || !in_array(self::$type, $arate['skip_calc'])) &&
-				isset($line['sid']) && $line['sid'] !== false &&
-				$line['urt']->sec >= $this->billrun_lower_bound_timestamp;
+			isset($line['sid']) && $line['sid'] !== false &&
+			$line['urt']->sec >= $this->billrun_lower_bound_timestamp;
 	}
 
 	/**
 	 * 
 	 */
-	protected function setCalculatorTag() {
-		parent::setCalculatorTag();
+	protected function setCalculatorTag($query = array(), $update = array()) {
+		parent::setCalculatorTag($query, $update);
 		foreach ($this->data as $item) {
 			if ($this->isLineLegitimate($item) && !empty($item['tx_saved'])) {
 				$this->removeBalanceTx($item); // we can safely remove the transactions after the lines have left the current queue
@@ -406,7 +412,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 
 	protected function loadRates() {
 		$rates_coll = Billrun_Factory::db()->ratesCollection();
-		$rates = $rates_coll->query()->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
+		$rates = $rates_coll->query()->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
 		foreach ($rates as $rate) {
 			$rate->collection($rates_coll);
 			$this->rates[strval($rate->getId())] = $rate;
@@ -415,7 +421,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 
 	protected function loadPlans() {
 		$plans_coll = Billrun_Factory::db()->plansCollection();
-		$plans = $plans_coll->query()->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
+		$plans = $plans_coll->query()->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
 		foreach ($plans as $plan) {
 			$plan->collection($plans_coll);
 			$this->plans[strval($plan->getId())] = $plan;

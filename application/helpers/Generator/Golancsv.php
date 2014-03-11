@@ -45,7 +45,7 @@ class Generator_Golancsv extends Billrun_Generator {
 	 * @var array the subscribers file header
 	 */
 	protected $subscribersFields = array();
-	
+
 	/**
 	 *
 	 * @var int number of accounts to write to the csv file(s) at once
@@ -94,7 +94,9 @@ class Generator_Golancsv extends Billrun_Generator {
 			'OutsidePackageNoVatTap3',
 			'TotalVat',
 			'TotalCharge',
-			'CountActiveCli'
+			'CountActiveCli',
+			'kosherCount',
+			'TotalChargeVatRounded',
 		);
 		$this->subscribersFields = array(
 			'billrun_key',
@@ -115,7 +117,8 @@ class Generator_Golancsv extends Billrun_Generator {
 			'curPackage',
 			'nextPackage',
 			'TotalChargeVatData',
-			'CountOfKb'
+			'CountOfKb',
+			'isKosher',
 		);
 
 		$this->loadPlans();
@@ -178,9 +181,9 @@ class Generator_Golancsv extends Billrun_Generator {
 		$billrun = Billrun_Factory::db()->billrunCollection();
 
 		$this->data = $billrun
-				->query('billrun_key', $this->stamp)
-				->exists('invoice_id')
-				->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
+						->query('billrun_key', $this->stamp)
+						->exists('invoice_id')
+						->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
 
 		Billrun_Factory::log()->log("generator entities loaded: " . $this->data->count(), Zend_Log::INFO);
 
@@ -207,9 +210,11 @@ class Generator_Golancsv extends Billrun_Generator {
 			$vat = isset($account['vat']) ? $account['vat'] : floatval(Billrun_Factory::config()->getConfigValue('pricing.vat', 0.18));
 			$acc_row = array();
 			$acc_row['TotalChargeVat'] = $this->getAccountTotalChargeVat($account);
+			$acc_row['TotalChargeVatRounded'] = round($this->getAccountTotalChargeVat($account), 2);
 			$acc_row['billrun_key'] = $this->stamp;
 			$acc_row['InvoiceNumber'] = $account['invoice_id'];
-			$acc_row['TotalCharge'] = $acc_row['TotalVat'] = $acc_row['OutsidePackageNoVatTap3'] = $acc_row['ManualCorrection'] = $acc_row['ManualCorrectionCharge'] = $acc_row['ManualCorrectionCredit'] = $acc_row['TotalExtraOverPackage'] = $acc_row['TotalExtraOutOfPackage'] = $acc_row['TotalFlat'] = 0;
+			$acc_row['TotalCharge'] = $acc_row['TotalVat'] = $acc_row['OutsidePackageNoVatTap3'] = $acc_row['ManualCorrection'] = $acc_row['ManualCorrectionCharge'] = $acc_row['ManualCorrectionCredit'] = $acc_row['TotalExtraOverPackage'] = $acc_row['TotalExtraOutOfPackage'] = $acc_row['TotalFlat'] = $acc_row['kosherCount'] = 0;
+			$acc_row['CountActiveCli'] = 0;
 			foreach ($account['subs'] as $subscriber) {
 				$sub_row['billrun_key'] = $this->stamp;
 				$acc_row['AccountNumber'] = $sub_row['AccountNumber'] = $account['aid'];
@@ -225,14 +230,14 @@ class Generator_Golancsv extends Billrun_Generator {
 				$acc_row['OutsidePackageNoVatTap3'] += $sub_row['OutsidePackageNoVatTap3'] = $this->getOutsidePackageNoVatTap3($subscriber);
 				$acc_row['TotalVat'] += $sub_row['TotalVat'] = $this->getTotalVat($subscriber);
 				$acc_row['TotalCharge'] += $sub_row['TotalCharge'] = $this->getTotalCharge($subscriber);
-				$sub_row['isAccountActive'] = $this->getIsAccountActive($subscriber);
+				$acc_row['CountActiveCli'] += $sub_row['isAccountActive'] = $this->getIsAccountActive($subscriber);
+				$acc_row['kosherCount'] += $sub_row['isKosher'] = $this->is_kosher($subscriber);
 				$sub_row['curPackage'] = $this->getCurPackage($subscriber);
 				$sub_row['nextPackage'] = $this->getNextPackage($subscriber);
 				$sub_row['TotalChargeVatData'] = $this->getTotalChargeVatData($subscriber, $vat);
 				$sub_row['CountOfKb'] = $this->getCountOfKb($subscriber);
 				$this->addSubscriberRow($sub_row);
 			}
-			$acc_row['CountActiveCli'] = count($account['subs']);
 //			Billrun_Factory::log()->log("invoice id created " . $invoice_id . " for the account", Zend_Log::INFO);
 
 			$this->addAccountRow($acc_row);
@@ -264,12 +269,12 @@ class Generator_Golancsv extends Billrun_Generator {
 
 	protected function getManualCorrectionCredit($subscriber) {
 		return floatval(isset($subscriber['costs']['credit']['refund']['vatable']) ? $subscriber['costs']['credit']['refund']['vatable'] : 0) +
-			floatval(isset($subscriber['costs']['credit']['refund']['vat_free']) ? $subscriber['costs']['credit']['refund']['vat_free'] : 0);
+				floatval(isset($subscriber['costs']['credit']['refund']['vat_free']) ? $subscriber['costs']['credit']['refund']['vat_free'] : 0);
 	}
 
 	protected function getManualCorrectionCharge($subscriber) {
 		return floatval(isset($subscriber['costs']['credit']['charge']['vatable']) ? $subscriber['costs']['credit']['charge']['vatable'] : 0) +
-			floatval(isset($subscriber['costs']['credit']['charge']['vat_free']) ? $subscriber['costs']['credit']['charge']['vat_free'] : 0);
+				floatval(isset($subscriber['costs']['credit']['charge']['vat_free']) ? $subscriber['costs']['credit']['charge']['vat_free'] : 0);
 	}
 
 	protected function getOutsidePackageNoVatTap3($subscriber) {
@@ -285,15 +290,15 @@ class Generator_Golancsv extends Billrun_Generator {
 	}
 
 	protected function getIsAccountActive($subscriber) {
-		$is_active = -1;
-		if (isset($subscriber['subscriber_status'])) {
-			if ($subscriber['subscriber_status'] == "open") {
-				$is_active = 1;
-			} else if ($subscriber['subscriber_status'] == "closed") {
-				$is_active = 0;
-			}
+		$is_active = 0;
+		if (isset($subscriber['breakdown']) || (isset($subscriber['subscriber_status']) && $subscriber['subscriber_status'] == "open")) {
+			$is_active = 1;
 		}
 		return $is_active;
+	}
+
+	protected function is_kosher($subscriber) {
+		return (isset($subscriber['kosher']) && $subscriber['kosher'] == "true") ? 1 : 0;
 	}
 
 	/**
@@ -326,8 +331,8 @@ class Generator_Golancsv extends Billrun_Generator {
 
 	protected function getTotalChargeVatData($subscriber, $vat) {
 		$price_before_vat = (isset($subscriber['breakdown']['in_plan']['base']['INTERNET_BILL_BY_VOLUME']['totals']['data']['cost']) ? $subscriber['breakdown']['in_plan']['base']['INTERNET_BILL_BY_VOLUME']['totals']['data']['cost'] : 0) +
-			(isset($subscriber['breakdown']['over_plan']['base']['INTERNET_BILL_BY_VOLUME']['totals']['data']['cost']) ? $subscriber['breakdown']['over_plan']['base']['INTERNET_BILL_BY_VOLUME']['totals']['data']['cost'] : 0) +
-			(isset($subscriber['breakdown']['out_plan']['base']['INTERNET_BILL_BY_VOLUME']['totals']['data']['cost']) ? $subscriber['breakdown']['out_plan']['base']['INTERNET_BILL_BY_VOLUME']['totals']['data']['cost'] : 0);
+				(isset($subscriber['breakdown']['over_plan']['base']['INTERNET_BILL_BY_VOLUME']['totals']['data']['cost']) ? $subscriber['breakdown']['over_plan']['base']['INTERNET_BILL_BY_VOLUME']['totals']['data']['cost'] : 0) +
+				(isset($subscriber['breakdown']['out_plan']['base']['INTERNET_BILL_BY_VOLUME']['totals']['data']['cost']) ? $subscriber['breakdown']['out_plan']['base']['INTERNET_BILL_BY_VOLUME']['totals']['data']['cost'] : 0);
 		return $price_before_vat * (1 + $vat);
 	}
 
@@ -411,7 +416,7 @@ class Generator_Golancsv extends Billrun_Generator {
 	 */
 	protected function loadPlans() {
 		$plans_coll = Billrun_Factory::db()->plansCollection();
-		$plans = $plans_coll->query()->cursor()->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
+		$plans = $plans_coll->query()->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
 		foreach ($plans as $plan) {
 			$plan->collection($plans_coll);
 			$this->plans[strval($plan->getId())] = $plan;
