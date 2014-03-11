@@ -42,56 +42,40 @@ class AdminController extends Yaf_Controller_Abstract {
 	}
 
 	/**
-	 * save controller
-	 * @return boolean
-	 * @todo move to model
+	 * display the current status of the  generators  and  the currently  running test
+	 * @param type $param
 	 */
-	public function editAction() {
-		$coll = Billrun_Util::filter_var($this->getRequest()->get('coll'), FILTER_SANITIZE_STRING);
-		$id = Billrun_Util::filter_var($this->getRequest()->get('id'), FILTER_SANITIZE_STRING);
-		$type = Billrun_Util::filter_var($this->getRequest()->get('type'), FILTER_SANITIZE_STRING);
-
-		$model = self::getModel($coll);
-		$entity = $model->getItem($id);
-		if ($type == 'close_and_new' && is_subclass_of($model, "TabledateModel") && !$model->isLast($entity)) {
-			die("There's already a newer entity with this key");
-		}
-
-		// passing values into the view
-		$this->getView()->entity = $entity;
-		$this->getView()->collectionName = $coll;
-		$this->getView()->type = $type;
-		$this->getView()->protectedKeys = $model->getProtectedKeys($entity, $type);
-		$this->getView()->hiddenKeys = $model->getHiddenKeys($entity, $type);
+	public function statusAction($param) {
+		
+	}
+	
+	/**
+	 * generate a report
+	 */
+	public function reportAction() {
+		$from = Billrun_Util::getFieldVal(Billrun_Util::filter_var($this->getRequest()->get('from'), FILTER_SANITIZE_STRING),date("Y-m-d H:i:sP",time()-86400*7));
+		$to =  Billrun_Util::getFieldVal(Billrun_Util::filter_var($this->getRequest()->get('to'), FILTER_SANITIZE_STRING),date("Y-m-d H:i:sP"));
+		$testId =  Billrun_Util::filter_var($this->getRequest()->get('id'), FILTER_SANITIZE_STRING);
+		$generator = Billrun_Generator::getInstance(array('type'=> 'Report_GeneratedCalls','from' => $from, 'to' => $to, 'test_id' => $testId ));
+		header("Cache-Control: max-age=0");
+		header("Content-type: application/csv");
+		header("Content-Disposition: attachment; filename=csv_export.csv");
+		print_r($generator->generate());
 	}
 
-	public function confirmAction() {
-		$coll = Billrun_Util::filter_var($this->getRequest()->get('coll'), FILTER_SANITIZE_STRING);
-		$ids = Billrun_Util::filter_var($this->getRequest()->get('id'), FILTER_SANITIZE_STRING);
-		$type = Billrun_Util::filter_var($this->getRequest()->get('type'), FILTER_SANITIZE_STRING);
-
-		$model = self::getModel($coll);
-
-		if ($type == 'remove' && $coll != 'lines') {
-			$entity = $model->getItem($ids);
-			$this->getView()->entity = $entity;
-			$this->getView()->key = $entity[$model->search_key];
-			if (!$model->isLast($entity)) {
-				die("There's already a newer entity with this key");
-			} else if (is_subclass_of($model, "TabledateModel") && !$model->startsInFuture($entity)) {
-				die("Only future entities could be removed");
-			}
-		} else {
-			$this->getView()->key = "the selected lines";
-		}
-
-
-		$this->getView()->collectionName = $coll;
-		$this->getView()->type = $type;
-		$this->getView()->ids = $ids;
-//		$this->getView()->component = $this->renderView('remove', array('entity' => $entity, 'collectionName' => $coll, 'type' => $type, 'key' => $entity[$model->search_key]));
+	/**
+	 * create a new test
+	 * @param type $param
+	 */
+	public function createAction($param) {
+		$from = Billrun_Util::getFieldVal(Billrun_Util::filter_var($this->getRequest()->get('from'), FILTER_SANITIZE_STRING),date("Y-m-d H:i:sP",time()-86400*7));
+		$testId =  Billrun_Util::filter_var($this->getRequest()->get('id'), FILTER_SANITIZE_STRING);
+		$numbers =  Billrun_Util::getFieldVal(Billrun_Util::filter_var($this->getRequest()->get('numbers'), FILTER_SANITIZE_STRING),array(/*TODO  change to configuration*/));
+		$generator = Billrun_Generator::getInstance(array_merge(Billrun_Factory::config()->getConfigValue('Report_CallingScript',array()),
+																array('type'=> 'Report_CallingScript','start_test' => $from, 'test_id' => $testId,'to_remote'=> true ) ));
+		$generator->generate();
 	}
-
+	
 	/**
 	 * save controller
 	 * @return boolean
@@ -123,151 +107,8 @@ class AdminController extends Yaf_Controller_Abstract {
 		die(json_encode(null));
 	}
 
-	/**
-	 * save controller
-	 * @return boolean
-	 * @todo move to model
-	 * @todo protect the from and to to be continuely
-	 */
-	public function saveAction() {
-		$flatData = $this->getRequest()->get('data');
-		$id = Billrun_Util::filter_var($this->getRequest()->get('id'), FILTER_SANITIZE_STRING);
-		$coll = Billrun_Util::filter_var($this->getRequest()->get('coll'), FILTER_SANITIZE_STRING);
-		$type = Billrun_Util::filter_var($this->getRequest()->get('type'), FILTER_SANITIZE_STRING);
 
-		$model = self::getModel($coll);
-
-		$collection = Billrun_Factory::db()->getCollection($coll);
-		if (!($collection instanceof Mongodloid_Collection)) {
-			return false;
-		}
-
-		$data = @json_decode($flatData, true);
-
-		if (empty($data) || empty($id) || empty($coll)) {
-			return false;
-		}
-
-		$params = array_merge($data, array('_id' => new MongoId($id)));
-
-		if ($type == 'update') {
-			$saveStatus = $model->update($params);
-		} else if ($type == 'close_and_new') {
-			$saveStatus = $model->closeAndNew($params);
-		} else if ($type == 'duplicate') {
-			$saveStatus = $model->duplicate($params);
-		}
-
-//		$ret = array(
-//			'status' => $saveStatus,
-//			'closeLine' => $entity->getRawData(),
-//			'newLine' => $newEntity->getRawData(),
-//		);
-		// @TODO: need to load ajax view
-		// for now just die with json
-		die(json_encode(null));
-	}
-
-	/**
-	 * method to save all related rates after save
-	 * 
-	 * @param Mongodloid_Collection $collection The collection to save to
-	 * @param Mongodolid_Entity $entity The entity to save
-	 * 
-	 * @return void
-	 * @todo move to model
-	 */
-	protected function plansAfterDataSave($collection, &$entity) {
-		$ratesColl = Billrun_Factory::db()->ratesCollection();
-		$planName = $entity->get('name');
-		$ratesColl->query('rates.call.plans', $entity->get('name'));
-	}
-
-	/**
-	 * plans controller of admin
-	 */
-	public function plansAction() {
-		$this->forward("tabledate", array('table' => 'plans'));
-		return false;
-	}
-
-	/**
-	 * rates controller of admin
-	 */
-	public function ratesAction() {
-		$this->forward("tabledate", array('table' => 'rates'));
-		return false;
-	}
-
-	public function tabledateAction() {
-		$table = $this->_request->getParam("table");
-
-//		$sort = array('unified_record_time' => -1);
-		$sort = $this->applySort($table);
-		$options = array(
-			'collection' => $table,
-			'sort' => $sort,
-		);
-
-		$model = self::getModel($table, $options);
-		$query = $this->applyFilters($table);
-
-		$this->getView()->component = $this->buildComponent($table, $query);
-	}
-
-	/**
-	 * lines controller of admin
-	 */
-	public function linesAction() {
-		$table = 'lines';
-		$sort = $this->applySort($table);
-		$options = array(
-			'collection' => $table,
-			'sort' => $sort,
-		);
-
-		$model = self::getModel($table, $options);
-		$query = $this->applyFilters($table);
-
-		$this->getView()->component = $this->buildComponent('lines', $query);
-	}
-
-	/**
-	 * events controller of admin
-	 */
-	public function eventsAction() {
-		$table = "events";
-//		$sort = array('creation_time' => -1);
-		$sort = $this->applySort($table);
-		$options = array(
-			'collection' => $table,
-			'sort' => $sort,
-		);
-
-		$model = self::getModel($table, $options);
-		$query = $this->applyFilters($table);
-
-		$this->getView()->component = $this->buildComponent($table, $query);
-	}
-
-	/**
-	 * log controller of admin
-	 */
-	public function logAction() {
-		$table = "log";
-//		$sort = array('received_time' => -1);
-		$sort = $this->applySort($table);
-		$options = array(
-			'collection' => $table,
-			'sort' => $sort,
-		);
-
-		$model = self::getModel($table, $options);
-		$query = $this->applyFilters($table);
-
-		$this->getView()->component = $this->buildComponent($table, $query);
-	}
-
+	
 	/**
 	 * method to render component page
 	 * 
@@ -313,23 +154,6 @@ class AdminController extends Yaf_Controller_Abstract {
 		);
 
 		return $params;
-	}
-
-	protected function createFilterToolbar() {
-
-		$params['filter_fields'] = $this->model->getFilterFields();
-		$params['filter_fields_order'] = $this->model->getFilterFieldsOrder();
-		$params['sort_fields'] = $this->model->getSortFields();
-
-		return $params;
-	}
-
-	// choose columns
-	// delete
-	// apply property
-	// remove property
-	protected function createToolbar() {
-		
 	}
 
 	/**
@@ -424,22 +248,6 @@ class AdminController extends Yaf_Controller_Abstract {
 		return $session->$target_name;
 	}
 
-	protected function applyFilters($table) {
-		$model = $this->model;
-		$session = $this->getSession($table);
-		$filter_fields = $model->getFilterFields();
-		$query = array();
-		if ($filter = $this->getManualFilters($table)) {
-			$query['$and'][] = $filter;
-		}
-		foreach ($filter_fields as $filter_name => $filter_field) {
-			$value = $this->getSetVar($session, $filter_field['key'], $filter_field['key'], $filter_field['default']);
-			if ($filter = $model->applyFilter($filter_field, $value)) {
-				$query['$and'][] = $filter;
-			}
-		}
-		return $query;
-	}
 
 	protected function applySort($table) {
 		$session = $this->getSession($table);
@@ -447,56 +255,6 @@ class AdminController extends Yaf_Controller_Abstract {
 		$order = $this->getSetVar($session, 'order', 'order', 'asc') == 'asc' ? 1 : -1;
 		$sort = array($sort_by => $order);
 		return $sort;
-	}
-
-	public function getManualFilters($table) {
-		$query = false;
-		$session = $this->getSession($table);
-		$keys = $this->getSetVar($session, 'manual_key', 'manual_key');
-		$types = $this->getSetVar($session, 'manual_type', 'manual_type');
-		$operators = $this->getSetVar($session, 'manual_operator', 'manual_operator');
-		$values = $this->getSetVar($session, 'manual_value', 'manual_value');
-		for ($i = 0; $i < count($keys); $i++) {
-			if ($keys[$i]=='' || $values[$i]=='') {
-				continue;
-			}
-			switch ($types[$i]) {
-				case 'number':
-					$values[$i] = floatval($values[$i]);
-					break;
-				case  'date':
-					if (Zend_Date::isDate($values[$i], 'yyyy-MM-dd hh:mm:ss')) {
-						$values[$i] = new MongoDate((new Zend_Date($values[$i], null, new Zend_Locale('he_IL')))->getTimestamp());
-					}
-					else {
-						continue 2;
-					}
-				default:
-					break;
-			}
-			switch ($operators[$i]) {
-				case 'lt':
-					$operators[$i] = '$lt';
-					break;
-				case 'lte':
-					$operators[$i] = '$lte';
-					break;
-				case 'gt':
-					$operators[$i] = '$gt';
-					break;
-				case 'gte':
-					$operators[$i] = '$gte';
-					break;
-				case 'equals':
-					$operators[$i] = '$in';
-					$values[$i] = array($values[$i]);
-					break;
-				default:
-					break;
-			}
-			$query[$keys[$i]][$operators[$i]] = $values[$i];
-		}
-		return $query;
-	}
+	}	
 
 }

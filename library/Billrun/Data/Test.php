@@ -20,7 +20,8 @@ class Billrun_Data_Test extends Billrun_Data {
 	protected $testId = false;
 	
 	public function __construct($testConfig) {
-		$this->testScript = $testConfig->getRawData();
+		parent::__construct($testConfig->getRarData());
+		$this->testScript = $this->data['test_script'];
 		$this->testId = $this->testScript['test_id'];
 	}
 	
@@ -33,9 +34,23 @@ class Billrun_Data_Test extends Billrun_Data {
 		if($testId) {
 			$query['test_id'] = $testId;
 		}
-		$testConfig = Billrun_Factory::db($query)->configCollection()->query()->cursor()->sort(array('urt' => -1))->limit(1)->current();
+		$testConfig = Billrun_Factory::db($query)->configCollection()->query()->cursor()->sort(array('from' => -1,'urt' => -1))->limit(1)->current();
 		
 		return !$testConfig->isEmpty() ? new Billrun_Data_Test($testConfig) : null;
+	}
+	/**
+	 *  Gety  all or some of the tests that are/were scheduled
+	 * @param type $query 
+	 * @return type
+	 */
+	static public function  get($query= array()) {
+			$query = array_merge($query,array( 'key' => 'call_generator' ));
+		
+		$results = Billrun_Factory::db($query)->configCollection()->query()->cursor()->sort(array('urt' => -1));
+		foreach ($results as  $testConfig) {
+			$tests[] = new Billrun_Data_Test($testConfig);
+		}
+		return $tests;
 	}
 
 	
@@ -46,7 +61,7 @@ class Billrun_Data_Test extends Billrun_Data {
 		//Billrun_Factory::log("Checking configuration update  relative to: ".date("Y-m-d H:i:s",  $currentConfig['urt']->sec));
 		$currTime = new MongoDate(time());	
 		$retVal = Billrun_Factory::db()->configCollection()->query(array('key' => 'call_generator','from'=> array('$lt'=> new MongoDate(time())),			
-				'urt' => array(	'$gt' => $currentConfig['urt']  ,'$lte' =>  $currTime ) //@TODO add top limit to loaded configuration
+				'urt' => array(	'$gt' => $currentConfig['urt']  ,'$lte' =>  $currTime ) 
 			))->cursor()->limit(1)->current();
 		return !$retVal->isEmpty();
 	}
@@ -97,8 +112,31 @@ class Billrun_Data_Test extends Billrun_Data {
 		return Billrun_Util::getFieldVal($this->testScript['state'], 'start') == 'start' && !$this->isTestFinished();
 	}
 	
-	public function save($data = false) {
-	
+	/**
+	 * 
+	 * @return boolean
+	 */
+	public function save() {
+		Billrun_Factory::log()->log("Saving Config", Zend_Log::INFO);
+		
+		$data = $this->data;
+		$data['test_script'] = $this->testScript;
+		$data['test_id'] = $this->testId;
+		$data['urt'] = new MongoDate( time() ); 
+		$data['from'] = new MongoDate($data['from']);
+		$data['to'] = new MongoDate($data['to']);
+		$configCol = Billrun_Factory::db()->configCollection();		
+		$entity = new Mongodloid_Entity($data,$configCol);		
+		
+		if ($entity->isEmpty() || $entity->save($configCol) === false) {
+			Billrun_Factory::log()->log('Failed to store configuration into DB',Zend_Log::ALERT);
+			return false;
+		}
+		
+		$this->removeOldEnteries($entity['key'],$data['from'],$data['to'],$data['urt']);
+		
+		Billrun_Factory::log()->log("Saved Config", Zend_Log::INFO);
+		return true;
 	}
 	
 
@@ -120,6 +158,21 @@ class Billrun_Data_Test extends Billrun_Data {
 		return Billrun_Factory::db()->linesCollection()->query(array('type'=> 'generated_call','urt'=> array('$gt' => $script['from'], 'test_id'=> $script['test_id'])))->cursor()->count(true);
 	}
 
+	
+	/**
+	 * Remove old config entries
+	 * @param type $keythe  key to remove old entries for.
+	 */
+	protected function removeOldEnteries($key,$from , $to, $urt) {
+		$oldEntries = Billrun_Factory::db()->configCollection()->query(array('key' => $key))->cursor()->sort(array('urt'=>-1))->skip(static::CONCURRENT_CONFIG_ENTRIES);
+		foreach ($oldEntries as $entry) {
+			$entry->collection(Billrun_Factory::db()->configCollection());
+			$entry->remove();
+		}
+		
+		return Billrun_Factory::db()->configCollection()->remove(array('key' => $key, 'from' => array('$gte' => $from, '$lte' => $to),'urt' => array('$lt'=> $urt)));
+		
+	}
 	
 	//---------------------------------- GETTERS / SETTERS ----------------------------------
 	
