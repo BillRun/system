@@ -69,9 +69,9 @@ class Gsmodem_Gsmodem  {
 	 * @param type $number
 	 * @return type
 	 */
-	public function call($number) {		
+	public function call($number,$waitDuration = false) {		
 		$this->hangUp();
-		$ret =  $this->doCmd($this->getATcmd('call', array($number)), true, true, true, self::COMMAND_RESPONSE_TIME * 2);		
+		$ret =  $this->doCmd($this->getATcmd('call', array($number)), true, true, true,($waitDuration ? $waitDuration : self::COMMAND_RESPONSE_TIME * 2) );		
 
 		return $ret;
 	}

@@ -85,6 +85,21 @@ class Gsmodem_ModemState {
 		$this->mapping = $mapping ? $mapping : new Gsmodem_StateMapping();
 		$this->state = $startingState;
 	}
+	/**
+	 * TODO
+	 * @param type $mapping
+	 */
+	public function setAtCommandMapping($mapping = array()) {
+		$this->atCmdMap = $mapping;
+	}
+	
+	/**
+	 * TODO
+	 * @param type $mapping
+	 */
+	public function setAtResultMapping($mapping = array()) {
+		$this->resultsMap = $mapping;
+	}
 	
 	/**
 	 * Update the state upon results.

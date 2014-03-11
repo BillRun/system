@@ -28,6 +28,14 @@ class Billrun_Generator_Report_GeneratedCalls extends Billrun_Generator_Report {
 	protected $billingCalls = null;
 	protected $billingTimeOffset = 0;
 	protected $allowedTimeDiveation = 10;
+	protected $testPassParams = array(
+		'start_time_diff' => 1.5,
+		'end_time_diff' => 1.5,
+		'charge_off' => 0.3,		
+		'time_offset' => 1,
+		'call_recording_offset' => 0,
+		'called_number_diff' => 0,
+	);
 	
 
 	public function __construct($options) {
@@ -117,28 +125,36 @@ class Billrun_Generator_Report_GeneratedCalls extends Billrun_Generator_Report {
 				'callee_estimated_price' => 'generator_estimated_price',
 			);			
 			$record = array_merge( $this->filterArray($callingRecordFilter, $line),  $this->filterArray($billingRecordFilter, $line) );			
-			$record['start_time_offest'] = Billrun_Util::getFieldVal($line['callee_call_start_time']->sec,0) - strtotime( Billrun_Util::getFieldVal($line['billing_charging_start_time'],'') );
+			$record['start_time_offest'] = Billrun_Util::getFieldVal($line['caller_call_start_time']->sec,0) - strtotime( Billrun_Util::getFieldVal($line['billing_charging_start_time'],'') );
+			
 			$record['end_time_offest'] = Billrun_Util::getFieldVal($line['callee_call_end_time']->sec,0) - strtotime(Billrun_Util::getFieldVal($line['billing_charging_end_time'],''));
 			
 			if($isCallerHanugup) {
 				$record['generator_duration'] = Billrun_Util::getFieldVal($line['caller_duration'],Billrun_Util::getFieldVal($line['callee_duration'],0));
 				$record['generator_call_start_time'] = date("Y-m-d H:i:s",Billrun_Util::getFieldVal($line['caller_call_start_time']->sec,Billrun_Util::getFieldVal($line['callee_call_start_time']->sec,0)));
-				$record['generator_call_end_time'] = date("Y-m-d H:i:s", Billrun_Util::getFieldVal($line['caller_call_end_time']->sec,Billrun_Util::getFieldVal($line['callee_call_end_time']->sec,0)));
-				$record['start_time_offest'] = Billrun_Util::getFieldVal($line['caller_call_start_time']->sec,0) - strtotime( Billrun_Util::getFieldVal($line['billing_charging_start_time'],'') );
+				$record['generator_call_end_time'] = date("Y-m-d H:i:s", Billrun_Util::getFieldVal($line['caller_call_end_time']->sec,Billrun_Util::getFieldVal($line['callee_call_end_time']->sec,0)));				
 				$record['end_time_offest'] = Billrun_Util::getFieldVal($line['caller_call_end_time']->sec,0) - strtotime(Billrun_Util::getFieldVal($line['billing_charging_end_time'],''));			
 			}
+			
+			$isNoCall = ($record['caller_end_status'] == 'no_call' && $record['called_end_status'] == 'no_call');
 			
 			$record['crashed'] = Billrun_Util::getFieldVal($line['stage'],'call_done') != 'call_done' ? 1 : 0;
 			$record['time_offset'] = Billrun_Util::getFieldVal($record['generator_duration'],0) - Billrun_Util::getFieldVal($line['billing_usagev'],0);
 			$record['charge_offest'] = Billrun_Util::getFieldVal($line['callee_cost'],0) - Billrun_Util::getFieldVal($line['billing_aprice'],0);
 			$record['rate_offest'] = Billrun_Util::getFieldVal($line['rate'],0) - Billrun_Util::getFieldVal($line['billling_arate'],0);
-			$record['call_recoding_diff'] =	isset($line['billing_urt'])  ? 0 : 1 ;
-			$record['called_number_diff'] = Billrun_Util::getFieldVal($line['to'],'') != Billrun_Util::getFieldVal($line['billing_called_number'],'') ? 1 : 0;
-			$record['correctness'] = ($record['caller_end_status'] == 'no_call' && $record['called_end_status'] == 'no_call')^ ( // Check that the  call is corrent
-										abs($record['start_time_offest']) <= 1.5 && abs($record['end_time_offest']) <= 1.5 &&
-										$record['call_recoding_diff']  == 0 && $record['called_number_diff'] == 0 &&
-										abs($record['charge_offest']) <= 0.3 && abs($record['time_offset']) <= 1 
-									) ? 0 : 1;
+			$record['call_recoding_diff'] =	(isset($line['billing_urt'])  ? 0 : 1) ^ $isNoCall;
+			$record['called_number_diff'] = (Billrun_Util::getFieldVal($line['to'],'') != Billrun_Util::getFieldVal($line['billing_called_number'],'') ? 1 : 0)  ^ $isNoCall;
+//			$record['correctness'] =  ( // Check that the  call is corrent
+//										abs($record['start_time_offest']) <= 1.5 && abs($record['end_time_offest']) <= 1.5 &&
+//										$record['call_recoding_diff']  == 0 && $record['called_number_diff'] == 0 &&
+//										abs($record['charge_offest']) <= 0.3 && abs($record['time_offset']) <= 1 
+//									) ? 0 : 1;
+			$record['correctness'] = 0;
+			foreach ($this->testPassParams as $key => $value) {
+				if(abs($record[$key]) > $value) {
+					$record['correctness'] = 1;
+				}
+			}
 			
 			return $record;
 	}

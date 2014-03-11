@@ -259,7 +259,7 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 			if ($action['action_type'] == static::TYPE_BUSY) {
 				sleep( intval(Billrun_Factory::config()->getConfigValue('calls.busy_wait_time', static::BUSY_WAIT_TIME)) );
 			}
-			$this->makeACall($device, $call, $action['to']);
+			$this->makeACall($device, $call, $action['to'], ( $action['action_type'] == static::TYPE_VOICE_MAIL ? $action['duration'] : false ));			
 		} else {			
 			if ($action['action_type'] != static::TYPE_BUSY) {
 				$this->waitForCall($device, $call, $action['action_type'], $action['duration'] + static::WAIT_TIME_PADDING );
@@ -289,16 +289,16 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 	 * @param type $callRecord the  call record to save to the DB.
 	 * @return mixed the call record with the data regarding making the call.
 	 */
-	protected function makeACall($device, &$callRecord, $numberToCall) {
+	protected function makeACall($device, &$callRecord, $numberToCall,$waitDuration = false ) {
 		Billrun_Factory::log("Making a call to  {$numberToCall}");
 		$callRecord['called_number'] = $numberToCall;
-		$device->call($numberToCall);
+		$device->call($numberToCall,$waitDuration);
 		$callRecord['execution_start_time'] = new MongoDate(round(microtime(true)));
 		$callRecord['calling_result'] = $device->getState();
 
 		return $callRecord['calling_result'];
 	}
-
+	
 	/**
 	 * Wait for a call.
 	 * @param mixed $callRecord  the call record to save to the DB.
@@ -512,7 +512,7 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 	 * @return type
 	 */
 	protected function scriptFinshedCallsCount($script) {
-		return Billrun_Factory::db()->linesCollection()->query(array('type'=> 'generated_call','urt'=> array('$gt' => $script['from'], 'test_id'=> $script['test_id'])))->cursor()->count(true);
+		return Billrun_Factory::db()->linesCollection()->query(array('type'=> 'generated_call','urt'=> array('$gt' => $script['from']),"stage"=> "call_done", 'test_id'=> $script['test_id']))->cursor()->count(true);
 	}
 	
 	/**

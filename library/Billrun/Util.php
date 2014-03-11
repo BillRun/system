@@ -227,9 +227,6 @@ class Billrun_Util {
 	 * @return type
 	 */
 	public static function getFieldVal(&$field, $defVal) {
-		if(isset($field)) {
-			return $field;
-		}
-		return $defVal;
+		return isset($field) ? $field : $defVal;
 	}
 }

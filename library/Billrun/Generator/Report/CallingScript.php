@@ -30,7 +30,7 @@ class Billrun_Generator_Report_CallingScript extends Billrun_Generator_Report {
 	
 	const CALLEE = 'callee';
 	const CALLER = 'caller';
-	const VOIVE_MAIL_DURATION = 1.5;
+	const VOIVE_MAIL_DURATION = 5;
 	const NO_ANSWER_DURATION = 10;
 
 	const CONCURRENT_CONFIG_ENTRIES = 50;
