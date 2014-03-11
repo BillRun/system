@@ -368,4 +368,12 @@ class TableModel {
 		return $columns;
 	}
 
+	public function getSortElements() {
+		$sort_fields = $this->getSortFields();
+		if ($sort_fields) {
+			$sort_fields = array_merge(array(0 => 'N/A'), $sort_fields);
+		}
+		return $sort_fields;
+	}
+
 }

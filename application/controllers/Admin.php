@@ -376,7 +376,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	protected function createFilterToolbar() {
 		$params['filter_fields'] = $this->model->getFilterFields();
 		$params['filter_fields_order'] = $this->model->getFilterFieldsOrder();
-		$params['sort_fields'] = $this->model->getSortFields();
+		$params['sort_fields'] = $this->model->getSortElements();
 		$params['extra_columns'] = $this->model->getExtraColumns();
 
 		return $params;
@@ -514,9 +514,14 @@ class AdminController extends Yaf_Controller_Abstract {
 
 	protected function applySort($table) {
 		$session = $this->getSession($table);
-		$sort_by = $this->getSetVar($session, 'sort_by', 'sort_by', '_id');
-		$order = $this->getSetVar($session, 'order', 'order', 'asc') == 'asc' ? 1 : -1;
-		$sort = array($sort_by => $order);
+		$sort_by = $this->getSetVar($session, 'sort_by', 'sort_by');
+		if ($sort_by) {
+			$order = $this->getSetVar($session, 'order', 'order', 'asc') == 'asc' ? 1 : -1;
+			$sort = array($sort_by => $order);
+		}
+		else {
+			$sort = array();
+		}
 		return $sort;
 	}
 

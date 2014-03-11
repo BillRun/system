@@ -103,7 +103,7 @@
 			<span class="pull-right">
 			<?php endif; ?>
 			<?php if (strtolower($this->title) == 'rates' || strtolower($this->title) == 'plans') : ?>
-				<span><a id='close_and_new' data-type="close_and_new" href="#popupModal" class="btn btn-primary" data-toggle="modal" role="button" data-remote="">Close & new</a></span>
+				<span><a id='close_and_new' data-type="close_and_new" href="#popupModal" class="btn btn-warning" data-toggle="modal" role="button" data-remote="">Close & new</a></span>
 				<span><a id='duplicate' data-type="duplicate" href="#popupModal" class="btn btn-info" data-toggle="modal" role="button" data-remote="">Duplicate</a></span>
 			<?php endif; ?>
 			<?php if (!in_array(strtolower($this->title), array('events', 'log'))) : ?>
@@ -111,6 +111,8 @@
 			<?php endif; ?>
 			<?php if (strtolower($this->title) == 'lines') : ?>
 				<span><a id='download' data-type="download" href="/admin/csvExport" class="btn btn-info"><i class="icon-download-alt"> </i>Export to CSV</a></span>
+			<?php endif; ?>
+			<?php if (in_array(strtolower($this->title), array('lines', 'rates'))) : ?>
 				<span><a id='upload' data-type="upload" href="#uploadModal" class="btn btn-primary" data-toggle="modal" role="button"><i class="icon-upload"> </i>Import</a></span>
 			<?php endif; ?>
 		</span>
