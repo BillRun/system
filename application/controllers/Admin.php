@@ -248,7 +248,8 @@ class AdminController extends Yaf_Controller_Abstract {
 	}
 
 	public function tabledateAction() {
-		$showprefix = $this->_request->getParam("showprefix") == 'on' ? 1 : 0;
+		$showprefix_param = $this->_request->getParam("showprefix");
+		$showprefix = $showprefix_param == 'on' && !$showprefix_param == '0' ? 1 : 0;
 		$table = $this->_request->getParam("table");
 
 //		$sort = array('urt' => -1);
@@ -375,7 +376,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	protected function createFilterToolbar() {
 		$params['filter_fields'] = $this->model->getFilterFields();
 		$params['filter_fields_order'] = $this->model->getFilterFieldsOrder();
-		$params['sort_fields'] = $this->model->getSortFields();
+		$params['sort_fields'] = $this->model->getSortElements();
 		$params['extra_columns'] = $this->model->getExtraColumns();
 
 		return $params;
@@ -513,9 +514,14 @@ class AdminController extends Yaf_Controller_Abstract {
 
 	protected function applySort($table) {
 		$session = $this->getSession($table);
-		$sort_by = $this->getSetVar($session, 'sort_by', 'sort_by', '_id');
-		$order = $this->getSetVar($session, 'order', 'order', 'asc') == 'asc' ? 1 : -1;
-		$sort = array($sort_by => $order);
+		$sort_by = $this->getSetVar($session, 'sort_by', 'sort_by');
+		if ($sort_by) {
+			$order = $this->getSetVar($session, 'order', 'order', 'asc') == 'asc' ? 1 : -1;
+			$sort = array($sort_by => $order);
+		}
+		else {
+			$sort = array();
+		}
 		return $sort;
 	}
 

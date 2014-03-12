@@ -265,7 +265,9 @@ class TableModel {
 			$raw_data = $entity->getRawData();
 			$new_data = array();
 			foreach ($protected_keys as $value) {
-				$new_data[$value] = $raw_data[$value];
+				if (isset($raw_data[$value])) {
+					$new_data[$value] = $raw_data[$value];
+				}
 			}
 			foreach ($hidden_keys as $value) {
 				$new_data[$value] = $raw_data[$value];
@@ -312,6 +314,9 @@ class TableModel {
 		} else if ($filter_field['input_type'] == 'text') {
 			if ($value != '') {
 				if ($filter_field['comparison'] == 'contains') {
+					if (isset($filter_field['case_type'])) {
+						$value = Admin_Table::convertValueByCaseType($value, $filter_field['case_type']);
+					}
 					return array(
 						$filter_field['db_key'] => array('$regex' => strval($value)),
 					);
@@ -353,7 +358,7 @@ class TableModel {
 		$extra_columns = Billrun_Factory::config()->getConfigValue('admin_panel.' . $this->collection_name . '.extra_columns', array());
 		return $extra_columns;
 	}
-	
+
 	public function getTableColumns() {
 		$columns = Billrun_Factory::config()->getConfigValue('admin_panel.' . $this->collection_name . '.table_columns', array());
 		if (!empty($this->extra_columns)) {
@@ -361,6 +366,14 @@ class TableModel {
 			$columns = array_merge($columns, $extra_columns);
 		}
 		return $columns;
+	}
+
+	public function getSortElements() {
+		$sort_fields = $this->getSortFields();
+		if ($sort_fields) {
+			$sort_fields = array_merge(array(0 => 'N/A'), $sort_fields);
+		}
+		return $sort_fields;
 	}
 
 }
