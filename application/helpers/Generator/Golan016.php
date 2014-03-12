@@ -29,9 +29,9 @@ class Generator_Golan016 extends Billrun_Generator_Csv_Fixed {
 	static protected $fileName = '';
 
 	/**
-	 * @object logEntity
+	 * @object logEntities
 	 */
-	protected $logEntity;
+	protected $logEntities = array();
 
 	/**
 	 *  Disable stamp export directory
@@ -87,41 +87,70 @@ class Generator_Golan016 extends Billrun_Generator_Csv_Fixed {
 		$lines = Billrun_Factory::db()->linesCollection();
 
 		$log = $log_coll->query(array(
-					'source' => '016',
-					'generated' => array('$exists' => false),
-				))->cursor()->current();
+				'source' => '016',
+				'generated' => array('$exists' => false),
+			))->limit(100)->cursor(); //->current();
 
 		if ($log->isEmpty()) {
 			Billrun_Factory::log()->log("No file to generate", Zend_Log::INFO);
 			return FALSE;
 		}
 
-		$this->logEntity = $log;
-
-		$lines_arr = $lines->query()
+		foreach ($log as $file) {
+			$fileStamp = $file['stamp'];
+			$this->logEntities[$fileStamp] = $file;
+			$lines_arr = $lines->query()
 				->equals('source', 'ilds')
 				->equals('type', '016')
 				->exists('price_customer')
-				->equals('file', $log['file_name']);
+				->equals('file', $file['file_name']);
 
-		foreach ($lines_arr as $entity) {
+			$this->data[$fileStamp] = array();
+			foreach ($lines_arr as $entity) {
 
-			$this->data[] = $entity;
+				$this->data[$fileStamp][] = $entity;
 
-			if (empty(self::$fileName) && !empty($entity['file'])) {
-				self::$fileName = $entity['file'];
+				if (empty(self::$fileName) && !empty($entity['file'])) {
+					self::$fileName = $entity['file'];
+				}
 			}
 		}
+	}
+
+	/**
+	 * execute the generate action
+	 */
+	public function generate() {
+
+		foreach ($this->data as $file) {
+			$str = '';
+			foreach ($file as $key => $row) {
+				$str .= $this->createRow($row);
+			}
+
+			if (empty($str)) {
+				continue;
+			}
+
+			$fileTreated = $this->createTreatedFile($str);
+			if ($fileTreated) {
+
+				$this->setGeneratedStamp($key);
+				Billrun_Factory::log()->log("file: " . $fileTreated . " was generated and file response created", Zend_Log::INFO);
+				continue;
+			}
+		}
+
+		return FALSE;
 	}
 
 	/*
 	 * set stamp on the generated file on log collecton
 	 */
-
-	public function setGeneratedStamp() {
+	public function setGeneratedStamp($fileStamp) {
 
 		$log = Billrun_Factory::db()->logCollection();
-		$logEntity = $this->logEntity;
+		$logEntity = $this->logEntities[$fileStamp];
 		$current_row = $logEntity->getRawData();
 
 		$added_values = array(
@@ -137,7 +166,7 @@ class Generator_Golan016 extends Billrun_Generator_Csv_Fixed {
 	 * @see Billrun_Generator_Csv::createTreatedFile
 	 */
 	public function createTreatedFile($xmlContent) {
-		
+
 		$treatedFile = substr(self::$fileName, 0, strpos(self::$fileName, '.new')) . '.out';
 		if (empty($treatedFile)) {
 			Billrun_Factory::log()->log("file name is empty, cannot generate the file:" . self::$fileName, Zend_Log::ERR);
