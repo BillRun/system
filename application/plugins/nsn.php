@@ -251,7 +251,7 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 				$data['called_number'] = substr($data['called_number'], 3);
 			}
 		} else {
-			Billrun_Factory::log()->log("unsupported NSN record type : {$data['record_type']}",Zend_log::DEBUG);
+//			Billrun_Factory::log()->log("unsupported NSN record type : {$data['record_type']}",Zend_log::DEBUG);
 		}
 
 		$parser->setLastParseLength($data['record_length']);

@@ -914,8 +914,9 @@ EOI;
 						};
 				$subscriber_lines = array_filter($lines, $func);
 			}
+			$subscriber_united_lines = $this->aggregateLinesByCallReference($subscriber_lines);
 			$lines_counter = 0;
-			foreach ($subscriber_lines as $line) {
+			foreach ($subscriber_united_lines as $line) {
 				if (!$line->isEmpty() && $line['type'] != 'ggsn') {
 					$lines_counter++;
 					$line->collection($this->lines_coll);
@@ -931,6 +932,39 @@ EOI;
 			}
 		}
 		$this->writer->endElement(); // end BILLING_LINES
+	}
+
+	/**
+	 * Aggregate lines by call reference & call reference time (Handover)
+	 * @param array $lines lines with stamp as their key, sorted by urt
+	 * @return array
+	 */
+	protected function aggregateLinesByCallReference($lines) {
+		$call_references = array();
+		foreach ($lines as $stamp => $line) {
+			if ($line['type'] == 'nsn' && isset($line['call_reference']) && isset($line['call_reference_time'])) {
+				$unique_call_reference = $line['call_reference'] . $line['call_reference_time'];
+				$call_references[$unique_call_reference][] = $stamp;
+			}
+		}
+		foreach ($call_references as $stamps) {
+			if (count($stamps) > 1) {
+				for ($i = 1; $i < count($stamps); $i++) {
+					$lines[$stamps[0]]['usagev']+=$lines[$stamps[$i]]['usagev'];
+					$lines[$stamps[0]]['aprice']+=$lines[$stamps[$i]]['aprice'];
+					$plan_flag = isset($lines[$stamps[$i]]['over_plan']) ? 'over_plan' : isset($lines[$stamps[$i]]['out_plan']) ? 'out_plan' : false;
+					if ($plan_flag) {
+						if (isset($lines[$stamps[0]][$plan_flag])) {
+							$lines[$stamps[0]][$plan_flag] += $lines[$stamps[$i]][$plan_flag];
+						} else {
+							$lines[$stamps[0]][$plan_flag] = $lines[$stamps[$i]][$plan_flag];
+						}
+					}
+					unset($lines[$stamps[$i]]);
+				}
+			}
+		}
+		return $lines;
 	}
 
 	protected function startInvoice() {
