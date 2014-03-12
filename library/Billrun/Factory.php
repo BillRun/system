@@ -62,7 +62,7 @@ class Billrun_Factory {
 	 * @var Billrun Smser
 	 */
 	protected static $smser = null;
-	
+
 	/**
 	 * method to retrieve the log instance and can send automatically to msg to log
 	 * 
@@ -75,7 +75,7 @@ class Billrun_Factory {
 		if (!self::$log) {
 			self::$log = Billrun_Log::getInstance();
 		}
-		
+
 		$args = func_get_args();
 		if (count($args) > 0) {
 			$message = (string) $args[0];
@@ -108,12 +108,24 @@ class Billrun_Factory {
 	 * 
 	 * @return Billrun_Db
 	 */
-	static public function db() {
-		if (!self::$db) {
-			self::$db = Billrun_Db::getInstance();
+	static public function db(array $options = array()) {
+		if (empty($options)) {
+			$options = Billrun_Factory::config()->getConfigValue('db'); // the stdclass force it to return object
+		} else if (isset($options['name']) && in_array($options['name'], array('balances', 'billrunstats')) && count($options) == 1) {
+			$name = $options['name'];
+			// move balances to different database
+			$options = Billrun_Factory::config()->getConfigValue('db');
+			$options['name'] = $name;
 		}
 
-		return self::$db;
+		// unique stamp per db connection
+		$stamp = md5(serialize($options));
+
+		if (!isset(self::$db[$stamp])) {
+			self::$db[$stamp] = Billrun_Db::getInstance($options);
+		}
+
+		return self::$db[$stamp];
 	}
 
 	/**
@@ -178,7 +190,7 @@ class Billrun_Factory {
 
 		return self::$chain;
 	}
-	
+
 	/**
 	 * method to retrieve the a mailer instance
 	 * 
@@ -192,7 +204,7 @@ class Billrun_Factory {
 		if (!isset(self::$smser[$stamp])) {
 			self::$smser[$stamp] = new Billrun_Sms($options);
 		}
-		
+
 		return self::$smser[$stamp];
 	}
 
