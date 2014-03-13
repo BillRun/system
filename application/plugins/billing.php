@@ -9,19 +9,66 @@ abstract class billingPlugin extends Billrun_Plugin_BillrunPluginFraud {
 	 */
 	protected $name;
 
+	/**
+	 * lag caused by the receiving + processing, in seconds
+	 * @var int
+	 */
+	protected $lag;
+
+	/**
+	 * time interval to query on, in seconds
+	 * @var int
+	 */
+	protected $interval;
+
+	/**
+	 * lines types to query on
+	 * @var array
+	 */
+	protected $types;
+
+	/**
+	 * lines usage types to query on
+	 * @var array
+	 */
+	protected $usage_types;
+
+	/**
+	 * amount of abuse usage, in seconds
+	 * @var int
+	 */
+	protected $threshold;
+
 	const time_format = 'YmdHis';
 
 	public function __construct($options = array()) {
 		parent::__construct($options);
-		$options = Billrun_Factory::config()->getConfigValue('nrtrde.thresholds.moc.israel', 1800, 'int');
+
+		$pluginOptions = Billrun_Factory::config()->getConfigValue($this->getName());
+
+		if (isset($pluginOptions['lag'])) {
+			$this->lag = $pluginOptions['lag'];
+		}
+		if (isset($pluginOptions['interval'])) {
+			$this->interval = $pluginOptions['interval'];
+		}
+		if (isset($pluginOptions['type'])) {
+			$this->types = $pluginOptions['type'];
+		}
+		if (isset($pluginOptions['usaget'])) {
+			$this->usage_types = $pluginOptions['usaget'];
+		}
+		if (isset($pluginOptions['threshold'])) {
+			$this->threshold = intval($pluginOptions['threshold']);
+		}
 	}
 
-	protected function validateOptions($options) {
-		if (!isset($options['interval'], $options['lag'], $options['usaget'], $options['threshold'], $options['type'])) {
+	protected function validateOptions() {
+		if (!isset($this->interval, $this->lag, $this->usage_types, $this->threshold, $this->types)) {
 			return FALSE;
-		} else if (!is_array($options['usaget']) || !is_array($options['type']) || empty($options['type']) || empty($options['usaget'])) {
+		} else if (!is_array($this->usage_types) || !is_array($this->types) || empty($this->types) || empty($this->usage_types)) {
 			return FALSE;
-		} else if (!is_numeric($options['lag']) || !is_numeric($options['interval']) || !is_numeric($options['threshold'])) {
+		} else if (!is_numeric($this->lag) || !is_numeric($this->interval) || !is_numeric($this->threshold)) {
 			return FALSE;
 		}
 		return TRUE;
@@ -34,21 +81,17 @@ abstract class billingPlugin extends Billrun_Plugin_BillrunPluginFraud {
 		if ($options['type'] != $this->getName()) {
 			return FALSE;
 		}
-
-		$options = array_merge($options, Billrun_Factory::config()->getConfigValue($this->getName()));
-		if (!$this->validateOptions($options)) {
+		if (!$this->validateOptions()) {
 			return FALSE;
 		}
-		$interval = $options['interval'];
-		$lag = $options['lag'];
-		$types = $options['type'];
-		$usage_types = $options['usaget'];
-		$threshold = $options['threshold'] * 3600;
+		$billing_db_config = Billrun_Factory::config()->getConfigValue('billing.db');
+		if (!$billing_db_config) {
+			return FALSE;
+		}
+		$lines = Billrun_Factory::db($billing_db_config)->linesCollection();
 
-		$lines = Billrun_Factory::db()->linesCollection();
-
-		$end_timestamp = strtotime($lag . ' hours ago');
-		$start_timestamp = strtotime($interval . ' hours ago', $end_timestamp);
+		$end_timestamp = strtotime($this->lag . ' seconds ago');
+		$start_timestamp = strtotime($this->interval . ' seconds ago', $end_timestamp);
 
 
 		$base_match = array(
@@ -57,26 +100,37 @@ abstract class billingPlugin extends Billrun_Plugin_BillrunPluginFraud {
 					'$exists' => TRUE,
 				),
 				'type' => array(
-					'$in' => $types,
+					'$in' => $this->types,
 				),
 				'urt' => array(
 					'$lte' => new MongoDate($end_timestamp),
 					'$gte' => new MongoDate($start_timestamp),
 				),
 				'usaget' => array(
-					'$in' => $usage_types,
+					'$in' => $this->usage_types,
 				),
 			),
 		);
 
 		$group = array(
 			'$group' => array(
-				"_id" => '$sid',
-				"usagev" => array(
+				'_id' => '$sid',
+				'value' => array(
 					'$sum' => '$usagev'
 				),
-				'lines_stamps' => array(
-					'$addToSet' => '$stamp'
+				'plan' => array(
+					'$first' => '$plan'
+				),
+				'aid' => array(
+					'$first' => '$aid'
+				),
+			),
+		);
+
+		$having = array(
+			'$match' => array(
+				'value' => array(
+					'$gte' => $this->threshold,
 				),
 			),
 		);
@@ -85,25 +139,13 @@ abstract class billingPlugin extends Billrun_Plugin_BillrunPluginFraud {
 			'$project' => array(
 				'_id' => 0,
 				'sid' => '$_id',
-				'usagev' => 1,
-				'event_type' => array(
-					'$concat' => array(
-						'BILLING'
-					)
-				),
+				'value' => 1,
+				'plan' => 1,
+				'aid' => 1,
 			),
 		);
 
-		$having = array(
-			'$match' => array(
-				'usagev' => array(
-					'$gte' => $threshold,
-				),
-			),
-		);
-
-
-		$ret = $lines->aggregate($base_match, $group, $project, $having);
+		$ret = $lines->aggregate($base_match, $group, $having, $project);
 
 		Billrun_Factory::log()->log($this->getName() . ' plugin located ' . count($ret) . ' items as fraud events', Zend_Log::INFO);
 
@@ -111,6 +153,11 @@ abstract class billingPlugin extends Billrun_Plugin_BillrunPluginFraud {
 	}
 
 	protected function addAlertData(&$event) {
+		$event['threshold'] = $this->threshold;
+		$event['event_type'] = 'BILLING';
+		if (array_intersect($this->usage_types, array('call', 'incoming_call'))) {
+			$event['units'] = 'SEC';
+		}
 		return $event;
 	}
 

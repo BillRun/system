@@ -21,26 +21,26 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @var boolean
 	 */
 	protected $isDryRun = false;
-	
+
 	public function __construct($options = array(
 	)) {
 		parent::__construct($options);
 
 		$this->alertServer = isset($options['alertHost']) ?
-			$options['alertHost'] :
-			Billrun_Factory::config()->getConfigValue('fraudAlerts.alert.host', '127.0.0.1');
+				$options['alertHost'] :
+				Billrun_Factory::config()->getConfigValue('fraudAlerts.alert.host', '127.0.0.1');
 
 		$this->alertPath = isset($options['alertPath']) ?
-			$options['alertPath'] :
-			Billrun_Factory::config()->getConfigValue('fraudAlerts.alert.path', '/');
+				$options['alertPath'] :
+				Billrun_Factory::config()->getConfigValue('fraudAlerts.alert.path', '/');
 
 		$this->alertTypes = isset($options['alertTypes']) ?
-			$options['alertTypes'] :
-			Billrun_Factory::config()->getConfigValue('fraudAlerts.alert.types', array('nrtrde', 'ggsn', 'deposit', 'ilds', 'nsn'));
+				$options['alertTypes'] :
+				Billrun_Factory::config()->getConfigValue('fraudAlerts.alert.types', array('nrtrde', 'ggsn', 'deposit', 'ilds', 'nsn', 'billing1', 'billing2'));
 
 		$this->isDryRun = isset($options['dryRun']) ?
-			$options['dryRun'] :
-			Billrun_Factory::config()->getConfigValue('fraudAlerts.alert.dry_run', false);
+				$options['dryRun'] :
+				Billrun_Factory::config()->getConfigValue('fraudAlerts.alert.dry_run', false);
 
 		$this->startTime = time();
 
@@ -54,9 +54,9 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @return type
 	 */
 	public function handlerNotify($handler, $options) {
-               
-		if( $options['type'] != 'roaming') {
-                    return FALSE; 
+
+		if ($options['type'] != 'roaming' && substr($options['type'], 0, 7) != 'billing') {
+			return FALSE;
 		}
 		$ret = $this->roamingNotify();
 
@@ -80,7 +80,7 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 			if (!empty($alertsFilter) && !in_array($event['event_type'], $alertsFilter)) {
 				continue;
 			}
-			
+
 			$ret = $this->notifyOnEvent($event);
 			if ($ret === FALSE) {
 				$this->sendEmailOnFailure($event, $ret);
@@ -91,11 +91,10 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 				$event['returned_value'] = (array) $ret;
 				$this->markEvent($event);
 				$this->markEventLines($event);
-
 			} else {
 				$this->sendEmailOnFailure($event, $ret);
 			}
-			
+
 			//Decrease the amount of alerts allowed in a single run if 0 is reached the break the loop.
 			$alertsLeft--;
 
@@ -113,21 +112,21 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @param type $event the event that  was  suppose  to be passed to the RPC.
 	 * @param type $rpcRet the  remote rpc returned value
 	 */
-	protected function sendEmailOnFailure($event,$rpcRet) {
-		$msg = "Failed  when sending event to RPC". PHP_EOL;
-		$msg .= "Event : stamp : {$event['stamps'][0]} , imsi :  ".@$event['imsi']." ,  msisdn :  ".(@$event['msisdn']) . PHP_EOL;
-		$msg .= (isset($rpcRet['message']) ? "Message From RPC: " . $rpcRet['message'] : "No  failure  message  from the RPC.") .PHP_EOL;
-		$tmpStr ="";
-		if(is_array($rpcRet)) {
-			foreach($rpcRet as $key => $val) {
+	protected function sendEmailOnFailure($event, $rpcRet) {
+		$msg = "Failed  when sending event to RPC" . PHP_EOL;
+		$msg .= "Event : stamp : {$event['stamps'][0]} , imsi :  " . @$event['imsi'] . " ,  msisdn :  " . (@$event['msisdn']) . PHP_EOL;
+		$msg .= (isset($rpcRet['message']) ? "Message From RPC: " . $rpcRet['message'] : "No  failure  message  from the RPC.") . PHP_EOL;
+		$tmpStr = "";
+		if (is_array($rpcRet)) {
+			foreach ($rpcRet as $key => $val) {
 				$tmpStr .= " $key : $val,";
 			}
 		}
-		$msg .= "RPC Result : ". $tmpStr . PHP_EOL;
+		$msg .= "RPC Result : " . $tmpStr . PHP_EOL;
 		Billrun_Factory::log()->log($msg, Zend_Log::ALERT);
-		return Billrun_Util::sendMail("Failed Fraud Alert, " . date(Billrun_Base::base_dateformat), $msg, Billrun_Factory::config()->getConfigValue('fraudAlert.failed_alerts.recipients', array()) );
+		return Billrun_Util::sendMail("Failed Fraud Alert, " . date(Billrun_Base::base_dateformat), $msg, Billrun_Factory::config()->getConfigValue('fraudAlert.failed_alerts.recipients', array()));
 	}
-	
+
 	/**
 	 * Method to send events to the appropiate hadling body. 
 	 * @param array $args the arguments to send to the remote server.
@@ -195,18 +194,18 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 
 		if (!$this->isDryRun) {
 			$output = Billrun_Util::sendRequest($url, $post_fields, Zend_Http_Client::POST);
-			
+
 			Billrun_Log::getInstance()->log("fraudAlertsPlugin::notifyRemoteServer response: " . $output, Zend_Log::INFO);
-			
-			$ret = json_decode($output,true);
-			
+
+			$ret = json_decode($output, true);
+
 			if (is_null($ret)) {
 				Billrun_Log::getInstance()->log("fraudAlertsPlugin::notifyRemoteServer response is empty, null or not json string: ", Zend_Log::ERR);
 				return FALSE;
 			}
 
 			Billrun_Log::getInstance()->log("fraudAlertsPlugin::notifyRemoteServer decode: " . print_r($ret, 1), Zend_Log::INFO);
-			
+
 			return $ret;
 		} else {
 			Billrun_Log::getInstance()->log("fraudAlertsPlugin::notifyRemoteServer - Running in DRY RUN mode returning successful alert.", Zend_Log::INFO);
@@ -231,16 +230,16 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 */
 	protected function gatherEvents($types) {
 		$events = $this->eventsCol->aggregate(
-			array(
+				array(
 			'$match' => array(
 				'notify_time' => array('$exists' => false),
 				'source' => array('$in' => $types)
 			),
-			), array(
+				), array(
 			'$sort' => array('priority' => 1)
-			), array(
+				), array(
 			'$group' => array(
-				'_id' => array('imsi' => '$imsi', 'msisdn' => '$msisdn' , 'sid'=> '$sid'),
+				'_id' => array('imsi' => '$imsi', 'msisdn' => '$msisdn', 'sid' => '$sid'),
 				'id' => array('$addToSet' => '$_id'),
 				'imsi' => array('$first' => '$imsi'),
 				'msisdn' => array('$first' => '$msisdn'),
@@ -255,9 +254,9 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 				'plan' => array('$first' => '$plan'),
 				'stamps' => array('$addToSet' => '$stamp'),
 			),
-			), array(
-				'$sort' => array('priority' => 1)
-			),	array(
+				), array(
+			'$sort' => array('priority' => 1)
+				), array(
 			'$project' => array(
 				'_id' => 0,
 				'imsi' => '$_id.imsi',
@@ -268,13 +267,13 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 				'event_type' => 1,
 				'units' => 1,
 				'threshold' => 1,
-			//	'deposit_stamp' => 1,
+				//	'deposit_stamp' => 1,
 				'id' => 1,
 				'source' => 1,
 				'stamps' => 1,
 				'plan' => 1,
 			),
-			)
+				)
 		);
 		return $events;
 	}
@@ -291,7 +290,7 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 			'notify_time' => array('$exists' => false),
 			'_id' => array('$in' => $event['id']),
 		);
-		
+
 		if (is_null($failure)) {
 			$events_update_set = array(
 				'$set' => array(
@@ -307,7 +306,7 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 					'deposit_stamp' => 'ERROR-' . date(Billrun_Base::base_dateformat),
 					'returned_value' => $failure,
 				),
-			);			
+			);
 		}
 		$update_options = array('multiple' => 1);
 		return $this->eventsCol->update($events_where, $events_update_set, $update_options);
@@ -318,7 +317,7 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @param type $event the event that relate to the lines.
 	 */
 	protected function markEventLines($event) {
-		if($event['source'] == 'billing') { // HACK to prvent the fraud from trying to mark  the lines of an event  that originated in the billing system
+		if ($event['source'] == 'billing') { // HACK to prvent the fraud from trying to mark  the lines of an event  that originated in the billing system
 			return;
 		}
 		//mark deposit for the lines on the current imsi
@@ -333,11 +332,11 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		if (isset($subscriber_id)) {
 			$lines_where['subscriber_id'] = $subscriber_id;
 			$hint = array('subscriber_id' => 1);
-		} else if (isset($sid)) { 
+		} else if (isset($sid)) {
 			$lines_where['sid'] = $sid;
 			$hint = array('sid' => 1);
 		}
-		
+
 		if (isset($imsi)) {
 			$lines_where['imsi'] = $imsi;
 			if (!isset($hint)) {
@@ -351,7 +350,7 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 				$hint = array('msisdn' => 1);
 			}
 		}
-		
+
 //		if (isset($event['effects'])) {
 //			$lines_where[$event['effects']['key']] = $event['effects']['filter'];
 //		} else {
@@ -362,14 +361,14 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$lines_where['process_time'] = array('$lt' => date(Billrun_Base::base_dateformat, $this->startTime));
 		$lines_where['deposit_stamp'] = array('$exists' => false);
 
-		if (!($imsi || $msisdn ||$sid )) {
+		if (!($imsi || $msisdn || $sid )) {
 			Billrun_Log::getInstance()->log("fraudAlertsPlugin::markEventLines cannot find IMSI nor NDC_SN  or SID on event, marking CDR lines with event_stamp of : " . print_r($event['stamps'], 1), Zend_Log::INFO);
 			$lines_where['event_stamp'] = array('$in' => $event['stamps']);
 		}
 
 		// the update will done manually due to performance with collection update (not supported with hint)
 		// @TODO: when update command will suport hint will use update (see remark code after foreach loop)
-		$rows = $this->linesCol->query($lines_where)->cursor();//->hint($hint);
+		$rows = $this->linesCol->query($lines_where)->cursor(); //->hint($hint);
 		if (isset($hint)) {
 			$rows->hint($hint);
 		}
