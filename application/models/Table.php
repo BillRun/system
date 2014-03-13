@@ -307,7 +307,9 @@ class TableModel {
 			if ($value != '') {
 				if ($filter_field['comparison'] == 'equals') {
 					return array(
-						$filter_field['key'] => intval($value),
+						$filter_field['db_key'] => array(
+							'$in' => array_map('floatval', explode(',', $value)),
+						),
 					);
 				}
 			}
