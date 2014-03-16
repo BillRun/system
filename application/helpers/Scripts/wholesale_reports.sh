@@ -32,7 +32,8 @@ if [ $4 ]; then
 	output_dir=$4;
 fi
 
-month_end=`date -d "$(date -d "$year-$month-01" +%Y-%m-01) +1 month -1 day" +%d`;
+month_end=5;
+#`date -d "$(date -d "$year-$month-01" +%Y-%m-01) +1 month -1 day" +%d`;
 	
 js_code='db.getMongo().setReadPref("secondaryPreferred");var start_day = 1; var end_day = '$month_end'; for(var i = start_day; i <= end_day; i++) {var day = (i.toString().length==1 ? "0" + i : i);var from_date = ISODate("'$year'-'$month'-" + day + "T00:00:00+02:00");var to_date = ISODate("'$year'-'$month'-" + day + "T23:59:59+02:00");';
 
@@ -42,13 +43,13 @@ case $report_name in
 	js_code=$js_code'db.lines.aggregate({$match:{urt:{$gte:from_date, $lte:to_date}, type:"nsn", record_type:"01"}},{$group:{_id:"$out_circuit_group", count:{$sum:1},usagev:{$sum:"$usagev"}}})' ;;
 
 	"nr_out_call" )
-	js_code=$js_code'db.lines.aggregate({$match:{urt:{$gte:from_date, $lte:to_date}, type:"nsn", record_type:"11", in_circuit_group:/^RCEL/ , out_circuit_group_name:/^(?!RCEL|FCEL|VVOM|PCT)/ }},{$group:{_id:"$out_circuit_group", count:{$sum:1},usagev:{$sum:"$usagev"}}})' ;;
+	js_code=$js_code'db.lines.aggregate({$match:{urt:{$gte:from_date, $lte:to_date}, type:"nsn", record_type:"11", in_circuit_group_name:/^RCEL/ , out_circuit_group_name:/^(?!FCEL|VVOM)/ }},{$group:{_id:"$out_circuit_group", count:{$sum:1},usagev:{$sum:"$usagev"}}})' ;;
 
 	"gt_in_call" )
-	js_code=$js_code'db.lines.aggregate({$match:{urt:{$gte:from_date, $lte:to_date}, type:"nsn", record_type:"02"}},{$group:{_id:"$in_circuit_group", count:{$sum:1},usagev:{$sum:"$usagev"}}})' ;;
+	js_code=$js_code'db.lines.aggregate({$match:{urt:{$gte:from_date, $lte:to_date}, type:"nsn",  record_type:"11" , in_circuit_group_name:/^(?!FCEL|VVOM)/,out_circuit_group_name:/^(?=PCT|BICC|PCL)/}},}},{$group:{_id:"$in_circuit_group", count:{$sum:1},usagev:{$sum:"$usagev"}}})' ;;
 
 	"nr_in_call" )
-	js_code=$js_code'db.lines.aggregate({$match:{urt:{$gte:from_date, $lte:to_date}, type:"nsn", record_type:"12", in_circuit_group:/^(?!FCEL|VVOM|PCT)/ , out_circuit_group_name:/^RCEL/}},{$group:{_id:"$in_circuit_group", count:{$sum:1},usagev:{$sum:"$usagev"}}})' ;;
+	js_code=$js_code'db.lines.aggregate({$match:{urt:{$gte:from_date, $lte:to_date}, type:"nsn", record_type:"11" , in_circuit_group_name:/^(?!FCEL|VVOM)/,out_circuit_group_name:/^RCEL/, out_circuit_group_name:/^RCEL/}},{$group:{_id:"$in_circuit_group", count:{$sum:1},usagev:{$sum:"$usagev"}}})' ;;
 
 	"gt_out_sms" )
 	js_code=$js_code'db.lines.aggregate({$match:{urt:{$gte:from_date, $lte:to_date}, type:"smsc", "calling_msc" : /^0*97258/, arate:{$exists:1, $ne:false}}},{$group:{_id:"$called_msc", count:{$sum:1},usagev:{$sum:"$usagev"}}})' ;;
@@ -60,16 +61,16 @@ case $report_name in
 	js_code=$js_code'db.lines.aggregate({$match:{urt:{$gte:from_date, $lte:to_date}, type:"ggsn"}},{$group:{_id:"$sgsn_address", count:{$sum:1},usagev:{$sum:"$usagev"}}})' ;; 
 
 	"all_in_call" )
-	js_code=$js_code'db.lines.aggregate({$match:{urt:{$gte:from_date, $lte:to_date}, type:"nsn", record_type:"11", in_circuit_group:/^(?!RCEL|FCEL|VVOM|PCT)/ , out_circuit_group_name:/^(?!FCEL|VVOM|PCT)/}},{$group:{_id:"$in_circuit_group", count:{$sum:1},usagev:{$sum:"$usagev"}}})' ;;
+	js_code=$js_code'db.lines.aggregate({$match:{urt:{$gte:from_date, $lte:to_date}, type:"nsn", record_type:"11" , in_circuit_group_name:/^(?!FCEL|VVOM)/}},{$group:{_id:"$in_circuit_group", count:{$sum:1},usagev:{$sum:"$usagev"}}})' ;;
 
 	"all_out_call" )
-	js_code=$js_code'db.lines.aggregate({$match:{urt:{$gte:from_date, $lte:to_date}, type:"nsn", record_type:"11", in_circuit_group:/^(?!FCEL|VVOM|PCT)/, out_circuit_group_name:/^(?!RCEL|FCEL|VVOM|PCT)/ }},{$group:{_id:"$out_circuit_group", count:{$sum:1},usagev:{$sum:"$usagev"}}})' ;;
+	js_code=$js_code'db.lines.aggregate({$match:{urt:{$gte:from_date, $lte:to_date}, type:"nsn", $or:[{record_type:"01"},{record_type:"11", in_circuit_group_name:/^RCEL/}], out_circuit_group_name:/^(?!RCEL|FCEL|VVOM)/ }},{$group:{_id:"$out_circuit_group", count:{$sum:1},usagev:{$sum:"$usagev"}}})' ;;
 
 	"all_nr_out_call" )
-	js_code=$js_code'db.lines.aggregate({$match:{urt:{$gte:from_date, $lte:to_date}, type:"nsn", record_type:"11",in_circuit_group_name:/^RCEL/ ,out_circuit_group:/^(?!FCEL|VVOM)/ }},{$group:{_id:"$out_circuit_group", count:{$sum:1},usagev:{$sum:"$usagev"}}})' ;;
+	js_code=$js_code'db.lines.aggregate({$match:{urt:{$gte:from_date, $lte:to_date}, type:"nsn", record_type:"11",in_circuit_group_name:/^RCEL/ ,out_circuit_group_name:/^(?!FCEL|VVOM)/ }},{$group:{_id:"$out_circuit_group", count:{$sum:1},usagev:{$sum:"$usagev"}}})' ;;
 
 	"all_nr_in_call" )
-	js_code=$js_code'db.lines.aggregate({$match:{urt:{$gte:from_date, $lte:to_date}, type:"nsn", record_type:"12",out_circuit_group_name:/^RCEL/ ,in_circuit_group:/^(?!FCEL|VVOM)/ }},{$group:{_id:"$in_circuit_group", count:{$sum:1},usagev:{$sum:"$usagev"}}})' ;;
+	js_code=$js_code'db.lines.aggregate({$match:{urt:{$gte:from_date, $lte:to_date}, type:"nsn", record_type:"12",out_circuit_group_name:/^RCEL/ ,in_circuit_group_name:/^(?!FCEL|VVOM)/ }},{$group:{_id:"$in_circuit_group", count:{$sum:1},usagev:{$sum:"$usagev"}}})' ;;
 
 	*)
 	echo "Unrecognized report name";
