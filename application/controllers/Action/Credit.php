@@ -26,32 +26,44 @@ class CreditAction extends Action_Base {
 		if (is_null($parsed_row)) {
 			return;
 		}
+		try {
+			$linesCollection = Billrun_Factory::db()->linesCollection();
+			if ($linesCollection->query('stamp', $parsed_row['stamp'])->count() > 0) {
+				return $this->setError('Transaction already exists in the DB', $request);
+			}
 
-		$linesCollection = Billrun_Factory::db()->linesCollection();
-		if ($linesCollection->query('stamp', $parsed_row['stamp'])->count() > 0) {
-			return $this->setError('Transaction already exists in the DB', $request);
-		}
+			$parsed_row['process_time'] = date(Billrun_Base::base_dateformat);
 
-		$parsed_row['process_time'] = date(Billrun_Base::base_dateformat);
+			$entity = new Mongodloid_Entity($parsed_row);
+		
+			if ($entity->save($linesCollection) === false) {
+				return $this->setError('failed to store into DB lines', $request);
+			}
 
-		$entity = new Mongodloid_Entity($parsed_row);
+				if ($this->insertToQueue($entity) === false) {
+					return $this->setError('failed to store into DB queue', $request);
+				} else {
+					$this->getController()->setOutput(array(array(
+							'status' => 1,
+							'desc' => 'success',
+							'stamp' => $entity['stamp'],
+							'input' => $request,
+					)));
+					Billrun_Factory::log()->log("Added credit line " . $entity['stamp'], Zend_Log::INFO);
+					return true;
+				}
+		} catch(\Exception $e) {
+			Billrun_Factory::log()->log('failed to store into DB got error : '.$e->getCode() .' : '.$e->getMessage() , $request);
+			Billrun_Factory::log()->log('failed saving request :'.print_r($request,1) , Zend_Log::INFO);
+            Billrun_Factory::log()->log('failed saving :'.json_encode($parsed_row) , Zend_Log::INFO);
 
-		if ($entity->save($linesCollection) === false) {
-			return $this->setError('failed to store into DB lines', $request);
-		}
-
-		if ($this->insertToQueue($entity) === false) {
+			$fd= fopen(Billrun_Factory::config()->getConfigValue('credit.failed_credits_file', './files/failed_credits.json'), 'a+');			
+			fwrite($fd,json_encode($parsed_row));
+			fclose($fd);
+			
 			return $this->setError('failed to store into DB queue', $request);
-		} else {
-			$this->getController()->setOutput(array(array(
-					'status' => 1,
-					'desc' => 'success',
-					'stamp' => $entity['stamp'],
-					'input' => $request,
-			)));
-			Billrun_Factory::log()->log("Added credit line " . $entity['stamp'], Zend_Log::INFO);
-			return true;
 		}
+		
 	}
 
 	protected function parseRow($credit_row) {
