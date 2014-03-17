@@ -79,7 +79,7 @@ class Billrun_Parser_Separator extends Billrun_Parser {
 	 */
 	public function parse() {
 
-		$line = is_array($this->line) ? $this->line : explode($this->separator, rtrim($this->line, "{$this->separator}\t\n\r\0\x0B"));
+		$line = is_array($this->line) ? $this->line : str_getcsv(rtrim($this->line, "{$this->separator}\t\n\r\0\x0B"), $this->separator);
 		//Billrun_Factory::log()->log(print_r($line,1),Zend_Log::DEBUG);
 		$row = array_combine($this->structure, $line);
 		$row['stamp'] = md5(serialize($line));
