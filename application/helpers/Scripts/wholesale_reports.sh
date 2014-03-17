@@ -45,7 +45,7 @@ case $report_name in
 	js_code=$js_code'db.lines.aggregate({$match:{urt:{$gte:from_date, $lte:to_date}, type:"nsn", record_type:"11", in_circuit_group_name:/^RCEL/ , out_circuit_group_name:/^(?!FCEL|VVOM)/ }},{$group:{_id:"$out_circuit_group", count:{$sum:1},usagev:{$sum:"$usagev"}}})' ;;
 
 	"gt_in_call" )
-	js_code=$js_code'db.lines.aggregate({$match:{urt:{$gte:from_date, $lte:to_date}, type:"nsn",  record_type:"11" , in_circuit_group_name:/^(?!FCEL|VVOM)/,out_circuit_group_name:/^(?=PCT|BICC|PCL)/}},}},{$group:{_id:"$in_circuit_group", count:{$sum:1},usagev:{$sum:"$usagev"}}})' ;;
+	js_code=$js_code'db.lines.aggregate({$match:{urt:{$gte:from_date, $lte:to_date}, type:"nsn",  record_type:"11" , in_circuit_group_name:/^(?!FCEL|VVOM)/,out_circuit_group_name:/^(?=PCT|BICC|PCL)/}},{$group:{_id:"$in_circuit_group", count:{$sum:1},usagev:{$sum:"$usagev"}}})' ;;
 
 	"nr_in_call" )
 	js_code=$js_code'db.lines.aggregate({$match:{urt:{$gte:from_date, $lte:to_date}, type:"nsn", record_type:"11" , in_circuit_group_name:/^(?!FCEL|VVOM)/,out_circuit_group_name:/^RCEL/, out_circuit_group_name:/^RCEL/}},{$group:{_id:"$in_circuit_group", count:{$sum:1},usagev:{$sum:"$usagev"}}})' ;;
