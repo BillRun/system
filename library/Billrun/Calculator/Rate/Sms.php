@@ -53,6 +53,9 @@ abstract class Billrun_Calculator_Rate_Sms extends Billrun_Calculator_Rate {
 		$usage_type = $this->getLineUsageType($row);
 		$volume = $this->getLineVolume($row, $usage_type);
 		$rate = $this->getLineRate($row, $usage_type);
+		if (isset($rate['key']) && $rate['key'] == "UNRATED") {
+			return false; // check the effects
+		}
 		$added_values = array(
 			'usaget' => $usage_type,
 			'usagev' => $volume,
@@ -60,7 +63,6 @@ abstract class Billrun_Calculator_Rate_Sms extends Billrun_Calculator_Rate {
 		);
 		$newData = array_merge($current, $added_values);
 		$row->setRawData($newData);
-
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteRow', array($row, $this));
 		return true;
 	}
@@ -85,9 +87,9 @@ abstract class Billrun_Calculator_Rate_Sms extends Billrun_Calculator_Rate {
 	 * @return type
 	 */
 	protected function shouldLineBeRated($row) {
-		return ($row['type'] == 'smpp' && $row['record_type'] == '1' && in_array($row['called_number'], array('000000000002020', '000000000006060', '000000000007070', '000000000005060', '000000000002040'))) ||
-			($row['type'] == 'smsc' && $row['record_type'] == '1' && $row["cause_of_terminition"] == "100" && preg_match("/^0*9725[82]/", $row["calling_msc"]) ) ||
-			($row['type'] == 'mmsc' && ('S' == $row['action']) && $row['final_state'] == 'S' && preg_match('/^\+\d+\/TYPE\s*=\s*.*golantelecom/', $row['mm_source_addr']));
+		return ($row['type'] == 'smpp' && $row['record_type'] == '1') || // also remove these numbers before commiting
+				($row['type'] == 'smsc' && $row['record_type'] == '1' && $row["cause_of_terminition"] == "100" && preg_match("/^0*9725[82]/", $row["calling_msc"]) ) ||
+				($row['type'] == 'mmsc' && ('S' == $row['action']) && $row['final_state'] == 'S' && preg_match('/^\+\d+\/TYPE\s*=\s*.*golantelecom/', $row['mm_source_addr']));
 	}
 
 	/**
@@ -95,7 +97,7 @@ abstract class Billrun_Calculator_Rate_Sms extends Billrun_Calculator_Rate {
 	 */
 	protected function getLineRate($row, $usage_type) {
 		if ($this->shouldLineBeRated($row)) {
-			$matchedRate = false;
+			$matchedRate = $this->rates['UNRATED'];
 			$called_number = $this->extractNumber($row);
 			$line_time = $row['urt'];
 			$called_number_prefixes = $this->getPrefixes($called_number);
