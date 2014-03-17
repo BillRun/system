@@ -66,20 +66,10 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	protected $testAcc = false;
 
 	/**
-	 * @var boolean when creating billrun documents, write lines stamps to file rather than updating the lines with billrun stamps
-	 */
-	protected $write_stamps_to_file = false;
-
-	/**
 	 * Memory limit in bytes, after which the aggregation is stopped. Set to -1 for no limit.
 	 * @var int 
 	 */
 	protected $memory_limit = -1;
-
-	/**
-	 * @var boolean if $write_stamps_to_file is true, will be set to the stamps files directory
-	 */
-	protected $stamps_dir = null;
 
 	public function __construct($options = array()) {
 		parent::__construct($options);
@@ -109,10 +99,6 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 			$this->min_invoice_id = (int) $options['aggregator']['min_invoice_id'];
 		}
 
-		if (isset($options['aggregator']['write_stamps_to_file']) && $options['aggregator']['write_stamps_to_file']) {
-			$this->write_stamps_to_file = $options['aggregator']['write_stamps_to_file'];
-			$this->stamps_dir = (isset($options['aggregator']['stamps_dir']) ? $options['aggregator']['stamps_dir'] : getcwd() . '/files/billrun_stamps') . '/' . $this->getStamp() . '/';
-		}
 		if (isset($options['aggregator']['memory_limit_in_mb'])) {
 			if ($options['aggregator']['memory_limit_in_mb'] > -1) {
 				$this->memory_limit = $options['aggregator']['memory_limit_in_mb'] * 1048576;
@@ -147,12 +133,6 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	 * execute aggregate
 	 */
 	public function aggregate() {
-		if ($this->write_stamps_to_file) {
-			if (!$this->initStampsDir()) {
-				Billrun_Factory::log()->log("Could not create stamps file for page " . $this->page, Zend_Log::ALERT);
-				return false;
-			}
-		}
 		// @TODO trigger before aggregate
 		Billrun_Factory::dispatcher()->trigger('beforeAggregate', array($this->data, &$this));
 		$account_billrun = false;
@@ -209,15 +189,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 				$account_billrun->addSubscriber($subscriber, $subscriber_status);
 				Billrun_Factory::dispatcher()->trigger('afterAggregateSubscriber', array($subscriber, $account_billrun, &$this));
 			}
-			if ($this->write_stamps_to_file) {
-				$lines = $account_billrun->addLines(false, 0, $flat_lines);
-				if (!empty($lines)) {
-					$stamps_str = implode("\n", array_keys($lines)) . "\n";
-					file_put_contents($this->file_path, $stamps_str, FILE_APPEND);
-				}
-			} else {
-				$lines = $account_billrun->addLines(true, 0, $flat_lines);
-			}
+			$lines = $account_billrun->addLines(0, $flat_lines);
 			//save the billrun
 			Billrun_Factory::log('Saving account ' . $accid, Zend_Log::INFO);
 			if ($account_billrun->save() === false) {
@@ -320,14 +292,6 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		} else {
 			return $row->get('arate', false);
 		}
-	}
-
-	protected function initStampsDir() {
-		@mkdir($this->stamps_dir, 0777, true);
-		$this->file_path = $this->stamps_dir . '/' . $this->size . '.' . $this->page;
-		@unlink($this->file_path);
-		@touch($this->file_path);
-		return is_file($this->file_path);
 	}
 
 }
