@@ -35,7 +35,7 @@ fi
 month_end=3;
 #`date -d "$(date -d "$year-$month-01" +%Y-%m-01) +1 month -1 day" +%d`;
 	
-js_code='db.getMongo().setReadPref("secondaryPreferred");var start_day = 1; var end_day = '$month_end'; for(var i = start_day; i <= end_day; i++) {var day = (i.toString().length==1 ? "0" + i : i);var from_date = ISODate("'$year'-'$month'-" + day + "T00:00:00+02:00");var to_date = ISODate("'$year'-'$month'-" + day + "T23:59:59+02:00");';
+js_code='db.getMongo().setReadPref("primaryPreferred");var start_day = 1; var end_day = '$month_end'; for(var i = start_day; i <= end_day; i++) {var day = (i.toString().length==1 ? "0" + i : i);var from_date = ISODate("'$year'-'$month'-" + day + "T00:00:00+02:00");var to_date = ISODate("'$year'-'$month'-" + day + "T23:59:59+02:00");';
 nsn_end_code='.result.forEach(      function(obj) {         print("'$year'-'$month'-" + day + "," + (!isNaN(parseInt(obj._id,10)) ? parseInt(obj._id,10) : obj._id ) + "," + obj.count + "," + obj.usagev);});}';
 data_end_code='.result.forEach(      function(obj) {         print("'$year'-'$month'-" + day + "," +  obj._id  + "," + obj.count + "," + obj.usagev);});}';
 sms_end_code='.result.forEach(      function(obj) {         print("'$year'-'$month'-" + day + "," +  obj._id  + "," + obj.count + "," + obj.usagev);});}';
@@ -68,7 +68,7 @@ case $report_name in
 	js_code="$js_code $sms_end_code" ;;
 
 	"data" )
-	js_code=$js_code'db.lines.aggregate({$match:{urt:{$gte:from_date, $lte:to_date}, type:"ggsn", sid:{$gt:0}}},{$group:{_id:"$sgsn_address", count:{$sum:1},usagev:{$sum:"$usagev"}}})'; 
+	js_code=$js_code'db.lines.aggregate({$match:{urt:{$gte:from_date, $lte:to_date}, type:"ggsn"}},{$group:{_id:"$sgsn_address", count:{$sum:1},usagev:{$sum:"$usagev"}}})'; 
 	js_code="$js_code$data_end_code" ;;
 
 	"all_in_call" )
@@ -95,5 +95,6 @@ esac
 if [[ -n "$js_code" ]]; then	
 	mongo 172.29.202.111/billing -ureading -pguprgri --quiet --eval "$js_code" > "$output_dir/$report_name""_""$year$month.csv" ;
 fi
+
 
 exit;
