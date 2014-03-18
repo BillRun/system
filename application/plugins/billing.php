@@ -39,6 +39,12 @@ abstract class billingPlugin extends Billrun_Plugin_BillrunPluginFraud {
 	 */
 	protected $threshold;
 
+	/**
+	 * Out circuit groups to query on
+	 * @var array
+	 */
+	protected $ocgs = array();
+
 	const time_format = 'YmdHis';
 
 	public function __construct($options = array()) {
@@ -61,12 +67,15 @@ abstract class billingPlugin extends Billrun_Plugin_BillrunPluginFraud {
 		if (isset($pluginOptions['threshold'])) {
 			$this->threshold = intval($pluginOptions['threshold']);
 		}
+		if (isset($pluginOptions['ocg'])) {
+			$this->ocgs = $pluginOptions['ocg'];
+		}
 	}
 
 	protected function validateOptions() {
 		if (!isset($this->interval, $this->lag, $this->usage_types, $this->threshold, $this->types)) {
 			return FALSE;
-		} else if (!is_array($this->usage_types) || !is_array($this->types) || empty($this->types) || empty($this->usage_types)) {
+		} else if (!is_array($this->usage_types) || !is_array($this->types) || !is_array($this->ocgs) || empty($this->types) || empty($this->usage_types)) {
 			return FALSE;
 		} else if (!is_numeric($this->lag) || !is_numeric($this->interval) || !is_numeric($this->threshold)) {
 			return FALSE;
@@ -96,7 +105,7 @@ abstract class billingPlugin extends Billrun_Plugin_BillrunPluginFraud {
 
 		$base_match = array(
 			'$match' => array(
-				'billrun' => array(
+				'aid' => array(
 					'$exists' => TRUE,
 				),
 				'type' => array(
@@ -111,6 +120,9 @@ abstract class billingPlugin extends Billrun_Plugin_BillrunPluginFraud {
 				),
 			),
 		);
+		if ($this->ocgs) {
+			$base_match['$match']['out_circuit_group']['$in'] = $this->ocgs;
+		}
 
 		$group = array(
 			'$group' => array(
