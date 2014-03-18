@@ -26,6 +26,7 @@ class archiveCustomerPlugin extends archivePlugin {
 	 * method to declare the archive scope data
 	 * 
 	 * @return array query to run. the results lines will be removed
+	 * @todo 000000 is not a valid billrun stamp anymore
 	 */
 	protected function getQuery() {
 		return array(

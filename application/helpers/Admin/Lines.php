@@ -10,6 +10,7 @@ class Admin_Lines {
 		// @TODO: move to config
 		$operators = array(
 			'equals' => 'Equals',
+			'like' => 'Contains',
 			'ne' => 'Not equals',
 			'lt' => 'Less than',
 			'lte' => 'Less than or equals',
@@ -17,7 +18,6 @@ class Admin_Lines {
 			'gte' => 'Greater than or equals',
 			'starts_with' => 'Starts with',
 			'ends_with' => 'Ends with',
-			'like' => 'Like',
 		);
 
 		$types = self::getOptions();
