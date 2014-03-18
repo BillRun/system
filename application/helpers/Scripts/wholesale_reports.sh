@@ -36,12 +36,10 @@ month_end=3;
 #`date -d "$(date -d "$year-$month-01" +%Y-%m-01) +1 month -1 day" +%d`;
 	
 js_code='db.getMongo().setReadPref("secondaryPreferred");var start_day = 1; var end_day = '$month_end'; for(var i = start_day; i <= end_day; i++) {var day = (i.toString().length==1 ? "0" + i : i);var from_date = ISODate("'$year'-'$month'-" + day + "T00:00:00+02:00");var to_date = ISODate("'$year'-'$month'-" + day + "T23:59:59+02:00");';
-
 nsn_end_code='.result.forEach(      function(obj) {         print("'$year'-'$month'-" + day + "," + (!isNaN(parseInt(obj._id,10)) ? parseInt(obj._id,10) : obj._id ) + "," + obj.count + "," + obj.usagev);});}';
-
 data_end_code='.result.forEach(      function(obj) {         print("'$year'-'$month'-" + day + "," +  obj._id  + "," + obj.count + "," + obj.usagev);});}';
-
 sms_end_code='.result.forEach(      function(obj) {         print("'$year'-'$month'-" + day + "," +  obj._id  + "," + obj.count + "," + obj.usagev);});}';
+sipregex='^(?=NSML|NBZI|MAZI|MCLA|ISML|IBZI|ITLZ|IXFN|IMRS|IHLT|HBZI|IKRT|IKRTROM|SWAT|GSML|GNTV|GHOT|GBZQ|GBZI|GCEL|LMRS)';
 
 case $report_name in
 
@@ -54,7 +52,7 @@ case $report_name in
 	js_code="$js_code$nsn_end_code" ;;
 
 	"gt_in_call" )
-	js_code=$js_code'db.lines.aggregate({$match:{urt:{$gte:from_date, $lte:to_date}, type:"nsn",  record_type:"11" , in_circuit_group_name:/^(?!FCEL|VVOM)/,out_circuit_group_name:/^(?=PCT|BICC|PCL|)/}},{$group:{_id:"$in_circuit_group", count:{$sum:1},usagev:{$sum:"$usagev"}}})';
+	js_code=$js_code'db.lines.aggregate({$match:{urt:{$gte:from_date, $lte:to_date}, type:"nsn",  record_type:"11" , in_circuit_group_name:/^(?!FCEL|VVOM)/,out_circuit_group_name:/^(?=PCT|BICC|PCL|$)/}},{$group:{_id:"$in_circuit_group", count:{$sum:1},usagev:{$sum:"$usagev"}}})';
 	js_code="$js_code$nsn_end_code" ;;
 
 	"nr_in_call" )
@@ -70,11 +68,11 @@ case $report_name in
 	js_code="$js_code $sms_end_code" ;;
 
 	"data" )
-	js_code=$js_code'db.lines.aggregate({$match:{urt:{$gte:from_date, $lte:to_date}, type:"ggsn"}},{$group:{_id:"$sgsn_address", count:{$sum:1},usagev:{$sum:"$usagev"}}})'; 
+	js_code=$js_code'db.lines.aggregate({$match:{urt:{$gte:from_date, $lte:to_date}, type:"ggsn", sid:{$gt:0}}},{$group:{_id:"$sgsn_address", count:{$sum:1},usagev:{$sum:"$usagev"}}})'; 
 	js_code="$js_code$data_end_code" ;;
 
 	"all_in_call" )
-	js_code=$js_code'db.lines.aggregate({$match:{urt:{$gte:from_date, $lte:to_date}, type:"nsn", record_type:{$in:["02","11","12"]}}},{$match:{ $or:[{record_type:"02",in_circuit_group_name:/^(?!TONES|BICC)/},{record_type:"12",in_circuit_group_name:/^(?!TONES|BICC)/,out_circuit_group_name:/^RCEL/},{record_type:"11" , in_circuit_group_name:/^(?!FCEL|VVOM)/ ,out_circuit_group_name:/^(?=BICC|TONES)/}]}},{$group:{_id:"$in_circuit_group", count:{$sum:1}, usagev:{$sum:"$usagev"}}})';
+	js_code=$js_code'db.lines.aggregate({$match:{urt:{$gte:from_date, $lte:to_date}, type:"nsn", $or:[{record_type:"02",in_circuit_group_name:/'$sipregex'/},{record_type:"12",in_circuit_group_name:/'$sipregex'/,out_circuit_group_name:/^(?=BICC)/},{record_type:"12",in_circuit_group_name:/^(?!FCEL|BICC)/,out_circuit_group_name:/^(?=RCEL)/},{record_type:"11",in_circuit_group_name:/^(?!FCEL|RCEL|BICC|TONES|PCLB|PCTI|$)/,out_circuit_group_name:/^(?!FCEL|RCEL)/}]}},{$group:{_id:"$in_circuit_group", count:{$sum:1}, usagev:{$sum:"$usagev"}}})';
 	js_code="$js_code$nsn_end_code" ;;
 
 	"all_out_call" )
@@ -95,7 +93,7 @@ esac
 
 
 if [[ -n "$js_code" ]]; then	
-	mongo 172.29.202.111/billing -ureading -pguprgri --quiet --eval "$js_code" > "$output_dir/$report_name""_$year$month.csv" ;
+	mongo 172.29.202.111/billing -ureading -pguprgri --quiet --eval "$js_code" > "$output_dir/$report_name""_""$year$month.csv" ;
 fi
 
 exit;
