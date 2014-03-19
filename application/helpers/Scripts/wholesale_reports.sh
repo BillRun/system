@@ -32,8 +32,7 @@ if [ $4 ]; then
 	output_dir=$4;
 fi
 
-month_end=3;
-#`date -d "$(date -d "$year-$month-01" +%Y-%m-01) +1 month -1 day" +%d`;
+month_end=`date -d "$(date -d "$year-$month-01" +%Y-%m-01) +1 month -1 day" +%d`;
 	
 js_code='db.getMongo().setReadPref("primaryPreferred");var start_day = 1; var end_day = '$month_end'; for(var i = start_day; i <= end_day; i++) {var day = (i.toString().length==1 ? "0" + i : i);var from_date = ISODate("'$year'-'$month'-" + day + "T00:00:00+02:00");var to_date = ISODate("'$year'-'$month'-" + day + "T23:59:59+02:00");';
 nsn_end_code='.result.forEach(      function(obj) {         print("'$year'-'$month'-" + day + "," + (!isNaN(parseInt(obj._id,10)) ? parseInt(obj._id,10) : obj._id ) + "," + obj.count + "," + obj.usagev);});}';
