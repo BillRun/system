@@ -218,7 +218,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 
 		for ($i = $this->getLimit(); $i > 0; $i--) {
 			if ($this->isQueueFull()) {
-				Billrun_Factory::log()->log("Billrun_Processor: queue size is too big", Zend_Log::INFO);
+				Billrun_Factory::log()->log("Billrun_Processor: queue size is too big", Zend_Log::ALERT);
 				return $linesCount;
 			} else {
 				$this->init();
@@ -260,7 +260,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 */
 	public function process() {
 		if ($this->isQueueFull()) {
-			Billrun_Factory::log()->log("Billrun_Processor: queue size is too big", Zend_Log::INFO);
+			Billrun_Factory::log()->log("Billrun_Processor: queue size is too big", Zend_Log::ALERT);
 			return FALSE;
 		} else {
 			Billrun_Factory::dispatcher()->trigger('beforeProcessorParsing', array($this));
