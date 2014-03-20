@@ -26,20 +26,11 @@ class ImportPricesListAction extends ApiAction {
 	protected $model;
 
 	/**
-	 * Whether to close rates with keys not present in the input file
-	 * @var boolean
-	 */
-//	protected $close_non_existing_keys = false;
-
-	/**
 	 * Whether to remove usage types which don't exist in the input file
 	 * @var boolean
 	 */
 	protected $remove_non_existing_usage_types = false;
 
-	public function init() {
-		echo 'dfdf';
-	}
 
 	/**
 	 * method to execute the bulk credit

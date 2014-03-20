@@ -209,7 +209,7 @@ class RatesModel extends TabledateModel {
 	 */
 	public function getData($filter_query = array()) {
 //		print_R($filter_query);die;
-		$cursor = $this->collection->query($filter_query)->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
+		$cursor = $this->getRates($filter_query);
 		$this->_count = $cursor->count();
 		$resource = $cursor->sort($this->sort)->skip($this->offset())->limit($this->size);
 		$ret = array();
@@ -242,6 +242,10 @@ class RatesModel extends TabledateModel {
 			}
 		}
 		return $ret;
+	}
+
+	public function getRates($filter_query) {
+		return $this->collection->query($filter_query)->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
 	}
 
 	public function getFutureRateKeys($by_keys = array()) {
@@ -369,6 +373,40 @@ class RatesModel extends TabledateModel {
 			$rate_arr[] = $rate;
 		}
 		return $rate_arr;
+	}
+
+	/**
+	 * Get rules array by db rate
+	 * @param Mongodloid_Entity $rate
+	 * @return array
+	 */
+	public function getRulesByRate($rate) {
+		$rule['key'] = $rate['key'];
+		$rule['from_date'] = date('Y-m-d H:i:s', $rate['from']->sec);
+		foreach ($rate['rates'] as $usage_type => $usage_type_rate) {
+			$rule['usage_type'] = $usage_type;
+			$rule['category'] = $usage_type_rate['category'];
+			$rule['access_price'] = isset($usage_type_rate['access']) ? $usage_type_rate['access'] : 0;
+			$rule_counter = 1;
+			foreach ($usage_type_rate['rate'] as $rate_rule) {
+				$rule['rule'] = $rule_counter;
+				$rule['interval'] = $rate_rule['interval'];
+				$rule['price'] = $rate_rule['price'];
+				$rule['times'] = intval($rate_rule['to'] / $rate_rule['interval']);
+				$rule_counter++;
+				$rules[] = $rule;
+			}
+		}
+		return $rules;
+		//sort by header?
+	}
+
+	/**
+	 * 
+	 * @return aray
+	 */
+	public function getPricesListFileHeader() {
+		return array('key', 'usage_type', 'category', 'rule', 'access_price', 'interval', 'price', 'times', 'from_date');
 	}
 
 }
