@@ -6,13 +6,15 @@
  * @license         GNU General Public License version 2 or later; see LICENSE.txt
  */
 
+require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
+
 /**
  * Credit action class
  *
  * @package  Action
  * @since    0.5
  */
-class CreditAction extends Action_Base {
+class CreditAction extends ApiAction {
 
 	/**
 	 * method to execute the refund
@@ -182,19 +184,6 @@ class CreditAction extends Action_Base {
 					'calc_time' => false,
 			));
 		}
-	}
-
-	function setError($error_message, $input = null) {
-		Billrun_Factory::log()->log("Sending Error : {$error_message}", Zend_Log::NOTICE);
-		$output = array(
-			'status' => 0,
-			'desc' => $error_message,
-		);
-		if (!is_null($input)) {
-			$output['input'] = $input;
-		}
-		$this->getController()->setOutput(array($output));
-		return;
 	}
 
 }

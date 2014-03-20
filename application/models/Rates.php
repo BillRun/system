@@ -244,4 +244,131 @@ class RatesModel extends TabledateModel {
 		return $ret;
 	}
 
+	public function getFutureRateKeys($by_keys = array()) {
+		$base_match = array(
+			'$match' => array(
+				'from' => array(
+					'$gt' => new MongoDate(),
+				),
+			),
+		);
+		if ($by_keys) {
+			$base_match['$match']['key']['$in'] = $by_keys;
+		}
+
+		$group = array(
+			'$group' => array(
+				'_id' => '$key',
+			),
+		);
+		$project = array(
+			'$project' => array(
+				'_id' => 0,
+				'key' => '$_id',
+			),
+		);
+		$future_rates = $this->collection->aggregate($base_match, $group, $project);
+		$future_keys = array();
+		foreach ($future_rates as $rate) {
+			$future_keys[] = $rate['key'];
+		}
+		return $future_keys;
+	}
+
+	public function getActiveRates($by_keys = array()) {
+		$base_match = array(
+			'$match' => array(
+				'from' => array(
+					'$lt' => new MongoDate(),
+				),
+				'to' => array(
+					'$gt' => new MongoDate(),
+				),
+			),
+		);
+		if ($by_keys) {
+			$base_match['$match']['key']['$in'] = $by_keys;
+		}
+
+		$group = array(
+			'$group' => array(
+				'_id' => '$key',
+				'count' => array(
+					'$sum' => 1,
+				),
+				'oid' => array(
+					'$first' => '$_id',
+				)
+			),
+		);
+		$project = array(
+			'$project' => array(
+				'_id' => 0,
+				'count' => 1,
+				'oid' => 1,
+			),
+		);
+		$having = array(
+			'$match' => array(
+				'count' => 1,
+			),
+		);
+		$active_rates = $this->collection->aggregate($base_match, $group, $project, $having);
+		if (!$active_rates) {
+			return $active_rates;
+		}
+		foreach ($active_rates as $rate) {
+			$active_oids[] = $rate['oid'];
+		}
+		$query = array(
+			'_id' => array(
+				'$in' => $active_oids,
+			),
+		);
+		$rates = $this->collection->query($query);
+		return $rates;
+	}
+
+	/**
+	 * 
+	 * @param string $usage_type
+	 * @return string
+	 */
+	public function getUnit($usage_type) {
+		switch ($usage_type) {
+			case 'call':
+			case 'incoming_call':
+				$unit = 'seconds';
+				break;
+			case 'data':
+				$unit = 'bytes';
+				break;
+			case 'sms':
+			case 'mms':
+				$unit = 'counter';
+				break;
+			default:
+				$unit = 'seconds';
+				break;
+		}
+		return $unit;
+	}
+
+	/**
+	 * 
+	 * @param array $rules
+	 */
+	public function getRateArrayByRules($rules) {
+		ksort($rules);
+		$rate_arr = array();
+		$rule_end = 0;
+		foreach ($rules as $rule) {
+			$rate['price'] = floatval($rule['price']);
+			$rate['interval'] = intval($rule['interval']);
+			$rate['to'] = $rule_end = intval($rule['times'] == 0 ? pow(2, 31) - 1 : $rule_end + $rule['times'] * $rule['interval']);
+			$rate_arr[] = $rate;
+		}
+		return $rate_arr;
+	}
+
 }
