@@ -364,10 +364,11 @@ class Subscriber_Golan extends Billrun_Subscriber {
 //				Billrun_Factory::log()->log('Failed to load Golan subscriber data', Zend_Log::ALERT);
 				}
 			}
+			Billrun_Factory::log()->log($message . ". Proceeding with calculation...", Zend_Log::INFO);
 		} else {
 			$message = 'Customer API responded with no results';
+			Billrun_Factory::log()->log($message . ". Proceeding with calculation...", count($params_arr) ? Zend_Log::ALERT : Zend_Log::INFO);
 		}
-		Billrun_Factory::log()->log($message . ". Proceeding with calculation...", Zend_Log::INFO);
 		return $subscribers;
 	}
 
