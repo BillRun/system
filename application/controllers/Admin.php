@@ -518,8 +518,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		if ($sort_by) {
 			$order = $this->getSetVar($session, 'order', 'order', 'asc') == 'asc' ? 1 : -1;
 			$sort = array($sort_by => $order);
-		}
-		else {
+		} else {
 			$sort = array();
 		}
 		return $sort;
@@ -529,14 +528,14 @@ class AdminController extends Yaf_Controller_Abstract {
 		$query = false;
 		$session = $this->getSession($table);
 		$keys = $this->getSetVar($session, 'manual_key', 'manual_key');
-		$types = Admin_Lines::getOptions();
+		$advanced_options = Admin_Lines::getOptions();
 		$operators = $this->getSetVar($session, 'manual_operator', 'manual_operator');
 		$values = $this->getSetVar($session, 'manual_value', 'manual_value');
 		for ($i = 0; $i < count($keys); $i++) {
 			if ($keys[$i] == '' || $values[$i] == '') {
 				continue;
 			}
-			switch ($types[$keys[$i]]) {
+			switch ($advanced_options[$keys[$i]]['type']) {
 				case 'number':
 					$values[$i] = floatval($values[$i]);
 					break;
@@ -548,6 +547,9 @@ class AdminController extends Yaf_Controller_Abstract {
 					}
 				default:
 					break;
+			}
+			if (isset($advanced_options[$keys[$i]]['case'])) {
+				$values[$i] = Admin_Table::convertValueByCaseType($values[$i], $advanced_options[$keys[$i]]['case']);
 			}
 			// TODO: decoupling to config of fields
 			switch ($operators[$i]) {
@@ -584,6 +586,16 @@ class AdminController extends Yaf_Controller_Abstract {
 					break;
 				default:
 					break;
+			}
+			if ($advanced_options[$keys[$i]]['type'] == 'dbref') {
+				$collection = Billrun_Factory::db()->{$advanced_options[$keys[$i]]['collection'] . "Collection"}();
+				$pre_query[$advanced_options[$keys[$i]]['collection_key']][$operators[$i]] = $values[$i];
+				$cursor = $collection->query($pre_query);
+				$values [$i] = array();
+				foreach ($cursor as $entity) {
+					$values[$i][] = $entity->createRef($collection);
+				}
+				$operators[$i] = '$in';
 			}
 			$query[$keys[$i]][$operators[$i]] = $values[$i];
 		}
