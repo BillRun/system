@@ -248,7 +248,7 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 
 		if (isset($data['out_circuit_group']) && in_array($data['out_circuit_group'], array('2100', '2101', '2499')) && substr($data['called_number'], 0, 2) == "10") {
 			$data['called_number'] = substr($data['called_number'], 2);
-		} else if (in_array($data['record_type'], array('30', '31')) && preg_match($this->ild_called_number_regex, $data['called_number'])) {
+		} else if (isset($data['called_number']) && in_array($data['record_type'], array('30', '31')) && preg_match($this->ild_called_number_regex, $data['called_number'])) {
 			$data['ild_prefix'] = substr($data['called_number'], 0, 3);
 			$data['called_number'] = substr($data['called_number'], 3);
 		}

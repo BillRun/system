@@ -15,7 +15,7 @@ abstract class Billrun_Processor_Base_BlockedSeperatedBinary extends Billrun_Pro
 
 	public function process() {
 		if ($this->isQueueFull()) {
-			Billrun_Factory::log()->log("Billrun_Processor_Base_BlockedSeperatedBinary: queue size is too big", Zend_Log::INFO);
+			Billrun_Factory::log()->log("Billrun_Processor_Base_BlockedSeperatedBinary: queue size is too big", Zend_Log::ALERT);
 			return FALSE;
 		} else {
 			// run all over the file with the parser helper
