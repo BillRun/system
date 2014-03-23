@@ -16,8 +16,12 @@
 class EventsModel extends TableModel {
 
 	public function __construct(array $params = array()) {
-		$params['collection'] = Billrun_Factory::db()->events;
+		if (isset($params['collection'])) {
+			unset($params['collection']);
+		}
 		parent::__construct($params);
+		$this->collection = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('fraud.db'))->eventsCollection();
+		$this->collection_name = 'events';
 		$this->search_key = "stamp";
 	}
 
@@ -32,9 +36,8 @@ class EventsModel extends TableModel {
 			'units' => 'Units',
 			'value' => 'Value',
 			'notify_time' => 'Notify time',
-			'email_sent' => 'Email sent',
 			'priority' => 'Priority',
-			'_id' => 'Id',
+//			'_id' => 'Id',
 		);
 		return $columns;
 	}
@@ -54,7 +57,6 @@ class EventsModel extends TableModel {
 			'units' => 'Units',
 			'value' => 'Value',
 			'notify_time' => 'Notify time',
-			'email_sent' => 'Email sent',
 			'priority' => 'Priority',
 		);
 		return $sort_fields;

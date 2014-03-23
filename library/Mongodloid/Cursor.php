@@ -69,8 +69,19 @@ class Mongodloid_Cursor implements Iterator, Countable {
 		return $this->_cursor->explain();
 	}
 
-	public function setReadPreference($read_preference, array $tags = array()) {
-		$this->_cursor->setReadPreference($read_preference, $tags);
+	/**
+	 * method to set read preference of cursor connection
+	 * 
+	 * @param string $readPreference The read preference mode: RP_PRIMARY, RP_PRIMARY_PREFERRED, RP_SECONDARY, RP_SECONDARY_PREFERRED or RP_NEAREST
+	 * @param array $tags An array of zero or more tag sets, where each tag set is itself an array of criteria used to match tags on replica set members
+	 * 
+	 * @return Mongodloid_Collection self object
+	 */
+	public function setReadPreference($readPreference, array $tags = array()) {
+		if (defined('MongoClient::' . $readPreference)) {
+			$this->_cursor->setReadPreference(constant('MongoClient::' . $readPreference), $tags);
+		}
+		
 		return $this;
 	}
 

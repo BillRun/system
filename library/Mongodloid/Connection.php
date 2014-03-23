@@ -61,11 +61,6 @@ class Mongodloid_Connection {
 		if ($this->_connected)
 			return;
 
-		if (isset($options['readPreference'])) {
-			$read_preference = $options['readPreference'];
-			unset($options['readPreference']);
-		}
-
 		if (!empty($this->username)) {
 			$options['username'] = $this->username;
 		}
@@ -73,11 +68,18 @@ class Mongodloid_Connection {
 		if (!empty($this->password)) {
 			$options['password'] = $this->password;
 		}
+		
+		if (isset($options['readPreference'])) {
+			$readPreference = $options['readPreference'];
+			unset($options['readPreference']);
+		}
 
 		// this can throw an Exception
 		$this->_connection = new MongoClient($this->_server ? $this->_server : 'mongodb://localhost:27017', $options);
 
-		$this->_connection->setReadPreference($read_preference);
+		if (!empty($readPreference) && defined('MongoClient::' . $readPreference)) {
+			$this->_connection->setReadPreference(constant('MongoClient::' . $readPreference));
+		}
 
 		$this->_connected = true;
 	}
