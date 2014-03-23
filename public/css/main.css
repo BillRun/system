@@ -37,9 +37,7 @@ div:last-of-type>.add-filter{
 div:nth-of-type(n+5)>.add-filter{
 	display: none;
 }
-div:only-of-type>.remove-filter {
-	display: none;
-}
+
 @media only screen and (max-width: 1190px) {
 
     /* Force table to not be like tables anymore */

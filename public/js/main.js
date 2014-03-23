@@ -128,7 +128,13 @@ $(function() {
 });
 
 function removeFilter(button) {
-	$(button).parent().remove();
+	$(button).siblings("input[name='manual_value[]']").val('');
+	if ($(button).parent().siblings().length) {
+		$(button).parent().remove();
+	}
+	else {
+		$('.advanced-options').click();
+	}
 }
 
 function type_changed(sel) {
