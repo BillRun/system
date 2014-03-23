@@ -15,7 +15,7 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  */
 class ImportPricesListAction extends ApiAction {
 
-	protected $usage_types = array('call', 'sms', 'data', 'incoming_call', 'mms');
+	protected $usage_types = array('call', 'sms', 'data', 'incoming_call', 'mms', 'incoming_sms');
 	protected $categories = array('base', 'intl', 'roaming', 'special');
 
 	/**
@@ -30,7 +30,6 @@ class ImportPricesListAction extends ApiAction {
 	 * @var boolean
 	 */
 	protected $remove_non_existing_usage_types = false;
-
 
 	/**
 	 * method to execute the bulk credit
@@ -183,14 +182,14 @@ class ImportPricesListAction extends ApiAction {
 				}
 				$infinite_counter = 0;
 				foreach ($rate_rules as $rate_rule) {
-					if ($rate_rule['times'] == '0') {
+					if ($rate_rule['times'] == '0' || $rate_rule['times'] == pow(2, 31) - 1) {
 						$infinite_counter++;
 					}
 				}
 				if ($infinite_counter != 1) {
 					return $this->setError('None or more than one infinite rule detected for ' . $key . ', ' . $usage_type);
 				}
-				if ($rate_rules[strval($max)]['times'] != '0') {
+				if ($rate_rules[strval($max)]['times'] != '0' && $rate_rules[strval($max)]['times'] != pow(2, 31) - 1) {
 					return $this->setError('The last rule must be an infinite one (' . $key . ', ' . $usage_type . ')');
 				}
 			}

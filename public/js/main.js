@@ -126,7 +126,7 @@ $(function() {
 						var reasons = {"updated": "Updated", "future": "Rates that were not imported due to an existing future rate", "missing_category": "Rates that were not updated because they miss category", "old": "Inactive rates not imported"};
 						$.each(obj.keys, function(key, value) {
 							if (value.length) {
-								output += eval("reasons." + key) + ": " + value.join() + "<br/>";
+								output += eval("reasons." + key) + ": " + value.join(', ') + "<br/>";
 							}
 						});
 						$("#importPricesModal #file-upload2").val('');
