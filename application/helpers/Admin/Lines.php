@@ -3,9 +3,9 @@
 class Admin_Lines {
 
 	public static function getOptions() {
-		return Billrun_Factory::config()->getConfigValue('admin.advancedOptions.types');
+		return Billrun_Factory::config()->getConfigValue('admin.advancedOptions');
 	}
-	
+
 	public static function getFilterRow($key = null, $type = null, $operator = null, $value = null) {
 		// @TODO: move to config
 		$operators = array(
@@ -21,11 +21,11 @@ class Admin_Lines {
 		);
 
 		$types = self::getOptions();
-		$keys = array_keys($types);
 		$output = "<div class=\"controls controls-row\">
                                <select name=\"manual_key[]\" class=\"span2\">";
-		foreach ($keys as $manual_key) {
-			$output.= "<option value=\"" . $manual_key . "\"" . ($key == $manual_key ? " selected" : "") . ">" . $manual_key . "</option>";
+		foreach ($types as $manual_key => $manual_type) {
+			$manual_display = isset($manual_type['display']) ? $manual_type['display'] : ucfirst(str_replace('_', ' ', $manual_key));
+			$output.= "<option value=\"" . $manual_key . "\"" . ($key == $manual_key ? " selected" : "") . ">" . $manual_display . "</option>";
 		}
 		$output.= "</select>
                                 <select name=\"manual_operator[]\" class=\"span2\">";

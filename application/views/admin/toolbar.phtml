@@ -55,12 +55,13 @@
                             <div id = \"manual_filters\"" . (Admin_Lines::isManualFilter($this->session) ? "" : " style=\"display:none;\"") . ">";
 				if (Admin_Lines::isManualFilter($this->session)) {
 					for ($i = 0; $i < count($this->session->manual_key); $i++) {
-						echo Admin_Lines::getFilterRow($this->session->manual_key[$i], $this->session->manual_type[$i], $this->session->manual_operator[$i], $this->session->manual_value[$i]);
+						echo Admin_Lines::getFilterRow($this->session->manual_key[$i], isset($this->session->manual_type[$i]) ? $this->session->manual_type[$i] : NULL, $this->session->manual_operator[$i], $this->session->manual_value[$i]);
 					}
 				} else {
 					echo Admin_Lines::getFilterRow(); // add first manual filter on load
 				}
-				echo "</div>"; elseif (strtolower($this->title) == 'rates') :
+				echo "</div>";
+			elseif (strtolower($this->title) == 'rates') :
 			endif;
 			if (strtolower($this->title) == 'lines' || strtolower($this->title) == 'rates'):
 				echo "<div><div id=\"extra_columns\" class=\"controls form-inline\">"
@@ -99,10 +100,10 @@
 		<script type="text/javascript">
 			var active_collection = '<?php echo strtolower($this->title); ?>';
 		</script>
-		<?php if (!in_array(strtolower($this->title), array('events', 'log'))) : ?>
+			<?php if (!in_array(strtolower($this->title), array('events', 'log'))) : ?>
 			<span class="pull-right">
 			<?php endif; ?>
-			<?php if (strtolower($this->title) == 'rates' || strtolower($this->title) == 'plans') : ?>
+<?php if (strtolower($this->title) == 'rates' || strtolower($this->title) == 'plans') : ?>
 				<span><a id='close_and_new' data-type="close_and_new" href="#popupModal" class="btn btn-warning" data-toggle="modal" role="button" data-remote="">Close & new</a></span>
 				<span><a id='duplicate' data-type="duplicate" href="#popupModal" class="btn btn-info" data-toggle="modal" role="button" data-remote="">Duplicate</a></span>
 			<?php endif; ?>
@@ -111,10 +112,10 @@
 			<?php endif; ?>
 			<?php if (strtolower($this->title) == 'lines') : ?>
 				<span><a id='download' data-type="download" href="/admin/csvExport" class="btn btn-info"><i class="icon-download-alt"> </i>Export to CSV</a></span>
-			<?php // endif; ?>
-			<?php // if (in_array(strtolower($this->title), array('lines', 'rates'))) : ?>
+				<?php // endif; ?>
+				<?php // if (in_array(strtolower($this->title), array('lines', 'rates'))) :  ?>
 				<span><a id='upload' data-type="upload" href="#uploadModal" class="btn btn-primary" data-toggle="modal" role="button"><i class="icon-upload"> </i>Import</a></span>
-			<?php endif; ?>
+<?php endif; ?>
 		</span>
 
 	</form>
