@@ -87,56 +87,63 @@ $(function() {
 	 * @todo prevent duplicate code with credits import
 	 */
 	$("#importPricesModal #import").click(function(event) {
-		$(this).attr('disabled', 'disabled');
 		if (isAPIAvailable()) {
 			var remove_non_existing_usage_types = $("#remove_non_existing_usage_types").is(':checked') ? 1 : 0;
 			var files = $("#importPricesModal #file-upload2").get(0).files; // FileList object
-			var file = files[0];
-			var reader = new FileReader();
-			reader.readAsText(file);
-			reader.onload = function(event) {
-				var csv = event.target.result;
-				var data = $.csv.toArrays(csv);
-				var header_line = data[0];
-				var headers = [];
-				var ret = [];
-				for (var item in header_line) {
-					headers[item] = data[0][item];
-				}
-				var _c = 0;
-				var retRow;
-				for (var row in data) {
-					if (row != 0) { // skip the first (header)
-						retRow = {};
-						for (var item in data[row]) {
-							retRow[headers[item]] = data[row][item];
-						}
-						ret[_c++] = retRow;
+			if (files.length) {
+				$(this).attr('disabled', 'disabled');
+				var file = files[0];
+				var reader = new FileReader();
+				reader.readAsText(file);
+				reader.onload = function(event) {
+					var csv = event.target.result;
+					var data = $.csv.toArrays(csv);
+					var header_line = data[0];
+					var headers = [];
+					var ret = [];
+					for (var item in header_line) {
+						headers[item] = data[0][item];
 					}
-				}
-
-				var _prices = JSON.stringify(ret);
-				$.ajax({
-					url: '/api/importpriceslist',
-					type: "POST",
-					data: {prices: _prices, remove_non_existing_usage_types: remove_non_existing_usage_types}
-				}).done(function(msg) {
-					obj = JSON.parse(msg);
-					if (obj.status == "1") {
-						var output = 'Success.<br/>';
-						var reasons = {"updated": "Updated", "future": "Rates that were not imported due to an existing future rate", "missing_category": "Rates that were not updated because they miss category", "old": "Inactive rates not imported"};
-						$.each(obj.keys, function(key, value) {
-							if (value.length) {
-								output += eval("reasons." + key) + ": " + value.join() + "<br/>";
+					var _c = 0;
+					var retRow;
+					for (var row in data) {
+						if (row != 0) { // skip the first (header)
+							retRow = {};
+							for (var item in data[row]) {
+								retRow[headers[item]] = data[row][item];
 							}
-						});
-						$("#importPricesModal #file-upload2").val('');
-						$('#importPricesModal #saveOutput2').html(output);
-					} else {
-						$('#importPricesModal #saveOutput2').html('Failed to import: ' + obj.desc);
+							ret[_c++] = retRow;
+						}
 					}
-					$('#import').removeAttr("disabled");
-				});
+
+					var _prices = JSON.stringify(ret);
+					$.ajax({
+						url: '/api/importpriceslist',
+						type: "POST",
+						data: {prices: _prices, remove_non_existing_usage_types: remove_non_existing_usage_types}
+					}).done(function(msg) {
+						obj = JSON.parse(msg);
+						var output;
+						if (obj.status == "1") {
+							output = 'Success.<br/>';
+							var reasons = {"updated": "Updated", "future": "Rates that were not imported due to an existing future rate", "missing_category": "Rates that were not updated because they miss category", "old": "Inactive rates not imported"};
+							$.each(obj.keys, function(key, value) {
+								if (value.length) {
+									output += eval("reasons." + key) + ": " + value.join() + "<br/>";
+								}
+							});
+							$("#importPricesModal #file-upload2").val('');
+							$('#importPricesModal #saveOutput2').html(output);
+						} else {
+							output = 'Failed to import: ' + obj.desc;
+							if (obj.input) {
+								output += '</br>Input was: ' + JSON.stringify(obj.input);
+							}
+							$('#importPricesModal #saveOutput2').html(output);
+						}
+						$('#import').removeAttr("disabled");
+					});
+				}
 			}
 
 		} else {
