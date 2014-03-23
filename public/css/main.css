@@ -96,7 +96,7 @@ input[type=checkbox] {
 }
 
 .toolbar-rates {
-	
+
 }
 .control-group {
 	height: 35px;
@@ -106,4 +106,12 @@ input[type=checkbox] {
 	display: inline;
 	float:left;
 	margin-right: 10px;
+}
+
+td[data-title="Rate"] a{
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    width: 90px;
 }
