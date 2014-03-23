@@ -87,6 +87,7 @@ $(function() {
 	 * @todo prevent duplicate code with credits import
 	 */
 	$("#importPricesModal #import").click(function(event) {
+		$(this).attr('disabled', 'disabled');
 		if (isAPIAvailable()) {
 			var remove_non_existing_usage_types = $("#remove_non_existing_usage_types").is(':checked') ? 1 : 0;
 			var files = $("#importPricesModal #file-upload2").get(0).files; // FileList object
@@ -134,6 +135,7 @@ $(function() {
 					} else {
 						$('#importPricesModal #saveOutput2').html('Failed to import: ' + obj.desc);
 					}
+					$('#import').removeAttr("disabled");
 				});
 			}
 
