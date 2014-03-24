@@ -89,7 +89,7 @@ $(function() {
 
 
 
-	$('#usage,#billrun').multiselect({
+	$('#usage,#billrun,#source').multiselect({
 		selectAllValue: 'all',
 		selectedClass: null
 	});

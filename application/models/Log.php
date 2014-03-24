@@ -51,21 +51,22 @@ class LogModel extends TableModel {
 		}
 		return $parent_protected;
 	}
-	
+
 	public function getFilterFields() {
 		$filter_fields = array(
 			'type' => array(
 				'key' => 'source',
 				'db_key' => 'source',
-				'input_type' => 'text',
-				'comparison' => 'contains',
+				'input_type' => 'multiselect',
+				'comparison' => '$in',
 				'display' => 'Type',
-				'default' => '',
+				'values' => Billrun_Factory::config()->getConfigValue('admin_panel.log.source'),
+				'default' => array(),
 			),
 		);
 		return array_merge($filter_fields, parent::getFilterFields());
 	}
-	
+
 	public function getFilterFieldsOrder() {
 		$filter_field_order = array(
 			0 => array(
