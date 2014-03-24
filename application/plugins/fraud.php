@@ -298,7 +298,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$newEvent['creation_time'] = date(Billrun_Base::base_dateformat);
 
 		try {
-			$insertResult = $fraud_connection->insert($newEvent, array('w' => 1));
+			$insertResult = $fraud_connection->insert($newEvent, array('w' => 0));
 
 			if ($insertResult['ok'] == 1) {
 				Billrun_Factory::log()->log("Fraud plugin - Event stamp: " . $newEvent['stamp'] . " inserted to the fraud events", Zend_Log::INFO);
