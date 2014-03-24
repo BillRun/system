@@ -58,7 +58,7 @@ class CreditAction extends Action_Base {
             Billrun_Factory::log()->log('failed saving :'.json_encode($parsed_row) , Zend_Log::INFO);
 
 			$fd= fopen(Billrun_Factory::config()->getConfigValue('credit.failed_credits_file', './files/failed_credits.json'), 'a+');			
-			fwrite($fd,json_encode($parsed_row));
+			fwrite($fd,json_encode($parsed_row) . PHP_EOL);
 			fclose($fd);
 			
 			return $this->setError('failed to store into DB queue', $request);
