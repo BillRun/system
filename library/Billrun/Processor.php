@@ -327,6 +327,9 @@ abstract class Billrun_Processor extends Billrun_Base {
 			return FALSE;
 		}
 
+		$header['linesStats']['queue'] = count($this->queue_data);
+		$header['linesStats']['good'] = count($this->data['data']) - $header['linesStats']['queue'];
+
 		$current_stamp = $this->getStamp(); // mongo id in new version; else string
 		if ($current_stamp instanceof Mongodloid_Entity || $current_stamp instanceof Mongodloid_Id) {
 			$resource = $log->findOne($current_stamp);
@@ -471,8 +474,8 @@ abstract class Billrun_Processor extends Billrun_Base {
 		}
 		$target_path = $path . DIRECTORY_SEPARATOR . $this->filename;
 		$ret = @call_user_func_array($callback, array(
-				$this->filePath,
-				$target_path,
+					$this->filePath,
+					$target_path,
 		));
 		if ($callback == 'copy' && $this->preserve_timestamps) {
 			$timestamp = filemtime($this->filePath);
@@ -542,8 +545,8 @@ abstract class Billrun_Processor extends Billrun_Base {
 		if ($this->orderLinesBeforeInsert) {
 			Billrun_Factory::log()->log("Reordering lines  by stamp...", Zend_Log::DEBUG);
 			uasort($lines_data, function($a, $b) {
-				return strcmp($a['stamp'], $b['stamp']);
-			});
+						return strcmp($a['stamp'], $b['stamp']);
+					});
 			Billrun_Factory::log()->log("Done reordering lines  by stamp.", Zend_Log::DEBUG);
 		}
 
@@ -577,8 +580,8 @@ abstract class Billrun_Processor extends Billrun_Base {
 		if ($this->orderLinesBeforeInsert) {
 			Billrun_Factory::log()->log("Reordering Q lines  by stamp...", Zend_Log::DEBUG);
 			uasort($queue_data, function($a, $b) {
-				return strcmp($a['stamp'], $b['stamp']);
-			});
+						return strcmp($a['stamp'], $b['stamp']);
+					});
 			Billrun_Factory::log()->log("Done reordering Q lines  by stamp.", Zend_Log::DEBUG);
 		}
 		try {
