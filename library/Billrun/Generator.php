@@ -28,7 +28,7 @@ abstract class Billrun_Generator extends Billrun_Base {
 	protected $export_directory;
 
 	/**
-	 * load balanced between db primary and slave
+	 * load balanced between db primary and secondary
 	 * @var int
 	 */
 	protected $loadBalanced = 0;

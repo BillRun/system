@@ -697,7 +697,12 @@ class Billrun_Billrun {
 			'urt' => 1,
 		);
 		Billrun_Factory::log()->log("Querying for account " . $aid . " lines", Zend_Log::INFO);
-		$cursor = $this->lines->query($query)->cursor()->fields($this->filter_fields)->sort($sort)->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'))->hint($hint);
+		$cursor = $this->lines->query($query)->cursor()->fields($this->filter_fields)->sort($sort)->hint($hint);
+		// change config
+		$loadBalanced = Billrun_Factory::config()->getConfigValue('generate.loadBalanced', 0);
+		if (rand(1, 100) >= $loadBalanced) {
+			$cursor->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
+		}
 		Billrun_Factory::log()->log("Finished querying for account " . $aid . " lines", Zend_Log::INFO);
 //		$results = array();
 //		Billrun_Factory::log()->log("Saving account " . $aid . " lines to array", Zend_Log::DEBUG);
