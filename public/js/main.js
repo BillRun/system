@@ -90,6 +90,8 @@ $(function() {
 		if (isAPIAvailable()) {
 			var remove_non_existing_usage_types = $("#remove_non_existing_usage_types").is(':checked') ? 1 : 0;
 			var files = $("#importPricesModal #file-upload2").get(0).files; // FileList object
+			if (files.length) {
+				$(this).attr('disabled', 'disabled');
 			var file = files[0];
 			var reader = new FileReader();
 			reader.readAsText(file);
@@ -121,20 +123,27 @@ $(function() {
 					data: {prices: _prices, remove_non_existing_usage_types: remove_non_existing_usage_types}
 				}).done(function(msg) {
 					obj = JSON.parse(msg);
+						var output;
 					if (obj.status == "1") {
-						var output = 'Success.<br/>';
+							output = 'Success.<br/>';
 						var reasons = {"updated": "Updated", "future": "Rates that were not imported due to an existing future rate", "missing_category": "Rates that were not updated because they miss category", "old": "Inactive rates not imported"};
 						$.each(obj.keys, function(key, value) {
 							if (value.length) {
-								output += eval("reasons." + key) + ": " + value.join(', ') + "<br/>";
+								output += eval("reasons." + key) + ": " + value.join() + "<br/>";
 							}
 						});
 						$("#importPricesModal #file-upload2").val('');
 						$('#importPricesModal #saveOutput2').html(output);
 					} else {
-						$('#importPricesModal #saveOutput2').html('Failed to import: ' + obj.desc);
+							output = 'Failed to import: ' + obj.desc;
+							if (obj.input) {
+								output += '</br>Input was: ' + JSON.stringify(obj.input);
 					}
+							$('#importPricesModal #saveOutput2').html(output);
+						}
+						$('#import').removeAttr("disabled");
 				});
+				}
 			}
 
 		} else {
@@ -189,7 +198,7 @@ $(function() {
 function removeFilter(button) {
 	$(button).siblings("input[name='manual_value[]']").val('');
 	if ($(button).parent().siblings().length) {
-		$(button).parent().remove();
+	$(button).parent().remove();
 	}
 	else {
 		$('.advanced-options').click();
