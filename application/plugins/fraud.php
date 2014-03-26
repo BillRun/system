@@ -207,7 +207,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 		// if the limit for specific plans
 		if (isset($rule['limitPlans']) &&
-			(is_array($rule['limitPlans']) && !in_array(strtolower($row['plan']), $rule['limitPlans']))) {
+			(is_array($rule['limitPlans']) && !in_array(strtoupper($row['plan']), $rule['limitPlans']))) {
 			return false;
 		}
 		// ignore subscribers :)
