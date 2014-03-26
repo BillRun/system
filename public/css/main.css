@@ -37,7 +37,6 @@ div:last-of-type>.add-filter{
 div:nth-of-type(n+5)>.add-filter{
 	display: none;
 }
-
 @media only screen and (max-width: 1190px) {
 
     /* Force table to not be like tables anymore */
@@ -96,7 +95,7 @@ input[type=checkbox] {
 }
 
 .toolbar-rates {
-
+	
 }
 .control-group {
 	height: 35px;
@@ -114,4 +113,14 @@ td[data-title="Rate"] a{
     text-overflow: ellipsis;
     white-space: nowrap;
     width: 90px;
+}
+.center {
+	margin: 50px auto 0;
+	display: block;
+	width: 500px;
+	text-align: center;
+}
+
+.login {
+	width: 100%;
 }
