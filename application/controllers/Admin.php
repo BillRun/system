@@ -687,4 +687,37 @@ class AdminController extends Yaf_Controller_Abstract {
 		return $query;
 	}
 
+	public function exportAction() {
+		$table = "rates";
+		$sort = $this->applySort($table);
+		$options = array(
+			'collection' => $table,
+			'sort' => $sort,
+		);
+
+		$model = self::getModel($table, $options);
+		$query = $this->applyFilters($table);
+
+		$rates = $this->model->getRates($query);
+
+		$header = $this->model->getPricesListFileHeader();
+		$data_output[] = implode(",", $header);
+		foreach ($rates as $rate) {
+			$rules = $this->model->getRulesByRate($rate);
+			foreach ($rules as $rule) {
+				$imploded_text = '';
+				foreach ($header as $title) {
+					$imploded_text.=$rule[$title] . ',';
+				}
+				$data_output[] = substr($imploded_text, 0, strlen($imploded_text) - 1);
+			}
+		}
+
+		$output = implode(PHP_EOL, $data_output);
+		header("Cache-Control: max-age=0");
+		header("Content-type: application/csv");
+		header("Content-Disposition: attachment; filename=csv_export.csv");
+		die($output);
+	}
+
 }
