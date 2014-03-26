@@ -49,12 +49,18 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * @todo move to model
 	 */
 	public function editAction() {
+		if (!$this->allowed('read'))
+			return false;
 		$coll = Billrun_Util::filter_var($this->getRequest()->get('coll'), FILTER_SANITIZE_STRING);
 		$id = Billrun_Util::filter_var($this->getRequest()->get('id'), FILTER_SANITIZE_STRING);
 		$type = Billrun_Util::filter_var($this->getRequest()->get('type'), FILTER_SANITIZE_STRING);
 
 		$model = self::getModel($coll);
-		$entity = $model->getItem($id);
+		if ($type == 'new') {
+			$entity = $model->getEmptyItem();
+		} else {
+			$entity = $model->getItem($id);
+		}
 		if ($type == 'close_and_new' && is_subclass_of($model, "TabledateModel") && !$model->isLast($entity)) {
 			die("There's already a newer entity with this key");
 		}
@@ -76,7 +82,7 @@ class AdminController extends Yaf_Controller_Abstract {
 
 		$model = self::getModel($coll);
 
-		if ($type == 'remove' && $coll != 'lines') {
+		if ($type == 'remove' && !in_array($coll, array('lines', 'users'))) {
 			$entity = $model->getItem($ids);
 			$this->getView()->entity = $entity;
 			$this->getView()->key = $entity[$model->search_key];
@@ -86,7 +92,7 @@ class AdminController extends Yaf_Controller_Abstract {
 				die("Only future entities could be removed");
 			}
 		} else {
-			$this->getView()->key = "the selected lines";
+			$this->getView()->key = "the selected documents";
 		}
 
 
@@ -113,6 +119,10 @@ class AdminController extends Yaf_Controller_Abstract {
 		$type = Billrun_Util::filter_var($this->getRequest()->get('type'), FILTER_SANITIZE_STRING);
 
 		$model = self::getModel($coll);
+
+		if ($coll == 'users' && in_array(strval(Billrun_Factory::user()->getMongoId()), $ids)) { // user is not allowed to remove oneselfs
+			die(json_encode("Can't remove oneself"));
+		}
 
 		$collection = Billrun_Factory::db()->getCollection($coll);
 		if (!($collection instanceof Mongodloid_Collection)) {
@@ -148,9 +158,9 @@ class AdminController extends Yaf_Controller_Abstract {
 		if (!$this->allowed('write'))
 			die(json_encode(null));
 		$flatData = $this->getRequest()->get('data');
+		$type = Billrun_Util::filter_var($this->getRequest()->get('type'), FILTER_SANITIZE_STRING);
 		$id = Billrun_Util::filter_var($this->getRequest()->get('id'), FILTER_SANITIZE_STRING);
 		$coll = Billrun_Util::filter_var($this->getRequest()->get('coll'), FILTER_SANITIZE_STRING);
-		$type = Billrun_Util::filter_var($this->getRequest()->get('type'), FILTER_SANITIZE_STRING);
 
 		$model = self::getModel($coll);
 
@@ -161,17 +171,21 @@ class AdminController extends Yaf_Controller_Abstract {
 
 		$data = @json_decode($flatData, true);
 
-		if (empty($data) || empty($id) || empty($coll)) {
+		if (empty($data) || ($type != 'new' && empty($id)) || empty($coll)) {
 			return false;
 		}
 
-		$params = array_merge($data, array('_id' => new MongoId($id)));
+		if ($id) {
+			$params = array_merge($data, array('_id' => new MongoId($id)));
+		} else {
+			$params = $data;
+		}
 
 		if ($type == 'update') {
 			$saveStatus = $model->update($params);
 		} else if ($type == 'close_and_new') {
 			$saveStatus = $model->closeAndNew($params);
-		} else if ($type == 'duplicate') {
+		} else if (in_array($type, array('duplicate', 'new'))) {
 			$saveStatus = $model->duplicate($params);
 		}
 
@@ -284,7 +298,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$username = $this->getRequest()->get('username');
 		$password = $this->getRequest()->get('password');
 
-		if ($username != '') {
+		if ($username != '' && !is_null($password)) {
 			$adapter = new Zend_Auth_Adapter_MongoDb(
 					$db, 'username', 'password'
 			);
@@ -319,7 +333,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$ret = $this->renderView('login', $params);
 		return $ret;
 	}
-	
+
 	protected function auth() {
 		return Zend_Auth::getInstance()->setStorage(new Zend_Auth_Storage_Yaf());
 	}
@@ -333,7 +347,7 @@ class AdminController extends Yaf_Controller_Abstract {
 				return false;
 			}
 			$user = Billrun_Factory::user($auth->getIdentity());
-			if (!$user->allowed($permission)) {
+			if (!$user->valid() || !$user->allowed($permission)) {
 				$this->forward('error');
 				return false;
 			}
@@ -400,6 +414,23 @@ class AdminController extends Yaf_Controller_Abstract {
 		$options = array(
 			'collection' => $table,
 			'sort' => $sort,
+		);
+
+		$model = self::getModel($table, $options);
+		$query = $this->applyFilters($table);
+
+		$this->getView()->component = $this->buildComponent($table, $query);
+	}
+
+	/**
+	 * users controller of admin
+	 */
+	public function usersAction() {
+		if (!$this->allowed('admin'))
+			return false;
+		$table = "users";
+		$options = array(
+			'collection' => $table,
 		);
 
 		$model = self::getModel($table, $options);

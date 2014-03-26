@@ -38,5 +38,17 @@ class Billrun_User {
 	public function allowed($permission) {
 		return (boolean) array_intersect($this->entity['roles'], array($permission, 'admin'));
 	}
+	
+	public function valid() {
+		return !$this->entity->isEmpty();
+	}
+	
+	public function getUsername() {
+		return $this->entity['username'];
+	}
+	
+	public function getMongoId() {
+		return $this->entity['_id'];
+	}
 
 }
