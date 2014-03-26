@@ -246,7 +246,6 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 	protected function isThresholdTriggered($before, $after, $threshold, $recurring = false, $minimum = 0, $maximum = -1) {
 		if ($recurring) {
 			return ($minimum < $after) && ($maximum < 0 || $maximum > $before) && (floor($before / $threshold) < floor($after / $threshold));
-//			return ($usage_before % $threshold > $usage_after % $threshold || ($usage_after-$usage_before) > $threshold);
 		}
 		return ($before < $threshold) && ($threshold < $after);
 	}
