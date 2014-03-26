@@ -44,19 +44,16 @@ fi
 
 js_code='
 db.getMongo().setReadPref("secondaryPreferred");
-Array.prototype.array_diff = function(a) {
-	return this.filter(function(i) {
-		return a.indexOf(i) < 0;
-	});
-};
 var billrun_key = "'$billrun_key'";
 var username = "'$username'";
 var password = "'$password'";
-var from_billrun = new Array();
+var from_billrun = {};
 var from_balances = new Array();
+var diff = new Array();
+var output = new Object();
 db.billrun.find({"billrun_key": billrun_key}, {_id: 0, subs: 1}).forEach(function(obj) {
 	obj.subs.forEach(function(obj2) {
-		from_billrun.push(obj2.sid)
+		from_billrun[obj2.sid+""] = null;
 	})
 });
 balances_db = db.getSiblingDB("balances");
@@ -65,10 +62,13 @@ if (username != "") {
 }
 balances_coll = balances_db.getCollection("balances");
 balances_coll.find({"billrun_month": billrun_key}, {_id: 0, sid: 1}).forEach(function(obj) {
-	from_balances.push(obj.sid)
+	from_balances.push(obj.sid+"");
 });
-var diff = from_balances.array_diff(from_billrun);
-var output = new Object();
+from_balances.forEach(function(obj){
+	if (!from_billrun.hasOwnProperty(obj)) {
+		diff.push(parseInt(obj));
+	}
+});
 balances_coll.aggregate({$match: {"billrun_month": billrun_key, sid: {$in: diff}}}, {$group: {_id: {aid: "$aid"}, subs: {$addToSet: "$sid"}}}).result.forEach(function(obj) {
 	var subs = new Array();
 	obj.subs.forEach(function(sub) {
@@ -76,6 +76,7 @@ balances_coll.aggregate({$match: {"billrun_month": billrun_key, sid: {$in: diff}
 		new_sub.subscriber_id = sub.toString();
 		new_sub.curr_plan = new_sub.next_plan = "NULL";
 		subs.push(new_sub);
+//		print(parseInt(obj._id.aid) + "," + new_sub.subscriber_id); // unmark to get csv format + mark "printjson"
 	});
 	output[obj._id.aid] = new Object();
 	output[obj._id.aid]["subscribers"] = subs;
