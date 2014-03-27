@@ -1,4 +1,5 @@
 <?php
+
 require_once APPLICATION_PATH . '/library/password_compat/password.php';
 
 /**
@@ -54,6 +55,7 @@ class UsersModel extends TableModel {
 	public function getTableColumns() {
 		$columns = array(
 			'username' => 'Username',
+			'roles' => 'Roles',
 		);
 		return $columns;
 	}
@@ -74,6 +76,16 @@ class UsersModel extends TableModel {
 			'roles' => array(
 			),
 		));
+	}
+
+	public function getData($filter_query = array()) {
+		$resource = parent::getData();
+		$ret = array();
+		foreach ($resource as $item) {
+			$item['roles'] = implode(", ", $item['roles']);
+			$ret[] = $item;
+		}
+		return $ret;
 	}
 
 }
