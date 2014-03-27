@@ -14,6 +14,7 @@ class Mongodloid_Collection {
 	const DROP_DUPLICATES = 2;
 
 	protected $w = 0;
+	protected $j = true;
 
 	public function __construct(MongoCollection $collection, Mongodloid_DB $db) {
 		$this->_collection = $collection;
@@ -23,6 +24,9 @@ class Mongodloid_Collection {
 	public function update($query, $values, $options = array()) {
 		if (!isset($options['w'])) {
 			$options['w'] = $this->w;
+		}
+		if (!isset($options['j'])) {
+			$options['j'] = $this->j;
 		}
 		return $this->_collection->update($query, $values, $options);
 	}
@@ -93,7 +97,7 @@ class Mongodloid_Collection {
 			$w = $this->w;
 		}
 
-		$result = $this->_collection->save($data, array('save' => $save, 'w' => $w));
+		$result = $this->_collection->save($data, array('save' => $save, 'w' => $w, 'j' => $this->j));
 		if (!$result)
 			return false;
 
@@ -249,6 +253,11 @@ class Mongodloid_Collection {
 		if (!isset($options['w'])) {
 			$options['w'] = $this->w;
 		}
+
+		if (!isset($options['j'])) {
+			$options['j'] = $this->j;
+		}
+
 		return $this->_collection->batchInsert($a, $options);
 	}
 
@@ -265,6 +274,11 @@ class Mongodloid_Collection {
 		if (!isset($options['w'])) {
 			$options['w'] = $this->w;
 		}
+		
+		if (!isset($options['j'])) {
+			$options['j'] = $this->j;
+		}
+
 		return $this->_collection->insert( ($a instanceof Mongodloid_Entity ? $a->getrawData() : $a), $options);
 	}
 
