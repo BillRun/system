@@ -159,19 +159,19 @@ class LinesModel extends TableModel {
 
 	public function getFilterFields() {
 		$months = 6;
-		$previous_billruns = array();
+		$billruns = array();
 		$timestamp = time();
-		for ($i = 1; $i <= $months; $i++) {
-			$timestamp = strtotime("1 month ago", $timestamp);
+		for ($i = 0; $i < $months; $i++) {
 			$billrun_key = Billrun_Util::getBillrunKey($timestamp);
 			if ($billrun_key >= '201401') {
-				$previous_billruns[$billrun_key] = $billrun_key;
+				$billruns[$billrun_key] = $billrun_key;
 			}
+			else {
+				break;
+			}
+			$timestamp = strtotime("1 month ago", $timestamp);
 		}
-		arsort($previous_billruns);
-		$current_billrun_key = '000000';
-		$current_billrun = array($current_billrun_key => 'Current billrun');
-		$billruns = $current_billrun + $previous_billruns;
+		arsort($billruns);
 
 		$filter_fields = array(
 			'aid' => array(
@@ -222,7 +222,7 @@ class LinesModel extends TableModel {
 				'comparison' => '$in',
 				'display' => 'Billrun',
 				'values' => $billruns,
-				'default' => $current_billrun_key,
+				'default' => array(),
 			),
 		);
 		return array_merge($filter_fields, parent::getFilterFields());
