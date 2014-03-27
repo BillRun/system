@@ -219,7 +219,8 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$threshold = $rule['threshold'];
 		$recurring = isset($rule['recurring']) && $rule['recurring'];
 		$minimum = (isset($rule['minimum']) && $rule['minimum']) ? (int) $rule['minimum'] : 0;
-		if ($this->isThresholdTriggered($before, $after, $threshold, $recurring, $minimum)) {
+		$maximum = (isset($rule['maximum']) && $rule['maximum']) ? (int) $rule['maximum'] : -1;
+		if ($this->isThresholdTriggered($before, $after, $threshold, $recurring, $minimum, $maximum)) {
 			Billrun_Factory::log("Fraud plugin - line stamp " . $row['stamp'] . ' trigger event ' . $rule['name'], Zend_Log::INFO);
 			if (isset($rule['priority'])) {
 				$priority = (int) $rule['priority'];
@@ -242,10 +243,9 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * 
 	 * @return boolean true if the threshold passed the value
 	 */
-	protected function isThresholdTriggered($before, $after, $threshold, $recurring = false, $minimum = 0) {
+	protected function isThresholdTriggered($before, $after, $threshold, $recurring = false, $minimum = 0, $maximum = -1) {
 		if ($recurring) {
-			return ($minimum < $after) && (floor($before / $threshold) < floor($after / $threshold));
-//			return ($usage_before % $threshold > $usage_after % $threshold || ($usage_after-$usage_before) > $threshold);
+			return ($minimum < $after) && ($maximum < 0 || $maximum > $before) && (floor($before / $threshold) < floor($after / $threshold));
 		}
 		return ($before < $threshold) && ($threshold < $after);
 	}
@@ -287,6 +287,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$newEvent['plan'] = $row['plan'];
 		$newEvent['recurring'] = $recurring;
 		$newEvent['line_stamp'] = $row['stamp'];
+		$newEvent['line_urt'] = $row['urt'];
 		if (!is_null($priority)) {
 			$newEvent['priority'] = (int) $priority;
 		} else if ($recurring) {
