@@ -239,7 +239,13 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 		}
 		if (isset($data['charging_end_time']) && isset($data['charging_start_time']) &&
 				(strtotime($data['charging_end_time']) > 0 && strtotime($data['charging_start_time']) > 0)) {
-			$data['duration'] = strtotime($data['charging_end_time']) - strtotime($data['charging_start_time']);
+			$computed_dur = strtotime($data['charging_end_time']) - strtotime($data['charging_start_time']);
+			if($computed_dur >= 0  && $computed_dur <= 3600 ) {
+				$data['duration'] =  $computed_dur;
+			} else {
+				Billrun_Factory::log("Processor recieved line (cf : ".$data['call_reference']. " , cft : ".$data['call_reference_time'] ." ) with computed duration of $computed_dur using orginal duration field. ",Zend_Log::ALERT);
+			}
+			
 		}
 		//Remove  the  "10" in front of the national call with an international prefix
 //		if (isset($data['in_circuit_group_name']) && preg_match("/^RCEL/", $data['in_circuit_group_name']) && strlen($data['called_number']) > 10 && substr($data['called_number'], 0, 2) == "10") { // will fail when in_circuit_group_name is empty / called_number length is exactly 10
