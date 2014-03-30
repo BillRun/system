@@ -49,12 +49,18 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * @todo move to model
 	 */
 	public function editAction() {
+		if (!$this->allowed('read'))
+			return false;
 		$coll = Billrun_Util::filter_var($this->getRequest()->get('coll'), FILTER_SANITIZE_STRING);
 		$id = Billrun_Util::filter_var($this->getRequest()->get('id'), FILTER_SANITIZE_STRING);
 		$type = Billrun_Util::filter_var($this->getRequest()->get('type'), FILTER_SANITIZE_STRING);
 
 		$model = self::getModel($coll);
-		$entity = $model->getItem($id);
+		if ($type == 'new') {
+			$entity = $model->getEmptyItem();
+		} else {
+			$entity = $model->getItem($id);
+		}
 		if ($type == 'close_and_new' && is_subclass_of($model, "TabledateModel") && !$model->isLast($entity)) {
 			die("There's already a newer entity with this key");
 		}
@@ -68,13 +74,15 @@ class AdminController extends Yaf_Controller_Abstract {
 	}
 
 	public function confirmAction() {
+		if (!$this->allowed('read'))
+			return false;
 		$coll = Billrun_Util::filter_var($this->getRequest()->get('coll'), FILTER_SANITIZE_STRING);
 		$ids = Billrun_Util::filter_var($this->getRequest()->get('id'), FILTER_SANITIZE_STRING);
 		$type = Billrun_Util::filter_var($this->getRequest()->get('type'), FILTER_SANITIZE_STRING);
 
 		$model = self::getModel($coll);
 
-		if ($type == 'remove' && $coll != 'lines') {
+		if ($type == 'remove' && !in_array($coll, array('lines', 'users'))) {
 			$entity = $model->getItem($ids);
 			$this->getView()->entity = $entity;
 			$this->getView()->key = $entity[$model->search_key];
@@ -84,7 +92,7 @@ class AdminController extends Yaf_Controller_Abstract {
 				die("Only future entities could be removed");
 			}
 		} else {
-			$this->getView()->key = "the selected lines";
+			$this->getView()->key = "the selected documents";
 		}
 
 
@@ -101,6 +109,8 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * @todo protect the from and to to be continuely
 	 */
 	public function removeAction() {
+		if (!$this->allowed('write'))
+			die(json_encode(null));
 		$ids = explode(",", Billrun_Util::filter_var($this->getRequest()->get('ids'), FILTER_SANITIZE_STRING));
 		if (!is_array($ids) || count($ids) == 0 || empty($ids)) {
 			return;
@@ -109,6 +119,10 @@ class AdminController extends Yaf_Controller_Abstract {
 		$type = Billrun_Util::filter_var($this->getRequest()->get('type'), FILTER_SANITIZE_STRING);
 
 		$model = self::getModel($coll);
+
+		if ($coll == 'users' && in_array(strval(Billrun_Factory::user()->getMongoId()), $ids)) { // user is not allowed to remove oneselfs
+			die(json_encode("Can't remove oneself"));
+		}
 
 		$collection = Billrun_Factory::db()->getCollection($coll);
 		if (!($collection instanceof Mongodloid_Collection)) {
@@ -141,10 +155,12 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * @todo protect the from and to to be continuely
 	 */
 	public function saveAction() {
+		if (!$this->allowed('write'))
+			die(json_encode(null));
 		$flatData = $this->getRequest()->get('data');
+		$type = Billrun_Util::filter_var($this->getRequest()->get('type'), FILTER_SANITIZE_STRING);
 		$id = Billrun_Util::filter_var($this->getRequest()->get('id'), FILTER_SANITIZE_STRING);
 		$coll = Billrun_Util::filter_var($this->getRequest()->get('coll'), FILTER_SANITIZE_STRING);
-		$type = Billrun_Util::filter_var($this->getRequest()->get('type'), FILTER_SANITIZE_STRING);
 
 		$model = self::getModel($coll);
 
@@ -155,17 +171,21 @@ class AdminController extends Yaf_Controller_Abstract {
 
 		$data = @json_decode($flatData, true);
 
-		if (empty($data) || empty($id) || empty($coll)) {
+		if (empty($data) || ($type != 'new' && empty($id)) || empty($coll)) {
 			return false;
 		}
 
-		$params = array_merge($data, array('_id' => new MongoId($id)));
+		if ($id) {
+			$params = array_merge($data, array('_id' => new MongoId($id)));
+		} else {
+			$params = $data;
+		}
 
 		if ($type == 'update') {
 			$saveStatus = $model->update($params);
 		} else if ($type == 'close_and_new') {
 			$saveStatus = $model->closeAndNew($params);
-		} else if ($type == 'duplicate') {
+		} else if (in_array($type, array('duplicate', 'new'))) {
 			$saveStatus = $model->duplicate($params);
 		}
 
@@ -233,6 +253,8 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * plans controller of admin
 	 */
 	public function plansAction() {
+		if (!$this->allowed('read'))
+			return false;
 		$this->forward("tabledate", array('table' => 'plans'));
 		return false;
 	}
@@ -241,6 +263,8 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * rates controller of admin
 	 */
 	public function ratesAction() {
+		if (!$this->allowed('read'))
+			return false;
 		$session = $this->getSession("rates");
 		$show_prefix = $this->getSetVar($session, 'showprefix', 'showprefix', 0);
 		$this->forward("tabledate", array('table' => 'rates', 'showprefix' => $show_prefix));
@@ -267,10 +291,79 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->getView()->component = $this->buildComponent($table, $query);
 	}
 
+	public function loginAction() {
+		$params = array_merge($this->getRequest()->getParams(), $this->getRequest()->getPost());
+		$db = Billrun_Factory::db()->usersCollection()->getMongoCollection();
+
+		$username = $this->getRequest()->get('username');
+		$password = $this->getRequest()->get('password');
+
+		if ($username != '' && !is_null($password)) {
+			$adapter = new Zend_Auth_Adapter_MongoDb(
+					$db, 'username', 'password'
+			);
+
+			$adapter->setIdentity($username);
+			$adapter->setCredential($password);
+
+			$result = $this->auth()->authenticate($adapter);
+
+			if ($result->isValid()) {
+				$ip = $this->getRequest()->getServer('REMOTE_ADDR', 'Unknown IP');
+				Billrun_Factory::log()->log('User ' . $username . ' logged in to admin panel from IP: ' . $ip, Zend_log::INFO);
+				$ret_action = $this->getRequest()->get('ret_action');
+				if ($ret_action) {
+					$this->redirect($ret_action);
+					return false;
+				}
+				return true;
+			}
+		}
+
+		$this->getView()->component = $this->getLoginForm($params);
+	}
+
+	protected function getLoginForm($params) {
+		$this->title = "Login";
+
+		// TODO: use ready pager/paginiation class (zend? joomla?) with auto print
+		$params = array_merge(array(
+			'title' => $this->title,
+				), $params);
+//		$params = array_merge($options, $params, $this->getTableViewParams($filter_query), $this->createFilterToolbar($table));
+
+		$ret = $this->renderView('login', $params);
+		return $ret;
+	}
+
+	protected function auth() {
+		return Zend_Auth::getInstance()->setStorage(new Zend_Auth_Storage_Yaf());
+	}
+
+	protected function allowed($permission) {
+		$action = $this->getRequest()->getActionName();
+		$auth = $this->auth();
+		if ($action != 'login') {
+			if (!$auth->hasIdentity()) {
+				$this->forward('login', array('ret_action' => $action));
+				return false;
+			}
+			$user = Billrun_Factory::user($auth->getIdentity());
+			if (!$user->valid() || !$user->allowed($permission)) {
+				$this->forward('error');
+				return false;
+			}
+		}
+		return true;
+	}
+
 	/**
 	 * lines controller of admin
 	 */
 	public function linesAction() {
+		if (!$this->allowed('read'))
+			return false;
+
 		$table = 'lines';
 		$sort = $this->applySort($table);
 		$options = array(
@@ -287,10 +380,16 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->getView()->component = $this->buildComponent('lines', $query);
 	}
 
+	protected function errorAction() {
+		$this->getView()->component = $this->renderView('error');
+	}
+
 	/**
 	 * events controller of admin
 	 */
 	public function eventsAction() {
+		if (!$this->allowed('read'))
+			return false;
 		$table = "events";
 //		$sort = array('creation_time' => -1);
 		$sort = $this->applySort($table);
@@ -309,12 +408,31 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * log controller of admin
 	 */
 	public function logAction() {
+		if (!$this->allowed('read'))
+			return false;
 		$table = "log";
 //		$sort = array('received_time' => -1);
 		$sort = $this->applySort($table);
 		$options = array(
 			'collection' => $table,
 			'sort' => $sort,
+		);
+
+		$model = self::getModel($table, $options);
+		$query = $this->applyFilters($table);
+
+		$this->getView()->component = $this->buildComponent($table, $query);
+	}
+
+	/**
+	 * users controller of admin
+	 */
+	public function usersAction() {
+		if (!$this->allowed('admin'))
+			return false;
+		$table = "users";
+		$options = array(
+			'collection' => $table,
 		);
 
 		$model = self::getModel($table, $options);
@@ -600,6 +718,39 @@ class AdminController extends Yaf_Controller_Abstract {
 			$query[$keys[$i]][$operators[$i]] = $values[$i];
 		}
 		return $query;
+	}
+
+	public function exportAction() {
+		$table = "rates";
+		$sort = $this->applySort($table);
+		$options = array(
+			'collection' => $table,
+			'sort' => $sort,
+		);
+
+		$model = self::getModel($table, $options);
+		$query = $this->applyFilters($table);
+
+		$rates = $this->model->getRates($query);
+
+		$header = $this->model->getPricesListFileHeader();
+		$data_output[] = implode(",", $header);
+		foreach ($rates as $rate) {
+			$rules = $this->model->getRulesByRate($rate);
+			foreach ($rules as $rule) {
+				$imploded_text = '';
+				foreach ($header as $title) {
+					$imploded_text.=$rule[$title] . ',';
+				}
+				$data_output[] = substr($imploded_text, 0, strlen($imploded_text) - 1);
+			}
+		}
+
+		$output = implode(PHP_EOL, $data_output);
+		header("Cache-Control: max-age=0");
+		header("Content-type: application/csv");
+		header("Content-Disposition: attachment; filename=csv_export.csv");
+		die($output);
 	}
 
 }

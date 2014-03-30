@@ -53,3 +53,27 @@
 		<button id="upload" class="btn btn-primary">Import</button>
 	</div>
 </div>
+<div class="modal fade hide" id="importPricesModal" tabindex="-2" role="dialog" aria-labelledby="importPricesModalLabel" aria-hidden="true">
+	<div class="modal-header">
+		<button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+		<h3 id="importPricesModalLabel">Import</h3>
+	</div>
+	<div class="modal-body">
+		Please supply a csv in the following format:</br>
+		key,usage_type,category,rule,access_price,interval,price,times,from_date</br>
+		from_date in yyyy-mm-dd HH:ii:ss format</br></br>
+		Don't forget to stop the processing + backup your rates</br>
+		<input id="file-upload2" type="file"/>
+		<input type="hidden" id="csvJson2" value=""/>
+		<div id="saveOutput2"></div>
+		<div class="control-group control-group0">
+			<div class="controls form-inline">
+				<input class="span1" id="remove_non_existing_usage_types" name="remove_non_existing_usage_types" type="checkbox" value="off" > <label class="checkbox" for="remove_non_existing_usage_types">Remove non existing usage types</label>
+			</div>
+		</div>
+	</div>
+	<div class="modal-footer">
+		<button id="cancelimport" class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
+		<button id="import" class="btn btn-primary">Import</button>
+	</div>
+</div>

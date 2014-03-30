@@ -6,13 +6,15 @@
  * @license         GNU General Public License version 2 or later; see LICENSE.txt
  */
 
+require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
+
 /**
  * Credit action class
  *
  * @package  Action
  * @since    0.5
  */
-class CreditAction extends Action_Base {
+class CreditAction extends ApiAction {
 
 	/**
 	 * method to execute the refund
@@ -35,35 +37,34 @@ class CreditAction extends Action_Base {
 			$parsed_row['process_time'] = date(Billrun_Base::base_dateformat);
 
 			$entity = new Mongodloid_Entity($parsed_row);
-		
+
 			if ($entity->save($linesCollection) === false) {
 				return $this->setError('failed to store into DB lines', $request);
 			}
 
-				if ($this->insertToQueue($entity) === false) {
-					return $this->setError('failed to store into DB queue', $request);
-				} else {
-					$this->getController()->setOutput(array(array(
-							'status' => 1,
-							'desc' => 'success',
-							'stamp' => $entity['stamp'],
-							'input' => $request,
-					)));
-					Billrun_Factory::log()->log("Added credit line " . $entity['stamp'], Zend_Log::INFO);
-					return true;
-				}
-		} catch(\Exception $e) {
-			Billrun_Factory::log()->log('failed to store into DB got error : '.$e->getCode() .' : '.$e->getMessage() , $request);
-			Billrun_Factory::log()->log('failed saving request :'.print_r($request,1) , Zend_Log::INFO);
-            Billrun_Factory::log()->log('failed saving :'.json_encode($parsed_row) , Zend_Log::INFO);
+			if ($this->insertToQueue($entity) === false) {
+				return $this->setError('failed to store into DB queue', $request);
+			} else {
+				$this->getController()->setOutput(array(array(
+						'status' => 1,
+						'desc' => 'success',
+						'stamp' => $entity['stamp'],
+						'input' => $request,
+				)));
+				Billrun_Factory::log()->log("Added credit line " . $entity['stamp'], Zend_Log::INFO);
+				return true;
+			}
+		} catch (\Exception $e) {
+			Billrun_Factory::log()->log('failed to store into DB got error : ' . $e->getCode() . ' : ' . $e->getMessage(), $request);
+			Billrun_Factory::log()->log('failed saving request :' . print_r($request, 1), Zend_Log::INFO);
+			Billrun_Factory::log()->log('failed saving :' . json_encode($parsed_row), Zend_Log::INFO);
 
-			$fd= fopen(Billrun_Factory::config()->getConfigValue('credit.failed_credits_file', './files/failed_credits.json'), 'a+');			
-			fwrite($fd,json_encode($parsed_row) . PHP_EOL);
+			$fd = fopen(Billrun_Factory::config()->getConfigValue('credit.failed_credits_file', './files/failed_credits.json'), 'a+');
+			fwrite($fd, json_encode($parsed_row) . PHP_EOL);
 			fclose($fd);
-			
+
 			return $this->setError('failed to store into DB queue', $request);
 		}
-		
 	}
 
 	protected function parseRow($credit_row) {
@@ -80,7 +81,8 @@ class CreditAction extends Action_Base {
 
 		// @TODO: take to config
 		$optional_fields = array(
-			'vatable' => '1',
+			'plan' => array(),
+			'vatable' => array('default' => '1'),
 		);
 		$filtered_request = array();
 
@@ -106,9 +108,11 @@ class CreditAction extends Action_Base {
 			}
 		}
 
-		foreach ($optional_fields as $field => $default_value) {
+		foreach ($optional_fields as $field => $options) {
 			if (!isset($credit_row[$field])) {
-				$filtered_request[$field] = $default_value;
+				if (isset($options['default'])) {
+					$filtered_request[$field] = $options['default'];
+				}
 			} else {
 				$filtered_request[$field] = $credit_row[$field];
 			}
@@ -187,26 +191,13 @@ class CreditAction extends Action_Base {
 			return false;
 		} else {
 			return $queue->insert(array(
-					'stamp' => $entity['stamp'],
-					'type' => $entity['type'],
-					'urt' => $entity['urt'],
-					'calc_name' => false,
-					'calc_time' => false,
+						'stamp' => $entity['stamp'],
+						'type' => $entity['type'],
+						'urt' => $entity['urt'],
+						'calc_name' => false,
+						'calc_time' => false,
 			));
 		}
-	}
-
-	function setError($error_message, $input = null) {
-		Billrun_Factory::log()->log("Sending Error : {$error_message}", Zend_Log::NOTICE);
-		$output = array(
-			'status' => 0,
-			'desc' => $error_message,
-		);
-		if (!is_null($input)) {
-			$output['input'] = $input;
-		}
-		$this->getController()->setOutput(array($output));
-		return;
 	}
 
 }

@@ -83,6 +83,13 @@ class Billrun_Factory {
 	 * @var Billrun Plan
 	 */
 	protected static $plan = array();
+	
+	/**
+	 * Users
+	 * 
+	 * @var Mongodloid_Entity
+	 */
+	protected static $users = array();
 
 	/**
 	 * method to retrieve the log instance
@@ -287,4 +294,21 @@ class Billrun_Factory {
 		return new Billrun_Billrun(array_merge($billrunSettings, $params));
 	}
 
+	/**
+	 * Receive a billrun user
+	 * @param string $username
+	 * @return Billrun_User
+	 */
+	public static function user($username = null) {
+		if (is_null($username)) {
+			$username = Zend_Auth::getInstance()->setStorage(new Zend_Auth_Storage_Yaf())->getIdentity();
+		}
+		if (!isset(self::$users[$username])) {
+			$entity = Billrun_Factory::db()->usersCollection()->query(array('username' => $username))->cursor()->current();
+			self::$users[$username] = new Billrun_User($entity);
+		}
+		return self::$users[$username];
+	}
+
 }
+

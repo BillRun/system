@@ -209,7 +209,7 @@ class RatesModel extends TabledateModel {
 	 */
 	public function getData($filter_query = array()) {
 //		print_R($filter_query);die;
-		$cursor = $this->collection->query($filter_query)->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
+		$cursor = $this->getRates($filter_query);
 		$this->_count = $cursor->count();
 		$resource = $cursor->sort($this->sort)->skip($this->offset())->limit($this->size);
 		$ret = array();
@@ -242,6 +242,171 @@ class RatesModel extends TabledateModel {
 			}
 		}
 		return $ret;
+	}
+
+	public function getRates($filter_query) {
+		return $this->collection->query($filter_query)->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
+	}
+
+	public function getFutureRateKeys($by_keys = array()) {
+		$base_match = array(
+			'$match' => array(
+				'from' => array(
+					'$gt' => new MongoDate(),
+				),
+			),
+		);
+		if ($by_keys) {
+			$base_match['$match']['key']['$in'] = $by_keys;
+		}
+
+		$group = array(
+			'$group' => array(
+				'_id' => '$key',
+			),
+		);
+		$project = array(
+			'$project' => array(
+				'_id' => 0,
+				'key' => '$_id',
+			),
+		);
+		$future_rates = $this->collection->aggregate($base_match, $group, $project);
+		$future_keys = array();
+		foreach ($future_rates as $rate) {
+			$future_keys[] = $rate['key'];
+		}
+		return $future_keys;
+	}
+
+	public function getActiveRates($by_keys = array()) {
+		$base_match = array(
+			'$match' => array(
+				'from' => array(
+					'$lt' => new MongoDate(),
+				),
+				'to' => array(
+					'$gt' => new MongoDate(),
+				),
+			),
+		);
+		if ($by_keys) {
+			$base_match['$match']['key']['$in'] = $by_keys;
+		}
+
+		$group = array(
+			'$group' => array(
+				'_id' => '$key',
+				'count' => array(
+					'$sum' => 1,
+				),
+				'oid' => array(
+					'$first' => '$_id',
+				)
+			),
+		);
+		$project = array(
+			'$project' => array(
+				'_id' => 0,
+				'count' => 1,
+				'oid' => 1,
+			),
+		);
+		$having = array(
+			'$match' => array(
+				'count' => 1,
+			),
+		);
+		$active_rates = $this->collection->aggregate($base_match, $group, $project, $having);
+		if (!$active_rates) {
+			return $active_rates;
+		}
+		foreach ($active_rates as $rate) {
+			$active_oids[] = $rate['oid'];
+		}
+		$query = array(
+			'_id' => array(
+				'$in' => $active_oids,
+			),
+		);
+		$rates = $this->collection->query($query);
+		return $rates;
+	}
+
+	/**
+	 * 
+	 * @param string $usage_type
+	 * @return string
+	 */
+	public function getUnit($usage_type) {
+		switch ($usage_type) {
+			case 'call':
+			case 'incoming_call':
+				$unit = 'seconds';
+				break;
+			case 'data':
+				$unit = 'bytes';
+				break;
+			case 'sms':
+			case 'mms':
+				$unit = 'counter';
+				break;
+			default:
+				$unit = 'seconds';
+				break;
+		}
+		return $unit;
+	}
+
+	/**
+	 * 
+	 * @param array $rules
+	 */
+	public function getRateArrayByRules($rules) {
+		ksort($rules);
+		$rate_arr = array();
+		$rule_end = 0;
+		foreach ($rules as $rule) {
+			$rate['price'] = floatval($rule['price']);
+			$rate['interval'] = intval($rule['interval']);
+			$rate['to'] = $rule_end = intval($rule['times'] == 0 ? pow(2, 31) - 1 : $rule_end + $rule['times'] * $rule['interval']);
+			$rate_arr[] = $rate;
+		}
+		return $rate_arr;
+	}
+
+	/**
+	 * Get rules array by db rate
+	 * @param Mongodloid_Entity $rate
+	 * @return array
+	 */
+	public function getRulesByRate($rate) {
+		$rule['key'] = $rate['key'];
+		$rule['from_date'] = date('Y-m-d H:i:s', $rate['from']->sec);
+		foreach ($rate['rates'] as $usage_type => $usage_type_rate) {
+			$rule['usage_type'] = $usage_type;
+			$rule['category'] = $usage_type_rate['category'];
+			$rule['access_price'] = isset($usage_type_rate['access']) ? $usage_type_rate['access'] : 0;
+			$rule_counter = 1;
+			foreach ($usage_type_rate['rate'] as $rate_rule) {
+				$rule['rule'] = $rule_counter;
+				$rule['interval'] = $rate_rule['interval'];
+				$rule['price'] = $rate_rule['price'];
+				$rule['times'] = intval($rate_rule['to'] / $rate_rule['interval']);
+				$rule_counter++;
+				$rules[] = $rule;
+			}
+		}
+		return $rules;
+		//sort by header?
+	}
+
+	/**
+	 * 
+	 * @return aray
+	 */
+	public function getPricesListFileHeader() {
+		return array('key', 'usage_type', 'category', 'rule', 'access_price', 'interval', 'price', 'times', 'from_date');
 	}
 
 }

@@ -22,10 +22,14 @@ $(function() {
 		}
 	});
 
+	$("#new").click(function() {
+		$(this).data('remote', '/admin/edit?coll=' + active_collection + '&type=' + $(this).data('type'));
+	});
+
 	$("#popupModal,#confirmModal").on('show', function(event) {
 		if (checkItems) {
 			var items_checked = $('#data_table :checked');
-			if (!items_checked.length || (items_checked.length != 1 && (coll != 'lines' || $(this).attr('id') != 'confirmModal'))) {
+			if (!items_checked.length || (items_checked.length != 1 && ($.inArray(coll, ['lines', 'users']) === -1 || $(this).attr('id') != 'confirmModal'))) {
 				alert('Please check exactly one item from the list');
 				$(this).removeData('modal');
 				event.preventDefault();
@@ -83,11 +87,79 @@ $(function() {
 
 	});
 
-	$("#uploadModal #file-upload").on('change', function(event) {
+	/**
+	 * @todo prevent duplicate code with credits import
+	 */
+	$("#importPricesModal #import").click(function(event) {
+		if (isAPIAvailable()) {
+			var remove_non_existing_usage_types = $("#remove_non_existing_usage_types").is(':checked') ? 1 : 0;
+			var files = $("#importPricesModal #file-upload2").get(0).files; // FileList object
+			if (files.length) {
+				$(this).attr('disabled', 'disabled');
+			var file = files[0];
+			var reader = new FileReader();
+			reader.readAsText(file);
+			reader.onload = function(event) {
+				var csv = event.target.result;
+				var data = $.csv.toArrays(csv);
+				var header_line = data[0];
+				var headers = [];
+				var ret = [];
+				for (var item in header_line) {
+					headers[item] = data[0][item];
+				}
+				var _c = 0;
+				var retRow;
+				for (var row in data) {
+					if (row != 0) { // skip the first (header)
+						retRow = {};
+						for (var item in data[row]) {
+							retRow[headers[item]] = data[row][item];
+						}
+						ret[_c++] = retRow;
+					}
+				}
+
+				var _prices = JSON.stringify(ret);
+				$.ajax({
+					url: '/api/importpriceslist',
+					type: "POST",
+					data: {prices: _prices, remove_non_existing_usage_types: remove_non_existing_usage_types}
+				}).done(function(msg) {
+					obj = JSON.parse(msg);
+						var output;
+					if (obj.status == "1") {
+							output = 'Success.<br/>';
+						var reasons = {"updated": "Updated", "future": "Rates that were not imported due to an existing future rate", "missing_category": "Rates that were not updated because they miss category", "old": "Inactive rates not imported"};
+						$.each(obj.keys, function(key, value) {
+							if (value.length) {
+								output += eval("reasons." + key) + ": " + value.join() + "<br/>";
+							}
+						});
+						$("#importPricesModal #file-upload2").val('');
+						$('#importPricesModal #saveOutput2').html(output);
+					} else {
+							output = 'Failed to import: ' + obj.desc;
+							if (obj.input) {
+								output += '</br>Input was: ' + JSON.stringify(obj.input);
+					}
+							$('#importPricesModal #saveOutput2').html(output);
+						}
+						$('#import').removeAttr("disabled");
+				});
+				}
+			}
+
+		} else {
+			alert("Your browser doesn't support parse csv on client side. Please use IE12+, Chrome or Firefox");
+			return false;
+		}
 
 	});
 
+	$("#uploadModal #file-upload").on('change', function(event) {
 
+	});
 
 	$('#usage,#billrun,#source').multiselect({
 		selectAllValue: 'all',
@@ -125,12 +197,12 @@ $(function() {
 		$("#manual_filters").slideToggle();
 		$("i", this).toggleClass("icon-chevron-down icon-chevron-up");
 	});
-});
-
+}
+);
 function removeFilter(button) {
 	$(button).siblings("input[name='manual_value[]']").val('');
 	if ($(button).parent().siblings().length) {
-		$(button).parent().remove();
+	$(button).parent().remove();
 	}
 	else {
 		$('.advanced-options').click();

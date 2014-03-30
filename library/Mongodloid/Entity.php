@@ -13,6 +13,7 @@ class Mongodloid_Entity implements ArrayAccess {
 	const POPFIRST = 1;
 
 	protected $w = 0;
+	protected $j = true;
 	private $_atomics = array(
 		'inc',
 //		'set',
@@ -143,7 +144,7 @@ class Mongodloid_Entity implements ArrayAccess {
 		$data = array(
 			'_id' => $this->getId()->getMongoID()
 		);
-		return $this->_collection->update($data, $fields, array('w' => $this->w));
+		return $this->_collection->update($data, $fields, array('w' => $this->w, 'j' => $this->j));
 	}
 
 	public function set($key, $value, $dontSend = false) {
@@ -280,7 +281,7 @@ class Mongodloid_Entity implements ArrayAccess {
 		if (is_null($w)) {
 			$w = $this->w;
 		}
-		return $this->collection()->save($this, array('save' => $save, 'w' => $w));
+		return $this->collection()->save($this, array('save' => $save, 'w' => $w, 'j' => $this->j));
 	}
 
 	public function collection($collection = null) {
