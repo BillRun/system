@@ -266,7 +266,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 			$orphand_time = time() - 3600;
 		}
 
-		// TODO: initialize this array with PHP strict standards
+		$query = array();
 		$query['$and'][0]['calc_name'] = $previous_calculator;
 		$query['$and'][0]['$or'] = array(
 			array('calc_time' => false),
