@@ -337,7 +337,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				$this->setMongoNativeLong(0);
 			}
 			if (!($ret['ok'] && $ret['updatedExisting'])) { // failed because of different totals (could be that another server with another line raised the totals). Need to calculate pricingData from the beginning
-				Billrun_Factory::log()->log("Concurrent write to balance " . $billrun_key . " of subscriber " . $row['sid'] . ". Retrying...", Zend_Log::DEBUG);
+				Billrun_Factory::log()->log("Concurrent write to balance " . $billrun_key . " of subscriber " . $row['sid'] . ". Retrying...", Zend_Log::INFO);
 				return $this->updateSubscriberBalance($row, $billrun_key, $usage_type, $rate, $volume);
 			}
 			Billrun_Factory::log()->log("Line with stamp " . $row['stamp'] . " was written to balance " . $billrun_key . " for subscriber " . $row['sid'], Zend_Log::DEBUG);
@@ -369,12 +369,13 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		if ($is_data_usage) {
 			$this->setMongoNativeLong(1);
 		}
-		Billrun_Factory::log()->log("Increasing subscriber $sid balance " . $billrun_key, Zend_Log::INFO);
+		Billrun_Factory::log()->log("Increasing subscriber $sid balance " . $billrun_key, Zend_Log::DEBUG);
 		$balance = $this->balances->findAndModify($query, $update, array(), array());
 		if ($is_data_usage) {
 			$this->setMongoNativeLong(0);
 		}
 		if ($balance->isEmpty()) {
+			Billrun_Factory::log()->log('Balance ' . $billrun_key . ' does not exist for subscriber ' .$sid . '. Creating...', Zend_Log::INFO);
 			Billrun_Balance::createBalanceIfMissing($aid, $sid, $billrun_key, $plan_ref);
 			return $this->increaseSubscriberBalance($counters, $billrun_key, $aid, $sid, $plan_ref);
 		} else {
