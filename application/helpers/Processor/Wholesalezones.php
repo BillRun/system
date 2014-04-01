@@ -93,7 +93,7 @@ class Processor_Wholesalezones extends Billrun_Processor_Base_Separator {
 				continue;
 			}
 
-			$entity->save($rates, true);
+			$entity->save($rates);
 			$this->data['stored_data'][] = $row;
 		}
 

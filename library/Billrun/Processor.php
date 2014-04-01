@@ -339,7 +339,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 			if (!empty($trailer)) {
 				$resource->set('trailer', $trailer);
 			}
-			return $resource->save($log, true);
+			return $resource->save($log);
 		} else {
 			// backward compatibility
 			// old method of processing => receiver did not logged, so it's the first time the file logged into DB
@@ -348,7 +348,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 				Billrun_Factory::log()->log("Billrun_Processor::logDB - DUPLICATE! trying to insert duplicate log file with stamp of : {$entity->get('stamp')}", Zend_Log::NOTICE);
 				return FALSE;
 			}
-			return $entity->save($log, true);
+			return $entity->save($log);
 		}
 	}
 
@@ -621,7 +621,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 		foreach ($this->data['data'] as $row) {
 			try {
 				$entity = new Mongodloid_Entity($row);
-				$entity->save($collection, true);
+				$entity->save($collection);
 				$this->data['stored_data'][] = $row;
 			} catch (Exception $e) {
 				Billrun_Factory::log()->log("Processor store " . basename($this->filePath) . " failed on stamp : " . $row['stamp'] . " with the next message: " . $e->getCode() . ": " . $e->getMessage(), Zend_Log::NOTICE);
@@ -635,7 +635,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 		foreach ($queue_data as $row) {
 			try {
 				$entity = new Mongodloid_Entity($row);
-				$entity->save($queue, true);
+				$entity->save($queue);
 			} catch (Exception $e) {
 				Billrun_Factory::log()->log("Processor store " . basename($this->filePath) . " to queue failed on stamp : " . $row['stamp'] . " with the next message: " . $e->getCode() . ": " . $e->getMessage(), Zend_Log::NOTICE);
 				continue;

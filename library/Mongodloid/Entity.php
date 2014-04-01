@@ -271,7 +271,7 @@ class Mongodloid_Entity implements ArrayAccess {
 		}
 	}
 
-	public function save($collection = null, $save = false, $w = null) {
+	public function save($collection = null, $w = null) {
 		if ($collection instanceOf Mongodloid_Collection)
 			$this->collection($collection);
 
@@ -281,7 +281,7 @@ class Mongodloid_Entity implements ArrayAccess {
 		if (is_null($w)) {
 			$w = $this->w;
 		}
-		return $this->collection()->save($this, array('save' => $save, 'w' => $w, 'j' => $this->j));
+		return $this->collection()->save($this, array('w' => $w, 'j' => $this->j));
 	}
 
 	public function collection($collection = null) {

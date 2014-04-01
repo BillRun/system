@@ -95,7 +95,7 @@ abstract class Billrun_Receiver extends Billrun_Base {
 			return FALSE;
 		}
 
-		return $entity->save($log, true);
+		return $entity->save($log);
 	}
 
 	/**
