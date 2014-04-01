@@ -13,7 +13,7 @@ class Mongodloid_Entity implements ArrayAccess {
 	const POPFIRST = 1;
 
 	protected $w = 0;
-	protected $j = true;
+	protected $j = false;
 	private $_atomics = array(
 		'inc',
 //		'set',

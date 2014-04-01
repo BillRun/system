@@ -14,7 +14,7 @@ class Mongodloid_Collection {
 	const DROP_DUPLICATES = 2;
 
 	protected $w = 0;
-	protected $j = true;
+	protected $j = false;
 
 	public function __construct(MongoCollection $collection, Mongodloid_DB $db) {
 		$this->_collection = $collection;
