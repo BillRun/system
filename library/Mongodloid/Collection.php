@@ -14,7 +14,7 @@ class Mongodloid_Collection {
 	const DROP_DUPLICATES = 2;
 
 	protected $w = 0;
-	protected $j = true;
+	protected $j = false;
 
 	public function __construct(MongoCollection $collection, Mongodloid_DB $db) {
 		$this->_collection = $collection;
@@ -90,14 +90,14 @@ class Mongodloid_Collection {
 		return $query;
 	}
 
-	public function save(Mongodloid_Entity $entity, $save = false, $w = null) {
+	public function save(Mongodloid_Entity $entity, $w = null) {
 		$data = $entity->getRawData();
 
 		if (is_null($w)) {
 			$w = $this->w;
 		}
 
-		$result = $this->_collection->save($data, array('save' => $save, 'w' => $w, 'j' => $this->j));
+		$result = $this->_collection->save($data, array('w' => $w, 'j' => $this->j));
 		if (!$result)
 			return false;
 

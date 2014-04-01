@@ -240,10 +240,10 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 		if (isset($data['charging_end_time']) && isset($data['charging_start_time']) &&
 				(strtotime($data['charging_end_time']) > 0 && strtotime($data['charging_start_time']) > 0)) {
 			$computed_dur = strtotime($data['charging_end_time']) - strtotime($data['charging_start_time']);
-			if($computed_dur >= 0  && $computed_dur <= 3600 ) {
+			if($computed_dur >= 0) {
 				$data['duration'] =  $computed_dur;
 			} else {
-				Billrun_Factory::log("Processor recieved line (cf : ".$data['call_reference']. " , cft : ".$data['call_reference_time'] ." ) with computed duration of $computed_dur using orginal duration field. ",Zend_Log::ALERT);
+				Billrun_Factory::log("Processor received line (cf : ".$data['call_reference']. " , cft : ".$data['call_reference_time'] ." ) with computed duration of $computed_dur using orginal duration field : {$data['duration']} ",Zend_Log::ALERT);
 			}
 			
 		}
