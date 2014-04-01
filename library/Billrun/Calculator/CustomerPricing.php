@@ -369,7 +369,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		if ($is_data_usage) {
 			$this->setMongoNativeLong(1);
 		}
-		Billrun_Factory::log()->log("Increasing subscriber $sid balance " . $billrun_key, Zend_Log::DEBUG);
+		Billrun_Factory::log()->log("Increasing subscriber $sid balance " . $billrun_key, Zend_Log::INFO);
 		$balance = $this->balances->findAndModify($query, $update, array(), array());
 		if ($is_data_usage) {
 			$this->setMongoNativeLong(0);
