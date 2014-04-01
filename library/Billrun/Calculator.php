@@ -257,7 +257,15 @@ abstract class Billrun_Calculator extends Billrun_Base {
 			$previous_calculator = $queue_calculators[$queue_id - 1];
 			//$queryData['hint'] = $previous_calculator_tag;
 		}
-		$orphand_time = strtotime(Billrun_Factory::config()->getConfigValue('queue.calculator.orphan_wait_time', "6 hours") . " ago");
+		
+		$orphanConfigTime = Billrun_Factory::config()->getConfigValue('queue.calculator.orphan_wait_time', "6 hours");
+		$orphand_time = strtotime($orphanConfigTime . " ago");
+		// verify minimum orphan time to avoid parallel calculation
+		if (Billrun_Factory::config()->isProd() && (time() - $orphand_time) < 3600) {
+			Billrun_Factory::log()->log("Calculator orphan time less than one hour: " . $orphanConfigTime . ". Please set value greater than or equal to one hour. We will take one hour for now", Zend_Log::NOTICE);
+			$orphand_time = time() - 3600;
+		}
+
 		// TODO: initialize this array with PHP strict standards
 		$query['$and'][0]['calc_name'] = $previous_calculator;
 		$query['$and'][0]['$or'] = array(

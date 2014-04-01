@@ -504,6 +504,12 @@ abstract class Billrun_Processor extends Billrun_Base {
 	protected function getFileForProcessing() {
 		$log = Billrun_Factory::db()->logCollection();
 		$adoptThreshold = strtotime('-' . $this->orphandFilesAdoptionTime);
+		
+		// verify minimum orphan time to avoid parallel processing
+		if (Billrun_Factory::config()->isProd() && (time()-$adoptThreshold) < 3600) {
+			Billrun_Factory::log()->log("Processor orphan time less than one hour: " . $this->orphandFilesAdoptionTime . ". Please set value greater than or equal to one hour. We will take one hour for now", Zend_Log::NOTICE);
+			$adoptThreshold = time() - 3600;
+		}
 		$query = array(
 			'$or' => array(
 				array('start_process_time' => array('$exists' => false)),
