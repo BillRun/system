@@ -225,11 +225,28 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @return void
 	 */
 	public function afterAggregateAccount($accid, $account, Billrun_Billrun $account_billrun, $lines, Billrun_Aggregator $aggregator) {
+		
+		$forkXmlGeneration = Billrun_Factory::config()->getConfigValue('calcCpu.forkXmlGeneration', 0);
+		if (function_exists("pcntl_fork") && $forkXmlGeneration && -1 !== ($pid = pcntl_fork()) ) {
+            if ($pid == 0) {
+				Billrun_Factory::log('Plugin calc cpu afterAggregateAccount run it in async mode', Zend_Log::INFO);
+                $this->makeXml($account_billrun);
+				exit(); // exit from child process after finish creating xml; continue on parent
+			}
+			Billrun_Factory::log('Plugin calc cpu afterAggregateAccount forked the xml generation. Continue to next account', Zend_Log::INFO);
+			return;
+		}
+		Billrun_Factory::log('Plugin calc cpu afterAggregateAccount run it in sync mode', Zend_Log::INFO);
+		$this->makeXml($account_billrun);
+
+	}
+
+	protected function makeXml($account_billrun) {
 		$options = array(
 			'type' => 'golanxml',
 			'stamp' => $account_billrun->getBillrunKey(),
 		);
-
+		
 		$generator = Billrun_Generator::getInstance($options);
 		$generator->createXmlInvoice($account_billrun->getRawData(), $lines);
 	}
