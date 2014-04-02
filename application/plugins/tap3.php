@@ -87,7 +87,7 @@ use Billrun_Traits_FileSequenceChecking;
 			return FALSE;
 		}
 		//Billrun_Factory::log()->log("Header data : ". print_r(Asn_Base::getDataArray( $data ,true ),1) ,  Zend_Log::DEBUG);
-		$header = $this->parseASNDataRecur($this->nsnConfig['header'], Asn_Base::getDataArray($data, true, true), $this->nsnConfig['fields']);
+		$header = $this->parseASNDataRecur($this->nsnConfig['header'], $data, $this->nsnConfig['fields']);
 		$this->currentFileHeader = $header;
 
 		return $header;
@@ -105,7 +105,7 @@ use Billrun_Traits_FileSequenceChecking;
 		$cdrLine = false;
 
 		if (isset($this->nsnConfig[$type])) {
-			$cdrLine = $this->parseASNDataRecur($this->nsnConfig[$type], Asn_Base::getDataArray($data, true, true), $this->nsnConfig['fields']);
+			$cdrLine = $this->parseASNDataRecur($this->nsnConfig[$type], $data, $this->nsnConfig['fields']);
 			if ($cdrLine) {
 				$cdrLine['record_type'] = $type;
 
@@ -138,7 +138,7 @@ use Billrun_Traits_FileSequenceChecking;
 			return FALSE;
 		}
 
-		$trailer = $this->parseASNDataRecur($this->nsnConfig['trailer'], Asn_Base::getDataArray($data, true), $this->nsnConfig['fields']);
+		$trailer = $this->parseASNDataRecur($this->nsnConfig['trailer'], $data, $this->nsnConfig['fields']);
 		//Billrun_Factory::log()->log(print_r($trailer,1),  Zend_Log::DEBUG);
 
 		return $trailer;
@@ -204,16 +204,16 @@ use Billrun_Traits_FileSequenceChecking;
 	protected function addParsingMethods() {
 		$newParsingMethods = array(
 			'raw_data' => function($data) {
-			return $this->utf8encodeArr($data);
-		},
+				return $this->utf8encodeArr($data);
+			},
 			'bcd_number' => function($fieldData) {
-			$ret = $this->parsingMethods['bcd_encode']($fieldData);
+				$ret = $this->parsingMethods['bcd_encode']($fieldData);
 
-			return preg_replace('/15$/', '', $ret);
-		},
+				return preg_replace('/15$/', '', $ret);
+			},
 			'time_offset_list' => function($data) {
-			return $this->parseTimeOffsetList($data);
-		},
+				return $this->parseTimeOffsetList($data);
+			},
 		);
 
 		$this->parsingMethods = array_merge($this->parsingMethods, $newParsingMethods);
@@ -221,17 +221,18 @@ use Billrun_Traits_FileSequenceChecking;
 
 	/**
 	 * Parse time offset list that  conatin the time offset  refecenced in each line  cal start time
-	 * @param type $data the  time offset list
+	 * @param type $asn the  time offset list
 	 * @return rray  containing the time offset list  keyed by its offset code.
 	 */
 	protected function parseTimeOffsetList($data) {
 		$timeOffsets = array();
-		if (isset($data['e9']['e8'])) {
-			$data['e9'] = array($data['e9']);
-		}
-		foreach ($data['e9'] as $value) {
-			$key = $this->parseField('number', $value['e8']);
-			$timeOffsets[$key] = $value['e7'];
+		foreach ($data as $time_offset) {
+			$time_offset_arr = array();
+			foreach ($time_offset->getData() as $value) {
+				$time_offset_arr[$value->getType()] = $value->getData();
+			}
+			$key = $this->parseField('number', $time_offset_arr['e8']);
+			$timeOffsets[$key] = $time_offset_arr['e7'];
 		}
 		return $timeOffsets;
 	}
@@ -295,6 +296,22 @@ use Billrun_Traits_FileSequenceChecking;
 			return FALSE;
 		}
 		return $this->getFileSequenceData($filename);
+	}
+
+	/**
+	 * Encode an array content in utf encoding
+	 * @param $arr the array to encode.
+	 * @return array with a recurcivly encoded values.
+	 */
+	protected function utf8encodeArr($arr) {
+		if (is_object($arr)) {
+			$val = array();
+			foreach ($arr->getData() as $val) {
+				$val[$arr->getType()][] = $this->utf8encodeArr($val);
+			}
+			return $val;
+		}
+		return utf8_encode($arr);
 	}
 
 }
