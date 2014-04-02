@@ -259,7 +259,7 @@ use Billrun_Traits_FileSequenceChecking;
 				foreach ($record->getData() as $key => $data) {
 					$row = $processor->buildDataRow($data);
 					if ($row) {
-						$row['file_rec_num'] = $key;
+						$row['file_rec_num'] = $key + 1;
 						$processorData['data'][] = $row;
 					}
 				}
