@@ -34,7 +34,7 @@ class Generator_Billrunstats extends Billrun_Generator {
 	 * load the container the need to be generate
 	 */
 	public function load() {
-		$billrun = Billrun_Factory::db()->billrunCollection();
+		$billrun = Billrun_Factory::db(array('name' => 'billrun'))->billrunCollection();
 
 		$this->data = $billrun
 						->query('billrun_key', $this->stamp)
