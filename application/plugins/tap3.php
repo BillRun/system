@@ -18,12 +18,20 @@ class tap3Plugin extends Billrun_Plugin_BillrunPluginBase implements Billrun_Plu
 use Billrun_Traits_FileSequenceChecking;
 
 	protected $name = 'tap3';
-	protected $nsnConfig = false;
+	protected $tap3Config = false;
+	protected $currentFileHeader = array();
+	protected $exchangeRates = array();
+
+	/**
+	 * Number by which to divide the line charge to get the sdr value
+	 * @var int
+	 */
+	protected $sdr_division_value;
 
 	const FILE_READ_AHEAD_LENGTH = 65535;
 
 	public function __construct(array $options = array()) {
-		$this->nsnConfig = (new Yaf_Config_Ini(Billrun_Factory::config()->getConfigValue('tap3.config_path')))->toArray();
+		$this->tap3Config = (new Yaf_Config_Ini(Billrun_Factory::config()->getConfigValue('tap3.config_path')))->toArray();
 		$this->initParsing();
 		$this->addParsingMethods();
 	}
@@ -87,9 +95,8 @@ use Billrun_Traits_FileSequenceChecking;
 			return FALSE;
 		}
 		//Billrun_Factory::log()->log("Header data : ". print_r(Asn_Base::getDataArray( $data ,true ),1) ,  Zend_Log::DEBUG);
-		$header = $this->parseASNDataRecur($this->nsnConfig['header'], $data, $this->nsnConfig['fields']);
+		$header = $this->parseASNDataRecur($this->tap3Config['header'], $data, $this->tap3Config['fields']);
 		$this->currentFileHeader = $header;
-
 		return $header;
 	}
 
@@ -104,8 +111,8 @@ use Billrun_Traits_FileSequenceChecking;
 		$type = $data->getType();
 		$cdrLine = false;
 
-		if (isset($this->nsnConfig[$type])) {
-			$cdrLine = $this->parseASNDataRecur($this->nsnConfig[$type], $data, $this->nsnConfig['fields']);
+		if (isset($this->tap3Config[$type])) {
+			$cdrLine = $this->parseASNDataRecur($this->tap3Config[$type], $data, $this->tap3Config['fields']);
 			if ($cdrLine) {
 				$cdrLine['record_type'] = $type;
 
@@ -138,7 +145,7 @@ use Billrun_Traits_FileSequenceChecking;
 			return FALSE;
 		}
 
-		$trailer = $this->parseASNDataRecur($this->nsnConfig['trailer'], $data, $this->nsnConfig['fields']);
+		$trailer = $this->parseASNDataRecur($this->tap3Config['trailer'], $data, $this->tap3Config['fields']);
 		//Billrun_Factory::log()->log(print_r($trailer,1),  Zend_Log::DEBUG);
 
 		return $trailer;
@@ -195,6 +202,14 @@ use Billrun_Traits_FileSequenceChecking;
 			$cdrLine['serving_network'] = $cdrLine['LocationInformation']['GeographicalLocation']['ServingNetwork'];
 		} else {
 			$cdrLine['serving_network'] = $this->currentFileHeader['header']['sending_source'];
+		}
+
+		if (isset($cdrLine['BasicServiceUsedList']['BasicServiceUsed']['ChargeInformationList']['ChargeInformation']['ChargeDetailList']['ChargeDetail']['Charge'])) {
+			$cdrLine['sdr'] = $cdrLine['BasicServiceUsedList']['BasicServiceUsed']['ChargeInformationList']['ChargeInformation']['ChargeDetailList']['ChargeDetail']['Charge'] / $this->sdr_division_value;
+			$cdrLine['exchange_rate'] = $this->exchangeRates[$cdrLine['BasicServiceUsedList']['BasicServiceUsed']['ChargeInformationList']['ChargeInformation']['ExchangeRateCode']];
+		} else if (isset($cdrLine['GprsServiceUsed']['ChargeInformationList']['ChargeInformation']['ChargeDetailList']['ChargeDetail']['Charge'])) {
+			$cdrLine['sdr'] = $cdrLine['GprsServiceUsed']['ChargeInformationList']['ChargeInformation']['ChargeDetailList']['ChargeDetail']['Charge'] / $this->sdr_division_value;
+			$cdrLine['exchange_rate'] = $this->exchangeRates[$cdrLine['GprsServiceUsed']['ChargeInformationList']['ChargeInformation']['ExchangeRateCode']];
 		}
 	}
 
@@ -254,9 +269,11 @@ use Billrun_Traits_FileSequenceChecking;
 		$parsedData = Asn_Base::parseASNString($bytes);
 		$processorData['header'] = $processor->buildHeader($parsedData);
 		//$bytes = substr($bytes, $processor->getParser()->getLastParseLength());
+		$trailer = $processor->buildTrailer($parsedData);
+		$this->initExchangeRates($trailer);
 
 		foreach ($parsedData->getData() as $record) {
-			if (in_array($record->getType(), $this->nsnConfig['config']['data_records'])) {
+			if (in_array($record->getType(), $this->tap3Config['config']['data_records'])) {
 				foreach ($record->getData() as $key => $data) {
 					$row = $processor->buildDataRow($data);
 					if ($row) {
@@ -269,7 +286,7 @@ use Billrun_Traits_FileSequenceChecking;
 			}
 		}
 
-		$processorData['trailer'] = $processor->buildTrailer($parsedData);
+		$processorData['trailer'] = $trailer;
 
 		return true;
 	}
@@ -312,6 +329,15 @@ use Billrun_Traits_FileSequenceChecking;
 			return $val;
 		}
 		return utf8_encode($arr);
+	}
+
+	protected function initExchangeRates($trailer) {
+		if (isset($trailer['data']['trailer']['currency_conversion_info']['currency_conversion'])) {
+			foreach ($trailer['data']['trailer']['currency_conversion_info']['currency_conversion'] as $currency_conversion) {
+				$this->exchangeRates[$currency_conversion['exchange_rate_code']] = $currency_conversion['exchange_rate'] / pow(10, $currency_conversion['number_of_decimalplaces']);
+			}
+		}
+		$this->sdr_division_value = pow(10, $trailer['data']['trailer']['tap_decimal_places']);
 	}
 
 }
