@@ -79,7 +79,7 @@ class Generator_Golanxml extends Billrun_Generator {
 	}
 
 	public function load() {
-		$billrun = Billrun_Factory::db()->billrunCollection();
+		$billrun = Billrun_Factory::db(array('name' => 'billrun'))->billrunCollection();
 		Billrun_Factory::log()->log('Loading ' . $this->size . ' billrun documents with offset ' . $this->offset, Zend_Log::INFO);
 		$resource = $billrun
 				->query('billrun_key', $this->stamp)
@@ -986,7 +986,7 @@ EOI;
 
 		$newData = array_merge($current, $added_values);
 		$line->setRawData($newData);
-		$line->save(Billrun_Factory::db()->billrunCollection());
+		$line->save(Billrun_Factory::db(array('name' => 'billrun'))->billrunCollection());
 		return true;
 	}
 

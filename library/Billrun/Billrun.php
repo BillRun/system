@@ -65,7 +65,7 @@ class Billrun_Billrun {
 			} else {
 				$this->load();
 			}
-			$this->data->collection(Billrun_Factory::db()->billrunCollection());
+			$this->data->collection(Billrun_Factory::db(array('name' => 'billrun'))->billrunCollection());
 		} else {
 			Billrun_Factory::log()->log("Returning an empty billrun!", Zend_Log::NOTICE);
 		}
@@ -73,7 +73,7 @@ class Billrun_Billrun {
 			$this->filter_fields = array_map("intval", $options['filter_fields']);
 		}
 		$this->lines = Billrun_Factory::db()->linesCollection();
-		$this->billrun_coll = Billrun_Factory::db()->billrunCollection();
+		$this->billrun_coll = Billrun_Factory::db(array('name' => 'billrun'))->billrunCollection();
 	}
 
 	/**
@@ -156,7 +156,7 @@ class Billrun_Billrun {
 	 * @return boolean true if yes, false otherwise
 	 */
 	public static function exists($aid, $billrun_key) {
-		$billrun_coll = Billrun_Factory::db()->billrunCollection();
+		$billrun_coll = Billrun_Factory::db(array('name' => 'billrun'))->billrunCollection();
 		$data = $billrun_coll->query(array(
 							'aid' => $aid,
 							'billrun_key' => $billrun_key,
@@ -734,7 +734,7 @@ class Billrun_Billrun {
 			'billrun_key' => 1,
 		);
 		$runtime_billrun_key = Billrun_Util::getBillrunKey($now);
-		$last = Billrun_Factory::db()->billrunCollection()->query()->cursor()->limit(1)->fields($fields)->sort($sort)->current();
+		$last = Billrun_Factory::db(array('name' => 'billrun'))->billrunCollection()->query()->cursor()->limit(1)->fields($fields)->sort($sort)->current();
 		if ($last->isEmpty()) {
 			$active_billrun = $runtime_billrun_key;
 		} else {
