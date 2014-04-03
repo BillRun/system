@@ -190,9 +190,9 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		$path = 'http://' . $host . '/' . $url . '?' . http_build_query($params);
 		//Billrun_Factory::log()->log($path, Zend_Log::DEBUG);
 		// @TODO: use Zend_Http_Client
-//		$path .= "&account_id=4171195"; // Shani
+//		$path .= "&account_id=4171195"; // Shani_old
+		$path .= "&account_id=4050951"; // Shani_new
 //		$path .= "&account_id=9073496"; // Ofer
-//		$path .= "&account_id=5236445";
 //		$path .= "&account_id=9999263";
 		$json = self::send($path);
 		if ($saveToFile) {

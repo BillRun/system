@@ -139,11 +139,11 @@ class Billrun_Factory {
 	static public function db(array $options = array()) {
 		if (empty($options)) {
 			$options = Billrun_Factory::config()->getConfigValue('db'); // the stdclass force it to return object
-		} else {
+		} else if (isset($options['name']) && count($options) == 1) {
+			$name = $options['name'];
 			$options = Billrun_Factory::config()->getConfigValue('db');
 			$seperateDatabaseCollections = isset($options['seperateDatabaseCollections']) ? $options['seperateDatabaseCollections'] : array('balances', 'billrunstats', 'billrun'); // until mongo will do collection lock
-			if (isset($options['name']) && in_array($options['name'], $seperateDatabaseCollections) && count($options) == 1) {
-				$name = $options['name'];
+			if (in_array($name, $seperateDatabaseCollections)) {
 				$options['name'] = $name;
 			}
 		}
