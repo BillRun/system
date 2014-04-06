@@ -385,7 +385,6 @@ class Billrun_Util {
 			$defaultPrefix = Billrun_Factory::config()->getConfigValue('billrun.defaultCountryPrefix', 972);
 		}
 		
-		echo $phoneNumber . "<br />" . PHP_EOL;
 		//CCNDCSN
 		// USA is the only country that have extension with string length of 1
 		if (preg_match("/^([1-9]{2,3}|1)[1-9]{1,2}[0-9]{7}$/", $phoneNumber)) {
