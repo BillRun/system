@@ -41,8 +41,8 @@ sms_end_code='.result.forEach(      function(obj) {         print("sms," + dir +
 sipregex='^(?=NSML|NBZI|MAZI|MCLA|ISML|IBZI|ITLZ|IXFN|IMRS|IHLT|HBZI|IKRT|IKRTROM|SWAT|GSML|GNTV|GHOT|GBZQ|GBZI|GCEL|LMRS)';
 nsn_grouping_out='{$group:{_id:{c:"$out_circuit_group_name",r:"$arate"}, count:{$sum:1},usagev:{$sum:"$usagev"}}},{$project:{"_id.c":{$substr:["$_id.c",0,4]},"_id.r":1, count:1,usagev:1}},{$group:{_id:"$_id",count:{$sum:"$count"},usagev:{$sum:"$usagev"}}}';
 nsn_grouping_in='{$group:{_id:{c:"$in_circuit_group_name",r:"$pzone"}, count:{$sum:1},usagev:{$sum:"$usagev"}}},{$project:{"_id.c":{$substr:["$_id.c",0,4]},"_id.r":1, count:1,usagev:1}},{$group:{_id:"$_id",count:{$sum:"$count"},usagev:{$sum:"$usagev"}}}';
-out_str='fg'
-in_str='tg'
+out_str='FG'
+in_str='TG'
 
 case $report_name in
 
