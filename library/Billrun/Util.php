@@ -371,4 +371,39 @@ class Billrun_Util {
 		return true;
 	}
 
+
+	/**
+	 * method to convert phone number to msisdn
+	 * 
+	 * @param string $phoneNumber the phone number to convert
+	 * @param string $defaultPrefix the default prefix to add
+	 * 
+	 * @return string phone number in msisdn format
+	 */
+	public static function msisdn($phoneNumber, $defaultPrefix = null) {
+		if (is_null($defaultPrefix)) {
+			$defaultPrefix = Billrun_Factory::config()->getConfigValue('billrun.defaultCountryPrefix', 972);
+		}
+		
+		echo $phoneNumber . "<br />" . PHP_EOL;
+		//CCNDCSN
+		// USA is the only country that have extension with string length of 1
+		if (preg_match("/^([1-9]{2,3}|1)[1-9]{1,2}[0-9]{7}$/", $phoneNumber)) {
+			return $phoneNumber;
+		}
+		
+		//0NDCSN
+		$ret = preg_replace("/^(0)([0-9]{1,2}[0-9]{7})$/", $defaultPrefix . '$2', $phoneNumber);
+		if (!empty($ret) && $phoneNumber !== $ret) {
+			return $ret;
+		}
+		
+		//NDCSN
+		$ret = preg_replace("/^([0-9]{1,2}[0-9]{7})$/", $defaultPrefix . '$1', $phoneNumber);
+		if (!empty($ret) && $phoneNumber !== $ret) {
+			return $ret;
+		}
+		
+		return $phoneNumber;
+	}
 }
