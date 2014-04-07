@@ -412,6 +412,6 @@ class Billrun_Util {
 			return $ret;
 		}
 		
-		return $phoneNumber;
+		return $defaultPrefix . $phoneNumber;
 	}
 }
