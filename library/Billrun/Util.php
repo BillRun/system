@@ -397,7 +397,6 @@ class Billrun_Util {
 		
 		//CCNDCSN - First part USA; second non-USA
 		if (preg_match("/^(1[2-9]{1}[0-9]{2}|[2-9]{1}[0-9]{2}[1-9]{1}[0-9]{1,2})[0-9]{7}$/", $phoneNumber)) {
-			echo "1 <br />" . PHP_EOL;
 			return $phoneNumber;
 		}
 		
