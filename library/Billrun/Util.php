@@ -215,10 +215,10 @@ class Billrun_Util {
 		$mongo_date = new MongoDate($timestamp);
 		$rates_coll = Billrun_Factory::db()->ratesCollection();
 		return $rates_coll
-						->query('key', 'VAT')
-						->lessEq('from', $mongo_date)
-						->greaterEq('to', $mongo_date)
-						->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'))->current()->get('vat');
+				->query('key', 'VAT')
+				->lessEq('from', $mongo_date)
+				->greaterEq('to', $mongo_date)
+				->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'))->current()->get('vat');
 	}
 
 	public static function isTimestamp($timestamp) {
@@ -271,7 +271,7 @@ class Billrun_Util {
 
 		return FALSE;
 	}
-
+	
 	/**
 	 * convert seconds to requested format
 	 * 
@@ -284,7 +284,7 @@ class Billrun_Util {
 	 * 3400 sec => X minutes
 	 */
 	public static function durationFormat($seconds) {
-		if ($seconds > 3600) {
+		if ($seconds> 3600) {
 			return gmdate('H:i:s', $seconds);
 		}
 		return gmdate('i:s', $seconds);
@@ -306,8 +306,8 @@ class Billrun_Util {
 
 	public static function sendMail($subject, $body, $recipients, $attachments = array()) {
 		$mailer = Billrun_Factory::mailer()->
-				setSubject($subject)->
-				setBodyText($body);
+			setSubject($subject)->
+			setBodyText($body);
 		//add attachments
 		foreach ($attachments as $attachment) {
 			$mailer->addAttachment($attachment);
@@ -319,7 +319,7 @@ class Billrun_Util {
 		//sen email
 		return $mailer->send();
 	}
-
+	
 	/**
 	 * method to fork process of PHP-Web (Apache/Nginx/FPM)
 	 * 
@@ -338,10 +338,10 @@ class Billrun_Util {
 		$querystring = http_build_query($params);
 		if (!$post) {
 			$cmd = "wget -O /dev/null '" . $forkUrl . $url . "?" . $querystring .
-					"' > /dev/null & ";
+				"' > /dev/null & ";
 		} else {
 			$cmd = "wget -O /dev/null '" . $forkUrl . $url . "' --post-data '" . $querystring .
-					"' > /dev/null & ";
+				"' > /dev/null & ";
 		}
 
 //		echo $cmd . "<br />" . PHP_EOL;
@@ -362,7 +362,7 @@ class Billrun_Util {
 	 * @return Boolean true on success else FALSE
 	 */
 	public static function forkProcessCli($cmd) {
-		$syscmd = $cmd . " > /dev/null & ";
+		$syscmd = $cmd ." > /dev/null & ";
 		if (system($syscmd) === FALSE) {
 			error_log("Can't fork PHP process");
 			return false;
@@ -393,5 +393,37 @@ class Billrun_Util {
 		}
 		return $ar;
 	}
+
+	/**
+	 * method to convert phone number to msisdn
+	 * 
+	 * @param string $phoneNumber the phone number to convert
+	 * @param string $defaultPrefix the default prefix to add
+	 * 
+	 * @return string phone number in msisdn format
+	 */
+	public static function msisdn($phoneNumber, $defaultPrefix = null) {
+		
+		if (empty($phoneNumber)) {
+			return $phoneNumber;
+		}
+		
+		settype($phoneNumber, 'string');
+		
+		$replace = array("(0)", "-", "+", "(", ")", " ");
+		$phoneNumber = ltrim(str_replace($replace, "", $phoneNumber), "0");
+		
+		//CCNDCSN - First part USA; second non-USA
+		if (preg_match("/^(1[2-9]{1}[0-9]{2}|[2-9]{1}[0-9]{1,2}[1-9]{1}[0-9]{0,2})[0-9]{7}$/", $phoneNumber)) {
+			return $phoneNumber;
+		}
+
+		if (is_null($defaultPrefix)) {
+			$defaultPrefix = Billrun_Factory::config()->getConfigValue('billrun.defaultCountryPrefix', 972);
+		}
+
+		return $defaultPrefix . $phoneNumber;
+	}
+
 
 }

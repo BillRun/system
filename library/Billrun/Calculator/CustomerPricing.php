@@ -207,7 +207,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * Override parent calculator to save changes with update (not save)
 	 */
 	public function writeLine($line, $dataKey) {
-		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteLine', array('data' => $line));
+		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteLine', array('data' => $line, 'calculator' => $this));
 		$save = array();
 		$saveProperties = array($this->pricingField, 'billrun', 'over_plan', 'in_plan', 'out_plan', 'plan_ref', 'usagesb');
 		foreach ($saveProperties as $p) {
@@ -217,7 +217,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		}
 		$where = array('stamp' => $line['stamp']);
 		Billrun_Factory::db()->linesCollection()->update($where, $save);
-		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteLine', array('data' => $line));
+		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteLine', array('data' => $line, 'calculator' => $this));
 		if (!isset($line['usagev']) || $line['usagev'] === 0) {
 			$this->removeLineFromQueue($line);
 			unset($this->data[$dataKey]);
