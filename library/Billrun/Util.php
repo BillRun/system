@@ -374,4 +374,24 @@ class Billrun_Util {
 		return is_string($billrun_key) && Zend_Locale_Format::isInteger($billrun_key) && strlen($billrun_key) == 6 && substr($billrun_key, 4, 2) >= '01' && substr($billrun_key, 4, 2) <= '12';
 	}
 
+	/**
+	 * Cast an array / string which represents an array.
+	 * @param type $ar
+	 * @param type $type
+	 * @param type $explode
+	 * @return type
+	 */
+	public static function verify_array($ar, $type = null, $explode = ',') {
+		if (is_string($ar)) {
+			$ar = explode($explode, $ar);
+		} elseif (!is_array($ar)) {
+			settype($ar, 'array');
+		}
+		// check if casting required
+		if (!is_null($type)) {
+			$ar = array_map($type . 'val', $ar);
+		}
+		return $ar;
+	}
+
 }

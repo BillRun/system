@@ -8,18 +8,17 @@
 require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
 
 /**
- * Credit action class
+ * Reset lines action class
  *
  * @package  Action
  * @since    0.5
  */
-class ResetAction extends ApiAction {
+class ResetLinesAction extends ApiAction {
 
 	public function execute() {
 		Billrun_Factory::log()->log("Execute reset", Zend_Log::INFO);
 		$request = $this->getRequest()->getRequest(); // supports GET / POST requests
-		$sids = array();
-		if (!isset($request['sid'])) {
+		if (empty($request['sid'])) {
 			return $this->setError('Please supply at least one sid', $request);
 		}
 		if (!isset($request['billrun']) || !Billrun_Util::isBillrunKey($request['billrun'])) {
@@ -28,20 +27,14 @@ class ResetAction extends ApiAction {
 			$billrun_key = $request['billrun'];
 		}
 
-		foreach (explode(',', $request['sid']) as $sid) {
-			if (!Zend_Locale_Format::isInteger($sid)) {
-				return $this->setError('Illegal sid', $sid);
-				continue;
-			} else {
-				$sids[] = intval($sid);
-			}
-		}
+		// Warning: will convert half numeric strings / floats to integers
+		$sids = array_unique(array_diff(Billrun_Util::verify_array(explode(',', $request['sid']), 'int'), array(0)));
 
 		if ($sids) {
-			$model = new ResetModel(array_unique($sids), $billrun_key);
+			$model = new ResetModel($sids, $billrun_key);
 			$model->reset();
 		} else {
-			return $this->setError('Please supply at least one sid', $request);
+			return $this->setError('Illegal sid', $request);
 		}
 		$this->getController()->setOutput(array(array(
 				'status' => 1,
