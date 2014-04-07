@@ -400,18 +400,6 @@ class Billrun_Util {
 			return $phoneNumber;
 		}
 		
-		//0NDCSN
-		$ret = preg_replace("/^(0)([0-9]{1,2}[0-9]{7})$/", $defaultPrefix . '$2', $phoneNumber);
-		if (!empty($ret) && $phoneNumber !== $ret) {
-			return $ret;
-		}
-		
-		//NDCSN
-		$ret = preg_replace("/^([0-9]{1,2}[0-9]{7})$/", $defaultPrefix . '$1', $phoneNumber);
-		if (!empty($ret) && $phoneNumber !== $ret) {
-			return $ret;
-		}
-		
-		return $defaultPrefix . $phoneNumber;
+		return $defaultPrefix . ltrim($phoneNumber, "0");
 	}
 }
