@@ -400,22 +400,19 @@ class Billrun_Util {
 			echo "1 <br />" . PHP_EOL;
 			return $phoneNumber;
 		}
-				
+		
 		//0NDCSN
 		$ret = preg_replace("/^(0)([0-9]{1,2}[0-9]{7})$/", $defaultPrefix . '$2', $phoneNumber);
 		if (!empty($ret) && $phoneNumber !== $ret) {
-			echo "2 0NDCSN<br />" . PHP_EOL;
 			return $ret;
 		}
 		
 		//NDCSN
 		$ret = preg_replace("/^([0-9]{1,2}[0-9]{7})$/", $defaultPrefix . '$1', $phoneNumber);
 		if (!empty($ret) && $phoneNumber !== $ret) {
-			echo "3 NDCSN<br />" . PHP_EOL;
 			return $ret;
 		}
 		
-		echo "4<br />" . PHP_EOL;
 		return $phoneNumber;
 	}
 }
