@@ -381,28 +381,41 @@ class Billrun_Util {
 	 * @return string phone number in msisdn format
 	 */
 	public static function msisdn($phoneNumber, $defaultPrefix = null) {
+		
+		if (empty($phoneNumber)) {
+			return $phoneNumber;
+		}
+		
+		settype($phoneNumber, 'string');
+		
+		$replace = array("(0)", "-", "+", "(", ")", " ");
+		$phoneNumber = str_replace($replace, "", $phoneNumber);
+		
 		if (is_null($defaultPrefix)) {
 			$defaultPrefix = Billrun_Factory::config()->getConfigValue('billrun.defaultCountryPrefix', 972);
 		}
 		
-		//CCNDCSN
-		// USA is the only country that have extension with string length of 1
-		if (preg_match("/^([1-9]{2,3}|1)[1-9]{1,2}[0-9]{7}$/", $phoneNumber)) {
+		//CCNDCSN - First part USA; second non-USA
+		if (preg_match("/^(1[2-9]{1}[0-9]{2}|[2-9]{1}[0-9]{2}[1-9]{1}[0-9]{1,2})[0-9]{7}$/", $phoneNumber)) {
+			echo "1 <br />" . PHP_EOL;
 			return $phoneNumber;
 		}
-		
+				
 		//0NDCSN
 		$ret = preg_replace("/^(0)([0-9]{1,2}[0-9]{7})$/", $defaultPrefix . '$2', $phoneNumber);
 		if (!empty($ret) && $phoneNumber !== $ret) {
+			echo "2 0NDCSN<br />" . PHP_EOL;
 			return $ret;
 		}
 		
 		//NDCSN
 		$ret = preg_replace("/^([0-9]{1,2}[0-9]{7})$/", $defaultPrefix . '$1', $phoneNumber);
 		if (!empty($ret) && $phoneNumber !== $ret) {
+			echo "3 NDCSN<br />" . PHP_EOL;
 			return $ret;
 		}
 		
+		echo "4<br />" . PHP_EOL;
 		return $phoneNumber;
 	}
 }
