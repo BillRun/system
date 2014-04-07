@@ -202,7 +202,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		}
 		//Billrun_Factory::log()->log("stamps : ".print_r($stamps,1),Zend_Log::DEBUG);
 		$lines = Billrun_Factory::db()->linesCollection()
-				->query()->in('stamp', $stamps)->cursor();
+						->query()->in('stamp', $stamps)->cursor();
 
 		if ($this->autosort) {
 			$lines->sort(array('urt' => 1));
@@ -219,7 +219,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	 */
 	protected function pullLine($queue_line) {
 		$line = Billrun_Factory::db()->linesCollection()->query('stamp', $queue_line['stamp'])
-				->cursor()->current();
+						->cursor()->current();
 		if ($line->isEmpty()) {
 			return false;
 		}
@@ -257,7 +257,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 			$previous_calculator = $queue_calculators[$queue_id - 1];
 			//$queryData['hint'] = $previous_calculator_tag;
 		}
-		
+
 		$orphanConfigTime = Billrun_Factory::config()->getConfigValue('queue.calculator.orphan_wait_time', "6 hours");
 		$orphand_time = strtotime($orphanConfigTime . " ago");
 		// verify minimum orphan time to avoid parallel calculation
@@ -430,11 +430,25 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	 * @return string the  type  of the calculator
 	 */
 	abstract public function getCalculatorQueueType();
-		
+
 	/**
 	 * Check if a given line  can be handeld by  the calcualtor.
 	 * @param @line the line to check.
 	 * @return ture if the line  can be handled  by the  calculator  false otherwise.
 	 */
 	abstract protected function isLineLegitimate($line);
+
+	/**
+	 * Get queue line by its stamp is it was loaded by the calculator
+	 * @param type $stamp
+	 * @todo create queue trait to be used in processors / calculators
+	 */
+	public function getQueueLine($stamp) {
+		if (isset($this->lines[$stamp])) {
+			return $this->lines[$stamp];
+		} else {
+			return null;
+		}
+	}
+
 }

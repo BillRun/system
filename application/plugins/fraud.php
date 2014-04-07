@@ -61,7 +61,10 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * 
 	 */
 	public function afterUpdateSubscriberBalance($row, $balance, $rowPrice, $calculator) {
-
+		$queue_line = $calculator->getQueueLine($row['stamp']);
+		if (isset($queue_line['skip_fraud']) && $queue_line['skip_fraud']) {
+			return true;
+		}
 		if (is_null($balance)) {
 			Billrun_Factory::log("Fraud plugin - balance is empty or not transfer to the plugin" . $row['stamp'] . ' | calculator ' . $calculator->getType(), Zend_Log::WARN);
 			return true;
@@ -207,12 +210,12 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 		// if the limit for specific plans
 		if (isset($rule['limitPlans']) &&
-			(is_array($rule['limitPlans']) && !in_array(strtoupper($row['plan']), $rule['limitPlans']))) {
+				(is_array($rule['limitPlans']) && !in_array(strtoupper($row['plan']), $rule['limitPlans']))) {
 			return false;
 		}
 		// ignore subscribers :)
 		if (isset($rule['ignoreSubscribers']) &&
-			(is_array($rule['ignoreSubscribers']) && in_array($row['sid'], $rule['ignoreSubscribers']))) {
+				(is_array($rule['ignoreSubscribers']) && in_array($row['sid'], $rule['ignoreSubscribers']))) {
 			return false;
 		}
 

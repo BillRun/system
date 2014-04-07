@@ -183,7 +183,7 @@ class Billrun_Balance implements ArrayAccess {
 	}
 
 	/**
-	 * * Get an empty balance structure
+	 * Get an empty balance structure
 	 * @param string $prefix if supplied, usage types with this prefix would also be included
 	 * @return array containing an empty balance structure.
 	 */
