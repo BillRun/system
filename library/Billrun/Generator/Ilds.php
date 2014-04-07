@@ -168,8 +168,10 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 
 		ksort($cost_ilds);
 		$seperator = ',';
-		$row = $invoice_id . $seperator . $account_id . $seperator .
-			$total . $seperator . ($total * $this->vat) . $seperator . implode($seperator, $cost_ilds) . PHP_EOL;
+		$total_incl_vat = $total * $this->vat;
+		$row = $invoice_id . $seperator . $account_id . $seperator
+			. $total . $seperator . $total_incl_vat . $seperator . implode($seperator, $cost_ilds)
+			. $seperator .round($total_incl_vat, 2) . PHP_EOL;
 		$this->csv($row);
 	}
 
