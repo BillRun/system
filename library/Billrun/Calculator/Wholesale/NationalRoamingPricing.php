@@ -36,7 +36,7 @@ class Billrun_Calculator_Wholesale_NationalRoamingPricing extends Billrun_Calcul
 	}
 
 	public function updateRow($row) {
-		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteRow', array($row, $this));
+		Billrun_Factory::dispatcher()->trigger('beforeCalculatorUpdateRow', array($row, $this));
 
 		//@TODO  change this  be be configurable.
 		$pricingData = array();
@@ -57,7 +57,7 @@ class Billrun_Calculator_Wholesale_NationalRoamingPricing extends Billrun_Calcul
 			return false;
 		}
 
-		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteRow', array($row, $this));
+		Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array($row, $this));
 		return true;
 	}
 

@@ -132,7 +132,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	}
 
 	public function updateRow($row) {
-		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteRow', array($row, $this));
+		Billrun_Factory::dispatcher()->trigger('beforeCalculatorUpdateRow', array($row, $this));
 		$billrun_key = Billrun_Util::getBillrunKey($row->get('urt')->sec);
 		$rate = $this->getRowRate($row);
 
@@ -165,7 +165,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		Billrun_Factory::log()->log($pricingDataTxt, Zend_Log::DEBUG);
 		$row->setRawData(array_merge($row->getRawData(), $pricingData));
 
-		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteRow', array($row, $this));
+		Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array($row, $this));
 		return true;
 	}
 

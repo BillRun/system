@@ -325,8 +325,8 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		return FALSE;
 	}
 	
-	public function afterCalculatorWriteRow($line, $calculator) {
-		if ($line['type'] != 'nsn') {
+	public function afterCalculatorUpdateRow($line, $calculator) {
+		if (!$calculator->getCalculatorQueueType() == 'rate' || $line['type'] != 'nsn') {
 			return;
 		}
 		$rateKey = isset($line['arate']['key']) ? $line['arate']['key'] : null;
