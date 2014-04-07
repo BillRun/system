@@ -13,7 +13,7 @@
  * @subpackage Table
  * @since    0.5
  */
-class ResetModel {
+class ResetLinesModel {
 
 	/**
 	 *

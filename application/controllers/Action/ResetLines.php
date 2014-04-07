@@ -31,7 +31,7 @@ class ResetLinesAction extends ApiAction {
 		$sids = array_unique(array_diff(Billrun_Util::verify_array(explode(',', $request['sid']), 'int'), array(0)));
 
 		if ($sids) {
-			$model = new ResetModel($sids, $billrun_key);
+			$model = new ResetLinesModel($sids, $billrun_key);
 			$model->reset();
 		} else {
 			return $this->setError('Illegal sid', $request);
