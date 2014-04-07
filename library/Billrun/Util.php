@@ -215,10 +215,10 @@ class Billrun_Util {
 		$mongo_date = new MongoDate($timestamp);
 		$rates_coll = Billrun_Factory::db()->ratesCollection();
 		return $rates_coll
-				->query('key', 'VAT')
-				->lessEq('from', $mongo_date)
-				->greaterEq('to', $mongo_date)
-				->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'))->current()->get('vat');
+						->query('key', 'VAT')
+						->lessEq('from', $mongo_date)
+						->greaterEq('to', $mongo_date)
+						->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'))->current()->get('vat');
 	}
 
 	public static function isTimestamp($timestamp) {
@@ -271,7 +271,7 @@ class Billrun_Util {
 
 		return FALSE;
 	}
-	
+
 	/**
 	 * convert seconds to requested format
 	 * 
@@ -284,12 +284,11 @@ class Billrun_Util {
 	 * 3400 sec => X minutes
 	 */
 	public static function durationFormat($seconds) {
-		if ($seconds> 3600) {
+		if ($seconds > 3600) {
 			return gmdate('H:i:s', $seconds);
 		}
 		return gmdate('i:s', $seconds);
 	}
-
 
 	/**
 	 * convert megabytes to bytes
@@ -307,8 +306,8 @@ class Billrun_Util {
 
 	public static function sendMail($subject, $body, $recipients, $attachments = array()) {
 		$mailer = Billrun_Factory::mailer()->
-			setSubject($subject)->
-			setBodyText($body);
+				setSubject($subject)->
+				setBodyText($body);
 		//add attachments
 		foreach ($attachments as $attachment) {
 			$mailer->addAttachment($attachment);
@@ -320,7 +319,7 @@ class Billrun_Util {
 		//sen email
 		return $mailer->send();
 	}
-	
+
 	/**
 	 * method to fork process of PHP-Web (Apache/Nginx/FPM)
 	 * 
@@ -339,10 +338,10 @@ class Billrun_Util {
 		$querystring = http_build_query($params);
 		if (!$post) {
 			$cmd = "wget -O /dev/null '" . $forkUrl . $url . "?" . $querystring .
-				"' > /dev/null & ";
+					"' > /dev/null & ";
 		} else {
 			$cmd = "wget -O /dev/null '" . $forkUrl . $url . "' --post-data '" . $querystring .
-				"' > /dev/null & ";
+					"' > /dev/null & ";
 		}
 
 //		echo $cmd . "<br />" . PHP_EOL;
@@ -363,12 +362,16 @@ class Billrun_Util {
 	 * @return Boolean true on success else FALSE
 	 */
 	public static function forkProcessCli($cmd) {
-		$syscmd = $cmd ." > /dev/null & ";
+		$syscmd = $cmd . " > /dev/null & ";
 		if (system($syscmd) === FALSE) {
 			error_log("Can't fork PHP process");
 			return false;
 		}
 		return true;
+	}
+
+	public static function isBillrunKey($billrun_key) {
+		return is_string($billrun_key) && Zend_Locale_Format::isInteger($billrun_key) && strlen($billrun_key) == 6 && substr($billrun_key, 4, 2) >= '01' && substr($billrun_key, 4, 2) <= '12';
 	}
 
 }
