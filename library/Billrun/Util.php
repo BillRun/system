@@ -389,17 +389,17 @@ class Billrun_Util {
 		settype($phoneNumber, 'string');
 		
 		$replace = array("(0)", "-", "+", "(", ")", " ");
-		$phoneNumber = str_replace($replace, "", $phoneNumber);
-		
-		if (is_null($defaultPrefix)) {
-			$defaultPrefix = Billrun_Factory::config()->getConfigValue('billrun.defaultCountryPrefix', 972);
-		}
+		$phoneNumber = ltrim(str_replace($replace, "", $phoneNumber), "0");
 		
 		//CCNDCSN - First part USA; second non-USA
 		if (preg_match("/^(1[2-9]{1}[0-9]{2}|[2-9]{1}[0-9]{1,2}[1-9]{1}[0-9]{0,2})[0-9]{7}$/", $phoneNumber)) {
 			return $phoneNumber;
 		}
-		
-		return $defaultPrefix . ltrim($phoneNumber, "0");
+
+		if (is_null($defaultPrefix)) {
+			$defaultPrefix = Billrun_Factory::config()->getConfigValue('billrun.defaultCountryPrefix', 972);
+		}
+
+		return $defaultPrefix . $phoneNumber;
 	}
 }
