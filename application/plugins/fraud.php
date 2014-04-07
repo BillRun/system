@@ -325,17 +325,17 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		return FALSE;
 	}
 	
-//	public function afterCalculatorWriteLine($line, $calculator) {
-//		if ($line['type'] != 'nsn') {
-//			return;
-//		}
-//		$rateKey = isset($line['arate']['key']) ? $line['arate']['key'] : null;
-//		if (!empty($rateKey) && ($rateKey == 'IL_MOBILE' || substr($rateKey, 0, 3) == 'KT_') && isset($line['called_number'])) {
-//			// fire  event to increased called_number usagev
-//			$this->triggerCalledNumber($line);
-//			
-//		}
-//	}
+	public function afterCalculatorWriteRow($line, $calculator) {
+		if ($line['type'] != 'nsn') {
+			return;
+		}
+		$rateKey = isset($line['arate']['key']) ? $line['arate']['key'] : null;
+		if (!empty($rateKey) && ($rateKey == 'IL_MOBILE' || substr($rateKey, 0, 3) == 'KT_') && isset($line['called_number'])) {
+			// fire  event to increased called_number usagev
+			$this->triggerCalledNumber($line);
+			
+		}
+	}
 	
 	protected function triggerCalledNumber($line) {
 		$called_number = Billrun_Util::msisdn($line['called_number']);
