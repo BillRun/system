@@ -266,8 +266,6 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 */
 	protected function insert_fraud_event($value, $value_before, $row, $threshold, $units, $event_type, $priority = null, $recurring = false) {
 
-		$fraud_connection = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('fraud.db'))->eventsCollection();
-
 		$newEvent = new Mongodloid_Entity();
 		$newEvent['value'] = (float) $value;
 		$newEvent['value_before'] = (float) $value_before;
@@ -304,14 +302,9 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$newEvent['creation_time'] = date(Billrun_Base::base_dateformat);
 
 		try {
-			$insertResult = $fraud_connection->insert($newEvent, array('w' => 0));
-
-			if ($insertResult['ok'] == 1) {
-				Billrun_Factory::log()->log("Fraud plugin - Event stamp: " . $newEvent['stamp'] . " inserted to the fraud events", Zend_Log::INFO);
-			} else {
-				// @TODO: dump to file for durability
-				Billrun_Factory::log()->log("Fraud plugin - Failed insert line with the stamp: " . $newEvent['stamp'] . " to the fraud events", Zend_Log::WARN);
-			}
+			Billrun_Factory::log()->log("Fraud plugin - Event stamp: " . $newEvent['stamp'] . " inserted to the fraud events", Zend_Log::INFO);
+			$fraud_connection = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('fraud.db'))->eventsCollection();
+			$fraud_connection->insert($newEvent, array('w' => 0));
 		} catch (Exception $e) {
 			// @TODO: dump to file for durability
 			Billrun_Factory::log()->log("Fraud plugin - Failed insert line with the stamp: " . $newEvent['stamp'] . " to the fraud events, got Exception : " . $e->getCode() . " : " . $e->getMessage(), Zend_Log::ERR);
@@ -327,6 +320,47 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 
 		return FALSE;
+	}
+	
+	public function afterCalculatorWriteLine($line, $calculator) {
+		if ($line['type'] != 'nsn') {
+			return;
+		}
+		$rateKey = isset($line['arate']['key']) ? $line['arate']['key'] : null;
+		if (!empty($rateKey) && ($rateKey == 'IL_MOBILE' || substr($rateKey, 0, 3) == 'KT_') && isset($line['called_number'])) {
+			// fire  event to increased called_number usagev
+			$this->triggerCalledNumber($line);
+			
+		}
+	}
+	
+	protected function triggerCalledNumber($line) {
+		$called_number = Billrun_Util::msisdn($line['called_number']);
+		$query = array(
+			'called_number' => $called_number,
+			'billrun' => Billrun_Util::getBillrunKey($line['urt']->sec),
+		);
+		
+		$update = array(
+			'$inc' => array(
+				'usagev' => $line['usagev'],
+				'eventsCount' => 1
+			),
+		);
+		
+		$options = array(
+			'upsert' => true,
+			'w' => 0,
+		);
+		
+		try {
+			Billrun_Factory::log()->log("Fraud plugin - called " . $called_number . " with usagev of " . $line['usagev'] . " upserted to the fraud called collection", Zend_Log::DEBUG);
+			$fraud_connection = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('fraud.db'))->calledCollection();
+			$fraud_connection->update($query, $update, $options);
+		} catch (Exception $e) {
+			// @TODO: dump to file for durability
+			Billrun_Factory::log()->log("Fraud plugin - Failed insert line with the stamp: " . $newEvent['stamp'] . " to the fraud events, got Exception : " . $e->getCode() . " : " . $e->getMessage(), Zend_Log::ERR);
+		}
 	}
 
 }
