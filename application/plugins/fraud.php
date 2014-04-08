@@ -325,8 +325,8 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		return FALSE;
 	}
 	
-	public function afterCalculatorWriteLine($line, $calculator) {
-		if ($line['type'] != 'nsn') {
+	public function afterCalculatorUpdateRow($line, $calculator) {
+		if (!$calculator->getCalculatorQueueType() == 'rate' || $line['type'] != 'nsn') {
 			return;
 		}
 		$rateKey = isset($line['arate']['key']) ? $line['arate']['key'] : null;
@@ -341,7 +341,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$called_number = Billrun_Util::msisdn($line['called_number']);
 		$query = array(
 			'called_number' => $called_number,
-			'dom' => (int) date('Ymd', $line['urt']->sec),
+			'date' => (int) date('Ymd', $line['urt']->sec),
 		);
 		
 		$update = array(
