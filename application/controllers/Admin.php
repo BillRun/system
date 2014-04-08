@@ -288,7 +288,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		self::getModel($table, $options);
 		$query = $this->applyFilters($table);
 
-		$this->getView()->component = $this->buildComponent($table, $query);
+		$this->getView()->component = $this->buildTableComponent($table, $query);
 	}
 
 	public function loginAction() {
@@ -377,7 +377,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$session = $this->getSession($table);
 		$this->getSetVar($session, $query, 'query', $query);
 
-		$this->getView()->component = $this->buildComponent('lines', $query);
+		$this->getView()->component = $this->buildTableComponent('lines', $query);
 	}
 
 	protected function errorAction() {
@@ -401,7 +401,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$model = self::getModel($table, $options);
 		$query = $this->applyFilters($table);
 
-		$this->getView()->component = $this->buildComponent($table, $query);
+		$this->getView()->component = $this->buildTableComponent($table, $query);
 	}
 
 	/**
@@ -421,7 +421,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$model = self::getModel($table, $options);
 		$query = $this->applyFilters($table);
 
-		$this->getView()->component = $this->buildComponent($table, $query);
+		$this->getView()->component = $this->buildTableComponent($table, $query);
 	}
 
 	/**
@@ -438,7 +438,24 @@ class AdminController extends Yaf_Controller_Abstract {
 		$model = self::getModel($table, $options);
 		$query = $this->applyFilters($table);
 
-		$this->getView()->component = $this->buildComponent($table, $query);
+		$this->getView()->component = $this->buildTableComponent($table, $query);
+	}
+
+	/**
+	 * users controller of admin
+	 */
+	public function configAction() {
+		if (!$this->allowed('admin'))
+			return false;
+		$table = "users";
+		$options = array(
+			'collection' => $table,
+		);
+
+		$model = self::getModel($table, $options);
+//		$query = $this->applyFilters($table);
+
+		$this->getView()->component = $this->renderView('config');
 	}
 
 	/**
@@ -551,7 +568,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		return $this->model;
 	}
 
-	protected function buildComponent($table, $filter_query, $options = array()) {
+	protected function buildTableComponent($table, $filter_query, $options = array()) {
 		$this->title = ucfirst($table);
 
 		// TODO: use ready pager/paginiation class (zend? joomla?) with auto print
