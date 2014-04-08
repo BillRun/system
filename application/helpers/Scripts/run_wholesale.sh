@@ -26,11 +26,11 @@ fi
 
 reports=( "gt_out_sms" "nr_out_sms" "data" "all_in_call" "all_out_call" "all_nr_out_call" "all_nr_in_call" )
 
-wd=`pwd`;
+WD="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )" # hack to get the directory of the .sh file
 
 for i in "${reports[@]}"
 do
    :
 	echo $i;
-	$wd/wholesale_reports.sh $i $year $month $output_dir
+	$WD/wholesale_reports.sh $i $year $month $output_dir
 done
