@@ -61,8 +61,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * 
 	 */
 	public function afterUpdateSubscriberBalance($row, $balance, $rowPrice, $calculator) {
-		$queue_line = $calculator->getQueueLine($row['stamp']);
-		if (isset($queue_line['skip_fraud']) && $queue_line['skip_fraud']) {
+		if (!$this->isLineLegitimate($line, $calculator)) {
 			return true;
 		}
 		if (is_null($balance)) {
@@ -326,8 +325,13 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 	
 	public function afterCalculatorUpdateRow($line, $calculator) {
+		
+		if (!$this->isLineLegitimate($line, $calculator)) {
+			return true;
+		}
+
 		if (!$calculator->getCalculatorQueueType() == 'rate' || $line['type'] != 'nsn') {
-			return;
+			return true;
 		}
 		$rateKey = isset($line['arate']['key']) ? $line['arate']['key'] : null;
 		if (!empty($rateKey) && ($rateKey == 'IL_MOBILE' || substr($rateKey, 0, 3) == 'KT_') && isset($line['called_number'])) {
@@ -364,6 +368,14 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 			// @TODO: dump to file for durability
 			Billrun_Factory::log()->log("Fraud plugin - Failed insert line with the stamp: " . $newEvent['stamp'] . " to the fraud events, got Exception : " . $e->getCode() . " : " . $e->getMessage(), Zend_Log::ERR);
 		}
+	}
+	
+	protected function isLineLegitimate($row, $calculator) {
+		$queue_line = $calculator->getQueueLine($row['stamp']);
+		if (isset($queue_line['skip_fraud']) && $queue_line['skip_fraud']) {
+			return false;
+		}
+		return true;
 	}
 
 }
