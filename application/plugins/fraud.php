@@ -61,7 +61,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * 
 	 */
 	public function afterUpdateSubscriberBalance($row, $balance, $rowPrice, $calculator) {
-		if (!$this->isLineLegitimate($line, $calculator)) {
+		if (!$this->isLineLegitimate($row, $calculator)) {
 			return true;
 		}
 		if (is_null($balance)) {
