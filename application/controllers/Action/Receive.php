@@ -36,9 +36,13 @@ class ReceiveAction extends Action_Base {
 		$this->getController()->addOutput("Receiver loaded");
 
 		if ($receiver) {
-			$this->getController()->addOutput("Starting to receive. This action can take a while...");
-			$files = $receiver->receive();
-			$this->getController()->addOutput("Received " . count($files) . " files");
+			if (!Billrun_Factory::config()->getConfigValue('receive')) {
+				$this->getController()->addOutput("Receiver is off");
+			} else {
+				$this->getController()->addOutput("Starting to receive. This action can take a while...");
+				$files = $receiver->receive();
+				$this->getController()->addOutput("Received " . count($files) . " files");
+			}
 		} else {
 			$this->getController()->addOutput("Receiver cannot be loaded");
 		}

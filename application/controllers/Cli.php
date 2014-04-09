@@ -23,6 +23,8 @@ class CliController extends Yaf_Controller_Abstract {
 	public function init() {
 		$this->setActions();
 		$this->setOptions();
+		// this will verify db config will load into main config
+		Billrun_Factory::db();
 	}
 
 	/**
