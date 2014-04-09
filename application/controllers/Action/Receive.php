@@ -21,6 +21,11 @@ class ReceiveAction extends Action_Base {
 	 */
 	public function execute() {
 
+		if (!$this->isOn()) {
+			$this->getController()->addOutput(ucfirst($this->getRequest()->action) . " is off");
+			return;
+		}
+
 		$possibleOptions = array(
 			'type' => false,
 			'path' => true,
@@ -36,13 +41,9 @@ class ReceiveAction extends Action_Base {
 		$this->getController()->addOutput("Receiver loaded");
 
 		if ($receiver) {
-			if (!Billrun_Factory::config()->getConfigValue('receive')) {
-				$this->getController()->addOutput("Receiver is off");
-			} else {
-				$this->getController()->addOutput("Starting to receive. This action can take a while...");
-				$files = $receiver->receive();
-				$this->getController()->addOutput("Received " . count($files) . " files");
-			}
+			$this->getController()->addOutput("Starting to receive. This action can take a while...");
+			$files = $receiver->receive();
+			$this->getController()->addOutput("Received " . count($files) . " files");
 		} else {
 			$this->getController()->addOutput("Receiver cannot be loaded");
 		}

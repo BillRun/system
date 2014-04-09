@@ -21,6 +21,11 @@ class CalculateAction extends Action_Base {
 	 */
 	public function execute() {
 
+		if (!$this->isOn()) {
+			$this->getController()->addOutput(ucfirst($this->getRequest()->action) . " is off");
+			return;
+		}
+
 		$possibleOptions = array('type' => false);
 
 		if (($options = $this->_controller->getInstanceOptions($possibleOptions)) === FALSE) {
@@ -32,16 +37,12 @@ class CalculateAction extends Action_Base {
 		$this->_controller->addOutput("Calculator loaded");
 
 		if ($calculator) {
-			if (!Billrun_Factory::config()->getConfigValue('calculate')) {
-				$this->getController()->addOutput("Calculator is off");
-			} else {
-				$this->_controller->addOutput("Starting to calculate. This action can take a while...");
-				$calculator->calc();
-				$this->_controller->addOutput("Writing calculated data.");
-				$calculator->write();
-				$this->_controller->addOutput("Calculation finished.");
-				$calculator->removeFromQueue();
-			}
+			$this->_controller->addOutput("Starting to calculate. This action can take a while...");
+			$calculator->calc();
+			$this->_controller->addOutput("Writing calculated data.");
+			$calculator->write();
+			$this->_controller->addOutput("Calculation finished.");
+			$calculator->removeFromQueue();
 		} else {
 			$this->_controller->addOutput("Calculator cannot be loaded");
 		}

@@ -26,5 +26,13 @@ abstract class Action_Base extends Yaf_Action_Abstract {
 		$tpl = 'index';
 		return parent::render($tpl, $parameters);
 	}
+	
+	protected function isOn() {
+		if (Billrun_Factory::config()->getConfigValue($this->getRequest()->action)) {
+			return true;
+		}
+		return false;
+
+	}
 
 }
