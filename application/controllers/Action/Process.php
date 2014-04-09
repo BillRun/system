@@ -40,19 +40,22 @@ class ProcessAction extends Action_Base {
 		$this->_controller->addOutput("Processor loaded");
 
 		if ($processor) {
-			$this->_controller->addOutput("Starting to process. This action can take a while...");
-
-			// buffer all action output
-			ob_start();
-			if (isset($options['path']) && $options['path']) {
-				$linesProcessedCount = $processor->process();
+			if (!Billrun_Factory::config()->getConfigValue('process')) {
+				$this->getController()->addOutput("Processor is off");
 			} else {
-				$linesProcessedCount = $processor->process_files();
+				$this->_controller->addOutput("Starting to process. This action can take a while...");
+				// buffer all action output
+				ob_start();
+				if (isset($options['path']) && $options['path']) {
+					$linesProcessedCount = $processor->process();
+				} else {
+					$linesProcessedCount = $processor->process_files();
+				}
+				// write the buffer into log and output
+				$this->_controller->addOutput("processed " . $linesProcessedCount . " lines");
+				$this->_controller->addOutput(ob_get_contents());
+				ob_end_clean();
 			}
-			// write the buffer into log and output
-			$this->_controller->addOutput("processed " . $linesProcessedCount . " lines");
-			$this->_controller->addOutput(ob_get_contents());
-			ob_end_clean();
 		} else {
 			$this->_controller->addOutput("Processor cannot be loaded");
 		}
