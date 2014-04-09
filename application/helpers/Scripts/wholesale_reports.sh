@@ -34,7 +34,7 @@ fi
 
 month_end=`date -d "$(date -d "$year-$month-01" +%Y-%m-01) +1 month -1 day" +%d`;
 	
-js_code='db.getMongo().setReadPref("primaryPreferred");var start_day = 1; var end_day = '$month_end'; for(var i = start_day; i <= end_day; i++) {var day = (i.toString().length==1 ? "0" + i : i);var from_date = ISODate("'$year'-'$month'-" + day + "T00:00:00+02:00");var to_date = ISODate("'$year'-'$month'-" + day + "T23:59:59+02:00");';
+js_code='db.getMongo().setReadPref("secondaryPreferred");var start_day = 1; var end_day = '$month_end'; for(var i = start_day; i <= end_day; i++) {var day = (i.toString().length==1 ? "0" + i : i);var from_date = ISODate("'$year'-'$month'-" + day + "T00:00:00+02:00");var to_date = ISODate("'$year'-'$month'-" + day + "T23:59:59+02:00");';
 nsn_end_code='.result.forEach(function(obj) { print("call," + dir + "," + product + ",'$year'-'$month'-" + day + "," + (!isNaN(parseInt(obj._id.c,10)) ? parseInt(obj._id.c,10) : obj._id.c ) + "," +( obj._id.r ? db.rates.findOne(obj._id.r.$id).key : "") + "," + obj.count + "," + obj.usagev);});}';
 data_end_code='.result.forEach(      function(obj) {         print("data," + dir + "," + product + ",'$year'-'$month'-" + day + "," +  obj._id  + "," + obj.count + "," + obj.usagev);});}';
 sms_end_code='.result.forEach(      function(obj) {         print("sms," + dir + "," + product + ",'$year'-'$month'-" + day + "," +  obj._id  + "," + obj.count + "," + obj.usagev);});}';
