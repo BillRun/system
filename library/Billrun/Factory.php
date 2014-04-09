@@ -137,6 +137,7 @@ class Billrun_Factory {
 	 * @return Billrun_Db
 	 */
 	static public function db(array $options = array()) {
+		$mainDb = 0;
 		if (empty($options)) {
 			$options = Billrun_Factory::config()->getConfigValue('db'); // the stdclass force it to return object
 			$mainDb = 1;
@@ -147,7 +148,6 @@ class Billrun_Factory {
 			if (in_array($name, $seperateDatabaseCollections)) {
 				$options['name'] = $name;
 			}
-			$mainDb = 0;
 		}
 
 		// unique stamp per db connection
