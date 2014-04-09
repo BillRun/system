@@ -442,21 +442,36 @@ class AdminController extends Yaf_Controller_Abstract {
 	}
 
 	/**
-	 * users controller of admin
+	 * config controller of admin
 	 */
 	public function configAction() {
 		if (!$this->allowed('admin'))
 			return false;
-		$table = "users";
-		$options = array(
-			'collection' => $table,
+
+		$model = $this->getModel('config');
+		$configData = $model->getConfig();
+
+		$viewData = array(
+			'data' => $configData,
+			'options' => $model->getOptions(),
 		);
-
-		$model = self::getModel($table, $options);
-//		$query = $this->applyFilters($table);
-
-		$this->getView()->component = $this->renderView('config');
+		$this->getView()->component = $this->renderView('config', $viewData);
 	}
+	
+	/**
+	 * config controller of admin
+	 */
+	public function configsaveAction() {
+		if (!$this->allowed('admin'))
+			return false;
+		// get model cofig
+		$model = $this->getModel('config');
+		$data = $this->getRequest()->getRequest();
+		$model->setConfig($data);
+		header('Location: /admin/config');
+		exit();
+	}
+
 
 	/**
 	 * method to render component page

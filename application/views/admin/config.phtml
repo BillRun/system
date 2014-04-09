@@ -1,23 +1,18 @@
+<?php // print_R($this->data); die; ?>
 <div class="container component">
 
 	<h2>Configuration</h2>
-	<form id="config-form">
+	<form id="config-form" action="/admin/configsave">
 		<div class="clearfix config">
+			<?php 
+			foreach ($this->options as $action) : ?>
 			<div class="option">
-				<span>Receive</span>
-				<input type="checkbox" name="receive" checked>
+				<span><?php echo ucfirst($action) ?></span>
+				<input type="checkbox" name="receive" value="1"<?php
+					echo (isset($this->data[$action]) && $this->data[$action])?' checked': ''; ?>>
 			</div>
-			
-			<div class="option">
-				<span>Process</span>
-				<input type="checkbox" name="process" checked>
-			</div>
-
-			<div class="option">
-				<span>Calculate</span>
-				<input type="checkbox" name="calculate" checked>
-			</div>
-		</div>
+			 <?php endforeach; ?>
+					</div>
 		<div class="submit">
 			  <button type="submit" class="btn">Submit</button>
 		</div>
