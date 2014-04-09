@@ -336,10 +336,44 @@ class AdminController extends Yaf_Controller_Abstract {
 		return $ret;
 	}
 
-	protected function auth() {
+	static protected function auth() {
 		return Zend_Auth::getInstance()->setStorage(new Zend_Auth_Storage_Yaf());
 	}
 
+	/**
+	 * method to check if user is authorize to resource
+	 * 
+	 * @param string $permission the permission require authorization
+	 * 
+	 * @return boolean true if have access, else false
+	 * 
+	 * @todo: refactoring to core
+	 */
+	static public function authorized($permission) {
+		$auth = self::auth();
+		if (!$auth->hasIdentity()) {
+			return false;
+		}
+
+		$user = Billrun_Factory::user($auth->getIdentity());
+		if (!$user->valid() || !$user->allowed($permission)) {
+			$this->forward('error');
+			return false;
+		}
+		
+		return true;
+
+	}
+	
+	/**
+	 * method to check if user is allowed to access page
+	 * 
+	 * @param string $permission the permission required to the page
+	 * 
+	 * @return boolean true if have access, else false
+	 * 
+	 * @deprecated since version 2.1 use authorized method
+	 */
 	protected function allowed($permission) {
 		$action = $this->getRequest()->getActionName();
 		$auth = $this->auth();
