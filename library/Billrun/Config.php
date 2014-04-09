@@ -57,6 +57,23 @@ class Billrun_Config {
 		}
 		return self::$instance;
 	}
+	
+	public function loadDbConfig() {
+		try {
+			$dbConfig = Billrun_Factory::db()->configCollection()->query()
+				->cursor()
+				->sort(array('_id' => -1))
+				->limit(1)
+				->current()
+				->getRawData();
+		} catch (Exception $e) {
+			Billrun_Factory::log('Cannot load database config', Zend_Log::CRIT);
+			return false;
+		}
+		unset($dbConfig['_id']);
+		$iniConfig = $this->config->toArray();
+		$this->config = new Yaf_Config_Simple(array_merge($iniConfig, $dbConfig));
+	}
 
 	/**
 	 * method to get config value
@@ -85,7 +102,7 @@ class Billrun_Config {
 			$currConf = $currConf[$key];
 		}
 
-		if ($currConf instanceof Yaf_Config_Ini) {
+		if ($currConf instanceof Yaf_Config_Ini || $currConf instanceof Yaf_Config_Simple) {
 			$currConf = $currConf->toArray();
 		}
 
