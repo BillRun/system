@@ -189,7 +189,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 				$account_billrun->addSubscriber($subscriber, $subscriber_status);
 				Billrun_Factory::dispatcher()->trigger('afterAggregateSubscriber', array($subscriber, $account_billrun, &$this));
 			}
-			$lines = $account_billrun->addLines(0, $flat_lines);
+			$lines = $account_billrun->addLines($flat_lines);
 			//save the billrun
 			Billrun_Factory::log('Saving account ' . $accid, Zend_Log::INFO);
 			if ($account_billrun->save() === false) {

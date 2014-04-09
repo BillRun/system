@@ -618,9 +618,9 @@ class Billrun_Billrun {
 	 * @param int $start_time lower bound date to get lines from. A unix timestamp 
 	 * @return array the stamps of the lines used to create the billrun
 	 */
-	public function addLines($start_time = 0, $flat_lines = array()) {
+	public function addLines($flat_lines = array()) {
 		Billrun_Factory::log()->log("Querying account " . $this->aid . " for lines...", Zend_Log::INFO);
-		$account_lines = $this->getAccountLines($this->aid, $start_time, false);
+		$account_lines = $this->getAccountLines($this->aid, false);
 		Billrun_Factory::log("Processing account Lines $this->aid", Zend_Log::INFO);
 		$updatedLines = array_merge($this->processLines($account_lines), $this->processLines($flat_lines));
 		Billrun_Factory::log("Finished processing account $this->aid lines. Total: " . count($updatedLines), Zend_log::INFO);
@@ -659,25 +659,13 @@ class Billrun_Billrun {
 	/**
 	 * Gets all the account lines for this billrun from the db
 	 * @param int $aid the account id
-	 * @param int $start_time lower bound date to get lines from. A unix timestamp
+	 * @param boolean $include_flats whether to include flat lines in the search
 	 * @return Mongodloid_Cursor the mongo cursor used to iterate over the lines
 	 * @todo remove aid parameter
 	 */
-	protected function getAccountLines($aid, $start_time = 0, $include_flats = true) {
-		$start_time = new MongoDate($start_time);
-		$end_time = new MongoDate(Billrun_Util::getEndTime($this->billrun_key));
+	protected function getAccountLines($aid, $include_flats = true) {
 		$query = array(
 			'aid' => $aid,
-			'urt' => array(
-				'$lte' => $end_time,
-				'$gte' => $start_time, // needed for current balance
-			),
-//			'aprice' => array(
-//				'$exists' => true,
-//			),
-//			'type' => array(
-//				'$ne' => 'ggsn',
-//			),
 		);
 		if (!$include_flats) {
 			$query['type'] = array(
@@ -687,27 +675,14 @@ class Billrun_Billrun {
 
 		$query['billrun'] = $this->billrun_key;
 
-		$hint = array(
-			'aid' => 1,
-			'urt' => 1,
-		);
-
 		$sort = array(
-			'aid' => 1,
 			'urt' => 1,
 		);
 		Billrun_Factory::log()->log("Querying for account " . $aid . " lines", Zend_Log::INFO);
 		$cursor = $this->lines->query($query)->cursor()->fields($this->filter_fields)
-			->sort($sort)->hint($hint)
-			->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
+				->sort($sort)
+				->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
 		Billrun_Factory::log()->log("Finished querying for account " . $aid . " lines", Zend_Log::INFO);
-//		$results = array();
-//		Billrun_Factory::log()->log("Saving account " . $aid . " lines to array", Zend_Log::DEBUG);
-//		foreach ($cursor as $entity) {
-//			$results[] = $entity;
-//		}
-//		Billrun_Factory::log()->log("Finished saving account " . $aid . " lines to array", Zend_Log::DEBUG);
-//		return $results;
 		return $cursor;
 	}
 
