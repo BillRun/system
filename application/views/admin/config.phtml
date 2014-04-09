@@ -8,7 +8,7 @@
 			foreach ($this->options as $action) : ?>
 			<div class="option">
 				<span><?php echo ucfirst($action) ?></span>
-				<input type="checkbox" name="receive" value="1"<?php
+				<input type="checkbox" name="<?php echo $action; ?>" value="1"<?php
 					echo (isset($this->data[$action]) && $this->data[$action])?' checked': ''; ?>>
 			</div>
 			 <?php endforeach; ?>
