@@ -357,7 +357,6 @@ class AdminController extends Yaf_Controller_Abstract {
 
 		$user = Billrun_Factory::user($auth->getIdentity());
 		if (!$user->valid() || !$user->allowed($permission)) {
-			$this->forward('error');
 			return false;
 		}
 		

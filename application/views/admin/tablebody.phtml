@@ -4,7 +4,12 @@ $c = $this->offset;
 foreach ($this->data as $item) {
 //			$shani = $this->data->count();
 	print '<tr>';
-	print '<td data-title=\'#\'><label class="checkbox"><a onclick="update_current(this);" href="#popupModal" data-type="update" data-toggle="modal" role="button" data-remote="">#' . ($c + 1) . '</a>&nbsp;<input value="' . $item['_id'] . '" type="checkbox" id="chk' . $c++ . '"/></label></td>';
+	print '<td data-title=\'#\'>'
+		. '<label class="checkbox">'
+		. '<a onclick="update_current(this);" href="#popupModal" data-type="update" data-toggle="modal" role="button" data-remote="">#' . ($c + 1) . '</a>&nbsp;'
+		. ((AdminController::authorized('write')) ? '<input value="' . $item['_id'] . '" type="checkbox" id="chk' . $c . '"/>' : '')
+		. '</label></td>';
+	$c++;
 	foreach ($this->columns as $h => $columnName) {
 		$data = $item->get($h);
 		print '<td data-title=' . $columnName . '>';
