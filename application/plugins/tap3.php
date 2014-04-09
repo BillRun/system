@@ -18,12 +18,20 @@ class tap3Plugin extends Billrun_Plugin_BillrunPluginBase implements Billrun_Plu
 use Billrun_Traits_FileSequenceChecking;
 
 	protected $name = 'tap3';
-	protected $nsnConfig = false;
+	protected $tap3Config = false;
+	protected $currentFileHeader = array();
+	protected $exchangeRates = array();
+
+	/**
+	 * Number by which to divide the line charge to get the sdr value
+	 * @var int
+	 */
+	protected $sdr_division_value;
 
 	const FILE_READ_AHEAD_LENGTH = 65535;
 
 	public function __construct(array $options = array()) {
-		$this->nsnConfig = (new Yaf_Config_Ini(Billrun_Factory::config()->getConfigValue('tap3.config_path')))->toArray();
+		$this->tap3Config = (new Yaf_Config_Ini(Billrun_Factory::config()->getConfigValue('tap3.config_path')))->toArray();
 		$this->initParsing();
 		$this->addParsingMethods();
 	}
@@ -87,9 +95,8 @@ use Billrun_Traits_FileSequenceChecking;
 			return FALSE;
 		}
 		//Billrun_Factory::log()->log("Header data : ". print_r(Asn_Base::getDataArray( $data ,true ),1) ,  Zend_Log::DEBUG);
-		$header = $this->parseASNDataRecur($this->nsnConfig['header'], Asn_Base::getDataArray($data, true, true), $this->nsnConfig['fields']);
+		$header = $this->parseASNDataRecur($this->tap3Config['header'], $data, $this->tap3Config['fields']);
 		$this->currentFileHeader = $header;
-
 		return $header;
 	}
 
@@ -104,8 +111,8 @@ use Billrun_Traits_FileSequenceChecking;
 		$type = $data->getType();
 		$cdrLine = false;
 
-		if (isset($this->nsnConfig[$type])) {
-			$cdrLine = $this->parseASNDataRecur($this->nsnConfig[$type], Asn_Base::getDataArray($data, true, true), $this->nsnConfig['fields']);
+		if (isset($this->tap3Config[$type])) {
+			$cdrLine = $this->parseASNDataRecur($this->tap3Config[$type], $data, $this->tap3Config['fields']);
 			if ($cdrLine) {
 				$cdrLine['record_type'] = $type;
 
@@ -138,7 +145,7 @@ use Billrun_Traits_FileSequenceChecking;
 			return FALSE;
 		}
 
-		$trailer = $this->parseASNDataRecur($this->nsnConfig['trailer'], Asn_Base::getDataArray($data, true), $this->nsnConfig['fields']);
+		$trailer = $this->parseASNDataRecur($this->tap3Config['trailer'], $data, $this->tap3Config['fields']);
 		//Billrun_Factory::log()->log(print_r($trailer,1),  Zend_Log::DEBUG);
 
 		return $trailer;
@@ -196,6 +203,14 @@ use Billrun_Traits_FileSequenceChecking;
 		} else {
 			$cdrLine['serving_network'] = $this->currentFileHeader['header']['sending_source'];
 		}
+
+		if (isset($cdrLine['BasicServiceUsedList']['BasicServiceUsed']['ChargeInformationList']['ChargeInformation']['ChargeDetailList']['ChargeDetail']['Charge'])) {
+			$cdrLine['sdr'] = $cdrLine['BasicServiceUsedList']['BasicServiceUsed']['ChargeInformationList']['ChargeInformation']['ChargeDetailList']['ChargeDetail']['Charge'] / $this->sdr_division_value;
+			$cdrLine['exchange_rate'] = $this->exchangeRates[$cdrLine['BasicServiceUsedList']['BasicServiceUsed']['ChargeInformationList']['ChargeInformation']['ExchangeRateCode']];
+		} else if (isset($cdrLine['GprsServiceUsed']['ChargeInformationList']['ChargeInformation']['ChargeDetailList']['ChargeDetail']['Charge'])) {
+			$cdrLine['sdr'] = $cdrLine['GprsServiceUsed']['ChargeInformationList']['ChargeInformation']['ChargeDetailList']['ChargeDetail']['Charge'] / $this->sdr_division_value;
+			$cdrLine['exchange_rate'] = $this->exchangeRates[$cdrLine['GprsServiceUsed']['ChargeInformationList']['ChargeInformation']['ExchangeRateCode']];
+		}
 	}
 
 	/**
@@ -204,16 +219,16 @@ use Billrun_Traits_FileSequenceChecking;
 	protected function addParsingMethods() {
 		$newParsingMethods = array(
 			'raw_data' => function($data) {
-			return $this->utf8encodeArr($data);
-		},
+				return $this->utf8encodeArr($data);
+			},
 			'bcd_number' => function($fieldData) {
-			$ret = $this->parsingMethods['bcd_encode']($fieldData);
+				$ret = $this->parsingMethods['bcd_encode']($fieldData);
 
-			return preg_replace('/15$/', '', $ret);
-		},
+				return preg_replace('/15$/', '', $ret);
+			},
 			'time_offset_list' => function($data) {
-			return $this->parseTimeOffsetList($data);
-		},
+				return $this->parseTimeOffsetList($data);
+			},
 		);
 
 		$this->parsingMethods = array_merge($this->parsingMethods, $newParsingMethods);
@@ -221,17 +236,18 @@ use Billrun_Traits_FileSequenceChecking;
 
 	/**
 	 * Parse time offset list that  conatin the time offset  refecenced in each line  cal start time
-	 * @param type $data the  time offset list
+	 * @param type $asn the  time offset list
 	 * @return rray  containing the time offset list  keyed by its offset code.
 	 */
 	protected function parseTimeOffsetList($data) {
 		$timeOffsets = array();
-		if (isset($data['e9']['e8'])) {
-			$data['e9'] = array($data['e9']);
-		}
-		foreach ($data['e9'] as $value) {
-			$key = $this->parseField('number', $value['e8']);
-			$timeOffsets[$key] = $value['e7'];
+		foreach ($data as $time_offset) {
+			$time_offset_arr = array();
+			foreach ($time_offset->getData() as $value) {
+				$time_offset_arr[$value->getType()] = $value->getData();
+			}
+			$key = $this->parseField('number', $time_offset_arr['e8']);
+			$timeOffsets[$key] = $time_offset_arr['e7'];
 		}
 		return $timeOffsets;
 	}
@@ -253,9 +269,11 @@ use Billrun_Traits_FileSequenceChecking;
 		$parsedData = Asn_Base::parseASNString($bytes);
 		$processorData['header'] = $processor->buildHeader($parsedData);
 		//$bytes = substr($bytes, $processor->getParser()->getLastParseLength());
+		$trailer = $processor->buildTrailer($parsedData);
+		$this->initExchangeRates($trailer);
 
 		foreach ($parsedData->getData() as $record) {
-			if (in_array($record->getType(), $this->nsnConfig['config']['data_records'])) {
+			if (in_array($record->getType(), $this->tap3Config['config']['data_records'])) {
 				foreach ($record->getData() as $key => $data) {
 					$row = $processor->buildDataRow($data);
 					if ($row) {
@@ -268,7 +286,7 @@ use Billrun_Traits_FileSequenceChecking;
 			}
 		}
 
-		$processorData['trailer'] = $processor->buildTrailer($parsedData);
+		$processorData['trailer'] = $trailer;
 
 		return true;
 	}
@@ -295,6 +313,31 @@ use Billrun_Traits_FileSequenceChecking;
 			return FALSE;
 		}
 		return $this->getFileSequenceData($filename);
+	}
+
+	/**
+	 * Encode an array content in utf encoding
+	 * @param $arr the array to encode.
+	 * @return array with a recurcivly encoded values.
+	 */
+	protected function utf8encodeArr($arr) {
+		if (is_object($arr)) {
+			$val = array();
+			foreach ($arr->getData() as $val) {
+				$val[$arr->getType()][] = $this->utf8encodeArr($val);
+			}
+			return $val;
+		}
+		return utf8_encode($arr);
+	}
+
+	protected function initExchangeRates($trailer) {
+		if (isset($trailer['data']['trailer']['currency_conversion_info']['currency_conversion'])) {
+			foreach ($trailer['data']['trailer']['currency_conversion_info']['currency_conversion'] as $currency_conversion) {
+				$this->exchangeRates[$currency_conversion['exchange_rate_code']] = $currency_conversion['exchange_rate'] / pow(10, $currency_conversion['number_of_decimalplaces']);
+			}
+		}
+		$this->sdr_division_value = pow(10, $trailer['data']['trailer']['tap_decimal_places']);
 	}
 
 }
