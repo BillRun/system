@@ -347,7 +347,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			}
 			if (!($ret['ok'] && $ret['updatedExisting'])) { // failed because of different totals (could be that another server with another line raised the totals). Need to calculate pricingData from the beginning
 				if ($this->pricing_retries >= 10) {
-					Billrun_Factory::log()->log('Too many pricing retries for line ' . $row['stamp'], Zend_Log::ALERT);
+					Billrun_Factory::log()->log('Too many pricing retries for line ' . $row['stamp'] . '. Update status: ' . print_r($ret, true), Zend_Log::ALERT);
 					return false;
 				}
 				Billrun_Factory::log()->log('Concurrent write of stamp ' . $row['stamp'] . ' to balance. Update status: ' . print_r($ret, true) . 'Retrying...', Zend_Log::INFO);
