@@ -139,6 +139,7 @@ class Billrun_Factory {
 	static public function db(array $options = array()) {
 		if (empty($options)) {
 			$options = Billrun_Factory::config()->getConfigValue('db'); // the stdclass force it to return object
+			$mainDb = 1;
 		} else if (isset($options['name']) && count($options) == 1) {
 			$name = $options['name'];
 			$options = Billrun_Factory::config()->getConfigValue('db');
@@ -146,6 +147,7 @@ class Billrun_Factory {
 			if (in_array($name, $seperateDatabaseCollections)) {
 				$options['name'] = $name;
 			}
+			$mainDb = 0;
 		}
 
 		// unique stamp per db connection
@@ -153,6 +155,9 @@ class Billrun_Factory {
 
 		if (!isset(self::$db[$stamp])) {
 			self::$db[$stamp] = Billrun_Db::getInstance($options);
+			if ($mainDb) {
+				Billrun_Factory::config()->loadDbConfig();
+			}
 		}
 
 		return self::$db[$stamp];

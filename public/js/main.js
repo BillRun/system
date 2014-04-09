@@ -275,3 +275,8 @@ function isAPIAvailable() {
 		return false;
 	}
 }
+$(document).ready(function () {
+$(".config input[type='checkbox']").bootstrapSwitch();
+
+});
+

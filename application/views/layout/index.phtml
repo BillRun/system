@@ -17,6 +17,7 @@
         </style>
         <link rel="stylesheet" href="<?php echo $this->baseUrl; ?>/css/bootstrap-responsive.css">
         <link rel="stylesheet" href="<?php echo $this->baseUrl; ?>/css/bootstrap-datetimepicker.min.css">
+        <link rel="stylesheet" href="<?php echo $this->baseUrl; ?>/css/bootstrap-switch.css">
         <link rel="stylesheet" href="<?php echo $this->baseUrl; ?>/css/jsoneditor.css">
         <link rel="stylesheet" href="<?php echo $this->baseUrl; ?>/css/main.css">
 
@@ -55,8 +56,21 @@
                             <li<?php echo ($active == 'log' ? ' class="active"' : ''); ?>>
 								<a href="<?php echo $this->baseUrl; ?>/admin/log">Log</a>
 							</li>
-                            <li<?php echo ($active == 'users' ? ' class="active"' : ''); ?>>
-								<a href="<?php echo $this->baseUrl; ?>/admin/users">Users</a>
+							<li class="dropdown<?php echo (in_array($active, array('users', 'config')) ? ' active' : ''); ?>">
+								<a class="dropdown-toggle"
+								   data-toggle="dropdown"
+								   href="#">
+									Admin
+									<b class="caret"></b>
+								</a>
+								<ul class="dropdown-menu">
+									<li<?php echo ($active == 'config' ? ' class="active"' : ''); ?>>
+										<a href="<?php echo $this->baseUrl; ?>/admin/config">Config</a>
+									</li>
+									<li<?php echo ($active == 'users' ? ' class="active"' : ''); ?>>
+										<a href="<?php echo $this->baseUrl; ?>/admin/users">Users</a>
+									</li>
+								</ul>
 							</li>
                         </ul>
                     </div><!--/.nav-collapse -->
@@ -77,6 +91,7 @@
 
         <script src="<?php echo $this->baseUrl; ?>/js/main.js"></script>
         <script src="<?php echo $this->baseUrl; ?>/js/bootstrap-multiselect.js"></script>
+        <script src="<?php echo $this->baseUrl; ?>/js/bootstrap-switch.js"></script>
         <script src="<?php echo $this->baseUrl; ?>/js/jquery.csv-0.71.min.js"></script>
 
     </body>
