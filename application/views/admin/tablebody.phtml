@@ -7,7 +7,7 @@ foreach ($this->data as $item) {
 	print '<td data-title=\'#\'>'
 		. '<label class="checkbox">'
 		. '<a onclick="update_current(this);" href="#popupModal" data-type="update" data-toggle="modal" role="button" data-remote="">#' . ($c + 1) . '</a>&nbsp;'
-		. ((AdminController::authorized('write')) ? '<input value="' . $item['_id'] . '" type="checkbox" id="chk' . $c . '"/>' : '')
+		. '<input value="' . $item['_id'] . '" type="' . (AdminController::authorized('write') ? 'checkbox' : 'hidden') . '" id="chk' . $c . '"/>'
 		. '</label></td>';
 	$c++;
 	foreach ($this->columns as $h => $columnName) {
