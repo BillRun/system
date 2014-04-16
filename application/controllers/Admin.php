@@ -520,7 +520,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		foreach ($params as $key => $val) {
 			$view->assign($key, $val);
 		}
-
+		
 		return $view->render($viewName . '.phtml', $params);
 	}
 

@@ -100,12 +100,6 @@ input[type=checkbox] {
 .control-group {
 	height: 35px;
 }
-.toolbar-rates .control-group0,
-.toolbar-rates .control-group2 {
-	display: inline;
-	float:left;
-	margin-right: 10px;
-}
 
 td[data-title="Rate"] a{
     display: block;
@@ -167,3 +161,31 @@ tr.progress td, tr.progress th {
     50% { opacity: 0.0; }
     100% { opacity: 1.0; }
 }
+.toolbar-buttons, .control-group1, #manual_filters select {
+	margin:10px auto;
+}
+
+#manual_filters select, input[type=text].advanced-filter, .toolbar-lines input[type=text].span2{
+	width:10%;
+	clear:none;
+	display:inline;
+}
+
+input[type=text].advanced-filter, .toolbar-lines input[type=text].span2{
+	width:15%;
+}
+
+#manual_filters select {
+	width:15%;
+}
+
+.pagination {
+	margin:0;
+}
+
+.toolbar-rates .control-group0 {
+	display: inline;
+	float:left;
+	margin-right: 10px;
+}
+

@@ -181,8 +181,7 @@ class TableModel {
 				$max = $count;
 			}
 
-			$ret = '<div class="pagination pagination-right">'
-					. '<ul>';
+			$ret = '<ul class="pagination pagination-right">';
 			if ($current == 1) {
 				$ret .= '<li class="disabled"><a href="javascript:void(0);">First</a></li>'
 						. '<li class="disabled"><a href="javascript:void(0);">Prev</a></li>';
@@ -209,7 +208,7 @@ class TableModel {
 						. '<li><a href="?page=' . $count . '">Last</a></li>';
 			}
 
-			$ret .= '</ul></div>';
+			$ret .= '</ul>';
 
 			if ($print) {
 				print $ret;
