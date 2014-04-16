@@ -1,11 +1,5 @@
-.navbar .nav>li{
-	line-height: 67px;
-}
-.navbar-inverse .nav li.dropdown > .dropdown-toggle .caret {
-	margin-top:30px;
-}
 .component {
-	margin-top:30px;
+	/*margin-top:30px;*/
 }
 .navbar .nav {
 	float:right
@@ -21,7 +15,10 @@ div#listSize {
 	width: 100%;
 }
 .date {
-	margin-bottom:0;
+	width: 18%;
+	clear: both;
+	display: inline-table;
+	vertical-align: bottom;
 }
 
 .json-editor .value {
