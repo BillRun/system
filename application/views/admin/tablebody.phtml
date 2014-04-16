@@ -2,8 +2,11 @@
 
 $c = $this->offset;
 foreach ($this->data as $item) {
-//			$shani = $this->data->count();
-	print '<tr>';
+	if (strtolower($this->title) == 'log' && isset($item['start_process_time']) && !isset($item['process_time'])) :
+		print '<tr class="progress' . ((time() - $item['start_process_time']->sec) > 3600 ? ' alert-danger':'') . '">';
+	else:
+		print '<tr>';
+	endif;
 	print '<td data-title=\'#\'>'
 		. '<label class="checkbox">'
 		. '<a onclick="update_current(this);" href="#popupModal" data-type="update" data-toggle="modal" role="button" data-remote="">#' . ($c + 1) . '</a>&nbsp;'
