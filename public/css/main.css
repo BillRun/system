@@ -189,3 +189,10 @@ input[type=text].advanced-filter, .toolbar-lines input[type=text].span2{
 	margin-right: 10px;
 }
 
+.modal-body, .modal-content {
+	max-height:60%;
+}
+
+.form_protect .label-inverse{
+	background-color: darkblue;
+}
