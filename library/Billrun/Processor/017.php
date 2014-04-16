@@ -27,27 +27,14 @@ class Billrun_Processor_017 extends Billrun_Processor_Base_Ilds {
 
 		$this->data_structure = array(
 			'record_type' => 1,
-			'sequence_no' => 7,
 			'call_type' => 2,
-			'caller_phone_no' => 10,
-			'called_no' => 18,
-			'orig_country_desc' => 13,
-			'dest_country_desc' => 13,
-			'mobile_ind' => 1,
-			'start_dt' => 14,
+			'caller_phone_no' => 9,
+			'called_no' => 14,
+			'orig_country_desc' => 15,
 			'call_start_dt' => 14,
-			'call_end_dt' => 14,
-			'gross_call_dur' => 6,
-			'chrgbl_call_dur' => 6,
+			'chrgbl_call_dur' => 7,
 			'call_charge_sign' => 1,
-			'chrgbl_call_dur_round' => 6, /* same as chrgbl_call_dur */
-			'sign_before' => 1,
-			'charge_before' => 11,
-			'sign_after' => 1,
-			'charge_after' => 11,
-			'call_charge' => 11,
-			'collection_ind' => 2,
-			'record_status' => 2,
+			'call_charge' => 15,
 		);
 
 
