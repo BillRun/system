@@ -345,6 +345,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$called_number = Billrun_Util::msisdn($line['called_number']);
 		$query = array(
 			'called_number' => $called_number,
+			'out_circuit_group' => isset($line['out_circuit_group']) ? $line['out_circuit_group'] : '',
 			'date' => (int) date('Ymd', $line['urt']->sec),
 		);
 		
