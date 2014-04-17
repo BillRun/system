@@ -189,10 +189,23 @@ input[type=text].advanced-filter, .toolbar-lines input[type=text].span2{
 	margin-right: 10px;
 }
 
+#popupModal {
+	height:100%;
+}
+
 .modal-body, .modal-content {
 	max-height:60%;
 }
 
+.modal-dialog .modal-content #jsondiv{
+	padding:2em;
+	max-height:30em;
+	overflow:auto;
+}
 .form_protect .label-inverse{
 	background-color: darkblue;
+}
+
+.remove-filter , .add-filter {
+  color:black;
 }

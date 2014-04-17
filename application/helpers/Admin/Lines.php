@@ -40,10 +40,10 @@ class Admin_Lines {
 						</div>";
 
 		$output.="<a class=\"remove-filter\" href=\"#\">
-							<i class=\"icon-minus-sign\"></i>
+							<i class=\"glyphicon glyphicon-minus-sign\"></i>
 						</a>
 						<a class=\"add-filter\" href=\"#\">
-							<i class=\"icon-plus-sign\"></i>
+							<i class=\"glyphicon glyphicon-plus-sign\"></i>
 						</a>
 					</div>";
 		return $output;
