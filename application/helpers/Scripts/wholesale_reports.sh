@@ -27,7 +27,9 @@ else
 	exit 2
 fi
 
-output_dir="/var/www/billrun/files/csvs";
+script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+output_dir="${script_dir}/../../../files/csvs";
+
 if [ $4 ]; then
 	output_dir=$4;
 fi
@@ -44,23 +46,15 @@ nsn_grouping_in='{$group:{_id:{c:"$in_circuit_group_name",r:"$pzone"}, count:{$s
 out_str='FG'
 in_str='TG'
 
+#compatibility with 2.6 - aggregate is cursor
+mongo_main_version=`mongo --version | awk '//{split($4,a,"."); print a[1]"."a[2]}'`
+if [ $mongo_main_version == "2.6" ] ; then
+	nsn_end_code=${nsn_end_code/\.result/}
+	data_end_code=${data_end_code/\.result/}
+	sms_end_code=${sms_end_code/\.result/}
+fi
+
 case $report_name in
-
-#	"gt_out_call" )
-#	js_code=$js_code'db.lines.aggregate({$match:{urt:{$gte:from_date, $lte:to_date}, type:"nsn", record_type:"01"}},'$nsn_grouping_out')';
-#	js_code="$js_code$nsn_end_code" ;;
-
-#	"nr_out_call" )
-#	js_code=$js_code'db.lines.aggregate({$match:{urt:{$gte:from_date, $lte:to_date}, type:"nsn", record_type:"11", in_circuit_group_name:/^RCEL/ , out_circuit_group_name:/^(?!FCEL|VVOM)/ }},'$nsn_grouping_out')';
-#	js_code="$js_code$nsn_end_code" ;;
-
-#	"gt_in_call" )
-#	js_code=$js_code'db.lines.aggregate({$match:{urt:{$gte:from_date, $lte:to_date}, type:"nsn",  record_type:"11" , in_circuit_group_name:/^(?!FCEL|VVOM)/,out_circuit_group_name:/^(?=PCT|BICC|PCL|$)/}},'$nsn_grouping_in')';
-#	js_code="$js_code$nsn_end_code" ;;
-
-#	"nr_in_call" )
-#	js_code=$js_code'db.lines.aggregate({$match:{urt:{$gte:from_date, $lte:to_date}, type:"nsn", record_type:"11" , in_circuit_group_name:/^(?!FCEL|VVOM)/ ,out_circuit_group_name:/^RCEL/}},'$nsn_grouping_in')';
-#	js_code="$js_code$nsn_end_code" ;;
 
 	"gt_out_sms" )
 	js_code=$js_code'var dir="'$out_str'";var network = "all";db.lines.aggregate({$match:{urt:{$gte:from_date, $lte:to_date}, type:"smsc", "calling_msc" : /^0*97258/, arate:{$exists:1, $ne:false}}},{$group:{_id:"$called_msc", count:{$sum:1},usagev:{$sum:"$usagev"}}})';
@@ -98,7 +92,7 @@ esac
 
 
 if [[ -n "$js_code" ]]; then	
-	mongo 172.29.202.111/billing -ureading -pguprgri --quiet --eval "$js_code" > "$output_dir/$report_name""_""$year$month.csv" ;
+	mongo billing -ureading -pguprgri --quiet --eval "$js_code" > "$output_dir/$report_name""_""$year$month.csv" ;
 fi
 
 

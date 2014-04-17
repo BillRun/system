@@ -458,6 +458,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 
 	/**
 	 * method to backup the processed file
+	 * 
 	 * @param string $path  the path to backup the file to.
 	 * @param boolean $copy copy or rename (move) the file to backup
 	 * 
@@ -467,18 +468,19 @@ abstract class Billrun_Processor extends Billrun_Base {
 		if ($copy) {
 			$callback = "copy";
 		} else {
-			$callback = "rename";
+			$callback = "rename"; // php move
 		}
 		if (!file_exists($path)) {
 			@mkdir($path, 0777, true);
 		}
 		$target_path = $path . DIRECTORY_SEPARATOR . $this->filename;
+		$timestamp = filemtime($this->filePath); // this will be used after copy/move to preserve timestamp
 		$ret = @call_user_func_array($callback, array(
 					$this->filePath,
 					$target_path,
 		));
-		if ($callback == 'copy' && $this->preserve_timestamps) {
-			$timestamp = filemtime($this->filePath);
+
+		if ($this->preserve_timestamps) {
 			Billrun_Util::setFileModificationTime($target_path, $timestamp);
 		}
 		return $ret;

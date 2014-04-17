@@ -352,6 +352,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 					return false;
 				}
 				Billrun_Factory::log()->log('Concurrent write of stamp ' . $row['stamp'] . ' to balance. Update status: ' . print_r($ret, true) . 'Retrying...', Zend_Log::INFO);
+				sleep($this->pricing_retries);
 				return $this->updateSubscriberBalance($row, $billrun_key, $usage_type, $rate, $volume);
 			}
 			Billrun_Factory::log()->log("Line with stamp " . $row['stamp'] . " was written to balance " . $billrun_key . " for subscriber " . $row['sid'], Zend_Log::DEBUG);
