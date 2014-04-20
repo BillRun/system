@@ -85,12 +85,18 @@ class Billrun_Factory {
 	protected static $plan = array();
 
 	/**
-	 * Users
+	 * Users container
 	 * 
 	 * @var Mongodloid_Entity
 	 */
 	protected static $users = array();
 
+	/**
+	 * Authentication main dispatcher
+	 * 
+	 * @var Zend_Auth
+	 */
+	protected static $auth;
 	/**
 	 * method to retrieve the log instance
 	 * 
@@ -323,7 +329,10 @@ class Billrun_Factory {
 	}
 	
 	public static function auth() {
-		return Zend_Auth::getInstance()->setStorage(new Zend_Auth_Storage_Yaf());
+		if (!isset(self::$auth)) {
+			self::$auth = Zend_Auth::getInstance()->setStorage(new Zend_Auth_Storage_Yaf());
+		}
+		return self::$auth;
 	}
 
 }
