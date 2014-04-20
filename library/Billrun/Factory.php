@@ -85,6 +85,13 @@ class Billrun_Factory {
 	protected static $plan = array();
 
 	/**
+	 * Smser instance
+	 * 
+	 * @var Billrun Smser
+	 */
+	protected static $smser = null;
+	
+	/**
 	 * Users
 	 * 
 	 * @var Mongodloid_Entity
@@ -316,5 +323,25 @@ class Billrun_Factory {
 		}
 		return self::$users[$username];
 	}
+	
+	/**
+	 * method to retrieve the a mailer instance
+	 * 
+	 * @return Billrun_Sms
+	 * 
+	 * @todo Refactoring Billrun_Sms object
+	 */
+	static public function smser($options = array()) {
+		if (empty($options)) {
+			$options = Billrun_Factory::config()->getConfigValue('sms');
+		}
+		$stamp = Billrun_Util::generateArrayStamp($options);
+		if (!isset(self::$smser[$stamp])) {
+			self::$smser[$stamp] = new Billrun_Sms($options);
+		}
+
+		return self::$smser[$stamp];
+	}
+
 
 }
