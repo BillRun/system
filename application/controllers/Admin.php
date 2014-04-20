@@ -215,6 +215,9 @@ class AdminController extends Yaf_Controller_Abstract {
 	}
 
 	public function csvExportAction() {
+		if (!$this->allowed('read'))
+			return false;
+
 		$session = $this->getSession('lines');
 
 		if (!empty($session->query)) {
@@ -798,6 +801,8 @@ class AdminController extends Yaf_Controller_Abstract {
 	}
 
 	public function exportAction() {
+		if (!$this->allowed('read'))
+			return false;
 		$table = "rates";
 		$sort = $this->applySort($table);
 		$options = array(
@@ -829,5 +834,19 @@ class AdminController extends Yaf_Controller_Abstract {
 		header("Content-Disposition: attachment; filename=csv_export.csv");
 		die($output);
 	}
+	
+	public function wholesaleAction() {
+		if (!$this->authorized('reports'))
+			return false;
+		
+		$model = new WholesaleModel();
+		$viewData = array(
+			'data' => $model->getStats(),
+		);
+
+		$this->getView()->component = $this->renderView('wholesale', $viewData);
+	}
+	
+	
 
 }
