@@ -341,9 +341,6 @@ class AdminController extends Yaf_Controller_Abstract {
 		return $ret;
 	}
 
-	static public function isLogin() {
-		
-	}
 	/**
 	 * method to check if user is authorize to resource
 	 * 
