@@ -92,6 +92,13 @@ class Billrun_Factory {
 	protected static $smser = null;
 	
 	/**
+	 * Mailer instance
+	 * 
+	 * @var Billrun Mail
+	 */
+	protected static $mailer = null;
+	
+	/**
 	 * Users
 	 * 
 	 * @var Mongodloid_Entity
@@ -193,18 +200,20 @@ class Billrun_Factory {
 	 * @return Billrun_Db
 	 */
 	static public function mailer() {
-		try {
-			$mail = new Zend_Mail();
-			//TODO set common configuration.
-			$fromName = Billrun_Factory::config()->getConfigValue('mailer.from.address', 'no-reply');
-			$fromAddress = Billrun_Factory::config()->getConfigValue('mailer.from.name', 'Billrun');
-			$mail->setFrom($fromName, $fromAddress);
-			//$mail->setDefaultTransport($transport);
-			return $mail;
-		} catch (Exception $e) {
-			self::log("Can't instantiat mail object. Please check your settings", Zend_Log::ALERT);
-			return false;
+		if (!isset(self::$mailer)) {
+			try {
+				self::$mailer = new Zend_Mail();
+				//TODO set common configuration.
+				$fromName = Billrun_Factory::config()->getConfigValue('mailer.from.address', 'no-reply');
+				$fromAddress = Billrun_Factory::config()->getConfigValue('mailer.from.name', 'Billrun');
+				self::$mailer->setFrom($fromName, $fromAddress);
+				//$mail->setDefaultTransport($transport);
+			} catch (Exception $e) {
+				self::log("Can't instantiat mail object. Please check your settings", Zend_Log::ALERT);
+				return false;
+			}
 		}
+		return self::$mailer;
 	}
 
 	/**

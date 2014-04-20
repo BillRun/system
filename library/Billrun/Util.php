@@ -313,9 +313,10 @@ class Billrun_Util {
 			$mailer->addAttachment($attachment);
 		}
 		//set recipents
-		foreach ($recipients as $recipient) {
-			$mailer->addTo($recipient);
-		}
+//		foreach ($recipients as $recipient) {
+//			$mailer->addTo($recipient);
+//		}
+		$mailer->addTo($recipients);
 		//sen email
 		return $mailer->send();
 	}
