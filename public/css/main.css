@@ -212,3 +212,7 @@ input[type=text].advanced-filter, .toolbar-lines input[type=text].span2{
 li.logout {
 	margin-left:25px;
 }
+div.billrun-logo img {
+	height: 40px;
+	margin-top: 5px;
+}
