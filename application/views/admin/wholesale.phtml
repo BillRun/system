@@ -1,0 +1,50 @@
+<?php 
+// print_R($this->data); die;
+$sums = array();
+?>
+<div class="container component">
+	<h2>Wholesale</h2>
+	<h3>Incoming</h3>
+	<table border="1">
+		<?php
+		
+		$keys = array(
+			'dayofmonth',
+			'carrier',
+			'duration',
+		);
+		$vertical_keys = array('call');
+		//print table headers
+		echo "<tr>";
+		foreach ($keys as $k) {
+			echo "<th>" . $k . "</th>";
+		}
+		echo "</tr>";
+
+		foreach ($this->data['incoming_call'] as $item) {
+			if (!isset($sums[$item['dayofmonth']])) {
+				// print sum of previous dom
+				if (!empty($sums)) {
+					
+				}
+				$sums[$item['dayofmonth']] = $item['duration'];
+			} else {
+				$sums[$item['dayofmonth']] += $item['duration'];
+			}
+
+			echo "<tr>";
+			foreach ($keys as $k) :
+				echo "<td>" . (isset($item[$k]) ? $item[$k] : '&nbsp;') . "</td>";
+			endforeach;
+			echo "<tr>";
+//			$lastDom = $item['dayofmonth'];
+		} ?>
+	</table>
+	<h3>Outgoing</h3>
+	<hr>
+
+	<footer>
+		<p>&copy; S.D.O.C. LTD 2012-2014</p>
+	</footer>
+
+</div> <!-- /container -->
