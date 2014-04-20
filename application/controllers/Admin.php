@@ -292,6 +292,10 @@ class AdminController extends Yaf_Controller_Abstract {
 	}
 
 	public function loginAction() {
+		if (Billrun_Factory::user() !== FALSE) {
+			// if already logged-in redirect to admin homepage
+			$this->forceRedirect($this->baseUrl . '/admin/');
+		}
 		$params = array_merge($this->getRequest()->getParams(), $this->getRequest()->getPost());
 		$db = Billrun_Factory::db()->usersCollection()->getMongoCollection();
 
@@ -306,16 +310,17 @@ class AdminController extends Yaf_Controller_Abstract {
 			$adapter->setIdentity($username);
 			$adapter->setCredential($password);
 
-			$result = $this->auth()->authenticate($adapter);
+			$result = Billrun_Factory::auth()->authenticate($adapter);
 
 			if ($result->isValid()) {
 				$ip = $this->getRequest()->getServer('REMOTE_ADDR', 'Unknown IP');
 				Billrun_Factory::log()->log('User ' . $username . ' logged in to admin panel from IP: ' . $ip, Zend_log::INFO);
+				// TODO: stringify to url encoding (A-Z,a-z,0-9)
 				$ret_action = $this->getRequest()->get('ret_action');
-				if ($ret_action) {
-					$this->redirect($ret_action);
-					return false;
-				}
+//				if (empty($ret_action)) {
+//					$ret_action = 'admin';
+//				}
+				$this->forceRedirect($this->baseUrl . $ret_action);
 				return true;
 			}
 		}
@@ -336,10 +341,9 @@ class AdminController extends Yaf_Controller_Abstract {
 		return $ret;
 	}
 
-	static protected function auth() {
-		return Zend_Auth::getInstance()->setStorage(new Zend_Auth_Storage_Yaf());
+	static public function isLogin() {
+		
 	}
-
 	/**
 	 * method to check if user is authorize to resource
 	 * 
@@ -350,18 +354,12 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * @todo: refactoring to core
 	 */
 	static public function authorized($permission) {
-		$auth = self::auth();
-		if (!$auth->hasIdentity()) {
-			return false;
-		}
-
-		$user = Billrun_Factory::user($auth->getIdentity());
-		if (!$user->valid() || !$user->allowed($permission)) {
+		$user = Billrun_Factory::user();
+		if (!$user || !$user->valid() || !$user->allowed($permission)) {
 			return false;
 		}
 		
 		return true;
-
 	}
 	
 	/**
@@ -375,7 +373,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	 */
 	protected function allowed($permission) {
 		$action = $this->getRequest()->getActionName();
-		$auth = $this->auth();
+		$auth = Billrun_Factory::auth();
 		if ($action != 'login') {
 			if (!$auth->hasIdentity()) {
 				$this->forward('login', array('ret_action' => $action));
@@ -501,7 +499,14 @@ class AdminController extends Yaf_Controller_Abstract {
 		$model = $this->getModel('config');
 		$data = $this->getRequest()->getRequest();
 		$model->setConfig($data);
-		header('Location: /admin/config');
+		$this->forceRedirect('/admin/config');
+	}
+	
+	protected function forceRedirect($uri) {
+		if (empty($uri)) {
+			$uri = '/';
+		}
+		header('Location: ' . $uri);
 		exit();
 	}
 
@@ -783,6 +788,16 @@ class AdminController extends Yaf_Controller_Abstract {
 			$query[$keys[$i]][$operators[$i]] = $values[$i];
 		}
 		return $query;
+	}
+	
+	public function logoutAction() {
+		Billrun_Factory::auth()->clearIdentity();
+		$session = Yaf_Session::getInstance();
+		foreach($session as $k => $v) {
+			unset($session[$k]);
+		}
+		
+		$this->forceRedirect('/admin/login');
 	}
 
 	public function exportAction() {

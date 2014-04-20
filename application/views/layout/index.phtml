@@ -82,6 +82,15 @@
 					</ul>
 				</li>
 				<?php endif; ?>
+				<?php if (Billrun_Factory::user() === FALSE) : ?>
+					<li class="logout">
+						<a href="<?php echo $this->baseUrl; ?>/admin/login">Login</a>
+					</li>
+				<?php else: ?>
+					<li class="logout">
+						<a href="<?php echo $this->baseUrl; ?>/admin/logout">Logout</a>
+					</li>
+				<?php endif; ?>
 			</ul>
         </div><!--/.navbar-collapse -->
       </div>

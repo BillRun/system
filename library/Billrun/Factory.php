@@ -308,13 +308,22 @@ class Billrun_Factory {
 	 */
 	public static function user($username = null) {
 		if (is_null($username)) {
-			$username = Zend_Auth::getInstance()->setStorage(new Zend_Auth_Storage_Yaf())->getIdentity();
+			$username = Billrun_Factory::auth()->getIdentity();
 		}
+		
+		if (empty($username)) {
+			return FALSE;
+		}
+		
 		if (!isset(self::$users[$username])) {
 			$entity = Billrun_Factory::db()->usersCollection()->query(array('username' => $username))->cursor()->current();
 			self::$users[$username] = new Billrun_User($entity);
 		}
 		return self::$users[$username];
+	}
+	
+	public static function auth() {
+		return Zend_Auth::getInstance()->setStorage(new Zend_Auth_Storage_Yaf());
 	}
 
 }

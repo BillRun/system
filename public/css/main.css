@@ -209,3 +209,6 @@ input[type=text].advanced-filter, .toolbar-lines input[type=text].span2{
 .remove-filter , .add-filter {
   color:black;
 }
+li.logout {
+	margin-left:25px;
+}
