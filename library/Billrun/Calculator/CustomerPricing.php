@@ -351,7 +351,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 					Billrun_Factory::log()->log('Too many pricing retries for line ' . $row['stamp'] . '. Update status: ' . print_r($ret, true), Zend_Log::ALERT);
 					return false;
 				}
-				Billrun_Factory::log()->log('Concurrent write of stamp ' . $row['stamp'] . ' to balance. Update status: ' . print_r($ret, true) . 'Retrying...', Zend_Log::INFO);
+				Billrun_Factory::log()->log('Concurrent write of sid : '.$row['sid'].' line stamp : ' . $row['stamp'] . ' to balance. Update status: ' . print_r($ret, true) . 'Retrying...', Zend_Log::INFO);
 				sleep($this->pricing_retries);
 				return $this->updateSubscriberBalance($row, $billrun_key, $usage_type, $rate, $volume);
 			}
