@@ -602,7 +602,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	public function getModel($collection_name, $options = array()) {
 		$session = $this->getSession($collection_name);
 		$options['page'] = $this->getSetVar($session, "page", "page", 1);
-		$options['size'] = $this->getSetVar($session, "listSize", "size", 1000);
+		$options['size'] = $this->getSetVar($session, "listSize", "size", Billrun_Factory::config()->getConfigValue('admin_panel.lines.limit', 100));
 		$options['extra_columns'] = $this->getSetVar($session, "extra_columns", "extra_columns", array());
 
 		if (is_null($this->model)) {
