@@ -411,11 +411,11 @@ class Billrun_Util {
 		
 		settype($phoneNumber, 'string');
 		
-		$replace = array("(0)", "-", "+", "(", ")", " ");
-		$phoneNumber = ltrim(str_replace($replace, "", $phoneNumber), "0");
+		$replace = array("(0)", "-", "+", "(", ")", " ", "#", "*");
+		$cleanNumber = ltrim(str_replace($replace, "", $phoneNumber), "0");
 		
 		//CCNDCSN - First part USA; second non-USA
-		if (preg_match("/^(1[2-9]{1}[0-9]{2}|[2-9]{1}[0-9]{1,2}[1-9]{1}[0-9]{0,2})[0-9]{7}$/", $phoneNumber)) {
+		if (preg_match("/^(1[2-9]{1}[0-9]{2}|[2-9]{1}[0-9]{1,2}[1-9]{1}[0-9]{0,2})[0-9]{7}$/", $cleanNumber)) {
 			return $phoneNumber;
 		}
 
@@ -423,7 +423,7 @@ class Billrun_Util {
 			$defaultPrefix = Billrun_Factory::config()->getConfigValue('billrun.defaultCountryPrefix', 972);
 		}
 
-		return $defaultPrefix . $phoneNumber;
+		return $defaultPrefix . ltrim($phoneNumber, "0");
 	}
 
 
