@@ -182,7 +182,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	 */
 	public function writeLine($line, $dataKey) {
 		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteLine', array('data' => $line, 'calculator' => $this));
-		$line->save(Billrun_Factory::db()->linesCollection());
+		$line->save(Billrun_Factory::db()->linesCollection(),1);
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteLine', array('data' => $line, 'calculator' => $this));
 		if (!isset($line['usagev']) || $line['usagev'] === 0) {
 			$this->removeLineFromQueue($line);
@@ -240,7 +240,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		}
 		$query = array_merge($query, array('stamp' => array('$in' => $stamps), 'hash' => $this->workHash, 'calc_time' => $this->signedMicrotime)); //array('stamp' => $item['stamp']);
 		$update = array_merge($update, array('$set' => array('calc_name' => $calculator_tag, 'calc_time' => false)));
-		$this->queue_coll->update($query, $update, array('multiple' => true));
+		$this->queue_coll->update($query, $update, array('multiple' => true,'w'=>1));
 	}
 
 	/**
