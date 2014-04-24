@@ -323,6 +323,69 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 
 		return FALSE;
 	}
+	/**
+	 * TODO
+	 * Save lines to the fraud DB lines collection.
+	 * @param type $lines
+	 */
+	public function insertToFraudLines($lines) {
+		try {
+			Billrun_Factory::log()->log('Fraud plugin - Inserting '.count($lines).' Lines to fraud lines collection', Zend_Log::INFO);
+			$fraud_connection = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('fraud.db'))->linesCollection();
+			foreach($lines as $line) {
+	
+				$line['unified_record_time'] = $line['urt'];
+				if(isset($line['aid'])) { $line['account_id'] = $line['aid']; }
+				if(isset($line['sid'])) { $line['subscriber_id'] = $line['sid']; }
+				
+				$fraud_connection->insert(new Mongodloid_Entity($line), array('w' => 0));
+			}
+		} catch (Exception $e) {			
+			Billrun_Factory::log()->log("Fraud plugin - Failed to insert line with the stamp: " . $line['stamp'] . " to the fraud lines collection, got Exception : " . $e->getCode() . " : " . $e->getMessage(), Zend_Log::ERR);
+		}
+	}
+	
+	/**
+	 * TODO document
+	 * detect roaming ggsn lines
+	 * @param type $lines
+	 */
+	protected function insertRoamingGgsn($lines) {
+		$roamingLines = array();
+		foreach ($lines as $line) {			
+			if(!preg_match('/^(?=62\.90\.|37\.26\.)/', $line['sgsn_address'])) {
+				$roamingLines[] = $line;				
+			}
+		}
+		if(!empty($roamingLines)) {
+			$this->insertToFraudLines($roamingLines);
+		}
+	}
+
+	/**
+	 * TODO
+	 * @param \Billrun_Processor $processor
+	 * @return type
+	 */
+	public function afterProcessorStore( $processor ) {
+		if($processor->getType() != "ggsn") { return; }
+		Billrun_Factory::log('Plugin fraud beforeProcessorStore', Zend_Log::INFO);
+		$runAsync = Billrun_Factory::config()->getConfigValue('fraud.runAsync', 1);
+		if (function_exists("pcntl_fork") && $runAsync && -1 !== ($pid = pcntl_fork())) {
+			if ($pid == 0) {
+				Billrun_Factory::log('Plugin fraud::afterProcessorStore run it in async mode', Zend_Log::INFO);
+				$this->insertRoamingGgsn($processor->getData()['data']);
+				Billrun_Factory::log('Plugin fraud::afterProcessorStore async mode done.', Zend_Log::INFO);
+				exit(); // exit from child process after finish
+			}
+			
+			return;
+		} else {
+			Billrun_Factory::log('Plugin fraud::afterProcessorStore runing in sync mode', Zend_Log::INFO);			
+			$this->insertRoamingGgsn($processor->getData()['data']);
+		}
+		Billrun_Factory::log('Plugin fraud afterProcessorStore was ended', Zend_Log::INFO);
+	}
 	
 	public function afterCalculatorUpdateRow($line, $calculator) {
 		
