@@ -14,7 +14,6 @@
  * @since    0.9
  */
 declare(ticks = 100);
-global $openProcesses;
 
 class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 
@@ -30,11 +29,15 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @var array rows that inserted a transaction to balances
 	 */
 	protected $tx_saved_rows = array();
+	
+	/**
+	 *
+	 * @var int active child processes counter
+	 */
+	protected $childProcesses = 0;
 
 	public function __construct() {
-		pcntl_signal(SIGCHLD, "childFinished");
-		global $openProcesses;
-		$openProcesses = 0;
+		pcntl_signal(SIGCHLD, array($this, 'childFinished'));
 	}
 
 	public function beforeProcessorStore($processor) {
@@ -234,16 +237,15 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @return void
 	 */
 	public function afterAggregateAccount($accid, $account, Billrun_Billrun $account_billrun, $lines, Billrun_Aggregator $aggregator) {
-		global $openProcesses;
 		$forkXmlGeneration = Billrun_Factory::config()->getConfigValue('calcCpu.forkXmlGeneration', 0);
 		$forkXmlLimit = Billrun_Factory::config()->getConfigValue('calcCpu.forkXmlLimit', 100);
-		if (function_exists("pcntl_fork") && $forkXmlGeneration && $openProcesses <= $forkXmlLimit && -1 !== ($pid = pcntl_fork())) {
+		if (function_exists("pcntl_fork") && $forkXmlGeneration && $this->childProcesses <= $forkXmlLimit && -1 !== ($pid = pcntl_fork())) {
 			if ($pid == 0) {
 				Billrun_Factory::log('Plugin calc cpu afterAggregateAccount run it in async mode', Zend_Log::INFO);
 				$this->makeXml($account_billrun, $lines);
 				exit(0); // exit from child process after finish creating xml; continue on parent
 			}
-			++$openProcesses;
+			$this->childProcesses++;
 			Billrun_Factory::log('Plugin calc cpu afterAggregateAccount forked the xml generation. Continue to next account', Zend_Log::INFO);
 			return;
 		}
@@ -261,10 +263,9 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$generator->createXmlInvoice($account_billrun->getRawData(), $lines);
 	}
 
-}
+	public function childFinished($signo) {
+		$this->childProcesses--;
+		pcntl_wait($status, WNOHANG); // to release the zombie process
+	}
 
-function childFinished($signo) {
-	global $openProcesses;
-	--$openProcesses;
-	pcntl_wait($status, WNOHANG); // to release the zombie process
 }
