@@ -13,7 +13,10 @@
  * @subpackage Plugins
  * @since    0.9
  */
-declare(ticks = 1);
+
+if (function_exists('pcntl_signal')) {
+	declare(ticks = 1);
+}
 
 class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 
@@ -37,7 +40,9 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 	protected $childProcesses = 0;
 
 	public function __construct() {
-		pcntl_signal(SIGCHLD, array($this, 'childFinished'));
+		if (function_exists('pcntl_signal')) {
+			pcntl_signal(SIGCHLD, array($this, 'childFinished'));
+		}
 	}
 
 	public function beforeProcessorStore($processor) {
