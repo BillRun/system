@@ -330,7 +330,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 */
 	public function insertToFraudLines($lines) {
 		try {
-			Billrun_Factory::log()->log('Fraud plugin - Inserting '.count($lines).' Lines to fraud lines collection', Zend_Log::DEBUG);
+			Billrun_Factory::log()->log('Fraud plugin - Inserting '.count($lines).' Lines to fraud lines collection', Zend_Log::INFO);
 			$fraud_connection = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('fraud.db'))->linesCollection();
 			foreach($lines as $line) {
 	
@@ -367,27 +367,24 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @param \Billrun_Processor $processor
 	 * @return type
 	 */
-	public function beforeProcessorStore(\Billrun_Processor $processor) {
-		Billrun_Factory::log('Plugin fraud beforeProcessorStore', Zend_Log::DEBUG);
+	public function afterProcessorStore( $processor ) {
+		if($processor->getType() != "ggsn") { return; }
+		Billrun_Factory::log('Plugin fraud beforeProcessorStore', Zend_Log::INFO);
 		$runAsync = Billrun_Factory::config()->getConfigValue('fraud.runAsync', 1);
 		if (function_exists("pcntl_fork") && $runAsync && -1 !== ($pid = pcntl_fork())) {
 			if ($pid == 0) {
-				Billrun_Factory::log('Plugin fraud::beforeProcessorStore run it in async mode', Zend_Log::INFO);
-				if($processor->getType() == "ggsn") {
-					$this->insertRoamingGgsn($processor->getData()['data']);
-				}
-				Billrun_Factory::log('Plugin fraud::beforeProcessorStore async mode done.', Zend_Log::INFO);
-				exit(); // exit from child process after finish creating xml; continue on parent
+				Billrun_Factory::log('Plugin fraud::afterProcessorStore run it in async mode', Zend_Log::INFO);
+				$this->insertRoamingGgsn($processor->getData()['data']);
+				Billrun_Factory::log('Plugin fraud::afterProcessorStore async mode done.', Zend_Log::INFO);
+				exit(); // exit from child process after finish
 			}
 			
 			return;
 		} else {
-			Billrun_Factory::log('Plugin frauD::beforeProcessorStore runing in sync mode', Zend_Log::INFO);			
-			if($processor->getType() == "ggsn") {
-				$this->insertRoamingGgsn($processor->getData()['data']);
-			}
+			Billrun_Factory::log('Plugin fraud::afterProcessorStore runing in sync mode', Zend_Log::INFO);			
+			$this->insertRoamingGgsn($processor->getData()['data']);
 		}
-		
+		Billrun_Factory::log('Plugin fraud afterProcessorStore was ended', Zend_Log::INFO);
 	}
 	
 	public function afterCalculatorUpdateRow($line, $calculator) {
