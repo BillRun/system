@@ -954,7 +954,7 @@ EOI;
 				for ($i = 1; $i < count($stamps); $i++) {
 					$lines[$stamps[0]]['usagev']+=$lines[$stamps[$i]]['usagev'];
 					$lines[$stamps[0]]['aprice']+=$lines[$stamps[$i]]['aprice'];
-					$plan_flag = isset($lines[$stamps[$i]]['over_plan']) ? 'over_plan' : isset($lines[$stamps[$i]]['out_plan']) ? 'out_plan' : false;
+					$plan_flag = isset($lines[$stamps[$i]]['over_plan']) ? 'over_plan' : (isset($lines[$stamps[$i]]['out_plan']) ? 'out_plan' : false);
 					if ($plan_flag) {
 						if (isset($lines[$stamps[0]][$plan_flag])) {
 							$lines[$stamps[0]][$plan_flag] += $lines[$stamps[$i]][$plan_flag];
