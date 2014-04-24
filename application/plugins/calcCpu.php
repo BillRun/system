@@ -13,7 +13,7 @@
  * @subpackage Plugins
  * @since    0.9
  */
-declare(ticks = 100);
+declare(ticks = 1);
 
 class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 
