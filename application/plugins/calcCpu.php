@@ -269,8 +269,10 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 
 	public function childFinished($signo) {
-		$this->childProcesses--;
-		pcntl_wait($status, WNOHANG); // to release the zombie process
+		if (function_exists('pcntl_wait')) {
+			$this->childProcesses--;
+			pcntl_wait($status, WNOHANG); // to release the zombie process
+		}
 	}
 
 }
