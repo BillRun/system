@@ -21,6 +21,10 @@ class CliController extends Yaf_Controller_Abstract {
 	protected $options;
 
 	public function init() {
+		$forceUser = Billrun_Factory::config()->getConfigValue('cliForceUser', '');
+		if (!empty($forceUser) && ($systemExecuterUser = trim(shell_exec('whoami'))) != $forceUser) {
+			Billrun_Factory::log('Cannot run cli command with the system user ' . $systemExecuterUser . '. Please use ' . $forceUser . ' for CLI operations');
+		}
 		$this->setActions();
 		$this->setOptions();
 		// this will verify db config will load into main config
