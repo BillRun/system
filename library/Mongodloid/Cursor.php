@@ -85,6 +85,36 @@ class Mongodloid_Cursor implements Iterator, Countable {
 		return $this;
 	}
 
+	/**
+	 * method to get read preference of cursor connection
+	 * 
+	 * @param boolean $includeTage if to include tags in the return value, else return only the read preference
+	 * 
+	 * @return mixed array in case of include tage else string (the string would be the rp constant)
+	 */
+	public function getReadPreference($includeTage = false) {
+		$ret = $this->_cursor->setReadPreference();
+		if ($includeTage) {
+			return $ret;
+		}
+		
+		switch ($ret['type']) {
+			case MongoClient::RP_PRIMARY:
+				return 'RP_PRIMARY';
+			case MongoClient::RP_PRIMARY_PREFERRED:
+				return 'RP_PRIMARY_PREFERRED';
+			case MongoClient::RP_SECONDARY:
+				return 'RP_SECONDARY';
+			case MongoClient::RP_SECONDARY_PREFERRED:
+				return 'RP_SECONDARY_PREFERRED';
+			case MongoClient::RP_NEAREST:
+				return 'RP_NEAREST';
+			default:
+				return MongoClient::RP_PRIMARY_PREFERRED;
+		}
+
+	}
+
 	public function timeout($ms) {
 		$this->_cursor->timeout($ms);
 		return $this;
