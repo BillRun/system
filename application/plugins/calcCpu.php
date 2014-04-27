@@ -13,11 +13,6 @@
  * @subpackage Plugins
  * @since    0.9
  */
-
-if (function_exists('pcntl_signal')) {
-	declare(ticks = 1);
-}
-
 class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 
 	/**
@@ -32,18 +27,12 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @var array rows that inserted a transaction to balances
 	 */
 	protected $tx_saved_rows = array();
-	
+
 	/**
 	 *
 	 * @var int active child processes counter
 	 */
 	protected $childProcesses = 0;
-
-	public function __construct() {
-		if (function_exists('pcntl_signal')) {
-			pcntl_signal(SIGCHLD, array($this, 'childFinished'));
-		}
-	}
 
 	public function beforeProcessorStore($processor) {
 		Billrun_Factory::log('Plugin calc cpu triggered before processor store', Zend_Log::INFO);
@@ -244,15 +233,22 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 	public function afterAggregateAccount($accid, $account, Billrun_Billrun $account_billrun, $lines, Billrun_Aggregator $aggregator) {
 		$forkXmlGeneration = Billrun_Factory::config()->getConfigValue('calcCpu.forkXmlGeneration', 0);
 		$forkXmlLimit = Billrun_Factory::config()->getConfigValue('calcCpu.forkXmlLimit', 100);
-		if (function_exists("pcntl_fork") && $forkXmlGeneration && $this->childProcesses <= $forkXmlLimit && -1 !== ($pid = pcntl_fork())) {
-			if ($pid == 0) {
-				Billrun_Factory::log('Plugin calc cpu afterAggregateAccount run it in async mode', Zend_Log::INFO);
-				$this->makeXml($account_billrun, $lines);
-				exit(0); // exit from child process after finish creating xml; continue on parent
+		if (function_exists("pcntl_fork") && $forkXmlGeneration) {
+			if ($this->childProcesses > $forkXmlLimit) {
+				$this->releaseZombies();
 			}
-			$this->childProcesses++;
-			Billrun_Factory::log('Plugin calc cpu afterAggregateAccount forked the xml generation. Continue to next account', Zend_Log::INFO);
-			return;
+			if ($this->childProcesses <= $forkXmlLimit) {
+				if (-1 !== ($pid = pcntl_fork())) {
+					if ($pid == 0) {
+						Billrun_Factory::log('Plugin calc cpu afterAggregateAccount run it in async mode', Zend_Log::INFO);
+						$this->makeXml($account_billrun, $lines);
+						exit(0); // exit from child process after finish creating xml; continue on parent
+					}
+					$this->childProcesses++;
+					Billrun_Factory::log('Plugin calc cpu afterAggregateAccount forked the xml generation. Continue to next account', Zend_Log::INFO);
+					return;
+				}
+			}
 		}
 		Billrun_Factory::log('Plugin calc cpu afterAggregateAccount run it in sync mode', Zend_Log::INFO);
 		$this->makeXml($account_billrun, $lines);
@@ -268,10 +264,11 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$generator->createXmlInvoice($account_billrun->getRawData(), $lines);
 	}
 
-	public function childFinished($signo) {
+	protected function releaseZombies() {
 		if (function_exists('pcntl_wait')) {
-			$this->childProcesses--;
-			pcntl_wait($status, WNOHANG); // to release the zombie process
+			while (pcntl_wait($status, WNOHANG) > 0) {
+				$this->childProcesses--;
+			}
 		}
 	}
 
