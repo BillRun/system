@@ -14,48 +14,15 @@
  */
 class Billrun_Connection extends Mongodloid_Connection {
 
-	public function getDB($db, $user = false , $pass = false) {
-		if (!isset($this->_dbs[$db]) || !$this->_dbs[$db]) {
-			$this->forceConnect();
-			$newDb = $this->_connection->selectDB($db);
-			if($user) {
-				$newDb->authenticate($user,$pass);
-			}
-			$this->_dbs[$db] = new Billrun_DB($newDb, $this);
-		}
-
-		return $this->_dbs[$db];
-	}
-
-	public static function getInstance($server = '', $port = '', $persistent = false) {
-		static $instances;
-
-		if (!$instances) {
-			$instances = array();
-		}
-
-		if (is_bool($server)) {
-			$persistent = $server;
-			$server = $port = '';
-		}
-
-		if (is_bool($port)) {
-			$persistent = $port;
-			$port = '';
-		}
-
-		if (is_numeric($port) && $port) {
-			$server .= ':' . $port;
-		}
-
-		$persistent = (bool) $persistent;
-		$server = (string) $server;
-
-		if (!isset($instances[$server]) || !$instances[$server]) {
-			$instances[$server] = new Billrun_Connection($server, $persistent);
-		}
-
-		return $instances[$server];
+	/**
+	 * create instance of the connection db
+	 * 
+	 * @param MongoDB $newDb The PHP Driver MongoDb instance
+	 * 
+	 * @return Mongodloid_Db instance
+	 */
+	protected function createInstance($newDb) {
+		return new Billrun_Db($newDb, $this);
 	}
 
 }

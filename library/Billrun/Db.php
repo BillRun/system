@@ -40,10 +40,18 @@ class Billrun_Db extends Mongodloid_Db {
 	 * 
 	 * @return Billrun_Db instance of the Database
 	 */
-	static public function getInstance() {
-		$config = Billrun_Factory::config();
-		$conn = Billrun_Connection::getInstance($config->db->host, $config->db->port);
-		return $conn->getDB($config->db->name, $config->db->user, $config->db->password);
+	static public function getInstance($config) {
+		if (isset($config['port'])) {
+			$conn = Billrun_Connection::getInstance($config['host'], $config['port']);
+		} else {
+			$conn = Billrun_Connection::getInstance($config['host']);
+		}
+
+		if (!isset($config['options'])) {
+			return $conn->getDB($config['name'], $config['user'], $config['password']);
+		}
+
+		return $conn->getDB($config['name'], $config['user'], $config['password'], $config['options']);
 	}
 
 	/**
@@ -64,8 +72,9 @@ class Billrun_Db extends Mongodloid_Db {
 	/**
 	 * Magic method to receive collection instance
 	 * 
-	 * @param string $name name of the function call; convention is getCollnameCollection
-	 * @param array $arguments not used for getCollnameCollection
+	 * @param string $name name of the function call; convention is collectionnameCollection
+	 * @param array $arguments not used for collectionnameCollection (forward compatability)
+	 * 
 	 * @return mixed if collection exists return instance of Mongodloid_Collection, else false
 	 */
 	public function __call($name, $arguments) {
