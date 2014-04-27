@@ -177,10 +177,12 @@ class Mongodloid_Collection {
 	 * @param array $tags An array of zero or more tag sets, where each tag set is itself an array of criteria used to match tags on replica set members
 	 * 
 	 * @return boolean TRUE on success, or FALSE otherwise.
-	 * @deprecated since version 2.1
 	 */
 	public function setReadPreference($readPreference, array $tags = array()) {
-		Billrun_Factory::log('setReadPreference method of collection class is not used anymore', Zend_Log::ALERT);
+		if (defined('MongoClient::' . $readPreference)) {
+			return $this->_collection->setReadPreference(constant('MongoClient::' . $readPreference), $tags);
+		}
+		return FALSE;
 	}
 
 	/**
