@@ -151,6 +151,7 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Pl
 				'$or' => array(
 					array('download' => array('$gte' => $limit)),
 					array('upload' => array('$gte' => $limit)),
+					array('usagev' => array('$gte' => $limit)),
 				),
 			),
 		);
@@ -158,7 +159,7 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Pl
 		$alerts = $linesCol->aggregate(array_merge($aggregateQuery, array($having)));
 		foreach ($alerts as $alert) {
 			$alert['units'] = 'KB';
-			$alert['value'] = ($alert['download'] > $limit ? $alert['download'] : $alert['upload']);
+			$alert['value'] = ($alert['usagev'] > $limit ? $alert['usagev'] : ($alert['download'] > $limit ? $alert['download'] : $alert['upload']));
 			$alert['threshold'] = $limit;
 			$alert['event_type'] = 'GGSN_HOURLY_DATA';
 			$exceeders[] = $alert;
@@ -179,13 +180,14 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Pl
 				'$or' => array(
 					array('download' => array('$gte' => $limit)),
 					array('upload' => array('$gte' => $limit)),
+					array('usagev' => array('$gte' => $limit)),
 				),
 			),
 		);
 		$dataAlerts = $lines->aggregate(array_merge($aggregateQuery, array($dataThrs)));
 		foreach ($dataAlerts as &$alert) {
 			$alert['units'] = 'KB';
-			$alert['value'] = ($alert['download'] > $limit ? $alert['download'] : $alert['upload']);
+			$alert['value'] = ($alert['usagev'] > $limit ? $alert['usagev'] : ($alert['download'] > $limit ? $alert['download'] : $alert['upload']));
 			$alert['threshold'] = $limit;
 			$alert['event_type'] = 'GGSN_DATA';
 		}
@@ -255,6 +257,7 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Pl
 					"_id" => array('imsi' => '$served_imsi', 'msisdn' => '$served_msisdn'),
 					"download" => array('$sum' => '$fbc_downlink_volume'),
 					"upload" => array('$sum' => '$fbc_uplink_volume'),
+					"usagev" => array('$sum' => '$usagev'),
 					"duration" => array('$sum' => '$duration'),
 					'lines_stamps' => array('$addToSet' => '$stamp'),
 				),
@@ -264,6 +267,7 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Pl
 					'_id' => 0,
 					'download' => array('$multiply' => array('$download', 0.001)),
 					'upload' => array('$multiply' => array('$upload', 0.001)),
+					'usagev' => array('$multiply' => array('$usagev', 0.001)),
 					'duration' => 1,
 					'imsi' => '$_id.imsi',
 					'msisdn' => array('$substr' => array('$_id.msisdn', 5, 10)),
