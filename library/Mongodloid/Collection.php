@@ -180,7 +180,7 @@ class Mongodloid_Collection {
 	 */
 	public function setReadPreference($readPreference, array $tags = array()) {
 		if (defined('MongoClient::' . $readPreference)) {
-			return $this->_connection->setReadPreference(constant('MongoClient::' . $readPreference), $tags);
+			return $this->_collection->setReadPreference(constant('MongoClient::' . $readPreference), $tags);
 		}
 		return FALSE;
 	}

@@ -23,7 +23,9 @@ class CliController extends Yaf_Controller_Abstract {
 	public function init() {
 		$forceUser = Billrun_Factory::config()->getConfigValue('cliForceUser', '');
 		if (!empty($forceUser) && ($systemExecuterUser = trim(shell_exec('whoami'))) != $forceUser) {
-			Billrun_Factory::log('Cannot run cli command with the system user ' . $systemExecuterUser . '. Please use ' . $forceUser . ' for CLI operations');
+			Billrun_Log::getInstance()->addWriter(new Zend_Log_Writer_Stream('php://stdout'));
+			$this->addOutput('Cannot run cli command with the system user ' . $systemExecuterUser . '. Please use ' . $forceUser . ' for CLI operations');
+			exit();
 		}
 		$this->setActions();
 		$this->setOptions();
@@ -99,13 +101,13 @@ class CliController extends Yaf_Controller_Abstract {
 
 
 		//Go through all actions and run the first one that was selected
-		foreach (array_keys($this->actions) as $val) {
-			if (isset($this->options->{$val})) {
-				$this->addOutput(ucfirst($val) . "...");
-				$this->forward($val);
+			foreach (array_keys($this->actions) as $val) {
+				if (isset($this->options->{$val})) {
+					$this->addOutput(ucfirst($val) . "...");
+					$this->forward($val);
+				}
 			}
 		}
-	}
 
 	/**
 	 * method to add output to the stream and log
