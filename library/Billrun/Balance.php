@@ -134,11 +134,11 @@ class Billrun_Balance implements ArrayAccess {
 		Billrun_Factory::log()->log("Create empty balance " . $billrun_key . " if not exists for subscriber " . $sid, Zend_Log::DEBUG);
 		$output = $balances_coll->findAndModify($query, $update, array(), $options, true);
 		
-		if ($output['ok']) {
+		if ($output['ok'] && isset($output['value']) && $output['value']) {
 			Billrun_Factory::log('Added balance ' . $billrun_key . ' to subscriber ' . $sid, Zend_Log::INFO);
 			$ret = true;
 		} else {
-			Billrun_Factory::log('Error creating balance ' . $billrun_key . ' for subscriber ' . $sid . '. Code: ' . $output['code'] . '. Message: ' . $output['errmsg'], Zend_Log::ALERT);
+			Billrun_Factory::log('Error creating balance ' . $billrun_key . ' for subscriber ' . $sid . '. Output was: ' . print_r($output->getRawData(), true), Zend_Log::ALERT);
 		}
 
 		return $ret;
