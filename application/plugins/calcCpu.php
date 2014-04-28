@@ -235,7 +235,7 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$forkXmlLimit = Billrun_Factory::config()->getConfigValue('calcCpu.forkXmlLimit', 100);
 		if (function_exists("pcntl_fork") && $forkXmlGeneration) {
 			if ($this->childProcesses > $forkXmlLimit) {
-				$this->releaseZombies();
+				$this->releaseZombies($forkXmlLimit);
 			}
 			if ($this->childProcesses <= $forkXmlLimit) {
 				if (-1 !== ($pid = pcntl_fork())) {
@@ -266,9 +266,9 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$generator->createXmlInvoice($account_billrun->getRawData(), $lines);
 	}
 
-	protected function releaseZombies() {
+	protected function releaseZombies($waitNum) {
 		if (function_exists('pcntl_wait')) {
-			while (pcntl_wait($status, WNOHANG) > 0) {
+			while ($waitNum-- && pcntl_wait($status, WNOHANG) > 0) {
 				$this->childProcesses--;
 			}
 		}
