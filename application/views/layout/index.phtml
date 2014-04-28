@@ -24,7 +24,7 @@ if (APPLICATION_ENV === 'prod') {
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
 		<link href="http://www.billrun.net/templates/meet_gavern/images/favicon.ico" rel="shortcut icon" type="image/vnd.microsoft.icon" />
-        <link rel="stylesheet" href="<?php echo $this->baseUrl; ?>/css/bootstrap.min.css">
+        <link rel="stylesheet" href="<?php echo $this->baseUrl; ?>/css/bootstrap.min.css<?php echo '?' . $commit;?>">
         <style>
             body {
                 padding-top: 50px;
