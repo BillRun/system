@@ -51,7 +51,7 @@
 			}
 
 			if (strtolower($this->title) == 'lines') :
-				echo "<div><a href=\"javascript:void(0)\" class=\"advanced-options\" href=\"#\">Advanced options <i class=\"" . (Admin_Lines::isManualFilter($this->session) ? "icon-chevron-up" : "icon-chevron-down") . "\"></i></a></div>
+				echo "<div><a href=\"javascript:void(0)\" class=\"advanced-options\">Advanced options <i class=\"" . (Admin_Lines::isManualFilter($this->session) ? "icon-chevron-up" : "icon-chevron-down") . "\"></i></a></div>
                             <div id = \"manual_filters\"" . (Admin_Lines::isManualFilter($this->session) ? "" : " style=\"display:none;\"") . ">";
 				if (Admin_Lines::isManualFilter($this->session)) {
 					for ($i = 0; $i < count($this->session->manual_key); $i++) {
