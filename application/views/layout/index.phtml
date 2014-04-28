@@ -1,4 +1,17 @@
-<!DOCTYPE html>
+<?php
+
+if (APPLICATION_ENV === 'prod') {
+	$branch = 'production';
+	if (file_exists(APPLICATION_PATH . '/.git/refs/heads/' . $branch)) {
+		$commit = rtrim(file_get_contents( APPLICATION_PATH . '/.git/refs/heads/' . $branch), "\n");
+	} else {
+		$commit = md5(date('ymd'));
+	}
+} else {
+	$commit = md5(time());
+}
+
+?><!DOCTYPE html>
 <!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
 <!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
 <!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
@@ -18,13 +31,13 @@
                 padding-bottom: 20px;
             }
         </style>
-        <link rel="stylesheet" href="<?php echo $this->baseUrl; ?>/css/bootstrap-datetimepicker.min.css">
-        <link rel="stylesheet" href="<?php echo $this->baseUrl; ?>/css/bootstrap-switch.min.css">
-        <link rel="stylesheet" href="<?php echo $this->baseUrl; ?>/css/bootstrap-multiselect.css">
-        <link rel="stylesheet" href="<?php echo $this->baseUrl; ?>/css/jsoneditor.css">
-        <link rel="stylesheet" href="<?php echo $this->baseUrl; ?>/css/main.css">
+        <link rel="stylesheet" href="<?php echo $this->baseUrl; ?>/css/bootstrap-datetimepicker.min.css<?php echo '?' . $commit;?>">
+        <link rel="stylesheet" href="<?php echo $this->baseUrl; ?>/css/bootstrap-switch.min.css<?php echo '?' . $commit;?>">
+        <link rel="stylesheet" href="<?php echo $this->baseUrl; ?>/css/bootstrap-multiselect.css<?php echo '?' . $commit;?>">
+        <link rel="stylesheet" href="<?php echo $this->baseUrl; ?>/css/jsoneditor.css<?php echo '?' . $commit;?>">
+        <link rel="stylesheet" href="<?php echo $this->baseUrl; ?>/css/main.css<?php echo '?' . $commit;?>">
 
-        <script src="<?php echo $this->baseUrl; ?>/js/vendor/modernizr-2.6.2-respond-1.1.0.min.js"></script>
+        <script src="<?php echo $this->baseUrl; ?>/js/vendor/modernizr-2.6.2-respond-1.1.0.min.js<?php echo '?' . $commit;?>"></script>
     </head>
     <body>
         <!--[if lt IE 7]>
@@ -102,17 +115,17 @@
 	<!-- end of main component -->
 	
 	<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
-	<script>window.jQuery || document.write('<script src="<?php echo $this->baseUrl; ?>/js/vendor/jquery-1.11.0.min.js"><\/script>')</script>
+	<script>window.jQuery || document.write('<script src="<?php echo $this->baseUrl; ?>/js/vendor/jquery-1.11.0.min.js<?php echo '?' . $commit;?>"><\/script>')</script>
 
-	<script src="<?php echo $this->baseUrl; ?>/js/vendor/bootstrap.min.js"></script>
-	<script src="<?php echo $this->baseUrl; ?>/js/plugins.js"></script>
-	<script src="<?php echo $this->baseUrl; ?>/js/moment.js"></script>
-	<script src="<?php echo $this->baseUrl; ?>/js/bootstrap-datetimepicker.min.js"></script>
-	<script src="<?php echo $this->baseUrl; ?>/js/jquery.jsoneditor.min.js"></script>
-	<script src="<?php echo $this->baseUrl; ?>/js/bootstrap-multiselect.js"></script>
-	<script src="<?php echo $this->baseUrl; ?>/js/bootstrap-switch.min.js"></script>
-	<script src="<?php echo $this->baseUrl; ?>/js/jquery.csv-0.71.min.js"></script>
-	<script src="<?php echo $this->baseUrl; ?>/js/main.js"></script>
+	<script src="<?php echo $this->baseUrl; ?>/js/vendor/bootstrap.min.js<?php echo '?' . $commit;?>"></script>
+	<script src="<?php echo $this->baseUrl; ?>/js/plugins.js<?php echo '?' . $commit;?>"></script>
+	<script src="<?php echo $this->baseUrl; ?>/js/moment.js<?php echo '?' . $commit;?>"></script>
+	<script src="<?php echo $this->baseUrl; ?>/js/bootstrap-datetimepicker.min.js<?php echo '?' . $commit;?>"></script>
+	<script src="<?php echo $this->baseUrl; ?>/js/jquery.jsoneditor.min.js<?php echo '?' . $commit;?>"></script>
+	<script src="<?php echo $this->baseUrl; ?>/js/bootstrap-multiselect.js<?php echo '?' . $commit;?>"></script>
+	<script src="<?php echo $this->baseUrl; ?>/js/bootstrap-switch.min.js<?php echo '?' . $commit;?>"></script>
+	<script src="<?php echo $this->baseUrl; ?>/js/jquery.csv-0.71.min.js<?php echo '?' . $commit;?>"></script>
+	<script src="<?php echo $this->baseUrl; ?>/js/main.js<?php echo '?' . $commit;?>"></script>
 
     </body>
 </html>
