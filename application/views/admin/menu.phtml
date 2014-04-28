@@ -1,0 +1,43 @@
+<?php // require to use instead of general layout ?>
+<div class="navbar-collapse collapse">
+	<ul class="nav">
+		<li<?php echo ($active == '' ? ' class="active"' : ''); ?>>
+			<a href="<?php echo $this->baseUrl; ?>/admin">Home</a>
+		</li>
+		<?php if (AdminController::authorized('read')) : ?>
+			<li<?php echo ($active == 'lines' ? ' class="active"' : ''); ?>>
+				<a href="<?php echo $this->baseUrl; ?>/admin/lines">Lines</a>
+			</li>
+			<li<?php echo ($active == 'plans' ? ' class="active"' : ''); ?>>
+				<a href="<?php echo $this->baseUrl; ?>/admin/plans">Plans</a>
+			</li>
+			<li<?php echo ($active == 'rates' ? ' class="active"' : ''); ?>>
+				<a href="<?php echo $this->baseUrl; ?>/admin/rates">Rates</a>
+			</li>
+			<li<?php echo ($active == 'events' ? ' class="active"' : ''); ?>>
+				<a href="<?php echo $this->baseUrl; ?>/admin/events">Events</a>
+			</li>
+			<li<?php echo ($active == 'log' ? ' class="active"' : ''); ?>>
+				<a href="<?php echo $this->baseUrl; ?>/admin/log">Log</a>
+			</li>
+		<?php endif; ?>
+		<?php if (AdminController::authorized('admin')) : ?>
+			<li class="dropdown<?php echo (in_array($active, array('users', 'config')) ? ' active' : ''); ?>">
+				<a class="dropdown-toggle"
+				   data-toggle="dropdown"
+				   href="#">
+					Admin
+					<b class="caret"></b>
+				</a>
+				<ul class="dropdown-menu">
+					<li<?php echo ($active == 'config' ? ' class="active"' : ''); ?>>
+						<a href="<?php echo $this->baseUrl; ?>/admin/config">Config</a>
+					</li>
+					<li<?php echo ($active == 'users' ? ' class="active"' : ''); ?>>
+						<a href="<?php echo $this->baseUrl; ?>/admin/users">Users</a>
+					</li>
+				</ul>
+			</li>
+		<?php endif; ?>
+	</ul>
+</div><!--/.navbar-collapse -->
