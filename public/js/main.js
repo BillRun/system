@@ -161,6 +161,8 @@ $(function() {
 
 	});
 
+	$('.control-group5 .multiselect').multiselect({});
+	
 	$('#usage,#billrun,#source').multiselect({
 		selectAllValue: 'all',
 		selectedClass: null
