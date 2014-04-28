@@ -37,14 +37,20 @@ $(function() {
 		}
 	});
 
-	$("#uploadModal #upload").click(function(event) {
+	function getInputFileContent(file, contentLoadedCB) {
 		if (isAPIAvailable()) {
-			var files = $("#uploadModal #file-upload").get(0).files; // FileList object
-			var file = files[0];
-			var reader = new FileReader();
+			var reader = new FileReader();			
 			reader.readAsText(file);
-			reader.onload = function(event) {
-				var csv = event.target.result;
+			reader.onload = function(event) {contentLoadedCB(event.target.result); };
+		} else {
+			alert("Your browser doesn't support parse csv on client side. Please use IE12+, Chrome or Firefox");
+		}
+	}
+
+	function getCSVContent(file, csvContentParsedCB) {
+		getInputFileContent(file, function(content) {
+				var csv = content;
+				csv = csv.replace(/^\s*$/g,"");
 				var data = $.csv.toArrays(csv);
 				var header_line = data[0];
 				var headers = [];
@@ -55,36 +61,71 @@ $(function() {
 				var _c = 0;
 				var retRow;
 				for (var row in data) {
-					if (row != 0) { // skip the first (header)
-						retRow = {};
-						for (var item in data[row]) {
+					if (row != 0 && data[row].length == headers.length) { // skip the first (header) and only take rows that hass all column of the headers
+						retRow = {};						
+						for (var item in data[row]) {							
 							retRow[headers[item]] = data[row][item];
 						}
-						ret[_c++] = retRow;
+						ret[_c++] = retRow;					
+						
 					}
 				}
 
-				var _credits = JSON.stringify(ret);
+				csvContentParsedCB(JSON.stringify(ret));
+			});		
+	}
+	
+	$("#resetSubsModal #upload").click(function(event) {
+		function resetLines(content){
 				$.ajax({
-					url: '/api/bulkcredit',
+					url: "/api/resetlines",
 					type: "POST",
-					data: {operation: "credit", credits: _credits}
+					data: {billrun: $("#resetSubsModal #billrun-input").val(), sid: content}
 				}).done(function(msg) {
 					obj = JSON.parse(msg);
 					if (obj.status == "1") { // success - print the file token
-						$('#uploadModal #saveOutput').html('Success to upload. File token: ' + obj.stamp);
+						$('#resetSubsModal #saveOutput').append('Successful upload. Results: ' + JSON.stringify(obj.input));
 					} else {
-						$('#uploadModal #saveOutput').html('Failed to upload. Reason as follow: ' + obj.desc);
+						$('#resetSubsModal #saveOutput').append('Failed on upload. Reason as follow: ' + obj.desc);
+					}
+				});
+				$("#resetSubsModal #file-upload").val('');
+				$("#resetSubsModal #single-sub-input").val('');
+			}
+		
+		var files = $("#resetSubsModal #file-upload").get(0).files;
+		$('#resetSubsModal #saveOutput').html('');
+		if(files.length == 0) {
+			if($("#resetSubsModal #single-sub-input").val()) {
+				resetLines($("#resetSubsModal #single-sub-input").val());
+			}
+		} else {
+			for(var i = 0; i < files.length; i++) {
+				getInputFileContent(files[i], resetLines);
+			}
+		}
+	});
+
+	$("#uploadModal #upload").click(function(event) {
+		var files = $("#uploadModal #file-upload").get(0).files;
+		$('#uploadModal #saveOutput').html('');
+		for(var i = 0; i < files.length; i++) {
+			getCSVContent(files[i], function(content){
+				$.ajax({
+					url: '/api/bulkcredit',
+					type: "POST",
+					data: {operation: "credit", credits: content}
+				}).done(function(msg) {
+					obj = JSON.parse(msg);
+					if (obj.status == "1") { // success - print the file token
+						$('#uploadModal #saveOutput').append('Success to upload. File token: ' + obj.stamp);
+					} else {
+						$('#uploadModal #saveOutput').append('Failed to upload. Reason as follow: ' + obj.desc);
 					}
 				});
 				$("#uploadModal #file-upload").val('');
-			}
-
-		} else {
-			alert("Your browser doesn't support parse csv on client side. Please use IE12+, Chrome or Firefox");
-			return false;
+			});
 		}
-
 	});
 
 	/**

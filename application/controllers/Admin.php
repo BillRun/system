@@ -468,6 +468,16 @@ class AdminController extends Yaf_Controller_Abstract {
 
 		$this->getView()->component = $this->buildTableComponent($table, $query);
 	}
+	
+	/**
+	 * config controller of admin
+	 */
+	public function operationsAction() {
+		if (!$this->allowed('admin'))
+			return false;
+		
+		$this->getView()->component = $this->renderView('operations');
+	}
 
 	/**
 	 * config controller of admin

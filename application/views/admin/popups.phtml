@@ -98,3 +98,28 @@
 		</div>
 	</div>
 </div>
+
+
+
+<div class="modal fade" id="resetSubsModal" tabindex="-2" role="dialog" aria-labelledby="resetSubsModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				<h3 id="uploadModalLabel">Reset Lines</h3>
+			</div>
+			<div class="modal-body">				
+				<div class="inputs">
+					<span class="input"><label id="single-sub-input-label" class="input-label" for="single-sub-input">Enter SID : </label><input type="text" id="single-sub-input" value=""/></span>
+					<span class="input"><label id="file-upload-label" class="input-label" for="file-upload">Or file : </label><input id="file-upload" type="file"/></label><input type="hidden" id="csvJson" value=""/></span>
+					<span class="input"><label id="billrun-input-label" class="input-label" for="billrun">For Billrun : </label><input type="text" id="billrun-input" value="<?php print(Billrun_Util::getBillrunKey(time())); ?>"/></span>
+				</div>
+				<div id="saveOutput"></div>
+			</div>
+			<div class="modal-footer">
+				<button id="cancelupload" class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
+				<button id="upload" data-url="/api/resetlines" class="btn btn-primary">Reset</button>
+			</div>
+		</div>
+	</div>
+</div>

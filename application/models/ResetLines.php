@@ -34,8 +34,14 @@ class ResetLinesModel {
 
 	public function reset() {
 		Billrun_Factory::log()->log('Reset subscriber activated', Zend_Log::INFO);
-		$this->resetBalances();
-		$this->resetLines();
+	
+			$configModel = new ConfigModel();
+			$oldConfigValue=  $configModel->getConfig()['calculate']; //TODO add this  when theres no chance that  this will activate/disable  manually disabled settings
+			$configModel->save(array('calculate'=> 0));
+			$this->resetBalances();
+			$this->resetLines();			
+			
+			$configModel->save(array('calculate'=> $oldConfigValue));
 		return true;
 	}
 
@@ -60,6 +66,7 @@ class ResetLinesModel {
 	 * @todo support update/removal of credit lines
 	 */
 	public function resetLines() {
+
 		$lines_coll = Billrun_Factory::db()->linesCollection();
 		$queue_coll = Billrun_Factory::db()->queueCollection();
 		if (!empty($this->sids) && !empty($this->billrun_key)) {
@@ -111,8 +118,12 @@ class ResetLinesModel {
 
 				if ($stamps) {
 					$queue_coll->remove($remove);
+					foreach ($queue_lines as $qline) {
+						$queue_coll->insert($qline);
+					}
+					//$queue_coll->batchInsert($queue_lines);	TPDO reinstate  when 
 					$lines_coll->update($query, $update, array('multiple' => 1));
-					$queue_coll->batchInsert($queue_lines);
+					
 				}
 				$offset += 10;
 			}

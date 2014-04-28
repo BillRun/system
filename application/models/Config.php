@@ -67,4 +67,10 @@ class ConfigModel {
 		}
 		return $this->collection->insert($data);
 	}
+	
+	public function save($items) {
+		$data = $this->getConfig();
+		$saveData = array_merge($data, $items);
+		$this->setConfig($saveData);
+	}
 }
