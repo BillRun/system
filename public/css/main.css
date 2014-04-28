@@ -216,3 +216,6 @@ div.billrun-logo img {
 	height: 40px;
 	margin-top: 5px;
 }
+.multiselect-container>li>a>label.radio, .multiselect-container>li>a>label.checkbox {
+	margin-left:10px;
+}
