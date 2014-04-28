@@ -358,10 +358,10 @@ class AdminController extends Yaf_Controller_Abstract {
 		if (!$user || !$user->valid() || !$user->allowed($permission)) {
 			return false;
 		}
-		
+
 		return true;
 	}
-	
+
 	/**
 	 * method to check if user is allowed to access page
 	 * 
@@ -488,7 +488,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		);
 		$this->getView()->component = $this->renderView('config', $viewData);
 	}
-	
+
 	/**
 	 * config controller of admin
 	 */
@@ -501,7 +501,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$model->setConfig($data);
 		$this->forceRedirect('/admin/config');
 	}
-	
+
 	protected function forceRedirect($uri) {
 		if (empty($uri)) {
 			$uri = '/';
@@ -525,7 +525,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		foreach ($params as $key => $val) {
 			$view->assign($key, $val);
 		}
-		
+
 		return $view->render($viewName . '.phtml', $params);
 	}
 
@@ -789,14 +789,14 @@ class AdminController extends Yaf_Controller_Abstract {
 		}
 		return $query;
 	}
-	
+
 	public function logoutAction() {
 		Billrun_Factory::auth()->clearIdentity();
 		$session = Yaf_Session::getInstance();
-		foreach($session as $k => $v) {
+		foreach ($session as $k => $v) {
 			unset($session[$k]);
 		}
-		
+
 		$this->forceRedirect('/admin/login');
 	}
 
@@ -834,19 +834,19 @@ class AdminController extends Yaf_Controller_Abstract {
 		header("Content-Disposition: attachment; filename=csv_export.csv");
 		die($output);
 	}
-	
+
 	public function wholesaleAction() {
 		if (!$this->authorized('reports'))
 			return false;
-		
+		$table = 'wholesale';
+		$group_by = $this->getSetVar($this->getSession($table), 'group_by', 'group_by', 'dayofmonth');
 		$model = new WholesaleModel();
 		$viewData = array(
-			'data' => $model->getStats(),
+			'data' => $model->getStats($group_by),
+			'group_fields' => $model->getGroupFields(),
+			'session' => $this->getSession($table),
 		);
-
-		$this->getView()->component = $this->renderView('wholesale', $viewData);
+		$this->getView()->component = $this->renderView($table, $viewData);
 	}
-	
-	
 
 }

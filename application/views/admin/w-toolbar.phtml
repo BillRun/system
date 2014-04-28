@@ -1,0 +1,27 @@
+<div class="toolbar toolbar-<?php echo strtolower($this->title); ?>">
+	<form id="search-criteria" action="" method="POST" class="form-vertical">
+		<div class="control-group control-group0">
+			<div class="control-group control-group1">
+				<?php
+				if (isset($this->group_fields) && is_array($this->group_fields)) {
+					foreach ($this->group_fields as $group_field) {
+						$default_key = isset($this->session->$group_field['key']) ? $this->session->$group_field['key'] : $group_field['default'];
+						$this->group_value = $group_field['values'][$default_key];
+						echo '<div class="controls form-inline">&nbsp;<label class="control-label">' . $group_field['display'] . '</label>
+						<select id="' . $group_field['key'] . '" name="' . $group_field['key'] . '" class="form-control">';
+						foreach ($group_field['values'] as $key => $value) {
+							echo '<option value="' . $key . '"' . ($default_key == $key ? ' selected' : '') . '>' . $value . '</option>';
+						}
+					}
+					echo '</select>
+				</div>';
+				}
+				?>
+			</div>
+		</div>
+
+		<div class="toolbar-buttons">
+			<span><input type="hidden" name="new_search" value="1"><button type="submit" class="btn btn-success"><i class="icon-search"> </i>Submit</button></span>
+		</div>
+	</form>
+</div>

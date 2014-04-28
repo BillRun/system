@@ -26,10 +26,10 @@ class WholesaleModel {
 		$this->collection = Billrun_Factory::db(array('name' => 'billrun'))->wholesaleCollection();
 	}
 
-	public function getStats() {
+	public function getStats($group_field) {
 		return array(
-			'incoming_call' => $this->getCall('TG'),
-			'outgoing_call' => $this->getCall('FG'),
+			'incoming_call' => $this->getCall('TG', $group_field),
+			'outgoing_call' => $this->getCall('FG', $group_field),
 		);
 	}
 	
@@ -44,7 +44,8 @@ class WholesaleModel {
 	 * 
 	 * @return array of results
 	 */
-	protected function getCall($direction, $network = 'all', $daysCount = 60) {
+	protected function getCall($direction, $group_field, $network = 'all', $daysCount = 60) {
+		
 		$match = array(
 			'$match' => array(
 				'dayofmonth' => array('$gte' => date('Y-m-d', strtotime($daysCount . ' days ago'))),
@@ -55,8 +56,7 @@ class WholesaleModel {
 		$group = array(
 			'$group' => array(
 				'_id' => array(
-					'dayofmonth' => '$dayofmonth',
-					'carrier' => '$carrier',
+					'group_by' => '$' . $group_field,
 					'usaget' => '$usaget',
 				),
 				'duration' => array(
@@ -67,8 +67,7 @@ class WholesaleModel {
 		$project = array(
 			'$project' => array(
 				'_id' => 0,
-				'dayofmonth' => '$_id.dayofmonth',
-				'carrier' => '$_id.carrier',
+				'group_by' => '$_id.group_by',
 				'usaget' => '$_id.usaget',
 				'duration' => 1,
 			)
@@ -76,8 +75,7 @@ class WholesaleModel {
 		
 		$sort = array(
 			'$sort' => array(
-				'dayofmonth' => 1,
-				'carrier' => 1,
+				'group_by' => 1,
 				'usaget' => 1,
 			),
 		);
@@ -92,5 +90,18 @@ class WholesaleModel {
 		return $callData;
 
 	}
-
+	
+	public function getGroupFields() {
+		$group_fields = array(
+			'group_by' => array(
+				'key' => 'group_by',
+				'input_type' => 'select',
+				'display' => 'Group by',
+				'values' => array('dayofmonth' => 'Day of month', 'carrier' => 'Carrier'),
+				'default' => 'dayofmonth',
+			),
+		);
+		return $group_fields;
+	}
+	
 }

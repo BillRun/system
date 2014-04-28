@@ -1,46 +1,55 @@
 <?php 
 // print_R($this->data); die;
-$sums = array();
 ?>
 <div class="container component">
+	<?php $this->display('w-toolbar.phtml', array()); ?>
 	<h2>Wholesale</h2>
 	<h3>Incoming</h3>
 	<table border="1">
 		<?php
-		
 		$keys = array(
-			'dayofmonth',
-			'carrier',
+			'group_by',
 			'duration',
 		);
-		$vertical_keys = array('call');
 		//print table headers
 		echo "<tr>";
 		foreach ($keys as $k) {
-			echo "<th>" . $k . "</th>";
+			echo "<th>" . ($k=='group_by'? $this->group_value : $k) . "</th>";
 		}
 		echo "</tr>";
 
 		foreach ($this->data['incoming_call'] as $item) {
-			if (!isset($sums[$item['dayofmonth']])) {
-				// print sum of previous dom
-				if (!empty($sums)) {
-					
-				}
-				$sums[$item['dayofmonth']] = $item['duration'];
-			} else {
-				$sums[$item['dayofmonth']] += $item['duration'];
-			}
-
 			echo "<tr>";
 			foreach ($keys as $k) :
 				echo "<td>" . (isset($item[$k]) ? $item[$k] : '&nbsp;') . "</td>";
 			endforeach;
 			echo "<tr>";
-//			$lastDom = $item['dayofmonth'];
 		} ?>
 	</table>
 	<h3>Outgoing</h3>
+	<table border="1">
+		<?php
+		
+		$keys = array(
+			'group_by',
+			'duration',
+		);
+		//print table headers
+		echo "<tr>";
+		foreach ($keys as $k) {
+			echo "<th>" . ($k=='group_by'? $this->group_value : $k) . "</th>";
+		}
+		echo "</tr>";
+
+		foreach ($this->data['outgoing_call'] as $item) {
+			echo "<tr>";
+			foreach ($keys as $k) :
+				echo "<td>" . (isset($item[$k]) ? $item[$k] : '&nbsp;') . "</td>";
+			endforeach;
+			echo "<tr>";
+		} ?>
+	</table>
+	
 	<hr>
 
 	<footer>
