@@ -191,7 +191,8 @@ $(function() {
 		type_changed(this)
 	});
 	$('.date').datetimepicker({
-		format: 'yyyy-MM-dd hh:mm:ss',
+		format: 'YYYY-MM-DD',
+//		language:'he'
 	});
 	$(".advanced-options").on('click', function() {
 		$("#manual_filters").slideToggle();
