@@ -586,7 +586,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * @return string the render layout including the page (component)
 	 */
 	protected function render($tpl, array $parameters = array()) {
-		if ($tpl == 'edit' || $tpl == 'confirm' || $tpl == 'logdetails') {
+		if ($tpl == 'edit' || $tpl == 'confirm' || $tpl == 'logdetails' || $tpl == 'wholesaleajax') {
 			return parent::render($tpl, $parameters);
 		}
 		$tpl = 'index';
@@ -840,13 +840,30 @@ class AdminController extends Yaf_Controller_Abstract {
 			return false;
 		$table = 'wholesale';
 		$group_by = $this->getSetVar($this->getSession($table), 'group_by', 'group_by', 'dayofmonth');
+		$from_day = $this->getSetVar($this->getSession($table), 'from_day', 'from_day', (new Zend_Date(strtotime('60 days ago'), null, new Zend_Locale('he_IL')))->toString('YYYY-MM-dd'));
+		$to_day = $this->getSetVar($this->getSession($table), 'to_day', 'to_day', (new Zend_Date(time(), null, new Zend_Locale('he_IL')))->toString('YYYY-MM-dd'));
 		$model = new WholesaleModel();
 		$viewData = array(
-			'data' => $model->getStats($group_by),
+			'data' => $model->getStats($group_by, $from_day, $to_day),
 			'group_fields' => $model->getGroupFields(),
+			'filter_fields' => $model->getFilterFields(),
 			'session' => $this->getSession($table),
 		);
 		$this->getView()->component = $this->renderView($table, $viewData);
+	}
+	
+	public function wholesaleAjaxAction() {
+		if (!$this->authorized('reports'))
+			return false;
+		$group_by = $this->getRequest()->get('group_by');
+		$direction = $this->getRequest()->get('direction');
+		$from_day = $this->getRequest()->get('from_day');
+		$to_day = $this->getRequest()->get('to_day');
+//		$network = 
+		$model = new WholesaleModel();
+		$data = $model->getCall($direction, $group_by, $from_day, $to_day);
+//			'group_fields' => $model->getGroupFields(),
+		$this->getView()->data = $data;
 	}
 
 }

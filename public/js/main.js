@@ -190,8 +190,12 @@ $(function() {
 	$("select[name='manual_type[]']").on('change', function() {
 		type_changed(this)
 	});
-	$('.date').datetimepicker({
+	$('.date:not(.wholesale-date)').datetimepicker({
 		format: 'yyyy-MM-dd hh:mm:ss',
+	});
+	$('.wholesale-date').datetimepicker({
+		format: 'YYYY-MM-DD',
+		pickTime: false
 	});
 	$(".advanced-options").on('click', function() {
 		$("#manual_filters").slideToggle();

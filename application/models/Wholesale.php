@@ -26,10 +26,10 @@ class WholesaleModel {
 		$this->collection = Billrun_Factory::db(array('name' => 'billrun'))->wholesaleCollection();
 	}
 
-	public function getStats($group_field) {
+	public function getStats($group_field, $from_day, $to_day) {
 		return array(
-			'incoming_call' => $this->getCall('TG', $group_field),
-			'outgoing_call' => $this->getCall('FG', $group_field),
+			'incoming_call' => $this->getCall('TG', $group_field, $from_day, $to_day),
+			'outgoing_call' => $this->getCall('FG', $group_field, $from_day, $to_day),
 		);
 	}
 	
@@ -44,11 +44,10 @@ class WholesaleModel {
 	 * 
 	 * @return array of results
 	 */
-	protected function getCall($direction, $group_field, $network = 'all', $daysCount = 60) {
-		
+	public function getCall($direction, $group_field, $from_day, $to_day, $network = 'all') {
 		$match = array(
 			'$match' => array(
-				'dayofmonth' => array('$gte' => date('Y-m-d', strtotime($daysCount . ' days ago'))),
+				'dayofmonth' => array('$gte' => $from_day, '$lte' => $to_day),
 				'direction' => $direction,
 				'network' => $network,
 			),
@@ -102,6 +101,28 @@ class WholesaleModel {
 			),
 		);
 		return $group_fields;
+	}
+	
+	public function getFilterFields() {
+		$filter_fields = array(
+			'from' => array(
+				'key' => 'from_day',
+				'db_key' => 'dayofmonth',
+				'input_type' => 'date',
+				'comparison' => '$gte',
+				'display' => 'From day',
+				'default' => (new Zend_Date(strtotime('60 days ago'), null, new Zend_Locale('he_IL')))->toString('YYYY-MM-dd'),
+			),
+			'to' => array(
+				'key' => 'to_day',
+				'db_key' => 'dayofmonth',
+				'input_type' => 'date',
+				'comparison' => '$lte',
+				'display' => 'To day',
+				'default' => (new Zend_Date(time(), null, new Zend_Locale('he_IL')))->toString('YYYY-MM-dd'),
+			),
+		);
+		return $filter_fields;
 	}
 	
 }
