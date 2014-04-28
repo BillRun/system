@@ -226,7 +226,7 @@ class AdminController extends Yaf_Controller_Abstract {
 			$model = self::getModel('lines', $options);
 
 			$skip = Billrun_Factory::config()->getConfigValue('admin_panel.csv_export.skip', 0);
-			$size = Billrun_Factory::config()->getConfigValue('admin_panel.csv_export.size', 10000);
+			$size = Billrun_Factory::config()->getConfigValue('admin_panel.csv_export.size', 100);
 			$params = array_merge($this->getTableViewParams($session->query, $skip, $size), $this->createFilterToolbar('lines'));
 			Admin_Lines::getCsvFile($params);
 		} else {

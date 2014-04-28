@@ -109,11 +109,13 @@ class LinesModel extends TableModel {
 		if (empty($skip)) {
 			$skip = $this->offset();
 		}
+		
+		$limit = Billrun_Factory::config()->getConfigValue('admin_panel.lines.limit', 100);
+		
 		if (empty($size)) {
-			$size = $this->size;
+			$size = $limit;
 		}
 
-		$limit = Billrun_Factory::config()->getConfigValue('admin_panel.lines.limit', 10000);
 		$cursor = $this->collection->query($filter_query)->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'))->limit($limit);
 		$this->_count = $cursor->count();
 		$resource = $cursor->sort($this->sort)->skip($skip)->limit($size);
