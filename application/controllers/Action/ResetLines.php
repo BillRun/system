@@ -21,11 +21,8 @@ class ResetLinesAction extends ApiAction {
 		if (empty($request['sid'])) {
 			return $this->setError('Please supply at least one sid', $request);
 		}
-		if (!isset($request['billrun']) || !Billrun_Util::isBillrunKey($request['billrun'])) {
-			return $this->setError('Please supply a valid billrun key', $request);
-		} else {
-			$billrun_key = $request['billrun'];
-		}
+		
+		$billrun_key = Billrun_Util::getBillrunKey(time());
 
 		// Warning: will convert half numeric strings / floats to integers
 		$sids = array_unique(array_diff(Billrun_Util::verify_array(explode(',', $request['sid']), 'int'), array(0)));

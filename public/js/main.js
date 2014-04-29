@@ -80,7 +80,7 @@ $(function() {
 				$.ajax({
 					url: "/api/resetlines",
 					type: "POST",
-					data: {billrun: $("#resetSubsModal #billrun-input").val(), sid: content}
+					data: {sid: content}
 				}).done(function(msg) {
 					obj = JSON.parse(msg);
 					if (obj.status == "1") { // success - print the file token

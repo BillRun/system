@@ -34,14 +34,15 @@ class ResetLinesModel {
 
 	public function reset() {
 		Billrun_Factory::log()->log('Reset subscriber activated', Zend_Log::INFO);
-	
-			$configModel = new ConfigModel();
-			$oldConfigValue=  $configModel->getConfig()['calculate']; //TODO add this  when theres no chance that  this will activate/disable  manually disabled settings
-			$configModel->save(array('calculate'=> 0));
-			$this->resetBalances();
-			$this->resetLines();			
-			
-			$configModel->save(array('calculate'=> $oldConfigValue));
+
+		$configModel = new ConfigModel();
+		$oldConfigValue=  $configModel->getConfig()['calculate']; 
+		$configModel->save(array('calculate'=> 0));
+		$this->resetBalances();
+		$this->resetLines();			
+
+		$configModel->save(array('calculate'=> $oldConfigValue));
+		
 		return true;
 	}
 
