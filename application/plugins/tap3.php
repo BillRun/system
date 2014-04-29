@@ -15,7 +15,7 @@ class tap3Plugin extends Billrun_Plugin_BillrunPluginBase implements Billrun_Plu
 
 	use Billrun_Traits_AsnParsing;
 
-use Billrun_Traits_FileSequenceChecking;
+	use Billrun_Traits_FileSequenceChecking;
 
 	protected $name = 'tap3';
 	protected $nsnConfig = false;

@@ -34,11 +34,11 @@ trait Billrun_Traits_FileActions {
 		);
 	}
 	
-	// TODO  uncomment this when you have time to refactor it should be a common logic....
+
 	/**
 	 * Verify that the file is a valid file. 
 	 * @return boolean false if the file name should not be received true if it should.
-	 *
+	 */
 	protected function isFileValid($filename, $path) {
 		//igonore hidden files
 		return preg_match(( $this->filenameRegex ? $this->filenameRegex : "/^[^\.]/"), $filename);
@@ -47,7 +47,7 @@ trait Billrun_Traits_FileActions {
 	
 	/**
 	 * method to check if the file already processed
-	 *
+	 */
 	protected function isFileReceived($filename, $type, $more_fields = array()) {
 		$log = Billrun_Factory::db()->logCollection();
 
@@ -63,7 +63,7 @@ trait Billrun_Traits_FileActions {
 		Billrun_Factory::dispatcher()->trigger('alertisFileReceivedQuery', array(&$query, $type, $this));
 		$resource = $log->query($query)->cursor()->limit(1);
 		return $resource->count() > 0;
-	}*/
+	}
 	
 	/**
 	 * Backup the current processed file to the proper backup paths
