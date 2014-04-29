@@ -348,5 +348,15 @@ class Mongodloid_Collection {
 	public function getMongoCollection() {
 		return $this->_collection;
 	}
+	/**
+	 * method to get collection stats
+	 * 
+	 * @param mixed $item return only specific property of stats
+	 * 
+	 * @return mixed the whole stats or just one item of it
+	 */
+	public function stats($item) {
+		return $this->_db->stats(array('collStats' => $this->getName()), $item);
+	}
 
 }

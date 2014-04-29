@@ -114,10 +114,8 @@ class LinesModel extends TableModel {
 			$size = $this->size;
 		}
 		
-		$limit = Billrun_Factory::config()->getConfigValue('admin_panel.lines.limit', 10000);
-
-		$cursor = $this->collection->query($filter_query)->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'))->limit($limit);
-		$this->_count = $cursor->count();
+		$cursor = $this->collection->query($filter_query)->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
+		$this->count = $this->collection->stats('count');
 		$resource = $cursor->sort($this->sort)->skip($skip)->limit($size);
 		$ret = array();
 		foreach ($resource as $item) {

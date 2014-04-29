@@ -30,5 +30,26 @@ class Mongodloid_Db {
 	public function command(array $command, array $options = array()) {
 		return $this->_db->command($command, $options);
 	}
+	
+	/**
+	 * method to get dbStats or collection stats (for the later see the stats method in collection class)
+	 * 
+	 * @param array $stats which stats to pull
+	 * @param mixed $item return only specific property of stats
+	 * 
+	 * @return mixed the whole stats or just one item of it
+	 */
+	public function stats(array $stats = array('dbStats' => 1), $item = null) {
+		$ret = $this->_db->command($stats);
+
+		if (is_null($item)) {
+			return $ret;
+		}
+		
+		if (isset($ret[$item])) {
+			return $ret[$item];
+		}
+		
+	}
 
 }
