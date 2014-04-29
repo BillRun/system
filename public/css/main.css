@@ -1,11 +1,5 @@
-.navbar .nav>li{
-	line-height: 67px;
-}
-.navbar-inverse .nav li.dropdown > .dropdown-toggle .caret {
-	margin-top:30px;
-}
 .component {
-	margin-top:30px;
+	/*margin-top:30px;*/
 }
 .navbar .nav {
 	float:right
@@ -21,7 +15,10 @@ div#listSize {
 	width: 100%;
 }
 .date {
-	margin-bottom:0;
+	width: 18%;
+	clear: both;
+	display: inline-table;
+	vertical-align: bottom;
 }
 
 .json-editor .value {
@@ -103,12 +100,6 @@ input[type=checkbox] {
 .control-group {
 	height: 35px;
 }
-.toolbar-rates .control-group0,
-.toolbar-rates .control-group2 {
-	display: inline;
-	float:left;
-	margin-right: 10px;
-}
 
 td[data-title="Rate"] a{
     display: block;
@@ -169,4 +160,67 @@ tr.progress td, tr.progress th {
     0% { opacity: 1.0; }
     50% { opacity: 0.0; }
     100% { opacity: 1.0; }
+}
+.toolbar-buttons, .control-group1, #manual_filters select {
+	margin:10px auto;
+}
+
+#manual_filters select, input[type=text].advanced-filter, .toolbar-lines input[type=text].span2{
+	width:10%;
+	clear:none;
+	display:inline;
+}
+
+input[type=text].advanced-filter, .toolbar-lines input[type=text].span2{
+	width:15%;
+}
+
+#manual_filters select {
+	width:15%;
+}
+
+.pagination {
+	margin:0;
+}
+
+.toolbar-rates .control-group0 {
+	display: inline;
+	float:left;
+	margin-right: 10px;
+}
+
+#popupModal {
+	height:100%;
+}
+
+.modal-body, .modal-content {
+	max-height:60%;
+}
+
+.modal-dialog .modal-content #jsondiv{
+	padding:2em;
+	max-height:30em;
+	overflow:auto;
+}
+.form_protect .label-inverse{
+	background-color: darkblue;
+}
+
+.remove-filter , .add-filter {
+  color:black;
+}
+li.logout {
+	margin-left:25px;
+}
+div.billrun-logo img {
+	height: 40px;
+	margin-top: 5px;
+}
+.multiselect-container>li>a>label.radio, .multiselect-container>li>a>label.checkbox {
+	margin-left:10px;
+}
+.table>thead>tr>th, .table>tbody>tr>th, .table>tfoot>tr>th, .table>thead>tr>td, .table>tbody>tr>td, .table>tfoot>tr>td{ 
+	padding:5px;  
+	vertical-align:middle;
+	text-align:center;
 }

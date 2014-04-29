@@ -1,5 +1,5 @@
-$('body').on('hidden', '.modal', function() {
-	$(this).removeData('modal');
+$('body').on('hidden.bs.modal', '.modal', function () {
+	$(this).removeData('bs.modal');
 });
 var checkItems = false;
 $(function() {
@@ -26,7 +26,7 @@ $(function() {
 		$(this).data('remote', '/admin/edit?coll=' + active_collection + '&type=' + $(this).data('type'));
 	});
 
-	$("#popupModal,#confirmModal").on('show', function(event) {
+	$("#popupModal,#confirmModal").on('show.bs.modal', function(event) {
 		if (checkItems) {
 			var items_checked = $('#data_table :checked');
 			if (!items_checked.length || (items_checked.length != 1 && ($.inArray(coll, ['lines', 'users']) === -1 || $(this).attr('id') != 'confirmModal'))) {
@@ -161,6 +161,8 @@ $(function() {
 
 	});
 
+	$('.control-group5 .multiselect').multiselect({});
+	
 	$('#usage,#billrun,#source').multiselect({
 		selectAllValue: 'all',
 		selectedClass: null
@@ -191,7 +193,8 @@ $(function() {
 		type_changed(this)
 	});
 	$('.date').datetimepicker({
-		format: 'yyyy-MM-dd hh:mm:ss',
+		format: 'YYYY-MM-DD',
+//		language:'he'
 	});
 	$(".advanced-options").on('click', function() {
 		$("#manual_filters").slideToggle();

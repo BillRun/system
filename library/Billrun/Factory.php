@@ -99,12 +99,18 @@ class Billrun_Factory {
 	protected static $mailer = null;
 	
 	/**
-	 * Users
+	 * Users container
 	 * 
 	 * @var Mongodloid_Entity
 	 */
 	protected static $users = array();
 
+	/**
+	 * Authentication main dispatcher
+	 * 
+	 * @var Zend_Auth
+	 */
+	protected static $auth;
 	/**
 	 * method to retrieve the log instance
 	 * 
@@ -201,19 +207,38 @@ class Billrun_Factory {
 	 */
 	static public function mailer() {
 		if (!isset(self::$mailer)) {
-			try {
+		try {
 				self::$mailer = new Zend_Mail();
-				//TODO set common configuration.
-				$fromName = Billrun_Factory::config()->getConfigValue('mailer.from.address', 'no-reply');
-				$fromAddress = Billrun_Factory::config()->getConfigValue('mailer.from.name', 'Billrun');
+			//TODO set common configuration.
+			$fromName = Billrun_Factory::config()->getConfigValue('mailer.from.address', 'no-reply');
+			$fromAddress = Billrun_Factory::config()->getConfigValue('mailer.from.name', 'Billrun');
 				self::$mailer->setFrom($fromName, $fromAddress);
-				//$mail->setDefaultTransport($transport);
-			} catch (Exception $e) {
-				self::log("Can't instantiat mail object. Please check your settings", Zend_Log::ALERT);
-				return false;
-			}
+			//$mail->setDefaultTransport($transport);
+		} catch (Exception $e) {
+			self::log("Can't instantiat mail object. Please check your settings", Zend_Log::ALERT);
+			return false;
 		}
+	}
 		return self::$mailer;
+	}
+
+	/**
+	 * method to retrieve the a smser instance
+	 * 
+	 * @return Billrun_Sms
+	 * 
+	 * @todo Refactoring Billrun_Sms object
+	 */
+	static public function smser($options = array()) {
+		if (empty($options)) {
+			$options = Billrun_Factory::config()->getConfigValue('sms');
+		}
+		$stamp = Billrun_Util::generateArrayStamp($options);
+		if (!isset(self::$smser[$stamp])) {
+			self::$smser[$stamp] = new Billrun_Sms($options);
+		}
+
+		return self::$smser[$stamp];
 	}
 
 	/**
@@ -324,8 +349,13 @@ class Billrun_Factory {
 	 */
 	public static function user($username = null) {
 		if (is_null($username)) {
-			$username = Zend_Auth::getInstance()->setStorage(new Zend_Auth_Storage_Yaf())->getIdentity();
+			$username = Billrun_Factory::auth()->getIdentity();
 		}
+		
+		if (empty($username)) {
+			return FALSE;
+		}
+		
 		if (!isset(self::$users[$username])) {
 			$entity = Billrun_Factory::db()->usersCollection()->query(array('username' => $username))->cursor()->current();
 			self::$users[$username] = new Billrun_User($entity);
@@ -333,23 +363,11 @@ class Billrun_Factory {
 		return self::$users[$username];
 	}
 	
-	/**
-	 * method to retrieve the a mailer instance
-	 * 
-	 * @return Billrun_Sms
-	 * 
-	 * @todo Refactoring Billrun_Sms object
-	 */
-	static public function smser($options = array()) {
-		if (empty($options)) {
-			$options = Billrun_Factory::config()->getConfigValue('sms');
+	public static function auth() {
+		if (!isset(self::$auth)) {
+			self::$auth = Zend_Auth::getInstance()->setStorage(new Zend_Auth_Storage_Yaf());
 		}
-		$stamp = Billrun_Util::generateArrayStamp($options);
-		if (!isset(self::$smser[$stamp])) {
-			self::$smser[$stamp] = new Billrun_Sms($options);
-		}
-
-		return self::$smser[$stamp];
+		return self::$auth;
 	}
 
 

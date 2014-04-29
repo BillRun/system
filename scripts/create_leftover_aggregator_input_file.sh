@@ -88,4 +88,4 @@ if [ "$username" != "" ]; then
 	auth_str="-u $username -p$password"
 fi
 
-mongo --quiet --eval "$js_code" billing $auth_str | sudo -u $unix_user tee $billrun_dir"/files/"$billrun_key"_leftover_aggregator_input" > /dev/null
+mongo --quiet --eval "$js_code" billrun $auth_str | sudo -u $unix_user tee $billrun_dir"/files/"$billrun_key"_leftover_aggregator_input" > /dev/null

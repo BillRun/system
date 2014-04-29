@@ -109,11 +109,13 @@ class LinesModel extends TableModel {
 		if (empty($skip)) {
 			$skip = $this->offset();
 		}
+		
 		if (empty($size)) {
 			$size = $this->size;
 		}
-
+		
 		$limit = Billrun_Factory::config()->getConfigValue('admin_panel.lines.limit', 10000);
+
 		$cursor = $this->collection->query($filter_query)->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'))->limit($limit);
 		$this->_count = $cursor->count();
 		$resource = $cursor->sort($this->sort)->skip($skip)->limit($size);
@@ -134,13 +136,13 @@ class LinesModel extends TableModel {
 	public function getTableColumns() {
 		$columns = array(
 			'type' => 'Type',
-			'aid' => 'Account id',
-			'sid' => 'Subscriber id',
-			'calling_number' => 'Calling Number',
-			'called_number' => 'Called Number',
+			'aid' => 'Account',
+			'sid' => 'Subscriber',
+			'calling_number' => 'Calling',
+			'called_number' => 'Called',
 			'plan' => 'Plan',
-			'usaget' => 'Usage type',
-			'usagev' => 'Usage volume',
+			'usaget' => 'Usage',
+			'usagev' => 'Volume',
 			'arate' => 'Rate',
 			'aprice' => 'Charge',
 			'billrun' => 'Billrun',
