@@ -7,7 +7,7 @@
  */
 
 /**
- * Description of AsnParser
+ * This Trait is used  for classes that need to  implement ASN binary parsing for files such as GGSN/TAP3
  *
  * @author eran
  */

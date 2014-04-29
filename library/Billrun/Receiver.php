@@ -14,6 +14,8 @@
  */
 abstract class Billrun_Receiver extends Billrun_Base {
 
+	use Billrun_Traits_FileActions;
+	
 	/**
 	 * Type of object
 	 *
@@ -96,35 +98,6 @@ abstract class Billrun_Receiver extends Billrun_Base {
 		}
 
 		return $entity->save($log);
-	}
-
-	/**
-	 * method to check if the file already processed
-	 */
-	protected function isFileReceived($filename, $type, $more_fields = array()) {
-		$log = Billrun_Factory::db()->logCollection();
-
-		$query = array(
-			'source' => $type,
-			'file_name' => $filename,
-		);
-
-		if (!empty($more_fields)) {
-			$query = array_merge($query, $more_fields);
-		}
-
-		Billrun_Factory::dispatcher()->trigger('alertisFileReceivedQuery', array(&$query, $type, $this));
-		$resource = $log->query($query)->cursor()->limit(1);
-		return $resource->count() > 0;
-	}
-
-	/**
-	 * Verify that the file is a valid file. 
-	 * @return boolean false if the file name should not be received true if it should.
-	 */
-	protected function isFileValid($filename, $path) {
-		//igonore hidden files
-		return preg_match(( $this->filenameRegex ? $this->filenameRegex : "/^[^\.]/"), $filename);
 	}
 
 }
