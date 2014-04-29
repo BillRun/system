@@ -377,9 +377,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 				$this->insertRoamingGgsn($processor->getData()['data']);
 				Billrun_Factory::log('Plugin fraud::afterProcessorStore async mode done.', Zend_Log::INFO);
 				exit(); // exit from child process after finish
-			}
-			
-			return;
+			}			
 		} else {
 			Billrun_Factory::log('Plugin fraud::afterProcessorStore runing in sync mode', Zend_Log::INFO);			
 			$this->insertRoamingGgsn($processor->getData()['data']);
