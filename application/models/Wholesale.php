@@ -21,22 +21,60 @@ class WholesaleModel {
 	 */
 	protected $collection;
 
+	/**
+	 * Mappings from circuit groups to names
+	 * @var array
+	 */
+	protected $cgrs;
+
 	public function __construct() {
 		// load the config data from db
 		$this->collection = Billrun_Factory::db(array('name' => 'billrun'))->wholesaleCollection();
 	}
 
 	public function getStats($group_field, $from_day, $to_day) {
+		$incoming_call_data = $this->getCall('TG', $group_field, $from_day, $to_day);
+		$outgoing_call_data = $this->getCall('FG', $group_field, $from_day, $to_day);
+		if ($group_field == 'carrier') {
+			$incoming_call_data = $this->AddCGRName($incoming_call_data, 'group_by', 'carrier');
+			$outgoing_call_data = $this->AddCGRName($outgoing_call_data, 'group_by', 'carrier');
+		}
 		return array(
-			'incoming_call' => $this->getCall('TG', $group_field, $from_day, $to_day),
-			'outgoing_call' => $this->getCall('FG', $group_field, $from_day, $to_day),
+			'incoming_call' => $incoming_call_data,
+			'outgoing_call' => $outgoing_call_data,
 		);
 	}
-	
-	public function getCgr() {
-		return iterator_to_array(Billrun_Factory::db(array('name' => 'billrun'))->cgrCollection()->query()->cursor());
+
+	public function getNameByCgr($cgr) {
+		if (is_null($cgr)) {
+			return '';
+		}
+		if (!isset($this->cgrs)) {
+			$this->cgrs = $this->getCgr();
+		}
+		if (isset($this->cgrs[$cgr])) {
+			return $this->cgrs[$cgr];
+		} else {
+			return $cgr;
+		}
 	}
-	
+
+	public function getCgr() {
+		$cursor = Billrun_Factory::db(array('name' => 'billrun'))->cgrCollection()->query()->cursor();
+		$ret = array();
+		foreach ($cursor as $document) {
+			$ret[$document['shortname']] = $document['longname'];
+		}
+		return $ret;
+	}
+
+	public function AddCGRName($data, $cgr_field, $cgr_name_field) {
+		foreach ($data as &$row) {
+			$row[$cgr_name_field] = $this->getNameByCgr($row[$cgr_field]);
+		}
+		return $data;
+	}
+
 	/**
 	 * 
 	 * @param string $direction FG
@@ -74,25 +112,24 @@ class WholesaleModel {
 				'duration' => 1,
 			)
 		);
-		
+
 		$sort = array(
 			'$sort' => array(
 				'group_by' => 1,
 				'usaget' => 1,
 			),
 		);
-		
+
 //		$usaget_group = array(
 //			'$group' => array(
 //				
 //			),
 //		);
 		$callData = $this->collection->aggregate($match, $group, $project, $sort);
-		
-		return $callData;
 
+		return $callData;
 	}
-	
+
 	public function getGroupFields() {
 		$group_fields = array(
 			'group_by' => array(
@@ -105,7 +142,7 @@ class WholesaleModel {
 		);
 		return $group_fields;
 	}
-	
+
 	public function getFilterFields() {
 		$filter_fields = array(
 			'from' => array(
@@ -127,5 +164,5 @@ class WholesaleModel {
 		);
 		return $filter_fields;
 	}
-	
+
 }

@@ -280,8 +280,7 @@ function isAPIAvailable() {
 	}
 }
 $(document).ready(function () {
-$(".config input[type='checkbox']").bootstrapSwitch();
-
+	$(".config input[type='checkbox']").bootstrapSwitch();
 });
 
 function openPopup (obj, direction) {
@@ -295,7 +294,7 @@ function openPopup (obj, direction) {
 	else {
 		var from_day =  $('input[name="init_from_day"]').val();
 		var to_day =  $('input[name="init_to_day"]').val();
-		var carrier = obj.find('[data-type="group_by"]').text();
+		var carrier = obj.find('input.carrier').val();
 	}
 	obj.data('remote', '/admin/wholesaleajax?direction=' + direction + '&group_by=' + popup_group_field + '&from_day=' + from_day + '&to_day=' + to_day + (carrier? '&carrier=' + carrier : ''));
 }

@@ -5,7 +5,7 @@
 	<h2>Wholesale</h2>
 	<?php $this->display('w-toolbar.phtml', array()); ?>
 	<h3>Incoming</h3>
-	<table border="1" data-type="TG">
+	<table border="1" data-type="TG" class="wholesale-table">
 		<?php
 		$keys = array(
 			'group_by',
@@ -21,19 +21,16 @@
 		foreach ($this->data['incoming_call'] as $item) {
 			echo '<tr onclick="openPopup(this);" href="#w-popup" data-type="update" data-toggle="modal" role="button" data-remote="">';
 			foreach ($keys as $k) :
-				echo "<td data-type='" . $k . "'>" . (isset($item[$k]) ? $item[$k] : '&nbsp;') . "</td>";
+				$is_carrier = $k == 'group_by' && isset($item['carrier']);
+				echo "<td data-type='" . $k . "'>" . ($is_carrier ? "<input class=\"carrier\" type=\"hidden\" value=\"" . $item[$k] . "\">" . $item['carrier'] : (isset($item[$k])? $item[$k] : '&nbsp;')) . "</td>";
 			endforeach;
 			echo "</tr>";
 		}
 		?>
 	</table>
 	<h3>Outgoing</h3>
-	<table border="1" data-type="FG">
+	<table border="1" data-type="FG" class="wholesale-table">
 		<?php
-		$keys = array(
-			'group_by',
-			'duration',
-		);
 		//print table headers
 		echo "<tr>";
 		foreach ($keys as $k) {
@@ -44,7 +41,8 @@
 		foreach ($this->data['outgoing_call'] as $item) {
 			echo '<tr onclick="openPopup(this);" href="#w-popup" data-type="update" data-toggle="modal" role="button" data-remote="">';
 			foreach ($keys as $k) :
-				echo "<td data-type='" . $k . "'>" . (isset($item[$k]) ? $item[$k] : '&nbsp;') . "</td>";
+				$is_carrier = $k == 'group_by' && isset($item['carrier']);
+				echo "<td data-type='" . $k . "'>" . ($is_carrier ? "<input class=\"carrier\" type=\"hidden\" value=\"" . $item[$k] . "\">" . $item['carrier'] : (isset($item[$k])? $item[$k] : '&nbsp;')) . "</td>";
 			endforeach;
 			echo "</tr>";
 		}
