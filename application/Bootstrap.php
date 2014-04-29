@@ -55,7 +55,7 @@ class Bootstrap extends Yaf_Bootstrap_Abstract {
 	public function _initLayout(Yaf_Dispatcher $dispatcher) {
 		// Enable template layout only on admin
 		// TODO: make this more accurate
-		if (strpos($dispatcher->getRequest()->getRequestUri(), "admin") !== FALSE && strpos($dispatcher->getRequest()->getRequestUri(), "edit") === FALSE && strpos($dispatcher->getRequest()->getRequestUri(), "confirm") === FALSE && strpos($dispatcher->getRequest()->getRequestUri(), "logDetails") === FALSE) {
+		if (strpos($dispatcher->getRequest()->getRequestUri(), "admin") !== FALSE && strpos($dispatcher->getRequest()->getRequestUri(), "edit") === FALSE && strpos($dispatcher->getRequest()->getRequestUri(), "confirm") === FALSE && strpos($dispatcher->getRequest()->getRequestUri(), "logDetails") === FALSE && strpos($dispatcher->getRequest()->getRequestUri(), "wholesaleajax") === FALSE) {
 			$path = Billrun_Factory::config()->getConfigValue('application.directory');
 			$view = new Yaf_View_Simple($path . '/views/layout');
 			$dispatcher->setView($view);

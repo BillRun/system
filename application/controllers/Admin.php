@@ -851,19 +851,22 @@ class AdminController extends Yaf_Controller_Abstract {
 		);
 		$this->getView()->component = $this->renderView($table, $viewData);
 	}
-	
+
 	public function wholesaleAjaxAction() {
 		if (!$this->authorized('reports'))
 			return false;
 		$group_by = $this->getRequest()->get('group_by');
 		$direction = $this->getRequest()->get('direction');
+		$carrier = $this->getRequest()->get('carrier');
 		$from_day = $this->getRequest()->get('from_day');
 		$to_day = $this->getRequest()->get('to_day');
-//		$network = 
 		$model = new WholesaleModel();
-		$data = $model->getCall($direction, $group_by, $from_day, $to_day);
-//			'group_fields' => $model->getGroupFields(),
+		$data = $model->getCall($direction, $group_by, $from_day, $to_day, $carrier);
 		$this->getView()->data = $data;
+		$this->getView()->direction = $direction == 'TG' ? 'Incoming' : 'Outgoing';
+		$this->getView()->carrier = $carrier;
+		$this->getView()->group_by = $group_by;
+		$this->getView()->from_day = $from_day;
 	}
 
 }

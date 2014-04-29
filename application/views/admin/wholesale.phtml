@@ -1,11 +1,11 @@
-<?php 
+<?php
 // print_R($this->data); die;
 ?>
 <div class="container component">
 	<h2>Wholesale</h2>
 	<?php $this->display('w-toolbar.phtml', array()); ?>
 	<h3>Incoming</h3>
-	<table border="1">
+	<table border="1" data-type="TG">
 		<?php
 		$keys = array(
 			'group_by',
@@ -14,22 +14,22 @@
 		//print table headers
 		echo "<tr>";
 		foreach ($keys as $k) {
-			echo "<th>" . ($k=='group_by'? $this->group_value : $k) . "</th>";
+			echo "<th>" . ($k == 'group_by' ? $this->group_field_display : $k) . "</th>";
 		}
 		echo "</tr>";
 
 		foreach ($this->data['incoming_call'] as $item) {
-			echo "<tr>";
+			echo '<tr onclick="openPopup(this);" href="#w-popup" data-type="update" data-toggle="modal" role="button" data-remote="">';
 			foreach ($keys as $k) :
-				echo "<td>" . (isset($item[$k]) ? $item[$k] : '&nbsp;') . "</td>";
+				echo "<td data-type='" . $k . "'>" . (isset($item[$k]) ? $item[$k] : '&nbsp;') . "</td>";
 			endforeach;
-			echo "<tr>";
-		} ?>
+			echo "</tr>";
+		}
+		?>
 	</table>
 	<h3>Outgoing</h3>
-	<table border="1">
+	<table border="1" data-type="FG">
 		<?php
-		
 		$keys = array(
 			'group_by',
 			'duration',
@@ -37,19 +37,20 @@
 		//print table headers
 		echo "<tr>";
 		foreach ($keys as $k) {
-			echo "<th>" . ($k=='group_by'? $this->group_value : $k) . "</th>";
+			echo "<th>" . ($k == 'group_by' ? $this->group_field_display : $k) . "</th>";
 		}
 		echo "</tr>";
 
 		foreach ($this->data['outgoing_call'] as $item) {
-			echo "<tr>";
+			echo '<tr onclick="openPopup(this);" href="#w-popup" data-type="update" data-toggle="modal" role="button" data-remote="">';
 			foreach ($keys as $k) :
-				echo "<td>" . (isset($item[$k]) ? $item[$k] : '&nbsp;') . "</td>";
+				echo "<td data-type='" . $k . "'>" . (isset($item[$k]) ? $item[$k] : '&nbsp;') . "</td>";
 			endforeach;
-			echo "<tr>";
-		} ?>
+			echo "</tr>";
+		}
+		?>
 	</table>
-	
+<?php $this->display('w-popups.phtml', array()); ?>
 	<hr>
 
 	<footer>

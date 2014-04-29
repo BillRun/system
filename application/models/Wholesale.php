@@ -44,7 +44,7 @@ class WholesaleModel {
 	 * 
 	 * @return array of results
 	 */
-	public function getCall($direction, $group_field, $from_day, $to_day, $network = 'all') {
+	public function getCall($direction, $group_field, $from_day, $to_day, $carrier = null, $network = 'all') {
 		$match = array(
 			'$match' => array(
 				'dayofmonth' => array('$gte' => $from_day, '$lte' => $to_day),
@@ -52,6 +52,9 @@ class WholesaleModel {
 				'network' => $network,
 			),
 		);
+		if ($carrier) {
+			$match['$match']['carrier'] = $carrier;
+		}
 		$group = array(
 			'$group' => array(
 				'_id' => array(
@@ -96,7 +99,7 @@ class WholesaleModel {
 				'key' => 'group_by',
 				'input_type' => 'select',
 				'display' => 'Group by',
-				'values' => array('dayofmonth' => 'Day of month', 'carrier' => 'Carrier'),
+				'values' => array('dayofmonth' => array('display' => 'Day of month', 'popup' => 'carrier'), 'carrier' => array('display' => 'Carrier', 'popup' => 'dayofmonth')),
 				'default' => 'dayofmonth',
 			),
 		);

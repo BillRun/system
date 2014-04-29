@@ -1,5 +1,5 @@
-$('body').on('hidden', '.modal', function() {
-	$(this).removeData('modal');
+$('body').on('hidden.bs.modal', '.modal', function () {
+  $(this).removeData('bs.modal');
 });
 var checkItems = false;
 $(function() {
@@ -284,3 +284,18 @@ $(".config input[type='checkbox']").bootstrapSwitch();
 
 });
 
+function openPopup (obj, direction) {
+	obj = $(obj);
+	var popup_group_field = $("input[name='popup_group_field']").val();
+	var direction = obj.closest('table').data('type');
+	if (popup_group_field=='carrier') {
+		var from_day, to_day;
+		from_day = to_day = obj.find('[data-type="group_by"]').text();
+	}
+	else {
+		var from_day =  $('input[name="init_from_day"]').val();
+		var to_day =  $('input[name="init_to_day"]').val();
+		var carrier = obj.find('[data-type="group_by"]').text();
+	}
+	obj.data('remote', '/admin/wholesaleajax?direction=' + direction + '&group_by=' + popup_group_field + '&from_day=' + from_day + '&to_day=' + to_day + (carrier? '&carrier=' + carrier : ''));
+}

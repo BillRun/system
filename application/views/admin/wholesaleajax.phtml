@@ -1,0 +1,25 @@
+<?php
+
+echo '<h3>' . $this->direction . ' (' . ($this->carrier ? $this->carrier  : $this->from_day) . ')' . '</h3>';
+echo "<table>";
+
+$keys = array(
+			'group_by',
+			'duration',
+		);
+		//print table headers
+		echo "<tr>";
+		foreach ($keys as $k) {
+			echo "<th>" . ($k == 'group_by' ? $this->group_by : $k) . "</th>";
+		}
+		echo "</tr>";
+
+		foreach ($this->data as $item) {
+			echo '<tr>';
+			foreach ($keys as $k) :
+				echo "<td>" . (isset($item[$k]) ? $item[$k] : '&nbsp;') . "</td>";
+			endforeach;
+			echo "</tr>";
+		}
+
+echo "</table>";
