@@ -296,5 +296,5 @@ function openPopup (obj, direction) {
 		var to_day =  $('input[name="init_to_day"]').val();
 		var carrier = obj.find('input.carrier').val();
 	}
-	obj.data('remote', '/admin/wholesaleajax?direction=' + direction + '&group_by=' + popup_group_field + '&from_day=' + from_day + '&to_day=' + to_day + (carrier? '&carrier=' + carrier : ''));
+	obj.data('remote', '/admin/wholesaleajax?direction=' + direction + '&group_by=' + popup_group_field + '&from_day=' + from_day + '&to_day=' + to_day + (carrier? '&carrier=' + encodeURIComponent(carrier) : ''));
 }

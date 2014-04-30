@@ -847,6 +847,7 @@ class AdminController extends Yaf_Controller_Abstract {
 			'group_fields' => $model->getGroupFields(),
 			'filter_fields' => $model->getFilterFields(),
 			'session' => $this->getSession($table),
+			'group_by' => $group_by,
 		);
 		$this->getView()->component = $this->renderView($table, $viewData);
 	}
@@ -861,12 +862,9 @@ class AdminController extends Yaf_Controller_Abstract {
 		$to_day = $this->getRequest()->get('to_day');
 		$model = new WholesaleModel();
 		$data = $model->getCall($direction, $group_by, $from_day, $to_day, $carrier);
-		if ($group_by == 'carrier') {
-			$data = $model->AddCGRName($data, 'group_by', 'carrier');
-		}
 		$this->getView()->data = $data;
 		$this->getView()->direction = $direction == 'TG' ? 'Incoming' : 'Outgoing';
-		$this->getView()->carrier = $model->getNameByCgr($carrier);
+		$this->getView()->carrier = $carrier;
 		$this->getView()->group_by = $group_by;
 		$this->getView()->from_day = $from_day;
 	}
