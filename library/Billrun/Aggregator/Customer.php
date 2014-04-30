@@ -72,9 +72,9 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	protected $memory_limit = -1;
 	/**
 	 * the amount of account lines to preload from the db at a time.
-	 * @param int $numberOfAccountsToPreload
+	 * @param int $bulkAccountPreload
 	 */
-	protected $numberOfAccountsToPreload = 1;
+	protected $bulkAccountPreload = 10;
 
 	public function __construct($options = array()) {
 		parent::__construct($options);
@@ -112,8 +112,8 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 			}
 		}
 		
-		if (isset($options['aggregator']['number_of_accounts_to_perload'])) {
-			$this->numberOfAccountsToPreload = (int) $options['aggregator']['number_of_accounts_to_perload'];
+		if (isset($options['aggregator']['bulk_account_perload'])) {
+			$this->bulkAccountPreload = (int) $options['aggregator']['bulk_account_perload'];
 		}
 
 
@@ -154,11 +154,13 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 				Billrun_Factory::log('Customer aggregator memory limit of ' . $this->memory_limit / 1048576 . 'M has reached. Exiting (page: ' . $this->page . ', size: ' . $this->size . ').', Zend_log::ALERT);
 				break;
 			}
-			if( !($billruns_count % $this->numberOfAccountsToPreload) && count($dataKeys) > $billruns_count) {
-				if( $billruns_count>$this->numberOfAccountsToPreload ) {
-					Billrun_Billrun::clearPreLoadedLines(array_slice($dataKeys, $billruns_count - $this->numberOfAccountsToPreload, $this->numberOfAccountsToPreload));
+			
+			//perload  account lines
+			if( !($billruns_count % $this->bulkAccountPreload) && count($dataKeys) > $billruns_count) {
+				if( $billruns_count>$this->bulkAccountPreload ) {
+					Billrun_Billrun::clearPreLoadedLines(array_slice($dataKeys, $billruns_count - $this->bulkAccountPreload, $this->bulkAccountPreload));
 				}
-				$aidsToLoad = array_slice($dataKeys, $billruns_count, $this->numberOfAccountsToPreload);
+				$aidsToLoad = array_slice($dataKeys, $billruns_count, $this->bulkAccountPreload);
 				foreach($aidsToLoad as $key => $aid) {
 					if(Billrun_Billrun::exists($accid, $billrun_key)) {
 						unset($aidsToLoad[$key]);
