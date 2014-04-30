@@ -235,11 +235,13 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$forkXmlLimit = Billrun_Factory::config()->getConfigValue('calcCpu.forkXmlLimit', 100);
 		if (function_exists("pcntl_fork") && $forkXmlGeneration) {
 			if ($this->childProcesses > $forkXmlLimit) {
-				$this->releaseZombies();
+				$this->releaseZombies($forkXmlLimit);
 			}
 			if ($this->childProcesses <= $forkXmlLimit) {
 				if (-1 !== ($pid = pcntl_fork())) {
 					if ($pid == 0) {
+						Billrun_Factory::log()->removeWriters('Mail');
+						Billrun_Factory::log()->addWriters('Mail');
 						Billrun_Factory::log('Plugin calc cpu afterAggregateAccount run it in async mode', Zend_Log::INFO);
 						$this->makeXml($account_billrun, $lines);
 						exit(0); // exit from child process after finish creating xml; continue on parent
@@ -264,9 +266,9 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$generator->createXmlInvoice($account_billrun->getRawData(), $lines);
 	}
 
-	protected function releaseZombies() {
+	protected function releaseZombies($waitNum) {
 		if (function_exists('pcntl_wait')) {
-			while (pcntl_wait($status, WNOHANG) > 0) {
+			while ($waitNum-- && pcntl_wait($status, WNOHANG) > 0) {
 				$this->childProcesses--;
 			}
 		}
