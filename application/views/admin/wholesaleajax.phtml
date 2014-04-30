@@ -1,7 +1,7 @@
 <?php
-
-echo '<h3>' . $this->direction . ' (' . ($this->carrier ? $this->carrier  : $this->from_day) . ')' . '</h3>';
-echo "<table>";
+echo '<div class="wholesale-popup">
+<h2>' . $this->direction . ' (' . ($this->carrier ? $this->carrier  : $this->from_day) . ')' . '</h2>
+<table border="1" class="wholesale-table">';
 
 $keys = array(
 			'group_by',
@@ -10,8 +10,12 @@ $keys = array(
 		);
 		//print table headers
 		echo "<tr>";
-		foreach ($keys as $k) {
-			echo "<th>" . ($k == 'group_by' ? $this->group_by : $k) . "</th>";
+			echo '<th rowspan="2">' . $this->group_by_display . '</th>
+			<th colspan="2">' . current($this->data)['usaget'] . '</th>';
+		echo "</tr>";
+		echo "<tr>";
+		foreach (array_diff($keys, array('group_by')) as $k) {
+			echo "<th" . ($k == 'group_by' ? ' rowspan="2"' : '') . ">" . ($k == 'group_by' ? $this->group_by_display : $k) . "</th>";
 		}
 		echo "</tr>";
 
@@ -23,4 +27,4 @@ $keys = array(
 			echo "</tr>";
 		}
 
-echo "</table>";
+echo '</table>';

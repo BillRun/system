@@ -216,3 +216,27 @@ div.billrun-logo img {
 	height: 40px;
 	margin-top: 5px;
 }
+.wholesale-popup {
+    margin: 0 auto;
+    padding: 0;
+    padding-bottom: 25px;
+}
+
+.wholesale-popup h2 {
+    text-align: center;
+}
+
+.wholesale-popup table{
+    margin: 0 auto;
+    padding: 0;
+}
+.wholesale-table td, .wholesale-table th{
+	padding: 3px;
+}
+.wholesale-table th {
+	text-align: center;
+}
+#w-popup .modal-content {
+    max-height: 45em;
+    overflow: auto;
+}

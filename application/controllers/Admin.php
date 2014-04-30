@@ -866,6 +866,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->getView()->direction = $direction == 'TG' ? 'Incoming' : 'Outgoing';
 		$this->getView()->carrier = $carrier;
 		$this->getView()->group_by = $group_by;
+		$this->getView()->group_by_display = $model->getGroupFields()['group_by']['values'][$group_by]['display'];
 		$this->getView()->from_day = $from_day;
 	}
 
