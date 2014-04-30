@@ -51,16 +51,24 @@ class WholesaleModel {
 				. ' WHERE direction like "' . $direction . '" AND network like "' . $network . '" AND dayofmonth BETWEEN "' . $from_day . '" AND "' . $to_day . '"'
 				. ' GROUP BY dayofmonth,carrier,usaget,direction'
 				. ' ORDER BY usaget,dayofmonth,longname';
-		
+
 		$query = 'SELECT ' . $group_field . ' AS group_by, usaget ,sum(seconds) as duration, round(sum(cost),2) as cost from (' . $sub_query . ') as sq';
 
 		if ($carrier) {
 			$query .= ' WHERE carrier LIKE "' . $carrier . '"';
 		}
-		
-		$query .= ' GROUP BY '. $group_field;
-		
-		$callData= $this->db->fetchAll($query);
+
+		$query .= ' GROUP BY ' . $group_field;
+
+		$callData = $this->db->fetchAll($query);
+		foreach ($callData as &$row) {
+			if (isset($row['duration'])) {
+				$hours = floor($row['duration'] / 3600);
+				$minutes = floor(($row['duration'] / 60) % 60);
+				$seconds = $row['duration'] % 60;
+				$row['duration'] = str_pad($hours, 2, '0', STR_PAD_LEFT) . ':' .  str_pad($minutes, 2, '0', STR_PAD_LEFT) . ':' . str_pad($seconds, 2, '0', STR_PAD_LEFT);
+			}
+		}
 		return $callData;
 	}
 
