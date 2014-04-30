@@ -70,6 +70,11 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	 * @var int 
 	 */
 	protected $memory_limit = -1;
+	/**
+	 * the amount of account lines to preload from the db at a time.
+	 * @param int $numberOfAccountsToPreload
+	 */
+	protected $numberOfAccountsToPreload = 1;
 
 	public function __construct($options = array()) {
 		parent::__construct($options);
@@ -106,6 +111,11 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 				$this->memory_limit = $options['aggregator']['memory_limit_in_mb'];
 			}
 		}
+		
+		if (isset($options['aggregator']['number_of_accounts_to_perload'])) {
+			$this->numberOfAccountsToPreload = (int) $options['aggregator']['number_of_accounts_to_perload'];
+		}
+
 
 		$this->plans = Billrun_Factory::db()->plansCollection();
 		$this->lines = Billrun_Factory::db()->linesCollection();
@@ -138,11 +148,24 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		$account_billrun = false;
 		$billrun_key = $this->getStamp();
 		$billruns_count = 0;
+		$dataKeys = array_keys($this->data);
 		foreach ($this->data as $accid => $account) {
 			if ($this->memory_limit > -1 && memory_get_usage() > $this->memory_limit) {
 				Billrun_Factory::log('Customer aggregator memory limit of ' . $this->memory_limit / 1048576 . 'M has reached. Exiting (page: ' . $this->page . ', size: ' . $this->size . ').', Zend_log::ALERT);
 				break;
 			}
+			if( !($billruns_count % $this->numberOfAccountsToPreload) && count($dataKeys) > $billruns_count) {
+				if( $billruns_count>$this->numberOfAccountsToPreload ) {
+					Billrun_Billrun::clearPreLoadedLines(array_slice($dataKeys, $billruns_count - $this->numberOfAccountsToPreload, $this->numberOfAccountsToPreload));
+				}
+				$aidsToLoad = array_slice($dataKeys, $billruns_count, $this->numberOfAccountsToPreload);
+				foreach($aidsToLoad as $key => $aid) {
+					if(Billrun_Billrun::exists($accid, $billrun_key)) {
+						unset($aidsToLoad[$key]);
+					}
+				}
+				Billrun_Billrun::preLoadAccountsLines($aidsToLoad, $billrun_key);
+			} 
 			Billrun_Factory::dispatcher()->trigger('beforeAggregateAccount', array($accid, $account, &$this));
 			Billrun_Factory::log('Current account index: ' . ++$billruns_count, Zend_log::INFO);
 			if (!Billrun_Factory::config()->isProd()) {
@@ -163,7 +186,8 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 			);
 			$account_billrun = Billrun_Factory::billrun($params);
 			$flat_lines = array();
-			foreach ($account as $subscriber) {
+			
+			foreach ($account as $subscriber) {								
 				Billrun_Factory::dispatcher()->trigger('beforeAggregateSubscriber', array($subscriber, $account_billrun, &$this));
 				$sid = $subscriber->sid;
 				if ($account_billrun->subscriberExists($sid)) {
