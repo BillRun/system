@@ -705,13 +705,15 @@ class Billrun_Billrun {
 		foreach ($aids as $aid) {// create a new array for each account
 			static::$accountsLines[$aid.$include_flats] = array();
 		}
-		
+		/**
+		 * 
+		 */
 		Billrun_Factory::log()->log("Querying for account " . implode(",",$aids) . " lines with flats" . $include_flats, Zend_Log::INFO);
 		$doneCount = 0;		
 		do {
-			//$cursor = Billrun_Factory::db(array('host'=>'172.29.202.111','port'=>27017,'user'=>'reading','password'=>'guprgri','name'=>'billing','options'=>array('connect'=>1,'readPreference'=>"RP_SECONDARY_PREFERRED")))
-			$cursor = Billrun_Factory::db()
-					->linesCollection()->query($query)->cursor()->fields($filter_fields)
+			//$cursor = Billrun_Factory::db(array('host'=>'172.28.202.111','port'=>27017,'user'=>'reading','password'=>'guprgri','name'=>'billing','options'=>array('connect'=>1,'readPreference'=>"RP_SECONDARY_PREFERRED")))->linesCollection()
+			$cursor = Billrun_Factory::db()->linesCollection()
+					->query($query)->cursor()->fields($filter_fields)
 					->sort($sort)->skip($doneCount)->limit(Billrun_Factory::config()->getConfigValue('billrun.linesLimit', 10000))
 					->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));			
 			foreach ($cursor as $line) {
@@ -723,11 +725,20 @@ class Billrun_Billrun {
 		Billrun_Factory::log()->log("Finished querying for accounts " . implode(",",$aids) . " lines with flats" . $include_flats, Zend_Log::INFO);
 	}
 	
+	/**
+	 * remove account lines from the preload cache.
+	 * @param type $aids the acounts to remove.
+	 */
 	static public function clearPreLoadedLines($aids) {
-		foreach($aids as $aid) {
-			unset(static::$accountsLines[$aid.true]);
-			unset(static::$accountsLines[$aid.false]);
-		}
+		//TODO  use some thing like tghis  when you find out  why  theres a memory leak...
+//		foreach($aids as $aid) {
+//			unset(static::$accountsLines[$aid.true]);
+//			unset(static::$accountsLines[$aid.false]);
+//		}
+		static::$accountsLines = array();
+		gc_collect_cycles();
+		Billrun_Factory::log('Preloaded garbage collector run and returned : '.  gc_collect_cycles(), Zend_log::INFO);
+		Billrun_Factory::log('Preloaded account lines size is : '.count(static::$accountsLines), Zend_log::INFO);
 	}
 
 	/**
