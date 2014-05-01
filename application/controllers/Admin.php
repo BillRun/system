@@ -23,13 +23,37 @@ class AdminController extends Yaf_Controller_Abstract {
 	protected $session = null;
 	protected $model = null;
 	protected $baseUrl = null;
+	protected $cssPaths = array();
+	protected $jsPaths = array();
 
 	/**
 	 * method to control and navigate the user to the right view
 	 */
 	public function init() {
 		$this->baseUrl = $this->getRequest()->getBaseUri();
+		$this->addCss($this->baseUrl . '/css/bootstrap.min.css');
+		$this->addCss($this->baseUrl . '/css/bootstrap-datetimepicker.min.css');
+		$this->addCss($this->baseUrl . '/css/bootstrap-switch.css');
+		$this->addCss($this->baseUrl . '/css/jsoneditor.css');
+		$this->addCss($this->baseUrl . '/css/main.css');
+		$this->addJs($this->baseUrl . '/js/vendor/bootstrap.min.js');
+		$this->addJs($this->baseUrl . '/js/plugins.js');
+		$this->addJs($this->baseUrl . '/js/moment.js');
+		$this->addJs($this->baseUrl . '/js/bootstrap-datetimepicker.min.js');
+		$this->addJs($this->baseUrl . '/js/jquery.jsoneditor.js');
+		$this->addJs($this->baseUrl . '/js/bootstrap-multiselect.js');
+		$this->addJs($this->baseUrl . '/js/bootstrap-switch.js');
+		$this->addJs($this->baseUrl . '/js/jquery.csv-0.71.min.js');
+		$this->addJs($this->baseUrl . '/js/main.js');
 		Yaf_Loader::getInstance(APPLICATION_PATH . '/application/helpers')->registerLocalNamespace('Admin');
+	}
+
+	protected function addCss($path) {
+		$this->cssPaths[] = $path;
+	}
+
+	protected function addJs($path) {
+		$this->jsPaths[] = $path;
 	}
 
 	/**
@@ -600,6 +624,9 @@ class AdminController extends Yaf_Controller_Abstract {
 
 		$parameters['title'] = $this->title;
 		$parameters['baseUrl'] = $this->baseUrl;
+
+		$parameters['cssPaths'] = $this->cssPaths;
+		$parameters['jsPaths'] = $this->jsPaths;
 		return $this->getView()->render($tpl . ".phtml", $parameters);
 	}
 
