@@ -74,7 +74,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	}
 
 	public function confirmAction() {
-		if (!$this->allowed('read'))
+		if (!$this->allowed('write'))
 			return false;
 		$coll = Billrun_Util::filter_var($this->getRequest()->get('coll'), FILTER_SANITIZE_STRING);
 		$ids = Billrun_Util::filter_var($this->getRequest()->get('id'), FILTER_SANITIZE_STRING);

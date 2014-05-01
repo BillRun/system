@@ -106,15 +106,15 @@
 			<?php endif; ?>
 			<?php if (in_array(strtolower($this->title), array('rates', 'plans', 'users')) && AdminController::authorized('write')) : ?>
 				<?php if (strtolower($this->title) != 'users') : ?>
-				<span><a id='close_and_new' data-type="close_and_new" href="#popupModal" class="btn btn-primary" data-toggle="modal" role="button" data-remote="">Close & new</a></span>
+				<span><a id='close_and_new' data-type="close_and_new" href="#popupModal" class="btn btn-primary" data-toggle="modal" role="button">Close & new</a></span>
 				<?php endif; ?>
 				<?php if (strtolower($this->title) == 'users') : ?>
-				<span><a id='new' data-type="new" href="#popupModal" class="btn btn-warning" data-toggle="modal" role="button" data-remote="">New</a></span>
+				<span><a id='new' data-type="new" href="#popupModal" class="btn btn-warning" data-toggle="modal" role="button">New</a></span>
 				<?php endif; ?>
-				<span><a id='duplicate' data-type="duplicate" href="#popupModal" class="btn btn-info" data-toggle="modal" role="button" data-remote="">Duplicate</a></span>
+				<span><a id='duplicate' data-type="duplicate" href="#popupModal" class="btn btn-info" data-toggle="modal" role="button">Duplicate</a></span>
 			<?php endif; ?>
 			<?php if (!in_array(strtolower($this->title), array('events', 'log')) && AdminController::authorized('write')) : ?>
-				<span><a id='remove' data-type="remove" href="#confirmModal" class="btn btn-danger" data-toggle="modal" role="button" data-remote=""><i class="icon-remove"> </i>Remove</a></span>
+				<span><a id='remove' data-type="remove" href="#confirmModal" class="btn btn-danger" data-toggle="modal" role="button"><i class="icon-remove"> </i>Remove</a></span>
 			<?php endif; ?>
 			<?php if (strtolower($this->title) == 'lines') : ?>
 				<span><a id='download' data-type="download" href="/admin/csvExport" class="btn export-button"><i class="icon-download-alt"> </i>Export to CSV</a></span>

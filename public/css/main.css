@@ -198,7 +198,7 @@ input[type=text].advanced-filter, .toolbar-lines input[type=text].span2{
 }
 
 .modal-dialog .modal-content #jsondiv{
-	padding:2em;
+	/*padding:2em;*/
 	max-height:30em;
 	overflow:auto;
 }
