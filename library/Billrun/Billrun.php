@@ -666,11 +666,11 @@ class Billrun_Billrun {
 	 * @todo remove aid parameter
 	 */
 	protected function getAccountLines($aid, $include_flats = true) {
-		if(!isset(static::$accountsLines[$aid.$include_flats])) {
+		if(empty(static::$accountsLines[$aid.$include_flats])) {
 			$this->preLoadAccountsLines(array($aid), $this->billrun_key, $this->filter_fields, $include_flats);
 		}
-		$ret = static::$accountsLines[$aid.$include_flats];		
-		return $ret;
+
+		return static::$accountsLines[$aid.$include_flats];
 	}
 	
 	/**
@@ -686,7 +686,7 @@ class Billrun_Billrun {
 		$query = array(
 			'aid' => array('$in' => $aids),
 		);
-		
+		$requiredFields = array('aid'=> 1);
 		$filter_fields = empty($filter_fields) ? Billrun_Factory::config()->getConfigValue('billrun.filter_fields', array()):  $filter_fields;
 		
 		if (!$include_flats) {
@@ -711,9 +711,10 @@ class Billrun_Billrun {
 		Billrun_Factory::log()->log("Querying for account " . implode(",",$aids) . " lines with flats" . $include_flats, Zend_Log::INFO);
 		$doneCount = 0;		
 		do {
-			// TODO Remove $cursor = Billrun_Factory::db(array('host'=>'172.28.202.111','port'=>27017,'user'=>'reading','password'=>'guprgri','name'=>'billing','options'=>array('connect'=>1,'readPreference'=>"RP_SECONDARY_PREFERRED")))->linesCollection()
-			$cursor = Billrun_Factory::db()->linesCollection()
-					->query($query)->cursor()->fields($filter_fields)
+			// TODO Remove 
+			$cursor = Billrun_Factory::db(array('host'=>'172.28.202.111','port'=>27017,'user'=>'reading','password'=>'guprgri','name'=>'billing','options'=>array('connect'=>1,'readPreference'=>"RP_SECONDARY_PREFERRED")))->linesCollection()
+			//$cursor = Billrun_Factory::db()->linesCollection()
+					->query($query)->cursor()->fields(array_merge($filter_fields , $requiredFields))
 					->sort($sort)->skip($doneCount)->limit(Billrun_Factory::config()->getConfigValue('billrun.linesLimit', 10000))
 					->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));			
 			foreach ($cursor as $line) {
@@ -726,10 +727,18 @@ class Billrun_Billrun {
 	}
 	
 	/**
-	 * remove account lines from the preload cache.	 
+	 * remove account lines from the preload cache.
+	 * @param $aids a list of  aids to remove  of FALSE to remove all the  cached account lines. 	 
 	 */
-	static public function clearPreLoadedLines() {	
-		static::$accountsLines = array();
+	static public function clearPreLoadedLines($aids = FALSE) {	
+		if( $aids === FALSE ){ 
+			static::$accountsLines = array();
+		} else {
+			foreach($aids as $aid) {
+				unset(static::$accountsLines[$aid.true]);
+				unset(static::$accountsLines[$aid.false]);
+			}
+		}
 	}
 
 	/**
