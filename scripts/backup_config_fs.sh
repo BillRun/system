@@ -1,6 +1,6 @@
-#backup_fs.sh
-#This is a backup sricpt that shold be placed in the slave of each replica to backup the DB.
-#The result is a tar.gz file containing the  content of the  mongo database  driectory.
+#backup_config_fs.sh
+#This is a backup sricpt that shold be placed in one of the configuration servers to backup the DB.
+#The result is a tar.gz file containing the content of the  config database  driectory.
 #!/bin/bash
 
 numberOfHosts=7;
@@ -71,7 +71,7 @@ function isMongoSlave {
 ##### MAIN ####
 
 backupFile=$backupBase"/`date +%Y%m%d`_`hostname`.tar.gz";
-mongoDir="/ssd/mongo"
+mongoDir="/data/config"
 
 if [ -z "$(runningOnConf)" -a -z "$(isMongoSlave)" ]; then 
   echo "Mongo server is not a slave!!!" >> $logFile
