@@ -138,6 +138,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		$account_billrun = false;
 		$billrun_key = $this->getStamp();
 		$billruns_count = 0;
+		$skipped_billruns_count = 0;
 		foreach ($this->data as $accid => $account) {
 			if ($this->memory_limit > -1 && memory_get_usage() > $this->memory_limit) {
 				Billrun_Factory::log('Customer aggregator memory limit of ' . $this->memory_limit / 1048576 . 'M has reached. Exiting (page: ' . $this->page . ', size: ' . $this->size . ').', Zend_log::ALERT);
@@ -154,6 +155,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 
 			if (Billrun_Billrun::exists($accid, $billrun_key)) {
 				Billrun_Factory::log()->log("Billrun " . $billrun_key . " already exists for account " . $accid, Zend_Log::ALERT);
+				$skipped_billruns_count++;
 				continue;
 			}
 			$params = array(
@@ -205,8 +207,9 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 			Billrun_Factory::dispatcher()->trigger('afterAggregateAccount', array($accid, $account, $account_billrun, $lines, &$this));
 		}
 		if ($billruns_count == count($this->data)) {
-			$end_msg = "Finished iterating page $this->page of size $this->size. Memory usage is " . memory_get_usage() / 1048576 . " MB";
+			$end_msg = "Finished iterating page $this->page of size $this->size. Memory usage is " . memory_get_usage() / 1048576 . " MB\n";			
 			Billrun_Factory::log($end_msg, Zend_log::INFO);
+			$end_msg .="Processed ".($billruns_count-$skipped_billruns_count)." accounts, Skipped over {$skipped_billruns_count} accounts, out of a total of {$billruns_count} accounts";
 			$this->sendEndMail($end_msg);
 		}
 
