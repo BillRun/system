@@ -711,9 +711,7 @@ class Billrun_Billrun {
 		Billrun_Factory::log()->log("Querying for account " . implode(",",$aids) . " lines with flats" . $include_flats, Zend_Log::INFO);
 		$doneCount = 0;		
 		do {
-			// TODO Remove 
-			$cursor = Billrun_Factory::db(array('host'=>'172.28.202.111','port'=>27017,'user'=>'reading','password'=>'guprgri','name'=>'billing','options'=>array('connect'=>1,'readPreference'=>"RP_SECONDARY_PREFERRED")))->linesCollection()
-			//$cursor = Billrun_Factory::db()->linesCollection()
+			$cursor = Billrun_Factory::db()->linesCollection()
 					->query($query)->cursor()->fields(array_merge($filter_fields , $requiredFields))
 					->sort($sort)->skip($doneCount)->limit(Billrun_Factory::config()->getConfigValue('billrun.linesLimit', 10000))
 					->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));			
