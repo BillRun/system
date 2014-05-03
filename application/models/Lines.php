@@ -114,9 +114,11 @@ class LinesModel extends TableModel {
 			$size = $this->size;
 		}
 		
-		$cursor = $this->collection->query($filter_query)->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
-		$this->count = $this->collection->stats('count');
-		$resource = $cursor->sort($this->sort)->skip($skip)->limit($size);
+		$cursor = $this->collection->query($filter_query)->cursor()
+			->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'))
+			->sort($this->sort)->skip($skip)->limit($size);
+		$this->_count = $cursor->count(false);
+		$resource = $cursor;
 		$ret = array();
 		foreach ($resource as $item) {
 			$item->collection($this->lines_coll);

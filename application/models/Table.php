@@ -49,7 +49,7 @@ class TableModel {
 	protected $sort = array();
 
 	/**
-	 * the count of the page
+	 * the count of the full scope (use for pagination)
 	 * 
 	 * @var int
 	 */
