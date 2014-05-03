@@ -117,10 +117,15 @@ class LinesModel extends TableModel {
 		$cursor = $this->collection->query($filter_query)->cursor()
 			->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'))
 			->sort($this->sort)->skip($skip)->limit($size);
-		$this->_count = $cursor->count(false);
-		$resource = $cursor;
+
+		if (count($filter_query['$and']) <= 2) {
+			$this->_count = 10000;
+		} else {
+			$this->_count = $cursor->count(false);
+		}
+
 		$ret = array();
-		foreach ($resource as $item) {
+		foreach ($cursor as $item) {
 			$item->collection($this->lines_coll);
 			if ($arate = $this->getDBRefField($item, 'arate')) {
 				$item['arate'] = $arate['key'];
