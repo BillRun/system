@@ -69,7 +69,7 @@ class Admin_Lines {
 		}
 		$data_output[] = implode($separator, $row);
 		foreach ($params['data'] as $item) {
-			$row = array($c++);
+			$row = array(++$c);
 			foreach ($columns_keys as $h) {
 				$data = $item->get($h);
 				if (($h == 'from' || $h == 'to' || $h == 'urt' || $h == 'notify_time') && $data) {
