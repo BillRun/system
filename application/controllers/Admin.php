@@ -219,14 +219,17 @@ class AdminController extends Yaf_Controller_Abstract {
 
 		if (!empty($session->query)) {
 
+			$collectionName = 'lines';
+			
 			$options = array(
-				'collection' => 'lines',
-				'sort' => array('urt' => 1),
+				'collection' => $collectionName,
+				'sort' => $this->applySort($collectionName),
 			);
-			$model = self::getModel('lines', $options);
+			// init lines model
+			self::getModel('lines', $options);
 
 			$skip = Billrun_Factory::config()->getConfigValue('admin_panel.csv_export.skip', 0);
-			$size = Billrun_Factory::config()->getConfigValue('admin_panel.csv_export.size', 100);
+			$size = Billrun_Factory::config()->getConfigValue('admin_panel.csv_export.size', 10000);
 			$params = array_merge($this->getTableViewParams($session->query, $skip, $size), $this->createFilterToolbar('lines'));
 			Admin_Lines::getCsvFile($params);
 		} else {
