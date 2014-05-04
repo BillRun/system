@@ -26,7 +26,7 @@ class Generator_BillrunstatsCsv extends Billrun_Generator_Csv {
 		self::$type = 'billrunstatscsv';
 //		$options['auto_create_dir'] = FALSE;
 		parent::__construct($options);
-		$this->billrunstats_coll = Billrun_Factory::db(array('name' => 'billrunstats'))->billrunstatsCollection();
+		$this->billrunstats_coll = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('fraud.db'))->billrunstatsCollection();
 	}
 
 	/**
@@ -52,7 +52,6 @@ class Generator_BillrunstatsCsv extends Billrun_Generator_Csv {
 			'current_plan' => 'current_plan',
 			'next_plan' => 'next_plan',
 			'kosher' => 'kosher',
-//			'sub_before_vat' => 'sub_before_vat',
 			'day' => 'day',
 			'plan' => 'plan',
 			'category' => 'category',

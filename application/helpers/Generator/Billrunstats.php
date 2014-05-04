@@ -27,7 +27,7 @@ class Generator_Billrunstats extends Billrun_Generator {
 		self::$type = 'billrunstats';
 		$options['auto_create_dir'] = FALSE;
 		parent::__construct($options);
-		$this->billrunstats_coll = Billrun_Factory::db(array('name' => 'billrunstats'))->billrunstatsCollection();
+		$this->billrunstats_coll = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('fraud.db'))->billrunstatsCollection();
 	}
 
 	/**
@@ -145,24 +145,3 @@ class Generator_Billrunstats extends Billrun_Generator {
 	}
 
 }
-
-//create table billrunstats(
-//aid INT NOT NULL, 
-//billrun_key varchar(10) NOT NULL, 
-//sid INT NOT NULL, 
-//subscriber_status varchar(100), 
-//current_plan varchar(100), 
-//next_plan varchar(100), 
-//sub_before_vat DECIMAL(64,25), 
-//day INT, 
-//plan varchar(100), 
-//category varchar(100), 
-//zone varchar(150), 
-//vat DECIMAL(5,5), 
-//usagev BIGINT,
-//usaget varchar(100), 
-//count INT, 
-//cost DECIMAL(64,25)
-//);
-//
-//mysqlimport --ignore-lines=1 --fields-optionally-enclosed-by='"' --fields-terminated-by=',' --lines-terminated-by='\n' --local test /home/shani/Desktop/subscribers.csv
