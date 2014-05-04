@@ -271,7 +271,7 @@ class Billrun_Util {
 
 		return FALSE;
 	}
-	
+
 	/**
 	 * convert seconds to requested format
 	 * 
@@ -284,7 +284,7 @@ class Billrun_Util {
 	 * 3400 sec => X minutes
 	 */
 	public static function durationFormat($seconds) {
-		if ($seconds> 3600) {
+		if ($seconds > 3600) {
 			return gmdate('H:i:s', $seconds);
 		}
 		return gmdate('i:s', $seconds);
@@ -320,7 +320,7 @@ class Billrun_Util {
 		//sen email
 		return $mailer->send();
 	}
-	
+
 	/**
 	 * method to fork process of PHP-Web (Apache/Nginx/FPM)
 	 * 
@@ -363,7 +363,7 @@ class Billrun_Util {
 	 * @return Boolean true on success else FALSE
 	 */
 	public static function forkProcessCli($cmd) {
-		$syscmd = $cmd ." > /dev/null & ";
+		$syscmd = $cmd . " > /dev/null & ";
 		if (system($syscmd) === FALSE) {
 			error_log("Can't fork PHP process");
 			return false;
@@ -404,16 +404,16 @@ class Billrun_Util {
 	 * @return string phone number in msisdn format
 	 */
 	public static function msisdn($phoneNumber, $defaultPrefix = null) {
-		
+
 		if (empty($phoneNumber)) {
 			return $phoneNumber;
 		}
-		
+
 		settype($phoneNumber, 'string');
-		
+
 		$replace = array("(0)", "-", "+", "(", ")", " ", "#", "*");
 		$cleanNumber = ltrim(str_replace($replace, "", $phoneNumber), "0");
-		
+
 		//CCNDCSN - First part USA; second non-USA
 		if (preg_match("/^(1[2-9]{1}[0-9]{2}|[2-9]{1}[0-9]{1,2}[1-9]{1}[0-9]{0,2})[0-9]{7}$/", $cleanNumber)) {
 			return $phoneNumber;
@@ -425,15 +425,14 @@ class Billrun_Util {
 
 		return $defaultPrefix . ltrim($phoneNumber, "0");
 	}
-	
+
 	/**
 	 * utility to reset and initialized fork process
-	 * use this method when you open a child fork process
+	 * use this method when you open a child fork process with pcntl_fork
 	 */
 	public static function resetForkProcess() {
 		Billrun_Factory::log()->removeWriters('Mail');
 		Billrun_Factory::log()->addWriters('Mail');
 	}
-
 
 }
