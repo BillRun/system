@@ -56,6 +56,14 @@ abstract class Billrun_Receiver extends Billrun_Base {
 		if (isset($options['receiver']['preserve_timestamps'])) {
 			$this->preserve_timestamps = $options['receiver']['preserve_timestamps'];
 		}
+		if (isset($options['backup_path'])) {
+			$this->backupPaths = $options['backup_path'];
+		} else {
+			$this->backupPaths = Billrun_Factory::config()->getConfigValue($this->getType() . '.backup_path', array('./backups/' . $this->getType()));
+		}
+		if (isset($options['receiver']['backup_granularity']) && $options['processor']['backup_granularity']) {
+			$this->setGranularity((int) $options['processor']['backup_granularity']);
+		}
 	}
 
 	/**

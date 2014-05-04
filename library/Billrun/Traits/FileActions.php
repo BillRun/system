@@ -22,6 +22,12 @@ trait Billrun_Traits_FileActions {
 	protected $backup_seq_granularity = 2;// 100 files in each directory.
 	
 	/**
+	 * An array of path to back files to.
+	 * @var Array containg the paths  to save backups to.
+	 */
+	protected $backupPaths = array();
+	
+	/**
 	 * Get the data the is stored in the file name.
 	 * @return an array containing the sequence data. ie:
 	 * 			array(seq => 00001, date => 20130101 )
@@ -90,7 +96,7 @@ trait Billrun_Traits_FileActions {
 	 * @return string the path to place the file in.
 	 */
 	public function generateBackupPath($basePath,$fileSeqData,$retrievedHostname = false) {
-			$basePath = $basePath;
+			$backupPath = $basePath;
 			$backupPath .= ($retrievedHostname ? DIRECTORY_SEPARATOR . $retrievedHostname : ""); //If theres more then one host or the files were retrived from a named host backup under that host name
 			$backupPath .= DIRECTORY_SEPARATOR . ($fileSeqData['date'] ? $fileSeqData['date'] : date("Ym")); // if the file name has a date  save under that date else save under tthe current month
 			$backupPath .= ($fileSeqData['seq'] ? DIRECTORY_SEPARATOR . substr($fileSeqData['seq'], 0, - $this->backup_seq_granularity) : ""); // brak the date to sequence number with varing granularity
@@ -150,7 +156,7 @@ trait Billrun_Traits_FileActions {
 		return $path;	
 	}
 	
-	protected function setGrannularoty($grn) {
+	protected function setGranularity($grn) {
 		$this->backup_seq_granularity = intval($grn);
 	}
 	

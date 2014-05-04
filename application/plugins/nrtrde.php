@@ -104,16 +104,16 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 	 * @param Billrun_Processor $processor the proce
 	 * @param string $file_path the path of the current processing file.
 	 */
-	public function afterProcessorBackup($processor, &$file_path) {
-		if ($processor->getType() != $this->getName()) {
+	public function afterReceiverBackup($receiver, &$file_path, $retrievedHostname= FALSE) {
+		if ($receiver->getType() != $this->getName()) {
 			return;
 		}
 		$path = Billrun_Factory::config()->getConfigValue($this->getName() . '.processor.zip_move_path', false, 'string');
 		if (!$path)
 			return;
 
-		if ($processor->retrievedHostname) {
-			$path = $path . DIRECTORY_SEPARATOR . $processor->retrievedHostname;
+		if ($retrievedHostname) {
+			$path = $path . DIRECTORY_SEPARATOR . $retrievedHostname;
 		}
 
 		$path .= DIRECTORY_SEPARATOR . date("Ym");

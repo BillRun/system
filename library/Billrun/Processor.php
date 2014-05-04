@@ -60,11 +60,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 */
 	protected $bulkInsert = 0;
 
-	/**
-	 * the file path to process on
-	 * @var file path
-	 */
-	protected $backupPaths = array();
+
 
 	/**
 	 * The time to wait  until adopting file  that were  started processing but weren't finished.
@@ -83,12 +79,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 */
 	protected $current_line = 0;
 
-	/**
-	 * the backup sequence file number digits granularity 
-	 * (1=batches of 10 files  in each directory, 2= batches of 100, 3= batches of 1000,etc...)
-	 * @param integer
-	 */
-	protected $backup_seq_granularity = self::BACKUP_FILE_SEQUENCE_GRANULARITY;
+
 
 	/**
 	 *
@@ -129,11 +120,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 			$this->line_numbers = $options['processor']['line_numbers'];
 		}
 
-		if (isset($options['backup_path'])) {
-			$this->setBackupPath($options['backup_path']);
-		} else {
-			$this->setBackupPath(Billrun_Factory::config()->getConfigValue($this->getType() . '.backup_path', array('./backups/' . $this->getType())));
-		}
+	
 
 		if (isset($options['orphan_files_time'])) {
 			$this->orphandFilesAdoptionTime = $options['orphan_files_time'];
@@ -144,15 +131,10 @@ abstract class Billrun_Processor extends Billrun_Base {
 		if (isset($options['processor']['limit']) && $options['processor']['limit']) {
 			$this->setLimit($options['processor']['limit']);
 		}
-		if (isset($options['processor']['backup_granularity']) && $options['processor']['backup_granularity']) {
-			$this->backup_seq_granularity = $options['processor']['backup_granularity'];
-		}
+		
 		if (isset($options['bulkInsert'])) {
 			$this->bulkInsert = $options['bulkInsert'];
-		}
-		if (isset($options['processor']['preserve_timestamps'])) {
-			$this->preserve_timestamps = $options['processor']['preserve_timestamps'];
-		}
+		}		
 
 		if (isset($options['processor']['order_lines_before_insert'])) {
 			$this->orderLinesBeforeInsert = $options['processor']['order_lines_before_insert'];
@@ -180,32 +162,6 @@ abstract class Billrun_Processor extends Billrun_Base {
 		return $this->parser;
 	}
 
-	/**
-	 * method to setup the backup path that the processor will stored the parsing file
-	 * 
-	 * @param string $path the backup path
-	 */
-	public function setBackupPath($paths) {
-		$paths = is_array($paths) ? $paths : explode(',', $paths);
-		$this->backupPaths = array();
-
-		foreach ($paths as $path) {
-			// in case the path is not exists but we can't create it
-			if (!file_exists($path) && !@mkdir($path, 0777, true)) {
-				Billrun_Factory::log()->log("Can't create backup path or is not a directory " . $path, Zend_Log::WARN);
-				return FALSE;
-			}
-
-			// in case the path exists but it's a file
-			if (!is_dir($path)) {
-				Billrun_Factory::log()->log("The path " . $path . " is not directory", Zend_Log::WARN);
-				return FALSE;
-			}
-			$this->backupPaths[] = $path;
-		}
-
-		return TRUE;
-	}
 
 	/**
 	 * method to run over all the files received which did not have been processed
@@ -284,9 +240,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 				return FALSE;
 			}
 			Billrun_Factory::dispatcher()->trigger('afterProcessorStore', array($this));
-			$this->backup();
 
-			Billrun_Factory::dispatcher()->trigger('afterProcessorBackup', array($this, &$this->filePath));
 			return count($this->data['data']);
 		}
 	}
@@ -436,55 +390,6 @@ abstract class Billrun_Processor extends Billrun_Base {
 		return $this;
 	}
 
-	/**
-	 * Backup the current processed file to the proper backup paths
-	 * @param type $move should the file be moved when the backup ends?
-	 */
-	protected function backup($move = true) {
-		$seqData = $this->getFilenameData($this->filename);
-		for ($i = 0; $i < count($this->backupPaths); $i++) {
-			$backupPath = $this->backupPaths[$i];
-			$backupPath .= ($this->retrievedHostname ? DIRECTORY_SEPARATOR . $this->retrievedHostname : ""); //If theres more then one host or the files were retrived from a named host backup under that host name
-			$backupPath .= DIRECTORY_SEPARATOR . ($seqData['date'] ? $seqData['date'] : date("Ym")); // if the file name has a date  save under that date else save under tthe current month
-			$backupPath .= ($seqData['seq'] ? DIRECTORY_SEPARATOR . substr($seqData['seq'], 0, -$this->backup_seq_granularity) : ""); // brak the date to sequence number with varing granularity
-
-			if ($this->backupToPath($backupPath, !($move && $i + 1 == count($this->backupPaths))) === TRUE) {
-				Billrun_Factory::log()->log("Success backup file " . $this->filePath . " to " . $backupPath, Zend_Log::INFO);
-			} else {
-				Billrun_Factory::log()->log("Failed backup file " . $this->filePath . " to " . $backupPath, Zend_Log::INFO);
-			}
-		}
-	}
-
-	/**
-	 * method to backup the processed file
-	 * 
-	 * @param string $path  the path to backup the file to.
-	 * @param boolean $copy copy or rename (move) the file to backup
-	 * 
-	 * @return boolean return true if success to backup
-	 */
-	public function backupToPath($path, $copy = false) {
-		if ($copy) {
-			$callback = "copy";
-		} else {
-			$callback = "rename"; // php move
-		}
-		if (!file_exists($path)) {
-			@mkdir($path, 0777, true);
-		}
-		$target_path = $path . DIRECTORY_SEPARATOR . $this->filename;
-		$timestamp = filemtime($this->filePath); // this will be used after copy/move to preserve timestamp
-		$ret = @call_user_func_array($callback, array(
-					$this->filePath,
-					$target_path,
-		));
-
-		if ($this->preserve_timestamps) {
-			Billrun_Util::setFileModificationTime($target_path, $timestamp);
-		}
-		return $ret;
-	}
 
 	/**
 	 * Get the data the is stored in the file name.

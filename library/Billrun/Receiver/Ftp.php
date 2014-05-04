@@ -149,6 +149,10 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 			}
 			Billrun_Factory::dispatcher()->trigger('afterFTPFileReceived', array(&$received_path, $file, $this, $hostName, $extraData));
 
+			if(!empty($this->backupPaths)) {
+				$this->backup($received_path, $file->name, $this->backupPaths, $hostName);
+				Billrun_Factory::dispatcher()->trigger('afterReceiverBackup', array($this, &$received_path, $hostName));
+			}
 			if ($this->logDB($received_path, $hostName, $extraData)) {
 				$ret[] = $received_path;
 				$count++; //count the file as recieved
