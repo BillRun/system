@@ -17,7 +17,6 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 	const MAX_CHUNKLENGTH_LENGTH = 4096;
 	const FILE_READ_AHEAD_LENGTH = 16384;
 	const RECORD_PADDING = 8;
-
 	/**
 	 * plugin name
 	 *
@@ -31,27 +30,8 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 		$this->addParsingMethods();
 	}
 
-	/**
-	 * back up retrived files that were processed to a third patry path.
-	 * @param \Billrun_Processor $processor the processor instace contain the current processed file data. 
-	 */
-	public function afterProcessorStore(\Billrun_Processor $processor) {
-		if ($processor->getType() != $this->getName()) {
-			return;
-		}
-		$path = Billrun_Factory::config()->getConfigValue('ggsn.thirdparty.backup_path', false, 'string');
-		if (!$path)
-			return;
-		if ($processor->retrievedHostname) {
-			$path = $path . DIRECTORY_SEPARATOR . $processor->retrievedHostname;
-		}
-		Billrun_Factory::log()->log("Saving  file to third party at : $path", Zend_Log::INFO);
-		if (!$processor->backupToPath($path, true)) {
-			Billrun_Factory::log()->log("Couldn't  save file to third patry path at : $path", Zend_Log::ERR);
-		}
-	}
-
 	/////////////////////////////////////////  Alerts /////////////////////////////////////////
+
 //	/**
 //	 * method to collect data which need to be handle by event
 //	 */
@@ -103,6 +83,17 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 			return;
 		}
 		$this->checkFilesSeq($filepaths, $hostname);
+		$path = Billrun_Factory::config()->getConfigValue($this->getName().'.thirdparty.backup_path', false, 'string');
+		if (!$path)	return;
+		if ($hostname) {
+			$path = $path . DIRECTORY_SEPARATOR . $hostname;
+		}
+		Billrun_Factory::log()->log("Saving files to third party at : $path", Zend_Log::INFO);
+		foreach ($filepaths as $filePath) {
+			if (!$receiver->backupToPath($filePath, $path, true , true)) {
+				Billrun_Factory::log()->log("Couldn't save file $filePath to third patry path at : $path", Zend_Log::ERR);
+			}
+		}
 	}
 
 	/**
@@ -287,11 +278,12 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 				$cdrLine['org_fbc_uplink_volume'] = $cdrLine['fbc_uplink_volume'];
 				$cdrLine['org_fbc_downlink_volume'] = $cdrLine['fbc_downlink_volume'];
 				$cdrLine['org_rating_group'] = $cdrLine['rating_group'];
-
+				
 				foreach ($cdrLine['rating_group'] as $key => $rateVal) {
 					if (isset($this->ggsnConfig['rating_groups'][$rateVal])) {
 						$fbc_uplink_volume += $cdrLine['fbc_uplink_volume'][$key];
 						$fbc_downlink_volume += $cdrLine['fbc_downlink_volume'][$key];
+						
 					}
 				}
 				$cdrLine['fbc_uplink_volume'] = $fbc_uplink_volume;
@@ -320,9 +312,9 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 		$nx16Data = unpack("N", substr($data, 0x16, 4));
 		$header['next_file_number'] = reset($nx16Data);
 		//Billrun_Factory::log(print_r($header,1));
-
+		
 		$header['raw'] = utf8_encode(base64_encode($data)); // Is  this  needed?
-
+		
 		return $header;
 	}
 
@@ -343,7 +335,7 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 		if ($this->getName() != $type) {
 			return FALSE;
 		}
-
+		
 		$trailer = utf8_encode(base64_encode($data)); // Is  this  needed?
 
 		return $trailer;
@@ -567,5 +559,6 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 		}
 		return $ret;
 	}
+	
 
 }
