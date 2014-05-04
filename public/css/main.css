@@ -95,7 +95,7 @@ input[type=checkbox] {
 }
 
 .toolbar-rates {
-	
+
 }
 .control-group {
 	height: 35px;
@@ -207,7 +207,7 @@ input[type=text].advanced-filter, .toolbar-lines input[type=text].span2{
 }
 
 .remove-filter , .add-filter {
-  color:black;
+	color:black;
 }
 li.logout {
 	margin-left:25px;
@@ -239,4 +239,17 @@ div.billrun-logo img {
 #w-popup .modal-content {
     max-height: 45em;
     overflow: auto;
+}
+.wholesale-data {
+	clear: both;
+}
+.wholesale-data .wholesale-table {
+	float: left;
+}
+.wholesale-data .wholesale-graph {
+    height: 350px;
+    overflow-x: scroll;
+    overflow-y: hidden;
+    width: 650px;
+	float: right;
 }

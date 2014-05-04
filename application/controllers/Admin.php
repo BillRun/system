@@ -56,6 +56,22 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->jsPaths[] = $path;
 	}
 
+	protected function fetchJsFiles() {
+		$ret = '';
+		foreach ($this->jsPaths as $jsPath) {
+			$ret.='<script src="' . $jsPath . '"></script>';
+		}
+		return $ret;
+	}
+
+	protected function fetchCssFiles() {
+		$ret = '';
+		foreach ($this->cssPaths as $cssPath) {
+			$ret.='<link rel="stylesheet" href="' . $cssPath . '">';
+		}
+		return $ret;
+	}
+
 	/**
 	 * default controller of admin
 	 */
@@ -118,7 +134,6 @@ class AdminController extends Yaf_Controller_Abstract {
 		} else {
 			$this->getView()->key = "the selected documents";
 		}
-
 
 		$this->getView()->collectionName = $coll;
 		$this->getView()->type = $type;
@@ -625,8 +640,9 @@ class AdminController extends Yaf_Controller_Abstract {
 		$parameters['title'] = $this->title;
 		$parameters['baseUrl'] = $this->baseUrl;
 
-		$parameters['cssPaths'] = $this->cssPaths;
-		$parameters['jsPaths'] = $this->jsPaths;
+		$parameters['css'] = $this->fetchCssFiles();
+		$parameters['js'] = $this->fetchJsFiles();
+		
 		return $this->getView()->render($tpl . ".phtml", $parameters);
 	}
 
@@ -864,6 +880,8 @@ class AdminController extends Yaf_Controller_Abstract {
 	public function wholesaleAction() {
 		if (!$this->authorized('reports'))
 			return false;
+		$this->addJs('//www.google.com/jsapi');
+		$this->addJs('/js/graphs.js');
 		$table = 'wholesale';
 		$group_by = $this->getSetVar($this->getSession($table), 'group_by', 'group_by', 'dayofmonth');
 		$from_day = $this->getSetVar($this->getSession($table), 'from_day', 'from_day', (new Zend_Date(strtotime('60 days ago'), null, new Zend_Locale('he_IL')))->toString('YYYY-MM-dd'));

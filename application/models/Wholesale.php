@@ -62,7 +62,11 @@ class WholesaleModel {
 
 		$callData = $this->db->fetchAll($query);
 		foreach ($callData as &$row) {
+			if (isset($row['cost'])) {
+				$row['cost'] = floatval($row['cost']);
+			}
 			if (isset($row['duration'])) {
+				$row['hours'] = $row['duration'] / 3600;
 				$hours = floor($row['duration'] / 3600);
 				$minutes = floor(($row['duration'] / 60) % 60);
 				$seconds = $row['duration'] % 60;
