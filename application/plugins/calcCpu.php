@@ -240,8 +240,7 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 			if ($this->childProcesses <= $forkXmlLimit) {
 				if (-1 !== ($pid = pcntl_fork())) {
 					if ($pid == 0) {
-						Billrun_Factory::log()->removeWriters('Mail');
-						Billrun_Factory::log()->addWriters('Mail');
+						Billrun_Util::resetForkProcess();
 						Billrun_Factory::log('Plugin calc cpu afterAggregateAccount run it in async mode', Zend_Log::INFO);
 						$this->makeXml($account_billrun, $lines);
 						exit(0); // exit from child process after finish creating xml; continue on parent

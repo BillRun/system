@@ -425,6 +425,15 @@ class Billrun_Util {
 
 		return $defaultPrefix . ltrim($phoneNumber, "0");
 	}
+	
+	/**
+	 * utility to reset and initialized fork process
+	 * use this method when you open a child fork process
+	 */
+	public static function resetForkProcess() {
+		Billrun_Factory::log()->removeWriters('Mail');
+		Billrun_Factory::log()->addWriters('Mail');
+	}
 
 
 }

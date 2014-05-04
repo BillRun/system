@@ -373,6 +373,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$runAsync = Billrun_Factory::config()->getConfigValue('fraud.runAsync', 1);
 		if (function_exists("pcntl_fork") && $runAsync && -1 !== ($pid = pcntl_fork())) {
 			if ($pid == 0) {
+				Billrun_Util::resetForkProcess();
 				Billrun_Factory::log('Plugin fraud::afterProcessorStore run it in async mode', Zend_Log::INFO);
 				$this->insertRoamingGgsn($processor->getData()['data']);
 				Billrun_Factory::log('Plugin fraud::afterProcessorStore async mode done.', Zend_Log::INFO);
