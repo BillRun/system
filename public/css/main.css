@@ -224,3 +224,17 @@ div.billrun-logo img {
 	vertical-align:middle;
 	text-align:center;
 }
+#resetSubsModal input#file-upload {
+	display:inline-block;
+}
+#resetSubsModal .inputs {
+	padding:0.5em;
+}
+#resetSubsModal .inputs .input{
+	display:block;
+}
+#resetSubsModal .inputs .input-label{
+	text-align: right;
+	width:15em;
+	padding:0.4em;
+}
