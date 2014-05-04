@@ -84,6 +84,7 @@ trait Billrun_Traits_FileActions {
 	 * @param type $move should the file be moved when the backup ends?
 	 */
 	protected function backup($filePath, $filename, $backupPaths, $retrievedHostname, $move = true) {
+		$backupPaths = is_array($backupPaths) ? $backupPaths : array($backupPaths);
 		
 		$seqData = $this->getFilenameData($filename,$this->getType());
 		for ($i = 0; $i < count($backupPaths); $i++) {

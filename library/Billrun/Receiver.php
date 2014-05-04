@@ -31,7 +31,6 @@ abstract class Billrun_Receiver extends Billrun_Base {
 	 */
 	protected $workspace;
 
-	
 	/**
 	 * A regular expression to identify the files that should be downloaded
 	 * 
