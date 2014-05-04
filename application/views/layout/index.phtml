@@ -57,7 +57,7 @@ if (APPLICATION_ENV === 'prod') {
 			</a>
         </div>
 		<?php
-			print $this->render('menu.phtml', array());
+			print $this->render('menu.phtml', array('active' => $active));
 		?>
       </div>
     </div>
