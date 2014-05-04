@@ -31,12 +31,7 @@ abstract class Billrun_Receiver extends Billrun_Base {
 	 */
 	protected $workspace;
 
-	/**
-	 *
-	 * @var boolean whether to preserve the modification timestamps of the received files
-	 */
-	protected $preserve_timestamps = true;
-
+	
 	/**
 	 * A regular expression to identify the files that should be downloaded
 	 * 

@@ -27,6 +27,14 @@ trait Billrun_Traits_FileActions {
 	 */
 	protected $backupPaths = array();
 	
+	
+	/**
+	 *
+	 * @var boolean whether to preserve the modification timestamps of the received files
+	 */
+	protected $preserve_timestamps = true;
+
+	
 	/**
 	 * Get the data the is stored in the file name.
 	 * @return an array containing the sequence data. ie:
@@ -81,7 +89,7 @@ trait Billrun_Traits_FileActions {
 		for ($i = 0; $i < count($backupPaths); $i++) {
 			$backupPath = $this->generateBackupPath($backupPaths[$i],$seqData,$retrievedHostname);
 			$this->prepareBackupPath($backupPath);
-			if ($this->backupToPath($filePath,$backupPath, !($move && $i + 1 == count($backupPaths))) === TRUE) {
+			if ($this->backupToPath($filePath,$backupPath, $this->preserve_timestamps,!($move && $i + 1 == count($backupPaths))) === TRUE) {
 				Billrun_Factory::log()->log("Success backup file " . $filePath . " to " . $backupPath, Zend_Log::INFO);
 			} else {
 				Billrun_Factory::log()->log("Failed backup file " . $filePath . " to " . $backupPath, Zend_Log::INFO);
