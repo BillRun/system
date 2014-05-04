@@ -87,15 +87,19 @@ trait Billrun_Traits_FileActions {
 		$backupPaths = is_array($backupPaths) ? $backupPaths : array($backupPaths);
 		
 		$seqData = $this->getFilenameData($filename,$this->getType());
+		$backedTo = array();
 		for ($i = 0; $i < count($backupPaths); $i++) {
 			$backupPath = $this->generateBackupPath($backupPaths[$i],$seqData,$retrievedHostname);
 			$this->prepareBackupPath($backupPath);
 			if ($this->backupToPath($filePath,$backupPath, $this->preserve_timestamps,!($move && $i + 1 == count($backupPaths))) === TRUE) {
 				Billrun_Factory::log()->log("Success backup file " . $filePath . " to " . $backupPath, Zend_Log::INFO);
+				$backedTo[] = $backupPath;
 			} else {
 				Billrun_Factory::log()->log("Failed backup file " . $filePath . " to " . $backupPath, Zend_Log::INFO);
 			}
 		}
+		
+		return $backedTo;
 	}
 	/**
 	 * Generate a backup path to a given file.
@@ -165,8 +169,29 @@ trait Billrun_Traits_FileActions {
 		return $path;	
 	}
 	
+	/**
+	 * Set the backup granularity.
+	 * @param type $grn the digit  granularity count.
+	 */
 	protected function setGranularity($grn) {
 		$this->backup_seq_granularity = intval($grn);
+	}
+	
+	/**
+	 * Remove the file if its backed up if not back it  in a default folder.
+	 * @param type $filepath the stamp to the file to remove from workspace
+	 */
+	protected function removeFromWorkspace($filestamp) {
+		$file = Billrun_Factory::db()->logCollection()->query(array('stamp'=> $filestamp))->cursor()->limit(1)->current();
+		if(!$file->isEmpty()) {
+			$defaultBackup = Billrun_Factory::config()->getConfigValue('backup.default_backup_path',FALSE);
+			if(empty($file['backed_to']) &&  $defaultBackup ) {
+					Billrun_Factory::log()->log("Backing up file {$file['path']} to default location." , Zend_Log::INFO);	
+				$this->backupToPath($file['path'], $defaultBackup);
+			}
+				Billrun_Factory::log()->log("Backing up file from : " . $srcPath . " to :  " . $trgtPath, Zend_Log::INFO);
+			unlink($file['path']);
+		}
 	}
 	
 	/**
@@ -174,5 +199,7 @@ trait Billrun_Traits_FileActions {
 	 * @return string the  class instance name
 	 */
 	abstract function  getType();
+	
+	
 	
 }

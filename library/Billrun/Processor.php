@@ -13,6 +13,8 @@
  * @since    0.5
  */
 abstract class Billrun_Processor extends Billrun_Base {
+	
+	use Billrun_Traits_FileActions;
 
 	const BACKUP_FILE_SEQUENCE_GRANULARITY = 2;
 
@@ -79,13 +81,6 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 */
 	protected $current_line = 0;
 
-
-
-	/**
-	 *
-	 * @var boolean whether to preserve the modification timestamps of the files being backed up
-	 */
-	protected $preserve_timestamps = true;
 
 	/**
 	 *
@@ -241,6 +236,9 @@ abstract class Billrun_Processor extends Billrun_Base {
 			}
 			Billrun_Factory::dispatcher()->trigger('afterProcessorStore', array($this));
 
+			$this->removefromWorkspace($this->getFileStamp());
+			Billrun_Factory::dispatcher()->trigger('afterProcessorRemove', array($this));
+			
 			return count($this->data['data']);
 		}
 	}
