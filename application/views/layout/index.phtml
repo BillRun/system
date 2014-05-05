@@ -1,17 +1,4 @@
-<?php
-
-if (APPLICATION_ENV === 'prod') {
-	$branch = 'production';
-	if (file_exists(APPLICATION_PATH . '/.git/refs/heads/' . $branch)) {
-		$commit = rtrim(file_get_contents( APPLICATION_PATH . '/.git/refs/heads/' . $branch), "\n");
-	} else {
-		$commit = md5(date('ymd'));
-	}
-} else {
-	$commit = md5(time());
-}
-
-?><!DOCTYPE html>
+<!DOCTYPE html>
 <!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
 <!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
 <!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
@@ -30,7 +17,7 @@ if (APPLICATION_ENV === 'prod') {
                 padding-bottom: 20px;
             }
         </style>
-
+		<?php echo $css; ?>
 		<script src="<?php echo $this->baseUrl; ?>/js/vendor/modernizr-2.6.2-respond-1.1.0.min.js"></script>
 		<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
 		<script>window.jQuery || document.write('<script src="<?php echo $this->baseUrl; ?>/js/vendor/jquery-1.11.0.min.js"><\/script>')</script>
@@ -63,9 +50,7 @@ if (APPLICATION_ENV === 'prod') {
 	<?php echo $this->component; ?>
 	<!-- end of main component -->
 	
-		<?php
-		echo $js;
-		?>
+		<?php echo $js; ?>
 		<script type="text/javascript">
 			if (typeof google !== 'undefined') {
 				google.load('visualization', '1', {packages: ["corechart", "annotatedtimeline", "controls"]});

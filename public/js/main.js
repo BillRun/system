@@ -332,12 +332,12 @@ function openPopup(obj, direction) {
 	var direction = obj.closest('table').data('type');
 	if (popup_group_field == 'carrier') {
 		var from_day, to_day;
-		from_day = to_day = obj.find('[data-type="group_by"]').text();
+		from_day = to_day = obj.text();
 	}
 	else {
 		var from_day = $('input[name="init_from_day"]').val();
 		var to_day = $('input[name="init_to_day"]').val();
-		var carrier = obj.find('input.carrier').val();
+		var carrier = obj.siblings('input.carrier').val();
 	}
 	obj.data('remote', '/admin/wholesaleajax?direction=' + direction + '&group_by=' + popup_group_field + '&from_day=' + from_day + '&to_day=' + to_day + (carrier ? '&carrier=' + encodeURIComponent(carrier) : ''));
 }

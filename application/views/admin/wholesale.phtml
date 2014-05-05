@@ -37,10 +37,18 @@
 					echo "</tr>";
 
 					foreach ($this->data['incoming_call'] as $item) {
-						echo '<tr onclick="openPopup(this);" href="#w-popup" data-type="update" data-toggle="modal" role="button" data-remote="">';
+						echo '<tr>';
 						foreach ($keys as $k) :
-							$is_carrier = $k == 'group_by' && $this->group_by == 'carrier';
-							echo "<td data-type='" . $k . "'>" . ($is_carrier ? "<input class=\"carrier\" type=\"hidden\" value=\"" . $item[$k] . "\">" . $item[$k] : (isset($item[$k]) ? $item[$k] : '&nbsp;')) . "</td>";
+							echo "<td>";
+							if ($k == 'group_by') {
+								if ($this->group_by == 'carrier') {
+									echo "<input class=\"carrier\" type=\"hidden\" value=\"" . $item[$k] . "\">";
+								}
+								echo '<a onclick="openPopup(this);" href="#w-popup" data-type="update" data-toggle="modal" role="button" data-remote="" data-type="' . $k . '">' . $item[$k] . '</a>';
+							} else {
+								echo (isset($item[$k]) ? $item[$k] : '&nbsp;');
+							}
+							echo "</td>";
 						endforeach;
 						echo "</tr>";
 					}
@@ -63,10 +71,18 @@
 					echo "</tr>";
 
 					foreach ($this->data['outgoing_call'] as $item) {
-						echo '<tr onclick="openPopup(this);" href="#w-popup" data-type="update" data-toggle="modal" role="button" data-remote="">';
+						echo '<tr>';
 						foreach ($keys as $k) :
-							$is_carrier = $k == 'group_by' && $this->group_by == 'carrier';
-							echo "<td data-type='" . $k . "'>" . ($is_carrier ? "<input class=\"carrier\" type=\"hidden\" value=\"" . $item[$k] . "\">" . $item[$k] : (isset($item[$k]) ? $item[$k] : '&nbsp;')) . "</td>";
+							echo "<td>";
+							if ($k == 'group_by') {
+								if ($this->group_by == 'carrier') {
+									echo "<input class=\"carrier\" type=\"hidden\" value=\"" . $item[$k] . "\">";
+								}
+								echo '<a onclick="openPopup(this);" href="#w-popup" data-type="update" data-toggle="modal" role="button" data-remote="" data-type="' . $k . '">' . $item[$k] . '</a>';
+							} else {
+								echo (isset($item[$k]) ? $item[$k] : '&nbsp;');
+							}
+							echo "</td>";
 						endforeach;
 						echo "</tr>";
 					}

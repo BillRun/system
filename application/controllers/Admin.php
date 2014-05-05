@@ -25,11 +25,24 @@ class AdminController extends Yaf_Controller_Abstract {
 	protected $baseUrl = null;
 	protected $cssPaths = array();
 	protected $jsPaths = array();
+	protected $commit;
 
 	/**
 	 * method to control and navigate the user to the right view
 	 */
 	public function init() {
+		if (APPLICATION_ENV === 'prod') {
+			// TODO: set the branch through config
+			$branch = 'production';
+			if (file_exists(APPLICATION_PATH . '/.git/refs/heads/' . $branch)) {
+				$this->commit = rtrim(file_get_contents( APPLICATION_PATH . '/.git/refs/heads/' . $branch), "\n");
+			} else {
+				$this->commit = md5(date('ymd'));
+			}
+		} else {
+			$this->commit = md5(time());
+		}
+
 		$this->baseUrl = $this->getRequest()->getBaseUri();
 		$this->addCss($this->baseUrl . '/css/bootstrap.min.css');
 		$this->addCss($this->baseUrl . '/css/bootstrap-datetimepicker.min.css');
@@ -59,7 +72,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	protected function fetchJsFiles() {
 		$ret = '';
 		foreach ($this->jsPaths as $jsPath) {
-			$ret.='<script src="' . $jsPath . '"></script>' . PHP_EOL;
+			$ret.='<script src="' . $jsPath . '?' . $this->commit . '"></script>' . PHP_EOL;
 		}
 		return $ret;
 	}
@@ -67,7 +80,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	protected function fetchCssFiles() {
 		$ret = '';
 		foreach ($this->cssPaths as $cssPath) {
-			$ret.='<link rel="stylesheet" href="' . $cssPath . '">' . PHP_EOL;
+			$ret.='<link rel="stylesheet" href="' . $cssPath . '?' . $this->commit . '">' . PHP_EOL;
 		}
 		return $ret;
 	}
