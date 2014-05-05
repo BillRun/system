@@ -281,7 +281,6 @@ function isAPIAvailable() {
 }
 $(document).ready(function() {
 	$(".config input[type='checkbox']").bootstrapSwitch();
-	$("#tabs").tabs();
 });
 
 function openPopup(obj, direction) {

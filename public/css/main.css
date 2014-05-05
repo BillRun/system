@@ -256,3 +256,6 @@ div.billrun-logo img {
 #w-popup .modal-dialog {
 	width: 1000px;
 }
+.tabbable ul li a {
+	outline: 0;
+}
