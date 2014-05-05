@@ -24,20 +24,17 @@ if (APPLICATION_ENV === 'prod') {
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
 		<link href="http://www.billrun.net/templates/meet_gavern/images/favicon.ico" rel="shortcut icon" type="image/vnd.microsoft.icon" />
-        <link rel="stylesheet" href="<?php echo $this->baseUrl; ?>/css/bootstrap.min.css<?php echo '?' . $commit;?>">
         <style>
             body {
                 padding-top: 50px;
                 padding-bottom: 20px;
             }
         </style>
-        <link rel="stylesheet" href="<?php echo $this->baseUrl; ?>/css/bootstrap-datetimepicker.min.css<?php echo '?' . $commit;?>">
-        <link rel="stylesheet" href="<?php echo $this->baseUrl; ?>/css/bootstrap-switch.min.css<?php echo '?' . $commit;?>">
-        <link rel="stylesheet" href="<?php echo $this->baseUrl; ?>/css/bootstrap-multiselect.css<?php echo '?' . $commit;?>">
-        <link rel="stylesheet" href="<?php echo $this->baseUrl; ?>/css/jsoneditor.css<?php echo '?' . $commit;?>">
-        <link rel="stylesheet" href="<?php echo $this->baseUrl; ?>/css/main.css<?php echo '?' . $commit;?>">
 
-        <script src="<?php echo $this->baseUrl; ?>/js/vendor/modernizr-2.6.2-respond-1.1.0.min.js<?php echo '?' . $commit;?>"></script>
+		<script src="<?php echo $this->baseUrl; ?>/js/vendor/modernizr-2.6.2-respond-1.1.0.min.js"></script>
+		<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+		<script>window.jQuery || document.write('<script src="<?php echo $this->baseUrl; ?>/js/vendor/jquery-1.11.0.min.js"><\/script>')</script>
+		
     </head>
     <body>
         <!--[if lt IE 7]>
@@ -66,18 +63,14 @@ if (APPLICATION_ENV === 'prod') {
 	<?php echo $this->component; ?>
 	<!-- end of main component -->
 	
-	<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
-	<script>window.jQuery || document.write('<script src="<?php echo $this->baseUrl; ?>/js/vendor/jquery-1.11.0.min.js<?php echo '?' . $commit;?>"><\/script>')</script>
-
-	<script src="<?php echo $this->baseUrl; ?>/js/vendor/bootstrap.min.js<?php echo '?' . $commit;?>"></script>
-	<script src="<?php echo $this->baseUrl; ?>/js/plugins.js<?php echo '?' . $commit;?>"></script>
-	<script src="<?php echo $this->baseUrl; ?>/js/moment.js<?php echo '?' . $commit;?>"></script>
-	<script src="<?php echo $this->baseUrl; ?>/js/bootstrap-datetimepicker.min.js<?php echo '?' . $commit;?>"></script>
-	<script src="<?php echo $this->baseUrl; ?>/js/jquery.jsoneditor.min.js<?php echo '?' . $commit;?>"></script>
-	<script src="<?php echo $this->baseUrl; ?>/js/bootstrap-multiselect.js<?php echo '?' . $commit;?>"></script>
-	<script src="<?php echo $this->baseUrl; ?>/js/bootstrap-switch.min.js<?php echo '?' . $commit;?>"></script>
-	<script src="<?php echo $this->baseUrl; ?>/js/jquery.csv-0.71.min.js<?php echo '?' . $commit;?>"></script>
-	<script src="<?php echo $this->baseUrl; ?>/js/main.js<?php echo '?' . $commit;?>"></script>
+		<?php
+		echo $js;
+		?>
+		<script type="text/javascript">
+			if (typeof google !== 'undefined') {
+				google.load('visualization', '1', {packages: ["corechart", "annotatedtimeline", "controls"]});
+			}
+		</script>
 
     </body>
 </html>

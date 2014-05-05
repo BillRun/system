@@ -39,7 +39,7 @@ $(function() {
 
 	function getInputFileContent(file, contentLoadedCB) {
 		if (isAPIAvailable()) {
-			var reader = new FileReader();			
+			var reader = new FileReader();
 			reader.readAsText(file);
 			reader.onload = function(event) {contentLoadedCB(event.target.result); };
 		} else {
@@ -62,12 +62,11 @@ $(function() {
 				var retRow;
 				for (var row in data) {
 					if (row != 0 && data[row].length == headers.length) { // skip the first (header) and only take rows that hass all column of the headers
-						retRow = {};						
-						for (var item in data[row]) {							
+						retRow = {};
+						for (var item in data[row]) {
 							retRow[headers[item]] = data[row][item];
 						}
-						ret[_c++] = retRow;					
-						
+						ret[_c++] = retRow;
 					}
 				}
 
@@ -92,7 +91,7 @@ $(function() {
 				$("#resetSubsModal #file-upload").val('');
 				$("#resetSubsModal #single-sub-input").val('');
 			}
-		
+
 		var files = $("#resetSubsModal #file-upload").get(0).files;
 		$('#resetSubsModal #saveOutput').html('');
 		if(files.length == 0) {
@@ -102,7 +101,7 @@ $(function() {
 		} else {
 			for(var i = 0; i < files.length; i++) {
 				getInputFileContent(files[i], resetLines);
-			}
+		}
 		}
 	});
 
@@ -203,7 +202,7 @@ $(function() {
 	});
 
 	$('.control-group5 .multiselect').multiselect({});
-	
+
 	$('#usage,#billrun,#source').multiselect({
 		selectAllValue: 'all',
 		selectedClass: null
@@ -233,9 +232,13 @@ $(function() {
 	$("select[name='manual_type[]']").on('change', function() {
 		type_changed(this)
 	});
-	$('.date').datetimepicker({
+	$('.date:not(.wholesale-date)').datetimepicker({
 		format: 'YYYY-MM-DD',
 //		language:'he'
+	});
+	$('.wholesale-date').datetimepicker({
+		format: 'YYYY-MM-DD',
+		pickTime: false
 	});
 	$(".advanced-options").on('click', function() {
 		$("#manual_filters").slideToggle();
@@ -321,6 +324,20 @@ function isAPIAvailable() {
 }
 $(document).ready(function () {
 $(".config input[type='checkbox']").bootstrapSwitch();
-
 });
 
+function openPopup(obj, direction) {
+	obj = $(obj);
+	var popup_group_field = $("input[name='popup_group_field']").val();
+	var direction = obj.closest('table').data('type');
+	if (popup_group_field == 'carrier') {
+		var from_day, to_day;
+		from_day = to_day = obj.find('[data-type="group_by"]').text();
+	}
+	else {
+		var from_day = $('input[name="init_from_day"]').val();
+		var to_day = $('input[name="init_to_day"]').val();
+		var carrier = obj.find('input.carrier').val();
+	}
+	obj.data('remote', '/admin/wholesaleajax?direction=' + direction + '&group_by=' + popup_group_field + '&from_day=' + from_day + '&to_day=' + to_day + (carrier ? '&carrier=' + encodeURIComponent(carrier) : ''));
+}

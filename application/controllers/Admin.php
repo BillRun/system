@@ -23,13 +23,53 @@ class AdminController extends Yaf_Controller_Abstract {
 	protected $session = null;
 	protected $model = null;
 	protected $baseUrl = null;
+	protected $cssPaths = array();
+	protected $jsPaths = array();
 
 	/**
 	 * method to control and navigate the user to the right view
 	 */
 	public function init() {
 		$this->baseUrl = $this->getRequest()->getBaseUri();
+		$this->addCss($this->baseUrl . '/css/bootstrap.min.css');
+		$this->addCss($this->baseUrl . '/css/bootstrap-datetimepicker.min.css');
+		$this->addCss($this->baseUrl . '/css/bootstrap-switch.css');
+		$this->addCss($this->baseUrl . '/css/jsoneditor.css');
+		$this->addCss($this->baseUrl . '/css/main.css');
+		$this->addJs($this->baseUrl . '/js/vendor/bootstrap.min.js');
+		$this->addJs($this->baseUrl . '/js/plugins.js');
+		$this->addJs($this->baseUrl . '/js/moment.js');
+		$this->addJs($this->baseUrl . '/js/bootstrap-datetimepicker.min.js');
+		$this->addJs($this->baseUrl . '/js/jquery.jsoneditor.js');
+		$this->addJs($this->baseUrl . '/js/bootstrap-multiselect.js');
+		$this->addJs($this->baseUrl . '/js/bootstrap-switch.js');
+		$this->addJs($this->baseUrl . '/js/jquery.csv-0.71.min.js');
+		$this->addJs($this->baseUrl . '/js/main.js');
 		Yaf_Loader::getInstance(APPLICATION_PATH . '/application/helpers')->registerLocalNamespace('Admin');
+	}
+
+	protected function addCss($path) {
+		$this->cssPaths[] = $path;
+	}
+
+	protected function addJs($path) {
+		$this->jsPaths[] = $path;
+	}
+
+	protected function fetchJsFiles() {
+		$ret = '';
+		foreach ($this->jsPaths as $jsPath) {
+			$ret.='<script src="' . $jsPath . '"></script>' . PHP_EOL;
+		}
+		return $ret;
+	}
+
+	protected function fetchCssFiles() {
+		$ret = '';
+		foreach ($this->cssPaths as $cssPath) {
+			$ret.='<link rel="stylesheet" href="' . $cssPath . '">' . PHP_EOL;
+		}
+		return $ret;
 	}
 
 	/**
@@ -94,7 +134,6 @@ class AdminController extends Yaf_Controller_Abstract {
 		} else {
 			$this->getView()->key = "the selected documents";
 		}
-
 
 		$this->getView()->collectionName = $coll;
 		$this->getView()->type = $type;
@@ -215,6 +254,9 @@ class AdminController extends Yaf_Controller_Abstract {
 	}
 
 	public function csvExportAction() {
+		if (!$this->allowed('read'))
+			return false;
+
 		$session = $this->getSession('lines');
 
 		if (!empty($session->query)) {
@@ -358,10 +400,10 @@ class AdminController extends Yaf_Controller_Abstract {
 		if (!$user || !$user->valid() || !$user->allowed($permission)) {
 			return false;
 		}
-		
+
 		return true;
 	}
-	
+
 	/**
 	 * method to check if user is allowed to access page
 	 * 
@@ -498,7 +540,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		);
 		$this->getView()->component = $this->renderView('config', $viewData);
 	}
-	
+
 	/**
 	 * config controller of admin
 	 */
@@ -511,7 +553,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$model->setConfig($data);
 		$this->forceRedirect('/admin/config');
 	}
-	
+
 	protected function forceRedirect($uri) {
 		if (empty($uri)) {
 			$uri = '/';
@@ -519,7 +561,6 @@ class AdminController extends Yaf_Controller_Abstract {
 		header('Location: ' . $uri);
 		exit();
 	}
-
 
 	/**
 	 * method to render component page
@@ -535,7 +576,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		foreach ($params as $key => $val) {
 			$view->assign($key, $val);
 		}
-		
+
 		return $view->render($viewName . '.phtml', $params);
 	}
 
@@ -596,7 +637,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * @return string the render layout including the page (component)
 	 */
 	protected function render($tpl, array $parameters = array()) {
-		if ($tpl == 'edit' || $tpl == 'confirm' || $tpl == 'logdetails') {
+		if ($tpl == 'edit' || $tpl == 'confirm' || $tpl == 'logdetails' || $tpl == 'wholesaleajax') {
 			return parent::render($tpl, $parameters);
 		}
 		$tpl = 'index';
@@ -611,6 +652,10 @@ class AdminController extends Yaf_Controller_Abstract {
 
 		$parameters['title'] = $this->title;
 		$parameters['baseUrl'] = $this->baseUrl;
+
+		$parameters['css'] = $this->fetchCssFiles();
+		$parameters['js'] = $this->fetchJsFiles();
+		
 		return $this->getView()->render($tpl . ".phtml", $parameters);
 	}
 
@@ -799,18 +844,20 @@ class AdminController extends Yaf_Controller_Abstract {
 		}
 		return $query;
 	}
-	
+
 	public function logoutAction() {
 		Billrun_Factory::auth()->clearIdentity();
 		$session = Yaf_Session::getInstance();
-		foreach($session as $k => $v) {
+		foreach ($session as $k => $v) {
 			unset($session[$k]);
 		}
-		
+
 		$this->forceRedirect('/admin/login');
 	}
 
 	public function exportAction() {
+		if (!$this->allowed('read'))
+			return false;
 		$table = "rates";
 		$sort = $this->applySort($table);
 		$options = array(
@@ -841,6 +888,44 @@ class AdminController extends Yaf_Controller_Abstract {
 		header("Content-type: application/csv");
 		header("Content-Disposition: attachment; filename=csv_export.csv");
 		die($output);
+	}
+
+	public function wholesaleAction() {
+		if (!$this->authorized('reports'))
+			return false;
+		$this->addJs('//www.google.com/jsapi');
+		$this->addJs('/js/graphs.js');
+		$table = 'wholesale';
+		$group_by = $this->getSetVar($this->getSession($table), 'group_by', 'group_by', 'dayofmonth');
+		$from_day = $this->getSetVar($this->getSession($table), 'from_day', 'from_day', (new Zend_Date(strtotime('60 days ago'), null, new Zend_Locale('he_IL')))->toString('YYYY-MM-dd'));
+		$to_day = $this->getSetVar($this->getSession($table), 'to_day', 'to_day', (new Zend_Date(time(), null, new Zend_Locale('he_IL')))->toString('YYYY-MM-dd'));
+		$model = new WholesaleModel();
+		$viewData = array(
+			'data' => $model->getStats($group_by, $from_day, $to_day),
+			'group_fields' => $model->getGroupFields(),
+			'filter_fields' => $model->getFilterFields(),
+			'session' => $this->getSession($table),
+			'group_by' => $group_by,
+		);
+		$this->getView()->component = $this->renderView($table, $viewData);
+	}
+
+	public function wholesaleAjaxAction() {
+		if (!$this->authorized('reports'))
+			return false;
+		$group_by = $this->getRequest()->get('group_by');
+		$direction = $this->getRequest()->get('direction');
+		$carrier = $this->getRequest()->get('carrier');
+		$from_day = $this->getRequest()->get('from_day');
+		$to_day = $this->getRequest()->get('to_day');
+		$model = new WholesaleModel();
+		$data = $model->getCall($direction, $group_by, $from_day, $to_day, $carrier);
+		$this->getView()->data = $data;
+		$this->getView()->direction = $direction == 'TG' ? 'Incoming' : 'Outgoing';
+		$this->getView()->carrier = $carrier;
+		$this->getView()->group_by = $group_by;
+		$this->getView()->group_by_display = $model->getGroupFields()['group_by']['values'][$group_by]['display'];
+		$this->getView()->from_day = $from_day;
 	}
 
 }
