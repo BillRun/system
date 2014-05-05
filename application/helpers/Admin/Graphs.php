@@ -144,10 +144,7 @@ class Admin_Graphs {
 			$output.= '<div id="' . $graph_metadata->filter_div['id'] . '" class="' . $graph_metadata->filter_div['class'] . '"></div></div>';
 		}
 		$output .= '<script type="text/javascript">';
-		if (isset($graph_metadata->ajax_url)) {
-			$output.="google.setOnLoadCallback(function() {jQuery.getJSON('" . $graph_metadata->ajax_url . "',{}, function(data) {";
-		}
-		$output .= 'drawChart(' . (isset($graph_metadata->ajax_url) ? "data" : self::outputGoogleData($graph_metadata->data)) . ', '
+		$output .= '$(function() {drawChart(' . (isset($graph_metadata->ajax_url) ? "data" : self::outputGoogleData($graph_metadata->data)) . ', '
 				. json_encode($graph_metadata->options) . ', \'' . $graph_metadata->target_div['id']
 				. '\', \'' . $graph_metadata->chart_type . '\', ' . ($data_type ? 1 : 0) . ', ' . (isset($graph_metadata->ajax_url) ? 'true' : 'false');
 		if (isset($graph_metadata->dashboard_div) && isset($graph_metadata->filter_options)) {
@@ -158,10 +155,7 @@ class Admin_Graphs {
 		if (isset($graph_metadata->format_options)) {
 			$output.=', ' . json_encode($graph_metadata->format_options);
 		}
-		$output.=');';
-		if (isset($graph_metadata->ajax_url)) {
-			$output.="});});";
-		}
+		$output.=');})';
 		$output.='</script>';
 
 		if ($echo_output) {
