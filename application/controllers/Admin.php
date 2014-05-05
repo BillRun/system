@@ -44,6 +44,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->addJs($this->baseUrl . '/js/bootstrap-multiselect.js');
 		$this->addJs($this->baseUrl . '/js/bootstrap-switch.js');
 		$this->addJs($this->baseUrl . '/js/jquery.csv-0.71.min.js');
+		$this->addJs($this->baseUrl . '/js/jquery-ui-1.10.4.custom.min.js');
 		$this->addJs($this->baseUrl . '/js/main.js');
 		Yaf_Loader::getInstance(APPLICATION_PATH . '/application/helpers')->registerLocalNamespace('Admin');
 	}
@@ -59,7 +60,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	protected function fetchJsFiles() {
 		$ret = '';
 		foreach ($this->jsPaths as $jsPath) {
-			$ret.='<script src="' . $jsPath . '"></script>';
+			$ret.='<script src="' . $jsPath . '"></script>' . PHP_EOL;
 		}
 		return $ret;
 	}
@@ -67,7 +68,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	protected function fetchCssFiles() {
 		$ret = '';
 		foreach ($this->cssPaths as $cssPath) {
-			$ret.='<link rel="stylesheet" href="' . $cssPath . '">';
+			$ret.='<link rel="stylesheet" href="' . $cssPath . '">' . PHP_EOL;
 		}
 		return $ret;
 	}
@@ -882,6 +883,7 @@ class AdminController extends Yaf_Controller_Abstract {
 			return false;
 		$this->addJs('//www.google.com/jsapi');
 		$this->addJs('/js/graphs.js');
+		$this->addCss('/css/jquery-ui-1.10.4.custom.min.css');
 		$table = 'wholesale';
 		$group_by = $this->getSetVar($this->getSession($table), 'group_by', 'group_by', 'dayofmonth');
 		$from_day = $this->getSetVar($this->getSession($table), 'from_day', 'from_day', (new Zend_Date(strtotime('60 days ago'), null, new Zend_Locale('he_IL')))->toString('YYYY-MM-dd'));

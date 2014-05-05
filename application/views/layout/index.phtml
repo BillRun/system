@@ -29,7 +29,9 @@
 		echo $js;
 		?>
 		<script type="text/javascript">
-			google && google.load('visualization', '1', {packages: ['corechart']});
+			if (typeof google !== 'undefined') {
+				google.load('visualization', '1', {packages: ["corechart", "annotatedtimeline", "controls"]});
+			}
 		</script>
     </head>
     <body>

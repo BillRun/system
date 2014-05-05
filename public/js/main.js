@@ -1,5 +1,5 @@
-$('body').on('hidden.bs.modal', '.modal', function () {
-  $(this).removeData('bs.modal');
+$('body').on('hidden.bs.modal', '.modal', function() {
+	$(this).removeData('bs.modal');
 });
 var checkItems = false;
 $(function() {
@@ -96,57 +96,57 @@ $(function() {
 			var files = $("#importPricesModal #file-upload2").get(0).files; // FileList object
 			if (files.length) {
 				$(this).attr('disabled', 'disabled');
-			var file = files[0];
-			var reader = new FileReader();
-			reader.readAsText(file);
-			reader.onload = function(event) {
-				var csv = event.target.result;
-				var data = $.csv.toArrays(csv);
-				var header_line = data[0];
-				var headers = [];
-				var ret = [];
-				for (var item in header_line) {
-					headers[item] = data[0][item];
-				}
-				var _c = 0;
-				var retRow;
-				for (var row in data) {
-					if (row != 0) { // skip the first (header)
-						retRow = {};
-						for (var item in data[row]) {
-							retRow[headers[item]] = data[row][item];
-						}
-						ret[_c++] = retRow;
+				var file = files[0];
+				var reader = new FileReader();
+				reader.readAsText(file);
+				reader.onload = function(event) {
+					var csv = event.target.result;
+					var data = $.csv.toArrays(csv);
+					var header_line = data[0];
+					var headers = [];
+					var ret = [];
+					for (var item in header_line) {
+						headers[item] = data[0][item];
 					}
-				}
-
-				var _prices = JSON.stringify(ret);
-				$.ajax({
-					url: '/api/importpriceslist',
-					type: "POST",
-					data: {prices: _prices, remove_non_existing_usage_types: remove_non_existing_usage_types}
-				}).done(function(msg) {
-					obj = JSON.parse(msg);
-						var output;
-					if (obj.status == "1") {
-							output = 'Success.<br/>';
-						var reasons = {"updated": "Updated", "future": "Rates that were not imported due to an existing future rate", "missing_category": "Rates that were not updated because they miss category", "old": "Inactive rates not imported"};
-						$.each(obj.keys, function(key, value) {
-							if (value.length) {
-								output += eval("reasons." + key) + ": " + value.join() + "<br/>";
+					var _c = 0;
+					var retRow;
+					for (var row in data) {
+						if (row != 0) { // skip the first (header)
+							retRow = {};
+							for (var item in data[row]) {
+								retRow[headers[item]] = data[row][item];
 							}
-						});
-						$("#importPricesModal #file-upload2").val('');
-						$('#importPricesModal #saveOutput2').html(output);
-					} else {
+							ret[_c++] = retRow;
+						}
+					}
+
+					var _prices = JSON.stringify(ret);
+					$.ajax({
+						url: '/api/importpriceslist',
+						type: "POST",
+						data: {prices: _prices, remove_non_existing_usage_types: remove_non_existing_usage_types}
+					}).done(function(msg) {
+						obj = JSON.parse(msg);
+						var output;
+						if (obj.status == "1") {
+							output = 'Success.<br/>';
+							var reasons = {"updated": "Updated", "future": "Rates that were not imported due to an existing future rate", "missing_category": "Rates that were not updated because they miss category", "old": "Inactive rates not imported"};
+							$.each(obj.keys, function(key, value) {
+								if (value.length) {
+									output += eval("reasons." + key) + ": " + value.join() + "<br/>";
+								}
+							});
+							$("#importPricesModal #file-upload2").val('');
+							$('#importPricesModal #saveOutput2').html(output);
+						} else {
 							output = 'Failed to import: ' + obj.desc;
 							if (obj.input) {
 								output += '</br>Input was: ' + JSON.stringify(obj.input);
-					}
+							}
 							$('#importPricesModal #saveOutput2').html(output);
 						}
 						$('#import').removeAttr("disabled");
-				});
+					});
 				}
 			}
 
@@ -206,7 +206,7 @@ $(function() {
 function removeFilter(button) {
 	$(button).siblings("input[name='manual_value[]']").val('');
 	if ($(button).parent().siblings().length) {
-	$(button).parent().remove();
+		$(button).parent().remove();
 	}
 	else {
 		$('.advanced-options').click();
@@ -279,22 +279,23 @@ function isAPIAvailable() {
 		return false;
 	}
 }
-$(document).ready(function () {
+$(document).ready(function() {
 	$(".config input[type='checkbox']").bootstrapSwitch();
+	$("#tabs").tabs();
 });
 
-function openPopup (obj, direction) {
+function openPopup(obj, direction) {
 	obj = $(obj);
 	var popup_group_field = $("input[name='popup_group_field']").val();
 	var direction = obj.closest('table').data('type');
-	if (popup_group_field=='carrier') {
+	if (popup_group_field == 'carrier') {
 		var from_day, to_day;
 		from_day = to_day = obj.find('[data-type="group_by"]').text();
 	}
 	else {
-		var from_day =  $('input[name="init_from_day"]').val();
-		var to_day =  $('input[name="init_to_day"]').val();
+		var from_day = $('input[name="init_from_day"]').val();
+		var to_day = $('input[name="init_to_day"]').val();
 		var carrier = obj.find('input.carrier').val();
 	}
-	obj.data('remote', '/admin/wholesaleajax?direction=' + direction + '&group_by=' + popup_group_field + '&from_day=' + from_day + '&to_day=' + to_day + (carrier? '&carrier=' + encodeURIComponent(carrier) : ''));
+	obj.data('remote', '/admin/wholesaleajax?direction=' + direction + '&group_by=' + popup_group_field + '&from_day=' + from_day + '&to_day=' + to_day + (carrier ? '&carrier=' + encodeURIComponent(carrier) : ''));
 }
