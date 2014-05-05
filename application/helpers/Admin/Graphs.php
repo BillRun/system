@@ -126,7 +126,8 @@ class Admin_Graphs {
 				)
 			);
 			if ($xField=='dayofmonth') {
-				$output->filter_options['options']['ui']['chartOptions']['chartArea']['height'] = '18%';
+//				$output->filter_options['options']['ui']['chartOptions']['chartArea']['height'] = '70%';
+				$output->filter_options['options']['ui']['chartOptions']['height'] = '80';
 			}
 		}
 		return $output;

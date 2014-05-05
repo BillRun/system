@@ -253,3 +253,6 @@ div.billrun-logo img {
     width: 650px;
 	float: right;
 }
+#w-popup .modal-dialog {
+	width: 1000px;
+}
