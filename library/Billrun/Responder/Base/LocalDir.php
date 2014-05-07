@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package         Billing
  * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
@@ -18,14 +19,13 @@ abstract class Billrun_Responder_Base_LocalDir extends Billrun_Responder_Base_Fi
 	 * @var string directory path
 	 */
 	protected $exportDir;
-	
 	protected $exportFromConfig = false;
 
 	public function __construct($options) {
 
 		parent::__construct($options);
 
-		if (isset($options['export-path']) &&  true !== $options['export-path']) {
+		if (isset($options['export-path']) && true !== $options['export-path']) {
 			$this->exportDir = $options['export-path'];
 		} else {
 			$this->exportDir = Billrun_Factory::config()->getConfigValue('response.export.path', './');
@@ -35,8 +35,8 @@ abstract class Billrun_Responder_Base_LocalDir extends Billrun_Responder_Base_Fi
 
 	protected function respondAFile($responseFilePath, $fileName, $logLine) {
 		//move file to export folder
-		$exportDir = $this->exportFromConfig ?	$this->exportDir . DIRECTORY_SEPARATOR . self::$type : 
-												$this->exportDir;
+		$exportDir = $this->exportFromConfig ? $this->exportDir . DIRECTORY_SEPARATOR . self::$type :
+			$this->exportDir;
 		if (!file_exists($exportDir)) {
 			mkdir($exportDir);
 		}
@@ -47,7 +47,7 @@ abstract class Billrun_Responder_Base_LocalDir extends Billrun_Responder_Base_Fi
 		}
 		parent::respondAFile($responseFilePath, $fileName, $logLine);
 		Billrun_Factory::log()->log("Placed response at : $exportPath", Zend_Log::DEBUG);
-		
+
 		return $exportPath;
 	}
 

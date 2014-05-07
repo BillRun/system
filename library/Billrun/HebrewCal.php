@@ -5,7 +5,6 @@
  * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
  * @license         GNU General Public License version 2 or later; see LICENSE.txt
  */
-
 define('HEBCAL_WEEKDAY', 'weekday');
 define('HEBCAL_WEEKEND', 'weekend');
 define('HEBCAL_WORKDAY', 'workday');

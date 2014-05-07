@@ -29,8 +29,7 @@ class ApiController extends Yaf_Controller_Abstract {
 		$this->output = new stdClass();
 		$this->getView()->output = $this->output;
 		// set the actions autoloader
-		$loader = Yaf_Loader::getInstance(APPLICATION_PATH . '/application/helpers');
-		$loader->registerLocalNamespace("Action");
+		Yaf_Loader::getInstance(APPLICATION_PATH . '/application/helpers')->registerLocalNamespace("Action");
 		$this->setActions();
 		$this->setOutputMethod();
 	}
@@ -99,8 +98,7 @@ class ApiController extends Yaf_Controller_Abstract {
 		if (is_null($output_methods[$action])) {
 			echo("No output method defined");
 			Billrun_Factory::log()->log('No output method defined in credit api', Zend_Log::ALERT);
-		}
-		else {
+		} else {
 			$this->getView()->outputMethod = $output_methods[$action];
 		}
 	}

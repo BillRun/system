@@ -29,12 +29,6 @@ class Billrun_Config {
 	protected $config;
 
 	/**
-	 * the environment field in config ini file
-	 */
-
-	const environment_field = 'environment';
-
-	/**
 	 * constructor of the class
 	 * protected for converting this class to singleton design pattern
 	 */
@@ -63,6 +57,28 @@ class Billrun_Config {
 		}
 		return self::$instance;
 	}
+	
+	public function loadDbConfig() {
+		try {
+			$configColl = Billrun_Factory::db()->configCollection();
+			if ($configColl) {
+				$dbConfig = $configColl->query()
+					->cursor()
+					->sort(array('_id' => -1))
+					->limit(1)
+					->current()
+					->getRawData();
+				
+				unset($dbConfig['_id']);
+				$iniConfig = $this->config->toArray();
+				$this->config = new Yaf_Config_Simple(array_merge($iniConfig, $dbConfig));
+			}
+
+		} catch (Exception $e) {
+			Billrun_Factory::log('Cannot load database config', Zend_Log::CRIT);
+			return false;
+		}
+	}
 
 	/**
 	 * method to get config value
@@ -90,14 +106,14 @@ class Billrun_Config {
 			}
 			$currConf = $currConf[$key];
 		}
-		
-		if ($currConf instanceof Yaf_Config_Ini) {
+
+		if ($currConf instanceof Yaf_Config_Ini || $currConf instanceof Yaf_Config_Simple) {
 			$currConf = $currConf->toArray();
 		}
-		
-		if (isset($retType) && $retType ) {
+
+		if (isset($retType) && $retType) {
 			settype($currConf, $retType);
-		} else if (strtoupper($type = gettype($defVal)) != 'NULL' ) {
+		} else if (strtoupper($type = gettype($defVal)) != 'NULL') {
 			settype($currConf, $type);
 		}
 
@@ -110,7 +126,7 @@ class Billrun_Config {
 	 * @return string the environment (prod, test or dev)
 	 */
 	public function getEnv() {
-		return $this->getConfigValue(self::environment_field, 'dev');
+		return APPLICATION_ENV;
 	}
 
 	/**
@@ -121,6 +137,9 @@ class Billrun_Config {
 	 * @return boolean true if the environment is the one that supplied, else false
 	 */
 	public function checkEnv($env) {
+		if (is_array($env) && in_array($this->getEnv(), $env)) {
+			return true;
+		}
 		if ($this->getEnv() === $env) {
 			return true;
 		}
@@ -133,7 +152,7 @@ class Billrun_Config {
 	 * @return boolean true if it's production, else false
 	 */
 	public function isProd() {
-		if ($this->checkEnv('prod')) {
+		if ($this->checkEnv(array('prod', 'product', 'production'))) {
 			return true;
 		}
 		return false;

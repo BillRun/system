@@ -14,7 +14,7 @@
  */
 class Billrun_Calculator_Wholesale_Nsn extends Billrun_Calculator_Wholesale {
 
-	const MAIN_DB_FIELD = 'provider_zone';
+	const MAIN_DB_FIELD = 'pzone';
 
 	protected $ratingField = self::MAIN_DB_FIELD;
 
@@ -34,9 +34,8 @@ class Billrun_Calculator_Wholesale_Nsn extends Billrun_Calculator_Wholesale {
 	/**
 	 * Write the calculation into DB
 	 */
-	protected function updateRow($row) {
-
-		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteRow', array('row' => $row));
+	public function updateRow($row) {
+		Billrun_Factory::dispatcher()->trigger('beforeCalculatorUpdateRow', array($row, $this));
 		//Billrun_Factory::log()->log("Line start : getLineZone  start : ".microtime(true));
 		$rate = $this->getLineZone($row, $row['usaget']);
 		//Billrun_Factory::log()->log(" getLineZone  end : ".microtime(true));
@@ -48,8 +47,8 @@ class Billrun_Calculator_Wholesale_Nsn extends Billrun_Calculator_Wholesale {
 
 		$newData = array_merge($current, $added_values);
 		$row->setRawData($newData);
-		//Billrun_Factory::log()->log("Line end : ".microtime(true));
-		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteRow', array('row' => $row));
+
+		Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array($row, $this));
 		return true;
 	}
 
@@ -70,7 +69,7 @@ class Billrun_Calculator_Wholesale_Nsn extends Billrun_Calculator_Wholesale {
 		}
 
 //		Billrun_Factory::log()->log($called_number);
-		$line_time = $row->get('unified_record_time');
+		$line_time = $row->get('urt');
 
 		$called_number_prefixes = $this->getPrefixes($called_number);
 		$carrier_cg = $row->get('out_circuit_group');
@@ -168,10 +167,11 @@ class Billrun_Calculator_Wholesale_Nsn extends Billrun_Calculator_Wholesale {
 	 * load the ggsn rates to be used later.
 	 */
 	protected function loadRates() {
-		$rates = Billrun_Factory::db()->ratesCollection()->query()->cursor();
+		$rates_coll = Billrun_Factory::db()->ratesCollection();
+		$rates = $rates_coll->query()->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
 		$this->rates = array();
 		foreach ($rates as $rate) {
-			$rate->collection(Billrun_Factory::db()->ratesCollection());
+			$rate->collection($rates_coll);
 			if (isset($rate['params']['prefix'])) {
 				foreach ($rate['params']['prefix'] as $prefix) {
 					$this->rates[$prefix][] = $rate;
@@ -201,9 +201,9 @@ class Billrun_Calculator_Wholesale_Nsn extends Billrun_Calculator_Wholesale {
 	/**
 	 * @see Billrun_Calculator::isLineLegitimate()
 	 */
-	protected function isLineLegitimate($line) {
+	public function isLineLegitimate($line) {
 		return $line['type'] == 'nsn' &&
-			in_array($line['usaget'], array('call', 'sms')) &&
+			in_array($line['usaget'], array('call', 'sms', 'incoming_call')) &&
 			in_array($line['record_type'], $this->wholesaleRecords);
 	}
 

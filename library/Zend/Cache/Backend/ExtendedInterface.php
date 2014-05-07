@@ -20,10 +20,6 @@
  * @version    $Id: ExtendedInterface.php 24593 2012-01-05 20:35:02Z matthew $
  */
 
-/**
- * @see Zend_Cache_Backend_Interface
- */
-require_once 'Zend/Cache/Backend/Interface.php';
 
 /**
  * @package    Zend_Cache

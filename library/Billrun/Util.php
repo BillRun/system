@@ -123,7 +123,7 @@ class Billrun_Util {
 		} else {
 			$tz_offset = $offset;
 		}
-		$date_formatted = str_replace(' ', 'T', date(Billrun_Base::base_dateformat, strtotime($datetime))) . $tz_offset;
+		$date_formatted = str_replace(' ', 'T', date(Billrun_Base::base_dateformat, strtotime($datetime))) . $tz_offset; // Unnecessary code?
 		$datetime = strtotime($date_formatted);
 		return $datetime;
 	}
@@ -155,6 +155,13 @@ class Billrun_Util {
 	public static function getFollowingBillrunKey($billrun_key) {
 		$datetime = $billrun_key . "01000000";
 		$month_later = strtotime('+1 month', strtotime($datetime));
+		$ret = date("Ym", $month_later);
+		return $ret;
+	}
+
+	public static function getPreviousBillrunKey($billrun_key) {
+		$datetime = $billrun_key . "01000000";
+		$month_later = strtotime('-1 month', strtotime($datetime));
 		$ret = date("Ym", $month_later);
 		return $ret;
 	}
@@ -206,18 +213,226 @@ class Billrun_Util {
 	 */
 	public static function getVATAtDate($timestamp) {
 		$mongo_date = new MongoDate($timestamp);
-		return Billrun_Factory::db()->ratesCollection()
+		$rates_coll = Billrun_Factory::db()->ratesCollection();
+		return $rates_coll
 				->query('key', 'VAT')
 				->lessEq('from', $mongo_date)
 				->greaterEq('to', $mongo_date)
-				->cursor()->current()->get('vat');
+				->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'))->current()->get('vat');
 	}
 
 	public static function isTimestamp($timestamp) {
 		return ((string) (int) $timestamp === strval($timestamp)) && ($timestamp <= PHP_INT_MAX) && ($timestamp >= ~PHP_INT_MAX);
 	}
-	
+
 	public static function setFileModificationTime($received_path, $timestamp) {
 		return touch($received_path, $timestamp);
 	}
+
+	/**
+	 * convert bytes to requested format
+	 * if no format supply will take the format that is closet to the bytes
+	 * 
+	 * @param string $bytes
+	 * @param string $unit
+	 * @param int $decimals
+	 * @return string size in requested format
+	 */
+	public static function byteFormat($bytes, $unit = "", $decimals = 2, $includeUnit = false) {
+		$units = array('B' => 0, 'KB' => 1, 'MB' => 2, 'GB' => 3, 'TB' => 4,
+			'PB' => 5, 'EB' => 6, 'ZB' => 7, 'YB' => 8);
+
+		$value = 0;
+		if ($bytes > 0) {
+			// Generate automatic prefix by bytes 
+			// If wrong prefix given, search for the closest unit
+			if (!array_key_exists($unit, $units)) {
+				$pow = floor(log($bytes) / log(1024));
+				$unit = array_search($pow, $units);
+			}
+
+			// Calculate byte value by prefix
+			$value = ($bytes / pow(1024, floor($units[$unit])));
+		}
+
+		// If decimals is not numeric or decimals is less than 0 
+		// then set default value
+		if (!is_numeric($decimals) || $decimals < 0) {
+			$decimals = 2;
+		}
+
+		// Format output
+		if (!empty($value)) {
+			if ($includeUnit) {
+				return number_format($value, $decimals) . $unit;
+			}
+			return number_format($value, $decimals);
+		}
+
+		return FALSE;
+	}
+	
+	/**
+	 * convert seconds to requested format
+	 * 
+	 * @param string $bytes
+	 * 
+	 * @return string size in requested foramt
+	 * 
+	 * 60 sec => 1 min
+	 * 10 sec => 10 sec
+	 * 3400 sec => X minutes
+	 */
+	public static function durationFormat($seconds) {
+		if ($seconds> 3600) {
+			return gmdate('H:i:s', $seconds);
+		}
+		return gmdate('i:s', $seconds);
+	}
+
+	/**
+	 * convert megabytes to bytes
+	 * @param string $megabytes
+	 * @return string size in bytes
+	 */
+	public static function megabytesToBytesFormat($megabytes) {
+		// Format output
+		if (!empty($megabytes)) {
+			return $megabytes * pow(1024, 2);
+		}
+
+		return FALSE;
+	}
+
+	public static function sendMail($subject, $body, $recipients, $attachments = array()) {
+		$mailer = Billrun_Factory::mailer()->
+			setSubject($subject)->
+			setBodyText($body);
+		//add attachments
+		foreach ($attachments as $attachment) {
+			$mailer->addAttachment($attachment);
+		}
+		//set recipents
+//		foreach ($recipients as $recipient) {
+//			$mailer->addTo($recipient);
+//		}
+		$mailer->addTo($recipients);
+		//sen email
+		return $mailer->send();
+	}
+	
+	/**
+	 * method to fork process of PHP-Web (Apache/Nginx/FPM)
+	 * 
+	 * @param String $url the url to open
+	 * @param Array $params data sending to the new process
+	 * @params Boolean $post use POST to query string else use GET
+	 * 
+	 * @return Boolean true on success else FALSE
+	 */
+	public static function forkProcessWeb($url, $params, $post = false, $sleep = 0) {
+		$params['fork'] = 1;
+		if ($sleep) {
+			$params['SLEEP'] = (int) $sleep;
+		}
+		$forkUrl = self::getForkUrl();
+		$querystring = http_build_query($params);
+		if (!$post) {
+			$cmd = "wget -O /dev/null '" . $forkUrl . $url . "?" . $querystring .
+				"' > /dev/null & ";
+		} else {
+			$cmd = "wget -O /dev/null '" . $forkUrl . $url . "' --post-data '" . $querystring .
+				"' > /dev/null & ";
+		}
+
+//		echo $cmd . "<br />" . PHP_EOL;
+		if (system($cmd) === FALSE) {
+			error_log("Can't fork PHP process");
+			return false;
+		}
+		usleep(500000);
+		return true;
+	}
+
+	/**
+	 * method to fork process of PHP-Cli
+	 * 
+	 * @param String $cmd the command to run
+	 * @param String $cmd the command to run
+	 * 
+	 * @return Boolean true on success else FALSE
+	 */
+	public static function forkProcessCli($cmd) {
+		$syscmd = $cmd ." > /dev/null & ";
+		if (system($syscmd) === FALSE) {
+			error_log("Can't fork PHP process");
+			return false;
+		}
+		return true;
+	}
+
+	public static function isBillrunKey($billrun_key) {
+		return is_string($billrun_key) && Zend_Locale_Format::isInteger($billrun_key) && strlen($billrun_key) == 6 && substr($billrun_key, 4, 2) >= '01' && substr($billrun_key, 4, 2) <= '12';
+	}
+
+	/**
+	 * Cast an array / string which represents an array.
+	 * @param type $ar
+	 * @param type $type
+	 * @param type $explode
+	 * @return type
+	 */
+	public static function verify_array($ar, $type = null, $explode = ',') {
+		if (is_string($ar)) {
+			$ar = explode($explode, $ar);
+		} elseif (!is_array($ar)) {
+			settype($ar, 'array');
+		}
+		// check if casting required
+		if (!is_null($type)) {
+			$ar = array_map($type . 'val', $ar);
+		}
+		return $ar;
+	}
+
+	/**
+	 * method to convert phone number to msisdn
+	 * 
+	 * @param string $phoneNumber the phone number to convert
+	 * @param string $defaultPrefix the default prefix to add
+	 * 
+	 * @return string phone number in msisdn format
+	 */
+	public static function msisdn($phoneNumber, $defaultPrefix = null) {
+		
+		if (empty($phoneNumber)) {
+			return $phoneNumber;
+		}
+		
+		settype($phoneNumber, 'string');
+		
+		$replace = array("(0)", "-", "+", "(", ")", " ", "#", "*");
+		$cleanNumber = ltrim(str_replace($replace, "", $phoneNumber), "0");
+		
+		//CCNDCSN - First part USA; second non-USA
+		if (preg_match("/^(1[2-9]{1}[0-9]{2}|[2-9]{1}[0-9]{1,2}[1-9]{1}[0-9]{0,2})[0-9]{7}$/", $cleanNumber)) {
+			return $phoneNumber;
+		}
+
+		if (is_null($defaultPrefix)) {
+			$defaultPrefix = Billrun_Factory::config()->getConfigValue('billrun.defaultCountryPrefix', 972);
+		}
+
+		return $defaultPrefix . ltrim($phoneNumber, "0");
+	}
+
+	/**
+	 * utility to reset and initialized fork process
+	 * use this method when you open a child fork process with pcntl_fork
+	 */
+	public static function resetForkProcess() {
+		Billrun_Factory::log()->removeWriters('Mail');
+		Billrun_Factory::log()->addWriters('Mail');
+	}
+
 }

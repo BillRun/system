@@ -1,36 +1,218 @@
-$('body').on('hidden', '.modal', function() {
-	$(this).removeData('modal');
+$('body').on('hidden.bs.modal', '.modal', function () {
+	$(this).removeData('bs.modal');
 });
-
+var checkItems = false;
 $(function() {
-	$("#update_current,#close_and_new,#duplicate").click(function() {
+	$("#close_and_new,#duplicate").click(function() {
 		var items_checked = $('#data_table :checked');
+		checkItems = true;
 		if (items_checked.length) {
-			$(this).data('remote', edit_url_prefix + items_checked.eq(0).val() + '&type=' + $(this).data('type'));
+			$(this).data('remote', '/admin/edit?coll=' + active_collection + '&id=' + items_checked.eq(0).val() + '&type=' + $(this).data('type'));
 		}
 	});
 
 	$("#remove").click(function() {
 		var items_checked = $('#data_table :checked');
+		checkItems = true;
 		var output = $.map(items_checked, function(n, i) {
 			return n.value;
 		}).join(',');
 		if (items_checked.length) {
-			$(this).data('remote', confirm_url_prefix + output + '&type=' + $(this).data('type'));
+			$(this).data('remote', '/admin/confirm?coll=' + active_collection + '&id=' + output + '&type=' + $(this).data('type'));
 		}
 	});
 
-	$("#popupModal, #confirmModal").on('show', function(event) {
-		var items_checked = $('#data_table :checked');
-		if (!items_checked.length || (items_checked.length != 1 && (coll != 'lines' || $(this).attr('id') != 'confirmModal'))) {
-			alert('Please check exactly one item from the list');
-			$(this).removeData('modal');
-			event.preventDefault();
+	$("#new").click(function() {
+		$(this).data('remote', '/admin/edit?coll=' + active_collection + '&type=' + $(this).data('type'));
+	});
+
+	$("#popupModal,#confirmModal").on('show.bs.modal', function(event) {
+		if (checkItems) {
+			var items_checked = $('#data_table :checked');
+			if (!items_checked.length || (items_checked.length != 1 && ($.inArray(coll, ['lines', 'users']) === -1 || $(this).attr('id') != 'confirmModal'))) {
+				alert('Please check exactly one item from the list');
+				$(this).removeData('modal');
+				event.preventDefault();
+			}
 		}
 	});
 
-	$('.multiselect').multiselect({
-		//        includeSelectAllOption: true,
+	function getInputFileContent(file, contentLoadedCB) {
+		if (isAPIAvailable()) {
+			var reader = new FileReader();
+			reader.readAsText(file);
+			reader.onload = function(event) {contentLoadedCB(event.target.result); };
+		} else {
+			alert("Your browser doesn't support parse csv on client side. Please use IE12+, Chrome or Firefox");
+		}
+	}
+
+	function getCSVContent(file, csvContentParsedCB) {
+		getInputFileContent(file, function(content) {
+				var csv = content;
+				csv = csv.replace(/^\s*$/g,"");
+				var data = $.csv.toArrays(csv);
+				var header_line = data[0];
+				var headers = [];
+				var ret = [];
+				for (var item in header_line) {
+					headers[item] = data[0][item];
+				}
+				var _c = 0;
+				var retRow;
+				for (var row in data) {
+					if (row != 0 && data[row].length == headers.length) { // skip the first (header) and only take rows that hass all column of the headers
+						retRow = {};
+						for (var item in data[row]) {
+							retRow[headers[item]] = data[row][item];
+						}
+						ret[_c++] = retRow;
+					}
+				}
+
+				csvContentParsedCB(JSON.stringify(ret));
+			});		
+	}
+	
+	$("#resetSubsModal #upload").click(function(event) {
+		function resetLines(content){
+				$.ajax({
+					url: "/api/resetlines",
+					type: "POST",
+					data: {sid: content}
+				}).done(function(msg) {
+					obj = JSON.parse(msg);
+					if (obj.status == "1") { // success - print the file token
+						$('#resetSubsModal #saveOutput').append('Successful upload. Results: ' + JSON.stringify(obj.input));
+					} else {
+						$('#resetSubsModal #saveOutput').append('Failed on upload. Reason as follow: ' + obj.desc);
+					}
+				});
+				$("#resetSubsModal #file-upload").val('');
+				$("#resetSubsModal #single-sub-input").val('');
+			}
+
+		var files = $("#resetSubsModal #file-upload").get(0).files;
+		$('#resetSubsModal #saveOutput').html('');
+		if(files.length == 0) {
+			if($("#resetSubsModal #single-sub-input").val()) {
+				resetLines($("#resetSubsModal #single-sub-input").val());
+			}
+		} else {
+			for(var i = 0; i < files.length; i++) {
+				getInputFileContent(files[i], resetLines);
+		}
+		}
+	});
+
+	$("#uploadModal #upload").click(function(event) {
+		var files = $("#uploadModal #file-upload").get(0).files;
+		$('#uploadModal #saveOutput').html('');
+		for(var i = 0; i < files.length; i++) {
+			getCSVContent(files[i], function(content){
+				$.ajax({
+					url: '/api/bulkcredit',
+					type: "POST",
+					data: {operation: "credit", credits: content}
+				}).done(function(msg) {
+					obj = JSON.parse(msg);
+					if (obj.status == "1") { // success - print the file token
+						$('#uploadModal #saveOutput').append('Success to upload. File token: ' + obj.stamp);
+					} else {
+						$('#uploadModal #saveOutput').append('Failed to upload. Reason as follow: ' + obj.desc);
+					}
+				});
+				$("#uploadModal #file-upload").val('');
+			});
+		}
+	});
+
+	/**
+	 * @todo prevent duplicate code with credits import
+	 */
+	$("#importPricesModal #import").click(function(event) {
+		if (isAPIAvailable()) {
+			var remove_non_existing_usage_types = $("#remove_non_existing_usage_types").is(':checked') ? 1 : 0;
+			var files = $("#importPricesModal #file-upload2").get(0).files; // FileList object
+			if (files.length) {
+				$(this).attr('disabled', 'disabled');
+			var file = files[0];
+			var reader = new FileReader();
+			reader.readAsText(file);
+			reader.onload = function(event) {
+				var csv = event.target.result;
+				var data = $.csv.toArrays(csv);
+				var header_line = data[0];
+				var headers = [];
+				var ret = [];
+				for (var item in header_line) {
+					headers[item] = data[0][item];
+				}
+				var _c = 0;
+				var retRow;
+				for (var row in data) {
+					if (row != 0) { // skip the first (header)
+						retRow = {};
+						for (var item in data[row]) {
+							retRow[headers[item]] = data[row][item];
+						}
+						ret[_c++] = retRow;
+					}
+				}
+
+				var _prices = JSON.stringify(ret);
+				$.ajax({
+					url: '/api/importpriceslist',
+					type: "POST",
+					data: {prices: _prices, remove_non_existing_usage_types: remove_non_existing_usage_types}
+				}).done(function(msg) {
+					obj = JSON.parse(msg);
+						var output;
+					if (obj.status == "1") {
+							output = 'Success.<br/>';
+						var reasons = {"updated": "Updated", "future": "Rates that were not imported due to an existing future rate", "missing_category": "Rates that were not updated because they miss category", "old": "Inactive rates not imported"};
+						$.each(obj.keys, function(key, value) {
+							if (value.length) {
+								output += eval("reasons." + key) + ": " + value.join() + "<br/>";
+							}
+						});
+						$("#importPricesModal #file-upload2").val('');
+						$('#importPricesModal #saveOutput2').html(output);
+					} else {
+							output = 'Failed to import: ' + obj.desc;
+							if (obj.input) {
+								output += '</br>Input was: ' + JSON.stringify(obj.input);
+					}
+							$('#importPricesModal #saveOutput2').html(output);
+						}
+						$('#import').removeAttr("disabled");
+				});
+				}
+			}
+
+		} else {
+			alert("Your browser doesn't support parse csv on client side. Please use IE12+, Chrome or Firefox");
+			return false;
+		}
+
+	});
+
+	$("#uploadModal #file-upload").on('change', function(event) {
+
+	});
+
+	$('.control-group5 .multiselect').multiselect({});
+
+	$('#usage,#billrun,#source').multiselect({
+		selectAllValue: 'all',
+		selectedClass: null
+	});
+
+	$('#extra_columns select').multiselect({
+		maxHeight: 250,
+		enableFiltering: true,
+		enableCaseInsensitiveFiltering: true,
+		includeSelectAllOption: true,
 		selectAllValue: 'all',
 		selectedClass: null
 	});
@@ -50,17 +232,28 @@ $(function() {
 	$("select[name='manual_type[]']").on('change', function() {
 		type_changed(this)
 	});
-	$('.date').datetimepicker({
-		format: 'yyyy-MM-dd hh:mm:ss',
+	$('.date:not(.wholesale-date)').datetimepicker({
+		format: 'YYYY-MM-DD',
+//		language:'he'
 	});
-	$(".advanced-options").on('click',function() {
+	$('.wholesale-date').datetimepicker({
+		format: 'YYYY-MM-DD',
+		pickTime: false
+	});
+	$(".advanced-options").on('click', function() {
 		$("#manual_filters").slideToggle();
-		$("i",this).toggleClass("icon-chevron-down icon-chevron-up");
+		$("i", this).toggleClass("icon-chevron-down icon-chevron-up");
 	});
-});
-
+}
+);
 function removeFilter(button) {
+	$(button).siblings("input[name='manual_value[]']").val('');
+	if ($(button).parent().siblings().length) {
 	$(button).parent().remove();
+	}
+	else {
+		$('.advanced-options').click();
+	}
 }
 
 function type_changed(sel) {
@@ -97,4 +290,54 @@ function addFilter(button) {
 	$("select[name='manual_type[]']", cloned).on('change', function() {
 		type_changed(this);
 	});
+}
+
+function update_current(obj) {
+	var item_checked = $(obj).next("input[type=checkbox],input[type=hidden]");
+	checkItems = false;
+	if (item_checked.length) {
+		$(obj).data('remote', '/admin/edit?coll=' + active_collection + '&id=' + item_checked.eq(0).val() + '&type=' + $(obj).data('type'));
+	}
+}
+
+function isAPIAvailable() {
+	// Check for the various File API support.
+	if (window.File && window.FileReader && window.FileList && window.Blob) {
+		// Great success! All the File APIs are supported.
+		return true;
+	} else {
+		// source: File API availability - http://caniuse.com/#feat=fileapi
+		// source: <output> availability - http://html5doctor.com/the-output-element/
+		document.writeln('The HTML5 APIs used in this form are only available in the following browsers:<br />');
+		// 6.0 File API & 13.0 <output>
+		document.writeln(' - Google Chrome: 13.0 or later<br />');
+		// 3.6 File API & 6.0 <output>
+		document.writeln(' - Mozilla Firefox: 6.0 or later<br />');
+		// 10.0 File API & 10.0 <output>
+		document.writeln(' - Internet Explorer: Not supported (partial support expected in 10.0)<br />');
+		// ? File API & 5.1 <output>
+		document.writeln(' - Safari: Not supported<br />');
+		// ? File API & 9.2 <output>
+		document.writeln(' - Opera: Not supported');
+		return false;
+	}
+}
+$(document).ready(function () {
+$(".config input[type='checkbox']").bootstrapSwitch();
+});
+
+function openPopup(obj, direction) {
+	obj = $(obj);
+	var popup_group_field = $("input[name='popup_group_field']").val();
+	var direction = obj.closest('table').data('type');
+	if (popup_group_field == 'carrier') {
+		var from_day, to_day;
+		from_day = to_day = obj.text();
+	}
+	else {
+		var from_day = $('input[name="init_from_day"]').val();
+		var to_day = $('input[name="init_to_day"]').val();
+		var carrier = obj.siblings('input.carrier').val();
+	}
+	obj.data('remote', '/admin/wholesaleajax?direction=' + direction + '&group_by=' + popup_group_field + '&from_day=' + from_day + '&to_day=' + to_day + (carrier ? '&carrier=' + encodeURIComponent(carrier) : ''));
 }

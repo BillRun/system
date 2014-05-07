@@ -49,16 +49,16 @@ class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 				continue;
 			}
 
-			$subscriber_id = $subscriber->id;
+			$sid = $subscriber->id;
 
 			// update billing line with billrun stamp
 			if (!$this->updateBillingLine($subscriber, $item)) {
-				Billrun_Factory::log()->log("subscriber " . $subscriber_id . " cannot update billing line", Zend_Log::INFO);
+				Billrun_Factory::log()->log("subscriber " . $sid . " cannot update billing line", Zend_Log::INFO);
 				continue;
 			}
 
-			if (isset($this->excludes['subscribers']) && in_array($subscriber_id, $this->excludes['subscribers'])) {
-				Billrun_Factory::log()->log("subscriber " . $subscriber_id . " is in the excluded list skipping billrun for him.", Zend_Log::INFO);
+			if (isset($this->excludes['subscribers']) && in_array($sid, $this->excludes['subscribers'])) {
+				Billrun_Factory::log()->log("subscriber " . $sid . " is in the excluded list skipping billrun for him.", Zend_Log::INFO);
 				//mark line as excluded.
 				$item['billrun_excluded'] = true;
 			}
@@ -71,13 +71,13 @@ class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 				$billrun = $this->loadSubscriberBillrun($subscriber);
 
 				if (!$billrun) {
-					Billrun_Factory::log()->log("subscriber " . $subscriber_id . " cannot load billrun", Zend_Log::INFO);
+					Billrun_Factory::log()->log("subscriber " . $sid . " cannot load billrun", Zend_Log::INFO);
 					continue;
 				}
 
 				// update billrun subscriber with amount
 				if (!$this->updateBillrun($billrun, $item)) {
-					Billrun_Factory::log()->log("subscriber " . $subscriber_id . " cannot update billrun", Zend_Log::INFO);
+					Billrun_Factory::log()->log("subscriber " . $sid . " cannot update billrun", Zend_Log::INFO);
 					continue;
 				}
 
@@ -90,11 +90,11 @@ class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 			Billrun_Factory::dispatcher()->trigger('beforeAggregateSaveLine', array(&$save_data, &$this));
 
 			if (!$this->save($save_data)) {
-				Billrun_Factory::log()->log("subscriber " . $subscriber_id . " cannot save data", Zend_Log::INFO);
+				Billrun_Factory::log()->log("subscriber " . $sid . " cannot save data", Zend_Log::INFO);
 				continue;
 			}
 
-			Billrun_Factory::log()->log("subscriber " . $subscriber_id . " saved successfully", Zend_Log::INFO);
+			Billrun_Factory::log()->log("subscriber " . $sid . " saved successfully", Zend_Log::INFO);
 		}
 		// @TODO trigger after aggregate
 		Billrun_Factory::dispatcher()->trigger('afterAggregate', array($this->data, &$this));
@@ -112,7 +112,7 @@ class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 		$billrun = Billrun_Factory::db()->billrunCollection();
 		$resource = $billrun->query()
 			//->exists("subscriber.{$subscriber['id']}")
-			->equals('account_id', $subscriber->account_id)
+			->equals('aid', $subscriber->aid)
 			->equals('stamp', $this->getStamp());
 
 		if ($resource && $resource->count()) {
@@ -124,7 +124,7 @@ class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 
 		$values = array(
 			'stamp' => $this->stamp,
-			'account_id' => $subscriber->account_id,
+			'aid' => $subscriber->aid,
 			'subscribers' => array($subscriber->id => array('cost' => array())),
 			'cost' => array(),
 			'source' => 'ilds',
@@ -144,7 +144,7 @@ class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 		// @TODO trigger before update row
 
 		$current = $billrun->getRawData();
-		$added_charge = $line->get('price_customer');
+		$added_charge = $line->get('aprice');
 
 		if (!is_numeric($added_charge)) {
 			//raise an error
@@ -152,7 +152,7 @@ class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 		}
 
 		$type = $line->get('type');
-		$subscriberId = $line->get('subscriber_id');
+		$subscriberId = $line->get('sid');
 		if (!isset($current['subscribers'][$subscriberId])) {
 			$current['subscribers'][$subscriberId] = array('cost' => array());
 		}
@@ -177,26 +177,26 @@ class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 	/**
 	 * update the billing line with stamp to avoid another aggregation
 	 *
-	 * @param int $subscriber_id the subscriber id to update
+	 * @param int $sid the subscriber id to update
 	 * @param Mongodloid_Entity $line the billing line to update
 	 *
 	 * @return boolean true on success else false
 	 */
 	protected function updateBillingLine($subscriber, $line) {
 		if (isset($subscriber->id)) {
-			$subscriber_id = $subscriber->id;
+			$sid = $subscriber->id;
 		} else {
 			// todo: alert to log
 			return false;
 		}
 		$current = $line->getRawData();
 		$added_values = array(
-			'subscriber_id' => $subscriber_id,
+			'sid' => $sid,
 			'billrun' => $this->getStamp(),
 		);
-		
-		if (isset($subscriber->account_id)) {
-			$added_values['account_id'] = $subscriber->account_id;
+
+		if (isset($subscriber->aid)) {
+			$added_values['aid'] = $subscriber->aid;
 		}
 
 		$newData = array_merge($current, $added_values);
@@ -213,8 +213,8 @@ class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 		$this->data = $lines->query()
 				->equals('source', 'ilds')
 				->notExists('billrun')
-				->exists('price_provider')
-				->exists('price_customer')
+				->exists('pprice')
+				->exists('aprice')
 				->cursor()->hint(array('source' => 1));
 
 		Billrun_Factory::log()->log("aggregator entities loaded: " . $this->data->count(), Zend_Log::INFO);

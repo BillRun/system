@@ -36,7 +36,11 @@ class Billrun_Log extends Zend_Log {
 	 */
 	public function __construct(Zend_Log_Writer_Abstract $writer = null) {
 		parent::__construct($writer);
-		$this->stamp = substr(md5($_SERVER['REQUEST_TIME'] . rand(0, 100)), 0, 7);
+		if ($pid = getmypid()) {
+			$this->stamp = 'p' . $pid;
+		} else {
+			$this->stamp = substr(md5($_SERVER['REQUEST_TIME'] . rand(0, 100)), 0, 7);
+		}
 	}
 
 	public static function getInstance(array $options = array()) {
@@ -68,6 +72,36 @@ class Billrun_Log extends Zend_Log {
 		}
 
 		parent::log($message, $priority, $extras);
+	}
+
+	public function removeWriters($writerName) {
+		$log = Billrun_Factory::config()->getConfigValue('log', array());
+		if ($log) {
+			foreach ($log as $writer) {
+				if (is_array($writer)) {
+					if ($writer['writerName'] == $writerName) {
+						$className = $this->getClassName($writer, "writer", $this->_defaultWriterNamespace);
+						foreach ($this->_writers as $writerIndex => $writer) {
+							if (get_class($writer) == $className) {
+								unset($this->_writers[$writerIndex]);
+							}
+						}
+						break;
+					}
+				}
+			}
+		}
+	}
+
+	public function addWriters($writerName) {
+		$log = Billrun_Factory::config()->getConfigValue('log', array());
+		if ($log) {
+			foreach ($log as $writer) {
+				if (is_array($writer) && $writer['writerName'] == $writerName) {
+					$this->addWriter($writer);
+				}
+			}
+		}
 	}
 
 }

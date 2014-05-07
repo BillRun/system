@@ -27,7 +27,7 @@ class AggregateAction extends Action_Base {
 			'page' => true,
 			'size' => true,
 		);
-		
+
 		if (($options = $this->_controller->getInstanceOptions($possibleOptions)) === FALSE) {
 			return;
 		}

@@ -14,8 +14,6 @@
  */
 abstract class Billrun_Calculator extends Billrun_Base {
 
-	const CALCULATOR_QUEUE_PREFIX = 'calculator_';
-
 	/**
 	 * the type of the object
 	 *
@@ -69,6 +67,15 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	protected $rates = array();
 
 	/**
+	 * auto sort lines and queue on pull from db
+	 * useful for time consumption
+	 * 
+	 * @var boolean
+	 */
+	protected $autosort = true;
+	protected $queue_coll = null;
+
+	/**
 	 * constructor of the class
 	 * 
 	 * @param array $options the options of object load
@@ -88,6 +95,11 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		if (!isset($options['autoload']) || $options['autoload']) {
 			$this->load();
 		}
+
+		if (isset($options['autosort'])) {
+			$this->autosort = $options['autosort'];
+		}
+		$this->queue_coll = Billrun_Factory::db()->queueCollection();
 	}
 
 	/**
@@ -121,7 +133,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	/**
 	 * write the calculation into DB
 	 */
-	abstract protected function updateRow($row);
+	abstract public function updateRow($row);
 
 	/**
 	 * execute the calculation process
@@ -132,15 +144,16 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		$lines = $this->pullLines($this->lines);
 		foreach ($lines as $line) {
 			if ($line) {
-				//Billrun_Factory::log()->log("Calcuating row : ".print_r($line,1),  Zend_Log::DEBUG);
+				Billrun_Factory::log()->log("Calcuating row : " . $line['stamp'], Zend_Log::DEBUG);
 				Billrun_Factory::dispatcher()->trigger('beforeCalculateDataRow', array('data' => &$line));
 				$line->collection($lines_coll);
 				if ($this->isLineLegitimate($line)) {
 					if (!$this->updateRow($line)) {
+						unset($this->lines[$line['stamp']]);
 						continue;
 					}
+					$this->data[$line['stamp']] = $line;
 				}
-				$this->data[$line['stamp']] = $line;
 				Billrun_Factory::dispatcher()->trigger('afterCalculateDataRow', array('data' => &$line));
 			}
 		}
@@ -148,27 +161,29 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	}
 
 	/**
-	 * execute write the calculation output into DB
+	 * Execute write the calculation output into DB
 	 */
 	public function write() {
 		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteData', array('data' => $this->data));
 		//no need  the  line is now  written right after update @TODO now that we do use queue shuold the lines wirte be here?
-		Billrun_Factory::log()->log("Writing lines to lines collection...", Zend_Log::DEBUG);
+		Billrun_Factory::log()->log('Writing ' . count($this->data) . ' lines to lines collection...', Zend_Log::DEBUG);
 		foreach ($this->data as $key => $line) {
 			$this->writeLine($line, $key);
 		}
-		Billrun_Factory::log()->log("Updating queue calculator flag...", Zend_Log::DEBUG);
+		Billrun_Factory::log()->log('Updating ' . count($this->lines) . ' queue lines calculator flags...', Zend_Log::DEBUG);
 		$this->setCalculatorTag();
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteData', array('data' => $this->data));
 	}
 
 	/**
 	 * Save a modified line to the lines collection.
+	 * @param Mongodloid_Entity $line the line to write
+	 * @param mixed $dataKey the line key in the calculator's data container
 	 */
 	public function writeLine($line, $dataKey) {
-		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteLine', array('data' => $line));
-		$line->save(Billrun_Factory::db()->linesCollection());
-		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteLine', array('data' => $line));
+		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteLine', array('data' => $line, 'calculator' => $this));
+		$line->save(Billrun_Factory::db()->linesCollection(),1);
+		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteLine', array('data' => $line, 'calculator' => $this));
 		if (!isset($line['usagev']) || $line['usagev'] === 0) {
 			$this->removeLineFromQueue($line);
 			unset($this->data[$dataKey]);
@@ -176,9 +191,9 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	}
 
 	/**
-	 * 
-	 * @param type $queueLines
-	 * @return boolean
+	 * Pull all the lines from the lines collection from their associated queue lines.
+	 * @param type $queueLines 
+	 * @return boolean|mixed a DB cursor of all the lines the 
 	 */
 	protected function pullLines($queueLines) {
 		$stamps = array();
@@ -187,7 +202,12 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		}
 		//Billrun_Factory::log()->log("stamps : ".print_r($stamps,1),Zend_Log::DEBUG);
 		$lines = Billrun_Factory::db()->linesCollection()
-				->query()->in('stamp', $stamps)->cursor();
+						->query()->in('stamp', $stamps)->cursor();
+
+		if ($this->autosort) {
+			$lines->sort(array('urt' => 1));
+		}
+
 		//Billrun_Factory::log()->log("Lines : ".print_r($lines->count(),1),Zend_Log::DEBUG);			
 		return $lines;
 	}
@@ -199,7 +219,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	 */
 	protected function pullLine($queue_line) {
 		$line = Billrun_Factory::db()->linesCollection()->query('stamp', $queue_line['stamp'])
-				->cursor()->current();
+						->cursor()->current();
 		if ($line->isEmpty()) {
 			return false;
 		}
@@ -208,117 +228,113 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	}
 
 	/**
-	 * 
-	 * @param type $calculator_type
-	 * @return type
-	 */
-	static protected function getCalculatorQueueTag($calculator_type = null) {
-		if (is_null($calculator_type)) {
-			$calculator_type = static::getCalculatorQueueType();
-		}
-		return static::CALCULATOR_QUEUE_PREFIX . $calculator_type;
-	}
-
-	/**
-	 * Mark the claculation as finished in the queue.
+	 * Mark the calculation as finished in the queue.
+	 * @param array $query additional query parameters to the queue
+	 * @param array $update additional fields to update in the queue
 	 */
 	protected function setCalculatorTag($query = array(), $update = array()) {
-		$queue = Billrun_Factory::db()->queueCollection();
-		$calculator_tag = $this->getCalculatorQueueTag();
+		$calculator_tag = $this->getCalculatorQueueType();
 		$stamps = array();
-		foreach ($this->data as $item) {
+		foreach ($this->lines as $item) {
 			$stamps[] = $item['stamp'];
 		}
-		$query = array_merge($query, array('stamp' => array('$in' => $stamps), 'hash' => $this->workHash, $calculator_tag => $this->signedMicrotime)); //array('stamp' => $item['stamp']);
-		$update = array_merge($update, array('$set' => array($calculator_tag => true)));
-		$queue->update($query, $update, array('multiple' => true));
+		$query = array_merge($query, array('stamp' => array('$in' => $stamps), 'hash' => $this->workHash, 'calc_time' => $this->signedMicrotime)); //array('stamp' => $item['stamp']);
+		$update = array_merge($update, array('$set' => array('calc_name' => $calculator_tag, 'calc_time' => false)));
+		$this->queue_coll->update($query, $update, array('multiple' => true,'w'=>1));
 	}
 
 	/**
-	 * 
+	 * Get the base query to get lines from the queue for the current calculator
 	 * @return array
 	 */
-	static protected function getBaseQuery() {
-		$calculators_queue_order = Billrun_Factory::config()->getConfigValue("queue.calculators");
-		$calculator_type = static::getCalculatorQueueType();
+	protected function getBaseQuery() {
+		$queue_calculators = Billrun_Factory::config()->getConfigValue("queue.calculators");
+		$calculator_type = $this->getCalculatorQueueType();
 		$queryData = array();
-		$queue_id = array_search($calculator_type, $calculators_queue_order);
+		$queue_id = array_search($calculator_type, $queue_calculators);
+		$previous_calculator = false;
 		if ($queue_id > 0) {
-			$previous_calculator_type = $calculators_queue_order[$queue_id - 1];
-			$previous_calculator_tag = self::getCalculatorQueueTag($previous_calculator_type);
-			$query[$previous_calculator_tag] = true;
+			$previous_calculator = $queue_calculators[$queue_id - 1];
 			//$queryData['hint'] = $previous_calculator_tag;
 		}
-		$current_calculator_queue_tag = self::getCalculatorQueueTag($calculator_type);
-		$orphand_time = strtotime(Billrun_Factory::config()->getConfigValue('queue.calculator.orphan_wait_time', "6 hours") . " ago");
+
+		$orphanConfigTime = Billrun_Factory::config()->getConfigValue('queue.calculator.orphan_wait_time', "6 hours");
+		$orphand_time = strtotime($orphanConfigTime . " ago");
+		// verify minimum orphan time to avoid parallel calculation
+		if (Billrun_Factory::config()->isProd() && (time() - $orphand_time) < 3600) {
+			Billrun_Factory::log()->log("Calculator orphan time less than one hour: " . $orphanConfigTime . ". Please set value greater than or equal to one hour. We will take one hour for now", Zend_Log::NOTICE);
+			$orphand_time = time() - 3600;
+		}
+
+		$query = array();
+		$query['$and'][0]['calc_name'] = $previous_calculator;
 		$query['$and'][0]['$or'] = array(
-			array($current_calculator_queue_tag => false),
-			array($current_calculator_queue_tag => array(
+			array('calc_time' => false),
+			array('calc_time' => array(
 					'$ne' => true, '$lt' => $orphand_time
 				)),
 		);
-		$queryData['hint'] = $current_calculator_queue_tag;
+//		$queryData['hint'] = $current_calculator_queue_tag;
 		$queryData['query'] = $query;
 		return $queryData;
 	}
 
 	/**
-	 * 
+	 * Get the base query to mark a working process in the queue
 	 * @return array
 	 */
 	protected function getBaseUpdate() {
-		$current_calculator_queue_tag = self::getCalculatorQueueTag();
 		$this->signedMicrotime = microtime(true);
 		$update = array(
 			'$set' => array(
-				$current_calculator_queue_tag => $this->signedMicrotime,
+				'calc_time' => $this->signedMicrotime,
 			)
 		);
 		return $update;
 	}
 
-	/**
-	 * 
-	 * @return array
-	 */
-	static protected function getBaseOptions() {
-		$options = array(
-			"sort" => array(
-				"_id" => 1,
-			),
-		);
-		return $options;
-	}
+//	/**
+//	 * 
+//	 * @return array
+//	 */
+//	static protected function getBaseOptions() {
+//		$options = array(
+//			"sort" => array(
+//				"_id" => 1,
+//			),
+//		);
+//		return $options;
+//	}
 
 	/**
-	 * 
+	 * Remove lines from the queue if the current calculator is the last one or if final_calc is set for a queue line and equals the current calculator
 	 */
 	public final function removeFromQueue() {
 		$queue = Billrun_Factory::db()->queueCollection();
-		$calculators_queue_order = Billrun_Factory::config()->getConfigValue("queue.calculators");
-		$calculator_type = static::getCalculatorQueueType();
-		$queue_id = array_search($calculator_type, $calculators_queue_order);
-		end($calculators_queue_order);
-		// remove  reclaculated lines.		
+		$queue_calculators = Billrun_Factory::config()->getConfigValue("queue.calculators");
+		$calculator_type = $this->getCalculatorQueueType();
+		$queue_id = array_search($calculator_type, $queue_calculators);
+		end($queue_calculators);
+		// remove  recalculated lines.	
+		$stamps = array();
 		foreach ($this->lines as $queueLine) {
-			if (isset($queueLine['final_calc']) && ($queueLine['final_calc'] == $calculator_type ) && $this->data[$queueLine['stamp']]) {
-				$queueLine->collection($queue);
-				$queueLine->remove();
+			if (($queue_id == key($queue_calculators)) || (isset($queueLine['final_calc']) && ($queueLine['final_calc'] == $calculator_type ))) {
+				$stamps[] = $queueLine['stamp'];
 			}
 		}
 
-		// remove   end of queue  stack calculator
-		if ($queue_id == key($calculators_queue_order)) { // last calculator
+		// remove end of queue stack calculator
+		if (!empty($stamps)) { // last calculator
 			Billrun_Factory::log()->log("Removing lines from queue", Zend_Log::INFO);
-			$stamps = array();
-			foreach ($this->data as $item) {
-				$stamps[] = $item['stamp'];
-			}
 			$query = array('stamp' => array('$in' => $stamps));
 			$queue->remove($query);
 		}
 	}
 
+	/**
+	 * Remove a particular line from the queue
+	 * @param type $line the line to be removed
+	 */
 	protected function removeLineFromQueue($line) {
 		$query = array(
 			'stamp' => $line['stamp'],
@@ -327,18 +343,17 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	}
 
 	/**
-	 * 
-	 * @param type $localquery
-	 * @return array
+	 * Get the queue lines for the current calculator
+	 * @param array $localquery the specific calculator filter query (usually on 'type' field)
+	 * @return array the queue lines
 	 */
 	protected function getQueuedLines($localquery) {
 		$queue = Billrun_Factory::db()->queueCollection();
-		$querydata = static::getBaseQuery();
+		$querydata = $this->getBaseQuery();
 		$query = array_merge($querydata['query'], $localquery);
 		$update = $this->getBaseUpdate();
 //		$fields = array();
 //		$options = static::getBaseOptions();
-		$current_calculator_queue_tag = $this->getCalculatorQueueTag();
 		$retLines = array();
 		$horizonlineCount = 0;
 		do {
@@ -346,15 +361,25 @@ abstract class Billrun_Calculator extends Billrun_Base {
 			if ($this->limit != 0) {
 				Billrun_Factory::log()->log('Looking for the last available line in the queue', Zend_Log::DEBUG);
 				if (isset($querydata['hint'])) {
-					$hq = $queue->query($query)->cursor()->hint(array($querydata['hint'] => 1))->sort(array('_id' => 1))->limit($this->limit);
+					$hq = $queue->query($query)->cursor()->hint(array($querydata['hint'] => 1))->limit($this->limit);
+					if ($this->autosort) {
+						$hq->sort(array('urt' => 1));
+					}
 				} else {
-					$hq = $queue->query($query)->cursor()->sort(array('_id' => 1))->limit($this->limit);
+					$hq = $queue->query($query)->cursor()->limit($this->limit);
+					if ($this->autosort) {
+						$hq->sort(array('urt' => 1));
+					}
 				}
 				$horizonlineCount = $hq->count(true);
 				$horizonline = $hq->skip(abs($horizonlineCount - 1))->limit(1)->current();
 				Billrun_Factory::log()->log("current limit : " . $horizonlineCount, Zend_Log::DEBUG);
 				if (!$horizonline->isEmpty()) {
-					$query['_id'] = array('$lte' => $horizonline['_id']->getMongoID());
+					if ($this->autosort) {
+						$query['urt'] = array('$lte' => $horizonline['urt']);
+					} else {
+						$query['_id'] = array('$lte' => $horizonline->getId()->getMongoID());
+					}
 				} else {
 					return $retLines;
 				}
@@ -364,22 +389,30 @@ abstract class Billrun_Calculator extends Billrun_Base {
 			$this->workHash = md5(time() . rand(0, PHP_INT_MAX));
 			$update['$set']['hash'] = $this->workHash;
 			//Billrun_Factory::log()->log(print_r($query,1),Zend_Log::DEBUG);
-			$queue->update($query, $update, array('multiple' => true));
+			$queue->update($query, $update, array('multiple' => true,'w'=>1));
 
-			$foundLines = $queue->query(array_merge($localquery, array('hash' => $this->workHash, $current_calculator_queue_tag => $this->signedMicrotime)))->cursor()->hint(array('hash' => 1));
+			$foundLines = $queue->query(array_merge($localquery, array('hash' => $this->workHash, 'calc_time' => $this->signedMicrotime)))->cursor();
+
+			if ($this->autosort) {
+				$foundLines->sort(array('urt' => 1));
+			}
 		} while ($horizonlineCount != 0 && $foundLines->count() == 0);
 
 		foreach ($foundLines as $line) {
-			$retLines[] = $line;
+			$retLines[$line['stamp']] = $line;
 		}
 		return $retLines;
 	}
 
+	/**
+	 * Caches the rates in the memory for fast computations
+	 */
 	protected function loadRates() {
-		$rates = Billrun_Factory::db()->ratesCollection()->query()->cursor();
+		$rates_coll = Billrun_Factory::db()->ratesCollection();
+		$rates = Billrun_Factory::db()->ratesCollection()->query()->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
 		$this->rates = array();
 		foreach ($rates as $rate) {
-			$rate->collection(Billrun_Factory::db()->ratesCollection());
+			$rate->collection($rates_coll);
 			if (isset($rate['params']['prefix'])) {
 				foreach ($rate['params']['prefix'] as $prefix) {
 					$this->rates[$prefix][] = $rate;
@@ -396,7 +429,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	 * Get the  current  calculator type, to be used in the queue.
 	 * @return string the  type  of the calculator
 	 */
-	abstract protected static function getCalculatorQueueType();
+	abstract public function getCalculatorQueueType();
 
 	/**
 	 * Check if a given line  can be handeld by  the calcualtor.
@@ -404,4 +437,18 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	 * @return ture if the line  can be handled  by the  calculator  false otherwise.
 	 */
 	abstract protected function isLineLegitimate($line);
+
+	/**
+	 * Get queue line by its stamp is it was loaded by the calculator
+	 * @param type $stamp
+	 * @todo create queue trait to be used in processors / calculators
+	 */
+	public function getQueueLine($stamp) {
+		if (isset($this->lines[$stamp])) {
+			return $this->lines[$stamp];
+		} else {
+			return null;
+		}
+	}
+
 }

@@ -35,6 +35,12 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 	 */
 	protected $availableFields = array();
 
+	/**
+	 * extra fields 
+	 * @var array
+	 */
+	protected $extraFields = array();
+
 	public function __construct($options = array()) {
 		parent::__construct($options);
 		if (isset($options['availableFields'])) {
@@ -46,7 +52,7 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 	 * method to load subsbscriber details
 	 */
 	public function __set($name, $value) {
-		if (in_array($name, $this->availableFields) && array_key_exists($name, $this->data)) {
+		if (array_key_exists($name, $this->availableFields) && array_key_exists($name, $this->data)) {
 			$this->data[$name] = $value;
 		}
 		return null;
@@ -68,7 +74,7 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 	 * @return mixed if data field  accessible return data field, else null
 	 */
 	public function __get($name) {
-		if (in_array($name, $this->availableFields) && array_key_exists($name, $this->data)) {
+		if ((array_key_exists($name, $this->availableFields) || in_array($name, $this->extraFields)) && array_key_exists($name, $this->data)) {
 			return $this->data[$name];
 		}
 		return null;
@@ -103,13 +109,27 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 	 * @return boolean
 	 */
 	public function getBalance() {
-		return Billrun_Factory::balance()->load($this->data['subscriber_id'], Billrun_Util::getNextChargeKey(time()));
+		return Billrun_Factory::balance()->load($this->data['sid'], Billrun_Util::getNextChargeKey(time()));
 	}
 
 	/**
 	 * get the (paged) current account(s) plans by time
 	 */
 	abstract public function getList($page, $size, $time, $acc_id = null);
-	
-	abstract static public function getSubscribersByParams($params);
+
+	/**
+	 * get the list of active subscribers from a json file. Parse subscribers plans at the given time (unix timestamp)
+	 */
+	abstract public function getListFromFile($file_path, $time);
+
+	abstract public function getSubscribersByParams($params, $availableFields);
+
+	/**
+	 * Returns field names to be saved when creating billrun
+	 * @return array
+	 */
+	public function getExtraFieldsForBillrun() {
+		return $this->extraFields;
+	}
+
 }

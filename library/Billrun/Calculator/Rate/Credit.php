@@ -21,29 +21,34 @@ class Billrun_Calculator_Rate_Credit extends Billrun_Calculator_Rate {
 	 */
 	static protected $type = "credit";
 
+	public function __construct($options = array()) {
+		parent::__construct($options);
+		$this->loadRates();
+	}
+
 	/**
 	 * Write the calculation into DB
 	 */
-	protected function updateRow($row) {
-		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteRow', array('row' => $row));
+	public function updateRow($row) {
+		Billrun_Factory::dispatcher()->trigger('beforeCalculatorUpdateRow', array($row, $this));
 		$usage_type = $this->getLineUsageType($row);
 		$volume = $this->getLineVolume($row, $usage_type);
 		$rate = $this->getLineRate($row, $usage_type);
-		
+
 		$current = $row->getRawData();
 
 		$added_values = array(
 			'usaget' => $usage_type,
 			'usagev' => $volume,
-			$this->ratingField => $rate? $rate->createRef() : $rate,
+			$this->ratingField => $rate ? $rate->createRef() : $rate,
 		);
 		$newData = array_merge($current, $added_values);
 		$row->setRawData($newData);
 
-		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteRow', array('row' => $row));
+		Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array($row, $this));
 		return true;
 	}
-	
+
 	/**
 	 * @see Billrun_Calculator_Rate::getLineVolume
 	 */
@@ -53,7 +58,7 @@ class Billrun_Calculator_Rate_Credit extends Billrun_Calculator_Rate {
 
 	/**
 	 * @see Billrun_Calculator_Rate::getLineUsageType
-	 */	
+	 */
 	protected function getLineUsageType($row) {
 		return 'credit';
 	}
@@ -62,27 +67,29 @@ class Billrun_Calculator_Rate_Credit extends Billrun_Calculator_Rate {
 	 * @see Billrun_Calculator_Rate::getLineRate
 	 */
 	protected function getLineRate($row, $usage_type) {
-		$rates = Billrun_Factory::db()->ratesCollection();
-		
-		$vat = $row['vatable'];
-		$query = array('key' => $vat? "CREDIT_VATABLE" : "CREDIT_VAT_FREE");
-		$rate = $rates->query($query)->cursor()->current();
-		$rate->collection($rates);
-		
+
+		$rate_key = $row['vatable'] ? "CREDIT_VATABLE" : "CREDIT_VAT_FREE";
+		$rate = $this->rates[$rate_key];
+
 		return $rate;
 	}
 
 	/**
-	 * get all the prefixes from a given number
-	 * @param type $str
-	 * @return type
+	 * Caches the rates in the memory for fast computations
 	 */
-	protected function getPrefixes($str) {
-		$prefixes = array();
-		for ($i = 0; $i < strlen($str); $i++) {
-			$prefixes[] = substr($str, 0, $i + 1);
+	protected function loadRates() {
+		$rates_coll = Billrun_Factory::db()->ratesCollection();
+		$query = array(
+			'key' => array(
+				'$in' => array('CREDIT_VATABLE', 'CREDIT_VAT_FREE'),
+			),
+		);
+		$rates = $rates_coll->query($query)->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
+		$this->rates = array();
+		foreach ($rates as $rate) {
+			$rate->collection($rates_coll);
+			$this->rates[$rate['key']] = $rate;
 		}
-		return $prefixes;
 	}
 
 }

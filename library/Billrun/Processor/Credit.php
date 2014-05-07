@@ -17,7 +17,7 @@ class Billrun_Processor_Credit extends Billrun_Processor_Json {
 	public function processData() {
 		parent::processData();
 		foreach ($this->data['data'] as &$row) {
-			$row['unified_record_time'] = new MongoDate($row['unified_record_time']);
+			$row['urt'] = new MongoDate($row['urt']['sec']);
 		}
 		return true;
 	}

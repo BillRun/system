@@ -15,26 +15,25 @@
 abstract class Billrun_Aggregator extends Billrun_Base {
 
 	protected $excludes = array();
-	
+
 	/**
 	 *
 	 * @var mixed The data container, should extend Traversable
 	 */
 	protected $data = null;
 
-
 	public function __construct($options = array()) {
 		parent::__construct($options);
-		
-		$configPath = Billrun_Factory::config()->getConfigValue($this->getType().'.billrun.config_path');
-		if($configPath) {
-			$config =  new Yaf_Config_Ini( $configPath );
-			if(isset($config->billrun->exclude)) {
+
+		$configPath = Billrun_Factory::config()->getConfigValue($this->getType() . '.billrun.config_path');
+		if ($configPath) {
+			$config = new Yaf_Config_Ini($configPath);
+			if (isset($config->billrun->exclude)) {
 				$this->excludes = $config->billrun->exclude->toArray();
 			}
 		}
 	}
-	
+
 	/**
 	 * execute aggregate
 	 */
@@ -48,12 +47,12 @@ abstract class Billrun_Aggregator extends Billrun_Base {
 	/**
 	 * update the billing line with stamp to avoid another aggregation
 	 *
-	 * @param int $subscriber_id the subscriber id to update
+	 * @param int $sid the subscriber id to update
 	 * @param Mongodloid_Entity $line the billing line to update
 	 *
 	 * @return boolean true on success else false
 	 */
-	abstract protected function updateBillingLine($subscriber_id, $item);
+	abstract protected function updateBillingLine($sid, $item);
 
 	/**
 	 * method to update the billrun by the billing line (row)

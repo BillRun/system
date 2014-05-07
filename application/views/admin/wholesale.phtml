@@ -1,0 +1,105 @@
+<?php
+// print_R($this); die;
+?>
+<div class="container component">
+	<h2>Wholesale</h2>
+	<?php $this->display('w-toolbar.phtml', array());
+	print '<div style="clear:both;"></div>';
+	?>
+	<div class="tabbable">
+		<ul class="nav nav-tabs">
+			<?php
+			foreach (array('incoming', 'outgoing') as $index => $v) :
+				echo '<li' . ($index==0? ' class="active"' : '') . '><a href="#tabs-' . ($index + 1) . '" data-toggle="tab">' . $v . '</a></li>';
+			endforeach;
+			?>
+		</ul>
+		<div class="tab-content">
+			<div class="tab-pane active" id="tabs-1">
+				<h3>Incoming</h3>
+				<table border="1" data-type="TG" class="wholesale-table">
+					<?php
+					$keys = array(
+						'group_by',
+						'duration',
+						'cost',
+					);
+					$graph_keys = array(
+						'group_by',
+						'hours',
+						'cost',
+					);
+					//print table headers
+					echo "<tr>";
+					foreach ($keys as $k) {
+						echo "<th>" . ($k == 'group_by' ? $this->group_field_display : $k) . "</th>";
+					}
+					echo "</tr>";
+
+					foreach ($this->data['incoming_call'] as $item) {
+						echo '<tr>';
+						foreach ($keys as $k) :
+							echo "<td>";
+							if ($k == 'group_by') {
+								if ($this->group_by == 'carrier') {
+									echo "<input class=\"carrier\" type=\"hidden\" value=\"" . $item[$k] . "\">";
+								}
+								echo '<a onclick="openPopup(this);" href="#w-popup" data-type="update" data-toggle="modal" role="button" data-remote="" data-type="' . $k . '">' . $item[$k] . '</a>';
+							} else {
+								echo (isset($item[$k]) ? $item[$k] : '&nbsp;');
+							}
+							echo "</td>";
+						endforeach;
+						echo "</tr>";
+					}
+					?>
+				</table>
+				<?php
+				$graph = Admin_Graphs::prepareGraph($this->data['incoming_call'], $this->group_field_display, $this->group_by, array_diff($graph_keys, array('group_by')), array_diff($graph_keys, array('group_by')), array('graph_id' => 'incoming_call_graph', 'graph_class' => 'wholesale-graph'));
+				echo Admin_Graphs::printGraph($graph, false, 1);
+				?>
+			</div>
+			<div class="tab-pane" id="tabs-2">
+				<h3>Outgoing</h3>
+				<table border="1" data-type="FG" class="wholesale-table">
+					<?php
+					//print table headers
+					echo "<tr>";
+					foreach ($keys as $k) {
+						echo "<th>" . ($k == 'group_by' ? $this->group_field_display : $k) . "</th>";
+					}
+					echo "</tr>";
+
+					foreach ($this->data['outgoing_call'] as $item) {
+						echo '<tr>';
+						foreach ($keys as $k) :
+							echo "<td>";
+							if ($k == 'group_by') {
+								if ($this->group_by == 'carrier') {
+									echo "<input class=\"carrier\" type=\"hidden\" value=\"" . $item[$k] . "\">";
+								}
+								echo '<a onclick="openPopup(this);" href="#w-popup" data-type="update" data-toggle="modal" role="button" data-remote="" data-type="' . $k . '">' . $item[$k] . '</a>';
+							} else {
+								echo (isset($item[$k]) ? $item[$k] : '&nbsp;');
+							}
+							echo "</td>";
+						endforeach;
+						echo "</tr>";
+					}
+					?>
+				</table>
+				<?php
+				$graph = Admin_Graphs::prepareGraph($this->data['outgoing_call'], $this->group_field_display, $this->group_by, array_diff($graph_keys, array('group_by')), array_diff($graph_keys, array('group_by')), array('graph_id' => 'outgoing_call_graph', 'graph_class' => 'wholesale-graph'));
+				echo Admin_Graphs::printGraph($graph, false, 1);
+				?>
+			</div>
+		</div>
+	</div>
+<?php $this->display('w-popups.phtml', array()); ?>
+	<hr>
+
+	<footer style="clear: both">
+		<p>&copy; S.D.O.C. LTD 2012-2014</p>
+	</footer>
+
+</div> <!-- /container -->

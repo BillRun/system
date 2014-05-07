@@ -14,8 +14,7 @@ class Mongodloid_Cursor implements Iterator, Countable {
 	}
 
 	public function count($foundOnly = true) {
-	
-		return  $this->_cursor->count($foundOnly);
+		return $this->_cursor->count($foundOnly);
 	}
 
 	public function current() {
@@ -68,6 +67,67 @@ class Mongodloid_Cursor implements Iterator, Countable {
 
 	public function explain() {
 		return $this->_cursor->explain();
+	}
+
+	/**
+	 * method to set read preference of cursor connection
+	 * 
+	 * @param string $readPreference The read preference mode: RP_PRIMARY, RP_PRIMARY_PREFERRED, RP_SECONDARY, RP_SECONDARY_PREFERRED or RP_NEAREST
+	 * @param array $tags An array of zero or more tag sets, where each tag set is itself an array of criteria used to match tags on replica set members
+	 * 
+	 * @return Mongodloid_Collection self object
+	 */
+	public function setReadPreference($readPreference, array $tags = array()) {
+		if (defined('MongoClient::' . $readPreference)) {
+			$this->_cursor->setReadPreference(constant('MongoClient::' . $readPreference), $tags);
+		}
+		
+		return $this;
+	}
+
+	/**
+	 * method to get read preference of cursor connection
+	 * 
+	 * @param boolean $includeTage if to include tags in the return value, else return only the read preference
+	 * 
+	 * @return mixed array in case of include tage else string (the string would be the rp constant)
+	 */
+	public function getReadPreference($includeTage = false) {
+		$ret = $this->_cursor->setReadPreference();
+		if ($includeTage) {
+			return $ret;
+		}
+		
+		switch ($ret['type']) {
+			case MongoClient::RP_PRIMARY:
+				return 'RP_PRIMARY';
+			case MongoClient::RP_PRIMARY_PREFERRED:
+				return 'RP_PRIMARY_PREFERRED';
+			case MongoClient::RP_SECONDARY:
+				return 'RP_SECONDARY';
+			case MongoClient::RP_SECONDARY_PREFERRED:
+				return 'RP_SECONDARY_PREFERRED';
+			case MongoClient::RP_NEAREST:
+				return 'RP_NEAREST';
+			default:
+				return MongoClient::RP_PRIMARY_PREFERRED;
+		}
+
+	}
+
+	public function timeout($ms) {
+		$this->_cursor->timeout($ms);
+		return $this;
+	}
+
+	public function immortal($liveForever = true) {
+		$this->_cursor->immortal($liveForever);
+		return $this;
+	}
+	
+	public function fields(array $fields) {
+		$this->_cursor->fields($fields);
+		return $this;
 	}
 
 }

@@ -24,6 +24,8 @@ class GenerateAction extends Action_Base {
 		$possibleOptions = array(
 			'type' => false,
 			'stamp' => false,
+			'page' => true,
+			'size' => true,
 		);
 
 		if (($options = $this->_controller->getInstanceOptions($possibleOptions)) === FALSE) {
@@ -37,11 +39,11 @@ class GenerateAction extends Action_Base {
 		if ($generator) {
 			$this->_controller->addOutput("Loading data to Generate...");
 			$generator->load();
-			$this->_controller->addOutput("Starting to Generate. This action can take awhile...");
+			$this->_controller->addOutput("Starting to Generate. This action can take a while...");
 			$generator->generate();
 			$this->_controller->addOutput("Finished generating.");
 		} else {
-			$this->_controller->addOutput("Aggregator cannot be loaded");
+			$this->_controller->addOutput("Generator cannot be loaded");
 		}
 	}
 

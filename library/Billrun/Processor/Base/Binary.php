@@ -20,7 +20,7 @@ abstract class Billrun_Processor_Base_Binary extends Billrun_Processor {
 	 * @var string
 	 */
 	static protected $type = 'binary';
-	
+
 	/**
 	 * create an header record
 	 * @param $data  the header record data.
@@ -32,7 +32,7 @@ abstract class Billrun_Processor_Base_Binary extends Billrun_Processor {
 		$header['stamp'] = md5(serialize($header));
 		$header['type'] = static::$type;
 		$header['file'] = basename($this->filePath);
-		
+
 		$header['process_time'] = date(self::base_dateformat);
 
 		return $header;
@@ -53,7 +53,7 @@ abstract class Billrun_Processor_Base_Binary extends Billrun_Processor {
 			$row['type'] = static::$type;
 			$row['source'] = self::$type;
 			$row['file'] = basename($this->filePath);
-			$row['header_stamp'] = $this->data['header']['stamp'];
+			$row['log_stamp'] = $this->getFileStamp();
 			$row['process_time'] = date(self::base_dateformat);
 		}
 		return $row;
@@ -72,7 +72,7 @@ abstract class Billrun_Processor_Base_Binary extends Billrun_Processor {
 		$trailer['header_stamp'] = $this->data['header']['stamp'];
 		$trailer['file'] = basename($this->filePath);
 		$trailer['process_time'] = date(self::base_dateformat);
-		
+
 		return $trailer;
 	}
 
@@ -81,23 +81,23 @@ abstract class Billrun_Processor_Base_Binary extends Billrun_Processor {
 	 * (The required field can be written in the config using <type>.fields_filter)
 	 * @param Array		$rawRow the full data record row.
 	 * @return Array	the record row with filtered only the requierd fields in it  
-	 *					or if no filter is defined in the configuration the full data record.
+	 * 					or if no filter is defined in the configuration the full data record.
 	 */
 	protected function filterFields($rawRow) {
 		$row = array();
-		
-		$requiredFields = Billrun_Factory::config()->getConfigValue( static::$type.'.fields_filter',array(),'array');
-		if(!empty($requiredFields)) {
-			foreach($requiredFields as $field) {
-				if(isset($rawRow[$field])) {
+
+		$requiredFields = Billrun_Factory::config()->getConfigValue(static::$type . '.fields_filter', array(), 'array');
+		if (!empty($requiredFields)) {
+			foreach ($requiredFields as $field) {
+				if (isset($rawRow[$field])) {
 					$row[$field] = $rawRow[$field];
 				}
 			}
 		} else {
 			return $rawRow;
 		}
-		
+
 		return $row;
 	}
-	
+
 }

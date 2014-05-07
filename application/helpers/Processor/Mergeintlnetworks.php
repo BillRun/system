@@ -99,7 +99,7 @@
 //				continue;
 //			}
 //
-//			$entity->save($rates, true);
+//			$entity->save($rates);
 //			$this->data['stored_data'][] = $row;
 //		}
 //		return true;

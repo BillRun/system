@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package         Billing
  * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
@@ -35,12 +36,12 @@ abstract class Billrun_Responder extends Billrun_Base {
 		} else {
 			$this->workspace = Billrun_Factory::config()->getConfigValue('response.workspace');
 		}
-		
+
 		if (isset($options['backup'])) {
 			$this->workspace = $options['backup'];
 		} else {
 			$defBackup = Billrun_Factory::config()->getConfigValue('response.backup');
-			$this->workspace = Billrun_Factory::config()->getConfigValue(static::type.'.backup', $defBackup);
+			$this->workspace = Billrun_Factory::config()->getConfigValue(static::type . '.backup', $defBackup);
 		}
 	}
 
@@ -51,4 +52,3 @@ abstract class Billrun_Responder extends Billrun_Base {
 	 */
 	abstract public function respond();
 }
-

@@ -94,7 +94,7 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 
 			// add record opening time UTC aligned
 			if (isset($row['callEventStartTimeStamp'])) {
-				$row['unified_record_time'] = new MongoDate(Billrun_Util::dateTimeConvertShortToIso($row['callEventStartTimeStamp'], $row['utcTimeOffset']));
+				$row['urt'] = new MongoDate(Billrun_Util::dateTimeConvertShortToIso($row['callEventStartTimeStamp'], $row['utcTimeOffset']));
 			}
 		}
 	}
@@ -158,12 +158,11 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 	 * method to collect data which need to be handle by event
 	 */
 	public function handlerCollect($options) {
-		if( $options['type'] != 'roaming') { 
-			return FALSE; 
+		if ($options['type'] != 'roaming') {
+			return FALSE;
 		}
 		$lines = Billrun_Factory::db()->linesCollection();
 		$charge_time = Billrun_Util::getLastChargeTime(true); // true means return timestamp
-
 		// TODO: take it to config ? how to handle variables ?
 		$base_match = array(
 			'$match' => array(
@@ -174,7 +173,7 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 			'$match' => array(
 				'record_type' => 'MOC',
 				'connectedNumber' => array('$regex' => '^972'),
-				'unified_record_time' => array('$gte' => new MongoDate($charge_time)),
+				'urt' => array('$gte' => new MongoDate($charge_time)),
 				'event_stamp' => array('$exists' => false),
 				'deposit_stamp' => array('$exists' => false),
 				'callEventDurationRound' => array('$gt' => 0), // not sms
@@ -251,7 +250,7 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 		unset($having['$match']['sms_out']);
 		unset($project['$project']['sms_out']);
 		$timeWindow = strtotime("-" . Billrun_Factory::config()->getConfigValue('nrtrde.hourly.timespan', '1h'));
-		$where['$match']['unified_record_time'] = array('$gt' => new MongoDate($timeWindow));
+		$where['$match']['urt'] = array('$gt' => new MongoDate($timeWindow));
 		$group['$group']['sms_hourly'] = array('$sum' => 1);
 		$having['$match']['sms_hourly'] = array('$gte' => Billrun_Factory::config()->getConfigValue('nrtrde.hourly.thresholds.smsout', 250, 'int'));
 		$project['$project']['sms_hourly'] = 1;
@@ -262,7 +261,7 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 		unset($group['$group']['sms_hourly']);
 		unset($having['$match']['sms_hourly']);
 		unset($project['$project']['sms_hourly']);
-		$where['$match']['unified_record_time'] = array('$gt' => new MongoDate($timeWindow));
+		$where['$match']['urt'] = array('$gt' => new MongoDate($timeWindow));
 		$where['$match']['callEventDurationRound'] = array('$gt' => 0);
 		$group['$group']['moc_nonisrael_hourly'] = array('$sum' => '$callEventDurationRound');
 		$having['$match']['moc_nonisrael_hourly'] = array('$gte' => Billrun_Factory::config()->getConfigValue('nrtrde.hourly.thresholds.mocnonisrael', 3000));
@@ -310,12 +309,12 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 	 */
 	protected function addAlertData(&$event) {
 		// @todo: WTF?!?! Are you real with this condition???
-		$type = isset($event['moc_israel']) ?	'moc_israel' :
-				(isset($event['moc_nonisrael'])?'moc_nonisrael' :
-				(isset($event['mtc_all'])	?	'mtc_all' :
-				(isset($event['sms_hourly'])?	'sms_hourly' :
-				(isset($event['sms_out'])	?	'sms_out' :
-												'moc_nonisrael_hourly'))));
+		$type = isset($event['moc_israel']) ? 'moc_israel' :
+			(isset($event['moc_nonisrael']) ? 'moc_nonisrael' :
+				(isset($event['mtc_all']) ? 'mtc_all' :
+					(isset($event['sms_hourly']) ? 'sms_hourly' :
+						(isset($event['sms_out']) ? 'sms_out' :
+							'moc_nonisrael_hourly'))));
 
 		$event['units'] = 'SEC';
 		$event['value'] = $event[$type];
@@ -351,7 +350,7 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 				$event['event_type'] = 'NRTRDE_HOURLY_VOICE';
 				break;
 		}
-		
+
 		$event['effects'] = array(
 			'key' => 'type',
 			'filter' => array('$in' => array('nrtrde', 'ggsn'))

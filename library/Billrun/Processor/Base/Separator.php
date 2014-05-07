@@ -65,7 +65,7 @@ abstract class Billrun_Processor_Base_Separator extends Billrun_Processor {
 				$this->parseFooter($line);
 			} else {
 				Billrun_Factory::log()->log("Billrun_Processor_Separator: cannot identify record type " . $record_type, Zend_Log::WARN);
-			}			
+			}
 		}
 
 		return true;
@@ -124,7 +124,7 @@ abstract class Billrun_Processor_Base_Separator extends Billrun_Processor {
 		$this->parser->setLine($line);
 		Billrun_Factory::dispatcher()->trigger('beforeHeaderParsing', array($line, $this));
 		$header = $this->parser->parse();
-		$header['source'] = static::$type; 
+		$header['source'] = static::$type;
 		$header['type'] = self::$type;
 		$header['file'] = basename($this->filePath);
 		$header['process_time'] = date(self::base_dateformat);
@@ -152,7 +152,7 @@ abstract class Billrun_Processor_Base_Separator extends Billrun_Processor {
 		$row = $this->parser->parse();
 		$row['source'] = static::$type;
 		$row['type'] = self::$type;
-		$row['header_stamp'] = $this->data['header']['stamp'];
+		$row['log_stamp'] = $this->getFileStamp();
 		$row['file'] = basename($this->filePath);
 		$row['process_time'] = date(self::base_dateformat);
 		Billrun_Factory::dispatcher()->trigger('afterDataParsing', array(&$row, $this));

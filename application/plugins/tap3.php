@@ -18,35 +18,24 @@ class tap3Plugin extends Billrun_Plugin_BillrunPluginBase implements Billrun_Plu
 	use Billrun_Traits_FileSequenceChecking;
 
 	protected $name = 'tap3';
-	protected $nsnConfig = false;
+	protected $tap3Config = false;
+	protected $currentFileHeader = array();
+	protected $exchangeRates = array();
+
+	/**
+	 * Number by which to divide the line charge to get the sdr value
+	 * @var int
+	 */
+	protected $sdr_division_value;
 
 	const FILE_READ_AHEAD_LENGTH = 65535;
 
 	public function __construct(array $options = array()) {
-		$this->nsnConfig = (new Yaf_Config_Ini(Billrun_Factory::config()->getConfigValue('tap3.config_path')))->toArray();
+		$this->tap3Config = (new Yaf_Config_Ini(Billrun_Factory::config()->getConfigValue('tap3.config_path')))->toArray();
 		$this->initParsing();
 		$this->addParsingMethods();
 	}
 
-	/**
-	 * back up retrived files that were processed to a third patry path.
-	 * @param \Billrun_Processor $processor the processor instace contain the current processed file data. 
-	 */
-	public function afterProcessorStore(\Billrun_Processor $processor) {
-		if ($processor->getType() != $this->getName()) {
-			return;
-		}
-		$path = Billrun_Factory::config()->getConfigValue($this->getName() . '.thirdparty.backup_path', false, 'string');
-		if (!$path)
-			return;
-		if ($processor->retrievedHostname) {
-			$path = $path . DIRECTORY_SEPARATOR . $processor->retrievedHostname;
-		}
-		Billrun_Factory::log()->log("Saving file to third party at : $path", Zend_Log::DEBUG);
-		if (!$processor->backupToPath($path, true)) {
-			Billrun_Factory::log()->log("Couldn't  save file to third patry path at : $path", Zend_Log::ERR);
-		}
-	}
 
 	/////////////////////////////////////////////// Reciver //////////////////////////////////////
 
@@ -61,6 +50,7 @@ class tap3Plugin extends Billrun_Plugin_BillrunPluginBase implements Billrun_Plu
 			return;
 		}
 		$this->setFilesSequenceCheckForHost($hostname);
+		
 	}
 
 	/**
@@ -75,6 +65,18 @@ class tap3Plugin extends Billrun_Plugin_BillrunPluginBase implements Billrun_Plu
 			return;
 		}
 		$this->checkFilesSeq($filepaths, $hostname);
+		
+		$path = Billrun_Factory::config()->getConfigValue($this->getName().'.thirdparty.backup_path', false, 'string');
+		if (!$path)	return;
+		if ($hostname) {
+			$path = $path . DIRECTORY_SEPARATOR . $hostname;
+		}
+		Billrun_Factory::log()->log("Saving files to third party at : $path", Zend_Log::INFO);
+		foreach ($filepaths as $filePath) {
+			if (!$receiver->backupToPath($filePath, $path, true , true)) {
+				Billrun_Factory::log()->log("Couldn't save file $filePath to third patry path at : $path", Zend_Log::ERR);
+			}
+		}
 	}
 
 	///////////////////////////////////////////////// Parser //////////////////////////////////
@@ -87,9 +89,8 @@ class tap3Plugin extends Billrun_Plugin_BillrunPluginBase implements Billrun_Plu
 			return FALSE;
 		}
 		//Billrun_Factory::log()->log("Header data : ". print_r(Asn_Base::getDataArray( $data ,true ),1) ,  Zend_Log::DEBUG);
-		$header = $this->parseASNDataRecur($this->nsnConfig['header'], Asn_Base::getDataArray($data, true, true), $this->nsnConfig['fields']);
+		$header = $this->parseASNDataRecur($this->tap3Config['header'], $data, $this->tap3Config['fields']);
 		$this->currentFileHeader = $header;
-
 		return $header;
 	}
 
@@ -104,8 +105,8 @@ class tap3Plugin extends Billrun_Plugin_BillrunPluginBase implements Billrun_Plu
 		$type = $data->getType();
 		$cdrLine = false;
 
-		if (isset($this->nsnConfig[$type])) {
-			$cdrLine = $this->parseASNDataRecur($this->nsnConfig[$type], Asn_Base::getDataArray($data, true, true), $this->nsnConfig['fields']);
+		if (isset($this->tap3Config[$type])) {
+			$cdrLine = $this->parseASNDataRecur($this->tap3Config[$type], $data, $this->tap3Config['fields']);
 			if ($cdrLine) {
 				$cdrLine['record_type'] = $type;
 
@@ -138,7 +139,7 @@ class tap3Plugin extends Billrun_Plugin_BillrunPluginBase implements Billrun_Plu
 			return FALSE;
 		}
 
-		$trailer = $this->parseASNDataRecur($this->nsnConfig['trailer'], Asn_Base::getDataArray($data, true), $this->nsnConfig['fields']);
+		$trailer = $this->parseASNDataRecur($this->tap3Config['trailer'], $data, $this->tap3Config['fields']);
 		//Billrun_Factory::log()->log(print_r($trailer,1),  Zend_Log::DEBUG);
 
 		return $trailer;
@@ -151,7 +152,8 @@ class tap3Plugin extends Billrun_Plugin_BillrunPluginBase implements Billrun_Plu
 	protected function surfaceCDRFields(&$cdrLine) {
 		if (isset($cdrLine['basicCallInformation']['CallEventStartTimeStamp']['localTimeStamp'])) {
 			$offset = $this->currentFileHeader['networkInfo']['UtcTimeOffsetInfoList'][$cdrLine['basicCallInformation']['CallEventStartTimeStamp']['TimeOffsetCode']];
-			$cdrLine['unified_record_time'] = new MongoDate(Billrun_Util::dateTimeConvertShortToIso($cdrLine['basicCallInformation']['CallEventStartTimeStamp']['localTimeStamp'], $offset));
+			$cdrLine['urt'] = new MongoDate(Billrun_Util::dateTimeConvertShortToIso($cdrLine['basicCallInformation']['CallEventStartTimeStamp']['localTimeStamp'], $offset));
+			$cdrLine['tzoffset'] = $offset;
 		}
 
 		if (isset($cdrLine['basicCallInformation']['chargeableSubscriber']['simChargeableSubscriber']['imsi'])) {
@@ -162,18 +164,46 @@ class tap3Plugin extends Billrun_Plugin_BillrunPluginBase implements Billrun_Plu
 			$cdrLine['imsi'] = $cdrLine['basicCallInformation']['GprsChargeableSubscriber']['chargeableSubscriber']['simChargeableSubscriber']['imsi'];
 		}
 
-		if (isset($cdrLine['basicCallInformation']['chargeableSubscriber']['simChargeableSubscriber']['msisdn'])) {
-			$cdrLine['calling_number'] = $cdrLine['basicCallInformation']['chargeableSubscriber']['simChargeableSubscriber']['msisdn'];
+		if (isset($cdrLine['BasicServiceUsedList']['BasicServiceUsed']['BasicService']['BasicServiceCode']['TeleServiceCode']) && isset($cdrLine['record_type'])) {
+			$tele_service_code = $cdrLine['BasicServiceUsedList']['BasicServiceUsed']['BasicService']['BasicServiceCode']['TeleServiceCode'];
+			$record_type = $cdrLine['record_type'];
+			if ($record_type == '9') {
+				if ($tele_service_code == '11') {
+					$cdrLine['called_number'] = $cdrLine['basicCallInformation']['Desination']['CalledNumber'];
+				} else if ($tele_service_code == '22') {
+					if (isset($cdrLine['basicCallInformation']['Desination']['DialedDigits'])) {
+						$cdrLine['called_number'] = $cdrLine['basicCallInformation']['Desination']['DialedDigits'];
+					} else if (isset($cdrLine['basicCallInformation']['Desination']['CalledNumber'])) { // @todo check with sefi. reference: db.lines.count({'BasicServiceUsedList.BasicServiceUsed.BasicService.BasicServiceCode.TeleServiceCode':"22",record_type:'9','basicCallInformation.Desination.DialedDigits':{$exists:false}});)
+						$cdrLine['called_number'] = $cdrLine['basicCallInformation']['Desination']['CalledNumber'];
+					}
+				}
+			}
 		}
 
 		if (isset($cdrLine['basicCallInformation']['GprsChargeableSubscriber']['chargeableSubscriber']['simChargeableSubscriber']['msisdn'])) {
 			$cdrLine['calling_number'] = $cdrLine['basicCallInformation']['GprsChargeableSubscriber']['chargeableSubscriber']['simChargeableSubscriber']['msisdn'];
+		} else if (isset($cdrLine['basicCallInformation']['chargeableSubscriber']['simChargeableSubscriber']['msisdn'])) {
+			$cdrLine['calling_number'] = $cdrLine['basicCallInformation']['chargeableSubscriber']['simChargeableSubscriber']['msisdn'];
+		} else if (isset($cdrLine['BasicServiceUsedList']['BasicServiceUsed']['BasicService']['BasicServiceCode']['TeleServiceCode']) && isset($cdrLine['record_type'])) {
+			if ($record_type == 'a' && ($tele_service_code == '11' || $tele_service_code == '21')) {
+				if (isset($cdrLine['basicCallInformation']['callOriginator']['callingNumber'])) { // for some calls (incoming?) there's no calling number
+					$cdrLine['calling_number'] = $cdrLine['basicCallInformation']['callOriginator']['callingNumber'];
+				}
+			}
 		}
 
 		if (isset($cdrLine['LocationInformation']['GeographicalLocation']['ServingNetwork'])) {
 			$cdrLine['serving_network'] = $cdrLine['LocationInformation']['GeographicalLocation']['ServingNetwork'];
 		} else {
 			$cdrLine['serving_network'] = $this->currentFileHeader['header']['sending_source'];
+		}
+
+		if (isset($cdrLine['BasicServiceUsedList']['BasicServiceUsed']['ChargeInformationList']['ChargeInformation']['ChargeDetailList']['ChargeDetail']['Charge'])) {
+			$cdrLine['sdr'] = $cdrLine['BasicServiceUsedList']['BasicServiceUsed']['ChargeInformationList']['ChargeInformation']['ChargeDetailList']['ChargeDetail']['Charge'] / $this->sdr_division_value;
+			$cdrLine['exchange_rate'] = $this->exchangeRates[$cdrLine['BasicServiceUsedList']['BasicServiceUsed']['ChargeInformationList']['ChargeInformation']['ExchangeRateCode']];
+		} else if (isset($cdrLine['GprsServiceUsed']['ChargeInformationList']['ChargeInformation']['ChargeDetailList']['ChargeDetail']['Charge'])) {
+			$cdrLine['sdr'] = $cdrLine['GprsServiceUsed']['ChargeInformationList']['ChargeInformation']['ChargeDetailList']['ChargeDetail']['Charge'] / $this->sdr_division_value;
+			$cdrLine['exchange_rate'] = $this->exchangeRates[$cdrLine['GprsServiceUsed']['ChargeInformationList']['ChargeInformation']['ExchangeRateCode']];
 		}
 	}
 
@@ -200,17 +230,18 @@ class tap3Plugin extends Billrun_Plugin_BillrunPluginBase implements Billrun_Plu
 
 	/**
 	 * Parse time offset list that  conatin the time offset  refecenced in each line  cal start time
-	 * @param type $data the  time offset list
+	 * @param type $asn the  time offset list
 	 * @return rray  containing the time offset list  keyed by its offset code.
 	 */
 	protected function parseTimeOffsetList($data) {
 		$timeOffsets = array();
-		if (isset($data['e9']['e8'])) {
-			$data['e9'] = array($data['e9']);
-		}
-		foreach ($data['e9'] as $value) {
-			$key = $this->parseField('number', $value['e8']);
-			$timeOffsets[$key] = $value['e7'];
+		foreach ($data as $time_offset) {
+			$time_offset_arr = array();
+			foreach ($time_offset->getData() as $value) {
+				$time_offset_arr[$value->getType()] = $value->getData();
+			}
+			$key = $this->parseField('number', $time_offset_arr['e8']);
+			$timeOffsets[$key] = $time_offset_arr['e7'];
 		}
 		return $timeOffsets;
 	}
@@ -232,12 +263,15 @@ class tap3Plugin extends Billrun_Plugin_BillrunPluginBase implements Billrun_Plu
 		$parsedData = Asn_Base::parseASNString($bytes);
 		$processorData['header'] = $processor->buildHeader($parsedData);
 		//$bytes = substr($bytes, $processor->getParser()->getLastParseLength());
+		$trailer = $processor->buildTrailer($parsedData);
+		$this->initExchangeRates($trailer);
 
 		foreach ($parsedData->getData() as $record) {
-			if (in_array($record->getType(), $this->nsnConfig['config']['data_records'])) {
+			if (in_array($record->getType(), $this->tap3Config['config']['data_records'])) {
 				foreach ($record->getData() as $key => $data) {
 					$row = $processor->buildDataRow($data);
 					if ($row) {
+						$row['file_rec_num'] = $key + 1;
 						$processorData['data'][] = $row;
 					}
 				}
@@ -246,7 +280,7 @@ class tap3Plugin extends Billrun_Plugin_BillrunPluginBase implements Billrun_Plu
 			}
 		}
 
-		$processorData['trailer'] = $processor->buildTrailer($parsedData);
+		$processorData['trailer'] = $trailer;
 
 		return true;
 	}
@@ -273,6 +307,31 @@ class tap3Plugin extends Billrun_Plugin_BillrunPluginBase implements Billrun_Plu
 			return FALSE;
 		}
 		return $this->getFileSequenceData($filename);
+	}
+
+	/**
+	 * Encode an array content in utf encoding
+	 * @param $arr the array to encode.
+	 * @return array with a recurcivly encoded values.
+	 */
+	protected function utf8encodeArr($arr) {
+		if (is_object($arr)) {
+			$val = array();
+			foreach ($arr->getData() as $val) {
+				$val[$arr->getType()][] = $this->utf8encodeArr($val);
+			}
+			return $val;
+		}
+		return utf8_encode($arr);
+	}
+
+	protected function initExchangeRates($trailer) {
+		if (isset($trailer['data']['trailer']['currency_conversion_info']['currency_conversion'])) {
+			foreach ($trailer['data']['trailer']['currency_conversion_info']['currency_conversion'] as $currency_conversion) {
+				$this->exchangeRates[$currency_conversion['exchange_rate_code']] = $currency_conversion['exchange_rate'] / pow(10, $currency_conversion['number_of_decimalplaces']);
+			}
+		}
+		$this->sdr_division_value = pow(10, $trailer['data']['trailer']['tap_decimal_places']);
 	}
 
 }

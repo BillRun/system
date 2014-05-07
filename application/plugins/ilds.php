@@ -13,11 +13,11 @@ class ildsPlugin extends Billrun_Plugin_BillrunPluginFraud {
 	 * method to collect data which need to be handle by event
 	 */
 	public function handlerCollect($options) {
-		if($this->getName() != $options['type']) { 
-			return FALSE; 
+		if ($this->getName() != $options['type']) {
+			return FALSE;
 		}
-		
-		Billrun_Factory::log()->log("ILDS fraud collect handler triggered",  Zend_Log::DEBUG);
+
+		Billrun_Factory::log()->log("ILDS fraud collect handler triggered", Zend_Log::DEBUG);
 		$lines = Billrun_Factory::db()->linesCollection();
 		$charge_time = Billrun_Util::getLastChargeTime(true, Billrun_Factory::config()->getConfigValue('ilds.billrun.charging_day', 20));
 
@@ -32,8 +32,8 @@ class ildsPlugin extends Billrun_Plugin_BillrunPluginFraud {
 				'event_stamp' => array('$exists' => false),
 				'deposit_stamp' => array('$exists' => false),
 //				'call_start_dt' => array('$gte' => $charge_time),
-				'unified_record_time' => array('$gte' => new MongoDate($charge_time)),
-				'price_customer' => array('$exists' => true),
+				'urt' => array('$gte' => new MongoDate($charge_time)),
+				'aprice' => array('$exists' => true),
 				'billrun' => array('$exists' => false),
 			),
 		);
@@ -42,7 +42,7 @@ class ildsPlugin extends Billrun_Plugin_BillrunPluginFraud {
 			'$group' => array(
 				"_id" => '$caller_phone_no',
 				'msisdn' => array('$first' => '$caller_phone_no'),
-				"total" => array('$sum' => '$price_customer'),
+				"total" => array('$sum' => '$aprice'),
 				'lines_stamps' => array('$addToSet' => '$stamp'),
 			),
 		);
@@ -59,28 +59,29 @@ class ildsPlugin extends Billrun_Plugin_BillrunPluginFraud {
 
 		$having = array(
 			'$match' => array(
-				'total' => array('$gte' => floatval( Billrun_Factory::config()->getConfigValue('ilds.threshold', 100)) )
+				'total' => array('$gte' => floatval(Billrun_Factory::config()->getConfigValue('ilds.threshold', 100)))
 			),
 		);
 
 		$ret = $lines->aggregate($base_match, $where, $group, $project, $having);
-		Billrun_Factory::log()->log("ILDS fraud plugin found " . count($ret) . " items",  Zend_Log::DEBUG);
+		Billrun_Factory::log()->log("ILDS fraud plugin found " . count($ret) . " items", Zend_Log::DEBUG);
 
 		return $ret;
 	}
-	
+
 	/**
 	 * Add data that is needed to use the event object/DB document later
 	 * @param Array|Object $event the event to add fields to.
 	 * @return Array|Object the event object with added fields
 	 */
 	protected function addAlertData(&$newEvent) {
-		
-		$newEvent['units']	= 'MIN';
-		$newEvent['value']	= $newEvent['total'];
+
+		$newEvent['units'] = 'MIN';
+		$newEvent['value'] = $newEvent['total'];
 		$newEvent['threshold'] = Billrun_Factory::config()->getConfigValue('ilds.threshold', 100);
-		$newEvent['event_type']	= 'ILDS';
-		$newEvent['msisdn']	= $newEvent['caller_phone_no'];
+		$newEvent['event_type'] = 'ILDS';
+		$newEvent['msisdn'] = $newEvent['caller_phone_no'];
 		return $newEvent;
 	}
+
 }

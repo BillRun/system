@@ -21,8 +21,16 @@ class CliController extends Yaf_Controller_Abstract {
 	protected $options;
 
 	public function init() {
+		$forceUser = Billrun_Factory::config()->getConfigValue('cliForceUser', '');
+		if (!empty($forceUser) && ($systemExecuterUser = trim(shell_exec('whoami'))) != $forceUser) {
+			Billrun_Log::getInstance()->addWriter(new Zend_Log_Writer_Stream('php://stdout'));
+			$this->addOutput('Cannot run cli command with the system user ' . $systemExecuterUser . '. Please use ' . $forceUser . ' for CLI operations');
+			exit();
+		}
 		$this->setActions();
 		$this->setOptions();
+		// this will verify db config will load into main config
+		Billrun_Factory::db();
 	}
 
 	/**
@@ -48,7 +56,10 @@ class CliController extends Yaf_Controller_Abstract {
 				'workspace-s' => 'The path to the workspace directory',
 				'parser-s' => 'Process: Parser type (default fixed)',
 				'backup' => 'Process: Backup path after the file processed (default ./backup)',
-				'environment-s' => 'Set the  Environment to dev/test/prod temporarly (for a single run)'
+				'page-s' => 'the  page to aggregate',
+				'size-s' => 'the size of the page to aggregate',
+				'environment-s' => 'Environment of the running command',
+				'env-s' => 'Environment of the running command',
 			);
 
 			$this->options = new Zend_Console_Getopt($input);
@@ -86,17 +97,17 @@ class CliController extends Yaf_Controller_Abstract {
 		// add log to stdout when we are on cli
 		Billrun_Log::getInstance()->addWriter(new Zend_Log_Writer_Stream('php://stdout'));
 		$this->addOutput("Running Billrun from CLI!");
-		$this->addOutput("Runnning under : '" . Billrun_Factory::config()->getEnv() . "' configuration.");
+		$this->addOutput("Running under : '" . Billrun_Factory::config()->getEnv() . "' configuration.");
 
 
 		//Go through all actions and run the first one that was selected
-		foreach (array_keys($this->actions) as $val) {
-			if (isset($this->options->{$val})) {
-				$this->addOutput(ucfirst($val) . "...");
-				$this->forward($val);
+			foreach (array_keys($this->actions) as $val) {
+				if (isset($this->options->{$val})) {
+					$this->addOutput(ucfirst($val) . "...");
+					$this->forward($val);
+				}
 			}
 		}
-	}
 
 	/**
 	 * method to add output to the stream and log
@@ -126,9 +137,19 @@ class CliController extends Yaf_Controller_Abstract {
 
 		$options = array();
 
+		//Retrive  the command line  properties
+//		foreach($this->options->getRemainingArgs() as  $cmdLineArg) {
+//			$seperatedCmdStr = !strpos('=',$cmdLineArg) ? split("=", $cmdLineArg) : split(" ", $cmdLineArg);
+//			$inLineOpt = isset($seperatedCmdStr[1]) ?  $seperatedCmdStr[1] : true;
+//			foreach (array_reverse(split("\.", $seperatedCmdStr[0])) as $field) {				
+//				$inLineOpt = array( $field => $inLineOpt);
+//			}
+//			$options['cmd_opts'] = array_merge_recursive( (isset($options['cmd_opts']) ? $options['cmd_opts'] : array() ), $inLineOpt );
+//		}
+
 		foreach ($possibleOptions as $key => $defVal) {
 			$options[$key] = $this->options->getOption($key);
-			if (empty($options[$key])) {
+			if (is_null($options[$key])) {
 				if (!$defVal) {
 					$this->addOutput("Error: No $key selected");
 					return false;
@@ -139,6 +160,7 @@ class CliController extends Yaf_Controller_Abstract {
 				}
 			}
 		}
+
 		return $options;
 	}
 

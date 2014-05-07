@@ -12,7 +12,7 @@
  */
 abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 
-	const DEF_CALC_DB_FIELD = 'customer_rate';
+	const DEF_CALC_DB_FIELD = 'arate';
 
 	/**
 	 * the type of the object
@@ -26,12 +26,14 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	 * @var array
 	 */
 	protected $rateMapping = array();
+	protected static $calcs = array();
 
 	/**
 	 * The rating field to update in the CDR line.
 	 * @var string
 	 */
 	protected $ratingField = self::DEF_CALC_DB_FIELD;
+	protected $pricingField = Billrun_Calculator_CustomerPricing::DEF_CALC_DB_FIELD;
 
 	public function __construct($options = array()) {
 		parent::__construct($options);
@@ -87,15 +89,58 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	/**
 	 * @see Billrun_Calculator::getCalculatorQueueType
 	 */
-	static protected function getCalculatorQueueType() {
+	public function getCalculatorQueueType() {
 		return self::$type;
 	}
 
 	/**
 	 * @see Billrun_Calculator::isLineLegitimate
 	 */
-	protected function isLineLegitimate($line) {
+	public function isLineLegitimate($line) {
 		return $line['type'] == static::$type;
+	}
+
+	/**
+	 * Override parent calculator to save changes with update (not save)
+	 */
+	public function writeLine($line, $dataKey) {
+		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteLine', array('data' => $line, 'calculator' => $this));
+		$save = array();
+		$saveProperties = array($this->ratingField, 'usaget', 'usagev', $this->pricingField);
+		foreach ($saveProperties as $p) {
+			if (!is_null($val = $line->get($p, true))) {
+				$save['$set'][$p] = $val;
+			}
+		}
+		$where = array('stamp' => $line['stamp']);
+		Billrun_Factory::db()->linesCollection()->update($where, $save);
+		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteLine', array('data' => $line, 'calculator' => $this));
+		if (!isset($line['usagev']) || $line['usagev'] === 0) {
+			$this->removeLineFromQueue($line);
+			unset($this->lines[$line['stamp']]);
+		}
+	}
+
+	/**
+	 * load calculator rate by line type
+	 * 
+	 * @param array $line the line properties
+	 * @param array $options options to load
+	 * 
+	 * @return Billrun calculator rate class
+	 */
+	public static function getRateCalculator($line, array $options = array()) {
+		$type = $line['type'];
+		if (!isset(self::$calcs[$type])) {
+			// @TODO: use always the first condition for all types - it will load the config values by default
+			if ($type === 'smsc' || $type === 'smpp') {
+				$configOptions = Billrun_Factory::config()->getConfigValue('Rate_' . ucfirst($type));
+				$options = array_merge($options, $configOptions);
+			}
+			$class = 'Billrun_Calculator_Rate_' . ucfirst($type);
+			self::$calcs[$type] = new $class($options);
+		}
+		return self::$calcs[$type];
 	}
 
 }

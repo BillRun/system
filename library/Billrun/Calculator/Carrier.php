@@ -12,7 +12,7 @@
  */
 class Billrun_Calculator_Carrier extends Billrun_Calculator {
 
-	const MAIN_DB_FIELD = 'carir';
+	const MAIN_DB_FIELD = 'wsc';
 
 	/**
 	 * The rating field to update in the CDR line.
@@ -37,12 +37,11 @@ class Billrun_Calculator_Carrier extends Billrun_Calculator {
 	}
 
 	protected function getLines() {
-
 		return $this->getQueuedLines(array());
 	}
 
-	protected function updateRow($row) {
-		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteRow', array('row' => $row));
+	public function updateRow($row) {
+		Billrun_Factory::dispatcher()->trigger('beforeCalculatorUpdateRow', array($row, $this));
 		$carrierOut = $this->detectCarrierOut($row);
 		$carrierIn = $this->detectCarrierIn($row);
 		$current = $row->getRawData();
@@ -55,7 +54,7 @@ class Billrun_Calculator_Carrier extends Billrun_Calculator {
 		$newData = array_merge($current, $added_values);
 		$row->setRawData($newData);
 
-		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteRow', array('row' => $row));
+		Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array($row, $this));
 		return true;
 	}
 
@@ -126,14 +125,14 @@ class Billrun_Calculator_Carrier extends Billrun_Calculator {
 	/**
 	 * @see Billrun_Calculator::getCalculatorQueueType
 	 */
-	protected static function getCalculatorQueueType() {
+	public function getCalculatorQueueType() {
 		return self::MAIN_DB_FIELD;
 	}
 
 	/**
 	 * @see Billrun_Calculator::isLineLegitimate
 	 */
-	protected function isLineLegitimate($line) {
+	public function isLineLegitimate($line) {
 		return $line['type'] == 'nsn';
 	}
 
@@ -146,4 +145,3 @@ class Billrun_Calculator_Carrier extends Billrun_Calculator {
 	}
 
 }
-

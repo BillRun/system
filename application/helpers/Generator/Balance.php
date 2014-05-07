@@ -15,13 +15,13 @@
  * @subpackage Balance
  * @since      1.0
  */
-class Generator_Balance extends Generator_Golan {
+class Generator_Balance extends Generator_Golanxml {
 
 	/**
 	 * Account for which to get the current balance
 	 * @var int 
 	 */
-	protected $account_id = null;
+	protected $aid = null;
 
 	/**
 	 * subscribers for whom to output lines (0 means all, empty means none)
@@ -42,37 +42,60 @@ class Generator_Balance extends Generator_Golan {
 	protected $date = null;
 
 	public function __construct($options) {
+		$options['auto_create_dir'] = false;
 		parent::__construct($options);
 		self::$type = 'balance';
-		if (isset($options['account_id']) && $options['account_id']) {
-			$this->setAccountId($options['account_id']);
+		if (isset($options['aid']) && $options['aid']) {
+			$this->setAccountId($options['aid']);
 		}
 		if (isset($options['subscribers']) && $options['subscribers']) {
 			$this->setSubscribers($options['subscribers']);
 		}
+		$this->now = time();
 	}
 
 	public function load() {
-		$billrun = Billrun_Billrun::getLastOpenBillrun($this->account_id);
-		$this->date = date(Billrun_Base::base_dateformat);
+		$this->date = date(Billrun_Base::base_dateformat, $this->now);
 		$subscriber = Billrun_Factory::subscriber();
-		$this->account_data = current($subscriber->getList(2, 1, $this->date, $this->account_id));
-
-		foreach ($this->account_data as $subscriber) {
-			if (!$billrun->exists($subscriber->subscriber_id)) {
-				$billrun->addSubscriber($subscriber->subscriber_id);
-			}
+		$this->account_data = array();
+		$res = $subscriber->getList(0, 1, $this->date, $this->aid);
+		if (!empty($res)) {
+			$this->account_data = current($res);
 		}
+
+		$billrun_params = array(
+			'aid' => $this->aid,
+			'billrun_key' => $this->stamp,
+			'autoload' => false,
+		);
+		$billrun = Billrun_Factory::billrun($billrun_params);
+		$flat_lines = array();
+		foreach ($this->account_data as $subscriber) {
+			if ($billrun->subscriberExists($subscriber->sid)) {
+				Billrun_Factory::log()->log("Billrun " . $this->stamp . " already exists for subscriber " . $subscriber->sid, Zend_Log::ALERT);
+				continue;
+			}
+			$next_plan_name = $subscriber->getNextPlanName();
+			if (is_null($next_plan_name) || $next_plan_name == "NULL") {
+				$subscriber_status = "closed";
+			} else {
+				$subscriber_status = "open";
+				$flat_lines[] = new Mongodloid_Entity($subscriber->getFlatEntry($this->stamp));
+			}
+			$billrun->addSubscriber($subscriber, $subscriber_status);
+		}
+		$this->lines = $billrun->addLines($flat_lines);
 
 		$this->data = $billrun->getRawData();
 	}
 
 	public function generate() {
-		return $this->getXML($this->data);
+		$this->writer->openURI('php://output'); 
+		return $this->writeXML($this->data, $this->lines);
 	}
 
-	protected function setAccountId($account_id) {
-		$this->account_id = intval($account_id);
+	protected function setAccountId($aid) {
+		$this->aid = intval($aid);
 	}
 
 	protected function setSubscribers($subscribers) {
@@ -85,38 +108,44 @@ class Generator_Balance extends Generator_Golan {
 	 * @return array
 	 */
 	protected function getFlatCosts($subscriber) {
-		$subscriber_id = $subscriber['sub_id'];
-		$plan_name = $this->getPlanName($subscriber);
+		$plan_name = $this->getNextPlanName($subscriber);
 		if (!$plan_name) {
 			//@error
-			return;
+			return array();
 		}
-		$planObj = Billrun_Factory::plan(array('name' => $plan_name, 'time' => strtotime($this->date)));
+		$planObj = Billrun_Factory::plan(array('name' => $plan_name, 'time' => Billrun_Util::getStartTime(Billrun_Util::getFollowingBillrunKey($this->stamp))));
 		if (!$planObj->get('_id')) {
 			Billrun_Factory::log("Couldn't get plan $plan_name data", Zend_Log::ALERT);
-			return;
+			return array();
 		}
 		$plan_price = $planObj->get('price');
 		return array('vatable' => $plan_price, 'vat_free' => 0);
 	}
 
-	protected function billingLinesNeeded($subscriber_id) {
-		return in_array($subscriber_id, $this->subscribers) || in_array(0, $this->subscribers);
+	protected function billingLinesNeeded($sid) {
+		return in_array($sid, $this->subscribers) || in_array(0, $this->subscribers);
 	}
 
 	/**
 	 * 
 	 * @param array $subscriber subscriber entry from billrun collection
 	 */
-	protected function getPlanName($subscriber) {
+	protected function getNextPlanName($subscriber) {
 		$plan_name = false;
 		foreach ($this->account_data as $sub) {
-			if ($sub->subscriber_id == $subscriber['sub_id']) {
-				$plan_name = $sub->plan;
+			if ($sub->sid == $subscriber['sid']) {
+				$next_plan = $sub->getNextPlanName();
+				if (!is_null($next_plan) && $next_plan != "NULL") {
+					$plan_name = $next_plan;
+				}
 				break;
 			}
 		}
 		return $plan_name;
+	}
+
+	protected function getInvoiceId($row) {
+		return '00000000000';
 	}
 
 }

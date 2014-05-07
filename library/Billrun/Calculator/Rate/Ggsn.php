@@ -43,8 +43,8 @@ class Billrun_Calculator_Rate_Ggsn extends Billrun_Calculator_Rate {
 	/**
 	 * write the calculation into DB
 	 */
-	protected function updateRow($row) {
-		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteRow', array('row' => $row));
+	public function updateRow($row) {
+		Billrun_Factory::dispatcher()->trigger('beforeCalculatorUpdateRow', array($row, $this));
 
 		$current = $row->getRawData();
 		$usage_type = $this->getLineUsageType($row);
@@ -58,7 +58,8 @@ class Billrun_Calculator_Rate_Ggsn extends Billrun_Calculator_Rate {
 		);
 		$newData = array_merge($current, $added_values);
 		$row->setRawData($newData);
-		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteRow', array('row' => $row));
+
+		Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array($row, $this));
 		return true;
 	}
 
@@ -80,10 +81,11 @@ class Billrun_Calculator_Rate_Ggsn extends Billrun_Calculator_Rate {
 	 * load the ggsn rates to be used later.
 	 */
 	protected function loadRates() {
-		$rates = Billrun_Factory::db()->ratesCollection()->query($this->rateKeyMapping);
+		$rates_coll = Billrun_Factory::db()->ratesCollection();
+		$rates = $rates_coll->query($this->rateKeyMapping)->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
 		$this->rates = array();
 		foreach ($rates as $value) {
-			$value->collection(Billrun_Factory::db()->ratesCollection());
+			$value->collection($rates_coll);
 			$this->rates[] = $value;
 		}
 	}
@@ -92,7 +94,7 @@ class Billrun_Calculator_Rate_Ggsn extends Billrun_Calculator_Rate {
 	 * @see Billrun_Calculator_Rate::getLineRate
 	 */
 	protected function getLineRate($row, $usage_type) {
-		$line_time = $row['unified_record_time'];
+		$line_time = $row['urt'];
 		if (preg_match('/^(?=62\.90\.|37\.26\.)/', $row['sgsn_address'])) {
 			$rate = new Mongodloid_Entity();
 			foreach ($this->rates as $key => $value) {
@@ -103,7 +105,7 @@ class Billrun_Calculator_Rate_Ggsn extends Billrun_Calculator_Rate {
 			if (!$rate->isEmpty()) {
 				return $rate;
 			} else {
-				Billrun_Factory::log()->log("Couldnt find rate for row : " . print_r($row['stamp'], 1), Zend_Log::DEBUG);
+				Billrun_Factory::log()->log("Couldn't find rate for row : " . print_r($row['stamp'], 1), Zend_Log::DEBUG);
 			}
 		}
 		//Billrun_Factory::log()->log("International row : ".print_r($row,1),  Zend_Log::DEBUG);

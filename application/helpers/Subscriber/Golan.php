@@ -16,7 +16,11 @@
 class Subscriber_Golan extends Billrun_Subscriber {
 
 	protected $plan = null;
+	protected $next_plan = null;
 	protected $time = null;
+	protected $save_crm_output = false;
+	protected $crm_output_dir = null;
+	protected $extraFields = array('kosher');
 
 	public function __construct($options = array()) {
 		parent::__construct($options);
@@ -28,6 +32,13 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		}
 		if (isset($options['time'])) {
 			$this->time = $options['time'];
+		}
+
+		if (isset($options['save_crm_output'])) {
+			$this->save_crm_output = $options['save_crm_output'];
+		}
+		if ($this->save_crm_output) {
+			$this->crm_output_dir = (isset($options['crm_output_dir']) ? $options['crm_output_dir'] : (getcwd() . '/files/crm_output/billable_subscribers')) . '/' . date('Ymd') . '/';
 		}
 		// pay attention that just availableFields array can be access from outside
 	}
@@ -86,7 +97,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 	 */
 	protected function request($params) {
 
-		$host = Billrun_Factory::config()->getConfigValue('provider.rpc.server', '');
+		$host = self::getRpcServer();
 		$url = Billrun_Factory::config()->getConfigValue('provider.rpc.url', '');
 		$datetime_format = Billrun_Base::base_dateformat; // 'Y-m-d H:i:s';
 
@@ -160,8 +171,8 @@ class Subscriber_Golan extends Billrun_Subscriber {
 	 */
 	public function isValid() {
 		$validFields = true;
-		foreach ($this->getAvailableFields() as $field) {
-			if (!isset($this->data[$field]) || is_null($this->data[$field])) {
+		foreach (array_keys($this->getAvailableFields()) as $key) {
+			if (!isset($this->data[$key]) || is_null($this->data[$key])) {
 				$validFields = false;
 				break;
 			}
@@ -172,15 +183,27 @@ class Subscriber_Golan extends Billrun_Subscriber {
 	}
 
 	//@TODO change this function
-	protected function requestAccounts($params) {
-		$host = Billrun_Factory::config()->getConfigValue('crm.server', '');
+	protected function requestAccounts($params, $saveToFile = false) {
+		$host = self::getRpcServer();
 		$url = Billrun_Factory::config()->getConfigValue('crm.url', '');
 
 		$path = 'http://' . $host . '/' . $url . '?' . http_build_query($params);
 		//Billrun_Factory::log()->log($path, Zend_Log::DEBUG);
 		// @TODO: use Zend_Http_Client
+//		$path .= "&account_id=4171195"; // Shani_old
+//		$path .= "&account_id=4050951"; // Shani_new
+//		$path .= "&account_id=9073496"; // Ofer
+//		$path .= "&account_id=9999263";
 		$json = self::send($path);
-//		$json =  '{"6052390":{"subscribers":[{"subscriber_id":1,"current_plan":"LARGE"}]}}'; // stub
+		if ($saveToFile) {
+			if (!file_exists($this->crm_output_dir)) {
+				mkdir($this->crm_output_dir, 0777, true);
+			}
+			$file_path = $this->crm_output_dir . time() . '_' . md5($path) . '.json';
+//			file_put_contents($file_path, $path . PHP_EOL);
+//			file_put_contents($file_path, $json, FILE_APPEND);
+			file_put_contents($file_path, $json);
+		}
 		if (!$json) {
 			return false;
 		}
@@ -200,19 +223,59 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		} else {
 			$params = array('msisdn' => '', 'IMSI' => '', 'DATETIME' => $time, 'page' => $page, 'size' => $size, 'account_id' => $acc_id);
 		}
-		$accounts = $this->requestAccounts($params);
+		$accounts = $this->requestAccounts($params, is_null($acc_id) && $this->save_crm_output);
+		return $this->parseActiveSubscribersOutput($accounts, strtotime($time));
+	}
+
+	/**
+	 * @param array $output_arr
+	 * @param int $time
+	 * @return array
+	 */
+	protected function parseActiveSubscribersOutput($output_arr, $time) {
+		if (isset($output_arr['success']) && $output_arr['success'] === FALSE) {
+			return array();
+		} else {
 		$subscriber_general_settings = Billrun_Config::getInstance()->getConfigValue('subscriber', array());
-		if (is_array($accounts) && !empty($accounts)) {
-			foreach ($accounts as $account_id => $account) {
+			if (is_array($output_arr) && !empty($output_arr)) {
+				$ret_data = array();
+				foreach ($output_arr as $aid => $account) {
+					if (isset($account['subscribers'])) {
 				foreach ($account['subscribers'] as $subscriber) {
-					$subscriber_settings = array_merge($subscriber_general_settings, array('time' => strtotime($time), 'data' => array('account_id' => intval($account_id), 'subscriber_id' => $subscriber['subscriber_id'], 'plan' => $subscriber['plan'])));
-					$ret_data[intval($account_id)][] = Billrun_Subscriber::getInstance($subscriber_settings);
+							$concat = array(
+								'time' => $time,
+								'data' => array(
+									'aid' => intval($aid),
+									'sid' => intval($subscriber['subscriber_id']),
+									'plan' => isset($subscriber['curr_plan']) ? $subscriber['curr_plan'] : null,
+									'next_plan' => isset($subscriber['next_plan']) ? $subscriber['next_plan'] : null,
+								),
+							);
+							foreach (self::getExtraFieldsForBillrun() as $field) {
+								if (isset($subscriber[$field])) {
+									$concat['data'][$field] = $subscriber[$field];
 				}
 			}
+							$subscriber_settings = array_merge($subscriber_general_settings, $concat);
+							$ret_data[intval($aid)][] = Billrun_Subscriber::getInstance($subscriber_settings);
+						}
+					}
+				}
+				ksort($ret_data); // maybe this will help the aid index to stay in memory
 			return $ret_data;
 		} else {
 			return null;
 		}
+	}
+	}
+
+	public function getListFromFile($file_path, $time) {
+		$json = @file_get_contents($file_path);
+		$arr = @json_decode($json, true);
+		if (!is_array($arr) || empty($arr)) {
+			return array();
+		}
+		return $this->parseActiveSubscribersOutput($arr, $time);
 	}
 
 	public function getPlan() {
@@ -226,8 +289,23 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		return $this->plan;
 	}
 
+	public function getNextPlan() {
+		if (is_null($this->next_plan)) {
+			if (is_null($this->getNextPlanName())) {
+				$this->next_plan = null;
+			} else {
+				$params = array(
+					'name' => $this->getNextPlanName(),
+					'time' => Billrun_Util::getStartTime(Billrun_Util::getFollowingBillrunKey(Billrun_Util::getBillrunKey($this->time))),
+				);
+				$this->next_plan = new Billrun_Plan($params);
+			}
+		}
+		return $this->next_plan;
+	}
+
 	public function getFlatPrice() {
-		return $this->getPlan()->getPrice();
+		return $this->getNextPlan()->getPrice();
 	}
 
 	/**
@@ -236,23 +314,25 @@ class Subscriber_Golan extends Billrun_Subscriber {
 	 * @return array
 	 */
 	public function getFlatEntry($billrun_key) {
+		$billrun_end_time = Billrun_Util::getEndTime($billrun_key);
 		$flat_entry = array(
-			'account_id' => $this->account_id,
-			'subscriber_id' => $this->subscriber_id,
+			'aid' => $this->aid,
+			'sid' => $this->sid,
 			'source' => 'billrun',
+			'billrun' => $billrun_key,
 			'type' => 'flat',
 			'usaget' => 'flat',
-			'unified_record_time' => new MongoDate(),
-			'billrun_key' => $billrun_key,
-			'price_customer' => $this->getFlatPrice(),
-			'plan_ref' => $this->getPlan()->createRef(),
+			'urt' => new MongoDate($billrun_end_time),
+			'aprice' => $this->getFlatPrice(),
+			'plan_ref' => $this->getNextPlan()->createRef(),
+			'process_time' => date(Billrun_Base::base_dateformat),
 		);
-		$stamp = md5($flat_entry['account_id'] . $flat_entry['subscriber_id'] . $flat_entry['billrun_key']);
+		$stamp = md5($flat_entry['aid'] . $flat_entry['sid'] . $billrun_end_time);
 		$flat_entry['stamp'] = $stamp;
 		return $flat_entry;
 	}
 
-	static public function getSubscribersByParams($params_arr) {
+	public function getSubscribersByParams($params_arr, $availableFields) {
 		$subscribers = array();
 		foreach ($params_arr as $key => &$params) {
 			if (!isset($params['imsi']) && !isset($params['IMSI']) && !isset($params['NDC_SN'])) {
@@ -271,26 +351,35 @@ class Subscriber_Golan extends Billrun_Subscriber {
 			$subscriberSettings = Billrun_Factory::config()->getConfigValue('subscriber', array());
 			foreach ($list as $stamp => $item) {
 				if (is_array($item)) {
-					$subscribers[$stamp] = new self(array_merge(array('data' => $item), $subscriberSettings));
+					foreach ($availableFields as $key => $field) {
+						if (isset($item[$field])) {
+							$temp = $item[$field];
+							unset($item[$field]);
+							$item[$key] = $temp;
+						}
+					}
+					$subscribers[$stamp] = new self(array_merge(array('data' => $item),$subscriberSettings));
 				} else {
 					//TODO what is the output when subscriber was not found?
 //				Billrun_Factory::log()->log('Failed to load Golan subscriber data', Zend_Log::ALERT);
 				}
 			}
+			Billrun_Factory::log()->log($message . ". Proceeding with calculation...", Zend_Log::INFO);
 		} else {
 			$message = 'Customer API responded with no results';
+			Billrun_Factory::log()->log($message . ". Proceeding with calculation...", count($params_arr) ? Zend_Log::ALERT : Zend_Log::INFO);
 		}
-		Billrun_Factory::log()->log($message . ". Proceeding with calculation...", Zend_Log::INFO);
 		return $subscribers;
 	}
 
 	static public function requestList($params) {
-		$host = Billrun_Factory::config()->getConfigValue('provider.rpc.server', '');
+		$host = self::getRpcServer();
 		$url = Billrun_Factory::config()->getConfigValue('provider.rpc.bulk_url', '');
 
 		$path = 'http://' . $host . '/' . $url;
 		//Billrun_Factory::log()->log($path, Zend_Log::DEBUG);
 		// @TODO: use Zend_Http_Client
+		Billrun_Factory::log()->log('Querying customer API with ' . count($params) . ' subscribers', Zend_Log::INFO);
 		$json = self::send($path, json_encode($params));
 
 		if (!$json) {
@@ -303,6 +392,34 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		}
 
 		return $arr;
+	}
+
+	public function getNextPlanName() {
+		if (isset($this->data['next_plan'])) {
+			return $this->data['next_plan'];
+		} else {
+			return null;
+}
+	}
+
+	/**
+	 * Get the rpc server from config
+	 * 
+	 * @return string the host or ip of the server
+	 */
+	static protected function getRpcServer() {
+		$hosts = Billrun_Factory::config()->getConfigValue('provider.rpc.server', array());
+		if (empty($hosts)) {
+			return false;
+		}
+
+		if (!is_array($hosts)) {
+			// probably string
+			return $hosts;
+		}
+
+		// if it's array rand between servers
+		return $hosts[rand(0, count($hosts) - 1)];
 	}
 
 }

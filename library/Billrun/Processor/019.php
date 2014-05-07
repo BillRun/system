@@ -62,7 +62,7 @@ class Billrun_Processor_019 extends Billrun_Processor_Base_Ilds {
 			'receiving_company_id' => 10,
 			'sequence_no' => 6,
 			'file_creation_date' => 12,
-			'sum_of_number' => 15, 
+			'sum_of_number' => 15,
 			'total_charge_sign2' => 1,
 			'total_charge2' => 15,
 			'total_charge_sign' => 1,

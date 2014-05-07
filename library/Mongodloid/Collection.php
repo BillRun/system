@@ -12,8 +12,9 @@ class Mongodloid_Collection {
 
 	const UNIQUE = 1;
 	const DROP_DUPLICATES = 2;
-	
+
 	protected $w = 0;
+	protected $j = false;
 
 	public function __construct(MongoCollection $collection, Mongodloid_DB $db) {
 		$this->_collection = $collection;
@@ -23,6 +24,9 @@ class Mongodloid_Collection {
 	public function update($query, $values, $options = array()) {
 		if (!isset($options['w'])) {
 			$options['w'] = $this->w;
+		}
+		if (!isset($options['j'])) {
+			$options['j'] = $this->j;
 		}
 		return $this->_collection->update($query, $values, $options);
 	}
@@ -86,14 +90,14 @@ class Mongodloid_Collection {
 		return $query;
 	}
 
-	public function save(Mongodloid_Entity $entity, $save = false, $w = null) {
+	public function save(Mongodloid_Entity $entity, $w = null) {
 		$data = $entity->getRawData();
 
 		if (is_null($w)) {
 			$w = $this->w;
 		}
-		
-		$result = $this->_collection->save($data, array('save' => $save, 'w' => $w));
+
+		$result = $this->_collection->save($data, array('w' => $w, 'j' => $this->j));
 		if (!$result)
 			return false;
 
@@ -141,7 +145,7 @@ class Mongodloid_Collection {
 		return $this->_collection->remove($query);
 	}
 
-	public function find($query) {
+	public function find($query, $fields = array()) {
 		return $this->_collection->find($query);
 	}
 
@@ -164,6 +168,21 @@ class Mongodloid_Collection {
 
 	public function getTimeout() {
 		return MongoCursor::$timeout;
+	}
+
+	/**
+	 * method to set read preference of collection connection
+	 * 
+	 * @param string $readPreference The read preference mode: RP_PRIMARY, RP_PRIMARY_PREFERRED, RP_SECONDARY, RP_SECONDARY_PREFERRED or RP_NEAREST
+	 * @param array $tags An array of zero or more tag sets, where each tag set is itself an array of criteria used to match tags on replica set members
+	 * 
+	 * @return boolean TRUE on success, or FALSE otherwise.
+	 */
+	public function setReadPreference($readPreference, array $tags = array()) {
+		if (defined('MongoClient::' . $readPreference)) {
+			return $this->_collection->setReadPreference(constant('MongoClient::' . $readPreference), $tags);
+		}
+		return FALSE;
 	}
 
 	/**
@@ -206,8 +225,19 @@ class Mongodloid_Collection {
 	 * @throws MongoResultException on failure
 	 * @see http://php.net/manual/en/mongocollection.findandmodify.php
 	 */
-	public function findAndModify(array $query, array $update = array(), array $fields = array(), array $options = array()) {
-		return new Mongodloid_Entity($this->_collection->findAndModify($query, $update, $fields, $options), $this);
+	public function findAndModify(array $query, array $update = array(), array $fields = array(), array $options = array(), $asCommand = false) {
+		$ret = FALSE;
+		if (!$asCommand) {
+			$ret = new Mongodloid_Entity($this->_collection->findAndModify($query, $update, $fields, $options), $this);
+		} else {
+			return new Mongodloid_Entity($this->_db->command(array_merge(array(
+					'findAndModify' => $this->getName(),
+					'query' => $query,
+					'update' => $update,
+					'fields' => $fields,
+						), $options)));
+		}
+		return $ret;
 	}
 
 	/**
@@ -223,6 +253,11 @@ class Mongodloid_Collection {
 		if (!isset($options['w'])) {
 			$options['w'] = $this->w;
 		}
+
+		if (!isset($options['j'])) {
+			$options['j'] = $this->j;
+		}
+
 		return $this->_collection->batchInsert($a, $options);
 	}
 
@@ -239,7 +274,12 @@ class Mongodloid_Collection {
 		if (!isset($options['w'])) {
 			$options['w'] = $this->w;
 		}
-		return $this->_collection->insert($a, $options);
+		
+		if (!isset($options['j'])) {
+			$options['j'] = $this->j;
+		}
+
+		return $this->_collection->insert( ($a instanceof Mongodloid_Entity ? $a->getrawData() : $a), $options);
 	}
 
 	/**
@@ -247,11 +287,11 @@ class Mongodloid_Collection {
 	 * To use this method require counters collection (see create.ini)
 	 * 
 	 * @param string $id the id of the document to auto increment
-	 * @param int $min_id the first value if no value exists
+	 * @param int $init_id the first value if no value exists
 	 * 
 	 * @return int the incremented value
 	 */
-	public function createAutoInc($oid, $min_id = 1) {
+	public function createAutoInc($oid, $init_id = 1) {
 
 		$countersColl = $this->_db->getCollection('counters');
 		$collection_name = $this->getName();
@@ -261,7 +301,7 @@ class Mongodloid_Collection {
 			// get last seq
 			$lastSeq = $countersColl->query('coll', $collection_name)->cursor()->sort(array('seq' => -1))->limit(1)->current()->get('seq');
 			if (is_null($lastSeq)) {
-				$lastSeq = $min_id;
+				$lastSeq = $init_id;
 			} else {
 				$lastSeq++;
 			}
@@ -299,6 +339,24 @@ class Mongodloid_Collection {
 			'oid' => $oid,
 		);
 		return $countersColl->query($query)->cursor()->limit(1)->current()->get('seq');
+	}
+	
+	/**
+	 * 
+	 * @return MongoCollection
+	 */
+	public function getMongoCollection() {
+		return $this->_collection;
+	}
+	/**
+	 * method to get collection stats
+	 * 
+	 * @param mixed $item return only specific property of stats
+	 * 
+	 * @return mixed the whole stats or just one item of it
+	 */
+	public function stats($item) {
+		return $this->_db->stats(array('collStats' => $this->getName()), $item);
 	}
 
 }

@@ -16,9 +16,10 @@ class BalanceAction extends Action_Base {
 
 	public function execute() {
 		$request = $this->getRequest();
-		$account_id = $request->get("account_id");
+		$aid = $request->get("aid");
+		$stamp = Billrun_Util::getBillrunKey(time());
 		$subscribers = $request->get("subscribers");
-		if (!is_numeric($account_id)) {
+		if (!is_numeric($aid)) {
 			die();
 		}
 		if (is_string($subscribers)) {
@@ -29,17 +30,17 @@ class BalanceAction extends Action_Base {
 
 		$options = array(
 			'type' => 'balance',
-			'account_id' => $account_id,
+			'aid' => $aid,
 			'subscribers' => $subscribers,
+			'stamp' => $stamp,
 		);
 		$generator = Billrun_Generator::getInstance($options);
 
 		if ($generator) {
 			$generator->load();
-			$balance = $generator->generate();
-//			$this->getView()->balance = $balance->asXML();
 			header('Content-type: text/xml');
-			$this->getController()->setOutput(array($balance->asXML(), true));
+			$generator->generate();
+			$this->getController()->setOutput(array(false, true)); // hack
 		} else {
 			$this->_controller->addOutput("Generator cannot be loaded");
 		}

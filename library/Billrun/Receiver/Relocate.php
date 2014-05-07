@@ -30,7 +30,7 @@ class Billrun_Receiver_Relocate extends Billrun_Receiver_Base_LocalFiles {
 	public function __construct($options) {
 		parent::__construct($options);
 
-		if (isset($options['receiver']) && isset($options['receiver']['move_received_files'])) {
+		if (isset($options['receiver']['move_received_files'])) {
 			$this->moveFiles = $options['receiver']['move_received_files'];
 		}
 	}
@@ -44,6 +44,7 @@ class Billrun_Receiver_Relocate extends Billrun_Receiver_Base_LocalFiles {
 	 * @return mixed the new path if success, else false
 	 */
 	protected function handleFile($srcPath, $filename) {
+		Billrun_Factory::log('Relocate receive handle file ' . $filename, Zend_Log::INFO);
 		$srcPath = parent::handleFile($srcPath, $filename);
 		Billrun_Factory::dispatcher()->trigger('beforeRelocateFileHandling', array($this, &$srcPath, $filename));
 		$newPath = $this->workspace . DIRECTORY_SEPARATOR . static::$type;

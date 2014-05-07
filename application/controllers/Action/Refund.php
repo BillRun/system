@@ -1,4 +1,6 @@
-<?php //
+<?php
+
+//
 
 /**
  * @package         Billing
@@ -14,12 +16,12 @@
  */
 class RefundAction extends Action_Base {
 
-        /**
-         * backward compatible method to execute the credit
-         */
-        public function execute() {
-                $this->forward("credit");
-                return false;
-        }
-}
+	/**
+	 * backward compatible method to execute the credit
+	 */
+	public function execute() {
+		$this->forward("credit");
+		return false;
+	}
 
+}

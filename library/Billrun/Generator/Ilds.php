@@ -15,10 +15,10 @@
  * @since    0.5
  */
 class Billrun_Generator_Ilds extends Billrun_Generator {
+
 	/**
 	 * The VAT value (TODO get from outside/config).
 	 */
-
 	const VAT_VALUE = 1.17;
 
 	static protected $type = 'ilds';
@@ -61,7 +61,7 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 	 * load the container the need to be generate
 	 */
 	public function load() {
-		$billrun = Billrun_Factory::db()->billrunCollection();
+		$billrun = Billrun_Factory::db(array('name' => 'billrun'))->billrunCollection();
 
 		$this->data = $billrun->query()
 			->equals('stamp', $this->getStamp())
@@ -69,9 +69,8 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 			->notExists('invoice_id');
 
 		Billrun_Factory::log()->log("aggregator entities loaded: " . $this->data->count(), Zend_Log::INFO);
-		
-		Billrun_Factory::dispatcher()->trigger('afterGeneratorLoadData', array('generator' => $this));
 
+		Billrun_Factory::dispatcher()->trigger('afterGeneratorLoadData', array('generator' => $this));
 	}
 
 	/**
@@ -85,7 +84,7 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 //		$this->csv();
 	}
 
-	protected function get_subscriber_lines($subscriber_id) {
+	protected function get_subscriber_lines($sid) {
 		$lines = Billrun_Factory::db()->linesCollection();
 
 		$ret = array();
@@ -93,12 +92,12 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 		$resource = $lines->query()
 			->equals('source', 'ilds')
 			->equals('billrun', $this->getStamp())
-			->equals('subscriber_id', "$subscriber_id")
+			->equals('sid', "$sid")
 			->notExists('billrun_excluded')
 			// todo check how to use hint with 2 indexes
-			->cursor()->hint(array('subscriber_id' => 1))
-			->sort(array('unified_record_time' => 1));
-			
+			->cursor()->hint(array('sid' => 1))
+			->sort(array('urt' => 1));
+
 		foreach ($resource as $entity) {
 			$ret[] = $entity->getRawData();
 		}
@@ -110,13 +109,13 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 		// use $this->export_directory
 		$short_format_date = 'd/m/Y';
 		foreach ($this->data as $row) {
-			Billrun_Factory::log()->log("xml account " . $row->get('account_id'), Zend_Log::INFO);
+			Billrun_Factory::log()->log("xml account " . $row->get('aid'), Zend_Log::INFO);
 			// @todo refactoring the xml generation to another class
 			$xml = $this->basic_xml();
 			$xml->TELECOM_INFORMATION->LASTTIMECDRPROCESSED = date('Y-m-d h:i:s');
 			$xml->TELECOM_INFORMATION->VAT_VALUE = '17';
 			$xml->TELECOM_INFORMATION->COMPANY_NAME_IN_ENGLISH = 'GOLAN';
-			$xml->INV_CUSTOMER_INFORMATION->CUSTOMER_CONTACT->EXTERNALACCOUNTREFERENCE = $row->get('account_id');
+			$xml->INV_CUSTOMER_INFORMATION->CUSTOMER_CONTACT->EXTERNALACCOUNTREFERENCE = $row->get('aid');
 			;
 			$total_ilds = array();
 			foreach ($row->get('subscribers') as $id => $subscriber) {
@@ -132,7 +131,7 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 					$billing_record->CTXT_CALL_OUT_DESTINATIONPNB = $line['called_no'];
 					$billing_record->CTXT_CALL_IN_CLI = $line['caller_phone_no'];
 					$billing_record->CHARGEDURATIONINSEC = $line['chrgbl_call_dur'];
-					$billing_record->CHARGE = $line['price_customer'];
+					$billing_record->CHARGE = $line['aprice'];
 					$billing_record->TARIFFKIND = 'Call';
 					$billing_record->INTERNATIONAL = '1';
 					$billing_record->ILD = $line['type'];
@@ -157,7 +156,7 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 				// TODO create file with the xml content and file name of invoice number (ILD000123...)
 			}
 
-			$invoice_id = $this->saveInvoiceId($row->get('account_id'), $this->createInvoiceId());
+			$invoice_id = $this->saveInvoiceId($row->get('aid'), $this->createInvoiceId());
 			// update billrun with the invoice id
 			$xml->INV_INVOICE_TOTAL->INVOICE_NUMBER = $invoice_id;
 			$xml->INV_INVOICE_TOTAL->INVOICE_DATE = date($short_format_date);
@@ -166,7 +165,7 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 			$xml->INV_INVOICE_TOTAL->TO_PERIOD = date($short_format_date, strtotime('last day of previous month'));
 			$xml->INV_INVOICE_TOTAL->SUBSCRIBER_COUNT = count($row);
 			$xml->INV_INVOICE_TOTAL->INVOICE_TYPE = "ilds";
-				
+
 			$invoice_sumup = $xml->INV_INVOICE_TOTAL->addChild('INVOICE_SUMUP');
 			$total = 0;
 			foreach ($total_ilds as $ild => $total_ild_cost) {
@@ -182,11 +181,11 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 			Billrun_Factory::log()->log("invoice id created " . $invoice_id . " for the account", Zend_Log::INFO);
 			$this->createXml($invoice_id, $xml->asXML());
 
-			$this->addRowToCsv($invoice_id, $row->get('account_id'), $total, $total_ilds);
+			$this->addRowToCsv($invoice_id, $row->get('aid'), $total, $total_ilds);
 		}
 	}
 
-	protected function addRowToCsv($invoice_id, $account_id, $total, $cost_ilds) {
+	protected function addRowToCsv($invoice_id, $aid, $total, $cost_ilds) {
 		//empty costs for each of the providers
 		foreach (array('012', '013', '014', '015', '018', '019') as $key) {
 			if (!isset($cost_ilds[$key])) {
@@ -196,7 +195,7 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 
 		ksort($cost_ilds);
 		$seperator = ',';
-		$row = $invoice_id . $seperator . $account_id . $seperator .
+		$row = $invoice_id . $seperator . $aid . $seperator .
 			$total . $seperator . ($total * self::VAT_VALUE) . $seperator . implode($seperator, $cost_ilds) . PHP_EOL;
 		$this->csv($row);
 	}
@@ -206,12 +205,12 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 		return file_put_contents($path, $xmlContent);
 	}
 
-	protected function saveInvoiceId($account_id, $invoice_id) {
-		$billrun = Billrun_Factory::db()->billrunCollection();
+	protected function saveInvoiceId($aid, $invoice_id) {
+		$billrun = Billrun_Factory::db(array('name' => 'billrun'))->billrunCollection();
 
 		$resource = $billrun->query()
 			->equals('stamp', $this->getStamp())
-			->equals('account_id', (string) $account_id)
+			->equals('aid', (string) $aid)
 //			->notExists('invoice_id')
 		;
 
@@ -230,7 +229,7 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 	}
 
 	protected function createInvoiceId() {
-		$invoices = Billrun_Factory::db()->billrunCollection();
+		$invoices = Billrun_Factory::db(array('name' => 'billrun'))->billrunCollection();
 		// @TODO: need to the level of the invoice type
 		$resource = $invoices->query()->cursor()->sort(array('invoice_id' => -1))->limit(1);
 		foreach ($resource as $e) {

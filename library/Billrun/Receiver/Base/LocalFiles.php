@@ -27,6 +27,19 @@ abstract class Billrun_Receiver_Base_LocalFiles extends Billrun_Receiver {
 	 */
 	protected $srcPath = null;
 
+	/**
+	 * sort of the file receiving (name, date or size)
+	 * 
+	 * @var string
+	 */
+	protected $sort = 'name';
+
+	/**
+	 * order of the file receiving (asc or desc)
+	 * @var string
+	 */
+	protected $order = 'asc';
+
 	public function __construct($options) {
 		parent::__construct($options);
 
@@ -36,8 +49,16 @@ abstract class Billrun_Receiver_Base_LocalFiles extends Billrun_Receiver {
 
 		if (isset($options['path'])) {
 			$this->srcPath = $options['path'];
-		} else if (isset($options['receiver']) && isset($options['receiver']['path'])) {
+		} else if (isset($options['receiver']['path'])) {
 			$this->srcPath = $options['receiver']['path'];
+		}
+
+		if (isset($options['receiver']['sort'])) {
+			$this->sort = $options['receiver']['sort'];
+		}
+
+		if (isset($options['receiver']['order'])) {
+			$this->order = $options['receiver']['order'];
 		}
 	}
 
@@ -53,14 +74,15 @@ abstract class Billrun_Receiver_Base_LocalFiles extends Billrun_Receiver {
 		$type = static::$type;
 		if (!file_exists($this->srcPath)) {
 			Billrun_Factory::log()->log("NOTICE : SKIPPING $type !!! directory " . $this->srcPath . " not found!!", Zend_Log::NOTICE);
-			return FALSE;
+			return array();
 		}
-		$files = scandir($this->srcPath);
+		$files = $this->getFiles($this->srcPath, $this->sort, $this->order);
 		$ret = array();
 		$receivedCount = 0;
 		foreach ($files as $file) {
 			$path = $this->srcPath . DIRECTORY_SEPARATOR . $file;
 			if (!$this->isFileValid($file, $path) || $this->isFileReceived($file, $type) || is_dir($path)) {
+				Billrun_Factory::log('File ' . $file . ' is not valid or received already', Zend_Log::INFO);
 				continue;
 			}
 			Billrun_Factory::log()->log("Billrun_Receiver_Base_LocalFiles::receive - handle file {$file}", Zend_Log::DEBUG);
@@ -73,7 +95,7 @@ abstract class Billrun_Receiver_Base_LocalFiles extends Billrun_Receiver {
 			if ($this->logDB($path) !== FALSE) {
 				$ret[] = $path;
 
-				if ((++$receivedCount) >= $this->limit) {
+				if (( ++$receivedCount) >= $this->limit) {
 					break;
 				}
 			}
@@ -82,6 +104,60 @@ abstract class Billrun_Receiver_Base_LocalFiles extends Billrun_Receiver {
 		Billrun_Factory::dispatcher()->trigger('afterLocalFilesReceived', array($this, $ret));
 
 		return $ret;
+	}
+
+	/**
+	 * get list of files in specific path
+	 * 
+	 * @param string $path
+	 * @param string $sort you can sort by name, date or size, default: name
+	 * @param string $order asc or desc. default: asc
+	 * @return array list of file names
+	 * @todo make defines (constants) for sort argument
+	 * @todo move to utils
+	 */
+	protected function getFiles($path, $sort = 'name', $order = 'asc') {
+		$files = array();
+		switch ($sort) {
+			case 'date':
+			case 'time':
+			case 'datetime':
+			case 'size':
+				if ($sort == 'size') {
+					$callback = 'filesize';
+				} else {
+					$callback = 'filemtime';
+				}
+				if ($handle = opendir($path)) {
+					while (false !== ($file = readdir($handle))) {
+						if ($file != "." && $file != "..") {
+							$key = call_user_func_array($callback, array($path . '/' . $file));
+							if (isset($files[$key])) {
+								$files[$key . $file] = $file;
+							} else {
+								$files[$key] = $file;
+							}
+						}
+					}
+					closedir($handle);
+					// sort
+					if ($order == 'desc') {
+						krsort($files);
+					} else {
+						ksort($files);
+					}
+				}
+				break;
+			default:
+				if ($order == 'desc') {
+					$files = scandir($path, SCANDIR_SORT_DESCENDING);
+				} else {
+					$files = scandir($path);
+				}
+				break;
+		}
+
+		return array_values($files);
 	}
 
 	/**

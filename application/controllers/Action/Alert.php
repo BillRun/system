@@ -24,7 +24,7 @@ class AlertAction extends Action_Base {
 		$possibleOptions = array(
 			'type' => true,
 		);
-		
+
 		if (($options = $this->_controller->getInstanceOptions($possibleOptions)) === FALSE) {
 			return;
 		}

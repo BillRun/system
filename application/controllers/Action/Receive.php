@@ -21,12 +21,17 @@ class ReceiveAction extends Action_Base {
 	 */
 	public function execute() {
 
+		if (!$this->isOn()) {
+			$this->getController()->addOutput(ucfirst($this->getRequest()->action) . " is off");
+			return;
+		}
+
 		$possibleOptions = array(
 			'type' => false,
 			'path' => true,
 			'workspace' => true,
 		);
-		
+
 		if (($options = $this->_controller->getInstanceOptions($possibleOptions)) === FALSE) {
 			return;
 		}

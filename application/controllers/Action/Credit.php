@@ -6,49 +6,64 @@
  * @license         GNU General Public License version 2 or later; see LICENSE.txt
  */
 
+require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
+
 /**
  * Credit action class
  *
  * @package  Action
  * @since    0.5
  */
-class CreditAction extends Action_Base {
+class CreditAction extends ApiAction {
 
 	/**
 	 * method to execute the refund
 	 * it's called automatically by the api main controller
 	 */
 	public function execute() {
-		Billrun_Factory::log()->log("Execute refund", Zend_Log::INFO);
+		Billrun_Factory::log()->log("Execute credit", Zend_Log::INFO);
 		$request = $this->getRequest()->getRequest(); // supports GET / POST requests
 
 		$parsed_row = $this->parseRow($request);
 		if (is_null($parsed_row)) {
 			return;
 		}
+		try {
+			$linesCollection = Billrun_Factory::db()->linesCollection();
+			if ($linesCollection->query('stamp', $parsed_row['stamp'])->count() > 0) {
+				return $this->setError('Transaction already exists in the DB', $request);
+			}
 
+			$parsed_row['process_time'] = date(Billrun_Base::base_dateformat);
 
+			$entity = new Mongodloid_Entity($parsed_row);
 
-		$linesCollection = Billrun_Factory::db()->linesCollection();
-		if ($linesCollection->query('stamp', $parsed_row['stamp'])->count() > 0) {
-			return $this->setError('Transaction already exists in the DB', $request);
-		}
+			if ($entity->save($linesCollection) === false) {
+				return $this->setError('failed to store into DB lines', $request);
+			}
 
-		$entity = new Mongodloid_Entity($parsed_row);
-		if ($this->insertToQueue($entity) === false) {
-			return $this->setError('failed to store into DB', $request);
-		}
+			if ($this->insertToQueue($entity) === false) {
+				return $this->setError('failed to store into DB queue', $request);
+			} else {
+				$this->getController()->setOutput(array(array(
+						'status' => 1,
+						'desc' => 'success',
+						'stamp' => $entity['stamp'],
+						'input' => $request,
+				)));
+				Billrun_Factory::log()->log("Added credit line " . $entity['stamp'], Zend_Log::INFO);
+				return true;
+			}
+		} catch (\Exception $e) {
+			Billrun_Factory::log()->log('failed to store into DB got error : ' . $e->getCode() . ' : ' . $e->getMessage(), $request);
+			Billrun_Factory::log()->log('failed saving request :' . print_r($request, 1), Zend_Log::INFO);
+			Billrun_Factory::log()->log('failed saving :' . json_encode($parsed_row), Zend_Log::INFO);
 
-		if ($entity->save($linesCollection) === false) {
-			return $this->setError('failed to store into DB', $request);
-		} else {
-			$this->getController()->setOutput(array(array(
-					'status' => 1,
-					'desc' => 'success',
-					'stamp' => $entity['stamp'],
-					'input' => $request,
-			)));
-			return true;
+			$fd = fopen(Billrun_Factory::config()->getConfigValue('credit.failed_credits_file', './files/failed_credits.json'), 'a+');
+			fwrite($fd, json_encode($parsed_row) . PHP_EOL);
+			fclose($fd);
+
+			return $this->setError('failed to store into DB queue', $request);
 		}
 	}
 
@@ -61,11 +76,13 @@ class CreditAction extends Action_Base {
 			'account_id',
 			'subscriber_id',
 			'credit_time',
+			'service_name',
 		);
 
 		// @TODO: take to config
 		$optional_fields = array(
-			'vatable' => '1',
+			'plan' => array(),
+			'vatable' => array('default' => '1'),
 		);
 		$filtered_request = array();
 
@@ -91,9 +108,11 @@ class CreditAction extends Action_Base {
 			}
 		}
 
-		foreach ($optional_fields as $field => $default_value) {
+		foreach ($optional_fields as $field => $options) {
 			if (!isset($credit_row[$field])) {
-				$filtered_request[$field] = $default_value;
+				if (isset($options['default'])) {
+					$filtered_request[$field] = $options['default'];
+				}
 			} else {
 				$filtered_request[$field] = $credit_row[$field];
 			}
@@ -111,27 +130,44 @@ class CreditAction extends Action_Base {
 		if (!is_numeric($filtered_request['amount_without_vat']) || $amount_without_vat === false) {
 			return $this->setError('amount_without_vat is not a number', $credit_row);
 		} else {
-			$filtered_request['amount_without_vat'] = floatval($amount_without_vat);
+
+			// TODO: Temporary conversion. Remove it once they send negative values!
+			if ($filtered_request['credit_type'] == 'refund' && floatval($amount_without_vat) > 0) {
+				$filtered_request['amount_without_vat'] = -floatval($amount_without_vat);
+			} else {
+				$filtered_request['amount_without_vat'] = floatval($amount_without_vat);
+			}
 		}
 
 		if (is_string($filtered_request['reason'])) {
-			$filtered_request['reason'] = preg_replace('/[^a-zA-Z0-9-_]+/', '_', $filtered_request['reason']); // removes unwanted characters from the string (especially dollar sign and dots) as they are not allowed as mongo keys
+			$filtered_request['reason'] = preg_replace('/[^a-zA-Z0-9-_]+/', '_', $filtered_request['reason']); // removes unwanted characters from the string (especially dollar sign and dots)
 		} else {
 			return $this->setError('reason error', $credit_row);
 		}
 
-		$filtered_request['account_id'] = (int) $filtered_request['account_id'];
-		$filtered_request['subscriber_id'] = (int) $filtered_request['subscriber_id'];
-		if ($filtered_request['account_id'] == 0 || $filtered_request['subscriber_id'] == 0) {
+		if (!empty($filtered_request['service_name']) && is_string($filtered_request['service_name'])) {
+			$filtered_request['service_name'] = preg_replace('/[^a-zA-Z0-9-_]+/', '_', $filtered_request['service_name']); // removes unwanted characters from the string (especially dollar sign and dots) as they are not allowed as mongo keys
+		} else {
+			return $this->setError('service_name error', $credit_row);
+		}
+
+		if (isset($filtered_request['account_id'])) {
+			$filtered_request['aid'] = (int) $filtered_request['account_id'];
+			unset($filtered_request['account_id']);
+		}
+
+		if (isset($filtered_request['subscriber_id'])) {
+			$filtered_request['sid'] = (int) $filtered_request['subscriber_id'];
+			unset($filtered_request['subscriber_id']);
+		}
+
+		if ($filtered_request['aid'] == 0 || $filtered_request['sid'] == 0) {
 			return $this->setError('account, subscriber ids must be positive integers', $credit_row);
 		}
 
-		if (Billrun_Util::isTimestamp(strval($filtered_request['credit_time']))) {
-			$filtered_request['unified_record_time'] = (int) $filtered_request['credit_time'];
-			unset($filtered_request['credit_time']);
-		} else {
-			return $this->setError('credit_time is not a valid time stamp', $credit_row);
-		}
+		$credit_time = new Zend_Date($filtered_request['credit_time']);
+		$filtered_request['urt'] = new MongoDate($credit_time->getTimestamp());
+		unset($filtered_request['credit_time']);
 
 		$filtered_request['vatable'] = filter_var($filtered_request['vatable'], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
 		if (!is_null($filtered_request['vatable'])) {
@@ -154,145 +190,14 @@ class CreditAction extends Action_Base {
 			Billrun_Factory::log()->log('Queue collection is not defined', Zend_Log::ALERT);
 			return false;
 		} else {
-			return $queue->insert(array('stamp' => $entity['stamp'], 'type' => $entity['type']));
+			return $queue->insert(array(
+						'stamp' => $entity['stamp'],
+						'type' => $entity['type'],
+						'urt' => $entity['urt'],
+						'calc_name' => false,
+						'calc_time' => false,
+			));
 		}
-	}
-
-	function setError($error_message, $input = null) {
-		$output = array(
-			'status' => 0,
-			'desc' => $error_message,
-		);
-		if (!is_null($input)) {
-			$output['input'] = $input;
-		}
-		$this->getController()->setOutput(array($output));
-		return;
-	}
-
-}
-
-class BulkCreditAction extends CreditAction {
-
-	/**
-	 * method to execute the bulk credit
-	 * it's called automatically by the api main controller
-	 */
-	public function execute() {
-		$request = $this->getRequest()->getPost();
-//		$request = $this->getRequest()->getQuery();
-//		$request = $this->getRequest()->getRequest(); // supports GET / POST requests
-		if (isset($request['operation'])) {
-			if ($request['operation'] == 'credit') {
-				return $this->bulkCredit($request);
-			} else if ($request['operation'] == 'query') {
-				return $this->queryCredit($request);
-			}
-		}
-		return $this->setError('Unrecognized operation', $request);
-	}
-
-	protected function bulkCredit($request) {
-		$credits = json_decode($request['credits'], true);
-		if (!is_array($credits) || empty($credits)) {
-			return $this->setError('Input json is invalid', $request);
-		}
-
-		$filename = md5(microtime()) . ".json";
-		foreach ($credits as $credit) {
-			$parsed_row = $this->parseRow($credit);
-			if (is_null($parsed_row)) {
-				return;
-			}
-			$parsed_row['file'] = $filename;
-			$parsed_rows[] = $parsed_row;
-		}
-
-		$options = array(
-			'type' => 'credit',
-			'file_name' => $filename,
-			'file_content' => json_encode($parsed_rows),
-		);
-
-		$receiver = Billrun_Receiver::getInstance($options);
-		if ($receiver) {
-			$files = $receiver->receive();
-		} else {
-			return $this->setError('Receiver cannot be loaded', $request);
-		}
-		$this->getController()->setOutput(array(array(
-				'status' => 1,
-				'desc' => 'success',
-				'operation' => 'credit',
-				'stamp' => $options['file_name'],
-				'input' => $request,
-		)));
-		return true;
-	}
-
-	protected function queryCredit($request) {
-		if (isset($request['stamp'])) {
-			$filtered_request['stamp'] = $request['stamp'];
-		} else {
-			return $this->setError('Stamp is missing', $request);
-		}
-
-		if (!isset($request['details'])) {
-			$filtered_request['details'] = 0;
-		} else {
-			$filtered_request['details'] = filter_var($request['details'], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
-			if (!is_null($filtered_request['details'])) {
-				$filtered_request['details'] = (int) $filtered_request['details'];
-			} else {
-				return $this->setError('details could be either "0" or "1"', $request);
-			}
-		}
-		return $this->getFileStatus($filtered_request['stamp'], $filtered_request['details']);
-	}
-
-	protected function getFileStatus($filename, $details) {
-		$log = Billrun_Factory::db()->logCollection();
-		$query = array(
-			'file_name' => $filename,
-		);
-		$log_entry = $log->query($query)->cursor()->current();
-		if ($log_entry->isEmpty()) {
-			return $this->setError("File $filename not found");
-		}
-		$statuses = array(
-			0 => 'File received',
-			1 => 'In progress',
-			2 => 'Done processing',
-		);
-		if (isset($log_entry['process_time'])) {
-			$status = 2;
-		} else if (isset($log_entry['start_process_time'])) {
-			$status = 1;
-		} else {
-			$status = 0;
-		}
-		$output = array(
-			'status' => 1,
-			'desc' => $statuses[$status],
-			'operation' => 'query',
-			'stamp' => $filename,
-		);
-		if ($status == 2) {
-			if ($details) {
-				$lines = Billrun_Factory::db()->linesCollection();
-				$query = array(
-					'file' => $filename,
-				);
-				$details = $lines->query($query)->cursor();
-				$output['details'] = array();
-				foreach ($details as $row) {
-					$output['details'][] = $row->getRawData();
-				}
-				$output['count'] = count($output['details']);
-			}
-		}
-		$this->getController()->setOutput(array($output));
-		return true;
 	}
 
 }

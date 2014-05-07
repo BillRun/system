@@ -20,7 +20,7 @@ abstract class Billrun_Processor_Base_SeparatorFieldLines extends Billrun_Proces
 	 * @var string
 	 */
 	static protected $type = 'separator_field_lines';
-	
+
 	/**
 	 * method to parse the data
 	 */
@@ -29,10 +29,10 @@ abstract class Billrun_Processor_Base_SeparatorFieldLines extends Billrun_Proces
 			Billrun_Factory::log()->log("Resource is not configured well", Zend_Log::ERR);
 			return false;
 		}
-	
+
 		while ($line = $this->fgetsIncrementLine($this->fileHandler)) {
 			$record_type = $this->getLineType($line);
-	
+
 			// @todo: convert each case code snippet to protected method (including triggers)
 			switch ($record_type) {
 				case 'H': // header
@@ -48,7 +48,7 @@ abstract class Billrun_Processor_Base_SeparatorFieldLines extends Billrun_Proces
 						Billrun_Factory::log()->log("double trailer", Zend_Log::ERR);
 						return false;
 					}
-				
+
 					$this->data['trailer'] = $this->buildTrailer($line);
 
 					break;
@@ -59,7 +59,7 @@ abstract class Billrun_Processor_Base_SeparatorFieldLines extends Billrun_Proces
 					}
 
 					$row = $this->buildData($line);
-					if($this->isValidDataRecord($row)) {
+					if ($this->isValidDataRecord($row)) {
 						$this->data['data'][] = $row;
 					}
 
@@ -85,37 +85,37 @@ abstract class Billrun_Processor_Base_SeparatorFieldLines extends Billrun_Proces
 		$header['process_time'] = date(self::base_dateformat);
 		return $header;
 	}
-	
-	protected function buildTrailer($line) {
-			$this->parser->setStructure($this->trailer_structure);
-			$this->parser->setLine($line);
-			// @todo: trigger after trailer load (including $header, $data, $trailer)
-			$trailer = $this->parser->parse();
 
-			// @todo: trigger after trailer parse (including $header, $data, $trailer)
-			$trailer['source'] = self::$type;
-			$trailer['type'] = static::$type;
-			$trailer['header_stamp'] = $this->data['header']['stamp'];
-			$trailer['file'] = basename($this->filePath);
-			$trailer['process_time'] = date(self::base_dateformat);
-			return $trailer;
+	protected function buildTrailer($line) {
+		$this->parser->setStructure($this->trailer_structure);
+		$this->parser->setLine($line);
+		// @todo: trigger after trailer load (including $header, $data, $trailer)
+		$trailer = $this->parser->parse();
+
+		// @todo: trigger after trailer parse (including $header, $data, $trailer)
+		$trailer['source'] = self::$type;
+		$trailer['type'] = static::$type;
+		$trailer['header_stamp'] = $this->data['header']['stamp'];
+		$trailer['file'] = basename($this->filePath);
+		$trailer['process_time'] = date(self::base_dateformat);
+		return $trailer;
 	}
-	
+
 	protected function buildData($line, $line_number = null) {
-			$this->parser->setStructure($this->data_structure); // for the next iteration
-			$this->parser->setLine($line);
-			// @todo: trigger after row load (including $header, $row)
-			$row = $this->parser->parse();
-			// @todo: trigger after row parse (including $header, $row)
-			$row['source'] = self::$type;
-			$row['type'] = static::$type;
-			$row['header_stamp'] = $this->data['header']['stamp'];
-			$row['file'] = basename($this->filePath);
-			$row['process_time'] = date(self::base_dateformat);
-			if ($this->line_numbers) {
-				$row['line_number'] = $this->current_line;
-			}
-			return $row;
+		$this->parser->setStructure($this->data_structure); // for the next iteration
+		$this->parser->setLine($line);
+		// @todo: trigger after row load (including $header, $row)
+		$row = $this->filterFields($this->parser->parse());
+		// @todo: trigger after row parse (including $header, $row)
+		$row['source'] = self::$type;
+		$row['type'] = static::$type;
+		$row['log_stamp'] = $this->getFileStamp();
+		$row['file'] = basename($this->filePath);
+		$row['process_time'] = date(self::base_dateformat);
+		if ($this->line_numbers) {
+			$row['line_number'] = $this->current_line;
+		}
+		return $row;
 	}
 
 	/**
@@ -124,4 +124,32 @@ abstract class Billrun_Processor_Base_SeparatorFieldLines extends Billrun_Proces
 	 * @return true (by default) if the line is valid or false if theres some problem.
 	 */
 	abstract protected function isValidDataRecord($dataLine);
+
+	/**
+	 * (@TODO  duplicate of Billrun_Processor_Base_Binary::filterFields merge both of them to the processor  when  time  are less daire!)
+	 * filter the record row data fields from the records
+	 * (The required field can be written in the config using <type>.fields_filter)
+	 * @param Array		$rawRow the full data record row.
+	 * @return Array	the record row with filtered only the requierd fields in it  
+	 * 					or if no filter is defined in the configuration the full data record.
+	 */
+	protected function filterFields($rawRow) {
+		$stdFields = array('stamp');
+		$row = array();
+
+		$requiredFields = Billrun_Factory::config()->getConfigValue(static::$type . '.fields_filter', array(), 'array');
+		if (!empty($requiredFields)) {
+			$passThruFields = array_merge($requiredFields, $stdFields);
+			foreach ($passThruFields as $field) {
+				if (isset($rawRow[$field])) {
+					$row[$field] = $rawRow[$field];
+				}
+			}
+		} else {
+			return $rawRow;
+		}
+
+		return $row;
+	}
+
 }

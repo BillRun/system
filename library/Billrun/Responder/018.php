@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package         Billing
  * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
@@ -66,14 +67,13 @@ class Billrun_Responder_018 extends Billrun_Responder_Base_Ilds {
 			'filler' => '%-122s',
 		);
 	}
-	
+
 	protected function updateHeader($line, $logLine) {
 		$line = parent::updateHeader($line, $logLine);
 		$line = $this->switchNamesInLine("XFN", "GOLA", $line);
 		return $line;
 	}
-	
-	
+
 	protected function updateTrailer($logLine) {
 		$logLine['total_charge'] = $this->totalChargeAmount;
 		$logLine['total_rec_no'] = $this->linesCount;
@@ -81,12 +81,12 @@ class Billrun_Responder_018 extends Billrun_Responder_Base_Ilds {
 		$line = parent::updateTrailer($logLine);
 		return $line;
 	}
-	
+
 	protected function processLineErrors($dbLine) {
-		if(!isset($dbLine['billrun']) || !$dbLine['billrun']) {
-				$dbLine['record_status'] = '02';
+		if (!isset($dbLine['billrun']) || !$dbLine['billrun']) {
+			$dbLine['record_status'] = '02';
 		}
-		return  $dbLine;
+		return $dbLine;
 	}
 
 	protected function getResponseFilename($receivedFilename, $logLine) {
