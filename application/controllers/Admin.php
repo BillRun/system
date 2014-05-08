@@ -35,7 +35,7 @@ class AdminController extends Yaf_Controller_Abstract {
 			// TODO: set the branch through config
 			$branch = 'production';
 			if (file_exists(APPLICATION_PATH . '/.git/refs/heads/' . $branch)) {
-				$this->commit = rtrim(file_get_contents( APPLICATION_PATH . '/.git/refs/heads/' . $branch), "\n");
+				$this->commit = rtrim(file_get_contents(APPLICATION_PATH . '/.git/refs/heads/' . $branch), "\n");
 			} else {
 				$this->commit = md5(date('ymd'));
 			}
@@ -275,7 +275,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		if (!empty($session->query)) {
 
 			$collectionName = 'lines';
-			
+
 			$options = array(
 				'collection' => $collectionName,
 				'sort' => $this->applySort($collectionName),
@@ -418,29 +418,25 @@ class AdminController extends Yaf_Controller_Abstract {
 	}
 
 	/**
-	 * method to check if user is allowed to access page
+	 * method to check if user is allowed to access page, if not redirect or show error message
 	 * 
 	 * @param string $permission the permission required to the page
 	 * 
 	 * @return boolean true if have access, else false
 	 * 
-	 * @deprecated since version 2.1 use authorized method
 	 */
 	protected function allowed($permission) {
-		$action = $this->getRequest()->getActionName();
-		$auth = Billrun_Factory::auth();
-		if ($action != 'login') {
-			if (!$auth->hasIdentity()) {
-				$this->forward('login', array('ret_action' => $action));
-				return false;
-			}
-			$user = Billrun_Factory::user($auth->getIdentity());
-			if (!$user->valid() || !$user->allowed($permission)) {
-				$this->forward('error');
-				return false;
-			}
+		if (self::authorized($permission)) {
+			return true;
 		}
-		return true;
+		
+		if (Billrun_Factory::user()) {
+			$this->forward('error');
+			return false;
+		}
+		
+		$this->forward('login', array('ret_action' => $this->getRequest()->getActionName()));
+		return false;
 	}
 
 	/**
@@ -526,14 +522,14 @@ class AdminController extends Yaf_Controller_Abstract {
 
 		$this->getView()->component = $this->buildTableComponent($table, $query);
 	}
-	
+
 	/**
 	 * config controller of admin
 	 */
 	public function operationsAction() {
 		if (!$this->allowed('admin'))
 			return false;
-		
+
 		$this->getView()->component = $this->renderView('operations');
 	}
 
@@ -668,7 +664,7 @@ class AdminController extends Yaf_Controller_Abstract {
 
 		$parameters['css'] = $this->fetchCssFiles();
 		$parameters['js'] = $this->fetchJsFiles();
-		
+
 		return $this->getView()->render($tpl . ".phtml", $parameters);
 	}
 
@@ -904,7 +900,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	}
 
 	public function wholesaleAction() {
-		if (!$this->authorized('reports'))
+		if (!$this->allowed('reports'))
 			return false;
 		$this->addJs('//www.google.com/jsapi');
 		$this->addJs('/js/graphs.js');
@@ -919,6 +915,7 @@ class AdminController extends Yaf_Controller_Abstract {
 			'filter_fields' => $model->getFilterFields(),
 			'session' => $this->getSession($table),
 			'group_by' => $group_by,
+			'tbl_params' => $model->getTblParams(),
 		);
 		$this->getView()->component = $this->renderView($table, $viewData);
 	}
@@ -932,13 +929,29 @@ class AdminController extends Yaf_Controller_Abstract {
 		$from_day = $this->getRequest()->get('from_day');
 		$to_day = $this->getRequest()->get('to_day');
 		$model = new WholesaleModel();
-		$data = $model->getCall($direction, $group_by, $from_day, $to_day, $carrier);
+		$report_type = $this->getReportTypeByDirection($direction);
+		if ($report_type == 'nr') {
+			$data = $model->getNrStats($group_by, $from_day, $to_day, $carrier);
+		} else {
+			$data = $model->getStats($group_by, $from_day, $to_day, $report_type);
+		}
 		$this->getView()->data = $data;
-		$this->getView()->direction = $direction == 'TG' ? 'Incoming' : 'Outgoing';
 		$this->getView()->carrier = $carrier;
 		$this->getView()->group_by = $group_by;
 		$this->getView()->group_by_display = $model->getGroupFields()['group_by']['values'][$group_by]['display'];
 		$this->getView()->from_day = $from_day;
+		$this->getView()->tbl_params = $model->getTblParams($report_type);
+	}
+
+	protected function getReportTypeByDirection($direction) {
+		switch ($direction) {
+			case 'TG':
+				return 'incoming_call';
+			case 'FG':
+				return 'outgoing_call';
+			default:
+				return 'nr';
+		}
 	}
 
 }
