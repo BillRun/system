@@ -139,11 +139,11 @@ class WholesaleModel {
 				$row['cost'] = floatval($row['cost']);
 			}
 			if (isset($row['duration'])) {
-				$row['hours'] = $row['duration'] / 3600;
-				$hours = floor($row['duration'] / 3600);
-				$minutes = floor(($row['duration'] / 60) % 60);
-				$seconds = $row['duration'] % 60;
-				$row['duration'] = str_pad($hours, 2, '0', STR_PAD_LEFT) . ':' . str_pad($minutes, 2, '0', STR_PAD_LEFT) . ':' . str_pad($seconds, 2, '0', STR_PAD_LEFT);
+				$row['duration'] = $row['duration'] / 3600;
+//				$hours = floor($row['duration'] / 3600);
+//				$minutes = floor(($row['duration'] / 60) % 60);
+//				$seconds = $row['duration'] % 60;
+//				$row['duration'] = str_pad($hours, 2, '0', STR_PAD_LEFT) . ':' . str_pad($minutes, 2, '0', STR_PAD_LEFT) . ':' . str_pad($seconds, 2, '0', STR_PAD_LEFT);
 			}
 		}
 		return $callData;
@@ -194,12 +194,14 @@ class WholesaleModel {
 				'fields' => array(
 					'incoming_call' => array(
 						0 => array(
-							'value' => 'hours',
+							'value' => 'duration',
 							'display' => 'duration',
+							'decimal' => 0,
 						),
 						1 => array(
 							'value' => 'cost',
 							'display' => 'cost',
+							'decimal' => 2,
 						),
 					),
 				),
@@ -211,12 +213,14 @@ class WholesaleModel {
 				'fields' => array(
 					'outgoing_call' => array(
 						0 => array(
-							'value' => 'hours',
+							'value' => 'duration',
 							'display' => 'duration',
+							'decimal' => 0,
 						),
 						1 => array(
 							'value' => 'cost',
 							'display' => 'cost',
+							'decimal' => 2,
 						),
 					),
 				),
@@ -228,32 +232,38 @@ class WholesaleModel {
 				'fields' => array(
 					'incoming_call' => array(
 						0 => array(
-							'value' => 'hours',
+							'value' => 'duration',
 							'display' => 'duration',
+							'decimal' => 0,
 						),
 						1 => array(
 							'value' => 'cost',
 							'display' => 'cost',
+							'decimal' => 2,
 						),
 					),
 					'outgoing_call' => array(
 						0 => array(
-							'value' => 'hours',
+							'value' => 'duration',
 							'display' => 'duration',
+							'decimal' => 0,
 						),
 						1 => array(
 							'value' => 'cost',
 							'display' => 'cost',
+							'decimal' => 2,
 						),
 					),
 					'data' => array(
 						0 => array(
 							'value' => 'duration',
 							'display' => 'duration',
+							'decimal' => 0,
 						),
 						1 => array(
 							'value' => 'cost',
 							'display' => 'cost',
+							'decimal' => 2,
 						),
 					),
 				),

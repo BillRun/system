@@ -20,11 +20,9 @@
 			foreach (array_keys($this->tbl_params) as $index => $report_type) {
 				$report_params = $this->tbl_params[$report_type];
 				$report_data = $this->data[$report_type];
-				$column_counter = 0;
 				foreach ($report_params['fields'] as $usage_type => $usage_fields) {
 					foreach ($usage_fields as $field) {
-						$table_totals[$column_counter] = 0;
-						$column_counter++;
+						$table_totals[$usage_type][$field['value']] = 0;
 					}
 				}
 
@@ -52,30 +50,40 @@
 						echo "<input class=\"carrier\" type=\"hidden\" value=\"" . $group_value . "\">";
 					}
 					echo '<a onclick="openPopup(this);" href="#w-popup" data-type="update" data-toggle="modal" role="button" data-remote="" data-type="what">' . $group_value . '</a></td>';
-					$column_counter = 0;
 					foreach ($report_params['fields'] as $usage_type => $usage_fields) {
 						foreach ($usage_fields as $field) {
 							echo '<td>';
 							if (isset($report_data['table_data'][$usage_type][$group_value][$field['display']])) {
-								if ($field['value'] == 'cost') {
-									echo number_format($report_data['table_data'][$usage_type][$group_value][$field['display']], 2);
-								} else {
+								if ($field['decimal'] === false) {
 									echo $report_data['table_data'][$usage_type][$group_value][$field['display']];
+								} else if ($field['decimal'] == 0) {
+									echo ceil($report_data['table_data'][$usage_type][$group_value][$field['display']]);
+								} else {
+									echo number_format($report_data['table_data'][$usage_type][$group_value][$field['display']], $field['decimal']);
 								}
-								$table_totals[$column_counter]+=$report_data['table_data'][$usage_type][$group_value][$field['value']];
+								$table_totals[$usage_type][$field['value']]+=$report_data['table_data'][$usage_type][$group_value][$field['value']];
 							} else {
 								echo '&nbsp;';
 							}
 							echo '</td>';
-							$column_counter++;
 						}
 					}
 					echo '</tr>';
 				}
 				echo '<tr class="totals">';
 				echo '<td>Total</td>';
-				for ($i = 0; $i < $column_counter; $i++) {
-					echo '<td>' . number_format($table_totals[$i],2) . '</td>';
+				foreach ($report_params['fields'] as $usage_type => $usage_fields) {
+					foreach ($usage_fields as $field) {
+						echo '<td>';
+						if ($field['decimal'] === false) {
+							echo $table_totals[$usage_type][$field['value']];
+						} else if ($field['decimal'] == 0) {
+							echo ceil($table_totals[$usage_type][$field['value']]);
+						} else {
+							echo number_format($table_totals[$usage_type][$field['value']], $field['decimal']);
+						}
+						echo '</td>';
+					}
 				}
 				echo '</tr>';
 				echo '</table>';

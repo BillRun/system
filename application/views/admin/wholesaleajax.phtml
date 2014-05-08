@@ -9,11 +9,9 @@ echo Admin_Graphs::printGraph($graph, false, 1);
 
 foreach (array_keys($tbl_params) as $index => $report_type) {
 	$report_params = $tbl_params[$report_type];
-	$column_counter = 0;
 	foreach ($report_params['fields'] as $usage_type => $usage_fields) {
 		foreach ($usage_fields as $field) {
-			$table_totals[$column_counter] = 0;
-			$column_counter++;
+			$table_totals[$usage_type][$field['value']] = 0;
 		}
 	}
 	echo '<div class="tab-pane' . (isset($report_params['default']) && $report_params['default'] ? ' active' : '') . '" id="tabs-' . ($index + 1) . '">
@@ -35,30 +33,40 @@ foreach (array_keys($tbl_params) as $index => $report_type) {
 
 	foreach ($this->data['available_group_values'] as $group_value) {
 		echo '<tr><td>' . $group_value . '</td>';
-		$column_counter = 0;
 		foreach ($report_params['fields'] as $usage_type => $usage_fields) {
 			foreach ($usage_fields as $field) {
 				echo '<td>';
 				if (isset($this->data['table_data'][$usage_type][$group_value][$field['display']])) {
-					if ($field['value'] == 'cost') {
-						echo number_format($this->data['table_data'][$usage_type][$group_value][$field['display']], 2);
-					} else {
+					if ($field['decimal'] === false) {
 						echo $this->data['table_data'][$usage_type][$group_value][$field['display']];
+					} else if ($field['decimal'] == 0) {
+						echo ceil($this->data['table_data'][$usage_type][$group_value][$field['display']]);
+					} else {
+						echo number_format($this->data['table_data'][$usage_type][$group_value][$field['display']], $field['decimal']);
 					}
-					$table_totals[$column_counter]+=$this->data['table_data'][$usage_type][$group_value][$field['value']];
+					$table_totals[$usage_type][$field['value']]+=$this->data['table_data'][$usage_type][$group_value][$field['value']];
 				} else {
 					echo '&nbsp;';
 				}
 				echo '</td>';
-				$column_counter++;
 			}
 		}
 		echo '</tr>';
 	}
 	echo '<tr class="totals">';
 	echo '<td>Total</td>';
-	for ($i = 0; $i < $column_counter; $i++) {
-		echo '<td>' . number_format($table_totals[$i],2) . '</td>';
+	foreach ($report_params['fields'] as $usage_type => $usage_fields) {
+		foreach ($usage_fields as $field) {
+			echo '<td>';
+			if ($field['decimal'] === false) {
+				echo $table_totals[$usage_type][$field['value']];
+			} else if ($field['decimal'] == 0) {
+				echo ceil($table_totals[$usage_type][$field['value']]);
+			} else {
+				echo number_format($table_totals[$usage_type][$field['value']], $field['decimal']);
+			}
+			echo '</td>';
+		}
 	}
 	echo '</tr>';
 	echo '</table>';
