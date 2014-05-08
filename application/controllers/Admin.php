@@ -35,7 +35,7 @@ class AdminController extends Yaf_Controller_Abstract {
 			// TODO: set the branch through config
 			$branch = 'production';
 			if (file_exists(APPLICATION_PATH . '/.git/refs/heads/' . $branch)) {
-				$this->commit = rtrim(file_get_contents( APPLICATION_PATH . '/.git/refs/heads/' . $branch), "\n");
+				$this->commit = rtrim(file_get_contents(APPLICATION_PATH . '/.git/refs/heads/' . $branch), "\n");
 			} else {
 				$this->commit = md5(date('ymd'));
 			}
@@ -275,7 +275,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		if (!empty($session->query)) {
 
 			$collectionName = 'lines';
-			
+
 			$options = array(
 				'collection' => $collectionName,
 				'sort' => $this->applySort($collectionName),
@@ -526,14 +526,14 @@ class AdminController extends Yaf_Controller_Abstract {
 
 		$this->getView()->component = $this->buildTableComponent($table, $query);
 	}
-	
+
 	/**
 	 * config controller of admin
 	 */
 	public function operationsAction() {
 		if (!$this->allowed('admin'))
 			return false;
-		
+
 		$this->getView()->component = $this->renderView('operations');
 	}
 
@@ -668,7 +668,7 @@ class AdminController extends Yaf_Controller_Abstract {
 
 		$parameters['css'] = $this->fetchCssFiles();
 		$parameters['js'] = $this->fetchJsFiles();
-		
+
 		return $this->getView()->render($tpl . ".phtml", $parameters);
 	}
 
@@ -919,6 +919,7 @@ class AdminController extends Yaf_Controller_Abstract {
 			'filter_fields' => $model->getFilterFields(),
 			'session' => $this->getSession($table),
 			'group_by' => $group_by,
+			'tbl_params' => $model->getTblParams(),
 		);
 		$this->getView()->component = $this->renderView($table, $viewData);
 	}
@@ -932,13 +933,29 @@ class AdminController extends Yaf_Controller_Abstract {
 		$from_day = $this->getRequest()->get('from_day');
 		$to_day = $this->getRequest()->get('to_day');
 		$model = new WholesaleModel();
-		$data = $model->getCall($direction, $group_by, $from_day, $to_day, $carrier);
+		$report_type = $this->getReportTypeByDirection($direction);
+		if ($report_type == 'nr') {
+			$data = $model->getNrStats($group_by, $from_day, $to_day, $carrier);
+		} else {
+			$data = $model->getStats($group_by, $from_day, $to_day, $report_type);
+		}
 		$this->getView()->data = $data;
-		$this->getView()->direction = $direction == 'TG' ? 'Incoming' : 'Outgoing';
 		$this->getView()->carrier = $carrier;
 		$this->getView()->group_by = $group_by;
 		$this->getView()->group_by_display = $model->getGroupFields()['group_by']['values'][$group_by]['display'];
 		$this->getView()->from_day = $from_day;
+		$this->getView()->tbl_params = $model->getTblParams($report_type);
+	}
+
+	protected function getReportTypeByDirection($direction) {
+		switch ($direction) {
+			case 'TG':
+				return 'incoming_call';
+			case 'FG':
+				return 'outgoing_call';
+			default:
+				return 'nr';
+		}
 	}
 
 }

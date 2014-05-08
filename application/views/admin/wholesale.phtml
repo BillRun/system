@@ -3,99 +3,90 @@
 ?>
 <div class="container component">
 	<h2>Wholesale</h2>
-	<?php $this->display('w-toolbar.phtml', array());
+	<?php
+	$this->display('w-toolbar.phtml', array());
 	print '<div style="clear:both;"></div>';
 	?>
 	<div class="tabbable">
 		<ul class="nav nav-tabs">
 			<?php
-			foreach (array('incoming', 'outgoing') as $index => $v) :
-				echo '<li' . ($index==0? ' class="active"' : '') . '><a href="#tabs-' . ($index + 1) . '" data-toggle="tab">' . $v . '</a></li>';
+			foreach (array_keys($this->tbl_params) as $index => $v) :
+				echo '<li' . ($index == 0 ? ' class="active"' : '') . '><a href="#tabs-' . ($index + 1) . '" data-toggle="tab">' . $this->tbl_params[$v]['title'] . '</a></li>';
 			endforeach;
 			?>
 		</ul>
 		<div class="tab-content">
-			<div class="tab-pane active" id="tabs-1">
-				<h3>Incoming</h3>
-				<table border="1" data-type="TG" class="wholesale-table">
-					<?php
-					$keys = array(
-						'group_by',
-						'duration',
-						'cost',
-					);
-					$graph_keys = array(
-						'group_by',
-						'hours',
-						'cost',
-					);
-					//print table headers
-					echo "<tr>";
-					foreach ($keys as $k) {
-						echo "<th>" . ($k == 'group_by' ? $this->group_field_display : $k) . "</th>";
+			<?php
+			foreach (array_keys($this->tbl_params) as $index => $report_type) {
+				$report_params = $this->tbl_params[$report_type];
+				$report_data = $this->data[$report_type];
+				$column_counter = 0;
+				foreach ($report_params['fields'] as $usage_type => $usage_fields) {
+					foreach ($usage_fields as $field) {
+						$table_totals[$column_counter] = 0;
+						$column_counter++;
 					}
-					echo "</tr>";
+				}
 
-					foreach ($this->data['incoming_call'] as $item) {
-						echo '<tr>';
-						foreach ($keys as $k) :
-							echo "<td>";
-							if ($k == 'group_by') {
-								if ($this->group_by == 'carrier') {
-									echo "<input class=\"carrier\" type=\"hidden\" value=\"" . $item[$k] . "\">";
-								}
-								echo '<a onclick="openPopup(this);" href="#w-popup" data-type="update" data-toggle="modal" role="button" data-remote="" data-type="' . $k . '">' . $item[$k] . '</a>';
-							} else {
-								echo (isset($item[$k]) ? $item[$k] : '&nbsp;');
-							}
-							echo "</td>";
-						endforeach;
-						echo "</tr>";
-					}
-					?>
-				</table>
-				<?php
-				$graph = Admin_Graphs::prepareGraph($this->data['incoming_call'], $this->group_field_display, $this->group_by, array_diff($graph_keys, array('group_by')), array_diff($graph_keys, array('group_by')), array('graph_id' => 'incoming_call_graph', 'graph_class' => 'wholesale-graph'));
-				echo Admin_Graphs::printGraph($graph, false, 1);
-				?>
-			</div>
-			<div class="tab-pane" id="tabs-2">
-				<h3>Outgoing</h3>
-				<table border="1" data-type="FG" class="wholesale-table">
-					<?php
-					//print table headers
-					echo "<tr>";
-					foreach ($keys as $k) {
-						echo "<th>" . ($k == 'group_by' ? $this->group_field_display : $k) . "</th>";
-					}
-					echo "</tr>";
+				echo '<div class="tab-pane' . (isset($report_params['default']) && $report_params['default'] ? ' active' : '') . '" id="tabs-' . ($index + 1) . '">
+					<h3>' . $report_params['title'] . '</h3>
+					<table border="1" data-type="' . $report_params['direction'] . '" class="wholesale-table">';
 
-					foreach ($this->data['outgoing_call'] as $item) {
-						echo '<tr>';
-						foreach ($keys as $k) :
-							echo "<td>";
-							if ($k == 'group_by') {
-								if ($this->group_by == 'carrier') {
-									echo "<input class=\"carrier\" type=\"hidden\" value=\"" . $item[$k] . "\">";
-								}
-								echo '<a onclick="openPopup(this);" href="#w-popup" data-type="update" data-toggle="modal" role="button" data-remote="" data-type="' . $k . '">' . $item[$k] . '</a>';
-							} else {
-								echo (isset($item[$k]) ? $item[$k] : '&nbsp;');
-							}
-							echo "</td>";
-						endforeach;
-						echo "</tr>";
+				echo "<tr>";
+				echo '<th rowspan="2">' . $this->group_field_display . '</th>';
+				foreach ($report_params['fields'] as $usage_type => $fields) {
+					echo '<th colspan="' . count($fields) . '">' . $usage_type . '</th>';
+				}
+				echo "</tr>";
+				echo "<tr>";
+				foreach ($report_params['fields'] as $fields) {
+					foreach ($fields as $field) {
+						echo '<th>' . $field['display'] . "</th>";
 					}
-					?>
-				</table>
-				<?php
-				$graph = Admin_Graphs::prepareGraph($this->data['outgoing_call'], $this->group_field_display, $this->group_by, array_diff($graph_keys, array('group_by')), array_diff($graph_keys, array('group_by')), array('graph_id' => 'outgoing_call_graph', 'graph_class' => 'wholesale-graph'));
+				}
+				echo "</tr>";
+
+				foreach ($report_data['available_group_values'] as $group_value) {
+					echo '<tr><td>';
+					if ($this->group_by == 'carrier') {
+						echo "<input class=\"carrier\" type=\"hidden\" value=\"" . $group_value . "\">";
+					}
+					echo '<a onclick="openPopup(this);" href="#w-popup" data-type="update" data-toggle="modal" role="button" data-remote="" data-type="what">' . $group_value . '</a></td>';
+					$column_counter = 0;
+					foreach ($report_params['fields'] as $usage_type => $usage_fields) {
+						foreach ($usage_fields as $field) {
+							echo '<td>';
+							if (isset($report_data['table_data'][$usage_type][$group_value][$field['display']])) {
+								if ($field['value'] == 'cost') {
+									echo number_format($report_data['table_data'][$usage_type][$group_value][$field['display']], 2);
+								} else {
+									echo $report_data['table_data'][$usage_type][$group_value][$field['display']];
+								}
+								$table_totals[$column_counter]+=$report_data['table_data'][$usage_type][$group_value][$field['value']];
+							} else {
+								echo '&nbsp;';
+							}
+							echo '</td>';
+							$column_counter++;
+						}
+					}
+					echo '</tr>';
+				}
+				echo '<tr class="totals">';
+				echo '<td>Total</td>';
+				for ($i = 0; $i < $column_counter; $i++) {
+					echo '<td>' . number_format($table_totals[$i],2) . '</td>';
+				}
+				echo '</tr>';
+				echo '</table>';
+				$graph = Admin_Graphs::prepareGraph($this->data[$report_type]['table_data'], $this->group_field_display, $this->group_by, $report_params['fields'], array('graph_id' => ($report_type . '_call_graph'), 'graph_class' => 'wholesale-graph'));
 				echo Admin_Graphs::printGraph($graph, false, 1);
-				?>
-			</div>
+				echo '</div>';
+			}
+			?>
 		</div>
 	</div>
-<?php $this->display('w-popups.phtml', array()); ?>
+	<?php $this->display('w-popups.phtml', array()); ?>
 	<hr>
 
 	<footer style="clear: both">

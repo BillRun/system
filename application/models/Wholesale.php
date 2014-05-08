@@ -30,11 +30,63 @@ class WholesaleModel {
 		));
 	}
 
-	public function getStats($group_field, $from_day, $to_day) {
-		return array(
-			'incoming_call' => $this->getCall('TG', $group_field, $from_day, $to_day),
-			'outgoing_call' => $this->getCall('FG', $group_field, $from_day, $to_day),
+	public function getStats($group_field, $from_day, $to_day, $report_type = null) {
+		if ($report_type) {
+			$table_data = $this->convertToAssocArray($this->getCall($report_type == 'incoming_call' ? 'TG' : 'FG', $group_field, $from_day, $to_day), 'group_by');
+			return array(
+				'table_data' => array($report_type => $table_data),
+				'available_group_values' => $this->getAvailableGroupValues($table_data),
+			);
+		}
+		$incoming_call = $this->convertToAssocArray($this->getCall('TG', $group_field, $from_day, $to_day), 'group_by');
+		$outgoing_call = $this->convertToAssocArray($this->getCall('FG', $group_field, $from_day, $to_day), 'group_by');
+
+		$ret = array(
+			'incoming_call' => array(
+				'table_data' => array('incoming_call' => $incoming_call),
+				'available_group_values' => $this->getAvailableGroupValues($incoming_call),
+			),
+			'outgoing_call' => array(
+				'table_data' => array('outgoing_call' => $outgoing_call),
+				'available_group_values' => $this->getAvailableGroupValues($outgoing_call),
+			),
+			'nr' => $this->getNrStats($group_field, $from_day, $to_day),
 		);
+		return $ret;
+	}
+
+	protected function getAvailableGroupValues() {
+		$ret = array();
+		$arg_list = func_get_args();
+		foreach ($arg_list as $data) {
+			$ret = array_merge($ret, array_keys($data));
+		}
+		$ret = array_unique($ret);
+		asort($ret);
+		return $ret;
+	}
+
+	public function getNrStats($group_field, $from_day, $to_day, $carrier = null) {
+		$incoming_call = $this->convertToAssocArray($this->getCall('TG', $group_field, $from_day, $to_day, $carrier, 'nr'), 'group_by');
+		$outgoing_call = $this->convertToAssocArray($this->getCall('FG', $group_field, $from_day, $to_day, $carrier, 'nr'), 'group_by');
+		$data = $this->convertToAssocArray($this->getData($group_field, $from_day, $to_day, $carrier), 'group_by');
+		$ret = array(
+			'table_data' => array(
+				'incoming_call' => $incoming_call,
+				'outgoing_call' => $outgoing_call,
+				'data' => $data,
+			),
+		);
+		$ret['available_group_values'] = $this->getAvailableGroupValues($incoming_call, $outgoing_call, $data);
+		return $ret;
+	}
+
+	protected function convertToAssocArray($source_array, $row_field) {
+		foreach ($source_array as $index => $row) {
+			$source_array[$row[$row_field]] = $row;
+			unset($source_array[$index]);
+		}
+		return $source_array;
 	}
 
 	/**
@@ -44,12 +96,33 @@ class WholesaleModel {
 	 * 
 	 * @return array of results
 	 */
+	public function getData($group_field, $from_day, $to_day, $carrier = null) {
+		$query = 'SELECT ' . ($group_field == 'carrier' ? 'cgr_compressed.longname' : 'dayofmonth') . ' AS group_by, usaget, sum(duration) AS duration, round(sum(duration)/pow(1024,2)*0.0297,2) AS cost '
+				. 'FROM wholesale left join cgr_compressed ON wholesale.carrier=cgr_compressed.shortname '
+				. 'WHERE usaget like "data" AND wholesale.carrier NOT IN ("GT", "OTHER") AND dayofmonth BETWEEN "' . $from_day . '" AND "' . $to_day . '" ';
+		if ($carrier) {
+			$query .= ' AND longname LIKE "' . $carrier . '"';
+		}
+		$query.= 'GROUP by group_by';
+
+		$data = $this->db->fetchAll($query);
+		foreach ($data as &$row) {
+			if (isset($row['cost'])) {
+				$row['cost'] = floatval($row['cost']);
+			}
+			if (isset($row['duration'])) {
+				$row['duration'] = $row['duration'] / pow(1024, 2);
+			}
+		}
+		return $data;
+	}
+
 	public function getCall($direction, $group_field, $from_day, $to_day, $carrier = null, $network = 'all') {
 		$sub_query = 'SELECT usaget, dayofmonth, longname as carrier, sum(duration) as seconds,'
 				. 'CASE WHEN carrier like "N%" and direction like "TG" THEN sum(duration)/60*0.0614842117289702 ELSE sum(duration)/60*0.0614842117289702 END as cost'
 				. ' FROM wholesale left join cgr_compressed on wholesale.carrier=cgr_compressed.shortname'
 				. ' WHERE direction like "' . $direction . '" AND network like "' . $network . '" AND dayofmonth BETWEEN "' . $from_day . '" AND "' . $to_day . '"'
-				. ' GROUP BY dayofmonth,carrier,usaget,direction'
+				. ' GROUP BY dayofmonth,wholesale.carrier,usaget,direction'
 				. ' ORDER BY usaget,dayofmonth,longname';
 
 		$query = 'SELECT ' . $group_field . ' AS group_by, usaget ,sum(seconds) as duration, round(sum(cost),2) as cost from (' . $sub_query . ') as sq';
@@ -70,7 +143,7 @@ class WholesaleModel {
 				$hours = floor($row['duration'] / 3600);
 				$minutes = floor(($row['duration'] / 60) % 60);
 				$seconds = $row['duration'] % 60;
-				$row['duration'] = str_pad($hours, 2, '0', STR_PAD_LEFT) . ':' .  str_pad($minutes, 2, '0', STR_PAD_LEFT) . ':' . str_pad($seconds, 2, '0', STR_PAD_LEFT);
+				$row['duration'] = str_pad($hours, 2, '0', STR_PAD_LEFT) . ':' . str_pad($minutes, 2, '0', STR_PAD_LEFT) . ':' . str_pad($seconds, 2, '0', STR_PAD_LEFT);
 			}
 		}
 		return $callData;
@@ -111,4 +184,87 @@ class WholesaleModel {
 		return $filter_fields;
 	}
 
+	public function getTblParams($report_type = null) {
+		$reports = array(
+			'incoming_call' => array(
+				'title' => 'Incoming',
+				'default' => true,
+				'direction' => 'TG',
+				'group_by_field' => 'group_by',
+				'fields' => array(
+					'incoming_call' => array(
+						0 => array(
+							'value' => 'hours',
+							'display' => 'duration',
+						),
+						1 => array(
+							'value' => 'cost',
+							'display' => 'cost',
+						),
+					),
+				),
+			),
+			'outgoing_call' => array(
+				'title' => 'Outgoing',
+				'direction' => 'FG',
+				'group_by_field' => 'group_by',
+				'fields' => array(
+					'outgoing_call' => array(
+						0 => array(
+							'value' => 'hours',
+							'display' => 'duration',
+						),
+						1 => array(
+							'value' => 'cost',
+							'display' => 'cost',
+						),
+					),
+				),
+			),
+			'nr' => array(
+				'title' => 'National roaming',
+				'direction' => 'Nr',
+				'group_by_field' => 'group_by',
+				'fields' => array(
+					'incoming_call' => array(
+						0 => array(
+							'value' => 'hours',
+							'display' => 'duration',
+						),
+						1 => array(
+							'value' => 'cost',
+							'display' => 'cost',
+						),
+					),
+					'outgoing_call' => array(
+						0 => array(
+							'value' => 'hours',
+							'display' => 'duration',
+						),
+						1 => array(
+							'value' => 'cost',
+							'display' => 'cost',
+						),
+					),
+					'data' => array(
+						0 => array(
+							'value' => 'duration',
+							'display' => 'duration',
+						),
+						1 => array(
+							'value' => 'cost',
+							'display' => 'cost',
+						),
+					),
+				),
+			),
+		);
+		if ($report_type) {
+			return array($report_type => $reports[$report_type]);
+		} else {
+			return $reports;
+		}
+	}
+
 }
+

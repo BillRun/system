@@ -274,3 +274,6 @@ div.billrun-logo img {
 .tabbable ul li a {
 	outline: 0;
 }
+.wholesale-table .totals td {
+	font-weight: bold;
+}
