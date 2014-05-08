@@ -418,29 +418,25 @@ class AdminController extends Yaf_Controller_Abstract {
 	}
 
 	/**
-	 * method to check if user is allowed to access page
+	 * method to check if user is allowed to access page, if not redirect or show error message
 	 * 
 	 * @param string $permission the permission required to the page
 	 * 
 	 * @return boolean true if have access, else false
 	 * 
-	 * @deprecated since version 2.1 use authorized method
 	 */
 	protected function allowed($permission) {
-		$action = $this->getRequest()->getActionName();
-		$auth = Billrun_Factory::auth();
-		if ($action != 'login') {
-			if (!$auth->hasIdentity()) {
-				$this->forward('login', array('ret_action' => $action));
-				return false;
-			}
-			$user = Billrun_Factory::user($auth->getIdentity());
-			if (!$user->valid() || !$user->allowed($permission)) {
-				$this->forward('error');
-				return false;
-			}
+		if (self::authorized($permission)) {
+			return true;
 		}
-		return true;
+		
+		if (Billrun_Factory::user()) {
+			$this->forward('error');
+			return false;
+		}
+		
+		$this->forward('login', array('ret_action' => $this->getRequest()->getActionName()));
+		return false;
 	}
 
 	/**
@@ -904,7 +900,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	}
 
 	public function wholesaleAction() {
-		if (!$this->authorized('reports'))
+		if (!$this->allowed('reports'))
 			return false;
 		$this->addJs('//www.google.com/jsapi');
 		$this->addJs('/js/graphs.js');
