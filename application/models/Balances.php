@@ -71,7 +71,7 @@ class BalancesModel extends TableModel {
 		arsort($billruns);
 
 		$usage_filter_values = $this->getBalancesFields();
-		unset($usage_filter_values['aid'], $usage_filter_values['sid']);
+		unset($usage_filter_values['aid'], $usage_filter_values['sid'], $usage_filter_values['billrun_month']);
 //		$usage_filter_values = array_merge($basic_columns, $extra_columns);
 		
 		$operators = array(
