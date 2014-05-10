@@ -764,7 +764,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		} else if (!isset($session->$target_name)) {
 			$session->$target_name = $default;
 		}
-		return $session->$target_name;
+			return $session->$target_name;
 	}
 
 	protected function applyFilters($table) {
@@ -800,7 +800,19 @@ class AdminController extends Yaf_Controller_Abstract {
 		$query = false;
 		$session = $this->getSession($table);
 		$keys = $this->getSetVar($session, 'manual_key', 'manual_key');
-		$advanced_options = Admin_Lines::getOptions();
+		if ($this->model instanceof LinesModel) {
+			$advanced_options = Admin_Lines::getOptions();
+		} else if ($this->model instanceof BalancesModel) {
+			// TODO: make refactoring of the advanced options for each page (lines, balances, etc)
+			$advanced_options = array(
+				$keys[0] => array(
+					'type' => 'number',
+					'display' => 'usage',
+				)
+			);
+		} else {
+			return $query;
+		}
 		$operators = $this->getSetVar($session, 'manual_operator', 'manual_operator');
 		$values = $this->getSetVar($session, 'manual_value', 'manual_value');
 		for ($i = 0; $i < count($keys); $i++) {

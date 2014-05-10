@@ -157,6 +157,9 @@ tr.progress td, tr.progress th {
 .toolbar-buttons, .control-group1, #manual_filters select {
 	margin:10px auto;
 }
+.toolbar-buttons, .control-group4 {
+	margin-top:5px;
+}
 
 #manual_filters select, input[type=text].advanced-filter, .toolbar-lines input[type=text].span2{
 	width:10%;

@@ -46,6 +46,14 @@ class BalancesModel extends TableModel {
 		return $this->collection->query($query)->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'))->hint(array('aid' => 1, 'billrun_month' => 1))->limit($this->size);
 	}
 	
+	protected function getBalancesFields() {
+		$basic_columns = Billrun_Factory::config()->getConfigValue('admin_panel.balances.table_columns');
+		$extra_columns = Billrun_Factory::config()->getConfigValue('admin_panel.balances.extra_columns');
+		
+		return array_merge($basic_columns, $extra_columns);
+	}
+
+
 	public function getFilterFields() {
 		$months = 6;
 		$billruns = array();
@@ -61,6 +69,18 @@ class BalancesModel extends TableModel {
 			$timestamp = strtotime("1 month ago", $timestamp);
 		}
 		arsort($billruns);
+
+		$usage_filter_values = $this->getBalancesFields();
+		unset($usage_filter_values['aid'], $usage_filter_values['sid']);
+//		$usage_filter_values = array_merge($basic_columns, $extra_columns);
+		
+		$operators = array(
+			'equals' => '=',
+			'lt' => '<',
+			'lte' => '<=',
+			'gt' => '>',
+			'gte' => '>=',
+		);
 
 		$filter_fields = array(
 			'aid' => array(
@@ -79,14 +99,33 @@ class BalancesModel extends TableModel {
 				'display' => 'Subscriber id',
 				'default' => '',
 			),
-			'usage' => array(
-				'key' => 'usage',
-				'db_key' => 'usaget',
+			'usage_type' => array(
+				'key' => 'manual_key',
+				'db_key' => 'nofilter',
 				'input_type' => 'multiselect',
 				'comparison' => '$in',
 				'display' => 'Usage',
-				'values' => Billrun_Factory::config()->getConfigValue('admin_panel.line_usages'),
+				'values' => $usage_filter_values,
+				'singleselect' => 1,
 				'default' => array(),
+			),
+			'usage_filter' => array(
+				'key' => 'manual_operator',
+				'db_key' => 'nofilter',
+				'input_type' => 'multiselect',
+				'comparison' => '$in',
+				'display' => '',
+				'values' => $operators,
+				'singleselect' => 1,
+				'default' => array(),
+			),
+			'usage_value' => array(
+				'key' => 'manual_value[]',
+				'db_key' => 'nofilter',
+				'input_type' => 'number',
+				'comparison' => 'equals',
+				'display' => '',
+				'default' => '',
 			),
 			'billrun' => array(
 				'key' => 'billrun',
@@ -116,6 +155,18 @@ class BalancesModel extends TableModel {
 					'width' => 2,
 				),
 			),
+			2 => array(
+				'usage_type' => array(
+					'width' => 2,
+				),
+				'usage_filter' => array(
+					'width' => 1,
+				),
+				'usage_value' => array(
+					'width' => 1,
+				),
+
+			)
 		);
 		return $filter_field_order;
 	}
@@ -125,4 +176,9 @@ class BalancesModel extends TableModel {
 		$this->_count = $resource->count(false);
 		return $resource;
 	}
+	
+	public function getSortFields() {
+		return $this->getBalancesFields();
+	}
+
 }
