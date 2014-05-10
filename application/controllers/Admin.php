@@ -507,6 +507,26 @@ class AdminController extends Yaf_Controller_Abstract {
 	}
 
 	/**
+	 * log controller of admin
+	 */
+	public function balancesAction() {
+		if (!$this->allowed('read'))
+			return false;
+		$table = "balances";
+//		$sort = array('received_time' => -1);
+		$sort = $this->applySort($table);
+		$options = array(
+			'collection' => $table,
+			'sort' => $sort,
+		);
+
+		$model = self::getModel($table, $options);
+		$query = $this->applyFilters($table);
+
+		$this->getView()->component = $this->buildTableComponent($table, $query);
+	}
+
+	/**
 	 * users controller of admin
 	 */
 	public function usersAction() {
@@ -689,11 +709,11 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->title = ucfirst($table);
 
 		// TODO: use ready pager/paginiation class (zend? joomla?) with auto print
-		$params = array(
+		$basic_params = array(
 			'title' => $this->title,
 			'session' => $this->getSession($table),
 		);
-		$params = array_merge($options, $params, $this->getTableViewParams($filter_query), $this->createFilterToolbar($table));
+		$params = array_merge($options, $basic_params, $this->getTableViewParams($filter_query), $this->createFilterToolbar($table));
 
 		$ret = $this->renderView('table', $params);
 		return $ret;

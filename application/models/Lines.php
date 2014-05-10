@@ -105,25 +105,6 @@ class LinesModel extends TableModel {
 		parent::update($data);
 	}
 	
-	/**
-	 * method to check if indexes exists in the query filters
-	 * 
-	 * @param type $filters the filters to search in
-	 * @param type $searched_filter the filter to search
-	 * 
-	 * @return boolean true if searched filter exists in the filters supply
-	 */
-	protected function filterExists($filters, $searched_filter) {
-		settype($searched_filter, 'array');
-		foreach ($filters as $k => $f) {
-			$keys = array_keys($f);
-			if (count(array_intersect($searched_filter, $keys))) {
-				return true;
-			}
-		}
-		return false;
-	}
-
 	public function getData($filter_query = array(), $skip = null, $size = null) {
 		if (empty($skip)) {
 			$skip = $this->offset();
@@ -137,7 +118,7 @@ class LinesModel extends TableModel {
 			->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'))
 			->sort($this->sort)->skip($skip)->limit($size);
 
-		if ($this->filterExists($filter_query['$and'], array('aid', 'sid'))) {
+		if ($this->filterExists($filter_query['$and'], array('aid', 'sid', 'stamp'))) {
 			$this->_count = $cursor->count(false);
 		} else {
 			$this->_count = Billrun_Factory::config()->getConfigValue('admin_panel.lines.global_limit', 10000);
