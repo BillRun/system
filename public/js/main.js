@@ -201,7 +201,7 @@ $(function() {
 
 	});
 
-	$('.control-group5 .multiselect').multiselect({});
+	$('.multiselect').multiselect({});
 
 	$('#usage,#billrun,#source').multiselect({
 		selectAllValue: 'all',

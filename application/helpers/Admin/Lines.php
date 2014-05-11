@@ -22,7 +22,7 @@ class Admin_Lines {
 
 		$types = self::getOptions();
 		$output = "<div class=\"controls controls-row\">
-                               <select name=\"manual_key[]\" class=\"form-control span2\">";
+                               <select name=\"manual_key[]\" class=\"form-control span2 multiselect\">";
 		foreach ($types as $manual_key => $manual_type) {
 			$manual_display = isset($manual_type['display']) ? $manual_type['display'] : ucfirst(str_replace('_', ' ', $manual_key));
 			$output.= "<option value=\"" . $manual_key . "\"" . ($key == $manual_key ? " selected" : "") . ">" . $manual_display . "</option>";

@@ -154,8 +154,11 @@ tr.progress td, tr.progress th {
     50% { opacity: 0.0; }
     100% { opacity: 1.0; }
 }
-.toolbar-buttons, .control-group1, #manual_filters select {
+.toolbar-buttons, .control-group1 {
 	margin:10px auto;
+}
+#manual_filters .controls-row {
+	margin-top:5px;
 }
 .toolbar-buttons, .control-group4 {
 	margin-top:5px;

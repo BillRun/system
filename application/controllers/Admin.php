@@ -47,6 +47,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->addCss($this->baseUrl . '/css/bootstrap.min.css');
 		$this->addCss($this->baseUrl . '/css/bootstrap-datetimepicker.min.css');
 		$this->addCss($this->baseUrl . '/css/bootstrap-switch.css');
+		$this->addCss($this->baseUrl . '/css/bootstrap-multiselect.css');
 		$this->addCss($this->baseUrl . '/css/jsoneditor.css');
 		$this->addCss($this->baseUrl . '/css/main.css');
 		$this->addJs($this->baseUrl . '/js/vendor/bootstrap.min.js');
