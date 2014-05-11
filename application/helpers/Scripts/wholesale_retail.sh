@@ -20,7 +20,7 @@ else
 fi
 
 script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-output_dir="${script_dir}/../../../files/csvs/wholesale";
+output_dir="${script_dir}/../../../files/wholesale";
 
 if [ $3 ]; then
 	output_dir=$3;
