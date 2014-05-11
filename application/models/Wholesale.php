@@ -286,5 +286,83 @@ class WholesaleModel {
 		}
 	}
 
+	public function getRetailData($from_day, $to_day) {
+		$query = 'SELECT retail_extra.dayofmonth,retail_extra.over_plan,retail_extra.out_plan,retail_new.subsCount AS newSubs,'
+				. 'retail_churn.subsCount AS churnSubs,sum(retail_active.subsCount) AS totalCustomer,sum(retail_active.totalCost) AS flatRateRevenue,'
+				. 'simAggregated.simCount,simAggregated.totalSimCost FROM retail_extra LEFT JOIN retail_new ON retail_extra.dayofmonth=retail_new.dayofmonth '
+				. 'LEFT JOIN retail_churn ON retail_extra.dayofmonth = retail_churn.dayofmonth '
+				. 'LEFT JOIN retail_active ON retail_extra.dayofmonth=retail_active.dayofmonth '
+				. 'LEFT JOIN '
+				. '(SELECT dayofmonth,sum(simCount)-sum(cancelCount) AS simCount,sum(totalSimCost)-sum(totalCancelCost) AS totalSimCost '
+				. 'FROM retail_sim GROUP BY dayofmonth) AS simAggregated '
+				. 'ON retail_extra.dayofmonth=simAggregated.dayofmonth '
+				. 'WHERE retail_active.planName IS NOT NULL AND retail_extra.dayofmonth BETWEEN "' . $from_day . '" AND "' . $to_day . '"';
+
+		$data = $this->db->fetchAll($query);
+		return $data;
+	}
+
+	public function getRetailTableParams() {
+		return array(
+			'title' => 'Retail',
+			'fields' => array(
+				array(
+					'value' => 'dayofmonth',
+					'display' => 'dayofmonth',
+					'label' => 'Day of month',
+					'decimal' => false,
+				),
+				array(
+					'value' => 'newSubs',
+					'display' => 'newSubs',
+					'decimal' => 0,
+					'label' => 'New customers',
+				),
+				array(
+					'value' => 'churnSubs',
+					'display' => 'churnSubs',
+					'decimal' => 0,
+					'label' => 'Churn total',
+				),
+				array(
+					'value' => 'totalCustomer',
+					'display' => 'totalCustomer',
+					'decimal' => 0,
+					'label' => 'Total customer end of period',
+				),
+				array(
+					'value' => 'simCount',
+					'display' => 'simCount',
+					'decimal' => 0,
+					'label' => 'Sim count',
+				),
+				array(
+					'value' => 'totalSimCost',
+					'display' => 'totalSimCost',
+					'decimal' => 2,
+					'label' => 'Sending fees',
+				),
+				array(
+					'value' => 'flatRateRevenue',
+					'display' => 'flatRateRevenue',
+					'decimal' => 2,
+					'label' => 'Flat rate revenue',
+				),
+				array(
+					'value' => 'over_plan',
+					'display' => 'over_plan',
+					'decimal' => 2,
+					'label' => 'Extra flat rate revenue (over)',
+				),
+				array(
+					'value' => 'out_plan',
+					'display' => 'out_plan',
+					'decimal' => 2,
+					'label' => 'Extra flat rate revenue (out)',
+				),
+			)
+		);
+	}
+
 }
 
