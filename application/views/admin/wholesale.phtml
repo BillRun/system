@@ -4,7 +4,7 @@
 <div class="container component">
 	<h2>Wholesale</h2>
 	<?php
-	$this->display('w-toolbar.phtml', array());
+	$this->display('w-toolbar.phtml', array('baseUrl' => $this->baseUrl));
 	print '<div style="clear:both;"></div>';
 	?>
 	<div class="tabbable">
@@ -29,7 +29,7 @@
 
 				echo '<div class="tab-pane' . (isset($report_params['default']) && $report_params['default'] ? ' active' : '') . '" id="tabs-' . ($index + 1) . '">
 					<h3>' . $report_params['title'] . '</h3>
-					<table border="1" data-type="' . $report_params['direction'] . '" class="wholesale-table">';
+					<table data-type="' . $report_params['direction'] . '" class="wholesale-table">';
 
 				echo "<tr>";
 				echo '<th rowspan="2">' . $this->group_field_display . '</th>';
@@ -50,7 +50,7 @@
 					if ($this->group_by == 'carrier') {
 						echo "<input class=\"carrier\" type=\"hidden\" value=\"" . $group_value . "\">";
 					}
-					echo '<a onclick="openPopup(this);" href="#w-popup" data-type="update" data-toggle="modal" role="button" data-remote="" data-type="what">' . $group_value . '</a></td>';
+					echo '<a onclick="openPopup(this);" href="#w-popup" data-type="update" data-toggle="modal" role="button" data-remote="">' . $group_value . '</a></td>';
 					foreach ($report_params['fields'] as $usage_type => $usage_fields) {
 						foreach ($usage_fields as $field) {
 							echo '<td>';
@@ -100,10 +100,11 @@
 
 			echo '<div class="tab-pane" id="tabs-' . ($index + 2) . '">
 					<h3>Retail</h3>
-					<table border="1" class="wholesale-table">';
+					<table class="wholesale-table"><tr>';
 			foreach ($retail_tbl_params['fields'] as $field) {
 				echo '<th>' . $field['label'] . '</th>';
 			}
+			echo '</tr>';
 			foreach ($retail_data as $row) {
 				echo '<tr>';
 				foreach ($retail_tbl_params['fields'] as $field) {

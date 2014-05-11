@@ -1,5 +1,5 @@
 <div class="toolbar toolbar-<?php echo strtolower($this->title); ?>">
-	<form id="search-criteria" action="" method="POST" class="form-vertical">
+	<form id="search-criteria" action="<?php echo $baseUrl; ?>/admin/wholesale" method="POST" class="form-vertical">
 		<?php
 		if (isset($this->group_fields) && is_array($this->group_fields)) {
 			echo '<div class="control-group control-group0">';
