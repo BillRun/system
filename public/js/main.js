@@ -234,7 +234,7 @@ $(function() {
 	});
 	$('.date:not(.wholesale-date)').datetimepicker({
 		format: 'YYYY-MM-DD',
-//		language:'he'
+		useSeconds: true,
 	});
 	$('.wholesale-date').datetimepicker({
 		format: 'YYYY-MM-DD',
