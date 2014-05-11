@@ -127,12 +127,12 @@
 			echo '<tr class="totals">';
 			foreach ($retail_tbl_params['fields'] as $field) {
 				echo '<td>';
-				if ($field['decimal'] === false) {
+				if (in_array($field['value'], array('flatRateRevenue', 'totalCustomer'))) {
+					echo '&nbsp;';
+				} else if ($field['decimal'] === false) {
 					echo 'Total';
 				} else if ($field['decimal'] == 0) {
 					echo number_format(ceil($table_totals[$field['value']]));
-				} else if ($field['value'] == 'flatRateRevenue') {
-					echo '&nbsp;';
 				} else {
 					echo number_format($table_totals[$field['value']], $field['decimal']);
 				}
