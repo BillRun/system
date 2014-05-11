@@ -47,7 +47,7 @@ if [ $mongo_main_version == "2.6" ] ; then
 fi
 
 if [[ -n "$js_code" ]]; then	
-	mongo billing -ureading -pguprgri --quiet --eval "$js_code" > "$output_dir/$report_name.csv" ;
+	mongo billing -ureading -pguprgri --quiet --eval "$js_code" >> "$output_dir/$report_name.csv" ;
 fi
 
 
