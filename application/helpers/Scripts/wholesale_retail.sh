@@ -20,7 +20,7 @@ else
 fi
 
 script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-output_dir="${script_dir}/../../../files/csvs";
+output_dir="${script_dir}/../../../files/csvs/wholesale";
 
 if [ $3 ]; then
 	output_dir=$3;
@@ -34,7 +34,7 @@ mongo_main_version=`mongo --version | awk '//{split($4,a,"."); print a[1]"."a[2]
 case $report_name in
 
 	"extra" )
-	js_code=$js_code'db.lines.aggregate({$match:{urt:{$gte:ISODate("'$day'T00:00:00+03:00"),$lt:ISODate("'$day'T23:59:59+03:00")},$or:[{over_plan:{$exists:1}},{out_plan:{$exists:1}}]}},{$project:{_id:0,over_aprice:{$cond: [{$gt: ["$over_plan", 0]}, "$aprice", 0]},out_aprice:{$cond: [{$gt: ["$out_plan", 0]}, "$aprice", 0]}}},{$group:{_id:0,over:{$sum:"$over_aprice"},out:{$sum:"$out_aprice"}}}).result.forEach(function (obj){print("'$day'" + "," + obj.over + "," + obj.out)});';;
+	js_code=$js_code'db.lines.aggregate({$match:{urt:{$gte:ISODate("'$day'T00:00:00+03:00"),$lt:ISODate("'$day'T23:59:59+03:00")},$or:[{over_plan:{$exists:1}},{out_plan:{$exists:1}}]}},{$project:{_id:0,over_aprice:{$cond: [{$gt: ["$over_plan", 0]}, "$aprice", 0]},out_aprice:{$cond: [{$gt: ["$out_plan", 0]}, "$aprice", 0]}}},{$group:{_id:0,over:{$sum:"$over_aprice"},out:{$sum:"$out_aprice"}}}).result.forEach(function (obj){print("'$day'" + "\t" + obj.over + "\t" + obj.out)});';;
 
 	*)
 	echo "Unrecognized report name";
@@ -47,7 +47,7 @@ if [ $mongo_main_version == "2.6" ] ; then
 fi
 
 if [[ -n "$js_code" ]]; then	
-	mongo billing -ureading -pguprgri --quiet --eval "$js_code" > "$output_dir/$report_name""_""$day.csv" ;
+	mongo billing -ureading -pguprgri --quiet --eval "$js_code" > "$output_dir/$report_name.csv" ;
 fi
 
 
