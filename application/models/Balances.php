@@ -106,7 +106,7 @@ class BalancesModel extends TableModel {
 				'display' => 'Usage',
 				'values' => $usage_filter_values,
 				'singleselect' => 1,
-//				'default' => array(),
+				'default' => array(),
 			),
 			'usage_filter' => array(
 				'key' => 'manual_operator',
@@ -115,14 +115,14 @@ class BalancesModel extends TableModel {
 				'display' => '',
 				'values' => $operators,
 				'singleselect' => 1,
-//				'default' => array(),
+				'default' => array(),
 			),
 			'usage_value' => array(
 				'key' => 'manual_value',
 				'db_key' => 'nofilter',
 				'input_type' => 'number',
 				'display' => '',
-//				'default' => '',
+				'default' => '',
 			),
 			'billrun' => array(
 				'key' => 'billrun',
