@@ -273,18 +273,19 @@ class AdminController extends Yaf_Controller_Abstract {
 		$collectionName = $this->getRequest()->get("collection");
 		$session = $this->getSession($collectionName);
 
-		if ($collectionName != 'lines' || !empty($session->query)) {
+		if (!empty($session->query)) {
 
 			$options = array(
 				'collection' => $collectionName,
 				'sort' => $this->applySort($collectionName),
 			);
-			// init lines model
+			
+			// init model
 			self::initModel($collectionName, $options);
 
 			$skip = Billrun_Factory::config()->getConfigValue('admin_panel.csv_export.skip', 0);
 			$size = Billrun_Factory::config()->getConfigValue('admin_panel.csv_export.size', 10000);
-			$params = array_merge($this->getTableViewParams($session->query, $skip, $size));
+			$params = array_merge($this->getTableViewParams($session->query, $skip, $size), $this->createFilterToolbar('lines'));
 			$this->model->exportCsvFile($params);
 		} else {
 			return false;
@@ -456,6 +457,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$query = $this->applyFilters($table);
 
 		$session = $this->getSession($table);
+		// this use for export
 		$this->getSetVar($session, $query, 'query', $query);
 
 		$this->getView()->component = $this->buildTableComponent('lines', $query);
@@ -519,9 +521,12 @@ class AdminController extends Yaf_Controller_Abstract {
 			'sort' => $sort,
 		);
 
-		$model = self::initModel($table, $options);
+		self::initModel($table, $options);
 		$query = $this->applyFilters($table);
 
+		// this use for export
+		$this->getSetVar($this->getSession($table), $query, 'query', $query);
+		
 		$this->getView()->component = $this->buildTableComponent($table, $query);
 	}
 
@@ -536,7 +541,7 @@ class AdminController extends Yaf_Controller_Abstract {
 			'collection' => $table,
 		);
 
-		$model = self::initModel($table, $options);
+		self::initModel($table, $options);
 		$query = $this->applyFilters($table);
 
 		$this->getView()->component = $this->buildTableComponent($table, $query);
@@ -936,7 +941,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$output = implode(PHP_EOL, $data_output);
 		header("Cache-Control: max-age=0");
 		header("Content-type: application/csv");
-		header("Content-Disposition: attachment; filename=csv_export.csv");
+		header("Content-Disposition: attachment; filename=export_rates.csv");
 		die($output);
 	}
 
