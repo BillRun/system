@@ -220,8 +220,8 @@ div.billrun-logo img {
 	height: 40px;
 	margin-top: 5px;
 }
-.multiselect-container>li>a>label.checkbox {
-	margin-left:10px;
+.multiselect-container>li>a>label.radio {
+	margin-left:3px;
 }
 .table>thead>tr>th, .table>tbody>tr>th, .table>tfoot>tr>th, .table>thead>tr>td, .table>tbody>tr>td, .table>tfoot>tr>td{ 
 	padding:5px;  
