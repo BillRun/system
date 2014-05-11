@@ -113,7 +113,7 @@
 						if ($field['decimal'] === false) {
 							echo $row[$field['display']];
 						} else if ($field['decimal'] == 0) {
-							echo ceil($row[$field['display']]);
+							echo number_format(ceil($row[$field['display']]));
 						} else {
 							echo number_format($row[$field['display']], $field['decimal']);
 						}

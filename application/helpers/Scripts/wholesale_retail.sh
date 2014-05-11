@@ -20,7 +20,7 @@ else
 fi
 
 script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-output_dir="${script_dir}/../../../files/csvs/wholesale";
+output_dir="${script_dir}/../../../files/wholesale";
 
 if [ $3 ]; then
 	output_dir=$3;
@@ -47,7 +47,7 @@ if [ $mongo_main_version == "2.6" ] ; then
 fi
 
 if [[ -n "$js_code" ]]; then	
-	mongo billing -ureading -pguprgri --quiet --eval "$js_code" > "$output_dir/$report_name.csv" ;
+	mongo billing -ureading -pguprgri --quiet --eval "$js_code" >> "$output_dir/$report_name.csv" ;
 fi
 
 
