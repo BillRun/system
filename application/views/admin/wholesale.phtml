@@ -13,6 +13,7 @@
 			foreach (array_keys($this->tbl_params) as $index => $v) :
 				echo '<li' . ($index == 0 ? ' class="active"' : '') . '><a href="#tabs-' . ($index + 1) . '" data-toggle="tab">' . $this->tbl_params[$v]['title'] . '</a></li>';
 			endforeach;
+			echo '<li><a href="#tabs-' . ($index + 2) . '" data-toggle="tab">Retail</a></li>';
 			?>
 		</ul>
 		<div class="tab-content">
@@ -91,6 +92,55 @@
 				echo Admin_Graphs::printGraph($graph, false, 1);
 				echo '</div>';
 			}
+
+			$table_totals = array();
+			foreach (array_keys($retail_data[0]) as $fieldName) {
+				$table_totals[$fieldName] = 0;
+			}
+
+			echo '<div class="tab-pane" id="tabs-' . ($index + 2) . '">
+					<h3>Retail</h3>
+					<table border="1" class="wholesale-table">';
+			foreach ($retail_tbl_params['fields'] as $field) {
+				echo '<th>' . $field['label'] . '</th>';
+			}
+			foreach ($retail_data as $row) {
+				echo '<tr>';
+				foreach ($retail_tbl_params['fields'] as $field) {
+					echo '<td>';
+					if (isset($row[$field['display']])) {
+						if ($field['decimal'] === false) {
+							echo $row[$field['display']];
+						} else if ($field['decimal'] == 0) {
+							echo ceil($row[$field['display']]);
+						} else {
+							echo number_format($row[$field['display']], $field['decimal']);
+						}
+						$table_totals[$field['value']]+=$row[$field['value']];
+					} else {
+						echo '&nbsp;';
+					}
+					echo '</td>';
+				}
+				echo '</tr>';
+			}
+			echo '<tr class="totals">';
+			foreach ($retail_tbl_params['fields'] as $field) {
+				echo '<td>';
+				if ($field['decimal'] === false) {
+					echo 'Total';
+				} else if ($field['decimal'] == 0) {
+					echo number_format(ceil($table_totals[$field['value']]));
+				} else if ($field['value'] == 'flatRateRevenue') {
+					echo '&nbsp;';
+				} else {
+					echo number_format($table_totals[$field['value']], $field['decimal']);
+				}
+				echo '</td>';
+			}
+			echo '</tr>';
+			echo '</table>';
+			echo '</div>';
 			?>
 		</div>
 	</div>

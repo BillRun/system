@@ -920,6 +920,8 @@ class AdminController extends Yaf_Controller_Abstract {
 			'session' => $this->getSession($table),
 			'group_by' => $group_by,
 			'tbl_params' => $model->getTblParams(),
+			'retail_data' => $model->getRetailData($from_day, $to_day),
+			'retail_tbl_params' => $model->getRetailTableParams(),
 		);
 		$this->getView()->component = $this->renderView($table, $viewData);
 	}
