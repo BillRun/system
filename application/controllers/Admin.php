@@ -641,12 +641,12 @@ class AdminController extends Yaf_Controller_Abstract {
 	}
 
 	protected function createFilterToolbar() {
-		$params['filter_fields'] = $this->model->getFilterFields();
-		$params['filter_fields_order'] = $this->model->getFilterFieldsOrder();
-		$params['sort_fields'] = $this->model->getSortElements();
-		$params['extra_columns'] = $this->model->getExtraColumns();
-
-		return $params;
+		return array(
+			'filter_fields' => $this->model->getFilterFields(),
+			'filter_fields_order' => $this->model->getFilterFieldsOrder(),
+			'sort_fields' => $this->model->getSortElements(),
+			'extra_columns' => $this->model->getExtraColumns(),
+		);
 	}
 
 	// choose columns
