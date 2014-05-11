@@ -105,18 +105,11 @@ class LinesModel extends TableModel {
 		parent::update($data);
 	}
 	
-	public function getData($filter_query = array(), $skip = null, $size = null) {
-		if (empty($skip)) {
-			$skip = $this->offset();
-		}
-		
-		if (empty($size)) {
-			$size = $this->size;
-		}
-		
+	public function getData($filter_query = array()) {
+
 		$cursor = $this->collection->query($filter_query)->cursor()
 			->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'))
-			->sort($this->sort)->skip($skip)->limit($size);
+			->sort($this->sort)->skip($this->offset())->limit($this->size);
 
 		if ($this->filterExists($filter_query['$and'], array('aid', 'sid', 'stamp'))) {
 			$this->_count = $cursor->count(false);
@@ -158,10 +151,6 @@ class LinesModel extends TableModel {
 			$columns = array_merge($columns, $extra_columns);
 		}
 		return $columns;
-	}
-
-	public function toolbar() {
-		return 'events';
 	}
 
 	public function getFilterFields() {
@@ -314,4 +303,30 @@ class LinesModel extends TableModel {
 		);
 	}
 
+	protected function formatCsvCell($row, $header) {
+		if (($header == 'from' || $header == 'to' || $header == 'urt' || $header == 'notify_time') && $row) {
+			if (!empty($row["tzoffset"])) {
+				// TODO change this to regex; move it to utils
+				$tzoffset = $row['tzoffset'];
+				$sign = substr($tzoffset, 0, 1);
+				$hours = substr($tzoffset, 1, 2);
+				$minutes = substr($tzoffset, 3, 2);
+				$time = $hours . ' hours ' . $minutes . ' minutes';
+				if ($sign == "-") {
+					$time .= ' ago';
+				}
+				$timsetamp = strtotime($time, $item['urt']->sec);
+				$zend_date = new Zend_Date($timsetamp);
+				$zend_date->setTimezone('UTC');
+				return $zend_date->toString("d/M/Y H:m:s") . $row['tzoffset'];
+			} else {
+				$zend_date = new Zend_Date($row[$header]->sec);
+				return $zend_date->toString("d/M/Y H:m:s");
+			}
+		} else {
+			return parent::formatCsvCell($row, $header);
+		}
+
+	}
+	
 }

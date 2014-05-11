@@ -108,7 +108,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$id = Billrun_Util::filter_var($this->getRequest()->get('id'), FILTER_SANITIZE_STRING);
 		$type = Billrun_Util::filter_var($this->getRequest()->get('type'), FILTER_SANITIZE_STRING);
 
-		$model = self::getModel($coll);
+		$model = self::initModel($coll);
 		if ($type == 'new') {
 			$entity = $model->getEmptyItem();
 		} else {
@@ -133,7 +133,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$ids = Billrun_Util::filter_var($this->getRequest()->get('id'), FILTER_SANITIZE_STRING);
 		$type = Billrun_Util::filter_var($this->getRequest()->get('type'), FILTER_SANITIZE_STRING);
 
-		$model = self::getModel($coll);
+		$model = self::initModel($coll);
 
 		if ($type == 'remove' && !in_array($coll, array('lines', 'users'))) {
 			$entity = $model->getItem($ids);
@@ -170,7 +170,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$coll = Billrun_Util::filter_var($this->getRequest()->get('coll'), FILTER_SANITIZE_STRING);
 		$type = Billrun_Util::filter_var($this->getRequest()->get('type'), FILTER_SANITIZE_STRING);
 
-		$model = self::getModel($coll);
+		$model = self::initModel($coll);
 
 		if ($coll == 'users' && in_array(strval(Billrun_Factory::user()->getMongoId()), $ids)) { // user is not allowed to remove oneselfs
 			die(json_encode("Can't remove oneself"));
@@ -214,7 +214,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$id = Billrun_Util::filter_var($this->getRequest()->get('id'), FILTER_SANITIZE_STRING);
 		$coll = Billrun_Util::filter_var($this->getRequest()->get('coll'), FILTER_SANITIZE_STRING);
 
-		$model = self::getModel($coll);
+		$model = self::initModel($coll);
 
 		$collection = Billrun_Factory::db()->getCollection($coll);
 		if (!($collection instanceof Mongodloid_Collection)) {
@@ -256,7 +256,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$stamp = Billrun_Util::filter_var($this->getRequest()->get('stamp'), FILTER_SANITIZE_STRING);
 		$type = Billrun_Util::filter_var($this->getRequest()->get('type'), FILTER_SANITIZE_STRING);
 
-		$model = self::getModel($coll);
+		$model = self::initModel($coll);
 		$entity = $model->getDataByStamp(array("stamp" => $stamp));
 
 		// passing values into the view
@@ -270,23 +270,22 @@ class AdminController extends Yaf_Controller_Abstract {
 		if (!$this->allowed('read'))
 			return false;
 
-		$session = $this->getSession('lines');
+		$collectionName = $this->getRequest()->get("collection");
+		$session = $this->getSession($collectionName);
 
-		if (!empty($session->query)) {
-
-			$collectionName = 'lines';
+		if ($collectionName != 'lines' || !empty($session->query)) {
 
 			$options = array(
 				'collection' => $collectionName,
 				'sort' => $this->applySort($collectionName),
 			);
 			// init lines model
-			self::getModel('lines', $options);
+			self::initModel($collectionName, $options);
 
 			$skip = Billrun_Factory::config()->getConfigValue('admin_panel.csv_export.skip', 0);
 			$size = Billrun_Factory::config()->getConfigValue('admin_panel.csv_export.size', 10000);
-			$params = array_merge($this->getTableViewParams($session->query, $skip, $size), $this->createFilterToolbar('lines'));
-			Admin_Lines::getCsvFile($params);
+			$params = array_merge($this->getTableViewParams($session->query, $skip, $size));
+			$this->model->exportCsvFile($params);
 		} else {
 			return false;
 		}
@@ -343,7 +342,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		);
 
 		// set the model
-		self::getModel($table, $options);
+		self::initModel($table, $options);
 		$query = $this->applyFilters($table);
 
 		$this->getView()->component = $this->buildTableComponent($table, $query);
@@ -453,7 +452,7 @@ class AdminController extends Yaf_Controller_Abstract {
 			'sort' => $sort,
 		);
 
-		self::getModel($table, $options);
+		self::initModel($table, $options);
 		$query = $this->applyFilters($table);
 
 		$session = $this->getSession($table);
@@ -480,7 +479,7 @@ class AdminController extends Yaf_Controller_Abstract {
 			'sort' => $sort,
 		);
 
-		$model = self::getModel($table, $options);
+		self::initModel($table, $options);
 		$query = $this->applyFilters($table);
 
 		$this->getView()->component = $this->buildTableComponent($table, $query);
@@ -500,7 +499,7 @@ class AdminController extends Yaf_Controller_Abstract {
 			'sort' => $sort,
 		);
 
-		$model = self::getModel($table, $options);
+		$model = self::initModel($table, $options);
 		$query = $this->applyFilters($table);
 
 		$this->getView()->component = $this->buildTableComponent($table, $query);
@@ -520,7 +519,7 @@ class AdminController extends Yaf_Controller_Abstract {
 			'sort' => $sort,
 		);
 
-		$model = self::getModel($table, $options);
+		$model = self::initModel($table, $options);
 		$query = $this->applyFilters($table);
 
 		$this->getView()->component = $this->buildTableComponent($table, $query);
@@ -537,7 +536,7 @@ class AdminController extends Yaf_Controller_Abstract {
 			'collection' => $table,
 		);
 
-		$model = self::getModel($table, $options);
+		$model = self::initModel($table, $options);
 		$query = $this->applyFilters($table);
 
 		$this->getView()->component = $this->buildTableComponent($table, $query);
@@ -560,7 +559,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		if (!$this->allowed('admin'))
 			return false;
 
-		$model = $this->getModel('config');
+		$model = $this->initModel('config');
 		$configData = $model->getConfig();
 
 		$viewData = array(
@@ -577,7 +576,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		if (!$this->allowed('admin'))
 			return false;
 		// get model cofig
-		$model = $this->getModel('config');
+		$model = $this->initModel('config');
 		$data = $this->getRequest()->getRequest();
 		$model->setConfig($data);
 		$this->forceRedirect('/admin/config');
@@ -620,10 +619,10 @@ class AdminController extends Yaf_Controller_Abstract {
 	 */
 	protected function getTableViewParams($filter_query = array(), $skip = null, $size = null) {
 		if (isset($skip) && !empty($size)) {
-			$data = $this->model->getData($filter_query, $skip, $size);
-		} else {
-			$data = $this->model->getData($filter_query);
+			$this->model->setSize($size);
+			$this->model->setPage($skip);
 		}
+		$data = $this->model->getData($filter_query);
 		$columns = $this->model->getTableColumns();
 		$edit_key = $this->model->getEditKey();
 		$pagination = $this->model->printPager();
@@ -688,7 +687,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		return $this->getView()->render($tpl . ".phtml", $parameters);
 	}
 
-	public function getModel($collection_name, $options = array()) {
+	public function initModel($collection_name, $options = array()) {
 		$session = $this->getSession($collection_name);
 		$options['page'] = $this->getSetVar($session, "page", "page", 1);
 		$options['size'] = $this->getSetVar($session, "listSize", "size", Billrun_Factory::config()->getConfigValue('admin_panel.lines.limit', 100));
@@ -711,6 +710,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		// TODO: use ready pager/paginiation class (zend? joomla?) with auto print
 		$basic_params = array(
 			'title' => $this->title,
+			'active' => $table,
 			'session' => $this->getSession($table),
 		);
 		$params = array_merge($options, $basic_params, $this->getTableViewParams($filter_query), $this->createFilterToolbar($table));
@@ -896,7 +896,14 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->forceRedirect('/admin/login');
 	}
 
-	public function exportAction() {
+	/**
+	 * method to export rates to csv
+	 * 
+	 * @return null; directly export to client
+	 * 
+	 * @todo refactoring with model csv export
+	 */
+	public function exportratesAction() {
 		if (!$this->allowed('read'))
 			return false;
 		$table = "rates";
@@ -906,7 +913,7 @@ class AdminController extends Yaf_Controller_Abstract {
 			'sort' => $sort,
 		);
 
-		$model = self::getModel($table, $options);
+		self::initModel($table, $options);
 		$query = $this->applyFilters($table);
 
 		$rates = $this->model->getRates($query);

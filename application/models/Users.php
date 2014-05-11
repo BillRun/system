@@ -23,10 +23,6 @@ class UsersModel extends TableModel {
 		$this->search_key = "username";
 	}
 
-	public function toolbar() {
-		return 'users';
-	}
-
 	public function getFilterFields() {
 		$filter_fields = array(
 			'username' => array(

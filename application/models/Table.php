@@ -85,11 +85,11 @@ class TableModel {
 		}
 
 		if (isset($params['page'])) {
-			$this->page = $params['page'];
+			$this->setPage($params['page']);
 		}
 
 		if (isset($params['size'])) {
-			$this->size = $params['size'];
+			$this->setSize($params['size']);
 		}
 
 		if (isset($params['sort'])) {
@@ -101,6 +101,13 @@ class TableModel {
 		}
 	}
 
+	public function setSize($size) {
+		$this->size = $size;
+	}
+	
+	public function setPage($page) {
+		$this->page = $page;
+	}
 	/**
 	 * Get the data resource
 	 * 
@@ -416,6 +423,48 @@ class TableModel {
 		}
 		return false;
 	}
+	
+	public function exportCsvFile($params) {
+		$separator = ',';
+		$header_output[] = implode($separator, $this->prepareHeaderExport($params['columns']));
+		$data_output = $this->prepareDataExport($params['data'], array_keys($params['columns']), $separator);
+		$output = implode(PHP_EOL, array_merge($header_output,$data_output));
+		$this->export($output);
+	}
+	
+	protected function export($output) {
+		header("Cache-Control: max-age=0");
+		header("Content-type: application/csv");
+		header("Content-Disposition: attachment; filename=csv_export.csv");
+		die($output);
+	}
 
+	protected function prepareHeaderExport($headerData) {
+		$row = array('#');
+		foreach ($headerData as $value) {
+			$row[] = $value;
+		}
+		return $row;
+	}
+
+	protected function prepareDataExport($data, $columns, $separator = ',') {
+		$ret = array();
+		$c = 0;
+		foreach ($data as $item) {
+			$ret[] = ++$c . $separator . $this->formatCsvRow($item, $columns, $separator);
+		}
+		return $ret;
+	}
+
+	protected function formatCsvRow($row, $columns, $separator = ',') {
+		$ret = array();
+		foreach ($columns as $h) {
+			$ret[] = $this->formatCsvCell($row, $h);
+		}
+		return implode($separator, $ret);
+	}
+	protected function formatCsvCell($row, $header) {
+		return $row[$header];
+	}
 
 }

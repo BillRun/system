@@ -187,10 +187,6 @@ class TabledateModel extends TableModel {
 		}
 	}
 
-	public function toolbar() {
-		return 'date';
-	}
-
 	public function getFilterFieldsOrder() {
 		$filter_field_order = array(
 			array(

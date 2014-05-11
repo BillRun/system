@@ -21,10 +21,6 @@ class LogModel extends TableModel {
 		$this->search_key = "stamp";
 	}
 
-	public function toolbar() {
-		return 'log';
-	}
-
 	public function getSortFields() {
 		$sort_fields = array(
 			'source' => 'Source',

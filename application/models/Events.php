@@ -42,10 +42,6 @@ class EventsModel extends TableModel {
 		return $columns;
 	}
 
-	public function toolbar() {
-		return 'events';
-	}
-
 	public function getSortFields() {
 		$sort_fields = array(
 			'creation_time' => 'Creation time',

@@ -1,4 +1,4 @@
-<div class="toolbar toolbar-<?php echo strtolower($this->title); ?>">
+<div class="toolbar toolbar-<?php echo $active; ?>">
 	<form id="search-criteria" action="" method="POST" class="form-vertical">
 		<?php
 //		print_R($this->filter_fields_order);
@@ -50,7 +50,7 @@
 				echo "</div></div>";
 			}
 
-			if (strtolower($this->title) == 'lines') :
+			if ($active == 'lines') :
 				echo "<div><a href=\"javascript:void(0)\" class=\"advanced-options\">Advanced options <i class=\"" . (Admin_Lines::isManualFilter($this->session) ? "icon-chevron-up" : "icon-chevron-down") . "\"></i></a></div>
                             <div id = \"manual_filters\"" . (Admin_Lines::isManualFilter($this->session) ? "" : " style=\"display:none;\"") . ">";
 				if (Admin_Lines::isManualFilter($this->session)) {
@@ -61,9 +61,9 @@
 					echo Admin_Lines::getFilterRow(); // add first manual filter on load
 				}
 				echo "</div>";
-			elseif (strtolower($this->title) == 'rates') :
+			elseif ($active == 'rates') :
 			endif;
-			if (strtolower($this->title) == 'lines' || strtolower($this->title) == 'rates' || strtolower($this->title) == 'balances'):
+			if ($active == 'lines' || $active == 'rates' || $active == 'balances'):
 				echo "<div class=\"control-group control-group4\"><div id=\"extra_columns\" class=\"controls form-inline\">"
 				. "&nbsp;<label class=\"control-label\">Display fields</label>
 						<select name=\"extra_columns[]\" class=\"form-control multiselect\" multiple=\"multiple\">";
@@ -99,34 +99,34 @@
 		<div class="toolbar-buttons">
 		<span><input type="hidden" name="new_search" value="1"><button type="submit" class="btn btn-success"><i class="icon-search"> </i>Submit</button></span>
 		<script type="text/javascript">
-			var active_collection = '<?php echo strtolower($this->title); ?>';
+			var active_collection = '<?php echo $active; ?>';
 		</script>
-		<?php if (!in_array(strtolower($this->title), array('events', 'log'))) : ?>
+		<?php if (!in_array($active, array('events', 'log'))) : ?>
 			<span class="pull-right">
 			<?php endif; ?>
-			<?php if (in_array(strtolower($this->title), array('rates', 'plans', 'users')) && AdminController::authorized('write')) : ?>
-				<?php if (strtolower($this->title) != 'users') : ?>
+			<?php if (in_array($active, array('rates', 'plans', 'users')) && AdminController::authorized('write')) : ?>
+				<?php if ($active != 'users') : ?>
 				<span><a id='close_and_new' data-type="close_and_new" href="#popupModal" class="btn btn-primary" data-toggle="modal" role="button">Close & new</a></span>
 				<?php endif; ?>
-				<?php if (strtolower($this->title) == 'users') : ?>
+				<?php if ($active == 'users') : ?>
 				<span><a id='new' data-type="new" href="#popupModal" class="btn btn-warning" data-toggle="modal" role="button">New</a></span>
 				<?php endif; ?>
 				<span><a id='duplicate' data-type="duplicate" href="#popupModal" class="btn btn-info" data-toggle="modal" role="button">Duplicate</a></span>
 			<?php endif; ?>
-			<?php if (!in_array(strtolower($this->title), array('events', 'log')) && AdminController::authorized('write')) : ?>
+			<?php if (!in_array($active, array('events', 'log')) && AdminController::authorized('write')) : ?>
 				<span><a id='remove' data-type="remove" href="#confirmModal" class="btn btn-danger" data-toggle="modal" role="button"><i class="icon-remove"> </i>Remove</a></span>
 			<?php endif; ?>
-			<?php if (strtolower($this->title) == 'lines') : ?>
-				<span><a id='download' data-type="download" href="/admin/csvExport" class="btn export-button"><i class="icon-download-alt"> </i>Export to CSV</a></span>
+			<?php if ($active == 'lines' || $active == 'balances') : ?>
+				<span><a id='download' data-type="download" href="/admin/csvExport?collection=<?php echo $active;?>" class="btn export-button"><i class="icon-download-alt"> </i>Export to CSV</a></span>
 				<?php if (AdminController::authorized('write')) : ?>
 				<span><a id='upload' data-type="upload" href="#uploadModal" class="btn btn-primary" data-toggle="modal" role="button"><i class="icon-upload"> </i>Import</a></span>
 				<?php endif; ?>
 			<?php endif; ?>
-			<?php if (strtolower($this->title) == 'rates') : ?>
+			<?php if ($active == 'rates') : ?>
 				<?php if (AdminController::authorized('write')) : ?>
 				<span><a id='import_prices' data-type="upload" href="#importPricesModal" class="btn btn-primary" data-toggle="modal" role="button"><i class="icon-upload"> </i>Import</a></span>
 				<?php endif; ?>
-				<span><a id='export_prices' data-type="download" href="/admin/export" class="btn export-button"><i class="icon-download"> </i>Export to CSV</a></span>
+				<span><a id='export_prices' data-type="download" href="/admin/exportrates" class="btn export-button"><i class="icon-download"> </i>Export to CSV</a></span>
 			<?php endif; ?>
 			</span>
 		</div>
