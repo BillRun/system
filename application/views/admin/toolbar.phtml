@@ -113,12 +113,12 @@
 				<?php endif; ?>
 				<span><a id='duplicate' data-type="duplicate" href="#popupModal" class="btn btn-info" data-toggle="modal" role="button">Duplicate</a></span>
 			<?php endif; ?>
-			<?php if (!in_array($active, array('events', 'log')) && AdminController::authorized('write')) : ?>
+			<?php if (!in_array($active, array('events', 'log', 'balances')) && AdminController::authorized('write')) : ?>
 				<span><a id='remove' data-type="remove" href="#confirmModal" class="btn btn-danger" data-toggle="modal" role="button"><i class="icon-remove"> </i>Remove</a></span>
 			<?php endif; ?>
 			<?php if ($active == 'lines' || $active == 'balances') : ?>
 				<span><a id='download' data-type="download" href="/admin/csvExport?collection=<?php echo $active;?>" class="btn export-button"><i class="icon-download-alt"> </i>Export to CSV</a></span>
-				<?php if (AdminController::authorized('write')) : ?>
+				<?php if ($active == 'lines' && AdminController::authorized('write')) : ?>
 				<span><a id='upload' data-type="upload" href="#uploadModal" class="btn btn-primary" data-toggle="modal" role="button"><i class="icon-upload"> </i>Import</a></span>
 				<?php endif; ?>
 			<?php endif; ?>
