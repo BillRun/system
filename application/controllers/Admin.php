@@ -815,6 +815,8 @@ class AdminController extends Yaf_Controller_Abstract {
 		}
 		$operators = $this->getSetVar($session, 'manual_operator', 'manual_operator');
 		$values = $this->getSetVar($session, 'manual_value', 'manual_value');
+		settype($operators, 'array');
+		settype($values, 'array');
 		for ($i = 0; $i < count($keys); $i++) {
 			if ($keys[$i] == '' || $values[$i] == '') {
 				continue;
