@@ -965,6 +965,7 @@ class AdminController extends Yaf_Controller_Abstract {
 			'tbl_params' => $model->getTblParams(),
 			'retail_data' => $model->getRetailData($from_day, $to_day),
 			'retail_tbl_params' => $model->getRetailTableParams(),
+			'common_columns' => $model->getCommonColumns(),
 			'baseUrl' => $this->baseUrl,
 		);
 		$this->getView()->component = $this->renderView($table, $viewData);

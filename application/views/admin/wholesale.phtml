@@ -102,7 +102,20 @@
 					<h3>Retail</h3>
 					<table class="wholesale-table"><tr>';
 			foreach ($retail_tbl_params['fields'] as $field) {
-				echo '<th>' . $field['label'] . '</th>';
+				if (isset($field['commonColumn'])) {
+					if (!isset($commonColumns[$field['commonColumn']])) {
+						echo '<th colspan="' . $common_columns[$field['commonColumn']]['colspan'] . '">' . $common_columns[$field['commonColumn']]['label'] . '</th>';
+						$commonColumns[$field['commonColumn']] = true;
+					}
+				} else {
+					echo '<th rowspan="2">' . $field['label'] . '</th>';
+				}
+			}
+			echo '</tr><tr>';
+			foreach ($retail_tbl_params['fields'] as $field) {
+				if (isset($field['commonColumn'])) {
+					echo '<th>' . $field['label'] . '</th>';
+				}
 			}
 			echo '</tr>';
 			foreach ($retail_data as $row) {
@@ -128,7 +141,7 @@
 			echo '<tr class="totals">';
 			foreach ($retail_tbl_params['fields'] as $field) {
 				echo '<td>';
-				if (in_array($field['value'], array('flatRateRevenue', 'totalCustomer'))) {
+				if (isset($field['totals']) && !$field['totals']) {
 					echo '&nbsp;';
 				} else if ($field['decimal'] === false) {
 					echo 'Total';
