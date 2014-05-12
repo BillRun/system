@@ -563,6 +563,8 @@ abstract class Billrun_Processor extends Billrun_Base {
 				'continueOnError' => true,
 				'wtimeout' => 300000,
 				'timeout' => 300000,
+				'socketTimeoutMS' => 300000,
+				'wTimeoutMS' => 300000,
 			);
 			$offset = 0;
 			while ($insert_count = count($insert = array_slice($lines_data, $offset, $this->bulkInsert, true))) {
@@ -597,6 +599,8 @@ abstract class Billrun_Processor extends Billrun_Base {
 				'continueOnError' => true,
 				'wtimeout' => 300000,
 				'timeout' => 300000,
+				'socketTimeoutMS' => 300000,
+				'wTimeoutMS' => 300000,
 			);
 			$offset = 0;
 			while ($insert_count = count($insert = array_slice($queue_data, $offset, $this->bulkInsert, true))) {
