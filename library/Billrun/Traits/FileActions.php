@@ -124,7 +124,7 @@ trait Billrun_Traits_FileActions {
 	 * 
 	 * @return boolean return true if success to backup
 	 */
-	public function backupToPath($srcPath, $trgtPath, $preserve_timestamps = true, $copy = false) {
+	public function backupToPath($srcPath, $trgtPath, $preserve_timestamps = true, $copy = true) {
 		if ($copy) {
 			$callback = "copy";
 		} else {
@@ -184,13 +184,14 @@ trait Billrun_Traits_FileActions {
 	protected function removeFromWorkspace($filestamp) {
 		$file = Billrun_Factory::db()->logCollection()->query(array('stamp'=> $filestamp))->cursor()->limit(1)->current();
 		if(!$file->isEmpty()) {
-			$defaultBackup = Billrun_Factory::config()->getConfigValue('backup.default_backup_path',FALSE);
-			if(empty($file['backed_to']) &&  $defaultBackup ) {
-					Billrun_Factory::log()->log("Backing up file {$file['path']} to default location." , Zend_Log::INFO);	
+			$defaultBackup = Billrun_Factory::config()->getConfigValue($this->getType().'.default_backup_path',FALSE);
+			if(empty($file['extra_data']['backed_to']) && $defaultBackup ) {
+					Billrun_Factory::log()->log("Backing up and moving file {$file['path']} to default location." , Zend_Log::INFO);	
 				$this->backupToPath($file['path'], $defaultBackup);
+			} else {
+				Billrun_Factory::log()->log("Removing file {$file['path']} from the workspace", Zend_Log::INFO);
+				unlink($file['path']);
 			}
-				Billrun_Factory::log()->log("Backing up file from : " . $srcPath . " to :  " . $trgtPath, Zend_Log::INFO);
-			unlink($file['path']);
 		}
 	}
 	
