@@ -121,7 +121,9 @@ class WholesaleModel {
 		$sub_query = 'SELECT usaget, dayofmonth, longname as carrier, sum(duration) as seconds,'
 				. 'CASE WHEN carrier like "N%" and direction like "TG" THEN sum(duration)/60*0.0614842117289702 ELSE sum(duration)/60*0.0614842117289702 END as cost'
 				. ' FROM wholesale left join cgr_compressed on wholesale.carrier=cgr_compressed.shortname'
-				. ' WHERE direction like "' . $direction . '" AND network like "' . $network . '" AND dayofmonth BETWEEN "' . $from_day . '" AND "' . $to_day . '"'
+				. ' WHERE'
+				. ' wholesale.carrier NOT IN("DDWW", "DKRT", "GPRT", "GT", "LALC", "LCEL", "NSML", "PCTI", "POPC") AND' // temporary exclude these carriers until Dror explains them
+				. ' direction like "' . $direction . '" AND network like "' . $network . '" AND dayofmonth BETWEEN "' . $from_day . '" AND "' . $to_day . '"'
 				. ' GROUP BY dayofmonth,wholesale.carrier,usaget,direction'
 				. ' ORDER BY usaget,dayofmonth,longname';
 
@@ -289,14 +291,16 @@ class WholesaleModel {
 	public function getRetailData($from_day, $to_day) {
 		$query = 'SELECT retail_extra.dayofmonth,retail_extra.over_plan,retail_extra.out_plan,retail_new.subsCount AS newSubs,'
 				. 'retail_churn.subsCount AS churnSubs,sum(retail_active.subsCount) AS totalCustomer,sum(retail_active.totalCost) AS flatRateRevenue,'
-				. 'simAggregated.simCount,simAggregated.totalSimCost FROM retail_extra LEFT JOIN retail_new ON retail_extra.dayofmonth=retail_new.dayofmonth '
+				. 'simAggregated.simCount,simAggregated.totalSimCost, retail_unsubscribe.subsCount as subsLeft '
+				. 'FROM retail_extra LEFT JOIN retail_new ON retail_extra.dayofmonth=retail_new.dayofmonth '
 				. 'LEFT JOIN retail_churn ON retail_extra.dayofmonth = retail_churn.dayofmonth '
 				. 'LEFT JOIN retail_active ON retail_extra.dayofmonth=retail_active.dayofmonth '
 				. 'LEFT JOIN '
 				. '(SELECT dayofmonth,sum(simCount)-sum(cancelCount) AS simCount,sum(totalSimCost)-sum(totalCancelCost) AS totalSimCost '
 				. 'FROM retail_sim GROUP BY dayofmonth) AS simAggregated '
 				. 'ON retail_extra.dayofmonth=simAggregated.dayofmonth '
-				. 'WHERE retail_active.planName IS NOT NULL AND retail_extra.dayofmonth BETWEEN "' . $from_day . '" AND "' . $to_day . '" '
+				. ' LEFT JOIN retail_unsubscribe on retail_extra.dayofmonth=retail_unsubscribe.dayofmonth '
+				. 'WHERE retail_extra.dayofmonth BETWEEN "' . $from_day . '" AND "' . $to_day . '" '
 				. 'GROUP BY retail_extra.dayofmonth';
 
 		$data = $this->db->fetchAll($query);
@@ -330,6 +334,12 @@ class WholesaleModel {
 					'display' => 'totalCustomer',
 					'decimal' => 0,
 					'label' => 'Total customer end of period',
+				),
+				array(
+					'value' => 'subsLeft',
+					'display' => 'subsLeft',
+					'decimal' => 0,
+					'label' => 'Closed subscribers',
 				),
 				array(
 					'value' => 'simCount',
