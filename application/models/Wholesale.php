@@ -296,7 +296,8 @@ class WholesaleModel {
 				. '(SELECT dayofmonth,sum(simCount)-sum(cancelCount) AS simCount,sum(totalSimCost)-sum(totalCancelCost) AS totalSimCost '
 				. 'FROM retail_sim GROUP BY dayofmonth) AS simAggregated '
 				. 'ON retail_extra.dayofmonth=simAggregated.dayofmonth '
-				. 'WHERE retail_active.planName IS NOT NULL AND retail_extra.dayofmonth BETWEEN "' . $from_day . '" AND "' . $to_day . '" '
+//				. 'WHERE retail_active.planName IS NOT NULL AND retail_extra.dayofmonth BETWEEN "' . $from_day . '" AND "' . $to_day . '" '
+				. 'WHERE retail_extra.dayofmonth BETWEEN "' . $from_day . '" AND "' . $to_day . '" '
 				. 'GROUP BY retail_extra.dayofmonth';
 
 		$data = $this->db->fetchAll($query);
