@@ -346,18 +346,6 @@ class WholesaleModel {
 					'decimal' => false,
 				),
 				array(
-					'value' => 'newSubs',
-					'display' => 'newSubs',
-					'decimal' => 0,
-					'label' => 'New customers',
-				),
-				array(
-					'value' => 'churnSubs',
-					'display' => 'churnSubs',
-					'decimal' => 0,
-					'label' => 'Churn total',
-				),
-				array(
 					'value' => 'totalCustomer',
 					'display' => 'totalCustomer',
 					'decimal' => 0,
@@ -370,19 +358,6 @@ class WholesaleModel {
 					'display' => 'subsLeft',
 					'decimal' => 0,
 					'label' => 'Closed subscribers',
-				),
-				array(
-					'value' => 'simCount',
-					'display' => 'simCount',
-					'decimal' => 0,
-					'label' => 'Sum',
-					'commonColumn' => 'sim',
-				),
-				array(
-					'value' => 'totalSimCost',
-					'display' => 'totalSimCost',
-					'decimal' => 2,
-					'label' => 'Sending fees',
 				),
 				array(
 					'value' => 'flatRateRevenue',
@@ -402,6 +377,31 @@ class WholesaleModel {
 					'display' => 'out_plan',
 					'decimal' => 2,
 					'label' => 'Extra flat rate revenue (out)',
+				),
+				array(
+					'value' => 'newSubs',
+					'display' => 'newSubs',
+					'decimal' => 0,
+					'label' => 'New subscribers',
+				),
+				array(
+					'value' => 'churnSubs',
+					'display' => 'churnSubs',
+					'decimal' => 0,
+					'label' => 'Churn total',
+				),
+				array(
+					'value' => 'simCount',
+					'display' => 'simCount',
+					'decimal' => 0,
+					'label' => 'Sum',
+					'commonColumn' => 'sim',
+				),
+				array(
+					'value' => 'totalSimCost',
+					'display' => 'totalSimCost',
+					'decimal' => 2,
+					'label' => 'Sending fees',
 				),
 			)
 		);
@@ -446,7 +446,7 @@ class WholesaleModel {
 	public function getCommonColumns() {
 		return array(
 			'plans' => array(
-				'label' => 'Total customers',
+				'label' => 'Total subscribers',
 				'colspan' => 1 + count($this->getPlans()),
 			),
 			'sim' => array(
