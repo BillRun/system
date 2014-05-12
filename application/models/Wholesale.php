@@ -289,16 +289,26 @@ class WholesaleModel {
 	}
 
 	public function getRetailData($from_day, $to_day) {
+		$sendingTypes = $this->getSendingTypes();
 		$query = 'SELECT retail_extra.dayofmonth,retail_extra.over_plan,retail_extra.out_plan,retail_new.subsCount AS newSubs,'
 				. 'retail_churn.subsCount AS churnSubs,sum(retail_active.subsCount) AS totalCustomer,sum(retail_active.totalCost) AS flatRateRevenue,'
-				. 'simAggregated.simCount,simAggregated.totalSimCost, retail_unsubscribe.subsCount as subsLeft '
-				. 'FROM retail_extra LEFT JOIN retail_new ON retail_extra.dayofmonth=retail_new.dayofmonth '
+				. 'simAggregated.simCount as simCount,simAggregated.totalSimCost as totalSimCost, retail_unsubscribe.subsCount as subsLeft';
+		foreach ($this->getPlans() as $planName) {
+			$query.= ', SUM(IF(retail_active.planName="' . $planName . '", retail_active.subsCount, 0)) as ' . $planName;
+		}
+		foreach ($sendingTypes as $sendingType) {
+			$query.=', simAggregated.' . $sendingType;
+		}
+		$query.= ' FROM retail_extra LEFT JOIN retail_new ON retail_extra.dayofmonth=retail_new.dayofmonth '
 				. 'LEFT JOIN retail_churn ON retail_extra.dayofmonth = retail_churn.dayofmonth '
 				. 'LEFT JOIN retail_active ON retail_extra.dayofmonth=retail_active.dayofmonth '
 				. 'LEFT JOIN '
-				. '(SELECT dayofmonth,sum(simCount)-sum(cancelCount) AS simCount,sum(totalSimCost)-sum(totalCancelCost) AS totalSimCost '
-				. 'FROM retail_sim GROUP BY dayofmonth) AS simAggregated '
-				. 'ON retail_extra.dayofmonth=simAggregated.dayofmonth '
+				. '(SELECT dayofmonth,sum(simCount-cancelCount) as simCount,sum(totalSimCost-totalCancelCost) as totalSimCost';
+		foreach ($sendingTypes as $sendingType) {
+			$query.=', SUM(IF(sendingType="' . $sendingType . '",simCount-cancelCount,0)) as ' . $sendingType;
+		}
+		$query.= ' FROM retail_sim group by dayofmonth) as simAggregated '
+				. 'ON retail_extra.dayofmonth=simAggregated.dayofmonth'
 				. ' LEFT JOIN retail_unsubscribe on retail_extra.dayofmonth=retail_unsubscribe.dayofmonth '
 				. 'WHERE retail_extra.dayofmonth BETWEEN "' . $from_day . '" AND "' . $to_day . '" '
 				. 'GROUP BY retail_extra.dayofmonth';
@@ -307,8 +317,26 @@ class WholesaleModel {
 		return $data;
 	}
 
-	public function getRetailTableParams() {
+	protected function getPlans() {
 		return array(
+			102 => 'LARGE',
+			105 => 'SMALL',
+			106 => 'BIRTHDAY',
+			107 => 'HOLIDAY',
+		);
+	}
+
+	protected function getSendingTypes() {
+		return array(
+			'SIM',
+			'UPS',
+		);
+	}
+
+	public function getRetailTableParams() {
+		$plans = $this->getPlans();
+		$sendingTypes = $this->getSendingTypes();
+		$retailTableParams = array(
 			'title' => 'Retail',
 			'fields' => array(
 				array(
@@ -318,22 +346,12 @@ class WholesaleModel {
 					'decimal' => false,
 				),
 				array(
-					'value' => 'newSubs',
-					'display' => 'newSubs',
-					'decimal' => 0,
-					'label' => 'New customers',
-				),
-				array(
-					'value' => 'churnSubs',
-					'display' => 'churnSubs',
-					'decimal' => 0,
-					'label' => 'Churn total',
-				),
-				array(
 					'value' => 'totalCustomer',
 					'display' => 'totalCustomer',
 					'decimal' => 0,
-					'label' => 'Total customer end of period',
+					'label' => 'Sum',
+					'totals' => false,
+					'commonColumn' => 'plans',
 				),
 				array(
 					'value' => 'subsLeft',
@@ -342,22 +360,11 @@ class WholesaleModel {
 					'label' => 'Closed subscribers',
 				),
 				array(
-					'value' => 'simCount',
-					'display' => 'simCount',
-					'decimal' => 0,
-					'label' => 'Sim count',
-				),
-				array(
-					'value' => 'totalSimCost',
-					'display' => 'totalSimCost',
-					'decimal' => 2,
-					'label' => 'Sending fees',
-				),
-				array(
 					'value' => 'flatRateRevenue',
 					'display' => 'flatRateRevenue',
 					'decimal' => 2,
 					'label' => 'Flat rate revenue',
+					'totals' => false,
 				),
 				array(
 					'value' => 'over_plan',
@@ -371,6 +378,80 @@ class WholesaleModel {
 					'decimal' => 2,
 					'label' => 'Extra flat rate revenue (out)',
 				),
+				array(
+					'value' => 'newSubs',
+					'display' => 'newSubs',
+					'decimal' => 0,
+					'label' => 'New subscribers',
+				),
+				array(
+					'value' => 'churnSubs',
+					'display' => 'churnSubs',
+					'decimal' => 0,
+					'label' => 'Churn total',
+				),
+				array(
+					'value' => 'simCount',
+					'display' => 'simCount',
+					'decimal' => 0,
+					'label' => 'Sum',
+					'commonColumn' => 'sim',
+				),
+				array(
+					'value' => 'totalSimCost',
+					'display' => 'totalSimCost',
+					'decimal' => 2,
+					'label' => 'Sending fees',
+				),
+			)
+		);
+		foreach ($retailTableParams['fields'] as $index => $field) {
+			if ($field['value'] == 'totalCustomer') {
+				$totalCustomerIndex = $index;
+			}
+		}
+		if (isset($totalCustomerIndex)) {
+			foreach ($plans as $planName) {
+				$planFields[] = array(
+					'value' => $planName,
+					'display' => $planName,
+					'decimal' => 0,
+					'label' => $planName,
+					'totals' => false,
+					'commonColumn' => 'plans',
+				);
+			}
+			array_splice($retailTableParams['fields'], $totalCustomerIndex, 0, $planFields);
+		}
+		foreach ($retailTableParams['fields'] as $index => $field) {
+			if ($field['value'] == 'simCount') {
+				$simCountIndex = $index;
+			}
+		}
+		if (isset($simCountIndex)) {
+			foreach ($sendingTypes as $sendingType) {
+				$sendingTypeFields[] = array(
+					'value' => $sendingType,
+					'display' => $sendingType,
+					'decimal' => 0,
+					'label' => $sendingType,
+					'commonColumn' => 'sim',
+				);
+			}
+			array_splice($retailTableParams['fields'], $simCountIndex, 0, $sendingTypeFields);
+		}
+		return $retailTableParams;
+	}
+
+	public function getCommonColumns() {
+		return array(
+			'plans' => array(
+				'label' => 'Total subscribers',
+				'colspan' => 1 + count($this->getPlans()),
+			),
+			'sim' => array(
+				'label' => 'Sim count',
+				'colspan' => 1 + count($this->getSendingTypes()),
 			)
 		);
 	}
