@@ -269,7 +269,7 @@ class Billrun_Util {
 			return number_format($value, $decimals);
 		}
 
-		return FALSE;
+		return 0;
 	}
 	
 	/**
