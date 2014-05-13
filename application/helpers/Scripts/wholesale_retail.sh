@@ -29,6 +29,6 @@ if [ $mongo_main_version == "2.6" ] ; then
 	js_code=${js_code/\.result/}
 fi
 
-mongo billing -ureading -pguprgri --quiet --eval "$js_code" >> "$output_dir/$report_name.csv" ;
+mongo billing -ureading -pguprgri --quiet --eval "$js_code" >> "$output_dir/extra.csv" ;
 
 exit;
