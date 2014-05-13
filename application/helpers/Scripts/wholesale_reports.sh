@@ -2,9 +2,8 @@
 
 ###  script arguments as follow:
 ###  1) report name
-###  2) year
-###  3) month
-###  4) output directory
+###  2) report day (YYYY-mm-dd format)
+###  3) output directory
 
 if [ $1 ]; then
         report_name=$1;
@@ -14,32 +13,23 @@ else
 fi
 
 if [ $2 ]; then
-        year=$2;
+        day=$2;
 else
-	echo "please supply year (format: YYYY)"
+	echo "please supply day (format: YYYY-mm-dd)"
 	exit 2
 fi
 
 if [ $3 ]; then
-        month=$3;
+	output_dir=$3;
 else
-	echo "please supply month (format: MM)"
-	exit 2
+	script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+	output_dir="${script_dir}/../../../files/wholesale";
 fi
 
-script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-output_dir="${script_dir}/../../../files/csvs";
-
-if [ $4 ]; then
-	output_dir=$4;
-fi
-
-month_end=`date -d "$(date -d "$year-$month-01" +%Y-%m-01) +1 month -1 day" +%d`;
-	
-js_code='db.getMongo().setReadPref("secondaryPreferred");var start_day = 1; var end_day = '$month_end'; for(var i = start_day; i <= end_day; i++) {var day = (i.toString().length==1 ? "0" + i : i);var from_date = ISODate("'$year'-'$month'-" + day + "T00:00:00+02:00");var to_date = ISODate("'$year'-'$month'-" + day + "T23:59:59+02:00");';
-nsn_end_code='.result.forEach(function(obj) { print("call," + dir + "," + network + ",'$year'-'$month'-" + day + "," + ( obj._id.c ) + "," +( obj._id.r ? db.rates.findOne(obj._id.r.$id).key : "") + "," + obj.count + "," + obj.usagev);});}';
-data_end_code='.result.forEach(      function(obj) {         print("data," + dir + "," + network + ",'$year'-'$month'-" + day + "," +  (obj._id.match(/^37\.26/) ? "GT" : (obj._id.match(/^62\.90/) ? "MCEL" : "OTHER") )  +",INTERNET_BY_VOLUME" + "," + obj.count + "," + obj.usagev);});}';
-sms_end_code='.result.forEach(      function(obj) {         print("sms," + dir + "," + network + ",'$year'-'$month'-" + day + "," +  obj._id  + "," + obj.count + "," + obj.usagev);});}';
+js_code='db.getMongo().setReadPref("secondaryPreferred");var from_date = ISODate("'$day'T00:00:00+02:00");var to_date = ISODate("'$day'T23:59:59+02:00");';
+nsn_end_code='.result.forEach(function(obj) { print("call\t" + dir + "\t" + network + "\t'$day'\t" + ( obj._id.c ) + "\t" +( obj._id.r ? db.rates.findOne(obj._id.r.$id).key : "") + "\t" + obj.count + "\t" + obj.usagev);})';
+data_end_code='.result.forEach(      function(obj) {         print("data\t" + dir + "\t" + network + "\t'$day'\t" +  (obj._id.match(/^37\.26/) ? "GT" : (obj._id.match(/^62\.90/) ? "MCEL" : "OTHER") )  +"\tINTERNET_BY_VOLUME" + "\t" + obj.count + "\t" + obj.usagev);})';
+sms_end_code='.result.forEach(      function(obj) {         print("sms\t" + dir + "\t" + network + "\t'$day'\t" +  obj._id  + "\t" + obj.count + "\t" + obj.usagev);})';
 sipregex='^(?=NSML|NBZI|MAZI|MCLA|ISML|IBZI|ITLZ|IXFN|IMRS|IHLT|HBZI|IKRT|IKRTROM|SWAT|GSML|GNTV|GHOT|GBZQ|GBZI|GCEL|LMRS)';
 nsn_grouping_out='{$group:{_id:{c:"$out_circuit_group_name",r:"$arate"}, count:{$sum:1},usagev:{$sum:"$usagev"}}},{$project:{"_id.c":{$substr:["$_id.c",0,4]},"_id.r":1, count:1,usagev:1}},{$group:{_id:"$_id",count:{$sum:"$count"},usagev:{$sum:"$usagev"}}}';
 nsn_grouping_in='{$group:{_id:{c:"$in_circuit_group_name",r:"$pzone"}, count:{$sum:1},usagev:{$sum:"$usagev"}}},{$project:{"_id.c":{$substr:["$_id.c",0,4]},"_id.r":1, count:1,usagev:1}},{$group:{_id:"$_id",count:{$sum:"$count"},usagev:{$sum:"$usagev"}}}';
@@ -92,7 +82,7 @@ esac
 
 
 if [[ -n "$js_code" ]]; then	
-	mongo billing -ureading -pguprgri --quiet --eval "$js_code" > "$output_dir/$report_name""_""$year$month.csv" ;
+	mongo billing -ureading -pguprgri --quiet --eval "$js_code" >> "$output_dir/$report_name.csv" ;
 fi
 
 

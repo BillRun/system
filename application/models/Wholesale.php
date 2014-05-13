@@ -370,13 +370,15 @@ class WholesaleModel {
 					'value' => 'over_plan',
 					'display' => 'over_plan',
 					'decimal' => 2,
-					'label' => 'Extra flat rate revenue (over)',
+					'label' => 'Over',
+					'commonColumn' => 'extra',
 				),
 				array(
 					'value' => 'out_plan',
 					'display' => 'out_plan',
 					'decimal' => 2,
-					'label' => 'Extra flat rate revenue (out)',
+					'label' => 'Out',
+					'commonColumn' => 'extra',
 				),
 				array(
 					'value' => 'newSubs',
@@ -401,7 +403,7 @@ class WholesaleModel {
 					'value' => 'totalSimCost',
 					'display' => 'totalSimCost',
 					'decimal' => 2,
-					'label' => 'Sending fees',
+					'label' => 'Sim revenue',
 				),
 			)
 		);
@@ -452,6 +454,10 @@ class WholesaleModel {
 			'sim' => array(
 				'label' => 'Sim count',
 				'colspan' => 1 + count($this->getSendingTypes()),
+			),
+			'extra' => array(
+				'label' => 'Extra flat revenue',
+				'colspan' => 2,
 			)
 		);
 	}
