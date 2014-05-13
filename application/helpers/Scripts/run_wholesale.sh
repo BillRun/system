@@ -1,36 +1,44 @@
 #!/bin/bash
 
 ###  script arguments as follow:
-###  1) year
-###  2) month
+###  1) days back
+###  2) date range in days
 ###  3) output directory
 
 if [ $1 ]; then
-        year=$1;
+        from_days_back=$1;
 else
-	echo "please supply year (format: YYYY)"
+	echo "please supply number of days back from today (integer)"
 	exit 2
 fi
 
 if [ $2 ]; then
-        month=$2;
+        to_days_back=$((from_days_back-$2+1));
 else
-	echo "please supply month (format: MM)"
+	echo "please supply the range for the report in days (integer)"
 	exit 2
 fi
 
-output_dir="";
 if [ $3 ]; then
 	output_dir=$3;
+else
+	script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+	output_dir="${script_dir}/../../../files/wholesale";
 fi
 
-reports=( "gt_out_sms" "nr_out_sms" "data" "all_in_call" "all_out_call" "all_nr_out_call" "all_nr_in_call" )
+wholesale_reports=( "gt_out_sms" "nr_out_sms" "data" "all_in_call" "all_out_call" "all_nr_out_call" "all_nr_in_call" )
 
 WD="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )" # hack to get the directory of the .sh file
 
-for i in "${reports[@]}"
+
+for (( day=$from_days_back; day >= $to_days_back; day-- ))
 do
-   :
-	echo $i;
-	$WD/wholesale_reports.sh $i $year $month $output_dir
+	report_day=`date -d "$day days ago" +'%F'`
+	for report in "${wholesale_reports[@]}"
+	do
+	   :
+		echo $report_day $report;
+		$WD/wholesale_reports.sh $report $report_day $output_dir
+	done
+	$WD/wholesale_retail.sh $report_day $output_dir
 done
