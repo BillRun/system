@@ -255,9 +255,11 @@ class Billrun_Util {
 			$value = ($bytes / pow(1024, floor($units[$unit])));
 		}
 
+		if ($unit == 'B') {
+			$decimals = 0;
+		} else if (!is_numeric($decimals) || $decimals < 0) {
 		// If decimals is not numeric or decimals is less than 0 
 		// then set default value
-		if (!is_numeric($decimals) || $decimals < 0) {
 			$decimals = 2;
 		}
 
