@@ -46,7 +46,7 @@ foreach ($this->data as $item) {
 			if (is_float($data) && strpos($h, 'usage') === FALSE) { // hack: is_float sometimes take long numbers as float
 				print number_format($data, 2);
 			} else if (($active == 'lines' && $item['usaget'] == 'data') || ($active == 'balances' && strpos($h, 'usage') !== FALSE && strpos($h, 'data') !== FALSE)) {
-				print Billrun_Util::byteFormat($data, null, 2, true);
+				print Billrun_Util::byteFormat($data, null, 3, true);
 			} else {
 				print number_format($data, 0);
 			}
