@@ -434,5 +434,20 @@ class Billrun_Util {
 		Billrun_Factory::log()->removeWriters('Mail');
 		Billrun_Factory::log()->addWriters('Mail');
 	}
+	
+	public static function arrayToQuery($array) {
+		$query = array();
+		foreach($array as $key => $val) {
+			if(is_array($val)) {
+				foreach (self::arrayToQuery($val) as $subKey => $subValue) {
+					$query[$key.".".$subKey] = $subValue;
+				}
+			} else {
+				$query[$key] = $val;
+			}
+			
+		}
+		return $query;
+	}
 
 }

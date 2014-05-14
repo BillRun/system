@@ -70,8 +70,9 @@ trait Billrun_Traits_FileActions {
 			'file_name' => $filename,
 		);
 
-		if (!empty($more_fields)) {
-			$query = array_merge($query, $more_fields);
+		if (!empty($more_fields)) {			
+			$query = array_merge($query, Billrun_Util::arrayToQuery($query));
+			Billrun_Factory::log()->log(print_r(), Zend_Log::INFO);
 		}
 
 		Billrun_Factory::dispatcher()->trigger('alertisFileReceivedQuery', array(&$query, $type, $this));
@@ -184,11 +185,13 @@ trait Billrun_Traits_FileActions {
 	protected function removeFromWorkspace($filestamp) {
 		$file = Billrun_Factory::db()->logCollection()->query(array('stamp'=> $filestamp))->cursor()->limit(1)->current();
 		if(!$file->isEmpty()) {
-			$defaultBackup = Billrun_Factory::config()->getConfigValue($this->getType().'.default_backup_path',FALSE);
-			if(empty($file['extra_data']['backed_to']) && $defaultBackup ) {
-					Billrun_Factory::log()->log("Backing up and moving file {$file['path']} to default location." , Zend_Log::INFO);	
-				$this->backupToPath($file['path'], $defaultBackup);
+			$defaultBackup = Billrun_Factory::config()->getConfigValue('backup.default_backup_path',FALSE);			
+			if(empty($file['extra_data']['backed_to'])) {
+				$backupPaths =  !empty($this->backupPaths) ? $defaultBackup : (!empty($defaultBackup) ? $defaultBackup : array('./backup/' . $this->getType()));
+				Billrun_Factory::log()->log("Backing up and moving file {$file['path']} to - ".implode(",", $backupPaths) , Zend_Log::INFO);	
+				$this->backup(basename($file['path']),$file['path'], $backupPaths, $file['retrived_from'],true);
 			} else {
+				Billrun_Factory::log()->log("File {$file['path']}  already backed up to :".implode(",",$file['extra_data']['backed_to']), Zend_Log::INFO);
 				Billrun_Factory::log()->log("Removing file {$file['path']} from the workspace", Zend_Log::INFO);
 				unlink($file['path']);
 			}

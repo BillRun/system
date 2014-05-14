@@ -134,6 +134,12 @@ abstract class Billrun_Processor extends Billrun_Base {
 		if (isset($options['processor']['order_lines_before_insert'])) {
 			$this->orderLinesBeforeInsert = $options['processor']['order_lines_before_insert'];
 		}
+		
+		if (isset($options['backup_path'])) {
+			$this->backupPaths = $options['backup_path'];
+		} else {
+			$this->backupPaths = Billrun_Factory::config()->getConfigValue($this->getType() . '.backup_path', array('./backup/' . $this->getType()));
+		}
 	}
 
 	/**
