@@ -24,9 +24,11 @@
 			<li<?php echo ($active == 'log' ? ' class="active"' : ''); ?>>
 				<a href="<?php echo $this->baseUrl; ?>/admin/log">Log</a>
 			</li>
+			<?php if (AdminController::authorized('reports')) : ?>
 			<li<?php echo ($active == 'wholesale' ? ' class="active"' : ''); ?>>
 				<a href="<?php echo $this->baseUrl; ?>/admin/wholesale">Reports</a>
 			</li>
+			<?php endif; ?>
 		<?php endif; ?>
 		<?php if (AdminController::authorized('admin')) : ?>
 			<li class="dropdown<?php echo (in_array($active, array('users', 'config')) ? ' active' : ''); ?>">
