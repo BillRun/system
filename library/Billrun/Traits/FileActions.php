@@ -72,7 +72,6 @@ trait Billrun_Traits_FileActions {
 
 		if (!empty($more_fields)) {			
 			$query = array_merge($query, Billrun_Util::arrayToQuery($query));
-			Billrun_Factory::log()->log(print_r(), Zend_Log::INFO);
 		}
 
 		Billrun_Factory::dispatcher()->trigger('alertisFileReceivedQuery', array(&$query, $type, $this));
