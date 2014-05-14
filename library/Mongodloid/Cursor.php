@@ -116,7 +116,7 @@ class Mongodloid_Cursor implements Iterator, Countable {
 	}
 
 	public function timeout($ms) {
-//		$this->_cursor->timeout($ms);
+		$this->_cursor->timeout($ms);
 		return $this;
 	}
 

@@ -30,9 +30,9 @@ class Billrun_Db extends Mongodloid_Db {
 	public function __construct(\MongoDb $db, \Mongodloid_Connection $connection) {
 		parent::__construct($db, $connection);
 		$this->collections = Billrun_Factory::config()->getConfigValue('db.collections', array());
-//		$timeout = Billrun_Factory::config()->getConfigValue('db.timeout', 3600000); // default 60 minutes
-//		Billrun_Factory::log()->log('Set database cursor timeout to: ' . $timeout, Zend_Log::INFO);
-//		MongoCursor::$timeout = $timeout;
+		$timeout = Billrun_Factory::config()->getConfigValue('db.timeout', 3600000); // default 60 minutes
+		Billrun_Factory::log()->log('Set database cursor timeout to: ' . $timeout, Zend_Log::INFO);
+		@MongoCursor::$timeout = $timeout;
 	}
 
 	/**
