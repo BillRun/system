@@ -418,14 +418,25 @@ class Billrun_Util {
 		
 		//CCNDCSN - First part USA; second non-USA
 		if (preg_match("/^(1[2-9]{1}[0-9]{2}|[2-9]{1}[0-9]{1,2}[1-9]{1}[0-9]{0,2})[0-9]{7}$/", $cleanNumber)) {
-			return $phoneNumber;
+			return self::cleanLeadingZeros($phoneNumber);;
 		}
 
 		if (is_null($defaultPrefix)) {
 			$defaultPrefix = Billrun_Factory::config()->getConfigValue('billrun.defaultCountryPrefix', 972);
 		}
 
-		return $defaultPrefix . ltrim($phoneNumber, "0");
+		return $defaultPrefix . self::cleanLeadingZeros($phoneNumber);
+	}
+	
+	/**
+	 * method to clean leading zero of phone number
+	 * 
+	 * @param string $number
+	 * 
+	 * @return string the number without leading zeros
+	 */
+	public static function cleanLeadingZeros($number) {
+		return ltrim($number, "0");
 	}
 
 	/**
