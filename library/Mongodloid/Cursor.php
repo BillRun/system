@@ -5,12 +5,20 @@
  * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
  * @license         GNU General Public License version 2 or later; see LICENSE.txt
  */
+
+/**
+ * Cursor class layer
+ * Some methods exists only with MongoCursor and not with MongoCommandCursor (aggregator cursor)
+ *	both are expected in the constructor
+ */
 class Mongodloid_Cursor implements Iterator, Countable {
 
 	protected $_cursor;
 
-	public function __construct(MongoCursor $cursor) {
-		$this->_cursor = $cursor;
+	public function __construct($cursor) {
+		if ($cursor instanceof MongoCursor || (is_object($cursor) && get_class($cursor) == 'MongoCommandCursor')) {
+			$this->_cursor = $cursor;
+		}
 	}
 
 	public function count($foundOnly = true) {
@@ -19,8 +27,9 @@ class Mongodloid_Cursor implements Iterator, Countable {
 
 	public function current() {
 		//If before the start of the vector move to the first element.
-		if (!$this->_cursor->current() && $this->_cursor->hasNext()) {
-			$this->_cursor->next();
+		// 
+		if (method_exists($this->_cursor, 'hasNext') && !$this->_cursor->current() && $this->_cursor->hasNext()) {
+			$this->next();
 		}
 		return new Mongodloid_Entity($this->_cursor->current());
 	}
@@ -43,30 +52,41 @@ class Mongodloid_Cursor implements Iterator, Countable {
 	}
 
 	public function sort(array $fields) {
-		$this->_cursor->sort($fields);
+		if (method_exists($this->_cursor, 'sort')) {
+			$this->_cursor->sort($fields);
+		}
 		return $this;
 	}
 
 	public function limit($limit) {
-		$this->_cursor->limit(intval($limit));
+		if (method_exists($this->_cursor, 'limit')) {
+			$this->_cursor->limit(intval($limit));
+		}
 		return $this;
 	}
 
 	public function skip($limit) {
-		$this->_cursor->skip(intval($limit));
+		if (method_exists($this->_cursor, 'skip')) {
+			$this->_cursor->skip(intval($limit));
+		}
 		return $this;
 	}
 
 	public function hint(array $key_pattern) {
-		if (empty($key_pattern)) {
-			return;
+		if (method_exists($this->_cursor, 'hint')) {
+			if (empty($key_pattern)) {
+				return;
+			}
+			$this->_cursor->hint($key_pattern);
 		}
-		$this->_cursor->hint($key_pattern);
 		return $this;
 	}
 
 	public function explain() {
-		return $this->_cursor->explain();
+		if (method_exists($this->_cursor, 'explain')) {
+			return $this->_cursor->explain();
+		}
+		return false;
 	}
 
 	/**
@@ -78,8 +98,10 @@ class Mongodloid_Cursor implements Iterator, Countable {
 	 * @return Mongodloid_Collection self object
 	 */
 	public function setReadPreference($readPreference, array $tags = array()) {
-		if (defined('MongoClient::' . $readPreference)) {
-			$this->_cursor->setReadPreference(constant('MongoClient::' . $readPreference), $tags);
+		if (method_exists($this->_cursor, 'setReadPreference')) {
+			if (defined('MongoClient::' . $readPreference)) {
+				$this->_cursor->setReadPreference(constant('MongoClient::' . $readPreference), $tags);
+			}
 		}
 		
 		return $this;
@@ -93,6 +115,9 @@ class Mongodloid_Cursor implements Iterator, Countable {
 	 * @return mixed array in case of include tage else string (the string would be the rp constant)
 	 */
 	public function getReadPreference($includeTage = false) {
+		if (!method_exists($this->_cursor, 'setReadPreference')) {
+			return false;
+		}
 		$ret = $this->_cursor->setReadPreference();
 		if ($includeTage) {
 			return $ret;
@@ -116,17 +141,23 @@ class Mongodloid_Cursor implements Iterator, Countable {
 	}
 
 	public function timeout($ms) {
-		$this->_cursor->timeout($ms);
+		if (method_exists($this->_cursor, 'timeout')) {
+			$this->_cursor->timeout($ms);
+		}
 		return $this;
 	}
 
 	public function immortal($liveForever = true) {
-		$this->_cursor->immortal($liveForever);
+		if (method_exists($this->_cursor, 'immortal')) {
+			$this->_cursor->immortal($liveForever);
+		}
 		return $this;
 	}
 	
 	public function fields(array $fields) {
-		$this->_cursor->fields($fields);
+		if (method_exists($this->_cursor, 'fields')) {
+			$this->_cursor->fields($fields);
+		}
 		return $this;
 	}
 
