@@ -559,13 +559,21 @@ abstract class Billrun_Processor extends Billrun_Base {
 		}
 
 		try {
-			$bulkOptions = array(
-				'continueOnError' => true,
-				'wtimeout' => 300000,
-				'timeout' => 300000,
-				'socketTimeoutMS' => 300000,
-				'wTimeoutMS' => 300000,
-			);
+			if (Billrun_Factory::db()->compareServerVersion('2.6', '>=') === true) {
+				// we are on 2.6
+				$bulkOptions = array(
+					'continueOnError' => true,
+					'socketTimeoutMS' => 300000,
+					'wTimeoutMS' => 300000,
+				);
+			} else {
+				// we are on 2.4 and lower
+				$bulkOptions = array(
+					'continueOnError' => true,
+					'wtimeout' => 300000,
+					'timeout' => 300000,
+				);
+			}
 			$offset = 0;
 			while ($insert_count = count($insert = array_slice($lines_data, $offset, $this->bulkInsert, true))) {
 				Billrun_Factory::log()->log("Processor bulk insert to lines " . basename($this->filePath) . " from: " . $offset . ' count: ' . $insert_count, Zend_Log::DEBUG);
@@ -595,13 +603,21 @@ abstract class Billrun_Processor extends Billrun_Base {
 			Billrun_Factory::log()->log("Done reordering Q lines  by stamp.", Zend_Log::DEBUG);
 		}
 		try {
-			$bulkOptions = array(
-				'continueOnError' => true,
-				'wtimeout' => 300000,
-				'timeout' => 300000,
-				'socketTimeoutMS' => 300000,
-				'wTimeoutMS' => 300000,
-			);
+			if (Billrun_Factory::db()->compareServerVersion('2.6', '>=') === true) {
+				// we are on 2.6
+				$bulkOptions = array(
+					'continueOnError' => true,
+					'socketTimeoutMS' => 300000,
+					'wTimeoutMS' => 300000,
+				);
+			} else {
+				// we are on 2.4 and lower
+				$bulkOptions = array(
+					'continueOnError' => true,
+					'wtimeout' => 300000,
+					'timeout' => 300000,
+				);
+			}
 			$offset = 0;
 			while ($insert_count = count($insert = array_slice($queue_data, $offset, $this->bulkInsert, true))) {
 				Billrun_Factory::log()->log("Processor bulk insert to queue " . basename($this->filePath) . " from: " . $offset . ' count: ' . $insert_count, Zend_Log::DEBUG);

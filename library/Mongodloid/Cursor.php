@@ -7,7 +7,7 @@
  */
 class Mongodloid_Cursor implements Iterator, Countable {
 
-	private $_cursor;
+	protected $_cursor;
 
 	public function __construct(MongoCursor $cursor) {
 		$this->_cursor = $cursor;

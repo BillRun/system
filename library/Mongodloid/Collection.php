@@ -150,16 +150,20 @@ class Mongodloid_Collection {
 	}
 
 	public function aggregate() {
-		$timeout = $this->getTimeout();
-		$this->setTimeout(-1);
 		$args = func_get_args();
-		$result = call_user_func_array(array($this->_collection, 'aggregate'), $args);
-		$this->setTimeout($timeout);
-		if (!isset($result['ok']) || !$result['ok']) {
-			throw new Mongodloid_Exception('aggregate failed with the following error: ' . $result['code'] . ' - ' . $result['errmsg']);
-			return false;
+		if (!$this->_db->compareServerVersion('2.6', '>=')) {
+			$timeout = $this->getTimeout();
+			$this->setTimeout(-1);
+			$result = call_user_func_array(array($this->_collection, 'aggregate'), $args);
+			$this->setTimeout($timeout);
+			if (!isset($result['ok']) || !$result['ok']) {
+				throw new Mongodloid_Exception('aggregate failed with the following error: ' . $result['code'] . ' - ' . $result['errmsg']);
+				return false;
+			}
+			return $result['result'];
 		}
-		return $result['result'];
+		// else on 2.6 and above it's much more simple
+		return new Mongodloid_Cursor(call_user_func_array(array($this->_collection, 'aggregateCursor'), $args));
 	}
 
 	public function setTimeout($timeout) {
@@ -258,7 +262,16 @@ class Mongodloid_Collection {
 			$options['j'] = $this->j;
 		}
 
-		return $this->_collection->batchInsert($a, $options);
+		if ($this->_db->compareServerVersion('2.6', '>=')) {
+			$batch = new MongoInsertBatch($this->_collection);
+			foreach($a as $doc) {
+				$batch->add($doc);
+			}
+			return $batch->execute($options);
+		} else {
+			return $this->_collection->batchInsert($a, $options);
+		}
+		
 	}
 
 	/**
