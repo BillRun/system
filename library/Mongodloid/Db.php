@@ -30,7 +30,7 @@ class Mongodloid_Db {
 	public function command(array $command, array $options = array()) {
 		return $this->_db->command($command, $options);
 	}
-	
+
 	/**
 	 * method to get dbStats or collection stats (for the later see the stats method in collection class)
 	 * 
@@ -45,22 +45,20 @@ class Mongodloid_Db {
 		if (is_null($item)) {
 			return $ret;
 		}
-		
+
 		if (isset($ret[$item])) {
 			return $ret[$item];
 		}
-		
 	}
-	
+
 	/**
 	 * method to get mongodb server version
 	 * 
 	 * @return string version
 	 */
 	public function getServerVersion() {
-		$mongodb_info = $this->_db->command(array('buildinfo'=>true));
+		$mongodb_info = $this->_db->command(array('buildinfo' => true));
 		return $mongodb_info['version'];
-		
 	}
 
 	/**
@@ -76,7 +74,7 @@ class Mongodloid_Db {
 		if (!empty($operator)) {
 			return version_compare($serverVersion, $compare, $operator);
 		}
-		
+
 		return version_compare($serverVersion, $compare);
 	}
 
