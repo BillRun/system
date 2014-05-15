@@ -51,5 +51,33 @@ class Mongodloid_Db {
 		}
 		
 	}
+	
+	/**
+	 * method to get mongodb server version
+	 * 
+	 * @return string version
+	 */
+	public function getServerVersion() {
+		$mongodb_info = $this->_db->command(array('buildinfo'=>true));
+		return $mongodb_info['version'];
+		
+	}
+
+	/**
+	 * method to get mongodb server version
+	 * 
+	 * @param string $compare compare to version number
+	 * @param string $operator operator how to compare (see PHP version_compare function)
+	 * 
+	 * @return string version if no compare return full number else boolean compare to supply version
+	 */
+	public function compareServerVersion($compare, $operator = null) {
+		$serverVersion = $this->getServerVersion();
+		if (!empty($operator)) {
+			return version_compare($serverVersion, $compare, $operator);
+		}
+		
+		return version_compare($serverVersion, $compare);
+	}
 
 }
