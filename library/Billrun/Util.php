@@ -402,10 +402,11 @@ class Billrun_Util {
 	 * 
 	 * @param string $phoneNumber the phone number to convert
 	 * @param string $defaultPrefix the default prefix to add
+	 * @param boolean $cleanLeadingZeros decide if to clean leading zeros on return value
 	 * 
 	 * @return string phone number in msisdn format
 	 */
-	public static function msisdn($phoneNumber, $defaultPrefix = null) {
+	public static function msisdn($phoneNumber, $defaultPrefix = null, $cleanLeadingZeros = true) {
 		
 		if (empty($phoneNumber)) {
 			return $phoneNumber;
@@ -413,19 +414,38 @@ class Billrun_Util {
 		
 		settype($phoneNumber, 'string');
 		
-		$replace = array("(0)", "-", "+", "(", ")", " ", "#", "*");
-		$cleanNumber = ltrim(str_replace($replace, "", $phoneNumber), "0");
-		
-		//CCNDCSN - First part USA; second non-USA
-		if (preg_match("/^(1[2-9]{1}[0-9]{2}|[2-9]{1}[0-9]{1,2}[1-9]{1}[0-9]{0,2})[0-9]{7}$/", $cleanNumber)) {
-			return self::cleanLeadingZeros($phoneNumber);;
+		if ($cleanLeadingZeros) {
+			$phoneNumber = self::cleanLeadingZeros($phoneNumber);
 		}
-
+		
+		if (self::isIntlNumber($phoneNumber)) {
+			return $phoneNumber;
+		}
+		
 		if (is_null($defaultPrefix)) {
 			$defaultPrefix = Billrun_Factory::config()->getConfigValue('billrun.defaultCountryPrefix', 972);
 		}
 
-		return $defaultPrefix . self::cleanLeadingZeros($phoneNumber);
+		return $defaultPrefix . $phoneNumber;
+	}
+	
+	/**
+	 * method to check if phone number is intl number or local number base on msisdn standard
+	 * 
+	 * @param string $phoneNumber the phone number to check
+	 * 
+	 * @return boolean true in case is international phone number else false
+	 */
+	public static function isIntlNumber($phoneNumber) {
+		$replace = array("(0)", "-", "+", "(", ")", " ", "#", "*");
+		$cleanNumber = self::cleanLeadingZeros(str_replace($replace, "", $phoneNumber));
+		
+		//CCNDCSN - First part USA; second non-USA
+		if (preg_match("/^(1[2-9]{1}[0-9]{2}|[2-9]{1}[0-9]{1,2}[1-9]{1}[0-9]{0,2})[0-9]{7}$/", $cleanNumber)) {
+			return true;
+		}
+		
+		return false;
 	}
 	
 	/**
