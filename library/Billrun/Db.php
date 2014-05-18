@@ -30,7 +30,7 @@ class Billrun_Db extends Mongodloid_Db {
 	public function __construct(\MongoDb $db, \Mongodloid_Connection $connection) {
 		parent::__construct($db, $connection);
 		$this->collections = Billrun_Factory::config()->getConfigValue('db.collections', array());
-		if ($this->_db->compareClientVersion('1.5.3', '>=')) {
+		if ($this->compareClientVersion('1.5.3', '>=')) {
 			// see bugs: 
 			// https://jira.mongodb.org/browse/PHP-1099
 			// https://jira.mongodb.org/browse/PHP-1080
