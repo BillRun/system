@@ -26,6 +26,7 @@ class AggregateAction extends Action_Base {
 			'stamp' => false,
 			'page' => true,
 			'size' => true,
+			'fetchonly' => true,
 		);
 
 		if (($options = $this->_controller->getInstanceOptions($possibleOptions)) === FALSE) {
@@ -39,9 +40,13 @@ class AggregateAction extends Action_Base {
 		if ($aggregator) {
 			$this->_controller->addOutput("Loading data to Aggregate...");
 			$aggregator->load();
-			$this->_controller->addOutput("Starting to Aggregate. This action can take a while...");
-			$aggregator->aggregate();
-			$this->_controller->addOutput("Finish to Aggregate.");
+			if (!isset($options['fetchonly'])) {
+				$this->_controller->addOutput("Starting to Aggregate. This action can take a while...");
+				$aggregator->aggregate();
+				$this->_controller->addOutput("Finish to Aggregate.");
+			} else {
+				$this->_controller->addOutput("Only fetched aggregate accounts info. Exit...");
+			}
 		} else {
 			$this->_controller->addOutput("Aggregator cannot be loaded");
 		}

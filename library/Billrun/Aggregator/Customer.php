@@ -64,7 +64,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	protected $vatable = true;
 	protected $rates;
 	protected $testAcc = false;
-
+	
 	/**
 	 * Memory limit in bytes, after which the aggregation is stopped. Set to -1 for no limit.
 	 * @var int 
@@ -98,7 +98,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		if (isset($options['aggregator']['min_invoice_id'])) {
 			$this->min_invoice_id = (int) $options['aggregator']['min_invoice_id'];
 		}
-
+		
 		if (isset($options['aggregator']['memory_limit_in_mb'])) {
 			if ($options['aggregator']['memory_limit_in_mb'] > -1) {
 				$this->memory_limit = $options['aggregator']['memory_limit_in_mb'] * 1048576;

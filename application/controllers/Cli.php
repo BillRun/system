@@ -60,6 +60,7 @@ class CliController extends Yaf_Controller_Abstract {
 				'size-s' => 'the size of the page to aggregate',
 				'environment-s' => 'Environment of the running command',
 				'env-s' => 'Environment of the running command',
+				'fetchonly' => 'Only fetch data from remote or db instead of doing complete action',
 			);
 
 			$this->options = new Zend_Console_Getopt($input);
