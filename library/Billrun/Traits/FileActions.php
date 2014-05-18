@@ -71,7 +71,7 @@ trait Billrun_Traits_FileActions {
 		);
 
 		if (!empty($more_fields)) {			
-			$query = array_merge($query, Billrun_Util::arrayToQuery($query));
+			$query = array_merge($query, Billrun_Util::arrayToMongoQuery($query));
 		}
 
 		Billrun_Factory::dispatcher()->trigger('alertisFileReceivedQuery', array(&$query, $type, $this));
@@ -128,23 +128,23 @@ trait Billrun_Traits_FileActions {
 		if ($copy) {
 			$callback = "copy";
 		} else {
-			$callback = "rename";
+			$callback = "rename"; // php move
 		}
 		
 		if (!file_exists($trgtPath)) {
 			@mkdir($trgtPath, 0777, true);
 		}
 		
+		
 		$filename = basename($srcPath);
 		$target_path = $trgtPath . DIRECTORY_SEPARATOR . $filename;
 		Billrun_Factory::log()->log("Backing up file from : " . $srcPath . " to :  " . $trgtPath, Zend_Log::INFO);
-		
+		$timestamp = filemtime($srcPath); // this will be used after copy/move to preserve timestamp
 		$ret = @call_user_func_array($callback, array(
 				$srcPath,
 				$target_path,
 		));		
-		if ($callback == 'copy' && $preserve_timestamps) {
-			$timestamp = filemtime($srcPath);
+		if ($preserve_timestamps) {			
 			Billrun_Util::setFileModificationTime($target_path, $timestamp);
 		}
 		
