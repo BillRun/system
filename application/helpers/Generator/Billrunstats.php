@@ -14,27 +14,29 @@
  * @package  Billing
  * @since    0.5
  */
-class Generator_Billrunstats extends Billrun_Generator {
+abstract class Generator_Billrunstats extends Billrun_Generator {
 
 	/**
 	 *
 	 * @var Mongodloid_Collection
 	 */
-	protected $billrunstats_coll = null;
 	protected $ggsn_zone = 'INTERNET_BILL_BY_VOLUME';
+	protected $buffer = array();
 
 	public function __construct($options) {
-		self::$type = 'billrunstats';
 		$options['auto_create_dir'] = FALSE;
 		parent::__construct($options);
-		$this->billrunstats_coll = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('fraud.db'))->billrunstatsCollection();
+	}
+
+	public function __destruct() {
+		$this->flushBuffer();
 	}
 
 	/**
 	 * load the container the need to be generate
 	 */
 	public function load() {
-		$billrun = Billrun_Factory::db(array('name' => 'billrun'))->billrunCollection();
+		$billrun = Billrun_Factory::db()->billrunCollection();
 
 		$this->data = $billrun
 						->query('billrun_key', $this->stamp)
@@ -128,7 +130,10 @@ class Generator_Billrunstats extends Billrun_Generator {
 	 * @param array $record
 	 */
 	protected function addFlatRecord($record) {
-		$this->billrunstats_coll->insert($record);
+		$this->buffer[] = $record;
+		if ($this->timeToFlush()) {
+			$this->flushBuffer();
+		}
 	}
 
 	/**
@@ -142,6 +147,14 @@ class Generator_Billrunstats extends Billrun_Generator {
 			return $field;
 		}
 		return $defVal;
+	}
+
+	abstract protected function flushBuffer();
+
+	abstract protected function timeToFlush();
+
+	protected function resetBuffer() {
+		$this->buffer = array();
 	}
 
 }
