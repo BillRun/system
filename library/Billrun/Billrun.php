@@ -666,11 +666,11 @@ class Billrun_Billrun {
 	 * @todo remove aid parameter
 	 */
 	protected function getAccountLines($aid, $include_flats = true) {
-		if(empty(static::$accountsLines[$aid.$include_flats])) {
+		if(empty(static::$accountsLines[self::getAidPreloadKey($aid,$include_flats)])) {
 			$this->preLoadAccountsLines(array($aid), $this->billrun_key, $this->filter_fields, $include_flats);
 		}
 
-		return static::$accountsLines[$aid.$include_flats];
+		return static::$accountsLines[self::getAidPreloadKey($aid,$include_flats)];
 	}
 	
 	/**
@@ -703,24 +703,24 @@ class Billrun_Billrun {
 		
 		
 		foreach ($aids as $aid) {// create a new array for each account
-			static::$accountsLines[$aid.$include_flats] = array();
+			static::$accountsLines[self::getAidPreloadKey($aid,$include_flats)] = array();
 		}
+		
 		/**
 		 * 
 		 */
 		Billrun_Factory::log()->log("Querying for account " . implode(",",$aids) . " lines with flats" . $include_flats, Zend_Log::INFO);
-		$doneCount = 0;		
+		$addCount = $bufferCount = 0;		
 		do {
+			$bufferCount +=  $addCount;
 			$cursor = Billrun_Factory::db()->linesCollection()
 					->query($query)->cursor()->fields(array_merge($filter_fields , $requiredFields))
-					->sort($sort)->skip($doneCount)->limit(Billrun_Factory::config()->getConfigValue('billrun.linesLimit', 10000))
+					->sort($sort)->skip($bufferCount)->limit(Billrun_Factory::config()->getConfigValue('billrun.linesLimit', 10000))
 					->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));			
 			foreach ($cursor as $line) {
-				static::$accountsLines[$line['aid'].$include_flats][] = $line;
-			}
-			$addCount = $cursor->count(true);
-			$doneCount +=  $addCount;
-		} while($addCount > 0);
+				static::$accountsLines[self::getAidPreloadKey($line['aid'],$include_flats)][] = $line;
+			}						
+		} while(($addCount = $cursor->count(true)) > 0);
 		Billrun_Factory::log()->log("Finished querying for accounts " . implode(",",$aids) . " lines with flats" . $include_flats, Zend_Log::INFO);
 	}
 	
@@ -733,10 +733,14 @@ class Billrun_Billrun {
 			static::$accountsLines = array();
 		} else {
 			foreach($aids as $aid) {
-				unset(static::$accountsLines[$aid.true]);
-				unset(static::$accountsLines[$aid.false]);
+				unset(static::$accountsLines[self::getAidPreloadKey($aid,true)]);
+				unset(static::$accountsLines[self::getAidPreloadKey($aid,false)]);
 			}
 		}
+	}
+	
+	static protected function getAidPreloadKey($aid, $include_flats) {
+		return $aid."_".intval(false);
 	}
 
 	/**
