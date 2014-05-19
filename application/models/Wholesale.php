@@ -30,16 +30,16 @@ class WholesaleModel {
 		));
 	}
 
-	public function getStats($group_field, $from_day, $to_day, $report_type = null) {
+	public function getStats($group_field, $from_day, $to_day, $report_type = null, $carrier = null) {
 		if ($report_type) {
-			$table_data = $this->convertToAssocArray($this->getCall($report_type == 'incoming_call' ? 'TG' : 'FG', $group_field, $from_day, $to_day), 'group_by');
+			$table_data = $this->convertToAssocArray($this->getCall($report_type == 'incoming_call' ? 'TG' : 'FG', $group_field, $from_day, $to_day, $carrier), 'group_by');
 			return array(
 				'table_data' => array($report_type => $table_data),
 				'available_group_values' => $this->getAvailableGroupValues($table_data),
 			);
 		}
-		$incoming_call = $this->convertToAssocArray($this->getCall('TG', $group_field, $from_day, $to_day), 'group_by');
-		$outgoing_call = $this->convertToAssocArray($this->getCall('FG', $group_field, $from_day, $to_day), 'group_by');
+		$incoming_call = $this->convertToAssocArray($this->getCall('TG', $group_field, $from_day, $to_day, $carrier), 'group_by');
+		$outgoing_call = $this->convertToAssocArray($this->getCall('FG', $group_field, $from_day, $to_day, $carrier), 'group_by');
 
 		$ret = array(
 			'incoming_call' => array(
@@ -119,7 +119,10 @@ class WholesaleModel {
 
 	public function getCall($direction, $group_field, $from_day, $to_day, $carrier = null, $network = 'all') {
 		$sub_query = 'SELECT usaget, dayofmonth, longname as carrier, sum(duration) as seconds,'
-				. 'CASE WHEN carrier like "N%" and direction like "TG" THEN sum(duration)/60*0.0614842117289702 ELSE sum(duration)/60*0.0614842117289702 END as cost'
+				. 'CASE WHEN network like "nr" THEN sum(duration)/60*0.053'
+				. ' WHEN carrier like "N%" and direction like "FG" THEN sum(duration)/60*0.0101002109924085'
+				. ' WHEN carrier like "I%" and direction like "FG" THEN sum(duration)/60*-0.0614842117289702'
+				. ' ELSE sum(duration)/60*0.0614842117289702 END as cost'
 				. ' FROM wholesale left join cgr_compressed on wholesale.carrier=cgr_compressed.shortname'
 				. ' WHERE'
 				. ' wholesale.carrier NOT IN("DDWW", "DKRT", "GPRT", "GT", "LALC", "LCEL", "NSML", "PCTI", "POPC") AND' // temporary exclude these carriers until Dror explains them

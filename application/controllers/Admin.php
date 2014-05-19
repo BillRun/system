@@ -985,7 +985,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		if ($report_type == 'nr') {
 			$data = $model->getNrStats($group_by, $from_day, $to_day, $carrier);
 		} else {
-			$data = $model->getStats($group_by, $from_day, $to_day, $report_type);
+			$data = $model->getStats($group_by, $from_day, $to_day, $report_type, $carrier);
 		}
 		$this->getView()->data = $data;
 		$this->getView()->carrier = $carrier;

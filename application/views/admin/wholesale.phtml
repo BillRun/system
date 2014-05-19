@@ -78,7 +78,9 @@
 						foreach ($report_params['fields'] as $usage_type => $usage_fields) {
 							foreach ($usage_fields as $field) {
 								if ($field['value'] == 'cost') {
-									$row_cost+=$report_data['table_data'][$usage_type][$group_value][$field['value']];
+									if (isset($report_data['table_data'][$usage_type][$group_value][$field['value']])) {
+										$row_cost+=$report_data['table_data'][$usage_type][$group_value][$field['value']];
+									}
 								}
 							}
 						}
