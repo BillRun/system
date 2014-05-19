@@ -15,7 +15,7 @@ foreach (array_keys($tbl_params) as $index => $report_type) {
 		}
 	}
 	echo '<div class="tab-pane' . (isset($report_params['default']) && $report_params['default'] ? ' active' : '') . '" id="tabs-' . ($index + 1) . '">
-		<table border="1" data-type="' . $report_params['direction'] . '" class="wholesale-table">';
+		<table border="1" data-type="' . $report_params['direction'] . '" class="wholesale-table"><thead>';
 
 	echo "<tr>";
 	echo '<th rowspan="2">' . $this->group_by_display . '</th>';
@@ -29,7 +29,7 @@ foreach (array_keys($tbl_params) as $index => $report_type) {
 			echo '<th>' . $field['label'] . "</th>";
 		}
 	}
-	echo "</tr>";
+	echo "</tr></thead><tbody>";
 
 	foreach ($this->data['available_group_values'] as $group_value) {
 		echo '<tr><td>' . $group_value . '</td>';
@@ -68,7 +68,10 @@ foreach (array_keys($tbl_params) as $index => $report_type) {
 			echo '</td>';
 		}
 	}
-	echo '</tr>';
+	echo '</tr></tbody>';
 	echo '</table>';
 	echo '</div>';
+//	echo '<script type="text/javascript">';
+//	echo '$(".wholesale-table", $("#w-popup")).stickyTableHeaders({fixedOffset: $(".wholesale-graph")});'; // doesn't work
+//	echo '</script>';
 }

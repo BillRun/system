@@ -31,7 +31,7 @@
 					<h3>' . $report_params['title'] . '</h3>
 					<table data-type="' . $report_params['direction'] . '" class="wholesale-table">';
 
-				echo "<tr>";
+				echo "<thead><tr>";
 				echo '<th rowspan="2">' . $this->group_field_display . '</th>';
 				foreach ($report_params['fields'] as $usage_type => $fields) {
 					echo '<th colspan="' . count($fields) . '">' . $usage_type . '</th>';
@@ -43,7 +43,7 @@
 						echo '<th>' . $field['label'] . "</th>";
 					}
 				}
-				echo "</tr>";
+				echo "</tr></thead><tbody>";
 
 				foreach ($report_data['available_group_values'] as $group_value) {
 					echo '<tr><td>';
@@ -58,7 +58,7 @@
 								if ($field['decimal'] === false) {
 									echo $report_data['table_data'][$usage_type][$group_value][$field['display']];
 								} else if ($field['decimal'] == 0) {
-									echo ceil($report_data['table_data'][$usage_type][$group_value][$field['display']]);
+									echo number_format(ceil($report_data['table_data'][$usage_type][$group_value][$field['display']]));
 								} else {
 									echo number_format($report_data['table_data'][$usage_type][$group_value][$field['display']], $field['decimal']);
 								}
@@ -79,14 +79,14 @@
 						if ($field['decimal'] === false) {
 							echo $table_totals[$usage_type][$field['value']];
 						} else if ($field['decimal'] == 0) {
-							echo ceil($table_totals[$usage_type][$field['value']]);
+							echo number_format(ceil($table_totals[$usage_type][$field['value']]));
 						} else {
 							echo number_format($table_totals[$usage_type][$field['value']], $field['decimal']);
 						}
 						echo '</td>';
 					}
 				}
-				echo '</tr>';
+				echo '</tr></tbody>';
 				echo '</table>';
 				$graph = Admin_Graphs::prepareGraph($this->data[$report_type]['table_data'], $this->group_field_display, $this->group_by, $report_params['fields'], array('graph_id' => ($report_type . '_call_graph'), 'graph_class' => 'wholesale-graph'));
 				echo Admin_Graphs::printGraph($graph, false, 1);
@@ -100,7 +100,7 @@
 
 			echo '<div class="tab-pane" id="tabs-' . ($index + 2) . '">
 					<h3>Retail</h3>
-					<table class="wholesale-table"><tr>';
+					<table class="wholesale-table"><thead><tr>';
 			foreach ($retail_tbl_params['fields'] as $field) {
 				if (isset($field['commonColumn'])) {
 					if (!isset($commonColumns[$field['commonColumn']])) {
@@ -117,7 +117,7 @@
 					echo '<th>' . $field['label'] . '</th>';
 				}
 			}
-			echo '</tr>';
+			echo '</tr></thead><tbody>';
 			foreach ($retail_data as $row) {
 				echo '<tr>';
 				foreach ($retail_tbl_params['fields'] as $field) {
@@ -152,7 +152,7 @@
 				}
 				echo '</td>';
 			}
-			echo '</tr>';
+			echo '</tr></tbody>';
 			echo '</table>';
 			echo '</div>';
 			?>
@@ -160,7 +160,6 @@
 	</div>
 	<?php $this->display('w-popups.phtml', array()); ?>
 	<hr>
-
 	<footer style="clear: both">
 		<p>&copy; S.D.O.C. LTD 2012-2014</p>
 	</footer>

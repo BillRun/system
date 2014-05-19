@@ -1,4 +1,4 @@
-$('body').on('hidden.bs.modal', '.modal', function () {
+$('body').on('hidden.bs.modal', '.modal', function() {
 	$(this).removeData('bs.modal');
 });
 var checkItems = false;
@@ -41,7 +41,9 @@ $(function() {
 		if (isAPIAvailable()) {
 			var reader = new FileReader();
 			reader.readAsText(file);
-			reader.onload = function(event) {contentLoadedCB(event.target.result); };
+			reader.onload = function(event) {
+				contentLoadedCB(event.target.result);
+			};
 		} else {
 			alert("Your browser doesn't support parse csv on client side. Please use IE12+, Chrome or Firefox");
 		}
@@ -49,67 +51,67 @@ $(function() {
 
 	function getCSVContent(file, csvContentParsedCB) {
 		getInputFileContent(file, function(content) {
-				var csv = content;
-				csv = csv.replace(/^\s*$/g,"");
-				var data = $.csv.toArrays(csv);
-				var header_line = data[0];
-				var headers = [];
-				var ret = [];
-				for (var item in header_line) {
-					headers[item] = data[0][item];
-				}
-				var _c = 0;
-				var retRow;
-				for (var row in data) {
-					if (row != 0 && data[row].length == headers.length) { // skip the first (header) and only take rows that hass all column of the headers
-						retRow = {};
-						for (var item in data[row]) {
-							retRow[headers[item]] = data[row][item];
-						}
-						ret[_c++] = retRow;
-					}
-				}
-
-				csvContentParsedCB(JSON.stringify(ret));
-			});		
-	}
-	
-	$("#resetSubsModal #upload").click(function(event) {
-		function resetLines(content){
-				$.ajax({
-					url: "/api/resetlines",
-					type: "POST",
-					data: {sid: content}
-				}).done(function(msg) {
-					obj = JSON.parse(msg);
-					if (obj.status == "1") { // success - print the file token
-						$('#resetSubsModal #saveOutput').append('Successful upload. Results: ' + JSON.stringify(obj.input));
-					} else {
-						$('#resetSubsModal #saveOutput').append('Failed on upload. Reason as follow: ' + obj.desc);
-					}
-				});
-				$("#resetSubsModal #file-upload").val('');
-				$("#resetSubsModal #single-sub-input").val('');
+			var csv = content;
+			csv = csv.replace(/^\s*$/g, "");
+			var data = $.csv.toArrays(csv);
+			var header_line = data[0];
+			var headers = [];
+			var ret = [];
+			for (var item in header_line) {
+				headers[item] = data[0][item];
 			}
+			var _c = 0;
+			var retRow;
+			for (var row in data) {
+				if (row != 0 && data[row].length == headers.length) { // skip the first (header) and only take rows that hass all column of the headers
+					retRow = {};
+					for (var item in data[row]) {
+						retRow[headers[item]] = data[row][item];
+					}
+					ret[_c++] = retRow;
+				}
+			}
+
+			csvContentParsedCB(JSON.stringify(ret));
+		});
+	}
+
+	$("#resetSubsModal #upload").click(function(event) {
+		function resetLines(content) {
+			$.ajax({
+				url: "/api/resetlines",
+				type: "POST",
+				data: {sid: content}
+			}).done(function(msg) {
+				obj = JSON.parse(msg);
+				if (obj.status == "1") { // success - print the file token
+					$('#resetSubsModal #saveOutput').append('Successful upload. Results: ' + JSON.stringify(obj.input));
+				} else {
+					$('#resetSubsModal #saveOutput').append('Failed on upload. Reason as follow: ' + obj.desc);
+				}
+			});
+			$("#resetSubsModal #file-upload").val('');
+			$("#resetSubsModal #single-sub-input").val('');
+		}
 
 		var files = $("#resetSubsModal #file-upload").get(0).files;
 		$('#resetSubsModal #saveOutput').html('');
-		if(files.length == 0) {
-			if($("#resetSubsModal #single-sub-input").val()) {
+		if (files.length == 0) {
+			if ($("#resetSubsModal #single-sub-input").val()) {
 				resetLines($("#resetSubsModal #single-sub-input").val());
 			}
 		} else {
-			for(var i = 0; i < files.length; i++) {
+			for (var i = 0; i < files.length; i++) {
 				getInputFileContent(files[i], resetLines);
-		}
+			}
 		}
 	});
 
 	$("#uploadModal #upload").click(function(event) {
 		var files = $("#uploadModal #file-upload").get(0).files;
 		$('#uploadModal #saveOutput').html('');
-		for(var i = 0; i < files.length; i++) {
-			getCSVContent(files[i], function(content){
+		for (var i = 0; i < files.length; i++) {
+			getCSVContent(files[i], function(content) {
 				$.ajax({
 					url: '/api/bulkcredit',
 					type: "POST",
@@ -136,57 +138,57 @@ $(function() {
 			var files = $("#importPricesModal #file-upload2").get(0).files; // FileList object
 			if (files.length) {
 				$(this).attr('disabled', 'disabled');
-			var file = files[0];
-			var reader = new FileReader();
-			reader.readAsText(file);
-			reader.onload = function(event) {
-				var csv = event.target.result;
-				var data = $.csv.toArrays(csv);
-				var header_line = data[0];
-				var headers = [];
-				var ret = [];
-				for (var item in header_line) {
-					headers[item] = data[0][item];
-				}
-				var _c = 0;
-				var retRow;
-				for (var row in data) {
-					if (row != 0) { // skip the first (header)
-						retRow = {};
-						for (var item in data[row]) {
-							retRow[headers[item]] = data[row][item];
-						}
-						ret[_c++] = retRow;
+				var file = files[0];
+				var reader = new FileReader();
+				reader.readAsText(file);
+				reader.onload = function(event) {
+					var csv = event.target.result;
+					var data = $.csv.toArrays(csv);
+					var header_line = data[0];
+					var headers = [];
+					var ret = [];
+					for (var item in header_line) {
+						headers[item] = data[0][item];
 					}
-				}
-
-				var _prices = JSON.stringify(ret);
-				$.ajax({
-					url: '/api/importpriceslist',
-					type: "POST",
-					data: {prices: _prices, remove_non_existing_usage_types: remove_non_existing_usage_types}
-				}).done(function(msg) {
-					obj = JSON.parse(msg);
-						var output;
-					if (obj.status == "1") {
-							output = 'Success.<br/>';
-						var reasons = {"updated": "Updated", "future": "Rates that were not imported due to an existing future rate", "missing_category": "Rates that were not updated because they miss category", "old": "Inactive rates not imported"};
-						$.each(obj.keys, function(key, value) {
-							if (value.length) {
-								output += eval("reasons." + key) + ": " + value.join() + "<br/>";
+					var _c = 0;
+					var retRow;
+					for (var row in data) {
+						if (row != 0) { // skip the first (header)
+							retRow = {};
+							for (var item in data[row]) {
+								retRow[headers[item]] = data[row][item];
 							}
-						});
-						$("#importPricesModal #file-upload2").val('');
-						$('#importPricesModal #saveOutput2').html(output);
-					} else {
+							ret[_c++] = retRow;
+						}
+					}
+
+					var _prices = JSON.stringify(ret);
+					$.ajax({
+						url: '/api/importpriceslist',
+						type: "POST",
+						data: {prices: _prices, remove_non_existing_usage_types: remove_non_existing_usage_types}
+					}).done(function(msg) {
+						obj = JSON.parse(msg);
+						var output;
+						if (obj.status == "1") {
+							output = 'Success.<br/>';
+							var reasons = {"updated": "Updated", "future": "Rates that were not imported due to an existing future rate", "missing_category": "Rates that were not updated because they miss category", "old": "Inactive rates not imported"};
+							$.each(obj.keys, function(key, value) {
+								if (value.length) {
+									output += eval("reasons." + key) + ": " + value.join() + "<br/>";
+								}
+							});
+							$("#importPricesModal #file-upload2").val('');
+							$('#importPricesModal #saveOutput2').html(output);
+						} else {
 							output = 'Failed to import: ' + obj.desc;
 							if (obj.input) {
 								output += '</br>Input was: ' + JSON.stringify(obj.input);
-					}
+							}
 							$('#importPricesModal #saveOutput2').html(output);
 						}
 						$('#import').removeAttr("disabled");
-				});
+					});
 				}
 			}
 
@@ -244,12 +246,14 @@ $(function() {
 		$("#manual_filters").slideToggle();
 		$("i", this).toggleClass("icon-chevron-down icon-chevron-up");
 	});
+	
+	$('.wholesale-table').stickyTableHeaders({fixedOffset: $('.navbar-fixed-top')});
 }
 );
 function removeFilter(button) {
 	$(button).siblings("input[name='manual_value[]']").val('');
 	if ($(button).parent().siblings().length) {
-	$(button).parent().remove();
+		$(button).parent().remove();
 	}
 	else {
 		$('.advanced-options').click();
@@ -322,10 +326,16 @@ function isAPIAvailable() {
 		return false;
 	}
 }
-$(document).ready(function () {
-$(".config input[type='checkbox']").bootstrapSwitch();
+$(document).ready(function() {
+	$(".config input[type='checkbox']").bootstrapSwitch();
 });
 
+/**
+ * Open wholesale popup
+ * @param {type} obj
+ * @param {type} direction
+ * @returns {undefined}
+ */
 function openPopup(obj, direction) {
 	obj = $(obj);
 	var popup_group_field = $("input[name='popup_group_field']").val();

@@ -289,3 +289,6 @@ div.billrun-logo img {
 .wholesale-table .totals td {
 	font-weight: bold;
 }
+.wholesale-table thead {
+	background-color: white;
+}

@@ -73,7 +73,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	protected function fetchJsFiles() {
 		$ret = '';
 		foreach ($this->jsPaths as $jsPath) {
-			$ret.='<script src="' . $jsPath . '?' . $this->commit . '"></script>' . PHP_EOL;
+			$ret.='<script src="' . $jsPath . (Billrun_Factory::config()->isProd() ?  '?' . $this->commit : '') . '"></script>' . PHP_EOL;
 		}
 		return $ret;
 	}
@@ -951,6 +951,7 @@ class AdminController extends Yaf_Controller_Abstract {
 			return false;
 		$this->addJs('//www.google.com/jsapi');
 		$this->addJs('/js/graphs.js');
+		$this->addJs('/js/jquery.stickytableheaders.min.js');
 		$table = 'wholesale';
 		$group_by = $this->getSetVar($this->getSession($table), 'group_by', 'group_by', 'dayofmonth');
 		$from_day = $this->getSetVar($this->getSession($table), 'from_day', 'from_day', (new Zend_Date(strtotime('60 days ago'), null, new Zend_Locale('he_IL')))->toString('YYYY-MM-dd'));
