@@ -28,17 +28,20 @@ class Billrun_Db extends Mongodloid_Db {
 	 * @param \Mongodloid_Connection $connection
 	 */
 	public function __construct(\MongoDb $db, \Mongodloid_Connection $connection) {
-		parent::__construct($db, $connection);
-		$this->collections = Billrun_Factory::config()->getConfigValue('db.collections', array());
-		if ($this->compareClientVersion('1.5.3', '>=')) {
-			// see bugs: 
+		$timeout = Billrun_Factory::config()->getConfigValue('db.timeout', 3600000);
+		if ($this->compareClientVersion('1.5', '>=')) {
+			// see also bugs:
 			// https://jira.mongodb.org/browse/PHP-1099
 			// https://jira.mongodb.org/browse/PHP-1080
+			$db->setWriteConcern($db->getWriteConcern()['w'], $timeout);
 		} else {
-			$timeout = Billrun_Factory::config()->getConfigValue('db.timeout', 3600000); // default 60 minutes
 			Billrun_Factory::log()->log('Set database cursor timeout to: ' . $timeout, Zend_Log::INFO);
 			@MongoCursor::$timeout = $timeout;
 		}
+
+		parent::__construct($db, $connection);
+		// TODO: refatoring the collections to factory (loose coupling)
+		$this->collections = Billrun_Factory::config()->getConfigValue('db.collections', array());
 	}
 
 	/**
