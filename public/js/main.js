@@ -246,8 +246,10 @@ $(function() {
 		$("#manual_filters").slideToggle();
 		$("i", this).toggleClass("icon-chevron-down icon-chevron-up");
 	});
-	
-	$('.wholesale-table').stickyTableHeaders({fixedOffset: $('.navbar-fixed-top')});
+
+	if ($.fn.stickyTableHeaders) {
+		$('.wholesale-table').stickyTableHeaders({fixedOffset: $('.navbar-fixed-top')});
+	}
 }
 );
 function removeFilter(button) {
