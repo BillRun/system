@@ -122,10 +122,12 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 				continue;
 			}
 
-			if ($this->isFileReceived($file->name, static::$type, $isFileReceivedMoreFields)) {
+			if (!$this->lockFileForReceive($file->name, static::$type, $isFileReceivedMoreFields)) {
 				Billrun_Factory::log()->log("FTP: " . $file->name . " received already", Zend_Log::INFO);
 				continue;
 			}
+			
+			$fileData = $this->getFileLogData($file->name, static::$type, $isFileReceivedMoreFields);
 
 			Billrun_Factory::log()->log("FTP: Download file " . $file->name . " from remote host", Zend_Log::INFO);
 			$targetPath = $this->workspace;
@@ -140,22 +142,23 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 				Billrun_Factory::log()->log("FTP: failed to download " . $file->name . " from remote host", Zend_Log::ALERT);
 				continue;
 			}
-			$received_path = $targetPath . $file->name;
+			$fileData['path'] = $targetPath . $file->name;
 			if ($this->preserve_timestamps) {
 				$timestamp = $file->getModificationTime();
 				if ($timestamp !== FALSE) {
-					Billrun_Util::setFileModificationTime($received_path, $timestamp);
+					Billrun_Util::setFileModificationTime($fileData['path'], $timestamp);
 				}
 			}
-			Billrun_Factory::dispatcher()->trigger('afterFTPFileReceived', array(&$received_path, $file, $this, $hostName, $extraData));
+			Billrun_Factory::dispatcher()->trigger('afterFTPFileReceived', array(&$fileData['path'], $file, $this, $hostName, $extraData));
 
 			if(!empty($this->backupPaths)) {
-				$backedTo = $this->backup($received_path, $file->name, $this->backupPaths, $hostName, FALSE);
-				$extraData['backed_to'] = $backedTo;
-				Billrun_Factory::dispatcher()->trigger('afterReceiverBackup', array($this, &$received_path, $hostName));
+				$backedTo = $this->backup($fileData['path'], $file->name, $this->backupPaths, $hostName, FALSE);
+				Billrun_Factory::dispatcher()->trigger('beforeReceiverBackup', array($this, &$fileData['path'], $hostName));
+				$fileData['backed_to'] = $backedTo;
+				Billrun_Factory::dispatcher()->trigger('afterReceiverBackup', array($this, &$fileData['path'], $hostName));
 			}
-			if ($this->logDB($received_path, $hostName, $extraData)) {
-				$ret[] = $received_path;
+			if ($this->logDB($fileData)) {				
+				$ret[] = $fileData['path'];
 				$count++; //count the file as recieved
 				// delete the file after downloading and store it to processing queue
 				if (Billrun_Factory::config()->isProd() && (isset($config['delete_received']) && $config['delete_received'] )) {

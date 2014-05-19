@@ -71,11 +71,19 @@ class Billrun_Receiver_Inline extends Billrun_Receiver {
 		}
 		$ret = array();
 		Billrun_Factory::log()->log("Billrun_Receiver_Inline::receive - handle file {$this->filename}", Zend_Log::DEBUG);
-		$path = $this->handleFile();
+		$path = $this->handleFile();		
 		if (!$path) {
 			Billrun_Factory::log()->log("NOTICE : Couldn't write file $this->filename.", Zend_Log::NOTICE);
 			return FALSE;
 		} else {
+			$fileData = $this->getFileLogData($this->filename, $type);
+				$fileData['path'] = $path;
+			if(!empty($this->backupPaths)) {
+				$backedTo = $this->backup($fileData['path'], $file->filename, $this->backupPaths, FALSE, FALSE);
+				Billrun_Factory::dispatcher()->trigger('beforeReceiverBackup', array($this, &$fileData['path'], $hostName));
+				$fileData['backed_to'] = $backedTo;
+				Billrun_Factory::dispatcher()->trigger('afterReceiverBackup', array($this, &$fileData['path'], $hostName));
+			}
 			$this->logDB($path);
 			$ret[] = $path;
 		}
