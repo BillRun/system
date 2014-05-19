@@ -385,12 +385,14 @@ class WholesaleModel {
 					'display' => 'newSubs',
 					'decimal' => 0,
 					'label' => 'New subscribers',
+					'commonColumn' => 'np',
 				),
 				array(
 					'value' => 'churnSubs',
 					'display' => 'churnSubs',
 					'decimal' => 0,
 					'label' => 'Churn total',
+					'commonColumn' => 'np',
 				),
 				array(
 					'value' => 'simCount',
@@ -458,7 +460,11 @@ class WholesaleModel {
 			'extra' => array(
 				'label' => 'Extra flat revenue',
 				'colspan' => 2,
-			)
+			),
+			'np' => array(
+				'label' => 'NP',
+				'colspan' => 2,
+			),
 		);
 	}
 
