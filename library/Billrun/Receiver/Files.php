@@ -57,9 +57,9 @@ class Billrun_Receiver_Files extends Billrun_Receiver {
 				$fileData['path'] = $path;
 				if(!empty($this->backupPaths)) {
 					$backedTo = $this->backup($fileData['path'], $file, $this->backupPaths, FALSE, FALSE);
-					Billrun_Factory::dispatcher()->trigger('beforeReceiverBackup', array($this, &$fileData['path'], $hostName));
+					Billrun_Factory::dispatcher()->trigger('beforeReceiverBackup', array($this, &$fileData['path']));
 					$fileData['backed_to'] = $backedTo;
-					Billrun_Factory::dispatcher()->trigger('afterReceiverBackup', array($this, &$fileData['path'], $hostName));
+					Billrun_Factory::dispatcher()->trigger('afterReceiverBackup', array($this, &$fileData['path']));
 				}
 				$this->logDB($fileData);
 				$ret[] = $fileData['path'];

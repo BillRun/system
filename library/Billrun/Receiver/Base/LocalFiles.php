@@ -87,7 +87,7 @@ abstract class Billrun_Receiver_Base_LocalFiles extends Billrun_Receiver {
 			}
 			Billrun_Factory::log()->log("Billrun_Receiver_Base_LocalFiles::receive - handle file {$file}", Zend_Log::DEBUG);
 			
-			$fileData = $this->getFileLogData($file, $type, $isFileReceivedMoreFields);
+			$fileData = $this->getFileLogData($file, $type);
 			$fileData['path'] = $this->handleFile($path, $file);
 			
 			if (!$fileData['path']) {
@@ -96,9 +96,9 @@ abstract class Billrun_Receiver_Base_LocalFiles extends Billrun_Receiver {
 			}
 			if(!empty($this->backupPaths)) {
 				$backedTo = $this->backup($fileData['path'], $file, $this->backupPaths, FALSE, FALSE);
-				Billrun_Factory::dispatcher()->trigger('beforeReceiverBackup', array($this, &$fileData['path'], $hostName));
+				Billrun_Factory::dispatcher()->trigger('beforeReceiverBackup', array($this, &$fileData['path']));
 				$fileData['backed_to'] = $backedTo;
-				Billrun_Factory::dispatcher()->trigger('afterReceiverBackup', array($this, &$fileData['path'], $hostName));
+				Billrun_Factory::dispatcher()->trigger('afterReceiverBackup', array($this, &$fileData['path']));
 			}
 			if ($this->logDB($fileData) !== FALSE) {
 				$ret[] = $fileData['path'];

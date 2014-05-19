@@ -101,7 +101,7 @@ trait Billrun_Traits_FileActions {
 			$result = $log->update($query,$update,array('upsert'=>1,'w'=> 1));			
 		} catch(Exception $e) {
 			if($e->getCode() == 11000) {
-				Billrun_Factory::log()->log("Billrun_Traits_FileActions::lockFileForReceive - Trying to refetch  a file the was allready beeen fetched" . $filename . " with stamp of : {$logData['stamp']}", Zend_Log::NOTICE);
+				Billrun_Factory::log()->log("Billrun_Traits_FileActions::lockFileForReceive - Trying to refetch  a file the was already beeen fetched" . $filename . " with stamp of : {$logData['stamp']}", Zend_Log::NOTICE);
 			} else {
 				throw $e;
 			}
