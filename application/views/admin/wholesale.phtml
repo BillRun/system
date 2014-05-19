@@ -36,6 +36,10 @@
 				foreach ($report_params['fields'] as $usage_type => $fields) {
 					echo '<th colspan="' . count($fields) . '">' . $usage_type . '</th>';
 				}
+				if ($report_type == 'nr') {
+					$total_cost = 0;
+					echo '<th rowspan="2">Total cost</th>';
+				}
 				echo "</tr>";
 				echo "<tr>";
 				foreach ($report_params['fields'] as $fields) {
@@ -69,6 +73,18 @@
 							echo '</td>';
 						}
 					}
+					if ($report_type == 'nr') {
+						$row_cost = 0;
+						foreach ($report_params['fields'] as $usage_type => $usage_fields) {
+							foreach ($usage_fields as $field) {
+								if ($field['value'] == 'cost') {
+									$row_cost+=$report_data['table_data'][$usage_type][$group_value][$field['value']];
+								}
+							}
+						}
+						echo '<td>' . number_format($row_cost, 2) . '</td>';
+						$total_cost+=$row_cost;
+					}
 					echo '</tr>';
 				}
 				echo '<tr class="totals">';
@@ -85,6 +101,9 @@
 						}
 						echo '</td>';
 					}
+				}
+				if ($report_type == 'nr') {
+					echo '<td>' . number_format($total_cost, 2) . '</td>';
 				}
 				echo '</tr></tbody>';
 				echo '</table>';
