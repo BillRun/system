@@ -203,7 +203,7 @@ $(function() {
 
 	});
 
-	$('.multiselect').multiselect({});
+	$('.multiselect:not(#usage,#billrun,#source,#extra_columns select)').multiselect({});
 
 	$('#usage,#billrun,#source').multiselect({
 		selectAllValue: 'all',
