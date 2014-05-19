@@ -111,7 +111,7 @@ class WholesaleModel {
 				$row['cost'] = floatval($row['cost']);
 			}
 			if (isset($row['duration'])) {
-				$row['duration'] = $row['duration'] / pow(1024, 2);
+				$row['duration'] = $row['duration'] / pow(1024, 3);
 			}
 		}
 		return $data;
