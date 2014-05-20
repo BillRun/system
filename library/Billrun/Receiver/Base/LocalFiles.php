@@ -81,8 +81,12 @@ abstract class Billrun_Receiver_Base_LocalFiles extends Billrun_Receiver {
 		$receivedCount = 0;
 		foreach ($files as $file) {
 			$path = $this->srcPath . DIRECTORY_SEPARATOR . $file;
-			if (!$this->isFileValid($file, $path) || !$this->lockFileForReceive($file, $type) || is_dir($path)) {
-				Billrun_Factory::log('File ' . $file . ' is not valid or received already', Zend_Log::INFO);
+			if (!$this->isFileValid($file, $path) || is_dir($path)) {
+				Billrun_Factory::log('File ' . $file . ' is not valid', Zend_Log::INFO);
+				continue;
+			}
+			if ( !$this->lockFileForReceive($file, $type) ) {
+				Billrun_Factory::log('File ' . $file . ' has been received already', Zend_Log::INFO);
 				continue;
 			}
 			Billrun_Factory::log()->log("Billrun_Receiver_Base_LocalFiles::receive - handle file {$file}", Zend_Log::DEBUG);
