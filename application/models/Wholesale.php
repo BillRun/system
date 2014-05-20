@@ -61,7 +61,9 @@ class WholesaleModel {
 		foreach ($arg_list as $data) {
 			$ret = array_merge($ret, array_keys($data));
 		}
-		return asort(array_unique($ret));
+		$unique_ret = array_unique($ret);
+		asort($unique_ret);
+		return $unique_ret;
 	}
 
 	public function getNrStats($group_field, $from_day, $to_day, $carrier = null) {
