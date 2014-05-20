@@ -96,7 +96,7 @@ trait Billrun_Traits_FileActions {
 			'stamp' => $logData['stamp'],
 			'file_name' => $filename,
 			'fetching_time' => array('$lt' => new MongoDate(time()-$orphan_window)),
-			'received_time' => array('exists' => false)
+			'received_time' => array('$exists' => false)
 		);
 		
 		$update = array(
