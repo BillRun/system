@@ -55,8 +55,12 @@ abstract class Billrun_Receiver extends Billrun_Base {
 		} else {
 			$this->backupPaths = Billrun_Factory::config()->getConfigValue($this->getType() . '.backup_path', array('./backups/' . $this->getType()));
 		}
-		if (isset($options['receiver']['backup_granularity']) && $options['processor']['backup_granularity']) {
-			$this->setGranularity((int) $options['processor']['backup_granularity']);
+		if (isset($options['receiver']['backup_granularity']) && $options['receiver']['backup_granularity']) {
+			$this->setGranularity((int) $options['receiver']['backup_granularity']);
+		}
+		
+		if (isset($options['receiver']['orphan_time']) && ((int) $options['receiver']['orphan_time']) > 900 ) {
+			$this->file_fetch_orphan_time =  $options['receiver']['orphan_time'];
 		}
 	}
 
@@ -76,12 +80,12 @@ abstract class Billrun_Receiver extends Billrun_Base {
 		$log = Billrun_Factory::db()->logCollection();
 
 		Billrun_Factory::dispatcher()->trigger('beforeLogReceiveFile', array(&$fileData, $this));
-
+		
 		$query = array(
-			'stamp' => $fileData['stamp'],
+			'stamp' => $this->getFileLogData($fileData['file_name'], $this->getType(), Billrun_Util::getFieldVal($fileData['extra_data'],array()) )['stamp'],
 			'received_time' => array('exists' => false)
 		);
-
+	
 		$update = array(
 			'$set' => array_merge($fileData, array('received_time' => date(self::base_dateformat)))
 		);

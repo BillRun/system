@@ -450,4 +450,17 @@ class Billrun_Util {
 		return $query;
 	}
 
+	/**
+	 * Returns an array value if it is set
+	 * @param mixed $field the array value
+	 * @param mixed $defVal the default value to return if $field is not set
+	 * @return mixed the array value if it is set, otherwise returns $defVal
+	 */
+	static public function getFieldVal(&$field, $defVal) {
+		if (isset($field)) {
+			return $field;
+		}
+		return $defVal;
+	}
+	
 }

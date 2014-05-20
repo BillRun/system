@@ -29,11 +29,15 @@ trait Billrun_Traits_FileActions {
 	
 	
 	/**
-	 *
 	 * @var boolean whether to preserve the modification timestamps of the received files
 	 */
 	protected $preserve_timestamps = true;
 
+	
+	/**
+	 * @var boolean whether to preserve the modification timestamps of the received files
+	 */
+	protected $file_fetch_orphan_time = 3600;
 	
 	/**
 	 * Get the data the is stored in the file name.
@@ -54,7 +58,7 @@ trait Billrun_Traits_FileActions {
 	 * @return boolean false if the file name should not be received true if it should.
 	 */
 	protected function isFileValid($filename, $path) {
-		//igonore hidden files
+		//igonore hidden files by default
 		return preg_match(( $this->filenameRegex ? $this->filenameRegex : "/^[^\.]/"), $filename);
 	}
 	
@@ -64,8 +68,9 @@ trait Billrun_Traits_FileActions {
 	 */
 	protected function isFileReceived($filename, $type, $more_fields = array()) {
 		$log = Billrun_Factory::db()->logCollection();
-
+		$logData = $this->getFileLogData($filename, $type, $more_fields);
 		$query = array(
+			'stamp' => $logData['stamp'],
 			'source' => $type,
 			'file_name' => $filename,
 		);
@@ -83,8 +88,9 @@ trait Billrun_Traits_FileActions {
 	 * Method to check if the file is allready being received 
 	 * @return bollean true  if the file wasn't receive and can be fetched to the workspace or false if another process allready received the file.
 	 */
-	protected function lockFileForReceive($filename, $type, $more_fields = array(),$orphan_window = 3600) {
+	protected function lockFileForReceive($filename, $type, $more_fields = array(),$orphan_window = false) {
 		$log = Billrun_Factory::db()->logCollection();
+		$orphan_window = $orphan_window ? $orphan_window : $this->file_fetch_orphan_time;
 		$logData = $this->getFileLogData($filename, $type, $more_fields);
 		$query = array(
 			'stamp' => $logData['stamp'],
@@ -101,7 +107,7 @@ trait Billrun_Traits_FileActions {
 			$result = $log->update($query,$update,array('upsert'=>1,'w'=> 1));			
 		} catch(Exception $e) {
 			if($e->getCode() == 11000) {
-				Billrun_Factory::log()->log("Billrun_Traits_FileActions::lockFileForReceive - Trying to refetch  a file the was already beeen fetched" . $filename . " with stamp of : {$logData['stamp']}", Zend_Log::NOTICE);
+				Billrun_Factory::log()->log("Billrun_Traits_FileActions::lockFileForReceive - Trying to relock  a file the was already beeen locked : " . $filename . " with stamp of : {$logData['stamp']}", Zend_Log::NOTICE);
 			} else {
 				throw $e;
 			}
