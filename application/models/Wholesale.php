@@ -61,9 +61,7 @@ class WholesaleModel {
 		foreach ($arg_list as $data) {
 			$ret = array_merge($ret, array_keys($data));
 		}
-		$ret = array_unique($ret);
-		asort($ret);
-		return $ret;
+		return asort(array_unique($ret));
 	}
 
 	public function getNrStats($group_field, $from_day, $to_day, $carrier = null) {
@@ -292,30 +290,23 @@ class WholesaleModel {
 	}
 
 	public function getRetailData($from_day, $to_day) {
-		$sendingTypes = $this->getSendingTypes();
 		$query = 'SELECT retail_extra.dayofmonth,retail_extra.over_plan,retail_extra.out_plan,retail_new.subsCount AS newSubs,'
 				. 'retail_churn.subsCount AS churnSubs,sum(retail_active.subsCount) AS totalCustomer,sum(retail_active.totalCost) AS flatRateRevenue,'
-				. 'simAggregated.simCount as simCount,simAggregated.totalSimCost as totalSimCost, retail_unsubscribe.subsCount as subsLeft';
+				. 'sum(retail_sim2.simCount) as simCountTotal, sum(retail_sim2.simCost) as simCostTotal, '
+				. 'SUM(retail_sim2.upsCount) as upsCountTotal, SUM(retail_sim2.upsCost) as upsCostTotal, '
+				. 'SUM(retail_sim2.simCount+retail_sim2.upsCount) as totalSimCountTotal, SUM(retail_sim2.simCost+retail_sim2.upsCost) as totalSimCostTotal,'
+				. 'retail_unsubscribe.subsCount as subsLeft';
 		foreach ($this->getPlans() as $planName) {
 			$query.= ', SUM(IF(retail_active.planName="' . $planName . '", retail_active.subsCount, 0)) as ' . $planName;
-		}
-		foreach ($sendingTypes as $sendingType) {
-			$query.=', simAggregated.' . $sendingType;
 		}
 		$query.= ' FROM retail_extra LEFT JOIN retail_new ON retail_extra.dayofmonth=retail_new.dayofmonth '
 				. 'LEFT JOIN retail_churn ON retail_extra.dayofmonth = retail_churn.dayofmonth '
 				. 'LEFT JOIN retail_active ON retail_extra.dayofmonth=retail_active.dayofmonth '
-				. 'LEFT JOIN '
-				. '(SELECT dayofmonth,sum(simCount-cancelCount) as simCount,sum(totalSimCost-totalCancelCost) as totalSimCost';
-		foreach ($sendingTypes as $sendingType) {
-			$query.=', SUM(IF(sendingType="' . $sendingType . '",simCount-cancelCount,0)) as ' . $sendingType;
-		}
-		$query.= ' FROM retail_sim group by dayofmonth) as simAggregated '
-				. 'ON retail_extra.dayofmonth=simAggregated.dayofmonth'
+				. 'LEFT JOIN retail_sim2 ON retail_extra.dayofmonth=retail_sim2.dayofmonth'
 				. ' LEFT JOIN retail_unsubscribe on retail_extra.dayofmonth=retail_unsubscribe.dayofmonth '
 				. 'WHERE retail_extra.dayofmonth BETWEEN "' . $from_day . '" AND "' . $to_day . '" '
 				. 'GROUP BY retail_extra.dayofmonth';
-
+//		print $query;
 		$data = $this->db->fetchAll($query);
 		return $data;
 	}
@@ -331,14 +322,13 @@ class WholesaleModel {
 
 	protected function getSendingTypes() {
 		return array(
-			'SIM',
-			'UPS',
+			'Sim',
+			'Ups',
 		);
 	}
 
 	public function getRetailTableParams() {
 		$plans = $this->getPlans();
-		$sendingTypes = $this->getSendingTypes();
 		$retailTableParams = array(
 			'title' => 'Retail',
 			'fields' => array(
@@ -398,20 +388,21 @@ class WholesaleModel {
 					'commonColumn' => 'np',
 				),
 				array(
-					'value' => 'simCount',
-					'display' => 'simCount',
+					'value' => 'totalSimCountTotal',
+					'display' => 'totalSimCountTotal',
 					'decimal' => 0,
 					'label' => 'Sum',
 					'commonColumn' => 'sim',
 				),
 				array(
-					'value' => 'totalSimCost',
-					'display' => 'totalSimCost',
-					'decimal' => 2,
+					'value' => 'totalSimCostTotal',
+					'display' => 'totalSimCostTotal',
+					'decimal' => 0,
 					'label' => 'Sim revenue',
 				),
 			)
 		);
+		
 		foreach ($retailTableParams['fields'] as $index => $field) {
 			if ($field['value'] == 'totalCustomer') {
 				$totalCustomerIndex = $index;
@@ -431,20 +422,28 @@ class WholesaleModel {
 			array_splice($retailTableParams['fields'], $totalCustomerIndex, 0, $planFields);
 		}
 		foreach ($retailTableParams['fields'] as $index => $field) {
-			if ($field['value'] == 'simCount') {
+			if ($field['value'] == 'totalSimCountTotal') {
 				$simCountIndex = $index;
 			}
 		}
+		
 		if (isset($simCountIndex)) {
-			foreach ($sendingTypes as $sendingType) {
-				$sendingTypeFields[] = array(
-					'value' => $sendingType,
-					'display' => $sendingType,
+			$sendingTypeFields = array(
+				array(
+					'value' => 'simCountTotal',
+					'display' => 'simCountTotal',
 					'decimal' => 0,
-					'label' => $sendingType,
+					'label' => 'sim',
 					'commonColumn' => 'sim',
-				);
-			}
+				),
+				array(
+					'value' => 'upsCountTotal',
+					'display' => 'upsCountTotal',
+					'decimal' => 0,
+					'label' => 'ups',
+					'commonColumn' => 'sim',
+				)
+			);
 			array_splice($retailTableParams['fields'], $simCountIndex, 0, $sendingTypeFields);
 		}
 		return $retailTableParams;
