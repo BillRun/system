@@ -293,22 +293,30 @@ class WholesaleModel {
 
 	public function getRetailData($from_day, $to_day) {
 		$query = 'SELECT retail_extra.dayofmonth,retail_extra.over_plan,retail_extra.out_plan,retail_new.subsCount AS newSubs,'
-				. 'retail_churn.subsCount AS churnSubs,sum(retail_active.subsCount) AS totalCustomer,sum(retail_active.totalCost) AS flatRateRevenue,'
-				. 'sum(retail_sim2.simCount) as simCountTotal, sum(retail_sim2.simCost) as simCostTotal, '
+				. 'retail_churn.subsCount AS churnSubs,retail_active_agg.totalCost AS flatRateRevenue,';
+		$query .=  'sum(retail_active_agg.' . implode('+retail_active_agg.', $this->getPlans()) . ') AS totalCustomer';
+		foreach ($this->getPlans() as $planName) {
+			$query.= ', retail_active_agg.' . $planName . ' as ' . $planName;
+		}
+		
+		$query .= ',sum(retail_sim2.simCount) as simCountTotal, sum(retail_sim2.simCost) as simCostTotal, '
 				. 'SUM(retail_sim2.upsCount) as upsCountTotal, SUM(retail_sim2.upsCost) as upsCostTotal, '
 				. 'SUM(retail_sim2.simCount+retail_sim2.upsCount) as totalSimCountTotal, SUM(retail_sim2.simCost+retail_sim2.upsCost) as totalSimCostTotal,'
 				. 'retail_unsubscribe.subsCount as subsLeft';
+		$query.= ' FROM retail_extra LEFT JOIN retail_new ON retail_extra.dayofmonth=retail_new.dayofmonth '
+				. 'LEFT JOIN retail_churn ON retail_extra.dayofmonth = retail_churn.dayofmonth '
+				. 'LEFT JOIN (SELECT dayofmonth';
+		
 		foreach ($this->getPlans() as $planName) {
 			$query.= ', SUM(IF(retail_active.planName="' . $planName . '", retail_active.subsCount, 0)) as ' . $planName;
 		}
-		$query.= ' FROM retail_extra LEFT JOIN retail_new ON retail_extra.dayofmonth=retail_new.dayofmonth '
-				. 'LEFT JOIN retail_churn ON retail_extra.dayofmonth = retail_churn.dayofmonth '
-				. 'LEFT JOIN retail_active ON retail_extra.dayofmonth=retail_active.dayofmonth '
-				. 'LEFT JOIN retail_sim2 ON retail_extra.dayofmonth=retail_sim2.dayofmonth'
-				. ' LEFT JOIN retail_unsubscribe on retail_extra.dayofmonth=retail_unsubscribe.dayofmonth '
+
+		$query .= ', sum(totalCost) AS totalCost FROM retail_active GROUP BY dayofmonth) AS retail_active_agg ON retail_extra.dayofmonth=retail_active_agg.dayofmonth '
+				. 'LEFT JOIN retail_sim2 ON retail_extra.dayofmonth=retail_sim2.dayofmonth '
+				. 'LEFT JOIN retail_unsubscribe on retail_extra.dayofmonth=retail_unsubscribe.dayofmonth '
 				. 'WHERE retail_extra.dayofmonth BETWEEN "' . $from_day . '" AND "' . $to_day . '" '
 				. 'GROUP BY retail_extra.dayofmonth';
-//		print $query;
+//		print $query;die;
 		$data = $this->db->fetchAll($query);
 		return $data;
 	}
