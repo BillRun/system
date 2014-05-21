@@ -740,7 +740,7 @@ class Billrun_Billrun {
 	}
 	
 	static protected function getAidPreloadKey($aid, $include_flats) {
-		return $aid."_".intval(false);
+		return $aid."_".intval($include_flats);
 	}
 
 	/**
