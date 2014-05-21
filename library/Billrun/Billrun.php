@@ -672,7 +672,7 @@ class Billrun_Billrun {
 			$ret = &static::$accountsLines;
 		}
 
-		return empty($ret[self::getAidPreloadKey($aid,$include_flats)]) ? array() : $ret[self::getAidPreloadKey($aid,$include_flats)];
+		return isset($ret[self::getAidPreloadKey($aid,$include_flats)]) ? $ret[self::getAidPreloadKey($aid,$include_flats)] : array();
 	}
 
 	/**
