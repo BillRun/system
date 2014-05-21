@@ -725,10 +725,10 @@ class Billrun_Billrun {
 			$cursor = Billrun_Factory::db(array('host'=>'172.28.202.111','port'=>27017,'user'=>'reading','password'=>'guprgri','name'=>'billing','options'=>array('connect'=>1,'readPreference'=>"RP_SECONDARY_PREFERRED")))->linesCollection()
 					->query($query)->cursor()->fields(array_merge($filter_fields , $requiredFields))
 					->sort($sort)->skip($bufferCount)->limit(Billrun_Factory::config()->getConfigValue('billrun.linesLimit', 10000))->timeout(-1)
-					->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));			
+					->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
 			foreach ($cursor as $line) {				
 					$ret[self::getAidPreloadKey($line['aid'],$include_flats)][] = $line;
-			}						
+			}
 		} while(($addCount = $cursor->count(true)) > 0);
 		Billrun_Factory::log()->log("Finished querying for accounts " . implode(",",$aids) . " lines with flats" . $include_flats, Zend_Log::INFO);		
 		
@@ -751,7 +751,7 @@ class Billrun_Billrun {
 	}
 	
 	static protected function getAidPreloadKey($aid, $include_flats) {
-		return $aid."_".intval($include_flats);
+		return $aid.'_'.intval($include_flats);
 	}
 
 	/**

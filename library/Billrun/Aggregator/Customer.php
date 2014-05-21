@@ -148,14 +148,19 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		$account_billrun = false;
 		$billrun_key = $this->getStamp();
 		$billruns_count = 0;
-		$dataKeys = array_keys($this->data);
-		$existingAccounts = array();
-		foreach($dataKeys as $key => $aid) {
-			if(Billrun_Billrun::exists($aid, $billrun_key)) {
-				unset($dataKeys[$key]);
-				//$existingAccounts[$aid]  = $this->data[$aid];
+		
+		if($this->bulkAccountPreload) {
+			Billrun_Factory::log('loading accounts that will be needed to be preloaded...', Zend_log::INFO);
+			$dataKeys = array_keys($this->data);
+			//$existingAccounts = array();			
+			foreach($dataKeys as $key => $aid) {
+				if(Billrun_Billrun::exists($aid, $billrun_key)) {
+					unset($dataKeys[$key]);
+					//$existingAccounts[$aid]  = $this->data[$aid];
+				}
 			}
 		}
+		
 		foreach ($this->data as $accid => $account) {
 			if ($this->memory_limit > -1 && memory_get_usage() > $this->memory_limit) {
 				Billrun_Factory::log('Customer aggregator memory limit of ' . $this->memory_limit / 1048576 . 'M has reached. Exiting (page: ' . $this->page . ', size: ' . $this->size . ').', Zend_log::ALERT);
@@ -171,12 +176,12 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 			Billrun_Factory::dispatcher()->trigger('beforeAggregateAccount', array($accid, $account, &$this));
 			Billrun_Factory::log('Current account index: ' . ++$billruns_count, Zend_log::INFO);
 			
-			if (!Billrun_Factory::config()->isProd()) {
-				if ($this->testAcc && is_array($this->testAcc) && !in_array($accid, $this->testAcc)) {//TODO : remove this??
-					//Billrun_Factory::log(" Moving on nothing to see here... , account Id : $accid");
-					continue;
-				}
-			}
+//			if (!Billrun_Factory::config()->isProd()) {
+//				if ($this->testAcc && is_array($this->testAcc) && !in_array($accid, $this->testAcc)) {//TODO : remove this??
+//					//Billrun_Factory::log(" Moving on nothing to see here... , account Id : $accid");
+//					continue;
+//				}
+//			}
 
 			if (Billrun_Billrun::exists($aid, $billrun_key)) {
 				Billrun_Factory::log()->log("Billrun " . $billrun_key . " already exists for account " . $accid, Zend_Log::ALERT);
