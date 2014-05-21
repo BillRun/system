@@ -149,33 +149,36 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		$billrun_key = $this->getStamp();
 		$billruns_count = 0;
 		$dataKeys = array_keys($this->data);
+		$existingAccounts = array();
+		foreach($dataKeys as $key => $aid) {
+			if(Billrun_Billrun::exists($aid, $billrun_key)) {
+				unset($dataKeys[$key]);
+				//$existingAccounts[$aid]  = $this->data[$aid];
+			}
+		}
 		foreach ($this->data as $accid => $account) {
 			if ($this->memory_limit > -1 && memory_get_usage() > $this->memory_limit) {
 				Billrun_Factory::log('Customer aggregator memory limit of ' . $this->memory_limit / 1048576 . 'M has reached. Exiting (page: ' . $this->page . ', size: ' . $this->size . ').', Zend_log::ALERT);
 				break;
 			}
 			
-			//perload  account lines
-			if( !($billruns_count % $this->bulkAccountPreload) && count($dataKeys) > $billruns_count) {
-				Billrun_Billrun::clearPreLoadedLines();
+			//perload  account lines 
+			if($this->bulkAccountPreload && !($billruns_count % $this->bulkAccountPreload) && count($dataKeys) > $billruns_count) {				
 				$aidsToLoad = array_slice($dataKeys, $billruns_count, $this->bulkAccountPreload);
-				foreach($aidsToLoad as $key => $aid) {
-					if(Billrun_Billrun::exists($accid, $billrun_key)) {
-						unset($aidsToLoad[$key]);
-					}
-				}
-				Billrun_Billrun::preLoadAccountsLines($aidsToLoad, $billrun_key);
+				Billrun_Billrun::preloadAccountsLines($aidsToLoad, $billrun_key);
 			} 
+			
 			Billrun_Factory::dispatcher()->trigger('beforeAggregateAccount', array($accid, $account, &$this));
 			Billrun_Factory::log('Current account index: ' . ++$billruns_count, Zend_log::INFO);
+			
 			if (!Billrun_Factory::config()->isProd()) {
-				if ($this->testAcc && is_array($this->testAcc) && !in_array($accid, $this->testAcc)) {
-					//Billrun_Factory::log("Moving on nothing to see here... , account Id : $accid");
+				if ($this->testAcc && is_array($this->testAcc) && !in_array($accid, $this->testAcc)) {//TODO : remove this??
+					//Billrun_Factory::log(" Moving on nothing to see here... , account Id : $accid");
 					continue;
 				}
 			}
 
-			if (Billrun_Billrun::exists($accid, $billrun_key)) {
+			if (Billrun_Billrun::exists($aid, $billrun_key)) {
 				Billrun_Factory::log()->log("Billrun " . $billrun_key . " already exists for account " . $accid, Zend_Log::ALERT);
 				continue;
 			}
@@ -227,6 +230,10 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 			$account_billrun->close($this->min_invoice_id);
 			Billrun_Factory::log("Finished closing billrun $billrun_key for account $accid", Zend_log::INFO);
 			Billrun_Factory::dispatcher()->trigger('afterAggregateAccount', array($accid, $account, $account_billrun, $lines, &$this));
+			
+			if( $this->bulkAccountPreload ) {
+				Billrun_Billrun::clearPreLoadedLines(array($accid));
+			}
 		}
 		if ($billruns_count == count($this->data)) {
 			$end_msg = "Finished iterating page $this->page of size $this->size. Memory usage is " . memory_get_usage() / 1048576 . " MB";

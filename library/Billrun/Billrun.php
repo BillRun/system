@@ -667,25 +667,43 @@ class Billrun_Billrun {
 	 */
 	protected function getAccountLines($aid, $include_flats = true) {
 		if(empty(static::$accountsLines[self::getAidPreloadKey($aid,$include_flats)])) {
-			$this->preLoadAccountsLines(array($aid), $this->billrun_key, $this->filter_fields, $include_flats);
+			 $ret = $this->loadAccountsLines(array($aid), $this->billrun_key, $this->filter_fields, $include_flats, true);
+		} else {
+			$ret = &static::$accountsLines;
 		}
 
-		return static::$accountsLines[self::getAidPreloadKey($aid,$include_flats)];
+		return empty($ret[self::getAidPreloadKey($aid,$include_flats)]) ? array() : $ret[self::getAidPreloadKey($aid,$include_flats)];
 	}
+
+	/**
+	 *  preload  and saves accounts lines to a static structure.
+	 * @param type $aids the account to get the lines for.
+	 * @param type $billrun_key the billrun key  that the lines should be in.
+	 * @param type $filter_fields the fileds that the returned lines need to have.
+	 * @param type $include_flats should the lines include the flat lines.
+	 */
+	static public function preloadAccountsLines($aids, $billrun_key ,$filter_fields = FALSE, $include_flats = FALSE) {
+		static::$accountsLines = array_merge( static::$accountsLines, static::loadAccountsLines($aids, $billrun_key, $filter_fields, $include_flats));
+	}
+	
 	
 	/**
 	 * Gets all the account lines for this billrun from the db
-	 * @param int $aid the account id
-	 * @param boolean $include_flats whether to include flat lines in the search
-	 * @return Mongodloid_Cursor the mongo cursor used to iterate over the lines
-	 * @todo remove aid parameter
+	 * @param type $aids the account to get the lines for.
+	 * @param type $billrun_key the billrun key  that the lines should be in.
+	 * @param type $filter_fields the fileds that the returned lines need to have.
+	 * @param type $include_flats should the lines include the flat lines.
+	 * @return an array containing all the  accounts with thier lines.
 	 */
-	static public function preLoadAccountsLines($aids, $billrun_key ,$filter_fields = FALSE, $include_flats = FALSE) {
-		if(empty($aids)) { return; }
+	static public function loadAccountsLines($aids, $billrun_key ,$filter_fields = FALSE, $include_flats = FALSE) {
+		if(empty($aids)) { return; }		
 		
+		$ret = array();		
 		$query = array(
 			'aid' => array('$in' => $aids),
+			'billrun' => $billrun_key
 		);
+		
 		$requiredFields = array('aid'=> 1);
 		$filter_fields = empty($filter_fields) ? Billrun_Factory::config()->getConfigValue('billrun.filter_fields', array()):  $filter_fields;
 		
@@ -695,37 +713,30 @@ class Billrun_Billrun {
 			);
 		}
 
-		$query['billrun'] = $billrun_key;
-
 		$sort = array(
 			'urt' => 1,
-		);
+		);				
 		
-		
-		foreach ($aids as $aid) {// create a new array for each account
-			static::$accountsLines[self::getAidPreloadKey($aid,$include_flats)] = array();
-		}
-		
-		/**
-		 * 
-		 */
 		Billrun_Factory::log()->log("Querying for account " . implode(",",$aids) . " lines with flats" . $include_flats, Zend_Log::INFO);
 		$addCount = $bufferCount = 0;		
 		do {
 			$bufferCount +=  $addCount;
-			$cursor = Billrun_Factory::db()->linesCollection()
+			//$cursor = Billrun_Factory::db()->linesCollection()
+			$cursor = Billrun_Factory::db(array('host'=>'172.28.202.111','port'=>27017,'user'=>'reading','password'=>'guprgri','name'=>'billing','options'=>array('connect'=>1,'readPreference'=>"RP_SECONDARY_PREFERRED")))->linesCollection()
 					->query($query)->cursor()->fields(array_merge($filter_fields , $requiredFields))
-					->sort($sort)->skip($bufferCount)->limit(Billrun_Factory::config()->getConfigValue('billrun.linesLimit', 10000))
+					->sort($sort)->skip($bufferCount)->limit(Billrun_Factory::config()->getConfigValue('billrun.linesLimit', 10000))->timeout(-1)
 					->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));			
-			foreach ($cursor as $line) {
-				static::$accountsLines[self::getAidPreloadKey($line['aid'],$include_flats)][] = $line;
+			foreach ($cursor as $line) {				
+					$ret[self::getAidPreloadKey($line['aid'],$include_flats)][] = $line;
 			}						
 		} while(($addCount = $cursor->count(true)) > 0);
-		Billrun_Factory::log()->log("Finished querying for accounts " . implode(",",$aids) . " lines with flats" . $include_flats, Zend_Log::INFO);
+		Billrun_Factory::log()->log("Finished querying for accounts " . implode(",",$aids) . " lines with flats" . $include_flats, Zend_Log::INFO);		
+		
+		return $ret;
 	}
 	
 	/**
-	 * remove account lines from the preload cache.
+	 * Remove account lines from the preload cache.
 	 * @param $aids a list of  aids to remove  of FALSE to remove all the  cached account lines. 	 
 	 */
 	static public function clearPreLoadedLines($aids = FALSE) {	
