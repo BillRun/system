@@ -16,6 +16,7 @@ class Asn_Object extends Asn_Base {
 
 	protected $parsedData = null;
 	protected $dataLength = false;
+	protected $rawDataLength = false;
 	protected $typeId = null;
 	protected $asnData = null;
 	protected $flags = null;
@@ -40,7 +41,7 @@ class Asn_Object extends Asn_Base {
 			$this->parsedData = array();
 			while (isset($data[0])) {
 				$ret = $this->newClassFromData($data);				
-				if( $ret instanceof Asn_Type_Eoc || ($ret->getDataLength() == 0 && hexdec($ret->getType()) == 0 )) {
+				if( $ret instanceof Asn_Type_Eoc || ( hexdec($ret->getType()) == 0 && $ret->getDataLength() == 0 )) {
 					$this->offset += $ret->getRawDataLength();
 					break;
 				}
@@ -83,15 +84,17 @@ class Asn_Object extends Asn_Base {
 	 * @return integer the length of the data that was used to create the object.
 	 */
 	public function getRawDataLength() {		
-		$rawDataLength = $this->offset;
-		if(is_array($this->parsedData)) {
-			foreach($this->parsedData as $child) {
-				$rawDataLength += $child->getRawDataLength();
-			}
-		} else {
-			$rawDataLength += $this->parsedData instanceof Asn_Object  ?  $this->parsedData->getRawDataLength() : strlen($this->parsedData);
-		}		
-		return $rawDataLength;
+		if(!$this->rawDataLength) {
+			$this->rawDataLength = $this->offset;
+			if(is_array($this->parsedData)) {
+				foreach($this->parsedData as $child) {
+					$this->rawDataLength += $child->getRawDataLength();
+				}
+			} else {
+				$this->rawDataLength += $this->parsedData instanceof Asn_Object  ?  $this->parsedData->getRawDataLength() : strlen($this->parsedData);
+			}		
+		}
+		return $this->rawDataLength;
 	}	
 	
 	

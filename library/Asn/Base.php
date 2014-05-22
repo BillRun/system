@@ -89,7 +89,7 @@ class Asn_Base {
 			return null;
 		}
 		$data = self::getObjectData($rawData, $offset);
-		if(FALSE === $data ) {				
+		if(null === $data ) {				
 				$ret =  new $cls(substr($rawData, $offset,strlen($rawData)-$offset), $type, $flags, $offset);
 				self::shift($rawData, $ret->getRawDataLength());
 				return $ret;
@@ -108,14 +108,14 @@ class Asn_Base {
 		if (($length & Asn_Markers::ASN_LONG_LEN) == Asn_Markers::ASN_LONG_LEN) {			
 			$tempLength = 0;
 			if($length == Asn_Markers::ASN_INDEFINITE_LEN ) {
-				return FALSE;
+				return null;
 			} else for ($x = ($length - Asn_Markers::ASN_LONG_LEN); $x > 0; $x--) {
 				$tempLength = ord($rawData[$offest++]) + ($tempLength << 8);
 			}
 			$length = $tempLength;
 		}
 		//print("Asn_Base::getRawData data length : $length \n");
-		return (string) self::shift($rawData, $length, $offest);
+		return  self::shift($rawData, $length, $offest);
 	}
 
 	/**
