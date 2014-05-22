@@ -28,7 +28,7 @@ class Admin_Lines {
 			$output.= "<option value=\"" . $manual_key . "\"" . ($key == $manual_key ? " selected" : "") . ">" . $manual_display . "</option>";
 		}
 		$output.= "</select>
-                                <select name=\"manual_operator[]\" class=\"form-control span2\">";
+                                <select name=\"manual_operator[]\" class=\"form-control span2 multiselect\">";
 		foreach ($operators as $operator_key => $operator_display) {
 			$output.="<option value=\"" . $operator_key . "\"" . ($operator == $operator_key ? " selected" : "") . ">" . $operator_display . "</option>";
 		}

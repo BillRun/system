@@ -278,7 +278,9 @@ function type_changed(sel) {
 }
 
 function addFilter(button) {
-	var cloned = $("#manual_filters>:last-child").clone().appendTo('#manual_filters');
+	var original = $("#manual_filters>:last-child");
+	$('select.multiselect', original).multiselect('destroy');
+	var cloned = original.clone().appendTo('#manual_filters');
 	cloned.find("select").each(function(i) {
 		var cloned_sel = $(this);
 		var original_sel = $("#manual_filters>div").eq(-2).find("select").eq(i);
@@ -296,6 +298,8 @@ function addFilter(button) {
 	$("select[name='manual_type[]']", cloned).on('change', function() {
 		type_changed(this);
 	});
+	$('.multiselect', original).multiselect({});
+	$('.multiselect', cloned).multiselect({});
 }
 
 function update_current(obj) {
