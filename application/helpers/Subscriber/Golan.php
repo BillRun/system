@@ -199,7 +199,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 //		$path .= "&account_id=9073496"; // Ofer
 //		$path .= "&account_id=9999263";
 		if ($saveToFile) {
-			$cache_file_path = $this->crm_output_dir . str_replace(array(':', ' ', '-'), '', $params['DATETIME']) . '.json';
+			$cache_file_path = $this->crm_output_dir . $params['page'] . '_' . $params['size'] . '.json';
 			if (!file_exists($cache_file_path) || ($json = file_get_contents($cache_file_path)) === FALSE) {
 				$json = self::send($path);
 				file_put_contents($cache_file_path, $json);
@@ -227,13 +227,13 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		return $arr;
 	}
 
-	public function getList($page, $size, $time, $acc_id = null, $cache = false) {
+	public function getList($page, $size, $time, $acc_id = null) {
 		if (is_null($acc_id)) {
 			$params = array('msisdn' => '', 'IMSI' => '', 'DATETIME' => $time, 'page' => $page, 'size' => $size);
 		} else {
 			$params = array('msisdn' => '', 'IMSI' => '', 'DATETIME' => $time, 'page' => $page, 'size' => $size, 'account_id' => $acc_id);
 		}
-		$accounts = $this->requestAccounts($params, is_null($acc_id) && $this->save_crm_output, $cache);
+		$accounts = $this->requestAccounts($params, is_null($acc_id) && $this->save_crm_output);
 		return $this->parseActiveSubscribersOutput($accounts, strtotime($time));
 	}
 
