@@ -167,7 +167,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 				break;
 			}
 			
-			//perload  account lines 
+			//pre-load  account lines 
 			if($this->bulkAccountPreload && !($billruns_count % $this->bulkAccountPreload) && count($dataKeys) > $billruns_count) {				
 				$aidsToLoad = array_slice($dataKeys, $billruns_count, $this->bulkAccountPreload);
 				Billrun_Billrun::preloadAccountsLines($aidsToLoad, $billrun_key);
