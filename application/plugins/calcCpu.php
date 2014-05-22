@@ -235,6 +235,7 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$forkXmlLimit = Billrun_Factory::config()->getConfigValue('calcCpu.forkXmlLimit', 100);
 		if (function_exists("pcntl_fork") && $forkXmlGeneration) {
 			if ($this->childProcesses > $forkXmlLimit) {
+				Billrun_Factory::log('Plugin calc cpu afterAggregateAccount : Releasing Zombies...', Zend_Log::INFO);
 				$this->releaseZombies($forkXmlLimit);
 			}
 			if ($this->childProcesses <= $forkXmlLimit) {

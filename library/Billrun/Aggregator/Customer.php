@@ -70,6 +70,11 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	 * @var int 
 	 */
 	protected $memory_limit = -1;
+	/**
+	 * the amount of account lines to preload from the db at a time.
+	 * @param int $bulkAccountPreload
+	 */
+	protected $bulkAccountPreload = 10;
 
 	public function __construct($options = array()) {
 		parent::__construct($options);
@@ -106,6 +111,11 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 				$this->memory_limit = $options['aggregator']['memory_limit_in_mb'];
 			}
 		}
+		
+		if (isset($options['aggregator']['bulk_account_perload'])) {
+			$this->bulkAccountPreload = (int) $options['aggregator']['bulk_account_perload'];
+		}
+
 
 		$this->plans = Billrun_Factory::db()->plansCollection();
 		$this->lines = Billrun_Factory::db()->linesCollection();
@@ -138,21 +148,42 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		$account_billrun = false;
 		$billrun_key = $this->getStamp();
 		$billruns_count = 0;
+		
+		if($this->bulkAccountPreload) {
+			Billrun_Factory::log('loading accounts that will be needed to be preloaded...', Zend_log::INFO);
+			$dataKeys = array_keys($this->data);
+			//$existingAccounts = array();			
+			foreach($dataKeys as $key => $aid) {
+				if(Billrun_Billrun::exists($aid, $billrun_key)) {
+					unset($dataKeys[$key]);
+					//$existingAccounts[$aid]  = $this->data[$aid];
+				}
+			}
+		}
+		
 		foreach ($this->data as $accid => $account) {
 			if ($this->memory_limit > -1 && memory_get_usage() > $this->memory_limit) {
 				Billrun_Factory::log('Customer aggregator memory limit of ' . $this->memory_limit / 1048576 . 'M has reached. Exiting (page: ' . $this->page . ', size: ' . $this->size . ').', Zend_log::ALERT);
 				break;
 			}
+			
+			//pre-load  account lines 
+			if($this->bulkAccountPreload && !($billruns_count % $this->bulkAccountPreload) && count($dataKeys) > $billruns_count) {				
+				$aidsToLoad = array_slice($dataKeys, $billruns_count, $this->bulkAccountPreload);
+				Billrun_Billrun::preloadAccountsLines($aidsToLoad, $billrun_key);
+			} 
+			
 			Billrun_Factory::dispatcher()->trigger('beforeAggregateAccount', array($accid, $account, &$this));
 			Billrun_Factory::log('Current account index: ' . ++$billruns_count, Zend_log::INFO);
-			if (!Billrun_Factory::config()->isProd()) {
-				if ($this->testAcc && is_array($this->testAcc) && !in_array($accid, $this->testAcc)) {
-					//Billrun_Factory::log("Moving on nothing to see here... , account Id : $accid");
-					continue;
-				}
-			}
+			
+//			if (!Billrun_Factory::config()->isProd()) {
+//				if ($this->testAcc && is_array($this->testAcc) && !in_array($accid, $this->testAcc)) {//TODO : remove this??
+//					//Billrun_Factory::log(" Moving on nothing to see here... , account Id : $accid");
+//					continue;
+//				}
+//			}
 
-			if (Billrun_Billrun::exists($accid, $billrun_key)) {
+			if (Billrun_Billrun::exists($aid, $billrun_key)) {
 				Billrun_Factory::log()->log("Billrun " . $billrun_key . " already exists for account " . $accid, Zend_Log::ALERT);
 				continue;
 			}
@@ -163,7 +194,8 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 			);
 			$account_billrun = Billrun_Factory::billrun($params);
 			$flat_lines = array();
-			foreach ($account as $subscriber) {
+			
+			foreach ($account as $subscriber) {								
 				Billrun_Factory::dispatcher()->trigger('beforeAggregateSubscriber', array($subscriber, $account_billrun, &$this));
 				$sid = $subscriber->sid;
 				if ($account_billrun->subscriberExists($sid)) {
@@ -203,6 +235,10 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 			$account_billrun->close($this->min_invoice_id);
 			Billrun_Factory::log("Finished closing billrun $billrun_key for account $accid", Zend_log::INFO);
 			Billrun_Factory::dispatcher()->trigger('afterAggregateAccount', array($accid, $account, $account_billrun, $lines, &$this));
+			
+			if( $this->bulkAccountPreload ) {
+				Billrun_Billrun::clearPreLoadedLines(array($accid));
+			}
 		}
 		if ($billruns_count == count($this->data)) {
 			$end_msg = "Finished iterating page $this->page of size $this->size. Memory usage is " . memory_get_usage() / 1048576 . " MB";
