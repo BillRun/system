@@ -13,7 +13,8 @@ class Asn_Type_Boolean extends Asn_Object {
 	 * @param $data The ASN encoded data
 	 */
 	protected function parse($data) {
-		$this->parsedData = (bool) $data;
+	//	$this->parsedData = (bool) $data;
+		return parent::parse($data);
 	}
 
 }

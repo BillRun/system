@@ -13,7 +13,7 @@ class Asn_Type_Integer extends Asn_Object {
 	 * @param $data The ASN encoded data
 	 */
 	protected function parse($data) {
-		parent::parse($data);
+		return parent::parse($data);
 		//$this->parsedData = unpack("I*",$data);;
 	}
 
