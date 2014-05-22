@@ -113,7 +113,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		}
 		
 		if (isset($options['aggregator']['bulk_account_perload'])) {
-			$this->bulkAccountPreload = (int) $options['aggregator']['bulk_account_perload'];
+			$this->bulkAccountPreload = (int) $options['aggregator']['bulk_account_preload'];
 		}
 
 
