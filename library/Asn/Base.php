@@ -89,7 +89,12 @@ class Asn_Base {
 			return null;
 		}
 		$data = self::getObjectData($rawData, $offset);
-		return new $cls($data, $type, $flags);
+		if(FALSE === $data ) {				
+				$ret =  new $cls(substr($rawData, $offset,strlen($rawData)-$offset), $type, $flags, $offset);
+				self::shift($rawData, $ret->getRawDataLength());
+				return $ret;
+		} 
+		return new $cls($data, $type, $flags, $offset);
 	}
 
 	/**
@@ -98,17 +103,19 @@ class Asn_Base {
 	 * @return 		The object data block that was reoved from $rawData.
 	 * 		 	(Notice! will alter the provided $rawData)
 	 */
-	protected static function getObjectData(&$rawData, $offest = 0) {
-		$length = ord($rawData[$offest++]);
-		if (($length & Asn_Markers::ASN_LONG_LEN) == Asn_Markers::ASN_LONG_LEN) {
+	protected static function getObjectData(&$rawData, &$offest = 0) {
+		$length = isset($rawData[$offest]) ? ord($rawData[$offest++]) : 0 ;
+		if (($length & Asn_Markers::ASN_LONG_LEN) == Asn_Markers::ASN_LONG_LEN) {			
 			$tempLength = 0;
-			for ($x = ($length - Asn_Markers::ASN_LONG_LEN); $x > 0; $x--) {
+			if($length == Asn_Markers::ASN_INDEFINITE_LEN ) {
+				return FALSE;
+			} else for ($x = ($length - Asn_Markers::ASN_LONG_LEN); $x > 0; $x--) {
 				$tempLength = ord($rawData[$offest++]) + ($tempLength << 8);
 			}
-			$length = $length == Asn_Markers::ASN_LONG_LEN ? 0xffffffff : $tempLength;
+			$length = $tempLength;
 		}
 		//print("Asn_Base::getRawData data length : $length \n");
-		return self::shift($rawData, $length, $offest);
+		return (string) self::shift($rawData, $length, $offest);
 	}
 
 	/**

@@ -19,8 +19,9 @@ class Asn_Object extends Asn_Base {
 	protected $typeId = null;
 	protected $asnData = null;
 	protected $flags = null;
+	protected $offset = 0;
 
-	function __construct($data = false, $type = false, $flags = false) {
+	function __construct($data = false, $type = false, $flags = false, $offset = 0) {
 		if (false !== $data) {
 			$this->asnData = $data;
 		}
@@ -31,12 +32,19 @@ class Asn_Object extends Asn_Base {
 		if (false !== $flags) {
 			$this->flags = $flags;
 		}
-
+		
+		$this->offset = $offset;
+		
 		if ($this->isConstructed()) {
 			//the object is constructed from smaller objects
 			$this->parsedData = array();
 			while (isset($data[0])) {
-				$this->parsedData[] = $this->newClassFromData($data);
+				$ret = $this->newClassFromData($data);				
+				if( $ret instanceof Asn_Type_Eoc || ($ret->getDataLength() == 0 && hexdec($ret->getType()) == 0 )) {
+					$this->offset += $ret->getRawDataLength();
+					break;
+				}
+				$this->parsedData[] = $ret;
 			}
 		} else {
 			//this object only conatins data so parse it.
@@ -58,11 +66,35 @@ class Asn_Object extends Asn_Base {
 	 */
 	public function getDataLength() {
 		if (!$this->dataLength) {
-			$this->dataLength = strlen($this->asnData);
+			$this->dataLength = 0;
+			if(is_array($this->parsedData)) {
+				foreach($this->parsedData as $child) {
+					$this->dataLength += $child->getDataLength();
+				}
+			} else {
+				$this->dataLength = $this->parsedData instanceof Asn_Object  ?  $this->parsedData->getDataLength() : strlen($this->parsedData);
+			}
 		}
 		return $this->dataLength;
 	}
 
+	/**
+	 * get the length of the data this object was created from.
+	 * @return integer the length of the data that was used to create the object.
+	 */
+	public function getRawDataLength() {		
+		$rawDataLength = $this->offset;
+		if(is_array($this->parsedData)) {
+			foreach($this->parsedData as $child) {
+				$rawDataLength += $child->getRawDataLength();
+			}
+		} else {
+			$rawDataLength += $this->parsedData instanceof Asn_Object  ?  $this->parsedData->getRawDataLength() : strlen($this->parsedData);
+		}		
+		return $rawDataLength;
+	}	
+	
+	
 	/**
 	 * Get the type that the object was constructed on.
 	 * @return string hex representation of the type.
