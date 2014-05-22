@@ -16,7 +16,7 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 	const HEADER_LENGTH = 54;
 	const MAX_CHUNKLENGTH_LENGTH = 4096;
 	const FILE_READ_AHEAD_LENGTH = 16384;
-	const RECORD_PADDING = 8;
+	const RECORD_PADDING = 4;
 	/**
 	 * plugin name
 	 *
@@ -260,7 +260,7 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 		}
 
 		$asnObject = Asn_Base::parseASNString($data);
-		$parser->setLastParseLength($asnObject->getDataLength() + self::RECORD_PADDING);
+		$parser->setLastParseLength($asnObject->getRawDataLength() + self::RECORD_PADDING);
 
 		$type = $asnObject->getType();
 		$cdrLine = false;
