@@ -160,8 +160,8 @@ class Billrun_Billrun {
 	public static function exists($aid, $billrun_key) {
 		$billrun_coll = Billrun_Factory::db(array('name' => 'billrun'))->billrunCollection();
 		$data = $billrun_coll->query(array(
-							'aid' => $aid,
-							'billrun_key' => $billrun_key,
+							'aid' => (int) $aid,
+							'billrun_key' => (string) $billrun_key,
 						))
 						->cursor()->limit(1)->current();
 		return !$data->isEmpty();
