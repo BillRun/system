@@ -717,7 +717,7 @@ class Billrun_Billrun {
 			'urt' => 1,
 		);				
 		
-		Billrun_Factory::log()->log("Querying for account " . implode(",",$aids) . " lines with flats" . $include_flats, Zend_Log::INFO);
+		Billrun_Factory::log()->log("Querying for accounts " . implode(",",$aids) . " lines with flats" . $include_flats, Zend_Log::INFO);
 		$addCount = $bufferCount = 0;		
 		do {
 			$bufferCount +=  $addCount;
