@@ -184,7 +184,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 //				}
 //			}
 
-			if (Billrun_Billrun::exists($aid, $billrun_key)) {
+			if (Billrun_Billrun::exists($accid, $billrun_key)) {
 				Billrun_Factory::log()->log("Billrun " . $billrun_key . " already exists for account " . $accid, Zend_Log::ALERT);
 				continue;
 			}
