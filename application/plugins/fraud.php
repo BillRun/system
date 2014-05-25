@@ -399,7 +399,10 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		if (!empty($rateKey) && ($rateKey == 'IL_MOBILE' || substr($rateKey, 0, 3) == 'KT_') && isset($line['called_number'])) {
 			// fire  event to increased called_number usagev
 			$this->triggerCalledNumber($line);
-			
+		}
+		
+		if (isset($line['sid']) && isset($line['usaget']) && $line['usaget']=='incoming_call') {
+			$this->triggerCallingNumber($line);
 		}
 	}
 	
@@ -429,9 +432,40 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$fraud_connection->update($query, $update, $options);
 		} catch (Exception $e) {
 			// @TODO: dump to file for durability
-			Billrun_Factory::log()->log("Fraud plugin - Failed insert line with the stamp: " . $newEvent['stamp'] . " to the fraud events, got Exception : " . $e->getCode() . " : " . $e->getMessage(), Zend_Log::ERR);
+			Billrun_Factory::log()->log("Fraud plugin - Failed insert line with the stamp: " . $line['stamp'] . " to the fraud called, got Exception : " . $e->getCode() . " : " . $e->getMessage(), Zend_Log::ERR);
 		}
 	}
+	
+	protected function triggerCallingNumber($line) {
+		$calling_number = Billrun_Util::msisdn($line['calling_number']);
+		$query = array(
+			'calling_number' => $calling_number,
+			'in_circuit_group' => isset($line['in_circuit_group']) ? $line['in_circuit_group'] : '',
+			'date' => (int) date('Ymd', $line['urt']->sec),
+		);
+		
+		$update = array(
+			'$inc' => array(
+				'usagev' => $line['usagev'],
+				'eventsCount' => 1
+			),
+		);
+		
+		$options = array(
+			'upsert' => true,
+			'w' => 0,
+		);
+		
+		try {
+			Billrun_Factory::log()->log("Fraud plugin - calling " . $calling_number . " with usagev of " . $line['usagev'] . " upserted to the fraud calling collection", Zend_Log::DEBUG);
+			$fraud_connection = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('fraud.db'))->callingCollection();
+			$fraud_connection->update($query, $update, $options);
+		} catch (Exception $e) {
+			// @TODO: dump to file for durability
+			Billrun_Factory::log()->log("Fraud plugin - Failed insert line with the stamp: " . $line['stamp'] . " to the fraud calling, got Exception : " . $e->getCode() . " : " . $e->getMessage(), Zend_Log::ERR);
+		}
+	}
+
 	
 	protected function isLineLegitimate($row, $calculator) {
 		$queue_line = $calculator->getQueueLine($row['stamp']);
