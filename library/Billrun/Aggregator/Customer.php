@@ -155,6 +155,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 			//$existingAccounts = array();			
 			foreach($dataKeys as $key => $aid) {
 				if(Billrun_Billrun::exists($aid, $billrun_key)) {
+					Billrun_Factory::log()->log("Billrun " . $billrun_key . " already exists for account " . $aid, Zend_Log::ALERT);
 					unset($dataKeys[$key]);
 					//$existingAccounts[$aid]  = $this->data[$aid];
 				}
