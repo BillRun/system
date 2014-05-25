@@ -111,7 +111,7 @@ class Mongodloid_Query implements IteratorAggregate {
 	}
 
 	public function cursor() {
-		return new Mongodloid_Cursor($this->_collection->find($this->_params));
+		return new Mongodloid_Cursor($this->_collection->find($this->_params), $this->_collection->getWriteConcern('wtimeout'));
 	}
 
 	public function query($key, $value = null) {

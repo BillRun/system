@@ -167,10 +167,11 @@ class Mongodloid_Collection {
 	}
 
 	public function setTimeout($timeout) {
-		if ($this->_db->compareClientVersion('1.5.3', '>=')) {
-			// see bugs:
+		if ($this->_db->compareClientVersion('1.5', '>=')) {
+			// see also bugs:
 			// https://jira.mongodb.org/browse/PHP-1099
 			// https://jira.mongodb.org/browse/PHP-1080
+			$this->_collection->setWriteConcern($this->db->getWriteConcern()['w'], $timeout);
 		} else {
 			@MongoCursor::$timeout = (int) $timeout;
 		}
@@ -376,6 +377,17 @@ class Mongodloid_Collection {
 	 */
 	public function stats($item) {
 		return $this->_db->stats(array('collStats' => $this->getName()), $item);
+	}
+	
+	public function getWriteConcern($var = null) {
+		$ret = $this->_collection->getWriteConcern();
+		if (is_null($var)) {
+			return $ret;
+		}
+		
+		if (isset($ret[$var])) {
+			return $ret[$var];
+		}
 	}
 
 }
