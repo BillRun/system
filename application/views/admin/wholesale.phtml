@@ -143,7 +143,9 @@
 				echo '<tr>';
 				foreach ($retail_tbl_params['fields'] as $field) {
 					echo '<td>';
-					if (isset($row[$field['display']])) {
+					if (is_object($field['display'])) {
+						echo $field['display']($row[$field['value']]);
+					} else if (isset($row[$field['display']])) {
 						if ($field['decimal'] === false) {
 							echo $row[$field['display']];
 						} else if ($field['decimal'] == 0) {
