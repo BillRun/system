@@ -71,7 +71,7 @@ class Asn_Base {
 	 * @param $rawData the raw byte data that we want to decode
 	 * @return Asn_Object an asn object holding the parsed ASN1 data.
 	 */
-	protected static function newClassFromData(&$rawData) {
+	protected static function newClassFromData($rawData) {
 		$tmpType = $offset = 0;
 		$flags = ord($rawData[$offset++]);
 		$type = $flags & Asn_Markers::ASN_EXTENSION_ID;
@@ -88,34 +88,10 @@ class Asn_Base {
 			print('Asn_Base::newClassFromData couldn`t create class!!');
 			return null;
 		}
-		$data = self::getObjectData($rawData, $offset);
-		if(null === $data ) {				
-				$ret =  new $cls(substr($rawData, $offset,strlen($rawData)-$offset), $type, $flags, $offset);
-				self::shift($rawData, $ret->getRawDataLength());
-				return $ret;
-		} 
-		return new $cls($data, $type, $flags, $offset);
-	}
-
-	/**
-	 * Get the Object data from the raw byte array data.
-	 * @param $rawData 	(passed by ref) the raw byte data.
-	 * @return 		The object data block that was reoved from $rawData.
-	 * 		 	(Notice! will alter the provided $rawData)
-	 */
-	protected static function getObjectData(&$rawData, &$offest = 0) {
-		$length = isset($rawData[$offest]) ? ord($rawData[$offest++]) : 0 ;
-		if (($length & Asn_Markers::ASN_LONG_LEN) == Asn_Markers::ASN_LONG_LEN) {			
-			$tempLength = 0;
-			if($length == Asn_Markers::ASN_INDEFINITE_LEN ) {
-				return null;
-			} else for ($x = ($length - Asn_Markers::ASN_LONG_LEN); $x > 0; $x--) {
-				$tempLength = ord($rawData[$offest++]) + ($tempLength << 8);
-			}
-			$length = $tempLength;
-		}
-		//print("Asn_Base::getRawData data length : $length \n");
-		return  self::shift($rawData, $length, $offest);
+		
+		$ret =  new $cls($rawData, $type, $flags, $offset);
+		
+		return $ret;
 	}
 
 	/**
