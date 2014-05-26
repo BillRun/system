@@ -344,7 +344,9 @@ class WholesaleModel {
 			'fields' => array(
 				array(
 					'value' => 'dayofmonth',
-					'display' => 'dayofmonth',
+					'display' => function ($dom) {
+						return $dom . ' (' . date("D", strtotime($dom)) . ')';
+					},
 					'label' => 'Day of month',
 					'decimal' => false,
 				),
