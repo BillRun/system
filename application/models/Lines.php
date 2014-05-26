@@ -315,7 +315,7 @@ class LinesModel extends TableModel {
 				if ($sign == "-") {
 					$time .= ' ago';
 				}
-				$timsetamp = strtotime($time, $item['urt']->sec);
+				$timsetamp = strtotime($time, $row['urt']->sec);
 				$zend_date = new Zend_Date($timsetamp);
 				$zend_date->setTimezone('UTC');
 				return $zend_date->toString("d/M/Y H:m:s") . $row['tzoffset'];
