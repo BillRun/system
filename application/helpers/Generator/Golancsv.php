@@ -59,12 +59,12 @@ class Generator_Golancsv extends Billrun_Generator {
 		if (isset($options['accounts_csv_filename'])) {
 			$this->accountsCsvPath = $this->export_directory . '/' . $options['account_csv_filename'] . '.csv';
 		} else {
-			$this->accountsCsvPath = $this->export_directory . '/accounts.csv';
+			$this->accountsCsvPath = $this->export_directory . '/accounts' . $this->stamp . '.csv';
 		}
 		if (isset($options['subscribers_csv_filename'])) {
 			$this->subscribersCsvPath = $this->export_directory . '/' . $options['subscriber_csv_filename'] . '.csv';
 		} else {
-			$this->subscribersCsvPath = $this->export_directory . '/subscribers.csv';
+			$this->subscribersCsvPath = $this->export_directory . '/subscribers' . $this->stamp . '.csv';
 		}
 		if (isset($options['blockSize'])) {
 			$this->blockSize = $options['blockSize'];
