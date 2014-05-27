@@ -63,7 +63,7 @@ function waitForServers {
 
 ##### MAIN ####
 
-backupFile=$backupBase"/`date +%Y%m%d`_`hostname`.tar.gz";
+backupFile=$backupBase"/`date +%Y%m%d`_`hostname`.tar.xz";
 mongoDir="/data/configdb"
 
 if [ -z "$(runningOnConf)" ]; then 
@@ -78,7 +78,7 @@ $(updateSync stopped);
 $(waitForServers)
 
 $(updateSync backingup);
-tar -vczf $backupFile $mongoDir >> $logFile
+tar -vcJf $backupFile $mongoDir >> $logFile
 $(updateSync backedup);
 
 $(updateSync starting);

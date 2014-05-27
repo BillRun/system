@@ -71,7 +71,7 @@ function isMongoSlave {
 
 ##### MAIN ####
 
-backupFile=$backupBase"/`date +%Y%m%d`_`hostname`.tar.gz";
+backupFile=$backupBase"/`date +%Y%m%d`_`hostname`.tar.xz";
 mongoDir="/ssd/mongo"
 
 if [ -z "$(runningOnConf)" -a -z "$(isMongoSlave)" ]; then 
@@ -86,7 +86,7 @@ $(updateSync stopped);
 $(waitForServers)
 
 $(updateSync backingup);
-tar -vczf $backupFile $mongoDir >> $logFile
+tar -vcJf $backupFile $mongoDir >> $logFile
 $(updateSync backedup);
 
 $(updateSync starting);
