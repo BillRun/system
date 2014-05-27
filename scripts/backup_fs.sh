@@ -3,7 +3,7 @@
 #The result is a tar.gz file containing the  content of the  mongo database  driectory.
 #!/bin/bash
 
-numberOfHosts=7;
+numberOfHosts=8;
 hostname="`hostname`";
 backupBase="/mnt/mongo_backup/backups";
 syncFile=$backupBase"/sync.txt";
@@ -38,13 +38,12 @@ function hasSyncAt {
 
 function updateSync {
   local to=$1;
-  local init=$2;
   
   if [ -n "`grep \"$hostname:\" $syncFile`"  ]; then
     flock $lockFile sed -i.bak s/$hostname:.*$/$hostname:$to/g $syncFile;
   else 
-    if [ $init -eq 1  -a  -z "`grep $hostname $syncFile`" ]; then
-      echo "$hostname:$to" >> $syncFile
+    if [ -z "`grep $hostname $syncFile`" ]; then
+      flock $lockFile echo "$hostname:$to" >> $syncFile
     fi
   fi
   sleep $((RANDOM%5+1)); # allow other host to notice the change.
@@ -80,7 +79,7 @@ if [ -z "$(runningOnConf)" -a -z "$(isMongoSlave)" ]; then
   exit;
 fi
 
-$(updateSync stopping 1);
+$(updateSync stopping);
 service mongod stop >> $logFile
 $(updateSync stopped);
 
