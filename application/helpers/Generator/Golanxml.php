@@ -84,11 +84,18 @@ class Generator_Golanxml extends Billrun_Generator {
 		$resource = $billrun
 				->query('billrun_key', $this->stamp)
 				->exists('invoice_id')
-				->cursor()->timeout(-1)
+				->cursor()
 				->sort(array("aid" => 1))
 				->skip($this->offset * $this->size)
 				->limit($this->size);
 
+		if ($this->_db->compareClientVersion('1.5.3', '>=')) {
+			// see bugs:
+			// https://jira.mongodb.org/browse/PHP-1099
+			// https://jira.mongodb.org/browse/PHP-1080
+		} else {
+			$resource->limit(-1);
+		}
 		// @TODO - there is issue with the timeout; need to be fixed
 		//         meanwhile, let's pull the lines right after the query
 		foreach ($resource as $row) {

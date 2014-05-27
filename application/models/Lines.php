@@ -295,6 +295,7 @@ class LinesModel extends TableModel {
 			'billrun_key' => 'Billrun',
 			'aprice' => 'Charge',
 			'plan' => 'Plan',
+			'process_time' => 'Process time',
 			'sid' => 'Subscriber id',
 			'urt' => 'Time',
 			'type' => 'Type',
