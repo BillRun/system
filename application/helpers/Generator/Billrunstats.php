@@ -36,12 +36,12 @@ abstract class Generator_Billrunstats extends Billrun_Generator {
 	 * load the container the need to be generate
 	 */
 	public function load() {
-        $billrun = Billrun_Factory::db(array('name' => 'billrun'))->billrunCollection();
+		$billrun = Billrun_Factory::db(array('name' => 'billrun'))->billrunCollection();
 
 		$this->data = $billrun
-						->query('billrun_key', $this->stamp)
-						->exists('invoice_id')
-						->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
+				->query('billrun_key', $this->stamp)
+				->exists('invoice_id')
+				->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
 
 		Billrun_Factory::log()->log("generator entities loaded: " . $this->data->count(), Zend_Log::INFO);
 
