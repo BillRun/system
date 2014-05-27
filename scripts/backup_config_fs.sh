@@ -7,6 +7,7 @@ numberOfHosts=7;
 hostname="`hostname`";
 backupBase="/mnt/mongo_backup/backups";
 syncFile=$backupBase"/sync.txt";
+lockFile=$backupBase"/lock.txt";
 logFile="/tmp/backup.log";
 
 function runningOnConf {
@@ -40,12 +41,13 @@ function updateSync {
   local init=$2;
   
   if [ -n "`grep \"$hostname:\" $syncFile`"  ]; then
-    sed -i.bak s/$hostname:.*$/$hostname:$to/g $syncFile;
+    flock $lockFile sed -i.bak s/$hostname:.*$/$hostname:$to/g $syncFile;
   else 
     if [ $init -eq 1  -a  -z "`grep $hostname $syncFile`" ]; then
       echo "$hostname:$to" >> $syncFile
     fi
   fi
+  sleep $((RANDOM%5+1)); # allow other host to notice the change.
 }
 
 function waitForServers {
@@ -60,21 +62,13 @@ function waitForServers {
   done
 }
 
-function isMongoSlave {
-  local state="`mongo --port 27018 --eval 'tojson(rs.isMaster());'`";
-  
-  if [ -n "`echo $state | grep '\"ismaster\" : false'`" ]; then 
-    echo 1;
-  fi
-}
-
 ##### MAIN ####
 
 backupFile=$backupBase"/`date +%Y%m%d`_`hostname`.tar.gz";
-mongoDir="/data/config"
+mongoDir="/data/configdb"
 
-if [ -z "$(runningOnConf)" -a -z "$(isMongoSlave)" ]; then 
-  echo "Mongo server is not a slave!!!" >> $logFile
+if [ -z "$(runningOnConf)" ]; then 
+  echo "Mongo server is not a config server!!!" >> $logFile
   exit;
 fi
 

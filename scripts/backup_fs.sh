@@ -7,6 +7,7 @@ numberOfHosts=7;
 hostname="`hostname`";
 backupBase="/mnt/mongo_backup/backups";
 syncFile=$backupBase"/sync.txt";
+lockFile=$backupBase"/lock.txt";
 logFile="/tmp/backup.log";
 
 function runningOnConf {
@@ -40,12 +41,13 @@ function updateSync {
   local init=$2;
   
   if [ -n "`grep \"$hostname:\" $syncFile`"  ]; then
-    sed -i.bak s/$hostname:.*$/$hostname:$to/g $syncFile;
+    flock $lockFile sed -i.bak s/$hostname:.*$/$hostname:$to/g $syncFile;
   else 
     if [ $init -eq 1  -a  -z "`grep $hostname $syncFile`" ]; then
       echo "$hostname:$to" >> $syncFile
     fi
   fi
+  sleep $((RANDOM%5+1)); # allow other host to notice the change.
 }
 
 function waitForServers {

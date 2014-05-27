@@ -23,8 +23,8 @@ class Generator_BillrunstatsCsv extends Generator_Billrunstats {
 
 	public function __construct($options) {
 		self::$type = 'billrunstatscsv';
-		$this->filename = "billrunstats.csv";
 		parent::__construct($options);
+		$this->filename = "billrunstats" . $this->stamp . ".csv";
 		$this->buildHeader();
 		$this->file_path = $this->export_directory . DIRECTORY_SEPARATOR . $this->filename;
 		$this->resetFile();
