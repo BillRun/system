@@ -75,7 +75,9 @@ class Billrun_Balance implements ArrayAccess {
 		$this->data = Billrun_Factory::db(array('name' => 'balances'))->balancesCollection()->query(array(
 				'sid' => $subscriberId,
 				'billrun_month' => $billrunKey
-			))->cursor()->hint(array('sid' => 1, 'billrun_month' => 1))->limit(1)->current();
+			))
+			->cursor()->setReadPreference('RP_PRIMARY')
+			->hint(array('sid' => 1, 'billrun_month' => 1))->limit(1)->current();
 
 		$this->data->collection(Billrun_Factory::db(array('name' => 'balances'))->balancesCollection());
 	}
@@ -174,7 +176,8 @@ class Billrun_Balance implements ArrayAccess {
 		$balance = Billrun_Factory::db(array('name' => 'balances'))->balancesCollection()->query(array(
 				'sid' => $subscriberId,
 				'billrun_month' => $billrunKey
-			))->cursor()->current();
+			))->cursor()->setReadPreference('RP_PRIMARY')
+			->current();
 
 		if (!count($balance->getRawData())) {
 			return FALSE;
