@@ -120,7 +120,7 @@ class Mongodloid_Cursor implements Iterator, Countable {
 		if (!method_exists($this->_cursor, 'setReadPreference')) {
 			return false;
 		}
-		$ret = $this->_cursor->setReadPreference();
+		$ret = $this->_cursor->getReadPreference();
 		if ($includeTage) {
 			return $ret;
 		}
