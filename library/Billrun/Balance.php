@@ -72,14 +72,17 @@ class Billrun_Balance implements ArrayAccess {
 		Billrun_Factory::log()->log("Trying to load balance " . $billrunKey . " for subscriber " . $subscriberId, Zend_Log::DEBUG);
 		$billrunKey = !$billrunKey ? Billrun_Util::getBillrunKey(time()) : $billrunKey;
 
-		$this->data = Billrun_Factory::db(array('name' => 'balances'))->balancesCollection()->query(array(
+		$balancesCollection = Billrun_Factory::db(array('name' => 'balances'))->balancesCollection()->setReadPreference('RP_PRIMARY');
+		
+		$this->data = $balancesCollection->query(array(
 				'sid' => $subscriberId,
 				'billrun_month' => $billrunKey
 			))
 			->cursor()->setReadPreference('RP_PRIMARY')
 			->hint(array('sid' => 1, 'billrun_month' => 1))->limit(1)->current();
 
-		$this->data->collection(Billrun_Factory::db(array('name' => 'balances'))->balancesCollection());
+		// set the data collection to enable clear save
+		$this->data->collection($balancesCollection);
 	}
 
 	/**
