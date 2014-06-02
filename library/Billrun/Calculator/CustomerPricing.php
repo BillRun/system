@@ -63,10 +63,19 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	protected $next_active_billrun;
 
 	/**
-	 * Temporary feature to inspect loops in updateSubscriberBalance
+	 * inspect loops in updateSubscriberBalance (
+	 * @see mongodb update where value equale old value
+	 * 
 	 * @var int
 	 */
-	protected $pricing_retries;
+	protected $countConcurrentRetries;
+	
+	/**
+	 * max retries on concurrent balance updates loops
+	 * 
+	 * @var int
+	 */
+	protected $concurrentMaxRetries;
 
 	public function __construct($options = array()) {
 		if (isset($options['autoload'])) {
@@ -101,6 +110,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		$this->active_billrun = Billrun_Billrun::getActiveBillrun();
 		$this->active_billrun_end_time = Billrun_Util::getEndTime($this->active_billrun);
 		$this->next_active_billrun = Billrun_Util::getFollowingBillrunKey($this->active_billrun);
+		$this->concurrentMaxRetries = (int) Billrun_Factory::config()->getConfigValue('updateValueEqualOldValueMaxRetries',8);
 	}
 
 	protected function getLines() {
@@ -138,7 +148,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	}
 
 	public function updateRow($row) {
-		$this->pricing_retries = 0;
+		$this->countConcurrentRetries = 0;
 		Billrun_Factory::dispatcher()->trigger('beforeCalculatorUpdateRow', array($row, $this));
 		$billrun_key = Billrun_Util::getBillrunKey($row->get('urt')->sec);
 		$rate = $this->getRowRate($row);
@@ -262,17 +272,18 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	}
 
 	/**
-	 * Update the subscriber balance for a given usage.
-	 * @param array $counters the counters to update
+	 * Update the subscriber balance for a given usage
+	 * 
 	 * @param Mongodloid_Entity $row the input line
 	 * @param string $billrun_key the billrun key at the row time
-	 * @param string $usageType The type  of the usage (call/sms/data)
+	 * @param string $usage_type The type  of the usage (call/sms/data)
 	 * @param mixed $rate The rate of associated with the usage.
 	 * @param int $volume The usage volume (seconds of call, count of SMS, bytes  of data)
+	 * 
 	 * @return mixed array with the pricing data on success, false otherwise
 	 */
 	protected function updateSubscriberBalance($row, $billrun_key, $usage_type, $rate, $volume) {
-		$this->pricing_retries++;
+		$this->countConcurrentRetries++;
 		Billrun_Factory::dispatcher()->trigger('beforeUpdateSubscriberBalance', array($row, $billrun_key, $this));
 		$plan = Billrun_Factory::plan(array('name' => $row['plan'], 'time' => $row['urt']->sec, 'disableCache' => true));
 		$plan_ref = $plan->createRef();
@@ -346,13 +357,12 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				$this->setMongoNativeLong(0);
 			}
 			if (!($ret['ok'] && $ret['updatedExisting'])) { // failed because of different totals (could be that another server with another line raised the totals). Need to calculate pricingData from the beginning
-				$maxRetries = (int) Billrun_Factory::config()->getConfigValue('updateValueEqualOldValueMaxRetries',8);
-				if ($this->pricing_retries >= $maxRetries) {
+				if ($this->countConcurrentRetries >= $this->concurrentMaxRetries) {
 					Billrun_Factory::log()->log('Too many pricing retries for line ' . $row['stamp'] . '. Update status: ' . print_r($ret, true), Zend_Log::ALERT);
 					return false;
 				}
 				Billrun_Factory::log()->log('Concurrent write of sid : '.$row['sid'].' line stamp : ' . $row['stamp'] . ' to balance. Update status: ' . print_r($ret, true) . 'Retrying...', Zend_Log::INFO);
-				sleep($this->pricing_retries);
+				sleep($this->countConcurrentRetries);
 				return $this->updateSubscriberBalance($row, $billrun_key, $usage_type, $rate, $volume);
 			}
 			Billrun_Factory::log()->log("Line with stamp " . $row['stamp'] . " was written to balance " . $billrun_key . " for subscriber " . $row['sid'], Zend_Log::DEBUG);
