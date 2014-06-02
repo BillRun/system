@@ -110,6 +110,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		$this->active_billrun = Billrun_Billrun::getActiveBillrun();
 		$this->active_billrun_end_time = Billrun_Util::getEndTime($this->active_billrun);
 		$this->next_active_billrun = Billrun_Util::getFollowingBillrunKey($this->active_billrun);
+		// max recursive retrues for value=oldValue tactic
 		$this->concurrentMaxRetries = (int) Billrun_Factory::config()->getConfigValue('updateValueEqualOldValueMaxRetries',8);
 	}
 
@@ -273,6 +274,8 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 
 	/**
 	 * Update the subscriber balance for a given usage
+	 * Method is recursive - it tries to update subscriber balances with value=oldValue tactic
+	 * There is max retries for the recursive to run and the value is configured
 	 * 
 	 * @param Mongodloid_Entity $row the input line
 	 * @param string $billrun_key the billrun key at the row time
@@ -281,6 +284,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @param int $volume The usage volume (seconds of call, count of SMS, bytes  of data)
 	 * 
 	 * @return mixed array with the pricing data on success, false otherwise
+	 * 
 	 */
 	protected function updateSubscriberBalance($row, $billrun_key, $usage_type, $rate, $volume) {
 		$this->countConcurrentRetries++;
