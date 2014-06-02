@@ -37,6 +37,7 @@ class Billrun_Balance implements ArrayAccess {
 			$this->load($options['sid'], $options['billrun_key']);
 		}
 		
+		// TODO: refactoring the read preference to the factory to take it from config
 		$this->collection = Billrun_Factory::db(array('name' => 'balances'))->balancesCollection()->setReadPreference('RP_PRIMARY');
 	}
 
