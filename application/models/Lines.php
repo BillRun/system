@@ -330,4 +330,49 @@ class LinesModel extends TableModel {
 
 	}
 	
+	public function getActivity($sids, $from_date, $to_date, $include_outgoing, $include_incoming, $include_sms) {
+		if (!is_array()) {
+			settype($sids, 'array');
+		}
+		$query = array(
+			'sid' => array(
+				'$in' => $sids,
+			),
+			'usaget' => array('$in' => array()),
+		);
+		
+		if ($include_incoming) {
+			$query['usaget']['$in'][] = 'incoming_call';
+		}
+		
+		if ($include_outgoing) {
+			$query['usaget']['$in'][] = 'call';
+		}
+		
+		if ($include_sms) {
+			$query['usaget']['$in'][] = 'sms';
+		}
+		
+		$query['urt'] = array(
+			'$lte' => new MongoDate($to_date),
+			'$gte' => new MongoDate($from_date),
+		);
+
+		$cursor = $this->collection->query($query)->cursor()->limit(10000)->sort(array('urt' => 1));
+		$ret = array();
+		
+		foreach($cursor as $row) {
+			$ret[] = array(
+				'date' => date(Billrun_Base::base_dateformat, $row['urt']->sec),
+				'called_number' => $row['called_number'],
+				'calling_number' => $row['calling_number'],
+				'usagev' => $row['usagev'],
+				'usaget' => $row['usaget'],
+			);
+		}
+		
+		return $ret;
+
+	}
+	
 }
