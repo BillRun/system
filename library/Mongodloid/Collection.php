@@ -167,12 +167,12 @@ class Mongodloid_Collection {
 	}
 
 	public function setTimeout($timeout) {
-		if ($this->_db->compareClientVersion('1.5.3', '>=')) {
+		if ($this->_db->compareClientVersion('1.5.3', '<')) {
+			@MongoCursor::$timeout = (int) $timeout;
+		} else {
 			// see bugs:
 			// https://jira.mongodb.org/browse/PHP-1099
 			// https://jira.mongodb.org/browse/PHP-1080
-		} else {
-			@MongoCursor::$timeout = (int) $timeout;
 		}
 	}
 
