@@ -43,31 +43,6 @@ abstract class Billrun_Calculator_Rate_Sms extends Billrun_Calculator_Rate {
 	}
 
 	/**
-	 * Write the calculation into DB.
-	 * @param $row the line CDR to update. 
-	 */
-	public function updateRow($row) {
-		Billrun_Factory::dispatcher()->trigger('beforeCalculatorUpdateRow', array($row, $this));
-
-		$current = $row->getRawData();
-		$usage_type = $this->getLineUsageType($row);
-		$volume = $this->getLineVolume($row, $usage_type);
-		$rate = $this->getLineRate($row, $usage_type);
-		if (isset($rate['key']) && $rate['key'] == "UNRATED") {
-			return false; // check the effects
-		}
-		$added_values = array(
-			'usaget' => $usage_type,
-			'usagev' => $volume,
-			$this->ratingField => $rate ? $rate->createRef() : $rate,
-		);
-		$newData = array_merge($current, $added_values);
-		$row->setRawData($newData);
-		Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array($row, $this));
-		return true;
-	}
-
-	/**
 	 * @see Billrun_Calculator_Rate::getLineVolume
 	 */
 	protected function getLineVolume($row, $usage_type) {

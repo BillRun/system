@@ -437,8 +437,7 @@ class Billrun_Util {
 	 * @return boolean true in case is international phone number else false
 	 */
 	public static function isIntlNumber($phoneNumber) {
-		$replace = array("(0)", "-", "+", "(", ")", " ", "#", "*");
-		$cleanNumber = self::cleanLeadingZeros(str_replace($replace, "", $phoneNumber));
+		$cleanNumber = self::cleanLeadingZeros(self::cleanNumber($phoneNumber));
 		
 		//CCNDCSN - First part USA; second non-USA
 		if (preg_match("/^(1[2-9]{1}[0-9]{2}|[2-9]{1}[0-9]{1,2}[1-9]{1}[0-9]{0,2})[0-9]{7}$/", $cleanNumber)) {
@@ -446,6 +445,17 @@ class Billrun_Util {
 		}
 		
 		return false;
+	}
+	
+	/**
+	 * method to clean phone number and leave only numeric characters
+	 * 
+	 * @param string $phoneNumber
+	 * 
+	 * @return string the clean phone number
+	 */
+	public static function cleanNumber($phoneNumber) {
+		return preg_replace("/[^0-9]/", "", $phoneNumber);
 	}
 	
 	/**

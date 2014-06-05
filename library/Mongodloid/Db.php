@@ -52,13 +52,26 @@ class Mongodloid_Db {
 	}
 
 	/**
-	 * method to get mongodb server version
+	 * method to copmare version of mongo (server or client)
 	 * 
-	 * @return string version
+	 * @param string $compare compare to version number
+	 * @param string $source what version to compare to (server or client)
+	 * @param string $operator operator how to compare (see PHP version_compare function)
+	 * 
+	 * @return mixed see PHP documentation of version_compare function
 	 */
-	public function getServerVersion() {
-		$mongodb_info = $this->_db->command(array('buildinfo' => true));
-		return $mongodb_info['version'];
+	protected function compareMongoVersion($compare, $source = 'server', $operator = null) {
+		if (strtolower($source) == 'server') {
+			$version = $this->getServerVersion();
+		} else {
+			$version = $this->getClientVersion();
+		}
+
+		if (!empty($operator)) {
+			return version_compare($version, $compare, $operator);
+		}
+
+		return version_compare($version, $compare);
 	}
 
 	/**
@@ -67,15 +80,41 @@ class Mongodloid_Db {
 	 * @param string $compare compare to version number
 	 * @param string $operator operator how to compare (see PHP version_compare function)
 	 * 
-	 * @return string version if no compare return full number else boolean compare to supply version
+	 * @return mixed see PHP documentation of version_compare function
 	 */
 	public function compareServerVersion($compare, $operator = null) {
-		$serverVersion = $this->getServerVersion();
-		if (!empty($operator)) {
-			return version_compare($serverVersion, $compare, $operator);
-		}
+		return $this->compareMongoVersion($compare, 'server', $operator);
+	}
 
-		return version_compare($serverVersion, $compare);
+	/**
+	 * method to get mongodb server version
+	 * 
+	 * @param string $compare compare to version number
+	 * @param string $operator operator how to compare (see PHP version_compare function)
+	 * 
+	 * @return mixed see PHP documentation of version_compare function
+	 */
+	public function compareClientVersion($compare, $operator = null) {
+		return $this->compareMongoVersion($compare, 'client', $operator);
+	}
+
+	/**
+	 * method to get mongodb client version
+	 * 
+	 * @return string version
+	 */
+	public function getClientVersion() {
+		return MongoClient::VERSION;
+	}
+
+	/**
+	 * method to get mongodb server version
+	 * 
+	 * @return string version
+	 */
+	public function getServerVersion() {
+		$mongodb_info = $this->_db->command(array('buildinfo' => true));
+		return $mongodb_info['version'];
 	}
 
 }

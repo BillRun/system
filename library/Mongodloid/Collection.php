@@ -146,13 +146,17 @@ class Mongodloid_Collection {
 	}
 
 	public function find($query, $fields = array()) {
-		return $this->_collection->find($query);
+		return $this->_collection->find($query, $fields);
 	}
 
 	public function aggregate() {
+		$args = func_get_args();
+		if ($this->_db->compareServerVersion('2.6', '>=')) {
+			// on 2.6 and above it's much more simple
+			return new Mongodloid_Cursor(call_user_func_array(array($this->_collection, 'aggregateCursor'), $args));
+		}
 		$timeout = $this->getTimeout();
 		$this->setTimeout(-1);
-		$args = func_get_args();
 		$result = call_user_func_array(array($this->_collection, 'aggregate'), $args);
 		$this->setTimeout($timeout);
 		if (!isset($result['ok']) || !$result['ok']) {
@@ -163,7 +167,13 @@ class Mongodloid_Collection {
 	}
 
 	public function setTimeout($timeout) {
-		@MongoCursor::$timeout = (int) $timeout;
+		if ($this->_db->compareClientVersion('1.5.3', '>=')) {
+			// see bugs:
+			// https://jira.mongodb.org/browse/PHP-1099
+			// https://jira.mongodb.org/browse/PHP-1080
+		} else {
+			@MongoCursor::$timeout = (int) $timeout;
+		}
 	}
 
 	public function getTimeout() {
@@ -258,7 +268,16 @@ class Mongodloid_Collection {
 			$options['j'] = $this->j;
 		}
 
-		return $this->_collection->batchInsert($a, $options);
+		if ($this->_db->compareServerVersion('2.6', '>=')) {
+			$batch = new MongoInsertBatch($this->_collection);
+			foreach($a as $doc) {
+				$batch->add($doc);
+			}
+			return $batch->execute($options);
+		} else {
+			return $this->_collection->batchInsert($a, $options);
+		}
+		
 	}
 
 	/**

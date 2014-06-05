@@ -33,7 +33,6 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 	 */
 	protected $ild_called_number_regex = null;
 
-
 	public function __construct(array $options = array()) {
 		$this->nsnConfig = (new Yaf_Config_Ini(Billrun_Factory::config()->getConfigValue('nsn.config_path')))->toArray();
 		$this->ild_called_number_regex = Billrun_Factory::config()->getConfigValue('016_one_way.identifications.called_number_regex');
@@ -67,19 +66,19 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 			return;
 		}
 		$this->checkFilesSeq($filepaths, $hostname);
-		
-		$path = Billrun_Factory::config()->getConfigValue($this->getName().'.thirdparty.backup_path', false, 'string');
-		if (!$path)	return;
+
+		$path = Billrun_Factory::config()->getConfigValue($this->getName() . '.thirdparty.backup_path', false, 'string');
+		if (!$path)
+			return;
 		if ($hostname) {
 			$path = $path . DIRECTORY_SEPARATOR . $hostname;
 		}
 		Billrun_Factory::log()->log("Saving files to third party at : $path", Zend_Log::INFO);
 		foreach ($filepaths as $filePath) {
-			if (!$receiver->backupToPath($filePath, $path, true , true)) {
+			if (!$receiver->backupToPath($filePath, $path, true, true)) {
 				Billrun_Factory::log()->log("Couldn't save file $filePath to third patry path at : $path", Zend_Log::ERR);
 			}
 		}
-		
 	}
 
 	/**
@@ -226,27 +225,34 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 				}
 			}
 			$data['urt'] = new MongoDate(Billrun_Util::dateTimeConvertShortToIso((string) (isset($data['charging_start_time']) && $data['charging_start_time'] ? $data['charging_start_time'] : $data['call_reference_time']), date("P", strtotime($data['call_reference_time']))));
-		//Use the  actual charing time duration instead of the  duration  that  was set by the switch
-		if (isset($data['duration'])) {
-			$data['org_dur'] = $data['duration']; // save the original duration.
-		}
-		if (isset($data['charging_end_time']) && isset($data['charging_start_time']) &&
-				(strtotime($data['charging_end_time']) > 0 && strtotime($data['charging_start_time']) > 0)) {
-			$computed_dur = strtotime($data['charging_end_time']) - strtotime($data['charging_start_time']);
-			if($computed_dur >= 0) {
-				$data['duration'] =  $computed_dur;
-			} else {
-				Billrun_Factory::log("Processor received line (cf : ".$data['call_reference']. " , cft : ".$data['call_reference_time'] ." ) with computed duration of $computed_dur using orginal duration field : {$data['duration']} ",Zend_Log::ALERT);
+			//Use the  actual charing time duration instead of the  duration  that  was set by the switch
+			if (isset($data['duration'])) {
+				$data['org_dur'] = $data['duration']; // save the original duration.
 			}
-			
-		}
-		//Remove  the  "10" in front of the national call with an international prefix
+			if (isset($data['charging_end_time']) && isset($data['charging_start_time']) &&
+					(strtotime($data['charging_end_time']) > 0 && strtotime($data['charging_start_time']) > 0)) {
+				$computed_dur = strtotime($data['charging_end_time']) - strtotime($data['charging_start_time']);
+				if ($computed_dur >= 0) {
+					$data['duration'] = $computed_dur;
+				} else {
+					Billrun_Factory::log("Processor received line (cf : " . $data['call_reference'] . " , cft : " . $data['call_reference_time'] . " ) with computed duration of $computed_dur using orginal duration field : {$data['duration']} ", Zend_Log::ALERT);
+				}
+			}
+			//Remove  the  "10" in front of the national call with an international prefix
 //		if (isset($data['in_circuit_group_name']) && preg_match("/^RCEL/", $data['in_circuit_group_name']) && strlen($data['called_number']) > 10 && substr($data['called_number'], 0, 2) == "10") { // will fail when in_circuit_group_name is empty / called_number length is exactly 10
-		if (isset($data['out_circuit_group']) && in_array($data['out_circuit_group'], array('2100', '2101', '2499')) && substr($data['called_number'], 0, 2) == "10") {
-			$data['called_number'] = substr($data['called_number'], 2);
-		} else if (isset($data['called_number']) && in_array($data['record_type'], array('30', '31')) && preg_match($this->ild_called_number_regex, $data['called_number'])) {
-			$data['ild_prefix'] = substr($data['called_number'], 0, 3);
-			$data['called_number'] = substr($data['called_number'], 3);
+			if (isset($data['calling_number'])) {
+				$data['calling_number'] = Billrun_Util::msisdn($data['calling_number']);
+			}
+			if (isset($data['called_number'])) {
+				if (isset($data['out_circuit_group']) && in_array($data['out_circuit_group'], array('2100', '2101', '2499')) && substr($data['called_number'], 0, 2) == "10") {
+					$data['called_number'] = substr($data['called_number'], 2);
+				} else if (in_array($data['record_type'], array('30', '31')) && preg_match($this->ild_called_number_regex, $data['called_number'])) {
+					$data['ild_prefix'] = substr($data['called_number'], 0, 3);
+					$data['called_number'] = substr($data['called_number'], 3);
+				}
+				if ((!isset($data['out_circuit_group'])) || (isset($data['out_circuit_group']) && !(($data['out_circuit_group'] >= '2000' && $data['out_circuit_group'] <= '2069') || ($data['out_circuit_group'] >= '2500' && $data['out_circuit_group'] <= '2529') || ($data['out_circuit_group'] >= '1230' && $data['out_circuit_group'] <= '1233')))) {
+					$data['called_number'] = Billrun_Util::msisdn($data['called_number']);
+				}
 			}
 		} else {
 //			Billrun_Factory::log()->log("unsupported NSN record type : {$data['record_type']}",Zend_log::DEBUG);
@@ -441,21 +447,21 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 		if (isset($header['data_length_in_block']) && !feof($fileHandle)) {
 			$bytes = fread($fileHandle, $header['data_length_in_block'] - self::HEADER_LENGTH);
 		}
-		if(in_array($header['format_version'],$this->nsnConfig['block_config']['supported_versions'])) {
-		do {
-			$row = $processor->buildDataRow($bytes);
-			if ($row) {
-				$processor->addDataRow($row);
-			}
-			$bytes = substr($bytes, $processor->getParser()->getLastParseLength());
-		} while (isset($bytes[self::TRAILER_LENGTH + 1]));
+		if (in_array($header['format_version'], $this->nsnConfig['block_config']['supported_versions'])) {
+			do {
+				$row = $processor->buildDataRow($bytes);
+				if ($row) {
+					$processor->addDataRow($row);
+				}
+				$bytes = substr($bytes, $processor->getParser()->getLastParseLength());
+			} while (isset($bytes[self::TRAILER_LENGTH + 1]));
 		} else {
-			Billrun_Factory::log()->log("Got NSN block with unsupported version :  {$header['format_version']} , block header data : ".print_r($header,1),Zend_log::CRIT);
+			Billrun_Factory::log()->log("Got NSN block with unsupported version :  {$header['format_version']} , block header data : " . print_r($header, 1), Zend_log::CRIT);
 		}
 
 		$trailer = $processor->getParser()->parseTrailer($bytes);
 		//align the readhead
-		$alignment = self::RECORD_ALIGNMENT * max(1,$header['charging_block_size']);
+		$alignment = self::RECORD_ALIGNMENT * max(1, $header['charging_block_size']);
 		if (($alignment - $header['data_length_in_block']) > 0) {
 			fread($fileHandle, ($alignment - $header['data_length_in_block']));
 		}

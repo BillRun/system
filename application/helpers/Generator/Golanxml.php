@@ -84,11 +84,19 @@ class Generator_Golanxml extends Billrun_Generator {
 		$resource = $billrun
 				->query('billrun_key', $this->stamp)
 				->exists('invoice_id')
-				->cursor()->timeout(-1)
+				->notExists('invoice_file')
+				->cursor()
 				->sort(array("aid" => 1))
 				->skip($this->offset * $this->size)
 				->limit($this->size);
 
+		if ($this->_db->compareClientVersion('1.5.3', '>=')) {
+			// see bugs:
+			// https://jira.mongodb.org/browse/PHP-1099
+			// https://jira.mongodb.org/browse/PHP-1080
+		} else {
+			$resource->limit(-1);
+		}
 		// @TODO - there is issue with the timeout; need to be fixed
 		//         meanwhile, let's pull the lines right after the query
 		foreach ($resource as $row) {
@@ -120,14 +128,14 @@ class Generator_Golanxml extends Billrun_Generator {
 		$invoice_id = $row->get('invoice_id');
 		$invoice_filename = $row['billrun_key'] . '_' . str_pad($row['aid'], 9, '0', STR_PAD_LEFT) . '_' . str_pad($invoice_id, 11, '0', STR_PAD_LEFT) . '.xml';
 		$invoice_file_path = $this->export_directory . '/' . $invoice_filename;
-		if (!file_exists($invoice_file_path)) {
+//		if (!file_exists($invoice_file_path)) {
 			$this->writer->openURI($invoice_file_path);
 			$this->writeXML($row, $lines);
 			$this->setFileStamp($row, $invoice_filename);
 			Billrun_Factory::log()->log("invoice file " . $invoice_filename . " created for account " . $row->get('aid'), Zend_Log::INFO);
-		} else {
-			Billrun_Factory::log()->log('Skipping filename ' . $invoice_filename, Zend_Log::INFO);
-		}
+//		} else {
+//			Billrun_Factory::log()->log('Skipping filename ' . $invoice_filename, Zend_Log::INFO);
+//		}
 //		$this->addRowToCsv($invoice_id, $row->get('aid'), $total, $total_ilds);
 	}
 
