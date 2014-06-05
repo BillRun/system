@@ -190,9 +190,11 @@ class Mongodloid_Collection {
 	 */
 	public function setReadPreference($readPreference, array $tags = array()) {
 		if (defined('MongoClient::' . $readPreference)) {
-			return $this->_collection->setReadPreference(constant('MongoClient::' . $readPreference), $tags);
+			$this->_collection->setReadPreference(constant('MongoClient::' . $readPreference), $tags);
+		} else if (in_array($readPreference, Mongodloid_Connection::$availableReadPreferences)) {
+			$this->_collection->setReadPreference($readPreference, $tags);
 		}
-		return FALSE;
+		return $this;
 	}
 
 	/**

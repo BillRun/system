@@ -27,6 +27,8 @@ class Billrun_Balance implements ArrayAccess {
 	 * @var array
 	 */
 	protected $data = array();
+	
+	protected $collection = null;
 
 	public function __construct($options = array()) {
 		if (isset($options['data'])) {
@@ -34,6 +36,9 @@ class Billrun_Balance implements ArrayAccess {
 		} else if (isset($options['sid']) && isset($options['billrun_key'])) {
 			$this->load($options['sid'], $options['billrun_key']);
 		}
+		
+		// TODO: refactoring the read preference to the factory to take it from config
+		$this->collection = Billrun_Factory::db(array('name' => 'balances'))->balancesCollection()->setReadPreference('RP_PRIMARY');
 	}
 
 	/**
@@ -72,19 +77,22 @@ class Billrun_Balance implements ArrayAccess {
 		Billrun_Factory::log()->log("Trying to load balance " . $billrunKey . " for subscriber " . $subscriberId, Zend_Log::DEBUG);
 		$billrunKey = !$billrunKey ? Billrun_Util::getBillrunKey(time()) : $billrunKey;
 
-		$this->data = Billrun_Factory::db(array('name' => 'balances'))->balancesCollection()->query(array(
+		$this->data = $this->collection->query(array(
 				'sid' => $subscriberId,
 				'billrun_month' => $billrunKey
-			))->cursor()->hint(array('sid' => 1, 'billrun_month' => 1))->limit(1)->current();
+			))
+			->cursor()->setReadPreference('RP_PRIMARY')
+			->hint(array('sid' => 1, 'billrun_month' => 1))->limit(1)->current();
 
-		$this->data->collection(Billrun_Factory::db(array('name' => 'balances'))->balancesCollection());
+		// set the data collection to enable clear save
+		$this->data->collection($this->collection);
 	}
 
 	/**
 	 * method to save balance details
 	 */
 	public function save() {
-		return $this->data->save(Billrun_Factory::db(array('name' => 'balances'))->balancesCollection());
+		return $this->data->save($this->collection);
 	}
 
 	/**
@@ -118,7 +126,8 @@ class Billrun_Balance implements ArrayAccess {
 	 */
 	public static function createBalanceIfMissing($aid, $sid, $billrun_key, $plan_ref) {
 		$ret = false;
-		$balances_coll = Billrun_Factory::db(array('name' => 'balances'))->balancesCollection();
+//		$balances_coll = Billrun_Factory::db(array('name' => 'balances'))->balancesCollection();
+		
 		$query = array(
 			'sid' => $sid,
 			'billrun_month' => $billrun_key,
@@ -132,7 +141,7 @@ class Billrun_Balance implements ArrayAccess {
 			'w' => 1,
 		);
 		Billrun_Factory::log()->log("Create empty balance " . $billrun_key . " if not exists for subscriber " . $sid, Zend_Log::DEBUG);
-		$output = $balances_coll->findAndModify($query, $update, array(), $options, true);
+		$output = $this->collection->findAndModify($query, $update, array(), $options, true);
 		
 		if ($output['ok'] && isset($output['value']) && $output['value']) {
 			Billrun_Factory::log('Added balance ' . $billrun_key . ' to subscriber ' . $sid, Zend_Log::INFO);
@@ -171,10 +180,11 @@ class Billrun_Balance implements ArrayAccess {
 	 */
 	protected function isExists($subscriberId, $billrunKey) {
 
-		$balance = Billrun_Factory::db(array('name' => 'balances'))->balancesCollection()->query(array(
+		$balance = $this->collection->query(array(
 				'sid' => $subscriberId,
 				'billrun_month' => $billrunKey
-			))->cursor()->current();
+			))->cursor()->setReadPreference('RP_PRIMARY')
+			->current();
 
 		if (!count($balance->getRawData())) {
 			return FALSE;
