@@ -259,6 +259,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 									'sid' => intval($subscriber['subscriber_id']),
 									'plan' => isset($subscriber['curr_plan']) ? $subscriber['curr_plan'] : null,
 									'next_plan' => isset($subscriber['next_plan']) ? $subscriber['next_plan'] : null,
+									'credits' => isset($subscriber['credits']) ? $subscriber['credits'] : null,
 								),
 							);
 							foreach (self::getExtraFieldsForBillrun() as $field) {
@@ -278,6 +279,11 @@ class Subscriber_Golan extends Billrun_Subscriber {
 			}
 		}
 	}
+	
+	public function getCredits() {
+		$this->credits;
+	}
+
 
 	public function getListFromFile($file_path, $time) {
 		$json = @file_get_contents($file_path);
@@ -431,5 +437,5 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		// if it's array rand between servers
 		return $hosts[rand(0, count($hosts) - 1)];
 	}
-
+	
 }
