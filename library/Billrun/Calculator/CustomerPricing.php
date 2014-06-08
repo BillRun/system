@@ -170,7 +170,11 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			if (!$pricingData) {
 				return false;
 			}
-			$pricingData['billrun'] = $row['urt']->sec <= $this->active_billrun_end_time ? $this->active_billrun : $this->next_active_billrun;
+			
+			// billrun cannot override on api calls
+			if (!isset($row['billrun']) || $row['source'] != 'api') {
+				$pricingData['billrun'] = $row['urt']->sec <= $this->active_billrun_end_time ? $this->active_billrun : $this->next_active_billrun;
+			}
 		} else {
 			Billrun_Factory::log()->log("Line with stamp " . $row['stamp'] . " is missing volume information", Zend_Log::ALERT);
 			return false;
