@@ -135,7 +135,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				//Billrun_Factory::log()->log("Calcuating row : ".print_r($item,1),  Zend_Log::DEBUG);
 				$line->collection($lines_coll);
 				if ($this->isLineLegitimate($line)) {
-					if (!$this->updateRow($line)) {
+					if ($this->updateRow($line) === FALSE) {
 						unset($this->lines[$line['stamp']]);
 						continue;
 					}
@@ -178,13 +178,13 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 
 		$pricingDataTxt = "Saving pricing data to line with stamp: " . $row['stamp'] . ".";
 		foreach ($pricingData as $key => $value) {
-			$pricingDataTxt.=" " . $key . ": " . $value . ".";
+			$pricingDataTxt .= " " . $key . ": " . $value . ".";
 		}
 		Billrun_Factory::log()->log($pricingDataTxt, Zend_Log::DEBUG);
 		$row->setRawData(array_merge($row->getRawData(), $pricingData));
 
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array($row, $this));
-		return true;
+		return $row;
 	}
 
 	/**

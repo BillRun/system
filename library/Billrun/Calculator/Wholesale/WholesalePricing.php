@@ -41,7 +41,7 @@ class Billrun_Calculator_Wholesale_WholesalePricing extends Billrun_Calculator_W
 	}
 
 	/**
-	 * @see Billrun_Calculator::updateRow
+	 * make the calculation
 	 */
 	public function updateRow($row) {
 		Billrun_Factory::dispatcher()->trigger('beforeCalculatorUpdateRow', array($row, $this));
@@ -67,7 +67,7 @@ class Billrun_Calculator_Wholesale_WholesalePricing extends Billrun_Calculator_W
 		}
 
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array($row, $this));
-		return true;
+		return $row;
 	}
 
 	/**

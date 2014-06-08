@@ -147,7 +147,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	}
 
 	/**
-	 * Write the calculation into DB
+	 * make the calculation
 	 */
 	public function updateRow($row) {
 		Billrun_Factory::dispatcher()->trigger('beforeCalculatorUpdateRow', array($row, $this));
@@ -170,7 +170,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 		$row->setRawData($newData);
 
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array($row, $this));
-		return true;
+		return $row;
 	}
 
 }

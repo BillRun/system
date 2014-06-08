@@ -79,7 +79,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	}
 
 	/**
-	 * write the calculation into DB
+	 * make the  calculation
 	 */
 	public function updateRow($row) {
 		Billrun_Factory::dispatcher()->trigger('beforeCalculatorUpdateRow', array($row, $this));
@@ -96,7 +96,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 				return false;
 			} else {
 				Billrun_Factory::log('Missing subscriber info for line with stamp : ' . $row->get('stamp'), Zend_Log::DEBUG);
-				return true;
+				return $row;
 			}
 		}
 
@@ -108,7 +108,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			$row[$key] = $subscriber_field;
 		}
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array($row, $this));
-		return true;
+		return $row;
 	}
 
 	/**

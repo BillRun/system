@@ -55,7 +55,7 @@ class Billrun_Calculator_Carrier extends Billrun_Calculator {
 		$row->setRawData($newData);
 
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array($row, $this));
-		return true;
+		return $row;
 	}
 
 	/**

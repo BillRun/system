@@ -131,7 +131,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	}
 
 	/**
-	 * write the calculation into DB
+	 * make the calculation
 	 */
 	abstract public function updateRow($row);
 
@@ -148,7 +148,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 				Billrun_Factory::dispatcher()->trigger('beforeCalculateDataRow', array('data' => &$line));
 				$line->collection($lines_coll);
 				if ($this->isLineLegitimate($line)) {
-					if (!$this->updateRow($line)) {
+					if ($this->updateRow($line) === FALSE) {
 						unset($this->lines[$line['stamp']]);
 						continue;
 					}
