@@ -32,7 +32,7 @@ class Billrun_Balance implements ArrayAccess {
 
 	public function __construct($options = array()) {
 		// TODO: refactoring the read preference to the factory to take it from config
-		$this->collection = Billrun_Factory::db(array('name' => 'balances'))->balancesCollection()->setReadPreference('RP_PRIMARY');
+		$this->collection = self::getCollection();
 
 		if (isset($options['data'])) {
 			$this->data = $options['data'];
@@ -40,6 +40,10 @@ class Billrun_Balance implements ArrayAccess {
 			$this->load($options['sid'], $options['billrun_key']);
 		}
 
+	}
+	
+	public static function getCollection() {
+		return Billrun_Factory::db(array('name' => 'balances'))->balancesCollection()->setReadPreference('RP_PRIMARY');
 	}
 
 	/**
@@ -142,7 +146,7 @@ class Billrun_Balance implements ArrayAccess {
 			'w' => 1,
 		);
 		Billrun_Factory::log()->log("Create empty balance " . $billrun_key . " if not exists for subscriber " . $sid, Zend_Log::DEBUG);
-		$output = $this->collection->findAndModify($query, $update, array(), $options, true);
+		$output = self::getCollection()->findAndModify($query, $update, array(), $options, true);
 		
 		if ($output['ok'] && isset($output['value']) && $output['value']) {
 			Billrun_Factory::log('Added balance ' . $billrun_key . ' to subscriber ' . $sid, Zend_Log::INFO);
