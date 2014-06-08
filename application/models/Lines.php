@@ -358,7 +358,7 @@ class LinesModel extends TableModel {
 			'$gte' => new MongoDate($from_date),
 		);
 
-		$cursor = $this->collection->query($query)->cursor()->limit(10000)->sort(array('urt' => 1));
+		$cursor = $this->collection->query($query)->cursor()->limit(100000)->sort(array('urt' => 1));
 		$ret = array();
 		
 		foreach($cursor as $row) {
