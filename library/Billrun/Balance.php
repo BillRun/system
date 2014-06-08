@@ -31,14 +31,15 @@ class Billrun_Balance implements ArrayAccess {
 	protected $collection = null;
 
 	public function __construct($options = array()) {
+		// TODO: refactoring the read preference to the factory to take it from config
+		$this->collection = Billrun_Factory::db(array('name' => 'balances'))->balancesCollection()->setReadPreference('RP_PRIMARY');
+
 		if (isset($options['data'])) {
 			$this->data = $options['data'];
 		} else if (isset($options['sid']) && isset($options['billrun_key'])) {
 			$this->load($options['sid'], $options['billrun_key']);
 		}
-		
-		// TODO: refactoring the read preference to the factory to take it from config
-		$this->collection = Billrun_Factory::db(array('name' => 'balances'))->balancesCollection()->setReadPreference('RP_PRIMARY');
+
 	}
 
 	/**
