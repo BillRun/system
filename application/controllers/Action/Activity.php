@@ -37,7 +37,7 @@ class ActivityAction extends ApiAction {
 		}
 		
 		if (!is_numeric($to_date)) {
-			$from_date = strtotime($to_date);
+			$to_date = strtotime($to_date);
 		}
 
 		$model = new LinesModel();
