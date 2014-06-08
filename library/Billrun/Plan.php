@@ -124,7 +124,7 @@ class Billrun_Plan {
 	/**
 	 * check if a subscriber 
 	 * @param type $rate
-	 * @param type $sub
+	 * @param type $type
 	 * @return boolean
 	 * @deprecated since version 0.1
 	 * 		should be removed from here;
@@ -135,7 +135,79 @@ class Billrun_Plan {
 			is_array($rate['rates'][$type]['plans']) &&
 			in_array($this->createRef(), $rate['rates'][$type]['plans']);
 	}
+	
+	public function isRateInPlanRate($rate, $usageType) {
+		return (isset($this->data['include']['rates'][$rate['key']][$usageType]));
+	}
+	
+	public function usageLeftInRateBalance($subscriberBalance, $rate, $usageType = 'call') {
+		if (!isset($this->get('include')[$rate['key']][$usageType])) {
+			return 0;
+		}
+		
+		$rateUsageIncluded = $this->get('include')[$rate['key']][$usageType];
 
+		if ($rateUsageIncluded == 'UNLIMITED') {
+			return PHP_INT_MAX;
+		}
+		
+		if (isset($subscriberBalance['rates'][$rate['key']]['usagev'])) {
+			$subscriberSpent = $subscriberBalance['rates'][$rate['key']]['usagev'];
+		} else {
+			$subscriberSpent = 0;
+		}
+		$usageLeft = $rateUsageIncluded - $subscriberSpent;
+		return floatval($usageLeft < 0 ? 0 : $usageLeft);
+	}
+	
+	public function getRateGroups($rate, $usageType) {
+		if (isset($rate['rates'][$usageType]['groups'])) {
+			$groups = $rate['rates'][$usageType]['groups'];
+			if (!empty($groups) && isset($this->data['include']['groups'])) {
+				return array_intersect($groups, array_keys($this->data['include']['groups']));
+			}
+		}
+		return false;
+	}
+	
+	public function isRateInPlanGroup($rate, $usageType) {
+		if ($this->getRateGroups($rate, $usageType)) {
+			return true;
+		}
+		return false;
+	}
+	
+	// currently the strongest rule is simple the first rule selected
+	public function getStrongestGroup($rate, $usageType) {
+		$groups = $this->getRateGroups($rate, $usageType);
+		if (empty($groups)) {
+			return false;
+		}
+		
+		return $groups[0];
+	}
+
+	public function usageLeftInRateGroup($subscriberBalance, $rate, $usageType = 'call') {
+		$groupSelected = $this->getStrongestGroup($rate, $usageType);
+		if ($groupSelected === FALSE) {
+			return 0;
+		}
+		
+		$rateUsageIncluded = $this->data['include']['groups'][$groupSelected][$usageType];
+
+		if ($rateUsageIncluded == 'UNLIMITED') {
+			return PHP_INT_MAX;
+		}
+		
+		if (isset($subscriberBalance['groups'][$groupSelected]['usagev'])) {
+			$subscriberSpent = $subscriberBalance['groups'][$groupSelected]['usagev'];
+		} else {
+			$subscriberSpent = 0;
+		}
+		$usageLeft = $rateUsageIncluded - $subscriberSpent;
+		return floatval($usageLeft < 0 ? 0 : $usageLeft);
+	}
+	
 	/**
 	 * Get the usage left in the current plan.
 	 * @param $subscriberBalance the current sunscriber balance.
@@ -144,20 +216,16 @@ class Billrun_Plan {
 	 */
 	public function usageLeftInPlan($subscriberBalance, $usagetype = 'call') {
 
-		if (!isset($subscriberBalance['totals'][$usagetype]['usagev'])) {
-			throw new Exception("Inproper usage counter requested : $usagetype from subscriber : " . print_r($subscriber, 1));
+		if (!isset($this->get('include')[$usagetype])) {
+			return 0;
 		}
-
-		/* if ( ($this->getRef() != $subscriberBalance['current_plan']) ) {
-		  throw new Exception("Couldn't load plan for subscriber : " . print_r($subscriber, 1));
-		  } */
-		$usageLeft = 0;
-		if (isset($this->get('include')[$usagetype])) {
-			if ($this->get('include')[$usagetype] == 'UNLIMITED') {
-				return PHP_INT_MAX;
-			}
-			$usageLeft = $this->get('include')[$usagetype] - $subscriberBalance['totals'][$usagetype]['usagev'];
+		
+		$usageIncluded = $this->get('include')[$usagetype];
+		if ($usageIncluded == 'UNLIMITED') {
+			return PHP_INT_MAX;
 		}
+		
+		$usageLeft = $usageIncluded - $subscriberBalance['totals'][$usagetype]['usagev'];
 		return floatval($usageLeft < 0 ? 0 : $usageLeft);
 	}
 
@@ -189,6 +257,20 @@ class Billrun_Plan {
 
 	public function isUnlimited($usage_type) {
 		return isset($this->data['include'][$usage_type]) && $this->data['include'][$usage_type] == "UNLIMITED";
+	}
+
+	public function isUnlimitedRate($rate, $usageType) {
+		return (isset($this->data['include']['rates'][$rate['key']][$usageType]) 
+			&& $this->data['include']['rates'][$rate['key']][$usageType] == "UNLIMITED");
+	}
+
+	public function isUnlimitedGroup($rate, $usageType) {
+		$groupSelected = $this->getStrongestGroup($rate, $usageType);
+		if ($groupSelected === FALSE) {
+			 return FALSE;
+		}
+		return (isset($this->data['include']['rates'][$rate['key']][$usageType]) 
+			&& $this->data['include']['groups'][$groupSelected][$usageType] == "UNLIMITED");
 	}
 
 }
