@@ -75,6 +75,14 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	 * @param int $bulkAccountPreload
 	 */
 	protected $bulkAccountPreload = 10;
+	
+	/**
+	 * calculator for manual charges on billable
+	 * 
+	 * @var Billrun Calculator
+	 */
+	protected $creditCalc = null;
+	protected $pricingCalc = null;
 
 	public function __construct($options = array()) {
 		parent::__construct($options);
@@ -122,6 +130,9 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		$this->billrun = Billrun_Factory::db(array('name' => 'billrun'))->billrunCollection();
 
 		$this->loadRates();
+		
+		$this->creditCalc = Billrun_Calculator::getInstance(Billrun_Factory::config()->getConfigValue('Rate_Credit.calculator', array()));
+		$this->pricingCalc = Billrun_Calculator::getInstance(Billrun_Factory::config()->getConfigValue('customerPricing.calculator', array()));
 	}
 
 	/**
@@ -143,7 +154,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	 * execute aggregate
 	 */
 	public function aggregate() {
-		// @TODO trigger before aggregate
+
 		Billrun_Factory::dispatcher()->trigger('beforeAggregate', array($this->data, &$this));
 		$account_billrun = false;
 		$billrun_key = $this->getStamp();
@@ -194,7 +205,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 				'autoload' => false,
 			);
 			$account_billrun = Billrun_Factory::billrun($params);
-			$flat_lines = array();
+			$manual_lines = array();
 			
 			foreach ($account as $subscriber) {								
 				Billrun_Factory::dispatcher()->trigger('beforeAggregateSubscriber', array($subscriber, $account_billrun, &$this));
@@ -216,13 +227,13 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 						continue;
 					}
 					Billrun_Factory::log('Adding flat line to subscriber ' . $sid, Zend_Log::INFO);
-					$flat_lines[] = $this->saveFlatLine($subscriber, $billrun_key);
+					$manual_lines = array_merge(array($this->saveFlatLine($subscriber, $billrun_key)), $this->saveCreditLines($subscriber, $billrun_key));
 					Billrun_Factory::log('Finished adding flat line to subscriber ' . $sid, Zend_Log::INFO);
 				}
 				$account_billrun->addSubscriber($subscriber, $subscriber_status);
 				Billrun_Factory::dispatcher()->trigger('afterAggregateSubscriber', array($subscriber, $account_billrun, &$this));
 			}
-			$lines = $account_billrun->addLines($flat_lines);
+			$lines = $account_billrun->addLines($manual_lines);
 			//save the billrun
 			Billrun_Factory::log('Saving account ' . $accid, Zend_Log::INFO);
 			if ($account_billrun->save() === false) {
@@ -276,6 +287,51 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 			}
 		}
 		return new Mongodloid_Entity($flat_entry);
+	}
+	
+	protected function saveCreditLines($subscriber, $billrun_key) {
+		$credits = $subscriber->getCredits();
+		$ret = array();
+		foreach($credits as $credit) {
+			if (($row = $this->saveCredit($credit, $billrun_key)) !== FALSE) {
+				$ret[] = $row;
+			}
+		}
+		return $ret;
+	}
+	
+	protected function saveCredit($credit, $billrun_key) {
+		try {
+			$parsedRow = Billrun_Util::parseCreditRow($credit);
+			$parsedRow['billrun'] = $billrun_key; // this will ensure we are on correct billrun even on pricing calculator
+			if (empty($parsedRow)) {
+				Billrun_Factory::log("Credit cannot be parsed for subscriber " . $subscriber->sid . " for billrun " . $billrun_key . " credit details: " . print_R($credit, 1), Zend_log::ALERT);
+				return false;
+			}
+			// add rate
+			if (($ratedRow = $this->creditCalc->updateRow($parsedRow)) === FALSE) {
+				Billrun_Factory::log("Credit cannot be rated for subscriber " . $subscriber->sid . " for billrun " . $billrun_key . " credit details: " . print_R($credit, 1), Zend_log::ALERT);
+				return false;
+			}
+
+			// add billrun, price
+			if (($insertRow = $this->pricingCalc->updateRow($ratedRow)) === FALSE) {
+				Billrun_Factory::log("Credit cannot be calc pricing for subscriber " . $subscriber->sid . " for billrun " . $billrun_key . " credit details: " . print_R($credit, 1), Zend_log::ALERT);
+				return false;
+			}
+
+			$this->lines->insert($insertRow, array("w" => 1));
+		} catch (Exception $e) {
+			if ($e->getCode() == 11000) {
+				Billrun_Factory::log("Credit already exists for subscriber " . $subscriber->sid . " for billrun " . $billrun_key . " credit details: " . print_R($credit, 1), Zend_log::ALERT);
+			} else {
+				Billrun_Factory::log("Problem inserting credit for subscriber " . $subscriber->sid . " for billrun " . $billrun_key 
+					. ". error message: " . $e->getMessage() . ". error code: " . $e->getCode() . ". credit details:" . print_R($credit, 1), Zend_log::ALERT);
+				return false;
+			}
+		}
+		return $insertRow;
+
 	}
 
 	protected function save($data) {
