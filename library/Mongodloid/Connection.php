@@ -15,6 +15,15 @@ class Mongodloid_Connection {
 	protected static $instances;
 	protected $username = '';
 	protected $password = '';
+	
+	static public $availableReadPreferences = array(
+		MongoClient::RP_PRIMARY,
+		MongoClient::RP_PRIMARY_PREFERRED,
+		MongoClient::RP_SECONDARY,
+		MongoClient::RP_SECONDARY_PREFERRED,
+		MongoClient::RP_NEAREST,
+	);
+
 
 	/**
 	 * Method to get database instance

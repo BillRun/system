@@ -101,9 +101,11 @@ class Mongodloid_Cursor implements Iterator, Countable {
 		if (method_exists($this->_cursor, 'setReadPreference')) {
 			if (defined('MongoClient::' . $readPreference)) {
 				$this->_cursor->setReadPreference(constant('MongoClient::' . $readPreference), $tags);
+			} else if (in_array($readPreference, Mongodloid_Connection::$availableReadPreferences)) {
+				$this->_cursor->setReadPreference($readPreference, $tags);
 			}
 		}
-		
+
 		return $this;
 	}
 
@@ -118,7 +120,7 @@ class Mongodloid_Cursor implements Iterator, Countable {
 		if (!method_exists($this->_cursor, 'setReadPreference')) {
 			return false;
 		}
-		$ret = $this->_cursor->setReadPreference();
+		$ret = $this->_cursor->getReadPreference();
 		if ($includeTage) {
 			return $ret;
 		}

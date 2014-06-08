@@ -50,7 +50,7 @@ class ResetLinesModel {
 	 * Removes the balance doc for each of the subscribers
 	 */
 	public function resetBalances() {
-		$balances_coll = Billrun_Factory::db(array('name' => 'balances'))->balancesCollection();
+		$balances_coll = Billrun_Factory::db(array('name' => 'balances'))->balancesCollection()->setReadPreference('RP_PRIMARY');
 		if (!empty($this->sids) && !empty($this->billrun_key)) {
 			$query = array(
 				'billrun_month' => $this->billrun_key,

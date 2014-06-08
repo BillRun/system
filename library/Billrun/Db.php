@@ -30,14 +30,14 @@ class Billrun_Db extends Mongodloid_Db {
 	public function __construct(\MongoDb $db, \Mongodloid_Connection $connection) {
 		parent::__construct($db, $connection);
 		$this->collections = Billrun_Factory::config()->getConfigValue('db.collections', array());
-		if ($this->compareClientVersion('1.5.3', '>=')) {
-			// see bugs: 
-			// https://jira.mongodb.org/browse/PHP-1099
-			// https://jira.mongodb.org/browse/PHP-1080
-		} else {
+		if ($this->compareClientVersion('1.5.3', '<')) {
 			$timeout = Billrun_Factory::config()->getConfigValue('db.timeout', 3600000); // default 60 minutes
 			Billrun_Factory::log()->log('Set database cursor timeout to: ' . $timeout, Zend_Log::INFO);
 			@MongoCursor::$timeout = $timeout;
+		} else {
+			// see bugs: 
+			// https://jira.mongodb.org/browse/PHP-1099
+			// https://jira.mongodb.org/browse/PHP-1080
 		}
 	}
 
