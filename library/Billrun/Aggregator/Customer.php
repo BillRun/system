@@ -266,9 +266,9 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	 * @return array the inserted line or the old one if it already exists
 	 */
 	protected function saveFlatLine($subscriber, $billrun_key) {
-		$flat_entry = $subscriber->getFlatEntry($billrun_key);
+		$flat_entry = $subscriber->getFlatEntry($billrun_key, true);
 		try {
-			$this->lines->insert($flat_entry, array("w" => 1));
+			$this->lines->insert($flat_entry->getRawData(), array("w" => 1));
 		} catch (Exception $e) {
 			if ($e->getCode() == 11000) {
 				Billrun_Factory::log("Flat line already exists for subscriber " . $subscriber->sid . " for billrun " . $billrun_key, Zend_log::ALERT);
@@ -276,15 +276,15 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 				Billrun_Factory::log("Problem inserting flat line for subscriber " . $subscriber->sid . " for billrun " . $billrun_key . ". error message: " . $e->getMessage() . ". error code: " . $e->getCode(), Zend_log::ALERT);
 			}
 		}
-		return new Mongodloid_Entity($flat_entry);
+		return $flat_entry;
 	}
 	
 	protected function saveCreditLines($subscriber, $billrun_key) {
-		$credits = $subscriber->getCredits();
+		$credits = $subscriber->getCredits($billrun_key, true);
 		$ret = array();
 		foreach($credits as $credit) {
 			try {
-				$this->lines->insert($credit, array("w" => 1));
+				$this->lines->insert($credit->getRawData(), array("w" => 1));
 			} catch (Exception $e) {
 				if ($e->getCode() == 11000) {
 					Billrun_Factory::log("Credit already exists for subscriber " . $subscriber->sid . " for billrun " . $billrun_key . " credit details: " . print_R($credit, 1), Zend_log::ALERT);
@@ -295,7 +295,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 				}
 			}
 		}
-		return $ret;
+		return $credits;
 	}
 	
 	protected function saveCredit($credit, $billrun_key) {
