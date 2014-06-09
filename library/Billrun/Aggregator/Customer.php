@@ -75,14 +75,6 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	 * @param int $bulkAccountPreload
 	 */
 	protected $bulkAccountPreload = 10;
-	
-	/**
-	 * calculator for manual charges on billable
-	 * 
-	 * @var Billrun Calculator
-	 */
-	protected $creditCalc = null;
-	protected $pricingCalc = null;
 
 	public function __construct($options = array()) {
 		parent::__construct($options);
@@ -131,8 +123,6 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 
 		$this->loadRates();
 		
-		$this->creditCalc = Billrun_Calculator::getInstance(Billrun_Factory::config()->getConfigValue('Rate_Credit.calculator', array()));
-		$this->pricingCalc = Billrun_Calculator::getInstance(Billrun_Factory::config()->getConfigValue('customerPricing.calculator', array()));
 	}
 
 	/**
@@ -293,43 +283,22 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		$credits = $subscriber->getCredits();
 		$ret = array();
 		foreach($credits as $credit) {
-			if (($row = $this->saveCredit($credit, $billrun_key)) !== FALSE) {
-				$ret[] = $row;
+			try {
+				$this->lines->insert($credit, array("w" => 1));
+			} catch (Exception $e) {
+				if ($e->getCode() == 11000) {
+					Billrun_Factory::log("Credit already exists for subscriber " . $subscriber->sid . " for billrun " . $billrun_key . " credit details: " . print_R($credit, 1), Zend_log::ALERT);
+				} else {
+					Billrun_Factory::log("Problem inserting credit for subscriber " . $subscriber->sid . " for billrun " . $billrun_key 
+						. ". error message: " . $e->getMessage() . ". error code: " . $e->getCode() . ". credit details:" . print_R($credit, 1), Zend_log::ALERT);
+					return false;
+				}
 			}
 		}
 		return $ret;
 	}
 	
 	protected function saveCredit($credit, $billrun_key) {
-		try {
-			$parsedRow = Billrun_Util::parseCreditRow($credit);
-			$parsedRow['billrun'] = $billrun_key; // this will ensure we are on correct billrun even on pricing calculator
-			if (empty($parsedRow)) {
-				Billrun_Factory::log("Credit cannot be parsed for subscriber " . $subscriber->sid . " for billrun " . $billrun_key . " credit details: " . print_R($credit, 1), Zend_log::ALERT);
-				return false;
-			}
-			// add rate
-			if (($ratedRow = $this->creditCalc->updateRow($parsedRow)) === FALSE) {
-				Billrun_Factory::log("Credit cannot be rated for subscriber " . $subscriber->sid . " for billrun " . $billrun_key . " credit details: " . print_R($credit, 1), Zend_log::ALERT);
-				return false;
-			}
-
-			// add billrun, price
-			if (($insertRow = $this->pricingCalc->updateRow($ratedRow)) === FALSE) {
-				Billrun_Factory::log("Credit cannot be calc pricing for subscriber " . $subscriber->sid . " for billrun " . $billrun_key . " credit details: " . print_R($credit, 1), Zend_log::ALERT);
-				return false;
-			}
-
-			$this->lines->insert($insertRow, array("w" => 1));
-		} catch (Exception $e) {
-			if ($e->getCode() == 11000) {
-				Billrun_Factory::log("Credit already exists for subscriber " . $subscriber->sid . " for billrun " . $billrun_key . " credit details: " . print_R($credit, 1), Zend_log::ALERT);
-			} else {
-				Billrun_Factory::log("Problem inserting credit for subscriber " . $subscriber->sid . " for billrun " . $billrun_key 
-					. ". error message: " . $e->getMessage() . ". error code: " . $e->getCode() . ". credit details:" . print_R($credit, 1), Zend_log::ALERT);
-				return false;
-			}
-		}
 		return $insertRow;
 
 	}

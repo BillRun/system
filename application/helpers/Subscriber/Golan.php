@@ -21,6 +21,14 @@ class Subscriber_Golan extends Billrun_Subscriber {
 	protected $save_crm_output = false;
 	protected $crm_output_dir = null;
 	protected $extraFields = array('kosher');
+	
+	/**
+	 * calculator for manual charges on billable
+	 * 
+	 * @var Billrun Calculator
+	 */
+	protected $creditCalc = null;
+	protected $pricingCalc = null;
 
 	public function __construct($options = array()) {
 		parent::__construct($options);
@@ -44,6 +52,11 @@ class Subscriber_Golan extends Billrun_Subscriber {
 			}
 
 		}
+		$creditCalcOptions = array_merge(array('type' => 'Rate_Credit', 'autoload' => false), Billrun_Factory::config()->getConfigValue('Rate_Credit.calculator', array()));
+		$this->creditCalc = Billrun_Calculator::getInstance($creditCalcOptions);
+		$pricingCalcOptions = array_merge(array('type' => 'customerPricing', 'autoload' => false), Billrun_Factory::config()->getConfigValue('customerPricing.calculator', array()));
+		$this->pricingCalc = Billrun_Calculator::getInstance($pricingCalcOptions);
+
 		// pay attention that just availableFields array can be access from outside
 	}
 
@@ -103,7 +116,6 @@ class Subscriber_Golan extends Billrun_Subscriber {
 
 		$host = self::getRpcServer();
 		$url = Billrun_Factory::config()->getConfigValue('provider.rpc.url', '');
-		$datetime_format = Billrun_Base::base_dateformat; // 'Y-m-d H:i:s';
 
 		$path = 'http://' . $host . '/' . $url . '?' . http_build_query($params);
 		//Billrun_Factory::log()->log($path, Zend_Log::DEBUG);
@@ -259,9 +271,20 @@ class Subscriber_Golan extends Billrun_Subscriber {
 									'sid' => intval($subscriber['subscriber_id']),
 									'plan' => isset($subscriber['curr_plan']) ? $subscriber['curr_plan'] : null,
 									'next_plan' => isset($subscriber['next_plan']) ? $subscriber['next_plan'] : null,
-									'credits' => isset($subscriber['credits']) ? $subscriber['credits'] : null,
 								),
 							);
+
+							if (isset($subscriber['occ']) && is_array($subscriber['occ'])) {
+								$credits = array();
+								foreach ($subscriber['occ'] as $credit) {
+									$credit['aid'] = $concat['data']['aid'];
+									$credit['sid'] = $concat['data']['sid'];
+									$credit['plan'] = $concat['data']['plan'];
+									$credits[] = $credit;
+								}
+								$concat['data']['credits'] = $credits;
+							}
+
 							foreach (self::getExtraFieldsForBillrun() as $field) {
 								if (isset($subscriber[$field])) {
 									$concat['data'][$field] = $subscriber[$field];
@@ -280,8 +303,45 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		}
 	}
 	
-	public function getCredits() {
-		$this->credits;
+	public function getCredits($billrun_key, $retEntity = false) {
+		$ret = array();
+		if (!is_array($this->credits) || !count($this->credits)) {
+			return $ret;
+		}
+		foreach($this->credits as $credit) {
+			if (!isset($credit['aid']) || !isset($credit['sid'])) {
+				Billrun_Factory::log("Credit cannot be parsed for subscriber. aid or sid or both not exists. credit details: " . print_R($credit, 1), Zend_log::ALERT);
+				continue;
+			}
+			
+			$parsedRow = Billrun_Util::parseCreditRow($credit);
+			$parsedRow['billrun'] = $billrun_key; // this will ensure we are on correct billrun even on pricing calculator
+			if (empty($parsedRow)) {
+				Billrun_Factory::log("Credit cannot be parsed for subscriber " . $credit['sid'] . " for billrun " . $billrun_key . " credit details: " . print_R($credit, 1), Zend_log::ALERT);
+				continue;
+			}
+			// add rate
+			if (($ratedRow = $this->creditCalc->updateRow(new Mongodloid_Entity($parsedRow))) === FALSE) {
+				Billrun_Factory::log("Credit cannot be rated for subscriber " . $credit['sid'] . " for billrun " . $billrun_key . " credit details: " . print_R($credit, 1), Zend_log::ALERT);
+				continue;
+			}
+
+			// add billrun, price
+			if (($insertRow = $this->pricingCalc->updateRow($ratedRow)) === FALSE) {
+				Billrun_Factory::log("Credit cannot be calc pricing for subscriber " . $credit['sid'] . " for billrun " . $billrun_key . " credit details: " . print_R($credit, 1), Zend_log::ALERT);
+				continue;
+			}
+			
+			if ($retEntity && !($insertRow instanceof Mongodloid_Entity)) {
+				$ret[] = new Mongodloid_Entity($insertRow);
+			} else if (!$retEntity && ($insertRow instanceof Mongodloid_Entity)) {
+				$ret[] = $insertRow->getRawData();
+			} else {
+				$ret[] = $insertRow;
+			}
+
+		}
+		return $ret;
 	}
 
 
@@ -329,7 +389,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 	 * @param string $billrun_key
 	 * @return array
 	 */
-	public function getFlatEntry($billrun_key) {
+	public function getFlatEntry($billrun_key, $retEntity = false) {
 		$billrun_end_time = Billrun_Util::getEndTime($billrun_key);
 		$flat_entry = array(
 			'aid' => $this->aid,
@@ -345,6 +405,9 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		);
 		$stamp = md5($flat_entry['aid'] . $flat_entry['sid'] . $billrun_end_time);
 		$flat_entry['stamp'] = $stamp;
+		if ($retEntity) {
+			return new Mongodloid_Entity($flat_entry);
+		}
 		return $flat_entry;
 	}
 

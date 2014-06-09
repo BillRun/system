@@ -620,11 +620,11 @@ class Billrun_Billrun {
 	 * @param int $start_time lower bound date to get lines from. A unix timestamp 
 	 * @return array the stamps of the lines used to create the billrun
 	 */
-	public function addLines($flat_lines = array()) {
+	public function addLines($manual_lines = array()) {
 		Billrun_Factory::log()->log("Querying account " . $this->aid . " for lines...", Zend_Log::INFO);
 		$account_lines = $this->getAccountLines($this->aid, false);
 		Billrun_Factory::log("Processing account Lines $this->aid", Zend_Log::INFO);
-		$updatedLines = array_merge($this->processLines($account_lines), $this->processLines($flat_lines));
+		$updatedLines = array_merge($this->processLines($account_lines), $this->processLines($manual_lines));
 		Billrun_Factory::log("Finished processing account $this->aid lines. Total: " . count($updatedLines), Zend_log::INFO);
 		$this->updateTotals();
 		return $updatedLines;

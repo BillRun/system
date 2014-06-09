@@ -69,7 +69,7 @@ class Generator_Balance extends Generator_Golanxml {
 			'autoload' => false,
 		);
 		$billrun = Billrun_Factory::billrun($billrun_params);
-		$flat_lines = array();
+		$manual_lines = array();
 		foreach ($this->account_data as $subscriber) {
 			if ($billrun->subscriberExists($subscriber->sid)) {
 				Billrun_Factory::log()->log("Billrun " . $this->stamp . " already exists for subscriber " . $subscriber->sid, Zend_Log::ALERT);
@@ -80,11 +80,12 @@ class Generator_Balance extends Generator_Golanxml {
 				$subscriber_status = "closed";
 			} else {
 				$subscriber_status = "open";
-				$flat_lines[] = new Mongodloid_Entity($subscriber->getFlatEntry($this->stamp));
+				$manual_lines = array_merge($manual_lines, $subscriber->getCredits($this->stamp, true), array($subscriber->getFlatEntry($this->stamp, true)));
 			}
 			$billrun->addSubscriber($subscriber, $subscriber_status);
 		}
-		$this->lines = $billrun->addLines($flat_lines);
+//		print_R($manual_lines);die;
+		$this->lines = $billrun->addLines($manual_lines);
 
 		$this->data = $billrun->getRawData();
 	}
