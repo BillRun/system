@@ -331,7 +331,7 @@ class LinesModel extends TableModel {
 	}
 	
 	public function getActivity($sids, $from_date, $to_date, $include_outgoing, $include_incoming, $include_sms) {
-		if (!is_array()) {
+		if (!is_array($sids)) {
 			settype($sids, 'array');
 		}
 		$query = array(
