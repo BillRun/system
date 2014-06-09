@@ -274,10 +274,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 				Billrun_Factory::log("Flat line already exists for subscriber " . $subscriber->sid . " for billrun " . $billrun_key, Zend_log::ALERT);
 			} else {
 				Billrun_Factory::log("Problem inserting flat line for subscriber " . $subscriber->sid . " for billrun " . $billrun_key . ". error message: " . $e->getMessage() . ". error code: " . $e->getCode(), Zend_log::ALERT);
-				$fd = fopen(Billrun_Factory::config()->getConfigValue('credit.failed_credits_file', './files/failed_credits.json'), 'a+');
-				fwrite($fd, json_encode($flat_entry->getRawData()) . PHP_EOL);
-				fclose($fd);
-
+				Billrun_Util::logFailedCreditRow($flat_entry->getRawData());
 			}
 		}
 		return $flat_entry;
@@ -296,9 +293,8 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 				} else {
 					Billrun_Factory::log("Problem inserting credit for subscriber " . $subscriber->sid . " for billrun " . $billrun_key 
 						. ". error message: " . $e->getMessage() . ". error code: " . $e->getCode() . ". credit details:" . print_R($rawData, 1), Zend_log::ALERT);
-					$fd = fopen(Billrun_Factory::config()->getConfigValue('credit.failed_credits_file', './files/failed_credits.json'), 'a+');
-					fwrite($fd, json_encode($rawData) . PHP_EOL);
-					fclose($fd);
+					Billrun_Util::logFailedCreditRow($rawData);
+					continue;
 				}
 			}
 			$ret[] = $credit;
