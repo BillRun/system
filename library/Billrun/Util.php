@@ -614,5 +614,11 @@ class Billrun_Util {
 
 		return $filtered_request;
 	}
+	
+	public static function logFailedCreditRow($row) {
+		$fd = fopen(Billrun_Factory::config()->getConfigValue('credit.failed_credits_file', './files/failed_credits.json'), 'a+');
+		fwrite($fd, json_encode($row) . PHP_EOL);
+		fclose($fd);
+	}
 
 }

@@ -54,13 +54,10 @@ class CreditAction extends ApiAction {
 				return true;
 			}
 		} catch (\Exception $e) {
-			Billrun_Factory::log()->log('failed to store into DB got error : ' . $e->getCode() . ' : ' . $e->getMessage(), $request);
-			Billrun_Factory::log()->log('failed saving request :' . print_r($request, 1), Zend_Log::INFO);
-			Billrun_Factory::log()->log('failed saving :' . json_encode($parsed_row), Zend_Log::INFO);
-
-			$fd = fopen(Billrun_Factory::config()->getConfigValue('credit.failed_credits_file', './files/failed_credits.json'), 'a+');
-			fwrite($fd, json_encode($parsed_row) . PHP_EOL);
-			fclose($fd);
+			Billrun_Factory::log()->log('failed to store into DB got error : ' . $e->getCode() . ' : ' . $e->getMessage(), Zend_Log::ALERT);
+			Billrun_Factory::log()->log('failed saving request :' . print_r($request, 1), Zend_Log::ALERT);
+			Billrun_Factory::log()->log('failed saving :' . json_encode($parsed_row), Zend_Log::ALERT);
+			Billrun_Util::logFailedCreditRow($parsed_row);
 
 			return $this->setError('failed to store into DB queue', $request);
 		}
