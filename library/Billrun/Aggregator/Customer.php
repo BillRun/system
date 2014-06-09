@@ -274,6 +274,10 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 				Billrun_Factory::log("Flat line already exists for subscriber " . $subscriber->sid . " for billrun " . $billrun_key, Zend_log::ALERT);
 			} else {
 				Billrun_Factory::log("Problem inserting flat line for subscriber " . $subscriber->sid . " for billrun " . $billrun_key . ". error message: " . $e->getMessage() . ". error code: " . $e->getCode(), Zend_log::ALERT);
+				$fd = fopen(Billrun_Factory::config()->getConfigValue('credit.failed_credits_file', './files/failed_credits.json'), 'a+');
+				fwrite($fd, json_encode($flat_entry->getRawData()) . PHP_EOL);
+				fclose($fd);
+
 			}
 		}
 		return $flat_entry;
@@ -283,19 +287,23 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		$credits = $subscriber->getCredits($billrun_key, true);
 		$ret = array();
 		foreach($credits as $credit) {
+			$rawData = $credit->getRawData();
 			try {
-				$this->lines->insert($credit->getRawData(), array("w" => 1));
+				$this->lines->insert($rawData, array("w" => 1));
 			} catch (Exception $e) {
 				if ($e->getCode() == 11000) {
-					Billrun_Factory::log("Credit already exists for subscriber " . $subscriber->sid . " for billrun " . $billrun_key . " credit details: " . print_R($credit, 1), Zend_log::ALERT);
+					Billrun_Factory::log("Credit already exists for subscriber " . $subscriber->sid . " for billrun " . $billrun_key . " credit details: " . print_R($rawData, 1), Zend_log::ALERT);
 				} else {
 					Billrun_Factory::log("Problem inserting credit for subscriber " . $subscriber->sid . " for billrun " . $billrun_key 
-						. ". error message: " . $e->getMessage() . ". error code: " . $e->getCode() . ". credit details:" . print_R($credit, 1), Zend_log::ALERT);
-					return false;
+						. ". error message: " . $e->getMessage() . ". error code: " . $e->getCode() . ". credit details:" . print_R($rawData, 1), Zend_log::ALERT);
+					$fd = fopen(Billrun_Factory::config()->getConfigValue('credit.failed_credits_file', './files/failed_credits.json'), 'a+');
+					fwrite($fd, json_encode($rawData) . PHP_EOL);
+					fclose($fd);
 				}
 			}
+			$ret[] = $credit;
 		}
-		return $credits;
+		return $ret;
 	}
 	
 	protected function saveCredit($credit, $billrun_key) {
