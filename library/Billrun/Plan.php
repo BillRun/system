@@ -152,7 +152,7 @@ class Billrun_Plan {
 		}
 		
 		if (isset($subscriberBalance['rates'][$rate['key']]['usagev'])) {
-			$subscriberSpent = $subscriberBalance['rates'][$rate['key']]['usagev'];
+			$subscriberSpent = $subscriberBalance['rates'][$rate['key']][$usageType]['usagev'];
 		} else {
 			$subscriberSpent = 0;
 		}
@@ -199,8 +199,8 @@ class Billrun_Plan {
 			return PHP_INT_MAX;
 		}
 		
-		if (isset($subscriberBalance['groups'][$groupSelected]['usagev'])) {
-			$subscriberSpent = $subscriberBalance['groups'][$groupSelected]['usagev'];
+		if (isset($subscriberBalance['groups'][$groupSelected][$usageType]['usagev'])) {
+			$subscriberSpent = $subscriberBalance['groups'][$groupSelected][$usageType]['usagev'];
 		} else {
 			$subscriberSpent = 0;
 		}
