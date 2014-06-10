@@ -153,7 +153,7 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 						unset($data['data'][$key]);												
 					}					
 				} else {
-					Billrun_Factory::log("Line $key isnt legitimate : ".print_r($line,1), Zend_Log::INFO);
+					//Billrun_Factory::log("Line $key isnt legitimate : ".print_r($line,1), Zend_Log::INFO);
 					// if this is last calculator, remove from queue
 					if ($queue_calculators[count($queue_calculators) - 1] == 'unify') {
 						$processor->unsetQueueRow($entity['stamp']);
@@ -169,7 +169,7 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$this->unifyCalc->updateUnifiedLines();//TODO add failed line bacj to the queue.
 		$this->unifyCalc->saveLinesToArchive();
 		
-		Billrun_Factory::log(count($data['data']), Zend_Log::INFO);
+		//Billrun_Factory::log(count($data['data']), Zend_Log::INFO);
 		
 		Billrun_Factory::log('Plugin calc cpu end', Zend_Log::INFO);
 	}

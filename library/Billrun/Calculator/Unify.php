@@ -17,7 +17,7 @@
 class Billrun_Calculator_Unify extends Billrun_Calculator {
 	protected $unifiedLines = array();
 	protected $unificationFields = array('ggsn' => array(
-											'required' => array('sid','aid','ggsn_address','arate'),
+											'required' => array('sid','aid','ggsn_address','arate','urt'),
 											'date_seperation' => 'Ymd',
 											'stamp' => array('sgsn_address','ggsn_address','sid','aid','arate','imsi','plan','rating_group'),
 											'fields' => array(
