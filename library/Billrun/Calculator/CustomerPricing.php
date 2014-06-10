@@ -232,7 +232,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				$ret['over_rate'] = $volumeToPrice;
 			}
 		} else if ($plan->isRateInPlanGroup($rate, $usageType)) {
-			$volumeToPrice = $plan->usageLeftInRateGroup($sub_balance['balance'], $rate, $usageType);
+			$volumeToPrice = $volumeToPrice - $plan->usageLeftInRateGroup($sub_balance['balance'], $rate, $usageType);
 			if ($volumeToPrice < 0) {
 				$volumeToPrice = 0;
 			} else if ($volumeToPrice > 0) {

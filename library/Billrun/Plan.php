@@ -269,7 +269,7 @@ class Billrun_Plan {
 		if ($groupSelected === FALSE) {
 			 return FALSE;
 		}
-		return (isset($this->data['include']['rates'][$rate['key']][$usageType]) 
+		return (isset($this->data['include']['groups'][$rate['key']][$usageType]) 
 			&& $this->data['include']['groups'][$groupSelected][$usageType] == "UNLIMITED");
 	}
 
