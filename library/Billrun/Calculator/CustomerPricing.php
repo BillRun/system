@@ -224,7 +224,6 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			} else if ($volumeToPrice > 0) {
 				$ret['over_plan'] = $volumeToPrice;
 			}
-			$price = $accessPrice + self::getPriceByRate($rate, $usageType, $volumeToPrice);
 		} else if ($plan->isRateInPlanRate($rate, $usageType)) {
 			$volumeToPrice = $plan->usageLeftInRateBalance($sub_balance['balance'], $rate, $usageType);
 			if ($volumeToPrice < 0) {
