@@ -133,9 +133,44 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 				$line = $entity->getRawData();
 			}
 		}
+
 		if (Billrun_Factory::config()->getConfigValue('calcCpu.wholesale_calculators', true)) {
 			$this->wholeSaleCalculators($data, $processor);
 		}
+		
+		Billrun_Factory::log('Plugin calc unify lines', Zend_Log::INFO);
+		
+		$this->unifyCalc = Billrun_Calculator::getInstance(array('type' => 'unify', 'autoload' => false));
+		$queue_data = $processor->getQueueData();		
+
+		foreach ($data['data'] as $key => &$line) {
+			if (isset($queue_data[$line['stamp']]) && $queue_data[$line['stamp']]['calc_name'] == 'pricing') {
+				$entity = new Mongodloid_Entity($line);
+				if ($this->unifyCalc->isLineLegitimate($entity)) {
+					if ($this->unifyCalc->updateRow($entity) !== FALSE) {						
+						//remove lines that where successfuly unified.
+						$processor->unsetQueueRow($entity['stamp']);
+						unset($data['data'][$key]);												
+					}					
+				} else {
+					Billrun_Factory::log("Line $key isnt legitimate : ".print_r($line,1), Zend_Log::INFO);
+					// if this is last calculator, remove from queue
+					if ($queue_calculators[count($queue_calculators) - 1] == 'unify') {
+						$processor->unsetQueueRow($entity['stamp']);
+					} else {
+						$processor->setQueueRowStep($entity['stamp'], 'unify');
+					}
+				}
+				
+				$line = $entity->getRawData();
+			} 
+		}
+		
+		$this->unifyCalc->updateUnifiedLines();//TODO add failed line bacj to the queue.
+		$this->unifyCalc->saveLinesToArchive();
+		
+		Billrun_Factory::log(count($data['data']), Zend_Log::INFO);
+		
 		Billrun_Factory::log('Plugin calc cpu end', Zend_Log::INFO);
 	}
 
@@ -193,6 +228,7 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 		foreach ($this->tx_saved_rows as $row) {
 			$customerPricingCalc->removeBalanceTx($row);
 		}
+		$this->unifyCalc->releaseAllLines();
 	}
 
 	protected function removeDuplicates($processor) {

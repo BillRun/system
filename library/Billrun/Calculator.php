@@ -309,7 +309,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	/**
 	 * Remove lines from the queue if the current calculator is the last one or if final_calc is set for a queue line and equals the current calculator
 	 */
-	public final function removeFromQueue() {
+	public function removeFromQueue() {
 		$queue = Billrun_Factory::db()->queueCollection();
 		$queue_calculators = Billrun_Factory::config()->getConfigValue("queue.calculators");
 		$calculator_type = $this->getCalculatorQueueType();
