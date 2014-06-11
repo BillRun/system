@@ -137,20 +137,20 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 		if (Billrun_Factory::config()->getConfigValue('calcCpu.wholesale_calculators', true)) {
 			$this->wholeSaleCalculators($data, $processor);
 		}
-		
-		Billrun_Factory::log('Plugin calc unify lines', Zend_Log::INFO);
+				
 		
 		$this->unifyCalc = Billrun_Calculator::getInstance(array('type' => 'unify', 'autoload' => false));
-		$queue_data = $processor->getQueueData();		
-
+		$queue_data = $processor->getQueueData();
+		$sucessfulyUnified = array();
+		Billrun_Factory::log('Plugin calc Cpu unifing '.count($queue_data).' lines', Zend_Log::INFO);
+		
 		foreach ($data['data'] as $key => &$line) {
 			if (isset($queue_data[$line['stamp']]) && $queue_data[$line['stamp']]['calc_name'] == 'pricing') {
 				$entity = new Mongodloid_Entity($line);
 				if ($this->unifyCalc->isLineLegitimate($entity)) {
-					if ($this->unifyCalc->updateRow($entity) !== FALSE) {						
-						//remove lines that where successfuly unified.
-						$processor->unsetQueueRow($entity['stamp']);
-						unset($data['data'][$key]);												
+					if ($this->unifyCalc->updateRow($entity) !== FALSE) {
+						//mark lines that were successfuly unified.						
+						$sucessfulyUnified[$entity['stamp']] = $key;
 					}					
 				} else {
 					//Billrun_Factory::log("Line $key isnt legitimate : ".print_r($line,1), Zend_Log::INFO);
@@ -166,7 +166,18 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 			} 
 		}
 		
-		$this->unifyCalc->updateUnifiedLines();//TODO add failed line bacj to the queue.
+		//handle update errors unmark  lines that thier unified line failed to update.
+		foreach( $this->unifyCalc->updateUnifiedLines() as $failedLine) {
+			foreach($failedLine['lines'] as $stamp) {
+				unset($sucessfulyUnified[$stamp]);	
+			}
+		}
+		
+		//remove lines that where succesfully unified.
+		foreach ($sucessfulyUnified as $stamp => $dataKey) {
+				$processor->unsetQueueRow($stamp);
+				unset($data['data'][$dataKey]);
+		}
 		$this->unifyCalc->saveLinesToArchive();
 		
 		//Billrun_Factory::log(count($data['data']), Zend_Log::INFO);
