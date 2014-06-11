@@ -58,13 +58,11 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 	public function updateRow($rawRow) {
 		$newRow = $rawRow instanceof Mongodloid_Entity? $rawRow->getRawData() : $rawRaw;
 		$updatedRowStamp = $this->getLineUnifiedLineStamp($newRow);
-		
 		if( $this->isLinesLocked($updatedRowStamp, array($newRow['stamp'])) || 
 			(!$this->acceptArchivedLines && $this->isLinesArchived(array($newRow['stamp']))) ) {
 				Billrun_Factory::log("Line {$newRow['stamp']} was already applied to unified line $updatedRowStamp",Zend_Log::NOTICE);
 				return true;
-		}
-		
+			}
 		$updatedRow = $this->getUnifiedRowForSingleRow($updatedRowStamp, $newRow);
 		foreach($this->unificationFields[$newRow['type']]['fields'] as $key => $fields) {
 			foreach ($fields as $field) {
@@ -75,7 +73,6 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 				}
 			}
 		}
-		
 		$updatedRow['lcount'] += 1;
 		$this->unifiedLines[$updatedRowStamp] = $updatedRow;
 		$this->unifiedToRawLines[$updatedRowStamp][] = $newRow['stamp'];
@@ -150,7 +147,6 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 				foreach ($this->unifiedToRawLines[$key] as $lstamp) {
 					unset($this->archivedLines[$lstamp]);
 				}
-				
 				Billrun_Factory::log("Updating unified line $key failed.",Zend_Log::ERR);
 			}
 		}
@@ -165,7 +161,6 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 				unset($this->lines[$stamp]);			
 			}
 		}
-		
 		//add lines to archive 
 		$this->saveLinesToArchive();
 		
@@ -245,7 +240,6 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 		$query = array('stamp'=> $unifiedStamp,'tx'=>array('$in'=>$lineStamps));
 		return !Billrun_Factory::db()->linesCollection()->setReadPreference('RP_PRIMARY_PREFERRED')->query($query)->cursor()->limit(1)->current()->isEmpty() ;		
 	}
-	
 	/**
 	 * Check if certain lines already inserted to the archive.
 	 * @param type $lineStamps an array containing the line stamps to check
