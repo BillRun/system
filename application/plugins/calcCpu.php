@@ -140,6 +140,7 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 				
 		
 		$this->unifyCalc = Billrun_Calculator::getInstance(array('type' => 'unify', 'autoload' => false));
+		$this->unifyCalc->init();
 		$queue_data = $processor->getQueueData();
 		$sucessfulyUnified = array();
 		Billrun_Factory::log('Plugin calc Cpu unifing '.count($queue_data).' lines', Zend_Log::INFO);

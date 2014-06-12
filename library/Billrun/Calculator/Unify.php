@@ -37,6 +37,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 
 	public function __construct($options = array()) {
 		parent::__construct($options);
+		$this->init();
 		if (isset($option['date_seperation'])) {
 			$this->dateSeperation = $option['date_seperation'];
 		}
@@ -49,11 +50,21 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 			$this->acceptArchivedLines = $options['accept_archived_lines'];
 		}
 	}
+	
+	/**
+	 * Initialize the data used for lines unification.
+	 * (call this when you want to start unify again after the lines were saved to the DB)
+	 */
+	public function init() {
+		$this->archivedLines = array();
+		$this->unifiedToRawLines = array();
+		$this->unifiedLines = array();
+	}
 
 	/**
-	 * 
-	 * @param type $row
-	 * @return type
+	 * add a sigle row/line to unified line if there is no unified line then create one.
+	 * @param type $row the single row to unify.
+	 * @return boolean true this can't fail (other then some php errors)
 	 */
 	public function updateRow($rawRow) {
 		$newRow = $rawRow instanceof Mongodloid_Entity ? $rawRow->getRawData() : $rawRaw;
@@ -85,7 +96,8 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 	}
 
 	/**
-	 * 
+	 * saved the single rows that were unified to the archive.
+	 * @return array containing the rows that were failed when trying to save to the archive.
 	 */
 	public function saveLinesToArchive() {
 		$failedArchived = array();
@@ -117,7 +129,8 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 	}
 
 	/**
-	 * 
+	 * uptade/create the unified lines in the DB.
+	 * @return the unified lines that were failed to be updaed/created in the DB.
 	 */
 	public function updateUnifiedLines() {
 		Billrun_Factory::log('Updateing ' . count($this->unifiedLines) . ' unified lines...', Zend_Log::INFO);
@@ -186,7 +199,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 					} else if (isset($newRow[$field])) {
 						$existingRow[$field] = $newRow[$field];
 					} else {
-						Billrun_Factory::log("Missing Field $field for row {$newRow['stamp']} when trying to unifiy.", Zend_Log::ERR);
+						Billrun_Factory::log("Missing Field $field for row {$newRow['stamp']} when trying to unify.", Zend_Log::NOTICE);
 					}
 				}
 			}
