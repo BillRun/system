@@ -73,7 +73,9 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 		$updatedRowStamp = $this->getLineUnifiedLineStamp($newRow);
 		
 		$newRow['u_s'] = $updatedRowStamp;
-		$this->archivedLines[$newRow['stamp']] = $newRow;		
+		$this->archivedLines[$newRow['stamp']] = $newRow;
+		$this->unifiedToRawLines[$updatedRowStamp]['remove'][] = $newRow['stamp'];
+		
 		if ($this->isLinesLocked($updatedRowStamp, array($newRow['stamp'])) ||
 			(!$this->acceptArchivedLines && $this->isLinesArchived(array($newRow['stamp'])))) {			
 			Billrun_Factory::log("Line {$newRow['stamp']} was already applied to unified line $updatedRowStamp", Zend_Log::NOTICE);
@@ -92,7 +94,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 		}
 		$updatedRow['lcount'] += 1;
 		$this->unifiedLines[$updatedRowStamp] = $updatedRow;
-		$this->unifiedToRawLines[$updatedRowStamp][] = $newRow['stamp'];		
+		$this->unifiedToRawLines[$updatedRowStamp]['update'][] = $newRow['stamp'];
 
 		return true;
 	}
@@ -138,7 +140,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 		Billrun_Factory::log('Updateing ' . count($this->unifiedLines) . ' unified lines...', Zend_Log::INFO);
 		$updateFailedLines = array();
 		foreach ($this->unifiedLines as $key => $row) {
-			$query = array('stamp' => $key, 'type' => $row['type'], 'tx' => array('$nin' => $this->unifiedToRawLines[$key]));
+			$query = array('stamp' => $key, 'type' => $row['type'], 'tx' => array('$nin' => $this->unifiedToRawLines[$key]['update']));
 			$update = array_merge(array(
 				'$setOnInsert' => array(
 					'stamp' => $key,
@@ -146,7 +148,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 					'type' => $row['type'],
 					'billrun' => Billrun_Util::getBillrunKey(time())
 				),
-				), $this->getlockLinesUpdate($key, $this->unifiedToRawLines[$key]));
+				), $this->getlockLinesUpdate($key, $this->unifiedToRawLines[$key]['update']));
 			foreach ($this->unificationFields[$row['type']]['fields'] as $fkey => $fields) {
 				foreach ($fields as $field) {
 					if (isset($row[$field])) {
@@ -158,8 +160,8 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 
 			$ret = Billrun_Factory::db()->linesCollection()->setReadPreference('RP_PRIMARY_PREFERRED')->update($query, $update, array('w' => 1, 'upsert' => true));
 			if (!($ret['ok'] && $ret['n'] != 0)) {//TODO add support for w => 0 it should  not  enter the if
-				$updateFailedLines[$key] = array('unified' => $row, 'lines' => $this->unifiedToRawLines[$key]);
-				foreach ($this->unifiedToRawLines[$key] as $lstamp) {
+				$updateFailedLines[$key] = array('unified' => $row, 'lines' => $this->unifiedToRawLines[$key]['update']);
+				foreach ($this->unifiedToRawLines[$key]['update'] as $lstamp) {
 					unset($this->archivedLines[$lstamp]);
 				}
 				Billrun_Factory::log("Updating unified line $key failed.", Zend_Log::ERR);
@@ -298,7 +300,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 	public function releaseAllLines() {
 		Billrun_Factory::log('Removing locks from  ' . count($this->unifiedToRawLines) . ' unified lines...', Zend_Log::INFO);
 		foreach ($this->unifiedToRawLines as $key => $value) {
-			$this->releaseLines($key, $value);
+			$this->releaseLines($key, $value['remove']);
 		}
 	}
 
