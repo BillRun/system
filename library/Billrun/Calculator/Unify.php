@@ -34,6 +34,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 	protected $unifiedToRawLines = array();
 	protected $dateSeperation = "Ymd";
 	protected $acceptArchivedLines = false;
+	protected $archiveDb;
 
 	public function __construct($options = array()) {
 		parent::__construct($options);
@@ -49,6 +50,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 		if (isset($options['accept_archived_lines'])) {
 			$this->acceptArchivedLines = $options['accept_archived_lines'];
 		}
+		$this->archiveDb = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('archive.db'));
 	}
 	
 	/**
@@ -69,11 +71,15 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 	public function updateRow($rawRow) {
 		$newRow = $rawRow instanceof Mongodloid_Entity ? $rawRow->getRawData() : $rawRaw;
 		$updatedRowStamp = $this->getLineUnifiedLineStamp($newRow);
+		
+		$newRow['u_s'] = $updatedRowStamp;
+		$this->archivedLines[$newRow['stamp']] = $newRow;		
 		if ($this->isLinesLocked($updatedRowStamp, array($newRow['stamp'])) ||
-			(!$this->acceptArchivedLines && $this->isLinesArchived(array($newRow['stamp'])))) {
+			(!$this->acceptArchivedLines && $this->isLinesArchived(array($newRow['stamp'])))) {			
 			Billrun_Factory::log("Line {$newRow['stamp']} was already applied to unified line $updatedRowStamp", Zend_Log::NOTICE);
 			return true;
 		}
+		
 		$updatedRow = $this->getUnifiedRowForSingleRow($updatedRowStamp, $newRow);
 		foreach ($this->unificationFields[$newRow['type']]['fields'] as $key => $fields) {
 			foreach ($fields as $field) {
@@ -86,11 +92,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 		}
 		$updatedRow['lcount'] += 1;
 		$this->unifiedLines[$updatedRowStamp] = $updatedRow;
-		$this->unifiedToRawLines[$updatedRowStamp][] = $newRow['stamp'];
-
-		$newRow['u_s'] = $updatedRowStamp;
-		$this->archivedLines[$newRow['stamp']] = $newRow;
-
+		$this->unifiedToRawLines[$updatedRowStamp][] = $newRow['stamp'];		
 
 		return true;
 	}
@@ -102,13 +104,13 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 	public function saveLinesToArchive() {
 		$failedArchived = array();
 		$linesArchivedStamps = array();
-		$linesColl = Billrun_Factory::db(array('name' => 'archive'))->linesCollection()->setReadPreference('RP_PRIMARY_PREFERRED');
+		$archLinesColl = $this->archiveDb->linesCollection()->setReadPreference('RP_PRIMARY_PREFERRED');
 		$localLines = Billrun_Factory::db()->linesCollection()->setReadPreference('RP_PRIMARY_PREFERRED');
 
 		Billrun_Factory::log('Saving ' . count($this->archivedLines) . ' to archive.', Zend_Log::INFO);
 		foreach ($this->archivedLines as $line) {
 			try {
-				$linesColl->insert($line, array('w' => 1));
+				$archLinesColl->insert($line, array('w' => 1));
 				$linesArchivedStamps[] = $line['stamp'];
 				unset($this->data[$line['stamp']]);
 			} catch (\Exception $e) {
@@ -258,7 +260,8 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 	 * @return boolean true if the line all ready exist in the archive false otherwise.
 	 */
 	protected function isLinesArchived($lineStamps) {
-		return !Billrun_Factory::db(array('name' => 'archive'))->linesCollection()->setReadPreference('RP_PRIMARY_PREFERRED')->query(array('stamp' => array('$in' => $lineStamps)))->cursor()->limit(1)->current()->isEmpty();
+		
+		return !$this->archiveDb->linesCollection()->setReadPreference('RP_PRIMARY_PREFERRED')->query(array('stamp' => array('$in' => $lineStamps)))->cursor()->limit(1)->current()->isEmpty();
 	}
 
 	/**
