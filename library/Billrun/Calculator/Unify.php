@@ -52,7 +52,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 		}
 		$this->archiveDb = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('archive.db'));
 	}
-	
+
 	/**
 	 * Initialize the data used for lines unification.
 	 * (call this when you want to start unify again after the lines were saved to the DB)
@@ -71,17 +71,17 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 	public function updateRow($rawRow) {
 		$newRow = $rawRow instanceof Mongodloid_Entity ? $rawRow->getRawData() : $rawRaw;
 		$updatedRowStamp = $this->getLineUnifiedLineStamp($newRow);
-		
+
 		$newRow['u_s'] = $updatedRowStamp;
 		$this->archivedLines[$newRow['stamp']] = $newRow;
 		$this->unifiedToRawLines[$updatedRowStamp]['remove'][] = $newRow['stamp'];
-		
+
 		if ($this->isLinesLocked($updatedRowStamp, array($newRow['stamp'])) ||
-			(!$this->acceptArchivedLines && $this->isLinesArchived(array($newRow['stamp'])))) {			
+			(!$this->acceptArchivedLines && $this->isLinesArchived(array($newRow['stamp'])))) {
 			Billrun_Factory::log("Line {$newRow['stamp']} was already applied to unified line $updatedRowStamp", Zend_Log::NOTICE);
 			return true;
 		}
-		
+
 		$updatedRow = $this->getUnifiedRowForSingleRow($updatedRowStamp, $newRow);
 		foreach ($this->unificationFields[$newRow['type']]['fields'] as $key => $fields) {
 			foreach ($fields as $field) {
@@ -138,6 +138,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 	 */
 	public function updateUnifiedLines() {
 		Billrun_Factory::log('Updateing ' . count($this->unifiedLines) . ' unified lines...', Zend_Log::INFO);
+		Billrun_Db::setMongoNativeLong(1);
 		$updateFailedLines = array();
 		foreach ($this->unifiedLines as $key => $row) {
 			$query = array('stamp' => $key, 'type' => $row['type'], 'tx' => array('$nin' => $this->unifiedToRawLines[$key]['update']));
@@ -167,6 +168,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 				Billrun_Factory::log("Updating unified line $key failed.", Zend_Log::ERR);
 			}
 		}
+		Billrun_Db::setMongoNativeLong(0);
 		return $updateFailedLines;
 	}
 
@@ -262,7 +264,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 	 * @return boolean true if the line all ready exist in the archive false otherwise.
 	 */
 	protected function isLinesArchived($lineStamps) {
-		
+
 		return !$this->archiveDb->linesCollection()->setReadPreference('RP_PRIMARY_PREFERRED')->query(array('stamp' => array('$in' => $lineStamps)))->cursor()->limit(1)->current()->isEmpty();
 	}
 
