@@ -138,50 +138,50 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$this->wholeSaleCalculators($data, $processor);
 		}
 				
-		
-		$this->unifyCalc = Billrun_Calculator::getInstance(array('type' => 'unify', 'autoload' => false));
-		$this->unifyCalc->init();
-		$queue_data = $processor->getQueueData();
-		$sucessfulyUnified = array();
-		Billrun_Factory::log('Plugin calc Cpu unifing '.count($queue_data).' lines', Zend_Log::INFO);
-		
-		foreach ($data['data'] as $key => &$line) {
-			if (isset($queue_data[$line['stamp']]) && $queue_data[$line['stamp']]['calc_name'] == 'pricing') {
-				$entity = new Mongodloid_Entity($line);
-				if ($this->unifyCalc->isLineLegitimate($entity)) {
-					if ($this->unifyCalc->updateRow($entity) !== FALSE) {
-						//mark lines that were successfuly unified.						
-						$sucessfulyUnified[$entity['stamp']] = $key;
-					}					
-				} else {
-					//Billrun_Factory::log("Line $key isnt legitimate : ".print_r($line,1), Zend_Log::INFO);
-					// if this is last calculator, remove from queue
-					if ($queue_calculators[count($queue_calculators) - 1] == 'unify') {
-						$processor->unsetQueueRow($entity['stamp']);
+		if(in_array('unify',$queue_calculators)) {
+			$this->unifyCalc = Billrun_Calculator::getInstance(array('type' => 'unify', 'autoload' => false));
+			$this->unifyCalc->init();
+			$queue_data = $processor->getQueueData();
+			$sucessfulyUnified = array();
+			Billrun_Factory::log('Plugin calc Cpu unifing '.count($queue_data).' lines', Zend_Log::INFO);
+
+			foreach ($data['data'] as $key => &$line) {
+				if (isset($queue_data[$line['stamp']]) && $queue_data[$line['stamp']]['calc_name'] == 'pricing') {
+					$entity = new Mongodloid_Entity($line);
+					if ($this->unifyCalc->isLineLegitimate($entity)) {
+						if ($this->unifyCalc->updateRow($entity) !== FALSE) {
+							//mark lines that were successfuly unified.						
+							$sucessfulyUnified[$entity['stamp']] = $key;
+						}					
 					} else {
-						$processor->setQueueRowStep($entity['stamp'], 'unify');
+						//Billrun_Factory::log("Line $key isnt legitimate : ".print_r($line,1), Zend_Log::INFO);
+						// if this is last calculator, remove from queue
+						if ($queue_calculators[count($queue_calculators) - 1] == 'unify') {
+							$processor->unsetQueueRow($entity['stamp']);
+						} else {
+							$processor->setQueueRowStep($entity['stamp'], 'unify');
+						}
 					}
-				}
-				
-				$line = $entity->getRawData();
-			} 
-		}
-		
-		//handle update errors unmark  lines that thier unified line failed to update.
-		foreach( $this->unifyCalc->updateUnifiedLines() as $failedLine) {
-			foreach($failedLine['lines'] as $stamp) {
-				unset($sucessfulyUnified[$stamp]);	
+
+					$line = $entity->getRawData();
+				} 
 			}
+
+			//handle update errors unmark  lines that thier unified line failed to update.
+			foreach( $this->unifyCalc->updateUnifiedLines() as $failedLine) {
+				foreach($failedLine['lines'] as $stamp) {
+					unset($sucessfulyUnified[$stamp]);	
+				}
+			}
+
+			//remove lines that where succesfully unified.
+			foreach ($sucessfulyUnified as $stamp => $dataKey) {
+					$processor->unsetQueueRow($stamp);
+					unset($data['data'][$dataKey]);
+			}
+			$this->unifyCalc->saveLinesToArchive();		
+			//Billrun_Factory::log(count($data['data']), Zend_Log::INFO);
 		}
-		
-		//remove lines that where succesfully unified.
-		foreach ($sucessfulyUnified as $stamp => $dataKey) {
-				$processor->unsetQueueRow($stamp);
-				unset($data['data'][$dataKey]);
-		}
-		$this->unifyCalc->saveLinesToArchive();
-		
-		//Billrun_Factory::log(count($data['data']), Zend_Log::INFO);
 		
 		Billrun_Factory::log('Plugin calc cpu end', Zend_Log::INFO);
 	}
@@ -240,7 +240,9 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 		foreach ($this->tx_saved_rows as $row) {
 			$customerPricingCalc->removeBalanceTx($row);
 		}
-		$this->unifyCalc->releaseAllLines();
+		if(isset($this->unifyCalc) ) {
+			$this->unifyCalc->releaseAllLines();
+		}			
 	}
 
 	protected function removeDuplicates($processor) {
