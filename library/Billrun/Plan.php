@@ -151,7 +151,7 @@ class Billrun_Plan {
 			return PHP_INT_MAX;
 		}
 		
-		if (isset($subscriberBalance['rates'][$rate['key']]['usagev'])) {
+		if (isset($subscriberBalance['rates'][$rate['key']][$usageType]['usagev'])) {
 			$subscriberSpent = $subscriberBalance['rates'][$rate['key']][$usageType]['usagev'];
 		} else {
 			$subscriberSpent = 0;
@@ -269,7 +269,7 @@ class Billrun_Plan {
 		if ($groupSelected === FALSE) {
 			 return FALSE;
 		}
-		return (isset($this->data['include']['groups'][$rate['key']][$usageType]) 
+		return (isset($this->data['include']['groups'][$groupSelected][$usageType]) 
 			&& $this->data['include']['groups'][$groupSelected][$usageType] == "UNLIMITED");
 	}
 
