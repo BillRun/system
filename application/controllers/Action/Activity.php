@@ -9,7 +9,7 @@
 require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
 
 /**
- * Credit action class
+ * Activity action class
  *
  * @package  Action
  * @since    0.5
@@ -20,9 +20,9 @@ class ActivityAction extends ApiAction {
 		Billrun_Factory::log()->log("Execute activity call", Zend_Log::INFO);
 		$request = $this->getRequest();
 		$sid = (int) $request->get('sid', 0);
-		$input = $request->getRequest();
+
 		if (empty($sid)) {
-			return $this->setError('Subscriber not exists', $input);
+			return $this->setError('Subscriber not exists', $request);
 		}
 		
 		$include_incoming = (int) $request->get('include_incoming', 0);
@@ -47,7 +47,7 @@ class ActivityAction extends ApiAction {
 				'status' => 1,
 				'desc' => 'success',
 				'details' => $results,
-				'input' => $input,
+				'input' => $request,
 		)));
 
 	}
