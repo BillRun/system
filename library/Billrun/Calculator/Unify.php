@@ -137,7 +137,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 	 * @return the unified lines that were failed to be updaed/created in the DB.
 	 */
 	public function updateUnifiedLines() {
-		Billrun_Factory::log('Updateing ' . count($this->unifiedLines) . ' unified lines...', Zend_Log::INFO);
+		Billrun_Factory::log('Updating ' . count($this->unifiedLines) . ' unified lines...', Zend_Log::INFO);
 		Billrun_Db::setMongoNativeLong(1);
 		$updateFailedLines = array();
 		foreach ($this->unifiedLines as $key => $row) {
