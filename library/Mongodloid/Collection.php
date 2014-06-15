@@ -381,6 +381,14 @@ class Mongodloid_Collection {
 	}
 	
 	public function getWriteConcern($var = null) {
+		// backward compatibility with 1.4
+		if ($this->_db->compareClientVersion('1.5', '<')) {
+			return array(
+				'w' => $this->w,
+				'wtimeout' => $this->w,
+			);
+		}
+		
 		$ret = $this->_collection->getWriteConcern();
 		if (is_null($var)) {
 			return $ret;
