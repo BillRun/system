@@ -207,14 +207,19 @@ class RatesModel extends TabledateModel {
 	 * 
 	 * @return Mongo Cursor
 	 */
-	public function getData($filter_query = array()) {
+	public function getData($filter_query = array(), $fields = false) {
 //		print_R($filter_query);die;
 		$cursor = $this->getRates($filter_query);
 		$this->_count = $cursor->count();
 		$resource = $cursor->sort($this->sort)->skip($this->offset())->limit($this->size);
 		$ret = array();
 		foreach ($resource as $item) {
-			if ($item->get('rates') && !$this->showprefix) {
+			if ($fields) {
+				foreach ($fields as $field) {
+					$row[$field] = $item->get($field);
+				}
+				$ret[] = $row;
+			} else if ($item->get('rates') && !$this->showprefix) {
 				foreach ($item->get('rates') as $key => $rate) {
 					$added_columns = array(
 						't' => $key,
