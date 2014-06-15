@@ -32,7 +32,7 @@ class Billrun_Plan {
 	public function __construct(array $params = array()) {
 		if ((!isset($params['name']) || !isset($params['time'])) && (!isset($params['id'])) && (!isset($params['data']))) {
 			//throw an error
-			throw new Exception("plan constructor was called  without the appropiate paramters , got : " . print_r($params, 1));
+			throw new Exception("plan constructor was called  without the appropriate parameters , got : " . print_r($params, 1));
 		}
 		if (isset($params['data'])) {
 			$this->data = $params['data'];

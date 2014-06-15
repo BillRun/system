@@ -379,5 +379,16 @@ class Mongodloid_Collection {
 	public function stats($item) {
 		return $this->_db->stats(array('collStats' => $this->getName()), $item);
 	}
+	
+	public function getWriteConcern($var = null) {
+		$ret = $this->_collection->getWriteConcern();
+		if (is_null($var)) {
+			return $ret;
+		}
+		
+		if (isset($ret[$var])) {
+			return $ret[$var];
+		}
+	}
 
 }
