@@ -23,7 +23,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 				'match' => array('sgsn_address' => '/^(?=62\.90\.|37\.26\.)/')
 			),
 			'date_seperation' => 'Ymd',
-			'stamp' => array('value' => array('sgsn_address', 'ggsn_address', 'sid', 'aid', 'arate', 'imsi', 'plan', 'rating_group'), 'field' => array('out_plan', 'over_plan', 'aprice')),
+			'stamp' => array('value' => array('sgsn_address', 'ggsn_address', 'sid', 'aid', 'arate', 'imsi', 'plan', 'rating_group', 'billrun'), 'field' => array('out_plan', 'over_plan', 'aprice')),
 			'fields' => array(
 				'$set' => array('process_time'),
 				'$setOnInsert' => array('urt', 'imsi', 'usagesb', 'usaget', 'aid', 'sid', 'ggsn_address', 'sgsn_address', 'rating_group', 'arate'),
@@ -35,6 +35,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 	protected $dateSeperation = "Ymd";
 	protected $acceptArchivedLines = false;
 	protected $archiveDb;
+	protected $activeBillrun;
 
 	public function __construct($options = array()) {
 		parent::__construct($options);
@@ -61,6 +62,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 		$this->archivedLines = array();
 		$this->unifiedToRawLines = array();
 		$this->unifiedLines = array();
+		$this->activeBillrun = Billrun_Billrun::getActiveBillrun();
 	}
 
 	/**
@@ -149,7 +151,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 						'stamp' => $key,
 						'source' => 'unify',
 						'type' => $row['type'],
-						'billrun' => Billrun_Util::getBillrunKey(time())
+						'billrun' => $this->activeBillrun,
 					),
 				), $this->getlockLinesUpdate($this->unifiedToRawLines[$key]['update']));
 			foreach ($this->unificationFields[$row['type']]['fields'] as $fkey => $fields) {
