@@ -39,8 +39,8 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 	public function __construct($options = array()) {
 		parent::__construct($options);
 		$this->init();
-		if (isset($option['date_seperation'])) {
-			$this->dateSeperation = $option['date_seperation'];
+		if (isset($options['date_seperation'])) {
+			$this->dateSeperation = $options['date_seperation'];
 		}
 
 		if (isset($options['unification_fields'])) {
@@ -65,11 +65,11 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 
 	/**
 	 * add a sigle row/line to unified line if there is no unified line then create one.
-	 * @param type $row the single row to unify.
+	 * @param type $rawRow the single row to unify.
 	 * @return boolean true this can't fail (other then some php errors)
 	 */
 	public function updateRow($rawRow) {
-		$newRow = $rawRow instanceof Mongodloid_Entity ? $rawRow->getRawData() : $rawRaw;
+		$newRow = $rawRow instanceof Mongodloid_Entity ? $rawRow->getRawData() : $rawRow;
 		$updatedRowStamp = $this->getLineUnifiedLineStamp($newRow);
 
 		$newRow['u_s'] = $updatedRowStamp;
@@ -143,16 +143,19 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 		foreach ($this->unifiedLines as $key => $row) {
 			$query = array('stamp' => $key, 'type' => $row['type'], 'tx' => array('$nin' => $this->unifiedToRawLines[$key]['update']));
 			$update = array_merge(array(
-				'$setOnInsert' => array(
-					'stamp' => $key,
-					'source' => 'unify',
-					'type' => $row['type'],
-					'billrun' => Billrun_Util::getBillrunKey(time())
-				),
-				), $this->getlockLinesUpdate($key, $this->unifiedToRawLines[$key]['update']));
+					'$setOnInsert' => array(
+						'stamp' => $key,
+						'source' => 'unify',
+						'type' => $row['type'],
+						'billrun' => Billrun_Util::getBillrunKey(time())
+					),
+				), $this->getlockLinesUpdate($this->unifiedToRawLines[$key]['update']));
 			foreach ($this->unificationFields[$row['type']]['fields'] as $fkey => $fields) {
 				foreach ($fields as $field) {
 					if (isset($row[$field])) {
+						if ($field == 'urt') {
+							$row[$field] = new MongoDate(strtotime(date('Ymd 12:00:00', $row[$field]->sec)));
+						}
 						$update[$fkey][$field] = $row[$field];
 					}
 				}
@@ -228,7 +231,8 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 		foreach ($typeData['stamp']['field'] as $field) {
 			$str .= isset($newRow[$field]) ? '1' : '0';
 		}
-		return md5($str . date(( isset($typeData['date_seperation']) ? $typeData['date_seperation'] : $this->dateSeperation), $newRow['urt']->sec));
+		$dateSeperation = (isset($typeData['date_seperation']) ? $typeData['date_seperation'] : $this->dateSeperation);
+		return md5($str . date($dateSeperation, $newRow['urt']->sec));
 	}
 
 	public function isLineLegitimate($line) {
@@ -270,12 +274,10 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 
 	/**
 	 * Get the update argument/query to lock lines for a unfied line in a the DB.
-	 * @param type $unifiedStamp the unifed line to lock the lines in.
 	 * @param type $lineStamps the stamps of the lines to lock.
 	 * @return array update query to pass on to an update  action.
 	 */
-	protected function getlockLinesUpdate($unifiedStamp, $lineStamps) {
-		$query = array('stamp' => $unifiedStamp);
+	protected function getlockLinesUpdate($lineStamps) {
 		$txarr = array();
 		foreach ($lineStamps as $value) {
 			$txarr[$value] = true;
