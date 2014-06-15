@@ -70,10 +70,12 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 	 */
 	public function updateRow($rawRow) {
 		$newRow = $rawRow instanceof Mongodloid_Entity ? $rawRow->getRawData() : $rawRow;
+		// we aligned the urt to one main timestamp to avoid DST issues; effect only unified data
+		$newRow['urt'] = new MongoDate(strtotime(date('Ymd 12:00:00', $newRow['urt']->sec)));
 		$updatedRowStamp = $this->getLineUnifiedLineStamp($newRow);
 
-		$newRow['u_s'] = $updatedRowStamp;
-		$this->archivedLines[$newRow['stamp']] = $newRow;
+		$rawRow['u_s'] = $updatedRowStamp;
+		$this->archivedLines[$newRow['stamp']] = $rawRow;
 		$this->unifiedToRawLines[$updatedRowStamp]['remove'][] = $newRow['stamp'];
 
 		if ($this->isLinesLocked($updatedRowStamp, array($newRow['stamp'])) ||
@@ -153,9 +155,6 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 			foreach ($this->unificationFields[$row['type']]['fields'] as $fkey => $fields) {
 				foreach ($fields as $field) {
 					if (isset($row[$field])) {
-						if ($field == 'urt') {
-							$row[$field] = new MongoDate(strtotime(date('Ymd 12:00:00', $row[$field]->sec)));
-						}
 						$update[$fkey][$field] = $row[$field];
 					}
 				}
@@ -223,16 +222,18 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 	 * @return a string  with the unified row stamp.
 	 */
 	protected function getLineUnifiedLineStamp($newRow) {
-		$str = '';
 		$typeData = $this->unificationFields[$newRow['type']];
+		$serialize_array = array();
 		foreach ($typeData['stamp']['value'] as $field) {
-			$str .= serialize($newRow[$field]);
+			$serialize_array[$field] = $newRow[$field];
 		}
+
 		foreach ($typeData['stamp']['field'] as $field) {
-			$str .= isset($newRow[$field]) ? '1' : '0';
+			$serialize_array['exists'][$field] = isset($newRow[$field]) ? '1' : '0';
 		}
 		$dateSeperation = (isset($typeData['date_seperation']) ? $typeData['date_seperation'] : $this->dateSeperation);
-		return md5($str . date($dateSeperation, $newRow['urt']->sec));
+		$serialize_array['dateSeperation'] = date($dateSeperation, $newRow['urt']->sec);
+		return Billrun_Util::generateArrayStamp($serialize_array);
 	}
 
 	public function isLineLegitimate($line) {
