@@ -227,15 +227,12 @@ class Generator_Golanxml extends Billrun_Generator {
 					}
 				}
 			}
-			
+
 			$subscriber_sumup_TOTAL_MANUAL_CORRECTION_CREDIT_PROMOTION = 0;
-			if (isset($subscriber['breakdown']['credit']) && is_array($subscriber['breakdown']['credit'])) {
-				foreach ($subscriber['breakdown']['credit'] as $key => $credit) {
-					if (strpos($key, 'refund') !== FALSE && is_array($credit)) {
-						$key = key($credit);
-						if (strpos($key, 'CRM-REFUND_PROMOTION') !== FALSE) {
-							$subscriber_sumup_TOTAL_MANUAL_CORRECTION_CREDIT_PROMOTION += floatval($credit[$key]);
-						}
+			if (isset($subscriber['breakdown']['credit']['refund_vatable']) && is_array($subscriber['breakdown']['credit']['refund_vatable'])) {
+				foreach ($subscriber['breakdown']['credit']['refund_vatable'] as $key => $credit) {
+					if (strpos($key, 'CRM-REFUND_PROMOTION') !== FALSE) {
+						$subscriber_sumup_TOTAL_MANUAL_CORRECTION_CREDIT_PROMOTION += floatval($credit);
 					}
 				}
 			}
