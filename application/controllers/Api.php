@@ -96,8 +96,8 @@ class ApiController extends Yaf_Controller_Abstract {
 		$action = $this->getRequest()->getActionName();
 		$output_methods = Billrun_Factory::config()->getConfigValue('api.outputMethod');
 		if (is_null($output_methods[$action])) {
-			echo("No output method defined");
-			Billrun_Factory::log()->log('No output method defined in credit api', Zend_Log::ALERT);
+			Billrun_Factory::log()->log('No output method defined in credit api; set to json encode', Zend_Log::INFO);
+			$this->getView()->outputMethod = array('Zend_Json', 'encode');
 		} else {
 			$this->getView()->outputMethod = $output_methods[$action];
 		}

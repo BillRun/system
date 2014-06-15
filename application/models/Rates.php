@@ -218,7 +218,21 @@ class RatesModel extends TabledateModel {
 				foreach ($fields as $field) {
 					$row[$field] = $item->get($field);
 				}
+				if (isset($row['rates'])) {
+					// convert plan ref to plan name
+					foreach ($row['rates'] as &$rate) {
+						if (isset($rate['plans'])) {
+							$plans = array();
+							foreach ($rate['plans'] as $plan) {
+								$plan_id = $plan['$id'];
+								$plans[] = Billrun_Factory::plan(array('id' => $plan_id))->getName();
+							}
+							$rate['plans'] = $plans;
+						}
+					}
+				}
 				$ret[] = $row;
+				
 			} else if ($item->get('rates') && !$this->showprefix) {
 				foreach ($item->get('rates') as $key => $rate) {
 					$added_columns = array(
