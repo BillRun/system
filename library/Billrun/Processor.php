@@ -430,6 +430,9 @@ abstract class Billrun_Processor extends Billrun_Base {
 			'process_time' => array(
 				'$exists' => false,
 			),
+			'received_time' => array(
+				'$exists' => true,
+			),
 		);
 		$update = array(
 			'$set' => array(

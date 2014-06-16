@@ -36,6 +36,11 @@ trait Billrun_Traits_FileActions {
 
 	
 	/**
+	 * @var boolean whether to preserve the modification timestamps of the received files
+	 */
+	protected $file_fetch_orphan_time = 3600;
+	
+	/**
 	 * Get the data the is stored in the file name.
 	 * @return an array containing the sequence data. ie:
 	 * 			array(seq => 00001, date => 20130101 )
@@ -54,7 +59,7 @@ trait Billrun_Traits_FileActions {
 	 * @return boolean false if the file name should not be received true if it should.
 	 */
 	protected function isFileValid($filename, $path) {
-		//igonore hidden files
+		//igonore hidden files by default
 		return preg_match(( $this->filenameRegex ? $this->filenameRegex : "/^[^\.]/"), $filename);
 	}
 	
@@ -64,27 +69,80 @@ trait Billrun_Traits_FileActions {
 	 */
 	protected function isFileReceived($filename, $type, $more_fields = array()) {
 		$log = Billrun_Factory::db()->logCollection();
-
+		$logData = $this->getFileLogData($filename, $type, $more_fields);
 		$query = array(
+			'stamp' => $logData['stamp'],
 			'source' => $type,
 			'file_name' => $filename,
 		);
 
 		if (!empty($more_fields)) {			
-			$query = array_merge($query, Billrun_Util::arrayToQuery($query));
-			Billrun_Factory::log()->log(print_r(), Zend_Log::INFO);
+			$query = array_merge($query, Billrun_Util::arrayToMongoQuery($query));
 		}
 
-		Billrun_Factory::dispatcher()->trigger('alertisFileReceivedQuery', array(&$query, $type, $this));
+		//Billrun_Factory::dispatcher()->trigger('alertisFileReceivedQuery', array(&$query, $type, $this));
 		$resource = $log->query($query)->cursor()->limit(1);
 		return $resource->count() > 0;
+	}
+	
+	/**
+	 * Method to check if the file is allready being received 
+	 * @return bollean true  if the file wasn't receive and can be fetched to the workspace or false if another process allready received the file.
+	 */
+	protected function lockFileForReceive($filename, $type, $more_fields = array(),$orphan_window = false) {
+		$log = Billrun_Factory::db()->logCollection();
+		$orphan_window = $orphan_window ? $orphan_window : $this->file_fetch_orphan_time;
+		$logData = $this->getFileLogData($filename, $type, $more_fields);
+		$query = array(
+			'stamp' => $logData['stamp'],
+			'file_name' => $filename,
+			'fetching_time' => array('$lt' => new MongoDate(time()-$orphan_window)),
+			'received_time' => array('$exists' => false)
+		);
+		
+		$update = array(
+				'$set' => array('fetching_time' => new MongoDate(time())),
+				'$setOnInsert' => $logData
+			);
+		try {
+			$result = $log->update($query,$update,array('upsert'=>1,'w'=> 1));			
+		} catch(Exception $e) {
+			if($e->getCode() == 11000) {
+				Billrun_Factory::log()->log("Billrun_Traits_FileActions::lockFileForReceive - Trying to relock  a file the was already beeen locked : " . $filename . " with stamp of : {$logData['stamp']}", Zend_Log::NOTICE);
+			} else {
+				throw $e;
+			}
+			return FALSE;
+		}
+		return $result['n'] == 1 && $result['ok'] == 1;
+	}
+	
+	/**
+	 * build the structure that will be used as a base to log the file in the DB, and generate the file uniqe stamp.
+	 * @param type $filename
+	 * @param type $type
+	 * @param type $more_fields
+	 * @return type
+	 */
+	protected function getFileLogData($filename, $type, $more_fields = array()) {
+		$log_data = array(
+			'source' => $type,
+			'file_name' => $filename,
+		);
+
+		if (!is_null($more_fields)) {
+			array_merge($log_data, $more_fields);
+		}
+	
+		$log_data['stamp'] = md5(serialize($log_data));
+		return $log_data;
 	}
 	
 	/**
 	 * Backup the current processed file to the proper backup paths
 	 * @param type $move should the file be moved when the backup ends?
 	 */
-	protected function backup($filePath, $filename, $backupPaths, $retrievedHostname, $move = true) {
+	protected function backup($filePath, $filename, $backupPaths, $retrievedHostname = false, $move = false) {
 		$backupPaths = is_array($backupPaths) ? $backupPaths : array($backupPaths);
 		
 		$seqData = $this->getFilenameData($filename,$this->getType());
@@ -129,7 +187,7 @@ trait Billrun_Traits_FileActions {
 		if ($copy) {
 			$callback = "copy";
 		} else {
-			$callback = "rename";
+			$callback = "rename"; // php move
 		}
 		
 		if (!file_exists($trgtPath)) {
@@ -139,13 +197,12 @@ trait Billrun_Traits_FileActions {
 		$filename = basename($srcPath);
 		$target_path = $trgtPath . DIRECTORY_SEPARATOR . $filename;
 		Billrun_Factory::log()->log("Backing up file from : " . $srcPath . " to :  " . $trgtPath, Zend_Log::INFO);
-		
+		$timestamp = filemtime($srcPath); // this will be used after copy/move to preserve timestamp
 		$ret = @call_user_func_array($callback, array(
 				$srcPath,
 				$target_path,
 		));		
-		if ($callback == 'copy' && $preserve_timestamps) {
-			$timestamp = filemtime($srcPath);
+		if ($preserve_timestamps) {			
 			Billrun_Util::setFileModificationTime($target_path, $timestamp);
 		}
 		
@@ -186,12 +243,12 @@ trait Billrun_Traits_FileActions {
 		$file = Billrun_Factory::db()->logCollection()->query(array('stamp'=> $filestamp))->cursor()->limit(1)->current();
 		if(!$file->isEmpty()) {
 			$defaultBackup = Billrun_Factory::config()->getConfigValue('backup.default_backup_path',FALSE);			
-			if(empty($file['extra_data']['backed_to'])) {
+			if(empty($file['backed_to'])) {
 				$backupPaths =  !empty($this->backupPaths) ? $defaultBackup : (!empty($defaultBackup) ? $defaultBackup : array('./backup/' . $this->getType()));
 				Billrun_Factory::log()->log("Backing up and moving file {$file['path']} to - ".implode(",", $backupPaths) , Zend_Log::INFO);	
 				$this->backup(basename($file['path']),$file['path'], $backupPaths, $file['retrived_from'],true);
 			} else {
-				Billrun_Factory::log()->log("File {$file['path']}  already backed up to :".implode(",",$file['extra_data']['backed_to']), Zend_Log::INFO);
+				Billrun_Factory::log()->log("File {$file['path']}  already backed up to :".implode(",",$file['backed_to']), Zend_Log::INFO);
 				Billrun_Factory::log()->log("Removing file {$file['path']} from the workspace", Zend_Log::INFO);
 				unlink($file['path']);
 			}

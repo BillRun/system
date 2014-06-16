@@ -435,11 +435,11 @@ class Billrun_Util {
 		Billrun_Factory::log()->addWriters('Mail');
 	}
 	
-	public static function arrayToQuery($array) {
+	public static function arrayToMongoQuery($array) {
 		$query = array();
 		foreach($array as $key => $val) {
 			if(is_array($val)) {
-				foreach (self::arrayToQuery($val) as $subKey => $subValue) {
+				foreach (self::arrayToMongoQuery($val) as $subKey => $subValue) {
 					$query[$key.".".$subKey] = $subValue;
 				}
 			} else {
@@ -450,4 +450,17 @@ class Billrun_Util {
 		return $query;
 	}
 
+	/**
+	 * Returns an array value if it is set
+	 * @param mixed $field the array value
+	 * @param mixed $defVal the default value to return if $field is not set
+	 * @return mixed the array value if it is set, otherwise returns $defVal
+	 */
+	static public function getFieldVal(&$field, $defVal) {
+		if (isset($field)) {
+			return $field;
+		}
+		return $defVal;
+	}
+	
 }
