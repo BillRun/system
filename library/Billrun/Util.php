@@ -425,6 +425,12 @@ class Billrun_Util {
 		if (is_null($defaultPrefix)) {
 			$defaultPrefix = Billrun_Factory::config()->getConfigValue('billrun.defaultCountryPrefix', 972);
 		}
+		
+		// if the prefix already included just return the phone number
+		$prefix_len = strlen($defaultPrefix);
+		if (strlen($phoneNumber) > $prefix_len && substr($phoneNumber, 0, $prefix_len) === (string) $defaultPrefix) {
+			return $phoneNumber;
+		}
 
 		return $defaultPrefix . $phoneNumber;
 	}
