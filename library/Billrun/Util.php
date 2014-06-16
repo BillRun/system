@@ -445,10 +445,14 @@ class Billrun_Util {
 	 */
 	public static function arrayToMongoQuery($array) {
 		$query = array();
-		foreach($array as $key => $val) {
-			if(is_array($val)) {
+		foreach($array as $key => $val) {			
+			if(is_array($val) && strpos($key,'$') !== 0) {
 				foreach (self::arrayToMongoQuery($val) as $subKey => $subValue) {
-					$query[$key.".".$subKey] = $subValue;
+					if(strpos($subKey,'$') === 0) {
+						$query[$key][$subKey] = $subValue;
+					} else {
+						$query[$key.".".$subKey] = $subValue;
+					}
 				}
 			} else {
 				$query[$key] = $val;
