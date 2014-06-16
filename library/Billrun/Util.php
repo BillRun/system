@@ -418,7 +418,7 @@ class Billrun_Util {
 			$phoneNumber = self::cleanLeadingZeros($phoneNumber);
 		}
 		
-		if (self::isIntlNumber($phoneNumber)) {
+		if (self::isIntlNumber($phoneNumber) || strlen($phoneNumber) > 15) { // len>15 means not msisdn
 			return $phoneNumber;
 		}
 		
@@ -426,12 +426,6 @@ class Billrun_Util {
 			$defaultPrefix = Billrun_Factory::config()->getConfigValue('billrun.defaultCountryPrefix', 972);
 		}
 		
-		// if the prefix already included just return the phone number
-		$prefix_len = strlen($defaultPrefix);
-		if (strlen($phoneNumber) > $prefix_len && substr($phoneNumber, 0, $prefix_len) === (string) $defaultPrefix) {
-			return $phoneNumber;
-		}
-
 		return $defaultPrefix . $phoneNumber;
 	}
 	
@@ -446,7 +440,7 @@ class Billrun_Util {
 		$cleanNumber = self::cleanLeadingZeros(self::cleanNumber($phoneNumber));
 		
 		//CCNDCSN - First part USA; second non-USA
-		if (preg_match("/^(1[2-9]{1}[0-9]{2}|[2-9]{1}[0-9]{1,2}[1-9]{1}[0-9]{0,2})[0-9]{7}$/", $cleanNumber)) {
+		if (preg_match("/^(1[2-9]{1}[0-9]{2}|[2-9]{1}[0-9]{1,2}[1-9]{1}[0-9]{0,2})[0-9]{7,9}$/", $cleanNumber)) {
 			return true;
 		}
 		
