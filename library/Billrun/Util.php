@@ -435,6 +435,14 @@ class Billrun_Util {
 		Billrun_Factory::log()->addWriters('Mail');
 	}
 	
+	/**
+	 * convert assoc array to MongoDB query
+	 * 
+	 * @param array $array the array to convert
+	 * @return array the MongoDB array conversion
+	 * 
+	 * @todo move to Mongodloid
+	 */
 	public static function arrayToMongoQuery($array) {
 		$query = array();
 		foreach($array as $key => $val) {
