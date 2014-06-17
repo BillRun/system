@@ -135,14 +135,19 @@ class Mongodloid_Collection {
 		return $this->remove(array());
 	}
 
-	public function remove($query) {
+	public function remove($query, $options = array('w' => 1)) {
+		// avoid empty database
+		if (empty($query)) {
+			return false;
+		}
+		
 		if ($query instanceOf Mongodloid_Entity)
 			$query = $query->getId();
 
 		if ($query instanceOf Mongodloid_Id)
 			$query = array('_id' => $query->getMongoId());
 
-		return $this->_collection->remove($query);
+		return $this->_collection->remove($query, $options);
 	}
 
 	public function find($query, $fields = array()) {

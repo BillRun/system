@@ -1,0 +1,65 @@
+<?php
+
+/**
+ * @package         Billing
+ * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
+ * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ */
+require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
+
+/**
+ * Credit action class
+ *
+ * @package  Action
+ * @since    0.5
+ */
+class RemoveAction extends ApiAction {
+
+	/**
+	 * method to execute the refund
+	 * it's called automatically by the api main controller
+	 */
+	public function execute() {
+		Billrun_Factory::log()->log("Execute remove", Zend_Log::INFO);
+		$request = $this->getRequest()->getRequest(); // supports GET / POST requests
+		Billrun_Factory::log()->log("Input: " . print_R($request, 1), Zend_Log::INFO);
+
+		$stamps = array();
+		foreach ($request['stamps'] as $line_stamp) {
+			$stamps[] = Billrun_Util::filter_var($line_stamp, FILTER_SANITIZE_STRING, FILTER_FLAG_ALLOW_HEX);
+		}
+
+		if (empty($stamps)) {
+			Billrun_Factory::log()->log("remove action failed; no correct stamps", Zend_Log::INFO);
+			$this->getController()->setOutput(array(array(
+					'status' => 0,
+					'desc' => 'failed - invalid stamps input',
+					'input' => $request,
+			)));
+			return true;
+		}
+		
+		$model = new LinesModel();
+		$ret = $model->remove($stamps);
+		
+		if ($ret === FALSE) {
+			Billrun_Factory::log()->log("remove action failed pr miscomplete", Zend_Log::INFO);
+			$this->getController()->setOutput(array(array(
+					'status' => 0,
+					'desc' => 'remove not completed or failed. please try again later',
+					'input' => $request,
+			)));
+			return true;
+		}
+		
+		Billrun_Factory::log()->log("remove success", Zend_Log::INFO);
+		$this->getController()->setOutput(array(array(
+				'status' => $ret,
+				'desc' => 'success',
+				'input' => $request,
+		)));
+
+		
+	}
+
+}
