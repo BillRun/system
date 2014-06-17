@@ -28,7 +28,7 @@ class RatesAction extends ApiAction {
 				'status' => 1,
 				'desc' => 'success',
 				'details' => $results,
-				'input' => $request,
+				'input' => $request->getRequest(),
 		)));
 
 	}
