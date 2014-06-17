@@ -217,7 +217,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 						continue;
 					}
 					Billrun_Factory::log('Adding flat line to subscriber ' . $sid, Zend_Log::INFO);
-					$manual_lines = array_merge(array($this->saveFlatLine($subscriber, $billrun_key)), $this->saveCreditLines($subscriber, $billrun_key));
+					$manual_lines = array_merge($manual_lines,array($this->saveFlatLine($subscriber, $billrun_key)), $this->saveCreditLines($subscriber, $billrun_key));
 					Billrun_Factory::log('Finished adding flat line to subscriber ' . $sid, Zend_Log::INFO);
 				}
 				$account_billrun->addSubscriber($subscriber, $subscriber_status);
