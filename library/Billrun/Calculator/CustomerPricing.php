@@ -192,18 +192,31 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	}
 
 	/**
+	 * get subscriber plan object
+	 * identification using the balance collection
+	 * 
+	 * @param array $sub_balance the subscriber balance
+	 * @return type
+	 */
+	protected function getPlan($sub_balance) {
+		$subscriber_current_plan = $this->getBalancePlan($sub_balance);
+		return Billrun_Factory::plan(array('data' => $subscriber_current_plan));
+	}
+	
+	/**
 	 * Get pricing data for a given rate / subcriber.
-	 * @param int $volume The usage volume (seconds of call, count of SMS, bytes  of data)
+	 * @param int $volumeToPrice The usage volume (seconds of call, count of SMS, bytes  of data)
 	 * @param string $usageType The type  of the usage (call/sms/data)
 	 * @param mixed $rate The rate of associated with the usage.
-	 * @param mixed $subr the  subscriber that generated the usage.
+	 * @param mixed $sub_balance the  subscriber that generated the usage.
 	 * @return Array the 
+	 * @todo make it works with groups and rates balances
 	 */
 	protected function getLinePricingData($volumeToPrice, $usageType, $rate, $sub_balance) {
 		$accessPrice = isset($rate['rates'][$usageType]['access']) ? $rate['rates'][$usageType]['access'] : 0;
-		$subscriber_current_plan = $this->getBalancePlan($sub_balance);
-		$plan = Billrun_Factory::plan(array('data' => $subscriber_current_plan, 'disableCache' => true));
-
+//		$subscriber_current_plan = $this->getBalancePlan($sub_balance);
+//		$plan = Billrun_Factory::plan(array('data' => $subscriber_current_plan, 'disableCache' => true));
+		$plan = $this->getPlan($sub_balance);
 		$ret = array();
 		if ($plan->isRateInSubPlan($rate, $usageType)) {
 			$volumeToPrice = $volumeToPrice - $plan->usageLeftInPlan($sub_balance['balance'], $usageType);
@@ -215,16 +228,30 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			} else if ($volumeToPrice > 0) {
 				$ret['over_plan'] = $volumeToPrice;
 			}
+		} else if ($plan->isRateInPlanRate($rate, $usageType)) {
+			$volumeToPrice = $plan->usageLeftInRateBalance($sub_balance['balance'], $rate, $usageType);
+			if ($volumeToPrice < 0) {
+				$volumeToPrice = 0;
+			} else if ($volumeToPrice > 0) {
+				$ret['over_rate'] = $volumeToPrice;
+			}
+		} else if ($plan->isRateInPlanGroup($rate, $usageType)) {
+			$volumeToPrice = $volumeToPrice - $plan->usageLeftInRateGroup($sub_balance['balance'], $rate, $usageType);
+			if ($volumeToPrice < 0) {
+				$volumeToPrice = 0;
+			} else if ($volumeToPrice > 0) {
+				$ret['over_group'] = $volumeToPrice;
+			}
 		} else {
 			$ret['out_plan'] = $volumeToPrice;
 		}
-
+		
 		$price = $accessPrice + self::getPriceByRate($rate, $usageType, $volumeToPrice);
 		//Billrun_Factory::log()->log("Rate : ".print_r($typedRates,1),  Zend_Log::DEBUG);
 		$ret[$this->pricingField] = $price;
 		return $ret;
 	}
-
+	
 	/**
 	 * Override parent calculator to save changes with update (not save)
 	 */
@@ -271,7 +298,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			} else {
 				$price += floatval($volumeToPriceCurrentRating / $currRate['interval'] * $currRate['price']); // actually price the usage volume by the current 
 			}
-			$volume = $volume - $volumeToPriceCurrentRating; //decressed the volume that was priced
+			$volume = $volume - $volumeToPriceCurrentRating; //decrease the volume that was priced
 		}
 		return $price;
 	}
@@ -335,7 +362,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			$subRaw = $balance->getRawData();
 			$stamp = strval($row['stamp']);
 			if (isset($subRaw['tx']) && array_key_exists($stamp, $subRaw['tx'])) { // we're after a crash
-				$pricingData = $subRaw['tx'][$stamp]; // restore the pricingData from before the crash
+				$pricingData = $subRaw['tx'][$stamp]; // restore the pricingData before the crash
 				return $pricingData;
 			}
 			$pricingData = $this->getLinePricingData($volume, $usage_type, $rate, $balance);
@@ -350,6 +377,19 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				$update['$set']['balance.totals.' . $key . '.usagev'] = $old_usage + $value;
 				$update['$inc']['balance.totals.' . $key . '.cost'] = $pricingData[$this->pricingField];
 				$update['$inc']['balance.totals.' . $key . '.count'] = 1;
+				// update balance rate if required
+				if ($plan->isRateInPlanRate($rate, $usage_type)) {
+					$update['$inc']['balance.rates.' . $rate['key'] . '.' . $usage_type. '.usagev'] = $value;
+					$update['$inc']['balance.rates.' . $rate['key'] . '.' . $usage_type. '.cost'] = $pricingData[$this->pricingField];
+					$update['$inc']['balance.rates.' . $rate['key'] . '.' . $usage_type. '.count'] = 1;
+				}
+				// update balance group (if exists)
+				if ($plan->isRateInPlanGroup($rate, $usage_type)) {
+					$group = $plan->getStrongestGroup($rate, $usage_type);
+					$update['$inc']['balance.groups.' . $group . '.' . $usage_type . '.usagev'] = $value;
+					$update['$inc']['balance.groups.' . $group . '.' . $usage_type . '.cost'] = $pricingData[$this->pricingField];
+					$update['$inc']['balance.groups.' . $group . '.' . $usage_type . '.count'] = 1;
+				}
 				$pricingData['usagesb'] = floatval($old_usage);
 			}
 			$update['$set']['balance.cost'] = $subRaw['balance']['cost'] + $pricingData[$this->pricingField];
@@ -554,7 +594,9 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @param Billrun_Plan $plan
 	 */
 	protected function isUsageUnlimited($rate, $usage_type, $plan) {
-		return $plan->isRateInSubPlan($rate, $usage_type) && $plan->isUnlimited($usage_type);
+		return ($plan->isRateInSubPlan($rate, $usage_type) && $plan->isUnlimited($usage_type))
+			|| ($plan->isRateInPlanRate($rate, $usage_type) && $plan->isUnlimitedRate($rate, $usage_type))
+			|| ($plan->isRateInPlanGroup($rate, $usage_type) && $plan->isUnlimitedGroup($rate, $usage_type));
 	}
 
 	protected function getBalanceTotalsKey($type, $usage_type, $plan, $rate) {
