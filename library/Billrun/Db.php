@@ -111,5 +111,12 @@ class Billrun_Db extends Mongodloid_Db {
 	public function execute($code, $args = array()) {
 		return $this->command(array('$eval' => $code, 'args' => $args));
 	}
+	/**
+	 * Change the default number size in mongo to long or regular (64/32 bit) size.
+	 * @param int $status either 1 to turn on or 0 for off
+	 */
+	static  public function setMongoNativeLong($status = 1) {
+		ini_set('mongo.native_long', $status);
+	}
 
 }
