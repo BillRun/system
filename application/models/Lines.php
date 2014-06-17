@@ -375,29 +375,5 @@ class LinesModel extends TableModel {
 
 	}
 	
-	/**
-	 * method to remove lines by stamps
-	 * @param array $stamps array of lines stamps
-	 * 
-	 * @return mixed true on complete remove, int on partial remove (count of docs), false on failure
-	 */
-	public function remove($stamps) {
-		if (empty($stamps) || !is_array($stamps) || count($stamps) == 0) {
-			return false;
-		}
-		
-		$query = array('stamp' => array('$in' => $stamps));
-		$ret = $this->collection->remove($query);
-		
-		if (!isset($ret['ok']) || !$ret['ok'] || !isset($ret['n'])) {
-			return false;
-		}
-		
-		if ($ret['n'] != count($stamps)) {
-			return $ret['n'];
-		}
-		
-		return true;
-	}
 	
 }

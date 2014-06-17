@@ -32,7 +32,7 @@ class RemoveAction extends ApiAction {
 		if (empty($stamps)) {
 			Billrun_Factory::log()->log("remove action failed; no correct stamps", Zend_Log::INFO);
 			$this->getController()->setOutput(array(array(
-					'status' => 0,
+					'status' => false,
 					'desc' => 'failed - invalid stamps input',
 					'input' => $request,
 			)));
@@ -40,13 +40,14 @@ class RemoveAction extends ApiAction {
 		}
 		
 		$model = new LinesModel();
-		$ret = $model->remove($stamps);
+		$query = array('stamp' => array('$in' => $stamps));
+		$ret = $model->remove($query);
 		
-		if ($ret === FALSE) {
+		if (!isset($ret['ok']) || !$ret['ok'] || !isset($ret['n'])) {
 			Billrun_Factory::log()->log("remove action failed pr miscomplete", Zend_Log::INFO);
 			$this->getController()->setOutput(array(array(
-					'status' => 0,
-					'desc' => 'remove not completed or failed. please try again later',
+					'status' => false,
+					'desc' => 'remove failed',
 					'input' => $request,
 			)));
 			return true;
@@ -54,11 +55,10 @@ class RemoveAction extends ApiAction {
 		
 		Billrun_Factory::log()->log("remove success", Zend_Log::INFO);
 		$this->getController()->setOutput(array(array(
-				'status' => $ret,
+				'status' => $ret['n'],
 				'desc' => 'success',
 				'input' => $request,
 		)));
-
 		
 	}
 
