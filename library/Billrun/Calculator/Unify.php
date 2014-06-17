@@ -67,7 +67,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 
 	/**
 	 * add a sigle row/line to unified line if there is no unified line then create one.
-	 * @param type $rawRow the single row to unify.
+	 * @param array $rawRow the single row to unify.
 	 * @return boolean true this can't fail (other then some php errors)
 	 */
 	public function updateRow($rawRow) {
@@ -190,9 +190,9 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 	}
 
 	/**
-	 * Get or create a unified row from a given signle row
-	 * @param type $updatedRowStamp the unified stamp that the returned row should have.
-	 * @param type $newRow the single row.
+	 * Get or create a unified row from a given single row
+	 * @param string $updatedRowStamp the unified stamp that the returned row should have.
+	 * @param array $newRow the single row.
 	 * @return array containing  a new or existing unified row.
 	 */
 	protected function getUnifiedRowForSingleRow($updatedRowStamp, $newRow) {
