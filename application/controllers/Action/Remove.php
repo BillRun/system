@@ -43,7 +43,14 @@ class RemoveAction extends ApiAction {
 		}
 		
 		$model = new LinesModel();
-		$query = array('stamp' => array('$in' => $stamps));
+		$query = array(
+			'source' => 'api',
+			'stamp' => array('$in' => $stamps),
+			'$or' => array(
+				array('billrun' => Billrun_Billrun::getActiveBillrun()),
+				array('billrun' => array('$exists' => false)),
+			)
+		);
 		$ret = $model->remove($query);
 		
 		if (!isset($ret['ok']) || !$ret['ok'] || !isset($ret['n'])) {
