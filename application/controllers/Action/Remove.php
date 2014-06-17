@@ -26,7 +26,10 @@ class RemoveAction extends ApiAction {
 
 		$stamps = array();
 		foreach ($request['stamps'] as $line_stamp) {
-			$stamps[] = Billrun_Util::filter_var($line_stamp, FILTER_SANITIZE_STRING, FILTER_FLAG_ALLOW_HEX);
+			$clear_stamp = Billrun_Util::filter_var($line_stamp, FILTER_SANITIZE_STRING, FILTER_FLAG_ALLOW_HEX);
+			if (!empty($clear_stamp)) {
+				$stamps[] = $clear_stamp;
+			}
 		}
 
 		if (empty($stamps)) {
