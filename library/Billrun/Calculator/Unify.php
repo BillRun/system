@@ -114,26 +114,28 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 		$archLinesColl = $this->archiveDb->linesCollection()->setReadPreference('RP_PRIMARY_PREFERRED');
 		$localLines = Billrun_Factory::db()->linesCollection()->setReadPreference('RP_PRIMARY_PREFERRED');
 
-		Billrun_Factory::log('Saving ' . count($this->archivedLines) . ' to archive.', Zend_Log::INFO);
-		foreach ($this->archivedLines as $line) {
-			try {
-				$archLinesColl->insert($line, array('w' => 1));
-				$linesArchivedStamps[] = $line['stamp'];
-				unset($this->data[$line['stamp']]);
-			} catch (\Exception $e) {
-				if ($e->getCode() == '11000') {
-					Billrun_Factory::log("got duplicate line when trying to save line {$line['stamp']} to archive.", Zend_Log::ALERT);
+		$archivedLinesCount = count($this->archivedLines);
+		if ($archivedLinesCount > 0) {
+			Billrun_Factory::log('Saving ' . $archivedLinesCount . ' to archive.', Zend_Log::INFO);
+			foreach ($this->archivedLines as $line) {
+				try {
+					$archLinesColl->insert($line, array('w' => 1));
 					$linesArchivedStamps[] = $line['stamp'];
 					unset($this->data[$line['stamp']]);
-				} else {
-					Billrun_Factory::log("Failed when trying to save a line {$line['stamp']} to the archive failed with: " . $e->getCode() . " : " . $e->getMessage(), Zend_Log::ALERT);
-					$failedArchived[] = $line;
+				} catch (\Exception $e) {
+					if ($e->getCode() == '11000') {
+						Billrun_Factory::log("got duplicate line when trying to save line {$line['stamp']} to archive.", Zend_Log::ALERT);
+						$linesArchivedStamps[] = $line['stamp'];
+						unset($this->data[$line['stamp']]);
+					} else {
+						Billrun_Factory::log("Failed when trying to save a line {$line['stamp']} to the archive failed with: " . $e->getCode() . " : " . $e->getMessage(), Zend_Log::ALERT);
+						$failedArchived[] = $line;
+					}
 				}
 			}
+			Billrun_Factory::log('Removing Lines from the lines collection....', Zend_Log::INFO);
+			$localLines->remove(array('stamp' => array('$in' => $linesArchivedStamps)));
 		}
-		Billrun_Factory::log('Removing Lines from the lines collection....', Zend_Log::INFO);
-		$localLines->remove(array('stamp' => array('$in' => $linesArchivedStamps)));
-
 		return $failedArchived;
 	}
 
