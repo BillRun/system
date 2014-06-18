@@ -11,7 +11,8 @@
  * The class is basic rate that can evaluate record rate by different factors
  * 
  * @package  calculator
- * @since    0.5
+ * 
+ * @since    2.6
  *
  */
 class Billrun_Calculator_Unify extends Billrun_Calculator {

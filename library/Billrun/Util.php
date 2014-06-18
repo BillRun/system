@@ -207,9 +207,11 @@ class Billrun_Util {
 	}
 
 	/**
+	 * method to get VAT cost on specific datetime
 	 * 
-	 * @param type $timestamp
-	 * @return real the VAT at the current timestamp
+	 * @param int $timestamp datetime in unix timestamp format
+	 * 
+	 * @return float the VAT at the current timestamp
 	 */
 	public static function getVATAtDate($timestamp) {
 		$mongo_date = new MongoDate($timestamp);
@@ -478,6 +480,13 @@ class Billrun_Util {
 		Billrun_Factory::log()->addWriters('Mail');
 	}
 	
+	/**
+	 * method to parse credit row from API
+	 * 
+	 * @param array $credit_row
+	 * 
+	 * @return array after filtering and validation
+	 */
 	public static function parseCreditRow($credit_row) {
 		// @TODO: take to config
 		$required_fields = array(
@@ -615,6 +624,13 @@ class Billrun_Util {
 		return $filtered_request;
 	}
 	
+	/**
+	 * method to log failed credit
+	 * 
+	 * @param array $row row to log
+	 * 
+	 * @since 2.6
+	 */
 	public static function logFailedCreditRow($row) {
 		$fd = fopen(Billrun_Factory::config()->getConfigValue('credit.failed_credits_file', './files/failed_credits.json'), 'a+');
 		fwrite($fd, json_encode($row) . PHP_EOL);

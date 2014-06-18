@@ -12,7 +12,8 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  * Activity action class
  *
  * @package  Action
- * @since    0.5
+ * 
+ * @since    2.6
  */
 class ActivityAction extends ApiAction {
 	

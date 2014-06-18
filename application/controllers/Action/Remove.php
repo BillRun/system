@@ -8,10 +8,11 @@
 require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
 
 /**
- * Credit action class
+ * Remove action class
  *
  * @package  Action
- * @since    0.5
+ * 
+ * @since    2.6
  */
 class RemoveAction extends ApiAction {
 
