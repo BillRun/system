@@ -122,9 +122,8 @@ class ResetLinesModel {
 					foreach ($queue_lines as $qline) {
 						$queue_coll->insert($qline);
 					}
-					//$queue_coll->batchInsert($queue_lines);	TPDO reinstate  when 
+					//$queue_coll->batchInsert($queue_lines); TODO reinstate when on 2.6
 					$lines_coll->update($query, $update, array('multiple' => 1));
-					
 				}
 				$offset += 10;
 			}
