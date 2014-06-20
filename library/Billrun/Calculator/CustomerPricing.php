@@ -328,9 +328,6 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * 
 	 */
 	protected function updateSubscriberBalance($row, $billrun_key, $usage_type, $rate, $volume) {
-		if ($row['stamp'] == '4a1496a21242e0174f31128601fa7ffb') {
-			$ofer=1;
-		}
 		$this->countConcurrentRetries++;
 		Billrun_Factory::dispatcher()->trigger('beforeUpdateSubscriberBalance', array($row, $billrun_key, $this));
 		$plan = Billrun_Factory::plan(array('name' => $row['plan'], 'time' => $row['urt']->sec, 'disableCache' => true));

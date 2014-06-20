@@ -178,13 +178,14 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 
 		$usaget = $row['usaget'];
 
-		if (!isset($balance->balance['totals'][$usaget]['usagev'])) {
+		// on some cases balances is not object - TODO investigate this issue
+		if (!is_object($balance) || !isset($balance->balance['totals'][$usaget]['usagev'])) {
 			Billrun_Factory::log("Fraud plugin - balance not exists for subscriber " . $row['sid'] . ' usage type ' . $usaget, Zend_Log::WARN);
 			return false;
 		}
 
 		foreach ($limits['rules'] as $rule) {
-			$ret[] = $this->checkRule($rule, $row, $balance);
+			$ret[] = $this->checkRule($rule, $row, $balance->balance);
 		}
 
 		return $ret;
@@ -219,7 +220,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 			return false;
 		} else if (isset($rule['limitGroups'])) { // if limit by specific groups
 			if ((is_array($rule['limitGroups']) && isset($row['arategroup']) && !in_array(strtoupper($row['arategroup']), $rule['limitGroups']))
-				|| (!isset($row['arategroup']) || !isset($balance->balance['groups'][$row['arategroup']][$usaget]['usagev']))) { 
+				|| (!isset($row['arategroup']) || !isset($balance['groups'][$row['arategroup']][$usaget]['usagev']))) { 
 				return false;
 			}
 		}
@@ -227,16 +228,10 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		// calculate before and after usage
 		// first check if the rule is based on groups usage
 		if (isset($rule['limitGroups'])) {
-			$before = $balance->balance['groups'][$row['arategroup']][$usaget]['usagev'];
+			$before = $balance['groups'][$row['arategroup']][$usaget]['usagev'];
 			$after = $before + $row['usagev'];
 		} else { // fallback: rule based on general usage
-//			Billrun_Factory::log("USAGE TYPE: " . print_R($balance->balance['totals'], 1));
-			if (!is_object($balance)) {
-				var_dump($balance);
-				print_R($row['stamp']); 
-				return false;
-			}
-			$before = $balance->balance['totals'][$usaget]['usagev'];
+			$before = $balance['totals'][$usaget]['usagev'];
 			$after = $before + $row['usagev'];
 		}
 
@@ -491,9 +486,9 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 	
 	protected function isLineLegitimate($row, $calculator) {
 		$queue_line = $calculator->getQueueLine($row['stamp']);
-//		if (isset($queue_line['skip_fraud']) && $queue_line['skip_fraud']) {
-//			return false;
-//		}
+		if (isset($queue_line['skip_fraud']) && $queue_line['skip_fraud']) {
+			return false;
+		}
 		return true;
 	}
 
