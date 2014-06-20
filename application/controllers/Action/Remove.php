@@ -17,7 +17,7 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
 class RemoveAction extends ApiAction {
 
 	/**
-	 * method to execute the refund
+	 * method to execute remove of billing lines (only credit and active)
 	 * it's called automatically by the api main controller
 	 */
 	public function execute() {
