@@ -182,11 +182,9 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 			Billrun_Factory::log("Fraud plugin - balance not exists for subscriber " . $row['sid'] . ' usage type ' . $usaget, Zend_Log::WARN);
 			return false;
 		}
-		$balance_before_change = $balance->balance['totals'][$usaget]['usagev'];
-		$balance_after_change = $balance_before_change + $row['usagev'];
 
 		foreach ($limits['rules'] as $rule) {
-			$ret[] = $this->checkRule($rule, $row, $balance_before_change, $balance_after_change);
+			$ret[] = $this->checkRule($rule, $row, $balance);
 		}
 
 		return $ret;
@@ -197,25 +195,49 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * 
 	 * @param array $rule the array rule of settings
 	 * @param array $row the row to check the rule
-	 * @param number $before the value before the change
-	 * @param number $after the value after the change
+	 * @param array $balance the balance array contain all subscriber balance
 	 * 
 	 * @return mixed return the rule array if succeed, else false
 	 */
-	protected function checkRule($rule, $row, $before, $after) {
+	protected function checkRule($rule, $row, $balance) {
 		// if the limit for specific type
 		if (!isset($row['usaget']) || (!empty($rule['usaget']) && !in_array($row['usaget'], $rule['usaget']))) {
 			return false;
 		}
-		// if the limit for specific plans
-		if (isset($rule['limitPlans']) &&
-				(is_array($rule['limitPlans']) && !in_array(strtoupper($row['plan']), $rule['limitPlans']))) {
+		
+		// ignore subscribers :)
+		if (isset($rule['ignoreSubscribers']) && is_array($rule['ignoreSubscribers']
+				&& in_array($row['sid'], $rule['ignoreSubscribers']))) {
 			return false;
 		}
-		// ignore subscribers :)
-		if (isset($rule['ignoreSubscribers']) &&
-				(is_array($rule['ignoreSubscribers']) && in_array($row['sid'], $rule['ignoreSubscribers']))) {
+		
+		$usaget = $row['usaget'];
+		
+		// if the limit for specific plans
+		if (isset($rule['limitPlans']) && is_array($rule['limitPlans']) 
+			&& !in_array(strtoupper($row['plan']), $rule['limitPlans'])) {
 			return false;
+		} else if (isset($rule['limitGroups'])) { // if limit by specific groups
+			if ((is_array($rule['limitGroups']) && isset($row['arategroup']) && !in_array(strtoupper($row['arategroup']), $rule['limitGroups']))
+				|| (!isset($row['arategroup']) || !isset($balance->balance['groups'][$row['arategroup']][$usaget]['usagev']))) { 
+				return false;
+			}
+		}
+		
+		// calculate before and after usage
+		// first check if the rule is based on groups usage
+		if (isset($rule['limitGroups'])) {
+			$before = $balance->balance['groups'][$row['arategroup']][$usaget]['usagev'];
+			$after = $before + $row['usagev'];
+		} else { // fallback: rule based on general usage
+//			Billrun_Factory::log("USAGE TYPE: " . print_R($balance->balance['totals'], 1));
+			if (!is_object($balance)) {
+				var_dump($balance);
+				print_R($row['stamp']); 
+				return false;
+			}
+			$before = $balance->balance['totals'][$usaget]['usagev'];
+			$after = $before + $row['usagev'];
 		}
 
 		$threshold = $rule['threshold'];
@@ -469,9 +491,9 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 	
 	protected function isLineLegitimate($row, $calculator) {
 		$queue_line = $calculator->getQueueLine($row['stamp']);
-		if (isset($queue_line['skip_fraud']) && $queue_line['skip_fraud']) {
-			return false;
-		}
+//		if (isset($queue_line['skip_fraud']) && $queue_line['skip_fraud']) {
+//			return false;
+//		}
 		return true;
 	}
 
