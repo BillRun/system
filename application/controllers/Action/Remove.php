@@ -21,7 +21,7 @@ class RemoveAction extends ApiAction {
 	 * it's called automatically by the api main controller
 	 */
 	public function execute() {
-		Billrun_Factory::log()->log("Execute remove", Zend_Log::INFO);
+		Billrun_Factory::log()->log("Execute api remove", Zend_Log::INFO);
 		$request = $this->getRequest()->getRequest(); // supports GET / POST requests
 		Billrun_Factory::log()->log("Input: " . print_R($request, 1), Zend_Log::INFO);
 
