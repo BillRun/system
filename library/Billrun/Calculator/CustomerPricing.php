@@ -325,6 +325,8 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @param int $volume The usage volume (seconds of call, count of SMS, bytes  of data)
 	 * 
 	 * @return mixed array with the pricing data on success, false otherwise
+	 * @todo refactoring and make it more abstract
+	 * @todo create unit test for this method because it's critical method
 	 * 
 	 */
 	protected function updateSubscriberBalance($row, $billrun_key, $usage_type, $rate, $volume) {
@@ -389,6 +391,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				$update['$inc']['balance.totals.' . $key . '.count'] = 1;
 				// update balance rate if required
 				if ($plan->isRateInPlanRate($rate, $usage_type)) {
+					// @TODO: check if $usage_type should be $key
 					$update['$inc']['balance.rates.' . $rate['key'] . '.' . $usage_type. '.usagev'] = $value;
 					$update['$inc']['balance.rates.' . $rate['key'] . '.' . $usage_type. '.cost'] = $pricingData[$this->pricingField];
 					$update['$inc']['balance.rates.' . $rate['key'] . '.' . $usage_type. '.count'] = 1;
@@ -396,6 +399,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				// update balance group (if exists)
 				if ($plan->isRateInPlanGroup($rate, $usage_type)) {
 					$group = $plan->getStrongestGroup($rate, $usage_type);
+					// @TODO: check if $usage_type should be $key
 					$update['$inc']['balance.groups.' . $group . '.' . $usage_type . '.usagev'] = $value;
 					$update['$inc']['balance.groups.' . $group . '.' . $usage_type . '.cost'] = $pricingData[$this->pricingField];
 					$update['$inc']['balance.groups.' . $group . '.' . $usage_type . '.count'] = 1;
