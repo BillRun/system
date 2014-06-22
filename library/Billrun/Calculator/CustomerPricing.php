@@ -435,10 +435,16 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	}
 
 	/**
+	 * method to set MongoDB native long
+	 * this is useful only on MongoDB 2.4 and below because the native long is off by default
 	 * 
 	 * @param int $status either 1 to turn on or 0 for off
 	 */
 	protected function setMongoNativeLong($status = 1) {
+		// on MongoDB 2.6 native long is on by default - avoid turn it off
+		if ($status == 0 && Billrun_Factory::db()->compareServerVersion('2.6', '>=') === true) {
+			return;
+		}
 		ini_set('mongo.native_long', $status);
 	}
 
