@@ -418,7 +418,9 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			if ($is_data_usage) {
 				$this->setMongoNativeLong(0);
 			}
-			if (!($ret['ok'] && $ret['updatedExisting'])) { // failed because of different totals (could be that another server with another line raised the totals). Need to calculate pricingData from the beginning
+			if (!($ret['ok'] && $ret['updatedExisting'])) {
+				// failed because of different totals (could be that another server with another line raised the totals). 
+				// Need to calculate pricingData from the beginning
 				if ($this->countConcurrentRetries >= $this->concurrentMaxRetries) {
 					Billrun_Factory::log()->log('Too many pricing retries for line ' . $row['stamp'] . '. Update status: ' . print_r($ret, true), Zend_Log::ALERT);
 					return false;
