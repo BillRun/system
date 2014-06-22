@@ -1,7 +1,7 @@
 <?php
 
 /**
- * @package         Billing
+ * @packmge         Billing
  * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
  * @license         GNU General Public License version 2 or later; see LICENSE.txt
  */
@@ -420,7 +420,7 @@ class Billrun_Util {
 			$phoneNumber = self::cleanLeadingZeros($phoneNumber);
 		}
 		
-		if (self::isIntlNumber($phoneNumber) || strlen($phoneNumber) > 15) { // len>15 means not msisdn
+		if (self::isIntlNumber($phoneNumber) || strlen($phoneNumber) > 12) { // len>15 means not msisdn
 			return $phoneNumber;
 		}
 		
