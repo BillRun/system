@@ -92,6 +92,13 @@ class Billrun_Plan {
 		}
 	}
 
+	/**
+	 * get the plan by its id
+	 * 
+	 * @param string $id
+	 * 
+	 * @return array of plan details if id exists else false
+	 */
 	protected function getPlanById($id) {
 		if (isset(self::$plans['by_id'][$id])) {
 			return self::$plans['by_id'][$id];
@@ -99,6 +106,13 @@ class Billrun_Plan {
 		return false;
 	}
 
+	/**
+	 * get plan by name and date
+	 * plan is time-depend
+	 * @param string $name name of the plan
+	 * @param int $time unix timestamp
+	 * @return array with plan details if plan exists, else false
+	 */
 	protected function getPlanByNameAndTime($name, $time) {
 		if (isset(self::$plans['by_name'][$name])) {
 			foreach (self::$plans['by_name'][$name] as $planTimes) {
@@ -111,7 +125,7 @@ class Billrun_Plan {
 	}
 
 	/**
-	 * method to pull plan data
+	 * method to pull current plan data
 	 * 
 	 * @param string $name the property name; could be mongo key
 	 * 
@@ -122,7 +136,7 @@ class Billrun_Plan {
 	}
 
 	/**
-	 * check if a subscriber 
+	 * check if a usage type included as part of the plan
 	 * @param type $rate
 	 * @param type $type
 	 * @return boolean
@@ -136,10 +150,30 @@ class Billrun_Plan {
 			in_array($this->createRef(), $rate['rates'][$type]['plans']);
 	}
 	
+	/**
+	 * method to check if a usage type included in the rate plan
+	 * rate plan means that there is rate that have balance that included as part of the plan
+	 * it's described in the plan meta data
+	 * 
+	 * @param array $rate details of the rate
+	 * @param string $usageType the usage type
+	 * 
+	 * @return boolean
+	 * @since 2.6
+	 */
 	public function isRateInPlanRate($rate, $usageType) {
 		return (isset($this->data['include']['rates'][$rate['key']][$usageType]));
 	}
 	
+	/**
+	 * check if usage left in the rate balance (part of the plan)
+	 * 
+	 * @param array $subscriberBalance subscriber balance to check
+	 * @param array $rate the rate to check
+	 * @param string $usageType usage type to check
+	 * @return int the usage left
+	 * @since 2.6
+	 */
 	public function usageLeftInRateBalance($subscriberBalance, $rate, $usageType = 'call') {
 		if (!isset($this->get('include')[$rate['key']][$usageType])) {
 			return 0;
@@ -160,6 +194,13 @@ class Billrun_Plan {
 		return floatval($usageLeft < 0 ? 0 : $usageLeft);
 	}
 	
+	/**
+	 * method to receive all group rates of the current plan
+	 * @param array $rate the rate to check
+	 * @param string $usageType usage type to check
+	 * @return false when no group rates, else array list of the groups
+	 * @since 2.6
+	 */
 	public function getRateGroups($rate, $usageType) {
 		if (isset($rate['rates'][$usageType]['groups'])) {
 			$groups = $rate['rates'][$usageType]['groups'];
@@ -170,6 +211,14 @@ class Billrun_Plan {
 		return false;
 	}
 	
+	/**
+	 * method to check if rate is part of group of rates balance
+	 * there is option to create balance for group of rates
+	 * 
+	 * @param array $rate the rate to check
+	 * @param string $usageType the usage type to check
+	 * @return true when the rate is part of group else false
+	 */
 	public function isRateInPlanGroup($rate, $usageType) {
 		if ($this->getRateGroups($rate, $usageType)) {
 			return true;
@@ -177,7 +226,16 @@ class Billrun_Plan {
 		return false;
 	}
 	
-	// currently the strongest rule is simple the first rule selected
+	/**
+	 * method to receive the strongest group of list of groups
+	 * currently the strongest rule is simple the first rule selected
+	 * 
+	 * @param array $rate the rate to check
+	 * @param string $usageType the usage type to check
+	 * 
+	 * @return false when no group, else string name of the group
+	 * @todo create mechanism to define the strongest group
+	 */
 	public function getStrongestGroup($rate, $usageType) {
 		$groups = $this->getRateGroups($rate, $usageType);
 		if (empty($groups)) {
@@ -187,6 +245,14 @@ class Billrun_Plan {
 		return $groups[0];
 	}
 
+	/**
+	 * method to receive the usage left in group of rates of current plan
+	 * 
+	 * @param array $subscriberBalance subscriber balance
+	 * @param array $rate the rate to check the balance
+	 * @param string $usageType the 
+	 * @return int|string
+	 */
 	public function usageLeftInRateGroup($subscriberBalance, $rate, $usageType = 'call') {
 		$groupSelected = $this->getStrongestGroup($rate, $usageType);
 		if ($groupSelected === FALSE) {
