@@ -116,7 +116,7 @@ class Billrun_Db extends Mongodloid_Db {
 	 * @param int $status either 1 to turn on or 0 for off
 	 */
 	static  public function setMongoNativeLong($status = 1) {
-		if ($status == 0 && Billrun_Factory::db()->compareServerVersion('2.6', '>=') === true) {
+		if ($status == 0 && $this->compareServerVersion('2.6', '>=') === true) {
 			return;
 		}
 		ini_set('mongo.native_long', $status);
