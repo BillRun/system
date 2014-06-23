@@ -116,5 +116,16 @@ class Mongodloid_Db {
 		$mongodb_info = $this->_db->command(array('buildinfo' => true));
 		return $mongodb_info['version'];
 	}
+	
+	/**
+	 * Change the default number size in mongo to long or regular (64/32 bit) size.
+	 * @param int $status either 1 to turn on or 0 for off
+	 */
+	public function setMongoNativeLong($status = 1) {
+		if ($status == 0 && $this->compareServerVersion('2.6', '>=') === true) {
+			return;
+		}
+		ini_set('mongo.native_long', $status);
+	}
 
 }
