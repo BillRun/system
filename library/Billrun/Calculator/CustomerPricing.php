@@ -401,6 +401,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 					$update['$inc']['balance.rates.' . $rate['key'] . '.' . $usage_type. '.usagev'] = $value;
 					$update['$inc']['balance.rates.' . $rate['key'] . '.' . $usage_type. '.cost'] = $pricingData[$this->pricingField];
 					$update['$inc']['balance.rates.' . $rate['key'] . '.' . $usage_type. '.count'] = 1;
+					$pricingData['usagesb'] = floatval($subRaw['balance']['rates'][$rate['key']][$usage_type]['usagev']);
 				}
 				// update balance group (if exists)
 				if ($plan->isRateInPlanGroup($rate, $usage_type)) {
@@ -409,8 +410,10 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 					$update['$inc']['balance.groups.' . $group . '.' . $usage_type . '.usagev'] = $value;
 					$update['$inc']['balance.groups.' . $group . '.' . $usage_type . '.cost'] = $pricingData[$this->pricingField];
 					$update['$inc']['balance.groups.' . $group . '.' . $usage_type . '.count'] = 1;
+					$pricingData['usagesb'] = floatval($subRaw['balance']['groups'][$group][$usage_type]['usagev']);
+				} else {
+					$pricingData['usagesb'] = floatval($old_usage);
 				}
-				$pricingData['usagesb'] = floatval($old_usage);
 			}
 			$update['$set']['balance.cost'] = $subRaw['balance']['cost'] + $pricingData[$this->pricingField];
 			$options = array('w' => 1);
