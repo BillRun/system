@@ -32,7 +32,7 @@ class Mongodloid_Connection {
 	 * @param string $user user to authenticate
 	 * @param string $pass password to authenticate
 	 * 
-	 * @return Billrun_Db instance
+	 * @return Mongodloid_Db instance
 	 */
 	public function getDB($db, $user = false, $pass = false, array $options = array("connect" => TRUE)) {
 		if (!isset($this->_dbs[$db]) || !$this->_dbs[$db]) {
@@ -108,7 +108,7 @@ class Mongodloid_Connection {
 	 * @param string $port the port of the connection
 	 * @param boolean $persistent set if the connection is persistent
 	 * 
-	 * @return Billrun_Connection
+	 * @return Mongodloid_Connection
 	 */
 	public static function getInstance($server = '', $port = '', $persistent = false) {
 
