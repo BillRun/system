@@ -145,7 +145,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 	 */
 	public function updateUnifiedLines() {
 		Billrun_Factory::log('Updating ' . count($this->unifiedLines) . ' unified lines...', Zend_Log::INFO);
-		Billrun_Db::setMongoNativeLong(1);
+		Billrun_Factory::db()->setMongoNativeLong(1);
 		$updateFailedLines = array();
 		foreach ($this->unifiedLines as $key => $row) {
 			$query = array('stamp' => $key, 'type' => $row['type'], 'tx' => array('$nin' => $this->unifiedToRawLines[$key]['update']));
@@ -175,7 +175,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 				Billrun_Factory::log("Updating unified line $key failed.", Zend_Log::ERR);
 			}
 		}
-		Billrun_Db::setMongoNativeLong(0);
+		Billrun_Factory::db()->setMongoNativeLong(0);
 		return $updateFailedLines;
 	}
 

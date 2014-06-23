@@ -447,11 +447,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @param int $status either 1 to turn on or 0 for off
 	 */
 	protected function setMongoNativeLong($status = 1) {
-		// on MongoDB 2.6 native long is on by default - avoid turn it off
-		if ($status == 0 && Billrun_Factory::db()->compareServerVersion('2.6', '>=') === true) {
-			return;
-		}
-		ini_set('mongo.native_long', $status);
+		Billrun_Factory::db()->setMongoNativeLong($status);
 	}
 
 	protected function increaseSubscriberBalance($counters, $billrun_key, $aid, $sid, $plan_ref) {
