@@ -226,7 +226,9 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				$ret['in_plan'] = $volume;
 				$accessPrice = 0;
 			} else if ($volumeToCharge > 0) {
-				$planVolumeLeft > 0 ? $ret['in_plan'] = $volume-$volumeToCharge : null;
+				if ($planVolumeLeft > 0) {
+					$ret['in_plan'] = $volume-$volumeToCharge;
+				}
 				$ret['over_plan'] = $volumeToCharge;
 			}
 		} else if ($plan->isRateInPlanRate($rate, $usageType)) {
@@ -234,22 +236,26 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			$volumeToCharge = $volume - $rateVolumeLeft;
 			if ($volumeToCharge < 0) {
 				$volumeToCharge = 0;
-				$ret['in_arate'] = $volume;
+				$ret['in_arate'] = $ret['in_plan'] = $volume;
 				$accessPrice = 0;
 			} else if ($volumeToCharge > 0) {
-				$rateVolumeLeft > 0 ? $ret['in_arate'] = $volume-$volumeToCharge : null;
-				$ret['over_arate'] = $volumeToCharge;
+				if ($rateVolumeLeft > 0) {
+					$ret['in_arate'] = $ret['in_plan'] = $volume-$volumeToCharge;
+				}
+				$ret['over_arate'] = $ret['over_plan'] = $volumeToCharge;
 			}
 		} else if ($plan->isRateInPlanGroup($rate, $usageType)) {
 			$groupVolumeLeft = $plan->usageLeftInRateGroup($sub_balance['balance'], $rate, $usageType);
 			$volumeToCharge = $volume - $groupVolumeLeft;
 			if ($volumeToCharge < 0) {
 				$volumeToCharge = 0;
-				$ret['in_group'] = $volume;
+				$ret['in_group'] = $ret['in_plan'] = $volume;
 				$accessPrice = 0;
 			} else if ($volumeToCharge > 0) {
-				$groupVolumeLeft > 0 ? $ret['in_group'] = $volume-$volumeToCharge : null;
-				$ret['over_group'] = $volumeToCharge;
+				if ($groupVolumeLeft > 0) {
+					$ret['in_group'] = $ret['in_plan'] = $volume-$volumeToCharge;
+				}
+				$ret['over_group'] = $ret['over_plan'] = $volumeToCharge;
 			}
 			$ret['arategroup'] = $plan->getStrongestGroup($rate, $usageType);
 		} else {
