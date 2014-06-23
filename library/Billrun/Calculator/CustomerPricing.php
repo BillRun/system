@@ -210,7 +210,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @param mixed $rate The rate of associated with the usage.
 	 * @param mixed $sub_balance the  subscriber that generated the usage.
 	 * @return Array the 
-	 * @todo make it works with groups and rates balances
+	 * @todo refactoring the if-else-if-else-if-else to methods
 	 */
 	protected function getLinePricingData($volume, $usageType, $rate, $sub_balance) {
 		$accessPrice = isset($rate['rates'][$usageType]['access']) ? $rate['rates'][$usageType]['access'] : 0;
