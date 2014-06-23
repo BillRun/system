@@ -101,7 +101,7 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 		foreach ($called_number_prefixes as $prefix) {
 			if (isset($this->rates[$prefix])) {
 				foreach ($this->rates[$prefix] as $rate) {
-					if (isset($rate['rates'][$usage_type])) {
+					if (isset($rate['rates'][$usage_type]) && (!isset($rate['params']['fullEqual']) || $prefix == $called_number)) {
 						if ($rate['from'] <= $urt && $rate['to'] >= $urt) {
 							if (is_null($ocg)) {
 								$matchedRate = $rate;
