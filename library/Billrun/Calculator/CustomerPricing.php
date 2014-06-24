@@ -402,9 +402,8 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 					$update['$inc']['balance.rates.' . $rate['key'] . '.' . $usage_type. '.cost'] = $pricingData[$this->pricingField];
 					$update['$inc']['balance.rates.' . $rate['key'] . '.' . $usage_type. '.count'] = 1;
 					$pricingData['usagesb'] = floatval($subRaw['balance']['rates'][$rate['key']][$usage_type]['usagev']);
-				}
-				// update balance group (if exists)
-				if ($plan->isRateInPlanGroup($rate, $usage_type)) {
+				} else if ($plan->isRateInPlanGroup($rate, $usage_type)) {
+					// update balance group (if exists)
 					$group = $plan->getStrongestGroup($rate, $usage_type);
 					// @TODO: check if $usage_type should be $key
 					$update['$inc']['balance.groups.' . $group . '.' . $usage_type . '.usagev'] = $value;
