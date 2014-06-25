@@ -118,7 +118,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$price_before = $this->calculateCost($balance->balance, $filterTypes);
 		$price_after = $price_before + $rowPrice;
 		foreach ($limits['rules'] as $rule) {
-			$this->checkRule($rule, $row, $price_before, $price_after);
+			$this->checkCostRule($rule, $row, $price_before, $price_after);
 		}
 	}
 
@@ -186,7 +186,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 
 		foreach ($limits['rules'] as $rule) {
-			$ret[] = $this->checkRule($rule, $row, $balance->balance);
+			$ret[] = $this->checkUsageRule($rule, $row, $balance->balance);
 		}
 
 		return $ret;
@@ -201,7 +201,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * 
 	 * @return mixed return the rule array if succeed, else false
 	 */
-	protected function checkRule($rule, $row, $balance) {
+	protected function checkUsageRule($rule, $row, $balance) {
 		// if the limit for specific type
 		if (!isset($row['usaget']) || (!empty($rule['usaget']) && !in_array($row['usaget'], $rule['usaget']))) {
 			return false;
@@ -234,6 +234,48 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		} else { // fallback: rule based on general usage
 			$before = $balance['totals'][$usaget]['usagev'];
 			$after = $before + $row['usagev'];
+		}
+
+		$threshold = $rule['threshold'];
+		$recurring = isset($rule['recurring']) && $rule['recurring'];
+		$minimum = (isset($rule['minimum']) && $rule['minimum']) ? (int) $rule['minimum'] : 0;
+		$maximum = (isset($rule['maximum']) && $rule['maximum']) ? (int) $rule['maximum'] : -1;
+		if ($this->isThresholdTriggered($before, $after, $threshold, $recurring, $minimum, $maximum)) {
+			Billrun_Factory::log("Fraud plugin - line stamp " . $row['stamp'] . ' trigger event ' . $rule['name'], Zend_Log::INFO);
+			if (isset($rule['priority'])) {
+				$priority = (int) $rule['priority'];
+			} else {
+				$priority = null;
+			}
+			$this->insert_fraud_event($after, $before, $row, $threshold, $rule['unit'], $rule['name'], $priority, $recurring);
+			return $rule;
+		}
+	}
+	
+	/**
+	 * check if fraud rule triggered
+	 * 
+	 * @param array $rule the array rule of settings
+	 * @param array $row the row to check the rule
+	 * @param number $before the value before the change
+	 * @param number $after the value after the change
+	 * 
+	 * @return mixed return the rule array if succeed, else false
+	 */
+	protected function checkCostRule($rule, $row, $before, $after) {
+		// if the limit for specific type
+		if (!isset($row['usaget']) || (!empty($rule['usaget']) && !in_array($row['usaget'], $rule['usaget']))) {
+			return false;
+		}
+		// if the limit for specific plans
+		if (isset($rule['limitPlans']) &&
+				(is_array($rule['limitPlans']) && !in_array(strtoupper($row['plan']), $rule['limitPlans']))) {
+			return false;
+		}
+		// ignore subscribers :)
+		if (isset($rule['ignoreSubscribers']) &&
+				(is_array($rule['ignoreSubscribers']) && in_array($row['sid'], $rule['ignoreSubscribers']))) {
+			return false;
 		}
 
 		$threshold = $rule['threshold'];
