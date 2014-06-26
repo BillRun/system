@@ -90,8 +90,8 @@ class Generator_Golanxml extends Billrun_Generator {
 				->skip($this->offset * $this->size)
 				->limit($this->size);
 
-		if ($this->_db->compareClientVersion('1.5.3', '<')) {
-			$resource->limit(-1);
+		if (Billrun_Factory::db()->compareClientVersion('1.5.3', '<')) {
+			$resource->timeout(-1);
 		} else {
 			// see bugs:
 			// https://jira.mongodb.org/browse/PHP-1099
