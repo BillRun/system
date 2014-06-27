@@ -144,7 +144,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		$lines = $this->pullLines($this->lines);
 		foreach ($lines as $line) {
 			if ($line) {
-				Billrun_Factory::log()->log("Calcuating row : " . $line['stamp'], Zend_Log::DEBUG);
+				Billrun_Factory::log()->log("Calculating row: " . $line['stamp'], Zend_Log::DEBUG);
 				Billrun_Factory::dispatcher()->trigger('beforeCalculateDataRow', array('data' => &$line));
 				$line->collection($lines_coll);
 				if ($this->isLineLegitimate($line)) {

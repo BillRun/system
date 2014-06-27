@@ -195,7 +195,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			if (isset($row[$key])) {
 				$params[$toKey['toKey']] = preg_replace($toKey['clearRegex'], '', $row[$key]);
 				//$this->subscriberNumber = $params[$toKey['toKey']];
-				Billrun_Factory::log("found identification for row : {$row['stamp']} from {$key} to " . $toKey['toKey'] . ' with value :' . $params[$toKey['toKey']], Zend_Log::DEBUG);
+				Billrun_Factory::log("found identification for row: {$row['stamp']} from {$key} to " . $toKey['toKey'] . ' with value:' . $params[$toKey['toKey']], Zend_Log::DEBUG);
 				break;
 			}
 		}

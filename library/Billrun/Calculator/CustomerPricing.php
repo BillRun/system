@@ -132,7 +132,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		foreach ($lines as $key => $line) {
 			if ($line) {
 				Billrun_Factory::dispatcher()->trigger('beforePricingDataRow', array('data' => &$line));
-				//Billrun_Factory::log()->log("Calcuating row : ".print_r($item,1),  Zend_Log::DEBUG);
+				//Billrun_Factory::log()->log("Calculating row: ".print_r($item,1),  Zend_Log::DEBUG);
 				$line->collection($lines_coll);
 				if ($this->isLineLegitimate($line)) {
 					if ($this->updateRow($line) === FALSE) {
