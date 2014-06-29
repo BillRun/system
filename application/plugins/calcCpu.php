@@ -143,7 +143,7 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$this->unifyCalc->init();
 			$queue_data = $processor->getQueueData();
 			$sucessfulyUnified = array();
-			Billrun_Factory::log('Plugin calc Cpu unifing '.count($queue_data).' lines', Zend_Log::INFO);
+			Billrun_Factory::log('Plugin calc Cpu unifying '.count($queue_data).' lines', Zend_Log::INFO);
 
 			foreach ($data['data'] as $key => &$line) {
 				if (isset($queue_data[$line['stamp']]) && $queue_data[$line['stamp']]['calc_name'] == 'pricing') {
