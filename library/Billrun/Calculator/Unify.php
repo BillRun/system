@@ -172,8 +172,8 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 				$ret = $linesCollection->setReadPreference('RP_PRIMARY_PREFERRED')->update($query, $update, array('w' => 1, 'upsert' => true));
 				$success = isset($ret['ok']) && $ret['ok'] && isset($ret['n']) && $ret['n'] > 0;
 			} else { // 2.4 has a bug with the update command, so let's use FAM
-				$ret = $linesCollection->setReadPreference('RP_PRIMARY_PREFERRED')->findAndModify($query, $update, array('stamp' => 1), array('upsert' => true));
-				$success = !(empty($ret));
+				$ret = $linesCollection->setReadPreference('RP_PRIMARY_PREFERRED')->findAndModify($query, $update, array('stamp' => 1), array('upsert' => true, 'new' => true));
+				$success = !(empty($ret->getRawData()));
 			}
 			if (!$success) {//TODO add support for w => 0 it should  not  enter the if
 				$updateFailedLines[$key] = array('unified' => $row, 'lines' => $this->unifiedToRawLines[$key]['update']);
