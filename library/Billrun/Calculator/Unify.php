@@ -30,7 +30,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 				'$setOnInsert' => array('urt', 'imsi', 'usagesb', 'usaget', 'aid', 'sid', 'ggsn_address', 'sgsn_address', 'rating_group', 'arate', 'plan'),
 				'$inc' => array('usagev', 'aprice', 'apr', 'fbc_downlink_volume', 'fbc_uplink_volume', 'duration'),
 			),
-		));
+	));
 	protected $archivedLines = array();
 	protected $unifiedToRawLines = array();
 	protected $dateSeperation = "Ymd";
@@ -82,7 +82,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 		$this->unifiedToRawLines[$updatedRowStamp]['remove'][] = $newRow['stamp'];
 
 		if ($this->isLinesLocked($updatedRowStamp, array($newRow['stamp'])) ||
-			(!$this->acceptArchivedLines && $this->isLinesArchived(array($newRow['stamp'])))) {
+				(!$this->acceptArchivedLines && $this->isLinesArchived(array($newRow['stamp'])))) {
 			Billrun_Factory::log("Line {$newRow['stamp']} was already applied to unified line $updatedRowStamp", Zend_Log::NOTICE);
 			return true;
 		}
@@ -151,12 +151,12 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 		foreach ($this->unifiedLines as $key => $row) {
 			$query = array('stamp' => $key, 'type' => $row['type'], 'tx' => array('$nin' => $this->unifiedToRawLines[$key]['update']));
 			$base_update = array(
-					'$setOnInsert' => array(
-						'stamp' => $key,
-						'source' => 'unify',
-						'type' => $row['type'],
-						'billrun' => $this->activeBillrun,
-					));
+				'$setOnInsert' => array(
+					'stamp' => $key,
+					'source' => 'unify',
+					'type' => $row['type'],
+					'billrun' => $this->activeBillrun,
+			));
 			$update = array_merge($base_update, $this->getlockLinesUpdate($this->unifiedToRawLines[$key]['update']));
 			foreach ($this->unificationFields[$row['type']]['fields'] as $fkey => $fields) {
 				foreach ($fields as $field) {
@@ -173,7 +173,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 				$success = isset($ret['ok']) && $ret['ok'] && isset($ret['n']) && $ret['n'] > 0;
 			} else { // 2.4 has a bug with the update command, so let's use FAM
 				$ret = $linesCollection->setReadPreference('RP_PRIMARY_PREFERRED')->findAndModify($query, $update, array('stamp' => 1), array('upsert' => true, 'new' => true));
-				$success = !(empty($ret->getRawData()));
+				$success = !$ret->isEmpty();
 			}
 			if (!$success) {//TODO add support for w => 0 it should  not  enter the if
 				$updateFailedLines[$key] = array('unified' => $row, 'lines' => $this->unifiedToRawLines[$key]['update']);
@@ -261,8 +261,8 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 			}
 		}
 		return $matched &&
-			//verify that all the required field exists in the line
-			(count(array_intersect(array_keys($line->getRawData()), $requirements['fields'])) == count($requirements['fields']));
+				//verify that all the required field exists in the line
+				(count(array_intersect(array_keys($line->getRawData()), $requirements['fields'])) == count($requirements['fields']));
 	}
 
 	/**

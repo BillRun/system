@@ -137,13 +137,13 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 		if (Billrun_Factory::config()->getConfigValue('calcCpu.wholesale_calculators', true)) {
 			$this->wholeSaleCalculators($data, $processor);
 		}
-				
-		if(in_array('unify',$queue_calculators)) {
+
+		if (in_array('unify', $queue_calculators)) {
 			$this->unifyCalc = Billrun_Calculator::getInstance(array('type' => 'unify', 'autoload' => false));
 			$this->unifyCalc->init();
 			$queue_data = $processor->getQueueData();
 			$sucessfulyUnified = array();
-			Billrun_Factory::log('Plugin calc Cpu unifying '.count($queue_data).' lines', Zend_Log::INFO);
+			Billrun_Factory::log('Plugin calc Cpu unifying ' . count($queue_data) . ' lines', Zend_Log::INFO);
 
 			foreach ($data['data'] as $key => &$line) {
 				if (isset($queue_data[$line['stamp']]) && $queue_data[$line['stamp']]['calc_name'] == 'pricing') {
@@ -152,7 +152,7 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 						if ($this->unifyCalc->updateRow($entity) !== FALSE) {
 							//mark lines that were successfuly unified.						
 							$sucessfulyUnified[$entity['stamp']] = $key;
-						}					
+						}
 					} else {
 						//Billrun_Factory::log("Line $key isnt legitimate : ".print_r($line,1), Zend_Log::INFO);
 						// if this is last calculator, remove from queue
@@ -164,25 +164,25 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 					}
 
 					$line = $entity->getRawData();
-				} 
+				}
 			}
 
 			//handle update errors unmark  lines that thier unified line failed to update.
-			foreach( $this->unifyCalc->updateUnifiedLines() as $failedLine) {
-				foreach($failedLine['lines'] as $stamp) {
-					unset($sucessfulyUnified[$stamp]);	
+			foreach ($this->unifyCalc->updateUnifiedLines() as $failedLine) {
+				foreach ($failedLine['lines'] as $stamp) {
+					unset($sucessfulyUnified[$stamp]);
 				}
 			}
 
 			//remove lines that where succesfully unified.
 			foreach ($sucessfulyUnified as $stamp => $dataKey) {
-					$processor->unsetQueueRow($stamp);
-					unset($data['data'][$dataKey]);
+				$processor->unsetQueueRow($stamp);
+				unset($data['data'][$dataKey]);
 			}
-			$this->unifyCalc->saveLinesToArchive();		
+			$this->unifyCalc->saveLinesToArchive();
 			//Billrun_Factory::log(count($data['data']), Zend_Log::INFO);
 		}
-		
+
 		Billrun_Factory::log('Plugin calc cpu end', Zend_Log::INFO);
 	}
 
@@ -240,9 +240,9 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 		foreach ($this->tx_saved_rows as $row) {
 			$customerPricingCalc->removeBalanceTx($row);
 		}
-		if(isset($this->unifyCalc) ) {
+		if (isset($this->unifyCalc)) {
 			$this->unifyCalc->releaseAllLines();
-		}			
+		}
 	}
 
 	protected function removeDuplicates($processor) {
