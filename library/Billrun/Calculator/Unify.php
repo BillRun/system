@@ -145,18 +145,19 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 	 */
 	public function updateUnifiedLines() {
 		Billrun_Factory::log('Updating ' . count($this->unifiedLines) . ' unified lines...', Zend_Log::INFO);
-		Billrun_Factory::db()->setMongoNativeLong(1);
+		$db = Billrun_Factory::db();
+		$db->setMongoNativeLong(1);
 		$updateFailedLines = array();
 		foreach ($this->unifiedLines as $key => $row) {
 			$query = array('stamp' => $key, 'type' => $row['type'], 'tx' => array('$nin' => $this->unifiedToRawLines[$key]['update']));
-			$update = array_merge(array(
+			$base_update = array(
 					'$setOnInsert' => array(
 						'stamp' => $key,
 						'source' => 'unify',
 						'type' => $row['type'],
 						'billrun' => $this->activeBillrun,
-					),
-				), $this->getlockLinesUpdate($this->unifiedToRawLines[$key]['update']));
+					));
+			$update = array_merge($base_update, $this->getlockLinesUpdate($this->unifiedToRawLines[$key]['update']));
 			foreach ($this->unificationFields[$row['type']]['fields'] as $fkey => $fields) {
 				foreach ($fields as $field) {
 					if (isset($row[$field])) {
@@ -166,8 +167,15 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 			}
 			$update['$inc']['lcount'] = $row['lcount'];
 
-			$ret = Billrun_Factory::db()->linesCollection()->setReadPreference('RP_PRIMARY_PREFERRED')->update($query, $update, array('w' => 1, 'upsert' => true));
-			if (!($ret['ok'] && $ret['n'] != 0)) {//TODO add support for w => 0 it should  not  enter the if
+			$linesCollection = $db->linesCollection();
+			if ($db->compareServerVersion('2.6', '>=')) {
+				$ret = $linesCollection->setReadPreference('RP_PRIMARY_PREFERRED')->update($query, $update, array('w' => 1, 'upsert' => true));
+				$success = isset($ret['ok']) && $ret['ok'] && isset($ret['n']) && $ret['n'] > 0;
+			} else { // 2.4 has a bug with the update command, so let's use FAM
+				$ret = $linesCollection->setReadPreference('RP_PRIMARY_PREFERRED')->findAndModify($query, $update, array('stamp' => 1), array('upsert' => true));
+				$success = !(empty($ret));
+			}
+			if (!$success) {//TODO add support for w => 0 it should  not  enter the if
 				$updateFailedLines[$key] = array('unified' => $row, 'lines' => $this->unifiedToRawLines[$key]['update']);
 				foreach ($this->unifiedToRawLines[$key]['update'] as $lstamp) {
 					unset($this->archivedLines[$lstamp]);
@@ -175,7 +183,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 				Billrun_Factory::log("Updating unified line $key failed.", Zend_Log::ERR);
 			}
 		}
-		Billrun_Factory::db()->setMongoNativeLong(0);
+		$db->setMongoNativeLong(0);
 		return $updateFailedLines;
 	}
 
