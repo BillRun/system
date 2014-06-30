@@ -28,7 +28,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 			'fields' => array(
 				'$set' => array('process_time'),
 				'$setOnInsert' => array('urt', 'imsi', 'usagesb', 'usaget', 'aid', 'sid', 'ggsn_address', 'sgsn_address', 'rating_group', 'arate', 'plan'),
-				'$inc' => array('usagev', 'aprice', 'apr', 'fbc_downlink_volume', 'fbc_uplink_volume', 'duration'),
+				'$inc' => array('usagev', 'aprice', 'apr', 'fbc_downlink_volume', 'fbc_uplink_volume', 'duration', 'out_plan', 'over_plan'),
 			),
 	));
 	protected $archivedLines = array();
