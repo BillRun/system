@@ -54,7 +54,7 @@ class QueryAction extends ApiAction {
 		$model = new LinesModel($options);
 		$lines = $model->getData($find);
 
-		Billrun_Factory::log()->log("remove success", Zend_Log::INFO);
+		Billrun_Factory::log()->log("query success", Zend_Log::INFO);
 		$ret = array(
 			array(
 				'status' => 1,
