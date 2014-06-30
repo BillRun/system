@@ -53,6 +53,10 @@ class QueryAction extends ApiAction {
 		);
 		$model = new LinesModel($options);
 		$lines = $model->getData($find);
+		
+		foreach ($lines as &$line) {
+			$line = $line->getRawData();
+		}
 
 		Billrun_Factory::log()->log("query success", Zend_Log::INFO);
 		$ret = array(
