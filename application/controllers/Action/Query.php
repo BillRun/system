@@ -31,20 +31,20 @@ class QueryAction extends ApiAction {
 		}
 		$find = array();
 		if (isset($request['aid'])) {
-			$find[]['aid'] = (int) $request['aid'];
+			$find['aid'] = (int) $request['aid'];
 		}
 
 		if (isset($request['sid'])) {
-			$find[]['sid'] = (int) $request['sid'];
+			$find['sid'] = (int) $request['sid'];
 		}
 
 		if (isset($request['billrun'])) {
-			$find[]['billrun'] = (string) $request['billrun'];
+			$find['billrun'] = (string) $request['billrun'];
 		}
 		
-//		if (isset($request['query'])) {
-//			$find[] = $request['query'];
-//		}
+		if (isset($request['query'])) {
+			$find = array_merge($find, (array) $request['query']);
+		}
 		
 		$options = array(
 			'sort' => array('urt'),
