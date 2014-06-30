@@ -622,7 +622,11 @@ class Billrun_Billrun {
 	 */
 	public function addLines($manual_lines = array()) {
 		Billrun_Factory::log()->log("Querying account " . $this->aid . " for lines...", Zend_Log::INFO);
-		$account_lines = $this->getAccountLines($this->aid, false);
+		$manual_lines_stamps = array();
+		foreach ($manual_lines as $line) {
+			$manual_lines_stamps[] = $line['stamp'];
+		}
+		$account_lines = $this->getAccountLines($this->aid, $manual_lines_stamps);
 		Billrun_Factory::log("Processing account Lines $this->aid", Zend_Log::INFO);
 		$updatedLines = array_merge($this->processLines($account_lines), $this->processLines($manual_lines));
 		Billrun_Factory::log("Finished processing account $this->aid lines. Total: " . count($updatedLines), Zend_log::INFO);
@@ -661,18 +665,18 @@ class Billrun_Billrun {
 	/**
 	 * Gets all the account lines for this billrun from the db
 	 * @param int $aid the account id
-	 * @param boolean $include_flats whether to include flat lines in the search
+	 * @param array $excluded_stamps exclude lines with these stamps from the search
 	 * @return Mongodloid_Cursor the mongo cursor used to iterate over the lines
 	 * @todo remove aid parameter
 	 */
-	protected function getAccountLines($aid, $include_flats = true) {
-		if(empty(static::$accountsLines[self::getAidPreloadKey($aid,$include_flats)])) {
-			 $ret = $this->loadAccountsLines(array($aid), $this->billrun_key, $this->filter_fields, $include_flats, true);
+	protected function getAccountLines($aid, $excluded_stamps = array()) {
+		if(empty(static::$accountsLines[self::getAidPreloadKey($aid,$excluded_stamps)])) {
+			 $ret = $this->loadAccountsLines(array($aid), $this->billrun_key, $this->filter_fields, $excluded_stamps, true);
 		} else {
 			$ret = &static::$accountsLines;
 		}
 
-		return isset($ret[self::getAidPreloadKey($aid,$include_flats)]) ? $ret[self::getAidPreloadKey($aid,$include_flats)] : array();
+		return isset($ret[self::getAidPreloadKey($aid,$excluded_stamps)]) ? $ret[self::getAidPreloadKey($aid,$excluded_stamps)] : array();
 	}
 
 	/**
@@ -680,10 +684,10 @@ class Billrun_Billrun {
 	 * @param type $aids the account to get the lines for.
 	 * @param type $billrun_key the billrun key  that the lines should be in.
 	 * @param type $filter_fields the fileds that the returned lines need to have.
-	 * @param type $include_flats should the lines include the flat lines.
+	 * @param array $excluded_stamps stamps excluded from the search
 	 */
-	static public function preloadAccountsLines($aids, $billrun_key ,$filter_fields = FALSE, $include_flats = FALSE) {
-		static::$accountsLines = array_merge( static::$accountsLines, static::loadAccountsLines($aids, $billrun_key, $filter_fields, $include_flats));
+	static public function preloadAccountsLines($aids, $billrun_key ,$filter_fields = FALSE, $excluded_stamps = array()) {
+		static::$accountsLines = array_merge( static::$accountsLines, static::loadAccountsLines($aids, $billrun_key, $filter_fields, $excluded_stamps));
 	}
 	
 	
@@ -692,10 +696,10 @@ class Billrun_Billrun {
 	 * @param type $aids the account to get the lines for.
 	 * @param type $billrun_key the billrun key  that the lines should be in.
 	 * @param type $filter_fields the fileds that the returned lines need to have.
-	 * @param type $include_flats should the lines include the flat lines.
+	 * @param array $excluded_stamps stamps excluded from the search
 	 * @return an array containing all the  accounts with thier lines.
 	 */
-	static public function loadAccountsLines($aids, $billrun_key ,$filter_fields = FALSE, $include_flats = FALSE) {
+	static public function loadAccountsLines($aids, $billrun_key ,$filter_fields = FALSE, $excluded_stamps = array()) {
 		if(empty($aids)) { return; }		
 		
 		$ret = array();		
@@ -707,9 +711,9 @@ class Billrun_Billrun {
 		$requiredFields = array('aid'=> 1);
 		$filter_fields = empty($filter_fields) ? Billrun_Factory::config()->getConfigValue('billrun.filter_fields', array()):  $filter_fields;
 		
-		if (!$include_flats) {
-			$query['type'] = array(
-				'$ne' => 'flat',
+		if ($excluded_stamps) {
+			$query['stamp'] = array(
+				'$nin' => $excluded_stamps,
 			);
 		}
 
@@ -717,7 +721,7 @@ class Billrun_Billrun {
 			'urt' => 1,
 		);				
 		
-		Billrun_Factory::log()->log("Querying for accounts " . implode(",",$aids) . " lines with" . ($include_flats? "" : "out") . " flats", Zend_Log::INFO);
+		Billrun_Factory::log()->log('Querying for accounts ' . implode(',',$aids) . ' lines', Zend_Log::INFO);
 		$addCount = $bufferCount = 0;		
 		do {
 			$bufferCount +=  $addCount;
@@ -727,10 +731,10 @@ class Billrun_Billrun {
 					->sort($sort)->skip($bufferCount)->limit(Billrun_Factory::config()->getConfigValue('billrun.linesLimit', 10000))->timeout(-1)
 					->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
 			foreach ($cursor as $line) {				
-					$ret[self::getAidPreloadKey($line['aid'],$include_flats)][] = $line;
+					$ret[self::getAidPreloadKey($line['aid'],$excluded_stamps)][] = $line;
 			}
 		} while(($addCount = $cursor->count(true)) > 0);
-		Billrun_Factory::log()->log("Finished querying for accounts " . implode(",",$aids) . " lines with flats" . $include_flats, Zend_Log::INFO);		
+		Billrun_Factory::log()->log('Finished querying for accounts ' . implode(',',$aids) . ' lines', Zend_Log::INFO);		
 		
 		return $ret;
 	}
@@ -750,8 +754,8 @@ class Billrun_Billrun {
 		}
 	}
 	
-	static protected function getAidPreloadKey($aid, $include_flats) {
-		return $aid.'_'.intval($include_flats);
+	static protected function getAidPreloadKey($aid, $excluded_stamps) {
+		return $aid.'_'.  serialize($excluded_stamps);
 	}
 
 	/**
