@@ -35,8 +35,11 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 	protected $unifiedToRawLines = array();
 	protected $dateSeperation = "Ymd";
 	protected $acceptArchivedLines = false;
+	protected $protectedConcorentFiles = true;
 	protected $archiveDb;
 	protected $activeBillrun;
+	protected $dbConcurentPref = 'RP_PRIMARY_PREFERRED';
+	protected $dbReadPref = 'RP_SECONDARY_PREFERRED';
 
 	public function __construct($options = array()) {
 		parent::__construct($options);
@@ -51,6 +54,17 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 
 		if (isset($options['accept_archived_lines'])) {
 			$this->acceptArchivedLines = $options['accept_archived_lines'];
+		}
+		
+		if (isset($options['protect_concurent_files'])) {
+			$this->protectedConcorentFiles = $options['protect_concurent_files'];
+		}
+		
+		if (isset($options['read_only_db_pref'])) {
+			$this->dbReadPref = $options['read_only_db_pref'];
+		}
+		if (isset($options['concurent_db_pref'])) {
+			$this->dbConcurentPref = $options['concurent_db_pref'];
 		}
 		$this->archiveDb = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('archive.db'));
 	}
@@ -81,7 +95,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 		$this->archivedLines[$newRow['stamp']] = $rawRow;
 		$this->unifiedToRawLines[$updatedRowStamp]['remove'][] = $newRow['stamp'];
 
-		if ($this->isLinesLocked($updatedRowStamp, array($newRow['stamp'])) ||
+		if ( ($this->protectedConcorentFiles && $this->isLinesLocked($updatedRowStamp, array($newRow['stamp']))) ||
 				(!$this->acceptArchivedLines && $this->isLinesArchived(array($newRow['stamp'])))) {
 			Billrun_Factory::log("Line {$newRow['stamp']} was already applied to unified line $updatedRowStamp", Zend_Log::NOTICE);
 			return true;
@@ -111,8 +125,8 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 	public function saveLinesToArchive() {
 		$failedArchived = array();
 		$linesArchivedStamps = array();
-		$archLinesColl = $this->archiveDb->linesCollection()->setReadPreference('RP_PRIMARY_PREFERRED');
-		$localLines = Billrun_Factory::db()->linesCollection()->setReadPreference('RP_PRIMARY_PREFERRED');
+		$archLinesColl = $this->archiveDb->linesCollection()->setReadPreference($this->dbConcurentPref);
+		$localLines = Billrun_Factory::db()->linesCollection()->setReadPreference($this->dbConcurentPref);
 
 		$archivedLinesCount = count($this->archivedLines);
 		if ($archivedLinesCount > 0) {
@@ -169,10 +183,10 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 
 			$linesCollection = $db->linesCollection();
 			if ($db->compareServerVersion('2.6', '>=')) {
-				$ret = $linesCollection->setReadPreference('RP_PRIMARY_PREFERRED')->update($query, $update, array('w' => 1, 'upsert' => true));
+				$ret = $linesCollection->setReadPreference($this->dbConcurentPref)->update($query, $update, array('w' => 1, 'upsert' => true));
 				$success = isset($ret['ok']) && $ret['ok'] && isset($ret['n']) && $ret['n'] > 0;
 			} else { // 2.4 has a bug with the update command, so let's use FAM
-				$ret = $linesCollection->setReadPreference('RP_PRIMARY_PREFERRED')->findAndModify($query, $update, array('stamp' => 1), array('upsert' => true, 'new' => true));
+				$ret = $linesCollection->setReadPreference($this->dbConcurentPref)->findAndModify($query, $update, array('stamp' => 1), array('upsert' => true, 'new' => true));
 				$success = !$ret->isEmpty();
 			}
 			if (!$success) {//TODO add support for w => 0 it should  not  enter the if
@@ -210,17 +224,22 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 		$type = $newRow['type'];
 		if (isset($this->unifiedLines[$updatedRowStamp])) {
 			$existingRow = $this->unifiedLines[$updatedRowStamp];
+			foreach ($this->unificationFields[$type]['fields']['$inc'] as $field) {
+				if(isset($newRow[$field]) && !isset($existingRow[$field])) {
+					$existingRow[$field] = 0;
+				}
+			}
 		} else {
 			//Billrun_Factory::log(print_r($newRow,1),Zend_Log::ERR);
 			$existingRow = array('lcount' => 0, 'type' => $type);
 			foreach ($this->unificationFields[$type]['fields'] as $key => $fields) {
 				foreach ($fields as $field) {
-					if ($key == '$inc') {
+					if ($key == '$inc' && isset($newRow[$field])) {
 						$existingRow[$field] = 0;
 					} else if (isset($newRow[$field])) {
 						$existingRow[$field] = $newRow[$field];
 					} else {
-						Billrun_Factory::log("Missing Field $field for row {$newRow['stamp']} when trying to unify.", Zend_Log::NOTICE);
+						Billrun_Factory::log("Missing Field $field for row {$newRow['stamp']} when trying to unify.", Zend_Log::DEBUG);
 					}
 				}
 			}
@@ -273,7 +292,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 	 */
 	protected function isLinesLocked($unifiedStamp, $lineStamps) {
 		$query = array('stamp' => $unifiedStamp, 'tx' => array('$in' => $lineStamps));
-		return !Billrun_Factory::db()->linesCollection()->setReadPreference('RP_PRIMARY_PREFERRED')->query($query)->cursor()->limit(1)->current()->isEmpty();
+		return !Billrun_Factory::db()->linesCollection()->setReadPreference($this->dbReadPref)->query($query)->cursor()->limit(1)->current()->isEmpty();
 	}
 
 	/**
@@ -283,7 +302,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 	 */
 	protected function isLinesArchived($lineStamps) {
 
-		return !$this->archiveDb->linesCollection()->setReadPreference('RP_PRIMARY_PREFERRED')->query(array('stamp' => array('$in' => $lineStamps)))->cursor()->limit(1)->current()->isEmpty();
+		return !$this->archiveDb->linesCollection()->setReadPreference($this->dbReadPref)->query(array('stamp' => array('$in' => $lineStamps)))->cursor()->limit(1)->current()->isEmpty();
 	}
 
 	/**
@@ -309,7 +328,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 		$query = array('stamp' => $unifiedStamp);
 
 		$update = array('$pullAll' => array('tx' => $lineStamps));
-		Billrun_Factory::db()->linesCollection()->setReadPreference('RP_PRIMARY_PREFERRED')->update($query, $update);
+		Billrun_Factory::db()->linesCollection()->setReadPreference($this->dbConcurentPref)->update($query, $update);
 	}
 
 	/**
