@@ -126,7 +126,7 @@ class LinesModel extends TableModel {
 			} else {
 				$item['arate'] = $arate;
 			}
-			$ret[] = $item->getRawData();
+			$ret[] = $item;
 		}
 		return $ret;
 	}
