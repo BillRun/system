@@ -295,7 +295,6 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 							. ". error message: " . $e->getMessage() . ". error code: " . $e->getCode() . ". credit details:" . print_R($rawData, 1), Zend_log::ALERT);
 					Billrun_Util::logFailedCreditRow($rawData);
 				}
-				continue;
 			}
 			$ret[] = $credit;
 		}
