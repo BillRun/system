@@ -35,7 +35,7 @@ class Generator_Golanxml extends Billrun_Generator {
 	protected $plans;
 	protected $data_rate;
 	protected $lines_coll;
-	protected $invoice_version = "1.0";
+	protected $invoice_version = "1.1";
 
 	/**
 	 * Flush XMLWriter every $flush_size billing lines
@@ -123,10 +123,10 @@ class Generator_Golanxml extends Billrun_Generator {
 		$invoice_filename = $row['billrun_key'] . '_' . str_pad($row['aid'], 9, '0', STR_PAD_LEFT) . '_' . str_pad($invoice_id, 11, '0', STR_PAD_LEFT) . '.xml';
 		$invoice_file_path = $this->export_directory . '/' . $invoice_filename;
 //		if (!file_exists($invoice_file_path)) {
-			$this->writer->openURI($invoice_file_path);
-			$this->writeXML($row, $lines);
-			$this->setFileStamp($row, $invoice_filename);
-			Billrun_Factory::log()->log("invoice file " . $invoice_filename . " created for account " . $row->get('aid'), Zend_Log::INFO);
+		$this->writer->openURI($invoice_file_path);
+		$this->writeXML($row, $lines);
+		$this->setFileStamp($row, $invoice_filename);
+		Billrun_Factory::log()->log("invoice file " . $invoice_filename . " created for account " . $row->get('aid'), Zend_Log::INFO);
 //		} else {
 //			Billrun_Factory::log()->log('Skipping filename ' . $invoice_filename, Zend_Log::INFO);
 //		}
@@ -163,6 +163,12 @@ class Generator_Golanxml extends Billrun_Generator {
 			$subscriber_flat_costs = $this->getFlatCosts($subscriber);
 			if (is_null($subscriber['current_plan']) && is_null($subscriber['next_plan']) && !isset($subscriber['breakdown'])) {
 				continue;
+			}
+			$current_plan_ref = $subscriber['current_plan'];
+			if (MongoDBRef::isRef($current_plan_ref)) {
+				$current_plan = $this->getPlanById(strval($current_plan_ref['$id']));
+			} else {
+				$current_plan = null;
 			}
 			if ($subscriber['subscriber_status'] == 'open' && (!is_array($subscriber_flat_costs) || empty($subscriber_flat_costs))) {
 				Billrun_Factory::log('Missing flat costs for subscriber ' . $sid, Zend_Log::INFO);
@@ -244,6 +250,69 @@ class Generator_Golanxml extends Billrun_Generator {
 			$this->writer->writeElement('MMS_ABOVEFREECOST', $subscriber_gift_usage_MMS_ABOVEFREECOST);
 			$this->writer->writeElement('MMS_ABOVEFREEUSAGE', $subscriber_gift_usage_MMS_ABOVEFREEUSAGE);
 			$this->writer->endElement(); // end SUBSCRIBER_GIFT_USAGE
+
+			if (isset($current_plan['include']['groups'])) {
+				foreach ($current_plan['include']['groups'] as $group_name => $group) {
+					$this->writer->startElement('SUBSCRIBER_GROUP_USAGE');
+					$this->writer->writeElement('GROUP_NAME', $group_name);
+					$subscriber_group_usage_VOICE_FREEUSAGE = 0;
+					$subscriber_group_usage_VOICE_ABOVEFREECOST = 0;
+					$subscriber_group_usage_VOICE_ABOVEFREEUSAGE = 0;
+					$subscriber_group_usage_SMS_FREEUSAGE = 0;
+					$subscriber_group_usage_SMS_ABOVEFREECOST = 0;
+					$subscriber_group_usage_SMS_ABOVEFREEUSAGE = 0;
+					$subscriber_group_usage_DATA_FREEUSAGE = 0;
+					$subscriber_group_usage_DATA_ABOVEFREECOST = 0;
+					$subscriber_group_usage_DATA_ABOVEFREEUSAGE = 0;
+					$subscriber_group_usage_MMS_FREEUSAGE = 0;
+					$subscriber_group_usage_MMS_ABOVEFREECOST = 0;
+					$subscriber_group_usage_MMS_ABOVEFREEUSAGE = 0;
+					if (isset($subscriber['groups'][$group_name])) {
+						foreach ($subscriber['groups'][$group_name] as $plan => $zone) {
+							if ($plan == 'over_plan') {
+								$subscriber_group_usage_VOICE_ABOVEFREECOST+=$this->getZoneTotalsFieldByUsage($zone, 'cost', 'call');
+								$subscriber_group_usage_SMS_ABOVEFREECOST+=$this->getZoneTotalsFieldByUsage($zone, 'cost', 'sms');
+								$subscriber_group_usage_DATA_ABOVEFREECOST+=$this->getZoneTotalsFieldByUsage($zone, 'cost', 'data');
+								$subscriber_group_usage_MMS_ABOVEFREECOST+=$this->getZoneTotalsFieldByUsage($zone, 'cost', 'mms');
+								$subscriber_group_usage_VOICE_ABOVEFREEUSAGE+= $this->getZoneTotalsFieldByUsage($zone, 'usagev', 'call');
+								$subscriber_group_usage_SMS_ABOVEFREEUSAGE+= $this->getZoneTotalsFieldByUsage($zone, 'usagev', 'sms');
+								$subscriber_group_usage_DATA_ABOVEFREEUSAGE+=$this->bytesToKB($this->getZoneTotalsFieldByUsage($zone, 'usagev', 'data'));
+								$subscriber_group_usage_MMS_ABOVEFREEUSAGE+= $this->getZoneTotalsFieldByUsage($zone, 'usagev', 'mms');
+							} else if ($plan == 'in_plan') {
+								$subscriber_group_usage_VOICE_FREEUSAGE+=$this->getZoneTotalsFieldByUsage($zone, 'usagev', 'call');
+								$subscriber_group_usage_SMS_FREEUSAGE+=$this->getZoneTotalsFieldByUsage($zone, 'usagev', 'sms');
+								$subscriber_group_usage_DATA_FREEUSAGE+=$this->bytesToKB($this->getZoneTotalsFieldByUsage($zone, 'usagev', 'data'));
+								$subscriber_group_usage_MMS_FREEUSAGE+=$this->getZoneTotalsFieldByUsage($zone, 'usagev', 'mms');
+							}
+						}
+					}
+					if (isset($group['call'])) {
+						$this->writer->writeElement('VOICE_FREEUSAGE', $subscriber_group_usage_VOICE_FREEUSAGE);
+						$this->writer->writeElement('VOICE_ABOVEFREECOST', $subscriber_group_usage_VOICE_ABOVEFREECOST);
+						$this->writer->writeElement('VOICE_ABOVEFREEUSAGE', $subscriber_group_usage_VOICE_ABOVEFREEUSAGE);
+						$this->writer->writeElement('VOICE_CAPACITY', $group['call']);
+					}
+					if (isset($group['sms'])) {
+						$this->writer->writeElement('SMS_FREEUSAGE', $subscriber_group_usage_SMS_FREEUSAGE);
+						$this->writer->writeElement('SMS_ABOVEFREECOST', $subscriber_group_usage_SMS_ABOVEFREECOST);
+						$this->writer->writeElement('SMS_ABOVEFREEUSAGE', $subscriber_group_usage_SMS_ABOVEFREEUSAGE);
+						$this->writer->writeElement('SMS_CAPACITY', $group['sms']);
+					}
+					if (isset($group['data'])) {
+						$this->writer->writeElement('DATA_FREEUSAGE', $subscriber_group_usage_DATA_FREEUSAGE);
+						$this->writer->writeElement('DATA_ABOVEFREECOST', $subscriber_group_usage_DATA_ABOVEFREECOST);
+						$this->writer->writeElement('DATA_ABOVEFREEUSAGE', $subscriber_group_usage_DATA_ABOVEFREEUSAGE);
+						$this->writer->writeElement('DATA_CAPACITY', $group['data']);
+					}
+					if (isset($group['mms'])) {
+						$this->writer->writeElement('MMS_FREEUSAGE', $subscriber_group_usage_MMS_FREEUSAGE);
+						$this->writer->writeElement('MMS_ABOVEFREECOST', $subscriber_group_usage_MMS_ABOVEFREECOST);
+						$this->writer->writeElement('MMS_ABOVEFREEUSAGE', $subscriber_group_usage_MMS_ABOVEFREEUSAGE);
+						$this->writer->writeElement('MMS_CAPACITY', $group['mms']);
+					}
+					$this->writer->endElement(); // end SUBSCRIBER_GROUP_USAGE
+				}
+			}
 
 			$this->writer->startElement('SUBSCRIBER_SUMUP');
 			$this->writer->writeElement('TOTAL_GIFT', $subscriber_gift_usage_TOTAL_FREE_COUNTER_COST);
@@ -864,8 +933,7 @@ class Generator_Golanxml extends Billrun_Generator {
 	protected function getCalledNo($line) {
 		$called_number = '';
 		if ($line['type'] == 'tap3' // on tap3
-			|| (isset($line['out_circuit_group']) && ($line['out_circuit_group'] == "2100" || $line['out_circuit_group'] == "2101" || $line['out_circuit_group'] == "2499"))) // or call to abroad
-		{
+				|| (isset($line['out_circuit_group']) && ($line['out_circuit_group'] == "2100" || $line['out_circuit_group'] == "2101" || $line['out_circuit_group'] == "2499"))) { // or call to abroad
 			if ($line['usaget'] == 'incoming_call') {
 				$called_number = $line['calling_number'];
 			} else {
@@ -1295,3 +1363,4 @@ EOI;
 	}
 
 }
+
