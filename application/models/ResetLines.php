@@ -105,10 +105,17 @@ class ResetLinesModel {
 				$update = array(
 					'$unset' => array(
 						'aid' => 1,
+						'apr' => 1,
 						'aprice' => 1,
 						'arate' => 1,
+						'arategroup' => 1,
 						'billrun' => 1,
+						'in_arate' => 1,
+						'in_group' => 1,
+						'in_plan' => 1,
 						'out_plan' => 1,
+						'over_arate' => 1,
+						'over_group' => 1,
 						'over_plan' => 1,
 						'plan' => 1,
 						'sid' => 1,
