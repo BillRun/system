@@ -503,6 +503,7 @@ class Billrun_Util {
 		$optional_fields = array(
 			'plan' => array(),
 			'vatable' => array('default' => '1'),
+			'promotion' => array(),
 		);
 		$filtered_request = array();
 
