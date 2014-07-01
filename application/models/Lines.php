@@ -111,7 +111,7 @@ class LinesModel extends TableModel {
 			->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'))
 			->sort($this->sort)->skip($this->offset())->limit($this->size);
 
-		if ($this->filterExists($filter_query['$and'], array('aid', 'sid', 'stamp'))) {
+		if (isset($filter_query['$and']) && $this->filterExists($filter_query['$and'], array('aid', 'sid', 'stamp'))) {
 			$this->_count = $cursor->count(false);
 		} else {
 			$this->_count = Billrun_Factory::config()->getConfigValue('admin_panel.lines.global_limit', 10000);

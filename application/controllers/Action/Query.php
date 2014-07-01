@@ -31,20 +31,20 @@ class QueryAction extends ApiAction {
 		}
 		$find = array();
 		if (isset($request['aid'])) {
-			$find[]['aid'] = (int) $request['aid'];
+			$find['aid'] = (int) $request['aid'];
 		}
 
 		if (isset($request['sid'])) {
-			$find[]['sid'] = (int) $request['sid'];
+			$find['sid'] = (int) $request['sid'];
 		}
 
 		if (isset($request['billrun'])) {
-			$find[]['billrun'] = (string) $request['billrun'];
+			$find['billrun'] = (string) $request['billrun'];
 		}
 		
-//		if (isset($request['query'])) {
-//			$find[] = $request['query'];
-//		}
+		if (isset($request['query'])) {
+			$find = array_merge($find, (array) $request['query']);
+		}
 		
 		$options = array(
 			'sort' => array('urt'),
@@ -53,8 +53,12 @@ class QueryAction extends ApiAction {
 		);
 		$model = new LinesModel($options);
 		$lines = $model->getData($find);
+		
+		foreach ($lines as &$line) {
+			$line = $line->getRawData();
+		}
 
-		Billrun_Factory::log()->log("remove success", Zend_Log::INFO);
+		Billrun_Factory::log()->log("query success", Zend_Log::INFO);
 		$ret = array(
 			array(
 				'status' => 1,
