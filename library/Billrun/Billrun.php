@@ -15,7 +15,6 @@
 class Billrun_Billrun {
 
 	static public $accountsLines = array();
-	
 	protected $aid;
 	protected $billrun_key;
 	protected $data;
@@ -464,6 +463,15 @@ class Billrun_Billrun {
 		} else {
 			$zone += $pricingData['aprice'];
 		}
+		if (isset($row['arategroup'])) {
+			if (isset($row['in_plan'])) {
+				$sraw['groups'][$row['arategroup']]['in_plan']['totals'][key($counters)]['usagev'] = $this->getFieldVal($sraw['groups'][$row['arategroup']]['in_plan']['totals'][key($counters)]['usagev'], 0) + $row['in_plan'];
+			}
+			if (isset($row['over_plan'])) {
+				$sraw['groups'][$row['arategroup']]['over_plan']['totals'][key($counters)]['usagev'] = $this->getFieldVal($sraw['groups'][$row['arategroup']]['over_plan']['totals'][key($counters)]['usagev'], 0) + $row['over_plan'];
+				$sraw['groups'][$row['arategroup']]['over_plan']['totals'][key($counters)]['cost'] = $this->getFieldVal($sraw['groups'][$row['arategroup']]['over_plan']['totals'][key($counters)]['cost'], 0) + $row['aprice'];
+			}
+		}
 		if ($usage_type == 'data' && $row['type'] != 'tap3') {
 			$date_key = date("Ymd", $row['urt']->sec);
 			$sraw['lines'][$usage_type]['counters'][$date_key]['usagev'] = $this->getFieldVal($sraw['lines'][$usage_type]['counters'][$date_key]['usagev'], 0) + $row['usagev'];
@@ -670,13 +678,13 @@ class Billrun_Billrun {
 	 * @todo remove aid parameter
 	 */
 	protected function getAccountLines($aid, $excluded_stamps = array()) {
-		if(empty(static::$accountsLines[self::getAidPreloadKey($aid,$excluded_stamps)])) {
-			 $ret = $this->loadAccountsLines(array($aid), $this->billrun_key, $this->filter_fields, $excluded_stamps, true);
+		if (empty(static::$accountsLines[self::getAidPreloadKey($aid, $excluded_stamps)])) {
+			$ret = $this->loadAccountsLines(array($aid), $this->billrun_key, $this->filter_fields, $excluded_stamps, true);
 		} else {
 			$ret = &static::$accountsLines;
 		}
 
-		return isset($ret[self::getAidPreloadKey($aid,$excluded_stamps)]) ? $ret[self::getAidPreloadKey($aid,$excluded_stamps)] : array();
+		return isset($ret[self::getAidPreloadKey($aid, $excluded_stamps)]) ? $ret[self::getAidPreloadKey($aid, $excluded_stamps)] : array();
 	}
 
 	/**
@@ -686,11 +694,10 @@ class Billrun_Billrun {
 	 * @param type $filter_fields the fileds that the returned lines need to have.
 	 * @param array $excluded_stamps stamps excluded from the search
 	 */
-	static public function preloadAccountsLines($aids, $billrun_key ,$filter_fields = FALSE, $excluded_stamps = array()) {
-		static::$accountsLines = array_merge( static::$accountsLines, static::loadAccountsLines($aids, $billrun_key, $filter_fields, $excluded_stamps));
+	static public function preloadAccountsLines($aids, $billrun_key, $filter_fields = FALSE, $excluded_stamps = array()) {
+		static::$accountsLines = array_merge(static::$accountsLines, static::loadAccountsLines($aids, $billrun_key, $filter_fields, $excluded_stamps));
 	}
-	
-	
+
 	/**
 	 * Gets all the account lines for this billrun from the db
 	 * @param type $aids the account to get the lines for.
@@ -699,18 +706,20 @@ class Billrun_Billrun {
 	 * @param array $excluded_stamps stamps excluded from the search
 	 * @return an array containing all the  accounts with thier lines.
 	 */
-	static public function loadAccountsLines($aids, $billrun_key ,$filter_fields = FALSE, $excluded_stamps = array()) {
-		if(empty($aids)) { return; }		
-		
-		$ret = array();		
+	static public function loadAccountsLines($aids, $billrun_key, $filter_fields = FALSE, $excluded_stamps = array()) {
+		if (empty($aids)) {
+			return;
+		}
+
+		$ret = array();
 		$query = array(
 			'aid' => array('$in' => $aids),
 			'billrun' => $billrun_key
 		);
-		
-		$requiredFields = array('aid'=> 1);
-		$filter_fields = empty($filter_fields) ? Billrun_Factory::config()->getConfigValue('billrun.filter_fields', array()):  $filter_fields;
-		
+
+		$requiredFields = array('aid' => 1);
+		$filter_fields = empty($filter_fields) ? Billrun_Factory::config()->getConfigValue('billrun.filter_fields', array()) : $filter_fields;
+
 		if ($excluded_stamps) {
 			$query['stamp'] = array(
 				'$nin' => $excluded_stamps,
@@ -719,43 +728,43 @@ class Billrun_Billrun {
 
 		$sort = array(
 			'urt' => 1,
-		);				
-		
-		Billrun_Factory::log()->log('Querying for accounts ' . implode(',',$aids) . ' lines', Zend_Log::INFO);
-		$addCount = $bufferCount = 0;		
+		);
+
+		Billrun_Factory::log()->log('Querying for accounts ' . implode(',', $aids) . ' lines', Zend_Log::INFO);
+		$addCount = $bufferCount = 0;
 		do {
-			$bufferCount +=  $addCount;
+			$bufferCount += $addCount;
 			$cursor = Billrun_Factory::db()->linesCollection()
 //			$cursor = Billrun_Factory::db(array('host'=>'172.28.202.111','port'=>27017,'user'=>'reading','password'=>'guprgri','name'=>'billing','options'=>array('connect'=>1,'readPreference'=>"RP_SECONDARY_PREFERRED")))->linesCollection()
-					->query($query)->cursor()->fields(array_merge($filter_fields , $requiredFields))
+					->query($query)->cursor()->fields(array_merge($filter_fields, $requiredFields))
 					->sort($sort)->skip($bufferCount)->limit(Billrun_Factory::config()->getConfigValue('billrun.linesLimit', 10000))->timeout(-1)
 					->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
-			foreach ($cursor as $line) {				
-					$ret[self::getAidPreloadKey($line['aid'],$excluded_stamps)][] = $line;
+			foreach ($cursor as $line) {
+				$ret[self::getAidPreloadKey($line['aid'], $excluded_stamps)][] = $line;
 			}
-		} while(($addCount = $cursor->count(true)) > 0);
-		Billrun_Factory::log()->log('Finished querying for accounts ' . implode(',',$aids) . ' lines', Zend_Log::INFO);		
-		
+		} while (($addCount = $cursor->count(true)) > 0);
+		Billrun_Factory::log()->log('Finished querying for accounts ' . implode(',', $aids) . ' lines', Zend_Log::INFO);
+
 		return $ret;
 	}
-	
+
 	/**
 	 * Remove account lines from the preload cache.
 	 * @param $aids a list of  aids to remove  of FALSE to remove all the  cached account lines. 	 
 	 */
-	static public function clearPreLoadedLines($aids = FALSE) {	
-		if( $aids === FALSE ){ 
+	static public function clearPreLoadedLines($aids = FALSE) {
+		if ($aids === FALSE) {
 			static::$accountsLines = array();
 		} else {
-			foreach($aids as $aid) {
-				unset(static::$accountsLines[self::getAidPreloadKey($aid,true)]);
-				unset(static::$accountsLines[self::getAidPreloadKey($aid,false)]);
+			foreach ($aids as $aid) {
+				unset(static::$accountsLines[self::getAidPreloadKey($aid, true)]);
+				unset(static::$accountsLines[self::getAidPreloadKey($aid, false)]);
 			}
 		}
 	}
-	
+
 	static protected function getAidPreloadKey($aid, $excluded_stamps) {
-		return $aid.'_'.  serialize($excluded_stamps);
+		return $aid . '_' . serialize($excluded_stamps);
 	}
 
 	/**
