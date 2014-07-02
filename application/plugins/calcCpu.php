@@ -91,6 +91,7 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 				} else if ($customerCalc->isLineLegitimate($entity)) {
 					if ($customerCalc->updateRow($entity) !== FALSE) {
 						$processor->setQueueRowStep($entity['stamp'], 'customer');
+						$processor->addAdvancedPropertiesToQueueRow($entity);
 					}
 				} else {
 					$processor->setQueueRowStep($entity['stamp'], 'customer');
