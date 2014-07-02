@@ -150,6 +150,9 @@ class Mongodloid_Collection {
 		return $this->_collection->remove($query, $options);
 	}
 
+	/**
+	 * @return MongoCursor a cursor for the search results.
+	 */
 	public function find($query, $fields = array()) {
 		return $this->_collection->find($query, $fields);
 	}

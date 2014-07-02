@@ -29,20 +29,12 @@ class ResetLinesModel {
 
 	public function __construct($sids, $billrun_key) {
 		$this->sids = $sids;
-		$this->billrun_key = $billrun_key;
+		$this->billrun_key = strval($billrun_key);
 	}
 
 	public function reset() {
 		Billrun_Factory::log()->log('Reset subscriber activated', Zend_Log::INFO);
-
-		$configModel = new ConfigModel();
-		$oldConfigValue=  $configModel->getConfig()['calculate']; 
-		$configModel->save(array('calculate'=> 0));
-//		$this->resetBalances();
-		$this->resetLines();			
-
-		$configModel->save(array('calculate'=> $oldConfigValue));
-		
+		$this->resetLines();
 		return true;
 	}
 
@@ -67,7 +59,6 @@ class ResetLinesModel {
 	 * @todo support update/removal of credit lines
 	 */
 	protected function resetLines() {
-
 		$lines_coll = Billrun_Factory::db()->linesCollection();
 		$queue_coll = Billrun_Factory::db()->queueCollection();
 		if (!empty($this->sids) && !empty($this->billrun_key)) {
@@ -123,8 +114,8 @@ class ResetLinesModel {
 						'usagev' => 1,
 					),
 					'$set' => array(
-						'rebalance' => MongoDate()
-					)
+						'rebalance' => new MongoDate(),
+					),
 				);
 
 				if ($stamps) {

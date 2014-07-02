@@ -637,5 +637,11 @@ class Billrun_Util {
 		fwrite($fd, json_encode($row) . PHP_EOL);
 		fclose($fd);
 	}
+	
+	public static function logFailedResetLines($sids, $billrun_key) {
+		$fd = fopen(Billrun_Factory::config()->getConfigValue('resetlines.failed_sids_file', './files/failed_resetlines.json'), 'a+');
+		fwrite($fd, json_encode(array('sids' => $sids, 'billrun_key' => $billrun_key)) . PHP_EOL);
+		fclose($fd);
+	}
 
 }

@@ -79,7 +79,7 @@ $(function() {
 	$("#resetSubsModal #upload").click(function(event) {
 		function resetLines(content) {
 			$.ajax({
-				url: "/api/resetlines",
+				url: "/api/resetlinesqueue",
 				type: "POST",
 				data: {sid: content}
 			}).done(function(msg) {
