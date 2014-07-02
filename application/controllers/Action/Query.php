@@ -43,7 +43,12 @@ class QueryAction extends ApiAction {
 		}
 		
 		if (isset($request['query'])) {
-			$find = array_merge($find, (array) $request['query']);
+			if (is_string($request['query'])) {
+				$query = json_decode($request['query'], true);
+			} else {
+				$query = (array) $request['query'];
+			}
+			$find = array_merge($find, (array) $query);
 		}
 		
 		$options = array(
