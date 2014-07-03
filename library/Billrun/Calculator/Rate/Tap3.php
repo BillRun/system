@@ -82,15 +82,17 @@ class Billrun_Calculator_Rate_Tap3 extends Billrun_Calculator_Rate {
 
 		return $usage_type;
 	}
-
+	
+	const SENDING_SOURCE_SCORE_AUGMENT = 20;
 	/**
 	 * @see Billrun_Calculator_Rate::getLineRate
 	 */
 	protected function getLineRate($row, $usage_type) {
 		$line_time = $row['urt'];
 		$serving_network = $row['serving_network'];
+		$sender = isset($row['sending_source']) ? $row['sending_source'] :  false;
 		$matchedRate = false;
-		$prefix_length_matched = 0;
+		$last_matched_score = 0;
 
 		if (!is_null($serving_network)) {
 			$call_number = isset($row['called_number']) ? $row->get('called_number') : (isset($row['calling_number']) ? $row->get('calling_number') : NULL);
@@ -99,13 +101,21 @@ class Billrun_Calculator_Rate_Tap3 extends Billrun_Calculator_Rate {
 				$call_number_prefixes = $this->getPrefixes($call_number);
 			}
 			$potential_rates = array();
-			if (isset($this->rates['by_names'][$serving_network])) {
-				$potential_rates = $this->rates['by_names'][$serving_network];
+			if (isset($this->rates['by_names'][$serving_network]) ) {
+				foreach($this->rates['by_names'][$serving_network] as $named_rate) {
+					if(!$sender || (isset($named_rate['params']['sending_sources']) && in_array($sender,$named_rate['params']['sending_sources'])) ) {
+						 $potential_rates[] = $named_rate;
+					}
+				}
 			}
 			if (!empty($this->rates['by_regex'])) {
 				foreach ($this->rates['by_regex'] as $regex => $regex_rates) {
-					if (preg_match($regex, $serving_network)) {
-						$potential_rates = array_merge($potential_rates, $regex_rates);
+					if(preg_match($regex, $serving_network) ) {
+					      foreach ($regex_rates as $regex_rate) {
+						      if ( !$sender || (isset($regex_rate['params']['sending_sources']) && in_array($sender,$regex_rate['params']['sending_sources'])) ) {
+							      $potential_rates[] = $regex_rate;
+						      }
+					      }
 					}
 				}
 			}
@@ -113,13 +123,16 @@ class Billrun_Calculator_Rate_Tap3 extends Billrun_Calculator_Rate {
 			foreach ($potential_rates as $rate) {
 				if (isset($rate['rates'][$usage_type])) {
 					if ($rate['from'] <= $line_time && $rate['to'] >= $line_time) {
-						if (!$matchedRate || (is_array($rate['params']['serving_networks']) && !$prefix_length_matched)) { // array of serving networks is stronger then regex of serving_networks
+						$score_augmentor = (isset($rate['params']['sending_sources'])  && in_array($sender,$rate['params']['sending_sources']) ? self::SENDING_SOURCE_SCORE_AUGMENT :0);
+						if (!$matchedRate || (is_array($rate['params']['serving_networks']) && $last_matched_score < $score_augmentor)) { // array of serving networks is stronger then regex of serving_networks
 							$matchedRate = $rate;
+							$last_matched_score = $score_augmentor;
 						}
 						if (isset($call_number_prefixes) && !empty($rate['params']['prefix'])) {
 							foreach ($call_number_prefixes as $prefix) {
-								if (in_array($prefix, $rate['params']['prefix']) && strlen($prefix) > $prefix_length_matched) {
-									$prefix_length_matched = strlen($prefix);
+								$rate_score = (strlen($prefix) + $score_augmentor);
+								if (in_array($prefix, $rate['params']['prefix']) &&  $rate_score > $last_matched_score) {
+									$last_matched_score = $rate_score;
 									$matchedRate = $rate;
 								}
 							}
