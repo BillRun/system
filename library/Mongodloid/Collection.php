@@ -409,5 +409,9 @@ class Mongodloid_Collection {
 			return $ret[$var];
 		}
 	}
+	
+	public function distinct($key, array $query = null) {
+		return $this->_collection->distinct($key, $query);
+	}
 
 }

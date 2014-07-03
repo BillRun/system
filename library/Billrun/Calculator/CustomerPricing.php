@@ -69,13 +69,19 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @var int
 	 */
 	protected $countConcurrentRetries;
-	
+
 	/**
 	 * max retries on concurrent balance updates loops
 	 * 
 	 * @var int
 	 */
 	protected $concurrentMaxRetries;
+
+	/**
+	 * Array of subscriber ids queued for rebalance in rebalance_queue collection
+	 * @var array
+	 */
+	protected $sidsQueuedForRebalance;
 
 	public function __construct($options = array()) {
 		if (isset($options['autoload'])) {
@@ -111,7 +117,8 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		$this->active_billrun_end_time = Billrun_Util::getEndTime($this->active_billrun);
 		$this->next_active_billrun = Billrun_Util::getFollowingBillrunKey($this->active_billrun);
 		// max recursive retrues for value=oldValue tactic
-		$this->concurrentMaxRetries = (int) Billrun_Factory::config()->getConfigValue('updateValueEqualOldValueMaxRetries',8);
+		$this->concurrentMaxRetries = (int) Billrun_Factory::config()->getConfigValue('updateValueEqualOldValueMaxRetries', 8);
+		$this->sidsQueuedForRebalance = array_flip(Billrun_Factory::db()->rebalance_queueCollection()->distinct('sid'));
 	}
 
 	protected function getLines() {
@@ -149,6 +156,9 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	}
 
 	public function updateRow($row) {
+		if (isset($this->sidsQueuedForRebalance[$row['sid']])) {
+			return false;
+		}
 		$this->countConcurrentRetries = 0;
 		Billrun_Factory::dispatcher()->trigger('beforeCalculatorUpdateRow', array($row, $this));
 		$billrun_key = Billrun_Util::getBillrunKey($row->get('urt')->sec);
@@ -170,7 +180,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			if (!$pricingData) {
 				return false;
 			}
-			
+
 			// billrun cannot override on api calls
 			if (!isset($row['billrun']) || $row['source'] != 'api') {
 				$pricingData['billrun'] = $row['urt']->sec <= $this->active_billrun_end_time ? $this->active_billrun : $this->next_active_billrun;
@@ -202,7 +212,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		$subscriber_current_plan = $this->getBalancePlan($sub_balance);
 		return Billrun_Factory::plan(array('data' => $subscriber_current_plan));
 	}
-	
+
 	/**
 	 * Get pricing data for a given rate / subcriber.
 	 * @param int $volume The usage volume (seconds of call, count of SMS, bytes  of data)
@@ -227,7 +237,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				$accessPrice = 0;
 			} else if ($volumeToCharge > 0) {
 				if ($planVolumeLeft > 0) {
-					$ret['in_plan'] = $volume-$volumeToCharge;
+					$ret['in_plan'] = $volume - $volumeToCharge;
 				}
 				$ret['over_plan'] = $volumeToCharge;
 			}
@@ -240,7 +250,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				$accessPrice = 0;
 			} else if ($volumeToCharge > 0) {
 				if ($rateVolumeLeft > 0) {
-					$ret['in_arate'] = $ret['in_plan'] = $volume-$volumeToCharge;
+					$ret['in_arate'] = $ret['in_plan'] = $volume - $volumeToCharge;
 				}
 				$ret['over_arate'] = $ret['over_plan'] = $volumeToCharge;
 			}
@@ -253,7 +263,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				$accessPrice = 0;
 			} else if ($volumeToCharge > 0) {
 				if ($groupVolumeLeft > 0) {
-					$ret['in_group'] = $ret['in_plan'] = $volume-$volumeToCharge;
+					$ret['in_group'] = $ret['in_plan'] = $volume - $volumeToCharge;
 				}
 				$ret['over_group'] = $ret['over_plan'] = $volumeToCharge;
 			}
@@ -261,13 +271,13 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		} else {
 			$ret['out_plan'] = $volumeToCharge = $volume;
 		}
-		
+
 		$price = $accessPrice + self::getPriceByRate($rate, $usageType, $volumeToCharge);
 		//Billrun_Factory::log()->log("Rate : ".print_r($typedRates,1),  Zend_Log::DEBUG);
 		$ret[$this->pricingField] = $price;
 		return $ret;
 	}
-	
+
 	/**
 	 * Override parent calculator to save changes with update (not save)
 	 */
@@ -398,9 +408,9 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				// update balance rate if required
 				if ($plan->isRateInPlanRate($rate, $usage_type)) {
 					// @TODO: check if $usage_type should be $key
-					$update['$inc']['balance.rates.' . $rate['key'] . '.' . $usage_type. '.usagev'] = $value;
-					$update['$inc']['balance.rates.' . $rate['key'] . '.' . $usage_type. '.cost'] = $pricingData[$this->pricingField];
-					$update['$inc']['balance.rates.' . $rate['key'] . '.' . $usage_type. '.count'] = 1;
+					$update['$inc']['balance.rates.' . $rate['key'] . '.' . $usage_type . '.usagev'] = $value;
+					$update['$inc']['balance.rates.' . $rate['key'] . '.' . $usage_type . '.cost'] = $pricingData[$this->pricingField];
+					$update['$inc']['balance.rates.' . $rate['key'] . '.' . $usage_type . '.count'] = 1;
 					$pricingData['usagesb'] = floatval($subRaw['balance']['rates'][$rate['key']][$usage_type]['usagev']);
 				} else if ($plan->isRateInPlanGroup($rate, $usage_type)) {
 					// update balance group (if exists)
@@ -433,7 +443,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 					Billrun_Factory::log()->log('Too many pricing retries for line ' . $row['stamp'] . '. Update status: ' . print_r($ret, true), Zend_Log::ALERT);
 					return false;
 				}
-				Billrun_Factory::log()->log('Concurrent write of sid : '.$row['sid'].' line stamp : ' . $row['stamp'] . ' to balance. Update status: ' . print_r($ret, true) . 'Retrying...', Zend_Log::INFO);
+				Billrun_Factory::log()->log('Concurrent write of sid : ' . $row['sid'] . ' line stamp : ' . $row['stamp'] . ' to balance. Update status: ' . print_r($ret, true) . 'Retrying...', Zend_Log::INFO);
 				sleep($this->countConcurrentRetries);
 				return $this->updateSubscriberBalance($row, $billrun_key, $usage_type, $rate, $volume);
 			}
@@ -620,9 +630,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @param Billrun_Plan $plan
 	 */
 	protected function isUsageUnlimited($rate, $usage_type, $plan) {
-		return ($plan->isRateInSubPlan($rate, $usage_type) && $plan->isUnlimited($usage_type))
-			|| ($plan->isRateInPlanRate($rate, $usage_type) && $plan->isUnlimitedRate($rate, $usage_type))
-			|| ($plan->isRateInPlanGroup($rate, $usage_type) && $plan->isUnlimitedGroup($rate, $usage_type));
+		return ($plan->isRateInSubPlan($rate, $usage_type) && $plan->isUnlimited($usage_type)) || ($plan->isRateInPlanRate($rate, $usage_type) && $plan->isUnlimitedRate($rate, $usage_type)) || ($plan->isRateInPlanGroup($rate, $usage_type) && $plan->isUnlimitedGroup($rate, $usage_type));
 	}
 
 	protected function getBalanceTotalsKey($type, $usage_type, $plan, $rate) {

@@ -26,10 +26,17 @@ class ResetLinesModel {
 	 * @var string
 	 */
 	protected $billrun_key;
+	
+	/**
+	 * Don't get newly stuck lines because they might have not been inserted yet to the queue
+	 * @var string
+	 */
+	protected $process_time_offset;
 
 	public function __construct($sids, $billrun_key) {
 		$this->sids = $sids;
 		$this->billrun_key = strval($billrun_key);
+		$this->process_time_offset = Billrun_Config::getInstance()->getConfigValue('resetlines.process_time_offset', '15 minutes');
 	}
 
 	public function reset() {
@@ -73,6 +80,9 @@ class ResetLinesModel {
 					'type' => array(
 						'$ne' => 'credit',
 					),
+					'process_time' => array(
+						'$lt' => date(Billrun_Base::base_dateformat, strtotime($this->process_time_offset . ' ago')),
+					),
 				);
 				$lines = $lines_coll->query($query);
 				$stamps = array();
@@ -88,7 +98,7 @@ class ResetLinesModel {
 						'skip_fraud' => true,
 					);
 				}
-				$remove = array(
+				$stamps_query = array(
 					'stamp' => array(
 						'$in' => $stamps,
 					),
@@ -119,13 +129,13 @@ class ResetLinesModel {
 				);
 
 				if ($stamps) {
-					$queue_coll->remove($remove);
+					$queue_coll->remove($stamps_query);
 					$this->resetBalances($update_sids);
 					foreach ($queue_lines as $qline) {
 						$queue_coll->insert($qline);
 					}
 					//$queue_coll->batchInsert($queue_lines); TODO reinstate when on 2.6
-					$lines_coll->update($query, $update, array('multiple' => 1));
+					$lines_coll->update($stamps_query, $update, array('multiple' => 1));
 				}
 				$offset += 10;
 			}

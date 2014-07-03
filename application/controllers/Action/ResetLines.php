@@ -20,9 +20,10 @@ class ResetLinesAction extends ApiAction {
 
 		$rebalance_queue = Billrun_Factory::db()->rebalance_queueCollection();
 		$limit = Billrun_Config::getInstance()->getConfigValue('resetlines.limit', 10);
+		$offset = Billrun_Config::getInstance()->getConfigValue('resetlines.offset', '1 hour');
 		$query = array(
 			'creation_date' => array(
-				'$lt' => new MongoDate(strtotime('1 hour ago')),
+				'$lt' => new MongoDate(strtotime($offset . ' ago')),
 			),
 		);
 		$sort = array(
