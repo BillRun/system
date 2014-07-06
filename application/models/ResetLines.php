@@ -41,14 +41,15 @@ class ResetLinesModel {
 
 	public function reset() {
 		Billrun_Factory::log()->log('Reset subscriber activated', Zend_Log::INFO);
-		$this->resetLines();
-		return true;
+		$ret = $this->resetLines();
+		return $ret;
 	}
 
 	/**
 	 * Removes the balance doc for each of the subscribers
 	 */
 	public function resetBalances($sids) {
+		$ret = true;
 		$balances_coll = Billrun_Factory::db(array('name' => 'balances'))->balancesCollection()->setReadPreference('RP_PRIMARY');
 		if (!empty($this->sids) && !empty($this->billrun_key)) {
 			$query = array(
@@ -57,8 +58,9 @@ class ResetLinesModel {
 					'$in' => $sids,
 				),
 			);
-			$balances_coll->remove($query);
+			$ret = $balances_coll->remove($query, array('w' => 1)); // ok ==1 && n>0
 		}
+		return $ret;
 	}
 
 	/**
@@ -129,20 +131,38 @@ class ResetLinesModel {
 				);
 
 				if ($stamps) {
-					$queue_coll->remove($stamps_query);
-					$this->resetBalances($update_sids);
-					if (Billrun_Factory::db()->compareServerVersion('2.6', '>=') === true) {
-						$queue_coll->batchInsert($queue_lines);
+					$ret = $queue_coll->remove($stamps_query, array('w' => 1)); // ok == 1, err null
+					if (isset($ret['err']) && !is_null($ret['err'])) {
+						return FALSE;
 					} else {
-						foreach ($queue_lines as $qline) {
-							$queue_coll->insert($qline);
+						$ret = $this->resetBalances($update_sids); // err null
+						if (isset($ret['err']) && !is_null($ret['err'])) {
+							return FALSE;
+						} else {
+							if (Billrun_Factory::db()->compareServerVersion('2.6', '>=') === true) {
+								$ret = $queue_coll->batchInsert($queue_lines, array('w' => 1)); // ok==true, nInserted==0 if w was 0
+								if (isset($ret['err']) && !is_null($ret['err'])) {
+									return FALSE;
+								}
+							} else {
+								foreach ($queue_lines as $qline) {
+									$ret = $queue_coll->insert($qline, array('w' => 1)); // ok==1, err null
+									if (isset($ret['err']) && !is_null($ret['err'])) {
+										return FALSE;
+									}
+								}
+							}
+							$ret = $lines_coll->update($stamps_query, $update, array('multiple' => 1, 'w' => 1)); // err null
+							if (isset($ret['err']) && !is_null($ret['err'])) {
+								return FALSE;
+							}
 						}
 					}
-					$lines_coll->update($stamps_query, $update, array('multiple' => 1));
 				}
 				$offset += 10;
 			}
 		}
+		return TRUE;
 	}
 
 }

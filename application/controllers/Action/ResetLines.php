@@ -17,40 +17,28 @@ class ResetLinesAction extends ApiAction {
 
 	public function execute() {
 		Billrun_Factory::log()->log("Execute reset", Zend_Log::INFO);
-
-		$rebalance_queue = Billrun_Factory::db()->rebalance_queueCollection();
-		$limit = Billrun_Config::getInstance()->getConfigValue('resetlines.limit', 10);
-		$offset = Billrun_Config::getInstance()->getConfigValue('resetlines.offset', '1 hour');
-		$query = array(
-			'creation_date' => array(
-				'$lt' => new MongoDate(strtotime($offset . ' ago')),
-			),
-		);
-		$sort = array(
-			'creation_date' => 1,
-		);
-		$results = $rebalance_queue->find($query)->sort($sort)->limit($limit);
-
-		$billruns = array();
-		$all_sids = array();
-		foreach ($results as $result) {
-			$billruns[$result['billrun_key']][] = $result['sid'];
-			$all_sids[] = $result['sid'];
+		$request = $this->getRequest()->getRequest(); // supports GET / POST requests
+		if (empty($request['sid'])) {
+			return $this->setError('Please supply at least one sid', $request);
 		}
 
-		foreach ($billruns as $billrun_key => $sids) {
-			$model = new ResetLinesModel($sids, $billrun_key);
-			try {
-				$model->reset();
-				$rebalance_queue->remove(array('sid' => array('$in' => $sids)));
-			} catch (Exception $exc) {
-				return $this->setError($exc->getTraceAsString(), array('sids' => $sids, 'billrun_key' => $billrun_key));
+		$billrun_key = Billrun_Util::getBillrunKey(time());
+
+		// Warning: will convert half numeric strings / floats to integers
+		$sids = array_unique(array_diff(Billrun_Util::verify_array(explode(',', $request['sid']), 'int'), array(0)));
+
+		if ($sids) {
+			$rebalance_queue = Billrun_Factory::db()->rebalance_queueCollection();
+			foreach ($sids as $sid) {
+				$rebalance_queue->insert(array('sid' => $sid, 'billrun_key' =>	 $billrun_key, 'creation_date' => new MongoDate()));
 			}
+		} else {
+			return $this->setError('Illegal sid', $request);
 		}
 		$this->getController()->setOutput(array(array(
 				'status' => 1,
 				'desc' => 'success',
-				'sids' => $all_sids,
+				'input' => $request,
 		)));
 		return true;
 	}

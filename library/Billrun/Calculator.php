@@ -434,7 +434,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	/**
 	 * Check if a given line  can be handeld by  the calcualtor.
 	 * @param @line the line to check.
-	 * @return ture if the line  can be handled  by the  calculator  false otherwise.
+	 * @return boolean true if the line  can be handled  by the  calculator  false otherwise.
 	 */
 	abstract protected function isLineLegitimate($line);
 
