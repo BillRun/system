@@ -37,7 +37,7 @@ class CreditAction extends ApiAction {
 
 			$entity = new Mongodloid_Entity($parsed_row);
 
-			if ($entity->save($linesCollection) === false) {
+			if ($entity->save($linesCollection, 1) === false) {
 				return $this->setError('failed to store into DB lines', $request);
 			}
 
@@ -84,7 +84,7 @@ class CreditAction extends ApiAction {
 					'urt' => $entity['urt'],
 					'calc_name' => false,
 					'calc_time' => false,
-			));
+			), array('w' => 1));
 		}
 	}
 
