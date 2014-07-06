@@ -35,6 +35,8 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 	 */
 	protected $ftp_path = '/';
 	protected $ftpConfig = false;
+	
+	protected $checkReceivedSize = true;
 
 	public function __construct($options) {
 		parent::__construct($options);
@@ -48,6 +50,9 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 			$this->workspace = $options['workspace'];
 		}
 
+		if (isset($options['recieved']['check_received_size'])) {
+			$this->checkReceivedSize = $options['recieved']['check_received_size'];
+		}
 
 		Zend_Ftp_Factory::registerParserType(Zend_Ftp::UNKNOWN_SYSTEM_TYPE, 'Zend_Ftp_Parser_NsnFtpParser');
 		Zend_Ftp_Factory::registerInteratorType(Zend_Ftp::UNKNOWN_SYSTEM_TYPE, 'Zend_Ftp_Directory_NsnIterator');
@@ -112,18 +117,7 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 				$isFileReceivedMoreFields['extra_data'] = $extraData;
 			}
 
-			if (!$file->isFile()) {
-				Billrun_Factory::log()->log("FTP: " . $file->name . " is not a file", Zend_Log::INFO);
-				continue;
-			}
-
-			if (!$this->isFileValid($file->name, $file->path)) {
-				Billrun_Factory::log()->log("FTP: " . $file->name . " is not a valid file", Zend_Log::INFO);
-				continue;
-			}
-
-			if ($this->isFileReceived($file->name, static::$type, $isFileReceivedMoreFields)) {
-				Billrun_Factory::log()->log("FTP: " . $file->name . " received already", Zend_Log::INFO);
+			if(!$this->shouldFileBeReceived($file, $isFileReceivedMoreFields)) {
 				continue;
 			}
 
@@ -140,7 +134,13 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 				Billrun_Factory::log()->log("FTP: failed to download " . $file->name . " from remote host", Zend_Log::ALERT);
 				continue;
 			}
+
 			$received_path = $targetPath . $file->name;
+
+			if (!$this->isFileReceivedCorrectly($file, $received_path)) {			
+				continue;
+			}
+			
 			if ($this->preserve_timestamps) {
 				$timestamp = $file->getModificationTime();
 				if ($timestamp !== FALSE) {
@@ -164,7 +164,46 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 		}
 		return $ret;
 	}
+	
+	/**
+	 * Check if a remote file shold be received for further processing.
+	 * @param type $file
+	 */
+	protected function shouldFileBeReceived($file, $isFileReceivedMoreFields) {
+		$ret = true;
+		if (!$file->isFile()) {
+			Billrun_Factory::log()->log("FTP: " . $file->name . " is not a file", Zend_Log::INFO);
+			$ret = false;
+		}
 
+		if (!$this->isFileValid($file->name, $file->path)) {
+			Billrun_Factory::log()->log("FTP: " . $file->name . " is not a valid file", Zend_Log::INFO);
+			$ret = false;
+		}
+
+		if ($this->isFileReceived($file->name, static::$type, $isFileReceivedMoreFields)) {
+			Billrun_Factory::log()->log("FTP: " . $file->name . " received already", Zend_Log::INFO);
+			$ret = false;
+		}
+		return $ret;
+	}
+
+	/**
+	 * check if the received file was correctly received
+	 * @param type $param
+	 */
+	protected function isFileReceivedCorrectly($remoteFile,$localFilePath) {
+		if($this->checkReceivedSize) {
+			$local_size = filesize($localFilePath);
+			$remote_size = $remoteFile->size();
+			if ($local_size !== $remote_size) {
+				Billrun_Factory::log()->log("FTP: The remote file size (" . $remote_size . ") is different from local file size (" . $local_size . ")", Zend_Log::ERR);
+				return false;
+			}
+		}
+		return true;
+	}
+	
 	/**
 	 * Sort an array of files returned by the ftp  by the  file date  and  file name
 	 * @param type $files the ftp  directrory iterator
