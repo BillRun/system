@@ -26,7 +26,7 @@ class ResetLinesModel {
 	 * @var string
 	 */
 	protected $billrun_key;
-	
+
 	/**
 	 * Don't get newly stuck lines because they might have not been inserted yet to the queue
 	 * @var string
@@ -131,10 +131,13 @@ class ResetLinesModel {
 				if ($stamps) {
 					$queue_coll->remove($stamps_query);
 					$this->resetBalances($update_sids);
-					foreach ($queue_lines as $qline) {
-						$queue_coll->insert($qline);
+					if (Billrun_Factory::db()->compareServerVersion('2.6', '>=') === true) {
+						$queue_coll->batchInsert($queue_lines);
+					} else {
+						foreach ($queue_lines as $qline) {
+							$queue_coll->insert($qline);
+						}
 					}
-					//$queue_coll->batchInsert($queue_lines); TODO reinstate when on 2.6
 					$lines_coll->update($stamps_query, $update, array('multiple' => 1));
 				}
 				$offset += 10;
