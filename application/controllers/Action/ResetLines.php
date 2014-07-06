@@ -28,9 +28,14 @@ class ResetLinesAction extends ApiAction {
 		$sids = array_unique(array_diff(Billrun_Util::verify_array(explode(',', $request['sid']), 'int'), array(0)));
 
 		if ($sids) {
-			$rebalance_queue = Billrun_Factory::db()->rebalance_queueCollection();
-			foreach ($sids as $sid) {
-				$rebalance_queue->insert(array('sid' => $sid, 'billrun_key' =>	 $billrun_key, 'creation_date' => new MongoDate()));
+			try {
+				$rebalance_queue = Billrun_Factory::db()->rebalance_queueCollection();
+				foreach ($sids as $sid) {
+					$rebalance_queue->insert(array('sid' => $sid, 'billrun_key' => $billrun_key, 'creation_date' => new MongoDate()));
+				}
+			} catch (Exception $exc) {
+				Billrun_Util::logFailedResetLines($sids, $billrun_key);
+				return FALSE;
 			}
 		} else {
 			return $this->setError('Illegal sid', $request);
@@ -40,7 +45,7 @@ class ResetLinesAction extends ApiAction {
 				'desc' => 'success',
 				'input' => $request,
 		)));
-		return true;
+		return TRUE;
 	}
 
 }
