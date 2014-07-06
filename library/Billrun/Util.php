@@ -1,7 +1,7 @@
 <?php
 
 /**
- * @packmge         Billing
+ * @package         Billing
  * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
  * @license         GNU General Public License version 2 or later; see LICENSE.txt
  */
@@ -423,11 +423,11 @@ class Billrun_Util {
 		if (self::isIntlNumber($phoneNumber) || strlen($phoneNumber) > 12) { // len>15 means not msisdn
 			return $phoneNumber;
 		}
-		
+
 		if (is_null($defaultPrefix)) {
 			$defaultPrefix = Billrun_Factory::config()->getConfigValue('billrun.defaultCountryPrefix', 972);
 		}
-		
+
 		return $defaultPrefix . $phoneNumber;
 	}
 	
@@ -624,7 +624,47 @@ class Billrun_Util {
 
 		return $filtered_request;
 	}
-	
+
+	/**
+	 * convert assoc array to MongoDB query
+	 * 
+	 * @param array $array the array to convert
+	 * @return array the MongoDB array conversion
+	 * 
+	 * @todo move to Mongodloid
+	 */
+	public static function arrayToMongoQuery($array) {
+		$query = array();
+		foreach($array as $key => $val) {			
+			if(is_array($val) && strpos($key,'$') !== 0) {
+				foreach (self::arrayToMongoQuery($val) as $subKey => $subValue) {
+					if(strpos($subKey,'$') === 0) {
+						$query[$key][$subKey] = $subValue;
+					} else {
+						$query[$key.".".$subKey] = $subValue;
+					}
+				}
+			} else {
+				$query[$key] = $val;
+			}
+			
+		}
+		return $query;
+	}
+
+	/**
+	 * Returns an array value if it is set
+	 * @param mixed $field the array value
+	 * @param mixed $defVal the default value to return if $field is not set
+	 * @return mixed the array value if it is set, otherwise returns $defVal
+	 */
+	static public function getFieldVal(&$field, $defVal) {
+		if (isset($field)) {
+			return $field;
+		}
+		return $defVal;
+	}
+
 	/**
 	 * method to log failed credit
 	 * 

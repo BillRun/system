@@ -71,7 +71,7 @@ class tap3Plugin extends Billrun_Plugin_BillrunPluginBase implements Billrun_Plu
 		if ($hostname) {
 			$path = $path . DIRECTORY_SEPARATOR . $hostname;
 		}
-		Billrun_Factory::log()->log("Saving files to third party at : $path", Zend_Log::INFO);
+
 		foreach ($filepaths as $filePath) {
 			if (!$receiver->backupToPath($filePath, $path, true , true)) {
 				Billrun_Factory::log()->log("Couldn't save file $filePath to third patry path at : $path", Zend_Log::ERR);

@@ -104,7 +104,7 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 	 * @param Billrun_Processor $processor the proce
 	 * @param string $file_path the path of the current processing file.
 	 */
-	public function afterProcessorBackup($processor, &$file_path) {
+	public function afterProcessorStore($processor, &$file_path) {
 		if ($processor->getType() != $this->getName()) {
 			return;
 		}
