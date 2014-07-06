@@ -38,7 +38,7 @@ class Billrun_Receiver_Files extends Billrun_Receiver {
 	 * @return array list of files received
 	 */
 	public function receive() {
-
+		$ret = array();
 		foreach (Billrun_Factory::config()->getConfigValue('ilds.providers', array()) as $type) {
 			if (!file_exists($this->workspace . DIRECTORY_SEPARATOR . $type)) {
 				Billrun_Factory::log()->log("NOTICE : SKIPPING $type !!! directory " . $this->workspace . DIRECTORY_SEPARATOR . $type . " not found!!", Zend_Log::NOTICE);
@@ -46,7 +46,6 @@ class Billrun_Receiver_Files extends Billrun_Receiver {
 			}
 
 			$files = scandir($this->workspace . DIRECTORY_SEPARATOR . $type);
-			$ret = array();
 			static::$type = $type;
 			foreach ($files as $file) {
 				$path = $this->workspace . DIRECTORY_SEPARATOR . $type . DIRECTORY_SEPARATOR . $file;
