@@ -70,8 +70,15 @@ class BalancesModel extends TableModel {
 		}
 		arsort($billruns);
 
+//		$plansModel = new PlansModel();
+//		$plansCursor = $plansModel->getData();
+//		$plans = array();
+//		foreach ($plansCursor as $p) {
+//			$plans[(string) $p->getId()->getMongoID()] = $p["name"];
+//		}
+		
 		$usage_filter_values = $this->getBalancesFields();
-		unset($usage_filter_values['aid'], $usage_filter_values['sid'], $usage_filter_values['billrun_month']);
+		unset($usage_filter_values['aid'], $usage_filter_values['sid'], $usage_filter_values['billrun_month'], $usage_filter_values['current_plan']);
 //		$usage_filter_values = array_merge($basic_columns, $extra_columns);
 		
 		$operators = array(
@@ -124,6 +131,15 @@ class BalancesModel extends TableModel {
 				'display' => '',
 				'default' => '',
 			),
+//			'plan' => array(
+//				'key' => 'plan',
+//				'db_key' => 'current_plan',
+//				'input_type' => 'multiselect',
+//				'comparison' => '$in',
+//				'display' => 'Plan',
+//				'values' => $plans,
+//				'default' => array(),
+//			),
 			'billrun' => array(
 				'key' => 'billrun',
 				'db_key' => 'billrun_month',
@@ -152,7 +168,12 @@ class BalancesModel extends TableModel {
 					'width' => 2,
 				),
 			),
-			2 => array(
+//			2 => array(
+//				'plan' => array(
+//					'width' => 2,
+//				),
+//			),
+			3 => array(
 				'usage_type' => array(
 					'width' => 2,
 				),
@@ -169,9 +190,17 @@ class BalancesModel extends TableModel {
 	}
 
 	public function getData($filter_query = array()) {
-		$resource = parent::getData($filter_query);
+ 		$resource = parent::getData($filter_query);
+		$ret = array();
+		foreach($resource as $item) {
+ 			if ($current_plan = $this->getDBRefField($item, 'current_plan')) {
+				$item['current_plan'] = $current_plan['name'];
+			}
+			$ret[] = $item;
+		}
+
 		$this->_count = $resource->count(false);
-		return $resource;
+		return $ret;
 	}
 	
 	public function getSortFields() {

@@ -15,7 +15,10 @@
 class Billrun_DBRef {
 
 	protected static $entities;
-	protected static $keys = array('rates' => 'key');
+	protected static $keys = array(
+		'rates' => 'key',
+		'plans' => 'name',
+	);
 
 	protected static function initCollection($collection_name) {
 		if (isset(self::$keys[$collection_name])) {
