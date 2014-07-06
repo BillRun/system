@@ -513,13 +513,13 @@ abstract class Billrun_Processor extends Billrun_Base {
 			$adoptThreshold = time() - 3600;
 		}
 		$query = array(
-			'$or' => array(
-				array('start_process_time' => array('$exists' => false)),
-				array('start_process_time' => array('$lt' => new MongoDate($adoptThreshold))),
-			),
 			'source' => static::$type,
 			'process_time' => array(
 				'$exists' => false,
+			),
+			'$or' => array(
+				array('start_process_time' => array('$exists' => false)),
+				array('start_process_time' => array('$lt' => new MongoDate($adoptThreshold))),
 			),
 		);
 		$update = array(
