@@ -208,7 +208,7 @@ class WholesaleModel {
 							'value' => 'cost',
 							'display' => 'cost',
 							'decimal' => 2,
-							'label' => 'Cost',
+							'label' => 'Charge',
 						),
 					),
 				),
@@ -302,7 +302,7 @@ class WholesaleModel {
 		$query .= ',sum(retail_sim2.simCount) as simCountTotal, sum(retail_sim2.simCost) as simCostTotal, '
 				. 'SUM(retail_sim2.upsCount) as upsCountTotal, SUM(retail_sim2.upsCost) as upsCostTotal, '
 				. 'SUM(retail_sim2.simCount+retail_sim2.upsCount) as totalSimCountTotal, SUM(retail_sim2.simCost+retail_sim2.upsCost) as totalSimCostTotal,'
-				. 'retail_unsubscribe.subsCount as subsLeft';
+				. 'retail_unsubscribe.subsCount as subsLeft, retail_active_agg.totalCost+retail_extra.over_plan+retail_extra.out_plan-retail_promotions_agg.totalCost+SUM(retail_sim2.simCost+retail_sim2.upsCost) as finalTotalAmount';
 		$query.= ' FROM retail_extra LEFT JOIN retail_new ON retail_extra.dayofmonth=retail_new.dayofmonth '
 				. 'LEFT JOIN retail_churn ON retail_extra.dayofmonth = retail_churn.dayofmonth '
 				. 'LEFT JOIN (SELECT dayofmonth';
@@ -314,6 +314,7 @@ class WholesaleModel {
 		$query .= ', sum(totalCost) AS totalCost FROM retail_active GROUP BY dayofmonth) AS retail_active_agg ON retail_extra.dayofmonth=retail_active_agg.dayofmonth '
 				. 'LEFT JOIN retail_sim2 ON retail_extra.dayofmonth=retail_sim2.dayofmonth '
 				. 'LEFT JOIN retail_unsubscribe on retail_extra.dayofmonth=retail_unsubscribe.dayofmonth '
+				. 'LEFT JOIN (SELECT dayofmonth, SUM(totalCost) AS totalCost from retail_promotions GROUP BY dayofmonth) AS retail_promotions_agg on retail_extra.dayofmonth=retail_promotions_agg.dayofmonth '
 				. 'WHERE retail_extra.dayofmonth BETWEEN "' . $from_day . '" AND "' . $to_day . '" '
 				. 'GROUP BY retail_extra.dayofmonth';
 //		print $query;die;
@@ -327,6 +328,9 @@ class WholesaleModel {
 			105 => 'SMALL',
 			106 => 'BIRTHDAY',
 			107 => 'HOLIDAY',
+			108 => 'LARGE_KOSHER',
+			109 => 'LARGE_PREMIUM',
+			110 => 'SUMMER_2014',
 		);
 	}
 
@@ -362,7 +366,7 @@ class WholesaleModel {
 					'value' => 'subsLeft',
 					'display' => 'subsLeft',
 					'decimal' => 0,
-					'label' => 'Closed subscribers',
+					'label' => 'Subscribers waiting for disconnect',
 				),
 				array(
 					'value' => 'flatRateRevenue',
@@ -411,6 +415,13 @@ class WholesaleModel {
 					'display' => 'totalSimCostTotal',
 					'decimal' => 0,
 					'label' => 'Sim revenue',
+				),
+				array(
+					'value' => 'finalTotalAmount',
+					'display' => 'finalTotalAmount',
+					'decimal' => 0,
+					'label' => 'Final total amount',
+					'totals' => false,
 				),
 			)
 		);
@@ -468,7 +479,7 @@ class WholesaleModel {
 				'colspan' => 1 + count($this->getPlans()),
 			),
 			'sim' => array(
-				'label' => 'Sim count',
+				'label' => 'Sim orders count',
 				'colspan' => 1 + count($this->getSendingTypes()),
 			),
 			'extra' => array(
