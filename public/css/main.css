@@ -293,3 +293,6 @@ div.billrun-logo img {
 .wholesale-table thead {
 	background-color: white;
 }
+.num-cell {
+	text-align: right;
+}

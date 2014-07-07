@@ -57,7 +57,7 @@
 					echo '<a onclick="openPopup(this);" href="#w-popup" data-type="update" data-toggle="modal" role="button" data-remote="">' . $group_value . '</a></td>';
 					foreach ($report_params['fields'] as $usage_type => $usage_fields) {
 						foreach ($usage_fields as $field) {
-							echo '<td>';
+							echo '<td class="num-cell">';
 							if (isset($report_data['table_data'][$usage_type][$group_value][$field['display']])) {
 								if ($field['decimal'] === false) {
 									echo $report_data['table_data'][$usage_type][$group_value][$field['display']];
@@ -84,7 +84,7 @@
 								}
 							}
 						}
-						echo '<td>' . number_format($row_cost, 2) . '</td>';
+						echo '<td class="num-cell">' . number_format($row_cost, 2) . '</td>';
 						$total_cost+=$row_cost;
 					}
 					echo '</tr>';
@@ -93,7 +93,7 @@
 				echo '<td>Total</td>';
 				foreach ($report_params['fields'] as $usage_type => $usage_fields) {
 					foreach ($usage_fields as $field) {
-						echo '<td>';
+						echo '<td class="num-cell">';
 						if ($field['decimal'] === false) {
 							echo $table_totals[$usage_type][$field['value']];
 						} else if ($field['decimal'] == 0) {
@@ -142,7 +142,7 @@
 			foreach ($retail_data as $row) {
 				echo '<tr>';
 				foreach ($retail_tbl_params['fields'] as $field) {
-					echo '<td>';
+					echo '<td' . ($field['decimal'] === false ? '': ' class="num-cell"') . '>';
 					if (is_object($field['display'])) {
 						echo $field['display']($row[$field['value']]);
 					} else if (isset($row[$field['display']])) {
@@ -163,7 +163,7 @@
 			}
 			echo '<tr class="totals">';
 			foreach ($retail_tbl_params['fields'] as $field) {
-				echo '<td>';
+				echo '<td' . ($field['decimal'] === false ? '': ' class="num-cell"') . '>';
 				if (isset($field['totals']) && !$field['totals']) {
 					echo '&nbsp;';
 				} else if ($field['decimal'] === false) {
