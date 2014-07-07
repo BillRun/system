@@ -35,7 +35,7 @@ foreach (array_keys($tbl_params) as $index => $report_type) {
 		echo '<tr><td>' . $group_value . '</td>';
 		foreach ($report_params['fields'] as $usage_type => $usage_fields) {
 			foreach ($usage_fields as $field) {
-				echo '<td>';
+				echo '<td' . ($field['decimal'] === false ? '': ' class="num-cell"') . '>';
 				if (isset($this->data['table_data'][$usage_type][$group_value][$field['display']])) {
 					if ($field['decimal'] === false) {
 						echo $this->data['table_data'][$usage_type][$group_value][$field['display']];
@@ -57,7 +57,7 @@ foreach (array_keys($tbl_params) as $index => $report_type) {
 	echo '<td>Total</td>';
 	foreach ($report_params['fields'] as $usage_type => $usage_fields) {
 		foreach ($usage_fields as $field) {
-			echo '<td>';
+			echo '<td' . ($field['decimal'] === false ? '': ' class="num-cell"') . '>';
 			if ($field['decimal'] === false) {
 				echo $table_totals[$usage_type][$field['value']];
 			} else if ($field['decimal'] == 0) {
