@@ -130,8 +130,8 @@ trait Billrun_Traits_FileActions {
 			'file_name' => $filename,
 		);
 
-		if (!is_null($more_fields)) {
-			array_merge($log_data, $more_fields);
+		if (!empty($more_fields)) {
+			$log_data =	array_merge($log_data, $more_fields);
 		}
 	
 		$log_data['stamp'] = md5(serialize($log_data));

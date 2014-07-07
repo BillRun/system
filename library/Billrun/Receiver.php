@@ -81,7 +81,7 @@ abstract class Billrun_Receiver extends Billrun_Base {
 		Billrun_Factory::dispatcher()->trigger('beforeLogReceiveFile', array(&$fileData, $this));
 		
 		$query = array(
-			'stamp' => $this->getFileLogData($fileData['file_name'], $this->getType(), Billrun_Util::getFieldVal($fileData['extra_data'],array()) )['stamp'],
+			'stamp' =>  $fileData['stamp'],
 			'received_time' => array('$exists' => false)
 		);
 	
