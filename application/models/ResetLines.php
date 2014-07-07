@@ -38,7 +38,7 @@ class ResetLinesModel {
 		$configModel = new ConfigModel();
 		$oldConfigValue=  $configModel->getConfig()['calculate']; 
 		$configModel->save(array('calculate'=> 0));
-		$this->resetBalances();
+//		$this->resetBalances();
 		$this->resetLines();			
 
 		$configModel->save(array('calculate'=> $oldConfigValue));
@@ -49,13 +49,13 @@ class ResetLinesModel {
 	/**
 	 * Removes the balance doc for each of the subscribers
 	 */
-	public function resetBalances() {
+	public function resetBalances($sids) {
 		$balances_coll = Billrun_Factory::db(array('name' => 'balances'))->balancesCollection()->setReadPreference('RP_PRIMARY');
 		if (!empty($this->sids) && !empty($this->billrun_key)) {
 			$query = array(
 				'billrun_month' => $this->billrun_key,
 				'sid' => array(
-					'$in' => $this->sids,
+					'$in' => $sids,
 				),
 			);
 			$balances_coll->remove($query);
@@ -66,7 +66,7 @@ class ResetLinesModel {
 	 * Removes lines from queue, reset added fields off lines and re-insert to queue first stage
 	 * @todo support update/removal of credit lines
 	 */
-	public function resetLines() {
+	protected function resetLines() {
 
 		$lines_coll = Billrun_Factory::db()->linesCollection();
 		$queue_coll = Billrun_Factory::db()->queueCollection();
@@ -104,21 +104,32 @@ class ResetLinesModel {
 				);
 				$update = array(
 					'$unset' => array(
-						'aid' => 1,
+//						'aid' => 1,
+//						'sid' => 1,
+						'apr' => 1,
 						'aprice' => 1,
 						'arate' => 1,
+						'arategroup' => 1,
 						'billrun' => 1,
+						'in_arate' => 1,
+						'in_group' => 1,
+						'in_plan' => 1,
 						'out_plan' => 1,
+						'over_arate' => 1,
+						'over_group' => 1,
 						'over_plan' => 1,
 						'plan' => 1,
-						'sid' => 1,
 						'usagesb' => 1,
 						'usagev' => 1,
 					),
+					'$set' => array(
+						'rebalance' => MongoDate()
+					)
 				);
 
 				if ($stamps) {
 					$queue_coll->remove($remove);
+					$this->resetBalances($update_sids);
 					foreach ($queue_lines as $qline) {
 						$queue_coll->insert($qline);
 					}

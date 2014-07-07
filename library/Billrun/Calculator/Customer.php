@@ -219,11 +219,11 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		$calculator_tag = $this->getCalculatorQueueType();
 		$advance_stamps = array();
 		foreach ($this->lines as $stamp => $item) {
-			if (!isset($item['aid'])) {
+			if (!isset($this->data[$stamp]['aid'])) {
 				$advance_stamps[] = $stamp;
 			} else {
 				$query = array('stamp' => $stamp);
-				$update = array('$set' => array('calc_name' => $calculator_tag, 'calc_time' => false, 'aid' => $item['aid']));
+				$update = array('$set' => array('calc_name' => $calculator_tag, 'calc_time' => false, 'aid' => $this->data[$stamp]['aid'], 'sid' => $this->data[$stamp]['sid']));
 				$queue->update($query, $update);
 			}
 		}
