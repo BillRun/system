@@ -141,7 +141,7 @@ class Admin_Graphs {
 		return $output;
 	}
 
-	public static function printGraph($graph_metadata, $echo_output = true, $data_type = 1, $tabId = null) {
+	public static function printGraph($graph_metadata, $echo_output = true, $data_type = 1, $tabId = null, $popupId = null) {
 		$output = '';
 		if (isset($graph_metadata->dashboard_div)) {
 			$output.='<div id="' . $graph_metadata->dashboard_div['id'] . '">';
@@ -157,6 +157,9 @@ class Admin_Graphs {
 		if (!is_null($tabId)) {
 			$output.='$(\'#' . $tabId . '\').on("shown.bs.tab", function(e) {if ($(".graph.loading",$($(e.delegateTarget).attr("href"))).length)';
 		}
+		else if (!is_null($popupId)) {
+			$output .= '$("#' . $popupId . '").on("shown.bs.modal", function(e) {$("#' . $popupId . '").off("shown.bs.modal");';
+		}
 		$output.='drawChart(' . (isset($graph_metadata->ajax_url) ? "data" : self::outputGoogleData($graph_metadata->data)) . ', '
 				. json_encode($graph_metadata->options) . ', \'' . $graph_metadata->target_div['id']
 				. '\', \'' . $graph_metadata->chart_type . '\', ' . ($data_type ? 1 : 0) . ', ' . (isset($graph_metadata->ajax_url) ? 'true' : 'false');
@@ -169,7 +172,7 @@ class Admin_Graphs {
 			$output.=', ' . json_encode($graph_metadata->format_options);
 		}
 		$output.=');';
-		if (!is_null($tabId)) {
+		if (!is_null($tabId) || !is_null($popupId)) {
 			$output.='});';
 		}
 		$output.='})';

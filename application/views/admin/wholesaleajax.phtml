@@ -5,7 +5,7 @@ echo '<div class="wholesale-popup">
 <h2>' . $report_params['title'] . ' (' . ($this->carrier ? $this->carrier : $this->from_day) . ')' . '</h2>';
 
 $graph = Admin_Graphs::prepareGraph($this->data['table_data'], $this->group_by_display, $this->group_by, $report_params['fields'], array('graph_id' => (strtolower($report_params['direction']) . '_graph'), 'graph_class' => 'wholesale-graph'));
-echo Admin_Graphs::printGraph($graph, false, 1);
+echo Admin_Graphs::printGraph($graph, false, 1, null, 'w-popup');
 
 foreach (array_keys($tbl_params) as $index => $report_type) {
 	$report_params = $tbl_params[$report_type];
