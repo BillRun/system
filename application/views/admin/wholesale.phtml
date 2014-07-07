@@ -11,7 +11,8 @@
 		<ul class="nav nav-tabs">
 			<?php
 			foreach (array_keys($this->tbl_params) as $index => $v) :
-				echo '<li' . ($index == 0 ? ' class="active"' : '') . '><a id="menutab' . ($index + 1) . '" href="#tabs-' . ($index + 1) . '" data-toggle="tab">' . $this->tbl_params[$v]['title'] . '</a></li>';
+//				echo '<li' . ($index == 0 ? ' class="active"' : '') . '><a id="menutab' . ($index + 1) . '" href="#tabs-' . ($index + 1) . '" data-toggle="tab">' . $this->tbl_params[$v]['title'] . '</a></li>';
+				echo '<li><a id="menutab' . ($index + 1) . '" href="#tabs-' . ($index + 1) . '" data-toggle="tab">' . $this->tbl_params[$v]['title'] . '</a></li>';
 			endforeach;
 			echo '<li><a id="menutab' . ($index + 2) . '" href="#tabs-' . ($index + 2) . '" data-toggle="tab">Retail from wholesale</a></li>';
 			?>
@@ -27,7 +28,8 @@
 					}
 				}
 
-				echo '<div class="tab-pane' . (isset($report_params['default']) && $report_params['default'] ? ' active' : '') . '" id="tabs-' . ($index + 1) . '">
+//				echo '<div class="tab-pane' . (isset($report_params['default']) && $report_params['default'] ? ' active' : '') . '" id="tabs-' . ($index + 1) . '">
+				echo '<div class="tab-pane" id="tabs-' . ($index + 1) . '">
 					<h3>' . $report_params['title'] . '</h3>
 					<table data-type="' . $report_params['direction'] . '" class="wholesale-table">';
 
@@ -110,7 +112,7 @@
 				echo '</tr></tbody>';
 				echo '</table>';
 				$graph = Admin_Graphs::prepareGraph($this->data[$report_type]['table_data'], $this->group_field_display, $this->group_by, $report_params['fields'], array('graph_id' => ($report_type . '_call_graph'), 'graph_class' => 'wholesale-graph'));
-				echo Admin_Graphs::printGraph($graph, false, 1);
+				echo Admin_Graphs::printGraph($graph, false, 1, 'menutab' . ($index + 1));
 				echo '</div>';
 			}
 
