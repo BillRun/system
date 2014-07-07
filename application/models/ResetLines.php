@@ -123,7 +123,7 @@ class ResetLinesModel {
 						'usagev' => 1,
 					),
 					'$set' => array(
-						'rebalance' => MongoDate()
+						'rebalance' => new MongoDate()
 					)
 				);
 
