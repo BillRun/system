@@ -49,13 +49,36 @@ class RatesAction extends ApiAction {
 			
 			if(!isset($retQuery['from'])) {
 				$retQuery['from']['$lte'] = new MongoDate();
+			} else {
+				$retQuery['from'] = $this->intToMongoDate($retQuery['from']);
 			}
 			if(!isset($retQuery['to'])) {
 				$retQuery['to']['$gte'] = new MongoDate();
+			} else {
+				$retQuery['to'] = $this->intToMongoDate($retQuery['to']);
 			}
 		}
-		
+		Billrun_Factory::log(print_r($retQuery,1),Zend_Log::NOTICE);
 		return $retQuery;
+	}
+	
+	/**
+	 * Change numeric references to MongoDate object in a given filed in an array.
+	 * @param MongoDate $arr 
+	 * @param type $fieldName the filed in the array to alter
+	 * @return the translated array
+	 */
+	protected function intToMongoDate($arr) {
+		if(is_array($arr)) {
+			foreach($arr as $key => $value) {
+				if(is_numeric($value)) {
+					$arr[$key] = new MongoDate((int) $value);
+				}
+			}
+		} else if(is_numeric($arr)) {
+			$arr = new MongoDate((int) $arr);
+		}
+		return $arr;
 	}
 
 }
