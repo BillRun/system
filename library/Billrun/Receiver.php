@@ -15,7 +15,7 @@
 abstract class Billrun_Receiver extends Billrun_Base {
 
 	use Billrun_Traits_FileActions;
-	
+
 	/**
 	 * Type of object
 	 *
@@ -30,12 +30,6 @@ abstract class Billrun_Receiver extends Billrun_Base {
 	 * @var string
 	 */
 	protected $workspace;
-
-	/**
-	 *
-	 * @var boolean whether to preserve the modification timestamps of the received files
-	 */
-	protected $preserve_timestamps = true;
 
 	/**
 	 * A regular expression to identify the files that should be downloaded
@@ -56,6 +50,18 @@ abstract class Billrun_Receiver extends Billrun_Base {
 		if (isset($options['receiver']['preserve_timestamps'])) {
 			$this->preserve_timestamps = $options['receiver']['preserve_timestamps'];
 		}
+		if (isset($options['backup_path'])) {
+			$this->backupPaths = $options['backup_path'];
+		} else {
+			$this->backupPaths = Billrun_Factory::config()->getConfigValue($this->getType() . '.backup_path', array('./backups/' . $this->getType()));
+		}
+		if (isset($options['receiver']['backup_granularity']) && $options['receiver']['backup_granularity']) {
+			$this->setGranularity((int) $options['receiver']['backup_granularity']);
+		}
+		
+		if (isset($options['receiver']['orphan_time']) && ((int) $options['receiver']['orphan_time']) > 900 ) {
+			$this->file_fetch_orphan_time =  $options['receiver']['orphan_time'];
+		}
 	}
 
 	/**
@@ -63,41 +69,38 @@ abstract class Billrun_Receiver extends Billrun_Base {
 	 *
 	 * @return array list of files received
 	 */
-	abstract public function receive();
+	abstract protected function receive();
 
 	/**
 	 * method to log the processing
 	 * 
 	 * @todo refactoring this method
 	 */
-	protected function logDB($path, $remoteHost = null, $extraData = false) {
+	protected function logDB($fileData) {
 		$log = Billrun_Factory::db()->logCollection();
-
-		$log_data = array(
-			'source' => static::$type,
-			'path' => $path,
-			'file_name' => basename($path),
+		Billrun_Factory::dispatcher()->trigger('beforeLogReceiveFile', array(&$fileData, $this));
+		
+		$query = array(
+			'stamp' =>  $fileData['stamp'],
+			'received_time' => array('$exists' => false)
+		);
+	
+		$update = array(
+			'$set' => array_merge($fileData, array('received_time' => date(self::base_dateformat)))
 		);
 
-		if (!is_null($remoteHost)) {
-			$log_data['retrieved_from'] = $remoteHost;
-		}
-
-		if ($extraData) {
-			$log_data['extra_data'] = $extraData;
-		}
-
-		$log_data['stamp'] = md5(serialize($log_data));
-		$log_data['received_time'] = date(self::base_dateformat);
-
-		Billrun_Factory::dispatcher()->trigger('beforeLogReceiveFile', array(&$log_data, $this));
-		$entity = new Mongodloid_Entity($log_data);
-		if ($log->query('stamp', $entity->get('stamp'))->count() > 0) {
-			Billrun_Factory::log()->log("Billrun_Receiver::logDB - DUPLICATE! trying to insert duplicate log file " . $log_data['file_name'] . " with stamp of : {$entity->get('stamp')}", Zend_Log::NOTICE);
+		if (empty($query['stamp'])) {
+			Billrun_Factory::log()->log("Billrun_Receiver::logDB - got file with empty stamp :  {$fileData['stamp']}", Zend_Log::NOTICE);
 			return FALSE;
 		}
 
-		return $entity->save($log);
+		$result = $log->update($query, $update, array('w' => 1));
+
+		if ($result['ok'] != 1 || $result['n'] != 1) {
+			Billrun_Factory::log()->log("Billrun_Receiver::logDB - Failed when trying to update a file log record " . $fileData['file_name'] . " with stamp of : {$fileData['stamp']}", Zend_Log::NOTICE);
+		}
+		
+		return $result['n'] == 1 && $result['ok'] == 1;
 	}
 
 }
