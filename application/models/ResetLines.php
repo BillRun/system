@@ -27,29 +27,29 @@ class ResetLinesModel {
 	 */
 	protected $billrun_key;
 
+	/**
+	 * Don't get newly stuck lines because they might have not been inserted yet to the queue
+	 * @var string
+	 */
+	protected $process_time_offset;
+
 	public function __construct($sids, $billrun_key) {
 		$this->sids = $sids;
-		$this->billrun_key = $billrun_key;
+		$this->billrun_key = strval($billrun_key);
+		$this->process_time_offset = Billrun_Config::getInstance()->getConfigValue('resetlines.process_time_offset', '15 minutes');
 	}
 
 	public function reset() {
 		Billrun_Factory::log()->log('Reset subscriber activated', Zend_Log::INFO);
-
-		$configModel = new ConfigModel();
-		$oldConfigValue=  $configModel->getConfig()['calculate']; 
-		$configModel->save(array('calculate'=> 0));
-//		$this->resetBalances();
-		$this->resetLines();			
-
-		$configModel->save(array('calculate'=> $oldConfigValue));
-		
-		return true;
+		$ret = $this->resetLines();
+		return $ret;
 	}
 
 	/**
 	 * Removes the balance doc for each of the subscribers
 	 */
 	public function resetBalances($sids) {
+		$ret = true;
 		$balances_coll = Billrun_Factory::db(array('name' => 'balances'))->balancesCollection()->setReadPreference('RP_PRIMARY');
 		if (!empty($this->sids) && !empty($this->billrun_key)) {
 			$query = array(
@@ -58,8 +58,9 @@ class ResetLinesModel {
 					'$in' => $sids,
 				),
 			);
-			$balances_coll->remove($query);
+			$ret = $balances_coll->remove($query, array('w' => 1)); // ok ==1 && n>0
 		}
+		return $ret;
 	}
 
 	/**
@@ -67,7 +68,6 @@ class ResetLinesModel {
 	 * @todo support update/removal of credit lines
 	 */
 	protected function resetLines() {
-
 		$lines_coll = Billrun_Factory::db()->linesCollection();
 		$queue_coll = Billrun_Factory::db()->queueCollection();
 		if (!empty($this->sids) && !empty($this->billrun_key)) {
@@ -81,6 +81,9 @@ class ResetLinesModel {
 					),
 					'type' => array(
 						'$ne' => 'credit',
+					),
+					'process_time' => array(
+						'$lt' => date(Billrun_Base::base_dateformat, strtotime($this->process_time_offset . ' ago')),
 					),
 				);
 				$lines = $lines_coll->query($query);
@@ -97,7 +100,7 @@ class ResetLinesModel {
 						'skip_fraud' => true,
 					);
 				}
-				$remove = array(
+				$stamps_query = array(
 					'stamp' => array(
 						'$in' => $stamps,
 					),
@@ -123,22 +126,43 @@ class ResetLinesModel {
 						'usagev' => 1,
 					),
 					'$set' => array(
-						'rebalance' => new MongoDate()
-					)
+						'rebalance' => new MongoDate(),
+					),
 				);
 
 				if ($stamps) {
-					$queue_coll->remove($remove);
-					$this->resetBalances($update_sids);
-					foreach ($queue_lines as $qline) {
-						$queue_coll->insert($qline);
+					$ret = $queue_coll->remove($stamps_query, array('w' => 1)); // ok == 1, err null
+					if (isset($ret['err']) && !is_null($ret['err'])) {
+						return FALSE;
+					} else {
+						$ret = $this->resetBalances($update_sids); // err null
+						if (isset($ret['err']) && !is_null($ret['err'])) {
+							return FALSE;
+						} else {
+							if (Billrun_Factory::db()->compareServerVersion('2.6', '>=') === true) {
+								$ret = $queue_coll->batchInsert($queue_lines, array('w' => 1)); // ok==true, nInserted==0 if w was 0
+								if (isset($ret['err']) && !is_null($ret['err'])) {
+									return FALSE;
+								}
+							} else {
+								foreach ($queue_lines as $qline) {
+									$ret = $queue_coll->insert($qline, array('w' => 1)); // ok==1, err null
+									if (isset($ret['err']) && !is_null($ret['err'])) {
+										return FALSE;
+									}
+								}
+							}
+							$ret = $lines_coll->update($stamps_query, $update, array('multiple' => 1, 'w' => 1)); // err null
+							if (isset($ret['err']) && !is_null($ret['err'])) {
+								return FALSE;
+							}
+						}
 					}
-					//$queue_coll->batchInsert($queue_lines); TODO reinstate when on 2.6
-					$lines_coll->update($query, $update, array('multiple' => 1));
 				}
 				$offset += 10;
 			}
 		}
+		return TRUE;
 	}
 
 }
