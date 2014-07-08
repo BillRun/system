@@ -5,7 +5,7 @@ echo '<div class="wholesale-popup">
 <h2>' . $report_params['title'] . ' (' . ($this->carrier ? $this->carrier : $this->from_day) . ')' . '</h2>';
 
 $graph = Admin_Graphs::prepareGraph($this->data['table_data'], $this->group_by_display, $this->group_by, $report_params['fields'], array('graph_id' => (strtolower($report_params['direction']) . '_graph'), 'graph_class' => 'wholesale-graph'));
-echo Admin_Graphs::printGraph($graph, false, 1);
+echo Admin_Graphs::printGraph($graph, false, 1, null, 'w-popup');
 
 foreach (array_keys($tbl_params) as $index => $report_type) {
 	$report_params = $tbl_params[$report_type];
@@ -35,7 +35,7 @@ foreach (array_keys($tbl_params) as $index => $report_type) {
 		echo '<tr><td>' . $group_value . '</td>';
 		foreach ($report_params['fields'] as $usage_type => $usage_fields) {
 			foreach ($usage_fields as $field) {
-				echo '<td>';
+				echo '<td' . ($field['decimal'] === false ? '': ' class="num-cell"') . '>';
 				if (isset($this->data['table_data'][$usage_type][$group_value][$field['display']])) {
 					if ($field['decimal'] === false) {
 						echo $this->data['table_data'][$usage_type][$group_value][$field['display']];
@@ -57,7 +57,7 @@ foreach (array_keys($tbl_params) as $index => $report_type) {
 	echo '<td>Total</td>';
 	foreach ($report_params['fields'] as $usage_type => $usage_fields) {
 		foreach ($usage_fields as $field) {
-			echo '<td>';
+			echo '<td' . ($field['decimal'] === false ? '': ' class="num-cell"') . '>';
 			if ($field['decimal'] === false) {
 				echo $table_totals[$usage_type][$field['value']];
 			} else if ($field['decimal'] == 0) {

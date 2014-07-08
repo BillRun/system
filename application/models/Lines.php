@@ -375,5 +375,10 @@ class LinesModel extends TableModel {
 
 	}
 	
-	
+	public function remove($params) {
+		// first remove line from queue (collection) than from lines collection (parent)
+		Billrun_Factory::db()->queueCollection()->remove($params);
+		return parent::remove($params);
+	}
+
 }

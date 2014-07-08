@@ -11,9 +11,10 @@
 		<ul class="nav nav-tabs">
 			<?php
 			foreach (array_keys($this->tbl_params) as $index => $v) :
-				echo '<li' . ($index == 0 ? ' class="active"' : '') . '><a href="#tabs-' . ($index + 1) . '" data-toggle="tab">' . $this->tbl_params[$v]['title'] . '</a></li>';
+//				echo '<li' . ($index == 0 ? ' class="active"' : '') . '><a id="menutab' . ($index + 1) . '" href="#tabs-' . ($index + 1) . '" data-toggle="tab">' . $this->tbl_params[$v]['title'] . '</a></li>';
+				echo '<li><a id="menutab' . ($index + 1) . '" href="#tabs-' . ($index + 1) . '" data-toggle="tab">' . $this->tbl_params[$v]['title'] . '</a></li>';
 			endforeach;
-			echo '<li><a href="#tabs-' . ($index + 2) . '" data-toggle="tab">Retail</a></li>';
+			echo '<li><a id="menutab' . ($index + 2) . '" href="#tabs-' . ($index + 2) . '" data-toggle="tab">Retail from wholesale</a></li>';
 			?>
 		</ul>
 		<div class="tab-content">
@@ -27,7 +28,8 @@
 					}
 				}
 
-				echo '<div class="tab-pane' . (isset($report_params['default']) && $report_params['default'] ? ' active' : '') . '" id="tabs-' . ($index + 1) . '">
+//				echo '<div class="tab-pane' . (isset($report_params['default']) && $report_params['default'] ? ' active' : '') . '" id="tabs-' . ($index + 1) . '">
+				echo '<div class="tab-pane" id="tabs-' . ($index + 1) . '">
 					<h3>' . $report_params['title'] . '</h3>
 					<table data-type="' . $report_params['direction'] . '" class="wholesale-table">';
 
@@ -57,7 +59,7 @@
 					echo '<a onclick="openPopup(this);" href="#w-popup" data-type="update" data-toggle="modal" role="button" data-remote="">' . $group_value . '</a></td>';
 					foreach ($report_params['fields'] as $usage_type => $usage_fields) {
 						foreach ($usage_fields as $field) {
-							echo '<td>';
+							echo '<td class="num-cell">';
 							if (isset($report_data['table_data'][$usage_type][$group_value][$field['display']])) {
 								if ($field['decimal'] === false) {
 									echo $report_data['table_data'][$usage_type][$group_value][$field['display']];
@@ -84,7 +86,7 @@
 								}
 							}
 						}
-						echo '<td>' . number_format($row_cost, 2) . '</td>';
+						echo '<td class="num-cell">' . number_format($row_cost, 2) . '</td>';
 						$total_cost+=$row_cost;
 					}
 					echo '</tr>';
@@ -93,7 +95,7 @@
 				echo '<td>Total</td>';
 				foreach ($report_params['fields'] as $usage_type => $usage_fields) {
 					foreach ($usage_fields as $field) {
-						echo '<td>';
+						echo '<td class="num-cell">';
 						if ($field['decimal'] === false) {
 							echo $table_totals[$usage_type][$field['value']];
 						} else if ($field['decimal'] == 0) {
@@ -110,7 +112,7 @@
 				echo '</tr></tbody>';
 				echo '</table>';
 				$graph = Admin_Graphs::prepareGraph($this->data[$report_type]['table_data'], $this->group_field_display, $this->group_by, $report_params['fields'], array('graph_id' => ($report_type . '_call_graph'), 'graph_class' => 'wholesale-graph'));
-				echo Admin_Graphs::printGraph($graph, false, 1);
+				echo Admin_Graphs::printGraph($graph, false, 1, 'menutab' . ($index + 1));
 				echo '</div>';
 			}
 
@@ -142,7 +144,7 @@
 			foreach ($retail_data as $row) {
 				echo '<tr>';
 				foreach ($retail_tbl_params['fields'] as $field) {
-					echo '<td>';
+					echo '<td' . ($field['decimal'] === false ? '': ' class="num-cell"') . '>';
 					if (is_object($field['display'])) {
 						echo $field['display']($row[$field['value']]);
 					} else if (isset($row[$field['display']])) {
@@ -163,7 +165,7 @@
 			}
 			echo '<tr class="totals">';
 			foreach ($retail_tbl_params['fields'] as $field) {
-				echo '<td>';
+				echo '<td' . ($field['decimal'] === false ? '': ' class="num-cell"') . '>';
 				if (isset($field['totals']) && !$field['totals']) {
 					echo '&nbsp;';
 				} else if ($field['decimal'] === false) {

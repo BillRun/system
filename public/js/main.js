@@ -250,6 +250,16 @@ $(function() {
 	if ($.fn.stickyTableHeaders) {
 		$('.wholesale-table').stickyTableHeaders({fixedOffset: $('.navbar-fixed-top')});
 	}
+
+	$('a[data-toggle="tab"]').on('shown.bs.tab', function(e) {
+		localStorage.setItem('lastTab', $(e.target).attr('id'));
+	});
+
+	var lastTab = localStorage.getItem('lastTab');
+	if (lastTab) {
+		$('#' + lastTab).tab('show');
+	}
+
 }
 );
 function removeFilter(button) {
