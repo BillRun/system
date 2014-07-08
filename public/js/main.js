@@ -259,6 +259,9 @@ $(function() {
 	if (lastTab) {
 		$('#' + lastTab).tab('show');
 	}
+	else {
+		$('#menutab1').tab('show');
+	}
 
 }
 );
@@ -358,7 +361,7 @@ function openPopup(obj, direction) {
 	var direction = obj.closest('table').data('type');
 	if (popup_group_field == 'carrier') {
 		var from_day, to_day;
-		from_day = to_day = obj.text();
+		from_day = to_day = obj.data('value');
 	}
 	else {
 		var from_day = $('input[name="init_from_day"]').val();

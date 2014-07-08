@@ -73,7 +73,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	protected function fetchJsFiles() {
 		$ret = '';
 		foreach ($this->jsPaths as $jsPath) {
-			$ret.='<script src="' . $jsPath . (Billrun_Factory::config()->isProd() ?  '?v=' . $this->commit : '') . '"></script>' . PHP_EOL;
+			$ret.='<script src="' . $jsPath . (Billrun_Factory::config()->isProd() ?  '?' . $this->commit : '') . '"></script>' . PHP_EOL;
 		}
 		return $ret;
 	}
@@ -81,7 +81,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	protected function fetchCssFiles() {
 		$ret = '';
 		foreach ($this->cssPaths as $cssPath) {
-			$ret.='<link rel="stylesheet" href="' . $cssPath . '?v=' . $this->commit . '">' . PHP_EOL;
+			$ret.='<link rel="stylesheet" href="' . $cssPath . '?' . $this->commit . '">' . PHP_EOL;
 		}
 		return $ret;
 	}
