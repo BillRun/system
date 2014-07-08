@@ -19,6 +19,8 @@ class WholesaleModel {
 	 * @var type 
 	 */
 	protected $db;
+	
+	protected $plans = array();
 
 	public function __construct() {
 		$db = Billrun_Factory::config()->getConfigValue('wholesale.db');
@@ -323,15 +325,11 @@ class WholesaleModel {
 	}
 
 	protected function getPlans() {
-		return array(
-			102 => 'LARGE',
-			105 => 'SMALL',
-			106 => 'BIRTHDAY',
-			107 => 'HOLIDAY',
-			108 => 'LARGE_KOSHER',
-			109 => 'LARGE_PREMIUM',
-			110 => 'SUMMER_2014',
-		);
+		if (empty($this->plans)) {
+			$query = 'SELECT plan,planName FROM retail_active WHERE planName IS NOT NULL GROUP BY planName ORDER by plan;';
+			$this->plans = $this->db->fetchPairs($query);
+		}
+		return $this->plans;
 	}
 
 	protected function getSendingTypes() {
