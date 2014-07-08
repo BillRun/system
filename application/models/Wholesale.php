@@ -19,6 +19,8 @@ class WholesaleModel {
 	 * @var type 
 	 */
 	protected $db;
+	
+	protected $plans = array();
 
 	public function __construct() {
 		$db = Billrun_Factory::config()->getConfigValue('wholesale.db');
@@ -292,8 +294,8 @@ class WholesaleModel {
 	}
 
 	public function getRetailData($from_day, $to_day) {
-		$query = 'SELECT retail_extra.dayofmonth,retail_extra.over_plan,retail_extra.out_plan,retail_new.subsCount AS newSubs,'
-				. 'retail_churn.subsCount AS churnSubs,retail_active_agg.totalCost AS flatRateRevenue,';
+		$query = 'SELECT retail_extra.dayofmonth,SUM(retail_extra.over_plan) as over_plan,SUM(retail_extra.out_plan) AS out_plan,SUM(retail_new.subsCount) AS newSubs,'
+				. 'SUM(retail_churn.subsCount) AS churnSubs,SUM(retail_active_agg.totalCost) AS flatRateRevenue,';
 		$query .=  'sum(retail_active_agg.' . implode('+retail_active_agg.', $this->getPlans()) . ') AS totalCustomer';
 		foreach ($this->getPlans() as $planName) {
 			$query.= ', retail_active_agg.' . $planName . ' as ' . $planName;
@@ -302,7 +304,7 @@ class WholesaleModel {
 		$query .= ',sum(retail_sim2.simCount) as simCountTotal, sum(retail_sim2.simCost) as simCostTotal, '
 				. 'SUM(retail_sim2.upsCount) as upsCountTotal, SUM(retail_sim2.upsCost) as upsCostTotal, '
 				. 'SUM(retail_sim2.simCount+retail_sim2.upsCount) as totalSimCountTotal, SUM(retail_sim2.simCost+retail_sim2.upsCost) as totalSimCostTotal,'
-				. 'retail_unsubscribe.subsCount as subsLeft, retail_active_agg.totalCost+retail_extra.over_plan+retail_extra.out_plan-retail_promotions_agg.totalCost+SUM(retail_sim2.simCost+retail_sim2.upsCost) as finalTotalAmount';
+				. 'SUM(retail_unsubscribe.subsCount) as subsLeft, retail_active_agg.totalCost+retail_extra.over_plan+retail_extra.out_plan-retail_promotions_agg.totalCost+SUM(retail_sim2.simCost+retail_sim2.upsCost) as finalTotalAmount';
 		$query.= ' FROM retail_extra LEFT JOIN retail_new ON retail_extra.dayofmonth=retail_new.dayofmonth '
 				. 'LEFT JOIN retail_churn ON retail_extra.dayofmonth = retail_churn.dayofmonth '
 				. 'LEFT JOIN (SELECT dayofmonth';
@@ -323,15 +325,11 @@ class WholesaleModel {
 	}
 
 	protected function getPlans() {
-		return array(
-			102 => 'LARGE',
-			105 => 'SMALL',
-			106 => 'BIRTHDAY',
-			107 => 'HOLIDAY',
-			108 => 'LARGE_KOSHER',
-			109 => 'LARGE_PREMIUM',
-			110 => 'SUMMER_2014',
-		);
+		if (empty($this->plans)) {
+			$query = 'SELECT plan,planName FROM retail_active WHERE planName IS NOT NULL GROUP BY planName ORDER by plan;';
+			$this->plans = $this->db->fetchPairs($query);
+		}
+		return $this->plans;
 	}
 
 	protected function getSendingTypes() {
