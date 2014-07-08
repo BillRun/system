@@ -419,6 +419,10 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 					} else {
 						$pricingData['usagesb'] = 0;
 					}
+					// this for dispatcher the plugin with the new data
+                    if (isset($pricingData['arategroup'])) {
+                        $row['arategroup'] = $pricingData['arategroup'];
+                    }
 				} else {
 					$pricingData['usagesb'] = floatval($old_usage);
 				}
