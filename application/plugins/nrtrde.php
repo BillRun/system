@@ -12,9 +12,16 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 
 	const time_format = 'YmdHis';
 	
+	/**
+	 * PLMNs to exclude from events
+	 * @param type $options
+	 */
+	protected $excludedPLMNs = array("GRCPF","ESPAT","ESPVV","TURTS");
+		
 	public function __construct($options = array()) {
 		parent::__construct($options);
 		$this->outOfSequenceAlertLevel =  Billrun_Factory::config()->getConfigValue('nrtrde.receiver.out_of_seq_log_level',$this->outOfSequenceAlertLevel);
+		$this->excludedPLMNs =  Billrun_Factory::config()->getConfigValue('nrtrde.fraud.exclude_plmns',$this->excludedPLMNs);
 	}
 
 	public function beforeFTPReceive($receiver, $hostname) {
@@ -179,6 +186,7 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 				'event_stamp' => array('$exists' => false),
 				'deposit_stamp' => array('$exists' => false),
 				'callEventDurationRound' => array('$gt' => 0), // not sms
+				'sender' => array('$nin' => $this->excludedPLMNs),
 			),
 		);
 
