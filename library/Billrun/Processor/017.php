@@ -28,13 +28,15 @@ class Billrun_Processor_017 extends Billrun_Processor_Base_Ilds {
 		$this->data_structure = array(
 			'record_type' => 1,
 			'call_type' => 2,
-			'caller_phone_no' => 9,
-			'called_no' => 14,
-			'orig_country_desc' => 15,
+			'caller_phone_no' => 10,
+			'called_no' => 28,
 			'call_start_dt' => 14,
-			'chrgbl_call_dur' => 7,
+			'chrgbl_call_dur' => 6,
+			'chrgbl_code' => 1,
 			'call_charge_sign' => 1,
-			'call_charge' => 15,
+			'call_charge' => 14,
+			'collecion_code' => 2,
+			'return_code' => 2,
 		);
 
 
@@ -44,10 +46,10 @@ class Billrun_Processor_017 extends Billrun_Processor_Base_Ilds {
 			'sending_company_id' => 10,
 			'receiving_company_id' => 10,
 			'sequence_no' => 6,
-			'file_creation_date' => 12,
+			'file_creation_date' => 14,
 			'file_sending_date' => 12,
+			'filler' => 2,
 			'file_status' => 2,
-			'filler' => 187,
 		);
 
 		$this->trailer_structure = array(
@@ -56,15 +58,12 @@ class Billrun_Processor_017 extends Billrun_Processor_Base_Ilds {
 			'sending_company_id' => 10,
 			'receiving_company_id' => 10,
 			'sequence_no' => 6,
-			'file_creation_date' => 12,
+			'file_creation_date' => 14,
 			'sum_of_number' => 15, 
 			'sum_of_number_sign' => 1,
-			'sum_of_charges' => 15,
-			'sum_of_charges_sign' => 1,
-			'sum_of_charge' => 15,
+			'sum_of_charges' => 18,
 			'num_of_records' => 6,
 			'sum_of_err_rec' => 6,
-			'last_field' => 40,
 		);
 	}
 
