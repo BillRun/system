@@ -19,7 +19,6 @@ class WholesaleModel {
 	 * @var type 
 	 */
 	protected $db;
-	
 	protected $plans = array();
 
 	public function __construct() {
@@ -294,21 +293,22 @@ class WholesaleModel {
 	}
 
 	public function getRetailData($from_day, $to_day) {
-		$query = 'SELECT retail_extra.dayofmonth,SUM(retail_extra.over_plan) as over_plan,SUM(retail_extra.out_plan) AS out_plan,SUM(retail_new.subsCount) AS newSubs,'
+		$query = 'SELECT retail_extra.dayofmonth,SUM(retail_promotions_agg.totalCost) as promotionsCost, SUM(retail_extra.over_plan) as over_plan,SUM(retail_new_subscribers.count) as newSubsNotNp,SUM(retail_extra.out_plan) AS out_plan,SUM(retail_new.subsCount) AS newSubs,'
 				. 'SUM(retail_churn.subsCount) AS churnSubs,SUM(retail_active_agg.totalCost) AS flatRateRevenue,';
-		$query .=  'sum(retail_active_agg.' . implode('+retail_active_agg.', $this->getPlans()) . ') AS totalCustomer';
+		$query .= 'sum(retail_active_agg.' . implode('+retail_active_agg.', $this->getPlans()) . ') AS totalCustomer';
 		foreach ($this->getPlans() as $planName) {
 			$query.= ', retail_active_agg.' . $planName . ' as ' . $planName;
 		}
-		
+
 		$query .= ',sum(retail_sim2.simCount) as simCountTotal, sum(retail_sim2.simCost) as simCostTotal, '
 				. 'SUM(retail_sim2.upsCount) as upsCountTotal, SUM(retail_sim2.upsCost) as upsCostTotal, '
 				. 'SUM(retail_sim2.simCount+retail_sim2.upsCount) as totalSimCountTotal, SUM(retail_sim2.simCost+retail_sim2.upsCost) as totalSimCostTotal,'
 				. 'SUM(retail_unsubscribe.subsCount) as subsLeft, retail_active_agg.totalCost+retail_extra.over_plan+retail_extra.out_plan-retail_promotions_agg.totalCost+SUM(retail_sim2.simCost+retail_sim2.upsCost) as finalTotalAmount';
 		$query.= ' FROM retail_extra LEFT JOIN retail_new ON retail_extra.dayofmonth=retail_new.dayofmonth '
+				. 'LEFT JOIN retail_new_subscribers ON retail_extra.dayofmonth = retail_new_subscribers.dayofmonth '
 				. 'LEFT JOIN retail_churn ON retail_extra.dayofmonth = retail_churn.dayofmonth '
 				. 'LEFT JOIN (SELECT dayofmonth';
-		
+
 		foreach ($this->getPlans() as $planName) {
 			$query.= ', SUM(IF(retail_active.planName="' . $planName . '", retail_active.subsCount, 0)) as ' . $planName;
 		}
@@ -356,22 +356,30 @@ class WholesaleModel {
 					'value' => 'totalCustomer',
 					'display' => 'totalCustomer',
 					'decimal' => 0,
-					'label' => 'Sum',
+					'label' => 'Count',
 					'totals' => false,
 					'commonColumn' => 'plans',
+				),
+				array(
+					'value' => 'flatRateRevenue',
+					'display' => 'flatRateRevenue',
+					'decimal' => 2,
+					'label' => 'Revenue',
+					'totals' => false,
+					'commonColumn' => 'plans',
+				),
+				array(
+					'value' => 'promotionsCost',
+					'display' => 'promotionsCost',
+					'decimal' => 0,
+					'label' => 'Promotions Cost',
+					'totals' => FALSE,
 				),
 				array(
 					'value' => 'subsLeft',
 					'display' => 'subsLeft',
 					'decimal' => 0,
 					'label' => 'Subscribers waiting for disconnect',
-				),
-				array(
-					'value' => 'flatRateRevenue',
-					'display' => 'flatRateRevenue',
-					'decimal' => 2,
-					'label' => 'Flat rate revenue',
-					'totals' => false,
 				),
 				array(
 					'value' => 'over_plan',
@@ -402,6 +410,12 @@ class WholesaleModel {
 					'commonColumn' => 'np',
 				),
 				array(
+					'value' => 'newSubsNotNp',
+					'display' => 'newSubsNotNp',
+					'decimal' => 0,
+					'label' => 'New subs not NP',
+				),
+				array(
 					'value' => 'totalSimCountTotal',
 					'display' => 'totalSimCountTotal',
 					'decimal' => 0,
@@ -423,31 +437,31 @@ class WholesaleModel {
 				),
 			)
 		);
-		
-		foreach ($retailTableParams['fields'] as $index => $field) {
-			if ($field['value'] == 'totalCustomer') {
-				$totalCustomerIndex = $index;
-			}
-		}
-		if (isset($totalCustomerIndex)) {
-			foreach ($plans as $planName) {
-				$planFields[] = array(
-					'value' => $planName,
-					'display' => $planName,
-					'decimal' => 0,
-					'label' => $planName,
-					'totals' => false,
-					'commonColumn' => 'plans',
-				);
-			}
-			array_splice($retailTableParams['fields'], $totalCustomerIndex, 0, $planFields);
-		}
+
+//		foreach ($retailTableParams['fields'] as $index => $field) {
+//			if ($field['value'] == 'totalCustomer') {
+//				$totalCustomerIndex = $index;
+//			}
+//		}
+//		if (isset($totalCustomerIndex)) {
+//			foreach ($plans as $planName) {
+//				$planFields[] = array(
+//					'value' => $planName,
+//					'display' => $planName,
+//					'decimal' => 0,
+//					'label' => $planName,
+//					'totals' => false,
+//					'commonColumn' => 'plans',
+//				);
+//			}
+//			array_splice($retailTableParams['fields'], $totalCustomerIndex, 0, $planFields);
+//		}
 		foreach ($retailTableParams['fields'] as $index => $field) {
 			if ($field['value'] == 'totalSimCountTotal') {
 				$simCountIndex = $index;
 			}
 		}
-		
+
 		if (isset($simCountIndex)) {
 			$sendingTypeFields = array(
 				array(
@@ -474,7 +488,8 @@ class WholesaleModel {
 		return array(
 			'plans' => array(
 				'label' => 'Total subscribers',
-				'colspan' => 1 + count($this->getPlans()),
+//				'colspan' => 1 + count($this->getPlans()),
+				'colspan' => 2,
 			),
 			'sim' => array(
 				'label' => 'Sim orders count',

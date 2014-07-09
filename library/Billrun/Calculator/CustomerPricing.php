@@ -402,11 +402,10 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				$update['$inc']['balance.rates.' . $rate['key'] . '.' . $usage_type . '.cost'] = $pricingData[$this->pricingField];
 				$update['$inc']['balance.rates.' . $rate['key'] . '.' . $usage_type . '.count'] = 1;
 				if (isset($subRaw['balance']['rates'][$rate['key']][$usage_type]['usagev'])) {
-					$pricingData['usagesb'] = $subRaw['balance']['rates'][$rate['key']][$usage_type]['usagev'];
+					$pricingData['usagesb'] = floatval($subRaw['balance']['rates'][$rate['key']][$usage_type]['usagev']);
 				} else {
 					$pricingData['usagesb'] = 0;
 				}
-				$pricingData['usagesb'] = floatval($subRaw['balance']['rates'][$rate['key']][$usage_type]['usagev']);
 			} else if ($plan->isRateInPlanGroup($rate, $usage_type)) {
 				// update balance group (if exists)
 				$group = $plan->getStrongestGroup($rate, $usage_type);
@@ -448,7 +447,6 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		}
 		Billrun_Factory::log()->log("Line with stamp " . $row['stamp'] . " was written to balance " . $billrun_key . " for subscriber " . $row['sid'], Zend_Log::DEBUG);
 		$row['tx_saved'] = true; // indication for transaction existence in balances. Won't & shouldn't be saved to the db.
-
 		Billrun_Factory::dispatcher()->trigger('afterUpdateSubscriberBalance', array(array_merge($row->getRawData(), $pricingData), $balance, $pricingData[$this->pricingField], $this));
 		return $pricingData;
 	}
