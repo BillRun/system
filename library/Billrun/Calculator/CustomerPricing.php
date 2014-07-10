@@ -607,6 +607,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @param Mongodloid_Entity $rate
 	 * @param string $usage_type
 	 * @param Billrun_Plan $plan
+	 * @todo move to plan class
 	 */
 	protected function isUsageUnlimited($rate, $usage_type, $plan) {
 		return ($plan->isRateInSubPlan($rate, $usage_type) && $plan->isUnlimited($usage_type)) || ($plan->isRateInPlanGroup($rate, $usage_type) && $plan->isUnlimitedGroup($rate, $usage_type));
