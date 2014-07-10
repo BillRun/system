@@ -241,19 +241,6 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				}
 				$ret['over_plan'] = $volumeToCharge;
 			}
-		} else if ($plan->isRateInPlanRate($rate, $usageType)) {
-			$rateVolumeLeft = $plan->usageLeftInRateBalance($sub_balance['balance'], $rate, $usageType);
-			$volumeToCharge = $volume - $rateVolumeLeft;
-			if ($volumeToCharge < 0) {
-				$volumeToCharge = 0;
-				$ret['in_arate'] = $ret['in_plan'] = $volume;
-				$accessPrice = 0;
-			} else if ($volumeToCharge > 0) {
-				if ($rateVolumeLeft > 0) {
-					$ret['in_arate'] = $ret['in_plan'] = $volume - $volumeToCharge;
-				}
-				$ret['over_arate'] = $ret['over_plan'] = $volumeToCharge;
-			}
 		} else if ($plan->isRateInPlanGroup($rate, $usageType)) {
 			$groupVolumeLeft = $plan->usageLeftInRateGroup($sub_balance['balance'], $rate, $usageType);
 			$volumeToCharge = $volume - $groupVolumeLeft;
@@ -395,20 +382,8 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			$update['$set']['balance.totals.' . $key . '.usagev'] = $old_usage + $value;
 			$update['$inc']['balance.totals.' . $key . '.cost'] = $pricingData[$this->pricingField];
 			$update['$inc']['balance.totals.' . $key . '.count'] = 1;
-			// update balance rate if required
-			if ($plan->isRateInPlanRate($rate, $usage_type)) {
-				// @TODO: check if $usage_type should be $key
-				$update['$inc']['balance.rates.' . $rate['key'] . '.' . $usage_type . '.usagev'] = $value;
-				$update['$inc']['balance.rates.' . $rate['key'] . '.' . $usage_type . '.cost'] = $pricingData[$this->pricingField];
-				$update['$inc']['balance.rates.' . $rate['key'] . '.' . $usage_type . '.count'] = 1;
-				if (isset($subRaw['balance']['rates'][$rate['key']][$usage_type]['usagev'])) {
-					$pricingData['usagesb'] = $subRaw['balance']['rates'][$rate['key']][$usage_type]['usagev'];
-				} else {
-					$pricingData['usagesb'] = 0;
-				}
-				$pricingData['usagesb'] = floatval($subRaw['balance']['rates'][$rate['key']][$usage_type]['usagev']);
-			} else if ($plan->isRateInPlanGroup($rate, $usage_type)) {
-				// update balance group (if exists)
+			// update balance group (if exists)
+			if ($plan->isRateInPlanGroup($rate, $usage_type)) {
 				$group = $plan->getStrongestGroup($rate, $usage_type);
 				// @TODO: check if $usage_type should be $key
 				$update['$inc']['balance.groups.' . $group . '.' . $usage_type . '.usagev'] = $value;
@@ -467,6 +442,11 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		Billrun_Factory::db()->setMongoNativeLong($status);
 	}
 
+	/**
+	 * method to increase subscriber balance without lock nor transaction
+	 * 
+	 * @deprecated 2.7
+	 */
 	protected function increaseSubscriberBalance($counters, $billrun_key, $aid, $sid, $plan_ref) {
 		$query = array('sid' => $sid, 'billrun_month' => $billrun_key);
 		foreach ($counters as $key => $value) {
@@ -629,7 +609,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @param Billrun_Plan $plan
 	 */
 	protected function isUsageUnlimited($rate, $usage_type, $plan) {
-		return ($plan->isRateInSubPlan($rate, $usage_type) && $plan->isUnlimited($usage_type)) || ($plan->isRateInPlanRate($rate, $usage_type) && $plan->isUnlimitedRate($rate, $usage_type)) || ($plan->isRateInPlanGroup($rate, $usage_type) && $plan->isUnlimitedGroup($rate, $usage_type));
+		return ($plan->isRateInSubPlan($rate, $usage_type) && $plan->isUnlimited($usage_type)) || ($plan->isRateInPlanGroup($rate, $usage_type) && $plan->isUnlimitedGroup($rate, $usage_type));
 	}
 
 	protected function getBalanceTotalsKey($type, $usage_type, $plan, $rate) {
