@@ -259,7 +259,7 @@ div.billrun-logo img {
 .wholesale-table td, .wholesale-table th{
 	padding: 3px;
 	border: 1px solid gray;
-	white-space: nowrap;
+/*	white-space: nowrap;*/
 }
 .wholesale-table th {
 	text-align: center;
