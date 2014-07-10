@@ -228,8 +228,8 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 //		$plan = Billrun_Factory::plan(array('data' => $subscriber_current_plan, 'disableCache' => true));
 		$plan = $this->getPlan($sub_balance);
 		$ret = array();
-		if ($plan->isRateInSubPlan($rate, $usageType)) {
-			$planVolumeLeft = $plan->usageLeftInPlan($sub_balance['balance'], $usageType);
+		if ($plan->isRateInBasePlan($rate, $usageType)) {
+			$planVolumeLeft = $plan->usageLeftInPlan($sub_balance['balance'], $rate, $usageType);
 			$volumeToCharge = $volume - $planVolumeLeft;
 			if ($volumeToCharge < 0) {
 				$volumeToCharge = 0;
@@ -255,7 +255,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				$ret['over_group'] = $ret['over_plan'] = $volumeToCharge;
 			}
 			$ret['arategroup'] = $plan->getStrongestGroup($rate, $usageType);
-		} else {
+		} else { // else if (dispatcher->chain_of_responsibilty)->isRateInPlugin {dispatcher->trigger->calc}
 			$ret['out_plan'] = $volumeToCharge = $volume;
 		}
 
@@ -342,7 +342,6 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			return false;
 		}
 
-		$balance_totals_key = $this->getBalanceTotalsKey($row['type'], $usage_type, $plan, $rate);
 		$balance_unique_key = array('sid' => $row['sid'], 'billrun_key' => $billrun_key);
 		if (!($balance = $this->createBalanceIfMissing($row['aid'], $row['sid'], $billrun_key, $plan_ref))) {
 			return false;
@@ -375,7 +374,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		$query = $balance_unique_key;
 		$update = array();
 		$update['$set']['tx.' . $stamp] = $pricingData;
-
+		$balance_totals_key = $plan->getBalanceTotalsKey($usage_type, $rate);
 		$old_usage = $subRaw['balance']['totals'][$balance_totals_key]['usagev'];
 		$query['balance.totals.' . $balance_totals_key . '.usagev'] = $old_usage;
 		$update['$set']['balance.totals.' . $balance_totals_key . '.usagev'] = $old_usage + $volume;
@@ -431,6 +430,12 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		return $this->pricingField;
 	}
 
+	/**
+	 * method to get usage type by balances total key
+	 * @param array $counters
+	 * @return string
+	 * @deprecated since version 2.7
+	 */
 	protected function getUsageKey($counters) {
 		return key($counters); // array pointer will always point to the first key
 	}
@@ -448,7 +453,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	/**
 	 * method to increase subscriber balance without lock nor transaction
 	 * 
-	 * @deprecated 2.7
+	 * @deprecated since version 2.7
 	 */
 	protected function increaseSubscriberBalance($counters, $billrun_key, $aid, $sid, $plan_ref) {
 		$query = array('sid' => $sid, 'billrun_month' => $billrun_key);
@@ -613,20 +618,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @todo move to plan class
 	 */
 	protected function isUsageUnlimited($rate, $usage_type, $plan) {
-		return ($plan->isRateInSubPlan($rate, $usage_type) && $plan->isUnlimited($usage_type)) || ($plan->isRateInPlanGroup($rate, $usage_type) && $plan->isUnlimitedGroup($rate, $usage_type));
-	}
-
-	protected function getBalanceTotalsKey($type, $usage_type, $plan, $rate) {
-		if ($type != 'tap3') {
-			if (($usage_type == "call" || $usage_type == "sms") && !$plan->isRateInSubPlan($rate, $usage_type)) {
-				$usage_class_prefix = "out_plan_";
-			} else {
-				$usage_class_prefix = "";
-			}
-		} else {
-			$usage_class_prefix = "intl_roam_";
-		}
-		return $usage_class_prefix . $usage_type;
+		return ($plan->isRateInBasePlan($rate, $usage_type) && $plan->isUnlimited($usage_type)) || ($plan->isRateInPlanGroup($rate, $usage_type) && $plan->isUnlimitedGroup($rate, $usage_type));
 	}
 
 }

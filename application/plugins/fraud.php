@@ -64,7 +64,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		if ($calculator->getType == 'pricing' && method_exists($calculator, 'getPricingField') && ($pricingField = $calculator->getPricingField())) {
 			$rowPrice = $pricingData[$pricingField];
 		} else {
-			return;
+			return true;
 		}
 		
 		if (!$this->isLineLegitimate($row, $calculator)) {

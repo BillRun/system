@@ -140,11 +140,8 @@ class Billrun_Plan {
 	 * @param type $rate
 	 * @param type $type
 	 * @return boolean
-	 * @deprecated since version 0.1
-	 * 		should be removed from here;
-	 * 		the check of plan should be run on line not subscriber/balance
 	 */
-	public function isRateInSubPlan($rate, $type) {
+	public function isRateInBasePlan($rate, $type) {
 		return isset($rate['rates'][$type]['plans']) &&
 			is_array($rate['rates'][$type]['plans']) &&
 			in_array($this->createRef(), $rate['rates'][$type]['plans']);
@@ -160,7 +157,7 @@ class Billrun_Plan {
 	 * 
 	 * @return boolean
 	 * @since 2.6
-	 * @deprecated since 2.7
+	 * @deprecated since version 2.7
 	 */
 	public function isRateInPlanRate($rate, $usageType) {
 		return (isset($this->data['include']['rates'][$rate['key']][$usageType]));
@@ -263,6 +260,12 @@ class Billrun_Plan {
 		
 		$rateUsageIncluded = $this->data['include']['groups'][$groupSelected][$usageType];
 
+		// if isset $rule {
+		// Billrun_Factory::dispatcher()->trigger('triggerGroupRateRule', array($rule, $this, $group, $usageType, $rate, &$usageLeft));
+		// return $usageLeft
+		// }
+		// else continue as usual
+		
 		if ($rateUsageIncluded == 'UNLIMITED') {
 			return PHP_INT_MAX;
 		}
@@ -282,7 +285,7 @@ class Billrun_Plan {
 	 * @param $usagetype the usage type to check.
 	 * @return int  the usage  left in the usage type of the subscriber.
 	 */
-	public function usageLeftInPlan($subscriberBalance, $usagetype = 'call') {
+	public function usageLeftInPlan($subscriberBalance, $rate, $usagetype = 'call') {
 
 		if (!isset($this->get('include')[$usagetype])) {
 			return 0;
@@ -292,8 +295,8 @@ class Billrun_Plan {
 		if ($usageIncluded == 'UNLIMITED') {
 			return PHP_INT_MAX;
 		}
-		
-		$usageLeft = $usageIncluded - $subscriberBalance['totals'][$usagetype]['usagev'];
+
+		$usageLeft = $usageIncluded - $subscriberBalance['totals'][$this->getBalanceTotalsKey($usagetype, $rate)]['usagev'];
 		return floatval($usageLeft < 0 ? 0 : $usageLeft);
 	}
 
@@ -339,6 +342,15 @@ class Billrun_Plan {
 		}
 		return (isset($this->data['include']['groups'][$groupSelected][$usageType]) 
 			&& $this->data['include']['groups'][$groupSelected][$usageType] == "UNLIMITED");
+	}
+	
+	public function getBalanceTotalsKey($usage_type, $rate) {
+		if (($usage_type == "call" || $usage_type == "sms") && !$this->isRateInBasePlan($rate, $usage_type)) {
+			$usage_class_prefix = "out_plan_";
+		} else {
+			$usage_class_prefix = "";
+		}
+		return $usage_class_prefix . $usage_type;
 	}
 
 }
