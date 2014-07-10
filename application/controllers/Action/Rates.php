@@ -22,7 +22,8 @@ class RatesAction extends ApiAction {
 
 		$query = $this->processQuery($request->get('query', array()));
 		$strip = $this->getCompundParam($request->get('strip', false), false);
-		$filter = $strip ? $strip : array('key', 'rates');
+		$filter = !empty($strip) ? $strip : array('key', 'rates');
+
 		$model = new RatesModel(array('sort' => array('provider' => 1, 'from' => 1)));
 		$results = $model->getData($query, $filter);
 		if (!empty($strip)) {
@@ -107,11 +108,14 @@ class RatesAction extends ApiAction {
 	 * @return type
 	 */
 	protected function getCompundParam($param, $retParam = array()) {
-		if (isset($param)) {
-			if (is_string($param)) {
-				$retParam = json_decode($param, true);
-			} else {
-				$retParam = (array) $param;
+		if(isset($param)) {
+			$retParam =  $param ;
+			if ($param !== FALSE) {
+				if (is_string($param)) {
+					$retParam = json_decode($param, true);
+				} else {
+					$retParam = (array) $param;
+				}
 			}
 		}
 		return $retParam;
