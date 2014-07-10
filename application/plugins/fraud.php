@@ -61,7 +61,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * 
 	 */
 	public function afterUpdateSubscriberBalance($row, $balance, &$pricingData, $calculator) {
-		if ($calculator->getType == 'pricing' && method_exists($calculator, 'getPricingField') && ($pricingField = $calculator->getPricingField())) {
+		if ($calculator->getType() == 'pricing' && method_exists($calculator, 'getPricingField') && ($pricingField = $calculator->getPricingField())) {
 			$rowPrice = $pricingData[$pricingField];
 		} else {
 			return true;
