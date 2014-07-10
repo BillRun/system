@@ -261,7 +261,7 @@ class Billrun_Plan {
 		$rateUsageIncluded = $this->data['include']['groups'][$groupSelected][$usageType];
 
 		// if isset $rule {
-		// Billrun_Factory::dispatcher()->trigger('triggerGroupRateRule', array($rule, $this, $group, $usageType, $rate, &$usageLeft));
+		// Billrun_Factory::dispatcher()->trigger('triggerGroupRateRule', array($rule, $this, $group, $usageType, $rate, $subscriberBalance, &$usageLeft));
 		// return $usageLeft
 		// }
 		// else continue as usual
