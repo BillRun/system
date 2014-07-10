@@ -50,18 +50,23 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 
 	/**
 	 * Method to save fraud events on the fraud system once event triggered
+	 * afterUpdateSubscriberBalance trigger after subscriber balance is updated
 	 * 
 	 * @param array $row the line from lines collection
 	 * @param Mongodloid_Entity $balance 
-	 * @param string $usage_type, the usage type could be: call, data, mms, sms
-	 * @param array $rate
-	 * @param string $volume
+	 * @param array $pricingData reference to the pricing data that will update the row after exiting the plugin method
 	 * @param Billrun_Calculator $calculator
 	 * 
 	 * @return boolean in case we are on chain return true if all ok and chain can continue, else return false if require to stop the plugin chain
 	 * 
 	 */
-	public function afterUpdateSubscriberBalance($row, $balance, $rowPrice, $calculator) {
+	public function afterUpdateSubscriberBalance($row, $balance, &$pricingData, $calculator) {
+		if ($calculator->getType == 'pricing' && method_exists($calculator, 'getPricingField') && ($pricingField = $calculator->getPricingField())) {
+			$rowPrice = $pricingData[$pricingField];
+		} else {
+			return;
+		}
+		
 		if (!$this->isLineLegitimate($row, $calculator)) {
 			return true;
 		}
