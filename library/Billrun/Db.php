@@ -92,6 +92,8 @@ class Billrun_Db extends Mongodloid_Db {
 			if (in_array($collectionName, $this->collections)) {
 				return $this->getCollection($this->collections[$collectionName]);
 			}
+		} else if ($arguments['force']) {
+			return $this->getCollection($name);
 		}
 		return false;
 	}
