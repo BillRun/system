@@ -205,6 +205,12 @@ class tap3Plugin extends Billrun_Plugin_BillrunPluginBase implements Billrun_Plu
 			$cdrLine['sdr'] = $cdrLine['GprsServiceUsed']['ChargeInformationList']['ChargeInformation']['ChargeDetailList']['ChargeDetail']['Charge'] / $this->sdr_division_value;
 			$cdrLine['exchange_rate'] = $this->exchangeRates[$cdrLine['GprsServiceUsed']['ChargeInformationList']['ChargeInformation']['ExchangeRateCode']];
 		}
+		
+		if (isset($cdrLine['BasicServiceUsedList']['BasicServiceUsed']['ChargeInformationList']['ChargeInformation']['CallTypeGroup']['CallTypeLevel1'])) {
+			$cdrLine['call_type'] = $cdrLine['BasicServiceUsedList']['BasicServiceUsed']['ChargeInformationList']['ChargeInformation']['CallTypeGroup']['CallTypeLevel1'];
+		} else if(isset($cdrLine['GprsServiceUsed']['ChargeInformationList']['ChargeInformation']['CallTypeGroup']['CallTypeLevel1'])) {
+				$cdrLine['call_type'] = $cdrLine['GprsServiceUsed']['ChargeInformationList']['ChargeInformation']['CallTypeGroup']['CallTypeLevel1'];
+		}
 	}
 
 	/**
