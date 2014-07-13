@@ -221,7 +221,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 			return false;
 		} else if (isset($rule['limitGroups'])) { // if limit by specific groups
 			if ((is_array($rule['limitGroups']) && isset($row['arategroup']) && !in_array(strtoupper($row['arategroup']), $rule['limitGroups']))
-				|| (!isset($row['arategroup']) || !isset($balance['groups'][$row['arategroup']][$usaget]['usagev']))) { 
+				|| !isset($row['arategroup'])) { 
 				return false;
 			}
 		}
@@ -229,7 +229,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		// calculate before and after usage
 		// first check if the rule is based on groups usage
 		if (isset($rule['limitGroups'])) {
-			$before = $balance['groups'][$row['arategroup']][$usaget]['usagev'];
+			$before = isset($balance['groups'][$row['arategroup']][$usaget]['usagev'])? $balance['groups'][$row['arategroup']][$usaget]['usagev'] : 0;
 			$after = $before + $row['usagev'];
 		} else { // fallback: rule based on general usage
 			$before = $balance['totals'][$usaget]['usagev'];

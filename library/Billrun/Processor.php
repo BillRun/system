@@ -15,6 +15,7 @@
 abstract class Billrun_Processor extends Billrun_Base {
 
 	use Billrun_Traits_FileActions;
+
 	const BACKUP_FILE_SEQUENCE_GRANULARITY = 2;
 
 	/**
@@ -61,7 +62,6 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 */
 	protected $bulkInsert = 0;
 
-
 	/**
 	 * The time to wait  until adopting file  that were  started processing but weren't finished.
 	 */
@@ -78,7 +78,6 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 * @var boolean 
 	 */
 	protected $current_line = 0;
-
 
 	/**
 	 *
@@ -125,7 +124,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 		}
 		if (isset($options['bulkInsert'])) {
 			$this->bulkInsert = $options['bulkInsert'];
-		}		
+		}
 
 		if (isset($options['processor']['order_lines_before_insert'])) {
 			$this->orderLinesBeforeInsert = $options['processor']['order_lines_before_insert'];
@@ -157,7 +156,6 @@ abstract class Billrun_Processor extends Billrun_Base {
 	public function getParser() {
 		return $this->parser;
 	}
-
 
 	/**
 	 * method to run over all the files received which did not have been processed
@@ -311,7 +309,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 */
 	protected function store() {
 		if (!isset($this->data['data'])) {
-// raise error
+			// raise error
 			return false;
 		}
 
@@ -388,7 +386,6 @@ abstract class Billrun_Processor extends Billrun_Base {
 		return $this;
 	}
 
-
 	/**
 	 * Get the data the is stored in the file name.
 	 * @return an array containing the sequence data. ie:
@@ -409,9 +406,9 @@ abstract class Billrun_Processor extends Billrun_Base {
 	protected function getFileForProcessing() {
 		$log = Billrun_Factory::db()->logCollection();
 		$adoptThreshold = strtotime('-' . $this->orphandFilesAdoptionTime);
-		
+
 		// verify minimum orphan time to avoid parallel processing
-		if (Billrun_Factory::config()->isProd() && (time()-$adoptThreshold) < 3600) {
+		if (Billrun_Factory::config()->isProd() && (time() - $adoptThreshold) < 3600) {
 			Billrun_Factory::log()->log("Processor orphan time less than one hour: " . $this->orphandFilesAdoptionTime . ". Please set value greater than or equal to one hour. We will take one hour for now", Zend_Log::NOTICE);
 			$adoptThreshold = time() - 3600;
 		}
@@ -459,14 +456,13 @@ abstract class Billrun_Processor extends Billrun_Base {
 		if ($this->orderLinesBeforeInsert) {
 			Billrun_Factory::log()->log("Reordering lines  by stamp...", Zend_Log::DEBUG);
 			uasort($lines_data, function($a, $b) {
-						return strcmp($a['stamp'], $b['stamp']);
-					});
+				return strcmp($a['stamp'], $b['stamp']);
+			});
 			Billrun_Factory::log()->log("Done reordering lines  by stamp.", Zend_Log::DEBUG);
 		}
 
 		try {
-			if (Billrun_Factory::db()->compareServerVersion('2.6', '>=') === true
-				&& Billrun_Factory::db()->compareClientVersion('1.5', '>=') === true) {
+			if (Billrun_Factory::db()->compareServerVersion('2.6', '>=') === true && Billrun_Factory::db()->compareClientVersion('1.5', '>=') === true) {
 				// we are on 2.6
 				$bulkOptions = array(
 					'continueOnError' => true,
@@ -475,11 +471,11 @@ abstract class Billrun_Processor extends Billrun_Base {
 				);
 			} else {
 				// we are on 2.4 and lower
-			$bulkOptions = array(
-				'continueOnError' => true,
-				'wtimeout' => 300000,
-				'timeout' => 300000,
-			);
+				$bulkOptions = array(
+					'continueOnError' => true,
+					'wtimeout' => 300000,
+					'timeout' => 300000,
+				);
 			}
 			$offset = 0;
 			while ($insert_count = count($insert = array_slice($lines_data, $offset, $this->bulkInsert, true))) {
@@ -505,13 +501,12 @@ abstract class Billrun_Processor extends Billrun_Base {
 		if ($this->orderLinesBeforeInsert) {
 			Billrun_Factory::log()->log("Reordering Q lines  by stamp...", Zend_Log::DEBUG);
 			uasort($queue_data, function($a, $b) {
-						return strcmp($a['stamp'], $b['stamp']);
-					});
+				return strcmp($a['stamp'], $b['stamp']);
+			});
 			Billrun_Factory::log()->log("Done reordering Q lines  by stamp.", Zend_Log::DEBUG);
 		}
 		try {
-			if (Billrun_Factory::db()->compareServerVersion('2.6', '>=') === true
-				&& Billrun_Factory::db()->compareClientVersion('1.5', '>=') === true) {
+			if (Billrun_Factory::db()->compareServerVersion('2.6', '>=') === true && Billrun_Factory::db()->compareClientVersion('1.5', '>=') === true) {
 				// we are on 2.6
 				$bulkOptions = array(
 					'continueOnError' => true,
@@ -520,11 +515,11 @@ abstract class Billrun_Processor extends Billrun_Base {
 				);
 			} else {
 				// we are on 2.4 and lower
-			$bulkOptions = array(
-				'continueOnError' => true,
-				'wtimeout' => 300000,
-				'timeout' => 300000,
-			);
+				$bulkOptions = array(
+					'continueOnError' => true,
+					'wtimeout' => 300000,
+					'timeout' => 300000,
+				);
 			}
 			$offset = 0;
 			while ($insert_count = count($insert = array_slice($queue_data, $offset, $this->bulkInsert, true))) {

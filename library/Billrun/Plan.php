@@ -160,6 +160,7 @@ class Billrun_Plan {
 	 * 
 	 * @return boolean
 	 * @since 2.6
+	 * @deprecated since 2.7
 	 */
 	public function isRateInPlanRate($rate, $usageType) {
 		return (isset($this->data['include']['rates'][$rate['key']][$usageType]));
@@ -173,6 +174,7 @@ class Billrun_Plan {
 	 * @param string $usageType usage type to check
 	 * @return int the usage left
 	 * @since 2.6
+	 * @deprecated since 2.7
 	 */
 	public function usageLeftInRateBalance($subscriberBalance, $rate, $usageType = 'call') {
 		if (!isset($this->get('include')[$rate['key']][$usageType])) {
