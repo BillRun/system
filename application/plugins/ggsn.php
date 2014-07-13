@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
  * @license         GNU General Public License version 2 or later; see LICENSE.txt
  */
 
@@ -11,12 +11,14 @@
  */
 class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plugin_Interface_IParser, Billrun_Plugin_Interface_IProcessor {
 
-	use Billrun_Traits_AsnParsing;
-	use Billrun_Traits_FileSequenceChecking;
+	use Billrun_Traits_AsnParsing,
+	 Billrun_Traits_FileSequenceChecking,
+	 Billrun_Traits_FraudAggregation;
 
 	const HEADER_LENGTH = 54;
-	const MAX_CHUNKLENGTH_LENGTH = 512;
+	const MAX_CHUNKLENGTH_LENGTH = 4096;
 	const FILE_READ_AHEAD_LENGTH = 16384;
+	const RECORD_PADDING = 4;
 
 	/**
 	 * plugin name
@@ -27,11 +29,12 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Pl
 
 	public function __construct($options = array()) {
 		parent::__construct($options);
-		$this->outOfSequenceAlertLevel =  Billrun_Factory::config()->getConfigValue('ggsn.receiver.out_of_seq_log_level',$this->outOfSequenceAlertLevel);
+		$this->outOfSequenceAlertLevel = Billrun_Factory::config()->getConfigValue('ggsn.receiver.out_of_seq_log_level', $this->outOfSequenceAlertLevel);
 		
 		$this->ggsnConfig = (new Yaf_Config_Ini(Billrun_Factory::config()->getConfigValue('ggsn.config_path')))->toArray();
 		$this->initParsing();
 		$this->addParsingMethods();
+		$this->initFraudAggregation();
 	}
 	
 	public function beforeProcessorStore(Billrun_Processor $processor) {
@@ -39,7 +42,7 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Pl
 		if ($processor->getType() != $this->getName()) {
 			return true;
 		}
-		if (!Billrun_Factory::config()->getConfigValue('ggsn.only_save_international', false) ) {
+		if (!Billrun_Factory::config()->getConfigValue('ggsn.only_save_international', false)) {
 			return true;
 		}
 		
@@ -80,8 +83,8 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Pl
 	 * method to collect data which need to be handle by event
 	 */
 	public function handlerCollect($options) {
-		if( $options['type'] != 'roaming') { 
-			return FALSE; 
+		if ($options['type'] != 'roaming') {
+			return FALSE;
 		}
 		$lines = Billrun_Factory::db()->linesCollection();
 		
@@ -89,7 +92,19 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Pl
 		//$charge_time = new MongoDate($this->get_last_charge_time(true) - date_default_timezone_get() );
 		$charge_time = Billrun_Util::getLastChargeTime(true);
 		
-		$aggregateQuery = $this->getBaseAggregateQuery($charge_time);
+		Billrun_Factory::log()->log("ggsnPlugin::handlerCollect collecting monthly data exceeders", Zend_Log::DEBUG);
+		$advancedEvents = array();
+		if (isset($this->fraudConfig['groups'])) {
+			foreach ($this->fraudConfig['groups'] as $groupName => $groupIds) {
+				$baseQuery = $this->getBaseAggregateQuery($charge_time, true);
+				if (!empty($groupIds)) {
+					$baseQuery['where']['$match'] = array_merge($baseQuery['where']['$match'], $groupIds);
+				}
+				$advancedEvents = array_merge($advancedEvents, $this->collectFraudEvents($groupName, $groupIds, $baseQuery));
+			}
+		}
+
+		$aggregateQuery = array_values($this->getBaseAggregateQuery($charge_time));
 
 		Billrun_Factory::log()->log("ggsnPlugin::handlerCollect collecting monthly data exceeders", Zend_Log::DEBUG);
 		$dataExceedersAlerts = $this->detectDataExceeders($lines, $aggregateQuery);
@@ -98,7 +113,7 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Pl
 		$hourlyDataExceedersAlerts = $this->detectHourlyDataExceeders($lines, $aggregateQuery);
 		Billrun_Factory::log()->log("GGSN plugin of hourly usage fraud found " . count($hourlyDataExceedersAlerts) . " ", Zend_Log::INFO);
 
-		return array_merge($dataExceedersAlerts, $hourlyDataExceedersAlerts);
+		return array_merge($advancedEvents, $dataExceedersAlerts, $hourlyDataExceedersAlerts);
 	}
 
 	/**
@@ -127,6 +142,18 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Pl
 			return;
 		}
 		$this->checkFilesSeq($filepaths, $hostname);
+//		$path = Billrun_Factory::config()->getConfigValue($this->getName() . '.thirdparty.backup_path', false, 'string');
+//		if (!$path)
+//			return;
+//		if ($hostname) {
+//			$path = $path . DIRECTORY_SEPARATOR . $hostname;
+//		}
+//		Billrun_Factory::log()->log("Saving files to third party at : $path", Zend_Log::INFO);
+//		foreach ($filepaths as $filePath) {
+//			//if (!$receiver->backupToPath($filePath, $path, true, true)) {
+//			//	Billrun_Factory::log()->log("Couldn't save file $filePath to third patry path at : $path", Zend_Log::ERR);
+//			//}
+//		}
 	}
 
 	/**
@@ -162,6 +189,7 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Pl
 			$alert['value'] = ($alert['usagev'] > $limit ? $alert['usagev'] : ($alert['download'] > $limit ? $alert['download'] : $alert['upload']));
 			$alert['threshold'] = $limit;
 			$alert['event_type'] = 'GGSN_HOURLY_DATA';
+			$alert['target_plans'] = $this->fraudConfig['defaults']['target_plans'];
 			$exceeders[] = $alert;
 		}
 		return $exceeders;
@@ -185,13 +213,16 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Pl
 			),
 		);
 		$dataAlerts = $lines->aggregate(array_merge($aggregateQuery, array($dataThrs)));
-		foreach ($dataAlerts as &$alert) {
+		$retAlerts = array();
+		foreach ($dataAlerts as $key => $alert) {
 			$alert['units'] = 'KB';
 			$alert['value'] = ($alert['usagev'] > $limit ? $alert['usagev'] : ($alert['download'] > $limit ? $alert['download'] : $alert['upload']));
 			$alert['threshold'] = $limit;
 			$alert['event_type'] = 'GGSN_DATA';
+			$alert['target_plans'] = $this->fraudConfig['defaults']['target_plans'];
+			$retAlerts[$key] = $alert;
 		}
-		return $dataAlerts;
+		return $retAlerts;
 	}
 
 	/**
@@ -216,6 +247,7 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Pl
 			$alert['value'] = $alert['duration'];
 			$alert['threshold'] = $threshold;
 			$alert['event_type'] = 'GGSN_DATA_DURATION';
+			$alert['target_plans'] = $this->fraudConfig['defaults']['target_plans'];
 		}
 		return $durationAlert;
 	}
@@ -225,44 +257,40 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Pl
 	 * @param type $charge_time the charge time of the billrun (records will not be pull before that)
 	 * @return Array containing a standard PHP mongo aggregate query to retrive  ggsn entries by imsi.
 	 */
-	protected function getBaseAggregateQuery($charge_time) {
-		return array(
-			array(
+	protected function getBaseAggregateQuery($charge_time, $clean = false) {
+		$ret = array(
+			'base_match' => array(
 				'$match' => array(
 					'type' => 'ggsn',
-					'unified_record_time' => array('$gte' => new MongoDate($charge_time)),
 				)
 			),
-			array(
+			'where' => array(
 				'$match' => array(
-					//@TODO  switch to unified time once you have the time to test it
-					'unified_record_time' => array('$gte' => new MongoDate($charge_time)),
-//					'record_opening_time' => array('$gt' => $charge_time),
 					'deposit_stamp' => array('$exists' => false),
 					'event_stamp' => array('$exists' => false),
 					
-					'sgsn_address' => array('$regex' => '^(?!62\.90\.|37\.26\.)'),
 					'$or' => array(
-						array('rating_group' => array( '$exists' => FALSE)),
+						array('rating_group' => array('$exists' => false)),
 						array('rating_group' => 0)
 					),
-					'$or' => array(
-						array('fbc_downlink_volume' => array('$gt' => 0)),
-						array('fbc_uplink_volume' => array('$gt' => 0))
+//					'$or' => array(
+//						array('fbc_downlink_volume' => array('$gt' => 0)),
+//						array('fbc_uplink_volume' => array('$gt' => 0))
+//					),
 					),
 				),
-			),
-			array(
+			'group' => array(
 				'$group' => array(
 					"_id" => array('imsi' => '$served_imsi', 'msisdn' => '$served_msisdn'),
 					"download" => array('$sum' => '$fbc_downlink_volume'),
 					"upload" => array('$sum' => '$fbc_uplink_volume'),
-					"usagev" => array('$sum' => '$usagev'),
+					"usagev" => array('$sum' => array('$add' => array('$fbc_downlink_volume', '$fbc_uplink_volume'))),
+					//"usagev" => array('$sum' => '$usagev'), //TODO usethis once the usagev is calculated before the fraud.
 					"duration" => array('$sum' => '$duration'),
 					'lines_stamps' => array('$addToSet' => '$stamp'),
 				),
 			),
-			array(
+			'translate' => array(
 				'$project' => array(
 					'_id' => 0,
 					'download' => array('$multiply' => array('$download', 0.001)),
@@ -274,7 +302,26 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Pl
 					'lines_stamps' => 1,
 				),
 			),
+			'project' => array(
+				'$project' => array(
+					'download' => 1,
+					'upload' => 1,
+					'usagev' => 1,
+					'duration' => 1,
+					'imsi' => 1,
+					'msisdn' => 1,
+					'lines_stamps' => 1,
+				),
+			),
 		);
+		if (!$clean) {
+			$ret['base_match']['$match']['$or'] = array(
+				array('urt' => array('$gte' => new MongoDate($charge_time))),
+				array('unified_record_time' => array('$gte' => new MongoDate($charge_time))),
+			);
+			$ret['where']['$match']['sgsn_address'] = array('$regex' => '^(?!62\.90\.|37\.26\.)');
+		}
+		return $ret;
 	}
 
 	/**
@@ -298,7 +345,7 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Pl
 		}
 
 		$asnObject = Asn_Base::parseASNString($data);
-		$parser->setLastParseLength($asnObject->getDataLength() + 8);
+		$parser->setLastParseLength($asnObject->getRawDataLength() + self::RECORD_PADDING);
 
 		$type = $asnObject->getType();
 		$cdrLine = false;
@@ -307,16 +354,39 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Pl
 			$cdrLine = $this->getASNDataByConfig($asnObject, $this->ggsnConfig[$type], $this->ggsnConfig['fields']);
 			if ($cdrLine && !isset($cdrLine['record_type'])) {
 				$cdrLine['record_type'] = $type;
-			}			
+			}
 			//convert to unified time GMT  time.
 			$timeOffset = (isset($cdrLine['ms_timezone']) ? $cdrLine['ms_timezone'] : date('P') );
-			$cdrLine['unified_record_time'] = new MongoDate(  Billrun_Util::dateTimeConvertShortToIso( $cdrLine['record_opening_time'], $timeOffset ) );
+			$cdrLine['urt'] = $cdrLine['unified_record_time']= new MongoDate(Billrun_Util::dateTimeConvertShortToIso($cdrLine['record_opening_time'], $timeOffset));
+			if (is_array($cdrLine['rating_group'])) {
+				$fbc_uplink_volume = $fbc_downlink_volume = 0;
+				$cdrLine['org_fbc_uplink_volume'] = $cdrLine['fbc_uplink_volume'];
+				$cdrLine['org_fbc_downlink_volume'] = $cdrLine['fbc_downlink_volume'];
+				$cdrLine['org_rating_group'] = $cdrLine['rating_group'];
+
+				foreach ($cdrLine['rating_group'] as $key => $rateVal) {
+					if (isset($this->ggsnConfig['rating_groups'][$rateVal])) {
+						$fbc_uplink_volume += $cdrLine['fbc_uplink_volume'][$key];
+						$fbc_downlink_volume += $cdrLine['fbc_downlink_volume'][$key];
+					}
+				}
+				$cdrLine['fbc_uplink_volume'] = $fbc_uplink_volume;
+				$cdrLine['fbc_downlink_volume'] = $fbc_downlink_volume;
+				$cdrLine['rating_group'] = 0;
+			} else if ($cdrLine['rating_group'] == 10) {
+				return false;
+			}
 		} else {
 			Billrun_Factory::log()->log("couldn't find  definition for {$type}", Zend_Log::INFO);
 		}
+		if (isset($cdrLine['calling_number'])) {
+			$cdrLine['calling_number'] = Billrun_Util::msisdn($cdrLine['calling_number']);
+		}
+		if (isset($cdrLine['called_number'])) {
+			$cdrLine['called_number'] = Billrun_Util::msisdn($cdrLine['called_number']);
+		}
 		
 		//Billrun_Factory::log()->log($asnObject->getType() . " : " . print_r($cdrLine,1) ,  Zend_Log::DEBUG);
-		//@TODO add unifiom field translation. ('record_opening_time',etc...)
 		return $cdrLine;
 	}
 
@@ -327,8 +397,13 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Pl
 		if ($this->getName() != $type) {
 			return FALSE;
 		}
+		$nx12Data = unpack("N", substr($data, 0x12, 4));
+		$header['line_count'] = reset($nx12Data);
+		$nx16Data = unpack("N", substr($data, 0x16, 4));
+		$header['next_file_number'] = reset($nx16Data);
+		//Billrun_Factory::log(print_r($header,1));
 
-		$header = utf8_encode(base64_encode($data)); //$this->getASNDataByConfig($data, $this->ggsnConfig['header'], $this->ggsnConfig['fields']);		
+		$header['raw'] = utf8_encode(base64_encode($data)); // Is  this  needed?
 
 		return $header;
 	}
@@ -351,7 +426,7 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Pl
 			return FALSE;
 		}
 
-		$trailer = utf8_encode(base64_encode($data)); //$this->getASNDataByConfig($data, $this->ggsnConfig['trailer'], $this->ggsnConfig['fields']);		
+		$trailer = utf8_encode(base64_encode($data)); // Is  this  needed?
 
 		return $trailer;
 	}
@@ -379,13 +454,17 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Pl
 				return $ret;
 			},
 			'timezone' => function ($data) {
-				$smode =unpack('c*', $data);
-				//$timeSaving=intval($smode[2] < 3 ? $smode[2] : 0 );
-				//time zone offset is repesented  by  multiples of  15 minutes.
-				$quarterOffset = intval($smode[1]);
-				$h = str_pad(intval($quarterOffset/4), 2 ,"0", STR_PAD_LEFT); // calc the offset hours
-				$m = str_pad(($quarterOffset%4)*15, 2, "0", STR_PAD_LEFT); // calc the offset minutes
-				return  (($quarterOffset > 0) ? "+" : "-") . "$h:$m" ;
+				$smode = unpack('c*', $data);
+				//$timeSaving=intval( $smode[2] & 0x3 );
+				//time zone offset is repesented by multiples of 15 minutes.
+				$quarterOffset = intval($smode[1] & 0xAF);
+				if (abs($quarterOffset) <= 52) {//data sanity check less then 13hours  offset
+					$h = str_pad(abs(intval($quarterOffset / 4)), 2, "0", STR_PAD_LEFT); // calc the offset hours
+					$m = str_pad(abs(($quarterOffset % 4) * 15), 2, "0", STR_PAD_LEFT); // calc the offset minutes
+					return (($quarterOffset > 0) ? "+" : "-") . "$h:$m";
+				}
+				//Billrun_Factory::log()->log($data. " : ". print_r($smode,1),Zend_Log::DEBUG );
+				return false;
 			},
 			'ch_ch_selection_mode' => function($data) {
 				$smode = intval(implode('.', unpack('C', $data)));
@@ -422,18 +501,23 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Pl
 		$processedData['header'] = $processor->buildHeader(fread($fileHandle, self::HEADER_LENGTH));
 
 		$bytes = null;
-		do {
+		while (true) {
 			if (!feof($fileHandle) && !isset($bytes[self::MAX_CHUNKLENGTH_LENGTH])) {
 				$bytes .= fread($fileHandle, self::FILE_READ_AHEAD_LENGTH);
 			}
 
+			if (!isset($bytes[self::HEADER_LENGTH])) {
+				break;
+			}
 			$row = $processor->buildDataRow($bytes);
 			if ($row) {
+				$row['stamp'] = md5($bytes);
 				$processedData['data'][] = $row;
 			}
-			//Billrun_Factory::log()->log( $processor->getParser()->getLastParseLength(),  Zend_Log::DEBUG);	
-			$bytes = substr($bytes, $processor->getParser()->getLastParseLength());
-		} while (isset($bytes[self::HEADER_LENGTH]));
+			//Billrun_Factory::log()->log( $processor->getParser()->getLastParseLength(),  Zend_Log::DEBUG);
+			$advance = $processor->getParser()->getLastParseLength();
+			$bytes = substr($bytes, $advance <= 0 ? 1 : $advance);
+		}
 
 		$processedData['trailer'] = $processor->buildTrailer($bytes);
 
@@ -462,6 +546,109 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Pl
 			return FALSE;
 		}
 		return $this->getFileSequenceData($filename);
+	}
+
+	/**
+	 * Get specific data from an asn.1 structure  based on configuration
+	 * @param type $data the ASN.1 data struture
+	 * @param type $config the configuration of the data to retrive.
+	 * @return Array an array containing flatten asn.1 data keyed by the configuration.
+	 * @todo Merge this  function with the ASNParing  function
+	 */
+	protected function getASNDataByConfig($data, $config, $fields) {
+		$dataArr = Asn_Base::getDataArray($data, true, true);
+		$valueArr = array();
+		foreach ($config as $key => $val) {
+			$tmpVal = $this->parseASNData(explode(',', $val), $dataArr, $fields);
+			if ($tmpVal !== FALSE) {
+				$valueArr[$key] = $tmpVal;
+}
+		}
+		return count($valueArr) ? $valueArr : false;
+	}
+
+	/**
+	 * convert the actual data we got from the ASN record to a readable information
+	 * @param $struct 
+	 * @param $asnData the parsed ASN.1 recrod.
+	 * @param $fields TODO
+	 * @return Array conatining the fields in the ASN record converted to readableformat and keyed by they're use.
+	 * @todo Merge this  function with the ASNParing  function
+	 */
+	protected function parseASNData($struct, $asnData, $fields) {
+		$matches = array();
+		if (preg_match("/\[(\w+)\]/", $struct[0], $matches) || !is_array($asnData)) {
+			$ret = false;
+			if (!isset($matches[1]) || !$matches[1] || !isset($fields[$matches[1]])) {
+				Billrun_Factory::log()->log(" couldn't digg into : {$struct[0]} struct : " . print_r($struct, 1) . " data : " . print_r($asnData, 1), Zend_Log::DEBUG);
+			} else {
+				$ret = $this->parseField($fields[$matches[1]], $asnData);
+			}
+			return $ret;
+		}
+
+		foreach ($struct as $val) {
+			if (($val == "*" || $val == "+" || $val == "-" || $val == ".")) {  // This is  here to handle cascading  data arrays
+				if (isset($asnData[0])) {// Taking as an assumption there will never be a 0 key in the ASN types 
+					$newStruct = $struct;
+					array_shift($newStruct);
+					$sum = null;
+					foreach ($asnData as $subData) {
+						$sum = $this->doParsingAction($val, $this->parseASNData($newStruct, $subData, $fields), $sum);
+					}
+					return $sum;
+				} else {
+					$val = next($struct);
+					array_shift($struct);
+				}
+			}
+			if (isset($asnData[$val])) {
+				$newStruct = $struct;
+				array_shift($newStruct);
+				return $this->parseASNData($newStruct, $asnData[$val], $fields);
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * An hack to ahndle casacing  arrays  of  a given field
+	 * @param type $action
+	 * @param type $data
+	 * @param type $prevVal
+	 * @return string
+	 */
+	protected function doParsingAction($action, $data, $prevVal = null) {
+		$ret = $prevVal;
+		switch ($action) {
+			case "+":
+				if ($prevVal == null) {
+					$ret = 0;
+				}
+				$ret += $data;
+				break;
+			case "-":
+				if ($prevVal == null) {
+					$ret = 0;
+				}
+				$ret -= $data;
+				break;
+			case "*":
+				if ($prevVal == null) {
+					$ret = array();
+				}
+				$ret[] = $data;
+				break;
+			default:
+			case ".":
+				if ($prevVal == null) {
+					$ret = "";
+				}
+				$ret .= "," . $data;
+				break;
+		}
+		return $ret;
 	}
 
 }

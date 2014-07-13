@@ -14,7 +14,7 @@ class Asn_Type_Real extends Asn_Object {
 	 */
 	protected function parse($data) {
 		//	$this->parsedData = unpack(($this->dataLength > 4 ? "d" : "f"),$data);;
-		parent::parse($data);
+		return parent::parse($data);
 	}
 
 }

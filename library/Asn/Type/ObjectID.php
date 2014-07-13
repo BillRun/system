@@ -7,10 +7,6 @@
  */
 class Asn_Type_ObjectID extends Asn_Object {
 
-	public function __construct($data, $type) {
-		parent::__construct($data, $type);
-	}
-
 	/**
 	 * Parse an ASN.1 OID value.
 	 *
@@ -22,7 +18,7 @@ class Asn_Type_ObjectID extends Asn_Object {
 	 * @param	string	$data		The raw binary data string
 	 */
 	protected function parse($string) {
-		parent::parse($string);
+		return parent::parse($string);
 		/* 	$ret = floor(ord($string[0])/40).".";
 		  $ret .= (ord($string[0]) % 40);
 		  $build = array();

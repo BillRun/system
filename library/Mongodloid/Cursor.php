@@ -49,6 +49,12 @@ class Mongodloid_Cursor implements Iterator {
 		return $this;
 	}
 
+	public function skip($limit) {
+		if (method_exists($this->_cursor, 'skip')) {
+			$this->_cursor->skip(intval($limit));
+		}
+		return $this;
+	}
 	public function limit($limit) {
 		$this->_cursor->limit(intval($limit));
 		return $this;

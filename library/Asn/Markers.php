@@ -10,7 +10,7 @@
  * This class holds the constats that are use in ASN.
  *
  * @package  ASN
- * @since    1.0
+ * @since    0.5
  */
 class Asn_Markers {
 
@@ -23,6 +23,7 @@ class Asn_Markers {
 	const ASN_LONG_LEN = 0x80;
 	const ASN_EXTENSION_ID = 0x1F;
 	const ASN_BIT = 0x80;
-	const ASN_EOC = 0x00;
+	const ASN_EOC = 0x00;	
+	const ASN_INDEFINITE_LEN = 0x80;
 
 }
