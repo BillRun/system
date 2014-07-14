@@ -136,7 +136,7 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 	 * @return type
 	 */
 	protected function getPLMNMatchQuery($local = false) {
-		$retQuery = $local ? array('$or' => array('connectedNumber' => "/^972/"), array('$where' => "this.connectedNumber.length <= 8")) : array();
+		$retQuery = $local ? array('$or' => array(array('connectedNumber' => "/^972/"), array('$where' => "this.connectedNumber.length <= 8"))) : array('$or' => array(array('connectedNumber' => "/^(?!972)/")));
 		foreach ($this->plmnTransaltion as $plmn => $regxes) {
 			foreach ($regxes as $regx) {
 				$retQuery['$or'][] = array('sender' => $plmn, 'connectedNumber' => $local ? "/^$regx/" : "/^(?!$regx)/");
@@ -155,8 +155,8 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 		foreach ($this->fraudConfig['plmn'] as $key => $rateKeys) {
 			foreach ($rateKeys as $rateKey) {
 				$rate = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('billing.db'))->ratesCollection()->query(array('key' => $rateKey))->cursor()->limit(1)->current();
-				if ($rate && isset($rate['params']['prefixes'])) {
-					foreach ($rate['params']['prefixes'] as $value) {
+				if ($rate && isset($rate['params']['prefix'])) {
+					foreach ($rate['params']['prefix'] as $value) {
 						$this->plmnTransaltion[$key][] = $value;
 					}
 				}

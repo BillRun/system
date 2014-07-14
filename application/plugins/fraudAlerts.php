@@ -101,7 +101,9 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 				$event['deposit_stamp'] = $event['stamps'][0]; // remember what event you sent to the remote server
 				$event['returned_value'] = (array) $ret;
 				$this->markEvent($event);
-				$this->markEventLines($event);
+				if($ret['success']) {
+					$this->markEventLines($event);
+				}
 			} else {
 				$this->sendEmailOnFailure($event, $ret);
 			}
