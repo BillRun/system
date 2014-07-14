@@ -51,9 +51,9 @@ trait Billrun_Traits_FraudAggregation {
 				$query = $baseQuery;
 				$eventQuery = $this->prepareRuleQuery($eventQuery, $key);
 				$charge_time = new MongoDate(isset($eventQuery['hourly']) ? strtotime("-" . $eventQuery['hourly']) : Billrun_Util::getLastChargeTime(true));
-				Billrun_Factory::log()->log("date : " . date("Y/m/d H:i:s", $charge_time->sec));
 				$query['base_match']['$match'][$timeField]['$gte'] = $charge_time;
 				//$query['base_match']['$match']['urt']['$gte'] = $charge_time;
+				
 				$project = $query['project'];
 				$project['$project'] = array_merge($project['$project'], $this->addToProject(array('units' => $eventQuery['units'],
 						'event_type' => $key,
