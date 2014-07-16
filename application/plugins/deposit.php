@@ -86,7 +86,7 @@ class depositPlugin extends Billrun_Plugin_BillrunPluginBase {
 				'event_stamp' => array('$exists'=> false),
 //				'deposit_stamp' => array('$exists'=> true),
 				'event_type' => array('$ne'=> 'DEPOSITS'),
-				'nofity_time' => array('$gte' => new MongoDate ($timeWindow) )
+				'nofity_time' => array('$gte' => new MongoDate ($timeWindow) ),
 			),
 		);
 		$group =array(

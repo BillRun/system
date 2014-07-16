@@ -69,11 +69,11 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 		//Create filter object
 		$filter = new Zend_Filter_Decompress(
 				array(
-					'adapter' => 'Zend_Filter_Compress_Zip', //Or 'Zend_Filter_Compress_Tar', or 'Zend_Filter_Compress_Gz'
-					'options' => array(
-						'target' => dirname($local_path),
-					)
-			));
+			'adapter' => 'Zend_Filter_Compress_Zip', //Or 'Zend_Filter_Compress_Tar', or 'Zend_Filter_Compress_Gz'
+			'options' => array(
+				'target' => dirname($local_path),
+			)
+		));
 
 		$filter->filter($local_path);
 
@@ -131,15 +131,16 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 	}
 
 	/**
-	 * 
-	 * @param type $local
-	 * @return type
+	 * THis  function is used to add local/none-local checks to  aggregation query.
+	 * @param type $local shold the check be for local usage or none local usage
+	 * @return array  the  query to add to the aggregation query.
 	 */
 	protected function getPLMNMatchQuery($local = false) {
-		$retQuery = $local ? array('$or' => array(array('connectedNumber' => "/^972/"), array('$where' => "this.connectedNumber.length <= 8"))) : array('$or' => array(array('connectedNumber' => "/^(?!972)/")));
+		$queryLogic = $local ? '$or' : '$and';
+		$retQuery = $local ? array($queryLogic => array(array('connectedNumber' => array('$regex' => "^972")), array('$where' => "this.connectedNumber.length <= 8"))) : array($queryLogic => array(array('connectedNumber' => array('$regex' => "/^(?!972)/"))));
 		foreach ($this->plmnTransaltion as $plmn => $regxes) {
 			foreach ($regxes as $regx) {
-				$retQuery['$or'][] = array('sender' => $plmn, 'connectedNumber' => $local ? "/^$regx/" : "/^(?!$regx)/");
+				$retQuery[$queryLogic][] = array('sender' => $plmn, 'connectedNumber' => array('$regex' => ($local ? "^$regx" : "^(?!$regx)")));
 			}
 		}
 
@@ -162,7 +163,6 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 				}
 			}
 		}
-
 	}
 
 	protected function addToProject($valueArr) {
@@ -478,13 +478,13 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 		// @todo: WTF?!?! Are you real with this condition???
 		if (!isset($event['event_type'])) {
 			$type = (isset($event['sms_hourly_nonisrael']) ? 'sms_hourly_nonisrael' :
-					(isset($event['moc_nonisrael_hourly']) ? 'moc_nonisrael_hourly' :
-						(isset($event['moc_israel_hourly']) ? 'moc_israel_hourly' :
-							(isset($event['sms_hourly']) ? 'sms_hourly' :
-								(isset($event['moc_nonisrael']) ? 'moc_nonisrael' :
-									(isset($event['mtc_all']) ? 'mtc_all' :
-										(isset($event['sms_out']) ? 'sms_out' :
-											'moc_israel')))))));
+							(isset($event['moc_nonisrael_hourly']) ? 'moc_nonisrael_hourly' :
+									(isset($event['moc_israel_hourly']) ? 'moc_israel_hourly' :
+											(isset($event['sms_hourly']) ? 'sms_hourly' :
+													(isset($event['moc_nonisrael']) ? 'moc_nonisrael' :
+															(isset($event['mtc_all']) ? 'mtc_all' :
+																	(isset($event['sms_out']) ? 'sms_out' :
+																			'moc_israel')))))));
 
 			$event['units'] = 'SEC';
 			$event['value'] = $event[$type];
