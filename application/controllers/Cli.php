@@ -22,7 +22,8 @@ class CliController extends Yaf_Controller_Abstract {
 
 	public function init() {
 		$forceUser = Billrun_Factory::config()->getConfigValue('cliForceUser', '');
-		if (!empty($forceUser) && ($systemExecuterUser = trim(shell_exec('whoami'))) != $forceUser) {
+		$systemExecuterUser = trim(shell_exec('whoami'));
+		if (!empty($forceUser) && $systemExecuterUser != $forceUser && $systemExecuterUser != 'apache') {
 			Billrun_Log::getInstance()->addWriter(new Zend_Log_Writer_Stream('php://stdout'));
 			$this->addOutput('Cannot run cli command with the system user ' . $systemExecuterUser . '. Please use ' . $forceUser . ' for CLI operations');
 			exit();

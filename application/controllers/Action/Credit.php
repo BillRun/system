@@ -65,7 +65,7 @@ class CreditAction extends ApiAction {
 
 	protected function parseRow($credit_row) {
 		$ret = Billrun_Util::parseCreditRow($credit_row);
-		if (isset($ret['status']) && ['status'] == 0) {
+		if (isset($ret['status']) && $ret['status'] == 0) {
 			$error_message = isset($ret['desc']) ? $ret['desc'] : 'Error with credit row';
 			return $this->setError($error_message, $credit_row);
 		}
