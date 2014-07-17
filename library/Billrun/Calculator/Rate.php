@@ -136,7 +136,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 		$type = $line['type'];
 		if (!isset(self::$calcs[$type])) {
 			// @TODO: use always the first condition for all types - it will load the config values by default
-			if ($type === 'smsc' || $type === 'smpp') {
+			if ($type === 'smsc' || $type === 'smpp' || $type === 'tap3') {
 				$configOptions = Billrun_Factory::config()->getConfigValue('Rate_' . ucfirst($type));
 				$options = array_merge($options, $configOptions);
 			}

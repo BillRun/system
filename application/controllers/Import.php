@@ -156,6 +156,7 @@ class ImportController extends Yaf_Controller_Abstract {
 	public function convertTap3RatesAction() {
 		$path = '/home/shani/Documents/S.D.O.C/BillRun/Files/Docs/CSVs/countries.csv';
 		$change_date = '2014-09-01 00:00:00';
+//		$change_date = '2014-01-01 00:00:00';
 		$new_from_date = new MongoDate(strtotime($change_date));
 		$old_to_date = new MongoDate(strtotime($change_date) - 1);
 		$now = new MongoDate();
@@ -178,11 +179,11 @@ class ImportController extends Yaf_Controller_Abstract {
 		}
 		foreach ($old_tap3_rates as $rate) {
 			foreach ($rate['params']['serving_networks'] as $plmn) {
-				if (!isset($plmns[$plmn])) {
+				if (!isset($plmns[$plmn]['country'])) {
 					die('PLMN ' . $plmn . ' of rate ' . $rate['key'] . ' not found in csv');
 				}
-				$country = $plmns[$plmn];
-				$unified_country = $this->getUnifiedCountry($country);
+				$country_label = $plmns[$plmn]['country'];
+				$unified_country = $plmns[$plmn]['unified_country'];
 				$new_rate_key = 'AC_' . $unified_country;
 				if (!isset($new_rates[$new_rate_key])) {
 					$new_rate = $rate->getRawData();
@@ -190,13 +191,13 @@ class ImportController extends Yaf_Controller_Abstract {
 					unset($new_rate['params']['serving_networks']);
 					$new_rate['key'] = $new_rate_key;
 					$new_rate['from'] = $new_from_date;
-					$new_rate['country'] = $country;
+					$new_rate['country'] = $country_label;
 					if (isset($new_rate['rates']['incoming_call']) && preg_match('/CALLBACK/', $rate['key'])) {
 						$new_rate['rates']['callback'] = $new_rate['rates']['incoming_call'];
 						unset($new_rate['rates']['incoming_call']);
 					}
 					if (!isset($prefixes_by_country[$unified_country])) {
-						die('No KT prefixes found for ' . $country);
+						die('No KT prefixes found for ' . $country_label);
 					} else {
 						$new_rate['kt_prefixes'] = $prefixes_by_country[$unified_country];
 					}
@@ -218,19 +219,19 @@ class ImportController extends Yaf_Controller_Abstract {
 			$new_rate['params']['serving_networks'] = array_unique($new_rate['params']['serving_networks']);
 		}
 //		die('Finished preparations successfuly. ' . count($new_rates) . ' rates will be added.');
-		// insert new rates
-		if ($new_rates) {
-			Billrun_Factory::db()->ratesCollection()->batchInsert($new_rates);
-		}
 
-		// update old rates "to" field
-		Billrun_Factory::db()->ratesCollection()->update(array('key' => array('$regex' => '^AC_ROAM')), array('$set' => array('to' => $old_to_date)), array('multiple' => TRUE));
+		if ($new_rates) {
+			// insert new rates
+			Billrun_Factory::db()->ratesCollection()->batchInsert($new_rates);
+			// update old rates "to" field
+			Billrun_Factory::db()->ratesCollection()->update(array('key' => array('$regex' => '^AC_ROAM'), 'from' => array('$lte' => $now), 'to' => array('$gte' => $now)), array('$set' => array('to' => $old_to_date)), array('multiple' => TRUE));
+		}
 
 		die('Ended successfuly.');
 	}
 
 	protected function getUnifiedCountry($kt_rate_key) {
-		return strtoupper(str_replace(array('_MOBILE', '_FIX', 'KT_', ' '), '', $kt_rate_key));
+		return str_replace('USA_NEW', 'USA', strtoupper(str_replace(array('_MOBILE', '_FIX', 'KT_', ' '), '', $kt_rate_key)));
 	}
 
 	protected function getPLMNsArr($path) {
@@ -246,31 +247,20 @@ class ImportController extends Yaf_Controller_Abstract {
 			if ($row == 1) {
 				continue;
 			}
-			$plmns[$data[0]] = $data[3];
+			$plmns[$data[0]]['unified_country'] = $this->getUnifiedCountry(empty($data[4]) ? $data[3] : $data[4]);
+			$plmns[$data[0]]['country'] = $data[3];
 		}
 		return $plmns;
 	}
 
 	public function checkCountryNamesAction() {
 		$path = '/home/shani/Documents/S.D.O.C/BillRun/Files/Docs/CSVs/countries.csv';
-		if (($handle = fopen($path, "r")) === FALSE) {
-			die("error opening file");
-		}
-		$delimiter = "\t";
-		$limit = 0;
-		$row = 0;
-		$plmn_countries = array();
-		while (($data = fgetcsv($handle, $limit, $delimiter)) !== FALSE) {
-			$row++;
-			if ($row == 1) {
-				continue;
-			}
-			$plmn_countries[] = $data[3];
-		}
-		$plmn_countries = array_unique($plmn_countries);
+		$plmn_countries = $this->getPLMNsArr($path);
+		$unified_countries = array();
 		foreach ($plmn_countries as &$country) {
-			$country = str_replace(' ', '', strtoupper($country));
+			$unified_countries[] = $country['unified_country'];
 		}
+		$unified_countries = array_unique($unified_countries);
 
 		$kt_countries = array();
 		$kt_rates = Billrun_Factory::db()->ratesCollection()->query(array('key' => array('$regex' => '^KT_')));
@@ -278,8 +268,8 @@ class ImportController extends Yaf_Controller_Abstract {
 			$kt_countries[] = $this->getUnifiedCountry($rate['key']);
 		}
 		$kt_countries = array_unique($kt_countries);
-		die('Exist only in csv ( ' . count(array_diff($plmn_countries, $kt_countries)) . '):<br>' . implode('<br>', array_diff($plmn_countries, $kt_countries)) . '<br><br>' .
-				'Exist only in kt rates ( ' . count(array_diff($kt_countries, $plmn_countries)) . '):<br>' . implode('<br>', array_diff($kt_countries, $plmn_countries)));
+		die('Exist only in csv ( ' . count(array_diff($unified_countries, $kt_countries)) . '):<br>' . implode('<br>', array_diff($unified_countries, $kt_countries)) . '<br><br>' .
+				'Exist only in kt rates ( ' . count(array_diff($kt_countries, $unified_countries)) . '):<br>' . implode('<br>', array_diff($kt_countries, $unified_countries)));
 	}
 
 }

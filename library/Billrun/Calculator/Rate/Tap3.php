@@ -29,7 +29,7 @@ class Billrun_Calculator_Rate_Tap3 extends Billrun_Calculator_Rate {
 
 	public function __construct($options = array()) {
 		parent::__construct($options);
-		$this->optional_usage_types = isset($options['calculator']['optional_usage_types']) ? $options['calculator']['optional_usage_types'] : array('incoming_sm');
+		$this->optional_usage_types = isset($options['calculator']['optional_usage_types']) ? $options['calculator']['optional_usage_types'] : array('incoming_sms');
 		$this->loadRates();
 	}
 
