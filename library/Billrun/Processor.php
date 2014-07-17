@@ -608,7 +608,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 		foreach ($this->data['data'] as $row) {
 			try {
 				$entity = new Mongodloid_Entity($row);
-				$entity->save($collection, true);
+				$entity->save($collection, true, 1);
 				$this->data['stored_data'][] = $row;
 			} catch (Exception $e) {
 				Billrun_Factory::log()->log("Processor store " . basename($this->filePath) . " failed on stamp : " . $row['stamp'] . " with the next message: " . $e->getCode() . ": " . $e->getMessage(), Zend_Log::NOTICE);
@@ -660,6 +660,10 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 * @param array $row
 	 */
 	public function setQueueRow($row) {
+		if (isset($this->queue_data[$row['stamp']])) {
+			Billrun_Factory::log()->log('Line stamp ' . $row['stamp'] . ' is duplicate', Zend_Log::ALERT);
+			return;
+		}
 		$this->queue_data[$row['stamp']] = $row;
 	}
 
