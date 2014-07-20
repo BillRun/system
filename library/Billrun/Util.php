@@ -683,5 +683,18 @@ class Billrun_Util {
 		fwrite($fd, json_encode(array('sids' => $sids, 'billrun_key' => $billrun_key)) . PHP_EOL);
 		fclose($fd);
 	}
+	
+	/**
+	 * Get an array of prefixes for a given.
+	 * @param string $str the number to get prefixes to.
+	 * @return Array the possible prefixes of the number sorted by prefix length in decreasing order.
+	 */
+	public static function getPrefixes($str) {
+		$prefixes = array();
+		for ($i = strlen($str); $i > 0; $i--) {
+			$prefixes[] = substr($str, 0, $i);
+		}
+		return $prefixes;
+	}
 
 }

@@ -232,7 +232,6 @@ class RatesModel extends TabledateModel {
 					}
 				}
 				$ret[] = $row;
-				
 			} else if ($item->get('rates') && !$this->showprefix) {
 				foreach ($item->get('rates') as $key => $rate) {
 					$added_columns = array(
@@ -426,6 +425,35 @@ class RatesModel extends TabledateModel {
 	 */
 	public function getPricesListFileHeader() {
 		return array('key', 'usage_type', 'category', 'rule', 'access_price', 'interval', 'price', 'times', 'from_date');
+	}
+
+	public function getRateByVLR($vlr) {
+		$prefixes = Billrun_Util::getPrefixes($vlr);
+		$match = array('$match' => array(
+				'params.serving_networks' => array(
+					'$exists' => true,
+				),
+				'kt_prefixes' => array(
+					'$in' => $prefixes,
+				),
+			),);
+		$unwind = array(
+			'$unwind' => '$kt_prefixes',
+		);
+		$sort = array(
+			'$sort' => array(
+				'kt_prefixes' => -1,
+			),
+		);
+		$limit = array(
+			'$limit' => 1,
+		);
+		$rate = $this->collection->aggregate(array($match, $unwind, $sort, $limit));
+		if ($rate) {
+			return $rate[0];
+		} else {
+			return NULL;
+		}
 	}
 
 }

@@ -68,19 +68,6 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	abstract protected function getLineRate($row, $usage_type);
 
 	/**
-	 * Get an array of prefixes for a given.
-	 * @param string $str the number to get prefixes to.
-	 * @return Array the possible prefixes of the number sorted by prefix size in decreasing order.
-	 */
-	protected function getPrefixes($str) {
-		$prefixes = array();
-		for ($i = strlen($str); $i > 0; $i--) {
-			$prefixes[] = substr($str, 0, $i);
-		}
-		return $prefixes;
-	}
-
-	/**
 	 * method to receive the lines the calculator should take care
 	 * 
 	 * @return Mongodloid_Cursor Mongo cursor for iteration

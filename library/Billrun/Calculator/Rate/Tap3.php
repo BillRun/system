@@ -104,7 +104,7 @@ class Billrun_Calculator_Rate_Tap3 extends Billrun_Calculator_Rate {
 			$call_number = isset($row['called_number']) ? $row->get('called_number') : (isset($row['calling_number']) ? $row->get('calling_number') : NULL);
 			if ($call_number) {
 				$call_number = preg_replace("/^[^1-9]*/", "", $call_number);
-				$call_number_prefixes = $this->getPrefixes($call_number);
+				$call_number_prefixes = Billrun_Util::getPrefixes($call_number);
 			}
 			$potential_rates = array();
 			if (isset($this->rates['by_names'][$serving_network])) {
