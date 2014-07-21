@@ -183,6 +183,7 @@ class ImportController extends Yaf_Controller_Abstract {
 					die('PLMN ' . $plmn . ' of rate ' . $rate['key'] . ' not found in csv');
 				}
 				$country_label = $plmns[$plmn]['country'];
+				$alpha3 = $plmns[$plmn]['alpha3'];
 				$unified_country = $plmns[$plmn]['unified_country'];
 				$new_rate_key = 'AC_' . $unified_country;
 				if (!isset($new_rates[$new_rate_key])) {
@@ -192,6 +193,7 @@ class ImportController extends Yaf_Controller_Abstract {
 					$new_rate['key'] = $new_rate_key;
 					$new_rate['from'] = $new_from_date;
 					$new_rate['country'] = $country_label;
+					$new_rate['alpha3'] = $alpha3;
 					if (isset($new_rate['rates']['incoming_call']) && preg_match('/CALLBACK/', $rate['key'])) {
 						$new_rate['rates']['callback'] = $new_rate['rates']['incoming_call'];
 						unset($new_rate['rates']['incoming_call']);
@@ -249,6 +251,7 @@ class ImportController extends Yaf_Controller_Abstract {
 			}
 			$plmns[$data[0]]['unified_country'] = $this->getUnifiedCountry(empty($data[4]) ? $data[3] : $data[4]);
 			$plmns[$data[0]]['country'] = $data[3];
+			$plmns[$data[0]]['alpha3'] = $data[1];
 		}
 		return $plmns;
 	}
