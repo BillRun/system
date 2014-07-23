@@ -488,7 +488,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		
 		try {
 			Billrun_Factory::log()->log("Fraud plugin - called " . $called_number . " with usagev of " . $line['usagev'] . " upserted to the fraud called collection", Zend_Log::DEBUG);
-			$fraud_connection = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('fraud.db'))->calledCollection();
+			$fraud_connection = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('fraud2.db'))->calledCollection();
 			$fraud_connection->update($query, $update, $options);
 		} catch (Exception $e) {
 			// @TODO: dump to file for durability
@@ -518,7 +518,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		
 		try {
 			Billrun_Factory::log()->log("Fraud plugin - calling " . $calling_number . " with usagev of " . $line['usagev'] . " upserted to the fraud calling collection", Zend_Log::DEBUG);
-			$fraud_connection = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('fraud.db'))->callingCollection();
+			$fraud_connection = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('fraud2.db'))->callingCollection();
 			$fraud_connection->update($query, $update, $options);
 		} catch (Exception $e) {
 			// @TODO: dump to file for durability
