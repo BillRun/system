@@ -85,11 +85,15 @@ class RatesModel extends TabledateModel {
 					$newRefPlans = array(); // this will be the new array of DBRefs
 					unset($rate['plans']);
 					foreach ($sourcePlans as &$plan) {
-						$planEntity = $plansColl->query('name', $plan)
-										->lessEq('from', $currentDate)
-										->greaterEq('to', $currentDate)
-										->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'))->current();
-						$newRefPlans[] = $planEntity->createRef($plansColl);
+						if (MongoDBRef::isRef($plan)) {
+							$newRefPlans[] = $plan;
+						} else {
+							$planEntity = $plansColl->query('name', $plan)
+											->lessEq('from', $currentDate)
+											->greaterEq('to', $currentDate)
+											->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'))->current();
+							$newRefPlans[] = $planEntity->createRef($plansColl);
+						}
 					}
 					$rate['plans'] = $newRefPlans;
 				}
