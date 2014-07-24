@@ -25,7 +25,7 @@ class Gsmodem_Gsmodem  {
 	const HANGING_UP = 'hanging_up';
 
 	const COMMAND_RESPONSE_TIME = 15; // the amount of seconds to wait  for a response from the modem to a given command.
-	const RESPONSIVE_RESULTS_TIMEOUT = 0.05; 
+	const RESPONSIVE_RESULTS_TIMEOUT = 0.01; 
 	
 	//--------------------------------------------------------------------------
 	
@@ -69,9 +69,9 @@ class Gsmodem_Gsmodem  {
 	 * @param type $number
 	 * @return type
 	 */
-	public function call($number,$waitDuration = false) {		
+	public function call($number,$waitDuration = false) {
 		$this->hangUp();
-		$ret =  $this->doCmd($this->getATcmd('call', array($number)), true, true, true,($waitDuration ? $waitDuration : self::COMMAND_RESPONSE_TIME * 2) );		
+		$ret =  $this->doCmd($this->getATcmd('call', array($number)), true, true, true,($waitDuration ? $waitDuration : self::COMMAND_RESPONSE_TIME * 2) );
 
 		return $ret;
 	}
@@ -279,7 +279,7 @@ class Gsmodem_Gsmodem  {
 		$beginningState = $this->getState();
 		stream_set_blocking($this->deviceFD,FALSE);
 		$startTime = microtime(true);
-		usleep(100);
+		usleep(10);
 		while (( $newData = fread($this->deviceFD,4096)) || $waitTime > microtime(true) - $startTime ) {	
 			$callResult .= $newData ;
 			//Billrun_Factory::log()->log(trim($callResult),  Zend_Log::DEBUG);
@@ -304,7 +304,7 @@ class Gsmodem_Gsmodem  {
 				}
 			}
 			//wait  for additional input from the device.
-			usleep(100);
+			usleep(5);
 		}
 		return $res;
 	}

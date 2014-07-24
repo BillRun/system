@@ -125,14 +125,15 @@ class Billrun_Generator_Report_GeneratedCalls extends Billrun_Generator_Report {
 				'callee_estimated_price' => 'generator_estimated_price',
 			);			
 			$record = array_merge( $this->filterArray($callingRecordFilter, $line),  $this->filterArray($billingRecordFilter, $line) );			
-			$record['start_time_offest'] = Billrun_Util::getFieldVal($line['caller_call_start_time']->sec,0) - strtotime( Billrun_Util::getFieldVal($line['billing_charging_start_time'],'') );
+			$record['start_time_offest'] = Billrun_Util::getFieldVal($line['callee_call_start_time']->sec,0) - strtotime( Billrun_Util::getFieldVal($line['billing_charging_start_time'],'') );
 			
 			$record['end_time_offest'] = Billrun_Util::getFieldVal($line['callee_call_end_time']->sec,0) - strtotime(Billrun_Util::getFieldVal($line['billing_charging_end_time'],''));
 			
 			if($isCallerHanugup) {
 				$record['generator_duration'] = Billrun_Util::getFieldVal($line['caller_duration'],Billrun_Util::getFieldVal($line['callee_duration'],0));
 				$record['generator_call_start_time'] = date("Y-m-d H:i:s",Billrun_Util::getFieldVal($line['caller_call_start_time']->sec,Billrun_Util::getFieldVal($line['callee_call_start_time']->sec,0)));
-				$record['generator_call_end_time'] = date("Y-m-d H:i:s", Billrun_Util::getFieldVal($line['caller_call_end_time']->sec,Billrun_Util::getFieldVal($line['callee_call_end_time']->sec,0)));				
+				$record['generator_call_end_time'] = date("Y-m-d H:i:s", Billrun_Util::getFieldVal($line['caller_call_end_time']->sec,Billrun_Util::getFieldVal($line['callee_call_end_time']->sec,0)));
+				$record['start_time_offest'] = Billrun_Util::getFieldVal($line['caller_call_start_time']->sec,$record['start_time_offest']) - strtotime( Billrun_Util::getFieldVal($line['billing_charging_start_time'],'') );
 				$record['end_time_offest'] = Billrun_Util::getFieldVal($line['caller_call_end_time']->sec,0) - strtotime(Billrun_Util::getFieldVal($line['billing_charging_end_time'],''));			
 			}
 			
@@ -264,7 +265,8 @@ class Billrun_Generator_Report_GeneratedCalls extends Billrun_Generator_Report {
 
 		$this->billingCalls= array();
 		foreach($this->subscribers as $subscriber) {
-			$this->billingCalls = array_merge_recursive($this->billingCalls,$this->mergeBillingLines($subscriber));
+//$this->billingCalls = array_merge_recursive($this->billingCalls,$this->mergeBillingLines($subscriber)); // was on dev code might be better TODO check this
+			$this->billingCalls = array_merge($this->billingCalls,$this->mergeBillingLines($subscriber));
 		}
 		
 		//load calls made
@@ -276,11 +278,6 @@ class Billrun_Generator_Report_GeneratedCalls extends Billrun_Generator_Report {
 											'$gt' => new MongoDate($this->from),
 											'$lte'=> new MongoDate($this->to),										
 										 ),
-								//'$or' => array(
-								//	array('callee_call_start_time' => array('$gt'=> new MongoDate(0) )),
-								//	array('billing_urt' => array('$gt'=> new MongoDate(0) )),
-									//array('caller_end_result' => array('$ne'=> 'no_call' )),
-								//),
 								'from' =>  array('$regex' => (string) $number ),
 						);
 		
@@ -312,7 +309,7 @@ class Billrun_Generator_Report_GeneratedCalls extends Billrun_Generator_Report {
 			}			
 			
 			$updateResults =  Billrun_Factory::db()->linesCollection()->update(array('type'=>'generated_call',
-																//'from' => array('$regex' => preg_replace("/^972/","",$bLine['calling_number']) ),
+																'from' => array('$regex' => preg_replace("/^972/","",$bLine['calling_number']) ),
 																'to' => array('$regex' => preg_replace("/^972/","",$bLine['called_number']) ),
 																'urt' => array('$lte' => new MongoDate($bLine['urt']['sec'] + $this->billingTimeOffset + $this->allowedTimeDiveation),
 																			   '$gte' => new MongoDate($bLine['urt']['sec'] + $this->billingTimeOffset - $this->allowedTimeDiveation))

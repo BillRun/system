@@ -25,6 +25,7 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 	const WAIT_TIME_PADDING = 10;
 	const WAITING_SLEEP_TIME = 1;
 	const RESET_MODEM_WINDOW = 10;
+	const MODEM_RESPONSE_TIME = 0.205; //TODO move to the device driver
 
 	/**
 	 * the type of the object
@@ -259,7 +260,7 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 			if ($action['action_type'] == static::TYPE_BUSY) {
 				sleep( intval(Billrun_Factory::config()->getConfigValue('calls.busy_wait_time', static::BUSY_WAIT_TIME)) );
 			}
-			$this->makeACall($device, $call, $action['to'], ( $action['action_type'] == static::TYPE_VOICE_MAIL ? $action['duration'] : false ));			
+			$this->makeACall($device, $call, $action['to'], ( $action['action_type'] == static::TYPE_VOICE_MAIL ? $action['duration'] : false ));
 		} else {			
 			if ($action['action_type'] != static::TYPE_BUSY) {
 				$this->waitForCall($device, $call, $action['action_type'], $action['duration'] + static::WAIT_TIME_PADDING );
@@ -270,13 +271,15 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 		}
 		
 		$this->save($action, $call, $isCalling,'handling_call');
-		if ($call['calling_result'] == Gsmodem_StateMapping::IN_CALL_STATE ||$call['calling_result'] == Gsmodem_StateMapping::OUT_CALL_STATE ) {
+		if ( ( $call['calling_result'] == Gsmodem_StateMapping::IN_CALL_STATE ||$call['calling_result'] == Gsmodem_StateMapping::OUT_CALL_STATE ) && $action['action_type'] != static::TYPE_VOICE_MAIL ) {
 			$this->HandleCall($device, $call, $action['duration'], (($action['hangup'] == 'caller') == $isCalling) );
 			$ret = true;
 		} else if($action['action_type'] == static::TYPE_REGULAR) {
 			Billrun_Factory::log("Failed on action of type : {$action['action_type']} when using modem  with number : ".$device->getModemNumber() . " got  result of {$call['calling_result']}.",Zend_Log::ERR);
 			$device->hangUp();			
-		} 
+		} else {
+			$device->hangUp();
+		}
 		//$call['execution_end_time'] = date("YmdTHis");
 		//$call['estimated_price'] = $call['duration'] * $action['rate']; //TODO  maybe use  the billing  getPriceData?
 		$this->save($action, $call, $isCalling,'call_done');		
@@ -352,12 +355,14 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 
 		if ($ret == Gsmodem_Gsmodem::NO_RESPONSE ) {
 				$device->hangUp();
+				$callRecord['call_end_time'] = new MongoDate( round(microtime(true) - self::MODEM_RESPONSE_TIME) );
 				$callRecord['end_result'] = 'hang_up';
 		}  else {
+			$callRecord['call_end_time'] = new MongoDate( round(microtime(true) - self::MODEM_RESPONSE_TIME) );
 			$callRecord['end_result'] = $device->getState();
 		}
+
 		
-		$callRecord['call_end_time'] = new MongoDate( round(microtime(true)) );
 		$callRecord['duration'] = $callRecord['call_end_time']->sec - $callRecord['call_start_time']->sec;
 	
 	}
