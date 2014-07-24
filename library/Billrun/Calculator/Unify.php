@@ -37,7 +37,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 	protected $acceptArchivedLines = false;
 	protected $protectedConcurrentFiles = true;
 	protected $archiveDb;
-	protected $activeBillrun;
+//	protected $activeBillrun;
 	protected $dbConcurrentPref = 'RP_PRIMARY_PREFERRED';
 	protected $dbReadPref = 'RP_SECONDARY_PREFERRED';
 
@@ -75,7 +75,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 		$this->archivedLines = array();
 		$this->unifiedToRawLines = array();
 		$this->unifiedLines = array();
-		$this->activeBillrun = Billrun_Billrun::getActiveBillrun();
+//		$this->activeBillrun = Billrun_Billrun::getActiveBillrun();
 	}
 
 	/**
@@ -167,8 +167,11 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 					'stamp' => $key,
 					'source' => 'unify',
 					'type' => $row['type'],
-					'billrun' => $this->activeBillrun,
+//					'billrun' => $this->activeBillrun,
 			));
+			if (isset($row['billrun'])) {
+				$base_update['$setOnInsert']['billrun'] = $row['billrun'];
+			}
 			$update = array_merge($base_update, $this->getlockLinesUpdate($this->unifiedToRawLines[$key]['update']));
 			foreach ($this->unificationFields[$row['type']]['fields'] as $fkey => $fields) {
 				foreach ($fields as $field) {
