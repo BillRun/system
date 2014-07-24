@@ -69,17 +69,17 @@ class Billrun_Generator_Report_CallingScript extends Billrun_Generator_Report {
 	public function __construct($options) {
 		parent::__construct($options);
 		if (isset($options['script_type'])) {
-			$this->scriptType = is_array($options['script_type']) ? $options['script_type'] : split(",",$options['script_type']);
+			$this->scriptType = is_array($options['script_type']) ? $options['script_type'] : explode(",",$options['script_type']);
 		}
 		if (isset($options['numbers'])) {
-			$this->numbers = is_array($options['numbers']) ? $options['numbers'] : split(",",$options['numbers']);
+			$this->numbers = is_array($options['numbers']) ? $options['numbers'] : explode(",",$options['numbers']);
 		}		
 		if (isset($options['durations'])) {
-			$this->durations = is_array($options['durations']) ? $options['durations'] : split(",",$options['durations']);
+			$this->durations = is_array($options['durations']) ? $options['durations'] : explode(",",$options['durations']);
 		}
 		
 		if (isset($options['active_days'])) {
-			$this->activeDays = is_array($options['active_days']) ? $options['active_days'] : split(",",$options['active_days']);
+			$this->activeDays = is_array($options['active_days']) ? $options['active_days'] : explode(",",$options['active_days']);
 		}
 		
 		if (isset($options['start_test'])) {

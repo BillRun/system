@@ -50,7 +50,7 @@ class CliController extends Yaf_Controller_Abstract {
 				'workspace-s' => 'The path to the workspace directory',
 				'parser-s' => 'Process: Parser type (default fixed)',
 				'backup' => 'Process: Backup path after the file processed (default ./backup)',
-				'environment-s' => 'Set the  Environment to dev/test/prod temporarly (for a single run)'
+				'env-s' => 'Set the  Environment to dev/test/prod temporarly (for a single run)'
 			);
 
 			$this->options = new Zend_Console_Getopt($input);
@@ -129,7 +129,7 @@ class CliController extends Yaf_Controller_Abstract {
 		$options = array();
 		foreach($this->options->getRemainingArgs() as  $val) {
 			//TODO add "." separation add cascading fileds
-			$tmpArr = split("=", $val);
+			$tmpArr = explode("=", $val);
 			$options[$tmpArr[0]] = isset($tmpArr[1]) ? $tmpArr[1] :  true;			
 
 		}
