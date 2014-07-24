@@ -551,30 +551,15 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		return true;
 	}
 
-	public function beforeUpdateSubscriberBalance($balance, $row, $rate, $calculator) {
-		if (!Billrun_Calculator_CustomerPricing::isBillable($rate)) {
-			$plan = Billrun_Factory::plan(array('name' => $row['plan'], 'time' => $row['urt']->sec, 'disableCache' => true));
-			if ($plan->isRateInPlanGroup($rate, $row['usaget'])) {
-				$billrun_key = $balance['billrun_month'];
-				if (isset($balance['tx']) && array_key_exists($row['stamp'], $balance['tx'])) { // we're after a crash
-					return;
+	public function beforeCommitSubscriberBalance(&$row, &$pricingData, &$query, &$update, $calculator) {
+		if (isset($pricingData['arategroup']) && $pricingData['arategroup'] == 'VF_INCLUDED') {
+			$query = array('sid' => $query['sid'], 'billrun_month' => $query['billrun_month']);
+			$pricingData = array('arategroup' => $pricingData['arategroup'], 'usagesb' => $pricingData['usagesb']);
+			$update['$set'] = array('tx.' . $row['stamp'] => $pricingData);
+			foreach (array_keys($update['$inc']) as $key) {
+				if (!Billrun_Util::startsWith($key, 'balance.groups')) {
+					unset($update['$inc'][$key]);
 				}
-				$group = $plan->getStrongestGroup($rate, $row['usaget']);
-				$row['arategroup'] = $plan->getStrongestGroup($rate, $row['usaget']);
-				if (isset($balance['balance']['groups'][$group][$row['usaget']]['usagev'])) {
-					$row['usagesb'] = floatval($balance['balance']['groups'][$group][$row['usaget']]['usagev']);
-				} else {
-					$row['usagesb'] = 0;
-				}
-				$query = array('sid' => $row['sid'], 'billrun_month' => $billrun_key);
-				$update['$set']['tx.' . $row['stamp']] = array();
-				$update['$inc']['balance.groups.' . $group . '.' . $row['usaget'] . '.usagev'] = $row['usagev'];
-				$update['$inc']['balance.groups.' . $group . '.' . $row['usaget'] . '.cost'] = 0;
-				$update['$inc']['balance.groups.' . $group . '.' . $row['usaget'] . '.count'] = 1;
-				$options = array('w' => 1);
-				Billrun_Factory::db()->setMongoNativeLong(1);
-				Billrun_Factory::db(array('name' => 'balances'))->balancesCollection()->setReadPreference('RP_PRIMARY')->update($query, $update, $options);
-				Billrun_Factory::db()->setMongoNativeLong(0);
 			}
 		}
 	}

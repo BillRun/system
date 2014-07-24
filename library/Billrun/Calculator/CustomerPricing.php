@@ -182,7 +182,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				$pricingData = $this->updateSubscriberBalance($balance, $row, $usage_type, $rate, $volume);
 			}
 
-			if (self::isBillable($rate)) {
+			if ($this->isBillable($rate)) {
 				if (!$pricingData) {
 					return false;
 				}
@@ -214,7 +214,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @param type $billrun_key
 	 * @return Billrun_Balance
 	 */
-	public static function getSubscriberBalance($row, $billrun_key) {
+	public function getSubscriberBalance($row, $billrun_key) {
 		$plan = Billrun_Factory::plan(array('name' => $row['plan'], 'time' => $row['urt']->sec, 'disableCache' => true));
 		$plan_ref = $plan->createRef();
 		if (is_null($plan_ref)) {
@@ -308,7 +308,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		return $ret;
 	}
 
-	public static function isBillable($rate) {
+	public function isBillable($rate) {
 		return !isset($rate['billable']) || $rate['billable'] === TRUE;
 	}
 
@@ -384,72 +384,68 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	protected function updateSubscriberBalance($balance, $row, $usage_type, $rate, $volume) {
 		$this->countConcurrentRetries++;
 		Billrun_Factory::dispatcher()->trigger('beforeUpdateSubscriberBalance', array($balance, &$row, $rate, $this));
-		if (self::isBillable($rate)) {
-			$plan = Billrun_Factory::plan(array('name' => $row['plan'], 'time' => $row['urt']->sec, 'disableCache' => true));
-			$balance_totals_key = $this->getBalanceTotalsKey($row['type'], $usage_type, $plan, $rate);
-			$counters = array($balance_totals_key => $volume);
-			$subRaw = $balance->getRawData();
-			$stamp = strval($row['stamp']);
-			if (isset($subRaw['tx']) && array_key_exists($stamp, $subRaw['tx'])) { // we're after a crash
-				$pricingData = $subRaw['tx'][$stamp]; // restore the pricingData before the crash
-				return $pricingData;
-			}
-			$pricingData = $this->getLinePricingData($volume, $usage_type, $rate, $balance);
-			$query = array('sid' => $row['sid'], 'billrun_month' => $balance['billrun_month']);
-			$update = array();
-			$update['$set']['tx.' . $stamp] = $pricingData;
-			foreach ($counters as $key => $value) {
-				$old_usage = $subRaw['balance']['totals'][$key]['usagev'];
-				$query['balance.totals.' . $key . '.usagev'] = $old_usage;
-				$update['$set']['balance.totals.' . $key . '.usagev'] = $old_usage + $value;
-				$update['$inc']['balance.totals.' . $key . '.cost'] = $pricingData[$this->pricingField];
-				$update['$inc']['balance.totals.' . $key . '.count'] = 1;
-				// update balance group (if exists)
-				if ($plan->isRateInPlanGroup($rate, $usage_type)) {
-					$group = $plan->getStrongestGroup($rate, $usage_type);
-					// @TODO: check if $usage_type should be $key
-					$update['$inc']['balance.groups.' . $group . '.' . $usage_type . '.usagev'] = $value;
-					$update['$inc']['balance.groups.' . $group . '.' . $usage_type . '.cost'] = $pricingData[$this->pricingField];
-					$update['$inc']['balance.groups.' . $group . '.' . $usage_type . '.count'] = 1;
-					if (isset($subRaw['balance']['groups'][$group][$usage_type]['usagev'])) {
-						$pricingData['usagesb'] = floatval($subRaw['balance']['groups'][$group][$usage_type]['usagev']);
-					} else {
-						$pricingData['usagesb'] = 0;
-					}
-				} else {
-					$pricingData['usagesb'] = floatval($old_usage);
-				}
-			}
-			$update['$set']['balance.cost'] = $subRaw['balance']['cost'] + $pricingData[$this->pricingField];
-			$options = array('w' => 1);
-			$is_data_usage = $this->getUsageKey($counters) == 'data';
-			if ($is_data_usage) {
-				$this->setMongoNativeLong(1);
-			}
-			Billrun_Factory::log()->log("Updating balance " . $balance['billrun_month'] . " of subscriber " . $row['sid'], Zend_Log::DEBUG);
-
-			$ret = $this->balances->update($query, $update, $options);
-			if ($is_data_usage) {
-				$this->setMongoNativeLong(0);
-			}
-			if (!($ret['ok'] && $ret['updatedExisting'])) {
-				// failed because of different totals (could be that another server with another line raised the totals). 
-				// Need to calculate pricingData from the beginning
-				if ($this->countConcurrentRetries >= $this->concurrentMaxRetries) {
-					Billrun_Factory::log()->log('Too many pricing retries for line ' . $row['stamp'] . '. Update status: ' . print_r($ret, true), Zend_Log::ALERT);
-					return false;
-				}
-				Billrun_Factory::log()->log('Concurrent write of sid : ' . $row['sid'] . ' line stamp : ' . $row['stamp'] . ' to balance. Update status: ' . print_r($ret, true) . 'Retrying...', Zend_Log::INFO);
-				sleep($this->countConcurrentRetries);
-				$balance = $this->getSubscriberBalance($row, $balance['billrun_month']);
-				return $this->updateSubscriberBalance($balance, $row, $usage_type, $rate, $volume);
-			}
-			Billrun_Factory::log()->log("Line with stamp " . $row['stamp'] . " was written to balance " . $balance['billrun_month'] . " for subscriber " . $row['sid'], Zend_Log::DEBUG);
-			$row['tx_saved'] = true; // indication for transaction existence in balances. Won't & shouldn't be saved to the db.
-		} else {
-			$pricingData = array();
+		$plan = Billrun_Factory::plan(array('name' => $row['plan'], 'time' => $row['urt']->sec, 'disableCache' => true));
+		$balance_totals_key = $this->getBalanceTotalsKey($row['type'], $usage_type, $plan, $rate);
+		$counters = array($balance_totals_key => $volume);
+		$subRaw = $balance->getRawData();
+		$stamp = strval($row['stamp']);
+		if (isset($subRaw['tx']) && array_key_exists($stamp, $subRaw['tx'])) { // we're after a crash
+			$pricingData = $subRaw['tx'][$stamp]; // restore the pricingData before the crash
+			return $pricingData;
 		}
-		Billrun_Factory::dispatcher()->trigger('afterUpdateSubscriberBalance', array(array_merge($row->getRawData(), $pricingData), $balance, self::isBillable($rate) ? $pricingData[$this->pricingField] : 0, $this));
+		$pricingData = $this->getLinePricingData($volume, $usage_type, $rate, $balance);
+		$query = array('sid' => $row['sid'], 'billrun_month' => $balance['billrun_month']);
+		$update = array();
+		$update['$set']['tx.' . $stamp] = $pricingData;
+		foreach ($counters as $key => $value) {
+			$old_usage = $subRaw['balance']['totals'][$key]['usagev'];
+			$query['balance.totals.' . $key . '.usagev'] = $old_usage;
+			$update['$set']['balance.totals.' . $key . '.usagev'] = $old_usage + $value;
+			$update['$inc']['balance.totals.' . $key . '.cost'] = $pricingData[$this->pricingField];
+			$update['$inc']['balance.totals.' . $key . '.count'] = 1;
+			// update balance group (if exists)
+			if ($plan->isRateInPlanGroup($rate, $usage_type)) {
+				$group = $plan->getStrongestGroup($rate, $usage_type);
+				// @TODO: check if $usage_type should be $key
+				$update['$inc']['balance.groups.' . $group . '.' . $usage_type . '.usagev'] = $value;
+				$update['$inc']['balance.groups.' . $group . '.' . $usage_type . '.cost'] = $pricingData[$this->pricingField];
+				$update['$inc']['balance.groups.' . $group . '.' . $usage_type . '.count'] = 1;
+				if (isset($subRaw['balance']['groups'][$group][$usage_type]['usagev'])) {
+					$pricingData['usagesb'] = floatval($subRaw['balance']['groups'][$group][$usage_type]['usagev']);
+				} else {
+					$pricingData['usagesb'] = 0;
+				}
+			} else {
+				$pricingData['usagesb'] = floatval($old_usage);
+			}
+		}
+		$update['$set']['balance.cost'] = $subRaw['balance']['cost'] + $pricingData[$this->pricingField];
+		$options = array('w' => 1);
+		$is_data_usage = $this->getUsageKey($counters) == 'data';
+		if ($is_data_usage) {
+			$this->setMongoNativeLong(1);
+		}
+		Billrun_Factory::log()->log("Updating balance " . $balance['billrun_month'] . " of subscriber " . $row['sid'], Zend_Log::DEBUG);
+		Billrun_Factory::dispatcher()->trigger('beforeCommitSubscriberBalance', array(&$row, &$pricingData, &$query, &$update, $this));
+		$ret = $this->balances->update($query, $update, $options);
+		if ($is_data_usage) {
+			$this->setMongoNativeLong(0);
+		}
+		if (!($ret['ok'] && $ret['updatedExisting'])) {
+			// failed because of different totals (could be that another server with another line raised the totals). 
+			// Need to calculate pricingData from the beginning
+			if ($this->countConcurrentRetries >= $this->concurrentMaxRetries) {
+				Billrun_Factory::log()->log('Too many pricing retries for line ' . $row['stamp'] . '. Update status: ' . print_r($ret, true), Zend_Log::ALERT);
+				return false;
+			}
+			Billrun_Factory::log()->log('Concurrent write of sid : ' . $row['sid'] . ' line stamp : ' . $row['stamp'] . ' to balance. Update status: ' . print_r($ret, true) . 'Retrying...', Zend_Log::INFO);
+			sleep($this->countConcurrentRetries);
+			$balance = $this->getSubscriberBalance($row, $balance['billrun_month']);
+			return $this->updateSubscriberBalance($balance, $row, $usage_type, $rate, $volume);
+		}
+		Billrun_Factory::log()->log("Line with stamp " . $row['stamp'] . " was written to balance " . $balance['billrun_month'] . " for subscriber " . $row['sid'], Zend_Log::DEBUG);
+		$row['tx_saved'] = true; // indication for transaction existence in balances. Won't & shouldn't be saved to the db.
+		Billrun_Factory::dispatcher()->trigger('afterUpdateSubscriberBalance', array(array_merge($row->getRawData(), $pricingData), $balance, $this->isBillable($rate) ? $pricingData[$this->pricingField] : 0, $this));
 		return $pricingData;
 	}
 
@@ -529,8 +525,8 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	public function isLineLegitimate($line) {
 		$arate = $this->getRateByRef($line->get('arate', true));
 		return !is_null($arate) && (empty($arate['skip_calc']) || !in_array(self::$type, $arate['skip_calc'])) &&
-			isset($line['sid']) && $line['sid'] !== false &&
-			$line['urt']->sec >= $this->billrun_lower_bound_timestamp;
+				isset($line['sid']) && $line['sid'] !== false &&
+				$line['urt']->sec >= $this->billrun_lower_bound_timestamp;
 	}
 
 	/**
