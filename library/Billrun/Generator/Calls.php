@@ -62,26 +62,25 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 
 	public function __construct($options) {
 		parent::__construct($options);
-		if (isset($options['path_to_calling_devices'])) {
-			foreach ($options['path_to_calling_devices'] as $value) {
-				Billrun_Factory::log("Initializing  modem  at dev : {$value['device']} with number {$value['number']}.");
-				$modem = new Gsmodem_Gsmodem($value['device'],(isset($value['statemapping']) ? new $value['statemapping']() : false));			
-				if ($modem->isValid()) {					
-					//$modem->registerToNet();
-					if(!$modem->getModemNumber()) {
-						if (isset($value['number'])) {						
-							$modem->setNumber($value['number']);
-						} else {
-							$imei = $modem->getImei();
-							if (isset($value['modem_number_mapping'][$imei])  ) {
-								$modem->setNumber($value['modem_number_mapping'][$imei]);
-							} 	
-						}
+		foreach (Billrun_Util::getFieldVal($options['path_to_calling_devices'],array()) as $value) {
+			Billrun_Factory::log("Initializing  modem  at dev : {$value['device']} with number {$value['number']}.");
+			$modem = new Gsmodem_Gsmodem($value['device'],(isset($value['statemapping']) ? new $value['statemapping']() : false));			
+			if ($modem->isValid()) {					
+				//$modem->registerToNet();
+				if(!$modem->getModemNumber()) {
+					if (isset($value['number'])) {						
+						$modem->setNumber($value['number']);
+					} else {
+						$imei = $modem->getImei();
+						if (isset($value['modem_number_mapping'][$imei])  ) {
+							$modem->setNumber($value['modem_number_mapping'][$imei]);
+						} 	
 					}
-					$this->modemDevices[] = $modem;
 				}
+				$this->modemDevices[] = $modem;
 			}
 		}
+
 	}
 
 	/**
@@ -94,8 +93,8 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 		}
 		
 		sleep(static::RESET_MODEM_WINDOW);//wait for the modem to register to the network properly.
-		
-		if (count($this->modemDevices)  == count($this->options['path_to_calling_devices'])) {
+
+		if (count($this->modemDevices)  == count(Billrun_Util::getFieldVal($this->options['path_to_calling_devices'],false)) ) {
 			while ($this->isWorking) {
 				//update  the  configuration if needed
 				if ($this->isConfigUpdated($this->testScript)) {
@@ -454,8 +453,9 @@ class Billrun_Generator_Calls extends Billrun_Generator {
 	 */
 	protected function getConnectedModemByNumber($number) {
 		foreach ($this->modemDevices as $modem) {
-			//Billrun_Factory::log('quering for modem number');
+			//Billrun_Factory::log('quering for modem number ' . $modem->getModemNumber());			
 			if ($modem->getModemNumber() == $number) {
+				
 				return $modem;
 			}
 		}

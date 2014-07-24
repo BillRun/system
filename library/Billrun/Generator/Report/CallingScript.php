@@ -180,7 +180,8 @@ class Billrun_Generator_Report_CallingScript extends Billrun_Generator_Report {
 	 * @return type
 	 */
 	public function generateDailyScript($params) {
-		$startOffset = $offset =(int) strtotime($params['daily_start_time']) % 86400 ;
+		$daylightSavingOffset = date("I",strtotime($params['daily_start_time']))*3600;
+		$startOffset = $offset =(int) (strtotime($params['daily_start_time'])+ $daylightSavingOffset ) % 86400  ;
 		
 		$actions = array();
 		$sides = array(self::CALLEE, self::CALLER);

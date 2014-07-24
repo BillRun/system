@@ -12,8 +12,9 @@ class Mongodloid_Collection {
 
 	const UNIQUE = 1;
 	const DROP_DUPLICATES = 2;
-	
+
 	protected $w = 0;
+	protected $j = false;
 
 	public function __construct(MongoCollection $collection, Mongodloid_DB $db) {
 		$this->_collection = $collection;
@@ -23,6 +24,9 @@ class Mongodloid_Collection {
 	public function update($query, $values, $options = array()) {
 		if (!isset($options['w'])) {
 			$options['w'] = $this->w;
+		}
+		if (!isset($options['j'])) {
+			$options['j'] = $this->j;
 		}
 		return $this->_collection->update($query, $values, $options);
 	}
@@ -86,14 +90,14 @@ class Mongodloid_Collection {
 		return $query;
 	}
 
-	public function save(Mongodloid_Entity $entity, $save = false, $w = null) {
+	public function save(Mongodloid_Entity $entity, $w = null) {
 		$data = $entity->getRawData();
 
 		if (is_null($w)) {
 			$w = $this->w;
 		}
-		
-		$result = $this->_collection->save($data, array('save' => $save, 'w' => $w));
+
+		$result = $this->_collection->save($data, array('w' => $w, 'j' => $this->j));
 		if (!$result)
 			return false;
 
@@ -131,24 +135,39 @@ class Mongodloid_Collection {
 		return $this->remove(array());
 	}
 
-	public function remove($query) {
+	public function remove($query, $options = array('w' => 1)) {
+		// avoid empty database
+		if (empty($query)) {
+			return false;
+		}
+		
 		if ($query instanceOf Mongodloid_Entity)
 			$query = $query->getId();
 
 		if ($query instanceOf Mongodloid_Id)
 			$query = array('_id' => $query->getMongoId());
 
-		return $this->_collection->remove($query);
+		return $this->_collection->remove($query, $options);
 	}
 
-	public function find($query) {
-		return $this->_collection->find($query);
+	/**
+	 * @return MongoCursor a cursor for the search results.
+	 */
+	public function find($query, $fields = array()) {
+		return $this->_collection->find($query, $fields);
 	}
 
 	public function aggregate() {
+		$args = func_get_args();
+//		if ($this->_db->compareServerVersion('2.6', '>=')) { // TODO Need to update Mongodloid_Cursor functions
+//			// on 2.6 and above it's much more simple
+//			if (count($args)>1) { // Assume the array contains 'ops' for backward compatibility
+//				$args = array($args);
+//			}
+//			return new Mongodloid_Cursor(call_user_func_array(array($this->_collection, 'aggregateCursor'), $args));
+//		}
 		$timeout = $this->getTimeout();
 		$this->setTimeout(-1);
-		$args = func_get_args();
 		$result = call_user_func_array(array($this->_collection, 'aggregate'), $args);
 		$this->setTimeout($timeout);
 		if (!isset($result['ok']) || !$result['ok']) {
@@ -159,11 +178,34 @@ class Mongodloid_Collection {
 	}
 
 	public function setTimeout($timeout) {
-		MongoCursor::$timeout = (int) $timeout;
+		if ($this->_db->compareClientVersion('1.5.3', '<')) {
+			@MongoCursor::$timeout = (int) $timeout;
+		} else {
+			// see bugs:
+			// https://jira.mongodb.org/browse/PHP-1099
+			// https://jira.mongodb.org/browse/PHP-1080
+		}
 	}
 
 	public function getTimeout() {
 		return MongoCursor::$timeout;
+	}
+
+	/**
+	 * method to set read preference of collection connection
+	 * 
+	 * @param string $readPreference The read preference mode: RP_PRIMARY, RP_PRIMARY_PREFERRED, RP_SECONDARY, RP_SECONDARY_PREFERRED or RP_NEAREST
+	 * @param array $tags An array of zero or more tag sets, where each tag set is itself an array of criteria used to match tags on replica set members
+	 * 
+	 * @return boolean TRUE on success, or FALSE otherwise.
+	 */
+	public function setReadPreference($readPreference, array $tags = array()) {
+		if (defined('MongoClient::' . $readPreference)) {
+			$this->_collection->setReadPreference(constant('MongoClient::' . $readPreference), $tags);
+		} else if (in_array($readPreference, Mongodloid_Connection::$availableReadPreferences)) {
+			$this->_collection->setReadPreference($readPreference, $tags);
+		}
+		return $this;
 	}
 
 	/**
@@ -201,13 +243,26 @@ class Mongodloid_Collection {
 	 * @param array $update The update criteria
 	 * @param array $fields Optionally only return these fields
 	 * @param array $options An array of options to apply, such as remove the match document from the DB and return it
+	 * @param boolean $asCommand On some mongodb versions FAM is not working well and FAM command better to use
 	 * 
 	 * @return Mongodloid_Entity the original document, or the modified document when new is set.
 	 * @throws MongoResultException on failure
 	 * @see http://php.net/manual/en/mongocollection.findandmodify.php
 	 */
-	public function findAndModify(array $query, array $update = array(), array $fields = array(), array $options = array()) {
-		return new Mongodloid_Entity($this->_collection->findAndModify($query, $update, $fields, $options), $this);
+	public function findAndModify(array $query, array $update = array(), array $fields = null, array $options = array(), $asCommand = false) {
+		if (!$asCommand) {
+			$ret = $this->_collection->findAndModify($query, $update, $fields, $options);
+		} else {
+			$commandOptions = array(
+				'findAndModify' => $this->getName(),
+				'query' => $query,
+				'update' => $update,
+				'fields' => $fields,
+			);
+			$ret = $this->_db->command(array_merge($commandOptions, $options));
+		}
+
+		return new Mongodloid_Entity($ret, $this);
 	}
 
 	/**
@@ -223,7 +278,21 @@ class Mongodloid_Collection {
 		if (!isset($options['w'])) {
 			$options['w'] = $this->w;
 		}
-		return $this->_collection->batchInsert($a, $options);
+
+		if (!isset($options['j'])) {
+			$options['j'] = $this->j;
+		}
+
+		if ($this->_db->compareServerVersion('2.6', '>=')) {
+			$batch = new MongoInsertBatch($this->_collection);
+			foreach($a as $doc) {
+				$batch->add($doc);
+			}
+			return $batch->execute($options);
+		} else {
+			return $this->_collection->batchInsert($a, $options);
+		}
+		
 	}
 
 	/**
@@ -239,7 +308,12 @@ class Mongodloid_Collection {
 		if (!isset($options['w'])) {
 			$options['w'] = $this->w;
 		}
-		return $this->_collection->insert($a, $options);
+		
+		if (!isset($options['j'])) {
+			$options['j'] = $this->j;
+		}
+
+		return $this->_collection->insert( ($a instanceof Mongodloid_Entity ? $a->getrawData() : $a), $options);
 	}
 
 	/**
@@ -247,11 +321,11 @@ class Mongodloid_Collection {
 	 * To use this method require counters collection (see create.ini)
 	 * 
 	 * @param string $id the id of the document to auto increment
-	 * @param int $min_id the first value if no value exists
+	 * @param int $init_id the first value if no value exists
 	 * 
 	 * @return int the incremented value
 	 */
-	public function createAutoInc($oid, $min_id = 1) {
+	public function createAutoInc($oid, $init_id = 1) {
 
 		$countersColl = $this->_db->getCollection('counters');
 		$collection_name = $this->getName();
@@ -261,7 +335,7 @@ class Mongodloid_Collection {
 			// get last seq
 			$lastSeq = $countersColl->query('coll', $collection_name)->cursor()->sort(array('seq' => -1))->limit(1)->current()->get('seq');
 			if (is_null($lastSeq)) {
-				$lastSeq = $min_id;
+				$lastSeq = $init_id;
 			} else {
 				$lastSeq++;
 			}
@@ -299,6 +373,48 @@ class Mongodloid_Collection {
 			'oid' => $oid,
 		);
 		return $countersColl->query($query)->cursor()->limit(1)->current()->get('seq');
+	}
+	
+	/**
+	 * 
+	 * @return MongoCollection
+	 */
+	public function getMongoCollection() {
+		return $this->_collection;
+	}
+	/**
+	 * method to get collection stats
+	 * 
+	 * @param mixed $item return only specific property of stats
+	 * 
+	 * @return mixed the whole stats or just one item of it
+	 */
+	public function stats($item) {
+		return $this->_db->stats(array('collStats' => $this->getName()), $item);
+	}
+	
+	public function getWriteConcern($var = null) {
+		// backward compatibility with 1.4
+		if ($this->_db->compareClientVersion('1.5', '<')) {
+			$ret = array(
+				'w' => $this->w,
+				'wtimeout' => $this->getTimeout(),
+			);
+		} else {
+			$ret = $this->_collection->getWriteConcern();
+		}
+		
+		if (is_null($var)) {
+			return $ret;
+		}
+		
+		if (isset($ret[$var])) {
+			return $ret[$var];
+		}
+	}
+	
+	public function distinct($key, array $query = null) {
+		return $this->_collection->distinct($key, $query);
 	}
 
 }

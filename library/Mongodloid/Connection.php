@@ -13,6 +13,17 @@ class Mongodloid_Connection {
 	protected $_server = '';
 	protected $_dbs = array();
 	protected static $instances;
+	protected $username = '';
+	protected $password = '';
+	
+	static public $availableReadPreferences = array(
+		MongoClient::RP_PRIMARY,
+		MongoClient::RP_PRIMARY_PREFERRED,
+		MongoClient::RP_SECONDARY,
+		MongoClient::RP_SECONDARY_PREFERRED,
+		MongoClient::RP_NEAREST,
+	);
+
 
 	/**
 	 * Method to get database instance
@@ -21,15 +32,19 @@ class Mongodloid_Connection {
 	 * @param string $user user to authenticate
 	 * @param string $pass password to authenticate
 	 * 
-	 * @return Billrun_Db instance
+	 * @return Mongodloid_Db instance
 	 */
 	public function getDB($db, $user = false, $pass = false, array $options = array("connect" => TRUE)) {
 		if (!isset($this->_dbs[$db]) || !$this->_dbs[$db]) {
+			if ($user) {
+				$this->username = $user;
+			}
+			if ($pass) {
+				$this->password = $pass;
+			}
+			$options['db'] = $db;
 			$this->forceConnect($options);
 			$newDb = $this->_connection->selectDB($db);
-			if ($user) {
-				$newDb->authenticate($user, $pass);
-			}
 
 			$this->_dbs[$db] = $this->createInstance($newDb);
 		}
@@ -55,15 +70,25 @@ class Mongodloid_Connection {
 		if ($this->_connected)
 			return;
 
-		if (isset($options['readPreference'])) {
-			$read_preference = $options['readPreference'];
-			unset($options['readPreference']);
+		if (!empty($this->username)) {
+			$options['username'] = $this->username;
+		}
+
+		if (!empty($this->password)) {
+			$options['password'] = $this->password;
 		}
 		
+		if (isset($options['readPreference'])) {
+			$readPreference = $options['readPreference'];
+			unset($options['readPreference']);
+		}
+
 		// this can throw an Exception
 		$this->_connection = new MongoClient($this->_server ? $this->_server : 'mongodb://localhost:27017', $options);
-		
-		$this->_connection->setReadPreference($read_preference);
+
+		if (!empty($readPreference) && defined('MongoClient::' . $readPreference)) {
+			$this->_connection->setReadPreference(constant('MongoClient::' . $readPreference));
+		}
 
 		$this->_connected = true;
 	}
@@ -83,7 +108,7 @@ class Mongodloid_Connection {
 	 * @param string $port the port of the connection
 	 * @param boolean $persistent set if the connection is persistent
 	 * 
-	 * @return Billrun_Connection
+	 * @return Mongodloid_Connection
 	 */
 	public static function getInstance($server = '', $port = '', $persistent = false) {
 
