@@ -69,7 +69,7 @@ from_balances.forEach(function(obj){
 		diff.push(parseInt(obj));
 	}
 });
-balances_coll.aggregate({$match: {"billrun_month": billrun_key, sid: {$in: diff}}}, {$group: {_id: {aid: "$aid"}, subs: {$addToSet: "$sid"}}}).result.forEach(function(obj) {
+balances_coll.aggregate({$match: {"billrun_month": billrun_key, sid: {$in: diff}}}, {$group: {_id: {aid: "$aid"}, subs: {$addToSet: "$sid"}}}).forEach(function(obj) {
 	var subs = new Array();
 	obj.subs.forEach(function(sub) {
 		var new_sub = new Object();
