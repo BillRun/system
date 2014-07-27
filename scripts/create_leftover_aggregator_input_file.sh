@@ -76,7 +76,7 @@ balances_coll.aggregate({$match: {"billrun_month": billrun_key, sid: {$in: diff}
 		new_sub.subscriber_id = sub.toString();
 		new_sub.curr_plan = new_sub.next_plan = "NULL";
 		subs.push(new_sub);
-		print(parseInt(obj._id.aid) + "," + new_sub.subscriber_id); // comment to get json format + uncomment "printjson"
+		print(obj._id.aid + "," + new_sub.subscriber_id); // comment to get json format + uncomment "printjson"
 	});
 	output[obj._id.aid] = new Object();
 	output[obj._id.aid]["subscribers"] = subs;
