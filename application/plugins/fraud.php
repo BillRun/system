@@ -551,15 +551,19 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		return true;
 	}
 
-	public function beforeCommitSubscriberBalance(&$row, &$pricingData, &$query, &$update, $calculator) {
-		if (isset($pricingData['arategroup']) && $pricingData['arategroup'] == 'VF_INCLUDED') {
-			$query = array('sid' => $query['sid'], 'billrun_month' => $query['billrun_month']);
-			$pricingData = array('arategroup' => $pricingData['arategroup'], 'usagesb' => $pricingData['usagesb']);
-			$update['$set'] = array('tx.' . $row['stamp'] => $pricingData);
-			foreach (array_keys($update['$inc']) as $key) {
-				if (!Billrun_Util::startsWith($key, 'balance.groups')) {
-					unset($update['$inc'][$key]);
+	public function beforeCommitSubscriberBalance(&$row, &$pricingData, &$query, &$update, $arate, $calculator) {
+		if ($arate['key'] == 'INTERNET_INTL_ROAMING') {
+			if (isset($pricingData['arategroup']) && $pricingData['arategroup'] == 'VF_INCLUDED') {
+				$query = array('sid' => $query['sid'], 'billrun_month' => $query['billrun_month']);
+				$pricingData = array('arategroup' => $pricingData['arategroup'], 'usagesb' => $pricingData['usagesb']);
+				$update['$set'] = array('tx.' . $row['stamp'] => $pricingData);
+				foreach (array_keys($update['$inc']) as $key) {
+					if (!Billrun_Util::startsWith($key, 'balance.groups')) {
+						unset($update['$inc'][$key]);
+					}
 				}
+			} else {
+				$pricingData = $update = array();
 			}
 		}
 	}

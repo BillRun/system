@@ -426,8 +426,15 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			$this->setMongoNativeLong(1);
 		}
 		Billrun_Factory::log()->log("Updating balance " . $balance['billrun_month'] . " of subscriber " . $row['sid'], Zend_Log::DEBUG);
-		Billrun_Factory::dispatcher()->trigger('beforeCommitSubscriberBalance', array(&$row, &$pricingData, &$query, &$update, $this));
-		$ret = $this->balances->update($query, $update, $options);
+		Billrun_Factory::dispatcher()->trigger('beforeCommitSubscriberBalance', array(&$row, &$pricingData, &$query, &$update, $rate, $this));
+		if ($update) {
+			$ret = $this->balances->update($query, $update, $options);
+		} else {
+			if ($is_data_usage) {
+				$this->setMongoNativeLong(0);
+			}
+			return $pricingData;
+		}
 		if ($is_data_usage) {
 			$this->setMongoNativeLong(0);
 		}
