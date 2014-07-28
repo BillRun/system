@@ -123,7 +123,10 @@ class Generator_Golanxml extends Billrun_Generator {
 		$invoice_filename = $row['billrun_key'] . '_' . str_pad($row['aid'], 9, '0', STR_PAD_LEFT) . '_' . str_pad($invoice_id, 11, '0', STR_PAD_LEFT) . '.xml';
 		$invoice_file_path = $this->export_directory . '/' . $invoice_filename;
 //		if (!file_exists($invoice_file_path)) {
-		$this->writer->openURI($invoice_file_path);
+		if ($this->writer->openURI($invoice_file_path) === FALSE) {
+			Billrun_Factory::log('Couldn\'t create invoice file for account ' . $row['aid'] . ' for billrun ' . $row['billrun_key'], Zend_log::ALERT);
+			return;
+		}
 		$this->writeXML($row, $lines);
 		$this->setFileStamp($row, $invoice_filename);
 		Billrun_Factory::log()->log("invoice file " . $invoice_filename . " created for account " . $row->get('aid'), Zend_Log::INFO);
