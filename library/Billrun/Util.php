@@ -559,7 +559,7 @@ class Billrun_Util {
 				'status' => 0,
 				'desc' => 'amount_without_vat is not a number',
 			);
-		} else if ($amount_without_vat === 0) {
+		} else if ($amount_without_vat == 0) {
 			return array(
 				'status' => 0,
 				'desc' => 'amount_without_vat equal zero',
