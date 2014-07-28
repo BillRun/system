@@ -106,6 +106,33 @@ $(function() {
 			}
 		}
 	});
+	
+	$("#recreateInvoicesModal #uploadAccounts").click(function(event) {
+		function recreateInvoices(content) {
+			$.ajax({
+				url: "/api/recreateinvoices",
+				type: "POST",
+				data: {account_id: content}
+			}).done(function(msg) {
+				obj = JSON.parse(msg);
+				$('#recreateInvoicesModal #saveOutputAccounts').append('Successful upload. Results: ' + JSON.stringify(obj));
+			});
+			$("#recreateInvoicesModal #file-upload-accounts").val('');
+			$("#recreateInvoicesModal #single-sub-input-accounts").val('');
+		}
+
+		var files = $("#recreateInvoicesModal #file-upload-accounts").get(0).files;
+		$('#recreateInvoicesModal #saveOutputAccounts').html('');
+		if (files.length == 0) {
+			if ($("#recreateInvoicesModal #single-sub-input-accounts").val()) {
+				recreateInvoices($("#recreateInvoicesModal #single-sub-input-accounts").val());
+			}
+		} else {
+			for (var i = 0; i < files.length; i++) {
+				getInputFileContent(files[i], recreateInvoices);
+			}
+		}
+	});
 
 	$("#uploadModal #upload").click(function(event) {
 		var files = $("#uploadModal #file-upload").get(0).files;
