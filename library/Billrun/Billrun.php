@@ -642,7 +642,10 @@ class Billrun_Billrun {
 	protected function processLines($account_lines) {
 		$updatedLines = array();
 		foreach ($account_lines as $line) {
-			if (isset($updatedLines[$line['stamp']])) { // temporary fix for https://jira.mongodb.org/browse/SERVER-9858
+			// the check fix 2 issues:
+			// 1. temporary fix for https://jira.mongodb.org/browse/SERVER-9858
+			// 2. avoid duplicate lines
+			if (isset($updatedLines[$line['stamp']])) { 
 				continue;
 			}
 			$line->collection($this->lines);
