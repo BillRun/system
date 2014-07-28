@@ -27,7 +27,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 			'stamp' => array('value' => array('sgsn_address', 'ggsn_address', 'sid', 'aid', 'arate', 'imsi', 'plan', 'rating_group', 'billrun'), 'field' => array('in_plan', 'out_plan', 'over_plan', 'aprice')),
 			'fields' => array(
 				'$set' => array('process_time'),
-				'$setOnInsert' => array('urt', 'imsi', 'usagesb', 'usaget', 'aid', 'sid', 'ggsn_address', 'sgsn_address', 'rating_group', 'arate', 'plan'),
+				'$setOnInsert' => array('urt', 'imsi', 'usagesb', 'usaget', 'aid', 'sid', 'ggsn_address', 'sgsn_address', 'rating_group', 'arate', 'plan', 'billrun'),
 				'$inc' => array('usagev', 'aprice', 'apr', 'fbc_downlink_volume', 'fbc_uplink_volume', 'duration', 'in_plan', 'out_plan', 'over_plan'),
 			),
 	));
@@ -37,7 +37,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 	protected $acceptArchivedLines = false;
 	protected $protectedConcurrentFiles = true;
 	protected $archiveDb;
-	protected $activeBillrun;
+//	protected $activeBillrun;
 	protected $dbConcurrentPref = 'RP_PRIMARY_PREFERRED';
 	protected $dbReadPref = 'RP_SECONDARY_PREFERRED';
 
@@ -75,7 +75,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 		$this->archivedLines = array();
 		$this->unifiedToRawLines = array();
 		$this->unifiedLines = array();
-		$this->activeBillrun = Billrun_Billrun::getActiveBillrun();
+//		$this->activeBillrun = Billrun_Billrun::getActiveBillrun();
 	}
 
 	/**
@@ -167,7 +167,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 					'stamp' => $key,
 					'source' => 'unify',
 					'type' => $row['type'],
-					'billrun' => $this->activeBillrun,
+//					'billrun' => $this->activeBillrun,
 			));
 			$update = array_merge($base_update, $this->getlockLinesUpdate($this->unifiedToRawLines[$key]['update']));
 			foreach ($this->unificationFields[$row['type']]['fields'] as $fkey => $fields) {

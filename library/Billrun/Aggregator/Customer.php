@@ -152,7 +152,6 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 			//$existingAccounts = array();			
 			foreach ($dataKeys as $key => $aid) {
 				if (Billrun_Billrun::exists($aid, $billrun_key)) {
-					Billrun_Factory::log()->log("Billrun " . $billrun_key . " already exists for account " . $aid, Zend_Log::ALERT);
 					unset($dataKeys[$key]);
 					//$existingAccounts[$aid]  = $this->data[$aid];
 				}
@@ -209,7 +208,8 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 						continue;
 					}
 					Billrun_Factory::log('Adding flat line to subscriber ' . $sid, Zend_Log::INFO);
-					$manual_lines = array_merge($manual_lines, array($this->saveFlatLine($subscriber, $billrun_key)), $this->saveCreditLines($subscriber, $billrun_key));
+					$flat = $this->saveFlatLine($subscriber, $billrun_key);
+					$manual_lines = array_merge($manual_lines, array($flat['stamp'] => $flat), $this->saveCreditLines($subscriber, $billrun_key));
 					Billrun_Factory::log('Finished adding flat line to subscriber ' . $sid, Zend_Log::INFO);
 				}
 				$account_billrun->addSubscriber($subscriber, $subscriber_status);
@@ -288,7 +288,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 					Billrun_Util::logFailedCreditRow($rawData);
 				}
 			}
-			$ret[] = $credit;
+			$ret[$credit['stamp']] = $credit;
 		}
 		return $ret;
 	}

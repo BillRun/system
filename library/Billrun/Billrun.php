@@ -630,13 +630,10 @@ class Billrun_Billrun {
 	 */
 	public function addLines($manual_lines = array()) {
 		Billrun_Factory::log()->log("Querying account " . $this->aid . " for lines...", Zend_Log::INFO);
-		$manual_lines_stamps = array();
-		foreach ($manual_lines as $line) {
-			$manual_lines_stamps[] = $line['stamp'];
-		}
-		$account_lines = $this->getAccountLines($this->aid, $manual_lines_stamps);
+		$account_lines = $this->getAccountLines($this->aid);
 		Billrun_Factory::log("Processing account Lines $this->aid", Zend_Log::INFO);
-		$updatedLines = array_merge($this->processLines($account_lines), $this->processLines($manual_lines));
+		$lines = array_merge($account_lines, $manual_lines);
+		$updatedLines = $this->processLines(array_values($lines));
 		Billrun_Factory::log("Finished processing account $this->aid lines. Total: " . count($updatedLines), Zend_log::INFO);
 		$this->updateTotals();
 		return $updatedLines;
@@ -645,7 +642,10 @@ class Billrun_Billrun {
 	protected function processLines($account_lines) {
 		$updatedLines = array();
 		foreach ($account_lines as $line) {
-			if (isset($updatedLines[$line['stamp']])) { // temporary fix for https://jira.mongodb.org/browse/SERVER-9858
+			// the check fix 2 issues:
+			// 1. temporary fix for https://jira.mongodb.org/browse/SERVER-9858
+			// 2. avoid duplicate lines
+			if (isset($updatedLines[$line['stamp']])) { 
 				continue;
 			}
 			$line->collection($this->lines);
@@ -677,14 +677,14 @@ class Billrun_Billrun {
 	 * @return Mongodloid_Cursor the mongo cursor used to iterate over the lines
 	 * @todo remove aid parameter
 	 */
-	protected function getAccountLines($aid, $excluded_stamps = array()) {
-		if (empty(static::$accountsLines[self::getAidPreloadKey($aid, $excluded_stamps)])) {
-			$ret = $this->loadAccountsLines(array($aid), $this->billrun_key, $this->filter_fields, $excluded_stamps, true);
+	protected function getAccountLines($aid) {
+		if (!isset(static::$accountsLines[$aid])) {
+			$ret = $this->loadAccountsLines(array($aid), $this->billrun_key, $this->filter_fields);
 		} else {
 			$ret = &static::$accountsLines;
 		}
 
-		return isset($ret[self::getAidPreloadKey($aid, $excluded_stamps)]) ? $ret[self::getAidPreloadKey($aid, $excluded_stamps)] : array();
+		return isset($ret[$aid]) ? $ret[$aid] : array();
 	}
 
 	/**
@@ -694,8 +694,8 @@ class Billrun_Billrun {
 	 * @param type $filter_fields the fileds that the returned lines need to have.
 	 * @param array $excluded_stamps stamps excluded from the search
 	 */
-	static public function preloadAccountsLines($aids, $billrun_key, $filter_fields = FALSE, $excluded_stamps = array()) {
-		static::$accountsLines = array_merge(static::$accountsLines, static::loadAccountsLines($aids, $billrun_key, $filter_fields, $excluded_stamps));
+	static public function preloadAccountsLines($aids, $billrun_key, $filter_fields = FALSE) {
+		static::$accountsLines = static::$accountsLines + static::loadAccountsLines($aids, $billrun_key, $filter_fields);
 	}
 
 	/**
@@ -706,7 +706,7 @@ class Billrun_Billrun {
 	 * @param array $excluded_stamps stamps excluded from the search
 	 * @return an array containing all the  accounts with thier lines.
 	 */
-	static public function loadAccountsLines($aids, $billrun_key, $filter_fields = FALSE, $excluded_stamps = array()) {
+	static public function loadAccountsLines($aids, $billrun_key, $filter_fields = FALSE) {
 		if (empty($aids)) {
 			return;
 		}
@@ -719,12 +719,6 @@ class Billrun_Billrun {
 
 		$requiredFields = array('aid' => 1);
 		$filter_fields = empty($filter_fields) ? Billrun_Factory::config()->getConfigValue('billrun.filter_fields', array()) : $filter_fields;
-
-		if ($excluded_stamps) {
-			$query['stamp'] = array(
-				'$nin' => $excluded_stamps,
-			);
-		}
 
 		$sort = array(
 			'urt' => 1,
@@ -740,11 +734,15 @@ class Billrun_Billrun {
 					->sort($sort)->skip($bufferCount)->limit(Billrun_Factory::config()->getConfigValue('billrun.linesLimit', 10000))->timeout(-1)
 					->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
 			foreach ($cursor as $line) {
-				$ret[self::getAidPreloadKey($line['aid'], $excluded_stamps)][] = $line;
+				$ret[$line['aid']][$line['stamp']] = $line;
 			}
 		} while (($addCount = $cursor->count(true)) > 0);
 		Billrun_Factory::log()->log('Finished querying for accounts ' . implode(',', $aids) . ' lines', Zend_Log::INFO);
-
+		foreach ($aids as $aid) {
+			if (!isset($ret[$aid])) {
+				$ret[$aid] = array();
+			}
+		}
 		return $ret;
 	}
 
@@ -757,14 +755,9 @@ class Billrun_Billrun {
 			static::$accountsLines = array();
 		} else {
 			foreach ($aids as $aid) {
-				unset(static::$accountsLines[self::getAidPreloadKey($aid, true)]);
-				unset(static::$accountsLines[self::getAidPreloadKey($aid, false)]);
+				unset(static::$accountsLines[$aid]);
 			}
 		}
-	}
-
-	static protected function getAidPreloadKey($aid, $excluded_stamps) {
-		return $aid . '_' . serialize($excluded_stamps);
 	}
 
 	/**

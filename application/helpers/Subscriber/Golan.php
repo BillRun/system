@@ -333,11 +333,11 @@ class Subscriber_Golan extends Billrun_Subscriber {
 			}
 			
 			if ($retEntity && !($insertRow instanceof Mongodloid_Entity)) {
-				$ret[] = new Mongodloid_Entity($insertRow);
+				$ret[$insertRow['stamp']] = new Mongodloid_Entity($insertRow);
 			} else if (!$retEntity && ($insertRow instanceof Mongodloid_Entity)) {
-				$ret[] = $insertRow->getRawData();
+				$ret[$insertRow['stamp']] = $insertRow->getRawData();
 			} else {
-				$ret[] = $insertRow;
+				$ret[$insertRow['stamp']] = $insertRow;
 			}
 
 		}
