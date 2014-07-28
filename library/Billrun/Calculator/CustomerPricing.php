@@ -308,6 +308,11 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		return $ret;
 	}
 
+	/**
+	 * Determines if a rate should not produce billable lines, but only counts the usage
+	 * @param Mongodloid_Entity|array $rate the input rate
+	 * @return boolean
+	 */
 	public function isBillable($rate) {
 		return !isset($rate['billable']) || $rate['billable'] === TRUE;
 	}
