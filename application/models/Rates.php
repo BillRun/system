@@ -238,19 +238,21 @@ class RatesModel extends TabledateModel {
 				$ret[] = $row;
 			} else if ($item->get('rates') && !$this->showprefix) {
 				foreach ($item->get('rates') as $key => $rate) {
-					$added_columns = array(
-						't' => $key,
-						'tprice' => $rate['rate'][0]['price'],
-						'taccess' => isset($rate['access']) ? $rate['access'] : 0,
-					);
-					if (strpos($key, 'call') !== FALSE) {
-						$added_columns['tduration'] = Billrun_Util::durationFormat($rate['rate'][0]['interval']);
-					} else if ($key == 'data') {
-						$added_columns['tduration'] = Billrun_Util::byteFormat($rate['rate'][0]['interval'], '', 0, true);
-					} else {
-						$added_columns['tduration'] = $rate['rate'][0]['interval'];
+					if (is_array($rate)) {
+						$added_columns = array(
+							't' => $key,
+							'tprice' => $rate['rate'][0]['price'],
+							'taccess' => isset($rate['access']) ? $rate['access'] : 0,
+						);
+						if (strpos($key, 'call') !== FALSE) {
+							$added_columns['tduration'] = Billrun_Util::durationFormat($rate['rate'][0]['interval']);
+						} else if ($key == 'data') {
+							$added_columns['tduration'] = Billrun_Util::byteFormat($rate['rate'][0]['interval'], '', 0, true);
+						} else {
+							$added_columns['tduration'] = $rate['rate'][0]['interval'];
+						}
+						$ret[] = new Mongodloid_Entity(array_merge($item->getRawData(), $added_columns, $rate));
 					}
-					$ret[] = new Mongodloid_Entity(array_merge($item->getRawData(), $added_columns, $rate));
 				}
 			} else if ($this->showprefix && (isset($filter_query['$and'][0]['key']) || isset($filter_query['$and'][0]['params.prefix']))) {
 				foreach ($item->get('params.prefix') as $prefix) {
