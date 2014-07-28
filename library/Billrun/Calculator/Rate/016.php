@@ -57,7 +57,7 @@ class Billrun_Calculator_Rate_016 extends Billrun_Calculator_Rate {
 		foreach ($this->data as $item) {
 			// update billing line with ratingField & duration
 			if (!$this->updateRow($item)) {
-				Billrun_Factory::log()->log("stamp:" . $item->get('stamp') . " cannot update billing line", Zend_Log::ERR);
+				Billrun_Factory::log()->log("stamp:" . $item->get('stamp') . " cannot update rate for billing line", Zend_Log::ERR);
 				continue;
 			}
 		}
