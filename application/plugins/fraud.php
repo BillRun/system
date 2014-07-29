@@ -552,7 +552,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 
 	public function beforeCommitSubscriberBalance(&$row, &$pricingData, &$query, &$update, $arate, $calculator) {
-		if ($arate['key'] == 'INTERNET_INTL_ROAMING') {
+		if ($arate['key'] == 'INTERNET_VF') {
 			if (isset($pricingData['arategroup']) && $pricingData['arategroup'] == 'VF_INCLUDED') {
 				$query = array('sid' => $query['sid'], 'billrun_month' => $query['billrun_month']);
 				$pricingData = array('arategroup' => $pricingData['arategroup'], 'usagesb' => $pricingData['usagesb']);
