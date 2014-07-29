@@ -36,15 +36,6 @@ class Mongodloid_Cursor implements Iterator, Countable {
 		}
 		
 		return new Mongodloid_Entity($this->_cursor->current());
-		
-//		$a = method_exists($this->_cursor, 'hasNext');
-//		$b = $this->_cursor->current();
-//		$c = $this->_cursor->valid();
-//		if (!$this->_cursor->current() && ((method_exists($this->_cursor, 'hasNext') && $this->_cursor->hasNext()) || (!method_exists($this->_cursor, 'hasNext') && $this->_cursor->valid()))) {
-//			$a = $this->next();
-//		}
-//		return new Mongodloid_Entity($this->_cursor->current());
-		
 	}
 
 	public function key() {
