@@ -55,14 +55,14 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 		if (isset($options['accept_archived_lines'])) {
 			$this->acceptArchivedLines = $options['accept_archived_lines'];
 		}
-		
+
 		if (isset($options['protect_concurrent_files'])) {
 			$this->protectedConcurrentFiles = $options['protect_concurrent_files'];
 		}
-		
+
 		$this->dbReadPref = Billrun_Factory::config()->getConfigValue('read_only_db_pref', $this->dbReadPref);
 		$this->dbConcurrentPref = Billrun_Factory::config()->getConfigValue('concurrent_db_pref', $this->dbConcurrentPref);
-		
+
 		// archive connection setting
 		$this->archiveDb = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('archive.db'));
 	}
@@ -93,7 +93,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 		$this->archivedLines[$newRow['stamp']] = $rawRow;
 		$this->unifiedToRawLines[$updatedRowStamp]['remove'][] = $newRow['stamp'];
 
-		if ( ($this->protectedConcurrentFiles && $this->isLinesLocked($updatedRowStamp, array($newRow['stamp']))) ||
+		if (($this->protectedConcurrentFiles && $this->isLinesLocked($updatedRowStamp, array($newRow['stamp']))) ||
 				(!$this->acceptArchivedLines && $this->isLinesArchived(array($newRow['stamp'])))) {
 			Billrun_Factory::log("Line {$newRow['stamp']} was already applied to unified line $updatedRowStamp", Zend_Log::NOTICE);
 			return true;
@@ -223,7 +223,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 		if (isset($this->unifiedLines[$updatedRowStamp])) {
 			$existingRow = $this->unifiedLines[$updatedRowStamp];
 			foreach ($this->unificationFields[$type]['fields']['$inc'] as $field) {
-				if(isset($newRow[$field]) && !isset($existingRow[$field])) {
+				if (isset($newRow[$field]) && !isset($existingRow[$field])) {
 					$existingRow[$field] = 0;
 				}
 			}
@@ -344,7 +344,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 	 * @return type
 	 */
 	protected function getLines() {
-		$types = array_keys($this->unificationFields);
+		$types = array('ggsn', 'smpp', 'mmsc', 'smsc', 'nsn', 'tap3', 'credit');
 		return $this->getQueuedLines(array('type' => array('$in' => $types)));
 	}
 
