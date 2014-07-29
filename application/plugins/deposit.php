@@ -1,7 +1,7 @@
 <?php
 
 class depositPlugin extends Billrun_Plugin_BillrunPluginBase {
-
+	 use Billrun_Traits_FraudAggregation;
 		
 	/**
 	 * plugin name
@@ -71,22 +71,34 @@ class depositPlugin extends Billrun_Plugin_BillrunPluginBase {
 		return $ret;
 	}
 	
+	public function handlerCollect($options) {
+        if( $options['type'] != 'roaming') { 
+                    return FALSE; 
+		}
+		$ret = array();
+		foreach ($this->fraudConfig['groups'] as $groupName => $groupIds) {
+			$ret = array_merge($ret, $this->collectForGroup($groupName, $groupIds), $this->collectAdvanceEvents($groupName, $groupIds));
+		}
+		Billrun_Factory::log()->log("Deposits fraud found " . count($ret) . " items", Zend_Log::INFO);
+	}
+
 	/**
 	 * method to collect data which need to be handle by event
 	 */
-	public function handlerCollect($options) {
-                if( $options['type'] != 'roaming') { 
-                    return FALSE; 
-		}
-		Billrun_Factory::log()->log("Collect deposits fraud (deposits plugin)", Zend_Log::INFO);
+	protected function collectForGroup($groupName, $groupIds) {
+
+		Billrun_Factory::log()->log("Collect deposits fraud (deposits plugin) for group : $groupName", Zend_Log::INFO);
 		$eventsCol = Billrun_Factory::db()->eventsCollection();
 		$timeWindow= strtotime("-" . Billrun_Factory::config()->getConfigValue('deposit.hourly.timespan','4 hours'));
 		$where = array( 
 			'$match' => array (
 				'event_stamp' => array('$exists'=> false),
 //				'deposit_stamp' => array('$exists'=> true),
+				'source' => array('$ne'=> 'billing'), // filter out billing events (70_PERCENT,FP_NATINAL,etc...)
 				'event_type' => array('$ne'=> 'DEPOSITS'),
+				'group' => $groupName,
 				'nofity_time' => array('$gte' => new MongoDate ($timeWindow) ),
+				'returned_value.success' => 1,
 			),
 		);
 		$group =array(
@@ -97,6 +109,7 @@ class depositPlugin extends Billrun_Plugin_BillrunPluginBase {
 				'imsi' => array('$first'=> '$imsi'),
 				'msisdn' => array('$first'=> '$msisdn'),
 				'events_stamps' => array('$addToSet' => '$stamp'),
+				'group' => array('$first' => '$group')
 			),
 		);
 		$project = array(
@@ -107,6 +120,7 @@ class depositPlugin extends Billrun_Plugin_BillrunPluginBase {
 				'imsi' => 1,
 				'msisdn' => 1,
 				'events_stamps' => 1,
+				'group' => 1,
 			),
 		);
 		$having = array(
@@ -117,7 +131,7 @@ class depositPlugin extends Billrun_Plugin_BillrunPluginBase {
 		
 		$items = $eventsCol->aggregate($where, $group, $project, $having);
 
-		Billrun_Factory::log()->log("Deposits fraud found " . count($items) . " items", Zend_Log::INFO);
+		Billrun_Factory::log()->log("Deposits fraud found " . count($items) . " items for group : $groupName" , Zend_Log::INFO);
 
 		return $items;
 	}
@@ -132,6 +146,7 @@ class depositPlugin extends Billrun_Plugin_BillrunPluginBase {
 		
 		$newEvent['value']= $newEvent[$type];
 		$newEvent['source']	= $this->getName();
+		$newEvent['target_plans'] = $this->fraudConfig['defaults']['target_plans'];
 		
 		switch($type) {
 			case 'deposit':
