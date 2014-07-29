@@ -104,10 +104,11 @@ class TableModel {
 	public function setSize($size) {
 		$this->size = $size;
 	}
-	
+
 	public function setPage($page) {
 		$this->page = $page;
 	}
+
 	/**
 	 * Get the data resource
 	 * 
@@ -303,7 +304,7 @@ class TableModel {
 	public function getFilterFields() {
 		return array();
 	}
-	
+
 	public function getSortFields() {
 		return array();
 	}
@@ -344,6 +345,19 @@ class TableModel {
 				);
 			}
 		} else if ($filter_field['input_type'] == 'multiselect') {
+			if (isset($filter_field['ref_coll']) && isset($filter_field['ref_key'])) {
+				$collection = Billrun_Factory::db()->{$filter_field['ref_coll'] . "Collection"}();
+				$pre_query = array(
+					$filter_field['ref_key'] => array(
+						'$in' => $value,
+					),
+				);
+				$cursor = $collection->query($pre_query);
+				$value = array();
+				foreach ($cursor as $entity) {
+					$value[] = $entity->createRef($collection);
+				}
+			}
 			if (is_array($value) && !empty($value)) {
 				return array(
 					$filter_field['db_key'] => array(
@@ -370,7 +384,7 @@ class TableModel {
 		$extra_columns = Billrun_Factory::config()->getConfigValue('admin_panel.' . $this->collection_name . '.extra_columns', array());
 		return $extra_columns;
 	}
-	
+
 	public function getTableColumns() {
 		$columns = Billrun_Factory::config()->getConfigValue('admin_panel.' . $this->collection_name . '.table_columns', array());
 		if (!empty($this->extra_columns)) {
@@ -400,11 +414,11 @@ class TableModel {
 		unset($params['_id']);
 		return $this->update($params);
 	}
-	
+
 	public function getEmptyItem() {
 		return new Mongodloid_Entity();
 	}
-	
+
 	/**
 	 * method to check if indexes exists in the query filters
 	 * 
@@ -423,15 +437,15 @@ class TableModel {
 		}
 		return false;
 	}
-	
+
 	public function exportCsvFile($params) {
 		$separator = ',';
 		$header_output[] = implode($separator, $this->prepareHeaderExport($params['columns']));
 		$data_output = $this->prepareDataExport($params['data'], array_keys($params['columns']), $separator);
-		$output = implode(PHP_EOL, array_merge($header_output,$data_output));
+		$output = implode(PHP_EOL, array_merge($header_output, $data_output));
 		$this->export($output);
 	}
-	
+
 	protected function export($output) {
 		header("Cache-Control: max-age=0");
 		header("Content-type: application/csv");
@@ -463,6 +477,7 @@ class TableModel {
 		}
 		return implode($separator, $ret);
 	}
+
 	protected function formatCsvCell($row, $header) {
 		return $row[$header];
 	}
