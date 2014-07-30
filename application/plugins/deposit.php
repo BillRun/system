@@ -88,6 +88,7 @@ class depositPlugin extends Billrun_Plugin_BillrunPluginFraud {
 			$ret = array_merge($ret, $this->collectForGroup($groupName, $groupIds));
 		}
 		Billrun_Factory::log()->log("Deposits fraud found " . count($ret) . " items", Zend_Log::INFO);
+		return $ret;
 	}
 
 	/**
