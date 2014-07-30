@@ -130,6 +130,13 @@ class LinesModel extends TableModel {
 		}
 		return $ret;
 	}
+	
+	public function getDistinctField($field, $filter_query = array()) {
+		if (empty($field) || empty($filter_query)) {
+			return array();
+		}
+		return $this->collection->distinct($field, $filter_query);
+	}
 
 	public function getTableColumns() {
 		$columns = array(
