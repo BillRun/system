@@ -53,7 +53,7 @@ class QueryAction extends ApiAction {
 		
 		$options = array(
 			'sort' => array('urt'),
-			'page' => isset($request['page']) && $request['page'] > 0 ? (int) $request['page']: 0,
+			'page' => isset($request['page']) && $request['page'] > 0 ? (int) $request['page']: 1,
 			'size' =>isset($request['size']) && $request['size'] > 0 ? (int) $request['size']: 1000,
 		);
 		$model = new LinesModel($options);
