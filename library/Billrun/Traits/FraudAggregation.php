@@ -20,7 +20,7 @@ trait Billrun_Traits_FraudAggregation {
 	 */
 	protected $fraudConfig = array();
 
-	public function __construct() {
+	public function __construct($options = array()) {
 		$this->initFraudAggregation();
 	}
 
