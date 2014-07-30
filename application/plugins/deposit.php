@@ -85,7 +85,7 @@ class depositPlugin extends Billrun_Plugin_BillrunPluginFraud {
 		}
 		$ret = array();
 		foreach ($this->fraudConfig['groups'] as $groupName => $groupIds) {
-			$ret = array_merge($ret, $this->collectForGroup($groupName, $groupIds), $this->collectAdvanceEvents($groupName, $groupIds));
+			$ret = array_merge($ret, $this->collectForGroup($groupName, $groupIds));
 		}
 		Billrun_Factory::log()->log("Deposits fraud found " . count($ret) . " items", Zend_Log::INFO);
 	}
@@ -105,7 +105,7 @@ class depositPlugin extends Billrun_Plugin_BillrunPluginFraud {
 				'source' => array('$ne' => 'billing'), // filter out billing events (70_PERCENT,FP_NATINAL,etc...)
 				'event_type' => array('$ne' => 'DEPOSITS'),
 				'group' => $groupName,
-				'nofity_time' => array('$gte' => new MongoDate($timeWindow)),
+				'notify_time' => array('$gte' => new MongoDate($timeWindow)),
 				'returned_value.success' => 1,
 			),
 		);
