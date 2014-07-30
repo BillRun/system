@@ -41,7 +41,7 @@ class QueryAction extends ApiAction {
 		if (isset($request['billrun'])) {
 			$find['billrun'] = (string) $request['billrun'];
 		}
-		
+
 		if (isset($request['query'])) {
 			if (is_string($request['query'])) {
 				$query = json_decode($request['query'], true);
@@ -50,15 +50,15 @@ class QueryAction extends ApiAction {
 			}
 			$find = array_merge($find, (array) $query);
 		}
-		
+
 		$options = array(
 			'sort' => array('urt'),
-			'page' => isset($request['page']) && $request['page'] > 0 ? (int) $request['page']: 1,
-			'size' =>isset($request['size']) && $request['size'] > 0 ? (int) $request['size']: 1000,
+			'page' => isset($request['page']) && $request['page'] > 0 ? (int) $request['page'] : 1,
+			'size' => isset($request['size']) && $request['size'] > 0 && $request['size'] <= 10000 ? (int) $request['size'] : 1000,
 		);
 		$model = new LinesModel($options);
 		$lines = $model->getData($find);
-		
+
 		foreach ($lines as &$line) {
 			$line = $line->getRawData();
 		}
