@@ -41,7 +41,7 @@ class QueryAction extends ApiAction {
 		if (isset($request['billrun'])) {
 			$find['billrun'] = (string) $request['billrun'];
 		}
-		
+
 		if (isset($request['query'])) {
 			if (is_string($request['query'])) {
 				$query = json_decode($request['query'], true);
@@ -50,7 +50,7 @@ class QueryAction extends ApiAction {
 			}
 			$find = array_merge($find, (array) $query);
 		}
-		
+
 		$options = array(
 			'sort' => array('urt'),
 			'page' => isset($request['page']) && $request['page'] > 0 ? (int) $request['page']: 0,
