@@ -151,15 +151,15 @@ class depositPlugin extends Billrun_Plugin_BillrunPluginFraud {
 	 * @return Array|Object the event object with added fields
 	 */
 	protected function addAlertData(&$newEvent) {
-		$type = 'deposit';
+		$type = 'deposits';
 
 		$newEvent['value'] = $newEvent[$type];
 		$newEvent['source'] = $this->getName();
 		$newEvent['target_plans'] = $this->fraudConfig['defaults']['target_plans'];
 
 		switch ($type) {
-			case 'deposit':
-				$newEvent['threshold'] = Billrun_Factory::config()->getConfigValue('timespan_events.thresholds.deposit', 0);
+			case 'deposits':
+				$newEvent['threshold'] = Billrun_Factory::config()->getConfigValue('deposit.hourly.thresholds.deposits', 3);
 				$newEvent['units'] = 'DEPOSIT';
 				$newEvent['event_type'] = 'DEPOSITS';
 				break;
