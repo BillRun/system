@@ -53,14 +53,19 @@ class QueryAction extends ApiAction {
 
 		$options = array(
 			'sort' => array('urt'),
-			'page' => isset($request['page']) && $request['page'] > 0 ? (int) $request['page'] : 1,
-			'size' => isset($request['size']) && $request['size'] > 0 && $request['size'] <= 10000 ? (int) $request['size'] : 1000,
+			'page' => isset($request['page']) && $request['page'] > 0 ? (int) $request['page']: 0,
+			'size' =>isset($request['size']) && $request['size'] > 0 ? (int) $request['size']: 1000,
 		);
 		$model = new LinesModel($options);
-		$lines = $model->getData($find);
+		
+		if (isset($request['distinct'])) {
+			$lines = $model->getDistinctField((string) $request['distinct'], $find);
+		} else {
+			$lines = $model->getData($find);
 
-		foreach ($lines as &$line) {
-			$line = $line->getRawData();
+			foreach ($lines as &$line) {
+				$line = $line->getRawData();
+			}
 		}
 
 		Billrun_Factory::log()->log("query success", Zend_Log::INFO);
@@ -69,7 +74,7 @@ class QueryAction extends ApiAction {
 				'status' => 1,
 				'desc' => 'success',
 				'input' => $request,
-				'details' => $lines
+				'details' => $lines,
 			)
 		);
 		$this->getController()->setOutput($ret);
