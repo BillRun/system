@@ -65,19 +65,21 @@ trait Billrun_Traits_FileActions {
 	
 	
 	/**
-	 * method to check if the file already processed
+	 * @deprecated since version 2.7
+	 * legacy method to check if the file already processed by the old receiver logic
 	 */
 	protected function isFileReceived($filename, $type, $more_fields = array()) {
 		$log = Billrun_Factory::db()->logCollection();
-		$logData = $this->getFileLogData($filename, $type, $more_fields);
+		//$logData = $this->getFileLogData($filename, $type, $more_fields);
 		$query = array(
-			'stamp' => $logData['stamp'],
+			//'stamp' => $logData['stamp'],
 			'source' => $type,
 			'file_name' => $filename,
+			'received_time' => array('$exists' => true)
 		);
 
 		if (!empty($more_fields)) {			
-			$query = array_merge($query, Billrun_Util::arrayToMongoQuery($query));
+			$query = array_merge($query, Billrun_Util::arrayToMongoQuery($more_fields));
 		}
 
 		//Billrun_Factory::dispatcher()->trigger('alertisFileReceivedQuery', array(&$query, $type, $this));
@@ -244,7 +246,7 @@ trait Billrun_Traits_FileActions {
 		if(!$file->isEmpty()) {
 			$defaultBackup = Billrun_Factory::config()->getConfigValue('backup.default_backup_path',FALSE);			
 			if(empty($file['backed_to'])) {
-				$backupPaths =  !empty($this->backupPaths) ? $defaultBackup : (!empty($defaultBackup) ? $defaultBackup : array('./backup/' . $this->getType()));
+				$backupPaths =  !empty($this->backupPaths) ? $this->backupPaths : (!empty($defaultBackup) ? $defaultBackup : array('./backup/' . $this->getType()));
 				Billrun_Factory::log()->log("Backing up and moving file {$file['path']} to - ".implode(",", $backupPaths) , Zend_Log::INFO);	
 				$this->backup(basename($file['path']),$file['path'], $backupPaths, $file['retrived_from'],true);
 			} else {

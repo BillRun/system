@@ -72,7 +72,7 @@ abstract class Billrun_Receiver extends Billrun_Base {
 	abstract protected function receive();
 
 	/**
-	 * method to log the processing
+	 * method to update a file  as recevied succesfuly
 	 * 
 	 * @todo refactoring this method
 	 */

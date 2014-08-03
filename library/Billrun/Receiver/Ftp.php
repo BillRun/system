@@ -146,6 +146,7 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 					Billrun_Util::setFileModificationTime($fileData['path'], $timestamp);
 				}
 			}
+
 			Billrun_Factory::dispatcher()->trigger('afterFTPFileReceived', array(&$fileData['path'], $file, $this, $hostName, $extraData));
 
 			if(!empty($this->backupPaths)) {
@@ -181,6 +182,9 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 			$ret = false;
 		}else if (!$this->isFileValid($file->name, $file->path)) {
 			Billrun_Factory::log()->log("FTP: " . $file->name . " is not a valid file", Zend_Log::INFO);
+			$ret = false;
+		} else if($this->isFileReceived($file->name, static::$type, $isFileReceivedMoreFields)) {
+			Billrun_Factory::log("File {$file->name} was allready fully received",Zend_Log::WARN);
 			$ret = false;
 		} else if (!$this->lockFileForReceive($file->name, static::$type, $isFileReceivedMoreFields)) {
 			Billrun_Factory::log()->log("FTP: " . $file->name . " received already", Zend_Log::INFO);
