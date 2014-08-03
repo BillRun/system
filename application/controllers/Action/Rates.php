@@ -22,7 +22,7 @@ class RatesAction extends ApiAction {
 
 		$query = $this->processQuery($request->get('query', array()));
 		$strip = $this->getCompundParam($request->get('strip', false), false);
-		$filter = !empty($strip) ? $strip : array('key', 'rates');
+		$filter = !empty($strip) ? $strip : array('key', 'rates', 'provider');
 
 		$model = new RatesModel(array('sort' => array('provider' => 1, 'from' => 1)));
 		$results = $model->getData($query, $filter);

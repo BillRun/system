@@ -33,7 +33,7 @@ class Billrun_Calculator_Rate_Ggsn extends Billrun_Calculator_Rate {
 	 * @see Billrun_Calculator_Base_Rate
 	 * @var type 
 	 */
-	protected $rateKeyMapping = array('key' => 'INTERNET_BILL_BY_VOLUME');
+	protected $rateKeyMapping = array('params.sgsn_addresses' => array('$exists' => true));
 
 	public function __construct($options = array()) {
 		parent::__construct($options);
@@ -72,20 +72,12 @@ class Billrun_Calculator_Rate_Ggsn extends Billrun_Calculator_Rate {
 	 */
 	protected function getLineRate($row, $usage_type) {
 		$line_time = $row['urt'];
-		if (preg_match('/^(?=62\.90\.|37\.26\.)/', $row['sgsn_address'])) {
-			$rate = new Mongodloid_Entity();
-			foreach ($this->rates as $key => $value) {
-				if ($value['from'] <= $line_time && $line_time <= $value['to']) {
-					$rate = $value;
-				}
-			}
-			if (!$rate->isEmpty()) {
+		foreach ($this->rates as $rate) {
+			if (preg_match($rate['params']['sgsn_addresses'], $row['sgsn_address']) && $rate['from'] <= $line_time && $line_time <= $rate['to']) {
 				return $rate;
-			} else {
-				Billrun_Factory::log()->log("Couldn't find rate for row : " . print_r($row['stamp'], 1), Zend_Log::DEBUG);
 			}
 		}
-		//Billrun_Factory::log()->log("International row : ".print_r($row,1),  Zend_Log::DEBUG);
+		Billrun_Factory::log()->log("Couldn't find rate for row : " . print_r($row['stamp'], 1), Zend_Log::DEBUG);
 		return FALSE;
 	}
 

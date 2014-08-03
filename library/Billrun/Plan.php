@@ -37,9 +37,7 @@ class Billrun_Plan {
 		if (isset($params['data'])) {
 			$this->data = $params['data'];
 		} else {
-			if (empty(self::$plans)) {
-				$this->initPlans();
-			}
+			self::initPlans();
 			if (isset($params['id'])) {
 				$id = $params['id'];
 				if ($id instanceof Mongodloid_Id) {
@@ -62,34 +60,41 @@ class Billrun_Plan {
 					$this->data = $plan;
 				} else {
 					$this->data = Billrun_Factory::db()->plansCollection()
-						->query(array(
-							'name' => $params['name'],
-							'$or' => array(
-								array('to' => array('$gt' => $date)),
-								array('to' => null)
-							)
-						))
-						->lessEq('from', $date)
-						->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'))
-						->current();
+							->query(array(
+								'name' => $params['name'],
+								'$or' => array(
+									array('to' => array('$gt' => $date)),
+									array('to' => null)
+								)
+							))
+							->lessEq('from', $date)
+							->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'))
+							->current();
 					$this->data->collection(Billrun_Factory::db()->plansCollection());
 				}
 			}
 		}
 	}
 
-	protected function initPlans() {
-		$plans_coll = Billrun_Factory::db()->plansCollection();
-		$plans = $plans_coll->query()->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
-		foreach ($plans as $plan) {
-			$plan->collection($plans_coll);
-			self::$plans['by_id'][strval($plan->getId())] = $plan;
-			self::$plans['by_name'][$plan['name']][] = array(
-				'plan' => $plan,
-				'from' => $plan['from'],
-				'to' => $plan['to'],
-			);
+	protected static function initPlans() {
+		if (empty(self::$plans)) {
+			$plans_coll = Billrun_Factory::db()->plansCollection();
+			$plans = $plans_coll->query()->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
+			foreach ($plans as $plan) {
+				$plan->collection($plans_coll);
+				self::$plans['by_id'][strval($plan->getId())] = $plan;
+				self::$plans['by_name'][$plan['name']][] = array(
+					'plan' => $plan,
+					'from' => $plan['from'],
+					'to' => $plan['to'],
+				);
+			}
 		}
+	}
+	
+	public static function getPlans() {
+		self::initPlans();
+		return self::$plans;
 	}
 
 	/**
@@ -140,13 +145,16 @@ class Billrun_Plan {
 	 * @param type $rate
 	 * @param type $type
 	 * @return boolean
+	 * @deprecated since version 0.1
+	 * 		should be removed from here;
+	 * 		the check of plan should be run on line not subscriber/balance
 	 */
 	public function isRateInBasePlan($rate, $type) {
 		return isset($rate['rates'][$type]['plans']) &&
-			is_array($rate['rates'][$type]['plans']) &&
-			in_array($this->createRef(), $rate['rates'][$type]['plans']);
+				is_array($rate['rates'][$type]['plans']) &&
+				in_array($this->createRef(), $rate['rates'][$type]['plans']);
 	}
-	
+
 	/**
 	 * method to check if a usage type included in the rate plan
 	 * rate plan means that there is rate that have balance that included as part of the plan
@@ -162,7 +170,7 @@ class Billrun_Plan {
 	public function isRateInPlanRate($rate, $usageType) {
 		return (isset($this->data['include']['rates'][$rate['key']][$usageType]));
 	}
-	
+
 	/**
 	 * check if usage left in the rate balance (part of the plan)
 	 * 
@@ -177,13 +185,13 @@ class Billrun_Plan {
 		if (!isset($this->get('include')[$rate['key']][$usageType])) {
 			return 0;
 		}
-		
+
 		$rateUsageIncluded = $this->get('include')[$rate['key']][$usageType];
 
 		if ($rateUsageIncluded == 'UNLIMITED') {
 			return PHP_INT_MAX;
 		}
-		
+
 		if (isset($subscriberBalance['rates'][$rate['key']][$usageType]['usagev'])) {
 			$subscriberSpent = $subscriberBalance['rates'][$rate['key']][$usageType]['usagev'];
 		} else {
@@ -192,7 +200,7 @@ class Billrun_Plan {
 		$usageLeft = $rateUsageIncluded - $subscriberSpent;
 		return floatval($usageLeft < 0 ? 0 : $usageLeft);
 	}
-	
+
 	/**
 	 * method to receive all group rates of the current plan
 	 * @param array $rate the rate to check
@@ -209,7 +217,7 @@ class Billrun_Plan {
 		}
 		return false;
 	}
-	
+
 	/**
 	 * method to check if rate is part of group of rates balance
 	 * there is option to create balance for group of rates
@@ -224,7 +232,7 @@ class Billrun_Plan {
 		}
 		return false;
 	}
-	
+
 	/**
 	 * method to receive the strongest group of list of groups
 	 * currently the strongest rule is simple the first rule selected
@@ -240,7 +248,7 @@ class Billrun_Plan {
 		if (empty($groups)) {
 			return false;
 		}
-		
+
 		return $groups[0];
 	}
 
@@ -257,7 +265,7 @@ class Billrun_Plan {
 		if ($groupSelected === FALSE) {
 			return 0;
 		}
-		
+
 		$rateUsageIncluded = $this->data['include']['groups'][$groupSelected][$usageType];
 
 		// if isset $rule {
@@ -269,7 +277,7 @@ class Billrun_Plan {
 		if ($rateUsageIncluded == 'UNLIMITED') {
 			return PHP_INT_MAX;
 		}
-		
+
 		if (isset($subscriberBalance['groups'][$groupSelected][$usageType]['usagev'])) {
 			$subscriberSpent = $subscriberBalance['groups'][$groupSelected][$usageType]['usagev'];
 		} else {
@@ -278,7 +286,7 @@ class Billrun_Plan {
 		$usageLeft = $rateUsageIncluded - $subscriberSpent;
 		return floatval($usageLeft < 0 ? 0 : $usageLeft);
 	}
-	
+
 	/**
 	 * Get the usage left in the current plan.
 	 * @param $subscriberBalance the current sunscriber balance.
@@ -290,7 +298,7 @@ class Billrun_Plan {
 		if (!isset($this->get('include')[$usagetype])) {
 			return 0;
 		}
-		
+
 		$usageIncluded = $this->get('include')[$usagetype];
 		if ($usageIncluded == 'UNLIMITED') {
 			return PHP_INT_MAX;
@@ -320,7 +328,7 @@ class Billrun_Plan {
 	public function createRef($collection = false) {
 		if (count($this->plan_ref) == 0) {
 			$collection = $collection ? $collection :
-				($this->data->collection() ? $this->data->collection() : Billrun_Factory::db()->plansCollection() );
+					($this->data->collection() ? $this->data->collection() : Billrun_Factory::db()->plansCollection() );
 			$this->plan_ref = $this->data->createRef($collection);
 		}
 		return $this->plan_ref;
@@ -331,17 +339,15 @@ class Billrun_Plan {
 	}
 
 	public function isUnlimitedRate($rate, $usageType) {
-		return (isset($this->data['include']['rates'][$rate['key']][$usageType]) 
-			&& $this->data['include']['rates'][$rate['key']][$usageType] == "UNLIMITED");
+		return (isset($this->data['include']['rates'][$rate['key']][$usageType]) && $this->data['include']['rates'][$rate['key']][$usageType] == "UNLIMITED");
 	}
 
 	public function isUnlimitedGroup($rate, $usageType) {
 		$groupSelected = $this->getStrongestGroup($rate, $usageType);
 		if ($groupSelected === FALSE) {
-			 return FALSE;
+			return FALSE;
 		}
-		return (isset($this->data['include']['groups'][$groupSelected][$usageType]) 
-			&& $this->data['include']['groups'][$groupSelected][$usageType] == "UNLIMITED");
+		return (isset($this->data['include']['groups'][$groupSelected][$usageType]) && $this->data['include']['groups'][$groupSelected][$usageType] == "UNLIMITED");
 	}
 	
 	public function getBalanceTotalsKey($usage_type, $rate) {

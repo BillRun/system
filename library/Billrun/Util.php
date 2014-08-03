@@ -559,6 +559,11 @@ class Billrun_Util {
 				'status' => 0,
 				'desc' => 'amount_without_vat is not a number',
 			);
+		} else if ($amount_without_vat == 0) {
+			return array(
+				'status' => 0,
+				'desc' => 'amount_without_vat equal zero',
+			);
 		} else {
 			// TODO: Temporary conversion. Remove it once they send negative values!
 			if ($filtered_request['credit_type'] == 'refund' && floatval($amount_without_vat) > 0) {
@@ -682,6 +687,19 @@ class Billrun_Util {
 		$fd = fopen(Billrun_Factory::config()->getConfigValue('resetlines.failed_sids_file', './files/failed_resetlines.json'), 'a+');
 		fwrite($fd, json_encode(array('sids' => $sids, 'billrun_key' => $billrun_key)) . PHP_EOL);
 		fclose($fd);
+	}
+	
+	/**
+	 * Get an array of prefixes for a given.
+	 * @param string $str the number to get prefixes to.
+	 * @return Array the possible prefixes of the number sorted by prefix length in decreasing order.
+	 */
+	public static function getPrefixes($str) {
+		$prefixes = array();
+		for ($i = strlen($str); $i > 0; $i--) {
+			$prefixes[] = substr($str, 0, $i);
+		}
+		return $prefixes;
 	}
 
 }

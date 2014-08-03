@@ -81,6 +81,9 @@ class BalancesModel extends TableModel {
 		unset($usage_filter_values['aid'], $usage_filter_values['sid'], $usage_filter_values['billrun_month'], $usage_filter_values['current_plan']);
 //		$usage_filter_values = array_merge($basic_columns, $extra_columns);
 		
+		$planNames = array_unique(array_keys(Billrun_Plan::getPlans()['by_name']));
+		$planNames = array_combine($planNames, $planNames);
+		
 		$operators = array(
 			'equals' => '=',
 			'lt' => '<',
@@ -131,15 +134,17 @@ class BalancesModel extends TableModel {
 				'display' => '',
 				'default' => '',
 			),
-//			'plan' => array(
-//				'key' => 'plan',
-//				'db_key' => 'current_plan',
-//				'input_type' => 'multiselect',
-//				'comparison' => '$in',
-//				'display' => 'Plan',
-//				'values' => $plans,
-//				'default' => array(),
-//			),
+			'plan' => array(
+				'key' => 'plan',
+				'db_key' => 'current_plan',
+				'input_type' => 'multiselect',
+				'comparison' => '$in',
+				'ref_coll' => 'plans',
+				'ref_key' => 'name',
+				'display' => 'Plan',
+				'values' => $planNames,
+				'default' => array(),
+			),
 			'billrun' => array(
 				'key' => 'billrun',
 				'db_key' => 'billrun_month',
@@ -168,11 +173,11 @@ class BalancesModel extends TableModel {
 					'width' => 2,
 				),
 			),
-//			2 => array(
-//				'plan' => array(
-//					'width' => 2,
-//				),
-//			),
+			2 => array(
+				'plan' => array(
+					'width' => 2,
+				),
+			),
 			3 => array(
 				'usage_type' => array(
 					'width' => 2,

@@ -97,7 +97,7 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 	 */
 	protected function getRateByParams($called_number, $usage_type, $urt, $ocg = null) {
 		$matchedRate = $this->rates['UNRATED'];
-		$called_number_prefixes = $this->getPrefixes($called_number);
+		$called_number_prefixes = Billrun_Util::getPrefixes($called_number);
 		foreach ($called_number_prefixes as $prefix) {
 			if (isset($this->rates[$prefix])) {
 				foreach ($this->rates[$prefix] as $rate) {

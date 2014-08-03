@@ -21,8 +21,15 @@ class Billrun_Calculator_Rate_Tap3 extends Billrun_Calculator_Rate {
 	 */
 	static protected $type = 'tap3';
 
+	/**
+	 * Detecting an arate is optional for these usage types
+	 * @var array
+	 */
+	protected $optional_usage_types = array();
+
 	public function __construct($options = array()) {
 		parent::__construct($options);
+		$this->optional_usage_types = isset($options['calculator']['optional_usage_types']) ? $options['calculator']['optional_usage_types'] : array('incoming_sms');
 		$this->loadRates();
 	}
 
@@ -89,6 +96,7 @@ class Billrun_Calculator_Rate_Tap3 extends Billrun_Calculator_Rate {
 	protected function getLineRate($row, $usage_type) {
 		$line_time = $row['urt'];
 		$serving_network = $row['serving_network'];
+		$sender = isset($row['sending_source']) ? $row['sending_source'] : false;
 		$matchedRate = false;
 		$prefix_length_matched = 0;
 
@@ -96,16 +104,24 @@ class Billrun_Calculator_Rate_Tap3 extends Billrun_Calculator_Rate {
 			$call_number = isset($row['called_number']) ? $row->get('called_number') : (isset($row['calling_number']) ? $row->get('calling_number') : NULL);
 			if ($call_number) {
 				$call_number = preg_replace("/^[^1-9]*/", "", $call_number);
-				$call_number_prefixes = $this->getPrefixes($call_number);
+				$call_number_prefixes = Billrun_Util::getPrefixes($call_number);
 			}
 			$potential_rates = array();
 			if (isset($this->rates['by_names'][$serving_network])) {
-				$potential_rates = $this->rates['by_names'][$serving_network];
+				foreach ($this->rates['by_names'][$serving_network] as $named_rate) {
+					if (!$sender || (isset($named_rate['params']['sending_sources']) && in_array($sender, $named_rate['params']['sending_sources']))) {
+						$potential_rates[] = $named_rate;
+					}
+				}
 			}
 			if (!empty($this->rates['by_regex'])) {
 				foreach ($this->rates['by_regex'] as $regex => $regex_rates) {
 					if (preg_match($regex, $serving_network)) {
-						$potential_rates = array_merge($potential_rates, $regex_rates);
+						foreach ($regex_rates as $regex_rate) {
+							if (!$sender || (isset($regex_rate['params']['sending_sources']) && in_array($sender, $regex_rate['params']['sending_sources']))) {
+								$potential_rates[] = $regex_rate;
+							}
+						}
 					}
 				}
 			}
@@ -129,6 +145,10 @@ class Billrun_Calculator_Rate_Tap3 extends Billrun_Calculator_Rate {
 			}
 		}
 
+		if ($matchedRate === FALSE && !in_array($usage_type, $this->optional_usage_types)) {
+			$matchedRate = $this->rates['UNRATED'];
+		}
+
 		return $matchedRate;
 	}
 
@@ -146,8 +166,15 @@ class Billrun_Calculator_Rate_Tap3 extends Billrun_Calculator_Rate {
 	 */
 	protected function loadRates() {
 		$query = array(
-			'params.serving_networks' => array(
-				'$exists' => true,
+			'$or' => array(
+				array(
+					'params.serving_networks' => array(
+						'$exists' => true,
+					),
+				),
+				array(
+					'key' => 'UNRATED',
+				),
 			),
 		);
 		$rates_coll = Billrun_Factory::db()->ratesCollection();
@@ -160,10 +187,11 @@ class Billrun_Calculator_Rate_Tap3 extends Billrun_Calculator_Rate {
 				}
 			} else if (is_string($rate['params']['serving_networks'])) {
 				$this->rates['by_regex'][$rate['params']['serving_networks']][] = $rate;
+			} else if ($rate['key'] == 'UNRATED') {
+				$this->rates['UNRATED'] = $rate;
 			}
 		}
 	}
 
 }
-
 ?>

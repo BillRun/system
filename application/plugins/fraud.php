@@ -211,35 +211,45 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		if (!isset($row['usaget']) || (!empty($rule['usaget']) && !in_array($row['usaget'], $rule['usaget']))) {
 			return false;
 		}
-		
 		// ignore subscribers :)
-		if (isset($rule['ignoreSubscribers']) && is_array($rule['ignoreSubscribers']
-				&& in_array($row['sid'], $rule['ignoreSubscribers']))) {
+		if (isset($rule['ignoreSubscribers']) && is_array($rule['ignoreSubscribers'] && in_array($row['sid'], $rule['ignoreSubscribers']))) {
 			return false;
 		}
-		
+
 		$usaget = $row['usaget'];
-		
+
 		// if the limit for specific plans
-		if (isset($rule['limitPlans']) && is_array($rule['limitPlans']) 
-			&& !in_array(strtoupper($row['plan']), $rule['limitPlans'])) {
+		if (isset($rule['limitPlans']) && is_array($rule['limitPlans']) && !in_array(strtoupper($row['plan']), $rule['limitPlans'])) {
 			return false;
 		} else if (isset($rule['limitGroups'])) { // if limit by specific groups
-			if ((is_array($rule['limitGroups']) && isset($row['arategroup']) && !in_array(strtoupper($row['arategroup']), $rule['limitGroups']))
-				|| !isset($row['arategroup'])) { 
+			if ((is_array($rule['limitGroups']) && isset($row['arategroup']) && !in_array(strtoupper($row['arategroup']), $rule['limitGroups'])) || !isset($row['arategroup'])) {
 				return false;
 			}
 		}
-		
+
 		// calculate before and after usage
 		// first check if the rule is based on groups usage
-		if (isset($rule['limitGroups'])) {
-			$before = isset($balance['groups'][$row['arategroup']][$usaget]['usagev'])? $balance['groups'][$row['arategroup']][$usaget]['usagev'] : 0;
-			$after = $before + $row['usagev'];
+		if (!empty($rule['sumFields']) && is_array($rule['sumFields'])) {
+			$before = 0;
+			foreach ($rule['sumFields'] as $dottedField) {
+				$value = $balance;
+				$field_arr = explode('.', $dottedField);
+				foreach ($field_arr as $field) {
+					if (isset($value[$field])) {
+						$value = $value[$field];
+					} else {
+						$value = 0;
+						break;
+					}
+				}
+				$before+=$value;
+			}
+		} else if (isset($rule['limitGroups'])) {
+			$before = isset($balance['groups'][$row['arategroup']][$usaget]['usagev']) ? $balance['groups'][$row['arategroup']][$usaget]['usagev'] : 0;
 		} else { // fallback: rule based on general usage
 			$before = $balance['totals'][$usaget]['usagev'];
-			$after = $before + $row['usagev'];
 		}
+		$after = $before + $row['usagev'];
 
 		$threshold = $rule['threshold'];
 		$recurring = isset($rule['recurring']) && $rule['recurring'];
@@ -256,7 +266,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 			return $rule;
 		}
 	}
-	
+
 	/**
 	 * check if fraud rule triggered
 	 * 
@@ -388,6 +398,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 
 		return FALSE;
 	}
+
 	/**
 	 * TODO
 	 * Save lines to the fraud DB lines collection.
@@ -395,21 +406,25 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 */
 	public function insertToFraudLines($lines) {
 		try {
-			Billrun_Factory::log()->log('Fraud plugin - Inserting '.count($lines).' Lines to fraud lines collection', Zend_Log::INFO);
+			Billrun_Factory::log()->log('Fraud plugin - Inserting ' . count($lines) . ' Lines to fraud lines collection', Zend_Log::INFO);
 			$fraud_connection = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('fraud.db'))->linesCollection();
-			foreach($lines as $line) {
-	
+			foreach ($lines as $line) {
+
 				$line['unified_record_time'] = $line['urt'];
-				if(isset($line['aid'])) { $line['account_id'] = $line['aid']; }
-				if(isset($line['sid'])) { $line['subscriber_id'] = $line['sid']; }
-				
+				if (isset($line['aid'])) {
+					$line['account_id'] = $line['aid'];
+				}
+				if (isset($line['sid'])) {
+					$line['subscriber_id'] = $line['sid'];
+				}
+
 				$fraud_connection->insert(new Mongodloid_Entity($line), array('w' => 0));
 			}
-		} catch (Exception $e) {			
+		} catch (Exception $e) {
 			Billrun_Factory::log()->log("Fraud plugin - Failed to insert line with the stamp: " . $line['stamp'] . " to the fraud lines collection, got Exception : " . $e->getCode() . " : " . $e->getMessage(), Zend_Log::ERR);
 		}
 	}
-	
+
 	/**
 	 * TODO document
 	 * detect roaming ggsn lines
@@ -417,12 +432,12 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 */
 	protected function insertRoamingGgsn($lines) {
 		$roamingLines = array();
-		foreach ($lines as $line) {			
-			if(!preg_match('/^(?=62\.90\.|37\.26\.)/', $line['sgsn_address'])) {
-				$roamingLines[] = $line;				
+		foreach ($lines as $line) {
+			if (!preg_match('/^(?=62\.90\.|37\.26\.)/', $line['sgsn_address'])) {
+				$roamingLines[] = $line;
 			}
 		}
-		if(!empty($roamingLines)) {
+		if (!empty($roamingLines)) {
 			$this->insertToFraudLines($roamingLines);
 		}
 	}
@@ -432,8 +447,10 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @param \Billrun_Processor $processor
 	 * @return type
 	 */
-	public function afterProcessorStore( $processor ) {
-		if($processor->getType() != "ggsn") { return; }
+	public function afterProcessorStore($processor) {
+		if ($processor->getType() != "ggsn") {
+			return;
+		}
 		Billrun_Factory::log('Plugin fraud beforeProcessorStore', Zend_Log::INFO);
 		$runAsync = Billrun_Factory::config()->getConfigValue('fraud.runAsync', 1);
 		if (function_exists("pcntl_fork") && $runAsync && -1 !== ($pid = pcntl_fork())) {
@@ -443,16 +460,16 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 				$this->insertRoamingGgsn($processor->getData()['data']);
 				Billrun_Factory::log('Plugin fraud::afterProcessorStore async mode done.', Zend_Log::INFO);
 				exit(); // exit from child process after finish
-			}			
+			}
 		} else {
-			Billrun_Factory::log('Plugin fraud::afterProcessorStore runing in sync mode', Zend_Log::INFO);			
+			Billrun_Factory::log('Plugin fraud::afterProcessorStore runing in sync mode', Zend_Log::INFO);
 			$this->insertRoamingGgsn($processor->getData()['data']);
 		}
 		Billrun_Factory::log('Plugin fraud afterProcessorStore was ended', Zend_Log::INFO);
 	}
-	
+
 	public function afterCalculatorUpdateRow($line, $calculator) {
-		
+
 		if (!$this->isLineLegitimate($line, $calculator)) {
 			return true;
 		}
@@ -465,12 +482,12 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 			// fire  event to increased called_number usagev
 			$this->triggerCalledNumber($line);
 		}
-		
-		if (isset($line['sid']) && isset($line['usaget']) && $line['usaget']=='incoming_call') {
+
+		if (isset($line['sid']) && isset($line['usaget']) && $line['usaget'] == 'incoming_call') {
 			$this->triggerCallingNumber($line);
 		}
 	}
-	
+
 	protected function triggerCalledNumber($line) {
 		$called_number = Billrun_Util::msisdn($line['called_number']);
 		$query = array(
@@ -478,29 +495,29 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 			'out_circuit_group' => isset($line['out_circuit_group']) ? $line['out_circuit_group'] : '',
 			'date' => (int) date('Ymd', $line['urt']->sec),
 		);
-		
+
 		$update = array(
 			'$inc' => array(
 				'usagev' => $line['usagev'],
 				'eventsCount' => 1
 			),
 		);
-		
+
 		$options = array(
 			'upsert' => true,
 			'w' => 0,
 		);
-		
+
 		try {
 			Billrun_Factory::log()->log("Fraud plugin - called " . $called_number . " with usagev of " . $line['usagev'] . " upserted to the fraud called collection", Zend_Log::DEBUG);
-			$fraud_connection = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('fraud.db'))->calledCollection();
+			$fraud_connection = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('fraud2.db'))->calledCollection();
 			$fraud_connection->update($query, $update, $options);
 		} catch (Exception $e) {
 			// @TODO: dump to file for durability
 			Billrun_Factory::log()->log("Fraud plugin - Failed insert line with the stamp: " . $line['stamp'] . " to the fraud called, got Exception : " . $e->getCode() . " : " . $e->getMessage(), Zend_Log::ERR);
 		}
 	}
-	
+
 	protected function triggerCallingNumber($line) {
 		$calling_number = Billrun_Util::msisdn($line['calling_number']);
 		$query = array(
@@ -508,22 +525,22 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 			'in_circuit_group' => isset($line['in_circuit_group']) ? $line['in_circuit_group'] : '',
 			'date' => (int) date('Ymd', $line['urt']->sec),
 		);
-		
+
 		$update = array(
 			'$inc' => array(
 				'usagev' => $line['usagev'],
 				'eventsCount' => 1
 			),
 		);
-		
+
 		$options = array(
 			'upsert' => true,
 			'w' => 0,
 		);
-		
+
 		try {
 			Billrun_Factory::log()->log("Fraud plugin - calling " . $calling_number . " with usagev of " . $line['usagev'] . " upserted to the fraud calling collection", Zend_Log::DEBUG);
-			$fraud_connection = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('fraud.db'))->callingCollection();
+			$fraud_connection = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('fraud2.db'))->callingCollection();
 			$fraud_connection->update($query, $update, $options);
 		} catch (Exception $e) {
 			// @TODO: dump to file for durability
@@ -531,13 +548,29 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 	}
 
-	
 	protected function isLineLegitimate($row, $calculator) {
 		$queue_line = $calculator->getQueueLine($row['stamp']);
 		if (isset($queue_line['skip_fraud']) && $queue_line['skip_fraud']) {
 			return false;
 		}
 		return true;
+	}
+
+	public function beforeCommitSubscriberBalance(&$row, &$pricingData, &$query, &$update, $arate, $calculator) {
+		if ($arate['key'] == 'INTERNET_VF') {
+			if (isset($pricingData['arategroup']) && $pricingData['arategroup'] == 'VF_INCLUDED') {
+				$query = array('sid' => $query['sid'], 'billrun_month' => $query['billrun_month']);
+				$pricingData = array('arategroup' => $pricingData['arategroup'], 'usagesb' => $pricingData['usagesb']);
+				$update['$set'] = array('tx.' . $row['stamp'] => $pricingData);
+				foreach (array_keys($update['$inc']) as $key) {
+					if (!Billrun_Util::startsWith($key, 'balance.groups')) {
+						unset($update['$inc'][$key]);
+					}
+				}
+			} else {
+				$pricingData = $update = array();
+			}
+		}
 	}
 
 }

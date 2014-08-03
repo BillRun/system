@@ -71,7 +71,6 @@ class tap3Plugin extends Billrun_Plugin_BillrunPluginBase implements Billrun_Plu
 		if ($hostname) {
 			$path = $path . DIRECTORY_SEPARATOR . $hostname;
 		}
-
 		foreach ($filepaths as $filePath) {
 			if (!$receiver->backupToPath($filePath, $path, true , true)) {
 				Billrun_Factory::log()->log("Couldn't save file $filePath to third patry path at : $path", Zend_Log::ERR);
@@ -204,6 +203,15 @@ class tap3Plugin extends Billrun_Plugin_BillrunPluginBase implements Billrun_Plu
 		} else if (isset($cdrLine['GprsServiceUsed']['ChargeInformationList']['ChargeInformation']['ChargeDetailList']['ChargeDetail']['Charge'])) {
 			$cdrLine['sdr'] = $cdrLine['GprsServiceUsed']['ChargeInformationList']['ChargeInformation']['ChargeDetailList']['ChargeDetail']['Charge'] / $this->sdr_division_value;
 			$cdrLine['exchange_rate'] = $this->exchangeRates[$cdrLine['GprsServiceUsed']['ChargeInformationList']['ChargeInformation']['ExchangeRateCode']];
+		}
+		
+		//save the sending source in each of the lines
+		$cdrLine['sending_source'] = $this->currentFileHeader['header']['sending_source'];
+
+		if (isset($cdrLine['BasicServiceUsedList']['BasicServiceUsed']['ChargeInformationList']['ChargeInformation']['CallTypeGroup']['CallTypeLevel1'])) {
+			$cdrLine['call_type'] = $cdrLine['BasicServiceUsedList']['BasicServiceUsed']['ChargeInformationList']['ChargeInformation']['CallTypeGroup']['CallTypeLevel1'];
+		} else if(isset($cdrLine['GprsServiceUsed']['ChargeInformationList']['ChargeInformation']['CallTypeGroup']['CallTypeLevel1'])) {
+				$cdrLine['call_type'] = $cdrLine['GprsServiceUsed']['ChargeInformationList']['ChargeInformation']['CallTypeGroup']['CallTypeLevel1'];
 		}
 	}
 
