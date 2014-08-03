@@ -179,7 +179,7 @@ class Billrun_Plan {
 	 * @param string $usageType usage type to check
 	 * @return int the usage left
 	 * @since 2.6
-	 * @deprecated since 2.7
+	 * @deprecated since version 2.7
 	 */
 	public function usageLeftInRateBalance($subscriberBalance, $rate, $usageType = 'call') {
 		if (!isset($this->get('include')[$rate['key']][$usageType])) {
@@ -260,7 +260,7 @@ class Billrun_Plan {
 	 * @param string $usageType the 
 	 * @return int|string
 	 */
-	public function usageLeftInRateGroup($subscriberBalance, $rate, $usageType = 'call') {
+	public function usageLeftInPlanGroup($subscriberBalance, $rate, $usageType = 'call') {
 		$groupSelected = $this->getStrongestGroup($rate, $usageType);
 		if ($groupSelected === FALSE) {
 			return 0;
@@ -293,7 +293,7 @@ class Billrun_Plan {
 	 * @param $usagetype the usage type to check.
 	 * @return int  the usage  left in the usage type of the subscriber.
 	 */
-	public function usageLeftInPlan($subscriberBalance, $rate, $usagetype = 'call') {
+	public function usageLeftInBasePlan($subscriberBalance, $rate, $usagetype = 'call') {
 
 		if (!isset($this->get('include')[$usagetype])) {
 			return 0;
