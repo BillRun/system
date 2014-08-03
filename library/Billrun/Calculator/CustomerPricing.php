@@ -492,6 +492,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 */
 	protected function increaseSubscriberBalance($counters, $billrun_key, $aid, $sid, $plan_ref) {
 		$query = array('sid' => $sid, 'billrun_month' => $billrun_key);
+		$update = array('$inc' => array());
 		foreach ($counters as $key => $value) {
 			$update['$inc']['balance.totals.' . $key . '.usagev'] = $value;
 			$update['$inc']['balance.totals.' . $key . '.count'] = 1;
