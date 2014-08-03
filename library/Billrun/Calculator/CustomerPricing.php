@@ -457,7 +457,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		}
 		Billrun_Factory::log()->log("Line with stamp " . $row['stamp'] . " was written to balance " . $balance['billrun_month'] . " for subscriber " . $row['sid'], Zend_Log::DEBUG);
 		$row['tx_saved'] = true; // indication for transaction existence in balances. Won't & shouldn't be saved to the db.
-		Billrun_Factory::dispatcher()->trigger('afterUpdateSubscriberBalance', array(array_merge($row->getRawData(), $pricingData), $balance, $this->isBillable($rate) ? $pricingData[$this->pricingField] : 0, $this));
+		Billrun_Factory::dispatcher()->trigger('afterUpdateSubscriberBalance', array(array_merge($row->getRawData(), $pricingData), $balance, $this->isBillable($rate) ? $pricingData : 0, $this));
 		return $pricingData;
 	}
 
