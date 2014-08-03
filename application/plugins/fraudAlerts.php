@@ -93,19 +93,21 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 			}
 
 			$ret = $this->notifyOnEvent($event);
-			if ($ret === FALSE) {
-				$this->sendEmailOnFailure($event, $ret);
-				//some connection failure - mark event as paused
-				$this->markEvent($event, FALSE);
-			} else if (isset($ret['success']) ) {
+			if (isset($ret['success']) && $ret['success']) {
 				$event['deposit_stamp'] = $event['stamps'][0]; // remember what event you sent to the remote server
 				$event['returned_value'] = (array) $ret;
 				$this->markEvent($event);
-				if($ret['success']) {
+				if (!isset($ret['ignored']) || !$ret['ignored']) {
 					$this->markEventLines($event);
 				}
-			} else {
+			} else if (isset($ret['success']) && !$ret['success']) {
 				$this->sendEmailOnFailure($event, $ret);
+				$this->markEvent($event, FALSE);
+			} else {
+				//some connection failure - mark event as paused
+				$this->sendEmailOnFailure($event, $ret);
+				$this->markEvent($event, FALSE);
+				$this->markEventLines($event);
 			}
 
 			//Decrease the amount of alerts allowed in a single run if 0 is reached the break the loop.
@@ -181,7 +183,7 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		);
 
 		foreach ($required_args as $key => $argsKey) {
-			$required_args[$key] = isset($args[$argsKey]) ? (is_array($args[$argsKey]) ? implode(",",$args[$argsKey]) : $args[$argsKey] ) : null;
+			$required_args[$key] = isset($args[$argsKey]) ? (is_array($args[$argsKey]) ? implode(",", $args[$argsKey]) : $args[$argsKey] ) : null;
 			unset($args[$argsKey]);
 		}
 
@@ -206,10 +208,11 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 			'extra_data' => Zend_Json::encode($post_array)
 		);
 		Billrun_Log::getInstance()->log("fraudAlertsPlugin::notifyRemoteServer URL: " . $url, Zend_Log::INFO);
-		Billrun_Log::getInstance()->log("fraudAlertsPlugin::notifyRemoteServer Post: " . print_r($post_fields,1) , Zend_Log::INFO);
+		Billrun_Log::getInstance()->log("fraudAlertsPlugin::notifyRemoteServer Post: " . print_r($post_fields, 1), Zend_Log::INFO);
 
 		if (!$this->isDryRun) {
-			$output = Billrun_Util::sendRequest($url, $post_fields, Zend_Http_Client::POST);
+			$timeout = intval(Billrun_Factory::config()->getConfigValue('fraudAlerts.timeout', 30));
+			$output = Billrun_Util::sendRequest($url, $post_fields, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), $timeout);
 
 			Billrun_Log::getInstance()->log("fraudAlertsPlugin::notifyRemoteServer response: " . $output, Zend_Log::INFO);
 
@@ -252,7 +255,7 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 				'source' => array('$in' => $types)
 			),
 				), array(
-			'$sort' => array('priority' => 1,'creation_time'=> 1)
+			'$sort' => array('priority' => 1, 'creation_time' => 1)
 				), array(
 			'$group' => array(
 				'_id' => array('imsi' => '$imsi', 'msisdn' => '$msisdn', 'sid' => '$sid'),
@@ -311,7 +314,7 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 			'_id' => array('$in' => $event['id']),
 		);
 
-		if (is_null($failure)) {
+		if (is_null($failure)) { // no failure
 			$events_update_set = array(
 				'$set' => array(
 					'notify_time' => new MongoDate(),
