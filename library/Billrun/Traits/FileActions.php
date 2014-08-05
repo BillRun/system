@@ -22,6 +22,13 @@ trait Billrun_Traits_FileActions {
 	protected $backup_seq_granularity = 2;// 100 files in each directory.
 	
 	/**
+	 * the backup date fromat to save files under 
+	 * 
+	 * @param integer
+	 */
+	protected $backup_date_dir_format = "Ym";// seperate files monthly
+	
+	/**
 	 * An array of path to back files to.
 	 * @var Array containg the paths  to save backups to.
 	 */
@@ -169,9 +176,10 @@ trait Billrun_Traits_FileActions {
 	 */
 	public function generateBackupPath($basePath,$fileSeqData,$retrievedHostname = false) {
 			$backupPath = $basePath;
+			$date = Billrun_Util::fixShortHandYearDate($fileSeqData['date'],$this->backup_date_dir_format);//HACK to fix short hand year.
 			$backupPath .= ($retrievedHostname ? DIRECTORY_SEPARATOR . $retrievedHostname : ""); //If theres more then one host or the files were retrived from a named host backup under that host name
-			$backupPath .= DIRECTORY_SEPARATOR . ($fileSeqData['date'] ? $fileSeqData['date'] : date("Ym")); // if the file name has a date  save under that date else save under tthe current month
-			$backupPath .= ($fileSeqData['seq'] ? DIRECTORY_SEPARATOR . substr($fileSeqData['seq'], 0, - $this->backup_seq_granularity) : ""); // brak the date to sequence number with varing granularity
+			$backupPath .= DIRECTORY_SEPARATOR . date($this->backup_date_dir_format, (strtotime($date) > 0 ? strtotime($date) : time()) ); // if the file name has a date  save under that date else save under tthe current month
+			$backupPath .= ($fileSeqData['seq'] ? DIRECTORY_SEPARATOR . substr($fileSeqData['seq'], 0, - $this->backup_seq_granularity) : ""); // break the date to sequence number with varing granularity
 			
 			return $backupPath;
 	}
@@ -229,10 +237,20 @@ trait Billrun_Traits_FileActions {
 	
 	/**
 	 * Set the backup granularity.
-	 * @param type $grn the digit  granularity count.
+	 * @param int $grn the digit  granularity count.
 	 */
 	protected function setGranularity($grn) {
 		$this->backup_seq_granularity = intval($grn);
+	}
+	
+	/**
+	 * Set the backup date seperation directory format.
+	 * @param string $dateFromat the date fromat (http://php.net/manual/en/function.date.php) to use.
+	 */
+	protected function setBackupDateDirFromat($dateFromat) {
+		if(strtotime(date($dateFromat))) {//check that the format is legitimate
+			$this->backup_date_dir_format = $dateFromat;
+		}
 	}
 	
 	/**
