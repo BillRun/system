@@ -183,6 +183,10 @@ abstract class Billrun_Processor extends Billrun_Base {
 				if (FALSE !== $processedLinesCount) {
 					$linesCount += $processedLinesCount;
 					$file->collection($log);
+					$host = function_exists('gethostname') ? gethostname() : false;
+					if (!empty($host)) {
+						$file->set('process_hostname', $host, true);
+					}
 					$file->set('process_time', date(self::base_dateformat));
 				}
 			}
