@@ -714,5 +714,14 @@ class Billrun_Util {
 		}
 		return preg_match('/^'.date($format,strtotime($date)).'/',$date) ? $date : false; 
 	}
+	
+	/**
+	 * method to get current hostname runnning the PHP
+	 * 
+	 * @return string host name or false when gethostname is not available (PHP 5.2 and lower)
+	 */
+	public static function getHostName() {
+		return function_exists('gethostname') ? gethostname() : false;
+	}
 
 }

@@ -89,8 +89,14 @@ abstract class Billrun_Receiver extends Billrun_Base {
 			'received_time' => array('$exists' => false)
 		);
 	
+		$addData = array(
+			'received_time' => date(self::base_dateformat)
+		);
+		
+		$addData['received_hostname'] = Billrun_Util::getHostName();
+
 		$update = array(
-			'$set' => array_merge($fileData, array('received_time' => date(self::base_dateformat)))
+			'$set' => array_merge($fileData, $addData)
 		);
 
 		if (empty($query['stamp'])) {
