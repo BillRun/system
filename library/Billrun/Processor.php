@@ -187,7 +187,8 @@ abstract class Billrun_Processor extends Billrun_Base {
 					if (!empty($host)) {
 						$file->set('process_hostname', $host, true);
 					}
-					$file->set('process_time', date(self::base_dateformat));
+					$file->set('process_time', date(self::base_dateformat), true);
+					$file->save();
 				}
 			}
 		}
