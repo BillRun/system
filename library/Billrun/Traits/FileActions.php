@@ -161,7 +161,7 @@ trait Billrun_Traits_FileActions {
 				Billrun_Factory::log()->log("Success backup file " . $filePath . " to " . $backupPath, Zend_Log::INFO);
 				$backedTo[] = $backupPath;
 			} else {
-				Billrun_Factory::log()->log("Failed backup file " . $filePath . " to " . $backupPath, Zend_Log::INFO);
+				Billrun_Factory::log()->log("Failed backup file " . $filePath . " to " . $backupPath, Zend_Log::WARN);
 			}
 		}
 		
