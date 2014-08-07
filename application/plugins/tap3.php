@@ -105,6 +105,7 @@ class tap3Plugin extends Billrun_Plugin_BillrunPluginBase implements Billrun_Plu
 		$cdrLine = false;
 
 		if (isset($this->tap3Config[$type])) {
+			//print_r($data->getDataArray($data,true,true));
 			$cdrLine = $this->parseASNDataRecur($this->tap3Config[$type], $data, $this->tap3Config['fields']);
 			if ($cdrLine) {
 				$cdrLine['record_type'] = $type;
@@ -158,13 +159,19 @@ class tap3Plugin extends Billrun_Plugin_BillrunPluginBase implements Billrun_Plu
 		if (isset($cdrLine['basicCallInformation']['chargeableSubscriber']['simChargeableSubscriber']['imsi'])) {
 			$cdrLine['imsi'] = $cdrLine['basicCallInformation']['chargeableSubscriber']['simChargeableSubscriber']['imsi'];
 		}
+		
+		if (isset($cdrLine['basicCallInformation']['simChargeableSubscriber']['imsi'])) {
+			$cdrLine['imsi'] = $cdrLine['basicCallInformation']['simChargeableSubscriber']['imsi'];
+		}
 
 		if (isset($cdrLine['basicCallInformation']['GprsChargeableSubscriber']['chargeableSubscriber']['simChargeableSubscriber']['imsi'])) {
 			$cdrLine['imsi'] = $cdrLine['basicCallInformation']['GprsChargeableSubscriber']['chargeableSubscriber']['simChargeableSubscriber']['imsi'];
 		}
 
-		if (isset($cdrLine['BasicServiceUsedList']['BasicServiceUsed']['BasicService']['BasicServiceCode']['TeleServiceCode']) && isset($cdrLine['record_type'])) {
-			$tele_service_code = $cdrLine['BasicServiceUsedList']['BasicServiceUsed']['BasicService']['BasicServiceCode']['TeleServiceCode'];
+		 if ( ( isset($cdrLine['BasicServiceUsedList']['BasicServiceUsed']['BasicService']['BasicServiceCode']['TeleServiceCode']) || isset($cdrLine['BasicServiceUsedList']['BasicServiceUsed']['BasicService']['TeleServiceCode']) ) && isset($cdrLine['record_type'])) {
+			$tele_service_code = isset($cdrLine['BasicServiceUsedList']['BasicServiceUsed']['BasicService']['BasicServiceCode']['TeleServiceCode']) ?
+										$cdrLine['BasicServiceUsedList']['BasicServiceUsed']['BasicService']['BasicServiceCode']['TeleServiceCode'] : 
+										$cdrLine['BasicServiceUsedList']['BasicServiceUsed']['BasicService']['TeleServiceCode'];
 			$record_type = $cdrLine['record_type'];
 			if ($record_type == '9') {
 				if ($tele_service_code == '11') {
@@ -183,11 +190,11 @@ class tap3Plugin extends Billrun_Plugin_BillrunPluginBase implements Billrun_Plu
 			$cdrLine['calling_number'] = $cdrLine['basicCallInformation']['GprsChargeableSubscriber']['chargeableSubscriber']['simChargeableSubscriber']['msisdn'];
 		} else if (isset($cdrLine['basicCallInformation']['chargeableSubscriber']['simChargeableSubscriber']['msisdn'])) {
 			$cdrLine['calling_number'] = $cdrLine['basicCallInformation']['chargeableSubscriber']['simChargeableSubscriber']['msisdn'];
-		} else if (isset($cdrLine['BasicServiceUsedList']['BasicServiceUsed']['BasicService']['BasicServiceCode']['TeleServiceCode']) && isset($cdrLine['record_type'])) {
+		} else if (isset($tele_service_code) && isset($cdrLine['record_type'])) {
 			if ($record_type == 'a' && ($tele_service_code == '11' || $tele_service_code == '21')) {
 				if (isset($cdrLine['basicCallInformation']['callOriginator']['callingNumber'])) { // for some calls (incoming?) there's no calling number
 					$cdrLine['calling_number'] = $cdrLine['basicCallInformation']['callOriginator']['callingNumber'];
-				}
+				} 
 			}
 		}
 

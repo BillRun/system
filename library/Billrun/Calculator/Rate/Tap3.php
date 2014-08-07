@@ -64,8 +64,11 @@ class Billrun_Calculator_Rate_Tap3 extends Billrun_Calculator_Rate {
 		$usage_type = null;
 
 		$record_type = $row['record_type'];
-		if (isset($row['BasicServiceUsedList']['BasicServiceUsed']['BasicService']['BasicServiceCode']['TeleServiceCode'])) {
-			$tele_service_code = $row['BasicServiceUsedList']['BasicServiceUsed']['BasicService']['BasicServiceCode']['TeleServiceCode'];
+		if (isset($row['BasicServiceUsedList']['BasicServiceUsed']['BasicService']['BasicServiceCode']['TeleServiceCode']) || 
+			isset($row['BasicServiceUsedList']['BasicServiceUsed']['BasicService']['TeleServiceCode']) ) {
+			$tele_service_code = isset($row['BasicServiceUsedList']['BasicServiceUsed']['BasicService']['BasicServiceCode']['TeleServiceCode']) ? 
+									$row['BasicServiceUsedList']['BasicServiceUsed']['BasicService']['BasicServiceCode']['TeleServiceCode'] : 
+									$row['BasicServiceUsedList']['BasicServiceUsed']['BasicService']['TeleServiceCode'] ;
 			if ($tele_service_code == '11') {
 				if ($record_type == '9') {
 					$usage_type = 'call'; // outgoing call
