@@ -262,7 +262,7 @@ trait Billrun_Traits_FileActions {
 		if(!$file->isEmpty()) {
 			$defaultBackup = Billrun_Factory::config()->getConfigValue('backup.default_backup_path',FALSE);			
 			if(empty($file['backed_to'])) {
-				$backupPaths =  !empty($this->backupPaths) ? $defaultBackup : (!empty($defaultBackup) ? $defaultBackup : array('./backup/' . $this->getType()));
+				$backupPaths =  !empty($this->backupPaths) ? $this->backupPaths : (!empty($defaultBackup) ? $defaultBackup : array('./backup/' . $this->getType()));
 				Billrun_Factory::log()->log("Backing up and moving file {$file['path']} to - ".implode(",", $backupPaths) , Zend_Log::INFO);	
 				$this->backup(basename($file['path']),$file['path'], $backupPaths, $file['retrived_from'],true);
 			} else {
