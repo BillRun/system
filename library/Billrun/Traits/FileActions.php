@@ -260,11 +260,11 @@ trait Billrun_Traits_FileActions {
 	protected function removeFromWorkspace($filestamp) {
 		$file = Billrun_Factory::db()->logCollection()->query(array('stamp'=> $filestamp))->cursor()->limit(1)->current();
 		if(!$file->isEmpty()) {
-			$defaultBackup = Billrun_Factory::config()->getConfigValue('backup.default_backup_path',FALSE);			
+			$defaultBackup = Billrun_Factory::config()->getConfigValue('backup.default_backup_path',FALSE);
 			if(empty($file['backed_to'])) {
-				$backupPaths =  !empty($this->backupPaths) ? $this->backupPaths : (!empty($defaultBackup) ? $defaultBackup : array('./backup/' . $this->getType()));
+				$backupPaths = !empty($this->backupPaths) ? (array) $this->backupPaths : (!empty($defaultBackup) ? (array) $defaultBackup : array('./backup/' . $this->getType()));
 				Billrun_Factory::log()->log("Backing up and moving file {$file['path']} to - ".implode(",", $backupPaths) , Zend_Log::INFO);	
-				$this->backup(basename($file['path']),$file['path'], $backupPaths, $file['retrived_from'],true);
+				$this->backup($file['path'], basename($file['path']), $backupPaths, $file['retrieved_from'],true);
 			} else {
 				Billrun_Factory::log()->log("File {$file['path']}  already backed up to :".implode(",",$file['backed_to']), Zend_Log::INFO);
 				Billrun_Factory::log()->log("Removing file {$file['path']} from the workspace", Zend_Log::INFO);
