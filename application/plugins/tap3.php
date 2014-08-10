@@ -90,7 +90,7 @@ class tap3Plugin extends Billrun_Plugin_BillrunPluginBase implements Billrun_Plu
 		//Billrun_Factory::log()->log("Header data : ". print_r(Asn_Base::getDataArray( $data ,true ),1) ,  Zend_Log::DEBUG);
 		$header = $this->parseASNDataRecur($this->tap3Config['header'], $data, $this->tap3Config['fields']);
 		$this->currentFileHeader = $header;
-		$this->fileVersion = $this->currentFileHeader['header']['version'] ."_" .$this->currentFileHeader['header']['minor_version']; 
+		$this->fileVersion = $this->currentFileHeader['header']['version'] ."_" .$this->currentFileHeader['header']['minor_version'];
 		//Billrun_Factory::log()->log("File Version :  {$this->fileVersion}",Zend_Log::DEBUG);
 		return $header;
 	}
@@ -153,18 +153,12 @@ class tap3Plugin extends Billrun_Plugin_BillrunPluginBase implements Billrun_Plu
 	protected function surfaceCDRFields(&$cdrLine,$mapping) {
 
 		
-		foreach($mapping as $key => $fieldToMap) {
-			$val = Billrun_Util::getNestedArrayVal($cdrLine,$fieldToMap, null);
-			if($val !== null && Billrun_Util::getFieldVal($this->tap3Config['fields_to_save'][$key],false)) {
-				$cdrLine[$key] = $val;
-			}
-		}
-		
-		if (Billrun_Util::getNestedArrayVal($cdrLine, $mapping['localTimeStamp'])) {
+		if (Billrun_Util::getNestedArrayVal($cdrLine, $mapping['localTimeStamp']) !== null) {
 			$offset = $this->currentFileHeader['networkInfo']['UtcTimeOffsetInfoList'][Billrun_Util::getNestedArrayVal($cdrLine, $mapping['TimeOffsetCode'])];
 			$cdrLine['urt'] = new MongoDate(Billrun_Util::dateTimeConvertShortToIso(Billrun_Util::getNestedArrayVal($cdrLine, $mapping['localTimeStamp']), $offset));
 			$cdrLine['tzoffset'] = $offset;
 		}
+		
 
 //		if (isset($cdrLine['basicCallInformation']['chargeableSubscriber']['simChargeableSubscriber']['imsi'])) {
 //			$cdrLine['imsi'] = $cdrLine['basicCallInformation']['chargeableSubscriber']['simChargeableSubscriber']['imsi'];
@@ -174,11 +168,7 @@ class tap3Plugin extends Billrun_Plugin_BillrunPluginBase implements Billrun_Plu
 //			$cdrLine['imsi'] = $cdrLine['basicCallInformation']['simChargeableSubscriber']['imsi'];
 //		}
 
-//		if (Billrun_Util::getNestedArrayVal($cdrLine, $mapping['imsi'])) {
-//			$cdrLine['imsi'] = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['imsi']);
-//		}
-
-		 if (  Billrun_Util::getNestedArrayVal($cdrLine, $mapping['tele_srv_code']) && isset($cdrLine['record_type'])) {
+		 if (  Billrun_Util::getNestedArrayVal($cdrLine, $mapping['tele_srv_code']) !== null && isset($cdrLine['record_type'])) {
 			$tele_service_code = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['tele_srv_code']);
 			$record_type = $cdrLine['record_type'];
 			if ($record_type == '9') {
@@ -198,10 +188,9 @@ class tap3Plugin extends Billrun_Plugin_BillrunPluginBase implements Billrun_Plu
 //			$cdrLine['calling_number'] = $cdrLine['basicCallInformation']['GprsChargeableSubscriber']['chargeableSubscriber']['simChargeableSubscriber']['msisdn'];
 //		} else if (isset($cdrLine['basicCallInformation']['chargeableSubscriber']['simChargeableSubscriber']['msisdn'])) {
 //			$cdrLine['calling_number'] = $cdrLine['basicCallInformation']['chargeableSubscriber']['simChargeableSubscriber']['msisdn'];
-//		if(Billrun_Util::getNestedArrayVal($cdrLine, $mapping['calling_number'])) {
-//			$cdrLine['calling_number'] = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['calling_number']);
 //		} //else
-		if (isset($tele_service_code) && isset($cdrLine['record_type'])) {
+
+		if (!Billrun_Util::getNestedArrayVal($cdrLine, $mapping['calling_number']) && isset($tele_service_code) && isset($record_type) ) {
 			if ($record_type == 'a' && ($tele_service_code == '11' || $tele_service_code == '21')) {
 				if (Billrun_Util::getNestedArrayVal($cdrLine, $mapping['call_org_number'])) { // for some calls (incoming?) there's no calling number
 					$cdrLine['calling_number'] = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['call_org_number']);
@@ -209,13 +198,13 @@ class tap3Plugin extends Billrun_Plugin_BillrunPluginBase implements Billrun_Plu
 			}
 		}
 
-		if (Billrun_Util::getNestedArrayVal($cdrLine, $mapping['serving_network'])) {
+		if (Billrun_Util::getNestedArrayVal($cdrLine, $mapping['serving_network']) !== null) {
 			$cdrLine['serving_network'] = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['serving_network']);
 		} else {
 			$cdrLine['serving_network'] = $this->currentFileHeader['header']['sending_source'];
 		}
 
-		if (Billrun_Util::getNestedArrayVal($cdrLine, $mapping['sdr'])) {
+		if (Billrun_Util::getNestedArrayVal($cdrLine, $mapping['sdr']) !== null) {
 			$cdrLine['sdr'] = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['sdr']) / $this->sdr_division_value;
 			$cdrLine['exchange_rate'] = $this->exchangeRates[Billrun_Util::getNestedArrayVal($cdrLine, $mapping['exchange_rate_code'])];
 //		} else if (isset($cdrLine['GprsServiceUsed']['ChargeInformationList']['ChargeInformation']['ChargeDetailList']['ChargeDetail']['Charge'])) {
@@ -225,6 +214,13 @@ class tap3Plugin extends Billrun_Plugin_BillrunPluginBase implements Billrun_Plu
 		
 		//save the sending source in each of the lines
 		$cdrLine['sending_source'] = $this->currentFileHeader['header']['sending_source'];
+
+		foreach($mapping as $key => $fieldToMap) {
+			$val = Billrun_Util::getNestedArrayVal($cdrLine,$fieldToMap, null);
+			if($val !== null && Billrun_Util::getFieldVal($this->tap3Config['fields_to_save'][$key],false)) {
+				$cdrLine[$key] = $val;
+			}
+		}
 
 //		if (Billrun_Util::getNestedArrayVal($cdrLine, $mapping['call_type'])) {
 //			$cdrLine['call_type'] = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['call_type']);
@@ -290,6 +286,10 @@ class tap3Plugin extends Billrun_Plugin_BillrunPluginBase implements Billrun_Plu
 		$parsedData = Asn_Base::parseASNString($bytes);
 		$processorData['header'] = $processor->buildHeader($parsedData);
 		//$bytes = substr($bytes, $processor->getParser()->getLastParseLength());
+		if(!isset($this->tap3Config[$this->fileVersion])) {
+			Billrun_Factory::log("Processing tap3 file {$processor->filename} with non supported version : {$this->fileVersion}",Zend_log::NOTICE);
+			return false;
+		}
 		$trailer = $processor->buildTrailer($parsedData);
 		$this->initExchangeRates($trailer);
 
