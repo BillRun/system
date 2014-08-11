@@ -48,7 +48,7 @@ class RemoveAction extends ApiAction {
 			'source' => 'api',
 			'stamp' => array('$in' => $stamps),
 			'$or' => array(
-				array('billrun' => Billrun_Billrun::getActiveBillrun()),
+				array('billrun' => array('$gte' => Billrun_Billrun::getActiveBillrun())),
 				array('billrun' => array('$exists' => false)),
 			)
 		);
