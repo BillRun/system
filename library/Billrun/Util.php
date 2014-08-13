@@ -714,7 +714,7 @@ class Billrun_Util {
 		}
 		return preg_match('/^'.date($format,strtotime($date)).'/',$date) ? $date : false; 
 	}
-	
+
 	/**
 	 * method to get current hostname runnning the PHP
 	 * 
@@ -724,4 +724,19 @@ class Billrun_Util {
 		return function_exists('gethostname') ? gethostname() : false;
 	}
 
+	/**
+	 * 
+	 * @param type $array
+	 * @param type $fields
+	 * @param type $defaultVal
+	 * @return type
+	 */
+	public static function getNestedArrayVal($array, $fields, $defaultVal = null) {
+		$fields = is_array($fields) ? $fields : explode('.', $fields);
+		$field = array_shift($fields);
+		if( isset($array[$field]) ) {
+			return empty($fields) ? $array[$field] : static::getNestedArrayVal($array[$field], $fields, $defaultVal); 
+		}
+		return $defaultVal;
+	}
 }

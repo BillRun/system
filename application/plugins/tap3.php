@@ -90,6 +90,8 @@ class tap3Plugin extends Billrun_Plugin_BillrunPluginBase implements Billrun_Plu
 		//Billrun_Factory::log()->log("Header data : ". print_r(Asn_Base::getDataArray( $data ,true ),1) ,  Zend_Log::DEBUG);
 		$header = $this->parseASNDataRecur($this->tap3Config['header'], $data, $this->tap3Config['fields']);
 		$this->currentFileHeader = $header;
+		$this->fileVersion = $this->currentFileHeader['header']['version'] ."_" .$this->currentFileHeader['header']['minor_version'];
+		//Billrun_Factory::log()->log("File Version :  {$this->fileVersion}",Zend_Log::DEBUG);
 		return $header;
 	}
 
@@ -104,12 +106,12 @@ class tap3Plugin extends Billrun_Plugin_BillrunPluginBase implements Billrun_Plu
 		$type = $data->getType();
 		$cdrLine = false;
 
-		if (isset($this->tap3Config[$type])) {
-			$cdrLine = $this->parseASNDataRecur($this->tap3Config[$type], $data, $this->tap3Config['fields']);
+		if (isset($this->tap3Config[$this->fileVersion][$type])) {
+			//print_r($data->getDataArray($data,true,true));			
+			$cdrLine = $this->parseASNDataRecur($this->tap3Config[$this->fileVersion][$type], $data, $this->tap3Config['fields']);
 			if ($cdrLine) {
 				$cdrLine['record_type'] = $type;
-
-				$this->surfaceCDRFields($cdrLine);
+				$this->surfaceCDRFields($cdrLine, array_merge($this->tap3Config[$this->fileVersion]['mapping']['common'], $this->tap3Config[$this->fileVersion]['mapping'][$type]) );
 			}
 		} else {
 			//Billrun_Factory::log()->log("Unidetifiyed type :  $type",Zend_Log::DEBUG);
@@ -148,71 +150,84 @@ class tap3Plugin extends Billrun_Plugin_BillrunPluginBase implements Billrun_Plu
 	 * Pull required fields from the CDR nested tree to the surface.
 	 * @param type $cdrLine the line to monipulate.
 	 */
-	protected function surfaceCDRFields(&$cdrLine) {
-		if (isset($cdrLine['basicCallInformation']['CallEventStartTimeStamp']['localTimeStamp'])) {
-			$offset = $this->currentFileHeader['networkInfo']['UtcTimeOffsetInfoList'][$cdrLine['basicCallInformation']['CallEventStartTimeStamp']['TimeOffsetCode']];
-			$cdrLine['urt'] = new MongoDate(Billrun_Util::dateTimeConvertShortToIso($cdrLine['basicCallInformation']['CallEventStartTimeStamp']['localTimeStamp'], $offset));
+	protected function surfaceCDRFields(&$cdrLine,$mapping) {
+
+		
+		if (Billrun_Util::getNestedArrayVal($cdrLine, $mapping['localTimeStamp']) !== null) {
+			$offset = $this->currentFileHeader['networkInfo']['UtcTimeOffsetInfoList'][Billrun_Util::getNestedArrayVal($cdrLine, $mapping['TimeOffsetCode'])];
+			$cdrLine['urt'] = new MongoDate(Billrun_Util::dateTimeConvertShortToIso(Billrun_Util::getNestedArrayVal($cdrLine, $mapping['localTimeStamp']), $offset));
 			$cdrLine['tzoffset'] = $offset;
 		}
+		
 
-		if (isset($cdrLine['basicCallInformation']['chargeableSubscriber']['simChargeableSubscriber']['imsi'])) {
-			$cdrLine['imsi'] = $cdrLine['basicCallInformation']['chargeableSubscriber']['simChargeableSubscriber']['imsi'];
-		}
+//		if (isset($cdrLine['basicCallInformation']['chargeableSubscriber']['simChargeableSubscriber']['imsi'])) {
+//			$cdrLine['imsi'] = $cdrLine['basicCallInformation']['chargeableSubscriber']['simChargeableSubscriber']['imsi'];
+//		}
+//		
+//		if (isset($cdrLine['basicCallInformation']['simChargeableSubscriber']['imsi'])) {
+//			$cdrLine['imsi'] = $cdrLine['basicCallInformation']['simChargeableSubscriber']['imsi'];
+//		}
 
-		if (isset($cdrLine['basicCallInformation']['GprsChargeableSubscriber']['chargeableSubscriber']['simChargeableSubscriber']['imsi'])) {
-			$cdrLine['imsi'] = $cdrLine['basicCallInformation']['GprsChargeableSubscriber']['chargeableSubscriber']['simChargeableSubscriber']['imsi'];
-		}
-
-		if (isset($cdrLine['BasicServiceUsedList']['BasicServiceUsed']['BasicService']['BasicServiceCode']['TeleServiceCode']) && isset($cdrLine['record_type'])) {
-			$tele_service_code = $cdrLine['BasicServiceUsedList']['BasicServiceUsed']['BasicService']['BasicServiceCode']['TeleServiceCode'];
+		 if (  Billrun_Util::getNestedArrayVal($cdrLine, $mapping['tele_srv_code']) !== null && isset($cdrLine['record_type'])) {
+			$tele_service_code = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['tele_srv_code']);
 			$record_type = $cdrLine['record_type'];
 			if ($record_type == '9') {
 				if ($tele_service_code == '11') {
-					$cdrLine['called_number'] = $cdrLine['basicCallInformation']['Desination']['CalledNumber'];
+					$cdrLine['called_number'] = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['called_number']) ; //$cdrLine['basicCallInformation']['Desination']['CalledNumber'];
 				} else if ($tele_service_code == '22') {
-					if (isset($cdrLine['basicCallInformation']['Desination']['DialedDigits'])) {
-						$cdrLine['called_number'] = $cdrLine['basicCallInformation']['Desination']['DialedDigits'];
+					if (Billrun_Util::getNestedArrayVal($cdrLine, $mapping['dialed_digits'])) {
+						$cdrLine['called_number'] = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['dialed_digits']);
 					} else if (isset($cdrLine['basicCallInformation']['Desination']['CalledNumber'])) { // @todo check with sefi. reference: db.lines.count({'BasicServiceUsedList.BasicServiceUsed.BasicService.BasicServiceCode.TeleServiceCode':"22",record_type:'9','basicCallInformation.Desination.DialedDigits':{$exists:false}});)
-						$cdrLine['called_number'] = $cdrLine['basicCallInformation']['Desination']['CalledNumber'];
+						$cdrLine['called_number'] = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['called_number']);
 					}
 				}
 			}
 		}
 
-		if (isset($cdrLine['basicCallInformation']['GprsChargeableSubscriber']['chargeableSubscriber']['simChargeableSubscriber']['msisdn'])) {
-			$cdrLine['calling_number'] = $cdrLine['basicCallInformation']['GprsChargeableSubscriber']['chargeableSubscriber']['simChargeableSubscriber']['msisdn'];
-		} else if (isset($cdrLine['basicCallInformation']['chargeableSubscriber']['simChargeableSubscriber']['msisdn'])) {
-			$cdrLine['calling_number'] = $cdrLine['basicCallInformation']['chargeableSubscriber']['simChargeableSubscriber']['msisdn'];
-		} else if (isset($cdrLine['BasicServiceUsedList']['BasicServiceUsed']['BasicService']['BasicServiceCode']['TeleServiceCode']) && isset($cdrLine['record_type'])) {
+//		if (isset($cdrLine['basicCallInformation']['GprsChargeableSubscriber']['chargeableSubscriber']['simChargeableSubscriber']['msisdn'])) {
+//			$cdrLine['calling_number'] = $cdrLine['basicCallInformation']['GprsChargeableSubscriber']['chargeableSubscriber']['simChargeableSubscriber']['msisdn'];
+//		} else if (isset($cdrLine['basicCallInformation']['chargeableSubscriber']['simChargeableSubscriber']['msisdn'])) {
+//			$cdrLine['calling_number'] = $cdrLine['basicCallInformation']['chargeableSubscriber']['simChargeableSubscriber']['msisdn'];
+//		} //else
+
+		if (!Billrun_Util::getNestedArrayVal($cdrLine, $mapping['calling_number']) && isset($tele_service_code) && isset($record_type) ) {
 			if ($record_type == 'a' && ($tele_service_code == '11' || $tele_service_code == '21')) {
-				if (isset($cdrLine['basicCallInformation']['callOriginator']['callingNumber'])) { // for some calls (incoming?) there's no calling number
-					$cdrLine['calling_number'] = $cdrLine['basicCallInformation']['callOriginator']['callingNumber'];
-				}
+				if (Billrun_Util::getNestedArrayVal($cdrLine, $mapping['call_org_number'])) { // for some calls (incoming?) there's no calling number
+					$cdrLine['calling_number'] = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['call_org_number']);
+				} 
 			}
 		}
 
-		if (isset($cdrLine['LocationInformation']['GeographicalLocation']['ServingNetwork'])) {
-			$cdrLine['serving_network'] = $cdrLine['LocationInformation']['GeographicalLocation']['ServingNetwork'];
+		if (Billrun_Util::getNestedArrayVal($cdrLine, $mapping['serving_network']) !== null) {
+			$cdrLine['serving_network'] = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['serving_network']);
 		} else {
 			$cdrLine['serving_network'] = $this->currentFileHeader['header']['sending_source'];
 		}
 
-		if (isset($cdrLine['BasicServiceUsedList']['BasicServiceUsed']['ChargeInformationList']['ChargeInformation']['ChargeDetailList']['ChargeDetail']['Charge'])) {
-			$cdrLine['sdr'] = $cdrLine['BasicServiceUsedList']['BasicServiceUsed']['ChargeInformationList']['ChargeInformation']['ChargeDetailList']['ChargeDetail']['Charge'] / $this->sdr_division_value;
-			$cdrLine['exchange_rate'] = $this->exchangeRates[$cdrLine['BasicServiceUsedList']['BasicServiceUsed']['ChargeInformationList']['ChargeInformation']['ExchangeRateCode']];
-		} else if (isset($cdrLine['GprsServiceUsed']['ChargeInformationList']['ChargeInformation']['ChargeDetailList']['ChargeDetail']['Charge'])) {
-			$cdrLine['sdr'] = $cdrLine['GprsServiceUsed']['ChargeInformationList']['ChargeInformation']['ChargeDetailList']['ChargeDetail']['Charge'] / $this->sdr_division_value;
-			$cdrLine['exchange_rate'] = $this->exchangeRates[$cdrLine['GprsServiceUsed']['ChargeInformationList']['ChargeInformation']['ExchangeRateCode']];
+		if (Billrun_Util::getNestedArrayVal($cdrLine, $mapping['sdr']) !== null) {
+			$cdrLine['sdr'] = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['sdr']) / $this->sdr_division_value;
+			$cdrLine['exchange_rate'] = $this->exchangeRates[Billrun_Util::getNestedArrayVal($cdrLine, $mapping['exchange_rate_code'])];
+//		} else if (isset($cdrLine['GprsServiceUsed']['ChargeInformationList']['ChargeInformation']['ChargeDetailList']['ChargeDetail']['Charge'])) {
+//			$cdrLine['sdr'] = $cdrLine['GprsServiceUsed']['ChargeInformationList']['ChargeInformation']['ChargeDetailList']['ChargeDetail']['Charge'] / $this->sdr_division_value;
+//			$cdrLine['exchange_rate'] = $this->exchangeRates[$cdrLine['GprsServiceUsed']['ChargeInformationList']['ChargeInformation']['ExchangeRateCode']];
 		}
 		
 		//save the sending source in each of the lines
 		$cdrLine['sending_source'] = $this->currentFileHeader['header']['sending_source'];
 
-		if (isset($cdrLine['BasicServiceUsedList']['BasicServiceUsed']['ChargeInformationList']['ChargeInformation']['CallTypeGroup']['CallTypeLevel1'])) {
-			$cdrLine['call_type'] = $cdrLine['BasicServiceUsedList']['BasicServiceUsed']['ChargeInformationList']['ChargeInformation']['CallTypeGroup']['CallTypeLevel1'];
-		} else if(isset($cdrLine['GprsServiceUsed']['ChargeInformationList']['ChargeInformation']['CallTypeGroup']['CallTypeLevel1'])) {
-				$cdrLine['call_type'] = $cdrLine['GprsServiceUsed']['ChargeInformationList']['ChargeInformation']['CallTypeGroup']['CallTypeLevel1'];
+		foreach($mapping as $key => $fieldToMap) {
+			$val = Billrun_Util::getNestedArrayVal($cdrLine,$fieldToMap, null);
+			if($val !== null && Billrun_Util::getFieldVal($this->tap3Config['fields_to_save'][$key],false)) {
+				$cdrLine[$key] = $val;
+			}
 		}
+
+//		if (Billrun_Util::getNestedArrayVal($cdrLine, $mapping['call_type'])) {
+//			$cdrLine['call_type'] = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['call_type']);
+//		} else if(isset($cdrLine['GprsServiceUsed']['ChargeInformationList']['ChargeInformation']['CallTypeGroup']['CallTypeLevel1'])) {
+//				$cdrLine['call_type'] = $cdrLine['GprsServiceUsed']['ChargeInformationList']['ChargeInformation']['CallTypeGroup']['CallTypeLevel1'];
+//		}
+		
 	}
 
 	/**
@@ -271,6 +286,10 @@ class tap3Plugin extends Billrun_Plugin_BillrunPluginBase implements Billrun_Plu
 		$parsedData = Asn_Base::parseASNString($bytes);
 		$processorData['header'] = $processor->buildHeader($parsedData);
 		//$bytes = substr($bytes, $processor->getParser()->getLastParseLength());
+		if(!isset($this->tap3Config[$this->fileVersion])) {
+			Billrun_Factory::log("Processing tap3 file {$processor->filename} with non supported version : {$this->fileVersion}",Zend_log::NOTICE);
+			throw new Exception("Processing tap3 file {$processor->filename} with non supported version : {$this->fileVersion}");			
+		}
 		$trailer = $processor->buildTrailer($parsedData);
 		$this->initExchangeRates($trailer);
 
