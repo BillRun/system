@@ -1,0 +1,16 @@
+wse-php
+|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+?? ??? 2010, 1.1.0
+Features:
+- Add options parameter to signSoapDoc() method.
+  options include insertBefore and KeyInfo array (X509SubjectKeyIdentifier).
+- Add options parameter to addEncryptedKey() method.
+  options include KeyInfo array (X509SubjectKeyIdentifier).
+- Add encryptSoapDoc() method
+- Add decryptSoapDoc() method
+- Libraries now provide ability to interoperate with WCF servers using message 
+  level security (Signatures and Encryption).
+
+08 Mar 2010, 1.0.0
+Initial import of libraries to repository from cdatazone web site
+Provides support for Digital Sigatures via WS-Security and WS-Addressing

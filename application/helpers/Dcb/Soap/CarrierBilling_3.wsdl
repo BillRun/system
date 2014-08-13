@@ -1,0 +1,1320 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<wsdl:definitions name="CarrierBilling" xmlns:m="http://www.android.google.com/billing"
+  xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+  xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:http="http://schemas.xmlsoap.org/wsdl/http/"
+  targetNamespace="http://www.android.google.com/billing">
+  <wsdl:types>
+    <xsd:schema targetNamespace="http://www.android.google.com/billing">
+      <xsd:complexType name="Auth">
+        <xsd:sequence>
+          <xsd:element name="Version" type="xsd:int" maxOccurs="1"
+            minOccurs="1">
+            <xsd:annotation><xsd:documentation><![CDATA[
+                The version of the protocol being used. This should be 3.
+            ]]></xsd:documentation></xsd:annotation>
+          </xsd:element>
+          <xsd:element name="CorrelationId" type="m:genericString128"
+            maxOccurs="1" minOccurs="1">
+            <xsd:annotation><xsd:documentation><![CDATA[
+              Correlation ID to combine all the events related to an
+              order. This ID is unique to each order.
+            ]]></xsd:documentation></xsd:annotation>
+          </xsd:element>
+          <xsd:element name="PurchaseTime" type="m:timestamp"
+            maxOccurs="1" minOccurs="1">
+            <xsd:annotation><xsd:documentation><![CDATA[
+              Timestamp of the purchase request.
+            ]]></xsd:documentation></xsd:annotation>
+          </xsd:element>
+          <xsd:element name="BillingAgreement" type="m:genericString64"
+            maxOccurs="1" minOccurs="1">
+            <xsd:annotation><xsd:documentation><![CDATA[
+              Short string indicating the billing agreement of the
+              carrier who will charge the customer.  This will always
+              be the same string, unless the same SOAP server is
+              serving multiple carrier entities.
+            ]]></xsd:documentation></xsd:annotation>
+          </xsd:element>
+          <xsd:element name="OperatorUserToken" type="m:genericString" maxOccurs="1"
+            minOccurs="1">
+            <xsd:annotation><xsd:documentation><![CDATA[
+              The Operator User Token for the user.
+            ]]></xsd:documentation></xsd:annotation>
+          </xsd:element>
+          <xsd:element name="PaymentDescription" type="m:genericString"
+            maxOccurs="1" minOccurs="1">
+            <xsd:annotation><xsd:documentation><![CDATA[
+              Description of the purchase.
+            ]]></xsd:documentation></xsd:annotation>
+          </xsd:element>
+          <xsd:element name="SubscriptionId" type="m:genericString"
+            maxOccurs="1" minOccurs="0">
+            <xsd:annotation><xsd:documentation><![CDATA[
+              If present, indicates that this transaction is for a
+              recurring subscription and the value contained here is
+              the subscription id for this subscription.  The same id
+              that was present in the first Auth request to initiate
+              the subscription will be present in every subsequent
+              Auth request due to rebills on the same subscription.
+            ]]></xsd:documentation></xsd:annotation>
+          </xsd:element>
+          <xsd:element name="SubscriptionRecurrenceFrequency"
+            type="m:SubscriptionRecurrence" maxOccurs="1" minOccurs="0">
+            <xsd:annotation><xsd:documentation><![CDATA[
+              This field will only be set if SubscriptionId is
+              provided. It indicates how often the subscription will
+              re-bill. (Note: DAILY is meant only for testing, so subscriptions
+              can be tested with a short turnaround time. Daily subscriptions
+              will not be officially supported in production.)
+            ]]></xsd:documentation></xsd:annotation>
+          </xsd:element>
+          <xsd:element name="MerchantContact" type="m:genericString"
+            maxOccurs="1" minOccurs="1">
+            <xsd:annotation><xsd:documentation><![CDATA[
+              Contact information for the merchant, it may be a URL,
+              phone number or address.  This field is free format, and
+              is intended to be presented on the subscriber bill to
+              allow consumers to contact the merchant.
+            ]]></xsd:documentation></xsd:annotation>
+          </xsd:element>
+          <xsd:element name="Currency" type="m:currencyCode"
+            maxOccurs="1" minOccurs="1">
+            <xsd:annotation><xsd:documentation><![CDATA[
+              ISO 4217 3-letter currency code.
+            ]]></xsd:documentation></xsd:annotation>
+          </xsd:element>
+          <xsd:element name="ItemPrice" type="m:micros" maxOccurs="1"
+            minOccurs="1">
+            <xsd:annotation><xsd:documentation><![CDATA[
+              The base price of the item; set by the
+              developer. Revenue sharing applies only to this amount.
+              ]]></xsd:documentation></xsd:annotation>
+          </xsd:element>
+          <xsd:element name="Tax" type="m:micros" maxOccurs="1"
+            minOccurs="1">
+            <xsd:annotation><xsd:documentation><![CDATA[
+              Computed tax on the base item price.
+            ]]></xsd:documentation></xsd:annotation>
+          </xsd:element>
+          <xsd:element name="Total" type="m:micros" maxOccurs="1"
+            minOccurs="1">
+            <xsd:annotation><xsd:documentation><![CDATA[
+              Sum of ItemPrice and Tax; this is the amount which
+              should be charged to the subscriber's bill.
+            ]]></xsd:documentation></xsd:annotation>
+          </xsd:element>
+          <xsd:element name="UserLocale" type="m:localeCode"
+            maxOccurs="1" minOccurs="0">
+            <xsd:annotation><xsd:documentation><![CDATA[
+              A two-letter ISO 639-1 Alpha 2 language code
+              optionally followed by a hyphen and an ISO 3166-1 Alpha-2
+              country code, e.g."pt" or "pt-BR".
+            ]]></xsd:documentation></xsd:annotation>
+          </xsd:element>
+          <xsd:element name="DcbTosVersion" type="m:genericString64" maxOccurs="1"
+            minOccurs="0">
+            <xsd:annotation><xsd:documentation><![CDATA[
+              Latest version of the Carrier Billing TOS that was
+              accepted by the user.
+            ]]></xsd:documentation></xsd:annotation>
+          </xsd:element>
+          <xsd:element name="Passphrase" type="m:genericString"
+            maxOccurs="1" minOccurs="0">
+            <xsd:annotation><xsd:documentation><![CDATA[
+              The passphrase to validate for this user account.
+            ]]></xsd:documentation></xsd:annotation>
+          </xsd:element>
+        </xsd:sequence>
+      </xsd:complexType>
+
+      <xsd:simpleType name="SubscriptionRecurrence">
+        <xsd:restriction base="xsd:string">
+          <xsd:enumeration value="DAILY" />
+          <xsd:enumeration value="MONTHLY" />
+          <xsd:enumeration value="YEARLY" />
+        </xsd:restriction>
+      </xsd:simpleType>
+
+      <xsd:complexType name="AuthResponse">
+        <xsd:sequence>
+          <xsd:element name="Version" type="xsd:int" maxOccurs="1"
+            minOccurs="1">
+            <xsd:annotation><xsd:documentation><![CDATA[
+              The version of the protocol being used. Set to 3.
+            ]]></xsd:documentation></xsd:annotation>
+          </xsd:element>
+          <xsd:element name="CorrelationId" type="m:genericString128" maxOccurs="1"
+            minOccurs="1">
+            <xsd:annotation><xsd:documentation><![CDATA[
+              Original CorrelationId for this response.
+            ]]></xsd:documentation></xsd:annotation>
+          </xsd:element>
+          <xsd:element name="Result" type="m:AuthResponseResult"
+            maxOccurs="1" minOccurs="1">
+            <xsd:annotation><xsd:documentation><![CDATA[
+              <table border="1">
+              <tr><th>Result Code</th><th>Description</th><th>System Behavior</th></tr>
+              <tr>
+                <td>SUCCESS</td>
+                <td>Indicates that the operation succeeded normally.
+                User receives confirmation email and app download starts.</td>
+              </tr><tr>
+                <td>CHARGE_EXCEEDS_LIMIT</td>
+                <td>The total charge requested exceeds the
+                  operator-determined bill cycle limit.  Returned for postpaid accounts.
+                  Indicates that the subscriber needs to wait until the next bill cycle to
+                  purchase or request limit increase from carrier.</td>
+                <td>Payment marked as "declined"; no retry.</td>
+              </tr><tr>
+                <td>INSUFFICIENT_FUNDS</td>
+                <td>Subscriber has insufficient funds for this
+                  transaction.  Returned for prepaid accounts.  Indicates that the subscriber
+                  needs to add funds to their account before proceeding with any more
+                  transactions.</td>
+                <td>Payment marked as "declined"; no retry.</td>
+              </tr><tr>
+                <td>INVALID_BILLING_AGREEMENT</td>
+                <td>The operator has no record of the BillingAgreement, it does
+                    not apply to the subscriber, or it has expired.</td>
+                <td>Payment marked as "error"; no retry.</td>
+              </tr><tr>
+                <td>INVALID_CURRENCY</td>
+                <td>Requested Currency cannot be handled by the operator</td>
+                <td>Payment marked as "error"; no retry.</td>
+              </tr><tr>
+                <td>RETRIABLE_ERROR</td>
+                <td>If any of the internal system is not accessible or throws a
+                    retriable error, then Carriers should pass this as part
+                    of the response code.</td>
+                <td>The API call will be reattempted after some time.</td>
+              </tr><tr>
+                <td>GENERAL_DECLINE</td>
+                <td>The authorization was declined for some other reason.
+                  This code should be used only as last resort when all
+                  other error codes do not apply.</td>
+                <td>Payment marked as "declined"; no retry.</td>
+              </tr><tr>
+                <td>ACCOUNT_ON_HOLD</td>
+                <td>Subscriber account is on hold due to negligent payments.
+                  Indicates that the subscriber needs to pay their bill to have their account
+                  reactivated for carrier billing.</td>
+                <td>Payment marked as "declined"; no retry.</td>
+              </tr><tr>
+                <td>SUBSCRIPTION_CANCELLED</td>
+                <td>The subscription id supplied was for a subscription
+                  which has been cancelled by the user or the operator.</td>
+                <td>Payment marked as "decline"; no retry.</td>
+              </tr><tr>
+                <td>NO_LONGER_PROVISIONED</td>
+                <td>The device is no longer provisioned.  The carrier billing
+                  option should no longer be presented to the user
+                  until the next scheduled call to GetProvisioning,
+                  normally 14 days.  Most often used to indicate that
+                  the user has opted out of operator billing.
+                </td>
+                <td>Payment marked as "decline"; no retry.</td>
+              </tr><tr>
+                <td>INVALID_USER</td>
+                <td>The user information provided in the call does not
+                    correspond to an active user.  If the user was
+                    previously associated and this error code is
+                    encountered, the user will be disassociated.  This
+                    is useful for users who have cancelled their
+                    operator accounts.
+                </td>
+                <td>Payment marked as "decline"; no retry.</td>
+              </tr><tr>
+                <td>INVALID_TOS</td>
+                <td>The TOS version supplied in the request isn't the
+                    latest version of the TOS.  The user will have to
+                    agree to the newest version of the TOS.  The new
+                    TOS information MUST be provided in this response
+                    by populating the DcbTos field.
+                </td>
+                <td>Payment marked as "decline"; no retry.</td>
+              </tr><tr>
+                <td>INVALID_PASSPHRASE_FAILURE</td>
+                <td>Indicates that the supplied passphrase doesn't
+                match the stored passphrase for this user.</td>
+                <td>Payment marked as "decline"; no retry.</td>
+              </tr></table>
+            ]]></xsd:documentation></xsd:annotation>
+          </xsd:element>
+          <xsd:element name="Message" type="m:genericString"
+            maxOccurs="1" minOccurs="0">
+            <xsd:annotation><xsd:documentation><![CDATA[
+              A message explaning the result of the request (intended
+              for debugging and logging).
+            ]]></xsd:documentation></xsd:annotation>
+          </xsd:element>
+          <xsd:element name="AuthTransactionId" type="m:genericString"
+            maxOccurs="1" minOccurs="0">
+            <xsd:annotation><xsd:documentation><![CDATA[
+              A transaction id to be generated by the operator to
+              uniquely identify this response.
+            ]]></xsd:documentation></xsd:annotation>
+          </xsd:element>
+          <xsd:element name="UserMessage" type="m:genericString"
+            maxOccurs="1" minOccurs="0">
+            <xsd:annotation><xsd:documentation><![CDATA[
+              An error message to be shown to the end user. This should be
+              translated into the user's language as specified in the
+              UserLocale field of the request. If this message is missing
+              the user will be shown a generic error message based
+              on the Result code.
+            ]]></xsd:documentation></xsd:annotation>
+          </xsd:element>
+          <xsd:element name="DcbTos" type="m:CarrierTos" maxOccurs="1"
+            minOccurs="0">
+            <xsd:annotation><xsd:documentation><![CDATA[
+              If present, the user must be presented with and agree to
+              this Terms of Service prior to any operator billing
+              purchases.
+            ]]></xsd:documentation></xsd:annotation>
+          </xsd:element>
+        </xsd:sequence>
+      </xsd:complexType>
+
+      <xsd:complexType name="CancelNotification">
+        <xsd:sequence>
+          <xsd:element name="Version" type="xsd:int" maxOccurs="1"
+            minOccurs="1">
+            <xsd:annotation><xsd:documentation><![CDATA[
+              The version of the protocol being used. This should be 3.
+            ]]></xsd:documentation></xsd:annotation>
+          </xsd:element>
+          <xsd:element name="CorrelationId" type="m:genericString128"
+            maxOccurs="1" minOccurs="1">
+            <xsd:annotation><xsd:documentation><![CDATA[
+              The CorrelationId of the Auth request to be cancelled.
+            ]]></xsd:documentation></xsd:annotation>
+          </xsd:element>
+          <xsd:element name="BillingAgreement" type="m:genericString64"
+            maxOccurs="1" minOccurs="1">
+            <xsd:annotation><xsd:documentation><![CDATA[
+              Short string indicating the billing agreement of the
+              carrier who will charge the customer.  This will always
+              be the same string, unless the same SOAP server is
+              serving multiple carrier entities.
+            ]]></xsd:documentation></xsd:annotation>
+          </xsd:element>
+        </xsd:sequence>
+      </xsd:complexType>
+
+      <xsd:simpleType name="AuthResponseResult">
+        <xsd:restriction base="xsd:string">
+          <xsd:enumeration value="SUCCESS" />
+          <xsd:enumeration value="CHARGE_EXCEEDS_LIMIT" />
+          <xsd:enumeration value="INSUFFICIENT_FUNDS" />
+          <xsd:enumeration value="INVALID_BILLING_AGREEMENT" />
+          <xsd:enumeration value="INVALID_CURRENCY" />
+          <xsd:enumeration value="RETRIABLE_ERROR" />
+          <xsd:enumeration value="GENERAL_DECLINE" />
+          <xsd:enumeration value="ACCOUNT_ON_HOLD" />
+          <xsd:enumeration value="SUBSCRIPTION_CANCELLED" />
+          <xsd:enumeration value="NO_LONGER_PROVISIONED" />
+          <xsd:enumeration value="INVALID_USER" />
+          <xsd:enumeration value="INVALID_TOS" />
+          <xsd:enumeration value="INVALID_PASSPHRASE_FAILURE" />
+        </xsd:restriction>
+      </xsd:simpleType>
+
+      <xsd:complexType name="Echo">
+        <xsd:sequence>
+          <xsd:element name="Version" type="xsd:int" maxOccurs="1"
+            minOccurs="1">
+            <xsd:annotation><xsd:documentation><![CDATA[
+              The version of the protocol being used. Should be 3.
+            ]]></xsd:documentation></xsd:annotation>
+          </xsd:element>
+          <xsd:element name="CorrelationId" type="m:genericString128"
+            maxOccurs="1" minOccurs="1">
+            <xsd:annotation><xsd:documentation><![CDATA[
+              The unique id for this request.
+            ]]></xsd:documentation></xsd:annotation>
+          </xsd:element>
+          <xsd:element name="Message" type="m:genericString"
+            maxOccurs="1" minOccurs="1">
+            <xsd:annotation><xsd:documentation><![CDATA[
+              Google will send a test message and this should be
+              returned back in the response.
+            ]]></xsd:documentation></xsd:annotation>
+          </xsd:element>
+          <xsd:element name="BillingAgreement" type="m:genericString64"
+            maxOccurs="1" minOccurs="1">
+            <xsd:annotation><xsd:documentation><![CDATA[
+              Short string indicating the billing agreement of the
+              carrier who will charge the customer.  This will always
+              be the same string, unless the same SOAP server is
+              serving multiple carrier entities.
+            ]]></xsd:documentation></xsd:annotation>
+          </xsd:element>
+        </xsd:sequence>
+      </xsd:complexType>
+
+      <xsd:complexType name="EchoResponse">
+        <xsd:sequence>
+          <xsd:element name="Version" type="xsd:int" maxOccurs="1"
+            minOccurs="1">
+            <xsd:annotation><xsd:documentation><![CDATA[
+              The version of the protocol being used. Set to 3.
+            ]]></xsd:documentation></xsd:annotation>
+          </xsd:element>
+          <xsd:element name="CorrelationId" type="m:genericString128"
+            maxOccurs="1" minOccurs="1">
+            <xsd:annotation><xsd:documentation><![CDATA[
+              Original CorrelationId for this response.
+            ]]></xsd:documentation></xsd:annotation>
+          </xsd:element>
+          <xsd:element name="EchoTransactionId" type="m:genericString" maxOccurs="1"
+            minOccurs="0">
+            <xsd:annotation><xsd:documentation><![CDATA[
+              A transaction id to be generated by the operator to
+              uniquely identify this response.
+            ]]></xsd:documentation></xsd:annotation>
+          </xsd:element>
+          <xsd:element name="Result" type="m:EchoResponseResult"
+            maxOccurs="1" minOccurs="1">
+            <xsd:annotation><xsd:documentation><![CDATA[
+              <table border="1">
+              <tr><th>Result Code</th><th>Description</th></tr>
+              <tr>
+                <td>SUCCESS</td>
+                <td>Indicates that the operation succeeded normally.</td>
+              </tr><tr>
+                <td>GENERAL_FAILURE</td>
+                <td>Indicates that there is a fatal error with the system.</td>
+              </tr><tr>
+                <td>RETRIABLE_ERROR</td>
+                <td>If any of the internal system is not accessible or throws a
+                    retriable error, then Carriers should pass this as part
+                    of the response code.</td>
+              </tr></table>
+            ]]></xsd:documentation></xsd:annotation>
+          </xsd:element>
+          <xsd:element name="OriginalMessage" type="m:genericString"
+            maxOccurs="1" minOccurs="1">
+            <xsd:annotation><xsd:documentation><![CDATA[
+              Carriers should tunnel back the original message that
+              was sent as part of the Echo Request.
+            ]]></xsd:documentation></xsd:annotation>
+          </xsd:element>
+          <xsd:element name="DebugMessage" type="m:genericString"
+            maxOccurs="1" minOccurs="0">
+            <xsd:annotation><xsd:documentation><![CDATA[
+              A debug string that will be useful for debugging.
+            ]]></xsd:documentation></xsd:annotation>
+          </xsd:element>
+        </xsd:sequence>
+      </xsd:complexType>
+
+      <xsd:simpleType name="EchoResponseResult">
+        <xsd:restriction base="xsd:string">
+          <xsd:enumeration value="SUCCESS" />
+          <xsd:enumeration value="GENERAL_FAILURE" />
+          <xsd:enumeration value="RETRIABLE_ERROR" />
+        </xsd:restriction>
+      </xsd:simpleType>
+
+      <xsd:simpleType name="genericString">
+        <xsd:restriction base="xsd:string">
+          <xsd:minLength value="0" />
+          <xsd:maxLength value="1024" />
+        </xsd:restriction>
+      </xsd:simpleType>
+
+      <xsd:simpleType name="genericString64">
+        <xsd:restriction base="xsd:string">
+          <xsd:minLength value="0" />
+          <xsd:maxLength value="64" />
+        </xsd:restriction>
+      </xsd:simpleType>
+
+      <xsd:simpleType name="genericString128">
+        <xsd:restriction base="xsd:string">
+          <xsd:minLength value="0" />
+          <xsd:maxLength value="128" />
+        </xsd:restriction>
+      </xsd:simpleType>
+
+      <xsd:simpleType name="genericString256">
+        <xsd:restriction base="xsd:string">
+          <xsd:minLength value="0" />
+          <xsd:maxLength value="256" />
+        </xsd:restriction>
+      </xsd:simpleType>
+
+      <xsd:simpleType name="timestamp">
+        <xsd:restriction base="xsd:long" />
+      </xsd:simpleType>
+
+      <xsd:simpleType name="currencyCode">
+        <xsd:restriction base="xsd:string">
+          <xsd:whiteSpace value="collapse" />
+          <xsd:pattern value="[A-Z]{3}" />
+        </xsd:restriction>
+      </xsd:simpleType>
+
+      <xsd:simpleType name="countryCode">
+        <xsd:restriction base="xsd:string">
+          <xsd:whiteSpace value="collapse" />
+          <xsd:pattern value="[A-Z]{2}" />
+        </xsd:restriction>
+      </xsd:simpleType>
+
+      <xsd:simpleType name="localeCode">
+        <xsd:restriction base="xsd:string">
+          <xsd:whiteSpace value="collapse" />
+          <xsd:pattern value="[a-z]{2}(-[A-Z]{2})?" />
+        </xsd:restriction>
+      </xsd:simpleType>
+
+      <xsd:simpleType name="micros">
+        <xsd:restriction base="xsd:long" />
+      </xsd:simpleType>
+
+      <xsd:complexType name="GetProvisioning">
+        <xsd:sequence>
+          <xsd:element name="Version" type="xsd:int" maxOccurs="1"
+            minOccurs="1">
+            <xsd:annotation><xsd:documentation><![CDATA[
+              The version of the protocol being used. Set to 3.
+            ]]></xsd:documentation></xsd:annotation>
+          </xsd:element>
+          <xsd:element name="CorrelationId" type="m:genericString128"
+            maxOccurs="1" minOccurs="1">
+            <xsd:annotation><xsd:documentation><![CDATA[
+              The unique id for this request.
+            ]]></xsd:documentation></xsd:annotation>
+          </xsd:element>
+          <xsd:element name="UserIdentifier" type="m:UserIdentifier" maxOccurs="1"
+            minOccurs="1">
+            <xsd:annotation><xsd:documentation><![CDATA[
+              The fields contained in here identifier the user.
+              SubscriberId, DeviceId and SimSerialNumber are not
+              set and will be removed in future.
+            ]]></xsd:documentation></xsd:annotation>
+          </xsd:element>
+          <xsd:element name="UserLocale" type="m:localeCode"
+            maxOccurs="1" minOccurs="0">
+            <xsd:annotation><xsd:documentation><![CDATA[
+              A two-letter ISO 639-1 Alpha 2 language code
+              optionally followed by a hyphen and an ISO 3166-1 Alpha-2
+              country code, e.g."pt" or "pt-BR".
+            ]]></xsd:documentation></xsd:annotation>
+          </xsd:element>
+          <xsd:element name="BillingAgreement" type="m:genericString64"
+            maxOccurs="1" minOccurs="1">
+            <xsd:annotation><xsd:documentation><![CDATA[
+              Short string indicating the billing agreement of the
+              carrier who will charge the customer.  This will always
+              be the same string, unless the same SOAP server is
+              serving multiple carrier entities.
+            ]]></xsd:documentation></xsd:annotation>
+          </xsd:element>
+        </xsd:sequence>
+      </xsd:complexType>
+
+      <xsd:complexType name="GetProvisioningResponse">
+        <xsd:sequence>
+          <xsd:element name="Version" type="xsd:int" maxOccurs="1"
+             minOccurs="1">
+            <xsd:annotation><xsd:documentation><![CDATA[
+              The version of the protocol being used. Set to 3.
+            ]]></xsd:documentation></xsd:annotation>
+          </xsd:element>
+           <xsd:element name="CorrelationId" type="m:genericString128"
+            maxOccurs="1" minOccurs="1">
+            <xsd:annotation><xsd:documentation><![CDATA[
+              Original CorrelationId for this response.
+            ]]></xsd:documentation></xsd:annotation>
+          </xsd:element>
+          <xsd:element name="Result" type="m:GetProvisioningResponseResult"
+            maxOccurs="1" minOccurs="1">
+            <xsd:annotation><xsd:documentation><![CDATA[
+              <table border="1">
+              <tr><th>Result Code</th><th>Description</th></tr>
+              <tr>
+                <td>SUCCESS</td>
+                <td>Indicates that the operation succeeded normally.
+                User receives confirmation email and app download starts.</td>
+              </tr><tr>
+                <td>INVALID_BILLING_AGREEMENT</td>
+                <td>The operator has no record of the BillingAgreement, it does
+                    not apply to the subscriber, or it has expired.</td>
+              </tr><tr>
+                <td>INVALID_USER</td>
+                <td>The user information provided in the call does not
+                    correspond to an active user.  If the user was
+                    previously associated and this error code is
+                    encountered, the user will be disassociated.  This
+                    is useful for users who have cancelled their
+                    operator accounts.
+                </td>
+              </tr><tr>
+                <td>GENERAL_FAILURE</td>
+                <td>Indicates that an error has happened, but retrying the
+                    request at a later time has a chance of getting an answer.
+                    This is not the appropriate return code for a user who
+                    cannot be provisioned or is not provisioned. If the
+                    UserIdentifier is not recognized, return INVALID_USER. If
+                    the UserIdentifier is recognized but the user is not
+                    provisioned, return SUCCESS and IsProvisioned = false.</td>
+              </tr><tr>
+              </tr></table>
+            ]]></xsd:documentation></xsd:annotation>
+          </xsd:element>
+          <xsd:element name="Message" type="m:genericString"
+            maxOccurs="1" minOccurs="0">
+            <xsd:annotation><xsd:documentation><![CDATA[
+              A message explaning the result of the request (intended
+              for debugging and logging).
+            ]]></xsd:documentation></xsd:annotation>
+          </xsd:element>
+          <xsd:element name="IsProvisioned" type="xsd:boolean" maxOccurs="1"
+            minOccurs="0">
+            <xsd:annotation><xsd:documentation><![CDATA[
+              Indicates whether or not operator billing is allowed for
+              this subscriber. Only required if the
+              Result is SUCCESS.
+            ]]></xsd:documentation></xsd:annotation>
+          </xsd:element>
+          <xsd:element name="PiiTos" type="m:CarrierTos" maxOccurs="1"
+            minOccurs="0">
+            <xsd:annotation><xsd:documentation><![CDATA[
+              If present, the user must be presented with and agree to
+              this Terms of Service prior to the operator providing
+              any Subscriber Information to Google about the user.  If
+              a combined TOS should be used, PiiTos and DcbTos should
+              be set to the same values.
+            ]]></xsd:documentation></xsd:annotation>
+          </xsd:element>
+          <xsd:element name="DcbTos" type="m:CarrierTos" maxOccurs="1"
+            minOccurs="0">
+            <xsd:annotation><xsd:documentation><![CDATA[
+              If present, the user must be presented with and agree to
+              this Terms of Service prior to any operator billing
+              purchases.  If a combined TOS should be used, PiiTos and
+              DcbTos should be set to the same values.
+            ]]></xsd:documentation></xsd:annotation>
+          </xsd:element>
+          <xsd:element name="SubscriberCurrency" type="m:currencyCode" maxOccurs="1"
+            minOccurs="0">
+            <xsd:annotation><xsd:documentation><![CDATA[
+              ISO 4217 3-letter code of the accepted currency for this
+              account. Only required if the Result is SUCCESS and IsProvisioned is true.
+            ]]></xsd:documentation></xsd:annotation>
+          </xsd:element>
+          <xsd:element name="TransactionLimit" type="m:micros" maxOccurs="1"
+            minOccurs="0">
+            <xsd:annotation><xsd:documentation><![CDATA[
+              The maximum limit of a single transaction allowed by the
+              operator for this subscriber.  Must be an integer
+              greater than 0. Only required if the Result is SUCCESS and IsProvisioned is true.
+            ]]></xsd:documentation></xsd:annotation>
+          </xsd:element>
+          <xsd:element name="AccountType" type="m:AccountType" maxOccurs="1"
+            minOccurs="0">
+            <xsd:annotation><xsd:documentation><![CDATA[
+              <table border="1">
+                <tr>
+                  <th>Account Type</th>
+                  <th>Description</th>
+                </tr>
+                <tr>
+                  <td>GENERAL</td>
+                  <td>A general account with no special limitations.</td>
+                </tr>
+                <tr>
+                  <td>PREPAID</td>
+                  <td>Special account that is prepaid by the user.</td>
+                </tr>
+                <tr>
+                  <td>ENTERPRISE</td>
+                  <td>An enterprise managed account, where the enterprise may
+                    have placed limitations on purchases.</td>
+                </tr>
+              </table>
+              Only required if the Result is SUCCESS and IsProvisioned is true.
+            ]]></xsd:documentation></xsd:annotation>
+          </xsd:element>
+          <xsd:element name="GetProvisioningTransactionId" type="m:genericString"
+            maxOccurs="1" minOccurs="0">
+            <xsd:annotation><xsd:documentation><![CDATA[
+              A transaction id to be generated by the operator to
+              uniquely identify this response.
+            ]]></xsd:documentation></xsd:annotation>
+          </xsd:element>
+          <xsd:element name="UserMessage" type="m:genericString"
+            maxOccurs="1" minOccurs="0">
+            <xsd:annotation><xsd:documentation><![CDATA[
+              An error message to be shown to the end user. This should be
+              provided in the user's language as specified in the
+              UserLocale field of the request. If this message is missing
+              the user will be shown a generic error message based
+              on the Result code.
+            ]]></xsd:documentation></xsd:annotation>
+          </xsd:element>
+          <xsd:element name="PasswordPrompt" type="m:genericString"
+            maxOccurs="1" minOccurs="0">
+            <xsd:annotation><xsd:documentation><![CDATA[
+              A localized message to be shown to the user to be used
+              when asking them to enter their passphrase.
+            ]]></xsd:documentation></xsd:annotation>
+          </xsd:element>
+          <xsd:element name="ForgottenPasswordUrl" type="m:genericString"
+            maxOccurs="1" minOccurs="0">
+            <xsd:annotation><xsd:documentation><![CDATA[
+              The URL to send a user to if then forget their password
+              and need to recover it.
+            ]]></xsd:documentation></xsd:annotation>
+          </xsd:element>
+        </xsd:sequence>
+      </xsd:complexType>
+
+      <xsd:simpleType name="GetProvisioningResponseResult">
+        <xsd:restriction base="xsd:string">
+          <xsd:enumeration value="SUCCESS" />
+          <xsd:enumeration value="INVALID_BILLING_AGREEMENT" />
+          <xsd:enumeration value="INVALID_USER" />
+          <xsd:enumeration value="GENERAL_FAILURE" />
+        </xsd:restriction>
+      </xsd:simpleType>
+
+      <xsd:simpleType name="AccountType">
+        <xsd:restriction base="xsd:string">
+          <xsd:enumeration value="GENERAL" />
+          <xsd:enumeration value="PREPAID" />
+          <xsd:enumeration value="ENTERPRISE" />
+        </xsd:restriction>
+      </xsd:simpleType>
+
+      <xsd:complexType name="GetSubscriberAddress">
+        <xsd:sequence>
+          <xsd:element name="Version" type="xsd:int" maxOccurs="1"
+            minOccurs="1">
+            <xsd:annotation><xsd:documentation><![CDATA[
+              The version of the protocol being used. Set to 3.
+            ]]></xsd:documentation></xsd:annotation>
+          </xsd:element>
+          <xsd:element name="CorrelationId" type="m:genericString128"
+            maxOccurs="1" minOccurs="1">
+            <xsd:annotation><xsd:documentation><![CDATA[
+              The unique id for this request.
+            ]]></xsd:documentation></xsd:annotation>
+          </xsd:element>
+          <xsd:element name="OperatorUserToken" type="m:genericString" maxOccurs="1"
+            minOccurs="1">
+            <xsd:annotation><xsd:documentation><![CDATA[
+              The Operator User Token for the user.
+            ]]></xsd:documentation></xsd:annotation>
+          </xsd:element>
+          <xsd:element name="PiiTosVersion" type="m:genericString64" maxOccurs="1"
+            minOccurs="0">
+            <xsd:annotation><xsd:documentation><![CDATA[
+              Latest version of the PII TOS that was accepted by the
+              user.
+            ]]></xsd:documentation></xsd:annotation>
+          </xsd:element>
+          <xsd:element name="BillingAgreement" type="m:genericString64"
+            maxOccurs="1" minOccurs="1">
+            <xsd:annotation><xsd:documentation><![CDATA[
+              Short string indicating the billing agreement of the
+              carrier who will charge the customer.  This will always
+              be the same string, unless the same SOAP server is
+              serving multiple carrier entities.
+            ]]></xsd:documentation></xsd:annotation>
+          </xsd:element>
+        </xsd:sequence>
+      </xsd:complexType>
+
+      <xsd:complexType name="GetSubscriberAddressResponse">
+        <xsd:sequence>
+          <xsd:element name="Version" type="xsd:int" maxOccurs="1"
+            minOccurs="1">
+            <xsd:annotation><xsd:documentation><![CDATA[
+              The version of the protocol being used. Set to 3.
+            ]]></xsd:documentation></xsd:annotation>
+          </xsd:element>
+          <xsd:element name="CorrelationId" type="m:genericString128"
+            maxOccurs="1" minOccurs="1">
+            <xsd:annotation><xsd:documentation><![CDATA[
+              Original CorrelationId for this response.
+            ]]></xsd:documentation></xsd:annotation>
+          </xsd:element>
+          <xsd:element name="Result" type="m:GetSubscriberAddressResponseResult"
+            maxOccurs="1" minOccurs="1">
+            <xsd:annotation><xsd:documentation><![CDATA[
+              <table border="1">
+              <tr><th>Result Code</th><th>Description</th></tr>
+              <tr>
+                <td>SUCCESS</td>
+                <td>Indicates that the operation succeeded normally.</td>
+              </tr><tr>
+                <td>INVALID_TOS</td>
+                <td>The TOS version supplied in the request isn't the
+                    latest version of the TOS.  A call to GetProvisioning will
+                    made to get the current version of the TOS if needed.
+                </td>
+              </tr><tr>
+                <td>INVALID_BILLING_AGREEMENT</td>
+                <td>The operator has no record of the BillingAgreement, it does
+                    not apply to the subscriber, or it has expired.</td>
+              </tr><tr>
+                <td>ADDRESS_UNKNOWN</td>
+                <td>The operator does not have subscriber's address information
+                or it cannot provide address information.</td>
+              </tr><tr>
+                <td>GENERAL_FAILURE</td>
+                <td>Indicates an error happened</td>
+              </tr><tr>
+              </tr></table>
+            ]]></xsd:documentation></xsd:annotation>
+          </xsd:element>
+          <xsd:element name="PiiTos" type="m:CarrierTos" maxOccurs="1"
+            minOccurs="0">
+            <xsd:annotation><xsd:documentation><![CDATA[
+              If present, the user must be presented with and agree to
+              this Terms of Service prior to the operator providing
+              any Subscriber Information to Google about the user.
+            ]]></xsd:documentation></xsd:annotation>
+          </xsd:element>
+          <xsd:element name="SubscriberAddress" type="m:SubscriberAddress"
+            maxOccurs="1" minOccurs="0">
+            <xsd:annotation><xsd:documentation><![CDATA[
+              If present, this is the user's address information.
+            ]]></xsd:documentation></xsd:annotation>
+          </xsd:element>
+          <xsd:element name="GetSubscriberAddressTransactionId"
+            type="m:genericString" maxOccurs="1" minOccurs="0">
+            <xsd:annotation><xsd:documentation><![CDATA[
+              A transaction id to be generated by the operator to
+              uniquely identify this response.
+            ]]></xsd:documentation></xsd:annotation>
+          </xsd:element>
+          <xsd:element name="Message" type="m:genericString"
+            maxOccurs="1" minOccurs="0">
+            <xsd:annotation><xsd:documentation><![CDATA[
+              A message explaning the result of the request (intended
+              for debugging and logging).
+            ]]></xsd:documentation></xsd:annotation>
+          </xsd:element>
+        </xsd:sequence>
+      </xsd:complexType>
+
+      <xsd:complexType name="SubscriberAddress">
+        <xsd:sequence>
+          <xsd:element name="Name" type="m:genericString" maxOccurs="1" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation><![CDATA[
+                The subscriber's full name. This is not a structured field. The
+                name should be given in its "natural" order, e.g. "John Smith."
+            ]]></xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+          <xsd:element name="Address1" type="m:genericString" maxOccurs="1"
+            minOccurs="0">
+            <xsd:annotation><xsd:documentation><![CDATA[
+              Street Address.
+            ]]></xsd:documentation></xsd:annotation>
+          </xsd:element>
+          <xsd:element name="Address2" type="m:genericString" maxOccurs="1"
+            minOccurs="0">
+            <xsd:annotation><xsd:documentation><![CDATA[
+              Building Detail
+            ]]></xsd:documentation></xsd:annotation>
+          </xsd:element>
+          <xsd:element name="City" type="m:genericString64" maxOccurs="1"
+            minOccurs="0">
+            <xsd:annotation><xsd:documentation><![CDATA[
+              City, Town, Locality.
+            ]]></xsd:documentation></xsd:annotation>
+          </xsd:element>
+          <xsd:element name="State" type="m:genericString64" maxOccurs="1"
+            minOccurs="0">
+            <xsd:annotation><xsd:documentation><![CDATA[
+              State, Region, Province, Regional, Entity.
+            ]]></xsd:documentation></xsd:annotation>
+          </xsd:element>
+          <xsd:element name="Country" type="m:countryCode" maxOccurs="1"
+            minOccurs="0">
+            <xsd:annotation><xsd:documentation><![CDATA[
+              ISO 3166-1 Alpha-2 code for the country.
+            ]]></xsd:documentation></xsd:annotation>
+          </xsd:element>
+          <xsd:element name="PostalCode" type="m:genericString64" maxOccurs="1"
+            minOccurs="0">
+            <xsd:annotation><xsd:documentation><![CDATA[
+              The code used by the postal service.
+            ]]></xsd:documentation></xsd:annotation>
+          </xsd:element>
+        </xsd:sequence>
+      </xsd:complexType>
+
+      <xsd:simpleType name="GetSubscriberAddressResponseResult">
+        <xsd:restriction base="xsd:string">
+          <xsd:enumeration value="SUCCESS" />
+          <xsd:enumeration value="INVALID_TOS" />
+          <xsd:enumeration value="INVALID_BILLING_AGREEMENT" />
+          <xsd:enumeration value="ADDRESS_UNKNOWN" />
+          <xsd:enumeration value="GENERAL_FAILURE" />
+        </xsd:restriction>
+      </xsd:simpleType>
+
+      <xsd:complexType name="ValidatePassphrase">
+        <xsd:sequence>
+          <xsd:element name="Version" type="xsd:int" maxOccurs="1"
+            minOccurs="1">
+            <xsd:annotation><xsd:documentation><![CDATA[
+                The version of the protocol being used. This should be 3.
+            ]]></xsd:documentation></xsd:annotation>
+          </xsd:element>
+          <xsd:element name="CorrelationId" type="m:genericString128"
+            maxOccurs="1" minOccurs="1">
+            <xsd:annotation><xsd:documentation><![CDATA[
+              The unique id for this request.
+            ]]></xsd:documentation></xsd:annotation>
+          </xsd:element>
+          <xsd:element name="OperatorUserToken" type="m:genericString"
+            maxOccurs="1" minOccurs="1">
+            <xsd:annotation><xsd:documentation><![CDATA[
+              The Operator User Token for the user.
+            ]]></xsd:documentation></xsd:annotation>
+          </xsd:element>
+          <xsd:element name="Passphrase" type="m:genericString">
+            <xsd:annotation><xsd:documentation><![CDATA[
+              The passphrase to validate for this user account.
+            ]]></xsd:documentation></xsd:annotation>
+          </xsd:element>
+          <xsd:element name="UserLocale" type="m:localeCode"
+            maxOccurs="1" minOccurs="0">
+            <xsd:annotation><xsd:documentation><![CDATA[
+              A two-letter ISO 639-1 Alpha 2 language code
+              optionally followed by a hyphen and an ISO 3166-1 Alpha-2
+              country code, e.g."pt" or "pt-BR".
+            ]]></xsd:documentation></xsd:annotation>
+          </xsd:element>
+          <xsd:element name="BillingAgreement" type="m:genericString64"
+            maxOccurs="1" minOccurs="1">
+            <xsd:annotation><xsd:documentation><![CDATA[
+              Short string indicating the billing agreement of the
+              carrier who will charge the customer.  This will always
+              be the same string, unless the same SOAP server is
+              serving multiple carrier entities.
+            ]]></xsd:documentation></xsd:annotation>
+          </xsd:element>
+        </xsd:sequence>
+      </xsd:complexType>
+
+      <xsd:complexType name="ValidatePassphraseResponse">
+        <xsd:sequence>
+          <xsd:element name="Version" type="xsd:int" maxOccurs="1"
+            minOccurs="1">
+            <xsd:annotation><xsd:documentation><![CDATA[
+              The version of the protocol being used. Set to 3.
+            ]]></xsd:documentation></xsd:annotation>
+          </xsd:element>
+          <xsd:element name="CorrelationId" type="m:genericString128"
+            maxOccurs="1" minOccurs="1">
+            <xsd:annotation><xsd:documentation><![CDATA[
+              Original CorrelationId for this response.
+            ]]></xsd:documentation></xsd:annotation>
+          </xsd:element>
+          <xsd:element name="Result" type="m:ValidatePassphraseResponseResult"
+            maxOccurs="1" minOccurs="1">
+            <xsd:annotation><xsd:documentation><![CDATA[
+              <table border="1">
+              <tr><th>Result Code</th><th>Description</th></tr>
+              <tr>
+                <td>SUCCESS</td>
+                <td>Indicates that the operation succeeded normally
+                    and that the passphrase provided was correct.</td>
+              </tr><tr>
+                <td>NO_LONGER_PROVISIONED</td>
+                <td>The device is no longer provisioned.  The carrier billing
+                  option should no longer be presented to the user
+                  until the next scheduled call to GetProvisioning,
+                  normally 14 days.  Most often used to indicate that
+                  the user has opted out of operator billing.
+                </td>
+              </tr><tr>
+                <td>INVALID_USER</td>
+                <td>The user information provided in the call does not
+                    correspond to an active user.  If the user was
+                    previously associated and this error code is
+                    encountered, the user will be disassociated.  This
+                    is useful for users who have cancelled their
+                    operator accounts.
+                </td>
+              </tr><tr>
+                <td>ACCOUNT_ON_HOLD</td>
+                <td>Subscriber account is on hold due to negligent payments.
+                  Indicates that the subscriber needs to pay their bill to have their account
+                  reactivated for carrier billing.</td>
+              </tr><tr>
+                <td>RETRIABLE_ERROR</td>
+                <td>If any of the internal system is not accessible or throws a
+                    retriable error, then Carriers should pass this as part
+                    of the response code.</td>
+              </tr><tr>
+                <td>INVALID_PASSPHRASE_FAILURE</td>
+                <td>Indicates that the supplied passphrase doesn't
+                match the stored passphrase for this user.</td>
+              </tr><tr>
+                <td>INVALID_BILLING_AGREEMENT</td>
+                <td>The operator has no record of the BillingAgreement, it does
+                    not apply to the subscriber, or it has expired.</td>
+              </tr></table>
+            ]]></xsd:documentation></xsd:annotation>
+          </xsd:element>
+          <xsd:element name="ValidatePassphraseTransactionId" type="m:genericString"
+            maxOccurs="1" minOccurs="0">
+            <xsd:annotation><xsd:documentation><![CDATA[
+              A transaction id to be generated by the operator to
+              uniquely identify this response.
+            ]]></xsd:documentation></xsd:annotation>
+          </xsd:element>
+          <xsd:element name="Message" type="m:genericString"
+            maxOccurs="1" minOccurs="0">
+            <xsd:annotation><xsd:documentation><![CDATA[
+              A message explaning the result of the request (intended
+              for debugging and logging).
+            ]]></xsd:documentation></xsd:annotation>
+          </xsd:element>
+          <xsd:element name="UserMessage" type="m:genericString"
+            maxOccurs="1" minOccurs="0">
+            <xsd:annotation><xsd:documentation><![CDATA[
+              An error message to be shown to the end user.  This should be
+              provided in the user's language as specified in the
+              UserLocale field of the request. If this message is missing
+              the user will be shown a generic error message based
+              on the Result code.
+            ]]></xsd:documentation></xsd:annotation>
+          </xsd:element>
+        </xsd:sequence>
+      </xsd:complexType>
+
+      <xsd:simpleType name="ValidatePassphraseResponseResult">
+        <xsd:restriction base="xsd:string">
+          <xsd:enumeration value="SUCCESS" />
+          <xsd:enumeration value="NO_LONGER_PROVISIONED" />
+          <xsd:enumeration value="INVALID_USER" />
+          <xsd:enumeration value="ACCOUNT_ON_HOLD" />
+          <xsd:enumeration value="RETRIABLE_ERROR" />
+          <xsd:enumeration value="INVALID_PASSPHRASE_FAILURE" />
+          <xsd:enumeration value="INVALID_BILLING_AGREEMENT" />
+        </xsd:restriction>
+      </xsd:simpleType>
+
+      <xsd:complexType name="UserIdentifier">
+        <xsd:sequence>
+          <xsd:element name="OperatorUserToken" type="m:genericString"
+            maxOccurs="1" minOccurs="0">
+            <xsd:annotation><xsd:documentation><![CDATA[
+              The Operator User Token for the user.
+            ]]></xsd:documentation></xsd:annotation>
+          </xsd:element>
+        </xsd:sequence>
+      </xsd:complexType>
+
+      <xsd:complexType name="CarrierTos">
+        <xsd:sequence>
+          <xsd:element name="TosUrl" type="m:genericString" maxOccurs="1"
+            minOccurs="1">
+            <xsd:annotation><xsd:documentation><![CDATA[
+              URL which points to the operator's billing Terms Of
+              Service, to be viewed by the subscriber.
+            ]]></xsd:documentation></xsd:annotation>
+          </xsd:element>
+          <xsd:element name="TosVersion" type="m:genericString64" maxOccurs="1"
+            minOccurs="1">
+            <xsd:annotation><xsd:documentation><![CDATA[
+              Latest version of the TOS that should be accepted by the
+              user prior to performing purchases.
+            ]]></xsd:documentation></xsd:annotation>
+          </xsd:element>
+        </xsd:sequence>
+      </xsd:complexType>
+
+    </xsd:schema>
+  </wsdl:types>
+
+
+  <!-- Message Definitions. -->
+
+  <wsdl:message name="Auth">
+    <wsdl:part name="parameters" type="m:Auth" />
+  </wsdl:message>
+  <wsdl:message name="AuthResponse">
+    <wsdl:part name="parameters" type="m:AuthResponse" />
+  </wsdl:message>
+
+  <wsdl:message name="CancelNotification">
+    <wsdl:part name="parameters" type="m:CancelNotification" />
+  </wsdl:message>
+
+  <wsdl:message name="Echo">
+    <wsdl:part name="parameters" type="m:Echo" />
+  </wsdl:message>
+  <wsdl:message name="EchoResponse">
+    <wsdl:part name="parameters" type="m:EchoResponse" />
+  </wsdl:message>
+
+  <wsdl:message name="GetProvisioning">
+    <wsdl:part name="parameters" type="m:GetProvisioning" />
+  </wsdl:message>
+  <wsdl:message name="GetProvisioningResponse">
+    <wsdl:part name="parameters" type="m:GetProvisioningResponse" />
+  </wsdl:message>
+
+  <wsdl:message name="ValidatePassphrase">
+    <wsdl:part name="parameters" type="m:ValidatePassphrase" />
+  </wsdl:message>
+  <wsdl:message name="ValidatePassphraseResponse">
+    <wsdl:part name="parameters" type="m:ValidatePassphraseResponse" />
+  </wsdl:message>
+
+  <wsdl:message name="GetSubscriberAddress">
+    <wsdl:part name="parameters" type="m:GetSubscriberAddress" />
+  </wsdl:message>
+  <wsdl:message name="GetSubscriberAddressResponse">
+    <wsdl:part name="parameters" type="m:GetSubscriberAddressResponse" />
+  </wsdl:message>
+
+  <!-- Port Definitions -->
+
+  <wsdl:portType name="CarrierBilling">
+    <wsdl:operation name="Auth">
+      <wsdl:documentation><![CDATA[
+        <p>This call is issued from Google's servers to the partner's
+        billing system upon receiving a purchase request from the
+        device. When possible, this call should result in the
+        reservation of funds from the user's account, not an actual
+        charge.</p>
+
+        <p>Example: <a href="examples_3/auth.txt">examples_3/auth.txt</a></p>
+      ]]></wsdl:documentation>
+      <wsdl:input name="Auth" message="m:Auth" />
+      <wsdl:output name="AuthResponse" message="m:AuthResponse" />
+    </wsdl:operation>
+
+    <wsdl:operation name="CancelNotification">
+      <wsdl:documentation><![CDATA[
+
+        <p>This call is issued from the Google servers to the
+        partner's billing system when the user uninstalls the
+        purchased content from the device and requests a refund within
+        the trial window. For billing systems with separate
+        authorization and capture operations, this call should cancel
+        the authorization request; the funds requests in the Auth call
+        should be made available to the user account again. For
+        billing systems with combined authorization and capture, this
+        call should result in a negative charge being applied to the
+        user's account, in the full amount specified in the previous
+        Auth call.</p>
+      <p>This call is a courtesy notification only. The official cancel
+        request will be in the batch request file.  Operators are free to
+        ignore this CancelNotification message, if the customer's balance
+        is not time critical.  Since this message is only advisory, it will
+        only be retried for a very short time period. It is important not to
+        credit the customer twice, as you will receive every cancel request
+        twice: Once in the SOAP message, and again in the batch request file.
+      </p>
+
+        <p>Example: <a
+        href="examples_3/cancel_auth.txt">examples_3/cancel_auth.txt</a></p>
+
+      ]]></wsdl:documentation>
+      <wsdl:input name="CancelNotification" message="m:CancelNotification" />
+    </wsdl:operation>
+
+    <wsdl:operation name="Echo">
+      <wsdl:documentation><![CDATA[
+      <p>This call is mainly for the debugging purpose and is used to achieve following:</p>
+      <ul>
+        <li>Check network connectivity and verify that Partner's server are accessible from Google Servers.</li>
+        <li>Verify that proper set of keys are used on both side.</li>
+      </ul>
+
+        <p>Example: <a
+        href="examples_3/echo.txt">examples_3/echo.txt</a></p>
+      ]]></wsdl:documentation>
+      <wsdl:input name="Echo" message="m:Echo" />
+      <wsdl:output name="EchoResponse" message="m:EchoResponse" />
+    </wsdl:operation>
+
+    <wsdl:operation name="GetProvisioning">
+      <wsdl:documentation><![CDATA[
+        <p>This call is made to check the provisioning status of a
+        specific device and to indicate if the device is eligible to
+        do carrier billing.</p>
+
+        <p>Example: <a
+        href="examples_3/get_provisioning.txt">examples_3/get_provisioning.txt</a></p>
+      ]]></wsdl:documentation>
+      <wsdl:input name="GetProvisioning" message="m:GetProvisioning" />
+      <wsdl:output name="GetProvisioningResponse" message="m:GetProvisioningResponse" />
+    </wsdl:operation>
+
+    <wsdl:operation name="ValidatePassphrase">
+      <wsdl:documentation><![CDATA[
+        <p>For operators using the pre-shared secret assocation
+        method, this call will validate that the supplied passphrase
+        matches the passphrase associated with the users operator
+        account.  This will be called during the purchase flow to
+        advise the user if they have entered the correct passphrase or
+        not.</p>
+
+        <p>This will not be called for any other association
+        methods.</p>
+
+        <p>Example: <a
+        href="examples_3/validate_passphrase.txt">examples_3/validate_passphrase.txt</a></p>
+      ]]></wsdl:documentation>
+      <wsdl:input name="ValidatePassphrase" message="m:ValidatePassphrase" />
+      <wsdl:output name="ValidatePassphraseResponse" message="m:ValidatePassphraseResponse" />
+    </wsdl:operation>
+
+    <wsdl:operation name="GetSubscriberAddress">
+      <wsdl:documentation><![CDATA[
+        <p>During account creation, Google needs the subscriber's
+        billing address to setup the carrier billing account.  This
+        method will be called when the address is needed for account
+        creation.</p>
+
+        <p>Example: <a
+        href="examples_3/get_subscriber_address.txt">examples_3/get_subscriber_address.txt</a></p>
+
+      ]]></wsdl:documentation>
+      <wsdl:input name="GetSubscriberAddress" message="m:GetSubscriberAddress" />
+      <wsdl:output name="GetSubscriberAddressResponse" message="m:GetSubscriberAddressResponse" />
+    </wsdl:operation>
+  </wsdl:portType>
+
+
+  <!-- Binding Definitions. -->
+
+  <wsdl:binding name="CarrierBillingSOAP" type="m:CarrierBilling">
+    <soap:binding style="rpc" transport="http://schemas.xmlsoap.org/soap/http" />
+    <wsdl:operation name="Auth">
+      <soap:operation soapAction="http://www.carrier.com/Auth" />
+      <wsdl:input>
+        <soap:body use="literal" namespace="http://www.android.google.com/billing" />
+      </wsdl:input>
+      <wsdl:output >
+        <soap:body use="literal" namespace="http://www.android.google.com/billing"/>
+      </wsdl:output>
+    </wsdl:operation>
+
+    <wsdl:operation name="CancelNotification">
+      <soap:operation soapAction="http://www.carrier.com/CancelNotification" />
+      <wsdl:input>
+        <soap:body use="literal" namespace="http://www.android.google.com/billing" />
+      </wsdl:input>
+    </wsdl:operation>
+
+    <wsdl:operation name="Echo">
+      <soap:operation soapAction="http://www.carrier.com/Echo" />
+      <wsdl:input>
+        <soap:body use="literal" namespace="http://www.android.google.com/billing" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" namespace="http://www.android.google.com/billing" />
+      </wsdl:output>
+    </wsdl:operation>
+
+    <wsdl:operation name="GetProvisioning">
+      <soap:operation soapAction="http://www.carrier.com/GetProvisioning" />
+      <wsdl:input>
+        <soap:body use="literal" namespace="http://www.android.google.com/billing" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" namespace="http://www.android.google.com/billing" />
+      </wsdl:output>
+    </wsdl:operation>
+
+    <wsdl:operation name="ValidatePassphrase">
+      <soap:operation soapAction="http://www.carrier.com/ValidatePassphrase" />
+      <wsdl:input>
+        <soap:body use="literal" namespace="http://www.android.google.com/billing" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" namespace="http://www.android.google.com/billing" />
+      </wsdl:output>
+    </wsdl:operation>
+
+    <wsdl:operation name="GetSubscriberAddress">
+      <soap:operation soapAction="http://www.carrier.com/GetSubscriberAddress" />
+      <wsdl:input>
+        <soap:body use="literal" namespace="http://www.android.google.com/billing" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" namespace="http://www.android.google.com/billing" />
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+
+
+  <!-- Service Definitions. -->
+
+  <wsdl:service name="CarrierBilling">
+    <wsdl:documentation><![CDATA[
+      <p>This binding defines the operations and protocol used by
+      Google's order processing system to communicate with the
+      operator's billing system</p>
+
+      <p>All requests from Google's order processing system to the
+      operator will take place over HTTPS with server side and
+      client side authentication. Furthermore, each request and
+      response will have a signature to ensure non-repudiation. SOAP
+      security will be provided using WS-Security. </p>
+
+      <p>All requests issued from Google's order processing system
+      must have idempotent behavior and effect in the carrier billing
+      system.  This is, if the Android Market issues two Auth requests
+      for the same CorrelationId, the account must be charged only
+      once.  If the first call was successful, do not return an error
+      on the second call, just return SUCCESS again.  The most common
+      reason for a duplicate call is a network error before receiving
+      the response, therefore Google does not know if the first call
+      succeeded or failed. The carrier billing system doesn't need to
+      verify any parameters beyond CorrelationId when checking for
+      duplicates as it's an error if any other parameter changes in a
+      request with the same CorrelationId.</p>
+
+      <p><em>Included Examples</em></p>
+
+      <p>Please note that this document includes a number of example
+      transactions.  These transactions are to be used to illustrate
+      what the requests and responses might look like.  When the
+      examples differ from the code in the WSDL file, the examples are
+      wrong and the WSDL file is right.</p>
+
+      <p><em>Batch Files</em></p>
+
+      <p>In the following example files, there are 4 transactions.  It
+      can be assumed that the corresponding Auth requests have already
+      been sucessfully sent to the operator via the SOAP
+      interface.</p>
+
+      <p>Transaction <em>a1</em> indicates that the user has purchased
+      and kept the item being purchased. (no returns).</p>
+
+      <p>Transaction <em>a2</em> indicates that the user has returned
+      the item inside the return window.</p>
+
+      <p>Transaction <em>a3</em> indicates that the user has returned
+      the item outside the return window.</p>
+
+      <p><a href="examples/batch.txt">Example Batch File</a></p>
+
+      <p><a href="examples/batch_response.txt">Example Batch File
+      Response</a></p>
+
+    ]]></wsdl:documentation>
+    <wsdl:port binding="m:CarrierBillingSOAP" name="CarrierBillingSOAP">
+      <soap:address location="http://www.carrier.com/" />
+    </wsdl:port>
+  </wsdl:service>
+</wsdl:definitions>
+
