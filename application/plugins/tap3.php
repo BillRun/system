@@ -107,7 +107,6 @@ class tap3Plugin extends Billrun_Plugin_BillrunPluginBase implements Billrun_Plu
 		$cdrLine = false;
 
 		if (isset($this->tap3Config[$this->fileVersion][$type])) {
-			//print_r($data->getDataArray($data,true,true));			
 			$cdrLine = $this->parseASNDataRecur($this->tap3Config[$this->fileVersion][$type], $data, $this->tap3Config['fields']);
 			if ($cdrLine) {
 				$cdrLine['record_type'] = $type;
@@ -151,7 +150,6 @@ class tap3Plugin extends Billrun_Plugin_BillrunPluginBase implements Billrun_Plu
 	 * @param type $cdrLine the line to monipulate.
 	 */
 	protected function surfaceCDRFields(&$cdrLine,$mapping) {
-
 		
 		if (Billrun_Util::getNestedArrayVal($cdrLine, $mapping['localTimeStamp']) !== null) {
 			$offset = $this->currentFileHeader['networkInfo']['UtcTimeOffsetInfoList'][Billrun_Util::getNestedArrayVal($cdrLine, $mapping['TimeOffsetCode'])];
@@ -159,14 +157,6 @@ class tap3Plugin extends Billrun_Plugin_BillrunPluginBase implements Billrun_Plu
 			$cdrLine['tzoffset'] = $offset;
 		}
 		
-
-//		if (isset($cdrLine['basicCallInformation']['chargeableSubscriber']['simChargeableSubscriber']['imsi'])) {
-//			$cdrLine['imsi'] = $cdrLine['basicCallInformation']['chargeableSubscriber']['simChargeableSubscriber']['imsi'];
-//		}
-//		
-//		if (isset($cdrLine['basicCallInformation']['simChargeableSubscriber']['imsi'])) {
-//			$cdrLine['imsi'] = $cdrLine['basicCallInformation']['simChargeableSubscriber']['imsi'];
-//		}
 
 		 if (  Billrun_Util::getNestedArrayVal($cdrLine, $mapping['tele_srv_code']) !== null && isset($cdrLine['record_type'])) {
 			$tele_service_code = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['tele_srv_code']);
@@ -184,11 +174,6 @@ class tap3Plugin extends Billrun_Plugin_BillrunPluginBase implements Billrun_Plu
 			}
 		}
 
-//		if (isset($cdrLine['basicCallInformation']['GprsChargeableSubscriber']['chargeableSubscriber']['simChargeableSubscriber']['msisdn'])) {
-//			$cdrLine['calling_number'] = $cdrLine['basicCallInformation']['GprsChargeableSubscriber']['chargeableSubscriber']['simChargeableSubscriber']['msisdn'];
-//		} else if (isset($cdrLine['basicCallInformation']['chargeableSubscriber']['simChargeableSubscriber']['msisdn'])) {
-//			$cdrLine['calling_number'] = $cdrLine['basicCallInformation']['chargeableSubscriber']['simChargeableSubscriber']['msisdn'];
-//		} //else
 
 		if (!Billrun_Util::getNestedArrayVal($cdrLine, $mapping['calling_number']) && isset($tele_service_code) && isset($record_type) ) {
 			if ($record_type == 'a' && ($tele_service_code == '11' || $tele_service_code == '21')) {
@@ -207,9 +192,6 @@ class tap3Plugin extends Billrun_Plugin_BillrunPluginBase implements Billrun_Plu
 		if (Billrun_Util::getNestedArrayVal($cdrLine, $mapping['sdr']) !== null) {
 			$cdrLine['sdr'] = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['sdr']) / $this->sdr_division_value;
 			$cdrLine['exchange_rate'] = $this->exchangeRates[Billrun_Util::getNestedArrayVal($cdrLine, $mapping['exchange_rate_code'])];
-//		} else if (isset($cdrLine['GprsServiceUsed']['ChargeInformationList']['ChargeInformation']['ChargeDetailList']['ChargeDetail']['Charge'])) {
-//			$cdrLine['sdr'] = $cdrLine['GprsServiceUsed']['ChargeInformationList']['ChargeInformation']['ChargeDetailList']['ChargeDetail']['Charge'] / $this->sdr_division_value;
-//			$cdrLine['exchange_rate'] = $this->exchangeRates[$cdrLine['GprsServiceUsed']['ChargeInformationList']['ChargeInformation']['ExchangeRateCode']];
 		}
 		
 		//save the sending source in each of the lines
@@ -221,13 +203,6 @@ class tap3Plugin extends Billrun_Plugin_BillrunPluginBase implements Billrun_Plu
 				$cdrLine[$key] = $val;
 			}
 		}
-
-//		if (Billrun_Util::getNestedArrayVal($cdrLine, $mapping['call_type'])) {
-//			$cdrLine['call_type'] = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['call_type']);
-//		} else if(isset($cdrLine['GprsServiceUsed']['ChargeInformationList']['ChargeInformation']['CallTypeGroup']['CallTypeLevel1'])) {
-//				$cdrLine['call_type'] = $cdrLine['GprsServiceUsed']['ChargeInformationList']['ChargeInformation']['CallTypeGroup']['CallTypeLevel1'];
-//		}
-		
 	}
 
 	/**
