@@ -34,7 +34,7 @@ class Billrun_Processor_017 extends Billrun_Processor_Base_Ilds {
 			'chrgbl_call_dur' => 6,
 			'chrgbl_code' => 1,
 			'call_charge_sign' => 1,
-			'call_charge' => 14,
+			'call_charge' => 11,
 			'collecion_code' => 2,
 			'return_code' => 2,
 		);
