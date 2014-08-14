@@ -16,7 +16,7 @@ backupFile=$backupBase"/`date +%Y%m%d`_`hostname`.tar.xz";
 mongoDir="/ssd/mongo"
 
 #load configuration first from /usr/local/etc/ and then overide it with the local directory configuration.
-source /usr/local/etc/backupfs.conf
+source /usr/local/etc/backup_fs.conf
 source ./backup_fs.conf
 
 
@@ -120,8 +120,7 @@ if [ -n $(shutdownMongo) ]; then
 	$(startMongo);
 	$(updateSync  done);
 else 
-	echo "Failed to stop the mongo server!" > $logFile;
-if 
+	echo "Failed to stop the mongo server!" >> $logFile;
+fi
 
 exit;
-
