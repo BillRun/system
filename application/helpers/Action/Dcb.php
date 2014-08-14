@@ -1,7 +1,7 @@
 <?php
 
 require_once APPLICATION_PATH . '/application/helpers/Dcb/Soap/Handler.php';
-require_once APPLICATION_PATH . '/library/wse-php/soap-server-wsse.php';
+require_once APPLICATION_PATH . '/application/helpers/Dcb/Soap/Server.php';
 
 /**
  * @package         Billing
@@ -14,36 +14,29 @@ require_once APPLICATION_PATH . '/library/wse-php/soap-server-wsse.php';
  */
 class DcbAction extends Action_Base {
 
+	protected $wsdlPath;
+	protected $externalCerts;
+	protected $billrunPemPath;
+
+	public function init() {
+		$this->wsdlPath = Billrun_Factory::config()->getConfigValue('dcb.google.wsdl');
+		$this->externalCerts = Billrun_Factory::config()->getConfigValue('dcb.google.externalCerts');
+		$this->billrunPemPath = Billrun_Factory::config()->getConfigValue('dcb.google.billrunPemPath');
+	}
+
 	/**
 	 * @todo maybe use output method instead of dying
 	 * @todo is there a way to get rid of the require_once?
 	 */
 	public function execute() {
-//		$wsdl_path = '/home/shani/projects/billrun/application/helpers/Dcb/Soap/CarrierBilling_3.wsdl';
-//		$soap = new Zend_Soap_Server($wsdl_path, array('soap_version' => SOAP_1_1));
-//		$soap->setClass('Dcb_Soap_Handler');
-//		$soap->setReturnResponse(true);
-//		$result = $soap->handle();
-		
-		$doc = new DOMDocument('1.0');
-		$request = file_get_contents('php://input');
-		$doc->loadXML($request);
-		
-		$objWSSEServer = new WSSESoapServer($doc);
-		$objWSSEServer->addExternalCertificates(array('/home/shani/keys/clientPemFile.pem'));
-		
-		$objWSSEServer->process();
-		
-		$objWSSEServer->addTimestamp(600);
-
-		$SERVER_KEY = '/home/shani/keys/serverPemFile.pem';
-		$objKey = new XMLSecurityKey(XMLSecurityKey::RSA_SHA1, array('type' => 'private'));
-		$objKey->loadKey($SERVER_KEY, TRUE, TRUE);
-
-		$options = array("insertBefore" => TRUE);
-		$objWSSEServer->signSoapDoc($objKey, $options);
-
-		die($objWSSEServer->saveXML());
+		$this->init();
+		$soap = new Soap_Server_WSSE($this->wsdlPath, array('soap_version' => SOAP_1_1));
+		$soap->setClass('Dcb_Soap_Handler');
+		$soap->setReturnResponse(true);
+		$soap->addExternalCertificates($this->externalCerts);
+		$soap->setServerPem($this->billrunPemPath);
+		$result = $soap->handle();
+		die($result);
 	}
 
 }

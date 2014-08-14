@@ -69,9 +69,11 @@ class WSSESoapServer {
 	 *
 	 * @var string
 	 */
-	protected $requestSignatureValue;
+	protected $signatureValue;
+	
+	protected $serverPemPath;
 
-    private function locateSecurityHeader($setActor=NULL) { 
+	private function locateSecurityHeader($setActor=NULL) { 
         $wsNamespace = NULL; 
         if ($this->secNode == NULL) { 
             $headers = $this->SOAPXPath->query('//wssoap:Envelope/wssoap:Header'); 
@@ -162,11 +164,12 @@ class WSSESoapServer {
 							openssl_x509_export(openssl_x509_read(file_get_contents($certPath)), $x509cert);
 							$objKey->loadKey($x509cert);
 							if ($objXMLSecDSig->verify($objKey)) {
-								$this->requestSignatureValue = $objXMLSecDSig->getSignatureValue();
+								$this->signatureValue = $objXMLSecDSig->getSignatureValue();
 								return TRUE;
 							}
 						}
 					}
+					throw new Exception("Unable to validate Signature");
 				}
 				throw new Exception("Error loading key to handle Signature");
 			}
@@ -177,6 +180,10 @@ class WSSESoapServer {
 		}
 
 		return TRUE;
+	}
+	
+	public function getSignatureValue() {
+		return $this->signatureValue;
 	}
 
 	public function process() {
@@ -201,7 +208,6 @@ class WSSESoapServer {
 		}
 		$this->secNode->parentNode->removeChild($this->secNode);
 		$this->secNode = NULL;
-		$this->addSignatureConfirmation();
 		return TRUE;
 	}
 
@@ -318,14 +324,14 @@ class WSSESoapServer {
             $timestamp->appendChild($expire); 
         } 
     } 
-    public function addSignatureConfirmation() {
+    public function addSignatureConfirmation($signatureValue) {
         /* Add the WSU timestamps */ 
         $security = $this->createSecurityIfNotExists(); 
 
         $signatureConfirmation = $this->soapDoc->createElementNS(WSSESoapServer::WSSE11, WSSESoapServer::WSSE11PFX.':SignatureConfirmation'); 
 		
         $signatureConfirmation->setAttributeNS('http://www.w3.org/2000/xmlns/', 'xmlns:' . WSSESoapServer::WSSE11PFX, WSSESoapServer::WSSE11);
-        $signatureConfirmation->setAttribute('value', $this->requestSignatureValue);
+        $signatureConfirmation->setAttribute('value', $signatureValue);
         $security->appendChild($signatureConfirmation);
     } 
 	
@@ -363,7 +369,18 @@ class WSSESoapServer {
             $this->secNode = $secnode; 
         } 
         return $this->secNode;
-    } 
+    }
+	
+	public function setServerPem($pemPath) {
+		$this->serverPemPath = $pemPath;
+	}
+	
+	public function getServerPem() {
+		if (isset($this->serverPemPath)) {
+			return $this->serverPemPath;
+		}
+		return null;
+	}
 
 }
 

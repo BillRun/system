@@ -13,8 +13,11 @@
  */
 class Dcb_Soap_Handler {
 
+	const GOOGLE_RESULT_CODE_SUCCESS = 'SUCCESS';
+	const GOOGLE_RESULT_CODE_GENERAL_FAILURE = 'GENERAL_FAILURE';
+	const GOOGLE_RESULT_CODE_RETRIABLE_ERROR = 'RETRIABLE_ERROR';
+	
 	public function __call($name, $arguments) {
-		$a = print_r($arguments, true);
 		if (method_exists($this, 'do' . $name)) {
 			return call_user_func(array($this, 'do' . $name), $arguments);
 		} else {
@@ -26,7 +29,7 @@ class Dcb_Soap_Handler {
 		$echoResponse = new stdclass;
 		$echoResponse->Version = $params[0]->Version;
 		$echoResponse->CorrelationId = $params[0]->CorrelationId;
-		$echoResponse->Result = 'SUCCESS';
+		$echoResponse->Result = self::GOOGLE_RESULT_CODE_SUCCESS;
 		$echoResponse->OriginalMessage = $params[0]->Message;
 		return $echoResponse;
 	}
