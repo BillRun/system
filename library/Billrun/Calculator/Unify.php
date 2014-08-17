@@ -68,12 +68,12 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 					),
 					'date_seperation' => 'Ymd',
 					'stamp' => array(
-						'value' => array('record_type', 'in_circuit_group', 'in_circuit_group_name', 'out_circuit_group', 'out_circuit_group_name'),
-						'field' => array('calling_subs_last_ex_id', 'called_subs_last_ex_id')
+						'value' => array('record_type', 'in_circuit_group', 'in_circuit_group_name', 'out_circuit_group', 'out_circuit_group_name', 'arate', 'usaget', 'calling_subs_last_ex_id', 'called_subs_last_ex_id'),
+						'field' => array()
 					),
 					'fields' => array(
 						'$set' => array('process_time'),
-						'$setOnInsert' => array('urt', 'in_circuit_group', 'in_circuit_group_name', 'out_circuit_group', 'out_circuit_group_name', 'calling_subs_last_ex_id', 'called_subs_last_ex_id'),
+						'$setOnInsert' => array('urt', 'in_circuit_group', 'in_circuit_group_name', 'out_circuit_group', 'out_circuit_group_name', 'calling_subs_last_ex_id', 'called_subs_last_ex_id', 'arate', 'usaget'),
 						'$inc' => array('usagev', 'duration'),
 					),
 				),
@@ -283,7 +283,9 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 		$typeData = $this->unificationFields[$newRow['type']];
 		$serialize_array = array();
 		foreach ($typeData['stamp']['value'] as $field) {
-			$serialize_array[$field] = $newRow[$field];
+			if (isset($newRow[$field])) {
+				$serialize_array[$field] = $newRow[$field];
+			}
 		}
 
 		foreach ($typeData['stamp']['field'] as $field) {
