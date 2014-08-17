@@ -59,6 +59,10 @@ abstract class Billrun_Receiver extends Billrun_Base {
 			$this->setGranularity((int) $options['receiver']['backup_granularity']);
 		}
 		
+		if (Billrun_Util::getFieldVal($options['receiver']['backup_date_fromat'],false) ) {
+			$this->setBackupDateDirFromat( $options['receiver']['backup_date_fromat']);
+		}
+		
 		if (isset($options['receiver']['orphan_time']) && ((int) $options['receiver']['orphan_time']) > 900 ) {
 			$this->file_fetch_orphan_time =  $options['receiver']['orphan_time'];
 		}
@@ -85,8 +89,13 @@ abstract class Billrun_Receiver extends Billrun_Base {
 			'received_time' => array('$exists' => false)
 		);
 	
+		$addData = array(
+			'received_hostname' => Billrun_Util::getHostName(),
+			'received_time' => date(self::base_dateformat),
+		);
+
 		$update = array(
-			'$set' => array_merge($fileData, array('received_time' => date(self::base_dateformat)))
+			'$set' => array_merge($fileData, $addData)
 		);
 
 		if (empty($query['stamp'])) {

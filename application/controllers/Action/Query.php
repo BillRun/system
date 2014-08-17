@@ -29,13 +29,26 @@ class QueryAction extends ApiAction {
 			$this->setError('Require to supply aid or sid', $request);
 			return true;
 		}
+		
 		$find = array();
+		$max_list = 1000;
+		
 		if (isset($request['aid'])) {
-			$find['aid'] = (int) $request['aid'];
+			$aids = Billrun_Util::verify_array($request['aid'], 'int');
+			if (count($aids) > $max_list) {
+				$this->setError('Maximum of aid is ' . $max_list, $request);
+				return true;
+			}
+			$find['aid'] = array('$in' => $aids);
 		}
 
 		if (isset($request['sid'])) {
-			$find['sid'] = (int) $request['sid'];
+			$sids = Billrun_Util::verify_array($request['sid'], 'int');
+			if (count($sids) > $max_list) {
+				$this->setError('Maximum of sid is ' . $max_list, $request);
+				return true;
+			}
+			$find['sid'] = array('$in' => $sids);
 		}
 
 		if (isset($request['billrun'])) {

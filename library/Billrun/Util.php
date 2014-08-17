@@ -701,5 +701,27 @@ class Billrun_Util {
 		}
 		return $prefixes;
 	}
+	
+	/**
+	 * Make sure that a date start with the full year and make sure it compitibale with a given format.
+	 * @param $date the date to make sure is corrcet.
+	 * @param $foramt the fromat the date should be in.
+	 * @return mixed the fixed date sting if possible or false  if the date couldn't be fixed.
+	 */
+	public static function fixShortHandYearDate($date,$format = "Y") {
+		if( !preg_match('/^'.date($format,strtotime($date)).'/',$date) ) {
+			$date = substr(date("Y"),0,2).$date;
+		}
+		return preg_match('/^'.date($format,strtotime($date)).'/',$date) ? $date : false; 
+	}
+	
+	/**
+	 * method to get current hostname runnning the PHP
+	 * 
+	 * @return string host name or false when gethostname is not available (PHP 5.2 and lower)
+	 */
+	public static function getHostName() {
+		return function_exists('gethostname') ? gethostname() : false;
+	}
 
 }
