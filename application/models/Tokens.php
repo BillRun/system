@@ -14,20 +14,21 @@
  * @since    0.5
  */
 class TokensModel extends TableModel {
-    public function __construct(array $params = array()) {
-	$params['collection'] = Billrun_Factory::db()->tokens;
-	parent::__construct($params);
-	$this->search_key = "key";
-    }
-    
-    public function storeData($GUT, $OUT) {
-	$entity = new Mongodloid_Entity(array(
-		'GUT' => $GUT,
-		'OUT' => $OUT,
-	));
-	$tokensCollection = Billrun_Factory::db()->tokensCollection();
-	
-	return $entity->save($tokensCollection, 1);
-    }
+
+	public function __construct(array $params = array()) {
+		$params['collection'] = Billrun_Factory::db()->tokens;
+		parent::__construct($params);
+		$this->search_key = "key";
+	}
+
+	public function storeData($GUT, $OUT, $sid) {
+		$entity = new Mongodloid_Entity(array(
+			'GUT' => $GUT,
+			'OUT' => $OUT,
+			'sid' => $sid,
+		));
+		$tokensCollection = Billrun_Factory::db()->tokensCollection();
+		return $entity->save($tokensCollection, 1);
+	}
 
 }

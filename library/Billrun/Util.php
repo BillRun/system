@@ -708,7 +708,7 @@ class Billrun_Util {
 	 * @return string encoded text.
 	 */
 	static public function hash($plainText) {
-	    return hash('sha512', Billrun_Factory::config()->getConfigValue('secret') . $plainText);
+	    return hash('sha256', Billrun_Factory::config()->getConfigValue('secret') . $plainText);
 	}
 	
 	/**
