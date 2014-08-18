@@ -12,7 +12,7 @@ logFile="/tmp/backup.log";
 mongoCmd="mongo --port 27018"
 mongoSrv="mongod"
 
-backupFile=$backupBase"/`date +%Y%m%d`_`hostname`.tar.xz";
+backupFile=$backupBase"/`date +%Y%m%d`_`hostname`.tar.gz";
 mongoDir="/ssd/mongo"
 
 #load configuration first from /usr/local/etc/ and then overide it with the local directory configuration.
@@ -113,7 +113,7 @@ if [ -n $(shutdownMongo) ]; then
 	$(waitForServers)
 
 	$(updateSync backingup);
-	tar -vcJf $backupFile $mongoDir >> $logFile
+	tar -vczf $backupFile $mongoDir >> $logFile
 	$(updateSync backedup);
 
 	$(updateSync starting);
