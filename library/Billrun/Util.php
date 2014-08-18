@@ -701,5 +701,78 @@ class Billrun_Util {
 		}
 		return $prefixes;
 	}
+	
+	/**
+	 * Get a string and encode it.
+	 * @param string $plainText the text to encode.
+	 * @return string encoded text.
+	 */
+	static public function hash($plainText) {
+	    return hash('sha512', Billrun_Factory::config()->getConfigValue('secret') . $plainText);
+	}
+	
+	/**
+	 * Send curl request
+	 * 
+	 * @param string $url full path
+	 * @param Array $data parameters for the request
+	 * @param Array $options set some request options
+	 * 
+	 * @return array or FALSE on failure
+	 */
+	public static function sendRequest($url, array $data = array(), array $options = array()) {
+	    if (empty($url)) {
+		Billrun_Factory::log()->log("Bad parameters: url - " . $url . " method: " . $method, Zend_Log::ERR);
+		return FALSE;
+	    }
 
+	    if (!isset($options['method'])) {
+		$options['method'] = Zend_Http_Client::POST;
+	    }
+	    if (!isset($options['adapterName'])) {
+		$options['adapterName'] = 'curl';
+	    }
+	    if (!isset($options['headers']) || !is_array($options['headers'])) {
+		$options['headers'] = array('Accept-encoding' => 'deflate');
+	    }
+	    if (!isset($options['onlyBody'])) {
+		$options['onlyBody'] = true;
+	    }
+
+	    $options['method'] = strtoupper($options['method']);
+	    if (!defined("Zend_Http_Client::" . $options['method'])) {
+		return FALSE;
+	    }
+
+	    $zendMethod = constant("Zend_Http_Client::" . $options['method']);
+	    $adapaterClassName = 'Zend_Http_Client_Adapter_' . ucfirst($options['adapterName']);
+	    $curl = new $adapaterClassName();
+	    $client = new Zend_Http_Client($url);
+	    $client->setHeaders($options['headers']);
+	    $client->setAdapter($curl);
+	    $client->setMethod($options['method']);
+
+	    if (!empty($data)) {
+		if ($zendMethod == Zend_Http_Client::POST) {
+		    $client->setParameterPost($data);
+		} else {
+		    $client->setParameterGet($data);
+		}
+	    }
+
+	    $response = $client->request();
+
+	    if (!$options['onlyBody']) {
+		return $response;
+	    }
+
+	    $output = $response->getBody();
+
+	    if (empty($output)) {
+		Billrun_Factory::log()->log("No output", Zend_Log::NOTICE);
+		return FALSE;
+	    }
+
+	    return $output;
+	}
 }

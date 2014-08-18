@@ -69,6 +69,13 @@ class Billrun_Factory {
 	 * @var Billrun Balance
 	 */
 	protected static $balance = null;
+	
+	/**
+	 * Tokens instance
+	 * 
+	 * @var Billrun Tokens
+	 */
+	protected static $tokens = null;
 
 	/**
 	 * Tariff instance
@@ -297,6 +304,16 @@ class Billrun_Factory {
 		  } */
 		$balanceSettings = self::config()->getConfigValue('balance', array());
 		return new Billrun_Balance(array_merge($balanceSettings, $params));
+	}
+	
+	/**
+	 * method to retrieve a tokens instance
+	 * 
+	 * @return Billrun_Tokens
+	 */
+	static public function tokens($params = array()) {
+		$tokensSettings = self::config()->getConfigValue('tokens', array());
+		return new Billrun_Tokens(array_merge($tokensSettings, $params));
 	}
 
 	/**
