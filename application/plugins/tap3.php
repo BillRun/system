@@ -191,7 +191,7 @@ class tap3Plugin extends Billrun_Plugin_BillrunPluginBase implements Billrun_Plu
 
 		if (Billrun_Util::getNestedArrayVal($cdrLine, $mapping['sdr']) !== null) {
 			$cdrLine['sdr'] = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['sdr']) / $this->sdr_division_value;
-			$cdrLine['exchange_rate'] = $this->exchangeRates[Billrun_Util::getNestedArrayVal($cdrLine, $mapping['exchange_rate_code'])];
+			$cdrLine['exchange_rate'] = $this->exchangeRates[Billrun_Util::getNestedArrayVal($cdrLine, $mapping['exchange_rate_code'],0)];
 		}
 		
 		//save the sending source in each of the lines
@@ -277,8 +277,8 @@ class tap3Plugin extends Billrun_Plugin_BillrunPluginBase implements Billrun_Plu
 						$processorData['data'][] = $row;
 					}
 				}
-			} else {
-				//Billrun_Factory::log()->log(print_r($record,1) ,  Zend_Log::DEBUG);
+			} else if(!isset($this->tap3Config['header'][$record->getType()]) && !isset($this->tap3Config['trailer'][$record->getType()])) {				 
+				Billrun_Factory::log()->log('No config for type : ' .$record->getType(). " Full record :" . print_r(Asn_Base::getDataArray($record,true,true),1) ,  Zend_Log::DEBUG);
 			}
 		}
 
