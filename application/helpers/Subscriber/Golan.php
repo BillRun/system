@@ -50,7 +50,6 @@ class Subscriber_Golan extends Billrun_Subscriber {
 			if (!file_exists($this->crm_output_dir)) {
 				mkdir($this->crm_output_dir, 0777, true);
 			}
-
 		}
 		$creditCalcOptions = array_merge(array('type' => 'Rate_Credit', 'autoload' => false), Billrun_Factory::config()->getConfigValue('Rate_Credit.calculator', array()));
 		$this->creditCalc = Billrun_Calculator::getInstance($creditCalcOptions);
@@ -69,7 +68,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 	 */
 	public function load($params) {
 
-		if (!isset($params['imsi']) && !isset($params['IMSI']) && !isset($params['NDC_SN'])) {
+		if (!isset($params['imsi']) && !isset($params['IMSI']) && !isset($params['NDC_SN']) && !isset($params['sid'])) {
 			Billrun_Factory::log()->log('Cannot identify Golan subscriber. Require phone or imsi to load. Current parameters: ' . print_R($params, 1), Zend_Log::ALERT);
 			return $this;
 		}
@@ -83,7 +82,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		$data = $this->request($params);
 
 		if (is_array($data)) {
-			$this->data = $data;
+			$this->data = $this->parseSubscriberOutput($data, $this->availableFields);
 		} else {
 			Billrun_Factory::log()->log('Failed to load Golan subscriber data', Zend_Log::ALERT);
 		}
@@ -126,13 +125,13 @@ class Subscriber_Golan extends Billrun_Subscriber {
 			return false;
 		}
 
-		$object = @json_decode($json);
+		$arr = @json_decode($json, TRUE);
 
-		if (!$object || !is_object($object)) {
+		if (!$arr || !is_array($arr)) {
 			return false;
 		}
 
-		return (array) $object;
+		return $arr;
 	}
 
 	/**
@@ -302,18 +301,18 @@ class Subscriber_Golan extends Billrun_Subscriber {
 			}
 		}
 	}
-	
+
 	public function getCredits($billrun_key, $retEntity = false) {
 		$ret = array();
 		if (!is_array($this->credits) || !count($this->credits)) {
 			return $ret;
 		}
-		foreach($this->credits as $credit) {
+		foreach ($this->credits as $credit) {
 			if (!isset($credit['aid']) || !isset($credit['sid'])) {
 				Billrun_Factory::log("Credit cannot be parsed for subscriber. aid or sid or both not exists. credit details: " . print_R($credit, 1), Zend_log::ALERT);
 				continue;
 			}
-			
+
 			$parsedRow = Billrun_Util::parseCreditRow($credit);
 			$parsedRow['billrun'] = $billrun_key; // this will ensure we are on correct billrun even on pricing calculator
 			if (empty($parsedRow)) {
@@ -331,7 +330,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 				Billrun_Factory::log("Credit cannot be calc pricing for subscriber " . $credit['sid'] . " for billrun " . $billrun_key . " credit details: " . print_R($credit, 1), Zend_log::ALERT);
 				continue;
 			}
-			
+
 			if ($retEntity && !($insertRow instanceof Mongodloid_Entity)) {
 				$ret[$insertRow['stamp']] = new Mongodloid_Entity($insertRow);
 			} else if (!$retEntity && ($insertRow instanceof Mongodloid_Entity)) {
@@ -339,11 +338,9 @@ class Subscriber_Golan extends Billrun_Subscriber {
 			} else {
 				$ret[$insertRow['stamp']] = $insertRow;
 			}
-
 		}
 		return $ret;
 	}
-
 
 	public function getListFromFile($file_path, $time) {
 		$json = @file_get_contents($file_path);
@@ -430,13 +427,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 			$subscriberSettings = Billrun_Factory::config()->getConfigValue('subscriber', array());
 			foreach ($list as $stamp => $item) {
 				if (is_array($item)) {
-					foreach ($availableFields as $key => $field) {
-						if (isset($item[$field])) {
-							$temp = $item[$field];
-							unset($item[$field]);
-							$item[$key] = $temp;
-						}
-					}
+					$item = $this->parseSubscriberOutput($item, $availableFields);
 					$subscribers[$stamp] = new self(array_merge(array('data' => $item), $subscriberSettings));
 				} else {
 					//TODO what is the output when subscriber was not found?
@@ -449,6 +440,17 @@ class Subscriber_Golan extends Billrun_Subscriber {
 			Billrun_Factory::log()->log($message . ". Proceeding with calculation...", count($params_arr) ? Zend_Log::ALERT : Zend_Log::INFO);
 		}
 		return $subscribers;
+	}
+
+	protected function parseSubscriberOutput($subOutput, $availableFields) {
+		foreach ($availableFields as $key => $field) {
+			if (isset($subOutput[$field])) {
+				$temp = $subOutput[$field];
+				unset($subOutput[$field]);
+				$subOutput[$key] = $temp;
+			}
+		}
+		return $subOutput;
 	}
 
 	static public function requestList($params) {
@@ -500,5 +502,13 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		// if it's array rand between servers
 		return $hosts[rand(0, count($hosts) - 1)];
 	}
-	
+
+	public function isDcbActive() {
+		return isset($this->data['google_play']['active']) && $this->data['google_play']['active'] === 1;
+	}
+
+	public function isInDebt() {
+		return isset($this->data['in_debt']) && $this->data['in_debt'] === 0;
+	}
+
 }

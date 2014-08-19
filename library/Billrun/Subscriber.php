@@ -132,4 +132,15 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 		return $this->extraFields;
 	}
 
+	/**
+	 * Indicates if the subscriber has enabled Dcb
+	 * @return boolean
+	 */
+	abstract function isDcbActive();
+	
+	/**
+	 * Indicates if the subscriber is in debt
+	 * @return boolean
+	 */
+	abstract function isInDebt();
 }
