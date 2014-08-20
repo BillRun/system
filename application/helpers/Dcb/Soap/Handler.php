@@ -17,6 +17,7 @@ class Dcb_Soap_Handler {
 	const GOOGLE_RESULT_CODE_GENERAL_FAILURE = 'GENERAL_FAILURE';
 	const GOOGLE_RESULT_CODE_RETRIABLE_ERROR = 'RETRIABLE_ERROR';
 	const GOOGLE_RESULT_CODE_INVALID_USER = 'INVALID_USER';
+	const GOOGLE_RESULT_CODE_NO_LONGER_PROVISIONED = 'NO_LONGER_PROVISIONED';
 
 	/**
 	 * The subscriber associated with the request
@@ -56,7 +57,7 @@ class Dcb_Soap_Handler {
 		$response = new stdclass;
 		$response->Version = $request->Version;
 		$response->CorrelationId = $request->CorrelationId;
-		$sid = $this->getSid($this->getOUTFromRequest($request));
+		$sid = $this->getSid($request->UserIdentifier->OperatorUserToken);
 		if ($sid) {
 			$identityParams = $this->getIdentityParams($sid);
 			$this->subscriber->load($identityParams);
@@ -82,16 +83,38 @@ class Dcb_Soap_Handler {
 		return $response;
 	}
 	
+		public function Auth($request) {
+		$response = new stdclass;
+		$response->Version = $request->Version;
+		$response->CorrelationId = $request->CorrelationId;
+		$sid = $this->getSid($request->OperatorUserToken);
+		if ($sid) {
+			$identityParams = $this->getIdentityParams($sid);
+			$this->subscriber->load($identityParams);
+			if (!$this->subscriber->isValid()) {
+				$response->Result = self::GOOGLE_RESULT_CODE_INVALID_USER;
+			}
+			else {
+				if ($this->isDcbProvisioned($this->subscriber)) {
+					$response->Result = self::GOOGLE_RESULT_CODE_SUCCESS;
+				}
+				else {
+					$response->Result = self::GOOGLE_RESULT_CODE_NO_LONGER_PROVISIONED;
+				}
+			}
+		}
+		else {
+			$response->Result = self::GOOGLE_RESULT_CODE_INVALID_USER;
+		}
+		return $response;
+	}
+	
 	/**
 	 * Indicates if the subscriber is provisioned for Dcb
 	 * @param Billrun_Subscriber $subscriber
 	 */
 	protected function isDcbProvisioned($subscriber) {
 		return $subscriber->isDcbActive() && !$subscriber->isInDebt();
-	}
-
-	protected function getOUTFromRequest($request) {
-		return $request->UserIdentifier->OperatorUserToken;
 	}
 
 	protected function getSid($OUT) {
