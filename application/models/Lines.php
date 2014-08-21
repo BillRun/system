@@ -161,7 +161,7 @@ class LinesModel extends TableModel {
 	}
 
 	public function getFilterFields() {
-		$months = 6;
+		$months = 12;
 		$billruns = array();
 		$timestamp = time();
 		for ($i = 0; $i < $months; $i++) {
