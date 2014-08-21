@@ -18,13 +18,14 @@ class Dcb_Soap_Handler {
 	const GOOGLE_RESULT_CODE_RETRIABLE_ERROR = 'RETRIABLE_ERROR';
 	const GOOGLE_RESULT_CODE_INVALID_USER = 'INVALID_USER';
 	const GOOGLE_RESULT_CODE_NO_LONGER_PROVISIONED = 'NO_LONGER_PROVISIONED';
+	const GOOGLE_RESULT_CODE_INVALID_CURRENCY = 'INVALID_CURRENCY';
 
 	/**
 	 * The subscriber associated with the request
 	 * @var Billrun_Subscriber
 	 */
 	protected $subscriber;
-	
+
 	/**
 	 *
 	 * @var array
@@ -63,52 +64,48 @@ class Dcb_Soap_Handler {
 			$this->subscriber->load($identityParams);
 			if (!$this->subscriber->isValid()) {
 				$response->Result = self::GOOGLE_RESULT_CODE_INVALID_USER;
-			}
-			else {
+			} else {
 				$response->Result = self::GOOGLE_RESULT_CODE_SUCCESS;
 				if ($this->isDcbProvisioned($this->subscriber)) {
 					$response->IsProvisioned = TRUE;
 					$response->SubscriberCurrency = $this->config['currency'];
 					$response->TransactionLimit = intval($this->config['transaction_limit']);
 					$response->AccountType = $this->config['account_type'];
-				}
-				else {
+				} else {
 					$response->IsProvisioned = FALSE;
 				}
 			}
-		}
-		else {
+		} else {
 			$response->Result = self::GOOGLE_RESULT_CODE_INVALID_USER;
 		}
 		return $response;
 	}
-	
-		public function Auth($request) {
+
+	public function Auth($request) {
 		$response = new stdclass;
 		$response->Version = $request->Version;
 		$response->CorrelationId = $request->CorrelationId;
 		$sid = $this->getSid($request->OperatorUserToken);
-		if ($sid) {
+		if ($request->Currency != $this->config['currency']) {
+			$response->Result = self::GOOGLE_RESULT_CODE_INVALID_CURRENCY;
+		} else if ($sid) {
 			$identityParams = $this->getIdentityParams($sid);
 			$this->subscriber->load($identityParams);
 			if (!$this->subscriber->isValid()) {
 				$response->Result = self::GOOGLE_RESULT_CODE_INVALID_USER;
-			}
-			else {
+			} else {
 				if ($this->isDcbProvisioned($this->subscriber)) {
 					$response->Result = self::GOOGLE_RESULT_CODE_SUCCESS;
-				}
-				else {
+				} else {
 					$response->Result = self::GOOGLE_RESULT_CODE_NO_LONGER_PROVISIONED;
 				}
 			}
-		}
-		else {
+		} else {
 			$response->Result = self::GOOGLE_RESULT_CODE_INVALID_USER;
 		}
 		return $response;
 	}
-	
+
 	/**
 	 * Indicates if the subscriber is provisioned for Dcb
 	 * @param Billrun_Subscriber $subscriber
