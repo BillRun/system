@@ -390,7 +390,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		$this->countConcurrentRetries++;
 		Billrun_Factory::dispatcher()->trigger('beforeUpdateSubscriberBalance', array($balance, &$row, $rate, $this));
 		$plan = Billrun_Factory::plan(array('name' => $row['plan'], 'time' => $row['urt']->sec, 'disableCache' => true));
-		$balance_totals_key = $this->getBalanceTotalsKey($row['type'], $usage_type, $plan, $rate);
+		$balance_totals_key = $plan->getBalanceTotalsKey($usage_type, $rate);
 		$counters = array($balance_totals_key => $volume);
 		$subRaw = $balance->getRawData();
 		$stamp = strval($row['stamp']);
@@ -457,7 +457,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		}
 		Billrun_Factory::log()->log("Line with stamp " . $row['stamp'] . " was written to balance " . $balance['billrun_month'] . " for subscriber " . $row['sid'], Zend_Log::DEBUG);
 		$row['tx_saved'] = true; // indication for transaction existence in balances. Won't & shouldn't be saved to the db.
-		Billrun_Factory::dispatcher()->trigger('afterUpdateSubscriberBalance', array(array_merge($row->getRawData(), $pricingData), $balance, $this->isBillable($rate) ? $pricingData : 0, $this));
+		Billrun_Factory::dispatcher()->trigger('afterUpdateSubscriberBalance', array(array_merge($row->getRawData(), $pricingData), $balance, &$pricingData, $this));
 		return $pricingData;
 	}
 
