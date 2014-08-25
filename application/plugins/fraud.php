@@ -62,7 +62,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 */
 	public function afterUpdateSubscriberBalance($row, $balance, &$pricingData, $calculator) {
 		if ($calculator->getType() == 'pricing' && method_exists($calculator, 'getPricingField') && ($pricingField = $calculator->getPricingField())) {
-			$rowPrice = $pricingData[$pricingField];
+			$rowPrice = isset($pricingData[$pricingField])? $pricingData[$pricingField] : 0; // if the rate wasn't billable then the line won't have a charge
 		} else {
 			return true;
 		}
