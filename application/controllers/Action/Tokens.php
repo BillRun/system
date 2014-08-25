@@ -32,7 +32,7 @@ class TokensAction extends Action_Base {
 		$params[$callingNumberCRMConfig['toKey']] = preg_replace($callingNumberCRMConfig['clearRegex'], '', $ndcSn);
 
 		$subscriber = Billrun_Factory::subscriber();
-		$subscriberField = Billrun_Config::getInstance()->getConfigValue('dcb.google.subscriberField');
+		$subscriberField = Billrun_Config::getInstance()->getConfigValue('googledcb.subscriberField');
 		$identities = $subscriber->getSubscribersByParams(array($params), $subscriber->getAvailableFields());
 		if (isset($identities[0]) && $identities[0]->{$subscriberField}) { // to do: change to $subscriber->isValid() once it works
 			$sid = $identities[0]->{$subscriberField};
