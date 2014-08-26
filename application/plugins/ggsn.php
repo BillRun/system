@@ -371,11 +371,11 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 			$smode = unpack('c*', $data);
 			//$timeSaving=intval( $smode[2] & 0x3 );
 			//time zone offset is repesented by multiples of 15 minutes.
-			$quarterOffset = Billrun_Util::bcd_decode($smode[1]);
+			$quarterOffset = Billrun_Util::bcd_decode($smode[1] & 0xF7);
 			if (abs($quarterOffset) <= 52) {//data sanity check less then 13hours  offset
 				$h = str_pad(abs(intval($quarterOffset / 4)), 2, "0", STR_PAD_LEFT); // calc the offset hours
 				$m = str_pad(abs(($quarterOffset % 4) * 15), 2, "0", STR_PAD_LEFT); // calc the offset minutes
-				return (($quarterOffset > 0) ? "+" : "-") . "$h:$m";
+				return ((($smode[1] & 0x8) == 0) ? "+" : "-") . "$h:$m";
 			}
 			//Billrun_Factory::log()->log($data. " : ". print_r($smode,1),Zend_Log::DEBUG );
 			return false;
