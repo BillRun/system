@@ -723,5 +723,14 @@ class Billrun_Util {
 	public static function getHostName() {
 		return function_exists('gethostname') ? gethostname() : false;
 	}
+	
+	/**
+	 * Return the decimal value from the coded binary representation
+	 * @param int $binary
+	 * @return int
+	 */
+	public static function bcd_decode($binary) {
+		return ($binary & 0xF) . ((($binary >> 4) < 10) ? ($binary >> 4) : '' );
+	}
 
 }
