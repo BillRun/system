@@ -123,6 +123,12 @@ class Billrun_Receiver_Ssh extends Billrun_Receiver {
 			    }
 			}
 			
+			// Backup
+			if(!empty($this->backupPaths)) {
+			    $backedTo = $this->backup($fileData['path'], $file, $this->backupPaths);
+			    $fileData['backed_to'] = $backedTo;
+			}
+
 			// Log to DB
 			if ($this->logDB($fileData)) {				
 			    $ret[] = $fileData['path'];
@@ -133,12 +139,6 @@ class Billrun_Receiver_Ssh extends Billrun_Receiver {
 				Billrun_Factory::log()->log("SSH: Deleting file {$file} from remote host ", Zend_Log::INFO);
 				$this->deleteRemote($fileData['path']);
 			    }
-			}
-
-			// Backup
-			if(!empty($this->backupPaths)) {
-			    $backedTo = $this->backup($fileData['path'], $file, $this->backupPaths);
-			    $fileData['backed_to'] = $backedTo;
 			}
 			
 			// Check limit
