@@ -427,6 +427,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 		$update = array(
 			'$set' => array(
 				'start_process_time' => new MongoDate(time()),
+				'start_process_host' => Billrun_Util::getHostName(),
 			),
 		);
 		$options = array(
