@@ -183,6 +183,7 @@ class Generator_Golanxml extends Billrun_Generator {
 				$this->writer->writeElement('SUBSCRIBER_ID', $subscriber['sid']);
 				$this->writer->writeElement('SUBSCRIBER_STATUS', 'REBALANCE');
 				$this->writer->endElement();
+				$this->writer->endElement();
 				continue;
 			}
 			
