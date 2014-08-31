@@ -116,20 +116,28 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	 */
 	public function writeLine($line, $dataKey) {
 		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteLine', array('data' => $line, 'calculator' => $this));
-		$save = array();
+		
+		$save = array(
+			'$set' => array(),
+		);
 		$saveProperties = array_keys(Billrun_Factory::subscriber()->getAvailableFields());
 		foreach ($saveProperties as $p) {
 			if (!is_null($val = $line->get($p, true))) {
 				$save['$set'][$p] = $val;
 			}
 		}
-		$where = array('stamp' => $line['stamp']);
-		Billrun_Factory::db()->linesCollection()->update($where, $save);
-		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteLine', array('data' => $line, 'calculator' => $this));
+
+		if (count($save['$set'])) {
+			$where = array('stamp' => $line['stamp']);
+			Billrun_Factory::db()->linesCollection()->update($where, $save);
+		}
+
 		if (!isset($line['usagev']) || $line['usagev'] === 0) {
 			$this->removeLineFromQueue($line);
 			unset($this->data[$dataKey]);
 		}
+
+		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteLine', array('data' => $line, 'calculator' => $this));
 	}
 
 	/**
