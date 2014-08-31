@@ -182,10 +182,6 @@ abstract class Billrun_Processor extends Billrun_Base {
 				$processedLinesCount = $this->process();
 				if (FALSE !== $processedLinesCount) {
 					$linesCount += $processedLinesCount;
-					$file->collection($log);
-					$file->set('process_hostname', Billrun_Util::getHostName(), true);
-					$file->set('process_time', date(self::base_dateformat), true);
-					$file->save();
 				}
 			}
 		}
@@ -256,7 +252,6 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 */
 	protected function logDB() {
 
-
 		if (!isset($this->data['trailer']) && !isset($this->data['header'])) {
 			Billrun_Factory::log()->log("Billrun_Processor:logDB " . $this->filePath . " no header nor trailer to log", Zend_Log::ERR);
 			return false;
@@ -286,11 +281,13 @@ abstract class Billrun_Processor extends Billrun_Base {
 		if ($current_stamp instanceof Mongodloid_Entity || $current_stamp instanceof Mongodloid_Id) {
 			$resource = $log->findOne($current_stamp);
 			if (!empty($header)) {
-				$resource->set('header', $header);
+				$resource->set('header', $header, true);
 			}
 			if (!empty($trailer)) {
-				$resource->set('trailer', $trailer);
+				$resource->set('trailer', $trailer, true);
 			}
+			$resource->set('process_hostname', Billrun_Util::getHostName(), true);
+			$resource->set('process_time', date(self::base_dateformat), true);
 			return $resource->save($log);
 		} else {
 			// backward compatibility
