@@ -87,7 +87,7 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Pl
 			return FALSE;
 		}
 		$lines = Billrun_Factory::db()->linesCollection();
-		
+		$events =array();
 		//@TODO  switch  these lines  once  you have the time to test it.
 		//$charge_time = new MongoDate($this->get_last_charge_time(true) - date_default_timezone_get() );
 		$charge_time = Billrun_Util::getLastChargeTime(true);
@@ -96,24 +96,28 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Pl
 		$advancedEvents = array();
 		if (isset($this->fraudConfig['groups'])) {
 			foreach ($this->fraudConfig['groups'] as $groupName => $groupIds) {
-				$baseQuery = $this->getBaseAggregateQuery($charge_time, true);
-				if (!empty($groupIds)) {
-					$baseQuery['where']['$match'] = array_merge($baseQuery['where']['$match'], $groupIds);
-				}
-				$advancedEvents = array_merge($advancedEvents, $this->collectFraudEvents($groupName, $groupIds, $baseQuery));
+				$baseQuery = $this->getBaseAggregateQuery($charge_time, $groupName, $groupIds, true);				
+				$advancedEvents = $this->collectFraudEvents($groupName, $groupIds, $baseQuery);
+				
+				
+				//old method
+				Billrun_Factory::log()->log("ggsnPlugin::handlerCollect collecting monthly data exceeders", Zend_Log::DEBUG);
+				$aggregateQuery = array_values($this->getBaseAggregateQuery($charge_time ,$groupName, $groupIds));				
+				$dataExceedersAlerts = $this->detectDataExceeders($lines, $aggregateQuery);
+				Billrun_Factory::log()->log("GGSN plugin of monthly usage fraud found " . count($dataExceedersAlerts) . " ", Zend_Log::INFO);
+				Billrun_Factory::log()->log("ggsnPlugin::handlerCollect collecting hourly data exceeders", Zend_Log::DEBUG);
+				$hourlyDataExceedersAlerts = $this->detectHourlyDataExceeders($lines, $aggregateQuery);
+				Billrun_Factory::log()->log("GGSN plugin of hourly usage fraud found " . count($hourlyDataExceedersAlerts) . " ", Zend_Log::INFO);
+				
+				$events = array_merge($events,$advancedEvents, $dataExceedersAlerts, $hourlyDataExceedersAlerts);
 			}
 		}
 
-		$aggregateQuery = array_values($this->getBaseAggregateQuery($charge_time));
+		
 
-		Billrun_Factory::log()->log("ggsnPlugin::handlerCollect collecting monthly data exceeders", Zend_Log::DEBUG);
-		$dataExceedersAlerts = $this->detectDataExceeders($lines, $aggregateQuery);
-		Billrun_Factory::log()->log("GGSN plugin of monthly usage fraud found " . count($dataExceedersAlerts) . " ", Zend_Log::INFO);
-		Billrun_Factory::log()->log("ggsnPlugin::handlerCollect collecting hourly data exceeders", Zend_Log::DEBUG);
-		$hourlyDataExceedersAlerts = $this->detectHourlyDataExceeders($lines, $aggregateQuery);
-		Billrun_Factory::log()->log("GGSN plugin of hourly usage fraud found " . count($hourlyDataExceedersAlerts) . " ", Zend_Log::INFO);
 
-		return array_merge($advancedEvents, $dataExceedersAlerts, $hourlyDataExceedersAlerts);
+
+		return $events;
 	}
 
 	/**
@@ -245,7 +249,7 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Pl
 	 * @param type $charge_time the charge time of the billrun (records will not be pull before that)
 	 * @return Array containing a standard PHP mongo aggregate query to retrive  ggsn entries by imsi.
 	 */
-	protected function getBaseAggregateQuery($charge_time, $clean = false) {
+	protected function getBaseAggregateQuery($charge_time, $groupName, $groupMatch , $clean = false) {
 		$ret = array(
 			'base_match' => array(
 				'$match' => array(
@@ -253,7 +257,7 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Pl
 				)
 			),
 			'where' => array(
-				'$match' => array(
+				'$match' => array_merge( array(
 					'deposit_stamp' => array('$exists' => false),
 					'event_stamp' => array('$exists' => false),
 					
@@ -265,7 +269,7 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Pl
 //						array('fbc_downlink_volume' => array('$gt' => 0)),
 //						array('fbc_uplink_volume' => array('$gt' => 0))
 //					),
-					),
+					), $groupMatch),
 				),
 			'group' => array(
 				'$group' => array(
@@ -291,7 +295,7 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Pl
 				),
 			),
 			'project' => array(
-				'$project' => array(
+				'$project' => array_merge(array(
 					'download' => 1,
 					'upload' => 1,
 					'usagev' => 1,
@@ -299,7 +303,7 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Pl
 					'imsi' => 1,
 					'msisdn' => 1,
 					'lines_stamps' => 1,
-				),
+				), $this->addToProject( array('group' =>  $groupName,))),
 			),
 		);
 		if (!$clean) {
@@ -307,8 +311,9 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Pl
 				array('urt' => array('$gte' => new MongoDate($charge_time))),
 				array('unified_record_time' => array('$gte' => new MongoDate($charge_time))),
 			);
-			$ret['where']['$match']['sgsn_address'] = array('$regex' => '^(?!62\.90\.|37\.26\.)');
-		}
+			//$ret['where']['$match']['sgsn_address'] = array('$regex' => '^(?!62\.90\.|37\.26\.)');
+		}	
+		
 		return $ret;
 	}
 
