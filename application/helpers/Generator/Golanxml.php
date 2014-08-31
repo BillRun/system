@@ -122,20 +122,33 @@ class Generator_Golanxml extends Billrun_Generator {
 		$invoice_id = $row->get('invoice_id');
 		$invoice_filename = $row['billrun_key'] . '_' . str_pad($row['aid'], 9, '0', STR_PAD_LEFT) . '_' . str_pad($invoice_id, 11, '0', STR_PAD_LEFT) . '.xml';
 		$invoice_file_path = $this->export_directory . '/' . $invoice_filename;
-//		if (!file_exists($invoice_file_path)) {
 		if (!is_writable($this->export_directory)) {
 			Billrun_Factory::log('Couldn\'t create invoice file for account ' . $row['aid'] . ' for billrun ' . $row['billrun_key'], Zend_log::ALERT);
 			return;
 		}
+		$this->writer->openURI($invoice_file_path);
 		$this->writeXML($row, $lines);
+		if (!$this->validateXml($invoice_file_path)) {
+			Billrun_Factory::log('Xml file is not valid: ' . $invoice_file_path, Zend_log::ALERT);
+		}
 		$this->setFileStamp($row, $invoice_filename);
 		Billrun_Factory::log()->log("invoice file " . $invoice_filename . " created for account " . $row->get('aid'), Zend_Log::INFO);
-//		} else {
-//			Billrun_Factory::log()->log('Skipping filename ' . $invoice_filename, Zend_Log::INFO);
-//		}
-//		$this->addRowToCsv($invoice_id, $row->get('aid'), $total, $total_ilds);
 	}
 
+	/**
+	 * method to validate xml file content as valid xml standard
+	 * 
+	 * @param string $file_path xml file path on disk
+	 * 
+	 * @return boolean true if xml valid, else false
+	 */
+	protected function validateXml($file_path) {
+		$xml = XMLReader::open($file_path);
+		// The validate parser option must be enabled for 
+		// this method to work properly
+		$xml->setParserProperty(XMLReader::VALIDATE, true);
+		return $xml->isValid();
+	}
 	/**
 	 * receives a billrun document (account invoice)
 	 * @param Mongodloid_Entity $row
