@@ -161,7 +161,7 @@ class LinesModel extends TableModel {
 	}
 
 	public function getFilterFields() {
-		$months = 6;
+		$months = 12;
 		$billruns = array();
 		$timestamp = time();
 		for ($i = 0; $i < $months; $i++) {
@@ -199,7 +199,7 @@ class LinesModel extends TableModel {
 				'input_type' => 'date',
 				'comparison' => '$gte',
 				'display' => 'From',
-				'default' => (new Zend_Date(strtotime('2013-01-01'), null, new Zend_Locale('he_IL')))->toString('YYYY-MM-dd HH:mm:ss'),
+				'default' => (new Zend_Date(strtotime('2 months ago'), null, new Zend_Locale('he_IL')))->toString('YYYY-MM-dd HH:mm:ss'),
 			),
 			'to' => array(
 				'key' => 'to',

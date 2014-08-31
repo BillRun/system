@@ -103,7 +103,10 @@ trait Billrun_Traits_FileActions {
 		);
 
 		$update = array(
-			'$set' => array('fetching_time' => new MongoDate(time())),
+			'$set' => array(
+				'fetching_time' => new MongoDate(time()),
+				'fetching_host' => Billrun_Util::getHostName(),
+			),
 			'$setOnInsert' => $logData
 		);
 		try {
