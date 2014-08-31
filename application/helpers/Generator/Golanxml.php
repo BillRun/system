@@ -173,6 +173,19 @@ class Generator_Golanxml extends Billrun_Generator {
 			} else {
 				$current_plan = null;
 			}
+			
+			// TODO: make it more generic
+			if ($this instanceof Generator_Balance &&
+				!Billrun_Factory::db()->rebalance_queueCollection()->query(array('sid' => $subscriber['sid']), array('sid' => 1))
+				->cursor()->current()->isEmpty()) {
+				$this->writer->startElement('SUBSCRIBER_INF');
+				$this->writer->startElement('SUBSCRIBER_DETAILS');
+				$this->writer->writeElement('SUBSCRIBER_ID', $subscriber['sid']);
+				$this->writer->writeElement('SUBSCRIBER_STATUS', 'REBALANCE');
+				$this->writer->endElement();
+				continue;
+			}
+			
 			if ($subscriber['subscriber_status'] == 'open' && (!is_array($subscriber_flat_costs) || empty($subscriber_flat_costs))) {
 				Billrun_Factory::log('Missing flat costs for subscriber ' . $sid, Zend_Log::INFO);
 			}
