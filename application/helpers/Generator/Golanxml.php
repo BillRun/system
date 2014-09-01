@@ -50,12 +50,19 @@ class Generator_Golanxml extends Billrun_Generator {
 	protected $writer = null;
 
 	/**
+	 *
+	 * @var XMLReader
+	 */
+	protected $reader = null;
+
+	/**
 	 * fields to filter when pulling account lines
 	 * @var array 
 	 */
 	protected $filter_fields;
 
 	public function __construct($options) {
+		libxml_use_internal_errors(TRUE);
 		parent::__construct($options);
 		if (isset($options['page'])) {
 			$this->offset = intval($options['page']);
@@ -76,6 +83,7 @@ class Generator_Golanxml extends Billrun_Generator {
 
 		$this->filter_fields = array_map("intval", Billrun_Factory::config()->getConfigValue('billrun.filter_fields', array()));
 		$this->writer = new XMLWriter(); //create a new xmlwriter object
+		$this->reader = new XMLReader(); //create a new xmlwriter object
 	}
 
 	public function load() {
@@ -143,12 +151,15 @@ class Generator_Golanxml extends Billrun_Generator {
 	 * @return boolean true if xml valid, else false
 	 */
 	protected function validateXml($file_path) {
-		$xml = XMLReader::open($file_path);
-		// The validate parser option must be enabled for 
-		// this method to work properly
-		$xml->setParserProperty(XMLReader::VALIDATE, true);
-		return $xml->isValid();
+		if (!$this->reader->open($file_path)) {
+			return FALSE;
+		}
+		while ($this->reader->read()) {
+			
+		}
+		return count(libxml_get_errors()) == 0;
 	}
+
 	/**
 	 * receives a billrun document (account invoice)
 	 * @param Mongodloid_Entity $row
@@ -186,11 +197,11 @@ class Generator_Golanxml extends Billrun_Generator {
 			} else {
 				$current_plan = null;
 			}
-			
+
 			// TODO: make it more generic
 			if ($this instanceof Generator_Balance &&
-				!Billrun_Factory::db()->rebalance_queueCollection()->query(array('sid' => $subscriber['sid']), array('sid' => 1))
-				->cursor()->current()->isEmpty()) {
+					!Billrun_Factory::db()->rebalance_queueCollection()->query(array('sid' => $subscriber['sid']), array('sid' => 1))
+							->cursor()->current()->isEmpty()) {
 				$this->writer->startElement('SUBSCRIBER_INF');
 				$this->writer->startElement('SUBSCRIBER_DETAILS');
 				$this->writer->writeElement('SUBSCRIBER_ID', $subscriber['sid']);
@@ -199,7 +210,7 @@ class Generator_Golanxml extends Billrun_Generator {
 				$this->writer->endElement();
 				continue;
 			}
-			
+
 			if ($subscriber['subscriber_status'] == 'open' && (!is_array($subscriber_flat_costs) || empty($subscriber_flat_costs))) {
 				Billrun_Factory::log('Missing flat costs for subscriber ' . $sid, Zend_Log::INFO);
 			}
@@ -1390,6 +1401,10 @@ EOI;
 
 	protected function getInvoiceId($row) {
 		return $row['invoice_id'];
+	}
+
+	public function __destruct() {
+		libxml_use_internal_errors(FALSE);
 	}
 
 }
