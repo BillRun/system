@@ -29,8 +29,12 @@ class Billrun_Processor_BinaryExternal extends Billrun_Processor_Base_Binary {
 			Billrun_Factory::log()->log('Resource is not configured well', Zend_Log::ERR);
 			return FALSE;
 		}
-
-		return Billrun_Factory::chain()->trigger('processData', array($this->getType(), $this->fileHandler, &$this));
+		try {
+			return Billrun_Factory::chain()->trigger('processData', array($this->getType(), $this->fileHandler, &$this));
+		} catch( Exception $e) {
+			Billrun_Factory::log("Got exception :".$e->getMessage(). " while processing file {$this->filePath}",Zend_Log::ERR);
+			return FALSE;
+		}
 	}
 
 	/**

@@ -309,6 +309,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 	protected function store() {
 		if (!isset($this->data['data'])) {
 			// raise error
+			Billrun_Factory::log()->log('Got empty data from file  : ' . basename($this->filePath) , Zend_Log::ERR);
 			return false;
 		}
 
