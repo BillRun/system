@@ -17,11 +17,19 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 	 * @param type $options
 	 */
 	protected $excludedPLMNs = array("GRCPF","ESPAT","ESPVV","TURTS");
+	
+	
+	/**
+	 * Rates (the contain prefixes) that should not be alerted upon
+	 * @param type $options
+	 */
+	protected $freeRates = array();
 		
 	public function __construct($options = array()) {
 		parent::__construct($options);
 		$this->outOfSequenceAlertLevel =  Billrun_Factory::config()->getConfigValue('nrtrde.receiver.out_of_seq_log_level',$this->outOfSequenceAlertLevel);
 		$this->excludedPLMNs =  Billrun_Factory::config()->getConfigValue('nrtrde.fraud.exclude_plmns',$this->excludedPLMNs);
+		$this->freeRates = Billrun_Factory::config()->getConfigValue('nrtrde.fraud.free_rates',$this->freeRates);
 	}
 
 	public function beforeFTPReceive($receiver, $hostname) {
@@ -171,18 +179,19 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 		}
 		$lines = Billrun_Factory::db()->linesCollection();
 		$charge_time = Billrun_Util::getLastChargeTime(true); // true means return timestamp
-
+		$freePrefixes = (array) call_user_func_array('array_merge',$this->loadRatesPrefixes($this->freeRates));
 		// TODO: take it to config ? how to handle variables ?
 		$base_match = array(
 			'$match' => array(
 				'source' => 'nrtrde',
 				'unified_record_time' => array('$gte' => new MongoDate($charge_time)),
+				'connectedNumber' => array('$nin' => $freePrefixes),
 			)
 		);
 		$where = array(
 			'$match' => array(
 				'record_type' => 'MOC',
-				'connectedNumber' => array('$regex' => '^972'),				
+				'connectedNumber' => array('$regex' => '^972'),
 				'event_stamp' => array('$exists' => false),
 				'deposit_stamp' => array('$exists' => false),
 				'callEventDurationRound' => array('$gt' => 0), // not sms
@@ -315,6 +324,23 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 		Billrun_Factory::log()->log("NRTRDE plugin locate " . count($ret) . " items as fraud events", Zend_Log::INFO);
 
 		return $ret;
+	}
+	
+	/**
+	 * load prefixes from the billing
+	 */
+	protected function loadRatesPrefixes($keys) {
+		$transaltion = array();
+
+		foreach ($keys as $key => $rateKey) {			
+				$rate = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('billing.db'))->ratesCollection()->query(array('key' => $rateKey))->cursor()->limit(1)->current();
+				if ($rate && isset($rate['params']['prefix'])) {
+					foreach ($rate['params']['prefix'] as $value) {
+						$transaltion[$key][] = $value;
+					}
+			}
+		}
+		return (array) $transaltion;
 	}
 
 	protected function normalize(&$ret, $items, $field) {
