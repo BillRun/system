@@ -33,7 +33,7 @@ class Dcb_Soap_Handler {
 	protected $config;
 
 	public function __construct() {
-		$this->config = Billrun_Factory::config()->getConfigValue('dcb.google');
+		$this->config = Billrun_Factory::config()->getConfigValue('googledcb');
 		$this->subscriber = Billrun_Factory::subscriber();
 	}
 

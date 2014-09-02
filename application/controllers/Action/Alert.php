@@ -36,7 +36,7 @@ class AlertAction extends Action_Base {
 		if ($handler) {
 			$handler->execute();
 		} else {
-			$this->_controller->addOutput("Aggregator cannot be loaded");
+			$this->_controller->addOutput("Handler cannot be loaded");
 		}
 	}
 

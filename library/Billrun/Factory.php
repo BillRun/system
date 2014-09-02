@@ -69,7 +69,7 @@ class Billrun_Factory {
 	 * @var Billrun Balance
 	 */
 	protected static $balance = null;
-	
+
 	/**
 	 * Tokens instance
 	 * 
@@ -97,14 +97,14 @@ class Billrun_Factory {
 	 * @var Billrun Smser
 	 */
 	protected static $smser = null;
-	
+
 	/**
 	 * Mailer instance
 	 * 
 	 * @var Billrun Mail
 	 */
 	protected static $mailer = null;
-	
+
 	/**
 	 * Users container
 	 * 
@@ -118,6 +118,14 @@ class Billrun_Factory {
 	 * @var Zend_Auth
 	 */
 	protected static $auth;
+
+	/**
+	 * Smpp client instance
+	 * 
+	 * @var Billrun Smpp client
+	 */
+	protected static $smppClient = null;
+
 	/**
 	 * method to retrieve the log instance
 	 * 
@@ -214,18 +222,18 @@ class Billrun_Factory {
 	 */
 	static public function mailer() {
 		if (!isset(self::$mailer)) {
-		try {
+			try {
 				self::$mailer = new Zend_Mail();
-			//TODO set common configuration.
-			$fromName = Billrun_Factory::config()->getConfigValue('mailer.from.address', 'no-reply');
-			$fromAddress = Billrun_Factory::config()->getConfigValue('mailer.from.name', 'Billrun');
+				//TODO set common configuration.
+				$fromName = Billrun_Factory::config()->getConfigValue('mailer.from.address', 'no-reply');
+				$fromAddress = Billrun_Factory::config()->getConfigValue('mailer.from.name', 'Billrun');
 				self::$mailer->setFrom($fromName, $fromAddress);
-			//$mail->setDefaultTransport($transport);
-		} catch (Exception $e) {
-			self::log("Can't instantiat mail object. Please check your settings", Zend_Log::ALERT);
-			return false;
+				//$mail->setDefaultTransport($transport);
+			} catch (Exception $e) {
+				self::log("Can't instantiat mail object. Please check your settings", Zend_Log::ALERT);
+				return false;
+			}
 		}
-	}
 		return self::$mailer;
 	}
 
@@ -305,7 +313,7 @@ class Billrun_Factory {
 		$balanceSettings = self::config()->getConfigValue('balance', array());
 		return new Billrun_Balance(array_merge($balanceSettings, $params));
 	}
-	
+
 	/**
 	 * method to retrieve a tokens instance
 	 * 
@@ -368,18 +376,18 @@ class Billrun_Factory {
 		if (is_null($username)) {
 			$username = Billrun_Factory::auth()->getIdentity();
 		}
-		
+
 		if (empty($username)) {
 			return FALSE;
 		}
-		
+
 		if (!isset(self::$users[$username])) {
 			$entity = Billrun_Factory::db()->usersCollection()->query(array('username' => $username))->cursor()->current();
 			self::$users[$username] = new Billrun_User($entity);
 		}
 		return self::$users[$username];
 	}
-	
+
 	public static function auth() {
 		if (!isset(self::$auth)) {
 			self::$auth = Zend_Auth::getInstance()->setStorage(new Zend_Auth_Storage_Yaf());
@@ -387,5 +395,15 @@ class Billrun_Factory {
 		return self::$auth;
 	}
 
+	public static function smpp_client($options) {
+		if (empty($options)) {
+			return FALSE;
+		}
+		$stamp = Billrun_Util::generateArrayStamp($options);
+		if (!isset(self::$smppClient[$stamp])) {
+			self::$smppClient[$stamp] = new Billrun_SmppClient($options);
+		}
+		return self::$smppClient[$stamp];
+	}
 
 }

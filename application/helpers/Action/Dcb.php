@@ -19,9 +19,9 @@ class DcbAction extends Action_Base {
 	protected $billrunPemPath;
 
 	public function init() {
-		$this->wsdlPath = Billrun_Factory::config()->getConfigValue('dcb.google.wsdl');
-		$this->externalCerts = Billrun_Factory::config()->getConfigValue('dcb.google.externalCerts');
-		$this->billrunPemPath = Billrun_Factory::config()->getConfigValue('dcb.google.billrunPemPath');
+		$this->wsdlPath = Billrun_Factory::config()->getConfigValue('googledcb.wsdl');
+		$this->externalCerts = Billrun_Factory::config()->getConfigValue('googledcb.externalCerts');
+		$this->billrunPemPath = Billrun_Factory::config()->getConfigValue('googledcb.billrunPemPath');
 	}
 
 	/**

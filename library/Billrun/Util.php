@@ -217,10 +217,10 @@ class Billrun_Util {
 		$mongo_date = new MongoDate($timestamp);
 		$rates_coll = Billrun_Factory::db()->ratesCollection();
 		return $rates_coll
-				->query('key', 'VAT')
-				->lessEq('from', $mongo_date)
-				->greaterEq('to', $mongo_date)
-				->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'))->current()->get('vat');
+						->query('key', 'VAT')
+						->lessEq('from', $mongo_date)
+						->greaterEq('to', $mongo_date)
+						->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'))->current()->get('vat');
 	}
 
 	public static function isTimestamp($timestamp) {
@@ -260,8 +260,8 @@ class Billrun_Util {
 		if ($unit == 'B') {
 			$decimals = 0;
 		} else if (!is_numeric($decimals) || $decimals < 0) {
-		// If decimals is not numeric or decimals is less than 0 
-		// then set default value
+			// If decimals is not numeric or decimals is less than 0 
+			// then set default value
 			$decimals = 2;
 		}
 
@@ -275,7 +275,7 @@ class Billrun_Util {
 
 		return 0;
 	}
-	
+
 	/**
 	 * convert seconds to requested format
 	 * 
@@ -288,7 +288,7 @@ class Billrun_Util {
 	 * 3400 sec => X minutes
 	 */
 	public static function durationFormat($seconds) {
-		if ($seconds> 3600) {
+		if ($seconds > 3600) {
 			return gmdate('H:i:s', $seconds);
 		}
 		return gmdate('i:s', $seconds);
@@ -310,8 +310,8 @@ class Billrun_Util {
 
 	public static function sendMail($subject, $body, $recipients, $attachments = array()) {
 		$mailer = Billrun_Factory::mailer()->
-			setSubject($subject)->
-			setBodyText($body);
+				setSubject($subject)->
+				setBodyText($body);
 		//add attachments
 		foreach ($attachments as $attachment) {
 			$mailer->addAttachment($attachment);
@@ -324,7 +324,7 @@ class Billrun_Util {
 		//sen email
 		return $mailer->send();
 	}
-	
+
 	/**
 	 * method to fork process of PHP-Web (Apache/Nginx/FPM)
 	 * 
@@ -339,14 +339,12 @@ class Billrun_Util {
 		if ($sleep) {
 			$params['SLEEP'] = (int) $sleep;
 		}
-		$forkUrl = self::getForkUrl();
 		$querystring = http_build_query($params);
 		if (!$post) {
-			$cmd = "wget -O /dev/null '" . $forkUrl . $url . "?" . $querystring .
-				"' > /dev/null & ";
+			$cmd = "wget -qO /dev/null '" . $url . "?" . $querystring . "' > /dev/null & ";
 		} else {
-			$cmd = "wget -O /dev/null '" . $forkUrl . $url . "' --post-data '" . $querystring .
-				"' > /dev/null & ";
+			$post_data = http_build_query($post);
+			$cmd = "wget -qO /dev/null '" . $url . "?" . $querystring . "' --post-data '" . $post_data . "' > /dev/null & ";
 		}
 
 //		echo $cmd . "<br />" . PHP_EOL;
@@ -354,7 +352,6 @@ class Billrun_Util {
 			error_log("Can't fork PHP process");
 			return false;
 		}
-		usleep(500000);
 		return true;
 	}
 
@@ -367,7 +364,7 @@ class Billrun_Util {
 	 * @return Boolean true on success else FALSE
 	 */
 	public static function forkProcessCli($cmd) {
-		$syscmd = $cmd ." > /dev/null & ";
+		$syscmd = $cmd . " > /dev/null & ";
 		if (system($syscmd) === FALSE) {
 			error_log("Can't fork PHP process");
 			return false;
@@ -409,17 +406,17 @@ class Billrun_Util {
 	 * @return string phone number in msisdn format
 	 */
 	public static function msisdn($phoneNumber, $defaultPrefix = null, $cleanLeadingZeros = true) {
-		
+
 		if (empty($phoneNumber)) {
 			return $phoneNumber;
 		}
-		
+
 		settype($phoneNumber, 'string');
-		
+
 		if ($cleanLeadingZeros) {
 			$phoneNumber = self::cleanLeadingZeros($phoneNumber);
 		}
-		
+
 		if (self::isIntlNumber($phoneNumber) || strlen($phoneNumber) > 12) { // len>15 means not msisdn
 			return $phoneNumber;
 		}
@@ -430,7 +427,7 @@ class Billrun_Util {
 
 		return $defaultPrefix . $phoneNumber;
 	}
-	
+
 	/**
 	 * method to check if phone number is intl number or local number base on msisdn standard
 	 * 
@@ -440,15 +437,15 @@ class Billrun_Util {
 	 */
 	public static function isIntlNumber($phoneNumber) {
 		$cleanNumber = self::cleanLeadingZeros(self::cleanNumber($phoneNumber));
-		
+
 		//CCNDCSN - First part USA; second non-USA
 		if (preg_match("/^(1[2-9]{1}[0-9]{2}|[2-9]{1}[0-9]{1,2}[1-9]{1}[0-9]{0,2})[0-9]{7,9}$/", $cleanNumber)) {
 			return true;
 		}
-		
+
 		return false;
 	}
-	
+
 	/**
 	 * method to clean phone number and leave only numeric characters
 	 * 
@@ -459,7 +456,7 @@ class Billrun_Util {
 	public static function cleanNumber($phoneNumber) {
 		return preg_replace("/[^0-9]/", "", $phoneNumber);
 	}
-	
+
 	/**
 	 * method to clean leading zero of phone number
 	 * 
@@ -479,7 +476,7 @@ class Billrun_Util {
 		Billrun_Factory::log()->removeWriters('Mail');
 		Billrun_Factory::log()->addWriters('Mail');
 	}
-	
+
 	/**
 	 * method to parse credit row from API
 	 * 
@@ -640,19 +637,18 @@ class Billrun_Util {
 	 */
 	public static function arrayToMongoQuery($array) {
 		$query = array();
-		foreach($array as $key => $val) {			
-			if(is_array($val) && strpos($key,'$') !== 0) {
+		foreach ($array as $key => $val) {
+			if (is_array($val) && strpos($key, '$') !== 0) {
 				foreach (self::arrayToMongoQuery($val) as $subKey => $subValue) {
-					if(strpos($subKey,'$') === 0) {
+					if (strpos($subKey, '$') === 0) {
 						$query[$key][$subKey] = $subValue;
 					} else {
-						$query[$key.".".$subKey] = $subValue;
+						$query[$key . "." . $subKey] = $subValue;
 					}
 				}
 			} else {
 				$query[$key] = $val;
 			}
-			
 		}
 		return $query;
 	}
@@ -682,13 +678,13 @@ class Billrun_Util {
 		fwrite($fd, json_encode($row) . PHP_EOL);
 		fclose($fd);
 	}
-	
+
 	public static function logFailedResetLines($sids, $billrun_key) {
 		$fd = fopen(Billrun_Factory::config()->getConfigValue('resetlines.failed_sids_file', './files/failed_resetlines.json'), 'a+');
 		fwrite($fd, json_encode(array('sids' => $sids, 'billrun_key' => $billrun_key)) . PHP_EOL);
 		fclose($fd);
 	}
-	
+
 	/**
 	 * Get an array of prefixes for a given.
 	 * @param string $str the number to get prefixes to.
@@ -701,16 +697,16 @@ class Billrun_Util {
 		}
 		return $prefixes;
 	}
-	
+
 	/**
 	 * Get a string and encode it.
 	 * @param string $plainText the text to encode.
 	 * @return string encoded text.
 	 */
 	static public function hash($plainText) {
-	    return hash('sha256', Billrun_Factory::config()->getConfigValue('secret') . $plainText);
+		return hash('sha256', Billrun_Factory::config()->getConfigValue('secret') . $plainText);
 	}
-	
+
 	/**
 	 * Send curl request
 	 * 
@@ -720,59 +716,63 @@ class Billrun_Util {
 	 * 
 	 * @return array or FALSE on failure
 	 */
-	public static function sendRequest($url, array $data = array(), array $options = array()) {
-	    if (empty($url)) {
-		Billrun_Factory::log()->log("Bad parameters: url - " . $url . " method: " . $method, Zend_Log::ERR);
-		return FALSE;
-	    }
-
-	    if (!isset($options['method'])) {
-		$options['method'] = Zend_Http_Client::POST;
-	    }
-	    if (!isset($options['adapterName'])) {
-		$options['adapterName'] = 'curl';
-	    }
-	    if (!isset($options['headers']) || !is_array($options['headers'])) {
-		$options['headers'] = array('Accept-encoding' => 'deflate');
-	    }
-	    if (!isset($options['onlyBody'])) {
-		$options['onlyBody'] = true;
-	    }
-
-	    $options['method'] = strtoupper($options['method']);
-	    if (!defined("Zend_Http_Client::" . $options['method'])) {
-		return FALSE;
-	    }
-
-	    $zendMethod = constant("Zend_Http_Client::" . $options['method']);
-	    $adapaterClassName = 'Zend_Http_Client_Adapter_' . ucfirst($options['adapterName']);
-	    $curl = new $adapaterClassName();
-	    $client = new Zend_Http_Client($url);
-	    $client->setHeaders($options['headers']);
-	    $client->setAdapter($curl);
-	    $client->setMethod($options['method']);
-
-	    if (!empty($data)) {
-		if ($zendMethod == Zend_Http_Client::POST) {
-		    $client->setParameterPost($data);
-		} else {
-		    $client->setParameterGet($data);
+	public static function sendRequest($url, array $data = array(), array $options = array(), $timeout = null) {
+		if (empty($url)) {
+			Billrun_Factory::log()->log("Bad parameters: url - " . $url . " method: " . $method, Zend_Log::ERR);
+			return FALSE;
 		}
-	    }
 
-	    $response = $client->request();
+		if (!isset($options['method'])) {
+			$options['method'] = Zend_Http_Client::POST;
+		}
+		if (!isset($options['adapterName'])) {
+			$options['adapterName'] = 'curl';
+		}
+		if (!isset($options['headers']) || !is_array($options['headers'])) {
+			$options['headers'] = array('Accept-encoding' => 'deflate');
+		}
+		if (!isset($options['onlyBody'])) {
+			$options['onlyBody'] = true;
+		}
 
-	    if (!$options['onlyBody']) {
-		return $response;
-	    }
+		$options['method'] = strtoupper($options['method']);
+		if (!defined("Zend_Http_Client::" . $options['method'])) {
+			return FALSE;
+		}
 
-	    $output = $response->getBody();
+		$zendMethod = constant("Zend_Http_Client::" . $options['method']);
+		$adapaterClassName = 'Zend_Http_Client_Adapter_' . ucfirst($options['adapterName']);
+		$curl = new $adapaterClassName();
+		if (!is_null($timeout) && $curl instanceof Zend_Http_Client_Adapter_Curl) {
+			$curl->setCurlOption(CURLOPT_TIMEOUT, $timeout);
+		}
+		$client = new Zend_Http_Client($url);
+		$client->setHeaders($options['headers']);
+		$client->setAdapter($curl);
+		$client->setMethod($options['method']);
 
-	    if (empty($output)) {
-		Billrun_Factory::log()->log("No output", Zend_Log::NOTICE);
-		return FALSE;
-	    }
+		if (!empty($data)) {
+			if ($zendMethod == Zend_Http_Client::POST) {
+				$client->setParameterPost($data);
+			} else {
+				$client->setParameterGet($data);
+			}
+		}
 
-	    return $output;
+		$response = $client->request();
+
+		if (!$options['onlyBody']) {
+			return $response;
+		}
+
+		$output = $response->getBody();
+
+		if (empty($output)) {
+			Billrun_Factory::log()->log("No output", Zend_Log::NOTICE);
+			return FALSE;
+		}
+
+		return $output;
 	}
+
 }

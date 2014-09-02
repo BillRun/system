@@ -144,7 +144,7 @@ trait Billrun_Traits_FileActions {
 	 */
 	protected function backup($filePath, $filename, $backupPaths, $retrievedHostname = false, $move = false) {
 		$backupPaths = is_array($backupPaths) ? $backupPaths : array($backupPaths);
-		
+
 		$seqData = $this->getFilenameData($filename,$this->getType());
 		$backedTo = array();
 		for ($i = 0; $i < count($backupPaths); $i++) {
