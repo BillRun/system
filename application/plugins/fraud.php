@@ -451,7 +451,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		if ($processor->getType() != "ggsn") {
 			return;
 		}
-		Billrun_Factory::log('Plugin fraud beforeProcessorStore', Zend_Log::INFO);
+		Billrun_Factory::log('Plugin fraud afterProcessorStore', Zend_Log::INFO);
 		$runAsync = Billrun_Factory::config()->getConfigValue('fraud.runAsync', 1);
 		if (function_exists("pcntl_fork") && $runAsync && -1 !== ($pid = pcntl_fork())) {
 			if ($pid == 0) {

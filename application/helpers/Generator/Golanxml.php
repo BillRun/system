@@ -50,12 +50,19 @@ class Generator_Golanxml extends Billrun_Generator {
 	protected $writer = null;
 
 	/**
+	 *
+	 * @var XMLReader
+	 */
+	protected $reader = null;
+
+	/**
 	 * fields to filter when pulling account lines
 	 * @var array 
 	 */
 	protected $filter_fields;
 
 	public function __construct($options) {
+		libxml_use_internal_errors(TRUE);
 		parent::__construct($options);
 		if (isset($options['page'])) {
 			$this->offset = intval($options['page']);
@@ -76,6 +83,7 @@ class Generator_Golanxml extends Billrun_Generator {
 
 		$this->filter_fields = array_map("intval", Billrun_Factory::config()->getConfigValue('billrun.filter_fields', array()));
 		$this->writer = new XMLWriter(); //create a new xmlwriter object
+		$this->reader = new XMLReader(); //create a new xmlwriter object
 	}
 
 	public function load() {
@@ -122,19 +130,34 @@ class Generator_Golanxml extends Billrun_Generator {
 		$invoice_id = $row->get('invoice_id');
 		$invoice_filename = $row['billrun_key'] . '_' . str_pad($row['aid'], 9, '0', STR_PAD_LEFT) . '_' . str_pad($invoice_id, 11, '0', STR_PAD_LEFT) . '.xml';
 		$invoice_file_path = $this->export_directory . '/' . $invoice_filename;
-//		if (!file_exists($invoice_file_path)) {
-		if (!is_writable($invoice_file_path)) {
+		if (!is_writable($this->export_directory)) {
 			Billrun_Factory::log('Couldn\'t create invoice file for account ' . $row['aid'] . ' for billrun ' . $row['billrun_key'], Zend_log::ALERT);
 			return;
 		}
 		$this->writer->openURI($invoice_file_path);
 		$this->writeXML($row, $lines);
+		if (!$this->validateXml($invoice_file_path)) {
+			Billrun_Factory::log('Xml file is not valid: ' . $invoice_file_path, Zend_log::ALERT);
+		}
 		$this->setFileStamp($row, $invoice_filename);
 		Billrun_Factory::log()->log("invoice file " . $invoice_filename . " created for account " . $row->get('aid'), Zend_Log::INFO);
-//		} else {
-//			Billrun_Factory::log()->log('Skipping filename ' . $invoice_filename, Zend_Log::INFO);
-//		}
-//		$this->addRowToCsv($invoice_id, $row->get('aid'), $total, $total_ilds);
+	}
+
+	/**
+	 * method to validate xml file content as valid xml standard
+	 * 
+	 * @param string $file_path xml file path on disk
+	 * 
+	 * @return boolean true if xml valid, else false
+	 */
+	protected function validateXml($file_path) {
+		if (!$this->reader->open($file_path)) {
+			return FALSE;
+		}
+		while ($this->reader->read()) {
+			
+		}
+		return count(libxml_get_errors()) == 0;
 	}
 
 	/**
@@ -174,6 +197,20 @@ class Generator_Golanxml extends Billrun_Generator {
 			} else {
 				$current_plan = null;
 			}
+
+			// TODO: make it more generic
+			if ($this instanceof Generator_Balance &&
+					!Billrun_Factory::db()->rebalance_queueCollection()->query(array('sid' => $subscriber['sid']), array('sid' => 1))
+							->cursor()->current()->isEmpty()) {
+				$this->writer->startElement('SUBSCRIBER_INF');
+				$this->writer->startElement('SUBSCRIBER_DETAILS');
+				$this->writer->writeElement('SUBSCRIBER_ID', $subscriber['sid']);
+				$this->writer->writeElement('SUBSCRIBER_STATUS', 'REBALANCE');
+				$this->writer->endElement();
+				$this->writer->endElement();
+				continue;
+			}
+
 			if ($subscriber['subscriber_status'] == 'open' && (!is_array($subscriber_flat_costs) || empty($subscriber_flat_costs))) {
 				Billrun_Factory::log('Missing flat costs for subscriber ' . $sid, Zend_Log::INFO);
 			}
@@ -1364,6 +1401,10 @@ EOI;
 
 	protected function getInvoiceId($row) {
 		return $row['invoice_id'];
+	}
+
+	public function __destruct() {
+		libxml_use_internal_errors(FALSE);
 	}
 
 }
