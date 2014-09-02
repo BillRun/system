@@ -71,6 +71,13 @@ class Generator_Balance extends Generator_Golanxml {
 		$billrun = Billrun_Factory::billrun($billrun_params);
 		$manual_lines = array();
 		foreach ($this->account_data as $subscriber) {
+			if (!Billrun_Factory::db()->rebalance_queueCollection()->query(array('sid' => $subscriber->sid), array('sid' => 1))
+							->cursor()->current()->isEmpty()) {
+				$subscriber_status = "REBALANCE";
+				$billrun->addSubscriber($subscriber, $subscriber_status);
+				continue;
+			}
+
 			if ($billrun->subscriberExists($subscriber->sid)) {
 				Billrun_Factory::log()->log("Billrun " . $this->stamp . " already exists for subscriber " . $subscriber->sid, Zend_Log::ALERT);
 				continue;
