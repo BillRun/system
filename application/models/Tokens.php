@@ -23,12 +23,12 @@ class TokensModel extends TableModel {
 
 	public function storeData($GUT, $OUT, $sid) {
 		$entity = new Mongodloid_Entity(array(
+			'creation_date' => new MongoDate(),
 			'GUT' => $GUT,
 			'OUT' => $OUT,
 			'sid' => $sid,
 		));
-		$tokensCollection = Billrun_Factory::db()->tokensCollection();
-		return $entity->save($tokensCollection, 1);
+		return $entity->save($this->collection, 1);
 	}
 
 }
