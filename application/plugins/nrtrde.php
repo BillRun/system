@@ -1,8 +1,22 @@
 <?php
 
+/**
+ * @package         Billing
+ * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
+ * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ */
+
+/**
+ * Fraud NRTRDE plugin
+ *
+ * @package  Application
+ * @subpackage Plugins
+ * @since    0.5
+ */
 class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 
-	use Billrun_Traits_FileSequenceChecking;
+	use Billrun_Traits_FileSequenceChecking,
+	 Billrun_Traits_FraudAggregation;
 	/**
 	 * plugin name
 	 *
@@ -12,24 +26,20 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 
 	const time_format = 'YmdHis';
 	
-	/**
-	 * PLMNs to exclude from events
-	 * @param type $options
-	 */
-	protected $excludedPLMNs = array("GRCPF","ESPAT","ESPVV","TURTS");
-	
+
 	
 	/**
 	 * Rates (the contain prefixes) that should not be alerted upon
 	 * @param type $options
 	 */
 	protected $freeRates = array();
-		
+
 	public function __construct($options = array()) {
 		parent::__construct($options);
 		$this->outOfSequenceAlertLevel =  Billrun_Factory::config()->getConfigValue('nrtrde.receiver.out_of_seq_log_level',$this->outOfSequenceAlertLevel);
-		$this->excludedPLMNs =  Billrun_Factory::config()->getConfigValue('nrtrde.fraud.exclude_plmns',$this->excludedPLMNs);
 		$this->freeRates = Billrun_Factory::config()->getConfigValue('nrtrde.fraud.free_rates',$this->freeRates);
+		$this->initFraudAggregation();
+		$this->loadPlmnToPrefixes();
 	}
 
 	public function beforeFTPReceive($receiver, $hostname) {
@@ -111,6 +121,7 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 			// add record opening time UTC aligned
 			if (isset($row['callEventStartTimeStamp'])) {
 				$row['unified_record_time'] = new MongoDate(Billrun_Util::dateTimeConvertShortToIso($row['callEventStartTimeStamp'], $row['utcTimeOffset']));
+				$row['urt'] = new MongoDate(Billrun_Util::dateTimeConvertShortToIso($row['callEventStartTimeStamp'], $row['utcTimeOffset']));
 			}
 		}
 	}
@@ -177,25 +188,94 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 		if( $options['type'] != 'roaming') { 
 			return FALSE; 
 		}
+		$ret = array();
+		foreach ($this->fraudConfig['groups'] as $groupName => $groupIds) {
+			$ret = array_merge($ret, $this->collectForGroup($groupName, $groupIds), $this->collectAdvanceEvents($groupName, $groupIds));
+		}
+
+		Billrun_Factory::log()->log("NRTRDE plugin locate " . count($ret) . " items as fraud events", Zend_Log::INFO);
+
+		return $ret;
+	}
+
+
+	protected function postProcessEventResults(&$allEventsResults, &$eventResults, $eventQuery, $ruleName) {
+		$this->normalize($allEventsResults, $eventResults, $eventQuery['name']);
+		return false;
+	}
+
+	protected function prepareRuleQuery($eventQuery, $ruleName) {
+		if (isset($eventQuery['locality'])) {
+			$eventQuery['query'] = array_merge($eventQuery['query'], $this->getPLMNMatchQuery($eventQuery['locality']));
+		}
+		return $eventQuery;
+	}
+
+	/**
+	 * THis  function is used to add local/none-local checks to  aggregation query.
+	 * @param type $local shold the check be for local usage or none local usage
+	 * @return array  the  query to add to the aggregation query.
+	 */
+	protected function getPLMNMatchQuery($local = false) {
+		$queryLogic = $local ? '$or' : '$and';
+		$retQuery = $local ? array($queryLogic => array(array('connectedNumber' => array('$regex' => "^972")), array('$where' => "this.connectedNumber.length <= 8"))) : array($queryLogic => array(array('connectedNumber' => array('$regex' => "/^(?!972)/"))));
+		foreach ($this->plmnTransaltion as $plmn => $regxes) {
+			foreach ($regxes as $regx) {
+				$retQuery[$queryLogic][] = array('sender' => $plmn, 'connectedNumber' => array('$regex' => ($local ? "^$regx" : "^(?!$regx)")));
+			}
+		}
+
+		return $retQuery;
+	}
+
+	/**
+	 * load prefixes from the billing
+	 */
+	protected function loadPlmnToPrefixes() {
+		$this->plmnTransaltion = array();
+
+		foreach ($this->fraudConfig['plmn'] as $key => $rateKeys) {
+			foreach ($rateKeys as $rateKey) {
+				$rate = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('billing.db'))->ratesCollection()->query(array('key' => $rateKey))->cursor()->limit(1)->current();
+				if ($rate && isset($rate['params']['prefix'])) {
+					foreach ($rate['params']['prefix'] as $value) {
+						$this->plmnTransaltion[$key][] = $value;
+					}
+				}
+			}
+		}
+	}
+
+	protected function addToProject($valueArr) {
+		$retArr = array();
+		foreach ($valueArr as $key => $value) {
+			$retArr[$key] = array('$cond' => array(true, $value, $value));
+		}
+		return $retArr;
+	}
+
+	protected function collectForGroup($groupName, $groupIds) {
 		$lines = Billrun_Factory::db()->linesCollection();
 		$charge_time = Billrun_Util::getLastChargeTime(true); // true means return timestamp
+
 		$freePrefixes = (array) call_user_func_array('array_merge',$this->loadRatesPrefixes($this->freeRates));
 		// TODO: take it to config ? how to handle variables ?
 		$base_match = array(
 			'$match' => array(
 				'source' => 'nrtrde',
-				'unified_record_time' => array('$gte' => new MongoDate($charge_time)),
+				'unified_record_time' => array('$gte' => new MongoDate($charge_time)), //TODO DEBUG reinstate on push
+				'sender' => array('$in' => $groupIds),
 				'connectedNumber' => array('$nin' => $freePrefixes),
+				
 			)
 		);
 		$where = array(
 			'$match' => array(
 				'record_type' => 'MOC',
-				'connectedNumber' => array('$regex' => '^972'),
+				'connectedNumber' => array('$regex' => '^972'),				
 				'event_stamp' => array('$exists' => false),
 				'deposit_stamp' => array('$exists' => false),
 				'callEventDurationRound' => array('$gt' => 0), // not sms
-				'sender' => array('$nin' => $this->excludedPLMNs),
 			),
 		);
 
@@ -211,6 +291,7 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 			'$project' => array(
 				'imsi' => '$_id',
 				'_id' => 0,
+				'group' => array('$cond' => array(true, $groupName, $groupName,)),
 				'moc_israel' => 1,
 				'lines_stamps' => 1,
 			),
@@ -325,7 +406,57 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 
 		return $ret;
 	}
-	
+
+
+	/**
+	 * Helper function to integrate advance event collection
+	 * @param type $groupName the  group to collect events for
+	 * @param type $groupIds the ids array to collect events for.
+	 */
+	protected function collectAdvanceEvents($groupName, $groupIds) {
+		$baseQuery = array(
+			'base_match' => array(
+				'$match' => array(
+					'source' => 'nrtrde',
+					'sender' => array('$in' => $groupIds),
+				),
+			),
+			'where' => array(
+				'$match' => array(
+					'event_stamp' => array('$exists' => false),
+					'deposit_stamp' => array('$exists' => false),
+				),
+			),
+			'group' => array(
+				'$group' => array(
+					"_id" => '$imsi',
+					"callEventDurationRound" => array('$sum' => '$callEventDurationRound'),
+					"count" => array('$sum' => 1),
+					'lines_stamps' => array('$addToSet' => '$stamp'),
+				),
+			),
+			'translate' => array(
+				'$project' => array(
+					'imsi' => '$_id',
+					'_id' => 0,
+					'count' => 1,
+					'callEventDurationRound' => 1,
+					'lines_stamps' => 1,
+				),
+			),
+			'project' => array(
+				'$project' => array(
+					'imsi' => 1,
+					'_id' => 0,
+					'group' => array('$cond' => array(true, $groupName, $groupName)),
+					'lines_stamps' => 1,
+				),
+			),
+		);
+
+		return $this->collectFraudEvents($groupName, $groupIds, $baseQuery);
+	}
+
 	/**
 	 * load prefixes from the billing
 	 */
@@ -351,7 +482,7 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 		foreach ($items as $item) {
 			$imsi = $item['imsi'];
 			if (!isset($ret[$imsi])) {
-				$ret[$imsi] = array();
+				$ret[$imsi] = is_array($item) ? $item : array();
 				$ret[$imsi]['imsi'] = $imsi;
 			}
 
@@ -378,60 +509,62 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 	protected function addAlertData(&$event) {
 		// @todo: WTF?!?! Are you real with this condition???
 		
-		$type = (isset($event['sms_hourly_nonisrael']) ? 'sms_hourly_nonisrael' :
-				(isset($event['moc_nonisrael_hourly']) ? 'moc_nonisrael_hourly' :
-				(isset($event['moc_israel_hourly']) ? 'moc_israel_hourly' :
-				(isset($event['sms_hourly']) ? 'sms_hourly' :
-				(isset($event['moc_nonisrael']) ? 'moc_nonisrael' :
-				(isset($event['mtc_all']) ? 'mtc_all' :				
-				(isset($event['sms_out']) ? 'sms_out' :
-											'moc_israel')))))));
+		if (!isset($event['event_type'])) {
+			$type = (isset($event['sms_hourly_nonisrael']) ? 'sms_hourly_nonisrael' :
+					(isset($event['moc_nonisrael_hourly']) ? 'moc_nonisrael_hourly' :
+					(isset($event['moc_israel_hourly']) ? 'moc_israel_hourly' :
+					(isset($event['sms_hourly']) ? 'sms_hourly' :
+					(isset($event['moc_nonisrael']) ? 'moc_nonisrael' :
+					(isset($event['mtc_all']) ? 'mtc_all' :				
+					(isset($event['sms_out']) ? 'sms_out' :
+												'moc_israel')))))));
 
-		$event['units'] = 'SEC';
-		$event['value'] = $event[$type];
-		$event['event_type'] = 'NRTRDE_VOICE';
+			$event['units'] = 'SEC';
+			$event['value'] = $event[$type];
+			$event['event_type'] = 'NRTRDE_VOICE';
 
-		switch ($type) {
-			case 'moc_israel':
-				$event['threshold'] = Billrun_Factory::config()->getConfigValue('nrtrde.thresholds.moc.israel', 1800, 'int');
-				break;
+			$event['target_plans'] = $this->fraudConfig['defaults']['target_plans'];
+			switch ($type) {
+				case 'moc_israel':
+					$event['threshold'] = Billrun_Factory::config()->getConfigValue('nrtrde.thresholds.moc.israel', 1800, 'int');
+					break;
 
-			case 'moc_nonisrael':
-				$event['threshold'] = Billrun_Factory::config()->getConfigValue('nrtrde.thresholds.moc.nonisrael', 600);
-				break;
+				case 'moc_nonisrael':
+					$event['threshold'] = Billrun_Factory::config()->getConfigValue('nrtrde.thresholds.moc.nonisrael', 600);
+					break;
 
-			case 'mtc_all':
-				$event['threshold'] = Billrun_Factory::config()->getConfigValue('nrtrde.thresholds.mtc', 7200);
-				break;
+				case 'mtc_all':
+					$event['threshold'] = Billrun_Factory::config()->getConfigValue('nrtrde.thresholds.mtc', 7200);
+					break;
 
-			case 'sms_out':
-				$event['threshold'] = Billrun_Factory::config()->getConfigValue('nrtrde.thresholds.smsout', 70);
-				$event['units'] = 'SMS';
-				$event['event_type'] = 'NRTRDE_SMS';
-				break;
+				case 'sms_out':
+					$event['threshold'] = Billrun_Factory::config()->getConfigValue('nrtrde.thresholds.smsout', 70);
+					$event['units'] = 'SMS';
+					$event['event_type'] = 'NRTRDE_SMS';
+					break;
 
-			case 'sms_hourly':
-				$event['threshold'] = Billrun_Factory::config()->getConfigValue('nrtrde.hourly.thresholds.smsout_israel', 100);
-				$event['units'] = 'SMS';
-				$event['event_type'] = 'NRTRDE_HOURLY_SMS';
-				break;
-			case 'sms_hourly_nonisrael':
-				$event['threshold'] = Billrun_Factory::config()->getConfigValue('nrtrde.hourly.thresholds.smsout_nonisrael', 50);
-				$event['units'] = 'SMS';
-				$event['event_type'] = 'NRTRDE_HOURLY_SMS';
-				break;
+				case 'sms_hourly':
+					$event['threshold'] = Billrun_Factory::config()->getConfigValue('nrtrde.hourly.thresholds.smsout_israel', 100);
+					$event['units'] = 'SMS';
+					$event['event_type'] = 'NRTRDE_HOURLY_SMS';
+					break;
+				case 'sms_hourly_nonisrael':
+					$event['threshold'] = Billrun_Factory::config()->getConfigValue('nrtrde.hourly.thresholds.smsout_nonisrael', 50);
+					$event['units'] = 'SMS';
+					$event['event_type'] = 'NRTRDE_HOURLY_SMS';
+					break;
 			
-			case 'moc_israel_hourly' :
-				$event['threshold'] = Billrun_Factory::config()->getConfigValue('nrtrde.hourly.thresholds.mocisrael', 7200);
-				$event['event_type'] = 'NRTRDE_HOURLY_VOICE';
+				case 'moc_israel_hourly' :
+					$event['threshold'] = Billrun_Factory::config()->getConfigValue('nrtrde.hourly.thresholds.mocisrael', 7200);
+					$event['event_type'] = 'NRTRDE_HOURLY_VOICE';
 
-				break;
-			case 'moc_nonisrael_hourly':
-				$event['threshold'] = Billrun_Factory::config()->getConfigValue('nrtrde.hourly.thresholds.mocnonisrael', 3000);
-				$event['event_type'] = 'NRTRDE_HOURLY_VOICE';
-				break;
+					break;
+				case 'moc_nonisrael_hourly':
+					$event['threshold'] = Billrun_Factory::config()->getConfigValue('nrtrde.hourly.thresholds.mocnonisrael', 3000);
+					$event['event_type'] = 'NRTRDE_HOURLY_VOICE';
+					break;
+			}
 		}
-		
 		$event['effects'] = array(
 			'key' => 'type',
 			'filter' => array('$in' => array('nrtrde', 'ggsn'))

@@ -188,7 +188,7 @@ class Billrun_Util {
 	 * 
 	 * @return array or FALSE on failure
 	 */
-	public static function sendRequest($url, array $data = array(), $method = Zend_Http_Client::POST, array $headers = array('Accept-encoding' => 'deflate')) {
+	public static function sendRequest($url, array $data = array(), $method = Zend_Http_Client::POST, array $headers = array('Accept-encoding' => 'deflate'), $timeout = null) {
 		if (empty($url)) {
 			Billrun_Factory::log()->log("Bad parameters: url - " . $url . " method: " . $method, Zend_Log::ERR);
 			return FALSE;
@@ -201,6 +201,9 @@ class Billrun_Util {
 
 		$zendMethod = constant("Zend_Http_Client::" . $method);
 		$curl = new Zend_Http_Client_Adapter_Curl();
+		if (!is_null($timeout)) {
+			$curl->setCurlOption(CURLOPT_TIMEOUT, $timeout);
+		}
 		$client = new Zend_Http_Client($url);
 		$client->setHeaders($headers);
 		$client->setAdapter($curl);
@@ -213,12 +216,14 @@ class Billrun_Util {
 				$client->setParameterGet($data);
 			}
 		}
-
-		$response = $client->request();
-		$output = $response->getBody();
-
+		try {
+			$response = $client->request();
+			$output = $response->getBody();
+		} catch (Zend_Http_Client_Exception $e) {
+			$output = null;
+		}
 		if (empty($output)) {
-			Billrun_Factory::log()->log("Bad RPC result: " . print_r($response, TRUE) . " Parameters sent: " . $params, Zend_Log::WARN);
+			Billrun_Factory::log()->log("Bad RPC result: " . print_r($response, TRUE) . " Parameters sent: " . print_r($data, TRUE), Zend_Log::WARN);
 			return FALSE;
 		}
 
