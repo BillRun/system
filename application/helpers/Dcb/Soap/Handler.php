@@ -103,6 +103,16 @@ class Dcb_Soap_Handler {
 		} else {
 			$response->Result = self::GOOGLE_RESULT_CODE_INVALID_USER;
 		}
+		
+		if ($response->Result === self::GOOGLE_RESULT_CODE_SUCCESS) {
+			$data = json_decode(json_encode($request), true);
+			$ret = $this->saveItem($data);
+			
+			if (is_null($ret)) {
+				$response->Result = self::GOOGLE_RESULT_CODE_RETRIABLE_ERROR;
+			}
+		}
+		
 		return $response;
 	}
 
@@ -130,5 +140,9 @@ class Dcb_Soap_Handler {
 		);
 	}
 
+	protected function saveItem($data) {
+		$model = new FundsModel();
+		$model->storeData($data);
+	}
 }
 

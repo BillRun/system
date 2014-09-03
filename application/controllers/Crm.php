@@ -47,6 +47,9 @@ class CrmController extends Yaf_Controller_Abstract {
 			'to' => array(
 				'$gte' => $rowTime,
 			),
+			'name' => array(
+				'$exists' => true,
+			)
 		);
 		$plans = Billrun_Factory::db()->plansCollection()->query($plansQuery)->cursor()->sort(array('name' => 1));
 		$planCount = $plans->count();
