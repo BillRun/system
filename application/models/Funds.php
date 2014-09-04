@@ -26,4 +26,25 @@ class FundsModel extends TableModel {
 		return $entity->save($this->collection, 1);
 	}
 
+	public function cancelNotification($data) {
+		$query = array(
+			'CorrelationId' => $data['CorrelationId'],
+			'CancelNotification' => array('$exists' => false)
+			);
+		$notification = parent::getData($query)->current()->getRawData();
+		
+		if (count($notification) > 0) {
+			$notification['CancelNotification'] = $data;
+			parent::update($notification);
+		}
+	}
+	
+	public function getNotificationStatus($correlationId) {
+		$query = array(
+			'CorrelationId' => $correlationId
+			);
+		$notification = parent::getData($query)->current()->getRawData();
+		
+		return (count($notification) > 0) ? $notification['responseResult'] : false;
+	}
 }

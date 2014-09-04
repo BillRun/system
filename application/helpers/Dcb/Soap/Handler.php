@@ -31,10 +31,13 @@ class Dcb_Soap_Handler {
 	 * @var array
 	 */
 	protected $config;
+	
+	protected $model;
 
 	public function __construct() {
 		$this->config = Billrun_Factory::config()->getConfigValue('googledcb');
 		$this->subscriber = Billrun_Factory::subscriber();
+		$this->model = new FundsModel();
 	}
 
 	public function __call($name, $arguments) {
@@ -103,17 +106,28 @@ class Dcb_Soap_Handler {
 		} else {
 			$response->Result = self::GOOGLE_RESULT_CODE_INVALID_USER;
 		}
+
+		$data = (array)$request;
+		$data['responseResult'] = $response->Result;
 		
-		if ($response->Result === self::GOOGLE_RESULT_CODE_SUCCESS) {
-			$data = json_decode(json_encode($request), true);
-			$ret = $this->saveItem($data);
+		$status = $this->model->getNotificationStatus($data['CorrelationId']);
+		
+		if (!$status) {
+			$ret = $this->model->storeData($data);
 			
 			if (is_null($ret)) {
-				$response->Result = self::GOOGLE_RESULT_CODE_RETRIABLE_ERROR;
+				$response->Result = self::GOOGLE_RESULT_CODE_GENERAL_FAILURE;
 			}
+		} else {
+			$response->Result = $status;
 		}
 		
 		return $response;
+	}
+	
+	public function CancelNotification($request) {
+		$data = (array)$request;
+		$this->model->cancelNotification($data);
 	}
 
 	/**
@@ -138,11 +152,6 @@ class Dcb_Soap_Handler {
 			'sid' => $sid,
 			'DATETIME' => date(Billrun_Base::base_dateformat),
 		);
-	}
-
-	protected function saveItem($data) {
-		$model = new FundsModel();
-		$model->storeData($data);
 	}
 }
 
