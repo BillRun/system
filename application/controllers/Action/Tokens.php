@@ -42,12 +42,14 @@ class TokensAction extends Action_Base {
 		$model->storeData($GUT, $OUT, $sid);
 
 		// Send request to google
-		$url = Billrun_Factory::config()->getConfigValue('googledcb.association.tokens.host') .
-				Billrun_Factory::config()->getConfigValue('googledcb.association.tokens.post');
+		$this->tokenConfig = Billrun_Factory::config()->getConfigValue('googledcb.association.tokens', array());
+		$access_token = $this->getAccessToken();
+		$url = $this->tokenConfig['host'] . $this->tokenConfig['post'] .
+			"?access_token=$access_token";
 		$data = array(
 			"kind" => 'carrierbilling#userToken',
 			"GUT" => $GUT,
-			"OUT" => $OUT,
+			"OUT" => $OUT
 		);
 
 		$response = Billrun_Util::sendRequest($url, $data, array("onlyBody" => false));
@@ -59,4 +61,24 @@ class TokensAction extends Action_Base {
 		}
 	}
 
+	protected function getAccessToken() {
+		require_once 'Google/Client.php';
+		$service_account_name = $this->tokenConfig['client_name'];
+		$key_file_location = $this->tokenConfig['private_key'];
+
+		$client = new Google_Client();
+		$key = file_get_contents($key_file_location);
+		$cred = new Google_Auth_AssertionCredentials(
+			$service_account_name,
+			'https://www.googleapis.com/auth/carrierbilling',
+			$key
+		);
+		$client->setAssertionCredentials($cred);
+		if($client->getAuth()->isAccessTokenExpired()) {
+		  $client->getAuth()->refreshTokenWithAssertion($cred);
+		}
+		
+		$res = json_decode($client->getAccessToken());
+		return $res->access_token;
+	}
 }
