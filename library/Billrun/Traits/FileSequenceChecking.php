@@ -108,6 +108,7 @@ trait Billrun_Traits_FileSequenceChecking {
 		$log = Billrun_Factory::db()->logCollection();
 		$unsequencedWindow =  time()- strtotime('-'. Billrun_Factory::config()->getConfigValue($this->getName().'.receiver.unsequenced_time_window','30 min'));
 		$sequencedWindowMulti =   Billrun_Factory::config()->getConfigValue($this->getName().'.receiver.sequenced_time_window_multi',2);
+		$sequencedPadding =   Billrun_Factory::config()->getConfigValue($this->getName().'.receiver.sequence_padding',100);
 		$lastSeqeueced = $log->query(
 									array(	
 											'source'=> $this->getName(), 
@@ -124,12 +125,12 @@ trait Billrun_Traits_FileSequenceChecking {
 																		'$gte' => isset($lastSeqeueced['received_time']) ? $lastSeqeueced['received_time'] : date(Billrun_Base::base_dateformat,time() - ($unsequencedWindow * $sequencedWindowMulti) ) ),
 											'retrieved_from'=> $hostname, )
 									)										
-								->cursor()->sort(array('_id' =>  -1));
+								->cursor()->sort(array('extra_data.seq'=> -1,'file_name'=> -1))->skip($sequencedPadding);
 		
 		$retArr = array();
 		foreach($lastLogFiles as $file) {
 			$retArr[] = $file['file_name'];
-		}
+		}		
 		return $retArr;
 	}
 	

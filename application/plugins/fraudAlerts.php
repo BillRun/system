@@ -1,5 +1,18 @@
 <?php
 
+/**
+ * @package         Billing
+ * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
+ * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ */
+
+/**
+ * Fraud alerts plugin
+ *
+ * @package  Application
+ * @subpackage Plugins
+ * @since    0.5
+ */
 class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 
 	/**
@@ -22,9 +35,7 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 */
 	protected $isDryRun = false;
 
-	public function __construct($options = array(
-	)) {
-		parent::__construct($options);
+	public function __construct($options = array()) {
 
 		$this->alertServer = isset($options['alertHost']) ?
 				$options['alertHost'] :
@@ -55,7 +66,7 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 */
 	public function handlerNotify($handler, $options) {
 
-		if ($options['type'] != 'roaming' && substr($options['type'], 0, 7) != 'billing') {
+		if ($options['type'] != 'notify') {
 			return FALSE;
 		}
 		$ret = $this->roamingNotify();
@@ -82,17 +93,21 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 			}
 
 			$ret = $this->notifyOnEvent($event);
-			if ($ret === FALSE) {
-				$this->sendEmailOnFailure($event, $ret);
-				//some connection failure - mark event as paused
-				$this->markEvent($event, FALSE);
-			} else if (isset($ret['success']) && $ret['success']) {
+			if (isset($ret['success']) && $ret['success']) {
 				$event['deposit_stamp'] = $event['stamps'][0]; // remember what event you sent to the remote server
 				$event['returned_value'] = (array) $ret;
 				$this->markEvent($event);
-				$this->markEventLines($event);
-			} else {
+				if (!isset($ret['ignored']) || !$ret['ignored']) {
+					$this->markEventLines($event);
+				}
+			} else if (isset($ret['success']) && !$ret['success']) {
 				$this->sendEmailOnFailure($event, $ret);
+				$this->markEvent($event, FALSE);
+			} else {
+				//some connection failure - mark event as paused
+				$this->sendEmailOnFailure($event, $ret);
+				$this->markEvent($event, FALSE);
+				$this->markEventLines($event);
 			}
 
 			//Decrease the amount of alerts allowed in a single run if 0 is reached the break the loop.
@@ -163,10 +178,12 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 			'account_id' => 'aid',
 			'subscriber_id' => 'sid',
 			'plan' => 'plan',
+			'target_plans' => 'target_plans',
+			'group' => 'group'
 		);
 
 		foreach ($required_args as $key => $argsKey) {
-			$required_args[$key] = isset($args[$argsKey]) ? $args[$argsKey] : null;
+			$required_args[$key] = isset($args[$argsKey]) ? (is_array($args[$argsKey]) ? implode(",", $args[$argsKey]) : $args[$argsKey] ) : null;
 			unset($args[$argsKey]);
 		}
 
@@ -186,14 +203,16 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		// http://framework.zend.com/manual/1.12/en/zend.http.client.adapters.html#zend.http.client.adapters.curl
 		$url = 'http://' . $this->alertServer . $this->alertPath . '?' . http_build_query($query_args);
 		unset($post_args['stamps']);
-		$post_array = array_diff($post_args, $query_args);
+		$post_array = @array_diff($post_args, $query_args);
 		$post_fields = array(
 			'extra_data' => Zend_Json::encode($post_array)
 		);
 		Billrun_Log::getInstance()->log("fraudAlertsPlugin::notifyRemoteServer URL: " . $url, Zend_Log::INFO);
+		Billrun_Log::getInstance()->log("fraudAlertsPlugin::notifyRemoteServer Post: " . print_r($post_fields, 1), Zend_Log::INFO);
 
 		if (!$this->isDryRun) {
-			$output = Billrun_Util::sendRequest($url, $post_fields, Zend_Http_Client::POST);
+			$timeout = intval(Billrun_Factory::config()->getConfigValue('fraudAlerts.timeout', 30));
+			$output = Billrun_Util::sendRequest($url, $post_fields, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), $timeout);
 
 			Billrun_Log::getInstance()->log("fraudAlertsPlugin::notifyRemoteServer response: " . $output, Zend_Log::INFO);
 
@@ -236,7 +255,7 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 				'source' => array('$in' => $types)
 			),
 				), array(
-			'$sort' => array('priority' => 1)
+			'$sort' => array('priority' => 1, 'creation_time' => 1)
 				), array(
 			'$group' => array(
 				'_id' => array('imsi' => '$imsi', 'msisdn' => '$msisdn', 'sid' => '$sid'),
@@ -252,6 +271,8 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 				//'deposit_stamp' => array('$first' => '$_id'),
 				'source' => array('$first' => '$source'),
 				'plan' => array('$first' => '$plan'),
+				'target_plans' => array('$first' => '$target_plans'),
+				'group' => array('$first' => '$group'),
 				'stamps' => array('$addToSet' => '$stamp'),
 			),
 				), array(
@@ -272,6 +293,8 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 				'source' => 1,
 				'stamps' => 1,
 				'plan' => 1,
+				'target_plans' => 1,
+				'group' => 1,
 			),
 				)
 		);
@@ -291,7 +314,7 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 			'_id' => array('$in' => $event['id']),
 		);
 
-		if (is_null($failure)) {
+		if (is_null($failure)) { // no failure
 			$events_update_set = array(
 				'$set' => array(
 					'notify_time' => new MongoDate(),

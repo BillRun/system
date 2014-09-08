@@ -13,7 +13,7 @@ class Asn_Type_NumStr extends Asn_Object {
 	 * @param $data The ASN encoded data
 	 */
 	protected function parse($data) {
-		parent::parse($data);
+		return parent::parse($data);
 // 		$numarr = unpack("C*",$data);
 // 		$tempData =0;
 // 		foreach($numarr as $byte) {
