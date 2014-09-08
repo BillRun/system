@@ -276,7 +276,7 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 				'event_stamp' => array('$exists' => false),
 				'deposit_stamp' => array('$exists' => false),
 				'callEventDurationRound' => array('$gt' => 0), // not sms
-				'file' => array('$regex' => '^NRBEL'), // limit NRTRDE1  to BICS only
+				//'file' => array('$regex' => '^NRBEL'), // limit NRTRDE1  to BICS only
 			),
 		);
 
@@ -348,7 +348,7 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 		$sms_out = $lines->aggregate($base_match, $where, $group, $project, $having);
 		$this->normalize($ret, $sms_out, 'sms_out');
 		
-		unset($where['$match']['file']); // remove NRTRDE limit		
+		//unset($where['$match']['file']); // remove NRTRDE limit		
 		
 		//sms out hourly to israel numbers
 		unset($group['$group']['sms_out']);
