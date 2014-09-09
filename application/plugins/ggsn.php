@@ -92,7 +92,6 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Pl
 		//$charge_time = new MongoDate($this->get_last_charge_time(true) - date_default_timezone_get() );
 		$charge_time = Billrun_Util::getLastChargeTime(true);
 		
-		Billrun_Factory::log()->log("ggsnPlugin::handlerCollect collecting monthly data exceeders", Zend_Log::DEBUG);
 		$advancedEvents = array();
 		if (isset($this->fraudConfig['groups'])) {
 			foreach ($this->fraudConfig['groups'] as $groupName => $groupIds) {
@@ -104,10 +103,10 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Pl
 				Billrun_Factory::log()->log('ggsnPlugin::handlerCollect collecting monthly data exceeders for group :'.$groupName, Zend_Log::DEBUG);
 				$aggregateQuery = array_values($this->getBaseAggregateQuery($charge_time ,$groupName, $groupIds));				
 				$dataExceedersAlerts = $this->detectDataExceeders($lines, $aggregateQuery);
-				Billrun_Factory::log()->log('GGSN plugin of monthly usage fraud found ' . count($dataExceedersAlerts) , Zend_Log::INFO);
+				Billrun_Factory::log()->log('GGSN plugin of monthly usage fraud found ' . count($dataExceedersAlerts) . ' events for group ' .$groupName  , Zend_Log::INFO);
 				Billrun_Factory::log()->log('ggsnPlugin::handlerCollect collecting hourly data exceeders for group :'.$groupName, Zend_Log::DEBUG);
 				$hourlyDataExceedersAlerts = $this->detectHourlyDataExceeders($lines, $aggregateQuery);
-				Billrun_Factory::log()->log('GGSN plugin of hourly usage fraud found ' . count($hourlyDataExceedersAlerts) , Zend_Log::INFO);
+				Billrun_Factory::log()->log('GGSN plugin of hourly usage fraud found ' . count($hourlyDataExceedersAlerts) . ' events for group ' .$groupName , Zend_Log::INFO);
 				
 				$events = array_merge($events,$advancedEvents, $dataExceedersAlerts, $hourlyDataExceedersAlerts);
 			}
