@@ -75,6 +75,10 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	protected $autosort = true;
 	protected $queue_coll = null;
 
+	
+	protected $rates_query = array();
+
+
 	/**
 	 * constructor of the class
 	 * 
@@ -100,6 +104,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 			$this->autosort = $options['autosort'];
 		}
 		$this->queue_coll = Billrun_Factory::db()->queueCollection();
+		$this->rates_query = Billrun_Util::getFieldVal($options['calculator']['rates_query'], array('params.source_type'=> array('$in'=> array($this->getType()))) );
 	}
 
 	/**
@@ -403,13 +408,13 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		}
 		return $retLines;
 	}
-
+	
 	/**
 	 * Caches the rates in the memory for fast computations
 	 */
 	protected function loadRates() {
 		$rates_coll = Billrun_Factory::db()->ratesCollection();
-		$rates = Billrun_Factory::db()->ratesCollection()->query()->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
+		$rates = Billrun_Factory::db()->ratesCollection()->query($this->rates_query)->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
 		$this->rates = array();
 		foreach ($rates as $rate) {
 			$rate->collection($rates_coll);
