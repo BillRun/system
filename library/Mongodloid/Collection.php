@@ -283,7 +283,7 @@ class Mongodloid_Collection {
 			$options['j'] = $this->j;
 		}
 
-		if ($this->_db->compareServerVersion('2.6', '>=')) {
+		if ($this->_db->compareServerVersion('2.6', '>=') && $this->_db->compareClientVersion('1.5', '>=')) {
 			$batch = new MongoInsertBatch($this->_collection);
 			foreach($a as $doc) {
 				$batch->add($doc);
