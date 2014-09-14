@@ -47,10 +47,10 @@ abstract class ApiAction extends Action_Base {
 		$cacheKey = Billrun_Util::generateArrayStamp(array_values($params['stampParams']));
 		$cachedData = $cache->get($cacheKey, $cachePrefix);
 		if (empty($cachedData)) {
-			$results = $this->fetchData($params['fetchParams']);
-			$cache->set($cacheKey, $results, $cachePrefix);
+			$cachedData = $this->fetchData($params['fetchParams']);
+			$cache->set($cacheKey, $cachedData, $cachePrefix);
 		}
-		return $results;
+		return $cachedData;
 	}
 	
 	/**
