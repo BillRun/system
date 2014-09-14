@@ -206,7 +206,7 @@ class Billrun_Cache {
 	 */
 	static public function getInstance(array $args = array()) {
 		if (count($args) < 2) {
-			Billrun_Factory::log('Cache is not configure well. Not enough args to instantiate', Zend_Log::ERR);
+			Billrun_Factory::log('Cache is not configured well. Not enough args to instantiate', Zend_Log::ERR);
 			return false;
 		}
 
@@ -217,7 +217,16 @@ class Billrun_Cache {
 		} elseif (!isset($args[2]['automatic_serialization'])) {
 			$args[2]['automatic_serialization'] = true;
 		}
+		
+		$args[2]['logging'] = true;
+		$args[2]['logger'] = Billrun_Factory::log();
 
+		// if not set back-end, take it from front-end
+		if (!isset($args[3])) {
+			$args[3] = $args[2];
+		}
+		
+		
 		if (is_null(self::$instance)) {
 			$cache = forward_static_call_array(array('Zend_Cache', 'factory'), $args);
 			self::$instance = new self($cache);
