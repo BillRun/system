@@ -21,10 +21,14 @@ class VLRAction extends ApiAction {
 		$request = $this->getRequest();
 
 		$vlr = $request->get('vlr', NULL);
-		$model = new RatesModel();
-
-		$rate = $model->getRateByVLR($vlr);
-		unset($rate['_id']);
+		
+		$cacheParams = array(
+			'fetchParams' => array(
+				'vlr' => $vlr,
+			),
+		);
+		
+		$rate = $this->cache($cacheParams);
 		
 		$this->getController()->setOutput(array(array(
 				'status' => 1,
@@ -32,6 +36,13 @@ class VLRAction extends ApiAction {
 				'details' => $rate,
 				'input' => $request->getRequest(),
 			)));
+	}
+	
+	protected function fetchData($params) {
+		$model = new RatesModel();
+		$rate = $model->getRateByVLR($params['vlr']);
+		unset($rate['_id']);
+		return $rate;
 	}
 
 }
