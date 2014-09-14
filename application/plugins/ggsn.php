@@ -232,6 +232,7 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Pl
 			),
 		);
 
+		$aggregateQuery[1]['$match']['event_stamp'] = array('$exists' => false);
 		$durationAlert = $lines->aggregate(array_merge($aggregateQuery, array($durationThrs)));
 		foreach ($durationAlert as &$alert) {
 			$alert['units'] = 'SEC';
@@ -258,7 +259,6 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Pl
 			'where' => array(
 				'$match' => array_merge( array(
 					'deposit_stamp' => array('$exists' => false),
-					'event_stamp' => array('$exists' => false),
 					
 					'$or' => array(
 						array('rating_group' => array('$exists' => false)),

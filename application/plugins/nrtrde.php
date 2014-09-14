@@ -349,7 +349,7 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 		$this->normalize($ret, $sms_out, 'sms_out');
 		
 		//unset($where['$match']['file']); // remove NRTRDE limit		
-		
+		unset($where['$match']['event_stamp']);
 		//sms out hourly to israel numbers
 		unset($group['$group']['sms_out']);
 		unset($having['$match']['sms_out']);
@@ -425,7 +425,6 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 			),
 			'where' => array(
 				'$match' => array(
-					'event_stamp' => array('$exists' => false),
 					'deposit_stamp' => array('$exists' => false),
 				),
 			),
