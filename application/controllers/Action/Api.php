@@ -43,12 +43,15 @@ abstract class ApiAction extends Action_Base {
 		if (empty($cache)) {
 			return $this->fetchData($params['fetchParams']);
 		}
-		$cachePrefix = Yaf_Dispatcher::getInstance()->getRequest()->getActionName() . '_';
+		$actionName = Yaf_Dispatcher::getInstance()->getRequest()->getActionName();
+		$cachePrefix = $actionName . '_';
 		$cacheKey = Billrun_Util::generateArrayStamp(array_values($params['stampParams']));
 		$cachedData = $cache->get($cacheKey, $cachePrefix);
 		if (empty($cachedData)) {
 			$cachedData = $this->fetchData($params['fetchParams']);
 			$cache->set($cacheKey, $cachedData, $cachePrefix);
+		} else {
+			Billrun_Factory::log()->log("Fetch data from cache for " . $actionName . " api call", Zend_Log::INFO);
 		}
 		return $cachedData;
 	}
