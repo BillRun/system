@@ -5,14 +5,13 @@
  * @copyright       Copyright (C) 2012 S.D.O.C. LTD. All rights reserved.
  * @license         GNU General Public License version 2 or later; see LICENSE.txt
  */
+
 /**
  * Billing customer calculator class for ilds records
  *
  * @package  calculator
  * @since    1.0
  */
-require_once __DIR__ . '/../../../application/golan/' . 'subscriber.php';
-
 class Billrun_Calculator_Customer extends Billrun_Calculator {
 
 	/**
@@ -20,19 +19,48 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	 *
 	 * @var string
 	 */
-	static protected $type = "Customer";
+	static protected $type = 'customer';
+
+	/**
+	 * Array for translating CDR line values to  customer identifing values (finding out thier MSISDN/IMSI numbers)
+	 * @var array
+	 */
+	protected $translateCustomerIdentToAPI = array();
+
+	/**
+	 *
+	 * @var Billrun_Subscriber 
+	 */
+	protected $subscriber;
+
+	/**
+	 * array of Billrun_Subscriber
+	 * @var array
+	 */
+	protected $subscribers;
+
+	/**
+	 * Whether or not to use the subscriber bulk API method
+	 * @var boolean
+	 */
+	protected $bulk = true;
 	protected $subscriberSettings = array();
 	static protected $time;
+	protected $unrecognizedSubscribers = array();
 
 	public function __construct($options = array()) {
-		parent::__construct($options);
-		$this->subscriberSettings = Billrun_Factory::config()->getConfigValue('customer', array());
-
-		if (!isset($this->subscriberSettings['calculator']['subscriber']['identification_translation']) || !isset($this->subscriberSettings['calculator']['subscriber']['time_field_name']) || !isset($this->subscriberSettings['calculator']['subscriber']['subscriber_id_feild_name'])) {
-			return false;
+		$this->subscriberSettings = $options;
+		if (isset($options['calculator']['customer_identification_translation'])) {
+			$this->translateCustomerIdentToAPI = $options['calculator']['customer_identification_translation'];
+		}
+		if (isset($options['calculator']['bulk'])) {
+			$this->bulk = $options['calculator']['bulk'];
 		}
 
-		self::$time = $this->subscriberSettings['calculator']['subscriber']['time_field_name'];
+		$this->subscriber = Billrun_Factory::subscriber();
+		$this->plans = Billrun_Factory::db()->plansCollection();
+		$this->lines_coll = Billrun_Factory::db()->linesCollection();
+		parent::__construct($options);
 	}
 
 	/**
@@ -43,77 +71,102 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	protected function getLines() {
 		$lines = Billrun_Factory::db()->linesCollection();
 
-		return $lines->query(array(
+		$rows = $lines->query(array(
 					'source' => 'nrtrde',
 					'$or' => array(
-						array('account_id' => array('$exists' => false)),
-						array('subscriber_id' => array('$exists' => false))
-					)//'callEventStartTimeStamp' => array('$gt' => '20130929022502'),
-		)); //->cursor()->limit('500');
+						array('aid' => array('$exists' => false)),
+						array('sid' => array('$exists' => false)),
+						array('plan' => array('$exists' => false)),
+					),
+					'unified_record_time' => array(
+						'$gte' => new MongoDate(strtotime($this->subscriberSettings['calculator']['subscriber']['urt_lower_bound'] . ' ago')),
+					),
+				))->cursor()->limit($this->subscriberSettings['calculator']['subscriber']['limit']);
+		$this->loadSubscribers($rows);
+		return $rows;
 	}
 
-	/**
-	 * @param int $subscriber_id the subscriber id to update
-	 * @param Mongodloid_Entity $line the billing line to update
-	 *
-	 * @return boolean true on success else false
-	 */
-	protected function updateRow($row) {
-            
-		if ($row['source'] == 'api' && $row['type'] == 'refund') {
-			$time = date("YmtHis", $row->get('unified_record_time')->sec);
+	protected function getIdentityParams($row) {
+		$params = array();
+		$customer_identification_translation = $this->translateCustomerIdentToAPI;
+		foreach ($customer_identification_translation as $key => $toKey) {
+			if (isset($row[$key])) {
+				$params[$toKey['toKey']] = preg_replace($toKey['clearRegex'], '', $row[$key]);
+				//$this->subscriberNumber = $params[$toKey['toKey']];
+				Billrun_Factory::log("found identification for row: {$row['stamp']} from {$key} to " . $toKey['toKey'] . ' with value:' . $params[$toKey['toKey']], Zend_Log::DEBUG);
+				break;
+			}
 		}
+		return $params;
+	}
 
-		$customer_identification = array();
-		$customer_identification['key'][$this->subscriberSettings['calculator']['subscriber']['identification_translation']] = $row->get($this->subscriberSettings['calculator']['subscriber']['identification_translation']);
-		$customer_identification['time'][self::$time] = $row->get(self::$time);
+	protected function loadSubscribers($rows) {
+		$this->subscribers_by_stamp = false;
+		$params = array();
+		foreach ($rows as $row) {
+			$line_params = $this->getIdentityParams($row);
+			if (count($line_params) == 0) {
+				Billrun_Factory::log('Couldn\'t identify caller for line of stamp ' . $row['stamp'], Zend_Log::ALERT);
+			} else {
+				$line_params['time'] = date(Billrun_Base::base_dateformat, $row['unified_record_time']->sec);
+				$line_params['stamp'] = $row['stamp'];
+				$params[] = $line_params;
+			}
+		}
+		$this->subscribers = $this->subscriber->getSubscribersByParams($params, $this->subscriber->getAvailableFields());
+	}
 
-		// load subscriber
-		$subscriber = golan_subscriber::get($customer_identification);
+	protected function subscribersByStamp() {
+		if (!isset($this->subscribers_by_stamp) || !$this->subscribers_by_stamp) {
+			$subs_by_stamp = array();
+			foreach ($this->subscribers as $sub) {
+				$subs_by_stamp[$sub->getStamp()] = $sub;
+			}
+			$this->subscribers = $subs_by_stamp;
+			$this->subscribers_by_stamp = true;
+		}
+	}
 
-		if (!$subscriber) {
-			if (!isset($row['subscriber_not_found']) || (isset($row['subscriber_not_found']) && $row['subscriber_not_found'] == false)) {
-				$msg = "Failed  when sending event to subscriber_plan_by_date.rpc.php - sent: " . PHP_EOL . print_r($customer_identification, true) . PHP_EOL . " returned: NULL";
-				$this->sendEmailOnFailure($msg);
-				$this->sendSmsOnFailure("Failed when sending event to subscriber-plan-by-date.rpc.php, null returned, see email for more details");
-
-				// subscriber_not_found:true, update all rows with same subscriber detials
-				$status = true;
-				$result = $this->update_same_subscriber($status, $customer_identification, $subscriber);
+	public function updateRow($row) {
+		Billrun_Factory::dispatcher()->trigger('beforeCalculatorUpdateRow', array($row, $this));
+		$row->collection($this->lines_coll);
+		if ($this->isBulk()) {
+			$this->subscribersByStamp();
+			$subscriber = isset($this->subscribers[$row['stamp']]) ? $this->subscribers[$row['stamp']] : FALSE;
+		} else {
+			$subscriber = $this->loadSubscriberForLine($row);
+		}
+		if (!$subscriber || !$subscriber->isValid()) {
+			$customer_identification_translation = $this->translateCustomerIdentToAPI;
+			foreach ($customer_identification_translation as $key => $toKey) {
+				if (isset($row[$key]) && strlen($row[$key])) {
+					$id = $row[$key];
+					break;
+				}
+			}
+			if (!isset($row['subscriber_not_found'])) {
+				$row['subscriber_not_found'] = true;
+				if (!isset($this->unrecognizedSubscribers[$id])) {
+					$msg = "Failed when sending event to subscriber_plan_by_date.rpc.php - sent: " . PHP_EOL . $key . ': ' . $id . PHP_EOL . 'time: ' . date(Billrun_Base::base_dateformat, $row['unified_record_time']->sec) . PHP_EOL . " returned: NULL";
+					$this->sendEmailOnFailure($msg);
+					$this->sendSmsOnFailure("Failed when sending event to subscriber-plan-by-date.rpc.php, null returned, see email for more details");
+					$this->unrecognizedSubscribers[$id] = true;
+				}
 			}
 
-			Billrun_Factory::log()->log("No subscriber returned" . print_r($customer_identification, true), Zend_Log::INFO);
+			Billrun_Factory::log()->log("No subscriber returned" . PHP_EOL . $key . ': ' . $id . PHP_EOL . 'time: ' . date(Billrun_Base::base_dateformat, $row['unified_record_time']->sec), Zend_Log::INFO);
 			return false;
 		}
 
-		if (empty($subscriber[$this->subscriberSettings['calculator']['subscriber']['subscriber_id_feild_name']]) || empty($subscriber['account_id'])) {
-			if (!isset($row['subscriber_not_found']) || (isset($row['subscriber_not_found']) && $row['subscriber_not_found'] == false)) {
-				$msg = "Error on returned result - sent: " . print_r($customer_identification, true) . PHP_EOL . " returned: " . print_r($subscriber, true);
-				$this->sendEmailOnFailure($msg);
-				$this->sendSmsOnFailure("Error on returned result from subscriber-plan-by-date.rpc.php, see email for more details");
-
-				// subscriber_not_found:true, update all rows with same subscriber detials
-				$status = true;
-				$result = $this->update_same_subscriber($status, $customer_identification, $subscriber);
+		foreach (array_keys($subscriber->getAvailableFields()) as $key) {
+			if (is_numeric($subscriber->{$key})) {
+				$subscriber->{$key} = intval($subscriber->{$key}); // remove this conversion when Vitali changes the output of the CRM to integers
 			}
-
-			Billrun_Factory::log()->log("Error on returned result - sent: " . print_r($customer_identification, true) . PHP_EOL . " returned: " . print_r($subscriber, true), Zend_Log::WARN);
-			return false;
+			$subscriber_field = $subscriber->{$key};
+			$row[$key] = $subscriber_field;
 		}
-
-		if (isset($row['subscriber_not_found']) && $row['subscriber_not_found'] == true) {
-			// subscriber_not_found:false, update all rows with same subscriber detials
-			$status = false;
-			$result = $this->update_same_subscriber($status, $customer_identification, $subscriber);
-		}
-
-		$current = $row->getRawData();
-		$subscriber_id = $subscriber[$this->subscriberSettings['calculator']['subscriber']['subscriber_id_feild_name']];
-		$added_values = array('subscriber_id' => $subscriber_id, 'account_id' => $subscriber['account_id']);
-		$newData = array_merge($current, $added_values);
-		$row->setRawData($newData);
-
-		return true;
+		Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array($row, $this));
+		return $row;
 	}
 
 	/**
@@ -129,36 +182,8 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		}
 	}
 
-	protected function update_same_subscriber($status, $customer_identification, $subscriber) {
-		$lines = Billrun_Factory::db()->linesCollection();
-
-		$rows = array();
-		$results = $lines->query(array(
-			'source' => 'nrtrde',
-			key($customer_identification) => $customer_identification[key($customer_identification)]
-		));
-
-		if (empty($results)) {
-			exit;
-		}
-
-		foreach ($results as $result) {
-			$added_values = array();
-			$added_values['subscriber_not_found'] = $status;
-
-			if (isset($subscriber['account_id']) && !empty($subscriber['account_id']) && isset($subscriber['subscriber_id']) && !empty($subscriber['subscriber_id'])) {
-				$added_values['account_id'] = $subscriber['account_id'];
-				$added_values['subscriber_id'] = $subscriber['subscriber_id'];
-			}
-
-			$result_a = $result->getRawData();
-			$newData = array_merge($result_a, $added_values);
-			$result->setRawData($newData);
-			$result->save($lines);
-		}
-	}
-
 	protected function sendEmailOnFailure($msg) {
+		return true;
 		Billrun_Factory::log()->log($msg, Zend_Log::ALERT);
 		$recipients = Billrun_Factory::config()->getConfigValue('fraudAlert.failed_alerts.recipients', array());
 		$subject = "Failed Fraud Alert, subscriber not found" . date(Billrun_Base::base_dateformat);
@@ -166,6 +191,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	}
 
 	protected function sendSmsOnFailure($msg) {
+		return true;
 		$recipients = Billrun_Factory::config()->getConfigValue('smsAlerts.processing.recipients', array());
 		return Billrun_Util::sendSms($msg, $recipients);
 	}
@@ -177,9 +203,53 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteData', array('data' => $this->data));
 		$lines = Billrun_Factory::db()->linesCollection();
 		foreach ($this->data as $item) {
-			$item->save($lines);
+			$newFields = array_intersect_key($item->getRawData(), array('sid' => true, 'aid' => true, 'plan' => true, 'subscriber_not_found' => true));
+			if ($newFields) {
+				$lines->update(array('stamp' => $item['stamp']), array('$set' => $newFields));
+			}
 		}
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteData', array('data' => $this->data));
+	}
+
+	/**
+	 * Load a subscriber for a given CDR line.
+	 * @param type $row
+	 * @return type
+	 */
+	protected function loadSubscriberForLine($row) {
+		$params = $this->getIdentityParams($row);
+
+		if (count($params) == 0) {
+			Billrun_Factory::log('Couldn\'t identify caller for line of stamp ' . $row->get('stamp'), Zend_Log::ALERT);
+			return;
+		}
+
+		$params['time'] = date(Billrun_Base::base_dateformat, $row->get('urt')->sec);
+		$params['stamp'] = $row->get('stamp');
+
+		return $this->subscriber->load($params);
+	}
+
+	public function isBulk() {
+		return $this->bulk;
+	}
+
+	/**
+	 * @see Billrun_Calculator::isLineLegitimate
+	 */
+	public function isLineLegitimate($line) {
+		if (isset($line['usagev']) && $line['usagev'] !== 0 && $this->isCustomerable($line)) {
+			$customer = $this->isOutgoingCall($line) ? "caller" : "callee";
+			if (isset($this->translateCustomerIdentToAPI[$customer])) {
+				$customer_identification_translation = $this->translateCustomerIdentToAPI[$customer];
+				foreach ($customer_identification_translation as $key => $toKey) {
+					if (isset($line[$key]) && strlen($line[$key])) {
+						return true;
+					}
+				}
+			}
+		}
+		return false;
 	}
 
 }
