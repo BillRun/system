@@ -36,6 +36,7 @@ class VLRAction extends ApiAction {
 			),
 		);
 		
+		$this->setCacheLifeTime(604800); // 1 week
 		$rate = $this->cache($cacheParams);
 		
 		$this->getController()->setOutput(array(array(
