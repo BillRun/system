@@ -22,6 +22,14 @@ class VLRAction extends ApiAction {
 
 		$vlr = $request->get('vlr', NULL);
 		
+		if (empty($vlr)) {
+			return $this->setError('VLR number is empty', $request->getRequest());
+		}
+
+		if (strlen($vlr) > 5) {
+			$vlr = substr($vlr, 0, 5);
+		}
+
 		$cacheParams = array(
 			'fetchParams' => array(
 				'vlr' => $vlr,
