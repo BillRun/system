@@ -189,15 +189,20 @@ class Billrun_Factory {
 	 * @return Billrun_Cache
 	 */
 	static public function cache() {
-		if (!self::$cache) {
-			$args = self::config()->getConfigValue('cache', array());
-			if (empty($args)) {
-				return false;
+		try {
+			if (!self::$cache) {
+				$args = self::config()->getConfigValue('cache', array());
+				if (empty($args)) {
+					return false;
+				}
+				self::$cache = Billrun_Cache::getInstance($args);
 			}
-			self::$cache = Billrun_Cache::getInstance($args);
-		}
 
-		return self::$cache;
+			return self::$cache;
+		} catch (Exception $e) {
+			Billrun_Factory::log('Cache instance cannot be generated', Zend_Log::ALERT);
+		}
+		return false;
 	}
 
 	/**

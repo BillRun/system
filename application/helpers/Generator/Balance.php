@@ -40,7 +40,7 @@ class Generator_Balance extends Generator_Golanxml {
 	 * @var string a formatted date string
 	 */
 	protected $date = null;
-
+	
 	public function __construct($options) {
 		$options['auto_create_dir'] = false;
 		parent::__construct($options);
@@ -100,8 +100,17 @@ class Generator_Balance extends Generator_Golanxml {
 	}
 
 	public function generate() {
-		$this->writer->openURI('php://output'); 
-		return $this->writeXML($this->data, $this->lines);
+		if ($this->buffer) {
+			$this->writer->openMemory();
+		} else {
+			$this->writer->openURI('php://output');
+		}
+		
+		$this->writeXML($this->data, $this->lines);
+		if ($this->buffer) {
+			return $this->writer->outputMemory();
+		}
+		
 	}
 
 	protected function setAccountId($aid) {
