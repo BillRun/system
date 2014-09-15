@@ -36,7 +36,7 @@ class Generator_Golanxml extends Billrun_Generator {
 	protected $data_rate;
 	protected $lines_coll;
 	protected $invoice_version = "1.1";
-
+	
 	/**
 	 * Flush XMLWriter every $flush_size billing lines
 	 * @var int
@@ -54,6 +54,13 @@ class Generator_Golanxml extends Billrun_Generator {
 	 * @var array 
 	 */
 	protected $filter_fields;
+	
+	/**
+	 * flag to buffer output results
+	 * 
+	 * @var boolean
+	 */
+	protected $buffer = false;
 
 	public function __construct($options) {
 		parent::__construct($options);
@@ -68,6 +75,9 @@ class Generator_Golanxml extends Billrun_Generator {
 		}
 		if (isset($options['flush_size']) && is_numeric($options['flush_size'])) {
 			$this->flush_size = intval($options['flush_size']);
+		}
+		if (isset($options['buffer'])) {
+			$this->buffer = $options['buffer'];
 		}
 
 		$this->lines_coll = Billrun_Factory::db()->linesCollection();
@@ -599,7 +609,7 @@ class Generator_Golanxml extends Billrun_Generator {
 			$this->writer->endElement(); // end BREAKDOWN_TOPIC
 			$this->writer->endElement(); // end SUBSCRIBER_BREAKDOWN
 			$this->writer->endElement(); // end SUBSCRIBER_INF
-			$this->writer->flush(true);
+			$this->flush();
 		}
 
 		$this->writer->startElement('INV_INVOICE_TOTAL');
@@ -634,7 +644,7 @@ class Generator_Golanxml extends Billrun_Generator {
 		$this->endInvoice();
 
 		$this->writer->endDocument();
-		$this->writer->flush(true);
+		$this->flush();
 	}
 
 	/**
@@ -1023,7 +1033,7 @@ EOI;
 					$line->collection($this->lines_coll);
 					$this->writeBillingRecord($this->getDate($line), $this->getTariffItem($line, $subscriber), $this->getCalledNo($line), $this->getCallerNo($line), $this->getUsageVolume($line), $this->getCharge($line), $this->getCredit($line), $this->getTariffKind($line['usaget']), $this->getAccessPrice($line), $this->getInterval($line), $this->getRate($line), $this->getIntlFlag($line), $this->getDiscountUsage($line), $this->getRoaming($line), $this->getServingNetwork($line), $this->getLineTypeOfBillingChar($line));
 					if ($lines_counter % $this->flush_size == 0) {
-						$this->writer->flush(true);
+						$this->flush();
 					}
 				}
 			}
@@ -1033,6 +1043,12 @@ EOI;
 			}
 		}
 		$this->writer->endElement(); // end BILLING_LINES
+	}
+	
+	protected function flush() {
+		if (!$this->buffer) {
+			$this->writer->flush(true);
+		}
 	}
 
 	/**

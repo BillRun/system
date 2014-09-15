@@ -6,13 +6,15 @@
  * @license         GNU General Public License version 2 or later; see LICENSE.txt
  */
 
+require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
+
 /**
  * Balance action class
  *
  * @package  Action
  * @since    0.5
  */
-class BalanceAction extends Action_Base {
+class BalanceAction extends ApiAction {
 
 	public function execute() {
 		$request = $this->getRequest();
@@ -27,23 +29,33 @@ class BalanceAction extends Action_Base {
 		} else {
 			$subscribers = array();
 		}
-
+		
+		$cacheParams = array(
+			'fetchParams' => array(
+				'aid' => $aid,
+				'subscribers' => $subscribers,
+				'stamp' => $stamp,
+			),
+		);
+		
+		$output = $this->cache($cacheParams);
+		header('Content-type: text/xml');
+		echo $output;
+		$this->getController()->setOutput(array(false, true)); // hack
+	}
+	
+	protected function fetchData($params) {
 		$options = array(
 			'type' => 'balance',
-			'aid' => $aid,
-			'subscribers' => $subscribers,
-			'stamp' => $stamp,
+			'aid' => $params['aid'],
+			'subscribers' => $params['subscribers'],
+			'stamp' => $params['stamp'],
+			'buffer' => true,
 		);
 		$generator = Billrun_Generator::getInstance($options);
-
-		if ($generator) {
-			$generator->load();
-			header('Content-type: text/xml');
-			$generator->generate();
-			$this->getController()->setOutput(array(false, true)); // hack
-		} else {
-			$this->_controller->addOutput("Generator cannot be loaded");
-		}
+		$generator->load();
+		$output = $generator->generate();
+		return $output;
 	}
 
 }
