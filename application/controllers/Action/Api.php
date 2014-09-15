@@ -14,6 +14,13 @@
  */
 abstract class ApiAction extends Action_Base {
 
+	/**
+	 * how much time to store in cache (seconds)
+	 * 
+	 * @var int
+	 */
+	protected $cacheLifetime = 14400;
+	
 	function setError($error_message, $input = null) {
 		Billrun_Factory::log()->log("Sending Error : {$error_message}", Zend_Log::NOTICE);
 		$output = array(
@@ -49,7 +56,8 @@ abstract class ApiAction extends Action_Base {
 		$cachedData = $cache->get($cacheKey, $cachePrefix);
 		if (empty($cachedData)) {
 			$cachedData = $this->fetchData($params['fetchParams']);
-			$cache->set($cacheKey, $cachedData, $cachePrefix);
+			$lifetime = Billrun_Factory::config()->getConfigValue('api.cacheLifetime.' . $actionName, $this->getCacheLifeTime());
+			$cache->set($cacheKey, $cachedData, $cachePrefix, $lifetime);
 		} else {
 			Billrun_Factory::log()->log("Fetch data from cache for " . $actionName . " api call", Zend_Log::INFO);
 		}
@@ -65,6 +73,22 @@ abstract class ApiAction extends Action_Base {
 	 */
 	protected function fetchData($params) {
 		return true;
+	}
+
+	/**
+	 * method to set api call cache lifetime
+	 * @param int $val the cache lifetime (seconds)
+	 */
+	protected function setCacheLifeTime($val) {
+		$this->cacheLifetime = $val;
+	}
+	
+	/**
+	 * method to get api call cache lifetime
+	 * @return int $val the cache lifetime (seconds)
+	 */
+	protected function getCacheLifeTime() {
+		return $this->cacheLifetime;
 	}
 
 }
