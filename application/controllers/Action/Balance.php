@@ -19,6 +19,7 @@ class BalanceAction extends ApiAction {
 	public function execute() {
 		$request = $this->getRequest();
 		$aid = $request->get("aid");
+		Billrun_Factory::log()->log("Execute balance api call to " . $aid, Zend_Log::INFO);
 		$stamp = Billrun_Util::getBillrunKey(time());
 		$subscribers = $request->get("subscribers");
 		if (!is_numeric($aid)) {
