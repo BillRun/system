@@ -40,8 +40,7 @@ class BalanceAction extends ApiAction {
 		
 		$output = $this->cache($cacheParams);
 		header('Content-type: text/xml');
-		echo $output;
-		$this->getController()->setOutput(array(false, true)); // hack
+		$this->getController()->setOutput(array($output, true)); // hack
 	}
 	
 	protected function fetchData($params) {
