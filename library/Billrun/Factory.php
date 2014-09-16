@@ -62,6 +62,13 @@ class Billrun_Factory {
 	 * @var Billrun Smser
 	 */
 	protected static $smser = null;
+	
+	/**
+	 * Subscriber instance
+	 * 
+	 * @var Billrun_Subscriber
+	 */
+	protected static $subscriber = null;
 
 	/**
 	 * method to retrieve the log instance and can send automatically to msg to log
@@ -206,6 +213,20 @@ class Billrun_Factory {
 		}
 
 		return self::$smser[$stamp];
+	}
+
+	/**
+	 * method to retrieve the subscriber instance
+	 * 
+	 * @return Billrun_Subscriber
+	 */
+	static public function subscriber() {
+		if (!self::$subscriber) {
+			$subscriberSettings = self::config()->getConfigValue('subscriber', array());
+			self::$subscriber = Billrun_Subscriber::getInstance($subscriberSettings);
+		}
+
+		return self::$subscriber;
 	}
 
 }

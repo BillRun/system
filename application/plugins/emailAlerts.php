@@ -66,7 +66,7 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @return type
 	 */
 	public function handlerNotify($handler, $options) {
-                if( $options['type'] != 'roaming') {
+                if( $options['type'] != 'notify') {
                     return FALSE; 
 		}
 		$ret[] = $this->processingNotify();

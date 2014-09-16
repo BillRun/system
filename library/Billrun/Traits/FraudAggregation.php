@@ -72,7 +72,7 @@ trait Billrun_Traits_FraudAggregation {
 						$events = array_merge($events, $ret);
 					}
 
-					Billrun_Factory::log()->log("FraudAggregation::collectFraudEvents found " . count($ret) . " exceeders on rule {$eventQuery['name']} ", Zend_Log::DEBUG);
+					Billrun_Factory::log()->log("FraudAggregation::collectFraudEvents found " . count($ret) . " exceeders on rule {$eventQuery['name']} ", Zend_Log::INFO);
 				}
 			}
 		}
