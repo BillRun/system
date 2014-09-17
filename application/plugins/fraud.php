@@ -478,7 +478,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 			return true;
 		}
 		$rateKey = isset($line['arate']['key']) ? $line['arate']['key'] : null;
-		if (!empty($rateKey) && ($rateKey == 'IL_MOBILE' || substr($rateKey, 0, 3) == 'KT_') && isset($line['called_number'])) {
+		if (isset($line['called_number'])) {
 			// fire  event to increased called_number usagev
 			$this->triggerCalledNumber($line);
 		}
