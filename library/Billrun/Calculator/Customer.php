@@ -107,6 +107,10 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			$subscriber_field = $subscriber->{$key};
 			$row[$key] = $subscriber_field;
 		}
+		foreach (array_keys($subscriber->getCustomerExtraData()) as $key) {
+			$subscriber_field = $subscriber->{$key};
+			$row[$key] = $subscriber_field;
+		}
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array($row, $this));
 		return $row;
 	}
@@ -117,7 +121,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	public function writeLine($line, $dataKey) {
 		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteLine', array('data' => $line, 'calculator' => $this));
 		$save = array();
-		$saveProperties = array_keys(Billrun_Factory::subscriber()->getAvailableFields());
+		$saveProperties = array_merge(array_keys(Billrun_Factory::subscriber()->getAvailableFields()), array_keys(Billrun_Factory::subscriber()->getCustomerExtraData()));
 		foreach ($saveProperties as $p) {
 			if (!is_null($val = $line->get($p, true))) {
 				$save['$set'][$p] = $val;
