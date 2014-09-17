@@ -47,9 +47,9 @@ class TokensAction extends Action_Base {
 		$url = $this->tokenConfig['host'] . $this->tokenConfig['post'] .
 			"?access_token=$access_token";
 		$data = array(
-			"kind" => 'carrierbilling#userToken',
-			"GUT" => $GUT,
-			"OUT" => $OUT
+			"kind"			=> "carrierbilling#userToken",
+			"googleToken"	=> $GUT,
+			"operatorToken" => $OUT
 		);
 
 		$response = Billrun_Util::sendRequest($url, $data, array("onlyBody" => false));

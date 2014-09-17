@@ -102,5 +102,14 @@ abstract class Billrun_Receiver extends Billrun_Base {
 		
 		return $result['n'] == 1 && $result['ok'] == 1;
 	}
+	
+	/**
+	 * Verify that the file is a valid file. 
+	 * @return boolean false if the file name should not be received true if it should.
+	 */
+	protected function isFileValid($filename, $path) {
+		return preg_match($this->filenameRegex, $filename);
+	}
+
 
 }
