@@ -82,7 +82,22 @@ class Billrun_Processor_Googledcb extends Billrun_Processor_Base_SeparatorFieldL
 		}
 		return $row;
 	}
-
+	
+	/**
+	 * decrypt and then load file to be handle by the processor
+	 * 
+	 * @param string $file_path
+	 * 
+	 * @return void
+	 */
+	public function loadFile($file_path, $retrivedHost = '') {
+		$pgpConfig = Billrun_Factory::config()->getConfigValue('googledcb.pgp', array());
+		$decrypted_file_path = str_replace('.pgp', '', $file_path);
+		Billrun_Pgp::getInstance($pgpConfig)->decrypt_file($file_path, $decrypted_file_path);
+		$file_path = $decrypted_file_path;
+		
+		parent::loadFile($file_path, $retrivedHost);
+	}
 }
 
 ?>
