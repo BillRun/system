@@ -21,12 +21,14 @@ class TokensModel extends TableModel {
 		$this->search_key = "key";
 	}
 
-	public function storeData($GUT, $OUT, $sid) {
+	public function storeData($GUT, $OUT, $sid, $aid, $plan) {
 		$entity = new Mongodloid_Entity(array(
 			'creation_date' => new MongoDate(),
-			'GUT' => $GUT,
-			'OUT' => $OUT,
-			'sid' => $sid,
+			'GUT'	=> $GUT,
+			'OUT'	=> $OUT,
+			'sid'	=> $sid,
+			'aid'	=> $aid,
+			'plan'	=> $plan,
 		));
 		return $entity->save($this->collection, 1);
 	}

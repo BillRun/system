@@ -131,6 +131,10 @@ class LinesModel extends TableModel {
 		return $ret;
 	}
 	
+	public function getCursor($query = array()) {
+		return parent::getData($query);
+	}
+	
 	public function getDistinctField($field, $filter_query = array()) {
 		if (empty($field) || empty($filter_query)) {
 			return array();
