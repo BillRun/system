@@ -51,6 +51,18 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	 */
 	protected $extraData = array();
 
+	/**
+	 * all international ggsn rates
+	 * @var array
+	 */
+	protected $intlGgsnRates = array();
+
+	/**
+	 *
+	 * @var type 
+	 */
+	protected $ratesModel;
+
 	public function __construct($options = array()) {
 		parent::__construct($options);
 
@@ -67,6 +79,9 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		$this->subscriber = Billrun_Factory::subscriber();
 		$this->plans = Billrun_Factory::db()->plansCollection();
 		$this->lines_coll = Billrun_Factory::db()->linesCollection();
+
+		$this->loadIntlGgsnRates();
+		$this->ratesModel = new RatesModel();
 	}
 
 	/**
@@ -120,6 +135,14 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			if ($this->isExtraDataRelevant($row, $key)) {
 				$subscriber_field = $subscriber->{$key};
 				$row[$key] = $subscriber_field;
+				if ($key == 'last_vlr') { // also it's possible to add alpha3 only if daily_ird_plan is true
+					if ($subscriber->{$key}) {
+						$rate = $this->ratesModel->getRateByVLR($subscriber->{$key});
+						if ($rate) {
+							$row['alpha3'] = $rate['alpha3'];
+						}
+					}
+				}
 			}
 		}
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array($row, $this));
@@ -132,8 +155,19 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	 * @param string $field
 	 * @return boolean
 	 */
-	public function isExtraDataRelevant($line, $field) {
-		return !empty($this->extraData[$line['type']]) && in_array($field, $this->extraData[$line['type']]);
+	public function isExtraDataRelevant(&$line, $field) {
+		if (empty($this->extraData[$line['type']]) || !in_array($field, $this->extraData[$line['type']])) {
+			return false;
+		}
+		if ($line['type'] == 'ggsn') {
+			if (is_array($line)) {
+				$arate = $line['arate'];
+			} else {
+				$arate = $line->get('arate', true);
+			}
+			return isset($this->intlGgsnRates[strval($arate['$id'])]);
+		}
+		return true;
 	}
 
 	/**
@@ -142,7 +176,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	public function writeLine($line, $dataKey) {
 		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteLine', array('data' => $line, 'calculator' => $this));
 		$save = array();
-		$saveProperties = array_merge(array_keys(Billrun_Factory::subscriber()->getAvailableFields()), array_keys(Billrun_Factory::subscriber()->getCustomerExtraData()));
+		$saveProperties = array_merge(array('last_vlr','alpha3'), array_keys(Billrun_Factory::subscriber()->getAvailableFields()), array_keys(Billrun_Factory::subscriber()->getCustomerExtraData()));
 		foreach ($saveProperties as $p) {
 			if (!is_null($val = $line->get($p, true))) {
 				$save['$set'][$p] = $val;
@@ -315,6 +349,22 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			$outgoing = in_array($line['record_type'], array('01', '11'));
 		}
 		return $outgoing;
+	}
+
+	protected function loadIntlGgsnRates() {
+		$rates_coll = Billrun_Factory::db()->ratesCollection();
+		$query = array(
+			'params.sgsn_addresses' => array(
+				'$exists' => TRUE,
+			),
+			'key' => array(
+				'$ne' => 'INTERNET_BILL_BY_VOLUME',
+			),
+		);
+		$rates = $rates_coll->query($query)->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
+		foreach ($rates as $rate) {
+			$this->intlGgsnRates[strval($rate->getId())] = $rate;
+		}
 	}
 
 }
