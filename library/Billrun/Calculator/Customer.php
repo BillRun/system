@@ -45,6 +45,12 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	 */
 	protected $bulk = true;
 
+	/**
+	 * Extra customer fields to be saved by line type
+	 * @var array
+	 */
+	protected $extraData = array();
+
 	public function __construct($options = array()) {
 		parent::__construct($options);
 
@@ -53,6 +59,9 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		}
 		if (isset($options['calculator']['bulk'])) {
 			$this->bulk = $options['calculator']['bulk'];
+		}
+		if (isset($options['calculator']['extra_data'])) {
+			$this->extraData = $options['calculator']['extra_data'];
 		}
 
 		$this->subscriber = Billrun_Factory::subscriber();
@@ -107,8 +116,24 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			$subscriber_field = $subscriber->{$key};
 			$row[$key] = $subscriber_field;
 		}
+		foreach (array_keys($subscriber->getCustomerExtraData())as $key) {
+			if ($this->isExtraDataRelevant($row, $key)) {
+				$subscriber_field = $subscriber->{$key};
+				$row[$key] = $subscriber_field;
+			}
+		}
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array($row, $this));
 		return $row;
+	}
+
+	/**
+	 * Returns whether to save the extra data field to the line or not
+	 * @param Mongodloid_Entity $line
+	 * @param string $field
+	 * @return boolean
+	 */
+	public function isExtraDataRelevant($line, $field) {
+		return !empty($this->extraData[$line['type']]) && in_array($field, $this->extraData[$line['type']]);
 	}
 
 	/**
@@ -117,7 +142,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	public function writeLine($line, $dataKey) {
 		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteLine', array('data' => $line, 'calculator' => $this));
 		$save = array();
-		$saveProperties = array_keys(Billrun_Factory::subscriber()->getAvailableFields());
+		$saveProperties = array_merge(array_keys(Billrun_Factory::subscriber()->getAvailableFields()), array_keys(Billrun_Factory::subscriber()->getCustomerExtraData()));
 		foreach ($saveProperties as $p) {
 			if (!is_null($val = $line->get($p, true))) {
 				$save['$set'][$p] = $val;
