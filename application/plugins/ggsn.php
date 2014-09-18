@@ -211,6 +211,7 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Pl
 				),
 			),
 		);
+		$aggregateQuery[1]['$match']['event_stamp'] = array('$exists' => false);
 		$dataAlerts = $lines->aggregate(array_merge($aggregateQuery, array($dataThrs)));
 		$retAlerts = array();
 		foreach ($dataAlerts as $key => $alert) {
