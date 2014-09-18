@@ -31,7 +31,6 @@ class Dcb_Soap_Handler {
 	 * @var array
 	 */
 	protected $config;
-	
 	protected $model;
 
 	public function __construct() {
@@ -88,7 +87,10 @@ class Dcb_Soap_Handler {
 		$response = new stdclass;
 		$response->Version = $request->Version;
 		$response->CorrelationId = $request->CorrelationId;
-		$sid = $this->getSid($request->OperatorUserToken);
+		$subscriberDetails = $this->getSubscriberDetails($request->OperatorUserToken);
+		$sid = $subscriberDetails['sid'];
+		$aid = $subscriberDetails['aid'];
+		$plan = $subscriberDetails['plan'];
 		if ($request->Currency != $this->config['currency']) {
 			$response->Result = self::GOOGLE_RESULT_CODE_INVALID_CURRENCY;
 		} else if ($sid) {
@@ -107,26 +109,29 @@ class Dcb_Soap_Handler {
 			$response->Result = self::GOOGLE_RESULT_CODE_INVALID_USER;
 		}
 
-		$data = (array)$request;
+		$data = (array) $request;
 		$data['responseResult'] = $response->Result;
-		
+		$data['sid'] = $sid;
+		$data['aid'] = $aid;
+		$data['plan'] = $plan;
+
 		$status = $this->model->getNotificationStatus($data['CorrelationId']);
-		
+
 		if (!$status) {
 			$ret = $this->model->storeData($data);
-			
+
 			if (is_null($ret)) {
 				$response->Result = self::GOOGLE_RESULT_CODE_GENERAL_FAILURE;
 			}
 		} else {
 			$response->Result = $status;
 		}
-		
+
 		return $response;
 	}
-	
+
 	public function CancelNotification($request) {
-		$data = (array)$request;
+		$data = (array) $request;
 		$this->model->cancelNotification($data);
 	}
 
@@ -138,12 +143,16 @@ class Dcb_Soap_Handler {
 		return $subscriber->isDcbActive() && !$subscriber->isInDebt();
 	}
 
-	protected function getSid($OUT) {
+	protected function getSubscriberDetails($OUT) {
 		$cursor = Billrun_Factory::db()->tokensCollection()->query(array('OUT' => $OUT))->cursor();
 		if (!$cursor->count()) {
 			return null;
 		} else {
-			return $cursor->current()['sid'];
+			return array(
+				"sid"	=>	$cursor->current()['sid'],
+				"aid"	=>	$cursor->current()['aid'],
+				"plan"	=>	$cursor->current()['plan'],
+			);
 		}
 	}
 
@@ -153,5 +162,5 @@ class Dcb_Soap_Handler {
 			'DATETIME' => date(Billrun_Base::base_dateformat),
 		);
 	}
-}
 
+}

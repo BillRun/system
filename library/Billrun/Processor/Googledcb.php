@@ -18,6 +18,11 @@ class Billrun_Processor_Googledcb extends Billrun_Processor_Base_SeparatorFieldL
 	 * Hold the structure configuration data.
 	 */
 	protected $structConfig = false;
+	
+	/**
+	 * Holds path to decrypted file path
+	 */
+	protected $decrypted_file_path;
 
 	public function __construct($options = array()) {
 		parent::__construct($options);
@@ -76,10 +81,41 @@ class Billrun_Processor_Googledcb extends Billrun_Processor_Base_SeparatorFieldL
 			$date_value = $row[$this->structConfig['config']['date_field']];
 			unset($row[$this->structConfig['config']['date_field']]);
 			$row['urt'] = new MongoDate($date_value);
+			// TODO: Remove - for debug
+			 $row['urt']= new MongoDate(strtotime("2014-08-15 00:00:00"));
 		}
 		if (!empty($this->structConfig['stamp_fields'])) { // todo: apply to all processors
 			$row['stamp'] = md5(serialize(array_intersect_key($row, array_flip($this->structConfig['stamp_fields']))));
 		}
+		$row['credit_type'] = $row['record_type'];
+		$row['type'] = 'credit'; // Same behavior as credit 
+		$row['service_name'] = 'GOOGLE_DCB';
+		$row['reason'] = 'GOOGLE_DCB';
+		$model = new FundsModel();
+		$correlation = $model->getNotificationData($row['correlation_id']);
+		
+		if (!$correlation) {
+			Billrun_Factory::log()->log("Correlation id not found : " . $row['correlation_id'], Zend_Log::ALERT);
+			return false;
+		}
+		
+		unset($correlation['_id']);
+		unset($correlation['CorrelationId']);
+		unset($correlation['BillingAgreement']);
+		
+		$amount = $correlation['ItemPrice'];
+		$vatable = false;
+		
+		if ($correlation['Tax']) {
+			$amount /= (1 + Billrun_Factory::config()->getConfigValue('pricing.vat'));
+			$vatable = true;
+		}
+		
+		$row = array_merge($row, $correlation);
+		$row['amount_without_vat'] = $amount;
+		$row['vatable'] = $vatable;
+		
+		
 		return $row;
 	}
 	
@@ -92,11 +128,26 @@ class Billrun_Processor_Googledcb extends Billrun_Processor_Base_SeparatorFieldL
 	 */
 	public function loadFile($file_path, $retrivedHost = '') {
 		$pgpConfig = Billrun_Factory::config()->getConfigValue('googledcb.pgp', array());
-		$decrypted_file_path = str_replace('.pgp', '', $file_path);
-		Billrun_Pgp::getInstance($pgpConfig)->decrypt_file($file_path, $decrypted_file_path);
-		$file_path = $decrypted_file_path;
+		$this->decrypted_file_path = str_replace('.pgp', '', $file_path);
+		Billrun_Pgp::getInstance($pgpConfig)->decrypt_file($file_path, $this->decrypted_file_path);
+		$file_path = $this->decrypted_file_path;
 		
 		parent::loadFile($file_path, $retrivedHost);
+	}
+	
+	/**
+	 * removes backedup files from workspace, also removes decrypted files
+	 * 
+	 * @param string $filestamp
+	 * 
+	 * @return void
+	 */
+	protected function removeFromWorkspace($filestamp) {
+		parent::removeFromWorkspace($filestamp);
+		
+		// Remove decrypted file as well		
+		Billrun_Factory::log()->log("Removing file {$this->decrypted_file_path} from the workspace", Zend_Log::INFO);
+		unlink($this->decrypted_file_path);
 	}
 }
 

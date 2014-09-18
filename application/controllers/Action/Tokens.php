@@ -26,12 +26,22 @@ class TokensAction extends Action_Base {
 		$params[$callingNumberCRMConfig['toKey']] = preg_replace($callingNumberCRMConfig['clearRegex'], '', $ndcSn);
 
 		$subscriber = Billrun_Factory::subscriber();
-		$subscriberField = Billrun_Config::getInstance()->getConfigValue('googledcb.subscriberField');
+		$subscriberFields = Billrun_Config::getInstance()->getConfigValue('googledcb.subscriberFields', array());
+		$subscriberField = $subscriberFields['subscriberField'];
+		$accountField = $subscriberFields['accountField'];
+		$planField = $subscriberFields['planField'];
 		$identities = $subscriber->getSubscribersByParams(array($params), $subscriber->getAvailableFields());
+
 		if (isset($identities[0]) && $identities[0]->{$subscriberField}) { // to do: change to $subscriber->isValid() once it works
 			$sid = $identities[0]->{$subscriberField};
+			$aid = $identities[0]->{$accountField};
+			$plan = $identities[0]->{$planField};
+			
 			if (is_numeric($identities[0]->{$subscriberField})) {
 				$sid = intval($sid);
+			}
+			if (is_numeric($identities[0]->{$accountField})) {
+				$aid = intval($aid);
 			}
 		} else {
 			Billrun_Factory::log()->log('Google dcb association failed. Unknown ndc sn ' . $ndcSn, Zend_Log::ALERT);
@@ -39,7 +49,7 @@ class TokensAction extends Action_Base {
 		}
 		// Insert to DB
 		$model = new TokensModel();
-		$model->storeData($GUT, $OUT, $sid);
+		$model->storeData($GUT, $OUT, $sid, $aid, $plan);
 
 		// Send request to google
 		$this->tokenConfig = Billrun_Factory::config()->getConfigValue('googledcb.association.tokens', array());

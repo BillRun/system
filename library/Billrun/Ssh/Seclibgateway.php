@@ -1,7 +1,6 @@
 <?php
 
 //use Net_SFTP, Crypt_RSA, System_SSH_Agent;
-
 //require_once 'Net/SFTP.php';
 ////require_once 'Net/SSH2.php';
 //require_once 'Crypt/RSA.php';
@@ -52,11 +51,10 @@ class Billrun_Ssh_Seclibgateway implements Billrun_Ssh_Gatewayinterface {
 	 * @param  array  $files
 	 * @return void
 	 */
-	public function __construct($host, array $auth, array $files)
-	{
-	    $this->auth = $auth;
-	    $this->files = $files;
-	    $this->setHostAndPort($host);
+	public function __construct($host, array $auth, array $files) {
+		$this->auth = $auth;
+		$this->files = $files;
+		$this->setHostAndPort($host);
 	}
 
 	/**
@@ -65,17 +63,13 @@ class Billrun_Ssh_Seclibgateway implements Billrun_Ssh_Gatewayinterface {
 	 * @param  string  $host
 	 * @return void
 	 */
-	protected function setHostAndPort($host)
-	{
-	    if ( !strpos($host, ':'))
-	    {
-		$this->host = $host;
-	    }
-	    else
-	    {
-		list($this->host, $this->port) = explode(':', $host);
-		$this->port = (int) $this->port;
-	    }
+	protected function setHostAndPort($host) {
+		if (!strpos($host, ':')) {
+			$this->host = $host;
+		} else {
+			list($this->host, $this->port) = explode(':', $host);
+			$this->port = (int) $this->port;
+		}
 	}
 
 	/**
@@ -84,9 +78,8 @@ class Billrun_Ssh_Seclibgateway implements Billrun_Ssh_Gatewayinterface {
 	 * @param  string  $username
 	 * @return bool
 	 */
-	public function connect($username)
-	{
-	    return $this->getConnection()->login($username, $this->getAuthForLogin());
+	public function connect($username) {
+		return $this->getConnection()->login($username, $this->getAuthForLogin());
 	}
 
 	/**
@@ -94,9 +87,8 @@ class Billrun_Ssh_Seclibgateway implements Billrun_Ssh_Gatewayinterface {
 	 *
 	 * @return bool
 	 */
-	public function connected()
-	{
-	    return $this->getConnection()->isConnected();
+	public function connected() {
+		return $this->getConnection()->isConnected();
 	}
 
 	/**
@@ -105,9 +97,8 @@ class Billrun_Ssh_Seclibgateway implements Billrun_Ssh_Gatewayinterface {
 	 * @param  string  $command
 	 * @return void
 	 */
-	public function run($command)
-	{
-	    return $this->getConnection()->exec($command);
+	public function run($command) {
+		return $this->getConnection()->exec($command);
 	}
 
 	/**
@@ -117,9 +108,8 @@ class Billrun_Ssh_Seclibgateway implements Billrun_Ssh_Gatewayinterface {
 	 * @param  string  $local
 	 * @return void
 	 */
-	public function get($remote, $local)
-	{
-	    $this->getConnection()->get($remote, $local);
+	public function get($remote, $local) {
+		$this->getConnection()->get($remote, $local);
 	}
 
 	/**
@@ -128,9 +118,8 @@ class Billrun_Ssh_Seclibgateway implements Billrun_Ssh_Gatewayinterface {
 	 * @param  string  $remote
 	 * @return string
 	 */
-	public function getString($remote)
-	{
-	    return $this->getConnection()->get($remote);
+	public function getString($remote) {
+		return $this->getConnection()->get($remote);
 	}
 
 	/**
@@ -140,9 +129,8 @@ class Billrun_Ssh_Seclibgateway implements Billrun_Ssh_Gatewayinterface {
 	 * @param  string  $remote
 	 * @return void
 	 */
-	public function put($local, $remote)
-	{
-	    $this->getConnection()->put($remote, $local, NET_SFTP_LOCAL_FILE);
+	public function put($local, $remote) {
+		$this->getConnection()->put($remote, $local, NET_SFTP_LOCAL_FILE);
 	}
 
 	/**
@@ -152,9 +140,8 @@ class Billrun_Ssh_Seclibgateway implements Billrun_Ssh_Gatewayinterface {
 	 * @param  string  $contents
 	 * @return void
 	 */
-	public function putString($remote, $contents)
-	{
-	    $this->getConnection()->put($remote, $contents);
+	public function putString($remote, $contents) {
+		$this->getConnection()->put($remote, $contents);
 	}
 
 	/**
@@ -162,13 +149,12 @@ class Billrun_Ssh_Seclibgateway implements Billrun_Ssh_Gatewayinterface {
 	 *
 	 * @return string|null
 	 */
-	public function nextLine()
-	{
-	    $value = $this->getConnection()->_get_channel_packet(NET_SSH2_CHANNEL_EXEC);
+	public function nextLine() {
+		$value = $this->getConnection()->_get_channel_packet(NET_SSH2_CHANNEL_EXEC);
 
-	    return $value === true ? null : $value;
+		return $value === true ? null : $value;
 	}
-	
+
 	/**
 	 * Get list of files in directory
 	 *
@@ -176,42 +162,39 @@ class Billrun_Ssh_Seclibgateway implements Billrun_Ssh_Gatewayinterface {
 	 * @param  bool  $recursive
 	 * @return Array
 	 */
-	public function getListOfFiles($dir, $recursive = false)
-	{
-	    $files = array();
-	    $_files = $this->getConnection()->nlist($dir, $recursive);
-	    
-	    // Only adds files (not folders or hidden)
-	    foreach ($_files as $file) {
-		if (strpos($file, '.') !== 0) {
-		    $files[] = $file;
+	public function getListOfFiles($dir, $recursive = false) {
+		$files = array();
+		$_files = $this->getConnection()->nlist($dir, $recursive);
+
+		// Only adds files (not folders or hidden)
+		foreach ($_files as $file) {
+			if (strpos($file, '.') !== 0) {
+				$files[] = $file;
+			}
 		}
-	    }
-	    return $files;
+		return $files;
 	}
-		
+
 	/**
 	 * Get files' timestamp
 	 *
 	 * @param  string  $file_path
 	 * @return timestamp
 	 */
-	public function getTimestamp($file_path)
-	{
-	    return $this->getConnection()->filemtime($file_path);
+	public function getTimestamp($file_path) {
+		return $this->getConnection()->filemtime($file_path);
 	}
-	
+
 	/**
 	 * Get files' size
 	 *
 	 * @param  string  $file_path
 	 * @return size
 	 */
-	public function getFileSize($file_path)
-	{
-	    return $this->getConnection()->size($file_path);
+	public function getFileSize($file_path) {
+		return $this->getConnection()->size($file_path);
 	}
-	
+
 	/**
 	 * Get files' timestamp
 	 *
@@ -219,7 +202,7 @@ class Billrun_Ssh_Seclibgateway implements Billrun_Ssh_Gatewayinterface {
 	 * @return void
 	 */
 	public function deleteFile($file_path) {
-	    return $this->getConnection()->delete($file_path);
+		return $this->getConnection()->delete($file_path);
 	}
 
 	/**
@@ -228,29 +211,26 @@ class Billrun_Ssh_Seclibgateway implements Billrun_Ssh_Gatewayinterface {
 	 * @return Crypt_RSA|System_SSH_Agent|string
 	 * @throws InvalidArgumentException
 	 */
-	protected function getAuthForLogin()
-	{
-	    if ($this->useAgent()) {
-		return $this->getAgent();
-	    }
+	protected function getAuthForLogin() {
+		if ($this->useAgent()) {
+			return $this->getAgent();
+		}
 
-	    // If a "key" was specified in the auth credentials, we will load it into a
-	    // secure RSA key instance, which will be used to connect to the servers
-	    // in place of a password, and avoids the developer specifying a pass.
-	    elseif ($this->hasRsaKey())
-	    {
-		return $this->loadRsaKey($this->auth);
-	    }
+		// If a "key" was specified in the auth credentials, we will load it into a
+		// secure RSA key instance, which will be used to connect to the servers
+		// in place of a password, and avoids the developer specifying a pass.
+		elseif ($this->hasRsaKey()) {
+			return $this->loadRsaKey($this->auth);
+		}
 
-	    // If a plain password was set on the auth credentials, we will just return
-	    // that as it can be used to connect to the server. This will be used if
-	    // there is no RSA key and it gets specified in the credential arrays.
-	    elseif (isset($this->auth['password']))
-	    {
-		return $this->auth['password'];
-	    }
+		// If a plain password was set on the auth credentials, we will just return
+		// that as it can be used to connect to the server. This will be used if
+		// there is no RSA key and it gets specified in the credential arrays.
+		elseif (isset($this->auth['password'])) {
+			return $this->auth['password'];
+		}
 
-	    throw new InvalidArgumentException('Password / key is required.');
+		throw new InvalidArgumentException('Password / key is required.');
 	}
 
 	/**
@@ -258,11 +238,10 @@ class Billrun_Ssh_Seclibgateway implements Billrun_Ssh_Gatewayinterface {
 	 *
 	 * @return bool
 	 */
-	protected function hasRsaKey()
-	{
-	    $hasKey = (isset($this->auth['key']) && trim($this->auth['key']) != '');
+	protected function hasRsaKey() {
+		$hasKey = (isset($this->auth['key']) && trim($this->auth['key']) != '');
 
-	    return $hasKey || (isset($this->auth['keytext']) && trim($this->auth['keytext']) != '');
+		return $hasKey || (isset($this->auth['keytext']) && trim($this->auth['keytext']) != '');
 	}
 
 	/**
@@ -271,14 +250,13 @@ class Billrun_Ssh_Seclibgateway implements Billrun_Ssh_Gatewayinterface {
 	 * @param  array  $auth
 	 * @return Crypt_RSA
 	 */
-	protected function loadRsaKey(array $auth)
-	{
-	    //$key = $this->getKey($auth);
-	    $key = new Crypt_RSA();
-	    $key->loadKey($this->readRsaKey($auth));
-	    //$key->loadKey($this->readRsaKey($auth));
-	    //$key->setParams(array('public_key' => $this->readRsaKey($auth)));
-	    return $key;
+	protected function loadRsaKey(array $auth) {
+		//$key = $this->getKey($auth);
+		$key = new Crypt_RSA();
+		$key->loadKey($this->readRsaKey($auth));
+		//$key->loadKey($this->readRsaKey($auth));
+		//$key->setParams(array('public_key' => $this->readRsaKey($auth)));
+		return $key;
 	}
 
 	/**
@@ -287,13 +265,12 @@ class Billrun_Ssh_Seclibgateway implements Billrun_Ssh_Gatewayinterface {
 	 * @param  array  $auth
 	 * @return string
 	 */
-	protected function readRsaKey(array $auth)
-	{
-	    if (isset($auth['key']) && is_file($auth['key'])){
-		return file_get_contents($auth['key']);
-	    }
+	protected function readRsaKey(array $auth) {
+		if (isset($auth['key']) && is_file($auth['key'])) {
+			return file_get_contents($auth['key']);
+		}
 
-	    return $auth['keytext'];
+		return $auth['keytext'];
 	}
 
 	/**
@@ -302,14 +279,13 @@ class Billrun_Ssh_Seclibgateway implements Billrun_Ssh_Gatewayinterface {
 	 * @param  array  $auth
 	 * @return Crypt_RSA
 	 */
-	protected function getKey(array $auth)
-	{
-	    $key = $this->getNewKey();
-	    //$key->setParams($auth);
-	    //$key->setPassword(array_get($auth, 'keyphrase'));
-	    //$key->loadKey(file_get_contents('privatekey'));
+	protected function getKey(array $auth) {
+		$key = $this->getNewKey();
+		//$key->setParams($auth);
+		//$key->setPassword(array_get($auth, 'keyphrase'));
+		//$key->loadKey(file_get_contents('privatekey'));
 
-	    return $key;
+		return $key;
 	}
 
 	/**
@@ -317,9 +293,8 @@ class Billrun_Ssh_Seclibgateway implements Billrun_Ssh_Gatewayinterface {
 	 *
 	 * @return bool
 	 */
-	protected function useAgent()
-	{
-	    return isset($this->auth['agent']) && $this->auth['agent'] === true;
+	protected function useAgent() {
+		return isset($this->auth['agent']) && $this->auth['agent'] === true;
 	}
 
 	/**
@@ -327,9 +302,8 @@ class Billrun_Ssh_Seclibgateway implements Billrun_Ssh_Gatewayinterface {
 	 *
 	 * @return System_SSH_Agent
 	 */
-	public function getAgent()
-	{
-	    return new System_SSH_Agent;
+	public function getAgent() {
+		return new System_SSH_Agent;
 	}
 
 	/**
@@ -337,10 +311,9 @@ class Billrun_Ssh_Seclibgateway implements Billrun_Ssh_Gatewayinterface {
 	 *
 	 * @return Crypt_RSA
 	 */
-	public function getNewKey()
-	{
-	    return new Crypt_RSA;
-	    //return Crypt_RSA::factory();
+	public function getNewKey() {
+		return new Crypt_RSA;
+		//return Crypt_RSA::factory();
 	}
 
 	/**
@@ -348,8 +321,7 @@ class Billrun_Ssh_Seclibgateway implements Billrun_Ssh_Gatewayinterface {
 	 *
 	 * @return int|bool
 	 */
-	public function status()
-	{
+	public function status() {
 		return $this->getConnection()->getExitStatus();
 	}
 
@@ -358,8 +330,7 @@ class Billrun_Ssh_Seclibgateway implements Billrun_Ssh_Gatewayinterface {
 	 *
 	 * @return string
 	 */
-	public function getHost()
-	{
+	public function getHost() {
 		return $this->host;
 	}
 
@@ -368,8 +339,7 @@ class Billrun_Ssh_Seclibgateway implements Billrun_Ssh_Gatewayinterface {
 	 *
 	 * @return int
 	 */
-	public function getPort()
-	{
+	public function getPort() {
 		return $this->port;
 	}
 
@@ -378,11 +348,11 @@ class Billrun_Ssh_Seclibgateway implements Billrun_Ssh_Gatewayinterface {
 	 *
 	 * @return Net_SFTP
 	 */
-	public function getConnection()
-	{
-	    if ($this->connection) {
-		return $this->connection;
-	    }
-	    return $this->connection = new Net_SFTP($this->host, $this->port);
+	public function getConnection() {
+		if ($this->connection) {
+			return $this->connection;
+		}
+		return $this->connection = new Net_SFTP($this->host, $this->port);
 	}
+
 }
