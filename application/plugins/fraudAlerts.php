@@ -258,7 +258,7 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 			'$sort' => array('priority' => 1, 'creation_time' => 1)
 				), array(
 			'$group' => array(
-				'_id' => array('imsi' => '$imsi', 'msisdn' => '$msisdn', 'sid' => '$sid'),
+				'_id' => array('imsi' => '$imsi', 'msisdn' => '$msisdn', 'sid' => '$sid','channel' => '$channel'),
 				'id' => array('$addToSet' => '$_id'),
 				'imsi' => array('$first' => '$imsi'),
 				'msisdn' => array('$first' => '$msisdn'),
@@ -307,7 +307,7 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @param mixed $failure info on failure
 	 */
 	protected function markEvent($event, $failure = null) {
-		Billrun_Log::getInstance()->log("Fraud alerts mark event " . ($failure != null ? $event['stamp'] : $event['deposit_stamp'] ), Zend_Log::INFO);
+		Billrun_Log::getInstance()->log("Fraud alerts mark event " . ($failure !== null ? join(",",$event['stamps']) : $event['deposit_stamp'] ), Zend_Log::INFO);
 		//mark events as dealt with.
 		$events_where = array(
 			'notify_time' => array('$exists' => false),
@@ -367,12 +367,13 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 			}
 		}
 
-		if (isset($msisdn)) {
+		/* TODO no lines have this field reinstate once all lines have this field.
+		 * if (isset($msisdn)) {
 			$lines_where['msisdn'] = $msisdn;
 			if (!isset($hint)) {
 				$hint = array('msisdn' => 1);
 			}
-		}
+		}*/
 
 //		if (isset($event['effects'])) {
 //			$lines_where[$event['effects']['key']] = $event['effects']['filter'];

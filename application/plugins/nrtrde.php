@@ -420,13 +420,17 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 			'base_match' => array(
 				'$match' => array(
 					'source' => 'nrtrde',
-					'sender' => array('$in' => $groupIds),
 				),
 			),
 			'where' => array(
 				'$match' => array(
 					'deposit_stamp' => array('$exists' => false),
 				),
+			),
+			'group_match' => array(
+				'$match' => array(
+					'sender' => array('$in' => $groupIds),
+				)
 			),
 			'group' => array(
 				'$group' => array(
