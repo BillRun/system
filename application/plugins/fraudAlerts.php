@@ -367,12 +367,13 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 			}
 		}
 
-		if (isset($msisdn)) {
+		/* TODO no lines have this field reinstate once all lines have this field.
+		 * if (isset($msisdn)) {
 			$lines_where['msisdn'] = $msisdn;
 			if (!isset($hint)) {
 				$hint = array('msisdn' => 1);
 			}
-		}
+		}*/
 
 //		if (isset($event['effects'])) {
 //			$lines_where[$event['effects']['key']] = $event['effects']['filter'];
