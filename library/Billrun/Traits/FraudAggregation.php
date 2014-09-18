@@ -51,22 +51,20 @@ trait Billrun_Traits_FraudAggregation {
 
 					$query = $baseQuery;
 					$eventQuery = $this->prepareRuleQuery($eventQuery, $key);
-					$charge_time = new MongoDate(isset($eventQuery['time_period']) ? strtotime( $eventQuery['time_period']) : Billrun_Util::getLastChargeTime(true));
+					$charge_time = new MongoDate(isset($eventQuery['time_period']) ? strtotime($eventQuery['time_period']) : Billrun_Util::getLastChargeTime(true));
 					$query['base_match']['$match'][$timeField]['$gte'] = $charge_time;
 
 					$project = $query['project'];
-					$project['$project'] = array_merge($project['$project'], 
-											$this->addToProject((!empty($eventRules['added_values']) ? $eventRules['added_values'] : array())),
-											$this->addToProject(array(	'units' => $eventQuery['units'], 'event_type' => $key,
-																		'threshold' => $eventQuery['threshold'], 'target_plans' => $eventRules['target_plans']) ));
+					$project['$project'] = array_merge($project['$project'], $this->addToProject((!empty($eventRules['added_values']) ? $eventRules['added_values'] : array())), $this->addToProject(array('units' => $eventQuery['units'], 'event_type' => $key,
+								'threshold' => $eventQuery['threshold'], 'target_plans' => $eventRules['target_plans'])));
 					$project['$project']['value'] = $eventQuery['value'];
 					$project['$project'][$eventQuery['name']] = $eventQuery['value'];
 					$query['project'] = $project;
 
-					$query['where']['$match'] = array_merge($query['where']['$match'], (isset($eventQuery['query']) ? $this->parseEventQuery($eventQuery['query']) : array()));
+					$query['where']['$match'] = array_merge($query['where']['$match'], (isset($eventQuery['query']) ? $this->parseEventQuery($eventQuery['query']) : array()), (isset($eventRules['group_rules'][$groupName]) ? $this->parseEventQuery($eventRules['group_rules'][$groupName]) : array()));
 					$ruleMatch = array('$match' => (isset($eventQuery['match']) ? $eventQuery['match'] : array('value' => array('$gte' => intval($eventQuery['threshold']))) ));
-
-					$ret = $lines->aggregate($query['base_match'], $query['where'], $query['group'], $query['translate'], $query['project'], $ruleMatch);
+					
+					$ret = $lines->aggregate($query['base_match'], $query['where'], $query['group_match'], $query['group'], $query['translate'], $query['project'], $ruleMatch);
 
 					if ($this->postProcessEventResults($events, $ret, $eventQuery, $key)) {
 						$events = array_merge($events, $ret);
@@ -90,6 +88,9 @@ trait Billrun_Traits_FraudAggregation {
 						break;
 					case 'regex':
 						$value = array('$regex' => $parameter['value']);
+						break;
+					case 'boolean':
+						$value = (boolean) $parameter['value'];
 						break;
 				}
 			} else {
