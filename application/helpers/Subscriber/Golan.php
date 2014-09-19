@@ -20,7 +20,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 	protected $time = null;
 	protected $save_crm_output = false;
 	protected $crm_output_dir = null;
-	protected $extraFields = array('kosher', 'credits');
+	protected $billrunExtraFields = array('kosher', 'credits');
 
 	/**
 	 * calculator for manual charges on billable
