@@ -75,6 +75,17 @@ class Billrun_Plan {
 			}
 		}
 	}
+	
+	public function getData($raw = false) {
+		if ($raw) {
+			return $this->data->getRawData();
+		}
+		return $this->data;
+	}
+	
+	public function getPlanLoadTime() {
+		return $this->plan_load_time;
+	}
 
 	protected static function initPlans() {
 		if (empty(self::$plans)) {
@@ -262,11 +273,18 @@ class Billrun_Plan {
 	 */
 	public function usageLeftInPlanGroup($subscriberBalance, $rate, $usageType = 'call') {
 		$groupSelected = $this->getStrongestGroup($rate, $usageType);
-		if ($groupSelected === FALSE) {
+		if ($groupSelected === FALSE || !isset($this->data['include']['groups'][$groupSelected][$usageType])) {
 			return 0;
 		}
 
 		$rateUsageIncluded = $this->data['include']['groups'][$groupSelected][$usageType];
+
+		// on some cases we have limits to unlimited
+		if (isset($this->data['include']['groups'][$groupSelected]['limits'])) {
+			$limits = $this->data['include']['groups'][$groupSelected]['limits'];
+			Billrun_Factory::dispatcher()->trigger('triggerPlanGroupRateRule', array(&$rateUsageIncluded, $groupSelected, $limits, $this, $usageType, $rate, $subscriberBalance));
+		}
+
 
 		// if isset $rule {
 		// Billrun_Factory::dispatcher()->trigger('triggerGroupRateRule', array($rule, $this, $group, $usageType, $rate, $subscriberBalance, &$usageLeft));
@@ -278,15 +296,15 @@ class Billrun_Plan {
 			return PHP_INT_MAX;
 		}
 
-		if (isset($subscriberBalance['groups'][$groupSelected][$usageType]['usagev'])) {
-			$subscriberSpent = $subscriberBalance['groups'][$groupSelected][$usageType]['usagev'];
+		if (isset($subscriberBalance['balance']['groups'][$groupSelected][$usageType]['usagev'])) {
+			$subscriberSpent = $subscriberBalance['balance']['groups'][$groupSelected][$usageType]['usagev'];
 		} else {
 			$subscriberSpent = 0;
 		}
 		$usageLeft = $rateUsageIncluded - $subscriberSpent;
 		return floatval($usageLeft < 0 ? 0 : $usageLeft);
 	}
-
+	
 	/**
 	 * Get the usage left in the current plan.
 	 * @param $subscriberBalance the current sunscriber balance.
@@ -304,7 +322,7 @@ class Billrun_Plan {
 			return PHP_INT_MAX;
 		}
 
-		$usageLeft = $usageIncluded - $subscriberBalance['totals'][$this->getBalanceTotalsKey($usagetype, $rate)]['usagev'];
+		$usageLeft = $usageIncluded - $subscriberBalance['balance']['totals'][$this->getBalanceTotalsKey($usagetype, $rate)]['usagev'];
 		return floatval($usageLeft < 0 ? 0 : $usageLeft);
 	}
 
