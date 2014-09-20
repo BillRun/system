@@ -19,7 +19,7 @@ class irdPlugin extends Billrun_Plugin_BillrunPluginBase {
 	protected $line_type = null;
 
 	public function beforeUpdateSubscriberBalance($balance, $row, $rate, $calculator) {
-		if (isset($row['daily_ird']) || $row['daily_ird']) {
+		if (isset($row['daily_ird_plan']) && $row['daily_ird_plan']) {
 			$this->daily_ird = true;
 		} else {
 			$this->daily_ird = false;
