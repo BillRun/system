@@ -83,10 +83,6 @@ class Billrun_Plan {
 		return $this->data;
 	}
 	
-	public function getPlanLoadTime() {
-		return $this->plan_load_time;
-	}
-
 	protected static function initPlans() {
 		if (empty(self::$plans)) {
 			$plans_coll = Billrun_Factory::db()->plansCollection();
