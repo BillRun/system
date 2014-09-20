@@ -19,6 +19,7 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	protected $line_type = null;
 
 	public function beforeUpdateSubscriberBalance($balance, $row, $rate, $calculator) {
+		// todo: require to use local time abroad
 		$this->line_time = $row['urt']->sec;
 		$this->line_type = $row['type'];
 	}
@@ -34,7 +35,6 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @param type $rate
 	 * @param type $subscriberBalance
 	 * 
-	 * @todo need to verify when lines does not come in chronological order
 	 */
 	public function triggerPlanGroupRateRule(&$rateUsageIncluded, $groupSelected, $limits, $plan, $usageType, $rate, $subscriberBalance) {
 		if ($groupSelected != 'VF' || $this->line_type != 'tap3') {
