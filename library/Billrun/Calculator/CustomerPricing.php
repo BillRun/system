@@ -272,7 +272,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		$plan = $this->getPlan($sub_balance);
 		$ret = array();
 		if ($plan->isRateInBasePlan($rate, $usageType)) {
-			$planVolumeLeft = $plan->usageLeftInBasePlan($sub_balance['balance'], $rate, $usageType);
+			$planVolumeLeft = $plan->usageLeftInBasePlan($sub_balance, $rate, $usageType);
 			$volumeToCharge = $volume - $planVolumeLeft;
 			if ($volumeToCharge < 0) {
 				$volumeToCharge = 0;
@@ -285,7 +285,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				$ret['over_plan'] = $volumeToCharge;
 			}
 		} else if ($plan->isRateInPlanGroup($rate, $usageType)) {
-			$groupVolumeLeft = $plan->usageLeftInPlanGroup($sub_balance['balance'], $rate, $usageType);
+			$groupVolumeLeft = $plan->usageLeftInPlanGroup($sub_balance, $rate, $usageType);
 			$volumeToCharge = $volume - $groupVolumeLeft;
 			if ($volumeToCharge < 0) {
 				$volumeToCharge = 0;

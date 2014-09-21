@@ -21,10 +21,23 @@ class VLRAction extends ApiAction {
 		$request = $this->getRequest();
 
 		$vlr = $request->get('vlr', NULL);
-		$model = new RatesModel();
+		
+		if (empty($vlr)) {
+			return $this->setError('VLR number is empty', $request->getRequest());
+		}
 
-		$rate = $model->getRateByVLR($vlr);
-		unset($rate['_id']);
+		if (strlen($vlr) > 5) {
+			$vlr = substr($vlr, 0, 5);
+		}
+
+		$cacheParams = array(
+			'fetchParams' => array(
+				'vlr' => $vlr,
+			),
+		);
+		
+		$this->setCacheLifeTime(604800); // 1 week
+		$rate = $this->cache($cacheParams);
 		
 		$this->getController()->setOutput(array(array(
 				'status' => 1,
@@ -32,6 +45,13 @@ class VLRAction extends ApiAction {
 				'details' => $rate,
 				'input' => $request->getRequest(),
 			)));
+	}
+	
+	protected function fetchData($params) {
+		$model = new RatesModel();
+		$rate = $model->getRateByVLR($params['vlr']);
+		unset($rate['_id']);
+		return $rate;
 	}
 
 }

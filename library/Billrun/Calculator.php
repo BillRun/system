@@ -75,10 +75,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	protected $autosort = true;
 	protected $queue_coll = null;
 
-	
 	protected $rates_query = array();
-
-
 	/**
 	 * constructor of the class
 	 * 
@@ -410,6 +407,15 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	}
 	
 	/**
+	 * (Stab) Check if a given rate is a valid rate for rating
+	 * @param type $rate the rate to check
+	 * @return boolean true  if the rate is ok for use  false otherwise.
+	 */
+	protected function isRateValid($rate) {
+		return true;
+	}
+
+	/**
 	 * Caches the rates in the memory for fast computations
 	 */
 	protected function loadRates() {
@@ -417,6 +423,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		$rates = Billrun_Factory::db()->ratesCollection()->query($this->rates_query)->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
 		$this->rates = array();
 		foreach ($rates as $rate) {
+			if($this->isRateValid($rate)) {
 			$rate->collection($rates_coll);
 			if (isset($rate['params']['prefix'])) {
 				foreach ($rate['params']['prefix'] as $prefix) {
@@ -426,6 +433,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 				$this->rates['UNRATED'] = $rate;
 			} else {
 				$this->rates['noprefix'][] = $rate;
+				}	
 			}
 		}
 	}

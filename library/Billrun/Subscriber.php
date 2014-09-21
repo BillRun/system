@@ -36,15 +36,24 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 	protected $availableFields = array();
 
 	/**
-	 * extra fields 
+	 * extra fields for billrun
 	 * @var array
 	 */
-	protected $extraFields = array();
+	protected $billrunExtraFields = array();
+	
+	/**
+	 * extra fields for the customer
+	 * @var array
+	 */
+	protected $customerExtraData = array();
 
 	public function __construct($options = array()) {
 		parent::__construct($options);
 		if (isset($options['availableFields'])) {
 			$this->availableFields = $options['availableFields'];
+		}
+		if (isset($options['extra_data'])) {
+			$this->customerExtraData = $options['extra_data'];
 		}
 	}
 
@@ -74,8 +83,11 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 	 * @return mixed if data field  accessible return data field, else null
 	 */
 	public function __get($name) {
-		if ((array_key_exists($name, $this->availableFields) || in_array($name, $this->extraFields)) && array_key_exists($name, $this->data)) {
+		if ((array_key_exists($name, $this->availableFields) || in_array($name, $this->billrunExtraFields)) && array_key_exists($name, $this->data)) {
 			return $this->data[$name];
+		}
+		else if (array_key_exists($name, $this->customerExtraData) && isset ($this->data['extra_data'][$name])) {
+			return $this->data['extra_data'][$name];
 		}
 		return null;
 	}
@@ -129,7 +141,15 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 	 * @return array
 	 */
 	public function getExtraFieldsForBillrun() {
-		return $this->extraFields;
+		return $this->billrunExtraFields;
+	}
+	
+	/**
+	 * Returns extra fields for the customer
+	 * @return array
+	 */
+	public function getCustomerExtraData() {
+		return $this->customerExtraData;
 	}
 
 }

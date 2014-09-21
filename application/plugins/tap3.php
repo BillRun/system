@@ -173,7 +173,10 @@ class tap3Plugin extends Billrun_Plugin_BillrunPluginBase implements Billrun_Plu
 				}
 			}
 		}
-
+		
+		if (isset($cdrLine['called_number'])) {
+			$cdrLine['called_number'] = Billrun_Util::msisdn($cdrLine['called_number']);
+		}
 
 		if (!Billrun_Util::getNestedArrayVal($cdrLine, $mapping['calling_number']) && isset($tele_service_code) && isset($record_type) ) {
 			if ($record_type == 'a' && ($tele_service_code == '11' || $tele_service_code == '21')) {
