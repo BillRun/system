@@ -17,11 +17,17 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 
 	protected $line_time = null;
 	protected $line_type = null;
+	protected $cached_results = array();
 
 	public function beforeUpdateSubscriberBalance($balance, $row, $rate, $calculator) {
-		// todo: require to use local time abroad
-		$this->line_time = $row['urt']->sec;
-		$this->line_type = $row['type'];
+		if ($row['type'] == 'tap3') {
+			if (isset($row['basicCallInformation']['CallEventStartTimeStamp']['localTimeStamp'])) {
+				$this->line_type = $row['type'];
+				$this->line_time = $row['basicCallInformation']['CallEventStartTimeStamp']['localTimeStamp'];
+			} else {
+				Billrun_Factory::log()->log('localTimeStamp wasn\'t found for line ' . $row['stamp'] . '.', Zend_Log::ALERT);
+			}
+		}
 	}
 
 	/**
@@ -37,62 +43,73 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * 
 	 */
 	public function triggerPlanGroupRateRule(&$rateUsageIncluded, $groupSelected, $limits, $plan, $usageType, $rate, $subscriberBalance) {
-		if ($groupSelected != 'VF' || $this->line_type != 'tap3') {
+		if ($groupSelected != 'VF' || !isset($this->line_type)) {
 			return;
 		}
 		$sid = $subscriberBalance['sid'];
-		$line_year = date('Y', $this->line_time);
-		// todo: query on local datetime (abroad country time)
-		$from = strtotime(str_replace('%Y', $line_year, $limits['period']['from']) . ' 00:00:00');
-		$to = strtotime(str_replace('%Y', $line_year, $limits['period']['to']) . ' 23:59:59');
+		$line_year = substr($this->line_time, 0, 4);
+		$line_month = substr($this->line_time, 4, 2);
+		$line_day = substr($this->line_time, 6, 2);
+		$dayKey = $line_year . $line_month . $line_day;
+		$results = $this->loadSidLines($sid, $limits, $plan, $groupSelected, $dayKey);
+		$this->cached_results[$sid][] = $dayKey;
+		foreach ($this->cached_results[$sid] as $elem) {
+			if ($elem <= $dayKey) {
+				$results[] = $elem;
+			}
+		}
+		$results = array_unique($results);
+
+		$count_days = count($results);
+		if ($count_days <= $limits['days']) {
+			return;
+		}
+		$rateUsageIncluded = 0; // user passed its limit; no more usage available
+	}
+
+	protected function loadSidLines($sid, $limits, $plan, $groupSelected, $dayKey) {
+		$line_year = date('Y', strtotime($this->line_time));
+		$from = date('YmdHis', strtotime(str_replace('%Y', $line_year, $limits['period']['from']) . ' 00:00:00'));
+		$to = date('YmdHis', strtotime(str_replace('%Y', $line_year, $limits['period']['to']) . ' 23:59:59'));
 		$match = array(
 			'$match' => array(
 				'sid' => $sid,
+				'type' => 'tap3',
 				'plan' => $plan->getData()->get('name'),
-				'urt' => array(
-					'$gte' => new MongoDate($from),
-					'$lte' => new MongoDate($to),
+				'basicCallInformation.CallEventStartTimeStamp.localTimeStamp' => array(
+					'$gte' => $from,
+					'$lte' => $to,
 				),
 				'arategroup' => $groupSelected,
 				'in_group' => array(
 					'$gt' => 0,
-				)
+				),
+				'billrun' => array(
+					'$exists' => true,
+				),
 			),
 		);
 		$group = array(
 			'$group' => array(
 				'_id' => array(
-					'month' => array(
-						'$month' => '$urt'
-					),
-					'day' => array(
-						'$dayOfMonth' => '$urt'
+					'day_key' => array(
+						'$substr' => array('$basicCallInformation.CallEventStartTimeStamp.localTimeStamp', 0, 8),
 					),
 				),
-				'c' => array(
-					'$sum' => 1,
+			),
+		);
+		$match2 = array(
+			'$match' => array(
+				'_id.day_key' => array(
+					'$lte' => $dayKey,
 				),
 			),
 		);
 
-		$results = Billrun_Factory::db()->linesCollection()->aggregate($match, $group);
-		if (empty($results) || !is_array($results) || !count($results) || $results == array(0)) {
-			return;
-		}
-		$count_days = count($results);
-		if ($count_days < $limits['days']) {
-			return;
-		}
-		// month and day without leading zero
-		$line_month = date('n', $this->line_time);
-		$line_day = date('j', $this->line_time);
-		foreach ($results as $res) {
-			if ($res['_id']['month'] == $line_month && $res['_id']['day'] == $line_day) {
-				// day already exists as part of the limit
-				return ;
-			}
-		}
-		$rateUsageIncluded = 0; // user passed its limit; no more usage available
+		$results = Billrun_Factory::db()->linesCollection()->aggregate($match, $group, $match2);
+		return array_map(function($res) {
+					return $res['_id']['day_key'];
+				}, $results);
 	}
 
 }
