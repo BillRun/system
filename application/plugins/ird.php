@@ -451,13 +451,13 @@ class irdPlugin extends Billrun_Plugin_BillrunPluginBase {
 					Billrun_Factory::log()->log("irdPlugin::collectFraudEvents collecting {$eventQuery['name']} exceeders in group {$groupName}", Zend_Log::DEBUG);
 
 					$query = $baseQuery;
+					$eventQuery = $this->prepareRuleQuery($eventQuery, $key);
+					$charge_time = new MongoDate(isset($eventQuery['time_period']) ? strtotime($eventQuery['time_period']) : Billrun_Util::getLastChargeTime(true));
+					$query['base_match']['$match'][$timeField]['$gte'] = $charge_time;
 					$query['base_match']['$match']['$or'] = array(
 																array('ird_level' => array( '$lt' => intval($eventQuery['threshold']))),
 																array('ird_level' => array( '$exists' => false)),
 																);
-					$eventQuery = $this->prepareRuleQuery($eventQuery, $key);					
-					$charge_time = new MongoDate(isset($eventQuery['time_period']) ? strtotime($eventQuery['time_period']) : Billrun_Util::getLastChargeTime(true));
-					$query['base_match']['$match'][$timeField]['$gte'] = $charge_time;
 					$project = $query['project'];
 					$project['$project'] = array_merge($project['$project'], $this->addToProject((!empty($eventRules['added_values']) ? $eventRules['added_values'] : array())), $this->addToProject(array('units' => $eventQuery['units'], 'event_type' => $key,
 								'threshold' => $eventQuery['threshold'], 'target_plans' => $eventRules['target_plans'])));
