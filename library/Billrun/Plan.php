@@ -256,7 +256,7 @@ class Billrun_Plan {
 			return false;
 		}
 
-		return $groups[0];
+		return reset($groups);
 	}
 
 	/**
@@ -288,7 +288,7 @@ class Billrun_Plan {
 		// }
 		// else continue as usual
 		
-		if ($rateUsageIncluded == 'UNLIMITED') {
+		if ($rateUsageIncluded === 'UNLIMITED') {
 			return PHP_INT_MAX;
 		}
 
