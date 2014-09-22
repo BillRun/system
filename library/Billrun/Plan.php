@@ -256,7 +256,7 @@ class Billrun_Plan {
 			return false;
 		}
 
-		return $groups[0];
+		return reset($groups);
 	}
 
 	/**
