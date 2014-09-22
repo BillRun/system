@@ -467,7 +467,7 @@ class irdPlugin extends Billrun_Plugin_BillrunPluginBase {
 
 					$query['where']['$match'] = array_merge($query['where']['$match'], (isset($eventQuery['query']) ? $this->parseEventQuery($eventQuery['query']) : array()), (isset($eventRules['group_rules'][$groupName]) ? $this->parseEventQuery($eventRules['group_rules'][$groupName]) : array()));
 					$ruleMatch = array('$match' => (isset($eventQuery['match']) ? $eventQuery['match'] : array('value' => array('$gte' => intval($eventQuery['threshold']))) ));
-					
+
 					$ret = $lines->aggregate($query['base_match'], $query['where'], $query['group_match'], $query['group'], $query['translate'], $query['project'], $ruleMatch);
 
 					if ($this->postProcessEventResults($events, $ret, $eventQuery, $key)) {
@@ -518,9 +518,9 @@ class irdPlugin extends Billrun_Plugin_BillrunPluginBase {
 			'translate' => array(
 				'$project' => array(
 					'_id' => 0,
-					'download' => array('$multiply' => array('$download', 0.001)),
-					'upload' => array('$multiply' => array('$upload', 0.001)),
-					'usagev' => array('$multiply' => array('$usagev', 0.001)),
+					'download' => array('$divide' => array('$download', 1024)),
+					'upload' => array('$divide' => array('$upload', 1024)),
+					'usagev' => array('$divide' => array('$usagev', 1024)),
 					'duration' => 1,
 					'imsi' => '$_id.imsi',
 					'msisdn' => array('$substr' => array('$_id.msisdn', 5, 10)),
