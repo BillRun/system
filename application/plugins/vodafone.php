@@ -52,7 +52,9 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		$line_day = substr($this->line_time, 6, 2);
 		$dayKey = $line_year . $line_month . $line_day;
 		$results = $this->loadSidLines($sid, $limits, $plan, $groupSelected, $dayKey);
-		$this->cached_results[$sid][] = $dayKey;
+		if (!isset($this->cached_results[$sid]) || !in_array($dayKey, $this->cached_results[$sid])) {
+			$this->cached_results[$sid][] = $dayKey;
+		}
 		foreach ($this->cached_results[$sid] as $elem) {
 			if ($elem <= $dayKey) {
 				$results[] = $elem;
