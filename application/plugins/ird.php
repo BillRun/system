@@ -46,7 +46,12 @@ class irdPlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 		if ($this->daily_ird) {
 			$rateUsageIncluded = 'UNLIMITED';
+		} else if (isset($subscriberBalance['balance']['groups'][$groupSelected][$usageType]['usagev'])) {
+			$rateUsageIncluded = $subscriberBalance['balance']['groups'][$groupSelected][$usageType]['usagev'];
+		} else {
+			$rateUsageIncluded = 0;
 		}
+
 	}
 
 }
