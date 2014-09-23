@@ -290,6 +290,8 @@ class tap3Plugin extends Billrun_Plugin_BillrunPluginBase implements Billrun_Plu
 					Billrun_Factory::log()->log('No config for type : ' .$record->getType(). " Full record :" . print_r(Asn_Base::getDataArray($record,true,true),1) ,  Zend_Log::DEBUG);
 				}
 			}
+		} else {
+			Billrun_Factory::log()->log('Got notification/empty file : ' .$processor->filename. ' , moving on...' ,  Zend_Log::INFO);
 		}
 
 		$processorData['trailer'] = $trailer;
