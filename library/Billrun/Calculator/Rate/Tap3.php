@@ -129,7 +129,7 @@ class Billrun_Calculator_Rate_Tap3 extends Billrun_Calculator_Rate {
 			foreach ($potential_rates as $rate) {
 				if (isset($rate['rates'][$usage_type])) {
 					if ($rate['from'] <= $line_time && $rate['to'] >= $line_time) {
-						if (!$matchedRate || (is_array($rate['params']['serving_networks']) && !$prefix_length_matched)) { // array of serving networks is stronger then regex of serving_networks
+						if ((!$matchedRate && empty($rate['params']['prefix'])) || (is_array($rate['params']['serving_networks']) && !$prefix_length_matched)) { // array of serving networks is stronger then regex of serving_networks
 							$matchedRate = $rate;
 						}
 						if (isset($call_number_prefixes) && !empty($rate['params']['prefix'])) {
