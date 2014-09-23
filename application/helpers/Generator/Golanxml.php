@@ -36,7 +36,7 @@ class Generator_Golanxml extends Billrun_Generator {
 	protected $data_rate;
 	protected $lines_coll;
 	protected $invoice_version = "1.1";
-	
+
 	/**
 	 * Flush XMLWriter every $flush_size billing lines
 	 * @var int
@@ -60,7 +60,7 @@ class Generator_Golanxml extends Billrun_Generator {
 	 * @var array 
 	 */
 	protected $filter_fields;
-	
+
 	/**
 	 * flag to buffer output results
 	 * 
@@ -251,7 +251,7 @@ class Generator_Golanxml extends Billrun_Generator {
 			$subscriber_gift_usage_MMS_ABOVEFREEUSAGE = 0;
 			if (isset($subscriber['breakdown']['over_plan']) && is_array($subscriber['breakdown']['over_plan'])) {
 				foreach ($subscriber['breakdown']['over_plan'] as $category_key => $category) {
-					if ($category_key != 'intl') { // Sefi's request from 2014-03-06
+					if (!in_array($category_key, array('intl', 'roaming'))) { // Sefi's request from 2014-03-06 + do not count VF over_plan
 						foreach ($category as $zone) {
 							$subscriber_gift_usage_VOICE_ABOVEFREECOST+=$this->getZoneTotalsFieldByUsage($zone, 'cost', 'call');
 							$subscriber_gift_usage_SMS_ABOVEFREECOST+=$this->getZoneTotalsFieldByUsage($zone, 'cost', 'sms');
@@ -266,12 +266,14 @@ class Generator_Golanxml extends Billrun_Generator {
 				}
 			}
 			if (isset($subscriber['breakdown']['in_plan']) && is_array($subscriber['breakdown']['in_plan'])) {
-				foreach ($subscriber['breakdown']['in_plan'] as $category) {
-					foreach ($category as $zone) {
-						$subscriber_gift_usage_VOICE_FREEUSAGE+=$this->getZoneTotalsFieldByUsage($zone, 'usagev', 'call');
-						$subscriber_gift_usage_SMS_FREEUSAGE+=$this->getZoneTotalsFieldByUsage($zone, 'usagev', 'sms');
-						$subscriber_gift_usage_DATA_FREEUSAGE+=$this->bytesToKB($this->getZoneTotalsFieldByUsage($zone, 'usagev', 'data'));
-						$subscriber_gift_usage_MMS_FREEUSAGE+=$this->getZoneTotalsFieldByUsage($zone, 'usagev', 'mms');
+				foreach ($subscriber['breakdown']['in_plan'] as $category_key => $category) {
+					if ($category_key != 'roaming') { // Do not count VF in_plan
+						foreach ($category as $zone) {
+							$subscriber_gift_usage_VOICE_FREEUSAGE+=$this->getZoneTotalsFieldByUsage($zone, 'usagev', 'call');
+							$subscriber_gift_usage_SMS_FREEUSAGE+=$this->getZoneTotalsFieldByUsage($zone, 'usagev', 'sms');
+							$subscriber_gift_usage_DATA_FREEUSAGE+=$this->bytesToKB($this->getZoneTotalsFieldByUsage($zone, 'usagev', 'data'));
+							$subscriber_gift_usage_MMS_FREEUSAGE+=$this->getZoneTotalsFieldByUsage($zone, 'usagev', 'mms');
+						}
 					}
 				}
 			}
@@ -526,7 +528,7 @@ class Generator_Golanxml extends Billrun_Generator {
 						foreach ($plan['roaming'] as $zone_name => $zone) {
 							foreach ($zone['totals'] as $usage_type => $usage_totals) {
 								if ($usage_totals['cost'] > 0 || $usage_totals['usagev'] > 0) {
-									if (isset($subscriber_roaming[$zone_name][$usage_type])) {
+									if (isset($subscriber_roaming[$zone_name]['totals'][$usage_type])) {
 										$subscriber_roaming[$zone_name]['totals'][$usage_type]['usagev']+=$usage_totals['usagev'];
 										$subscriber_roaming[$zone_name]['totals'][$usage_type]['cost']+=$usage_totals['cost'];
 									} else {
@@ -1066,7 +1068,7 @@ EOI;
 		}
 		$this->writer->endElement(); // end BILLING_LINES
 	}
-	
+
 	protected function flush() {
 		if (!$this->buffer) {
 			$this->writer->flush(true);
