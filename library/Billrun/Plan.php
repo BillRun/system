@@ -188,7 +188,7 @@ class Billrun_Plan {
 
 		$rateUsageIncluded = $this->get('include')[$rate['key']][$usageType];
 
-		if ($rateUsageIncluded == 'UNLIMITED') {
+		if ($rateUsageIncluded === 'UNLIMITED') {
 			return PHP_INT_MAX;
 		}
 
@@ -268,7 +268,7 @@ class Billrun_Plan {
 
 		$rateUsageIncluded = $this->data['include']['groups'][$groupSelected][$usageType];
 
-		if ($rateUsageIncluded == 'UNLIMITED') {
+		if ($rateUsageIncluded === 'UNLIMITED') {
 			return PHP_INT_MAX;
 		}
 
