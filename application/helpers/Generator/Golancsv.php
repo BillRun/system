@@ -278,7 +278,8 @@ class Generator_Golancsv extends Billrun_Generator {
 	}
 
 	protected function getOutsidePackageNoVatTap3($subscriber) {
-		return floatval(isset($subscriber['costs']['out_plan']['vat_free']) ? $subscriber['costs']['out_plan']['vat_free'] : 0);
+		return floatval(isset($subscriber['costs']['out_plan']['vat_free']) ? $subscriber['costs']['out_plan']['vat_free'] : 0) +
+				floatval(isset($subscriber['costs']['over_plan']['vat_free']) ? $subscriber['costs']['over_plan']['vat_free'] : 0);
 	}
 
 	protected function getTotalVat($subscriber) {
