@@ -256,7 +256,8 @@ class Generator_Golancsv extends Billrun_Generator {
 	}
 
 	protected function getTotalExtraOverPackage($subscriber) {
-		return $this->getVatableOverPlan($subscriber) + $this->getVatFreeOverPlan($subscriber);
+//		return $this->getVatableOverPlan($subscriber) + $this->getVatFreeOverPlan($subscriber);
+		return $this->getVatableOverPlan($subscriber);
 	}
 
 	/**
