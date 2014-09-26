@@ -76,13 +76,13 @@ abstract class Billrun_Generator_Csv extends Billrun_Generator {
 		}
 		$this->writeToFile($file_contents);
 	}
-	
+
 	protected function getRowContent($entity) {
 		$row_contents = '';
 		foreach ($this->headers as $key => $field_name) {
 			$row_contents.=(isset($entity[$key]) ? $entity[$key] : "") . $this->separator;
 		}
-		
+
 		return $row_contents;
 	}
 
@@ -94,7 +94,9 @@ abstract class Billrun_Generator_Csv extends Billrun_Generator {
 	abstract protected function setFilename();
 
 	protected function resetFile() {
-		$this->writeToFile("", true);
+		if (is_file($this->file_path)) {
+			$this->writeToFile("", true);
+		}
 	}
 
 }

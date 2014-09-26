@@ -44,20 +44,20 @@ class Billrun_Listener_Googledcb extends Billrun_Listener {
 	 * general function to listen
 	 */
 	public function listen() {
-//		return $this->smppCLient->readSms();
+		return $this->smppCLient->readSms();
 	}
 
 	/**
 	 * 
 	 */
 	public function doAfterListen($data) {
-//		if (!$data instanceof SmppSms) {
-//			return FALSE;
-//		}
-//		$smsContent = $data->message;
-//		$ndcSn = $data->source->value;
-		$smsContent = 'djfgbv:875a978e9f79d9c';
-		$ndcSn = '972547655380';
+		if (!$data instanceof SmppSms) {
+			return FALSE;
+		}
+		$smsContent = $data->message;
+		$ndcSn = $data->source->value;
+//		$smsContent = 'djfgbv:875a978e9f79d9c';
+//		$ndcSn = '972547655380';
 		$url = 'http://' . $this->billrunHost . '/api/tokens';
 		$params = array('XDEBUG_SESSION_START' => 'netbeans-xdebug');
 		$post = array(
@@ -65,7 +65,7 @@ class Billrun_Listener_Googledcb extends Billrun_Listener {
 			'ndc_sn' => $ndcSn,
 		);
 		if (Billrun_Util::forkProcessWeb($url, $params, $post)) {
-			sleep(500);
+//			sleep(500);
 			return TRUE;
 		}
 	}

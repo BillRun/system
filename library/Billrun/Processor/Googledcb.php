@@ -18,7 +18,7 @@ class Billrun_Processor_Googledcb extends Billrun_Processor_Base_SeparatorFieldL
 	 * Hold the structure configuration data.
 	 */
 	protected $structConfig = false;
-	
+
 	/**
 	 * Holds path to decrypted file path
 	 */
@@ -81,8 +81,6 @@ class Billrun_Processor_Googledcb extends Billrun_Processor_Base_SeparatorFieldL
 			$date_value = $row[$this->structConfig['config']['date_field']];
 			unset($row[$this->structConfig['config']['date_field']]);
 			$row['urt'] = new MongoDate($date_value);
-			// TODO: Remove - for debug
-			 $row['urt']= new MongoDate(strtotime("2014-08-15 00:00:00"));
 		}
 		if (!empty($this->structConfig['stamp_fields'])) { // todo: apply to all processors
 			$row['stamp'] = md5(serialize(array_intersect_key($row, array_flip($this->structConfig['stamp_fields']))));
@@ -93,32 +91,32 @@ class Billrun_Processor_Googledcb extends Billrun_Processor_Base_SeparatorFieldL
 		$row['reason'] = 'GOOGLE_DCB';
 		$model = new FundsModel();
 		$correlation = $model->getNotificationData($row['correlation_id']);
-		
+
 		if (!$correlation) {
 			Billrun_Factory::log()->log("Correlation id not found : " . $row['correlation_id'], Zend_Log::ALERT);
 			return false;
 		}
-		
+
 		unset($correlation['_id']);
 		unset($correlation['CorrelationId']);
 		unset($correlation['BillingAgreement']);
-		
+
 		$amount = $correlation['ItemPrice'];
 		$vatable = false;
-		
+
 		if ($correlation['Tax']) {
 			$amount /= (1 + Billrun_Factory::config()->getConfigValue('pricing.vat'));
 			$vatable = true;
 		}
-		
+
 		$row = array_merge($row, $correlation);
 		$row['amount_without_vat'] = $amount;
 		$row['vatable'] = $vatable;
-		
-		
+
+
 		return $row;
 	}
-	
+
 	/**
 	 * decrypt and then load file to be handle by the processor
 	 * 
@@ -131,10 +129,10 @@ class Billrun_Processor_Googledcb extends Billrun_Processor_Base_SeparatorFieldL
 		$this->decrypted_file_path = str_replace('.pgp', '', $file_path);
 		Billrun_Pgp::getInstance($pgpConfig)->decrypt_file($file_path, $this->decrypted_file_path);
 		$file_path = $this->decrypted_file_path;
-		
+
 		parent::loadFile($file_path, $retrivedHost);
 	}
-	
+
 	/**
 	 * removes backedup files from workspace, also removes decrypted files
 	 * 
@@ -144,8 +142,10 @@ class Billrun_Processor_Googledcb extends Billrun_Processor_Base_SeparatorFieldL
 	 */
 	protected function removeFromWorkspace($filestamp) {
 		parent::removeFromWorkspace($filestamp);
+
+		// TODO: Remove folder if empty
 		
-		// Remove decrypted file as well		
+		// Remove decrypted file as well
 		Billrun_Factory::log()->log("Removing file {$this->decrypted_file_path} from the workspace", Zend_Log::INFO);
 		unlink($this->decrypted_file_path);
 	}
