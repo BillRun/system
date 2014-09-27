@@ -357,7 +357,7 @@ class Generator_Golanxml extends Billrun_Generator {
 			$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_CREDIT_PROMOTION', $subscriber_sumup_TOTAL_MANUAL_CORRECTION_CREDIT_PROMOTION);
 			$subscriber_sumup_TOTAL_MANUAL_CORRECTION = floatval($subscriber_sumup_TOTAL_MANUAL_CORRECTION_CHARGE) + floatval($subscriber_sumup_TOTAL_MANUAL_CORRECTION_CREDIT);
 			$this->writer->writeElement('TOTAL_MANUAL_CORRECTION', $subscriber_sumup_TOTAL_MANUAL_CORRECTION);
-			$subscriber_sumup_TOTAL_OUTSIDE_GIFT_NOVAT = floatval((isset($subscriber['costs']['out_plan']['vat_free']) ? $subscriber['costs']['out_plan']['vat_free'] : 0));
+			$subscriber_sumup_TOTAL_OUTSIDE_GIFT_NOVAT = floatval((isset($subscriber['costs']['out_plan']['vat_free']) ? $subscriber['costs']['out_plan']['vat_free'] : 0)) + floatval((isset($subscriber['costs']['over_plan']['vat_free']) ? $subscriber['costs']['over_plan']['vat_free'] : 0));
 			$this->writer->writeElement('TOTAL_OUTSIDE_GIFT_NOVAT', $subscriber_sumup_TOTAL_OUTSIDE_GIFT_NOVAT);
 			$subscriber_before_vat = $this->getSubscriberTotalBeforeVat($subscriber);
 			$subscriber_after_vat = $this->getSubscriberTotalAfterVat($subscriber);
