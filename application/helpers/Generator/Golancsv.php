@@ -97,6 +97,7 @@ class Generator_Golancsv extends Billrun_Generator {
 			'CountActiveCli',
 			'kosherCount',
 			'TotalChargeVatRounded',
+			//'GoogleDcb',
 		);
 		$this->subscribersFields = array(
 			'billrun_key',
@@ -119,6 +120,7 @@ class Generator_Golancsv extends Billrun_Generator {
 			'TotalChargeVatData',
 			'CountOfKb',
 			'isKosher',
+			//'GoogleDcb',
 		);
 
 		$this->loadPlans();
@@ -236,6 +238,7 @@ class Generator_Golancsv extends Billrun_Generator {
 				$sub_row['nextPackage'] = $this->getNextPackage($subscriber);
 				$sub_row['TotalChargeVatData'] = $this->getTotalChargeVatData($subscriber, $vat);
 				$sub_row['CountOfKb'] = $this->getCountOfKb($subscriber);
+				//$acc_row['GoogleDcb'] += $sub_row['GoogleDcb'] = $this->getTotalGoogleDcb($subscriber);
 				$this->addSubscriberRow($sub_row);
 			}
 //			Billrun_Factory::log()->log("invoice id created " . $invoice_id . " for the account", Zend_Log::INFO);
@@ -295,6 +298,29 @@ class Generator_Golancsv extends Billrun_Generator {
 			$is_active = 1;
 		}
 		return $is_active;
+	}
+	
+	protected function getTotalGoogleDcb($subscriber) {
+		$total = 0;
+		
+		if (isset($subscriber['breakdown']['credit'])){
+			foreach ($subscriber['breakdown']['credit'] as $cred) {
+				if (isset($cred['CHARGE_vatable']['GOOGLE_DCB'])) {
+					$total += $cred['CHARGE_vatable']['GOOGLE_DCB'];
+				}
+				else if (isset($cred['CHARGE_vat_free']['GOOGLE_DCB'])) {
+					$total += $cred['CHARGE_vat_free']['GOOGLE_DCB'];
+				}
+				else if (isset($cred['REFUND_vatable']['GOOGLE_DCB'])) {
+					$total += $cred['credit']['REFUND_vatable']['GOOGLE_DCB'];
+				}
+				else if (isset($cred['credit']['REFUND_vat_free']['GOOGLE_DCB'])) {
+					$total += $cred['REFUND_vat_free']['GOOGLE_DCB'];
+				}
+			}
+		}
+		
+		return $total;
 	}
 
 	protected function is_kosher($subscriber) {

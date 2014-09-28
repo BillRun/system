@@ -140,7 +140,7 @@ class Dcb_Soap_Handler {
 	 * Indicates if the subscriber is provisioned for Dcb
 	 * @param Billrun_Subscriber $subscriber
 	 */
-	protected function isDcbProvisioned($subscriber) {
+	protected function isDcbProvisioned($subscriber) {	
 		return $subscriber->isExtraDataActive('google_play') && !$subscriber->isExtraDataActive('in_dept');
 	}
 
