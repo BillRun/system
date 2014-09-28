@@ -106,7 +106,7 @@ class Generator_Golanxml extends Billrun_Generator {
 		foreach ($resource as $row) {
 			$this->data[] = $row;
 		}
-		Billrun_Factory::log()->log("aggregator documents loaded: " . count($this->data), Zend_Log::INFO);
+		Billrun_Factory::log()->log("Generator documents loaded: " . count($this->data), Zend_Log::INFO);
 
 		Billrun_Factory::dispatcher()->trigger('afterGeneratorLoadData', array('generator' => $this));
 	}
