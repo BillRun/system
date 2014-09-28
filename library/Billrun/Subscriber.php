@@ -133,14 +133,10 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 	}
 
 	/**
-	 * Indicates if the subscriber has enabled Dcb
+	 * Indicates if the subscriber has enabled some param
 	 * @return boolean
 	 */
-	abstract function isDcbActive();
-	
-	/**
-	 * Indicates if the subscriber is in debt
-	 * @return boolean
-	 */
-	abstract function isInDebt();
+	public function isExtraDataActive($param) {
+		return isset($this->data['extra_data'][$param]) && $this->data['extra_data'][$param] === 1;
+	}
 }

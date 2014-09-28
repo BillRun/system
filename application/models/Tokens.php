@@ -21,7 +21,7 @@ class TokensModel extends TableModel {
 		$this->search_key = "key";
 	}
 
-	public function storeData($GUT, $OUT, $sid, $aid, $plan) {
+	public function storeData($GUT, $OUT, $sid, $aid, $plan, $ndc_sn) {
 		$entity = new Mongodloid_Entity(array(
 			'creation_date' => new MongoDate(),
 			'GUT'	=> $GUT,
@@ -29,6 +29,7 @@ class TokensModel extends TableModel {
 			'sid'	=> $sid,
 			'aid'	=> $aid,
 			'plan'	=> $plan,
+			'ndc_sn' => $ndc_sn
 		));
 		return $entity->save($this->collection, 1);
 	}

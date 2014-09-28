@@ -49,7 +49,7 @@ class TokensAction extends Action_Base {
 		}
 		// Insert to DB
 		$model = new TokensModel();
-		$model->storeData($GUT, $OUT, $sid, $aid, $plan);
+		$model->storeData($GUT, $OUT, $sid, $aid, $plan, $ndcSn);
 
 		// Send request to google
 		$this->tokenConfig = Billrun_Factory::config()->getConfigValue('googledcb.association.tokens', array());

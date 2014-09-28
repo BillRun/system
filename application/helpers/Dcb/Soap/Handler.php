@@ -91,10 +91,11 @@ class Dcb_Soap_Handler {
 		$sid = $subscriberDetails['sid'];
 		$aid = $subscriberDetails['aid'];
 		$plan = $subscriberDetails['plan'];
+		$ndcSn = $subscriberDetails['ndc_sn'];
 		if ($request->Currency != $this->config['currency']) {
 			$response->Result = self::GOOGLE_RESULT_CODE_INVALID_CURRENCY;
 		} else if ($sid) {
-			$identityParams = $this->getIdentityParams($sid);
+			$identityParams = $this->getIdentityParams($sid, $ndcSn);
 			$this->subscriber->load($identityParams);
 			if (!$this->subscriber->isValid()) {
 				$response->Result = self::GOOGLE_RESULT_CODE_INVALID_USER;
@@ -140,7 +141,7 @@ class Dcb_Soap_Handler {
 	 * @param Billrun_Subscriber $subscriber
 	 */
 	protected function isDcbProvisioned($subscriber) {
-		return $subscriber->isDcbActive() && !$subscriber->isInDebt();
+		return $subscriber->isExtraDataActive('google_play') && !$subscriber->isExtraDataActive('in_dept');
 	}
 
 	protected function getSubscriberDetails($OUT) {
@@ -149,17 +150,19 @@ class Dcb_Soap_Handler {
 			return null;
 		} else {
 			return array(
-				"sid"	=>	$cursor->current()['sid'],
-				"aid"	=>	$cursor->current()['aid'],
-				"plan"	=>	$cursor->current()['plan'],
+				"sid"		=>	$cursor->current()['sid'],
+				"aid"		=>	$cursor->current()['aid'],
+				"plan"		=>	$cursor->current()['plan'],
+				"ndc_sn"	=>	$cursor->current()['ndc_sn'],
 			);
 		}
 	}
 
-	protected function getIdentityParams($sid) {
+	protected function getIdentityParams($sid, $ndc_sn) {
 		return array(
 			'sid' => $sid,
 			'DATETIME' => date(Billrun_Base::base_dateformat),
+			'NDC_SN' => $ndc_sn
 		);
 	}
 

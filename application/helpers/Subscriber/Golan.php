@@ -79,7 +79,8 @@ class Subscriber_Golan extends Billrun_Subscriber {
 			$params['DATETIME'] = $params['time'];
 		}
 
-		$data = $this->request($params);
+		$list = self::requestList(array($params));
+		$data = reset($list);
 
 		if (is_array($data)) {
 			$this->data = $this->parseSubscriberOutput($data, $this->availableFields);
@@ -105,6 +106,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 
 	/**
 	 * method to send request to Golan rpc
+	 * @deprecated since version 2.8
 	 * 
 	 * @param string $phone the phone number of the client
 	 * @param string $time the time that phone requested
@@ -502,13 +504,4 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		// if it's array rand between servers
 		return $hosts[rand(0, count($hosts) - 1)];
 	}
-
-	public function isDcbActive() {
-		return isset($this->data['google_play']['active']) && $this->data['google_play']['active'] === 1;
-	}
-
-	public function isInDebt() {
-		return isset($this->data['in_debt']) && $this->data['in_debt'] === 0;
-	}
-
 }
