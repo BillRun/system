@@ -142,13 +142,28 @@ class Billrun_Processor_Googledcb extends Billrun_Processor_Base_SeparatorFieldL
 	 */
 	protected function removeFromWorkspace($filestamp) {
 		parent::removeFromWorkspace($filestamp);
-
-		// TODO: Remove folder if empty
 		
 		// Remove decrypted file as well
 		Billrun_Factory::log()->log("Removing file {$this->decrypted_file_path} from the workspace", Zend_Log::INFO);
 		unlink($this->decrypted_file_path);
+		$this->clearDir(dirname($this->filePath));		
 	}
+
+	protected function clearDir($dir) {
+		// Can only remove up to 3 sub folders - YYYY/MM/DD
+		for ($i = 0; $i < 3; $i++) {
+			$filecount = count(glob($dir . "/*"));
+			
+			// If there are files in the folder
+			if ($filecount) {
+				return;
+			}
+			
+			rmdir($dir);
+			$dir = dirname($dir);
+		}
+	}
+
 }
 
 ?>
