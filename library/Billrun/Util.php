@@ -235,12 +235,17 @@ class Billrun_Util {
 	 * convert bytes to requested format
 	 * if no format supply will take the format that is closet to the bytes
 	 * 
-	 * @param string $bytes
-	 * @param string $unit
-	 * @param int $decimals
+	 * @param string $bytes bytes to format
+	 * @param string $unit unit to align to
+	 * @param int $decimals how many decimals after dot
+	 * @param boolean $includeUnit flag to incdicate if to include unit in return value
+	 * @param string $dec_point sets the separator for the decimal point
+	 * @param string $thousands_sep sets the thousands separator
+	 * 
 	 * @return string size in requested format
 	 */
-	public static function byteFormat($bytes, $unit = "", $decimals = 2, $includeUnit = false) {
+	public static function byteFormat($bytes, $unit = "", $decimals = 2, $includeUnit = false, 
+		$dec_point = "." , $thousands_sep = ",") {
 		$units = array('B' => 0, 'KB' => 1, 'MB' => 2, 'GB' => 3, 'TB' => 4,
 			'PB' => 5, 'EB' => 6, 'ZB' => 7, 'YB' => 8);
 
@@ -267,10 +272,11 @@ class Billrun_Util {
 
 		// Format output
 		if (!empty($value)) {
+			$number = number_format($value, $decimals, $dec_point, $thousands_sep);
 			if ($includeUnit) {
-				return number_format($value, $decimals) . $unit;
+				return $number . $unit;
 			}
-			return number_format($value, $decimals);
+			return $number;
 		}
 
 		return 0;
@@ -701,5 +707,51 @@ class Billrun_Util {
 		}
 		return $prefixes;
 	}
+	
+	/**
+	 * Make sure that a date start with the full year and make sure it compitibale with a given format.
+	 * @param $date the date to make sure is corrcet.
+	 * @param $foramt the fromat the date should be in.
+	 * @return mixed the fixed date sting if possible or false  if the date couldn't be fixed.
+	 */
+	public static function fixShortHandYearDate($date,$format = "Y") {
+		if( !preg_match('/^'.date($format,strtotime($date)).'/',$date) ) {
+			$date = substr(date("Y"),0,2).$date;
+		}
+		return preg_match('/^'.date($format,strtotime($date)).'/',$date) ? $date : false; 
+	}
 
+	/**
+	 * method to get current hostname runnning the PHP
+	 * 
+	 * @return string host name or false when gethostname is not available (PHP 5.2 and lower)
+	 */
+	public static function getHostName() {
+		return function_exists('gethostname') ? gethostname() : false;
+	}
+	
+	/**
+	 * Return the decimal value from the coded binary representation
+	 * @param int $binary
+	 * @return int
+	 */
+	public static function bcd_decode($binary) {
+		return ($binary & 0xF) . ((($binary >> 4) < 10) ? ($binary >> 4) : '' );
+	}
+
+	/**
+	 * 
+	 * @param type $array
+	 * @param type $fields
+	 * @param type $defaultVal
+	 * @return type
+	 */
+	public static function getNestedArrayVal($array, $fields, $defaultVal = null) {
+		$fields = is_array($fields) ? $fields : explode('.', $fields);
+		$field = array_shift($fields);
+		if( isset($array[$field]) ) {
+			return empty($fields) ? $array[$field] : static::getNestedArrayVal($array[$field], $fields, $defaultVal); 
+		}
+		return $defaultVal;
+	}
 }

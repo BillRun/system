@@ -159,53 +159,58 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		if (isset($this->sidsQueuedForRebalance[$row['sid']])) {
 			return false;
 		}
-		$this->countConcurrentRetries = 0;
-		Billrun_Factory::dispatcher()->trigger('beforeCalculatorUpdateRow', array($row, $this));
-		$billrun_key = Billrun_Util::getBillrunKey($row->get('urt')->sec);
-		$rate = $this->getRowRate($row);
+		try {
+			$this->countConcurrentRetries = 0;
+			Billrun_Factory::dispatcher()->trigger('beforeCalculatorUpdateRow', array($row, $this));
+			$billrun_key = Billrun_Util::getBillrunKey($row->get('urt')->sec);
+			$rate = $this->getRowRate($row);
 
-		//TODO  change this to be configurable.
-		$pricingData = array();
+			//TODO  change this to be configurable.
+			$pricingData = array();
 
-		$usage_type = $row['usaget'];
-		$volume = $row['usagev'];
+			$usage_type = $row['usaget'];
+			$volume = $row['usagev'];
 
-		if (isset($volume)) {
-			if ($row['type'] == 'credit') {
-				$accessPrice = isset($rate['rates'][$usage_type]['access']) ? $rate['rates'][$usage_type]['access'] : 0;
-				$pricingData = array($this->pricingField => $accessPrice + self::getPriceByRate($rate, $usage_type, $volume));
+			if (isset($volume)) {
+				if ($row['type'] == 'credit') {
+					$accessPrice = isset($rate['rates'][$usage_type]['access']) ? $rate['rates'][$usage_type]['access'] : 0;
+					$pricingData = array($this->pricingField => $accessPrice + self::getPriceByRate($rate, $usage_type, $volume));
+				} else {
+					$balance = $this->getSubscriberBalance($row, $billrun_key);
+					if ($balance === FALSE) {
+						return false;
+					}
+					$pricingData = $this->updateSubscriberBalance($balance, $row, $usage_type, $rate, $volume);
+				}
+
+				if ($this->isBillable($rate)) {
+					if (!$pricingData) {
+						return false;
+					}
+
+					// billrun cannot override on api calls
+					if (!isset($row['billrun']) || $row['source'] != 'api') {
+						$pricingData['billrun'] = $row['urt']->sec <= $this->active_billrun_end_time ? $this->active_billrun : $this->next_active_billrun;
+					}
+				}
 			} else {
-				$balance = $this->getSubscriberBalance($row, $billrun_key);
-				if ($balance === FALSE) {
-					return false;
-				}
-				$pricingData = $this->updateSubscriberBalance($balance, $row, $usage_type, $rate, $volume);
+				Billrun_Factory::log()->log("Line with stamp " . $row['stamp'] . " is missing volume information", Zend_Log::ALERT);
+				return false;
 			}
 
-			if ($this->isBillable($rate)) {
-				if (!$pricingData) {
-					return false;
-				}
-
-				// billrun cannot override on api calls
-				if (!isset($row['billrun']) || $row['source'] != 'api') {
-					$pricingData['billrun'] = $row['urt']->sec <= $this->active_billrun_end_time ? $this->active_billrun : $this->next_active_billrun;
-				}
+			$pricingDataTxt = "Saving pricing data to line with stamp: " . $row['stamp'] . ".";
+			foreach ($pricingData as $key => $value) {
+				$pricingDataTxt .= " " . $key . ": " . $value . ".";
 			}
-		} else {
-			Billrun_Factory::log()->log("Line with stamp " . $row['stamp'] . " is missing volume information", Zend_Log::ALERT);
+			Billrun_Factory::log()->log($pricingDataTxt, Zend_Log::DEBUG);
+			$row->setRawData(array_merge($row->getRawData(), $pricingData));
+
+			Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array($row, $this));
+			return $row;
+		} catch(Exception $e ) {
+			Billrun_Factory::log()->log('Line with stamp ' . $row['stamp'] . ' carshed when trying to price it. got exception :'.$e->getCode() .' : '. $e->getMessage() . "\n trace :" . $e->getTrace() , Zend_Log::ERR);
 			return false;
 		}
-
-		$pricingDataTxt = "Saving pricing data to line with stamp: " . $row['stamp'] . ".";
-		foreach ($pricingData as $key => $value) {
-			$pricingDataTxt .= " " . $key . ": " . $value . ".";
-		}
-		Billrun_Factory::log()->log($pricingDataTxt, Zend_Log::DEBUG);
-		$row->setRawData(array_merge($row->getRawData(), $pricingData));
-
-		Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array($row, $this));
-		return $row;
 	}
 
 	/**
@@ -272,7 +277,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		$plan = $this->getPlan($sub_balance);
 		$ret = array();
 		if ($plan->isRateInBasePlan($rate, $usageType)) {
-			$planVolumeLeft = $plan->usageLeftInBasePlan($sub_balance['balance'], $rate, $usageType);
+			$planVolumeLeft = $plan->usageLeftInBasePlan($sub_balance, $rate, $usageType);
 			$volumeToCharge = $volume - $planVolumeLeft;
 			if ($volumeToCharge < 0) {
 				$volumeToCharge = 0;
@@ -285,7 +290,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				$ret['over_plan'] = $volumeToCharge;
 			}
 		} else if ($plan->isRateInPlanGroup($rate, $usageType)) {
-			$groupVolumeLeft = $plan->usageLeftInPlanGroup($sub_balance['balance'], $rate, $usageType);
+			$groupVolumeLeft = $plan->usageLeftInPlanGroup($sub_balance, $rate, $usageType);
 			$volumeToCharge = $volume - $groupVolumeLeft;
 			if ($volumeToCharge < 0) {
 				$volumeToCharge = 0;
@@ -390,7 +395,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		$this->countConcurrentRetries++;
 		Billrun_Factory::dispatcher()->trigger('beforeUpdateSubscriberBalance', array($balance, &$row, $rate, $this));
 		$plan = Billrun_Factory::plan(array('name' => $row['plan'], 'time' => $row['urt']->sec, 'disableCache' => true));
-		$balance_totals_key = $this->getBalanceTotalsKey($row['type'], $usage_type, $plan, $rate);
+		$balance_totals_key = $plan->getBalanceTotalsKey($usage_type, $rate);
 		$counters = array($balance_totals_key => $volume);
 		$subRaw = $balance->getRawData();
 		$stamp = strval($row['stamp']);
@@ -457,7 +462,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		}
 		Billrun_Factory::log()->log("Line with stamp " . $row['stamp'] . " was written to balance " . $balance['billrun_month'] . " for subscriber " . $row['sid'], Zend_Log::DEBUG);
 		$row['tx_saved'] = true; // indication for transaction existence in balances. Won't & shouldn't be saved to the db.
-		Billrun_Factory::dispatcher()->trigger('afterUpdateSubscriberBalance', array(array_merge($row->getRawData(), $pricingData), $balance, $this->isBillable($rate) ? $pricingData : 0, $this));
+		Billrun_Factory::dispatcher()->trigger('afterUpdateSubscriberBalance', array(array_merge($row->getRawData(), $pricingData), $balance, &$pricingData, $this));
 		return $pricingData;
 	}
 

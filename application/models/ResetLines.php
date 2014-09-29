@@ -75,7 +75,20 @@ class ResetLinesModel {
 			while ($update_count = count($update_sids = array_slice($this->sids, $offset, 10))) {
 				Billrun_Factory::log()->log('Resetting lines of subscribers ' . implode(',', $update_sids), Zend_Log::INFO);
 				$query = array(
-					'billrun' => $this->billrun_key,
+					'$or' => array(
+						array(
+							'billrun' => $this->billrun_key
+						),
+						array(
+							'billrun' => array(
+								'$exists' => FALSE,
+							),
+							'urt' => array(// resets non-billable lines such as ggsn with rate INTERNET_VF
+								'$gte' => new MongoDate(Billrun_Util::getStartTime($this->billrun_key)),
+								'$lte' => new MongoDate(Billrun_Util::getEndTime($this->billrun_key)),
+							)
+						),
+					),
 					'sid' => array(
 						'$in' => $update_sids,
 					),

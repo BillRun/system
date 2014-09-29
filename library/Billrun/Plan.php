@@ -75,7 +75,14 @@ class Billrun_Plan {
 			}
 		}
 	}
-
+	
+	public function getData($raw = false) {
+		if ($raw) {
+			return $this->data->getRawData();
+		}
+		return $this->data;
+	}
+	
 	protected static function initPlans() {
 		if (empty(self::$plans)) {
 			$plans_coll = Billrun_Factory::db()->plansCollection();
@@ -188,7 +195,7 @@ class Billrun_Plan {
 
 		$rateUsageIncluded = $this->get('include')[$rate['key']][$usageType];
 
-		if ($rateUsageIncluded == 'UNLIMITED') {
+		if ($rateUsageIncluded === 'UNLIMITED') {
 			return PHP_INT_MAX;
 		}
 
@@ -249,7 +256,7 @@ class Billrun_Plan {
 			return false;
 		}
 
-		return $groups[0];
+		return reset($groups);
 	}
 
 	/**
@@ -262,24 +269,24 @@ class Billrun_Plan {
 	 */
 	public function usageLeftInPlanGroup($subscriberBalance, $rate, $usageType = 'call') {
 		$groupSelected = $this->getStrongestGroup($rate, $usageType);
-		if ($groupSelected === FALSE) {
+		if ($groupSelected === FALSE || !isset($this->data['include']['groups'][$groupSelected][$usageType])) {
 			return 0;
 		}
 
 		$rateUsageIncluded = $this->data['include']['groups'][$groupSelected][$usageType];
 
-		// if isset $rule {
-		// Billrun_Factory::dispatcher()->trigger('triggerGroupRateRule', array($rule, $this, $group, $usageType, $rate, $subscriberBalance, &$usageLeft));
-		// return $usageLeft
-		// }
-		// else continue as usual
-		
-		if ($rateUsageIncluded == 'UNLIMITED') {
+		// on some cases we have limits to unlimited
+		if (isset($this->data['include']['groups'][$groupSelected]['limits'])) {
+			$limits = $this->data['include']['groups'][$groupSelected]['limits'];
+			Billrun_Factory::dispatcher()->trigger('triggerPlanGroupRateRule', array(&$rateUsageIncluded, $groupSelected, $limits, $this, $usageType, $rate, $subscriberBalance));
+		}
+
+		if ($rateUsageIncluded === 'UNLIMITED') {
 			return PHP_INT_MAX;
 		}
 
-		if (isset($subscriberBalance['groups'][$groupSelected][$usageType]['usagev'])) {
-			$subscriberSpent = $subscriberBalance['groups'][$groupSelected][$usageType]['usagev'];
+		if (isset($subscriberBalance['balance']['groups'][$groupSelected][$usageType]['usagev'])) {
+			$subscriberSpent = $subscriberBalance['balance']['groups'][$groupSelected][$usageType]['usagev'];
 		} else {
 			$subscriberSpent = 0;
 		}
@@ -304,7 +311,7 @@ class Billrun_Plan {
 			return PHP_INT_MAX;
 		}
 
-		$usageLeft = $usageIncluded - $subscriberBalance['totals'][$this->getBalanceTotalsKey($usagetype, $rate)]['usagev'];
+		$usageLeft = $usageIncluded - $subscriberBalance['balance']['totals'][$this->getBalanceTotalsKey($usagetype, $rate)]['usagev'];
 		return floatval($usageLeft < 0 ? 0 : $usageLeft);
 	}
 

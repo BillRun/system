@@ -49,8 +49,8 @@ class Billrun_Calculator_Rate_Tap3 extends Billrun_Calculator_Rate {
 				$volume = $row->get('basicCallInformation.TotalCallEventDuration');
 				break;
 
-			case 'data' :
-				$volume = $row->get('GprsServiceUsed.DataVolumeIncoming') + $row->get('GprsServiceUsed.DataVolumeOutgoing');
+			case 'data' :					
+					$volume = $row->get('download_vol') + $row->get('upload_vol');
 				break;
 		}
 		return $volume;
@@ -64,8 +64,8 @@ class Billrun_Calculator_Rate_Tap3 extends Billrun_Calculator_Rate {
 		$usage_type = null;
 
 		$record_type = $row['record_type'];
-		if (isset($row['BasicServiceUsedList']['BasicServiceUsed']['BasicService']['BasicServiceCode']['TeleServiceCode'])) {
-			$tele_service_code = $row['BasicServiceUsedList']['BasicServiceUsed']['BasicService']['BasicServiceCode']['TeleServiceCode'];
+		if (isset($row['tele_srv_code']) ) {
+			$tele_service_code = $row['tele_srv_code'] ;
 			if ($tele_service_code == '11') {
 				if ($record_type == '9') {
 					$usage_type = 'call'; // outgoing call
@@ -129,7 +129,7 @@ class Billrun_Calculator_Rate_Tap3 extends Billrun_Calculator_Rate {
 			foreach ($potential_rates as $rate) {
 				if (isset($rate['rates'][$usage_type])) {
 					if ($rate['from'] <= $line_time && $rate['to'] >= $line_time) {
-						if (!$matchedRate || (is_array($rate['params']['serving_networks']) && !$prefix_length_matched)) { // array of serving networks is stronger then regex of serving_networks
+						if ((!$matchedRate && empty($rate['params']['prefix'])) || (is_array($rate['params']['serving_networks']) && !$prefix_length_matched)) { // array of serving networks is stronger then regex of serving_networks
 							$matchedRate = $rate;
 						}
 						if (isset($call_number_prefixes) && !empty($rate['params']['prefix'])) {

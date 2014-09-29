@@ -40,7 +40,7 @@ class Generator_Balance extends Generator_Golanxml {
 	 * @var string a formatted date string
 	 */
 	protected $date = null;
-
+	
 	public function __construct($options) {
 		$options['auto_create_dir'] = false;
 		parent::__construct($options);
@@ -71,6 +71,13 @@ class Generator_Balance extends Generator_Golanxml {
 		$billrun = Billrun_Factory::billrun($billrun_params);
 		$manual_lines = array();
 		foreach ($this->account_data as $subscriber) {
+			if (!Billrun_Factory::db()->rebalance_queueCollection()->query(array('sid' => $subscriber->sid), array('sid' => 1))
+							->cursor()->current()->isEmpty()) {
+				$subscriber_status = "REBALANCE";
+				$billrun->addSubscriber($subscriber, $subscriber_status);
+				continue;
+			}
+
 			if ($billrun->subscriberExists($subscriber->sid)) {
 				Billrun_Factory::log()->log("Billrun " . $this->stamp . " already exists for subscriber " . $subscriber->sid, Zend_Log::ALERT);
 				continue;
@@ -81,8 +88,9 @@ class Generator_Balance extends Generator_Golanxml {
 			} else {
 				$subscriber_status = "open";
 				$flat_entry = $subscriber->getFlatEntry($this->stamp, true);
-				$manual_lines = array_merge($manual_lines, $subscriber->getCredits($this->stamp, true), array($flat_entry['stamp'] => $flat_entry));
+				$manual_lines = array_merge($manual_lines, array($flat_entry['stamp'] => $flat_entry));
 			}
+			$manual_lines = array_merge($manual_lines, $subscriber->getCredits($this->stamp, true));
 			$billrun->addSubscriber($subscriber, $subscriber_status);
 		}
 //		print_R($manual_lines);die;
@@ -92,8 +100,17 @@ class Generator_Balance extends Generator_Golanxml {
 	}
 
 	public function generate() {
-		$this->writer->openURI('php://output'); 
-		return $this->writeXML($this->data, $this->lines);
+		if ($this->buffer) {
+			$this->writer->openMemory();
+		} else {
+			$this->writer->openURI('php://output');
+		}
+		
+		$this->writeXML($this->data, $this->lines);
+		if ($this->buffer) {
+			return $this->writer->outputMemory();
+		}
+		
 	}
 
 	protected function setAccountId($aid) {

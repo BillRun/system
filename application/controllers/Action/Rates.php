@@ -20,21 +20,46 @@ class RatesAction extends ApiAction {
 		Billrun_Factory::log()->log("Execute rates api call", Zend_Log::INFO);
 		$request = $this->getRequest();
 
-		$query = $this->processQuery($request->get('query', array()));
+		$requestedQuery = $request->get('query', array());
+		$query = $this->processQuery($requestedQuery);
 		$strip = $this->getCompundParam($request->get('strip', false), false);
 		$filter = !empty($strip) ? $strip : array('key', 'rates', 'provider');
 
-		$model = new RatesModel(array('sort' => array('provider' => 1, 'from' => 1)));
-		$results = $model->getData($query, $filter);
-		if (!empty($strip)) {
-			$results = $this->stripResults($results, $strip);
-		}
+		$cacheParams = array(
+			'fetchParams' => array(
+				'query' => $query,
+				'filter' => $filter,
+				'strip' => $strip,
+			),
+			'stampParams' => array($requestedQuery, $filter, $strip),
+		);
+		
+		$this->setCacheLifeTime(86400); // 1 day
+		$results = $this->cache($cacheParams);
+		
 		$this->getController()->setOutput(array(array(
 				'status' => 1,
 				'desc' => 'success',
 				'details' => $results,
 				'input' => $request->getRequest(),
 			)));
+	}
+	
+	/**
+	 * basic fetch data method used by the cache
+	 * 
+	 * @param array $params parameters to fetch the data
+	 * 
+	 * @return boolean
+	 */
+	protected function fetchData($params) {
+		$model = new RatesModel(array('sort' => array('provider' => 1, 'from' => 1)));
+		$results = $model->getData($params['query'], $params['filter']);
+		if (isset($params['strip']) && !empty($params['strip'])) {
+			$results = $this->stripResults($results, $params['strip']);
+		}
+		return $results;
+
 	}
 
 	/**
