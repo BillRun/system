@@ -62,16 +62,16 @@ class Billrun_Plan {
 					$this->data = $plan;
 				} else {
 					$this->data = Billrun_Factory::db()->plansCollection()
-						->query(array(
-							'name' => $params['name'],
-							'$or' => array(
-								array('to' => array('$gt' => $date)),
-								array('to' => null)
-							)
-						))
-						->lessEq('from', $date)
-						->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'))
-						->current();
+							->query(array(
+								'name' => $params['name'],
+								'$or' => array(
+									array('to' => array('$gt' => $date)),
+									array('to' => null)
+								)
+							))
+							->lessEq('from', $date)
+							->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'))
+							->current();
 					$this->data->collection(Billrun_Factory::db()->plansCollection());
 				}
 			}
@@ -160,8 +160,8 @@ class Billrun_Plan {
 	 */
 	public function isRateInBasePlan($rate, $type) {
 		return isset($rate['rates'][$type]['plans']) &&
-			is_array($rate['rates'][$type]['plans']) &&
-			in_array($this->createRef(), $rate['rates'][$type]['plans']);
+				is_array($rate['rates'][$type]['plans']) &&
+				in_array($this->createRef(), $rate['rates'][$type]['plans']);
 	}
 
 	/**
@@ -260,12 +260,10 @@ class Billrun_Plan {
 			$this->setPlanGroup(FALSE);
 		} else if ($reset || is_null($this->getPlanGroup())) { // if reset required or it's the first set
 			$this->setPlanGroup(reset($this->groups));
+		} else if (next($this->groups) !== FALSE) {
+			$this->setPlanGroup(current($this->groups));
 		} else {
-			if (next($this->groups) !== FALSE) {
-				$this->setPlanGroup(current($this->groups));
-			} else {
-				$this->setPlanGroup(FALSE);
-			}
+			$this->setPlanGroup(FALSE);
 		}
 
 		return $this->getPlanGroup();
@@ -277,6 +275,13 @@ class Billrun_Plan {
 
 	public function getPlanGroup() {
 		return $this->groupSelected;
+	}
+
+	public function unsetGroup($group) {
+		$item = array_search($group, $this->groups);
+		if (isset($this->groups[$item])) {
+			unset($this->groups[$item]);
+		}
 	}
 
 	/**
@@ -292,23 +297,27 @@ class Billrun_Plan {
 			$groupSelected = $this->setNextStrongestGroup($rate, $usageType);
 			// group not found
 			if ($groupSelected === FALSE) {
-				return 0;
+				$rateUsageIncluded = 0;
+				// @todo: add more logic instead of fallback to first
+				$this->setPlanGroup($this->setNextStrongestGroup($rate, $usageType, true));
+				break; // do-while
 			}
 			// not group included in the specific usage try to take iterate next group
 			if (!isset($this->data['include']['groups'][$groupSelected][$usageType])) {
 				continue;
 			}
-
 			$rateUsageIncluded = $this->data['include']['groups'][$groupSelected][$usageType];
-
-			if ($this->data['include']['groups'][$groupSelected]['limits']) {
+			if (isset($this->data['include']['groups'][$groupSelected]['limits'])) {
 				// on some cases we have limits to unlimited
 				$limits = $this->data['include']['groups'][$groupSelected]['limits'];
-				Billrun_Factory::dispatcher()->trigger('planGroupRateRule', array(&$rateUsageIncluded, &$groupSelected, $limits, $this, $usageType, $rate, $subscriberBalance));
+				Billrun_Factory::dispatcher()->trigger('planGroupRule', array(&$rateUsageIncluded, &$groupSelected, $limits, $this, $usageType, $rate, $subscriberBalance));
+				if ($rateUsageIncluded === FALSE) {
+					$this->unsetGroup($this->getPlanGroup());
+				}
 			}
 		}
 		// @todo: protect max 5 loops
-		while ($groupSelected === FALSE && isset($this->data['include']['groups'][$groupSelected]['limits']));
+		while ($groupSelected === FALSE);
 
 		if ($rateUsageIncluded === 'UNLIMITED') {
 			return PHP_INT_MAX;
@@ -364,7 +373,7 @@ class Billrun_Plan {
 	public function createRef($collection = false) {
 		if (count($this->plan_ref) == 0) {
 			$collection = $collection ? $collection :
-				($this->data->collection() ? $this->data->collection() : Billrun_Factory::db()->plansCollection() );
+					($this->data->collection() ? $this->data->collection() : Billrun_Factory::db()->plansCollection() );
 			$this->plan_ref = $this->data->createRef($collection);
 		}
 		return $this->plan_ref;
@@ -387,10 +396,10 @@ class Billrun_Plan {
 	}
 
 	public function getBalanceTotalsKey($usage_type, $rate) {
-		if (($usage_type == "call" || $usage_type == "sms") && !$this->isRateInBasePlan($rate, $usage_type)) {
-			$usage_class_prefix = "out_plan_";
-		} else {
+		if ($this->isRateInBasePlan($rate, $usage_type)) {
 			$usage_class_prefix = "";
+		} else {
+			$usage_class_prefix = "out_plan_";
 		}
 		return $usage_class_prefix . $usage_type;
 	}

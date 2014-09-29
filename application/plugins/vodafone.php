@@ -42,7 +42,7 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @param type $subscriberBalance
 	 * 
 	 */
-	public function planGroupRateRule(&$rateUsageIncluded, $groupSelected, $limits, $plan, $usageType, $rate, $subscriberBalance) {
+	public function planGroupRule(&$rateUsageIncluded, &$groupSelected, $limits, $plan, $usageType, $rate, $subscriberBalance) {
 		if ($groupSelected != 'VF' || !isset($this->line_type)) {
 			return;
 		}
