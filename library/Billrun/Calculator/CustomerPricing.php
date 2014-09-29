@@ -159,53 +159,58 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		if (isset($this->sidsQueuedForRebalance[$row['sid']])) {
 			return false;
 		}
-		$this->countConcurrentRetries = 0;
-		Billrun_Factory::dispatcher()->trigger('beforeCalculatorUpdateRow', array($row, $this));
-		$billrun_key = Billrun_Util::getBillrunKey($row->get('urt')->sec);
-		$rate = $this->getRowRate($row);
+		try {
+			$this->countConcurrentRetries = 0;
+			Billrun_Factory::dispatcher()->trigger('beforeCalculatorUpdateRow', array($row, $this));
+			$billrun_key = Billrun_Util::getBillrunKey($row->get('urt')->sec);
+			$rate = $this->getRowRate($row);
 
-		//TODO  change this to be configurable.
-		$pricingData = array();
+			//TODO  change this to be configurable.
+			$pricingData = array();
 
-		$usage_type = $row['usaget'];
-		$volume = $row['usagev'];
+			$usage_type = $row['usaget'];
+			$volume = $row['usagev'];
 
-		if (isset($volume)) {
-			if ($row['type'] == 'credit') {
-				$accessPrice = isset($rate['rates'][$usage_type]['access']) ? $rate['rates'][$usage_type]['access'] : 0;
-				$pricingData = array($this->pricingField => $accessPrice + self::getPriceByRate($rate, $usage_type, $volume));
+			if (isset($volume)) {
+				if ($row['type'] == 'credit') {
+					$accessPrice = isset($rate['rates'][$usage_type]['access']) ? $rate['rates'][$usage_type]['access'] : 0;
+					$pricingData = array($this->pricingField => $accessPrice + self::getPriceByRate($rate, $usage_type, $volume));
+				} else {
+					$balance = $this->getSubscriberBalance($row, $billrun_key);
+					if ($balance === FALSE) {
+						return false;
+					}
+					$pricingData = $this->updateSubscriberBalance($balance, $row, $usage_type, $rate, $volume);
+				}
+
+				if ($this->isBillable($rate)) {
+					if (!$pricingData) {
+						return false;
+					}
+
+					// billrun cannot override on api calls
+					if (!isset($row['billrun']) || $row['source'] != 'api') {
+						$pricingData['billrun'] = $row['urt']->sec <= $this->active_billrun_end_time ? $this->active_billrun : $this->next_active_billrun;
+					}
+				}
 			} else {
-				$balance = $this->getSubscriberBalance($row, $billrun_key);
-				if ($balance === FALSE) {
-					return false;
-				}
-				$pricingData = $this->updateSubscriberBalance($balance, $row, $usage_type, $rate, $volume);
+				Billrun_Factory::log()->log("Line with stamp " . $row['stamp'] . " is missing volume information", Zend_Log::ALERT);
+				return false;
 			}
 
-			if ($this->isBillable($rate)) {
-				if (!$pricingData) {
-					return false;
-				}
-
-				// billrun cannot override on api calls
-				if (!isset($row['billrun']) || $row['source'] != 'api') {
-					$pricingData['billrun'] = $row['urt']->sec <= $this->active_billrun_end_time ? $this->active_billrun : $this->next_active_billrun;
-				}
+			$pricingDataTxt = "Saving pricing data to line with stamp: " . $row['stamp'] . ".";
+			foreach ($pricingData as $key => $value) {
+				$pricingDataTxt .= " " . $key . ": " . $value . ".";
 			}
-		} else {
-			Billrun_Factory::log()->log("Line with stamp " . $row['stamp'] . " is missing volume information", Zend_Log::ALERT);
+			Billrun_Factory::log()->log($pricingDataTxt, Zend_Log::DEBUG);
+			$row->setRawData(array_merge($row->getRawData(), $pricingData));
+
+			Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array($row, $this));
+			return $row;
+		} catch(Exception $e ) {
+			Billrun_Factory::log()->log('Line with stamp ' . $row['stamp'] . ' carshed when trying to price it. got exception :'.$e->getCode() .' : '. $e->getMessage() . "\n trace :" . $e->getTrace() , Zend_Log::ERR);
 			return false;
 		}
-
-		$pricingDataTxt = "Saving pricing data to line with stamp: " . $row['stamp'] . ".";
-		foreach ($pricingData as $key => $value) {
-			$pricingDataTxt .= " " . $key . ": " . $value . ".";
-		}
-		Billrun_Factory::log()->log($pricingDataTxt, Zend_Log::DEBUG);
-		$row->setRawData(array_merge($row->getRawData(), $pricingData));
-
-		Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array($row, $this));
-		return $row;
 	}
 
 	/**

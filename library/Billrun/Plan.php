@@ -195,7 +195,7 @@ class Billrun_Plan {
 
 		$rateUsageIncluded = $this->get('include')[$rate['key']][$usageType];
 
-		if ($rateUsageIncluded == 'UNLIMITED') {
+		if ($rateUsageIncluded === 'UNLIMITED') {
 			return PHP_INT_MAX;
 		}
 
@@ -281,13 +281,6 @@ class Billrun_Plan {
 			Billrun_Factory::dispatcher()->trigger('triggerPlanGroupRateRule', array(&$rateUsageIncluded, $groupSelected, $limits, $this, $usageType, $rate, $subscriberBalance));
 		}
 
-
-		// if isset $rule {
-		// Billrun_Factory::dispatcher()->trigger('triggerGroupRateRule', array($rule, $this, $group, $usageType, $rate, $subscriberBalance, &$usageLeft));
-		// return $usageLeft
-		// }
-		// else continue as usual
-		
 		if ($rateUsageIncluded === 'UNLIMITED') {
 			return PHP_INT_MAX;
 		}
@@ -300,7 +293,7 @@ class Billrun_Plan {
 		$usageLeft = $rateUsageIncluded - $subscriberSpent;
 		return floatval($usageLeft < 0 ? 0 : $usageLeft);
 	}
-	
+
 	/**
 	 * Get the usage left in the current plan.
 	 * @param $subscriberBalance the current sunscriber balance.
