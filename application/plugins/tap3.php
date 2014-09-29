@@ -203,6 +203,10 @@ class tap3Plugin extends Billrun_Plugin_BillrunPluginBase implements Billrun_Plu
 			$cdrLine['exchange_rate'] = $this->exchangeRates[Billrun_Util::getNestedArrayVal($cdrLine, $mapping['exchange_rate_code'],0)];
 		}
 		
+		if (Billrun_Util::getNestedArrayVal($cdrLine, $mapping['tax']) !== null) {
+			$cdrLine['tax'] = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['tax']) / $this->sdr_division_value;			
+		}
+
 		//save the sending source in each of the lines
 		$cdrLine['sending_source'] = $this->currentFileHeader['header']['sending_source'];
 
@@ -349,5 +353,3 @@ class tap3Plugin extends Billrun_Plugin_BillrunPluginBase implements Billrun_Plu
 	}
 
 }
-
-?>
