@@ -22,6 +22,8 @@ class Billrun_Plan {
 	protected $data = null;
 	protected static $plans = array();
 	protected $plan_ref = array();
+	protected $groupSelected = null;
+	protected $groups = null;
 
 	/**
 	 * constructor
@@ -60,29 +62,29 @@ class Billrun_Plan {
 					$this->data = $plan;
 				} else {
 					$this->data = Billrun_Factory::db()->plansCollection()
-							->query(array(
-								'name' => $params['name'],
-								'$or' => array(
-									array('to' => array('$gt' => $date)),
-									array('to' => null)
-								)
-							))
-							->lessEq('from', $date)
-							->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'))
-							->current();
+						->query(array(
+							'name' => $params['name'],
+							'$or' => array(
+								array('to' => array('$gt' => $date)),
+								array('to' => null)
+							)
+						))
+						->lessEq('from', $date)
+						->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'))
+						->current();
 					$this->data->collection(Billrun_Factory::db()->plansCollection());
 				}
 			}
 		}
 	}
-	
+
 	public function getData($raw = false) {
 		if ($raw) {
 			return $this->data->getRawData();
 		}
 		return $this->data;
 	}
-	
+
 	protected static function initPlans() {
 		if (empty(self::$plans)) {
 			$plans_coll = Billrun_Factory::db()->plansCollection();
@@ -98,7 +100,7 @@ class Billrun_Plan {
 			}
 		}
 	}
-	
+
 	public static function getPlans() {
 		self::initPlans();
 		return self::$plans;
@@ -158,8 +160,8 @@ class Billrun_Plan {
 	 */
 	public function isRateInBasePlan($rate, $type) {
 		return isset($rate['rates'][$type]['plans']) &&
-				is_array($rate['rates'][$type]['plans']) &&
-				in_array($this->createRef(), $rate['rates'][$type]['plans']);
+			is_array($rate['rates'][$type]['plans']) &&
+			in_array($this->createRef(), $rate['rates'][$type]['plans']);
 	}
 
 	/**
@@ -222,7 +224,7 @@ class Billrun_Plan {
 				return array_intersect($groups, array_keys($this->data['include']['groups']));
 			}
 		}
-		return false;
+		return array();
 	}
 
 	/**
@@ -234,7 +236,7 @@ class Billrun_Plan {
 	 * @return true when the rate is part of group else false
 	 */
 	public function isRateInPlanGroup($rate, $usageType) {
-		if ($this->getRateGroups($rate, $usageType)) {
+		if (count($this->getRateGroups($rate, $usageType))) {
 			return true;
 		}
 		return false;
@@ -246,17 +248,35 @@ class Billrun_Plan {
 	 * 
 	 * @param array $rate the rate to check
 	 * @param string $usageType the usage type to check
+	 * @param boolean $reset reset to the first group plan
 	 * 
-	 * @return false when no group, else string name of the group
-	 * @todo create mechanism to define the strongest group
+	 * @return false when no group found, else string name of the group selected
 	 */
-	public function getStrongestGroup($rate, $usageType) {
-		$groups = $this->getRateGroups($rate, $usageType);
-		if (empty($groups)) {
-			return false;
+	protected function setNextStrongestGroup($rate, $usageType, $reset = FALSE) {
+		if (is_null($this->groups)) {
+			$this->groups = $this->getRateGroups($rate, $usageType);
+		}
+		if (!count($this->groups)) {
+			$this->setPlanGroup(FALSE);
+		} else if ($reset || is_null($this->getPlanGroup())) { // if reset required or it's the first set
+			$this->setPlanGroup(reset($this->groups));
+		} else {
+			if (next($this->groups) !== FALSE) {
+				$this->setPlanGroup(current($this->groups));
+			} else {
+				$this->setPlanGroup(FALSE);
+			}
 		}
 
-		return reset($groups);
+		return $this->getPlanGroup();
+	}
+
+	public function setPlanGroup($group) {
+		$this->groupSelected = $group;
+	}
+
+	public function getPlanGroup() {
+		return $this->groupSelected;
 	}
 
 	/**
@@ -268,18 +288,27 @@ class Billrun_Plan {
 	 * @return int|string
 	 */
 	public function usageLeftInPlanGroup($subscriberBalance, $rate, $usageType = 'call') {
-		$groupSelected = $this->getStrongestGroup($rate, $usageType);
-		if ($groupSelected === FALSE || !isset($this->data['include']['groups'][$groupSelected][$usageType])) {
-			return 0;
-		}
+		do {
+			$groupSelected = $this->setNextStrongestGroup($rate, $usageType);
+			// group not found
+			if ($groupSelected === FALSE) {
+				return 0;
+			}
+			// not group included in the specific usage try to take iterate next group
+			if (!isset($this->data['include']['groups'][$groupSelected][$usageType])) {
+				continue;
+			}
 
-		$rateUsageIncluded = $this->data['include']['groups'][$groupSelected][$usageType];
+			$rateUsageIncluded = $this->data['include']['groups'][$groupSelected][$usageType];
 
-		// on some cases we have limits to unlimited
-		if (isset($this->data['include']['groups'][$groupSelected]['limits'])) {
-			$limits = $this->data['include']['groups'][$groupSelected]['limits'];
-			Billrun_Factory::dispatcher()->trigger('triggerPlanGroupRateRule', array(&$rateUsageIncluded, $groupSelected, $limits, $this, $usageType, $rate, $subscriberBalance));
+			if ($this->data['include']['groups'][$groupSelected]['limits']) {
+				// on some cases we have limits to unlimited
+				$limits = $this->data['include']['groups'][$groupSelected]['limits'];
+				Billrun_Factory::dispatcher()->trigger('planGroupRateRule', array(&$rateUsageIncluded, &$groupSelected, $limits, $this, $usageType, $rate, $subscriberBalance));
+			}
 		}
+		// @todo: protect max 5 loops
+		while ($groupSelected === FALSE && isset($this->data['include']['groups'][$groupSelected]['limits']));
 
 		if ($rateUsageIncluded === 'UNLIMITED') {
 			return PHP_INT_MAX;
@@ -335,7 +364,7 @@ class Billrun_Plan {
 	public function createRef($collection = false) {
 		if (count($this->plan_ref) == 0) {
 			$collection = $collection ? $collection :
-					($this->data->collection() ? $this->data->collection() : Billrun_Factory::db()->plansCollection() );
+				($this->data->collection() ? $this->data->collection() : Billrun_Factory::db()->plansCollection() );
 			$this->plan_ref = $this->data->createRef($collection);
 		}
 		return $this->plan_ref;
@@ -350,13 +379,13 @@ class Billrun_Plan {
 	}
 
 	public function isUnlimitedGroup($rate, $usageType) {
-		$groupSelected = $this->getStrongestGroup($rate, $usageType);
+		$groupSelected = $this->getPlanGroup();
 		if ($groupSelected === FALSE) {
 			return FALSE;
 		}
 		return (isset($this->data['include']['groups'][$groupSelected][$usageType]) && $this->data['include']['groups'][$groupSelected][$usageType] == "UNLIMITED");
 	}
-	
+
 	public function getBalanceTotalsKey($usage_type, $rate) {
 		if (($usage_type == "call" || $usage_type == "sms") && !$this->isRateInBasePlan($rate, $usage_type)) {
 			$usage_class_prefix = "out_plan_";

@@ -40,7 +40,7 @@ class irdPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * 
 	 * @todo need to verify when lines does not come in chronological order
 	 */
-	public function triggerPlanGroupRateRule(&$rateUsageIncluded, $groupSelected, $limits, $plan, $usageType, $rate, $subscriberBalance) {
+	public function planGroupRateRule(&$rateUsageIncluded, $groupSelected, $limits, $plan, $usageType, $rate, $subscriberBalance) {
 		if ($groupSelected != 'IRD' || $this->line_type != 'tap3') {
 			return;
 		}
@@ -50,6 +50,7 @@ class irdPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$rateUsageIncluded = $subscriberBalance['balance']['groups'][$groupSelected][$usageType]['usagev'];
 		} else {
 			$rateUsageIncluded = 0;
+			$groupSelected = FALSE;
 		}
 
 	}

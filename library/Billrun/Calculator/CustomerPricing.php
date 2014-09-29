@@ -300,9 +300,13 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				if ($groupVolumeLeft > 0) {
 					$ret['in_group'] = $ret['in_plan'] = $volume - $volumeToCharge;
 				}
-				$ret['over_group'] = $ret['over_plan'] = $volumeToCharge;
+				if ($plan->getPlanGroup() !== FALSE) { // verify that after all calculations we are in group
+					$ret['over_group'] = $ret['over_plan'] = $volumeToCharge;
+					$ret['arategroup'] = $plan->getPlanGroup();
+				} else {
+					$ret['out_group'] = $ret['out_plan'] = $volumeToCharge;
+				}
 			}
-			$ret['arategroup'] = $plan->getStrongestGroup($rate, $usageType);
 		} else { // else if (dispatcher->chain_of_responsibilty)->isRateInPlugin {dispatcher->trigger->calc}
 			$ret['out_plan'] = $volumeToCharge = $volume;
 		}
@@ -415,7 +419,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			$update['$inc']['balance.totals.' . $key . '.count'] = 1;
 			// update balance group (if exists)
 			if ($plan->isRateInPlanGroup($rate, $usage_type)) {
-				$group = $plan->getStrongestGroup($rate, $usage_type);
+				$group = $plan->getPlanGroup();
 				// @TODO: check if $usage_type should be $key
 				$update['$inc']['balance.groups.' . $group . '.' . $usage_type . '.usagev'] = $value;
 				$update['$inc']['balance.groups.' . $group . '.' . $usage_type . '.cost'] = $pricingData[$this->pricingField];
