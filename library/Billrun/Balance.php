@@ -172,7 +172,7 @@ class Billrun_Balance implements ArrayAccess {
 			'aid' => $aid,
 			'sid' => $sid,
 			'current_plan' => $plan_ref,
-			'balance' => self::getEmptyBalance("intl_roam_"),
+			'balance' => self::getEmptyBalance("out_plan_"),
 			'tx' => new stdclass,
 		);
 	}
@@ -213,8 +213,6 @@ class Billrun_Balance implements ArrayAccess {
 				$usage_types[] = $prefix . $usage_type;
 			}
 		}
-		$usage_types[] = "out_plan_call";
-		$usage_types[] = "out_plan_sms";
 		foreach ($usage_types as $usage_type) {
 			$ret['totals'][$usage_type] = self::getEmptyUsageTypeTotals();
 		}
