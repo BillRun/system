@@ -73,7 +73,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	protected function fetchJsFiles() {
 		$ret = '';
 		foreach ($this->jsPaths as $jsPath) {
-			$ret.='<script src="' . $jsPath . (Billrun_Factory::config()->isProd() ?  '?' . $this->commit : '') . '"></script>' . PHP_EOL;
+			$ret.='<script src="' . $jsPath . (Billrun_Factory::config()->isProd() ? '?' . $this->commit : '') . '"></script>' . PHP_EOL;
 		}
 		return $ret;
 	}
@@ -280,7 +280,7 @@ class AdminController extends Yaf_Controller_Abstract {
 				'collection' => $collectionName,
 				'sort' => $this->applySort($collectionName),
 			);
-			
+
 			// init model
 			self::initModel($collectionName, $options);
 
@@ -363,7 +363,7 @@ class AdminController extends Yaf_Controller_Abstract {
 
 		if ($username != '' && !is_null($password)) {
 			$adapter = new Zend_Auth_Adapter_MongoDb(
-					$db, 'username', 'password'
+				$db, 'username', 'password'
 			);
 
 			$adapter->setIdentity($username);
@@ -393,7 +393,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		// TODO: use ready pager/paginiation class (zend? joomla?) with auto print
 		$params = array_merge(array(
 			'title' => $this->title,
-				), $params);
+			), $params);
 //		$params = array_merge($options, $params, $this->getTableViewParams($filter_query), $this->createFilterToolbar($table));
 
 		$ret = $this->renderView('login', $params);
@@ -430,12 +430,12 @@ class AdminController extends Yaf_Controller_Abstract {
 		if (self::authorized($permission)) {
 			return true;
 		}
-		
+
 		if (Billrun_Factory::user()) {
 			$this->forward('error');
 			return false;
 		}
-		
+
 		$this->forward('login', array('ret_action' => $this->getRequest()->getActionName()));
 		return false;
 	}
@@ -462,6 +462,27 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->getSetVar($session, $query, 'query', $query);
 
 		$this->getView()->component = $this->buildTableComponent('lines', $query);
+	}
+
+	public function queueAction() {
+		if (!$this->allowed('read'))
+			return false;
+
+		$table = 'queue';
+		$sort = $this->applySort($table);
+		$options = array(
+			'collection' => $table,
+			'sort' => $sort,
+		);
+
+		self::initModel($table, $options);
+		$query = $this->applyFilters($table);
+
+		$session = $this->getSession($table);
+		// this use for export
+		$this->getSetVar($session, $query, 'query', $query);
+
+		$this->getView()->component = $this->buildTableComponent('queue', $query);
 	}
 
 	protected function errorAction() {
@@ -527,7 +548,7 @@ class AdminController extends Yaf_Controller_Abstract {
 
 		// this use for export
 		$this->getSetVar($this->getSession($table), $query, 'query', $query);
-		
+
 		$this->getView()->component = $this->buildTableComponent($table, $query);
 	}
 
@@ -770,7 +791,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		} else if (!isset($session->$target_name)) {
 			$session->$target_name = $default;
 		}
-			return $session->$target_name;
+		return $session->$target_name;
 	}
 
 	protected function applyFilters($table) {
