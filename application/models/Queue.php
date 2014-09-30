@@ -10,8 +10,8 @@
  * Lines model class to pull data from database for lines collection
  *
  * @package  Models
- * @subpackage Lines
- * @since    0.5
+ * @subpackage Queue
+ * @since    2.7
  */
 class QueueModel extends TableModel {
 
