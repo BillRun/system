@@ -3,7 +3,7 @@
 /**
  * @package         Billing
  * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
- * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 /**
  * compatible for PHP 5.4
@@ -62,7 +62,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 */
 	public function afterUpdateSubscriberBalance($row, $balance, &$pricingData, $calculator) {
 		if ($calculator->getType() == 'pricing' && method_exists($calculator, 'getPricingField') && ($pricingField = $calculator->getPricingField())) {
-			$rowPrice = $pricingData[$pricingField];
+			$rowPrice = isset($pricingData[$pricingField])? $pricingData[$pricingField] : 0; // if the rate wasn't billable then the line won't have a charge
 		} else {
 			return true;
 		}
@@ -451,7 +451,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		if ($processor->getType() != "ggsn") {
 			return;
 		}
-		Billrun_Factory::log('Plugin fraud beforeProcessorStore', Zend_Log::INFO);
+		Billrun_Factory::log('Plugin fraud afterProcessorStore', Zend_Log::INFO);
 		$runAsync = Billrun_Factory::config()->getConfigValue('fraud.runAsync', 1);
 		if (function_exists("pcntl_fork") && $runAsync && -1 !== ($pid = pcntl_fork())) {
 			if ($pid == 0) {
@@ -478,7 +478,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 			return true;
 		}
 		$rateKey = isset($line['arate']['key']) ? $line['arate']['key'] : null;
-		if (!empty($rateKey) && ($rateKey == 'IL_MOBILE' || substr($rateKey, 0, 3) == 'KT_') && isset($line['called_number'])) {
+		if (isset($line['called_number'])) {
 			// fire  event to increased called_number usagev
 			$this->triggerCalledNumber($line);
 		}

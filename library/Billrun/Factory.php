@@ -3,7 +3,7 @@
 /**
  * @package         Billing
  * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
- * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
 /**
@@ -204,15 +204,20 @@ class Billrun_Factory {
 	 * @return Billrun_Cache
 	 */
 	static public function cache() {
-		if (!self::$cache) {
-			$args = self::config()->getConfigValue('cache', array());
-			if (empty($args)) {
-				return false;
+		try {
+			if (!self::$cache) {
+				$args = self::config()->getConfigValue('cache', array());
+				if (empty($args)) {
+					return false;
+				}
+				self::$cache = Billrun_Cache::getInstance($args);
 			}
-			self::$cache = Billrun_Cache::getInstance($args);
-		}
 
-		return self::$cache;
+			return self::$cache;
+		} catch (Exception $e) {
+			Billrun_Factory::log('Cache instance cannot be generated', Zend_Log::ALERT);
+		}
+		return false;
 	}
 
 	/**

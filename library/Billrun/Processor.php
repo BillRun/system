@@ -3,7 +3,7 @@
 /**
  * @package         Billing
  * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
- * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
 /**
@@ -182,8 +182,6 @@ abstract class Billrun_Processor extends Billrun_Base {
 				$processedLinesCount = $this->process();
 				if (FALSE !== $processedLinesCount) {
 					$linesCount += $processedLinesCount;
-					$file->collection($log);
-					$file->set('process_time', date(self::base_dateformat));
 				}
 			}
 		}
@@ -254,7 +252,6 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 */
 	protected function logDB() {
 
-
 		if (!isset($this->data['trailer']) && !isset($this->data['header'])) {
 			Billrun_Factory::log()->log("Billrun_Processor:logDB " . $this->filePath . " no header nor trailer to log", Zend_Log::ERR);
 			return false;
@@ -284,11 +281,13 @@ abstract class Billrun_Processor extends Billrun_Base {
 		if ($current_stamp instanceof Mongodloid_Entity || $current_stamp instanceof Mongodloid_Id) {
 			$resource = $log->findOne($current_stamp);
 			if (!empty($header)) {
-				$resource->set('header', $header);
+				$resource->set('header', $header, true);
 			}
 			if (!empty($trailer)) {
-				$resource->set('trailer', $trailer);
+				$resource->set('trailer', $trailer, true);
 			}
+			$resource->set('process_hostname', Billrun_Util::getHostName(), true);
+			$resource->set('process_time', date(self::base_dateformat), true);
 			return $resource->save($log);
 		} else {
 			// backward compatibility
@@ -310,6 +309,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 	protected function store() {
 		if (!isset($this->data['data'])) {
 			// raise error
+			Billrun_Factory::log()->log('Got empty data from file  : ' . basename($this->filePath) , Zend_Log::ERR);
 			return false;
 		}
 
@@ -428,6 +428,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 		$update = array(
 			'$set' => array(
 				'start_process_time' => new MongoDate(time()),
+				'start_process_host' => Billrun_Util::getHostName(),
 			),
 		);
 		$options = array(

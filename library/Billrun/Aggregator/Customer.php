@@ -3,7 +3,7 @@
 /**
  * @package         Billing
  * @copyright       Copyright (C) 2012 S.D.O.C. LTD. All rights reserved.
- * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
 /**
@@ -72,10 +72,23 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	protected $memory_limit = -1;
 
 	/**
+	 * Accounts to override
+	 * @var array
+	 */
+	protected $overrideAccountIds = array();
+
+	/**
 	 * the amount of account lines to preload from the db at a time.
 	 * @param int $bulkAccountPreload
 	 */
 	protected $bulkAccountPreload = 10;
+	
+	/**
+	 * the account ids that were successfully aggregated
+	 * @var array
+	 */
+	protected $successfulAccounts = array();
+
 	public function __construct($options = array()) {
 		parent::__construct($options);
 
@@ -115,6 +128,10 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 			$this->bulkAccountPreload = (int) $options['aggregator']['bulk_account_preload'];
 		}
 
+		if (isset($options['aggregator']['override_accounts'])) {
+			$this->overrideAccountIds = $options['aggregator']['override_accounts'];
+		}
+
 		$this->plans = Billrun_Factory::db()->plansCollection();
 		$this->lines = Billrun_Factory::db()->linesCollection();
 		$this->billrun = Billrun_Factory::db(array('name' => 'billrun'))->billrunCollection();
@@ -130,7 +147,14 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		$date = date(Billrun_Base::base_dateformat, Billrun_Util::getEndTime($billrun_key));
 		$subscriber = Billrun_Factory::subscriber();
 		Billrun_Factory::log()->log("Loading page " . $this->page . " of size " . $this->size, Zend_Log::INFO);
-		$this->data = $subscriber->getList($this->page, $this->size, $date);
+		if ($this->overrideAccountIds) {
+			$this->data = array();
+			foreach ($this->overrideAccountIds as $account_id) {
+				$this->data = $this->data + $subscriber->getList(0, 1, $date, $account_id);
+			}
+		} else {
+			$this->data = $subscriber->getList($this->page, $this->size, $date);
+		}
 
 		Billrun_Factory::log()->log("aggregator entities loaded: " . count($this->data), Zend_Log::INFO);
 
@@ -151,7 +175,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 			$dataKeys = array_keys($this->data);
 			//$existingAccounts = array();			
 			foreach ($dataKeys as $key => $aid) {
-				if (Billrun_Billrun::exists($aid, $billrun_key)) {
+				if (!$this->overrideAccountIds && Billrun_Billrun::exists($aid, $billrun_key)) {
 					unset($dataKeys[$key]);
 					//$existingAccounts[$aid]  = $this->data[$aid];
 				}
@@ -176,7 +200,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 //				}
 //			}
 
-			if (Billrun_Billrun::exists($accid, $billrun_key)) {
+			if (!$this->overrideAccountIds && Billrun_Billrun::exists($accid, $billrun_key)) {
 				Billrun_Factory::log()->log("Billrun " . $billrun_key . " already exists for account " . $accid, Zend_Log::ALERT);
 				$skipped_billruns_count++;
 				continue;
@@ -184,9 +208,12 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 			$params = array(
 				'aid' => $accid,
 				'billrun_key' => $billrun_key,
-				'autoload' => false,
+				'autoload' => !empty($this->overrideAccountIds),
 			);
 			$account_billrun = Billrun_Factory::billrun($params);
+			if ($this->overrideAccountIds) {
+				$account_billrun->resetBillrun();
+			}
 			$manual_lines = array();
 			foreach ($account as $subscriber) {
 				Billrun_Factory::dispatcher()->trigger('beforeAggregateSubscriber', array($subscriber, $account_billrun, &$this));
@@ -209,9 +236,10 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 					}
 					Billrun_Factory::log('Adding flat line to subscriber ' . $sid, Zend_Log::INFO);
 					$flat = $this->saveFlatLine($subscriber, $billrun_key);
-					$manual_lines = array_merge($manual_lines, array($flat['stamp'] => $flat), $this->saveCreditLines($subscriber, $billrun_key));
+					$manual_lines = array_merge($manual_lines, array($flat['stamp'] => $flat));
 					Billrun_Factory::log('Finished adding flat line to subscriber ' . $sid, Zend_Log::INFO);
 				}
+				$manual_lines = array_merge($manual_lines, $this->saveCreditLines($subscriber, $billrun_key));
 				$account_billrun->addSubscriber($subscriber, $subscriber_status);
 				Billrun_Factory::dispatcher()->trigger('afterAggregateSubscriber', array($subscriber, $account_billrun, &$this));
 			}
@@ -222,6 +250,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 				Billrun_Factory::log('Error saving account ' . $accid, Zend_Log::ALERT);
 				continue;
 			}
+			$this->successfulAccounts[] = $accid;
 			Billrun_Factory::log('Finished saving account ' . $accid, Zend_Log::INFO);
 
 			Billrun_Factory::dispatcher()->trigger('aggregateBeforeCloseAccountBillrun', array($accid, $account, $account_billrun, $lines, &$this));
@@ -234,14 +263,15 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 			}
 		}
 		if ($billruns_count == count($this->data)) {
-			$end_msg = "Finished iterating page $this->page of size $this->size. Memory usage is " . memory_get_usage() / 1048576 . " MB\n";						
-			$end_msg .="Processed ".($billruns_count-$skipped_billruns_count)." accounts, Skipped over {$skipped_billruns_count} accounts, out of a total of {$billruns_count} accounts";
+			$end_msg = "Finished iterating page $this->page of size $this->size. Memory usage is " . memory_get_usage() / 1048576 . " MB\n";
+			$end_msg .="Processed " . ($billruns_count - $skipped_billruns_count) . " accounts, Skipped over {$skipped_billruns_count} accounts, out of a total of {$billruns_count} accounts";
 			Billrun_Factory::log($end_msg, Zend_log::INFO);
 			$this->sendEndMail($end_msg);
 		}
 
 		// @TODO trigger after aggregate
 		Billrun_Factory::dispatcher()->trigger('afterAggregate', array($this->data, &$this));
+		return $this->successfulAccounts;
 	}
 
 	protected function sendEndMail($msg) {

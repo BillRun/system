@@ -3,7 +3,7 @@
 /**
  * @package         Billing
  * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
- * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
 /**
@@ -53,6 +53,8 @@ class Billrun_Billrun {
 	 * @todo used only in current balance API. Needs refactoring
 	 */
 	public function __construct($options = array()) {
+		$this->lines = Billrun_Factory::db()->linesCollection();
+		$this->billrun_coll = Billrun_Factory::db(array('name' => 'billrun'))->billrunCollection();
 		$this->vat = Billrun_Factory::config()->getConfigValue('pricing.vat', 0.18);
 		if (isset($options['aid']) && isset($options['billrun_key'])) {
 			$this->aid = $options['aid'];
@@ -61,20 +63,21 @@ class Billrun_Billrun {
 				if (isset($options['data']) && !$options['data']->isEmpty()) {
 					$this->data = $options['data'];
 				} else {
-					$this->resetBillrun($this->aid, $this->billrun_key);
+					$this->resetBillrun();
 				}
 			} else {
 				$this->load();
+				if ($this->data->isEmpty()) {
+					$this->resetBillrun();
+				}
 			}
-			$this->data->collection(Billrun_Factory::db(array('name' => 'billrun'))->billrunCollection());
+			$this->data->collection($this->billrun_coll);
 		} else {
 			Billrun_Factory::log()->log("Returning an empty billrun!", Zend_Log::NOTICE);
 		}
 		if (isset($options['filter_fields'])) {
 			$this->filter_fields = array_map("intval", $options['filter_fields']);
 		}
-		$this->lines = Billrun_Factory::db()->linesCollection();
-		$this->billrun_coll = Billrun_Factory::db(array('name' => 'billrun'))->billrunCollection();
 	}
 
 	/**
@@ -99,7 +102,7 @@ class Billrun_Billrun {
 	public function save() {
 		if (isset($this->data)) {
 			try {
-				$this->data->save();
+				$this->data->save(NULL, 1);
 				return true;
 			} catch (Exception $ex) {
 				Billrun_Factory::log()->log('Error saving billrun document. Error code: ' . $ex->getCode() . '. Message: ' . $ex->getMessage(), Zend_Log::ERR);
@@ -761,12 +764,13 @@ class Billrun_Billrun {
 	}
 
 	/**
-	 * Resets the billrun data
-	 * @param type $account_id
-	 * @param type $billrun_key
+	 * Resets the billrun data. If an invoice id exists, it will be kept.
 	 */
-	public function resetBillrun($account_id, $billrun_key) {
-		$this->data = new Mongodloid_Entity($this->getAccountEmptyBillrunEntry($account_id, $billrun_key));
+	public function resetBillrun() {
+		$empty_billrun_entry = $this->getAccountEmptyBillrunEntry($this->aid, $this->billrun_key);
+		$invoice_id_field = (isset($this->data['invoice_id']) ? array('invoice_id' => $this->data['invoice_id']) : array());
+		$id_field = (isset($this->data['_id']) ? array('_id' => $this->data['_id']->getMongoID()) : array());
+		$this->data = new Mongodloid_Entity(array_merge($empty_billrun_entry, $invoice_id_field, $id_field), $this->billrun_coll);
 	}
 
 	/**
