@@ -19,9 +19,8 @@ class EventsModel extends TableModel {
 		if (isset($params['collection'])) {
 			unset($params['collection']);
 		}
-		$params['collection'] = Billrun_Factory::db()->events;
 		parent::__construct($params);
-		//$this->collection = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('fraud.db'))->eventsCollection();
+		$this->collection = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('fraud.db'))->eventsCollection();
 		$this->collection_name = 'events';
 		$this->search_key = "stamp";
 	}
