@@ -5,6 +5,9 @@
  * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
  * @license         GNU General Public License version 2 or later; see LICENSE.txt
  */
+
+require_once 'Google/Client.php';
+
 class TokensAction extends Action_Base {
 
 	public function execute() {
@@ -12,6 +15,7 @@ class TokensAction extends Action_Base {
 		$request = $this->getRequest();
 		$smsContent = $request->get("sms_content");
 		$ndcSn = $request->get("ndc_sn");
+
 		$smsContentArr = explode(':', $smsContent);
 
 		if (is_null($ndcSn) || !isset($smsContentArr[1])) {
@@ -36,7 +40,7 @@ class TokensAction extends Action_Base {
 			$sid = $identities[0]->{$subscriberField};
 			$aid = $identities[0]->{$accountField};
 			$plan = $identities[0]->{$planField};
-			
+
 			if (is_numeric($identities[0]->{$subscriberField})) {
 				$sid = intval($sid);
 			}
@@ -54,40 +58,50 @@ class TokensAction extends Action_Base {
 		// Send request to google
 		$this->tokenConfig = Billrun_Factory::config()->getConfigValue('googledcb.association.tokens', array());
 		$access_token = $this->getAccessToken();
-		$url = $this->tokenConfig['host'] . $this->tokenConfig['post'] .
-			"?access_token=$access_token";
-		$data = array(
-			"kind"			=> "carrierbilling#userToken",
-			"googleToken"	=> $GUT,
+		$url = $this->tokenConfig['host'] . $this->tokenConfig['post'];
+		$data = json_encode(array(
+			"kind" => "carrierbilling#userToken",
+			"googleToken" => $GUT,
 			"operatorToken" => $OUT
-		);
+		));
 
-		$response = Billrun_Util::sendRequest($url, $data, array("onlyBody" => false));
-		$status = $response->getStatus();
+		$requestToGoogle = new Google_Http_Request($url, 'POST');
+		$headers = array(
+			'Content-Type' => 'application/json; charset=UTF-8',
+			'Content-Length' => strlen($data),
+			'Authorization' => 'Bearer ' . $access_token,
+		);
+		$requestToGoogle->setRequestHeaders($headers);
+		$requestToGoogle->setPostBody($data);
+		$client = new Google_Client();
+		$response = $client->getIo()->executeRequest($requestToGoogle);
+		$status = $response[2];
 
 		// Verifies request success
 		if ($status != 200) {
-			Billrun_Factory::log()->log("No response from Google API.\nData sent: " . $data, Zend_Log::ALERT);
+			$responseObj = json_decode($response[0]);
+			$errorMsg = $responseObj->error->message;
+			Billrun_Factory::log()->log("No response from Google API.\nError message: "
+				. $errorMsg . "\nData sent: " . $data, Zend_Log::ALERT);
 		}
 	}
 
 	protected function getAccessToken() {
-		require_once 'Google/Client.php';
 		$service_account_name = $this->tokenConfig['client_name'];
 		$key_file_location = $this->tokenConfig['private_key'];
 
 		$client = new Google_Client();
 		$key = file_get_contents($key_file_location);
 		$cred = new Google_Auth_AssertionCredentials(
-			$service_account_name,
-			'https://www.googleapis.com/auth/carrierbilling',
+			$service_account_name, 
+			'https://www.googleapis.com/auth/carrierbilling', 
 			$key
 		);
 		$client->setAssertionCredentials($cred);
-		if($client->getAuth()->isAccessTokenExpired()) {
-		  $client->getAuth()->refreshTokenWithAssertion($cred);
+		if ($client->getAuth()->isAccessTokenExpired()) {
+			$client->getAuth()->refreshTokenWithAssertion($cred);
 		}
-		
+
 		$res = json_decode($client->getAccessToken());
 		return $res->access_token;
 	}
