@@ -207,8 +207,8 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 
 			Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array($row, $this));
 			return $row;
-		} catch(Exception $e ) {
-			Billrun_Factory::log()->log('Line with stamp ' . $row['stamp'] . ' carshed when trying to price it. got exception :'.$e->getCode() .' : '. $e->getMessage() . "\n trace :" . $e->getTrace() , Zend_Log::ERR);
+		} catch (Exception $e) {
+			Billrun_Factory::log()->log('Line with stamp ' . $row['stamp'] . ' carshed when trying to price it. got exception :' . $e->getCode() . ' : ' . $e->getMessage() . "\n trace :" . $e->getTraceAsString(), Zend_Log::ERR);
 			return false;
 		}
 	}
@@ -267,14 +267,12 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @param string $usageType The type  of the usage (call/sms/data)
 	 * @param mixed $rate The rate of associated with the usage.
 	 * @param mixed $sub_balance the  subscriber that generated the usage.
+	 * @param Billrun_Plan $plan the subscriber's current plan
 	 * @return Array the 
 	 * @todo refactoring the if-else-if-else-if-else to methods
 	 */
-	protected function getLinePricingData($volume, $usageType, $rate, $sub_balance) {
+	protected function getLinePricingData($volume, $usageType, $rate, $sub_balance, $plan) {
 		$accessPrice = isset($rate['rates'][$usageType]['access']) ? $rate['rates'][$usageType]['access'] : 0;
-//		$subscriber_current_plan = $this->getBalancePlan($sub_balance);
-//		$plan = Billrun_Factory::plan(array('data' => $subscriber_current_plan, 'disableCache' => true));
-		$plan = $this->getPlan($sub_balance);
 		$ret = array();
 		if ($plan->isRateInBasePlan($rate, $usageType)) {
 			$planVolumeLeft = $plan->usageLeftInBasePlan($sub_balance, $rate, $usageType);
@@ -300,9 +298,15 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				if ($groupVolumeLeft > 0) {
 					$ret['in_group'] = $ret['in_plan'] = $volume - $volumeToCharge;
 				}
-				$ret['over_group'] = $ret['over_plan'] = $volumeToCharge;
+				if ($plan->getPlanGroup() !== FALSE) { // verify that after all calculations we are in group
+					$ret['over_group'] = $ret['over_plan'] = $volumeToCharge;
+				} else {
+					$ret['out_group'] = $ret['out_plan'] = $volumeToCharge;
+				}
 			}
-			$ret['arategroup'] = $plan->getStrongestGroup($rate, $usageType);
+			if ($plan->getPlanGroup() !== FALSE) {
+				$ret['arategroup'] = $plan->getPlanGroup();
+			}
 		} else { // else if (dispatcher->chain_of_responsibilty)->isRateInPlugin {dispatcher->trigger->calc}
 			$ret['out_plan'] = $volumeToCharge = $volume;
 		}
@@ -403,7 +407,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			$pricingData = $subRaw['tx'][$stamp]; // restore the pricingData before the crash
 			return $pricingData;
 		}
-		$pricingData = $this->getLinePricingData($volume, $usage_type, $rate, $balance);
+		$pricingData = $this->getLinePricingData($volume, $usage_type, $rate, $balance, $plan);
 		$query = array('sid' => $row['sid'], 'billrun_month' => $balance['billrun_month']);
 		$update = array();
 		$update['$set']['tx.' . $stamp] = $pricingData;
@@ -415,15 +419,17 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			$update['$inc']['balance.totals.' . $key . '.count'] = 1;
 			// update balance group (if exists)
 			if ($plan->isRateInPlanGroup($rate, $usage_type)) {
-				$group = $plan->getStrongestGroup($rate, $usage_type);
-				// @TODO: check if $usage_type should be $key
-				$update['$inc']['balance.groups.' . $group . '.' . $usage_type . '.usagev'] = $value;
-				$update['$inc']['balance.groups.' . $group . '.' . $usage_type . '.cost'] = $pricingData[$this->pricingField];
-				$update['$inc']['balance.groups.' . $group . '.' . $usage_type . '.count'] = 1;
-				if (isset($subRaw['balance']['groups'][$group][$usage_type]['usagev'])) {
-					$pricingData['usagesb'] = floatval($subRaw['balance']['groups'][$group][$usage_type]['usagev']);
-				} else {
-					$pricingData['usagesb'] = 0;
+				$group = $plan->getPlanGroup();
+				if ($group !== FALSE) {
+					// @TODO: check if $usage_type should be $key
+					$update['$inc']['balance.groups.' . $group . '.' . $usage_type . '.usagev'] = $value;
+					$update['$inc']['balance.groups.' . $group . '.' . $usage_type . '.cost'] = $pricingData[$this->pricingField];
+					$update['$inc']['balance.groups.' . $group . '.' . $usage_type . '.count'] = 1;
+					if (isset($subRaw['balance']['groups'][$group][$usage_type]['usagev'])) {
+						$pricingData['usagesb'] = floatval($subRaw['balance']['groups'][$group][$usage_type]['usagev']);
+					} else {
+						$pricingData['usagesb'] = 0;
+					}
 				}
 			} else {
 				$pricingData['usagesb'] = floatval($old_usage);

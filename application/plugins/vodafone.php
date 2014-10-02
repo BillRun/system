@@ -42,7 +42,7 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @param type $subscriberBalance
 	 * 
 	 */
-	public function triggerPlanGroupRateRule(&$rateUsageIncluded, $groupSelected, $limits, $plan, $usageType, $rate, $subscriberBalance) {
+	public function planGroupRule(&$rateUsageIncluded, &$groupSelected, $limits, $plan, $usageType, $rate, $subscriberBalance) {
 		if ($groupSelected != 'VF' || !isset($this->line_type)) {
 			return;
 		}
@@ -66,7 +66,9 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		if ($count_days <= $limits['days']) {
 			return;
 		}
+		
 		$rateUsageIncluded = 0; // user passed its limit; no more usage available
+		$groupSelected = FALSE; // we will cancel the usage as group plan when set to false groupSelected
 	}
 
 	protected function loadSidLines($sid, $limits, $plan, $groupSelected, $dayKey) {
