@@ -3,7 +3,7 @@
 /**
  * @package         Billing
  * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
- * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
 /**
@@ -371,11 +371,11 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 			$smode = unpack('c*', $data);
 			//$timeSaving=intval( $smode[2] & 0x3 );
 			//time zone offset is repesented by multiples of 15 minutes.
-			$quarterOffset = intval($smode[1] & 0xAF);
+			$quarterOffset = Billrun_Util::bcd_decode($smode[1] & 0xF7);
 			if (abs($quarterOffset) <= 52) {//data sanity check less then 13hours  offset
 				$h = str_pad(abs(intval($quarterOffset / 4)), 2, "0", STR_PAD_LEFT); // calc the offset hours
 				$m = str_pad(abs(($quarterOffset % 4) * 15), 2, "0", STR_PAD_LEFT); // calc the offset minutes
-				return (($quarterOffset > 0) ? "+" : "-") . "$h:$m";
+				return ((($smode[1] & 0x8) == 0) ? "+" : "-") . "$h:$m";
 			}
 			//Billrun_Factory::log()->log($data. " : ". print_r($smode,1),Zend_Log::DEBUG );
 			return false;
@@ -390,7 +390,7 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 			$halfBytes = unpack('C*', $fieldData);
 			$ret = '';
 			foreach ($halfBytes as $byte) {
-				$ret .= ($byte & 0xF) . ((($byte >> 4) < 10) ? ($byte >> 4) : '' );
+				$ret .= Billrun_Util::bcd_decode($byte);
 			}
 			return $ret;
 		},

@@ -3,7 +3,7 @@
 /**
  * @package         Billing
  * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
- * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
 /**
@@ -48,7 +48,7 @@ class DatausageAction extends Action_Base {
 		$counter = 0;
 		$accounts = array();
 		foreach ($results as $result) {
-			$accounts['aid'][$result['aid']]['subs'][$result['sid']] = Billrun_Util::byteFormat($result['balance']['totals']['data']['usagev'], 'MB');
+			$accounts['aid'][$result['aid']]['subs'][$result['sid']] = Billrun_Util::byteFormat($result['balance']['totals']['data']['usagev'], 'MB', 2, false, '.', '');
 			$counter++;
 		}
 

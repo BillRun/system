@@ -3,7 +3,7 @@
 /**
  * @package         Billing
  * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
- * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
 /**
@@ -57,5 +57,32 @@ class EventsModel extends TableModel {
 		);
 		return $sort_fields;
 	}
+	
+	public function getFilterFields() {
+		$filter_fields = array(
+			'EventType' => array(
+				'key' => 'EventType',
+				'db_key' => 'event_type',
+				'input_type' => 'text',
+				'comparison' => 'contains',
+				'display' => 'Event Type',
+				'default' => '',
+				'case_type' => 'upper',
+			),
+		);
+		return array_merge($filter_fields, parent::getFilterFields());
+	}
+	
+	public function getFilterFieldsOrder() {
+	    $filter_field_order = array(
+		    array(
+			    'EventType' => array(
+				    'width' => 2,
+			    ),
+		    ),
+	    );
+	    return array_merge($filter_field_order, parent::getFilterFieldsOrder());
+	}
+
 
 }

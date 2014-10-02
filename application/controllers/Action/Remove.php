@@ -3,7 +3,7 @@
 /**
  * @package         Billing
  * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
- * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
 
@@ -48,7 +48,7 @@ class RemoveAction extends ApiAction {
 			'source' => 'api',
 			'stamp' => array('$in' => $stamps),
 			'$or' => array(
-				array('billrun' => Billrun_Billrun::getActiveBillrun()),
+				array('billrun' => array('$gte' => Billrun_Billrun::getActiveBillrun())),
 				array('billrun' => array('$exists' => false)),
 			)
 		);

@@ -3,7 +3,7 @@
 /**
  * @package         Billing
  * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
- * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
 /**
@@ -271,7 +271,7 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 
 	/**
-	 * extend the customer aggregator to generate the invoice right after the aggregator finished
+	 * extend the customer aggregator to generate the invoice right after the aggregator finished. EXPERIMENTAL feature.
 	 * 
 	 * @param int                 $accid account id
 	 * @param account             $account account subscribers details
@@ -283,8 +283,8 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 */
 	public function afterAggregateAccount($accid, $account, Billrun_Billrun $account_billrun, $lines, Billrun_Aggregator $aggregator) {
 		$forkXmlGeneration = Billrun_Factory::config()->getConfigValue('calcCpu.forkXmlGeneration', 0);
-		$forkXmlLimit = Billrun_Factory::config()->getConfigValue('calcCpu.forkXmlLimit', 100);
-		if (function_exists("pcntl_fork") && $forkXmlGeneration) {
+		if ($forkXmlGeneration && function_exists("pcntl_fork")) {
+			$forkXmlLimit = Billrun_Factory::config()->getConfigValue('calcCpu.forkXmlLimit', 100);
 			if ($this->childProcesses > $forkXmlLimit) {
 				Billrun_Factory::log('Plugin calc cpu afterAggregateAccount : Releasing Zombies...', Zend_Log::INFO);
 				$this->releaseZombies($forkXmlLimit);

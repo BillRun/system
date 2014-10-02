@@ -228,16 +228,16 @@ div.billrun-logo img {
 	vertical-align:middle;
 	text-align:center;
 }
-#resetSubsModal input#file-upload {
+#recreateInvoicesModal input#file-upload-accounts, #resetSubsModal input#file-upload {
 	display:inline-block;
 }
-#resetSubsModal .inputs {
+#recreateInvoicesModal .inputs, #resetSubsModal .inputs {
 	padding:0.5em;
 }
-#resetSubsModal .inputs .input{
+#recreateInvoicesModal .inputs .input, #resetSubsModal .inputs .input{
 	display:block;
 }
-#resetSubsModal .inputs .input-label{
+#recreateInvoicesModal .inputs .input-label, #resetSubsModal .inputs .input-label{
 	text-align: right;
 	width:15em;
 	padding:0.4em;

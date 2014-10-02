@@ -3,7 +3,7 @@
 /**
  * @package         Billing
  * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
- * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
 /**
@@ -217,10 +217,10 @@ class Billrun_Util {
 		$mongo_date = new MongoDate($timestamp);
 		$rates_coll = Billrun_Factory::db()->ratesCollection();
 		return $rates_coll
-						->query('key', 'VAT')
-						->lessEq('from', $mongo_date)
-						->greaterEq('to', $mongo_date)
-						->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'))->current()->get('vat');
+				->query('key', 'VAT')
+				->lessEq('from', $mongo_date)
+				->greaterEq('to', $mongo_date)
+				->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'))->current()->get('vat');
 	}
 
 	public static function isTimestamp($timestamp) {
@@ -235,12 +235,17 @@ class Billrun_Util {
 	 * convert bytes to requested format
 	 * if no format supply will take the format that is closet to the bytes
 	 * 
-	 * @param string $bytes
-	 * @param string $unit
-	 * @param int $decimals
+	 * @param string $bytes bytes to format
+	 * @param string $unit unit to align to
+	 * @param int $decimals how many decimals after dot
+	 * @param boolean $includeUnit flag to incdicate if to include unit in return value
+	 * @param string $dec_point sets the separator for the decimal point
+	 * @param string $thousands_sep sets the thousands separator
+	 * 
 	 * @return string size in requested format
 	 */
-	public static function byteFormat($bytes, $unit = "", $decimals = 2, $includeUnit = false) {
+	public static function byteFormat($bytes, $unit = "", $decimals = 2, $includeUnit = false, 
+		$dec_point = "." , $thousands_sep = ",") {
 		$units = array('B' => 0, 'KB' => 1, 'MB' => 2, 'GB' => 3, 'TB' => 4,
 			'PB' => 5, 'EB' => 6, 'ZB' => 7, 'YB' => 8);
 
@@ -260,22 +265,23 @@ class Billrun_Util {
 		if ($unit == 'B') {
 			$decimals = 0;
 		} else if (!is_numeric($decimals) || $decimals < 0) {
-			// If decimals is not numeric or decimals is less than 0 
-			// then set default value
+		// If decimals is not numeric or decimals is less than 0 
+		// then set default value
 			$decimals = 2;
 		}
 
 		// Format output
 		if (!empty($value)) {
+			$number = number_format($value, $decimals, $dec_point, $thousands_sep);
 			if ($includeUnit) {
-				return number_format($value, $decimals) . $unit;
+				return $number . $unit;
 			}
-			return number_format($value, $decimals);
+			return $number;
 		}
 
 		return 0;
 	}
-
+	
 	/**
 	 * convert seconds to requested format
 	 * 
@@ -288,7 +294,7 @@ class Billrun_Util {
 	 * 3400 sec => X minutes
 	 */
 	public static function durationFormat($seconds) {
-		if ($seconds > 3600) {
+		if ($seconds> 3600) {
 			return gmdate('H:i:s', $seconds);
 		}
 		return gmdate('i:s', $seconds);
@@ -310,8 +316,8 @@ class Billrun_Util {
 
 	public static function sendMail($subject, $body, $recipients, $attachments = array()) {
 		$mailer = Billrun_Factory::mailer()->
-				setSubject($subject)->
-				setBodyText($body);
+			setSubject($subject)->
+			setBodyText($body);
 		//add attachments
 		foreach ($attachments as $attachment) {
 			$mailer->addAttachment($attachment);
@@ -324,7 +330,7 @@ class Billrun_Util {
 		//sen email
 		return $mailer->send();
 	}
-
+	
 	/**
 	 * method to fork process of PHP-Web (Apache/Nginx/FPM)
 	 * 
@@ -339,12 +345,14 @@ class Billrun_Util {
 		if ($sleep) {
 			$params['SLEEP'] = (int) $sleep;
 		}
+		$forkUrl = self::getForkUrl();
 		$querystring = http_build_query($params);
 		if (!$post) {
-			$cmd = "wget -qO /dev/null '" . $url . "?" . $querystring . "' > /dev/null & ";
+			$cmd = "wget -O /dev/null '" . $forkUrl . $url . "?" . $querystring .
+				"' > /dev/null & ";
 		} else {
-			$post_data = http_build_query($post);
-			$cmd = "wget -qO /dev/null '" . $url . "?" . $querystring . "' --post-data '" . $post_data . "' > /dev/null & ";
+			$cmd = "wget -O /dev/null '" . $forkUrl . $url . "' --post-data '" . $querystring .
+				"' > /dev/null & ";
 		}
 
 //		echo $cmd . "<br />" . PHP_EOL;
@@ -352,6 +360,7 @@ class Billrun_Util {
 			error_log("Can't fork PHP process");
 			return false;
 		}
+		usleep(500000);
 		return true;
 	}
 
@@ -364,7 +373,7 @@ class Billrun_Util {
 	 * @return Boolean true on success else FALSE
 	 */
 	public static function forkProcessCli($cmd) {
-		$syscmd = $cmd . " > /dev/null & ";
+		$syscmd = $cmd ." > /dev/null & ";
 		if (system($syscmd) === FALSE) {
 			error_log("Can't fork PHP process");
 			return false;
@@ -406,17 +415,17 @@ class Billrun_Util {
 	 * @return string phone number in msisdn format
 	 */
 	public static function msisdn($phoneNumber, $defaultPrefix = null, $cleanLeadingZeros = true) {
-
+		
 		if (empty($phoneNumber)) {
 			return $phoneNumber;
 		}
-
+		
 		settype($phoneNumber, 'string');
-
+		
 		if ($cleanLeadingZeros) {
 			$phoneNumber = self::cleanLeadingZeros($phoneNumber);
 		}
-
+		
 		if (self::isIntlNumber($phoneNumber) || strlen($phoneNumber) > 12) { // len>15 means not msisdn
 			return $phoneNumber;
 		}
@@ -427,7 +436,7 @@ class Billrun_Util {
 
 		return $defaultPrefix . $phoneNumber;
 	}
-
+	
 	/**
 	 * method to check if phone number is intl number or local number base on msisdn standard
 	 * 
@@ -437,15 +446,15 @@ class Billrun_Util {
 	 */
 	public static function isIntlNumber($phoneNumber) {
 		$cleanNumber = self::cleanLeadingZeros(self::cleanNumber($phoneNumber));
-
+		
 		//CCNDCSN - First part USA; second non-USA
 		if (preg_match("/^(1[2-9]{1}[0-9]{2}|[2-9]{1}[0-9]{1,2}[1-9]{1}[0-9]{0,2})[0-9]{7,9}$/", $cleanNumber)) {
 			return true;
 		}
-
+		
 		return false;
 	}
-
+	
 	/**
 	 * method to clean phone number and leave only numeric characters
 	 * 
@@ -456,7 +465,7 @@ class Billrun_Util {
 	public static function cleanNumber($phoneNumber) {
 		return preg_replace("/[^0-9]/", "", $phoneNumber);
 	}
-
+	
 	/**
 	 * method to clean leading zero of phone number
 	 * 
@@ -476,7 +485,7 @@ class Billrun_Util {
 		Billrun_Factory::log()->removeWriters('Mail');
 		Billrun_Factory::log()->addWriters('Mail');
 	}
-
+	
 	/**
 	 * method to parse credit row from API
 	 * 
@@ -637,18 +646,19 @@ class Billrun_Util {
 	 */
 	public static function arrayToMongoQuery($array) {
 		$query = array();
-		foreach ($array as $key => $val) {
-			if (is_array($val) && strpos($key, '$') !== 0) {
+		foreach($array as $key => $val) {			
+			if(is_array($val) && strpos($key,'$') !== 0) {
 				foreach (self::arrayToMongoQuery($val) as $subKey => $subValue) {
-					if (strpos($subKey, '$') === 0) {
+					if(strpos($subKey,'$') === 0) {
 						$query[$key][$subKey] = $subValue;
 					} else {
-						$query[$key . "." . $subKey] = $subValue;
+						$query[$key.".".$subKey] = $subValue;
 					}
 				}
 			} else {
 				$query[$key] = $val;
 			}
+			
 		}
 		return $query;
 	}
@@ -678,13 +688,13 @@ class Billrun_Util {
 		fwrite($fd, json_encode($row) . PHP_EOL);
 		fclose($fd);
 	}
-
+	
 	public static function logFailedResetLines($sids, $billrun_key) {
 		$fd = fopen(Billrun_Factory::config()->getConfigValue('resetlines.failed_sids_file', './files/failed_resetlines.json'), 'a+');
 		fwrite($fd, json_encode(array('sids' => $sids, 'billrun_key' => $billrun_key)) . PHP_EOL);
 		fclose($fd);
 	}
-
+	
 	/**
 	 * Get an array of prefixes for a given.
 	 * @param string $str the number to get prefixes to.
@@ -697,6 +707,54 @@ class Billrun_Util {
 		}
 		return $prefixes;
 	}
+	
+	/**
+	 * Make sure that a date start with the full year and make sure it compitibale with a given format.
+	 * @param $date the date to make sure is corrcet.
+	 * @param $foramt the fromat the date should be in.
+	 * @return mixed the fixed date sting if possible or false  if the date couldn't be fixed.
+	 */
+	public static function fixShortHandYearDate($date,$format = "Y") {
+		if( !preg_match('/^'.date($format,strtotime($date)).'/',$date) ) {
+			$date = substr(date("Y"),0,2).$date;
+		}
+		return preg_match('/^'.date($format,strtotime($date)).'/',$date) ? $date : false; 
+	}
+
+	/**
+	 * method to get current hostname runnning the PHP
+	 * 
+	 * @return string host name or false when gethostname is not available (PHP 5.2 and lower)
+	 */
+	public static function getHostName() {
+		return function_exists('gethostname') ? gethostname() : false;
+	}
+	
+	/**
+	 * Return the decimal value from the coded binary representation
+	 * @param int $binary
+	 * @return int
+	 */
+	public static function bcd_decode($binary) {
+		return ($binary & 0xF) . ((($binary >> 4) < 10) ? ($binary >> 4) : '' );
+	}
+
+	/**
+	 * 
+	 * @param type $array
+	 * @param type $fields
+	 * @param type $defaultVal
+	 * @return type
+	 */
+	public static function getNestedArrayVal($array, $fields, $defaultVal = null) {
+		$fields = is_array($fields) ? $fields : explode('.', $fields);
+		$field = array_shift($fields);
+		if( isset($array[$field]) ) {
+			return empty($fields) ? $array[$field] : static::getNestedArrayVal($array[$field], $fields, $defaultVal); 
+		}
+		return $defaultVal;
+	}
+
 
 	/**
 	 * Get a string and encode it.

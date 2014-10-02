@@ -122,3 +122,25 @@
 		</div>
 	</div>
 </div>
+
+<div class="modal fade" id="recreateInvoicesModal" tabindex="-2" role="dialog" aria-labelledby="recreateInvoicesModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				<h3 id="uploadAccountsModalLabel">Recreate invoices for last billrun</h3>
+			</div>
+			<div class="modal-body">				
+				<div class="inputs">
+					<span class="input"><label id="single-sub-input-label-invoices" class="input-label" for="single-sub-input">Enter account ids: </label><input type="text" id="single-sub-input-accounts" value=""/></span>
+					<span class="input"><label id="file-upload-label-invoices" class="input-label" for="file-upload">Or file : </label><input id="file-upload-accounts" type="file"/></label><input type="hidden" id="csvJson-accounts" value=""/></span>
+				</div>
+				<div id="saveOutputAccounts"></div>
+			</div>
+			<div class="modal-footer">
+				<button id="canceluploadAccounts" class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
+				<button id="uploadAccounts" data-url="/api/recreateinvoices" class="btn btn-primary">Reset</button>
+			</div>
+		</div>
+	</div>
+</div>
