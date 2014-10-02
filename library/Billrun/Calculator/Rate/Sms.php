@@ -3,7 +3,7 @@
 /**
  * @package         Billing
  * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
- * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
 /**
@@ -92,6 +92,12 @@ abstract class Billrun_Calculator_Rate_Sms extends Billrun_Calculator_Rate {
 		} else {
 			return false;
 		}
+	}
+	/**
+	 * @see Billrun_Calculator::isRateValid()
+	 */
+	protected function isRateValid($rate) {
+		return preg_match("/^(?!AC_|VF_)/", $rate['key']);
 	}
 
 	/**

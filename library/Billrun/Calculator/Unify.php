@@ -3,7 +3,7 @@
 /**
  * @package         Billing
  * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
- * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
 /**
@@ -18,19 +18,7 @@
 class Billrun_Calculator_Unify extends Billrun_Calculator {
 
 	protected $unifiedLines = array();
-	protected $unificationFields = array('ggsn' => array(
-			'required' => array(
-				'fields' => array('sid', 'aid', 'ggsn_address', 'arate', 'urt'),
-				'match' => array('sgsn_address' => '/^(?=62\.90\.|37\.26\.)/')
-			),
-			'date_seperation' => 'Ymd',
-			'stamp' => array('value' => array('sgsn_address', 'ggsn_address', 'sid', 'aid', 'arate', 'imsi', 'plan', 'rating_group', 'billrun'), 'field' => array('in_plan', 'out_plan', 'over_plan', 'aprice')),
-			'fields' => array(
-				'$set' => array('process_time'),
-				'$setOnInsert' => array('urt', 'imsi', 'usagesb', 'usaget', 'aid', 'sid', 'ggsn_address', 'sgsn_address', 'rating_group', 'arate', 'plan', 'billrun'),
-				'$inc' => array('usagev', 'aprice', 'apr', 'fbc_downlink_volume', 'fbc_uplink_volume', 'duration', 'in_plan', 'out_plan', 'over_plan'),
-			),
-	));
+	protected $unificationFields;
 	protected $archivedLines = array();
 	protected $unifiedToRawLines = array();
 	protected $dateSeperation = "Ymd";
@@ -50,6 +38,46 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 
 		if (isset($options['unification_fields'])) {
 			$this->unificationFields = $options['unification_fields'];
+		} else {
+			// TODO: put in seperate config dedicate to unify
+			$this->unificationFields = array(
+				'ggsn' => array(
+					'required' => array(
+						'fields' => array('sid', 'aid', 'ggsn_address', 'arate', 'urt'),
+						'match' => array(
+							'sgsn_address' => '/^(?=62\.90\.|37\.26\.)/',
+						),
+					),
+					'date_seperation' => 'Ymd',
+					'stamp' => array(
+						'value' => array('sgsn_address', 'ggsn_address', 'sid', 'aid', 'arate', 'imsi', 'plan', 'rating_group', 'billrun'), 
+						'field' => array('in_plan', 'out_plan', 'over_plan', 'aprice'),
+					),
+					'fields' => array(
+						'$set' => array('process_time'),
+						'$setOnInsert' => array('urt', 'imsi', 'usagesb', 'usaget', 'aid', 'sid', 'ggsn_address', 'sgsn_address', 'rating_group', 'arate', 'plan', 'billrun'),
+						'$inc' => array('usagev', 'aprice', 'apr', 'fbc_downlink_volume', 'fbc_uplink_volume', 'duration', 'in_plan', 'out_plan', 'over_plan'),
+					),
+				),
+				'nsn' => array(
+					'required' => array(
+						'fields' => array('urt', 'record_type', 'in_circuit_group', 'in_circuit_group_name', 'out_circuit_group', 'out_circuit_group_name'),
+						'match' => array(
+							'classMethod' => 'isNsnLineLegitimate',
+						),
+					),
+					'date_seperation' => 'Ymd',
+					'stamp' => array(
+						'value' => array('record_type', 'in_circuit_group', 'in_circuit_group_name', 'out_circuit_group', 'out_circuit_group_name', 'arate', 'usaget', 'calling_subs_last_ex_id', 'called_subs_last_ex_id'),
+						'field' => array()
+					),
+					'fields' => array(
+						'$set' => array('process_time'),
+						'$setOnInsert' => array('urt', 'in_circuit_group', 'in_circuit_group_name', 'out_circuit_group', 'out_circuit_group_name', 'calling_subs_last_ex_id', 'called_subs_last_ex_id', 'arate', 'usaget'),
+						'$inc' => array('usagev', 'duration'),
+					),
+				),
+			);
 		}
 
 		if (isset($options['accept_archived_lines'])) {
@@ -131,6 +159,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 			try {
 				Billrun_Factory::log('Saving ' . $archivedLinesCount . ' source lines to archive.', Zend_Log::INFO);
 				$archLinesColl->batchInsert($this->archivedLines);
+				$this->data = array_diff_key($this->data, $this->archivedLines);
 				$linesArchivedStamps = array_keys($this->archivedLines);
 			} catch (Exception $e) {
 				Billrun_Factory::log("Failed to insert to archive. " . $e->getCode() . " : " . $e->getMessage(), Zend_Log::ALERT);
@@ -262,7 +291,9 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 		$typeData = $this->unificationFields[$newRow['type']];
 		$serialize_array = array();
 		foreach ($typeData['stamp']['value'] as $field) {
-			$serialize_array[$field] = $newRow[$field];
+			if (isset($newRow[$field])) {
+				$serialize_array[$field] = $newRow[$field];
+			}
 		}
 
 		foreach ($typeData['stamp']['field'] as $field) {
@@ -279,7 +310,10 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 		if ($matched) {
 			$requirements = $this->unificationFields[$line['type']]['required'];
 			foreach ($requirements['match'] as $field => $regex) {
-				if (!preg_match($regex, $line[$field])) {
+				// @todo: make it pluginable with chain of responsibility
+				if ($field == 'classMethod') {
+					$matched = call_user_func_array(array($this, $regex), array($line));
+				} elseif (!preg_match($regex, $line[$field])) {
 					$matched = false;
 				}
 			}
@@ -287,6 +321,13 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 		return $matched &&
 				//verify that all the required field exists in the line
 				(count(array_intersect(array_keys($line->getRawData()), $requirements['fields'])) == count($requirements['fields']));
+	}
+
+	public function isNsnLineLegitimate($line) {
+		if ((isset($line['arate']) && $line['arate'] !== false) || (isset($line['usaget']) && $line['usaget'] == 'incoming_call' && isset($line['sid']))) {
+			return false;
+		}
+		return true;
 	}
 
 	/**

@@ -3,7 +3,7 @@
 /**
  * @package         Mongodloid
  * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
- * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 class Mongodloid_Collection {
 
@@ -283,7 +283,7 @@ class Mongodloid_Collection {
 			$options['j'] = $this->j;
 		}
 
-		if ($this->_db->compareServerVersion('2.6', '>=')) {
+		if ($this->_db->compareServerVersion('2.6', '>=') && $this->_db->compareClientVersion('1.5', '>=')) {
 			$batch = new MongoInsertBatch($this->_collection);
 			foreach($a as $doc) {
 				$batch->add($doc);

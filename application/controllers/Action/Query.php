@@ -3,7 +3,7 @@
 /**
  * @package         Billing
  * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
- * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
 
@@ -29,13 +29,26 @@ class QueryAction extends ApiAction {
 			$this->setError('Require to supply aid or sid', $request);
 			return true;
 		}
+		
 		$find = array();
+		$max_list = 1000;
+		
 		if (isset($request['aid'])) {
-			$find['aid'] = (int) $request['aid'];
+			$aids = Billrun_Util::verify_array($request['aid'], 'int');
+			if (count($aids) > $max_list) {
+				$this->setError('Maximum of aid is ' . $max_list, $request);
+				return true;
+			}
+			$find['aid'] = array('$in' => $aids);
 		}
 
 		if (isset($request['sid'])) {
-			$find['sid'] = (int) $request['sid'];
+			$sids = Billrun_Util::verify_array($request['sid'], 'int');
+			if (count($sids) > $max_list) {
+				$this->setError('Maximum of sid is ' . $max_list, $request);
+				return true;
+			}
+			$find['sid'] = array('$in' => $sids);
 		}
 
 		if (isset($request['billrun'])) {
