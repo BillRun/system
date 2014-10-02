@@ -50,7 +50,7 @@ class EventsModel extends TableModel {
 	public function getFilterFields() {
 
 		$search_by_values = array(
-			'event_type' => 'Evenet type',
+			'event_type' => 'Event type',
 			'source' => 'Source',
 		);
 
@@ -150,33 +150,6 @@ class EventsModel extends TableModel {
 		);
 		return $sort_fields;
 	}
-	
-	public function getFilterFields() {
-		$filter_fields = array(
-			'EventType' => array(
-				'key' => 'EventType',
-				'db_key' => 'event_type',
-				'input_type' => 'text',
-				'comparison' => 'contains',
-				'display' => 'Event Type',
-				'default' => '',
-				'case_type' => 'upper',
-			),
-		);
-		return array_merge($filter_fields, parent::getFilterFields());
-	}
-	
-	public function getFilterFieldsOrder() {
-	    $filter_field_order = array(
-		    array(
-			    'EventType' => array(
-				    'width' => 2,
-			    ),
-		    ),
-	    );
-	    return array_merge($filter_field_order, parent::getFilterFieldsOrder());
-	}
-
 
 	public function getData($filter_query = array()) {
 		$resource = parent::getData($filter_query);
