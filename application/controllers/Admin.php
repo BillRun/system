@@ -837,6 +837,12 @@ class AdminController extends Yaf_Controller_Abstract {
 					'display' => 'usage',
 				)
 			);
+		} else if ($this->model instanceof EventsModel) {
+			$avanced_options = array(
+				$keys[0] => array(
+					'type' => 'text',
+				)
+			);
 		} else {
 			return $query;
 		}
