@@ -54,6 +54,25 @@ class RatesAction extends ApiAction {
 	 */
 	protected function fetchData($params) {
 		$model = new RatesModel(array('sort' => array('provider' => 1, 'from' => 1)));
+		if (is_null($params)) {
+			$params = array();
+		}
+		if (!isset($params['query'])) {
+			$params['query'] = array();
+		}
+		$params['query']['$or'] = array(
+				array(
+					'hiddenFromApi' => array(
+						'$exists' => 0,
+					)
+				),
+				array(
+					'hiddenFromApi' => false
+				),
+				array(
+					'hiddenFromApi' => 0
+				)
+		);
 		$results = $model->getData($params['query'], $params['filter']);
 		if (isset($params['strip']) && !empty($params['strip'])) {
 			$results = $this->stripResults($results, $params['strip']);
