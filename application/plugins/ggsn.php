@@ -110,7 +110,7 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Pl
 					),
 								), array_slice($aggregateQuery, $wherePos + 1)
 				));
-				$dataExceedersAlerts = $this->detectDataExceeders($lines, $aggregateQuery);
+				$dataExceedersAlerts = $this->detectDataExceeders($lines, $aggregateQuery, $groupName);
 				Billrun_Factory::log()->log('GGSN plugin of monthly usage fraud found ' . count($dataExceedersAlerts) . ' events for group ' . $groupName, Zend_Log::INFO);
 				Billrun_Factory::log()->log('ggsnPlugin::handlerCollect collecting hourly data exceeders for group :' . $groupName, Zend_Log::DEBUG);
 				$hourlyDataExceedersAlerts = $this->detectHourlyDataExceeders($lines, $aggregateQuery);
@@ -200,8 +200,8 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Pl
 	 * @param type $aggregateQuery the general aggregate query.
 	 * @return Array containing all the exceeding events.
 	 */
-	protected function detectDataExceeders($lines, $aggregateQuery) {
-		$limit = floatval(Billrun_Factory::config()->getConfigValue('ggsn.thresholds.datalimit', 1000));
+	protected function detectDataExceeders($lines, $aggregateQuery, $groupName) {
+		$limit = floatval(Billrun_Factory::config()->getConfigValue('ggsn.' . $groupName . '.thresholds.datalimit', 1000));
 		$dataThrs = array(
 			'$match' => array(
 				'$or' => array(
