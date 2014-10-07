@@ -953,10 +953,13 @@ class AdminController extends Yaf_Controller_Abstract {
 
 		$rates = $this->model->getRates($query);
 
-		$header = $this->model->getPricesListFileHeader();
+
+		$showprefix = $_GET['show_prefix'];
+		$show_prefix = $showprefix == 'true' ? true : false;
+		$header = $this->model->getPricesListFileHeader($show_prefix);
 		$data_output[] = implode(",", $header);
 		foreach ($rates as $rate) {
-			$rules = $this->model->getRulesByRate($rate);
+			$rules = $this->model->getRulesByRate($rate, $show_prefix);
 			foreach ($rules as $rule) {
 				$imploded_text = '';
 				foreach ($header as $title) {
