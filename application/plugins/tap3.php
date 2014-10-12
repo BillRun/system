@@ -3,7 +3,7 @@
 /**
  * @package         Billing
  * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
- * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
 /**
@@ -89,9 +89,15 @@ class tap3Plugin extends Billrun_Plugin_BillrunPluginBase implements Billrun_Plu
 		}
 		//Billrun_Factory::log()->log("Header data : ". print_r(Asn_Base::getDataArray( $data ,true ),1) ,  Zend_Log::DEBUG);
 		$header = $this->parseASNDataRecur($this->tap3Config['header'], $data, $this->tap3Config['fields']);
+
 		$this->currentFileHeader = $header;
 		$this->fileVersion = $this->currentFileHeader['header']['version'] ."_" .$this->currentFileHeader['header']['minor_version'];
-		//Billrun_Factory::log()->log("File Version :  {$this->fileVersion}",Zend_Log::DEBUG);
+		if(empty( $this->currentFileHeader )) {
+			//Billrun_Factory::log()->log(print_r(Asn_Base::getDataArray($data ,true ,true),1),Zend_Log::DEBUG);
+			$header['notifcation'] = $this->parseASNDataRecur($this->tap3Config['notification'], $data, $this->tap3Config['fields']);
+			$this->fileVersion = $header['notifcation']['version'] ."_" .$header['notifcation']['minor_version'];
+		}		
+		Billrun_Factory::log()->log("File Version :  {$this->fileVersion}",Zend_Log::DEBUG);
 		return $header;
 	}
 
@@ -173,7 +179,10 @@ class tap3Plugin extends Billrun_Plugin_BillrunPluginBase implements Billrun_Plu
 				}
 			}
 		}
-
+		
+		if (isset($cdrLine['called_number'])) {
+			$cdrLine['called_number'] = Billrun_Util::msisdn($cdrLine['called_number']);
+		}
 
 		if (!Billrun_Util::getNestedArrayVal($cdrLine, $mapping['calling_number']) && isset($tele_service_code) && isset($record_type) ) {
 			if ($record_type == 'a' && ($tele_service_code == '11' || $tele_service_code == '21')) {
@@ -267,19 +276,22 @@ class tap3Plugin extends Billrun_Plugin_BillrunPluginBase implements Billrun_Plu
 		}
 		$trailer = $processor->buildTrailer($parsedData);
 		$this->initExchangeRates($trailer);
-
-		foreach ($parsedData->getData() as $record) {
-			if (in_array($record->getType(), $this->tap3Config['config']['data_records'])) {
-				foreach ($record->getData() as $key => $data) {
-					$row = $processor->buildDataRow($data);
-					if ($row) {
-						$row['file_rec_num'] = $key + 1;
-						$processorData['data'][] = $row;
+		if(empty($this->currentFileHeader['notification']) || !empty($this->currentFileHeader['header']) ) {
+			foreach ($parsedData->getData() as $record) {
+				if (in_array($record->getType(), $this->tap3Config['config']['data_records'])) {
+					foreach ($record->getData() as $key => $data) {
+						$row = $processor->buildDataRow($data);
+						if ($row) {
+							$row['file_rec_num'] = $key + 1;
+							$processorData['data'][] = $row;
+						}
 					}
+				} else if(!isset($this->tap3Config['header'][$record->getType()]) && !isset($this->tap3Config['trailer'][$record->getType()])) {
+					Billrun_Factory::log()->log('No config for type : ' .$record->getType(). " Full record :" . print_r(Asn_Base::getDataArray($record,true,true),1) ,  Zend_Log::DEBUG);
 				}
-			} else if(!isset($this->tap3Config['header'][$record->getType()]) && !isset($this->tap3Config['trailer'][$record->getType()])) {				 
-				Billrun_Factory::log()->log('No config for type : ' .$record->getType(). " Full record :" . print_r(Asn_Base::getDataArray($record,true,true),1) ,  Zend_Log::DEBUG);
 			}
+		} else {
+			Billrun_Factory::log()->log('Got notification/empty file : ' .$processor->filename. ' , moving on...' ,  Zend_Log::INFO);
 		}
 
 		$processorData['trailer'] = $trailer;
