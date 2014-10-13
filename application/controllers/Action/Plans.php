@@ -17,13 +17,13 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
 class PlansAction extends ApiAction {
 
 	public function execute() {
-		Billrun_Factory::log()->log("Execute rates api call", Zend_Log::INFO);
+		Billrun_Factory::log()->log("Execute plans api call", Zend_Log::INFO);
 		$request = $this->getRequest();
 
 		$requestedQuery = $request->get('query', array());
 		$query = $this->processQuery($requestedQuery);
 		$strip = $this->getCompundParam($request->get('strip', false), false);
-		$filter = !empty($strip) ? $strip : array('key', 'rates', 'provider');
+		$filter = !empty($strip) ? $strip : array('name');
 
 		$cacheParams = array(
 			'fetchParams' => array(
@@ -59,19 +59,19 @@ class PlansAction extends ApiAction {
 		if (!isset($params['query'])) {
 			$params['query'] = array();
 		}
-//		$params['query']['$or'] = array(
-//				array(
-//					'hiddenFromApi' => array(
-//						'$exists' => 0,
-//					)
-//				),
-//				array(
-//					'hiddenFromApi' => false
-//				),
-//				array(
-//					'hiddenFromApi' => 0
-//				)
-//		);
+		$params['query']['$or'] = array(
+				array(
+					'hiddenFromApi' => array(
+						'$exists' => 0,
+					)
+				),
+				array(
+					'hiddenFromApi' => false
+				),
+				array(
+					'hiddenFromApi' => 0
+				)
+		);
 		$model = new PlansModel(array('sort' => array('from' => 1)));
 		$resource = $model->getData($params['query'], $params['filter']);
 		if (is_resource($resource)) {
@@ -90,7 +90,7 @@ class PlansAction extends ApiAction {
 	}
 
 	/**
-	 * Process the query and prepere it for usage by the Rates model
+	 * Process the query and prepere it for usage by the Plans model
 	 * @param type $query the query that was recevied from the http request.
 	 * @return array containing the processed query.
 	 */
