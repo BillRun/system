@@ -16,9 +16,13 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  */
 class RatesAction extends ApiAction {
 
+	protected $model;
+	
 	public function execute() {
 		Billrun_Factory::log()->log("Execute rates api call", Zend_Log::INFO);
 		$request = $this->getRequest();
+		$this->model = new RatesModel(array('sort' => array('provider' => 1, 'from' => 1)));
+
 
 		$requestedQuery = $request->get('query', array());
 		$query = $this->processQuery($requestedQuery);
@@ -53,7 +57,6 @@ class RatesAction extends ApiAction {
 	 * @return boolean
 	 */
 	protected function fetchData($params) {
-		$model = new RatesModel(array('sort' => array('provider' => 1, 'from' => 1)));
 		if (is_null($params)) {
 			$params = array();
 		}
@@ -73,7 +76,7 @@ class RatesAction extends ApiAction {
 					'hiddenFromApi' => 0
 				)
 		);
-		$results = $model->getData($params['query'], $params['filter']);
+		$results = $this->model->getData($params['query'], $params['filter']);
 		if (isset($params['strip']) && !empty($params['strip'])) {
 			$results = $this->stripResults($results, $params['strip']);
 		}
@@ -90,7 +93,11 @@ class RatesAction extends ApiAction {
 		$retQuery = array();
 		if (isset($query)) {
 			$retQuery = $this->getCompundParam($query, array());
-
+			$matches = preg_grep('/rates.\w+.plans/', array_keys($retQuery));
+			foreach($matches as $m) {
+				$retQuery[$m] = $this->model->getPlan($retQuery[$m]);
+			}
+			
 			if (!isset($retQuery['from'])) {
 				$retQuery['from']['$lte'] = new MongoDate();
 			} else {
