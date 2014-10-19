@@ -366,18 +366,16 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$newEvent['recurring'] = $recurring;
 		$newEvent['line_stamp'] = $row['stamp'];
 		$newEvent['line_urt'] = $row['urt'];
-		if (!is_null($priority)) {
-			$newEvent['priority'] = (int) $priority;
-		} else if ($recurring) {
-			// as long as the value is greater the event priority should be high (the highest priority is 0)
-			// we are using the recurring value as offset if applicable (more than value 5)
-			if (is_numeric($recurring) && $recurring > 5) {
-				$newEvent['priority'] = (int) $recurring - floor($value / $threshold);
-			} else {
-				$newEvent['priority'] = (int) 15 - floor($value / $threshold);
-			}
+		
+		if (is_null($priority) || !is_numeric($priority)) {
+			$priority = 15;
+		}
+
+		if ($recurring) {
+			// we will use the priority as offset
+			$newEvent['priority'] = $priority - floor($value / $threshold);
 		} else {
-			$newEvent['priority'] = 10;
+			$newEvent['priority'] = (int) $priority;
 		}
 
 		$newEvent['stamp'] = md5(serialize($newEvent));
