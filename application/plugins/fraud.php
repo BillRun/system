@@ -370,7 +370,12 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$newEvent['priority'] = (int) $priority;
 		} else if ($recurring) {
 			// as long as the value is greater the event priority should be high (the highest priority is 0)
-			$newEvent['priority'] = (int) 15 - floor($value / $threshold);
+			// we are using the recurring value as offset if applicable (more than value 5)
+			if (is_numeric($recurring) && $recurring > 5) {
+				$newEvent['priority'] = (int) $recurring - floor($value / $threshold);
+			} else {
+				$newEvent['priority'] = (int) 15 - floor($value / $threshold);
+			}
 		} else {
 			$newEvent['priority'] = 10;
 		}
