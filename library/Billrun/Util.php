@@ -748,10 +748,20 @@ class Billrun_Util {
 	 */
 	public static function getNestedArrayVal($array, $fields, $defaultVal = null) {
 		$fields = is_array($fields) ? $fields : explode('.', $fields);
-		$field = array_shift($fields);
-		if( isset($array[$field]) ) {
-			return empty($fields) ? $array[$field] : static::getNestedArrayVal($array[$field], $fields, $defaultVal); 
+		$rawField = array_shift($fields);
+		preg_match("/\[([^\]]*)\]/", $rawField,$attr);		
+		if(!empty($attr)) {
+			$attr = explode("=",Billrun_Util::getFieldVal($attr[1],FALSE));
 		}
+		$field = preg_replace("/\[[^\]]*\]/", "", $rawField); 
+		$keys = ($field != "*") ? array($field) : array_keys($array);	
+		
+		foreach ($keys as $key ) {
+			if( isset($array[$key]) && (empty($attr) || isset($array[$key][$attr[0]])) && (!isset($attr[1]) || $array[$key][$attr[0]] == $attr[1] ) ) {
+				return empty($fields) ? $array[$key] : static::getNestedArrayVal($array[$key], $fields, $defaultVal); 
+			}
+		}
+		
 		return $defaultVal;
 	}
 }
