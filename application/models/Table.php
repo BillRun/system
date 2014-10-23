@@ -3,7 +3,7 @@
 /**
  * @package         Billing
  * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
- * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
 /**
@@ -192,10 +192,10 @@ class TableModel {
 			$ret = '<ul class="pagination pagination-right">';
 			if ($current == 1) {
 				$ret .= '<li class="disabled"><a href="javascript:void(0);">First</a></li>'
-						. '<li class="disabled"><a href="javascript:void(0);">Prev</a></li>';
+					. '<li class="disabled"><a href="javascript:void(0);">Prev</a></li>';
 			} else {
 				$ret .= '<li><a href="?page=1">First</a></li>'
-						. '<li><a href="?page=' . ($current - 1) . '">Prev</a></li>';
+					. '<li><a href="?page=' . ($current - 1) . '">Prev</a></li>';
 			}
 
 			for ($i = $min; $i < $current; $i++) {
@@ -210,10 +210,10 @@ class TableModel {
 
 			if ($current == $count) {
 				$ret .= '<li class="disabled"><a href="javascript:void(0);">Next</a></li>'
-						. '<li class="disabled"><a href="javascript:void(0);">Last</a></li>';
+					. '<li class="disabled"><a href="javascript:void(0);">Last</a></li>';
 			} else {
 				$ret .= '<li><a href="?page=' . ($current + 1) . '">Next</a></li>'
-						. '<li><a href="?page=' . $count . '">Last</a></li>';
+					. '<li><a href="?page=' . $count . '">Last</a></li>';
 			}
 
 			$ret .= '</ul>';
@@ -317,11 +317,28 @@ class TableModel {
 		if ($filter_field['input_type'] == 'number') {
 			if ($value != '') {
 				if ($filter_field['comparison'] == 'equals') {
-					return array(
-						$filter_field['db_key'] => array(
-							'$in' => array_map('floatval', explode(',', $value)),
-						),
-					);
+					if (is_array($filter_field['db_key'])) {
+						$ret = array('$or' => array(
+								array(
+									$filter_field['db_key'][0] => array(
+										'$in' => array_map('floatval', explode(',', $value)),
+									),
+								),
+								array(
+									$filter_field['db_key'][1] => array(
+										'$in' => array_map('strval', explode(',', $value)),
+									),
+								)
+							)
+						);
+					} else {
+						$ret = array(
+							$filter_field['db_key'] => array(
+								'$in' => array_map('floatval', explode(',', $value)),
+							),
+						);
+					}
+					return $ret;
 				}
 			}
 		} else if ($filter_field['input_type'] == 'text') {
@@ -359,6 +376,10 @@ class TableModel {
 				}
 			}
 			if (is_array($value) && !empty($value)) {
+
+				if ($this instanceof QueueModel && $filter_field['db_key'] == 'calc_name') {
+					$value = $this->prev_calc($value);
+				}
 				return array(
 					$filter_field['db_key'] => array(
 						$filter_field['comparison'] => $value
@@ -405,8 +426,8 @@ class TableModel {
 	public function duplicate($params) {
 		$key = $params[$this->search_key];
 		$count = $this->collection
-				->query($this->search_key, $key)
-				->count();
+			->query($this->search_key, $key)
+			->count();
 
 		if ($count) {
 			die(json_encode("key already exists"));

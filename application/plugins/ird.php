@@ -3,7 +3,7 @@
 /**
  * @package         Billing
  * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
- * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
 /**
@@ -40,16 +40,15 @@ class irdPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * 
 	 * @todo need to verify when lines does not come in chronological order
 	 */
-	public function triggerPlanGroupRateRule(&$rateUsageIncluded, $groupSelected, $limits, $plan, $usageType, $rate, $subscriberBalance) {
+	public function planGroupRule(&$rateUsageIncluded, &$groupSelected, $limits, $plan, $usageType, $rate, $subscriberBalance) {
 		if ($groupSelected != 'IRD' || $this->line_type != 'tap3') {
 			return;
 		}
 		if ($this->daily_ird) {
 			$rateUsageIncluded = 'UNLIMITED';
-		} else if (isset($subscriberBalance['balance']['groups'][$groupSelected][$usageType]['usagev'])) {
-			$rateUsageIncluded = $subscriberBalance['balance']['groups'][$groupSelected][$usageType]['usagev'];
 		} else {
-			$rateUsageIncluded = 0;
+			$rateUsageIncluded = FALSE;
+			$groupSelected = FALSE;
 		}
 
 	}

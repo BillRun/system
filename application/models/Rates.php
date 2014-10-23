@@ -3,7 +3,7 @@
 /**
  * @package         Billing
  * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
- * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
 /**
@@ -75,8 +75,6 @@ class RatesModel extends TabledateModel {
 	 */
 	public function update($data) {
 		if (isset($data['rates'])) {
-			$plansColl = Billrun_Factory::db()->plansCollection();
-			$currentDate = new MongoDate();
 			$rates = $data['rates'];
 			//convert plans
 			foreach ($rates as &$rate) {
@@ -88,11 +86,7 @@ class RatesModel extends TabledateModel {
 						if (MongoDBRef::isRef($plan)) {
 							$newRefPlans[] = $plan;
 						} else {
-							$planEntity = $plansColl->query('name', $plan)
-											->lessEq('from', $currentDate)
-											->greaterEq('to', $currentDate)
-											->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'))->current();
-							$newRefPlans[] = $planEntity->createRef($plansColl);
+							$newRefPlans[] = $this->getPlan($plan);
 						}
 					}
 					$rate['plans'] = $newRefPlans;
@@ -212,7 +206,6 @@ class RatesModel extends TabledateModel {
 	 * @return Mongo Cursor
 	 */
 	public function getData($filter_query = array(), $fields = false) {
-//		print_R($filter_query);die;
 		$cursor = $this->getRates($filter_query);
 		$this->_count = $cursor->count();
 		$resource = $cursor->sort($this->sort)->skip($this->offset())->limit($this->size);
@@ -460,6 +453,26 @@ class RatesModel extends TabledateModel {
 		} else {
 			return NULL;
 		}
+	}
+	
+	/**
+	 * method to fetch plan reference by plan name
+	 * 
+	 * @param string $plan
+	 * @param MongoDate $currentDate the affective date
+	 * 
+	 * @return MongoDBRef
+	 */
+	public function getPlan($plan, $currentDate = null) {
+		if (is_null($currentDate)) {
+			$currentDate = new MongoDate();
+		}
+		$plansColl = Billrun_Factory::db()->plansCollection();
+		$planEntity = $plansColl->query('name', $plan)
+						->lessEq('from', $currentDate)
+						->greaterEq('to', $currentDate)
+						->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'))->current();
+		return $planEntity->createRef($plansColl);
 	}
 
 }

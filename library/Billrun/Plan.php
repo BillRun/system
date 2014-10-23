@@ -3,7 +3,7 @@
 /**
  * @package         Billing
  * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
- * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
 /**
@@ -22,6 +22,8 @@ class Billrun_Plan {
 	protected $data = null;
 	protected static $plans = array();
 	protected $plan_ref = array();
+	protected $groupSelected = null;
+	protected $groups = null;
 
 	/**
 	 * constructor
@@ -75,14 +77,14 @@ class Billrun_Plan {
 			}
 		}
 	}
-	
+
 	public function getData($raw = false) {
 		if ($raw) {
 			return $this->data->getRawData();
 		}
 		return $this->data;
 	}
-	
+
 	protected static function initPlans() {
 		if (empty(self::$plans)) {
 			$plans_coll = Billrun_Factory::db()->plansCollection();
@@ -98,7 +100,7 @@ class Billrun_Plan {
 			}
 		}
 	}
-	
+
 	public static function getPlans() {
 		self::initPlans();
 		return self::$plans;
@@ -195,7 +197,7 @@ class Billrun_Plan {
 
 		$rateUsageIncluded = $this->get('include')[$rate['key']][$usageType];
 
-		if ($rateUsageIncluded == 'UNLIMITED') {
+		if ($rateUsageIncluded === 'UNLIMITED') {
 			return PHP_INT_MAX;
 		}
 
@@ -222,7 +224,7 @@ class Billrun_Plan {
 				return array_intersect($groups, array_keys($this->data['include']['groups']));
 			}
 		}
-		return false;
+		return array();
 	}
 
 	/**
@@ -234,7 +236,7 @@ class Billrun_Plan {
 	 * @return true when the rate is part of group else false
 	 */
 	public function isRateInPlanGroup($rate, $usageType) {
-		if ($this->getRateGroups($rate, $usageType)) {
+		if (count($this->getRateGroups($rate, $usageType))) {
 			return true;
 		}
 		return false;
@@ -246,17 +248,40 @@ class Billrun_Plan {
 	 * 
 	 * @param array $rate the rate to check
 	 * @param string $usageType the usage type to check
+	 * @param boolean $reset reset to the first group plan
 	 * 
-	 * @return false when no group, else string name of the group
-	 * @todo create mechanism to define the strongest group
+	 * @return false when no group found, else string name of the group selected
 	 */
-	public function getStrongestGroup($rate, $usageType) {
-		$groups = $this->getRateGroups($rate, $usageType);
-		if (empty($groups)) {
-			return false;
+	protected function setNextStrongestGroup($rate, $usageType, $reset = FALSE) {
+		if (is_null($this->groups)) {
+			$this->groups = $this->getRateGroups($rate, $usageType);
+		}
+		if (!count($this->groups)) {
+			$this->setPlanGroup(FALSE);
+		} else if ($reset || is_null($this->getPlanGroup())) { // if reset required or it's the first set
+			$this->setPlanGroup(reset($this->groups));
+		} else if (next($this->groups) !== FALSE) {
+			$this->setPlanGroup(current($this->groups));
+		} else {
+			$this->setPlanGroup(FALSE);
 		}
 
-		return reset($groups);
+		return $this->getPlanGroup();
+	}
+
+	public function setPlanGroup($group) {
+		$this->groupSelected = $group;
+	}
+
+	public function getPlanGroup() {
+		return $this->groupSelected;
+	}
+
+	public function unsetGroup($group) {
+		$item = array_search($group, $this->groups);
+		if (isset($this->groups[$item])) {
+			unset($this->groups[$item]);
+		}
 	}
 
 	/**
@@ -268,26 +293,32 @@ class Billrun_Plan {
 	 * @return int|string
 	 */
 	public function usageLeftInPlanGroup($subscriberBalance, $rate, $usageType = 'call') {
-		$groupSelected = $this->getStrongestGroup($rate, $usageType);
-		if ($groupSelected === FALSE || !isset($this->data['include']['groups'][$groupSelected][$usageType])) {
-			return 0;
+		do {
+			$groupSelected = $this->setNextStrongestGroup($rate, $usageType);
+			// group not found
+			if ($groupSelected === FALSE) {
+				$rateUsageIncluded = 0;
+				// @todo: add more logic instead of fallback to first
+				$this->setPlanGroup($this->setNextStrongestGroup($rate, $usageType, true));
+				break; // do-while
+			}
+			// not group included in the specific usage try to take iterate next group
+			if (!isset($this->data['include']['groups'][$groupSelected][$usageType])) {
+				continue;
+			}
+			$rateUsageIncluded = $this->data['include']['groups'][$groupSelected][$usageType];
+			if (isset($this->data['include']['groups'][$groupSelected]['limits'])) {
+				// on some cases we have limits to unlimited
+				$limits = $this->data['include']['groups'][$groupSelected]['limits'];
+				Billrun_Factory::dispatcher()->trigger('planGroupRule', array(&$rateUsageIncluded, &$groupSelected, $limits, $this, $usageType, $rate, $subscriberBalance));
+				if ($rateUsageIncluded === FALSE) {
+					$this->unsetGroup($this->getPlanGroup());
+				}
+			}
 		}
+		// @todo: protect max 5 loops
+		while ($groupSelected === FALSE);
 
-		$rateUsageIncluded = $this->data['include']['groups'][$groupSelected][$usageType];
-
-		// on some cases we have limits to unlimited
-		if (isset($this->data['include']['groups'][$groupSelected]['limits'])) {
-			$limits = $this->data['include']['groups'][$groupSelected]['limits'];
-			Billrun_Factory::dispatcher()->trigger('triggerPlanGroupRateRule', array(&$rateUsageIncluded, $groupSelected, $limits, $this, $usageType, $rate, $subscriberBalance));
-		}
-
-
-		// if isset $rule {
-		// Billrun_Factory::dispatcher()->trigger('triggerGroupRateRule', array($rule, $this, $group, $usageType, $rate, $subscriberBalance, &$usageLeft));
-		// return $usageLeft
-		// }
-		// else continue as usual
-		
 		if ($rateUsageIncluded === 'UNLIMITED') {
 			return PHP_INT_MAX;
 		}
@@ -300,7 +331,7 @@ class Billrun_Plan {
 		$usageLeft = $rateUsageIncluded - $subscriberSpent;
 		return floatval($usageLeft < 0 ? 0 : $usageLeft);
 	}
-	
+
 	/**
 	 * Get the usage left in the current plan.
 	 * @param $subscriberBalance the current sunscriber balance.
@@ -357,18 +388,18 @@ class Billrun_Plan {
 	}
 
 	public function isUnlimitedGroup($rate, $usageType) {
-		$groupSelected = $this->getStrongestGroup($rate, $usageType);
+		$groupSelected = $this->getPlanGroup();
 		if ($groupSelected === FALSE) {
 			return FALSE;
 		}
 		return (isset($this->data['include']['groups'][$groupSelected][$usageType]) && $this->data['include']['groups'][$groupSelected][$usageType] == "UNLIMITED");
 	}
-	
+
 	public function getBalanceTotalsKey($usage_type, $rate) {
-		if (($usage_type == "call" || $usage_type == "sms") && !$this->isRateInBasePlan($rate, $usage_type)) {
-			$usage_class_prefix = "out_plan_";
-		} else {
+		if ($this->isRateInBasePlan($rate, $usage_type)) {
 			$usage_class_prefix = "";
+		} else {
+			$usage_class_prefix = "out_plan_";
 		}
 		return $usage_class_prefix . $usage_type;
 	}

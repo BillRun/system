@@ -3,7 +3,7 @@
 /**
  * @package         Billing
  * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
- * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 /**
  * compatible for PHP 5.4
@@ -366,13 +366,16 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$newEvent['recurring'] = $recurring;
 		$newEvent['line_stamp'] = $row['stamp'];
 		$newEvent['line_urt'] = $row['urt'];
-		if (!is_null($priority)) {
-			$newEvent['priority'] = (int) $priority;
-		} else if ($recurring) {
-			// as long as the value is greater the event priority should be high (the highest priority is 0)
-			$newEvent['priority'] = (int) 15 - floor($value / $threshold);
+		
+		if (is_null($priority) || !is_numeric($priority)) {
+			$priority = 15;
+		}
+
+		if ($recurring) {
+			// we will use the priority as offset
+			$newEvent['priority'] = $priority - floor($value / $threshold);
 		} else {
-			$newEvent['priority'] = 10;
+			$newEvent['priority'] = (int) $priority;
 		}
 
 		$newEvent['stamp'] = md5(serialize($newEvent));
