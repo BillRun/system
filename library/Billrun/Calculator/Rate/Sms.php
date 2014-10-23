@@ -97,7 +97,7 @@ abstract class Billrun_Calculator_Rate_Sms extends Billrun_Calculator_Rate {
 	 * @see Billrun_Calculator::isRateValid()
 	 */
 	protected function isRateValid($rate) {
-		return preg_match("/^(?!AC_|VF_)/", $rate['key']);
+		return preg_match("/^(?!AC_|VF_|LEFTOVER_AC_TO_VF_)/", $rate['key']);
 	}
 
 	/**
