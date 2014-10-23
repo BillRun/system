@@ -215,6 +215,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 				$account_billrun->resetBillrun();
 			}
 			$manual_lines = array();
+			$deactivated_subscribers = array();
 			foreach ($account as $subscriber) {
 				Billrun_Factory::dispatcher()->trigger('beforeAggregateSubscriber', array($subscriber, $account_billrun, &$this));
 				$sid = $subscriber->sid;
@@ -225,6 +226,12 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 				$next_plan_name = $subscriber->getNextPlanName();
 				if (is_null($next_plan_name) || $next_plan_name == "NULL") {
 					$subscriber_status = "closed";
+					
+					$current_plan_name = $subscriber->getCurrentPlanName();
+					if (is_null($current_plan_name) || $current_plan_name == "NULL") {
+
+						$deactivated_subscribers[] = array("sid" => $sid);
+					}
 				} else {
 					$subscriber_status = "open";
 					Billrun_Factory::log("Getting flat price for subscriber $sid", Zend_log::INFO);
@@ -243,7 +250,10 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 				$account_billrun->addSubscriber($subscriber, $subscriber_status);
 				Billrun_Factory::dispatcher()->trigger('afterAggregateSubscriber', array($subscriber, $account_billrun, &$this));
 			}
-			$lines = $account_billrun->addLines($manual_lines);
+			$lines = $account_billrun->addLines($manual_lines,$deactivated_subscribers);
+	
+			$account_billrun->filter_disconected_subscribers($deactivated_subscribers);
+
 			//save the billrun
 			Billrun_Factory::log('Saving account ' . $accid, Zend_Log::INFO);
 			if ($account_billrun->save() === false) {

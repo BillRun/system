@@ -143,7 +143,7 @@ class Billrun_Billrun {
 		$this->data['subs'] = $subscribers;
 		return $this;
 	}
-
+	
 	/**
 	 * Check if a given subscriber exists in the current billrun.
 	 * @param int $sid the  subscriber id to check.
@@ -152,7 +152,24 @@ class Billrun_Billrun {
 	public function subscriberExists($sid) {
 		return $this->getSubRawData($sid) != false;
 	}
-
+	
+	/**
+	 * filter out subscribers that have no plans and no lines
+	 * @param int $sid the  subscriber id to check.
+	 * @return boolean TRUE if the subscriber exists in the current billrun entry, FALSE otherwise.
+	 */
+	public function filter_disconected_subscribers($deactivated_subscribers) {
+		$subscribers = $this->data['subs'];
+		foreach ($subscribers as $key => $sub) {
+			foreach ($deactivated_subscribers as $ds) {
+				if ($ds['sid'] == $sub['sid']) {
+					unset($subscribers[$key]);
+				}
+			}
+		}
+		$this->data['subs'] = array_values($subscribers);		
+	}
+	
 	/**
 	 * Checks if a billrun document exists in the db
 	 * @param int $aid the account id
@@ -631,10 +648,13 @@ class Billrun_Billrun {
 	 * @param int $start_time lower bound date to get lines from. A unix timestamp 
 	 * @return array the stamps of the lines used to create the billrun
 	 */
-	public function addLines($manual_lines = array()) {
+	public function addLines($manual_lines = array(), &$deactivated_subscribers = array()) {
 		Billrun_Factory::log()->log("Querying account " . $this->aid . " for lines...", Zend_Log::INFO);
 		$account_lines = $this->getAccountLines($this->aid);
+
+		$this->filterAccounts($account_lines, $deactivated_subscribers);
 		Billrun_Factory::log("Processing account Lines $this->aid", Zend_Log::INFO);
+
 		$lines = array_merge($account_lines, $manual_lines);
 		$updatedLines = $this->processLines(array_values($lines));
 		Billrun_Factory::log("Finished processing account $this->aid lines. Total: " . count($updatedLines), Zend_log::INFO);
@@ -673,6 +693,26 @@ class Billrun_Billrun {
 		return $updatedLines;
 	}
 
+
+	
+	/**
+	 * removes deactivated accounts from the list if they still have lines (and therfore should be in the billrun)
+	 * @param $deactivated_subscribers array of subscribers sids and their deactivation date
+	 */
+	
+	protected function filterAccounts($account_lines, &$deactivated_subscribers) {
+			if (empty($deactivated_subscribers) || empty($account_lines)) {
+				return;
+			}
+			foreach ($account_lines as $line) {
+				foreach ($deactivated_subscribers as $key => $ds) {
+					if ($ds['sid'] == $line['sid']) {
+						unset($deactivated_subscribers[$key]);
+					}
+				}
+			}
+	}	
+	
 	/**
 	 * Gets all the account lines for this billrun from the db
 	 * @param int $aid the account id

@@ -383,6 +383,8 @@ class Subscriber_Golan extends Billrun_Subscriber {
 	public function getFlatPrice() {
 		return $this->getNextPlan()->getPrice();
 	}
+	
+
 
 	/**
 	 * 
@@ -481,6 +483,13 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		}
 	}
 
+		public function getCurrentPlanName() {
+		if (isset($this->data['plan'])) {
+			return $this->data['plan'];
+		} else {
+			return null;
+		}
+	}
 	/**
 	 * Get the rpc server from config
 	 * 
