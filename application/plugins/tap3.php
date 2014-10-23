@@ -287,7 +287,7 @@ class tap3Plugin extends Billrun_Plugin_BillrunPluginBase implements Billrun_Plu
 						}
 					}
 				} else if(!isset($this->tap3Config['header'][$record->getType()]) && !isset($this->tap3Config['trailer'][$record->getType()])) {
-					Billrun_Factory::log()->log('No config for type : ' .$record->getType(). " Full record :" . print_r(Asn_Base::getDataArray($record,true,true),1) ,  Zend_Log::DEBUG);
+					Billrun_Factory::log()->log('No config for type : ' .$record->getType() ,  Zend_Log::DEBUG);
 				}
 			}
 		} else {
