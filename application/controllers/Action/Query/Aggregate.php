@@ -52,7 +52,7 @@ class QueryaggregateAction extends QueryAction {
 		}
 
 		if (isset($request['billrun'])) {
-			$find['billrun'] = (string) $request['billrun'];
+			$find['billrun'] = array('$in' => Billrun_Util::verify_array($request['billrun'], 'str'));
 		}
 
 		if (isset($request['query'])) {
