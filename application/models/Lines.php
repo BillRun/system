@@ -131,6 +131,39 @@ class LinesModel extends TableModel {
 		return $ret;
 	}
 	
+	/**
+	 * method to get data aggregated
+	 * 
+	 * @param array $filter_query what to filter by
+	 * @param array $aggregate what to aggregate by
+	 * 
+	 * @return array of result
+	 */
+	public function getDataAggregated($filter_query = array(), $aggregate = array()) {
+
+		$cursor = $this->collection->aggregatecursor($filter_query, $aggregate);
+
+		if (isset($filter_query['$and']) && $this->filterExists($filter_query['$and'], array('aid', 'sid', 'stamp'))) {
+			$this->_count = $cursor->count(false);
+		} else {
+			$this->_count = Billrun_Factory::config()->getConfigValue('admin_panel.lines.global_limit', 10000);
+		}
+
+		$ret = array();
+		foreach ($cursor as $item) {
+//			$item->collection($this->lines_coll);
+//			if ($arate = $this->getDBRefField($item, 'arate')) {
+//				$item['arate'] = $arate['key'];
+//				$item['arate_id'] = strval($arate['_id']);
+//			} else {
+//				$item['arate'] = $arate;
+//			}
+			$ret[] = $item;
+		}
+		return $ret;
+	}
+
+	
 	public function getDistinctField($field, $filter_query = array()) {
 		if (empty($field) || empty($filter_query)) {
 			return array();
