@@ -82,7 +82,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	 * @param int $bulkAccountPreload
 	 */
 	protected $bulkAccountPreload = 10;
-	
+
 	/**
 	 * the account ids that were successfully aggregated
 	 * @var array
@@ -226,7 +226,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 				$next_plan_name = $subscriber->getNextPlanName();
 				if (is_null($next_plan_name) || $next_plan_name == "NULL") {
 					$subscriber_status = "closed";
-					
+
 					$current_plan_name = $subscriber->getCurrentPlanName();
 					if (is_null($current_plan_name) || $current_plan_name == "NULL") {
 
@@ -250,8 +250,8 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 				$account_billrun->addSubscriber($subscriber, $subscriber_status);
 				Billrun_Factory::dispatcher()->trigger('afterAggregateSubscriber', array($subscriber, $account_billrun, &$this));
 			}
-			$lines = $account_billrun->addLines($manual_lines,$deactivated_subscribers);
-	
+			$lines = $account_billrun->addLines($manual_lines, $deactivated_subscribers);
+
 			$account_billrun->filter_disconected_subscribers($deactivated_subscribers);
 
 			//save the billrun
@@ -324,7 +324,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 					Billrun_Factory::log("Credit already exists for subscriber " . $subscriber->sid . " for billrun " . $billrun_key . " credit details: " . print_R($rawData, 1), Zend_log::ALERT);
 				} else {
 					Billrun_Factory::log("Problem inserting credit for subscriber " . $subscriber->sid . " for billrun " . $billrun_key
-							. ". error message: " . $e->getMessage() . ". error code: " . $e->getCode() . ". credit details:" . print_R($rawData, 1), Zend_log::ALERT);
+						. ". error message: " . $e->getMessage() . ". error code: " . $e->getCode() . ". credit details:" . print_R($rawData, 1), Zend_log::ALERT);
 					Billrun_Util::logFailedCreditRow($rawData);
 				}
 			}

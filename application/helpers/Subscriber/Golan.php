@@ -50,7 +50,6 @@ class Subscriber_Golan extends Billrun_Subscriber {
 			if (!file_exists($this->crm_output_dir)) {
 				mkdir($this->crm_output_dir, 0777, true);
 			}
-
 		}
 		$creditCalcOptions = array_merge(array('type' => 'Rate_Credit', 'autoload' => false), Billrun_Factory::config()->getConfigValue('Rate_Credit.calculator', array()));
 		$this->creditCalc = Billrun_Calculator::getInstance($creditCalcOptions);
@@ -302,18 +301,18 @@ class Subscriber_Golan extends Billrun_Subscriber {
 			}
 		}
 	}
-	
+
 	public function getCredits($billrun_key, $retEntity = false) {
 		$ret = array();
 		if (!is_array($this->credits) || !count($this->credits)) {
 			return $ret;
 		}
-		foreach($this->credits as $credit) {
+		foreach ($this->credits as $credit) {
 			if (!isset($credit['aid']) || !isset($credit['sid'])) {
 				Billrun_Factory::log("Credit cannot be parsed for subscriber. aid or sid or both not exists. credit details: " . print_R($credit, 1), Zend_log::ALERT);
 				continue;
 			}
-			
+
 			$parsedRow = Billrun_Util::parseCreditRow($credit);
 			$parsedRow['billrun'] = $billrun_key; // this will ensure we are on correct billrun even on pricing calculator
 			if (empty($parsedRow)) {
@@ -331,7 +330,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 				Billrun_Factory::log("Credit cannot be calc pricing for subscriber " . $credit['sid'] . " for billrun " . $billrun_key . " credit details: " . print_R($credit, 1), Zend_log::ALERT);
 				continue;
 			}
-			
+
 			if ($retEntity && !($insertRow instanceof Mongodloid_Entity)) {
 				$ret[$insertRow['stamp']] = new Mongodloid_Entity($insertRow);
 			} else if (!$retEntity && ($insertRow instanceof Mongodloid_Entity)) {
@@ -339,11 +338,9 @@ class Subscriber_Golan extends Billrun_Subscriber {
 			} else {
 				$ret[$insertRow['stamp']] = $insertRow;
 			}
-
 		}
 		return $ret;
 	}
-
 
 	public function getListFromFile($file_path, $time) {
 		$json = @file_get_contents($file_path);
@@ -383,8 +380,6 @@ class Subscriber_Golan extends Billrun_Subscriber {
 	public function getFlatPrice() {
 		return $this->getNextPlan()->getPrice();
 	}
-	
-
 
 	/**
 	 * 
@@ -483,13 +478,14 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		}
 	}
 
-		public function getCurrentPlanName() {
+	public function getCurrentPlanName() {
 		if (isset($this->data['plan'])) {
 			return $this->data['plan'];
 		} else {
 			return null;
 		}
 	}
+
 	/**
 	 * Get the rpc server from config
 	 * 
@@ -509,5 +505,5 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		// if it's array rand between servers
 		return $hosts[rand(0, count($hosts) - 1)];
 	}
-	
+
 }

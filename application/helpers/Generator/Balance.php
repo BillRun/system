@@ -40,7 +40,7 @@ class Generator_Balance extends Generator_Golanxml {
 	 * @var string a formatted date string
 	 */
 	protected $date = null;
-	
+
 	public function __construct($options) {
 		$options['auto_create_dir'] = false;
 		parent::__construct($options);
@@ -72,8 +72,8 @@ class Generator_Balance extends Generator_Golanxml {
 		$manual_lines = array();
 		$deactivated_subscribers = array();
 		foreach ($this->account_data as $subscriber) {
-			if (1==0 && !Billrun_Factory::db()->rebalance_queueCollection()->query(array('sid' => $subscriber->sid), array('sid' => 1))
-							->cursor()->current()->isEmpty()) {
+			if (1 == 0 && !Billrun_Factory::db()->rebalance_queueCollection()->query(array('sid' => $subscriber->sid), array('sid' => 1))
+					->cursor()->current()->isEmpty()) {
 				$subscriber_status = "REBALANCE";
 				$billrun->addSubscriber($subscriber, $subscriber_status);
 				continue;
@@ -87,10 +87,10 @@ class Generator_Balance extends Generator_Golanxml {
 			if (is_null($next_plan_name) || $next_plan_name == "NULL") {
 				$subscriber_status = "closed";
 				$current_plan_name = $subscriber->getCurrentPlanName();
-					if (is_null($current_plan_name) || $current_plan_name == "NULL") {
+				if (is_null($current_plan_name) || $current_plan_name == "NULL") {
 
-						$deactivated_subscribers[] = array("sid" => $sid);
-					}
+					$deactivated_subscribers[] = array("sid" => $sid);
+				}
 			} else {
 				$subscriber_status = "open";
 				$flat_entry = $subscriber->getFlatEntry($this->stamp, true);
@@ -100,9 +100,9 @@ class Generator_Balance extends Generator_Golanxml {
 			$billrun->addSubscriber($subscriber, $subscriber_status);
 		}
 //		print_R($manual_lines);die;
-		$this->lines = $billrun->addLines($manual_lines,$deactivated_subscribers);
+		$this->lines = $billrun->addLines($manual_lines, $deactivated_subscribers);
 		$billrun->filter_disconected_subscribers($deactivated_subscribers);
-   
+
 		$this->data = $billrun->getRawData();
 	}
 
@@ -112,12 +112,11 @@ class Generator_Balance extends Generator_Golanxml {
 		} else {
 			$this->writer->openURI('php://output');
 		}
-		
+
 		$this->writeXML($this->data, $this->lines);
 		if ($this->buffer) {
 			return $this->writer->outputMemory();
 		}
-		
 	}
 
 	protected function setAccountId($aid) {

@@ -86,10 +86,10 @@ class Billrun_Billrun {
 	 */
 	protected function load() {
 		$this->data = $this->billrun_coll->query(array(
-							'aid' => $this->aid,
-							'billrun_key' => $this->billrun_key,
-						))
-						->cursor()->limit(1)->current();
+					'aid' => $this->aid,
+					'billrun_key' => $this->billrun_key,
+				))
+				->cursor()->limit(1)->current();
 		$this->data->collection($this->billrun_coll);
 		return $this;
 	}
@@ -143,7 +143,7 @@ class Billrun_Billrun {
 		$this->data['subs'] = $subscribers;
 		return $this;
 	}
-	
+
 	/**
 	 * Check if a given subscriber exists in the current billrun.
 	 * @param int $sid the  subscriber id to check.
@@ -152,7 +152,7 @@ class Billrun_Billrun {
 	public function subscriberExists($sid) {
 		return $this->getSubRawData($sid) != false;
 	}
-	
+
 	/**
 	 * filter out subscribers that have no plans and no lines
 	 * @param int $sid the  subscriber id to check.
@@ -167,9 +167,9 @@ class Billrun_Billrun {
 				}
 			}
 		}
-		$this->data['subs'] = array_values($subscribers);		
+		$this->data['subs'] = array_values($subscribers);
 	}
-	
+
 	/**
 	 * Checks if a billrun document exists in the db
 	 * @param int $aid the account id
@@ -179,10 +179,10 @@ class Billrun_Billrun {
 	public static function exists($aid, $billrun_key) {
 		$billrun_coll = Billrun_Factory::db(array('name' => 'billrun'))->billrunCollection();
 		$data = $billrun_coll->query(array(
-							'aid' => (int) $aid,
-							'billrun_key' => (string) $billrun_key,
-						))
-						->cursor()->limit(1)->current();
+					'aid' => (int) $aid,
+					'billrun_key' => (string) $billrun_key,
+				))
+				->cursor()->limit(1)->current();
 		return !$data->isEmpty();
 	}
 
@@ -668,7 +668,7 @@ class Billrun_Billrun {
 			// the check fix 2 issues:
 			// 1. temporary fix for https://jira.mongodb.org/browse/SERVER-9858
 			// 2. avoid duplicate lines
-			if (isset($updatedLines[$line['stamp']])) { 
+			if (isset($updatedLines[$line['stamp']])) {
 				continue;
 			}
 			$line->collection($this->lines);
@@ -693,26 +693,23 @@ class Billrun_Billrun {
 		return $updatedLines;
 	}
 
-
-	
 	/**
 	 * removes deactivated accounts from the list if they still have lines (and therfore should be in the billrun)
 	 * @param $deactivated_subscribers array of subscribers sids and their deactivation date
 	 */
-	
 	protected function filterAccounts($account_lines, &$deactivated_subscribers) {
-			if (empty($deactivated_subscribers) || empty($account_lines)) {
-				return;
-			}
-			foreach ($account_lines as $line) {
-				foreach ($deactivated_subscribers as $key => $ds) {
-					if ($ds['sid'] == $line['sid']) {
-						unset($deactivated_subscribers[$key]);
-					}
+		if (empty($deactivated_subscribers) || empty($account_lines)) {
+			return;
+		}
+		foreach ($account_lines as $line) {
+			foreach ($deactivated_subscribers as $key => $ds) {
+				if ($ds['sid'] == $line['sid']) {
+					unset($deactivated_subscribers[$key]);
 				}
 			}
-	}	
-	
+		}
+	}
+
 	/**
 	 * Gets all the account lines for this billrun from the db
 	 * @param int $aid the account id
@@ -773,9 +770,9 @@ class Billrun_Billrun {
 			$bufferCount += $addCount;
 			$cursor = Billrun_Factory::db()->linesCollection()
 //			$cursor = Billrun_Factory::db(array('host'=>'172.28.202.111','port'=>27017,'user'=>'reading','password'=>'guprgri','name'=>'billing','options'=>array('connect'=>1,'readPreference'=>"RP_SECONDARY_PREFERRED")))->linesCollection()
-					->query($query)->cursor()->fields(array_merge($filter_fields, $requiredFields))
-					->sort($sort)->skip($bufferCount)->limit(Billrun_Factory::config()->getConfigValue('billrun.linesLimit', 10000))->timeout(-1)
-					->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
+				->query($query)->cursor()->fields(array_merge($filter_fields, $requiredFields))
+				->sort($sort)->skip($bufferCount)->limit(Billrun_Factory::config()->getConfigValue('billrun.linesLimit', 10000))->timeout(-1)
+				->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
 			foreach ($cursor as $line) {
 				$ret[$line['aid']][$line['stamp']] = $line;
 			}
