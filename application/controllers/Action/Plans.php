@@ -8,26 +8,22 @@
 require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
 
 /**
- * Rates action class
+ * Plans action class
  *
  * @package  Action
  * 
  * @since    2.6
  */
-class RatesAction extends ApiAction {
+class PlansAction extends ApiAction {
 
-	protected $model;
-	
 	public function execute() {
-		Billrun_Factory::log()->log("Execute rates api call", Zend_Log::INFO);
+		Billrun_Factory::log()->log("Execute plans api call", Zend_Log::INFO);
 		$request = $this->getRequest();
-		$this->model = new RatesModel(array('sort' => array('provider' => 1, 'from' => 1)));
-
 
 		$requestedQuery = $request->get('query', array());
 		$query = $this->processQuery($requestedQuery);
 		$strip = $this->getCompundParam($request->get('strip', false), false);
-		$filter = !empty($strip) ? $strip : array('key', 'rates', 'provider');
+		$filter = !empty($strip) ? $strip : array('name');
 
 		$cacheParams = array(
 			'fetchParams' => array(
@@ -76,7 +72,16 @@ class RatesAction extends ApiAction {
 					'hiddenFromApi' => 0
 				)
 		);
-		$results = $this->model->getData($params['query'], $params['filter']);
+		$model = new PlansModel(array('sort' => array('from' => 1)));
+		$resource = $model->getData($params['query'], $params['filter']);
+		if (is_resource($resource)) {
+			$results = iterator_to_array($resource);
+		} else if ($resource instanceof Mongodloid_Cursor) {
+			$results = array();
+			foreach ($resource as $item) {
+				$results[] = $item->getRawData();
+			}
+		}
 		if (isset($params['strip']) && !empty($params['strip'])) {
 			$results = $this->stripResults($results, $params['strip']);
 		}
@@ -85,7 +90,7 @@ class RatesAction extends ApiAction {
 	}
 
 	/**
-	 * Process the query and prepere it for usage by the Rates model
+	 * Process the query and prepere it for usage by the Plans model
 	 * @param type $query the query that was recevied from the http request.
 	 * @return array containing the processed query.
 	 */
@@ -93,11 +98,7 @@ class RatesAction extends ApiAction {
 		$retQuery = array();
 		if (isset($query)) {
 			$retQuery = $this->getCompundParam($query, array());
-			$matches = preg_grep('/rates.\w+.plans/', array_keys($retQuery));
-			foreach($matches as $m) {
-				$retQuery[$m] = $this->model->getPlan($retQuery[$m]);
-			}
-			
+
 			if (!isset($retQuery['from'])) {
 				$retQuery['from']['$lte'] = new MongoDate();
 			} else {

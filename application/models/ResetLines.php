@@ -104,7 +104,7 @@ class ResetLinesModel {
 				$queue_lines = array();
 				foreach ($lines as $line) {
 					$stamps[] = $line['stamp'];
-					$queue_lines[] = array(
+					$queue_line = array(
 						'calc_name' => false,
 						'calc_time' => false,
 						'stamp' => $line['stamp'],
@@ -112,6 +112,16 @@ class ResetLinesModel {
 						'urt' => $line['urt'],
 						'skip_fraud' => true,
 					);
+					
+					// todo: refactoring
+					$advancedProperties = Billrun_Factory::config()->getConfigValue("queue.advancedProperties", array('imsi', 'msisdn', 'called_number', 'calling_number'));
+					foreach ($advancedProperties as $property) {
+						if (isset($line[$property]) && !isset($queue_line[$property])) {
+							$queue_line[$property] = $line[$property];
+						}
+					}
+					
+					$queue_lines[] = $queue_line;
 				}
 				$stamps_query = array(
 					'stamp' => array(

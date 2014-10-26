@@ -177,6 +177,19 @@ class Mongodloid_Collection {
 		return $result['result'];
 	}
 
+	public function aggregatecursor() {
+		$args = func_get_args();
+		// on 2.4 and below use old aggregate
+		if (!$this->_db->compareServerVersion('2.6', '>=')) { // TODO Need to update Mongodloid_Cursor functions
+			return $this->aggregate($args);
+		}
+		// on 2.6 and above it's much more simple
+		if (count($args)>1) { // Assume the array contains 'ops' for backward compatibility
+			$args = array($args);
+		}
+		return new Mongodloid_Cursor(call_user_func_array(array($this->_collection, 'aggregateCursor'), $args));
+
+	}
 	public function setTimeout($timeout) {
 		if ($this->_db->compareClientVersion('1.5.3', '<')) {
 			@MongoCursor::$timeout = (int) $timeout;

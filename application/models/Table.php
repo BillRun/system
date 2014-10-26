@@ -76,10 +76,9 @@ class TableModel {
 
 		if (isset($params['collection'])) {
 			if (isset($params['db'])) {
-				$this->collection = Billrun_Factory::db(array('name' => $params['db']))->balancesCollection();
+				$this->collection = call_user_func(array(Billrun_Factory::db(array('name' => $params['db'])), $params['collection'] . 'Collection'));
 			} else {
 				$this->collection = call_user_func(array(Billrun_Factory::db(), $params['collection'] . 'Collection'));
-//                          $this->collection->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
 			}
 			$this->collection_name = $params['collection'];
 		}

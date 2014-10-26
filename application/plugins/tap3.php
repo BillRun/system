@@ -157,6 +157,14 @@ class tap3Plugin extends Billrun_Plugin_BillrunPluginBase implements Billrun_Plu
 	 */
 	protected function surfaceCDRFields(&$cdrLine,$mapping) {
 		
+		foreach($mapping as $key => $fieldToMap) {
+			$val = Billrun_Util::getNestedArrayVal($cdrLine,$fieldToMap, null);
+			if($val !== null && Billrun_Util::getFieldVal($this->tap3Config['fields_to_save'][$key],false)) {
+				$cdrLine[$key] = $val;
+			}
+		}
+		
+	
 		if (Billrun_Util::getNestedArrayVal($cdrLine, $mapping['localTimeStamp']) !== null) {
 			$offset = $this->currentFileHeader['networkInfo']['UtcTimeOffsetInfoList'][Billrun_Util::getNestedArrayVal($cdrLine, $mapping['TimeOffsetCode'])];
 			$cdrLine['urt'] = new MongoDate(Billrun_Util::dateTimeConvertShortToIso(Billrun_Util::getNestedArrayVal($cdrLine, $mapping['localTimeStamp']), $offset));
@@ -177,20 +185,28 @@ class tap3Plugin extends Billrun_Plugin_BillrunPluginBase implements Billrun_Plu
 						$cdrLine['called_number'] = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['called_number']);
 					}
 				}
-			}
+			} 
+			else if ($record_type == 'a') {
+				if ($tele_service_code == '11') {
+					if (Billrun_Util::getNestedArrayVal($cdrLine, $mapping['called_number'])) {
+						$cdrLine['called_number'] = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['called_number']) ; //$cdrLine['basicCallInformation']['Desination']['CalledNumber'];
+					}
+						
+				} 
+			}	
 		}
 		
 		if (isset($cdrLine['called_number'])) {
 			$cdrLine['called_number'] = Billrun_Util::msisdn($cdrLine['called_number']);
 		}
 
-		if (!Billrun_Util::getNestedArrayVal($cdrLine, $mapping['calling_number']) && isset($tele_service_code) && isset($record_type) ) {
-			if ($record_type == 'a' && ($tele_service_code == '11' || $tele_service_code == '21')) {
-				if (Billrun_Util::getNestedArrayVal($cdrLine, $mapping['call_org_number'])) { // for some calls (incoming?) there's no calling number
-					$cdrLine['calling_number'] = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['call_org_number']);
-				} 
-			}
-		}
+//		if (!Billrun_Util::getNestedArrayVal($cdrLine, $mapping['calling_number']) && isset($tele_service_code) && isset($record_type) ) {
+//			if ($record_type == 'a' && ($tele_service_code == '11' || $tele_service_code == '21')) {
+//				if (Billrun_Util::getNestedArrayVal($cdrLine, $mapping['call_org_number'])) { // for some calls (incoming?) there's no calling number
+//					$cdrLine['calling_number'] = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['call_org_number']);
+//				} 
+//			}
+//		}
 
 		if (Billrun_Util::getNestedArrayVal($cdrLine, $mapping['serving_network']) !== null) {
 			$cdrLine['serving_network'] = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['serving_network']);
@@ -206,12 +222,7 @@ class tap3Plugin extends Billrun_Plugin_BillrunPluginBase implements Billrun_Plu
 		//save the sending source in each of the lines
 		$cdrLine['sending_source'] = $this->currentFileHeader['header']['sending_source'];
 
-		foreach($mapping as $key => $fieldToMap) {
-			$val = Billrun_Util::getNestedArrayVal($cdrLine,$fieldToMap, null);
-			if($val !== null && Billrun_Util::getFieldVal($this->tap3Config['fields_to_save'][$key],false)) {
-				$cdrLine[$key] = $val;
-			}
-		}
+	
 	}
 
 	/**
@@ -287,7 +298,7 @@ class tap3Plugin extends Billrun_Plugin_BillrunPluginBase implements Billrun_Plu
 						}
 					}
 				} else if(!isset($this->tap3Config['header'][$record->getType()]) && !isset($this->tap3Config['trailer'][$record->getType()])) {
-					Billrun_Factory::log()->log('No config for type : ' .$record->getType(). " Full record :" . print_r(Asn_Base::getDataArray($record,true,true),1) ,  Zend_Log::DEBUG);
+					Billrun_Factory::log()->log('No config for type : ' .$record->getType() ,  Zend_Log::DEBUG);
 				}
 			}
 		} else {
