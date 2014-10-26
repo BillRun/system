@@ -89,7 +89,7 @@ class Generator_Balance extends Generator_Golanxml {
 				$current_plan_name = $subscriber->getCurrentPlanName();
 				if (is_null($current_plan_name) || $current_plan_name == "NULL") {
 
-					$deactivated_subscribers[] = array("sid" => $sid);
+					$deactivated_subscribers[] = array("sid" => $subscriber->sid);
 				}
 			} else {
 				$subscriber_status = "open";
