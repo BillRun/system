@@ -52,7 +52,7 @@ class QueryAction extends ApiAction {
 		}
 
 		if (isset($request['billrun'])) {
-			$find['billrun'] = array('$in' => Billrun_Util::verify_array($request['billrun'], 'str'));
+			$find['billrun'] = $this->getBillrunQuery($request['billrun']);
 		}
 
 		if (isset($request['query'])) {
@@ -95,11 +95,17 @@ class QueryAction extends ApiAction {
 	 * @param mixed $param the param to retreive
 	 */
 	protected function getArrayParam($param) {
+		if (empty($param)) {
+			return array();
+		}
 		if (is_string($param)) {
 			return json_decode($param, true);
 		}
 		return (array) $param;
-
+	}
+	
+	protected function getBillrunQuery($billrun) {
+		return array('$in' => Billrun_Util::verify_array($this->getArrayParam($billrun), 'str'));
 	}
 
 

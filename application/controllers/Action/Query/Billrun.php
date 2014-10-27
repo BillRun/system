@@ -43,7 +43,7 @@ class QuerybillrunAction extends QueryAction {
 		}
 
 		if (isset($request['billrun'])) {
-			$find['billrun_key'] = array('$in' => Billrun_Util::verify_array($request['billrun'], 'str'));
+			$find['billrun_key'] = $this->getBillrunQuery($request['billrun']);
 		}
 
 		$options = array(
