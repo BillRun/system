@@ -101,7 +101,8 @@ class Billrun_Calculator_Rate_Tap3 extends Billrun_Calculator_Rate {
 		$prefix_length_matched = 0;
 
 		if (!is_null($serving_network)) {
-			$call_number = isset($row['called_number']) ? $row->get('called_number') : (isset($row['calling_number']) ? $row->get('calling_number') : NULL);
+//			$call_number = isset($row['called_number']) ? $row->get('called_number') : (isset($row['calling_number']) ? $row->get('calling_number') : NULL);
+			$call_number = $this->number_to_rate($row);
 			if ($call_number) {
 				$call_number = preg_replace("/^[^1-9]*/", "", $call_number);
 				$call_number_prefixes = Billrun_Util::getPrefixes($call_number);
@@ -192,6 +193,18 @@ class Billrun_Calculator_Rate_Tap3 extends Billrun_Calculator_Rate {
 			}
 		}
 	}
+	
+	protected function number_to_rate($row){
+		if ($row['record_type'] = "e") {
+			return NULL;
+		} else if ( ($row['record_type'] == "9") && isset($row['called_number']) ) {
+			return $row->get('called_number');
+		} else if ( ($row['record_type'] == "a") && isset($row['calling_number']) ) {
+			return $row->get('calling_number');
+		} else {
+			Billrun_Factory::log("Couldn't find rateable number for line : {$row['stamp']}");
+		}
+	}  
 
 }
 ?>
