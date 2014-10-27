@@ -54,7 +54,7 @@ class QuerybillrunAction extends QueryAction {
 		);
 		
 		$model = new BillrunModel($options);
-		$resource = $model->getData(array());
+		$resource = $model->getData($find);
 
 		$results = array();
 		foreach ($resource as $row) {
