@@ -198,7 +198,7 @@ class Billrun_Calculator_Rate_Tap3 extends Billrun_Calculator_Rate {
 	 * @return number to rate by
 	 */
 	protected function number_to_rate($row) {
-		if ($row['record_type'] = "e") {
+		if ($row['record_type'] == "e") {
 			return NULL;
 		} else if (($row['record_type'] == "9") && isset($row['called_number'])) {
 			return $row->get('called_number');
