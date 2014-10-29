@@ -56,8 +56,6 @@ class Billrun_Listener_Googledcb extends Billrun_Listener {
 		}
 		$smsContent = $data->message;
 		$ndcSn = $data->source->value;
-//		$smsContent = 'djfgbv:875a978e9f79d9c';
-//		$ndcSn = '972547655380';
 		Billrun_Factory::log()->log('sms received from ' . $ndcSn . ' with message ' . $smsContent,  Zend_Log::DEBUG);
 		$url = 'http://' . $this->billrunHost . '/api/tokens';
 		$params = array('XDEBUG_SESSION_START' => 'netbeans-xdebug');
@@ -66,7 +64,6 @@ class Billrun_Listener_Googledcb extends Billrun_Listener {
 			'ndc_sn' => $ndcSn,
 		);
 		if (Billrun_Util::forkProcessWeb($url, $params, $post)) {
-//			sleep(500);
 			return TRUE;
 		}
 	}
