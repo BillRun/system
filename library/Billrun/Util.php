@@ -336,26 +336,27 @@ class Billrun_Util {
 	 * 
 	 * @param String $url the url to open
 	 * @param Array $params data sending to the new process
-	 * @params Boolean $post use POST to query string else use GET
+	 * @params Array $post use POST to query string else use GET
 	 * 
 	 * @return Boolean true on success else FALSE
 	 */
-	public static function forkProcessWeb($url, $params, $post = false, $sleep = 0) {
-		$params['fork'] = 1;
+	public static function forkProcessWeb($url, $get, $post = false, $sleep = 0) {
+		$get['fork'] = 1;
 		if ($sleep) {
-			$params['SLEEP'] = (int) $sleep;
+			$get['SLEEP'] = (int) $sleep;
 		}
-		$querystring = http_build_query($params);
+		$querystring = http_build_query($get);
 		if (!$post) {
 			$cmd = "wget -O /dev/null '" . $url . "?" . $querystring .
 				"' > /dev/null & ";
 		} else {
-			$cmd = "wget -O /dev/null '" . $url . "' --post-data '" . $querystring .
+			$post = http_build_query($post);
+			$cmd = "wget -O /dev/null '" . $url . "?" . $querystring . "' --post-data '" . $post .
 				"' > /dev/null & ";
 		}
 
-//		echo $cmd . "<br />" . PHP_EOL;
-		if (system($cmd) === FALSE) {
+		echo $cmd . "<br />" . PHP_EOL;
+		if (exec($cmd) === FALSE) {
 			error_log("Can't fork PHP process");
 			return false;
 		}

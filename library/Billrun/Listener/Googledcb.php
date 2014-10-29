@@ -44,6 +44,7 @@ class Billrun_Listener_Googledcb extends Billrun_Listener {
 	 * general function to listen
 	 */
 	public function listen() {
+		Billrun_Factory::log()->log('Waiting for sms...',  Zend_Log::DEBUG);
 		return $this->smppCLient->readSms();
 	}
 
