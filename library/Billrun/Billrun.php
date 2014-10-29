@@ -799,7 +799,23 @@ class Billrun_Billrun {
 		}
 		return $active_billrun;
 	}
-
+	
+	public function is_deactivated() {
+		$deactivated = true;
+		foreach ($this->data['subs'] as $subscriber) {
+			$its_empty = $this->empty_subscriber($subscriber);
+			if (!$its_empty ) {
+				$deactivated = false;
+				break;
+			}
+		} 
+		return $deactivated;
+	}
+	
+	public function empty_subscriber($subscriber) {
+		$status = $subscriber['subscriber_status'];
+		return ( ($status == "closed") && !isset($subscriber['breakdown']));
+	}
 }
 
 Billrun_Billrun::loadRates();
