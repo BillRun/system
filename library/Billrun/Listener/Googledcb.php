@@ -28,16 +28,16 @@ class Billrun_Listener_Googledcb extends Billrun_Listener {
 	protected $smppCLient;
 
 	/**
-	 * The billrun hostname
+	 * The tokens API URL
 	 * @var string
 	 */
-	protected $billrunHost;
+	protected $tokensApiUrl;
 
 
 	public function __construct($options = array()) {
 		parent::__construct($options);
 		$this->smppCLient = Billrun_Factory::smpp_client($options['listener']['smpp']);
-		$this->billrunHost = $options['listener']['billrunHost'];
+		$this->tokensApiUrl = $options['listener']['tokensApiUrl'];
 	}
 
 	/**
@@ -58,13 +58,12 @@ class Billrun_Listener_Googledcb extends Billrun_Listener {
 		$smsContent = $data->message;
 		$ndcSn = $data->source->value;
 		Billrun_Factory::log()->log('sms received from ' . $ndcSn . ' with message ' . $smsContent,  Zend_Log::DEBUG);
-		$url = 'http://' . $this->billrunHost . '/api/tokens';
 		$params = array('XDEBUG_SESSION_START' => 'netbeans-xdebug');
 		$post = array(
 			'sms_content' => $smsContent,
 			'ndc_sn' => $ndcSn,
 		);
-		if (Billrun_Util::forkProcessWeb($url, $params, $post)) {
+		if (Billrun_Util::forkProcessWeb($this->tokensApiUrl, $params, $post)) {
 			return TRUE;
 		}
 	}
