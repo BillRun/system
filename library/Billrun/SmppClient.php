@@ -33,7 +33,7 @@ class Billrun_SmppClient {
 		$this->transport->setRecvTimeout($options['timeout']);
 		$this->smpp = new SmppClient($this->transport);
 		$this->transport->open();
-		$this->smpp->bindReceiver($options['user'], $options['password']);
+		$this->smpp->bindReceiver($options['user'], $options['password']); // could throw Error code : 5 Error message: ESME Already in Bound State
 	}
 
 	public function __destruct() {

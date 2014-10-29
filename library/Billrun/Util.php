@@ -345,13 +345,12 @@ class Billrun_Util {
 		if ($sleep) {
 			$params['SLEEP'] = (int) $sleep;
 		}
-		$forkUrl = self::getForkUrl();
 		$querystring = http_build_query($params);
 		if (!$post) {
-			$cmd = "wget -O /dev/null '" . $forkUrl . $url . "?" . $querystring .
+			$cmd = "wget -O /dev/null '" . $url . "?" . $querystring .
 				"' > /dev/null & ";
 		} else {
-			$cmd = "wget -O /dev/null '" . $forkUrl . $url . "' --post-data '" . $querystring .
+			$cmd = "wget -O /dev/null '" . $url . "' --post-data '" . $querystring .
 				"' > /dev/null & ";
 		}
 
