@@ -347,11 +347,11 @@ class Billrun_Util {
 		}
 		$querystring = http_build_query($get);
 		if (!$post) {
-			$cmd = "wget -O /dev/null '" . $url . "?" . $querystring .
+			$cmd = "wget -O /dev/null --no-check-certificate '" . $url . "?" . $querystring .
 				"' > /dev/null & ";
 		} else {
 			$post = http_build_query($post);
-			$cmd = "wget -O /dev/null '" . $url . "?" . $querystring . "' --post-data '" . $post .
+			$cmd = "wget -O /dev/null --no-check-certificate '" . $url . "?" . $querystring . "' --post-data '" . $post .
 				"' > /dev/null & ";
 		}
 
