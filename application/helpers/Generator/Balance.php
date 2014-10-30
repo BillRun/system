@@ -71,7 +71,7 @@ class Generator_Balance extends Generator_Golanxml {
 		$billrun = Billrun_Factory::billrun($billrun_params);
 		$manual_lines = array();
 		foreach ($this->account_data as $subscriber) {
-			if (1==0 && !Billrun_Factory::db()->rebalance_queueCollection()->query(array('sid' => $subscriber->sid), array('sid' => 1))
+			if (!Billrun_Factory::db()->rebalance_queueCollection()->query(array('sid' => $subscriber->sid), array('sid' => 1))
 							->cursor()->current()->isEmpty()) {
 				$subscriber_status = "REBALANCE";
 				$billrun->addSubscriber($subscriber, $subscriber_status);
