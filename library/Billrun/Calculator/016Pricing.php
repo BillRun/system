@@ -126,9 +126,9 @@ class Billrun_Calculator_016Pricing extends Billrun_Calculator {
 
 		$added_values = array(
 			'sampleDurationInSec' => $sample_duration_in_sec,
-			'charge' => number_format($pricingData, 4),
+			'charge' => round($pricingData, 4),
 			'records_type' => $records_type,
-			'price_customer' => number_format($pricingData, 4)
+			'price_customer' => round($pricingData, 4)
 		);
 
 		$newData = array_merge($current, $added_values);
