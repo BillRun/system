@@ -37,7 +37,7 @@ class Billrun_Calculator_016Pricing extends Billrun_Calculator {
 	public function __construct($options = array()) {
 		parent::__construct($options);
 		$this->loadRates();
-		$this->two_way_access_price = floatval(number_format(Billrun_Factory::config()->getConfigValue('016_two_way.access_price', 1.00), 2));
+		$this->two_way_access_price = round(Billrun_Factory::config()->getConfigValue('016_two_way.access_price', 1.00), 2);
 	}
 
 	/**
