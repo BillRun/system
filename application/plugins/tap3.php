@@ -36,7 +36,6 @@ class tap3Plugin extends Billrun_Plugin_BillrunPluginBase implements Billrun_Plu
 		$this->addParsingMethods();
 	}
 
-
 	/////////////////////////////////////////////// Reciver //////////////////////////////////////
 
 	/**
@@ -50,7 +49,6 @@ class tap3Plugin extends Billrun_Plugin_BillrunPluginBase implements Billrun_Plu
 			return;
 		}
 		$this->setFilesSequenceCheckForHost($hostname);
-		
 	}
 
 	/**
@@ -65,14 +63,15 @@ class tap3Plugin extends Billrun_Plugin_BillrunPluginBase implements Billrun_Plu
 			return;
 		}
 		$this->checkFilesSeq($filepaths, $hostname);
-		
-		$path = Billrun_Factory::config()->getConfigValue($this->getName().'.thirdparty.backup_path', false, 'string');
-		if (!$path)	return;
+
+		$path = Billrun_Factory::config()->getConfigValue($this->getName() . '.thirdparty.backup_path', false, 'string');
+		if (!$path)
+			return;
 		if ($hostname) {
 			$path = $path . DIRECTORY_SEPARATOR . $hostname;
 		}
 		foreach ($filepaths as $filePath) {
-			if (!$receiver->backupToPath($filePath, $path, true , true)) {
+			if (!$receiver->backupToPath($filePath, $path, true, true)) {
 				Billrun_Factory::log()->log("Couldn't save file $filePath to third patry path at : $path", Zend_Log::ERR);
 			}
 		}
@@ -91,13 +90,13 @@ class tap3Plugin extends Billrun_Plugin_BillrunPluginBase implements Billrun_Plu
 		$header = $this->parseASNDataRecur($this->tap3Config['header'], $data, $this->tap3Config['fields']);
 
 		$this->currentFileHeader = $header;
-		$this->fileVersion = $this->currentFileHeader['header']['version'] ."_" .$this->currentFileHeader['header']['minor_version'];
-		if(empty( $this->currentFileHeader )) {
+		$this->fileVersion = $this->currentFileHeader['header']['version'] . "_" . $this->currentFileHeader['header']['minor_version'];
+		if (empty($this->currentFileHeader)) {
 			//Billrun_Factory::log()->log(print_r(Asn_Base::getDataArray($data ,true ,true),1),Zend_Log::DEBUG);
 			$header['notifcation'] = $this->parseASNDataRecur($this->tap3Config['notification'], $data, $this->tap3Config['fields']);
-			$this->fileVersion = $header['notifcation']['version'] ."_" .$header['notifcation']['minor_version'];
-		}		
-		Billrun_Factory::log()->log("File Version :  {$this->fileVersion}",Zend_Log::DEBUG);
+			$this->fileVersion = $header['notifcation']['version'] . "_" . $header['notifcation']['minor_version'];
+		}
+		Billrun_Factory::log()->log("File Version :  {$this->fileVersion}", Zend_Log::DEBUG);
 		return $header;
 	}
 
@@ -116,7 +115,7 @@ class tap3Plugin extends Billrun_Plugin_BillrunPluginBase implements Billrun_Plu
 			$cdrLine = $this->parseASNDataRecur($this->tap3Config[$this->fileVersion][$type], $data, $this->tap3Config['fields']);
 			if ($cdrLine) {
 				$cdrLine['record_type'] = $type;
-				$this->surfaceCDRFields($cdrLine, array_merge($this->tap3Config[$this->fileVersion]['mapping']['common'], $this->tap3Config[$this->fileVersion]['mapping'][$type]) );
+				$this->surfaceCDRFields($cdrLine, array_merge($this->tap3Config[$this->fileVersion]['mapping']['common'], $this->tap3Config[$this->fileVersion]['mapping'][$type]));
 			}
 		} else {
 			//Billrun_Factory::log()->log("Unidetifiyed type :  $type",Zend_Log::DEBUG);
@@ -155,29 +154,33 @@ class tap3Plugin extends Billrun_Plugin_BillrunPluginBase implements Billrun_Plu
 	 * Pull required fields from the CDR nested tree to the surface.
 	 * @param type $cdrLine the line to monipulate.
 	 */
-	protected function surfaceCDRFields(&$cdrLine,$mapping) {
-		
-		foreach($mapping as $key => $fieldToMap) {
-			$val = Billrun_Util::getNestedArrayVal($cdrLine,$fieldToMap, null);
-			if($val !== null && Billrun_Util::getFieldVal($this->tap3Config['fields_to_save'][$key],false)) {
+	protected function surfaceCDRFields(&$cdrLine, $mapping) {
+
+		foreach ($mapping as $key => $fieldToMap) {
+			$val = Billrun_Util::getNestedArrayVal($cdrLine, $fieldToMap, null);
+			if ($val !== null && Billrun_Util::getFieldVal($this->tap3Config['fields_to_save'][$key], false)) {
 				$cdrLine[$key] = $val;
 			}
 		}
-		
-	
+
+
 		if (Billrun_Util::getNestedArrayVal($cdrLine, $mapping['localTimeStamp']) !== null) {
 			$offset = $this->currentFileHeader['networkInfo']['UtcTimeOffsetInfoList'][Billrun_Util::getNestedArrayVal($cdrLine, $mapping['TimeOffsetCode'])];
 			$cdrLine['urt'] = new MongoDate(Billrun_Util::dateTimeConvertShortToIso(Billrun_Util::getNestedArrayVal($cdrLine, $mapping['localTimeStamp']), $offset));
 			$cdrLine['tzoffset'] = $offset;
 		}
-		
 
-		 if (  Billrun_Util::getNestedArrayVal($cdrLine, $mapping['tele_srv_code']) !== null && isset($cdrLine['record_type'])) {
+
+		if (Billrun_Util::getNestedArrayVal($cdrLine, $mapping['tele_srv_code']) !== null && isset($cdrLine['record_type'])) {
 			$tele_service_code = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['tele_srv_code']);
 			$record_type = $cdrLine['record_type'];
 			if ($record_type == '9') {
 				if ($tele_service_code == '11') {
-					$cdrLine['called_number'] = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['called_number']) ; //$cdrLine['basicCallInformation']['Desination']['CalledNumber'];
+					if (Billrun_Util::getNestedArrayVal($cdrLine, $mapping['dialed_digits'])) {
+						$cdrLine['called_number'] = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['dialed_digits']);
+					} else {
+						$cdrLine['called_number'] = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['called_number']); //$cdrLine['basicCallInformation']['Desination']['CalledNumber'];
+					}
 				} else if ($tele_service_code == '22') {
 					if (Billrun_Util::getNestedArrayVal($cdrLine, $mapping['dialed_digits'])) {
 						$cdrLine['called_number'] = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['dialed_digits']);
@@ -185,17 +188,15 @@ class tap3Plugin extends Billrun_Plugin_BillrunPluginBase implements Billrun_Plu
 						$cdrLine['called_number'] = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['called_number']);
 					}
 				}
-			} 
-			else if ($record_type == 'a') {
+			} else if ($record_type == 'a') {
 				if ($tele_service_code == '11') {
 					if (Billrun_Util::getNestedArrayVal($cdrLine, $mapping['called_number'])) {
-						$cdrLine['called_number'] = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['called_number']) ; //$cdrLine['basicCallInformation']['Desination']['CalledNumber'];
+						$cdrLine['called_number'] = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['called_number']); //$cdrLine['basicCallInformation']['Desination']['CalledNumber'];
 					}
-						
-				} 
-			}	
+				}
+			}
 		}
-		
+
 		if (isset($cdrLine['called_number'])) {
 			$cdrLine['called_number'] = Billrun_Util::msisdn($cdrLine['called_number']);
 		}
@@ -216,17 +217,15 @@ class tap3Plugin extends Billrun_Plugin_BillrunPluginBase implements Billrun_Plu
 
 		if (Billrun_Util::getNestedArrayVal($cdrLine, $mapping['sdr']) !== null) {
 			$cdrLine['sdr'] = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['sdr']) / $this->sdr_division_value;
-			$cdrLine['exchange_rate'] = $this->exchangeRates[Billrun_Util::getNestedArrayVal($cdrLine, $mapping['exchange_rate_code'],0)];
+			$cdrLine['exchange_rate'] = $this->exchangeRates[Billrun_Util::getNestedArrayVal($cdrLine, $mapping['exchange_rate_code'], 0)];
 		}
-		
+
 		if (Billrun_Util::getNestedArrayVal($cdrLine, $mapping['sdr_tax']) !== null) {
 			$cdrLine['sdr_tax'] = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['sdr_tax']) / $this->sdr_division_value;			
 		}
 
 		//save the sending source in each of the lines
 		$cdrLine['sending_source'] = $this->currentFileHeader['header']['sending_source'];
-
-	
 	}
 
 	/**
@@ -285,13 +284,13 @@ class tap3Plugin extends Billrun_Plugin_BillrunPluginBase implements Billrun_Plu
 		$parsedData = Asn_Base::parseASNString($bytes);
 		$processorData['header'] = $processor->buildHeader($parsedData);
 		//$bytes = substr($bytes, $processor->getParser()->getLastParseLength());
-		if(!isset($this->tap3Config[$this->fileVersion])) {
-			Billrun_Factory::log("Processing tap3 file {$processor->filename} with non supported version : {$this->fileVersion}",Zend_log::NOTICE);
-			throw new Exception("Processing tap3 file {$processor->filename} with non supported version : {$this->fileVersion}");			
+		if (!isset($this->tap3Config[$this->fileVersion])) {
+			Billrun_Factory::log("Processing tap3 file {$processor->filename} with non supported version : {$this->fileVersion}", Zend_log::NOTICE);
+			throw new Exception("Processing tap3 file {$processor->filename} with non supported version : {$this->fileVersion}");
 		}
 		$trailer = $processor->buildTrailer($parsedData);
 		$this->initExchangeRates($trailer);
-		if(empty($this->currentFileHeader['notification']) || !empty($this->currentFileHeader['header']) ) {
+		if (empty($this->currentFileHeader['notification']) || !empty($this->currentFileHeader['header'])) {
 			foreach ($parsedData->getData() as $record) {
 				if (in_array($record->getType(), $this->tap3Config['config']['data_records'])) {
 					foreach ($record->getData() as $key => $data) {
@@ -301,12 +300,12 @@ class tap3Plugin extends Billrun_Plugin_BillrunPluginBase implements Billrun_Plu
 							$processorData['data'][] = $row;
 						}
 					}
-				} else if(!isset($this->tap3Config['header'][$record->getType()]) && !isset($this->tap3Config['trailer'][$record->getType()])) {
-					Billrun_Factory::log()->log('No config for type : ' .$record->getType() ,  Zend_Log::DEBUG);
+				} else if (!isset($this->tap3Config['header'][$record->getType()]) && !isset($this->tap3Config['trailer'][$record->getType()])) {
+					Billrun_Factory::log()->log('No config for type : ' . $record->getType(), Zend_Log::DEBUG);
 				}
 			}
 		} else {
-			Billrun_Factory::log()->log('Got notification/empty file : ' .$processor->filename. ' , moving on...' ,  Zend_Log::INFO);
+			Billrun_Factory::log()->log('Got notification/empty file : ' . $processor->filename . ' , moving on...', Zend_Log::INFO);
 		}
 
 		$processorData['trailer'] = $trailer;

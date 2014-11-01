@@ -49,8 +49,8 @@ class Billrun_Calculator_Rate_Tap3 extends Billrun_Calculator_Rate {
 				$volume = $row->get('basicCallInformation.TotalCallEventDuration');
 				break;
 
-			case 'data' :					
-					$volume = $row->get('download_vol') + $row->get('upload_vol');
+			case 'data' :
+				$volume = $row->get('download_vol') + $row->get('upload_vol');
 				break;
 		}
 		return $volume;
@@ -64,8 +64,8 @@ class Billrun_Calculator_Rate_Tap3 extends Billrun_Calculator_Rate {
 		$usage_type = null;
 
 		$record_type = $row['record_type'];
-		if (isset($row['tele_srv_code']) ) {
-			$tele_service_code = $row['tele_srv_code'] ;
+		if (isset($row['tele_srv_code'])) {
+			$tele_service_code = $row['tele_srv_code'];
 			if ($tele_service_code == '11') {
 				if ($record_type == '9') {
 					$usage_type = 'call'; // outgoing call
@@ -101,7 +101,7 @@ class Billrun_Calculator_Rate_Tap3 extends Billrun_Calculator_Rate {
 		$prefix_length_matched = 0;
 
 		if (!is_null($serving_network)) {
-			$call_number = isset($row['called_number']) ? $row->get('called_number') : (isset($row['calling_number']) ? $row->get('calling_number') : NULL);
+			$call_number = $this->number_to_rate($row);
 			if ($call_number) {
 				$call_number = preg_replace("/^[^1-9]*/", "", $call_number);
 				$call_number_prefixes = Billrun_Util::getPrefixes($call_number);
@@ -193,5 +193,22 @@ class Billrun_Calculator_Rate_Tap3 extends Billrun_Calculator_Rate {
 		}
 	}
 
+	/**
+	 * "e" - data, "9" - outgoing(call/sms), "a" - incoming 
+	 * @return number to rate by
+	 */
+	protected function number_to_rate($row) {
+		if ($row['record_type'] == "e") {
+			return NULL;
+		} else if (($row['record_type'] == "9") && isset($row['called_number'])) {
+			return $row->get('called_number');
+		} else if (($row['record_type'] == "a") && isset($row['calling_number'])) {
+			return $row->get('calling_number');
+		} else {
+			Billrun_Factory::log("Couldn't find rateable number for line : {$row['stamp']}");
+		}
+	}
+
 }
+
 ?>
