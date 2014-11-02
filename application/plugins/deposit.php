@@ -103,7 +103,7 @@ class depositPlugin extends Billrun_Plugin_BillrunPluginFraud {
 			'$match' => array(
 				'event_stamp' => array('$exists' => false),
 //				'deposit_stamp' => array('$exists'=> true),
-				'source' => array('$ne' => 'billing'), // filter out billing events (70_PERCENT,FP_NATINAL,etc...)
+				'source' => array('$nin' => array('billing','ird')), // filter out billing events (70_PERCENT,FP_NATINAL,etc...)
 				'event_type' => array('$ne' => 'DEPOSITS'),
 				'group' => $groupName,
 				'notify_time' => array('$gte' => new MongoDate($timeWindow)),

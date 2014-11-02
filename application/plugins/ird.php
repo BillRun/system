@@ -13,14 +13,16 @@
  * @subpackage Plugins
  * @since    0.5
  */
-class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
+class irdPlugin extends Billrun_Plugin_BillrunPluginBase {
 
+	use Billrun_Traits_FraudAggregation;
+	
 	/**
 	 * plugin name
 	 *
 	 * @var string
 	 */
-	protected $name = 'fraudAlerts';
+	protected $name = 'ird';
 
 	/**
 	 * The timestamp of the start of the script
@@ -34,6 +36,12 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @var boolean
 	 */
 	protected $isDryRun = false;
+	
+	/**
+	 * Alert proirity array
+	 * @var array
+	 */
+	protected $priority = array();
 
 	public function __construct($options = array()) {
 
@@ -57,6 +65,12 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 
 		$this->eventsCol = Billrun_Factory::db()->eventsCollection();
 		$this->linesCol = Billrun_Factory::db()->linesCollection();
+		
+		$this->priority = isset($options['priority']) ?
+			$options['priority'] :
+			Billrun_Factory::config()->getConfigValue('alert.priority', array());
+		
+		$this->initFraudAggregation();
 	}
 
 	/**
@@ -66,26 +80,16 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 */
 	public function handlerNotify($handler, $options) {
 
-		if ($options['type'] != 'notify') {
+		if ($options['type'] != 'ird') {
 			return FALSE;
 		}
-		$ret = $this->roamingNotify();
-
-		return $ret;
-	}
-
-	/**
-	 * Handle Roaming events and try to notify the remote server.
-	 * @return array return value of each event status
-	 */
-	protected function roamingNotify() {
 		$retValue = array();
 		//Aggregate the  events by imsi  taking only the first one.
 		$events = $this->gatherEvents($this->alertTypes);
 		//Get the amount of alerts allow per run 0 means no limit (or a very high limit)
-		$alertsLeft = Billrun_Factory::config()->getConfigValue('fraudAlerts.alert_limit', 0);
+		$alertsLeft = Billrun_Factory::config()->getConfigValue('ird.alert_limit', 0);
 
-		$alertsFilter = Billrun_Factory::config()->getConfigValue('fraudAlerts.filter', array());
+		$alertsFilter = Billrun_Factory::config()->getConfigValue('ird.filter', array());
 		foreach ($events as $event) {
 			// check if alert is filter by configuration
 			if (!empty($alertsFilter) && !in_array($event['event_type'], $alertsFilter)) {
@@ -119,8 +123,9 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$retValue[] = $event;
 		}
 
-		return $retValue;
+		return $retValue;	
 	}
+
 
 	/**
 	 * Send an  email alert on events that failed to notify the  remote RPC (CRM)
@@ -238,7 +243,9 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 				'account_id' => 1337,
 				'SMS' => 1,
 				'EMAIL' => 1,
-				'success' => 1);
+				'success' => 1,
+				'ignored' => 0,
+				);
 		}
 	}
 
@@ -252,7 +259,7 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 				array(
 			'$match' => array(
 				'notify_time' => array('$exists' => false),
-				'source' => array('$in' => $types)
+				'event_type' => array( '$in' => array('70_IRD','90_IRD','100_IRD')),
 			),
 				), array(
 			'$sort' => array('priority' => 1, 'creation_time' => 1)
@@ -267,8 +274,7 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 				'event_type' => array('$first' => '$event_type'),
 				'units' => array('$first' => '$units'),
 				'threshold' => array('$first' => '$threshold'),
-				'priority' => array('$first' => '$priority'),
-				//'deposit_stamp' => array('$first' => '$_id'),
+				'priority' => array('$first' => '$priority'),				
 				'source' => array('$first' => '$source'),
 				'plan' => array('$first' => '$plan'),
 				'target_plans' => array('$first' => '$target_plans'),
@@ -301,6 +307,9 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		return $events;
 	}
 
+	
+
+	
 	/**
 	 * Mark an specific event as finished event. 
 	 * @param array $event the event to mark as dealt with.
@@ -340,9 +349,6 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @param type $event the event that relate to the lines.
 	 */
 	protected function markEventLines($event) {
-		if ($event['source'] == 'billing') { // HACK to prvent the fraud from trying to mark  the lines of an event  that originated in the billing system
-			return;
-		}
 		//mark deposit for the lines on the current imsi
 		Billrun_Log::getInstance()->log("Fraud alerts mark event lines " . $event['deposit_stamp'], Zend_Log::INFO);
 		$imsi = (isset($event['imsi']) && $event['imsi']) ? $event['imsi'] : null;
@@ -367,23 +373,10 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 			}
 		}
 
-		/* TODO no lines have this field reinstate once all lines have this field.
-		 * if (isset($msisdn)) {
-			$lines_where['msisdn'] = $msisdn;
-			if (!isset($hint)) {
-				$hint = array('msisdn' => 1);
-			}
-		}*/
 
-//		if (isset($event['effects'])) {
-//			$lines_where[$event['effects']['key']] = $event['effects']['filter'];
-//		} else {
-//			$lines_where['type'] = $event['source'];
-//		}
-//
 		$lines_where['process_time'] = array('$gt' => date(Billrun_Base::base_dateformat, Billrun_Util::getLastChargeTime()));
 		$lines_where['process_time'] = array('$lt' => date(Billrun_Base::base_dateformat, $this->startTime));
-		$lines_where['deposit_stamp'] = array('$exists' => false);
+		$lines_where['ird_stamp'] = array('$lt' => $event['event_type']);
 
 		if (!($imsi || $msisdn || $sid )) {
 			Billrun_Log::getInstance()->log("fraudAlertsPlugin::markEventLines cannot find IMSI nor NDC_SN  or SID on event, marking CDR lines with event_stamp of : " . print_r($event['stamps'], 1), Zend_Log::INFO);
@@ -398,17 +391,241 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 		foreach ($rows as $row) {
 			$row->collection($this->linesCol);
-			$row->set('deposit_stamp', $event['deposit_stamp']);
+			$row->set('ird_stamp', $event['event_type']);
 			$row->save($this->linesCol);
 		}
-
-		// forward compatibility
-//			$lines_update_set = array(
-//					'$set' => array( 'deposit_stamp' => $event['deposit_stamp'] )
-//			);
-//			$update_options = array( 'multiple' => 1 );
-//			
-//			$this->linesCol->update($lines_where, $lines_update_set, $update_options);				
+				
 	}
 
+	
+	//------------------------------------------------------
+	
+	
+	/**
+	 * method to collect data which need to be handle by event
+	 */
+	public function handlerCollect($options) {
+		if ($options['type'] != 'ird') {
+			return FALSE;
+		}
+		$events =array();
+		//@TODO  switch  these lines  once  you have the time to test it.
+		//$charge_time = new MongoDate($this->get_last_charge_time(true) - date_default_timezone_get() );
+		$charge_time = Billrun_Util::getLastChargeTime(true);
+		
+		$advancedEvents = array();
+		if (isset($this->fraudConfig['groups'])) {
+			foreach ($this->fraudConfig['groups'] as $groupName => $groupIds) {
+				$baseQuery = $this->getBaseAggregateQuery($charge_time, $groupName, $groupIds, true);				
+				$advancedEvents = $this->collectFraudEvents($groupName, $groupIds, $baseQuery);
+										
+				$events = array_merge($events,$advancedEvents);
+			}
+		}
+
+		
+
+
+
+		return $events;
+	}
+	
+	/**
+	 * Collect events  using  the configured values.
+	 * @param type $groupName
+	 * @param type $groupIds
+	 */
+	protected function collectFraudEvents($groupName, $groupIds, $baseQuery) {
+		$lines = Billrun_Factory::db()->linesCollection();
+		$events = array();
+		$timeField = $this->getTimeField();
+
+		if (isset($this->fraudConfig['events']) && is_array($this->fraudConfig['events'])) {
+			foreach ($this->fraudConfig['events'] as $key => $eventRules) {
+				// check to see if the event included in a group if not continue to the next one
+				if (isset($eventRules['groups']) && !in_array($groupName, $eventRules['groups'])) {
+					continue;
+				}
+
+				foreach ($eventRules['rules'] as $eventQuery) {
+					Billrun_Factory::log()->log("irdPlugin::collectFraudEvents collecting {$eventQuery['name']} exceeders in group {$groupName}", Zend_Log::DEBUG);
+
+					$query = $baseQuery;
+					$eventQuery = $this->prepareRuleQuery($eventQuery, $key);
+					$charge_time = new MongoDate(isset($eventQuery['time_period']) ? strtotime($eventQuery['time_period']) : Billrun_Util::getLastChargeTime(true));
+					$query['base_match']['$match'][$timeField]['$gte'] = $charge_time;
+					$query['base_match']['$match']['$or'] = array(
+																array('ird_level' => array( '$lt' => intval($eventQuery['threshold']))),
+																array('ird_level' => array( '$exists' => false)),
+																);
+					$project = $query['project'];
+					$project['$project'] = array_merge($project['$project'], $this->addToProject((!empty($eventRules['added_values']) ? $eventRules['added_values'] : array())), $this->addToProject(array('units' => $eventQuery['units'], 'event_type' => $key,
+								'threshold' => $eventQuery['threshold'], 'target_plans' => $eventRules['target_plans'])));
+					$project['$project']['value'] = $eventQuery['value'];
+					$project['$project'][$eventQuery['name']] = $eventQuery['value'];
+					$query['project'] = $project;
+
+					$query['where']['$match'] = array_merge($query['where']['$match'], (isset($eventQuery['query']) ? $this->parseEventQuery($eventQuery['query']) : array()), (isset($eventRules['group_rules'][$groupName]) ? $this->parseEventQuery($eventRules['group_rules'][$groupName]) : array()));
+					$ruleMatch = array('$match' => (isset($eventQuery['match']) ? $eventQuery['match'] : array('value' => array('$gte' => intval($eventQuery['threshold']))) ));
+
+					$ret = $lines->aggregate($query['base_match'], $query['where'], $query['group_match'], $query['group'], $query['translate'], $query['project'], $ruleMatch);
+
+					if ($this->postProcessEventResults($events, $ret, $eventQuery, $key)) {
+						$events = array_merge($events, $ret);
+					}
+
+					Billrun_Factory::log()->log("irdPlugin::collectFraudEvents found " . count($ret) . " exceeders on rule {$eventQuery['name']} ", Zend_Log::INFO);
+				}
+			}
+		}
+
+		return $events;
+	}
+	
+	/**
+	 * Get the base aggregation query.
+	 * @param type $charge_time the charge time of the billrun (records will not be pull before that)
+	 * @return Array containing a standard PHP mongo aggregate query to retrive  ggsn entries by imsi.
+	 */
+	protected function getBaseAggregateQuery($charge_time, $groupName, $groupMatch ) {
+		$ret = array(
+			'base_match' => array(
+				'$match' => array(
+					'type' => 'ggsn',
+				)
+			),
+			'where' => array(
+				'$match' => array(
+					'$or' => array(
+						array('rating_group' => array('$exists' => false)),
+						array('rating_group' => 0)
+					),
+				),
+			),
+			'group_match' => array(
+				'$match' => $groupMatch,
+				),
+			'group' => array(
+				'$group' => array(
+					"_id" => array('imsi' => '$served_imsi', 'msisdn' => '$served_msisdn'),
+					"download" => array('$sum' => '$fbc_downlink_volume'),
+					"upload" => array('$sum' => '$fbc_uplink_volume'),					
+					"usagev" => array('$sum' => '$usagev'), 
+					"duration" => array('$sum' => '$duration'),
+					'lines_stamps' => array('$addToSet' => '$stamp'),
+				),
+			),
+			'translate' => array(
+				'$project' => array(
+					'_id' => 0,
+					'download' => array('$divide' => array('$download', 1024)),
+					'upload' => array('$divide' => array('$upload', 1024)),
+					'usagev' => array('$divide' => array('$usagev', 1024)),
+					'duration' => 1,
+					'imsi' => '$_id.imsi',
+					'msisdn' => array('$substr' => array('$_id.msisdn', 5, 10)),
+					'lines_stamps' => 1,
+				),
+			),
+			'project' => array(
+				'$project' => array_merge(array(
+					'download' => 1,
+					'upload' => 1,
+					'usagev' => 1,
+					'duration' => 1,
+					'imsi' => 1,
+					'msisdn' => 1,
+					'lines_stamps' => 1,
+				), $this->addToProject( array('group' =>  $groupName,))),
+			),
+		);
+		
+		
+		return $ret;
+	}
+	
+	//------------------------------------------------------------------------------------------------------
+	
+	
+	/**
+	 * helper method to receive the last time of the monthly charge
+	 * 
+	 * @param boolean $return_timestamp if set to true return time stamp else full format of yyyymmddhhmmss
+	 * 
+	 * @return mixed timestamp or full format of time
+	 * @deprecated since version 0.4 use Billrun_Util::getLastChargeTime instead
+	 */
+	protected function get_last_charge_time($return_timestamp = false) {
+		Billrun_Factory::log()->log("Billrun_Plugin_BillrunPluginFraud::get_last_charge_time is deprecated; please use Billrun_Util::getLastChargeTime()", Zend_Log::DEBUG);
+		return Billrun_Util::getLastChargeTime($return_timestamp);
+	}
+	
+	/**
+	 * Write all the threshold that were broken as events to the db events collection 
+	 * @param type $items the broken  thresholds
+	 * @param type $pluginName the plugin that identified the threshold breakage
+	 * @return type
+	 */
+	public function handlerAlert(&$items,$pluginName) {
+		if($pluginName != $this->getName() || !$items ) {
+			return;	
+		}
+
+		$events = Billrun_Factory::db()->eventsCollection();
+		
+		$ret = array();
+		foreach($items as &$item) { 
+			$event = new Mongodloid_Entity($item);
+			unset($event['lines_stamps']);
+			
+			$newEvent = $this->addAlertData($event);
+			$newEvent['source']	= $this->getName();
+			$newEvent['stamp'] = md5(serialize($newEvent));
+			$newEvent['creation_time'] = date(Billrun_Base::base_dateformat);
+			foreach($this->priority as $key => $pri) {
+				$newEvent['priority'] = $key;	
+				if($event['event_type'] == $pri) {
+					break;
+				}
+			}
+			$item['event_stamp'] = $newEvent['stamp'];
+			
+			$ret[] = $events->save($newEvent);
+		}
+		return $ret; 
+	}
+
+	/**
+	 * method to markdown all the lines that triggered the event
+	 * 
+	 * @param array $items the lines
+	 * @param string $pluginName the plugin name which triggered the event
+	 * 
+	 * @return array affected lines
+	 */
+	public function handlerMarkDown(&$items, $pluginName) {
+		if ($pluginName != $this->getName() || !$items) {
+			return;
+		}
+		
+		$ret = array();
+		$lines = Billrun_Factory::db()->linesCollection();
+		foreach ($items as &$item) {
+			$ret[] = $lines->update(	array('stamp' => array('$in' => $item['lines_stamps'])),
+									array('$set' => array('ird_level' => (int) $item['threshold'], 'ird_stamp' => $item['event_stamp'] )),
+									array('multiple' => 1));
+		}
+		return $ret;
+	}
+	
+	/**
+	 * @see Billrun_Plugin_BillrunPluginFraud::addAlertData
+	 */
+	protected function addAlertData(&$event) {
+		$event['effects'] = array(
+			'key' => 'type',
+			'filter' => array('$in' => array('ird'))
+		);
+		return $event;
+	}
 }
