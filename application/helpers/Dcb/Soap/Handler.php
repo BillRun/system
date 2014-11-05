@@ -42,9 +42,8 @@ class Dcb_Soap_Handler {
 	public function __call($name, $arguments) {
 		if (method_exists($this, 'do' . $name)) {
 			return call_user_func(array($this, 'do' . $name), $arguments[0]);
-		} else {
-			return false;
 		}
+		throw new Exception('Unknown method ' . $name);
 	}
 
 	public function doEcho($request) {
@@ -60,9 +59,10 @@ class Dcb_Soap_Handler {
 		$response = new stdclass;
 		$response->Version = $request->Version;
 		$response->CorrelationId = $request->CorrelationId;
-		$sid = $this->getSid($request->UserIdentifier->OperatorUserToken);
-		if ($sid) {
-			$identityParams = $this->getIdentityParams($sid);
+		$subscriberDetails = $this->getSubscriberDetails($request->UserIdentifier->OperatorUserToken);
+		if ($subscriberDetails) {
+			$ndc_sn = $subscriberDetails['ndc_sn'];
+			$identityParams = $this->getIdentityParams($ndc_sn);
 			$this->subscriber->load($identityParams);
 			if (!$this->subscriber->isValid()) {
 				$response->Result = self::GOOGLE_RESULT_CODE_INVALID_USER;
@@ -95,7 +95,7 @@ class Dcb_Soap_Handler {
 		if ($request->Currency != $this->config['currency']) {
 			$response->Result = self::GOOGLE_RESULT_CODE_INVALID_CURRENCY;
 		} else if ($sid) {
-			$identityParams = $this->getIdentityParams($sid, $ndcSn);
+			$identityParams = $this->getIdentityParams($ndcSn);
 			$this->subscriber->load($identityParams);
 			if (!$this->subscriber->isValid()) {
 				$response->Result = self::GOOGLE_RESULT_CODE_INVALID_USER;
@@ -158,9 +158,8 @@ class Dcb_Soap_Handler {
 		}
 	}
 
-	protected function getIdentityParams($sid, $ndc_sn) {
+	protected function getIdentityParams($ndc_sn) {
 		return array(
-			'sid' => $sid,
 			'DATETIME' => date(Billrun_Base::base_dateformat),
 			'NDC_SN' => $ndc_sn
 		);
