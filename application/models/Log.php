@@ -56,7 +56,7 @@ class LogModel extends TableModel {
 				'input_type' => 'multiselect',
 				'comparison' => '$in',
 				'display' => 'Type',
-				'values' => Billrun_Factory::config()->getConfigValue('admin_panel.log.source'),
+				'values' => Billrun_Factory::config()->getConfigValue('admin_panel.line.type'),
 				'default' => array(),
 			),
 		);
