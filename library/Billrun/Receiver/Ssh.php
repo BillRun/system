@@ -61,7 +61,12 @@ class Billrun_Receiver_Ssh extends Billrun_Receiver {
 				);
 			}
 
-			$this->ssh = new Billrun_Ssh_Seclibgateway($config['host'], $auth, array());
+			$hostAndPort = $config['host'];
+			if (isset($config['port'])) {
+				$hostAndPort .= ':'.$config['port'];
+			}
+			
+			$this->ssh = new Billrun_Ssh_Seclibgateway($hostAndPort, $auth, array());
 			$this->ssh->connect($config['user']);
 
 			try {
