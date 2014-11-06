@@ -5,23 +5,23 @@
  * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
-require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
+require_once APPLICATION_PATH . '/application/controllers/Action/Query.php';
 
 /**
- * Query action class
+ * Aggregate query action class
  *
  * @package  Action
  * 
- * @since    2.6
+ * @since    2.8
  */
-class QueryAction extends ApiAction {
+class QueryaggregateAction extends QueryAction {
 
 	/**
 	 * method to execute the query
 	 * it's called automatically by the api main controller
 	 */
 	public function execute() {
-		Billrun_Factory::log()->log("Execute api query", Zend_Log::INFO);
+		Billrun_Factory::log()->log("Execute api query aggregate", Zend_Log::INFO);
 		$request = $this->getRequest()->getRequest(); // supports GET / POST requests
 		Billrun_Factory::log()->log("Input: " . print_R($request, 1), Zend_Log::INFO);
 
@@ -59,6 +59,20 @@ class QueryAction extends ApiAction {
 			$query = $this->getArrayParam($request['query']);
 			$find = array_merge($find, (array) $query);
 		}
+		
+		if (isset($request['groupby'])) {
+			$groupby = array('_id' => $this->getArrayParam($request['groupby']));
+		} else {
+			$groupby = array('_id' => null);
+		}
+
+		if (isset($request['aggregate'])) {
+			$aggregate = $this->getArrayParam($request['aggregate']);
+		} else {
+			$aggregate = array('count' => array('$sum' => 1));
+		}
+		
+		$group = array_merge($groupby, $aggregate);
 
 		$options = array(
 			'sort' => array('urt'),
@@ -66,15 +80,17 @@ class QueryAction extends ApiAction {
 			'size' =>isset($request['size']) && $request['size'] > 0 ? (int) $request['size']: 1000,
 		);
 		$model = new LinesModel($options);
-		
-		if (isset($request['distinct'])) {
-			$lines = $model->getDistinctField((string) $request['distinct'], $find);
-		} else {
-			$lines = $model->getData($find);
+		$lines = $model->getDataAggregated(array('$match' => $find), array('$group' => $group));
 
-			foreach ($lines as &$line) {
-				$line = $line->getRawData();
+ 		$groupby_keys = array_reverse(array_keys($groupby['_id']));
+		$results = array();
+		foreach ($lines as $line) {
+			$row = $line->getRawData();
+			foreach ($groupby_keys as $key) {
+				$row[$key] = $row['_id'][$key];
 			}
+			unset($row['_id']);
+			$results[] = array_reverse($row, true);
 		}
 
 		Billrun_Factory::log()->log("query success", Zend_Log::INFO);
@@ -83,30 +99,10 @@ class QueryAction extends ApiAction {
 				'status' => 1,
 				'desc' => 'success',
 				'input' => $request,
-				'details' => $lines,
+				'details' => $results,
 			)
 		);
 		$this->getController()->setOutput($ret);
 	}
-	
-	/**
-	 * method to retreive variable in dual way json or pure array
-	 * 
-	 * @param mixed $param the param to retreive
-	 */
-	protected function getArrayParam($param) {
-		if (empty($param)) {
-			return array();
-		}
-		if (is_string($param)) {
-			return json_decode($param, true);
-		}
-		return (array) $param;
-	}
-	
-	protected function getBillrunQuery($billrun) {
-		return array('$in' => Billrun_Util::verify_array($this->getArrayParam($billrun), 'str'));
-	}
-
 
 }

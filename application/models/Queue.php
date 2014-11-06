@@ -98,4 +98,22 @@ class QueueModel extends TableModel {
 		);
 	}
 
+	public function prev_calc($value) {
+		$val = $value[0];
+		$names = Billrun_Factory::config()->getConfigValue('queue.calculators');
+		if ($val != $names[0]) {
+			$key = array_search($val, $names);
+			$prev = $names[$key - 1];
+		} else {
+			$prev = false;
+		}
+		return array($prev);
+	}
+
+	public function getData($filter_query = array()) {
+		$resource = parent::getData($filter_query);
+		$this->_count = $resource->count(false);
+		return $resource;
+	}
+
 }

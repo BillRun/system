@@ -245,6 +245,10 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 			}
 			$lines = $account_billrun->addLines($manual_lines);
 			//save the billrun
+			if ($account_billrun->is_deactivated() === true){
+				Billrun_Factory::log('deactivated account, no need for invoice ' . $accid, Zend_Log::DEBUG);
+				continue;
+			}
 			Billrun_Factory::log('Saving account ' . $accid, Zend_Log::INFO);
 			if ($account_billrun->save() === false) {
 				Billrun_Factory::log('Error saving account ' . $accid, Zend_Log::ALERT);
