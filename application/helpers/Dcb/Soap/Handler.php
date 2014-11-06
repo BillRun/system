@@ -141,7 +141,7 @@ class Dcb_Soap_Handler {
 	 * @param Billrun_Subscriber $subscriber
 	 */
 	protected function isDcbProvisioned($subscriber) {	
-		return $subscriber->isExtraDataActive('google_play') && !$subscriber->isExtraDataActive('in_dept');
+		return $subscriber->isExtraDataActive('google_play');
 	}
 
 	protected function getSubscriberDetails($OUT) {

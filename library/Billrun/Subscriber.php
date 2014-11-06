@@ -157,6 +157,6 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 	 * @return boolean
 	 */
 	public function isExtraDataActive($param) {
-		return isset($this->data['extra_data'][$param]) && $this->data['extra_data'][$param] === 1;
+		return isset($this->data['extra_data'][$param]) && $this->data['extra_data'][$param];
 	}
 }
