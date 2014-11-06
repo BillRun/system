@@ -62,6 +62,8 @@ class CliController extends Yaf_Controller_Abstract {
 				'size-s' => 'the size of the page to aggregate',
 				'environment-s' => 'Environment of the running command',
 				'env-s' => 'Environment of the running command',
+				'host-s' => 'host to listen on',
+				'port-s' => 'port to listen on',
 				'fetchonly' => 'Only fetch data from remote or db instead of doing complete action',
 			);
 

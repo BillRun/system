@@ -36,6 +36,8 @@ class Billrun_Listener_Googledcb extends Billrun_Listener {
 
 	public function __construct($options = array()) {
 		parent::__construct($options);
+		$options['listener']['smpp']['hosts'][] = $options['host'];
+		$options['listener']['smpp']['port'] = $options['port'];
 		$this->smppCLient = Billrun_Factory::smpp_client($options['listener']['smpp']);
 		$this->tokensApiUrl = $options['listener']['tokensApiUrl'];
 	}

@@ -19,7 +19,8 @@ class ListenAction extends Action_Base {
 
 		$possibleOptions = array(
 			'type' => false,
-			'path' => true,
+			'host' => false,
+			'port' => false,
 		);
 
 		if (($options = $this->_controller->getInstanceOptions($possibleOptions)) === FALSE) {
