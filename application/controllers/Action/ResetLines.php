@@ -24,7 +24,7 @@ class ResetLinesAction extends ApiAction {
 		
 		// remove the aids from current balance cache - on next current balance it will be recalculated and avoid to take it from cache
 		if (isset($request['aid'])) {
-			$aids = array_unique(array_diff(Billrun_Util::verify_array(explode(',', $request['aid']), 'int'), array(0)));
+			$aids = array_unique(array_diff(Billrun_Util::verify_array($request['aid'], 'int'), array(0)));
 			$stamp = Billrun_Util::getBillrunKey(time());
 			foreach ($aids as $aid) {
 				Billrun_Factory::cache()->remove(Billrun_Util::generateArrayStamp(array_values(array('aid' => $aid, 'subscribers' => null, 'stamp' => $stamp))), 'balance');
@@ -36,7 +36,7 @@ class ResetLinesAction extends ApiAction {
 		$billrun_key = Billrun_Util::getBillrunKey(time());
 
 		// Warning: will convert half numeric strings / floats to integers
-		$sids = array_unique(array_diff(Billrun_Util::verify_array(explode(',', $request['sid']), 'int'), array(0)));
+		$sids = array_unique(array_diff(Billrun_Util::verify_array($request['sid'], 'int'), array(0)));
 
 		if ($sids) {
 			try {
