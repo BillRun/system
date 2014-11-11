@@ -67,7 +67,7 @@ class ResetLinesAction extends ApiAction {
 		}
 		$aids = array_unique(array_diff(Billrun_Util::verify_array(explode(',', $aid), 'int'), array(0)));
 		$billrunKey = Billrun_Util::getBillrunKey(time());
-		$cachePrefix = $this->getCachePrefix();
+		$cachePrefix = 'balance_'; // this is not the action name because it's clear the balance cache
 		foreach ($aids as $aid) {
 			$cleanCacheKeys = array(
 				Billrun_Util::generateArrayStamp(array_values(array('aid' => $aid, 'subscribers' => array(), 'stamp' => $billrunKey))),
