@@ -2,7 +2,7 @@
 
 
 stat='mongo --port 27018 --eval "tojson(rs.status());" | grep stateStr; echo "|" ; mongo --port 27018 --eval "tojson(rs.status());" | grep "optimeDate"';
-stat2='mongo --port 27018 billing --eval "db.serverStatus();" | grep --color "2.6"'
+stat2='mongo --port 27018 billing --quiet --eval "db.serverStatus().version;"'
 for i in {1..7}
 do
         ipad=`printf %02d $i`
