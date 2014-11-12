@@ -86,10 +86,10 @@ class Billrun_Billrun {
 	 */
 	protected function load() {
 		$this->data = $this->billrun_coll->query(array(
-							'aid' => $this->aid,
-							'billrun_key' => $this->billrun_key,
-						))
-						->cursor()->limit(1)->current();
+					'aid' => $this->aid,
+					'billrun_key' => $this->billrun_key,
+				))
+				->cursor()->limit(1)->current();
 		$this->data->collection($this->billrun_coll);
 		return $this;
 	}
@@ -136,7 +136,10 @@ class Billrun_Billrun {
 		$subscriber_entry['subscriber_status'] = $status;
 		$subscriber_entry['current_plan'] = $current_plan_ref;
 		$subscriber_entry['next_plan'] = $next_plan_ref;
-		foreach ($subscriber->getExtraFieldsForBillrun() as $field) {
+		foreach ($subscriber->getExtraFieldsForBillrun() as $field => $save) {
+			if ($field == !$save) {
+				continue;
+			}
 			$subscriber_entry[$field] = $subscriber->{$field};
 		}
 		$subscribers[] = $subscriber_entry;
@@ -162,10 +165,10 @@ class Billrun_Billrun {
 	public static function exists($aid, $billrun_key) {
 		$billrun_coll = Billrun_Factory::db(array('name' => 'billrun'))->billrunCollection();
 		$data = $billrun_coll->query(array(
-							'aid' => (int) $aid,
-							'billrun_key' => (string) $billrun_key,
-						))
-						->cursor()->limit(1)->current();
+					'aid' => (int) $aid,
+					'billrun_key' => (string) $billrun_key,
+				))
+				->cursor()->limit(1)->current();
 		return !$data->isEmpty();
 	}
 
@@ -295,6 +298,9 @@ class Billrun_Billrun {
 		if ($row['type'] == 'credit') {
 			$plan_key = 'credit';
 			$zone_key = $row['service_name'];
+		} else if ($row['type'] == 'service') {
+			$plan_key = 'service';
+			$zone_key = $row['key'];
 		} else if (!isset($pricingData['over_plan']) && !isset($pricingData['out_plan'])) { // in plan
 			$plan_key = 'in_plan';
 			if ($row['type'] == 'flat') {
@@ -387,6 +393,8 @@ class Billrun_Billrun {
 				return 'flat';
 			case 'credit':
 				return 'credit';
+			case 'service':
+				return 'service';
 			default:
 				return 'call';
 		}
@@ -424,6 +432,12 @@ class Billrun_Billrun {
 				$sraw['costs']['credit'][$row['credit_type']][$vat_key] = $pricingData['aprice'];
 			} else {
 				$sraw['costs']['credit'][$row['credit_type']][$vat_key] += $pricingData['aprice'];
+			}
+		} else if ($row['type'] == 'service') {
+			if (!isset($sraw['costs']['service'][$vat_key])) {
+				$sraw['costs']['service'][$vat_key] = $pricingData['aprice'];
+			} else {
+				$sraw['costs']['service'][$vat_key] += $pricingData['aprice'];
 			}
 		}
 	}
@@ -648,7 +662,7 @@ class Billrun_Billrun {
 			// the check fix 2 issues:
 			// 1. temporary fix for https://jira.mongodb.org/browse/SERVER-9858
 			// 2. avoid duplicate lines
-			if (isset($updatedLines[$line['stamp']])) { 
+			if (isset($updatedLines[$line['stamp']])) {
 				continue;
 			}
 			$line->collection($this->lines);
@@ -733,9 +747,9 @@ class Billrun_Billrun {
 			$bufferCount += $addCount;
 			$cursor = Billrun_Factory::db()->linesCollection()
 //			$cursor = Billrun_Factory::db(array('host'=>'172.28.202.111','port'=>27017,'user'=>'reading','password'=>'guprgri','name'=>'billing','options'=>array('connect'=>1,'readPreference'=>"RP_SECONDARY_PREFERRED")))->linesCollection()
-					->query($query)->cursor()->fields(array_merge($filter_fields, $requiredFields))
-					->sort($sort)->skip($bufferCount)->limit(Billrun_Factory::config()->getConfigValue('billrun.linesLimit', 10000))->timeout(-1)
-					->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
+				->query($query)->cursor()->fields(array_merge($filter_fields, $requiredFields))
+				->sort($sort)->skip($bufferCount)->limit(Billrun_Factory::config()->getConfigValue('billrun.linesLimit', 10000))->timeout(-1)
+				->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
 			foreach ($cursor as $line) {
 				$ret[$line['aid']][$line['stamp']] = $line;
 			}
@@ -799,23 +813,24 @@ class Billrun_Billrun {
 		}
 		return $active_billrun;
 	}
-	
+
 	public function is_deactivated() {
 		$deactivated = true;
 		foreach ($this->data['subs'] as $subscriber) {
 			$its_empty = $this->empty_subscriber($subscriber);
-			if (!$its_empty ) {
+			if (!$its_empty) {
 				$deactivated = false;
 				break;
 			}
-		} 
+		}
 		return $deactivated;
 	}
-	
+
 	public function empty_subscriber($subscriber) {
 		$status = $subscriber['subscriber_status'];
 		return ( ($status == "closed") && !isset($subscriber['breakdown']));
 	}
+
 }
 
 Billrun_Billrun::loadRates();

@@ -100,13 +100,13 @@ class Generator_Golanxml extends Billrun_Generator {
 		$billrun = Billrun_Factory::db(array('name' => 'billrun'))->billrunCollection();
 		Billrun_Factory::log()->log('Loading ' . $this->size . ' billrun documents with offset ' . $this->offset, Zend_Log::INFO);
 		$resource = $billrun
-				->query('billrun_key', $this->stamp)
-				->exists('invoice_id')
-				->notExists('invoice_file')
-				->cursor()
-				->sort(array("aid" => 1))
-				->skip($this->offset * $this->size)
-				->limit($this->size);
+			->query('billrun_key', $this->stamp)
+			->exists('invoice_id')
+			->notExists('invoice_file')
+			->cursor()
+			->sort(array("aid" => 1))
+			->skip($this->offset * $this->size)
+			->limit($this->size);
 
 		$resource->timeout(-1);
 		// @TODO - there is issue with the timeout; need to be fixed
@@ -184,6 +184,7 @@ class Generator_Golanxml extends Billrun_Generator {
 		$invoice_total_manual_correction_credit = 0;
 		$invoice_total_manual_correction_charge = 0;
 		$invoice_total_outside_gift_novat = 0;
+		$invoice_total_service = 0;
 		$billrun_key = $billrun['billrun_key'];
 		$aid = $billrun['aid'];
 		Billrun_Factory::log()->log("xml account " . $aid, Zend_Log::INFO);
@@ -380,6 +381,8 @@ class Generator_Golanxml extends Billrun_Generator {
 			$this->writer->writeElement('TOTAL_MANUAL_CORRECTION', $subscriber_sumup_TOTAL_MANUAL_CORRECTION);
 			$subscriber_sumup_TOTAL_OUTSIDE_GIFT_NOVAT = floatval((isset($subscriber['costs']['out_plan']['vat_free']) ? $subscriber['costs']['out_plan']['vat_free'] : 0)) + floatval((isset($subscriber['costs']['over_plan']['vat_free']) ? $subscriber['costs']['over_plan']['vat_free'] : 0));
 			$this->writer->writeElement('TOTAL_OUTSIDE_GIFT_NOVAT', $subscriber_sumup_TOTAL_OUTSIDE_GIFT_NOVAT);
+			$subscriber_sumup_TOTAL_SRVICES = floatval((isset($subscriber['costs']['service']['vat_free']) ? $subscriber['costs']['service']['vat_free'] : 0)) + floatval((isset($subscriber['costs']['service']['vatable']) ? $subscriber['costs']['service']['vatable'] : 0));
+			$this->writer->writeElement('TOTAL_SERVICES', $subscriber_sumup_TOTAL_SRVICES);
 			$subscriber_before_vat = $this->getSubscriberTotalBeforeVat($subscriber);
 			$subscriber_after_vat = $this->getSubscriberTotalAfterVat($subscriber);
 			$this->writer->writeElement('TOTAL_VAT', $subscriber_after_vat - $subscriber_before_vat);
@@ -393,6 +396,7 @@ class Generator_Golanxml extends Billrun_Generator {
 			$invoice_total_manual_correction_credit += $subscriber_sumup_TOTAL_MANUAL_CORRECTION_CREDIT;
 			$invoice_total_manual_correction_charge += $subscriber_sumup_TOTAL_MANUAL_CORRECTION_CHARGE;
 			$invoice_total_outside_gift_novat +=$subscriber_sumup_TOTAL_OUTSIDE_GIFT_NOVAT;
+			$invoice_total_service += $subscriber_sumup_TOTAL_SRVICES;
 			$this->writer->endElement(); // end SUBSCRIBER_SUMUP
 
 			$this->writer->startElement('SUBSCRIBER_BREAKDOWN');
@@ -658,6 +662,7 @@ class Generator_Golanxml extends Billrun_Generator {
 		$this->writer->writeElement('TOTAL_MANUAL_CORRECTION', $invoice_total_manual_correction);
 		$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_CREDIT', $invoice_total_manual_correction_credit);
 		$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_CHARGE', $invoice_total_manual_correction_charge);
+		$this->writer->writeElement('TOTAL_SERVICE', $invoice_total_service);
 		$this->writer->writeElement('TOTAL_OUTSIDE_GIFT_NOVAT', $invoice_total_outside_gift_novat);
 		$this->writer->writeElement('TOTAL_VAT', $account_after_vat - $account_before_vat);
 		$this->writer->writeElement('TOTAL_CHARGE_NO_VAT', $account_before_vat);
@@ -784,6 +789,7 @@ class Generator_Golanxml extends Billrun_Generator {
 				case 'sms':
 				case 'mms':
 				case 'incoming_sms':
+				case 'service':
 					return $line['usagev'];
 				case 'data':
 //					if ($line['type'] == 'tap3') {
@@ -983,7 +989,7 @@ class Generator_Golanxml extends Billrun_Generator {
 	protected function getCalledNo($line) {
 		$called_number = '';
 		if ($line['type'] == 'tap3' // on tap3
-				|| (isset($line['out_circuit_group']) && ($line['out_circuit_group'] == "2100" || $line['out_circuit_group'] == "2101" || $line['out_circuit_group'] == "2499"))) { // or call to abroad
+			|| (isset($line['out_circuit_group']) && ($line['out_circuit_group'] == "2100" || $line['out_circuit_group'] == "2101" || $line['out_circuit_group'] == "2499"))) { // or call to abroad
 			if ($line['usaget'] == 'incoming_call') {
 				$called_number = $line['calling_number'];
 			} else {
@@ -1045,8 +1051,8 @@ EOI;
 				$subscriber_lines = $this->get_lines($subscriber);
 			} else {
 				$func = function($line) use ($sid) {
-							return $line['sid'] == $sid;
-						};
+					return $line['sid'] == $sid;
+				};
 				$subscriber_lines = array_filter($lines, $func);
 			}
 			$subscriber_united_lines = $this->aggregateLinesByCallReference($subscriber_lines);
@@ -1423,4 +1429,3 @@ EOI;
 	}
 
 }
-
