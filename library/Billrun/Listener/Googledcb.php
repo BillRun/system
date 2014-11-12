@@ -60,7 +60,10 @@ class Billrun_Listener_Googledcb extends Billrun_Listener {
 		$smsContent = $data->message;
 		$ndcSn = $data->source->value;
 		Billrun_Factory::log()->log('sms received from ' . $ndcSn . ' with message ' . $smsContent,  Zend_Log::DEBUG);
-		$params = array('XDEBUG_SESSION_START' => 'netbeans-xdebug');
+		$params = array();
+		if (!Billrun_Factory::config()->isProd()) {
+			$params['XDEBUG_SESSION_START'] = 'netbeans-xdebug';
+		}
 		$post = array(
 			'sms_content' => $smsContent,
 			'ndc_sn' => $ndcSn,
