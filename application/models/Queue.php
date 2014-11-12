@@ -71,7 +71,7 @@ class QueueModel extends TableModel {
 				'input_type' => 'multiselect',
 				'comparison' => '$in',
 				'display' => 'Type',
-				'values' => Billrun_Factory::config()->getConfigValue('admin_panel.line.type'),
+				'values' => Billrun_Factory::config()->getConfigValue('admin_panel.queue.source'),
 				'default' => array(),
 			),
 		);
