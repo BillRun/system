@@ -23,6 +23,11 @@ class Billrun_Processor_Json extends Billrun_Processor {
 			return FALSE;
 		}
 		$this->data['data'] = json_decode(stream_get_contents($this->fileHandler), true);
+		if (!isset($this->data['trailer']) && !isset($this->data['header'])) {
+			$this->data['trailer'] = array('no_trailer' => true);
+			$this->data['header'] = array('no_header' => true);
+		}
+
 		return $this->processData();
 	}
 
@@ -31,10 +36,6 @@ class Billrun_Processor_Json extends Billrun_Processor {
 			$row['process_time'] = Billrun_Util::generateCurrentTime();
 		}
 		return true;
-	}
-
-	protected function logDB() {
-		
 	}
 
 }
