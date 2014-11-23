@@ -73,7 +73,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 					),
 					'fields' => array(
 						'$set' => array('process_time'),
-						'$setOnInsert' => array('urt', 'in_circuit_group', 'in_circuit_group_name', 'out_circuit_group', 'out_circuit_group_name', 'calling_subs_last_ex_id', 'called_subs_last_ex_id', 'arate', 'usaget'),
+						'$setOnInsert' => array('urt', 'record_type', 'in_circuit_group', 'in_circuit_group_name', 'out_circuit_group', 'out_circuit_group_name', 'calling_subs_last_ex_id', 'called_subs_last_ex_id', 'arate', 'usaget'),
 						'$inc' => array('usagev', 'duration'),
 					),
 				),
