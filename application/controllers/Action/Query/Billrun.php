@@ -53,13 +53,15 @@ class QuerybillrunAction extends QueryAction {
 //			'size' =>isset($request['size']) && $request['size'] > 0 ? (int) $request['size']: 1000,
 		);
 		
-		$model = new BillrunModel($options);
-		$resource = $model->getData($find);
+		$cacheParams = array(
+			'fetchParams' => array(
+				'options' => $options,
+				'find' => $find,
+			),
+		);
 
-		$results = array();
-		foreach ($resource as $row) {
-			$results[] = $row->getRawData();
-		}
+		$this->setCacheLifeTime(604800); // 1 week
+		$results = $this->cache($cacheParams);
 
 		Billrun_Factory::log()->log("query success", Zend_Log::INFO);
 		$ret = array(
@@ -71,6 +73,24 @@ class QuerybillrunAction extends QueryAction {
 			)
 		);
 		$this->getController()->setOutput($ret);
+	}
+	
+	/**
+	 * basic fetch data method used by the cache
+	 * 
+	 * @param array $params parameters to fetch the data
+	 * 
+	 * @return boolean
+	 */
+	protected function fetchData($params) {
+		$model = new BillrunModel($params['options']);
+		$resource = $model->getData($params['find']);
+
+		$results = array();
+		foreach ($resource as $row) {
+			$results[] = $row->getRawData();
+		}
+		return $results;
 	}
 
 }
