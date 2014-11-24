@@ -652,7 +652,7 @@ class Billrun_Billrun {
 		Billrun_Factory::log()->log("Querying account " . $this->aid . " for lines...", Zend_Log::INFO);
 		$account_lines = $this->getAccountLines($this->aid);
 
-		$this->filterAccounts($account_lines, $deactivated_subscribers);
+		$this->filterSubscribers($account_lines, $deactivated_subscribers);
 		Billrun_Factory::log("Processing account Lines $this->aid", Zend_Log::INFO);
 
 		$lines = array_merge($account_lines, $manual_lines);
@@ -697,7 +697,7 @@ class Billrun_Billrun {
 	 * removes deactivated accounts from the list if they still have lines (and therfore should be in the billrun)
 	 * @param $deactivated_subscribers array of subscribers sids and their deactivation date
 	 */
-	protected function filterAccounts($account_lines, &$deactivated_subscribers) {
+	protected function filterSubscribers($account_lines, &$deactivated_subscribers) {
 		if (empty($deactivated_subscribers) || empty($account_lines)) {
 			return;
 		}
