@@ -704,6 +704,7 @@ class Billrun_Billrun {
 		foreach ($account_lines as $line) {
 			foreach ($deactivated_subscribers as $key => $ds) {
 				if ($ds['sid'] == $line['sid']) {
+					Billrun_Factory::log()->log("Subscriber " . $ds['sid'] . " has current plan null and next plan null, yet has lines", Zend_Log::NOTICE);
 					unset($deactivated_subscribers[$key]);
 				}
 			}

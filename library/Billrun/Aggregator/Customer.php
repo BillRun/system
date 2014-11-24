@@ -229,7 +229,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 
 					$current_plan_name = $subscriber->getCurrentPlanName();
 					if (is_null($current_plan_name) || $current_plan_name == "NULL") {
-
+						Billrun_Factory::log()->log("Subscriber " . $sid . " has current plan null and next plan null", Zend_Log::INFO);
 						$deactivated_subscribers[] = array("sid" => $sid);
 					}
 				} else {
