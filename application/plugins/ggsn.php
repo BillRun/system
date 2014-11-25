@@ -563,5 +563,19 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 		}
 		return $ret;
 	}
-
+	
+	public function beforeCommitSubscriberBalance(&$row, &$pricingData, &$query, &$update, $arate, $calculator) {
+		
+		if ($row['type'] != "ggsn") {
+			return;
+		}
+		if ($row['rat_type'] == "06") { //4G
+			$group = "4G";
+		} else {
+			$group = "3G";
+		}
+		$update['$inc']['balance.groups.' . $group   . '.usagev'] = $row['usagev'];
+		$update['$inc']['balance.groups.' . $group   . '.cost'] = $pricingData['aprice'];
+		$update['$inc']['balance.groups.' . $group   . '.count'] = 1;
+	}
 }
