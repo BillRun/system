@@ -114,7 +114,11 @@ class QueryaggregateAction extends QueryAction {
 	protected function fetchData($params) {
 		$model = new LinesModel($params['options']);
 		$lines = $model->getDataAggregated(array('$match' => $params['find']), array('$group' => $params['group']));
- 		$groupby_keys = array_reverse(array_keys($params['groupby']['_id']));
+		if (isset($params['groupby']['_id'])) {
+			$groupby_keys = array_reverse(array_keys($params['groupby']['_id']));
+		} else {
+			$groupby_keys = array();
+		}
 		$results = array();
 		foreach ($lines as $line) {
 			$row = $line->getRawData();
