@@ -23,7 +23,7 @@ class QueryaggregateAction extends QueryAction {
 	public function execute() {
 		Billrun_Factory::log()->log("Execute api query aggregate", Zend_Log::INFO);
 		$request = $this->getRequest()->getRequest(); // supports GET / POST requests
-		Billrun_Factory::log()->log("Input: " . print_R($request, 1), Zend_Log::INFO);
+		Billrun_Factory::log()->log("Input: " . print_R($request, 1), Zend_Log::DEBUG);
 
 		if (!isset($request['aid']) && !isset($request['sid'])) {
 			$this->setError('Require to supply aid or sid', $request);
