@@ -50,12 +50,12 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 					),
 					'date_seperation' => 'Ymd',
 					'stamp' => array(
-						'value' => array('sgsn_address', 'ggsn_address', 'sid', 'aid', 'arate', 'imsi', 'plan', 'rating_group', 'billrun'), 
+						'value' => array('sgsn_address', 'ggsn_address', 'sid', 'aid', 'arate', 'imsi', 'plan', 'rating_group', 'billrun', 'rat_type'), 
 						'field' => array('in_plan', 'out_plan', 'over_plan', 'aprice'),
 					),
 					'fields' => array(
 						'$set' => array('process_time'),
-						'$setOnInsert' => array('urt', 'imsi', 'usagesb', 'usaget', 'aid', 'sid', 'ggsn_address', 'sgsn_address', 'rating_group', 'arate', 'plan', 'billrun'),
+						'$setOnInsert' => array('urt', 'imsi', 'usagesb', 'usaget', 'aid', 'sid', 'ggsn_address', 'sgsn_address', 'rating_group', 'arate', 'plan', 'billrun', 'rat_type'),
 						'$inc' => array('usagev', 'aprice', 'apr', 'fbc_downlink_volume', 'fbc_uplink_volume', 'duration', 'in_plan', 'out_plan', 'over_plan'),
 					),
 				),
