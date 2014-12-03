@@ -746,22 +746,30 @@ class Billrun_Util {
 	 * @param type $defaultVal
 	 * @return type
 	 */
-	public static function getNestedArrayVal($array, $fields, $defaultVal = null) {
+	public static function getNestedArrayVal($array, $fields, $defaultVal = null,$retArr = FALSE) {
 		$fields = is_array($fields) ? $fields : explode('.', $fields);
 		$rawField = array_shift($fields);
 		preg_match("/\[([^\]]*)\]/", $rawField,$attr);		
-		if(!empty($attr)) {
-			$attr = explode("=",Billrun_Util::getFieldVal($attr[1],FALSE));
+		if(!empty($attr)) {//Allow for  multiple attribute checks
+			$attr = explode("=",Billrun_Util::getFieldVal($attr[1],FALSE)); 
 		}
 		$field = preg_replace("/\[[^\]]*\]/", "", $rawField); 
+		$aggregate = $retArr &&  ($field =='*') ;
 		$keys = ($field != "*") ? array($field) : array_keys($array);	
 		
+		$retVal = $aggregate ? array() : $defaultVal;
 		foreach ($keys as $key ) {
 			if( isset($array[$key]) && (empty($attr) || isset($array[$key][$attr[0]])) && (!isset($attr[1]) || $array[$key][$attr[0]] == $attr[1] ) ) {
-				return empty($fields) ? $array[$key] : static::getNestedArrayVal($array[$key], $fields, $defaultVal); 
+				if (!$aggregate) {
+					$retVal = empty($fields) ? $array[$key] : static::getNestedArrayVal($array[$key], $fields, $defaultVal,$retArr); 
+					break;
+				}
+				else {
+					$retVal[] = empty($fields) ? $array[$key] : static::getNestedArrayVal($array[$key], $fields, $defaultVal,$retArr); 
+				}
 			}
-		}
+		}		
 		
-		return $defaultVal;
+		return $retVal;
 	}
 }
