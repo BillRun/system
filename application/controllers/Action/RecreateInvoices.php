@@ -33,7 +33,8 @@ class RecreateInvoicesAction extends ApiAction {
 				'stamp' => $billrun_key,
 			);
 			$customer_aggregator_options = array(
-				'override_accounts' => $account_ids
+				'override_accounts' => $account_ids,
+				'bulk_account_preload' => 0,
 			);
 			$customerOptions = array(
 				'type' => 'customer',

@@ -23,7 +23,7 @@ class QueryaggregateAction extends QueryAction {
 	public function execute() {
 		Billrun_Factory::log()->log("Execute api query aggregate", Zend_Log::INFO);
 		$request = $this->getRequest()->getRequest(); // supports GET / POST requests
-		Billrun_Factory::log()->log("Input: " . print_R($request, 1), Zend_Log::INFO);
+		Billrun_Factory::log()->log("Input: " . print_R($request, 1), Zend_Log::DEBUG);
 
 		if (!isset($request['aid']) && !isset($request['sid'])) {
 			$this->setError('Require to supply aid or sid', $request);
@@ -79,21 +79,19 @@ class QueryaggregateAction extends QueryAction {
 			'page' => isset($request['page']) && $request['page'] > 0 ? (int) $request['page']: 0,
 			'size' =>isset($request['size']) && $request['size'] > 0 ? (int) $request['size']: 1000,
 		);
-		$model = new LinesModel($options);
-		$lines = $model->getDataAggregated(array('$match' => $find), array('$group' => $group));
+		
+		$cacheParams = array(
+			'fetchParams' => array(
+				'options' => $options,
+				'find' => $find,
+				'group' => $group,
+				'groupby' => $groupby,
+			),
+		);
 
- 		$groupby_keys = array_reverse(array_keys($groupby['_id']));
-		$results = array();
-		foreach ($lines as $line) {
-			$row = $line->getRawData();
-			foreach ($groupby_keys as $key) {
-				$row[$key] = $row['_id'][$key];
-			}
-			unset($row['_id']);
-			$results[] = array_reverse($row, true);
-		}
-
-		Billrun_Factory::log()->log("query success", Zend_Log::INFO);
+		$this->setCacheLifeTime(604800); // 1 week
+		$results = $this->cache($cacheParams);
+		Billrun_Factory::log()->log("Aggregate query success", Zend_Log::INFO);
 		$ret = array(
 			array(
 				'status' => 1,
@@ -105,4 +103,32 @@ class QueryaggregateAction extends QueryAction {
 		$this->getController()->setOutput($ret);
 	}
 
+	
+	/**
+	 * basic fetch data method used by the cache
+	 * 
+	 * @param array $params parameters to fetch the data
+	 * 
+	 * @return boolean
+	 */
+	protected function fetchData($params) {
+		$model = new LinesModel($params['options']);
+		$lines = $model->getDataAggregated(array('$match' => $params['find']), array('$group' => $params['group']));
+		if (isset($params['groupby']['_id'])) {
+			$groupby_keys = array_reverse(array_keys($params['groupby']['_id']));
+		} else {
+			$groupby_keys = array();
+		}
+		$results = array();
+		foreach ($lines as $line) {
+			$row = $line->getRawData();
+			foreach ($groupby_keys as $key) {
+				$row[$key] = $row['_id'][$key];
+			}
+			unset($row['_id']);
+			$results[] = array_reverse($row, true);
+		}
+		return $results;
+
+	}
 }
