@@ -83,7 +83,7 @@ class EventsModel extends TableModel {
 				'key' => 'manual_key',
 				'db_key' => 'nofilter',
 				'input_type' => 'multiselect',
-				'display' => 'Search_by',
+				'display' => 'Search by',
 				'values' => $search_by_values,
 				'singleselect' => 1,
 				'default' => array(),
