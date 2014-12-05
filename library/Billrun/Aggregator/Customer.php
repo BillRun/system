@@ -247,6 +247,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 					Billrun_Factory::log('Finished adding flat line to subscriber ' . $sid, Zend_Log::INFO);
 				}
 				$manual_lines = array_merge($manual_lines, $this->saveCreditLines($subscriber, $billrun_key));
+				$manual_lines = array_merge($manual_lines, $this->saveServiceLines($subscriber, $billrun_key));
 				$account_billrun->addSubscriber($subscriber, $subscriber_status);
 				Billrun_Factory::dispatcher()->trigger('afterAggregateSubscriber', array($subscriber, $account_billrun, &$this));
 			}
@@ -255,7 +256,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 			$account_billrun->filter_disconected_subscribers($deactivated_subscribers);
 
 			//save the billrun
-			if ($account_billrun->is_deactivated() === true){
+			if ($account_billrun->is_deactivated() === true) {
 				Billrun_Factory::log('deactivated account, no need for invoice ' . $accid, Zend_Log::DEBUG);
 				continue;
 			}
@@ -316,6 +317,39 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		return $flat_entry;
 	}
 
+	/**
+	 * create and save service lines
+	 * @param type $subscriber
+	 * @param type $billrun_key
+	 * @return array of inserted lines
+	 */
+	protected function saveServiceLines($subscriber, $billrun_key) {
+		$services = $subscriber->getServices($billrun_key, true);
+		$ret = array();
+		foreach ($services as $service) {
+			$rawData = $service->getRawData();
+			try {
+				$this->lines->insert($rawData, array("w" => 1));
+			} catch (Exception $e) {
+				if ($e->getCode() == 11000) {
+					Billrun_Factory::log("Service already exists for subscriber " . $subscriber->sid . " for billrun " . $billrun_key . " service details: " . print_R($rawData, 1), Zend_log::ALERT);
+				} else {
+					Billrun_Factory::log("Problem inserting service for subscriber " . $subscriber->sid . " for billrun " . $billrun_key
+						. ". error message: " . $e->getMessage() . ". error code: " . $e->getCode() . ". service details:" . print_R($rawData, 1), Zend_log::ALERT);
+					Billrun_Util::logFailedServiceRow($rawData);
+				}
+			}
+			$ret[$service['stamp']] = $service;
+		}
+		return $ret;
+	}
+
+	/**
+	 * create and save credit lines
+	 * @param type $subscriber
+	 * @param type $billrun_key
+	 * @return array of inserted lines
+	 */
 	protected function saveCreditLines($subscriber, $billrun_key) {
 		$credits = $subscriber->getCredits($billrun_key, true);
 		$ret = array();
