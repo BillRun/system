@@ -136,7 +136,10 @@ class Billrun_Billrun {
 		$subscriber_entry['subscriber_status'] = $status;
 		$subscriber_entry['current_plan'] = $current_plan_ref;
 		$subscriber_entry['next_plan'] = $next_plan_ref;
-		foreach ($subscriber->getExtraFieldsForBillrun() as $field) {
+		foreach ($subscriber->getExtraFieldsForBillrun() as $field => $save) {
+			if ($field == !$save) {
+				continue;
+			}
 			$subscriber_entry[$field] = $subscriber->{$field};
 		}
 		$subscribers[] = $subscriber_entry;
@@ -312,6 +315,9 @@ class Billrun_Billrun {
 		if ($row['type'] == 'credit') {
 			$plan_key = 'credit';
 			$zone_key = $row['service_name'];
+		} else if ($row['type'] == 'service') {
+			$plan_key = 'service';
+			$zone_key = $row['key'];
 		} else if (!isset($pricingData['over_plan']) && !isset($pricingData['out_plan'])) { // in plan
 			$plan_key = 'in_plan';
 			if ($row['type'] == 'flat') {
@@ -404,6 +410,8 @@ class Billrun_Billrun {
 				return 'flat';
 			case 'credit':
 				return 'credit';
+			case 'service':
+				return 'service';
 			default:
 				return 'call';
 		}
@@ -441,6 +449,12 @@ class Billrun_Billrun {
 				$sraw['costs']['credit'][$row['credit_type']][$vat_key] = $pricingData['aprice'];
 			} else {
 				$sraw['costs']['credit'][$row['credit_type']][$vat_key] += $pricingData['aprice'];
+			}
+		} else if ($row['type'] == 'service') {
+			if (!isset($sraw['costs']['service'][$vat_key])) {
+				$sraw['costs']['service'][$vat_key] = $pricingData['aprice'];
+			} else {
+				$sraw['costs']['service'][$vat_key] += $pricingData['aprice'];
 			}
 		}
 	}

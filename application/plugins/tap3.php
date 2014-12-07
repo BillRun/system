@@ -216,12 +216,14 @@ class tap3Plugin extends Billrun_Plugin_BillrunPluginBase implements Billrun_Plu
 		}
 
 		if (Billrun_Util::getNestedArrayVal($cdrLine, $mapping['sdr']) !== null) {
-			$cdrLine['sdr'] = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['sdr']) / $this->sdr_division_value;
+			$sdrs = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['sdr'], null, TRUE);
+			$sum = $this->sumup_arrays($sdrs, 20);
+			$cdrLine['sdr'] = $sum;
 			$cdrLine['exchange_rate'] = $this->exchangeRates[Billrun_Util::getNestedArrayVal($cdrLine, $mapping['exchange_rate_code'], 0)];
 		}
 
 		if (Billrun_Util::getNestedArrayVal($cdrLine, $mapping['sdr_tax']) !== null) {
-			$cdrLine['sdr_tax'] = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['sdr_tax']) / $this->sdr_division_value;			
+			$cdrLine['sdr_tax'] = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['sdr_tax']) / $this->sdr_division_value;
 		}
 
 		//save the sending source in each of the lines
@@ -360,6 +362,25 @@ class tap3Plugin extends Billrun_Plugin_BillrunPluginBase implements Billrun_Plu
 			}
 		}
 		$this->sdr_division_value = pow(10, $trailer['data']['trailer']['tap_decimal_places']);
+	}
+	/**
+	 * sum up all values of nested array on various levels (as long as it doesnt exceed limit
+	 * @param type $limit maximum recurrsion depth
+	 * @return sum of all values
+	 */
+	protected static function sumup_arrays($maybe_arr, $limit) {
+		if ($limit == 0) {
+			Billrun_Factory::log()->log('recurrsion is to deep, aborting...', Zend_Log::INFO);
+			return;
+		} if (!is_array($maybe_arr)) {
+			return $maybe_arr;
+		} else {
+			$sum = 0;
+			foreach ($maybe_arr as $var) {
+				$sum += static::sumup_arrays($var, $limit - 1);
+			}
+		}
+		return $sum;
 	}
 
 }
