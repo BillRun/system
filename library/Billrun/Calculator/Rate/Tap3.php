@@ -109,15 +109,15 @@ class Billrun_Calculator_Rate_Tap3 extends Billrun_Calculator_Rate {
 			$potential_rates = array();
 			if (isset($this->rates['by_names'][$serving_network])) {
 				foreach ($this->rates['by_names'][$serving_network] as $named_rate) {
-					if(is_array($named_rate['params']['sending_sources'])) {
+					if (is_array($named_rate['params']['sending_sources'])) {
 						if (!$sender || (isset($named_rate['params']['sending_sources']) && in_array($sender, $named_rate['params']['sending_sources']))) {
 							$potential_rates[] = $named_rate;
-						}	
+						}
 					} else {
-						if(is_string($named_rate['params']['sending_sources'])) {
-							if (!$sender || (isset($named_rate['params']['sending_sources']) && preg_match( $named_rate['params']['sending_sources'], $sender))) {
+						if (is_string($named_rate['params']['sending_sources'])) {
+							if (!$sender || (isset($named_rate['params']['sending_sources']) && preg_match($named_rate['params']['sending_sources'], $sender))) {
 								$potential_rates[] = $named_rate;
-							}	
+							}
 						}
 					}
 				}
@@ -126,15 +126,15 @@ class Billrun_Calculator_Rate_Tap3 extends Billrun_Calculator_Rate {
 				foreach ($this->rates['by_regex'] as $regex => $regex_rates) {
 					if (preg_match($regex, $serving_network)) {
 						foreach ($regex_rates as $regex_rate) {
-							if(is_array($regex_rate['params']['sending_sources'])) {
+							if (is_array($regex_rate['params']['sending_sources'])) {
 								if (!$sender || (isset($regex_rate['params']['sending_sources']) && in_array($sender, $regex_rate['params']['sending_sources']))) {
 									$potential_rates[] = $regex_rate;
 								}
 							} else {
-								if(is_string($regex_rate['params']['sending_sources'])) {
-									if (!$sender || (isset($regex_rate['params']['sending_sources']) && preg_match( $regex_rate['params']['sending_sources'], $sender))) {
+								if (is_string($regex_rate['params']['sending_sources'])) {
+									if (!$sender || (isset($regex_rate['params']['sending_sources']) && preg_match($regex_rate['params']['sending_sources'], $sender))) {
 										$potential_rates[] = $regex_rate;
-									}	
+									}
 								}
 							}
 						}
@@ -158,9 +158,9 @@ class Billrun_Calculator_Rate_Tap3 extends Billrun_Calculator_Rate {
 								}
 							} else {
 								if (in_array($call_number, $rate['params']['prefix']) && strlen($call_number) > $prefix_length_matched) {
-										$prefix_length_matched = strlen($call_number);
-										$matchedRate = $rate;
-									}
+									$prefix_length_matched = strlen($call_number);
+									$matchedRate = $rate;
+								}
 							}
 						}
 					}
