@@ -707,7 +707,6 @@ class AdminController extends Yaf_Controller_Abstract {
 		if ($this->getRequest()->getActionName() == "tabledate") {
 			$parameters['active'] = $this->_request->getParam("table");
 		}
-		$parameters['active'] = "111";
 
 		$parameters['title'] = $this->title;
 		$parameters['baseUrl'] = $this->baseUrl;
