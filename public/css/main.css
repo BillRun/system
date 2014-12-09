@@ -296,3 +296,7 @@ div.billrun-logo img {
 .num-cell {
 	text-align: right;
 }
+.edit_checkboxes {
+/* clear: both; */
+float: left;
+}

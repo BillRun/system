@@ -38,5 +38,31 @@ class PlansModel extends TabledateModel {
 		);
 		return array_merge($sort_fields, parent::getSortFields());
 	}
+	
+	public function update($params) {
+		$source_id = $params['source_id'];
+		$duplicate = $params['duplicate_rates'];
+		unset($params['duplicate_rates']);
+		$entity = parent::update($params);
+		if ($duplicate) {
+			$new_id = $entity['_id']->getMongoID();
+			self::duplicate_rates ($source_id,$new_id);
+		}
+		return $entity;
+	}
+	/**
+	 * for every rate who has ref to original plan add ref to new plan
+	 * @param type $source_id
+	 * @param type $new_id
+	 */
+	public function duplicate_rates($source_id,$new_id) {
+		$rates_col = Billrun_Factory::db()->ratesCollection();
+		$source_ref = MongoDBRef::create("plans", $source_id);
+		$dest_ref = MongoDBRef::create("plans", $new_id);
+		$query = array("rates.call.plans" => $source_ref);
+		$update = array('$push' => array("rates.call.plans" => $dest_ref));
+		$params = array("multiple" => 1);
+		$rates_col->update($query, $update, $params);
+	}
 
 }
