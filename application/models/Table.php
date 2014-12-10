@@ -284,7 +284,7 @@ class TableModel {
 			$entity->setRawData($new_data);
 		} else {
 			$entity = new Mongodloid_Entity($params);
-		} ///////////////////////////////////////////////now you can call it but you must have the original id
+		}
 		$entity->save($this->collection);
 //		if (method_exists($this, $coll . 'AfterDataSave')) {
 //			call_user_func_array(array($this, $coll . 'AfterDataSave'), array($collection, &$newEntity));
@@ -431,7 +431,7 @@ class TableModel {
 		if ($count) {
 			die(json_encode("key already exists"));
 		}
-		$params['source_id'] = 	$params['_id'];
+		$params['source_id'] = $params['_id'];
 		unset($params['_id']);
 		return $this->update($params);
 	}

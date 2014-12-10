@@ -215,7 +215,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$id = Billrun_Util::filter_var($this->getRequest()->get('id'), FILTER_SANITIZE_STRING);
 		$coll = Billrun_Util::filter_var($this->getRequest()->get('coll'), FILTER_SANITIZE_STRING);
 		$dup_rates = $this->getRequest()->get('duplicate_rates');
-		$duplicate_rates = ($dup_rates == 'true') ? true : false; 
+		$duplicate_rates = ($dup_rates == 'true') ? true : false;
 		$model = self::initModel($coll);
 
 		$collection = Billrun_Factory::db()->getCollection($coll);
@@ -707,7 +707,6 @@ class AdminController extends Yaf_Controller_Abstract {
 		if ($this->getRequest()->getActionName() == "tabledate") {
 			$parameters['active'] = $this->_request->getParam("table");
 		}
-		$parameters['active'] = "111";
 
 		$parameters['title'] = $this->title;
 		$parameters['baseUrl'] = $this->baseUrl;
