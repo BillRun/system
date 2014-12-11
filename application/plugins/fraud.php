@@ -219,7 +219,11 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$usaget = $row['usaget'];
 
 		// if the limit for specific plans
-		if (isset($rule['limitPlans']) && is_array($rule['limitPlans']) && !in_array(strtoupper($row['plan']), $rule['limitPlans'])) {
+		// @todo: make the first if-condition as override (means be able to apply limit & exclude together)
+		if (
+			(isset($rule['limitPlans']) && is_array($rule['limitPlans']) && !in_array(strtoupper($row['plan']), $rule['limitPlans'])) ||
+			(isset($rule['excludePlans']) && is_array($rule['excludePlans']) && in_array(strtoupper($row['plan']), $rule['excludePlans']))
+			) {
 			return false;
 		} else if (isset($rule['limitGroups'])) { // if limit by specific groups
 			if ((is_array($rule['limitGroups']) && isset($row['arategroup']) && !in_array(strtoupper($row['arategroup']), $rule['limitGroups'])) || !isset($row['arategroup'])) {

@@ -214,7 +214,8 @@ class AdminController extends Yaf_Controller_Abstract {
 		$type = Billrun_Util::filter_var($this->getRequest()->get('type'), FILTER_SANITIZE_STRING);
 		$id = Billrun_Util::filter_var($this->getRequest()->get('id'), FILTER_SANITIZE_STRING);
 		$coll = Billrun_Util::filter_var($this->getRequest()->get('coll'), FILTER_SANITIZE_STRING);
-
+		$dup_rates = $this->getRequest()->get('duplicate_rates');
+		$duplicate_rates = ($dup_rates == 'true') ? true : false;
 		$model = self::initModel($coll);
 
 		$collection = Billrun_Factory::db()->getCollection($coll);
@@ -233,7 +234,9 @@ class AdminController extends Yaf_Controller_Abstract {
 		} else {
 			$params = $data;
 		}
-
+		if ($duplicate_rates) {
+			$params = array_merge($params, array('duplicate_rates' => $duplicate_rates));
+		}
 		if ($type == 'update') {
 			$saveStatus = $model->update($params);
 		} else if ($type == 'close_and_new') {
