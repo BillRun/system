@@ -287,6 +287,15 @@ class Subscriber_Golan extends Billrun_Subscriber {
 								}
 								$concat['data']['credits'] = $credits;
 							}
+							
+							if (isset($subscriber['did_premium'])) {
+								$count = intval($subscriber['did_premium']);
+								 while ($count > 0) {
+									 $subscriber['services'][] = 'DID_PREMIUM';
+									 $count--;
+									
+								}
+							}
 
 							if (isset($subscriber['services']) && is_array($subscriber['services'])) {
 								$reduced = array();
