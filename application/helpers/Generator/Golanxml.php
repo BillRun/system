@@ -185,7 +185,7 @@ class Generator_Golanxml extends Billrun_Generator {
 		$invoice_total_manual_correction_credit = 0;
 		$invoice_total_manual_correction_charge = 0;
 		$invoice_total_outside_gift_novat = 0;
-		$invoice_total_service = 0;
+		$invoice_total_did_premium = 0;
 		$billrun_key = $billrun['billrun_key'];
 		$aid = $billrun['aid'];
 		Billrun_Factory::log()->log("xml account " . $aid, Zend_Log::INFO);
@@ -382,8 +382,8 @@ class Generator_Golanxml extends Billrun_Generator {
 			$this->writer->writeElement('TOTAL_MANUAL_CORRECTION', $subscriber_sumup_TOTAL_MANUAL_CORRECTION);
 			$subscriber_sumup_TOTAL_OUTSIDE_GIFT_NOVAT = floatval((isset($subscriber['costs']['out_plan']['vat_free']) ? $subscriber['costs']['out_plan']['vat_free'] : 0)) + floatval((isset($subscriber['costs']['over_plan']['vat_free']) ? $subscriber['costs']['over_plan']['vat_free'] : 0));
 			$this->writer->writeElement('TOTAL_OUTSIDE_GIFT_NOVAT', $subscriber_sumup_TOTAL_OUTSIDE_GIFT_NOVAT);
-			$subscriber_sumup_TOTAL_SRVICES = floatval((isset($subscriber['costs']['service']['vat_free']) ? $subscriber['costs']['service']['vat_free'] : 0)) + floatval((isset($subscriber['costs']['service']['vatable']) ? $subscriber['costs']['service']['vatable'] : 0));
-			$this->writer->writeElement('TOTAL_SERVICES', $subscriber_sumup_TOTAL_SRVICES);
+			$subscriber_sumup_TOTAL_DID_PREMIUM = floatval((isset($subscriber['costs']['service']['vat_free']) ? $subscriber['costs']['service']['vat_free'] : 0)) + floatval((isset($subscriber['costs']['service']['vatable']) ? $subscriber['costs']['service']['vatable'] : 0));
+			$this->writer->writeElement('TOTAL_DID_PREMIUM', $subscriber_sumup_TOTAL_DID_PREMIUM);
 			$subscriber_before_vat = $this->getSubscriberTotalBeforeVat($subscriber);
 			$subscriber_after_vat = $this->getSubscriberTotalAfterVat($subscriber);
 			$this->writer->writeElement('TOTAL_VAT', $subscriber_after_vat - $subscriber_before_vat);
@@ -397,7 +397,7 @@ class Generator_Golanxml extends Billrun_Generator {
 			$invoice_total_manual_correction_credit += $subscriber_sumup_TOTAL_MANUAL_CORRECTION_CREDIT;
 			$invoice_total_manual_correction_charge += $subscriber_sumup_TOTAL_MANUAL_CORRECTION_CHARGE;
 			$invoice_total_outside_gift_novat +=$subscriber_sumup_TOTAL_OUTSIDE_GIFT_NOVAT;
-			$invoice_total_service += $subscriber_sumup_TOTAL_SRVICES;
+			$invoice_total_did_premium += $subscriber_sumup_TOTAL_DID_PREMIUM;
 			$this->writer->endElement(); // end SUBSCRIBER_SUMUP
 
 			$this->writer->startElement('SUBSCRIBER_BREAKDOWN');
@@ -663,7 +663,7 @@ class Generator_Golanxml extends Billrun_Generator {
 		$this->writer->writeElement('TOTAL_MANUAL_CORRECTION', $invoice_total_manual_correction);
 		$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_CREDIT', $invoice_total_manual_correction_credit);
 		$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_CHARGE', $invoice_total_manual_correction_charge);
-		$this->writer->writeElement('TOTAL_SERVICE', $invoice_total_service);
+		$this->writer->writeElement('TOTAL_DID_PREMIUM', $invoice_total_did_premium);
 		$this->writer->writeElement('TOTAL_OUTSIDE_GIFT_NOVAT', $invoice_total_outside_gift_novat);
 		$this->writer->writeElement('TOTAL_VAT', $account_after_vat - $account_before_vat);
 		$this->writer->writeElement('TOTAL_CHARGE_NO_VAT', $account_before_vat);
