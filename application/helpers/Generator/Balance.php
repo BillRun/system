@@ -96,7 +96,7 @@ class Generator_Balance extends Generator_Golanxml {
 				$flat_entry = $subscriber->getFlatEntry($this->stamp, true);
 				$manual_lines = array_merge($manual_lines, array($flat_entry['stamp'] => $flat_entry));
 			}
-			$manual_lines = array_merge($manual_lines, $subscriber->getCredits($this->stamp, true));
+			$manual_lines = array_merge($manual_lines, $subscriber->getCredits($this->stamp, true), $subscriber->getServices($this->stamp, true));
 			$billrun->addSubscriber($subscriber, $subscriber_status);
 		}
 //		print_R($manual_lines);die;

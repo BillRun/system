@@ -613,6 +613,9 @@ class Billrun_Billrun {
 	 * @return Mongodloid_Entity the corresponding rate
 	 */
 	protected static function getRateById($id) {
+		if (empty($id)) {
+			return;
+		}
 		if (!isset(self::$rates[$id])) {
 			$rates_coll = Billrun_Factory::db()->ratesCollection();
 			self::$rates[$id] = $rates_coll->findOne($id);
