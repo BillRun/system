@@ -23,13 +23,18 @@ class IrddaysAction extends Action_Base {
 		Billrun_Factory::log()->log("Execute ird days API call", Zend_Log::INFO);
 		$request = $this->getRequest();
 		$sid = intval($request->get("sid"));
-		$days = $this->count_days($sid);
+		$results = $this->count_days($sid);
+		if (isset($results[0]["count"])) {
+			$days = $results[0]["count"];
+		} else {
+			$days = 0;
+		}
 		$this->getController()->setOutput(array(
 			'status' => 1,
 			'desc' => 'success',
-			'input' => $post,
+			'input' => $request,
 			'details' => array(
-				'days' => $days[0]["count"],
+				'days' => $days,
 				'min_day' => 40,
 				'max_day' => 40,
 			)
