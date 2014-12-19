@@ -11,7 +11,7 @@
 if [ $1 ]; then
 	billrun_env=$1;
 else
-	echo "please supply environment to run (second argument)"
+	echo "please supply environment to run (first argument)"
 	exit 2
 fi
 
