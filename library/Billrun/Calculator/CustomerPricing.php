@@ -210,7 +210,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array($row, $this));
 			return $row;
 		} catch (Exception $e) {
-			Billrun_Factory::log()->log('Line with stamp ' . $row['stamp'] . ' carshed when trying to price it. got exception :' . $e->getCode() . ' : ' . $e->getMessage() . "\n trace :" . $e->getTraceAsString(), Zend_Log::ERR);
+			Billrun_Factory::log()->log('Line with stamp ' . $row['stamp'] . ' crashed when trying to price it. got exception :' . $e->getCode() . ' : ' . $e->getMessage() . "\n trace :" . $e->getTraceAsString(), Zend_Log::ERR);
 			return false;
 		}
 	}
