@@ -74,13 +74,4 @@ class Billrun_Calculator_Rate_Service extends Billrun_Calculator_Rate {
 		}
 	}
 	
-	public function updateRow($row) {
-		parent::updateRow($row);
-		$usage_type = $this->getLineUsageType($row);
-		$rate = $this->getLineRate($row, $usage_type);
-		if (!empty($rate['key'])) {
-			$row->set('key', $rate['key'], true);
-		}
-	}
-
 }
