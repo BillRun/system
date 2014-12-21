@@ -63,7 +63,7 @@ class Billrun_Config {
 			$configColl = Billrun_Factory::db()->configCollection();
 			if ($configColl) {
 				$dbConfig = $configColl->query()
-					->cursor()
+					->cursor()->setReadPreference('RP_PRIMARY')
 					->sort(array('_id' => -1))
 					->limit(1)
 					->current()
