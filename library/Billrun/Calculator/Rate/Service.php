@@ -45,7 +45,7 @@ class Billrun_Calculator_Rate_Service extends Billrun_Calculator_Rate {
 	 */
 	protected function getLineRate($row, $usage_type) {
 
-		$line_key = $row['key'];
+		$line_key = $row['service_name'];
 		$line_time = $row['urt'];
 		foreach ($this->rates as $rate) {
 			if ( ($rate['key'] == $line_key) && ($line_time >= $rate['from']) && ($line_time <= $rate['to']) ) {
@@ -71,6 +71,15 @@ class Billrun_Calculator_Rate_Service extends Billrun_Calculator_Rate {
 		foreach ($rates as $rate) {
 			$rate->collection($rates_coll);
 			$this->rates[] = $rate;
+		}
+	}
+	
+	public function updateRow($row) {
+		parent::updateRow($row);
+		$usage_type = $this->getLineUsageType($row);
+		$rate = $this->getLineRate($row, $usage_type);
+		if (!empty($rate['key'])) {
+			$row->set('key', $rate['key'], true);
 		}
 	}
 
