@@ -275,7 +275,9 @@ class Generator_Golancsv extends Billrun_Generator {
 
 	protected function getManualCorrectionCharge($subscriber) {
 		return floatval(isset($subscriber['costs']['credit']['charge']['vatable']) ? $subscriber['costs']['credit']['charge']['vatable'] : 0) +
-				floatval(isset($subscriber['costs']['credit']['charge']['vat_free']) ? $subscriber['costs']['credit']['charge']['vat_free'] : 0);
+				floatval(isset($subscriber['costs']['credit']['charge']['vat_free']) ? $subscriber['costs']['credit']['charge']['vat_free'] : 0) +
+				floatval(isset($subscriber['costs']['service']['vatable']) ? $subscriber['costs']['service']['vatable'] : 0) +
+				floatval(isset($subscriber['costs']['service']['vat_free']) ? $subscriber['costs']['service']['vat_free'] : 0);
 	}
 
 	protected function getOutsidePackageNoVatTap3($subscriber) {
