@@ -147,8 +147,9 @@ class Generator_Golanxml extends Billrun_Generator {
 		$this->writer->openURI($invoice_file_path);
 		$this->writeXML($row, $lines);
 		@chmod($invoice_file_path, 0777); // make the file writable for enable re-creation through admin
-		if (!$this->validateXml($invoice_file_path)) {
-			Billrun_Factory::log('Xml file is not valid: ' . $invoice_file_path, Zend_log::ALERT);
+		$xml_validation = $this->validateXml($invoice_file_path);
+		if ($xml_validation !== TRUE) {
+			Billrun_Factory::log('Xml file is not valid: ' . $invoice_file_path . ((is_array($xml_validation)) ? PHP_EOL . "xml errors: " . print_R($xml_validation, 1) : ''), Zend_log::ALERT);
 		}
 		$this->setFileStamp($row, $invoice_filename);
 		Billrun_Factory::log()->log("invoice file " . $invoice_filename . " created for account " . $row->get('aid'), Zend_Log::INFO);
@@ -168,7 +169,13 @@ class Generator_Golanxml extends Billrun_Generator {
 		while ($this->reader->read()) {
 			
 		}
-		return count(libxml_get_errors()) == 0;
+		$xml_errors = libxml_get_errors();
+		if (count($xml_errors) === 0) {
+			return TRUE;
+		} else {
+			libxml_clear_errors();
+			return $xml_errors;
+		}
 	}
 
 	/**
