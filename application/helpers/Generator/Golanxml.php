@@ -160,7 +160,7 @@ class Generator_Golanxml extends Billrun_Generator {
 	 * 
 	 * @param string $file_path xml file path on disk
 	 * 
-	 * @return boolean true if xml valid, else false
+	 * @return mixed true if xml valid, else array if xml errors raised, else false
 	 */
 	protected function validateXml($file_path) {
 		if (!$this->reader->open($file_path)) {
