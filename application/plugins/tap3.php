@@ -218,7 +218,7 @@ class tap3Plugin extends Billrun_Plugin_BillrunPluginBase implements Billrun_Plu
 		if (Billrun_Util::getNestedArrayVal($cdrLine, $mapping['sdr']) !== null) {
 			$sdrs = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['sdr'], null, TRUE);
 			$sum = $this->sumup_arrays($sdrs, 20);
-			$cdrLine['sdr'] = $sum;
+			$cdrLine['sdr'] = $sum/$this->sdr_division_value;
 			$cdrLine['exchange_rate'] = $this->exchangeRates[Billrun_Util::getNestedArrayVal($cdrLine, $mapping['exchange_rate_code'], 0)];
 		}
 
