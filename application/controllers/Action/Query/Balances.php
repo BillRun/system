@@ -53,6 +53,9 @@ class BalancesAction extends ApiAction {
 
 		if (isset($request['billrun'])) {
 			$find['billrun'] = $this->getBillrunQuery($request['billrun']);
+		} else {
+				$this->setError('Require to supply billrun', $request);
+				return true;
 		}
 
 		$cacheParams = array(
