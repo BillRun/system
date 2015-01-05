@@ -8,11 +8,11 @@
 require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
 
 /**
- * Query action class
+ * Balances query action class
  *
  * @package  Action
  * 
- * @since    2.6
+ * @since    2.8
  */
 class BalancesAction extends ApiAction {
 
@@ -52,7 +52,7 @@ class BalancesAction extends ApiAction {
 		}
 
 		if (isset($request['billrun'])) {
-			$find['billrun'] = $this->getBillrunQuery($request['billrun']);
+			$find['billrun_month'] = $this->getBillrunQuery($request['billrun']);
 		} else {
 				$this->setError('Require to supply billrun', $request);
 				return true;
