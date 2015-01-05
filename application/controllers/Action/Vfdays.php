@@ -23,7 +23,9 @@ class VfdaysAction extends Action_Base {
 		Billrun_Factory::log()->log("Execute ird days API call", Zend_Log::INFO);
 		$request = $this->getRequest();
 		$sid = intval($request->get("sid"));
-		$results = $this->count_days($sid);
+		$year = intval($request->get("year"));
+
+		$results = $this->count_days($sid, $year);
 		if (isset($results[0]["count"])) {
 			$days = $results[0]["count"];
 		} else {
@@ -47,8 +49,11 @@ class VfdaysAction extends Action_Base {
 	 * @param type $sid
 	 * @return number of days 
 	 */
-	public function count_days($sid) {
-		$this_year = date("Y");
+	public function count_days($sid, $year = null) {
+		if (is_null($year) || empty($year)) {
+			$year = date("Y");
+		}
+		
 		$ggsn_fields = Billrun_Factory::config()->getConfigValue('ggsn.fraud.groups.vodafone15');
 		$sender = Billrun_Factory::config()->getConfigValue('nrtrde.fraud.groups.vodafone15');
 		$match = array(
@@ -59,12 +64,12 @@ class VfdaysAction extends Action_Base {
 					array_merge(
 						array(
 						'type' => "ggsn",
-						'record_opening_time' => new MongoRegex("/^$this_year/"),
+						'record_opening_time' => new MongoRegex("/^$year/"),
 						), $ggsn_fields
 					),
 					array(
 						'type' => "nrtrde",
-						'callEventStartTimeStamp' => new MongoRegex("/^$this_year/"),
+						'callEventStartTimeStamp' => new MongoRegex("/^$year/"),
 						'sender' => array('$in' => $sender),
 						'$or' => array(
 							array(
