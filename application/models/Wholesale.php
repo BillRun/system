@@ -98,11 +98,11 @@ class WholesaleModel {
 	 * @return array of results
 	 */
 	public function getData($group_field, $from_day, $to_day, $carrier = null) {
-		$query = 'SELECT ' . ($group_field == 'carrier' ? 'cgr_compressed.longname' : 'dayofmonth') . ' AS group_by, usaget, sum(duration) AS duration, round(sum(duration)/pow(1024,2)*0.0297,2) AS cost '
-				. 'FROM wholesale left join cgr_compressed ON wholesale.carrier=cgr_compressed.shortname '
+		$query = 'SELECT ' . ($group_field == 'carrier' ? 'cgr_compressed.company_name' : 'dayofmonth') . ' AS group_by, usaget, sum(duration) AS duration, round(sum(duration)/pow(1024,2)*0.0297,2) AS cost '
+				. 'FROM wholesale left join cgr_compressed ON wholesale.carrier=cgr_compressed.carrier '
 				. 'WHERE usaget like "data" AND wholesale.carrier NOT IN ("GT", "OTHER") AND dayofmonth BETWEEN "' . $from_day . '" AND "' . $to_day . '" ';
 		if ($carrier) {
-			$query .= ' AND longname LIKE "' . $carrier . '"';
+			$query .= ' AND company_name LIKE "' . $carrier . '"';
 		}
 		$query.= 'GROUP by group_by';
 
@@ -119,22 +119,22 @@ class WholesaleModel {
 	}
 
 	public function getCall($direction, $group_field, $from_day, $to_day, $carrier = null, $network = 'all') {
-		$sub_query = 'SELECT usaget, dayofmonth, longname as carrier, sum(duration) as seconds,'
+		$sub_query = 'SELECT usaget, dayofmonth, company_name as carrier, sum(duration) as seconds,'
 				. 'CASE WHEN network like "nr" THEN sum(duration)/60*0.053'
-				. ' WHEN carrier like "N%" and direction like "FG" THEN sum(duration)/60*0.0101002109924085'
-				. ' WHEN carrier like "I%" and direction like "FG" THEN sum(duration)/60*-0.0614842117289702'
+				. ' WHEN wholesale.carrier like "N%" and direction like "FG" THEN sum(duration)/60*0.0101002109924085'
+				. ' WHEN wholesale.carrier like "I%" and direction like "FG" THEN sum(duration)/60*-0.0614842117289702'
 				. ' ELSE sum(duration)/60*0.0614842117289702 END as cost'
-				. ' FROM wholesale left join cgr_compressed on wholesale.carrier=cgr_compressed.shortname'
+				. ' FROM wholesale left join cgr_compressed on wholesale.carrier=cgr_compressed.carrier'
 				. ' WHERE'
 				. ' wholesale.carrier NOT IN("DDWW", "DKRT", "GPRT", "GT", "LALC", "LCEL", "NSML", "PCTI", "POPC") AND' // temporary exclude these carriers until Dror explains them
 				. ' direction like "' . $direction . '" AND network like "' . $network . '" AND dayofmonth BETWEEN "' . $from_day . '" AND "' . $to_day . '"'
 				. ' GROUP BY dayofmonth,wholesale.carrier,usaget,direction'
-				. ' ORDER BY usaget,dayofmonth,longname';
+				. ' ORDER BY usaget,dayofmonth,company_name';
 
 		$query = 'SELECT ' . $group_field . ' AS group_by, usaget ,sum(seconds) as duration, round(sum(cost),2) as cost from (' . $sub_query . ') as sq';
 
 		if ($carrier) {
-			$query .= ' WHERE carrier LIKE "' . $carrier . '"';
+			$query .= ' WHERE wholesale.carrier LIKE "' . $carrier . '"';
 		}
 
 		$query .= ' GROUP BY ' . $group_field;
