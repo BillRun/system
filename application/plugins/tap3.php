@@ -186,6 +186,8 @@ class tap3Plugin extends Billrun_Plugin_BillrunPluginBase implements Billrun_Plu
 						$cdrLine['called_number'] = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['dialed_digits']);
 					} else if (isset($cdrLine['basicCallInformation']['Desination']['CalledNumber'])) { // @todo check with sefi. reference: db.lines.count({'BasicServiceUsedList.BasicServiceUsed.BasicService.BasicServiceCode.TeleServiceCode':"22",record_type:'9','basicCallInformation.Desination.DialedDigits':{$exists:false}});)
 						$cdrLine['called_number'] = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['called_number']);
+					} else if (isset($cdrLine['basicCallInformation']['Destination']['CalledNumber'])) { // take the same last rule but this time with misspell fix (Destination)
+						$cdrLine['called_number'] = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['called_number']);
 					}
 				}
 			} else if ($record_type == 'a') {
