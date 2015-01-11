@@ -267,22 +267,33 @@ class Subscriber_Golan extends Billrun_Subscriber {
 				foreach ($output_arr as $aid => $account) {
 					if (isset($account['subscribers'])) {
 						foreach ($account['subscribers'] as $subscriber) {
+							$sid = intval($subscriber['subscriber_id']);
 							$concat = array(
 								'time' => $time,
 								'data' => array(
 									'aid' => intval($aid),
-									'sid' => intval($subscriber['subscriber_id']),
-									'plan' => isset($subscriber['curr_plan']) ? $subscriber['curr_plan'] : null,
-									'next_plan' => isset($subscriber['next_plan']) ? $subscriber['next_plan'] : null,
+									'sid' => $sid,
 								),
 							);
+
+							if ($sid) {
+								$concat['data']['plan'] = isset($subscriber['curr_plan']) ? $subscriber['curr_plan'] : null;
+								$concat['data']['next_plan'] = isset($subscriber['next_plan']) ? $subscriber['next_plan'] : null;
+							} else {
+								$concat['data']['plan'] = 'ACCOUNT';
+								$concat['data']['next_plan'] = 'ACCOUNT';
+							}
 
 							if (isset($subscriber['occ']) && is_array($subscriber['occ'])) {
 								$credits = array();
 								foreach ($subscriber['occ'] as $credit) {
 									$credit['aid'] = $concat['data']['aid'];
 									$credit['sid'] = $concat['data']['sid'];
-									$credit['plan'] = $concat['data']['plan'];
+									if ($sid) {
+										$credit['plan'] = $concat['data']['plan'];
+									} else {
+										$credit['plan'] = 'ACCOUNT';
+									}
 									$credits[] = $credit;
 								}
 								$concat['data']['credits'] = $credits;
@@ -308,13 +319,16 @@ class Subscriber_Golan extends Billrun_Subscriber {
 								}
 								$services = array();
 								foreach ($reduced as $service_name => $service_count) {
-
 									$service = array();
 									$service['service_name'] = $service_name;
 									$service['count'] = $service_count;
 									$service['aid'] = $concat['data']['aid'];
 									$service['sid'] = $concat['data']['sid'];
-									$service['plan'] = $concat['data']['plan'];
+									if ($sid) {
+										$service['plan'] = $concat['data']['plan'];
+									} else {
+										$service['plan'] = 'ACCOUNT';
+									}
 									$services[] = $service;
 								}
 								$concat['data']['sub_services'] = $services;
