@@ -44,7 +44,7 @@ foreach ($this->data as $item) {
 		} else if (($active == 'balances' && is_numeric($data) && !in_array($h, array('aid', 'sid')) && strpos($h, 'billrun') === FALSE) || ($active == 'lines' && ($h == 'aprice' || $h == 'usagev' || $h == 'usagesb'))) {
 			if (is_float($data) && strpos($h, 'usage') === FALSE) { // hack: is_float sometimes take long numbers as float
 				print number_format($data, 2);
-			} else if (($active == 'lines' && $item['usaget'] == 'data') || ($active == 'balances' && strpos($h, 'usage') !== FALSE && strpos($h, 'data') !== FALSE)) {
+			} else if (($active == 'lines' && $item['usaget'] == 'data') || ($active == 'balances' && strpos($columnName, 'usage') !== FALSE && strpos($columnName, 'data') !== FALSE)) {
 				print Billrun_Util::byteFormat($data, null, 3, true);
 			} else {
 				print number_format($data, 0);
