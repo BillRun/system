@@ -264,6 +264,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 			$subscriber_general_settings = Billrun_Config::getInstance()->getConfigValue('subscriber', array());
 			if (is_array($output_arr) && !empty($output_arr)) {
 				$ret_data = array();
+				$billrun_fields = array_keys(self::getExtraFieldsForBillrun());
 				foreach ($output_arr as $aid => $account) {
 					if (isset($account['subscribers'])) {
 						foreach ($account['subscribers'] as $subscriber) {
@@ -292,6 +293,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 									if ($sid) {
 										$credit['plan'] = $concat['data']['plan'];
 									} else {
+										$credit['subscriber_id'] = $sid;
 										$credit['plan'] = 'ACCOUNT';
 									}
 									$credits[] = $credit;
@@ -334,7 +336,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 								$concat['data']['sub_services'] = $services;
 							}
 
-							foreach (self::getExtraFieldsForBillrun() as $field => $dont_care) {
+							foreach ($billrun_fields as $field) {
 								if (isset($subscriber[$field])) {
 									$concat['data'][$field] = $subscriber[$field];
 								}
