@@ -224,19 +224,21 @@ class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 	 */
 	public function load() {
 
-		$min_time = (string) date('Ymd000000', strtotime('3 months ago'));
+		$min_time = (string) date('Ymd000000', strtotime('7 months ago'));
 		$lines = Billrun_Factory::db()->linesCollection();
 		$this->data = $lines->query(array(
 					'$or' => array(
-						array('source' => 'ilds'),
+						array('source' => 'premium'), //premium or ilds!!!
 						array('source' => 'api', 'type' => 'refund', 'reason' => 'ILDS_DEPOSIT')
 					),
-					'call_start_dt' => array('$gte' => $min_time),
+					'service_start_dt' => array('$gte' => $min_time),
+//					'billrun' => array('$exists' => )
 				))
-				->notExists('billrun')
-				//->exists('price_provider')
-				->exists('price_customer')
-				->cursor()->hint(array('source' => 1));
+//				->notExists('billrun')
+//				->exists('price_provider')
+//				->exists('price_customer')
+//				->cursor()->hint(array('source' => 1));
+				->cursor();
 
 		Billrun_Factory::log()->log("aggregator entities loaded: " . $this->data->count(), Zend_Log::INFO);
 

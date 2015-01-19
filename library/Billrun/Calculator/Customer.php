@@ -31,8 +31,8 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		$lines = Billrun_Factory::db()->linesCollection();
 
 		return $lines->query(array(
-					'source' => 'ilds',
-                                        'unified_record_time' => array('$gt' => new MongoDate(strtotime('-3 month'))),
+					'source' => array('$in' => array('ilds','premium')),
+                                        'unified_record_time' => array('$gt' => new MongoDate(strtotime('-7 month'))),
 					'$or' => array(
 						array('account_id' => array('$exists' => false)),
 						array('subscriber_id' => array('$exists' => false))
@@ -51,12 +51,24 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			$time = date("YmtHis", $row->get('unified_record_time')->sec);
 			$phone_number = $row->get('NDC_SN');
 		} else {
-			$time = $row->get('call_start_dt');
+			if (null != $row->get('call_start_dt')) {
+				$time = $row->get('call_start_dt');
+			} else if(null != $row->get('service_start_dt')) {
+				$time = $row->get('service_start_dt');
+			}
 			$phone_number = $row->get('caller_phone_no');
 		}
-
+		if ($row->get('source') == 'premium') { //todo: modify this!
+			$phone_number = "546918666";
+			$time =  "20141219174831";
+			$format_time = date(Billrun_Base::base_dateformat, strtotime($time));
+		} //todo: modify this!
+		$params = array(array('NDC_SN' => $phone_number, 'time' => $format_time, 'stamp' => $row->get('stamp'), 'EXTRAS' => 0, 'DATETIME' => $format_time)); //todo: modify this!
 		// load subscriber
-		$subscriber = golan_subscriber::get($phone_number, $time);
+		$golan = new Subscriber_Golan();
+//		$subscriber = golan_subscriber::get($phone_number, $time);
+		$list = $golan->requestList($params);
+		$subscriber = $list[0];
 		if (!$subscriber) {
 			Billrun_Factory::log()->log("subscriber not found. phone:" . $phone_number . " time: " . $time, Zend_Log::INFO);
 			return false;
@@ -64,13 +76,13 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		
 		$current = $row->getRawData();
 		
-		if (!isset($subscriber['id']) || !isset($subscriber['account_id'])) {
+		if (!isset($subscriber['subscriber_id']) || !isset($subscriber['account_id'])) {
 			Billrun_Factory::log()->log("subscriber_id or account_id not found. phone:" . $phone_number . " time: " . $time, Zend_Log::WARN);
 			return false;
 		}
 		
-                Billrun_Factory::log()->log("update line: ". $row->get('stamp') ." subscriber_id: ".$subscriber['id'].", account_id: ". $subscriber['account_id'], Zend_Log::INFO);
-		$added_values = array('subscriber_id' => $subscriber['id'], 'account_id' => $subscriber['account_id']);
+                Billrun_Factory::log()->log("update line: ". $row->get('stamp') ." subscriber_id: ".$subscriber['subscriber_id'].", account_id: ". $subscriber['account_id'], Zend_Log::INFO);
+		$added_values = array('subscriber_id' => $subscriber['subscriber_id'], 'account_id' => $subscriber['account_id']);
 		$newData = array_merge($current, $added_values);
 		$row->setRawData($newData);
 		return true;
