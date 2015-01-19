@@ -8,20 +8,20 @@
 require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
 
 /**
- * Query action class
+ * Balances query action class
  *
  * @package  Action
  * 
- * @since    2.6
+ * @since    2.8
  */
-class QueryAction extends ApiAction {
+class BalancesAction extends ApiAction {
 
 	/**
 	 * method to execute the query
 	 * it's called automatically by the api main controller
 	 */
 	public function execute() {
-		Billrun_Factory::log()->log("Execute api query", Zend_Log::INFO);
+		Billrun_Factory::log()->log("Execute api balances query", Zend_Log::INFO);
 		$request = $this->getRequest()->getRequest(); // supports GET / POST requests
 		Billrun_Factory::log()->log("Input: " . print_R($request, 1), Zend_Log::DEBUG);
 
@@ -31,7 +31,7 @@ class QueryAction extends ApiAction {
 		}
 		
 		$find = array();
-		$max_list = 1000;
+		$max_list = 10;
 		
 		if (isset($request['aid'])) {
 			$aids = Billrun_Util::verify_array($request['aid'], 'int');
@@ -52,43 +52,48 @@ class QueryAction extends ApiAction {
 		}
 
 		if (isset($request['billrun'])) {
-			$find['billrun'] = $this->getBillrunQuery($request['billrun']);
+			$find['billrun_month'] = $this->getBillrunQuery($request['billrun']);
 		}
 
-		if (isset($request['query'])) {
-			$query = $this->getArrayParam($request['query']);
-			$find = array_merge($find, (array) $query);
-		}
-
-		$options = array(
-			'sort' => array('urt'),
-			'page' => isset($request['page']) && $request['page'] > 0 ? (int) $request['page']: 0,
-			'size' =>isset($request['size']) && $request['size'] > 0 ? (int) $request['size']: 1000,
+		$cacheParams = array(
+			'fetchParams' => array(
+				'options' => array(),
+				'find' => $find,
+			),
 		);
-		$model = new LinesModel($options);
-		
-		if (isset($request['distinct'])) {
-			$lines = $model->getDistinctField((string) $request['distinct'], $find);
-		} else {
-			$lines = $model->getData($find);
 
-			foreach ($lines as &$line) {
-				$line = $line->getRawData();
-			}
-		}
+		$this->setCacheLifeTime(28800); // 8 hours
+		$results = $this->cache($cacheParams);
 
-		Billrun_Factory::log()->log("query success", Zend_Log::INFO);
+		Billrun_Factory::log()->log("balances query success", Zend_Log::INFO);
 		$ret = array(
 			array(
 				'status' => 1,
 				'desc' => 'success',
 				'input' => $request,
-				'details' => $lines,
+				'details' => $results,
 			)
 		);
 		$this->getController()->setOutput($ret);
 	}
 	
+	/**
+	 * basic fetch data method used by the cache
+	 * 
+	 * @param array $params parameters to fetch the data
+	 * 
+	 * @return boolean
+	 */
+	protected function fetchData($params) {
+		$model = new BalancesModel($params['options']);
+		$results = $model->getData($params['find']);
+		$ret = array();
+		foreach($results as $row) {
+			$ret[] = $row->getRawData();
+		}
+		return $ret;
+	}
+
 	/**
 	 * method to retreive variable in dual way json or pure array
 	 * 

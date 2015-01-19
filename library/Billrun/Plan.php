@@ -243,8 +243,10 @@ class Billrun_Plan {
 	}
 
 	/**
-	 * method to receive the strongest group of list of groups
-	 * currently the strongest rule is simple the first rule selected
+	 * method to receive the strongest group of list of groups 
+	 * method will init the groups list if not loaded yet
+	 * by default, the strongest rule is simple the first rule selected (in the plan)
+	 * rules can be complex with plugins (see vodafone and ird plugins for example)
 	 * 
 	 * @param array $rate the rate to check
 	 * @param string $usageType the usage type to check

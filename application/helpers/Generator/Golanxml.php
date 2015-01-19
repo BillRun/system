@@ -191,6 +191,9 @@ class Generator_Golanxml extends Billrun_Generator {
 		$invoice_total_manual_correction = 0;
 		$invoice_total_manual_correction_credit = 0;
 		$invoice_total_manual_correction_charge = 0;
+		$invoice_total_manual_correction_credit_fixed = 0;
+		$invoice_total_manual_correction_charge_fixed = 0;
+		$invoice_total_manual_correction_refund_fixed = 0;
 		$invoice_total_outside_gift_novat = 0;
 		$invoice_total_did_premium = 0;
 		$billrun_key = $billrun['billrun_key'];
@@ -296,6 +299,23 @@ class Generator_Golanxml extends Billrun_Generator {
 				}
 			}
 
+			$subscriber_sumup_TOTAL_MANUAL_CORRECTION_CREDIT_FIXED = 0;
+			$subscriber_sumup_TOTAL_MANUAL_CORRECTION_CHARGE_FIXED = 0;
+			$subscriber_sumup_TOTAL_MANUAL_CORRECTION_REFUND_FIXED = 0;
+			if (isset($subscriber['credits']) && is_array($subscriber['credits'])) {
+				foreach ($subscriber['credits'] as $credit) {
+					$amount_without_vat = floatval($credit['amount_without_vat']);
+					if (isset($credit['fixed']) && $credit['fixed']) {
+						$subscriber_sumup_TOTAL_MANUAL_CORRECTION_CREDIT_FIXED += $amount_without_vat;
+						if (isset($credit['credit_type']) && $credit['credit_type'] == 'charge') {
+							$subscriber_sumup_TOTAL_MANUAL_CORRECTION_CHARGE_FIXED += $amount_without_vat;
+						} else if (isset($credit['credit_type']) && $credit['credit_type'] == 'refund') {
+							$subscriber_sumup_TOTAL_MANUAL_CORRECTION_REFUND_FIXED += $amount_without_vat;
+						}
+					}
+				}
+			}
+
 			$this->writer->writeElement('VOICE_FREEUSAGE', $subscriber_gift_usage_VOICE_FREEUSAGE);
 			$this->writer->writeElement('VOICE_ABOVEFREECOST', $subscriber_gift_usage_VOICE_ABOVEFREECOST);
 			$this->writer->writeElement('VOICE_ABOVEFREEUSAGE', $subscriber_gift_usage_VOICE_ABOVEFREEUSAGE);
@@ -387,6 +407,9 @@ class Generator_Golanxml extends Billrun_Generator {
 			$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_CREDIT_PROMOTION', $subscriber_sumup_TOTAL_MANUAL_CORRECTION_CREDIT_PROMOTION);
 			$subscriber_sumup_TOTAL_MANUAL_CORRECTION = floatval($subscriber_sumup_TOTAL_MANUAL_CORRECTION_CHARGE) + floatval($subscriber_sumup_TOTAL_MANUAL_CORRECTION_CREDIT);
 			$this->writer->writeElement('TOTAL_MANUAL_CORRECTION', $subscriber_sumup_TOTAL_MANUAL_CORRECTION);
+			$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_CREDIT_FIXED', $subscriber_sumup_TOTAL_MANUAL_CORRECTION_CREDIT_FIXED);
+			$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_CHARGE_FIXED', $subscriber_sumup_TOTAL_MANUAL_CORRECTION_CHARGE_FIXED);
+			$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_REFUND_FIXED', $subscriber_sumup_TOTAL_MANUAL_CORRECTION_REFUND_FIXED);
 			$subscriber_sumup_TOTAL_OUTSIDE_GIFT_NOVAT = floatval((isset($subscriber['costs']['out_plan']['vat_free']) ? $subscriber['costs']['out_plan']['vat_free'] : 0)) + floatval((isset($subscriber['costs']['over_plan']['vat_free']) ? $subscriber['costs']['over_plan']['vat_free'] : 0));
 			$this->writer->writeElement('TOTAL_OUTSIDE_GIFT_NOVAT', $subscriber_sumup_TOTAL_OUTSIDE_GIFT_NOVAT);
 			$subscriber_sumup_TOTAL_DID_PREMIUM = floatval((isset($subscriber['costs']['service']['vat_free']) ? $subscriber['costs']['service']['vat_free'] : 0)) + floatval((isset($subscriber['costs']['service']['vatable']) ? $subscriber['costs']['service']['vatable'] : 0));
@@ -403,6 +426,9 @@ class Generator_Golanxml extends Billrun_Generator {
 			$invoice_total_manual_correction += $subscriber_sumup_TOTAL_MANUAL_CORRECTION;
 			$invoice_total_manual_correction_credit += $subscriber_sumup_TOTAL_MANUAL_CORRECTION_CREDIT;
 			$invoice_total_manual_correction_charge += $subscriber_sumup_TOTAL_MANUAL_CORRECTION_CHARGE;
+			$invoice_total_manual_correction_credit_fixed += $subscriber_sumup_TOTAL_MANUAL_CORRECTION_CREDIT_FIXED;
+			$invoice_total_manual_correction_charge_fixed += $subscriber_sumup_TOTAL_MANUAL_CORRECTION_CHARGE_FIXED;
+			$invoice_total_manual_correction_refund_fixed += $subscriber_sumup_TOTAL_MANUAL_CORRECTION_REFUND_FIXED;
 			$invoice_total_outside_gift_novat +=$subscriber_sumup_TOTAL_OUTSIDE_GIFT_NOVAT;
 			$invoice_total_did_premium += $subscriber_sumup_TOTAL_DID_PREMIUM;
 			$this->writer->endElement(); // end SUBSCRIBER_SUMUP
@@ -670,6 +696,9 @@ class Generator_Golanxml extends Billrun_Generator {
 		$this->writer->writeElement('TOTAL_MANUAL_CORRECTION', $invoice_total_manual_correction);
 		$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_CREDIT', $invoice_total_manual_correction_credit);
 		$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_CHARGE', $invoice_total_manual_correction_charge);
+		$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_CREDIT_FIXED', $invoice_total_manual_correction_credit_fixed);
+		$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_CHARGE_FIXED', $invoice_total_manual_correction_charge_fixed);
+		$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_REFUND_FIXED', $invoice_total_manual_correction_refund_fixed);
 		$this->writer->writeElement('TOTAL_DID_PREMIUM', $invoice_total_did_premium);
 		$this->writer->writeElement('TOTAL_OUTSIDE_GIFT_NOVAT', $invoice_total_outside_gift_novat);
 		$this->writer->writeElement('TOTAL_VAT', $account_after_vat - $account_before_vat);
