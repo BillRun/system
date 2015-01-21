@@ -1,5 +1,4 @@
 <<?php
-
 /**
  * @package         Billing
  * @copyright       Copyright (C) 2012 S.D.O.C. LTD. All rights reserved.
@@ -20,7 +19,7 @@ class Billrun_Processor_Premium extends Billrun_Processor_Base_Ilds {
 	 * @var string
 	 */
 	static protected $type = "premium";
-	
+
 	public function __construct($options) {
 
 		parent::__construct($options);
@@ -36,7 +35,7 @@ class Billrun_Processor_Premium extends Billrun_Processor_Base_Ilds {
 			'file_status' => 2,
 			'filler' => 80,
 		);
-		
+
 		$this->trailer_structure = array(
 			'record_type' => 1,
 			'file_type' => 15,
@@ -44,7 +43,7 @@ class Billrun_Processor_Premium extends Billrun_Processor_Base_Ilds {
 			'receiving_company_id' => 10,
 			'sequence_no' => 6,
 			'file_creation_date' => 12,
-			'total_phone_number' => 15, 
+			'total_phone_number' => 15,
 			'total_charge_sign_from_operator' => 1,
 			'total_charge_from_operator' => 15,
 			'total_charge_sign' => 1,
@@ -53,17 +52,17 @@ class Billrun_Processor_Premium extends Billrun_Processor_Base_Ilds {
 			'total_err_rec_no' => 6,
 			'filler' => 80,
 		);
-		
+
 		$this->data_structure = array(
 			'record_type' => 1,
 			'call_type' => 2,
-			'caller_phone_no' => 10, 
+			'caller_phone_no' => 10,
 			'called_no' => 18,
 			'phone_pickup_dt' => 14,
 			'call_start_dt' => 14,
 			'call_end_dt' => 14,
 			'pickup_to_hangup_dur' => 6,
-			'call_dur' => 6, 
+			'call_dur' => 6,
 			'pricing_code' => 1,
 			'chrgbl_call_dur' => 6,
 			'first_price_sign' => 1,
@@ -74,10 +73,10 @@ class Billrun_Processor_Premium extends Billrun_Processor_Base_Ilds {
 			'premium_price' => 11,
 			'collection_ind' => 2,
 			'filler' => 80,
-		//	'record_status' => 2,
+			//	'record_status' => 2,
 		);
 	}
-	
+
 	/**
 	 * method to parse the data
 	 */
@@ -145,12 +144,12 @@ class Billrun_Processor_Premium extends Billrun_Processor_Base_Ilds {
 					$row['header_stamp'] = $this->data['header']['stamp'];
 					$row['file'] = basename($this->filePath);
 					$row['process_time'] = date(self::base_dateformat);
-					$row['unified_record_time'] = new MongoDate(  Billrun_Util::dateTimeConvertShortToIso( $row['call_start_dt'] ,$this->defTimeOffset ) );
+					$row['unified_record_time'] = new MongoDate(Billrun_Util::dateTimeConvertShortToIso($row['call_start_dt'], $this->defTimeOffset));
 					// hot fix cause this field contain iso-8859-8
 //					if (isset($row['country_desc'])) {
 //						$row['country_desc'] = mb_convert_encoding($row['country_desc'], 'UTF-8', 'ISO-8859-8');
 //					}
-					if($this->isValidDataRecord($row)) {
+					if ($this->isValidDataRecord($row)) {
 						$this->data['data'][] = $row;
 					}
 
@@ -162,4 +161,6 @@ class Billrun_Processor_Premium extends Billrun_Processor_Base_Ilds {
 		}
 		return true;
 	}
+
 }
+				

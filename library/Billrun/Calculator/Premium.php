@@ -20,22 +20,22 @@ class Billrun_Calculator_Premium extends Billrun_Calculator {
 	 * @var string
 	 */
 	static protected $type = "premium";
-	
+
 	/**
 	 * method to receive the lines the calculator should take care
 	 * 
 	 * @return Mongodloid_Cursor Mongo cursor for iteration
 	 */
 	protected function getLines() {
-		
+
 		$lines = Billrun_Factory::db()->linesCollection();
 
 		return $lines->query()
-			->equals('source', static::$type)
-			->notExists('price_customer');
+				->equals('source', static::$type)
+				->notExists('price_customer');
 //			->notExists('price_provider'); // @todo: check how to do or between 2 not exists		
 	}
-	
+
 	/**
 	 * Execute the calculation process
 	 */
@@ -88,7 +88,7 @@ class Billrun_Calculator_Premium extends Billrun_Calculator {
 	 * @todo: refactoring it by mediator or plugin system
 	 */
 	protected function calcChargeLine($charge) {
-		
+
 		$rating_charge = round($charge / 1000, 3);
 		return $rating_charge;
 	}
