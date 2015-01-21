@@ -139,7 +139,8 @@ class Billrun_Processor_Premium extends Billrun_Processor_Base_Ilds {
 					// @todo: trigger after row load (including $header, $row)
 					$row = $this->parser->parse();
 					// @todo: trigger after row parse (including $header, $row)
-					$row['source'] = self::$type;
+//					$row['source'] = self::$type;
+					$row['source'] = 'premium';
 					$row['type'] = strtolower($this->data['header']['sending_company_id']);
 					$row['header_stamp'] = $this->data['header']['stamp'];
 					$row['file'] = basename($this->filePath);

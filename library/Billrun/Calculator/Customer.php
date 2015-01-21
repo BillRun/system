@@ -11,7 +11,8 @@
  * @package  calculator
  * @since    1.0
  */
-require_once __DIR__ . '/../../../application/golan/' . 'subscriber.php';
+//require_once __DIR__ . '/../../../application/golan/' . 'subscriber.php';
+require_once __DIR__ . '/../../../application/helpers/Subscriber/' . 'Golan.php';
 
 class Billrun_Calculator_Customer extends Billrun_Calculator {
 
