@@ -63,7 +63,7 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 
 		$resource = $lines->query(array(
 					'$or' => array(
-						array('source' => 'ilds'),
+						array('source' => array('$in' => array('ilds','premium'))),
 						array('source' => 'api', 'type' => 'refund', 'reason' => 'ILDS_DEPOSIT')
 					)
 				))
@@ -72,9 +72,10 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 			->equals('subscriber_id', "$subscriber_id")
 			->notExists('billrun_excluded')
 			// todo check how to use hint with 2 indexes
-			->cursor()->hint(array('subscriber_id' => 1)) 
+			->cursor() 
+//			->cursor()->hint(array('subscriber_id' => 1)) //todo :bring back 
 			->sort(array('unified_record_time' => 1));
-			
+			$resource->count();
 		foreach ($resource as $entity) {
 			$ret[] = $entity->getRawData();
 		}
@@ -118,7 +119,11 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 					} else {
 						$total_ilds[$ild] = $cost;
 					}
-					$ild_xml = $subscriber_sumup->addChild('ILD');
+					if (strpos($ild,'premium') == 0 ) {
+						$ild_xml = $subscriber_sumup->addChild('PREMIUM'); //change?
+					} else {
+						$ild_xml = $subscriber_sumup->addChild('ILD'); //change?					
+					}
 					$ild_xml->NDC = $ild;
 					$ild_xml->CHARGE_EXCL_VAT = $cost;
 					$ild_xml->CHARGE_INCL_VAT = $cost * $this->vat;
@@ -137,13 +142,18 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 			$xml->INV_INVOICE_TOTAL->FROM_PERIOD = date($short_format_date, strtotime('first day of previous month'));
 			$xml->INV_INVOICE_TOTAL->TO_PERIOD = date($short_format_date, strtotime('last day of previous month'));
 			$xml->INV_INVOICE_TOTAL->SUBSCRIBER_COUNT = count($row);
-			$xml->INV_INVOICE_TOTAL->INVOICE_TYPE = "ilds";
+			$xml->INV_INVOICE_TOTAL->INVOICE_TYPE = "ilds"; //change?
 				
 			$invoice_sumup = $xml->INV_INVOICE_TOTAL->addChild('INVOICE_SUMUP');
 			$total = 0;
 			foreach ($total_ilds as $ild => $total_ild_cost) {
-				$ild_xml = $invoice_sumup->addChild('ILD');
-				$ild_xml->NDC = $ild;
+				if (strpos($ild,'premium') == 0 ) {
+						$ild_xml = $invoice_sumup->addChild('PREMIUM'); //change?
+					} else {
+						$ild_xml = $invoice_sumup->addChild('ILD'); //change?					
+					}
+//				$ild_xml = $invoice_sumup->addChild('ILD'); //change?
+				$ild_xml->NDC = $ild; //?
 				$ild_xml->CHARGE_EXCL_VAT = $total_ild_cost;
 				$ild_xml->CHARGE_INCL_VAT = $total_ild_cost * $this->vat;
 				$total += $total_ild_cost;
@@ -218,14 +228,20 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 	
 	protected function addIldLineXML(&$billing_record , $line) {
 			$billing_record->TIMEOFBILLING = $line['call_start_dt'];
-			$billing_record->TARIFFITEM = 'IL_ILD';
+			if($line['source'] == 'premium') {
+				$billing_record->TARIFFITEM = 'IL_PREMIUM';
+				$billing_record->INTERNATIONAL = '0';
+				$billing_record->PREMIUM = $line['type'];
+			} else {
+				$billing_record->TARIFFITEM = 'IL_ILD';
+				$billing_record->INTERNATIONAL = '1';
+				$billing_record->ILD = $line['type'];
+			}
 			$billing_record->CTXT_CALL_OUT_DESTINATIONPNB = $line['called_no'];
 			$billing_record->CTXT_CALL_IN_CLI =  $line['caller_phone_no'];
 			$billing_record->CHARGEDURATIONINSEC =  $line['chrgbl_call_dur'];
 			$billing_record->CHARGE = $line['price_customer'];
 			$billing_record->TARIFFKIND = 'Call';
-			$billing_record->INTERNATIONAL = '1';
-			$billing_record->ILD = $line['type'];
 	}
 	
 	protected function addRefundLineXML(&$billing_record ,$line) {
