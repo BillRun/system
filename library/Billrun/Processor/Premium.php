@@ -60,12 +60,12 @@ class Billrun_Processor_Premium extends Billrun_Processor_Base_Ilds {
 			'caller_phone_no' => 10, 
 			'called_no' => 18,
 			'phone_pickup_dt' => 14,
-			'service_start_dt' => 14,
+			'call_start_dt' => 14,
 			'call_end_dt' => 14,
 			'pickup_to_hangup_dur' => 6,
-			'service_dur' => 6, 
+			'call_dur' => 6, 
 			'pricing_code' => 1,
-			'rounded_duration' => 6,
+			'chrgbl_call_dur' => 6,
 			'first_price_sign' => 1,
 			'first_price' => 11,
 			'second_price_sign' => 1,
@@ -141,11 +141,11 @@ class Billrun_Processor_Premium extends Billrun_Processor_Base_Ilds {
 					$row = $this->parser->parse();
 					// @todo: trigger after row parse (including $header, $row)
 					$row['source'] = self::$type;
-					$row['type'] = $this->data['header']['sending_company_id'];
+					$row['type'] = strtolower($this->data['header']['sending_company_id']);
 					$row['header_stamp'] = $this->data['header']['stamp'];
 					$row['file'] = basename($this->filePath);
 					$row['process_time'] = date(self::base_dateformat);
-					$row['unified_record_time'] = new MongoDate(  Billrun_Util::dateTimeConvertShortToIso( $row['service_start_dt'] ,$this->defTimeOffset ) );
+					$row['unified_record_time'] = new MongoDate(  Billrun_Util::dateTimeConvertShortToIso( $row['call_start_dt'] ,$this->defTimeOffset ) );
 					// hot fix cause this field contain iso-8859-8
 //					if (isset($row['country_desc'])) {
 //						$row['country_desc'] = mb_convert_encoding($row['country_desc'], 'UTF-8', 'ISO-8859-8');

@@ -51,22 +51,15 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			$time = date("YmtHis", $row->get('unified_record_time')->sec);
 			$phone_number = $row->get('NDC_SN');
 		} else {
-			if (null != $row->get('call_start_dt')) {
-				$time = $row->get('call_start_dt');
-			} else if(null != $row->get('service_start_dt')) {
-				$time = $row->get('service_start_dt');
-			}
+			$time = $row->get('call_start_dt');
 			$phone_number = $row->get('caller_phone_no');
 		}
-		if ($row->get('source') == 'premium') { //todo: modify this!
-			$phone_number = "546918666";
-			$time =  "20141219174831";
+		
 			$format_time = date(Billrun_Base::base_dateformat, strtotime($time));
-		} //todo: modify this!
 		$params = array(array('NDC_SN' => $phone_number, 'time' => $format_time, 'stamp' => $row->get('stamp'), 'EXTRAS' => 0, 'DATETIME' => $format_time)); //todo: modify this!
 		// load subscriber
 		$golan = new Subscriber_Golan();
-//		$subscriber = golan_subscriber::get($phone_number, $time);
+//		$subscriber = golan_subscriber::get($phone_number, $time); the old way
 		$list = $golan->requestList($params);
 		$subscriber = $list[0];
 		if (!$subscriber) {

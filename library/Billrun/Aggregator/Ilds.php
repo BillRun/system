@@ -164,8 +164,11 @@ class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 			//raise an error
 			return false;
 		}
-
-		$type = $line->get('type');
+		if($line->get('source') == 'premium') {
+			$type = 'premium_'.$line->get('type');
+		} else {
+			$type = $line->get('type');
+		}
 		$subscriberId = $line->get('subscriber_id');
 		if (!isset($current['subscribers'][$subscriberId])) {
 			$current['subscribers'][$subscriberId] = array('cost' => array());
@@ -224,21 +227,19 @@ class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 	 */
 	public function load() {
 
-		$min_time = (string) date('Ymd000000', strtotime('7 months ago'));
+		$min_time = (string) date('Ymd000000', strtotime('3 months ago')); //was 3 months
 		$lines = Billrun_Factory::db()->linesCollection();
 		$this->data = $lines->query(array(
 					'$or' => array(
-						array('source' => 'premium'), //premium or ilds!!!
+						array('source' => array('$in' => array('ilds','premium'))), //premium or ilds!!!
 						array('source' => 'api', 'type' => 'refund', 'reason' => 'ILDS_DEPOSIT')
 					),
-					'service_start_dt' => array('$gte' => $min_time),
-//					'billrun' => array('$exists' => )
+					'call_start_dt' => array('$gte' => $min_time),
 				))
-//				->notExists('billrun')
-//				->exists('price_provider')
-//				->exists('price_customer')
-//				->cursor()->hint(array('source' => 1));
-				->cursor();
+				->notExists('billrun')
+				->exists('price_provider')
+				->exists('price_customer')
+				->cursor()->hint(array('source' => 1));
 
 		Billrun_Factory::log()->log("aggregator entities loaded: " . $this->data->count(), Zend_Log::INFO);
 
