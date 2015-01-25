@@ -15,7 +15,7 @@ class tap3Plugin extends Billrun_Plugin_BillrunPluginBase implements Billrun_Plu
 
 	use Billrun_Traits_AsnParsing;
 
-	use Billrun_Traits_FileSequenceChecking;
+use Billrun_Traits_FileSequenceChecking;
 
 	protected $name = 'tap3';
 	protected $tap3Config = false;
@@ -197,6 +197,24 @@ class tap3Plugin extends Billrun_Plugin_BillrunPluginBase implements Billrun_Plu
 					}
 				}
 			}
+		} else if (Billrun_Util::getNestedArrayVal($cdrLine, $mapping['bearer_srv_code']) !== null && isset($cdrLine['record_type'])) {
+			$bearer_service_code = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['bearer_srv_code']);
+			$record_type = $cdrLine['record_type'];
+			$cdrLine['bearer_srv_code'] = $bearer_service_code;
+			if (in_array($bearer_service_code, array('30', '37'))) {
+				if ($record_type == '9') {
+					if (Billrun_Util::getNestedArrayVal($cdrLine, $mapping['dialed_digits'])) {
+						$cdrLine['called_number'] = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['dialed_digits']);
+					} else {
+						$cdrLine['called_number'] = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['called_number']); //$cdrLine['basicCallInformation']['Desination']['CalledNumber'];
+					}
+				}
+				if ($record_type == 'a') {
+					if (Billrun_Util::getNestedArrayVal($cdrLine, $mapping['called_number'])) {
+						$cdrLine['called_number'] = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['called_number']); //$cdrLine['basicCallInformation']['Desination']['CalledNumber'];
+					}
+				}
+			}
 		}
 
 		if (isset($cdrLine['called_number'])) {
@@ -220,7 +238,7 @@ class tap3Plugin extends Billrun_Plugin_BillrunPluginBase implements Billrun_Plu
 		if (Billrun_Util::getNestedArrayVal($cdrLine, $mapping['sdr']) !== null) {
 			$sdrs = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['sdr'], null, TRUE);
 			$sum = $this->sumup_arrays($sdrs, 20);
-			$cdrLine['sdr'] = $sum/$this->sdr_division_value;
+			$cdrLine['sdr'] = $sum / $this->sdr_division_value;
 			$cdrLine['exchange_rate'] = $this->exchangeRates[Billrun_Util::getNestedArrayVal($cdrLine, $mapping['exchange_rate_code'], 0)];
 		}
 
@@ -365,6 +383,7 @@ class tap3Plugin extends Billrun_Plugin_BillrunPluginBase implements Billrun_Plu
 		}
 		$this->sdr_division_value = pow(10, $trailer['data']['trailer']['tap_decimal_places']);
 	}
+
 	/**
 	 * sum up all values of nested array on various levels (as long as it doesnt exceed limit
 	 * @param type $limit maximum recurrsion depth
