@@ -333,7 +333,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			$record_type = $line['record_type'];
 			if ($record_type == '11' || $record_type == '12') {
 				$relevant_cg = $record_type == '11' ? $line['in_circuit_group'] : $line['out_circuit_group'];
-				if (!($relevant_cg == "1001" || $relevant_cg == "1006" || ($relevant_cg >= "1201" && $relevant_cg <= "1209"))) {
+				if (!($relevant_cg == "1001" || $relevant_cg == "1006" || ($relevant_cg >= "1201" && $relevant_cg <= "1209") || ($relevant_cg >= "1250" && $relevant_cg <= "1253"))) {
 					return false;
 				}
 				if ($record_type == '11' && in_array($line['out_circuit_group'], array('3060', '3061'))) {
