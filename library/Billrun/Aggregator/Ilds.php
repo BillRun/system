@@ -5,8 +5,8 @@
  * @copyright       Copyright (C) 2012 S.D.O.C. LTD. All rights reserved.
  * @license         GNU General Public License version 2 or later; see LICENSE.txt
  */
-require_once __DIR__ . '/../../../application/golan/' . 'subscriber.php';
-
+//require_once __DIR__ . '/../../../application/golan/' . 'subscriber.php';
+require_once __DIR__ . '/../../../application/helpers/Subscriber/' . 'Golan.php';
 /**
  * Billing aggregator class for ilds records
  *
@@ -164,11 +164,9 @@ class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 			//raise an error
 			return false;
 		}
-		if ($line->get('source') == 'premium') {
-			$type = 'premium_' . $line->get('type');
-		} else {
-			$type = $line->get('type');
-		}
+
+		$type = $line->get('type');
+
 		$subscriberId = $line->get('subscriber_id');
 		if (!isset($current['subscribers'][$subscriberId])) {
 			$current['subscribers'][$subscriberId] = array('cost' => array());
