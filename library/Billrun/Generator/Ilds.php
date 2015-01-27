@@ -85,6 +85,7 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 	protected function xml() {
 		// use $this->export_directory
 		$short_format_date = 'd/m/Y';
+		$premium_providers = Billrun_Factory::config()->getConfigValue('premium.provider_ids', array());
 		foreach ($this->data as $row) {
 			Billrun_Factory::log()->log("xml account " . $row->get('account_id'), Zend_Log::INFO);
 			// @todo refactoring the xml generation to another class
@@ -118,7 +119,7 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 					} else {
 						$total_ilds[$ild] = $cost;
 					}
-					if (strpos($ild, 'premium') == 0) {
+					if (in_array($ild,$premium_providers)) {
 						$ild_xml = $subscriber_sumup->addChild('PREMIUM'); //change?
 					} else {
 						$ild_xml = $subscriber_sumup->addChild('ILD'); //change?					
@@ -146,7 +147,7 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 			$invoice_sumup = $xml->INV_INVOICE_TOTAL->addChild('INVOICE_SUMUP');
 			$total = 0;
 			foreach ($total_ilds as $ild => $total_ild_cost) {
-				if (strpos($ild, 'premium') == 0) {
+				if (in_array($ild,$premium_providers)) { //todo: change condition!
 					$ild_xml = $invoice_sumup->addChild('PREMIUM'); //change?
 				} else {
 					$ild_xml = $invoice_sumup->addChild('ILD'); //change?					
