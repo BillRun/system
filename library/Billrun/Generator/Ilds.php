@@ -119,7 +119,6 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 					} else {
 						$total_ilds[$ild] = $cost;
 					}
-//					if (strpos($ild, 'premium') == 0) { //todo : change condition!
 					if (in_array($ild,$premium_providers)) {
 						$ild_xml = $subscriber_sumup->addChild('PREMIUM'); //change?
 					} else {
@@ -148,7 +147,6 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 			$invoice_sumup = $xml->INV_INVOICE_TOTAL->addChild('INVOICE_SUMUP');
 			$total = 0;
 			foreach ($total_ilds as $ild => $total_ild_cost) {
-//				if (strpos($ild, 'premium') == 0) { //todo: change condition!
 				if (in_array($ild,$premium_providers)) { //todo: change condition!
 					$ild_xml = $invoice_sumup->addChild('PREMIUM'); //change?
 				} else {
