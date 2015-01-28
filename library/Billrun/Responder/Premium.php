@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package         Billing
  * @copyright       Copyright (C) 2012 S.D.O.C. LTD. All rights reserved.
@@ -13,13 +14,12 @@
  */
 class Billrun_Responder_Premium extends Billrun_Responder_Base_Ilds {
 
-
 	public function __construct(array $params = array()) {
 		parent::__construct($params);
 		self::$type = 'premiumHot';
 
 
-$this->data_structure = array(
+		$this->data_structure = array(
 			'record_type' => "%1s",
 			'call_type' => "%02s",
 			'caller_phone_no' => "%010s",
@@ -67,57 +67,54 @@ $this->data_structure = array(
 //			'total_err_rec_no' => "%6s",
 //			'filler' => "%80s",
 //		);
-		
 	}
-
 
 	protected function updateHeader($line, $logLine) {
 		$header = "";
-		$header.=sprintf("%1s",$logLine['header']['record_type']);
-		$header.=sprintf("% -15s",$logLine['header']['file_type'].'_R');
-		$header.=sprintf("% -10s",$logLine['header']['receiving_company_id']); //the receiving company in the original file is the sending in the response 
-		$header.=sprintf("% -10s",$logLine['header']['sending_company_id']);   // and vice versa
-		$header.=sprintf("%06s",$logLine['header']['sequence_no']);   
-		$now = date("YmdHi"  , strtotime('now'));
-		$header.=sprintf("%12s",$now);   
-		$header.=sprintf("%12s",$now);		
-		$header.=sprintf("%02s",$this->getHeaderStateCode($logLine));	
+		$header.=sprintf("%1s", $logLine['header']['record_type']);
+		$header.=sprintf("% -15s", $logLine['header']['file_type'] . '_R');
+		$header.=sprintf("% -10s", $logLine['header']['receiving_company_id']); //the receiving company in the original file is the sending in the response 
+		$header.=sprintf("% -10s", $logLine['header']['sending_company_id']);   // and vice versa
+		$header.=sprintf("%06s", $logLine['header']['sequence_no']);
+		$now = date("YmdHi", strtotime('now'));
+		$header.=sprintf("%12s", $now);
+		$header.=sprintf("%12s", $now);
+		$header.=sprintf("%02s", $this->getHeaderStateCode($logLine));
 		$header.=$logLine['header']['filler'];
 		return $header;
 	}
 
 	protected function updateTrailer($logLine) {
-		
+
 		$trailer = "";
-		$trailer.=sprintf("%1s",$logLine['trailer']['record_type']);
-		$trailer.=sprintf("% -15s",$logLine['trailer']['file_type'].'_R');
-		$trailer.=sprintf("% -10s",$logLine['trailer']['receiving_company_id']); //the receiving company in the original file is the sending in the response 
-		$trailer.=sprintf("% -10s",$logLine['trailer']['sending_company_id']);   // and vice versa
-		$trailer.=sprintf("%06s",$logLine['trailer']['sequence_no']);   
-		$now = date("YmdHi"  , strtotime('now'));
-		$trailer.=sprintf("%12s",$now);
-		$trailer.=sprintf("%1s",$logLine['trailer']['total_charge_sign_from_operator']);
-		$trailer.=sprintf("%15s",$logLine['trailer']['total_charge_from_operator']);
-		$trailer.=sprintf("%1s",$logLine['trailer']['total_charge_sign']);
-		$trailer.=sprintf("%15s",$logLine['trailer']['total_charge']);
-		$trailer.=sprintf("%06s",$logLine['trailer']['total_rec_no']);
-		$trailer.=sprintf("%06s",$logLine['trailer']['total_err_rec_no']);
+		$trailer.=sprintf("%1s", $logLine['trailer']['record_type']);
+		$trailer.=sprintf("% -15s", $logLine['trailer']['file_type'] . '_R');
+		$trailer.=sprintf("% -10s", $logLine['trailer']['receiving_company_id']); //the receiving company in the original file is the sending in the response 
+		$trailer.=sprintf("% -10s", $logLine['trailer']['sending_company_id']);   // and vice versa
+		$trailer.=sprintf("%06s", $logLine['trailer']['sequence_no']);
+		$now = date("YmdHi", strtotime('now'));
+		$trailer.=sprintf("%12s", $now);
+		$trailer.=sprintf("%1s", $logLine['trailer']['total_charge_sign_from_operator']);
+		$trailer.=sprintf("%15s", $logLine['trailer']['total_charge_from_operator']);
+		$trailer.=sprintf("%1s", $logLine['trailer']['total_charge_sign']);
+		$trailer.=sprintf("%15s", $logLine['trailer']['total_charge']);
+		$trailer.=sprintf("%06s", $logLine['trailer']['total_rec_no']);
+		$trailer.=sprintf("%06s", $logLine['trailer']['total_err_rec_no']);
 		$trailer.=$logLine['trailer']['filler'];
 		return $trailer;
-
 	}
 
 	protected function processLineErrors($dbLine) {
-		if(!isset($dbLine['subscriber_id']) || !isset($dbLine['account_id'])) {
+		if (!isset($dbLine['subscriber_id']) || !isset($dbLine['account_id'])) {
 			$dbLine['record_status'] = '02';
 		}
-		if(!is_numeric($dbLine['chrgbl_call_dur']) || ($dbLine['chrgbl_call_dur'] <= '0')) {
+		if (!is_numeric($dbLine['chrgbl_call_dur']) || ($dbLine['chrgbl_call_dur'] <= '0')) {
 			$dbLine['record_status'] = '07';
 		}
-		if(!is_numeric($dbLine['price_customer']) || ($dbLine['price_customer'] <= 0)) {
+		if (!is_numeric($dbLine['price_customer']) || ($dbLine['price_customer'] <= 0)) {
 			$dbLine['record_status'] = '11';
 		}
-		if($dbLine['unified_record_time']->sec < strtotime('-3 months') ) {
+		if ($dbLine['unified_record_time']->sec < strtotime('-3 months')) {
 			$dbLine['record_status'] = '16';
 		}
 		return $dbLine;
@@ -127,23 +124,23 @@ $this->data_structure = array(
 		$responseFilename = preg_replace("/_CDR_/i", "_CDR_R_", $receivedFilename);
 		return $responseFilename;
 	}
-	
-	protected function	getHeaderStateCode($logLine) {
-		if($logLine['header']['file_type'] != "CDR") {
+
+	protected function getHeaderStateCode($logLine) {
+		if ($logLine['header']['file_type'] != "CDR") {
 			return 1;
 		}
-		if( !in_array(strtolower($logLine['header']['sending_company_id']) , Billrun_Factory::config()->getConfigValue('premium.provider_ids')) ) {
+		if (!in_array(strtolower($logLine['header']['sending_company_id']), Billrun_Factory::config()->getConfigValue('premium.provider_ids'))) {
 			return 2;
 		}
-		if($logLine['header']['receiving_company_id'] != "GOL") {
+		if ($logLine['header']['receiving_company_id'] != "GOL") {
 			return 3;
 		}
-		if(!is_numeric($logLine['header']['sequence_no']) ) {
+		if (!is_numeric($logLine['header']['sequence_no'])) {
 			return 4;
 		}
-		if(!date_create_from_format("YmdHi",$logLine['header']['file_creation_date']) ) {
+		if (!date_create_from_format("YmdHi", $logLine['header']['file_creation_date'])) {
 			return 5;
-		}		
+		}
 		//TOD add detection of  phone number sum and record sum errors
 		return 0;
 	}
