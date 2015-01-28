@@ -33,12 +33,12 @@ class ildsOneWayPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @var array 
 	 */
 	protected $providers = array(
-		'992' => '013', // netvision
+		'992' => 'ILD_013', // netvision
 		'993' => 'ILD_BEZ', // bezeq
-		'994' => '014', // bezeqint
-		'995' => '012', // smile
-		'996' => 'ILD_CEL', // cellcom mapa
-		'997' => 'ILD_HOT' // hot mapa
+		'994' => 'ILD_014', // bezeqint
+		'995' => 'ILD_012', // smile
+//		'996' => 'ILD_CEL', // cellcom mapa
+		'997' => 'ILD_HOT'  // hot mapa
 	);
 
 	/**
