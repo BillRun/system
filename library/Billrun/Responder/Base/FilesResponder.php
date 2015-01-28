@@ -19,26 +19,38 @@ abstract class Billrun_Responder_Base_FilesResponder extends Billrun_Responder {
 	 * @return mixed
 	 */
 	public function respond() {
-		
-		Billrun_Factory::dispatcher()->trigger('beforeResponse', array('type' => self::$type , 'responder' => &$this));
+		$types = array();
+		if(self::$type == 'premium') {
+			$types = Billrun_Factory::config()->getConfigValue('premium.providers');
+		} else {
+			$types[] = self::$type;
+		}
 		
 		$retPaths = array();
 		
-		foreach ($this->getProcessedFilesForType(self::$type) as $filename => $logLine) {
-			$filePath = $this->workspace . DIRECTORY_SEPARATOR . self::$type . DIRECTORY_SEPARATOR . $filename;
-			if (!file_exists($filePath)) {
-				Billrun_Factory::log()->log("NOTICE : SKIPPING $filename for type : " . self::$type . "!!! ,path -  $filePath not found!!", Zend_Log::NOTICE);
-				continue;
+		foreach ($types as $type) {
+			
+			Billrun_Factory::dispatcher()->trigger('beforeResponse', array('type' => $type , 'responder' => &$this));
+
+			foreach ($this->getProcessedFilesForType($type) as $filename => $logLine) {
+				$filePath = $this->workspace . DIRECTORY_SEPARATOR . $type . DIRECTORY_SEPARATOR . $filename;
+				if (!file_exists($filePath)) {
+					Billrun_Factory::log()->log("NOTICE : SKIPPING $filename for type : " . $type . "!!! ,path -  $filePath not found!!", Zend_Log::NOTICE);
+					continue;
+				}
+
+				$responseFilePath = $this->processFileForResponse($filePath, $logLine, $filename);
+				if ($responseFilePath) {
+					if(self::$type == 'premium') {
+						$retPaths[] = $this->respondAFile($responseFilePath, $this->getResponseFilename($filename, $logLine), $logLine , $type);
+					} else {
+						$retPaths[] = $this->respondAFile($responseFilePath, $this->getResponseFilename($filename, $logLine), $logLine);
+					}
+				}
 			}
 
-			$responseFilePath = $this->processFileForResponse($filePath, $logLine, $filename);
-			if ($responseFilePath) {
-				$retPaths[] = $this->respondAFile($responseFilePath, $this->getResponseFilename($filename, $logLine), $logLine);
-			}
-		}
-		
-		Billrun_Factory::dispatcher()->trigger('afterResponse', array('type' => self::$type , 'responder' => &$this));
-		
+			Billrun_Factory::dispatcher()->trigger('afterResponse', array('type' => $type , 'responder' => &$this));
+		} 
 		return $retPaths;
 	}
 

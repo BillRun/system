@@ -16,7 +16,7 @@ class Billrun_Responder_Premium extends Billrun_Responder_Base_Ilds {
 
 	public function __construct(array $params = array()) {
 		parent::__construct($params);
-		self::$type = 'premiumHot';
+		self::$type = 'premium';
 
 
 		$this->data_structure = array(
@@ -122,6 +122,7 @@ class Billrun_Responder_Premium extends Billrun_Responder_Base_Ilds {
 
 	protected function getResponseFilename($receivedFilename, $logLine) {
 		$responseFilename = preg_replace("/_CDR_/i", "_CDR_R_", $receivedFilename);
+//		$responseFilename = preg_replace('/PRM_(\w{3})_(GOL)/','PRM_$2_$1',$responseFilename );
 		return $responseFilename;
 	}
 
