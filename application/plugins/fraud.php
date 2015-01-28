@@ -484,7 +484,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		if (!$calculator->getCalculatorQueueType() == 'rate' || $line['type'] != 'nsn') {
 			return true;
 		}
-		$rateKey = isset($line['arate']['key']) ? $line['arate']['key'] : null;
+
 		if (isset($line['called_number'])) {
 			// fire  event to increased called_number usagev
 			$this->triggerCalledNumber($line);
