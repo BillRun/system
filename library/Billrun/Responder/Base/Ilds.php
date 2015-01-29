@@ -32,7 +32,7 @@ abstract class Billrun_Responder_Base_Ilds extends Billrun_Responder_Base_LocalD
 	 * @return boolean|string	return the temporary file path if the file should be responded to.
 	 *							or false if the file wasn't processed into the DB yet.
 	 */
-	protected function processFileForResponse($filePath, $logLine) {
+	protected function processFileForResponse($filePath, $logLine , $file_name = null) {
 		$logLine = $logLine->getRawData();
 		$this->linesCount = $this->linesErrors = $this->totalChargeAmount = $this->caller_num_sum = 0;
 
@@ -53,7 +53,7 @@ abstract class Billrun_Responder_Base_Ilds extends Billrun_Responder_Base_LocalD
 		$lines = "";
 		foreach ($dbLines as $dbLine) {
 			//alter data line
-			$line = $this->updateLine($dbLine->getRawData(), $logLine);
+			$line = $this->updateLine($dbLine, $logLine , $file_name);
 			if ($line) {
 				$this->linesCount++;
 				if($dbLine->get('source') == 'premium') {
@@ -97,11 +97,10 @@ abstract class Billrun_Responder_Base_Ilds extends Billrun_Responder_Base_LocalD
 	 * @param Array $logLine thelogline of the file the data line is linked to.
 	 * @return string a record data line that holds the data from the proccesed db line. 
 	 */
-	protected function updateLine($dbLine, $logLine) {
+	protected function updateLine($dbLine_obj, $logLine , $file_name = null) {
 		$line = "";
-		
+		$dbLine = $dbLine_obj->getRawData();
 		$dbLine = $this->processLineErrors($dbLine);
-		
 		if (!$dbLine || (isset($dbLine['record_status']) && intval($dbLine['record_status']) != 0 )) {
 			$this->linesErrors++;
 			if (!$dbLine) {
@@ -110,7 +109,9 @@ abstract class Billrun_Responder_Base_Ilds extends Billrun_Responder_Base_LocalD
 		}
 		$linesCollection = Billrun_Factory::db()->linesCollection();
 		if($dbLine['source'] == 'premium' && isset($dbLine['record_status']) && intval($dbLine['record_status']) != 0) {
-			$dbLine['dont_recalc'] == '1';
+			$dbLine['response_file'] = $this->getResponseFilename($file_name, $logLine);
+			$dbLine_obj->setRawData($dbLine);
+			$dbLine_obj->save($linesCollection);
 		}
 		
 		foreach ($this->data_structure as $key => $val) {
