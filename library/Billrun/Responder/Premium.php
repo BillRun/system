@@ -105,6 +105,7 @@ class Billrun_Responder_Premium extends Billrun_Responder_Base_Ilds {
 	}
 
 	protected function processLineErrors($dbLine) {
+		$dbLine['record_status'] = '00';
 		if (!isset($dbLine['subscriber_id']) || !isset($dbLine['account_id'])) {
 			$dbLine['record_status'] = '02';
 		}

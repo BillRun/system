@@ -108,7 +108,7 @@ abstract class Billrun_Responder_Base_Ilds extends Billrun_Responder_Base_LocalD
 			}
 		}
 		$linesCollection = Billrun_Factory::db()->linesCollection();
-		if($dbLine['source'] == 'premium' && isset($dbLine['record_status']) && intval($dbLine['record_status']) != 0) {
+		if($dbLine['source'] == 'premium') {
 			$dbLine['response_file'] = $this->getResponseFilename($file_name, $logLine);
 			$dbLine_obj->setRawData($dbLine);
 			$dbLine_obj->save($linesCollection);
