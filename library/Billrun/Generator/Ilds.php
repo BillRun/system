@@ -171,7 +171,7 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 	protected function addRowToCsv($invoice_id, $account_id, $total, $cost_ilds) {
 		//empty costs for each of the providers
 		$providers = Billrun_Factory::config()->getConfigValue('ilds.providers', array());
-		$providers = array_merge($providers, Billrun_Factory::config()->getConfigValue('premium.providers', array()));
+		$providers = array_merge($providers, Billrun_Factory::config()->getConfigValue('premium.provider_ids', array()));
 		$providers = array_merge($providers, array('refund'));
 		foreach ($providers as $key) {
 			if (!isset($cost_ilds[$key])) {
@@ -183,8 +183,8 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 		$seperator = ',';
 		$total_incl_vat = $total * $this->vat;
 		$row = $invoice_id . $seperator . $account_id . $seperator
-			. $total . $seperator . $total_incl_vat . $seperator . implode($seperator, $cost_ilds)
-			. $seperator . round($total_incl_vat, 2) . PHP_EOL;
+			. $total . $seperator . $total_incl_vat . $seperator . implode($seperator, $cost_ilds);
+//			. $seperator . round($total_incl_vat, 2) . PHP_EOL;
 		$this->csv($row);
 	}
 

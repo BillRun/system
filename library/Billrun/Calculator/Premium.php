@@ -32,7 +32,8 @@ class Billrun_Calculator_Premium extends Billrun_Calculator {
 
 		return $lines->query()
 				->equals('source', static::$type)
-				->notExists('price_customer');
+				->notExists('price_customer')
+				->notExists('dont_recalc');
 //			->notExists('price_provider'); // @todo: check how to do or between 2 not exists		
 	}
 

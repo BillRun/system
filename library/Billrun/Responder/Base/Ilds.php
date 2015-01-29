@@ -22,6 +22,9 @@ abstract class Billrun_Responder_Base_Ilds extends Billrun_Responder_Base_LocalD
 	// The total charge amount in the processed file.
 	protected $totalChargeAmount = 0;
 	
+	//the sum of caller numbers for premium lines
+	protected $caller_num_sum = 0;
+
 	/**
 	 * Process a given file and create a temporary response file to it.  
 	 * @param type $filePath the location of the file that need to be proceesed
@@ -31,7 +34,7 @@ abstract class Billrun_Responder_Base_Ilds extends Billrun_Responder_Base_LocalD
 	 */
 	protected function processFileForResponse($filePath, $logLine) {
 		$logLine = $logLine->getRawData();
-		$this->linesCount = $this->linesErrors = $this->totalChargeAmount = 0;
+		$this->linesCount = $this->linesErrors = $this->totalChargeAmount = $this->caller_num_sum = 0;
 
 		$linesCollection = Billrun_Factory::db()->linesCollection();
 		$dbLines = $linesCollection->query()->equals('file', $this->getFilenameFromLogLine($logLine));
@@ -53,7 +56,13 @@ abstract class Billrun_Responder_Base_Ilds extends Billrun_Responder_Base_LocalD
 			$line = $this->updateLine($dbLine->getRawData(), $logLine);
 			if ($line) {
 				$this->linesCount++;
-				$this->totalChargeAmount += floatval($dbLine->get('call_charge'));
+				if($dbLine->get('source') == 'premium') {
+					$this->totalChargeAmount += intval($dbLine->get('premium_price'));
+				} else {
+					$this->totalChargeAmount += floatval($dbLine->get('call_charge'));
+
+				}
+				$this->caller_num_sum += intval(substr($dbLine->get('caller_phone_no'), -7)."000");
 				$lines .= $line . "\n";
 			}
 		}
@@ -99,11 +108,16 @@ abstract class Billrun_Responder_Base_Ilds extends Billrun_Responder_Base_LocalD
 				return false;
 			}
 		}
+		$linesCollection = Billrun_Factory::db()->linesCollection();
+		if($dbLine['source'] == 'premium' && isset($dbLine['record_status']) && intval($dbLine['record_status']) != 0) {
+			$dbLine['dont_recalc'] == '1';
+		}
+		
 		foreach ($this->data_structure as $key => $val) {
 			$data = (isset($dbLine[$key]) ? $dbLine[$key] : "");
 			$line .= sprintf($val, mb_convert_encoding($data, 'ISO-8859-8', 'UTF-8'));
 		}
-
+		
 		return $line;
 	}
 	
