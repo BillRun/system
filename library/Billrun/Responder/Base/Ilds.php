@@ -22,6 +22,9 @@ abstract class Billrun_Responder_Base_Ilds extends Billrun_Responder_Base_LocalD
 	// The total charge amount in the processed file.
 	protected $totalChargeAmount = 0;
 	
+	//the sum of caller numbers for premium lines
+	protected $caller_num_sum = 0;
+
 	/**
 	 * Process a given file and create a temporary response file to it.  
 	 * @param type $filePath the location of the file that need to be proceesed
@@ -29,9 +32,9 @@ abstract class Billrun_Responder_Base_Ilds extends Billrun_Responder_Base_LocalD
 	 * @return boolean|string	return the temporary file path if the file should be responded to.
 	 *							or false if the file wasn't processed into the DB yet.
 	 */
-	protected function processFileForResponse($filePath, $logLine) {
+	protected function processFileForResponse($filePath, $logLine , $file_name = null) {
 		$logLine = $logLine->getRawData();
-		$this->linesCount = $this->linesErrors = $this->totalChargeAmount = 0;
+		$this->linesCount = $this->linesErrors = $this->totalChargeAmount = $this->caller_num_sum = 0;
 
 		$linesCollection = Billrun_Factory::db()->linesCollection();
 		$dbLines = $linesCollection->query()->equals('file', $this->getFilenameFromLogLine($logLine));
@@ -50,10 +53,16 @@ abstract class Billrun_Responder_Base_Ilds extends Billrun_Responder_Base_LocalD
 		$lines = "";
 		foreach ($dbLines as $dbLine) {
 			//alter data line
-			$line = $this->updateLine($dbLine->getRawData(), $logLine);
+			$line = $this->updateLine($dbLine, $logLine , $file_name);
 			if ($line) {
 				$this->linesCount++;
-				$this->totalChargeAmount += floatval($dbLine->get('call_charge'));
+				if($dbLine->get('source') == 'premium') {
+					$this->totalChargeAmount += intval($dbLine->get('premium_price'));
+				} else {
+					$this->totalChargeAmount += floatval($dbLine->get('call_charge'));
+
+				}
+				$this->caller_num_sum += intval(substr($dbLine->get('caller_phone_no'), -7)."000");
 				$lines .= $line . "\n";
 			}
 		}
@@ -88,22 +97,28 @@ abstract class Billrun_Responder_Base_Ilds extends Billrun_Responder_Base_LocalD
 	 * @param Array $logLine thelogline of the file the data line is linked to.
 	 * @return string a record data line that holds the data from the proccesed db line. 
 	 */
-	protected function updateLine($dbLine, $logLine) {
+	protected function updateLine($dbLine_obj, $logLine , $file_name = null) {
 		$line = "";
-		
+		$dbLine = $dbLine_obj->getRawData();
 		$dbLine = $this->processLineErrors($dbLine);
-		
 		if (!$dbLine || (isset($dbLine['record_status']) && intval($dbLine['record_status']) != 0 )) {
 			$this->linesErrors++;
 			if (!$dbLine) {
 				return false;
 			}
 		}
+		$linesCollection = Billrun_Factory::db()->linesCollection();
+		if($dbLine['source'] == 'premium') {
+			$dbLine['response_file'] = $this->getResponseFilename($file_name, $logLine);
+			$dbLine_obj->setRawData($dbLine);
+			$dbLine_obj->save($linesCollection);
+		}
+		
 		foreach ($this->data_structure as $key => $val) {
 			$data = (isset($dbLine[$key]) ? $dbLine[$key] : "");
 			$line .= sprintf($val, mb_convert_encoding($data, 'ISO-8859-8', 'UTF-8'));
 		}
-
+		
 		return $line;
 	}
 	

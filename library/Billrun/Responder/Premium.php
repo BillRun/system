@@ -105,6 +105,7 @@ class Billrun_Responder_Premium extends Billrun_Responder_Base_Ilds {
 	}
 
 	protected function processLineErrors($dbLine) {
+		$dbLine['record_status'] = '00';
 		if (!isset($dbLine['subscriber_id']) || !isset($dbLine['account_id'])) {
 			$dbLine['record_status'] = '02';
 		}
@@ -141,6 +142,18 @@ class Billrun_Responder_Premium extends Billrun_Responder_Base_Ilds {
 		}
 		if (!date_create_from_format("YmdHi", $logLine['header']['file_creation_date'])) {
 			return 5;
+		}
+		$actual_number_sum = str_repeat('0', 15 - strlen($this->caller_num_sum)) . $this->caller_num_sum;
+
+		if (($logLine['trailer']['total_phone_number']) != $actual_number_sum) {
+			return 6;
+		}
+		if ((intval($logLine['trailer']['total_rec_no'])) != ($this->linesCount + 2)) { //lines count doesnt include header and tralier
+			return 7;
+		}
+		$logcharge = intval($logLine['trailer']['total_charge']);
+		if ($logcharge != intval($this->totalChargeAmount)) {
+			return 8;
 		}
 		//TOD add detection of  phone number sum and record sum errors
 		return 0;
