@@ -370,6 +370,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$newEvent['recurring'] = $recurring;
 		$newEvent['line_stamp'] = $row['stamp'];
 		$newEvent['line_urt'] = $row['urt'];
+		$newEvent['line_usagev'] = $row['usagev'];
 		
 		if (is_null($priority) || !is_numeric($priority)) {
 			$priority = 15;
