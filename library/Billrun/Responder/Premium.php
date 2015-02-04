@@ -39,6 +39,7 @@ class Billrun_Responder_Premium extends Billrun_Responder_Base_Ilds {
 			'premium_price' => "%11s",
 			'collection_ind' => "%2s",
 			'filler' => "%80s",
+			'record_status' => "%02s",
 		);
 		//not used, updateHeader() and updateTrailer() are used instead to CREATE header and trailer
 //		$this->header_structure = array(
@@ -73,14 +74,14 @@ class Billrun_Responder_Premium extends Billrun_Responder_Base_Ilds {
 		$header = "";
 		$header.=sprintf("%1s", $logLine['header']['record_type']);
 		$header.=sprintf("% -15s", $logLine['header']['file_type'] . '_R');
-		$header.=sprintf("% -10s", $logLine['header']['receiving_company_id']); //the receiving company in the original file is the sending in the response 
-		$header.=sprintf("% -10s", $logLine['header']['sending_company_id']);   // and vice versa
+		$header.=sprintf("% -10s", $logLine['header']['sending_company_id']);
+		$header.=sprintf("% -10s", $logLine['header']['receiving_company_id']);
 		$header.=sprintf("%06s", $logLine['header']['sequence_no']);
 		$now = date("YmdHi", strtotime('now'));
-		$header.=sprintf("%12s", $now);
+		$header.=sprintf("%12s", $logLine['header']['file_creation_date']);
 		$header.=sprintf("%12s", $now);
 		$header.=sprintf("%02s", $this->getHeaderStateCode($logLine));
-		$header.=$logLine['header']['filler'];
+		$header.=sprintf("%80s", $logLine['header']['filler']);
 		return $header;
 	}
 
@@ -89,18 +90,20 @@ class Billrun_Responder_Premium extends Billrun_Responder_Base_Ilds {
 		$trailer = "";
 		$trailer.=sprintf("%1s", $logLine['trailer']['record_type']);
 		$trailer.=sprintf("% -15s", $logLine['trailer']['file_type'] . '_R');
-		$trailer.=sprintf("% -10s", $logLine['trailer']['receiving_company_id']); //the receiving company in the original file is the sending in the response 
-		$trailer.=sprintf("% -10s", $logLine['trailer']['sending_company_id']);   // and vice versa
+		$trailer.=sprintf("% -10s", $logLine['trailer']['sending_company_id']); //the receiving company in the original file is the sending in the response 
+		$trailer.=sprintf("% -10s", $logLine['trailer']['receiving_company_id']);   // and vice versa
 		$trailer.=sprintf("%06s", $logLine['trailer']['sequence_no']);
-		$now = date("YmdHi", strtotime('now'));
-		$trailer.=sprintf("%12s", $now);
+//		$now = date("YmdHi", strtotime('now'));
+//		$trailer.=sprintf("%12s", $now);
+		$trailer.=sprintf("%12s", $logLine['trailer']['file_creation_date']);
+		$trailer.=sprintf("%015s", $this->caller_num_sum);
 		$trailer.=sprintf("%1s", $logLine['trailer']['total_charge_sign_from_operator']);
-		$trailer.=sprintf("%15s", $logLine['trailer']['total_charge_from_operator']);
+		$trailer.=sprintf("%015s", $logLine['trailer']['total_charge_from_operator']);
 		$trailer.=sprintf("%1s", $logLine['trailer']['total_charge_sign']);
-		$trailer.=sprintf("%15s", $logLine['trailer']['total_charge']);
-		$trailer.=sprintf("%06s", $logLine['trailer']['total_rec_no']);
-		$trailer.=sprintf("%06s", $logLine['trailer']['total_err_rec_no']);
-		$trailer.=$logLine['trailer']['filler'];
+		$trailer.=sprintf("%015s", $this->totalChargeAmount);
+		$trailer.=sprintf("%06s", $this->linesCount + 2);
+		$trailer.=sprintf("%06s", $this->linesErrors);
+		$trailer.=sprintf("%80s", $logLine['trailer']['filler']);
 		return $trailer;
 	}
 
@@ -122,7 +125,9 @@ class Billrun_Responder_Premium extends Billrun_Responder_Base_Ilds {
 	}
 
 	protected function getResponseFilename($receivedFilename, $logLine) {
+		$now = date("Ymd", strtotime('now'));
 		$responseFilename = preg_replace("/_CDR_/i", "_CDR_R_", $receivedFilename);
+		$responseFilename = preg_replace("/\d{8}/i", $now, $responseFilename);
 //		$responseFilename = preg_replace('/PRM_(\w{3})_(GOL)/','PRM_$2_$1',$responseFilename );
 		return $responseFilename;
 	}

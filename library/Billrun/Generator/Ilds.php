@@ -86,6 +86,7 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 		// use $this->export_directory
 		$short_format_date = 'd/m/Y';
 		$premium_providers = Billrun_Factory::config()->getConfigValue('premium.provider_ids', array());
+		$add_header = true;
 		foreach ($this->data as $row) {
 			Billrun_Factory::log()->log("xml account " . $row->get('account_id'), Zend_Log::INFO);
 			// @todo refactoring the xml generation to another class
@@ -119,7 +120,7 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 					} else {
 						$total_ilds[$ild] = $cost;
 					}
-					if (in_array($ild,$premium_providers)) {
+					if (in_array($ild, $premium_providers)) {
 						$ild_xml = $subscriber_sumup->addChild('PREMIUM'); //change?
 					} else {
 						$ild_xml = $subscriber_sumup->addChild('ILD'); //change?					
@@ -147,7 +148,7 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 			$invoice_sumup = $xml->INV_INVOICE_TOTAL->addChild('INVOICE_SUMUP');
 			$total = 0;
 			foreach ($total_ilds as $ild => $total_ild_cost) {
-				if (in_array($ild,$premium_providers)) { //todo: change condition!
+				if (in_array($ild, $premium_providers)) { //todo: change condition!
 					$ild_xml = $invoice_sumup->addChild('PREMIUM'); //change?
 				} else {
 					$ild_xml = $invoice_sumup->addChild('ILD'); //change?					
@@ -163,28 +164,38 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 			//$row->{'xml'} = $xml->asXML();
 			Billrun_Factory::log()->log("invoice id created " . $invoice_id . " for the account", Zend_Log::INFO);
 			$this->createXml($invoice_id, $xml->asXML());
-
+			if ($add_header) {
+				$this->addRowToCsv(null, null, null, null, $add_header);
+				$add_header = false;
+			}
 			$this->addRowToCsv($invoice_id, $row->get('account_id'), $total, $total_ilds);
 		}
 	}
 
-	protected function addRowToCsv($invoice_id, $account_id, $total, $cost_ilds) {
+	protected function addRowToCsv($invoice_id, $account_id, $total, $cost_ilds, $addHeader = false) {
 		//empty costs for each of the providers
 		$providers = Billrun_Factory::config()->getConfigValue('ilds.providers', array());
 		$providers = array_merge($providers, Billrun_Factory::config()->getConfigValue('premium.provider_ids', array()));
 		$providers = array_merge($providers, array('refund'));
 		foreach ($providers as $key) {
 			if (!isset($cost_ilds[$key])) {
-				$cost_ilds[$key] = 0;
+				$cost_ilds[$key] = floatval(0);
 			}
 		}
 
 		ksort($cost_ilds);
+		$refund = $cost_ilds['refund'];
+		unset($cost_ilds['refund']);
 		$seperator = ',';
-		$total_incl_vat = $total * $this->vat;
-		$row = $invoice_id . $seperator . $account_id . $seperator
-			. $total . $seperator . $total_incl_vat . $seperator . implode($seperator, $cost_ilds);
-//			. $seperator . round($total_incl_vat, 2) . PHP_EOL;
+		if ($addHeader) {
+			$row = "invoice_id" . $seperator . "account_id" . $seperator
+				. "total" . $seperator . "total_incl_vat" . $seperator . implode($seperator, array_keys($cost_ilds)) . $seperator . 'refund' . PHP_EOL;
+		} else {
+			$total_incl_vat = $total * $this->vat;
+			$row = $invoice_id . $seperator . $account_id . $seperator
+				. $total . $seperator . $total_incl_vat . $seperator . implode($seperator, $cost_ilds) . $seperator . $refund . PHP_EOL;
+			//			. $seperator . round($total_incl_vat, 2) . PHP_EOL;
+		}
 		$this->csv($row);
 	}
 
