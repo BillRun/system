@@ -29,7 +29,7 @@ class RespondAction extends Action_Base {
 		if (($options = $this->_controller->getInstanceOptions($possibleOptions)) === FALSE) {
 			return;
 		}
-
+		
 		$this->_controller->addOutput("Loading Responder");
 		$responder = Billrun_Responder::getInstance($options);
 		$this->_controller->addOutput("Responder loaded");
