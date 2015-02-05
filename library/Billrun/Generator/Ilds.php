@@ -186,10 +186,16 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 		ksort($cost_ilds);
 		$refund = $cost_ilds['refund'];
 		unset($cost_ilds['refund']);
+		$keys = array_keys($cost_ilds);
+		foreach($keys as $i => $key) {
+			if (is_numeric($key)) {
+				$keys[$i] = 'c'.$key;
+			}
+		}
 		$seperator = ',';
 		if ($addHeader) {
 			$row = "invoice_id" . $seperator . "account_id" . $seperator
-				. "total" . $seperator . "total_incl_vat" . $seperator . implode($seperator, array_keys($cost_ilds)) . $seperator . 'refund' . PHP_EOL;
+				. "total" . $seperator . "total_incl_vat" . $seperator . implode($seperator, $keys) . $seperator . 'refund' . PHP_EOL;
 		} else {
 			$total_incl_vat = $total * $this->vat;
 			$row = $invoice_id . $seperator . $account_id . $seperator
