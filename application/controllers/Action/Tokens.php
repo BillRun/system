@@ -84,6 +84,9 @@ class TokensAction extends Action_Base {
 			Billrun_Factory::log()->log("No response from Google API.\nError message: "
 				. $errorMsg . "\nData sent: " . $data, Zend_Log::ALERT);
 		}
+		else {
+			Billrun_Factory::log()->log('Received status 200 from Google for OUT ' . $OUT, Zend_Log::INFO);
+		}
 	}
 
 	protected function getAccessToken() {

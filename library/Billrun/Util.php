@@ -355,7 +355,7 @@ class Billrun_Util {
 				"' > /dev/null & ";
 		}
 
-		echo $cmd . "<br />" . PHP_EOL;
+		echo $cmd . PHP_EOL; // Need to make the call to exec asynchronous, otherwise we will face dangerous lags!
 		if (exec($cmd) === FALSE) {
 			error_log("Can't fork PHP process");
 			return false;
