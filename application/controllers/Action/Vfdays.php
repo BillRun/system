@@ -56,10 +56,12 @@ class VfdaysAction extends Action_Base {
 		
 		$ggsn_fields = Billrun_Factory::config()->getConfigValue('ggsn.fraud.groups.vodafone15');
 		$sender = Billrun_Factory::config()->getConfigValue('nrtrde.fraud.groups.vodafone15');
+		$plans = Billrun_Factory::config()->getConfigValue('nrtrde.fraud.events.NRTRDE1_B.target_plans');
+		
 		$match = array(
 			'$match' => array(
 				'subscriber_id' => $sid,
-				'plan' => array('$in' => array('LARGE_PREMIUM', 'LARGE_KOSHER_PREMIUM')),
+				'plan' => array('$in' => $plans),
 				'$or' => array(
 					array_merge(
 						array(
