@@ -37,8 +37,8 @@ class VfdaysAction extends Action_Base {
 			'input' => $request,
 			'details' => array(
 				'days' => $days,
-				'min_day' => 40,
-				'max_day' => 40,
+				'min_day' => 45,
+				'max_day' => 45,
 			)
 		));
 	}
