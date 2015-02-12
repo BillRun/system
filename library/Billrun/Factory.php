@@ -101,12 +101,31 @@ class Billrun_Factory {
 	 * 
 	 * @return Billrun_Db
 	 */
-	static public function db() {
-		if (!self::$db) {
-			self::$db = Billrun_Db::getInstance();
+	static public function db(array $options = array()) {
+		$mainDb = 0;
+		if (empty($options)) {
+			$options = Billrun_Factory::config()->getConfigValue('db'); // the stdclass force it to return object
+			$mainDb = 1;
+		} else if (isset($options['name']) && count($options) == 1) {
+			$name = $options['name'];
+			$options = Billrun_Factory::config()->getConfigValue('db');
+			$seperateDatabaseCollections = isset($options['seperateDatabaseCollections']) ? $options['seperateDatabaseCollections'] : array('balances', 'billrunstats', 'billrun'); // until mongo will do collection lock
+			if (in_array($name, $seperateDatabaseCollections)) {
+				$options['name'] = $name;
+			}
 		}
 
-		return self::$db;
+		// unique stamp per db connection
+		$stamp = md5(serialize($options));
+
+		if (!isset(self::$db[$stamp])) {
+			self::$db[$stamp] = Billrun_Db::getInstance($options);
+//			if ($mainDb) {
+//				Billrun_Factory::config()->loadDbConfig();
+//			}
+		}
+
+		return self::$db[$stamp];
 	}
 
 	/**
