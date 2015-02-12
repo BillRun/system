@@ -370,6 +370,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$newEvent['recurring'] = $recurring;
 		$newEvent['line_stamp'] = $row['stamp'];
 		$newEvent['line_urt'] = $row['urt'];
+		$newEvent['line_usagev'] = $row['usagev'];
 		
 		if (is_null($priority) || !is_numeric($priority)) {
 			$priority = 15;
@@ -484,7 +485,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		if (!$calculator->getCalculatorQueueType() == 'rate' || $line['type'] != 'nsn') {
 			return true;
 		}
-		$rateKey = isset($line['arate']['key']) ? $line['arate']['key'] : null;
+
 		if (isset($line['called_number'])) {
 			// fire  event to increased called_number usagev
 			$this->triggerCalledNumber($line);
