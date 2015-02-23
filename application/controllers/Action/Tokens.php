@@ -85,7 +85,7 @@ class TokensAction extends Action_Base {
 				. $errorMsg . "\nData sent: " . $data, Zend_Log::ALERT);
 		}
 		else {
-			Billrun_Factory::log()->log('Received status 200 from Google for OUT ' . $OUT, Zend_Log::INFO);
+			Billrun_Factory::log()->log('Received status OK from Google for OUT ' . $OUT, Zend_Log::INFO);
 		}
 	}
 
