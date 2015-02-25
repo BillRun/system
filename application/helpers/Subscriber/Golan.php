@@ -288,6 +288,10 @@ class Subscriber_Golan extends Billrun_Subscriber {
 							if (isset($subscriber['occ']) && is_array($subscriber['occ'])) {
 								$credits = array();
 								foreach ($subscriber['occ'] as $credit) {
+									if ($aid != $concat['data']['aid']) {
+										Billrun_Factory::log("Credit account id " . $concat['data']['aid'] . " is different from parent account id " . $aid, Zend_log::ALERT);
+										continue;
+									}
 									$credit['aid'] = $concat['data']['aid'];
 									$credit['sid'] = $concat['data']['sid'];
 									if ($sid) {
