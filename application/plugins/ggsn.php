@@ -573,7 +573,7 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 		if ($row['type'] != "ggsn" || !isset($row['rat_type'])) {
 			return;
 		}
-		if ($row['rat_type'] == "06") { //4G
+		if (isset($row['rat_type']) && $row['rat_type'] == "06") { //4G
 			$group = "4G";
 		} else {
 			$group = "3G";

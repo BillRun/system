@@ -576,7 +576,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * config controller of admin
 	 */
 	public function operationsAction() {
-		if (!$this->allowed('admin'))
+		if (!$this->allowed('operations'))
 			return false;
 
 		$this->getView()->component = $this->renderView('operations');
