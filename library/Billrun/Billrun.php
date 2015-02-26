@@ -708,6 +708,8 @@ class Billrun_Billrun {
 				if (!empty($plan_ref)) {
 					$plan = self::getPlanById(strval($plan_ref['$id']));
 					$this->updateBillrun($this->billrun_key, array(), array('aprice' => $line['aprice']), $line, $plan->get('vatable'));
+				} else {
+					Billrun_Factory::log()->log("No plan or unrecognized plan for row " . $line['stamp'] . " Subscriber " . $line['sid'], Zend_Log::ALERT);
 				}
 			}
 			//Billrun_Factory::log("Done Processing account Line for $sid : ".  microtime(true));
