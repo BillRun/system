@@ -164,6 +164,9 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			}
 			$subscriber_field = $subscriber->{$key};
 			$row[$key] = $subscriber_field;
+			if($key == 'sid') {
+				$row['subscriber_id'] = $row[$key];
+			}
 		}
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array($row, $this));
 		return $row;
