@@ -449,6 +449,20 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$this->insertToFraudLines($roamingLines);
 		}
 	}
+	
+	protected function insertRoamingNsn($lines) {
+		$roamingLines = array();
+		$circuit_groups = array('2100','2101','2499');
+		$record_types = array('01','11');
+		foreach ($lines as $line) {
+			if (in_array($line['out_circuit_group'], $circuit_groups ) && in_array($line['record_type'],$record_types)) {
+				$roamingLines[] = $line;
+			}
+		}
+		if (!empty($roamingLines)) {
+			$this->insertToFraudLines($roamingLines);
+		}
+	}
 
 	/**
 	 * TODO
@@ -456,7 +470,8 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @return type
 	 */
 	public function afterProcessorStore($processor) {
-		if ($processor->getType() != "ggsn") {
+		$type = $processor->getType();
+		if ($type != "ggsn" && $type != "nsn") {
 			return;
 		}
 		Billrun_Factory::log('Plugin fraud afterProcessorStore', Zend_Log::INFO);
@@ -465,13 +480,21 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 			if ($pid == 0) {
 				Billrun_Util::resetForkProcess();
 				Billrun_Factory::log('Plugin fraud::afterProcessorStore run it in async mode', Zend_Log::INFO);
-				$this->insertRoamingGgsn($processor->getData()['data']);
+				if($type == "ggsn") {
+					$this->insertRoamingGgsn($processor->getData()['data']);
+				} else if($type == "nsn") {
+					$this->insertRoamingNsn($processor->getData()['data']);
+				}
 				Billrun_Factory::log('Plugin fraud::afterProcessorStore async mode done.', Zend_Log::INFO);
 				exit(); // exit from child process after finish
 			}
 		} else {
 			Billrun_Factory::log('Plugin fraud::afterProcessorStore runing in sync mode', Zend_Log::INFO);
-			$this->insertRoamingGgsn($processor->getData()['data']);
+			if($type == "ggsn") {
+				$this->insertRoamingGgsn($processor->getData()['data']);
+			} else if($type == "nsn") {
+				$this->insertRoamingNsn($processor->getData()['data']);
+			}
 		}
 		Billrun_Factory::log('Plugin fraud afterProcessorStore was ended', Zend_Log::INFO);
 	}
