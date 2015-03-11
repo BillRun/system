@@ -1026,7 +1026,7 @@ class Generator_Golanxml extends Billrun_Generator {
 	protected function getCalledNo($line) {
 		$called_number = '';
 		if ($line['type'] == 'tap3' // on tap3
-			|| (isset($line['out_circuit_group']) && ($line['out_circuit_group'] == "2100" || $line['out_circuit_group'] == "2101" || $line['out_circuit_group'] == "2499"))) { // or call to abroad
+			|| (isset($line['out_circuit_group']) && (in_array($line['out_circuit_group'], Billrun_Util::getIntlCircuitGroup())))) { // or call to abroad
 			if ($line['usaget'] == 'incoming_call') {
 				$called_number = $line['calling_number'];
 			} else {
