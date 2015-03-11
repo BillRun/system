@@ -67,7 +67,7 @@ fi
 
 for i in `seq 0 $instances`; do
 	page=`expr $start_instance \+ $i`;
-	screen -d -m flock -n $billrun_dir"/workspace/aggregate_lock_"$page"_"$size".tmp" php -t $billrun_dir $billrun_dir/public/index.php  --env $billrun_env --aggregate --type customer --stamp $month --page $page --size $size
+	screen -d -m flock -n $billrun_dir"/workspace/locks/aggregate_lock_"$page"_"$size".tmp" php -t $billrun_dir $billrun_dir/public/index.php  --env $billrun_env --aggregate --type customer --stamp $month --page $page --size $size
 	sleep $sleeptime;
 done
 
