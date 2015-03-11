@@ -798,5 +798,13 @@ class Billrun_Util {
 		
 		return $retVal;
 	}
+	/**
+	 * method to retreive internation circuit group
+	 * 
+	 * @todo take from db (?) with cache (static variable)
+	 */
+	public static function getIntlCircuitGroup() {
+		return Billrun_Factory::config()->getConfigValue('Rate_Nsn.calculator.intl_cg', array());
+	}
 
 }
