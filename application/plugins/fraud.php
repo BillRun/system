@@ -62,11 +62,11 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 */
 	public function afterUpdateSubscriberBalance($row, $balance, &$pricingData, $calculator) {
 		if ($calculator->getType() == 'pricing' && method_exists($calculator, 'getPricingField') && ($pricingField = $calculator->getPricingField())) {
-			$rowPrice = isset($pricingData[$pricingField])? $pricingData[$pricingField] : 0; // if the rate wasn't billable then the line won't have a charge
+			$rowPrice = isset($pricingData[$pricingField]) ? $pricingData[$pricingField] : 0; // if the rate wasn't billable then the line won't have a charge
 		} else {
 			return true;
 		}
-		
+
 		if (!$this->isLineLegitimate($row, $calculator)) {
 			return true;
 		}
@@ -223,7 +223,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		if (
 			(isset($rule['limitPlans']) && is_array($rule['limitPlans']) && !in_array(strtoupper($row['plan']), $rule['limitPlans'])) ||
 			(isset($rule['excludePlans']) && is_array($rule['excludePlans']) && in_array(strtoupper($row['plan']), $rule['excludePlans']))
-			) {
+		) {
 			return false;
 		} else if (isset($rule['limitGroups'])) { // if limit by specific groups
 			if ((is_array($rule['limitGroups']) && isset($row['arategroup']) && !in_array(strtoupper($row['arategroup']), $rule['limitGroups'])) || !isset($row['arategroup'])) {
@@ -288,12 +288,12 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 		// if the limit for specific plans
 		if (isset($rule['limitPlans']) &&
-				(is_array($rule['limitPlans']) && !in_array(strtoupper($row['plan']), $rule['limitPlans']))) {
+			(is_array($rule['limitPlans']) && !in_array(strtoupper($row['plan']), $rule['limitPlans']))) {
 			return false;
 		}
 		// ignore subscribers :)
 		if (isset($rule['ignoreSubscribers']) &&
-				(is_array($rule['ignoreSubscribers']) && in_array($row['sid'], $rule['ignoreSubscribers']))) {
+			(is_array($rule['ignoreSubscribers']) && in_array($row['sid'], $rule['ignoreSubscribers']))) {
 			return false;
 		}
 
@@ -371,7 +371,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$newEvent['line_stamp'] = $row['stamp'];
 		$newEvent['line_urt'] = $row['urt'];
 		$newEvent['line_usagev'] = $row['usagev'];
-		
+
 		if (is_null($priority) || !is_numeric($priority)) {
 			$priority = 15;
 		}
@@ -449,13 +449,13 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$this->insertToFraudLines($roamingLines);
 		}
 	}
-	
-	protected function insertRoamingNsn($lines) {
+
+	protected function insertIntlNsn($lines) {
 		$roamingLines = array();
-		$circuit_groups = array('2100','2101','2499');
-		$record_types = array('01','11');
+		$circuit_groups = Billrun_Util::getIntlCircuitGroup();
+		$record_types = array('01', '11');
 		foreach ($lines as $line) {
-			if (in_array($line['out_circuit_group'], $circuit_groups ) && in_array($line['record_type'],$record_types)) {
+			if (isset($line['out_circuit_group']) && in_array($line['out_circuit_group'], $circuit_groups) && in_array($line['record_type'], $record_types)) {
 				$roamingLines[] = $line;
 			}
 		}
@@ -480,20 +480,20 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 			if ($pid == 0) {
 				Billrun_Util::resetForkProcess();
 				Billrun_Factory::log('Plugin fraud::afterProcessorStore run it in async mode', Zend_Log::INFO);
-				if($type == "ggsn") {
+				if ($type == "ggsn") {
 					$this->insertRoamingGgsn($processor->getData()['data']);
-				} else if($type == "nsn") {
-					$this->insertRoamingNsn($processor->getData()['data']);
+				} else if ($type == "nsn") {
+					$this->insertIntlNsn($processor->getData()['data']);
 				}
 				Billrun_Factory::log('Plugin fraud::afterProcessorStore async mode done.', Zend_Log::INFO);
 				exit(); // exit from child process after finish
 			}
 		} else {
 			Billrun_Factory::log('Plugin fraud::afterProcessorStore runing in sync mode', Zend_Log::INFO);
-			if($type == "ggsn") {
+			if ($type == "ggsn") {
 				$this->insertRoamingGgsn($processor->getData()['data']);
-			} else if($type == "nsn") {
-				$this->insertRoamingNsn($processor->getData()['data']);
+			} else if ($type == "nsn") {
+				$this->insertIntlNsn($processor->getData()['data']);
 			}
 		}
 		Billrun_Factory::log('Plugin fraud afterProcessorStore was ended', Zend_Log::INFO);
