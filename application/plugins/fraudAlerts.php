@@ -385,7 +385,7 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$lines_where['process_time'] = array('$lt' => date(Billrun_Base::base_dateformat, $this->startTime));
 		$lines_where['deposit_stamp'] = array('$exists' => false);
 
-		if (!($imsi || $msisdn || $sid )) {
+		if (!($imsi || $msisdn || $sid || $subscriber_id )) {
 			Billrun_Log::getInstance()->log("fraudAlertsPlugin::markEventLines cannot find IMSI nor NDC_SN  or SID on event, marking CDR lines with event_stamp of : " . print_r($event['stamps'], 1), Zend_Log::INFO);
 			$lines_where['event_stamp'] = array('$in' => $event['stamps']);
 		}

@@ -33,9 +33,10 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 	
 	public function __construct($options = array()) {
 		parent::__construct($options);
-
+		
 		$this->nsnConfig = (new Yaf_Config_Ini(Billrun_Factory::config()->getConfigValue('nsn.config_path')))->toArray();
-
+		$this->initFraudAggregation();
+		
 	}
 	/**
 	 * back up retrived files that were processed to a third patry path.
@@ -151,7 +152,7 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 				'$group' => array(
 					"_id" => array('sid' => '$sid', '$imsi'=> '$imsi', 'msisdn' => '$calling_number'),
 					"usagev" => array('$sum' => '$usagev'),
-					"duration" => array('$sum' => '$durarion'),
+					"duration" => array('$sum' => '$usagev'),
 					'lines_stamps' => array('$addToSet' => '$stamp'),
 				),
 			),
@@ -160,9 +161,9 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 					'_id' => 0,
 					'usagev' => 1,
 					'duration' => 1,
-					'sid' => '$_id.sid',
+					'subscriber_id' => '$_id.sid',
 					'imsi' => '$_id.imsi',
-					'msisdn' => array('$substr' => array('$_id.msisdn', 5, 10)),
+					'msisdn' => array('$substr' => array('$_id.msisdn', 3,10)),//'$_id.msisdn',
 					'lines_stamps' => 1,
 				),
 			),
@@ -170,7 +171,7 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 				'$project' => array_merge(array(					
 					'duration' => 1,
 					'imsi' => 1,
-					'sid' => 1,
+					'subscriber_id' => 1,
 					'msisdn' => 1,
 					'lines_stamps' => 1,
 						), $this->addToProject(array('group' => $groupName,))),
@@ -259,8 +260,10 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 	 * @see Billrun_Plugin_BillrunPluginFraud::addAlertData 
 	 */
 	protected function addAlertData(&$event) {
-		$event['units'] = 'SECS';
-		$event['event_type'] = 'MABAL_016';
+		if(empty($event['group'])) {
+			$event['units'] = 'SECS';
+			$event['event_type'] = 'MABAL_016';
+		}
 		return $event;
 	}
 	
@@ -505,4 +508,3 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 	}
 }
 
-?>
