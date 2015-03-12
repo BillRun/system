@@ -14,7 +14,8 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 				implements	Billrun_Plugin_Interface_IParser,  
 							Billrun_Plugin_Interface_IProcessor {
 	
-	use Billrun_Traits_FileSequenceChecking;
+	use Billrun_Traits_FileSequenceChecking,
+		 Billrun_Traits_FraudAggregation;
 	
 	/**
 	 * plugin name
@@ -32,9 +33,10 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 	
 	public function __construct($options = array()) {
 		parent::__construct($options);
-
+		
 		$this->nsnConfig = (new Yaf_Config_Ini(Billrun_Factory::config()->getConfigValue('nsn.config_path')))->toArray();
-
+		$this->initFraudAggregation();
+		
 	}
 	/**
 	 * back up retrived files that were processed to a third patry path.
@@ -100,6 +102,7 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 		//check if the file was received more then an hour ago.
 		$query['extra_data.month'] =array('$gt' => date('Ym', strtotime('previous month')));
 	}
+	
 	/**
 	 * @see Billrun_Plugin_BillrunPluginFraud::handlerCollect
 	 */
@@ -107,6 +110,83 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 		if( $options['type'] != 'roaming') { 
 			return FALSE; 
 		}
+
+		$events = array();
+		//@TODO  switch  these lines  once  you have the time to test it.
+		//$charge_time = new MongoDate($this->get_last_charge_time(true) - date_default_timezone_get() );
+		$charge_time = Billrun_Util::getLastChargeTime(true);
+
+		$advancedEvents = array();
+		if (isset($this->fraudConfig['groups'])) {
+			foreach ($this->fraudConfig['groups'] as $groupName => $groupIds) {
+				$baseQuery = $this->getBaseAggregateQuery($charge_time, $groupName, $groupIds);
+				$advancedEvents = $this->collectFraudEvents($groupName, $groupIds, $baseQuery);
+				$events = array_merge($events, $advancedEvents);
+			}
+		}
+
+		return $events;
+	}
+	
+	/**
+	 * Get the base aggregation query.
+	 * @param type $charge_time the charge time of the billrun (records will not be pull before that)
+	 * @return Array containing a standard PHP mongo aggregate query to retrive  ggsn entries by imsi.
+	 */
+	protected function getBaseAggregateQuery($charge_time, $groupName, $groupMatch) {
+		$ret = array(
+			'base_match' => array(
+				'$match' => array(
+					'type' => 'nsn',
+				)
+			),
+			'where' => array(
+				'$match' => array(
+					'deposit_stamp' => array('$exists' => false),
+				),
+			),
+			'group_match' => array(
+				'$match' => $groupMatch,
+			),
+			'group' => array(
+				'$group' => array(
+					"_id" => array('sid' => '$sid', '$imsi'=> '$imsi', 'msisdn' => '$calling_number'),
+					"usagev" => array('$sum' => '$usagev'),
+					"duration" => array('$sum' => '$usagev'),
+					'lines_stamps' => array('$addToSet' => '$stamp'),
+				),
+			),
+			'translate' => array(
+				'$project' => array(
+					'_id' => 0,
+					'usagev' => 1,
+					'duration' => 1,
+					'subscriber_id' => '$_id.sid',
+					'imsi' => '$_id.imsi',
+					'msisdn' => array('$substr' => array('$_id.msisdn', 3,10)),//'$_id.msisdn',
+					'lines_stamps' => 1,
+				),
+			),
+			'project' => array(
+				'$project' => array_merge(array(					
+					'duration' => 1,
+					'imsi' => 1,
+					'subscriber_id' => 1,
+					'msisdn' => 1,
+					'lines_stamps' => 1,
+						), $this->addToProject(array('group' => $groupName,))),
+			),
+		);
+		
+		return $ret;
+	}
+	
+	/**
+	 * old  fraud  event logic  to detect over usage in golan  internaional provider (016)
+	 * @return array  containing all the events
+	 */
+	protected function collectGolanIntl() {
+
 		$monthlyThreshold = floatval(Billrun_Factory::config()->getConfigValue('nsn.thresholds.monthly_voice',36000));
 		$dailyThreshold = floatval(Billrun_Factory::config()->getConfigValue('nsn.thresholds.daily_voice',3600));
 
@@ -123,7 +203,6 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 		}
 		
 		return array_merge($monthlyAlerts,$dailyAlerts);
-		
 	}
 	
 	/**
@@ -181,8 +260,10 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 	 * @see Billrun_Plugin_BillrunPluginFraud::addAlertData 
 	 */
 	protected function addAlertData(&$event) {
-		$event['units'] = 'SECS';
-		$event['event_type'] = 'MABAL_016';
+		if(empty($event['group'])) {
+			$event['units'] = 'SECS';
+			$event['event_type'] = 'MABAL_016';
+		}
 		return $event;
 	}
 	
@@ -427,4 +508,3 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 	}
 }
 
-?>
