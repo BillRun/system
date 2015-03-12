@@ -150,7 +150,7 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 			),
 			'group' => array(
 				'$group' => array(
-					"_id" => array('sid' => '$sid', '$imsi'=> '$imsi', 'msisdn' => '$calling_number'),
+					"_id" => array('sid' => '$sid', 'imsi'=> '$imsi', 'msisdn' => '$calling_number'),
 					"usagev" => array('$sum' => '$usagev'),
 					"duration" => array('$sum' => '$usagev'),
 					'lines_stamps' => array('$addToSet' => '$stamp'),
