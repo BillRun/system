@@ -629,6 +629,9 @@ class Billrun_Billrun {
 	 * @return Mongodloid_Entity the corresponding plan
 	 */
 	protected static function getPlanById($id) {
+		if (empty($id)) {
+			return false;
+		}
 		if (!isset(self::$plans[$id])) {
 			self::$plans[$id] = Billrun_Factory::db()->plansCollection()->findOne($id);
 		}
@@ -701,8 +704,13 @@ class Billrun_Billrun {
 				$vatable = (!(isset($rate['vatable']) && !$rate['vatable']) || (!isset($rate['vatable']) && !$this->vatable));
 				$this->updateBillrun($this->billrun_key, array($line['usaget'] => $line['usagev']), $pricingData, $line, $vatable);
 			} else {
-				$plan = self::getPlanById(strval($line->get('plan_ref', true)['$id']));
-				$this->updateBillrun($this->billrun_key, array(), array('aprice' => $line['aprice']), $line, $plan->get('vatable'));
+				$plan_ref = $line->get('plan_ref', true);
+				if (!empty($plan_ref)) {
+					$plan = self::getPlanById(strval($plan_ref['$id']));
+					$this->updateBillrun($this->billrun_key, array(), array('aprice' => $line['aprice']), $line, $plan->get('vatable'));
+				} else {
+					Billrun_Factory::log()->log("No plan or unrecognized plan for row " . $line['stamp'] . " Subscriber " . $line['sid'], Zend_Log::ALERT);
+				}
 			}
 			//Billrun_Factory::log("Done Processing account Line for $sid : ".  microtime(true));
 			$updatedLines[$line['stamp']] = $line;

@@ -576,7 +576,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * config controller of admin
 	 */
 	public function operationsAction() {
-		if (!$this->allowed('admin'))
+		if (!$this->allowed('operations'))
 			return false;
 
 		$this->getView()->component = $this->renderView('operations');
@@ -807,7 +807,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		}
 		foreach ($filter_fields as $filter_name => $filter_field) {
 			$value = $this->getSetVar($session, $filter_field['key'], $filter_field['key'], $filter_field['default']);
-			if (!empty($value) && $filter_field['db_key'] != 'nofilter' && $filter = $model->applyFilter($filter_field, $value)) {
+			if ((!empty($value) || $value === 0 || $value === "0") && $filter_field['db_key'] != 'nofilter' && $filter = $model->applyFilter($filter_field, $value)) {
 				$query['$and'][] = $filter;
 			}
 		}

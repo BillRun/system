@@ -509,6 +509,7 @@ class Billrun_Util {
 			'plan' => array(),
 			'vatable' => array('default' => '1'),
 			'promotion' => array(),
+			'fixed' => array(),
 		);
 		$filtered_request = array();
 
@@ -606,10 +607,17 @@ class Billrun_Util {
 			unset($filtered_request['subscriber_id']);
 		}
 
-		if ($filtered_request['aid'] == 0 || $filtered_request['sid'] == 0) {
+		if ($filtered_request['aid'] == 0) {
 			return array(
 				'status' => 0,
-				'desc' => 'account, subscriber ids must be positive integers',
+				'desc' => 'account id must be positive integers',
+			);
+		}
+
+		if ($filtered_request['sid'] < 0) {
+			return array(
+				'status' => 0,
+				'desc' => 'subscriber id must be greater or equal to zero',
 			);
 		}
 
@@ -789,6 +797,14 @@ class Billrun_Util {
 		}		
 		
 		return $retVal;
+	}
+	/**
+	 * method to retreive internation circuit group
+	 * 
+	 * @todo take from db (?) with cache (static variable)
+	 */
+	public static function getIntlCircuitGroup() {
+		return Billrun_Factory::config()->getConfigValue('Rate_Nsn.calculator.intl_cg', array());
 	}
 
 }

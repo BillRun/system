@@ -32,7 +32,14 @@ class ildsOneWayPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * List of all possible provider names. Array key is the called_number prefix.
 	 * @var array 
 	 */
-	protected $providers = array('992' => '013', '993' => 'ILD_BEZ', '994' => '019', '995' => '012', '997' => 'ILD_HOT');
+	protected $providers = array(
+		'992' => 'ILD_013', // netvision
+		'993' => 'ILD_BEZ', // bezeq
+		'994' => 'ILD_014', // bezeqint
+		'995' => 'ILD_012', // smile
+//		'996' => 'ILD_CEL', // cellcom mapa
+		'997' => 'ILD_HOT'  // hot mapa
+	);
 
 	/**
 	 * the data structure of the output file, with each column's fixed width

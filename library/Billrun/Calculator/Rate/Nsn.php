@@ -75,7 +75,7 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 		$matchedRate = false;
 
 		if ($record_type == "01" || //MOC call
-				($record_type == "11" && ($icg == "1001" || $icg == "1006" || ($icg >= "1201" && $icg <= "1209")) &&
+				($record_type == "11" && ($icg == "1001" || $icg == "1006" || ($icg >= "1201" && $icg <= "1209") || ($icg >= "1250" && $icg <= "1253")) &&
 				$ocg != '3060' && $ocg != '3061') // Roaming on Cellcom and not redirection
 		) {
 			$matchedRate = $this->getRateByParams($called_number, $usage_type, $line_time, $ocg);
