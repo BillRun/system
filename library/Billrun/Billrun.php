@@ -487,6 +487,11 @@ class Billrun_Billrun {
 					$volume_priced = current($counters);
 				}
 				$zone['totals'][key($counters)]['usagev'] = $this->getFieldVal($zone['totals'][key($counters)]['usagev'], 0) + $volume_priced;
+				if($row['type'] == 'ggsn' && isset($row['rat_type']) && $row['rat_type'] == '06') {
+					$zone['totals'][key($counters)]['usagev_4g'] = $this->getFieldVal($zone['totals'][key($counters)]['usagev_4g'], 0) + $volume_priced;			
+				} else if($row['type'] == 'ggsn') {
+					$zone['totals'][key($counters)]['usagev_3g'] = $this->getFieldVal($zone['totals'][key($counters)]['usagev_3g'], 0) + $volume_priced;
+				}
 				$zone['totals'][key($counters)]['cost'] = $this->getFieldVal($zone['totals'][key($counters)]['cost'], 0) + $pricingData['aprice'];
 				$zone['totals'][key($counters)]['count'] = $this->getFieldVal($zone['totals'][key($counters)]['count'], 0) + 1;
 			}
@@ -509,6 +514,11 @@ class Billrun_Billrun {
 		if ($usage_type == 'data' && $row['type'] != 'tap3') {
 			$date_key = date("Ymd", $row['urt']->sec);
 			$sraw['lines'][$usage_type]['counters'][$date_key]['usagev'] = $this->getFieldVal($sraw['lines'][$usage_type]['counters'][$date_key]['usagev'], 0) + $row['usagev'];
+			if($row['type'] == 'ggsn' && isset($row['rat_type']) && $row['rat_type'] == '06') {
+				$sraw['lines'][$usage_type]['counters'][$date_key]['usagev_4g'] = $this->getFieldVal($sraw['lines'][$usage_type]['counters'][$date_key]['usagev_4g'], 0) + $row['usagev'];
+			} else if($row['type'] == 'ggsn') {
+				$sraw['lines'][$usage_type]['counters'][$date_key]['usagev_3g'] = $this->getFieldVal($sraw['lines'][$usage_type]['counters'][$date_key]['usagev_3g'], 0) + $row['usagev'];
+			}
 			$sraw['lines'][$usage_type]['counters'][$date_key]['aprice'] = $this->getFieldVal($sraw['lines'][$usage_type]['counters'][$date_key]['aprice'], 0) + $row['aprice'];
 			$sraw['lines'][$usage_type]['counters'][$date_key]['plan_flag'] = $this->getDayPlanFlagByDataRow($row, $this->getFieldVal($sraw['lines'][$usage_type]['counters'][$date_key]['plan_flag'], 'in'));
 		}
