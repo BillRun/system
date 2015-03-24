@@ -118,8 +118,6 @@ class Generator_Golancsv extends Billrun_Generator {
 			'nextPackage',
 			'TotalChargeVatData',
 			'CountOfKb',
-			'CountOfKb_3g',
-			'CountOfKb_4g',
 			'isKosher',
 		);
 
@@ -238,8 +236,6 @@ class Generator_Golancsv extends Billrun_Generator {
 				$sub_row['nextPackage'] = $this->getNextPackage($subscriber);
 				$sub_row['TotalChargeVatData'] = $this->getTotalChargeVatData($subscriber, $vat);
 				$sub_row['CountOfKb'] = $this->getCountOfKb($subscriber);
-				$sub_row['CountOfKb_3g'] = $this->getCountOfKb($subscriber, '3g');
-				$sub_row['CountOfKb_4g'] = $this->getCountOfKb($subscriber, '4g');
 				$this->addSubscriberRow($sub_row);
 			}
 //			Billrun_Factory::log()->log("invoice id created " . $invoice_id . " for the account", Zend_Log::INFO);
@@ -344,14 +340,11 @@ class Generator_Golancsv extends Billrun_Generator {
 		return $price_before_vat * (1 + $vat);
 	}
 
-	protected function getCountOfKb($subscriber, $type = null) {
+	protected function getCountOfKb($subscriber) {
 		$countOfKb = 0;
-		$key = is_null($type) ? 'usagev' : 'usagev' . '_' . $type;
 		if (isset($subscriber['lines']['data']['counters']) && is_array($subscriber['lines']['data']['counters'])) {
 			foreach ($subscriber['lines']['data']['counters'] as $data_by_day) {
-				if(isset($data_by_day[$key])) {
-					$countOfKb+=$data_by_day[$key];
-				}
+					$countOfKb+=$data_by_day['usagev'];
 			}
 		}
 		return $countOfKb / static::BYTES_IN_KB;
