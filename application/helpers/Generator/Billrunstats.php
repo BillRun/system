@@ -111,7 +111,7 @@ abstract class Generator_Billrunstats extends Billrun_Generator {
 							foreach(array('usagev_3g','usagev_4g') as $usage_type) {
 								if(isset($counters[$usage_type])) {
 									$flat_data_record['plan'] = $counters['plan_flag'] . '_plan';
-									$flat_data_record['category'] = str_replace('usagev', '' ,$usage_type );
+									$flat_data_record['category'] = str_replace('usagev_', '' ,$usage_type );
 									$flat_data_record['zone'] = $this->ggsn_zone;
 									$flat_data_record['vat'] = $default_vat;
 									$flat_data_record['usagev'] = $counters[$usage_type];
