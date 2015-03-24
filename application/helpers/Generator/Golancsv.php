@@ -349,7 +349,9 @@ class Generator_Golancsv extends Billrun_Generator {
 		$key = is_null($type) ? 'usagev' : 'usagev' . '_' . $type;
 		if (isset($subscriber['lines']['data']['counters']) && is_array($subscriber['lines']['data']['counters'])) {
 			foreach ($subscriber['lines']['data']['counters'] as $data_by_day) {
-				$countOfKb+=$data_by_day[$key];
+				if(isset($data_by_day[$key])) {
+					$countOfKb+=$data_by_day[$key];
+				}
 			}
 		}
 		return $countOfKb / static::BYTES_IN_KB;
