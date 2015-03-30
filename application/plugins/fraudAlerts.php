@@ -356,8 +356,8 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$lines_where['subscriber_id'] = $subscriber_id;
 			$hint = array('subscriber_id' => 1);
 		} else if (isset($sid)) {
-			$lines_where['sid'] = $sid;
-			$hint = array('sid' => 1);
+			$lines_where['subscriber_id'] = $sid;
+			$hint = array('subscriber_id' => 1);
 		}
 
 		if (isset($imsi)) {
