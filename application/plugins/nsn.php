@@ -161,7 +161,7 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 					'_id' => 0,
 					'usagev' => 1,
 					'duration' => 1,
-					'subscriber_id' => '$_id.sid',
+					'sid' => '$_id.sid',
 					'imsi' => '$_id.imsi',
 					'msisdn' => array('$substr' => array('$_id.msisdn', 3,10)),//'$_id.msisdn',
 					'lines_stamps' => 1,
@@ -171,7 +171,7 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud
 				'$project' => array_merge(array(					
 					'duration' => 1,
 					'imsi' => 1,
-					'subscriber_id' => 1,
+					'sid' => 1,
 					'msisdn' => 1,
 					'lines_stamps' => 1,
 						), $this->addToProject(array('group' => $groupName,))),
