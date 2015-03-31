@@ -89,6 +89,7 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 			return;
 		}
 		$extraData['month'] = date('Ym', $file->extraData['date']);
+		$extraData['week'] = date('W', $file->extraData['date']);
 	}
 
 //	/**
