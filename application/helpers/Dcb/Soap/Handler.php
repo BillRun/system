@@ -159,6 +159,7 @@ class Dcb_Soap_Handler {
 	}
 
 	protected function getIdentityParams($ndc_sn) {
+		$params['EXTRAS'] = 1;
 		$params['time'] = date(Billrun_Base::base_dateformat);
 		$callingNumberCRMConfig = Billrun_Config::getInstance()->getConfigValue('customer.calculator.customer_identification_translation.caller.calling_number', array('toKey' => 'NDC_SN', 'clearRegex' => '/^0*\+{0,1}972/'));
 		$params[$callingNumberCRMConfig['toKey']] = preg_replace($callingNumberCRMConfig['clearRegex'], '', $ndc_sn);
