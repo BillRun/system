@@ -624,7 +624,7 @@ class irdPlugin extends Billrun_Plugin_BillrunPluginBase {
 	protected function addAlertData(&$event) {
 		$event['effects'] = array(
 			'key' => 'type',
-			'filter' => array('$in' => array('ird'))
+//			'filter' => array('$in' => array('ird'))
 		);
 		return $event;
 	}

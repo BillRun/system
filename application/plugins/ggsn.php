@@ -350,7 +350,7 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Pl
 	protected function addAlertData(&$event) {
 		$event['effects'] = array(
 			'key' => 'type',
-			'filter' => array('$in' => array('nrtrde', 'ggsn'))
+//			'filter' => array('$in' => array('nrtrde', 'ggsn'))
 		);
 		return $event;
 	}
