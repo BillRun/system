@@ -64,7 +64,7 @@ trait Billrun_Traits_FraudAggregation {
 					$query['where']['$match'] = array_merge($query['where']['$match'], (isset($eventQuery['query']) ? $this->parseEventQuery($eventQuery['query']) : array()), (isset($eventRules['group_rules'][$groupName]) ? $this->parseEventQuery($eventRules['group_rules'][$groupName]) : array()));
 					$ruleMatch = array('$match' => (isset($eventQuery['match']) ? $eventQuery['match'] : array('value' => array('$gte' => intval($eventQuery['threshold']))) ));
 					
-					$ret = $lines->aggregate($query['base_match'], $query['where'], $query['group_match'], $query['group'], $query['translate'], $query['project'], $ruleMatch);
+					$ret = $lines->aggregate( array($query['base_match'], $query['where'], $query['group_match'], $query['group'], $query['translate'], $query['project'], $ruleMatch), array("allowDiskUse" => true) );
 
 					if ($this->postProcessEventResults($events, $ret, $eventQuery, $key)) {
 						$events = array_merge($events, $ret);
