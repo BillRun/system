@@ -334,10 +334,11 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Pl
 			),
 		);
 		if (!$clean) {
-			$ret['base_match']['$match']['$or'] = array(
-				array('urt' => array('$gte' => new MongoDate($charge_time))),
-				array('unified_record_time' => array('$gte' => new MongoDate($charge_time))),
-			);
+//			$ret['base_match']['$match']['$or'] = array(
+//				array('urt' => array('$gte' => new MongoDate($charge_time))),
+//				array('unified_record_time' => array('$gte' => new MongoDate($charge_time))),
+//			);
+			$ret['base_match']['$match']['unified_record_time'] = array('$gte' => new MongoDate($charge_time));
 			//$ret['where']['$match']['sgsn_address'] = array('$regex' => '^(?!62\.90\.|37\.26\.)');
 		}
 
