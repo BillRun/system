@@ -799,12 +799,22 @@ class Billrun_Util {
 		return $retVal;
 	}
 	/**
-	 * method to retreive internation circuit group
+	 * method to retrieve internation circuit groups
 	 * 
 	 * @todo take from db (?) with cache (static variable)
 	 */
-	public static function getIntlCircuitGroup() {
+	public static function getIntlCircuitGroups() {
 		return Billrun_Factory::config()->getConfigValue('Rate_Nsn.calculator.intl_cg', array());
 	}
+        
+	/**
+	 * method to retrieve roaming circuit groups
+	 * 
+	 * @todo take from db (?) with cache (static variable)
+	 */
+	public static function getRoamingCircuitGroups() {
+		return Billrun_Factory::config()->getConfigValue('Rate_Nsn.calculator.roaming_cg', array());
+	}
+
 
 }
