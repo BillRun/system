@@ -456,7 +456,9 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 				$bytes = substr($bytes, $processor->getParser()->getLastParseLength());
 			} while (isset($bytes[self::TRAILER_LENGTH + 1]));
 		} else {
-			Billrun_Factory::log()->log("Got NSN block with unsupported version :  {$header['format_version']} , block header data : " . print_r($header, 1), Zend_log::CRIT);
+			$msg  = "Got NSN block with unsupported version :  {$header['format_version']} , block header data : " . print_r($header, 1);
+			Billrun_Factory::log()->log($msg, Zend_log::CRIT);
+			throw new Exception($msg);
 		}
 
 		$trailer = $processor->getParser()->parseTrailer($bytes);
