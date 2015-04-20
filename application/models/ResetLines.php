@@ -68,8 +68,8 @@ class ResetLinesModel {
 	 * @todo support update/removal of credit lines
 	 */
 	protected function resetLines() {
-		$lines_coll = Billrun_Factory::db()->linesCollection();
-		$queue_coll = Billrun_Factory::db()->queueCollection();
+		$lines_coll = Billrun_Factory::db()->linesCollection()->setReadPreference('RP_PRIMARY');
+		$queue_coll = Billrun_Factory::db()->queueCollection()->setReadPreference('RP_PRIMARY');
 		if (!empty($this->sids) && !empty($this->billrun_key)) {
 			$offset = 0;
 			while ($update_count = count($update_sids = array_slice($this->sids, $offset, 10))) {
