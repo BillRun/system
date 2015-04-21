@@ -19,6 +19,7 @@ class Dcb_Soap_Handler {
 	const GOOGLE_RESULT_CODE_INVALID_USER = 'INVALID_USER';
 	const GOOGLE_RESULT_CODE_NO_LONGER_PROVISIONED = 'NO_LONGER_PROVISIONED';
 	const GOOGLE_RESULT_CODE_INVALID_CURRENCY = 'INVALID_CURRENCY';
+	const GOOGLE_RESULT_CODE_CHARGE_EXCEEDS_LIMIT = 'CHARGE_EXCEEDS_LIMIT';
 
 	/**
 	 * The subscriber associated with the request
@@ -37,6 +38,19 @@ class Dcb_Soap_Handler {
 		$this->config = Billrun_Factory::config()->getConfigValue('googledcb');
 		$this->subscriber = Billrun_Factory::subscriber();
 		$this->model = new FundsModel();
+		if (!isset($this->config['transaction_limit'])) {
+			$this->config['transaction_limit'] = self::toMicros(90);
+		} else {
+			$this->config['transaction_limit'] = self::toMicros($this->config['transaction_limit']);
+		}
+		if (!isset($this->config['transactions_per_month'])) {
+			$this->config['transactions_per_month'] = 30;
+		}
+		if (!isset($this->config['total_per_month'])) {
+			$this->config['total_per_month'] = self::toMicros(350);
+		} else {
+			$this->config['total_per_month'] = self::toMicros($this->config['total_per_month']);
+		}
 	}
 
 	public function __call($name, $arguments) {
@@ -71,7 +85,7 @@ class Dcb_Soap_Handler {
 				if ($this->isDcbProvisioned($this->subscriber)) {
 					$response->IsProvisioned = TRUE;
 					$response->SubscriberCurrency = $this->config['currency'];
-					$response->TransactionLimit = intval($this->config['transaction_limit']);
+					$response->TransactionLimit = self::toMicros($this->config['transaction_limit']);
 					$response->AccountType = $this->config['account_type'];
 				} else {
 					$response->IsProvisioned = FALSE;
@@ -111,14 +125,28 @@ class Dcb_Soap_Handler {
 		}
 
 		$data = (array) $request;
-		$data['responseResult'] = $response->Result;
-		$data['sid'] = $sid;
-		$data['aid'] = $aid;
-		$data['plan'] = $plan;
-
 		$status = $this->model->getNotificationStatus($data['CorrelationId']);
 
 		if (!$status) {
+			$billrunMonth = Billrun_Util::getBillrunKey(time());
+			if ($request->Total > $this->config['transaction_limit']) {
+				$response->Result = self::GOOGLE_RESULT_CODE_CHARGE_EXCEEDS_LIMIT;
+			} else if ($this->config['transactions_per_month'] != -1 || $this->config['total_per_month'] != -1) {
+				$fundsStats = $this->model->getFundsStats($sid, $billrunMonth);
+				if ($fundsStats) {
+					$fundsStats = current($fundsStats);
+					if ($this->config['transactions_per_month'] != -1 && $fundsStats['count'] >= $this->config['transactions_per_month']) {
+						$response->Result = self::GOOGLE_RESULT_CODE_CHARGE_EXCEEDS_LIMIT;
+					} else if ($this->config['total_per_month'] != -1 && (($fundsStats['sum'] + $request->Total) > $this->config['total_per_month'])) {
+						$response->Result = self::GOOGLE_RESULT_CODE_CHARGE_EXCEEDS_LIMIT;
+					}
+				}
+			}
+			$data['billrunMonth'] = $billrunMonth;
+			$data['sid'] = $sid;
+			$data['aid'] = $aid;
+			$data['plan'] = $plan;
+			$data['responseResult'] = $response->Result;
 			$ret = $this->model->storeData($data);
 
 			if (is_null($ret)) {
@@ -140,7 +168,7 @@ class Dcb_Soap_Handler {
 	 * Indicates if the subscriber is provisioned for Dcb
 	 * @param Billrun_Subscriber $subscriber
 	 */
-	protected function isDcbProvisioned($subscriber) {	
+	protected function isDcbProvisioned($subscriber) {
 		return $subscriber->isExtraDataActive('google_play');
 	}
 
@@ -150,10 +178,10 @@ class Dcb_Soap_Handler {
 			return null;
 		} else {
 			return array(
-				"sid"		=>	$cursor->current()['sid'],
-				"aid"		=>	$cursor->current()['aid'],
-				"plan"		=>	$cursor->current()['plan'],
-				"ndc_sn"	=>	$cursor->current()['ndc_sn'],
+				"sid" => $cursor->current()['sid'],
+				"aid" => $cursor->current()['aid'],
+				"plan" => $cursor->current()['plan'],
+				"ndc_sn" => $cursor->current()['ndc_sn'],
 			);
 		}
 	}
@@ -164,6 +192,10 @@ class Dcb_Soap_Handler {
 		$callingNumberCRMConfig = Billrun_Config::getInstance()->getConfigValue('customer.calculator.customer_identification_translation.caller.calling_number', array('toKey' => 'NDC_SN', 'clearRegex' => '/^0*\+{0,1}972/'));
 		$params[$callingNumberCRMConfig['toKey']] = preg_replace($callingNumberCRMConfig['clearRegex'], '', $ndc_sn);
 		return $params;
+	}
+
+	public static function toMicros($value) {
+		return intval($value * 1000000);
 	}
 
 }

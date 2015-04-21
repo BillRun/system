@@ -53,7 +53,32 @@ class FundsModel extends TableModel {
 			'CorrelationId' => $correlationId,
 			'CancelNotification' => array('$exists' => false)
 		);
-		
+
 		return parent::getData($query)->current()->getRawData();
 	}
+
+	public function getFundsStats($sid, $billrun_month) {
+		$match = array(
+			'$match' => array(
+				'sid' => $sid,
+				'billrunMonth' => $billrun_month,
+				'CancelNotification' => array(
+					'$exists' => FALSE,
+				),
+			),
+		);
+		$group = array(
+			'$group' => array(
+				'_id' => null,
+				'sum' => array(
+					'$sum' => '$Total',
+				),
+				'count' => array(
+					'$sum' => 1,
+				),
+			),
+		);
+		return $this->collection->aggregate($match, $group);
+	}
+
 }
