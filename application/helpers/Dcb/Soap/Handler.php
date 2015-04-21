@@ -85,7 +85,7 @@ class Dcb_Soap_Handler {
 				if ($this->isDcbProvisioned($this->subscriber)) {
 					$response->IsProvisioned = TRUE;
 					$response->SubscriberCurrency = $this->config['currency'];
-					$response->TransactionLimit = self::toMicros($this->config['transaction_limit']);
+					$response->TransactionLimit = $this->config['transaction_limit'];
 					$response->AccountType = $this->config['account_type'];
 				} else {
 					$response->IsProvisioned = FALSE;
