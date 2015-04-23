@@ -682,10 +682,10 @@ class Billrun_Billrun {
 		Billrun_Factory::log()->log("Querying account " . $this->aid . " for lines...", Zend_Log::INFO);
 		$account_lines = $this->getAccountLines($this->aid);
 
-		$this->filterSubscribers($account_lines, $deactivated_subscribers);
+		$lines = array_merge($account_lines, $manual_lines);
+		$this->filterSubscribers($lines, $deactivated_subscribers);
 		Billrun_Factory::log("Processing account Lines $this->aid", Zend_Log::INFO);
 
-		$lines = array_merge($account_lines, $manual_lines);
 		$updatedLines = $this->processLines(array_values($lines));
 		Billrun_Factory::log("Finished processing account $this->aid lines. Total: " . count($updatedLines), Zend_log::INFO);
 		$this->updateTotals();
