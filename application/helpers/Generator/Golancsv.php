@@ -206,6 +206,7 @@ class Generator_Golancsv extends Billrun_Generator {
 		$num_accounts = $this->data->count();
 		$accounts_counter = 0;
 		foreach ($this->data as $account) {
+			Billrun_Factory::log()->log("Creating data for account " . $account['aid'], Zend_Log::INFO);
 			$accounts_counter++;
 			$vat = isset($account['vat']) ? $account['vat'] : floatval(Billrun_Factory::config()->getConfigValue('pricing.vat', 0.18));
 			$acc_row = array();

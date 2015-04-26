@@ -34,7 +34,7 @@
 			<?php endif; ?>
 		<?php endif; ?>
 		<?php if (AdminController::authorized('admin')) : ?>
-			<li class="dropdown<?php echo (in_array($active, array('users', 'config')) ? ' active' : ''); ?>">
+			<li class="dropdown<?php echo (in_array($active, array('users', 'config', 'operations')) ? ' active' : ''); ?>">
 				<a class="dropdown-toggle"
 				   data-toggle="dropdown"
 				   href="#">
