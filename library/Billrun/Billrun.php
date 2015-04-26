@@ -487,13 +487,18 @@ class Billrun_Billrun {
 					$volume_priced = current($counters);
 				}
 				$zone['totals'][key($counters)]['usagev'] = $this->getFieldVal($zone['totals'][key($counters)]['usagev'], 0) + $volume_priced;
-				if($row['type'] == 'ggsn' && isset($row['rat_type']) && $row['rat_type'] == '06') {
-					$zone['totals'][key($counters)]['usagev_4g'] = $this->getFieldVal($zone['totals'][key($counters)]['usagev_4g'], 0) + $volume_priced;			
-				} else if($row['type'] == 'ggsn') {
-					$zone['totals'][key($counters)]['usagev_3g'] = $this->getFieldVal($zone['totals'][key($counters)]['usagev_3g'], 0) + $volume_priced;
-				}
 				$zone['totals'][key($counters)]['cost'] = $this->getFieldVal($zone['totals'][key($counters)]['cost'], 0) + $pricingData['aprice'];
 				$zone['totals'][key($counters)]['count'] = $this->getFieldVal($zone['totals'][key($counters)]['count'], 0) + 1;
+				if($row['type'] == 'ggsn') {
+					if(isset($row['rat_type']) && $row['rat_type'] == '06') {
+						$data_generation = 'usage_4g';
+					} else {
+						$data_generation = 'usage_3g';
+					}
+					$zone['totals'][key($counters)][$data_generation]['usagev'] = $this->getFieldVal($zone['totals'][key($counters)]['usagev_' . $data_generation], 0) + $volume_priced;
+					$zone['totals'][key($counters)][$data_generation]['cost'] = $this->getFieldVal($zone['totals'][key($counters)]['cost_' . $data_generation], 0) + $pricingData['aprice'];
+					$zone['totals'][key($counters)][$data_generation]['count'] = $this->getFieldVal($zone['totals'][key($counters)]['count_' . $data_generation], 0) + 1;
+				}
 			}
 			if ($plan_key != 'in_plan' || $zone_key == 'service') {
 				$zone['cost'] = $this->getFieldVal($zone['cost'], 0) + $pricingData['aprice'];
@@ -514,13 +519,19 @@ class Billrun_Billrun {
 		if ($usage_type == 'data' && $row['type'] != 'tap3') {
 			$date_key = date("Ymd", $row['urt']->sec);
 			$sraw['lines'][$usage_type]['counters'][$date_key]['usagev'] = $this->getFieldVal($sraw['lines'][$usage_type]['counters'][$date_key]['usagev'], 0) + $row['usagev'];
-			if($row['type'] == 'ggsn' && isset($row['rat_type']) && $row['rat_type'] == '06') {
-				$sraw['lines'][$usage_type]['counters'][$date_key]['usagev_4g'] = $this->getFieldVal($sraw['lines'][$usage_type]['counters'][$date_key]['usagev_4g'], 0) + $row['usagev'];
-			} else if($row['type'] == 'ggsn') {
-				$sraw['lines'][$usage_type]['counters'][$date_key]['usagev_3g'] = $this->getFieldVal($sraw['lines'][$usage_type]['counters'][$date_key]['usagev_3g'], 0) + $row['usagev'];
-			}
 			$sraw['lines'][$usage_type]['counters'][$date_key]['aprice'] = $this->getFieldVal($sraw['lines'][$usage_type]['counters'][$date_key]['aprice'], 0) + $row['aprice'];
 			$sraw['lines'][$usage_type]['counters'][$date_key]['plan_flag'] = $this->getDayPlanFlagByDataRow($row, $this->getFieldVal($sraw['lines'][$usage_type]['counters'][$date_key]['plan_flag'], 'in'));
+			if($row['type'] == 'ggsn') {
+				if (isset($row['rat_type']) && $row['rat_type'] == '06') {
+					$data_generation = 'usage_4g';
+				} else {
+					$data_generation = 'usage_3g';
+				}
+				$sraw['lines'][$usage_type]['counters'][$date_key][$data_generation]['usagev'] = $this->getFieldVal($sraw['lines'][$usage_type]['counters'][$date_key][$data_generation]['usagev'], 0) + $row['usagev'];
+				$sraw['lines'][$usage_type]['counters'][$date_key][$data_generation]['aprice'] = $this->getFieldVal($sraw['lines'][$usage_type]['counters'][$date_key][$data_generation]['aprice'], 0) + $row['aprice'];
+				$sraw['lines'][$usage_type]['counters'][$date_key][$data_generation]['plan_flag'] = $this->getDayPlanFlagByDataRow($row, $this->getFieldVal($sraw['lines'][$usage_type]['counters'][$date_key][$data_generation]['plan_flag'], 'in'));
+
+			}
 		}
 
 		if ($vatable) {
