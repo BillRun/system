@@ -164,14 +164,22 @@ class Billrun_Ssh_Seclibgateway implements Billrun_Ssh_Gatewayinterface {
 	 */
 	public function getListOfFiles($dir, $recursive = false) {
 		$files = array();
-		$_files = $this->getConnection()->nlist($dir, $recursive);
+		$rootFolders = $this->getConnection()->nlist($dir, $recursive);
 
-		// Only adds files (not folders or hidden)
-		foreach ($_files as $file) {
-			if (strpos($file, '.') !== 0) {
-				$files[] = $file;
+		foreach ($rootFolders as $folder) {
+			if (!is_numeric($folder)) {
+				continue;
+			}
+			
+			$_files = $this->getConnection()->nlist($dir . $folder, $recursive);
+			// Only adds files (not folders or hidden)
+			foreach ($_files as $file) {
+				if (strpos($file, '.') !== 0) {
+					$files[] = $folder . '/' . $file;
+				}
 			}
 		}
+
 		return $files;
 	}
 
