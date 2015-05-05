@@ -466,7 +466,7 @@ class RatesModel extends TabledateModel {
 		$limit = array(
 			'$limit' => 1,
 		);
-		$rate = $this->collection->aggregate(array($match, $unwind, $sort, $limit));
+		$rate = $this->collection->aggregate(array($match, $unwind, $match, $sort, $limit));
 		if ($rate) {
 			return $rate[0];
 		} else {
