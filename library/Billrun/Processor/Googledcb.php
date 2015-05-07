@@ -79,6 +79,7 @@ class Billrun_Processor_Googledcb extends Billrun_Processor_Base_SeparatorFieldL
 		$row = parent::buildData($line, $line_number);
 		if (isset($row[$this->structConfig['config']['date_field']])) {
 			$date_value = $row[$this->structConfig['config']['date_field']];
+			$date_value /= 1000; // Converts milliseconds to seconds
 			unset($row[$this->structConfig['config']['date_field']]);
 			$row['urt'] = new MongoDate($date_value);
 		}
@@ -101,7 +102,8 @@ class Billrun_Processor_Googledcb extends Billrun_Processor_Base_SeparatorFieldL
 		unset($correlation['CorrelationId']);
 		unset($correlation['BillingAgreement']);
 
-		$amount = $correlation['ItemPrice'];
+		require_once APPLICATION_PATH . '/application/helpers/Dcb/Soap/Handler.php';
+		$amount = Dcb_Soap_Handler::fromMicros($correlation['ItemPrice']);
 		$vatable = false;
 
 		if ($correlation['Tax']) {

@@ -197,5 +197,9 @@ class Dcb_Soap_Handler {
 	public static function toMicros($value) {
 		return intval($value * 1000000);
 	}
+	
+	public static function fromMicros($value) {
+		return intval($value / 1000000);
+	}
 
 }
