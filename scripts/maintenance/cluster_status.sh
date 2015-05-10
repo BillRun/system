@@ -11,7 +11,7 @@ do
 done
 
 
-for i in {1..7}
+for i in {1..9}
 do
         ipad=`printf %02d $i`
         echo "slv$ipad " `ssh slv$ipad.gt $stat`
