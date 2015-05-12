@@ -15,6 +15,6 @@ for i in {1..9}
 do
         ipad=`printf %02d $i`
         echo "slv$ipad " `ssh slv$ipad.gt $stat`
-        echo "slv$ipad " `ssh pri$ipad.gt $stat2`
+        echo "slv$ipad " `ssh slv$ipad.gt $stat2`
 done
 
