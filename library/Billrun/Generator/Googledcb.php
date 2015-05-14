@@ -138,10 +138,16 @@ class Billrun_Generator_Googledcb extends Billrun_Generator_Csv {
 
 		// Move files to Googles' SFTP
 		$sshConfig = Billrun_Factory::config()->getConfigValue('googledcb.ssh', array());
-		$ssh = new Billrun_Ssh_Seclibgateway($sshConfig['host'], array('key' => $sshConfig['key']), array());
-		$ssh->connect($sshConfig['user']);
-		$ssh->put($encrypted_file_path, $sshConfig['remote_directory'] . DIRECTORY_SEPARATOR .
-			$sshConfig['response_directory'] . DIRECTORY_SEPARATOR . basename($encrypted_file_path));
+		$auth = (isset($sshConfig['key']) ? array('key' => $sshConfig['key']) : array('password' => $sshConfig['password']));
+		$hostAndPort = (isset($sshConfig['port'])? $sshConfig['host'] . ':'.$sshConfig['port'] : $sshConfig['host']);
+			
+		$ssh = new Billrun_Ssh_Seclibgateway($hostAndPort, $auth, array());
+		if (!$ssh->connect($sshConfig['user'])) {
+			Billrun_Factory::log('Could not connect to: ' . $hostAndPort, Zend_log::ALERT);
+		} else {
+			$remote_path = $sshConfig['response_directory'] . DIRECTORY_SEPARATOR . basename($encrypted_file_path);
+			$ssh->put($encrypted_file_path, $remote_path);
+		}
 
 		// Deletes temp file
 		if ($this->delete_after_generate) {
