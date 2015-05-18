@@ -169,7 +169,7 @@ class Dcb_Soap_Handler {
 	 * @param Billrun_Subscriber $subscriber
 	 */
 	protected function isDcbProvisioned($subscriber) {
-		return $subscriber->isExtraDataActive('google_play');
+		return $subscriber->isExtraDataActive('dcb_google');
 	}
 
 	protected function getSubscriberDetails($OUT) {
