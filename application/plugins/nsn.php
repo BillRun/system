@@ -120,7 +120,7 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 		$monthlyAlerts = $this->detectDurationExcceders(date('Y0101000000'), $monthlyThreshold);
 		foreach ($monthlyAlerts as &$val) {
 			$val['threshold'] = $monthlyThreshold;
-		};
+		}
 
 		Billrun_Factory::log()->log("nsnPlugin::handlerCollect collecting hourly  exceedres", Zend_Log::DEBUG);
 		$dailyAlerts = $this->detectDurationExcceders(date('Y01d000000'), $dailyThreshold);
@@ -254,6 +254,8 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 					$data['called_number'] = Billrun_Util::msisdn($data['called_number']);
 				}
 			}
+			$data['usaget'] = $this->getLineUsageType($data);
+			$data['usagev'] = $this->getLineVolume($data, $data['usaget']);
 		} else {
 //			Billrun_Factory::log()->log("unsupported NSN record type : {$data['record_type']}",Zend_log::DEBUG);
 		}
@@ -500,6 +502,43 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 		return $logTrailer;
 	}
 
+	/**
+	 * @see Billrun_Processor::getLineVolume
+	 */
+	protected function getLineVolume($row, $usage_type) {
+		if (in_array($usage_type, array('call', 'incoming_call'))) {
+			if (isset($row['duration'])) {
+				return $row['duration'];
+			} else if ($row['record_type'] == '31') { // terminated call
+				return 0;
+			}
+		}
+		if ($usage_type == 'sms') {
+			return 1;
+		}
+		return null;
+	}
+
+	/**
+	 * @see Billrun_Processor::getLineUsageType
+	 */
+	protected function getLineUsageType($row) {
+		switch ($row['record_type']) {
+			case '08':
+			case '09':
+				return 'sms';
+			case '02':
+			case '12':
+				return 'incoming_call';
+			case '11':
+			case '01':
+			case '30':
+			default:
+				return 'call';
+		}
+		return 'call';
+	}
+	
 }
 
 ?>

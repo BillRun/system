@@ -16,7 +16,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 
 	const DEF_CALC_DB_FIELD = 'aprice';
 
-	protected $pricingField = self::DEF_CALC_DB_FIELD;
+	public $pricingField = self::DEF_CALC_DB_FIELD;
 	static protected $type = "pricing";
 
 	/**
@@ -123,7 +123,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 
 	protected function getLines() {
 		$query = array();
-		$query['type'] = array('$in' => array('ggsn', 'smpp', 'mmsc', 'smsc', 'nsn', 'tap3', 'credit'));
+		$query['type'] = array('$in' => array('ggsn', 'smpp', 'mmsc', 'smsc', 'nsn', 'tap3', 'credit','nrtrde'));
 		return $this->getQueuedLines($query);
 	}
 
@@ -146,7 +146,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 						unset($this->lines[$line['stamp']]);
 						continue;
 					}
-					$this->data[$line['stamp']] = $line;
+ 					$this->data[$line['stamp']] = $line;
 				}
 				//$this->updateLinePrice($item); //@TODO  this here to prevent divergance  between the priced lines and the subscriber's balance/billrun if the process fails in the middle.
 				Billrun_Factory::dispatcher()->trigger('afterPricingDataRow', array('data' => &$line));
@@ -207,7 +207,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			Billrun_Factory::log()->log($pricingDataTxt, Zend_Log::DEBUG);
 			$row->setRawData(array_merge($row->getRawData(), $pricingData));
 
-			Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array($row, $this));
+			Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array(&$row, $this));
 			return $row;
 		} catch (Exception $e) {
 			Billrun_Factory::log()->log('Line with stamp ' . $row['stamp'] . ' crashed when trying to price it. got exception :' . $e->getCode() . ' : ' . $e->getMessage() . "\n trace :" . $e->getTraceAsString(), Zend_Log::ERR);

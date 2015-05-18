@@ -28,7 +28,7 @@ class Billrun_Processor_Sms extends Billrun_Processor_Base_SeparatorFieldLines {
 	protected function parse() {
 		$this->parser->setSeparator($this->structConfig['config']['separator']);
 		if (isset($this->structConfig['config']) && isset($this->structConfig['config']['add_filename_data_to_header']) &&
-				$this->structConfig['config']['add_filename_data_to_header']) {
+			$this->structConfig['config']['add_filename_data_to_header']) {
 			$this->data['header'] = array_merge($this->buildHeader(''), array_merge((isset($this->data['header']) ? $this->data['header'] : array()), $this->getFilenameData(basename($this->filePath))));
 		}
 
@@ -84,7 +84,7 @@ class Billrun_Processor_Sms extends Billrun_Processor_Base_SeparatorFieldLines {
 			} else {
 				if (isset($row[$this->structConfig['config']['date_field']])) {
 					$offset = (isset($this->structConfig['config']['date_offset']) && isset($row[$this->structConfig['config']['date_offset']]) ?
-									($row[$this->structConfig['config']['date_offset']] > 0 ? "+" : "" ) . $row[$this->structConfig['config']['date_offset']] : "00" ) . ':00';
+							($row[$this->structConfig['config']['date_offset']] > 0 ? "+" : "" ) . $row[$this->structConfig['config']['date_offset']] : "00" ) . ':00';
 					$datetime = DateTime::createFromFormat($this->structConfig['config']['date_format'], $row[$this->structConfig['config']['date_field']] . $offset);
 				}
 			}
@@ -95,10 +95,25 @@ class Billrun_Processor_Sms extends Billrun_Processor_Base_SeparatorFieldLines {
 				$row[$this->structConfig['config']['called_number_field']] = Billrun_Util::msisdn($row[$this->structConfig['config']['called_number_field']]);
 			}
 			$row['urt'] = new MongoDate($datetime->format('U'));
+			$row['usaget'] = $this->getLineUsageType($row);
+			$row['usagev'] = $this->getLineVolume($row, $row['usaget']);
 		}
 		return $row;
 	}
 
+	/**
+	 * @see Billrun_Processor::getLineVolume
+	 */
+	protected function getLineVolume($row, $usage_type) {
+		return 1;
+	}
+
+	/**
+	 * @see Billrun_Processor::getLineUsageType
+	 */
+	protected function getLineUsageType($row) {
+		return $row['type'] == 'mmsc' ? 'mms' : 'sms';
+	}
 }
 
 ?>

@@ -146,8 +146,6 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 			return false;
 		}
 		$added_values = array(
-			'usaget' => $usage_type,
-			'usagev' => $volume,
 			$this->ratingField => $rate ? $rate->createRef() : $rate,
 		);
 		if ($rate) {

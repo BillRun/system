@@ -88,7 +88,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	 * method to get calculator lines
 	 */
 	protected function getLines() {
-		return $this->getQueuedLines(array('type' => array('$in' => array('nsn', 'ggsn', 'smsc', 'mmsc', 'smpp', 'tap3', 'credit'))));
+		return $this->getQueuedLines(array('type' => array('$in' => array('nsn', 'ggsn', 'smsc', 'mmsc', 'smpp', 'tap3', 'credit','nrtrde'))));
 	}
 
 	protected function subscribersByStamp() {
@@ -314,7 +314,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	 * @see Billrun_Calculator::isLineLegitimate
 	 */
 	public function isLineLegitimate($line) {
-		if (isset($line['usagev']) && $line['usagev'] !== 0 && $this->isCustomerable($line)) {
+		if ( $this->isCustomerable($line)) {
 			$customer = $this->isOutgoingCall($line) ? "caller" : "callee";
 			if (isset($this->translateCustomerIdentToAPI[$customer])) {
 				$customer_identification_translation = $this->translateCustomerIdentToAPI[$customer];
@@ -343,13 +343,6 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			} else if (!in_array($record_type, array('01', '02'))) {
 				return false;
 			}
-		} else {
-			if (is_array($line)) {
-				$arate = $line['arate'];
-			} else {
-				$arate = $line->get('arate', true);
-			}
-			return (isset($arate) && $arate); // for non-nsn records we currently identify only outgoing usage, based on arate.
 		}
 		return true;
 	}
