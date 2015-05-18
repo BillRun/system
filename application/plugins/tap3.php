@@ -253,6 +253,8 @@ use Billrun_Traits_FileSequenceChecking;
 
 		//save the sending source in each of the lines
 		$cdrLine['sending_source'] = $this->currentFileHeader['header']['sending_source'];
+		$cdrLine['usaget'] = $this->getLineUsageType($cdrLine);
+		$cdrLine['usagev'] = $this->getLineVolume($cdrLine,$cdrLine['usaget']);
 	}
 
 	/**
@@ -407,6 +409,67 @@ use Billrun_Traits_FileSequenceChecking;
 			}
 		}
 		return $sum;
+	}
+	
+	/**
+	 * @see Billrun_Calculator_Rate::getLineVolume
+	 */
+	protected function getLineVolume($row, $usage_type) {
+		$volume = null;
+		switch ($usage_type) {
+			case 'sms' :
+			case 'incoming_sms' :
+				$volume = 1;
+				break;
+
+			case 'call' :
+			case 'incoming_call' :
+				$volume = $row['basicCallInformation']['TotalCallEventDuration'];
+				break;
+
+			case 'data' :
+				$volume = $row['download_vol'] + $row['upload_vol'];
+				break;
+		}
+		return $volume;
+	}
+
+	/**
+	 * @see Billrun_Calculator_Rate::getLineUsageType
+	 */
+	protected function getLineUsageType($row) {
+		
+		$usage_type = null;
+		
+		$record_type = $row['record_type'];
+		if (isset($row['tele_srv_code'])) {
+			$tele_service_code = $row['tele_srv_code'];
+			if ($tele_service_code == '11') {
+				if ($record_type == '9') {
+					$usage_type = 'call'; // outgoing call
+				} else if ($record_type == 'a') {
+					$usage_type = 'incoming_call'; // incoming / callback
+				}
+			} else if ($tele_service_code == '22') {
+				if ($record_type == '9') {
+					$usage_type = 'sms';
+				}
+			} else if ($tele_service_code == '21') {
+				if ($record_type == 'a') {
+					$usage_type = 'incoming_sms';
+				}
+			}
+		} else if (isset($row['bearer_srv_code'])) {
+			if ($record_type == '9') {
+				$usage_type = 'call';
+			} else if ($record_type == 'a') {
+				$usage_type = 'incoming_call';
+			}
+		} else if ($record_type == 'e') {
+			$usage_type = 'data';
+		}
+
+		return $usage_type;
 	}
 
 }

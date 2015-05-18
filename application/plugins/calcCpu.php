@@ -33,34 +33,30 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @var int active child processes counter
 	 */
 	protected $childProcesses = 0;
-
-	public function beforeProcessorStore($processor) {
-		Billrun_Factory::log('Plugin calc cpu triggered before processor store', Zend_Log::INFO);
-		$options = array(
-			'autoload' => 0,
-		);
-
-		$remove_duplicates = Billrun_Factory::config()->getConfigValue('calcCpu.remove_duplicates', true);
-		if ($remove_duplicates) {
-			$this->removeDuplicates($processor);
-		}
-
-		$data = &$processor->getData();
+	
+	protected function rateCalc($processor,&$data,$options) {
 		Billrun_Factory::log('Plugin calc cpu rate', Zend_Log::INFO);
+		$queue_data = $processor->getQueueData();
 		foreach ($data['data'] as &$line) {
-			$entity = new Mongodloid_Entity($line);
-			$rateCalc = Billrun_Calculator_Rate::getRateCalculator($entity, $options);
-			if ($rateCalc->isLineLegitimate($entity)) {
-				if ($rateCalc->updateRow($entity) !== FALSE) {
+			if (isset($queue_data[$line['stamp']]) && $queue_data[$line['stamp']]['calc_name'] == 'customer') {
+				$entity = new Mongodloid_Entity($line);
+				$rateCalc = Billrun_Calculator_Rate::getRateCalculator($entity, $options);
+				if (!isset($entity['usagev']) || $entity['usagev'] === 0) {
+					$processor->unsetQueueRow($entity['stamp']);
+				} else if ($rateCalc->isLineLegitimate($entity)) {
+					if ($rateCalc->updateRow($entity) !== FALSE) {
+						$processor->setQueueRowStep($entity['stamp'], 'rate');
+					}
+				} else {
 					$processor->setQueueRowStep($entity['stamp'], 'rate');
 				}
-			} else {
-				$processor->setQueueRowStep($entity['stamp'], 'rate');
+				$line = $entity->getRawData();
+				$processor->addAdvancedPropertiesToQueueRow($line);
 			}
-			$line = $entity->getRawData();
-			$processor->addAdvancedPropertiesToQueueRow($line);
 		}
-
+	}
+	
+	protected function customerCalc($processor,&$data,$options) {
 		Billrun_Factory::log('Plugin calc cpu customer.', Zend_Log::INFO);
 		$customerAPISettings = Billrun_Factory::config()->getConfigValue('customer.calculator', array());
 		$customerOptions = array(
@@ -84,11 +80,11 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 					unset($data['data'][$key]);
 				}
 			}
-			if (isset($queue_data[$line['stamp']]) && $queue_data[$line['stamp']]['calc_name'] == 'rate') {
+			if (isset($queue_data[$line['stamp']]) && $queue_data[$line['stamp']]['calc_name'] == false) {
 				$entity = new Mongodloid_Entity($line);
-				if (!isset($entity['usagev']) || $entity['usagev'] === 0) {
+				/*if (!isset($entity['usagev']) || $entity['usagev'] === 0) {
 					$processor->unsetQueueRow($entity['stamp']);
-				} else if ($customerCalc->isLineLegitimate($entity)) {
+				} else*/ if ($customerCalc->isLineLegitimate($entity)) {
 					if ($customerCalc->updateRow($entity) !== FALSE) {
 						$processor->setQueueRowStep($entity['stamp'], 'customer');
 						$processor->addAdvancedPropertiesToQueueRow($entity);
@@ -101,14 +97,16 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 
 		$data['header']['linesStats']['garbage'] = $garbage_counter;
-
+	}
+	
+	protected function customerPricingCalc($processor,&$data) {
 		Billrun_Factory::log('Plugin calc cpu customer pricing', Zend_Log::INFO);
 		$customerPricingCalc = Billrun_Calculator::getInstance(array('type' => 'customerPricing', 'autoload' => false));
 		$queue_data = $processor->getQueueData();
 		$queue_calculators = Billrun_Factory::config()->getConfigValue("queue.calculators");
 
 		foreach ($data['data'] as &$line) {
-			if (isset($queue_data[$line['stamp']]) && $queue_data[$line['stamp']]['calc_name'] == 'customer') {
+			if (isset($queue_data[$line['stamp']]) && $queue_data[$line['stamp']]['calc_name'] == 'rate') {
 				$entity = new Mongodloid_Entity($line);
 				if ($customerPricingCalc->isLineLegitimate($entity)) {
 					if ($customerPricingCalc->updateRow($entity) !== FALSE) {
@@ -134,11 +132,9 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 				$line = $entity->getRawData();
 			}
 		}
-
-		if (Billrun_Factory::config()->getConfigValue('calcCpu.wholesale_calculators', true)) {
-			$this->wholeSaleCalculators($data, $processor);
-		}
-
+	}
+	
+	public function unifyCalc($processor,&$data) {
 		if (in_array('unify', $queue_calculators)) {
 			$this->unifyCalc = Billrun_Calculator::getInstance(array('type' => 'unify', 'autoload' => false));
 			$this->unifyCalc->init();
@@ -183,6 +179,28 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$this->unifyCalc->saveLinesToArchive();
 			//Billrun_Factory::log(count($data['data']), Zend_Log::INFO);
 		}
+	}
+
+	public function beforeProcessorStore($processor) {
+		Billrun_Factory::log('Plugin calc cpu triggered before processor store', Zend_Log::INFO);
+		$options = array(
+			'autoload' => 0,
+		);
+
+		$remove_duplicates = Billrun_Factory::config()->getConfigValue('calcCpu.remove_duplicates', true);
+		if ($remove_duplicates) {
+			$this->removeDuplicates($processor);
+		}
+		$data = &$processor->getData();
+
+		$this->customerCalc($processor, $data, $options);
+		$this->rateCalc($processor, $data, $options);
+		$this->customerPricingCalc($processor, $data);
+		if (Billrun_Factory::config()->getConfigValue('calcCpu.wholesale_calculators', true)) {
+			$this->wholeSaleCalculators($data, $processor);
+		}
+		$this->unifyCalc($processor, $data);
+		
 
 		Billrun_Factory::log('Plugin calc cpu end', Zend_Log::INFO);
 	}

@@ -499,8 +499,10 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		Billrun_Factory::log('Plugin fraud afterProcessorStore was ended', Zend_Log::INFO);
 	}
 
-	public function afterCalculatorUpdateRow($line, $calculator) {
-
+	public function afterCalculatorUpdateRow(&$line, $calculator) {
+		if($line['type'] == "nrtrde" && isset($line['billrun'])) {
+			unset($line['billrun']);
+		}
 		if (!$this->isLineLegitimate($line, $calculator)) {
 			return true;
 		}
@@ -601,6 +603,17 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 			} else {
 				$pricingData = $update = array();
 			}
+		} else if($row['type'] == "nrtrde") {
+			$usage_type = $row['usaget'];
+			foreach($update['$set'] as $key => $val) {
+				if($key != 'tx.'. $row['stamp']) {
+					unset($update['$set'][$key]);
+				}
+			}
+			unset($update['$inc']);
+			$update['$inc']['balance.groups.' . 'nrtrde' . '.' . $usage_type . '.usagev'] = $row['usagev'];
+			$update['$inc']['balance.groups.' . 'nrtrde' . '.' . $usage_type . '.cost'] = $pricingData[$calculator->pricingField];
+			$update['$inc']['balance.groups.' . 'nrtrde' . '.' . $usage_type . '.count'] = 1;
 		}
 	}
 

@@ -94,7 +94,7 @@ class ildsOneWayPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$this->lines_coll = Billrun_Factory::db()->linesCollection();
 	}
 
-	public function afterCalculatorUpdateRow($row, $calculator) {
+	public function afterCalculatorUpdateRow(&$row, $calculator) {
 		if ($calculator->getCalculatorQueueType() == 'rate' && $row['type'] == 'nsn' && in_array($row['record_type'], $this->record_types) && isset($row[$this->ild_prefix_field_name])) {
 			$result = $this->createRow($row);
 			if (!empty($result)) {
