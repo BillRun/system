@@ -98,22 +98,8 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 
 		$data['header']['linesStats']['garbage'] = $garbage_counter;
 	}
-
-	public function beforeProcessorStore($processor) {
-		Billrun_Factory::log('Plugin calc cpu triggered before processor store', Zend_Log::INFO);
-		$options = array(
-			'autoload' => 0,
-		);
-
-		$remove_duplicates = Billrun_Factory::config()->getConfigValue('calcCpu.remove_duplicates', true);
-		if ($remove_duplicates) {
-			$this->removeDuplicates($processor);
-		}
-		$data = &$processor->getData();
-
-		$this->customerCalc($processor, $data, $options);
-		$this->rateCalc($processor, $data, $options);
-
+	
+	protected function customerPricingCalc($processor,&$data) {
 		Billrun_Factory::log('Plugin calc cpu customer pricing', Zend_Log::INFO);
 		$customerPricingCalc = Billrun_Calculator::getInstance(array('type' => 'customerPricing', 'autoload' => false));
 		$queue_data = $processor->getQueueData();
@@ -146,11 +132,9 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 				$line = $entity->getRawData();
 			}
 		}
-
-		if (Billrun_Factory::config()->getConfigValue('calcCpu.wholesale_calculators', true)) {
-			$this->wholeSaleCalculators($data, $processor);
-		}
-
+	}
+	
+	public function unifyCalc($processor,&$data) {
 		if (in_array('unify', $queue_calculators)) {
 			$this->unifyCalc = Billrun_Calculator::getInstance(array('type' => 'unify', 'autoload' => false));
 			$this->unifyCalc->init();
@@ -195,6 +179,28 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$this->unifyCalc->saveLinesToArchive();
 			//Billrun_Factory::log(count($data['data']), Zend_Log::INFO);
 		}
+	}
+
+	public function beforeProcessorStore($processor) {
+		Billrun_Factory::log('Plugin calc cpu triggered before processor store', Zend_Log::INFO);
+		$options = array(
+			'autoload' => 0,
+		);
+
+		$remove_duplicates = Billrun_Factory::config()->getConfigValue('calcCpu.remove_duplicates', true);
+		if ($remove_duplicates) {
+			$this->removeDuplicates($processor);
+		}
+		$data = &$processor->getData();
+
+		$this->customerCalc($processor, $data, $options);
+		$this->rateCalc($processor, $data, $options);
+		$this->customerPricingCalc($processor, $data);
+		if (Billrun_Factory::config()->getConfigValue('calcCpu.wholesale_calculators', true)) {
+			$this->wholeSaleCalculators($data, $processor);
+		}
+		$this->unifyCalc($processor, $data);
+		
 
 		Billrun_Factory::log('Plugin calc cpu end', Zend_Log::INFO);
 	}
