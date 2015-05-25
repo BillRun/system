@@ -80,27 +80,20 @@ class Billrun_Processor_Googledcb extends Billrun_Processor_Base_SeparatorFieldL
 		if (isset($row[$this->structConfig['config']['date_field']])) {
 			$date_value = $row[$this->structConfig['config']['date_field']];
 			$date_value /= 1000; // Converts milliseconds to seconds
-			unset($row[$this->structConfig['config']['date_field']]);
-			$row['urt'] = new MongoDate($date_value);
+			$row['credit_time'] = $date_value;
 		}
-		if (!empty($this->structConfig['stamp_fields'])) { // todo: apply to all processors
-			$row['stamp'] = md5(serialize(array_intersect_key($row, array_flip($this->structConfig['stamp_fields']))));
-		}
-		$row['credit_type'] = $row['record_type'];
-		$row['type'] = 'credit'; // Same behavior as credit 
+
+		$row['credit_type'] = strtolower($row['record_type']);
 		$row['service_name'] = 'GOOGLE_DCB';
 		$row['reason'] = 'GOOGLE_DCB';
-		$model = new FundsModel();
-		$correlation = $model->getNotificationData($row['correlation_id']);
+		$fundsModel = new FundsModel();
+		$correlation = $fundsModel->getNotificationData($row['correlation_id']);
 
 		if (!$correlation) {
+			// TODO: check what to do in case no correlation was found
 			Billrun_Factory::log()->log("Correlation id not found : " . $row['correlation_id'], Zend_Log::ALERT);
 			return false;
 		}
-
-		unset($correlation['_id']);
-		unset($correlation['CorrelationId']);
-		unset($correlation['BillingAgreement']);
 
 		require_once APPLICATION_PATH . '/application/helpers/Dcb/Soap/Handler.php';
 		$amount = Dcb_Soap_Handler::fromMicros($correlation['ItemPrice']);
@@ -114,9 +107,38 @@ class Billrun_Processor_Googledcb extends Billrun_Processor_Base_SeparatorFieldL
 		$row = array_merge($row, $correlation);
 		$row['amount_without_vat'] = $amount;
 		$row['vatable'] = $vatable;
+		$row['account_id'] = $row['aid'];
+		$row['subscriber_id'] = $row['sid'];
 
+		// If it's not a "cancel" line - it should be treated as credit line
+		if ($row['credit_type'] !== 'cancel') {
+			$ret = Billrun_Util::parseCreditRow($row); // Same behavior as credit 
+			if (isset($ret['status']) && $ret['status'] == 0) {
+				$error_message = isset($ret['desc']) ? $ret['desc'] : 'Error with credit row';
+				return $this->setError($error_message, $row);
+			}
+			
+		} 
+		// If the line is of type "cancel", we should cancel the reservation of funds
+		// and it should not be treated as "credit" line
+		else {
+			$ret = $row;
+			$credit_time = new Zend_Date($ret['credit_time']);
+			$ret['urt'] = new MongoDate($credit_time->getTimestamp());
+			unset($ret['credit_time']);
+			$ret['source'] = 'api';
+			$ret['usaget'] = $ret['type'] = 'credit';
+			ksort($ret);
+			$ret['billable'] = false;
+			$ret['stamp'] = Billrun_Util::generateArrayStamp($ret);
+			$fundsModel->cancelNotification($ret);
+		}
 
-		return $row;
+		$ret['log_stamp'] = $this->getFileStamp();
+		$ret['process_time'] = $row['process_time'];
+		$ret['correlation_id'] = $row['correlation_id'];
+		$ret['billing_agreement'] = $row['billing_agreement'];
+		return $ret;
 	}
 
 	/**
@@ -144,23 +166,23 @@ class Billrun_Processor_Googledcb extends Billrun_Processor_Base_SeparatorFieldL
 	 */
 	protected function removeFromWorkspace($filestamp) {
 		parent::removeFromWorkspace($filestamp);
-		
+
 		// Remove decrypted file as well
 		Billrun_Factory::log()->log("Removing file {$this->decrypted_file_path} from the workspace", Zend_Log::INFO);
 		unlink($this->decrypted_file_path);
-		$this->clearDir(dirname($this->filePath));		
+		$this->clearDir(dirname($this->filePath));
 	}
 
 	protected function clearDir($dir) {
 		// Can only remove up to 3 sub folders - YYYY/MM/DD
 		for ($i = 0; $i < 3; $i++) {
 			$filecount = count(glob($dir . "/*"));
-			
+
 			// If there are files in the folder
 			if ($filecount) {
 				return;
 			}
-			
+
 			rmdir($dir);
 			$dir = dirname($dir);
 		}
