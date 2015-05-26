@@ -47,35 +47,7 @@ class LinesModel extends TableModel {
 	public function getItem($id) {
 
 		$entity = parent::getItem($id);
-
-		if (isset($entity['urt'])) {
-			$entity['urt'] = (new Zend_Date($entity['urt']->sec, null, new Zend_Locale('he_IL')))->getIso();
-		}
-		if (isset($entity['arate'])) {
-			$data = $entity->get('arate', false);
-			if ($data instanceof Mongodloid_Entity) {
-				$entity['arate'] = $data->get('key');
-			}
-		}
-		if (isset($entity['pzone'])) {
-			$data = $entity->get('pzone', false);
-			if ($data instanceof Mongodloid_Entity) {
-				$entity['pzone'] = $data->get('key');
-			}
-		}
-		if (isset($entity['wsc'])) {
-			$data = $entity->get('wsc', false);
-			if ($data instanceof Mongodloid_Entity) {
-				$entity['wsc'] = $data->get('key');
-			}
-		}
-		if (isset($entity['wsc_in'])) {
-			$data = $entity->get('wsc_in', false);
-			if ($data instanceof Mongodloid_Entity) {
-				$entity['wsc_in'] = $data->get('key');
-			}
-		}
-
+		Admin_Table::setEntityFields($entity);
 		return $entity;
 	}
 
@@ -125,6 +97,9 @@ class LinesModel extends TableModel {
 				$item['arate_id'] = strval($arate['_id']);
 			} else {
 				$item['arate'] = $arate;
+			}
+			if(isset($item['rat_type'])) {
+				$item['rat_type'] = Admin_Table::translateField($item, 'rat_type');
 			}
 			$ret[] = $item;
 		}
