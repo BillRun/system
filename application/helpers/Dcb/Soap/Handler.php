@@ -70,6 +70,7 @@ class Dcb_Soap_Handler {
 	}
 
 	public function GetProvisioning($request) {
+		Billrun_Factory::log()->log('GetProvisioning input: ' . print_r((array) $request,1), Zend_Log::DEBUG);
 		$response = new stdclass;
 		$response->Version = $request->Version;
 		$response->CorrelationId = $request->CorrelationId;
@@ -94,10 +95,12 @@ class Dcb_Soap_Handler {
 		} else {
 			$response->Result = self::GOOGLE_RESULT_CODE_INVALID_USER;
 		}
+		Billrun_Factory::log()->log('GetProvisioning output: ' . print_r((array) $response,1), Zend_Log::DEBUG);
 		return $response;
 	}
 
 	public function Auth($request) {
+		Billrun_Factory::log()->log('Auth call: ' . print_r((array) $request,1), Zend_Log::DEBUG);
 		$response = new stdclass;
 		$response->Version = $request->Version;
 		$response->CorrelationId = $request->CorrelationId;
@@ -155,7 +158,7 @@ class Dcb_Soap_Handler {
 		} else {
 			$response->Result = $status;
 		}
-
+		Billrun_Factory::log()->log('Auth output: ' . print_r((array) $response,1), Zend_Log::DEBUG);
 		return $response;
 	}
 
