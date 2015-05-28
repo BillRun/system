@@ -44,6 +44,11 @@ class Billrun_Generator_Googledcb extends Billrun_Generator_Csv {
 			);
 		}
 	}
+	
+	protected function writeHeaders() {
+		$header_str = implode($this->headers, $this->separator) . $this->separator . $this->separator . PHP_EOL;
+		$this->writeToFile($header_str);
+	}
 
 	protected function getRowContent($entity) {
 		$row_contents = '';
@@ -55,12 +60,12 @@ class Billrun_Generator_Googledcb extends Billrun_Generator_Csv {
 			if ($key == 'credit_type') {
 				$entity[$key] = strtoupper($entity[$key]);
 			}
-			$row_contents.=(isset($entity[$key]) ? $entity[$key] : "") . $this->separator;
+			$row_contents .= (isset($entity[$key]) ? $entity[$key] : "") . $this->separator;
 		}
 
 		$result = self::GOOGLE_RESPONSE_CODE_SUCCESS;
 		$row_contents.= $result . $this->separator;
-		$row_contents.= '' . $this->separator;
+		$row_contents.= ' ' . $this->separator;
 
 		return $row_contents;
 	}
