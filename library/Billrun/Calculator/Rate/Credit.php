@@ -44,8 +44,11 @@ class Billrun_Calculator_Rate_Credit extends Billrun_Calculator_Rate {
 	 * @see Billrun_Calculator_Rate::getLineRate
 	 */
 	protected function getLineRate($row, $usage_type) {
-
-		$rate_key = $row['vatable'] ? "CREDIT_VATABLE" : "CREDIT_VAT_FREE";
+		if (isset($row['billable']) && !$row['billable']) {
+			$rate_key = "CREDIT_NOT_BILLABLE";
+		} else {
+			$rate_key = $row['vatable'] ? "CREDIT_VATABLE" : "CREDIT_VAT_FREE";
+		}
 		$rate = $this->rates[$rate_key];
 
 		return $rate;
@@ -58,7 +61,7 @@ class Billrun_Calculator_Rate_Credit extends Billrun_Calculator_Rate {
 		$rates_coll = Billrun_Factory::db()->ratesCollection();
 		$query = array(
 			'key' => array(
-				'$in' => array('CREDIT_VATABLE', 'CREDIT_VAT_FREE'),
+				'$in' => array('CREDIT_VATABLE', 'CREDIT_VAT_FREE', 'CREDIT_NOT_BILLABLE'),
 			),
 		);
 		$rates = $rates_coll->query($query)->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));

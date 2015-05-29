@@ -44,6 +44,11 @@ class Billrun_Generator_Googledcb extends Billrun_Generator_Csv {
 			);
 		}
 	}
+	
+	protected function writeHeaders() {
+		$header_str = implode($this->headers, $this->separator) . $this->separator . $this->separator . PHP_EOL;
+		$this->writeToFile($header_str);
+	}
 
 	protected function getRowContent($entity) {
 		$row_contents = '';
@@ -52,37 +57,22 @@ class Billrun_Generator_Googledcb extends Billrun_Generator_Csv {
 			if ($key == 'process_time') {
 				$entity[$key] = strtotime($entity[$key]);
 			}
-			$row_contents.=(isset($entity[$key]) ? $entity[$key] : "") . $this->separator;
+			if ($key == 'credit_type') {
+				$entity[$key] = strtoupper($entity[$key]);
+			}
+			$row_contents .= (isset($entity[$key]) ? $entity[$key] : "") . $this->separator;
 		}
 
 		$result = self::GOOGLE_RESPONSE_CODE_SUCCESS;
-
-		if (!isset($entity['aid']) && !is_null($entity['aid'])) {
-			$result = self::GOOGLE_RESPONSE_CODE_ACCOUNT_CLOSED;
-		}
-		if (!isset($entity['aprice'])) {
-			$result = self::GOOGLE_RESPONSE_CODE_CHARGE_TOO_OLD;
-		}
 		$row_contents.= $result . $this->separator;
-		if (isset($entity['billrun'])) {
-			$billrun = $entity['billrun'];
-		}
-		else {
-			$billrun = '';
-		}
-		$row_contents.= 'Billrun: ' . $billrun . $this->separator;
+		$row_contents.= ' ' . $this->separator;
 
 		return $row_contents;
 	}
 
 	protected function setFilename() {
-		$modelLog = new LogModel();
 		$modelLines = new LinesModel();
-		$qureyLog = array(
-			"process_time" => array('$exists' => true),
-			"generate_time" => array('$exists' => false),
-		);
-		$this->log = $modelLog->getDataByStamp($qureyLog)->getRawData();
+		$this->log = $this->getFileForGenerating()->getRawData();
 
 		if (is_null($this->log) || !isset($this->log['path'])) {
 			return;
@@ -158,4 +148,33 @@ class Billrun_Generator_Googledcb extends Billrun_Generator_Csv {
 		}
 	}
 
+	protected function getFileForGenerating() {
+		$log = Billrun_Factory::db()->logCollection();
+		$adoptThreshold = strtotime('-' . Billrun_Factory::config()->getConfigValue('googledcb.orphan_files_time'));
+
+		$query = array(
+			'process_time' => array('$exists' => true),
+			'generate_time' => array('$exists' => false),
+			'$or' => array(
+				array('start_generate_time' => array('$exists' => false)),
+				array('start_generate_time' => array('$lt' => new MongoDate($adoptThreshold))),
+			),
+			'received_time' => array(
+				'$exists' => true,
+			),
+		);
+		$update = array(
+			'$set' => array('start_generate_time' => new MongoDate(time())),
+		);
+		$options = array(
+			'sort' => array(
+				'received_time' => 1,
+			),
+			'new' => true,
+		);
+		
+		$file = $log->findAndModify($query, $update, array(), $options);
+		$file->collection($log);
+		return $file;
+	}
 }
