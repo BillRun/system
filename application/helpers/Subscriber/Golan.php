@@ -293,7 +293,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 										continue;
 									}
 									if ($aid != $credit['account_id']) {
-										Billrun_Factory::log("Credit account id " . $concat['data']['aid'] . " is different from parent account id " . $aid, Zend_log::WARN);
+										Billrun_Factory::log("Credit account id " . $credit['account_id'] . " is different from parent account id " . $aid, Zend_log::WARN);
 										continue;
 									}
 									$credit['aid'] = $concat['data']['aid'];
