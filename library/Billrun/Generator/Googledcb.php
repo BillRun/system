@@ -124,6 +124,7 @@ class Billrun_Generator_Googledcb extends Billrun_Generator_Csv {
 		// Encrypt file
 		$pgpConfig = Billrun_Factory::config()->getConfigValue('googledcb.pgp', array());
 		$encrypted_file_path = $this->file_path . '.pgp';
+		$pgpConfig['encrypt_type'] = 'response';
 		Billrun_Pgp::getInstance($pgpConfig)->encrypt_file($this->file_path, $encrypted_file_path);
 
 		// Move files to Googles' SFTP
