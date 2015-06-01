@@ -44,27 +44,35 @@ class Billrun_Pgp {
 	public function __construct($config) {
 		$this->res = gnupg_init();
 		$this->config = $config;
+		$key_conf = 'private_key';
+		if (isset($this->config['encrypt_type']) && 
+		strtolower($this->config['encrypt_type']) === 'response') {
+			$key_conf = 'response_public_key';
+			$this->config['passphrase'] = '';
+		}
 		
 		if (!isset($this->config['passphrase'])) {
 			$this->config['passphrase'] = '';
 		}
 		
-		if (isset($this->config['private_key'])) {
-			$this->setPrivateKey($this->config['private_key'], $this->config['passphrase']);
+		if (isset($this->config[$key_conf])) {
+			$this->setPrivateKey($this->config[$key_conf], $this->config['passphrase']);
 		}
 	}
 	
 	/**
 	 * Set passphrase and fingerprint for ecnryption and decryption
 	 *
-	 * @param  string   $private_ket_path   private key path
+	 * @param  string   $private_key_path   private key path
 	 * @param  string   $passphrase			passphrase
 	 * @return void
 	 */
-	public function setPrivateKey($private_ket_path, $passphrase = '') {
-		$key_data = file_get_contents($private_ket_path);
+	public function setPrivateKey($private_key_path, $passphrase = '') {
+		$key_data = file_get_contents($private_key_path);
 		$info = gnupg_import($this->res, $key_data);
-		gnupg_adddecryptkey($this->res, $info['fingerprint'], $passphrase);
+		if ($passphrase !== '') {
+			gnupg_adddecryptkey($this->res, $info['fingerprint'], $passphrase);
+		}
 		gnupg_addencryptkey($this->res, $info['fingerprint']);
 	}
 
