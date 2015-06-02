@@ -347,17 +347,17 @@ class Billrun_Util {
 		}
 		$querystring = http_build_query($get);
 		if (!$post) {
-			$cmd = "wget -O /dev/null --no-check-certificate '" . $url . "?" . $querystring .
-				"' > /dev/null & ";
+			$cmd = "wget -qO /dev/null --no-check-certificate '" . $url . "?" . $querystring .
+				"' > /dev/null 2>&1 & ";
 		} else {
 			$post = http_build_query($post);
-			$cmd = "wget -O /dev/null --no-check-certificate '" . $url . "?" . $querystring . "' --post-data '" . $post .
-				"' > /dev/null & ";
+			$cmd = "wget -qO /dev/null --no-check-certificate '" . $url . "?" . $querystring . "' --post-data '" . $post .
+				"' > /dev/null 2>&1 &";
 		}
 
-		echo $cmd . PHP_EOL; // Need to make the call to exec asynchronous, otherwise we will face dangerous lags!
-		if (exec($cmd) === FALSE) {
-			error_log("Can't fork PHP process");
+		Billrun_Factory::log()->log("forkProcessWeb command executed: " . $cmd, Zend_Log::DEBUG);
+		if (system($cmd) === FALSE) {
+			Billrun_Factory::log()->log("Can't fork PHP process. command was: " . $cmd, Zend_Log::ALERT);
 			return false;
 		}
 		return true;
@@ -775,7 +775,7 @@ class Billrun_Util {
 	 */
 	public static function sendRequest($url, array $data = array(), array $options = array(), $timeout = null) {
 		if (empty($url)) {
-			Billrun_Factory::log()->log("Bad parameters: url - " . $url . " method: " . $method, Zend_Log::ERR);
+			Billrun_Factory::log()->log("Bad parameters: url - " . $url . " data: " . $data, Zend_Log::ERR);
 			return FALSE;
 		}
 
