@@ -27,7 +27,7 @@ class Billrun_Pgp {
 	 * 
 	 * @var array
 	 */
-	protected static $config = array();
+	protected $config = array();
 
 	/**
 	 * gnupg resource

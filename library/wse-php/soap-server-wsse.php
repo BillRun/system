@@ -72,6 +72,12 @@ class WSSESoapServer {
 	protected $signatureValue;
 	
 	protected $serverPemPath;
+	
+	/**
+	 *
+	 * @var boolean
+	 */
+	public $verifyBodySignature;
 
 	private function locateSecurityHeader($setActor=NULL) { 
         $wsNamespace = NULL; 
@@ -111,7 +117,7 @@ class WSSESoapServer {
 		}
 	}
 
-	public function processSignature($refNode) {
+	public function processSignature($refNode, $retValidated = false) {
 		$objXMLSecDSig = new XMLSecurityDSig();
 		$objXMLSecDSig->idKeys[] = 'wswsu:Id';
 		$objXMLSecDSig->idNS['wswsu'] = WSSESoapServer::WSUNS;
@@ -165,7 +171,7 @@ class WSSESoapServer {
 							$objKey->loadKey($x509cert);
 							if ($objXMLSecDSig->verify($objKey)) {
 								$this->signatureValue = $objXMLSecDSig->getSignatureValue();
-								return TRUE;
+								return $retValidated? $objXMLSecDSig->getValidatedNodes() : TRUE;
 							}
 						}
 					}
@@ -179,7 +185,7 @@ class WSSESoapServer {
 			throw new Exception("Unable to validate Signature");
 		}
 
-		return TRUE;
+		return $retValidated? $objXMLSecDSig->getValidatedNodes() : TRUE;
 	}
 	
 	public function getSignatureValue() {
@@ -188,14 +194,18 @@ class WSSESoapServer {
 
 	public function process() {
 		if (empty($this->secNode)) {
+			if ($this->verifyBodySignature) {
+				throw new Exception("Unable to validate Signature");
+			}
 			return;
 		}
 		$node = $this->secNode->firstChild;
+		$validatedNodes = array();
 		while ($node) {
 			$nextNode = $node->nextSibling;
 			switch ($node->localName) {
 				case "Signature":
-					if ($this->processSignature($node)) {
+					if ($validatedNodes = array_merge($validatedNodes, $this->processSignature($node, true))) {
 						if ($node->parentNode) {
 							$node->parentNode->removeChild($node);
 						}
@@ -208,6 +218,18 @@ class WSSESoapServer {
 		}
 		$this->secNode->parentNode->removeChild($this->secNode);
 		$this->secNode = NULL;
+		if ($this->verifyBodySignature) {
+			$query = "//*[local-name()='Body'][1]";
+			$nodeset = $this->SOAPXPath->query($query);
+			if ($bodyNode = $nodeset->item(0)) {
+				foreach ($validatedNodes as $validatedNode) {
+					if ($validatedNode->isSameNode($bodyNode)) {
+						return TRUE;
+					}
+				}
+			}
+			throw new Exception("Unable to validate Signature");
+		}
 		return TRUE;
 	}
 

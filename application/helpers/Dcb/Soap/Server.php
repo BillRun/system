@@ -66,14 +66,19 @@ class Soap_Server_WSSE extends Zend_Soap_Server {
 		}
 		return $result;
 	}
-
-	public function addExternalCertificates($paths) {
-		$this->WSSEServer->addExternalCertificates($paths);
+	
+	public function setOptions($options) {
+		parent::setOptions($options);
+		if (isset($options['external_certificates_paths'])) {
+			$this->WSSEServer->addExternalCertificates($options['external_certificates_paths']);
+		}
+		if (isset($options['server_pem_path'])) {
+			$this->WSSEServer->setServerPem($options['server_pem_path']);
+		}
+		if (isset($options['verify_body_signature'])) {
+			$this->WSSEServer->verifyBodySignature = $options['verify_body_signature'];
+		}
+		return $this;
 	}
-
-	public function setServerPem($pemPath) {
-		$this->WSSEServer->setServerPem($pemPath);
-	}
-
 }
 
