@@ -1,7 +1,7 @@
 #/bin/bash
 
 
-for i in {1..7}
+for i in {1..9}
 do
         ipad=`printf %02d $i`
         echo "pri$ipad " `ssh pri$ipad.gt 'df -h | grep ssd | grep G'`
