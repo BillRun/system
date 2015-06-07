@@ -30,12 +30,16 @@ class DcbAction extends Action_Base {
 	 */
 	public function execute() {
 		$this->init();
-		$soap = new Soap_Server_WSSE($this->wsdlPath, array('soap_version' => SOAP_1_1));
-		$soap->setClass('Dcb_Soap_Handler');
-		$soap->setReturnResponse(true);
-		$soap->addExternalCertificates($this->externalCerts);
-		$soap->setServerPem($this->billrunPemPath);
-		$result = $soap->handle();
+		$secured_soap_server = new Soap_Server_WSSE($this->wsdlPath, array('soap_version' => SOAP_1_1));
+		$secured_soap_server->setClass('Dcb_Soap_Handler');
+		$secured_soap_server->setReturnResponse(true);
+		$options = array(
+			'external_certificates_paths' => $this->externalCerts,
+			'server_pem_path' => $this->billrunPemPath,
+			'verify_body_signature' => TRUE,
+		);
+		$secured_soap_server->setOptions($options);
+		$result = $secured_soap_server->handle();
 		die($result);
 	}
 

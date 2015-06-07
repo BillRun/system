@@ -853,20 +853,7 @@ class XMLSecurityDSig {
             $arUrl = parse_url($uri);
             if (empty($arUrl['path'])) {
                 if ($identifier = $arUrl['fragment']) {
-                    $xPath = new DOMXPath($refNode->ownerDocument);
-                    if ($this->idNS && is_array($this->idNS)) {
-                        foreach ($this->idNS AS $nspf=>$ns) {
-                            $xPath->registerNamespace($nspf, $ns);
-                        }
-                    }
-                    $iDlist = '@Id="'.$identifier.'"';
-                    if (is_array($this->idKeys)) {
-                        foreach ($this->idKeys AS $idKey) {
-                            $iDlist .= " or @$idKey='$identifier'";
-                        }
-                    }
-                    $query = '//*['.$iDlist.']';
-                    $dataObject = $xPath->query($query)->item(0);
+                    $dataObject = $this->getDataObjectById($refNode, $identifier);
                 } else {
                     $dataObject = $refNode->ownerDocument;
                 }
@@ -1274,6 +1261,24 @@ class XMLSecurityDSig {
     public function getValidatedNodes() {
         return $this->validatedNodes;
     }
+	
+	public function getDataObjectById($refNode, $identifier) {
+		$xPath = new DOMXPath($refNode->ownerDocument);
+		if ($this->idNS && is_array($this->idNS)) {
+			foreach ($this->idNS AS $nspf => $ns) {
+				$xPath->registerNamespace($nspf, $ns);
+			}
+		}
+		$iDlist = '@Id="' . $identifier . '"';
+		if (is_array($this->idKeys)) {
+			foreach ($this->idKeys AS $idKey) {
+				$iDlist .= " or @$idKey='$identifier'";
+			}
+		}
+		$query = '//*[' . $iDlist . ']';
+		$dataObject = $xPath->query($query)->item(0);
+		return $dataObject;
+	}
 }
 
 class XMLSecEnc {
