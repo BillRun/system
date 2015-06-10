@@ -67,6 +67,9 @@ class Admin_Table {
 			case 5:
 				return 'HSPA';
 				break;
+			default :
+				return $number;
+				break;
 		}
 	} 
 
