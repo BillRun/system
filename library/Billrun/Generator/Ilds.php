@@ -97,6 +97,7 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 			$xml->INV_CUSTOMER_INFORMATION->CUSTOMER_CONTACT->EXTERNALACCOUNTREFERENCE = $row->get('account_id');
 			;
 			$total_ilds = array();
+			$stamps = array();
 			foreach ($row->get('subscribers') as $id => $subscriber) {
 				$subscriber_inf = $xml->addChild('SUBSCRIBER_INF');
 				$subscriber_inf->SUBSCRIBER_DETAILS->SUBSCRIBER_ID = $id;
@@ -104,6 +105,7 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 
 				$subscriber_lines = $this->get_subscriber_lines($id);
 				foreach ($subscriber_lines as $line) {
+					$stamps[] = $line['stamp'];
 					$billing_record = $billing_records->addChild('BILLING_RECORD');
 					if ($line['type'] == 'refund') {
 						$this->addRefundLineXML($billing_record, $line);
@@ -136,6 +138,7 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 			}
 
 			$invoice_id = $this->saveInvoiceId($row->get('account_id'), $this->createInvoiceId());
+			$this->setLinesInvoiceId($stamps, $invoice_id);
 			// update billrun with the invoice id
 			$xml->INV_INVOICE_TOTAL->INVOICE_NUMBER = $invoice_id;
 			$xml->INV_INVOICE_TOTAL->INVOICE_DATE = date($short_format_date);
@@ -231,6 +234,26 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 		}
 
 		return $invoice_id;
+	}
+	
+	protected function setLinesInvoiceId($stamps, $invoice_id) {
+		$lines = Billrun_Factory::db()->linesCollection();
+		$where = array(
+			'lines' => array(
+				'$in' => $stamps,
+			),
+			// the next or is for protection (source query that populate the lines)
+			'$or' => array(
+				array('source' => array('$in' => array('ilds', 'premium'))),
+				array('source' => 'api', 'type' => 'refund', 'reason' => 'ILDS_DEPOSIT')
+			),
+		);
+		$update = array(
+			'$set' => array(
+				'invoice_id' => $invoice_id,
+			)
+		);
+		$lines->update($where, $update, array("multiple" => true));
 	}
 
 	protected function createInvoiceId() {
