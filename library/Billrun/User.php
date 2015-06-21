@@ -35,7 +35,10 @@ class Billrun_User {
 	 * @param string $permission read/write/admin
 	 * @return boolean
 	 */
-	public function allowed($permission) {
+	public function allowed($permission, $page = null) {
+		if (isset($this->entity['roles'][$page])) {
+			return (boolean) array_intersect($this->entity['roles'][$page], array($permission, 'admin'));
+		}
 		return (boolean) array_intersect($this->entity['roles'], array($permission, 'admin'));
 	}
 	

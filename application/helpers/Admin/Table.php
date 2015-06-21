@@ -26,7 +26,8 @@ class Admin_Table {
 	public static function translateField($entity, $key) {
 		switch($key) {
 			case 'urt':
-				return (new Zend_Date($entity[$key]->sec, null, new Zend_Locale('he_IL')))->getIso();
+				$d = new Zend_Date($entity[$key]->sec, null, new Zend_Locale('he_IL'));
+				return $d->getIso();
 				break;
 			case 'arate':
 			case 'pzone':
@@ -39,14 +40,14 @@ class Admin_Table {
 				break;
 			case 'rat_type':
 				return self::translateRat_Type($entity[$key]);
+			default:
+				return $entity[$key];
 		}
 	}
 	
-	public static function setEntityFields(&$entity) {
-		foreach($entity as $key => $value) {
-			if(isset($value)) {
-				$entity[$key] = self::translateField($entity, $key);
-			}
+	public static function setEntityFields(Mongodloid_Entity &$entity) {
+		foreach($entity->getRawData() as $key => $val) {
+			$entity[$key] = self::translateField($entity, $key);
 		}
 	}
 	

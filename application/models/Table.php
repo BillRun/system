@@ -285,7 +285,7 @@ class TableModel {
 		} else {
 			$entity = new Mongodloid_Entity($params);
 		}
-		$entity->save($this->collection);
+		$entity->save($this->collection, 1);
 //		if (method_exists($this, $coll . 'AfterDataSave')) {
 //			call_user_func_array(array($this, $coll . 'AfterDataSave'), array($collection, &$newEntity));
 //		}
@@ -432,7 +432,7 @@ class TableModel {
 			die(json_encode("key already exists"));
 		}
 		if (isset($params['_id'])) {
-			$params['source_id'] = $params['_id'];
+			$params['source_id'] = (string) $params['_id'];
 			unset($params['_id']);
 		}
 		return $this->update($params);

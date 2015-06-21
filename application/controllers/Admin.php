@@ -412,9 +412,9 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * 
 	 * @todo: refactoring to core
 	 */
-	static public function authorized($permission) {
+	static public function authorized($permission, $page = null) {
 		$user = Billrun_Factory::user();
-		if (!$user || !$user->valid() || !$user->allowed($permission)) {
+		if (!$user || !$user->valid() || !$user->allowed($permission, $page)) {
 			return false;
 		}
 
@@ -430,7 +430,13 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * 
 	 */
 	protected function allowed($permission) {
-		if (self::authorized($permission)) {
+		$action = $this->getRequest()->getActionName();
+		if ($action != 'index') {
+			$page = $action;
+		} else {
+			$page = null;
+		}
+		if (self::authorized($permission, $page)) {
 			return true;
 		}
 
@@ -439,7 +445,7 @@ class AdminController extends Yaf_Controller_Abstract {
 			return false;
 		}
 
-		$this->forward('login', array('ret_action' => $this->getRequest()->getActionName()));
+		$this->forward('login', array('ret_action' => $action));
 		return false;
 	}
 
@@ -515,7 +521,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	/**
 	 * log controller of admin
 	 */
-	public function logAction() {
+	public function logsAction() {
 		if (!$this->allowed('read'))
 			return false;
 		$table = "log";

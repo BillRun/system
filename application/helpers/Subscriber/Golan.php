@@ -496,6 +496,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 	 */
 	public function getFlatEntry($billrun_key, $retEntity = false) {
 		$billrun_end_time = Billrun_Util::getEndTime($billrun_key);
+		$next_plan = $this->getNextPlan();
 		$flat_entry = array(
 			'aid' => $this->aid,
 			'sid' => $this->sid,
@@ -505,7 +506,8 @@ class Subscriber_Golan extends Billrun_Subscriber {
 			'usaget' => 'flat',
 			'urt' => new MongoDate($billrun_end_time),
 			'aprice' => $this->getFlatPrice(),
-			'plan_ref' => $this->getNextPlan()->createRef(),
+			'plan' => $next_plan->getName(),
+			'plan_ref' => $next_plan->createRef(),
 			'process_time' => date(Billrun_Base::base_dateformat),
 		);
 		$stamp = md5($flat_entry['aid'] . $flat_entry['sid'] . $billrun_end_time);
