@@ -14,10 +14,10 @@
  * @since    2.8
  */
 class CronController extends Yaf_Controller_Abstract {
-	
+
 	protected $mailer;
 	protected $smser;
-	
+
 	public function init() {
 		$this->smser = Billrun_Factory::smser();
 		$this->mailer = Billrun_Factory::mailer();
@@ -31,22 +31,21 @@ class CronController extends Yaf_Controller_Abstract {
 	public function indexAction() {
 		// do nothing
 	}
-	
+
 	public function receiveAction() {
 		$alerts = $this->locate(('receive'));
-		if (empty($alerts)) {
+		if (!empty($alerts)) {
 			$this->sendAlerts('receive', $alerts);
 		}
 	}
-	
+
 	public function processAction() {
 		$alerts = $this->locate(('process'));
-		if (empty($alerts)) {
+		if (!empty($alerts)) {
 			$this->sendAlerts('process', $alerts);
 		}
 	}
 
-	
 	protected function locate($process) {
 		$logsModel = new LogModel();
 		$empty_types = array();
@@ -55,15 +54,16 @@ class CronController extends Yaf_Controller_Abstract {
 		foreach ($types as $type => $timediff) {
 			$query = array(
 				'source' => $type,
-				$filter_field => array('$gt' => date('Y-m-d h:i:s', (time()-$timediff)))
+				$filter_field => array('$gt' => date('Y-m-d H:i:s', (time() - $timediff)))
 			);
-			$results = $logsModel->getData($query);
-			if (empty($results)) {
+			$results = $logsModel->getData($query)->current();
+			if ($results->isEmpty()) {
 				$empty_types[] = $type;
 			}
 		}
 		return $empty_types;
 	}
+
 	protected function sendAlerts($process, $empty_types) {
 		$actions = Billrun_Factory::config()->getConfigValue('cron.log.' . $process . '.actions', array());
 		if (isset($actions['email'])) {
@@ -71,12 +71,12 @@ class CronController extends Yaf_Controller_Abstract {
 			if (isset($actions['email']['recipients'])) {
 				$recipients = $actions['email']['recipients'];
 			} else {
-				$recipients = $this->getSmsList();
+				$recipients = $this->getEmailsList();
 			}
 			$this->mailer->addTo($recipients);
 			$this->mailer->setSubject($actions['email']['subject']);
 			$message = sprintf($actions['email']['message'], $process, implode(', ', $empty_types));
-			$this->mailer->setBody($message);
+			$this->mailer->setBodyText($message);
 			$this->mailer->send();
 		}
 		if (isset($actions['sms'])) {
@@ -87,7 +87,7 @@ class CronController extends Yaf_Controller_Abstract {
 			} else {
 				$recipients = $this->getSmsList();
 			}
-			$this->smser->send($message, $actions['sms']['recipients']);
+			$this->smser->send($message, $recipients);
 		}
 	}
 
@@ -99,7 +99,7 @@ class CronController extends Yaf_Controller_Abstract {
 	public function addOutput($content) {
 		Billrun_Log::getInstance()->log($content, Zend_Log::INFO);
 	}
-	
+
 	protected function getEmailsList() {
 		return Billrun_Factory::config()->getConfigValue('cron.log.mail_recipients', array());
 	}
