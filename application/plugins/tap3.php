@@ -179,8 +179,9 @@ use Billrun_Traits_FileSequenceChecking;
 			$record_type = $cdrLine['record_type'];
 			if ($record_type == '9') {
 				if ($tele_service_code == '11') {
-					if (Billrun_Util::getNestedArrayVal($cdrLine, $mapping['called_number'])) {
-						$cdrLine['called_number'] = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['called_number']); //$cdrLine['basicCallInformation']['Desination']['CalledNumber'];
+					$called_number = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['called_number']); //$cdrLine['basicCallInformation']['Desination']['CalledNumber'];
+					if ($called_number) {
+						$cdrLine['called_number'] = $called_number; 
 					} else {
 						$cdrLine['called_number'] = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['dialed_digits']); 
 					}
