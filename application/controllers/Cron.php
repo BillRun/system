@@ -19,6 +19,7 @@ class CronController extends Yaf_Controller_Abstract {
 	protected $smser;
 
 	public function init() {
+		Billrun_Factory::log("BillRun Cron is running", Zend_Log::INFO);
 		$this->smser = Billrun_Factory::smser();
 		$this->mailer = Billrun_Factory::mailer();
 	}
@@ -33,6 +34,7 @@ class CronController extends Yaf_Controller_Abstract {
 	}
 
 	public function receiveAction() {
+		Billrun_Factory::log("Check receive", Zend_Log::INFO);
 		$alerts = $this->locate(('receive'));
 		if (!empty($alerts)) {
 			$this->sendAlerts('receive', $alerts);
@@ -40,6 +42,7 @@ class CronController extends Yaf_Controller_Abstract {
 	}
 
 	public function processAction() {
+		Billrun_Factory::log("Check process", Zend_Log::INFO);
 		$alerts = $this->locate(('process'));
 		if (!empty($alerts)) {
 			$this->sendAlerts('process', $alerts);
@@ -65,6 +68,12 @@ class CronController extends Yaf_Controller_Abstract {
 	}
 
 	protected function sendAlerts($process, $empty_types) {
+		if (empty($empty_types)) {
+			return ;
+		}
+		$events_string = implode(', ', $empty_types);
+		Billrun_Factory::log("Send alerts for " . $process, Zend_Log::INFO);
+		Billrun_Factory::log("Events types: " . $events_string, Zend_Log::INFO);
 		$actions = Billrun_Factory::config()->getConfigValue('cron.log.' . $process . '.actions', array());
 		if (isset($actions['email'])) {
 			//'GT BillRun - file did not %s: %s'
@@ -75,13 +84,13 @@ class CronController extends Yaf_Controller_Abstract {
 			}
 			$this->mailer->addTo($recipients);
 			$this->mailer->setSubject($actions['email']['subject']);
-			$message = sprintf($actions['email']['message'], $process, implode(', ', $empty_types));
+			$message = sprintf($actions['email']['message'], $process, $events_string);
 			$this->mailer->setBodyText($message);
 			$this->mailer->send();
 		}
 		if (isset($actions['sms'])) {
 			//'GT BillRun - file types did not %s: %s'
-			$message = sprintf($actions['sms']['message'], $process, implode(', ', $empty_types));
+			$message = sprintf($actions['sms']['message'], $process, $events_string);
 			if (isset($actions['sms']['recipients'])) {
 				$recipients = $actions['sms']['recipients'];
 			} else {
