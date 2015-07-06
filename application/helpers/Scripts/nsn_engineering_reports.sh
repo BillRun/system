@@ -47,7 +47,7 @@ case $report_name in
                     });' ;;
 
 	"top_50_sms" )
-	js_code=$js_code'db.lines.aggregate({$match : {type : {$in : ["smsc"\t"smpp"\t"mmsc"]}, urt : {$gte : from_date , $lte : to_date }, sid : {$exists : 1}}},
+	js_code=$js_code'db.lines.aggregate({$match : {type : {$in : ["smsc","smpp","mmsc"]}, urt : {$gte : from_date , $lte : to_date }, sid : {$exists : 1}}},
                     {$group : {_id : "$sid",total_volume : {$sum : 1} }},
                     {$sort : {total_volume : -1}}, {$limit : 50}).forEach(function(obj) {
                         print("'$day'" + "\t" + obj._id +"\t"+ obj.total_volume);
