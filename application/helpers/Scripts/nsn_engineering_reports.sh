@@ -50,7 +50,7 @@ case $report_name in
 	js_code=$js_code'db.lines.aggregate({$match : {type : {$in : ["smsc"\t"smpp"\t"mmsc"]}, urt : {$gte : from_date , $lte : to_date }, sid : {$exists : 1}}},
                     {$group : {_id : "$sid",total_volume : {$sum : 1} }},
                     {$sort : {total_volume : -1}}, {$limit : 50}).forEach(function(obj) {
-                        print('$day' + "\t" + obj._id +"\t"+ obj.total_volume);
+                        print("'$day'" + "\t" + obj._id +"\t"+ obj.total_volume);
                     });' ;;
 
 
@@ -61,7 +61,7 @@ case $report_name in
                                   average_duration : {$cond : [{$gt : ["$total_successful", 0]}, {$divide : ["$total_volume", "$total_successful"]}, 0]} }}
                     ).forEach(function(obj) {
                         var rate = db.rates.findOne(obj._id.$id).key;
-                        print('$day' + "\t" + rate +"\t"+ obj.total_successful +"\t"+ obj.successful_ratio +"\t"+ obj.average_duration +"\t"+ obj.total_volume);
+                        print("'$day'" + "\t" + rate +"\t"+ obj.total_successful +"\t"+ obj.successful_ratio +"\t"+ obj.average_duration +"\t"+ obj.total_volume);
                     });';;
 
     "circuit_groups" )
@@ -73,7 +73,7 @@ case $report_name in
                         {$project : {ciruit_group : "$_id.circuit_group" , usaget : "$_id.type", circuit_group_name : 1, sid_count : {$size : "$sid_list"} , call_attempts : 1,
 			 total_successful : 1, total_volume : 1}}
 		).forEach(function(obj) {
-                        print('$day' + "\t" + obj._id.circuit_group +"\t"+ obj.circuit_group_name  +"\t"+ obj.sid_count  +"\t"+ obj.call_attempts  +"\t"+ obj.total_successful  +"\t"+ 
+                        print("'$day'" + "\t" + obj._id.circuit_group +"\t"+ obj.circuit_group_name  +"\t"+ obj.sid_count  +"\t"+ obj.call_attempts  +"\t"+ obj.total_successful  +"\t"+ 
                           obj.total_volume  +"\t"+ obj.total_volume/obj.sid_count  +"\t"+ obj.total_successful/obj.call_attempts*100 +"\t"+ obj._id.type);
                     });' ;;
 
