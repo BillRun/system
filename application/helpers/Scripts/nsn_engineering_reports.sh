@@ -86,7 +86,6 @@ esac
 
 if [[ -n "$js_code" ]]; then	
 	mongo billing -ureading -pguprgri --quiet --eval "$js_code" > "$output_dir/$report_name.csv" ;
-	echo $js_code ;
 fi
 
 
