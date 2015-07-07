@@ -500,6 +500,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 
 	public function afterCalculatorUpdateRow($line, $calculator) {
+		return;
 
 		if (!$this->isLineLegitimate($line, $calculator)) {
 			return true;
