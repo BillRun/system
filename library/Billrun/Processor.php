@@ -161,7 +161,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 					->equals('source', static::$type)
 					->notExists('process_time')
 					->cursor()->sort(array('received_time' => 1))
-					->limit(1)->current();
+					->limit(1)->hint(array('received_time' => 1))->current();
 			if (!$file || !$file->getID()) {
 				break;
 			}
