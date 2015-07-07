@@ -50,18 +50,42 @@ class CronController extends Yaf_Controller_Abstract {
 	}
 
 	protected function locate($process) {
-		$logsModel = new LogModel();
 		$empty_types = array();
-		$filter_field = Billrun_Factory::config()->getConfigValue('cron.log.' . $process . '.field');
-		$types = Billrun_Factory::config()->getConfigValue('cron.log.' . $process . '.types', array());
-		foreach ($types as $type => $timediff) {
-			$query = array(
-				'source' => $type,
-				$filter_field => array('$gt' => date('Y-m-d H:i:s', (time() - $timediff)))
-			);
-			$results = $logsModel->getData($query)->current();
-			if ($results->isEmpty()) {
-				$empty_types[] = $type;
+		$settings = array(
+			'log' => array(
+				'filter_field_type' => 'source',
+				'filter_time' => array('$gt' => ''),
+			),
+			'lines' => array(
+				'filter_field_type' => 'type',
+				'filter_time' => array('$gt' => ''),
+			),
+		);
+		foreach ($settings as $c => $c_settings) {
+			$modelName = $c . 'Model';
+			$model = new $modelName();
+			$filter_field = Billrun_Factory::config()->getConfigValue('cron.' . $c . '.' . $process . '.field');
+			$types = Billrun_Factory::config()->getConfigValue('cron.' . $c . '.' . $process . '.types', array());
+			if (empty($filter_field) || empty($types)) {
+				continue;
+			}
+			foreach ($types as $type => $timediff) {
+				if ($c == 'log') {
+					$c_settings['filter_time']['$gt'] = date('Y-m-d H:i:s', (time() - $timediff));
+				} else {
+					$c_settings['filter_time']['$gt'] = new MongoDate(time() - $timediff);
+				}
+				
+				$query = array(
+					$c_settings['filter_field_type'] => $type,
+					$filter_field => $c_settings['filter_time']
+				);
+				
+				$results = $model->setSize(1)->getData($query)->current();
+				
+				if ($results->isEmpty()) {
+					$empty_types[$c] = $type;
+				}
 			}
 		}
 		return $empty_types;
