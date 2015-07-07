@@ -431,7 +431,7 @@ class TableModel {
 		if ($count) {
 			die(json_encode("key already exists"));
 		}
-		if (isset($params['_id'])) {
+		if (isset($params['_id']->{'id'})) {
 			$params['source_id'] = (string) $params['_id']->{'$id'};
 			unset($params['_id']);
 		}
