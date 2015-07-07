@@ -433,8 +433,10 @@ class TableModel {
 		}
 		if (isset($params['_id']->{'id'})) {
 			$params['source_id'] = (string) $params['_id']->{'$id'};
-			unset($params['_id']);
+		} else if (isset($params['_id'])){
+			$params['source_id'] = (string) $params['_id'];
 		}
+		unset($params['_id']);
 		return $this->update($params);
 	}
 
