@@ -58,9 +58,13 @@ class VfdaysAction extends Action_Base {
 		$sender = Billrun_Factory::config()->getConfigValue('nrtrde.fraud.groups.vodafone15');
 		$plans = Billrun_Factory::config()->getConfigValue('nrtrde.fraud.events.NRTRDE1_B.target_plans');
 		
-		$match = array(
+		$match1 = array(
 			'$match' => array(
 				'subscriber_id' => $sid,
+			),
+		);
+		$match2 = array(
+			'$match' => array(
 				'plan' => array('$in' => $plans),
 				'$or' => array(
 					array_merge(
@@ -80,11 +84,11 @@ class VfdaysAction extends Action_Base {
 							array(
 								'record_type' => "MOC",
 								'connectedNumber' => new MongoRegex('/^972/')
-							)
-						)
+							),
+						),
 					),
 				),
-			)
+			),
 		);
 
 		$group = array(
@@ -97,17 +101,17 @@ class VfdaysAction extends Action_Base {
 					)
 				),
 				count => array('$sum' => 1),
-			)
+			),
 		);
 
 		$group2 = array(
 			'$group' => array(
 				'_id' => null,
 				count => array('$sum' => 1),
-			)
+			),
 		);
 
-		$res = Billrun_Factory::db()->linesCollection()->aggregate($match, $group, $group2);
+		$res = Billrun_Factory::db()->linesCollection()->aggregate($match1, $match2, $group, $group2);
 		return $res;
 	}
 
