@@ -263,11 +263,16 @@ $(function () {
 		type_changed(this)
 	});
 	$('.date:not(.wholesale-date)').datetimepicker({
-		format: 'YYYY-MM-DD',
-		useSeconds: true,
+		format: 'YYYY-MM-DD HH:mm:ss',
+		locale: 'he-il',
+		showTodayButton: true,
+		showClose: true
 	});
 	$('.wholesale-date').datetimepicker({
-		format: 'YYYY-MM-DD',
+		format: 'YYYY-MM-DD HH:mm:ss',
+		locale: 'he-il',
+		showTodayButton: true,
+		showClose: true,
 		pickTime: false
 	});
 	$(".advanced-options").on('click', function () {
@@ -330,7 +335,10 @@ function addFilter(button) {
 		cloned_sel.val(original_sel.val());
 	});
 	$('.date', cloned).datetimepicker({
-		format: 'yyyy-MM-dd hh:mm:ss',
+		format: 'YYYY-MM-DD HH:mm:ss',
+		locale: 'en-gb',
+		showTodayButton: true,
+		showClose: true
 	});
 	$(".remove-filter", cloned).on('click', function () {
 		removeFilter(this);
