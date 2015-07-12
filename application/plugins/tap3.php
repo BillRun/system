@@ -183,7 +183,10 @@ use Billrun_Traits_FileSequenceChecking;
 					if ($called_number) {
 						$cdrLine['called_number'] = $called_number; 
 					} else {
-						$cdrLine['called_number'] = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['dialed_digits']); 
+						$dialed_digits = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['dialed_digits']); 
+						if(isset($dialed_digits)) {
+							$cdrLine['called_number'] = $dialed_digits;
+						}
 					}
 				} else if ($tele_service_code == '22') {
 					if (Billrun_Util::getNestedArrayVal($cdrLine, $mapping['SmsDestinationNumber'])) {
@@ -209,11 +212,15 @@ use Billrun_Traits_FileSequenceChecking;
 			$cdrLine['bearer_srv_code'] = $bearer_service_code;
 			if (in_array($bearer_service_code, array('30', '37'))) {
 				if ($record_type == '9') {
-//					if (Billrun_Util::getNestedArrayVal($cdrLine, $mapping['dialed_digits'])) {
-//						$cdrLine['called_number'] = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['dialed_digits']);
-//					} else {
-						$cdrLine['called_number'] = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['called_number']); //$cdrLine['basicCallInformation']['Desination']['CalledNumber'];
-//					}
+					$called_number = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['called_number']); //$cdrLine['basicCallInformation']['Desination']['CalledNumber'];
+					if ($called_number) {
+						$cdrLine['called_number'] = $called_number; 
+					} else {
+						$dialed_digits = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['dialed_digits']); 
+						if(isset($dialed_digits)) {
+							$cdrLine['called_number'] = $dialed_digits;
+						}
+					}
 				}
 				if ($record_type == 'a') {
 					if (Billrun_Util::getNestedArrayVal($cdrLine, $mapping['called_number'])) {
