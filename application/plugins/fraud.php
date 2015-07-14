@@ -454,8 +454,12 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$roamingLines = array();
 		$circuit_groups = Billrun_Util::getIntlCircuitGroups();
 		$record_types = array('01', '11');
+		$rates_ref_list = Billrun_Util::getIntlRateRefs();			
 		foreach ($lines as $line) {
 			if (isset($line['out_circuit_group']) && in_array($line['out_circuit_group'], $circuit_groups) && in_array($line['record_type'], $record_types)) {
+				$roamingLines[] = $line;
+			} else if(isset($line['arate']) && in_array($line['arate']['$id']->{'$id'}, $rates_ref_list)) {
+				print_r($line['stamp']);
 				$roamingLines[] = $line;
 			}
 		}
@@ -519,6 +523,17 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$this->triggerCallingNumber($line);
 		}
 	}
+	
+//	public function afterCalculateData($data) {
+//		if(empty($data)) {
+//			return;
+//		}
+//		foreach($data as $stamp => $line) {
+//			$rate = $line['arate'];
+//			
+//			$a =1;
+//		}
+//	}
 
 	protected function triggerCalledNumber($line) {
 		$called_number = Billrun_Util::msisdn($line['called_number']);

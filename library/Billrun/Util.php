@@ -806,6 +806,18 @@ class Billrun_Util {
 	public static function getIntlCircuitGroups() {
 		return Billrun_Factory::config()->getConfigValue('Rate_Nsn.calculator.intl_cg', array());
 	}
+	
+	public static function getIntlRateRefs() {
+		$rate_key_list = array("IL_ILD");
+		$query = array("key" => array('$in' => $rate_key_list));
+		$ratesmodle =new RatesModel(array("collection" => "rates"));
+		$rates =$ratesmodle->getRates($query);
+		$rate_ref_list=array();
+		foreach ($rates as $rate) {
+			$rate_ref_list[]=$rate->createRef(Billrun_Factory::db()->ratesCollection())['$id']->{'$id'};
+		}
+		return $rate_ref_list;
+	}
         
 	/**
 	 * method to retrieve roaming circuit groups
