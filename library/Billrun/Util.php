@@ -806,9 +806,12 @@ class Billrun_Util {
 	public static function getIntlCircuitGroups() {
 		return Billrun_Factory::config()->getConfigValue('Rate_Nsn.calculator.intl_cg', array());
 	}
-	
+	/**
+	 * method to retrieve rates that ought to be included for fraud 
+	 * @return array of rate refs
+	 */
 	public static function getIntlRateRefs() {
-		$rate_key_list = array("IL_ILD");
+		$rate_key_list = Billrun_Factory::config()->getConfigValue('Rate_Nsn.calculator.intl_rates',array());
 		$query = array("key" => array('$in' => $rate_key_list));
 		$ratesmodle =new RatesModel(array("collection" => "rates"));
 		$rates =$ratesmodle->getRates($query);
