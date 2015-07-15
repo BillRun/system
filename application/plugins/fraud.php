@@ -523,17 +523,6 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 	}
 	
-//	public function afterCalculateData($data) {
-//		if(empty($data)) {
-//			return;
-//		}
-//		foreach($data as $stamp => $line) {
-//			$rate = $line['arate'];
-//			
-//			$a =1;
-//		}
-//	}
-
 	protected function triggerCalledNumber($line) {
 		$called_number = Billrun_Util::msisdn($line['called_number']);
 		$query = array(
