@@ -458,7 +458,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		foreach ($lines as $line) {
 			if (isset($line['out_circuit_group']) && in_array($line['out_circuit_group'], $circuit_groups) && in_array($line['record_type'], $record_types)) {
 				$roamingLines[] = $line;
-			} else if(isset($line['arate']) && $line['arate'] != null && in_array($line['arate']['$id']->{'$id'}, $rates_ref_list)) {
+			} else if(!empty($line['arate']) && in_array($line['arate']['$id']->{'$id'}, $rates_ref_list)) {
 				$roamingLines[] = $line;
 			}
 		}
