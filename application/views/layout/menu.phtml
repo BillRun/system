@@ -30,20 +30,10 @@
 				<a href="<?php echo $this->baseUrl; ?>/admin/queue">Queue</a>
 			</li>
 		<?php endif; ?>
-		<?php if (AdminController::authorized('read', 'events')) : ?>
-			<li<?php echo ($active == 'events' ? ' class="active"' : ''); ?>>
-				<a href="<?php echo $this->baseUrl; ?>/admin/events">Events</a>
-			</li>
-		<?php endif; ?>
 		<?php if (AdminController::authorized('read', 'logs')) : ?>
 			<li<?php echo ($active == 'logs' ? ' class="active"' : ''); ?>>
 				<a href="<?php echo $this->baseUrl; ?>/admin/logs">Log</a>
 			</li>
-		<?php endif; ?>
-		<?php if (AdminController::authorized('reports')) : ?>
-		<li<?php echo ($active == 'wholesale' ? ' class="active"' : ''); ?>>
-			<a href="<?php echo $this->baseUrl; ?>/admin/wholesale">Reports</a>
-		</li>
 		<?php endif; ?>
 		<?php if (AdminController::authorized('admin')) : ?>
 			<li class="dropdown<?php echo (in_array($active, array('users', 'config', 'operations')) ? ' active' : ''); ?>">

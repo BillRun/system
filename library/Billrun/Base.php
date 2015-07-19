@@ -138,15 +138,9 @@ abstract class Billrun_Base {
 			return self::$instance[$stamp];
 		}
 
-		if (isset($args['type'])) {
-			$type = $args['type'];
-			$args = array();
-			Billrun_Factory::log()->log('Depratected approach of Billrun_Base::getInstance: ' . $type, Zend_Log::INFO);
-		} else {
-			$type = $args[0]['type'];
-			unset($args[0]['type']);
-			$args = $args[0];
-		}
+		$type = $args[0]['type'];
+		unset($args[0]['type']);
+		$args = $args[0];
 
 		$config_type = Yaf_Application::app()->getConfig()->{$type};
 		$called_class = get_called_class();

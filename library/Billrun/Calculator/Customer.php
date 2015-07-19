@@ -43,7 +43,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	 * Whether or not to use the subscriber bulk API method
 	 * @var boolean
 	 */
-	protected $bulk = true;
+	protected $bulk = false;
 
 	/**
 	 * Extra customer fields to be saved by line type
