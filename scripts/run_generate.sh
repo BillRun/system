@@ -53,7 +53,7 @@ billrun_dir="/var/www/billrun";
 
 for i in `seq 0 $instances`; do
         page=`expr $start_instance \+ $i`;
-        screen -d -m php -t $billrun_dir $billrun_dir/public/index.php --env $billrun_env --generate --type golanxml --stamp $month --page $page --size $size
+        screen -d -m php -t $billrun_dir $billrun_dir/public/index.php --env $billrun_env --generate --type xml --stamp $month --page $page --size $size
         sleep $sleeptime;
 done
 

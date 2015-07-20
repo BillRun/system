@@ -35,7 +35,7 @@ class Billrun_Calculator_Rate_Mmsc extends Billrun_Calculator_Rate_Sms {
 	 * @return type
 	 */
 	protected function shouldLineBeRated($row) {
-		return ('S' == $row['action']) && $row['final_state'] == 'S' && preg_match('/^\+\d+\/TYPE\s*=\s*.*golantelecom/', $row['mm_source_addr']);
+		return ('S' == $row['action']) && $row['final_state'] == 'S' && preg_match('/^\+\d+\/TYPE\s*=\s*.*telecom/', $row['mm_source_addr']);
 	}
 
 }

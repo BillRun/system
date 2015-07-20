@@ -7,7 +7,7 @@
  */
 
 /**
- * Billing aggregator class for Golan customers records
+ * Billing aggregator class for customers records
  *
  * @package  calculator
  * @since    0.5

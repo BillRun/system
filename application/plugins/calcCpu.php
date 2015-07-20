@@ -309,7 +309,7 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 
 	protected function makeXml($account_billrun, $lines) {
 		$options = array(
-			'type' => 'golanxml',
+			'type' => 'xml',
 			'stamp' => $account_billrun->getBillrunKey(),
 		);
 

@@ -7,7 +7,7 @@
  */
 
 /**
- * Billing calculator class for ilds records
+ * Billing calculator class for records
  *
  * @package  calculator
  * @since    0.5
@@ -339,7 +339,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 				if ($record_type == '11' && in_array($line['out_circuit_group'], array('3060', '3061'))) {
 					return false;
 				}
-				// what about GOLAN IN direction (3060/3061)?
+				// what about IN direction (3060/3061)?
 			} else if (!in_array($record_type, array('01', '02'))) {
 				return false;
 			}

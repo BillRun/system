@@ -20,19 +20,20 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 	 * @param array $params load by those params 
 	 */
 	public function load($params) {
-		if (isset($params['imsi'])) {
-			$queryParams = $params['imsi'];
-		} elseif (isset($params['msisdn'])) {
-			$queryParams = $params['imsi'];			
+		$queryParams = array();
+		if (isset($params['IMSI'])) {
+			$queryParams['imsi'] = $params['IMSI'];
+		} elseif (isset($params['MSISDN'])) {
+			$queryParams['msisdn'] = $params['MSISDN'];
 		} else {
-			Billrun_Factory::log()->log('Cannot identify Golan subscriber. Require phone or imsi to load. Current parameters: ' . print_R($params, 1), Zend_Log::ALERT);
+			Billrun_Factory::log()->log('Cannot identify subscriber. Require phone or imsi to load. Current parameters: ' . print_R($params, 1), Zend_Log::ALERT);
 			return $this;
 		}
 
-		if (!isset($params['time'])) {
+		if (!isset($params['DATETIME'])) {
 			$datetime = date(Billrun_Base::base_dateformat);
 		} else {
-			$datetime = strtotime($params['time']);
+			$datetime = strtotime($params['DATETIME']);
 		}
 	
 			$queryParams['from'] = array('$lt' => new MongoDate($datetime));
@@ -52,6 +53,7 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 	protected function customerQueryDb($params) {
 		$coll = Billrun_Factory::db()->subscribersCollection();
 		$results = $coll->query($params)->limit(1);
+		return $results;
 	}
 
 	/**
