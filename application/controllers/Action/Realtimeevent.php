@@ -24,7 +24,67 @@ class RealtimeeventAction extends ApiAction {
 	public function execute() {
 		Billrun_Factory::log()->log("Execute realtime event", Zend_Log::INFO);
 //		$this->event = $this->getRequest()->getRequest();
-//		db.subscribers.insert({"from":ISODate("2012-01-01 "),"to":ISODate("2099-01-01 00:00:00",imsi:"", msisdn:""})
+//		db.subscribers.insert({"from":ISODate("2012-01-01 "),"to":ISODate("2099-01-01 00:00:00"),imsi:"425030024380232", msisdn:"9725050500", aid:12345, sid:77777, plan:"LARGE"})
+//		> db.plans.findOne({name:"LARGE"})
+//{
+//	"_id" : ObjectId("51bd8dc9eb2f76d2178dd3dd"),
+//	"from" : ISODate("2012-01-01T00:00:00Z"),
+//	"to" : ISODate("3013-01-01T00:00:00Z"),
+//	"name" : "LARGE",
+//	"include" : {
+//		"call" : "UNLIMITED",
+//		"sms" : "UNLIMITED",
+//		"mms" : "UNLIMITED",
+//		"data" : "UNLIMITED",
+//		"groups" : {
+//			"IRD" : {
+//				"data" : "UNLIMITED",
+//				"limits" : {
+//					"flag" : "plugin"
+//				}
+//			}
+//		}
+//	},
+//	"price" : 83.898305085,
+//	"vatable" : true
+//}
+//> 
+//		> db.rates.find({key:/INTERNET_BILL_BY_V/}).pretty()
+//{
+//	"_id" : ObjectId("521e07fcd88db0e73f000200"),
+//	"from" : ISODate("2012-06-01T00:00:00Z"),
+//	"to" : ISODate("2113-08-28T18:23:55Z"),
+//	"key" : "INTERNET_BILL_BY_VOLUME",
+//	"params" : {
+//		"sgsn_addresses" : "/^(?=91.135.)/"
+//	},
+//	"rates" : {
+//		"data" : {
+//			"category" : "base",
+//			"rate" : [
+//				{
+//					"to" : NumberLong(2147483647),
+//					"price" : 7.27378716e-8,
+//					"interval" : NumberLong(1)
+//				}
+//			],
+//			"unit" : "bytes",
+//			"plans" : [
+//				DBRef("plans", ObjectId("51bd8dc9eb2f76d2178dd3de")),
+//				DBRef("plans", ObjectId("51bd8dc9eb2f76d2178dd3dd")),
+//				DBRef("plans", ObjectId("53349c0c79c7f054396fcd75")),
+//				DBRef("plans", ObjectId("5396d8098f7ac3710d6228ce")),
+//				DBRef("plans", ObjectId("5396d8448f7ac326986228ce")),
+//				DBRef("plans", ObjectId("53b1730e8f7ac39233da4d5a")),
+//				DBRef("plans", ObjectId("54114b0fd88db0d336b22964")),
+//				DBRef("plans", ObjectId("547ed64d8f7ac3f2967560bc")),
+//				DBRef("plans", ObjectId("54b6be8a8f7ac3e15bd53d76"))
+//			]
+//		}
+//	}
+//}
+
+
 
 		$a = '{
 			"sessionId":"GyOCS.sasnlbumtsma0-0.pelephone.gy.lab;1378620500;536872634",
