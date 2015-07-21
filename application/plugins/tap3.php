@@ -230,8 +230,8 @@ use Billrun_Traits_FileSequenceChecking;
 			}
 		}
 
-		if (isset($cdrLine['called_number'])) {
-//			$cdrLine['called_number'] = Billrun_Util::msisdn($cdrLine['called_number']);
+		if (isset($cdrLine['called_number']) && strlen($cdrLine['called_number']) <= 10 && substr($cdrLine['called_number'], 0, 1) == "0") {
+			$cdrLine['called_number'] = Billrun_Util::msisdn($cdrLine['called_number']);
 		}
 
 //		if (!Billrun_Util::getNestedArrayVal($cdrLine, $mapping['calling_number']) && isset($tele_service_code) && isset($record_type) ) {
