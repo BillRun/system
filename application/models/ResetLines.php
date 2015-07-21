@@ -50,7 +50,7 @@ class ResetLinesModel {
 	 */
 	public function resetBalances($sids) {
 		$ret = true;
-		$balances_coll = Billrun_Factory::db(array('name' => 'balances'))->balancesCollection()->setReadPreference('RP_PRIMARY');
+		$balances_coll = Billrun_Factory::db()->balancesCollection()->setReadPreference('RP_PRIMARY');
 		if (!empty($this->sids) && !empty($this->billrun_key)) {
 			$query = array(
 				'billrun_month' => $this->billrun_key,

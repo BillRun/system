@@ -135,7 +135,7 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 			}
 		}
 
-		if (Billrun_Factory::config()->getConfigValue('calcCpu.wholesale_calculators', true)) {
+		if (Billrun_Factory::config()->getConfigValue('calcCpu.wholesale_calculators', false)) {
 			$this->wholeSaleCalculators($data, $processor);
 		}
 
