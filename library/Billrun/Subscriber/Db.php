@@ -30,17 +30,17 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 			return $this;
 		}
 
-		if (!isset($params['DATETIME'])) {
-			$datetime = date(Billrun_Base::base_dateformat);
+		if (!isset($params['time'])) {
+			$datetime = time();
 		} else {
-			$datetime = strtotime($params['DATETIME']);
+			$datetime = strtotime($params['time']);
 		}
 	
-			$queryParams['from'] = array('$lt' => new MongoDate($datetime));
-			$queryParams['to'] = array('$gt' => new MongoDate($datetime));
+//		$queryParams['from'] = array('$lt' => new MongoDate(strtotime($datetime)));
+//		$queryParams['to'] = array('$gt' => new MongoDate($datetime));
 
 
-		$data = $this->customerQueryDb($params);
+		$data = $this->customerQueryDb($queryParams);
 
 		if (is_array($data)) {
 			$this->data = $data;
@@ -52,8 +52,11 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 	
 	protected function customerQueryDb($params) {
 		$coll = Billrun_Factory::db()->subscribersCollection();
-		$results = $coll->query($params)->limit(1);
-		return $results;
+		$results = $coll->query($params)->cursor()->limit(1)->current();
+		if ($results->isEmpty()) {
+			return array();
+		}
+		return $results->getRawData();
 	}
 
 	/**

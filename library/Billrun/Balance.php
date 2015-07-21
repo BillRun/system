@@ -43,7 +43,7 @@ class Billrun_Balance implements ArrayAccess {
 	}
 	
 	public static function getCollection() {
-		return Billrun_Factory::db(array('name' => 'balances'))->balancesCollection()->setReadPreference('RP_PRIMARY');
+		return Billrun_Factory::db()->balancesCollection()->setReadPreference('RP_PRIMARY');
 	}
 
 	/**

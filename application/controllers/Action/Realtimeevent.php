@@ -24,6 +24,8 @@ class RealtimeeventAction extends ApiAction {
 	public function execute() {
 		Billrun_Factory::log()->log("Execute realtime event", Zend_Log::INFO);
 //		$this->event = $this->getRequest()->getRequest();
+//		db.subscribers.insert({"from":ISODate("2012-01-01 "),"to":ISODate("2099-01-01 00:00:00",imsi:"", msisdn:""})
+
 		$a = '{
 			"sessionId":"GyOCS.sasnlbumtsma0-0.pelephone.gy.lab;1378620500;536872634",
 			"ccRequestType":1,
@@ -71,7 +73,7 @@ class RealtimeeventAction extends ApiAction {
 		$this->event = @json_decode($a, JSON_OBJECT_AS_ARRAY);
 		$this->event['source'] = 'realtime';
 		$this->event['type'] = 'gy';
-		
+		$this->event['stamp'] = Billrun_Util::generateArrayStamp($this->event);
 		if (isset($this->event['Service-Information']['SGSNAddress'])) {
 			$this->event['sgsn_address'] = long2ip(hexdec($this->event['Service-Information']['SGSNAddress']));
 		} else {
