@@ -137,8 +137,8 @@ class Generator_Golancsv extends Billrun_Generator {
 	}
 
 	protected function addSubscriberRow($row) {
-			$this->subscribersRows[] = $row;
-		}
+		$this->subscribersRows[] = $row;
+	}
 
 	protected function addAccountRow($row) {
 		$this->accountRows[] = $row;
