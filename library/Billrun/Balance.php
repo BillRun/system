@@ -172,7 +172,8 @@ class Billrun_Balance implements ArrayAccess {
 			'aid' => $aid,
 			'sid' => $sid,
 			'current_plan' => $plan_ref,
-			'balance' => self::getEmptyBalance("out_plan_"),
+//			'balance' => self::getEmptyBalance("out_plan_"),
+			'balance' => self::getEmptyBalance(),
 			'tx' => new stdclass,
 		);
 	}
@@ -199,23 +200,23 @@ class Billrun_Balance implements ArrayAccess {
 
 	/**
 	 * Get an empty balance structure
-	 * @param string $prefix if supplied, usage types with this prefix would also be included
+	 * 
 	 * @return array containing an empty balance structure.
 	 */
-	static public function getEmptyBalance($prefix = null) {
+	static public function getEmptyBalance() {
 		$ret = array(
 			'totals' => array(),
 			'cost' => 0,
 		);
-		$usage_types = array('call', 'sms', 'data', 'incoming_call', 'incoming_sms', 'mms');
-		if (!is_null($prefix)) {
-			foreach ($usage_types as $usage_type) {
-				$usage_types[] = $prefix . $usage_type;
-			}
-		}
-		foreach ($usage_types as $usage_type) {
-			$ret['totals'][$usage_type] = self::getEmptyUsageTypeTotals();
-		}
+//		$usage_types = array('call', 'sms', 'data', 'incoming_call', 'incoming_sms', 'mms');
+//		if (!is_null($prefix)) {
+//			foreach ($usage_types as $usage_type) {
+//				$usage_types[] = $prefix . $usage_type;
+//			}
+//		}
+//		foreach ($usage_types as $usage_type) {
+//			$ret['totals'][$usage_type] = self::getEmptyUsageTypeTotals();
+//		}
 		return $ret;
 	}
 
