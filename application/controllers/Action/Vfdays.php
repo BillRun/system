@@ -79,7 +79,8 @@ class VfdaysAction extends Action_Base {
 						'sender' => array('$in' => $sender),
 						'$or' => array(
 							array(
-								'record_type' => "MTC"
+								'record_type' => "MTC",
+								'callEventDurationRound' => array('$gt' => 0), // duration greater then 0 => call and not sms
 							),
 							array(
 								'record_type' => "MOC",
