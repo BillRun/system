@@ -151,6 +151,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 			$this->ratingField => $rate ? $rate->createRef() : $rate,
 		);
 		if ($rate) {
+			// TODO: push plan to the function to enable market price by plan
 			$added_values[$this->aprField] = Billrun_Calculator_CustomerPricing::getPriceByRate($rate, $usage_type, $volume);
 		}
 		$newData = array_merge($current, $added_values);

@@ -174,9 +174,10 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			if (isset($volume)) {
 				if ($row['type'] == 'credit') {
 					$accessPrice = isset($rate['rates'][$usage_type]['access']) ? $rate['rates'][$usage_type]['access'] : 0;
-					$pricingData = array($this->pricingField => $accessPrice + self::getPriceByRate($rate, $usage_type, $volume));
+					$pricingData = array($this->pricingField => $accessPrice + self::getPriceByRate($rate, $usage_type, $volume, $row['plan']));
 				} else if ($row['type'] == 'service') {
-					$pricingData = array($this->pricingField => self::getPriceByRate($rate, $usage_type, $volume));
+					$plan_name = isset($row['plan']) ? $row['plan'] : null;
+					$pricingData = array($this->pricingField => self::getPriceByRate($rate, $usage_type, $volume, $plan_name));
 				} else {
 					$balance = $this->getSubscriberBalance($row, $billrun_key);
 					if ($balance === FALSE) {
@@ -313,7 +314,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			$ret['out_plan'] = $volumeToCharge = $volume;
 		}
 
-		$price = $accessPrice + self::getPriceByRate($rate, $usageType, $volumeToCharge);
+		$price = $accessPrice + self::getPriceByRate($rate, $usageType, $volumeToCharge, $plan);
 		//Billrun_Factory::log()->log("Rate : ".print_r($typedRates,1),  Zend_Log::DEBUG);
 		$ret[$this->pricingField] = $price;
 		return $ret;
@@ -353,13 +354,22 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 
 	/**
 	 * Calculates the price for the given volume (w/o access price)
+	 * 
 	 * @param array $rate the rate entry
 	 * @param string $usage_type the usage type
 	 * @param int $volume The usage volume (seconds of call, count of SMS, bytes  of data)
+	 * @param object $plan The plan the line is associate to
+	 * 
 	 * @return int the calculated price
 	 */
-	public static function getPriceByRate($rate, $usage_type, $volume) {
-		$rates_arr = $rate['rates'][$usage_type]['rate'];
+	public static function getPriceByRate($rate, $usage_type, $volume, $plan = null) {
+		if (!is_null($plan) && !empty($plan_name = $plan->getName()) && isset($rate['rates'][$usage_type]['rate'][$plan_name])) {
+			$rates_arr = $rate['rates'][$usage_type]['rate'][$plan_name];
+		} elseif (isset($rate['rates'][$usage_type]['rate']['BASE'])) {
+			$rates_arr = $rate['rates'][$usage_type]['rate']['BASE'];
+		} else {
+			$rates_arr = $rate['rates'][$usage_type]['rate'];
+		}
 		$price = 0;
 		foreach ($rates_arr as $currRate) {
 			if (0 == $volume) { // volume could be negative if it's a refund amount
