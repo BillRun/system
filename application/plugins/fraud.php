@@ -45,7 +45,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 	protected $min_time;
 
 	public function __construct() {
-		$this->min_time = Billrun_Util::getStartTime(Billrun_Util::getBillrunKey(time()));
+		$this->min_time = Billrun_Util::getStartTime(Billrun_Util::getBillrunKey(time() + Billrun_Factory::config()->getConfigValue('fraud.minTimeOffset', 5400))); // minus 1.5 hours
 	}
 
 	/**
@@ -85,7 +85,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 			return true;
 		}
 
-		// check if row is too "old" to be considered as a fraud. TODO: consider lowering min_time in 1-2 days.
+		// Check if row is too "old" to be considered as a fraud. Currently done by decrease X hours (default: 1.5 hours) from min_time variable
 		if ($row['urt']->sec <= $this->min_time) {
 			return true;
 		}
