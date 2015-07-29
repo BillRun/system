@@ -124,10 +124,20 @@ class Billrun_Util {
 			$tz_offset = $offset;
 		}
 		$date_formatted = str_replace(' ', 'T', date(Billrun_Base::base_dateformat, strtotime($datetime))) . $tz_offset; // Unnecessary code?
-		$datetime = strtotime($date_formatted);
-		return $datetime;
+		$ret = strtotime($date_formatted);
+		return $ret;
 	}
 
+	/**
+	 * method to check if string (needle) is starts with another string (haystack)
+	 * 
+	 * @param string $haystack the string to search in
+	 * @param string $needle the searched string
+	 * 
+	 * @return boolean return true if haystack starts with needle
+	 * 
+	 * @internal strncmp is faster as twice than substr
+	 */
 	public static function startsWith($haystack, $needle) {
 		return !strncmp($haystack, $needle, strlen($needle));
 	}
@@ -173,6 +183,7 @@ class Billrun_Util {
 	 * @param type $from the currency to conver from.
 	 * @param type $to the currency to convert to.
 	 * @return float the converted value.
+	 * @deprecated since version 2.5
 	 */
 	public static function convertCurrency($value, $from, $to) {
 		$conversion = array(
@@ -188,6 +199,7 @@ class Billrun_Util {
 	 * returns the end timestamp of the input billing period
 	 * @param type $billrun_key
 	 * @return type int
+	 * @todo move to BillRun object
 	 */
 	public static function getEndTime($billrun_key) {
 		$dayofmonth = Billrun_Factory::config()->getConfigValue('billrun.charging_day', 25);
@@ -199,6 +211,7 @@ class Billrun_Util {
 	 * returns the start timestamp of the input billing period
 	 * @param type $billrun_key
 	 * @return type int
+	 * @todo move to BillRun object
 	 */
 	public static function getStartTime($billrun_key) {
 		$dayofmonth = Billrun_Factory::config()->getConfigValue('billrun.charging_day', 25);
@@ -212,6 +225,7 @@ class Billrun_Util {
 	 * @param int $timestamp datetime in unix timestamp format
 	 * 
 	 * @return float the VAT at the current timestamp
+	 * @todo move to specific VAT object
 	 */
 	public static function getVATAtDate($timestamp) {
 		$mongo_date = new MongoDate($timestamp);
@@ -223,10 +237,27 @@ class Billrun_Util {
 				->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'))->current()->get('vat');
 	}
 
+	/**
+	 * method to check if input is timestamp
+	 * @param mixed $timestamp
+	 * @return return true if input is timestamp else false
+	 */
 	public static function isTimestamp($timestamp) {
-		return ((string) (int) $timestamp === strval($timestamp)) && ($timestamp <= PHP_INT_MAX) && ($timestamp >= ~PHP_INT_MAX);
+		return ((string) (int) $timestamp === strval($timestamp)) 
+		&& ($timestamp <= PHP_INT_MAX) 
+		&& ($timestamp >= ~PHP_INT_MAX);
 	}
 
+	/**
+	 * method to set modified time of file
+	 * 
+	 * @param string $received_path the file full path
+	 * @param int $timestamp the timestamp of the file
+	 * 
+	 * @return true on success else false
+	 * 
+	 * @todo move to Receiver object
+	 */
 	public static function setFileModificationTime($received_path, $timestamp) {
 		return touch($received_path, $timestamp);
 	}
@@ -491,6 +522,7 @@ class Billrun_Util {
 	 * @param array $credit_row
 	 * 
 	 * @return array after filtering and validation
+	 * @todo move to parser Object
 	 */
 	public static function parseCreditRow($credit_row) {
 		// @TODO: take to config
@@ -709,6 +741,13 @@ class Billrun_Util {
 		fclose($fd);
 	}
 
+	/**
+	 * method to log failed service
+	 * 
+	 * @param array $row row to log
+	 * 
+	 * @since 2.8
+	 */
 	public static function logFailedServiceRow($row) {
 		$fd = fopen(Billrun_Factory::config()->getConfigValue('service.failed_credits_file', './files/failed_service.json'), 'a+');
 		fwrite($fd, json_encode($row) . PHP_EOL);
@@ -760,6 +799,7 @@ class Billrun_Util {
 	 * Return the decimal value from the coded binary representation
 	 * @param int $binary
 	 * @return int
+	 * @todo move to Parser object
 	 */
 	public static function bcd_decode($binary) {
 		return ($binary & 0xF) . ((($binary >> 4) < 10) ? ($binary >> 4) : '' );
