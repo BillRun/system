@@ -3,7 +3,7 @@
 /**
  * @package			ASN
  * @copyright		Copyright (C) 2012 S.D.O.C. LTD. All rights reserved.
- * @license			GNU General Public License version 2 or later; see LICENSE.txt
+ * @license			GNU Affero General Public License Version 3; see LICENSE.txt
  */
 class Asn_Type_Integer extends Asn_Object {
 
@@ -13,7 +13,7 @@ class Asn_Type_Integer extends Asn_Object {
 	 * @param $data The ASN encoded data
 	 */
 	protected function parse($data) {
-		parent::parse($data);
+		return parent::parse($data);
 		//$this->parsedData = unpack("I*",$data);;
 	}
 

@@ -1,8 +1,9 @@
 <?php
+
 /**
  * @package         Billing
  * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
- * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
 /**
@@ -12,7 +13,6 @@
  * @since    0.5
  */
 class Billrun_Responder_014 extends Billrun_Responder_Base_Ilds {
-
 
 	public function __construct(array $params = array()) {
 		parent::__construct($params);
@@ -85,22 +85,22 @@ class Billrun_Responder_014 extends Billrun_Responder_Base_Ilds {
 	}
 
 	protected function processLineErrors($dbLine) {
-		if(!isset($dbLine['billrun']) || !$dbLine['billrun']) {
+		if (!isset($dbLine['billrun']) || !$dbLine['billrun']) {
 			$dbLine['record_status'] = '02';
 		}
 		return $dbLine;
 	}
-	
+
 	protected function updateHeader($line, $logLine) {
-		$line = substr( parent::updateHeader($line, $logLine), 0, 40);
+		$line = substr(parent::updateHeader($line, $logLine), 0, 40);
 		$now = date_create();
 		$line.=$now->format("YmdHis");
-		$line.= sprintf("%02s",$this->getHeaderStateCode($line, $logLine)); 
+		$line.= sprintf("%02s", $this->getHeaderStateCode($line, $logLine));
 		$line = $this->switchNamesInLine("GTC", "MBZ", $line);
 
 		return $line;
 	}
-	
+
 	protected function updateTrailer($logLine) {
 		$logLine['file_received_date'] = date('Ymd');
 		$logLine['file_received_time'] = date('His');
@@ -111,30 +111,29 @@ class Billrun_Responder_014 extends Billrun_Responder_Base_Ilds {
 
 		return $line;
 	}
-	
+
 	protected function getResponseFilename($receivedFilename, $logLine) {
-		$responseFilename =		preg_replace("/_OUR_/i", "_GTC_",
-									preg_replace("/_GTC_/i", "_MBZ_", 
-										preg_replace("/_MBZ_/", "_OUR_", $receivedFilename)
-									)
-								);
+		$responseFilename = preg_replace("/_OUR_/i", "_GTC_", preg_replace("/_GTC_/i", "_MBZ_", preg_replace("/_MBZ_/", "_OUR_", $receivedFilename)
+			)
+		);
 		return $responseFilename;
 	}
 
-		protected function getHeaderStateCode($headerLine,$logLine) {
-		if($logLine['file_type'] != "CDR") {
+	protected function getHeaderStateCode($headerLine, $logLine) {
+		if ($logLine['file_type'] != "CDR") {
 			return 1;
 		}
-		if($logLine['sending_company_id'] != "MBZ") {
+		if ($logLine['sending_company_id'] != "MBZ") {
 			return 2;
 		}
-		if(!is_numeric($logLine['sequence_no']) ) {
+		if (!is_numeric($logLine['sequence_no'])) {
 			return 3;
 		}
-		if(!date_create_from_format("YmdHis",substr($headerLine, 26,14)) ) {
+		if (!date_create_from_format("YmdHis", substr($headerLine, 26, 14))) {
 			return 4;
-		}	
+		}
 		//TOD add the other errors
 		return 0;
 	}
+
 }

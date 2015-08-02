@@ -3,7 +3,7 @@
 /**
  * @package         Billing
  * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
- * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
 /**
@@ -13,6 +13,12 @@
  * @since    0.5
  */
 class Bootstrap extends Yaf_Bootstrap_Abstract {
+
+	public function _initEnvironment(Yaf_Dispatcher $dispatcher) {
+		if (!isset($_SERVER['HTTP_USER_AGENT'])) {
+			Yaf_Application::app()->getDispatcher()->setDefaultController('Cli');
+		}
+	}
 
 	public function _initPlugin(Yaf_Dispatcher $dispatcher) {
 
@@ -49,8 +55,7 @@ class Bootstrap extends Yaf_Bootstrap_Abstract {
 	public function _initLayout(Yaf_Dispatcher $dispatcher) {
 		// Enable template layout only on admin
 		// TODO: make this more accurate
-		if (strpos($dispatcher->getRequest()->getRequestUri(), "admin") !== FALSE 
-			&& strpos($dispatcher->getRequest()->getRequestUri(), "edit") === FALSE && strpos($dispatcher->getRequest()->getRequestUri(), "confirm") === FALSE) {
+		if (strpos($dispatcher->getRequest()->getRequestUri(), "admin") !== FALSE && strpos($dispatcher->getRequest()->getRequestUri(), "edit") === FALSE && strpos($dispatcher->getRequest()->getRequestUri(), "confirm") === FALSE && strpos($dispatcher->getRequest()->getRequestUri(), "logDetails") === FALSE && strpos($dispatcher->getRequest()->getRequestUri(), "wholesaleajax") === FALSE) {
 			$path = Billrun_Factory::config()->getConfigValue('application.directory');
 			$view = new Yaf_View_Simple($path . '/views/layout');
 			$dispatcher->setView($view);

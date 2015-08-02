@@ -1,8 +1,9 @@
 <?php
+
 /**
  * @package         Billing
  * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
- * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
 /**
@@ -19,11 +20,11 @@ abstract class Billrun_Responder_Base_FilesResponder extends Billrun_Responder {
 	 * @return mixed
 	 */
 	public function respond() {
-		
-		Billrun_Factory::dispatcher()->trigger('beforeResponse', array('type' => self::$type , 'responder' => &$this));
-		
+
+		Billrun_Factory::dispatcher()->trigger('beforeResponse', array('type' => self::$type, 'responder' => &$this));
+
 		$retPaths = array();
-		
+
 		foreach ($this->getProcessedFilesForType(self::$type) as $filename => $logLine) {
 			$filePath = $this->workspace . DIRECTORY_SEPARATOR . self::$type . DIRECTORY_SEPARATOR . $filename;
 			if (!file_exists($filePath)) {
@@ -36,9 +37,9 @@ abstract class Billrun_Responder_Base_FilesResponder extends Billrun_Responder {
 				$retPaths[] = $this->respondAFile($responseFilePath, $this->getResponseFilename($filename, $logLine), $logLine);
 			}
 		}
-		
-		Billrun_Factory::dispatcher()->trigger('afterResponse', array('type' => self::$type , 'responder' => &$this));
-		
+
+		Billrun_Factory::dispatcher()->trigger('afterResponse', array('type' => self::$type, 'responder' => &$this));
+
 		return $retPaths;
 	}
 
@@ -69,4 +70,3 @@ abstract class Billrun_Responder_Base_FilesResponder extends Billrun_Responder {
 	}
 
 }
-

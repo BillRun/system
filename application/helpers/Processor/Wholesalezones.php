@@ -15,8 +15,9 @@
  * @subpackage Wholesalezones
  * @since      1.0
  */
-class  Processor_Wholesalezones  extends Billrun_Processor_Base_Separator {
-		/**
+class Processor_Wholesalezones extends Billrun_Processor_Base_Separator {
+
+	/**
 	 * the type of the object
 	 *
 	 * @var string
@@ -92,7 +93,7 @@ class  Processor_Wholesalezones  extends Billrun_Processor_Base_Separator {
 				continue;
 			}
 
-			$entity->save($rates, true);
+			$entity->save($rates);
 			$this->data['stored_data'][] = $row;
 		}
 
@@ -104,18 +105,18 @@ class  Processor_Wholesalezones  extends Billrun_Processor_Base_Separator {
 		$data[] = array('zoneName' => '$DEFAULT'); // does not exist in zone
 		foreach ($data as $row) {
 			$row['rates'] = array();
-			/*if (!isset($row['zoneName']) || $row['zoneName']=='ROAM_ALL_DEST' || $row['zoneName']=='$DEFAULT' || $row['zoneName']=='ALL_DESTINATION') {
-				print_R($row);
-				continue;
-			}*/
+			/* if (!isset($row['zoneName']) || $row['zoneName']=='ROAM_ALL_DEST' || $row['zoneName']=='$DEFAULT' || $row['zoneName']=='ALL_DESTINATION') {
+			  print_R($row);
+			  continue;
+			  } */
 			$key = $row['zoneName'];
-			if (!isset($ret[$key])) {				
+			if (!isset($ret[$key])) {
 				$ret[$key] = array(
 					'from' => new MongoDate(strtotime('2012-06-01T00:00:00+00:00')),
 					'to' => new MongoDate(strtotime('+100 years')),
 					'key' => $row['zoneName'],
 					'params' => array(
-						'prefix' => (isset( $row['prefix'] ) ?  array( $row['prefix'] ) : array() ),
+						'prefix' => (isset($row['prefix']) ? array($row['prefix']) : array() ),
 						'out_circuit_group' => $out_circuit_group
 					),
 				);
@@ -136,7 +137,7 @@ class  Processor_Wholesalezones  extends Billrun_Processor_Base_Separator {
 				$ret[$value['key']]['params']['prefix'] = array_merge($value['params']['prefix'], $params_dup);
 			}
 		}
-		
+
 		return $ret;
 	}
 

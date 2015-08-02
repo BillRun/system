@@ -3,7 +3,7 @@
 /**
  * @package         Billing
  * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
- * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
 /**
@@ -43,11 +43,10 @@ abstract class Billrun_Parser_Base_Binary extends Billrun_Parser {
 	public function getLine() {
 		return $this->line;
 	}
-	
-	abstract public function parseHeader($data);
-	
-	abstract public function parseTrailer($data);
-	
-	abstract public function parseField($data, $fileDesc);
 
+	abstract public function parseHeader($data);
+
+	abstract public function parseTrailer($data);
+
+	abstract public function parseField($data, $fileDesc);
 }

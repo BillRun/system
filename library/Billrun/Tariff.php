@@ -3,7 +3,7 @@
 /**
  * @package         Billing
  * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
- * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
 /**
@@ -62,17 +62,18 @@ class Billrun_Tariff {
 		$args = func_get_args();
 		if (is_array($args[0])) {
 			$params = $args[0];
-			$searchValue = isset($params['searchValue']) ? $params['searchValue'] : array('$exists' => true );
+			$searchValue = isset($params['searchValue']) ? $params['searchValue'] : array('$exists' => true);
 			$searchField = isset($params['searchBy']) ? $params['searchBy'] : 'key';
 		} else {
-			@list($searchField,$searchValue) = $args;
-			$searchValue = $searchValue ? $params['searchBy'] : array('$exists' => true );
+			@list($searchField, $searchValue) = $args;
+			$searchValue = $searchValue ? $params['searchBy'] : array('$exists' => true);
 		}
 
 		$data = $this->rates->query()->equals($searchField, $searchValue)->cursor()->current();
 
 		return $data;
 	}
+
 	/**
 	 * get tariff rate
 	 */
@@ -83,7 +84,6 @@ class Billrun_Tariff {
 
 		return $data;
 	}
-	
 
 	/**
 	 * set the tariff rate

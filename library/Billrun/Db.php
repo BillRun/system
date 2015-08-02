@@ -3,7 +3,7 @@
 /**
  * @package         Billing
  * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
- * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
 /**
@@ -29,10 +29,18 @@ class Billrun_Db extends Mongodloid_Db {
 	 */
 	public function __construct(\MongoDb $db, \Mongodloid_Connection $connection) {
 		parent::__construct($db, $connection);
+		// TODO: refatoring the collections to factory (loose coupling)
 		$this->collections = Billrun_Factory::config()->getConfigValue('db.collections', array());
 		$timeout = Billrun_Factory::config()->getConfigValue('db.timeout', 3600000); // default 60 minutes
-		Billrun_Factory::log()->log('Set database cursor timeout to: ' . $timeout, Zend_Log::INFO);
-		MongoCursor::$timeout = $timeout;
+		if ($this->compareClientVersion('1.5.3', '<')) {
+			Billrun_Factory::log()->log('Set database cursor timeout to: ' . $timeout, Zend_Log::INFO);
+			@MongoCursor::$timeout = $timeout;
+		} else {
+			// see also bugs: 
+			// https://jira.mongodb.org/browse/PHP-1099
+			// https://jira.mongodb.org/browse/PHP-1080
+			$db->setWriteConcern($db->getWriteConcern()['w'], $timeout);
+		}
 	}
 
 	/**
@@ -46,11 +54,11 @@ class Billrun_Db extends Mongodloid_Db {
 		} else {
 			$conn = Billrun_Connection::getInstance($config['host']);
 		}
-		
+
 		if (!isset($config['options'])) {
 			return $conn->getDB($config['name'], $config['user'], $config['password']);
 		}
-		
+
 		return $conn->getDB($config['name'], $config['user'], $config['password'], $config['options']);
 	}
 
@@ -84,6 +92,8 @@ class Billrun_Db extends Mongodloid_Db {
 			if (in_array($collectionName, $this->collections)) {
 				return $this->getCollection($this->collections[$collectionName]);
 			}
+		} else if ($arguments['force']) {
+			return $this->getCollection($name);
 		}
 		return false;
 	}

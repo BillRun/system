@@ -3,7 +3,7 @@
 /**
  * @package         Billing
  * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
- * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
 /**
@@ -45,10 +45,10 @@ class Billrun_Common_FileSequenceChecker {
 			return $msg;
 		}
 
-		if (!isset($this->sequencers[$sequenceData['date'].$sequenceData['zone']])) {
-			$this->sequencers[$sequenceData['date'].$sequenceData['zone']] = new Billrun_Common_SequenceChecker();
+		if (!isset($this->sequencers[$sequenceData['date'] . $sequenceData['zone']])) {
+			$this->sequencers[$sequenceData['date'] . $sequenceData['zone']] = new Billrun_Common_SequenceChecker();
 		}
-		$this->sequencers[$sequenceData['date'].$sequenceData['zone']]->addSequence($sequenceData['seq'], $filename);
+		$this->sequencers[$sequenceData['date'] . $sequenceData['zone']]->addSequence($sequenceData['seq'], $filename);
 
 		return $msg;
 	}

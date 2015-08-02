@@ -3,7 +3,7 @@
 /**
  * @package         Billing
  * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
- * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
 /**
@@ -20,7 +20,7 @@ class Billrun_Processor_014 extends Billrun_Processor_Base_Ilds {
 	 * @var string
 	 */
 	static protected $type = '014';
-	
+
 	const ITS_ON_GOLAN_DATE = '07/02/2012-2013';
 
 	public function __construct($options) {

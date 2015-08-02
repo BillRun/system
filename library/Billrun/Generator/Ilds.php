@@ -3,7 +3,7 @@
 /**
  * @package         Billing
  * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
- * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
 /**
@@ -15,10 +15,10 @@
  * @since    0.5
  */
 class Billrun_Generator_Ilds extends Billrun_Generator {
+
 	/**
 	 * The VAT value (TODO get from outside/config).
 	 */
-
 	const VAT_VALUE = 1.17;
 
 	static protected $type = 'ilds';
@@ -61,7 +61,7 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 	 * load the container the need to be generate
 	 */
 	public function load() {
-		$billrun = Billrun_Factory::db()->billrunCollection();
+		$billrun = Billrun_Factory::db(array('name' => 'billrun'))->billrunCollection();
 
 		$this->data = $billrun->query()
 			->equals('stamp', $this->getStamp())
@@ -69,9 +69,8 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 			->notExists('invoice_id');
 
 		Billrun_Factory::log()->log("aggregator entities loaded: " . $this->data->count(), Zend_Log::INFO);
-		
-		Billrun_Factory::dispatcher()->trigger('afterGeneratorLoadData', array('generator' => $this));
 
+		Billrun_Factory::dispatcher()->trigger('afterGeneratorLoadData', array('generator' => $this));
 	}
 
 	/**
@@ -98,7 +97,7 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 			// todo check how to use hint with 2 indexes
 			->cursor()->hint(array('sid' => 1))
 			->sort(array('urt' => 1));
-			
+
 		foreach ($resource as $entity) {
 			$ret[] = $entity->getRawData();
 		}
@@ -166,7 +165,7 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 			$xml->INV_INVOICE_TOTAL->TO_PERIOD = date($short_format_date, strtotime('last day of previous month'));
 			$xml->INV_INVOICE_TOTAL->SUBSCRIBER_COUNT = count($row);
 			$xml->INV_INVOICE_TOTAL->INVOICE_TYPE = "ilds";
-				
+
 			$invoice_sumup = $xml->INV_INVOICE_TOTAL->addChild('INVOICE_SUMUP');
 			$total = 0;
 			foreach ($total_ilds as $ild => $total_ild_cost) {
@@ -207,7 +206,7 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 	}
 
 	protected function saveInvoiceId($aid, $invoice_id) {
-		$billrun = Billrun_Factory::db()->billrunCollection();
+		$billrun = Billrun_Factory::db(array('name' => 'billrun'))->billrunCollection();
 
 		$resource = $billrun->query()
 			->equals('stamp', $this->getStamp())
@@ -230,7 +229,7 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 	}
 
 	protected function createInvoiceId() {
-		$invoices = Billrun_Factory::db()->billrunCollection();
+		$invoices = Billrun_Factory::db(array('name' => 'billrun'))->billrunCollection();
 		// @TODO: need to the level of the invoice type
 		$resource = $invoices->query()->cursor()->sort(array('invoice_id' => -1))->limit(1);
 		foreach ($resource as $e) {

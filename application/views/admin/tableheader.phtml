@@ -1,0 +1,7 @@
+<?php
+print '<section id="no-more-tables"><table id="data_table" class="table table-striped table-bordered table-no-more-tables">';
+print '<thead><tr><th>#</th>';
+foreach ($this->columns as $value) {
+	print '<th>' . $value . '</th>';
+}
+print '</tr></thead><tbody>';

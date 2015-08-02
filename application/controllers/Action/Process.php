@@ -3,7 +3,7 @@
 /**
  * @package         Billing
  * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
- * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
 /**
@@ -20,7 +20,12 @@ class ProcessAction extends Action_Base {
 	 * it's called automatically by the cli main controller
 	 */
 	public function execute() {
-		
+
+		if (!$this->isOn()) {
+			$this->getController()->addOutput(ucfirst($this->getRequest()->action) . " is off");
+			return;
+		}
+
 		$possibleOptions = array(
 			'type' => false,
 			'parser' => false,
@@ -41,7 +46,6 @@ class ProcessAction extends Action_Base {
 
 		if ($processor) {
 			$this->_controller->addOutput("Starting to process. This action can take a while...");
-
 			// buffer all action output
 			ob_start();
 			if (isset($options['path']) && $options['path']) {

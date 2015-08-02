@@ -5,43 +5,30 @@
  * @copyright       Copyright (C) 2012 S.D.O.C. LTD. All rights reserved.
  * @license         GNU General Public License version 2 or later; see LICENSE.txt
  */
-/**
- * this file configured the environments and configuration of each one
- * if you have only one environment please set it directly as follow:
- * 
- * define('BILLRUN_CONFIG_PATH', APPLICATION_PATH . "/conf/configuration.ini");
- * 
- * put the above line in the head of this file and then create configuration.ini in application/conf directory
- * all the below code will be ignored
- */
-define('BILLRUN_CONFIG_PATH', APPLICATION_PATH . "/conf/prod.ini");
+$env = null;
 
-
-if (!defined('BILLRUN_CONFIG_PATH')) {
-	$config = array(
-		'servers' => array(
-			'dev' => array('127.0.0.1', '127.0.1.1', '::1'),
-			'test' => array('sdocserver', '10.162.10.63'),
-			'prod' => array('192.168.37.10', 'fraud.golan.local', '192.168.30.20', 'rp02_hfa.gt.local', 'rp02.gt.local', 'rp01.gt.local', 'rp01_hfa.gt.local'),
-		)
-	);
-
-	$envOpts = getopt('', array('environment:'));
-	if (isset($envOpts['environment'])) {
-		$config_env = (string) $envOpts['environment'];
-	} else {
-		$current_server = gethostbyname(gethostname()); // we cannot use $_SERVER cause we are on CLI on most cases
-		foreach ($config['servers'] as $key => $server) {
-			if (is_array($server) && in_array($current_server, $server) || $current_server == $server) {
-				$config_env = $key;
-			}
+if (!defined('APPLICATION_ENV')) {
+	$env = getenv('APPLICATION_ENV');
+	
+	// if APPLICATION_ENV not defined and the getenv not find it (not through web server), let's take it by cli opt
+	if (empty($env) && ($envs = getopt('', array('env:', 'environment:')))) {
+		$envOpts = array_values($envs);
+		if (isset($envOpts[0])) {
+			$env = $envOpts[0];
 		}
 	}
 
-	$conf_path = APPLICATION_PATH . "/conf/" . $config_env . ".ini";
-	if (!file_exists($conf_path)) {
-		die("no config file found in : $conf_path" . PHP_EOL);
+	if (empty($env)) {
+		error_log('Environment did not setup!');
+		die('Environment did not setup!' . PHP_EOL);
 	}
+	
+	define('APPLICATION_ENV', $env);
+}
 
-	define('BILLRUN_CONFIG_PATH', $conf_path);
+define('BILLRUN_CONFIG_PATH', APPLICATION_PATH . "/conf/" . APPLICATION_ENV . ".ini");
+
+if (!file_exists(BILLRUN_CONFIG_PATH)) {
+	error_log('Configuration file did not found');
+	die('Configuration file did not found');
 }

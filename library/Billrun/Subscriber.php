@@ -3,7 +3,7 @@
 /**
  * @package         Billing
  * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
- * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
 /**
@@ -35,10 +35,25 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 	 */
 	protected $availableFields = array();
 
+	/**
+	 * extra fields for billrun
+	 * @var array
+	 */
+	protected $billrunExtraFields = array();
+	
+	/**
+	 * extra fields for the customer
+	 * @var array
+	 */
+	protected $customerExtraData = array();
+
 	public function __construct($options = array()) {
 		parent::__construct($options);
 		if (isset($options['availableFields'])) {
 			$this->availableFields = $options['availableFields'];
+		}
+		if (isset($options['extra_data'])) {
+			$this->customerExtraData = $options['extra_data'];
 		}
 	}
 
@@ -68,8 +83,11 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 	 * @return mixed if data field  accessible return data field, else null
 	 */
 	public function __get($name) {
-		if (array_key_exists($name, $this->availableFields) && array_key_exists($name, $this->data)) {
+		if ((array_key_exists($name, $this->availableFields) || in_array($name, $this->billrunExtraFields)) && array_key_exists($name, $this->data)) {
 			return $this->data[$name];
+		}
+		else if (array_key_exists($name, $this->customerExtraData) && isset ($this->data['extra_data'][$name])) {
+			return $this->data['extra_data'][$name];
 		}
 		return null;
 	}
@@ -110,6 +128,28 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 	 * get the (paged) current account(s) plans by time
 	 */
 	abstract public function getList($page, $size, $time, $acc_id = null);
+
+	/**
+	 * get the list of active subscribers from a json file. Parse subscribers plans at the given time (unix timestamp)
+	 */
+	abstract public function getListFromFile($file_path, $time);
+
+	abstract public function getSubscribersByParams($params, $availableFields);
+
+	/**
+	 * Returns field names to be saved when creating billrun
+	 * @return array
+	 */
+	public function getExtraFieldsForBillrun() {
+		return $this->billrunExtraFields;
+	}
 	
-	abstract static public function getSubscribersByParams($params, $availableFields);
+	/**
+	 * Returns extra fields for the customer
+	 * @return array
+	 */
+	public function getCustomerExtraData() {
+		return $this->customerExtraData;
+	}
+
 }

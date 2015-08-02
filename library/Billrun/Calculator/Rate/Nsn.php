@@ -3,7 +3,7 @@
 /**
  * @package         Billing
  * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
- * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
 /**
@@ -27,33 +27,10 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 	}
 
 	/**
-	 * Write the calculation into DB
-	 */
-	public function updateRow($row) {
-		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteRow', array('row' => $row));
-		$usage_type = $this->getLineUsageType($row);
-		$volume = $this->getLineVolume($row, $usage_type);
-		$rate = $this->getLineRate($row, $usage_type);
-
-		$current = $row->getRawData();
-
-		$added_values = array(
-			'usaget' => $usage_type,
-			'usagev' => $volume,
-			$this->ratingField => $rate ? $rate->createRef() : $rate,
-		);
-		$newData = array_merge($current, $added_values);
-		$row->setRawData($newData);
-
-		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteRow', array('row' => $row));
-		return true;
-	}
-
-	/**
 	 * @see Billrun_Calculator_Rate::getLineVolume
 	 */
 	protected function getLineVolume($row, $usage_type) {
-		if ($usage_type == 'call') {
+		if (in_array($usage_type, array('call', 'incoming_call'))) {
 			if (isset($row['duration'])) {
 				return $row['duration'];
 			} else if ($row['record_type'] == '31') { // terminated call
@@ -74,11 +51,12 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 			case '08':
 			case '09':
 				return 'sms';
-			case '11':
-			case '12':
-			case '01':
 			case '02':
-			case '31':
+			case '12':
+				return 'incoming_call';
+			case '11':
+			case '01':
+			case '30':
 			default:
 				return 'call';
 		}
@@ -90,7 +68,6 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 	 */
 	protected function getLineRate($row, $usage_type) {
 		$record_type = $row->get('record_type');
-
 		$called_number = $row->get('called_number');
 		$ocg = $row->get('out_circuit_group');
 		$icg = $row->get('in_circuit_group');
@@ -98,15 +75,38 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 		$matchedRate = false;
 
 		if ($record_type == "01" || //MOC call
-				($record_type == "11" && ($icg == "1001" || $icg == "1006" || ($icg >= "1201" && $icg <= "1209")) &&
-				($ocg != '3051' && $ocg != '3050') && ($ocg != '3061' && $ocg != '3060'))// Roaming on Cellcom and the call is not to a voice mail
+				($record_type == "11" && in_array($icg, Billrun_Util::getRoamingCircuitGroups()) &&
+				$ocg != '3060' && $ocg != '3061') // Roaming on Cellcom and not redirection
 		) {
-			$called_number_prefixes = $this->getPrefixes($called_number);
-			foreach ($called_number_prefixes as $prefix) {
-				if (isset($this->rates[$prefix])) {
-					foreach ($this->rates[$prefix] as $rate) {
-						if (isset($rate['rates'][$usage_type])) {
-							if ($rate['from'] <= $line_time && $rate['to'] >= $line_time) {
+			$matchedRate = $this->getRateByParams($called_number, $usage_type, $line_time, $ocg);
+		} else if ($record_type == '30' && isset($row['ild_prefix'])) {
+			$called_number = preg_replace('/^016/', '', $called_number);
+			$matchedRate = $this->getRateByParams($called_number, $usage_type, $line_time);
+		}
+
+		return $matchedRate;
+	}
+
+	/**
+	 * Get a matching rate by the supplied params
+	 * @param string $called_number the number called
+	 * @param string $usage_type the usage type (call / sms ...)
+	 * @param MongoDate $urt the time of the event
+	 * @param string $ocg the out circuit group of the event. If not supplied, ocg will be ignored in the search.
+	 * @return Mongodloid_Entity the matched rate or UNRATED rate if none found
+	 */
+	protected function getRateByParams($called_number, $usage_type, $urt, $ocg = null) {
+		$matchedRate = $this->rates['UNRATED'];
+		$called_number_prefixes = Billrun_Util::getPrefixes($called_number);
+		foreach ($called_number_prefixes as $prefix) {
+			if (isset($this->rates[$prefix])) {
+				foreach ($this->rates[$prefix] as $rate) {
+					if (isset($rate['rates'][$usage_type]) && (!isset($rate['params']['fullEqual']) || $prefix == $called_number)) {
+						if ($rate['from'] <= $urt && $rate['to'] >= $urt) {
+							if (is_null($ocg)) {
+								$matchedRate = $rate;
+								break 2;
+							} else {
 								foreach ($rate['params']['out_circuit_group'] as $groups) {
 									if ($groups['from'] <= $ocg && $groups['to'] >= $ocg) {
 										$matchedRate = $rate;
@@ -118,11 +118,7 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 					}
 				}
 			}
-			if (!$matchedRate) {
-				$matchedRate = $this->rates['UNRATED'];
-			}
 		}
-
 		return $matchedRate;
 	}
 

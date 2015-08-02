@@ -1,10 +1,16 @@
 <?php
 
 /**
- * This interface defines the interface needed to add processor behavior to a plugin.
- * @author eran
+ * @package         Billing
+ * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
-interface  Billrun_Plugin_Interface_IProcessor {
+
+/**
+ * This interface defines the interface needed to add processor behavior to a plugin.
+ */
+interface Billrun_Plugin_Interface_IProcessor {
+
 	/**
 	 * Process data from a file.
 	 * @param type $type the type of file to process
@@ -12,6 +18,7 @@ interface  Billrun_Plugin_Interface_IProcessor {
 	 * @param Billrun_Processor $processor the processor object that managing the file processing
 	 */
 	public function processData($type, $fileHandle, Billrun_Processor &$processor);
+
 	/**
 	 * Check if thers more  processing to be done.
 	 * @param type $type  type of file being processed
@@ -19,6 +26,7 @@ interface  Billrun_Plugin_Interface_IProcessor {
 	 * @param Billrun_Processor $processor the processor object that managing the file processing
 	 */
 	public function isProcessingFinished($type, $fileHandle, Billrun_Processor &$processor);
+
 	/**
 	 * Retrive the sequence data for a filename
 	 * @param type $type the type of the file being processed
@@ -29,4 +37,3 @@ interface  Billrun_Plugin_Interface_IProcessor {
 	public function getFilenameData($type, $filename, &$processor);
 }
 
-?>
