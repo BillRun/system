@@ -24,8 +24,9 @@ class VfdaysAction extends Action_Base {
 		$request = $this->getRequest();
 		$sid = intval($request->get("sid"));
 		$year = intval($request->get("year"));
+		$max_datetime = $request->get("max_datetime");
 
-		$results = $this->count_days($sid, $year);
+		$results = $this->count_days($sid, $year, $max_datetime);
 		if (isset($results[0]["count"])) {
 			$days = $results[0]["count"];
 		} else {
@@ -49,7 +50,7 @@ class VfdaysAction extends Action_Base {
 	 * @param type $sid
 	 * @return number of days 
 	 */
-	public function count_days($sid, $year = null) {
+	public function count_days($sid, $year = null, $max_datetime = null) {
 		if (is_null($year) || empty($year)) {
 			$year = date("Y");
 		}
@@ -91,6 +92,10 @@ class VfdaysAction extends Action_Base {
 				),
 			),
 		);
+		
+		if (!empty($max_datetime)) {
+			$match2['$match']['unified_record_time'] = array('$lte' => new MongoDate(strtotime($max_datetime)));
+		}
 
 		$group = array(
 			'$group' => array(
