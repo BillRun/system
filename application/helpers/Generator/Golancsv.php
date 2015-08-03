@@ -296,7 +296,7 @@ class Generator_Golancsv extends Billrun_Generator {
 
 	protected function getIsAccountActive($subscriber) {
 		$is_active = 0;
-		if (isset($subscriber['breakdown']) || (isset($subscriber['subscriber_status']) && $subscriber['subscriber_status'] == "open")) {
+		if ((isset($subscriber['breakdown']) || (isset($subscriber['subscriber_status']) && $subscriber['subscriber_status'] == "open")) && $subscriber['sid'] != 0) {
 			$is_active = 1;
 		}
 		return $is_active;
