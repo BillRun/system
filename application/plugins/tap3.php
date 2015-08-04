@@ -232,7 +232,7 @@ use Billrun_Traits_FileSequenceChecking;
 				}
 			}
 		}
-		if (isset($cdrLine['called_number']) && (strlen($cdrLine['called_number']) <= 10 && substr($cdrLine['called_number'], 0, 1) == "0") || (!empty($cdrLine['called_place']) && $cdrLine['called_place'] == 'ISR')) {
+		if (isset($cdrLine['called_number']) && (strlen($cdrLine['called_number']) <= 10 && substr($cdrLine['called_number'], 0, 1) == "0") || (!empty($cdrLine['called_place']) && $cdrLine['called_place'] == Billrun_Factory::config()->getConfigValue('tap3.processor.local_code'))) {
 			$cdrLine['called_number'] = Billrun_Util::msisdn($cdrLine['called_number']);
 		}
 		
