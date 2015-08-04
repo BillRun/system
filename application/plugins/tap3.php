@@ -188,6 +188,9 @@ use Billrun_Traits_FileSequenceChecking;
 							$cdrLine['called_number'] = $dialed_digits;
 						}
 					}
+					if (Billrun_Util::getNestedArrayVal($cdrLine, $mapping['CalledPlace'])) {
+						$cdrLine['called_place'] = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['CalledPlace']);
+					}
 				} else if ($tele_service_code == '22') {
 					if (Billrun_Util::getNestedArrayVal($cdrLine, $mapping['SmsDestinationNumber'])) {
 						$cdrLine['called_number'] = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['SmsDestinationNumber']);
@@ -198,9 +201,6 @@ use Billrun_Traits_FileSequenceChecking;
 					} else if (isset($cdrLine['basicCallInformation']['Destination']['CalledNumber'])) { // take the same last rule but this time with misspell fix (Destination)
 						$cdrLine['called_number'] = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['called_number']);
 					}
-				}
-				if (Billrun_Util::getNestedArrayVal($cdrLine, $mapping['CalledPlace'])) {
-						$cdrLine['called_place'] = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['CalledPlace']);
 				}
 			} else if ($record_type == 'a') {
 				if ($tele_service_code == '11') {
