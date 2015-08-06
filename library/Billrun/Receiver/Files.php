@@ -3,7 +3,7 @@
 /**
  * @package         Billing
  * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
- * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
 /**
@@ -50,12 +50,19 @@ class Billrun_Receiver_Files extends Billrun_Receiver {
 			static::$type = $type;
 			foreach ($files as $file) {
 				$path = $this->workspace . DIRECTORY_SEPARATOR . $type . DIRECTORY_SEPARATOR . $file;
-				if (is_dir($path) || $this->isFileReceived($file, $type) || !$this->isFileValid($file, $path)) {
+				if (is_dir($path) || $this->lockFileForReceive($file, $type) || !$this->isFileValid($file, $path)) {
 					continue;
 				}
-
-				$this->logDB($path);
-				$ret[] = $path;
+				$fileData = $this->getFileLogData($file, $type);
+				$fileData['path'] = $path;
+				if(!empty($this->backupPaths)) {
+					$backedTo = $this->backup($fileData['path'], $file, $this->backupPaths, FALSE, FALSE);
+					Billrun_Factory::dispatcher()->trigger('beforeReceiverBackup', array($this, &$fileData['path']));
+					$fileData['backed_to'] = $backedTo;
+					Billrun_Factory::dispatcher()->trigger('afterReceiverBackup', array($this, &$fileData['path']));
+				}
+				$this->logDB($fileData);
+				$ret[] = $fileData['path'];
 			}
 			$this->processType($type);
 		}

@@ -3,7 +3,7 @@
 /**
  * @package         Billing
  * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
- * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
 /**
@@ -22,7 +22,7 @@ abstract class Billrun_Alert extends Billrun_Base {
 	/**
 	 * go over the aggregated data and check of values the break a ceartain threshold.
 	 * @return Array|bool	false if no threshold was crossed or
-	 *						an array conatining the crossed thresholds and thier values
+	 * 						an array conatining the crossed thresholds and thier values
 	 */
 	abstract public function getAlerts();
 
@@ -32,5 +32,4 @@ abstract class Billrun_Alert extends Billrun_Base {
 	 * 
 	 */
 	abstract public function handleAlerts($thresholds);
-
 }

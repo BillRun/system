@@ -3,7 +3,7 @@
 /**
  * @package         Billing
  * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
- * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
 /**
@@ -20,6 +20,12 @@ class TableModel {
 	 * @var Mongodloid Collection
 	 */
 	protected $collection;
+
+	/**
+	 *
+	 * @var string The collection name
+	 */
+	protected $collection_name;
 
 	/**
 	 * the page number to pull; use as current page
@@ -40,10 +46,10 @@ class TableModel {
 	 * 
 	 * @var array
 	 */
-	protected $sort;
+	protected $sort = array();
 
 	/**
-	 * the count of the page
+	 * the count of the full scope (use for pagination)
 	 * 
 	 * @var int
 	 */
@@ -56,6 +62,12 @@ class TableModel {
 	public $search_key;
 
 	/**
+	 *
+	 * @var array extra columns to display in the table
+	 */
+	public $extra_columns;
+
+	/**
 	 * constructor
 	 * 
 	 * @param array $params of parameters to preset the object
@@ -63,21 +75,37 @@ class TableModel {
 	public function __construct(array $params = array()) {
 
 		if (isset($params['collection'])) {
-			$this->collection = call_user_func(array(Billrun_Factory::db(), $params['collection'] . 'Collection'));
-			$this->collection->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED);
+			if (isset($params['db'])) {
+				$this->collection = call_user_func(array(Billrun_Factory::db(array('name' => $params['db'])), $params['collection'] . 'Collection'));
+			} else {
+				$this->collection = call_user_func(array(Billrun_Factory::db(), $params['collection'] . 'Collection'));
+			}
+			$this->collection_name = $params['collection'];
 		}
 
 		if (isset($params['page'])) {
-			$this->page = $params['page'];
+			$this->setPage($params['page']);
 		}
 
 		if (isset($params['size'])) {
-			$this->size = $params['size'];
+			$this->setSize($params['size']);
 		}
 
 		if (isset($params['sort'])) {
 			$this->sort = $params['sort'];
 		}
+
+		if (isset($params['extra_columns'])) {
+			$this->extra_columns = $params['extra_columns'];
+		}
+	}
+
+	public function setSize($size) {
+		$this->size = $size;
+	}
+
+	public function setPage($page) {
+		$this->page = $page;
 	}
 
 	/**
@@ -160,8 +188,7 @@ class TableModel {
 				$max = $count;
 			}
 
-			$ret = '<div class="pagination pagination-right">'
-				. '<ul>';
+			$ret = '<ul class="pagination pagination-right">';
 			if ($current == 1) {
 				$ret .= '<li class="disabled"><a href="javascript:void(0);">First</a></li>'
 					. '<li class="disabled"><a href="javascript:void(0);">Prev</a></li>';
@@ -188,7 +215,7 @@ class TableModel {
 					. '<li><a href="?page=' . $count . '">Last</a></li>';
 			}
 
-			$ret .= '</ul></div>';
+			$ret .= '</ul>';
 
 			if ($print) {
 				print $ret;
@@ -244,7 +271,9 @@ class TableModel {
 			$raw_data = $entity->getRawData();
 			$new_data = array();
 			foreach ($protected_keys as $value) {
-				$new_data[$value] = $raw_data[$value];
+				if (isset($raw_data[$value])) {
+					$new_data[$value] = $raw_data[$value];
+				}
 			}
 			foreach ($hidden_keys as $value) {
 				$new_data[$value] = $raw_data[$value];
@@ -256,7 +285,7 @@ class TableModel {
 		} else {
 			$entity = new Mongodloid_Entity($params);
 		}
-		$entity->save($this->collection);
+		$entity->save($this->collection, 1);
 //		if (method_exists($this, $coll . 'AfterDataSave')) {
 //			call_user_func_array(array($this, $coll . 'AfterDataSave'), array($collection, &$newEntity));
 //		}
@@ -275,6 +304,10 @@ class TableModel {
 		return array();
 	}
 
+	public function getSortFields() {
+		return array();
+	}
+
 	public function getEditKey() {
 		return null;
 	}
@@ -283,8 +316,38 @@ class TableModel {
 		if ($filter_field['input_type'] == 'number') {
 			if ($value != '') {
 				if ($filter_field['comparison'] == 'equals') {
+					if (is_array($filter_field['db_key'])) {
+						$ret = array('$or' => array(
+								array(
+									$filter_field['db_key'][0] => array(
+										'$in' => array_map('floatval', explode(',', $value)),
+									),
+								),
+								array(
+									$filter_field['db_key'][1] => array(
+										'$in' => array_map('strval', explode(',', $value)),
+									),
+								)
+							)
+						);
+					} else {
+						$ret = array(
+							$filter_field['db_key'] => array(
+								'$in' => array_map('floatval', explode(',', $value)),
+							),
+						);
+					}
+					return $ret;
+				}
+			}
+		} else if ($filter_field['input_type'] == 'text') {
+			if ($value != '') {
+				if ($filter_field['comparison'] == 'contains') {
+					if (isset($filter_field['case_type'])) {
+						$value = Admin_Table::convertValueByCaseType($value, $filter_field['case_type']);
+					}
 					return array(
-						$filter_field['key'] => intval($value),
+						$filter_field['db_key'] => array('$regex' => strval($value)),
 					);
 				}
 			}
@@ -298,7 +361,24 @@ class TableModel {
 				);
 			}
 		} else if ($filter_field['input_type'] == 'multiselect') {
+			if (isset($filter_field['ref_coll']) && isset($filter_field['ref_key'])) {
+				$collection = Billrun_Factory::db()->{$filter_field['ref_coll'] . "Collection"}();
+				$pre_query = array(
+					$filter_field['ref_key'] => array(
+						'$in' => $value,
+					),
+				);
+				$cursor = $collection->query($pre_query);
+				$value = array();
+				foreach ($cursor as $entity) {
+					$value[] = $entity->createRef($collection);
+				}
+			}
 			if (is_array($value) && !empty($value)) {
+
+				if ($this instanceof QueueModel && $filter_field['db_key'] == 'calc_name') {
+					$value = $this->prev_calc($value);
+				}
 				return array(
 					$filter_field['db_key'] => array(
 						$filter_field['comparison'] => $value
@@ -311,6 +391,120 @@ class TableModel {
 
 	public function getFilterFieldsOrder() {
 		return array();
+	}
+
+	protected function getDBRefField($item, $field_name) {
+		if (($value = $item->get($field_name, true)) && MongoDBRef::isRef($value)) {
+			$value = Billrun_DBRef::getEntity($value);
+		}
+		return $value;
+	}
+
+	public function getExtraColumns() {
+		$extra_columns = Billrun_Factory::config()->getConfigValue('admin_panel.' . $this->collection_name . '.extra_columns', array());
+		return $extra_columns;
+	}
+
+	public function getTableColumns() {
+		$columns = Billrun_Factory::config()->getConfigValue('admin_panel.' . $this->collection_name . '.table_columns', array());
+		if (!empty($this->extra_columns)) {
+			$extra_columns = array_intersect_key($this->getExtraColumns(), array_fill_keys($this->extra_columns, ""));
+			$columns = array_merge($columns, $extra_columns);
+		}
+		return $columns;
+	}
+
+	public function getSortElements() {
+		$sort_fields = $this->getSortFields();
+		if ($sort_fields) {
+			$sort_fields = array_merge(array(0 => 'N/A'), $sort_fields);
+		}
+		return $sort_fields;
+	}
+
+	public function duplicate($params) {
+		$key = $params[$this->search_key];
+		$count = $this->collection
+			->query($this->search_key, $key)
+			->count();
+
+		if ($count) {
+			die(json_encode("key already exists"));
+		}
+		if (isset($params['_id']->{'id'})) {
+			$params['source_id'] = (string) $params['_id']->{'$id'};
+		} else if (isset($params['_id'])){
+			$params['source_id'] = (string) $params['_id'];
+		}
+		unset($params['_id']);
+		return $this->update($params);
+	}
+
+	public function getEmptyItem() {
+		return new Mongodloid_Entity();
+	}
+
+	/**
+	 * method to check if indexes exists in the query filters
+	 * 
+	 * @param type $filters the filters to search in
+	 * @param type $searched_filter the filter to search
+	 * 
+	 * @return boolean true if searched filter exists in the filters supply
+	 */
+	protected function filterExists($filters, $searched_filter) {
+		settype($searched_filter, 'array');
+		foreach ($filters as $k => $f) {
+			$keys = array_keys($f);
+			if (count(array_intersect($searched_filter, $keys))) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	public function exportCsvFile($params) {
+		$separator = ',';
+		$header_output[] = implode($separator, $this->prepareHeaderExport($params['columns']));
+		$data_output = $this->prepareDataExport($params['data'], array_keys($params['columns']), $separator);
+		$output = implode(PHP_EOL, array_merge($header_output, $data_output));
+		$this->export($output);
+	}
+
+	protected function export($output) {
+		header("Cache-Control: max-age=0");
+		header("Content-type: application/csv");
+		header("Content-Disposition: attachment; filename=csv_export.csv");
+		die($output);
+	}
+
+	protected function prepareHeaderExport($headerData) {
+		$row = array('#');
+		foreach ($headerData as $value) {
+			$row[] = $value;
+		}
+		return $row;
+	}
+
+	protected function prepareDataExport($data, $columns, $separator = ',') {
+		$ret = array();
+		$c = 0;
+		foreach ($data as $item) {
+			$ret[] = ++$c . $separator . $this->formatCsvRow($item, $columns, $separator);
+		}
+		return $ret;
+	}
+
+	protected function formatCsvRow($row, $columns, $separator = ',') {
+		$ret = array();
+		foreach ($columns as $h) {
+			$ret[] = $this->formatCsvCell($row, $h);
+		}
+		return implode($separator, $ret);
+	}
+
+	protected function formatCsvCell($row, $header) {
+		return $row[$header];
 	}
 
 }

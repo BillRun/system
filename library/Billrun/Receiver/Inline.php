@@ -3,7 +3,7 @@
 /**
  * @package         Billing
  * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
- * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
 /**
@@ -38,6 +38,9 @@ class Billrun_Receiver_Inline extends Billrun_Receiver {
 
 		if (isset($options['workspace'])) {
 			$this->workspace = $options['workspace'];
+//			if (!file_exists($this->workspace)) {
+//				mkdir($this->workspace, 0755, true);
+//			}
 		}
 
 		if (isset($options['file_content'])) {
@@ -68,12 +71,22 @@ class Billrun_Receiver_Inline extends Billrun_Receiver {
 		}
 		$ret = array();
 		Billrun_Factory::log()->log("Billrun_Receiver_Inline::receive - handle file {$this->filename}", Zend_Log::DEBUG);
-		$path = $this->handleFile();
+		$this->lockFileForReceive($this->filename, $type);
+		$path = $this->handleFile();		
 		if (!$path) {
 			Billrun_Factory::log()->log("NOTICE : Couldn't write file $this->filename.", Zend_Log::NOTICE);
-		} else {
-			$this->logDB($path);
-			$ret[] = $path;
+			return FALSE;
+		} else {			
+			$fileData = $this->getFileLogData($this->filename, $type);
+			$fileData['path'] = $path;
+			if(!empty($this->backupPaths)) {
+				$backedTo = $this->backup($fileData['path'], $file->filename, $this->backupPaths, FALSE, FALSE);
+				Billrun_Factory::dispatcher()->trigger('beforeReceiverBackup', array($this, &$fileData['path']));
+				$fileData['backed_to'] = $backedTo;
+				Billrun_Factory::dispatcher()->trigger('afterReceiverBackup', array($this, &$fileData['path']));
+			}			
+			$this->logDB($fileData);
+			$ret[] = $fileData['path'];
 		}
 
 		Billrun_Factory::dispatcher()->trigger('afterInlineFilesReceive', array($this, $ret));
@@ -90,14 +103,15 @@ class Billrun_Receiver_Inline extends Billrun_Receiver {
 	}
 
 	protected function handleFile() {
+		$ret = FALSE;
 		Billrun_Factory::dispatcher()->trigger('beforeInlineFileHandling', array($this));
 		$newPath = $this->getDestBasePath();
-		if (!file_exists($newPath)) {
-			mkdir($newPath, 0777, true);
+		@mkdir($newPath, 0755, true);
+		if (file_exists($newPath)) {
+			$newPath .= DIRECTORY_SEPARATOR . $this->filename;
+			$ret = file_put_contents($newPath, $this->file_content);
+			Billrun_Factory::dispatcher()->trigger('afterInlineFileHandling', array($this, &$newPath, $ret));
 		}
-		$newPath .= DIRECTORY_SEPARATOR . $this->filename;
-		$ret = file_put_contents($newPath, $this->file_content);
-		Billrun_Factory::dispatcher()->trigger('afterInlineFileHandling', array($this, &$newPath, $ret));
 		return $ret === FALSE ? FALSE : $newPath;
 	}
 

@@ -3,7 +3,7 @@
 /**
  * @package         Billing
  * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
- * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
 /**
@@ -33,40 +33,39 @@ abstract class Billrun_Plugin_BillrunPluginFraud extends Billrun_Plugin_BillrunP
 		Billrun_Factory::log()->log("Billrun_Plugin_BillrunPluginFraud::get_last_charge_time is deprecated; please use Billrun_Util::getLastChargeTime()", Zend_Log::DEBUG);
 		return Billrun_Util::getLastChargeTime($return_timestamp);
 	}
-	
+
 	/**
 	 * method to collect data which need to be handle by event
 	 */
 	abstract public function handlerCollect($options);
 
-	
-		/**
+	/**
 	 * Write all the threshold that were broken as events to the db events collection 
 	 * @param type $items the broken  thresholds
 	 * @param type $pluginName the plugin that identified the threshold breakage
 	 * @return type
 	 */
-	public function handlerAlert(&$items,$pluginName) {
-		if($pluginName != $this->getName() || !$items ) {
-			return;	
+	public function handlerAlert(&$items, $pluginName) {
+		if ($pluginName != $this->getName() || !$items) {
+			return;
 		}
 
 		$events = Billrun_Factory::db()->eventsCollection();
 		//Billrun_Factory::log()->log("New Alert For {$item['imsi']}",Zend_Log::DEBUG);
 		$ret = array();
-		foreach($items as &$item) { 
+		foreach ($items as &$item) {
 			$event = new Mongodloid_Entity($item);
 			unset($event['lines_stamps']);
-			
+
 			$newEvent = $this->addAlertData($event);
-			$newEvent['source']	= $this->getName();
+			$newEvent['source'] = $this->getName();
 			$newEvent['stamp'] = md5(serialize($newEvent));
 			$newEvent['creation_time'] = date(Billrun_Base::base_dateformat);
 			$item['event_stamp'] = $newEvent['stamp'];
-			
+
 			$ret[] = $events->save($newEvent);
 		}
-		return $ret; 
+		return $ret;
 	}
 
 	/**
@@ -81,13 +80,11 @@ abstract class Billrun_Plugin_BillrunPluginFraud extends Billrun_Plugin_BillrunP
 		if ($pluginName != $this->getName() || !$items) {
 			return;
 		}
-		
+
 		$ret = array();
 		$lines = Billrun_Factory::db()->linesCollection();
 		foreach ($items as &$item) {
-			$ret[] = $lines->update(	array('stamp' => array('$in' => $item['lines_stamps'])),
-									array('$set' => array('event_stamp' => $item['event_stamp'])),
-									array('multiple' => 1));
+			$ret[] = $lines->update(array('stamp' => array('$in' => $item['lines_stamps'])), array('$set' => array('event_stamp' => $item['event_stamp'])), array('multiple' => 1));
 		}
 		return $ret;
 	}

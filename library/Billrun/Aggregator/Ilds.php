@@ -3,7 +3,7 @@
 /**
  * @package         Billing
  * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
- * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
 /**
@@ -194,7 +194,7 @@ class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 			'sid' => $sid,
 			'billrun' => $this->getStamp(),
 		);
-		
+
 		if (isset($subscriber->aid)) {
 			$added_values['aid'] = $subscriber->aid;
 		}

@@ -3,7 +3,7 @@
 /**
  * @package         Billing
  * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
- * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
 /**
@@ -29,8 +29,7 @@ class ApiController extends Yaf_Controller_Abstract {
 		$this->output = new stdClass();
 		$this->getView()->output = $this->output;
 		// set the actions autoloader
-		$loader = Yaf_Loader::getInstance(APPLICATION_PATH . '/application/helpers');
-		$loader->registerLocalNamespace("Action");
+		Yaf_Loader::getInstance(APPLICATION_PATH . '/application/helpers')->registerLocalNamespace("Action");
 		$this->setActions();
 		$this->setOutputMethod();
 	}
@@ -128,11 +127,10 @@ class ApiController extends Yaf_Controller_Abstract {
 	protected function setOutputMethod() {
 		$action = $this->getRequest()->getActionName();
 		$output_methods = Billrun_Factory::config()->getConfigValue('api.outputMethod');
-		if (is_null($output_methods[$action])) {
-			echo("No output method defined");
-			Billrun_Factory::log()->log('No output method defined in credit api', Zend_Log::ALERT);
-		}
-		else {
+		if (!isset($output_methods[$action]) || is_null($output_methods[$action])) {
+			Billrun_Factory::log()->log('No output method defined; set to json encode', Zend_Log::DEBUG);
+			$this->getView()->outputMethod = array('Zend_Json', 'encode');
+		} else {
 			$this->getView()->outputMethod = $output_methods[$action];
 		}
 	}

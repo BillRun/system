@@ -3,7 +3,7 @@
 /**
  * @package         Billing
  * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
- * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
 /**
@@ -20,7 +20,7 @@ class Billrun_Calculator_Ilds extends Billrun_Calculator_Rate {
 	 * @var string
 	 */
 	static protected $type = "ilds";
-	
+
 	/**
 	 * load the data to run the calculator for
 	 * 
@@ -28,13 +28,13 @@ class Billrun_Calculator_Ilds extends Billrun_Calculator_Rate {
 	 * 
 	 */
 	public function load($initData = true) {
-		
+
 		if ($initData) {
 			$this->data = array();
 		}
 
 		$resource = $this->getLines();
-		
+
 		foreach ($resource as $entity) {
 			$this->data[] = $entity;
 		}
@@ -57,14 +57,14 @@ class Billrun_Calculator_Ilds extends Billrun_Calculator_Rate {
 			->equals('source', static::$type)
 			->notExists('aprice');
 //			->notExists('pprice'); // @todo: check how to do or between 2 not exists		
-		
+
 		if ($this->limit > 0) {
 			$query->cursor()->limit($this->limit);
 		}
-		
+
 		return $query;
 	}
-	
+
 	/**
 	 * Execute the calculation process
 	 */
@@ -93,7 +93,7 @@ class Billrun_Calculator_Ilds extends Billrun_Calculator_Rate {
 	 * Write the calculation into DB
 	 */
 	public function updateRow($row) {
-		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteRow', array('row' => $row));
+		Billrun_Factory::dispatcher()->trigger('beforeCalculatorUpdateRow', array($row, $this));
 
 		$current = $row->getRawData();
 		$charge = $this->calcChargeLine($row->get('type'), $row->get('call_charge'));
@@ -104,8 +104,8 @@ class Billrun_Calculator_Ilds extends Billrun_Calculator_Rate {
 		$newData = array_merge($current, $added_values);
 		$row->setRawData($newData);
 
-		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteRow', array('row' => $row));
-		return true;
+		Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array($row, $this));
+		return $row;
 	}
 
 	/**
@@ -129,7 +129,7 @@ class Billrun_Calculator_Ilds extends Billrun_Calculator_Rate {
 				$rating_charge = round($charge / 100, 2);
 				break;
 			case '014':
-			case '019':	
+			case '019':
 				$rating_charge = round($charge, 3);
 				break;
 			default:

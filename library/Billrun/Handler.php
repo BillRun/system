@@ -1,8 +1,9 @@
 <?php
+
 /**
  * @package         Billing
  * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
- * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
 /**
@@ -18,11 +19,11 @@ class Billrun_Handler extends Billrun_Base {
 	 * Options passed from  the owner of the handler object
 	 */
 	protected $options = array();
-	
+
 	public function __construct($options = array()) {
 		$this->options = $options;
 	}
-	
+
 	/**
 	 * method to retrieve instance of Billrun Handler
 	 * 
@@ -62,7 +63,7 @@ class Billrun_Handler extends Billrun_Base {
 
 		Billrun_Factory::log()->log("Handler collect start", Zend_Log::INFO);
 
-		$items = Billrun_Factory::dispatcher()->trigger('handlerCollect',array($this->options));
+		$items = Billrun_Factory::dispatcher()->trigger('handlerCollect', array($this->options));
 
 		Billrun_Factory::log()->log("Handler collect finished", Zend_Log::INFO);
 
@@ -78,7 +79,7 @@ class Billrun_Handler extends Billrun_Base {
 
 		Billrun_Factory::log()->log("Handler notify start", Zend_Log::INFO);
 
-		$items = Billrun_Factory::dispatcher()->trigger('handlerNotify',array($this,$this->options));
+		$items = Billrun_Factory::dispatcher()->trigger('handlerNotify', array($this, $this->options));
 
 		Billrun_Factory::log()->log("Handler notify finished", Zend_Log::INFO);
 

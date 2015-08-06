@@ -18,9 +18,10 @@ abstract class Billrun_Calculator_Wholesale extends Billrun_Calculator {
 	 */
 	protected $peakTimes = array(
 		'weekday' => array('start' => 9, 'end' => 19),
+		'workday' => array('start' => 9, 'end' => 19),
 		'weekend' => array('start' => 0, 'end' => -1),
 		'shortday' => array('start' => 9, 'end' => 13),
-		'holyday' => array('start' => 0, 'end' => -1)
+		'holiday' => array('start' => 0, 'end' => -1),
 	);
 	protected $wholesaleRecords = array('11', '12', '08', '09');
 	protected $dbrefs = array();
@@ -56,11 +57,12 @@ abstract class Billrun_Calculator_Wholesale extends Billrun_Calculator {
 			//break if no volume left to price.
 			$volumeToPriceCurrentRating = ($volumeToPrice - $currRate['to'] < 0) ? $volumeToPrice : $currRate['to']; // get the volume that needed to be priced for the current rating
 			$price += floatval((ceil($volumeToPriceCurrentRating / $currRate['interval']) * $currRate['price'])); // actually price the usage volume by the current 
-			$rates[] = array('rate' => $currRate, 'volume' => $volumeToPriceCurrentRating);
+			//TODO  add later to suppprt  multiple rates division.
+			//$rates["".($currRate['price']/$currRate['interval'])] = $volumeToPriceCurrentRating;
 			$volumeToPrice = $volumeToPrice - $volumeToPriceCurrentRating; //decressed the volume that was priced			
 		}
 		$ret = array(
-			'prate' => $rates,
+			//'prate' => $rates, //TODO  add later to suppprt  multiple rates division.
 			$this->pricingField => $price
 		);
 		return $ret;
@@ -81,6 +83,11 @@ abstract class Billrun_Calculator_Wholesale extends Billrun_Calculator {
 				$carrier['zones'][$zoneKey][$usageType][$peak] :
 				$carrier['zones'][$zoneKey][$usageType];
 		}
+		if (isset($carrier['zones']['other'])) {
+			$typedRates = $peak && isset($carrier['zones']['other'][$usageType][$peak]) ?
+				$carrier['zones']['other'][$usageType][$peak] :
+				$carrier['zones']['other'][$usageType];
+		}
 		if (!$typedRates['rate'] || !is_array($typedRates['rate'])) {
 			Billrun_Factory::log()->log("Couldn't find rate for key : $zoneKey in {$carrier['key']}", Zend_Log::DEBUG);
 			//if(!Billrun_Factory::config()->isProd()) {
@@ -100,7 +107,7 @@ abstract class Billrun_Calculator_Wholesale extends Billrun_Calculator {
 	protected function isLineIncoming($row) {
 		$ocg = $row->get('out_circuit_group');
 		$ocgn = $row->get('out_circuit_group_name');
-		return $ocg == 0 || $ocg == 3060 || $ocg == 3061 ||  $ocg == 3050 || $ocg == 3051 || preg_match("/^RCEL/", $ocgn) || $ocg == 152;
+		return $ocg == 0 || $ocg == 3060 || $ocg == 3061 || $ocg == 3050 || $ocg == 3051 || preg_match("/^RCEL/", $ocgn) || $ocg == 152;
 	}
 
 	/**
@@ -119,7 +126,7 @@ abstract class Billrun_Calculator_Wholesale extends Billrun_Calculator {
 	/**
 	 * @see Billrun_Calculator::getCalculatorQueueType
 	 */
-	protected static function getCalculatorQueueType() {
+	public function getCalculatorQueueType() {
 		return static::MAIN_DB_FIELD;
 	}
 

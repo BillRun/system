@@ -16,7 +16,8 @@
  * @since      1.0
  */
 class Processor_Wholesaleinrates extends Billrun_Processor_Base_Separator {
-		/**
+
+	/**
 	 * the type of the object
 	 *
 	 * @var string
@@ -86,32 +87,32 @@ class Processor_Wholesaleinrates extends Billrun_Processor_Base_Separator {
 		$this->data['stored_data'] = array();
 
 		foreach ($this->data['data'] as $key => $row) {
-				$row['carrier'] = preg_replace("/_OUT$/", "", preg_replace("/_IN$/", "", $row['carrier']));
-				$entity = $carriers->query(array('key' => $row['carrier']))->cursor()->current();
-				if(!$entity->getId()) {
-					$entity = $this->createANewCarrier($row);
-				}
-				
-				$entity['zones'] = array_merge($entity['zones'], array( 'incoming' => array_merge($entity['zones']['incoming'], $this->getRate($row)) ) );
-								
-				$entity->collection($carriers);								
-				$entity->save($carriers);
+			$row['carrier'] = preg_replace("/_OUT$/", "", preg_replace("/_IN$/", "", $row['carrier']));
+			$entity = $carriers->query(array('key' => $row['carrier']))->cursor()->current();
+			if (!$entity->getId()) {
+				$entity = $this->createANewCarrier($row);
+			}
 
-				$this->data['stored_data'][] = $row;
+			$entity['zones'] = array_merge($entity['zones'], array('incoming' => array_merge($entity['zones']['incoming'], $this->getRate($row))));
+
+			$entity->collection($carriers);
+			$entity->save($carriers);
+
+			$this->data['stored_data'][] = $row;
 		}
 
 		return true;
 	}
-	
-	protected function getRate( $rateRow ) {
+
+	protected function getRate($rateRow) {
 		$intervalMultiplier = 1;
 		switch ($rateRow['wsaleTclassName']) {
 			case 'WTC_V':
 			case 'WTC_T':
-			case 'GTMOC':					
-				$rateType = 'call';				
+			case 'GTMOC':
+				$rateType = 'call';
 				$unit = 'seconds';
-				break;			
+				break;
 			case 'WTC_S':
 				$rateType = 'sms';
 				$unit = 'counter';
@@ -119,37 +120,37 @@ class Processor_Wholesaleinrates extends Billrun_Processor_Base_Separator {
 			case 'WTC_M':
 				$rateType = 'mms';
 				$unit = 'counter';
-				break;				
+				break;
 			default:
-				echo("Unknown kind :  {$rateRow['wsaleTclassName']} <br/>\n");	
+				echo("Unknown kind :  {$rateRow['wsaleTclassName']} <br/>\n");
 				return array();
 		}
 
-		$value =  array(
-					'unit' => $unit,
-					'rate' => array(
-							array(
-							'to' => (int) 2147483647,
-							'price' => (double) $rateRow['sampPrice'],
-							'interval' => (int) ( $rateRow['sampDelayInSec'] ? ($rateRow['sampDelayInSec'] ) : 1  ) * $intervalMultiplier,
-						) ),
-				);
+		$value = array(
+			'unit' => $unit,
+			'rate' => array(
+				array(
+					'to' => (int) 2147483647,
+					'price' => (double) $rateRow['sampPrice'],
+					'interval' => (int) ( $rateRow['sampDelayInSec'] ? ($rateRow['sampDelayInSec'] ) : 1 ) * $intervalMultiplier,
+				)),
+		);
 		if ($rateType == 'call') { // add access price for calls
-				$value['access'] = (double) $rateRow['accessPrice'];
+			$value['access'] = (double) $rateRow['accessPrice'];
 		}
-		return array($rateType => $value );
+		return array($rateType => $value);
 	}
-	
-	protected function createANewCarrier( $rateRow ) {
-		return new Mongodloid_Entity( array(
-					'key' => $rateRow['carrier'],
-					'name' => $rateRow['carrier'],
-					'currency' => 'ILS', //as defined by http://en.wikipedia.org/wiki/ISO_4217
-					'from' => new MongoDate(),
-					'to' => new MongoDate(),
-					'prefixes' => array(),
-					'zones' => array('incoming' => array()),
-				
-				));
+
+	protected function createANewCarrier($rateRow) {
+		return new Mongodloid_Entity(array(
+			'key' => $rateRow['carrier'],
+			'name' => $rateRow['carrier'],
+			'currency' => 'ILS', //as defined by http://en.wikipedia.org/wiki/ISO_4217
+			'from' => new MongoDate(),
+			'to' => new MongoDate(),
+			'prefixes' => array(),
+			'zones' => array('incoming' => array()),
+		));
 	}
+
 }

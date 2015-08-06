@@ -3,7 +3,7 @@
 /**
  * @package         Billing
  * @copyright       Copyright (C) 2012 S.D.O.C. LTD. All rights reserved.
- * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
 /**
@@ -36,6 +36,7 @@ class Billrun_Calculator_Wholesale_NationalRoamingPricing extends Billrun_Calcul
 	}
 
 	public function updateRow($row) {
+		Billrun_Factory::dispatcher()->trigger('beforeCalculatorUpdateRow', array($row, $this));
 
 		//@TODO  change this  be be configurable.
 		$pricingData = array();
@@ -43,7 +44,7 @@ class Billrun_Calculator_Wholesale_NationalRoamingPricing extends Billrun_Calcul
 		$zoneKey = $this->isLineIncoming($row) ? 'incoming' : $this->loadDBRef($row->get(Billrun_Calculator_Wholesale_Nsn::MAIN_DB_FIELD, true))['key'];
 
 		if (isset($row['usagev']) && $zoneKey) {
-			$carir = $this->loadDBRef($row->get(in_array($row->get('wsc', true), $this->nrCarriers) ? 'wsc' : 'wscin', true));
+			$carir = $this->loadDBRef($row->get(in_array($row->get('wsc', true), $this->nrCarriers) ? 'wsc' : 'wsc_in', true));
 			$rates = $this->getCarrierRateForZoneAndType($carir, $zoneKey, $row['usaget']);
 			if (!$rates) {
 				Billrun_Factory::log()->log(" Failed finding rate for row : " . print_r($row['stamp'], 1), Zend_Log::DEBUG);
@@ -52,21 +53,22 @@ class Billrun_Calculator_Wholesale_NationalRoamingPricing extends Billrun_Calcul
 			$pricingData = $this->getLinePricingData($row['usagev'], $rates);
 			$row->setRawData(array_merge($row->getRawData(), $pricingData));
 		} else {
-			Billrun_Factory::log()->log( " No usagev or zone : {$row['usagev']} && $zoneKey for line with stamp: " . $row['stamp'], Zend_Log::NOTICE);
+			Billrun_Factory::log()->log(" No usagev or zone : {$row['usagev']} && $zoneKey for line with stamp: " . $row['stamp'], Zend_Log::NOTICE);
 			return false;
 		}
-		return true;
+
+		Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array($row, $this));
+		return $row;
 	}
 
 	/**
 	 * @see Billrun_Calculator::isLineLegitimate()
 	 */
 	public function isLineLegitimate($line) {
-		return	$line['type'] == 'nsn' && 
-				$line->get(Billrun_Calculator_Wholesale_Nsn::MAIN_DB_FIELD, true) &&
-				(	($line['record_type'] === "12" && in_array($line->get('wsc', true), $this->nrCarriers)) ||
-					($line['record_type'] === "11" && in_array($line->get('wscin', true), $this->nrCarriers)) );
+		return $line['type'] == 'nsn' &&
+			$line->get(Billrun_Calculator_Wholesale_Nsn::MAIN_DB_FIELD, true) &&
+			( ($line['record_type'] === "12" && in_array($line->get('wsc', true), $this->nrCarriers)) ||
+			($line['record_type'] === "11" && in_array($line->get('wsc_in', true), $this->nrCarriers)) );
 	}
 
 }
-

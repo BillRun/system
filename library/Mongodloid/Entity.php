@@ -3,7 +3,7 @@
 /**
  * @package         Mongodloid
  * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
- * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 class Mongodloid_Entity implements ArrayAccess {
 
@@ -12,8 +12,8 @@ class Mongodloid_Entity implements ArrayAccess {
 
 	const POPFIRST = 1;
 
-	protected $w = 0;
-
+//	protected $w = 0;
+//	protected $j = false;
 	private $_atomics = array(
 		'inc',
 //		'set',
@@ -144,7 +144,7 @@ class Mongodloid_Entity implements ArrayAccess {
 		$data = array(
 			'_id' => $this->getId()->getMongoID()
 		);
-		return $this->_collection->update($data, $fields, array('w' => $this->w));
+		return $this->collection()->update($data, $fields);
 	}
 
 	public function set($key, $value, $dontSend = false) {
@@ -266,23 +266,19 @@ class Mongodloid_Entity implements ArrayAccess {
 		// prevent from making a link
 		if ($safe) {
 			$this->_values = unserialize(serialize($data));
-		}
-		else {
+		} else {
 			$this->_values = $data;
 		}
 	}
 
-	public function save($collection = null, $save = false, $w = null) {
+	public function save($collection = null, $w = null) {
 		if ($collection instanceOf Mongodloid_Collection)
 			$this->collection($collection);
 
 		if (!$this->collection())
 			throw new Mongodloid_Exception('You need to specify the collection');
 
-		if (is_null($w)) {
-			$w = $this->w;
-		}
-		return $this->collection()->save($this, array('save' => $save, 'w' => $w));
+		return $this->collection()->save($this, $w);
 	}
 
 	public function collection($collection = null) {

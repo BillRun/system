@@ -3,7 +3,7 @@
 /**
  * @package         Billing
  * @copyright       Copyright (C) 2012 S.D.O.C. LTD. All rights reserved.
- * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
 /**
@@ -12,6 +12,7 @@
  * @author eran
  */
 class ReportsController extends Yaf_Controller_Abstract {
+
 	/**
 	 * api call output. the output will be converted to json on view
 	 * 
@@ -32,14 +33,13 @@ class ReportsController extends Yaf_Controller_Abstract {
 		$this->setActions();
 		$this->setOutputMethod();
 	}
-	
+
 	public function indexAction() {
 
 		$this->getView()->title = "BillRun | Reporting so you don't have to";
 		$this->getView()->content = "reporting for duty";
-		
 	}
-	
+
 	/**
 	 * method to add output to the stream and log
 	 * 
@@ -48,20 +48,21 @@ class ReportsController extends Yaf_Controller_Abstract {
 	public function addOutput($content) {
 		$this->output .= $content;
 	}
+
 	/**
 	 * method to set the available actions of the api from config declaration
 	 */
 	protected function setActions() {
 		$this->actions = Billrun_Factory::config()->getConfigValue('reports.actions', array('wholesale' => 'controllers/Action/Wholesale.php'));
 	}
-	
+
 	/**
 	 * method to set how the api output method
 	 */
 	protected function setOutputMethod() {
 		$this->getView()->outputMethod = Billrun_Factory::config()->getConfigValue('reports.outputMethod');
 	}
-	
+
 }
 
 ?>

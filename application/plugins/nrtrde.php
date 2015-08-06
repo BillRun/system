@@ -3,7 +3,7 @@
 /**
  * @package         Billing
  * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
- * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
 /**
@@ -104,7 +104,7 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 	 * @param Billrun_Processor $processor the proce
 	 * @param string $file_path the path of the current processing file.
 	 */
-	public function afterProcessorBackup($processor, &$file_path) {
+	public function afterProcessorStore($processor, &$file_path) {
 		if ($processor->getType() != $this->getName()) {
 			return;
 		}
@@ -158,12 +158,11 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 	 * method to collect data which need to be handle by event
 	 */
 	public function handlerCollect($options) {
-		if( $options['type'] != 'roaming') { 
-			return FALSE; 
+		if ($options['type'] != 'roaming') {
+			return FALSE;
 		}
 		$lines = Billrun_Factory::db()->linesCollection();
 		$charge_time = Billrun_Util::getLastChargeTime(true); // true means return timestamp
-
 		// TODO: take it to config ? how to handle variables ?
 		$base_match = array(
 			'$match' => array(
@@ -310,12 +309,12 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 	 */
 	protected function addAlertData(&$event) {
 		// @todo: WTF?!?! Are you real with this condition???
-		$type = isset($event['moc_israel']) ?	'moc_israel' :
-				(isset($event['moc_nonisrael'])?'moc_nonisrael' :
-				(isset($event['mtc_all'])	?	'mtc_all' :
-				(isset($event['sms_hourly'])?	'sms_hourly' :
-				(isset($event['sms_out'])	?	'sms_out' :
-												'moc_nonisrael_hourly'))));
+		$type = isset($event['moc_israel']) ? 'moc_israel' :
+			(isset($event['moc_nonisrael']) ? 'moc_nonisrael' :
+				(isset($event['mtc_all']) ? 'mtc_all' :
+					(isset($event['sms_hourly']) ? 'sms_hourly' :
+						(isset($event['sms_out']) ? 'sms_out' :
+							'moc_nonisrael_hourly'))));
 
 		$event['units'] = 'SEC';
 		$event['value'] = $event[$type];
@@ -351,7 +350,7 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 				$event['event_type'] = 'NRTRDE_HOURLY_VOICE';
 				break;
 		}
-		
+
 		$event['effects'] = array(
 			'key' => 'type',
 			'filter' => array('$in' => array('nrtrde', 'ggsn'))

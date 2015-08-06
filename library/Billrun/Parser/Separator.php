@@ -3,7 +3,7 @@
 /**
  * @package         Billing
  * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
- * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
 /**
@@ -79,9 +79,9 @@ class Billrun_Parser_Separator extends Billrun_Parser {
 	 */
 	public function parse() {
 
-		$line = is_array($this->line) ? $this->line : explode($this->separator, rtrim($this->line, "{$this->separator}\t\n\r\0\x0B")); 
+		$line = is_array($this->line) ? $this->line : explode($this->separator, rtrim($this->line, "{$this->separator}\t\n\r\0\x0B"));
 		//Billrun_Factory::log()->log(print_r($line,1),Zend_Log::DEBUG);
-		$row = array_combine($this->structure, $line );
+		$row = array_combine($this->structure, $line);
 		$row['stamp'] = md5(serialize($line));
 
 		if ($this->return == 'array') {

@@ -3,7 +3,7 @@
 /**
  * @package         Billing
  * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
- * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
 /**
@@ -27,4 +27,12 @@ abstract class Action_Base extends Yaf_Action_Abstract {
 		return parent::render($tpl, $parameters);
 	}
 	
+	protected function isOn() {
+		if (Billrun_Factory::config()->getConfigValue($this->getRequest()->action)) {
+			return true;
+		}
+		return false;
+
+	}
+
 }

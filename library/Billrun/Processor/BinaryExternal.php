@@ -11,15 +11,16 @@
  * @author eran
  */
 class Billrun_Processor_BinaryExternal extends Billrun_Processor_Base_Binary {
-	
+
 	static protected $type = 'binaryExternal';
-	
-		public function __construct($options = array()) {
+
+	public function __construct($options = array()) {
 		parent::__construct($options);
-		if($this->getType() == 'binaryExternal') {
+		if ($this->getType() == 'binaryExternal') {
 			throw new Exception('Billrun_Processor_BinaryExternal::__construct : cannot run without specifing a specific type.');
 		}
 	}
+
 	/**
 	 * @see Billrun_Processor::parse()
 	 */
@@ -28,16 +29,19 @@ class Billrun_Processor_BinaryExternal extends Billrun_Processor_Base_Binary {
 			Billrun_Factory::log()->log('Resource is not configured well', Zend_Log::ERR);
 			return FALSE;
 		}
-
-		return Billrun_Factory::chain()->trigger('processData',array($this->getType(), $this->fileHandler, &$this));		
+		try {
+			return Billrun_Factory::chain()->trigger('processData', array($this->getType(), $this->fileHandler, &$this));
+		} catch( Exception $e) {
+			Billrun_Factory::log("Got exception :".$e->getMessage(). " while processing file {$this->filePath}",Zend_Log::ERR);
+			return FALSE;
+		}
 	}
 
 	/**
 	 * @see Billrun_Processor::getSequenceData
 	 */
 	public function getFilenameData($filename) {
-		return Billrun_Factory::chain()->trigger('getFilenameData',array($this->getType(), $filename, &$this));
+		return Billrun_Factory::chain()->trigger('getFilenameData', array($this->getType(), $filename, &$this));
 	}
-	
-	
+
 }

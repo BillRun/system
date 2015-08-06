@@ -3,7 +3,7 @@
 /**
  * @package         Billing
  * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
- * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
 /**
@@ -30,7 +30,7 @@ abstract class Billrun_Spl_Observer implements SplObserver {
 		// get the event and args from the subject (dispatcher) to use in the plugin
 		$event = $subject->getEvent();
 		$args = $subject->getArgs();
-		
+
 		/*
 		 * If the method to handle an event exists, call it and return its value
 		 * If it does not exist, return null.
@@ -41,4 +41,5 @@ abstract class Billrun_Spl_Observer implements SplObserver {
 			return null;
 		}
 	}
+
 }

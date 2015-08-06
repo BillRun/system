@@ -3,7 +3,7 @@
 /**
  * @package         Billing
  * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
- * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
 /**
@@ -27,17 +27,16 @@ class Billrun_Processor_Base_Ilds extends Billrun_Processor {
 	 * @var string
 	 */
 	protected $defTimeOffset = '+03:00';
-	
-	
+
 	public function __construct($options) {
 		parent::__construct($options);
-		if(isset($options['time_offset'])) {
+		if (isset($options['time_offset'])) {
 			$this->defTimeOffset = $options['time_offset'];
 		} else {
 			$this->defTimeOffset = date('P');
 		}
 	}
-	
+
 	/**
 	 * method to parse the data
 	 */
@@ -105,12 +104,12 @@ class Billrun_Processor_Base_Ilds extends Billrun_Processor {
 					$row['log_stamp'] = $this->getFileStamp();
 					$row['file'] = basename($this->filePath);
 					$row['process_time'] = date(self::base_dateformat);
-					$row['urt'] = new MongoDate(  Billrun_Util::dateTimeConvertShortToIso( $row['call_start_dt'] ,$this->defTimeOffset ) );
+					$row['urt'] = new MongoDate(Billrun_Util::dateTimeConvertShortToIso($row['call_start_dt'], $this->defTimeOffset));
 					// hot fix cause this field contain iso-8859-8
 					if (isset($row['country_desc'])) {
 						$row['country_desc'] = mb_convert_encoding($row['country_desc'], 'UTF-8', 'ISO-8859-8');
 					}
-					if($this->isValidDataRecord($row)) {
+					if ($this->isValidDataRecord($row)) {
 						$this->data['data'][] = $row;
 					}
 
@@ -130,6 +129,6 @@ class Billrun_Processor_Base_Ilds extends Billrun_Processor {
 	 */
 	protected function isValidDataRecord($dataLine) {
 		return true;
-
 	}
+
 }
