@@ -254,6 +254,9 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 				$smsMsg = "ALERT! : didn't processed $name longer then the configured time";
 				$emailMsg .= $smsMsg . PHP_EOL . PHP_EOL;
 				$this->sendSmsOnFailure($smsMsg);
+				$date = date(Billrun_Base::base_dateformat);
+				$email_recipients = Billrun_Factory::config()->getConfigValue('emailAlerts.alerts.nrtrde.recipients', array());
+				$this->sendMail("NRTRDE ALERT ".$date,$emailMsg,$email_recipients);
 			} if (Billrun_Factory::config()->getConfigValue('emailAlerts.processing.send_report_regularly', false)) {
 				$seq = $this->getFileSequenceData($val['last_received']['file_name'], $type);
 				$emailMsg .= strtoupper($type) . " recevied Index : " . $seq['seq'] . " receving date : " . $val['last_received']['received_time'] . PHP_EOL;
