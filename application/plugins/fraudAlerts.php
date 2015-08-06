@@ -346,7 +346,7 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		//mark deposit for the lines on the current imsi
 		Billrun_Log::getInstance()->log("Fraud alerts mark event lines " . $event['deposit_stamp'], Zend_Log::INFO);
 		$imsi = (isset($event['imsi']) && $event['imsi']) ? $event['imsi'] : null;
-		$msisdn = (isset($event['msisdn']) && $event['msisdn']) ? $event['msisdn'] : null;
+		//$msisdn = (isset($event['msisdn']) && $event['msisdn']) ? $event['msisdn'] : null;
 		$sid = (isset($event['sid']) && $event['sid']) ? $event['sid'] : null;
 		// backward compatibility
 		$subscriber_id = (isset($event['subscriber_id']) && $event['subscriber_id']) ? $event['subscriber_id'] : null;
@@ -356,8 +356,8 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$lines_where['subscriber_id'] = $subscriber_id;
 			$hint = array('subscriber_id' => 1);
 		} else if (isset($sid)) {
-			$lines_where['sid'] = $sid;
-			$hint = array('sid' => 1);
+			$lines_where['subscriber_id'] = $sid;
+			$hint = array('subscriber_id' => 1);
 		}
 
 		if (isset($imsi)) {
@@ -385,7 +385,7 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$lines_where['process_time'] = array('$lt' => date(Billrun_Base::base_dateformat, $this->startTime));
 		$lines_where['deposit_stamp'] = array('$exists' => false);
 
-		if (!($imsi || $msisdn || $sid )) {
+		if (!($imsi || $sid || $subscriber_id )) {
 			Billrun_Log::getInstance()->log("fraudAlertsPlugin::markEventLines cannot find IMSI nor NDC_SN  or SID on event, marking CDR lines with event_stamp of : " . print_r($event['stamps'], 1), Zend_Log::INFO);
 			$lines_where['event_stamp'] = array('$in' => $event['stamps']);
 		}

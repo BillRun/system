@@ -148,6 +148,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 
 		$adoptThreshold = strtotime('-' . $this->orphandFilesAdoptionTime);
 		$baseQuery = array(
+			'received_time' => array('$gt' => date('Y-m-d H:i:s', strtotime('1 week ago'))), // this make the query run fast but we must to avoid gap of 1 week
 			'$or' => array(
 				array('start_process_time' => array('$exists' => false)),
 				array('start_process_time' => array('$lt' => new MongoDate($adoptThreshold))),
@@ -160,7 +161,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 					->equals('source', static::$type)
 					->notExists('process_time')
 					->cursor()->sort(array('received_time' => 1))
-					->limit(1)->current();
+					->limit(1)->hint(array('received_time' => 1))->current();
 			if (!$file || !$file->getID()) {
 				break;
 			}

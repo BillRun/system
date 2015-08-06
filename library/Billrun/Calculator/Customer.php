@@ -167,6 +167,10 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			if($key == 'sid') {
 				$row['subscriber_id'] = $row[$key];
 			}
+			if($key == 'aid') {
+				$row['account_id'] = $row[$key];
+			}
+
 		}
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array($row, $this));
 		return $row;
@@ -206,7 +210,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteData', array('data' => $this->data));
 		$lines = Billrun_Factory::db()->linesCollection();
 		foreach ($this->data as $item) {
-			$newFields = array_intersect_key($item->getRawData(), array('sid' => true, 'aid' => true, 'plan' => true, 'subscriber_not_found' => true));
+			$newFields = array_intersect_key($item->getRawData(), array('sid' => true, 'aid' => true, 'subscriber_id' => true, 'account_id' => true,'plan' => true, 'subscriber_not_found' => true));
 			if ($newFields) {
 				$lines->update(array('stamp' => $item['stamp']), array('$set' => $newFields));
 			}

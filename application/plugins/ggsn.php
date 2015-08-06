@@ -49,7 +49,7 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Pl
 		$data = &$processor->getData();
 
 		foreach ($data['data'] as $key => $row) {
-			if (preg_match('/^(?=62\.90\.|37\.26\.)/', $row['sgsn_address']) == 1) { // what is under IL IP's gateway - remove it from fraud
+			if (preg_match('/^(?=62\.90\.|37\.26\.|176\.12\.158\.(\d$|[1]\d$|2[10]$))/', $row['sgsn_address']) == 1) { // what is under IL IP's gateway - remove it from fraud
 				//Billrun_Factory::log()->log('GGSN plugin skip the line ' . $row['stamp'] . 'have the IP ' . $row['sgsn_address'], Zend_Log::INFO);
 				unset($data['data'][$key]);
 			}
@@ -334,10 +334,11 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Pl
 			),
 		);
 		if (!$clean) {
-			$ret['base_match']['$match']['$or'] = array(
-				array('urt' => array('$gte' => new MongoDate($charge_time))),
-				array('unified_record_time' => array('$gte' => new MongoDate($charge_time))),
-			);
+//			$ret['base_match']['$match']['$or'] = array(
+//				array('urt' => array('$gte' => new MongoDate($charge_time))),
+//				array('unified_record_time' => array('$gte' => new MongoDate($charge_time))),
+//			);
+			$ret['base_match']['$match']['unified_record_time'] = array('$gte' => new MongoDate($charge_time));
 			//$ret['where']['$match']['sgsn_address'] = array('$regex' => '^(?!62\.90\.|37\.26\.)');
 		}
 
@@ -350,7 +351,7 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Pl
 	protected function addAlertData(&$event) {
 		$event['effects'] = array(
 			'key' => 'type',
-			'filter' => array('$in' => array('nrtrde', 'ggsn'))
+//			'filter' => array('$in' => array('nrtrde', 'ggsn'))
 		);
 		return $event;
 	}

@@ -24,8 +24,9 @@ class VfdaysAction extends Action_Base {
 		$request = $this->getRequest();
 		$sid = intval($request->get("sid"));
 		$year = intval($request->get("year"));
+		$max_datetime = $request->get("max_datetime");
 
-		$results = $this->count_days($sid, $year);
+		$results = $this->count_days($sid, $year, $max_datetime);
 		if (isset($results[0]["count"])) {
 			$days = $results[0]["count"];
 		} else {
@@ -49,7 +50,7 @@ class VfdaysAction extends Action_Base {
 	 * @param type $sid
 	 * @return number of days 
 	 */
-	public function count_days($sid, $year = null) {
+	public function count_days($sid, $year = null, $max_datetime = null) {
 		if (is_null($year) || empty($year)) {
 			$year = date("Y");
 		}
@@ -58,9 +59,13 @@ class VfdaysAction extends Action_Base {
 		$sender = Billrun_Factory::config()->getConfigValue('nrtrde.fraud.groups.vodafone15');
 		$plans = Billrun_Factory::config()->getConfigValue('nrtrde.fraud.events.NRTRDE1_B.target_plans');
 		
-		$match = array(
+		$match1 = array(
 			'$match' => array(
 				'subscriber_id' => $sid,
+			),
+		);
+		$match2 = array(
+			'$match' => array(
 				'plan' => array('$in' => $plans),
 				'$or' => array(
 					array_merge(
@@ -75,17 +80,22 @@ class VfdaysAction extends Action_Base {
 						'sender' => array('$in' => $sender),
 						'$or' => array(
 							array(
-								'record_type' => "MTC"
+								'record_type' => "MTC",
+								'callEventDurationRound' => array('$gt' => 0), // duration greater then 0 => call and not sms
 							),
 							array(
 								'record_type' => "MOC",
 								'connectedNumber' => new MongoRegex('/^972/')
-							)
-						)
+							),
+						),
 					),
 				),
-			)
+			),
 		);
+		
+		if (!empty($max_datetime)) {
+			$match2['$match']['unified_record_time'] = array('$lte' => new MongoDate(strtotime($max_datetime)));
+		}
 
 		$group = array(
 			'$group' => array(
@@ -97,17 +107,17 @@ class VfdaysAction extends Action_Base {
 					)
 				),
 				count => array('$sum' => 1),
-			)
+			),
 		);
 
 		$group2 = array(
 			'$group' => array(
 				'_id' => null,
 				count => array('$sum' => 1),
-			)
+			),
 		);
 
-		$res = Billrun_Factory::db()->linesCollection()->aggregate($match, $group, $group2);
+		$res = Billrun_Factory::db()->linesCollection()->aggregate($match1, $match2, $group, $group2);
 		return $res;
 	}
 
