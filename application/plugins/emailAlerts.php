@@ -42,20 +42,20 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	)) {
 
 		$this->isDryRun = isset($options['dryRun']) ?
-				$options['dryRun'] :
-				Billrun_Factory::config()->getConfigValue('emailAlerts.dry_run', false);
+			$options['dryRun'] :
+			Billrun_Factory::config()->getConfigValue('emailAlerts.dry_run', false);
 
 		$this->alertTypes = isset($options['alertTypes']) ?
-				$options['alertTypes'] :
-				Billrun_Factory::config()->getConfigValue('emailAlerts.alert.types', array('nrtrde', 'ggsn', 'deposit', 'ilds', 'nsn'));
+			$options['alertTypes'] :
+			Billrun_Factory::config()->getConfigValue('emailAlerts.alert.types', array('nrtrde', 'ggsn', 'deposit', 'ilds', 'nsn'));
 
 		$this->processingTypes = isset($options['processingTypes']) ?
-				$options['processingTypes'] :
-				Billrun_Factory::config()->getConfigValue('emailAlerts.processing.types', array('nrtrde', 'ggsn', 'nsn', 'tap3'));
+			$options['processingTypes'] :
+			Billrun_Factory::config()->getConfigValue('emailAlerts.processing.types', array('nrtrde', 'ggsn', 'nsn', 'tap3'));
 
 		$this->commonRecipients = isset($options['recipients']) ?
-				$options['recipients'] :
-				Billrun_Factory::config()->getConfigValue('emailAlerts.recipients', array());
+			$options['recipients'] :
+			Billrun_Factory::config()->getConfigValue('emailAlerts.recipients', array());
 
 		$this->startTime = time();
 	}
@@ -66,8 +66,8 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @return type
 	 */
 	public function handlerNotify($handler, $options) {
-                if( $options['type'] != 'notify') {
-                    return FALSE; 
+		if ($options['type'] != 'notify') {
+			return FALSE;
 		}
 		$ret[] = $this->processingNotify();
 		$ret[] = $this->alertsNotify();
@@ -155,12 +155,12 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$aggregateLogs = array();
 		foreach ($types as $type) {
 			$aggregateLogs[$type]['last_processed'] = Billrun_Factory::db()->logCollection()->
-							query(array('source' => $type, 'process_time' => array('$exists' => true)))->cursor()->
-							sort(array('process_time' => -1, '_id' => -1))->limit(1)->current();
+					query(array('source' => $type, 'process_time' => array('$exists' => true)))->cursor()->
+					sort(array('process_time' => -1, '_id' => -1))->limit(1)->current();
 			if ($received) {
 				$aggregateLogs[$type]['last_received'] = Billrun_Factory::db()->logCollection()->
-								query(array('source' => $type, 'received_time' => array('$exists' => true)))->cursor()->
-								sort(array('received_time' => -1, '_id' => -1))->limit(1)->current();
+						query(array('source' => $type, 'received_time' => array('$exists' => true)))->cursor()->
+						sort(array('received_time' => -1, '_id' => -1))->limit(1)->current();
 			}
 		}
 		return $aggregateLogs;
@@ -194,8 +194,8 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 
 		$msg = "Count of failed: $failed" . PHP_EOL
-				. "Count of success: $successful" . PHP_EOL
-				. PHP_EOL . $postMsg . PHP_EOL
+			. "Count of success: $successful" . PHP_EOL
+			. PHP_EOL . $postMsg . PHP_EOL
 		;
 
 		if ($failed || $successful) {
@@ -227,7 +227,7 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 			if (isset($val['last_processed'])) {
 				$seq = $this->getFileSequenceData($val['last_processed']['file_name'], $type);
 				$msg .= strtoupper($type) . " last processed Index: " . $seq['seq']
-						. " processing date: " . $val['last_processed']['process_time'] . PHP_EOL;
+					. " processing date: " . $val['last_processed']['process_time'] . PHP_EOL;
 			} else {
 				$msg .= strtoupper($type) . " no processed files " . PHP_EOL;
 			}
@@ -248,17 +248,19 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 			if (!isset($val['last_received'])) {
 				$emailMsg .= strtoupper($type) . " no files were processed or recevied";
 				continue;
-			} if ($val['warning']) {
-				$smsMsg = "WARNNING! : it seems the server stopped processing $name";
-				$emailMsg .= $smsMsg . PHP_EOL . PHP_EOL;
-				$this->sendSmsOnFailure($smsMsg);
-				$this->sendMail("NRTRDE WARNING ".$date,$emailMsg,$email_noc_recipients);
-			} if ($val['alert']) {
+			}
+			if ($val['alert']) {
 				$smsMsg = "ALERT! : didn't processed $name longer then the configured time";
 				$emailMsg .= $smsMsg . PHP_EOL . PHP_EOL;
 				$this->sendSmsOnFailure($smsMsg);
-				$this->sendMail("NRTRDE ALERT ".$date,$emailMsg,$email_noc_recipients);
-			} if (Billrun_Factory::config()->getConfigValue('emailAlerts.processing.send_report_regularly', false)) {
+				$this->sendMail("NRTRDE ALERT " . $date, $emailMsg, $email_noc_recipients);
+			} else if ($val['warning']) {
+				$smsMsg = "WARNNING! : it seems the server stopped processing $name";
+				$emailMsg .= $smsMsg . PHP_EOL . PHP_EOL;
+				$this->sendSmsOnFailure($smsMsg);
+				$this->sendMail("NRTRDE WARNING " . $date, $emailMsg, $email_noc_recipients);
+			}
+			if (Billrun_Factory::config()->getConfigValue('emailAlerts.processing.send_report_regularly', false)) {
 				$seq = $this->getFileSequenceData($val['last_received']['file_name'], $type);
 				$emailMsg .= strtoupper($type) . " recevied Index : " . $seq['seq'] . " receving date : " . $val['last_received']['received_time'] . PHP_EOL;
 			}
@@ -282,7 +284,7 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 
 		return Billrun_Util::sendMail($subject, $body, $recipients, $attachments);
 	}
-	
+
 	/**
 	 * Sends warning sms to the recipients
 	 * @param string $msg
@@ -307,8 +309,8 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$csvEvent = array();
 			foreach ($header as $fieldKey) {
 				$csvEvent[$fieldKey] = isset($event['returned_value']) && isset($event['returned_value'][$fieldKey]) ?
-						$event['returned_value'][$fieldKey] :
-						( isset($event[$fieldKey]) ? $event[$fieldKey] : "");
+					$event['returned_value'][$fieldKey] :
+					( isset($event[$fieldKey]) ? $event[$fieldKey] : "");
 			}
 
 			fputcsv($fp, $csvEvent);
