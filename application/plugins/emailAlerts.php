@@ -241,7 +241,7 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	protected function sendProcessingSummary($logs) {
 		Billrun_Log::getInstance()->log("Generate Processing result to email", Zend_Log::INFO);
 		$emailMsg = "";
-		$email_noc_recipients = Billrun_Factory::config()->getConfigValue('emailAlerts.alerts.nrtrde.recipients', array());
+		$email_noc_recipients = Billrun_Factory::config()->getConfigValue('emailAlerts.alerts.noc.recipients', array());
 		$date = date(Billrun_Base::base_dateformat);
 		foreach ($logs as $type => $val) {
 			$name = strtoupper($type);
