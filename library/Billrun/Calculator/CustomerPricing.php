@@ -221,6 +221,8 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @param type $row
 	 * @param type $billrun_key
 	 * @return Billrun_Balance
+	 * 
+	 * @todo Add compatiblity to prepaid
 	 */
 	public function getSubscriberBalance($row, $billrun_key) {
 		$plan = Billrun_Factory::plan(array('name' => $row['plan'], 'time' => $row['urt']->sec, 'disableCache' => true));
@@ -405,6 +407,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @return mixed array with the pricing data on success, false otherwise
 	 * @todo refactoring and make it more abstract
 	 * @todo create unit test for this method because it's critical method
+	 * @todo add compatiblity to prepaid
 	 * 
 	 */
 	protected function updateSubscriberBalance($balance, $row, $usage_type, $rate, $volume) {
@@ -412,7 +415,6 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		Billrun_Factory::dispatcher()->trigger('beforeUpdateSubscriberBalance', array($balance, &$row, $rate, $this));
 		$plan = Billrun_Factory::plan(array('name' => $row['plan'], 'time' => $row['urt']->sec, 'disableCache' => true));
 		$balance_totals_key = $plan->getBalanceTotalsKey($usage_type, $rate);
-		$counters = array($balance_totals_key => $volume);
 		$subRaw = $balance->getRawData();
 		$stamp = strval($row['stamp']);
 		if (isset($subRaw['tx']) && array_key_exists($stamp, $subRaw['tx'])) { // we're after a crash
@@ -423,29 +425,27 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		$query = array('sid' => $row['sid'], 'billrun_month' => $balance['billrun_month']);
 		$update = array();
 		$update['$set']['tx.' . $stamp] = $pricingData;
-		foreach ($counters as $key => $value) {
-			$old_usage = $subRaw['balance']['totals'][$key]['usagev'];
-			$query['balance.totals.' . $key . '.usagev'] = $old_usage;
-			$update['$set']['balance.totals.' . $key . '.usagev'] = $old_usage + $value;
-			$update['$inc']['balance.totals.' . $key . '.cost'] = $pricingData[$this->pricingField];
-			$update['$inc']['balance.totals.' . $key . '.count'] = 1;
-			// update balance group (if exists)
-			if ($plan->isRateInPlanGroup($rate, $usage_type)) {
-				$group = $plan->getPlanGroup();
-				if ($group !== FALSE) {
-					// @TODO: check if $usage_type should be $key
-					$update['$inc']['balance.groups.' . $group . '.' . $usage_type . '.usagev'] = $value;
-					$update['$inc']['balance.groups.' . $group . '.' . $usage_type . '.cost'] = $pricingData[$this->pricingField];
-					$update['$inc']['balance.groups.' . $group . '.' . $usage_type . '.count'] = 1;
-					if (isset($subRaw['balance']['groups'][$group][$usage_type]['usagev'])) {
-						$pricingData['usagesb'] = floatval($subRaw['balance']['groups'][$group][$usage_type]['usagev']);
-					} else {
-						$pricingData['usagesb'] = 0;
-					}
+		$old_usage = $subRaw['balance']['totals'][$balance_totals_key]['usagev'];
+		$query['balance.totals.' . $balance_totals_key . '.usagev'] = $old_usage;
+		$update['$set']['balance.totals.' . $balance_totals_key . '.usagev'] = $old_usage + $volume;
+		$update['$inc']['balance.totals.' . $balance_totals_key . '.cost'] = $pricingData[$this->pricingField];
+		$update['$inc']['balance.totals.' . $balance_totals_key . '.count'] = 1;
+		// update balance group (if exists)
+		if ($plan->isRateInPlanGroup($rate, $usage_type)) {
+			$group = $plan->getPlanGroup();
+			if ($group !== FALSE) {
+				// @TODO: check if $usage_type should be $key
+				$update['$inc']['balance.groups.' . $group . '.' . $usage_type . '.usagev'] = $volume;
+				$update['$inc']['balance.groups.' . $group . '.' . $usage_type . '.cost'] = $pricingData[$this->pricingField];
+				$update['$inc']['balance.groups.' . $group . '.' . $usage_type . '.count'] = 1;
+				if (isset($subRaw['balance']['groups'][$group][$usage_type]['usagev'])) {
+					$pricingData['usagesb'] = floatval($subRaw['balance']['groups'][$group][$usage_type]['usagev']);
+				} else {
+					$pricingData['usagesb'] = 0;
 				}
-			} else {
-				$pricingData['usagesb'] = floatval($old_usage);
 			}
+		} else {
+			$pricingData['usagesb'] = floatval($old_usage);
 		}
 		$update['$set']['balance.cost'] = $subRaw['balance']['cost'] + $pricingData[$this->pricingField];
 		$options = array('w' => 1);
@@ -474,7 +474,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				return false;
 			}
 			Billrun_Factory::log()->log('Concurrent write of sid : ' . $row['sid'] . ' line stamp : ' . $row['stamp'] . ' to balance. Update status: ' . print_r($ret, true) . 'Retrying...', Zend_Log::INFO);
-			sleep($this->countConcurrentRetries);
+			sleep($this->countConcurrentRetries); // TODO: convert to milliseconds
 			$balance = $this->getSubscriberBalance($row, $balance['billrun_month']);
 			return $this->updateSubscriberBalance($balance, $row, $usage_type, $rate, $volume);
 		}
