@@ -909,6 +909,26 @@ class Billrun_Billrun {
 		$status = $subscriber['subscriber_status'];
 		return ( ($status == "closed") && !isset($subscriber['breakdown']));
 	}
+	
+	/**
+	 * returns the end timestamp of the input billing period
+	 * @param date $date
+	 */
+	public static function getBillrunEndTimeByDate($date) {
+		$dayofmonth = Billrun_Factory::config()->getConfigValue('billrun.charging_day', 25); //TODO: get by subscriber
+		$datetime = date('Ym',  strtotime($date)) . $dayofmonth . "000000";
+		return strtotime('-1 second', strtotime($datetime));
+	}
+
+	/**
+	 * returns the start timestamp of the input billing period
+	 * @param date $date
+	 */
+	public static function getBillrunStartTimeByDate($date) {
+		$dayofmonth = Billrun_Factory::config()->getConfigValue('billrun.charging_day', 25); //TODO: get by subscriber
+		$datetime = date('Ym',  strtotime($date)) . $dayofmonth . "000000";
+		return strtotime('-1 month', strtotime($datetime));
+	}
 
 }
 

@@ -12,7 +12,7 @@
  * @package  Billing
  * @since    0.5
  */
-class Billrun_Balance implements ArrayAccess {
+class Billrun_Balance extends Mongodloid_Entity {
 
 	/**
 	 * Type of object
@@ -34,12 +34,24 @@ class Billrun_Balance implements ArrayAccess {
 		// TODO: refactoring the read preference to the factory to take it from config
 		$this->collection = self::getCollection();
 
-		if (isset($options['data'])) {
-			$this->data = $options['data'];
-		} else if (isset($options['sid']) && isset($options['billrun_key'])) {
-			$this->load($options['sid'], $options['billrun_key']);
+		if (!isset($options['sid']) || !isset($options['aid'])) {
+			Billrun_Factory::log('Error creating balance, no aid or sid' , Zend_Log::ALERT);
+			return false;
 		}
-
+		if (isset($options['billrun_key'])) {
+			$ret = $this->load($options['sid'], $options['billrun_key']);
+		}
+		
+		if (isset($options['charging_type']) && $options['charging_type'] === 'postpaid') {
+			if (!$this->isValid()) {
+				$urtDate = date('Y-m-d h:i:s', $options['urt']->sec);
+				$from = Billrun_Billrun::getBillrunStartTimeByDate($urtDate);
+				$to = Billrun_Billrun::getBillrunEndTimeByDate($urtDate);
+				$ret = $this->createBalanceIfMissing($options['aid'], $options['sid'], $from, $to, $plan_ref);
+			}
+		}
+		
+		parent::__construct($ret, self::getCollection());
 	}
 	
 	public static function getCollection() {
@@ -82,23 +94,24 @@ class Billrun_Balance implements ArrayAccess {
 		Billrun_Factory::log()->log("Trying to load balance " . $billrunKey . " for subscriber " . $subscriberId, Zend_Log::DEBUG);
 		$billrunKey = !$billrunKey ? Billrun_Util::getBillrunKey(time()) : $billrunKey;
 
-		$this->data = $this->collection->query(array(
+		return $this->collection->query(array(
 				'sid' => $subscriberId,
 				'billrun_month' => $billrunKey
 			))
 			->cursor()->setReadPreference('RP_PRIMARY')
-			->hint(array('sid' => 1, 'billrun_month' => 1))->limit(1)->current();
+//			->hint(array('sid' => 1, 'billrun_month' => 1))
+			->limit(1)->current();
 
 		// set the data collection to enable clear save
-		$this->data->collection($this->collection);
+//		$this->data->collection($this->collection);
 	}
 
 	/**
 	 * method to save balance details
 	 */
-	public function save() {
-		return $this->data->save($this->collection);
-	}
+//	public function save() {
+//		return $this->data->save($this->collection);
+//	}
 
 	/**
 	 * method to check if the loaded balance is valid
@@ -125,34 +138,37 @@ class Billrun_Balance implements ArrayAccess {
 	 * Create a new balance  for a subscriber  in a given billrun
 	 * @param type $account_id the account ID  of the subscriber.
 	 * @param type $subscriber_id the subscriber ID.
-	 * @param type $billrun_key the  billrun key that the balance refer to.
+	 * @param type $from billrun start date
+	 * @param type $to billrun end date
 	 * @param type $plan_ref the subscriber plan.
 	 * @return boolean true  if the creation was sucessful false otherwise.
 	 */
-	public static function createBalanceIfMissing($aid, $sid, $billrun_key, $plan_ref) {
+	protected function createBalanceIfMissing($aid, $sid, $from, $to, $plan_ref) {
 		$ret = false;
 //		$balances_coll = Billrun_Factory::db(array('name' => 'balances'))->balancesCollection();
+		$a = date("Y-m-d", $from);
 		
 		$query = array(
 			'sid' => $sid,
-			'billrun_month' => $billrun_key,
+			'billrun_from' => new MongoDate($from),
+			'billrun_to' => new MongoDate($to),
 		);
 		$update = array(
-			'$setOnInsert' => self::getEmptySubscriberEntry($billrun_key, $aid, $sid, $plan_ref),
+			'$setOnInsert' => self::getEmptySubscriberEntry($from , $to, $aid, $sid, $plan_ref),
 		);
 		$options = array(
 			'upsert' => true,
 			'new' => true,
 			'w' => 1,
 		);
-		Billrun_Factory::log()->log("Create empty balance " . $billrun_key . " if not exists for subscriber " . $sid, Zend_Log::DEBUG);
-		$output = self::getCollection()->findAndModify($query, $update, array(), $options, true);
+		Billrun_Factory::log()->log("Create empty balance, from: " . date("Y-m-d", $from) . " to: " . date("Y-m-d", $to) . ", if not exists for subscriber " . $sid, Zend_Log::DEBUG);
+		$output = $this->collection->findAndModify($query, $update, array(), $options, true);
 		
 		if ($output['ok'] && isset($output['value']) && $output['value']) {
-			Billrun_Factory::log('Added balance ' . $billrun_key . ' to subscriber ' . $sid, Zend_Log::INFO);
+			Billrun_Factory::log('Added balance , from: ' . date("Y-m-d", $from) . " to: " . date("Y-m-d", $to) . ', to subscriber ' . $sid, Zend_Log::INFO);
 			$ret = true;
 		} else {
-			Billrun_Factory::log('Error creating balance ' . $billrun_key . ' for subscriber ' . $sid . '. Output was: ' . print_r($output->getRawData(), true), Zend_Log::ALERT);
+			Billrun_Factory::log('Error creating balance  , from: ' . date("Y-m-d", $from) . " to: " . date("Y-m-d", $to) . ', for subscriber ' . $sid . '. Output was: ' . print_r($output->getRawData(), true), Zend_Log::ALERT);
 		}
 
 		return $ret;
@@ -166,9 +182,11 @@ class Billrun_Balance implements ArrayAccess {
 	 * @param type $current_plan
 	 * @return type
 	 */
-	public static function getEmptySubscriberEntry($billrun_month, $aid, $sid, $plan_ref) {
+	public static function getEmptySubscriberEntry($from, $to, $aid, $sid, $plan_ref) {
 		return array(
-			'billrun_month' => $billrun_month,
+			//'billrun_month' => $billrun_month,
+			'billrun_from' => new MongoDate($from),
+			'billrun_to' => new MongoDate($to),
 			'aid' => $aid,
 			'sid' => $sid,
 			'current_plan' => $plan_ref,
@@ -205,7 +223,7 @@ class Billrun_Balance implements ArrayAccess {
 	 */
 	static public function getEmptyBalance() {
 		$ret = array(
-			'totals' => array(),
+//			'totals' => array(),
 			'cost' => 0,
 		);
 //		$usage_types = array('call', 'sms', 'data', 'incoming_call', 'incoming_sms', 'mms');
