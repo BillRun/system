@@ -28,7 +28,7 @@ fi
 
 tz_from=`date -d "$day"T00:00:00 +%:z`
 tz_to=`date -d "$day"T23:59:59 +%:z`
-js_code='db.getMongo().setReadPref("secondaryPreferred");var from_date = ISODate("'$day'T00:00:00'$tz_from'");var to_date = ISODate("'$day'T23:59:59'$tz_to'");';
+js_code='db.getMongo();var from_date = ISODate("'$day'T00:00:00'$tz_from'");var to_date = ISODate("'$day'T13:10:15'$tz_to'");';
 nsn_end_code='.forEach(function(obj) { print("call\t" + dir + "\t" + network + "\t'$day'\t" + ( obj._id.c ) + "\t" +( obj._id.r ? db.rates.findOne(obj._id.r.$id).key : "") + "\t" + obj.count + "\t" + obj.usagev);})';
 data_end_code='.forEach(      function(obj) {         print("data\t" + dir + "\t" + network + "\t'$day'\t" +  (obj._id.match(/^37\.26/) ? "GT" : (obj._id.match(/^62\.90/) ? "MCEL" : "OTHER") )  +"\tINTERNET_BY_VOLUME" + "\t" + obj.count + "\t" + obj.usagev);})';
 sms_end_code='.forEach(      function(obj) {         print("sms\t" + dir + "\t" + network + "\t'$day'\t" +  obj._id.c  + "\t" + (obj._id.r ? db.rates.findOne(obj._id.r.$id).key : "") + "\t" + obj.count + "\t" + obj.usagev);})';
@@ -57,11 +57,11 @@ case $report_name in
 	js_code="$js_code$nsn_end_code" ;;
 
 	"all_out_call" )
- 	js_code=$js_code'var dir="'$out_str'";var network = "all";db.lines.aggregate({$match:{urt:{$gte:from_date, $lte:to_date}, type:"nsn", $or:[{record_type:"01"},{record_type:"11", in_circuit_group_name:/^RCEL/},{record_type:"12",in_circuit_group_name:/^BICC/}], out_circuit_group_name:/^(?!FCEL|VVOM|BICC)/ }},'$nsn_grouping_out')';
+ 	js_code=$js_code'var dir="'$out_str'";var network = "all";db.lines.aggregate({$match:{urt:{$gte:from_date, $lte:to_date}, type:"nsn", $or:[{record_type:"01"},{record_type:"11", in_circuit_group_name:/^(RCEL|4CEL)/},{record_type:"12",in_circuit_group_name:/^BICC/}], out_circuit_group_name:/^(?!FCEL|VVOM|BICC)/ }},'$nsn_grouping_out')';
 	js_code="$js_code$nsn_end_code" ;;
 
 	"all_nr_out_call" )
-	js_code=$js_code'var dir="'$out_str'";var network = "nr";db.lines.aggregate({$match:{urt:{$gte:from_date, $lte:to_date}, type:"nsn", $or:[{record_type:"11",in_circuit_group_name:/^RCEL/ },{record_type:"01", calling_subs_last_ex_id : /^97252/}]}},'$nsn_grouping_out')';
+	js_code=$js_code'var dir="'$out_str'";var network = "nr";db.lines.aggregate({$match:{urt:{$gte:from_date, $lte:to_date}, type:"nsn", $or:[{record_type:"11",in_circuit_group_name:/^(RCEL|4CEL)/ },{record_type:"01", calling_subs_last_ex_id : /^97252/}]}},'$nsn_grouping_out')';
 	js_code="$js_code$nsn_end_code" ;;
 
 	"all_nr_in_call" )
@@ -84,7 +84,9 @@ esac
 
 
 if [[ -n "$js_code" ]]; then	
-	mongo billing -ureading -pguprgri --quiet --eval "$js_code" >> "$output_dir/$report_name.csv" ;
+ 	mongo 172.28.202.111/billing -ureading -pguprgri --quiet --eval "$js_code" >> "$output_dir/$report_name.csv" ;
+	echo $js_code;
+	#mongo billing --quiet --eval "$js_code" >> "$output_dir/$report_name.csv" ;
 fi
 
 
