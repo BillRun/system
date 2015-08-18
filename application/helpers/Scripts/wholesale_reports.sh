@@ -28,7 +28,7 @@ fi
 
 tz_from=`date -d "$day"T00:00:00 +%:z`
 tz_to=`date -d "$day"T23:59:59 +%:z`
-js_code='db.getMongo();var from_date = ISODate("'$day'T00:00:00'$tz_from'");var to_date = ISODate("'$day'T23:59:59'$tz_to'");';
+js_code='db.getMongo().setReadPref("secondaryPreferred");var from_date = ISODate("'$day'T00:00:00'$tz_from'");var to_date = ISODate("'$day'T23:59:59'$tz_to'");';
 nsn_end_code='.forEach(function(obj) { print("call\t" + dir + "\t" + network + "\t'$day'\t" + ( obj._id.c ) + "\t" +( obj._id.r ? db.rates.findOne(obj._id.r.$id).key : "") + "\t" + obj.count + "\t" + obj.usagev);})';
 data_end_code='.forEach(      function(obj) {         print("data\t" + dir + "\t" + network + "\t'$day'\t" +  (obj._id.match(/^37\.26/) ? "GT" : (obj._id.match(/^62\.90/) ? "MCEL" : "OTHER") )  +"\tINTERNET_BY_VOLUME" + "\t" + obj.count + "\t" + obj.usagev);})';
 sms_end_code='.forEach(      function(obj) {         print("sms\t" + dir + "\t" + network + "\t'$day'\t" +  obj._id.c  + "\t" + (obj._id.r ? db.rates.findOne(obj._id.r.$id).key : "") + "\t" + obj.count + "\t" + obj.usagev);})';
