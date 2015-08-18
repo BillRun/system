@@ -76,10 +76,9 @@ class TableModel {
 
 		if (isset($params['collection'])) {
 			if (isset($params['db'])) {
-				$this->collection = Billrun_Factory::db(array('name' => $params['db']))->balancesCollection();
+				$this->collection = call_user_func(array(Billrun_Factory::db(array('name' => $params['db'])), $params['collection'] . 'Collection'));
 			} else {
 				$this->collection = call_user_func(array(Billrun_Factory::db(), $params['collection'] . 'Collection'));
-//                          $this->collection->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
 			}
 			$this->collection_name = $params['collection'];
 		}
@@ -192,10 +191,10 @@ class TableModel {
 			$ret = '<ul class="pagination pagination-right">';
 			if ($current == 1) {
 				$ret .= '<li class="disabled"><a href="javascript:void(0);">First</a></li>'
-						. '<li class="disabled"><a href="javascript:void(0);">Prev</a></li>';
+					. '<li class="disabled"><a href="javascript:void(0);">Prev</a></li>';
 			} else {
 				$ret .= '<li><a href="?page=1">First</a></li>'
-						. '<li><a href="?page=' . ($current - 1) . '">Prev</a></li>';
+					. '<li><a href="?page=' . ($current - 1) . '">Prev</a></li>';
 			}
 
 			for ($i = $min; $i < $current; $i++) {
@@ -210,10 +209,10 @@ class TableModel {
 
 			if ($current == $count) {
 				$ret .= '<li class="disabled"><a href="javascript:void(0);">Next</a></li>'
-						. '<li class="disabled"><a href="javascript:void(0);">Last</a></li>';
+					. '<li class="disabled"><a href="javascript:void(0);">Last</a></li>';
 			} else {
 				$ret .= '<li><a href="?page=' . ($current + 1) . '">Next</a></li>'
-						. '<li><a href="?page=' . $count . '">Last</a></li>';
+					. '<li><a href="?page=' . $count . '">Last</a></li>';
 			}
 
 			$ret .= '</ul>';
@@ -286,7 +285,7 @@ class TableModel {
 		} else {
 			$entity = new Mongodloid_Entity($params);
 		}
-		$entity->save($this->collection);
+		$entity->save($this->collection, 1);
 //		if (method_exists($this, $coll . 'AfterDataSave')) {
 //			call_user_func_array(array($this, $coll . 'AfterDataSave'), array($collection, &$newEntity));
 //		}
@@ -317,11 +316,28 @@ class TableModel {
 		if ($filter_field['input_type'] == 'number') {
 			if ($value != '') {
 				if ($filter_field['comparison'] == 'equals') {
-					return array(
-						$filter_field['db_key'] => array(
-							'$in' => array_map('floatval', explode(',', $value)),
-						),
-					);
+					if (is_array($filter_field['db_key'])) {
+						$ret = array('$or' => array(
+								array(
+									$filter_field['db_key'][0] => array(
+										'$in' => array_map('floatval', explode(',', $value)),
+									),
+								),
+								array(
+									$filter_field['db_key'][1] => array(
+										'$in' => array_map('strval', explode(',', $value)),
+									),
+								)
+							)
+						);
+					} else {
+						$ret = array(
+							$filter_field['db_key'] => array(
+								'$in' => array_map('floatval', explode(',', $value)),
+							),
+						);
+					}
+					return $ret;
 				}
 			}
 		} else if ($filter_field['input_type'] == 'text') {
@@ -359,6 +375,10 @@ class TableModel {
 				}
 			}
 			if (is_array($value) && !empty($value)) {
+
+				if ($this instanceof QueueModel && $filter_field['db_key'] == 'calc_name') {
+					$value = $this->prev_calc($value);
+				}
 				return array(
 					$filter_field['db_key'] => array(
 						$filter_field['comparison'] => $value
@@ -405,11 +425,16 @@ class TableModel {
 	public function duplicate($params) {
 		$key = $params[$this->search_key];
 		$count = $this->collection
-				->query($this->search_key, $key)
-				->count();
+			->query($this->search_key, $key)
+			->count();
 
 		if ($count) {
 			die(json_encode("key already exists"));
+		}
+		if (isset($params['_id']->{'id'})) {
+			$params['source_id'] = (string) $params['_id']->{'$id'};
+		} else if (isset($params['_id'])){
+			$params['source_id'] = (string) $params['_id'];
 		}
 		unset($params['_id']);
 		return $this->update($params);

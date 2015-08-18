@@ -53,6 +53,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->addJs($this->baseUrl . '/js/vendor/bootstrap.min.js');
 		$this->addJs($this->baseUrl . '/js/plugins.js');
 		$this->addJs($this->baseUrl . '/js/moment.js');
+		$this->addJs($this->baseUrl . '/js/moment-with-locales.min.js');
 		$this->addJs($this->baseUrl . '/js/bootstrap-datetimepicker.min.js');
 		$this->addJs($this->baseUrl . '/js/jquery.jsoneditor.js');
 		$this->addJs($this->baseUrl . '/js/bootstrap-multiselect.js');
@@ -214,7 +215,8 @@ class AdminController extends Yaf_Controller_Abstract {
 		$type = Billrun_Util::filter_var($this->getRequest()->get('type'), FILTER_SANITIZE_STRING);
 		$id = Billrun_Util::filter_var($this->getRequest()->get('id'), FILTER_SANITIZE_STRING);
 		$coll = Billrun_Util::filter_var($this->getRequest()->get('coll'), FILTER_SANITIZE_STRING);
-
+		$dup_rates = $this->getRequest()->get('duplicate_rates');
+		$duplicate_rates = ($dup_rates == 'true') ? true : false;
 		$model = self::initModel($coll);
 
 		$collection = Billrun_Factory::db()->getCollection($coll);
@@ -233,7 +235,9 @@ class AdminController extends Yaf_Controller_Abstract {
 		} else {
 			$params = $data;
 		}
-
+		if ($duplicate_rates) {
+			$params = array_merge($params, array('duplicate_rates' => $duplicate_rates));
+		}
 		if ($type == 'update') {
 			$saveStatus = $model->update($params);
 		} else if ($type == 'close_and_new') {
@@ -409,9 +413,9 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * 
 	 * @todo: refactoring to core
 	 */
-	static public function authorized($permission) {
+	static public function authorized($permission, $page = null) {
 		$user = Billrun_Factory::user();
-		if (!$user || !$user->valid() || !$user->allowed($permission)) {
+		if (!$user || !$user->valid() || !$user->allowed($permission, $page)) {
 			return false;
 		}
 
@@ -427,7 +431,13 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * 
 	 */
 	protected function allowed($permission) {
-		if (self::authorized($permission)) {
+		$action = $this->getRequest()->getActionName();
+		if ($action != 'index') {
+			$page = $action;
+		} else {
+			$page = null;
+		}
+		if (self::authorized($permission, $page)) {
 			return true;
 		}
 
@@ -436,7 +446,7 @@ class AdminController extends Yaf_Controller_Abstract {
 			return false;
 		}
 
-		$this->forward('login', array('ret_action' => $this->getRequest()->getActionName()));
+		$this->forward('login', array('ret_action' => $action));
 		return false;
 	}
 
@@ -512,7 +522,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	/**
 	 * log controller of admin
 	 */
-	public function logAction() {
+	public function logsAction() {
 		if (!$this->allowed('read'))
 			return false;
 		$table = "log";
@@ -573,7 +583,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * config controller of admin
 	 */
 	public function operationsAction() {
-		if (!$this->allowed('admin'))
+		if (!$this->allowed('operations'))
 			return false;
 
 		$this->getView()->component = $this->renderView('operations');
@@ -804,7 +814,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		}
 		foreach ($filter_fields as $filter_name => $filter_field) {
 			$value = $this->getSetVar($session, $filter_field['key'], $filter_field['key'], $filter_field['default']);
-			if (!empty($value) && $filter_field['db_key'] != 'nofilter' && $filter = $model->applyFilter($filter_field, $value)) {
+			if ((!empty($value) || $value === 0 || $value === "0") && $filter_field['db_key'] != 'nofilter' && $filter = $model->applyFilter($filter_field, $value)) {
 				$query['$and'][] = $filter;
 			}
 		}
@@ -835,6 +845,12 @@ class AdminController extends Yaf_Controller_Abstract {
 				$keys[0] => array(
 					'type' => 'number',
 					'display' => 'usage',
+				)
+			);
+		} else if ($this->model instanceof EventsModel) {
+			$avanced_options = array(
+				$keys[0] => array(
+					'type' => 'text',
 				)
 			);
 		} else {
@@ -947,10 +963,13 @@ class AdminController extends Yaf_Controller_Abstract {
 
 		$rates = $this->model->getRates($query);
 
-		$header = $this->model->getPricesListFileHeader();
+
+		$showprefix = $_GET['show_prefix'];
+		$show_prefix = $showprefix == 'true' ? true : false;
+		$header = $this->model->getPricesListFileHeader($show_prefix);
 		$data_output[] = implode(",", $header);
 		foreach ($rates as $rate) {
-			$rules = $this->model->getRulesByRate($rate);
+			$rules = $this->model->getRulesByRate($rate, $show_prefix);
 			foreach ($rules as $rule) {
 				$imploded_text = '';
 				foreach ($header as $title) {

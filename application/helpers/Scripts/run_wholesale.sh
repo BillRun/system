@@ -40,5 +40,17 @@ do
 		echo $report_day $report;
 		$WD/wholesale_reports.sh $report $report_day $output_dir
 	done
-	$WD/wholesale_retail.sh $report_day $output_dir
+	 $WD/wholesale_retail.sh $report_day $output_dir
+done
+
+nsn_reports_for_engineering=( "top_50_calls" "top_50_incoming_calls" "top_50_sms" "circuit_groups" "international_calls" )  
+for (( day=$from_days_back; day >= $to_days_back; day-- ))
+do
+	report_day=`date -d "$day days ago" +'%F'`
+	for report in "${nsn_reports_for_engineering[@]}"
+	do
+		:
+		echo $report_day $report;
+		$WD/nsn_engineering_reports.sh $report $report_day $output_dir
+	done
 done

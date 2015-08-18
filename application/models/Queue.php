@@ -65,6 +65,15 @@ class QueueModel extends TableModel {
 				'values' => Billrun_Factory::config()->getConfigValue('queue.calculators'),
 				'default' => array(),
 			),
+			'type' => array(
+				'key' => 'type1',
+				'db_key' => 'type',
+				'input_type' => 'multiselect',
+				'comparison' => '$in',
+				'display' => 'Type',
+				'values' => Billrun_Factory::config()->getConfigValue('admin_panel.queue.source'),
+				'default' => array(),
+			),
 		);
 		foreach ($filter_fields['next_calculator']['values'] as $key => $val) {
 			$filter_fields['next_calculator']['values'][$val] = $val;
@@ -85,6 +94,9 @@ class QueueModel extends TableModel {
 				'next_calculator' => array(
 					'width' => 2,
 				),
+				'type' => array(
+					'width' => 2,
+				)
 			),
 		);
 		return $filter_field_order;
@@ -96,6 +108,24 @@ class QueueModel extends TableModel {
 			'type' => 'Type',
 			'calc_name' => 'next calculator',
 		);
+	}
+
+	public function prev_calc($value) {
+		$val = $value[0];
+		$names = Billrun_Factory::config()->getConfigValue('queue.calculators');
+		if ($val != $names[0]) {
+			$key = array_search($val, $names);
+			$prev = $names[$key - 1];
+		} else {
+			$prev = false;
+		}
+		return array($prev);
+	}
+
+	public function getData($filter_query = array()) {
+		$resource = parent::getData($filter_query);
+		$this->_count = $resource->count(false);
+		return $resource;
 	}
 
 }

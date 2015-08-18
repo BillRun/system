@@ -5,8 +5,8 @@
 				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
 				<h3 id="confirmModalLabel"></h3>
 			</div>
-<!--			<div class="modal-body">
-			</div>-->
+			<!--			<div class="modal-body">
+						</div>-->
 			<div class="modal-footer">
 				<button id="cancelConfirm" class="btn" data-dismiss="modal" aria-hidden="true">Cancel</button>
 				<button id="confirm" class="btn btn-primary">Remove</button>
@@ -27,7 +27,7 @@
 			<div class="modal-footer">
 				<button id="cancelPopup" class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
 				<?php if (AdminController::authorized('write')) : ?>
-				<button id="save" class="btn btn-primary">Save changes</button>
+					<button id="save" class="btn btn-primary">Save changes</button>
 				<?php endif; ?>
 			</div>
 		</div><!-- /.modal-content -->
@@ -37,16 +37,16 @@
 <div class="modal fade" id="LogPopup" tabindex="-3" role="dialog" aria-labelledby="LogPopupLabel" aria-hidden="true">
 	<div class="modal-dialog">
 		<div class="modal-content">
-		<div class="modal-header">
-			<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-			<h3 id="LogPopupLabel"></h3>
-		</div>
-		<div class="modal-body">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				<h3 id="LogPopupLabel"></h3>
+			</div>
+			<div class="modal-body">
 
-		</div>
-		<div class="modal-footer">
-			<button id="cancelLogPopup" class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
-		</div>
+			</div>
+			<div class="modal-footer">
+				<button id="cancelLogPopup" class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
+			</div>
 		</div><!-- /.modal-content -->
 	</div><!-- /.modal-dialog -->
 </div>
@@ -88,6 +88,9 @@
 				<div class="control-group control-group0">
 					<div class="controls form-inline">
 						<input class="span1" id="remove_non_existing_usage_types" name="remove_non_existing_usage_types" type="checkbox" value="off" > <label class="checkbox" for="remove_non_existing_usage_types">Remove non existing usage types</label>
+					</div>
+					<div class="controls form-inline">
+						<input class="span1" id="remove_non_existing_prefix" name="remove_non_existing_prefix" type="checkbox" value="off" > <label class="checkbox" for="remove_non_existing_prefix">Remove non existing prefixes</label>
 					</div>
 				</div>
 			</div>

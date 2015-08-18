@@ -63,7 +63,7 @@
 				echo "</div>";
 			elseif ($active == 'rates') :
 			endif;
-			if ($active == 'lines' || $active == 'rates' || $active == 'balances'):
+			if ($active == 'lines' || $active == 'rates' || $active == 'balances' || $active == 'events'):
 				echo "<div class=\"control-group control-group4\"><div id=\"extra_columns\" class=\"controls form-inline\">"
 				. "&nbsp;<label class=\"control-label\">Display fields</label>
 						<select name=\"extra_columns[]\" class=\"form-control multiselect\" multiple=\"multiple\">";
@@ -126,7 +126,7 @@
 				<?php if (AdminController::authorized('write')) : ?>
 				<span><a id='import_prices' data-type="upload" href="#importPricesModal" class="btn btn-primary" data-toggle="modal" role="button"><i class="icon-upload"> </i>Import</a></span>
 				<?php endif; ?>
-				<span><a id='export_prices' data-type="download" href="/admin/exportrates" class="btn export-button"><i class="icon-download"> </i>Export to CSV</a></span>
+				<span><a id='export_prices' data-type="download" href="javascript:exportRates();" class="btn export-button"><i class="icon-download"> </i>Export to CSV</a></span>
 			<?php endif; ?>
 			</span>
 		</div>

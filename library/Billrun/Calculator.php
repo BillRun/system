@@ -74,6 +74,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	 */
 	protected $autosort = true;
 	protected $queue_coll = null;
+	protected $rates_query = array();
 
 	/**
 	 * constructor of the class
@@ -99,6 +100,11 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		if (isset($options['autosort'])) {
 			$this->autosort = $options['autosort'];
 		}
+		
+		if (Billrun_Util::getFieldVal($options['calculator']['rates_query'], false)) {
+			$this->rates_query = Billrun_Util::getFieldVal($options['calculator']['rates_query'], array());
+		}
+		
 		$this->queue_coll = Billrun_Factory::db()->queueCollection();
 	}
 
@@ -182,7 +188,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	 */
 	public function writeLine($line, $dataKey) {
 		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteLine', array('data' => $line, 'calculator' => $this));
-		$line->save(Billrun_Factory::db()->linesCollection(),1);
+		$line->save(Billrun_Factory::db()->linesCollection(), 1);
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteLine', array('data' => $line, 'calculator' => $this));
 		if (!isset($line['usagev']) || $line['usagev'] === 0) {
 			$this->removeLineFromQueue($line);
@@ -202,7 +208,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		}
 		//Billrun_Factory::log()->log("stamps : ".print_r($stamps,1),Zend_Log::DEBUG);
 		$lines = Billrun_Factory::db()->linesCollection()
-						->query()->in('stamp', $stamps)->cursor();
+				->query()->in('stamp', $stamps)->cursor();
 
 		if ($this->autosort) {
 			$lines->sort(array('urt' => 1));
@@ -219,7 +225,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	 */
 	protected function pullLine($queue_line) {
 		$line = Billrun_Factory::db()->linesCollection()->query('stamp', $queue_line['stamp'])
-						->cursor()->current();
+				->cursor()->current();
 		if ($line->isEmpty()) {
 			return false;
 		}
@@ -240,7 +246,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		}
 		$query = array_merge($query, array('stamp' => array('$in' => $stamps), 'hash' => $this->workHash, 'calc_time' => $this->signedMicrotime)); //array('stamp' => $item['stamp']);
 		$update = array_merge($update, array('$set' => array('calc_name' => $calculator_tag, 'calc_time' => false)));
-		$this->queue_coll->update($query, $update, array('multiple' => true,'w'=>1));
+		$this->queue_coll->update($query, $update, array('multiple' => true, 'w' => 1));
 	}
 
 	/**
@@ -389,7 +395,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 			$this->workHash = md5(time() . rand(0, PHP_INT_MAX));
 			$update['$set']['hash'] = $this->workHash;
 			//Billrun_Factory::log()->log(print_r($query,1),Zend_Log::DEBUG);
-			$queue->update($query, $update, array('multiple' => true,'w'=>1));
+			$queue->update($query, $update, array('multiple' => true, 'w' => 1));
 
 			$foundLines = $queue->query(array_merge($localquery, array('hash' => $this->workHash, 'calc_time' => $this->signedMicrotime)))->cursor();
 
@@ -403,7 +409,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		}
 		return $retLines;
 	}
-	
+
 	/**
 	 * (Stab) Check if a given rate is a valid rate for rating
 	 * @param type $rate the rate to check
@@ -418,10 +424,10 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	 */
 	protected function loadRates() {
 		$rates_coll = Billrun_Factory::db()->ratesCollection();
-		$rates = Billrun_Factory::db()->ratesCollection()->query()->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
+		$rates = Billrun_Factory::db()->ratesCollection()->query($this->rates_query)->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
 		$this->rates = array();
 		foreach ($rates as $rate) {
-			if($this->isRateValid($rate)) {
+			if ($this->isRateValid($rate)) {
 				$rate->collection($rates_coll);
 				if (isset($rate['params']['prefix'])) {
 					foreach ($rate['params']['prefix'] as $prefix) {
@@ -431,7 +437,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 					$this->rates['UNRATED'] = $rate;
 				} else {
 					$this->rates['noprefix'][] = $rate;
-				}	
+				}
 			}
 		}
 	}

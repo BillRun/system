@@ -82,7 +82,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	 * @param int $bulkAccountPreload
 	 */
 	protected $bulkAccountPreload = 10;
-	
+
 	/**
 	 * the account ids that were successfully aggregated
 	 * @var array
@@ -215,6 +215,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 				$account_billrun->resetBillrun();
 			}
 			$manual_lines = array();
+			$deactivated_subscribers = array();
 			foreach ($account as $subscriber) {
 				Billrun_Factory::dispatcher()->trigger('beforeAggregateSubscriber', array($subscriber, $account_billrun, &$this));
 				$sid = $subscriber->sid;
@@ -225,6 +226,12 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 				$next_plan_name = $subscriber->getNextPlanName();
 				if (is_null($next_plan_name) || $next_plan_name == "NULL") {
 					$subscriber_status = "closed";
+
+					$current_plan_name = $subscriber->getCurrentPlanName();
+					if (is_null($current_plan_name) || $current_plan_name == "NULL") {
+						Billrun_Factory::log()->log("Subscriber " . $sid . " has current plan null and next plan null", Zend_Log::INFO);
+						$deactivated_subscribers[] = array("sid" => $sid);
+					}
 				} else {
 					$subscriber_status = "open";
 					Billrun_Factory::log("Getting flat price for subscriber $sid", Zend_log::INFO);
@@ -240,11 +247,19 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 					Billrun_Factory::log('Finished adding flat line to subscriber ' . $sid, Zend_Log::INFO);
 				}
 				$manual_lines = array_merge($manual_lines, $this->saveCreditLines($subscriber, $billrun_key));
+				$manual_lines = array_merge($manual_lines, $this->saveServiceLines($subscriber, $billrun_key));
 				$account_billrun->addSubscriber($subscriber, $subscriber_status);
 				Billrun_Factory::dispatcher()->trigger('afterAggregateSubscriber', array($subscriber, $account_billrun, &$this));
 			}
-			$lines = $account_billrun->addLines($manual_lines);
+			$lines = $account_billrun->addLines($manual_lines, $deactivated_subscribers);
+
+			$account_billrun->filter_disconected_subscribers($deactivated_subscribers);
+
 			//save the billrun
+			if ($account_billrun->is_deactivated() === true) {
+				Billrun_Factory::log('deactivated account, no need for invoice ' . $accid, Zend_Log::DEBUG);
+				continue;
+			}
 			Billrun_Factory::log('Saving account ' . $accid, Zend_Log::INFO);
 			if ($account_billrun->save() === false) {
 				Billrun_Factory::log('Error saving account ' . $accid, Zend_Log::ALERT);
@@ -302,6 +317,39 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		return $flat_entry;
 	}
 
+	/**
+	 * create and save service lines
+	 * @param type $subscriber
+	 * @param type $billrun_key
+	 * @return array of inserted lines
+	 */
+	protected function saveServiceLines($subscriber, $billrun_key) {
+		$services = $subscriber->getServices($billrun_key, true);
+		$ret = array();
+		foreach ($services as $service) {
+			$rawData = $service->getRawData();
+			try {
+				$this->lines->insert($rawData, array("w" => 1));
+			} catch (Exception $e) {
+				if ($e->getCode() == 11000) {
+					Billrun_Factory::log("Service already exists for subscriber " . $subscriber->sid . " for billrun " . $billrun_key . " service details: " . print_R($rawData, 1), Zend_log::ALERT);
+				} else {
+					Billrun_Factory::log("Problem inserting service for subscriber " . $subscriber->sid . " for billrun " . $billrun_key
+						. ". error message: " . $e->getMessage() . ". error code: " . $e->getCode() . ". service details:" . print_R($rawData, 1), Zend_log::ALERT);
+					Billrun_Util::logFailedServiceRow($rawData);
+				}
+			}
+			$ret[$service['stamp']] = $service;
+		}
+		return $ret;
+	}
+
+	/**
+	 * create and save credit lines
+	 * @param type $subscriber
+	 * @param type $billrun_key
+	 * @return array of inserted lines
+	 */
 	protected function saveCreditLines($subscriber, $billrun_key) {
 		$credits = $subscriber->getCredits($billrun_key, true);
 		$ret = array();
@@ -314,7 +362,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 					Billrun_Factory::log("Credit already exists for subscriber " . $subscriber->sid . " for billrun " . $billrun_key . " credit details: " . print_R($rawData, 1), Zend_log::ALERT);
 				} else {
 					Billrun_Factory::log("Problem inserting credit for subscriber " . $subscriber->sid . " for billrun " . $billrun_key
-							. ". error message: " . $e->getMessage() . ". error code: " . $e->getCode() . ". credit details:" . print_R($rawData, 1), Zend_log::ALERT);
+						. ". error message: " . $e->getMessage() . ". error code: " . $e->getCode() . ". credit details:" . print_R($rawData, 1), Zend_log::ALERT);
 					Billrun_Util::logFailedCreditRow($rawData);
 				}
 			}

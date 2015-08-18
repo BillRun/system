@@ -47,35 +47,7 @@ class LinesModel extends TableModel {
 	public function getItem($id) {
 
 		$entity = parent::getItem($id);
-
-		if (isset($entity['urt'])) {
-			$entity['urt'] = (new Zend_Date($entity['urt']->sec, null, new Zend_Locale('he_IL')))->getIso();
-		}
-		if (isset($entity['arate'])) {
-			$data = $entity->get('arate', false);
-			if ($data instanceof Mongodloid_Entity) {
-				$entity['arate'] = $data->get('key');
-			}
-		}
-		if (isset($entity['pzone'])) {
-			$data = $entity->get('pzone', false);
-			if ($data instanceof Mongodloid_Entity) {
-				$entity['pzone'] = $data->get('key');
-			}
-		}
-		if (isset($entity['wsc'])) {
-			$data = $entity->get('wsc', false);
-			if ($data instanceof Mongodloid_Entity) {
-				$entity['wsc'] = $data->get('key');
-			}
-		}
-		if (isset($entity['wsc_in'])) {
-			$data = $entity->get('wsc_in', false);
-			if ($data instanceof Mongodloid_Entity) {
-				$entity['wsc_in'] = $data->get('key');
-			}
-		}
-
+		Admin_Table::setEntityFields($entity);
 		return $entity;
 	}
 
@@ -126,10 +98,46 @@ class LinesModel extends TableModel {
 			} else {
 				$item['arate'] = $arate;
 			}
+			if(isset($item['rat_type'])) {
+				$item['rat_type'] = Admin_Table::translateField($item, 'rat_type');
+			}
 			$ret[] = $item;
 		}
 		return $ret;
 	}
+	
+	/**
+	 * method to get data aggregated
+	 * 
+	 * @param array $filter_query what to filter by
+	 * @param array $aggregate what to aggregate by
+	 * 
+	 * @return array of result
+	 */
+	public function getDataAggregated($filter_query = array(), $aggregate = array()) {
+
+		$cursor = $this->collection->aggregatecursor($filter_query, $aggregate);
+
+		if (isset($filter_query['$and']) && $this->filterExists($filter_query['$and'], array('aid', 'sid', 'stamp'))) {
+			$this->_count = $cursor->count(false);
+		} else {
+			$this->_count = Billrun_Factory::config()->getConfigValue('admin_panel.lines.global_limit', 10000);
+		}
+
+		$ret = array();
+		foreach ($cursor as $item) {
+//			$item->collection($this->lines_coll);
+//			if ($arate = $this->getDBRefField($item, 'arate')) {
+//				$item['arate'] = $arate['key'];
+//				$item['arate_id'] = strval($arate['_id']);
+//			} else {
+//				$item['arate'] = $arate;
+//			}
+			$ret[] = $item;
+		}
+		return $ret;
+	}
+
 	
 	public function getDistinctField($field, $filter_query = array()) {
 		if (empty($field) || empty($filter_query)) {
@@ -375,6 +383,10 @@ class LinesModel extends TableModel {
 				'calling_number' => $row['calling_number'],
 				'usagev' => $row['usagev'],
 				'usaget' => $row['usaget'],
+				'calling_subs_first_ci' => $row['calling_subs_first_ci'],
+				'called_subs_first_ci' => $row['called_subs_first_ci'],
+				'calling_subs_first_lac' => $row['calling_subs_first_lac'],
+				'called_subs_first_lac' => $row['called_subs_first_lac'],
 			);
 		}
 		

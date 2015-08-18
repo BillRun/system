@@ -45,17 +45,17 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 					'required' => array(
 						'fields' => array('sid', 'aid', 'ggsn_address', 'arate', 'urt'),
 						'match' => array(
-							'sgsn_address' => '/^(?=62\.90\.|37\.26\.)/',
+							'sgsn_address' => '/^(?=62\.90\.|37\.26\.|176\.12\.158\.(\d$|[1]\d$|2[10]$))/',
 						),
 					),
 					'date_seperation' => 'Ymd',
 					'stamp' => array(
-						'value' => array('sgsn_address', 'ggsn_address', 'sid', 'aid', 'arate', 'imsi', 'plan', 'rating_group', 'billrun'), 
+						'value' => array('sgsn_address', 'ggsn_address', 'sid', 'aid', 'arate', 'imsi', 'plan', 'rating_group', 'billrun', 'rat_type'), 
 						'field' => array('in_plan', 'out_plan', 'over_plan', 'aprice'),
 					),
 					'fields' => array(
 						'$set' => array('process_time'),
-						'$setOnInsert' => array('urt', 'imsi', 'usagesb', 'usaget', 'aid', 'sid', 'ggsn_address', 'sgsn_address', 'rating_group', 'arate', 'plan', 'billrun'),
+						'$setOnInsert' => array('urt', 'imsi', 'usagesb', 'usaget', 'aid', 'sid', 'ggsn_address', 'sgsn_address', 'rating_group', 'arate', 'plan', 'billrun', 'rat_type'),
 						'$inc' => array('usagev', 'aprice', 'apr', 'fbc_downlink_volume', 'fbc_uplink_volume', 'duration', 'in_plan', 'out_plan', 'over_plan'),
 					),
 				),
@@ -73,7 +73,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 					),
 					'fields' => array(
 						'$set' => array('process_time'),
-						'$setOnInsert' => array('urt', 'in_circuit_group', 'in_circuit_group_name', 'out_circuit_group', 'out_circuit_group_name', 'calling_subs_last_ex_id', 'called_subs_last_ex_id', 'arate', 'usaget'),
+						'$setOnInsert' => array('urt', 'record_type', 'in_circuit_group', 'in_circuit_group_name', 'out_circuit_group', 'out_circuit_group_name', 'calling_subs_last_ex_id', 'called_subs_last_ex_id', 'arate', 'usaget'),
 						'$inc' => array('usagev', 'duration'),
 					),
 				),

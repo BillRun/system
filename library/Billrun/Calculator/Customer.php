@@ -175,11 +175,11 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	 */
 	public function writeLine($line, $dataKey) {
 		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteLine', array('data' => $line, 'calculator' => $this));
-		
+
 		$save = array(
 			'$set' => array(),
 		);
-		$saveProperties = array_merge(array('last_vlr','alpha3'), array_keys(Billrun_Factory::subscriber()->getAvailableFields()), array_keys(Billrun_Factory::subscriber()->getCustomerExtraData()));
+		$saveProperties = array_merge(array('last_vlr', 'alpha3'), array_keys(Billrun_Factory::subscriber()->getAvailableFields()), array_keys(Billrun_Factory::subscriber()->getCustomerExtraData()));
 		foreach ($saveProperties as $p) {
 			if (!is_null($val = $line->get($p, true))) {
 				$save['$set'][$p] = $val;
@@ -220,6 +220,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	public function loadSubscribers($rows) {
 		$this->subscribers_by_stamp = false;
 		$params = array();
+		$subscriber_extra_data = array_keys($this->subscriber->getCustomerExtraData());
 		foreach ($rows as $row) {
 			if ($this->isLineLegitimate($row)) {
 				$line_params = $this->getIdentityParams($row);
@@ -228,6 +229,13 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 				} else {
 					$line_params['time'] = date(Billrun_Base::base_dateformat, $row['urt']->sec);
 					$line_params['stamp'] = $row['stamp'];
+					$line_params['EXTRAS'] = 0;
+					foreach ($subscriber_extra_data as $key) {
+						if ($this->isExtraDataRelevant($row, $key)) {
+							$line_params['EXTRAS'] = 1;
+							break;
+						}
+					}
 					$params[] = $line_params;
 				}
 			}
@@ -325,7 +333,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			$record_type = $line['record_type'];
 			if ($record_type == '11' || $record_type == '12') {
 				$relevant_cg = $record_type == '11' ? $line['in_circuit_group'] : $line['out_circuit_group'];
-				if (!($relevant_cg == "1001" || $relevant_cg == "1006" || ($relevant_cg >= "1201" && $relevant_cg <= "1209"))) {
+				if (!in_array($relevant_cg, Billrun_Util::getRoamingCircuitGroups())) {
 					return false;
 				}
 				if ($record_type == '11' && in_array($line['out_circuit_group'], array('3060', '3061'))) {

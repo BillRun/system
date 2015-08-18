@@ -20,7 +20,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 	protected $time = null;
 	protected $save_crm_output = false;
 	protected $crm_output_dir = null;
-	protected $billrunExtraFields = array('kosher', 'credits');
+	protected $billrunExtraFields = array('kosher' => 1, 'credits' => 1, 'sub_services' => 0); //true to save in billrun, false not to save
 
 	/**
 	 * calculator for manual charges on billable
@@ -29,6 +29,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 	 */
 	protected $creditCalc = null;
 	protected $pricingCalc = null;
+	protected $serviceCalc = null;
 
 	public function __construct($options = array()) {
 		parent::__construct($options);
@@ -56,6 +57,8 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		$this->creditCalc = Billrun_Calculator::getInstance($creditCalcOptions);
 		$pricingCalcOptions = array_merge(array('type' => 'customerPricing', 'autoload' => false), Billrun_Factory::config()->getConfigValue('customerPricing.calculator', array()));
 		$this->pricingCalc = Billrun_Calculator::getInstance($pricingCalcOptions);
+		$serviceCalcOptions = array_merge(array('type' => 'Rate_Service', 'autoload' => false), Billrun_Factory::config()->getConfigValue('Rate_Service.calculator', array()));
+		$this->serviceCalc = Billrun_Calculator::getInstance($serviceCalcOptions);
 
 		// pay attention that just availableFields array can be access from outside
 	}
@@ -261,31 +264,87 @@ class Subscriber_Golan extends Billrun_Subscriber {
 			$subscriber_general_settings = Billrun_Config::getInstance()->getConfigValue('subscriber', array());
 			if (is_array($output_arr) && !empty($output_arr)) {
 				$ret_data = array();
+				$billrun_fields = array_keys(self::getExtraFieldsForBillrun());
 				foreach ($output_arr as $aid => $account) {
 					if (isset($account['subscribers'])) {
 						foreach ($account['subscribers'] as $subscriber) {
+							$sid = intval($subscriber['subscriber_id']);
 							$concat = array(
 								'time' => $time,
 								'data' => array(
 									'aid' => intval($aid),
-									'sid' => intval($subscriber['subscriber_id']),
-									'plan' => isset($subscriber['curr_plan']) ? $subscriber['curr_plan'] : null,
-									'next_plan' => isset($subscriber['next_plan']) ? $subscriber['next_plan'] : null,
+									'sid' => $sid,
 								),
 							);
+
+							if ($sid) {
+								$concat['data']['plan'] = isset($subscriber['curr_plan']) ? $subscriber['curr_plan'] : null;
+								$concat['data']['next_plan'] = isset($subscriber['next_plan']) ? $subscriber['next_plan'] : null;
+							} else {
+								$concat['data']['plan'] = 'ACCOUNT';
+								$concat['data']['next_plan'] = 'ACCOUNT';
+							}
 
 							if (isset($subscriber['occ']) && is_array($subscriber['occ'])) {
 								$credits = array();
 								foreach ($subscriber['occ'] as $credit) {
+									if (!isset($credit['account_id'])) {
+										Billrun_Factory::log("No account id for credit line. Parent account id is " . $aid, Zend_log::ALERT);
+										continue;
+									}
+									if ($aid != $credit['account_id']) {
+										Billrun_Factory::log("Credit account id " . $credit['account_id'] . " is different from parent account id " . $aid, Zend_log::WARN);
+										continue;
+									}
 									$credit['aid'] = $concat['data']['aid'];
 									$credit['sid'] = $concat['data']['sid'];
-									$credit['plan'] = $concat['data']['plan'];
+									if ($sid) {
+										$credit['plan'] = $concat['data']['plan'];
+									} else {
+										$credit['subscriber_id'] = $sid;
+										$credit['plan'] = 'ACCOUNT';
+									}
 									$credits[] = $credit;
 								}
 								$concat['data']['credits'] = $credits;
 							}
+							
+							if (isset($subscriber['did_premium'])) {
+								$count = intval($subscriber['did_premium']);
+								 while ($count > 0) {
+									 $subscriber['services'][] = 'DID_PREMIUM';
+									 $count--;
+									
+								}
+							}
 
-							foreach (self::getExtraFieldsForBillrun() as $field) {
+							if (isset($subscriber['services']) && is_array($subscriber['services'])) {
+								$reduced = array();
+								foreach ($subscriber['services'] as $service_name) {
+									if (!isset($reduced[$service_name])) {
+										$reduced[$service_name] = 1;
+									} else {
+										$reduced[$service_name]+=1;
+									}
+								}
+								$services = array();
+								foreach ($reduced as $service_name => $service_count) {
+									$service = array();
+									$service['service_name'] = $service_name;
+									$service['count'] = $service_count;
+									$service['aid'] = $concat['data']['aid'];
+									$service['sid'] = $concat['data']['sid'];
+									if ($sid) {
+										$service['plan'] = $concat['data']['plan'];
+									} else {
+										$service['plan'] = 'ACCOUNT';
+									}
+									$services[] = $service;
+								}
+								$concat['data']['sub_services'] = $services;
+							}
+
+							foreach ($billrun_fields as $field) {
 								if (isset($subscriber[$field])) {
 									$concat['data'][$field] = $subscriber[$field];
 								}
@@ -302,18 +361,24 @@ class Subscriber_Golan extends Billrun_Subscriber {
 			}
 		}
 	}
-	
+
+	/**
+	 * for each credit create a row, parse, rate and price
+	 * @param type $billrun_key
+	 * @param type $retEntity
+	 * @return array of credit rows
+	 */
 	public function getCredits($billrun_key, $retEntity = false) {
 		$ret = array();
 		if (!is_array($this->credits) || !count($this->credits)) {
 			return $ret;
 		}
-		foreach($this->credits as $credit) {
+		foreach ($this->credits as $credit) {
 			if (!isset($credit['aid']) || !isset($credit['sid'])) {
 				Billrun_Factory::log("Credit cannot be parsed for subscriber. aid or sid or both not exists. credit details: " . print_R($credit, 1), Zend_log::ALERT);
 				continue;
 			}
-			
+
 			$parsedRow = Billrun_Util::parseCreditRow($credit);
 			$parsedRow['billrun'] = $billrun_key; // this will ensure we are on correct billrun even on pricing calculator
 			if (empty($parsedRow)) {
@@ -331,7 +396,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 				Billrun_Factory::log("Credit cannot be calc pricing for subscriber " . $credit['sid'] . " for billrun " . $billrun_key . " credit details: " . print_R($credit, 1), Zend_log::ALERT);
 				continue;
 			}
-			
+
 			if ($retEntity && !($insertRow instanceof Mongodloid_Entity)) {
 				$ret[$insertRow['stamp']] = new Mongodloid_Entity($insertRow);
 			} else if (!$retEntity && ($insertRow instanceof Mongodloid_Entity)) {
@@ -339,11 +404,51 @@ class Subscriber_Golan extends Billrun_Subscriber {
 			} else {
 				$ret[$insertRow['stamp']] = $insertRow;
 			}
-
 		}
 		return $ret;
 	}
 
+	/**
+	 * for each service type create a row, add required fields for lines collection, rate and price
+	 * @param type $billrun_key
+	 * @param type $retEntity
+	 * @return array of service rows
+	 */
+	public function getServices($billrun_key, $retEntity = false) {
+		$ret = array();
+		if (!is_array($this->sub_services) || !count($this->sub_services)) {
+			return $ret;
+		}
+		foreach ($this->sub_services as $service) {
+			if (!isset($service['aid']) || !isset($service['sid'])) {
+				Billrun_Factory::log("Service cannot be parsed for subscriber. aid or sid or both not exists. service details: " . print_R($service, 1), Zend_log::ALERT);
+				continue;
+			}
+			$parsedRow = Billrun_Util::parseServiceRow($service, $billrun_key);
+			$parsedRow['billrun'] = $billrun_key;
+
+			// add rate
+			if (($ratedRow = $this->serviceCalc->updateRow(new Mongodloid_Entity($parsedRow))) === FALSE) {
+				Billrun_Factory::log("service cannot be rated for subscriber " . $service['sid'] . " for billrun " . $billrun_key . " service details: " . print_R($service, 1), Zend_log::ALERT);
+				continue;
+			}
+
+			// add billrun, price
+			if (($insertRow = $this->pricingCalc->updateRow($ratedRow)) === FALSE) {
+				Billrun_Factory::log("service cannot be calc pricing for subscriber " . $service['sid'] . " for billrun " . $billrun_key . " credit details: " . print_R($service, 1), Zend_log::ALERT);
+				continue;
+			}
+
+			if ($retEntity && !($insertRow instanceof Mongodloid_Entity)) {
+				$ret[$insertRow['stamp']] = new Mongodloid_Entity($insertRow);
+			} else if (!$retEntity && ($insertRow instanceof Mongodloid_Entity)) {
+				$ret[$insertRow['stamp']] = $insertRow->getRawData();
+			} else {
+				$ret[$insertRow['stamp']] = $insertRow;
+			}
+		}
+		return $ret;
+	}
 
 	public function getListFromFile($file_path, $time) {
 		$json = @file_get_contents($file_path);
@@ -391,6 +496,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 	 */
 	public function getFlatEntry($billrun_key, $retEntity = false) {
 		$billrun_end_time = Billrun_Util::getEndTime($billrun_key);
+		$next_plan = $this->getNextPlan();
 		$flat_entry = array(
 			'aid' => $this->aid,
 			'sid' => $this->sid,
@@ -400,7 +506,8 @@ class Subscriber_Golan extends Billrun_Subscriber {
 			'usaget' => 'flat',
 			'urt' => new MongoDate($billrun_end_time),
 			'aprice' => $this->getFlatPrice(),
-			'plan_ref' => $this->getNextPlan()->createRef(),
+			'plan' => $next_plan->getName(),
+			'plan_ref' => $next_plan->createRef(),
 			'process_time' => date(Billrun_Base::base_dateformat),
 		);
 		$stamp = md5($flat_entry['aid'] . $flat_entry['sid'] . $billrun_end_time);
@@ -481,6 +588,14 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		}
 	}
 
+	public function getCurrentPlanName() {
+		if (isset($this->data['plan'])) {
+			return $this->data['plan'];
+		} else {
+			return null;
+		}
+	}
+
 	/**
 	 * Get the rpc server from config
 	 * 
@@ -500,5 +615,5 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		// if it's array rand between servers
 		return $hosts[rand(0, count($hosts) - 1)];
 	}
-	
+
 }

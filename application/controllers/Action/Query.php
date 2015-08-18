@@ -23,7 +23,7 @@ class QueryAction extends ApiAction {
 	public function execute() {
 		Billrun_Factory::log()->log("Execute api query", Zend_Log::INFO);
 		$request = $this->getRequest()->getRequest(); // supports GET / POST requests
-		Billrun_Factory::log()->log("Input: " . print_R($request, 1), Zend_Log::INFO);
+		Billrun_Factory::log()->log("Input: " . print_R($request, 1), Zend_Log::DEBUG);
 
 		if (!isset($request['aid']) && !isset($request['sid'])) {
 			$this->setError('Require to supply aid or sid', $request);
@@ -52,15 +52,11 @@ class QueryAction extends ApiAction {
 		}
 
 		if (isset($request['billrun'])) {
-			$find['billrun'] = (string) $request['billrun'];
+			$find['billrun'] = $this->getBillrunQuery($request['billrun']);
 		}
 
 		if (isset($request['query'])) {
-			if (is_string($request['query'])) {
-				$query = json_decode($request['query'], true);
-			} else {
-				$query = (array) $request['query'];
-			}
+			$query = $this->getArrayParam($request['query']);
 			$find = array_merge($find, (array) $query);
 		}
 
@@ -92,5 +88,33 @@ class QueryAction extends ApiAction {
 		);
 		$this->getController()->setOutput($ret);
 	}
+	
+	/**
+	 * method to retreive variable in dual way json or pure array
+	 * 
+	 * @param mixed $param the param to retreive
+	 */
+	protected function getArrayParam($param) {
+		if (empty($param)) {
+			return array();
+		}
+		if (is_string($param)) {
+			$ret = json_decode($param, true);
+		} else {
+			$ret = (array) $param;
+		}
+		// convert short ref to real PHP MongoId (query convention)
+		foreach ($ret as $k => &$v) {
+			if (is_array($v) && isset($v['$id'])) {
+				$v = new MongoId($v['$id']);
+			}
+		}
+		return $ret;
+	}
+	
+	protected function getBillrunQuery($billrun) {
+		return array('$in' => Billrun_Util::verify_array($this->getArrayParam($billrun), 'str'));
+	}
+
 
 }

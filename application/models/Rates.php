@@ -212,7 +212,6 @@ class RatesModel extends TabledateModel {
 	 * @return Mongo Cursor
 	 */
 	public function getData($filter_query = array(), $fields = false) {
-//		print_R($filter_query);die;
 		$cursor = $this->getRates($filter_query);
 		$this->_count = $cursor->count();
 		$resource = $cursor->sort($this->sort)->skip($this->offset())->limit($this->size);
@@ -404,7 +403,8 @@ class RatesModel extends TabledateModel {
 	 * @param Mongodloid_Entity $rate
 	 * @return array
 	 */
-	public function getRulesByRate($rate) {
+	public function getRulesByRate($rate, $showprefix = false) {
+		$first_rule = true;
 		$rule['key'] = $rate['key'];
 		$rule['from_date'] = date('Y-m-d H:i:s', $rate['from']->sec);
 		foreach ($rate['rates'] as $usage_type => $usage_type_rate) {
@@ -418,6 +418,14 @@ class RatesModel extends TabledateModel {
 				$rule['price'] = $rate_rule['price'];
 				$rule['times'] = intval($rate_rule['to'] / $rate_rule['interval']);
 				$rule_counter++;
+				if ($showprefix) {
+					if ($first_rule) {
+						$rule['prefix'] = '"' . implode(',', $rate['params']['prefix']) . '"';
+						$first_rule = false;
+					} else {
+						$rule['prefix'] = '';
+					}
+				}
 				$rules[] = $rule;
 			}
 		}
@@ -429,8 +437,12 @@ class RatesModel extends TabledateModel {
 	 * 
 	 * @return aray
 	 */
-	public function getPricesListFileHeader() {
-		return array('key', 'usage_type', 'category', 'rule', 'access_price', 'interval', 'price', 'times', 'from_date');
+	public function getPricesListFileHeader($showprefix = false) {
+		if ($showprefix) {
+			return array('key', 'usage_type', 'category', 'rule', 'access_price', 'interval', 'price', 'times', 'from_date', 'prefix');
+		} else {
+			return array('key', 'usage_type', 'category', 'rule', 'access_price', 'interval', 'price', 'times', 'from_date');
+		}
 	}
 
 	public function getRateByVLR($vlr) {
@@ -454,12 +466,32 @@ class RatesModel extends TabledateModel {
 		$limit = array(
 			'$limit' => 1,
 		);
-		$rate = $this->collection->aggregate(array($match, $unwind, $sort, $limit));
+		$rate = $this->collection->aggregate(array($match, $unwind, $match, $sort, $limit));
 		if ($rate) {
 			return $rate[0];
 		} else {
 			return NULL;
 		}
+	}
+	
+	/**
+	 * method to fetch plan reference by plan name
+	 * 
+	 * @param string $plan
+	 * @param MongoDate $currentDate the affective date
+	 * 
+	 * @return MongoDBRef
+	 */
+	public function getPlan($plan, $currentDate = null) {
+		if (is_null($currentDate)) {
+			$currentDate = new MongoDate();
+		}
+		$plansColl = Billrun_Factory::db()->plansCollection();
+		$planEntity = $plansColl->query('name', $plan)
+						->lessEq('from', $currentDate)
+						->greaterEq('to', $currentDate)
+						->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'))->current();
+		return $planEntity->createRef($plansColl);
 	}
 
 }

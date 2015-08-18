@@ -9,6 +9,16 @@ backupBase="/mnt/mongo_backup/backups";
 syncFile=$backupBase"/sync.txt";
 lockFile=$backupBase"/lock.txt";
 logFile="/tmp/backup.log";
+mongoCmd="mongo --port 27018 admin -uadmin -pqsef1#2$"
+mongoSrv="mongod"
+
+backupFile=$backupBase"/`date +%Y%m%d`_`hostname`.tar.gz";
+mongoDir="/ssd/mongo"
+
+#load configuration first from /usr/local/etc/ and then overide it with the local directory configuration.
+source /usr/local/etc/backup_fs.conf
+source ./backup_fs.conf
+
 
 function runningOnConf {
   if [ -n "`hostname | grep -e 'con0[0-9]'`" ]; then
@@ -62,17 +72,34 @@ function waitForServers {
 }
 
 function isMongoSlave {
-  local state="`mongo --port 27018 --eval 'tojson(rs.isMaster());'`";
+  local state="`$mongoCmd --eval 'tojson(rs.isMaster());'`";
   
   if [ -n "`echo $state | grep '\"ismaster\" : false'`" ]; then 
     echo 1;
   fi
 }
 
+function shutdownMongo {
+	#echo "Shutting down mongo" > STDOUT;
+	local result="`service $mongoSrv status`";	
+	if [ -n "`echo $result | grep 'stop'`" ]; then 
+		echo 1;
+	else
+		local result="`$mongoCmd admin --eval 'db.shutdownServer();'`";
+		echo $result >> $logFile;
+		if [ -n "`echo $result | grep 'server should be down'`" ]; then 
+			echo 1;
+		fi
+	fi
+}
+
+function startMongo {
+	#echo "Starting mongo" > STDOUT;
+	service $mongoSrv start >> $logFile
+}
+
 ##### MAIN ####
 
-backupFile=$backupBase"/`date +%Y%m%d`_`hostname`.tar.xz";
-mongoDir="/ssd/mongo"
 
 if [ -z "$(runningOnConf)" -a -z "$(isMongoSlave)" ]; then 
   echo "Mongo server is not a slave!!!" >> $logFile
@@ -80,18 +107,20 @@ if [ -z "$(runningOnConf)" -a -z "$(isMongoSlave)" ]; then
 fi
 
 $(updateSync stopping);
-service mongod stop >> $logFile
-$(updateSync stopped);
+if [ -n $(shutdownMongo) ]; then 
+	$(updateSync stopped);
 
-$(waitForServers)
+	$(waitForServers)
 
-$(updateSync backingup);
-tar -vcJf $backupFile $mongoDir >> $logFile
-$(updateSync backedup);
+	$(updateSync backingup);
+	tar -vczf $backupFile $mongoDir >> $logFile
+	$(updateSync backedup);
 
-$(updateSync starting);
-service mongod start >> $logFile
-$(updateSync  done);
+	$(updateSync starting);
+	$(startMongo);
+	$(updateSync  done);
+else 
+	echo "Failed to stop the mongo server!" >> $logFile;
+fi
 
 exit;
-
