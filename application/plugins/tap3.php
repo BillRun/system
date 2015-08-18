@@ -188,6 +188,9 @@ use Billrun_Traits_FileSequenceChecking;
 							$cdrLine['called_number'] = $dialed_digits;
 						}
 					}
+					if (Billrun_Util::getNestedArrayVal($cdrLine, $mapping['CalledPlace'])) {
+						$cdrLine['called_place'] = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['CalledPlace']);
+					}
 				} else if ($tele_service_code == '22') {
 					if (Billrun_Util::getNestedArrayVal($cdrLine, $mapping['SmsDestinationNumber'])) {
 						$cdrLine['called_number'] = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['SmsDestinationNumber']);
@@ -229,11 +232,10 @@ use Billrun_Traits_FileSequenceChecking;
 				}
 			}
 		}
-
-		if (isset($cdrLine['called_number'])) {
-//			$cdrLine['called_number'] = Billrun_Util::msisdn($cdrLine['called_number']);
+		if (isset($cdrLine['called_number']) && (strlen($cdrLine['called_number']) <= 10 && substr($cdrLine['called_number'], 0, 1) == "0") || (!empty($cdrLine['called_place']) && $cdrLine['called_place'] == Billrun_Factory::config()->getConfigValue('tap3.processor.local_code'))) {
+			$cdrLine['called_number'] = Billrun_Util::msisdn($cdrLine['called_number']);
 		}
-
+		
 //		if (!Billrun_Util::getNestedArrayVal($cdrLine, $mapping['calling_number']) && isset($tele_service_code) && isset($record_type) ) {
 //			if ($record_type == 'a' && ($tele_service_code == '11' || $tele_service_code == '21')) {
 //				if (Billrun_Util::getNestedArrayVal($cdrLine, $mapping['call_org_number'])) { // for some calls (incoming?) there's no calling number

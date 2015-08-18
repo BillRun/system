@@ -382,6 +382,10 @@ class LinesModel extends TableModel {
 				'calling_number' => $row['calling_number'],
 				'usagev' => $row['usagev'],
 				'usaget' => $row['usaget'],
+				'calling_subs_first_ci' => $row['calling_subs_first_ci'],
+				'called_subs_first_ci' => $row['called_subs_first_ci'],
+				'calling_subs_first_lac' => $row['calling_subs_first_lac'],
+				'called_subs_first_lac' => $row['called_subs_first_lac'],
 			);
 		}
 		
