@@ -40,16 +40,15 @@ class Billrun_Balance extends Mongodloid_Entity {
 			Billrun_Factory::log('Error creating balance, no aid or sid' , Zend_Log::ALERT);
 			return false;
 		}
-		if (isset($options['billrun_key'])) {
-			$ret = $this->load($options['sid'], $options['billrun_key']);
-		} else if (!isset($options['charging_type']) || $options['charging_type'] === 'postpaid') {
-			if (!$this->isValid()) {
+		if (!isset($options['charging_type']) || $options['charging_type'] === 'postpaid') {
+			$ret = $this->load($options['sid'], $options['urt'])->getRawData();
+			if (empty($ret) || count($ret) == 0) {
 				$urtDate = date('Y-m-d h:i:s', $options['urt']->sec);
 				$from = Billrun_Billrun::getBillrunStartTimeByDate($urtDate);
 				$to = Billrun_Billrun::getBillrunEndTimeByDate($urtDate);
 				$plan = Billrun_Factory::plan(array('name' => $options['plan'], 'time' => $options['urt']->sec, 'disableCache' => true));
 				$plan_ref = $plan->createRef();
-				$ret = $this->createBalanceIfMissing($options['aid'], $options['sid'], $from, $to, $plan_ref);
+				$ret = $this->createBasicBalance($options['aid'], $options['sid'], $from, $to, $plan_ref);
 			}
 		} else {
 			$ret = array();
@@ -94,28 +93,18 @@ class Billrun_Balance extends Mongodloid_Entity {
 		return call_user_func_array(array($this->data, $name), $arguments);
 	}
 
-	public function load($subscriberId, $billrunKey = NULL) {
-		Billrun_Factory::log()->log("Trying to load balance " . $billrunKey . " for subscriber " . $subscriberId, Zend_Log::DEBUG);
-		$billrunKey = !$billrunKey ? Billrun_Util::getBillrunKey(time()) : $billrunKey;
+	public function load($subscriberId, $urt) {
+		Billrun_Factory::log()->log("Trying to load balance for subscriber " . $subscriberId . " urt: " . $urt->sec, Zend_Log::DEBUG);
 
 		return $this->collection->query(array(
 				'sid' => $subscriberId,
-				'billrun_month' => $billrunKey
+				'from' => array('$lte' => $urt),
+				'to' => array('$gte' => $urt),
 			))
 			->cursor()->setReadPreference('RP_PRIMARY')
-//			->hint(array('sid' => 1, 'billrun_month' => 1))
 			->limit(1)->current();
 
-		// set the data collection to enable clear save
-//		$this->data->collection($this->collection);
 	}
-
-	/**
-	 * method to save balance details
-	 */
-//	public function save() {
-//		return $this->data->save($this->collection);
-//	}
 
 	/**
 	 * method to check if the loaded balance is valid
@@ -131,9 +120,10 @@ class Billrun_Balance extends Mongodloid_Entity {
 	 * @param type $plan
 	 * @param type $aid
 	 * @return boolean
+	 * @deprecated since version 4.0
 	 */
 	public function create($billrunKey, $subscriber, $plan_ref) {
-		$ret = self::createBalanceIfMissing($subscriber->aid, $subscriber->sid, $billrunKey, $plan_ref);
+		$ret = $this->createBasicBalance($subscriber->aid, $subscriber->sid, $billrunKey, $plan_ref);
 		$this->load($subscriber->sid, $billrunKey);
 		return $ret;
 	}
@@ -147,15 +137,9 @@ class Billrun_Balance extends Mongodloid_Entity {
 	 * @param type $plan_ref the subscriber plan.
 	 * @return boolean true  if the creation was sucessful false otherwise.
 	 */
-	protected function createBalanceIfMissing($aid, $sid, $from, $to, $plan_ref) {
-		$ret = false;
-//		$balances_coll = Billrun_Factory::db(array('name' => 'balances'))->balancesCollection();
-		$a = date("Y-m-d", $from);
-		
+	protected function createBasicBalance($aid, $sid, $from, $to, $plan_ref) {
 		$query = array(
 			'sid' => $sid,
-			'billrun_from' => new MongoDate($from),
-			'billrun_to' => new MongoDate($to),
 		);
 		$update = array(
 			'$setOnInsert' => self::getEmptySubscriberEntry($from , $to, $aid, $sid, $plan_ref),
@@ -168,15 +152,12 @@ class Billrun_Balance extends Mongodloid_Entity {
 		Billrun_Factory::log()->log("Create empty balance, from: " . date("Y-m-d", $from) . " to: " . date("Y-m-d", $to) . ", if not exists for subscriber " . $sid, Zend_Log::DEBUG);
 		$output = $this->collection->findAndModify($query, $update, array(), $options, false);
 		
-		if (is_array($output)) {
-			Billrun_Factory::log('Added balance , from: ' . date("Y-m-d", $from) . " to: " . date("Y-m-d", $to) . ', to subscriber ' . $sid, Zend_Log::INFO);
-			$ret = $output;
-		} else {
+		if (!is_array($output)) {
 			Billrun_Factory::log('Error creating balance  , from: ' . date("Y-m-d", $from) . " to: " . date("Y-m-d", $to) . ', for subscriber ' . $sid . '. Output was: ' . print_r($output->getRawData(), true), Zend_Log::ALERT);
-			$ret = false;
+			return false;
 		}
-
-		return $ret;
+		Billrun_Factory::log('Added balance , from: ' . date("Y-m-d", $from) . " to: " . date("Y-m-d", $to) . ', to subscriber ' . $sid, Zend_Log::INFO);
+		return $output;
 	}
 
 	/**
@@ -190,8 +171,8 @@ class Billrun_Balance extends Mongodloid_Entity {
 	public static function getEmptySubscriberEntry($from, $to, $aid, $sid, $plan_ref) {
 		return array(
 			//'billrun_month' => $billrun_month,
-			'billrun_from' => new MongoDate($from),
-			'billrun_to' => new MongoDate($to),
+			'from' => new MongoDate($from),
+			'to' => new MongoDate($to),
 			'aid' => $aid,
 			'sid' => $sid,
 			'current_plan' => $plan_ref,
