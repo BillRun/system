@@ -66,7 +66,7 @@ class Billrun_Calculator_Rate_Service extends Billrun_Calculator_Rate {
 				'$exists' => 1
 			),
 		);
-		$rates = $rates_coll->query($query)->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
+		$rates = $rates_coll->query($query)->cursor();
 		$this->rates = array();
 		foreach ($rates as $rate) {
 			$rate->collection($rates_coll);

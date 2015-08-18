@@ -70,7 +70,7 @@ class Billrun_Plan {
 								)
 							))
 							->lessEq('from', $date)
-							->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'))
+							->cursor()
 							->current();
 					$this->data->collection(Billrun_Factory::db()->plansCollection());
 				}
@@ -88,7 +88,7 @@ class Billrun_Plan {
 	protected static function initPlans() {
 		if (empty(self::$plans)) {
 			$plans_coll = Billrun_Factory::db()->plansCollection();
-			$plans = $plans_coll->query()->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
+			$plans = $plans_coll->query()->cursor();
 			foreach ($plans as $plan) {
 				$plan->collection($plans_coll);
 				self::$plans['by_id'][strval($plan->getId())] = $plan;
