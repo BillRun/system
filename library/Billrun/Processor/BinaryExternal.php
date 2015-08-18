@@ -43,5 +43,12 @@ class Billrun_Processor_BinaryExternal extends Billrun_Processor_Base_Binary {
 	public function getFilenameData($filename) {
 		return Billrun_Factory::chain()->trigger('getFilenameData', array($this->getType(), $filename, &$this));
 	}
-
+	
+	protected function getLineVolume($row, $usage_type) {
+		return Billrun_Factory::chain()->trigger('getLineVolume', $row, $usage_type);
+	}
+	
+	protected function getLineUsageType($row) {
+		return Billrun_Factory::chain()->trigger('getLineVolume', $row);
+	}
 }

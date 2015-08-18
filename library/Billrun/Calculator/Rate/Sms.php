@@ -41,9 +41,9 @@ abstract class Billrun_Calculator_Rate_Sms extends Billrun_Calculator_Rate {
 		ksort($this->prefixTranslation);
 		$this->loadRates();
 	}
-
 	/**
 	 * @see Billrun_Calculator_Rate::getLineVolume
+	 * @deprecated since version 2.9
 	 */
 	protected function getLineVolume($row, $usage_type) {
 		return 1;
@@ -51,6 +51,7 @@ abstract class Billrun_Calculator_Rate_Sms extends Billrun_Calculator_Rate {
 
 	/**
 	 * @see Billrun_Calculator_Rate::getLineUsageType
+	 * @deprecated since version 2.9
 	 */
 	protected function getLineUsageType($row) {
 		return $row['type'] == 'mmsc' ? 'mms' : 'sms';

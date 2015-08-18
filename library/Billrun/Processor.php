@@ -696,5 +696,17 @@ abstract class Billrun_Processor extends Billrun_Base {
 	protected function getFileStamp() {
 		return $this->file_stamp;
 	}
+	
+	/**
+	 * Get a CDR line volume (duration/count/bytes used)
+	 * @param $row the line to get  the volume for.
+	 * @param the line usage type
+	 */
+	abstract protected function getLineVolume($row, $usage_type);
 
+	/**
+	 * Get the line usage type (SMS/Call/Data/etc..)
+	 * @param $row the CDR line  to get the usage for.
+	 */
+	abstract protected function getLineUsageType($row);
 }

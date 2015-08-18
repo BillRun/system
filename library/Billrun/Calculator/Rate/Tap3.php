@@ -35,6 +35,7 @@ class Billrun_Calculator_Rate_Tap3 extends Billrun_Calculator_Rate {
 
 	/**
 	 * @see Billrun_Calculator_Rate::getLineVolume
+	 * @deprecated since version 2.9
 	 */
 	protected function getLineVolume($row, $usage_type) {
 		$volume = null;
@@ -58,6 +59,7 @@ class Billrun_Calculator_Rate_Tap3 extends Billrun_Calculator_Rate {
 
 	/**
 	 * @see Billrun_Calculator_Rate::getLineUsageType
+	 * @deprecated since version 2.9
 	 */
 	protected function getLineUsageType($row) {
 

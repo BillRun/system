@@ -39,9 +39,9 @@ class Billrun_Calculator_Rate_Ggsn extends Billrun_Calculator_Rate {
 		parent::__construct($options);
 		$this->loadRates();
 	}
-
 	/**
 	 * @see Billrun_Calculator_Rate::getLineVolume
+	 * @deprecated since version 2.9
 	 */
 	protected function getLineVolume($row, $usage_type) {
 		return $row['fbc_downlink_volume'] + $row['fbc_uplink_volume'];
@@ -49,6 +49,7 @@ class Billrun_Calculator_Rate_Ggsn extends Billrun_Calculator_Rate {
 
 	/**
 	 * @see Billrun_Calculator_Rate::getLineUsageType
+	 * @deprecated since version 2.9
 	 */
 	protected function getLineUsageType($row) {
 		return 'data';

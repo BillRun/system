@@ -300,7 +300,8 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 		if (isset($cdrLine['called_number'])) {
 			$cdrLine['called_number'] = Billrun_Util::msisdn($cdrLine['called_number']);
 		}
-
+		$cdrLine['usaget'] = $this->getLineUsageType($cdrLine);
+		$cdrLine['usagev'] = $this->getLineVolume($cdrLine , $cdrLine['usaget']);
 		//Billrun_Factory::log()->log($asnObject->getType() . " : " . print_r($cdrLine,1) ,  Zend_Log::DEBUG);
 		return $cdrLine;
 	}
@@ -582,5 +583,19 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 		$update['$inc']['balance.groups.' . $group . '.cost'] = $pricingData['aprice'];
 		$update['$inc']['balance.groups.' . $group . '.count'] = 1;
 	}
+	
+	/**
+	 * @see Billrun_Processor::getLineVolume
+	 */
+	protected function getLineVolume($row, $usage_type) {
+		return $row['fbc_downlink_volume'] + $row['fbc_uplink_volume'];
+	}
 
+	/**
+	 * @see Billrun_Processor::getLineUsageType
+	 */
+	protected function getLineUsageType($row) {
+		return 'data';
+	}
+	
 }

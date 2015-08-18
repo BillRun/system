@@ -28,6 +28,7 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 
 	/**
 	 * @see Billrun_Calculator_Rate::getLineVolume
+	 * @deprecated since version 2.9
 	 */
 	protected function getLineVolume($row, $usage_type) {
 		if (in_array($usage_type, array('call', 'incoming_call'))) {
@@ -45,6 +46,7 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 
 	/**
 	 * @see Billrun_Calculator_Rate::getLineUsageType
+	 * @deprecated since version 2.9
 	 */
 	protected function getLineUsageType($row) {
 		switch ($row['record_type']) {
