@@ -25,6 +25,8 @@ class Billrun_Balance extends Mongodloid_Entity {
 	 * Data container for subscriber details
 	 * 
 	 * @var array
+	 * 
+	 * @deprecated since version 4.0 use $_values of Mongodloid_Entity
 	 */
 	protected $data = array();
 	
@@ -47,6 +49,8 @@ class Billrun_Balance extends Mongodloid_Entity {
 				$urtDate = date('Y-m-d h:i:s', $options['urt']->sec);
 				$from = Billrun_Billrun::getBillrunStartTimeByDate($urtDate);
 				$to = Billrun_Billrun::getBillrunEndTimeByDate($urtDate);
+				$plan = Billrun_Factory::plan(array('name' => $options['plan'], 'time' => $options['urt']->sec, 'disableCache' => true));
+				$plan_ref = $plan->createRef();
 				$ret = $this->createBalanceIfMissing($options['aid'], $options['sid'], $from, $to, $plan_ref);
 			}
 		}
@@ -117,7 +121,7 @@ class Billrun_Balance extends Mongodloid_Entity {
 	 * method to check if the loaded balance is valid
 	 */
 	public function isValid() {
-		return !is_array($this->data) && count($this->data->getRawData()) > 0;
+		return count($this->getRawData()) > 0;
 	}
 
 	/**
@@ -162,13 +166,14 @@ class Billrun_Balance extends Mongodloid_Entity {
 			'w' => 1,
 		);
 		Billrun_Factory::log()->log("Create empty balance, from: " . date("Y-m-d", $from) . " to: " . date("Y-m-d", $to) . ", if not exists for subscriber " . $sid, Zend_Log::DEBUG);
-		$output = $this->collection->findAndModify($query, $update, array(), $options, true);
+		$output = $this->collection->findAndModify($query, $update, array(), $options, false);
 		
-		if ($output['ok'] && isset($output['value']) && $output['value']) {
+		if (is_array($output)) {
 			Billrun_Factory::log('Added balance , from: ' . date("Y-m-d", $from) . " to: " . date("Y-m-d", $to) . ', to subscriber ' . $sid, Zend_Log::INFO);
-			$ret = true;
+			$ret = $output;
 		} else {
 			Billrun_Factory::log('Error creating balance  , from: ' . date("Y-m-d", $from) . " to: " . date("Y-m-d", $to) . ', for subscriber ' . $sid . '. Output was: ' . print_r($output->getRawData(), true), Zend_Log::ALERT);
+			$ret = false;
 		}
 
 		return $ret;

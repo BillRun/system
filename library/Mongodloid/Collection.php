@@ -256,26 +256,19 @@ class Mongodloid_Collection {
 	 * @param array $update The update criteria
 	 * @param array $fields Optionally only return these fields
 	 * @param array $options An array of options to apply, such as remove the match document from the DB and return it
-	 * @param boolean $asCommand On some mongodb versions FAM is not working well and FAM command better to use
+	 * @param boolean $retEntity return Mongodloid entity instead of native return of FindAndModify
 	 * 
 	 * @return Mongodloid_Entity the original document, or the modified document when new is set.
 	 * @throws MongoResultException on failure
 	 * @see http://php.net/manual/en/mongocollection.findandmodify.php
 	 */
-	public function findAndModify(array $query, array $update = array(), array $fields = null, array $options = array(), $asCommand = false) {
-		if (!$asCommand) {
-			$ret = $this->_collection->findAndModify($query, $update, $fields, $options);
-		} else {
-			$commandOptions = array(
-				'findAndModify' => $this->getName(),
-				'query' => $query,
-				'update' => $update,
-				'fields' => $fields,
-			);
-			$ret = $this->_db->command(array_merge($commandOptions, $options));
-		}
+	public function findAndModify(array $query, array $update = array(), array $fields = null, array $options = array(), $retEntity = true) {
+		$ret = $this->_collection->findAndModify($query, $update, $fields, $options);
 
-		return new Mongodloid_Entity($ret, $this);
+		if ($retEntity) {
+			return new Mongodloid_Entity($ret, $this);
+		}
+		return $ret;
 	}
 
 	/**
