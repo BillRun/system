@@ -146,10 +146,10 @@ class Billrun_Processor_Nrtrde extends Billrun_Processor_Base_Separator {
 		}
 	}
 	
-	protected function getLineVolume($row, $usage_type) {
-		if($usage_type == 'sms' || $usage_type == 'incoming_sms') {
+	protected function getLineVolume($row) {
+		if($row['usaget'] == 'sms' || $row['usaget'] == 'incoming_sms') {
 			return 1;
-		} else if($usage_type == 'call' || $usage_type == 'incoming_call') {
+		} else if($row['usaget'] == 'call' || $row['usaget'] == 'incoming_call') {
 			return $row['callEventDuration'];
 		}
 	}

@@ -42,9 +42,7 @@ class Billrun_Balance extends Mongodloid_Entity {
 		}
 		if (isset($options['billrun_key'])) {
 			$ret = $this->load($options['sid'], $options['billrun_key']);
-		}
-		
-		if (isset($options['charging_type']) && $options['charging_type'] === 'postpaid') {
+		} else if (!isset($options['charging_type']) || $options['charging_type'] === 'postpaid') {
 			if (!$this->isValid()) {
 				$urtDate = date('Y-m-d h:i:s', $options['urt']->sec);
 				$from = Billrun_Billrun::getBillrunStartTimeByDate($urtDate);
@@ -53,6 +51,8 @@ class Billrun_Balance extends Mongodloid_Entity {
 				$plan_ref = $plan->createRef();
 				$ret = $this->createBalanceIfMissing($options['aid'], $options['sid'], $from, $to, $plan_ref);
 			}
+		} else {
+			$ret = array();
 		}
 		
 		parent::__construct($ret, self::getCollection());

@@ -50,14 +50,14 @@ class Billrun_Processor_Sms extends Billrun_Processor_Base_SeparatorFieldLines {
 	 * @param type $length the lengthh of the line,
 	 * @return string H/T/D  depending on the type of the line.
 	 */
-	protected function getLineType($line, $length = 1) {
+	protected function getLineType($line) {
 		foreach ($this->structConfig['config']['line_types'] as $key => $val) {
 			if (preg_match($val, $line)) {
 				//	Billrun_Factory::log()->log("line type key : $key",Zend_Log::DEBUG);
 				return $key;
 			}
 		}
-		return parent::getLineType($line, $length);
+		return parent::getLineType($line);
 	}
 
 	/**
@@ -96,7 +96,7 @@ class Billrun_Processor_Sms extends Billrun_Processor_Base_SeparatorFieldLines {
 			}
 			$row['urt'] = new MongoDate($datetime->format('U'));
 			$row['usaget'] = $this->getLineUsageType($row);
-			$row['usagev'] = $this->getLineVolume($row, $row['usaget']);
+			$row['usagev'] = $this->getLineVolume($row);
 		}
 		return $row;
 	}
@@ -104,7 +104,7 @@ class Billrun_Processor_Sms extends Billrun_Processor_Base_SeparatorFieldLines {
 	/**
 	 * @see Billrun_Processor::getLineVolume
 	 */
-	protected function getLineVolume($row, $usage_type) {
+	protected function getLineVolume($row) {
 		return 1;
 	}
 

@@ -343,6 +343,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 * 	'H' => Header
 	 * 	'D' => Data
 	 * 	'T' => Trailer
+	 * @todo make the method abstract and implement in all children classes
 	 */
 	protected function getLineType($line, $length = 1) {
 		return substr($line, 0, $length);
@@ -702,7 +703,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 * @param $row the line to get  the volume for.
 	 * @param the line usage type
 	 */
-	abstract protected function getLineVolume($row, $usage_type);
+	abstract protected function getLineVolume($row);
 
 	/**
 	 * Get the line usage type (SMS/Call/Data/etc..)

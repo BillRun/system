@@ -36,7 +36,7 @@ class Billrun_Calculator_Rate_Nrtrde extends Billrun_Calculator_Rate {
 	 * @see Billrun_Calculator_Rate::getLineVolume
 	 * @deprecated since version 2.9
 	 */
-	protected function getLineVolume($row, $usage_type) {
+	protected function getLineVolume($row) {
 		return $row['usagev'];
 	}
 
@@ -51,7 +51,7 @@ class Billrun_Calculator_Rate_Nrtrde extends Billrun_Calculator_Rate {
 	/**
 	 * @see Billrun_Calculator_Rate::getLineRate
 	 */
-	protected function getLineRate($row, $usage_type) {
+	protected function getLineRate($row) {
 		$aplha3 = $row['alpha3'];
 		$line_time = $row['urt'];
 		$number_to_rate = $this->number_to_rate($row);

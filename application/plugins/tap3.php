@@ -264,7 +264,7 @@ use Billrun_Traits_FileSequenceChecking;
 		//save the sending source in each of the lines
 		$cdrLine['sending_source'] = $this->currentFileHeader['header']['sending_source'];
 		$cdrLine['usaget'] = $this->getLineUsageType($cdrLine);
-		$cdrLine['usagev'] = $this->getLineVolume($cdrLine,$cdrLine['usaget']);
+		$cdrLine['usagev'] = $this->getLineVolume($cdrLine);
 	}
 
 	/**
@@ -424,9 +424,9 @@ use Billrun_Traits_FileSequenceChecking;
 	/**
 	 * @see Billrun_Calculator_Rate::getLineVolume
 	 */
-	protected function getLineVolume($row, $usage_type) {
+	protected function getLineVolume($row) {
 		$volume = null;
-		switch ($usage_type) {
+		switch ($row['usaget']) {
 			case 'sms' :
 			case 'incoming_sms' :
 				$volume = 1;

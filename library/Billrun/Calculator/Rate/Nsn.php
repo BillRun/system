@@ -30,7 +30,7 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 	 * @see Billrun_Calculator_Rate::getLineVolume
 	 * @deprecated since version 2.9
 	 */
-	protected function getLineVolume($row, $usage_type) {
+	protected function getLineVolume($row) {
 		if (in_array($usage_type, array('call', 'incoming_call'))) {
 			if (isset($row['duration'])) {
 				return $row['duration'];
@@ -68,7 +68,7 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 	/**
 	 * @see Billrun_Calculator_Rate::getLineRate
 	 */
-	protected function getLineRate($row, $usage_type) {
+	protected function getLineRate($row) {
 		$record_type = $row->get('record_type');
 		$called_number = $row->get('called_number');
 		$ocg = $row->get('out_circuit_group');
@@ -80,10 +80,10 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 				($record_type == "11" && in_array($icg, Billrun_Util::getRoamingCircuitGroups()) &&
 				$ocg != '3060' && $ocg != '3061') // Roaming on Cellcom and not redirection
 		) {
-			$matchedRate = $this->getRateByParams($called_number, $usage_type, $line_time, $ocg);
+			$matchedRate = $this->getRateByParams($called_number, $row['usaget'], $line_time, $ocg);
 		} else if ($record_type == '30' && isset($row['ild_prefix'])) {
 			$called_number = preg_replace('/^016/', '', $called_number);
-			$matchedRate = $this->getRateByParams($called_number, $usage_type, $line_time);
+			$matchedRate = $this->getRateByParams($called_number, $row['usaget'], $line_time);
 		}
 
 		return $matchedRate;

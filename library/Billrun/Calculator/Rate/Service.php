@@ -29,7 +29,7 @@ class Billrun_Calculator_Rate_Service extends Billrun_Calculator_Rate {
 	/**
 	 * @see Billrun_Calculator_Rate::getLineVolume
 	 */
-	protected function getLineVolume($row, $usage_type) {
+	protected function getLineVolume($row) {
 		return $row['count'];
 	}
 
@@ -43,7 +43,7 @@ class Billrun_Calculator_Rate_Service extends Billrun_Calculator_Rate {
 	/**
 	 * @see Billrun_Calculator_Rate::getLineRate
 	 */
-	protected function getLineRate($row, $usage_type) {
+	protected function getLineRate($row) {
 
 		$line_key = $row['service_name'];
 		$line_time = $row['urt'];

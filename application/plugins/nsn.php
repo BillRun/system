@@ -255,7 +255,7 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 				}
 			}
 			$data['usaget'] = $this->getLineUsageType($data);
-			$data['usagev'] = $this->getLineVolume($data, $data['usaget']);
+			$data['usagev'] = $this->getLineVolume($data);
 		} else {
 //			Billrun_Factory::log()->log("unsupported NSN record type : {$data['record_type']}",Zend_log::DEBUG);
 		}
@@ -505,15 +505,15 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 	/**
 	 * @see Billrun_Processor::getLineVolume
 	 */
-	protected function getLineVolume($row, $usage_type) {
-		if (in_array($usage_type, array('call', 'incoming_call'))) {
+	protected function getLineVolume($row) {
+		if (in_array($row['usaget'], array('call', 'incoming_call'))) {
 			if (isset($row['duration'])) {
 				return $row['duration'];
 			} else if ($row['record_type'] == '31') { // terminated call
 				return 0;
 			}
 		}
-		if ($usage_type == 'sms') {
+		if ($row['usaget'] == 'sms') {
 			return 1;
 		}
 		return null;

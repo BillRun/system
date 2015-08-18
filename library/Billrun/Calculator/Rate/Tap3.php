@@ -37,7 +37,7 @@ class Billrun_Calculator_Rate_Tap3 extends Billrun_Calculator_Rate {
 	 * @see Billrun_Calculator_Rate::getLineVolume
 	 * @deprecated since version 2.9
 	 */
-	protected function getLineVolume($row, $usage_type) {
+	protected function getLineVolume($row) {
 		$volume = null;
 		switch ($usage_type) {
 			case 'sms' :
@@ -99,7 +99,7 @@ class Billrun_Calculator_Rate_Tap3 extends Billrun_Calculator_Rate {
 	/**
 	 * @see Billrun_Calculator_Rate::getLineRate
 	 */
-	protected function getLineRate($row, $usage_type) {
+	protected function getLineRate($row) {
 		$line_time = $row['urt'];
 		$serving_network = $row['serving_network'];
 		$sender = isset($row['sending_source']) ? $row['sending_source'] : false;
@@ -149,7 +149,7 @@ class Billrun_Calculator_Rate_Tap3 extends Billrun_Calculator_Rate {
 			}
 
 			foreach ($potential_rates as $rate) {
-				if (isset($rate['rates'][$usage_type])) {
+				if (isset($rate['rates'][$row['usaget']])) {
 					if ($rate['from'] <= $line_time && $rate['to'] >= $line_time) {
 						if ((!$matchedRate && empty($rate['params']['prefix'])) || (is_array($rate['params']['serving_networks']) && !$prefix_length_matched)) { // array of serving networks is stronger then regex of serving_networks
 							$matchedRate = $rate;
@@ -174,7 +174,7 @@ class Billrun_Calculator_Rate_Tap3 extends Billrun_Calculator_Rate {
 			}
 		}
 
-		if ($matchedRate === FALSE && !in_array($usage_type, $this->optional_usage_types)) {
+		if ($matchedRate === FALSE && !in_array($row['usaget'], $this->optional_usage_types)) {
 			$matchedRate = $this->rates['UNRATED'];
 		}
 

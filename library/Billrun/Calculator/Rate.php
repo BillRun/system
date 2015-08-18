@@ -50,12 +50,14 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	 * Get a CDR line volume (duration/count/bytes used)
 	 * @param $row the line to get  the volume for.
 	 * @param the line usage type
+	 * @deprecated since version 2.9
 	 */
-	abstract protected function getLineVolume($row, $usage_type);
+	abstract protected function getLineVolume($row);
 
 	/**
 	 * Get the line usage type (SMS/Call/Data/etc..)
 	 * @param $row the CDR line  to get the usage for.
+	 * @deprecated since version 2.9
 	 */
 	abstract protected function getLineUsageType($row);
 
@@ -65,7 +67,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	 * @param $usage_type the CDR line  usage type (SMS/Call/etc..)
 	 * @return the Rate object that was loaded  from the DB  or false if the line shouldn't be rated.
 	 */
-	abstract protected function getLineRate($row, $usage_type);
+	abstract protected function getLineRate($row);
 
 	/**
 	 * method to receive the lines the calculator should take care
@@ -139,9 +141,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	public function updateRow($row) {
 		Billrun_Factory::dispatcher()->trigger('beforeCalculatorUpdateRow', array($row, $this));
 		$current = $row->getRawData();
-		$usage_type = $this->getLineUsageType($row);
-		$volume = $this->getLineVolume($row, $usage_type);
-		$rate = $this->getLineRate($row, $usage_type);
+		$rate = $this->getLineRate($row);
 		if (isset($rate['key']) && $rate['key'] == "UNRATED") {
 			return false;
 		}
@@ -150,7 +150,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 		);
 		if ($rate) {
 			// TODO: push plan to the function to enable market price by plan
-			$added_values[$this->aprField] = Billrun_Calculator_CustomerPricing::getPriceByRate($rate, $usage_type, $volume);
+			$added_values[$this->aprField] = Billrun_Calculator_CustomerPricing::getPriceByRate($rate, $row['usaget'], $row['usagev']);
 		}
 		$newData = array_merge($current, $added_values);
 		$row->setRawData($newData);

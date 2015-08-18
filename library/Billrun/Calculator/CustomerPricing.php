@@ -424,9 +424,10 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 
 		$update = array();
 		$update['$set']['tx.' . $stamp] = $pricingData;
-		$old_usage = $subRaw['balance']['totals'][$balance_totals_key]['usagev'];
-		if (is_null($old_usage)) {
+		if (!isset($subRaw['balance']['totals'][$balance_totals_key]['usagev'])) {
 			$old_usage = 0;
+		} else {
+			$old_usage = $subRaw['balance']['totals'][$balance_totals_key]['usagev'];
 		}
 		$balance_id = $this->balance->getId();
 		$balance_key = 'balance.totals.' . $balance_totals_key . '.usagev';
