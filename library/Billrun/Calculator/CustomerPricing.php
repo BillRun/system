@@ -407,7 +407,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 */
 	protected function updateSubscriberBalance($row, $usage_type, $rate, $volume) {
 		$billrun_key = Billrun_Util::getBillrunKey($row->get('urt')->sec);
-		if (!$this->loadSubscriberBalance($row, $billrun_key)) { // will load $this->balance
+		if (!$this->loadSubscriberBalance($row)) { // will load $this->balance
 			return false;
 		}
 		$this->countConcurrentRetries++;
