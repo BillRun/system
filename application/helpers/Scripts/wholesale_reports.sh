@@ -84,7 +84,7 @@ esac
 
 
 if [[ -n "$js_code" ]]; then	
- 	mongo 172.28.202.111/billing -ureading -pguprgri --quiet --eval "$js_code" >> "$output_dir/$report_name.csv" ;
+ 	mongo billing -ureading -pguprgri --quiet --eval "$js_code" >> "$output_dir/$report_name.csv" ;
 fi
 
 
