@@ -274,7 +274,7 @@ class Billrun_Log extends Zend_Log {
 
 	public function addWriters($writerName) {
 		$log = Billrun_Factory::config()->getConfigValue('log', array());
-		if ($log) {
+		if (!$log) {
 			error_log("addWriters Log is null!\n");
 			return;
 		}
