@@ -158,6 +158,9 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 				}
 			}
 		}
+		
+		Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array(&$row, $this));
+ 		return $row;
 	}
 	
 	/**
