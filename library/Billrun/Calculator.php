@@ -468,7 +468,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	 */
 	protected function loadRates() {
 		$rates_coll = Billrun_Factory::db()->ratesCollection();
-		$rates = $rates_coll->query($this->rates_query)->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
+		$rates = $rates_coll->query($this->rates_query)->cursor();
 		$this->rates = array();
 		foreach ($rates as $rate) {
 			if (!$this->isRateValid($rate)) {

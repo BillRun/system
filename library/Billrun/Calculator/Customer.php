@@ -334,6 +334,12 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	 * @see Billrun_Calculator::isLineLegitimate
 	 */
 	public function isLineLegitimate($line) {
+//		 if ( $this->isCustomerable($line)) {
+// 			$customer = $this->isOutgoingCall($line) ? "caller" : "callee";
+// 			if (isset($this->translateCustomerIdentToAPI[$customer])) {
+// 						return true;
+// 					}
+// 				}
 		if(!isset($line['usagev']) || $line['usagev'] === 0) {
 			// TODO: Log error.
 			return false;
@@ -375,12 +381,6 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			if (!in_array($relevant_cg, Billrun_Util::getRoamingCircuitGroups())) {
 				return false;
 			}
-			if ($record_type == '11' && in_array($line['out_circuit_group'], array('3060', '3061'))) {
-				return false;
-			}
-			// what about IN direction (3060/3061)?
-		} else if (!in_array($record_type, array('01', '02'))) {
-			return false;
 		}
 			
 		return true;

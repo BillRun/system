@@ -684,6 +684,11 @@ class Billrun_Billrun {
 	 */
 	public static function loadRates() {
 		$rates_coll = Billrun_Factory::db()->ratesCollection();
+//		$rates = $rates_coll->query()->cursor();
+// 		foreach ($rates as $rate) {
+// 			$rate->collection($rates_coll);
+// 			self::$rates[strval($rate->getId())] = $rate;
+// 		}
 		$this->loadFromDB($rates_coll);
 	}
 
@@ -692,6 +697,11 @@ class Billrun_Billrun {
 	 */
 	public static function loadPlans() {
 		$plans_coll = Billrun_Factory::db()->plansCollection();
+		$plans = $plans_coll->query()->cursor();
+// 		foreach ($plans as $plan) {
+// 			$plan->collection($plans_coll);
+// 			self::$plans[strval($plan->getId())] = $plan;
+//		}
 		$this->loadFromDB($plans_coll);
 	}
 	
