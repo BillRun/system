@@ -120,7 +120,7 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 		$monthlyAlerts = $this->detectDurationExcceders(date('Y0101000000'), $monthlyThreshold);
 		foreach ($monthlyAlerts as &$val) {
 			$val['threshold'] = $monthlyThreshold;
-		};
+		}
 
 		Billrun_Factory::log("nsnPlugin::handlerCollect collecting hourly  exceedres", Zend_Log::DEBUG);
 		$dailyAlerts = $this->detectDurationExcceders(date('Y01d000000'), $dailyThreshold);
