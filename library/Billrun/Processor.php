@@ -489,7 +489,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 		} catch (Exception $e) {
 			Billrun_Factory::log()->log("Processor store " . basename($this->filePath) . " failed on bulk insert with the next message: " . $e->getCode() . ": " . $e->getMessage(), Zend_Log::NOTICE);
 
-			if ($e->getCode() == "11000") {
+			if ($e->getCode() == Mongodloid_General::DUPLICATE_UNIQUE_INDEX_ERROR) {
 				Billrun_Factory::log()->log("Processor store " . basename($this->filePath) . " to queue failed on bulk insert on duplicate stamp.", Zend_Log::NOTICE);
 				return $this->addToCollection($collection);
 			}
@@ -535,7 +535,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 		} catch (Exception $e) {
 			Billrun_Factory::log()->log("Processor store " . basename($this->filePath) . " to queue failed on bulk insert with the next message: " . $e->getCode() . ": " . $e->getMessage(), Zend_Log::NOTICE);
 
-			if ($e->getCode() == "11000") {
+			if ($e->getCode() == Mongodloid_General::DUPLICATE_UNIQUE_INDEX_ERROR) {
 				Billrun_Factory::log()->log("Processor store " . basename($this->filePath) . " to queue failed on bulk insert on duplicate stamp.", Zend_Log::NOTICE);
 				return $this->addToQueue($queue_data);
 			}

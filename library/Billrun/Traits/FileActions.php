@@ -112,7 +112,7 @@ trait Billrun_Traits_FileActions {
 		try {
 			$result = $log->update($query, $update, array('upsert' => 1, 'w' => 1));
 		} catch (Exception $e) {
-			if ($e->getCode() == 11000) {
+			if ($e->getCode() == Mongodloid_General::DUPLICATE_UNIQUE_INDEX_ERROR) {
 				Billrun_Factory::log()->log("Billrun_Traits_FileActions::lockFileForReceive - Trying to relock  a file the was already beeen locked : " . $filename . " with stamp of : {$logData['stamp']}", Zend_Log::DEBUG);
 			} else {
 				throw $e;
