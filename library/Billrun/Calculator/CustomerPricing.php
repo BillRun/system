@@ -241,13 +241,10 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			$balance = Billrun_Factory::balance($balance_unique_key);
 		}
 		if (!$balance || !$balance->isValid()) {
-			Billrun_Factory::log("couldn't get balance for : " . print_r(array(
-					'sid' => $row['sid'],
-					'billrun_month' => $billrun_key
-					), 1), Zend_Log::INFO);
+			Billrun_Factory::log("couldn't get balance for for subscriber " . $row['sid'], Zend_Log::DEBUG);
 			return false;
 		} else {
-			Billrun_Factory::log("Found balance " . $billrun_key . " for subscriber " . $row['sid'], Zend_Log::DEBUG);
+			Billrun_Factory::log("Found balance for subscriber " . $row['sid'], Zend_Log::DEBUG);
 		}
 		return $balance;
 	}
@@ -449,10 +446,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		}
 		$update['$set']['balance.cost'] = $subRaw['balance']['cost'] + $pricingData[$this->pricingField];
 		$options = array('w' => 1);
-		$is_data_usage = ($balance_totals_key == 'data');
-		if ($is_data_usage) {
-			$this->setMongoNativeLong(1);
-		}
+
 		Billrun_Factory::log("Updating balance " . $balance['billrun_month'] . " of subscriber " . $row['sid'], Zend_Log::DEBUG);
 		Billrun_Factory::dispatcher()->trigger('beforeCommitSubscriberBalance', array(&$row, &$pricingData, &$query, &$update, $rate, $this));
 		if ($update) {
@@ -474,9 +468,8 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				return false;
 			}
 			Billrun_Factory::log('Concurrent write of sid : ' . $row['sid'] . ' line stamp : ' . $row['stamp'] . ' to balance. Update status: ' . print_r($ret, true) . 'Retrying...', Zend_Log::INFO);
-			sleep($this->countConcurrentRetries);
-			$balance = $this->getSubscriberBalance($row, $balance['billrun_month']);
-			return $this->updateSubscriberBalance($balance, $row, $usage_type, $rate, $volume);
+ 			usleep($this->countConcurrentRetries);
+ 			return $this->updateSubscriberBalance($row, $usage_type, $rate, $volume);
 		}
 		Billrun_Factory::log("Line with stamp " . $row['stamp'] . " was written to balance " . $balance['billrun_month'] . " for subscriber " . $row['sid'], Zend_Log::DEBUG);
 		$row['tx_saved'] = true; // indication for transaction existence in balances. Won't & shouldn't be saved to the db.
@@ -496,47 +489,6 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 */
 	protected function getUsageKey($counters) {
 		return key($counters); // array pointer will always point to the first key
-	}
-
-	/**
-	 * method to set MongoDB native long
-	 * this is useful only on MongoDB 2.4 and below because the native long is off by default
-	 * 
-	 * @param int $status either 1 to turn on or 0 for off
-	 */
-	protected function setMongoNativeLong($status = 1) {
-		Billrun_Factory::db()->setMongoNativeLong($status);
-	}
-
-	/**
-	 * method to increase subscriber balance without lock nor transaction
-	 * 
-	 * @deprecated since version 2.7
-	 */
-	protected function increaseSubscriberBalance($counters, $billrun_key, $aid, $sid, $plan_ref) {
-		$query = array('sid' => $sid, 'billrun_month' => $billrun_key);
-		$update = array('$inc' => array());
-		foreach ($counters as $key => $value) {
-			$update['$inc']['balance.totals.' . $key . '.usagev'] = $value;
-			$update['$inc']['balance.totals.' . $key . '.count'] = 1;
-		}
-		$is_data_usage = $this->getUsageKey($counters) == 'data';
-		if ($is_data_usage) {
-			$this->setMongoNativeLong(1);
-		}
-		Billrun_Factory::log("Increasing subscriber $sid balance " . $billrun_key, Zend_Log::DEBUG);
-		$balance = $this->balances->findAndModify($query, $update, array(), array());
-		if ($is_data_usage) {
-			$this->setMongoNativeLong(0);
-		}
-		if ($balance->isEmpty()) {
-			Billrun_Factory::log('Balance ' . $billrun_key . ' does not exist for subscriber ' . $sid . '. Creating...', Zend_Log::INFO);
-			Billrun_Balance::createBalanceIfMissing($aid, $sid, $billrun_key, $plan_ref);
-			return $this->increaseSubscriberBalance($counters, $billrun_key, $aid, $sid, $plan_ref);
-		} else {
-			Billrun_Factory::log("Found balance " . $billrun_key . " for subscriber " . $sid, Zend_Log::DEBUG);
-		}
-		return Billrun_Factory::balance(array('data' => $balance));
 	}
 
 	/**

@@ -83,11 +83,12 @@ class Billrun_Balance implements ArrayAccess {
 		$billrunKey = !$billrunKey ? Billrun_Util::getBillrunKey(time()) : $billrunKey;
 
 		$this->data = $this->collection->query(array(
-				'sid' => $subscriberId,
-				'billrun_month' => $billrunKey
+				'sid'  => $subscriberId,
+				'from' => array('$lte' => $urt),
+				'to'   => array('$gte' => $urt),
 			))
 			->cursor()->setReadPreference('RP_PRIMARY')
-			->hint(array('sid' => 1, 'billrun_month' => 1))->limit(1)->current();
+			->limit(1)->current();
 
 		// set the data collection to enable clear save
 		$this->data->collection($this->collection);
@@ -146,7 +147,7 @@ class Billrun_Balance implements ArrayAccess {
 			'w' => 1,
 		);
 		Billrun_Factory::log("Create empty balance " . $billrun_key . " if not exists for subscriber " . $sid, Zend_Log::DEBUG);
-		$output = self::getCollection()->findAndModify($query, $update, array(), $options, true);
+		$output = $this->$collection->findAndModify($query, $update, array(), $options, false);
 		
 		if ($output['ok'] && isset($output['value']) && $output['value']) {
 			Billrun_Factory::log('Added balance ' . $billrun_key . ' to subscriber ' . $sid, Zend_Log::INFO);

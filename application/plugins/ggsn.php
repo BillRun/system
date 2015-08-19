@@ -300,6 +300,9 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 		if (isset($cdrLine['called_number'])) {
 			$cdrLine['called_number'] = Billrun_Util::msisdn($cdrLine['called_number']);
 		}
+		
+ 		$cdrLine['usaget'] = $this->getLineUsageType($cdrLine);
+ 		$cdrLine['usagev'] = $this->getLineVolume($cdrLine);
 
 		//Billrun_Factory::log($asnObject->getType() . " : " . print_r($cdrLine,1) ,  Zend_Log::DEBUG);
 		return $cdrLine;
