@@ -88,7 +88,7 @@ class ildsPlugin extends Billrun_Plugin_BillrunPluginFraud {
 	 */
 	protected function addAlertData(&$newEvent) {
 		
-		$newEvent['units']	= 'MIN';
+		$newEvent['units']	= 'NIS';
 		$newEvent['value']	= $newEvent['total'];
 		$newEvent['threshold'] = Billrun_Factory::config()->getConfigValue('ilds.threshold', 100);
 		$newEvent['event_type']	= 'ILDS';
