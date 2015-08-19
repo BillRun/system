@@ -133,8 +133,6 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			$row[$key] = $subscriber_field;
 		}
 		
-		$this->updateRowHandleExtraData($subscriber, $row);
-		Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array(&$row, $this));
 		return $row;
 	}
 
@@ -334,17 +332,8 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	 * @see Billrun_Calculator::isLineLegitimate
 	 */
 	public function isLineLegitimate($line) {
-//		 if ( $this->isCustomerable($line)) {
-// 			$customer = $this->isOutgoingCall($line) ? "caller" : "callee";
-// 			if (isset($this->translateCustomerIdentToAPI[$customer])) {
-// 						return true;
-// 					}
-// 				}
-		if(!isset($line['usagev']) || $line['usagev'] === 0) {
-			// TODO: Log error.
-			return false;
-		}
 		if (!$this->isCustomerable($line)) {
+			Billrun_Factory::log("isLineLegitimate: " . print_r($line,true) . " Is not customerable!", Zend_Log::INFO);
 			return false;
 		}
 		$customer = $this->isOutgoingCall($line) ? "caller" : "callee";
@@ -353,16 +342,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			return false;
 		}
 		
-		$customer_identification_translation = $this->translateCustomerIdentToAPI[$customer];
-		// [tom] TODO: What does this for do? Does it check for at least one indetifier for a client?
-		foreach ($customer_identification_translation as $key => $toKey) {
-			if (isset($line[$key]) && strlen($line[$key])) {
-				return true;
-			}
-		}
-		
-		Billrun_Factory::log("isLineLegitimate: No identification found!", Zend_Log::INFO);
-		return false;
+		return true;
 	}
 
 	/**
