@@ -697,7 +697,7 @@ class Billrun_Billrun {
 	 */
 	public static function loadPlans() {
 		$plans_coll = Billrun_Factory::db()->plansCollection();
-		$plans = $plans_coll->query()->cursor();
+//		$plans = $plans_coll->query()->cursor();
 // 		foreach ($plans as $plan) {
 // 			$plan->collection($plans_coll);
 // 			self::$plans[strval($plan->getId())] = $plan;
@@ -712,7 +712,7 @@ class Billrun_Billrun {
 	 * @param type $colls - Collums of the DB.
 	 */
 	private function loadFromDB($colls) {
-		$data = $colls->query()->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
+		$data = $colls->query()->cursor();
 		foreach ($data as $record) {
 			$record->collection($colls);
 			self::$plans[strval($record->getId())] = $record;
