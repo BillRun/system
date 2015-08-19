@@ -54,13 +54,14 @@ abstract class ApiAction extends Action_Base {
 		$cachePrefix = $this->getCachePrefix();
 		$cacheKey = Billrun_Util::generateArrayStamp(array_values($params['stampParams']));
 		$cachedData = $cache->get($cacheKey, $cachePrefix);
-		if (empty($cachedData)) {
+		if (!empty($cachedData)) {
+			Billrun_Factory::log("Fetch data from cache for " . $actionName . " api call", Zend_Log::INFO);
+		} else {
 			$cachedData = $this->fetchData($params['fetchParams']);
 			$lifetime = Billrun_Factory::config()->getConfigValue('api.cacheLifetime.' . $actionName, $this->getCacheLifeTime());
 			$cache->set($cacheKey, $cachedData, $cachePrefix, $lifetime);
-		} else {
-			Billrun_Factory::log("Fetch data from cache for " . $actionName . " api call", Zend_Log::INFO);
 		}
+		
 		return $cachedData;
 	}
 	
