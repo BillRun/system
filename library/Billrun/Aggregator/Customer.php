@@ -161,15 +161,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		Billrun_Factory::dispatcher()->trigger('afterAggregatorLoadData', array('aggregator' => $this));
 	}
 
-	/**
-	 * execute aggregate
-	 */
-	public function aggregate() {
-		Billrun_Factory::dispatcher()->trigger('beforeAggregate', array($this->data, &$this));
-		$account_billrun = false;
-		$billrun_key = $this->getStamp();
-		$billruns_count = 0;
-		$skipped_billruns_count = 0;
+	private function handleBulkAccountPreload($billrun_key) {
 		if ($this->bulkAccountPreload) {
 			Billrun_Factory::log('loading accounts that will be needed to be preloaded...', Zend_log::INFO);
 			$dataKeys = array_keys($this->data);
@@ -181,6 +173,11 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 				}
 			}
 		}
+	}
+	
+	private function aggregateAccounts($billrun_key) {
+		$billruns_count = 0;
+		$skipped_billruns_count = 0;
 		foreach ($this->data as $accid => $account) {
 			if ($this->memory_limit > -1 && memory_get_usage() > $this->memory_limit) {
 				// [tom] TODO: Memory limit should not be here as magic number.
@@ -194,12 +191,6 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 			}
 			Billrun_Factory::dispatcher()->trigger('beforeAggregateAccount', array($accid, $account, &$this));
 			Billrun_Factory::log('Current account index: ' . ++$billruns_count, Zend_log::INFO);
-//			if (!Billrun_Factory::config()->isProd()) {
-//				if ($this->testAcc && is_array($this->testAcc) && !in_array($accid, $this->testAcc)) {//TODO : remove this??
-//					//Billrun_Factory::log(" Moving on nothing to see here... , account Id : $accid");
-//					continue;
-//				}
-//			}
 
 			if (!$this->overrideAccountIds && Billrun_Billrun::exists($accid, $billrun_key)) {
 				Billrun_Factory::log("Billrun " . $billrun_key . " already exists for account " . $accid, Zend_Log::ALERT);
@@ -278,9 +269,23 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 				Billrun_Billrun::clearPreLoadedLines(array($accid));
 			}
 		}
-		if ($billruns_count == count($this->data)) {
+		
+		return array('count' => $billruns_count, 'skipped' => $skipped_billruns_count);
+	}
+	
+	/**
+	 * execute aggregate
+	 */
+	public function aggregate() {
+		Billrun_Factory::dispatcher()->trigger('beforeAggregate', array($this->data, &$this));
+		$billrun_key = $this->getStamp();
+		
+		$this->handleBulkAccountPreload($billrun_key);
+		$count = $this->aggregateAccounts($billrun_key);
+
+		if ($count['count'] == count($this->data)) {
 			$end_msg = "Finished iterating page $this->page of size $this->size. Memory usage is " . memory_get_usage() / 1048576 . " MB\n";
-			$end_msg .="Processed " . ($billruns_count - $skipped_billruns_count) . " accounts, Skipped over {$skipped_billruns_count} accounts, out of a total of {$billruns_count} accounts";
+			$end_msg .="Processed " . ($count['count'] - $count['skipped']) . " accounts, Skipped over {$skipped_billruns_count} accounts, out of a total of {$billruns_count} accounts";
 			Billrun_Factory::log($end_msg, Zend_log::INFO);
 			$this->sendEndMail($end_msg);
 		}

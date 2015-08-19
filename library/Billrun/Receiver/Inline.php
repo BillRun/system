@@ -75,19 +75,20 @@ class Billrun_Receiver_Inline extends Billrun_Receiver {
 		$path = $this->handleFile();		
 		if (!$path) {
 			Billrun_Factory::log("NOTICE : Couldn't write file $this->filename.", Zend_Log::NOTICE);
+			// TODO: We do not dispatch the in lines file receive, is this on purpose?
 			return FALSE;
-		} else {			
-			$fileData = $this->getFileLogData($this->filename, $type);
-			$fileData['path'] = $path;
-			if(!empty($this->backupPaths)) {
-				$backedTo = $this->backup($fileData['path'], $file->filename, $this->backupPaths, FALSE, FALSE);
-				Billrun_Factory::dispatcher()->trigger('beforeReceiverBackup', array($this, &$fileData['path']));
-				$fileData['backed_to'] = $backedTo;
-				Billrun_Factory::dispatcher()->trigger('afterReceiverBackup', array($this, &$fileData['path']));
-			}			
-			$this->logDB($fileData);
-			$ret[] = $fileData['path'];
 		}
+		
+		$fileData = $this->getFileLogData($this->filename, $type);
+		$fileData['path'] = $path;
+		if(!empty($this->backupPaths)) {
+			$backedTo = $this->backup($fileData['path'], $file->filename, $this->backupPaths, FALSE, FALSE);
+			Billrun_Factory::dispatcher()->trigger('beforeReceiverBackup', array($this, &$fileData['path']));
+			$fileData['backed_to'] = $backedTo;
+			Billrun_Factory::dispatcher()->trigger('afterReceiverBackup', array($this, &$fileData['path']));
+		}			
+		$this->logDB($fileData);
+		$ret[] = $fileData['path'];
 
 		Billrun_Factory::dispatcher()->trigger('afterInlineFilesReceive', array($this, $ret));
 

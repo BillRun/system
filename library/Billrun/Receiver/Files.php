@@ -83,13 +83,12 @@ class Billrun_Receiver_Files extends Billrun_Receiver {
 		);
 
 		$processor = Billrun_Processor::getInstance($options);
-		if ($processor) {
-			$processor->process_files();
-		} else {
+		if (!$processor) {
 			Billrun_Factory::log("error with loading processor", Zend_log::ERR);
 			return false;
 		}
-
+		
+		$processor->process_files();
 		$data = $processor->getData();
 
 		Billrun_Factory::log("Process type: " . $type, Zend_log::INFO);
