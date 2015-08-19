@@ -17,7 +17,7 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
 class PlansAction extends ApiAction {
 
 	public function execute() {
-		Billrun_Factory::log()->log("Execute plans api call", Zend_Log::INFO);
+		Billrun_Factory::log("Execute plans api call", Zend_Log::INFO);
 		$request = $this->getRequest();
 
 		$requestedQuery = $request->get('query', array());

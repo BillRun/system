@@ -32,7 +32,7 @@ class Billrun_Processor_Sms extends Billrun_Processor_Base_SeparatorFieldLines {
 			$this->data['header'] = array_merge($this->buildHeader(''), array_merge((isset($this->data['header']) ? $this->data['header'] : array()), $this->getFilenameData(basename($this->filePath))));
 		}
 
-		// Billrun_Factory::log()->log("sms : ". print_r($this->data,1),Zend_Log::DEBUG);
+		// Billrun_Factory::log("sms : ". print_r($this->data,1),Zend_Log::DEBUG);
 
 		return parent::parse();
 	}
@@ -53,7 +53,7 @@ class Billrun_Processor_Sms extends Billrun_Processor_Base_SeparatorFieldLines {
 	protected function getLineType($line, $length = 1) {
 		foreach ($this->structConfig['config']['line_types'] as $key => $val) {
 			if (preg_match($val, $line)) {
-				//	Billrun_Factory::log()->log("line type key : $key",Zend_Log::DEBUG);
+				//	Billrun_Factory::log("line type key : $key",Zend_Log::DEBUG);
 				return $key;
 			}
 		}

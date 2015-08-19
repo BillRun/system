@@ -377,7 +377,7 @@ class AdminController extends Yaf_Controller_Abstract {
 
 			if ($result->isValid()) {
 				$ip = $this->getRequest()->getServer('REMOTE_ADDR', 'Unknown IP');
-				Billrun_Factory::log()->log('User ' . $username . ' logged in to admin panel from IP: ' . $ip, Zend_log::INFO);
+				Billrun_Factory::log('User ' . $username . ' logged in to admin panel from IP: ' . $ip, Zend_log::INFO);
 				// TODO: stringify to url encoding (A-Z,a-z,0-9)
 				$ret_action = $this->getRequest()->get('ret_action');
 //				if (empty($ret_action)) {

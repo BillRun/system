@@ -48,7 +48,7 @@ class Billrun_Calculator_Rate_Gy extends Billrun_Calculator_Rate_Ggsn {
 				return $rate;
 			}
 		}
-		Billrun_Factory::log()->log("Couldn't find rate for row : " . print_r($row['stamp'], 1), Zend_Log::DEBUG);
+		Billrun_Factory::log("Couldn't find rate for row : " . print_r($row['stamp'], 1), Zend_Log::DEBUG);
 		return FALSE;
 	}
 

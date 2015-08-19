@@ -26,7 +26,7 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 		} elseif (isset($params['MSISDN'])) {
 			$queryParams['msisdn'] = $params['MSISDN'];
 		} else {
-			Billrun_Factory::log()->log('Cannot identify subscriber. Require phone or imsi to load. Current parameters: ' . print_R($params, 1), Zend_Log::ALERT);
+			Billrun_Factory::log('Cannot identify subscriber. Require phone or imsi to load. Current parameters: ' . print_R($params, 1), Zend_Log::ALERT);
 			return $this;
 		}
 
@@ -45,7 +45,7 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 		if (is_array($data)) {
 			$this->data = $data;
 		} else {
-			Billrun_Factory::log()->log('Failed to load subscriber data', Zend_Log::ALERT);
+			Billrun_Factory::log('Failed to load subscriber data', Zend_Log::ALERT);
 		}
 		return $this;
 	}

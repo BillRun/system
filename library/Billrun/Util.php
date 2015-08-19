@@ -882,7 +882,7 @@ class Billrun_Util {
 	 */
 	public static function sendRequest($url, array $data = array(), $method = Zend_Http_Client::POST, array $headers = array('Accept-encoding' => 'deflate'), $timeout = null) {
 		if (empty($url)) {
-			Billrun_Factory::log()->log("Bad parameters: url - " . $url . " method: " . $method, Zend_Log::ERR);
+			Billrun_Factory::log("Bad parameters: url - " . $url . " method: " . $method, Zend_Log::ERR);
 			return FALSE;
 		}
 
@@ -915,7 +915,7 @@ class Billrun_Util {
 			$output = null;
 		}
 		if (empty($output)) {
-			Billrun_Factory::log()->log("Bad RPC result: " . print_r($response, TRUE) . " Parameters sent: " . print_r($data, TRUE), Zend_Log::WARN);
+			Billrun_Factory::log("Bad RPC result: " . print_r($response, TRUE) . " Parameters sent: " . print_r($data, TRUE), Zend_Log::WARN);
 			return FALSE;
 		}
 

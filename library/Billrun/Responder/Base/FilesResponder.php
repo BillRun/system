@@ -28,7 +28,7 @@ abstract class Billrun_Responder_Base_FilesResponder extends Billrun_Responder {
 		foreach ($this->getProcessedFilesForType(self::$type) as $filename => $logLine) {
 			$filePath = $this->workspace . DIRECTORY_SEPARATOR . self::$type . DIRECTORY_SEPARATOR . $filename;
 			if (!file_exists($filePath)) {
-				Billrun_Factory::log()->log("NOTICE : SKIPPING $filename for type : " . self::$type . "!!! ,path -  $filePath not found!!", Zend_Log::NOTICE);
+				Billrun_Factory::log("NOTICE : SKIPPING $filename for type : " . self::$type . "!!! ,path -  $filePath not found!!", Zend_Log::NOTICE);
 				continue;
 			}
 
@@ -61,7 +61,7 @@ abstract class Billrun_Responder_Base_FilesResponder extends Billrun_Responder {
 	abstract protected function getResponseFilename($receivedFilename, $logLine);
 
 	protected function respondAFile($responseFilePath, $fileName, $logLine) {
-		Billrun_Factory::log()->log("Responding on : $fileName", Zend_Log::DEBUG);
+		Billrun_Factory::log("Responding on : $fileName", Zend_Log::DEBUG);
 		$data = $logLine->getRawData();
 		$data['response_time'] = time();
 		$logLine->setRawData($data);

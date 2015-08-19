@@ -113,7 +113,7 @@ trait Billrun_Traits_FileActions {
 			$result = $log->update($query, $update, array('upsert' => 1, 'w' => 1));
 		} catch (Exception $e) {
 			if ($e->getCode() == Mongodloid_General::DUPLICATE_UNIQUE_INDEX_ERROR) {
-				Billrun_Factory::log()->log("Billrun_Traits_FileActions::lockFileForReceive - Trying to relock  a file the was already beeen locked : " . $filename . " with stamp of : {$logData['stamp']}", Zend_Log::DEBUG);
+				Billrun_Factory::log("Billrun_Traits_FileActions::lockFileForReceive - Trying to relock  a file the was already beeen locked : " . $filename . " with stamp of : {$logData['stamp']}", Zend_Log::DEBUG);
 			} else {
 				throw $e;
 			}
@@ -156,10 +156,10 @@ trait Billrun_Traits_FileActions {
 			$backupPath = $this->generateBackupPath($backupPaths[$i], $seqData, $retrievedHostname);
 			$this->prepareBackupPath($backupPath);
 			if ($this->backupToPath($filePath, $backupPath, $this->preserve_timestamps, !($move && $i + 1 == count($backupPaths))) === TRUE) {
-				Billrun_Factory::log()->log("Success backup file " . $filePath . " to " . $backupPath, Zend_Log::INFO);
+				Billrun_Factory::log("Success backup file " . $filePath . " to " . $backupPath, Zend_Log::INFO);
 				$backedTo[] = $backupPath;
 			} else {
-				Billrun_Factory::log()->log("Failed backup file " . $filePath . " to " . $backupPath, Zend_Log::WARN);
+				Billrun_Factory::log("Failed backup file " . $filePath . " to " . $backupPath, Zend_Log::WARN);
 			}
 		}
 
@@ -203,7 +203,7 @@ trait Billrun_Traits_FileActions {
 
 		$filename = basename($srcPath);
 		$target_path = $trgtPath . DIRECTORY_SEPARATOR . $filename;
-		Billrun_Factory::log()->log("Backing up file from : " . $srcPath . " to :  " . $trgtPath, Zend_Log::INFO);
+		Billrun_Factory::log("Backing up file from : " . $srcPath . " to :  " . $trgtPath, Zend_Log::INFO);
 		$timestamp = filemtime($srcPath); // this will be used after copy/move to preserve timestamp
 		$ret = @call_user_func_array($callback, array(
 				$srcPath,
@@ -223,13 +223,13 @@ trait Billrun_Traits_FileActions {
 	 */
 	protected function prepareBackupPath($path) {
 		if (!file_exists($path) && !@mkdir($path, 0777, true)) {
-			Billrun_Factory::log()->log("Can't create backup path or is not a directory " . $path, Zend_Log::WARN);
+			Billrun_Factory::log("Can't create backup path or is not a directory " . $path, Zend_Log::WARN);
 			return FALSE;
 		}
 
 		// in case the path exists but it's a file
 		if (!is_dir($path)) {
-			Billrun_Factory::log()->log("The path " . $path . " is not directory", Zend_Log::WARN);
+			Billrun_Factory::log("The path " . $path . " is not directory", Zend_Log::WARN);
 			return FALSE;
 		}
 		return $path;
@@ -263,11 +263,11 @@ trait Billrun_Traits_FileActions {
 			$defaultBackup = Billrun_Factory::config()->getConfigValue('backup.default_backup_path', FALSE);
 			if (empty($file['backed_to'])) {
 				$backupPaths = !empty($this->backupPaths) ? (array) $this->backupPaths : (!empty($defaultBackup) ? (array) $defaultBackup : array('./backup/' . $this->getType()));
-				Billrun_Factory::log()->log("Backing up and moving file {$file['path']} to - " . implode(",", $backupPaths), Zend_Log::INFO);
+				Billrun_Factory::log("Backing up and moving file {$file['path']} to - " . implode(",", $backupPaths), Zend_Log::INFO);
 				$this->backup($file['path'], basename($file['path']), $backupPaths, $file['retrieved_from'], true);
 			} else {
-				Billrun_Factory::log()->log("File {$file['path']}  already backed up to :" . implode(",", $file['backed_to']), Zend_Log::INFO);
-				Billrun_Factory::log()->log("Removing file {$file['path']} from the workspace", Zend_Log::INFO);
+				Billrun_Factory::log("File {$file['path']}  already backed up to :" . implode(",", $file['backed_to']), Zend_Log::INFO);
+				Billrun_Factory::log("Removing file {$file['path']} from the workspace", Zend_Log::INFO);
 				unlink($file['path']);
 			}
 		}

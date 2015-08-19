@@ -73,7 +73,7 @@ class Billrun_Billrun {
 			}
 			$this->data->collection($this->billrun_coll);
 		} else {
-			Billrun_Factory::log()->log("Returning an empty billrun!", Zend_Log::NOTICE);
+			Billrun_Factory::log("Returning an empty billrun!", Zend_Log::NOTICE);
 		}
 		if (isset($options['filter_fields'])) {
 			$this->filter_fields = array_map("intval", $options['filter_fields']);
@@ -105,7 +105,7 @@ class Billrun_Billrun {
 				$this->data->save(NULL, 1);
 				return true;
 			} catch (Exception $ex) {
-				Billrun_Factory::log()->log('Error saving billrun document. Error code: ' . $ex->getCode() . '. Message: ' . $ex->getMessage(), Zend_Log::ERR);
+				Billrun_Factory::log('Error saving billrun document. Error code: ' . $ex->getCode() . '. Message: ' . $ex->getMessage(), Zend_Log::ERR);
 			}
 		}
 		return false;
@@ -120,7 +120,7 @@ class Billrun_Billrun {
 	public function addSubscriber($subscriber, $status) {
 		$current_plan_name = $subscriber->plan;
 		if (is_null($current_plan_name) || $current_plan_name == "NULL") {
-			Billrun_Factory::log()->log("Null current plan for subscriber $subscriber->sid", Zend_Log::INFO);
+			Billrun_Factory::log("Null current plan for subscriber $subscriber->sid", Zend_Log::INFO);
 			$current_plan_ref = null;
 		} else {
 			$current_plan_ref = $subscriber->getPlan()->createRef();
@@ -255,9 +255,9 @@ class Billrun_Billrun {
 	public function close($min_id) {
 		$billrun_entity = $this->getRawData();
 		if (is_null($ret = $billrun_entity->createAutoInc("invoice_id", $min_id))) {
-			Billrun_Factory::log()->log("Failed to create invoice for account " . $this->aid, Zend_Log::INFO);
+			Billrun_Factory::log("Failed to create invoice for account " . $this->aid, Zend_Log::INFO);
 		} else {
-			Billrun_Factory::log()->log("Created invoice " . $ret . " for account " . $this->aid, Zend_Log::INFO);
+			Billrun_Factory::log("Created invoice " . $ret . " for account " . $this->aid, Zend_Log::INFO);
 		}
 	}
 
@@ -690,7 +690,7 @@ class Billrun_Billrun {
 	 * @return array the stamps of the lines used to create the billrun
 	 */
 	public function addLines($manual_lines = array(), &$deactivated_subscribers = array()) {
-		Billrun_Factory::log()->log("Querying account " . $this->aid . " for lines...", Zend_Log::INFO);
+		Billrun_Factory::log("Querying account " . $this->aid . " for lines...", Zend_Log::INFO);
 		$account_lines = $this->getAccountLines($this->aid);
 
 		$lines = array_merge($account_lines, $manual_lines);
@@ -730,7 +730,7 @@ class Billrun_Billrun {
 					$plan = self::getPlanById(strval($plan_ref['$id']));
 					$this->updateBillrun($this->billrun_key, array(), array('aprice' => $line['aprice']), $line, $plan->get('vatable'));
 				} else {
-					Billrun_Factory::log()->log("No plan or unrecognized plan for row " . $line['stamp'] . " Subscriber " . $line['sid'], Zend_Log::ALERT);
+					Billrun_Factory::log("No plan or unrecognized plan for row " . $line['stamp'] . " Subscriber " . $line['sid'], Zend_Log::ALERT);
 				}
 			}
 			//Billrun_Factory::log("Done Processing account Line for $sid : ".  microtime(true));
@@ -750,7 +750,7 @@ class Billrun_Billrun {
 		foreach ($account_lines as $line) {
 			foreach ($deactivated_subscribers as $key => $ds) {
 				if ($ds['sid'] == $line['sid']) {
-					Billrun_Factory::log()->log("Subscriber " . $ds['sid'] . " has current plan null and next plan null, yet has lines", Zend_Log::NOTICE);
+					Billrun_Factory::log("Subscriber " . $ds['sid'] . " has current plan null and next plan null, yet has lines", Zend_Log::NOTICE);
 					unset($deactivated_subscribers[$key]);
 				}
 			}
@@ -811,7 +811,7 @@ class Billrun_Billrun {
 			'urt' => 1,
 		);
 
-		Billrun_Factory::log()->log('Querying for accounts ' . implode(',', $aids) . ' lines', Zend_Log::INFO);
+		Billrun_Factory::log('Querying for accounts ' . implode(',', $aids) . ' lines', Zend_Log::INFO);
 		$addCount = $bufferCount = 0;
 		do {
 			$bufferCount += $addCount;
@@ -824,7 +824,7 @@ class Billrun_Billrun {
 				$ret[$line['aid']][$line['stamp']] = $line;
 			}
 		} while (($addCount = $cursor->count(true)) > 0);
-		Billrun_Factory::log()->log('Finished querying for accounts ' . implode(',', $aids) . ' lines', Zend_Log::INFO);
+		Billrun_Factory::log('Finished querying for accounts ' . implode(',', $aids) . ' lines', Zend_Log::INFO);
 		foreach ($aids as $aid) {
 			if (!isset($ret[$aid])) {
 				$ret[$aid] = array();

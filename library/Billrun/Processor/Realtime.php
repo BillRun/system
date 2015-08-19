@@ -40,7 +40,7 @@ class Billrun_Processor_Realtime extends Billrun_Processor {
 		Billrun_Factory::dispatcher()->trigger('beforeProcessorParsing', array($this));
 
 		if ($this->parse() === FALSE) {
-			Billrun_Factory::log()->log("Billrun_Processor: cannot parse " . $this->filePath, Zend_Log::ERR);
+			Billrun_Factory::log("Billrun_Processor: cannot parse " . $this->filePath, Zend_Log::ERR);
 			return FALSE;
 		}
 
@@ -51,7 +51,7 @@ class Billrun_Processor_Realtime extends Billrun_Processor {
 		Billrun_Factory::dispatcher()->trigger('beforeProcessorStore', array($this));
 
 		if ($this->store() === FALSE) {
-			Billrun_Factory::log()->log("Billrun_Processor: cannot store the parser lines " . $this->filePath, Zend_Log::ERR);
+			Billrun_Factory::log("Billrun_Processor: cannot store the parser lines " . $this->filePath, Zend_Log::ERR);
 			return FALSE;
 		}
 

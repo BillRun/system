@@ -22,7 +22,7 @@ abstract class ApiAction extends Action_Base {
 	protected $cacheLifetime = 14400;
 	
 	function setError($error_message, $input = null) {
-		Billrun_Factory::log()->log("Sending Error : {$error_message}", Zend_Log::NOTICE);
+		Billrun_Factory::log("Sending Error : {$error_message}", Zend_Log::NOTICE);
 		$output = array(
 			'status' => 0,
 			'desc' => $error_message,
@@ -59,7 +59,7 @@ abstract class ApiAction extends Action_Base {
 			$lifetime = Billrun_Factory::config()->getConfigValue('api.cacheLifetime.' . $actionName, $this->getCacheLifeTime());
 			$cache->set($cacheKey, $cachedData, $cachePrefix, $lifetime);
 		} else {
-			Billrun_Factory::log()->log("Fetch data from cache for " . $actionName . " api call", Zend_Log::INFO);
+			Billrun_Factory::log("Fetch data from cache for " . $actionName . " api call", Zend_Log::INFO);
 		}
 		return $cachedData;
 	}

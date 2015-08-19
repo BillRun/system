@@ -15,12 +15,12 @@ abstract class Billrun_Processor_Base_BlockedSeperatedBinary extends Billrun_Pro
 
 	public function process() {
 		if ($this->isQueueFull()) {
-			Billrun_Factory::log()->log("Billrun_Processor_Base_BlockedSeperatedBinary: queue size is too big", Zend_Log::ALERT);
+			Billrun_Factory::log("Billrun_Processor_Base_BlockedSeperatedBinary: queue size is too big", Zend_Log::ALERT);
 			return FALSE;
 		} else {
 			// run all over the file with the parser helper
 			if (!is_resource($this->fileHandler)) {
-				Billrun_Factory::log()->log("Resource is not configured well", Zend_Log::ERR);
+				Billrun_Factory::log("Resource is not configured well", Zend_Log::ERR);
 				return false;
 			}
 			$this->data['trailer'] = array();
@@ -30,7 +30,7 @@ abstract class Billrun_Processor_Base_BlockedSeperatedBinary extends Billrun_Pro
 
 			while (!$this->processFinished()) {
 				if ($this->parse() === FALSE) {
-					Billrun_Factory::log()->log("Billrun_Processor: cannot parse", Zend_Log::ERR);
+					Billrun_Factory::log("Billrun_Processor: cannot parse", Zend_Log::ERR);
 					return false;
 				}
 			}
@@ -42,12 +42,12 @@ abstract class Billrun_Processor_Base_BlockedSeperatedBinary extends Billrun_Pro
 			Billrun_Factory::dispatcher()->trigger('beforeProcessorStore', array($this));
 
 			if ($this->store() === FALSE) {
-				Billrun_Factory::log()->log("Billrun_Processor: cannot store the parser lines", Zend_Log::ERR);
+				Billrun_Factory::log("Billrun_Processor: cannot store the parser lines", Zend_Log::ERR);
 				return false;
 			}
 
 			if ($this->logDB() === FALSE) {
-				Billrun_Factory::log()->log("Billrun_Processor: cannot log parsing action", Zend_Log::WARN);
+				Billrun_Factory::log("Billrun_Processor: cannot log parsing action", Zend_Log::WARN);
 			}
 
 			Billrun_Factory::dispatcher()->trigger('afterProcessorStore', array($this));

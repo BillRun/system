@@ -33,7 +33,7 @@ class Billrun_Db extends Mongodloid_Db {
 		$this->collections = Billrun_Factory::config()->getConfigValue('db.collections', array());
 		$timeout = Billrun_Factory::config()->getConfigValue('db.timeout', 3600000); // default 60 minutes
 		if ($this->compareClientVersion('1.5.3', '<')) {
-			Billrun_Factory::log()->log('Set database cursor timeout to: ' . $timeout, Zend_Log::INFO);
+			Billrun_Factory::log('Set database cursor timeout to: ' . $timeout, Zend_Log::INFO);
 			@MongoCursor::$timeout = $timeout;
 		} else {
 			// see also bugs: 
@@ -107,7 +107,7 @@ class Billrun_Db extends Mongodloid_Db {
 		if (in_array($name, $this->collections)) {
 			return $this->collections[$name];
 		}
-		Billrun_Factory::log()->log('Collection or property' . $name . ' did not found in the DB layer', Zend_Log::ALERT);
+		Billrun_Factory::log('Collection or property' . $name . ' did not found in the DB layer', Zend_Log::ALERT);
 	}
 
 	public function execute($code, $args = array()) {
