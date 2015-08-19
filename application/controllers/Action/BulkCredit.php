@@ -57,14 +57,15 @@ class BulkCreditAction extends CreditAction {
 		);
 
 		$receiver = Billrun_Receiver::getInstance($options);
-		if ($receiver) {
-			$files = $receiver->receive();
-			if (!$files) {
-				return $this->setError('Couldn\'t receive file', $request);
-			}
-		} else {
+		if (!$receiver) {
 			return $this->setError('Receiver cannot be loaded', $request);
 		}
+		
+		$files = $receiver->receive();
+		if (!$files) {
+			return $this->setError('Couldn\'t receive file', $request);
+		}
+		
 		$this->processBulkCredit();
 		$this->getController()->setOutput(array(array(
 				'status' => 1,
@@ -83,11 +84,11 @@ class BulkCreditAction extends CreditAction {
 	}
 
 	protected function queryCredit($request) {
-		if (isset($request['stamp'])) {
-			$filtered_request['stamp'] = $request['stamp'];
-		} else {
+		if (!isset($request['stamp'])) {
 			return $this->setError('Stamp is missing', $request);
 		}
+		
+		$filtered_request['stamp'] = $request['stamp'];
 
 		if (!isset($request['details'])) {
 			$filtered_request['details'] = 0;
