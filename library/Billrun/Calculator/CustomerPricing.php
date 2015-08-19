@@ -146,14 +146,14 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		foreach ($lines as $key => $line) {
 			if ($line) {
 				Billrun_Factory::dispatcher()->trigger('beforePricingDataRow', array('data' => &$line));
-				//Billrun_Factory::log()->log("Calculating row: ".print_r($item,1),  Zend_Log::DEBUG);
+				//Billrun_Factory::log("Calculating row: ".print_r($item,1),  Zend_Log::DEBUG);
 				$line->collection($lines_coll);
 				if ($this->isLineLegitimate($line)) {
 					if ($this->updateRow($line) === FALSE) {
 						unset($this->lines[$line['stamp']]);
 						continue;
 					}
- 					$this->data[$line['stamp']] = $line;
+					$this->data[$line['stamp']] = $line;
 				}
 				//$this->updateLinePrice($item); //@TODO  this here to prevent divergance  between the priced lines and the subscriber's balance/billrun if the process fails in the middle.
 				Billrun_Factory::dispatcher()->trigger('afterPricingDataRow', array('data' => &$line));
@@ -202,7 +202,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 					}
 				}
 			} else {
-				Billrun_Factory::log()->log("Line with stamp " . $row['stamp'] . " is missing volume information", Zend_Log::ALERT);
+				Billrun_Factory::log("Line with stamp " . $row['stamp'] . " is missing volume information", Zend_Log::ALERT);
 				return false;
 			}
 
@@ -210,13 +210,13 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			foreach ($pricingData as $key => $value) {
 				$pricingDataTxt .= " " . $key . ": " . $value . ".";
 			}
-			Billrun_Factory::log()->log($pricingDataTxt, Zend_Log::DEBUG);
+			Billrun_Factory::log($pricingDataTxt, Zend_Log::DEBUG);
 			$row->setRawData(array_merge($row->getRawData(), $pricingData));
 
 			Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array(&$row, $this));
 			return $row;
 		} catch (Exception $e) {
-			Billrun_Factory::log()->log('Line with stamp ' . $row['stamp'] . ' crashed when trying to price it. got exception :' . $e->getCode() . ' : ' . $e->getMessage() . "\n trace :" . $e->getTraceAsString(), Zend_Log::ERR);
+			Billrun_Factory::log('Line with stamp ' . $row['stamp'] . ' crashed when trying to price it. got exception :' . $e->getCode() . ' : ' . $e->getMessage() . "\n trace :" . $e->getTraceAsString(), Zend_Log::ERR);
 			return false;
 		}
 	}
@@ -240,10 +240,10 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 
 		$balance = new Billrun_Balance($row);
 		if (!$balance || !$balance->isValid()) {
-			Billrun_Factory::log()->log("couldn't get balance for subscriber: " . $row['sid'], Zend_Log::INFO);
+			Billrun_Factory::log("couldn't get balance for subscriber: " . $row['sid'], Zend_Log::INFO);
 			return false;
 		} else {
-			Billrun_Factory::log()->log("Found balance  for subscriber " . $row['sid'], Zend_Log::DEBUG);
+			Billrun_Factory::log("Found balance  for subscriber " . $row['sid'], Zend_Log::DEBUG);
 		}
 		$this->balance = $balance;
 		return true;
@@ -312,7 +312,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		}
 
 		$price = $accessPrice + self::getPriceByRate($rate, $usageType, $volumeToCharge, $plan);
-		//Billrun_Factory::log()->log("Rate : ".print_r($typedRates,1),  Zend_Log::DEBUG);
+		//Billrun_Factory::log("Rate : ".print_r($typedRates,1),  Zend_Log::DEBUG);
 		$ret[$this->pricingField] = $price;
 		return $ret;
 	}
@@ -460,7 +460,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		}
 		$update['$set']['balance.cost'] = $subRaw['balance']['cost'] + $pricingData[$this->pricingField];
 		$options = array('w' => 1);
-		Billrun_Factory::log()->log("Updating balance " . $balance_id . " of subscriber " . $row['sid'], Zend_Log::DEBUG);
+		Billrun_Factory::log("Updating balance " . $balance_id . " of subscriber " . $row['sid'], Zend_Log::DEBUG);
 		Billrun_Factory::dispatcher()->trigger('beforeCommitSubscriberBalance', array(&$row, &$pricingData, &$query, &$update, $rate, $this));
 		$ret = $this->balances->update($query, $update, $options);
 		if (!($ret['ok'] && $ret['updatedExisting'])) {
@@ -470,11 +470,11 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				Billrun_Factory::log()->log('Too many pricing retries for line ' . $row['stamp'] . '. Update status: ' . print_r($ret, true), Zend_Log::ALERT);
 				return false;
 			}
-			Billrun_Factory::log()->log('Concurrent write of sid : ' . $row['sid'] . ' line stamp : ' . $row['stamp'] . ' to balance. Update status: ' . print_r($ret, true) . 'Retrying...', Zend_Log::INFO);
+			Billrun_Factory::log('Concurrent write of sid : ' . $row['sid'] . ' line stamp : ' . $row['stamp'] . ' to balance. Update status: ' . print_r($ret, true) . 'Retrying...', Zend_Log::INFO);
 			usleep($this->countConcurrentRetries);
 			return $this->updateSubscriberBalance($row, $usage_type, $rate, $volume);
 		}
-		Billrun_Factory::log()->log("Line with stamp " . $row['stamp'] . " was written to balance " . $balance_id . " for subscriber " . $row['sid'], Zend_Log::DEBUG);
+		Billrun_Factory::log("Line with stamp " . $row['stamp'] . " was written to balance " . $balance_id . " for subscriber " . $row['sid'], Zend_Log::DEBUG);
 		$row['tx_saved'] = true; // indication for transaction existence in balances. Won't & shouldn't be saved to the db.
 		Billrun_Factory::dispatcher()->trigger('afterUpdateSubscriberBalance', array(array_merge($row->getRawData(), $pricingData), $this->balance, &$pricingData, $this));
 		return $pricingData;

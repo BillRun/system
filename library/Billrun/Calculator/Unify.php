@@ -167,7 +167,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 //					$linesArchivedStamps[] = $line['stamp'];
 //					unset($this->data[$line['stamp']]);
 //				} catch (\Exception $e) {
-//					if ($e->getCode() == '11000') {
+//					if ($e->getCode() == 'Mongodloid_General::DUPLICATE_UNIQUE_INDEX_ERROR') {
 //						Billrun_Factory::log("got duplicate line when trying to save line {$line['stamp']} to archive.", Zend_Log::ALERT);
 //						$linesArchivedStamps[] = $line['stamp'];
 //						unset($this->data[$line['stamp']]);

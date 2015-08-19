@@ -18,7 +18,7 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
 class ActivityAction extends ApiAction {
 	
 	public function execute() {
-		Billrun_Factory::log()->log("Execute activity call", Zend_Log::INFO);
+		Billrun_Factory::log("Execute activity call", Zend_Log::INFO);
 		$request = $this->getRequest();
 		$sid = (int) $request->get('sid', 0);
 

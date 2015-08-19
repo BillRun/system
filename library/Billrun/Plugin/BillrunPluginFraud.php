@@ -30,7 +30,7 @@ abstract class Billrun_Plugin_BillrunPluginFraud extends Billrun_Plugin_BillrunP
 	 * @deprecated since version 0.4 use Billrun_Util::getLastChargeTime instead
 	 */
 	protected function get_last_charge_time($return_timestamp = false) {
-		Billrun_Factory::log()->log("Billrun_Plugin_BillrunPluginFraud::get_last_charge_time is deprecated; please use Billrun_Util::getLastChargeTime()", Zend_Log::DEBUG);
+		Billrun_Factory::log("Billrun_Plugin_BillrunPluginFraud::get_last_charge_time is deprecated; please use Billrun_Util::getLastChargeTime()", Zend_Log::DEBUG);
 		return Billrun_Util::getLastChargeTime($return_timestamp);
 	}
 
@@ -51,7 +51,7 @@ abstract class Billrun_Plugin_BillrunPluginFraud extends Billrun_Plugin_BillrunP
 		}
 
 		$events = Billrun_Factory::db()->eventsCollection();
-		//Billrun_Factory::log()->log("New Alert For {$item['imsi']}",Zend_Log::DEBUG);
+		//Billrun_Factory::log("New Alert For {$item['imsi']}",Zend_Log::DEBUG);
 		$ret = array();
 		foreach ($items as &$item) {
 			$event = new Mongodloid_Entity($item);

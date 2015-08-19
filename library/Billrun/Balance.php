@@ -94,7 +94,7 @@ class Billrun_Balance extends Mongodloid_Entity {
 	}
 
 	public function load($subscriberId, $urt) {
-		Billrun_Factory::log()->log("Trying to load balance for subscriber " . $subscriberId . " urt: " . $urt->sec, Zend_Log::DEBUG);
+		Billrun_Factory::log("Trying to load balance for subscriber " . $subscriberId . " urt: " . $urt->sec, Zend_Log::DEBUG);
 
 		return $this->collection->query(array(
 				'sid' => $subscriberId,

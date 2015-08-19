@@ -40,7 +40,7 @@ class ResetLinesModel {
 	}
 
 	public function reset() {
-		Billrun_Factory::log()->log('Reset subscriber activated', Zend_Log::INFO);
+		Billrun_Factory::log('Reset subscriber activated', Zend_Log::INFO);
 		$ret = $this->resetLines();
 		return $ret;
 	}
@@ -73,7 +73,7 @@ class ResetLinesModel {
 		if (!empty($this->sids) && !empty($this->billrun_key)) {
 			$offset = 0;
 			while ($update_count = count($update_sids = array_slice($this->sids, $offset, 10))) {
-				Billrun_Factory::log()->log('Resetting lines of subscribers ' . implode(',', $update_sids), Zend_Log::INFO);
+				Billrun_Factory::log('Resetting lines of subscribers ' . implode(',', $update_sids), Zend_Log::INFO);
 				$query = array(
 					'$or' => array(
 						array(

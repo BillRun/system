@@ -172,7 +172,6 @@ class Mongodloid_Collection {
 		$this->setTimeout($timeout);
 		if (!isset($result['ok']) || !$result['ok']) {
 			throw new Mongodloid_Exception('aggregate failed with the following error: ' . $result['code'] . ' - ' . $result['errmsg']);
-			return false;
 		}
 		return $result['result'];
 	}
@@ -354,7 +353,7 @@ class Mongodloid_Collection {
 			try {
 				$ret = $countersColl->insert($insert, array('w' => 1));
 			} catch (MongoCursorException $e) {
-				if ($e->getCode() == 11000) {
+				if ($e->getCode() == Mongodloid_General::DUPLICATE_UNIQUE_INDEX_ERROR) {
 					// duplicate - need to check if oid already exists
 					$ret = $this->getAutoInc($oid);
 					if (empty($ret) || !is_numeric($ret)) {

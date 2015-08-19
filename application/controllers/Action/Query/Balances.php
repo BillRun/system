@@ -21,9 +21,9 @@ class BalancesAction extends ApiAction {
 	 * it's called automatically by the api main controller
 	 */
 	public function execute() {
-		Billrun_Factory::log()->log("Execute api balances query", Zend_Log::INFO);
+		Billrun_Factory::log("Execute api balances query", Zend_Log::INFO);
 		$request = $this->getRequest()->getRequest(); // supports GET / POST requests
-		Billrun_Factory::log()->log("Input: " . print_R($request, 1), Zend_Log::DEBUG);
+		Billrun_Factory::log("Input: " . print_R($request, 1), Zend_Log::DEBUG);
 
 		if (!isset($request['aid']) && !isset($request['sid'])) {
 			$this->setError('Require to supply aid or sid', $request);
@@ -65,7 +65,7 @@ class BalancesAction extends ApiAction {
 		$this->setCacheLifeTime(28800); // 8 hours
 		$results = $this->cache($cacheParams);
 
-		Billrun_Factory::log()->log("balances query success", Zend_Log::INFO);
+		Billrun_Factory::log("balances query success", Zend_Log::INFO);
 		$ret = array(
 			array(
 				'status' => 1,

@@ -46,7 +46,7 @@ abstract class Billrun_Responder_Base_LocalDir extends Billrun_Responder_Base_Fi
 			return FALSE;
 		}
 		parent::respondAFile($responseFilePath, $fileName, $logLine);
-		Billrun_Factory::log()->log("Placed response at : $exportPath", Zend_Log::DEBUG);
+		Billrun_Factory::log("Placed response at : $exportPath", Zend_Log::DEBUG);
 
 		return $exportPath;
 	}

@@ -42,7 +42,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 		parent::__construct($options);
 		if (isset($options['calculator']['rate_mapping'])) {
 			$this->rateMapping = $options['calculator']['rate_mapping'];
-			//Billrun_Factory::log()->log("receive options : ".print_r($this->rateMapping,1),  Zend_Log::DEBUG);
+			//Billrun_Factory::log("receive options : ".print_r($this->rateMapping,1),  Zend_Log::DEBUG);
 		}
 	}
 

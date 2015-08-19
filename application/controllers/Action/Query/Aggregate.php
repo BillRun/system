@@ -21,9 +21,9 @@ class QueryaggregateAction extends QueryAction {
 	 * it's called automatically by the api main controller
 	 */
 	public function execute() {
-		Billrun_Factory::log()->log("Execute api query aggregate", Zend_Log::INFO);
+		Billrun_Factory::log("Execute api query aggregate", Zend_Log::INFO);
 		$request = $this->getRequest()->getRequest(); // supports GET / POST requests
-		Billrun_Factory::log()->log("Input: " . print_R($request, 1), Zend_Log::DEBUG);
+		Billrun_Factory::log("Input: " . print_R($request, 1), Zend_Log::DEBUG);
 
 		if (!isset($request['aid']) && !isset($request['sid'])) {
 			$this->setError('Require to supply aid or sid', $request);
@@ -91,7 +91,7 @@ class QueryaggregateAction extends QueryAction {
 
 		$this->setCacheLifeTime(604800); // 1 week
 		$results = $this->cache($cacheParams);
-		Billrun_Factory::log()->log("Aggregate query success", Zend_Log::INFO);
+		Billrun_Factory::log("Aggregate query success", Zend_Log::INFO);
 		$ret = array(
 			array(
 				'status' => 1,

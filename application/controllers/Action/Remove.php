@@ -21,9 +21,9 @@ class RemoveAction extends ApiAction {
 	 * it's called automatically by the api main controller
 	 */
 	public function execute() {
-		Billrun_Factory::log()->log("Execute api remove", Zend_Log::INFO);
+		Billrun_Factory::log("Execute api remove", Zend_Log::INFO);
 		$request = $this->getRequest()->getRequest(); // supports GET / POST requests
-		Billrun_Factory::log()->log("Input: " . print_R($request, 1), Zend_Log::INFO);
+		Billrun_Factory::log("Input: " . print_R($request, 1), Zend_Log::INFO);
 
 		$stamps = array();
 		foreach ($request['stamps'] as $line_stamp) {
@@ -34,7 +34,7 @@ class RemoveAction extends ApiAction {
 		}
 
 		if (empty($stamps)) {
-			Billrun_Factory::log()->log("remove action failed; no correct stamps", Zend_Log::INFO);
+			Billrun_Factory::log("remove action failed; no correct stamps", Zend_Log::INFO);
 			$this->getController()->setOutput(array(array(
 					'status' => false,
 					'desc' => 'failed - invalid stamps input',
@@ -55,7 +55,7 @@ class RemoveAction extends ApiAction {
 		$ret = $model->remove($query);
 		
 		if (!isset($ret['ok']) || !$ret['ok'] || !isset($ret['n'])) {
-			Billrun_Factory::log()->log("remove action failed pr miscomplete", Zend_Log::INFO);
+			Billrun_Factory::log("remove action failed pr miscomplete", Zend_Log::INFO);
 			$this->getController()->setOutput(array(array(
 					'status' => false,
 					'desc' => 'remove failed',
@@ -64,7 +64,7 @@ class RemoveAction extends ApiAction {
 			return true;
 		}
 		
-		Billrun_Factory::log()->log("remove success", Zend_Log::INFO);
+		Billrun_Factory::log("remove success", Zend_Log::INFO);
 		$this->getController()->setOutput(array(array(
 				'status' => $ret['n'],
 				'desc' => 'success',

@@ -17,7 +17,7 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
 class VLRAction extends ApiAction {
 
 	public function execute() {
-		Billrun_Factory::log()->log("Execute VLR api call", Zend_Log::INFO);
+		Billrun_Factory::log("Execute VLR api call", Zend_Log::INFO);
 		$request = $this->getRequest();
 
 		$vlr = $request->get('vlr', NULL);

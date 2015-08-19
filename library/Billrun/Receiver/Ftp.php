@@ -84,7 +84,7 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 			try {
 				$hostRet = $this->receiveFromHost($hostName, $config);
 			} catch (Exception $e) {
-				Billrun_Factory::log()->log("FTP: Fail when downloading from : $hostName with exception : " . $e, Zend_Log::DEBUG);
+				Billrun_Factory::log("FTP: Fail when downloading from : $hostName with exception : " . $e, Zend_Log::DEBUG);
 			}
 			Billrun_Factory::dispatcher()->trigger('afterFTPReceived', array($this, $hostRet, $hostName));
 
@@ -105,10 +105,10 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 		$ret = array();
 		$files = $this->ftp->getDirectory($config['remote_directory'])->getContents();
 
-		Billrun_Factory::log()->log("FTP: Starting to receive from remote host : $hostName", Zend_Log::INFO);
+		Billrun_Factory::log("FTP: Starting to receive from remote host : $hostName", Zend_Log::INFO);
 		$count = 0;
 		foreach ($this->sortByFileDate($files) as $file) {
-			Billrun_Factory::log()->log("FTP: Found file " . $file->name . " on remote host", Zend_Log::INFO);
+			Billrun_Factory::log("FTP: Found file " . $file->name . " on remote host", Zend_Log::INFO);
 			$extraData = array();
 			Billrun_Factory::dispatcher()->trigger('beforeFTPFileReceived', array(&$file, $this, $hostName, &$extraData));
 			$isFileReceivedMoreFields = array('retrieved_from' => $hostName);
@@ -122,7 +122,7 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 
 			$fileData = $this->getFileLogData($file->name, static::$type, $isFileReceivedMoreFields);
 
-			Billrun_Factory::log()->log("FTP: Download file " . $file->name . " from remote host", Zend_Log::INFO);
+			Billrun_Factory::log("FTP: Download file " . $file->name . " from remote host", Zend_Log::INFO);
 			$targetPath = $this->workspace;
 			if (substr($targetPath, -1) != '/') {
 				$targetPath .= '/';
@@ -132,7 +132,7 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 				mkdir($targetPath, 0777, true);
 			}
 			if ($file->saveToPath($targetPath, null, 0, true) === FALSE) { // the last arg declare try to recover on failure
-				Billrun_Factory::log()->log("FTP: failed to download " . $file->name . " from remote host", Zend_Log::ALERT);
+				Billrun_Factory::log("FTP: failed to download " . $file->name . " from remote host", Zend_Log::ALERT);
 				continue;
 			}
 			$fileData['path'] = $targetPath . $file->name;
@@ -159,7 +159,7 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 				$count++; //count the file as recieved
 				// delete the file after downloading and store it to processing queue
 				if (Billrun_Factory::config()->isProd() && (isset($config['delete_received']) && $config['delete_received'] )) {
-					Billrun_Factory::log()->log("FTP: Deleting file {$file->name} from remote host ", Zend_Log::INFO);
+					Billrun_Factory::log("FTP: Deleting file {$file->name} from remote host ", Zend_Log::INFO);
 					$file->delete();
 				}
 			}
@@ -177,13 +177,13 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 	protected function shouldFileBeReceived($file, $isFileReceivedMoreFields) {
 		$ret = true;
 		if (!$file->isFile()) {
-			Billrun_Factory::log()->log("FTP: " . $file->name . " is not a file", Zend_Log::INFO);
+			Billrun_Factory::log("FTP: " . $file->name . " is not a file", Zend_Log::INFO);
 			$ret = false;
 		}else if (!$this->isFileValid($file->name, $file->path)) {
-			Billrun_Factory::log()->log("FTP: " . $file->name . " is not a valid file", Zend_Log::INFO);
+			Billrun_Factory::log("FTP: " . $file->name . " is not a valid file", Zend_Log::INFO);
 			$ret = false;
 		} else if (!$this->lockFileForReceive($file->name, static::$type, $isFileReceivedMoreFields)) {
-			Billrun_Factory::log()->log("FTP: " . $file->name . " received already", Zend_Log::INFO);
+			Billrun_Factory::log("FTP: " . $file->name . " received already", Zend_Log::INFO);
 			$ret = false;
 		}
 		return $ret;
@@ -198,7 +198,7 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 			$local_size = filesize($localFilePath);
 			$remote_size = $remoteFile->size();
 			if ($local_size !== $remote_size) {
-				Billrun_Factory::log()->log("FTP: The remote file size (" . $remote_size . ") is different from local file size (" . $local_size . "). File name: " . $remoteFile->name, Zend_Log::ERR);
+				Billrun_Factory::log("FTP: The remote file size (" . $remote_size . ") is different from local file size (" . $local_size . "). File name: " . $remoteFile->name, Zend_Log::ERR);
 				return false;
 			}
 		}

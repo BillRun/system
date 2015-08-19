@@ -26,7 +26,7 @@ class Billrun_Processor_BinaryExternal extends Billrun_Processor_Base_Binary {
 	 */
 	protected function parse() {
 		if (!is_resource($this->fileHandler)) {
-			Billrun_Factory::log()->log('Resource is not configured well', Zend_Log::ERR);
+			Billrun_Factory::log('Resource is not configured well', Zend_Log::ERR);
 			return FALSE;
 		}
 		try {
