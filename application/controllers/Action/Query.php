@@ -27,6 +27,7 @@ class QueryAction extends ApiAction {
 
 		if (!isset($request['aid']) && !isset($request['sid'])) {
 			$this->setError('Require to supply aid or sid', $request);
+			// TODO: Return true on purpose? 
 			return true;
 		}
 		

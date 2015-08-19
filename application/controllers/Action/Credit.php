@@ -43,16 +43,15 @@ class CreditAction extends ApiAction {
 
 			if ($this->insertToQueue($entity) === false) {
 				return $this->setError('failed to store into DB queue', $request);
-			} else {
-				$this->getController()->setOutput(array(array(
-						'status' => 1,
-						'desc' => 'success',
-						'stamp' => $entity['stamp'],
-						'input' => $request,
-				)));
-				Billrun_Factory::log("Added credit line " . $entity['stamp'], Zend_Log::INFO);
-				return true;
 			}
+			$this->getController()->setOutput(array(array(
+					'status' => 1,
+					'desc' => 'success',
+					'stamp' => $entity['stamp'],
+					'input' => $request,
+			)));
+			Billrun_Factory::log("Added credit line " . $entity['stamp'], Zend_Log::INFO);
+			return true;
 		} catch (\Exception $e) {
 			Billrun_Factory::log('failed to store into DB got error : ' . $e->getCode() . ' : ' . $e->getMessage(), Zend_Log::ALERT);
 			Billrun_Factory::log('failed saving request :' . print_r($request, 1), Zend_Log::ALERT);

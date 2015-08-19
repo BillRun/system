@@ -38,7 +38,7 @@ class RatesAction extends ApiAction {
 			'stampParams' => array($requestedQuery, $filter, $strip),
 		);
 		
-		$this->setCacheLifeTime(86400); // 1 day
+		$this->setCacheLifeTime(86400); // 1 day TODO: Use time utils.
 		$results = $this->cache($cacheParams);
 		
 		$this->getController()->setOutput(array(array(

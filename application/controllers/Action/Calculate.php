@@ -36,15 +36,15 @@ class CalculateAction extends Action_Base {
 		$calculator = Billrun_Calculator::getInstance($options);
 		$this->_controller->addOutput("Calculator loaded");
 
-		if ($calculator) {
+		if (!$calculator) {
+			$this->_controller->addOutput("Calculator cannot be loaded");
+		} else {
 			$this->_controller->addOutput("Starting to calculate. This action can take a while...");
 			$calculator->calc();
 			$this->_controller->addOutput("Writing calculated data.");
 			$calculator->write();
 			$this->_controller->addOutput("Calculation finished.");
 			$calculator->removeFromQueue();
-		} else {
-			$this->_controller->addOutput("Calculator cannot be loaded");
 		}
 	}
 
