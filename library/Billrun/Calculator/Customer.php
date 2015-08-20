@@ -158,7 +158,6 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 				}
 			}
 		}
-		
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array(&$row, $this));
  		return $row;
 	}
@@ -335,6 +334,12 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	 * @see Billrun_Calculator::isLineLegitimate
 	 */
 	public function isLineLegitimate($line) {
+//		 if ( $this->isCustomerable($line)) {
+// 			$customer = $this->isOutgoingCall($line) ? "caller" : "callee";
+// 			if (isset($this->translateCustomerIdentToAPI[$customer])) {
+// 					}
+// 				}
+// 			}
 		if (!$this->isCustomerable($line)) {
 			Billrun_Factory::log("isLineLegitimate: " . print_r($line,true) . " Is not customerable!", Zend_Log::INFO);
 			return false;

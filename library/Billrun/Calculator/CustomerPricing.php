@@ -232,23 +232,24 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 
 		$balance_unique_key = array('sid' => $row['sid'], 'billrun_key' => $billrun_key);
 		if (!($balance = self::createBalanceIfMissing($row['aid'], $row['sid'], $billrun_key, $plan_ref))) {
+			// TODO: report error?
 			return false;
-		} else if ($balance === true) {
+		}
+		
+		if ($balance === true) {
 			$balance = null;
 		}
 
 		if (is_null($balance)) {
 			$balance = Billrun_Factory::balance($balance_unique_key);
 		}
+		
 		if (!$balance || !$balance->isValid()) {
-			Billrun_Factory::log("couldn't get balance for : " . print_r(array(
-					'sid' => $row['sid'],
-					'billrun_month' => $billrun_key
-					), 1), Zend_Log::INFO);
+			Billrun_Factory::log("couldn't get balance for subscriber: " . $row['sid'], Zend_Log::INFO);
 			return false;
-		} else {
-			Billrun_Factory::log("Found balance " . $billrun_key . " for subscriber " . $row['sid'], Zend_Log::DEBUG);
 		}
+		
+		Billrun_Factory::log("Found balance " . $billrun_key . " for subscriber " . $row['sid'], Zend_Log::DEBUG);
 		return $balance;
 	}
 
@@ -449,11 +450,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		}
 		$update['$set']['balance.cost'] = $subRaw['balance']['cost'] + $pricingData[$this->pricingField];
 		$options = array('w' => 1);
-		$is_data_usage = ($balance_totals_key == 'data');
-		if ($is_data_usage) {
-			$this->setMongoNativeLong(1);
-		}
-		Billrun_Factory::log("Updating balance " . $balance['billrun_month'] . " of subscriber " . $row['sid'], Zend_Log::DEBUG);
+		Billrun_Factory::log("Updating balance " . $balance_id . " of subscriber " . $row['sid'], Zend_Log::DEBUG);
 		Billrun_Factory::dispatcher()->trigger('beforeCommitSubscriberBalance', array(&$row, &$pricingData, &$query, &$update, $rate, $this));
 		if ($update) {
 			$ret = $this->balances->update($query, $update, $options);
@@ -474,9 +471,8 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				return false;
 			}
 			Billrun_Factory::log('Concurrent write of sid : ' . $row['sid'] . ' line stamp : ' . $row['stamp'] . ' to balance. Update status: ' . print_r($ret, true) . 'Retrying...', Zend_Log::INFO);
-			sleep($this->countConcurrentRetries);
-			$balance = $this->getSubscriberBalance($row, $balance['billrun_month']);
-			return $this->updateSubscriberBalance($balance, $row, $usage_type, $rate, $volume);
+			usleep($this->countConcurrentRetries);
+			return $this->updateSubscriberBalance($row, $usage_type, $rate, $volume);
 		}
 		Billrun_Factory::log("Line with stamp " . $row['stamp'] . " was written to balance " . $balance['billrun_month'] . " for subscriber " . $row['sid'], Zend_Log::DEBUG);
 		$row['tx_saved'] = true; // indication for transaction existence in balances. Won't & shouldn't be saved to the db.
