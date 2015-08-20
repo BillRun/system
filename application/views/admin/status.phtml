@@ -1,0 +1,11 @@
+
+<html>
+	<head>
+		<h1>Fraud ftp status</h1>
+	</head>
+	<body>
+		<p><?php print($this->testConnection ? "ftp connection tested successfully" : " ftp connection test failed"); ?></p>
+		<p>last file received: <?php print($this->file_name) ?><p/>
+		<p>received time: <?php print($this->received_time) ?></p>
+	</body>
+</html>
