@@ -18,11 +18,9 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 	 * @var type Array
 	 */
 	protected $recordToSet = array();
-	
 	protected $query = array();
-	protected $keepHistory = true;
-	protected $keepBalances = true;
-	
+	protected $subscriberId = true;
+
 	/**
 	 */
 	public function __construct() {
@@ -36,24 +34,14 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 	public function execute() {
 		$success = true;
 		$updatedDocument = null;
-		try {
-			// TODO: How do i keep history?
-			// TODO: Does removing 'balances' means from the subscribers collection?
-			$cursor = $this->collection->query($this->options)->cursor();
-			foreach ($cursor as $record) {
-				foreach ($this->recordToSet as $key => $value) {
-					$record->collection($this->collection);
-					if(!$record->set($key, $value)) {
-						$success = false;
-						break 2;
-					}
-				}
-			}		
-		} catch (\Exception $e) {
-			Billrun_Factory::log('failed to store into DB got error : ' . $e->getCode() . ' : ' . $e->getMessage(), Zend_Log::ALERT);
-			Billrun_Factory::log('failed saving request :' . print_r($this->recordToSet, 1), Zend_Log::ALERT);
-			$success = false;
-		}
+
+		list($filterName,$t)=each($this->query);
+		
+		// Get the updater for the filter.
+		$updater = 
+			Billrun_ActionManagers_Balances_Updaters_Manager::getUpdater($filterName);
+		
+		$updater->update($this->query, $this->recordToSet, $subscriberId);
 
 		$outputResult = 
 			array('status'  => ($success) ? (1) : (0),
@@ -68,6 +56,12 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 	 * @return true if valid.
 	 */
 	public function parse($input) {
+		$this->subscriberId = $input->get('sid');
+		if(empty($this->subscriberId)) {
+			Billrun_Factory::log("Update action did not receive subscriber ID!", Zend_Log::ALERT);
+			return false;
+		}
+		
 		$jsonUpdateData = null;
 		$update = $input->get('upsert');
 		if(empty($update) || (!($jsonUpdateData = json_decode($update, true)))) {
@@ -93,13 +87,20 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 			return false;
 		}
 		
+		$operation = "inc";
+		if(isset($jsonUpdateData['operation'])) {
+			// TODO: What if this is not INC and not SET? Should we check and raise error?
+			$operation = $jsonUpdateData['operation'];
+		}
+		
+		$to = isset($jsonUpdateData['expiration_date']) ? ($jsonUpdateData['expiration_date']) : 0;
+		
 		// TODO: Do i need to validate that all these fields are set?
 		$this->recordToSet = 
 			array('value'			=> $jsonUpdateData['value'],
 				  'recurring'		=> $jsonUpdateData['recurring'],
-				  'expiration_date'	=> $jsonUpdateData['expiration_date'],
-				   // TOOD: In documentation it says "operation default is inc" so can this field be empty for inc to be used?
-				  'operation'		=> $jsonUpdateData['operation']);
+				  'to'				=> $to,
+				  'operation'		=> $operation);
 		
 		return true;
 	}
