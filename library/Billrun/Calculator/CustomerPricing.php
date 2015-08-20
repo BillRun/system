@@ -179,11 +179,10 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 					$plan_name = isset($row['plan']) ? $row['plan'] : null;
 					$pricingData = array($this->pricingField => self::getPriceByRate($rate, $usage_type, $volume, $plan_name));
 				} else {
-					$balance = $this->getSubscriberBalance($row, $billrun_key);
+					$pricingData = $this->updateSubscriberBalance($row, $billrun_key);
 					if ($balance === FALSE) {
 						return false;
 					}
-					$pricingData = $this->updateSubscriberBalance($balance, $row, $usage_type, $rate, $volume);
 				}
 
 				if ($this->isBillable($rate)) {
@@ -222,7 +221,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @param type $billrun_key
 	 * @return Billrun_Balance
 	 */
-	public function getSubscriberBalance($row, $billrun_key) {
+	public function loadSubscriberBalance($row, $billrun_key) {
 		$plan = Billrun_Factory::plan(array('name' => $row['plan'], 'time' => $row['urt']->sec, 'disableCache' => true));
 		$plan_ref = $plan->createRef();
 		if (is_null($plan_ref)) {
