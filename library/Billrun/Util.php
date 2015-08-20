@@ -279,14 +279,12 @@ class Billrun_Util {
 		$units = array('B' => 0, 'KB' => 1, 'MB' => 2, 'GB' => 3, 'TB' => 4,
 			'PB' => 5, 'EB' => 6, 'ZB' => 7, 'YB' => 8);
 
-		$negative = $bytes < 0;
-		$bytes = abs($bytes);	
 		$value = 0;
-		if ($bytes > 0) {
+		if ($bytes != 0) {
 			// Generate automatic prefix by bytes 
 			// If wrong prefix given, search for the closest unit
 			if (!array_key_exists($unit, $units)) {
-				$pow = floor(log($bytes) / log(1024));
+				$pow = floor(log(abs($bytes)) / log(1024));
 				$unit = array_search($pow, $units);
 			}
 
@@ -305,9 +303,6 @@ class Billrun_Util {
 		// Format output
 		if (!empty($value)) {
 			$number = number_format($value, $decimals, $dec_point, $thousands_sep);
-			if ($negative) {
-				$number *= -1;
-			}
 			if ($includeUnit) {
 				return $number . $unit;
 			}
