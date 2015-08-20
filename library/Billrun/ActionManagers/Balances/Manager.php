@@ -11,18 +11,19 @@
  *
  * @author tom
  */
-class Billrun_Subscriber_Actions_Manager {
+// TODO: Create abstract manager class and extend it.
+class Billrun_ActionManagers_Balances_Manager {
 	
 	/**
-	 * This function receives input and returns a subscriber action instance after
+	 * This function receives input and returns a balances action instance after
 	 * it already parsed the input into itself.
 	 * @param type $input
-	 * @return type Subscriber action
+	 * @return type Balances action
 	 */
-	public static function getSubscriberAction($input) {
+	public static function getAction($input) {
 		$methodInput = $input->get('method');
 		if(empty($methodInput)) {
-			Billrun_Factory::log("getSubscriberAction received invalid input", Zend_Log::INFO);
+			Billrun_Factory::log("getAction received invalid input", Zend_Log::INFO);
 			return null;
 		}
 		$method = ucfirst(strtolower($methodInput));
@@ -31,7 +32,7 @@ class Billrun_Subscriber_Actions_Manager {
 		$action = new $actionClass();
 		
 		if(!$action) {
-			Billrun_Factory::log("getSubscriberAction Action '$method' is invalid!", Zend_Log::INFO);
+			Billrun_Factory::log("getAction Action '$method' is invalid!", Zend_Log::INFO);
 			return null;
 		}
 		
@@ -39,7 +40,7 @@ class Billrun_Subscriber_Actions_Manager {
 		 * Parse the input data.
 		 */
 		if(!$action->parse($input)) {
-			Billrun_Factory::log("getSubscriberAction Action failed to parse input! " . print_r($input, 1), Zend_Log::INFO);
+			Billrun_Factory::log("getAction Action failed to parse input! " . print_r($input, 1), Zend_Log::INFO);
 			return null;
 		}
 		

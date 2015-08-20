@@ -7,11 +7,11 @@
  */
 
 /**
- * This is a parser to be used by the subscribers action.
+ * This is a parser to be used by the balances action.
  *
  * @author tom
  */
-class Billrun_Subscriber_Actions_Update extends Billrun_Subscriber_Actions_SubscribersAction{
+class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Balances_Manager{
 	
 	/**
 	 * Field to hold the data to be written in the DB.
@@ -57,7 +57,7 @@ class Billrun_Subscriber_Actions_Update extends Billrun_Subscriber_Actions_Subsc
 
 		$outputResult = 
 			array('status'  => ($success) ? (1) : (0),
-				  'desc'    => ($success) ? ('success') : ('Failed updating subscriber'),
+				  'desc'    => ($success) ? ('success') : ('Failed updating balance'),
 				  'details' => ($updatedDocument) ? json_encode($updatedDocument) : 'null');
 		return $outputResult;
 	}
@@ -69,7 +69,7 @@ class Billrun_Subscriber_Actions_Update extends Billrun_Subscriber_Actions_Subsc
 	 */
 	public function parse($input) {
 		$jsonUpdateData = null;
-		$update = $input->get('update');
+		$update = $input->get('upsert');
 		if(empty($update) || (!($jsonUpdateData = json_decode($update, true)))) {
 			Billrun_Factory::log("Update action does not have an update field!", Zend_Log::ALERT);
 			return false;
@@ -82,29 +82,65 @@ class Billrun_Subscriber_Actions_Update extends Billrun_Subscriber_Actions_Subsc
 			return false;
 		}
 		
+		$this->query = $this->getUpdateFilter($jsonQueryData);
+		// This is a critical error!
+		if($this->query===null){
+			Billrun_Factory::log("Balances Update: Received more than one filter field!", Zend_Log::ERR);
+		}
+		// No filter found.
+		else if(empty($this->query)) {
+			Billrun_Factory::log("Balances Update: Did not receive a filter field!", Zend_Log::ERR);
+			return false;
+		}
+		
 		// TODO: Do i need to validate that all these fields are set?
 		$this->recordToSet = 
-			array('imsi'			 => $jsonUpdateData['imsi'],
-				  'msisdn'			 => $jsonUpdateData['msisdn'],
-				  'aid'				 => $jsonUpdateData['aid'],
-				  'sid'				 => $jsonUpdateData['sid'],
-				  'plan'			 => $jsonUpdateData['plan'], 
-				  'language'		 => $jsonUpdateData['language'],
-				  'service_provider' => $jsonUpdateData['service_provider'],
-			//	  'from'			 => THIS FIELD IS SET AFTERWARDS WITH THE DATA FROM THE EXISTING RECORD IN MONGO.
-				  'to'				 => new MongoDate(strtotime('+100 years')));
-		
-		$this->query = 
-			array('sid'    => $jsonQueryData['sid'],
-				  'imsi'   => $jsonQueryData['imsi'],
-				  'msisdn' => $jsonQueryData['msisdn']);
-		
-		// If keep_history is set take it.
-		$this->keepHistory = $input->get('keep_history');
-		
-		// If keep_balances is set take it.
-		$this->keepBalances = $input->get('keep_balances');
+			array('value'			=> $jsonUpdateData['value'],
+				  'recurring'		=> $jsonUpdateData['recurring'],
+				  'expiration_date'	=> $jsonUpdateData['expiration_date'],
+				   // TOOD: In documentation it says "operation default is inc" so can this field be empty for inc to be used?
+				  'operation'		=> $jsonUpdateData['operation']);
 		
 		return true;
+	}
+	
+	/**
+	 * Get the query to use to update mongo.
+	 * 
+	 * @param type $jsonQueryData - The update JSON input.
+	 * @return type Query to run to update mongo
+	 */
+	protected function getUpdateFilter($jsonQueryData) {
+		$filter = array();
+		
+		$filterFields = 
+			array('id', 
+				  'charging_plan', 
+				  'charging_plan_intenal_id', 
+				  'name', 
+				  'account_intenal_id', 
+				  'reccuring', 
+				  'secret');
+		
+		// Check which field is set.
+		foreach ($filterFields as $fieldName) {
+			// Check if the field is set.
+			if(!isset($jsonQueryData[$fieldName])) {
+				continue;
+			}
+			
+			// Check if filter is already set.
+			// If it is, this is an error. We do not want that someone will try
+			// to update by secret code, but somehow manages to send a query with 
+			// charging_plan, so that we will update by charging plan and not code.
+			// To be sure, when receiving more than one filter field, return error!
+			if(!empty($filter)) {
+				return NULL;
+			}
+
+			$filter = array($fieldName => $jsonQueryData[$fieldName]);
+		}
+		
+		return $filter;
 	}
 }

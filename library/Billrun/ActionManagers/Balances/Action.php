@@ -7,11 +7,12 @@
  */
 
 /**
- * This is a prototype for a subscriber action.
+ * This is a prototype for a balances action.
  *
  * @author tom
  */
-abstract class Billrun_Subscriber_Actions_SubscribersAction {
+// TODO: Make an interface for these classes.
+abstract class Billrun_ActionManagers_Balances_Action {
 
 	protected $collection = null;
 	
@@ -19,7 +20,7 @@ abstract class Billrun_Subscriber_Actions_SubscribersAction {
 	 * Create an instance of the SubscibersAction type.
 	 */
 	public function __construct() {
-		$this->collection = Billrun_Factory::db()->subscribersCollection();
+		$this->collection = Billrun_Factory::db()->balancesCollection();
 	}
 	
 	/**

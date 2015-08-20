@@ -11,7 +11,7 @@
  *
  * @author tom
  */
-class Billrun_Subscriber_Actions_Create extends Billrun_Subscriber_Actions_SubscribersAction{
+class Billrun_ActionManagers_Subscriber_Create extends Billrun_ActionManagers_Subscriber_Action{
 	
 	/**
 	 * Field to hold the data to be written in the DB.
