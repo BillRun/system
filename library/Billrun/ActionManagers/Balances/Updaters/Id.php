@@ -112,6 +112,6 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		);
 
 		// Return the new document.
-		return $balancesColl->findAndModify($query, $valueUpdateQuery, array(), $options, true);
+		return array($balancesColl->findAndModify($query, $valueUpdateQuery, array(), $options, true));
 	}
 }
