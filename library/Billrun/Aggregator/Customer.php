@@ -161,7 +161,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		Billrun_Factory::dispatcher()->trigger('afterAggregatorLoadData', array('aggregator' => $this));
 	}
 
-	private function handleBulkAccountPreload($billrun_key) {
+	protected function handleBulkAccountPreload($billrun_key) {
 		if ($this->bulkAccountPreload) {
 			Billrun_Factory::log('loading accounts that will be needed to be preloaded...', Zend_log::INFO);
 			$dataKeys = array_keys($this->data);
@@ -175,7 +175,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		}
 	}
 	
-	private function aggregateAccounts($billrun_key) {
+	protected function aggregateAccounts($billrun_key) {
 		$billruns_count = 0;
 		$skipped_billruns_count = 0;
 		foreach ($this->data as $accid => $account) {

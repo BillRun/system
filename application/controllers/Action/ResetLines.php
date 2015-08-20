@@ -39,9 +39,9 @@ class ResetLinesAction extends ApiAction {
 		try {
 			$rebalance_queue = Billrun_Factory::db()->rebalance_queueCollection();
 			foreach ($sids as $sid) {
-				$rebalance_queue->insert(array('sid' => $sid, 
-										       'billrun_key' => $billrun_key, 
-											   'creation_date' => new MongoDate()));
+				$rebalance_queue->insert(array( 'sid' => $sid, 
+												'billrun_key' => $billrun_key, 
+												'creation_date' => new MongoDate()));
 			}
 		} catch (Exception $exc) {
 			Billrun_Util::logFailedResetLines($sids, $billrun_key);

@@ -32,7 +32,7 @@ class Billrun_Subscriber_Actions_Query extends Billrun_Subscriber_Actions_Subscr
 	/**
 	 * Query the subscribers collection to receive data in a range.
 	 */
-	private function queryRangeSubscribers() {
+	protected function queryRangeSubscribers() {
 		try {
 			$cursor = $this->collection->query($this->subscriberQuerys)->cursor();
 			if(!$queryInRange) {

@@ -10,8 +10,10 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
 /**
  * This class holds the api logic for the subscribers.
  *
- * @author tom
- */
+ * @package     Controllers
+ * @subpackage  Action
+ * @since       4.0
+*/
 class SubscribersAction extends ApiAction {
 	
 	protected $model;
