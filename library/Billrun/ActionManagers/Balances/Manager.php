@@ -28,7 +28,7 @@ class Billrun_ActionManagers_Balances_Manager {
 		}
 		$method = ucfirst(strtolower($methodInput));
 		 
-		$actionClass = str_replace('Manager', $method, __CLASS__);
+		$actionClass = str_replace('_Manager', $method, __CLASS__);
 		$action = new $actionClass();
 		
 		if(!$action) {
