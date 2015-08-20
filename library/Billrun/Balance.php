@@ -40,18 +40,23 @@ class Billrun_Balance extends Mongodloid_Entity {
 			Billrun_Factory::log('Error creating balance, no aid or sid' , Zend_Log::ALERT);
 			return false;
 		}
-		if (!isset($options['charging_type']) || $options['charging_type'] === 'postpaid') {
-			$ret = $this->load($options['sid'], $options['urt'])->getRawData();
-			if (empty($ret) || count($ret) == 0) {
+		
+		if (!isset($options['charging_type'])) {
+			$options['charging_type'] = 'postpaid';
+		}
+		$ret = $this->load($options['sid'], $options['urt'], $options['charging_type'], $options['usaget'])->getRawData();
+		
+		if (empty($ret) || count($ret) == 0) {
+			if ($options['charging_type'] == 'postpaid') {
 				$urtDate = date('Y-m-d h:i:s', $options['urt']->sec);
 				$from = Billrun_Billrun::getBillrunStartTimeByDate($urtDate);
 				$to = Billrun_Billrun::getBillrunEndTimeByDate($urtDate);
 				$plan = Billrun_Factory::plan(array('name' => $options['plan'], 'time' => $options['urt']->sec, 'disableCache' => true));
 				$plan_ref = $plan->createRef();
 				$ret = $this->createBasicBalance($options['aid'], $options['sid'], $from, $to, $plan_ref);
+			} else {
+				$ret = array();
 			}
-		} else {
-			$ret = array();
 		}
 		
 		parent::__construct($ret, self::getCollection());
@@ -93,17 +98,36 @@ class Billrun_Balance extends Mongodloid_Entity {
 		return call_user_func_array(array($this->data, $name), $arguments);
 	}
 
-	public function load($subscriberId, $urt) {
-		Billrun_Factory::log("Trying to load balance for subscriber " . $subscriberId . " urt: " . $urt->sec, Zend_Log::DEBUG);
+	/**
+	 * Loads the balance for subscriber
+	 * @param type $subscriberId
+	 * @param type $urt
+	 * @param type $chargingType prepaid/postpaid
+	 * @return subscriber's balance
+	 */
+	public function load($subscriberId, $urt, $chargingType = 'postpaid', $usageType = "") {
+		Billrun_Factory::log()->log("Trying to load balance for subscriber " . $subscriberId . ". urt: " . $urt->sec . ". charging_type: " . $chargingType, Zend_Log::DEBUG);
+		
+		$query = array(
+			'sid' => $subscriberId,
+			'from' => array('$lte' => $urt),
+			'to' => array('$gte' => $urt),
+		);
+		
+		if ($chargingType === 'prepaid') {
+			$query['$or'] = array (
+				array("balance.totals.$usageType.usagev" => array('$lt' => 0)),
+				array("balance.totals.$usageType.cost" => array('$lt' => 0)),
+				array("balance.cost" => array('$lt' => 0)),
+			);
+		}
 
-		return $this->collection->query(array(
-				'sid' => $subscriberId,
-				'from' => array('$lte' => $urt),
-				'to' => array('$gte' => $urt),
-			))
-			->cursor()->setReadPreference('RP_PRIMARY')
+		$cursor = $this->collection->query($query)->cursor();
+		if ($chargingType === 'prepaid') { // for pre-paid subscribers - choose correct balance by priority field
+			$cursor = $cursor->sort(array('priority' => -1));
+		}
+		return $cursor->setReadPreference('RP_PRIMARY')
 			->limit(1)->current();
-
 	}
 
 	/**

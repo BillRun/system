@@ -135,6 +135,7 @@ class RealtimeeventAction extends ApiAction {
 		$this->event['type'] = 'gy';
 		$this->event['rand'] = rand(1,1000000);
 		$this->event['stamp'] = Billrun_Util::generateArrayStamp($this->event);
+		$this->event['billrun_prepend'] = false; //TODO: set by type
 		if (isset($this->event['Service-Information']['SGSNAddress'])) {
 			$this->event['sgsn_address'] = long2ip(hexdec($this->event['Service-Information']['SGSNAddress']));
 		} else {
@@ -178,8 +179,11 @@ class RealtimeeventAction extends ApiAction {
 //				'returnCode' => 0
 //			),
 		);
-		$ret['MSCC']['granted'] = $ret['MSCC']['requested'];
-		$ret['MSCC']['returnCode'] = 0;
+		$data = $processor->getData()['data'][0];
+		$ret['MSCC']['returnCode'] = $data['grantedReturnCode'];
+		if ($data['grantedReturnCode'] == Billrun_Factory::config()->getConfigValue('prepaid.ok')) {
+			$ret['MSCC']['granted'] = $data['usagev'];
+		}
 		$this->getController()->setOutput(array($ret));
 //		if ($this->customer() !== TRUE) {
 //			die("error on customer");

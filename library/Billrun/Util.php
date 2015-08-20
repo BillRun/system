@@ -280,11 +280,11 @@ class Billrun_Util {
 			'PB' => 5, 'EB' => 6, 'ZB' => 7, 'YB' => 8);
 
 		$value = 0;
-		if ($bytes > 0) {
+		if ($bytes != 0) {
 			// Generate automatic prefix by bytes 
 			// If wrong prefix given, search for the closest unit
 			if (!array_key_exists($unit, $units)) {
-				$pow = floor(log($bytes) / log(1024));
+				$pow = floor(log(abs($bytes)) / log(1024));
 				$unit = array_search($pow, $units);
 			}
 
