@@ -49,7 +49,7 @@ class smsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		
 		foreach ($filepaths as $filePath) {
 			if (!$receiver->backupToPath($filePath, $path, true , true)) {
-				Billrun_Factory::log()->log("Couldn't save file $filePath to third patry path at : $path", Zend_Log::ERR);
+				Billrun_Factory::log("Couldn't save file $filePath to third patry path at : $path", Zend_Log::ERR);
 			}
 		}
 	}

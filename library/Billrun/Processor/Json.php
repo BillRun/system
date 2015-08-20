@@ -21,7 +21,7 @@ class Billrun_Processor_Json extends Billrun_Processor {
 	 */
 	protected function parse() {
 		if (!is_resource($this->fileHandler)) {
-			Billrun_Factory::log()->log('Resource is not configured well', Zend_Log::ERR);
+			Billrun_Factory::log('Resource is not configured well', Zend_Log::ERR);
 			return FALSE;
 		}
 		$this->data['data'] = json_decode(stream_get_contents($this->fileHandler), true);

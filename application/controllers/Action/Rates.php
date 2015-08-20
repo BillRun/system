@@ -19,7 +19,7 @@ class RatesAction extends ApiAction {
 	protected $model;
 	
 	public function execute() {
-		Billrun_Factory::log()->log("Execute rates api call", Zend_Log::INFO);
+		Billrun_Factory::log("Execute rates api call", Zend_Log::INFO);
 		$request = $this->getRequest();
 		$this->model = new RatesModel(array('sort' => array('provider' => 1, 'from' => 1)));
 
@@ -38,7 +38,7 @@ class RatesAction extends ApiAction {
 			'stampParams' => array($requestedQuery, $filter, $strip),
 		);
 		
-		$this->setCacheLifeTime(86400); // 1 day
+		$this->setCacheLifeTime(86400); // 1 day TODO: Use time utils.
 		$results = $this->cache($cacheParams);
 		
 		$this->getController()->setOutput(array(array(

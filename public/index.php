@@ -14,6 +14,9 @@ $app = new Yaf_Application(BILLRUN_CONFIG_PATH);
 try {
 	$app->bootstrap()->run();
 } catch (Exception $e) {
-	$log = print_R($_SERVER, TRUE) . PHP_EOL . print_R('Error code : ' . $e->getCode() . PHP_EOL . 'Error message: ' . $e->getMessage() . PHP_EOL . 'Host: ' . gethostname() . PHP_EOL . $e->getTraceAsString(), TRUE); // we don't cast the exception to string because Yaf_Exception could cause a segmentation fault
-	Billrun_Factory::log()->log('Crashed When running... exception details are as follow : ' . PHP_EOL . $log, Zend_Log::CRIT);
+	try {
+		Billrun_Factory::log()->logCrash($e);
+	} catch(Exception $e1) {
+		print_r("Log error! " . print_r($e1, 1));
+	}
 }

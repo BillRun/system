@@ -20,7 +20,7 @@ class CreditAction extends ApiAction {
 	 * it's called automatically by the api main controller
 	 */
 	public function execute() {
-		Billrun_Factory::log()->log("Execute credit", Zend_Log::INFO);
+		Billrun_Factory::log("Execute credit", Zend_Log::INFO);
 		$request = $this->getRequest()->getRequest(); // supports GET / POST requests
 
 		$parsed_row = $this->parseRow($request);
@@ -43,20 +43,19 @@ class CreditAction extends ApiAction {
 
 			if ($this->insertToQueue($entity) === false) {
 				return $this->setError('failed to store into DB queue', $request);
-			} else {
-				$this->getController()->setOutput(array(array(
-						'status' => 1,
-						'desc' => 'success',
-						'stamp' => $entity['stamp'],
-						'input' => $request,
-				)));
-				Billrun_Factory::log()->log("Added credit line " . $entity['stamp'], Zend_Log::INFO);
-				return true;
 			}
+			$this->getController()->setOutput(array(array(
+					'status' => 1,
+					'desc' => 'success',
+					'stamp' => $entity['stamp'],
+					'input' => $request,
+			)));
+			Billrun_Factory::log("Added credit line " . $entity['stamp'], Zend_Log::INFO);
+			return true;
 		} catch (\Exception $e) {
-			Billrun_Factory::log()->log('failed to store into DB got error : ' . $e->getCode() . ' : ' . $e->getMessage(), Zend_Log::ALERT);
-			Billrun_Factory::log()->log('failed saving request :' . print_r($request, 1), Zend_Log::ALERT);
-			Billrun_Factory::log()->log('failed saving :' . json_encode($parsed_row), Zend_Log::ALERT);
+			Billrun_Factory::log('failed to store into DB got error : ' . $e->getCode() . ' : ' . $e->getMessage(), Zend_Log::ALERT);
+			Billrun_Factory::log('failed saving request :' . print_r($request, 1), Zend_Log::ALERT);
+			Billrun_Factory::log('failed saving :' . json_encode($parsed_row), Zend_Log::ALERT);
 			Billrun_Util::logFailedCreditRow($parsed_row);
 
 			return $this->setError('failed to store into DB queue', $request);
@@ -75,7 +74,7 @@ class CreditAction extends ApiAction {
 	protected function insertToQueue($entity) {
 		$queue = Billrun_Factory::db()->queueCollection();
 		if (!is_object($queue)) {
-			Billrun_Factory::log()->log('Queue collection is not defined', Zend_Log::ALERT);
+			Billrun_Factory::log('Queue collection is not defined', Zend_Log::ALERT);
 			return false;
 		} else {
 			return $queue->insert(array(

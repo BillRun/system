@@ -131,7 +131,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		  $this->data[] = $entity;
 		  } */
 
-		Billrun_Factory::log()->log("entities loaded: " . count($this->lines), Zend_Log::INFO);
+		Billrun_Factory::log("entities loaded: " . count($this->lines), Zend_Log::INFO);
 
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorLoadData', array('calculator' => $this));
 	}
@@ -150,7 +150,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		$lines = $this->pullLines($this->lines);
 		foreach ($lines as $line) {
 			if ($line) {
-				Billrun_Factory::log()->log("Calculating row: " . $line['stamp'], Zend_Log::DEBUG);
+				Billrun_Factory::log("Calculating row: " . $line['stamp'], Zend_Log::DEBUG);
 				Billrun_Factory::dispatcher()->trigger('beforeCalculateDataRow', array('data' => &$line));
 				$line->collection($lines_coll);
 				if ($this->isLineLegitimate($line)) {
@@ -172,11 +172,11 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	public function write() {
 		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteData', array('data' => $this->data));
 		//no need  the  line is now  written right after update @TODO now that we do use queue shuold the lines wirte be here?
-		Billrun_Factory::log()->log('Writing ' . count($this->data) . ' lines to lines collection...', Zend_Log::DEBUG);
+		Billrun_Factory::log('Writing ' . count($this->data) . ' lines to lines collection...', Zend_Log::DEBUG);
 		foreach ($this->data as $key => $line) {
 			$this->writeLine($line, $key);
 		}
-		Billrun_Factory::log()->log('Updating ' . count($this->lines) . ' queue lines calculator flags...', Zend_Log::DEBUG);
+		Billrun_Factory::log('Updating ' . count($this->lines) . ' queue lines calculator flags...', Zend_Log::DEBUG);
 		$this->setCalculatorTag();
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteData', array('data' => $this->data));
 	}
@@ -206,7 +206,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		foreach ($queueLines as $item) {
 			$stamps[] = $item['stamp'];
 		}
-		//Billrun_Factory::log()->log("stamps : ".print_r($stamps,1),Zend_Log::DEBUG);
+		//Billrun_Factory::log("stamps : ".print_r($stamps,1),Zend_Log::DEBUG);
 		$lines = Billrun_Factory::db()->linesCollection()
 				->query()->in('stamp', $stamps)->cursor();
 
@@ -214,7 +214,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 			$lines->sort(array('urt' => 1));
 		}
 
-		//Billrun_Factory::log()->log("Lines : ".print_r($lines->count(),1),Zend_Log::DEBUG);			
+		//Billrun_Factory::log("Lines : ".print_r($lines->count(),1),Zend_Log::DEBUG);			
 		return $lines;
 	}
 
@@ -268,7 +268,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		$orphand_time = strtotime($orphanConfigTime . " ago");
 		// verify minimum orphan time to avoid parallel calculation
 		if (Billrun_Factory::config()->isProd() && (time() - $orphand_time) < 3600) {
-			Billrun_Factory::log()->log("Calculator orphan time less than one hour: " . $orphanConfigTime . ". Please set value greater than or equal to one hour. We will take one hour for now", Zend_Log::NOTICE);
+			Billrun_Factory::log("Calculator orphan time less than one hour: " . $orphanConfigTime . ". Please set value greater than or equal to one hour. We will take one hour for now", Zend_Log::NOTICE);
 			$orphand_time = time() - 3600;
 		}
 
@@ -331,7 +331,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 
 		// remove end of queue stack calculator
 		if (!empty($stamps)) { // last calculator
-			Billrun_Factory::log()->log("Removing lines from queue", Zend_Log::INFO);
+			Billrun_Factory::log("Removing lines from queue", Zend_Log::INFO);
 			$query = array('stamp' => array('$in' => $stamps));
 			$queue->remove($query);
 		}
@@ -365,7 +365,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		do {
 			//if There limit to the calculator set an updating limit.
 			if ($this->limit != 0) {
-				Billrun_Factory::log()->log('Looking for the last available line in the queue', Zend_Log::DEBUG);
+				Billrun_Factory::log('Looking for the last available line in the queue', Zend_Log::DEBUG);
 				if (isset($querydata['hint'])) {
 					$hq = $queue->query($query)->cursor()->hint(array($querydata['hint'] => 1))->limit($this->limit);
 					if ($this->autosort) {
@@ -379,7 +379,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 				}
 				$horizonlineCount = $hq->count(true);
 				$horizonline = $hq->skip(abs($horizonlineCount - 1))->limit(1)->current();
-				Billrun_Factory::log()->log("current limit : " . $horizonlineCount, Zend_Log::DEBUG);
+				Billrun_Factory::log("current limit : " . $horizonlineCount, Zend_Log::DEBUG);
 				if (!$horizonline->isEmpty()) {
 					if ($this->autosort) {
 						$query['urt'] = array('$lte' => $horizonline['urt']);
@@ -394,7 +394,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 			$query['$isolated'] = 1; //isolate the update
 			$this->workHash = md5(time() . rand(0, PHP_INT_MAX));
 			$update['$set']['hash'] = $this->workHash;
-			//Billrun_Factory::log()->log(print_r($query,1),Zend_Log::DEBUG);
+			//Billrun_Factory::log(print_r($query,1),Zend_Log::DEBUG);
 			$queue->update($query, $update, array('multiple' => true, 'w' => 1));
 
 			$foundLines = $queue->query(array_merge($localquery, array('hash' => $this->workHash, 'calc_time' => $this->signedMicrotime)))->cursor();

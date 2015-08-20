@@ -22,7 +22,7 @@ class Billrun_Parser_KeyedSeparated extends Billrun_Parser_Separator {
 			if (isset($this->structure[$key])) {
 				$retRecord[$this->structure[$key]] = $value;
 			} else {
-				Billrun_Factory::log()->log("couldn't find $key in configuration", Zend_Log::DEBUG);
+				Billrun_Factory::log("couldn't find $key in configuration", Zend_Log::DEBUG);
 			}
 		}
 		$retRecord['stamp'] = md5(serialize($retRecord));

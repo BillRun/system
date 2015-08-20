@@ -66,15 +66,15 @@ class Billrun_Receiver_Inline extends Billrun_Receiver {
 
 		$type = static::$type;
 		if (empty($this->file_content)) {
-			Billrun_Factory::log()->log("NOTICE : SKIPPING $this->filename !!! It is empty!!!", Zend_Log::NOTICE);
+			Billrun_Factory::log("NOTICE : SKIPPING $this->filename !!! It is empty!!!", Zend_Log::NOTICE);
 			return FALSE;
 		}
 		$ret = array();
-		Billrun_Factory::log()->log("Billrun_Receiver_Inline::receive - handle file {$this->filename}", Zend_Log::DEBUG);
+		Billrun_Factory::log("Billrun_Receiver_Inline::receive - handle file {$this->filename}", Zend_Log::DEBUG);
 		$this->lockFileForReceive($this->filename, $type);
 		$path = $this->handleFile();		
 		if (!$path) {
-			Billrun_Factory::log()->log("NOTICE : Couldn't write file $this->filename.", Zend_Log::NOTICE);
+			Billrun_Factory::log("NOTICE : Couldn't write file $this->filename.", Zend_Log::NOTICE);
 			return FALSE;
 		} else {			
 			$fileData = $this->getFileLogData($this->filename, $type);

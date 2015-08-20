@@ -72,7 +72,7 @@ use Billrun_Traits_FileSequenceChecking;
 		}
 		foreach ($filepaths as $filePath) {
 			if (!$receiver->backupToPath($filePath, $path, true, true)) {
-				Billrun_Factory::log()->log("Couldn't save file $filePath to third patry path at : $path", Zend_Log::ERR);
+				Billrun_Factory::log("Couldn't save file $filePath to third patry path at : $path", Zend_Log::ERR);
 			}
 		}
 	}
@@ -86,17 +86,17 @@ use Billrun_Traits_FileSequenceChecking;
 		if ($this->getName() != $type) {
 			return FALSE;
 		}
-		//Billrun_Factory::log()->log("Header data : ". print_r(Asn_Base::getDataArray( $data ,true ),1) ,  Zend_Log::DEBUG);
+		//Billrun_Factory::log("Header data : ". print_r(Asn_Base::getDataArray( $data ,true ),1) ,  Zend_Log::DEBUG);
 		$header = $this->parseASNDataRecur($this->tap3Config['header'], $data, $this->tap3Config['fields']);
 
 		$this->currentFileHeader = $header;
 		$this->fileVersion = $this->currentFileHeader['header']['version'] . "_" . $this->currentFileHeader['header']['minor_version'];
 		if (empty($this->currentFileHeader)) {
-			//Billrun_Factory::log()->log(print_r(Asn_Base::getDataArray($data ,true ,true),1),Zend_Log::DEBUG);
+			//Billrun_Factory::log(print_r(Asn_Base::getDataArray($data ,true ,true),1),Zend_Log::DEBUG);
 			$header['notifcation'] = $this->parseASNDataRecur($this->tap3Config['notification'], $data, $this->tap3Config['fields']);
 			$this->fileVersion = $header['notifcation']['version'] . "_" . $header['notifcation']['minor_version'];
 		}
-		Billrun_Factory::log()->log("File Version :  {$this->fileVersion}", Zend_Log::DEBUG);
+		Billrun_Factory::log("File Version :  {$this->fileVersion}", Zend_Log::DEBUG);
 		return $header;
 	}
 
@@ -118,7 +118,7 @@ use Billrun_Traits_FileSequenceChecking;
 				$this->surfaceCDRFields($cdrLine, array_merge($this->tap3Config[$this->fileVersion]['mapping']['common'], $this->tap3Config[$this->fileVersion]['mapping'][$type]));
 			}
 		} else {
-			//Billrun_Factory::log()->log("Unidetifiyed type :  $type",Zend_Log::DEBUG);
+			//Billrun_Factory::log("Unidetifiyed type :  $type",Zend_Log::DEBUG);
 		}
 
 		return $cdrLine;
@@ -132,7 +132,7 @@ use Billrun_Traits_FileSequenceChecking;
 			return FALSE;
 		}
 		$parsedData = Asn_Base::parseASNString($data);
-		//	Billrun_Factory::log()->log(print_r(Asn_Base::getDataArray($parsedData),1),  Zend_Log::DEBUG);
+		//	Billrun_Factory::log(print_r(Asn_Base::getDataArray($parsedData),1),  Zend_Log::DEBUG);
 		return $this->parseField($parsedData, $fieldDesc);
 	}
 
@@ -145,7 +145,7 @@ use Billrun_Traits_FileSequenceChecking;
 		}
 
 		$trailer = $this->parseASNDataRecur($this->tap3Config['trailer'], $data, $this->tap3Config['fields']);
-		//Billrun_Factory::log()->log(print_r($trailer,1),  Zend_Log::DEBUG);
+		//Billrun_Factory::log(print_r($trailer,1),  Zend_Log::DEBUG);
 
 		return $trailer;
 	}
@@ -340,11 +340,11 @@ use Billrun_Traits_FileSequenceChecking;
 						}
 					}
 				} else if (!isset($this->tap3Config['header'][$record->getType()]) && !isset($this->tap3Config['trailer'][$record->getType()])) {
-					Billrun_Factory::log()->log('No config for type : ' . $record->getType(), Zend_Log::DEBUG);
+					Billrun_Factory::log('No config for type : ' . $record->getType(), Zend_Log::DEBUG);
 				}
 			}
 		} else {
-			Billrun_Factory::log()->log('Got notification/empty file : ' . $processor->filename . ' , moving on...', Zend_Log::INFO);
+			Billrun_Factory::log('Got notification/empty file : ' . $processor->filename . ' , moving on...', Zend_Log::INFO);
 		}
 
 		$processorData['trailer'] = $trailer;
@@ -408,7 +408,7 @@ use Billrun_Traits_FileSequenceChecking;
 	 */
 	protected static function sumup_arrays($maybe_arr, $limit) {
 		if ($limit == 0) {
-			Billrun_Factory::log()->log('recurrsion is to deep, aborting...', Zend_Log::INFO);
+			Billrun_Factory::log('recurrsion is to deep, aborting...', Zend_Log::INFO);
 			return;
 		} if (!is_array($maybe_arr)) {
 			return $maybe_arr;

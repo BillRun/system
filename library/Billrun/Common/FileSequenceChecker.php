@@ -41,7 +41,7 @@ class Billrun_Common_FileSequenceChecker {
 
 		if (!($sequenceData = call_user_func($this->getFileSequenceDataCallable, $filename))) {
 			$msg = "GGSN Reciever : Couldnt parse received file : $filename !!!!";
-			Billrun_Factory::log()->log($msg, Zend_Log::ALERT);
+			Billrun_Factory::log($msg, Zend_Log::ALERT);
 			return $msg;
 		}
 

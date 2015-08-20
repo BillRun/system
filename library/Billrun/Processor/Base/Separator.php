@@ -46,7 +46,7 @@ abstract class Billrun_Processor_Base_Separator extends Billrun_Processor {
 	 */
 	protected function parse() {
 		if (!is_resource($this->fileHandler)) {
-			Billrun_Factory::log()->log("Resource is not configured well", Zend_Log::ERR);
+			Billrun_Factory::log("Resource is not configured well", Zend_Log::ERR);
 			return false;
 		}
 
@@ -64,7 +64,7 @@ abstract class Billrun_Processor_Base_Separator extends Billrun_Processor {
 			} else if (in_array($record_type, $footerOptions)) {
 				$this->parseFooter($line);
 			} else {
-				Billrun_Factory::log()->log("Billrun_Processor_Separator: cannot identify record type " . $record_type, Zend_Log::WARN);
+				Billrun_Factory::log("Billrun_Processor_Separator: cannot identify record type " . $record_type, Zend_Log::WARN);
 			}
 		}
 
@@ -116,7 +116,7 @@ abstract class Billrun_Processor_Base_Separator extends Billrun_Processor {
 	 */
 	protected function parseHeader($line) {
 		if (isset($this->data['header'])) {
-			Billrun_Factory::log()->log("double header", Zend_Log::ERR);
+			Billrun_Factory::log("double header", Zend_Log::ERR);
 			return false;
 		}
 
@@ -142,7 +142,7 @@ abstract class Billrun_Processor_Base_Separator extends Billrun_Processor {
 	 */
 	protected function parseData($line) {
 		if (!isset($this->data['header'])) {
-			Billrun_Factory::log()->log("No header found", Zend_Log::ERR);
+			Billrun_Factory::log("No header found", Zend_Log::ERR);
 			return false;
 		}
 
@@ -170,7 +170,7 @@ abstract class Billrun_Processor_Base_Separator extends Billrun_Processor {
 	protected function parseFooter($line) {
 
 		if (isset($this->data['trailer'])) {
-			Billrun_Factory::log()->log("double trailer", Zend_Log::ERR);
+			Billrun_Factory::log("double trailer", Zend_Log::ERR);
 			return false;
 		}
 

@@ -48,12 +48,12 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 //		
 //		$aggregateQuery = $this->getBaseAggregateQuery($charge_time);
 //
-//		Billrun_Factory::log()->log("ggsnPlugin::handlerCollect collecting monthly data exceeders", Zend_Log::DEBUG);
+//		Billrun_Factory::log("ggsnPlugin::handlerCollect collecting monthly data exceeders", Zend_Log::DEBUG);
 //		$dataExceedersAlerts = $this->detectDataExceeders($lines, $aggregateQuery);
-//		Billrun_Factory::log()->log("GGSN plugin of monthly usage fraud found " . count($dataExceedersAlerts) . " ", Zend_Log::INFO);
-//		Billrun_Factory::log()->log("ggsnPlugin::handlerCollect collecting hourly data exceeders", Zend_Log::DEBUG);
+//		Billrun_Factory::log("GGSN plugin of monthly usage fraud found " . count($dataExceedersAlerts) . " ", Zend_Log::INFO);
+//		Billrun_Factory::log("ggsnPlugin::handlerCollect collecting hourly data exceeders", Zend_Log::DEBUG);
 //		$hourlyDataExceedersAlerts = $this->detectHourlyDataExceeders($lines, $aggregateQuery);
-//		Billrun_Factory::log()->log("GGSN plugin of hourly usage fraud found " . count($hourlyDataExceedersAlerts) . " ", Zend_Log::INFO);
+//		Billrun_Factory::log("GGSN plugin of hourly usage fraud found " . count($hourlyDataExceedersAlerts) . " ", Zend_Log::INFO);
 //
 //		return array_merge($dataExceedersAlerts, $hourlyDataExceedersAlerts);
 //	}
@@ -92,7 +92,7 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 		}
 		foreach ($filepaths as $filePath) {
 			if (!$receiver->backupToPath($filePath, $path, true, true)) {
-				Billrun_Factory::log()->log("Couldn't save file $filePath to third patry path at : $path", Zend_Log::ERR);
+				Billrun_Factory::log("Couldn't save file $filePath to third patry path at : $path", Zend_Log::ERR);
 			}
 		}
 	}
@@ -292,7 +292,7 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 				return false;
 			}
 		} else {
-			Billrun_Factory::log()->log("couldn't find  definition for {$type}", Zend_Log::INFO);
+			Billrun_Factory::log("couldn't find  definition for {$type}", Zend_Log::INFO);
 		}
 		if (isset($cdrLine['calling_number'])) {
 			$cdrLine['calling_number'] = Billrun_Util::msisdn($cdrLine['calling_number']);
@@ -302,7 +302,7 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 		}
 		$cdrLine['usaget'] = $this->getLineUsageType($cdrLine);
 		$cdrLine['usagev'] = $this->getLineVolume($cdrLine);
-		//Billrun_Factory::log()->log($asnObject->getType() . " : " . print_r($cdrLine,1) ,  Zend_Log::DEBUG);
+		//Billrun_Factory::log($asnObject->getType() . " : " . print_r($cdrLine,1) ,  Zend_Log::DEBUG);
 		return $cdrLine;
 	}
 
@@ -362,7 +362,7 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 					foreach ($diags as $key => $diagnostics) {
 						if (is_array($diagnostics) && isset($data[$key])) {
 							$diag = intval(implode('.', unpack('C', $data[$key])));
-							Billrun_Factory::log()->log($diag . " : " . $diagnostics[$diag], Zend_Log::DEBUG);
+							Billrun_Factory::log($diag . " : " . $diagnostics[$diag], Zend_Log::DEBUG);
 							$ret = $diagnostics[$diag];
 						}
 					}
@@ -379,7 +379,7 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 					$m = str_pad(abs(($quarterOffset % 4) * 15), 2, "0", STR_PAD_LEFT); // calc the offset minutes
 					return ((($smode[1] & 0x8) == 0) ? "+" : "-") . "$h:$m";
 				}
-				//Billrun_Factory::log()->log($data. " : ". print_r($smode,1),Zend_Log::DEBUG );
+				//Billrun_Factory::log($data. " : ". print_r($smode,1),Zend_Log::DEBUG );
 				return false;
 			},
 			'ch_ch_selection_mode' => function($data) {

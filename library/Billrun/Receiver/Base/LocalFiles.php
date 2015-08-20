@@ -73,7 +73,7 @@ abstract class Billrun_Receiver_Base_LocalFiles extends Billrun_Receiver {
 
 		$type = static::$type;
 		if (!file_exists($this->srcPath)) {
-			Billrun_Factory::log()->log("NOTICE : SKIPPING $type !!! directory " . $this->srcPath . " not found!!", Zend_Log::NOTICE);
+			Billrun_Factory::log("NOTICE : SKIPPING $type !!! directory " . $this->srcPath . " not found!!", Zend_Log::NOTICE);
 			return array();
 		}
 		$files = $this->getFiles($this->srcPath, $this->sort, $this->order);
@@ -89,13 +89,13 @@ abstract class Billrun_Receiver_Base_LocalFiles extends Billrun_Receiver {
 				Billrun_Factory::log('File ' . $file . ' has been received already', Zend_Log::INFO);
 				continue;
 			}
-			Billrun_Factory::log()->log("Billrun_Receiver_Base_LocalFiles::receive - handle file {$file}", Zend_Log::DEBUG);
+			Billrun_Factory::log("Billrun_Receiver_Base_LocalFiles::receive - handle file {$file}", Zend_Log::DEBUG);
 			
 			$fileData = $this->getFileLogData($file, $type);
 			$fileData['path'] = $this->handleFile($path, $file);
 			
 			if (!$fileData['path']) {
-				Billrun_Factory::log()->log("NOTICE : Couldn't relocate file from  $path.", Zend_Log::NOTICE);
+				Billrun_Factory::log("NOTICE : Couldn't relocate file from  $path.", Zend_Log::NOTICE);
 				continue;
 			}
 			if(!empty($this->backupPaths)) {

@@ -26,7 +26,7 @@ abstract class Billrun_Processor_Base_SeparatorFieldLines extends Billrun_Proces
 	 */
 	protected function parse() {
 		if (!is_resource($this->fileHandler)) {
-			Billrun_Factory::log()->log("Resource is not configured well", Zend_Log::ERR);
+			Billrun_Factory::log("Resource is not configured well", Zend_Log::ERR);
 			return false;
 		}
 
@@ -37,7 +37,7 @@ abstract class Billrun_Processor_Base_SeparatorFieldLines extends Billrun_Proces
 			switch ($record_type) {
 				case 'H': // header
 					if (isset($this->data['header'])) {
-						Billrun_Factory::log()->log("double header", Zend_Log::ERR);
+						Billrun_Factory::log("double header", Zend_Log::ERR);
 						return false;
 					}
 					$this->data['header'] = $this->buildHeader($line);
@@ -45,7 +45,7 @@ abstract class Billrun_Processor_Base_SeparatorFieldLines extends Billrun_Proces
 					break;
 				case 'T': //trailer
 					if (isset($this->data['trailer'])) {
-						Billrun_Factory::log()->log("double trailer", Zend_Log::ERR);
+						Billrun_Factory::log("double trailer", Zend_Log::ERR);
 						return false;
 					}
 
@@ -54,7 +54,7 @@ abstract class Billrun_Processor_Base_SeparatorFieldLines extends Billrun_Proces
 					break;
 				case 'D': //data
 					if (!isset($this->data['header'])) {
-						Billrun_Factory::log()->log("No header found", Zend_Log::ERR);
+						Billrun_Factory::log("No header found", Zend_Log::ERR);
 						return false;
 					}
 

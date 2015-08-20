@@ -17,7 +17,7 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
 class PlansAction extends ApiAction {
 
 	public function execute() {
-		Billrun_Factory::log()->log("Execute plans api call", Zend_Log::INFO);
+		Billrun_Factory::log("Execute plans api call", Zend_Log::INFO);
 		$request = $this->getRequest();
 
 		$requestedQuery = $request->get('query', array());
@@ -34,7 +34,7 @@ class PlansAction extends ApiAction {
 			'stampParams' => array($requestedQuery, $filter, $strip),
 		);
 		
-		$this->setCacheLifeTime(86400); // 1 day
+		$this->setCacheLifeTime(86400); // 1 day TODO: Use time utils
 		$results = $this->cache($cacheParams);
 		
 		$this->getController()->setOutput(array(array(
@@ -95,21 +95,26 @@ class PlansAction extends ApiAction {
 	 * @return array containing the processed query.
 	 */
 	protected function processQuery($query) {
-		$retQuery = array();
-		if (isset($query)) {
-			$retQuery = $this->getCompundParam($query, array());
-
-			if (!isset($retQuery['from'])) {
-				$retQuery['from']['$lte'] = new MongoDate();
-			} else {
-				$retQuery['from'] = $this->intToMongoDate($retQuery['from']);
-			}
-			if (!isset($retQuery['to'])) {
-				$retQuery['to']['$gte'] = new MongoDate();
-			} else {
-				$retQuery['to'] = $this->intToMongoDate($retQuery['to']);
-			}
+		if (!isset($query)) {
+			// TODO: Report error?
+			return array();
 		}
+		
+		$retQuery = $this->getCompundParam($query, array());
+
+		// TODO: This code appears multiple times in the project, 
+		// should be moved to a more general class.
+		if (!isset($retQuery['from'])) {
+			$retQuery['from']['$lte'] = new MongoDate();
+		} else {
+			$retQuery['from'] = $this->intToMongoDate($retQuery['from']);
+		}
+		if (!isset($retQuery['to'])) {
+			$retQuery['to']['$gte'] = new MongoDate();
+		} else {
+			$retQuery['to'] = $this->intToMongoDate($retQuery['to']);
+		}
+		
 		return $retQuery;
 	}
 
@@ -137,6 +142,7 @@ class PlansAction extends ApiAction {
 	 * @param type $results
 	 * @param type $strip
 	 * @return type
+	 * TODO: This function is found in the project multiple times, should be moved to a better location.
 	 */
 	protected function stripResults($results, $strip) {
 		$stripped = array();
