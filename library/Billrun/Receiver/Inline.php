@@ -75,7 +75,6 @@ class Billrun_Receiver_Inline extends Billrun_Receiver {
 		$path = $this->handleFile();		
 		if (!$path) {
 			Billrun_Factory::log("NOTICE : Couldn't write file $this->filename.", Zend_Log::NOTICE);
-			// TODO: We do not dispatch the in lines file receive, is this on purpose?
 			return FALSE;
 		}
 		
