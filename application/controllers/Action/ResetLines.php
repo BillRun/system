@@ -32,25 +32,47 @@ class ResetLinesAction extends ApiAction {
 		// Warning: will convert half numeric strings / floats to integers
 		$sids = array_unique(array_diff(Billrun_Util::verify_array($request['sid'], 'int'), array(0)));
 
-		if ($sids) {
-			try {
-				$rebalance_queue = Billrun_Factory::db()->rebalance_queueCollection();
-				foreach ($sids as $sid) {
-					$rebalance_queue->insert(array('sid' => $sid, 'billrun_key' => $billrun_key, 'creation_date' => new MongoDate()));
-				}
-			} catch (Exception $exc) {
-				Billrun_Util::logFailedResetLines($sids, $billrun_key);
-				return FALSE;
-			}
-		} else {
+		if (!$sids) {
 			return $this->setError('Illegal sid', $request);
 		}
+		
+		try {
+			$rebalance_queue = Billrun_Factory::db()->rebalance_queueCollection();
+			foreach ($sids as $sid) {
+				$rebalance_queue->insert(array( 'sid' => $sid, 
+												'billrun_key' => $billrun_key, 
+												'creation_date' => new MongoDate()));
+			}
+		} catch (Exception $exc) {
+			Billrun_Util::logFailedResetLines($sids, $billrun_key);
+			return FALSE;
+		}
+		
 		$this->getController()->setOutput(array(array(
 				'status' => 1,
 				'desc' => 'success',
 				'input' => $request,
 		)));
 		return TRUE;
+	}
+	
+	/**
+	 * Clean cache from account.
+	 * @param type $aid - Account ID
+	 * @param type $cache - Cache to be cleaned
+	 * @param type $billrunKey - Current billrun key.
+	 * @param type $cachePrefix - Prefix name of cach record to remove.
+	 */
+	protected function cleanSingleAccountCache($aid, $cache, $billrunKey, $cachePrefix) {
+		$cleanCacheKeys = array(
+			Billrun_Util::generateArrayStamp(array_values(array('aid' => $aid, 'subscribers' => array(), 'stamp' => $billrunKey))),
+			Billrun_Util::generateArrayStamp(array_values(array('aid' => $aid, 'subscribers' => null, 'stamp' => (int) $billrunKey))),
+			Billrun_Util::generateArrayStamp(array_values(array('aid' => $aid, 'subscribers' => "", 'stamp' => (int) $billrunKey))),
+			Billrun_Util::generateArrayStamp(array_values(array('aid' => $aid, 'subscribers' => 0, 'stamp' => (int) $billrunKey))),
+			);
+		foreach ($cleanCacheKeys as $cacheKey) {
+			$cache->remove($cacheKey, $cachePrefix);
+		}
 	}
 	
 	/**
@@ -69,15 +91,7 @@ class ResetLinesAction extends ApiAction {
 		$billrunKey = Billrun_Util::getBillrunKey(time());
 		$cachePrefix = 'balance_'; // this is not the action name because it's clear the balance cache
 		foreach ($aids as $aid) {
-			$cleanCacheKeys = array(
-				Billrun_Util::generateArrayStamp(array_values(array('aid' => $aid, 'subscribers' => array(), 'stamp' => $billrunKey))),
-				Billrun_Util::generateArrayStamp(array_values(array('aid' => $aid, 'subscribers' => null, 'stamp' => (int) $billrunKey))),
-				Billrun_Util::generateArrayStamp(array_values(array('aid' => $aid, 'subscribers' => "", 'stamp' => (int) $billrunKey))),
-				Billrun_Util::generateArrayStamp(array_values(array('aid' => $aid, 'subscribers' => 0, 'stamp' => (int) $billrunKey))),
-			);
-			foreach ($cleanCacheKeys as $cacheKey) {
-				$cache->remove($cacheKey, $cachePrefix);
-			}
+			$this->cleanSingleAccountCache($aid, $cache, $billrunKey, $cachePrefix);
 		}
 		return true;
 	}

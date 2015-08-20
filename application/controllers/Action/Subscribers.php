@@ -10,8 +10,10 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
 /**
  * This class holds the api logic for the subscribers.
  *
- * @author tom
- */
+ * @package     Controllers
+ * @subpackage  Action
+ * @since       4.0
+*/
 class SubscribersAction extends ApiAction {
 	
 	protected $model;
@@ -25,7 +27,7 @@ class SubscribersAction extends ApiAction {
 		$request = $this->getRequest();
 
 		// This is the method which is going to be executed.
-		$action = Billrun_Subscriber_Actions_Manager::getSubscriberAction($request);
+		$action = Billrun_ActionManagers_Subscriber_Manager::getAction($request);
 		
 		// Check that received a valid action.
 		if(!$action) {

@@ -31,13 +31,14 @@ class AlertAction extends Action_Base {
 
 		$this->_controller->addOutput("Loading handler");
 		$handler = Billrun_Handler::getInstance($options);
-		$this->_controller->addOutput("Handler loaded");
 
-		if ($handler) {
-			$handler->execute();
-		} else {
+		if (!$handler) {
 			$this->_controller->addOutput("Aggregator cannot be loaded");
+			return;
 		}
+		
+		$this->_controller->addOutput("Handler loaded");
+		$handler->execute();
 	}
 
 }

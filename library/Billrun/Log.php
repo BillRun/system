@@ -44,7 +44,7 @@ class Billrun_Log extends Zend_Log {
 	 * @string - String to put color on.
 	 * @color - int representing the requested.
 	 */
-	private function addColor($string, $color) {
+	protected function addColor($string, $color) {
 		$fixedColor = $color %10;
 		return "\033[1;3" . $fixedColor . "m" . $string . "\033[0m ";
 	}
@@ -173,7 +173,7 @@ class Billrun_Log extends Zend_Log {
 	 * 
 	 * @return boolean false if nothing to be printed.
 	 */
-	private function logSuppressDuplicates($message, $priority, $extras) {
+	protected function logSuppressDuplicates($message, $priority, $extras) {
 		// Check if the priority is to be suppressed.
 		if($priority < Billrun_Log::DUPLICATE_MESSAGE_PRIORITY_THRESHOLD){
 			return;
