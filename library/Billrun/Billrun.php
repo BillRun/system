@@ -664,7 +664,7 @@ class Billrun_Billrun {
 	 */
 	public static function loadRates() {
 		$rates_coll = Billrun_Factory::db()->ratesCollection();
-		$rates = $rates_coll->query()->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
+		$rates = $rates_coll->query()->cursor();
 		foreach ($rates as $rate) {
 			$rate->collection($rates_coll);
 			self::$rates[strval($rate->getId())] = $rate;
@@ -676,7 +676,7 @@ class Billrun_Billrun {
 	 */
 	public static function loadPlans() {
 		$plans_coll = Billrun_Factory::db()->plansCollection();
-		$plans = $plans_coll->query()->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
+		$plans = $plans_coll->query()->cursor();
 		foreach ($plans as $plan) {
 			$plan->collection($plans_coll);
 			self::$plans[strval($plan->getId())] = $plan;
@@ -818,8 +818,7 @@ class Billrun_Billrun {
 			$cursor = Billrun_Factory::db()->linesCollection()
 //			$cursor = Billrun_Factory::db(array('host'=>'172.28.202.111','port'=>27017,'user'=>'reading','password'=>'guprgri','name'=>'billing','options'=>array('connect'=>1,'readPreference'=>MongoClient::RP_SECONDARY_PREFERRED)))->linesCollection()
 				->query($query)->cursor()->fields(array_merge($filter_fields, $requiredFields))
-				->sort($sort)->skip($bufferCount)->limit(Billrun_Factory::config()->getConfigValue('billrun.linesLimit', 10000))->timeout(-1)
-				->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
+				->sort($sort)->skip($bufferCount)->limit(Billrun_Factory::config()->getConfigValue('billrun.linesLimit', 10000))->timeout(-1);
 			foreach ($cursor as $line) {
 				$ret[$line['aid']][$line['stamp']] = $line;
 			}
@@ -908,6 +907,26 @@ class Billrun_Billrun {
 	public function empty_subscriber($subscriber) {
 		$status = $subscriber['subscriber_status'];
 		return ( ($status == "closed") && !isset($subscriber['breakdown']));
+	}
+	
+	/**
+	 * returns the end timestamp of the input billing period
+	 * @param date $date
+	 */
+	public static function getBillrunEndTimeByDate($date) {
+		$dayofmonth = Billrun_Factory::config()->getConfigValue('billrun.charging_day', 25); //TODO: get by subscriber
+		$datetime = date('Ym',  strtotime($date)) . $dayofmonth . "000000";
+		return strtotime('-1 second', strtotime($datetime));
+	}
+
+	/**
+	 * returns the start timestamp of the input billing period
+	 * @param date $date
+	 */
+	public static function getBillrunStartTimeByDate($date) {
+		$dayofmonth = Billrun_Factory::config()->getConfigValue('billrun.charging_day', 25); //TODO: get by subscriber
+		$datetime = date('Ym',  strtotime($date)) . $dayofmonth . "000000";
+		return strtotime('-1 month', strtotime($datetime));
 	}
 
 }

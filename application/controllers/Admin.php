@@ -842,11 +842,11 @@ class AdminController extends Yaf_Controller_Abstract {
 		} else if ($this->model instanceof BalancesModel) {
 			// TODO: make refactoring of the advanced options for each page (lines, balances, etc)
 			$advanced_options = array(
-				$keys[0] => array(
+				$keys = array(array(
 					'type' => 'number',
 					'display' => 'usage',
 				)
-			);
+			));
 		} else if ($this->model instanceof EventsModel) {
 			$avanced_options = array(
 				$keys[0] => array(

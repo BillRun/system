@@ -300,10 +300,8 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 		if (isset($cdrLine['called_number'])) {
 			$cdrLine['called_number'] = Billrun_Util::msisdn($cdrLine['called_number']);
 		}
-		
- 		$cdrLine['usaget'] = $this->getLineUsageType($cdrLine);
- 		$cdrLine['usagev'] = $this->getLineVolume($cdrLine);
-
+		$cdrLine['usaget'] = $this->getLineUsageType($cdrLine);
+		$cdrLine['usagev'] = $this->getLineVolume($cdrLine);
 		//Billrun_Factory::log($asnObject->getType() . " : " . print_r($cdrLine,1) ,  Zend_Log::DEBUG);
 		return $cdrLine;
 	}
@@ -431,7 +429,7 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 				$row['stamp'] = md5($bytes);
 				$processedData['data'][] = $row;
 			}
-			//Billrun_Factory::log( $processor->getParser()->getLastParseLength(),  Zend_Log::DEBUG);
+			//Billrun_Factory::log()->log( $processor->getParser()->getLastParseLength(),  Zend_Log::DEBUG);
 			$advance = $processor->getParser()->getLastParseLength();
 			$bytes = substr($bytes, $advance <= 0 ? 1 : $advance);
 		}
@@ -497,7 +495,7 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 		if (preg_match("/\[(\w+)\]/", $struct[0], $matches) || !is_array($asnData)) {
 			$ret = false;
 			if (!isset($matches[1]) || !$matches[1] || !isset($fields[$matches[1]])) {
-				Billrun_Factory::log(" couldn't digg into : {$struct[0]} struct : " . print_r($struct, 1) . " data : " . print_r($asnData, 1), Zend_Log::DEBUG);
+				Billrun_Factory::log()->log(" couldn't digg into : {$struct[0]} struct : " . print_r($struct, 1) . " data : " . print_r($asnData, 1), Zend_Log::DEBUG);
 			} else {
 				$ret = $this->parseField($fields[$matches[1]], $asnData);
 			}
@@ -585,5 +583,19 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 		$update['$inc']['balance.groups.' . $group . '.cost'] = $pricingData['aprice'];
 		$update['$inc']['balance.groups.' . $group . '.count'] = 1;
 	}
+	
+	/**
+	 * @see Billrun_Processor::getLineVolume
+	 */
+	protected function getLineVolume($row) {
+		return $row['fbc_downlink_volume'] + $row['fbc_uplink_volume'];
+	}
 
+	/**
+	 * @see Billrun_Processor::getLineUsageType
+	 */
+	protected function getLineUsageType($row) {
+		return 'data';
+	}
+	
 }

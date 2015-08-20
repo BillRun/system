@@ -41,16 +41,17 @@ abstract class Billrun_Calculator_Rate_Sms extends Billrun_Calculator_Rate {
 		ksort($this->prefixTranslation);
 		$this->loadRates();
 	}
-
 	/**
 	 * @see Billrun_Calculator_Rate::getLineVolume
+	 * @deprecated since version 2.9
 	 */
-	protected function getLineVolume($row, $usage_type) {
+	protected function getLineVolume($row) {
 		return 1;
 	}
 
 	/**
 	 * @see Billrun_Calculator_Rate::getLineUsageType
+	 * @deprecated since version 2.9
 	 */
 	protected function getLineUsageType($row) {
 		return $row['type'] == 'mmsc' ? 'mms' : 'sms';
@@ -70,7 +71,7 @@ abstract class Billrun_Calculator_Rate_Sms extends Billrun_Calculator_Rate {
 	/**
 	 * @see Billrun_Calculator_Rate::getLineRate
 	 */
-	protected function getLineRate($row, $usage_type) {
+	protected function getLineRate($row) {
 		if ($this->shouldLineBeRated($row)) {
 			$matchedRate = $this->rates['UNRATED'];
 			$called_number = $this->extractNumber($row);
@@ -79,7 +80,7 @@ abstract class Billrun_Calculator_Rate_Sms extends Billrun_Calculator_Rate {
 			foreach ($called_number_prefixes as $prefix) {
 				if (isset($this->rates[$prefix])) {
 					foreach ($this->rates[$prefix] as $rate) {
-						if (isset($rate['rates'][$usage_type]) && (!isset($rate['params']['fullEqual']) || $prefix == $called_number)) {
+						if (isset($rate['rates'][$row['usaget']]) && (!isset($rate['params']['fullEqual']) || $prefix == $called_number)) {
 							if ($rate['from'] <= $line_time && $rate['to'] >= $line_time) {
 								$matchedRate = $rate;
 								break 2;

@@ -291,6 +291,7 @@ class Billrun_Factory {
 	 * method to retrieve a balance instance
 	 * 
 	 * @return Billrun_Balance
+	 * @deprecated since version 4.0
 	 */
 	static public function balance($params = array()) {
 		/*
