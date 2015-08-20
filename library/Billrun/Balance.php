@@ -40,8 +40,13 @@ class Billrun_Balance extends Mongodloid_Entity {
 			Billrun_Factory::log('Error creating balance, no aid or sid' , Zend_Log::ALERT);
 			return false;
 		}
-		if (!isset($options['charging_type']) || $options['charging_type'] === 'postpaid') {
-			$ret = $this->load($options['sid'], $options['urt'])->getRawData();
+		
+		if (!isset($options['charging_type'])) {
+			$options['charging_type'] = 'postpaid';
+		}
+		$ret = $this->load($options['sid'], $options['urt'], $options['charging_type'], $options['usaget'])->getRawData();
+		
+		if ($options['charging_type'] === 'postpaid') { // post-paid subscriber
 			if (empty($ret) || count($ret) == 0) {
 				$urtDate = date('Y-m-d h:i:s', $options['urt']->sec);
 				$from = Billrun_Billrun::getBillrunStartTimeByDate($urtDate);
@@ -49,9 +54,14 @@ class Billrun_Balance extends Mongodloid_Entity {
 				$plan = Billrun_Factory::plan(array('name' => $options['plan'], 'time' => $options['urt']->sec, 'disableCache' => true));
 				$plan_ref = $plan->createRef();
 				$ret = $this->createBasicBalance($options['aid'], $options['sid'], $from, $to, $plan_ref);
+			}			
+		} else { // pre-paid subscriber
+			if (empty($ret) || count($ret) == 0) {
+				// TODO: return error code - no available balances
+				$ret = array();
 			}
-		} else {
-			$ret = array();
+			
+			// TODO: calculate response (prepaid_granted)
 		}
 		
 		parent::__construct($ret, self::getCollection());
@@ -93,17 +103,36 @@ class Billrun_Balance extends Mongodloid_Entity {
 		return call_user_func_array(array($this->data, $name), $arguments);
 	}
 
-	public function load($subscriberId, $urt) {
-		Billrun_Factory::log()->log("Trying to load balance for subscriber " . $subscriberId . " urt: " . $urt->sec, Zend_Log::DEBUG);
+	/**
+	 * Loads the balance for subscriber
+	 * @param type $subscriberId
+	 * @param type $urt
+	 * @param type $chargingType prepaid/postpaid
+	 * @return subscriber's balance
+	 */
+	public function load($subscriberId, $urt, $chargingType = 'postpaid', $usageType = "") {
+		Billrun_Factory::log()->log("Trying to load balance for subscriber " . $subscriberId . ". urt: " . $urt->sec . ". charging_type: " . $chargingType, Zend_Log::DEBUG);
+		
+		$query = array(
+			'sid' => $subscriberId,
+			'from' => array('$lte' => $urt),
+			'to' => array('$gte' => $urt),
+		);
+		
+		if ($chargingType === 'prepaid') {
+			$query['$or'] = array (
+				array("balance.totals.$usageType.usagev" => array('$lt' => 0)),
+				array("balance.totals.$usageType.cost" => array('$lt' => 0)),
+				array("balance.cost" => array('$lt' => 0)),
+			);
+		}
 
-		return $this->collection->query(array(
-				'sid' => $subscriberId,
-				'from' => array('$lte' => $urt),
-				'to' => array('$gte' => $urt),
-			))
-			->cursor()->setReadPreference('RP_PRIMARY')
+		$cursor = $this->collection->query($query)->cursor();
+		if ($chargingType === 'prepaid') { // for pre-paid subscribers - choose correct balance by priority field
+			$cursor = $cursor->sort(array('priority' => -1));
+		}
+		return $cursor->setReadPreference('RP_PRIMARY')
 			->limit(1)->current();
-
 	}
 
 	/**
@@ -234,6 +263,49 @@ class Billrun_Balance extends Mongodloid_Entity {
 			'cost' => 0,
 			'count' => 0,
 		);
+	}
+	
+	/**
+	 * Calculates the volume granted for subscriber by rate and balance
+	 * @param type $rate
+	 * @param type $balance
+	 * @param type $usageType
+	 */
+	protected function getPrepaidGrantedVolume($rate, $balance, $usageType) {
+		$maximumGrantedVolume = $this->getPrepaidGrantedVolumeByRate($rate, $usageType);
+		if (isset($balance["balance.totals.$usageType.usagev"])) {
+			$currentBalanceVolume = $balance["balance.totals.$usageType.usagev"];
+		} else {
+			if (isset($balance["balance.totals.$usageType.cost"])) {
+				$price = $balance["balance.totals.$usageType.cost"];
+			} else {
+				$price = $balance["balance.cost"];
+			}
+			$currentBalanceVolume = Billrun_Calculator_CustomerPricing::getVolumeByRate($rate, $usageType, $price);
+		}
+		
+		return ($currentBalanceVolume < $maximumGrantedVolume ? $currentBalanceVolume : $maximumGrantedVolume);
+	}
+	
+	/**
+	 * Gets the maximum allowed granted volume for rate
+	 * @param type $rate
+	 * @param type $usageType
+	 */
+	protected function getPrepaidGrantedVolumeByRate($rate, $usageType) {
+		if (isset($rate["rates.$usageType.prepaid_granted_usagev"])) {
+			return $rate["rates.$usageType.prepaid_granted_usagev"];
+		}
+		if (isset($rate["rates.$usageType.prepaid_granted_cost"])) {
+			return Billrun_Calculator_CustomerPricing::getVolumeByRate($rate, $usageType, $rate["rates.$usageType.prepaid_granted_cost"]);
+		}
+		
+		$usagevDefault = Billrun_Factory::config()->getConfigValue("rates.prepaid_granted.$usageType.usagev", false);
+		if ($usagevDefault) {
+			return $usagevDefault;
+		}
+		
+		return Billrun_Calculator_CustomerPricing::getVolumeByRate($rate, $usageType, Billrun_Factory::config()->getConfigValue("rates.prepaid_granted.$usageType.cost", 0));
 	}
 
 	//=============== ArrayAccess Implementation =============

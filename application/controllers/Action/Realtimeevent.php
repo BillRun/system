@@ -135,6 +135,7 @@ class RealtimeeventAction extends ApiAction {
 		$this->event['type'] = 'gy';
 		$this->event['rand'] = rand(1,1000000);
 		$this->event['stamp'] = Billrun_Util::generateArrayStamp($this->event);
+		$this->event['billrun_prepend'] = false; //TODO: set by type
 		if (isset($this->event['Service-Information']['SGSNAddress'])) {
 			$this->event['sgsn_address'] = long2ip(hexdec($this->event['Service-Information']['SGSNAddress']));
 		} else {
@@ -178,7 +179,7 @@ class RealtimeeventAction extends ApiAction {
 //				'returnCode' => 0
 //			),
 		);
-		$ret['MSCC']['granted'] = $ret['MSCC']['requested'];
+		$ret['MSCC']['granted'] = $this->event['usagev'];
 		$ret['MSCC']['returnCode'] = 0;
 		$this->getController()->setOutput(array($ret));
 //		if ($this->customer() !== TRUE) {

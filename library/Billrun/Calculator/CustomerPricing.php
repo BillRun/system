@@ -360,13 +360,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @return int the calculated price
 	 */
 	public static function getPriceByRate($rate, $usage_type, $volume, $plan = null) {
-		if (!is_null($plan) && !empty($plan_name = $plan->getName()) && isset($rate['rates'][$usage_type]['rate'][$plan_name])) {
-			$rates_arr = $rate['rates'][$usage_type]['rate'][$plan_name];
-		} elseif (isset($rate['rates'][$usage_type]['rate']['BASE'])) {
-			$rates_arr = $rate['rates'][$usage_type]['rate']['BASE'];
-		} else {
-			$rates_arr = $rate['rates'][$usage_type]['rate'];
-		}
+		$rates_arr = self::getRatesArray($rate, $usage_type, $plan);
 		$price = 0;
 		foreach ($rates_arr as $currRate) {
 			if (0 == $volume) { // volume could be negative if it's a refund amount
@@ -386,6 +380,52 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			$volume = $volume - $volumeToPriceCurrentRating; //decrease the volume that was priced
 		}
 		return $price;
+	}
+	
+	/**
+	 * Calculates the volume for the given price (w/o access price)
+	 * 
+	 * @param array $rate the rate entry
+	 * @param string $usage_type the usage type
+	 * @param int $price The price
+	 * @param object $plan The plan the line is associate to
+	 * 
+	 * @return int the calculated volume
+	 */
+	public static function getVolumeByRate($rate, $usage_type, $price, $plan = null) {
+		$rates_arr = self::getRatesArray($rate, $usage_type, $plan);
+		$volume = 0;
+		$lastRateFrom = 0;
+		foreach ($rates_arr as $currRate) {
+			if ($price === 0) {
+				break;
+			}
+			
+			$volumeAvailableInCurrentRate = floor(($price / $currRate['price']) / $currRate['interval']) * $currRate['interval']; // In case of no limit
+			if (isset($currRate['from'])) {
+				$lastRateFrom = $currRate['from'];
+			}
+			$currentRateMaxVolume = $currRate['to'] - $lastRateFrom;
+			$lastRateFrom = $currRate['to']; // Support the case of rate without "from" field
+			$volumeInCurrentRate = ($volumeAvailableInCurrentRate < $currentRateMaxVolume ? $volumeAvailableInCurrentRate : $currentRateMaxVolume); // Checks limit for current rate
+			//TODO: add support for ceil if needed
+			if ($volumeInCurrentRate == 0) {
+				break;
+			}
+			$price -= ($volumeInCurrentRate * $currRate['price']);
+			$volume += $volumeInCurrentRate;
+		}
+		return $volume;
+	}
+	
+	protected static function getRatesArray($rate, $usage_type, $plan = null) {
+		if (!is_null($plan) && !empty($plan_name = $plan->getName()) && isset($rate['rates'][$usage_type]['rate'][$plan_name])) {
+			return $rate['rates'][$usage_type]['rate'][$plan_name];
+		}
+		if (isset($rate['rates'][$usage_type]['rate']['BASE'])) {
+			return $rate['rates'][$usage_type]['rate']['BASE'];
+		}
+		return $rate['rates'][$usage_type]['rate'];
 	}
 
 	/**
@@ -413,7 +453,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		$this->countConcurrentRetries++;
 		Billrun_Factory::dispatcher()->trigger('beforeUpdateSubscriberBalance', array($this->balance, &$row, $rate, $this));
 		$plan = Billrun_Factory::plan(array('name' => $row['plan'], 'time' => $row['urt']->sec, 'disableCache' => true));
-		$balance_totals_key = $plan->getBalanceTotalsKey($usage_type, $rate);
+		$balance_totals_key = ($row['charging_type'] === 'postpaid' ? $plan->getBalanceTotalsKey($usage_type, $rate) : $usage_type);
 		$subRaw = $this->balance->getRawData();
 		$stamp = strval($row['stamp']);
 		if (isset($subRaw['tx']) && array_key_exists($stamp, $subRaw['tx'])) { // we're after a crash
@@ -421,6 +461,9 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			return $pricingData;
 		}
 		$pricingData = $this->getLinePricingData($volume, $usage_type, $rate, $this->balance, $plan);
+		if (isset($row['billrun_prepend']) && $row['billrun_prepend']) {
+			return $pricingData;
+		}
 
 		$update = array();
 		$update['$set']['tx.' . $stamp] = $pricingData;
@@ -438,17 +481,34 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				array($balance_key => array('$exists' => 0))
 			)
 		);		
-		$update['$set']['balance.totals.' . $balance_totals_key . '.usagev'] = $old_usage + $volume;
-		$update['$inc']['balance.totals.' . $balance_totals_key . '.cost'] = $pricingData[$this->pricingField];
-		$update['$inc']['balance.totals.' . $balance_totals_key . '.count'] = 1;
+		
+		if ($row['charging_type'] === 'postpaid') {
+			$update['$set']['balance.totals.' . $balance_totals_key . '.usagev'] = $old_usage + $volume;
+			$update['$inc']['balance.totals.' . $balance_totals_key . '.cost'] = $pricingData[$this->pricingField];
+			$update['$inc']['balance.totals.' . $balance_totals_key . '.count'] = 1;
+		} else {
+			if (!is_null($this->balance->get('balance.totals.' . $balance_totals_key . '.usagev'))) {
+				$update['$set']['balance.totals.' . $balance_totals_key . '.usagev'] = $old_usage + $volume;
+			} else {
+				$update['$inc']['balance.totals.' . $balance_totals_key . '.cost'] = $pricingData[$this->pricingField];
+			}
+		}
 		// update balance group (if exists)
 		if ($plan->isRateInPlanGroup($rate, $usage_type)) {
 			$group = $plan->getPlanGroup();
 			if ($group !== FALSE) {
-				// @TODO: check if $usage_type should be $key
-				$update['$inc']['balance.groups.' . $group . '.' . $usage_type . '.usagev'] = $volume;
-				$update['$inc']['balance.groups.' . $group . '.' . $usage_type . '.cost'] = $pricingData[$this->pricingField];
-				$update['$inc']['balance.groups.' . $group . '.' . $usage_type . '.count'] = 1;
+				if ($row['charging_type'] === 'postpaid') {
+					// @TODO: check if $usage_type should be $key
+					$update['$inc']['balance.groups.' . $group . '.' . $usage_type . '.usagev'] = $volume;
+					$update['$inc']['balance.groups.' . $group . '.' . $usage_type . '.cost'] = $pricingData[$this->pricingField];
+					$update['$inc']['balance.groups.' . $group . '.' . $usage_type . '.count'] = 1;
+				} else {
+					if (!is_null($this->balance->get('balance.totals.' . $balance_totals_key . '.usagev'))) {
+						$update['$inc']['balance.groups.' . $group . '.' . $usage_type . '.usagev'] = $volume;
+					} else {
+						$update['$inc']['balance.groups.' . $group . '.' . $usage_type . '.cost'] = $pricingData[$this->pricingField];
+					}
+				}
 				if (isset($subRaw['balance']['groups'][$group][$usage_type]['usagev'])) {
 					$pricingData['usagesb'] = floatval($subRaw['balance']['groups'][$group][$usage_type]['usagev']);
 				} else {
