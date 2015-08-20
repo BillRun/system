@@ -118,6 +118,7 @@ class RatesAction extends ApiAction {
 	 * @param type $fieldName the filed in the array to alter
 	 * @return the translated array
 	 */
+	// TODO: Moved this function to Billrun_Db.
 	protected function intToMongoDate($arr) {
 		if (is_array($arr)) {
 			foreach ($arr as $key => $value) {
