@@ -120,7 +120,7 @@ class Billrun_Db extends Mongodloid_Db {
 	 * @param type $fieldName the filed in the array to alter
 	 * @return the translated array
 	 */
-	protected static function intToMongoDate($arr) {
+	public static function intToMongoDate($arr) {
 		if (is_array($arr)) {
 			foreach ($arr as $key => $value) {
 				if (is_numeric($value)) {
