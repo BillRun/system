@@ -139,7 +139,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		foreach ($lines as $key => $line) {
 			if ($line) {
 				Billrun_Factory::dispatcher()->trigger('beforePricingDataRow', array('data' => &$line));
-				//Billrun_Factory::log()->log("Calculating row: ".print_r($item,1),  Zend_Log::DEBUG);
+				//Billrun_Factory::log("Calculating row: ".print_r($item,1),  Zend_Log::DEBUG);
 				$line->collection($lines_coll);
 				if ($this->isLineLegitimate($line)) {
 					if ($this->updateRow($line) === FALSE) {
@@ -197,7 +197,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 					}
 				}
 			} else {
-				Billrun_Factory::log()->log("Line with stamp " . $row['stamp'] . " is missing volume information", Zend_Log::ALERT);
+				Billrun_Factory::log("Line with stamp " . $row['stamp'] . " is missing volume information", Zend_Log::ALERT);
 				return false;
 			}
 
@@ -205,13 +205,13 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			foreach ($pricingData as $key => $value) {
 				$pricingDataTxt .= " " . $key . ": " . $value . ".";
 			}
-			Billrun_Factory::log()->log($pricingDataTxt, Zend_Log::DEBUG);
+			Billrun_Factory::log($pricingDataTxt, Zend_Log::DEBUG);
 			$row->setRawData(array_merge($row->getRawData(), $pricingData));
 
 			Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array($row, $this));
 			return $row;
 		} catch (Exception $e) {
-			Billrun_Factory::log()->log('Line with stamp ' . $row['stamp'] . ' crashed when trying to price it. got exception :' . $e->getCode() . ' : ' . $e->getMessage() . "\n trace :" . $e->getTraceAsString(), Zend_Log::ERR);
+			Billrun_Factory::log('Line with stamp ' . $row['stamp'] . ' crashed when trying to price it. got exception :' . $e->getCode() . ' : ' . $e->getMessage() . "\n trace :" . $e->getTraceAsString(), Zend_Log::ERR);
 			return false;
 		}
 	}
@@ -241,15 +241,13 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			$balance = Billrun_Factory::balance($balance_unique_key);
 		}
 		if (!$balance || !$balance->isValid()) {
-			Billrun_Factory::log()->log("couldn't get balance for : " . print_r(array(
-					'sid' => $row['sid'],
-					'billrun_month' => $billrun_key
-					), 1), Zend_Log::INFO);
+			Billrun_Factory::log("couldn't get balance for subscriber: " . $row['sid'], Zend_Log::INFO);
 			return false;
-		} else {
-			Billrun_Factory::log()->log("Found balance " . $billrun_key . " for subscriber " . $row['sid'], Zend_Log::DEBUG);
 		}
-		return $balance;
+		
+		Billrun_Factory::log("Found balance  for subscriber " . $row['sid'], Zend_Log::DEBUG);
+		$this->balance = $balance;
+ 		return true;
 	}
 
 	/**
@@ -315,7 +313,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		}
 
 		$price = $accessPrice + self::getPriceByRate($rate, $usageType, $volumeToCharge, $plan);
-		//Billrun_Factory::log()->log("Rate : ".print_r($typedRates,1),  Zend_Log::DEBUG);
+		//Billrun_Factory::log("Rate : ".print_r($typedRates,1),  Zend_Log::DEBUG);
 		$ret[$this->pricingField] = $price;
 		return $ret;
 	}
@@ -449,11 +447,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		}
 		$update['$set']['balance.cost'] = $subRaw['balance']['cost'] + $pricingData[$this->pricingField];
 		$options = array('w' => 1);
-		$is_data_usage = ($balance_totals_key == 'data');
-		if ($is_data_usage) {
-			$this->setMongoNativeLong(1);
-		}
-		Billrun_Factory::log()->log("Updating balance " . $balance['billrun_month'] . " of subscriber " . $row['sid'], Zend_Log::DEBUG);
+ 		Billrun_Factory::log("Updating balance " . $balance_id . " of subscriber " . $row['sid'], Zend_Log::DEBUG);
 		Billrun_Factory::dispatcher()->trigger('beforeCommitSubscriberBalance', array(&$row, &$pricingData, &$query, &$update, $rate, $this));
 		if ($update) {
 			$ret = $this->balances->update($query, $update, $options);
@@ -470,15 +464,14 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			// failed because of different totals (could be that another server with another line raised the totals). 
 			// Need to calculate pricingData from the beginning
 			if ($this->countConcurrentRetries >= $this->concurrentMaxRetries) {
-				Billrun_Factory::log()->log('Too many pricing retries for line ' . $row['stamp'] . '. Update status: ' . print_r($ret, true), Zend_Log::ALERT);
+				Billrun_Factory::log('Too many pricing retries for line ' . $row['stamp'] . '. Update status: ' . print_r($ret, true), Zend_Log::ALERT);
 				return false;
 			}
-			Billrun_Factory::log()->log('Concurrent write of sid : ' . $row['sid'] . ' line stamp : ' . $row['stamp'] . ' to balance. Update status: ' . print_r($ret, true) . 'Retrying...', Zend_Log::INFO);
-			sleep($this->countConcurrentRetries);
-			$balance = $this->getSubscriberBalance($row, $balance['billrun_month']);
-			return $this->updateSubscriberBalance($balance, $row, $usage_type, $rate, $volume);
+			Billrun_Factory::log('Concurrent write of sid : ' . $row['sid'] . ' line stamp : ' . $row['stamp'] . ' to balance. Update status: ' . print_r($ret, true) . 'Retrying...', Zend_Log::INFO);
+ 			usleep($this->countConcurrentRetries);
+ 			return $this->updateSubscriberBalance($row, $usage_type, $rate, $volume);
 		}
-		Billrun_Factory::log()->log("Line with stamp " . $row['stamp'] . " was written to balance " . $balance['billrun_month'] . " for subscriber " . $row['sid'], Zend_Log::DEBUG);
+		Billrun_Factory::log("Line with stamp " . $row['stamp'] . " was written to balance " . $balance_id . " for subscriber " . $row['sid'], Zend_Log::DEBUG);
 		$row['tx_saved'] = true; // indication for transaction existence in balances. Won't & shouldn't be saved to the db.
 		Billrun_Factory::dispatcher()->trigger('afterUpdateSubscriberBalance', array(array_merge($row->getRawData(), $pricingData), $balance, &$pricingData, $this));
 		return $pricingData;
@@ -524,17 +517,17 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		if ($is_data_usage) {
 			$this->setMongoNativeLong(1);
 		}
-		Billrun_Factory::log()->log("Increasing subscriber $sid balance " . $billrun_key, Zend_Log::DEBUG);
+		Billrun_Factory::log("Increasing subscriber $sid balance " . $billrun_key, Zend_Log::DEBUG);
 		$balance = $this->balances->findAndModify($query, $update, array(), array());
 		if ($is_data_usage) {
 			$this->setMongoNativeLong(0);
 		}
 		if ($balance->isEmpty()) {
-			Billrun_Factory::log()->log('Balance ' . $billrun_key . ' does not exist for subscriber ' . $sid . '. Creating...', Zend_Log::INFO);
+			Billrun_Factory::log('Balance ' . $billrun_key . ' does not exist for subscriber ' . $sid . '. Creating...', Zend_Log::INFO);
 			Billrun_Balance::createBalanceIfMissing($aid, $sid, $billrun_key, $plan_ref);
 			return $this->increaseSubscriberBalance($counters, $billrun_key, $aid, $sid, $plan_ref);
 		} else {
-			Billrun_Factory::log()->log("Found balance " . $billrun_key . " for subscriber " . $sid, Zend_Log::DEBUG);
+			Billrun_Factory::log("Found balance " . $billrun_key . " for subscriber " . $sid, Zend_Log::DEBUG);
 		}
 		return Billrun_Factory::balance(array('data' => $balance));
 	}
