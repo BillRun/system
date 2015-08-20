@@ -243,12 +243,10 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		if (!$balance || !$balance->isValid()) {
 			Billrun_Factory::log("couldn't get balance for subscriber: " . $row['sid'], Zend_Log::INFO);
 			return false;
-		} /*else {
+ 		} else {
  			Billrun_Factory::log("Found balance  for subscriber " . $row['sid'], Zend_Log::DEBUG);
- 		}*/
-
-		Billrun_Factory::log("Found balance  for subscriber " . $row['sid'], Zend_Log::DEBUG);
-		$this->balance = $balance;
+ 		}
+ 		$this->balance = $balance;
  		return true;
 	}
 
