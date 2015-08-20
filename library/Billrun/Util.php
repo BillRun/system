@@ -279,7 +279,7 @@ class Billrun_Util {
 		$units = array('B' => 0, 'KB' => 1, 'MB' => 2, 'GB' => 3, 'TB' => 4,
 			'PB' => 5, 'EB' => 6, 'ZB' => 7, 'YB' => 8);
 
-		$positive = ($bytes > 0 ? true : false);
+		$negative = $bytes < 0;
 		$bytes = abs($bytes);	
 		$value = 0;
 		if ($bytes > 0) {
@@ -305,7 +305,9 @@ class Billrun_Util {
 		// Format output
 		if (!empty($value)) {
 			$number = number_format($value, $decimals, $dec_point, $thousands_sep);
-			$number *= ($positive ? 1 : -1);
+			if ($negative) {
+				$number *= -1;
+			}
 			if ($includeUnit) {
 				return $number . $unit;
 			}
