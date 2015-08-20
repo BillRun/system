@@ -56,7 +56,13 @@ class ResetLinesAction extends ApiAction {
 		return TRUE;
 	}
 	
-	// TODO: Move to phpdoc methods.
+	/**
+	 * Clean cache from account.
+	 * @param type $aid - Account ID
+	 * @param type $cache - Cache to be cleaned
+	 * @param type $billrunKey - Current billrun key.
+	 * @param type $cachePrefix - Prefix name of cach record to remove.
+	 */
 	protected function cleanSingleAccountCache($aid, $cache, $billrunKey, $cachePrefix) {
 		$cleanCacheKeys = array(
 			Billrun_Util::generateArrayStamp(array_values(array('aid' => $aid, 'subscribers' => array(), 'stamp' => $billrunKey))),
