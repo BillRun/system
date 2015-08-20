@@ -11,6 +11,12 @@ class ildsPlugin extends Billrun_Plugin_BillrunPluginFraud {
 
 	/**
 	 * method to collect data which need to be handle by event
+	 * db.lines.aggregate(
+	 * {$match:{source:"ilds", unified_record_time:{$gt:ISODate('2015-08-#ilds.billrun.charging_day# 00:00:00+03:00')}, price_customer:{$exists:1}, billrun:{$exists:0}}}, 
+	 * {$group:{_id:"$caller_phone_no", s:{$sum:"$price_customer"}}}, 
+	 * {$match:{"s":{$gte:#ilds.threshold#}}}, 
+	 * {$group:{_id:null, s:{$sum:1}}}
+	 * )
 	 */
 	public function handlerCollect($options) {
 		if($this->getName() != $options['type']) { 
@@ -82,7 +88,7 @@ class ildsPlugin extends Billrun_Plugin_BillrunPluginFraud {
 	 */
 	protected function addAlertData(&$newEvent) {
 		
-		$newEvent['units']	= 'MIN';
+		$newEvent['units']	= 'NIS';
 		$newEvent['value']	= $newEvent['total'];
 		$newEvent['threshold'] = Billrun_Factory::config()->getConfigValue('ilds.threshold', 100);
 		$newEvent['event_type']	= 'ILDS';
