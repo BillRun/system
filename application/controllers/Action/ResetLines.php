@@ -56,6 +56,7 @@ class ResetLinesAction extends ApiAction {
 		return TRUE;
 	}
 	
+	// TODO: Move to phpdoc methods.
 	protected function cleanSingleAccountCache($aid, $cache, $billrunKey, $cachePrefix) {
 		$cleanCacheKeys = array(
 			Billrun_Util::generateArrayStamp(array_values(array('aid' => $aid, 'subscribers' => array(), 'stamp' => $billrunKey))),
