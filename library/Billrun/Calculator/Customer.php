@@ -337,6 +337,10 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 //		 if ( $this->isCustomerable($line)) {
 // 			$customer = $this->isOutgoingCall($line) ? "caller" : "callee";
 // 			if (isset($this->translateCustomerIdentToAPI[$customer])) {
+// 				$customer_identification_translation = $this->translateCustomerIdentToAPI[$customer];
+// 				foreach ($customer_identification_translation as $key => $toKey) {
+// 					if (isset($line[$key]) && strlen($line[$key])) {
+// 						return true;
 // 					}
 // 				}
 // 			}
@@ -350,7 +354,18 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			return false;
 		}
 		
-		return true;
+		$customer_identification_translation = $this->translateCustomerIdentToAPI[$customer];
+
+		// Go through the ID's
+		foreach ($customer_identification_translation as $key => $toKey) {
+			// There is an ID for this line.
+			if (isset($line[$key]) && strlen($line[$key])) {
+				return true;
+			}
+		}
+					
+		// TODO: Log error? No ID found for this line?
+		return false;
 	}
 
 	/**
