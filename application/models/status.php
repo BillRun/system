@@ -32,7 +32,7 @@ class statusModel {
 	}
 
 	public function getFtpFiles() {
-		$list = $this->ftp->getDirectory($this->config['remote_directory'])->getContents();
+		return $this->ftp->getDirectory($this->config['remote_directory'])->getContents();
 	}
 
 	/*
