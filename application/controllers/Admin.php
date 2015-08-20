@@ -37,6 +37,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$last_file = $this->status_model->lastFile();
 		$params['file_name'] = $last_file['file_name'];
 		$params['received_time'] = $last_file['received_time'];
+		$params['files_list'] = $this->status_model->getFtpFiles();
 		print( $this->renderView('status', $params));
 //		$this->getView()->component = $this->renderView('status');
 	}

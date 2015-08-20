@@ -5,7 +5,11 @@
 	</head>
 	<body>
 		<p><?php print($this->testConnection ? "ftp connection tested successfully" : " ftp connection test failed"); ?></p>
-		<p>last file received: <?php print($this->file_name) ?><p/>
-		<p>received time: <?php print($this->received_time) ?></p>
+		<p>Last file received: <?php print($this->file_name) ?><p/>
+		<p>Received time: <?php print($this->received_time) ?></p>
+		<div>
+			Files to be received soon:
+			<?php print_R($this->files_list); ?>
+		</div>
 	</body>
 </html>
