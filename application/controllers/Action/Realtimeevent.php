@@ -22,7 +22,6 @@ class RealtimeeventAction extends ApiAction {
 	 * method to execute realtime event
 	 */
 	public function execute() {
-		$a = Billrun_Factory::config()->getConfigValue('prepaid_get_balance.ok');
 		Billrun_Factory::log("Execute realtime event", Zend_Log::INFO);
 //		$this->event = $this->getRequest()->getRequest();
 //		db.subscribers.insert({"from":ISODate("2012-01-01 "),"to":ISODate("2099-01-01 00:00:00"),imsi:"425030024380232", msisdn:"9725050500", aid:12345, sid:77777, plan:"LARGE"})
