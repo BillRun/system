@@ -9,7 +9,10 @@
 		<p>Received time: <?php print($this->received_time) ?></p>
 		<div>
 			Files to be received soon:
-			<?php print_R($this->files_list); ?>
+			<?php foreach($this->files_list as $file) : 
+				print '<p>' . $file['date'] . ' ' . $file['name'] . "</p>";
+			endforeach;
+			?>
 		</div>
 	</body>
 </html>
