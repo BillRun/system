@@ -41,12 +41,13 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		$updater = 
 			Billrun_ActionManagers_Balances_Updaters_Manager::getUpdater($filterName);
 		
-		$updater->update($this->query, $this->recordToSet, $subscriberId);
+		$outputDocuments = 
+			$updater->update($this->query, $this->recordToSet, $this->subscriberId);
 
 		$outputResult = 
 			array('status'  => ($success) ? (1) : (0),
 				  'desc'    => ($success) ? ('success') : ('Failed updating balance'),
-				  'details' => ($updatedDocument) ? json_encode($updatedDocument) : 'null');
+				  'details' => ($outputDocuments) ? json_encode($outputDocuments) : 'null');
 		return $outputResult;
 	}
 
