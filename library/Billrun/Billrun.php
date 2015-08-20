@@ -384,7 +384,6 @@ class Billrun_Billrun {
 			);
 			$subscriber_settings = array_merge($subscriber_general_settings, $null_subscriber_params);
 			$subscriber = Billrun_Subscriber::getInstance($subscriber_settings);
-			// [tom] TODO: Why not checking the 'is valid' function?
 			$this->addSubscriber($subscriber, "closed");
 			$this->updateBillrun($billrun_key, $counters, $pricingData, $row, $vatable);
 		}
@@ -396,8 +395,6 @@ class Billrun_Billrun {
 	 * @return string the general usage type
 	 */
 	public static function getGeneralUsageType($specific_usage_type) {
-		// [tom] TODO: Why isn't this just a table? the code is executed as a lookup table anyway.
-		// Will be easier to update if moved to a table as a property of this class.
 		switch ($specific_usage_type) {
 			case 'call':
 			case 'incoming_call':
@@ -463,48 +460,6 @@ class Billrun_Billrun {
 	}
 
 	/**
-	 * Add pricing and usage counters to a non credit record subscriber.
-	 * @param array $counters keys - usage type. values - amount of usage. Currently supports only arrays of one element
-	 * @param Mongodloid_Entity $row the row to insert to the billrun
-	 * @param array $pricingData the output array from updateSubscriberBalance function
-	 * @param boolean $vatable is the line vatable or not
-	 * @param string $billrun_key the billrun_key of the billrun
-	 */
-	private function addLineToNonCreditSubscriber($counters, $row, $pricingData, $vatable, &$sraw, $zone, $plan_key, $category_key, $zone_key) {
-		if (!empty($counters)) {
-			if (!(isset($pricingData['over_plan']) && $pricingData['over_plan'] < current($counters))) { // volume is partially priced (in & over plan)
-				$volume_priced = current($counters);
-			} else {
-				$volume_priced = $pricingData['over_plan'];
-				$planZone = &$sraw['breakdown']['in_plan'][$category_key][$zone_key];
-				$planZone['totals'][key($counters)]['usagev'] = $this->getFieldVal($planZone['totals'][key($counters)]['usagev'], 0) + current($counters) - $volume_priced; // add partial usage to flat
-				$planZone['totals'][key($counters)]['cost'] = $this->getFieldVal($planZone['totals'][key($counters)]['cost'], 0);
-				$planZone['totals'][key($counters)]['count'] = $this->getFieldVal($planZone['totals'][key($counters)]['count'], 0) + 1;
-				$planZone['vat'] = ($vatable ? floatval($this->vat) : 0); //@TODO we assume here that all the lines would be vatable or all vat-free
-			}
-
-			$zone['totals'][key($counters)]['usagev'] = $this->getFieldVal($zone['totals'][key($counters)]['usagev'], 0) + $volume_priced;
-			$zone['totals'][key($counters)]['cost'] = $this->getFieldVal($zone['totals'][key($counters)]['cost'], 0) + $pricingData['aprice'];
-			$zone['totals'][key($counters)]['count'] = $this->getFieldVal($zone['totals'][key($counters)]['count'], 0) + 1;
-			if($row['type'] == 'ggsn') {
-				// [tom] TODO: What is this magic number 06? There should just be a ggsn row class
-				if(isset($row['rat_type']) && $row['rat_type'] == '06') {
-					$data_generation = 'usage_4g';
-				} else {
-					$data_generation = 'usage_3g';
-				}
-				$zone['totals'][key($counters)][$data_generation]['usagev'] = $this->getFieldVal($zone['totals'][key($counters)]['usagev_' . $data_generation], 0) + $volume_priced;
-				$zone['totals'][key($counters)][$data_generation]['cost'] = $this->getFieldVal($zone['totals'][key($counters)]['cost_' . $data_generation], 0) + $pricingData['aprice'];
-				$zone['totals'][key($counters)][$data_generation]['count'] = $this->getFieldVal($zone['totals'][key($counters)]['count_' . $data_generation], 0) + 1;
-			}
-		}
-		if ($plan_key != 'in_plan' || $zone_key == 'service') {
-			$zone['cost'] = $this->getFieldVal($zone['cost'], 0) + $pricingData['aprice'];
-		}
-		$zone['vat'] = ($vatable ? floatval($this->vat) : 0); //@TODO we assume here that all the lines would be vatable or all vat-free
-	}
-	
-	/**
 	 * Add pricing and usage counters to the subscriber billrun breakdown.
 	 * @param array $counters keys - usage type. values - amount of usage. Currently supports only arrays of one element
 	 * @param Mongodloid_Entity $row the row to insert to the billrun
@@ -519,10 +474,38 @@ class Billrun_Billrun {
 		list($plan_key, $category_key, $zone_key) = self::getBreakdownKeys($row, $pricingData, $vatable);
 		$zone = &$sraw['breakdown'][$plan_key][$category_key][$zone_key];
 
-		if ($plan_key == 'credit') {
-			$zone += $pricingData['aprice'];
+		if ($plan_key != 'credit') {
+			if (!empty($counters)) {
+				if (isset($pricingData['over_plan']) && $pricingData['over_plan'] < current($counters)) { // volume is partially priced (in & over plan)
+					$volume_priced = $pricingData['over_plan'];
+					$planZone = &$sraw['breakdown']['in_plan'][$category_key][$zone_key];
+					$planZone['totals'][key($counters)]['usagev'] = $this->getFieldVal($planZone['totals'][key($counters)]['usagev'], 0) + current($counters) - $volume_priced; // add partial usage to flat
+					$planZone['totals'][key($counters)]['cost'] = $this->getFieldVal($planZone['totals'][key($counters)]['cost'], 0);
+					$planZone['totals'][key($counters)]['count'] = $this->getFieldVal($planZone['totals'][key($counters)]['count'], 0) + 1;
+					$planZone['vat'] = ($vatable ? floatval($this->vat) : 0); //@TODO we assume here that all the lines would be vatable or all vat-free
+				} else {
+					$volume_priced = current($counters);
+				}
+				$zone['totals'][key($counters)]['usagev'] = $this->getFieldVal($zone['totals'][key($counters)]['usagev'], 0) + $volume_priced;
+				$zone['totals'][key($counters)]['cost'] = $this->getFieldVal($zone['totals'][key($counters)]['cost'], 0) + $pricingData['aprice'];
+				$zone['totals'][key($counters)]['count'] = $this->getFieldVal($zone['totals'][key($counters)]['count'], 0) + 1;
+				if($row['type'] == 'ggsn') {
+					if(isset($row['rat_type']) && $row['rat_type'] == '06') {
+						$data_generation = 'usage_4g';
+					} else {
+						$data_generation = 'usage_3g';
+					}
+					$zone['totals'][key($counters)][$data_generation]['usagev'] = $this->getFieldVal($zone['totals'][key($counters)]['usagev_' . $data_generation], 0) + $volume_priced;
+					$zone['totals'][key($counters)][$data_generation]['cost'] = $this->getFieldVal($zone['totals'][key($counters)]['cost_' . $data_generation], 0) + $pricingData['aprice'];
+					$zone['totals'][key($counters)][$data_generation]['count'] = $this->getFieldVal($zone['totals'][key($counters)]['count_' . $data_generation], 0) + 1;
+				}
+			}
+			if ($plan_key != 'in_plan' || $zone_key == 'service') {
+				$zone['cost'] = $this->getFieldVal($zone['cost'], 0) + $pricingData['aprice'];
+			}
+			$zone['vat'] = ($vatable ? floatval($this->vat) : 0); //@TODO we assume here that all the lines would be vatable or all vat-free
 		} else {
-			$this->addLineToNonCreditSubscriber($counters, $row, $pricingData, $vatable, $sraw, $zone, $plan_key);
+			$zone += $pricingData['aprice'];
 		}
 		if (isset($row['arategroup'])) {
 			if (isset($row['in_plan'])) {
@@ -645,9 +628,6 @@ class Billrun_Billrun {
 		return self::getRateById($id_str);
 	}
 
-	// [tom] The correct way would be to have two handler types, rates and plans.
-	// And have them as billrun members, so the implementation will be more modular.
-	
 	/**
 	 * Get a rate by hexadecimal id
 	 * @param string $id hexadecimal id of rate (taken from Mongo ID)
@@ -684,12 +664,11 @@ class Billrun_Billrun {
 	 */
 	public static function loadRates() {
 		$rates_coll = Billrun_Factory::db()->ratesCollection();
-//		$rates = $rates_coll->query()->cursor();
-// 		foreach ($rates as $rate) {
-// 			$rate->collection($rates_coll);
-// 			self::$rates[strval($rate->getId())] = $rate;
-// 		}
-		$this->loadFromDB($rates_coll);
+		$rates = $rates_coll->query()->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
+		foreach ($rates as $rate) {
+			$rate->collection($rates_coll);
+			self::$rates[strval($rate->getId())] = $rate;
+		}
 	}
 
 	/**
@@ -697,28 +676,13 @@ class Billrun_Billrun {
 	 */
 	public static function loadPlans() {
 		$plans_coll = Billrun_Factory::db()->plansCollection();
-//		$plans = $plans_coll->query()->cursor();
-// 		foreach ($plans as $plan) {
-// 			$plan->collection($plans_coll);
-// 			self::$plans[strval($plan->getId())] = $plan;
-//		}
-		$this->loadFromDB($plans_coll);
-	}
-	
-	/**
-	 * This function loads all data from a givven structure of DB collumns.
-	 * [tom] @TODO: This should not be here, this logic is for some DB class, 
-	 * find a beter place to put it, or receive as strategy a Billrun_DBProxy type
-	 * @param type $colls - Collums of the DB.
-	 */
-	private function loadFromDB($colls) {
-		$data = $colls->query()->cursor();
-		foreach ($data as $record) {
-			$record->collection($colls);
-			self::$plans[strval($record->getId())] = $record;
+		$plans = $plans_coll->query()->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
+		foreach ($plans as $plan) {
+			$plan->collection($plans_coll);
+			self::$plans[strval($plan->getId())] = $plan;
 		}
 	}
-	
+
 	/**
 	 * Add all lines of the account to the billrun object
 	 * @param boolean $update_lines whether to set the billrun key as the billrun stamp of the lines
@@ -767,7 +731,6 @@ class Billrun_Billrun {
 					$this->updateBillrun($this->billrun_key, array(), array('aprice' => $line['aprice']), $line, $plan->get('vatable'));
 				} else {
 					Billrun_Factory::log("No plan or unrecognized plan for row " . $line['stamp'] . " Subscriber " . $line['sid'], Zend_Log::ALERT);
-					continue;
 				}
 			}
 			//Billrun_Factory::log("Done Processing account Line for $sid : ".  microtime(true));
@@ -842,9 +805,7 @@ class Billrun_Billrun {
 		);
 
 		$requiredFields = array('aid' => 1);
-		if(empty($filter_fields)) {
-			$filter_fields = Billrun_Factory::config()->getConfigValue('billrun.filter_fields', array());
-		}
+		$filter_fields = empty($filter_fields) ? Billrun_Factory::config()->getConfigValue('billrun.filter_fields', array()) : $filter_fields;
 
 		$sort = array(
 			'urt' => 1,
@@ -916,7 +877,6 @@ class Billrun_Billrun {
 		} else {
 			$active_billrun = Billrun_Util::getFollowingBillrunKey($last['billrun_key']);
 			$billrun_start_time = Billrun_Util::getStartTime($active_billrun);
-			// [tom] TODO: There should be a static time class to provide all these numbers in different resolutions, months, weeks, hours, etc.
 			if ($now - $billrun_start_time > 5184000) { // more than two months diff (60*60*24*30*2)
 				$active_billrun = $runtime_billrun_key;
 			}
@@ -952,6 +912,5 @@ class Billrun_Billrun {
 
 }
 
-// [tom] TODO: Why is this here? this is the Billrun class code, this should be in some excute script file.
 Billrun_Billrun::loadRates();
 Billrun_Billrun::loadPlans();
