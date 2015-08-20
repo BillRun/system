@@ -93,6 +93,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 			$operation = $jsonUpdateData['operation'];
 		}
 		
+		// TODO: If to is not set, but received opration set, it's an error, report?
 		$to = isset($jsonUpdateData['expiration_date']) ? ($jsonUpdateData['expiration_date']) : 0;
 		
 		// TODO: Do i need to validate that all these fields are set?
