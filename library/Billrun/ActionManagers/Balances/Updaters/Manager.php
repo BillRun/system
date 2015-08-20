@@ -28,9 +28,12 @@ class Billrun_ActionManagers_Balances_Updaters_Manager {
 	 * @return type Balances action
 	 */
 	public static function getUpdater($filterName) {
+		if(!isset(self::$updaterTranslator[$filterName])) {
+			// TODO: Log error!
+			return false;
+		}
 		
-		
-		$updater = ucfirst(strtolower($methodInput));
+		$updater = self::$updaterTranslator[$filterName];
 		 
 		$actionClass = str_replace('_Manager', $updater, __CLASS__);
 		$action = new $actionClass();
