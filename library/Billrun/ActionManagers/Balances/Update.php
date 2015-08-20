@@ -117,7 +117,8 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		$filter = array();
 		
 		$filterFields = 
-			array('id', 
+			array('id',
+				  '_id',
 				  'charging_plan', 
 				  'charging_plan_intenal_id', 
 				  'name', 

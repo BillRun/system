@@ -50,39 +50,6 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 	}
 	
 	/**
-	 * Get billrun subscriber instance.
-	 * @param type $subscriberId If of the subscriber to load.
-	 * @param type $dateRecord Array that has to and from fields for the query.
-	 */
-	protected function getSubscriber($subscriberId, $dateRecord) {
-		// Get subscriber query.
-		$subscriberQuery = $this->getSubscriberQuery($subscriberId, $dateRecord);
-		
-		// Get the subscriber.
-		return Billrun_Factory::subscriber()->load($subscriberQuery);
-	}
-	
-	/**
-	 * Validate the service provider fields.
-	 * @param type $subscriber
-	 * @param type $planRecord
-	 * @return boolean
-	 */
-	protected function validateServiceProviders($subscriber, $planRecord) {
-		// Get the service provider to check that it fits the subscriber's.
-		$subscriberServiceProvider = $subscriber->{'service_provider'};
-		
-		// Check if mismatching serivce providers.
-		if($planRecord['service_provider'] != $subscriberServiceProvider) {
-			$planServiceProvider = $planRecord['service_provider'];
-			Billrun_Factory::log("Failed updating balance! mismatching service prociders: subscriber: $subscriberServiceProvider plan: $planServiceProvider");
-			return false;
-		}
-		
-		return true;
-	}
-	
-	/**
 	 * Get the query to run on the plans collection in mongo.
 	 * @param type $query Input query to proccess.
 	 * @return type Query to run on plans collection.
@@ -113,6 +80,7 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 	 * @param type $subscriberId - Id for the subscriber to update.
 	 */
 	public function update($query, $recordToSet, $subscriberId) {
+		// TODO: This function is free similar to the one in ID, should refactor code to be more generic.
 		$planQuery = $this->getPlanQuery($query);
 		$plansCollection = Billrun_Factory::db()->plansCollection();
 		
@@ -197,6 +165,8 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 			$chargingBy=$chargingByValueName;
 		}
 
+		$this->handleZeroing($query, $balancesColl);
+		
 		$valueUpdateQuery = array();
 		$queryType = $this->isIncrement ? '$inc' : '$set';
 		$valueUpdateQuery[$queryType]
