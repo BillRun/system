@@ -188,6 +188,9 @@ use Billrun_Traits_FileSequenceChecking;
 							$cdrLine['called_number'] = $dialed_digits;
 						}
 					}
+					if (Billrun_Util::getNestedArrayVal($cdrLine, $mapping['CalledPlace'])) {
+						$cdrLine['called_place'] = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['CalledPlace']);
+					}
 				} else if ($tele_service_code == '22') {
 					if (Billrun_Util::getNestedArrayVal($cdrLine, $mapping['SmsDestinationNumber'])) {
 						$cdrLine['called_number'] = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['SmsDestinationNumber']);
@@ -229,11 +232,10 @@ use Billrun_Traits_FileSequenceChecking;
 				}
 			}
 		}
-
-		if (isset($cdrLine['called_number'])) {
-//			$cdrLine['called_number'] = Billrun_Util::msisdn($cdrLine['called_number']);
+		if (isset($cdrLine['called_number']) && (strlen($cdrLine['called_number']) <= 10 && substr($cdrLine['called_number'], 0, 1) == "0") || (!empty($cdrLine['called_place']) && $cdrLine['called_place'] == Billrun_Factory::config()->getConfigValue('tap3.processor.local_code'))) {
+			$cdrLine['called_number'] = Billrun_Util::msisdn($cdrLine['called_number']);
 		}
-
+		
 //		if (!Billrun_Util::getNestedArrayVal($cdrLine, $mapping['calling_number']) && isset($tele_service_code) && isset($record_type) ) {
 //			if ($record_type == 'a' && ($tele_service_code == '11' || $tele_service_code == '21')) {
 //				if (Billrun_Util::getNestedArrayVal($cdrLine, $mapping['call_org_number'])) { // for some calls (incoming?) there's no calling number
@@ -261,6 +263,8 @@ use Billrun_Traits_FileSequenceChecking;
 
 		//save the sending source in each of the lines
 		$cdrLine['sending_source'] = $this->currentFileHeader['header']['sending_source'];
+		$cdrLine['usaget'] = $this->getLineUsageType($cdrLine);
+		$cdrLine['usagev'] = $this->getLineVolume($cdrLine);
 	}
 
 	/**
@@ -415,6 +419,67 @@ use Billrun_Traits_FileSequenceChecking;
 			}
 		}
 		return $sum;
+	}
+	
+	/**
+	 * @see Billrun_Calculator_Rate::getLineVolume
+	 */
+	protected function getLineVolume($row) {
+		$volume = null;
+		switch ($row['usaget']) {
+			case 'sms' :
+			case 'incoming_sms' :
+				$volume = 1;
+				break;
+
+			case 'call' :
+			case 'incoming_call' :
+				$volume = $row['basicCallInformation']['TotalCallEventDuration'];
+				break;
+
+			case 'data' :
+				$volume = $row['download_vol'] + $row['upload_vol'];
+				break;
+		}
+		return $volume;
+	}
+
+	/**
+	 * @see Billrun_Calculator_Rate::getLineUsageType
+	 */
+	protected function getLineUsageType($row) {
+		
+		$usage_type = null;
+		
+		$record_type = $row['record_type'];
+		if (isset($row['tele_srv_code'])) {
+			$tele_service_code = $row['tele_srv_code'];
+			if ($tele_service_code == '11') {
+				if ($record_type == '9') {
+					$usage_type = 'call'; // outgoing call
+				} else if ($record_type == 'a') {
+					$usage_type = 'incoming_call'; // incoming / callback
+				}
+			} else if ($tele_service_code == '22') {
+				if ($record_type == '9') {
+					$usage_type = 'sms';
+				}
+			} else if ($tele_service_code == '21') {
+				if ($record_type == 'a') {
+					$usage_type = 'incoming_sms';
+				}
+			}
+		} else if (isset($row['bearer_srv_code'])) {
+			if ($record_type == '9') {
+				$usage_type = 'call';
+			} else if ($record_type == 'a') {
+				$usage_type = 'incoming_call';
+			}
+		} else if ($record_type == 'e') {
+			$usage_type = 'data';
+		}
+
+		return $usage_type;
 	}
 
 }

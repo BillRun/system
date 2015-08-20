@@ -100,9 +100,17 @@ class QueryAction extends ApiAction {
 			return array();
 		}
 		if (is_string($param)) {
-			return json_decode($param, true);
+			$ret = json_decode($param, true);
+		} else {
+			$ret = (array) $param;
 		}
-		return (array) $param;
+		// convert short ref to real PHP MongoId (query convention)
+		foreach ($ret as $k => &$v) {
+			if (is_array($v) && isset($v['$id'])) {
+				$v = new MongoId($v['$id']);
+			}
+		}
+		return $ret;
 	}
 	
 	protected function getBillrunQuery($billrun) {

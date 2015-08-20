@@ -259,7 +259,7 @@ class Mongodloid_Entity implements ArrayAccess {
 	 * @throws Mongodloid_Exception
 	 * @todo consider defaulting $safe to false because most of the time this is the behavior we want
 	 */
-	public function setRawData($data, $safe = true) {
+	public function setRawData($data, $safe = false) {
 		if (!is_array($data))
 			throw new Mongodloid_Exception('Data must be an array!');
 

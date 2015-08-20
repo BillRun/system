@@ -133,6 +133,7 @@ class RealtimeeventAction extends ApiAction {
 		$this->event = @json_decode($a, JSON_OBJECT_AS_ARRAY);
 		$this->event['source'] = 'realtime';
 		$this->event['type'] = 'gy';
+		$this->event['rand'] = rand(1,1000000);
 		$this->event['stamp'] = Billrun_Util::generateArrayStamp($this->event);
 		if (isset($this->event['Service-Information']['SGSNAddress'])) {
 			$this->event['sgsn_address'] = long2ip(hexdec($this->event['Service-Information']['SGSNAddress']));

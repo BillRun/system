@@ -21,6 +21,10 @@ class Billrun_Processor_Realtime extends Billrun_Processor {
 	 * @return true
 	 */
 	public function parse() {
+		// real-time have only one event (currently)
+		$row = &$this->data['data'][0];
+		$row['usaget'] = $this->getLineUsageType($row);
+		$row['usagev'] = $this->getLineVolume($row);
 		return true;
 	}
 
@@ -45,9 +49,7 @@ class Billrun_Processor_Realtime extends Billrun_Processor {
 		}
 
 		Billrun_Factory::dispatcher()->trigger('afterProcessorParsing', array($this));
-//		no need to queue because it's real-time; 
-//		@TODO: check this with future spec
-//		$this->prepareQueue();
+		$this->prepareQueue();
 		Billrun_Factory::dispatcher()->trigger('beforeProcessorStore', array($this));
 
 		if ($this->store() === FALSE) {
@@ -57,9 +59,22 @@ class Billrun_Processor_Realtime extends Billrun_Processor {
 
 		Billrun_Factory::dispatcher()->trigger('afterProcessorStore', array($this));
 
-		$this->removefromWorkspace($this->getFileStamp());
+		//$this->removefromWorkspace($this->getFileStamp());
 		Billrun_Factory::dispatcher()->trigger('afterProcessorRemove', array($this));
 		return count($this->data['data']);
 	}
+	
+	protected function getLineVolume($row) {
+		return $row['MSCC']['used'];
+	}
+
+	/**
+	 * Get the line usage type (SMS/Call/Data/etc..)
+	 * @param $row the CDR line  to get the usage for.
+	 */
+	protected function getLineUsageType($row) {
+		return 'data';
+	}
+
 
 }

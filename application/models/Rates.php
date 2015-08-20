@@ -91,7 +91,7 @@ class RatesModel extends TabledateModel {
 							$planEntity = $plansColl->query('name', $plan)
 											->lessEq('from', $currentDate)
 											->greaterEq('to', $currentDate)
-											->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'))->current();
+											->cursor()->current();
 							$newRefPlans[] = $planEntity->createRef($plansColl);
 						}
 					}
@@ -253,7 +253,7 @@ class RatesModel extends TabledateModel {
 						$ret[] = new Mongodloid_Entity(array_merge($item->getRawData(), $added_columns, $rate));
 					}
 				}
-			} else if ($this->showprefix && (isset($filter_query['$and'][0]['key']) || isset($filter_query['$and'][0]['params.prefix']))) {
+			} else if ($this->showprefix && (isset($filter_query['$and'][0]['key']) || isset($filter_query['$and'][0]['params.prefix'])) && !empty($item->get('params.prefix'))) {
 				foreach ($item->get('params.prefix') as $prefix) {
 					$item_raw_data = $item->getRawData();
 					unset($item_raw_data['params']['prefix']); // to prevent high memory usage
@@ -268,7 +268,7 @@ class RatesModel extends TabledateModel {
 	}
 
 	public function getRates($filter_query) {
-		return $this->collection->query($filter_query)->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
+		return $this->collection->query($filter_query)->cursor();
 	}
 
 	public function getFutureRateKeys($by_keys = array()) {
@@ -490,7 +490,7 @@ class RatesModel extends TabledateModel {
 		$planEntity = $plansColl->query('name', $plan)
 						->lessEq('from', $currentDate)
 						->greaterEq('to', $currentDate)
-						->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'))->current();
+						->cursor()->current();
 		return $planEntity->createRef($plansColl);
 	}
 

@@ -343,6 +343,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 * 	'H' => Header
 	 * 	'D' => Data
 	 * 	'T' => Trailer
+	 * @todo make the method abstract and implement in all children classes
 	 */
 	protected function getLineType($line, $length = 1) {
 		return substr($line, 0, $length);
@@ -607,6 +608,10 @@ abstract class Billrun_Processor extends Billrun_Base {
 				$queue_row[$property] = $row[$property];
 			}
 		}
+		
+		if (!isset($queue_row['stamp'])) {
+			$queue_row['stamp'] = $row['stamp'];
+		}
 		$this->setQueueRow($queue_row);
 		return true;
 	}
@@ -692,5 +697,17 @@ abstract class Billrun_Processor extends Billrun_Base {
 	protected function getFileStamp() {
 		return $this->file_stamp;
 	}
+	
+	/**
+	 * Get a CDR line volume (duration/count/bytes used)
+	 * @param $row the line to get  the volume for.
+	 * @param the line usage type
+	 */
+	abstract protected function getLineVolume($row);
 
+	/**
+	 * Get the line usage type (SMS/Call/Data/etc..)
+	 * @param $row the CDR line  to get the usage for.
+	 */
+	abstract protected function getLineUsageType($row);
 }
