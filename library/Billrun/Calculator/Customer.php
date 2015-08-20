@@ -124,7 +124,6 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			}
 		}
 
-		// [tom] TODO: What does this do? I can't understand this just from the code.
 		foreach (array_keys($subscriber->getAvailableFields()) as $key) {
 			if (is_numeric($subscriber->{$key})) {
 				$subscriber->{$key} = intval($subscriber->{$key}); // remove this conversion when Vitali changes the output of the CRM to integers
@@ -132,36 +131,24 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			$subscriber_field = $subscriber->{$key};
 			$row[$key] = $subscriber_field;
 		}
-		
-		return $row;
-	}
-
-	/**
-	 * This function executes the logic regarding Extra Data in the updateRow functionality.
-	 * @param type $subscriber - Subscriber data to process.
-	 * @param type $row - Row to present.
-	 */
-	private function updateRowHandleExtraData($subscriber, $row) {
 		foreach (array_keys($subscriber->getCustomerExtraData())as $key) {
-			if (!$this->isExtraDataRelevant($row, $key)) {
-				continue;
-			}
-			
-			$subscriber_field = $subscriber->{$key};
-			$row[$key] = $subscriber_field;
-			if (($key == 'last_vlr') && // also it's possible to add alpha3 only if daily_ird_plan is true
-				($subscriber->{$key})) { 
-				$rate = $this->ratesModel->getRateByVLR($subscriber->{$key});
-
-				if ($rate) {
-					$row['alpha3'] = $rate['alpha3'];
+			if ($this->isExtraDataRelevant($row, $key)) {
+				$subscriber_field = $subscriber->{$key};
+				$row[$key] = $subscriber_field;
+				if ($key == 'last_vlr') { // also it's possible to add alpha3 only if daily_ird_plan is true
+					if ($subscriber->{$key}) {
+						$rate = $this->ratesModel->getRateByVLR($subscriber->{$key});
+						if ($rate) {
+							$row['alpha3'] = $rate['alpha3'];
+						}
+					}
 				}
 			}
 		}
-		Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array(&$row, $this));
- 		return $row;
+		Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array($row, $this));
+		return $row;
 	}
-	
+
 	/**
 	 * Returns whether to save the extra data field to the line or not
 	 * @param Mongodloid_Entity $line
@@ -235,28 +222,23 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		$params = array();
 		$subscriber_extra_data = array_keys($this->subscriber->getCustomerExtraData());
 		foreach ($rows as $row) {
-			// [tom] TODO: The loadSubscriberForLine function has the same code with less validations.
-			// Skip line if not legitimate.
-			if (!$this->isLineLegitimate($row)) {
-				continue;
-			}
-			
-			$line_params = $this->getIdentityParams($row);
-			if (count($line_params) == 0) {
-				Billrun_Factory::log('Couldn\'t identify caller for line of stamp ' . $row['stamp'], Zend_Log::ALERT);
-				continue;
-			}
-			
-			$line_params['time'] = date(Billrun_Base::base_dateformat, $row['urt']->sec);
-			$line_params['stamp'] = $row['stamp'];
-			$line_params['EXTRAS'] = 0;
-			foreach ($subscriber_extra_data as $key) {
-				if ($this->isExtraDataRelevant($row, $key)) {
-					$line_params['EXTRAS'] = 1;
-					break;
+			if ($this->isLineLegitimate($row)) {
+				$line_params = $this->getIdentityParams($row);
+				if (count($line_params) == 0) {
+					Billrun_Factory::log('Couldn\'t identify caller for line of stamp ' . $row['stamp'], Zend_Log::ALERT);
+				} else {
+					$line_params['time'] = date(Billrun_Base::base_dateformat, $row['urt']->sec);
+					$line_params['stamp'] = $row['stamp'];
+					$line_params['EXTRAS'] = 0;
+					foreach ($subscriber_extra_data as $key) {
+						if ($this->isExtraDataRelevant($row, $key)) {
+							$line_params['EXTRAS'] = 1;
+							break;
+						}
+					}
+					$params[] = $line_params;
 				}
 			}
-			$params[] = $line_params;
 		}
 		$this->subscribers = $this->subscriber->getSubscribersByParams($params, $this->subscriber->getAvailableFields());
 	}
@@ -267,17 +249,15 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	 * @return type
 	 */
 	protected function loadSubscriberForLine($row) {
-		// [tom] TODO: Doesn't chec 'Is line legitimate' function.
 		$params = $this->getIdentityParams($row);
 
 		if (count($params) == 0) {
 			Billrun_Factory::log('Couldn\'t identify caller for line of stamp ' . $row->get('stamp'), Zend_Log::ALERT);
-			return false;
+			return;
 		}
 
 		$params['time'] = date(Billrun_Base::base_dateformat, $row->get('urt')->sec);
 		$params['stamp'] = $row->get('stamp');
-		// [tom] TODO: No referencing the 'EXTRAS' field, is this on purpose?
 
 		return $this->subscriber->load($params);
 	}
@@ -334,58 +314,43 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	 * @see Billrun_Calculator::isLineLegitimate
 	 */
 	public function isLineLegitimate($line) {
-//		 if ( $this->isCustomerable($line)) {
-// 			$customer = $this->isOutgoingCall($line) ? "caller" : "callee";
-// 			if (isset($this->translateCustomerIdentToAPI[$customer])) {
-// 				$customer_identification_translation = $this->translateCustomerIdentToAPI[$customer];
-// 				foreach ($customer_identification_translation as $key => $toKey) {
-// 					if (isset($line[$key]) && strlen($line[$key])) {
-// 						return true;
-// 					}
-// 				}
-// 			}
-		if (!$this->isCustomerable($line)) {
-			Billrun_Factory::log("isLineLegitimate: " . print_r($line,true) . " Is not customerable!", Zend_Log::INFO);
-			return false;
-		}
-		$customer = $this->isOutgoingCall($line) ? "caller" : "callee";
-		if (!isset($this->translateCustomerIdentToAPI[$customer])) {
-			Billrun_Factory::log("isLineLegitimate: '$customer' field is not set!", Zend_Log::INFO);
-			return false;
-		}
-		
-		$customer_identification_translation = $this->translateCustomerIdentToAPI[$customer];
-
-		// Go through the ID's
-		foreach ($customer_identification_translation as $key => $toKey) {
-			// There is an ID for this line.
-			if (isset($line[$key]) && strlen($line[$key])) {
-				return true;
+		if (isset($line['usagev']) && $line['usagev'] !== 0 && $this->isCustomerable($line)) {
+			$customer = $this->isOutgoingCall($line) ? "caller" : "callee";
+			if (isset($this->translateCustomerIdentToAPI[$customer])) {
+				$customer_identification_translation = $this->translateCustomerIdentToAPI[$customer];
+				foreach ($customer_identification_translation as $key => $toKey) {
+					if (isset($line[$key]) && strlen($line[$key])) {
+						return true;
+					}
+				}
 			}
 		}
-					
-		// TODO: Log error? No ID found for this line?
 		return false;
 	}
 
-	/**
-	 * Chec if a line is customerable.
-	 * @param type $line
-	 * @return boolean - True if the line is customerable.
-	 */
 	protected function isCustomerable($line) {
-		if ($line['type'] != 'nsn') {
-			$arate = is_array($line) ? $line['arate'] : is_array($line, true);
-			return (isset($arate) && $arate); // for non-nsn records we currently identify only outgoing usage, based on arate.
-		} 
-		$record_type = $line['record_type'];
-		if ($record_type == '11' || $record_type == '12') {
-			$relevant_cg = $record_type == '11' ? $line['in_circuit_group'] : $line['out_circuit_group'];
-			if (!in_array($relevant_cg, Billrun_Util::getRoamingCircuitGroups())) {
+		if ($line['type'] == 'nsn') {
+			$record_type = $line['record_type'];
+			if ($record_type == '11' || $record_type == '12') {
+				$relevant_cg = $record_type == '11' ? $line['in_circuit_group'] : $line['out_circuit_group'];
+				if (!in_array($relevant_cg, Billrun_Util::getRoamingCircuitGroups())) {
+					return false;
+				}
+				if ($record_type == '11' && in_array($line['out_circuit_group'], array('3060', '3061'))) {
+					return false;
+				}
+				// what about IN direction (3060/3061)?
+			} else if (!in_array($record_type, array('01', '02'))) {
 				return false;
 			}
+		} else {
+			if (is_array($line)) {
+				$arate = $line['arate'];
+			} else {
+				$arate = $line->get('arate', true);
+			}
+			return (isset($arate) && $arate); // for non-nsn records we currently identify only outgoing usage, based on arate.
 		}
-			
 		return true;
 	}
 
