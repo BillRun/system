@@ -93,6 +93,13 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 	}
 
 	/**
+	 * Return true if the subscriber has no data.
+	 */
+	public function isEmpty() {
+		return empty($this->data);
+	}
+	
+	/**
 	 * method to load subsbscriber details
 	 * 
 	 * @param array $params load by those params 

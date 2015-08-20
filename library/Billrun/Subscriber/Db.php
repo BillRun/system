@@ -25,6 +25,10 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 			$queryParams['imsi'] = $params['IMSI'];
 		} elseif (isset($params['MSISDN'])) {
 			$queryParams['msisdn'] = $params['MSISDN'];
+		} elseif(isset($params['sid']) && $params['to'] && $params['from']) {
+			$queryParams['sid'] = $params['sid'];
+			$queryParams['to']['$lte']   = Billrun_Db::intToMongoDate($queryParams['to']);
+			$queryParams['from']['$gte'] = Billrun_Db::intToMongoDate($queryParams['from']);
 		} else {
 			Billrun_Factory::log('Cannot identify subscriber. Require phone or imsi to load. Current parameters: ' . print_R($params, 1), Zend_Log::ALERT);
 			return $this;
