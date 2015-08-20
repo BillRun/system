@@ -230,27 +230,16 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			return false;
 		}
 
-		$balance_unique_key = array('sid' => $row['sid'], 'billrun_key' => $billrun_key);
-		if (!($balance = self::createBalanceIfMissing($row['aid'], $row['sid'], $billrun_key, $plan_ref))) {
-			// TODO: report error?
-			return false;
-		}
+		$balance = new Billrun_Balance($row);
+ 		if (!$balance || !$balance->isValid()) {
+ 			Billrun_Factory::log("couldn't get balance for subscriber: " . $row['sid'], Zend_Log::INFO);
+ 			return false;
+ 		} 
 		
-		if ($balance === true) {
-			$balance = null;
-		}
+ 		Billrun_Factory::log("Found balance  for subscriber " . $row['sid'], Zend_Log::DEBUG);
+		$this->balance = $balance;
 
-		if (is_null($balance)) {
-			$balance = Billrun_Factory::balance($balance_unique_key);
-		}
-		
-		if (!$balance || !$balance->isValid()) {
-			Billrun_Factory::log("couldn't get balance for subscriber: " . $row['sid'], Zend_Log::INFO);
-			return false;
-		}
-		
-		Billrun_Factory::log("Found balance " . $billrun_key . " for subscriber " . $row['sid'], Zend_Log::DEBUG);
-		return $balance;
+ 		return true;
 	}
 
 	/**
