@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2015 S.D.O.C. LTD. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
@@ -17,10 +17,11 @@ class Billrun_ActionManagers_Balances_Updaters_Manager {
 	static $updaterTranslator = 
 		array('charging_plan_name'		  => 'ChargingPlan',
 			  'charging_plan_external_id' => 'ChargingPlan',
-			  'pp_includes_name'		  => 'Account',
-			  'pp_includes_external_id'	  => 'Account',
+			  'pp_includes_name'		  => 'PrepaidInclude',
+			  'pp_includes_external_id'	  => 'PrepaidInclude',
 			  'id'						  => 'Id',
-			  '_id'						  => 'Id');
+			  '_id'						  => 'Id',
+			  'secret'					  => 'Secret');
 	
 	/**
 	 * This function receives filter name and returns an updater.

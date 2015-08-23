@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2015 S.D.O.C. LTD. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
@@ -11,7 +11,10 @@
  *
  * @author tom
  */
-class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_ActionManagers_Balances_Updaters_Updater{
+class Billrun_ActionManagers_Balances_Updaters_Id extends Billrun_ActionManagers_Balances_Updaters_Updater{
+	
+	protected $balancesRecord = null;
+	
 	/**
 	 * Update the balances, based on the plans table
 	 * @param type $query - Query to find row to update.
@@ -19,13 +22,16 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 	 * @param type $subscriberId - Id for the subscriber to update.
 	 */
 	public function update($query, $recordToSet, $subscriberId) {
-		$planQuery = $this->getPlanQuery($query);
-		$plansCollection = Billrun_Factory::db()->plansCollection();
+		$this->getBalanceRecord();
+		if(!$this->balancesRecord){
+			Billrun_Factory::log("Failed to get balances record to update balances by ID", Zend_Log::ERR);
+			return false;
+		}
 		
-		// TODO: Use the plans DB/API proxy.
-		$planRecord = $plansCollection->query($planQuery)->cursor()->current();
-		if(!$planRecord || $planRecord->isEmpty()) {
-			// TODO: Report error.
+		$chargingPlansCollection = Billrun_Factory::db()->chargingPlansCollection();
+		$planRecord = $this->getPlanRecord($query, $chargingPlansCollection);
+		if(!$planRecord) {
+			Billrun_Factory::log("Failed to get plans record to update balances by ID", Zend_Log::ERR);
 			return false;
 		}
 		
@@ -34,7 +40,7 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		
 		// Subscriber was not found.
 		if($subscriber->isEmpty()) {
-			// TODO: Report error
+			Billrun_Factory::log("Updating balances by ID failed to get subscriber id: " . $subscriberId, Zend_Log::ERR);
 			return false;
 		}
 		
@@ -47,6 +53,16 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		$balancesColl = Billrun_Factory::db()->balancesCollection();
 		
 		return $this->updateBalance($query, $balancesColl, $recordToSet);
+	}
+	
+	/**
+	 * Get the record plan according to the input query.
+	 * @param type $query
+	 * @param type $chargingPlansCollection
+	 * @return type
+	 */
+	protected function getPlanRecord($query, $chargingPlansCollection) {
+		return DBRef::getEntity($this->balancesRecord['current_plan']);
 	}
 	
 	/**
@@ -63,10 +79,10 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		
 		if(!$balanceRecord || $balanceRecord->isEmpty()) {
 			// TODO: Report error.
-			return null;
+			return;
 		}
 		
-		return $balanceRecord;
+		$this->balancesRecord = $balanceRecord;
 	}
 	
 	/**
@@ -80,12 +96,11 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		$valueToUseInQuery = null;
 		
 		// Find the record in the collection.
-		$balanceRecord = $this->getBalanceRecord($balancesColl, $query);
-		if(!$balanceRecord) {
+		if(!$this->balancesRecord) {
 			return false;
 		}
 		
-		list($chargingBy, $chargingByValue) = each($balanceRecord['balance']);
+		list($chargingBy, $chargingByValue) = each($this->balancesRecord['balance']);
 		
 		if(!is_array($chargingByValue)){
 			$valueFieldName= 'balance.' . $chargingBy;

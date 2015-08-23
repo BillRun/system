@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2015 S.D.O.C. LTD. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
@@ -12,66 +12,6 @@
  * @author tom
  */
 class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_ActionManagers_Balances_Updaters_Updater{
-
-	/**
-	 * TODO: This kind of translator might exist, but if it does we need a more generic way. Best if not needed at all.
-	 * Update the field names to fit what is in the mongo.
-	 * @param type $query - Record to be update in the db.
-	 */
-	protected function translateFieldNames($query){
-		$fieldNamesTranslate =
-			array('charging_plan'			  => 'name',
-				  'charging_plan_external_id' => '_id');
-		$translatedQuery = array();
-		foreach ($fieldNamesTranslate as $oldName => $newName) {
-			if(isset($query[$oldName])){
-				$translatedQuery[$newName] = $query[$oldName];
-			}
-		}
-		
-		return $translatedQuery;
-	}
-	
-	/**
-	 * Get a subscriber query to get the subscriber.
-	 * @param type $subscriberId - The ID of the subscriber.
-	 * @param type $planRecord - Record that holds to and from fields.
-	 * @return type Query to run.
-	 */
-	protected function getSubscriberQuery($subscriberId, $planRecord) {
-		// Get subscriber query.
-		$subscriberQuery = array('sid' => $subscriberId);
-		
-		// Add time to query.
-		$subscriberQuery['from'] = $planRecord['from'];
-		$subscriberQuery['to'] = $planRecord['to'];
-		
-		return $subscriberQuery;
-	}
-	
-	/**
-	 * Get the query to run on the plans collection in mongo.
-	 * @param type $query Input query to proccess.
-	 * @return type Query to run on plans collection.
-	 */
-	protected function getPlanQuery($query) {
-		// Single the type to be charging.
-		$planQuery = array('type' => 'charging');
-		
-		// Fix the update record field names.
-		return array_megrge($this->translateFieldNames($query), $planQuery);
-	}
-	
-	/**
-	 * Handle logic around setting the expiration date.
-	 * @param type $recordToSet
-	 * @param type $planRecord
-	 */
-	protected function handleExpirationDate($recordToSet, $planRecord) {
-		if(!$recordToSet['to']) {
-			$recordToSet['to'] = $this->getDateFromChargingPlan($planRecord);
-		}
-	}
 	
 	/**
 	 * Update the balances, based on the plans table
@@ -81,22 +21,19 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 	 */
 	public function update($query, $recordToSet, $subscriberId) {
 		// TODO: This function is free similar to the one in ID, should refactor code to be more generic.
-		$planQuery = $this->getPlanQuery($query);
-		$plansCollection = Billrun_Factory::db()->plansCollection();
-		
-		// TODO: Use the plans DB/API proxy.
-		$planRecord = $plansCollection->query($planQuery)->cursor()->current();
-		if(!$planRecord || $planRecord->isEmpty()) {
-			// TODO: Report error.
+		$chargingPlansCollection = Billrun_Factory::db()->chargingPlansCollection();
+		$chargingPlanRecord = $this->getPlanRecord($query, $chargingPlansCollection);
+		if(!$chargingPlanRecord) {
+			Billrun_Factory::log("Failed to get plan record to update balance query: " . $query, Zend_Log::ERR);
 			return false;
 		}
 		
 		// Get the subscriber.
-		$subscriber = $this->getSubscriber($subscriberId, $planRecord);	
+		$subscriber = $this->getSubscriber($subscriberId, $chargingPlanRecord);	
 		
 		// Subscriber was not found.
 		if($subscriber->isEmpty()) {
-			// TODO: Report error
+			Billrun_Factory::log("Updating by charging plan failed to get subscriber id: " . $subscriberId, Zend_Log::ERR);
 			return false;
 		}
 		
@@ -105,20 +42,20 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		}
 		
 		// Create a default balance record.
-		$defaultBalance = $this->getDefaultBalance($subscriber, $planRecord, $recordToSet, $plansCollection);
+		$defaultBalance = $this->getDefaultBalance($subscriber, $chargingPlanRecord, $recordToSet, $chargingPlansCollection);
 		
 		$this->handleExpirationDate($recordToSet, $subscriberId);
 		
 		$balancesColl = Billrun_Factory::db()->balancesCollection();
 		
 		// TODO: What if empty?
-		$balancesArray = $planRecord['include'];
+		$balancesArray = $chargingPlanRecord['include'];
 		
 		$balancesToReturn = array();
 		// Go through all charging possibilities. 
 		foreach ($balancesArray as $chargingBy => $chargingByValue) {
 			$balancesToReturn[] = 
-				$this->updateBalance($chargingBy, $chargingByValue, $query, $planRecord, $balancesColl, $defaultBalance, $recordToSet['to']);
+				$this->updateBalance($chargingBy, $chargingByValue, $query, $chargingPlanRecord, $balancesColl, $defaultBalance, $recordToSet['to']);
 		}
 		
 		return $balancesToReturn;
@@ -154,17 +91,16 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 	protected function updateBalance($chargingBy, $chargingByValue, $query, $balancesColl, $defaultBalance, $toTime) {
 		$valueFieldName = array();
 		$valueToUseInQuery = null;
+		$chargingByUsegt = $chargingBy;
 		
 		if(!is_array($chargingByValue)){
 			$valueFieldName= 'balance.' . $chargingBy;
 			$valueToUseInQuery = $chargingByValue;
 		}else{
-			list($chargingByValueName, $value)= each($chargingByValue);
-			$valueFieldName= 'balance.totals.' . $chargingBy . '.' . $chargingByValueName;
-			$valueToUseInQuery = $value;
-			$chargingBy=$chargingByValueName;
+			list($chargingByUsegt, $valueToUseInQuery)= each($chargingByValue);
+			$valueFieldName= 'balance.totals.' . $chargingBy . '.' . $chargingByUsegt;
 		}
-
+		
 		$this->handleZeroing($query, $balancesColl);
 		
 		$valueUpdateQuery = array();
@@ -174,7 +110,7 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		$valueUpdateQuery[$queryType]
 				   ['to'] = $toTime;
 				
-		$update = array_merge($this->getSetOnInsert($chargingBy, $defaultBalance), $valueUpdateQuery);
+		$update = array_merge($this->getSetOnInsert($chargingBy, $chargingByUsegt, $defaultBalance), $valueUpdateQuery);
 
 		$options = array(
 			'upsert' => true,
@@ -192,46 +128,47 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 	 * @param array $defaultBalance
 	 * @return type
 	 */
-	protected function getSetOnInsert($chargingBy, $defaultBalance) {
+	protected function getSetOnInsert($chargingBy, $chargingByUsegt, $defaultBalance) {
 		$defaultBalance['charging_by'] = $chargingBy;
+		$defaultBalance['charging_by_usegt'] = $chargingByUsegt;
 		return array(
 			'$setOnInsert' => $defaultBalance,
 		);
 	}
 	
 	/**
-	 * Get a mongo date object based on charging plan record.
-	 * @param type $chargingPlan
-	 * @return \MongoDate
-	 */
-	protected function getDateFromChargingPlan($chargingPlan) {
-		$period = $chargingPlan['period'];
-		$unit = $period['units'];
-		$duration = $period['duration'];
-		return new MongoDate(strtotime("+ " . $duration . " " . $unit));
-	}
-	
-	/**
 	 * Get a default balance record, without charging by.
 	 * @param type $subscriber
-	 * @param type $planRecord
+	 * @param type $chargingPlanRecord
 	 * @param type $recordToSet
 	 */
-	protected function getDefaultBalance($subscriber, $planRecord, $recordToSet, $plansCollection) {
+	protected function getDefaultBalance($subscriber, $chargingPlanRecord, $recordToSet) {
 		$defaultBalance = array();
-		$defaultBalance['from'] = new MongoDate();
+		$nowTime = new MongoDate();
+		$defaultBalance['from'] = $nowTime;
 		
 		$to = $recordToSet['to'];
 		if(!$to) {
-			$to = $this->getDateFromChargingPlan($planRecord);
+			$to = $this->getDateFromDataRecord($chargingPlanRecord);
 		}
 		
 		$defaultBalance['to']    = $to;
 		$defaultBalance['sid']   = $subscriber->{'sid'};
 		$defaultBalance['aid']   = $subscriber->{'aid'};
+		
+		// Get the ref to the subscriber's plan.
+		$planName = $subscriber->{'plan'};
+		$plansCollection = Billrun_Factory::db()->plansCollection();
+		
+		// TODO: Is this right here to use the now time or should i use the times from the charging plan?
+		$plansQuery = array("name" => $planName,
+							"to"   => array('$gt', $nowTime),
+							"from" => array('$lt', $nowTime));
+		$planRecord = $plansCollection->query($plansQuery)->cursor()->current();
 		$defaultBalance['current_plan'] = $planRecord->createRef($plansCollection);
 		$defaultBalance['charging_type'] = $subscriber->{'charging_type'};
-		$defaultBalance['charging_by_usaget'] = 
+		// This is being set outside of this function!!!
+		//$defaultBalance['charging_by_usaget'] = 
 		// TODO: This is not the correct way, priority needs to be calculated.
 		$defaultBalance['priority'] = 1;
 	}
