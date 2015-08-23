@@ -106,14 +106,14 @@ class VfdaysAction extends Action_Base {
 						4
 					)
 				),
-				count => array('$sum' => 1),
+				'count' => array('$sum' => 1),
 			),
 		);
 
 		$group2 = array(
 			'$group' => array(
 				'_id' => null,
-				count => array('$sum' => 1),
+				'count' => array('$sum' => 1),
 			),
 		);
 
