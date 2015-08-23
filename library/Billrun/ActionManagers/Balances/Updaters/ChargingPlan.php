@@ -24,7 +24,7 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		$plansCollection = Billrun_Factory::db()->plansCollection();
 		$planRecord = $this->getPlanRecord($query, $plansCollection);
 		if(!$planRecord) {
-			// TODO: Report error.
+			Billrun_Factory::log("Failed to get plan record to update balance query: " . $query, Zend_Log::ERR);
 			return false;
 		}
 		
@@ -33,7 +33,7 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		
 		// Subscriber was not found.
 		if($subscriber->isEmpty()) {
-			// TODO: Report error
+			Billrun_Factory::log("Updating by charging plan failed to get subscriber id: " . $subscriberId, Zend_Log::ERR);
 			return false;
 		}
 		
@@ -91,17 +91,16 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 	protected function updateBalance($chargingBy, $chargingByValue, $query, $balancesColl, $defaultBalance, $toTime) {
 		$valueFieldName = array();
 		$valueToUseInQuery = null;
+		$chargingByUsegt = $chargingBy;
 		
 		if(!is_array($chargingByValue)){
 			$valueFieldName= 'balance.' . $chargingBy;
 			$valueToUseInQuery = $chargingByValue;
 		}else{
-			list($chargingByValueName, $value)= each($chargingByValue);
-			$valueFieldName= 'balance.totals.' . $chargingBy . '.' . $chargingByValueName;
-			$valueToUseInQuery = $value;
-			$chargingBy=$chargingByValueName;
+			list($chargingByUsegt, $valueToUseInQuery)= each($chargingByValue);
+			$valueFieldName= 'balance.totals.' . $chargingBy . '.' . $chargingByUsegt;
 		}
-
+		
 		$this->handleZeroing($query, $balancesColl);
 		
 		$valueUpdateQuery = array();
@@ -111,7 +110,7 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		$valueUpdateQuery[$queryType]
 				   ['to'] = $toTime;
 				
-		$update = array_merge($this->getSetOnInsert($chargingBy, $defaultBalance), $valueUpdateQuery);
+		$update = array_merge($this->getSetOnInsert($chargingBy, $chargingByUsegt, $defaultBalance), $valueUpdateQuery);
 
 		$options = array(
 			'upsert' => true,
@@ -129,8 +128,9 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 	 * @param array $defaultBalance
 	 * @return type
 	 */
-	protected function getSetOnInsert($chargingBy, $defaultBalance) {
+	protected function getSetOnInsert($chargingBy, $chargingByUsegt, $defaultBalance) {
 		$defaultBalance['charging_by'] = $chargingBy;
+		$defaultBalance['charging_by_usegt'] = $chargingByUsegt;
 		return array(
 			'$setOnInsert' => $defaultBalance,
 		);
@@ -148,7 +148,7 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		
 		$to = $recordToSet['to'];
 		if(!$to) {
-			$to = $this->getDateFromChargingPlan($planRecord);
+			$to = $this->getDateFromDataRecord($planRecord);
 		}
 		
 		$defaultBalance['to']    = $to;
@@ -156,7 +156,8 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		$defaultBalance['aid']   = $subscriber->{'aid'};
 		$defaultBalance['current_plan'] = $planRecord->createRef($plansCollection);
 		$defaultBalance['charging_type'] = $subscriber->{'charging_type'};
-		$defaultBalance['charging_by_usaget'] = 
+		// This is being set outside of this function!!!
+		//$defaultBalance['charging_by_usaget'] = 
 		// TODO: This is not the correct way, priority needs to be calculated.
 		$defaultBalance['priority'] = 1;
 	}

@@ -100,6 +100,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		$this->recordToSet = 
 			array('value'			=> $jsonUpdateData['value'],
 				  'recurring'		=> $jsonUpdateData['recurring'],
+				// TODO: Should it be 'to' or expiration date like in the documentation?
 				  'to'				=> $to,
 				  'operation'		=> $operation);
 		

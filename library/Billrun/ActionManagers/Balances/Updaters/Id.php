@@ -24,14 +24,14 @@ class Billrun_ActionManagers_Balances_Updaters_Id extends Billrun_ActionManagers
 	public function update($query, $recordToSet, $subscriberId) {
 		$this->getBalanceRecord();
 		if(!$this->balancesRecord){
-			// TODO: Report error.
+			Billrun_Factory::log("Failed to get balances record to update balances by ID", Zend_Log::ERR);
 			return false;
 		}
 		
 		$plansCollection = Billrun_Factory::db()->plansCollection();
 		$planRecord = $this->getPlanRecord($query, $plansCollection);
 		if(!$planRecord) {
-			// TODO: Report error.
+			Billrun_Factory::log("Failed to get plans record to update balances by ID", Zend_Log::ERR);
 			return false;
 		}
 		
@@ -40,7 +40,7 @@ class Billrun_ActionManagers_Balances_Updaters_Id extends Billrun_ActionManagers
 		
 		// Subscriber was not found.
 		if($subscriber->isEmpty()) {
-			// TODO: Report error
+			Billrun_Factory::log("Updating balances by ID failed to get subscriber id: " . $subscriberId, Zend_Log::ERR);
 			return false;
 		}
 		

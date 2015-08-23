@@ -26,13 +26,11 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater {
 	 * TODO: This kind of translator might exist, but if it does we need a more generic way. Best if not needed at all.
 	 * Update the field names to fit what is in the mongo.
 	 * @param type $query - Record to be update in the db.
+	 * @param type $translationTable - Table to use to translate the values.
 	 */
-	protected function translateFieldNames($query){
-		$fieldNamesTranslate =
-			array('charging_plan'			  => 'name',
-				  'charging_plan_external_id' => '_id');
+	protected function translateFieldNames($query, $translationTable){
 		$translatedQuery = array();
-		foreach ($fieldNamesTranslate as $oldName => $newName) {
+		foreach ($translationTable as $oldName => $newName) {
 			if(isset($query[$oldName])){
 				$translatedQuery[$newName] = $query[$oldName];
 			}
@@ -48,10 +46,14 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater {
 	 */
 	protected function getPlanQuery($query) {
 		// Single the type to be charging.
-		$planQuery = array('type' => 'charging');
+		$planQuery = array('type' => 'charging', 'to' => array('$gt', new MongoDate()));
 		
+		$fieldNamesTranslate =
+			array('charging_plan'			  => 'name',
+				  'charging_plan_external_id' => 'external_id');
+				
 		// Fix the update record field names.
-		return array_megrge($this->translateFieldNames($query), $planQuery);
+		return array_megrge($this->translateFieldNames($query, $fieldNamesTranslate), $planQuery);
 	}
 	
 	/**
@@ -115,11 +117,11 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater {
 	/**
 	 * Handle logic around setting the expiration date.
 	 * @param type $recordToSet
-	 * @param type $planRecord
+	 * @param type $dataRecord
 	 */
-	protected function handleExpirationDate($recordToSet, $planRecord) {
+	protected function handleExpirationDate($recordToSet, $dataRecord) {
 		if(!$recordToSet['to']) {
-			$recordToSet['to'] = $this->getDateFromChargingPlan($planRecord);
+			$recordToSet['to'] = $this->getDateFromDataRecord($dataRecord);
 		}
 	}
 	
@@ -128,7 +130,7 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater {
 	 * @param type $chargingPlan
 	 * @return \MongoDate
 	 */
-	protected function getDateFromChargingPlan($chargingPlan) {
+	protected function getDateFromDataRecord($chargingPlan) {
 		$period = $chargingPlan['period'];
 		$unit = $period['units'];
 		$duration = $period['duration'];

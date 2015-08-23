@@ -22,8 +22,9 @@ class Billrun_ActionManagers_Balances_Updaters_Secret extends Billrun_ActionMana
 	protected function getPlanRecord($query, $plansCollection) {
 		$cardsColl = Billrun_Factory::db()->cardsCollection();
 		// Get the record.
-		// TODO: Not checking TO or FROM!!!!!!!!!
-		$cardRecord = $cardsColl->query($query)->cursor()->current();
+		$dateQuery = array('to' => array('$gt', new MongoDate()));
+		$finalQuery = array_merge($dateQuery, $query);
+		$cardRecord = $cardsColl->query($finalQuery)->cursor()->current();
 		
 		// Build the plan query from the card plan field.
 		$planQuery = array('charging_plan_name' => $cardRecord['charging_plan']);
