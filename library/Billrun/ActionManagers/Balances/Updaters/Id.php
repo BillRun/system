@@ -11,7 +11,10 @@
  *
  * @author tom
  */
-class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_ActionManagers_Balances_Updaters_Updater{
+class Billrun_ActionManagers_Balances_Updaters_Id extends Billrun_ActionManagers_Balances_Updaters_Updater{
+	
+	protected $balancesRecord = null;
+	
 	/**
 	 * Update the balances, based on the plans table
 	 * @param type $query - Query to find row to update.
@@ -19,12 +22,15 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 	 * @param type $subscriberId - Id for the subscriber to update.
 	 */
 	public function update($query, $recordToSet, $subscriberId) {
-		$planQuery = $this->getPlanQuery($query);
-		$plansCollection = Billrun_Factory::db()->plansCollection();
+		$this->getBalanceRecord();
+		if(!$this->balancesRecord){
+			// TODO: Report error.
+			return false;
+		}
 		
-		// TODO: Use the plans DB/API proxy.
-		$planRecord = $plansCollection->query($planQuery)->cursor()->current();
-		if(!$planRecord || $planRecord->isEmpty()) {
+		$plansCollection = Billrun_Factory::db()->plansCollection();
+		$planRecord = $this->getPlanRecord($query, $plansCollection);
+		if(!$planRecord) {
 			// TODO: Report error.
 			return false;
 		}
@@ -50,6 +56,16 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 	}
 	
 	/**
+	 * Get the record plan according to the input query.
+	 * @param type $query
+	 * @param type $plansCollection
+	 * @return type
+	 */
+	protected function getPlanRecord($query, $plansCollection) {
+		return DBRef::getEntity($this->balancesRecord['current_plan']);
+	}
+	
+	/**
 	 * Get the record from the balance collection.
 	 * @param type $balancesColl
 	 * @param type $query
@@ -63,10 +79,10 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		
 		if(!$balanceRecord || $balanceRecord->isEmpty()) {
 			// TODO: Report error.
-			return null;
+			return;
 		}
 		
-		return $balanceRecord;
+		$this->balancesRecord = $balanceRecord;
 	}
 	
 	/**
@@ -80,12 +96,11 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		$valueToUseInQuery = null;
 		
 		// Find the record in the collection.
-		$balanceRecord = $this->getBalanceRecord($balancesColl, $query);
-		if(!$balanceRecord) {
+		if(!$this->balancesRecord) {
 			return false;
 		}
 		
-		list($chargingBy, $chargingByValue) = each($balanceRecord['balance']);
+		list($chargingBy, $chargingByValue) = each($this->balancesRecord['balance']);
 		
 		if(!is_array($chargingByValue)){
 			$valueFieldName= 'balance.' . $chargingBy;
