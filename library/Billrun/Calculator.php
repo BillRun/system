@@ -149,25 +149,19 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		$lines_coll = Billrun_Factory::db()->linesCollection();
 		$lines = $this->pullLines($this->lines);
 		foreach ($lines as $line) {
-			// Skipping NULL line.
-			if (!$line) {
-				Billrun_Factory::log("Invalid line in calc: $line", Zend_Log::ERROR);
-				continue;
-			}
-			
-			Billrun_Factory::log("Calculating row: " . $line['stamp'], Zend_Log::DEBUG);
-			// We are not checking is line legitimate here yet because we still want the plugin to proccess it.
-			// We check is line legitimate after the plugin is done proccessing the line.
-			Billrun_Factory::dispatcher()->trigger('beforeCalculateDataRow', array('data' => &$line, $this));
-			$line->collection($lines_coll);
-			if ($this->isLineLegitimate($line)) {
-				if ($this->updateRow($line) === FALSE) {
-					unset($this->lines[$line['stamp']]);
-					continue;
+			if ($line) {
+				Billrun_Factory::log("Calculating row: " . $line['stamp'], Zend_Log::DEBUG);
+				Billrun_Factory::dispatcher()->trigger('beforeCalculateDataRow', array('data' => &$line));
+				$line->collection($lines_coll);
+				if ($this->isLineLegitimate($line)) {
+					if ($this->updateRow($line) === FALSE) {
+						unset($this->lines[$line['stamp']]);
+						continue;
+					}
+					$this->data[$line['stamp']] = $line;
 				}
-				$this->data[$line['stamp']] = $line;
+				Billrun_Factory::dispatcher()->trigger('afterCalculateDataRow', array('data' => &$line));
 			}
-			Billrun_Factory::dispatcher()->trigger('afterCalculateDataRow', array('data' => &$line, $this));
 		}
 		Billrun_Factory::dispatcher()->trigger('afterCalculateData', array('data' => $this->data));
 	}
@@ -250,9 +244,9 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		foreach ($this->lines as $item) {
 			$stamps[] = $item['stamp'];
 		}
-		$queryToSet = array_merge($query, array('stamp' => array('$in' => $stamps), 'hash' => $this->workHash, 'calc_time' => $this->signedMicrotime)); //array('stamp' => $item['stamp']);
-		$updateToSet = array_merge($update, array('$set' => array('calc_name' => $calculator_tag, 'calc_time' => false)));
-		$this->queue_coll->update($queryToSet, $updateToSet, array('multiple' => true, 'w' => 1));
+		$query = array_merge($query, array('stamp' => array('$in' => $stamps), 'hash' => $this->workHash, 'calc_time' => $this->signedMicrotime)); //array('stamp' => $item['stamp']);
+		$update = array_merge($update, array('$set' => array('calc_name' => $calculator_tag, 'calc_time' => false)));
+		$this->queue_coll->update($query, $update, array('multiple' => true, 'w' => 1));
 	}
 
 	/**
@@ -355,96 +349,58 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	}
 
 	/**
-	 * This function sets the queue limit if it is not set.
-	 * @param type $querydata - Query data already proccessed.
-	 * @param type $queue - The queue to be sampled.
-	 * @param type $query - The query to run.
-	 * @param type $horizonlineCount - this is to be updated for outside function.
-	 * @return boolean false if horizon lines are empty, true otherwise.
-	 */
-	private function setQueueLimit($querydata, $queue, $query, &$horizonlineCount) {
-		Billrun_Factory::log('Looking for the last available line in the queue', Zend_Log::DEBUG);
-		if (isset($querydata['hint'])) {
-			$hq = $queue->query($query)->cursor()->hint(array($querydata['hint'] => 1))->limit($this->limit);
-		} else {
-			$hq = $queue->query($query)->cursor()->limit($this->limit);
-		}
-
-		if ($this->autosort) {
-			$hq->sort(array('urt' => 1));
-		}
-
-		$horizonlineCount = $hq->count(true);
-		
-		// Horizon line is the last line 'seen in the horizon' by the given limit.
-		// If the horizon line is empty that means that under the limit that was received 
-		// there are no lines to return.
-		$horizonline = $hq->skip(abs($horizonlineCount - 1))->limit(1)->current();
-		Billrun_Factory::log("current limit : " . $horizonlineCount, Zend_Log::DEBUG);
-		
-		// There are no lines to return under the record limit received here so we terminate the action.
-		if ($horizonline->isEmpty()) {
-			return false;
-		} 
-
-		if ($this->autosort) {
-			$query['urt'] = array('$lte' => $horizonline['urt']);
-		} else {
-			$query['_id'] = array('$lte' => $horizonline->getId()->getMongoID());
-		}
-		
-		return true;
-	}
-	
-	/**
-	 * This function is the main logic executed in the getQueuedLines loop.
-	 * 
-	 * @param type $localquery - The local query to be executed.
-	 * @return boolean - If false it means that the last line in the received limit is empty, else return true.
-	 */
-	private function getQueuedLinesLoop($localquery, &$horizonlineCount, &$foundLines) {
-		$queue = Billrun_Factory::db()->queueCollection();
-		$querydata = $this->getBaseQuery();
-		$query = array_merge($querydata['query'], $localquery);
-		$update = $this->getBaseUpdate();
-		
-		//if There limit to the calculator set an updating limit.
-		if ($this->limit != 0) {
-			// If the function returns false it means that there are no lines to return.
-			if(!$this->setQueueLimit($querydata, $queue, $query, $horizonlineCount)) {
-				return false;
-			}
-		}
-
-		$query['$isolated'] = 1; //isolate the update
-		$this->workHash = md5(time() . rand(0, PHP_INT_MAX));
-		$update['$set']['hash'] = $this->workHash;
-		//Billrun_Factory::log(print_r($query,1),Zend_Log::DEBUG);
-		$queue->update($query, $update, array('multiple' => true, 'w' => 1));
-
-		$foundLines = 
-			$queue->query(array_merge($localquery, array('hash' => $this->workHash, 'calc_time' => $this->signedMicrotime)))->cursor();
-
-		if ($this->autosort) {
-			$foundLines->sort(array('urt' => 1));
-		}
-		
-		return true;
-	}
-	
-	/**
 	 * Get the queue lines for the current calculator
 	 * @param array $localquery the specific calculator filter query (usually on 'type' field)
 	 * @return array the queue lines
 	 */
 	protected function getQueuedLines($localquery) {
+		$queue = Billrun_Factory::db()->queueCollection();
+		$querydata = $this->getBaseQuery();
+		$query = array_merge($querydata['query'], $localquery);
+		$update = $this->getBaseUpdate();
+//		$fields = array();
+//		$options = static::getBaseOptions();
 		$retLines = array();
-		$foundLines = $retLines;
 		$horizonlineCount = 0;
 		do {
-			if (!$this->getQueuedLinesLoop($localquery, $horizonlineCount, $foundLines)) {
-				// If the loop function returns false, it means that there are no lines to return.
-				return $retLines;
+			//if There limit to the calculator set an updating limit.
+			if ($this->limit != 0) {
+				Billrun_Factory::log('Looking for the last available line in the queue', Zend_Log::DEBUG);
+				if (isset($querydata['hint'])) {
+					$hq = $queue->query($query)->cursor()->hint(array($querydata['hint'] => 1))->limit($this->limit);
+					if ($this->autosort) {
+						$hq->sort(array('urt' => 1));
+					}
+				} else {
+					$hq = $queue->query($query)->cursor()->limit($this->limit);
+					if ($this->autosort) {
+						$hq->sort(array('urt' => 1));
+					}
+				}
+				$horizonlineCount = $hq->count(true);
+				$horizonline = $hq->skip(abs($horizonlineCount - 1))->limit(1)->current();
+				Billrun_Factory::log("current limit : " . $horizonlineCount, Zend_Log::DEBUG);
+				if (!$horizonline->isEmpty()) {
+					if ($this->autosort) {
+						$query['urt'] = array('$lte' => $horizonline['urt']);
+					} else {
+						$query['_id'] = array('$lte' => $horizonline->getId()->getMongoID());
+					}
+				} else {
+					return $retLines;
+				}
+			}
+
+			$query['$isolated'] = 1; //isolate the update
+			$this->workHash = md5(time() . rand(0, PHP_INT_MAX));
+			$update['$set']['hash'] = $this->workHash;
+			//Billrun_Factory::log(print_r($query,1),Zend_Log::DEBUG);
+			$queue->update($query, $update, array('multiple' => true, 'w' => 1));
+
+			$foundLines = $queue->query(array_merge($localquery, array('hash' => $this->workHash, 'calc_time' => $this->signedMicrotime)))->cursor();
+
+			if ($this->autosort) {
+				$foundLines->sort(array('urt' => 1));
 			}
 		} while ($horizonlineCount != 0 && $foundLines->count() == 0);
 
@@ -468,22 +424,20 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	 */
 	protected function loadRates() {
 		$rates_coll = Billrun_Factory::db()->ratesCollection();
-		$rates = $rates_coll->query($this->rates_query)->cursor();
+		$rates = Billrun_Factory::db()->ratesCollection()->query($this->rates_query)->cursor();
 		$this->rates = array();
 		foreach ($rates as $rate) {
-			if (!$this->isRateValid($rate)) {
-				continue;
-			}
-			
-			$rate->collection($rates_coll);
-			if (isset($rate['params']['prefix'])) {
-				foreach ($rate['params']['prefix'] as $prefix) {
-					$this->rates[$prefix][] = $rate;
+			if ($this->isRateValid($rate)) {
+				$rate->collection($rates_coll);
+				if (isset($rate['params']['prefix'])) {
+					foreach ($rate['params']['prefix'] as $prefix) {
+						$this->rates[$prefix][] = $rate;
+					}
+				} else if ($rate['key'] == 'UNRATED') {
+					$this->rates['UNRATED'] = $rate;
+				} else {
+					$this->rates['noprefix'][] = $rate;
 				}
-			} else if ($rate['key'] == 'UNRATED') {
-				$this->rates['UNRATED'] = $rate;
-			} else {
-				$this->rates['noprefix'][] = $rate;
 			}
 		}
 	}
