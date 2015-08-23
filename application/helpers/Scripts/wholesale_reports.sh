@@ -57,11 +57,11 @@ case $report_name in
 	js_code="$js_code$nsn_end_code" ;;
 
 	"all_out_call" )
- 	js_code=$js_code'var dir="'$out_str'";var network = "all";db.lines.aggregate({$match:{urt:{$gte:from_date, $lte:to_date}, type:"nsn", $or:[{record_type:"01"},{record_type:"11", in_circuit_group_name:/^RCEL/},{record_type:"12",in_circuit_group_name:/^BICC/}], out_circuit_group_name:/^(?!FCEL|VVOM|BICC)/ }},'$nsn_grouping_out')';
+ 	js_code=$js_code'var dir="'$out_str'";var network = "all";db.lines.aggregate({$match:{urt:{$gte:from_date, $lte:to_date}, type:"nsn", $or:[{record_type:"01"},{record_type:"11", in_circuit_group_name:/^(RCEL|4CEL)/},{record_type:"12",in_circuit_group_name:/^BICC/}], out_circuit_group_name:/^(?!FCEL|VVOM|BICC)/ }},'$nsn_grouping_out')';
 	js_code="$js_code$nsn_end_code" ;;
 
 	"all_nr_out_call" )
-	js_code=$js_code'var dir="'$out_str'";var network = "nr";db.lines.aggregate({$match:{urt:{$gte:from_date, $lte:to_date}, type:"nsn", $or:[{record_type:"11",in_circuit_group_name:/^RCEL/ },{record_type:"01", calling_subs_last_ex_id : /^97252/}]}},'$nsn_grouping_out')';
+	js_code=$js_code'var dir="'$out_str'";var network = "nr";db.lines.aggregate({$match:{urt:{$gte:from_date, $lte:to_date}, type:"nsn", $or:[{record_type:"11",in_circuit_group_name:/^(RCEL|4CEL)/ },{record_type:"01", calling_subs_last_ex_id : /^97252/}]}},'$nsn_grouping_out')';
 	js_code="$js_code$nsn_end_code" ;;
 
 	"all_nr_in_call" )
@@ -76,6 +76,22 @@ case $report_name in
 	js_code=$js_code'var dir="'$in_str'";var network = "ho";db.lines.aggregate({$match:{urt:{$gte:from_date, $lte:to_date}, type:"nsn", record_type:"02", called_subs_last_ex_id : /^97252/}},'$nsn_grouping_in')';
 	js_code="$js_code$nsn_end_code" ;;
 
+	"pal_in_call" )
+	js_code=$js_code'var dir="'$in_str'";var network = "all";db.lines.aggregate(
+		{$match : {
+			type : "nsn" ,
+			$or:[{record_type:"12",in_circuit_group_name:/^(?!FCEL|BICC)/,out_circuit_group_name:/^(?=RCEL)/},
+				 {record_type:"11",in_circuit_group_name:/^(?!FCEL|RCEL|BICC|TONES|PCLB|PCTI|$)/,out_circuit_group_name:/^(?!FCEL|RCEL)/}] , 
+			in_circuit_group_name : /^SPAL/,
+			urt : {$gte : from_date, $lte : to_date } }},
+		{$project : { usagev : 1 , icg: {$substr:["$in_circuit_group_name",0,4]},
+			carrier : {$cond : [ 
+								{$or : [{$eq : [{$substr : ["$calling_number" , 0,4]},"9725"]},
+										{$eq : [{$substr : ["$calling_number" , 0,2]},"05"]},
+										{$eq : [{$substr : ["$calling_number" , 0,1]},"5"]}]},
+								"IL_MOBILE_JAWAL", "IL_FIX_PALTEL"] } } },
+		{$group : {_id : {c: "$icg" ,r: "$carrier"} , usagev : {$sum : "$usagev"} , count : {$sum : 1} }}).forEach(function(obj) {
+		print("call\t" + dir + "\t" + network + "\t'$day'\t" + ( obj._id.c ) + "\t" +( obj._id.r )  + "\t" + obj.count + "\t" + obj.usagev);})';;
 	*)
 	echo "Unrecognized report name";
 	exit;
@@ -84,7 +100,7 @@ esac
 
 
 if [[ -n "$js_code" ]]; then	
-	mongo billing -ureading -pguprgri --quiet --eval "$js_code" >> "$output_dir/$report_name.csv" ;
+ 	mongo billing -ureading -pguprgri --quiet --eval "$js_code" >> "$output_dir/$report_name.csv" ;
 fi
 
 
