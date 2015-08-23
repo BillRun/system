@@ -12,66 +12,6 @@
  * @author tom
  */
 class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_ActionManagers_Balances_Updaters_Updater{
-
-	/**
-	 * TODO: This kind of translator might exist, but if it does we need a more generic way. Best if not needed at all.
-	 * Update the field names to fit what is in the mongo.
-	 * @param type $query - Record to be update in the db.
-	 */
-	protected function translateFieldNames($query){
-		$fieldNamesTranslate =
-			array('charging_plan'			  => 'name',
-				  'charging_plan_external_id' => '_id');
-		$translatedQuery = array();
-		foreach ($fieldNamesTranslate as $oldName => $newName) {
-			if(isset($query[$oldName])){
-				$translatedQuery[$newName] = $query[$oldName];
-			}
-		}
-		
-		return $translatedQuery;
-	}
-	
-	/**
-	 * Get a subscriber query to get the subscriber.
-	 * @param type $subscriberId - The ID of the subscriber.
-	 * @param type $planRecord - Record that holds to and from fields.
-	 * @return type Query to run.
-	 */
-	protected function getSubscriberQuery($subscriberId, $planRecord) {
-		// Get subscriber query.
-		$subscriberQuery = array('sid' => $subscriberId);
-		
-		// Add time to query.
-		$subscriberQuery['from'] = $planRecord['from'];
-		$subscriberQuery['to'] = $planRecord['to'];
-		
-		return $subscriberQuery;
-	}
-	
-	/**
-	 * Get the query to run on the plans collection in mongo.
-	 * @param type $query Input query to proccess.
-	 * @return type Query to run on plans collection.
-	 */
-	protected function getPlanQuery($query) {
-		// Single the type to be charging.
-		$planQuery = array('type' => 'charging');
-		
-		// Fix the update record field names.
-		return array_megrge($this->translateFieldNames($query), $planQuery);
-	}
-	
-	/**
-	 * Handle logic around setting the expiration date.
-	 * @param type $recordToSet
-	 * @param type $planRecord
-	 */
-	protected function handleExpirationDate($recordToSet, $planRecord) {
-		if(!$recordToSet['to']) {
-			$recordToSet['to'] = $this->getDateFromChargingPlan($planRecord);
-		}
-	}
 	
 	/**
 	 * Update the balances, based on the plans table
@@ -81,12 +21,9 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 	 */
 	public function update($query, $recordToSet, $subscriberId) {
 		// TODO: This function is free similar to the one in ID, should refactor code to be more generic.
-		$planQuery = $this->getPlanQuery($query);
 		$plansCollection = Billrun_Factory::db()->plansCollection();
-		
-		// TODO: Use the plans DB/API proxy.
-		$planRecord = $plansCollection->query($planQuery)->cursor()->current();
-		if(!$planRecord || $planRecord->isEmpty()) {
+		$planRecord = $this->getPlanRecord($query, $plansCollection);
+		if(!$planRecord) {
 			// TODO: Report error.
 			return false;
 		}
@@ -197,18 +134,6 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		return array(
 			'$setOnInsert' => $defaultBalance,
 		);
-	}
-	
-	/**
-	 * Get a mongo date object based on charging plan record.
-	 * @param type $chargingPlan
-	 * @return \MongoDate
-	 */
-	protected function getDateFromChargingPlan($chargingPlan) {
-		$period = $chargingPlan['period'];
-		$unit = $period['units'];
-		$duration = $period['duration'];
-		return new MongoDate(strtotime("+ " . $duration . " " . $unit));
 	}
 	
 	/**
