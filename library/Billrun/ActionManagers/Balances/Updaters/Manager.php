@@ -17,10 +17,11 @@ class Billrun_ActionManagers_Balances_Updaters_Manager {
 	static $updaterTranslator = 
 		array('charging_plan_name'		  => 'ChargingPlan',
 			  'charging_plan_external_id' => 'ChargingPlan',
-			  'pp_includes_name'		  => 'Account',
-			  'pp_includes_external_id'	  => 'Account',
+			  'pp_includes_name'		  => 'PrepaidInclude',
+			  'pp_includes_external_id'	  => 'PrepaidInclude',
 			  'id'						  => 'Id',
-			  '_id'						  => 'Id');
+			  '_id'						  => 'Id',
+			  'secret'					  => 'Secret');
 	
 	/**
 	 * This function receives filter name and returns an updater.
