@@ -68,7 +68,7 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 	 */
 	protected function handleZeroing($query, $balancesColl) {
 		// User requested incrementing, check if to reset the record.
-		if(!$this->isIncrement) {
+		if(!$this->shouldZero || !$this->isIncrement) {
 			return;
 		}
 		
@@ -77,7 +77,8 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		$zeroingQuery[$valueFieldName] = array('$gt' => 0);
 		$zeriongUpdate['$set'][$valueFieldName] = 0;
 		$originalBeforeZeroing= $balancesColl->findAndModify($zeroingQuery, $zeriongUpdate);
-		// TODO: Save the original balance in log somewhere.
+		
+		Billrun_Factory::log("Before zeroing: " . print_r($originalBeforeZeroing, 1), Zend_Log::INFO);
 	}
 	
 	/**

@@ -14,12 +14,16 @@
 abstract class Billrun_ActionManagers_Balances_Updaters_Updater {
 	
 	protected $isIncrement = true;
+	protected $shouldZero = true;
 	
 	/**
 	 * Create a new instance of the updater class.
+	 * @param type $zero - If requested to update by incrementing but the existing 
+	 *					   value is larger than zero than zeroise the value.
 	 */
-	public function __construct($increment = true) {
+	public function __construct($increment = true, $zero = true) {
 		$this->isIncrement = $increment;
+		$this->shouldZero = $zero;
 	}
 
 	/**
