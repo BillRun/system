@@ -33,7 +33,6 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 	 */
 	public function execute() {
 		$success = true;
-		$updatedDocument = null;
 
 		list($filterName,$t)=each($this->query);
 		
