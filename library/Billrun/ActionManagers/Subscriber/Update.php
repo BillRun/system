@@ -30,6 +30,34 @@ class Billrun_ActionManagers_Subscriber_Update extends Billrun_ActionManagers_Su
 	}
 	
 	/**
+	 * Close all the open balances for a subscriber.
+	 */
+	protected function closeBalances($sid, $aid) {
+		// Find all balances.
+		$balancesUpdate = array('$set' => array('to', new MongoDate()));
+		$balancesQuery = 
+			array('sid' => $sid, 
+				  'aid' => $aid);
+		$options = array(
+			'upsert' => false,
+			'new' => false,
+			'w' => 1,
+		);
+		$balancesColl = Billrun_Factory::db()->balancesCollection();
+		$balancesColl->findAndModify($balancesQuery, $balancesUpdate, array(), $options, true);
+	}
+	
+	/**
+	 * Keeps history before the records are modified.
+	 * @param type $record - Record to be modified.
+	 */
+	protected function handleKeepHistory($record) {				
+		$oldRecord = $record;
+		$oldRecord['to'] = new MongoDate();
+		return $oldRecord->save($this->collection);
+	}
+	
+	/**
 	 * Execute the action.
 	 * @return data for output.
 	 */
@@ -38,17 +66,32 @@ class Billrun_ActionManagers_Subscriber_Update extends Billrun_ActionManagers_Su
 		$updatedDocument = null;
 		try {
 			// TODO: How do i keep history?
-			// TODO: Does removing 'balances' means from the subscribers collection?
 			$cursor = $this->collection->query($this->options)->cursor();
 			foreach ($cursor as $record) {
 				foreach ($this->recordToSet as $key => $value) {
 					$record->collection($this->collection);
+
+					// Check if the user requested to keep history.
+					if($this->keepHistory) {
+						// TODO: What if this fails?
+						$this->handleKeepHistory($record);
+					}
+					
 					if(!$record->set($key, $value)) {
 						$success = false;
 						break 2;
 					}
+					
+					// TODO: Should i check if this fails?
+					$record->save($this->collection);
 				}
-			}		
+			}
+			
+			if(!$this->keepBalances) {
+				// Close balances.
+				$this->closeBalances($this->recordToSet['sid'], $this->recordToSet['aid']);
+			}
+			
 		} catch (\Exception $e) {
 			Billrun_Factory::log('failed to store into DB got error : ' . $e->getCode() . ' : ' . $e->getMessage(), Zend_Log::ALERT);
 			Billrun_Factory::log('failed saving request :' . print_r($this->recordToSet, 1), Zend_Log::ALERT);
