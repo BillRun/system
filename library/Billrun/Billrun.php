@@ -470,7 +470,7 @@ class Billrun_Billrun {
 	 * @param boolean $vatable is the line vatable or not
 	 * @param string $billrun_key the billrun_key of the billrun
 	 */
-	private function addLineToNonCreditSubscriber($counters, $row, $pricingData, $vatable, &$sraw, $zone, $plan_key, $category_key, $zone_key) {
+	protected function addLineToNonCreditSubscriber($counters, $row, $pricingData, $vatable, &$sraw, $zone, $plan_key, $category_key, $zone_key) {
 		if (!empty($counters)) {
 			if (!(isset($pricingData['over_plan']) && $pricingData['over_plan'] < current($counters))) { // volume is partially priced (in & over plan)
 				$volume_priced = current($counters);
@@ -684,7 +684,7 @@ class Billrun_Billrun {
 	 */
 	public static function loadRates() {
 		$rates_coll = Billrun_Factory::db()->ratesCollection();
-		$this->loadFromDB($rates_coll);
+		self::loadFromDB($rates_coll);
 	}
 
 	/**
@@ -692,7 +692,7 @@ class Billrun_Billrun {
 	 */
 	public static function loadPlans() {
 		$plans_coll = Billrun_Factory::db()->plansCollection();
-		$this->loadFromDB($plans_coll);
+		self::loadFromDB($plans_coll);
 	}
 	
 	/**
@@ -701,7 +701,7 @@ class Billrun_Billrun {
 	 * find a beter place to put it, or receive as strategy a Billrun_DBProxy type
 	 * @param type $colls - Collums of the DB.
 	 */
-	private function loadFromDB($colls) {
+	protected static function loadFromDB($colls) {
 		$data = $colls->query()->cursor();
 		foreach ($data as $record) {
 			$record->collection($colls);
