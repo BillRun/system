@@ -607,6 +607,10 @@ abstract class Billrun_Processor extends Billrun_Base {
 				$queue_row[$property] = $row[$property];
 			}
 		}
+				
+		if (!isset($queue_row['stamp'])) {
+			$queue_row['stamp'] = $row['stamp'];
+		}
 		$this->setQueueRow($queue_row);
 		return true;
 	}
