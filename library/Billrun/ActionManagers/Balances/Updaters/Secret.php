@@ -16,10 +16,10 @@ class Billrun_ActionManagers_Balances_Updaters_Secret extends Billrun_ActionMana
 	/**
 	 * Get the record plan according to the input query.
 	 * @param type $query
-	 * @param type $plansCollection
+	 * @param type $chargingPlanCollection
 	 * @return type
 	 */
-	protected function getPlanRecord($query, $plansCollection) {
+	protected function getPlanRecord($query, $chargingPlanCollection) {
 		$cardsColl = Billrun_Factory::db()->cardsCollection();
 		// Get the record.
 		$dateQuery = array('to' => array('$gt', new MongoDate()));
@@ -29,6 +29,6 @@ class Billrun_ActionManagers_Balances_Updaters_Secret extends Billrun_ActionMana
 		// Build the plan query from the card plan field.
 		$planQuery = array('charging_plan_name' => $cardRecord['charging_plan']);
 		
-		return parent::getPlanRecord($planQuery, $plansCollection);
+		return parent::getPlanRecord($planQuery, $chargingPlanCollection);
 	}
 }

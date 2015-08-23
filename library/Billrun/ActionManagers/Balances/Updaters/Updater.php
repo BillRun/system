@@ -59,14 +59,14 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater {
 	/**
 	 * Get the record plan according to the input query.
 	 * @param type $query
-	 * @param type $plansCollection
+	 * @param type $chargingPlanCollection
 	 * @return type
 	 */
-	protected function getPlanRecord($query, $plansCollection) {
+	protected function getPlanRecord($query, $chargingPlanCollection) {
 		$planQuery = $this->getPlanQuery($query);
 		
 		// TODO: Use the plans DB/API proxy.
-		$planRecord = $plansCollection->query($planQuery)->cursor()->current();
+		$planRecord = $chargingPlanCollection->query($planQuery)->cursor()->current();
 		if(!$planRecord || $planRecord->isEmpty()) {
 			// TODO: Report error.
 			return null;
@@ -75,7 +75,26 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater {
 		return $planRecord;
 	}
 	
+	/**
+	 * Get the ref to the monfo plan for the subscriber.
+	 * @param type $subscriber
+	 * @return type
+	 */
+	protected function getPlanRefForSubscriber($subscriber) {
+		// TODO: This function should be more generic. Or move the implementation into subscriber.
+		// Get the ref to the subscriber's plan.
+		$planName = $subscriber->{'plan'};
+		$plansCollection = Billrun_Factory::db()->plansCollection();
 		
+		// TODO: Is this right here to use the now time or should i use the times from the charging plan?
+		$plansQuery = array("name" => $planName,
+							"to"   => array('$gt', $nowTime),
+							"from" => array('$lt', $nowTime));
+		$planRecord = $plansCollection->query($plansQuery)->cursor()->current();
+		
+		return $planRecord->createRef($plansCollection);
+	}
+	
 	/**
 	 * Update the balances.
 	 * @param type $query - Query to find row to update.

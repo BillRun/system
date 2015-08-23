@@ -165,8 +165,7 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 		$defaultBalance['to']    = $prepaidRecord['to'];
 		$defaultBalance['sid']   = $subscriber->{'sid'};
 		$defaultBalance['aid']   = $subscriber->{'aid'};
-		// TODO: What do i put here???
-		$defaultBalance['current_plan'] = null;
+		$defaultBalance['current_plan'] = $this->getPlanRefForSubscriber($subscriber);
 		$defaultBalance['charging_type'] = $subscriber->{'charging_type'};
 		$defaultBalance['charging_by'] = $prepaidRecord->{'charging_by'};
 		$defaultBalance['charging_by_usaget'] = $prepaidRecord->{'charging_by_usaget'};

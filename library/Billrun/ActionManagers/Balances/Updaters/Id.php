@@ -28,8 +28,8 @@ class Billrun_ActionManagers_Balances_Updaters_Id extends Billrun_ActionManagers
 			return false;
 		}
 		
-		$plansCollection = Billrun_Factory::db()->plansCollection();
-		$planRecord = $this->getPlanRecord($query, $plansCollection);
+		$chargingPlansCollection = Billrun_Factory::db()->chargingPlansCollection();
+		$planRecord = $this->getPlanRecord($query, $chargingPlansCollection);
 		if(!$planRecord) {
 			Billrun_Factory::log("Failed to get plans record to update balances by ID", Zend_Log::ERR);
 			return false;
@@ -58,10 +58,10 @@ class Billrun_ActionManagers_Balances_Updaters_Id extends Billrun_ActionManagers
 	/**
 	 * Get the record plan according to the input query.
 	 * @param type $query
-	 * @param type $plansCollection
+	 * @param type $chargingPlansCollection
 	 * @return type
 	 */
-	protected function getPlanRecord($query, $plansCollection) {
+	protected function getPlanRecord($query, $chargingPlansCollection) {
 		return DBRef::getEntity($this->balancesRecord['current_plan']);
 	}
 	

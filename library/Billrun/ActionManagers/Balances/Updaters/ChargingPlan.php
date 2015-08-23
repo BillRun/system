@@ -21,15 +21,15 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 	 */
 	public function update($query, $recordToSet, $subscriberId) {
 		// TODO: This function is free similar to the one in ID, should refactor code to be more generic.
-		$plansCollection = Billrun_Factory::db()->plansCollection();
-		$planRecord = $this->getPlanRecord($query, $plansCollection);
-		if(!$planRecord) {
+		$chargingPlansCollection = Billrun_Factory::db()->chargingPlansCollection();
+		$chargingPlanRecord = $this->getPlanRecord($query, $chargingPlansCollection);
+		if(!$chargingPlanRecord) {
 			Billrun_Factory::log("Failed to get plan record to update balance query: " . $query, Zend_Log::ERR);
 			return false;
 		}
 		
 		// Get the subscriber.
-		$subscriber = $this->getSubscriber($subscriberId, $planRecord);	
+		$subscriber = $this->getSubscriber($subscriberId, $chargingPlanRecord);	
 		
 		// Subscriber was not found.
 		if($subscriber->isEmpty()) {
@@ -42,20 +42,20 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		}
 		
 		// Create a default balance record.
-		$defaultBalance = $this->getDefaultBalance($subscriber, $planRecord, $recordToSet, $plansCollection);
+		$defaultBalance = $this->getDefaultBalance($subscriber, $chargingPlanRecord, $recordToSet, $chargingPlansCollection);
 		
 		$this->handleExpirationDate($recordToSet, $subscriberId);
 		
 		$balancesColl = Billrun_Factory::db()->balancesCollection();
 		
 		// TODO: What if empty?
-		$balancesArray = $planRecord['include'];
+		$balancesArray = $chargingPlanRecord['include'];
 		
 		$balancesToReturn = array();
 		// Go through all charging possibilities. 
 		foreach ($balancesArray as $chargingBy => $chargingByValue) {
 			$balancesToReturn[] = 
-				$this->updateBalance($chargingBy, $chargingByValue, $query, $planRecord, $balancesColl, $defaultBalance, $recordToSet['to']);
+				$this->updateBalance($chargingBy, $chargingByValue, $query, $chargingPlanRecord, $balancesColl, $defaultBalance, $recordToSet['to']);
 		}
 		
 		return $balancesToReturn;
@@ -139,21 +139,32 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 	/**
 	 * Get a default balance record, without charging by.
 	 * @param type $subscriber
-	 * @param type $planRecord
+	 * @param type $chargingPlanRecord
 	 * @param type $recordToSet
 	 */
-	protected function getDefaultBalance($subscriber, $planRecord, $recordToSet, $plansCollection) {
+	protected function getDefaultBalance($subscriber, $chargingPlanRecord, $recordToSet) {
 		$defaultBalance = array();
-		$defaultBalance['from'] = new MongoDate();
+		$nowTime = new MongoDate();
+		$defaultBalance['from'] = $nowTime;
 		
 		$to = $recordToSet['to'];
 		if(!$to) {
-			$to = $this->getDateFromDataRecord($planRecord);
+			$to = $this->getDateFromDataRecord($chargingPlanRecord);
 		}
 		
 		$defaultBalance['to']    = $to;
 		$defaultBalance['sid']   = $subscriber->{'sid'};
 		$defaultBalance['aid']   = $subscriber->{'aid'};
+		
+		// Get the ref to the subscriber's plan.
+		$planName = $subscriber->{'plan'};
+		$plansCollection = Billrun_Factory::db()->plansCollection();
+		
+		// TODO: Is this right here to use the now time or should i use the times from the charging plan?
+		$plansQuery = array("name" => $planName,
+							"to"   => array('$gt', $nowTime),
+							"from" => array('$lt', $nowTime));
+		$planRecord = $plansCollection->query($plansQuery)->cursor()->current();
 		$defaultBalance['current_plan'] = $planRecord->createRef($plansCollection);
 		$defaultBalance['charging_type'] = $subscriber->{'charging_type'};
 		// This is being set outside of this function!!!
