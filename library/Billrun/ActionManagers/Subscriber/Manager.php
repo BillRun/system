@@ -25,7 +25,7 @@ class Billrun_ActionManagers_Subscriber_Manager {
 			Billrun_Factory::log("getAction received invalid input", Zend_Log::INFO);
 			return null;
 		}
-		$method = ucfirst(strtolower($methodInput));
+		$method = '_' . ucfirst(strtolower($methodInput));
 		 
 		$actionClass = str_replace('_Manager', $method, __CLASS__);
 		$action = new $actionClass();
