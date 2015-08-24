@@ -31,6 +31,9 @@ class Billrun_ActionManagers_Subscriber_Update extends Billrun_ActionManagers_Su
 	
 	/**
 	 * Close all the open balances for a subscriber.
+	 * 
+	 * @param string $sid - The sid of the user to close the balance for.
+	 * @param string $aid - The aid of the user to close the balance for.
 	 */
 	protected function closeBalances($sid, $aid) {
 		// Find all balances.
