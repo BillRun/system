@@ -29,23 +29,30 @@ class Billrun_Balance extends Mongodloid_Entity {
 	 * @deprecated since version 4.0 use $_values of Mongodloid_Entity
 	 */
 	protected $data = array();
-	
 	protected $collection = null;
+
+	/**
+	 * Saves the name of the selected balance type cost/usagev/total_cost.
+	 * Used to acces remaining balance in the balance object.
+	 * 
+	 * @var string
+	 */
+	protected $selectedBalance = '';
 
 	public function __construct($options = array()) {
 		// TODO: refactoring the read preference to the factory to take it from config
 		$this->collection = self::getCollection();
 
 		if (!isset($options['sid']) || !isset($options['aid'])) {
-			Billrun_Factory::log('Error creating balance, no aid or sid' , Zend_Log::ALERT);
+			Billrun_Factory::log('Error creating balance, no aid or sid', Zend_Log::ALERT);
 			return false;
 		}
-		
+
 		if (!isset($options['charging_type'])) {
 			$options['charging_type'] = 'postpaid';
 		}
 		$ret = $this->load($options['sid'], $options['urt'], $options['charging_type'], $options['usaget'])->getRawData();
-		
+
 		if (empty($ret) || count($ret) == 0) {
 			if ($options['charging_type'] == 'postpaid') {
 				$urtDate = date('Y-m-d h:i:s', $options['urt']->sec);
@@ -58,10 +65,11 @@ class Billrun_Balance extends Mongodloid_Entity {
 				$ret = array();
 			}
 		}
-		
+		$this->selectedBalance = self::getSelectedBalanceKey($ret);
+
 		parent::__construct($ret, self::getCollection());
 	}
-	
+
 	public static function getCollection() {
 		return Billrun_Factory::db()->balancesCollection()->setReadPreference('RP_PRIMARY');
 	}
@@ -107,15 +115,15 @@ class Billrun_Balance extends Mongodloid_Entity {
 	 */
 	public function load($subscriberId, $urt, $chargingType = 'postpaid', $usageType = "") {
 		Billrun_Factory::log()->log("Trying to load balance for subscriber " . $subscriberId . ". urt: " . $urt->sec . ". charging_type: " . $chargingType, Zend_Log::DEBUG);
-		
+
 		$query = array(
 			'sid' => $subscriberId,
 			'from' => array('$lte' => $urt),
 			'to' => array('$gte' => $urt),
 		);
-		
+
 		if ($chargingType === 'prepaid') {
-			$query['$or'] = array (
+			$query['$or'] = array(
 				array("balance.totals.$usageType.usagev" => array('$lt' => 0)),
 				array("balance.totals.$usageType.cost" => array('$lt' => 0)),
 				array("balance.cost" => array('$lt' => 0)),
@@ -127,7 +135,7 @@ class Billrun_Balance extends Mongodloid_Entity {
 			$cursor = $cursor->sort(array('priority' => -1));
 		}
 		return $cursor->setReadPreference('RP_PRIMARY')
-			->limit(1)->current();
+				->limit(1)->current();
 	}
 
 	/**
@@ -166,7 +174,7 @@ class Billrun_Balance extends Mongodloid_Entity {
 			'sid' => $sid,
 		);
 		$update = array(
-			'$setOnInsert' => self::getEmptySubscriberEntry($from , $to, $aid, $sid, $plan_ref),
+			'$setOnInsert' => self::getEmptySubscriberEntry($from, $to, $aid, $sid, $plan_ref),
 		);
 		$options = array(
 			'upsert' => true,
@@ -175,7 +183,7 @@ class Billrun_Balance extends Mongodloid_Entity {
 		);
 		Billrun_Factory::log()->log("Create empty balance, from: " . date("Y-m-d", $from) . " to: " . date("Y-m-d", $to) . ", if not exists for subscriber " . $sid, Zend_Log::DEBUG);
 		$output = $this->collection->findAndModify($query, $update, array(), $options, false);
-		
+
 		if (!is_array($output)) {
 			Billrun_Factory::log('Error creating balance  , from: ' . date("Y-m-d", $from) . " to: " . date("Y-m-d", $to) . ', for subscriber ' . $sid . '. Output was: ' . print_r($output->getRawData(), true), Zend_Log::ALERT);
 			return false;
@@ -258,6 +266,28 @@ class Billrun_Balance extends Mongodloid_Entity {
 			'cost' => 0,
 			'count' => 0,
 		);
+	}
+
+	/**
+	 * Gets the key of the current balance
+	 * 
+	 * @param type $balance
+	 * @return string balance key
+	 */
+	public static function getSelectedBalanceKey($balance) {
+		$selectedBalance = false;
+
+		if (isset($balance['balance']['totals'])) {
+			foreach ($balance['balance']['totals'] as $usageType => $value) {
+				foreach (array_keys($value) as $usageBy) {
+					$selectedBalance = 'balance.totals.' . $usageType . '.' . $usageBy;
+				}
+			}
+		} else if (isset($balance['balance']['cost'])) {
+			$selectedBalance = 'balance.cost';
+		}
+		
+		return $selectedBalance;
 	}
 
 	//=============== ArrayAccess Implementation =============

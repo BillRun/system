@@ -86,7 +86,7 @@ class RealtimeeventAction extends ApiAction {
 
 
 
-		$a = '{
+		/*$a = '{
 			"sessionId":"GyOCS.sasnlbumtsma0-0.pelephone.gy.lab;1378620500;536872634",
 			"ccRequestType":1,
 			"ccRequestNumber":415,
@@ -128,14 +128,38 @@ class RealtimeeventAction extends ApiAction {
 					"serviceAreaCode":1046
 				},
 				"3GPPRATType":"01"
-			}
+			},
+			"recordType":"start_call"
+		}';*/
+		$a = '{
+			"calling_number":"425030024380232",
+			"imsi":"425030024380232",
+			"dialed_digits":"425030024380232",
+			"event_type":"",
+			"service_key":"",
+			"call_reference":"2",
+			"call_id":"",
+			"vlr_number":"",
+			"location_information":{
+				"mcc":"",
+				"mnc":"",
+				"lac":"",
+				"ci":""
+			},
+			"duration":"2",
+			
+			"time_date":"01/01/2005 01:00:00",
+			"time_zone":"+3",
+			"free_call":false,
+			"recordType":"release_call",
+			"startTime":"20130908060820",
+			"SGSNAddress":"00015b876003"
 		}';
 		$this->event = @json_decode($a, JSON_OBJECT_AS_ARRAY);
 		$this->event['source'] = 'realtime';
 		$this->event['type'] = 'gy';
 		$this->event['rand'] = rand(1,1000000);
 		$this->event['stamp'] = Billrun_Util::generateArrayStamp($this->event);
-		$this->event['billrun_prepend'] = false; //TODO: set by type
 		if (isset($this->event['Service-Information']['SGSNAddress'])) {
 			$this->event['sgsn_address'] = long2ip(hexdec($this->event['Service-Information']['SGSNAddress']));
 		} else {
@@ -155,6 +179,12 @@ class RealtimeeventAction extends ApiAction {
 			unset($this->event['startTime']);
 		}
 		
+		if (isset($this->event['recordType'])) {
+			$this->event['record_type'] = $this->event['recordType'];
+			unset($this->event['recordType']);
+		}
+		
+		$this->event['billrun_prepend'] = ($this->event['record_type'] === 'start_call');
 		$this->event['urt'] = new MongoDate(strtotime($this->event['record_opening_time']));
 
 		$options = array(
@@ -165,7 +195,7 @@ class RealtimeeventAction extends ApiAction {
 		$processor->addDataRow($this->event);
 		$processor->process();
 
-		$ret = array(
+		/*$ret = array(
 			'sessionId' => $this->event['sessionId'],
 			'ccRequestType' => $this->event['ccRequestType'],
 			'ccRequestNumber' => $this->event['ccRequestNumber'],
@@ -178,13 +208,20 @@ class RealtimeeventAction extends ApiAction {
 //				'ratingGroup' => 92,
 //				'returnCode' => 0
 //			),
-		);
+		);*/
 		$data = $processor->getData()['data'][0];
-		$ret['MSCC']['returnCode'] = $data['grantedReturnCode'];
+		/*$ret['MSCC']['returnCode'] = $data['grantedReturnCode'];
 		if ($data['grantedReturnCode'] == Billrun_Factory::config()->getConfigValue('prepaid.ok')) {
 			$ret['MSCC']['granted'] = $data['usagev'];
-		}
+		}*/
 		$this->getController()->setOutput(array($ret));
+		
+		// Calls responder
+		$responderClassName = $this->recordTypeToClassName($this->event['record_type']);
+		if (class_exists($responderClassName)) {
+			(new $responderClassName($data))->respond();
+		}
+		
 //		if ($this->customer() !== TRUE) {
 //			die("error on customer");
 //		}
@@ -228,6 +265,11 @@ class RealtimeeventAction extends ApiAction {
 
 	protected function saveEvent() {
 		
+	}
+	
+	protected function recordTypeToClassName($recordType) {
+		$classNamePref = 'Billrun_ActionManagers_Realtime_';
+		return $classNamePref . str_replace(" ","", ucwords(str_replace("_", " ", $recordType))) . 'Responder';
 	}
 
 }

@@ -65,7 +65,13 @@ class Billrun_Processor_Realtime extends Billrun_Processor {
 	}
 	
 	protected function getLineVolume($row) {
-		return $row['MSCC']['used'];
+		switch ($row['usaget']) {
+			case ('data'):
+				return $row['MSCC']['used'];
+			case ('call'):
+				return 1;
+		}
+		return 0;
 	}
 
 	/**
@@ -73,7 +79,13 @@ class Billrun_Processor_Realtime extends Billrun_Processor {
 	 * @param $row the CDR line  to get the usage for.
 	 */
 	protected function getLineUsageType($row) {
-		return 'data';
+		if (isset($row['MSCC']['used'])) {
+			return 'data';
+		}
+		if (isset($row['call_reference'])) {
+			return 'call';
+		}
+		return '';
 	}
 
 
