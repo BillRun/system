@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2015 S.D.O.C. LTD. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
@@ -25,7 +25,7 @@ class Billrun_ActionManagers_Subscriber_Manager {
 			Billrun_Factory::log("getAction received invalid input", Zend_Log::INFO);
 			return null;
 		}
-		$method = ucfirst(strtolower($methodInput));
+		$method = '_' . ucfirst(strtolower($methodInput));
 		 
 		$actionClass = str_replace('_Manager', $method, __CLASS__);
 		$action = new $actionClass();

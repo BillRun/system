@@ -327,16 +327,16 @@ class Billrun_Factory {
 	 */
 	static public function plan($params) {
 
-		if (!isset($params['disableCache']) || !$params['disableCache']) {
-			// unique stamp per plan
-			$stamp = Billrun_Util::generateArrayStamp($params);
-
-			if (!isset(self::$plan[$stamp])) {
-				self::$plan[$stamp] = new Billrun_Plan($params);
-			}
-			return self::$plan[$stamp];
+		if (isset($params['disableCache']) && $params['disableCache']) {
+			return new Billrun_Plan($params);
 		}
-		return new Billrun_Plan($params);
+		// unique stamp per plan
+		$stamp = Billrun_Util::generateArrayStamp($params);
+
+		if (!isset(self::$plan[$stamp])) {
+			self::$plan[$stamp] = new Billrun_Plan($params);
+		}
+		return self::$plan[$stamp];
 	}
 
 	/**

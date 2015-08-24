@@ -128,6 +128,7 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 	 * @return boolean
 	 */
 	public function getBalance() {
+		// TODO: Create a getPlan function.
 		return Billrun_Factory::balance()->load($this->data['sid'], Billrun_Util::getNextChargeKey(time()));
 	}
 

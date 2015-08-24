@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2015 S.D.O.C. LTD. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
@@ -33,7 +33,6 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 	 */
 	public function execute() {
 		$success = true;
-		$updatedDocument = null;
 
 		list($filterName,$t)=each($this->query);
 		
@@ -101,6 +100,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		$this->recordToSet = 
 			array('value'			=> $jsonUpdateData['value'],
 				  'recurring'		=> $jsonUpdateData['recurring'],
+				// TODO: Should it be 'to' or expiration date like in the documentation?
 				  'to'				=> $to,
 				  'operation'		=> $operation);
 		
