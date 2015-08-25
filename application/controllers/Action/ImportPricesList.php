@@ -110,8 +110,8 @@ class ImportPricesListAction extends ApiAction {
 				}
 				$updated_keys[] = $rate_key;
 				$new_rate = new Mongodloid_Entity($new_raw_data);
-				$old_rate->save($rates_coll);
-				$new_rate->save($rates_coll);
+				$rates_coll->save($old_rate);
+				$rates_coll->save($new_rate);
 			}
 		}
 		if (count($updated_keys) + count($future_keys) + count($missing_categories) != count($this->rules)) {

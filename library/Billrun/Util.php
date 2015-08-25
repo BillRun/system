@@ -856,8 +856,9 @@ class Billrun_Util {
 		$ratesmodle =new RatesModel(array("collection" => "rates"));
 		$rates =$ratesmodle->getRates($query);
 		$rate_ref_list=array();
+		$ratesColl = Billrun_Factory::db()->ratesCollection();
 		foreach ($rates as $rate) {
-			$rate_ref_list[]=$rate->createRef(Billrun_Factory::db()->ratesCollection())['$id']->{'$id'};
+			$rate_ref_list[]= $ratesColl->createRefByEntity($rate)['$id']->{'$id'};
 		}
 		return $rate_ref_list;
 	}

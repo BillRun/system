@@ -285,7 +285,7 @@ class TableModel {
 		} else {
 			$entity = new Mongodloid_Entity($params);
 		}
-		$entity->save($this->collection, 1);
+		$this->collection->save($entity, 1);
 //		if (method_exists($this, $coll . 'AfterDataSave')) {
 //			call_user_func_array(array($this, $coll . 'AfterDataSave'), array($collection, &$newEntity));
 //		}

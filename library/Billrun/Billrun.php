@@ -71,6 +71,7 @@ class Billrun_Billrun {
 					$this->resetBillrun();
 				}
 			}
+			// TODO: Is this really neccessary?
 			$this->data->collection($this->billrun_coll);
 		} else {
 			Billrun_Factory::log("Returning an empty billrun!", Zend_Log::NOTICE);
@@ -90,7 +91,6 @@ class Billrun_Billrun {
 					'billrun_key' => $this->billrun_key,
 				))
 				->cursor()->limit(1)->current();
-		$this->data->collection($this->billrun_coll);
 		return $this;
 	}
 
@@ -100,14 +100,19 @@ class Billrun_Billrun {
 	 * @return type
 	 */
 	public function save() {
-		if (isset($this->data)) {
-			try {
-				$this->data->save(NULL, 1);
-				return true;
-			} catch (Exception $ex) {
-				Billrun_Factory::log('Error saving billrun document. Error code: ' . $ex->getCode() . '. Message: ' . $ex->getMessage(), Zend_Log::ERR);
-			}
+		if (!isset($this->data)) {
+			// TODO: Report error?
+			return false;
 		}
+		
+		try {
+			// TODO: Check if save returns false?
+			$this->billrun_coll->save($this->data, 1);
+			return true;
+		} catch (Exception $ex) {
+			Billrun_Factory::log('Error saving billrun document. Error code: ' . $ex->getCode() . '. Message: ' . $ex->getMessage(), Zend_Log::ERR);
+		}
+		
 		return false;
 	}
 
@@ -254,7 +259,8 @@ class Billrun_Billrun {
 	 */
 	public function close($min_id) {
 		$billrun_entity = $this->getRawData();
-		if (is_null($ret = $billrun_entity->createAutoInc("invoice_id", $min_id))) {
+		$ret = $this->billrun_coll->createAutoIncForEntity("invoice_id", $min_id);
+		if (is_null($ret)) {
 			Billrun_Factory::log("Failed to create invoice for account " . $this->aid, Zend_Log::INFO);
 		} else {
 			Billrun_Factory::log("Created invoice " . $ret . " for account " . $this->aid, Zend_Log::INFO);

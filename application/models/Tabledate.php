@@ -135,8 +135,7 @@ class TabledateModel extends TableModel {
 			$key_name = $entity[$this->search_key];
 			$this->collection->remove($entity);
 			$last_item = $this->getLastItem($key_name);
-			$last_item['to'] = $to;
-			$last_item->save();
+			$this->collection->updateEntity($last_item, array('to' => $to));
 		}
 	}
 

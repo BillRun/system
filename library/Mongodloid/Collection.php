@@ -16,11 +16,23 @@ class Mongodloid_Collection {
 	protected $w = 0;
 	protected $j = false;
 
+	/**
+	 * Create a new instance of the collection object.
+	 * @param MongoCollection $collection
+	 * @param Mongodloid_DB $db
+	 */
 	public function __construct(MongoCollection $collection, Mongodloid_DB $db) {
 		$this->_collection = $collection;
 		$this->_db = $db;
 	}
 
+	/**
+	 * Update a collection.
+	 * @param type $query - Query to filter records to update.
+	 * @param type $values - Query for updating new values.
+	 * @param type $options - Mongo options.
+	 * @return mongo update result.
+	 */
 	public function update($query, $values, $options = array()) {
 		if (!isset($options['w'])) {
 			$options['w'] = $this->w;
@@ -31,6 +43,35 @@ class Mongodloid_Collection {
 		return $this->_collection->update($query, $values, $options);
 	}
 
+	/**
+	 * Set the fields into the entity.
+	 * @param Mongodloid_Entity - Entity to set values into.
+	 * @param type $fields - Fields to set.
+	 */
+	protected function setEntityFields($entity, $fields) {
+		foreach ($fields as $key => $value) {
+			// Set values.
+			$entity->set($key, $value);
+		}
+	}
+	
+	/**
+	 * Update a collection by entity.
+	 * @param Mongodloid_Entity $entity - Entity to update in the collection.
+	 * @param array $fields - Array of keys and values to be updated in the entity.
+	 * @return mongo update result.
+	 */
+	public function updateEntity($entity, $fields) {
+		$data = array(
+			'_id' => $entity->getId()->getMongoID()
+		);
+		
+		// This function changes fields, should I clone fields before sending?
+		$this->setEntityFields($fields);
+		
+		return $this->update($data, array('$set' => $fields));
+	}
+	
 	public function getName() {
 		return $this->_collection->getName();
 	}
@@ -82,6 +123,10 @@ class Mongodloid_Collection {
 		return $indexCollection->query('ns', $this->_db->getName() . '.' . $this->getName());
 	}
 
+	/**
+	 * Create a query instance based on the current collection.
+	 * @return type
+	 */
 	public function query() {
 		$query = new Mongodloid_Query($this);
 		if (func_num_args()) {
@@ -240,6 +285,18 @@ class Mongodloid_Collection {
 	/**
 	 * method to create Mongo DB reference object
 	 * 
+	 * @param Mongodloid_Entity $entity Entity to create ref by.
+	 * 
+	 * @return MongoDBRef
+	 */
+	public function createRefByEntity($entity) {
+		// TODO: Valiudate the entity?
+		return $this->_collection->createDBRef($entity->getRawData());
+	}
+	
+	/**
+	 * method to create Mongo DB reference object
+	 * 
 	 * @param array $a raw data of object to create reference to itself; later on you can use the return value to store in other collection
 	 * 
 	 * @return MongoDBRef
@@ -321,6 +378,36 @@ class Mongodloid_Collection {
 		return $this->_collection->insert( ($a instanceof Mongodloid_Entity ? $a->getrawData() : $a), $options);
 	}
 
+	/**
+	 * Method to create auto increment of document based on an entity.
+	 * To use this method require counters collection (see create.ini)
+	 * 
+	 * @param Mongodloid_Entity $entity - Entity to create auto inc for.
+	 * @param string $field the field to set the auto increment
+	 * @param int $min_id the default value to use for the first value
+	 * 
+	 * @return mixed the auto increment value or void on error
+	 */
+	public function createAutoIncForEntity($entity, $field, $min_id = 1) {
+		// check if already set auto increment for the field
+		$value = $entity->get($field);
+		if ($value) {
+			return $value;
+		}
+
+		// check if id exists (cannot create auto increment without id)
+		$id = $entity->getId();
+		if (!$id) {
+			// TODO: Report error?
+			return;
+		}
+
+		$inc = $this->createAutoInc($id->getMongoID(), $min_id);
+		
+		// Set the values to the entity.
+		$entity->set($field, $inc);
+		return $inc;
+	}
 	/**
 	 * Method to create auto increment of document
 	 * To use this method require counters collection (see create.ini)

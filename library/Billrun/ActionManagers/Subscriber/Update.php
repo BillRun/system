@@ -41,12 +41,9 @@ class Billrun_ActionManagers_Subscriber_Update extends Billrun_ActionManagers_Su
 			// TODO: Does removing 'balances' means from the subscribers collection?
 			$cursor = $this->collection->query($this->options)->cursor();
 			foreach ($cursor as $record) {
-				foreach ($this->recordToSet as $key => $value) {
-					$record->collection($this->collection);
-					if(!$record->set($key, $value)) {
-						$success = false;
-						break 2;
-					}
+				if(!$this->collection->updateEntity($record, $this->recordToSet)) {
+					$success = false;
+					break;
 				}
 			}		
 		} catch (\Exception $e) {

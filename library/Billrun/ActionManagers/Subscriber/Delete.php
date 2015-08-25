@@ -43,8 +43,7 @@ class Billrun_ActionManagers_Subscriber_Delete extends Billrun_ActionManagers_Su
 				Billrun_Factory::log("Failed to get subscriber action instance for received input", Zend_Log::ALERT);
 				$success = false;
 			} else {
-				$rowToDelete->collection($this->collection);
-				$success = $rowToDelete->set('to', new MongoDate());
+				$this->collection->updateEntity($rowToDelete, array('to' => new MongoDate()));
 			}
 				
 		} catch (\Exception $e) {

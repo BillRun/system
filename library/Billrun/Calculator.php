@@ -188,7 +188,8 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	 */
 	public function writeLine($line, $dataKey) {
 		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteLine', array('data' => $line, 'calculator' => $this));
-		$line->save(Billrun_Factory::db()->linesCollection(), 1);
+		$linesCollection = Billrun_Factory::db()->linesCollection();
+		$linesCollection->save($line, 1);
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteLine', array('data' => $line, 'calculator' => $this));
 		if (!isset($line['usagev']) || $line['usagev'] === 0) {
 			$this->removeLineFromQueue($line);
@@ -316,7 +317,6 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	 * Remove lines from the queue if the current calculator is the last one or if final_calc is set for a queue line and equals the current calculator
 	 */
 	public function removeFromQueue() {
-		$queue = Billrun_Factory::db()->queueCollection();
 		$queue_calculators = Billrun_Factory::config()->getConfigValue("queue.calculators");
 		$calculator_type = $this->getCalculatorQueueType();
 		$queue_id = array_search($calculator_type, $queue_calculators);
@@ -333,6 +333,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		if (!empty($stamps)) { // last calculator
 			Billrun_Factory::log("Removing lines from queue", Zend_Log::INFO);
 			$query = array('stamp' => array('$in' => $stamps));
+			$queue = Billrun_Factory::db()->queueCollection();
 			$queue->remove($query);
 		}
 	}
