@@ -15,15 +15,25 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 	
 	/**
 	 * Field to hold the data to be written in the DB.
-	 * @var type Array
+	 * @array type Array
 	 */
 	protected $recordToSet = array();
+	
+	/**
+	 * Query to be used to find records to update.
+	 * @var array
+	 */
 	protected $query = array();
-	protected $subscriberId = true;
+	
+	/**
+	 * Holds the subscriber ID to update the balance for.
+	 * @var integer
+	 */
+	protected $subscriberId = null;
 
 	/**
 	 * Array to initialize the updater with.
-	 * @var type 
+	 * @var array 
 	 */
 	protected $updaterOptions = array();
 	
