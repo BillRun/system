@@ -18,8 +18,10 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater {
 	
 	/**
 	 * Create a new instance of the updater class.
-	 * @param type $zero - If requested to update by incrementing but the existing 
-	 *					   value is larger than zero than zeroise the value.
+	 * @param boolean $increment - If true then the values in mongo are updated by incrementation,
+	 * if false then the values in the mongo are forceablly set.
+	 * @param boolean $zero - If requested to update by incrementing but the existing 
+	 *	value is larger than zero than zeroise the value.
 	 */
 	public function __construct($increment = true, $zero = true) {
 		$this->isIncrement = $increment;
