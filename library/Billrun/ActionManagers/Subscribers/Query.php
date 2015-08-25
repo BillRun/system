@@ -10,6 +10,8 @@
  * This is a parser to be used by the subscribers action.
  *
  * @author tom
+ * @todo This class is very similar to balances query, 
+ * a generic query class should be created for both to implement.
  */
 class Billrun_ActionManagers_Subscribers_Query extends Billrun_ActionManagers_Subscribers_Action{
 	
