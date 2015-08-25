@@ -21,22 +21,23 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater {
 	protected $isIncrement = true;
 	
 	/**
-	 * If true then when the user requests to increment and the balance is already
-	 * depleted, the balance is zeroised and then incremented, with any over drafting ignored.
+	 * If true then when the user requests to increment and the balance is over the
+	 * allocated use, the balance is reset and then incremented, with any over drafting ignored.
 	 * @var type 
 	 */
 	protected $ignoreOveruse = true;
 	
 	/**
 	 * Create a new instance of the updater class.
-	 * @param boolean $increment - If true then the values in mongo are updated by incrementation,
-	 * if false then the values in the mongo are forceablly set.
-	 * @param boolean $zero - If requested to update by incrementing but the existing 
-	 *	value is larger than zero than zeroise the value.
+	 * @param array $options - Holding:
+	 *						   increment - If true then the values in mongo are updated by incrementation,
+	 *									   if false then the values in the mongo are forceablly set.
+	 *						   zero - If requested to update by incrementing but the existing 
+	 *								  value is larger than zero than zeroise the value.
 	 */
-	public function __construct($increment = true, $zero = true) {
-		$this->isIncrement = $increment;
-		$this->ignoreOveruse = $zero;
+	public function __construct($options) {
+		$this->isIncrement = $options['increment'];
+		$this->ignoreOveruse = $options['zero'];
 	}
 
 	/**

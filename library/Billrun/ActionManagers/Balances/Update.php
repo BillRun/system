@@ -22,6 +22,12 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 	protected $subscriberId = true;
 
 	/**
+	 * Array to initialize the updater with.
+	 * @var type 
+	 */
+	protected $updaterOptions = array();
+	
+	/**
 	 */
 	public function __construct() {
 		parent::__construct();
@@ -38,7 +44,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		
 		// Get the updater for the filter.
 		$updater = 
-			Billrun_ActionManagers_Balances_Updaters_Manager::getUpdater($filterName);
+			Billrun_ActionManagers_Balances_Updaters_Manager::getUpdater($filterName, $this->updaterOptions);
 		
 		$outputDocuments = 
 			$updater->update($this->query, $this->recordToSet, $this->subscriberId);
@@ -93,6 +99,11 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 			$operation = $jsonUpdateData['operation'];
 		}
 		
+		$this->updaterOptions['increment'] = ($operation == "inc");
+		
+		// TODO: For now this is hard-coded, untill the API will define this as a parameter.
+		$this->updaterOptions['zero'] = true;
+			
 		// TODO: If to is not set, but received opration set, it's an error, report?
 		$to = isset($jsonUpdateData['expiration_date']) ? ($jsonUpdateData['expiration_date']) : 0;
 		
