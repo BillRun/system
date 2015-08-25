@@ -21,8 +21,10 @@ class Billrun_ActionManagers_Subscribers_Query extends Billrun_ActionManagers_Su
 	 */
 	protected $subscriberQuery = array();
 	
-	protected $rawinput = array();
-
+	/**
+	 * If true then the query is a ranged query in a specific date.
+	 * @var boolean 
+	 */
 	protected $queryInRange = false;
 	
 	/**
@@ -53,20 +55,6 @@ class Billrun_ActionManagers_Subscribers_Query extends Billrun_ActionManagers_Su
 		
 		return $returnData;
 	}
-	/**
-	 * Query the subscribers collection to receive a single record.
-	 */
-	private function querySingleSubscribers() {
-		try {
-			$line = $this->collection->findOne($this->subscriberQuery);
-			
-		} catch (\Exception $e) {
-			Billrun_Factory::log('failed quering DB got error : ' . $e->getCode() . ' : ' . $e->getMessage(), Zend_Log::ALERT);
-			return null;
-		}	
-		
-		return array(json_encode($line));
-	}
 	
 	/**
 	 * Execute the action.
@@ -89,7 +77,24 @@ class Billrun_ActionManagers_Subscribers_Query extends Billrun_ActionManagers_Su
 				  'details' => $returnData);
 		return $outputResult;
 	}
-
+	
+	/**
+	 * Parse the to and from parameters if exists. If not execute handling logic.
+	 * @param type $input - The received input.
+	 */
+	protected function parseDateParameters($input) {
+		// Check if there is a to field.
+		$to = $input->get('to');
+		$from = $input->get('from');
+		if($to && $from) {
+			$this->subscriberQuery['to'] =
+				array('$lte' => new MongoTimestamp($to));
+			$this->subscriberQuery['from'] = 
+				array('$gte' => new MongoTimestamp($from));
+			$this->queryInRange = true;
+		}
+	}
+	
 	/**
 	 * Parse the received request.
 	 * @param type $input - Input received.
@@ -108,16 +113,7 @@ class Billrun_ActionManagers_Subscribers_Query extends Billrun_ActionManagers_Su
 				  'msisdn'			 => $jsonData['msisdn'],
 				  'sid'				 => $jsonData['sid']);
 		
-		// Check if there is a to field.
-		$to = $input->get('to');
-		$from = $input->get('from');
-		if($to && $from) {
-			$this->subscriberQuery['to'] =
-				array('$lte' => new MongoTimestamp($to));
-			$this->subscriberQuery['from'] = 
-				array('$gte' => new MongoTimestamp($from));
-			$this->queryInRange = true;
-		}
+		$this->parseDateParameters($input);
 		
 		return true;
 	}
