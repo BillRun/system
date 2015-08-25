@@ -140,7 +140,7 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 	 */
 	protected function handleZeroing($query, $balancesColl) {
 		// User requested incrementing, check if to reset the record.
-		if(!$this->shouldZero || !$this->isIncrement) {
+		if(!$this->ignoreOveruse || !$this->isIncrement) {
 			return;
 		}
 		

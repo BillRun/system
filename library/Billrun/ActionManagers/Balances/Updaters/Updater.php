@@ -13,8 +13,19 @@
  */
 abstract class Billrun_ActionManagers_Balances_Updaters_Updater {
 	
+	/**
+	 * If true then the values in mongo are updated by incrementation,
+	 * if false then the values in the mongo are forceablly set.
+	 * @var boolean. 
+	 */
 	protected $isIncrement = true;
-	protected $shouldZero = true;
+	
+	/**
+	 * If true then when the user requests to increment and the balance is already
+	 * depleted, the balance is zeroised and then incremented, with any over drafting ignored.
+	 * @var type 
+	 */
+	protected $ignoreOveruse = true;
 	
 	/**
 	 * Create a new instance of the updater class.
@@ -25,7 +36,7 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater {
 	 */
 	public function __construct($increment = true, $zero = true) {
 		$this->isIncrement = $increment;
-		$this->shouldZero = $zero;
+		$this->ignoreOveruse = $zero;
 	}
 
 	/**

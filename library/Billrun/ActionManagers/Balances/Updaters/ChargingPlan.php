@@ -68,7 +68,7 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 	 */
 	protected function handleZeroing($query, $balancesColl) {
 		// User requested incrementing, check if to reset the record.
-		if(!$this->shouldZero || !$this->isIncrement) {
+		if(!$this->ignoreOveruse || !$this->isIncrement) {
 			return;
 		}
 		
