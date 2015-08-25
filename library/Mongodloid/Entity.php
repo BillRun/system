@@ -280,14 +280,15 @@ class Mongodloid_Entity implements ArrayAccess {
 		}
 	}
 	
-//	/**
-//	 * Save this entity into it's collection.
-//	 * @param type $w
-//	 * @return type
-//	 */
-//	public function save($w = null) {
-//		return $this->collection()->save($this, $w);
-//	}
+	/**
+	 * Save this entity into it's collection.
+	 * @param type $w
+	 * @return type
+	 * @deprecated since version 4
+	 */
+	public function save($w = null) {
+		return $this->collection()->save($this, $w);
+	}
 
 	/**
 	 * Sets or gets the collection.
@@ -321,31 +322,32 @@ class Mongodloid_Entity implements ArrayAccess {
 	 * @param string $field the field to set the auto increment
 	 * @param int $min_id the default value to use for the first value
 	 * @return mixed the auto increment value or void on error
+	 * @deprecated since version 4
 	 */
 	// This is called through the collection.
-//	public function createAutoInc($field, $min_id = 1) {
-//		// check if already set auto increment for the field
-//		$value = $this->get($field);
-//		if ($value) {
-//			return $value;
-//		}
-//
-//		// check if collection exists for the entity
-//		if (!$this->collection()) {
-//			// TODO: Report error?
-//			return;
-//		}
-//
-//		// check if id exists (cannot create auto increment without id)
-//		$id = $this->getId();
-//		if (!$id) {
-//			return;
-//		}
-//
-//		$inc = $this->collection()->createAutoInc($id->getMongoID(), $min_id);
-//		$this->set($field, $inc);
-//		return $inc;
-//	}
+	public function createAutoInc($field, $min_id = 1) {
+		// check if already set auto increment for the field
+		$value = $this->get($field);
+		if ($value) {
+			return $value;
+		}
+
+		// check if collection exists for the entity
+		if (!$this->collection()) {
+			// TODO: Report error?
+			return;
+		}
+
+		// check if id exists (cannot create auto increment without id)
+		$id = $this->getId();
+		if (!$id) {
+			return;
+		}
+
+		$inc = $this->collection()->createAutoInc($id->getMongoID(), $min_id);
+		$this->set($field, $inc);
+		return $inc;
+	}
 
 	//=============== ArrayAccess Implementation =============
 	public function offsetExists($offset) {
