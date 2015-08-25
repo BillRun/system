@@ -32,7 +32,7 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 	}
 	
 	/**
-	 * Query the subscribers collection to receive data in a range.
+	 * Query the balances collection to receive data in a range.
 	 */
 	protected function queryRangeBalances() {
 		try {
