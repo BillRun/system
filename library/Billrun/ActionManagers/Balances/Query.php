@@ -106,11 +106,11 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 			return false;
 		}
 		
-		$accountName = $input->get('name');
-		if(empty($sid)) {
-			Billrun_Factory::log("Balances Query receieved no account name!", Zend_Log::NOTICE);
-			return false;
-		}
+//		$accountName = $input->get('name');
+//		if(empty($sid)) {
+//			Billrun_Factory::log("Balances Query receieved no account name!", Zend_Log::NOTICE);
+//			return false;
+//		}
 		
 		$this->balancesQuery = 
 			array('sid'	=> $sid);
