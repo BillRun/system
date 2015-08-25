@@ -21,9 +21,9 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater {
 	protected $isIncrement = true;
 	
 	/**
-	 * If true then when the user requests to increment and the balance is over the
-	 * allocated use, the balance is reset and then incremented, with any over drafting ignored.
-	 * @var type 
+	 * Any request for balance incrementation when the value is true and the balance
+	 * exceeds the maximum allowance, will reset the balance and then increment it
+	 * @var boolean 
 	 */
 	protected $ignoreOveruse = true;
 	
