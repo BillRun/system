@@ -17,7 +17,7 @@
 	<body>
 		<?php if ($this->testConnection){ print('<p id="green pad">ftp connection tested successfully</p>');
 		}else { 
-			print('<p id="red pad">ftp connection test failed</p>'); 
+			print('<p class="red pad">ftp connection test failed</p>'); 
 		} ?>
 		<p>Last file received: <?php print($this->file_name) ?></p> 
 		time: <?php if($this->longer_then_an_hour) {
