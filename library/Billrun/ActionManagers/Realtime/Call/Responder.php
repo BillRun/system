@@ -10,7 +10,7 @@
  * This is a prototype for a Realtime response action.
  *
  */
-abstract class Billrun_ActionManagers_Realtime_Responder {
+abstract class Billrun_ActionManagers_Realtime_Call_Responder {
 
 	protected $row;
 
@@ -26,17 +26,4 @@ abstract class Billrun_ActionManagers_Realtime_Responder {
 	 * Get response message
 	 */
 	public abstract function getResponse();
-
-	/**
-	 * Send a response
-	 * @param type $response
-	 */
-	public function respond() {
-		$response = $this->getResponse();
-		$a = 5;
-	}
-	
-	public function getRow() {
-		return $this->row;
-	}
 }

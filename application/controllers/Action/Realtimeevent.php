@@ -131,31 +131,33 @@ class RealtimeeventAction extends ApiAction {
 			},
 			"recordType":"start_call"
 		}';*/
-		$a = '{
-			"calling_number":"425030024380232",
-			"imsi":"425030024380232",
-			"dialed_digits":"425030024380232",
-			"event_type":"",
-			"service_key":"",
-			"call_reference":"2",
-			"call_id":"",
-			"vlr_number":"",
-			"location_information":{
-				"mcc":"",
-				"mnc":"",
-				"lac":"",
-				"ci":""
-			},
-			"duration":"2",
-			
-			"time_date":"01/01/2005 01:00:00",
-			"time_zone":"+3",
-			"free_call":false,
-			"recordType":"release_call",
-			"startTime":"20130908060820",
-			"SGSNAddress":"00015b876003"
-		}';
-		$this->event = @json_decode($a, JSON_OBJECT_AS_ARRAY);
+		$a = "<?xml version='1.0'?>
+			<document>
+			<calling_number>425030024380232</calling_number>
+			<imsi>425030024380232</imsi>
+			<dialed_digits>425030024380232</dialed_digits>
+			<event_type></event_type>
+			<service_key> </service_key>
+			<call_reference>2</call_reference>
+			<call_id> </call_id>
+			<vlr_number> </vlr_number>
+			<location_information>
+				<mcc>123</mcc>
+				<mnc>45</mnc>
+				<lac></lac>
+				<ci></ci>
+			</location_information>
+			<duration>2</duration>
+
+			<time_date>01/01/2005 010000</time_date>
+			<time_zone>+3</time_zone>
+			<free_call>false</free_call>
+			<recordType>start_call</recordType>
+			<startTime>20130908060820</startTime>
+			<SGSNAddress>00015b876003</SGSNAddress>
+			</document>
+		";
+		$this->event = $this->getController()->getInput($a);
 		$this->event['source'] = 'realtime';
 		$this->event['type'] = 'gy';
 		$this->event['rand'] = rand(1,1000000);
@@ -213,14 +215,16 @@ class RealtimeeventAction extends ApiAction {
 		/*$ret['MSCC']['returnCode'] = $data['grantedReturnCode'];
 		if ($data['grantedReturnCode'] == Billrun_Factory::config()->getConfigValue('prepaid.ok')) {
 			$ret['MSCC']['granted'] = $data['usagev'];
-		}*/
-		$this->getController()->setOutput(array($ret));
+		}
+		$this->getController()->setOutput(array($ret));*/
 		
 		// Calls responder
+		$ret = array();
 		$responderClassName = $this->recordTypeToClassName($this->event['record_type']);
 		if (class_exists($responderClassName)) {
-			(new $responderClassName($data))->respond();
+			$ret = (new $responderClassName($data))->getResponse();
 		}
+		$this->getController()->setOutput($ret);
 		
 //		if ($this->customer() !== TRUE) {
 //			die("error on customer");
@@ -268,7 +272,7 @@ class RealtimeeventAction extends ApiAction {
 	}
 	
 	protected function recordTypeToClassName($recordType) {
-		$classNamePref = 'Billrun_ActionManagers_Realtime_';
+		$classNamePref = 'Billrun_ActionManagers_Realtime_Call_';
 		return $classNamePref . str_replace(" ","", ucwords(str_replace("_", " ", $recordType))) . 'Responder';
 	}
 

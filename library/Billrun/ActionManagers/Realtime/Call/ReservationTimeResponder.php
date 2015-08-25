@@ -1,6 +1,6 @@
 <?php
 
- class Billrun_ActionManagers_Realtime_ReservationTimeResponder extends Billrun_ActionManagers_Realtime_Responder {
+ class Billrun_ActionManagers_Realtime_Call_ReservationTimeResponder extends Billrun_ActionManagers_Realtime_Call_Responder {
 	public function getResponse() {
 		return array(
 			'CallingNumber' => $this->row['calling_number'],
@@ -8,7 +8,7 @@
 			'CallID' => $this->row['call_id'],
 			'ReturnCode' => $this->row['grantedReturnCode'],
 			'CallReservationTime' => $this->row['usagev'],
-			'ClearCause' => '',
+			'ClearCause' => ($this->row['grantedReturnCode'] === 0 ? 1 : 0), //TODO: check if it's correct value
 		);
 	}
 

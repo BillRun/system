@@ -1,11 +1,6 @@
 <?php
 
-class Billrun_ActionManagers_Realtime_ReleaseCallResponder extends Billrun_ActionManagers_Realtime_Responder {
-
-	public function respond() {
-		$this->rebalance();
-		parent::respond();
-	}
+class Billrun_ActionManagers_Realtime_Call_ReleaseCallResponder extends Billrun_ActionManagers_Realtime_Call_Responder {
 
 	/**
 	 * Returns balance leftovers to the current balance (if were taken due to prepaid mechanism)
@@ -38,6 +33,7 @@ class Billrun_ActionManagers_Realtime_ReleaseCallResponder extends Billrun_Actio
 	}
 
 	public function getResponse() {
+		$this->rebalance();
 		return array(
 			'CallingNumber' => $this->row['calling_number'],
 			'CallReference' => $this->row['call_reference'],
