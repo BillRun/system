@@ -19,6 +19,10 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 	 */
 	protected $balancesQuery = array();
 
+	/**
+	 * If true then the query is a ranged query in a specific date.
+	 * @var boolean 
+	 */
 	protected $queryInRange = false;
 	
 	/**
