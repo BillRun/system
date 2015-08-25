@@ -8,9 +8,8 @@
 			.green {
 				background-color :  green;
 			}
-			#connection_ok {
-				background-color : green;
-				text-indent: 100px;
+			.pad {
+				padding-left: 10%;
 			}
 			#connection_nok {
 				background-color : red;
@@ -20,9 +19,9 @@
 		<h1>Fraud ftp status</h1>
 	</head>
 	<body>
-		<?php if ($this->testConnection){ print('<p id="connection_ok">ftp connection tested successfully</p>');
+		<?php if ($this->testConnection){ print('<p id="green pad">ftp connection tested successfully</p>');
 		}else { 
-			print('<p id="connection_nok">ftp connection test failed</p>'); 
+			print('<p id="red pad">ftp connection test failed</p>'); 
 		} ?>
 		<p>Last file received: <?php print($this->file_name) ?></p> 
 		time: <?php if($this->longer_then_an_hour) {
@@ -40,7 +39,7 @@
 				$table_lines .= "<div>" . $i++ . '. '. $file->name . " size: " . $file->size(). "</div>";
 			endforeach;
 			if ($i > 50) {
-				print('<p class="red">Warning : more than 50 files awaiting to be received</p>');
+				print('<p class="red pad">Warning : more than 50 files awaiting to be received</p>');
 			}
 				print($table_lines);
 			?>
