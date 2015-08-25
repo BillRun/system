@@ -35,7 +35,7 @@ class Mongodloid_Cursor implements Iterator, Countable {
 	 */
 	public function __construct($cursor, $collection, $timeout = null) {
 		// Check that the cursor is a mongocursor
-		if (!validateInputCursor($cursor)) {
+		if (!$this->validateInputCursor($cursor)) {
 			// TODO: Report error?
 			return;
 		}
