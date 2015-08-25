@@ -11,7 +11,7 @@
  *
  * @author tom
  */
-class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Balances_Manager{
+class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Balances_Action{
 	
 	/**
 	 * Field to hold the data to be written in the DB.
