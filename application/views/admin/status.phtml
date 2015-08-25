@@ -1,19 +1,35 @@
 
 <html>
 	<head>
+		<style>
+			.red {
+				background-color :  red;
+			}
+			.green {
+				background-color :  green;
+			}
+			#connection_ok {
+				background-color : green;
+				text-indent: 100px;
+			}
+			#connection_nok {
+				background-color : red;
+				text-indent: 100px;
+			}
+		</style>
 		<h1>Fraud ftp status</h1>
 	</head>
 	<body>
-		<?php if ($this->testConnection){ print("<p>ftp connection tested successfully</p>");
+		<?php if ($this->testConnection){ print('<p id="connection_ok">ftp connection tested successfully</p>');
 		}else { 
-			print('<p><font color="red">ftp connection test failed</font></p>'); 
+			print('<p id="connection_nok">ftp connection test failed</p>'); 
 		} ?>
 		<p>Last file received: <?php print($this->file_name) ?></p> 
-		<p>time: <?php if($this->longer_then_an_hour) {
-			print('<font color="red">'.$this->received_time."</font>");
+		time: <?php if($this->longer_then_an_hour) {
+			print('<p class="red">'.$this->received_time."</p>");
 		} else {
-			print($this->received_time);
-		} ?></p>
+			print('<p class="green">'.$this->received_time.'</p>');
+		} ?>
 		<div>
 			Files to be received soon:
 			<?php
@@ -24,7 +40,7 @@
 				$table_lines .= "<div>" . $i++ . '. '. $file->name . " size: " . $file->size(). "</div>";
 			endforeach;
 			if ($i > 50) {
-				print('<p><font color="red">Warning : more than 50 files awaiting to be received</font></p>');
+				print('<p class="red">Warning : more than 50 files awaiting to be received</p>');
 			}
 				print($table_lines);
 			?>
