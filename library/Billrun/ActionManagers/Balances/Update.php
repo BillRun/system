@@ -11,16 +11,32 @@
  *
  * @author tom
  */
-class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Balances_Manager{
+class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Balances_Action{
 	
 	/**
 	 * Field to hold the data to be written in the DB.
-	 * @var type Array
+	 * @array type Array
 	 */
 	protected $recordToSet = array();
+	
+	/**
+	 * Query to be used to find records to update.
+	 * @var array
+	 */
 	protected $query = array();
-	protected $subscriberId = true;
+	
+	/**
+	 * Holds the subscriber ID to update the balance for.
+	 * @var integer
+	 */
+	protected $subscriberId = null;
 
+	/**
+	 * Array to initialize the updater with.
+	 * @var array 
+	 */
+	protected $updaterOptions = array();
+	
 	/**
 	 */
 	public function __construct() {
@@ -38,14 +54,14 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		
 		// Get the updater for the filter.
 		$updater = 
-			Billrun_ActionManagers_Balances_Updaters_Manager::getUpdater($filterName);
+			Billrun_ActionManagers_Balances_Updaters_Manager::getUpdater($filterName, $this->updaterOptions);
 		
 		$outputDocuments = 
 			$updater->update($this->query, $this->recordToSet, $this->subscriberId);
 
 		$outputResult = 
 			array('status'  => ($success) ? (1) : (0),
-				  'desc'    => ($success) ? ('success') : ('Failed updating balance'),
+				  'desc'    => ($success) ? ('success') : ('Failed') . ' updating balance',
 				  'details' => ($outputDocuments) ? json_encode($outputDocuments) : 'null');
 		return $outputResult;
 	}
@@ -93,6 +109,11 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 			$operation = $jsonUpdateData['operation'];
 		}
 		
+		$this->updaterOptions['increment'] = ($operation == "inc");
+		
+		// TODO: For now this is hard-coded, untill the API will define this as a parameter.
+		$this->updaterOptions['zero'] = true;
+			
 		// TODO: If to is not set, but received opration set, it's an error, report?
 		$to = isset($jsonUpdateData['expiration_date']) ? ($jsonUpdateData['expiration_date']) : 0;
 		
