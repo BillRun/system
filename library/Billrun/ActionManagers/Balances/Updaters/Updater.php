@@ -23,7 +23,7 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater {
 	/**
 	 * Any request for balance incrementation when "$ignoreOveruse" value is true and the current account balance queried
 	 * exceeds the maximum allowance (balance is above zero), will reset the balance (to zero) and only then increment it.
-	 * This means that if had a positive balance e.g 5 and then was loaded with 100 units, the blance will be 100 and not 95.
+	 * This means that if the user had a positive balance e.g 5 and then was loaded with 100 units, the blance will be -100 and not -95.
 	 * @var boolean 
 	 */
 	protected $ignoreOveruse = true;
