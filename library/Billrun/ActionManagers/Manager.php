@@ -11,7 +11,7 @@
  *
  * @author tom
  */
-class Billrun_ActionManagers_Subscriber_Manager {
+class Billrun_ActionManagers_Manager {
 	
 	/**
 	 * This function receives input and returns a subscriber action instance after
@@ -19,13 +19,15 @@ class Billrun_ActionManagers_Subscriber_Manager {
 	 * @param type $input
 	 * @return type Subscriber action
 	 */
-	public static function getAction($input) {
+	public static function getAction($input, $apiName) {
 		$methodInput = $input->get('method');
 		if(empty($methodInput)) {
 			Billrun_Factory::log("getAction received invalid input", Zend_Log::INFO);
 			return null;
 		}
-		$method = '_' . ucfirst(strtolower($methodInput));
+		
+		// Make sure that the API name and the method input are lower case with capital first.
+		$method = ucfirst(strtolower($apiName)) . '_' . ucfirst(strtolower($methodInput));
 		 
 		$actionClass = str_replace('_Manager', $method, __CLASS__);
 		$action = new $actionClass();

@@ -11,7 +11,7 @@
  *
  * @author tom
  */
-class Billrun_ActionManagers_Subscriber_Query extends Billrun_ActionManagers_Subscriber_Action{
+class Billrun_ActionManagers_Subscribers_Query extends Billrun_ActionManagers_Subscribers_Action{
 	
 	/**
 	 * Field to hold the data to be written in the DB.
@@ -83,7 +83,7 @@ class Billrun_ActionManagers_Subscriber_Query extends Billrun_ActionManagers_Sub
 		
 		$outputResult = 
 			array('status'  => ($success) ? (1) : (0),
-				  'desc'    => ($success) ? ('success') : ('Failed querying subscriber'),
+				  'desc'    => ($success) ? ('success') : ('Failed') . ' querying subscriber',
 				  'details' => $returnData);
 		return $outputResult;
 	}

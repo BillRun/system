@@ -11,7 +11,7 @@
  *
  * @author tom
  */
-class Billrun_ActionManagers_Subscriber_Update extends Billrun_ActionManagers_Subscriber_Action{
+class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_Subscribers_Action{
 	
 	/**
 	 * Field to hold the data to be written in the DB.
@@ -46,6 +46,7 @@ class Billrun_ActionManagers_Subscriber_Update extends Billrun_ActionManagers_Su
 			'new' => false,
 			'w' => 1,
 		);
+		// TODO: Use balances DB/API proxy class.
 		$balancesColl = Billrun_Factory::db()->balancesCollection();
 		$balancesColl->findAndModify($balancesQuery, $balancesUpdate, array(), $options, true);
 	}
@@ -55,9 +56,38 @@ class Billrun_ActionManagers_Subscriber_Update extends Billrun_ActionManagers_Su
 	 * @param type $record - Record to be modified.
 	 */
 	protected function handleKeepHistory($record) {				
-		$oldRecord = $record;
+		// Cloning the record.
+		$oldRecord = clone $record;
 		$oldRecord['to'] = new MongoDate();
-		return $oldRecord->save($this->collection);
+		// This throws an exception if fails.
+		$oldRecord->save($this->collection);
+	}
+	
+	/**
+	 * Update a single subscriber record.
+	 * @param Mongodloid_Entity $record - Subscriber record to update.
+	 * @return boolean true if successful.
+	 * @throws WriteConcernException
+	 */
+	protected function updateSubscriberRecord($record) {
+		foreach ($this->recordToSet as $key => $value) {
+			$record->collection($this->collection);
+
+			// Check if the user requested to keep history.
+			if($this->keepHistory) {
+				// This throws an exception if fails.
+				$this->handleKeepHistory($record);
+			}
+
+			if(!$record->set($key, $value)) {
+				return false;
+			}
+
+			// This throws an exception if fails.
+			$record->save($this->collection);
+		}
+		
+		return true;
 	}
 	
 	/**
@@ -68,25 +98,11 @@ class Billrun_ActionManagers_Subscriber_Update extends Billrun_ActionManagers_Su
 		$success = true;
 		$updatedDocument = null;
 		try {
-			// TODO: How do i keep history?
 			$cursor = $this->collection->query($this->options)->cursor();
 			foreach ($cursor as $record) {
-				foreach ($this->recordToSet as $key => $value) {
-					$record->collection($this->collection);
-
-					// Check if the user requested to keep history.
-					if($this->keepHistory) {
-						// TODO: What if this fails?
-						$this->handleKeepHistory($record);
-					}
-					
-					if(!$record->set($key, $value)) {
-						$success = false;
-						break 2;
-					}
-					
-					// TODO: Should i check if this fails?
-					$record->save($this->collection);
+				if(!$this->updateSubscriberRecord($record)) {
+					$success = false;
+					break;
 				}
 			}
 			
@@ -103,7 +119,7 @@ class Billrun_ActionManagers_Subscriber_Update extends Billrun_ActionManagers_Su
 
 		$outputResult = 
 			array('status'  => ($success) ? (1) : (0),
-				  'desc'    => ($success) ? ('success') : ('Failed updating subscriber'),
+				  'desc'    => ($success) ? ('Success') : ('Failed') . ' updating subscriber',
 				  'details' => ($updatedDocument) ? json_encode($updatedDocument) : 'null');
 		return $outputResult;
 	}

@@ -11,7 +11,7 @@
  *
  * @author tom
  */
-class Billrun_ActionManagers_Subscriber_Delete extends Billrun_ActionManagers_Subscriber_Action{
+class Billrun_ActionManagers_Subscribers_Delete extends Billrun_ActionManagers_Subscribers_Action{
 	
 	/**
 	 * Field to hold the data to be written in the DB.
@@ -78,7 +78,7 @@ class Billrun_ActionManagers_Subscriber_Delete extends Billrun_ActionManagers_Su
 
 		$outputResult = 
 			array('status' => ($success) ? (1) : (0),
-				  'desc'   => ($success) ? ('success') : ('Failed deleting subscriber'));
+				  'desc'   => ($success) ? ('Success') : ('Failed') . ' deleting subscriber');
 		
 		return $outputResult;
 	}

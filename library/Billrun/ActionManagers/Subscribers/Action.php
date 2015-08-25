@@ -11,7 +11,7 @@
  *
  * @author tom
  */
-abstract class Billrun_ActionManagers_Subscriber_Action {
+abstract class Billrun_ActionManagers_Subscribers_Action {
 
 	protected $collection = null;
 	
