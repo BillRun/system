@@ -38,8 +38,7 @@ class SubscribersModel extends TabledateModel{
 	
 	public function getProtectedKeys($entity, $type) {
 		$parentKeys = parent::getProtectedKeys($entity, $type);
-		return array_merge(array("_id"),
-						   $parentKeys, 
+		return array_merge($parentKeys, 
 						   array("imsi", 
 							     "msisdn", 
 							     "aid",

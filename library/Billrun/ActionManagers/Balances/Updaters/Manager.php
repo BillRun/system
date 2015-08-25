@@ -26,9 +26,10 @@ class Billrun_ActionManagers_Balances_Updaters_Manager {
 	/**
 	 * This function receives filter name and returns an updater.
 	 * @param type $filterName
+	 * @param array $options - Options to initialize the updater with.
 	 * @return type Balances action
 	 */
-	public static function getUpdater($filterName) {
+	public static function getUpdater($filterName, $options) {
 		if(!isset(self::$updaterTranslator[$filterName])) {
 			// TODO: Log error!
 			return false;
@@ -37,7 +38,7 @@ class Billrun_ActionManagers_Balances_Updaters_Manager {
 		$updater = self::$updaterTranslator[$filterName];
 		 
 		$actionClass = str_replace('_Manager', $updater, __CLASS__);
-		$action = new $actionClass();
+		$action = new $actionClass($options);
 		
 		if(!$action) {
 			Billrun_Factory::log("getAction Action '$updater' is invalid!", Zend_Log::INFO);

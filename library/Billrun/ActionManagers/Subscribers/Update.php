@@ -11,7 +11,7 @@
  *
  * @author tom
  */
-class Billrun_ActionManagers_Subscriber_Update extends Billrun_ActionManagers_Subscriber_Action{
+class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_Subscribers_Action{
 	
 	/**
 	 * Field to hold the data to be written in the DB.
@@ -30,6 +30,67 @@ class Billrun_ActionManagers_Subscriber_Update extends Billrun_ActionManagers_Su
 	}
 	
 	/**
+	 * Close all the open balances for a subscriber.
+	 * 
+	 * @param string $sid - The sid of the user to close the balance for.
+	 * @param string $aid - The aid of the user to close the balance for.
+	 */
+	protected function closeBalances($sid, $aid) {
+		// Find all balances.
+		$balancesUpdate = array('$set' => array('to', new MongoDate()));
+		$balancesQuery = 
+			array('sid' => $sid, 
+				  'aid' => $aid);
+		$options = array(
+			'upsert' => false,
+			'new' => false,
+			'w' => 1,
+		);
+		// TODO: Use balances DB/API proxy class.
+		$balancesColl = Billrun_Factory::db()->balancesCollection();
+		$balancesColl->findAndModify($balancesQuery, $balancesUpdate, array(), $options, true);
+	}
+	
+	/**
+	 * Keeps history before the records are modified.
+	 * @param type $record - Record to be modified.
+	 */
+	protected function handleKeepHistory($record) {				
+		// Cloning the record.
+		$oldRecord = clone $record;
+		$oldRecord['to'] = new MongoDate();
+		// This throws an exception if fails.
+		$oldRecord->save($this->collection);
+	}
+	
+	/**
+	 * Update a single subscriber record.
+	 * @param Mongodloid_Entity $record - Subscriber record to update.
+	 * @return boolean true if successful.
+	 * @throws WriteConcernException
+	 */
+	protected function updateSubscriberRecord($record) {
+		foreach ($this->recordToSet as $key => $value) {
+			$record->collection($this->collection);
+
+			// Check if the user requested to keep history.
+			if($this->keepHistory) {
+				// This throws an exception if fails.
+				$this->handleKeepHistory($record);
+			}
+
+			if(!$record->set($key, $value)) {
+				return false;
+			}
+
+			// This throws an exception if fails.
+			$record->save($this->collection);
+		}
+		
+		return true;
+	}
+	
+	/**
 	 * Execute the action.
 	 * @return data for output.
 	 */
@@ -37,15 +98,19 @@ class Billrun_ActionManagers_Subscriber_Update extends Billrun_ActionManagers_Su
 		$success = true;
 		$updatedDocument = null;
 		try {
-			// TODO: How do i keep history?
-			// TODO: Does removing 'balances' means from the subscribers collection?
 			$cursor = $this->collection->query($this->options)->cursor();
 			foreach ($cursor as $record) {
-				if(!$this->collection->updateEntity($record, $this->recordToSet)) {
+				if(!$this->updateSubscriberRecord($record)) {
 					$success = false;
 					break;
 				}
-			}		
+			}
+			
+			if(!$this->keepBalances) {
+				// Close balances.
+				$this->closeBalances($this->recordToSet['sid'], $this->recordToSet['aid']);
+			}
+			
 		} catch (\Exception $e) {
 			Billrun_Factory::log('failed to store into DB got error : ' . $e->getCode() . ' : ' . $e->getMessage(), Zend_Log::ALERT);
 			Billrun_Factory::log('failed saving request :' . print_r($this->recordToSet, 1), Zend_Log::ALERT);
@@ -54,7 +119,7 @@ class Billrun_ActionManagers_Subscriber_Update extends Billrun_ActionManagers_Su
 
 		$outputResult = 
 			array('status'  => ($success) ? (1) : (0),
-				  'desc'    => ($success) ? ('success') : ('Failed updating subscriber'),
+				  'desc'    => ($success) ? ('Success') : ('Failed') . ' updating subscriber',
 				  'details' => ($updatedDocument) ? json_encode($updatedDocument) : 'null');
 		return $outputResult;
 	}
@@ -104,4 +169,5 @@ class Billrun_ActionManagers_Subscriber_Update extends Billrun_ActionManagers_Su
 		
 		return true;
 	}
+
 }
