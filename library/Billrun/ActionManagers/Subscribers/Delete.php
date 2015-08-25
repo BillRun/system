@@ -11,7 +11,7 @@
  *
  * @author tom
  */
-class Billrun_ActionManagers_Subscriber_Delete extends Billrun_ActionManagers_Subscriber_Action{
+class Billrun_ActionManagers_Subscribers_Delete extends Billrun_ActionManagers_Subscribers_Action{
 	
 	/**
 	 * Field to hold the data to be written in the DB.
@@ -21,7 +21,7 @@ class Billrun_ActionManagers_Subscriber_Delete extends Billrun_ActionManagers_Su
 	
 	protected $rawinput = array();
 
-	protected $keep_balances = false;
+	protected $keepBalances = false;
 	
 	/**
 	 */
@@ -29,6 +29,24 @@ class Billrun_ActionManagers_Subscriber_Delete extends Billrun_ActionManagers_Su
 		parent::__construct();
 	}
 
+	/**
+	 * Close all the open balances for a subscriber.
+	 */
+	protected function closeBalances($sid, $aid) {
+		// Find all balances.
+		$balancesUpdate = array('$set' => array('to', new MongoDate()));
+		$balancesQuery = 
+			array('sid' => $sid, 
+				  'aid' => $aid);
+		$options = array(
+			'upsert' => false,
+			'new' => false,
+			'w' => 1,
+		);
+		$balancesColl = Billrun_Factory::db()->balancesCollection();
+		$balancesColl->findAndModify($balancesQuery, $balancesUpdate, array(), $options, true);
+	}
+	
 	/**
 	 * Execute the action.
 	 * @return data for output.
@@ -46,7 +64,12 @@ class Billrun_ActionManagers_Subscriber_Delete extends Billrun_ActionManagers_Su
 				$rowToDelete->collection($this->collection);
 				$success = $rowToDelete->set('to', new MongoDate());
 			}
-				
+			
+			if(!$this->keepBalances) {
+				// Close balances.
+				$this->closeBalances($rowToDelete['sid'], $rowToDelete['aid']);
+			}
+			
 		} catch (\Exception $e) {
 			Billrun_Factory::log('failed to store into DB got error : ' . $e->getCode() . ' : ' . $e->getMessage(), Zend_Log::ALERT);
 			Billrun_Factory::log('failed saving request :' . print_r($this->options, 1), Zend_Log::ALERT);
@@ -55,7 +78,7 @@ class Billrun_ActionManagers_Subscriber_Delete extends Billrun_ActionManagers_Su
 
 		$outputResult = 
 			array('status' => ($success) ? (1) : (0),
-				  'desc'   => ($success) ? ('success') : ('Failed deleting subscriber'));
+				  'desc'   => ($success) ? ('Success') : ('Failed') . ' deleting subscriber');
 		
 		return $outputResult;
 	}
@@ -87,7 +110,7 @@ class Billrun_ActionManagers_Subscriber_Delete extends Billrun_ActionManagers_Su
 			return false;
 		}
 		 
-		$this->keep_balances = $input->get('keep_balances');
+		$this->keepBalances = $input->get('keep_balances');
 		
 		return true;
 	}

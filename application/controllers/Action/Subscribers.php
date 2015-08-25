@@ -27,7 +27,7 @@ class SubscribersAction extends ApiAction {
 		$request = $this->getRequest();
 
 		// This is the method which is going to be executed.
-		$action = Billrun_ActionManagers_Subscriber_Manager::getAction($request);
+		$action = Billrun_ActionManagers_Manager::getAction($request, 'Subscribers');
 		
 		// Check that received a valid action.
 		if(!$action) {
