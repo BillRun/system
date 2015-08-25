@@ -43,7 +43,8 @@ class statusModel {
 		$last_file = Billrun_Factory::db()->logCollection()->
 				query(array('source' => 'nrtrde', 'received_time' => array('$exists' => true)))->cursor()->
 				sort(array('received_time' => -1))->limit(1)->current();
-		return array('file_name' => $last_file['file_name'], 'received_time' => $last_file['received_time']);
+		$hour_warning = strtotime('-1 hour') > strtotime($last_file['received_time']);
+		return array('file_name' => $last_file['file_name'], 'received_time' => $last_file['received_time'], 'longer_then_an_hour' => $hour_warning);
 	}
 
 }

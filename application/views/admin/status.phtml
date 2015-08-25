@@ -4,16 +4,29 @@
 		<h1>Fraud ftp status</h1>
 	</head>
 	<body>
-		<p><?php print($this->testConnection ? "ftp connection tested successfully" : " ftp connection test failed"); ?></p>
-		<p>Last file received: <?php print($this->file_name) ?> time: <?php print($this->received_time) ?><p/>
+		<?php if ($this->testConnection){ print("<p>ftp connection tested successfully</p>");
+		}else { 
+			print('<p><font color="red">ftp connection test failed</font></p>'); 
+		} ?>
+		<p>Last file received: <?php print($this->file_name) ?></p> 
+		<p>time: <?php if($this->longer_then_an_hour) {
+			print('<font color="red">'.$this->received_time."</font>");
+		} else {
+			print($this->received_time);
+		} ?></p>
 		<div>
 			Files to be received soon:
 			<?php
 			$i=1;
+			$table_lines = "";
 			foreach($this->files_list as $file) :
 				if ($file->isDirectory()) continue;
-				print "<div>" . $i++ . '. '. $file->name . " size: " . $file->size(). "</div>";
+				$table_lines .= "<div>" . $i++ . '. '. $file->name . " size: " . $file->size(). "</div>";
 			endforeach;
+			if ($i > 50) {
+				print('<p><font color="red">Warning : more than 50 files awaiting to be received</font></p>');
+			}
+				print($table_lines);
 			?>
 		</div>
 	</body>
