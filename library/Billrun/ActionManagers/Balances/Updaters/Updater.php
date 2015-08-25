@@ -36,18 +36,14 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater {
 	 *								  value is larger than zero than zeroise the value.
 	 */
 	public function __construct($options) {
+		// If it is not set, the default is used.
 		if(isset($options['increment'])) {
 			$this->isIncrement = $options['increment'];
-		} else {
-			// Take the default.
-			$this->isIncrement = true;
 		}
 		
+		// If it is not set, the default is used.
 		if(isset($options['zero'])) {
 			$this->ignoreOveruse = $options['zero'];
-		} else {
-			// Take the default.
-			$this->ignoreOveruse = true;
 		}
 	}
 
