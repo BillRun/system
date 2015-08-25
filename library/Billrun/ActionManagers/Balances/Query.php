@@ -18,8 +18,6 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 	 * @var type Array
 	 */
 	protected $balancesQuery = array();
-	
-	protected $rawinput = array();
 
 	protected $queryInRange = false;
 	
@@ -34,7 +32,7 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 	 */
 	protected function queryRangeBalances() {
 		try {
-			$cursor = $this->collection->query($this->subscriberQuerys)->cursor();
+			$cursor = $this->collection->query($this->balancesQuery)->cursor();
 			if(!$this->queryInRange) {
 				$cursor->limit(1);
 			}
@@ -51,20 +49,6 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 		
 		return $returnData;
 	}
-	/**
-	 * Query the subscribers collection to receive a single record.
-	 */
-	private function querySingleBalance() {
-		try {
-			$line = $this->collection->findOne($this->balancesQuery);
-			
-		} catch (\Exception $e) {
-			Billrun_Factory::log('failed quering DB got error : ' . $e->getCode() . ' : ' . $e->getMessage(), Zend_Log::ALERT);
-			return null;
-		}	
-		
-		return array(json_encode($line));
-	}
 	
 	/**
 	 * Execute the action.
@@ -75,6 +59,7 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 			$this->queryRangeBalances();
 
 		$success=true;
+		
 		// Check if the return data is invalid.
 		if(!$returnData) {
 			$returnData = array();
@@ -83,29 +68,16 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 		
 		$outputResult = 
 			array('status'  => ($success) ? (1) : (0),
-				  'desc'    => ($success) ? ('success') : ('Failed querying balances'),
+				  'desc'    => ($success) ? ('success') : ('Failed') . ' querying balances',
 				  'details' => $returnData);
 		return $outputResult;
 	}
 
 	/**
-	 * Parse the received request.
-	 * @param type $input - Input received.
-	 * @return true if valid.
+	 * Parse the to and from parameters if exists. If not execute handling logic.
+	 * @param type $input - The received input.
 	 */
-	public function parse($input) {
-		$jsonData = null;
-		$query = $input->get('query');
-		if(empty($query) || (!($jsonData = json_decode($query, true)))) {
-			return false;
-		}
-		
-		// TODO: Do i need to validate that all these fields are set?
-		$this->balancesQuery = 
-			array('imsi'			 => $jsonData['imsi'],
-				  'msisdn'			 => $jsonData['msisdn'],
-				  'sid'				 => $jsonData['sid']);
-		
+	protected function parseDateParameters($input) {
 		// Check if there is a to field.
 		$to = $input->get('to');
 		$from = $input->get('from');
@@ -116,6 +88,30 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 				array('$gte' => new MongoTimestamp($from));
 			$this->queryInRange = true;
 		}
+	}
+	
+	/**
+	 * Parse the received request.
+	 * @param type $input - Input received.
+	 * @return true if valid.
+	 */
+	public function parse($input) {
+		$sid = $input->get('sid');
+		if(empty($sid)) {
+			Billrun_Factory::log("Balances Query receieved no sid!", Zend_Log::NOTICE);
+			return false;
+		}
+		
+		$accountName = $input->get('name');
+		if(empty($sid)) {
+			Billrun_Factory::log("Balances Query receieved no account name!", Zend_Log::NOTICE);
+			return false;
+		}
+		
+		$this->balancesQuery = 
+			array('sid'	=> $sid);
+		
+		$this->parseDateParameters($input);
 		
 		return true;
 	}
