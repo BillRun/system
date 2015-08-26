@@ -131,8 +131,8 @@ class RealtimeeventAction extends ApiAction {
 			},
 			"recordType":"start_call"
 		}';*/
-		$a = "<?xml version='1.0'?>
-			<document>
+		$a = '<?xml version = "1.0" encoding = "UTF-8"?>
+			<request>
 			<calling_number>425030024380232</calling_number>
 			<imsi>425030024380232</imsi>
 			<dialed_digits>425030024380232</dialed_digits>
@@ -155,8 +155,8 @@ class RealtimeeventAction extends ApiAction {
 			<recordType>start_call</recordType>
 			<startTime>20130908060820</startTime>
 			<SGSNAddress>00015b876003</SGSNAddress>
-			</document>
-		";
+			</request>
+		';
 		$this->event = $this->getController()->getInput($a);
 		$this->event['source'] = 'realtime';
 		$this->event['type'] = 'gy';

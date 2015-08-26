@@ -90,6 +90,9 @@ class ApiController extends Yaf_Controller_Abstract {
 			case ('xml'):
 				$this->getView()->output = array($this->arrayToXML((array) $this->output, "response"));
 				break;
+			default:
+				//TODO: add log
+				break;
 		}
 	}
 
@@ -101,7 +104,7 @@ class ApiController extends Yaf_Controller_Abstract {
 	 * @return string xml
 	 */
 	protected function arrayToXML($array, $root = 'root') {
-		return "<?xml version='1.0'?>" . "<" . $root . ">" . $this->getXMLBody($array) . "</" . $root . ">";
+		return '<?xml version = "1.0" encoding = "UTF-8"?>' . "<" . $root . ">" . $this->getXMLBody($array) . "</" . $root . ">";
 	}
 
 	/**

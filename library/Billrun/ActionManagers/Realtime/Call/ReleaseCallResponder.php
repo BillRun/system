@@ -31,9 +31,13 @@ class Billrun_ActionManagers_Realtime_Call_ReleaseCallResponder extends Billrun_
 			$customerPricingCalc->updateSubscriberBalance($rebalanceRow, $rebalanceRow['usaget'], $rate);
 		}
 	}
-
+	
 	public function getResponse() {
 		$this->rebalance();
+		parent::getResponse();
+	}
+
+	public function getResponseData() {
 		return array(
 			'CallingNumber' => $this->row['calling_number'],
 			'CallReference' => $this->row['call_reference'],

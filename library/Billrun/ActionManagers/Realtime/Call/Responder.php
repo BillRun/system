@@ -13,17 +13,30 @@
 abstract class Billrun_ActionManagers_Realtime_Call_Responder {
 
 	protected $row;
+	protected $controller;
 
 
 	/**
 	 * Create an instance of the RealtimeAction type.
 	 */
-	public function __construct($row) {
+	public function __construct($row, $controller = null) {
 		$this->row = $row;
+		$this->controller = $controller;
 	}
 	
 	/**
 	 * Get response message
 	 */
-	public abstract function getResponse();
+	public function getResponse() {
+		$responseData = $this->getResponseData();
+		if (!is_null($this->controller)) {
+			return $this->controller->setOutput($responseData);
+		}
+		return $responseData;
+	}
+	
+	/**
+	 * Get response message data
+	 */
+	public abstract function getResponseData();
 }
