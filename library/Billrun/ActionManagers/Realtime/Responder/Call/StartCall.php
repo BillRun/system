@@ -1,6 +1,6 @@
 <?php
 
- class Billrun_ActionManagers_Realtime_Call_StartCallResponder extends Billrun_ActionManagers_Realtime_Call_Responder {
+ class Billrun_ActionManagers_Realtime_Responder_Call_StartCall extends Billrun_ActionManagers_Realtime_Responder_Call_Base {
 	public function getResponseData() {
 		return array(
 			'CallingNumber' => $this->row['calling_number'],

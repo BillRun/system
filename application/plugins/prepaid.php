@@ -58,8 +58,8 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @return boolean true for success, false otherwise
 	 */
 	protected static function sendClearCallRequest($row) {
-		$response = (new Billrun_ActionManagers_Realtime_Call_ClearCallResponder($row))->getResponse();
-		//TODO: send request
+		$row['record_type'] = 'clear_call';
+		Billrun_ActionManagers_Realtime_Responder_Call_Manager::respond($row);
 		return true;
 	}
 }

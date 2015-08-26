@@ -10,7 +10,7 @@
  * This is a prototype for a Realtime response action.
  *
  */
-abstract class Billrun_ActionManagers_Realtime_Call_Responder {
+abstract class Billrun_ActionManagers_Realtime_Responder_Call_Base {
 
 	protected $row;
 	protected $controller;

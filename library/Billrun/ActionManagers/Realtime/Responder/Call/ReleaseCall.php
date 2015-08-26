@@ -1,6 +1,6 @@
 <?php
 
-class Billrun_ActionManagers_Realtime_Call_ReleaseCallResponder extends Billrun_ActionManagers_Realtime_Call_Responder {
+class Billrun_ActionManagers_Realtime_Responder_Call_ReleaseCall extends Billrun_ActionManagers_Realtime_Responder_Call_Base {
 
 	/**
 	 * Returns balance leftovers to the current balance (if were taken due to prepaid mechanism)

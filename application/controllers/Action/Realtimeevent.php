@@ -182,7 +182,6 @@ class RealtimeeventAction extends ApiAction {
 		
 		if (isset($this->event['time_date'])) {
 			$this->event['record_opening_time'] = $this->event['time_date'];
-			unset($this->event['time_date']);
 		}
 		
 		if (isset($this->event['recordType'])) {
@@ -223,12 +222,8 @@ class RealtimeeventAction extends ApiAction {
 		$this->getController()->setOutput(array($ret));*/
 		
 		// Calls responder
-		$ret = array();
-		$responderClassName = $this->recordTypeToClassName($this->event['record_type']);
-		if (class_exists($responderClassName)) {
-			$ret = (new $responderClassName($data))->getResponse();
-		}
-		$this->getController()->setOutput($ret);
+		Billrun_ActionManagers_Realtime_Responder_Call_Manager::respond($data);
+		//$this->getController()->setOutput($ret);
 		
 //		if ($this->customer() !== TRUE) {
 //			die("error on customer");
@@ -276,8 +271,8 @@ class RealtimeeventAction extends ApiAction {
 	}
 	
 	protected function recordTypeToClassName($recordType) {
-		$classNamePref = 'Billrun_ActionManagers_Realtime_Call_';
-		return $classNamePref . str_replace(" ","", ucwords(str_replace("_", " ", $recordType))) . 'Responder';
+		$classNamePref = 'Billrun_ActionManagers_Realtime_Responder_Call_';
+		return $classNamePref . str_replace(" ","", ucwords(str_replace("_", " ", $recordType)));
 	}
 
 }
