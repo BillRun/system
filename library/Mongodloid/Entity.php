@@ -24,6 +24,19 @@ class Mongodloid_Entity implements ArrayAccess {
 		'pull',
 		'pullAll'
 	);
+	
+ 	/**
+	 * method to load DB reference object
+	 * @param string $key the key of the current object which reference to another object
+     * @return array the raw data of the reference object
+	 * @deprecated since version 4. Moved this logic to Collection.createRefByEntity
+ 	 */
+	protected function loadRef($key) {
+		if (!$this->collection()) {
+				return;
+		}
+		return $this->_collection->getRef($key);
+	}
 
 	/**
 	 * Create a new instance of the Mongodloid_Entity object.
@@ -305,6 +318,7 @@ class Mongodloid_Entity implements ArrayAccess {
 
 	/**
 	 * No phpdoc existed prior to deprecation.
+	 * Remove the entity from its collection
 	 * @deprecated since version 4
 	 */
 	public function remove() {
