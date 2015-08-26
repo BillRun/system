@@ -91,6 +91,10 @@ class Billrun_Billrun {
 					'billrun_key' => $this->billrun_key,
 				))
 				->cursor()->limit(1)->current();
+		// TODO: After all entitie's references to the collection will be removed
+		// this code should be removed to. I am leaving it here for legacy because the
+		// intenal set and get of Mongodloid_Entity still use the collection.
+		$this->data->collection($this->billrun_coll);
 		return $this;
 	}
 
