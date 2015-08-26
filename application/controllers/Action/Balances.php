@@ -23,7 +23,7 @@ class BalancesAction extends ApiAction{
 		$request = $this->getRequest();
 
 		// This is the method which is going to be executed.
-		$action = Billrun_Balances_Actions_Manager::getSubscriberAction($request);
+		$action = Billrun_ActionManagers_Manager::getAction($request, "Balances");
 		
 		// Check that received a valid action.
 		if(!$action) {
