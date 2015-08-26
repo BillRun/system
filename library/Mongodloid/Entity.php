@@ -302,18 +302,20 @@ class Mongodloid_Entity implements ArrayAccess {
 
 		return $this->_collection;
 	}
-	
-// TODO: This function is never used. If you can create an entity with a null collection, its
-// better to keep the remove and update function in the collection object.
-//	public function remove() {
-//		if (!$this->collection())
-//			throw new Mongodloid_Exception('You need to specify the collection');
-//
-//		if (!$this->getId())
-//			throw new Mongodloid_Exception('Object wasn\'t saved!');
-//
-//		return $this->collection()->remove($this);
-//	}
+
+	/**
+	 * No phpdoc existed prior to deprecation.
+	 * @deprecated since version 4
+	 */
+	public function remove() {
+		if (!$this->collection())
+			throw new Mongodloid_Exception('You need to specify the collection');
+
+		if (!$this->getId())
+			throw new Mongodloid_Exception('Object wasn\'t saved!');
+
+		return $this->collection()->remove($this);
+	}
 
 	/**
 	 * Method to create auto increment of document
