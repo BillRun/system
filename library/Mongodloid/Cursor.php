@@ -16,12 +16,6 @@ class Mongodloid_Cursor implements Iterator, Countable {
 	protected $_cursor;
 	
 	/**
-	 * The collection this cursor is pointing to.
-	 * @var Mongodloid_Collection - MongoCollection.
-	 */
-	protected $_collection;
-	
-	/**
 	 * Parameter to ensure valid construction.
 	 * @var boolean - True if cursor is valid.
 	 */
@@ -30,19 +24,15 @@ class Mongodloid_Cursor implements Iterator, Countable {
 	/**
 	 * Create a new instance of the cursor object.
 	 * @param MongoCursor $cursor - Mongo cursor pointing to a collection.
-	 * @param Mongodloid_Collection $collection - Collection the cursor is pointing to.
 	 * @param type $timeout
 	 */
-	public function __construct($cursor, $collection, $timeout = null) {
+	public function __construct($cursor, $timeout = null) {
 		// Check that the cursor is a mongocursor
 		if (!$this->validateInputCursor($cursor)) {
 			// TODO: Report error?
 			return;
 		}
 		$this->_cursor = $cursor;
-		
-		// TODO: Validate the collection?
-		$this->_collection = $collection;
 		
 		if (!is_null($timeout)) {
 			$this->_cursor->timeout((int) $timeout);
@@ -84,7 +74,7 @@ class Mongodloid_Cursor implements Iterator, Countable {
 			$this->next();
 		}
 		
-		return new Mongodloid_Entity($this->_cursor->current(), $this->_collection);
+		return new Mongodloid_Entity($this->_cursor->current());
 	}
 
 	public function key() {
