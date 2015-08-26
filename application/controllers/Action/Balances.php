@@ -17,13 +17,37 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
 class BalancesAction extends ApiAction{
 	
 	/**
+	 * Get the correct action to use for this request.
+	 * @param data $request - The input request for the API.
+	 * @return Billrun_ActionManagers_Action
+	 * @todo - This is a generic function should find a better place to put it.
+	 */
+	protected function getAction($request) {
+		// TODO: Maybe add this functionallity (get api name) to the basic API action?
+		$apiName = str_replace("Action", "", __CLASS__);
+		$apiManagerInput = 
+			array('input'    => $request,
+				  'api_name' => $apiName);
+		
+		$manager = new Billrun_ActionManagers_APIManager($apiManagerInput);
+		
+		// This is the method which is going to be executed.
+		return $manager->getAction();
+	}
+	
+	/**
 	 * The logic to be executed when this API plugin is called.
+	 * @todo: This function is very generic, same as subscribers API, should be moved
+	 * to a more generic class.
 	 */
 	public function execute() {
+		// TODO: Not using Balances model here. Should it be used? and what for?
+		// There is an already existing Balances model, is this the right one?
+		
 		$request = $this->getRequest();
-
+		
 		// This is the method which is going to be executed.
-		$action = Billrun_ActionManagers_Manager::getAction($request, "Balances");
+		$action = $this->getAction($request);
 		
 		// Check that received a valid action.
 		if(!$action) {
