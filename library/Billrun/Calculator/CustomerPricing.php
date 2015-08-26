@@ -235,12 +235,14 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		$plan_ref = $plan->createRef();
 		if (is_null($plan_ref)) {
 			Billrun_Factory::log('No plan found for subscriber ' . $row['sid'], Zend_Log::ALERT);
+			$row['usagev'] = 0;
 			return false;
 		}
 
 		$balance = new Billrun_Balance($row);
 		if (!$balance || !$balance->isValid()) {
 			Billrun_Factory::log("couldn't get balance for subscriber: " . $row['sid'], Zend_Log::INFO);
+			$row['usagev'] = 0;
 			return false;
 		} else {
 			Billrun_Factory::log("Found balance  for subscriber " . $row['sid'], Zend_Log::DEBUG);

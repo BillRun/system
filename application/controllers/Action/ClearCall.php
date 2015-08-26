@@ -34,8 +34,7 @@ class ClearCallAction extends ApiAction {
 				$row = $call;
 				$row['call_reference'] = $row['_id'];
 				unset($row['_id']);
-				$response = (new Billrun_ActionManagers_Realtime_Call_ClearCallResponder($row))->getResponse();
-				//TODO: send response
+				Billrun_Factory::dispatcher()->trigger('afterSubscriberBalanceNotFound', array($row->getRawData()));
 			}
 		}
 	}

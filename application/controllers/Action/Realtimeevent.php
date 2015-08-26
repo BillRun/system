@@ -149,11 +149,10 @@ class RealtimeeventAction extends ApiAction {
 			</location_information>
 			<duration>2</duration>
 
-			<time_date>01/01/2005 010000</time_date>
-			<time_zone>+3</time_zone>
+			<time_date>2015/08/13 11:59:03</time_date>
+			<time_zone>0</time_zone>
 			<free_call>false</free_call>
 			<recordType>start_call</recordType>
-			<startTime>20130908060820</startTime>
 			<SGSNAddress>00015b876003</SGSNAddress>
 			</request>
 		';
@@ -179,6 +178,11 @@ class RealtimeeventAction extends ApiAction {
 		if (isset($this->event['startTime'])) {
 			$this->event['record_opening_time'] = $this->event['startTime'];
 			unset($this->event['startTime']);
+		}
+		
+		if (isset($this->event['time_date'])) {
+			$this->event['record_opening_time'] = $this->event['time_date'];
+			unset($this->event['time_date']);
 		}
 		
 		if (isset($this->event['recordType'])) {
