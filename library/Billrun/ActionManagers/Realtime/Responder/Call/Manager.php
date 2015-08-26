@@ -24,12 +24,12 @@ class Billrun_ActionManagers_Realtime_Responder_Call_Manager {
 		if (!$responder) {
 			return false;
 		}
-		
+
 		$response = $responder->getResponse();
 		//TODO: send response
 		return true;
 	}
-	
+
 	/**
 	 * Get response message base on data received
 	 * 
@@ -41,10 +41,10 @@ class Billrun_ActionManagers_Realtime_Responder_Call_Manager {
 		if (!$responder) {
 			return false;
 		}
-		
+
 		return $responder->getResponse();
 	}
-	
+
 	/**
 	 * Assistance function to get responder object based on response type
 	 * 
@@ -57,10 +57,10 @@ class Billrun_ActionManagers_Realtime_Responder_Call_Manager {
 			Billrun_Factory::log("Could not send respond. class $responderClassName not exists. Data:" . print_r($data, 1), Zend_Log::ALERT);
 			return false;
 		}
-		
+
 		return (new $responderClassName($data));
 	}
-	
+
 	/**
 	 * Assistance function to get responder object name based on response type
 	 * 
@@ -69,6 +69,7 @@ class Billrun_ActionManagers_Realtime_Responder_Call_Manager {
 	 */
 	protected static function getResponderClassName($recordType) {
 		$classNamePref = 'Billrun_ActionManagers_Realtime_Responder_Call_';
-		return $classNamePref . str_replace(" ","", ucwords(str_replace("_", " ", $recordType)));
+		return $classNamePref . str_replace(" ", "", ucwords(str_replace("_", " ", $recordType)));
 	}
+
 }
