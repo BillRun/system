@@ -19,15 +19,40 @@ class SubscribersAction extends ApiAction {
 	protected $model;
 	
 	/**
+	 * Get the correct action to use for this request.
+	 * @param data $request - The input request for the API.
+	 * @return Billrun_ActionManagers_Action
+	 * @todo - This is a generic function should find a better place to put it.
+	 */
+	protected function getAction($request) {
+		$apiName = str_replace("Action", "", __CLASS__);
+		$apiManagerInput = 
+			array('input'    => $request,
+				  'api_name' => $apiName);
+		
+		$manager = new Billrun_ActionManagers_APIManager($apiManagerInput);
+		
+		// This is the method which is going to be executed.
+		return $manager->getAction();
+	}
+	
+	/**
+	 * This method is for initializing the API Action's model.
+	 */
+	protected function initializeModel() {
+		$this->model = new SubscribersModel(array('sort' => array('from' => 1)));
+	}
+		
+	/**
 	 * The logic to be executed when this API plugin is called.
 	 */
 	public function execute() {
-		$this->model = new SubscribersModel(array('sort' => array('from' => 1)));
+		$this->initializeModel();
 		
 		$request = $this->getRequest();
 
 		// This is the method which is going to be executed.
-		$action = Billrun_ActionManagers_Manager::getAction($request, 'Subscribers');
+		$action = $this->getAction($request);
 		
 		// Check that received a valid action.
 		if(!$action) {
