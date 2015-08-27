@@ -15,7 +15,7 @@ class Billrun_Decoder_Manager {
 	public static function getDecoder($params) {
 		$decoderClassName = self::getDecoderClassName($params);
 		if (!class_exists($decoderClassName)) {
-			Billrun_Factory::log('Decoder class not found: ' . $decoderClassName, Zend_Log::NOTICE);
+			Billrun_Factory::log('Decoder class not found: ' . $decoderClassName, Zend_Log::WARN);
 			return false;
 		}
 		
