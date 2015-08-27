@@ -64,7 +64,7 @@ class Billrun_ActionManagers_Realtime_Responder_Call_ReleaseCall extends Billrun
 			'CallingNumber' => $this->row['calling_number'],
 			'CallReference' => $this->row['call_reference'],
 			'CallID' => $this->row['call_id'],
-			'ReturnCode' => $this->row['grantedReturnCode'],
+			'ReturnCode' => $this->row['granted_return_code'],
 		);
 	}
 

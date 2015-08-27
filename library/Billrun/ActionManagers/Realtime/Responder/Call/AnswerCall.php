@@ -6,7 +6,7 @@
 class Billrun_ActionManagers_Realtime_Responder_Call_AnswerCall extends Billrun_ActionManagers_Realtime_Responder_Call_Base {
 
 	public function getResponseData() {
-		$grantedReturnCode = $this->row['grantedReturnCode'];
+		$grantedReturnCode = $this->row['granted_return_code'];
 		return array(
 			'CallingNumber' => $this->row['calling_number'],
 			'CallReference' => $this->row['call_reference'],

@@ -12,7 +12,7 @@ class Billrun_ActionManagers_Realtime_Responder_Call_ClearCall extends Billrun_A
 			'CallID' => $this->row['call_id'],
 			'TimeDate' => $this->row['time_date'],
 			'TimeZone' => $this->row['time_zone'],
-			'ClearCause' => ($this->row['grantedReturnCode'] === 0 ? 1 : 0), //TODO: check if it's correct value
+			'ClearCause' => ($this->row['granted_return_code'] === 0 ? 1 : 0), //TODO: check if it's correct value
 		);
 	}
 

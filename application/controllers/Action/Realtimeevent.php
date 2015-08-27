@@ -221,7 +221,7 @@ class RealtimeeventAction extends ApiAction {
 			return false;
 		}
 		
-		return $decoder->decode($xmlData);
+		return Billrun_Util::parseDataToBillrunConvention($decoder->decode($xmlData));
 	}
 	
 	/**
@@ -232,32 +232,27 @@ class RealtimeeventAction extends ApiAction {
 		$this->event['type'] = 'gy';
 		$this->event['rand'] = rand(1,1000000);
 		$this->event['stamp'] = Billrun_Util::generateArrayStamp($this->event);
-		if (isset($this->event['Service-Information']['SGSNAddress'])) {
-			$this->event['sgsn_address'] = long2ip(hexdec($this->event['Service-Information']['SGSNAddress']));
+		if (isset($this->event['service-information']['sgsnaddress'])) {
+			$this->event['sgsn_address'] = long2ip(hexdec($this->event['service-information']['sgsnaddress']));
 		} else {
-			$sgsn_dec = hexdec($this->event['SGSNAddress']);
+			$sgsn_dec = hexdec($this->event['sgsnaddress']);
 			if (is_numeric($sgsn_dec)) {
 				$this->event['sgsn_address'] = long2ip($sgsn_dec);
 			}
 		}
 		
-		if (isset($this->event['GGSNAddress'])) {
-			$this->event['ggsn_address'] = $this->event['GGSNAddress'];
-			unset($this->event['GGSNAddress']);
+		if (isset($this->event['sgsnaddress'])) {
+			$this->event['ggsn_address'] = $this->event['sgsnaddress'];
+			unset($this->event['sgsnaddress']);
 		}
 
-		if (isset($this->event['startTime'])) {
+		if (isset($this->event['start_time'])) {
 			$this->event['record_opening_time'] = $this->event['startTime'];
-			unset($this->event['startTime']);
+			unset($this->event['start_time']);
 		}
 		
 		if (isset($this->event['time_date'])) {
 			$this->event['record_opening_time'] = $this->event['time_date'];
-		}
-		
-		if (isset($this->event['recordType'])) {
-			$this->event['record_type'] = $this->event['recordType'];
-			unset($this->event['recordType']);
 		}
 		
 		$this->event['billrun_prepend'] = $this->isPrepend();
@@ -292,8 +287,8 @@ class RealtimeeventAction extends ApiAction {
 //				'returnCode' => 0
 //			),
 		);
-		$ret['MSCC']['returnCode'] = $data['grantedReturnCode'];
-		if ($data['grantedReturnCode'] == Billrun_Factory::config()->getConfigValue('prepaid.ok')) {
+		$ret['MSCC']['returnCode'] = $data['granted_return_code'];
+		if ($data['granted_return_code'] == Billrun_Factory::config()->getConfigValue('prepaid.ok')) {
 			$ret['MSCC']['granted'] = $data['usagev'];
 		}*/
 		return $processor->getData()['data'][0];

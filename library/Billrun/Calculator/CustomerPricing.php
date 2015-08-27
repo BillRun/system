@@ -446,10 +446,10 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * 
 	 */
 	public function updateSubscriberBalance($row, $usage_type, $rate) {
-		$row['grantedReturnCode'] = Billrun_Factory::config()->getConfigValue('prepaid.ok');
+		$row['granted_return_code'] = Billrun_Factory::config()->getConfigValue('prepaid.ok');
 		if (!$this->loadSubscriberBalance($row)) { // will load $this->balance
 			if ($row['charging_type'] === 'prepaid') {
-				$row['grantedReturnCode'] = Billrun_Factory::config()->getConfigValue('prepaid.customer.no_available_balances');
+				$row['granted_return_code'] = Billrun_Factory::config()->getConfigValue('prepaid.customer.no_available_balances');
 			}
 			Billrun_Factory::dispatcher()->trigger('afterSubscriberBalanceNotFound', array($row->getRawData()));
 			return false;
