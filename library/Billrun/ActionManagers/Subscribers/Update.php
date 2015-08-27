@@ -98,7 +98,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 		$success = true;
 		$updatedDocument = null;
 		try {
-			$cursor = $this->collection->query($this->options)->cursor();
+			$cursor = $this->collection->query($this->query)->cursor();
 			foreach ($cursor as $record) {
 				if(!$this->updateSubscriberRecord($record)) {
 					$success = false;
