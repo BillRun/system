@@ -53,12 +53,20 @@ abstract class Billrun_API_CompoundParamAction extends ApiAction{
 	}
 	
 	/**
+	 * Get the seconds to set for the cache life time.
+	 * @return Seconds to set cache lifetime.
+	 */
+	protected function getCacheLifeTime() {
+		return Billrun_Utils_TimerUtils::daysToSeconds(1);
+	}
+	
+	/**
 	 * Handle the API cache logic.
 	 * @param type $request - Received request.
 	 * @return results of the API cache.
 	 */
 	protected function handleCache($request) {
-		$this->setCacheLifeTime(Billrun_Utils_TimerUtils::daysToSeconds(1)); 
+		$this->setCacheLifeTime($this->getCacheLifeTime()); 
 		return $this->cache($this->getCacheParams($request));
 	}
 	
