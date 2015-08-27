@@ -12,8 +12,8 @@
  */
 class Billrun_Encoder_Manager {
 
-	public static function getEncoder($controllerName, $actionName) {
-		$encoderClassName = self::getEncoderClassName($controllerName, $actionName);
+	public static function getEncoder($params) {
+		$encoderClassName = self::getEncoderClassName($params);
 		if (!class_exists($encoderClassName)) {
 			Billrun_Factory::log('Encoder class not found: ' . $encoderClassName, Zend_Log::NOTICE);
 			return false;
@@ -22,13 +22,17 @@ class Billrun_Encoder_Manager {
 		return new $encoderClassName();
 	}
 
-	protected static function getEncoderClassName($controllerName, $actionName) {
-		$encoderName = Billrun_Factory::config()->getConfigValue(strtolower($controllerName) . ".encode." . strtolower($actionName));
+	protected static function getEncoderClassName($params) {
+		$encoderName = null;
+		
+		if (!is_null($usaget = $params['usaget'])) {
+			$encoderName = Billrun_Factory::config()->getConfigValue(strtolower($usaget) . ".encode");
+		} else if (!is_null($controllerName = $params['controllerName']) && !is_null($actionName = $params['actionName'])) {
+			$encoderName = Billrun_Factory::config()->getConfigValue(strtolower($controllerName) . ".encode." . strtolower($actionName));
+		} 
 		if (is_null($encoderName)) {
-			Billrun_Factory::log('No output decode defined; set to array', Zend_Log::DEBUG);
+			Billrun_Factory::log('No encoder defined; set to array', Zend_Log::DEBUG);
 			$encoderName = 'array';
-		} else {
-			$encoderName = $encoderName;
 		}
 
 		return 'Billrun_Encoder_' . ucfirst($encoderName);

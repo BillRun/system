@@ -70,7 +70,7 @@ class ClearCallAction extends ApiAction {
 		$row = $call;
 		$row['call_reference'] = $row['_id'];
 		unset($row['_id']);
-		Billrun_Factory::dispatcher()->trigger('afterSubscriberBalanceNotFound', array($call, $this->getRequest()->controller, $this->getRequest()->getActionName()));
+		Billrun_Factory::dispatcher()->trigger('afterSubscriberBalanceNotFound', array($call));
 	}
 
 	/**

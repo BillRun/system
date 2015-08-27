@@ -12,8 +12,8 @@
  */
 class Billrun_Decoder_Manager {
 
-	public static function getDecoder($controllerName, $actionName) {
-		$decoderClassName = self::getDecoderClassName($controllerName, $actionName);
+	public static function getDecoder($params) {
+		$decoderClassName = self::getDecoderClassName($params);
 		if (!class_exists($decoderClassName)) {
 			Billrun_Factory::log('Decoder class not found: ' . $decoderClassName, Zend_Log::NOTICE);
 			return false;
@@ -22,15 +22,19 @@ class Billrun_Decoder_Manager {
 		return new $decoderClassName();
 	}
 	
-	protected static function getDecoderClassName($controllerName, $actionName) {
-		$decoderName = Billrun_Factory::config()->getConfigValue(strtolower($controllerName) . ".decode." . strtolower($actionName));
-		if (is_null($decoderName)) {
-			$decoderName = 'json';
-			Billrun_Factory::log('No output decode defined; set to json', Zend_Log::DEBUG);
-		} else {
-			$decoderName = $decoderName;
-		}
+	protected static function getDecoderClassName($params) {
+		$decoderName = null;
 		
+		if (!is_null($usaget = $params['usaget'])) {
+			$decoderName = Billrun_Factory::config()->getConfigValue(strtolower($usaget) . ".decode");
+		} else if (!is_null($controllerName = $params['controllerName']) && !is_null($actionName = $params['actionName'])) {
+			$decoderName = Billrun_Factory::config()->getConfigValue(strtolower($controllerName) . ".decode." . strtolower($actionName));
+		} 
+		if (is_null($decoderName)) {
+			Billrun_Factory::log('No decoder defined; set to array', Zend_Log::DEBUG);
+			$decoderName = 'json';
+		}
+
 		return 'Billrun_Decoder_' . ucfirst($decoderName);
 	}
 

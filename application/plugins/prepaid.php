@@ -37,7 +37,7 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @var string
 	 */
 	protected $name = 'prepaid';
-
+	
 	/**
 	 * Method to trigger api outside of Billrun.
 	 * afterSubscriberBalanceNotFound trigger after the subscriber has no available balance (relevant only for prepaid subscribers)
@@ -47,8 +47,8 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @return boolean true for success, false otherwise
 	 * 
 	 */
-	public function afterSubscriberBalanceNotFound($row, $controllerName, $actionName) {
-		return self::sendClearCallRequest($row, $controllerName, $actionName);
+	public function afterSubscriberBalanceNotFound($row) {
+		return self::sendClearCallRequest($row);
 	}
 	
 	/**
@@ -57,8 +57,10 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @param type $row
 	 * @return boolean true for success, false otherwise
 	 */
-	protected static function sendClearCallRequest($row, $controllerName, $actionName) {
-		$encoder = Billrun_Encoder_Manager::getEncoder($controllerName, $actionName);
+	protected static function sendClearCallRequest($row) {
+		$encoder = Billrun_Encoder_Manager::getEncoder(array(
+			'usaget' => $row['usaget']
+		));
 		if (!$encoder) {
 			Billrun_Factory::log('Cannot get encoder', Zend_Log::ALERT);
 			return false;
@@ -71,8 +73,8 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 			return false;
 		}
 
-		$response = $encoder->encode($responder->getResponse(), "response");
-		//Billrun_ActionManagers_Realtime_Responder_Call_Manager::respond($row);
+		$request = $encoder->encode($responder->getResponse(), "request");
+		//TODO: send request
 		return true;
 	}
 }

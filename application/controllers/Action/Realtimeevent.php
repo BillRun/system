@@ -212,7 +212,10 @@ class RealtimeeventAction extends ApiAction {
 			</request>
 		';
 		
-		$decoder = Billrun_Decoder_Manager::getDecoder($this->getRequest()->controller, $this->getRequest()->getActionName());
+		$decoder = Billrun_Decoder_Manager::getDecoder(array(
+			'controllerName' => $this->getRequest()->controller, 
+			'actionName' => $this->getRequest()->getActionName()
+		));
 		if (!$decoder) {
 			Billrun_Factory::log('Cannot get decoder', Zend_Log::ALERT);
 			return false;
@@ -303,7 +306,10 @@ class RealtimeeventAction extends ApiAction {
 	 * @return boolean
 	 */
 	protected function respond($data) {
-		$encoder = Billrun_Encoder_Manager::getEncoder($this->getRequest()->controller, $this->getRequest()->getActionName());
+		$encoder = Billrun_Encoder_Manager::getEncoder(array(
+			'controllerName' => $this->getRequest()->controller, 
+			'actionName' => $this->getRequest()->getActionName()
+			));
 		if (!$encoder) {
 			Billrun_Factory::log('Cannot get encoder', Zend_Log::ALERT);
 			return false;
