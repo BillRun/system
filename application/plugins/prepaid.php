@@ -47,8 +47,8 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @return boolean true for success, false otherwise
 	 * 
 	 */
-	public function afterSubscriberBalanceNotFound($row, $calculator = null) {
-		return self::sendClearCallRequest($row);
+	public function afterSubscriberBalanceNotFound($row, $controllerName, $actionName) {
+		return self::sendClearCallRequest($row, $controllerName, $actionName);
 	}
 	
 	/**
@@ -57,9 +57,22 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @param type $row
 	 * @return boolean true for success, false otherwise
 	 */
-	protected static function sendClearCallRequest($row) {
+	protected static function sendClearCallRequest($row, $controllerName, $actionName) {
+		$encoder = Billrun_Encoder_Manager::getEncoder($controllerName, $actionName);
+		if (!$encoder) {
+			Billrun_Factory::log('Cannot get encoder', Zend_Log::ALERT);
+			return false;
+		}
+		
 		$row['record_type'] = 'clear_call';
-		Billrun_ActionManagers_Realtime_Responder_Call_Manager::respond($row);
+		$responder = Billrun_ActionManagers_Realtime_Responder_Call_Manager::getResponder($row);
+		if (!$responder) {
+			Billrun_Factory::log('Cannot get responder', Zend_Log::ALERT);
+			return false;
+		}
+
+		$response = $encoder->encode($responder->getResponse(), "response");
+		//Billrun_ActionManagers_Realtime_Responder_Call_Manager::respond($row);
 		return true;
 	}
 }

@@ -19,9 +19,10 @@ abstract class Billrun_ActionManagers_Realtime_Responder_Call_Base {
 	/**
 	 * Create an instance of the RealtimeAction type.
 	 */
-	public function __construct($row, $controller = null) {
-		$this->row = $row;
-		$this->controller = $controller;
+	public function __construct($options = array()) {
+		
+		$this->row = $options['row'];
+		$this->controller = $options['controller'];
 	}
 	
 	/**

@@ -1,6 +1,10 @@
 <?php
 
- class Billrun_ActionManagers_Realtime_Responder_Call_BaseReservationTime extends Billrun_ActionManagers_Realtime_Responder_Call_Base {
+/**
+ * Response to ReservationTime request
+ */
+class Billrun_ActionManagers_Realtime_Responder_Call_ReservationTime extends Billrun_ActionManagers_Realtime_Responder_Call_Base {
+
 	public function getResponseData() {
 		return array(
 			'CallingNumber' => $this->row['calling_number'],

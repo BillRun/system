@@ -25,7 +25,7 @@ class Billrun_ActionManagers_Realtime_Responder_Call_Manager {
 			return false;
 		}
 
-		return (new $responderClassName($data));
+		return (new $responderClassName(array('row' => $data)));
 	}
 
 	/**

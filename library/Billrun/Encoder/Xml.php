@@ -30,13 +30,13 @@ class Billrun_Encoder_Xml extends Billrun_Encoder_Base {
 	 * @return string
 	 */
 	protected function getXMLBody($value) {
-		$ret = '';
-		if (is_array($value)) {
-			foreach ($value as $key => $val) {
-				$ret .= '<' . $key . '>' . $this->getXMLBody($val) . '</' . $key . '>';
-			}
-		} else {
+		if (!is_array($value)) {
 			return $value;
+		}
+		
+		$ret = '';
+		foreach ($value as $key => $val) {
+			$ret .= '<' . $key . '>' . $this->getXMLBody($val) . '</' . $key . '>';
 		}
 		return $ret;
 	}

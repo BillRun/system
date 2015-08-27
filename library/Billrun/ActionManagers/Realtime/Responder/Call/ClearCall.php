@@ -1,6 +1,10 @@
 <?php
 
- class Billrun_ActionManagers_Realtime_Responder_Call_ClearCall extends Billrun_ActionManagers_Realtime_Responder_Call_Base {
+/**
+ * Response to ClearCall request
+ */
+class Billrun_ActionManagers_Realtime_Responder_Call_ClearCall extends Billrun_ActionManagers_Realtime_Responder_Call_Base {
+
 	public function getResponseData() {
 		return array(
 			'CallingNumber' => $this->row['calling_number'],

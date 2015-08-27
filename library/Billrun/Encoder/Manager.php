@@ -15,6 +15,7 @@ class Billrun_Encoder_Manager {
 	public static function getEncoder($controllerName, $actionName) {
 		$encoderClassName = self::getEncoderClassName($controllerName, $actionName);
 		if (!class_exists($encoderClassName)) {
+			Billrun_Factory::log('Encoder class not found: ' . $encoderClassName, Zend_Log::NOTICE);
 			return false;
 		}
 
