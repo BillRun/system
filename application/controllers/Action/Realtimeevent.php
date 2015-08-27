@@ -288,7 +288,7 @@ class RealtimeeventAction extends ApiAction {
 			return false;
 		}
 
-		$response = array($encoder->encode($responder->getResponse()));
+		$response = array($encoder->encode($responder->getResponse(), "response"));
 		$this->getController()->setOutput($response);
 		//TODO: send response
 		return true;
