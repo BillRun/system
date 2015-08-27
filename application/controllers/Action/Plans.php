@@ -20,6 +20,8 @@ class PlansAction extends ApiAction {
 		Billrun_Factory::log("Execute plans api call", Zend_Log::INFO);
 		$request = $this->getRequest();
 
+		// If no query received, using empty array as default. 
+		// TODO: Is this correct? or should an error be raised if no query received?
 		$requestedQuery = $request->get('query', array());
 		$query = $this->processQuery($requestedQuery);
 		$strip = $this->getCompundParam($request->get('strip', false), false);
@@ -95,11 +97,6 @@ class PlansAction extends ApiAction {
 	 * @return array containing the processed query.
 	 */
 	protected function processQuery($query) {
-		if (!isset($query)) {
-			// TODO: Report error?
-			return array();
-		}
-		
 		$retQuery = $this->getCompundParam($query, array());
 
 		// TODO: This code appears multiple times in the project, 
