@@ -195,7 +195,7 @@ class RealtimeeventAction extends ApiAction {
 			unset($this->event['recordType']);
 		}
 		
-		$this->event['billrun_prepend'] = ($this->event['record_type'] === 'start_call');
+		$this->event['billrun_prepend'] = $this->isPrepend();
 		$this->event['urt'] = new MongoDate(strtotime($this->event['record_opening_time']));
 
 		$options = array(
@@ -292,6 +292,10 @@ class RealtimeeventAction extends ApiAction {
 		$this->getController()->setOutput($response);
 		//TODO: send response
 		return true;
+	}
+	
+	protected function isPrepend() {
+		return ($this->event['record_type'] === 'start_call');
 	}
 	
 	protected function recordTypeToClassName($recordType) {
