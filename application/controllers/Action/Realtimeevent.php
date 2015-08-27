@@ -149,14 +149,20 @@ class RealtimeeventAction extends ApiAction {
 			</location_information>
 			<duration>2</duration>
 
-			<time_date>2015/08/13 11:59:03</time_date>
+			<time_date>2013/09/01 11:59:03</time_date>
 			<time_zone>0</time_zone>
 			<free_call>false</free_call>
 			<recordType>start_call</recordType>
 			<SGSNAddress>00015b876003</SGSNAddress>
 			</request>
 		';
-		$this->event = $this->getController()->getInput($a);
+		$decoder = Billrun_Decoder_Manager::getDecoder($this->getRequest()->controller, $this->getRequest()->getActionName());
+		if (!$decoder) {
+			Billrun_Factory::log('Cannot get decoder', Zend_Log::ALERT);
+			return false;
+		}
+		
+		$this->event = $decoder->decode($a);
 		$this->event['source'] = 'realtime';
 		$this->event['type'] = 'gy';
 		$this->event['rand'] = rand(1,1000000);
@@ -221,8 +227,7 @@ class RealtimeeventAction extends ApiAction {
 		}
 		$this->getController()->setOutput(array($ret));*/
 		
-		// Calls responder
-		Billrun_ActionManagers_Realtime_Responder_Call_Manager::respond($data);
+		return $this->respond($data);
 		//$this->getController()->setOutput($ret);
 		
 //		if ($this->customer() !== TRUE) {
@@ -268,6 +273,25 @@ class RealtimeeventAction extends ApiAction {
 
 	protected function saveEvent() {
 		
+	}
+	
+	protected function respond($data) {
+		$encoder = Billrun_Encoder_Manager::getEncoder($this->getRequest()->controller, $this->getRequest()->getActionName());
+		if (!$encoder) {
+			Billrun_Factory::log('Cannot get encoder', Zend_Log::ALERT);
+			return false;
+		}
+		
+		$responder = Billrun_ActionManagers_Realtime_Responder_Call_Manager::getResponder($data);
+		if (!$responder) {
+			Billrun_Factory::log('Cannot get responder', Zend_Log::ALERT);
+			return false;
+		}
+
+		$response = array($encoder->encode($responder->getResponse()));
+		$this->getController()->setOutput($response);
+		//TODO: send response
+		return true;
 	}
 	
 	protected function recordTypeToClassName($recordType) {
