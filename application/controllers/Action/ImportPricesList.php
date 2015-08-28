@@ -29,7 +29,7 @@ class ImportPricesListAction extends ApiAction {
 	 * Whether to remove usage types which don't exist in the input file
 	 * @var boolean
 	 */
-	protected $remove_non_existing_usage_types = false;
+	protected $should_remove_non_existing_usage_types = false;
 
 	/**
 	 * method to execute the bulk credit
@@ -40,7 +40,7 @@ class ImportPricesListAction extends ApiAction {
 		$list = json_decode($request['prices'], true);
 		$this->model = new RatesModel();
 		if (isset($request['remove_non_existing_usage_types'])) {
-			$this->remove_non_existing_usage_types = (boolean) $request['remove_non_existing_usage_types'];
+			$this->should_remove_non_existing_usage_types = (boolean) $request['remove_non_existing_usage_types'];
 		}
 		if (isset($request['remove_non_existing_prefix'])) {
 			$this->remove_non_existing_prefix = (boolean) $request['remove_non_existing_prefix'];
@@ -69,49 +69,7 @@ class ImportPricesListAction extends ApiAction {
 		if ($this->rules) {
 			$active_rates = $this->model->getActiveRates(array_unique(array_keys($this->rules)));
 			foreach ($active_rates as $old_rate) {
-				$new_raw_data = $old_raw_data = $old_rate->getRawData();
-				$rate_key = $old_raw_data['key'];
-				$new_from_date = new Zend_Date($this->rules[$rate_key]['from'], 'yyyy-MM-dd HH:mm:ss');
-				$old_to_date = clone $new_from_date;
-				$old_raw_data['to'] = new MongoDate($old_to_date->subSecond(1)->getTimestamp());
-				$old_rate->setRawData($old_raw_data);
-				unset($new_raw_data['_id']);
-				$new_raw_data['from'] = new MongoDate($new_from_date->getTimestamp());
-
-				if ($this->remove_non_existing_usage_types) {
-					$new_usage_types = array_unique(array_keys($this->rules[$rate_key]['usage_type_rates']));
-					$old_usage_types = array_unique(array_keys($old_rate['rates']));
-					$usage_types_to_remove = array_diff($old_usage_types, $new_usage_types);
-					foreach ($usage_types_to_remove as $usage_types) {
-						unset($new_raw_data['rates'][$usage_types]);
-					}
-				}
-
-				$new_prefix = explode(',', $this->rules[$rate_key]['prefix']);
-				if (!$this->remove_non_existing_prefix) {
-					$additional_prefix = array_diff($new_prefix, $new_raw_data['params']['prefix']);
-					$combined_prefix = array_merge($new_raw_data['params']['prefix'], $additional_prefix);
-					$new_raw_data['params']['prefix'] = $combined_prefix;
-				} else {
-					$new_raw_data['params']['prefix'] = $new_prefix;
-				}
-
-				foreach ($this->rules[$rate_key]['usage_type_rates'] as $usage_type => $usage_type_rate) {
-					if (!isset($new_raw_data['rates'][$usage_type]) && (!isset($usage_type_rate['category']) || !$usage_type_rate['category'])) {
-						$missing_categories[] = $rate_key;
-						continue 2;
-					}
-					$new_raw_data['rates'][$usage_type]['unit'] = $this->model->getUnit($usage_type);
-					$new_raw_data['rates'][$usage_type]['rate'] = $this->model->getRateArrayByRules($usage_type_rate['rules']);
-					if ($usage_type_rate['category']) {
-						$new_raw_data['rates'][$usage_type]['category'] = $usage_type_rate['category'];
-					}
-					$new_raw_data['rates'][$usage_type]['access'] = floatval($usage_type_rate['access']);
-				}
-				$updated_keys[] = $rate_key;
-				$new_rate = new Mongodloid_Entity($new_raw_data);
-				$old_rate->save($rates_coll);
-				$new_rate->save($rates_coll);
+				$this->updateRates($old_rate, $rates_coll,$updated_keys, $missing_categories);
 			}
 		}
 		if (count($updated_keys) + count($future_keys) + count($missing_categories) != count($this->rules)) {
@@ -120,7 +78,109 @@ class ImportPricesListAction extends ApiAction {
 		}
 		return array('updated' => $updated_keys, 'future' => $future_keys, 'missing_category' => $missing_categories, 'old' => $old_or_not_exist);
 	}
+	
+	/**
+	 * Remove the non existing usage types from the rates record.
+	 * @param array $rulesForRate - Rules for the current rate.
+	 * @param array $oldRates - Array of old key=>value rates.
+	 * @param array $newRates - Array of new key=>value rates to update.
+	 */
+	protected function removeNonExistingUsageTypes($rulesForRate, $oldRates, $newRates) {
+		$new_usage_types = array_unique(array_keys($rulesForRate));
+		$old_usage_types = array_unique(array_keys($oldRates));
+		$usage_types_to_remove = array_diff($old_usage_types, $new_usage_types);
+		foreach ($usage_types_to_remove as $usage_types) {
+			unset($newRates[$usage_types]);
+		}
+	}
+	
+	/**
+	 * Get the params prefix to set.
+	 * @param array $ratePrefix - The prefix for the current rate proccessed.
+	 * @param array $currentPrefix - The current prefix of the record to be updated.
+	 * @return string Correct prefix for params.
+	 */
+	protected function getParamsPrefix($ratePrefix, $currentPrefix) {
+		$prefix = explode(',', $ratePrefix);
+		
+		// If requested not to remove existing prefix, we concatenate it.
+		if (!$this->remove_non_existing_prefix) {
+			$additional_prefix = array_diff($prefix, $currentPrefix);
+			$prefix = array_merge($currentPrefix, $additional_prefix);
+		}
+		
+		return $prefix;
+	}
+	
+	/**
+	 * Set the dates for the new raw record.
+	 * @param array $rateKey - The current rate key record.
+	 * @param array $oldRate - The old rate record.
+	 * @param array $newRawData - The new raw data record to set the date for.
+	 * @param array $oldRawData - The old raw data record to set the date for.
+	 */
+	protected function setDates($rateKey, $oldRate, $newRawData, $oldRawData) {
+		$newFromDate = new Zend_Date($this->rules[$rateKey]['from'], 'yyyy-MM-dd HH:mm:ss');
+		$oldToDate = clone $newFromDate;
+		$oldRawData['to'] = new MongoDate($oldToDate->subSecond(1)->getTimestamp());
+		$oldRate->setRawData($oldRawData);
+		unset($newRawData['_id']);
+		$newRawData['from'] = new MongoDate($newFromDate->getTimestamp());
+	}
+	
+	protected function updateRates($old_rate, $rates_coll,$updated_keys, $missing_categories) {
+		$new_raw_data = $old_raw_data = $old_rate->getRawData();
+		$rate_key = $old_raw_data['key'];
+		$this->setDates($rate_key, $old_rate, $new_raw_data, $old_raw_data);
 
+		if ($this->should_remove_non_existing_usage_types) {
+			$this->removeNonExistingUsageTypes($this->rules[$rate_key]['usage_type_rates'],
+											   $old_rate['rates'],
+											   $new_raw_data['rates']);
+		}
+
+		$prefix = 
+			$this->getParamsPrefix($this->rules[$rate_key]['prefix'],
+								   $new_raw_data['params']['prefix']);
+		$new_raw_data['params']['prefix']= $prefix;
+		
+		foreach ($this->rules[$rate_key]['usage_type_rates'] as $usage_type => $usage_type_rate) {
+			// If this returns false it means we found a missing category.
+			if(!$this->setUsageTypeData($usage_type,
+										$usage_type_rate,
+										$new_raw_data['rates'])) {
+				$missing_categories[] = $rate_key;
+				return false;
+			}
+		}
+		$updated_keys[] = $rate_key;
+		$new_rate = new Mongodloid_Entity($new_raw_data);
+		// TODO: Validate the save?
+		$old_rate->save($rates_coll);
+		$new_rate->save($rates_coll);
+	}
+	
+	/**
+	 * Set the rates field of the new record with the rate usage types.
+	 * @param string $usageType - Current usage type.
+	 * @param string $usageTypeRate - Current rage usage type to set.
+	 * @param array $ratesToSet - Rates field to set with usage values.
+	 * @return boolean - False if found a missing category true otherwise.
+	 */
+	protected function setUsageTypeData($usageType, $usageTypeRate, $ratesToSet) {
+		if (!isset($ratesToSet[$usageType]) && 
+		   (!isset($usageTypeRate['category'])	    || 
+			!$usageTypeRate['category'])) {
+			return false;
+		}
+		$ratesToSet[$usageType]['unit'] = $this->model->getUnit($usageType);
+		$ratesToSet[$usageType]['rate'] = $this->model->getRateArrayByRules($usageTypeRate['rules']);
+		if ($usageTypeRate['category']) {
+			$ratesToSet['rates'][$usageType]['category'] = $usageTypeRate['category'];
+		}
+		$ratesToSet[$usageType]['access'] = floatval($usageTypeRate['access']);
+	}
+	
 	protected function validateList($list) {
 		// exactly one infinite "times" for each rule
 		// continuous rule numbers starting from 1
