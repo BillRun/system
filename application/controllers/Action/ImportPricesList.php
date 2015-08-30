@@ -50,12 +50,14 @@ class ImportPricesListAction extends ApiAction {
 		}
 
 		$ret = $this->importRates();
-		$this->getController()->setOutput(array(array(
+		
+		$controllerOutput = 
+			array(
 				'status' => 1,
 				'desc' => 'success',
 				'keys' => $ret,
-		)));
-		return true;
+		);
+		return $this->getController()->setOutput(array($controllerOutput));
 	}
 
 	/**
@@ -75,15 +77,14 @@ class ImportPricesListAction extends ApiAction {
 		
 		// Go through all the old rates.
 		foreach ($activeRates as $oldRate) {
-			$updatedRate = $this->updateRates($ratesModel, $oldRate, $ratesColl,$updatedKeys);
-			// If the return key is not null it means a missing category is found.
+			$updatedRate = $this->updateRates($ratesModel, $oldRate, $ratesColl);
+			// If the return key is false it means a missing category is found.
 			if(isset($updatedRate[true])) {
 				$updatedKeys[] = $updatedRate;
 			} else if(isset($updatedRate[false])) {
 				$missingCategories[] = $updatedRate;
 			} else {
-				// This should never happen. I put this log message to be safe, if php decides to change behaviour or we decide
-				// to change this code.
+				// This can happen if saving to the mongo failed.
 				Billrun_Factory::log("getUpdatedAndMissingCategoryKeys: Something went terribly wrong.", Zend_Log::ERR);
 				return null;
 			}
@@ -108,8 +109,14 @@ class ImportPricesListAction extends ApiAction {
 		
 		// If there are rules to select rates by.
 		if ($this->rules) {
+			$updatedAndMissingCategories = 
+				$this->getUpdatedAndMissingCategoryKeys($ratesModel);
+			// This is a criticl error!
+			if(!$updatedAndMissingCategories) {
+				return null;
+			}
 			list($updated_keys, $missing_categories) = 
-				each($this->getUpdatedAndMissingCategoryKeys($ratesModel));
+				each($updatedAndMissingCategories);
 		}
 		
 		// Check if there are keys that are in the db but not in the rules or keys that are in the rules
@@ -175,11 +182,10 @@ class ImportPricesListAction extends ApiAction {
 	 * @param RatesModel $ratesModel - The rates model object.
 	 * @param array $oldRate - Current old rate.
 	 * @param Mongoldoid_Collection $ratesColl - The rates collection object.
-	 * @param array $updatedKeys - The updated keys array to set with updated keys.
 	 * @return (boolean, string) Pair of boolean and string. If the boolean is true the rate is to be 
 	 * added to the updated keys. If the boolean is false the rate is to be added to the missing categories.
 	 */
-	protected function updateRates($ratesModel, $oldRate, $ratesColl,$updatedKeys) {
+	protected function updateRates($ratesModel, $oldRate, $ratesColl) {
 		$newRawData = $oldRawData = $oldRate->getRawData();
 		$rateKey = $oldRawData['key'];
 		$this->setDates($rateKey, $oldRate, $newRawData, $oldRawData);
@@ -190,6 +196,12 @@ class ImportPricesListAction extends ApiAction {
 											   $newRawData['rates']);
 		}
 
+		// Write the updated old rate to the database.
+		if(!$ratesColl->save($oldRate)) {
+			Billrun_Factory::log("UpdateRates: failed to save old rate to the data base. " . print_r($oldRate, true), Zend_Log::ERR);
+			return null;
+		}
+		
 		$prefix = 
 			$this->getParamsPrefix($this->rules[$rateKey]['prefix'],
 								   $newRawData['params']['prefix']);
@@ -204,11 +216,13 @@ class ImportPricesListAction extends ApiAction {
 				return array(false => $rateKey);
 			}
 		}
-		$updatedKeys[] = $rateKey;
+		
 		$newRate = new Mongodloid_Entity($newRawData);
-		// TODO: Validate the save?
-		$ratesColl->save($oldRate);
-		$ratesColl->save($newRate);
+				
+		if(!$ratesColl->save($newRate)){
+			Billrun_Factory::log("UpdateRates: failed to save new rate to the data base. " . print_r($newRate, true), Zend_Log::ERR);
+			return null;
+		}
 		
 		return array(true => $rateKey);
 	}
@@ -353,8 +367,7 @@ class ImportPricesListAction extends ApiAction {
 		// exactly one infinite "times" for each rule
 		// continuous rule numbers starting from 1
 		if (!$list) {
-			$this->setError('Empty list');
-			return false;
+			return $this->setError('Empty list');
 		}
 		$now = new Zend_Date();
 		
@@ -363,21 +376,61 @@ class ImportPricesListAction extends ApiAction {
 			$error = $this->buildRuleFromItem($item, $now);
 			if(!empty($error)) {
 				// Send $item as received input.
-				$this->setError($error, $item);
-				return false;
+				return $this->setError($error, $item);
 			}
 		}
 		
 		// Validate the rules.
 		$error = $this->validateRuleList();
 		if(!empty($error)) {
-			$this->setError($error);
-			return false;
+			return $this->setError($error);
 		}
 		
 		return TRUE;
 	}
 
+	/**
+	 * Validate the rule numbers for the rate rules list.
+	 * @param array $rateRules - Array of rules to validate.
+	 * @return string - Error string. Empty string if no error.
+	 */
+	protected function validateRuleNumbers($rateRules) {
+		$rule_numbers = array_map('intval', array_keys($rateRules));
+		if (!in_array(1, $rule_numbers)) {
+			return 'Missing first rule for';
+		}
+		$min = min($rule_numbers);
+		$max = max($rule_numbers);
+		if (count($rule_numbers) != $max - $min + 1) {
+			return 'Missing rule for';
+		}
+		
+		$ruleMaxTimes = $rate_rules[strval($max)]['times'];
+		if ($ruleMaxTimes != '0' && $ruleMaxTimes != pow(2, 31) - 1) {
+			return 'The last rule must be an infinite one';
+		}
+				
+		return "";
+	}
+	
+	/**
+	 * Validate the number of inifinite rules in a rule list.
+	 * @param array $rateRules - List of rules to validate.
+	 * @return string - Error string. Empty if no error.
+	 */
+	protected function validateInfiniteRules($rateRules) {
+		$infiniteCounter = 0;
+		// Go through the rules.
+		foreach ($rateRules as $rateRule) {
+			if ($rateRule['times'] == '0' || $rateRule['times'] == pow(2, 31) - 1) {
+				$infiniteCounter++;
+			}
+		}
+		if ($infiniteCounter != 1) {
+			return 'None or more than one infinite rule detected for';
+		}
+	}
+	
 	/**
 	 * Validate this object's rule list.
 	 * @return string - Returns error string to report. Empty string if no error.
@@ -386,29 +439,20 @@ class ImportPricesListAction extends ApiAction {
 		// Go through the rules.
 		foreach ($this->rules as $key => $rule) {
 			// Go through the usage types.
-			foreach ($rule['usage_type_rates'] as $usage_type => $usage_type_rate) {
-				$rate_rules = $usage_type_rate['rules'];
-				$rule_numbers = array_map('intval', array_keys($rate_rules));
-				if (!in_array(1, $rule_numbers)) {
-					return 'Missing first rule for ' . $key . ', ' . $usage_type;
+			foreach ($rule['usage_type_rates'] as $usageType => $usageTypeRate) {
+				$rateRules = $usageTypeRate['rules'];
+				$error = $this->validateRuleNumbers($rateRules);
+				if(!empty($error)) {
+					// Append the key and usage type to the error.
+					return $error . ' (' . $key . ', ' . $usageType . ')';
 				}
-				$min = min($rule_numbers);
-				$max = max($rule_numbers);
-				if (count($rule_numbers) != $max - $min + 1) {
-					return 'Missing rule for ' . $key . ', ' . $usage_type;
+				
+				$error = $this->validateInfiniteRules($rateRules);
+				if(!empty($error)) {
+					// Append the key and usage type to the error.
+					return $error . ' (' . $key . ', ' . $usageType . ')';
 				}
-				$infinite_counter = 0;
-				foreach ($rate_rules as $rate_rule) {
-					if ($rate_rule['times'] == '0' || $rate_rule['times'] == pow(2, 31) - 1) {
-						$infinite_counter++;
-					}
-				}
-				if ($infinite_counter != 1) {
-					return 'None or more than one infinite rule detected for ' . $key . ', ' . $usage_type;
-				}
-				if ($rate_rules[strval($max)]['times'] != '0' && $rate_rules[strval($max)]['times'] != pow(2, 31) - 1) {
-					return 'The last rule must be an infinite one (' . $key . ', ' . $usage_type . ')';
-				}
+
 			}
 		}
 		
