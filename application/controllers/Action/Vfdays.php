@@ -24,20 +24,25 @@ class VfdaysAction extends Action_Base {
 		$request = $this->getRequest();
 		$sid = intval($request->get("sid"));
 		$year = intval($request->get("year"));
+		if (is_null($year) || empty($year)) {
+			$year = date("Y");
+		}
 		$max_datetime = $request->get("max_datetime");
 
 		$results = $this->count_days($sid, $year, $max_datetime);
+		$tap3_count = $this->count_days_tap3($sid, $year, $max_datetime);
 		if (isset($results[0]["count"])) {
 			$days = $results[0]["count"];
 		} else {
 			$days = 0;
 		}
+		$max_days = ($tap3_count > $days) ? $tap3_count : $days;
 		$this->getController()->setOutput(array(
 			'status' => 1,
 			'desc' => 'success',
 			'input' => $request,
 			'details' => array(
-				'days' => $days,
+				'days' => $max_days,
 				'min_day' => 45,
 				'max_day' => 45,
 			)
@@ -51,14 +56,11 @@ class VfdaysAction extends Action_Base {
 	 * @return number of days 
 	 */
 	public function count_days($sid, $year = null, $max_datetime = null) {
-		if (is_null($year) || empty($year)) {
-			$year = date("Y");
-		}
-		
+
 		$ggsn_fields = Billrun_Factory::config()->getConfigValue('ggsn.fraud.groups.vodafone15');
 		$sender = Billrun_Factory::config()->getConfigValue('nrtrde.fraud.groups.vodafone15');
 		$plans = Billrun_Factory::config()->getConfigValue('nrtrde.fraud.events.NRTRDE1_B.target_plans');
-		
+
 		$match1 = array(
 			'$match' => array(
 				'subscriber_id' => $sid,
@@ -92,7 +94,7 @@ class VfdaysAction extends Action_Base {
 				),
 			),
 		);
-		
+
 		if (!empty($max_datetime)) {
 			$match2['$match']['unified_record_time'] = array('$lte' => new MongoDate(strtotime($max_datetime)));
 		}
@@ -119,6 +121,57 @@ class VfdaysAction extends Action_Base {
 
 		$res = Billrun_Factory::db()->linesCollection()->aggregate($match1, $match2, $group, $group2);
 		return $res;
+	}
+
+	public function count_days_tap3($sid, $year = null) {
+		$from = date('YmdHis', strtotime($year . '-01-01' . ' 00:00:00'));
+		$to = date('YmdHis', strtotime($year . '-12-31' . ' 23:59:59'));
+		$plans = Billrun_Factory::config()->getConfigValue('nrtrde.fraud.events.NRTRDE1_B.target_plans');
+		print($year);
+		print_r($plans);
+		print_r($to);
+		print("<br>");
+		print_r($from);
+		$match = array(
+			'$match' => array(
+				'sid' => $sid,
+				'type' => 'tap3',
+				'plan' => array('$in' => $plans),
+				'basicCallInformation.CallEventStartTimeStamp.localTimeStamp' => array(
+					'$gte' => $from,
+					'$lte' => $to,
+				),
+				'arategroup' => "VF",
+				'in_group' => array(
+					'$gt' => 0,
+				),
+				'billrun' => array(
+					'$exists' => true,
+				),
+			),
+		);
+		$group = array(
+			'$group' => array(
+				'_id' => array(
+					'day_key' => array(
+						'$substr' => array('$basicCallInformation.CallEventStartTimeStamp.localTimeStamp', 0, 8),
+					),
+				),
+			),
+		);
+		$group2 = array(
+			'$group' => array(
+				'_id' => 'null',
+				'day_sum' => array(
+					'$sum' => 1,
+				),
+			),
+		);
+		$billing_connection = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('billing.db'))->linesCollection();
+		$results = $billing_connection->aggregate($match, $group);
+		print_r($results);
+		die();
+		return isset($results) ? $results[0]['day_sum'] : 0;
 	}
 
 }
