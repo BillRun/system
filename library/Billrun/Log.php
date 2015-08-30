@@ -176,7 +176,7 @@ class Billrun_Log extends Zend_Log {
 	protected function logSuppressDuplicates($message, $priority, $extras) {
 		// Check if the priority is to be suppressed.
 		if($priority < Billrun_Log::DUPLICATE_MESSAGE_PRIORITY_THRESHOLD){
-			return;
+			return true;
 		}
 		
 		$duplicateMessage = false;
