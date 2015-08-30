@@ -14,67 +14,63 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  * 
  * @since    2.8
  */
-class BalancesAction extends ApiAction {
+class BalancesAction extends QueryAction {
 
 	/**
-	 * method to execute the query
-	 * it's called automatically by the api main controller
+	 * Get the max list count.
+	 * @return int The maximum number allowed for the query.
 	 */
-	public function execute() {
+	protected function getMaxList() {
+		return 10;
+	}
+	
+	/**
+	 * The function to run before execute.
+	 */
+	protected function preExecute() {
 		Billrun_Factory::log("Execute api balances query", Zend_Log::INFO);
-		$request = $this->getRequest()->getRequest(); // supports GET / POST requests
-		Billrun_Factory::log("Input: " . print_R($request, 1), Zend_Log::DEBUG);
-
-		if (!isset($request['aid']) && !isset($request['sid'])) {
-			$this->setError('Require to supply aid or sid', $request);
-			return true;
-		}
-		
-		$find = array();
-		$max_list = 10;
-		
-		if (isset($request['aid'])) {
-			$aids = Billrun_Util::verify_array($request['aid'], 'int');
-			if (count($aids) > $max_list) {
-				$this->setError('Maximum of aid is ' . $max_list, $request);
-				return true;
-			}
-			$find['aid'] = array('$in' => $aids);
-		}
-
-		if (isset($request['sid'])) {
-			$sids = Billrun_Util::verify_array($request['sid'], 'int');
-			if (count($sids) > $max_list) {
-				$this->setError('Maximum of sid is ' . $max_list, $request);
-				return true;
-			}
-			$find['sid'] = array('$in' => $sids);
-		}
-
-		if (isset($request['billrun'])) {
-			$find['billrun_month'] = $this->getBillrunQuery($request['billrun']);
-		}
-
-		$cacheParams = array(
-			'fetchParams' => array(
-				'options' => array(),
-				'find' => $find,
-			),
-		);
-
-		$this->setCacheLifeTime(28800); // 8 hours
-		$results = $this->cache($cacheParams);
-
+	}
+	
+	/**
+	 * The function to run after execute.
+	 */
+	protected function postExecute() {
 		Billrun_Factory::log("balances query success", Zend_Log::INFO);
-		$ret = array(
-			array(
-				'status' => 1,
-				'desc' => 'success',
-				'input' => $request,
-				'details' => $results,
-			)
+	}
+	
+	/**
+	 * Sets additional values to the query.
+	 * @param array $request Input array to set values by.
+	 * @param array $query - Query to set values to.
+	 */
+	protected function setAdditionalValuesToQuery($request, $query) {
+		if (isset($request['billrun'])) {
+			$query['billrun_month'] = $this->getBillrunQuery($request['billrun']);
+		}
+	}
+	
+	/**
+	 * Get the array of options to use for the query.
+	 * @param array $request - Input request array.
+	 * @return array Options array for the query.
+	 */
+	protected function getQueryOptions($request) {
+		return array();
+	}
+	
+	/**
+	 * Get the lines data by the input request and query.
+	 * @param array $request - Input request array.
+	 * @param array $linesRequestQueries - Array of queries to be parsed to get the lines data.
+	 * @return array lines to return for the action.
+	 */
+	protected function getLinesData($request, $linesRequestQueries) {
+		$cacheParams = array(
+			'fetchParams' => $linesRequestQueries
 		);
-		$this->getController()->setOutput($ret);
+		
+		$this->setCacheLifeTime(Billrun_Utils_TimerUtils::weeksToSeconds(1)); // 1 week
+		return $this->cache($cacheParams);
 	}
 	
 	/**
@@ -108,10 +104,4 @@ class BalancesAction extends ApiAction {
 		}
 		return (array) $param;
 	}
-	
-	protected function getBillrunQuery($billrun) {
-		return array('$in' => Billrun_Util::verify_array($this->getArrayParam($billrun), 'str'));
-	}
-
-
 }
