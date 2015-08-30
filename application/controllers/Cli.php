@@ -62,6 +62,7 @@ class CliController extends Yaf_Controller_Abstract {
 				'environment-s' => 'Environment of the running command',
 				'env-s' => 'Environment of the running command',
 				'fetchonly' => 'Only fetch data from remote or db instead of doing complete action',
+				'clearcall' => 'Finds and inform about open calls without balance',
 			);
 
 			$this->options = new Zend_Console_Getopt($input);

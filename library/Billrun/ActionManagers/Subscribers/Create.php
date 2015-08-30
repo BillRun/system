@@ -17,7 +17,7 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 	 * Field to hold the data to be written in the DB.
 	 * @var type Array
 	 */
-	protected $options = array();
+	protected $query = array();
 
 	/**
 	 */
@@ -32,13 +32,13 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 	public function execute() {
 		$success = false;
 		try {
-			$entity = new Mongodloid_Entity($this->options);
+			$entity = new Mongodloid_Entity($this->query);
 		
 			$success = ($entity->save($this->collection, 1) !== false);
 				
 		} catch (\Exception $e) {
 			Billrun_Factory::log('failed to store into DB got error : ' . $e->getCode() . ' : ' . $e->getMessage(), Zend_Log::ALERT);
-			Billrun_Factory::log('failed saving request :' . print_r($this->options, 1), Zend_Log::ALERT);
+			Billrun_Factory::log('failed saving request :' . print_r($this->query, 1), Zend_Log::ALERT);
 			$success = false;
 		}
 
@@ -55,24 +55,70 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 	 * @return true if valid.
 	 */
 	public function parse($input) {
-		$jsonData = null;
-		$subscriber = $input->get('subscriber');
-		if(empty($subscriber) || !($jsonData = json_decode($subscriber, true))) {
+		if(!$this->setQueryRecord($input)) {
 			return false;
 		}
-
-		// TODO: Do i need to validate that all these fields are set?
-		$this->options = 
-			array('imsi'			 => $jsonData['imsi'],
-				  'msisdn'			 => $jsonData['msisdn'],
-				  'aid'				 => $jsonData['aid'],
-				  'sid'				 => $jsonData['sid'],
-				  'plan'			 => $jsonData['plan'], 
-				  'language'		 => $jsonData['language'],
-				  'service_provider' => $jsonData['service_provider'],
-				  'from'			 => new MongoDate(),
-				  'to'				 => new MongoDate(strtotime('+100 years')));
 		
 		return true;
+	}
+	
+	/**
+	 * Set the values for the query record to be set.
+	 * @param httpRequest $input - The input received from the user.
+	 * @return true if successful false otherwise.
+	 */
+	protected function setQueryRecord($input) {
+		$jsonData = null;
+		$query = $input->get('subscriber');
+		if(empty($query) || (!($jsonData = json_decode($query, true)))) {
+			return false;
+		}
+		
+		$invalidFields = $this->setQueryFields($jsonData);
+		
+		// If there were errors.
+		if(!empty($invalidFields)) {
+			Billrun_Factory::log("Subscribers create received invalid query values in fields: " . implode(',', $invalidFields), Zend_Log::ALERT);
+			return false;
+		}
+		
+		// Set the from and to values.
+		$this->query['from']= new MongoDate();
+		$this->query['to']= new MongoDate(strtotime('+100 years'));
+		
+		return true;
+	}
+	
+	/**
+	 * Set all the query fields in the record with values.
+	 * @param array $queryData - Data received.
+	 * @return array - Array of strings of invalid field name. Empty if all is valid.
+	 */
+	protected function setQueryFields($queryData) {
+		$queryFields = $this->getQueryFields();
+		
+		// Arrary of errors to report if any occurs.
+		$invalidFields = array();
+		
+		// Get only the values to be set in the update record.
+		// TODO: If no update fields are specified the record's to and from values will still be updated!
+		foreach ($queryFields as $field) {
+			// ATTENTION: This check will not allow updating to empty values which might be legitimate.
+			if(isset($queryData[$field]) && !empty($queryData[$field])) {
+				$this->query[$field] = $queryData[$field];
+			} else {
+				$invalidFields[] = $field;
+			}
+		}
+		
+		return $invalidFields;
+	}
+	
+	/**
+	 * Get the array of fields to be set in the query record from the user input.
+	 * @return array - Array of fields to set.
+	 */
+	protected function getQueryFields() {
+		return array('imsi', 'msisdn', 'sid', 'aid', 'plan', 'language', 'service_provider');
 	}
 }
