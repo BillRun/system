@@ -39,7 +39,7 @@ class Billrun_Processor_BlockedBinaryExternal extends Billrun_Processor_Base_Blo
 		return Billrun_Factory::chain()->trigger('getFilenameData', array($this->getType(), $filename, &$this));
 	}
 	protected function getLineVolume($row) {
-		return Billrun_Factory::chain()->trigger('getLineVolume', $row, $row['usaget']);
+		return Billrun_Factory::chain()->trigger('getLineVolume', $row);
 	}
 	
 	protected function getLineUsageType($row) {
