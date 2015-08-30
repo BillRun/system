@@ -921,5 +921,26 @@ class Billrun_Util {
 
 		return $output;
 	}
+	
+	/**
+	 * Convert array keys to lower case and underscore (Billrun convention)
+	 * 
+	 * @param array $data
+	 */
+	public static function parseDataToBillrunConvention($data = array()) {
+		$parsedData = $data;
+		foreach ($data as $key => $value) {
+			if (is_array($value)) {
+				$parsedData[$key] = self::parseDataToBillrunConvention($value);
+			}
+			$newKey = strtolower(preg_replace('/([a-z])([A-Z])/', '$1_$2', $key));
+			if ($key !== $newKey) {
+				$parsedData[$newKey] = $value;
+				unset($parsedData[$key]);
+			}
+		}
+		
+		return $parsedData;
+	}
 
 }
