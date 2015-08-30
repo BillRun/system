@@ -12,9 +12,12 @@
  */
 abstract class Billrun_ActionManagers_Realtime_Responder_Call_Base {
 
+	/**
+	 * Db line to create the response from
+	 * 
+	 * @var type array
+	 */
 	protected $row;
-	protected $controller;
-
 
 	/**
 	 * Create an instance of the RealtimeAction type.
@@ -22,7 +25,15 @@ abstract class Billrun_ActionManagers_Realtime_Responder_Call_Base {
 	public function __construct($options = array()) {
 		
 		$this->row = $options['row'];
-		$this->controller = $options['controller'];
+	}
+	
+	/**
+	 * Checks if the responder is valid
+	 * 
+	 * @return boolean
+	 */
+	public function isValid() {
+		return (!is_null($this->row));
 	}
 	
 	/**
@@ -30,9 +41,6 @@ abstract class Billrun_ActionManagers_Realtime_Responder_Call_Base {
 	 */
 	public function getResponse() {
 		$responseData = $this->getResponseData();
-		if (!is_null($this->controller)) {
-			return $this->controller->setOutput($responseData);
-		}
 		return $responseData;
 	}
 	

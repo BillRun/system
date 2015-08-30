@@ -69,16 +69,16 @@ class Billrun_Balance extends Mongodloid_Entity {
 	 * @return array The default balance
 	 */
 	protected function getDefaultBalance($options) {
-		if ($options['charging_type'] == 'postpaid') {
-			$urtDate = date('Y-m-d h:i:s', $options['urt']->sec);
-			$from = Billrun_Billrun::getBillrunStartTimeByDate($urtDate);
-			$to = Billrun_Billrun::getBillrunEndTimeByDate($urtDate);
-			$plan = Billrun_Factory::plan(array('name' => $options['plan'], 'time' => $options['urt']->sec, 'disableCache' => true));
-			$plan_ref = $plan->createRef();
-			return $this->createBasicBalance($options['aid'], $options['sid'], $from, $to, $plan_ref);
-		} else {
+		if ($options['charging_type'] == 'prepaid') {
 			return array();
-		}
+		} 
+		
+		$urtDate = date('Y-m-d h:i:s', $options['urt']->sec);
+		$from = Billrun_Billrun::getBillrunStartTimeByDate($urtDate);
+		$to = Billrun_Billrun::getBillrunEndTimeByDate($urtDate);
+		$plan = Billrun_Factory::plan(array('name' => $options['plan'], 'time' => $options['urt']->sec, 'disableCache' => true));
+		$plan_ref = $plan->createRef();
+		return $this->createBasicBalance($options['aid'], $options['sid'], $from, $to, $plan_ref);
 	}
 
 	public static function getCollection() {
