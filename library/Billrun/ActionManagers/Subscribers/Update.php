@@ -134,6 +134,14 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 	}
 	
 	/**
+	 * Get the array of fields to be set in the query record from the user input.
+	 * @return array - Array of fields to set.
+	 */
+	protected function getQueryFields() {
+		return array('imsi', 'msisdn', 'sid');
+	}
+	
+	/**
 	 * Set the values for the update record to be set.
 	 * @param httpRequest $input - The input received from the user.
 	 * @return true if successful false otherwise.
@@ -151,13 +159,41 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 		// Get only the values to be set in the update record.
 		// TODO: If no update fields are specified the record's to and from values will still be updated!
 		foreach ($updateFields as $field) {
-			$this->recordToSet[$field] = $jsonUpdateData[$field];
+			// ATTENTION: This check will not allow updating to empty values which might be legitimate.
+			if(isset($jsonUpdateData[$field]) && !empty($jsonUpdateData[$field])) {
+				$this->recordToSet[$field] = $jsonUpdateData[$field];
+			}
 		}
 		
 		// THE 'from' FIELD IS SET AFTERWARDS WITH THE DATA FROM THE EXISTING RECORD IN MONGO.
 		$this->recordToSet['to'] = new MongoDate(strtotime('+100 years'));
 		
 		return true;
+	}
+	
+	/**
+	 * Set all the query fields in the record with values.
+	 * @param array $queryData - Data received.
+	 * @return array - Array of strings of invalid field name. Empty if all is valid.
+	 */
+	protected function setQueryFields($queryData) {
+		$queryFields = $this->getQueryFields();
+		
+		// Arrary of errors to report if any occurs.
+		$invalidFields = array();
+		
+		// Get only the values to be set in the update record.
+		// TODO: If no update fields are specified the record's to and from values will still be updated!
+		foreach ($queryFields as $field) {
+			// ATTENTION: This check will not allow updating to empty values which might be legitimate.
+			if(isset($queryData[$field]) && !empty($queryData[$field])) {
+				$this->query[$field] = $queryData[$field];
+			} else {
+				$invalidFields[] = $field;
+			}
+		}
+		
+		return $invalidFields;
 	}
 	
 	/**
@@ -173,10 +209,13 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 			return false;
 		}
 		
-		$this->query = 
-			array('sid'    => $jsonQueryData['sid'],
-				  'imsi'   => $jsonQueryData['imsi'],
-				  'msisdn' => $jsonQueryData['msisdn']);
+		$invalidFields = $this->setQueryFields($jsonQueryData);
+		
+		// If there were errors.
+		if(!empty($invalidFields)) {
+			Billrun_Factory::log("Subscribers update received invalid query values in fields: " . implode(',', $invalidFields), Zend_Log::ALERT);
+			return false;
+		}
 		
 		return true;
 	}
