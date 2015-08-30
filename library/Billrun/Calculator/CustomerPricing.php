@@ -235,12 +235,14 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		$plan_ref = $plan->createRef();
 		if (is_null($plan_ref)) {
 			Billrun_Factory::log('No plan found for subscriber ' . $row['sid'], Zend_Log::ALERT);
+			$row['usagev'] = 0;
 			return false;
 		}
 
 		$balance = new Billrun_Balance($row);
 		if (!$balance || !$balance->isValid()) {
 			Billrun_Factory::log("couldn't get balance for subscriber: " . $row['sid'], Zend_Log::INFO);
+			$row['usagev'] = 0;
 			return false;
 		} else {
 			Billrun_Factory::log("Found balance  for subscriber " . $row['sid'], Zend_Log::DEBUG);
@@ -433,7 +435,6 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * There is max retries for the recursive to run and the value is configured
 	 * 
 	 * @param Mongodloid_Entity $row the input line
-	 * @param string $billrun_key the billrun key at the row time
 	 * @param string $usage_type The type  of the usage (call/sms/data)
 	 * @param mixed $rate The rate of associated with the usage.
 	 * @param int $volume The usage volume (seconds of call, count of SMS, bytes  of data)
@@ -444,17 +445,17 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @todo add compatiblity to prepaid
 	 * 
 	 */
-	protected function updateSubscriberBalance($row, $usage_type, $rate) {
-		$billrun_key = Billrun_Util::getBillrunKey($row->get('urt')->sec);
-		$row['grantedReturnCode'] = Billrun_Factory::config()->getConfigValue('prepaid.ok');
+	public function updateSubscriberBalance($row, $usage_type, $rate) {
+		$row['granted_return_code'] = Billrun_Factory::config()->getConfigValue('prepaid.ok');
 		if (!$this->loadSubscriberBalance($row)) { // will load $this->balance
 			if ($row['charging_type'] === 'prepaid') {
-				$row['grantedReturnCode'] = Billrun_Factory::config()->getConfigValue('prepaid.customer.no_available_balances');
+				$row['granted_return_code'] = Billrun_Factory::config()->getConfigValue('prepaid.customer.no_available_balances');
 			}
+			Billrun_Factory::dispatcher()->trigger('afterSubscriberBalanceNotFound', array($row->getRawData()));
 			return false;
 		}
 		$balanceRaw = $this->balance->getRawData();
-		if ($row['charging_type'] === 'prepaid') {
+		if ($row['charging_type'] === 'prepaid' && !(isset($row['prepaid_rebalance']) && $row['prepaid_rebalance'])) { // If it's a prepaid row, but not rebalance
 			$row['usagev'] = $volume = $this->getPrepaidGrantedVolume($rate, $this->balance, $usage_type);
 		} else {
 			$volume = $row['usagev'];
@@ -629,7 +630,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * gets an array which represents a db ref (includes '$ref' & '$id' keys)
 	 * @param type $db_ref
 	 */
-	protected function getRowRate($row) {
+	public function getRowRate($row) {
 		return $this->getRateByRef($row->get('arate', true));
 	}
 

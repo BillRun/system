@@ -23,70 +23,50 @@ class RealtimeeventAction extends ApiAction {
 	 */
 	public function execute() {
 		Billrun_Factory::log("Execute realtime event", Zend_Log::INFO);
-//		$this->event = $this->getRequest()->getRequest();
-//		db.subscribers.insert({"from":ISODate("2012-01-01 "),"to":ISODate("2099-01-01 00:00:00"),imsi:"425030024380232", msisdn:"9725050500", aid:12345, sid:77777, plan:"LARGE"})
-//		> db.plans.findOne({name:"LARGE"})
-//{
-//	"_id" : ObjectId("51bd8dc9eb2f76d2178dd3dd"),
-//	"from" : ISODate("2012-01-01T00:00:00Z"),
-//	"to" : ISODate("3013-01-01T00:00:00Z"),
-//	"name" : "LARGE",
-//	"include" : {
-//		"call" : "UNLIMITED",
-//		"sms" : "UNLIMITED",
-//		"mms" : "UNLIMITED",
-//		"data" : "UNLIMITED",
-//		"groups" : {
-//			"IRD" : {
-//				"data" : "UNLIMITED",
-//				"limits" : {
-//					"flag" : "plugin"
-//				}
-//			}
-//		}
-//	},
-//	"price" : 83.898305085,
-//	"vatable" : true
-//}
-//> 
-//		> db.rates.find({key:/INTERNET_BILL_BY_V/}).pretty()
-//{
-//	"_id" : ObjectId("521e07fcd88db0e73f000200"),
-//	"from" : ISODate("2012-06-01T00:00:00Z"),
-//	"to" : ISODate("2113-08-28T18:23:55Z"),
-//	"key" : "INTERNET_BILL_BY_VOLUME",
-//	"params" : {
-//		"sgsn_addresses" : "/^(?=91.135.)/"
-//	},
-//	"rates" : {
-//		"data" : {
-//			"category" : "base",
-//			"rate" : [
-//				{
-//					"to" : NumberLong(2147483647),
-//					"price" : 7.27378716e-8,
-//					"interval" : NumberLong(1)
-//				}
-//			],
-//			"unit" : "bytes",
-//			"plans" : [
-//				DBRef("plans", ObjectId("51bd8dc9eb2f76d2178dd3de")),
-//				DBRef("plans", ObjectId("51bd8dc9eb2f76d2178dd3dd")),
-//				DBRef("plans", ObjectId("53349c0c79c7f054396fcd75")),
-//				DBRef("plans", ObjectId("5396d8098f7ac3710d6228ce")),
-//				DBRef("plans", ObjectId("5396d8448f7ac326986228ce")),
-//				DBRef("plans", ObjectId("53b1730e8f7ac39233da4d5a")),
-//				DBRef("plans", ObjectId("54114b0fd88db0d336b22964")),
-//				DBRef("plans", ObjectId("547ed64d8f7ac3f2967560bc")),
-//				DBRef("plans", ObjectId("54b6be8a8f7ac3e15bd53d76"))
-//			]
-//		}
-//	}
-//}
+		$this->event = $this->getRequestData();
+		$this->setEventData();
+		$data = $this->process();
+		return $this->respond($data);
+	}
 
+	/**
+	 * make simple sanity to the event input
+	 */
+	protected function preCheck() {
+		
+	}
 
+	protected function customer() {
+		if (!empty($this->event['imsi'])) {
+			
+		} else if (!empty($this->event['msisdn'])) {
+			
+		} else {
+			// die no customer identifcation
+			return FALSE;
+		}
+		return TRUE;
+	}
 
-		$a = '{
+	protected function rate() {
+		$this->event['arate'] = MongoDBRef::create($collection, $id);
+	}
+
+	protected function charge() {
+		
+	}
+
+	protected function saveEvent() {
+		
+	}
+	
+	/**
+	 * Gets the data sent to the api
+	 * @todo get real data from request (now it's only mock-up)
+	 */
+	protected function getRequestData() {
+		//$requstData = $this->getRequest()->getRequest();
+		$jsonData = '{
 			"sessionId":"GyOCS.sasnlbumtsma0-0.pelephone.gy.lab;1378620500;536872634",
 			"ccRequestType":1,
 			"ccRequestNumber":415,
@@ -128,35 +108,89 @@ class RealtimeeventAction extends ApiAction {
 					"serviceAreaCode":1046
 				},
 				"3GPPRATType":"01"
-			}
+			},
+			"recordType":"start_call"
 		}';
-		$this->event = @json_decode($a, JSON_OBJECT_AS_ARRAY);
+		
+		$xmlData = '<?xml version = "1.0" encoding = "UTF-8"?>
+			<request>
+			<calling_number>425030024380232</calling_number>
+			<imsi>425030024380232</imsi>
+			<dialed_digits>425030024380232</dialed_digits>
+			<event_type></event_type>
+			<service_key> </service_key>
+			<call_reference>2</call_reference>
+			<call_id> </call_id>
+			<vlr_number> </vlr_number>
+			<location_information>
+				<mcc>123</mcc>
+				<mnc>45</mnc>
+				<lac></lac>
+				<ci></ci>
+			</location_information>
+			<duration>2</duration>
+
+			<time_date>2013/09/01 11:59:03</time_date>
+			<time_zone>0</time_zone>
+			<free_call>false</free_call>
+			<recordType>start_call</recordType>
+			<SGSNAddress>00015b876003</SGSNAddress>
+			</request>
+		';
+		
+		$decoder = Billrun_Decoder_Manager::getDecoder(array(
+			'controllerName' => $this->getRequest()->controller, 
+			'actionName' => $this->getRequest()->getActionName()
+		));
+		if (!$decoder) {
+			Billrun_Factory::log('Cannot get decoder', Zend_Log::ALERT);
+			return false;
+		}
+		
+		return Billrun_Util::parseDataToBillrunConvention($decoder->decode($xmlData));
+	}
+	
+	/**
+	 * Sets the data of $this->event
+	 */
+	protected function setEventData() {
 		$this->event['source'] = 'realtime';
 		$this->event['type'] = 'gy';
 		$this->event['rand'] = rand(1,1000000);
 		$this->event['stamp'] = Billrun_Util::generateArrayStamp($this->event);
-		$this->event['billrun_prepend'] = false; //TODO: set by type
-		if (isset($this->event['Service-Information']['SGSNAddress'])) {
-			$this->event['sgsn_address'] = long2ip(hexdec($this->event['Service-Information']['SGSNAddress']));
+		if (isset($this->event['service-information']['sgsnaddress'])) {
+			$this->event['sgsn_address'] = long2ip(hexdec($this->event['service-information']['sgsnaddress']));
 		} else {
-			$sgsn_dec = hexdec($this->event['SGSNAddress']);
+			$sgsn_dec = hexdec($this->event['sgsnaddress']);
 			if (is_numeric($sgsn_dec)) {
 				$this->event['sgsn_address'] = long2ip($sgsn_dec);
 			}
 		}
 		
-		if (isset($this->event['GGSNAddress'])) {
-			$this->event['ggsn_address'] = $this->event['GGSNAddress'];
-			unset($this->event['GGSNAddress']);
+		if (isset($this->event['sgsnaddress'])) {
+			$this->event['ggsn_address'] = $this->event['sgsnaddress'];
+			unset($this->event['sgsnaddress']);
 		}
 
-		if (isset($this->event['startTime'])) {
+		if (isset($this->event['start_time'])) {
 			$this->event['record_opening_time'] = $this->event['startTime'];
-			unset($this->event['startTime']);
+			unset($this->event['start_time']);
 		}
 		
+		if (isset($this->event['time_date'])) {
+			$this->event['record_opening_time'] = $this->event['time_date'];
+		}
+		
+		$this->event['billrun_prepend'] = $this->isPrepend();
 		$this->event['urt'] = new MongoDate(strtotime($this->event['record_opening_time']));
-
+	}
+	
+	/**
+	 * Runs Billrun process
+	 * 
+	 * @return type Data generated by process
+	 */
+	protected function process() {
 		$options = array(
 			'type' => 'Realtime',
 			'parser' => 'none',
@@ -165,7 +199,7 @@ class RealtimeeventAction extends ApiAction {
 		$processor->addDataRow($this->event);
 		$processor->process();
 
-		$ret = array(
+		/*$ret = array(
 			'sessionId' => $this->event['sessionId'],
 			'ccRequestType' => $this->event['ccRequestType'],
 			'ccRequestNumber' => $this->event['ccRequestNumber'],
@@ -179,55 +213,49 @@ class RealtimeeventAction extends ApiAction {
 //				'returnCode' => 0
 //			),
 		);
-		$data = $processor->getData()['data'][0];
-		$ret['MSCC']['returnCode'] = $data['grantedReturnCode'];
-		if ($data['grantedReturnCode'] == Billrun_Factory::config()->getConfigValue('prepaid.ok')) {
+		$ret['MSCC']['returnCode'] = $data['granted_return_code'];
+		if ($data['granted_return_code'] == Billrun_Factory::config()->getConfigValue('prepaid.ok')) {
 			$ret['MSCC']['granted'] = $data['usagev'];
-		}
-		$this->getController()->setOutput(array($ret));
-//		if ($this->customer() !== TRUE) {
-//			die("error on customer");
-//		}
-//		if ($this->rate() !== TRUE) {
-//			die("error on customer");
-//		}
-//		if ($this->charge() !== TRUE) {
-//			die("error on customer");
-//		}
-//		if ($this->saveEvent() !== TRUE) {
-//			die("error on customer");
-//		}
+		}*/
+		return $processor->getData()['data'][0];
 	}
-
+	
 	/**
-	 * make simple sanity to the event input
+	 * Send respond
+	 * 
+	 * @param type $data
+	 * @return boolean
 	 */
-	protected function preCheck() {
-		
-	}
-
-	protected function customer() {
-		if (!empty($this->event['imsi'])) {
-			
-		} else if (!empty($this->event['msisdn'])) {
-			
-		} else {
-			// die no customer identifcation
-			return FALSE;
+	protected function respond($data) {
+		$encoder = Billrun_Encoder_Manager::getEncoder(array(
+			'controllerName' => $this->getRequest()->controller, 
+			'actionName' => $this->getRequest()->getActionName()
+			));
+		if (!$encoder) {
+			Billrun_Factory::log('Cannot get encoder', Zend_Log::ALERT);
+			return false;
 		}
-		return TRUE;
-	}
-
-	protected function rate() {
-		$this->event['arate'] = MongoDBRef::create($collection, $id);
-	}
-
-	protected function charge() {
 		
-	}
+		$responder = Billrun_ActionManagers_Realtime_Responder_Call_Manager::getResponder($data);
+		if (!$responder) {
+			Billrun_Factory::log('Cannot get responder', Zend_Log::ALERT);
+			return false;
+		}
 
-	protected function saveEvent() {
-		
+		$response = array($encoder->encode($responder->getResponse(), "response"));
+		$this->getController()->setOutput($response);
+		// Sends response
+		$responseUrl = Billrun_Factory::config()->getConfigValue('IN.respose.url.realtimeevent');
+		return Billrun_Util::sendRequest($responseUrl, $response);
+	}
+	
+	/**
+	 * Checks if the row should really decrease balance from the subscriber's balance, or just prepend
+	 * 
+	 * @return boolean
+	 */
+	protected function isPrepend() {
+		return ($this->event['record_type'] === 'start_call');
 	}
 
 }
