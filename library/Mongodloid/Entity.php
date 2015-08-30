@@ -317,8 +317,7 @@ class Mongodloid_Entity implements ArrayAccess {
 	}
 
 	/**
-	 * No phpdoc existed prior to deprecation.
-	 * Remove the entity from its collection
+	 * Remove the entity from its collection.
 	 * @deprecated since version 4
 	 */
 	public function remove() {
