@@ -271,71 +271,131 @@ class ImportPricesListAction extends ApiAction {
 		return $error;
 	}
 	
+	/**
+	 * Set the item's usage type value, return error string if failed.
+	 * @param array $item - Item to set the usage type by.
+	 * @return string - Error to report, empty if no error.
+	 */
+	protected function setRuleUsageTypeByItem($item) {
+		$itemUsageType = $this->rules[$item['key']]['usage_type_rates'][$item['usage_type']];
+		if (isset($itemUsageType['rules'][$item['rule']])) {
+			return 'Duplicate rule (' . $item['rule'] . ') for ' . $item['key'] . ', ' . $item['usage_type'];
+		}
+
+		$itemUsageType['rules'][$item['rule']] = $item;
+
+
+		if (isset($itemUsageType['category'])) {
+			if ($itemUsageType['category'] != $item['category']) {
+				return 'Conflict in category';
+			}
+		} else {
+			$itemUsageType['category'] = $item['category'];
+		}
+
+		if (isset($itemUsageType['access'])) {
+			if ($itemUsageType['access'] != $item['access_price']) {
+				return 'Conflict in access price';
+			}
+		} else {
+			$itemUsageType['access'] = $item['access_price'];
+		}
+	
+		return "";
+	}
+	
+	/**
+	 * Build a rule in the rule list based on an input item.
+	 * @param array $item - Item to fill the rules with values by.
+	 * @param Zend_Date $now - The time now. This is sent so we won't have to allocate
+	 * a Zend_Date object each time.
+	 * @return string - Error to report, empty if no error.
+	 */
+	protected function buildRuleFromItem($item , $now) {
+		$error = $this->validateItem($item, $now);
+		if(!empty($error)) {
+			// Send $item as received input.
+			return $error;
+		}
+
+		$error = $this->setRuleUsageTypeByItem($item);
+		if(!empty($error)) {
+			// Send $item as received input.
+			return $error;
+		}
+
+		if (isset($this->rules[$item['key']]['from'])) {
+			if ($this->rules[$item['key']]['from'] != $item['from_date']) {
+				return 'Conflict in from_date for ' . $item['key'];
+			}
+		} else {
+			$this->rules[$item['key']]['from'] = $item['from_date'];
+		}
+
+		if (isset($this->rules[$item['key']]['prefix']) && !empty($this->rules[$item['key']]['prefix'])) {
+			if (!empty($item['prefix']) && $this->rules[$item['key']]['prefix'] != $item['prefix']) {
+				return 'Conflict in prefix for ' . $item['key'];
+			}
+		} else {
+			$this->rules[$item['key']]['prefix'] = $item['prefix'];
+		}
+		
+		return "";
+	}
+	
+	/**
+	 * Validate an input list of rules.
+	 * @param array $list - Input list to validate.
+	 * @return boolean true if successful false otherwise. 
+	 * This function can only fail if 
+	 */
 	protected function validateList($list) {
 		// exactly one infinite "times" for each rule
 		// continuous rule numbers starting from 1
 		if (!$list) {
-			return $this->setError('Empty list');
+			$this->setError('Empty list');
+			return false;
 		}
 		$now = new Zend_Date();
+		
+		// Go through the items of the list.
 		foreach ($list as $item) {
-			$error = $this->validateItem($item, $now);
+			$error = $this->buildRuleFromItem($item, $now);
 			if(!empty($error)) {
 				// Send $item as received input.
-				return $this->setError($error, $item);
-			}
-			
-			$itemUsageType = $this->rules[$item['key']]['usage_type_rates'][$item['usage_type']];
-			if (isset($itemUsageType['rules'][$item['rule']])) {
-				return $this->setError('Duplicate rule (' . $item['rule'] . ') for ' . $item['key'] . ', ' . $item['usage_type']);
-			}
-			
-			$itemUsageType['rules'][$item['rule']] = $item;
-			
-
-			if (isset($itemUsageType['category'])) {
-				if ($itemUsageType['category'] != $item['category']) {
-					return $this->setError('Conflict in category', $item);
-				}
-			} else {
-				$itemUsageType['category'] = $item['category'];
-			}
-
-			if (isset($itemUsageType['access'])) {
-				if ($itemUsageType['access'] != $item['access_price']) {
-					return $this->setError('Conflict in access price', $item);
-				}
-			} else {
-				$itemUsageType['access'] = $item['access_price'];
-			}
-
-			if (isset($this->rules[$item['key']]['from'])) {
-				if ($this->rules[$item['key']]['from'] != $item['from_date']) {
-					return $this->setError('Conflict in from_date for ' . $item['key']);
-				}
-			} else {
-				$this->rules[$item['key']]['from'] = $item['from_date'];
-			}
-
-			if (isset($this->rules[$item['key']]['prefix']) && !empty($this->rules[$item['key']]['prefix'])) {
-				if (!empty($item['prefix']) && $this->rules[$item['key']]['prefix'] != $item['prefix']) {
-					return $this->setError('Conflict in prefix for ' . $item['key']);
-				}
-			} else {
-				$this->rules[$item['key']]['prefix'] = $item['prefix'];
+				$this->setError($error, $item);
+				return false;
 			}
 		}
+		
+		// Validate the rules.
+		$error = $this->validateRuleList();
+		if(!empty($error)) {
+			$this->setError($error);
+			return false;
+		}
+		
+		return TRUE;
+	}
+
+	/**
+	 * Validate this object's rule list.
+	 * @return string - Returns error string to report. Empty string if no error.
+	 */
+	protected function validateRuleList() {
+		// Go through the rules.
 		foreach ($this->rules as $key => $rule) {
+			// Go through the usage types.
 			foreach ($rule['usage_type_rates'] as $usage_type => $usage_type_rate) {
 				$rate_rules = $usage_type_rate['rules'];
 				$rule_numbers = array_map('intval', array_keys($rate_rules));
 				if (!in_array(1, $rule_numbers)) {
-					return $this->setError('Missing first rule for ' . $key . ', ' . $usage_type);
+					return 'Missing first rule for ' . $key . ', ' . $usage_type;
 				}
 				$min = min($rule_numbers);
 				$max = max($rule_numbers);
 				if (count($rule_numbers) != $max - $min + 1) {
-					return $this->setError('Missing rule for ' . $key . ', ' . $usage_type);
+					return 'Missing rule for ' . $key . ', ' . $usage_type;
 				}
 				$infinite_counter = 0;
 				foreach ($rate_rules as $rate_rule) {
@@ -344,16 +404,17 @@ class ImportPricesListAction extends ApiAction {
 					}
 				}
 				if ($infinite_counter != 1) {
-					return $this->setError('None or more than one infinite rule detected for ' . $key . ', ' . $usage_type);
+					return 'None or more than one infinite rule detected for ' . $key . ', ' . $usage_type;
 				}
 				if ($rate_rules[strval($max)]['times'] != '0' && $rate_rules[strval($max)]['times'] != pow(2, 31) - 1) {
-					return $this->setError('The last rule must be an infinite one (' . $key . ', ' . $usage_type . ')');
+					return 'The last rule must be an infinite one (' . $key . ', ' . $usage_type . ')';
 				}
 			}
 		}
-		return TRUE;
+		
+		return "";
 	}
-
+	
 	/**
 	 * 
 	 * @param mixed $value
