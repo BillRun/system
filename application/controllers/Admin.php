@@ -833,100 +833,175 @@ class AdminController extends Yaf_Controller_Abstract {
 		return $sort;
 	}
 
-	public function getManualFilters($table) {
-		$query = false;
-		$session = $this->getSession($table);
-		$keys = $this->getSetVar($session, 'manual_key', 'manual_key');
+	/**
+	 * Return array of advanced options based on the current model used.
+	 * @return array of advanced options, false if no mode identified.
+	 */
+	protected function getAdvancedOptionsPerModel() {
 		if ($this->model instanceof LinesModel) {
-			$advanced_options = Admin_Lines::getOptions();
+			return Admin_Lines::getOptions();
 		} else if ($this->model instanceof BalancesModel) {
 			// TODO: make refactoring of the advanced options for each page (lines, balances, etc)
-			$advanced_options = array(
+			return array(
 				$keys = array(array(
 					'type' => 'number',
 					'display' => 'usage',
 				)
 			));
 		} else if ($this->model instanceof EventsModel) {
-			$avanced_options = array(
+			return array(
 				$keys[0] => array(
 					'type' => 'text',
 				)
 			);
-		} else {
-			return $query;
 		}
+		
+		// If model is unidentified return false;
+		return false;
+	}
+		
+	/**
+	 * Translate the value by the type option.
+	 * @param string $option - Type option to translate by.
+	 * @param string $inputValue - Value to translate.
+	 * @return the translated value.
+	 */
+	protected function translateValueByType($option, $inputValue) {
+		// TODO: Change this switch case to OOP classes.
+		switch ($option) {
+			case 'number':
+				$returnValue = floatval($inputValue);
+			case 'date':
+				// TODO: If the date is not in this format, should report error?
+				if (Zend_Date::isDate($inputValue, 'yyyy-MM-dd hh:mm:ss')) {
+					$returnValue = new MongoDate((new Zend_Date($inputValue, null, new Zend_Locale('he_IL')))->getTimestamp());
+				} else {
+					return false;
+				}
+			default:
+				break;
+		}
+		
+		return $returnValue;
+	}
+	
+	/**
+	 * Translate the value by the case option.
+	 * @param string $option - Case option to translate by.
+	 * @param string $inputValue - Value to translate.
+	 * @return the translated value.
+	 */
+	protected function translateValueByCase($option, $inputValue) {
+		return Admin_Table::convertValueByCaseType($inputValue, $option);
+	}
+	
+	/**
+	 * Convert value to set for the correct mongo type.
+	 * @param string $option - Value type.
+	 * @param string $inputValue - The value to be set.
+	 * @return The value to set in the correct mongo type, null if no convertion found, 
+	 * false if invalid.
+	 */
+	protected function getValueForOption($option, $inputValue) {
+		$returnValue = $this->translateValueByType($option['type'], $inputValue);
+		if($returnValue === false) {
+			return false;
+		}
+		
+		if (isset($option['case'])) {
+			$returnValue = $this->translateValueByCase($option['case'], $returnValue);
+		}
+			
+		return $returnValue;
+	}
+
+	/**
+	 * Return a pair of oprator and value in the mongo format based on user string
+	 * input.
+	 * @param string $operator - Readable string operator, not mongo format.
+	 * @param string $value - The value to be coupled with the operator.
+	 * @return pair - Operator as key and value as value.
+	 */
+	protected function getOperatorValuePair($operator, $value) {
+		$translator = Admin_MongoOperatorTranslators_Manager::getUpdater($operator);
+		// No translator found.
+		if($translator != null) {
+			// TODO: decoupling to config of fields
+			return $translator->translate($value);
+		}
+
+		// If no translator found return the input parameters.
+		return array($operator => $value);
+	}
+	
+	/**
+	 * Set the manual filter if the filter is a db ref.
+	 * @param type $inputValue - Value for the filter.
+	 * @param type $inputOperator - Operator for the filter.
+	 * @return pair - Operator as key and value as value.
+	 */
+	protected function setManualFilterForDbref($inputValue, $inputOperator) {
+		$collection = Billrun_Factory::db()->{$advancedOptions[$key]['collection'] . "Collection"}();
+		$pre_query = null;
+		$pre_query[$advancedOptions[$key]['collection_key']][$operator] = $inputValue;
+		$cursor = $collection->query($pre_query);
+		$value = array();
+		foreach ($cursor as $entity) {
+			$value[] = $entity->createRef($collection);
+		}
+		
+		return array('$in' => $value);
+	}
+	
+	/**
+	 * Set the naual filter for a key to the query.
+	 * @param array $query - Query to set the filter to.
+	 * @param type $key - Key for the filter.
+	 * @param type $inputValue - Value for the filter.
+	 * @param type $operator - Operator for filter.
+	 * @param array $advancedOptions - Array of advanced options for this action
+	 */
+	protected function setManualFilterForKey($query, $key, $inputValue, $operator, $advancedOptions) {
+			$convertedValue = $this->getValueForOption($advancedOptions[$key], $inputValue);
+			if($convertedValue === false) {
+				return;
+			}
+			
+			$value = $convertedValue;
+			
+			list($operator, $value) = each($this->getOperatorValuePair($operator, $convertedValue));
+			
+			// Handle a db ref option.
+			if ($advancedOptions[$key]['type'] == 'dbref') {
+				list($operator, $value) = each($this->setManualFilterForDbref($value, $operator));
+			}
+			
+		$query[$key][$operator] = $value;
+	}
+	
+	public function getManualFilters($table) {
+		$advanced_options = $this->getAdvancedOptionsPerModel();
+		if ($advanced_options === false) {
+			Billrun_Factory::log("No options found for current model.", Zend_Log::DEBUG);
+			return false;
+		}
+		
+		$query = false;
+		$session = $this->getSession($table);
+		$keys = $this->getSetVar($session, 'manual_key', 'manual_key');
+		
 		$operators = $this->getSetVar($session, 'manual_operator', 'manual_operator');
 		$values = $this->getSetVar($session, 'manual_value', 'manual_value');
 		settype($operators, 'array');
 		settype($values, 'array');
 		for ($i = 0; $i < count($keys); $i++) {
-			if ($keys[$i] == '' || $values[$i] == '') {
+			$key = $keys[$i];
+			$value = $values[$i];
+			if ($key == '' || $value == '') {
 				continue;
 			}
-			switch ($advanced_options[$keys[$i]]['type']) {
-				case 'number':
-					$values[$i] = floatval($values[$i]);
-					break;
-				case 'date':
-					if (Zend_Date::isDate($values[$i], 'yyyy-MM-dd hh:mm:ss')) {
-						$values[$i] = new MongoDate((new Zend_Date($values[$i], null, new Zend_Locale('he_IL')))->getTimestamp());
-					} else {
-						continue 2;
-					}
-				default:
-					break;
-			}
-			if (isset($advanced_options[$keys[$i]]['case'])) {
-				$values[$i] = Admin_Table::convertValueByCaseType($values[$i], $advanced_options[$keys[$i]]['case']);
-			}
-			// TODO: decoupling to config of fields
-			switch ($operators[$i]) {
-				case 'starts_with':
-					$operators[$i] = '$regex';
-					$values[$i] = "^$values[$i]";
-					break;
-				case 'ends_with':
-					$operators[$i] = '$regex';
-					$values[$i] = "$values[$i]$";
-					break;
-				case 'like':
-					$operators[$i] = '$regex';
-					$values[$i] = "$values[$i]";
-					break;
-				case 'lt':
-					$operators[$i] = '$lt';
-					break;
-				case 'lte':
-					$operators[$i] = '$lte';
-					break;
-				case 'gt':
-					$operators[$i] = '$gt';
-					break;
-				case 'gte':
-					$operators[$i] = '$gte';
-					break;
-				case 'ne':
-					$operators[$i] = '$ne';
-					break;
-				case 'equals':
-					$operators[$i] = '$in';
-					$values[$i] = array($values[$i]);
-					break;
-				default:
-					break;
-			}
-			if ($advanced_options[$keys[$i]]['type'] == 'dbref') {
-				$collection = Billrun_Factory::db()->{$advanced_options[$keys[$i]]['collection'] . "Collection"}();
-				$pre_query[$advanced_options[$keys[$i]]['collection_key']][$operators[$i]] = $values[$i];
-				$cursor = $collection->query($pre_query);
-				$values [$i] = array();
-				foreach ($cursor as $entity) {
-					$values[$i][] = $entity->createRef($collection);
-				}
-				$operators[$i] = '$in';
-			}
-			$query[$keys[$i]][$operators[$i]] = $values[$i];
+			$operator = $operators[$i];
+			$this->setManualFilterForKey($query, $key, $value, $operator);
 		}
 		return $query;
 	}

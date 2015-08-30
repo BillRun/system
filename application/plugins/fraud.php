@@ -61,13 +61,20 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * 
 	 */
 	public function afterUpdateSubscriberBalance($row, $balance, &$pricingData, $calculator) {
-		if ($calculator->getType() == 'pricing' && method_exists($calculator, 'getPricingField') && ($pricingField = $calculator->getPricingField())) {
-			$rowPrice = isset($pricingData[$pricingField]) ? $pricingData[$pricingField] : 0; // if the rate wasn't billable then the line won't have a charge
-		} else {
+		// TODO: Explain this condition.
+		if (!($calculator->getType() == 'pricing' && 
+			  method_exists($calculator, 'getPricingField') && 
+			  ($pricingField = $calculator->getPricingField()))) {
 			return true;
 		}
+		
+		$rowPrice = 
+			isset($pricingData[$pricingField]) ? 
+			$pricingData[$pricingField] : 
+			0; // if the rate wasn't billable then the line won't have a charge
 
 		if (!$this->isLineLegitimate($row, $calculator)) {
+			// TODO: Why return true?
 			return true;
 		}
 		if (is_null($balance)) {
@@ -184,7 +191,12 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 
 		$usaget = $row['usaget'];
 
-		// on some cases balances is not object - TODO investigate this issue
+		// on some cases balances is not object - 
+		// This happens because customer pricing sends the balance by a reference to its data member.
+		// It can be that customer pricing is sent to the garbage collector and being deserialized.
+		// This means that even though $balance will NOT be null, it will be an unitialized deserialized
+		// object so is_object will return false.
+		// The solution is sending a copy of the balance and not a reference to it.
 		if (!is_object($balance) || !isset($balance->balance['totals'][$usaget]['usagev'])) {
 			Billrun_Factory::log("Fraud plugin - balance not exists for subscriber " . $row['sid'] . ' usage type ' . $usaget, Zend_Log::WARN);
 			return false;

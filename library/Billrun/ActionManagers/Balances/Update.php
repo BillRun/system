@@ -44,17 +44,31 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 	}
 	
 	/**
+	 * Get the correct action to use for this request.
+	 * @param data $request - The input request for the API.
+	 * @return Billrun_ActionManagers_Action
+	 */
+	protected function getAction() {
+		list($filterName,$t)=each($this->query);
+		$updaterManagerInput = 
+			array('input'       => $this->updaterOptions,
+				  'filter_name' => $filterName);
+		
+		$manager = new Billrun_ActionManagers_Balances_Updaters_Manager($updaterManagerInput);
+		
+		// This is the method which is going to be executed.
+		return $manager->getAction();
+	}
+	
+	/**
 	 * Execute the action.
 	 * @return data for output.
 	 */
 	public function execute() {
 		$success = true;
 
-		list($filterName,$t)=each($this->query);
-		
 		// Get the updater for the filter.
-		$updater = 
-			Billrun_ActionManagers_Balances_Updaters_Manager::getUpdater($filterName, $this->updaterOptions);
+		$updater = $this->getAction();
 		
 		$outputDocuments = 
 			$updater->update($this->query, $this->recordToSet, $this->subscriberId);
@@ -67,17 +81,19 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 	}
 
 	/**
-	 * Parse the received request.
-	 * @param type $input - Input received.
-	 * @return true if valid.
+	 * Get the array of fields to be set in the update record from the user input.
+	 * @return array - Array of fields to set.
 	 */
-	public function parse($input) {
-		$this->subscriberId = $input->get('sid');
-		if(empty($this->subscriberId)) {
-			Billrun_Factory::log("Update action did not receive subscriber ID!", Zend_Log::ALERT);
-			return false;
-		}
-		
+	protected function getUpdateFields() {
+		return array('value', 'recurring');
+	}
+	
+	/**
+	 * Set the values for the update record to be set.
+	 * @param httpRequest $input - The input received from the user.
+	 * @return true if successful false otherwise.
+	 */
+	protected function setUpdateRecord($input) {
 		$jsonUpdateData = null;
 		$update = $input->get('upsert');
 		if(empty($update) || (!($jsonUpdateData = json_decode($update, true)))) {
@@ -85,6 +101,61 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 			return false;
 		}
 		
+		$operation = "inc";
+		if(isset($jsonUpdateData['operation'])) {
+			// TODO: What if this is not INC and not SET? Should we check and raise error?
+			$operation = $jsonUpdateData['operation'];
+		}
+		$this->recordToSet['operation'] = $operation;
+			
+		// TODO: If to is not set, but received opration set, it's an error, report?
+		$to = isset($jsonUpdateData['expiration_date']) ? ($jsonUpdateData['expiration_date']) : 0;
+		$this->recordToSet['to'] = $to;
+		$updateFields = $this->getUpdateFields();
+		
+		// Get only the values to be set in the update record.
+		// TODO: If no update fields are specified the record's to and from values will still be updated!
+		foreach ($updateFields as $field) {
+			// ATTENTION: This check will not allow updating to empty values which might be legitimate.
+			if(isset($jsonUpdateData[$field]) && !empty($jsonUpdateData[$field])) {
+				$this->recordToSet[$field] = $jsonUpdateData[$field];
+			}
+		}
+		
+		return true;
+	}
+	
+	/**
+	 * Set all the query fields in the record with values.
+	 * @param array $queryData - Data received.
+	 * @return array - Array of strings of invalid field name. Empty if all is valid.
+	 */
+	protected function setQueryFields($queryData) {
+		$queryFields = $this->getQueryFields();
+		
+		// Arrary of errors to report if any occurs.
+		$invalidFields = array();
+		
+		// Get only the values to be set in the update record.
+		// TODO: If no update fields are specified the record's to and from values will still be updated!
+		foreach ($queryFields as $field) {
+			// ATTENTION: This check will not allow updating to empty values which might be legitimate.
+			if(isset($queryData[$field]) && !empty($queryData[$field])) {
+				$this->query[$field] = $queryData[$field];
+			} else {
+				$invalidFields[] = $field;
+			}
+		}
+		
+		return $invalidFields;
+	}
+	
+	/**
+	 * Set the values for the query record to be set.
+	 * @param httpRequest $input - The input received from the user.
+	 * @return true if successful false otherwise.
+	 */
+	protected function setQueryRecord($input) {
 		$jsonQueryData = null;
 		$query = $input->get('query');
 		if(empty($query) || (!($jsonQueryData = json_decode($query, true)))) {
@@ -103,27 +174,33 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 			return false;
 		}
 		
-		$operation = "inc";
-		if(isset($jsonUpdateData['operation'])) {
-			// TODO: What if this is not INC and not SET? Should we check and raise error?
-			$operation = $jsonUpdateData['operation'];
+		return true;
+	}
+	
+	/**
+	 * Parse the received request.
+	 * @param type $input - Input received.
+	 * @return true if valid.
+	 */
+	public function parse($input) {
+		$this->subscriberId = $input->get('sid');
+		if(empty($this->subscriberId)) {
+			Billrun_Factory::log("Update action did not receive subscriber ID!", Zend_Log::ALERT);
+			return false;
 		}
 		
-		$this->updaterOptions['increment'] = ($operation == "inc");
+		if(!$this->setQueryRecord($input)) {
+			return false;
+		}
+		
+		if(!$this->setUpdateRecord($input)) {
+			return false;
+		}
+		
+		$this->updaterOptions['increment'] = ($this->recordToSet == "inc");
 		
 		// TODO: For now this is hard-coded, untill the API will define this as a parameter.
 		$this->updaterOptions['zero'] = true;
-			
-		// TODO: If to is not set, but received opration set, it's an error, report?
-		$to = isset($jsonUpdateData['expiration_date']) ? ($jsonUpdateData['expiration_date']) : 0;
-		
-		// TODO: Do i need to validate that all these fields are set?
-		$this->recordToSet = 
-			array('value'			=> $jsonUpdateData['value'],
-				  'recurring'		=> $jsonUpdateData['recurring'],
-				// TODO: Should it be 'to' or expiration date like in the documentation?
-				  'to'				=> $to,
-				  'operation'		=> $operation);
 		
 		return true;
 	}

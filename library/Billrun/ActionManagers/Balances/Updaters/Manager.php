@@ -12,7 +12,7 @@
  * @author tom
  */
 // TODO: Create abstract manager class and extend it.
-class Billrun_ActionManagers_Balances_Updaters_Manager {
+class Billrun_ActionManagers_Balances_Updaters_Manager extends Billrun_ActionManagers_Manager {
 	
 	static $updaterTranslator = 
 		array('charging_plan_name'		  => 'ChargingPlan',
@@ -25,34 +25,82 @@ class Billrun_ActionManagers_Balances_Updaters_Manager {
 	
 	/**
 	 * This function receives filter name and returns an updater.
-	 * @param type $filterName
-	 * @param array $options - Options to initialize the updater with.
 	 * @return type Balances action
 	 */
-	public static function getUpdater($filterName, $options) {
-		if(!isset(self::$updaterTranslator[$filterName])) {
-			// TODO: Log error!
-			return false;
-		}
+	public function getAction() {
+		$action = parent::getAction();
 		
-		$updater = self::$updaterTranslator[$filterName];
-		 
-		$actionClass = str_replace('_Manager', $updater, __CLASS__);
-		$action = new $actionClass($options);
-		
-		if(!$action) {
-			Billrun_Factory::log("getAction Action '$updater' is invalid!", Zend_Log::INFO);
-			return null;
-		}
+		$filterName = $this->options['filter_name'];
 		
 		/**
 		 * Parse the input data.
 		 */
 		if(!$action->parse($filterName)) {
-			Billrun_Factory::log("getAction Action failed to parse input! " . print_r($filterName, 1), Zend_Log::INFO);
+			Billrun_Factory::log("getAction Action failed to parse input! " . 
+								  print_r($filterName, 1), Zend_Log::INFO);
 			return null;
 		}
 		
 		return $action;
 	}
+	
+	/**
+	 * Allocate the new action to return.
+	 * @param string $actionClass - Name of the action to allocate.
+	 * @return Billrun_ActionManagers_Action - Action to return.
+	 */
+	protected function allocateAction($actionClass) {
+		return new $actionClass($this->options['options']);
+	}
+	
+	/**
+	 * Validate the input options parameters.
+	 * @return true if valid.
+	 */
+	protected function validate() {
+		// Validate that received all required paramters.
+		if(!parent::validate() || 
+		   !isset($this->options['options'])		  || 
+		   !isset($this->options['filter_name'])) {
+			return false;
+		}
+		
+		$filterName = $this->options['filter_name'];
+		
+		// Check that the filter name is correct.
+		if(!isset(self::$updaterTranslator[$filterName])) {
+			Billrun_Factory::log("Filter name " . 
+								 print_r($filterName,1) . 
+								 " not found in translator!", Zend_Log::NOTICE);
+			return false;
+		}
+		
+		return true;
+	}
+	
+	/**
+	 * Get the name of the action class to create.
+	 * @param string $action - String to concatenate to the current class stub
+	 * to create the name of the action requested.
+	 */
+	protected function getActionClassName($action) {
+		return str_replace('_Manager', $action, __CLASS__);
+	}
+	
+	/**
+	 * Get the action name from the input.
+	 * @param array $options - Array of options containing: 
+	 *						   'input' : The input to parse for the action.
+	 */
+	protected function getActionName($options) {
+		$filterName = $options['filter_name'];
+		
+		if(!isset(self::$updaterTranslator[$filterName])) {
+			Billrun_Factory::log("Filter name not found in translator!", Zend_Log::NOTICE);
+			return false;
+		}
+		
+		return self::$updaterTranslator[$filterName];
+	}
+
 }
