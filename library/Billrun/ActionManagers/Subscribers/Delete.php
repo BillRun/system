@@ -17,10 +17,13 @@ class Billrun_ActionManagers_Subscribers_Delete extends Billrun_ActionManagers_S
 	 * Field to hold the data to be written in the DB.
 	 * @var type Array
 	 */
-	protected $options = array();
-	
-	protected $rawinput = array();
+	protected $query = array();
 
+	/**
+	 * If this is set to false then all the balances related to the user 
+	 * that is deleted are to be closed.
+	 * @var boolean.
+	 */
 	protected $keepBalances = false;
 	
 	/**
@@ -54,7 +57,7 @@ class Billrun_ActionManagers_Subscribers_Delete extends Billrun_ActionManagers_S
 	public function execute() {
 		$success = false;
 		try {
-			$rowToDelete = $this->collection->query($this->options)->cursor()->current();
+			$rowToDelete = $this->collection->query($this->query)->cursor()->current();
 			
 			// Could not find the row to be deleted.
 			if(!$rowToDelete || $rowToDelete->isEmpty()) {
@@ -71,7 +74,7 @@ class Billrun_ActionManagers_Subscribers_Delete extends Billrun_ActionManagers_S
 			
 		} catch (\Exception $e) {
 			Billrun_Factory::log('failed to store into DB got error : ' . $e->getCode() . ' : ' . $e->getMessage(), Zend_Log::ALERT);
-			Billrun_Factory::log('failed saving request :' . print_r($this->options, 1), Zend_Log::ALERT);
+			Billrun_Factory::log('failed saving request :' . print_r($this->query, 1), Zend_Log::ALERT);
 			$success = false;
 		}
 
@@ -88,29 +91,72 @@ class Billrun_ActionManagers_Subscribers_Delete extends Billrun_ActionManagers_S
 	 * @return true if valid.
 	 */
 	public function parse($input) {
-		$jsonData = null;
-		$query = $input->get('query');
-		if(empty($query) || (!($jsonData = json_decode($query, true)))) {
-			return false;
-		}
-		
-		$deleteIdFields = array('imsi', 'aid', 'sid');
-		
-		// Go through the ID fields.
-		foreach ($deleteIdFields as $value) {
-			if(isset($jsonData[$value])) {
-				$this->options[$value] = $jsonData[$value];
-			}
-		}
-		
-		// No ID given.
-		if(empty($this->options)) {
-			Billrun_Factory::log("No ID given for delete subscriber action", Zend_Log::ALERT);
+		if(!$this->setQueryRecord($input)) {
 			return false;
 		}
 		 
 		$this->keepBalances = $input->get('keep_balances');
 		
 		return true;
+	}
+	
+	/**
+	 * Set the values for the query record to be set.
+	 * @param httpRequest $input - The input received from the user.
+	 * @return true if successful false otherwise.
+	 */
+	protected function setQueryRecord($input) {
+		$jsonData = null;
+		$query = $input->get('query');
+		if(empty($query) || (!($jsonData = json_decode($query, true)))) {
+			return false;
+		}
+		
+		// If there were errors.
+		if(!$this->setQueryFields($jsonData)) {
+			Billrun_Factory::log("Subscribers delete received invalid query values.", Zend_Log::ALERT);
+			return false;
+		}
+		
+		return true;
+	}
+	
+	/**
+	 * Set all the query fields in the record with values.
+	 * @param array $queryData - Data received.
+	 * @return array - Array of strings of invalid field name. Empty if all is valid.
+	 */
+	protected function setQueryFields($queryData) {
+		$queryFields = $this->getQueryFields();
+		
+		// Get only the values to be set in the update record.
+		// TODO: If no update fields are specified the record's to and from values will still be updated!
+		foreach ($queryFields as $field) {
+			// ATTENTION: This check will not allow updating to empty values which might be legitimate.
+			if(isset($queryData[$field]) && !empty($queryData[$field])) {
+				$this->query[$field] = $queryData[$field];
+			}
+		}
+		
+		// No ID given.
+		if(empty($this->query)) {
+			Billrun_Factory::log("No query given for delete subscriber action", Zend_Log::ALERT);
+			return false;
+		}
+		$fieldCount = count($this->query);
+		if($fieldCount != 1 && $fieldCount != count($queryFields)) {
+			Billrun_Factory::log("Delete subscriber can only use one OR all of the fields!", Zend_Log::ALERT);
+			return false;
+		}
+		
+		return true;
+	}
+	
+	/**
+	 * Get the array of fields to be set in the query record from the user input.
+	 * @return array - Array of fields to set.
+	 */
+	protected function getQueryFields() {
+		return array('imsi', 'msisdn', 'sid');
 	}
 }

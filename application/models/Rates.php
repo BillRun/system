@@ -39,7 +39,6 @@ class RatesModel extends TabledateModel {
 	 * @param array $entity
 	 * 
 	 * @return type
-	 * @todo move to model
 	 */
 	public function getItem($id) {
 
@@ -71,7 +70,6 @@ class RatesModel extends TabledateModel {
 	 * @param array $data
 	 * 
 	 * @return void
-	 * @todo move to model
 	 */
 	public function update($data) {
 		if (isset($data['rates'])) {
