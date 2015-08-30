@@ -381,7 +381,7 @@ class LinesModel extends TableModel {
 				'date' => date(Billrun_Base::base_dateformat, $row['urt']->sec),
 				'called_number' => $row['called_number'],
 				'calling_number' => $row['calling_number'],
-				'usagev' => $row['usagev'],
+				'usagev' => !empty($row['usagev']) ? $row['usagev'] : $row['duration'],
 				'usaget' => $row['usaget'],
 				'calling_subs_first_ci' => $row['calling_subs_first_ci'],
 				'called_subs_first_ci' => $row['called_subs_first_ci'],
