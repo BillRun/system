@@ -237,6 +237,40 @@ class ImportPricesListAction extends ApiAction {
 		return true;
 	}
 	
+	/**
+	 * Validate a list item.
+	 * @param array $item - Item to be validated.
+	 * @param Zend_Date $now - The time now. This is sent so we won't have to allocate
+	 * a Zend_Date object each time.
+	 * @return string - String describing the error that occured. Empty string if no error.
+	 */
+	protected function validateItem($item, $now) {
+		$error = "";
+		if (!in_array($item['usage_type'], $this->usage_types)) {
+			$error = 'Unknown usage type';
+		} else if ($item['category'] && !in_array($item['category'], $this->categories)) {
+			$error = 'Unknown category';
+		} else if (!($this->isIntValue($item['rule']) && $item['rule'] > 0)) {
+			$error = 'Illegal rule number';
+		} else if (!($this->isIntValue($item['interval']) && $item['interval'] > 0)) {
+			$error = 'Illegal interval';
+		} else if (!($this->isIntValue($item['times']) && $item['times'] >= 0)) {
+			$error = 'Illegal times';
+		} else if (!(is_numeric($item['access_price']) && $item['access_price'] >= 0)) {
+			$error = 'Illegal access price';
+		} else if (!(is_numeric($item['price']) && $item['price'] >= 0)) {
+			$error = 'Illegal price';
+		} else if (!Zend_Date::isDate($item['from_date'], 'yyyy-MM-dd HH:mm:ss')) {
+			$error = 'Illegal from date';
+		} else if ((new Zend_Date($item['from_date'], 'yyyy-MM-dd HH:mm:ss')) <= $now) {
+			$error = 'from date must be in the future';
+		} else if (!$item['key']) {
+			$error = 'Illegal key';
+		}
+		
+		return $error;
+	}
+	
 	protected function validateList($list) {
 		// exactly one infinite "times" for each rule
 		// continuous rule numbers starting from 1
@@ -245,48 +279,34 @@ class ImportPricesListAction extends ApiAction {
 		}
 		$now = new Zend_Date();
 		foreach ($list as $item) {
-			if (!in_array($item['usage_type'], $this->usage_types)) {
-				return $this->setError('Unknown usage type', $item);
-			} else if ($item['category'] && !in_array($item['category'], $this->categories)) {
-				return $this->setError('Unknown category', $item);
-			} else if (!($this->isIntValue($item['rule']) && $item['rule'] > 0)) {
-				return $this->setError('Illegal rule number', $item);
-			} else if (!($this->isIntValue($item['interval']) && $item['interval'] > 0)) {
-				return $this->setError('Illegal interval', $item);
-			} else if (!($this->isIntValue($item['times']) && $item['times'] >= 0)) {
-				return $this->setError('Illegal times', $item);
-			} else if (!(is_numeric($item['access_price']) && $item['access_price'] >= 0)) {
-				return $this->setError('Illegal access price', $item);
-			} else if (!(is_numeric($item['price']) && $item['price'] >= 0)) {
-				return $this->setError('Illegal price', $item);
-			} else if (!Zend_Date::isDate($item['from_date'], 'yyyy-MM-dd HH:mm:ss')) {
-				return $this->setError('Illegal from date', $item);
-			} else if ((new Zend_Date($item['from_date'], 'yyyy-MM-dd HH:mm:ss')) <= $now) {
-				return $this->setError('from date must be in the future', $item);
-			} else if (!$item['key']) {
-				return $this->setError('Illegal key', $item);
+			$error = $this->validateItem($item, $now);
+			if(!empty($error)) {
+				// Send $item as received input.
+				return $this->setError($error, $item);
 			}
-
-			if (isset($this->rules[$item['key']]['usage_type_rates'][$item['usage_type']]['rules'][$item['rule']])) {
+			
+			$itemUsageType = $this->rules[$item['key']]['usage_type_rates'][$item['usage_type']];
+			if (isset($itemUsageType['rules'][$item['rule']])) {
 				return $this->setError('Duplicate rule (' . $item['rule'] . ') for ' . $item['key'] . ', ' . $item['usage_type']);
-			} else {
-				$this->rules[$item['key']]['usage_type_rates'][$item['usage_type']]['rules'][$item['rule']] = $item;
 			}
+			
+			$itemUsageType['rules'][$item['rule']] = $item;
+			
 
-			if (isset($this->rules[$item['key']]['usage_type_rates'][$item['usage_type']]['category'])) {
-				if ($this->rules[$item['key']]['usage_type_rates'][$item['usage_type']]['category'] != $item['category']) {
+			if (isset($itemUsageType['category'])) {
+				if ($itemUsageType['category'] != $item['category']) {
 					return $this->setError('Conflict in category', $item);
 				}
 			} else {
-				$this->rules[$item['key']]['usage_type_rates'][$item['usage_type']]['category'] = $item['category'];
+				$itemUsageType['category'] = $item['category'];
 			}
 
-			if (isset($this->rules[$item['key']]['usage_type_rates'][$item['usage_type']]['access'])) {
-				if ($this->rules[$item['key']]['usage_type_rates'][$item['usage_type']]['access'] != $item['access_price']) {
+			if (isset($itemUsageType['access'])) {
+				if ($itemUsageType['access'] != $item['access_price']) {
 					return $this->setError('Conflict in access price', $item);
 				}
 			} else {
-				$this->rules[$item['key']]['usage_type_rates'][$item['usage_type']]['access'] = $item['access_price'];
+				$itemUsageType['access'] = $item['access_price'];
 			}
 
 			if (isset($this->rules[$item['key']]['from'])) {
