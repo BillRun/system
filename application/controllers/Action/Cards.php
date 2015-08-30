@@ -13,37 +13,62 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  * @package     Controllers
  * @subpackage  Action
  * @since       4.0
-*/
+ */
 class CardsAction extends ApiAction {
-	
+
 	protected $model;
-	
+
+	/**
+	 * Get the correct action to use for this request.
+	 * @param data $request - The input request for the API.
+	 * @return Billrun_ActionManagers_Action
+	 * @todo - This is a generic function should find a better place to put it.
+	 */
+	protected function getAction($request) {
+		$apiName = str_replace("Action", "", __CLASS__);
+		$apiManagerInput = array(
+				'input' => $request,
+				'api_name' => $apiName
+		);
+
+		$manager = new Billrun_ActionManagers_APIManager($apiManagerInput);
+
+		// This is the method which is going to be executed.
+		return $manager->getAction();
+	}
+
+	/**
+	 * This method is for initializing the API Action's model.
+	 */
+	protected function initializeModel() {
+		$this->model = new CardsModel(array('sort' => array('from' => 1)));
+	}
+
 	/**
 	 * The logic to be executed when this API plugin is called.
 	 */
 	public function execute() {
-		$this->model = new CardsModel(array('sort' => array('from' => 1)));
-		
+		$this->initializeModel();
+
 		$request = $this->getRequest();
 
 		// This is the method which is going to be executed.
-		$action = Billrun_ActionManagers_Cards_Manager::getAction($request);
-		
+		$action = $this->getAction($request);
+
 		// Check that received a valid action.
-		if(!$action) {
-			// TODO: Report failed action. What do i write to the output if this happens?
+		if (!$action) {
 			Billrun_Factory::log("Failed to get Cards action instance for received input", Zend_Log::ALERT);
 			return;
 		}
-		
+
 		$output = $action->execute();
-		
+
 		// Set the raw input.
 		$output['input'] = $request->getRequest();
-		
+
 		$this->getController()->setOutput(array($output));
 	}
-	
+
 	/**
 	 * basic fetch data method used by the cache
 	 * 
@@ -55,9 +80,10 @@ class CardsAction extends ApiAction {
 		$model = new CardsModel($params['options']);
 		$results = $model->getData($params['find']);
 		$ret = array();
-		foreach($results as $row) {
+		foreach ($results as $row) {
 			$ret[] = $row->getRawData();
 		}
 		return $ret;
 	}
+
 }

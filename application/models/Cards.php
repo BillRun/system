@@ -33,20 +33,23 @@ class CardsModel extends TabledateModel{
 		$params['collection'] = Billrun_Factory::db()->cards;
 		parent::__construct($params);
 		$this->cards_coll = Billrun_Factory::db()->cardsCollection();
-		$this->search_key = "sid";
+		$this->search_key = "secret";
 	}
 	
 	public function getProtectedKeys($entity, $type) {
 		$parentKeys = parent::getProtectedKeys($entity, $type);
-		return array_merge(array("_id"),
-						   $parentKeys, 
-						   array( "imsi", 
-							  "msisdn", 
-							  "aid",
-							  "sid",
-							  "plan",
-							  "language",
-							  "service_provider",
-							  "charging_type" ));
+		return array_merge(	array("_id"),
+							$parentKeys,
+							array(
+								"secret",
+								"batch_number",
+								"serial_number",
+								"charging_plan_external_id",
+								"service_provider",
+								"to",
+								"status",
+								"additional_information"
+							)
+						);
 	}
 }
