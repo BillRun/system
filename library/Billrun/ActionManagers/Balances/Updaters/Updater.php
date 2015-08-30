@@ -113,6 +113,7 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater {
 		$plansCollection = Billrun_Factory::db()->plansCollection();
 		
 		// TODO: Is this right here to use the now time or should i use the times from the charging plan?
+		$nowTime = new MongoDate();
 		$plansQuery = array("name" => $planName,
 							"to"   => array('$gt', $nowTime),
 							"from" => array('$lt', $nowTime));
