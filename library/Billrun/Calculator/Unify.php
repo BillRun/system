@@ -28,18 +28,17 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 //	protected $activeBillrun;
 	protected $dbConcurrentPref = 'RP_PRIMARY';
 
-	public function __construct($options = array()) {
-		parent::__construct($options);
-		$this->init();
-		if (isset($options['date_seperation'])) {
-			$this->dateSeperation = $options['date_seperation'];
-		}
-
+	/**
+	 * Get the unification fields.
+	 * @param array $options - Array of input options.
+	 * @return array The unification fields.
+	 */
+	protected function getUnificationFields($options) {
 		if (isset($options['unification_fields'])) {
-			$this->unificationFields = $options['unification_fields'];
+			return $options['unification_fields'];
 		} else {
 			// TODO: put in seperate config dedicate to unify
-			$this->unificationFields = array(
+			return array(
 				'ggsn' => array(
 					'required' => array(
 						'fields' => array('sid', 'aid', 'ggsn_address', 'arate', 'urt'),
@@ -78,6 +77,16 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 				),
 			);
 		}
+	}
+	
+	public function __construct($options = array()) {
+		parent::__construct($options);
+		$this->init();
+		if (isset($options['date_seperation'])) {
+			$this->dateSeperation = $options['date_seperation'];
+		}
+
+		$this->unificationFields = $this->getUnificationFields($options);
 
 		if (isset($options['accept_archived_lines'])) {
 			$this->acceptArchivedLines = $options['accept_archived_lines'];
@@ -88,7 +97,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 		}
 
 		// archive connection setting
-		$this->archiveDb = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('archive.db'));
+		$this->archiveDb = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('archive.db', array()));
 	}
 
 	/**
@@ -336,8 +345,8 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 	 * @return boolean true if the line all ready exist in the archive false otherwise.
 	 */
 	protected function isLinesArchived($lineStamps) {
-
-		return !$this->archiveDb->linesCollection()->query(array('stamp' => array('$in' => $lineStamps)))->cursor()->limit(1)->current()->isEmpty();
+		$lineQuery = array('stamp' => array('$in' => $lineStamps));
+		return !$this->archiveDb->linesCollection()->query($lineQuery)->cursor()->limit(1)->current()->isEmpty();
 	}
 
 	/**
