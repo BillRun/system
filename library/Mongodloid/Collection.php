@@ -179,13 +179,42 @@ class Mongodloid_Collection {
 	public function clear() {
 		return $this->remove(array());
 	}
-
+	
+	/**
+	 * Remove an entity from the collection.
+	 * @param Mongoldoid_Entity $entity - Entity to remove from the collection.
+	 * @param array $options - Options to send to the mongo
+	 * @return boolean true if succssfull.
+	 */
+	public function removeEntity($entity, $options = array('w' => 1)) {
+		$query = $entity->getId();
+		return $this->remove($query, $options);
+	}
+	
+	/**
+	 * Remove an entity from the collection.
+	 * @param Mongoldoid_Entity $id - ID of mongo record to be removed.
+	 * @param array $options - Options to send to the mongo
+	 * @return boolean true if succssfull.
+	 */
+	public function removeId($id, $options = array('w' => 1)) {
+		$query = array('_id' => $id->getMongoId());
+		return $this->remove($query, $options);
+	}
+	
+	/**
+	 * Remove data from the collection.
+	 * @param Query $query - Query object or Mongoldoid_Entity to use to remove data.
+	 * @param array $options - Options to send to the mongo
+	 * @return boolean true if succssfull.
+	 */
 	public function remove($query, $options = array('w' => 1)) {
 		// avoid empty database
 		if (empty($query)) {
 			return false;
 		}
 		
+		// TODO: Remove this conditions and use removeEntity and removeId instead.
 		if ($query instanceOf Mongodloid_Entity)
 			$query = $query->getId();
 
