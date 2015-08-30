@@ -132,8 +132,8 @@ class RealtimeeventAction extends ApiAction {
 
 			<time_date>2013/09/01 11:59:03</time_date>
 			<time_zone>0</time_zone>
-			<free_call>false</free_call>
-			<recordType>start_call</recordType>
+			<free_call>0</free_call>
+			<recordType>reservation_time</recordType>
 			<SGSNAddress>00015b876003</SGSNAddress>
 			</request>
 		';
