@@ -42,7 +42,6 @@ class LinesModel extends TableModel {
 	 * @param array $entity
 	 * 
 	 * @return type
-	 * @todo move to model
 	 */
 	public function getItem($id) {
 
@@ -319,29 +318,30 @@ class LinesModel extends TableModel {
 	}
 
 	protected function formatCsvCell($row, $header) {
-		if (($header == 'from' || $header == 'to' || $header == 'urt' || $header == 'notify_time') && $row) {
-			if (!empty($row["tzoffset"])) {
-				// TODO change this to regex; move it to utils
-				$tzoffset = $row['tzoffset'];
-				$sign = substr($tzoffset, 0, 1);
-				$hours = substr($tzoffset, 1, 2);
-				$minutes = substr($tzoffset, 3, 2);
-				$time = $hours . ' hours ' . $minutes . ' minutes';
-				if ($sign == "-") {
-					$time .= ' ago';
-				}
-				$timsetamp = strtotime($time, $row['urt']->sec);
-				$zend_date = new Zend_Date($timsetamp);
-				$zend_date->setTimezone('UTC');
-				return $zend_date->toString("d/M/Y H:m:s") . $row['tzoffset'];
-			} else {
-				$zend_date = new Zend_Date($row[$header]->sec);
-				return $zend_date->toString("d/M/Y H:m:s");
-			}
-		} else {
+		$headerValues = array('from', 'to', 'urt', 'notify_time');
+		
+		if (!in_array($header, $headerValues) || !$row) {
 			return parent::formatCsvCell($row, $header);
 		}
 
+		if (empty($row["tzoffset"])) {	
+			$zend_date = new Zend_Date($row[$header]->sec);
+			return $zend_date->toString("d/M/Y H:m:s");
+		}
+		
+		// TODO change this to regex; move it to utils
+		$tzoffset = $row['tzoffset'];
+		$sign = substr($tzoffset, 0, 1);
+		$hours = substr($tzoffset, 1, 2);
+		$minutes = substr($tzoffset, 3, 2);
+		$time = $hours . ' hours ' . $minutes . ' minutes';
+		if ($sign == "-") {
+			$time .= ' ago';
+		}
+		$timsetamp = strtotime($time, $row['urt']->sec);
+		$zend_date = new Zend_Date($timsetamp);
+		$zend_date->setTimezone('UTC');
+		return $zend_date->toString("d/M/Y H:m:s") . $row['tzoffset'];
 	}
 	
 	public function getActivity($sids, $from_date, $to_date, $include_outgoing, $include_incoming, $include_sms) {
