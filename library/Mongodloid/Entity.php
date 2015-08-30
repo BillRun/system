@@ -260,9 +260,10 @@ class Mongodloid_Entity implements ArrayAccess {
 	 * @return \Mongodloid_Id|boolean - false if no ID is set.
 	 */
 	public function getId() {
-		if (!isset($this->_values['_id']) || !$this->_values['_id'])
+		if (!isset($this->_values['_id']) || !$this->_values['_id']) {
 			return false;
-
+		}
+		
 		return new Mongodloid_Id($this->_values['_id']);
 	}
 
