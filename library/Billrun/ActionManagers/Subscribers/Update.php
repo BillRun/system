@@ -149,6 +149,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 		$updateFields = $this->getUpdateFields();
 		
 		// Get only the values to be set in the update record.
+		// TODO: If no update fields are specified the record's to and from values will still be updated!
 		foreach ($updateFields as $field) {
 			$this->recordToSet[$field] = $jsonUpdateData[$field];
 		}
