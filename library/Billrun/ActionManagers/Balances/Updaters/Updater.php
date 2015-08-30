@@ -13,13 +13,39 @@
  */
 abstract class Billrun_ActionManagers_Balances_Updaters_Updater {
 	
+	/**
+	 * If true then the values in mongo are updated by incrementation,
+	 * if false then the values in the mongo are forceablly set.
+	 * @var boolean. 
+	 */
 	protected $isIncrement = true;
 	
 	/**
-	 * Create a new instance of the updater class.
+	 * Any request for balance incrementation when "$ignoreOveruse" value is true and the current account balance queried
+	 * exceeds the maximum allowance (balance is above zero), will reset the balance (to zero) and only then increment it.
+	 * This means that if the user had a positive balance e.g 5 and then was loaded with 100 units, the blance will be -100 and not -95.
+	 * @var boolean 
 	 */
-	public function __construct($increment = true) {
-		$this->isIncrement = $increment;
+	protected $ignoreOveruse = true;
+	
+	/**
+	 * Create a new instance of the updater class.
+	 * @param array $options - Holding:
+	 *						   increment - If true then the values in mongo are updated by incrementation,
+	 *									   if false then the values in the mongo are forceablly set.
+	 *						   zero - If requested to update by incrementing but the existing 
+	 *								  value is larger than zero than zeroise the value.
+	 */
+	public function __construct($options) {
+		// If it is not set, the default is used.
+		if(isset($options['increment'])) {
+			$this->isIncrement = $options['increment'];
+		}
+		
+		// If it is not set, the default is used.
+		if(isset($options['zero'])) {
+			$this->ignoreOveruse = $options['zero'];
+		}
 	}
 
 	/**
@@ -87,6 +113,7 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater {
 		$plansCollection = Billrun_Factory::db()->plansCollection();
 		
 		// TODO: Is this right here to use the now time or should i use the times from the charging plan?
+		$nowTime = new MongoDate();
 		$plansQuery = array("name" => $planName,
 							"to"   => array('$gt', $nowTime),
 							"from" => array('$lt', $nowTime));
