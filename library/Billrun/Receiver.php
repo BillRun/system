@@ -81,7 +81,6 @@ abstract class Billrun_Receiver extends Billrun_Base {
 	 * @todo refactoring this method
 	 */
 	protected function logDB($fileData) {
-		$log = Billrun_Factory::db()->logCollection();
 		Billrun_Factory::dispatcher()->trigger('beforeLogReceiveFile', array(&$fileData, $this));
 		
 		$query = array(
@@ -103,6 +102,7 @@ abstract class Billrun_Receiver extends Billrun_Base {
 			return FALSE;
 		}
 
+		$log = Billrun_Factory::db()->logCollection();
 		$result = $log->update($query, $update, array('w' => 1));
 
 		if ($result['ok'] != 1 || $result['n'] != 1) {

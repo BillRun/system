@@ -166,7 +166,7 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 							"to"   => array('$gt', $nowTime),
 							"from" => array('$lt', $nowTime));
 		$planRecord = $plansCollection->query($plansQuery)->cursor()->current();
-		$defaultBalance['current_plan'] = $planRecord->createRef($plansCollection);
+		$defaultBalance['current_plan'] = $plansCollection->createRefByEntity($planRecord);
 		$defaultBalance['charging_type'] = $subscriber->{'charging_type'};
 		// This is being set outside of this function!!!
 		//$defaultBalance['charging_by_usaget'] = 

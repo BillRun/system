@@ -285,7 +285,7 @@ class TableModel {
 		} else {
 			$entity = new Mongodloid_Entity($params);
 		}
-		$entity->save($this->collection, 1);
+		$this->collection->save($entity, 1);
 //		if (method_exists($this, $coll . 'AfterDataSave')) {
 //			call_user_func_array(array($this, $coll . 'AfterDataSave'), array($collection, &$newEntity));
 //		}
@@ -371,7 +371,7 @@ class TableModel {
 				$cursor = $collection->query($pre_query);
 				$value = array();
 				foreach ($cursor as $entity) {
-					$value[] = $entity->createRef($collection);
+					$value[] = $collection->createRefByEntity($entity);
 				}
 			}
 			if (is_array($value) && !empty($value)) {

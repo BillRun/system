@@ -34,7 +34,7 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 		try {
 			$entity = new Mongodloid_Entity($this->query);
 		
-			$success = ($entity->save($this->collection, 1) !== false);
+			$success = ($this->collection->save($entity, 1) !== false);
 				
 		} catch (\Exception $e) {
 			Billrun_Factory::log('failed to store into DB got error : ' . $e->getCode() . ' : ' . $e->getMessage(), Zend_Log::ALERT);

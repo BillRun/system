@@ -119,7 +119,7 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater {
 							"from" => array('$lt', $nowTime));
 		$planRecord = $plansCollection->query($plansQuery)->cursor()->current();
 		
-		return $planRecord->createRef($plansCollection);
+		return $plansCollection->createRefByEntity($planRecord);
 	}
 	
 	/**

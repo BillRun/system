@@ -63,7 +63,7 @@ class LinesModel extends TableModel {
 							->lessEq('from', $currentDate)
 							->greaterEq('to', $currentDate)
 							->cursor()->current();
-			$data['arate'] = $rateEntity->createRef($ratesColl);
+			$data['arate'] = $ratesColl->createRefByEntity($rateEntity);
 		}
 		if (isset($data['plan'])) {
 			$plansColl = Billrun_Factory::db()->plansCollection();
@@ -71,7 +71,7 @@ class LinesModel extends TableModel {
 							->lessEq('from', $currentDate)
 							->greaterEq('to', $currentDate)
 							->cursor()->current();
-			$data['plan_ref'] = $planEntity->createRef($plansColl);
+			$data['plan_ref'] = $plansColl->createRefByEntity($planEntity);
 		}
 		parent::update($data);
 	}
@@ -242,7 +242,8 @@ class LinesModel extends TableModel {
 			if ($filter_field['input_type'] == 'boolean') {
 				if (!is_null($value) && $value != $filter_field['default']) {
 					$rates_coll = Billrun_Factory::db()->ratesCollection();
-					$unrated_rate = $rates_coll->query("key", "UNRATED")->cursor()->current()->createRef($rates_coll);
+					// TODO: Shouldn't ->cursor()->crurrent() be validated?
+					$unrated_rate = $rates_coll->createRefByEntity($rates_coll->query("key", "UNRATED")->cursor()->current());
 					$month_ago = new MongoDate(strtotime("1 month ago"));
 					return array(
 						'$or' => array(

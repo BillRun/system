@@ -947,7 +947,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$cursor = $collection->query($pre_query);
 		$value = array();
 		foreach ($cursor as $entity) {
-			$value[] = $entity->createRef($collection);
+			$value[] = $collection->createRefByEntity($entity);
 		}
 		
 		return array('$in' => $value);

@@ -281,14 +281,14 @@ abstract class Billrun_Processor extends Billrun_Base {
 		if ($current_stamp instanceof Mongodloid_Entity || $current_stamp instanceof Mongodloid_Id) {
 			$resource = $log->findOne($current_stamp);
 			if (!empty($header)) {
-				$resource->set('header', $header, true);
+				$resource->set('header', $header);
 			}
 			if (!empty($trailer)) {
-				$resource->set('trailer', $trailer, true);
+				$resource->set('trailer', $trailer);
 			}
-			$resource->set('process_hostname', Billrun_Util::getHostName(), true);
-			$resource->set('process_time', date(self::base_dateformat), true);
-			return $resource->save($log);
+			$resource->set('process_hostname', Billrun_Util::getHostName());
+			$resource->set('process_time', date(self::base_dateformat));
+			return $log->save($resource);
 		} else {
 			// backward compatibility
 			// old method of processing => receiver did not logged, so it's the first time the file logged into DB
@@ -297,7 +297,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 				Billrun_Factory::log("Billrun_Processor::logDB - DUPLICATE! trying to insert duplicate log file with stamp of : {$entity->get('stamp')}", Zend_Log::NOTICE);
 				return FALSE;
 			}
-			return $entity->save($log);
+			return $log->save($entity);
 		}
 	}
 
@@ -551,8 +551,8 @@ abstract class Billrun_Processor extends Billrun_Base {
 
 		foreach ($this->data['data'] as $row) {
 			try {
-				$entity = new Mongodloid_Entity($row);
-				$entity->save($collection);
+				$entity = new Mongodloid_Entity($row, $collection);
+				$collection->save($entity);
 				$this->data['stored_data'][] = $row;
 			} catch (Exception $e) {
 				Billrun_Factory::log("Processor store " . basename($this->filePath) . " failed on stamp : " . $row['stamp'] . " with the next message: " . $e->getCode() . ": " . $e->getMessage(), Zend_Log::NOTICE);
@@ -565,8 +565,8 @@ abstract class Billrun_Processor extends Billrun_Base {
 		$queue = Billrun_Factory::db()->queueCollection();
 		foreach ($queue_data as $row) {
 			try {
-				$entity = new Mongodloid_Entity($row);
-				$entity->save($queue);
+				$entity = new Mongodloid_Entity($row, $queue);
+				$queue->save($entity);
 			} catch (Exception $e) {
 				Billrun_Factory::log("Processor store " . basename($this->filePath) . " to queue failed on stamp : " . $row['stamp'] . " with the next message: " . $e->getCode() . ": " . $e->getMessage(), Zend_Log::NOTICE);
 				continue;
