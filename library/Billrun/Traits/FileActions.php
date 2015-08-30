@@ -92,7 +92,6 @@ trait Billrun_Traits_FileActions {
 	 * @return bollean true  if the file wasn't receive and can be fetched to the workspace or false if another process allready received the file.
 	 */
 	protected function lockFileForReceive($filename, $type, $more_fields = array(), $orphan_window = false) {
-		$log = Billrun_Factory::db()->logCollection();
 		$orphan_window = $orphan_window ? $orphan_window : $this->file_fetch_orphan_time;
 		$logData = $this->getFileLogData($filename, $type, $more_fields);
 		$query = array(
@@ -109,6 +108,7 @@ trait Billrun_Traits_FileActions {
 			),
 			'$setOnInsert' => $logData
 		);
+		$log = Billrun_Factory::db()->logCollection();
 		try {
 			$result = $log->update($query, $update, array('upsert' => 1, 'w' => 1));
 		} catch (Exception $e) {

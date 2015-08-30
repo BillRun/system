@@ -371,12 +371,14 @@ class Billrun_Plan {
 	 * create  a DB reference to the current plan
 	 * @param type $collection (optional) the collection to use to create the reference.
 	 * @return MongoDBRef the refernce to current plan.
+	 * @todo Should the collection here really be false by default? I think it's safer 
+	 * if the user of this function will have to specify a collection.
 	 */
 	public function createRef($collection = false) {
 		if (count($this->plan_ref) == 0) {
 			$collection = $collection ? $collection :
 					($this->data->collection() ? $this->data->collection() : Billrun_Factory::db()->plansCollection() );
-			$this->plan_ref = $this->data->createRef($collection);
+			$this->plan_ref = $collection->createRefByEntity($this->data);
 		}
 		return $this->plan_ref;
 	}

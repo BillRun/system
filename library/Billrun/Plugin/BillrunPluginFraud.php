@@ -84,7 +84,10 @@ abstract class Billrun_Plugin_BillrunPluginFraud extends Billrun_Plugin_BillrunP
 		$ret = array();
 		$lines = Billrun_Factory::db()->linesCollection();
 		foreach ($items as &$item) {
-			$ret[] = $lines->update(array('stamp' => array('$in' => $item['lines_stamps'])), array('$set' => array('event_stamp' => $item['event_stamp'])), array('multiple' => 1));
+			$query = array('stamp' => array('$in' => $item['lines_stamps']));
+			$values = array('$set' => array('event_stamp' => $item['event_stamp']));
+			$options = array('multiple' => 1);
+			$ret[] = $lines->update($query, $values, $options);
 		}
 		return $ret;
 	}

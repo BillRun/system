@@ -15,19 +15,58 @@ class Mongodloid_Cursor implements Iterator, Countable {
 
 	protected $_cursor;
 	
+	/**
+	 * Parameter to ensure valid construction.
+	 * @var boolean - True if cursor is valid.
+	 */
+	protected $_isValid = false;
+	
+	/**
+	 * Create a new instance of the cursor object.
+	 * @param MongoCursor $cursor - Mongo cursor pointing to a collection.
+	 * @param type $timeout
+	 */
 	public function __construct($cursor, $timeout = null) {
-		if ($cursor instanceof MongoCursor || (is_object($cursor) && get_class($cursor) == 'MongoCommandCursor')) {
-			$this->_cursor = $cursor;
-			if (!is_null($timeout)) {
-				$this->_cursor->timeout((int) $timeout);
-			}
+		// Check that the cursor is a mongocursor
+		if (!$this->validateInputCursor($cursor)) {
+			// TODO: Report error?
+			return;
 		}
+		$this->_cursor = $cursor;
+		
+		if (!is_null($timeout)) {
+			$this->_cursor->timeout((int) $timeout);
+		}
+		
+		$this->_isValid = true;
 	}
 
+	/**
+	 * Check if input cursor is of mongo cursor type.
+	 * @param MongoCursor $cursor
+	 * @return type
+	 */
+	protected function validateInputCursor($cursor) {
+		return ($cursor) && ($cursor instanceof MongoCursor || (is_object($cursor) && get_class($cursor) == 'MongoCommandCursor'));
+	}
+	
+	/**
+	 * Checks if the cursor is valid.
+	 * @return boolean - true if the cursor is valid.
+	 * @todo Actually use this function in billrun code.
+	 */
+	public function isValid() {
+		return $this->_isValid;
+	}
+	
 	public function count($foundOnly = true) {
 		return $this->_cursor->count($foundOnly);
 	}
 
+	/**
+	 * Get the current record the cursor is pointing to.
+	 * @return \Mongodloid_Entity
+	 */
 	public function current() {
 		//If before the start of the vector move to the first element.
 		// 

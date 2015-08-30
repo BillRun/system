@@ -145,6 +145,8 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 		if (isset($rate['key']) && $rate['key'] == "UNRATED") {
 			return false;
 		}
+		
+		// TODO: Create the ref using the collection, not the entity object.
 		$added_values = array(
 			$this->ratingField => $rate ? $rate->createRef() : $rate,
 		);

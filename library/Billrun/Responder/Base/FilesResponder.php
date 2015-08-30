@@ -49,7 +49,6 @@ abstract class Billrun_Responder_Base_FilesResponder extends Billrun_Responder {
 
 		$logLines = $log->query()->equals('type', $type)->exists('process_time')->notExists('response_time');
 		foreach ($logLines as $logEntry) {
-			$logEntry->collection($log);
 			$files[$logEntry->get('file')] = $logEntry;
 		}
 
@@ -65,7 +64,7 @@ abstract class Billrun_Responder_Base_FilesResponder extends Billrun_Responder {
 		$data = $logLine->getRawData();
 		$data['response_time'] = time();
 		$logLine->setRawData($data);
-		$logLine->save();
+		Billrun_Factory::db()->logCollection()->save($logLine);
 		return $responseFilePath;
 	}
 

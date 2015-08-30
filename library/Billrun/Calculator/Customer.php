@@ -179,7 +179,10 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		$save = array(
 			'$set' => array(),
 		);
-		$saveProperties = array_merge(array('last_vlr', 'alpha3'), array_keys(Billrun_Factory::subscriber()->getAvailableFields()), array_keys(Billrun_Factory::subscriber()->getCustomerExtraData()));
+		$subscriber = Billrun_Factory::subscriber();
+		$availableFileds = array_keys($subscriber->getAvailableFields());
+		$customerExtraData = array_keys($subscriber->getCustomerExtraData());
+		$saveProperties = array_merge(array('last_vlr', 'alpha3'), $availableFileds, $customerExtraData);
 		foreach ($saveProperties as $p) {
 			if (!is_null($val = $line->get($p, true))) {
 				$save['$set'][$p] = $val;
