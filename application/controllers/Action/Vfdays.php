@@ -169,8 +169,6 @@ class VfdaysAction extends Action_Base {
 		);
 		$billing_connection = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('billing.db'))->linesCollection();
 		$results = $billing_connection->aggregate($match, $group);
-		print_r($results);
-		die();
 		return isset($results) ? $results[0]['day_sum'] : 0;
 	}
 
