@@ -16,7 +16,21 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  */
 class QueryAction extends ApiAction {
 
-	const MAX_LIST = 1000;
+	/**
+	 * Get the max list count.
+	 * @return int The maximum number allowed for the query.
+	 */
+	protected function getMaxList() {
+		return 1000;
+	}
+	
+	/**
+	 * Get the array of field names to check that their count does not pass the max.
+	 * @return array Array of field names.
+	 */
+	protected function getFieldsToCheckForMaxList() {
+		return array('aid', 'sid');
+	}
 	
 	/**
 	 * Get the count limit query part.
@@ -26,7 +40,7 @@ class QueryAction extends ApiAction {
 	protected function getMaxListQuery($request) {
 		$returnQuery = array();
 		
-		$fieldsToCheck = array('aid', 'sid');
+		$fieldsToCheck = $this->getFieldsToCheckForMaxList();
 		
 		foreach ($fieldsToCheck as $field) {
 			if (!isset($request[$field])) {
@@ -54,12 +68,28 @@ class QueryAction extends ApiAction {
 	 */
 	protected function getQueryLimitForField($request, $paramName) {
 		$verifiedArray = Billrun_Util::verify_array($request[$paramName], 'int');
-		if (count($verifiedArray) > self::MAX_LIST) {
-			$this->setError('Maximum of '. $paramName . ' is ' . self::MAX_LIST, $request);
+		if (count($verifiedArray) > $this->getMaxList()) {
+			$this->setError('Maximum of '. $paramName . ' is ' . $this->getMaxList(), $request);
 			return false;
 		}
 		
 		return array('$in' => $verifiedArray);
+	}
+	
+	/**
+	 * Sets additional values to the query.
+	 * @param array $request Input array to set values by.
+	 * @param array $query - Query to set values to.
+	 */
+	protected function setAdditionalValuesToQuery($request, $query) {
+		if (isset($request['billrun'])) {
+			$query['billrun'] = $this->getBillrunQuery($request['billrun']);
+		}
+
+		if (isset($request['query'])) {
+			$inputRequestQuery = $this->getArrayParam($request['query']);
+			$query = array_merge($query, (array) $inputRequestQuery);
+		}
 	}
 	
 	/**
@@ -75,16 +105,31 @@ class QueryAction extends ApiAction {
 			return false;
 		}
 		
-		if (isset($request['billrun'])) {
-			$executeQuery['billrun'] = $this->getBillrunQuery($request['billrun']);
-		}
-
-		if (isset($request['query'])) {
-			$inputRequestQuery = $this->getArrayParam($request['query']);
-			$executeQuery = array_merge($executeQuery, (array) $inputRequestQuery);
-		}
+		$this->setAdditionalValuesToQuery($request, $executeQuery);
 		
 		return $executeQuery;
+	}
+	
+	/**
+	 * Get the lines data by the input request and query.
+	 * @param array $request - Input request array.
+	 * @param array $linesRequestQueries - Array of queries to be parsed to get the lines data.
+	 * @return array lines to return for the action.
+	 */
+	protected function getLinesData($request, $linesRequestQueries) {
+		$model = new LinesModel($linesRequestQueries['options']);
+		$lines = null;
+		$query = $linesRequestQueries['find'];
+		if (isset($request['distinct'])) {
+			$lines = $model->getDistinctField((string) $request['distinct'], $query);
+		} else {
+			$lines = $model->getData($query);
+			foreach ($lines as &$line) {
+				$line = $line->getRawData();
+			}
+		}
+		
+		return $lines;
 	}
 	
 	/**
@@ -96,22 +141,14 @@ class QueryAction extends ApiAction {
 		$executeQuery = $this->buildQuery($request);
 		// Error occured.
 		if($executeQuery === false) {
-			// TODO: Return true on purpose? 
 			return false;
 		}
 		
-		$model = new LinesModel($this->getQueryOptions($request));
-		$lines = null;
-		if (isset($request['distinct'])) {
-			$lines = $model->getDistinctField((string) $request['distinct'], $executeQuery);
-		} else {
-			$lines = $model->getData($executeQuery);
-			foreach ($lines as &$line) {
-				$line = $line->getRawData();
-			}
-		}
+		$queryOptions = $this->getQueryOptions($request);
 		
-		return $lines;
+		// Send the queries in an array.
+		$linesRequestQueries = array('find' => $executeQuery, 'options' => $queryOptions);
+		return $this->getLinesData($request, $linesRequestQueries);
 	}
 	
 	/**
@@ -123,7 +160,7 @@ class QueryAction extends ApiAction {
 		return array(
 			'sort' => array('urt'),
 			'page' => isset($request['page']) && $request['page'] > 0 ? (int) $request['page']: 0,
-			'size' =>isset($request['size']) && $request['size'] > 0 ? (int) $request['size']: 1000,
+			'size' =>isset($request['size']) && $request['size'] > 0 ? (int) $request['size']: $this->getMaxList(),
 			);
 	}
 	
@@ -145,16 +182,54 @@ class QueryAction extends ApiAction {
 	}
 	
 	/**
+	 * The function to run before execute.
+	 */
+	protected function preExecute() {
+		Billrun_Factory::log("Execute api query", Zend_Log::INFO);
+	}
+
+	/**
+	 * The function to run after execute.
+	 */
+	protected function postExecute() {
+		Billrun_Factory::log("query success", Zend_Log::INFO);
+	}
+	
+	/**
+	 * Get the array of fields that the request should have.
+	 * @return array of field names.
+	 */
+	protected function getRequestFields() {
+		return array('aid', 'sid');
+	}
+	
+	/**
+	 * Validate the input request.
+	 * @param array $request - Input request to be validated.
+	 * @return boolean true if valid.
+	 */
+	protected function validateRequest($request) {
+		$requestFields = $this->getRequestFields();
+		foreach ($requestFields as $field) {
+			if (!isset($request[$field])) {
+				$this->setError('Require to supply: ' . implode(',', $requestFields), $request);
+				return false;
+			}
+		}
+	
+		return true;
+	}
+	
+	/**
 	 * method to execute the query
 	 * it's called automatically by the api main controller
 	 */
 	public function execute() {
-		Billrun_Factory::log("Execute api query", Zend_Log::INFO);
+		$this->preExecute();
 		$request = $this->getRequest()->getRequest(); // supports GET / POST requests
 		Billrun_Factory::log("Input: " . print_R($request, 1), Zend_Log::DEBUG);
 
-		if (!isset($request['aid']) && !isset($request['sid'])) {
-			$this->setError('Require to supply aid or sid', $request);
+		if (!$this->validateRequest($request)) {
 			return false;
 		}
 		
@@ -164,7 +239,7 @@ class QueryAction extends ApiAction {
 			return false;
 		}
 
-		Billrun_Factory::log("query success", Zend_Log::INFO);
+		$this->postExecute();
 		$this->sendResults($request, $lines);
 	}
 	
