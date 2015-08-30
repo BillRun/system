@@ -22,11 +22,11 @@ abstract class Billrun_ActionManagers_Realtime_Responder_Call_Base {
 	/**
 	 * Create an instance of the RealtimeAction type.
 	 */
-	public function __construct(array $options) {
-		
+	public function __construct(array $options = array()) {
+
 		$this->row = $options['row'];
 	}
-	
+
 	/**
 	 * Checks if the responder is valid
 	 * 
@@ -35,7 +35,7 @@ abstract class Billrun_ActionManagers_Realtime_Responder_Call_Base {
 	public function isValid() {
 		return (!is_null($this->row));
 	}
-	
+
 	/**
 	 * Get response message
 	 */
@@ -43,25 +43,38 @@ abstract class Billrun_ActionManagers_Realtime_Responder_Call_Base {
 		$responseData = $this->getResponseData();
 		return $responseData;
 	}
-	
+
 	/**
 	 * Get response message data
 	 */
 	public abstract function getResponseData();
-	
+
 	/**
 	 * Gets response message basic data (shared to most responses)
 	 * 
 	 * @return array
 	 */
 	protected function getResponseBasicData() {
-		$grantedReturnCode = $this->row['granted_return_code'];
 		return array(
 			'CallingNumber' => $this->row['calling_number'],
 			'CallReference' => $this->row['call_reference'],
 			'CallID' => $this->row['call_id'],
-			'ReturnCode' => $grantedReturnCode,
-			'ClearCause' => ($grantedReturnCode === 0 ? 1 : 0), //TODO: check if it's correct value
+			'ReturnCode' => $this->row['granted_return_code'],
+			'ClearCause' => $this->getClearCause()
 		);
 	}
+
+	/**
+	 * Gest the clear casue value, based on $this->row data
+	 * 
+	 * @return int clear cause value
+	 */
+	protected function getClearCause() {
+		if ($this->row['usagev'] > 0) {
+			return Billrun_Factory::config()->getConfigValue('realtimeevent.clearCause.normal_release');
+		} else {
+			return Billrun_Factory::config()->getConfigValue('realtimeevent.clearCause.no_balance');
+		}
+	}
+
 }
