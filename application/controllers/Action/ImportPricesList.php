@@ -23,7 +23,6 @@ class ImportPricesListAction extends ApiAction {
 	 * @var array
 	 */
 	protected $rules = array();
-	protected $model;
 
 	/**
 	 * Whether to remove usage types which don't exist in the input file
@@ -34,20 +33,22 @@ class ImportPricesListAction extends ApiAction {
 	/**
 	 * method to execute the bulk credit
 	 * it's called automatically by the api main controller
+	 * @return boolean true if successfull.
 	 */
 	public function execute() {
 		$request = $this->getRequest()->getPost();
 		$list = json_decode($request['prices'], true);
-		$this->model = new RatesModel();
+		if (!$this->validateList($list)) {
+			return false;
+		}
+		
 		if (isset($request['remove_non_existing_usage_types'])) {
 			$this->should_remove_non_existing_usage_types = (boolean) $request['remove_non_existing_usage_types'];
 		}
 		if (isset($request['remove_non_existing_prefix'])) {
 			$this->remove_non_existing_prefix = (boolean) $request['remove_non_existing_prefix'];
 		}
-		if (!($ret = $this->validateList($list))) {
-			return $ret;
-		}
+
 		$ret = $this->importRates();
 		$this->getController()->setOutput(array(array(
 				'status' => 1,
@@ -57,21 +58,62 @@ class ImportPricesListAction extends ApiAction {
 		return true;
 	}
 
+	/**
+	 * Get the update and the missingCategory keys for the importRates function.
+	 * @param RatesModel $ratesModel - The model object for the rates.
+	 * @return array Containing the updateKeys and the missingCategories.
+	 */
+	protected function getUpdatedAndMissingCategoryKeys($ratesModel) {
+		// This array is to be filled with the new rates.
+		$updatedKeys = array();
+		
+		// This array is to be filled with all missing categories found.
+		$missingCategories = array();
+		
+		$activeRates = $ratesModel->getActiveRates(array_unique(array_keys($this->rules)));
+		$ratesColl = Billrun_Factory::db()->ratesCollection();
+		
+		// Go through all the old rates.
+		foreach ($activeRates as $oldRate) {
+			$updatedRate = $this->updateRates($ratesModel, $oldRate, $ratesColl,$updatedKeys);
+			// If the return key is not null it means a missing category is found.
+			if(isset($updatedRate[true])) {
+				$updatedKeys[] = $updatedRate;
+			} else if(isset($updatedRate[false])) {
+				$missingCategories[] = $updatedRate;
+			} else {
+				// This should never happen. I put this log message to be safe, if php decides to change behaviour or we decide
+				// to change this code.
+				Billrun_Factory::log("getUpdatedAndMissingCategoryKeys: Something went terribly wrong.", Zend_Log::ERR);
+				return null;
+			}
+		}
+		
+		return array($updatedKeys, $missingCategories);
+	}
+	
+	/**
+	 * Get all rates from the rates collection.
+	 * @return array - Array of rates in the collection divided to, updated, future, old and missing category.
+	 */
 	protected function importRates() {
 		$updated_keys = array();
 		$missing_categories = array();
 		$old_or_not_exist = array();
-		$rates_coll = Billrun_Factory::db()->ratesCollection();
-		$future_keys = $this->model->getFutureRateKeys(array_unique(array_keys($this->rules)));
+		$ratesModel = new RatesModel();
+		$future_keys = $ratesModel->getFutureRateKeys(array_unique(array_keys($this->rules)));
 		foreach ($future_keys as $key) {
 			unset($this->rules[$key]);
 		}
+		
+		// If there are rules to select rates by.
 		if ($this->rules) {
-			$active_rates = $this->model->getActiveRates(array_unique(array_keys($this->rules)));
-			foreach ($active_rates as $old_rate) {
-				$this->updateRates($old_rate, $rates_coll,$updated_keys, $missing_categories);
-			}
+			list($updated_keys, $missing_categories) = 
+				each($this->getUpdatedAndMissingCategoryKeys($ratesModel));
 		}
+		
+		// Check if there are keys that are in the db but not in the rules or keys that are in the rules
+		// but not in the db.
 		if (count($updated_keys) + count($future_keys) + count($missing_categories) != count($this->rules)) {
 			$all_keys = array_unique(array_keys($this->rules));
 			$old_or_not_exist = array_diff($all_keys, $updated_keys, $missing_categories);
@@ -128,57 +170,71 @@ class ImportPricesListAction extends ApiAction {
 		$newRawData['from'] = new MongoDate($newFromDate->getTimestamp());
 	}
 	
-	protected function updateRates($old_rate, $rates_coll,$updated_keys, $missing_categories) {
-		$new_raw_data = $old_raw_data = $old_rate->getRawData();
-		$rate_key = $old_raw_data['key'];
-		$this->setDates($rate_key, $old_rate, $new_raw_data, $old_raw_data);
+	/**
+	 * Update the new rates according to the old rates.
+	 * @param RatesModel $ratesModel - The rates model object.
+	 * @param array $oldRate - Current old rate.
+	 * @param Mongoldoid_Collection $ratesColl - The rates collection object.
+	 * @param array $updatedKeys - The updated keys array to set with updated keys.
+	 * @return (boolean, string) Pair of boolean and string. If the boolean is true the rate is to be 
+	 * added to the updated keys. If the boolean is false the rate is to be added to the missing categories.
+	 */
+	protected function updateRates($ratesModel, $oldRate, $ratesColl,$updatedKeys) {
+		$newRawData = $oldRawData = $oldRate->getRawData();
+		$rateKey = $oldRawData['key'];
+		$this->setDates($rateKey, $oldRate, $newRawData, $oldRawData);
 
 		if ($this->should_remove_non_existing_usage_types) {
-			$this->removeNonExistingUsageTypes($this->rules[$rate_key]['usage_type_rates'],
-											   $old_rate['rates'],
-											   $new_raw_data['rates']);
+			$this->removeNonExistingUsageTypes($this->rules[$rateKey]['usage_type_rates'],
+											   $oldRate['rates'],
+											   $newRawData['rates']);
 		}
 
 		$prefix = 
-			$this->getParamsPrefix($this->rules[$rate_key]['prefix'],
-								   $new_raw_data['params']['prefix']);
-		$new_raw_data['params']['prefix']= $prefix;
+			$this->getParamsPrefix($this->rules[$rateKey]['prefix'],
+								   $newRawData['params']['prefix']);
+		$newRawData['params']['prefix']= $prefix;
 		
-		foreach ($this->rules[$rate_key]['usage_type_rates'] as $usage_type => $usage_type_rate) {
+		foreach ($this->rules[$rateKey]['usage_type_rates'] as $usage_type => $usage_type_rate) {
 			// If this returns false it means we found a missing category.
-			if(!$this->setUsageTypeData($usage_type,
+			if(!$this->setUsageTypeData($ratesModel,
+										$usage_type,
 										$usage_type_rate,
-										$new_raw_data['rates'])) {
-				$missing_categories[] = $rate_key;
-				return false;
+										$newRawData['rates'])) {
+				return array(false => $rateKey);
 			}
 		}
-		$updated_keys[] = $rate_key;
-		$new_rate = new Mongodloid_Entity($new_raw_data);
+		$updatedKeys[] = $rateKey;
+		$newRate = new Mongodloid_Entity($newRawData);
 		// TODO: Validate the save?
-		$old_rate->save($rates_coll);
-		$new_rate->save($rates_coll);
+		$ratesColl->save($oldRate);
+		$ratesColl->save($newRate);
+		
+		return array(true => $rateKey);
 	}
 	
 	/**
 	 * Set the rates field of the new record with the rate usage types.
+	 * @param RatesModel $ratesModel - The rates model object.
 	 * @param string $usageType - Current usage type.
 	 * @param string $usageTypeRate - Current rage usage type to set.
 	 * @param array $ratesToSet - Rates field to set with usage values.
 	 * @return boolean - False if found a missing category true otherwise.
 	 */
-	protected function setUsageTypeData($usageType, $usageTypeRate, $ratesToSet) {
+	protected function setUsageTypeData($ratesModel, $usageType, $usageTypeRate, $ratesToSet) {
 		if (!isset($ratesToSet[$usageType]) && 
 		   (!isset($usageTypeRate['category'])	    || 
 			!$usageTypeRate['category'])) {
 			return false;
 		}
-		$ratesToSet[$usageType]['unit'] = $this->model->getUnit($usageType);
-		$ratesToSet[$usageType]['rate'] = $this->model->getRateArrayByRules($usageTypeRate['rules']);
+		$ratesToSet[$usageType]['unit'] = $ratesModel->getUnit($usageType);
+		$ratesToSet[$usageType]['rate'] = $$ratesModel->getRateArrayByRules($usageTypeRate['rules']);
 		if ($usageTypeRate['category']) {
 			$ratesToSet['rates'][$usageType]['category'] = $usageTypeRate['category'];
 		}
 		$ratesToSet[$usageType]['access'] = floatval($usageTypeRate['access']);
+		
+		return true;
 	}
 	
 	protected function validateList($list) {
