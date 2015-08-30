@@ -44,17 +44,31 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 	}
 	
 	/**
+	 * Get the correct action to use for this request.
+	 * @param data $request - The input request for the API.
+	 * @return Billrun_ActionManagers_Action
+	 */
+	protected function getAction() {
+		list($filterName,$t)=each($this->query);
+		$updaterManagerInput = 
+			array('input'       => $this->updaterOptions,
+				  'filter_name' => $filterName);
+		
+		$manager = new Billrun_ActionManagers_Balances_Updaters_Manager($updaterManagerInput);
+		
+		// This is the method which is going to be executed.
+		return $manager->getAction();
+	}
+	
+	/**
 	 * Execute the action.
 	 * @return data for output.
 	 */
 	public function execute() {
 		$success = true;
 
-		list($filterName,$t)=each($this->query);
-		
 		// Get the updater for the filter.
-		$updater = 
-			Billrun_ActionManagers_Balances_Updaters_Manager::getUpdater($filterName, $this->updaterOptions);
+		$updater = $this->getAction();
 		
 		$outputDocuments = 
 			$updater->update($this->query, $this->recordToSet, $this->subscriberId);
