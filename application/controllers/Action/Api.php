@@ -25,7 +25,7 @@ abstract class ApiAction extends Action_Base {
 	 * Set an error message to the controller.
 	 * @param string $errorMessage - Error message to send to the controller.
 	 * @param object $input - The input the triggerd the error.
-	 * @return boolean true if successful.
+	 * @return ALWAYS false.
 	 */
 	function setError($errorMessage, $input = null) {
 		Billrun_Factory::log("Sending Error : {$errorMessage}", Zend_Log::NOTICE);
@@ -36,7 +36,13 @@ abstract class ApiAction extends Action_Base {
 		if (!is_null($input)) {
 			$output['input'] = $input;
 		}
-		return $this->getController()->setOutput(array($output));
+
+		// If failed to report to controller.
+		if(!$this->getController()->setOutput(array($output))) {
+			Billrun_Factory::log("Failed to set message to controller. message: " . $errorMessage, Zend_Log::CRIT);
+		}
+		
+		return false;
 	}
 	
 
