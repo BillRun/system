@@ -54,20 +54,31 @@ class Billrun_Balance extends Mongodloid_Entity {
 		$ret = $this->load($options['sid'], $options['urt'], $options['charging_type'], $options['usaget'])->getRawData();
 
 		if (empty($ret) || count($ret) == 0) {
-			if ($options['charging_type'] == 'postpaid') {
-				$urtDate = date('Y-m-d h:i:s', $options['urt']->sec);
-				$from = Billrun_Billrun::getBillrunStartTimeByDate($urtDate);
-				$to = Billrun_Billrun::getBillrunEndTimeByDate($urtDate);
-				$plan = Billrun_Factory::plan(array('name' => $options['plan'], 'time' => $options['urt']->sec, 'disableCache' => true));
-				$plan_ref = $plan->createRef();
-				$ret = $this->createBasicBalance($options['aid'], $options['sid'], $from, $to, $plan_ref);
-			} else {
-				$ret = array();
-			}
+			$ret = $this->getDefaultBalance($options);
 		}
 		$this->selectedBalance = self::getSelectedBalanceKey($ret);
 
 		parent::__construct($ret, self::getCollection());
+	}
+	
+	/**
+	 * Gets default balance for subscriber (when no balance was found).
+	 * For post-paid subscribers, create new empty balance, for prepaid return no balance.
+	 * 
+	 * @param type $options subsciber's db line
+	 * @return array The default balance
+	 */
+	protected function getDefaultBalance($options) {
+		if ($options['charging_type'] == 'postpaid') {
+			$urtDate = date('Y-m-d h:i:s', $options['urt']->sec);
+			$from = Billrun_Billrun::getBillrunStartTimeByDate($urtDate);
+			$to = Billrun_Billrun::getBillrunEndTimeByDate($urtDate);
+			$plan = Billrun_Factory::plan(array('name' => $options['plan'], 'time' => $options['urt']->sec, 'disableCache' => true));
+			$plan_ref = $plan->createRef();
+			return $this->createBasicBalance($options['aid'], $options['sid'], $from, $to, $plan_ref);
+		} else {
+			return array();
+		}
 	}
 
 	public static function getCollection() {
@@ -116,6 +127,25 @@ class Billrun_Balance extends Mongodloid_Entity {
 	public function load($subscriberId, $urt, $chargingType = 'postpaid', $usageType = "") {
 		Billrun_Factory::log()->log("Trying to load balance for subscriber " . $subscriberId . ". urt: " . $urt->sec . ". charging_type: " . $chargingType, Zend_Log::DEBUG);
 
+		$query = $this->getGetBalanceQuery($subscriberId, $urt, $chargingType, $usageType);
+		$cursor = $this->collection->query($query)->cursor();
+		if ($chargingType === 'prepaid') { // for pre-paid subscribers - choose correct balance by priority field
+			$cursor = $cursor->sort(array('priority' => -1));
+		}
+		return $cursor->setReadPreference('RP_PRIMARY')
+				->limit(1)->current();
+	}
+	
+	/**
+	 * Gets a query to get the correct balance of the subscriber.
+	 * 
+	 * @param type $subscriberId
+	 * @param type $urt
+	 * @param type $chargingType
+	 * @param type $usageType
+	 * @return array
+	 */
+	protected function getGetBalanceQuery($subscriberId, $urt, $chargingType = 'postpaid', $usageType = "") {
 		$query = array(
 			'sid' => $subscriberId,
 			'from' => array('$lte' => $urt),
@@ -129,13 +159,8 @@ class Billrun_Balance extends Mongodloid_Entity {
 				array("balance.cost" => array('$lt' => 0)),
 			);
 		}
-
-		$cursor = $this->collection->query($query)->cursor();
-		if ($chargingType === 'prepaid') { // for pre-paid subscribers - choose correct balance by priority field
-			$cursor = $cursor->sort(array('priority' => -1));
-		}
-		return $cursor->setReadPreference('RP_PRIMARY')
-				->limit(1)->current();
+		
+		return $query;
 	}
 
 	/**
