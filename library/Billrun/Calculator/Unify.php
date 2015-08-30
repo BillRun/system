@@ -29,6 +29,31 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 	protected $dbConcurrentPref = 'RP_PRIMARY';
 
 	/**
+	 * Create a new instance of the unify caclulator object.
+	 * @param array $options - Array of input options to create the object by.
+	 */
+	public function __construct($options = array()) {
+		parent::__construct($options);
+		$this->init();
+		if (isset($options['date_seperation'])) {
+			$this->dateSeperation = $options['date_seperation'];
+		}
+
+		$this->unificationFields = $this->getUnificationFields($options);
+
+		if (isset($options['accept_archived_lines'])) {
+			$this->acceptArchivedLines = $options['accept_archived_lines'];
+		}
+
+		if (isset($options['protect_concurrent_files'])) {
+			$this->protectedConcurrentFiles = $options['protect_concurrent_files'];
+		}
+
+		// archive connection setting
+		$this->archiveDb = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('archive.db', array()));
+	}
+	
+	/**
 	 * Get the unification fields.
 	 * @param array $options - Array of input options.
 	 * @return array The unification fields.
@@ -79,27 +104,6 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 		}
 	}
 	
-	public function __construct($options = array()) {
-		parent::__construct($options);
-		$this->init();
-		if (isset($options['date_seperation'])) {
-			$this->dateSeperation = $options['date_seperation'];
-		}
-
-		$this->unificationFields = $this->getUnificationFields($options);
-
-		if (isset($options['accept_archived_lines'])) {
-			$this->acceptArchivedLines = $options['accept_archived_lines'];
-		}
-
-		if (isset($options['protect_concurrent_files'])) {
-			$this->protectedConcurrentFiles = $options['protect_concurrent_files'];
-		}
-
-		// archive connection setting
-		$this->archiveDb = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('archive.db', array()));
-	}
-
 	/**
 	 * Initialize the data used for lines unification.
 	 * (call this when you want to start unify again after the lines were saved to the DB)
