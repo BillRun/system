@@ -12,6 +12,7 @@
  * @author tom
  */
 class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_Subscribers_Action{
+	// TODO: Create a generic update action class. This class shares some logic with the cards and balances update action. The setUpdateRecord function is shared.
 	
 	/**
 	 * Field to hold the data to be written in the DB.
@@ -125,11 +126,19 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 	}
 
 	/**
-	 * Parse the received request.
-	 * @param type $input - Input received.
-	 * @return true if valid.
+	 * Get the array of fields to be set in the update record from the user input.
+	 * @return array - Array of fields to set.
 	 */
-	public function parse($input) {
+	protected function getUpdateFields() {
+		return array('imsi', 'msisdn', 'aid', 'sid', 'plan', 'language', 'service_provider');
+	}
+	
+	/**
+	 * Set the values for the update record to be set.
+	 * @param httpRequest $input - The input received from the user.
+	 * @return true if successful false otherwise.
+	 */
+	protected function setUpdateRecord($input) {
 		$jsonUpdateData = null;
 		$update = $input->get('update');
 		if(empty($update) || (!($jsonUpdateData = json_decode($update, true)))) {
@@ -137,6 +146,25 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 			return false;
 		}
 		
+		$updateFields = $this->getUpdateFields();
+		
+		// Get only the values to be set in the update record.
+		foreach ($updateFields as $field) {
+			$this->recordToSet[$field] = $jsonUpdateData[$field];
+		}
+		
+		// THE 'from' FIELD IS SET AFTERWARDS WITH THE DATA FROM THE EXISTING RECORD IN MONGO.
+		$this->recordToSet['to'] = new MongoDate(strtotime('+100 years'));
+		
+		return true;
+	}
+	
+	/**
+	 * Set the values for the query record to be set.
+	 * @param httpRequest $input - The input received from the user.
+	 * @return true if successful false otherwise.
+	 */
+	protected function setQueryRecord($input) {
 		$jsonQueryData = null;
 		$query = $input->get('query');
 		if(empty($query) || (!($jsonQueryData = json_decode($query, true)))) {
@@ -144,23 +172,29 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 			return false;
 		}
 		
-		// TODO: Do i need to validate that all these fields are set?
-		$this->recordToSet = 
-			array('imsi'			 => $jsonUpdateData['imsi'],
-				  'msisdn'			 => $jsonUpdateData['msisdn'],
-				  'aid'				 => $jsonUpdateData['aid'],
-				  'sid'				 => $jsonUpdateData['sid'],
-				  'plan'			 => $jsonUpdateData['plan'], 
-				  'language'		 => $jsonUpdateData['language'],
-				  'service_provider' => $jsonUpdateData['service_provider'],
-			//	  'from'			 => THIS FIELD IS SET AFTERWARDS WITH THE DATA FROM THE EXISTING RECORD IN MONGO.
-				  'to'				 => new MongoDate(strtotime('+100 years')));
-		
 		$this->query = 
 			array('sid'    => $jsonQueryData['sid'],
 				  'imsi'   => $jsonQueryData['imsi'],
 				  'msisdn' => $jsonQueryData['msisdn']);
 		
+		return true;
+	}
+	
+	/**
+	 * Parse the received request.
+	 * @param type $input - Input received.
+	 * @return true if valid.
+	 * @todo Create a generic update class that implemnts this basic parse logic.
+	 */
+	public function parse($input) {
+		if(!$this->setQueryRecord($input)) {
+			return false;
+		}
+		
+		if(!$this->setUpdateRecord($input)){
+			return false;
+		}
+				
 		// If keep_history is set take it.
 		$this->keepHistory = $input->get('keep_history');
 		
