@@ -60,12 +60,9 @@ class Billrun_ActionManagers_Realtime_Responder_Call_ReleaseCall extends Billrun
 	}
 
 	public function getResponseData() {
-		return array(
-			'CallingNumber' => $this->row['calling_number'],
-			'CallReference' => $this->row['call_reference'],
-			'CallID' => $this->row['call_id'],
-			'ReturnCode' => $this->row['granted_return_code'],
-		);
+		$ret = $this->getResponseBasicData();
+		unset($ret['ClearCause']);
+		return $ret;
 	}
 
 }

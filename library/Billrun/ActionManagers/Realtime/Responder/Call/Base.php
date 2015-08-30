@@ -40,4 +40,20 @@ abstract class Billrun_ActionManagers_Realtime_Responder_Call_Base {
 	 * Get response message data
 	 */
 	public abstract function getResponseData();
+	
+	/**
+	 * Gets response message basic data (shared to most responses)
+	 * 
+	 * @return array
+	 */
+	protected function getResponseBasicData() {
+		$grantedReturnCode = $this->row['granted_return_code'];
+		return array(
+			'CallingNumber' => $this->row['calling_number'],
+			'CallReference' => $this->row['call_reference'],
+			'CallID' => $this->row['call_id'],
+			'ReturnCode' => $grantedReturnCode,
+			'ClearCause' => ($grantedReturnCode === 0 ? 1 : 0), //TODO: check if it's correct value
+		);
+	}
 }
