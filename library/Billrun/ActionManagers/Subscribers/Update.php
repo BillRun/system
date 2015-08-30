@@ -12,6 +12,7 @@
  * @author tom
  */
 class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_Subscribers_Action{
+	// TODO: Create a generic update action class. This class shares some logic with the cards and balances update action. The setUpdateRecord function is shared.
 	
 	/**
 	 * Field to hold the data to be written in the DB.
@@ -98,7 +99,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 		$success = true;
 		$updatedDocument = null;
 		try {
-			$cursor = $this->collection->query($this->options)->cursor();
+			$cursor = $this->collection->query($this->query)->cursor();
 			foreach ($cursor as $record) {
 				if(!$this->updateSubscriberRecord($record)) {
 					$success = false;
@@ -125,11 +126,27 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 	}
 
 	/**
-	 * Parse the received request.
-	 * @param type $input - Input received.
-	 * @return true if valid.
+	 * Get the array of fields to be set in the update record from the user input.
+	 * @return array - Array of fields to set.
 	 */
-	public function parse($input) {
+	protected function getUpdateFields() {
+		return array('imsi', 'msisdn', 'aid', 'sid', 'plan', 'language', 'service_provider');
+	}
+	
+	/**
+	 * Get the array of fields to be set in the query record from the user input.
+	 * @return array - Array of fields to set.
+	 */
+	protected function getQueryFields() {
+		return array('imsi', 'msisdn', 'sid');
+	}
+	
+	/**
+	 * Set the values for the update record to be set.
+	 * @param httpRequest $input - The input received from the user.
+	 * @return true if successful false otherwise.
+	 */
+	protected function setUpdateRecord($input) {
 		$jsonUpdateData = null;
 		$update = $input->get('update');
 		if(empty($update) || (!($jsonUpdateData = json_decode($update, true)))) {
@@ -137,6 +154,54 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 			return false;
 		}
 		
+		$updateFields = $this->getUpdateFields();
+		
+		// Get only the values to be set in the update record.
+		// TODO: If no update fields are specified the record's to and from values will still be updated!
+		foreach ($updateFields as $field) {
+			// ATTENTION: This check will not allow updating to empty values which might be legitimate.
+			if(isset($jsonUpdateData[$field]) && !empty($jsonUpdateData[$field])) {
+				$this->recordToSet[$field] = $jsonUpdateData[$field];
+			}
+		}
+		
+		// THE 'from' FIELD IS SET AFTERWARDS WITH THE DATA FROM THE EXISTING RECORD IN MONGO.
+		$this->recordToSet['to'] = new MongoDate(strtotime('+100 years'));
+		
+		return true;
+	}
+	
+	/**
+	 * Set all the query fields in the record with values.
+	 * @param array $queryData - Data received.
+	 * @return array - Array of strings of invalid field name. Empty if all is valid.
+	 */
+	protected function setQueryFields($queryData) {
+		$queryFields = $this->getQueryFields();
+		
+		// Arrary of errors to report if any occurs.
+		$invalidFields = array();
+		
+		// Get only the values to be set in the update record.
+		// TODO: If no update fields are specified the record's to and from values will still be updated!
+		foreach ($queryFields as $field) {
+			// ATTENTION: This check will not allow updating to empty values which might be legitimate.
+			if(isset($queryData[$field]) && !empty($queryData[$field])) {
+				$this->query[$field] = $queryData[$field];
+			} else {
+				$invalidFields[] = $field;
+			}
+		}
+		
+		return $invalidFields;
+	}
+	
+	/**
+	 * Set the values for the query record to be set.
+	 * @param httpRequest $input - The input received from the user.
+	 * @return true if successful false otherwise.
+	 */
+	protected function setQueryRecord($input) {
 		$jsonQueryData = null;
 		$query = $input->get('query');
 		if(empty($query) || (!($jsonQueryData = json_decode($query, true)))) {
@@ -144,23 +209,32 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 			return false;
 		}
 		
-		// TODO: Do i need to validate that all these fields are set?
-		$this->recordToSet = 
-			array('imsi'			 => $jsonUpdateData['imsi'],
-				  'msisdn'			 => $jsonUpdateData['msisdn'],
-				  'aid'				 => $jsonUpdateData['aid'],
-				  'sid'				 => $jsonUpdateData['sid'],
-				  'plan'			 => $jsonUpdateData['plan'], 
-				  'language'		 => $jsonUpdateData['language'],
-				  'service_provider' => $jsonUpdateData['service_provider'],
-			//	  'from'			 => THIS FIELD IS SET AFTERWARDS WITH THE DATA FROM THE EXISTING RECORD IN MONGO.
-				  'to'				 => new MongoDate(strtotime('+100 years')));
+		$invalidFields = $this->setQueryFields($jsonQueryData);
 		
-		$this->query = 
-			array('sid'    => $jsonQueryData['sid'],
-				  'imsi'   => $jsonQueryData['imsi'],
-				  'msisdn' => $jsonQueryData['msisdn']);
+		// If there were errors.
+		if(!empty($invalidFields)) {
+			Billrun_Factory::log("Subscribers update received invalid query values in fields: " . implode(',', $invalidFields), Zend_Log::ALERT);
+			return false;
+		}
 		
+		return true;
+	}
+	
+	/**
+	 * Parse the received request.
+	 * @param type $input - Input received.
+	 * @return true if valid.
+	 * @todo Create a generic update class that implemnts this basic parse logic.
+	 */
+	public function parse($input) {
+		if(!$this->setQueryRecord($input)) {
+			return false;
+		}
+		
+		if(!$this->setUpdateRecord($input)){
+			return false;
+		}
+				
 		// If keep_history is set take it.
 		$this->keepHistory = $input->get('keep_history');
 		

@@ -58,6 +58,37 @@ abstract class Billrun_ActionManagers_Manager {
 	}
 	
 	/**
+	 * Validate the name of the action class that was created for the received input.
+	 * @param string $actionClassName - Name of the action class to create.
+	 * @return boolean true if valid.
+	 */
+	protected function validateActionClassName($actionClassName) {
+		// Check if the class exists.
+		return class_exists($actionClassName);
+	}
+	
+	/**
+	 * Get the instance of the action object to return.
+	 * @param string $actionClass - Name of the class to create.
+	 * @return Object - Action manager to return.
+	 */
+	protected function getActionInstance($actionClass) {
+		// Validate the action class.
+		if(!$this->validateActionClassName($actionClass)) {
+			Billrun_Factory::log("getAction Action '$actionClass' is an invalid class!", Zend_Log::INFO);
+			return null;
+		}
+		
+		$action = $this->allocateAction($actionClass);
+		if(!$action) {
+			Billrun_Factory::log("getAction Action '$actionClass' is invalid!", Zend_Log::INFO);
+			return null;
+		}
+		
+		return $action;
+	}
+	
+	/**
 	 * This function receives input and returns a subscriber action instance after
 	 * it already parsed the input into itself.
 	 * @return Billrun_ActionManagers_Action Subscriber action
@@ -68,14 +99,13 @@ abstract class Billrun_ActionManagers_Manager {
 			return null;
 		}
 		
+		// Get the method to create an action by.
 		$method = $this->getActionName();
-		$actionClass = $this->getActionClassName($method);
-		$action = $this->allocateAction($actionClass);
-		if(!$action) {
-			Billrun_Factory::log("getAction Action '$method' is invalid!", Zend_Log::INFO);
-			return null;
-		}
 		
-		return $action;
+		// Get the name of the action class.
+		$actionClass = $this->getActionClassName($method);
+		
+		// Return the action instance.
+		return $this->getActionInstance($actionClass);
 	}
 }
