@@ -22,7 +22,7 @@ abstract class Billrun_ActionManagers_Realtime_Responder_Call_Base {
 	/**
 	 * Create an instance of the RealtimeAction type.
 	 */
-	public function __construct($options = array()) {
+	public function __construct(array $options) {
 		
 		$this->row = $options['row'];
 	}
