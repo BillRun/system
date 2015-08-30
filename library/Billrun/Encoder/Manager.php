@@ -31,7 +31,7 @@ class Billrun_Encoder_Manager {
 			$encoderName = Billrun_Factory::config()->getConfigValue(strtolower($controllerName) . ".encode." . strtolower($actionName));
 		} 
 		if (is_null($encoderName)) {
-			Billrun_Factory::log('No encoder defined; set to array', Zend_Log::DEBUG);
+			Billrun_Factory::log('No encoder defined; set to array', Zend_Log::WARN);
 			$encoderName = 'array';
 		}
 

@@ -5,9 +5,8 @@
  */
 class Billrun_ActionManagers_Realtime_Responder_Call_AnswerCall extends Billrun_ActionManagers_Realtime_Responder_Call_Base {
 
-	public function getResponseData() {
-		$ret = $this->getResponseBasicData();
-		return $ret;
+	public function getResponsApiName() {
+		return 'answer_call';
 	}
 
 }

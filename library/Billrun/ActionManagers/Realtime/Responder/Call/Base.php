@@ -18,14 +18,26 @@ abstract class Billrun_ActionManagers_Realtime_Responder_Call_Base {
 	 * @var type array
 	 */
 	protected $row;
+	
+	/**
+	 * The name of the api response
+	 * 
+	 * @var string 
+	 */
+	protected $responseApiName = 'basic';
 
 	/**
 	 * Create an instance of the RealtimeAction type.
 	 */
 	public function __construct(array $options = array()) {
-
 		$this->row = $options['row'];
+		$this->responseApiName = $this->getResponsApiName();
 	}
+	
+	/**
+	 * Sets API name
+	 */
+	public abstract function getResponsApiName();
 
 	/**
 	 * Checks if the responder is valid
@@ -45,23 +57,22 @@ abstract class Billrun_ActionManagers_Realtime_Responder_Call_Base {
 	}
 
 	/**
-	 * Get response message data
-	 */
-	public abstract function getResponseData();
-
-	/**
-	 * Gets response message basic data (shared to most responses)
+	 * Gets response message data
 	 * 
 	 * @return array
 	 */
-	protected function getResponseBasicData() {
-		return array(
-			'CallingNumber' => $this->row['calling_number'],
-			'CallReference' => $this->row['call_reference'],
-			'CallID' => $this->row['call_id'],
-			'ReturnCode' => $this->row['granted_return_code'],
-			'ClearCause' => $this->getClearCause()
-		);
+	protected function getResponseData() {
+		$ret = array();
+		$responseFields = array_merge(Billrun_Factory::config()->getConfigValue('realtimeevent.responseData.basic', array()),
+			Billrun_Factory::config()->getConfigValue("realtimeevent.responseData.$this->responseApiName", array()));
+		foreach ($responseFields as $responseField => $rowField) {
+			if (is_array($rowField)) {
+				$ret[$responseField] = (isset($rowField['classMethod']) ? call_user_method($rowField['classMethod'], $this) : '');
+			} else {
+				$ret[$responseField] = (isset($this->row[$rowField]) ? $this->row[$rowField] : '');
+			}
+		}
+		return $ret;
 	}
 
 	/**
@@ -70,11 +81,11 @@ abstract class Billrun_ActionManagers_Realtime_Responder_Call_Base {
 	 * @return int clear cause value
 	 */
 	protected function getClearCause() {
-		if ($this->row['usagev'] > 0) {
-			return Billrun_Factory::config()->getConfigValue('realtimeevent.clearCause.normal_release');
-		} else {
+		if ($this->row['granted_return_code'] === 0) {
 			return Billrun_Factory::config()->getConfigValue('realtimeevent.clearCause.no_balance');
 		}
+		
+		return Billrun_Factory::config()->getConfigValue('realtimeevent.clearCause.normal_release');
 	}
 
 }

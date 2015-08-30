@@ -5,6 +5,10 @@
  */
 class Billrun_ActionManagers_Realtime_Responder_Call_ReleaseCall extends Billrun_ActionManagers_Realtime_Responder_Call_Base {
 
+	public function getResponsApiName() {
+		return 'release_call';
+	}
+	
 	/**
 	 * Returns balance leftovers to the current balance (if were taken due to prepaid mechanism)
 	 */
@@ -57,12 +61,6 @@ class Billrun_ActionManagers_Realtime_Responder_Call_ReleaseCall extends Billrun
 	public function getResponse() {
 		$this->rebalance();
 		parent::getResponse();
-	}
-
-	public function getResponseData() {
-		$ret = $this->getResponseBasicData();
-		unset($ret['ClearCause']);
-		return $ret;
 	}
 
 }
