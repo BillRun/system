@@ -73,8 +73,9 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 			return false;
 		}
 
-		$request = $encoder->encode($responder->getResponse(), "request");
-		//TODO: send request
-		return true;
+		$request = array($encoder->encode($responder->getResponse(), "request"));
+		// Sends request
+		$requestUrl = Billrun_Factory::config()->getConfigValue('IN.request.url.realtimeevent');
+		return Billrun_Util::sendRequest($requestUrl, $request);
 	}
 }

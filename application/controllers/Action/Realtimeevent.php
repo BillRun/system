@@ -318,8 +318,9 @@ class RealtimeeventAction extends ApiAction {
 
 		$response = array($encoder->encode($responder->getResponse(), "response"));
 		$this->getController()->setOutput($response);
-		//TODO: send response
-		return true;
+		// Sends response
+		$responseUrl = Billrun_Factory::config()->getConfigValue('IN.respose.url.realtimeevent');
+		return Billrun_Util::sendRequest($responseUrl, $response);
 	}
 	
 	/**
