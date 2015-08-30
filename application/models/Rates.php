@@ -90,7 +90,7 @@ class RatesModel extends TabledateModel {
 											->lessEq('from', $currentDate)
 											->greaterEq('to', $currentDate)
 											->cursor()->current();
-							$newRefPlans[] = $planEntity->createRef($plansColl);
+							$newRefPlans[] = $plansColl->createRefByEntity($planEntity);
 						}
 					}
 					$rate['plans'] = $newRefPlans;
@@ -489,7 +489,7 @@ class RatesModel extends TabledateModel {
 						->lessEq('from', $currentDate)
 						->greaterEq('to', $currentDate)
 						->cursor()->current();
-		return $planEntity->createRef($plansColl);
+		return $plansColl->createRefByEntity($planEntity);
 	}
 
 }

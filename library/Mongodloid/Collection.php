@@ -290,7 +290,7 @@ class Mongodloid_Collection {
 	 * @return MongoDBRef
 	 */
 	public function createRefByEntity($entity) {
-		// TODO: Valiudate the entity?
+		// TODO: Validate the entity?
 		return $this->_collection->createDBRef($entity->getRawData());
 	}
 	

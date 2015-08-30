@@ -61,7 +61,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 		$oldRecord = clone $record;
 		$oldRecord['to'] = new MongoDate();
 		// This throws an exception if fails.
-		$oldRecord->save($this->collection);
+		$this->collection->save($oldRecord);
 	}
 	
 	/**
@@ -85,7 +85,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 			}
 
 			// This throws an exception if fails.
-			$record->save($this->collection);
+			$this->collection->save($record);
 		}
 		
 		return true;

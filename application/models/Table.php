@@ -371,7 +371,7 @@ class TableModel {
 				$cursor = $collection->query($pre_query);
 				$value = array();
 				foreach ($cursor as $entity) {
-					$value[] = $entity->createRef($collection);
+					$value[] = $collection->createRefByEntity($entity);
 				}
 			}
 			if (is_array($value) && !empty($value)) {
