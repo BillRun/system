@@ -127,11 +127,6 @@ class VfdaysAction extends Action_Base {
 		$from = date('YmdHis', strtotime($year . '-01-01' . ' 00:00:00'));
 		$to = date('YmdHis', strtotime($year . '-12-31' . ' 23:59:59'));
 		$plans = Billrun_Factory::config()->getConfigValue('nrtrde.fraud.events.NRTRDE1_B.target_plans');
-		print($year);
-		print_r($plans);
-		print_r($to);
-		print("<br>");
-		print_r($from);
 		$match = array(
 			'$match' => array(
 				'sid' => $sid,
@@ -142,9 +137,6 @@ class VfdaysAction extends Action_Base {
 					'$lte' => $to,
 				),
 				'arategroup' => "VF",
-				'in_group' => array(
-					'$gt' => 0,
-				),
 				'billrun' => array(
 					'$exists' => true,
 				),
@@ -168,8 +160,8 @@ class VfdaysAction extends Action_Base {
 			),
 		);
 		$billing_connection = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('billing.db'))->linesCollection();
-		$results = $billing_connection->aggregate($match, $group);
-		return isset($results) ? $results[0]['day_sum'] : 0;
+		$results = $billing_connection->aggregate($match, $group,$group2);
+		return isset($results[0]['day_sum']) ? $results[0]['day_sum'] : 0;
 	}
 
 }
