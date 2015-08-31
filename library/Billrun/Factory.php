@@ -158,25 +158,16 @@ class Billrun_Factory {
 	 * @return Billrun_Db
 	 */
 	static public function db(array $options = array()) {
-		$mainDb = 0;
-		if (empty($options)) {
-			$options = Billrun_Factory::config()->getConfigValue('db'); // the stdclass force it to return object
-			$mainDb = 1;
-		} else if (isset($options['name']) && count($options) == 1) {
-			$name = $options['name'];
-			$options = Billrun_Factory::config()->getConfigValue('db');
-			$seperateDatabaseCollections = isset($options['seperateDatabaseCollections']) ? $options['seperateDatabaseCollections'] : array('balances', 'billrunstats', 'billrun'); // until mongo will do collection lock
-			if (in_array($name, $seperateDatabaseCollections)) {
-				$options['name'] = $name;
-			}
-		}
-
-		// unique stamp per db connection
-		$stamp = md5(serialize($options));
-
+		$stamp = md5(serialize($options)); // unique stamp per db connection
 		if (!isset(self::$db[$stamp])) {
+			$mainDb = 0;
+			if (empty($options)) { // get the db settings from config
+				$options = Billrun_Factory::config()->getConfigValue('db');
+				$mainDb = 1;
+			}
+
 			self::$db[$stamp] = Billrun_Db::getInstance($options);
-			if ($mainDb) {
+			if ($mainDb) { // on load main db - load db config
 				Billrun_Factory::config()->loadDbConfig();
 			}
 		}
