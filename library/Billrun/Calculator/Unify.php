@@ -25,8 +25,6 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 	protected $acceptArchivedLines = false;
 	protected $protectedConcurrentFiles = true;
 	protected $archiveDb;
-//	protected $activeBillrun;
-	protected $dbConcurrentPref = 'RP_PRIMARY';
 
 	public function __construct($options = array()) {
 		parent::__construct($options);
