@@ -1,6 +1,7 @@
 <?php
 
 /**
+ * 
  * @package         Billing
  * @copyright       Copyright (C) 2012-2015 S.D.O.C. LTD. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
@@ -13,38 +14,55 @@
  * @since    4.0
  */
 class Billrun_Subscriber_Db extends Billrun_Subscriber {
-
+	
+	/**
+	 * True if the query handlers are loaded.
+	 * @var boolean
+	 */
+	static $queriesLoaded = false;
+	
+	/**
+	 * Construct a new subscriber DB instance.
+	 * @param array $options - Array of initialization parameters.
+	 */
+	public function __construct($options = array()) {
+		parent::__construct($options);
+		
+		// Check that the queries are loaded.
+		if(!self::$queriesLoaded) {
+			self::$queriesLoaded = true;
+			
+			// Register all the query handlers.
+			// TODO: How can i do this dynamically?
+			Billrun_Subscriber_Query_Manager::register(new Billrun_Subscriber_Query_Types_Imsi());
+			Billrun_Subscriber_Query_Manager::register(new Billrun_Subscriber_Query_Types_Msisdn());
+			Billrun_Subscriber_Query_Manager::register(new Billrun_Subscriber_Query_Types_Sid());
+		}
+	}
+	
 	/**
 	 * method to load subsbscriber details
 	 * 
 	 * @param array $params load by those params 
 	 */
 	public function load($params) {
-		$queryParams = array();
-		if (isset($params['IMSI'])) {
-			$queryParams['imsi'] = $params['IMSI'];
-		} elseif (isset($params['MSISDN'])) {
-			$queryParams['msisdn'] = $params['MSISDN'];
-		} elseif(isset($params['sid']) && $params['to'] && $params['from']) {
-			$queryParams['sid'] = $params['sid'];
-			$queryParams['to']['$lte']   = Billrun_Db::intToMongoDate($queryParams['to']);
-			$queryParams['from']['$gte'] = Billrun_Db::intToMongoDate($queryParams['from']);
-		} else {
+		$subscriberQuery = Billrun_Subscriber_Query_Manager::handle($params);
+		if($subscriberQuery === false){
 			Billrun_Factory::log('Cannot identify subscriber. Require phone or imsi to load. Current parameters: ' . print_R($params, 1), Zend_Log::ALERT);
 			return $this;
 		}
 
-		if (!isset($params['time'])) {
-			$datetime = time();
-		} else {
-			$datetime = strtotime($params['time']);
-		}
+//		if (!isset($params['time'])) {
+//			$datetime = time();
+//		} else {
+//			$datetime = strtotime($params['time']);
+//		}
 	
 //		$queryParams['from'] = array('$lt' => new MongoDate(strtotime($datetime)));
 //		$queryParams['to'] = array('$gt' => new MongoDate($datetime));
 
 
-		$data = $this->customerQueryDb($queryParams);
+		$data = $this->customerQueryDb($subscriberQuery);
 
 		if (is_array($data)) {
 			$this->data = $data;
@@ -54,6 +72,11 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 		return $this;
 	}
 	
+	/**
+	 * Get the customer from the db.
+	 * @param array $params - Input params to get a subscriber by.
+	 * @return array Raw data of mongo raw.
+	 */
 	protected function customerQueryDb($params) {
 		$coll = Billrun_Factory::db()->subscribersCollection();
 		$results = $coll->query($params)->cursor()->limit(1)->current();
