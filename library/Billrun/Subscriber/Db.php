@@ -33,7 +33,7 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 			self::$queriesLoaded = true;
 			
 			// Register all the query handlers.
-			// TODO: How can i do this dynamically?
+			// TODO: Move the list of query types to conf to be created here by reflection.
 			Billrun_Subscriber_Query_Manager::register(new Billrun_Subscriber_Query_Types_Imsi());
 			Billrun_Subscriber_Query_Manager::register(new Billrun_Subscriber_Query_Types_Msisdn());
 			Billrun_Subscriber_Query_Manager::register(new Billrun_Subscriber_Query_Types_Sid());
