@@ -377,7 +377,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 				'$ne' => 'INTERNET_BILL_BY_VOLUME',
 			),
 		);
-		$rates = $rates_coll->query($query)->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
+		$rates = $rates_coll->query($query)->cursor();
 		foreach ($rates as $rate) {
 			$this->intlGgsnRates[strval($rate->getId())] = $rate;
 		}

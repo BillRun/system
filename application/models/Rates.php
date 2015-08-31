@@ -91,7 +91,7 @@ class RatesModel extends TabledateModel {
 							$planEntity = $plansColl->query('name', $plan)
 											->lessEq('from', $currentDate)
 											->greaterEq('to', $currentDate)
-											->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'))->current();
+											->cursor()->current();
 							$newRefPlans[] = $planEntity->createRef($plansColl);
 						}
 					}
@@ -268,7 +268,7 @@ class RatesModel extends TabledateModel {
 	}
 
 	public function getRates($filter_query) {
-		return $this->collection->query($filter_query)->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
+		return $this->collection->query($filter_query)->cursor();
 	}
 
 	public function getFutureRateKeys($by_keys = array()) {
@@ -490,7 +490,7 @@ class RatesModel extends TabledateModel {
 		$planEntity = $plansColl->query('name', $plan)
 						->lessEq('from', $currentDate)
 						->greaterEq('to', $currentDate)
-						->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'))->current();
+						->cursor()->current();
 		return $planEntity->createRef($plansColl);
 	}
 

@@ -59,7 +59,7 @@ class Billrun_Calculator_Rate_Ggsn extends Billrun_Calculator_Rate {
 	 */
 	protected function loadRates() {
 		$rates_coll = Billrun_Factory::db()->ratesCollection();
-		$rates = $rates_coll->query($this->rateKeyMapping)->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
+		$rates = $rates_coll->query($this->rateKeyMapping)->cursor();
 		$this->rates = array();
 		foreach ($rates as $value) {
 			$value->collection($rates_coll);
