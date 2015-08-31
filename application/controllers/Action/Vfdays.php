@@ -14,6 +14,7 @@
  */
 class VfdaysAction extends Action_Base {
 
+	protected $plans = null;
 	/**
 	 * method to execute the refund
 	 * it's called automatically by the api main controller
@@ -28,7 +29,7 @@ class VfdaysAction extends Action_Base {
 			$year = date("Y");
 		}
 		$max_datetime = $request->get("max_datetime");
-
+		$this->plans = Billrun_Factory::config()->getConfigValue('nrtrde.fraud.events.NRTRDE1_B.target_plans');
 		$results = $this->count_days($sid, $year, $max_datetime);
 		$tap3_count = $this->count_days_tap3($sid, $year, $max_datetime);
 		if (isset($results[0]["count"])) {
@@ -59,7 +60,6 @@ class VfdaysAction extends Action_Base {
 
 		$ggsn_fields = Billrun_Factory::config()->getConfigValue('ggsn.fraud.groups.vodafone15');
 		$sender = Billrun_Factory::config()->getConfigValue('nrtrde.fraud.groups.vodafone15');
-		$plans = Billrun_Factory::config()->getConfigValue('nrtrde.fraud.events.NRTRDE1_B.target_plans');
 
 		$match1 = array(
 			'$match' => array(
@@ -68,7 +68,7 @@ class VfdaysAction extends Action_Base {
 		);
 		$match2 = array(
 			'$match' => array(
-				'plan' => array('$in' => $plans),
+				'plan' => array('$in' => $this->plans),
 				'$or' => array(
 					array_merge(
 						array(
@@ -126,12 +126,12 @@ class VfdaysAction extends Action_Base {
 	public function count_days_tap3($sid, $year = null) {
 		$from = date('YmdHis', strtotime($year . '-01-01' . ' 00:00:00'));
 		$to = date('YmdHis', strtotime($year . '-12-31' . ' 23:59:59'));
-		$plans = Billrun_Factory::config()->getConfigValue('nrtrde.fraud.events.NRTRDE1_B.target_plans');
+		
 		$match = array(
 			'$match' => array(
 				'sid' => $sid,
 				'type' => 'tap3',
-				'plan' => array('$in' => $plans),
+				'plan' => array('$in' => $this->plans),
 				'basicCallInformation.CallEventStartTimeStamp.localTimeStamp' => array(
 					'$gte' => $from,
 					'$lte' => $to,
