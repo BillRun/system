@@ -1,6 +1,7 @@
 <?php
 
 /**
+ * 
  * @package         Billing
  * @copyright       Copyright (C) 2012-2015 S.D.O.C. LTD. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
@@ -13,13 +14,39 @@
  * @since    4.0
  */
 class Billrun_Subscriber_Db extends Billrun_Subscriber {
+	
+	/**
+	 * True if the query handlers are loaded.
+	 * @var boolean
+	 */
+	static $queriesLoaded = false;
+	
+	/**
+	 * Construct a new subscriber DB instance.
+	 * @param array $options - Array of initialization parameters.
+	 */
+	public function __construct($options = array()) {
+		parent::__construct($options);
+		
+		// Check that the queries are loaded.
+		if(!self::$queriesLoaded) {
+			self::$queriesLoaded = true;
+			
+			// Register all the query handlers.
+			// TODO: How can i do this dynamically?
+			Billrun_Subscriber_Query_Manager::register(new Billrun_Subscriber_Query_Types_Imsi());
+			Billrun_Subscriber_Query_Manager::register(new Billrun_Subscriber_Query_Types_Msisdn());
+			Billrun_Subscriber_Query_Manager::register(new Billrun_Subscriber_Query_Types_Sid());
+		}
+	}
+	
 	/**
 	 * method to load subsbscriber details
 	 * 
 	 * @param array $params load by those params 
 	 */
 	public function load($params) {
-		$subscriberQuery = $this->getSubscriberQuery($params);
+		$subscriberQuery = Billrun_Subscriber_Query_Manager::handle($params);
 		if($subscriberQuery === false){
 			Billrun_Factory::log('Cannot identify subscriber. Require phone or imsi to load. Current parameters: ' . print_R($params, 1), Zend_Log::ALERT);
 			return $this;
@@ -43,30 +70,6 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 			Billrun_Factory::log('Failed to load subscriber data', Zend_Log::ALERT);
 		}
 		return $this;
-	}
-	
-	/**
-	 * Get the query for the collection to get the subscriber by.
-	 * @param type $params
-	 * @return boolean
-	 */
-	protected function getSubscriberQuery($params){
-		$queryParams = array();
-		
-		// TODO: Create SubscriberQuery classes for Imsi, msisdn etc.
-		if (isset($params['IMSI'])) {
-			$queryParams['imsi'] = $params['IMSI'];
-		} elseif (isset($params['MSISDN'])) {
-			$queryParams['msisdn'] = $params['MSISDN'];
-		} elseif(isset($params['sid']) && $params['to'] && $params['from']) {
-			$queryParams['sid'] = $params['sid'];
-			$queryParams['to']['$lte']   = Billrun_Db::intToMongoDate($queryParams['to']);
-			$queryParams['from']['$gte'] = Billrun_Db::intToMongoDate($queryParams['from']);
-		} else {
-			return false;
-		}
-		
-		return $queryParams;
 	}
 	
 	/**
