@@ -78,10 +78,10 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 		}
 		
 		// Get the subscriber.
-		$subscriber = $this->getSubscriber($subscriberId, $prepaidRecord);	
+		$subscriber = $this->getSubscriber($subscriberId);	
 		
 		// Subscriber was not found.
-		if($subscriber->isEmpty()) {
+		if(!$subscriber) {
 			Billrun_Factory::log("Updating by prepaid include failed to get subscriber id: " . $subscriberId, Zend_Log::ERR);
 			return false;
 		}

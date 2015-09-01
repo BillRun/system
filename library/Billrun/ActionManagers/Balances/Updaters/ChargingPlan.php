@@ -30,7 +30,7 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		}
 		
 		// Get the subscriber.
-		$subscriber = $this->getSubscriber($subscriberId, $chargingPlanRecord);	
+		$subscriber = $this->getSubscriber($subscriberId);	
 		
 		// Subscriber was not found.
 		if(!$subscriber) {

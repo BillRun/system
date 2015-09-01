@@ -139,11 +139,10 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater {
 	/**
 	 * Get billrun subscriber instance.
 	 * @param type $subscriberId If of the subscriber to load.
-	 * @param type $dateRecord Array that has to and from fields for the query.
 	 */
-	protected function getSubscriber($subscriberId, $dateRecord) {
+	protected function getSubscriber($subscriberId) {
 		// Get subscriber query.
-		$subscriberQuery = $this->getSubscriberQuery($subscriberId, $dateRecord);
+		$subscriberQuery = $this->getSubscriberQuery($subscriberId);
 
 		// Get the subscriber.
 		return Billrun_Factory::subscriber()->load($subscriberQuery);
@@ -152,18 +151,11 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater {
 	/**
 	 * Get a subscriber query to get the subscriber.
 	 * @param type $subscriberId - The ID of the subscriber.
-	 * @param type $planRecord - Record that holds to and from fields.
 	 * @return type Query to run.
 	 */
-	protected function getSubscriberQuery($subscriberId, $planRecord) {
+	protected function getSubscriberQuery($subscriberId) {
 		// Get subscriber query.
-		$subscriberQuery = array('sid' => $subscriberId);
-
-		// Add time to query.
-		$subscriberQuery['from'] = $planRecord['from'];
-		$subscriberQuery['to'] = $planRecord['to'];
-
-		return $subscriberQuery;
+		return array('sid' => $subscriberId);
 	}
 
 	/**
