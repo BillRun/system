@@ -51,10 +51,15 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 	protected function getAction() {
 		$filterName=key($this->query);
 		$updaterManagerInput = 
-			array('input'       => $this->updaterOptions,
+			array('options'     => $this->updaterOptions,
 				  'filter_name' => $filterName);
 		
 		$manager = new Billrun_ActionManagers_Balances_Updaters_Manager($updaterManagerInput);
+		if(!$manager) {
+			Billrun_Factory::log("Failed to get the updater manager!", Zend_Log::ERR);
+			return null;
+		}
+		
 		
 		// This is the method which is going to be executed.
 		return $manager->getAction();
