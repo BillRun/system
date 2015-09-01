@@ -18,12 +18,6 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 	 * @var type Array
 	 */
 	protected $balancesQuery = array();
-
-	/**
-	 * If true then the query is a ranged query in a specific date.
-	 * @var boolean 
-	 */
-	protected $queryInRange = false;
 	
 	/**
 	 * Query for projecting the balance.
@@ -43,9 +37,6 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 	protected function queryRangeBalances() {
 		try {
 			$cursor = $this->collection->query($this->balancesQuery)->cursor();
-			if(!$this->queryInRange) {
-				$cursor->limit(1);
-			}
 			$returnData = array();
 			
 			// Going through the lines
@@ -92,23 +83,30 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 		$to = $input->get('to');
 		$from = $input->get('from');
 		if($to && $from) {
-			$this->setDateParameters($to, $from, $this->balancesQuery);
-			$this->queryInRange = true;
+			$dateParameters = array('to' => array('$lte' => $to), 'from' => array('$gte' => $from));
+			$this->setDateParameters($dateParameters, $this->balancesQuery);
+		} else {
+			$dateParameters = array('to' => array('$gte' => time()), 'from' => array('$lte' => time()));
+			// Get all active balances.
+			$this->setDateParameters($dateParameters, $this->balancesQuery);
 		}
 	}
 	
 	/**
 	 * Set date parameters to a query.
 	 * are not null.
-	 * @param type $to - To pramter.
-	 * @param type $from - From parameter.
+	 * @param array $dateParameters - Array of date parameters 
+	 * including to and from to set to the query.
 	 * @param type $query - Query to set the date in.
+	 * @todo this function should move to a more generic location.
 	 */
-	protected function setDateParameters($to, $from, $query) {
-		$query['to'] =
-			array('$lte' => new MongoTimestamp($to));
-		$query['from'] = 
-			array('$gte' => new MongoTimestamp($from));
+	protected function setDateParameters($dateParameters, $query) {
+		// Go through the date parameters.
+		foreach ($dateParameters as $fieldName => $fieldValue) {
+			list($condition, $value) = each($fieldValue);
+			$query[$fieldName] =
+				array($condition => new MongoDate(strtime($value)));
+		}
 	}
 	
 	/**
