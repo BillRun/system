@@ -11,9 +11,13 @@
  *
  * @author tom
  */
-// TODO: Create abstract manager class and extend it.
 class Billrun_ActionManagers_Balances_Updaters_Manager extends Billrun_ActionManagers_Manager {
 	
+	/**
+	 * Array for translating the filter fields to update managers.
+	 * @var array
+	 * @todo Move this array to the conf.
+	 */
 	static $updaterTranslator = 
 		array('charging_plan_name'		  => 'ChargingPlan',
 			  'charging_plan_external_id' => 'ChargingPlan',
@@ -89,18 +93,9 @@ class Billrun_ActionManagers_Balances_Updaters_Manager extends Billrun_ActionMan
 	
 	/**
 	 * Get the action name from the input.
-	 * @param array $options - Array of options containing: 
-	 *						   'input' : The input to parse for the action.
 	 */
-	protected function getActionName($options) {
-		$filterName = $options['filter_name'];
-		
-		if(!isset(self::$updaterTranslator[$filterName])) {
-			Billrun_Factory::log("Filter name not found in translator!", Zend_Log::NOTICE);
-			return false;
-		}
-		
-		return self::$updaterTranslator[$filterName];
+	protected function getActionName() {
+		return self::$updaterTranslator[$this->options['filter_name']];
 	}
 
 }
