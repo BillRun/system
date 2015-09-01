@@ -83,7 +83,7 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 			$called_number = preg_replace('/^016/', '', $called_number);
 			$matchedRate = $this->getRateByParams($called_number, $usage_type, $line_time);
 		} else if($record_type == '31' && $ocg == '2102') {
-			$matchedRate = $this->getRateByParams($called_number, $usage_type, $line_time,$ocg);
+			$matchedRate = $this->getRateByParams($called_number, $usage_type, $line_time, $ocg);
 		}
 
 		return $matchedRate;
