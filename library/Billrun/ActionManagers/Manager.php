@@ -37,7 +37,7 @@ abstract class Billrun_ActionManagers_Manager {
 	 * to create the name of the action requested.
 	 */
 	protected function getActionClassName($action) {
-		return str_replace('_Manager', $action, __CLASS__);
+		return str_replace('_Manager', '_' . $action, __CLASS__);
 	}
 	
 	/**
