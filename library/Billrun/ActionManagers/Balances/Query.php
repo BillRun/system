@@ -86,7 +86,8 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 			$dateParameters = array('to' => array('$lte' => $to), 'from' => array('$gte' => $from));
 			$this->setDateParameters($dateParameters, $this->balancesQuery);
 		} else {
-			$dateParameters = array('to' => array('$gte' => time()), 'from' => array('$lte' => time()));
+			$timeNow = new MongoDate();
+			$dateParameters = array('to' => array('$gte' => $timeNow), 'from' => array('$lte' => $timeNow));
 			// Get all active balances.
 			$this->setDateParameters($dateParameters, $this->balancesQuery);
 		}
@@ -105,7 +106,7 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 		foreach ($dateParameters as $fieldName => $fieldValue) {
 			list($condition, $value) = each($fieldValue);
 			$query[$fieldName] =
-				array($condition => new MongoDate(strtime($value)));
+				array($condition => new $value);
 		}
 	}
 	
