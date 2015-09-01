@@ -83,15 +83,6 @@ class Billrun_ActionManagers_Balances_Updaters_Manager extends Billrun_ActionMan
 	}
 	
 	/**
-	 * Get the name of the action class to create.
-	 * @param string $action - String to concatenate to the current class stub
-	 * to create the name of the action requested.
-	 */
-	protected function getActionClassName($action) {
-		return str_replace('_Manager', $action, __CLASS__);
-	}
-	
-	/**
 	 * Get the action name from the input.
 	 */
 	protected function getActionName() {
