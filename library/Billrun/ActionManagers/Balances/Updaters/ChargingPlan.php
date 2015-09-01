@@ -18,13 +18,14 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 	 * @param type $query - Query to find row to update.
 	 * @param type $recordToSet - Values to update.
 	 * @param type $subscriberId - Id for the subscriber to update.
+	 * @return The updated record, false if failed.
 	 */
 	public function update($query, $recordToSet, $subscriberId) {
 		// TODO: This function is free similar to the one in ID, should refactor code to be more generic.
-		$chargingPlansCollection = Billrun_Factory::db()->chargingPlansCollection();
+		$chargingPlansCollection = Billrun_Factory::db()->plansCollection();
 		$chargingPlanRecord = $this->getPlanRecord($query, $chargingPlansCollection);
 		if(!$chargingPlanRecord) {
-			Billrun_Factory::log("Failed to get plan record to update balance query: " . $query, Zend_Log::ERR);
+			Billrun_Factory::log("Failed to get plan record to update balance query: " . print_r($query,1), Zend_Log::ERR);
 			return false;
 		}
 		

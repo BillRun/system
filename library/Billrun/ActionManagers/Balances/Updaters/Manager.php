@@ -28,24 +28,11 @@ class Billrun_ActionManagers_Balances_Updaters_Manager extends Billrun_ActionMan
 			  'secret'					  => 'Secret');
 	
 	/**
-	 * This function receives filter name and returns an updater.
-	 * @return type Balances action
+	 * Get the string that is the stump for the action class name to be constructed.
+	 * @return string - String for action name.
 	 */
-	public function getAction() {
-		$action = parent::getAction();
-		
-		$filterName = $this->options['filter_name'];
-		
-		/**
-		 * Parse the input data.
-		 */
-		if(!$action->parse($filterName)) {
-			Billrun_Factory::log("getAction Action failed to parse input! " . 
-								  print_r($filterName, 1), Zend_Log::INFO);
-			return null;
-		}
-		
-		return $action;
+	protected function getActionStump() {
+		return __CLASS__;
 	}
 	
 	/**

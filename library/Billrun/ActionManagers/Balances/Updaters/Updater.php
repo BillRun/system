@@ -79,7 +79,7 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater {
 				  'charging_plan_external_id' => 'external_id');
 				
 		// Fix the update record field names.
-		return array_megrge($this->translateFieldNames($query, $fieldNamesTranslate), $planQuery);
+		return array_merge($this->translateFieldNames($query, $fieldNamesTranslate), $planQuery);
 	}
 	
 	/**
@@ -127,6 +127,7 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater {
 	 * @param type $query - Query to find row to update.
 	 * @param type $recordToSet - Values to update.
 	 * @param type $subscriberId - Id for the subscriber to update.
+	 * @return The updated record, false if failed.
 	 */
 	public abstract function update($query, $recordToSet, $subscriberId);
 	

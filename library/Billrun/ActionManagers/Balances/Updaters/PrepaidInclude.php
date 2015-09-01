@@ -54,6 +54,7 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 	 * @param type $query - Query to find row to update.
 	 * @param type $recordToSet - Values to update.
 	 * @param type $subscriberId - Id for the subscriber to update.
+	 * @return The updated record, false if failed.
 	 */
 	public function update($query, $recordToSet, $subscriberId) {
 		// If updating by prepaid include the user must specify an expiration date.
