@@ -17,6 +17,29 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
 class QueryAction extends ApiAction {
 
 	/**
+	 * method to execute the query
+	 * it's called automatically by the api main controller
+	 */
+	public function execute() {
+		$this->preExecute();
+		$request = $this->getRequest()->getRequest(); // supports GET / POST requests
+		Billrun_Factory::log("Input: " . print_R($request, 1), Zend_Log::DEBUG);
+
+		if (!$this->validateRequest($request)) {
+			return false;
+		}
+		
+		$lines = $this->getResultLines($request);
+		// Error occured.
+		if($lines === false) {
+			return false;
+		}
+
+		$this->postExecute();
+		$this->sendResults($request, $lines);
+	}
+	
+	/**
 	 * Get the max list count.
 	 * @return int The maximum number allowed for the query.
 	 */
@@ -218,29 +241,6 @@ class QueryAction extends ApiAction {
 		}
 	
 		return true;
-	}
-	
-	/**
-	 * method to execute the query
-	 * it's called automatically by the api main controller
-	 */
-	public function execute() {
-		$this->preExecute();
-		$request = $this->getRequest()->getRequest(); // supports GET / POST requests
-		Billrun_Factory::log("Input: " . print_R($request, 1), Zend_Log::DEBUG);
-
-		if (!$this->validateRequest($request)) {
-			return false;
-		}
-		
-		$lines = $this->getResultLines($request);
-		// Error occured.
-		if($lines === false) {
-			return false;
-		}
-
-		$this->postExecute();
-		$this->sendResults($request, $lines);
 	}
 	
 	/**
