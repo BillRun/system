@@ -49,7 +49,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 	 * @return Billrun_ActionManagers_Action
 	 */
 	protected function getAction() {
-		list($filterName,$t)=each($this->query);
+		$filterName=key($this->query);
 		$updaterManagerInput = 
 			array('input'       => $this->updaterOptions,
 				  'filter_name' => $filterName);
@@ -110,7 +110,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 			
 		// TODO: If to is not set, but received opration set, it's an error, report?
 		$to = isset($jsonUpdateData['expiration_date']) ? ($jsonUpdateData['expiration_date']) : 0;
-		$this->recordToSet['to'] = $to;
+		$this->recordToSet['to'] = new MongoDate(strtotime($to));
 		$updateFields = $this->getUpdateFields();
 		
 		// Get only the values to be set in the update record.
@@ -214,13 +214,14 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 	protected function getUpdateFilter($jsonQueryData) {
 		$filter = array();
 		
+		// TODO: Take this from the conf
 		$filterFields = 
 			array('id',
 				  '_id',
-				  'charging_plan', 
-				  'charging_plan_intenal_id', 
-				  'name', 
-				  'account_intenal_id', 
+				  'charging_plan_name', 
+				  'charging_plan_external_id', 
+				  'pp_includes_name', 
+				  'pp_includes_external_id', 
 				  'reccuring', 
 				  'secret');
 		
