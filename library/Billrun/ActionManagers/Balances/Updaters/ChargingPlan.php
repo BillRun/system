@@ -33,7 +33,7 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		$subscriber = $this->getSubscriber($subscriberId, $chargingPlanRecord);	
 		
 		// Subscriber was not found.
-		if($subscriber->isEmpty()) {
+		if(!$subscriber) {
 			Billrun_Factory::log("Updating by charging plan failed to get subscriber id: " . $subscriberId, Zend_Log::ERR);
 			return false;
 		}
