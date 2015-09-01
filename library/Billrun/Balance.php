@@ -140,16 +140,16 @@ class Billrun_Balance extends Mongodloid_Entity {
 	 * Gets a query to get the correct balance of the subscriber.
 	 * 
 	 * @param type $subscriberId
-	 * @param type $urt
+	 * @param type $timeNow - The time now.
 	 * @param type $chargingType
 	 * @param type $usageType
 	 * @return array
 	 */
-	protected function getGetBalanceQuery($subscriberId, $urt, $chargingType = 'postpaid', $usageType = "") {
+	protected function getGetBalanceQuery($subscriberId, $timeNow, $chargingType = 'postpaid', $usageType = "") {
 		$query = array(
 			'sid' => $subscriberId,
-			'from' => array('$lte' => $urt),
-			'to' => array('$gte' => $urt),
+			'from' => array('$lte' => $timeNow),
+			'to' => array('$gte' => $timeNow),
 		);
 
 		if ($chargingType === 'prepaid') {
