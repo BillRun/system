@@ -23,7 +23,7 @@ abstract class Billrun_ActionManagers_Manager {
 	 * Create a new instance of the manager class.
 	 * @param array $options - Array to initialize the manager with.
 	 */
-	public function __construct($options) {
+	public function __construct($options = array()) {
 		$this->options = $options;
 	}
 	/**
