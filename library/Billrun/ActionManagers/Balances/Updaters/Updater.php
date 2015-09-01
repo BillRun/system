@@ -143,9 +143,13 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater {
 	protected function getSubscriber($subscriberId) {
 		// Get subscriber query.
 		$subscriberQuery = $this->getSubscriberQuery($subscriberId);
-
-		// Get the subscriber.
-		return Billrun_Factory::subscriber()->load($subscriberQuery);
+		
+		$coll = Billrun_Factory::db()->subscribersCollection();
+		$results = $coll->query($subscriberQuery)->cursor()->limit(1)->current();
+		if ($results->isEmpty()) {
+			return false;
+		}
+		return $results->getRawData();
 	}
 
 	/**
