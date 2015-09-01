@@ -387,5 +387,5 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			$this->intlGgsnRates[strval($rate->getId())] = $rate;
 		}
 	}
-	
+
 }
