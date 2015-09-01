@@ -125,7 +125,7 @@ class Billrun_Balance extends Mongodloid_Entity {
 	 * @return subscriber's balance
 	 */
 	public function load($subscriberId, $urt, $chargingType = 'postpaid', $usageType = "") {
-		Billrun_Factory::log()->log("Trying to load balance for subscriber " . $subscriberId . ". urt: " . $urt->sec . ". charging_type: " . $chargingType, Zend_Log::DEBUG);
+		Billrun_Factory::log("Trying to load balance for subscriber " . $subscriberId . ". urt: " . $urt->sec . ". charging_type: " . $chargingType, Zend_Log::DEBUG);
 
 		$query = $this->getGetBalanceQuery($subscriberId, $urt, $chargingType, $usageType);
 		$cursor = $this->collection->query($query)->cursor();
