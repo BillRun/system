@@ -172,5 +172,7 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 		$defaultBalance['charging_by_usaget'] = $prepaidRecord->{'charging_by_usaget'};
 		// TODO: This is not the correct way, priority needs to be calculated.
 		$defaultBalance['priority'] = 1;
+		
+		return $defaultBalance;
 	}
 }

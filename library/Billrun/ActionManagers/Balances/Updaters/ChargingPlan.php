@@ -173,5 +173,7 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		//$defaultBalance['charging_by_usaget'] = 
 		// TODO: This is not the correct way, priority needs to be calculated.
 		$defaultBalance['priority'] = 1;
+		
+		return $defaultBalance;
 	}
 }
