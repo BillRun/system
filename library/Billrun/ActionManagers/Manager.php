@@ -44,9 +44,7 @@ abstract class Billrun_ActionManagers_Manager {
 	 * Validate the input options parameters.
 	 * @return true if valid.
 	 */
-	protected function validate() {
-		return $this->options;
-	}
+	protected abstract function validate();
 	
 	/**
 	 * Allocate the new action to return.
