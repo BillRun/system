@@ -33,8 +33,8 @@ class Billrun_Subscriber_Query_Types_Sid extends Billrun_Subscriber_Query_Base {
 		$query = parent::buildQuery($params, $fieldNames);
 		
 		// Add the extra query fields.
-		$query['to']['$gte']   = new MongoDate();
-		$query['from']['$lte'] = new MongoDate();
+		$query['to']['$gt']   = new MongoDate();
+		$query['from']['$lt'] = new MongoDate();
 		
 		return $query;
 	}

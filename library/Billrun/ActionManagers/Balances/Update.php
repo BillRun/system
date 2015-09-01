@@ -187,17 +187,48 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 	}
 	
 	/**
+	 * Get the integer sid value from the input.
+	 * @param json $input - Received input to parse.
+	 * @return integer The input sid, false if error occured.
+	 */
+	protected function getSid($input) {
+		$sid = $input->get('sid');
+		
+		// Check that sid exists.
+		if(!$sid) {
+			Billrun_Factory::log("Update action did not receive a subscriber ID!", Zend_Log::ALERT);
+			return false;
+		}
+		
+		// Check that id is an integer.
+		if(!is_int($sid)) {
+			// Convert to int.
+			$tempSid = (int)$sid;
+			
+			// If the convertion returns 0 and the input string is not 0 it's an error.
+			if(!$tempSid && $sid !== "0"){
+				Billrun_Factory::log("Update action did not receive a valid subscriber ID! [" . print_r($sid, true) . ']', Zend_Log::ALERT);
+				return false;
+			}
+			
+			$sid = $tempSid;
+		}
+		
+		return $sid;
+	}
+	
+	/**
 	 * Parse the received request.
 	 * @param type $input - Input received.
 	 * @return true if valid.
 	 */
 	public function parse($input) {
-		$this->subscriberId = $input->get('sid');
-		if(empty($this->subscriberId)) {
-			Billrun_Factory::log("Update action did not receive subscriber ID!", Zend_Log::ALERT);
+		$sid = $this->getSid($input);
+		if($sid === false){
 			return false;
 		}
 		
+		$this->subscriberId = $sid;
 		if(!$this->setQueryRecord($input)) {
 			return false;
 		}
