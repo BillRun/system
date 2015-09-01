@@ -75,7 +75,7 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater {
 		$planQuery = array('type' => 'charging', 'to' => array('$gt', new MongoDate()));
 		
 		$fieldNamesTranslate =
-			array('charging_plan'			  => 'name',
+			array('charging_plan_name'		  => 'name',
 				  'charging_plan_external_id' => 'external_id');
 				
 		// Fix the update record field names.
