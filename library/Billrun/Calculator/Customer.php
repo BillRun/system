@@ -314,6 +314,11 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	 * @see Billrun_Calculator::isLineLegitimate
 	 */
 	public function isLineLegitimate($line) {
+		$line->collection(Billrun_Factory::db()->linesCollection());
+		$arate = $line->get('arate', false);
+		if (!empty($arate['skip_calc']) && in_array(self::$type, $arate['skip_calc'])) {
+			return false;
+		}
 		if (isset($line['usagev']) && $line['usagev'] !== 0 && $this->isCustomerable($line)) {
 			$customer = $this->isOutgoingCall($line) ? "caller" : "callee";
 			if (isset($this->translateCustomerIdentToAPI[$customer])) {
