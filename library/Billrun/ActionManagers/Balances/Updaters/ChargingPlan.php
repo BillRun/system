@@ -40,6 +40,10 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 			return false;
 		}
 
+		// Set subscriber to query.
+		$query['sid'] = $subscriber['sid'];
+		$query['aid'] = $subscriber['aid'];
+		
 		if (!$this->validateServiceProviders($subscriberId, $recordToSet)) {
 			return false;
 		}
