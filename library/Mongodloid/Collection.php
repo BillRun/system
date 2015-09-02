@@ -231,6 +231,16 @@ class Mongodloid_Collection {
 		return $this->_collection->find($query, $fields);
 	}
 
+	/**
+	 * Check if a certain entity exists in the collection.
+	 * @return boolean true if the query returned results.
+	 */
+	public function exists($query, $fields = array()) {
+		$cursor = $this->_collection->find($query, $fields);
+		// TODO: Validation on everything.
+		return $cursor->count() > 0;
+	}
+	
 	public function aggregate() {
 		$args = func_get_args();
 //		if ($this->_db->compareServerVersion('2.6', '>=')) { // TODO Need to update Mongodloid_Cursor functions
