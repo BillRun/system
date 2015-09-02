@@ -86,43 +86,104 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 			return false;
 		}
 		
+		// Set subscriber to query.
+		$query['sid'] = $subscriber['sid'];
+		$query['aid'] = $subscriber['aid'];
+		
+		
 		// Create a default balance record.
 		$defaultBalance = $this->getDefaultBalance($subscriber, $prepaidRecord);
 		
-		return $this->updateBalance($prepaidRecord['charging_by_usegt'], 
-								    $prepaidRecord['charging_by'], 
+		$chargingPlan = $this->getPlanObject($prepaidRecord, $recordToSet);
+		
+		return $this->updateBalance($chargingPlan, 
 									$query, 
 									$defaultBalance, 
-									$recordToSet['to'],
-									$recordToSet['value']);
+									$recordToSet['to']);
+	}
+	
+	/**
+	 * Get the plan object built from the record values.
+	 * @param array $prepaidRecord - Prepaid record.
+	 * @param array $recordToSet - Record with values to be set.
+	 * @return \Billrun_DataTypes_ChargingPlan Plan object built with values.
+	 */
+	protected function getPlanObject($prepaidRecord, $recordToSet) {
+		$chargingBy = $prepaidRecord['charging_by'];
+		$chargingByUsaget = $prepaidRecord['charging_by_usaget'];
+		if($chargingBy == $chargingByUsaget) {
+			$chargingByUsaget = $recordToSet['value'];
+		}else{
+			$chargingByUsaget = array($chargingByUsaget => $recordToSet['value']);
+		}
+		
+		return new Billrun_DataTypes_ChargingPlan($chargingBy, 
+											      $chargingByUsaget);
+	}
+	
+	/**
+	 * Get the update balance query. 
+	 * @param Mongoldoid_Collection $balancesColl
+	 * @param array $query - Query for getting tha balance.
+	 * @param Billrun_DataTypes_ChargingPlan $chargingPlan
+	 * @param MongoDate $toTime - Expiration date.
+	 * @param array $defaultBalance - Default balance to set.
+	 * @return array Query for set updating the balance.
+	 */
+	protected function getUpdateBalanceQuery($balancesColl, 
+											 $query, 
+											 $chargingPlan,
+											 $toTime,
+										     $defaultBalance) {
+		$update = array();
+		// If the balance doesn't exist take the setOnInsert query, 
+		// if it exists take the set query.
+		if(!$balancesColl->exists($query)) {
+			$update = $this->getSetOnInsert($chargingPlan, $defaultBalance);
+		} else {
+			$this->handleZeroing($query, $balancesColl, $chargingPlan->getFieldName());
+			$update = $this->getSetQuery($chargingPlan->getValue(), $chargingPlan->getFieldName(), $toTime);
+		}
+		
+		return $update;
+	}
+	
+	/**
+	 * Return the part of the query for setOnInsert
+	 * @param Billrun_DataTypes_ChargingPlan $chargingPlan
+	 * @param array $defaultBalance
+	 * @return array
+	 */
+	protected function getSetOnInsert($chargingPlan, 
+									  $defaultBalance) {
+		$defaultBalance['charging_by'] = $chargingPlan->getChargingBy();
+		$defaultBalance['charging_by_usegt'] = $chargingPlan->getChargingByUsaget();
+		$defaultBalance[$chargingPlan->getFieldName()] = $chargingPlan->getValue();
+		return array(
+			'$setOnInsert' => $defaultBalance,
+		);
 	}
 	
 	/**
 	 * Update a single balance.
-	 * @param type $chargingBy
-	 * @param type $chargingByValue
-	 * @param type $query
-	 * @param type $balancesColl
-	 * @return type
+	 * @param Billrun_DataTypes_ChargingPlan $chargingPlan
+	 * @param array $query
+	 * @param array $defaultBalance
+	 * @param MongoDate $toTime
+	 * @return Updated record.
 	 */
-	protected function updateBalance($chargingBy, $chargingByValue, $query, $defaultBalance, $toTime, $value) {
+	protected function updateBalance($chargingPlan, $query, $defaultBalance, $toTime) {
 		$balancesColl = Billrun_Factory::db()->balancesCollection();
-		$valueFieldName = array();
-		
-		// TODO: What if total cost?
-		$valueFieldName= 'balance.totals.' . $chargingBy . '.' . $chargingByValue;
 
-		$this->handleZeroing($query, $balancesColl);
+		// Get the balance with the current value field.
+		$query[$chargingPlan->getFieldName()]['$exists'] = 1;
 		
-		$valueUpdateQuery = array();
-		$queryType = $this->isIncrement ? '$inc' : '$set';
-		$valueUpdateQuery[$queryType]
-				   [$valueFieldName] = $value;
-		$valueUpdateQuery[$queryType]
-				   ['to'] = $toTime;
+		$update = $this->getUpdateBalanceQuery($balancesColl, 
+											   $query, 
+											   $chargingPlan,
+											   $toTime,
+										       $defaultBalance);
 				
-		$update = array_merge($this->getSetOnInsert($chargingBy, $defaultBalance), $valueUpdateQuery);
-
 		$options = array(
 			'upsert' => true,
 			'new' => true,
@@ -139,7 +200,7 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 	 * @param type $balancesColl
 	 * @todo - This is suplicated in chargingPlan updater, should make more generic.
 	 */
-	protected function handleZeroing($query, $balancesColl) {
+	protected function handleZeroing($query, $balancesColl, $valueFieldName) {
 		// User requested incrementing, check if to reset the record.
 		if(!$this->ignoreOveruse || !$this->isIncrement) {
 			return;
