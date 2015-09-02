@@ -119,7 +119,7 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 	 * @param string $chargingBy
 	 * @param string $chargingByUsegt
 	 * @param string $valueFieldName
-	 * @param string $chargingByValue 
+	 * @param string $valueToUseInQuery 
 	 * @param MongoDate $toTime - Expiration date.
 	 * @return array Query for set updating the balance.
 	 */
@@ -128,17 +128,21 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 											 $chargingBy,
 											 $chargingByUsegt, 
 											 $valueFieldName,
-										     $chargingByValue,
+										     $valueToUseInQuery,
 											 $toTime,
 										     $defaultBalance) {
 		$update = array();
 		// If the balance doesn't exist take the setOnInsert query, 
 		// if it exists take the set query.
 		if(!$balancesColl->exists($query)) {
-			$update = $this->getSetOnInsert($chargingBy, $chargingByUsegt, $defaultBalance);
+			$update = $this->getSetOnInsert($chargingBy, 
+											$chargingByUsegt,
+											$valueToUseInQuery,
+											$valueFieldName, 
+											$defaultBalance);
 		} else {
 			$this->handleZeroing($query, $balancesColl, $valueFieldName);
-			$update = $this->getSetQuery($valueFieldName, $chargingByValue, $toTime);
+			$update = $this->getSetQuery($valueToUseInQuery, $valueFieldName, $toTime);
 		}
 		
 		return $update;
@@ -173,7 +177,7 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 											   $chargingBy,
 											   $chargingByUsegt,
 											   $valueFieldName, 
-									           $chargingByValue, 
+									           $valueToUseInQuery, 
 											   $toTime,
 											   $defaultBalance);
 			
@@ -191,11 +195,18 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 	 * Return the part of the query for setOnInsert
 	 * @param type $chargingBy
 	 * @param array $defaultBalance
+	 * @param string $valueToUseInQuery - The value name of the balance.
+	 * @param string $valueFieldName - The name of the field to be set.
 	 * @return type
 	 */
-	protected function getSetOnInsert($chargingBy, $chargingByUsegt, $defaultBalance) {
+	protected function getSetOnInsert($chargingBy,
+									  $chargingByUsegt,
+									  $valueFieldName, 
+									  $valueToUseInQuery, 
+									  $defaultBalance) {
 		$defaultBalance['charging_by'] = $chargingBy;
 		$defaultBalance['charging_by_usegt'] = $chargingByUsegt;
+		$defaultBalance[$valueFieldName] = $valueToUseInQuery;
 		return array(
 			'$setOnInsert' => $defaultBalance,
 		);
