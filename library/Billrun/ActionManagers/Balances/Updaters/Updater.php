@@ -193,7 +193,7 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater {
 	 */
 	protected function validateServiceProviders($subscriber, $planRecord) {
 		// Get the service provider to check that it fits the subscriber's.
-		$subscriberServiceProvider = $subscriber->{'service_provider'};
+		$subscriberServiceProvider = $subscriber['service_provider'];
 
 		// Check if mismatching serivce providers.
 		if ($planRecord['service_provider'] != $subscriberServiceProvider) {
