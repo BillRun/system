@@ -236,9 +236,9 @@ class Mongodloid_Collection {
 	 * @return boolean true if the query returned results.
 	 */
 	public function exists($query, $fields = array()) {
-		$cursor = $this->_collection->find($query, $fields);
+		$cursor = $this->query($query, $fields)->cursor();
 		// TODO: Validation on everything.
-		return $cursor->count() > 0;
+		return !$cursor->current()->isEmpty();
 	}
 	
 	public function aggregate() {
