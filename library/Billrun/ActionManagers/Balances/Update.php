@@ -49,12 +49,17 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 	 * @return Billrun_ActionManagers_Action
 	 */
 	protected function getAction() {
-		list($filterName,$t)=each($this->query);
+		$filterName=key($this->query);
 		$updaterManagerInput = 
-			array('input'       => $this->updaterOptions,
+			array('options'     => $this->updaterOptions,
 				  'filter_name' => $filterName);
 		
 		$manager = new Billrun_ActionManagers_Balances_Updaters_Manager($updaterManagerInput);
+		if(!$manager) {
+			Billrun_Factory::log("Failed to get the updater manager!", Zend_Log::ERR);
+			return null;
+		}
+		
 		
 		// This is the method which is going to be executed.
 		return $manager->getAction();
@@ -73,6 +78,10 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		$outputDocuments = 
 			$updater->update($this->query, $this->recordToSet, $this->subscriberId);
 
+		if($outputDocuments === false) {
+			$success = false;
+		}
+		
 		$outputResult = 
 			array('status'  => ($success) ? (1) : (0),
 				  'desc'    => ($success) ? ('success') : ('Failed') . ' updating balance',
@@ -110,7 +119,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 			
 		// TODO: If to is not set, but received opration set, it's an error, report?
 		$to = isset($jsonUpdateData['expiration_date']) ? ($jsonUpdateData['expiration_date']) : 0;
-		$this->recordToSet['to'] = $to;
+		$this->recordToSet['to'] = new MongoDate(strtotime($to));
 		$updateFields = $this->getUpdateFields();
 		
 		// Get only the values to be set in the update record.
@@ -178,17 +187,48 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 	}
 	
 	/**
+	 * Get the integer sid value from the input.
+	 * @param json $input - Received input to parse.
+	 * @return integer The input sid, false if error occured.
+	 */
+	protected function getSid($input) {
+		$sid = $input->get('sid');
+		
+		// Check that sid exists.
+		if(!$sid) {
+			Billrun_Factory::log("Update action did not receive a subscriber ID!", Zend_Log::ALERT);
+			return false;
+		}
+		
+		// Check that id is an integer.
+		if(!is_int($sid)) {
+			// Convert to int.
+			$tempSid = (int)$sid;
+			
+			// If the convertion returns 0 and the input string is not 0 it's an error.
+			if(!$tempSid && $sid !== "0"){
+				Billrun_Factory::log("Update action did not receive a valid subscriber ID! [" . print_r($sid, true) . ']', Zend_Log::ALERT);
+				return false;
+			}
+			
+			$sid = $tempSid;
+		}
+		
+		return $sid;
+	}
+	
+	/**
 	 * Parse the received request.
 	 * @param type $input - Input received.
 	 * @return true if valid.
 	 */
 	public function parse($input) {
-		$this->subscriberId = $input->get('sid');
-		if(empty($this->subscriberId)) {
-			Billrun_Factory::log("Update action did not receive subscriber ID!", Zend_Log::ALERT);
+		$sid = $this->getSid($input);
+		if($sid === false){
 			return false;
 		}
 		
+		$this->subscriberId = $sid;
 		if(!$this->setQueryRecord($input)) {
 			return false;
 		}
@@ -214,13 +254,14 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 	protected function getUpdateFilter($jsonQueryData) {
 		$filter = array();
 		
+		// TODO: Take this from the conf
 		$filterFields = 
 			array('id',
 				  '_id',
-				  'charging_plan', 
-				  'charging_plan_intenal_id', 
-				  'name', 
-				  'account_intenal_id', 
+				  'charging_plan_name', 
+				  'charging_plan_external_id', 
+				  'pp_includes_name', 
+				  'pp_includes_external_id', 
 				  'reccuring', 
 				  'secret');
 		

@@ -11,9 +11,13 @@
  *
  * @author tom
  */
-// TODO: Create abstract manager class and extend it.
 class Billrun_ActionManagers_Balances_Updaters_Manager extends Billrun_ActionManagers_Manager {
 	
+	/**
+	 * Array for translating the filter fields to update managers.
+	 * @var array
+	 * @todo Move this array to the conf.
+	 */
 	static $updaterTranslator = 
 		array('charging_plan_name'		  => 'ChargingPlan',
 			  'charging_plan_external_id' => 'ChargingPlan',
@@ -24,24 +28,11 @@ class Billrun_ActionManagers_Balances_Updaters_Manager extends Billrun_ActionMan
 			  'secret'					  => 'Secret');
 	
 	/**
-	 * This function receives filter name and returns an updater.
-	 * @return type Balances action
+	 * Get the string that is the stump for the action class name to be constructed.
+	 * @return string - String for action name.
 	 */
-	public function getAction() {
-		$action = parent::getAction();
-		
-		$filterName = $this->options['filter_name'];
-		
-		/**
-		 * Parse the input data.
-		 */
-		if(!$action->parse($filterName)) {
-			Billrun_Factory::log("getAction Action failed to parse input! " . 
-								  print_r($filterName, 1), Zend_Log::INFO);
-			return null;
-		}
-		
-		return $action;
+	protected function getActionStump() {
+		return __CLASS__;
 	}
 	
 	/**
@@ -79,28 +70,10 @@ class Billrun_ActionManagers_Balances_Updaters_Manager extends Billrun_ActionMan
 	}
 	
 	/**
-	 * Get the name of the action class to create.
-	 * @param string $action - String to concatenate to the current class stub
-	 * to create the name of the action requested.
-	 */
-	protected function getActionClassName($action) {
-		return str_replace('_Manager', $action, __CLASS__);
-	}
-	
-	/**
 	 * Get the action name from the input.
-	 * @param array $options - Array of options containing: 
-	 *						   'input' : The input to parse for the action.
 	 */
-	protected function getActionName($options) {
-		$filterName = $options['filter_name'];
-		
-		if(!isset(self::$updaterTranslator[$filterName])) {
-			Billrun_Factory::log("Filter name not found in translator!", Zend_Log::NOTICE);
-			return false;
-		}
-		
-		return self::$updaterTranslator[$filterName];
+	protected function getActionName() {
+		return self::$updaterTranslator[$this->options['filter_name']];
 	}
 
 }

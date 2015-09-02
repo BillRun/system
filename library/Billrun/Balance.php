@@ -125,7 +125,7 @@ class Billrun_Balance extends Mongodloid_Entity {
 	 * @return subscriber's balance
 	 */
 	public function load($subscriberId, $urt, $chargingType = 'postpaid', $usageType = "") {
-		Billrun_Factory::log()->log("Trying to load balance for subscriber " . $subscriberId . ". urt: " . $urt->sec . ". charging_type: " . $chargingType, Zend_Log::DEBUG);
+		Billrun_Factory::log("Trying to load balance for subscriber " . $subscriberId . ". urt: " . $urt->sec . ". charging_type: " . $chargingType, Zend_Log::DEBUG);
 
 		$query = $this->getGetBalanceQuery($subscriberId, $urt, $chargingType, $usageType);
 		$cursor = $this->collection->query($query)->cursor();
@@ -140,16 +140,16 @@ class Billrun_Balance extends Mongodloid_Entity {
 	 * Gets a query to get the correct balance of the subscriber.
 	 * 
 	 * @param type $subscriberId
-	 * @param type $urt
+	 * @param type $timeNow - The time now.
 	 * @param type $chargingType
 	 * @param type $usageType
 	 * @return array
 	 */
-	protected function getGetBalanceQuery($subscriberId, $urt, $chargingType = 'postpaid', $usageType = "") {
+	protected function getGetBalanceQuery($subscriberId, $timeNow, $chargingType = 'postpaid', $usageType = "") {
 		$query = array(
 			'sid' => $subscriberId,
-			'from' => array('$lte' => $urt),
-			'to' => array('$gte' => $urt),
+			'from' => array('$lte' => $timeNow),
+			'to' => array('$gte' => $timeNow),
 		);
 
 		if ($chargingType === 'prepaid') {

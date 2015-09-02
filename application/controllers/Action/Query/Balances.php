@@ -13,6 +13,8 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  * @package  Action
  * 
  * @since    2.8
+ * 
+ * @deprecated since version 4.0
  */
 class BalancesAction extends QueryAction {
 
