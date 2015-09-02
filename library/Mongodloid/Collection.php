@@ -235,8 +235,8 @@ class Mongodloid_Collection {
 	 * Check if a certain entity exists in the collection.
 	 * @return boolean true if the query returned results.
 	 */
-	public function exists($query, $fields = array()) {
-		$cursor = $this->query($query, $fields)->cursor();
+	public function exists($query) {
+		$cursor = $this->query($query)->cursor();
 		// TODO: Validation on everything.
 		return !$cursor->current()->isEmpty();
 	}
