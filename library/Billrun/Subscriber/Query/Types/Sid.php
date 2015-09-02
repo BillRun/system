@@ -24,18 +24,6 @@ class Billrun_Subscriber_Query_Types_Sid extends Billrun_Subscriber_Query_Base {
 	}
 	
 	/**
-	 * Checks if a query can be built from the received parameters.
-	 * @param array $params - Received array of parameters.
-	 * @param array $fieldsToValidate - Array of field names in the parameters.
-	 */
-	protected function canHandle($params, $fieldsToValidate) {
-		// Add extra fields to validate.
-		$fieldsToValidate[] = 'to';
-		$fieldsToValidate[] = 'from';
-		return parent::canHandle($params, $fieldsToValidate);
-	}
-	
-	/**
 	 * Build the query by the parameters.
 	 * @param array $params - Array of received parameters.
 	 * @param array $fieldNames - Array of field names in the parameters and the query.
@@ -45,8 +33,8 @@ class Billrun_Subscriber_Query_Types_Sid extends Billrun_Subscriber_Query_Base {
 		$query = parent::buildQuery($params, $fieldNames);
 		
 		// Add the extra query fields.
-		$query['to']['$lte']   = Billrun_Db::intToMongoDate($params['to']);
-		$query['from']['$gte'] = Billrun_Db::intToMongoDate($params['from']);
+		$query['to']['$gt']   = new MongoDate();
+		$query['from']['$lt'] = new MongoDate();
 		
 		return $query;
 	}

@@ -54,6 +54,7 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 	 * @param type $query - Query to find row to update.
 	 * @param type $recordToSet - Values to update.
 	 * @param type $subscriberId - Id for the subscriber to update.
+	 * @return The updated record, false if failed.
 	 */
 	public function update($query, $recordToSet, $subscriberId) {
 		// If updating by prepaid include the user must specify an expiration date.
@@ -77,10 +78,10 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 		}
 		
 		// Get the subscriber.
-		$subscriber = $this->getSubscriber($subscriberId, $prepaidRecord);	
+		$subscriber = $this->getSubscriber($subscriberId);	
 		
 		// Subscriber was not found.
-		if($subscriber->isEmpty()) {
+		if(!$subscriber) {
 			Billrun_Factory::log("Updating by prepaid include failed to get subscriber id: " . $subscriberId, Zend_Log::ERR);
 			return false;
 		}
@@ -163,13 +164,15 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 		$defaultBalance['from'] = new MongoDate();
 		
 		$defaultBalance['to']    = $prepaidRecord['to'];
-		$defaultBalance['sid']   = $subscriber->{'sid'};
-		$defaultBalance['aid']   = $subscriber->{'aid'};
+		$defaultBalance['sid']   = $subscriber['sid'];
+		$defaultBalance['aid']   = $subscriber['aid'];
 		$defaultBalance['current_plan'] = $this->getPlanRefForSubscriber($subscriber);
-		$defaultBalance['charging_type'] = $subscriber->{'charging_type'};
-		$defaultBalance['charging_by'] = $prepaidRecord->{'charging_by'};
-		$defaultBalance['charging_by_usaget'] = $prepaidRecord->{'charging_by_usaget'};
+		$defaultBalance['charging_type'] = $subscriber['charging_type'];
+		$defaultBalance['charging_by'] = $prepaidRecord['charging_by'];
+		$defaultBalance['charging_by_usaget'] = $prepaidRecord['charging_by_usaget'];
 		// TODO: This is not the correct way, priority needs to be calculated.
 		$defaultBalance['priority'] = 1;
+		
+		return $defaultBalance;
 	}
 }

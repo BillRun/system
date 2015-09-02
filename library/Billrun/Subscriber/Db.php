@@ -12,6 +12,9 @@
  *
  * @package  Billing
  * @since    4.0
+ * @todo This class sometimes uses Uppercase keys and sometimes lower case keys. [IMSI and imsi]. 
+ * There should be a convertor in the set and get function so that the keys will ALWAYS be lower or upper.
+ * This way whoever uses this class can send whatever he wants in the key fields.
  */
 class Billrun_Subscriber_Db extends Billrun_Subscriber {
 	
@@ -44,14 +47,15 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 	 * method to load subsbscriber details
 	 * 
 	 * @param array $params load by those params 
+	 * @return true if successful.
 	 */
 	public function load($params) {
 		$subscriberQuery = Billrun_Subscriber_Query_Manager::handle($params);
 		if($subscriberQuery === false){
 			Billrun_Factory::log('Cannot identify subscriber. Require phone or imsi to load. Current parameters: ' . print_R($params, 1), Zend_Log::ALERT);
-			return $this;
+			return false;
 		}
-
+		
 //		if (!isset($params['time'])) {
 //			$datetime = time();
 //		} else {
@@ -63,25 +67,25 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 
 
 		$data = $this->customerQueryDb($subscriberQuery);
-
-		if (is_array($data)) {
-			$this->data = $data;
-		} else {
+		if(!$data) {
 			Billrun_Factory::log('Failed to load subscriber data', Zend_Log::ALERT);
-		}
-		return $this;
+			return false;
+		}	
+		
+		$this->data = $data;
+		return true;
 	}
 	
 	/**
 	 * Get the customer from the db.
 	 * @param array $params - Input params to get a subscriber by.
-	 * @return array Raw data of mongo raw.
+	 * @return array Raw data of mongo raw. False if none found.
 	 */
 	protected function customerQueryDb($params) {
 		$coll = Billrun_Factory::db()->subscribersCollection();
 		$results = $coll->query($params)->cursor()->limit(1)->current();
 		if ($results->isEmpty()) {
-			return array();
+			return false;
 		}
 		return $results->getRawData();
 	}

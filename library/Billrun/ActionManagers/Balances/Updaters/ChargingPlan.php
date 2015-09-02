@@ -18,21 +18,22 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 	 * @param type $query - Query to find row to update.
 	 * @param type $recordToSet - Values to update.
 	 * @param type $subscriberId - Id for the subscriber to update.
+	 * @return The updated record, false if failed.
 	 */
 	public function update($query, $recordToSet, $subscriberId) {
 		// TODO: This function is free similar to the one in ID, should refactor code to be more generic.
-		$chargingPlansCollection = Billrun_Factory::db()->chargingPlansCollection();
+		$chargingPlansCollection = Billrun_Factory::db()->plansCollection();
 		$chargingPlanRecord = $this->getPlanRecord($query, $chargingPlansCollection);
 		if(!$chargingPlanRecord) {
-			Billrun_Factory::log("Failed to get plan record to update balance query: " . $query, Zend_Log::ERR);
+			Billrun_Factory::log("Failed to get plan record to update balance query: " . print_r($query,1), Zend_Log::ERR);
 			return false;
 		}
 		
 		// Get the subscriber.
-		$subscriber = $this->getSubscriber($subscriberId, $chargingPlanRecord);	
+		$subscriber = $this->getSubscriber($subscriberId);	
 		
 		// Subscriber was not found.
-		if($subscriber->isEmpty()) {
+		if(!$subscriber) {
 			Billrun_Factory::log("Updating by charging plan failed to get subscriber id: " . $subscriberId, Zend_Log::ERR);
 			return false;
 		}
@@ -154,11 +155,11 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		}
 		
 		$defaultBalance['to']    = $to;
-		$defaultBalance['sid']   = $subscriber->{'sid'};
-		$defaultBalance['aid']   = $subscriber->{'aid'};
+		$defaultBalance['sid']   = $subscriber['sid'];
+		$defaultBalance['aid']   = $subscriber['aid'];
 		
 		// Get the ref to the subscriber's plan.
-		$planName = $subscriber->{'plan'};
+		$planName = $subscriber['plan'];
 		$plansCollection = Billrun_Factory::db()->plansCollection();
 		
 		// TODO: Is this right here to use the now time or should i use the times from the charging plan?
@@ -167,10 +168,12 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 							"from" => array('$lt', $nowTime));
 		$planRecord = $plansCollection->query($plansQuery)->cursor()->current();
 		$defaultBalance['current_plan'] = $plansCollection->createRefByEntity($planRecord);
-		$defaultBalance['charging_type'] = $subscriber->{'charging_type'};
+		$defaultBalance['charging_type'] = $subscriber['charging_type'];
 		// This is being set outside of this function!!!
 		//$defaultBalance['charging_by_usaget'] = 
 		// TODO: This is not the correct way, priority needs to be calculated.
 		$defaultBalance['priority'] = 1;
+		
+		return $defaultBalance;
 	}
 }
