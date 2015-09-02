@@ -223,10 +223,12 @@ class ImportController extends Yaf_Controller_Abstract {
 //		die('Finished preparations successfuly. ' . count($new_rates) . ' rates will be added.');
 
 		if ($new_rates) {
+			$ratesCollection = Billrun_Factory::db()->ratesCollection();
 			// insert new rates
-			Billrun_Factory::db()->ratesCollection()->batchInsert($new_rates);
+			$ratesCollection->batchInsert($new_rates);
 			// update old rates "to" field
-			Billrun_Factory::db()->ratesCollection()->update(array('key' => array('$regex' => '^AC_ROAM'), 'from' => array('$lte' => $now), 'to' => array('$gte' => $now)), array('$set' => array('to' => $old_to_date)), array('multiple' => TRUE));
+			// TODO: Check the return value of update?
+			$ratesCollection->update(array('key' => array('$regex' => '^AC_ROAM'), 'from' => array('$lte' => $now), 'to' => array('$gte' => $now)), array('$set' => array('to' => $old_to_date)), array('multiple' => TRUE));
 		}
 
 		die('Ended successfuly.');

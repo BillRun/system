@@ -118,7 +118,7 @@ class CliController extends Yaf_Controller_Abstract {
 	 * @param string $content the content to add
 	 */
 	public function addOutput($content) {
-		Billrun_Log::getInstance()->log($content, Zend_Log::INFO);
+		Billrun_Factory::log($content, Zend_Log::INFO);
 	}
 
 	/**

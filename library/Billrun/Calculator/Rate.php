@@ -126,7 +126,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 		if (!isset(self::$calcs[$type])) {
 			// @TODO: use always the first condition for all types - it will load the config values by default
 			if ($type === 'smsc' || $type === 'smpp' || $type === 'tap3') {
-				$configOptions = Billrun_Factory::config()->getConfigValue('Rate_' . ucfirst($type));
+				$configOptions = Billrun_Factory::config()->getConfigValue('Rate_' . ucfirst($type), array());
 				$options = array_merge($options, $configOptions);
 			}
 			$class = 'Billrun_Calculator_Rate_' . ucfirst($type);
@@ -145,6 +145,8 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 		if (isset($rate['key']) && $rate['key'] == "UNRATED") {
 			return false;
 		}
+		
+		// TODO: Create the ref using the collection, not the entity object.
 		$added_values = array(
 			$this->ratingField => $rate ? $rate->createRef() : $rate,
 		);

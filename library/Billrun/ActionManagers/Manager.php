@@ -23,13 +23,21 @@ abstract class Billrun_ActionManagers_Manager {
 	 * Create a new instance of the manager class.
 	 * @param array $options - Array to initialize the manager with.
 	 */
-	public function __construct($options) {
+	public function __construct($options = array()) {
 		$this->options = $options;
 	}
 	/**
 	 * Get the action name from the input.
 	 */
 	protected abstract function getActionName();
+	
+	/**
+	 * Get the string that is the stump for the action class name to be constructed.
+	 * @return string - String for action name.
+	 */
+	protected function getActionStump() {
+		return __CLASS__;
+	}
 	
 	/**
 	 * Get the name of the action class to create.

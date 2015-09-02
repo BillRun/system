@@ -456,7 +456,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		}
 		$balanceRaw = $this->balance->getRawData();
 		if ($row['charging_type'] === 'prepaid' && !(isset($row['prepaid_rebalance']) && $row['prepaid_rebalance'])) { // If it's a prepaid row, but not rebalance
-			$row['usagev'] = $volume = $this->getPrepaidGrantedVolume($rate, $this->balance, $usage_type);
+			$row['usagev'] = $volume = $this->getPrepaidGrantedVolume($row, $rate, $this->balance, $usage_type);
 		} else {
 			$volume = $row['usagev'];
 		}
@@ -705,11 +705,16 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	
 	/**
 	 * Calculates the volume granted for subscriber by rate and balance
+	 * @param type $row
 	 * @param type $rate
 	 * @param type $balance
 	 * @param type $usageType
 	 */
-	protected function getPrepaidGrantedVolume($rate, $balance, $usageType) {
+	protected function getPrepaidGrantedVolume($row, $rate, $balance, $usageType) {
+		if ((isset($row['billrun_prepend']) && $row['billrun_prepend']) || 
+			(isset($row['free_call']) && $row['free_call'])) {
+			return 0;
+		}
 		$maximumGrantedVolume = $this->getPrepaidGrantedVolumeByRate($rate, $usageType);
 		if (isset($balance->get("balance")["totals"][$usageType]["usagev"])) {
 			$currentBalanceVolume = $balance->get("balance")["totals"][$usageType]["usagev"];

@@ -12,14 +12,14 @@
  * @author tom
  */
 abstract class Billrun_ActionManagers_Balances_Updaters_Updater {
-	
+
 	/**
 	 * If true then the values in mongo are updated by incrementation,
 	 * if false then the values in the mongo are forceablly set.
 	 * @var boolean. 
 	 */
 	protected $isIncrement = true;
-	
+
 	/**
 	 * Any request for balance incrementation when "$ignoreOveruse" value is true and the current account balance queried
 	 * exceeds the maximum allowance (balance is above zero), will reset the balance (to zero) and only then increment it.
@@ -27,23 +27,23 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater {
 	 * @var boolean 
 	 */
 	protected $ignoreOveruse = true;
-	
+
 	/**
 	 * Create a new instance of the updater class.
 	 * @param array $options - Holding:
-	 *						   increment - If true then the values in mongo are updated by incrementation,
-	 *									   if false then the values in the mongo are forceablly set.
-	 *						   zero - If requested to update by incrementing but the existing 
-	 *								  value is larger than zero than zeroise the value.
+	 * 						   increment - If true then the values in mongo are updated by incrementation,
+	 * 									   if false then the values in the mongo are forceablly set.
+	 * 						   zero - If requested to update by incrementing but the existing 
+	 * 								  value is larger than zero than zeroise the value.
 	 */
 	public function __construct($options) {
 		// If it is not set, the default is used.
-		if(isset($options['increment'])) {
+		if (isset($options['increment'])) {
 			$this->isIncrement = $options['increment'];
 		}
-		
+
 		// If it is not set, the default is used.
-		if(isset($options['zero'])) {
+		if (isset($options['zero'])) {
 			$this->ignoreOveruse = $options['zero'];
 		}
 	}
@@ -54,17 +54,17 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater {
 	 * @param type $query - Record to be update in the db.
 	 * @param type $translationTable - Table to use to translate the values.
 	 */
-	protected function translateFieldNames($query, $translationTable){
+	protected function translateFieldNames($query, $translationTable) {
 		$translatedQuery = array();
 		foreach ($translationTable as $oldName => $newName) {
-			if(isset($query[$oldName])){
+			if (isset($query[$oldName])) {
 				$translatedQuery[$newName] = $query[$oldName];
 			}
 		}
-		
+
 		return $translatedQuery;
 	}
-	
+
 	/**
 	 * Get the query to run on the plans collection in mongo.
 	 * @param type $query Input query to proccess.
@@ -72,16 +72,21 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater {
 	 */
 	protected function getPlanQuery($query) {
 		// Single the type to be charging.
-		$planQuery = array('type' => 'charging', 'to' => array('$gt', new MongoDate()));
-		
-		$fieldNamesTranslate =
-			array('charging_plan'			  => 'name',
-				  'charging_plan_external_id' => 'external_id');
-				
+		$planQuery = array(
+			'type' => 'charging',
+			'to' => array(
+				'$gt' => new MongoDate()
+			)
+		);
+
+		//unset($planQuery['to']);
+		$fieldNamesTranslate = array('charging_plan_name' => 'name',
+			'charging_plan_external_id' => 'external_id');
+
 		// Fix the update record field names.
-		return array_megrge($this->translateFieldNames($query, $fieldNamesTranslate), $planQuery);
+		return array_merge($this->translateFieldNames($query, $fieldNamesTranslate), $planQuery);
 	}
-	
+
 	/**
 	 * Get the record plan according to the input query.
 	 * @param type $query
@@ -90,17 +95,17 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater {
 	 */
 	protected function getPlanRecord($query, $chargingPlanCollection) {
 		$planQuery = $this->getPlanQuery($query);
-		
+
 		// TODO: Use the plans DB/API proxy.
 		$planRecord = $chargingPlanCollection->query($planQuery)->cursor()->current();
-		if(!$planRecord || $planRecord->isEmpty()) {
-			// TODO: Report error.
+		if (!$planRecord || $planRecord->isEmpty()) {
+			Billrun_Factory::log("Could not find plan. Query:[" . print_r($planQuery, 1) . "]", Zend_Log::ALERT);
 			return null;
 		}
-		
+
 		return $planRecord;
 	}
-	
+
 	/**
 	 * Get the ref to the monfo plan for the subscriber.
 	 * @param type $subscriber
@@ -111,66 +116,63 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater {
 		// Get the ref to the subscriber's plan.
 		$planName = $subscriber->{'plan'};
 		$plansCollection = Billrun_Factory::db()->plansCollection();
-		
+
 		// TODO: Is this right here to use the now time or should i use the times from the charging plan?
 		$nowTime = new MongoDate();
 		$plansQuery = array("name" => $planName,
-							"to"   => array('$gt', $nowTime),
-							"from" => array('$lt', $nowTime));
+			"to" => array('$gt', $nowTime),
+			"from" => array('$lt', $nowTime));
 		$planRecord = $plansCollection->query($plansQuery)->cursor()->current();
-		
-		return $planRecord->createRef($plansCollection);
+
+		return $plansCollection->createRefByEntity($planRecord);
 	}
-	
+
 	/**
 	 * Update the balances.
 	 * @param type $query - Query to find row to update.
 	 * @param type $recordToSet - Values to update.
 	 * @param type $subscriberId - Id for the subscriber to update.
+	 * @return The updated record, false if failed.
 	 */
 	public abstract function update($query, $recordToSet, $subscriberId);
-	
+
 	/**
 	 * Get billrun subscriber instance.
 	 * @param type $subscriberId If of the subscriber to load.
-	 * @param type $dateRecord Array that has to and from fields for the query.
 	 */
-	protected function getSubscriber($subscriberId, $dateRecord) {
+	protected function getSubscriber($subscriberId) {
 		// Get subscriber query.
-		$subscriberQuery = $this->getSubscriberQuery($subscriberId, $dateRecord);
+		$subscriberQuery = $this->getSubscriberQuery($subscriberId);
 		
-		// Get the subscriber.
-		return Billrun_Factory::subscriber()->load($subscriberQuery);
+		$coll = Billrun_Factory::db()->subscribersCollection();
+		$results = $coll->query($subscriberQuery)->cursor()->limit(1)->current();
+		if ($results->isEmpty()) {
+			return false;
+		}
+		return $results->getRawData();
 	}
-	
+
 	/**
 	 * Get a subscriber query to get the subscriber.
 	 * @param type $subscriberId - The ID of the subscriber.
-	 * @param type $planRecord - Record that holds to and from fields.
 	 * @return type Query to run.
 	 */
-	protected function getSubscriberQuery($subscriberId, $planRecord) {
+	protected function getSubscriberQuery($subscriberId) {
 		// Get subscriber query.
-		$subscriberQuery = array('sid' => $subscriberId);
-		
-		// Add time to query.
-		$subscriberQuery['from'] = $planRecord['from'];
-		$subscriberQuery['to'] = $planRecord['to'];
-		
-		return $subscriberQuery;
+		return array('sid' => $subscriberId);
 	}
-	
+
 	/**
 	 * Handle logic around setting the expiration date.
 	 * @param type $recordToSet
 	 * @param type $dataRecord
 	 */
 	protected function handleExpirationDate($recordToSet, $dataRecord) {
-		if(!$recordToSet['to']) {
+		if (!$recordToSet['to']) {
 			$recordToSet['to'] = $this->getDateFromDataRecord($dataRecord);
 		}
 	}
-	
+
 	/**
 	 * Get a mongo date object based on charging plan record.
 	 * @param type $chargingPlan
@@ -182,7 +184,7 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater {
 		$duration = $period['duration'];
 		return new MongoDate(strtotime("+ " . $duration . " " . $unit));
 	}
-	
+
 	/**
 	 * Validate the service provider fields.
 	 * @param type $subscriber
@@ -192,14 +194,15 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater {
 	protected function validateServiceProviders($subscriber, $planRecord) {
 		// Get the service provider to check that it fits the subscriber's.
 		$subscriberServiceProvider = $subscriber->{'service_provider'};
-		
+
 		// Check if mismatching serivce providers.
-		if($planRecord['service_provider'] != $subscriberServiceProvider) {
+		if ($planRecord['service_provider'] != $subscriberServiceProvider) {
 			$planServiceProvider = $planRecord['service_provider'];
 			Billrun_Factory::log("Failed updating balance! mismatching service prociders: subscriber: $subscriberServiceProvider plan: $planServiceProvider");
 			return false;
 		}
-		
+
 		return true;
 	}
+
 }

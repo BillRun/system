@@ -20,6 +20,7 @@ class Billrun_ActionManagers_Balances_Updaters_Id extends Billrun_ActionManagers
 	 * @param type $query - Query to find row to update.
 	 * @param type $recordToSet - Values to update.
 	 * @param type $subscriberId - Id for the subscriber to update.
+	 * @return The updated record, false if failed.
 	 */
 	public function update($query, $recordToSet, $subscriberId) {
 		$this->getBalanceRecord();
@@ -28,18 +29,11 @@ class Billrun_ActionManagers_Balances_Updaters_Id extends Billrun_ActionManagers
 			return false;
 		}
 		
-		$chargingPlansCollection = Billrun_Factory::db()->chargingPlansCollection();
-		$planRecord = $this->getPlanRecord($query, $chargingPlansCollection);
-		if(!$planRecord) {
-			Billrun_Factory::log("Failed to get plans record to update balances by ID", Zend_Log::ERR);
-			return false;
-		}
-		
 		// Get the subscriber.
-		$subscriber = $this->getSubscriber($subscriberId, $planRecord);	
+		$subscriber = $this->getSubscriber($subscriberId);	
 		
 		// Subscriber was not found.
-		if($subscriber->isEmpty()) {
+		if(!$subscriber) {
 			Billrun_Factory::log("Updating balances by ID failed to get subscriber id: " . $subscriberId, Zend_Log::ERR);
 			return false;
 		}

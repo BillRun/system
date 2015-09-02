@@ -26,16 +26,46 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 	}
 	
 	/**
+	 * Get the key name for getting a subscriber from the db.
+	 * @return string The name of the key to use to get the subscriber.
+	 * @todo This should be made more generic, this logic will probably happen many 
+	 * times in our code and is similar for getting a balance etc.
+	 */
+	protected function getSubscriberQueryKey() {
+		return 'imsi';
+	}
+	
+	/**
+	 * Check if the subscriber to create already exists.
+	 * @return boolean - true if the subscriber exists.
+	 */
+	protected function subscriberExists() {
+		// Check if the subscriber already exists.
+		$subscriberQueryKey = $this->getSubscriberQueryKey();
+		$subscriberQuery[$subscriberQueryKey] = $this->query[$subscriberQueryKey];
+		
+		// TODO: Use the subscriber class.
+		if($this->collection->query($subscriberQuery)->count() > 0){
+			Billrun_Factory::log('Subscriber already exists! [' . print_r($subscriberQuery, true) . ']', Zend_Log::ALERT);
+			return true;
+		}
+		
+		return false;
+	}
+	
+	/**
 	 * Execute the action.
 	 * @return data for output.
 	 */
 	public function execute() {
 		$success = false;
 		try {
-			$entity = new Mongodloid_Entity($this->query);
-		
-			$success = ($entity->save($this->collection, 1) !== false);
-				
+			// Create the subscriber only if it doesn't already exists.
+			if(!$this->subscriberExists()) {
+				$entity = new Mongodloid_Entity($this->query);
+
+				$success = ($this->collection->save($entity, 1) !== false);
+			}	
 		} catch (\Exception $e) {
 			Billrun_Factory::log('failed to store into DB got error : ' . $e->getCode() . ' : ' . $e->getMessage(), Zend_Log::ALERT);
 			Billrun_Factory::log('failed saving request :' . print_r($this->query, 1), Zend_Log::ALERT);
