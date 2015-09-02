@@ -94,42 +94,55 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 		// Create a default balance record.
 		$defaultBalance = $this->getDefaultBalance($subscriber, $prepaidRecord);
 		
-		return $this->updateBalance($prepaidRecord['charging_by_usegt'], 
-								    $prepaidRecord['charging_by'], 
+		$chargingPlan = $this->getPlanObject($prepaidRecord, $recordToSet);
+		
+		return $this->updateBalance($chargingPlan, 
 									$query, 
 									$defaultBalance, 
-									$recordToSet['to'],
-									$recordToSet['value']);
+									$recordToSet['to']);
 	}
 	
+	/**
+	 * Get the plan object built from the record values.
+	 * @param array $prepaidRecord - Prepaid record.
+	 * @param array $recordToSet - Record with values to be set.
+	 * @return \Billrun_DataTypes_ChargingPlan Plan object built with values.
+	 */
+	protected function getPlanObject($prepaidRecord, $recordToSet) {
+		$chargingBy = $prepaidRecord['charging_by'];
+		$chargingByUsaget = $prepaidRecord['charging_by_usaget'];
+		if($chargingBy == $chargingByUsaget) {
+			$chargingByUsaget = $recordToSet['value'];
+		}else{
+			$chargingByUsaget = array($chargingByUsaget => $recordToSet['value']);
+		}
+		
+		return new Billrun_DataTypes_ChargingPlan($chargingBy, 
+											      $chargingByUsaget);
+	}
 	
 	/**
 	 * Get the update balance query. 
 	 * @param Mongoldoid_Collection $balancesColl
 	 * @param array $query - Query for getting tha balance.
-	 * @param string $chargingBy
-	 * @param string $chargingByUsegt
-	 * @param string $valueFieldName
-	 * @param string $chargingByValue 
+	 * @param Billrun_DataTypes_ChargingPlan $chargingPlan
 	 * @param MongoDate $toTime - Expiration date.
+	 * @param array $defaultBalance - Default balance to set.
 	 * @return array Query for set updating the balance.
 	 */
 	protected function getUpdateBalanceQuery($balancesColl, 
 											 $query, 
-											 $chargingBy,
-											 $chargingByUsegt, 
-											 $valueFieldName,
-										     $chargingByValue,
+											 $chargingPlan,
 											 $toTime,
-											 $defaultBalance) {
+										     $defaultBalance) {
 		$update = array();
 		// If the balance doesn't exist take the setOnInsert query, 
 		// if it exists take the set query.
 		if(!$balancesColl->exists($query)) {
-			$update = $this->getSetOnInsert($chargingBy, $chargingByUsegt, $valueFieldName, $chargingByValue, $defaultBalance);
+			$update = $this->getSetOnInsert($chargingPlan, $defaultBalance);
 		} else {
-			$this->handleZeroing($query, $balancesColl, $valueFieldName);
-			$update = $this->getSetQuery($chargingByValue, $valueFieldName, $toTime);
+			$this->handleZeroing($query, $balancesColl, $chargingPlan->getFieldName());
+			$update = $this->getSetQuery($chargingPlan->getValue(), $chargingPlan->getFieldName(), $toTime);
 		}
 		
 		return $update;
@@ -137,20 +150,15 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 	
 	/**
 	 * Return the part of the query for setOnInsert
-	 * @param type $chargingBy
+	 * @param Billrun_DataTypes_ChargingPlan $chargingPlan
 	 * @param array $defaultBalance
-	 * @param string $valueToUseInQuery - The value name of the balance.
-	 * @param string $valueFieldName - The name of the field to be set.
-	 * @return type
+	 * @return array
 	 */
-	protected function getSetOnInsert($chargingBy,
-									  $chargingByUsegt, 									 
-									  $valueFieldName, 
-									  $valueToUseInQuery, 
+	protected function getSetOnInsert($chargingPlan, 
 									  $defaultBalance) {
-		$defaultBalance['charging_by'] = $chargingBy;
-		$defaultBalance['charging_by_usegt'] = $chargingByUsegt;
-		$defaultBalance[$valueFieldName] = $valueToUseInQuery;
+		$defaultBalance['charging_by'] = $chargingPlan->getChargingBy();
+		$defaultBalance['charging_by_usegt'] = $chargingPlan->getChargingByUsaget();
+		$defaultBalance[$chargingPlan->getFieldName()] = $chargingPlan->getValue();
 		return array(
 			'$setOnInsert' => $defaultBalance,
 		);
@@ -158,30 +166,23 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 	
 	/**
 	 * Update a single balance.
-	 * @param type $chargingByUsaget
-	 * @param type $chargingByValue
-	 * @param type $query
-	 * @param type $balancesColl
-	 * @return type
+	 * @param Billrun_DataTypes_ChargingPlan $chargingPlan
+	 * @param array $query
+	 * @param array $defaultBalance
+	 * @param MongoDate $toTime
+	 * @return Updated record.
 	 */
-	protected function updateBalance($chargingByUsaget, $chargingByValue, $query, $defaultBalance, $toTime, $value) {
+	protected function updateBalance($chargingPlan, $query, $defaultBalance, $toTime) {
 		$balancesColl = Billrun_Factory::db()->balancesCollection();
-		$valueFieldName = array();
-		
-		// TODO: What if total cost?
-		$valueFieldName= 'balance.totals.' . $chargingByUsaget . '.' . $chargingByValue;
 
 		// Get the balance with the current value field.
-		$query[$valueFieldName]['$exists'] = 1;
+		$query[$chargingPlan->getFieldName()]['$exists'] = 1;
 		
 		$update = $this->getUpdateBalanceQuery($balancesColl, 
 											   $query, 
-											   $chargingByUsaget, 
-											   $chargingByValue,
-											   $valueFieldName, 
-											   $value, 
-											   $toTime, 
-											   $defaultBalance);
+											   $chargingPlan,
+											   $toTime,
+										       $defaultBalance);
 				
 		$options = array(
 			'upsert' => true,

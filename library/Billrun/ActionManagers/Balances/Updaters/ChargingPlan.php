@@ -65,10 +65,12 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		$balancesToReturn = array();
 		// Go through all charging possibilities. 
 		foreach ($balancesArray as $chargingBy => $chargingByValue) {
+			$chargingPlan = 
+				new Billrun_DataTypes_ChargingPlan($chargingBy,
+												   $chargingByValue);
 			$to = $recordToSet['to'];
 			$balancesToReturn[] = 
-				$this->updateBalance($chargingBy,
-									 $chargingByValue, 
+				$this->updateBalance($chargingPlan,
 									 $query, 
 									 $balancesColl, 
 									 $defaultBalance, 
@@ -116,33 +118,25 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 	 * 
 	 * @param Mongoldoid_Collection $balancesColl
 	 * @param array $query - Query for getting tha balance.
-	 * @param string $chargingBy
-	 * @param string $chargingByUsegt
-	 * @param string $valueFieldName
-	 * @param string $valueToUseInQuery 
+	 * @param Billrun_DataTypes_ChargingPlan $chargingPlan
 	 * @param MongoDate $toTime - Expiration date.
 	 * @return array Query for set updating the balance.
 	 */
 	protected function getUpdateBalanceQuery($balancesColl, 
 											 $query, 
-											 $chargingBy,
-											 $chargingByUsegt, 
-											 $valueFieldName,
-										     $valueToUseInQuery,
+											 $chargingPlan,
 											 $toTime,
 										     $defaultBalance) {
 		$update = array();
 		// If the balance doesn't exist take the setOnInsert query, 
 		// if it exists take the set query.
 		if(!$balancesColl->exists($query)) {
-			$update = $this->getSetOnInsert($chargingBy, 
-											$chargingByUsegt,
-											$valueFieldName,
-											$valueToUseInQuery, 
+			$update = $this->getSetOnInsert($chargingPlan, 
 											$defaultBalance);
 		} else {
-			$this->handleZeroing($query, $balancesColl, $valueFieldName);
-			$update = $this->getSetQuery($valueToUseInQuery, $valueFieldName, $toTime);
+			$this->handleZeroing($query, $balancesColl, $chargingPlan->getFieldName());
+			$update = 
+				$this->getSetQuery($chargingPlan->getValue(), $chargingPlan->getFieldName(), $toTime);
 		}
 		
 		return $update;
@@ -150,34 +144,18 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 	
 	/**
 	 * Update a single balance.
-	 * @param string $chargingBy
-	 * @param string $chargingByValue
+	 * @param Billrun_DataTypes_ChargingPlan $chargingPlan
 	 * @param array $query
 	 * @param Mongoldoid_Collection $balancesColl
 	 * @return Mongoldoid_Entity
 	 */
-	protected function updateBalance($chargingBy, $chargingByValue, $query, $balancesColl, $defaultBalance, $toTime) {
-		$valueFieldName = array();
-		$valueToUseInQuery = null;
-		$chargingByUsegt = $chargingBy;
-
-		if (!is_array($chargingByValue)) {
-			$valueFieldName = 'balance.' . $chargingBy;
-			$valueToUseInQuery = $chargingByValue;
-		} else {
-			list($chargingByUsegt, $valueToUseInQuery) = each($chargingByValue);
-			$valueFieldName = 'balance.totals.' . $chargingBy . '.' . $chargingByUsegt;
-		}
-
+	protected function updateBalance($chargingPlan, $query, $balancesColl, $defaultBalance, $toTime) {
 		// Get the balance with the current value field.
-		$query[$valueFieldName]['$exists'] = 1;
+		$query[$chargingPlan->getFieldName()]['$exists'] = 1;
 		
 		$update = $this->getUpdateBalanceQuery($balancesColl, 
 											   $query, 
-											   $chargingBy,
-											   $chargingByUsegt,
-											   $valueFieldName, 
-									           $valueToUseInQuery, 
+											   $chargingPlan,
 											   $toTime,
 											   $defaultBalance);
 			
@@ -193,20 +171,15 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 
 	/**
 	 * Return the part of the query for setOnInsert
-	 * @param type $chargingBy
+	 * @param Billrun_DataTypes_ChargingPlan $chargingPlan
 	 * @param array $defaultBalance
-	 * @param string $valueToUseInQuery - The value name of the balance.
-	 * @param string $valueFieldName - The name of the field to be set.
 	 * @return type
 	 */
-	protected function getSetOnInsert($chargingBy,
-									  $chargingByUsegt,
-									  $valueFieldName, 
-									  $valueToUseInQuery, 
+	protected function getSetOnInsert($chargingPlan, 
 									  $defaultBalance) {
-		$defaultBalance['charging_by'] = $chargingBy;
-		$defaultBalance['charging_by_usegt'] = $chargingByUsegt;
-		$defaultBalance[$valueFieldName] = $valueToUseInQuery;
+		$defaultBalance['charging_by'] = $chargingPlan->getChargingBy();
+		$defaultBalance['charging_by_usegt'] = $chargingPlan->getChargingByUsaget();
+		$defaultBalance[$chargingPlan->getFieldName()] = $chargingPlan->getValue();
 		return array(
 			'$setOnInsert' => $defaultBalance,
 		);
