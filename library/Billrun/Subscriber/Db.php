@@ -12,6 +12,9 @@
  *
  * @package  Billing
  * @since    4.0
+ * @todo This class sometimes uses Uppercase keys and sometimes lower case keys. [IMSI and imsi]. 
+ * There should be a convertor in the set and get function so that the keys will ALWAYS be lower or upper.
+ * This way whoever uses this class can send whatever he wants in the key fields.
  */
 class Billrun_Subscriber_Db extends Billrun_Subscriber {
 	
@@ -52,7 +55,7 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 			Billrun_Factory::log('Cannot identify subscriber. Require phone or imsi to load. Current parameters: ' . print_R($params, 1), Zend_Log::ALERT);
 			return false;
 		}
-
+		
 //		if (!isset($params['time'])) {
 //			$datetime = time();
 //		} else {
