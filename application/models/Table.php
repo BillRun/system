@@ -399,6 +399,16 @@ class TableModel {
 		}
 		return $value;
 	}
+	
+	public function getQueryTypes() {
+		$query_types = Billrun_Factory::config()->getConfigValue('admin_panel.' . $this->collection_name . '.query_types', array());
+		return $query_types;
+	}
+	
+	public function getAggregateByFields() {
+		$aggregateByFields = Billrun_Factory::config()->getConfigValue('admin_panel.' . $this->collection_name . '.aggregate_by_fields', array());
+		return $aggregateByFields;
+	}
 
 	public function getExtraColumns() {
 		$extra_columns = Billrun_Factory::config()->getConfigValue('admin_panel.' . $this->collection_name . '.extra_columns', array());

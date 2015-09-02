@@ -25,6 +25,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	protected $baseUrl = null;
 	protected $cssPaths = array();
 	protected $jsPaths = array();
+	protected $aggregateColumns = array();
 	protected $commit;
 
 	/**
@@ -465,7 +466,12 @@ class AdminController extends Yaf_Controller_Abstract {
 		);
 
 		self::initModel($table, $options);
-		$query = $this->applyFilters($table);
+		if (($queryType = $this->getRequest()->get('queryType')) === 'aggregate') {
+			$query = $this->applyAggregateFilters($table);
+		} else {
+			$query = $this->applyFilters($table);
+		}
+		
 
 		$session = $this->getSession($table);
 		// this use for export
@@ -659,8 +665,14 @@ class AdminController extends Yaf_Controller_Abstract {
 			$this->model->setSize($size);
 			$this->model->setPage($skip);
 		}
-		$data = $this->model->getData($filter_query);
-		$columns = $this->model->getTableColumns();
+		if (($queryType = $this->getRequest()->get('queryType')) === 'aggregate') {
+			$data = $this->model->getAggregateData($filter_query);
+			$columns = $this->getAggregateTableColumns();
+		} else {
+			$data = $this->model->getData($filter_query);
+			$columns = $this->model->getTableColumns();
+		}
+		
 		$edit_key = $this->model->getEditKey();
 		$pagination = $this->model->printPager();
 		$sizeList = $this->model->printSizeList();
@@ -672,6 +684,7 @@ class AdminController extends Yaf_Controller_Abstract {
 			'pagination' => $pagination,
 			'sizeList' => $sizeList,
 			'offset' => $this->model->offset(),
+			'query_type' => $queryType,
 		);
 
 		return $params;
@@ -683,6 +696,8 @@ class AdminController extends Yaf_Controller_Abstract {
 			'filter_fields_order' => $this->model->getFilterFieldsOrder(),
 			'sort_fields' => $this->model->getSortElements(),
 			'extra_columns' => $this->model->getExtraColumns(),
+			'query_types' => $this->model->getQueryTypes(),
+			'aggregate_by_fields' => $this->model->getAggregateByFields(),
 		);
 	}
 
@@ -820,6 +835,38 @@ class AdminController extends Yaf_Controller_Abstract {
 		}
 		return $query;
 	}
+	
+	protected function applyAggregateFilters($table) {
+		$model = $this->model;
+		$session = $this->getSession($table);
+		$filter_fields = $model->getFilterFields();
+		$match = array();
+		if ($filter = $this->getManualFilters($table)) {
+			$match = array_merge($match, $filter);
+		}
+		foreach ($filter_fields as $filter_name => $filter_field) {
+			$value = $this->getSetVar($session, $filter_field['key'], $filter_field['key'], $filter_field['default']);
+			if ((!empty($value) || $value === 0 || $value === "0") && $filter_field['db_key'] != 'nofilter' && $filter = $model->applyFilter($filter_field, $value)) {
+				$match = array_merge($match, $filter);
+			}
+		}
+		
+		$groupBy = array();
+		foreach ($this->getRequest()->get('groupBySelect') as $groupDataElem) {
+			$groupBy[ucfirst($groupDataElem)] = '$' . $groupDataElem;
+		}
+		
+		$group = array_merge(array('_id' => $groupBy,'sum' => array('$sum' => 1)), $this->getGroupData($table));
+		
+		return array(
+			array(	
+				'$match' => $match
+			),
+			array(
+				'$group' => $group
+			),
+		);
+	}
 
 	protected function applySort($table) {
 		$session = $this->getSession($table);
@@ -927,6 +974,21 @@ class AdminController extends Yaf_Controller_Abstract {
 				$operators[$i] = '$in';
 			}
 			$query[$keys[$i]][$operators[$i]] = $values[$i];
+		}
+		return $query;
+	}
+	
+	public function getGroupData($table) {
+		$query = false;
+		$session = $this->getSession($table);
+		$keys = $this->getSetVar($session, 'group_data_keys', 'group_data_keys');
+		$operators = $this->getSetVar($session, 'group_data_operators', 'group_data_operators');
+		settype($keys, 'array');
+		settype($operators, 'array');
+		for ($i = 0; $i < count($keys); $i++) {
+			$columnName = $keys[$i] . '-' . $operators[$i];
+			$this->aggregateColumns[$columnName] = ucfirst($columnName);
+			$query[$columnName] = array('$' . $operators[$i] => '$' . $keys[$i]);
 		}
 		return $query;
 	}
@@ -1044,6 +1106,14 @@ class AdminController extends Yaf_Controller_Abstract {
 			default:
 				return 'nr';
 		}
+	}
+	
+	public function getAggregateTableColumns() {
+		$basicColumns = array(
+			'sum' => 'Count',
+		);
+
+		return array_merge($basicColumns, $this->aggregateColumns);
 	}
 
 }

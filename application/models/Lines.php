@@ -106,6 +106,21 @@ class LinesModel extends TableModel {
 		return $ret;
 	}
 	
+	public function getAggregateData($filter_query = array()) {
+		$cursor = $this->collection->aggregatecursor($filter_query)
+			->sort($this->sort)->skip($this->offset())->limit($this->size);
+		$this->_count = Billrun_Factory::config()->getConfigValue('admin_panel.lines.global_limit', 10000);
+		
+		$ret = array();
+		foreach ($cursor as $item) {
+			$item->collection($this->lines_coll);
+			$item['_id'] = new MongoId(); //TODO: change
+			$ret[] = $item;
+		}
+		
+		return $ret;
+	}
+	
 	/**
 	 * method to get data aggregated
 	 * 
