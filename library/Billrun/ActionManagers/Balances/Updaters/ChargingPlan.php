@@ -129,12 +129,13 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 											 $chargingByUsegt, 
 											 $valueFieldName,
 										     $chargingByValue,
-											 $toTime) {
+											 $toTime,
+										     $defaultBalance) {
 		$update = array();
 		// If the balance doesn't exist take the setOnInsert query, 
 		// if it exists take the set query.
 		if(!$balancesColl->exists($query)) {
-			$update = $this->getSetOnInsert($chargingBy, $chargingByUsegt, $valueFieldName);
+			$update = $this->getSetOnInsert($chargingBy, $chargingByUsegt, $defaultBalance);
 		} else {
 			$this->handleZeroing($query, $balancesColl, $valueFieldName);
 			$update = $this->getSetQuery($valueFieldName, $chargingByValue, $toTime);
@@ -169,11 +170,12 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		
 		$update = $this->getUpdateBalanceQuery($balancesColl, 
 											   $query, 
-											   $chargingBy, 
+											   $chargingBy,
+											   $chargingByUsegt,
 											   $valueFieldName, 
-											   $chargingByValue, 
 									           $chargingByValue, 
-											   $toTime);
+											   $toTime,
+											   $defaultBalance);
 			
 		$options = array(
 			'upsert' => true,

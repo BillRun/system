@@ -120,12 +120,13 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 											 $chargingByUsegt, 
 											 $valueFieldName,
 										     $chargingByValue,
-											 $toTime) {
+											 $toTime,
+											 $defaultBalance) {
 		$update = array();
 		// If the balance doesn't exist take the setOnInsert query, 
 		// if it exists take the set query.
 		if(!$balancesColl->exists($query)) {
-			$update = $this->getSetOnInsert($chargingBy, $chargingByUsegt, $valueFieldName);
+			$update = $this->getSetOnInsert($chargingBy, $chargingByUsegt, $defaultBalance);
 		} else {
 			$this->handleZeroing($query, $balancesColl, $valueFieldName);
 			$update = $this->getSetQuery($valueFieldName, $chargingByValue, $toTime);
@@ -150,25 +151,26 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 	
 	/**
 	 * Update a single balance.
-	 * @param type $chargingBy
+	 * @param type $chargingByUsaget
 	 * @param type $chargingByValue
 	 * @param type $query
 	 * @param type $balancesColl
 	 * @return type
 	 */
-	protected function updateBalance($chargingBy, $chargingByValue, $query, $defaultBalance, $toTime, $value) {
+	protected function updateBalance($chargingByUsaget, $chargingByValue, $query, $defaultBalance, $toTime, $value) {
 		$balancesColl = Billrun_Factory::db()->balancesCollection();
 		$valueFieldName = array();
 		
 		// TODO: What if total cost?
-		$valueFieldName= 'balance.totals.' . $chargingBy . '.' . $chargingByValue;
+		$valueFieldName= 'balance.totals.' . $chargingByUsaget . '.' . $chargingByValue;
 
 		// Get the balance with the current value field.
 		$query[$valueFieldName]['$exists'] = 1;
 		
 		$update = $this->getUpdateBalanceQuery($balancesColl, 
 											   $query, 
-											   $chargingBy, 
+											   $chargingByUsaget, 
+											   $chargingByValue,
 											   $value, 
 											   $chargingByValue, 
 											   $chargingByValue, 
