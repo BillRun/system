@@ -137,8 +137,8 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		if(!$balancesColl->exists($query)) {
 			$update = $this->getSetOnInsert($chargingBy, 
 											$chargingByUsegt,
-											$valueToUseInQuery,
-											$valueFieldName, 
+											$valueFieldName,
+											$valueToUseInQuery, 
 											$defaultBalance);
 		} else {
 			$this->handleZeroing($query, $balancesColl, $valueFieldName);

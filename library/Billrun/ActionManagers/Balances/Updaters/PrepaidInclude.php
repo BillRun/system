@@ -126,7 +126,7 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 		// If the balance doesn't exist take the setOnInsert query, 
 		// if it exists take the set query.
 		if(!$balancesColl->exists($query)) {
-			$update = $this->getSetOnInsert($chargingBy, $chargingByUsegt, $chargingByValue, $valueFieldName, $defaultBalance);
+			$update = $this->getSetOnInsert($chargingBy, $chargingByUsegt, $valueFieldName, $chargingByValue, $defaultBalance);
 		} else {
 			$this->handleZeroing($query, $balancesColl, $valueFieldName);
 			$update = $this->getSetQuery($chargingByValue, $valueFieldName, $toTime);
