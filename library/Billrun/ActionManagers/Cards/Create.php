@@ -28,15 +28,73 @@ class Billrun_ActionManagers_Cards_Create extends Billrun_ActionManagers_Cards_A
 	}
 	
 	/**
+	 * Get the array of fields to be inserted in the create record from the user input.
+	 * @return array - Array of fields to be inserted.
+	 */
+	protected function getCreateFields() {
+		return Billrun_Factory::config()->getConfigValue('cards.create_fields', array());
+	}
+	
+		/**
+	 * This function builds the create for the Cards creation API after 
+	 * validating existance of field and that they are not empty.
+	 * @param array $input - fields for insertion in Jason format. 
+	 * @return Return false (and writes errLog) when fails to loocate 
+	 * all needed field and/or values for insertion and true when success.
+	 */
+	protected function createProcess($input) {
+		$createFields = $this->getCreateFields();
+		$jsonCreateDataArray = null;
+		$create = $input->get('cards');
+		
+		if(empty($create) || (!($jsonCreateDataArray = json_decode($create, true)))) {
+			Billrun_Factory::log("There is no create tag or create tag is empty!", Zend_Log::ALERT);
+			return false;			
+		}
+		
+		if ($jsonCreateDataArray !== array_values($jsonCreateDataArray)) {
+			$jsonCreateDataArray = array($jsonCreateDataArray);
+		}		
+	
+		foreach ($jsonCreateDataArray as $jsonCreateData) {
+			$oneCard = array();
+			foreach($createFields as $field){
+				if(!isset($jsonCreateData[$field])) {
+					Billrun_Factory::log("Field: " . $field . " is not set!", Zend_Log::ALERT);					
+					return false;
+				}
+				$oneCard[$field] = $jsonCreateData[$field];
+			}
+			
+			if(isset($oneCard['secret'])) {
+				$oneCard['secret'] = password_hash($oneCard['secret'], PASSWORD_DEFAULT);
+			}
+
+			if(isset($oneCard['to'])) {
+				$oneCard['to'] = new MongoDate(strtotime($oneCard['to']));
+			}
+			$this->cards[] = $oneCard;
+		}		
+		
+		return true;
+	}
+	
+	/**
 	 * Execute the action.
 	 * @return data for output.
 	 */
 	public function execute() {
 		$success = false;
 		try {
-			$entity = new Mongodloid_Entity($this->cards);
-		
-			$success = ($entity->save($this->collection, 1) !== false);
+			$bulkOptions = array(
+				'continueOnError' => true,
+				'socketTimeoutMS' => 300000,
+				'wTimeoutMS' => 300000,
+				'w' => 1,
+			);
+			$res = Billrun_Factory::db()->cardsCollection()->batchInsert($this->cards, $bulkOptions);
+			$success = $res['ok'];
+			$count = $res['nInserted'];
 				
 		} catch (\Exception $e) {
 			Billrun_Factory::log('failed to store into DB got error : ' . $e->getCode() . ' : ' . $e->getMessage(), Zend_Log::ALERT);
@@ -47,8 +105,8 @@ class Billrun_ActionManagers_Cards_Create extends Billrun_ActionManagers_Cards_A
 		$outputResult = 
 			array(
 				'status'	=> ($success) ? (1) : (0),
-			    'desc'		=> ($success) ? ('success') : ('Failed creating card'),
-			    'details'	=> json_encode($entity));
+				'desc'		=> ($success) ? ('success creating ' . $count . ' cards') : ('Failed creating card'),
+				'details'	=> json_encode($this->cards));
 		return $outputResult;
 	}
 
@@ -58,23 +116,10 @@ class Billrun_ActionManagers_Cards_Create extends Billrun_ActionManagers_Cards_A
 	 * @return true if valid.
 	 */
 	public function parse($input) {
-		$jsonData = null;
-		$cards = $input->get('cards');
-		if(empty($cards) || !($jsonData = json_decode($cards, true))) {
-			Billrun_Factory::log("Insert action does not have a cards field!", Zend_Log::ALERT);
-			return false;
+		
+		if(!$this->createProcess($input)){
+			return false;			
 		}
-
-		$this->cards = 
-			array(
-				'secret'					=> $jsonData['secret'],
-                'batch_number'				=> $jsonData['batch_number'],
-                'serial_number'				=> $jsonData['serial_number'],
-                'charging_plan_external_id'	=> $jsonData['charging_plan_external_id'],
-				'service_provider'			=> $jsonData['service_provider'], 
-				'to'						=> new MongoDate(strtotime($jsonData['to'])),
-				'status'					=> $jsonData['status'],
-                'additional_information'	=> $jsonData['additional_information']);
 		
 		return true;
 	}

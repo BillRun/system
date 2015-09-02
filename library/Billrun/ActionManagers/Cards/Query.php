@@ -18,8 +18,9 @@ class Billrun_ActionManagers_Cards_Query extends Billrun_ActionManagers_Cards_Ac
 	 * @var type Array
 	 */
 	protected $cardsQuery = array();	
-	protected $queryLimit = false;
-	
+	protected $limit = false;
+	protected $page = false;
+
 	/**
 	 */
 	public function __construct() {
@@ -31,7 +32,7 @@ class Billrun_ActionManagers_Cards_Query extends Billrun_ActionManagers_Cards_Ac
      * @return array - Array of fields to set.
      */
 	protected function getQueryFields() {
-		return(array('status','batch_number','serial_number'));
+		return Billrun_Factory::config()->getConfigValue('cards.query_fields', array());
 	}
 	
 	/**
@@ -43,7 +44,7 @@ class Billrun_ActionManagers_Cards_Query extends Billrun_ActionManagers_Cards_Ac
 	 */
 	protected function queryProcess($input) {
 		$errLog = '';
-		$queryFields = $this->getQueryFields($input);
+		$queryFields = $this->getQueryFields();
 		
 		$jsonQueryData = null;
 		$query = $input->get('query');
@@ -53,7 +54,7 @@ class Billrun_ActionManagers_Cards_Query extends Billrun_ActionManagers_Cards_Ac
 		}
 
 		foreach($queryFields as $field){
-			if(!isset($jsonQueryData[$field]) || (empty($jsonQueryData[$field]))) {
+			if(!isset($jsonQueryData[$field])) {
 				$errLog[] = $field;
 			}
 		}
@@ -78,10 +79,12 @@ class Billrun_ActionManagers_Cards_Query extends Billrun_ActionManagers_Cards_Ac
 	 * @return data for output.
 	 */
 	public function execute() {
-
+		
+		$skip  = $this->page * $this->limit;
 		$success=true;
+		
 		try {
-			$cursor = $this->collection->query($this->cardsQuery)->cursor()->limit($this->queryLimit);			
+			$cursor = $this->collection->query($this->query)->cursor()->skip($skip)->limit($this->limit);			
 			$returnData = array();
 			
 			// Going through the lines
@@ -114,10 +117,10 @@ class Billrun_ActionManagers_Cards_Query extends Billrun_ActionManagers_Cards_Ac
 			return false;			
 		}
                 
-        //$page = $input->get('page');
-        //$this->cardsQuery['page'] = (!empty($page)) ? ($page) : (Billrun_Factory::config()->getConfigValue('api.cards.query.page', 0));            
+        $page = $input->get('page');
+        $this->page = (!empty($page)) ? ($page) : (Billrun_Factory::config()->getConfigValue('api.cards.query.page', 0));            
 		$size = $input->get('size');
-		$this->queryLimit = (!empty($size)) ? ($size) : (Billrun_Factory::config()->getConfigValue('api.cards.query.size', 10000));
+		$this->limit = (!empty($size)) ? ($size) : (Billrun_Factory::config()->getConfigValue('api.cards.query.size', 10000));
 	
 		return true;
 	}

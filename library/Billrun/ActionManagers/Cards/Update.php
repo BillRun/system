@@ -31,7 +31,7 @@ class Billrun_ActionManagers_Cards_Update extends Billrun_ActionManagers_Cards_A
      * @return array - Array of fields to set.
      */
 	protected function getQueryFields() {
-		return(array('status','batch_number','serial_number'));
+		return Billrun_Factory::config()->getConfigValue('cards.query_fields', array());
 	}
 	
     /**
@@ -39,7 +39,7 @@ class Billrun_ActionManagers_Cards_Update extends Billrun_ActionManagers_Cards_A
      * @return array - Array of fields to set.
      */
 	protected function getUpdateFields() {
-		return(array('status','batch_number','serial_number','charging_plan','service_provider','to'));
+		return Billrun_Factory::config()->getConfigValue('cards.update_fields', array());
 	}
 	
 	/**
@@ -51,7 +51,7 @@ class Billrun_ActionManagers_Cards_Update extends Billrun_ActionManagers_Cards_A
 	 */
 	protected function queryProcess($input) {
 		$errLog = '';
-		$queryFields = $this->getQueryFields($input);
+		$queryFields = $this->getQueryFields();
 		
 		$jsonQueryData = null;
 		$query = $input->get('query');
@@ -61,7 +61,7 @@ class Billrun_ActionManagers_Cards_Update extends Billrun_ActionManagers_Cards_A
 		}
 
 		foreach($queryFields as $field){
-			if(!isset($jsonQueryData[$field]) || (empty($jsonQueryData[$field]))) {
+			if(!isset($jsonQueryData[$field])) {
 				$errLog[] = $field;
 			}
 		}
@@ -89,7 +89,7 @@ class Billrun_ActionManagers_Cards_Update extends Billrun_ActionManagers_Cards_A
 	 * all needed field and/or values for query and true when success.
 	 */
 	protected function updateProcess($input) {
-		$updateFields = $this->getUpdateFields($input);
+		$updateFields = $this->getUpdateFields();
 		
 		$jsonUpdateData = null;
 		$update = $input->get('update');		
@@ -99,7 +99,7 @@ class Billrun_ActionManagers_Cards_Update extends Billrun_ActionManagers_Cards_A
 		}
 	
 		foreach($updateFields as $field){
-			if(isset($jsonUpdateData[$field]) && (!empty($jsonUpdateData[$field]))) {
+			if(isset($jsonUpdateData[$field])) {
 				$this->update[$field] = $jsonUpdateData[$field];
 			}
 		}		
@@ -118,8 +118,8 @@ class Billrun_ActionManagers_Cards_Update extends Billrun_ActionManagers_Cards_A
 	public function execute() {
 		$success = true;
 		try {
-			$updateResult = $this->collection->update($this->query, $this->update);
-			$countUpdated = $updateResult['nModified'];
+			$updateResult = $this->collection->update($this->query, array('$set' => $this->update), array('w' => 1, 'multiple' => 1));
+			$countUpdated = isset($updateResult['nModified']) ? $updateResult['nModified'] : 0;
 		} catch (\Exception $e) {
 			Billrun_Factory::log('failed to store into DB got error : ' . $e->getCode() . ' : ' . $e->getMessage(), Zend_Log::ALERT);
 			Billrun_Factory::log('failed saving request :' . print_r($this->update, 1), Zend_Log::ALERT);
@@ -128,9 +128,9 @@ class Billrun_ActionManagers_Cards_Update extends Billrun_ActionManagers_Cards_A
 
 		$outputResult = 
 			array(
-				'status'  => ($success) ? (1) : (0),
-				'desc'    => ($success) ? ('success') : ('Failed updating card(s)'),
-				'details' => $countUpdated
+				'status'  => (!$success) ? (0) : ($countUpdated) ? (1) : (0),
+				'desc'    => (!$success) ? ('Failed updating card(s)'): ($countUpdated) ? ('success') : ('Failed updating card(s)'),
+				'details' => 'Updated ' . $countUpdated . ' card(s)'
 			);
 		return $outputResult;
 	}
@@ -141,8 +141,7 @@ class Billrun_ActionManagers_Cards_Update extends Billrun_ActionManagers_Cards_A
 	 * @return true if valid.
 	 */
 	public function parse($input) {
-				
-			
+							
 		if(!$this->queryProcess($input)){
 			return false;			
 		}
