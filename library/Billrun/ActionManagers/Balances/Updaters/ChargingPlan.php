@@ -118,25 +118,25 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 	 * 
 	 * @param Mongoldoid_Collection $balancesColl
 	 * @param array $query - Query for getting tha balance.
-	 * @param Billrun_DataTypes_Wallet $chargingPlan
+	 * @param Billrun_DataTypes_Wallet $wallet
 	 * @param MongoDate $toTime - Expiration date.
 	 * @return array Query for set updating the balance.
 	 */
 	protected function getUpdateBalanceQuery($balancesColl, 
 											 $query, 
-											 $chargingPlan,
+											 $wallet,
 											 $toTime,
 										     $defaultBalance) {
 		$update = array();
 		// If the balance doesn't exist take the setOnInsert query, 
 		// if it exists take the set query.
 		if(!$balancesColl->exists($query)) {
-			$update = $this->getSetOnInsert($chargingPlan, 
+			$update = $this->getSetOnInsert($wallet, 
 											$defaultBalance);
 		} else {
-			$this->handleZeroing($query, $balancesColl, $chargingPlan->getFieldName());
+			$this->handleZeroing($query, $balancesColl, $wallet->getFieldName());
 			$update = 
-				$this->getSetQuery($chargingPlan->getValue(), $chargingPlan->getFieldName(), $toTime);
+				$this->getSetQuery($wallet->getValue(), $wallet->getFieldName(), $toTime);
 		}
 		
 		return $update;
@@ -144,18 +144,18 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 	
 	/**
 	 * Update a single balance.
-	 * @param Billrun_DataTypes_Wallet $chargingPlan
+	 * @param Billrun_DataTypes_Wallet $wallet
 	 * @param array $query
 	 * @param Mongoldoid_Collection $balancesColl
 	 * @return Mongoldoid_Entity
 	 */
-	protected function updateBalance($chargingPlan, $query, $balancesColl, $defaultBalance, $toTime) {
+	protected function updateBalance($wallet, $query, $balancesColl, $defaultBalance, $toTime) {
 		// Get the balance with the current value field.
-		$query[$chargingPlan->getFieldName()]['$exists'] = 1;
+		$query[$wallet->getFieldName()]['$exists'] = 1;
 		
 		$update = $this->getUpdateBalanceQuery($balancesColl, 
 											   $query, 
-											   $chargingPlan,
+											   $wallet,
 											   $toTime,
 											   $defaultBalance);
 			
@@ -171,15 +171,15 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 
 	/**
 	 * Return the part of the query for setOnInsert
-	 * @param Billrun_DataTypes_Wallet $chargingPlan
+	 * @param Billrun_DataTypes_Wallet $wallet
 	 * @param array $defaultBalance
 	 * @return type
 	 */
-	protected function getSetOnInsert($chargingPlan, 
+	protected function getSetOnInsert($wallet, 
 									  $defaultBalance) {
-		$defaultBalance['charging_by'] = $chargingPlan->getChargingBy();
-		$defaultBalance['charging_by_usegt'] = $chargingPlan->getChargingByUsaget();
-		$defaultBalance[$chargingPlan->getFieldName()] = $chargingPlan->getValue();
+		$defaultBalance['charging_by'] = $wallet->getChargingBy();
+		$defaultBalance['charging_by_usegt'] = $wallet->getChargingByUsaget();
+		$defaultBalance[$wallet->getFieldName()] = $wallet->getValue();
 		return array(
 			'$setOnInsert' => $defaultBalance,
 		);
