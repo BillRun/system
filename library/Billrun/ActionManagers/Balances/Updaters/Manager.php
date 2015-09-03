@@ -43,10 +43,10 @@ class Billrun_ActionManagers_Balances_Updaters_Manager extends Billrun_ActionMan
 		
 		$filterName = $this->options['filter_name'];
 		$updaterTranslator = 
-			Billrun_Factory::config()->getConfigValue('balances.updaters.' . $filterName, false);
+			Billrun_Factory::config()->getConfigValue('balances.updaters');
 		
 		// Check that the filter name is correct.
-		if($updaterTranslator===false) {
+		if(!isset($updaterTranslator[$filterName])) {
 			Billrun_Factory::log("Filter name " . 
 								 print_r($filterName,1) . 
 								 " not found in translator!", Zend_Log::NOTICE);
@@ -62,9 +62,9 @@ class Billrun_ActionManagers_Balances_Updaters_Manager extends Billrun_ActionMan
 	protected function getActionName() {
 		$filterName = $this->options['filter_name'];
 		$updaterTranslator = 
-			Billrun_Factory::config()->getConfigValue('balances.updaters.' . $filterName);
+			Billrun_Factory::config()->getConfigValue('balances.updaters');
 		
-		return $updaterTranslator;
+		return $updaterTranslator[$filterName];
 	}
 
 }
