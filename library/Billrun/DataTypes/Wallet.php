@@ -7,12 +7,12 @@
  */
 
 /**
- * This class represents the charging plan data type.
+ * This class represents the wallet inside the balance.
  *
  * @package  DataTypes
  * @since    4
  */
-class Billrun_DataTypes_ChargingPlan {
+class Billrun_DataTypes_Wallet {
 	
 	/**
 	 * This variable is for the field value name of this plan.
@@ -39,7 +39,7 @@ class Billrun_DataTypes_ChargingPlan {
 	protected $chargingByUsaget = null;
 	
 	/**
-	 * Create a new instance of the charging plan record type.
+	 * Create a new instance of the wallet type.
 	 * @param array $chargingBy
 	 * @param array $chargingByValue
 	 */
@@ -59,8 +59,8 @@ class Billrun_DataTypes_ChargingPlan {
 	}
 	
 	/**
-	 * Get the value for the current plan.
-	 * @return The current plan value.
+	 * Get the value for the current wallet.
+	 * @return The current wallet value.
 	 */
 	public function getValue() {
 		return $this->value;

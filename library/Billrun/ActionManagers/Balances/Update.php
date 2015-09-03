@@ -94,7 +94,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 	 * @return array - Array of fields to set.
 	 */
 	protected function getUpdateFields() {
-		return array('value', 'recurring');
+		return Billrun_Factory::config()->getConfigValue('balances.update_fields');
 	}
 	
 	/**
@@ -253,17 +253,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 	 */
 	protected function getUpdateFilter($jsonQueryData) {
 		$filter = array();
-		
-		// TODO: Take this from the conf
-		$filterFields = 
-			array('id',
-				  '_id',
-				  'charging_plan_name', 
-				  'charging_plan_external_id', 
-				  'pp_includes_name', 
-				  'pp_includes_external_id', 
-				  'reccuring', 
-				  'secret');
+		$filterFields = Billrun_Factory::config()->getConfigValue('balances.filter_fields');
 		
 		// Check which field is set.
 		foreach ($filterFields as $fieldName) {
