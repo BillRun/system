@@ -134,14 +134,6 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 	}
 	
 	/**
-	 * Get the array of fields to be set in the query record from the user input.
-	 * @return array - Array of fields to set.
-	 */
-	protected function getQueryFields() {
-		return array('imsi', 'msisdn', 'sid');
-	}
-	
-	/**
 	 * Set the values for the update record to be set.
 	 * @param httpRequest $input - The input received from the user.
 	 * @return true if successful false otherwise.

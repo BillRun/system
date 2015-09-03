@@ -155,12 +155,4 @@ class Billrun_ActionManagers_Subscribers_Query extends Billrun_ActionManagers_Su
 		
 		return $invalidFields;
 	}
-	
-	/**
-	 * Get the array of fields to be set in the query record from the user input.
-	 * @return array - Array of fields to set.
-	 */
-	protected function getQueryFields() {
-		return array('imsi', 'msisdn', 'sid');
-	}
 }
