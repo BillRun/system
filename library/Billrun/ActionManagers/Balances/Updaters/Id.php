@@ -23,7 +23,8 @@ class Billrun_ActionManagers_Balances_Updaters_Id extends Billrun_ActionManagers
 	 * @return The updated record, false if failed.
 	 */
 	public function update($query, $recordToSet, $subscriberId) {
-		$this->getBalanceRecord();
+		$coll = Billrun_Factory::db()->balancesCollection();
+		$this->getBalanceRecord($coll, $query);
 		if(!$this->balancesRecord){
 			Billrun_Factory::log("Failed to get balances record to update balances by ID", Zend_Log::ERR);
 			return false;

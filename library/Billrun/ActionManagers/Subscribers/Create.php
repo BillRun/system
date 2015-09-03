@@ -149,6 +149,6 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 	 * @return array - Array of fields to set.
 	 */
 	protected function getQueryFields() {
-		return array('imsi', 'msisdn', 'sid', 'aid', 'plan', 'language', 'service_provider');
+		return Billrun_Factory::config()->getConfigValue("subscribers.create_fields");
 	}
 }
