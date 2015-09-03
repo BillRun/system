@@ -159,17 +159,9 @@ class VfdaysAction extends Action_Base {
 				),
 			),
 		);
-		$sort = array(
-			'$sort' => array(
-				'_id.day_key' => 1,
-			)
-		);
 		$billing_connection = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('billing.db'))->linesCollection();
-		$results = $billing_connection->aggregate($match, $group,$sort);
-//		return isset($results[0]['day_sum']) ? $results[0]['day_sum'] : 0;
-		return array_map(function($res) {
-			return $res['_id']['day_key'];
-		}, $results);
+		$results = $billing_connection->aggregate($match, $group, $group2);
+		return isset($results[0]['day_sum']) ? $results[0]['day_sum'] : 0;
 	}
 
 }
