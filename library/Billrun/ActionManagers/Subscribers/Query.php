@@ -143,9 +143,7 @@ class Billrun_ActionManagers_Subscribers_Query extends Billrun_ActionManagers_Su
 		$invalidFields = array();
 		
 		// Get only the values to be set in the update record.
-		// TODO: If no update fields are specified the record's to and from values will still be updated!
 		foreach ($queryFields as $field) {
-			// ATTENTION: This check will not allow updating to empty values which might be legitimate.
 			if(isset($queryData[$field]) && !empty($queryData[$field])) {
 				$this->subscriberQuery[$field] = $queryData[$field];
 			} else {
