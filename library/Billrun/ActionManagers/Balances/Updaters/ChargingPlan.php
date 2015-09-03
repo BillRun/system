@@ -66,7 +66,7 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		// Go through all charging possibilities. 
 		foreach ($balancesArray as $chargingBy => $chargingByValue) {
 			$chargingPlan = 
-				new Billrun_DataTypes_ChargingPlan($chargingBy,
+				new Billrun_DataTypes_Wallet($chargingBy,
 												   $chargingByValue);
 			$to = $recordToSet['to'];
 			$balancesToReturn[] = 
@@ -118,7 +118,7 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 	 * 
 	 * @param Mongoldoid_Collection $balancesColl
 	 * @param array $query - Query for getting tha balance.
-	 * @param Billrun_DataTypes_ChargingPlan $chargingPlan
+	 * @param Billrun_DataTypes_Wallet $chargingPlan
 	 * @param MongoDate $toTime - Expiration date.
 	 * @return array Query for set updating the balance.
 	 */
@@ -144,7 +144,7 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 	
 	/**
 	 * Update a single balance.
-	 * @param Billrun_DataTypes_ChargingPlan $chargingPlan
+	 * @param Billrun_DataTypes_Wallet $chargingPlan
 	 * @param array $query
 	 * @param Mongoldoid_Collection $balancesColl
 	 * @return Mongoldoid_Entity
@@ -171,7 +171,7 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 
 	/**
 	 * Return the part of the query for setOnInsert
-	 * @param Billrun_DataTypes_ChargingPlan $chargingPlan
+	 * @param Billrun_DataTypes_Wallet $chargingPlan
 	 * @param array $defaultBalance
 	 * @return type
 	 */

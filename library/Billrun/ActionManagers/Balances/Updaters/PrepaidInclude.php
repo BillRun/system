@@ -106,7 +106,7 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 	 * Get the plan object built from the record values.
 	 * @param array $prepaidRecord - Prepaid record.
 	 * @param array $recordToSet - Record with values to be set.
-	 * @return \Billrun_DataTypes_ChargingPlan Plan object built with values.
+	 * @return \Billrun_DataTypes_Wallet Plan object built with values.
 	 */
 	protected function getPlanObject($prepaidRecord, $recordToSet) {
 		$chargingBy = $prepaidRecord['charging_by'];
@@ -117,15 +117,15 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 			$chargingByUsaget = array($chargingByUsaget => $recordToSet['value']);
 		}
 		
-		return new Billrun_DataTypes_ChargingPlan($chargingBy, 
-											      $chargingByUsaget);
+		return new Billrun_DataTypes_Wallet($chargingBy, 
+											$chargingByUsaget);
 	}
 	
 	/**
 	 * Get the update balance query. 
 	 * @param Mongoldoid_Collection $balancesColl
 	 * @param array $query - Query for getting tha balance.
-	 * @param Billrun_DataTypes_ChargingPlan $chargingPlan
+	 * @param Billrun_DataTypes_Wallet $chargingPlan
 	 * @param MongoDate $toTime - Expiration date.
 	 * @param array $defaultBalance - Default balance to set.
 	 * @return array Query for set updating the balance.
@@ -150,7 +150,7 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 	
 	/**
 	 * Return the part of the query for setOnInsert
-	 * @param Billrun_DataTypes_ChargingPlan $chargingPlan
+	 * @param Billrun_DataTypes_Wallet $chargingPlan
 	 * @param array $defaultBalance
 	 * @return array
 	 */
@@ -166,7 +166,7 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 	
 	/**
 	 * Update a single balance.
-	 * @param Billrun_DataTypes_ChargingPlan $chargingPlan
+	 * @param Billrun_DataTypes_Wallet $chargingPlan
 	 * @param array $query
 	 * @param array $defaultBalance
 	 * @param MongoDate $toTime
