@@ -116,22 +116,23 @@ class Billrun_ActionManagers_Cards_Update extends Billrun_ActionManagers_Cards_A
 	 * @return data for output.
 	 */
 	public function execute() {
-		$success = true;
+		$updated = 0;
 		try {
 			$updateResult = $this->collection->update($this->query, array('$set' => $this->update), array('w' => 1, 'multiple' => 1));
-			$countUpdated = isset($updateResult['nModified']) ? $updateResult['nModified'] : 0;
+			$updated = isset($updateResult['nModified']) ? $updateResult['nModified'] : 0;
 		} catch (\Exception $e) {
 			Billrun_Factory::log('failed to store into DB got error : ' . $e->getCode() . ' : ' . $e->getMessage(), Zend_Log::ALERT);
 			Billrun_Factory::log('failed saving request :' . print_r($this->update, 1), Zend_Log::ALERT);
-			$success = false;
+			$updated = 0;
 		}
 
 		$outputResult = 
 			array(
-				'status'  => (!$success) ? (0) : ($countUpdated) ? (1) : (0),
-				'desc'    => (!$success) ? ('Failed updating card(s)'): ($countUpdated) ? ('success') : ('Failed updating card(s)'),
-				'details' => 'Updated ' . $countUpdated . ' card(s)'
+				'status'  => ($updated) ? (1) : (0),
+				'desc'    => ($updated) ? ('success') : ('Failed updating card(s)'),
+				'details' => 'Updated ' . $updated . ' card(s)'
 			);
+		
 		return $outputResult;
 	}
 

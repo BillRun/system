@@ -106,7 +106,8 @@ class Billrun_ActionManagers_Cards_Create extends Billrun_ActionManagers_Cards_A
 			array(
 				'status'	=> ($success) ? (1) : (0),
 				'desc'		=> ($success) ? ('success creating ' . $count . ' cards') : ('Failed creating card'),
-				'details'	=> json_encode($this->cards));
+				'details'	=> json_encode($this->cards)
+			);
 		return $outputResult;
 	}
 
