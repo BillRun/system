@@ -27,8 +27,8 @@ class CardsAction extends ApiAction {
 	protected function getAction($request) {
 		$apiName = str_replace("Action", "", __CLASS__);
 		$apiManagerInput = array(
-				'input' => $request,
-				'api_name' => $apiName
+			'input' => $request,
+			'api_name' => $apiName
 		);
 
 		$manager = new Billrun_ActionManagers_APIManager($apiManagerInput);

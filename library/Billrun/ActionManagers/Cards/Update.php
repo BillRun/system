@@ -11,37 +11,37 @@
  *
  * @author Dori
  */
-class Billrun_ActionManagers_Cards_Update extends Billrun_ActionManagers_Cards_Action{
-	
+class Billrun_ActionManagers_Cards_Update extends Billrun_ActionManagers_Cards_Action {
+
 	/**
 	 * Field to hold the data to be written in the DB.
 	 * @var type Array
 	 */
 	protected $query = array();
 	protected $update = array();
-	
+
 	/**
 	 */
 	public function __construct() {
 		parent::__construct();
 	}
-	
-    /**
-     * Get the array of fields to be set in the query record from the user input.
-     * @return array - Array of fields to set.
-     */
+
+	/**
+	 * Get the array of fields to be set in the query record from the user input.
+	 * @return array - Array of fields to set.
+	 */
 	protected function getQueryFields() {
 		return Billrun_Factory::config()->getConfigValue('cards.query_fields', array());
 	}
-	
-    /**
-     * Get the array of fields to be set in the update record from the user input.
-     * @return array - Array of fields to set.
-     */
+
+	/**
+	 * Get the array of fields to be set in the update record from the user input.
+	 * @return array - Array of fields to set.
+	 */
 	protected function getUpdateFields() {
 		return Billrun_Factory::config()->getConfigValue('cards.update_fields', array());
 	}
-	
+
 	/**
 	 * This function builds the query for the Cards Update API after 
 	 * validating existance of mandatory fields and their values.
@@ -52,35 +52,34 @@ class Billrun_ActionManagers_Cards_Update extends Billrun_ActionManagers_Cards_A
 	protected function queryProcess($input) {
 		$errLog = '';
 		$queryFields = $this->getQueryFields();
-		
+
 		$jsonQueryData = null;
 		$query = $input->get('query');
-		if(empty($query) || (!($jsonQueryData = json_decode($query, true)))) {
+		if (empty($query) || (!($jsonQueryData = json_decode($query, true)))) {
 			Billrun_Factory::log("There is no query tag or query tag is empty!", Zend_Log::ALERT);
 			return false;
 		}
 
-		foreach($queryFields as $field){
-			if(!isset($jsonQueryData[$field])) {
+		foreach ($queryFields as $field) {
+			if (!isset($jsonQueryData[$field])) {
 				$errLog[] = $field;
 			}
 		}
-		
+
 		if (!empty($errLog)) {
-			Billrun_Factory::log("The following fields are missing or empty:" . implode(', ',$errLog), Zend_Log::ALERT);
+			Billrun_Factory::log("The following fields are missing or empty:" . implode(', ', $errLog), Zend_Log::ALERT);
 			return false;
 		}
-		
-		$this->query = 
-			array(
-				'status'			=> $jsonQueryData['status'],
-				'batch_number'		=> $jsonQueryData['batch_number'],
-				'serial_number'		=> $jsonQueryData['serial_number']
-			);
-		
+
+		$this->query = array(
+				'status' => $jsonQueryData['status'],
+				'batch_number' => $jsonQueryData['batch_number'],
+				'serial_number' => $jsonQueryData['serial_number']
+		);
+
 		return true;
 	}
-	
+
 	/**
 	 * This function builds the update for the Cards Update API after 
 	 * validating existance of field and that they are not empty.
@@ -90,27 +89,27 @@ class Billrun_ActionManagers_Cards_Update extends Billrun_ActionManagers_Cards_A
 	 */
 	protected function updateProcess($input) {
 		$updateFields = $this->getUpdateFields();
-		
+
 		$jsonUpdateData = null;
-		$update = $input->get('update');		
-		if(empty($update) || (!($jsonUpdateData = json_decode($update, true)))) {
+		$update = $input->get('update');
+		if (empty($update) || (!($jsonUpdateData = json_decode($update, true)))) {
 			Billrun_Factory::log("There is no update tag or update tag is empty!", Zend_Log::ALERT);
-			return false;			
+			return false;
 		}
-	
-		foreach($updateFields as $field){
-			if(isset($jsonUpdateData[$field])) {
+
+		foreach ($updateFields as $field) {
+			if (isset($jsonUpdateData[$field])) {
 				$this->update[$field] = $jsonUpdateData[$field];
 			}
-		}		
-		
-		if(isset($this->update['to'])) {
+		}
+
+		if (isset($this->update['to'])) {
 			$this->update['to'] = new MongoDate(strtotime($this->update['to']));
 		}
-		
+
 		return true;
 	}
-	
+
 	/**
 	 * Execute the action.
 	 * @return data for output.
@@ -126,13 +125,12 @@ class Billrun_ActionManagers_Cards_Update extends Billrun_ActionManagers_Cards_A
 			$updated = 0;
 		}
 
-		$outputResult = 
-			array(
-				'status'  => ($updated) ? (1) : (0),
-				'desc'    => ($updated) ? ('success') : ('Failed updating card(s)'),
+		$outputResult = array(
+				'status' => ($updated) ? (1) : (0),
+				'desc' => ($updated) ? ('success') : ('Failed updating card(s)'),
 				'details' => 'Updated ' . $updated . ' card(s)'
-			);
-		
+		);
+
 		return $outputResult;
 	}
 
@@ -142,15 +140,16 @@ class Billrun_ActionManagers_Cards_Update extends Billrun_ActionManagers_Cards_A
 	 * @return true if valid.
 	 */
 	public function parse($input) {
-							
-		if(!$this->queryProcess($input)){
-			return false;			
+
+		if (!$this->queryProcess($input)) {
+			return false;
 		}
 
-		if(!$this->updateProcess($input)){
-			return false;			
+		if (!$this->updateProcess($input)) {
+			return false;
 		}
-		
+
 		return true;
 	}
+
 }
