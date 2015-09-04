@@ -210,7 +210,18 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 			$update['$inc']['lcount'] = $row['lcount'];
 
 			$linesCollection = $db->linesCollection();
-			$ret = $linesCollection->update($query, $update, array('w' => 1, 'upsert' => true));
+			try {
+				$ret = $linesCollection->update($query, $update, array('w' => 1, 'upsert' => true));
+			} catch (Exception $e) {
+				// if it's duplicate let's retry to unify again (only once)
+				if ($e->getCode() == 11000) {
+					Billrun_Factory::log("Duplicate line raised when trying to unify into line " . $key, Zend_Log::WARN);
+					usleep(1000);
+					$ret = $linesCollection->update($query, $update, array('w' => 1, 'upsert' => true));
+				} else {
+					throw $e;
+				}
+			}
 			$success = isset($ret['ok']) && $ret['ok'] && isset($ret['n']) && $ret['n'] > 0;
 			if (!$success) {//TODO add support for w => 0 it should  not  enter the if
 				$updateFailedLines[$key] = array('unified' => $row, 'lines' => $this->unifiedToRawLines[$key]['update']);
