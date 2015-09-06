@@ -118,7 +118,6 @@ class LinesModel extends TableModel {
 		}
 		
 		$this->_count = count($ret);// Billrun_Factory::config()->getConfigValue('admin_panel.lines.global_limit', 10000);
-		Billrun_Factory::log("Result count: " . $this->_count, Zend_Log::DEBUG);
 		return $ret;
 	}
 	

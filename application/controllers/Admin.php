@@ -665,7 +665,10 @@ class AdminController extends Yaf_Controller_Abstract {
 			$this->model->setSize($size);
 			$this->model->setPage($skip);
 		}
-		if (($queryType = $this->getRequest()->get('queryType')) === 'aggregate') {
+		
+		$queryType = $this->getRequest()->get('queryType');
+		
+		if ($queryType === 'aggregate') {
 			$data = $this->model->getAggregateData($filter_query);
 			$columns = $this->getAggregateTableColumns();
 		} else {
@@ -674,8 +677,9 @@ class AdminController extends Yaf_Controller_Abstract {
 		}
 		
 		$edit_key = $this->model->getEditKey();
-		$pagination = $this->model->printPager();
-		$sizeList = $this->model->printSizeList();
+		$paramArray = array('queryType' => $queryType);
+		$pagination = $this->model->printPager(false, $paramArray);
+		$sizeList = $this->model->printSizeList(false, $paramArray);
 
 		$params = array(
 			'data' => $data,
@@ -740,19 +744,23 @@ class AdminController extends Yaf_Controller_Abstract {
 	}
 
 	public function initModel($collection_name, $options = array()) {
+		// If the model is already initialized, return it.
+		if (!is_null($this->model)) {
+			return $this->model;
+		}
+		
 		$session = $this->getSession($collection_name);
 		$options['page'] = $this->getSetVar($session, "page", "page", 1);
 		$options['size'] = $this->getSetVar($session, "listSize", "size", Billrun_Factory::config()->getConfigValue('admin_panel.lines.limit', 100));
 		$options['extra_columns'] = $this->getSetVar($session, "extra_columns", "extra_columns", array());
-
-		if (is_null($this->model)) {
-			$model_name = ucfirst($collection_name) . "Model";
-			if (class_exists($model_name)) {
-				$this->model = new $model_name($options);
-			} else {
-				die("Error loading model");
-			}
+		
+		// Initialize the model.
+		$model_name = ucfirst($collection_name) . "Model";
+		if (!class_exists($model_name)) {
+			die("Error loading model");
 		}
+		
+		$this->model = new $model_name($options);
 		return $this->model;
 	}
 
