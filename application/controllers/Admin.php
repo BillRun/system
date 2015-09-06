@@ -672,7 +672,12 @@ class AdminController extends Yaf_Controller_Abstract {
 		
 		if ($queryType === 'aggregate') {
 			$data = $this->model->getAggregateData($filter_query);
-			$columns = $this->getAggregateTableColumns();
+			$groupColumn= array();
+			foreach ($filter_query[1]['$group']['_id'] as $key=>$value) {
+				$groupColumn['group_by' . $key] = $key;
+			}
+
+			$columns = $this->getAggregateTableColumns($groupColumn);
 		} else {
 			$data = $this->model->getData($filter_query);
 			$columns = $this->model->getTableColumns();
@@ -1120,12 +1125,9 @@ class AdminController extends Yaf_Controller_Abstract {
 		}
 	}
 	
-	public function getAggregateTableColumns() {
-		$basicColumns = array(
-			'sum' => 'Count',
-		);
-
-		return array_merge($basicColumns, $this->aggregateColumns);
+	public function getAggregateTableColumns($group=array()) {
+		$group['sum'] = 'Count';
+		return array_merge($group, $this->aggregateColumns);
 	}
 
 }

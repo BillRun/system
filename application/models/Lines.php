@@ -108,11 +108,14 @@ class LinesModel extends TableModel {
 	public function getAggregateData($filter_query = array()) {
 		$cursor = $this->collection->aggregatecursor($filter_query)
 			->sort($this->sort)->skip($this->offset())->limit($this->size);
-
 		$ret = array();
 		foreach ($cursor as $item) {
 			$item->collection($this->lines_coll);
-			$item['_id'] = new MongoId(); //TODO: change
+			foreach ($filter_query[1]['$group']['_id'] as $key=>$value) {
+				$values = $item->getRawData();
+				$item->set('group_by'.$key,$values['_id'][$key], true);
+			}
+			$item['_id'] = new MongoId();
 			$ret[] = $item;
 		}
 		
