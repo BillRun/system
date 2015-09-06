@@ -167,26 +167,6 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 		return $balancesColl->findAndModify($query, $update, array(), $options, true);
 	}
 	
-		/**
-	 * Handle zeroing the record if the charging value is positive.
-	 * @param type $query
-	 * @param type $balancesColl
-	 * @todo - This is suplicated in chargingPlan updater, should make more generic.
-	 */
-	protected function handleZeroing($query, $balancesColl, $valueFieldName) {
-		// User requested incrementing, check if to reset the record.
-		if(!$this->ignoreOveruse || !$this->isIncrement) {
-			return;
-		}
-		
-		$zeroingQuery = $query;
-		$zeriongUpdate = array();
-		$zeroingQuery[$valueFieldName] = array('$gt' => 0);
-		$zeriongUpdate['$set'][$valueFieldName] = 0;
-		$originalBeforeZeroing= $balancesColl->findAndModify($zeroingQuery, $zeriongUpdate);
-		Billrun_Factory::log("Before zeroing: " . print_r($originalBeforeZeroing, 1), Zend_Log::INFO);
-	}
-	
 	/**
 	 * Get a default balance record, without charging by.
 	 * @param type $subscriber
