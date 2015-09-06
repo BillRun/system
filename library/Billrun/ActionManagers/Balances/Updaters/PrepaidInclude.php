@@ -14,39 +14,13 @@
 class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_ActionManagers_Balances_Updaters_Updater {
 	
 	/**
-	 * Get the query to run on the prepaidincludes collection in mongo.
-	 * @param type $query Input query to proccess.
-	 * @return type Query to run on prepaidincludes collection.
+	 * Get the array of strings to translate the names of the input fields to the names used in the db.
+	 * @return array.
 	 */
-	protected function getPrepaidIncludeQuery($query) {
-		// Single the type to be charging.
-		$prepaidRecord = array('to' => array('$gt', new MongoDate()));
-		
-		$translationTable =
-			array('pp_includes_name'        => 'name',
+	protected function getTranslateFields() {
+		// TODO: Should this be in conf?
+		return array('pp_includes_name'        => 'name',
 				  'pp_includes_external_id' => 'external_id');
-		
-		// Fix the update record field names.
-		return array_merge($this->translateFieldNames($query, $translationTable), $prepaidRecord);
-	}
-	
-	/**
-	 * Get the prepaid record according to the input query.
-	 * @param type $query
-	 * @param type $prepaidCollection
-	 * @return type
-	 */
-	protected function getPrepaidIncludeRecord($query, $prepaidCollection) {
-		$prepaidQuery = $this->getPrepaidIncludeQuery($query);
-		
-		// TODO: Use the prepaid DB/API proxy.
-		$prepaidRecord = $prepaidCollection->query($prepaidQuery)->cursor()->current();
-		if(!$prepaidRecord || $prepaidRecord->isEmpty()) {
-			// TODO: Report error.
-			return null;
-		}
-		
-		return $prepaidRecord;
 	}
 	
 	/**
@@ -71,7 +45,7 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 		
 		$db = Billrun_Factory::db();
 		$prepaidIncludes = $db->prepaidIncludesCollection();
-		$prepaidRecord = $this->getPrepaidIncludeRecord($query, $prepaidIncludes);
+		$prepaidRecord = $this->getRecord($query, $prepaidIncludes, $this->getTranslateFields());
 		if(!$prepaidRecord) {
 			Billrun_Factory::log("Failed to get prepaid include record", Zend_Log::ERR);
 			return false;
@@ -87,9 +61,8 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 		}
 		
 		// Set subscriber to query.
-		$query['sid'] = $subscriber['sid'];
-		$query['aid'] = $subscriber['aid'];
-		
+		$updateQuery['sid'] = $subscriber['sid'];
+		$updateQuery['aid'] = $subscriber['aid'];
 		
 		// Create a default balance record.
 		$defaultBalance = $this->getDefaultBalance($subscriber, $prepaidRecord);
@@ -97,7 +70,7 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 		$chargingPlan = $this->getPlanObject($prepaidRecord, $recordToSet);
 		
 		return $this->updateBalance($chargingPlan, 
-									$query, 
+									$updateQuery, 
 									$defaultBalance, 
 									$recordToSet['to']);
 	}
