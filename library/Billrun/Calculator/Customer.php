@@ -314,6 +314,15 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	 * @see Billrun_Calculator::isLineLegitimate
 	 */
 	public function isLineLegitimate($line) {
+		if (is_array($line)) {
+			$arate = $this->lines_coll->getRef($line['arate']);
+		} else { 
+			$line->collection(Billrun_Factory::db()->linesCollection());
+			$arate = $line->get('arate', false);
+		}
+		if (!empty($arate['skip_calc']) && in_array(self::$type, $arate['skip_calc'])) {
+			return false;
+		}
 		if (isset($line['usagev']) && $line['usagev'] !== 0 && $this->isCustomerable($line)) {
 			$customer = $this->isOutgoingCall($line) ? "caller" : "callee";
 			if (isset($this->translateCustomerIdentToAPI[$customer])) {
@@ -377,7 +386,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 				'$ne' => 'INTERNET_BILL_BY_VOLUME',
 			),
 		);
-		$rates = $rates_coll->query($query)->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
+		$rates = $rates_coll->query($query)->cursor();
 		foreach ($rates as $rate) {
 			$this->intlGgsnRates[strval($rate->getId())] = $rate;
 		}

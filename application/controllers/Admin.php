@@ -23,6 +23,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	protected $session = null;
 	protected $model = null;
 	protected $baseUrl = null;
+	protected $requestUrl = null;
 	protected $cssPaths = array();
 	protected $jsPaths = array();
 	protected $commit;
@@ -44,6 +45,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		}
 
 		$this->baseUrl = $this->getRequest()->getBaseUri();
+		$this->requestUrl = $this->getRequest()->getRequestUri();
 		$this->addCss($this->baseUrl . '/css/bootstrap.min.css');
 		$this->addCss($this->baseUrl . '/css/bootstrap-datetimepicker.min.css');
 		$this->addCss($this->baseUrl . '/css/bootstrap-switch.css');
@@ -749,6 +751,8 @@ class AdminController extends Yaf_Controller_Abstract {
 			'title' => $this->title,
 			'active' => $table,
 			'session' => $this->getSession($table),
+			'baseUrl' => $this->baseUrl,
+			'requestUrl' => $this->requestUrl,
 		);
 		$params = array_merge($options, $basic_params, $this->getTableViewParams($filter_query), $this->createFilterToolbar($table));
 

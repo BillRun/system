@@ -118,6 +118,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 	protected function request($params) {
 
 		$host = self::getRpcServer();
+		Billrun_Factory::log("Subscriber API chosen host: " . $host, Zend_Log::INFO);
 		$url = Billrun_Factory::config()->getConfigValue('provider.rpc.url', '');
 
 		$path = 'http://' . $host . '/' . $url . '?' . http_build_query($params);
@@ -204,6 +205,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 	//@TODO change this function
 	protected function requestAccounts($params, $saveToFile = false) {
 		$host = self::getRpcServer();
+		Billrun_Factory::log("Subscriber API chosen host: " . $host, Zend_Log::INFO);
 		$url = Billrun_Factory::config()->getConfigValue('crm.url', '');
 
 		$path = 'http://' . $host . '/' . $url . '?' . http_build_query($params);
@@ -560,6 +562,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 
 	static public function requestList($params) {
 		$host = self::getRpcServer();
+		Billrun_Factory::log("Subscriber API chosen host: " . $host, Zend_Log::INFO);
 		$url = Billrun_Factory::config()->getConfigValue('provider.rpc.bulk_url', '');
 
 		$path = 'http://' . $host . '/' . $url;

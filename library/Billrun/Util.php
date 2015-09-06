@@ -220,7 +220,7 @@ class Billrun_Util {
 				->query('key', 'VAT')
 				->lessEq('from', $mongo_date)
 				->greaterEq('to', $mongo_date)
-				->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'))->current()->get('vat');
+				->cursor()->current()->get('vat');
 	}
 
 	public static function isTimestamp($timestamp) {
@@ -753,7 +753,16 @@ class Billrun_Util {
 	 * @return string host name or false when gethostname is not available (PHP 5.2 and lower)
 	 */
 	public static function getHostName() {
-		return function_exists('gethostname') ? gethostname() : false;
+		return function_exists('gethostname') ? @gethostname() : false;
+	}
+
+	/**
+	 * method to get current operating system process id runnning the PHP
+	 * 
+	 * @return mixed current PHP process ID (int) or false on failure
+	 */
+	public static function getPid() {
+		return function_exists('getmypid') ? @getmypid() : false;
 	}
 
 	/**

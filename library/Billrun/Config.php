@@ -46,7 +46,7 @@ class Billrun_Config {
 
 	protected function addConfig($path) {
 		$addedConf = new Yaf_Config_Ini($path);
-		$this->config = new Yaf_Config_Simple($this->mergeConfigs($addedConf->toArray(), $this->config->toArray()));
+		$this->config = new Yaf_Config_Simple($this->mergeConfigs($this->config->toArray(), $addedConf->toArray()));
 	}
 
 	/**
@@ -96,7 +96,7 @@ class Billrun_Config {
 			$configColl = Billrun_Factory::db()->configCollection();
 			if ($configColl) {
 				$dbConfig = $configColl->query()
-					->cursor()->setReadPreference('RP_PRIMARY')
+					->cursor()->setReadPreference('RP_PRIMARY_PREFERRED')
 					->sort(array('_id' => -1))
 					->limit(1)
 					->current()
