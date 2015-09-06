@@ -1,5 +1,5 @@
 <div class="toolbar toolbar-<?php echo $active; ?>">
-	<form id="search-criteria" action="" method="POST" class="form-vertical">
+	<form id="search-criteria" action="<?php echo $baseUrl . $requestUrl; ?>" method="POST" class="form-vertical">
 		<input type="hidden" id="queryType" name="queryType" value="aggregate" />
 		<?php
 		echo '<div id="match">';
