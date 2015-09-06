@@ -27,7 +27,7 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 				  'pp_includes_external_id' => 'external_id');
 		
 		// Fix the update record field names.
-		return array_megrge($this->translateFieldNames($query, $translationTable), $prepaidRecord);
+		return array_merge($this->translateFieldNames($query, $translationTable), $prepaidRecord);
 	}
 	
 	/**
