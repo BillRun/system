@@ -56,6 +56,21 @@ class Billrun_DataTypes_Wallet {
 		
 		$this->chargingBy = $chargingBy;
 		$this->chargingByUsaget = $chargingByUsegt;
+		
+		$this->setValue();
+	}
+	
+	/**
+	 * Sets the value. If unable to convert to integer, throws an exception.
+	 * @throws InvalidArgumentException
+	 */
+	protected function setValue() {
+		// Convert the value to an integer.
+		$numValue = Billrun_Util::toNumber($this->value);
+		if($numValue === false) {
+			throw new InvalidArgumentException("Wallet initialized with non integer value " . $this->value);
+		}
+		$this->value = $numValue;
 	}
 	
 	/**
