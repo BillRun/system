@@ -25,9 +25,6 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 	protected $acceptArchivedLines = false;
 	protected $protectedConcurrentFiles = true;
 	protected $archiveDb;
-//	protected $activeBillrun;
-	protected $dbConcurrentPref = 'RP_PRIMARY_PREFERRED';
-	protected $dbReadPref = 'RP_SECONDARY_PREFERRED';
 
 	public function __construct($options = array()) {
 		parent::__construct($options);
@@ -87,9 +84,6 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 		if (isset($options['protect_concurrent_files'])) {
 			$this->protectedConcurrentFiles = $options['protect_concurrent_files'];
 		}
-
-		$this->dbReadPref = Billrun_Factory::config()->getConfigValue('read_only_db_pref', $this->dbReadPref);
-		$this->dbConcurrentPref = Billrun_Factory::config()->getConfigValue('concurrent_db_pref', $this->dbConcurrentPref);
 
 		// archive connection setting
 		$this->archiveDb = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('archive.db'));
@@ -151,8 +145,8 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 	public function saveLinesToArchive() {
 		$failedArchived = array();
 		$linesArchivedStamps = array();
-		$archLinesColl = $this->archiveDb->linesCollection()->setReadPreference($this->dbConcurrentPref);
-		$localLines = Billrun_Factory::db()->linesCollection()->setReadPreference($this->dbConcurrentPref);
+		$archLinesColl = $this->archiveDb->linesCollection();
+		$localLines = Billrun_Factory::db()->linesCollection();
 
 		$archivedLinesCount = count($this->archivedLines);
 		if ($archivedLinesCount > 0) {
@@ -216,13 +210,19 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 			$update['$inc']['lcount'] = $row['lcount'];
 
 			$linesCollection = $db->linesCollection();
-			if ($db->compareServerVersion('2.6', '>=')) {
-				$ret = $linesCollection->setReadPreference($this->dbConcurrentPref)->update($query, $update, array('w' => 1, 'upsert' => true));
-				$success = isset($ret['ok']) && $ret['ok'] && isset($ret['n']) && $ret['n'] > 0;
-			} else { // 2.4 has a bug with the update command, so let's use FAM
-				$ret = $linesCollection->setReadPreference($this->dbConcurrentPref)->findAndModify($query, $update, array('stamp' => 1), array('upsert' => true, 'new' => true));
-				$success = !$ret->isEmpty();
+			try {
+				$ret = $linesCollection->update($query, $update, array('w' => 1, 'upsert' => true));
+			} catch (Exception $e) {
+				// if it's duplicate let's retry to unify again (only once)
+				if ($e->getCode() == 11000) {
+					Billrun_Factory::log("Duplicate line raised when trying to unify into line " . $key, Zend_Log::WARN);
+					usleep(1000);
+					$ret = $linesCollection->update($query, $update, array('w' => 1, 'upsert' => true));
+				} else {
+					throw $e;
+				}
 			}
+			$success = isset($ret['ok']) && $ret['ok'] && isset($ret['n']) && $ret['n'] > 0;
 			if (!$success) {//TODO add support for w => 0 it should  not  enter the if
 				$updateFailedLines[$key] = array('unified' => $row, 'lines' => $this->unifiedToRawLines[$key]['update']);
 				foreach ($this->unifiedToRawLines[$key]['update'] as $lstamp) {
@@ -338,7 +338,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 	 */
 	protected function isLinesLocked($unifiedStamp, $lineStamps) {
 		$query = array('stamp' => $unifiedStamp, 'tx' => array('$in' => $lineStamps));
-		return !Billrun_Factory::db()->linesCollection()->setReadPreference($this->dbReadPref)->query($query)->cursor()->limit(1)->current()->isEmpty();
+		return !Billrun_Factory::db()->linesCollection()->query($query)->cursor()->limit(1)->current()->isEmpty();
 	}
 
 	/**
@@ -348,7 +348,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 	 */
 	protected function isLinesArchived($lineStamps) {
 
-		return !$this->archiveDb->linesCollection()->setReadPreference($this->dbReadPref)->query(array('stamp' => array('$in' => $lineStamps)))->cursor()->limit(1)->current()->isEmpty();
+		return !$this->archiveDb->linesCollection()->query(array('stamp' => array('$in' => $lineStamps)))->cursor()->limit(1)->current()->isEmpty();
 	}
 
 	/**
@@ -374,7 +374,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 		$query = array('stamp' => $unifiedStamp);
 
 		$update = array('$pullAll' => array('tx' => $lineStamps));
-		Billrun_Factory::db()->linesCollection()->setReadPreference($this->dbConcurrentPref)->update($query, $update);
+		Billrun_Factory::db()->linesCollection()->update($query, $update);
 	}
 
 	/**
