@@ -69,8 +69,8 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 			return false;
 		}
 		
-		// TODO: This function is free similar to the one in ID, should refactor code to be more generic.
-		$prepaidIncludes = Billrun_Factory::db()->prepaidIncludesCollection();
+		$db = Billrun_Factory::db();
+		$prepaidIncludes = $db->prepaidIncludesCollection();
 		$prepaidRecord = $this->getPrepaidIncludeRecord($query, $prepaidIncludes);
 		if(!$prepaidRecord) {
 			Billrun_Factory::log("Failed to get prepaid include record", Zend_Log::ERR);
