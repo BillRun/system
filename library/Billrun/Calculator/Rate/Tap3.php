@@ -205,7 +205,7 @@ class Billrun_Calculator_Rate_Tap3 extends Billrun_Calculator_Rate {
 			),
 		);
 		$rates_coll = Billrun_Factory::db()->ratesCollection();
-		$rates = $rates_coll->query($query)->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
+		$rates = $rates_coll->query($query)->cursor();
 		foreach ($rates as $rate) {
 			$rate->collection($rates_coll);
 			if (is_array($rate['params']['serving_networks'])) {
