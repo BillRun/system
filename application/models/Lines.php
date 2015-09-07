@@ -63,7 +63,7 @@ class LinesModel extends TableModel {
 			$rateEntity = $ratesColl->query('key', $data['arate'])
 							->lessEq('from', $currentDate)
 							->greaterEq('to', $currentDate)
-							->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'))->current();
+							->cursor()->current();
 			$data['arate'] = $rateEntity->createRef($ratesColl);
 		}
 		if (isset($data['plan'])) {
@@ -71,7 +71,7 @@ class LinesModel extends TableModel {
 			$planEntity = $plansColl->query('name', $data['plan'])
 							->lessEq('from', $currentDate)
 							->greaterEq('to', $currentDate)
-							->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'))->current();
+							->cursor()->current();
 			$data['plan_ref'] = $planEntity->createRef($plansColl);
 		}
 		parent::update($data);
@@ -80,7 +80,6 @@ class LinesModel extends TableModel {
 	public function getData($filter_query = array()) {
 
 		$cursor = $this->collection->query($filter_query)->cursor()
-			->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'))
 			->sort($this->sort)->skip($this->offset())->limit($this->size);
 
 		if (isset($filter_query['$and']) && $this->filterExists($filter_query['$and'], array('aid', 'sid', 'stamp'))) {
@@ -109,15 +108,18 @@ class LinesModel extends TableModel {
 	public function getAggregateData($filter_query = array()) {
 		$cursor = $this->collection->aggregatecursor($filter_query)
 			->sort($this->sort)->skip($this->offset())->limit($this->size);
-		$this->_count = Billrun_Factory::config()->getConfigValue('admin_panel.lines.global_limit', 10000);
-		
 		$ret = array();
 		foreach ($cursor as $item) {
 			$item->collection($this->lines_coll);
-			$item['_id'] = new MongoId(); //TODO: change
+			foreach ($filter_query[1]['$group']['_id'] as $key=>$value) {
+				$values = $item->getRawData();
+				$item->set('group_by'.$key,$values['_id'][$key], true);
+			}
+			$item['_id'] = new MongoId();
 			$ret[] = $item;
 		}
 		
+		$this->_count = count($ret);// Billrun_Factory::config()->getConfigValue('admin_panel.lines.global_limit', 10000);
 		return $ret;
 	}
 	
@@ -259,7 +261,7 @@ class LinesModel extends TableModel {
 			if ($filter_field['input_type'] == 'boolean') {
 				if (!is_null($value) && $value != $filter_field['default']) {
 					$rates_coll = Billrun_Factory::db()->ratesCollection();
-					$unrated_rate = $rates_coll->query("key", "UNRATED")->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'))->current()->createRef($rates_coll);
+					$unrated_rate = $rates_coll->query("key", "UNRATED")->cursor()->current()->createRef($rates_coll);
 					$month_ago = new MongoDate(strtotime("1 month ago"));
 					return array(
 						'$or' => array(

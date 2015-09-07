@@ -53,11 +53,11 @@ case $report_name in
 	js_code="$js_code$data_end_code" ;;
 
 	"all_in_call" )
-	js_code=$js_code'var dir="'$in_str'";var network = "all";db.lines.aggregate({$match:{urt:{$gte:from_date, $lte:to_date}, type:"nsn", $or:[{record_type:"02",in_circuit_group_name:/'$sipregex'/},{record_type:"12",in_circuit_group_name:/'$sipregex'/,out_circuit_group_name:/^(?=BICC)/},{record_type:"12",in_circuit_group_name:/^(?!FCEL|BICC)/,out_circuit_group_name:/^(?=RCEL)/},{record_type:"11",in_circuit_group_name:/^(?!FCEL|RCEL|BICC|TONES|PCLB|PCTI|$)/,out_circuit_group_name:/^(?!FCEL|RCEL)/}]}},'$nsn_grouping_in')';
+	js_code=$js_code'var dir="'$in_str'";var network = "all";db.lines.aggregate({$match:{urt:{$gte:from_date, $lte:to_date}, type:"nsn", $or:[{record_type:{$in:["02", "30"]},in_circuit_group_name:/'$sipregex'/},{record_type:"12",in_circuit_group_name:/'$sipregex'/,out_circuit_group_name:/^(?=BICC)/},{record_type:"12",in_circuit_group_name:/^(?!FCEL|BICC)/,out_circuit_group_name:/^(?=RCEL)/},{record_type:"11",in_circuit_group_name:/^(?!FCEL|RCEL|BICC|TONES|PCLB|PCTI|$)/,out_circuit_group_name:/^(?!FCEL|RCEL)/}]}},'$nsn_grouping_in')';
 	js_code="$js_code$nsn_end_code" ;;
 
 	"all_out_call" )
- 	js_code=$js_code'var dir="'$out_str'";var network = "all";db.lines.aggregate({$match:{urt:{$gte:from_date, $lte:to_date}, type:"nsn", $or:[{record_type:"01"},{record_type:"11", in_circuit_group_name:/^(RCEL|4CEL)/},{record_type:"12",in_circuit_group_name:/^BICC/}], out_circuit_group_name:/^(?!FCEL|VVOM|BICC)/ }},'$nsn_grouping_out')';
+ 	js_code=$js_code'var dir="'$out_str'";var network = "all";db.lines.aggregate({$match:{urt:{$gte:from_date, $lte:to_date}, type:"nsn", $or:[{record_type:{$in:["01", "31"]},{record_type:"11", in_circuit_group_name:/^(RCEL|4CEL)/},{record_type:"12",in_circuit_group_name:/^BICC/}], out_circuit_group_name:/^(?!FCEL|VVOM|BICC|IKRT)/ }},'$nsn_grouping_out')';
 	js_code="$js_code$nsn_end_code" ;;
 
 	"all_nr_out_call" )
