@@ -106,6 +106,10 @@ class LinesModel extends TableModel {
 	}
 	
 	public function getAggregateData($filter_query = array()) {
+		if (empty($filter_query[0]['$match'])) {
+			unset($filter_query[0]);
+			$filter_query = array_values($filter_query); // reset array index (required for aggregate framework)
+		}
 		$cursor = $this->collection->aggregatecursor($filter_query)
 			->sort($this->sort)->skip($this->offset())->limit($this->size);
 		$ret = array();
