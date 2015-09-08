@@ -811,6 +811,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * @param type $target_name the variable name in the session
 	 * @param type $default the default value for the variable
 	 * @return type
+	 * @todo Rename this function, this is very confusing. it took me alot of time and unneccessary code to write.
 	 */
 	protected function getSetVar($session, $source_name, $target_name = null, $default = null) {
 		if (is_null($target_name)) {
