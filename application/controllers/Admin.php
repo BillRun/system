@@ -292,32 +292,32 @@ class AdminController extends Yaf_Controller_Abstract {
 		$collectionName = $this->getRequest()->get("collection");
 		$session = $this->getSession($collectionName);
 
-		if (empty($session->query)) {
+		if (!empty($session->query)) {
+			$options = array(
+				'collection' => $collectionName,
+				'sort' => $this->applySort($collectionName),
+			);
+
+			// init model
+			self::initModel($collectionName, $options);
+
+			$skip = intval(Billrun_Factory::config()->getConfigValue('admin_panel.csv_export.skip', 0));
+			$size = intval(Billrun_Factory::config()->getConfigValue('admin_panel.csv_export.size', 10000));
+
+			$queryType = $this->getSetVar($session, 'queryType');
+	//		$viewParamsHandlerName = "Admin_Viewparams_" . ucfirst($queryType);
+	//		if(!class_exists($viewParamsHandlerName)){
+	//			Billrun_Factory::log("Failed getting the view params handler! " . $viewParamsHandlerName, Zend_Log::ERR);
+	//			return null;
+	//		}
+	//		$viewParamsHandler = new $viewParamsHandlerName();
+	//		$tableViewParams = $viewParamsHandler->getTableViewParams($this->model, $this->aggregateColumns, $session->query, $skip, $size);
+			$tableViewParams = $this->getTableViewParams($queryType, $this->query, $skip, $size);
+			$params = array_merge($tableViewParams, $this->createFilterToolbar('lines')); // TODO: Should we replace 'lines' here with $collectionName?
+			$this->model->exportCsvFile($params);
+		} else {
 			return false;
 		}
-
-		$options = array(
-			'collection' => $collectionName,
-			'sort' => $this->applySort($collectionName),
-		);
-
-		// init model
-		self::initModel($collectionName, $options);
-
-		$skip = intval(Billrun_Factory::config()->getConfigValue('admin_panel.csv_export.skip', 0));
-		$size = intval(Billrun_Factory::config()->getConfigValue('admin_panel.csv_export.size', 10000));
-		
-		$queryType = $this->getSetVar($session, 'queryType');
-//		$viewParamsHandlerName = "Admin_Viewparams_" . ucfirst($queryType);
-//		if(!class_exists($viewParamsHandlerName)){
-//			Billrun_Factory::log("Failed getting the view params handler! " . $viewParamsHandlerName, Zend_Log::ERR);
-//			return null;
-//		}
-//		$viewParamsHandler = new $viewParamsHandlerName();
-//		$tableViewParams = $viewParamsHandler->getTableViewParams($this->model, $this->aggregateColumns, $session->query, $skip, $size);
-		$tableViewParams = $this->getTableViewParams($queryType, $this->query, $skip, $size);
-		$params = array_merge($tableViewParams, $this->createFilterToolbar('lines')); // TODO: Should we replace 'lines' here with $collectionName?
-		$this->model->exportCsvFile($params);
 	}
 
 	/**
@@ -477,9 +477,8 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * lines controller of admin
 	 */
 	public function linesAction() {
-		if (!$this->allowed('read')) {
+		if (!$this->allowed('read'))
 			return false;
-		}
 		
 		$table = 'lines';
 		$sort = $this->applySort($table);
