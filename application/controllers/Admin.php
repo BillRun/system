@@ -777,6 +777,7 @@ class AdminController extends Yaf_Controller_Abstract {
 			'session' => $this->getSession($table),
 			'baseUrl' => $this->baseUrl,
 			'requestUrl' => $this->requestUrl,
+			'request' => $this->getRequest()->getRequest(),
 		);
 		$params = array_merge($options, $basic_params, $this->getTableViewParams($filter_query), $this->createFilterToolbar($table));
 
