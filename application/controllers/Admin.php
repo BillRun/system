@@ -91,6 +91,14 @@ class AdminController extends Yaf_Controller_Abstract {
 	}
 
 	/**
+	 * Get the model object.
+	 * @return The model object.
+	 */
+	public function getModel() {
+		return $this->model;
+	}
+	
+	/**
 	 * default controller of admin
 	 */
 	public function indexAction() {
@@ -282,7 +290,6 @@ class AdminController extends Yaf_Controller_Abstract {
 		$session = $this->getSession($collectionName);
 
 		if (!empty($session->query)) {
-
 			$options = array(
 				'collection' => $collectionName,
 				'sort' => $this->applySort($collectionName),
@@ -293,7 +300,10 @@ class AdminController extends Yaf_Controller_Abstract {
 
 			$skip = intval(Billrun_Factory::config()->getConfigValue('admin_panel.csv_export.skip', 0));
 			$size = intval(Billrun_Factory::config()->getConfigValue('admin_panel.csv_export.size', 10000));
-			$params = array_merge($this->getTableViewParams($session->query, $skip, $size), $this->createFilterToolbar('lines'));
+
+			$queryType = $this->getSetVar($session, 'queryType');
+			$tableViewParams = $this->getTableViewParams($queryType, $this->query, $skip, $size);
+			$params = array_merge($tableViewParams, $this->createFilterToolbar('lines')); // TODO: Should we replace 'lines' here with $collectionName?
 			$this->model->exportCsvFile($params);
 		} else {
 			return false;
@@ -401,7 +411,6 @@ class AdminController extends Yaf_Controller_Abstract {
 		$params = array_merge(array(
 			'title' => $this->title,
 			), $params);
-//		$params = array_merge($options, $params, $this->getTableViewParams($filter_query), $this->createFilterToolbar($table));
 
 		$ret = $this->renderView('login', $params);
 		return $ret;
@@ -468,14 +477,18 @@ class AdminController extends Yaf_Controller_Abstract {
 		);
 
 		self::initModel($table, $options);
-		if (($queryType = $this->getRequest()->get('queryType')) === 'aggregate') {
+		
+		$session = $this->getSession($table);
+				
+		$queryTypeDefault = Billrun_Config::getInstance()->getConfigValue('admin.query_type');
+		$queryType = $this->getSetVar($session, 'queryType', 'queryType', $queryTypeDefault);
+		
+		if($queryType === 'aggregate') {
 			$query = $this->applyAggregateFilters($table);
 		} else {
 			$query = $this->applyFilters($table);
 		}
 		
-
-		$session = $this->getSession($table);
 		// this use for export
 		$this->getSetVar($session, $query, 'query', $query);
 
@@ -661,23 +674,18 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * 
 	 * @return string the render page (HTML)
 	 * @todo refactoring this function
+	 * @todo Use the Admin_ViewParams classes.
 	 */
-	protected function getTableViewParams($filter_query = array(), $skip = null, $size = null) {
+	protected function getTableViewParams($queryType, $filter_query = array(), $skip = null, $size = null) {
 		if (isset($skip) && !empty($size)) {
 			$this->model->setSize($size);
 			$this->model->setPage($skip);
 		}
 		
-		$queryType = $this->getRequest()->get('queryType');
-		
 		if ($queryType === 'aggregate') {
 			$data = $this->model->getAggregateData($filter_query);
-			$groupColumn= array();
-			foreach ($filter_query[1]['$group']['_id'] as $key=>$value) {
-				$groupColumn['group_by' . $key] = $key;
-			}
-
-			$columns = $this->getAggregateTableColumns($groupColumn);
+			$groupByKeys = array_keys($filter_query[1]['$group']['_id'] );
+			$columns = $this->getAggregateTableColumns($groupByKeys);
 		} else {
 			$data = $this->model->getData($filter_query);
 			$columns = $this->model->getTableColumns();
@@ -757,9 +765,17 @@ class AdminController extends Yaf_Controller_Abstract {
 		}
 		
 		$session = $this->getSession($collection_name);
+		$request = $this->getRequest()->getRequest();
+		$groupBySelect = null;
+		if(isset($request['groupBySelect'])) {
+			$groupBySelect = $request['groupBySelect'];
+		}
+		
+		$options['groupBySelect'] = $this->getSetVar($session, "groupBySelect", "groupBySelect", $groupBySelect);
 		$options['page'] = $this->getSetVar($session, "page", "page", 1);
 		$options['size'] = $this->getSetVar($session, "listSize", "size", Billrun_Factory::config()->getConfigValue('admin_panel.lines.limit', 100));
 		$options['extra_columns'] = $this->getSetVar($session, "extra_columns", "extra_columns", array());
+		$options['viewType']= $queryType = $this->getSetVar($session, 'queryType');
 		
 		// Initialize the model.
 		$model_name = ucfirst($collection_name) . "Model";
@@ -773,16 +789,22 @@ class AdminController extends Yaf_Controller_Abstract {
 
 	protected function buildTableComponent($table, $filter_query, $options = array()) {
 		$this->title = ucfirst($table);
-
+		$session = $this->getSession($table);
+		
 		// TODO: use ready pager/paginiation class (zend? joomla?) with auto print
 		$basic_params = array(
 			'title' => $this->title,
 			'active' => $table,
-			'session' => $this->getSession($table),
+			'session' =>$session,
 			'baseUrl' => $this->baseUrl,
 			'requestUrl' => $this->requestUrl,
 		);
-		$params = array_merge($options, $basic_params, $this->getTableViewParams($filter_query), $this->createFilterToolbar($table));
+		
+		$queryTypeDefault = Billrun_Config::getInstance()->getConfigValue('admin.query_type');
+		$queryType = $this->getSetVar($session, 'queryType', 'queryType', $queryTypeDefault);
+		
+		$tableViewParams = $this->getTableViewParams($queryType, $filter_query);
+		$params = array_merge($options, $basic_params, $tableViewParams, $this->createFilterToolbar($table));
 
 		$ret = $this->renderView('table', $params);
 		return $ret;
@@ -792,7 +814,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * 
 	 * @param string $table the table name
 	 */
-	protected function getSession($table) {
+	public static function getSession($table) {
 		$session = Yaf_session::getInstance();
 		$session->start();
 
@@ -809,12 +831,27 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * @param type $target_name the variable name in the session
 	 * @param type $default the default value for the variable
 	 * @return type
+	 * @todo Rename this function, this is very confusing. it took me alot of time and unneccessary code to write.
 	 */
 	protected function getSetVar($session, $source_name, $target_name = null, $default = null) {
+		$request = $this->getRequest();
+		return self::setRequestToSession($request, $session, $source_name, $target_name, $default);
+	}
+	
+	/**
+	 * Gets a variable from the request / session and sets it to the session if found
+	 * @param Object $request - The request instance.
+	 * @param Object $session the session object
+	 * @param string $source_name the variable name in the request
+	 * @param type $target_name the variable name in the session
+	 * @param type $default the default value for the variable
+	 * @return type
+	 * @todo Move this function maybe?
+	 */
+	public static function setRequestToSession($request, $session, $source_name, $target_name = null, $default = null) {
 		if (is_null($target_name)) {
 			$target_name = $source_name;
 		}
-		$request = $this->getRequest();
 		$new_search = $request->get("new_search") == "1";
 		if (is_array($source_name)) {
 			$key = Billrun_Util::generateArrayStamp($source_name);
@@ -836,6 +873,14 @@ class AdminController extends Yaf_Controller_Abstract {
 		return $session->$target_name;
 	}
 
+	/**
+	 * Set the aggregated columns array. 
+	 * @param array $array - Array to set.
+	 */
+	public function setAggregateColumns($array) {
+		$this->aggregateColumns = $array;
+	}
+	
 	protected function applyFilters($table) {
 		$model = $this->model;
 		$session = $this->getSession($table);
@@ -861,15 +906,17 @@ class AdminController extends Yaf_Controller_Abstract {
 		if ($filter = $this->getManualFilters($table)) {
 			$match = array_merge($match, $filter);
 		}
-		foreach ($filter_fields as $filter_name => $filter_field) {
+		$filter_fields_values = array_values($filter_fields);
+		foreach ($filter_fields_values as $filter_field) {
 			$value = $this->getSetVar($session, $filter_field['key'], $filter_field['key'], $filter_field['default']);
 			if ((!empty($value) || $value === 0 || $value === "0") && $filter_field['db_key'] != 'nofilter' && $filter = $model->applyFilter($filter_field, $value)) {
 				$match = array_merge($match, $filter);
 			}
 		}
 		
+		$groupBySelect = $this->getSetVar($session, 'groupBySelect');
 		$groupBy = array();
-		foreach ($this->getRequest()->get('groupBySelect') as $groupDataElem) {
+		foreach ($groupBySelect as $groupDataElem) {
 			$groupBy[ucfirst($groupDataElem)] = '$' . $groupDataElem;
 		}
 		
@@ -897,6 +944,11 @@ class AdminController extends Yaf_Controller_Abstract {
 		return $sort;
 	}
 
+	/**
+	 * 
+	 * @param type $table
+	 * @return boolean
+	 */
 	public function getManualFilters($table) {
 		$query = false;
 		$session = $this->getSession($table);
@@ -995,6 +1047,11 @@ class AdminController extends Yaf_Controller_Abstract {
 		return $query;
 	}
 	
+	/**
+	 * 
+	 * @param type $table
+	 * @return string
+	 */
 	public function getGroupData($table) {
 		$query = false;
 		$session = $this->getSession($table);
@@ -1125,9 +1182,19 @@ class AdminController extends Yaf_Controller_Abstract {
 		}
 	}
 	
-	public function getAggregateTableColumns($group=array()) {
+	/**
+	 * Get the columns to present for the aggregate table.
+	 * @param array $groupByKeys - The keys to use for aggregation.
+	 * @return array Group columns to show.
+	 */
+	public function getAggregateTableColumns($groupByKeys=array()) {
+		$group= array();
+		
+		foreach ($groupByKeys as $key) {
+			$group['group_by' . '.' . $key] = $key;
+		}
+			
 		$group['sum'] = 'Count';
 		return array_merge($group, $this->aggregateColumns);
 	}
-
 }
