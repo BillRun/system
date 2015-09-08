@@ -64,6 +64,9 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->addJs($this->baseUrl . '/js/jquery.csv-0.71.min.js');
 		$this->addJs($this->baseUrl . '/js/main.js');
 		Yaf_Loader::getInstance(APPLICATION_PATH . '/application/helpers')->registerLocalNamespace('Admin');
+		
+		// This should be in a better place.
+		Yaf_Loader::getInstance(APPLICATION_PATH . '/application/helpers')->registerLocalNamespace('Lines');
 	}
 
 	protected function addCss($path) {
@@ -665,6 +668,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * 
 	 * @return string the render page (HTML)
 	 * @todo refactoring this function
+	 * @todo Use the Admin_ViewParams classes.
 	 */
 	protected function getTableViewParams($queryType, $filter_query = array(), $skip = null, $size = null) {
 		if (isset($skip) && !empty($size)) {
@@ -672,12 +676,11 @@ class AdminController extends Yaf_Controller_Abstract {
 			$this->model->setPage($skip);
 		}
 		
+		$data = $this->model->fetch($filter_query);
 		if ($queryType === 'aggregate') {
-			$data = $this->model->getAggregateData($filter_query);
 			$groupByKeys = array_keys($filter_query[1]['$group']['_id'] );
 			$columns = $this->getAggregateTableColumns($groupByKeys);
 		} else {
-			$data = $this->model->getData($filter_query);
 			$columns = $this->model->getTableColumns();
 		}
 		
@@ -759,7 +762,8 @@ class AdminController extends Yaf_Controller_Abstract {
 		$options['page'] = $this->getSetVar($session, "page", "page", 1);
 		$options['size'] = $this->getSetVar($session, "listSize", "size", Billrun_Factory::config()->getConfigValue('admin_panel.lines.limit', 100));
 		$options['extra_columns'] = $this->getSetVar($session, "extra_columns", "extra_columns", array());
-
+		$options['viewType']= $queryType = $this->getSetVar($session, 'queryType');
+		
 		// Initialize the model.
 		$model_name = ucfirst($collection_name) . "Model";
 		if (!class_exists($model_name)) {
@@ -783,8 +787,18 @@ class AdminController extends Yaf_Controller_Abstract {
 			'requestUrl' => $this->requestUrl,
 		);
 		
-		$queryType = $this->getSetVar($session, 'queryType');
-		$params = array_merge($options, $basic_params, $this->getTableViewParams($queryType, $filter_query), $this->createFilterToolbar($table));
+		$queryTypeDefault = Billrun_Config::getInstance()->getConfigValue('admin.query_type');
+		$queryType = $this->getSetVar($session, 'queryType', 'queryType', $queryTypeDefault);
+		
+		$viewParamsHandlerName = "Admin_Viewparams_" . ucfirst($queryType);
+		if(!class_exists($viewParamsHandlerName)){
+			Billrun_Factory::log("Failed getting the view params handler! " . $viewParamsHandlerName, Zend_Log::ERR);
+			return null;
+		}
+		
+		$viewParamsHandler = new $viewParamsHandlerName();
+		$tableViewParams = $viewParamsHandler->getTableViewParams($this->model, $this->aggregateColumns, $filter_query);
+		$params = array_merge($options, $basic_params, $tableViewParams, $this->createFilterToolbar($table));
 
 		$ret = $this->renderView('table', $params);
 		return $ret;
@@ -1145,5 +1159,4 @@ class AdminController extends Yaf_Controller_Abstract {
 		$group['sum'] = 'Count';
 		return array_merge($group, $this->aggregateColumns);
 	}
-
 }

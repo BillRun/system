@@ -111,6 +111,15 @@ class TableModel {
 	/**
 	 * Get the data resource
 	 * 
+	 * @return MongodloidEntity
+	 */
+	public function fetch($filter_query = array()) {
+		return $this->getData($filter_query);
+	}
+	
+	/**
+	 * Get the data resource
+	 * 
 	 * @return Mongo Cursor
 	 */
 	public function getData($filter_query = array()) {
@@ -417,6 +426,13 @@ class TableModel {
 		return array();
 	}
 
+	/**
+	 * 
+	 * @param type $item
+	 * @param type $field_name
+	 * @return type
+	 * @todo: Same function in DBRef, change all calls to the static function and make this deprecated.
+	 */
 	protected function getDBRefField($item, $field_name) {
 		if (($value = $item->get($field_name, true)) && MongoDBRef::isRef($value)) {
 			$value = Billrun_DBRef::getEntity($value);
@@ -485,6 +501,7 @@ class TableModel {
 	 * @param type $searched_filter the filter to search
 	 * 
 	 * @return boolean true if searched filter exists in the filters supply
+	 * @todo Moved this to utils, use the one in utils and deprecate this function.
 	 */
 	protected function filterExists($filters, $searched_filter) {
 		settype($searched_filter, 'array');

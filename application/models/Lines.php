@@ -22,13 +22,41 @@ class LinesModel extends TableModel {
 	protected $garbage = false;
 	protected $lines_coll = null;
 
+	/**
+	 * Fetcher used to get data.
+	 * @var Lines_IFetcher 
+	 */
+	protected $fetcher = null;
+	
 	public function __construct(array $params = array()) {
 		$params['collection'] = Billrun_Factory::db()->lines;
 		parent::__construct($params);
 		$this->search_key = "stamp";
 		$this->lines_coll = Billrun_Factory::db()->linesCollection();
+		
+		if(isset($params['viewType'])) {
+			$viewType = $params['viewType'];
+			$fetcherName = "Lines_Fetcher_" . ucfirst($viewType);
+			
+			if(!class_exists($fetcherName)){
+				Billrun_Factory::log("Invalid fetcher in the lines model " . $fetcherName, Zend_Log::ALERT);
+				return;
+			}
+			
+			// Create the fetcher.
+			$this->fetcher = new $fetcherName;
+		}
 	}
 
+	/**
+	 * Get the data for a query.
+	 * @param array $filter_query - Query to search.
+	 * @return array of Mongodloid_Entities.
+	 */
+	public function fetch($filter_query = array()) {
+		return $this->fetcher->fetch($filter_query, $this->collection, $this->sort, $this->offset(),$this->size);
+	}
+	
 	public function getProtectedKeys($entity, $type) {
 		$parent_protected = parent::getProtectedKeys($entity, $type);
 		if ($type == 'update') {
@@ -77,6 +105,12 @@ class LinesModel extends TableModel {
 		parent::update($data);
 	}
 	
+	/**
+	 * Get data for the find view.
+	 * @param type $filter_query
+	 * @return type
+	 * @deprecated since version 2.8
+	 */
 	public function getData($filter_query = array()) {
 
 		$cursor = $this->collection->query($filter_query)->cursor()
@@ -109,6 +143,7 @@ class LinesModel extends TableModel {
 	 * Get the aggregated data to show.
 	 * @param array $filter_query - Query to get the aggregated data for.
 	 * @return aray - Mongo entities to return.
+	 * @deprecated since version 2.8
 	 */
 	public function getAggregateData($filter_query = array()) {
 		$cursor = $this->collection->aggregatecursor($filter_query)
