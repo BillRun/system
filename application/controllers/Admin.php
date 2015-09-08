@@ -308,13 +308,14 @@ class AdminController extends Yaf_Controller_Abstract {
 		$size = intval(Billrun_Factory::config()->getConfigValue('admin_panel.csv_export.size', 10000));
 		
 		$queryType = $this->getSetVar($session, 'queryType');
-		$viewParamsHandlerName = "Admin_Viewparams_" . ucfirst($queryType);
-		if(!class_exists($viewParamsHandlerName)){
-			Billrun_Factory::log("Failed getting the view params handler! " . $viewParamsHandlerName, Zend_Log::ERR);
-			return null;
-		}
-		$viewParamsHandler = new $viewParamsHandlerName();
-		$tableViewParams = $viewParamsHandler->getTableViewParams($this->model, $this->aggregateColumns, $session->query, $skip, $size);
+//		$viewParamsHandlerName = "Admin_Viewparams_" . ucfirst($queryType);
+//		if(!class_exists($viewParamsHandlerName)){
+//			Billrun_Factory::log("Failed getting the view params handler! " . $viewParamsHandlerName, Zend_Log::ERR);
+//			return null;
+//		}
+//		$viewParamsHandler = new $viewParamsHandlerName();
+//		$tableViewParams = $viewParamsHandler->getTableViewParams($this->model, $this->aggregateColumns, $session->query, $skip, $size);
+		$tableViewParams = $this->getTableViewParams($queryType, $this->query, $skip, $size);
 		$params = array_merge($tableViewParams, $this->createFilterToolbar('lines')); // TODO: Should we replace 'lines' here with $collectionName?
 		$this->model->exportCsvFile($params);
 	}
@@ -494,15 +495,21 @@ class AdminController extends Yaf_Controller_Abstract {
 		$queryTypeDefault = Billrun_Config::getInstance()->getConfigValue('admin.query_type');
 		$queryType = $this->getSetVar($session, 'queryType', 'queryType', $queryTypeDefault);
 		
-		$filterHandlerName = "Admin_Filter_" . ucfirst($queryType);
-		if(!class_exists($filterHandlerName)){
-			Billrun_Factory::log("Failed getting the filter handler! " . $filterHandlerName, Zend_Log::ERR);
-			return false;
+//		$filterHandlerName = "Admin_Filter_" . ucfirst($queryType);
+//		if(!class_exists($filterHandlerName)){
+//			Billrun_Factory::log("Failed getting the filter handler! " . $filterHandlerName, Zend_Log::ERR);
+//			return false;
+//		}
+//		
+//		$filterHandler = new $filterHandlerName();
+//		$query = $filterHandler->query($this, $table);
+			
+		if($queryType === 'aggregate') {
+			$query = $this->applyAggregateFilters($table);
+		} else {
+			$query = $this->applyFilters($table);
 		}
 		
-		$filterHandler = new $filterHandlerName();
-		$query = $filterHandler->query($this, $table);
-
 		// this use for export
 		$this->getSetVar($session, $query, 'query', $query);
 
@@ -697,11 +704,13 @@ class AdminController extends Yaf_Controller_Abstract {
 			$this->model->setPage($skip);
 		}
 		
-		$data = $this->model->fetch($filter_query);
+//		$data = $this->model->fetch($filter_query);
 		if ($queryType === 'aggregate') {
+			$data = $this->model->getAggregateData($filter_query);
 			$groupByKeys = array_keys($filter_query[1]['$group']['_id'] );
 			$columns = $this->getAggregateTableColumns($groupByKeys);
 		} else {
+			$data = $this->model->getData($filter_query);
 			$columns = $this->model->getTableColumns();
 		}
 		
@@ -817,14 +826,15 @@ class AdminController extends Yaf_Controller_Abstract {
 		$queryTypeDefault = Billrun_Config::getInstance()->getConfigValue('admin.query_type');
 		$queryType = $this->getSetVar($session, 'queryType', 'queryType', $queryTypeDefault);
 		
-		$viewParamsHandlerName = "Admin_Viewparams_" . ucfirst($queryType);
-		if(!class_exists($viewParamsHandlerName)){
-			Billrun_Factory::log("Failed getting the view params handler! " . $viewParamsHandlerName, Zend_Log::ERR);
-			return null;
-		}
-		
-		$viewParamsHandler = new $viewParamsHandlerName();
-		$tableViewParams = $viewParamsHandler->getTableViewParams($this->model, $this->aggregateColumns, $filter_query);
+//		$viewParamsHandlerName = "Admin_Viewparams_" . ucfirst($queryType);
+//		if(!class_exists($viewParamsHandlerName)){
+//			Billrun_Factory::log("Failed getting the view params handler! " . $viewParamsHandlerName, Zend_Log::ERR);
+//			return null;
+//		}
+//		
+//		$viewParamsHandler = new $viewParamsHandlerName();
+//		$tableViewParams = $viewParamsHandler->getTableViewParams($this->model, $this->aggregateColumns, $filter_query);
+		$tableViewParams = $this->getTableViewParams($queryType, $filter_query);
 		$params = array_merge($options, $basic_params, $tableViewParams, $this->createFilterToolbar($table));
 
 		$ret = $this->renderView('table', $params);
