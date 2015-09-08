@@ -300,8 +300,14 @@ class AdminController extends Yaf_Controller_Abstract {
 		$size = intval(Billrun_Factory::config()->getConfigValue('admin_panel.csv_export.size', 10000));
 		
 		$queryType = $this->getSetVar($session, 'queryType');
-		
-		$params = array_merge($this->getTableViewParams($queryType, $session->query, $skip, $size), $this->createFilterToolbar('lines')); // TODO: Should we replace 'lines' here with $collectionName?
+		$viewParamsHandlerName = "Admin_Viewparams_" . ucfirst($queryType);
+		if(!class_exists($viewParamsHandlerName)){
+			Billrun_Factory::log("Failed getting the view params handler! " . $viewParamsHandlerName, Zend_Log::ERR);
+			return null;
+		}
+		$viewParamsHandler = new $viewParamsHandlerName();
+		$tableViewParams = $viewParamsHandler->getTableViewParams($this->model, $this->aggregateColumns, $session->query, $skip, $size);
+		$params = array_merge($tableViewParams, $this->createFilterToolbar('lines')); // TODO: Should we replace 'lines' here with $collectionName?
 		$this->model->exportCsvFile($params);
 	}
 
@@ -803,7 +809,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$ret = $this->renderView('table', $params);
 		return $ret;
 	}
-
+	
 	/**
 	 * 
 	 * @param string $table the table name
