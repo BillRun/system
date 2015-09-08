@@ -57,7 +57,7 @@ case $report_name in
 	js_code="$js_code$nsn_end_code" ;;
 
 	"all_out_call" )
- 	js_code=$js_code'var dir="'$out_str'";var network = "all";db.lines.aggregate({$match:{urt:{$gte:from_date, $lte:to_date}, type:"nsn", $or:[{record_type:{$in:["01", "31"]},{record_type:"11", in_circuit_group_name:/^(RCEL|4CEL)/},{record_type:"12",in_circuit_group_name:/^BICC/}], out_circuit_group_name:/^(?!FCEL|VVOM|BICC|IKRT)/ }},'$nsn_grouping_out')';
+ 	js_code=$js_code'var dir="'$out_str'";var network = "all";db.lines.aggregate({$match:{urt:{$gte:from_date, $lte:to_date}, type:"nsn", $or:[{record_type:{$in:["01", "31"]}},{record_type:"11", in_circuit_group_name:/^(RCEL|4CEL)/},{record_type:"12",in_circuit_group_name:/^BICC/}], out_circuit_group_name:/^(?!FCEL|VVOM|BICC)/ }},'$nsn_grouping_out')';
 	js_code="$js_code$nsn_end_code" ;;
 
 	"all_nr_out_call" )
