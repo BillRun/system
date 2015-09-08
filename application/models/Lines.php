@@ -154,8 +154,14 @@ class LinesModel extends TableModel {
 					
 		// Go through the items and construct aggregated entities.
 		foreach ($cursor as $item) {
-			$aggregatedItem = new Mongodloid_AggregatedEntity($item, $groupKeys);
-			$ret[] = $aggregatedItem;
+			$values = $item->getRawData();
+			foreach ($groupKeys as $key) {
+				// TODO: The 'group_by' constant should perheps move to a more fitting location.
+				$item->set('group_by' . '.' . $key,$values['_id'][$key], true);
+			}
+			$item->set('_id', new MongoId(), true);
+//			$aggregatedItem = new Mongodloid_AggregatedEntity($item, $groupKeys);
+			$ret[] = $item;
 		}
 		
 		$this->_count = count($ret);// Billrun_Factory::config()->getConfigValue('admin_panel.lines.global_limit', 10000);

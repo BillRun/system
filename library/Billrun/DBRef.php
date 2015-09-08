@@ -38,13 +38,13 @@ class Billrun_DBRef {
 	 * @param string $fieldName - Name of the field to get the ref from.
 	 * @return Mongoldoid_Entity
 	 */
-	public static function getDBRefField($entity, $fieldName) {
-		$value = $entity->get($fieldName, true);
-		if ($value && MongoDBRef::isRef($value)) {
-			$value = Billrun_DBRef::getEntity($value);
-		}
-		return $value;
-	}
+//	public static function getDBRefField($entity, $fieldName) {
+//		$value = $entity->get($fieldName, true);
+//		if ($value && MongoDBRef::isRef($value)) {
+//			$value = Billrun_DBRef::getEntity($value);
+//		}
+//		return $value;
+//	}
 	
 	/**
 	 * 

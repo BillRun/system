@@ -1224,7 +1224,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$group= array();
 		
 		foreach ($groupByKeys as $key) {
-			$group[Mongodloid_AggregatedEntity::$GROUP_BY_IDENTIFIER . '.' . $key] = $key;
+			$group['group_by' . '.' . $key] = $key;
 		}
 			
 		$group['sum'] = 'Count';
