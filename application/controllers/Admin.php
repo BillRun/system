@@ -94,6 +94,14 @@ class AdminController extends Yaf_Controller_Abstract {
 	}
 
 	/**
+	 * Get the model object.
+	 * @return The model object.
+	 */
+	public function getModel() {
+		return $this->model;
+	}
+	
+	/**
 	 * default controller of admin
 	 */
 	public function indexAction() {
@@ -468,9 +476,10 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * lines controller of admin
 	 */
 	public function linesAction() {
-		if (!$this->allowed('read'))
+		if (!$this->allowed('read')) {
 			return false;
-
+		}
+		
 		$table = 'lines';
 		$sort = $this->applySort($table);
 		$options = array(
@@ -482,12 +491,17 @@ class AdminController extends Yaf_Controller_Abstract {
 		
 		$session = $this->getSession($table);
 				
-		$queryType = $this->getSetVar($session, 'queryType');
-		if ($queryType === 'aggregate') {
-			$query = $this->applyAggregateFilters($table);
-		} else {
-			$query = $this->applyFilters($table);
+		$queryTypeDefault = Billrun_Config::getInstance()->getConfigValue('admin.query_type');
+		$queryType = $this->getSetVar($session, 'queryType', 'queryType', $queryTypeDefault);
+		
+		$filterHandlerName = "Admin_Filter_" . ucfirst($queryType);
+		if(!class_exists($filterHandlerName)){
+			Billrun_Factory::log("Failed getting the filter handler! " . $filterHandlerName, Zend_Log::ERR);
+			return false;
 		}
+		
+		$filterHandler = new $filterHandlerName();
+		$query = $filterHandler->query($this, $table);
 
 		// this use for export
 		$this->getSetVar($session, $query, 'query', $query);
@@ -675,6 +689,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * @return string the render page (HTML)
 	 * @todo refactoring this function
 	 * @todo Use the Admin_ViewParams classes.
+	 * @deprecated since version 2.8
 	 */
 	protected function getTableViewParams($queryType, $filter_query = array(), $skip = null, $size = null) {
 		if (isset($skip) && !empty($size)) {
@@ -764,7 +779,13 @@ class AdminController extends Yaf_Controller_Abstract {
 		}
 		
 		$session = $this->getSession($collection_name);
-		$options['groupBySelect'] = $this->getSetVar($session, "groupBySelect", "groupBySelect", $this->getRequest()->getRequest()['groupBySelect']);
+		$request = $this->getRequest()->getRequest();
+		$groupBySelect = null;
+		if(isset($request['groupBySelect'])) {
+			$groupBySelect = $request['groupBySelect'];
+		}
+		
+		$options['groupBySelect'] = $this->getSetVar($session, "groupBySelect", "groupBySelect", $groupBySelect);
 		$options['page'] = $this->getSetVar($session, "page", "page", 1);
 		$options['size'] = $this->getSetVar($session, "listSize", "size", Billrun_Factory::config()->getConfigValue('admin_panel.lines.limit', 100));
 		$options['extra_columns'] = $this->getSetVar($session, "extra_columns", "extra_columns", array());
@@ -814,7 +835,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * 
 	 * @param string $table the table name
 	 */
-	protected function getSession($table) {
+	public static function getSession($table) {
 		$session = Yaf_session::getInstance();
 		$session->start();
 
@@ -823,7 +844,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		}
 		return $session->$table;
 	}
-
+	
 	/**
 	 * Gets a variable from the request / session and sets it to the session if found
 	 * @param Object $session the session object
@@ -834,10 +855,24 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * @todo Rename this function, this is very confusing. it took me alot of time and unneccessary code to write.
 	 */
 	protected function getSetVar($session, $source_name, $target_name = null, $default = null) {
+		$request = $this->getRequest();
+		return self::setRequestToSession($request, $session, $source_name, $target_name, $default);
+	}
+	
+	/**
+	 * Gets a variable from the request / session and sets it to the session if found
+	 * @param Object $request - The request instance.
+	 * @param Object $session the session object
+	 * @param string $source_name the variable name in the request
+	 * @param type $target_name the variable name in the session
+	 * @param type $default the default value for the variable
+	 * @return type
+	 * @todo Move this function maybe?
+	 */
+	public static function setRequestToSession($request, $session, $source_name, $target_name = null, $default = null) {
 		if (is_null($target_name)) {
 			$target_name = $source_name;
 		}
-		$request = $this->getRequest();
 		$new_search = $request->get("new_search") == "1";
 		if (is_array($source_name)) {
 			$key = Billrun_Util::generateArrayStamp($source_name);
@@ -859,6 +894,14 @@ class AdminController extends Yaf_Controller_Abstract {
 		return $session->$target_name;
 	}
 
+	/**
+	 * Set the aggregated columns array. 
+	 * @param array $array - Array to set.
+	 */
+	public function setAggregateColumns($array) {
+		$this->aggregateColumns = $array;
+	}
+	
 	protected function applyFilters($table) {
 		$model = $this->model;
 		$session = $this->getSession($table);
@@ -922,6 +965,12 @@ class AdminController extends Yaf_Controller_Abstract {
 		return $sort;
 	}
 
+	/**
+	 * 
+	 * @param type $table
+	 * @return boolean
+	 * @deprecated since version 2.8
+	 */
 	public function getManualFilters($table) {
 		$query = false;
 		$session = $this->getSession($table);
@@ -1020,6 +1069,12 @@ class AdminController extends Yaf_Controller_Abstract {
 		return $query;
 	}
 	
+	/**
+	 * 
+	 * @param type $table
+	 * @return string
+	 * @deprecated since version 2.8
+	 */
 	public function getGroupData($table) {
 		$query = false;
 		$session = $this->getSession($table);
@@ -1154,6 +1209,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * Get the columns to present for the aggregate table.
 	 * @param array $groupByKeys - The keys to use for aggregation.
 	 * @return array Group columns to show.
+	 * @deprecated since version 2.8
 	 */
 	public function getAggregateTableColumns($groupByKeys) {
 		$group= array();
