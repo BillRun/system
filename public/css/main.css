@@ -305,3 +305,7 @@ div.billrun-logo img {
 /* clear: both; */
 float: left;
 }
+
+.control-row-group, #groupBy {
+	margin-top:5px;
+}
