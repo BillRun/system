@@ -1220,7 +1220,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * @return array Group columns to show.
 	 * @deprecated since version 2.8
 	 */
-	public function getAggregateTableColumns($groupByKeys) {
+	public function getAggregateTableColumns($groupByKeys=array()) {
 		$group= array();
 		
 		foreach ($groupByKeys as $key) {
