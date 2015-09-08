@@ -64,9 +64,6 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->addJs($this->baseUrl . '/js/jquery.csv-0.71.min.js');
 		$this->addJs($this->baseUrl . '/js/main.js');
 		Yaf_Loader::getInstance(APPLICATION_PATH . '/application/helpers')->registerLocalNamespace('Admin');
-		
-		// This should be in a better place.
-		Yaf_Loader::getInstance(APPLICATION_PATH . '/application/helpers')->registerLocalNamespace('Lines');
 	}
 
 	protected function addCss($path) {
@@ -305,13 +302,6 @@ class AdminController extends Yaf_Controller_Abstract {
 			$size = intval(Billrun_Factory::config()->getConfigValue('admin_panel.csv_export.size', 10000));
 
 			$queryType = $this->getSetVar($session, 'queryType');
-	//		$viewParamsHandlerName = "Admin_Viewparams_" . ucfirst($queryType);
-	//		if(!class_exists($viewParamsHandlerName)){
-	//			Billrun_Factory::log("Failed getting the view params handler! " . $viewParamsHandlerName, Zend_Log::ERR);
-	//			return null;
-	//		}
-	//		$viewParamsHandler = new $viewParamsHandlerName();
-	//		$tableViewParams = $viewParamsHandler->getTableViewParams($this->model, $this->aggregateColumns, $session->query, $skip, $size);
 			$tableViewParams = $this->getTableViewParams($queryType, $this->query, $skip, $size);
 			$params = array_merge($tableViewParams, $this->createFilterToolbar('lines')); // TODO: Should we replace 'lines' here with $collectionName?
 			$this->model->exportCsvFile($params);
@@ -421,7 +411,6 @@ class AdminController extends Yaf_Controller_Abstract {
 		$params = array_merge(array(
 			'title' => $this->title,
 			), $params);
-//		$params = array_merge($options, $params, $this->getTableViewParams($filter_query), $this->createFilterToolbar($table));
 
 		$ret = $this->renderView('login', $params);
 		return $ret;
@@ -494,15 +483,6 @@ class AdminController extends Yaf_Controller_Abstract {
 		$queryTypeDefault = Billrun_Config::getInstance()->getConfigValue('admin.query_type');
 		$queryType = $this->getSetVar($session, 'queryType', 'queryType', $queryTypeDefault);
 		
-//		$filterHandlerName = "Admin_Filter_" . ucfirst($queryType);
-//		if(!class_exists($filterHandlerName)){
-//			Billrun_Factory::log("Failed getting the filter handler! " . $filterHandlerName, Zend_Log::ERR);
-//			return false;
-//		}
-//		
-//		$filterHandler = new $filterHandlerName();
-//		$query = $filterHandler->query($this, $table);
-			
 		if($queryType === 'aggregate') {
 			$query = $this->applyAggregateFilters($table);
 		} else {
@@ -695,7 +675,6 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * @return string the render page (HTML)
 	 * @todo refactoring this function
 	 * @todo Use the Admin_ViewParams classes.
-	 * @deprecated since version 2.8
 	 */
 	protected function getTableViewParams($queryType, $filter_query = array(), $skip = null, $size = null) {
 		if (isset($skip) && !empty($size)) {
@@ -703,7 +682,6 @@ class AdminController extends Yaf_Controller_Abstract {
 			$this->model->setPage($skip);
 		}
 		
-//		$data = $this->model->fetch($filter_query);
 		if ($queryType === 'aggregate') {
 			$data = $this->model->getAggregateData($filter_query);
 			$groupByKeys = array_keys($filter_query[1]['$group']['_id'] );
@@ -825,14 +803,6 @@ class AdminController extends Yaf_Controller_Abstract {
 		$queryTypeDefault = Billrun_Config::getInstance()->getConfigValue('admin.query_type');
 		$queryType = $this->getSetVar($session, 'queryType', 'queryType', $queryTypeDefault);
 		
-//		$viewParamsHandlerName = "Admin_Viewparams_" . ucfirst($queryType);
-//		if(!class_exists($viewParamsHandlerName)){
-//			Billrun_Factory::log("Failed getting the view params handler! " . $viewParamsHandlerName, Zend_Log::ERR);
-//			return null;
-//		}
-//		
-//		$viewParamsHandler = new $viewParamsHandlerName();
-//		$tableViewParams = $viewParamsHandler->getTableViewParams($this->model, $this->aggregateColumns, $filter_query);
 		$tableViewParams = $this->getTableViewParams($queryType, $filter_query);
 		$params = array_merge($options, $basic_params, $tableViewParams, $this->createFilterToolbar($table));
 
@@ -978,7 +948,6 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * 
 	 * @param type $table
 	 * @return boolean
-	 * @deprecated since version 2.8
 	 */
 	public function getManualFilters($table) {
 		$query = false;
@@ -1082,7 +1051,6 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * 
 	 * @param type $table
 	 * @return string
-	 * @deprecated since version 2.8
 	 */
 	public function getGroupData($table) {
 		$query = false;
@@ -1218,7 +1186,6 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * Get the columns to present for the aggregate table.
 	 * @param array $groupByKeys - The keys to use for aggregation.
 	 * @return array Group columns to show.
-	 * @deprecated since version 2.8
 	 */
 	public function getAggregateTableColumns($groupByKeys=array()) {
 		$group= array();

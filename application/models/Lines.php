@@ -48,15 +48,6 @@ class LinesModel extends TableModel {
 		}
 	}
 
-	/**
-	 * Get the data for a query.
-	 * @param array $filter_query - Query to search.
-	 * @return array of Mongodloid_Entities.
-	 */
-	public function fetch($filter_query = array()) {
-		return $this->fetcher->fetch($filter_query, $this->collection, $this->sort, $this->offset(),$this->size);
-	}
-	
 	public function getProtectedKeys($entity, $type) {
 		$parent_protected = parent::getProtectedKeys($entity, $type);
 		if ($type == 'update') {
@@ -109,7 +100,6 @@ class LinesModel extends TableModel {
 	 * Get data for the find view.
 	 * @param type $filter_query
 	 * @return type
-	 * @deprecated since version 2.8
 	 */
 	public function getData($filter_query = array()) {
 
@@ -143,7 +133,6 @@ class LinesModel extends TableModel {
 	 * Get the aggregated data to show.
 	 * @param array $filter_query - Query to get the aggregated data for.
 	 * @return aray - Mongo entities to return.
-	 * @deprecated since version 2.8
 	 */
 	public function getAggregateData($filter_query = array()) {
 		$cursor = $this->collection->aggregatecursor($filter_query)
@@ -160,7 +149,6 @@ class LinesModel extends TableModel {
 				$item->set('group_by' . '.' . $key,$values['_id'][$key], true);
 			}
 			$item->set('_id', new MongoId(), true);
-//			$aggregatedItem = new Mongodloid_AggregatedEntity($item, $groupKeys);
 			$ret[] = $item;
 		}
 		

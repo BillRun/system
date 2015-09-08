@@ -33,20 +33,6 @@ class Billrun_DBRef {
 	}
 
 	/**
-	 * Get DBRef field from entity. Returns input entity if reference not found.
-	 * @param Mongodloid_Entity $entity - Entity to get ref from.
-	 * @param string $fieldName - Name of the field to get the ref from.
-	 * @return Mongoldoid_Entity
-	 */
-//	public static function getDBRefField($entity, $fieldName) {
-//		$value = $entity->get($fieldName, true);
-//		if ($value && MongoDBRef::isRef($value)) {
-//			$value = Billrun_DBRef::getEntity($value);
-//		}
-//		return $value;
-//	}
-	
-	/**
 	 * 
 	 * @param type $db_ref
 	 * @param type $time

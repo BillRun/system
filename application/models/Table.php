@@ -111,15 +111,6 @@ class TableModel {
 	/**
 	 * Get the data resource
 	 * 
-	 * @return MongodloidEntity
-	 */
-	public function fetch($filter_query = array()) {
-		return $this->getData($filter_query);
-	}
-	
-	/**
-	 * Get the data resource
-	 * 
 	 * @return Mongo Cursor
 	 */
 	public function getData($filter_query = array()) {
