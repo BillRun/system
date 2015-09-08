@@ -68,7 +68,7 @@
 			echo '<div id="groupBy">';
 			echo "&nbsp;<label class='control-labe'>Group by</label>
 			<select id='groupBySelect[]' name='groupBySelect[]' class='form-control multiselect' multiple='multiple'>";
-			$groupBySelect = $this->request['groupBySelect'];
+			$groupBySelect = $this->session->groupBySelect;
 			foreach ($aggregate_by_fields as $value => $name) {
 				$selected = "";
 				if (is_array($groupBySelect)	 &&
