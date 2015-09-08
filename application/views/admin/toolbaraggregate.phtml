@@ -79,11 +79,11 @@
 			}
 			echo "</select>";
 			echo '</div>';
-			echo "<div id='groupData'><a href='javascript:void(0)' class='groupData'>Group data <i class='" . (Admin_Lines::isManualFilter($this->session) ? "icon-chevron-up" : "icon-chevron-down") . "'></i></a></div>
-				<div id = 'group_by_filters'" . (Admin_Lines::isManualFilter($this->session) ? "" : " style='display:none'") . ">";
-			if (Admin_Lines::isManualFilter($this->session)) {
-				for ($i = 0; $i < count($this->session->manual_key); $i++) {
-					echo Admin_Table::getGroupRow($this->session->manual_key[$i], $this->session->manual_operator[$i]);
+			echo "<div id='groupData'><a href='javascript:void(0)' class='groupData'>Group data <i class='" . (Admin_Lines::isGroupFilter($this->session) ? "icon-chevron-up" : "icon-chevron-down") . "'></i></a></div>
+				<div id = 'group_by_filters'" . (Admin_Lines::isGroupFilter($this->session) ? "" : " style='display:none'") . ">";
+			if (Admin_Lines::isGroupFilter($this->session)) {
+				for ($i = 0; $i < count($this->session->group_data_keys); $i++) {
+					echo Admin_Table::getGroupRow($this->session->group_data_keys[$i], $this->session->group_data_operators[$i]);
 				}
 			} else {
 				echo Admin_Table::getGroupRow(); // add first manual filter on load
