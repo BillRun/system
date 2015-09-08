@@ -51,16 +51,6 @@ class Billrun_ActionManagers_Balances_Updaters_Id extends Billrun_ActionManagers
 	}
 	
 	/**
-	 * Get the record plan according to the input query.
-	 * @param type $query
-	 * @param type $chargingPlansCollection
-	 * @return type
-	 */
-	protected function getPlanRecord($query, $chargingPlansCollection) {
-		return DBRef::getEntity($this->balancesRecord['current_plan']);
-	}
-	
-	/**
 	 * Get the record from the balance collection.
 	 * @param type $balancesColl
 	 * @param type $query

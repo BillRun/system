@@ -64,48 +64,65 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater {
 
 		return $translatedQuery;
 	}
-
+	
 	/**
-	 * Get the query to run on the plans collection in mongo.
-	 * @param type $query Input query to proccess.
-	 * @return type Query to run on plans collection.
+	 * Handle zeroing the record if the charging value is positive.
+	 * @param type $query
+	 * @param type $balancesColl
+	 * @todo - This is suplicated in chargingPlan updater, should make more generic.
 	 */
-	protected function getPlanQuery($query) {
+	protected function handleZeroing($query, $balancesColl, $valueFieldName) {
+		// User requested incrementing, check if to reset the record.
+		if(!$this->ignoreOveruse || !$this->isIncrement) {
+			return;
+		}
+		
+		$zeroingQuery = $query;
+		$zeriongUpdate = array();
+		$zeroingQuery[$valueFieldName] = array('$gt' => 0);
+		$zeriongUpdate['$set'][$valueFieldName] = 0;
+		$originalBeforeZeroing= $balancesColl->findAndModify($zeroingQuery, $zeriongUpdate);
+		Billrun_Factory::log("Before zeroing: " . print_r($originalBeforeZeroing, 1), Zend_Log::INFO);
+	}
+	
+	/**
+	 * Get the query to run on the collection in mongo.
+	 * @param type $query Input query to proccess.
+	 * @param $fieldNamesTranslate - Array to translate the names from input format to mongo format.
+	 * @return type Query to run on the collection.
+	 */
+	protected function buildQuery($query, $fieldNamesTranslate) {
 		// Single the type to be charging.
 		$planQuery = array(
-			'type' => 'charging',
 			'to' => array(
 				'$gt' => new MongoDate()
 			)
 		);
-
-		//unset($planQuery['to']);
-		$fieldNamesTranslate = array('charging_plan_name' => 'name',
-			'charging_plan_external_id' => 'external_id');
 
 		// Fix the update record field names.
 		return array_merge($this->translateFieldNames($query, $fieldNamesTranslate), $planQuery);
 	}
 
 	/**
-	 * Get the record plan according to the input query.
+	 * Get the record according to the input query.
 	 * @param type $query
-	 * @param type $chargingPlanCollection
+	 * @param type $collection - Mongo collection
+	 * @param array $fieldNamesTranslate - Array to translate the names from input format to mongo format.
 	 * @return type
 	 */
-	protected function getPlanRecord($query, $chargingPlanCollection) {
-		$planQuery = $this->getPlanQuery($query);
+	protected function getRecord($query, $collection, $fieldNamesTranslate=null) {
+		$queryToUse = $this->buildQuery($query, $fieldNamesTranslate);
 
 		// TODO: Use the plans DB/API proxy.
-		$planRecord = $chargingPlanCollection->query($planQuery)->cursor()->current();
-		if (!$planRecord || $planRecord->isEmpty()) {
-			Billrun_Factory::log("Could not find plan. Query:[" . print_r($planQuery, 1) . "]", Zend_Log::ALERT);
+		$record = $collection->query($queryToUse)->cursor()->current();
+		if (!$record || $record->isEmpty()) {
+			Billrun_Factory::log("Could not find record. Query:[" . print_r($queryToUse, 1) . "]", Zend_Log::ALERT);
 			return null;
 		}
 
-		return $planRecord;
+		return $record;
 	}
-
+	
 	/**
 	 * Get the ref to the monfo plan for the subscriber.
 	 * @param type $subscriber
@@ -114,7 +131,7 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater {
 	protected function getPlanRefForSubscriber($subscriber) {
 		// TODO: This function should be more generic. Or move the implementation into subscriber.
 		// Get the ref to the subscriber's plan.
-		$planName = $subscriber->{'plan'};
+		$planName = $subscriber['plan'];
 		$plansCollection = Billrun_Factory::db()->plansCollection();
 
 		// TODO: Is this right here to use the now time or should i use the times from the charging plan?
@@ -205,4 +222,39 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater {
 		return true;
 	}
 
+	/**
+	 * Return the part of the query for setOnInsert
+	 * @param Billrun_DataTypes_Wallet $wallet
+	 * @param array $defaultBalance
+	 * @return type
+	 */
+	protected function getSetOnInsert($wallet, 
+									  $defaultBalance) {
+		$defaultBalance['charging_by'] = $wallet->getChargingBy();
+		$defaultBalance['charging_by_usegt'] = $wallet->getChargingByUsaget();
+		$defaultBalance[$wallet->getFieldName()] = $wallet->getValue();
+		return array(
+			'$setOnInsert' => $defaultBalance,
+		);
+	}
+
+	/**
+	 * Get the set part of the query.
+	 * @param string $valueToUseInQuery - The value name of the balance.
+	 * @param string $valueFieldName - The name of the field to be set.
+	 * @param MongoDate $toTime - Expiration date.
+	 */
+	protected function getSetQuery($valueToUseInQuery, $valueFieldName, $toTime) {
+		$valueUpdateQuery = array();
+		$queryType = $this->isIncrement ? '$inc' : '$set';
+		$valueUpdateQuery[$queryType]
+			[$valueFieldName] = $valueToUseInQuery;
+		
+		// The TO time is always set.
+		$valueUpdateQuery['$set']
+			['to'] = $toTime;
+		
+		return $valueUpdateQuery;
+	}
+	
 }
