@@ -472,14 +472,14 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->forward('login', array('ret_action' => $action));
 		return false;
 	}
-	
+
 	/**
 	 * lines controller of admin
 	 */
 	public function linesAction() {
 		if (!$this->allowed('read'))
 			return false;
-		
+
 		$table = 'lines';
 		$sort = $this->applySort($table);
 		$options = array(
