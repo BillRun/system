@@ -52,9 +52,18 @@ class Admin_Lines {
 	/**
 	 * Is the manual filter activated
 	 * @param type $param
+	 * @todo rename.
 	 */
 	public static function isManualFilter($session) {
 		return isset($session->manual_value) && count($session->manual_value) > 0 && $session->manual_value[0] != '' && $session->manual_key[0] != '';
 	}
 	
+	/**
+	 * Is the group filter activated
+	 * @param type $param
+	 * @todo Rename
+	 */
+	public static function isGroupFilter($session) {
+		return isset($session->group_data_keys) && count($session->group_data_keys) > 0;
+	}
 }

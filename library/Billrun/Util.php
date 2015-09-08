@@ -282,6 +282,25 @@ class Billrun_Util {
 	}
 
 	/**
+	 * method to check if indexes exists in the query filters
+	 * 
+	 * @param type $filters the filters to search in
+	 * @param type $searched_filter the filter to search
+	 * 
+	 * @return boolean true if searched filter exists in the filters supply
+	 */
+	public static function filterExists($filters, $searched_filter) {
+		settype($searched_filter, 'array');
+		foreach ($filters as $k => $f) {
+			$keys = array_keys($f);
+			if (count(array_intersect($searched_filter, $keys))) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	/**
 	 * convert seconds to requested format
 	 * 
 	 * @param string $bytes

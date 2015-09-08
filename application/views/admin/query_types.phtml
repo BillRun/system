@@ -1,0 +1,28 @@
+<?php 
+	if (count($this->query_types) === 0) { // If there is no query type defined, show default (find query)
+		$this->display('query_types/find.phtml', array());
+		return;
+	} else if (count($this->query_types) === 1) {  // If there is only 1 query type defined, show it without tabs
+		$this->display('query_types/' . array_keys($this->query_types)[0] . '.phtml', array());
+		return;
+	}
+	echo '<ul id="queryTypeTab" class="nav nav-tabs" role="tablist">';
+	$first = is_null($query_type) || empty($query_type);
+	foreach ($this->query_types as $type => $typeName) {
+		echo '<li role="presentation"' . ($first || ($type === $query_type) ? 'class="active"' : '') . '>' .
+			'<a href="#' . $type . '" aria-controls="' . $type . '" role="tab" data-toggle="tab">' . $typeName . '</a></li>';
+		$first = false;
+	}
+	echo '</ul>';
+	echo '<br/>';
+	echo '<div class="tab-content">';
+	$first = is_null($query_type) || empty($query_type);
+	foreach ($this->query_types as $type => $typeName) {
+		echo '<div role="tabpanel" class="tab-pane' . ($first || ($type === $query_type) ? ' active' : '') . '" id="' . $type . '">';
+		$this->display('query_types/' . $type . '.phtml', array());
+		echo '</div>';
+		$first = false;
+	}
+    
+	echo '</div>';
+?>
