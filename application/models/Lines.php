@@ -36,15 +36,15 @@ class LinesModel extends TableModel {
 		
 		if(isset($params['viewType'])) {
 			$viewType = $params['viewType'];
-			$fetcherName = "Lines_Fetcher_" . ucfirst($viewType);
-			
-			if(!class_exists($fetcherName)){
-				Billrun_Factory::log("Invalid fetcher in the lines model " . $fetcherName, Zend_Log::ALERT);
-				return;
-			}
-			
-			// Create the fetcher.
-			$this->fetcher = new $fetcherName;
+//			$fetcherName = "Lines_Fetcher_" . ucfirst($viewType);
+//			
+//			if(!class_exists($fetcherName)){
+//				Billrun_Factory::log("Invalid fetcher in the lines model " . $fetcherName, Zend_Log::ALERT);
+//				return;
+//			}
+//			
+//			// Create the fetcher.
+//			$this->fetcher = new $fetcherName;
 		}
 	}
 
