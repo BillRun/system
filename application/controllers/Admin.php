@@ -296,7 +296,6 @@ class AdminController extends Yaf_Controller_Abstract {
 		$skip = intval(Billrun_Factory::config()->getConfigValue('admin_panel.csv_export.skip', 0));
 		$size = intval(Billrun_Factory::config()->getConfigValue('admin_panel.csv_export.size', 10000));
 		
-		// $queryType = $this->getViewType($table);
 		$queryType = $this->getSetVar($session, 'queryType');
 		
 		$params = array_merge($this->getTableViewParams($queryType, $session->query, $skip, $size), $this->createFilterToolbar('lines')); // TODO: Should we replace 'lines' here with $collectionName?
@@ -455,23 +454,6 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->forward('login', array('ret_action' => $action));
 		return false;
 	}
-
-	/**
-	 * Get the name of the current view type (e.g aggregate).
-	 * @param string $collection - Name of the collection to get the session for.
-	 * @return string Name of the view type.
-	 */
-	protected function getViewType($collection) {
-		$query = $this->getRequest()->get('queryType');
-
-		// If the query type is not set in the request take it from the session.
-		if(!$queryType) {
-			$session = $this->getSession($collection);
-			$queryType = $this->getSetVar($session, 'queryType');
-		}
-		
-		return $queryType;
-	}
 	
 	/**
 	 * lines controller of admin
@@ -491,7 +473,6 @@ class AdminController extends Yaf_Controller_Abstract {
 		
 		$session = $this->getSession($table);
 				
-//		$queryType = $this->getViewType($table);
 		$queryType = $this->getSetVar($session, 'queryType');
 		if ($queryType === 'aggregate') {
 			$query = $this->applyAggregateFilters($table);
