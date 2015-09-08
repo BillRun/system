@@ -28,7 +28,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	protected $jsPaths = array();
 	protected $aggregateColumns = array();
 	protected $commit;
-	
+
 	/**
 	 * method to control and navigate the user to the right view
 	 */
@@ -853,7 +853,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		}
 		return $session->$table;
 	}
-	
+
 	/**
 	 * Gets a variable from the request / session and sets it to the session if found
 	 * @param Object $session the session object
