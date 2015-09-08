@@ -138,12 +138,15 @@ class LinesModel extends TableModel {
 		if (empty($filter_query[0]['$match'])) {
 			unset($filter_query[0]);
 			$filter_query = array_values($filter_query); // reset array index (required for aggregate framework)
+			$indexGroup = 0;
+		} else {
+			$indexGroup = 1;
 		}
 		$cursor = $this->collection->aggregatecursor($filter_query)
 			->sort($this->sort)->skip($this->offset())->limit($this->size);
 		$ret = array();
 		
-		$groupKeys = array_keys($filter_query[1]['$group']['_id']);
+		$groupKeys = array_keys($filter_query[$indexGroup]['$group']['_id']);
 					
 		// Go through the items and construct aggregated entities.
 		foreach ($cursor as $item) {
