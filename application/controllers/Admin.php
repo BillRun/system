@@ -800,7 +800,7 @@ class AdminController extends Yaf_Controller_Abstract {
 			'requestUrl' => $this->requestUrl,
 		);
 		
-		$queryTypeDefault = Billrun_Config::getInstance()->getConfigValue('admin.query_type');
+		$queryTypeDefault = Billrun_Config::getInstance()->getConfigValue('admin.query_type', 'find');
 		$queryType = $this->getSetVar($session, 'queryType', 'queryType', $queryTypeDefault);
 		
 		$tableViewParams = $this->getTableViewParams($queryType, $filter_query);
