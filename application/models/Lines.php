@@ -105,18 +105,22 @@ class LinesModel extends TableModel {
 		return $ret;
 	}
 	
+	/**
+	 * Get the aggregated data to show.
+	 * @param array $filter_query - Query to get the aggregated data for.
+	 * @return aray - Mongo entities to return.
+	 */
 	public function getAggregateData($filter_query = array()) {
 		$cursor = $this->collection->aggregatecursor($filter_query)
 			->sort($this->sort)->skip($this->offset())->limit($this->size);
 		$ret = array();
+		
+		$groupKeys = array_keys($filter_query[1]['$group']['_id']);
+					
+		// Go through the items and construct aggregated entities.
 		foreach ($cursor as $item) {
-			$item->collection($this->lines_coll);
-			foreach ($filter_query[1]['$group']['_id'] as $key=>$value) {
-				$values = $item->getRawData();
-				$item->set('group_by'.$key,$values['_id'][$key], true);
-			}
-			$item['_id'] = new MongoId();
-			$ret[] = $item;
+			$aggregatedItem = new Mongodloid_AggregatedEntity($item, $groupKeys);
+			$ret[] = $aggregatedItem;
 		}
 		
 		$this->_count = count($ret);// Billrun_Factory::config()->getConfigValue('admin_panel.lines.global_limit', 10000);

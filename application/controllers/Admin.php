@@ -672,12 +672,8 @@ class AdminController extends Yaf_Controller_Abstract {
 		
 		if ($queryType === 'aggregate') {
 			$data = $this->model->getAggregateData($filter_query);
-			$groupColumn= array();
-			foreach ($filter_query[1]['$group']['_id'] as $key=>$value) {
-				$groupColumn['group_by' . $key] = $key;
-			}
-
-			$columns = $this->getAggregateTableColumns($groupColumn);
+			$groupByKeys = array_keys($filter_query[1]['$group']['_id'] );
+			$columns = $this->getAggregateTableColumns($groupByKeys);
 		} else {
 			$data = $this->model->getData($filter_query);
 			$columns = $this->model->getTableColumns();
@@ -1125,7 +1121,18 @@ class AdminController extends Yaf_Controller_Abstract {
 		}
 	}
 	
-	public function getAggregateTableColumns($group=array()) {
+	/**
+	 * Get the columns to present for the aggregate table.
+	 * @param array $groupByKeys - The keys to use for aggregation.
+	 * @return array Group columns to show.
+	 */
+	public function getAggregateTableColumns($groupByKeys) {
+		$group= array();
+		
+		foreach ($groupByKeys as $key) {
+			$group[Mongodloid_AggregatedEntity::$GROUP_BY_IDENTIFIER . '.' . $key] = $key;
+		}
+			
 		$group['sum'] = 'Count';
 		return array_merge($group, $this->aggregateColumns);
 	}
