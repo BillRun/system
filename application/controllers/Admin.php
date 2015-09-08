@@ -839,7 +839,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$ret = $this->renderView('table', $params);
 		return $ret;
 	}
-	
+
 	/**
 	 * 
 	 * @param string $table the table name
