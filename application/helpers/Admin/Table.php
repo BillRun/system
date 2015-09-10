@@ -78,7 +78,7 @@ class Admin_Table {
 		$operators = Billrun_Factory::config()->getConfigValue('admin_panel.aggregate.group_accumulator_operators', array());
 
 		$types = Billrun_Factory::config()->getConfigValue('admin_panel.aggregate.group_data');
-		$output = "<div class=\"controls controls-row\">
+		$output = "<div class=\"controls controls-row control-row-group\">
                                <select name=\"group_data_keys[]\" class=\"form-control span2 multiselect\">";
 		foreach ($types as $manual_key => $manual_type) {
 			$manual_display = isset($manual_type['display']) ? $manual_type['display'] : ucfirst(str_replace('_', ' ', $manual_key));
