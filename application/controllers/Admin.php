@@ -301,7 +301,6 @@ class AdminController extends Yaf_Controller_Abstract {
 			$skip = intval(Billrun_Factory::config()->getConfigValue('admin_panel.csv_export.skip', 0));
 			$size = intval(Billrun_Factory::config()->getConfigValue('admin_panel.csv_export.size', 10000));
 
-//			$queryType = $this->getSetVar($session, 'queryType');
 			$isAggregate = ($session->{'groupBySelect'} != null);
 			$tableViewParams = $this->getTableViewParams($isAggregate, $session->query, $skip, $size);
 			$params = array_merge($tableViewParams, $this->createFilterToolbar('lines')); // TODO: Should we replace 'lines' here with $collectionName?
@@ -500,12 +499,12 @@ class AdminController extends Yaf_Controller_Abstract {
 			'sort' => $sort,
 		);
 		self::initModel($table, $options);
-//		$this->removeCookies();
+
 		$session = $this->getSession($table);
 		$query = $this->getLinesActionQuery($session, $table);
 		if(!$query) {
 			Billrun_Factory::log("Corrupted admin option.", Zend_Log::ERR);
-			$this->removeCookies();
+//			$this->removeCookies();
 			return false;
 		}
 		
