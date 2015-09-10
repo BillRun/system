@@ -52,13 +52,17 @@
 			}
 
 			if ($active == 'lines') :
+				$isGroupFilter = Admin_Lines::isGroupFilter($this->session);
+				$isManualFilter = Admin_Lines::isManualFilter($this->session);
+				$showAdvancedOptions = $isGroupFilter || $isManualFilter;
 				echo "<div>"
 						. "<a href=\"javascript:void(0)\" class=\"advanced-options\">Advanced options "
-							. "<i class=\"" . (Admin_Lines::isManualFilter($this->session) ? "icon-chevron-up" : "icon-chevron-down") . "\"></i>
+							. "<i class=\"" . ($showAdvancedOptions ? "icon-chevron-up" : "icon-chevron-down") . "\"></i>
 						  </a>
 					  </div>";
-                echo "<div id = \"manual_filters\"" . (Admin_Lines::isManualFilter($this->session) ? "" : " style=\"display:none;\"") . ">";
-				if (Admin_Lines::isManualFilter($this->session)) {
+                echo "<div id = \"manual_filters\"" . ($showAdvancedOptions ? "" : " style=\"display:none;\"") . ">";
+				echo '<div class="filters">';
+				if ($isManualFilter) {
 					for ($i = 0; $i < count($this->session->manual_key); $i++) {
 						echo Admin_Lines::getFilterRow($this->session->manual_key[$i], isset($this->session->manual_type[$i]) ? $this->session->manual_type[$i] : NULL, $this->session->manual_operator[$i], $this->session->manual_value[$i]);
 					}
@@ -66,15 +70,15 @@
 					echo Admin_Lines::getFilterRow(); // add first manual filter on load
 				}
 				
-//DEBUGGG				
-//			echo '</div>';
+//DEBUGGG	
+			echo '</div>';
 			echo "<div id='groupData'>";
 //			echo "<a href='javascript:void(0)' class='groupData'>";
-			echo "Group data <i class='" . (Admin_Lines::isGroupFilter($this->session) ? "icon-chevron-up" : "icon-chevron-down") . "'></i>";
+			echo "Group data <i class='icon-chevron-up'></i>";
 //			echo "</a>";
 			echo "</div>
-				<div id = 'group_by_filters'" . (Admin_Lines::isGroupFilter($this->session) ? "" : " style='display:none'") . ">";
-				if (Admin_Lines::isGroupFilter($this->session)) {
+				<div id = 'group_by_filters'>";
+				if ($isGroupFilter) {
 					for ($i = 0; $i < count($this->session->group_data_keys); $i++) {
 						echo Admin_Lines::getGroupRow($this->session->group_data_keys[$i], null, $this->session->group_data_operators[$i], $this->session->group_value[$i]);
 					}
@@ -91,7 +95,7 @@
 			foreach ($aggregate_by_fields as $value => $name) {
 				$selected = "";
 				if ($isGroupBy	 &&
-					in_array($value, $groupBySelect)){
+					(in_array($value, $groupBySelect))){
 						$selected = " selected";
 				}
 				

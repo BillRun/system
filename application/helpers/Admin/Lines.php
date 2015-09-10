@@ -15,8 +15,8 @@ class Admin_Lines {
 		);
 		
 		$output = "<div class=\"controls controls-row\">";
-		$output.= self::getFilterRowSelectKeys($key, $types);
-		$output.= self::getFilterRowSelectOperators($operator, $operators);
+		$output.= self::getFilterRowSelectKeys($key, $types, 'group_data_keys');
+		$output.= self::getFilterRowSelectOperators($operator, $operators, 'group_data_operators');
 		
 		$output.="<a class=\"remove-group-data\" href=\"#\">
 				<i class=\"glyphicon glyphicon-minus-sign\"></i>
@@ -28,8 +28,8 @@ class Admin_Lines {
 		return $output;
 	}
 	
-	protected static function getFilterRowSelectOperators($operator, $operators) {
-		$output = "<select name=\"manual_operator[]\" class=\"form-control span2 multiselect\">";
+	protected static function getFilterRowSelectOperators($operator, $operators, $arrayName) {
+		$output = "<select name=\"" . $arrayName . "[]\" class=\"form-control span2 multiselect\">";
 		
 		foreach ($operators as $operator_key => $operator_display) {
 			$output.="<option value=\"" . $operator_key . "\"" . ($operator == $operator_key ? " selected" : "") . ">" . $operator_display . "</option>";
@@ -38,8 +38,8 @@ class Admin_Lines {
 		return $output;
 	}
 	
-	protected static function getFilterRowSelectKeys($key, $types) {
-		$output = "<select name=\"manual_key[]\" class=\"form-control span2 multiselect\">";
+	protected static function getFilterRowSelectKeys($key, $types, $arrayName) {
+		$output = "<select name=\"". $arrayName . "[]\" class=\"form-control span2 multiselect\">";
 		foreach ($types as $manual_key => $manual_type) {
 			$manual_display = isset($manual_type['display']) ? $manual_type['display'] : ucfirst(str_replace('_', ' ', $manual_key));
 			$output.= "<option value=\"" . $manual_key . "\"" . ($key == $manual_key ? " selected" : "") . ">" . $manual_display . "</option>";
@@ -65,8 +65,8 @@ class Admin_Lines {
 
 		$types = self::getOptions();
 		$output = "<div class=\"controls controls-row\">";
-		$output.= self::getFilterRowSelectKeys($key, $types);
-		$output.= self::getFilterRowSelectOperators($operator, $operators);
+		$output.= self::getFilterRowSelectKeys($key, $types, 'manual_key');
+		$output.= self::getFilterRowSelectOperators($operator, $operators, 'manual_operator');
 		
 		$valueIsDate = !is_null($value) && ($type == 'date');
 		
