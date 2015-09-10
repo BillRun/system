@@ -302,7 +302,7 @@ class AdminController extends Yaf_Controller_Abstract {
 			$size = intval(Billrun_Factory::config()->getConfigValue('admin_panel.csv_export.size', 10000));
 
 			$queryType = $this->getSetVar($session, 'queryType');
-			$tableViewParams = $this->getTableViewParams($queryType, $this->query, $skip, $size);
+			$tableViewParams = $this->getTableViewParams($queryType, $session->query, $skip, $size);
 			$params = array_merge($tableViewParams, $this->createFilterToolbar('lines')); // TODO: Should we replace 'lines' here with $collectionName?
 			$this->model->exportCsvFile($params);
 		} else {
