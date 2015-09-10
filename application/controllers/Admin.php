@@ -303,7 +303,7 @@ class AdminController extends Yaf_Controller_Abstract {
 
 //			$queryType = $this->getSetVar($session, 'queryType');
 			$isAggregate = ($session->{'groupBySelect'} != null);
-			$tableViewParams = $this->getTableViewParams($isAggregate, $this->query, $skip, $size);
+			$tableViewParams = $this->getTableViewParams($isAggregate, $session->query, $skip, $size);
 			$params = array_merge($tableViewParams, $this->createFilterToolbar('lines')); // TODO: Should we replace 'lines' here with $collectionName?
 			$this->model->exportCsvFile($params);
 		} else {
@@ -472,6 +472,20 @@ class AdminController extends Yaf_Controller_Abstract {
 		return $this->applyFilters($table);
 	}
 	
+	protected function removeCookies() {
+		if (!isset($_SERVER['HTTP_COOKIE'])) {
+			return;
+		}
+		
+		$cookies = explode(';', $_SERVER['HTTP_COOKIE']);
+		foreach($cookies as $cookie) {
+			$parts = explode('=', $cookie);
+			$name = trim($parts[0]);
+			setcookie($name, '', time()-1000);
+			setcookie($name, '', time()-1000, '/');
+		}
+	}
+	
 	/**
 	 * lines controller of admin
 	 */
@@ -486,28 +500,14 @@ class AdminController extends Yaf_Controller_Abstract {
 			'sort' => $sort,
 		);
 		self::initModel($table, $options);
-		
+//		$this->removeCookies();
 		$session = $this->getSession($table);
-
-//		$queryTypeDefault = Billrun_Config::getInstance()->getConfigValue('admin.query_type');
-//		$queryType = $this->getSetVar($session, 'queryType', 'queryType', $queryTypeDefault);
-		
-//		if($queryType === 'aggregate') {
-//			$query = $this->applyAggregateFilters($table);
-//			if(!$query) {
-//				$query = $this->applyFilters($table);
-//			}
-//		} else {
-//			$query = $this->applyFilters($table);
-//		}
-
 		$query = $this->getLinesActionQuery($session, $table);
 		if(!$query) {
 			Billrun_Factory::log("Corrupted admin option.", Zend_Log::ERR);
-			$session->{'groupBy'} = null;
+			$this->removeCookies();
 			return false;
 		}
-		
 		
 		// this use for export
 		$this->getSetVar($session, $query, 'query', $query);
