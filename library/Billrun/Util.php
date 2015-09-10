@@ -909,5 +909,22 @@ class Billrun_Util {
 
 		return $output;
 	}
+	
+	/**
+	 * Remove all the cookies from the current context.
+	 */
+	public static function removeCookies() {
+		if (!isset($_SERVER['HTTP_COOKIE'])) {
+			return;
+		}
+		
+		$cookies = explode(';', $_SERVER['HTTP_COOKIE']);
+		foreach($cookies as $cookie) {
+			$parts = explode('=', $cookie);
+			$name = trim($parts[0]);
+			setcookie($name, '', time()-1000);
+			setcookie($name, '', time()-1000, '/');
+		}
+	}
 
 }

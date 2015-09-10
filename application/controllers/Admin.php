@@ -471,20 +471,6 @@ class AdminController extends Yaf_Controller_Abstract {
 		return $this->applyFilters($table);
 	}
 	
-	protected function removeCookies() {
-		if (!isset($_SERVER['HTTP_COOKIE'])) {
-			return;
-		}
-		
-		$cookies = explode(';', $_SERVER['HTTP_COOKIE']);
-		foreach($cookies as $cookie) {
-			$parts = explode('=', $cookie);
-			$name = trim($parts[0]);
-			setcookie($name, '', time()-1000);
-			setcookie($name, '', time()-1000, '/');
-		}
-	}
-	
 	/**
 	 * lines controller of admin
 	 */
@@ -504,7 +490,6 @@ class AdminController extends Yaf_Controller_Abstract {
 		$query = $this->getLinesActionQuery($session, $table);
 		if(!$query) {
 			Billrun_Factory::log("Corrupted admin option.", Zend_Log::ERR);
-//			$this->removeCookies();
 			return false;
 		}
 		
