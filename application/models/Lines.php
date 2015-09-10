@@ -21,31 +21,12 @@ class LinesModel extends TableModel {
 	 */
 	protected $garbage = false;
 	protected $lines_coll = null;
-
-	/**
-	 * Fetcher used to get data.
-	 * @var Lines_IFetcher 
-	 */
-	protected $fetcher = null;
 	
 	public function __construct(array $params = array()) {
 		$params['collection'] = Billrun_Factory::db()->lines;
 		parent::__construct($params);
 		$this->search_key = "stamp";
 		$this->lines_coll = Billrun_Factory::db()->linesCollection();
-		
-		if(isset($params['viewType'])) {
-			$viewType = $params['viewType'];
-//			$fetcherName = "Lines_Fetcher_" . ucfirst($viewType);
-//			
-//			if(!class_exists($fetcherName)){
-//				Billrun_Factory::log("Invalid fetcher in the lines model " . $fetcherName, Zend_Log::ALERT);
-//				return;
-//			}
-//			
-//			// Create the fetcher.
-//			$this->fetcher = new $fetcherName;
-		}
 	}
 
 	public function getProtectedKeys($entity, $type) {
