@@ -362,9 +362,9 @@ function addFilter(button) {
 	if (_container.length) {
 		_containerId = '#' + _container.attr('id') + " ";
 	}
-	var original = $(_containerId + "#manual_filters>:last-child");
+	var original = $(_containerId + "#manual_filters .filters > *:last-child");
 	$('select.multiselect', original).multiselect('destroy');
-	var cloned = original.clone().appendTo(_containerId + '#manual_filters');
+	var cloned = original.clone().appendTo(_containerId + '#manual_filters  .filters');
 	cloned.find("select").each(function (i) {
 		var cloned_sel = $(this);
 		var original_sel = $(_containerId + "#manual_filters>div").eq(-2).find("select").eq(i);

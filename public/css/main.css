@@ -32,6 +32,11 @@ div#listSize {
 .add-filter{
 	display: none;
 }
+
+.add-filter.shown {
+	display: inline-block;
+}
+
 div:last-of-type>.add-group-data,
 div:last-of-type>.add-filter{
 	display: inline-block;

@@ -909,5 +909,4 @@ class Billrun_Util {
 
 		return $output;
 	}
-
 }

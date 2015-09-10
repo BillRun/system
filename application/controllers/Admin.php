@@ -301,8 +301,8 @@ class AdminController extends Yaf_Controller_Abstract {
 			$skip = intval(Billrun_Factory::config()->getConfigValue('admin_panel.csv_export.skip', 0));
 			$size = intval(Billrun_Factory::config()->getConfigValue('admin_panel.csv_export.size', 10000));
 
-			$queryType = $this->getSetVar($session, 'queryType');
-			$tableViewParams = $this->getTableViewParams($queryType, $session->query, $skip, $size);
+			$isAggregate = ($session->{'groupBySelect'} != null);
+			$tableViewParams = $this->getTableViewParams($isAggregate, $session->query, $skip, $size);
 			$params = array_merge($tableViewParams, $this->createFilterToolbar('lines')); // TODO: Should we replace 'lines' here with $collectionName?
 			$this->model->exportCsvFile($params);
 		} else {
@@ -462,6 +462,15 @@ class AdminController extends Yaf_Controller_Abstract {
 		return false;
 	}
 
+	protected function getLinesActionQuery($session, $table) {
+		$isAggregate = ($session->{'groupBySelect'} != null);
+		if($isAggregate) {
+			return $this->applyAggregateFilters($table);
+		}
+		
+		return $this->applyFilters($table);
+	}
+	
 	/**
 	 * lines controller of admin
 	 */
@@ -475,18 +484,13 @@ class AdminController extends Yaf_Controller_Abstract {
 			'collection' => $table,
 			'sort' => $sort,
 		);
-
 		self::initModel($table, $options);
-		
+
 		$session = $this->getSession($table);
-				
-		$queryTypeDefault = Billrun_Config::getInstance()->getConfigValue('admin.query_type');
-		$queryType = $this->getSetVar($session, 'queryType', 'queryType', $queryTypeDefault);
-		
-		if($queryType === 'aggregate') {
-			$query = $this->applyAggregateFilters($table);
-		} else {
-			$query = $this->applyFilters($table);
+		$query = $this->getLinesActionQuery($session, $table);
+		if(!$query) {
+			Billrun_Factory::log("Corrupted admin option.", Zend_Log::ERR);
+			return false;
 		}
 		
 		// this use for export
@@ -669,6 +673,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	/**
 	 * method to render table view
 	 * 
+	 * @param boolean $isAggregate - true if aggregate.
 	 * @param string $table the db table to render
 	 * @param array $columns the columns to show
 	 * 
@@ -676,13 +681,14 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * @todo refactoring this function
 	 * @todo Use the Admin_ViewParams classes.
 	 */
-	protected function getTableViewParams($queryType, $filter_query = array(), $skip = null, $size = null) {
+	protected function getTableViewParams($isAggregate, $filter_query = array(), $skip = null, $size = null) {
 		if (isset($skip) && !empty($size)) {
 			$this->model->setSize($size);
 			$this->model->setPage($skip);
 		}
 		
-		if ($queryType === 'aggregate') {
+//		if ($isAggregate === 'aggregate') {
+		if ($isAggregate) {
 			$data = $this->model->getAggregateData($filter_query);
 			$groupByKeys = array_keys($filter_query[1]['$group']['_id'] );
 			$columns = $this->getAggregateTableColumns($groupByKeys);
@@ -692,7 +698,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		}
 		
 		$edit_key = $this->model->getEditKey();
-		$paramArray = array('queryType' => $queryType);
+		$paramArray = array('queryType' => $isAggregate);
 		$pagination = $this->model->printPager(false, $paramArray);
 		$sizeList = $this->model->printSizeList(false, $paramArray);
 
@@ -703,7 +709,7 @@ class AdminController extends Yaf_Controller_Abstract {
 			'pagination' => $pagination,
 			'sizeList' => $sizeList,
 			'offset' => $this->model->offset(),
-			'query_type' => $queryType,
+			'query_type' => $isAggregate,
 		);
 
 		return $params;
@@ -800,10 +806,10 @@ class AdminController extends Yaf_Controller_Abstract {
 			'requestUrl' => $this->requestUrl,
 		);
 		
-		$queryTypeDefault = Billrun_Config::getInstance()->getConfigValue('admin.query_type', 'find');
-		$queryType = $this->getSetVar($session, 'queryType', 'queryType', $queryTypeDefault);
-		
-		$tableViewParams = $this->getTableViewParams($queryType, $filter_query);
+//		$queryTypeDefault = Billrun_Config::getInstance()->getConfigValue('admin.query_type', 'find');
+//		$queryType = $this->getSetVar($session, 'queryType', 'queryType', $queryTypeDefault);
+		$isAggregate = ($session->{'groupBySelect'} != null);
+		$tableViewParams = $this->getTableViewParams($isAggregate, $filter_query);
 		$params = array_merge($options, $basic_params, $tableViewParams, $this->createFilterToolbar($table));
 
 		$ret = $this->renderView('table', $params);
@@ -898,9 +904,25 @@ class AdminController extends Yaf_Controller_Abstract {
 		return $query;
 	}
 	
+	protected function getGroupAggregateFilters($table, $session) {
+		$groupBySelect = $this->getSetVar($session, 'groupBySelect');
+		$groupBy = array();
+		foreach ($groupBySelect as $groupDataElem) {
+			$groupBy[ucfirst($groupDataElem)] = '$' . $groupDataElem;
+		}
+		
+		return array_merge(array('_id' => $groupBy,'sum' => array('$sum' => 1)), $this->getGroupData($table));
+	}
+	
 	protected function applyAggregateFilters($table) {
-		$model = $this->model;
 		$session = $this->getSession($table);
+		$group = $this->getGroupAggregateFilters($table, $session);
+		if(!$group){
+			return null;
+		}
+		
+		$model = $this->model;
+		
 		$filter_fields = $model->getFilterFields();
 		$match = array();
 		if ($filter = $this->getManualFilters($table)) {
@@ -913,14 +935,6 @@ class AdminController extends Yaf_Controller_Abstract {
 				$match = array_merge($match, $filter);
 			}
 		}
-		
-		$groupBySelect = $this->getSetVar($session, 'groupBySelect');
-		$groupBy = array();
-		foreach ($groupBySelect as $groupDataElem) {
-			$groupBy[ucfirst($groupDataElem)] = '$' . $groupDataElem;
-		}
-		
-		$group = array_merge(array('_id' => $groupBy,'sum' => array('$sum' => 1)), $this->getGroupData($table));
 		
 		return array(
 			array(	
@@ -1067,12 +1081,17 @@ class AdminController extends Yaf_Controller_Abstract {
 		return $query;
 	}
 
-	public function logoutAction() {
-		Billrun_Factory::auth()->clearIdentity();
+	protected function restartSession() {
 		$session = Yaf_Session::getInstance();
-		foreach ($session as $k => $v) {
+		$sessionKeys = array_keys($session);
+		foreach ($sessionKeys as $k) {
 			unset($session[$k]);
 		}
+	}
+	
+	public function logoutAction() {
+		Billrun_Factory::auth()->clearIdentity();
+		$this->restartSession();
 
 		$this->forceRedirect('/admin/login');
 	}
