@@ -314,3 +314,19 @@ float: left;
 .control-row-group, #groupBy {
 	margin-top:5px;
 }
+
+#AdvancedAndAggregated {
+	display: inline-block;
+	width: 1000px;
+	min-height: 59px;
+}
+
+#AdvancedParentDiv {
+	display: inline-block;
+	width: 50%;
+	float: left; 
+}
+
+#AggregateParentDiv {
+	display: inline-block;
+}
