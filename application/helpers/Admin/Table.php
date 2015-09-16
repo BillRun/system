@@ -73,5 +73,32 @@ class Admin_Table {
 				break;
 		}
 	} 
+	
+	public static function getGroupRow($key = null, $operator = null) {
+		$operators = Billrun_Factory::config()->getConfigValue('admin_panel.aggregate.group_accumulator_operators', array());
+
+		$types = Billrun_Factory::config()->getConfigValue('admin_panel.aggregate.group_data');
+		$output = "<div class=\"controls controls-row control-row-group\">
+                               <select name=\"group_data_keys[]\" class=\"form-control span2 multiselect\">";
+		foreach ($types as $manual_key => $manual_type) {
+			$manual_display = isset($manual_type['display']) ? $manual_type['display'] : ucfirst(str_replace('_', ' ', $manual_key));
+			$output.= "<option value=\"" . $manual_key . "\"" . ($key == $manual_key ? " selected" : "") . ">" . $manual_display . "</option>";
+		}
+		$output.= "</select>
+                                <select name=\"group_data_operators[]\" class=\"form-control span2 multiselect\">";
+		foreach ($operators as $operator_key => $operator_display) {
+			$output.="<option value=\"" . $operator_key . "\"" . ($operator == $operator_key ? " selected" : "") . ">" . $operator_display . "</option>";
+		}
+		$output.="</select>";
+		$output.="<a class=\"remove-group-data\" href=\"#\">
+							<i class=\"glyphicon glyphicon-minus-sign\"></i>
+						</a>
+						<a class=\"add-group-data\" href=\"#\">
+							<i class=\"glyphicon glyphicon-plus-sign\"></i>
+						</a>
+					</div>";
+		return $output;
+	}
+
 
 }

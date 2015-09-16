@@ -21,7 +21,7 @@ class LinesModel extends TableModel {
 	 */
 	protected $garbage = false;
 	protected $lines_coll = null;
-
+	
 	public function __construct(array $params = array()) {
 		$params['collection'] = Billrun_Factory::db()->lines;
 		parent::__construct($params);
@@ -77,6 +77,11 @@ class LinesModel extends TableModel {
 		parent::update($data);
 	}
 	
+	/**
+	 * Get data for the find view.
+	 * @param type $filter_query
+	 * @return type
+	 */
 	public function getData($filter_query = array()) {
 
 		$cursor = $this->collection->query($filter_query)->cursor()
@@ -102,6 +107,40 @@ class LinesModel extends TableModel {
 			}
 			$ret[] = $item;
 		}
+		return $ret;
+	}
+	
+	/**
+	 * Get the aggregated data to show.
+	 * @param array $filter_query - Query to get the aggregated data for.
+	 * @return aray - Mongo entities to return.
+	 */
+	public function getAggregateData($filter_query = array()) {
+		if (empty($filter_query[0]['$match'])) {
+			unset($filter_query[0]);
+			$filter_query = array_values($filter_query); // reset array index (required for aggregate framework)
+			$indexGroup = 0;
+		} else {
+			$indexGroup = 1;
+		}
+		$cursor = $this->collection->aggregatecursor($filter_query)
+			->sort($this->sort)->skip($this->offset())->limit($this->size);
+		$ret = array();
+		
+		$groupKeys = array_keys($filter_query[$indexGroup]['$group']['_id']);
+					
+		// Go through the items and construct aggregated entities.
+		foreach ($cursor as $item) {
+			$values = $item->getRawData();
+			foreach ($groupKeys as $key) {
+				// TODO: The 'group_by' constant should perheps move to a more fitting location.
+				$item->set('group_by' . '.' . $key,$values['_id'][$key], true);
+			}
+			$item->set('_id', new MongoId(), true);
+			$ret[] = $item;
+		}
+		
+		$this->_count = count($ret);// Billrun_Factory::config()->getConfigValue('admin_panel.lines.global_limit', 10000);
 		return $ret;
 	}
 	

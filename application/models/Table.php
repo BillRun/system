@@ -162,7 +162,13 @@ class TableModel {
 		return $ret;
 	}
 
-	public function printPager($print = false) {
+	/**
+	 * Get the pager html to use.
+	 * @param type $print 
+	 * @param type $params - Table of parameters to send through the href.
+	 * @return string
+	 */
+	public function printPager($print = false, $params = array()) {
 
 		if (($count = $this->getPagesCount()) > 1) {
 			$current = $this->page;
@@ -187,32 +193,38 @@ class TableModel {
 			if ($max > $count) {
 				$max = $count;
 			}
-
+			
+			$hrefParams = http_build_query($params);
+			// If the parameter list is not empty, put a & prefix.
+			if(!empty($hrefParams)) {
+				$hrefParams= '&' . $hrefParams;
+			}
+			
 			$ret = '<ul class="pagination pagination-right">';
 			if ($current == 1) {
 				$ret .= '<li class="disabled"><a href="javascript:void(0);">First</a></li>'
 					. '<li class="disabled"><a href="javascript:void(0);">Prev</a></li>';
 			} else {
-				$ret .= '<li><a href="?page=1">First</a></li>'
-					. '<li><a href="?page=' . ($current - 1) . '">Prev</a></li>';
+				$ret .= '<li><a href="?page=1' . $hrefParams . '">First</a></li>'
+					. '<li><a href="?page=' . ($current - 1) . $hrefParams . '">Prev</a></li>';
 			}
 
 			for ($i = $min; $i < $current; $i++) {
-				$ret .= '<li><a href="?page=' . $i . '">' . $i . '</a></li>';
+				$ret .= '<li><a href="?page=' . $i . $hrefParams . '">' . $i . '</a></li>';
 			}
 
 			$ret .= '<li class="active disabled"><a href="javascript:void(0);">' . $current . '</a></li>';
 
 			for ($i = ($current + 1); $i <= $max; $i++) {
-				$ret .= '<li><a href="?page=' . $i . '">' . $i . '</a></li>';
+				$ret .= '<li><a href="?page=' . $i . $hrefParams . '">' . $i . '</a></li>';
 			}
 
 			if ($current == $count) {
 				$ret .= '<li class="disabled"><a href="javascript:void(0);">Next</a></li>'
 					. '<li class="disabled"><a href="javascript:void(0);">Last</a></li>';
 			} else {
-				$ret .= '<li><a href="?page=' . ($current + 1) . '">Next</a></li>'
-					. '<li><a href="?page=' . $count . '">Last</a></li>';
+				$ret .= '<li><a href="?page=' . ($current + 1) . $hrefParams . '">Next</a></li>'
+					. '<li><a href="?page=' . $count . $hrefParams . '">Last</a></li>';
 			}
 
 			$ret .= '</ul>';
@@ -223,17 +235,29 @@ class TableModel {
 			return $ret;
 		}
 	}
-
-	public function printSizeList($print = false) {
+	/**
+	 * Get the size list html to use.
+	 * @param type $print 
+	 * @param type $params - Table of parameters to send through the href.
+	 * @return string
+	 */
+	public function printSizeList($print = false, $params = array()) {
 		$ret = '<div id="listSize" class="btn-group">
 				<button class="btn btn-danger dropdown-toggle" data-toggle="dropdown">' . $this->size . ' <span class="caret"></span></button>
 				<ul class="dropdown-menu">';
+		
+		$hrefParams = http_build_query($params);
+		// If the parameter list is not empty, put a & prefix.
+		if(!empty($hrefParams)) {
+			$hrefParams= '&' . $hrefParams;
+		}
+			
 		// TODO: move it to config
 		$ranges = array(
 			10, 50, 100, 500, 1000
 		);
 		foreach ($ranges as $r) {
-			$ret .= '<li><a href="?listSize=' . $r . '">' . $r . '</a></li>';
+			$ret .= '<li><a href="?listSize=' . $r . $hrefParams . '">' . $r . '</a></li>';
 		}
 		$ret .= '</ul></div><!-- /btn-group -->';
 		if ($print) {
@@ -393,11 +417,28 @@ class TableModel {
 		return array();
 	}
 
+	/**
+	 * 
+	 * @param type $item
+	 * @param type $field_name
+	 * @return type
+	 * @todo: Same function in DBRef, change all calls to the static function and make this deprecated.
+	 */
 	protected function getDBRefField($item, $field_name) {
 		if (($value = $item->get($field_name, true)) && MongoDBRef::isRef($value)) {
 			$value = Billrun_DBRef::getEntity($value);
 		}
 		return $value;
+	}
+	
+	public function getQueryTypes() {
+		$query_types = Billrun_Factory::config()->getConfigValue('admin_panel.' . $this->collection_name . '.query_types', array());
+		return $query_types;
+	}
+	
+	public function getAggregateByFields() {
+		$aggregateByFields = Billrun_Factory::config()->getConfigValue('admin_panel.' . $this->collection_name . '.aggregate_by_fields', array());
+		return $aggregateByFields;
 	}
 
 	public function getExtraColumns() {
@@ -451,6 +492,7 @@ class TableModel {
 	 * @param type $searched_filter the filter to search
 	 * 
 	 * @return boolean true if searched filter exists in the filters supply
+	 * @todo Moved this to utils, use the one in utils and deprecate this function.
 	 */
 	protected function filterExists($filters, $searched_filter) {
 		settype($searched_filter, 'array');
