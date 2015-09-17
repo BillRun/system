@@ -10,7 +10,7 @@ class Admin_Lines {
 		$operators = Billrun_Factory::config()->getConfigValue('admin_panel.aggregate.group_accumulator_operators', array());
 		$configTypes = Billrun_Factory::config()->getConfigValue('admin_panel.aggregate.group_data');
 		$types = array_combine(
-			array_map(create_function('$k', 'return "Aggregate_".$k;'), array_keys($configTypes))
+			array_map(create_function('$k', 'return "".$k;'), array_keys($configTypes))
 			, $configTypes
 		);
 		
