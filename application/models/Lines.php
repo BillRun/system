@@ -83,7 +83,6 @@ class LinesModel extends TableModel {
 	 * @return type
 	 */
 	public function getData($filter_query = array()) {
-
 		$cursor = $this->collection->query($filter_query)->cursor()
 			->sort($this->sort)->skip($this->offset())->limit($this->size);
 

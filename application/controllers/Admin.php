@@ -281,7 +281,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->getView()->collectionName = $coll;
 		$this->getView()->type = $type;
 	}
-
+	
 	public function csvExportAction() {
 		if (!$this->allowed('read'))
 			return false;
@@ -302,6 +302,12 @@ class AdminController extends Yaf_Controller_Abstract {
 			$size = intval(Billrun_Factory::config()->getConfigValue('admin_panel.csv_export.size', 10000));
 
 			$isAggregate = ($session->{'groupBySelect'} != null);
+			
+			// If this is an aggregated operation fill the aggregated columns.
+			if($isAggregate) {
+				$this->fillAggregateColumns($session);
+			}
+			
 			$tableViewParams = $this->getTableViewParams($isAggregate, $session->query, $skip, $size);
 			$params = array_merge($tableViewParams, $this->createFilterToolbar('lines')); // TODO: Should we replace 'lines' here with $collectionName?
 			$this->model->exportCsvFile($params);
@@ -907,6 +913,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	protected function getGroupAggregateFilters($table, $session) {
 		$groupBySelect = $this->getSetVar($session, 'groupBySelect');
 		$groupBy = array();
+		
 		foreach ($groupBySelect as $groupDataElem) {
 			$groupBy[ucfirst($groupDataElem)] = '$' . $groupDataElem;
 		}
@@ -1067,8 +1074,18 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * @return string
 	 */
 	public function getGroupData($table) {
-		$query = false;
 		$session = $this->getSession($table);
+		return $this->fillAggregateColumns($session);
+	}
+
+	/**
+	 * Fill the aggregate columns by the current session.
+	 * @param type $session - The current session.
+	 * @return array Query for aggregated operation result built from the new 
+	 * columns in the aggregated array.
+	 */
+	protected function fillAggregateColumns($session) {
+		$query = false;
 		$keys = $this->getSetVar($session, 'group_data_keys', 'group_data_keys');
 		$operators = $this->getSetVar($session, 'group_data_operators', 'group_data_operators');
 		settype($keys, 'array');
@@ -1080,7 +1097,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		}
 		return $query;
 	}
-
+	
 	protected function restartSession() {
 		$session = Yaf_Session::getInstance();
 		$sessionKeys = array_keys($session);

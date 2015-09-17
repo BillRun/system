@@ -289,17 +289,20 @@ $(function () {
 		} else {
 			$("#manual_filters", _container).slideToggle();
 		}
-		$("i", this).toggleClass("icon-chevron-down icon-chevron-up");
+		$("i", this).toggleClass("glyphicon-minus-sign glyphicon-plus-sign");
 	});
 	
 	$(".groupData").on('click', function () {
 		var _container = $('.tab-content div.active');
 		if (!_container.length) {
 			$("#group_by_filters").slideToggle();
+			$("#groupBy").slideToggle();
 		} else {
 			$("#group_by_filters", _container).slideToggle();
+			$("#groupBy", _container).slideToggle();
+
 		}
-		$("i", this).toggleClass("icon-chevron-down icon-chevron-up");
+		$("i", this).toggleClass("glyphicon-minus-sign glyphicon-plus-sign");
 	});
 
 	if ($.fn.stickyTableHeaders) {
