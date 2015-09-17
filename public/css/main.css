@@ -318,7 +318,7 @@ float: left;
 #AdvancedAndAggregated {
 	display: inline-block;
 	width: 1000px;
-	min-height: 59px;
+	min-height: 20px;
 }
 
 #AdvancedParentDiv {
