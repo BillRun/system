@@ -33,8 +33,8 @@ nsn_end_code='.forEach(function(obj) { print("call\t" + dir + "\t" + network + "
 data_end_code='.forEach(      function(obj) {         print("data\t" + dir + "\t" + network + "\t'$day'\t" +  (obj._id.match(/^37\.26/) ? "GT" : (obj._id.match(/^62\.90/) ? "MCEL" : "OTHER") )  +"\tINTERNET_BY_VOLUME" + "\t" + obj.count + "\t" + obj.usagev);})';
 sms_end_code='.forEach(      function(obj) {         print("sms\t" + dir + "\t" + network + "\t'$day'\t" +  obj._id.c  + "\t" + (obj._id.r ? db.rates.findOne(obj._id.r.$id).key : "") + "\t" + obj.count + "\t" + obj.usagev);})';
 sipregex='^(?=NSML|NBZI|MAZI|MCLA|ISML|IBZI|ITLZ|IXFN|IMRS|IHLT|HBZI|IKRT|IKRTROM|SWAT|GSML|GNTV|GHOT|GBZQ|GBZI|GCEL|LMRS)';
-nsn_grouping_out='{$group:{_id:{c:"$out_circuit_group_name",r:"$arate"}, count:{$sum:1},usagev:{$sum:"$usagev"}}},{$project:{"_id.c":{$substr:["$_id.c",0,4]},"_id.r":1, count:1,usagev:1}},{$group:{_id:"$_id",count:{$sum:"$count"},usagev:{$sum:"$usagev"}}}';
-nsn_grouping_in='{$group:{_id:{c:"$in_circuit_group_name",r:"$pzone"}, count:{$sum:1},usagev:{$sum:"$usagev"}}},{$project:{"_id.c":{$substr:["$_id.c",0,4]},"_id.r":1, count:1,usagev:1}},{$group:{_id:"$_id",count:{$sum:"$count"},usagev:{$sum:"$usagev"}}}';
+nsn_grouping_out='{$group:{_id:{c:"$out_circuit_group_name",r:"$arate"}, count:{$sum:{$ifNull : ["$lcount",1]}},usagev:{$sum:"$usagev"}}},{$project:{"_id.c":{$substr:["$_id.c",0,4]},"_id.r":1, count:1,usagev:1}},{$group:{_id:"$_id",count:{$sum:"$count"},usagev:{$sum:"$usagev"}}}';
+nsn_grouping_in='{$group:{_id:{c:"$in_circuit_group_name",r:"$pzone"}, count:{$sum:{$ifNull : ["$lcount",1]}},usagev:{$sum:"$usagev"}}},{$project:{"_id.c":{$substr:["$_id.c",0,4]},"_id.r":1, count:1,usagev:1}},{$group:{_id:"$_id",count:{$sum:"$count"},usagev:{$sum:"$usagev"}}}';
 out_str='FG'
 in_str='TG'
 
@@ -49,7 +49,7 @@ case $report_name in
 	js_code="$js_code $sms_end_code" ;;
 
 	"data" )
-	js_code=$js_code'var dir="";var network = "all";db.lines.aggregate({$match:{urt:{$gte:from_date, $lte:to_date}, type:"ggsn"}},{$group:{_id:{$substr:["$sgsn_address",0,5]}, count:{$sum:1},usagev:{$sum:"$usagev"}}})'; 
+	js_code=$js_code'var dir="";var network = "all";db.lines.aggregate({$match:{urt:{$gte:from_date, $lte:to_date}, type:"ggsn"}},{$group:{_id:{$substr:["$sgsn_address",0,5]}, count:{$sum:{$ifNull : ["$lcount",1]}},usagev:{$sum:"$usagev"}}})'; 
 	js_code="$js_code$data_end_code" ;;
 
 	"all_in_call" )
