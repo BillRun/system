@@ -61,9 +61,9 @@
 						echo "<div>"
 								. "<a href=\"javascript:void(0)\" class=\"advanced-options\">"
 									. "<i class=\"glyphicon glyphicon-" . ($isManualFilter ? "minus" : "plus") . "-sign\"></i>"
-								. "</a>"
 								. " Advanced options "	
-						   . "</div>";
+						   		. "</a>"
+							. "</div>";
 						echo "<div id = \"manual_filters\"" . ($isManualFilter ? "" : " style=\"display:none;\"") . ">";
 							echo '<div class="filters">';
 								if ($isManualFilter) {
@@ -82,8 +82,8 @@
 						echo "<div id='groupData'>";
 							echo "<a href='javascript:void(0)' class='groupData'>" .
 									"<i class=\"glyphicon glyphicon-" . ($isGroupFilter ? "minus" : "plus") . "-sign\"></i>" .
-								 "</a>" .
 								" Group options" .
+								 "</a>" .
 							"</div>";
 						echo "<div id = 'groupBy' " . ($isGroupFilter ? "" : " style=\"display:none;\"") . ">";
 							echo "&nbsp;<label class='control-label'>Group by</label>
