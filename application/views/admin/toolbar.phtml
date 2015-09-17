@@ -83,17 +83,8 @@
 							echo "Group options <i class=\"" . ($isGroupFilter ? "icon-chevron-up" : "icon-chevron-down") . "\"></i>";
 							echo "</a>";
 						echo "</div>";
-						echo "<div id = 'group_by_filters' " . ($isGroupFilter ? "" : " style=\"display:none;\"") . ">";
-								if ($isGroupFilter) {
-									for ($i = 0; $i < count($this->session->group_data_keys); $i++) {
-										echo Admin_Lines::getGroupRow($this->session->group_data_keys[$i], null, $this->session->group_data_operators[$i], $this->session->group_value[$i]);
-									}
-								} else {
-									echo Admin_Lines::getGroupRow(); // add first manual filter on load
-								}
-						echo '</div>';
-						echo '<div id="groupBy">';
-							echo "&nbsp;<label class='control-labe'>Group by</label>
+						echo "<div id = 'groupBy' " . ($isGroupFilter ? "" : " style=\"display:none;\"") . ">";
+							echo "&nbsp;<label class='control-label'>Group by</label>
 							<select id='groupBySelect[]' name='groupBySelect[]' class='form-control multiselect' multiple='multiple'>";
 								foreach ($aggregate_by_fields as $value => $name) {
 									$selected = "";
@@ -105,6 +96,15 @@
 									echo "<option value='$value' $selected>$name</option>";
 								}
 							echo "</select>";
+						echo '</div>';
+						echo "<div id = 'group_by_filters' " . ($isGroupFilter ? "" : " style=\"display:none;\"") . ">";
+								if ($isGroupFilter) {
+									for ($i = 0; $i < count($this->session->group_data_keys); $i++) {
+										echo Admin_Lines::getGroupRow($this->session->group_data_keys[$i], null, $this->session->group_data_operators[$i], $this->session->group_value[$i]);
+									}
+								} else {
+									echo Admin_Lines::getGroupRow(); // add first manual filter on load
+								}
 						echo '</div>';
 					echo "</div>";
 				echo "</div>";

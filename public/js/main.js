@@ -296,8 +296,11 @@ $(function () {
 		var _container = $('.tab-content div.active');
 		if (!_container.length) {
 			$("#group_by_filters").slideToggle();
+			$("#groupBy").slideToggle();
 		} else {
 			$("#group_by_filters", _container).slideToggle();
+			$("#groupBy", _container).slideToggle();
+
 		}
 		$("i", this).toggleClass("icon-chevron-down icon-chevron-up");
 	});
