@@ -289,7 +289,7 @@ $(function () {
 		} else {
 			$("#manual_filters", _container).slideToggle();
 		}
-		$("i", this).toggleClass("icon-chevron-down icon-chevron-up");
+		$("i", this).toggleClass("glyphicon-minus-sign glyphicon-plus-sign");
 	});
 	
 	$(".groupData").on('click', function () {
@@ -302,7 +302,7 @@ $(function () {
 			$("#groupBy", _container).slideToggle();
 
 		}
-		$("i", this).toggleClass("icon-chevron-down icon-chevron-up");
+		$("i", this).toggleClass("glyphicon-minus-sign glyphicon-plus-sign");
 	});
 
 	if ($.fn.stickyTableHeaders) {
