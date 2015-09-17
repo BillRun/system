@@ -1091,8 +1091,10 @@ class AdminController extends Yaf_Controller_Abstract {
 		settype($keys, 'array');
 		settype($operators, 'array');
 		for ($i = 0; $i < count($keys); $i++) {
+			$configKeyName = 'admin_panel.aggregate.group_data.' . $keys[$i] . '.display';
+			$columnDisplayName = Billrun_Factory::config()->getConfigValue($configKeyName);
 			$columnName = $keys[$i] . '-' . $operators[$i];
-			$this->aggregateColumns[$columnName] = ucfirst($columnName);
+			$this->aggregateColumns[$columnName] = $columnDisplayName;
 			$query[$columnName] = array('$' . $operators[$i] => '$' . $keys[$i]);
 		}
 		return $query;
