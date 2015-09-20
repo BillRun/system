@@ -483,7 +483,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	public function linesAction() {
 		if (!$this->allowed('read'))
 			return false;
-
+		
 		$table = 'lines';
 		$sort = $this->applySort($table);
 		$options = array(
@@ -916,7 +916,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		
 		// Check for URT filters.
 		$urtFields = Billrun_Factory::config()->getConfigValue("admin_panel.lines.aggregate_urt");
-		$groupDisplayNames = Billrun_Factory::config()->getConfigValue("admin_panel.lines.aggregate_by_fields");
+		$groupDisplayNames = $this->model->getAggregateByFields();
 		
 		foreach ($groupBySelect as $groupDataElem) {
 			$groupToDisplay = $groupDisplayNames[$groupDataElem];

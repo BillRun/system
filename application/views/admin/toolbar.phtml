@@ -131,9 +131,9 @@
 		<div class=\"controls form-inline\">
 			 <select id=\"sort_by\" name=\"sort_by\" class=\"form-control multiselect\">";
 				foreach ($this->sort_fields as $sort_field_key => $sort_field_display) {
-					if($isGroupBy && !isset($aggregate_by_fields[$sort_field_key])) {
-						continue;
-					}
+//					if($isGroupBy && !isset($aggregate_by_fields[$sort_field_key])) {
+//						continue;
+//					}
 					echo "<option value=\"" . $sort_field_key . "\"" . (isset($this->session->sort_by) && $this->session->sort_by == $sort_field_key ? " selected=\"selected\"" : "") . ">" . $sort_field_display . "</option>";
 				}
 				echo "</select>

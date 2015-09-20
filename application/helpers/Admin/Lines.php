@@ -14,7 +14,7 @@ class Admin_Lines {
 			, $configTypes
 		);
 		
-		$output = "<div class=\"controls controls-row controls-sort\">";
+		$output = "<div class=\"controls controls-row\">";
 		$output.= self::getFilterRowSelectKeys($key, $types, 'group_data_keys');
 		$output.= self::getFilterRowSelectOperators($operator, $operators, 'group_data_operators');
 		
@@ -64,7 +64,7 @@ class Admin_Lines {
 		);
 
 		$types = self::getOptions();
-		$output = "<div class=\"controls controls-row controls-sort\">";
+		$output = '<div class="controls controls-row" >';
 		$output.= self::getFilterRowSelectKeys($key, $types, 'manual_key');
 		$output.= self::getFilterRowSelectOperators($operator, $operators, 'manual_operator');
 		
