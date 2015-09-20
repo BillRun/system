@@ -170,7 +170,7 @@ tr.progress td, tr.progress th {
 .toolbar-buttons, .control-group1 {
 	margin:10px auto;
 }
-#manual_filters .controls-row {
+#manual_filters .controls-row, #group_by_filters .controls-row {
 	margin-top:5px;
 }
 .toolbar-buttons, .control-group4 {

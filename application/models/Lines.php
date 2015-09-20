@@ -116,6 +116,9 @@ class LinesModel extends TableModel {
 	 * @return string translated value.
 	 */
 	protected function translateAggregatedValue($key, $value) {
+		// Transform to zero based.
+		$value-=1;
+		
 		// Translate the values.
 		if(strcasecmp($key, "Day of the Week") === 0) {
 			return date('D', strtotime("Sunday +{$value} days"));
