@@ -694,13 +694,13 @@ class AdminController extends Yaf_Controller_Abstract {
 		}
 		
 //		if ($isAggregate === 'aggregate') {
-		if ($isAggregate) {
+		if (!$isAggregate) {
+			$data = $this->model->getData($filter_query);
+			$columns = $this->model->getTableColumns();
+		} else {
 			$data = $this->model->getAggregateData($filter_query);
 			$groupByKeys = array_keys($filter_query[1]['$group']['_id'] );
 			$columns = $this->getAggregateTableColumns($groupByKeys);
-		} else {
-			$data = $this->model->getData($filter_query);
-			$columns = $this->model->getTableColumns();
 		}
 		
 		$edit_key = $this->model->getEditKey();
@@ -916,12 +916,14 @@ class AdminController extends Yaf_Controller_Abstract {
 		
 		// Check for URT filters.
 		$urtFields = Billrun_Factory::config()->getConfigValue("admin_panel.lines.aggregate_urt");
+		$groupDisplayNames = Billrun_Factory::config()->getConfigValue("admin_panel.lines.aggregate_by_fields");
 		
 		foreach ($groupBySelect as $groupDataElem) {
+			$groupToDisplay = $groupDisplayNames[$groupDataElem];
 			if(!in_array($groupDataElem, $urtFields)) {
-				$groupBy[ucfirst($groupDataElem)] = '$' . $groupDataElem;
+				$groupBy[$groupToDisplay] = '$' . $groupDataElem;
 			} else {
-				$groupBy[ucfirst($groupDataElem)] = array('$' . $groupDataElem => '$urt');
+				$groupBy[$groupToDisplay] = array('$' . $groupDataElem => '$urt');
 			}
 		}
 		
