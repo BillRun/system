@@ -914,11 +914,39 @@ class AdminController extends Yaf_Controller_Abstract {
 		$groupBySelect = $this->getSetVar($session, 'groupBySelect');
 		$groupBy = array();
 		
+		// Check for URT filters.
+		$urtFields = Billrun_Factory::config()->getConfigValue("admin_panel.lines.aggregate_urt");
+		
 		foreach ($groupBySelect as $groupDataElem) {
-			$groupBy[ucfirst($groupDataElem)] = '$' . $groupDataElem;
+			if(!in_array($groupDataElem, $urtFields)) {
+				$groupBy[ucfirst($groupDataElem)] = '$' . $groupDataElem;
+			} else {
+				$groupBy[ucfirst($groupDataElem)] = array('$' . $groupDataElem => '$urt');
+			}
 		}
 		
 		return array_merge(array('_id' => $groupBy,'sum' => array('$sum' => 1)), $this->getGroupData($table));
+	}
+	
+	protected function getAggregateFiltersMatchClause($session, $table) {
+		$model = $this->model;
+		
+		$filter_fields = $model->getFilterFields();
+		$match = array();
+		$filter = $this->getManualFilters($table);
+		if ($filter) {
+			$match = array_merge($match, $filter);
+		}
+		
+		$filter_fields_values = array_values($filter_fields);
+		foreach ($filter_fields_values as $filter_field) {
+			$value = $this->getSetVar($session, $filter_field['key'], $filter_field['key'], $filter_field['default']);
+			if ((!empty($value) || $value === 0 || $value === "0") && $filter_field['db_key'] != 'nofilter' && $filter = $model->applyFilter($filter_field, $value)) {
+				$match = array_merge($match, $filter);
+			}
+		}
+		
+		return $match;
 	}
 	
 	protected function applyAggregateFilters($table) {
@@ -928,20 +956,7 @@ class AdminController extends Yaf_Controller_Abstract {
 			return null;
 		}
 		
-		$model = $this->model;
-		
-		$filter_fields = $model->getFilterFields();
-		$match = array();
-		if ($filter = $this->getManualFilters($table)) {
-			$match = array_merge($match, $filter);
-		}
-		$filter_fields_values = array_values($filter_fields);
-		foreach ($filter_fields_values as $filter_field) {
-			$value = $this->getSetVar($session, $filter_field['key'], $filter_field['key'], $filter_field['default']);
-			if ((!empty($value) || $value === 0 || $value === "0") && $filter_field['db_key'] != 'nofilter' && $filter = $model->applyFilter($filter_field, $value)) {
-				$match = array_merge($match, $filter);
-			}
-		}
+		$match = $this->getAggregateFiltersMatchClause($session, $table);
 		
 		return array(
 			array(	
