@@ -15,7 +15,7 @@
  * @since    1.0
  */
 class Billrun_Generator_Ilds extends Billrun_Generator {
-	
+
 	/**
 	 * The VAT value including the complete; for example 1.17
 	 * 
@@ -40,9 +40,8 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 			->notExists('invoice_id');
 
 		Billrun_Factory::log()->log("aggregator entities loaded: " . $this->data->count(), Zend_Log::INFO);
-		
-		Billrun_Factory::dispatcher()->trigger('afterGeneratorLoadData', array('generator' => $this));
 
+		Billrun_Factory::dispatcher()->trigger('afterGeneratorLoadData', array('generator' => $this));
 	}
 
 	/**
@@ -62,19 +61,20 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 		$ret = array();
 
 		$resource = $lines->query(array(
-					'$or' => array(
-						array('source' => 'ilds'),
-						array('source' => 'api', 'type' => 'refund', 'reason' => 'ILDS_DEPOSIT')
-					)
-				))
+				'$or' => array(
+					array('source' => array('$in' => array('ilds', 'premium'))),
+					array('source' => 'api', 'type' => 'refund', 'reason' => 'ILDS_DEPOSIT')
+				)
+			))
 			//->equals('source', 'ilds')
 			->equals('billrun', $this->getStamp())
 			->equals('subscriber_id', "$subscriber_id")
 			->notExists('billrun_excluded')
 			// todo check how to use hint with 2 indexes
-			->cursor()->hint(array('subscriber_id' => 1)) 
+			->cursor()
+//			->cursor()->hint(array('subscriber_id' => 1)) //todo :bring back 
 			->sort(array('unified_record_time' => 1));
-			
+		$resource->count();
 		foreach ($resource as $entity) {
 			$ret[] = $entity->getRawData();
 		}
@@ -85,16 +85,19 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 	protected function xml() {
 		// use $this->export_directory
 		$short_format_date = 'd/m/Y';
+		$premium_providers = Billrun_Factory::config()->getConfigValue('premium.provider_ids', array());
+		$add_header = true;
 		foreach ($this->data as $row) {
 			Billrun_Factory::log()->log("xml account " . $row->get('account_id'), Zend_Log::INFO);
 			// @todo refactoring the xml generation to another class
 			$xml = $this->basic_xml();
 			$xml->TELECOM_INFORMATION->LASTTIMECDRPROCESSED = date('Y-m-d h:i:s');
-			$xml->TELECOM_INFORMATION->VAT_VALUE = (string) (($this->vat * 100) - 100);//'17';
+			$xml->TELECOM_INFORMATION->VAT_VALUE = (string) (($this->vat * 100) - 100); //'17';
 			$xml->TELECOM_INFORMATION->COMPANY_NAME_IN_ENGLISH = 'GOLAN';
 			$xml->INV_CUSTOMER_INFORMATION->CUSTOMER_CONTACT->EXTERNALACCOUNTREFERENCE = $row->get('account_id');
 			;
 			$total_ilds = array();
+			$stamps = array();
 			foreach ($row->get('subscribers') as $id => $subscriber) {
 				$subscriber_inf = $xml->addChild('SUBSCRIBER_INF');
 				$subscriber_inf->SUBSCRIBER_DETAILS->SUBSCRIBER_ID = $id;
@@ -102,8 +105,9 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 
 				$subscriber_lines = $this->get_subscriber_lines($id);
 				foreach ($subscriber_lines as $line) {
+					$stamps[] = $line['stamp'];
 					$billing_record = $billing_records->addChild('BILLING_RECORD');
-					if($line['type'] == 'refund') {
+					if ($line['type'] == 'refund') {
 						$this->addRefundLineXML($billing_record, $line);
 					} else {
 						$this->addIldLineXML($billing_record, $line);
@@ -118,7 +122,11 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 					} else {
 						$total_ilds[$ild] = $cost;
 					}
-					$ild_xml = $subscriber_sumup->addChild('ILD');
+					if (in_array($ild, $premium_providers)) {
+						$ild_xml = $subscriber_sumup->addChild('PREMIUM'); //change?
+					} else {
+						$ild_xml = $subscriber_sumup->addChild('ILD'); //change?					
+					}
 					$ild_xml->NDC = $ild;
 					$ild_xml->CHARGE_EXCL_VAT = $cost;
 					$ild_xml->CHARGE_INCL_VAT = $cost * $this->vat;
@@ -130,6 +138,7 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 			}
 
 			$invoice_id = $this->saveInvoiceId($row->get('account_id'), $this->createInvoiceId());
+			$this->setLinesInvoiceId($stamps, $invoice_id);
 			// update billrun with the invoice id
 			$xml->INV_INVOICE_TOTAL->INVOICE_NUMBER = $invoice_id;
 			$xml->INV_INVOICE_TOTAL->INVOICE_DATE = date($short_format_date);
@@ -137,13 +146,18 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 			$xml->INV_INVOICE_TOTAL->FROM_PERIOD = date($short_format_date, strtotime('first day of previous month'));
 			$xml->INV_INVOICE_TOTAL->TO_PERIOD = date($short_format_date, strtotime('last day of previous month'));
 			$xml->INV_INVOICE_TOTAL->SUBSCRIBER_COUNT = count($row);
-			$xml->INV_INVOICE_TOTAL->INVOICE_TYPE = "ilds";
-				
+			$xml->INV_INVOICE_TOTAL->INVOICE_TYPE = "ilds"; //change?
+
 			$invoice_sumup = $xml->INV_INVOICE_TOTAL->addChild('INVOICE_SUMUP');
 			$total = 0;
 			foreach ($total_ilds as $ild => $total_ild_cost) {
-				$ild_xml = $invoice_sumup->addChild('ILD');
-				$ild_xml->NDC = $ild;
+				if (in_array($ild, $premium_providers)) { //todo: change condition!
+					$ild_xml = $invoice_sumup->addChild('PREMIUM'); //change?
+				} else {
+					$ild_xml = $invoice_sumup->addChild('ILD'); //change?					
+				}
+//				$ild_xml = $invoice_sumup->addChild('ILD'); //change?
+				$ild_xml->NDC = $ild; //?
 				$ild_xml->CHARGE_EXCL_VAT = $total_ild_cost;
 				$ild_xml->CHARGE_INCL_VAT = $total_ild_cost * $this->vat;
 				$total += $total_ild_cost;
@@ -153,25 +167,44 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 			//$row->{'xml'} = $xml->asXML();
 			Billrun_Factory::log()->log("invoice id created " . $invoice_id . " for the account", Zend_Log::INFO);
 			$this->createXml($invoice_id, $xml->asXML());
-
+			if ($add_header) {
+				$this->addRowToCsv(null, null, null, null, $add_header);
+				$add_header = false;
+			}
 			$this->addRowToCsv($invoice_id, $row->get('account_id'), $total, $total_ilds);
 		}
 	}
 
-	protected function addRowToCsv($invoice_id, $account_id, $total, $cost_ilds) {
+	protected function addRowToCsv($invoice_id, $account_id, $total, $cost_ilds, $addHeader = false) {
 		//empty costs for each of the providers
-		foreach (array('012', '013', '014', '015', '018', '019','refund') as $key) {
+		$providers = Billrun_Factory::config()->getConfigValue('ilds.providers', array());
+		$providers = array_merge($providers, Billrun_Factory::config()->getConfigValue('premium.provider_ids', array()));
+		$providers = array_merge($providers, array('refund'));
+		foreach ($providers as $key) {
 			if (!isset($cost_ilds[$key])) {
-				$cost_ilds[$key] = 0;
+				$cost_ilds[$key] = floatval(0);
 			}
 		}
 
 		ksort($cost_ilds);
+		$refund = $cost_ilds['refund'];
+		unset($cost_ilds['refund']);
+		$keys = array_keys($cost_ilds);
+		foreach($keys as $i => $key) {
+			if (is_numeric($key)) {
+				$keys[$i] = 'c'.$key;
+			}
+		}
 		$seperator = ',';
-		$total_incl_vat = $total * $this->vat;
-		$row = $invoice_id . $seperator . $account_id . $seperator
-			. $total . $seperator . $total_incl_vat . $seperator . implode($seperator, $cost_ilds)
-			. $seperator .round($total_incl_vat, 2) . PHP_EOL;
+		if ($addHeader) {
+			$row = "invoice_id" . $seperator . "account_id" . $seperator
+				. "total" . $seperator . "total_incl_vat" . $seperator . implode($seperator, $keys) . $seperator . 'refund' . PHP_EOL;
+		} else {
+			$total_incl_vat = $total * $this->vat;
+			$row = $invoice_id . $seperator . $account_id . $seperator
+				. $total . $seperator . $total_incl_vat . $seperator . implode($seperator, $cost_ilds) . $seperator . $refund . PHP_EOL;
+			//			. $seperator . round($total_incl_vat, 2) . PHP_EOL;
+		}
 		$this->csv($row);
 	}
 
@@ -202,6 +235,26 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 
 		return $invoice_id;
 	}
+	
+	protected function setLinesInvoiceId($stamps, $invoice_id) {
+		$lines = Billrun_Factory::db()->linesCollection();
+		$where = array(
+			'lines' => array(
+				'$in' => $stamps,
+			),
+			// the next or is for protection (source query that populate the lines)
+			'$or' => array(
+				array('source' => array('$in' => array('ilds', 'premium'))),
+				array('source' => 'api', 'type' => 'refund', 'reason' => 'ILDS_DEPOSIT')
+			),
+		);
+		$update = array(
+			'$set' => array(
+				'invoice_id' => $invoice_id,
+			)
+		);
+		$lines->update($where, $update, array("multiple" => true));
+	}
 
 	protected function createInvoiceId() {
 		$invoices = Billrun_Factory::db()->billrunCollection();
@@ -215,32 +268,38 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 		}
 		return '3100000000';
 	}
-	
-	protected function addIldLineXML(&$billing_record , $line) {
-			$billing_record->TIMEOFBILLING = $line['call_start_dt'];
+
+	protected function addIldLineXML(&$billing_record, $line) {
+		$billing_record->TIMEOFBILLING = $line['call_start_dt'];
+		if ($line['source'] == 'premium') {
+			$billing_record->TARIFFITEM = 'IL_PREMIUM';
+			$billing_record->INTERNATIONAL = '0';
+			$billing_record->PREMIUM = $line['type'];
+		} else {
 			$billing_record->TARIFFITEM = 'IL_ILD';
-			$billing_record->CTXT_CALL_OUT_DESTINATIONPNB = $line['called_no'];
-			$billing_record->CTXT_CALL_IN_CLI =  $line['caller_phone_no'];
-			$billing_record->CHARGEDURATIONINSEC =  $line['chrgbl_call_dur'];
-			$billing_record->CHARGE = $line['price_customer'];
-			$billing_record->TARIFFKIND = 'Call';
 			$billing_record->INTERNATIONAL = '1';
 			$billing_record->ILD = $line['type'];
+		}
+		$billing_record->CTXT_CALL_OUT_DESTINATIONPNB = $line['called_no'];
+		$billing_record->CTXT_CALL_IN_CLI = $line['caller_phone_no'];
+		$billing_record->CHARGEDURATIONINSEC = $line['chrgbl_call_dur'];
+		$billing_record->CHARGE = $line['price_customer'];
+		$billing_record->TARIFFKIND = 'Call';
 	}
-	
-	protected function addRefundLineXML(&$billing_record ,$line) {
+
+	protected function addRefundLineXML(&$billing_record, $line) {
 		$billing_record->TIMEOFBILLING = date("Y/m/t H:i:s", $line['unified_record_time']->sec);
-        $billing_record->TARIFFITEM = $line['reason']; //
-        $billing_record->CTXT_CALL_OUT_DESTINATIONPNB="";
+		$billing_record->TARIFFITEM = $line['reason']; //
+		$billing_record->CTXT_CALL_OUT_DESTINATIONPNB = "";
 		$billing_record->CHARGEDURATIONINSEC = "";
 		$billing_record->CHARGE = 0;
 		$billing_record->CREDIT = -$line['price_customer'];
 		$billing_record->NEWBALANCE = 0;
-        $billing_record->PREVIOUSBALANCE = 0;
-		$billing_record->TTAR_TCLASSNAME_EXT="";
-        $billing_record->TTAR_TIMEPERIOD = "";
-        $billing_record->TTAR_ACCESSPRICE1 = 0;
-		$billing_record->TTAR_SAMPLEDELAYINSEC1 = 0 ; 
+		$billing_record->PREVIOUSBALANCE = 0;
+		$billing_record->TTAR_TCLASSNAME_EXT = "";
+		$billing_record->TTAR_TIMEPERIOD = "";
+		$billing_record->TTAR_ACCESSPRICE1 = 0;
+		$billing_record->TTAR_SAMPLEDELAYINSEC1 = 0;
 		$billing_record->TTAR_SAMPPRICE1 = 0;
 		$billing_record->CTXT_CALL_IN_CLI = "";
 		$billing_record->ACCESSTYPENAME = "";
@@ -252,7 +311,7 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 		//<!-- eXSWI_ID_BILLING_CALCULATED_VALUES!-->
 		$billing_record->TARIFFKIND = "Service";
 		//<!-- eXSWI_ID_BILLING_CALCULATED_VALUES!-->
-		$billing_record->INTERNATIONAL = 1; 
+		$billing_record->INTERNATIONAL = 1;
 		//<!-- eXSWI_ID_BILLING_CALCULATED_VALUES!-->
 		$billing_record->DISCOUNT_USAGE = "DISCOUNT_NONE";
 	}

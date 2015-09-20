@@ -5,8 +5,8 @@
  * @copyright       Copyright (C) 2012 S.D.O.C. LTD. All rights reserved.
  * @license         GNU General Public License version 2 or later; see LICENSE.txt
  */
-require_once __DIR__ . '/../../../application/golan/' . 'subscriber.php';
-
+//require_once __DIR__ . '/../../../application/golan/' . 'subscriber.php';
+require_once __DIR__ . '/../../../application/helpers/Subscriber/' . 'Golan.php';
 /**
  * Billing aggregator class for ilds records
  *
@@ -31,16 +31,16 @@ class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 
 		foreach ($this->data as $item) {
 			Billrun_Factory::dispatcher()->trigger('beforeAggregateLine', array(&$item, &$this));
-			if($item['source'] == 'api' && $item['type'] == 'refund') {
+			if ($item['source'] == 'api' && $item['type'] == 'refund') {
 				$time = date("YmtHis", $item->get('unified_record_time')->sec);
 				$phone_number = $item->get('NDC_SN');
-			} else  {
+			} else {
 				$time = $item->get('call_start_dt');
-				$phone_number = $item->get('caller_phone_no');				
+				$phone_number = $item->get('caller_phone_no');
 			}
 			// @TODO make it configurable
 			$previous_month = date("Ymt235959", strtotime("previous month"));
-			
+
 
 			if ($time > $previous_month) {
 				Billrun_Factory::log()->log("time frame is not till the end of previous month " . $time . "; continue to the next line", Zend_Log::INFO);
@@ -64,7 +64,7 @@ class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 			}
 
 			$subscriber_id = $subscriber['id'];
-			
+
 			// update billing line with billrun stamp
 			if (!$this->updateBillingLine($subscriber, $item)) {
 				Billrun_Factory::log()->log("subscriber " . $subscriber_id . " cannot update billing line", Zend_Log::INFO);
@@ -166,6 +166,7 @@ class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 		}
 
 		$type = $line->get('type');
+
 		$subscriberId = $line->get('subscriber_id');
 		if (!isset($current['subscribers'][$subscriberId])) {
 			$current['subscribers'][$subscriberId] = array('cost' => array());
@@ -209,7 +210,7 @@ class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 			'subscriber_id' => $subscriber_id,
 			'billrun' => $this->getStamp(),
 		);
-		
+
 		if (isset($subscriber['account_id'])) {
 			$added_values['account_id'] = $subscriber['account_id'];
 		}
@@ -224,17 +225,17 @@ class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 	 */
 	public function load() {
 
-		$min_time = (string) date('Ymd000000', strtotime('3 months ago'));
+		$min_time = (string) date('Ymd000000', strtotime('3 months ago')); //was 3 months
 		$lines = Billrun_Factory::db()->linesCollection();
 		$this->data = $lines->query(array(
 					'$or' => array(
-						array('source' => 'ilds'),
+						array('source' => array('$in' => array('ilds', 'premium'))), //premium or ilds!!!
 						array('source' => 'api', 'type' => 'refund', 'reason' => 'ILDS_DEPOSIT')
 					),
 					'call_start_dt' => array('$gte' => $min_time),
 				))
 				->notExists('billrun')
-				//->exists('price_provider')
+				->exists('price_provider')
 				->exists('price_customer')
 				->cursor()->hint(array('source' => 1));
 

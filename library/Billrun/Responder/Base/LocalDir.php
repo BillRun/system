@@ -33,9 +33,12 @@ abstract class Billrun_Responder_Base_LocalDir extends Billrun_Responder_Base_Fi
 		}
 	}
 
-	protected function respondAFile($responseFilePath, $fileName, $logLine) {
+	protected function respondAFile($responseFilePath, $fileName, $logLine , $premium_type = null) {
 		//move file to export folder
-		$exportDir = $this->exportFromConfig ?	$this->exportDir . DIRECTORY_SEPARATOR . self::$type : 
+		if(!is_null($premium_type)) {
+			$type = !is_null($premium_type) ? $premium_type : self::$type;
+		}
+		$exportDir = $this->exportFromConfig ?	$this->exportDir . DIRECTORY_SEPARATOR . $type : 
 												$this->exportDir;
 		if (!file_exists($exportDir)) {
 			mkdir($exportDir);
