@@ -14,7 +14,7 @@ class Admin_Lines {
 			, $configTypes
 		);
 		
-		$output = "<div class=\"controls controls-row\">";
+		$output = "<div class=\"controls controls-row controls-sort\">";
 		$output.= self::getFilterRowSelectKeys($key, $types, 'group_data_keys');
 		$output.= self::getFilterRowSelectOperators($operator, $operators, 'group_data_operators');
 		
@@ -39,7 +39,7 @@ class Admin_Lines {
 	}
 	
 	protected static function getFilterRowSelectKeys($key, $types, $arrayName) {
-		$output = "<select name=\"". $arrayName . "[]\" class=\"form-control span2 multiselect\">";
+		$output = "<select name=\"". $arrayName . "[]\" class=\"form-control span2 multiselect \">";
 		foreach ($types as $manual_key => $manual_type) {
 			$manual_display = isset($manual_type['display']) ? $manual_type['display'] : ucfirst(str_replace('_', ' ', $manual_key));
 			$output.= "<option value=\"" . $manual_key . "\"" . ($key == $manual_key ? " selected" : "") . ">" . $manual_display . "</option>";
@@ -64,7 +64,7 @@ class Admin_Lines {
 		);
 
 		$types = self::getOptions();
-		$output = "<div class=\"controls controls-row\">";
+		$output = "<div class=\"controls controls-row controls-sort\">";
 		$output.= self::getFilterRowSelectKeys($key, $types, 'manual_key');
 		$output.= self::getFilterRowSelectOperators($operator, $operators, 'manual_operator');
 		
