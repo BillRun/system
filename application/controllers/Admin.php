@@ -917,13 +917,22 @@ class AdminController extends Yaf_Controller_Abstract {
 		// Check for URT filters.
 		$urtFields = Billrun_Factory::config()->getConfigValue("admin_panel.lines.aggregate_urt");
 		$groupDisplayNames = $this->model->getAggregateByFields();
+	
+		$urtFiltersPresent = false;
 		
 		foreach ($groupBySelect as $groupDataElem) {
 			$groupToDisplay = $groupDisplayNames[$groupDataElem];
 			if(!in_array($groupDataElem, $urtFields)) {
 				$groupBy[$groupToDisplay] = '$' . $groupDataElem;
 			} else {
-				$groupBy[$groupToDisplay] = array('$' . $groupDataElem => '$urt');
+				// If this is the first URT value, build the local time converter query.
+				if(!$urtFiltersPresent) {
+					$urtFiltersPresent = true;
+					$groupBy[$groupToDisplay]['$let']['vars']['local_time']['$add'] =
+						['$urt', 10800000] ;
+				}
+				
+				$groupBy[$groupToDisplay]['$let']['in'] = array('$' . $groupDataElem => '$$local_time');
 			}
 		}
 		
