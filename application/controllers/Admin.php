@@ -918,7 +918,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$urtFields = Billrun_Factory::config()->getConfigValue("admin_panel.lines.aggregate_urt");
 		$groupDisplayNames = $this->model->getAggregateByFields();
 	
-		$urtFiltersPresent = false;
+		$urtProject = null;
 		
 		foreach ($groupBySelect as $groupDataElem) {
 			$groupToDisplay = $groupDisplayNames[$groupDataElem];
@@ -926,17 +926,29 @@ class AdminController extends Yaf_Controller_Abstract {
 				$groupBy[$groupToDisplay] = '$' . $groupDataElem;
 			} else {
 				// If this is the first URT value, build the local time converter query.
-				if(!$urtFiltersPresent) {
-					$urtFiltersPresent = true;
-					$groupBy[$groupToDisplay]['$let']['vars']['local_time']['$add'] =
-						['$urt', 10800000] ;
-				}
+//				if($urtProject === null) {
+//					$urtProject = array();
+//					$urtProject['timeLocal']['$add'] = ['$urt', 10800000];
+//				}
 				
-				$groupBy[$groupToDisplay]['$let']['in'] = array('$' . $groupDataElem => '$$local_time');
+//				$groupBy[$groupToDisplay] = array('$' . $groupDataElem => '$timeLocal');
+				$groupBy[$groupToDisplay] = array('$' . $groupDataElem => '$urt');
 			}
 		}
 		
-		return array_merge(array('_id' => $groupBy,'sum' => array('$sum' => 1)), $this->getGroupData($table));
+		$returnArray = array();
+		$returnArray['_id'] = $groupBy;
+		$returnArray['sum'] = array('$sum' => 1);
+		$groupArray = array('$group' => array_merge($returnArray, $this->getGroupData($table)));
+		if($urtProject !== null) {
+			$projectArray = 
+				array('$project' => 
+					array($urtProject, 
+						  array('fields' => '$$ROOT')));
+			return array_merge($projectArray, $groupArray);
+		}
+		
+		return $groupArray;
 	}
 	
 	protected function getAggregateFiltersMatchClause($session, $table) {
@@ -950,14 +962,43 @@ class AdminController extends Yaf_Controller_Abstract {
 		}
 		
 		$filter_fields_values = array_values($filter_fields);
+		
+		// Go through the filter fields.
 		foreach ($filter_fields_values as $filter_field) {
-			$value = $this->getSetVar($session, $filter_field['key'], $filter_field['key'], $filter_field['default']);
-			if ((!empty($value) || $value === 0 || $value === "0") && $filter_field['db_key'] != 'nofilter' && $filter = $model->applyFilter($filter_field, $value)) {
-				$match = array_merge($match, $filter);
+			$filter = $this->getFilterForField($filter_field, $session);
+			if ($filter === false) {
+				continue;
 			}
+			$match = array_merge_recursive($match, $filter);
 		}
 		
 		return $match;
+	}
+	
+	protected function getFilterForField($filter_field, $session) {
+		$value = $this->getAggregatedFilterFieldValue($filter_field, $session);
+			
+		// Check if the value is empty.
+		if(empty($value) && $value !== 0 && $value !== "0") {
+			return false;
+		} 
+		if ($filter_field['db_key'] == 'nofilter') {
+			return false;
+		}
+
+		$filter = $this->model->applyFilter($filter_field, $value);
+		if (!$filter) {
+			return false;
+		}
+		
+		return $filter;
+	}
+
+
+	protected function getAggregatedFilterFieldValue($filter_field, $session) {
+		$key = $filter_field['key'];
+		$default = $filter_field['default'];
+		return $this->getSetVar($session, $key, $key, $default);
 	}
 	
 	protected function applyAggregateFilters($table) {
@@ -969,14 +1010,15 @@ class AdminController extends Yaf_Controller_Abstract {
 		
 		$match = $this->getAggregateFiltersMatchClause($session, $table);
 		
-		return array(
-			array(	
-				'$match' => $match
-			),
-			array(
-				'$group' => $group
-			),
-		);
+		$resultArray = array();
+		$resultArray[] = array('$match' => $match);
+		$resultArray[] = array('$group' => $group['$group']);
+		if(false && isset($group['$project'])) {
+			$resultArray = 
+				array_merge(array('$project' => $group['$project']), array($resultArray));
+		}
+		
+		return $resultArray;
 	}
 
 	protected function applySort($table) {
