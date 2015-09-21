@@ -253,6 +253,7 @@ $(function () {
 			return false;
 		}
 	});
+	
 	$(".add-filter").on('click', function () {
 		addFilter(this);
 	});
@@ -266,7 +267,7 @@ $(function () {
 		removeGroupData(this);
 	});
 	$("select[name='manual_type[]']").on('change', function () {
-		type_changed(this)
+		type_changed(this);
 	});
 	$('.date:not(.wholesale-date)').datetimepicker({
 		format: 'YYYY-MM-DD HH:mm:ss',
@@ -325,10 +326,56 @@ $(function () {
 
 }
 );
+
+function addSort(row) {
+	var active = $(row).find(".active").first();
+	if(active.length <= 0) {
+		return;
+	}
+	var value = $(active).text();
+	var input = $(active).find("input").first();
+	
+	var label =  input.val();
+	var option = $('#sort_by option[value=' + label + ']');
+	
+	// If already exists.
+	if(option.length > 0) {
+		return;
+	}
+	
+	// Get timestamp.
+	var timestamp = row.data('timestamp');
+	
+	// If it doesn't have a timestamp ignore.
+	if(timestamp !== undefined){
+		// Remove the option with this timestamp.
+		$('#sort_by option[timestamp=' + timestamp + ']').remove();
+	}
+	
+	// Update the timestamp.
+	timestamp = Date.now();
+
+	row.data('timestamp', timestamp);
+	$('#sort_by').append("<option timestamp=\"" + timestamp + "\" value=\"" + label + "\">" + value + "</option>");
+	$('#sort_by').multiselect( 'rebuild' );
+}
+
+function removeSort(row) {
+	var active = $(row).find(".active").first();
+	if(active.length <= 0) {
+		return;
+	}
+	var label = $(active).find("input").first().val();
+	$('#sort_by option[value=' + label + ']').remove();
+	$('#sort_by').multiselect( 'rebuild' );
+}
+
 function removeFilter(button) {
 	$(button).siblings("input[name='manual_value[]']").val('');
-	if ($(button).parent().siblings().length) {
-		$(button).parent().remove();
+	var row = $(button).parent();
+	if (row.siblings().length) {
+		removeSort(row);
+		row.remove();
 	}
 	else {
 		$('.advanced-options').click();
@@ -336,8 +383,10 @@ function removeFilter(button) {
 }
 
 function removeGroupData(button) {
-	if ($(button).parent().siblings().length) {
-		$(button).parent().remove();
+	var row = $(button).parent();
+	if (row.siblings().length) {
+		removeSort(row);
+		row.remove();
 	}
 	else {
 		$('#groupData').click();
@@ -359,7 +408,7 @@ function type_changed(sel) {
 	}
 }
 
-function addFilter(button) {
+function addFilter(button) {	
 	var _container = $('.tab-content div.active');
 	var _containerId = '';
 	if (_container.length) {
@@ -388,8 +437,13 @@ function addFilter(button) {
 	$("select[name='manual_type[]']", cloned).on('change', function () {
 		type_changed(this);
 	});
+	
 	$('.multiselect', original).multiselect({});
 	$('.multiselect', cloned).multiselect({});
+	
+	$('.multiselect', cloned).on('change', function() {
+		addSort(cloned);
+	});
 }
 
 function addGroupData(button) {
@@ -415,8 +469,14 @@ function addGroupData(button) {
 	$("select[name='manual_type[]']", cloned).on('change', function () {
 		type_changed(this);
 	});
+		
 	$('.multiselect', original).multiselect({});
 	$('.multiselect', cloned).multiselect({});
+	
+	$('.multiselect', cloned).on('change', function() {
+		addSort(cloned);
+	});
+	
 }
 
 function update_current(obj) {

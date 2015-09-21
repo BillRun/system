@@ -110,34 +110,73 @@ class LinesModel extends TableModel {
 	}
 	
 	/**
-	 * Get the aggregated data to show.
-	 * @param array $filter_query - Query to get the aggregated data for.
-	 * @return aray - Mongo entities to return.
+	 * Translate an aggregated value.
+	 * @param string $key - Key of the current aggregated value.
+	 * @param string $value - Actual value extracted by the aggregated query.
+	 * @return string translated value.
 	 */
-	public function getAggregateData($filter_query = array()) {
-		if (empty($filter_query[0]['$match'])) {
-			unset($filter_query[0]);
-			$filter_query = array_values($filter_query); // reset array index (required for aggregate framework)
-			$indexGroup = 0;
-		} else {
-			$indexGroup = 1;
-		}
-		$cursor = $this->collection->aggregatecursor($filter_query)
-			->sort($this->sort)->skip($this->offset())->limit($this->size);
-		$ret = array();
+	protected function translateAggregatedValue($key, $value) {
+		// Transform to zero based.
+		$value-=1;
 		
-		$groupKeys = array_keys($filter_query[$indexGroup]['$group']['_id']);
-					
+		// Translate the values.
+		if(strcasecmp($key, "Day of the Week") === 0) {
+			return date('D', strtotime("Sunday +{$value} days"));
+		}
+
+		// Translate the values.
+		if(strcasecmp($key, "Month") === 0) {
+			return date('M', strtotime("January +{$value} months"));
+		}
+		
+		return $value;
+	}
+	
+	/**
+	 * Get the lines to display from the aggregated data.
+	 * @param Mongodloid_AggregatedCyrsor $cursor - Cursor of the aggregation query.
+	 * @param array $groupKeys - Keys of the grouping.
+	 * @return array of lines to display.
+	 */
+	protected function getAggregatedLines($cursor, $groupKeys) {
+		$ret = array();
 		// Go through the items and construct aggregated entities.
 		foreach ($cursor as $item) {
 			$values = $item->getRawData();
 			foreach ($groupKeys as $key) {
+				// Translate the values.
+				$value = $this->translateAggregatedValue($key, $values['_id'][$key]);
+				
 				// TODO: The 'group_by' constant should perheps move to a more fitting location.
-				$item->set('group_by' . '.' . $key,$values['_id'][$key], true);
+				$item->set('group_by' . '.' . $key, $value, true);
 			}
 			$item->set('_id', new MongoId(), true);
 			$ret[] = $item;
 		}
+		
+		return $ret;
+	}
+	
+	/**
+	 * Get the aggregated data to show.
+	 * @param array $filterQuery - Query to get the aggregated data for.
+	 * @return aray - Mongo entities to return.
+	 */
+	public function getAggregateData($filterQuery = array()) {
+		if (empty($filterQuery[0]['$match'])) {
+			unset($filterQuery[0]);
+			$filterQuery = array_values($filterQuery); // reset array index (required for aggregate framework)
+			$indexGroup = 0;
+		} else {
+			$indexGroup = 1;
+		}
+		
+		$cursor = $this->collection->aggregatecursor($filterQuery)
+			->sort($this->sort)->skip($this->offset())->limit($this->size);
+		
+		$groupKeys = array_keys($filterQuery[$indexGroup]['$group']['_id']);
+					
+		$ret = $this->getAggregatedLines($cursor, $groupKeys);
 		
 		$this->_count = count($ret);// Billrun_Factory::config()->getConfigValue('admin_panel.lines.global_limit', 10000);
 		return $ret;
