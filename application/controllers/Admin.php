@@ -940,7 +940,8 @@ class AdminController extends Yaf_Controller_Abstract {
 				if($urtExists === false) {
 					$urtExists = true;
 					$timeOffsetMiliseconds = date('Z') * 1000;
-					$urtProject['timeLocal']['$add'] = ['$urt', $timeOffsetMiliseconds];
+					
+					$urtProject['timeLocal']['$add'] = array('$urt', $timeOffsetMiliseconds);
 				}
 				
 				$groupBy[$groupToDisplay] = array('$' . $groupDataElem => '$timeLocal');
@@ -1310,6 +1311,6 @@ class AdminController extends Yaf_Controller_Abstract {
 		}
 			
 		$group['sum'] = 'Count';
-		return array_merge($group, $this->aggregateColumns);
+		return array_merge($this->aggregateColumns, $group);
 	}
 }
