@@ -115,17 +115,18 @@ class LinesModel extends TableModel {
 	 * @param string $value - Actual value extracted by the aggregated query.
 	 * @return string translated value.
 	 */
-	protected function translateAggregatedValue($key, $value) {
-		// Transform to zero based.
-		$value-=1;
-		
+	protected function translateAggregatedValue($key, $value) {		
 		// Translate the values.
 		if(strcasecmp($key, "Day of the Week") === 0) {
+			// Transform to zero based.
+			$value-=1;
 			return date('D', strtotime("Sunday +{$value} days"));
 		}
 
 		// Translate the values.
 		if(strcasecmp($key, "Month") === 0) {
+			// Transform to zero based.
+			$value-=1;
 			return date('M', strtotime("January +{$value} months"));
 		}
 		
@@ -168,14 +169,14 @@ class LinesModel extends TableModel {
 			$filterQuery = array_values($filterQuery); // reset array index (required for aggregate framework)
 			$indexGroup = 0;
 		} else {
-			$indexGroup = 1;
+			$indexGroup = count($filterQuery) - 1;
 		}
 		
 		$cursor = $this->collection->aggregatecursor($filterQuery)
 			->sort($this->sort)->skip($this->offset())->limit($this->size);
 		
 		$groupKeys = array_keys($filterQuery[$indexGroup]['$group']['_id']);
-					
+				
 		$ret = $this->getAggregatedLines($cursor, $groupKeys);
 		
 		$this->_count = count($ret);// Billrun_Factory::config()->getConfigValue('admin_panel.lines.global_limit', 10000);
