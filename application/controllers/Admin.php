@@ -693,22 +693,33 @@ class AdminController extends Yaf_Controller_Abstract {
 			$this->model->setPage($skip);
 		}
 		
-//		if ($isAggregate === 'aggregate') {
 		if (!$isAggregate) {
 			$data = $this->model->getData($filter_query);
 			$columns = $this->model->getTableColumns();
 		} else {
 			$data = $this->model->getAggregateData($filter_query);
-			$groupByKeys = array_keys($filter_query[1]['$group']['_id'] );
+			$groupIndex = count($filter_query) - 1;
+			$groupByKeys = array_keys($filter_query[$groupIndex]['$group']['_id'] );
 			$columns = $this->getAggregateTableColumns($groupByKeys);
 		}
 		
+		return $this->buildTableViewParams($data, $columns, $isAggregate);
+	}
+
+	/**
+	 * Get the params for displaying the table view.
+	 * @param array $data - Data to display.
+	 * @param array $columns - Columns to display.
+	 * @param boolean $isAggregate - true if aggregate.
+	 * @return array of params to display.
+	 */
+	protected function buildTableViewParams($data, $columns, $isAggregate) {
 		$edit_key = $this->model->getEditKey();
 		$paramArray = array('queryType' => $isAggregate);
 		$pagination = $this->model->printPager(false, $paramArray);
 		$sizeList = $this->model->printSizeList(false, $paramArray);
 
-		$params = array(
+		return array(
 			'data' => $data,
 			'columns' => $columns,
 			'edit_key' => $edit_key,
@@ -717,10 +728,8 @@ class AdminController extends Yaf_Controller_Abstract {
 			'offset' => $this->model->offset(),
 			'query_type' => $isAggregate,
 		);
-
-		return $params;
 	}
-
+	
 	protected function createFilterToolbar() {
 		return array(
 			'filter_fields' => $this->model->getFilterFields(),
@@ -918,21 +927,24 @@ class AdminController extends Yaf_Controller_Abstract {
 		$urtFields = Billrun_Factory::config()->getConfigValue("admin_panel.lines.aggregate_urt");
 		$groupDisplayNames = $this->model->getAggregateByFields();
 	
-		$urtProject = null;
+		$urtProject = array();
+		$urtExists = false;
 		
 		foreach ($groupBySelect as $groupDataElem) {
 			$groupToDisplay = $groupDisplayNames[$groupDataElem];
 			if(!in_array($groupDataElem, $urtFields)) {
 				$groupBy[$groupToDisplay] = '$' . $groupDataElem;
+				$urtProject[$groupDataElem] = true;
 			} else {
 				// If this is the first URT value, build the local time converter query.
-//				if($urtProject === null) {
-//					$urtProject = array();
-//					$urtProject['timeLocal']['$add'] = ['$urt', 10800000];
-//				}
+				if($urtExists === false) {
+					$urtExists = true;
+					$timeOffsetMiliseconds = date('Z') * 1000;
+					$urtProject['timeLocal']['$add'] = ['$urt', $timeOffsetMiliseconds];
+				}
 				
-//				$groupBy[$groupToDisplay] = array('$' . $groupDataElem => '$timeLocal');
-				$groupBy[$groupToDisplay] = array('$' . $groupDataElem => '$urt');
+				$groupBy[$groupToDisplay] = array('$' . $groupDataElem => '$timeLocal');
+//				$groupBy[$groupToDisplay] = array('$' . $groupDataElem => '$urt');
 			}
 		}
 		
@@ -940,11 +952,10 @@ class AdminController extends Yaf_Controller_Abstract {
 		$returnArray['_id'] = $groupBy;
 		$returnArray['sum'] = array('$sum' => 1);
 		$groupArray = array('$group' => array_merge($returnArray, $this->getGroupData($table)));
-		if($urtProject !== null) {
+		
+		if($urtExists === true) {
 			$projectArray = 
-				array('$project' => 
-					array($urtProject, 
-						  array('fields' => '$$ROOT')));
+				array('$project' => $urtProject);
 			return array_merge($projectArray, $groupArray);
 		}
 		
@@ -1012,11 +1023,9 @@ class AdminController extends Yaf_Controller_Abstract {
 		
 		$resultArray = array();
 		$resultArray[] = array('$match' => $match);
-		$resultArray[] = array('$group' => $group['$group']);
-		if(false && isset($group['$project'])) {
-			$resultArray = 
-				array_merge(array('$project' => $group['$project']), array($resultArray));
-		}
+		foreach ($group as $arrayKey => $arrayData) {
+			$resultArray[] = array($arrayKey => $arrayData);
+		} 
 		
 		return $resultArray;
 	}
