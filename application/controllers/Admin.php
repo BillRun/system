@@ -955,6 +955,11 @@ class AdminController extends Yaf_Controller_Abstract {
 		$groupArray = array('$group' => array_merge($returnArray, $this->getGroupData($table)));
 		
 		if($urtExists === true) {
+			// Fill the project with all the aggregate function keys.
+			$keys = $this->getSetVar($session, 'group_data_keys', 'group_data_keys');
+			foreach ($keys as $aggregateKey) {
+				$urtProject[$aggregateKey] = true;
+			}
 			$projectArray = 
 				array('$project' => $urtProject);
 			return array_merge($projectArray, $groupArray);
@@ -1311,6 +1316,6 @@ class AdminController extends Yaf_Controller_Abstract {
 		}
 			
 		$group['sum'] = 'Count';
-		return array_merge($this->aggregateColumns, $group);
+		return array_merge($group, $this->aggregateColumns);
 	}
 }
