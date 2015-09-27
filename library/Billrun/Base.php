@@ -148,7 +148,9 @@ abstract class Billrun_Base {
 			$args = $args[0];
 		}
 
-		$config_type = Yaf_Application::app()->getConfig()->{$type};
+//		$config_type = Yaf_Application::app()->getConfig()->{$type};
+		$config_type = Billrun_Factory::config()->getInstance()->{$type};
+		
 		$called_class = get_called_class();
 
 		if ($called_class && Billrun_Factory::config()->getConfigValue($called_class)) {

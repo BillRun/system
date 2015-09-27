@@ -152,7 +152,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 		if ($archivedLinesCount > 0) {
 			try {
 				Billrun_Factory::log('Saving ' . $archivedLinesCount . ' source lines to archive.', Zend_Log::INFO);
-				$archLinesColl->batchInsert($this->archivedLines);
+				$archLinesColl->batchInsert($this->archivedLines, array('w' => 0)); // we put 0 in case insert was failed on previous run and this is recovery
 				$this->data = array_diff_key($this->data, $this->archivedLines);
 				$linesArchivedStamps = array_keys($this->archivedLines);
 			} catch (Exception $e) {
@@ -374,7 +374,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 		$query = array('stamp' => $unifiedStamp);
 
 		$update = array('$pullAll' => array('tx' => $lineStamps));
-		Billrun_Factory::db()->linesCollection()->update($query, $update);
+		Billrun_Factory::db()->linesCollection()->update($query, $update, array('w' => 1));
 	}
 
 	/**

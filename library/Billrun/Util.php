@@ -124,8 +124,7 @@ class Billrun_Util {
 			$tz_offset = $offset;
 		}
 		$date_formatted = str_replace(' ', 'T', date(Billrun_Base::base_dateformat, strtotime($datetime))) . $tz_offset; // Unnecessary code?
-		$datetime = strtotime($date_formatted);
-		return $datetime;
+		return strtotime($date_formatted);
 	}
 
 	public static function startsWith($haystack, $needle) {

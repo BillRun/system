@@ -116,6 +116,11 @@ td[data-title="Rate"] a{
     white-space: nowrap;
     width: 90px;
 }
+
+.btn-group {
+	margin-right: 3px;
+}
+
 .center {
 	margin: 50px auto 0;
 	display: block;
@@ -165,7 +170,7 @@ tr.progress td, tr.progress th {
 .toolbar-buttons, .control-group1 {
 	margin:10px auto;
 }
-#manual_filters .controls-row {
+#manual_filters .controls-row, #group_by_filters .controls-row {
 	margin-top:5px;
 }
 .toolbar-buttons, .control-group4 {
@@ -311,6 +316,27 @@ div.billrun-logo img {
 float: left;
 }
 
-.control-row-group, #groupBy {
+.control-row-group {
 	margin-top:5px;
+}
+
+#groupBy {
+	margin-bottom: 5px;
+	margin-top: 3px;
+}
+
+#AdvancedAndAggregated {
+	display: inline-block;
+	width: 1000px;
+	min-height: 20px;
+}
+
+#AdvancedParentDiv {
+	display: inline-block;
+	width: 50%;
+	float: left; 
+}
+
+#AggregateParentDiv {
+	display: inline-block;
 }

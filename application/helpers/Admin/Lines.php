@@ -10,7 +10,7 @@ class Admin_Lines {
 		$operators = Billrun_Factory::config()->getConfigValue('admin_panel.aggregate.group_accumulator_operators', array());
 		$configTypes = Billrun_Factory::config()->getConfigValue('admin_panel.aggregate.group_data');
 		$types = array_combine(
-			array_map(create_function('$k', 'return "Aggregate_".$k;'), array_keys($configTypes))
+			array_map(create_function('$k', 'return "".$k;'), array_keys($configTypes))
 			, $configTypes
 		);
 		
@@ -39,7 +39,7 @@ class Admin_Lines {
 	}
 	
 	protected static function getFilterRowSelectKeys($key, $types, $arrayName) {
-		$output = "<select name=\"". $arrayName . "[]\" class=\"form-control span2 multiselect\">";
+		$output = "<select name=\"". $arrayName . "[]\" class=\"form-control span2 multiselect \">";
 		foreach ($types as $manual_key => $manual_type) {
 			$manual_display = isset($manual_type['display']) ? $manual_type['display'] : ucfirst(str_replace('_', ' ', $manual_key));
 			$output.= "<option value=\"" . $manual_key . "\"" . ($key == $manual_key ? " selected" : "") . ">" . $manual_display . "</option>";
@@ -64,7 +64,7 @@ class Admin_Lines {
 		);
 
 		$types = self::getOptions();
-		$output = "<div class=\"controls controls-row\">";
+		$output = '<div class="controls controls-row" >';
 		$output.= self::getFilterRowSelectKeys($key, $types, 'manual_key');
 		$output.= self::getFilterRowSelectOperators($operator, $operators, 'manual_operator');
 		

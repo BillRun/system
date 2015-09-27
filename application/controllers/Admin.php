@@ -281,7 +281,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->getView()->collectionName = $coll;
 		$this->getView()->type = $type;
 	}
-
+	
 	public function csvExportAction() {
 		if (!$this->allowed('read'))
 			return false;
@@ -302,6 +302,12 @@ class AdminController extends Yaf_Controller_Abstract {
 			$size = intval(Billrun_Factory::config()->getConfigValue('admin_panel.csv_export.size', 10000));
 
 			$isAggregate = ($session->{'groupBySelect'} != null);
+			
+			// If this is an aggregated operation fill the aggregated columns.
+			if($isAggregate) {
+				$this->fillAggregateColumns($session);
+			}
+			
 			$tableViewParams = $this->getTableViewParams($isAggregate, $session->query, $skip, $size);
 			$params = array_merge($tableViewParams, $this->createFilterToolbar('lines')); // TODO: Should we replace 'lines' here with $collectionName?
 			$this->model->exportCsvFile($params);
@@ -477,7 +483,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	public function linesAction() {
 		if (!$this->allowed('read'))
 			return false;
-
+		
 		$table = 'lines';
 		$sort = $this->applySort($table);
 		$options = array(
@@ -687,22 +693,33 @@ class AdminController extends Yaf_Controller_Abstract {
 			$this->model->setPage($skip);
 		}
 		
-//		if ($isAggregate === 'aggregate') {
-		if ($isAggregate) {
-			$data = $this->model->getAggregateData($filter_query);
-			$groupByKeys = array_keys($filter_query[1]['$group']['_id'] );
-			$columns = $this->getAggregateTableColumns($groupByKeys);
-		} else {
+		if (!$isAggregate) {
 			$data = $this->model->getData($filter_query);
 			$columns = $this->model->getTableColumns();
+		} else {
+			$data = $this->model->getAggregateData($filter_query);
+			$groupIndex = count($filter_query) - 1;
+			$groupByKeys = array_keys($filter_query[$groupIndex]['$group']['_id'] );
+			$columns = $this->getAggregateTableColumns($groupByKeys);
 		}
 		
+		return $this->buildTableViewParams($data, $columns, $isAggregate);
+	}
+
+	/**
+	 * Get the params for displaying the table view.
+	 * @param array $data - Data to display.
+	 * @param array $columns - Columns to display.
+	 * @param boolean $isAggregate - true if aggregate.
+	 * @return array of params to display.
+	 */
+	protected function buildTableViewParams($data, $columns, $isAggregate) {
 		$edit_key = $this->model->getEditKey();
 		$paramArray = array('queryType' => $isAggregate);
 		$pagination = $this->model->printPager(false, $paramArray);
 		$sizeList = $this->model->printSizeList(false, $paramArray);
 
-		$params = array(
+		return array(
 			'data' => $data,
 			'columns' => $columns,
 			'edit_key' => $edit_key,
@@ -711,10 +728,8 @@ class AdminController extends Yaf_Controller_Abstract {
 			'offset' => $this->model->offset(),
 			'query_type' => $isAggregate,
 		);
-
-		return $params;
 	}
-
+	
 	protected function createFilterToolbar() {
 		return array(
 			'filter_fields' => $this->model->getFilterFields(),
@@ -907,11 +922,100 @@ class AdminController extends Yaf_Controller_Abstract {
 	protected function getGroupAggregateFilters($table, $session) {
 		$groupBySelect = $this->getSetVar($session, 'groupBySelect');
 		$groupBy = array();
+		
+		// Check for URT filters.
+		$urtFields = Billrun_Factory::config()->getConfigValue("admin_panel.lines.aggregate_urt");
+		$groupDisplayNames = $this->model->getAggregateByFields();
+	
+		$urtProject = array();
+		$urtExists = false;
+		
 		foreach ($groupBySelect as $groupDataElem) {
-			$groupBy[ucfirst($groupDataElem)] = '$' . $groupDataElem;
+			$groupToDisplay = $groupDisplayNames[$groupDataElem];
+			if(!in_array($groupDataElem, $urtFields)) {
+				$groupBy[$groupToDisplay] = '$' . $groupDataElem;
+				$urtProject[$groupDataElem] = true;
+			} else {
+				// If this is the first URT value, build the local time converter query.
+				if($urtExists === false) {
+					$urtExists = true;
+					$timeOffsetMiliseconds = date('Z') * 1000;
+					
+					$urtProject['timeLocal']['$add'] = array('$urt', $timeOffsetMiliseconds);
+				}
+				
+				$groupBy[$groupToDisplay] = array('$' . $groupDataElem => '$timeLocal');
+//				$groupBy[$groupToDisplay] = array('$' . $groupDataElem => '$urt');
+			}
 		}
 		
-		return array_merge(array('_id' => $groupBy,'sum' => array('$sum' => 1)), $this->getGroupData($table));
+		$returnArray = array();
+		$returnArray['_id'] = $groupBy;
+		$returnArray['sum'] = array('$sum' => 1);
+		$groupArray = array('$group' => array_merge($returnArray, $this->getGroupData($table)));
+		
+		if($urtExists === true) {
+			// Fill the project with all the aggregate function keys.
+			$keys = $this->getSetVar($session, 'group_data_keys', 'group_data_keys');
+			foreach ($keys as $aggregateKey) {
+				$urtProject[$aggregateKey] = true;
+			}
+			$projectArray = 
+				array('$project' => $urtProject);
+			return array_merge($projectArray, $groupArray);
+		}
+		
+		return $groupArray;
+	}
+	
+	protected function getAggregateFiltersMatchClause($session, $table) {
+		$model = $this->model;
+		
+		$filter_fields = $model->getFilterFields();
+		$match = array();
+		$filter = $this->getManualFilters($table);
+		if ($filter) {
+			$match = array_merge($match, $filter);
+		}
+		
+		$filter_fields_values = array_values($filter_fields);
+		
+		// Go through the filter fields.
+		foreach ($filter_fields_values as $filter_field) {
+			$filter = $this->getFilterForField($filter_field, $session);
+			if ($filter === false) {
+				continue;
+			}
+			$match = array_merge_recursive($match, $filter);
+		}
+		
+		return $match;
+	}
+	
+	protected function getFilterForField($filter_field, $session) {
+		$value = $this->getAggregatedFilterFieldValue($filter_field, $session);
+			
+		// Check if the value is empty.
+		if(empty($value) && $value !== 0 && $value !== "0") {
+			return false;
+		} 
+		if ($filter_field['db_key'] == 'nofilter') {
+			return false;
+		}
+
+		$filter = $this->model->applyFilter($filter_field, $value);
+		if (!$filter) {
+			return false;
+		}
+		
+		return $filter;
+	}
+
+
+	protected function getAggregatedFilterFieldValue($filter_field, $session) {
+		$key = $filter_field['key'];
+		$default = $filter_field['default'];
+		return $this->getSetVar($session, $key, $key, $default);
 	}
 	
 	protected function applyAggregateFilters($table) {
@@ -921,29 +1025,15 @@ class AdminController extends Yaf_Controller_Abstract {
 			return null;
 		}
 		
-		$model = $this->model;
+		$match = $this->getAggregateFiltersMatchClause($session, $table);
 		
-		$filter_fields = $model->getFilterFields();
-		$match = array();
-		if ($filter = $this->getManualFilters($table)) {
-			$match = array_merge($match, $filter);
-		}
-		$filter_fields_values = array_values($filter_fields);
-		foreach ($filter_fields_values as $filter_field) {
-			$value = $this->getSetVar($session, $filter_field['key'], $filter_field['key'], $filter_field['default']);
-			if ((!empty($value) || $value === 0 || $value === "0") && $filter_field['db_key'] != 'nofilter' && $filter = $model->applyFilter($filter_field, $value)) {
-				$match = array_merge($match, $filter);
-			}
-		}
+		$resultArray = array();
+		$resultArray[] = array('$match' => $match);
+		foreach ($group as $arrayKey => $arrayData) {
+			$resultArray[] = array($arrayKey => $arrayData);
+		} 
 		
-		return array(
-			array(	
-				'$match' => $match
-			),
-			array(
-				'$group' => $group
-			),
-		);
+		return $resultArray;
 	}
 
 	protected function applySort($table) {
@@ -1067,20 +1157,32 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * @return string
 	 */
 	public function getGroupData($table) {
-		$query = false;
 		$session = $this->getSession($table);
+		return $this->fillAggregateColumns($session);
+	}
+
+	/**
+	 * Fill the aggregate columns by the current session.
+	 * @param type $session - The current session.
+	 * @return array Query for aggregated operation result built from the new 
+	 * columns in the aggregated array.
+	 */
+	protected function fillAggregateColumns($session) {
+		$query = false;
 		$keys = $this->getSetVar($session, 'group_data_keys', 'group_data_keys');
 		$operators = $this->getSetVar($session, 'group_data_operators', 'group_data_operators');
 		settype($keys, 'array');
 		settype($operators, 'array');
 		for ($i = 0; $i < count($keys); $i++) {
+			$configKeyName = 'admin_panel.aggregate.group_data.' . $keys[$i] . '.display';
+			$columnDisplayName = Billrun_Factory::config()->getConfigValue($configKeyName);
 			$columnName = $keys[$i] . '-' . $operators[$i];
-			$this->aggregateColumns[$columnName] = ucfirst($columnName);
+			$this->aggregateColumns[$columnName] = $columnDisplayName;
 			$query[$columnName] = array('$' . $operators[$i] => '$' . $keys[$i]);
 		}
 		return $query;
 	}
-
+	
 	protected function restartSession() {
 		$session = Yaf_Session::getInstance();
 		$sessionKeys = array_keys($session);
