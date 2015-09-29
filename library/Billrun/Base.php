@@ -43,6 +43,8 @@ abstract class Billrun_Base {
 	 */
 	protected $limit = 10000;
 	
+	
+	static protected $instance = array();
 	/**
 	 * constructor
 	 * 
@@ -127,9 +129,16 @@ abstract class Billrun_Base {
 	 */
 	static public function getInstance() {
 		$args = func_get_args();
-		if (!is_array($args)) {
+
+		$stamp = md5(serialize($args));
+		if (isset(self::$instance[$stamp])) {
+			return self::$instance[$stamp];
+		}
+
+		if (isset($args['type'])) {
 			$type = $args['type'];
 			$args = array();
+			Billrun_Factory::log()->log('Depratected approach of Billrun_Base::getInstance: ' . $type, Zend_Log::INFO);
 		} else {
 			$type = $args[0]['type'];
 			unset($args[0]['type']);
@@ -138,24 +147,39 @@ abstract class Billrun_Base {
 
 		$config_type = Yaf_Application::app()->getConfig()->{$type};
 		$called_class = get_called_class();
-		
-		if($called_class && Billrun_Factory::config()->getConfigValue($called_class)) {
-			$args = array_merge( Billrun_Factory::config()->getConfigValue($called_class)->toArray(),$args);
+
+		if ($called_class && Billrun_Factory::config()->getConfigValue($called_class)) {
+			$args = array_merge(Billrun_Factory::config()->getConfigValue($called_class)->toArray(), $args);
 		}
-		
+
 		$class_type = $type;
-		if ( $config_type ) {
-			$args = array_merge( $config_type->toArray(),$args);
-			if( isset($config_type->{$called_class::$type}) &&
+		if ($config_type) {
+			$args = array_merge($config_type->toArray(), $args);
+			if (isset($config_type->{$called_class::$type}) &&
 				isset($config_type->{$called_class::$type}->type)) {
 				$class_type = $config_type[$called_class::$type]['type'];
 				$args['type'] = $type;
-			} 
-		} 
+			}
+		}
 		$class = $called_class . '_' . ucfirst($class_type);
-		return new $class($args);
-	}
+		if (!@class_exists($class, true)) {
+			// try to search in external sources (application/helpers)
+			$external_class = str_replace('Billrun_', '', $class);
+			if (($pos = strpos($external_class, "_")) !== FALSE) {
+				$namespace = substr($external_class, 0, $pos);
+				Yaf_Loader::getInstance(APPLICATION_PATH . '/application/helpers')->registerLocalNamespace($namespace);
+			}
+			if (!@class_exists($external_class, true)) {
+				Billrun_Factory::log("Can't find class: " . $class, Zend_Log::EMERG);
+				return false;
+			}
+			$class = $external_class;
+		}
 
+		self::$instance[$stamp] = new $class($args);
+		return self::$instance[$stamp];
+	}
+	
 	/**
 	 * method to get config value
 	 * 
