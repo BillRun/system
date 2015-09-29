@@ -33,7 +33,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 
 		return $lines->query(array(
 				'source' => array('$in' => array('ilds', 'premium')),
-				'unified_record_time' => array('$gt' => new MongoDate(strtotime('-12 month'))),
+				'unified_record_time' => array('$gt' => new MongoDate(strtotime('-7 month'))),
 				'$or' => array(
 					array('account_id' => array('$exists' => false)),
 					array('subscriber_id' => array('$exists' => false))
