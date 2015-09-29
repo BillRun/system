@@ -33,7 +33,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 
 		return $lines->query(array(
 				'source' => array('$in' => array('ilds', 'premium')),
-				'unified_record_time' => array('$gt' => new MongoDate(strtotime('-7 month'))),
+				'unified_record_time' => array('$gt' => new MongoDate(strtotime('-12 month'))),
 				'$or' => array(
 					array('account_id' => array('$exists' => false)),
 					array('subscriber_id' => array('$exists' => false))
@@ -59,14 +59,15 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		$format_time = date(Billrun_Base::base_dateformat, strtotime($time));
 		$params = array(array('NDC_SN' => $phone_number, 'time' => $format_time, 'stamp' => $row->get('stamp'), 'EXTRAS' => 0, 'DATETIME' => $format_time)); //todo: modify this!
 		// load subscriber
-		$golan = new Subscriber_Golan();
-//		$subscriber = golan_subscriber::get($phone_number, $time); the old way
-		$list = $golan->requestList($params);
-		$subscriber = $list[0];
-		if (!$subscriber) {
+		
+		$subscriber_golan = Billrun_Factory::subscriber();
+		$subsriber_details = $subscriber_golan->load(array("NDC_SN" => $phone_number, "time" => $format_time));
+		if (!$subsriber_details) {
 			Billrun_Factory::log()->log("subscriber not found. phone:" . $phone_number . " time: " . $time, Zend_Log::INFO);
 			return false;
 		}
+		$subscriber['account_id'] = $subsriber_details->account_id;
+		$subscriber['subscriber_id'] = $subsriber_details->subscriber_id; //
 
 		$current = $row->getRawData();
 
