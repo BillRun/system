@@ -240,7 +240,7 @@ class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 				->notExists('billrun')
 				->exists('price_provider')
 				->exists('price_customer')
-				->cursor()->hint(array('source' => 1));
+				->cursor();
 
 		Billrun_Factory::log()->log("aggregator entities loaded: " . $this->data->count(), Zend_Log::INFO);
 

@@ -218,7 +218,7 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 
 		$resource = $billrun->query()
 			->equals('stamp', $this->getStamp())
-			->equals('account_id', (string) $account_id)
+			->equals('account_id', $account_id)
 //			->notExists('invoice_id')
 		;
 
