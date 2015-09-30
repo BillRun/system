@@ -55,7 +55,7 @@ class Billrun_Billrun {
 	public function __construct($options = array()) {
 		$this->lines = Billrun_Factory::db()->linesCollection();
 		$this->billrun_coll = Billrun_Factory::db(array('name' => 'billrun'))->billrunCollection();
-		$this->vat = Billrun_Factory::config()->getConfigValue('pricing.vat', 0.18);
+
 		if (isset($options['aid']) && isset($options['billrun_key'])) {
 			$this->aid = $options['aid'];
 			$this->billrun_key = $options['billrun_key'];
@@ -78,6 +78,7 @@ class Billrun_Billrun {
 		if (isset($options['filter_fields'])) {
 			$this->filter_fields = array_map("intval", $options['filter_fields']);
 		}
+		$this->vat = Self::getVATByBillrunKey($this->billrun_key);
 	}
 
 	/**
