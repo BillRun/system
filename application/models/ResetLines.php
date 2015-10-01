@@ -163,7 +163,7 @@ class ResetLinesModel {
 							return FALSE;
 						} else {
 							if (Billrun_Factory::db()->compareServerVersion('2.6', '>=') === true) {
-								$ret = $queue_coll->batchInsert($queue_lines, array('w' => 1)); // ok==true, nInserted==0 if w was 0
+								$ret = $queue_coll->batchInsert($queue_lines, array('w' => 0)); // ok==true, nInserted==0 if w was 0
 								if (isset($ret['err']) && !is_null($ret['err'])) {
 									return FALSE;
 								}
