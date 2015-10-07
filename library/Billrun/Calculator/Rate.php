@@ -159,5 +159,42 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array($row, $this));
 		return $row;
 	}
+	
+	/**
+	 * method to get rate record by name, from and to period
+	 * 
+	 * @param string $rate_key name of the rate
+	 * @param mixed $from numeric unix timestamp or string date (ISO)
+	 * @param type $to numeric unix timestamp or string date (ISO)
+	 * 
+	 * @return Entity rate
+	 */
+	static public function getRateByName($rate_key, $from = null, $to = null) {
+		if (is_null($from)) {
+			$from = time();
+		}
+		if (is_null($to)) {
+			$to = time();
+		}
+		
+		if (is_string($from) && !is_numeric($from)) {
+			$from = strtotime($from);
+		}
+		if (is_string($to) && !is_numeric($to)) {
+			$to = strtotime($to);
+		}
+		
+		$query = array(
+			'key' => $rate_key,
+			'from' => array(
+				'$lt' => new MongoDate($from),
+			),
+			'to' => array(
+				'$gt' => new MongoDate($to),
+			)
+		);
+		$rates = Billrun_Factory::db()->ratesCollection();
+		return $rates->query($query)->cursor()->current();
+	}
 
 }
