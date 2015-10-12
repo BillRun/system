@@ -70,7 +70,8 @@ class Mongodloid_Cursor implements Iterator, Countable {
 	public function current() {
 		//If before the start of the vector move to the first element.
 		// 
-		if (method_exists($this->_cursor, 'hasNext') && !$this->_cursor->current() && $this->_cursor->hasNext()) {
+		if ((method_exists($this->_cursor, 'hasNext') && !$this->_cursor->current() && $this->_cursor->hasNext()) || 
+			(!method_exists($this->_cursor, 'hasNext') && !$this->_cursor->current())) {
 			$this->next();
 		}
 		

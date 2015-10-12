@@ -241,32 +241,17 @@ class Mongodloid_Collection {
 		return !$cursor->current()->isEmpty();
 	}
 	
-	public function aggregate() {
-		$args = func_get_args();
-//		if ($this->_db->compareServerVersion('2.6', '>=')) { // TODO Need to update Mongodloid_Cursor functions
-//			// on 2.6 and above it's much more simple
-//			if (count($args)>1) { // Assume the array contains 'ops' for backward compatibility
-//				$args = array($args);
-//			}
-//			return new Mongodloid_Cursor(call_user_func_array(array($this->_collection, 'aggregateCursor'), $args));
-//		}
-		$timeout = $this->getTimeout();
-		$this->setTimeout(-1);
-		$result = call_user_func_array(array($this->_collection, 'aggregate'), $args);
-		$this->setTimeout($timeout);
-		if (!isset($result['ok']) || !$result['ok']) {
-			throw new Mongodloid_Exception('aggregate failed with the following error: ' . $result['code'] . ' - ' . $result['errmsg']);
-		}
-		return $result['result'];
-	}
-
+	/**
+	 * 
+	 * @deprecated since version 4.0 - backward compatibility
+	 */
 	public function aggregatecursor() {
 		$args = func_get_args();
-		// on 2.4 and below use old aggregate
-		if (!$this->_db->compareServerVersion('2.6', '>=')) { // TODO Need to update Mongodloid_Cursor functions
-			return $this->aggregate($args);
-		}
-		// on 2.6 and above it's much more simple
+		return $this->aggregate($args);
+	}
+
+	public function aggregate() {
+		$args = func_get_args();
 		if (count($args)>1) { // Assume the array contains 'ops' for backward compatibility
 			$args = array($args);
 		}
