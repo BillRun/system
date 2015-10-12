@@ -81,13 +81,11 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 
 	/**
 	 * Get a matching rate by config params
-	 * @return Mongodloid_Entity the matched rate or UNRATED rate if none found
+	 * @return Mongodloid_Entity the matched rate or false if none found
 	 */
 	protected function getRateByParams() {		
 		$query = $this->getRateQuery();
-		$matchedRateCursor = Billrun_Factory::db()->ratesCollection()->aggregate($query)->rewind();
-		$matchedRateCursor->valid();
-		$matchedRate = $matchedRateCursor->current();
+		$matchedRateCursor = Billrun_Factory::db()->ratesCollection()->aggregate($query)->current();
 		
 		if (empty($matchedRate)) {
 			return false;
@@ -101,7 +99,7 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 	 * @return string mongo query
 	 */
 	protected function getRateQuery() {
-		$pipelines = Billrun_Config::getInstance()->getConfigValue('aggregate_pipelines.' . self::$type);
+		$pipelines = Billrun_Config::getInstance()->getConfigValue('rate_pipeline.' . self::$type);
 		$query = array();
 		foreach ($pipelines as $currPipeline) {
 			foreach ($currPipeline as $pipelineOperator => $pipeline) {

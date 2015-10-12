@@ -38,6 +38,11 @@ class Mongodloid_Cursor implements Iterator, Countable {
 			$this->_cursor->timeout((int) $timeout);
 		}
 		
+		if ($this->_cursor instanceof MongoCommandCursor) {
+			$this->rewind();
+			$this->valid();
+		}
+		
 		$this->_isValid = true;
 	}
 
@@ -70,8 +75,7 @@ class Mongodloid_Cursor implements Iterator, Countable {
 	public function current() {
 		//If before the start of the vector move to the first element.
 		// 
-		if ((method_exists($this->_cursor, 'hasNext') && !$this->_cursor->current() && $this->_cursor->hasNext()) || 
-			(!method_exists($this->_cursor, 'hasNext') && !$this->_cursor->current())) {
+		if ((method_exists($this->_cursor, 'hasNext') && !$this->_cursor->current() && $this->_cursor->hasNext())){
 			$this->next();
 		}
 		
