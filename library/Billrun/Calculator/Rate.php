@@ -147,6 +147,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 		}
 		
 		// TODO: Create the ref using the collection, not the entity object.
+		$rate->collection(Billrun_Factory::db()->ratesCollection());
 		$added_values = array(
 			$this->ratingField => $rate ? $rate->createRef() : $rate,
 		);
