@@ -135,6 +135,7 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 	
 	public function unifyCalc($processor,&$data) {
+		$queue_calculators = Billrun_Factory::config()->getConfigValue("queue.calculators"); //todo : move outside to a variable
 		if (in_array('unify', $queue_calculators)) {
 			$this->unifyCalc = Billrun_Calculator::getInstance(array('type' => 'unify', 'autoload' => false));
 			$this->unifyCalc->init();
