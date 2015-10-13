@@ -178,8 +178,13 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	 * 
 	 * @param type $row current line to find it's rate
 	 */
-	protected function setRowDataForQuery($row = null) {
-		$this->rowDataForQuery = array();
+	protected function setRowDataForQuery($row) {
+		$timeField = Billrun_Config::getInstance()->getConfigValue('rate_pipeline.' . static::$type . '.time_field', 'urt');
+		$calledNumberField = Billrun_Config::getInstance()->getConfigValue('rate_pipeline.' . static::$type . '.called_number_field', 'called_number');
+		$this->rowDataForQuery = array(
+			'line_time' => $row->get($timeField),
+			'called_number' => $row->get($calledNumberField),
+		);
 	}
 
 	/**
@@ -202,7 +207,8 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	 * @return string mongo query
 	 */
 	protected function getRateQuery() {
-		$pipelines = Billrun_Config::getInstance()->getConfigValue('rate_pipeline.' . static::$type, array());
+		$pipelines = Billrun_Config::getInstance()->getConfigValue('rate_pipeline.' . self::$type, array()) +
+			Billrun_Config::getInstance()->getConfigValue('rate_pipeline.' . static::$type, array());
 		$query = array();
 		foreach ($pipelines as $currPipeline) {
 			foreach ($currPipeline as $pipelineOperator => $pipeline) {
@@ -224,6 +230,33 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 		}
 		
 		return $query;
+	}
+	
+	/**
+	 * Assistance function to generate 'from' field query with current row.
+	 * 
+	 * @return array query for 'from' field
+	 */
+	protected function getFromTimeQuery() {
+		return array('$lte' => $this->rowDataForQuery['line_time']);
+	}
+
+	/**
+	 * Assistance function to generate 'to' field query with current row.
+	 * 
+	 * @return array query for 'to' field
+	 */
+	protected function getToTimeQuery() {
+		return array('$gte' => $this->rowDataForQuery['line_time']);
+	}
+	
+	/**
+	 * Assistance function to generate 'prefix' field query with current row.
+	 * 
+	 * @return array query for 'prefix' field
+	 */
+	protected function getPrefixMatchQuery() {
+		return array('$in' => Billrun_Util::getPrefixes($this->rowDataForQuery['called_number']));
 	}
 
 }
