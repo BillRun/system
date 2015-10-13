@@ -62,14 +62,6 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	abstract protected function getLineUsageType($row);
 
 	/**
-	 * Get the associate rate object for a given CDR line.
-	 * @param $row the CDR line to get the for.
-	 * @param $usage_type the CDR line  usage type (SMS/Call/etc..)
-	 * @return the Rate object that was loaded  from the DB  or false if the line shouldn't be rated.
-	 */
-	abstract protected function getLineRate($row);
-
-	/**
 	 * method to receive the lines the calculator should take care
 	 * 
 	 * @return Mongodloid_Cursor Mongo cursor for iteration
@@ -160,6 +152,65 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array(&$row, $this));
 		return $row;
+	}
+	
+	/**
+	 * Get the associate rate object for a given CDR line.
+	 * @param $row the CDR line to get the for.
+	 * @param $usage_type the CDR line  usage type (SMS/Call/etc..)
+	 * @return the Rate object that was loaded  from the DB  or false if the line shouldn't be rated.
+	 */
+	protected function getLineRate($row) {
+		$this->rowDataForQuery = array(
+			'line_time' => $row->get('urt'),
+			'called_number' => $row->get('called_number'),
+		);
+		
+		return $this->getRateByParams();
+	}
+
+	/**
+	 * Get a matching rate by config params
+	 * @return Mongodloid_Entity the matched rate or false if none found
+	 */
+	protected function getRateByParams() {		
+		$query = $this->getRateQuery();
+		$matchedRate = Billrun_Factory::db()->ratesCollection()->aggregate($query)->current();
+		
+		if (empty($matchedRate)) {
+			return false;
+		}
+		return $matchedRate;
+	}
+	
+	/**
+	 * Builds aggregate query from config
+	 * 
+	 * @return string mongo query
+	 */
+	protected function getRateQuery() {
+		$pipelines = Billrun_Config::getInstance()->getConfigValue('rate_pipeline.' . static::$type, array());
+		$query = array();
+		foreach ($pipelines as $currPipeline) {
+			foreach ($currPipeline as $pipelineOperator => $pipeline) {
+				$pipelineValue = '';
+				if (is_array($pipeline)) {
+					foreach ($pipeline as $key => $value) {
+						if (isset($value['classMethod'])) {
+							$pipelineValue[$key] = call_user_method($value['classMethod'], $this);
+						} else {
+							$pipelineValue[$key] = (is_numeric($value)) ? intval($value) : $value;
+						}
+					}
+				} else {
+					$pipelineValue = (is_numeric($pipeline)) ? intval($pipeline) : $pipeline;
+				}
+
+				$query[] = array('$' . $pipelineOperator => $pipelineValue);
+			}
+		}
+		
+		return $query;
 	}
 
 }
