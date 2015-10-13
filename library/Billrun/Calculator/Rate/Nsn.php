@@ -20,8 +20,6 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 	 * @var string
 	 */
 	static protected $type = "nsn";
-	
-	public $rowDataForQuery = array();
 
 	public function __construct($options = array()) {
 		parent::__construct($options);
@@ -65,6 +63,13 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 				return 'call';
 		}
 		return 'call';
+	}
+	
+	protected function setRowDataForQuery($row = null) {
+		$this->rowDataForQuery = array(
+			'line_time' => $row->get('urt'),
+			'called_number' => $row->get('called_number'),
+		);
 	}
 	
 	/**

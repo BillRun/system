@@ -22,6 +22,14 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	 * @var string
 	 */
 	static protected $type = 'rate';
+	
+	/**
+	 * Data from line used to find the correct rate.
+	 * Used in inner function to find the rate of the line
+	 * 
+	 * @var array
+	 */
+	protected $rowDataForQuery = array();
 
 	/**
 	 * The mapping of the fileds in the lines to the 
@@ -161,12 +169,17 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	 * @return the Rate object that was loaded  from the DB  or false if the line shouldn't be rated.
 	 */
 	protected function getLineRate($row) {
-		$this->rowDataForQuery = array(
-			'line_time' => $row->get('urt'),
-			'called_number' => $row->get('called_number'),
-		);
-		
+		$this->setRowDataForQuery($row);
 		return $this->getRateByParams();
+	}
+	
+	/**
+	 * Set data used in inner function to find the rate of the line
+	 * 
+	 * @param type $row current line to find it's rate
+	 */
+	protected function setRowDataForQuery($row = null) {
+		$this->rowDataForQuery = array();
 	}
 
 	/**
