@@ -11,6 +11,7 @@
  *
  * @package  calculator
  * @since    0.5
+ * @deprecated since version 4.0
  */
 class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 
@@ -20,19 +21,17 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 	 * @var string
 	 */
 	static protected $type = "nsn";
-	
-	public $rowDataForQuery = array();
 
 	public function __construct($options = array()) {
 		parent::__construct($options);
-		//$this->loadRates();
+		$this->loadRates();
 	}
 
 	/**
 	 * @see Billrun_Calculator_Rate::getLineVolume
 	 * @deprecated since version 2.9
 	 */
-	protected function getLineVolume($row) {
+	protected function getLineVolume($row, $usage_type) {
 		if (in_array($usage_type, array('call', 'incoming_call'))) {
 			if (isset($row['duration'])) {
 				return $row['duration'];
@@ -70,84 +69,60 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 	/**
 	 * @see Billrun_Calculator_Rate::getLineRate
 	 */
-	protected function getLineRate($row) {
-		$this->rowDataForQuery = array(
-			'line_time' => $row->get('urt'),
-			'called_number' => $row->get('called_number'),
-		);
-		
-		return $this->getRateByParams();
-	}
+	protected function getLineRate($row, $usage_type) {
+		$record_type = $row->get('record_type');
+		$called_number = $row->get('called_number');
+		$ocg = $row->get('out_circuit_group');
+		$icg = $row->get('in_circuit_group');
+		$line_time = $row->get('urt');
+		$matchedRate = false;
 
-	/**
-	 * Get a matching rate by config params
-	 * @return Mongodloid_Entity the matched rate or false if none found
-	 */
-	protected function getRateByParams() {		
-		$query = $this->getRateQuery();
-		$matchedRateCursor = Billrun_Factory::db()->ratesCollection()->aggregate($query)->current();
-		
-		if (empty($matchedRate)) {
-			return false;
+		if ($record_type == "01" || //MOC call
+				($record_type == "11" && in_array($icg, Billrun_Util::getRoamingCircuitGroups()) &&
+				$ocg != '3060' && $ocg != '3061') // Roaming on Cellcom and not redirection
+		) {
+			$matchedRate = $this->getRateByParams($called_number, $usage_type, $line_time, $ocg);
+		} else if ($record_type == '30' && isset($row['ild_prefix'])) {
+			$called_number = preg_replace('/^016/', '', $called_number);
+			$matchedRate = $this->getRateByParams($called_number, $usage_type, $line_time);
 		}
+
 		return $matchedRate;
 	}
-	
+
 	/**
-	 * Builds aggregate query from config
-	 * 
-	 * @return string mongo query
+	 * Get a matching rate by the supplied params
+	 * @param string $called_number the number called
+	 * @param string $usage_type the usage type (call / sms ...)
+	 * @param MongoDate $urt the time of the event
+	 * @param string $ocg the out circuit group of the event. If not supplied, ocg will be ignored in the search.
+	 * @return Mongodloid_Entity the matched rate or UNRATED rate if none found
 	 */
-	protected function getRateQuery() {
-		$pipelines = Billrun_Config::getInstance()->getConfigValue('rate_pipeline.' . self::$type);
-		$query = array();
-		foreach ($pipelines as $currPipeline) {
-			foreach ($currPipeline as $pipelineOperator => $pipeline) {
-				$pipelineValue = '';
-				if (is_array($pipeline)) {
-					foreach ($pipeline as $key => $value) {
-						if (isset($value['classMethod'])) {
-							$pipelineValue[$key] = call_user_method($value['classMethod'], $this);
-						} else {
-							$pipelineValue[$key] = (is_numeric($value)) ? intval($value) : $value;
+	protected function getRateByParams($called_number, $usage_type, $urt, $ocg = null) {
+		$matchedRate = $this->rates['UNRATED'];
+		$called_number_prefixes = Billrun_Util::getPrefixes($called_number);
+		foreach ($called_number_prefixes as $prefix) {
+			if (isset($this->rates[$prefix])) {
+				foreach ($this->rates[$prefix] as $rate) {
+					if (isset($rate['rates'][$usage_type]) && (!isset($rate['params']['fullEqual']) || $prefix == $called_number)) {
+						if ($rate['from'] <= $urt && $rate['to'] >= $urt) {
+							if (is_null($ocg)) {
+								$matchedRate = $rate;
+								break 2;
+							} else {
+								foreach ($rate['params']['out_circuit_group'] as $groups) {
+									if ($groups['from'] <= $ocg && $groups['to'] >= $ocg) {
+										$matchedRate = $rate;
+										break 3;
+									}
+								}
+							}
 						}
 					}
-				} else {
-					$pipelineValue = (is_numeric($pipeline)) ? intval($pipeline) : $pipeline;
 				}
-
-				$query[] = array('$' . $pipelineOperator => $pipelineValue);
 			}
 		}
-		
-		return $query;
-	}
-	
-	/**
-	 * Assistance function to generate 'from' field query with current row.
-	 * 
-	 * @return array query for 'from' field
-	 */
-	protected function getFromTimeQuery() {
-		return array('$lte' => $this->rowDataForQuery['line_time']);
-	}
-
-	/**
-	 * Assistance function to generate 'to' field query with current row.
-	 * 
-	 * @return array query for 'to' field
-	 */
-	protected function getToTimeQuery() {
-		return array('$gte' => $this->rowDataForQuery['line_time']);
-	}
-	
-	/**
-	 * Assistance function to generate 'prefix' field query with current row.
-	 * 
-	 * @return array query for 'prefix' field
-	 */
-	protected function getPrefixMatchQuery() {
-		return array('$in' => Billrun_Util::getPrefixes($this->rowDataForQuery['called_number']));
+		return $matchedRate;
 	}
 
 }
