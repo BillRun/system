@@ -11,7 +11,7 @@
  *
  * @author tom
  */
-class Billrun_Utils_TimerUtils {
+class Billrun_Utils_Time {
 
 	const SECONDS_IN_MINUTE = 60;
 	const SECONDS_IN_HOUR = 3600;
