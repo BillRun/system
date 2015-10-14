@@ -36,7 +36,7 @@ class PlansAction extends ApiAction {
 			'stampParams' => array($requestedQuery, $filter, $strip),
 		);
 
-		$this->setCacheLifeTime(Billrun_Utils_TimerUtils::daysToSeconds(1)); 
+		$this->setCacheLifeTime(Billrun_Utils_Time::daysToSeconds(1)); 
 		$results = $this->cache($cacheParams);
 		
 		$this->getController()->setOutput(array(array(

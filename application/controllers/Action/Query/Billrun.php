@@ -74,7 +74,7 @@ class QuerybillrunAction extends QueryAction {
 			'fetchParams' => $linesRequestQueries
 		);
 		
-		$this->setCacheLifeTime(Billrun_Utils_TimerUtils::weeksToSeconds(1)); // 1 week
+		$this->setCacheLifeTime(Billrun_Utils_Time::weeksToSeconds(1)); // 1 week
 		return $this->cache($cacheParams);
 	}
 	
