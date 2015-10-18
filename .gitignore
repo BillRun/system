@@ -1,6 +1,7 @@
 /.directory
 backups
 exports
+export
 files
 workspace
 mongo/*.json
