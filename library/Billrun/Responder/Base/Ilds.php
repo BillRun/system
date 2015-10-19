@@ -41,7 +41,7 @@ abstract class Billrun_Responder_Base_Ilds extends Billrun_Responder_Base_LocalD
 
 		//run only after the lines were processed by the billrun.
 		if ($dbLines->count() == 0 || /* TODO fix this db query  find a way to query the $dbLines results insted */ 
-			$linesCollection->query()->equals('file',$this->getFilenameFromLogLine($logLine))->exists('price_customer')->count() == 0) {
+			$linesCollection->query()->equals('file',$this->getFilenameFromLogLine($logLine))->exists('account_id')->count() == 0) {
 			return false;
 		}
 
