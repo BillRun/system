@@ -110,5 +110,17 @@ class Billrun_Util {
 		$datetime = strtotime($date_formatted);
 		return $datetime;
 	}
+	
+	/**
+	 * method to clean leading zero of phone number
+	 * 
+	 * @param string $number
+	 * 
+	 * @return string the number without leading zeros
+	 */
+	public static function cleanLeadingZeros($number) {
+		return ltrim($number, "0");
+	}
+
 
 }

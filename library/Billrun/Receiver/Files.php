@@ -30,6 +30,8 @@ class Billrun_Receiver_Files extends Billrun_Receiver {
 		} else {
 			$this->workspace = Billrun_Factory::config()->getConfigValue('ilds.workspace', './workspace/');
 		}
+		
+		$this->filenameRegex = '/(I\d+.I\d+$)|(.(dat|DAT)$)/'; // the first element for 013
 	}
 
 	/**
