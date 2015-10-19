@@ -162,6 +162,10 @@ class Billrun_Processor_Premium extends Billrun_Processor_Base_Ilds {
 		}
 		return true;
 	}
+	
+	protected function backup($move = true) {
+		parent::backup(false);
+	}
 
 }
 				
