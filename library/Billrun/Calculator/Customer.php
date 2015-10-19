@@ -50,10 +50,10 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	protected function updateRow($row) {
 		if ($row['source'] == 'api' && $row['type'] == 'refund') {
 			$time = date("YmtHis", $row->get('unified_record_time')->sec);
-			$phone_number = $row->get('NDC_SN');
+			$phone_number = Billrun_Util::cleanLeadingZeros($row->get('NDC_SN'));
 		} else {
 			$time = $row->get('call_start_dt');
-			$phone_number = $row->get('caller_phone_no');
+			$phone_number = Billrun_Util::cleanLeadingZeros($row->get('caller_phone_no'));
 		}
 
 		$format_time = date(Billrun_Base::base_dateformat, strtotime($time));
