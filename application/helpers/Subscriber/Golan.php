@@ -111,24 +111,24 @@ class Subscriber_Golan extends Billrun_Subscriber {
 	protected function request($params) {
 
 		$host = self::getRpcServer();
-		$url = Billrun_Factory::config()->getConfigValue('provider.rpc.url', '');
+		$url = Billrun_Factory::config()->getConfigValue('provider.rpc.bulk_url', '');
 
-		$path = 'http://' . $host . '/' . $url . '?' . http_build_query($params);
+		$path = 'http://' . $host . '/' . $url;
 		//Billrun_Factory::log()->log($path, Zend_Log::DEBUG);
 		// @TODO: use Zend_Http_Client
-		$json = $this->send($path);
+		$json = $this->send($path, json_encode(array($params)));
 
 		if (!$json) {
 			return false;
 		}
 
-		$object = @json_decode($json);
+		$object = @json_decode($json, true);
 
-		if (!$object || !is_object($object)) {
+		if (!$object || !is_array($object)) {
 			return false;
 		}
 
-		return (array) $object;
+		return (array) $object[0];
 	}
 
 	/**
