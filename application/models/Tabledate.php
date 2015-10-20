@@ -104,6 +104,11 @@ class TabledateModel extends TableModel {
 
 		// open new line
 		$params[$this->search_key] = $closed_data[$this->search_key];
+		if (isset($params['_id']->{'id'})) {
+			$params['source_id'] = (string) $params['_id']->{'$id'};
+		} else if (isset($params['_id'])){
+			$params['source_id'] = (string) $params['_id'];
+		}
 		unset($params['_id']);
 		$params['from'] = new MongoDate($new_from->getTimestamp());
 		$params['to'] = new MongoDate($new_from->add(125, Zend_Date::YEAR)->getTimestamp());
