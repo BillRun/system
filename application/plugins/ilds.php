@@ -8,6 +8,15 @@ class ildsPlugin extends Billrun_Plugin_BillrunPluginFraud {
 	 * @var string
 	 */
 	protected $name = 'ilds';
+	
+	protected $threshold;
+	
+	protected $fraud_event_name = 'ILDS';
+
+	public function __construct($options = array()) {
+		parent::__construct($options);
+		$this->threshold = floatval( Billrun_Factory::config()->getConfigValue($this->name . '.threshold', 100));
+	}
 
 	/**
 	 * method to collect data which need to be handle by event
@@ -31,9 +40,7 @@ class ildsPlugin extends Billrun_Plugin_BillrunPluginFraud {
 
 		$base_match = array(
 			'$match' => array(
-				'source' => array(
-					'$in' => array('ilds', 'premium'),
-				),
+				'source' => $this->name,
 			)
 		);
 
@@ -69,7 +76,9 @@ class ildsPlugin extends Billrun_Plugin_BillrunPluginFraud {
 
 		$having = array(
 			'$match' => array(
-				'total' => array('$gte' => floatval( Billrun_Factory::config()->getConfigValue('ilds.threshold', 100)) )
+				'total' => array(
+					'$gte' => $this->threshold,
+				)
 			),
 		);
 
@@ -80,7 +89,7 @@ class ildsPlugin extends Billrun_Plugin_BillrunPluginFraud {
 		);
 		
 		$ret = $lines->aggregate($base_match, $where, $group, $project, $having, $sort);
-		Billrun_Factory::log()->log("ILDS fraud plugin found " . count($ret) . " items",  Zend_Log::DEBUG);
+		Billrun_Factory::log()->log(strtoupper($this->name) . " fraud plugin found " . count($ilds_events) . " items",  Zend_Log::DEBUG);
 
 		return $ret;
 	}
@@ -94,8 +103,8 @@ class ildsPlugin extends Billrun_Plugin_BillrunPluginFraud {
 		
 		$newEvent['units']	= 'NIS';
 		$newEvent['value']	= $newEvent['total'];
-		$newEvent['threshold'] = Billrun_Factory::config()->getConfigValue('ilds.threshold', 100);
-		$newEvent['event_type']	= 'ILDS';
+		$newEvent['threshold'] = $this->threshold;
+		$newEvent['event_type']	= $this->fraud_event_name;
 		$newEvent['msisdn']	= $newEvent['caller_phone_no'];
 		return $newEvent;
 	}
