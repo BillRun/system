@@ -32,7 +32,7 @@ class ildsPlugin extends Billrun_Plugin_BillrunPluginFraud {
 			return FALSE; 
 		}
 		
-		Billrun_Factory::log()->log("ILDS fraud collect handler triggered",  Zend_Log::DEBUG);
+		Billrun_Factory::log()->log(strtoupper($this->name) .  " fraud collect handler triggered",  Zend_Log::DEBUG);
 
 		$ilds_db_settings = Billrun_Factory::config()->getConfigValue('ilds.db');
 		$lines = Billrun_Factory::db($ilds_db_settings)->linesCollection();
@@ -89,7 +89,7 @@ class ildsPlugin extends Billrun_Plugin_BillrunPluginFraud {
 		);
 		
 		$ret = $lines->aggregate($base_match, $where, $group, $project, $having, $sort);
-		Billrun_Factory::log()->log(strtoupper($this->name) . " fraud plugin found " . count($ilds_events) . " items",  Zend_Log::DEBUG);
+		Billrun_Factory::log()->log(strtoupper($this->name) . " fraud plugin found " . count($ret) . " items",  Zend_Log::DEBUG);
 
 		return $ret;
 	}
@@ -108,4 +108,25 @@ class ildsPlugin extends Billrun_Plugin_BillrunPluginFraud {
 		$newEvent['msisdn']	= $newEvent['caller_phone_no'];
 		return $newEvent;
 	}
+	
+	public function handlerMarkDown(&$items, $pluginName) {
+		parent::handlerMarkDown($items, $pluginName);
+		if ($pluginName != $this->getName() || !$items) {
+			return;
+		}
+		
+		$ret = array();
+		$ilds_db_settings = Billrun_Factory::config()->getConfigValue('ilds.db');
+		$lines = Billrun_Factory::db($ilds_db_settings)->linesCollection();
+		foreach ($items as &$item) {
+			$ret[] = $lines->update(	array('stamp' => array('$in' => $item['lines_stamps'])),
+									array('$set' => array(
+										'deopsit_stamp' => $item['event_stamp'],
+										'event_stamp' => $item['event_stamp'],
+									)),
+									array('multiple' => 1));
+		}
+		return $ret;
+	}
+
 }
