@@ -359,7 +359,7 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 			case 'hex' :
 				$retValue = '';
 				for ($i = $length - 1; $i >= 0; --$i) {
-					$retValue .= dechex(ord($data[$i]));
+					$retValue .= sprintf('%02s', dechex(ord($data[$i])));
 				}
 				break;
 
