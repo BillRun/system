@@ -1,5 +1,7 @@
 <?php
 
+require_once APPLICATION_PATH . '/application/helpers/Admin/Table.php';
+
 /**
  * @package         Billing
  * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
