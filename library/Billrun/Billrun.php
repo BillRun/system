@@ -59,7 +59,7 @@ class Billrun_Billrun {
 		if (isset($options['aid']) && isset($options['billrun_key'])) {
 			$this->aid = $options['aid'];
 			$this->billrun_key = $options['billrun_key'];
-			$this->vat = Self::getVATByBillrunKey($this->billrun_key);
+			$this->vat = self::getVATByBillrunKey($this->billrun_key);
 			if (isset($options['autoload']) && !$options['autoload']) {
 				if (isset($options['data']) && !$options['data']->isEmpty()) {
 					$this->data = $options['data'];
