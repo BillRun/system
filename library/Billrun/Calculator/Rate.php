@@ -36,7 +36,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	 * @var string
 	 */
 	protected $ratingField = self::DEF_CALC_DB_FIELD;
-	protected $ratingKyeField = self::DEF_RATE_KEY_DB_FIELD;
+	protected $ratingKeyField = self::DEF_RATE_KEY_DB_FIELD;
 	protected $pricingField = Billrun_Calculator_CustomerPricing::DEF_CALC_DB_FIELD;
 	protected $aprField = self::DEF_APR_DB_FIELD;
 
@@ -98,7 +98,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	public function writeLine($line, $dataKey) {
 		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteLine', array('data' => $line, 'calculator' => $this));
 		$save = array();
-		$saveProperties = array($this->ratingField,$this->ratingKyeField, 'usaget', 'usagev', $this->pricingField, $this->aprField,);
+		$saveProperties = array($this->ratingField,$this->ratingKeyField, 'usaget', 'usagev', $this->pricingField, $this->aprField,);
 		foreach ($saveProperties as $p) {
 			if (!is_null($val = $line->get($p, true))) {
 				$save['$set'][$p] = $val;
@@ -151,7 +151,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 			'usaget' => $usage_type,
 			'usagev' => $volume,
 			$this->ratingField => $rate ? $rate->createRef() : $rate,
-			$this->ratingKyeField => $rate ? $rate['key'] : null,
+			$this->ratingKeyField => $rate ? $rate['key'] : null,
 		);
 		if ($rate) {
 			$added_values[$this->aprField] = Billrun_Calculator_CustomerPricing::getPriceByRate($rate, $usage_type, $volume);
