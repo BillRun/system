@@ -151,8 +151,11 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 			'usaget' => $usage_type,
 			'usagev' => $volume,
 			$this->ratingField => $rate ? $rate->createRef() : $rate,
-			$this->ratingKeyField => $rate ? $rate['key'] : null,
 		);
+		if(isset($rate['key'])) {
+			$added_values[$this->ratingKeyField] = $rate['key'];
+		}
+		
 		if ($rate) {
 			$added_values[$this->aprField] = Billrun_Calculator_CustomerPricing::getPriceByRate($rate, $usage_type, $volume);
 		}
