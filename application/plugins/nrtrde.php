@@ -104,7 +104,7 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 	 * @param Billrun_Processor $processor the proce
 	 * @param string $file_path the path of the current processing file.
 	 */
-	public function afterProcessorStore($processor, &$file_path) {
+	public function afterProcessorStore($processor) {
 		if ($processor->getType() != $this->getName()) {
 			return;
 		}
@@ -123,13 +123,13 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 			mkdir($path, 0777, true);
 		}
 
-		$srcPath = $file_path . ".zip";
-		if (file_exists($srcPath)) {
-			Billrun_Factory::log()->log("Saving zip file to : $path", Zend_Log::DEBUG);
-			if (!rename($srcPath, $path . DIRECTORY_SEPARATOR . basename($srcPath))) {
-				Billrun_Factory::log()->log(" Failed when trying to save file : " . basename($srcPath) . " to third party path : $path", Zend_Log::ERR);
-			}
-		}
+//		$srcPath = $processor->getFilePath() . ".zip";
+//		if (file_exists($srcPath)) {
+//			Billrun_Factory::log()->log("Saving zip file to : $path", Zend_Log::DEBUG);
+//			if (!rename($srcPath, $path . DIRECTORY_SEPARATOR . basename($srcPath))) {
+//				Billrun_Factory::log()->log(" Failed when trying to save file : " . basename($srcPath) . " to third party path : $path", Zend_Log::ERR);
+//			}
+//		}
 	}
 
 	/**

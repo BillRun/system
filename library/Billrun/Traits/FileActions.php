@@ -54,6 +54,7 @@ trait Billrun_Traits_FileActions {
 			'seq' => Billrun_Util::regexFirstValue(Billrun_Factory::config()->getConfigValue($configPrefix . ".sequence_regex.seq", "/\D(\d+)\D/"), $filename),
 			'date' => Billrun_Util::regexFirstValue(Billrun_Factory::config()->getConfigValue($configPrefix . ".sequence_regex.date", "/\D(20\d{4})\D/"), $filename),
 			'time' => Billrun_Util::regexFirstValue(Billrun_Factory::config()->getConfigValue($configPrefix . ".sequence_regex.time", "/20\d{4}.*\D(\d{4,6})\D/"), $filename),
+			'zone' => Billrun_Util::regexFirstValue(Billrun_Factory::config()->getConfigValue($configPrefix . ".sequence_regex.zone", "//"), $filename),
 		);
 	}
 
@@ -178,6 +179,7 @@ trait Billrun_Traits_FileActions {
 		$date = Billrun_Util::fixShortHandYearDate($fileSeqData['date'], $this->backup_date_dir_format); //HACK to fix short hand year.
 		$backupPath .= ($retrievedHostname ? DIRECTORY_SEPARATOR . $retrievedHostname : ""); //If theres more then one host or the files were retrived from a named host backup under that host name
 		$backupPath .= DIRECTORY_SEPARATOR . date($this->backup_date_dir_format, (strtotime($date) > 0 ? strtotime($date) : time())); // if the file name has a date  save under that date else save under tthe current month
+		$backupPath .= empty($fileSeqData['zone']) ? '' : DIRECTORY_SEPARATOR . $fileSeqData['zone']; // if the file name has a zone save under that zone
 		$backupPath .= ($fileSeqData['seq'] ? DIRECTORY_SEPARATOR . substr($fileSeqData['seq'], 0, - $this->backup_seq_granularity) : ""); // break the date to sequence number with varing granularity
 
 		return $backupPath;
