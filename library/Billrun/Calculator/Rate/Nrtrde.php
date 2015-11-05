@@ -52,32 +52,27 @@ class Billrun_Calculator_Rate_Nrtrde extends Billrun_Calculator_Rate {
 	 * @see Billrun_Calculator_Rate::getLineRate
 	 */
 	protected function getLineRate($row, $usage_type) {
-		$aplha3 = $row['alpha3'];
+		$alpha = $row['alpha3'];
 		$line_time = $row['urt'];
 		$number_to_rate = $this->number_to_rate($row);
 		$call_number_prefixes = Billrun_Util::getPrefixes($number_to_rate);
-		$aggregate = array(
+		$call_number_prefixes[] = null;
+		$aggregateBaseMatch = array(
 			array(
 				'$match' => array(
-					'params.serving_networks' => new MongoRegex("/^$aplha3/"),
+					'params.serving_networks' => new MongoRegex("/^$alpha/"),
 					'to' => array(
 						'$gt' => $line_time,
 					),
 					'from' => array(
 						'$lt' => $line_time,
 					),
+					'rates.'.$usage_type => array('$exists'=> 1 ),
 				),
-			),
-			array(
-				'$unwind' => '$params.prefix',
-			),
-			array(
-				'$match' => array(
-					"params.prefix" => array (
-						'$in' => $call_number_prefixes,
-					)
-				)
-			),
+			),					
+		);
+		$aggregateSort =  array(
+			
 			array(
 				'$sort' => array(
 					'params.prefix' => -1,
@@ -87,9 +82,29 @@ class Billrun_Calculator_Rate_Nrtrde extends Billrun_Calculator_Rate {
 				'$limit' => 1,
 			)
 		);
+		$aggregateUnwind = array(array(
+				'$unwind' => '$params.prefix',
+			),
+			array(
+				'$match' => array(
+					"params.prefix" => array (
+						'$in' => $call_number_prefixes,
+					),
+				)
+			),
+		);
+		$aggregateNoPrefixMatch = array(
+			array(
+				'$match' => array( 'params.prefix' => array()),
+			),
+		);
 		$rates_coll = Billrun_Factory::db()->ratesCollection();
 //		$rate = $rates_coll->aggregate($aggregate)->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
-		$rate = $rates_coll->aggregate($aggregate);
+		$rate = $rates_coll->aggregate(array_merge($aggregateBaseMatch, $aggregateUnwind, $aggregateSort));
+		if(empty($rate)) {
+			$rate = $rates_coll->aggregate(array_merge($aggregateBaseMatch, $aggregateNoPrefixMatch,$aggregateSort));
+		}
+		
 		if(!empty($rate)) {
 			$obj_rate = new Mongodloid_Entity(reset($rate));
 			$obj_rate->collection($rates_coll);
@@ -115,7 +130,7 @@ class Billrun_Calculator_Rate_Nrtrde extends Billrun_Calculator_Rate {
 	 */
 	protected function number_to_rate($row) {
 		if (($row['record_type'] == "MTC") && isset($row['callingNumber'])) {
-			return $row->get('calling_number');
+			return $row->get('callingNumber');
 		} else if (($row['record_type'] == "MOC") && isset($row['connectedNumber'])) {
 			return $row->get('connectedNumber');
 		} else {
@@ -123,6 +138,7 @@ class Billrun_Calculator_Rate_Nrtrde extends Billrun_Calculator_Rate {
 		}
 	}
 
+	public function isLineLegitimate($line) {
+		return parent::isLineLegitimate($line) && $line['usaget'] != 'incoming_sms';
+	}
 }
-
-?>
