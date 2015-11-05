@@ -29,7 +29,7 @@ class Billrun_Processor_013 extends Billrun_Processor_Base_Ilds {
 	 * 		'D' => Data
 	 * 		'T' => Tail
 	 */
-	protected function getLineType($line) {
+	protected function getLineType($line, $length = 1) {
 		if (substr($line, 0, 1) == 'D') {
 			return 'D';
 		}

@@ -213,7 +213,7 @@ class Billrun_Factory {
 	static public function mailer() {
 		if (!isset(self::$mailer)) {
 		try {
-				self::$mailer = new Zend_Mail();
+			self::$mailer = new Zend_Mail();
 			//TODO set common configuration.
 			$fromName = Billrun_Factory::config()->getConfigValue('mailer.from.address', 'no-reply');
 			$fromAddress = Billrun_Factory::config()->getConfigValue('mailer.from.name', 'Billrun');
@@ -223,6 +223,10 @@ class Billrun_Factory {
 			self::log("Can't instantiat mail object. Please check your settings", Zend_Log::ALERT);
 			return false;
 		}
+	} else {
+		self::$mailer->clearFrom();
+		self::$mailer->clearSubject();
+		
 	}
 		return self::$mailer;
 	}

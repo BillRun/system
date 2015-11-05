@@ -30,10 +30,16 @@ class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 
 		foreach ($this->data as $item) {
 			Billrun_Factory::dispatcher()->trigger('beforeAggregateLine', array(&$item, &$this));
-			$time = $item->get('call_start_dt');
-
+			if($item['source'] == 'api' && $item['type'] == 'refund') {
+				$time = date("YmtHis", $item->get('unified_record_time')->sec);
+				$phone_number = $item->get('NDC_SN');
+			} else  {
+				$time = $item->get('call_start_dt');
+				$phone_number = $item->get('caller_phone_no');				
+			}
 			// @TODO make it configurable
 			$previous_month = date("Ymt235959", strtotime("previous month"));
+			
 
 			if ($time > $previous_month) {
 				Billrun_Factory::log()->log("time frame is not till the end of previous month " . $time . "; continue to the next line", Zend_Log::INFO);
@@ -210,8 +216,12 @@ class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 	public function load() {
 
 		$lines = Billrun_Factory::db()->linesCollection();
-		$this->data = $lines->query()
-				->equals('source', 'ilds')
+		$this->data = $lines->query(array(
+					'$or' => array(
+						array('source' => 'ilds'),
+						array('source' => 'api', 'type' => 'refund', 'reason' => 'ILDS_DEPOSIT')
+					)
+				))
 				->notExists('billrun')
 				->exists('pprice')
 				->exists('aprice')
