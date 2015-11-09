@@ -20,7 +20,20 @@ abstract class Billrun_Plugin_BillrunPluginFraud extends Billrun_Plugin_BillrunP
 	 * @var string
 	 */
 	protected $name = 'Fraud';
+	
+	/**
+	 * Alert proirity array
+	 * @var array
+	 */
+	protected $priority = array();
 
+	public function __construct($options = array()) {
+		//parent::__construct($options);
+		$this->priority = isset($options['priority']) ?
+			$options['priority'] :
+			Billrun_Factory::config()->getConfigValue('alert.priority', array());
+	}
+	
 	/**
 	 * helper method to receive the last time of the monthly charge
 	 * 
@@ -51,7 +64,7 @@ abstract class Billrun_Plugin_BillrunPluginFraud extends Billrun_Plugin_BillrunP
 		}
 
 		$events = Billrun_Factory::db()->eventsCollection();
-		//Billrun_Factory::log()->log("New Alert For {$item['imsi']}",Zend_Log::DEBUG);
+		
 		$ret = array();
 		foreach ($items as &$item) {
 			$event = new Mongodloid_Entity($item);
@@ -61,6 +74,12 @@ abstract class Billrun_Plugin_BillrunPluginFraud extends Billrun_Plugin_BillrunP
 			$newEvent['source'] = $this->getName();
 			$newEvent['stamp'] = md5(serialize($newEvent));
 			$newEvent['creation_time'] = date(Billrun_Base::base_dateformat);
+			foreach($this->priority as $key => $pri) {
+				$newEvent['priority'] = $key;	
+				if($event['event_type'] == $pri) {
+					break;
+				}
+			}
 			$item['event_stamp'] = $newEvent['stamp'];
 
 			$ret[] = $events->save($newEvent);

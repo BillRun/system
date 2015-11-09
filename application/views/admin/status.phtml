@@ -1,0 +1,44 @@
+
+<html>
+	<head>
+		<style>
+			.red {
+				background-color :  red;
+			}
+			.green {
+				background-color :  green;
+			}
+			.pad {
+				padding-left: 10%;
+			}
+		</style>
+		<h1>Fraud ftp status</h1>
+	</head>
+	<body>
+		<?php if ($this->testConnection){ print('<p id="green pad">ftp connection tested successfully</p>');
+		}else { 
+			print('<p class="red pad">ftp connection test failed</p>'); 
+		} ?>
+		<p>Last file received: <?php print($this->file_name) ?></p> 
+		time: <?php if($this->longer_then_an_hour) {
+			print('<p class="red">'.$this->received_time."</p>");
+		} else {
+			print('<p class="green">'.$this->received_time.'</p>');
+		} ?>
+		<div>
+			Files to be received soon:
+			<?php
+			$i=1;
+			$table_lines = "";
+			foreach($this->files_list as $file) :
+				if ($file->isDirectory()) continue;
+				$table_lines .= "<div>" . $i++ . '. '. $file->name . " size: " . $file->size(). "</div>";
+			endforeach;
+			if ($i > 50) {
+				print('<p class="red pad">Warning : more than 50 files awaiting to be received</p>');
+			}
+			print($table_lines);
+			?>
+		</div>
+	</body>
+</html>

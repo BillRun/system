@@ -24,9 +24,12 @@ class Billrun_Generator_NationalRoaming extends Billrun_Generator_Base_Wholesale
 		$providerResults = parent::generate();
 		$wh = fopen($this->reportBasePath . DIRECTORY_SEPARATOR . date('Ymd') . '_national_roaming.csv', 'w');
 		fputcsv($wh, array('Provider', 'Connection Type', '', 'Day', 'Product', 'Units', 'Minutes', 'Tariff per product', 'Charge', 'Direction'));
-
-		$this->addArrayToCSV($wh, $providerResults);
-		fclose($wh);
+		if($wh) {
+			$this->addArrayToCSV($wh, $providerResults);
+			fclose($wh);
+		} else {
+			Billrun_Factory::log()->log("Couldn't  open  file in path : ".$this->reportBasePath . DIRECTORY_SEPARATOR. date('Ymd').'_national_roaming.csv' , Zend_Log::ERR);
+		}
 		return $providerResults;
 	}
 
