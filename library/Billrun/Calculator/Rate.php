@@ -22,6 +22,14 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	 * @var string
 	 */
 	static protected $type = 'rate';
+	
+	/**
+	 * Data from line used to find the correct rate.
+	 * Used in inner function to find the rate of the line
+	 * 
+	 * @var array
+	 */
+	protected $rowDataForQuery = array();
 
 	/**
 	 * The mapping of the fileds in the lines to the 
@@ -60,14 +68,6 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	 * @deprecated since version 2.9
 	 */
 	abstract protected function getLineUsageType($row);
-
-	/**
-	 * Get the associate rate object for a given CDR line.
-	 * @param $row the CDR line to get the for.
-	 * @param $usage_type the CDR line  usage type (SMS/Call/etc..)
-	 * @return the Rate object that was loaded  from the DB  or false if the line shouldn't be rated.
-	 */
-	abstract protected function getLineRate($row);
 
 	/**
 	 * method to receive the lines the calculator should take care
@@ -147,6 +147,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 		}
 		
 		// TODO: Create the ref using the collection, not the entity object.
+		$rate->collection(Billrun_Factory::db()->ratesCollection());
 		$added_values = array(
 			$this->ratingField => $rate ? $rate->createRef() : $rate,
 		);
@@ -159,6 +160,103 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array(&$row, $this));
 		return $row;
+	}
+	
+	/**
+	 * Get the associate rate object for a given CDR line.
+	 * @param $row the CDR line to get the for.
+	 * @param $usage_type the CDR line  usage type (SMS/Call/etc..)
+	 * @return the Rate object that was loaded  from the DB  or false if the line shouldn't be rated.
+	 */
+	protected function getLineRate($row) {
+		$this->setRowDataForQuery($row);
+		return $this->getRateByParams();
+	}
+	
+	/**
+	 * Set data used in inner function to find the rate of the line
+	 * 
+	 * @param type $row current line to find it's rate
+	 */
+	protected function setRowDataForQuery($row) {
+		$timeField = Billrun_Config::getInstance()->getConfigValue('rate_pipeline.' . static::$type . '.time_field', 'urt');
+		$calledNumberField = Billrun_Config::getInstance()->getConfigValue('rate_pipeline.' . static::$type . '.called_number_field', 'called_number');
+		$this->rowDataForQuery = array(
+			'line_time' => $row->get($timeField),
+			'called_number' => $row->get($calledNumberField),
+		);
+	}
+
+	/**
+	 * Get a matching rate by config params
+	 * @return Mongodloid_Entity the matched rate or false if none found
+	 */
+	protected function getRateByParams() {		
+		$query = $this->getRateQuery();
+		$matchedRate = Billrun_Factory::db()->ratesCollection()->aggregate($query)->current();
+		
+		if (empty($matchedRate)) {
+			return false;
+		}
+		return $matchedRate;
+	}
+	
+	/**
+	 * Builds aggregate query from config
+	 * 
+	 * @return string mongo query
+	 */
+	protected function getRateQuery() {
+		$pipelines = Billrun_Config::getInstance()->getConfigValue('rate_pipeline.' . self::$type, array()) +
+			Billrun_Config::getInstance()->getConfigValue('rate_pipeline.' . static::$type, array());
+		$query = array();
+		foreach ($pipelines as $currPipeline) {
+			foreach ($currPipeline as $pipelineOperator => $pipeline) {
+				$pipelineValue = '';
+				if (is_array($pipeline)) {
+					foreach ($pipeline as $key => $value) {
+						if (isset($value['classMethod'])) {
+							$pipelineValue[$key] = call_user_method($value['classMethod'], $this);
+						} else {
+							$pipelineValue[$key] = (is_numeric($value)) ? intval($value) : $value;
+						}
+					}
+				} else {
+					$pipelineValue = (is_numeric($pipeline)) ? intval($pipeline) : $pipeline;
+				}
+
+				$query[] = array('$' . $pipelineOperator => $pipelineValue);
+			}
+		}
+		
+		return $query;
+	}
+	
+	/**
+	 * Assistance function to generate 'from' field query with current row.
+	 * 
+	 * @return array query for 'from' field
+	 */
+	protected function getFromTimeQuery() {
+		return array('$lte' => $this->rowDataForQuery['line_time']);
+	}
+
+	/**
+	 * Assistance function to generate 'to' field query with current row.
+	 * 
+	 * @return array query for 'to' field
+	 */
+	protected function getToTimeQuery() {
+		return array('$gte' => $this->rowDataForQuery['line_time']);
+	}
+	
+	/**
+	 * Assistance function to generate 'prefix' field query with current row.
+	 * 
+	 * @return array query for 'prefix' field
+	 */
+	protected function getPrefixMatchQuery() {
+		return array('$in' => Billrun_Util::getPrefixes($this->rowDataForQuery['called_number']));
 	}
 
 }

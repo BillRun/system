@@ -23,7 +23,7 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 	public function update($query, $recordToSet, $subscriberId) {
 		// TODO: This function is free similar to the one in ID, should refactor code to be more generic.
 		$chargingPlansCollection = Billrun_Factory::db()->plansCollection();
-		$chargingPlanRecord = $this->getPlanRecord($query, $chargingPlansCollection);
+		$chargingPlanRecord = $this->getRecord($query, $chargingPlansCollection, $this->getTranslateFields());
 		if (!$chargingPlanRecord) {
 			Billrun_Factory::log("Failed to get plan record to update balance query: " . print_r($query, 1), Zend_Log::ERR);
 			return false;
@@ -41,8 +41,8 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		}
 
 		// Set subscriber to query.
-		$query['sid'] = $subscriber['sid'];
-		$query['aid'] = $subscriber['aid'];
+		$updateQuery['sid'] = $subscriber['sid'];
+		$updateQuery['aid'] = $subscriber['aid'];
 		
 		if (!$this->validateServiceProviders($subscriberId, $recordToSet)) {
 			return false;
@@ -65,13 +65,13 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		$balancesToReturn = array();
 		// Go through all charging possibilities. 
 		foreach ($balancesArray as $chargingBy => $chargingByValue) {
-			$chargingPlan = 
+			$wallet = 
 				new Billrun_DataTypes_Wallet($chargingBy,
-												   $chargingByValue);
+											 $chargingByValue);
 			$to = $recordToSet['to'];
 			$balancesToReturn[] = 
-				$this->updateBalance($chargingPlan,
-									 $query, 
+				$this->updateBalance($wallet,
+									 $updateQuery, 
 									 $balancesColl, 
 									 $defaultBalance, 
 									 $to);
@@ -80,6 +80,16 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		return $balancesToReturn;
 	}
 
+	/**
+	 * Get the array of strings to translate the names of the input fields to the names used in the db.
+	 * @return array.
+	 */
+	protected function getTranslateFields() {
+		// TODO: Should this be in conf?
+		return array('charging_plan_name' => 'name',
+					 'charging_plan_external_id' => 'external_id');
+	}
+	
 	/**
 	 * Set the plan data to the query to get tha balance record to update.
 	 * @param array $query - The input query.
@@ -91,27 +101,6 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		$query['current_plan']=
 			$plansCollection->createRefByEntity($planRecord);
 		unset($query['charging_plan_name']);
-	}
-	
-	/**
-	 * Handle zeroing the record if the charging value is positive.
-	 * @param type $query
-	 * @param type $balancesColl
-	 * @param string $valueFieldName
-	 */
-	protected function handleZeroing($query, $balancesColl, $valueFieldName) {
-		// User requested incrementing, check if to reset the record.
-		if (!$this->ignoreOveruse || !$this->isIncrement) {
-			return;
-		}
-
-		$zeroingQuery = $query;
-		$zeriongUpdate = array();
-		$zeroingQuery[$valueFieldName] = array('$gt' => 0);
-		$zeriongUpdate['$set'][$valueFieldName] = 0;
-		$originalBeforeZeroing = $balancesColl->findAndModify($zeroingQuery, $zeriongUpdate);
-
-		Billrun_Factory::log("Before zeroing: " . print_r($originalBeforeZeroing, 1), Zend_Log::INFO);
 	}
 
 	/**
@@ -167,39 +156,6 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 
 		// Return the new document.
 		return $balancesColl->findAndModify($query, $update, array(), $options, true);
-	}
-
-	/**
-	 * Return the part of the query for setOnInsert
-	 * @param Billrun_DataTypes_Wallet $wallet
-	 * @param array $defaultBalance
-	 * @return type
-	 */
-	protected function getSetOnInsert($wallet, 
-									  $defaultBalance) {
-		$defaultBalance['charging_by'] = $wallet->getChargingBy();
-		$defaultBalance['charging_by_usegt'] = $wallet->getChargingByUsaget();
-		$defaultBalance[$wallet->getFieldName()] = $wallet->getValue();
-		return array(
-			'$setOnInsert' => $defaultBalance,
-		);
-	}
-
-	/**
-	 * Get the set part of the query.
-	 * @param string $valueToUseInQuery - The value name of the balance.
-	 * @param string $valueFieldName - The name of the field to be set.
-	 * @param MongoDate $toTime - Expiration date.
-	 */
-	protected function getSetQuery($valueToUseInQuery, $valueFieldName, $toTime) {
-		$valueUpdateQuery = array();
-		$queryType = $this->isIncrement ? '$inc' : '$set';
-		$valueUpdateQuery[$queryType]
-			[$valueFieldName] = $valueToUseInQuery;
-		$valueUpdateQuery[$queryType]
-			['to'] = $toTime;
-		
-		return $valueUpdateQuery;
 	}
 	
 	/**

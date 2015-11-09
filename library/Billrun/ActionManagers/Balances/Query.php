@@ -186,7 +186,7 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 	
 	protected function setPrepaidDataToQuery($prepaidQuery) {
 		// Get the prepaid record.
-		$prepaidCollection = Billrun_Factory::db()->prepaidIncludesCollection();
+		$prepaidCollection = Billrun_Factory::db()->prepaidincludesCollection();
 		
 		// TODO: Use the prepaid DB/API proxy.
 		$prepaidRecord = $prepaidCollection->query($prepaidQuery)->cursor()->current();

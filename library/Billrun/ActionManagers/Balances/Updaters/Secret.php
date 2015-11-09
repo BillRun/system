@@ -14,12 +14,13 @@
 class Billrun_ActionManagers_Balances_Updaters_Secret extends Billrun_ActionManagers_Balances_Updaters_ChargingPlan {
 
 	/**
-	 * Get the record plan according to the input query.
-	 * @param type $query
-	 * @param type $chargingPlanCollection
-	 * @return type
+	 * Update the balances, based on the plans table
+	 * @param type $query - Query to find row to update.
+	 * @param type $recordToSet - Values to update.
+	 * @param type $subscriberId - Id for the subscriber to update.
+	 * @return The updated record, false if failed.
 	 */
-	protected function getPlanRecord($query, $chargingPlanCollection) {
+	public function update($query, $recordToSet, $subscriberId) {
 		$cardsColl = Billrun_Factory::db()->cardsCollection();
 		// Get the record.
 		$dateQuery = array('to' => array('$gt', new MongoDate()));
@@ -29,6 +30,6 @@ class Billrun_ActionManagers_Balances_Updaters_Secret extends Billrun_ActionMana
 		// Build the plan query from the card plan field.
 		$planQuery = array('charging_plan_name' => $cardRecord['charging_plan']);
 		
-		return parent::getPlanRecord($planQuery, $chargingPlanCollection);
+		return parent::update($planQuery, $recordToSet, $subscriberId);
 	}
 }

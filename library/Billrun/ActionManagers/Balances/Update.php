@@ -200,21 +200,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 			return false;
 		}
 		
-		// Check that id is an integer.
-		if(!is_int($sid)) {
-			// Convert to int.
-			$tempSid = (int)$sid;
-			
-			// If the convertion returns 0 and the input string is not 0 it's an error.
-			if(!$tempSid && $sid !== "0"){
-				Billrun_Factory::log("Update action did not receive a valid subscriber ID! [" . print_r($sid, true) . ']', Zend_Log::ALERT);
-				return false;
-			}
-			
-			$sid = $tempSid;
-		}
-		
-		return $sid;
+		return Billrun_Util::toNumber($sid);;
 	}
 	
 	/**
@@ -237,7 +223,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 			return false;
 		}
 		
-		$this->updaterOptions['increment'] = ($this->recordToSet == "inc");
+		$this->updaterOptions['increment'] = ($this->recordToSet['operation'] == "inc");
 		
 		// TODO: For now this is hard-coded, untill the API will define this as a parameter.
 		$this->updaterOptions['zero'] = true;

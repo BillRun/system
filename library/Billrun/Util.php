@@ -943,5 +943,28 @@ class Billrun_Util {
 		
 		return $parsedData;
 	}
+	
+	/**
+	 * Return an integer based on an input string.
+	 * @param string/integer $input - String to convert or integer.
+	 * @return Integer value of input, or false if failed.
+	 */
+	public static function toNumber($input) {
+		// Check that the input is an integer.
+		if(is_int($input)) {
+			return $input;
+		}
+
+		// Convert to int.
+		$temp = (int)$input;
+
+		// If the convertion returns 0 and the input string is not 0 it's an error.
+		if(!$temp && $input !== "0"){
+			Billrun_Factory::log("Update action did not receive a valid subscriber ID! [" . print_r($input, true) . ']', Zend_Log::ALERT);
+			return false;
+		}
+
+		return $temp;
+	}
 
 }
