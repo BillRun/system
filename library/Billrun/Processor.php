@@ -234,7 +234,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 			Billrun_Factory::dispatcher()->trigger('afterProcessorStore', array($this));
 
 			$this->removefromWorkspace($this->getFileStamp());
-			Billrun_Factory::dispatcher()->trigger('afterProcessorRemove', array($this));
+			Billrun_Factory::dispatcher()->trigger('afterProcessorRemove', array($this, $this->filePath));
 			return count($this->data['data']);
 		}
 	}
@@ -412,6 +412,9 @@ abstract class Billrun_Processor extends Billrun_Base {
 			Billrun_Factory::log()->log("Processor orphan time less than one hour: " . $this->orphandFilesAdoptionTime . ". Please set value greater than or equal to one hour. We will take one hour for now", Zend_Log::NOTICE);
 			$adoptThreshold = time() - 3600;
 		}
+		
+		$receivedHorizion = date('Y-m-d H:i:s' , strtotime(Billrun_Factory::config()->getConfigValue($this->getType() . '.reciver_horizion', '8 weeks ago')));
+		
 		$query = array(
 			'source' => static::$type,
 			'process_time' => array(
@@ -422,7 +425,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 				array('start_process_time' => array('$lt' => new MongoDate($adoptThreshold))),
 			),
 			'received_time' => array(
-				'$exists' => true,
+				'$gt' => $receivedHorizion,
 			),
 		);
 		$update = array(

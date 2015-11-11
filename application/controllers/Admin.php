@@ -14,6 +14,8 @@
  */
 class AdminController extends Yaf_Controller_Abstract {
 
+	protected $status_model;
+	
 	/**
 	 * use for page title
 	 * 
@@ -60,6 +62,8 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->addJs($this->baseUrl . '/js/jquery.csv-0.71.min.js');
 		$this->addJs($this->baseUrl . '/js/main.js');
 		Yaf_Loader::getInstance(APPLICATION_PATH . '/application/helpers')->registerLocalNamespace('Admin');
+		
+		$this->status_model = new statusModel();
 	}
 
 	protected function addCss($path) {
@@ -619,6 +623,22 @@ class AdminController extends Yaf_Controller_Abstract {
 		header('Location: ' . $uri);
 		exit();
 	}
+	
+		/**
+	 * default controller of admin
+	 */
+	public function statusAction() {
+
+		$params['testConnection'] = $this->status_model->testFtpConnection();
+		$last_file = $this->status_model->lastFile();
+		$params['file_name'] = $last_file['file_name'];
+		$params['received_time'] = $last_file['received_time'];
+		$params['longer_then_an_hour'] = $last_file['longer_then_an_hour'];
+		$params['files_list'] = $this->status_model->getFtpFiles();
+		$this->getView()->component = $this->renderView('status', $params);
+//		$this->getView()->component = $this->renderView('status');
+	}
+
 
 	/**
 	 * method to render component page
