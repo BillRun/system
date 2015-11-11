@@ -97,7 +97,7 @@ trait Billrun_Traits_FileSequenceChecking {
 	 *						[date] => the file date.  
 	 */
 	public function getFileSequenceData($filename) {
-		return Billrun_Util::getFilenameData($this->getName(), $filename);	
+		return Billrun_Traits_FileActions::getFilenameData($this->getName(), $filename);	
 	}
 
 	

@@ -49,7 +49,7 @@ trait Billrun_Traits_FileActions {
 	 * @return an array containing the sequence data. ie:
 	 * 			array(seq => 00001, date => 20130101 )
 	 */
-	public function getFilenameData($filename, $configPrefix) {
+	public static function getFilenameData($filename, $configPrefix) {
 		return array(
 			'seq' => Billrun_Util::regexFirstValue(Billrun_Factory::config()->getConfigValue($configPrefix . ".sequence_regex.seq", "/\D(\d+)\D/"), $filename),
 			'date' => Billrun_Util::regexFirstValue(Billrun_Factory::config()->getConfigValue($configPrefix . ".sequence_regex.date", "/\D(20\d{4})\D/"), $filename),
