@@ -38,16 +38,16 @@ class VfdaysAction extends Action_Base {
 			$days = 0;
 		}
 		$max_days = ($tap3_count > $days) ? $tap3_count : $days;
-		$this->getController()->setOutput(array(
+		$this->getController()->setOutput(array(array(
 			'status' => 1,
 			'desc' => 'success',
-			'input' => $request,
+			'input' => $request->getRequest(),
 			'details' => array(
 				'days' => $max_days,
 				'min_day' => 45,
 				'max_day' => 45,
 			)
-		));
+		)));
 	}
 
 	/**
