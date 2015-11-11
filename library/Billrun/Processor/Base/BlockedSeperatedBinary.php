@@ -53,7 +53,7 @@ abstract class Billrun_Processor_Base_BlockedSeperatedBinary extends Billrun_Pro
 			Billrun_Factory::dispatcher()->trigger('afterProcessorStore', array($this));
 
 			$this->removefromWorkspace($this->getFileStamp());
-			Billrun_Factory::dispatcher()->trigger('afterProcessorRemove', array($this));
+			Billrun_Factory::dispatcher()->trigger('afterProcessorRemove', array($this, $this->filePath));
 			
 			return count($this->data['data']);
 		}

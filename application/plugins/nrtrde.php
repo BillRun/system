@@ -16,6 +16,7 @@
 class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 
 	use Billrun_Traits_FileSequenceChecking,
+		Billrun_Traits_FileActions,
 	 Billrun_Traits_FraudAggregation;
 	/**
 	 * plugin name
@@ -131,15 +132,15 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 	 * @param Billrun_Processor $processor the proce
 	 * @param string $file_path the path of the current processing file.
 	 */
-	public function afterProcessorBackup($processor, &$file_path) {
+	public function afterProcessorRemove($processor, $file_path) {
 		if ($processor->getType() != $this->getName()) {
 			return;
 		}
 		$path = Billrun_Factory::config()->getConfigValue($this->getName() . '.processor.zip_move_path', false, 'string');
-		if (!$path)
+		if (!$path) {
 			return;
-
-		if ($processor->retrievedHostname) {
+		}
+		/*if ($processor->retrievedHostname) {
 			$path = $path . DIRECTORY_SEPARATOR . $processor->retrievedHostname;
 		}
 
@@ -148,12 +149,12 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 		if (!file_exists($path)) {
 			Billrun_Factory::log()->log("Creating Directory : $path", Zend_Log::DEBUG);
 			mkdir($path, 0777, true);
-		}
+		}*/
 
-		$srcPath = $file_path . ".zip";
+		$srcPath = $file_path;
 		if (file_exists($srcPath)) {
 			Billrun_Factory::log()->log("Saving zip file to : $path", Zend_Log::DEBUG);
-			if (!rename($srcPath, $path . DIRECTORY_SEPARATOR . basename($srcPath))) {
+			if (!empty($this->backup($srcPath, basename($srcPath), $path, false, true ))) {
 				Billrun_Factory::log()->log(" Failed when trying to save file : " . basename($srcPath) . " to third party path : $path", Zend_Log::ERR);
 			}
 		}
@@ -578,6 +579,10 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 		);
 
 		return $event;
+	}
+	
+	public function getType() {
+		return $this->getName();
 	}
 
 }
