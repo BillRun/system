@@ -178,11 +178,11 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 
 			if (isset($row['usagev']) || $row['charging_type'] == 'prepaid') {  // for prepaid, volume is by balance left over
 				$volume = $row['usagev'];
+				$plan_name = isset($row['plan']) ? $row['plan'] : null;
 				if ($row['type'] == 'credit') {
-					$accessPrice = isset($rate['rates'][$usage_type]['access']) ? $rate['rates'][$usage_type]['access'] : 0;
+					$accessPrice = $this->getAccessPrice($rate, $usage_type, $plan_name);
 					$pricingData = array($this->pricingField => $accessPrice + self::getPriceByRate($rate, $usage_type, $volume, $row['plan']));
 				} else if ($row['type'] == 'service') {
-					$plan_name = isset($row['plan']) ? $row['plan'] : null;
 					$pricingData = array($this->pricingField => self::getPriceByRate($rate, $usage_type, $volume, $plan_name));
 				} else {
 					$pricingData = $this->updateSubscriberBalance($row, $usage_type, $rate);
@@ -274,7 +274,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @todo refactoring the if-else-if-else-if-else to methods
 	 */
 	protected function getLinePricingData($volume, $usageType, $rate, $sub_balance, $plan) {
-		$accessPrice = isset($rate['rates'][$usageType]['access']) ? $rate['rates'][$usageType]['access'] : 0;
+		$accessPrice = $this->getAccessPrice($rate, $usageType, $plan->getName());
 		$ret = array();
 		if ($plan->isRateInBasePlan($rate, $usageType)) {
 			$planVolumeLeft = $plan->usageLeftInBasePlan($sub_balance, $rate, $usageType);
@@ -427,6 +427,35 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			return $rate['rates'][$usage_type]['rate']['BASE'];
 		}
 		return $rate['rates'][$usage_type]['rate'];
+	}
+	
+	/**
+	 * Gets correct access price from rate by priority order: 
+	 *	1. Access for the customer plan.
+	 *	2. Base plan
+	 *	3. Numeric value
+	 *	4. Return 0
+	 * 
+	 * @param type $rate pricing rate row
+	 * @param type $usageType
+	 * @param type $planName
+	 * @return int Access price
+	 */
+	protected function getAccessPrice($rate, $usageType, $planName) {
+		if (isset($rate['rates'][$usageType]['access'])) {
+			$access = $rate['rates'][$usageType]['access'];
+			if (isset($access[$planName])) {
+				return $access[$planName];
+			}
+			if (isset($access['BASE'])) {
+				return $access['BASE'];
+			}
+			if (is_numeric($access)) {
+				return $access;
+			}
+		}
+		
+		return 0;
 	}
 
 	/**
