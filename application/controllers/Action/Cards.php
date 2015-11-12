@@ -64,7 +64,8 @@ class CardsAction extends ApiAction {
 		$output = $action->execute();
 
 		// Set the raw input.
-		$output['input'] = $request->getRequest();
+		// For security reasons (secret code) - the input won't be send back.
+//		$output['input'] = $request->getRequest();
 
 		$this->getController()->setOutput(array($output));
 	}

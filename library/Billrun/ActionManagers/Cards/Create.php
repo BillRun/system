@@ -20,7 +20,11 @@ class Billrun_ActionManagers_Cards_Create extends Billrun_ActionManagers_Cards_A
 	 * @var type Array
 	 */
 	protected $cards = array();
-
+	protected $removeQuery = array();
+	protected $updateQuery = array();
+	protected $updateValues = array();
+	protected $inner_hash;
+	
 	/**
 	 */
 	public function __construct() {
@@ -56,6 +60,7 @@ class Billrun_ActionManagers_Cards_Create extends Billrun_ActionManagers_Cards_A
 			$jsonCreateDataArray = array($jsonCreateDataArray);
 		}
 
+		$this->inner_hash = md5(serialize($jsonCreateDataArray));		
 		foreach ($jsonCreateDataArray as $jsonCreateData) {
 			$oneCard = array();
 			foreach ($createFields as $field) {
@@ -66,13 +71,11 @@ class Billrun_ActionManagers_Cards_Create extends Billrun_ActionManagers_Cards_A
 				$oneCard[$field] = $jsonCreateData[$field];
 			}
 
-			if (isset($oneCard['secret'])) {
-				$oneCard['secret'] = password_hash($oneCard['secret'], PASSWORD_DEFAULT);
-			}
+			$oneCard['secret'] = hash('sha512',$oneCard['secret']);
+			$oneCard['to'] = new MongoDate(strtotime($oneCard['to']));			
+			$oneCard['creation_time'] = new MongoDate(strtotime($oneCard['creation_time']));
+			$oneCard['inner_hash'] = $this->inner_hash;
 
-			if (isset($oneCard['to'])) {
-				$oneCard['to'] = new MongoDate(strtotime($oneCard['to']));
-			}
 			$this->cards[] = $oneCard;
 		}
 
@@ -92,6 +95,7 @@ class Billrun_ActionManagers_Cards_Create extends Billrun_ActionManagers_Cards_A
 				'wTimeoutMS' => 300000,
 				'w' => 1,
 			);
+			$this->updateOptions = array_merge($bulkOptions, array('multiple' => 1));
 			$res = Billrun_Factory::db()->cardsCollection()->batchInsert($this->cards, $bulkOptions);
 			$success = $res['ok'];
 			$count = $res['nInserted'];
@@ -99,12 +103,24 @@ class Billrun_ActionManagers_Cards_Create extends Billrun_ActionManagers_Cards_A
 			Billrun_Factory::log('failed to store into DB got error : ' . $e->getCode() . ' : ' . $e->getMessage(), Zend_Log::ALERT);
 			Billrun_Factory::log('failed saving request :' . print_r($this->cards, 1), Zend_Log::ALERT);
 			$success = false;
+			$this->removeQuery['inner_hash'] = $this->inner_hash;
+			$res = Billrun_Factory::db()->cardsCollection()->remove($this->removeQuery, $bulkOptions);
 		}
 
+		if ($success) {
+			$this->updateQuery['inner_hash'] = $this->inner_hash;	
+			$this->updateValues['$unset'] = array('inner_hash'=>1);			
+			$res = Billrun_Factory::db()->cardsCollection()->update($this->updateQuery, $this->updateValues, $this->updateOptions);
+		}
+		
+		array_walk($this->cards, function (&$card, $idx) { 
+			unset($card['secret']); 			
+		});
+			
 		$outputResult = array(
 				'status' => ($success) ? (1) : (0),
-				'desc' => ($success) ? ('success creating ' . $count . ' cards') : ('Failed creating card'),
-				'details' => json_encode($this->cards)
+				'desc' => ($success) ? ('success creating ' . $count . ' cards') : ('Failed creating cards'),
+				'details' => ($success) ? (json_encode($this->cards)) : ('Failed to store into DB got error : ' . $e->getCode() . ' : ' . $e->getMessage() . '. ' . $res['n'] . ' cards removed')
 		);
 		return $outputResult;
 	}

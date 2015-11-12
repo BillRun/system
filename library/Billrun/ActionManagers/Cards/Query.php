@@ -43,7 +43,6 @@ class Billrun_ActionManagers_Cards_Query extends Billrun_ActionManagers_Cards_Ac
 	 * all needed fields and/or values for query and true when success.
 	 */
 	protected function queryProcess($input) {
-		$errLog = '';
 		$queryFields = $this->getQueryFields();
 
 		$jsonQueryData = null;
@@ -53,22 +52,23 @@ class Billrun_ActionManagers_Cards_Query extends Billrun_ActionManagers_Cards_Ac
 			return false;
 		}
 
-		foreach ($queryFields as $field) {
-			if (!isset($jsonQueryData[$field])) {
-				$errLog[] = $field;
-			}
-		}
+		$errLog = array_diff($queryFields, array_keys($jsonQueryData));
 
-		if (!empty($errLog)) {
-			Billrun_Factory::log("The following fields are missing or empty:" . implode(', ', $errLog), Zend_Log::ALERT);
+		if (!empty($errLog) && count($errLog) == count($queryFields)) {
+			Billrun_Factory::log("Cannot query ! All the following fields are missing or empty:" . implode(', ', $errLog), Zend_Log::ALERT);
 			return false;
 		}
+		
+		if (isset($jsonQueryData['secret'])) {
+			$jsonQueryData['secret'] = hash('sha512',$jsonQueryData['secret']);
+		}
 
-		$this->query = array(
-				'status' => $jsonQueryData['status'],
-				'batch_number' => $jsonQueryData['batch_number'],
-				'serial_number' => $jsonQueryData['serial_number']
-		);
+		$this->query = array();
+		foreach ($queryFields as $field) {
+			if (isset($jsonQueryData[$field])) {
+				$this->query[$field] = $jsonQueryData[$field];
+			}
+		}
 
 		return true;
 	}
@@ -88,6 +88,7 @@ class Billrun_ActionManagers_Cards_Query extends Billrun_ActionManagers_Cards_Ac
 
 			// Going through the lines
 			foreach ($cursor as $line) {
+				unset($line['secret']);
 				$returnData[] = json_encode($line->getRawData());
 			}
 		} catch (\Exception $e) {
