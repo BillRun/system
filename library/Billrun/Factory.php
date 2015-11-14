@@ -224,8 +224,8 @@ class Billrun_Factory {
 			return false;
 		}
 	} else {
-		self::$mailer->clearFrom();
-		self::$mailer->clearSubject();
+		self::$mailer->clearRecipients()->clearReplyTo()
+					 ->clearSubject();
 		
 	}
 		return self::$mailer;
