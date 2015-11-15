@@ -56,7 +56,7 @@ trait Billrun_Traits_FraudAggregation {
 
 					$project = $query['project'];
 					$project['$project'] = array_merge($project['$project'], $this->addToProject((!empty($eventRules['added_values']) ? $eventRules['added_values'] : array())), $this->addToProject(array('units' => $eventQuery['units'], 'event_type' => $key,
-								'threshold' => $eventQuery['threshold'], 'target_plans' => $eventRules['target_plans'])));
+								'threshold' => $eventQuery['threshold'], 'target_plans' => Billrun_Util::getFieldVal($eventRules['target_plans'], $this->fraudConfig['defaults']['target_plans']) )));
 					$project['$project']['value'] = $eventQuery['value'];
 					$project['$project'][$eventQuery['name']] = $eventQuery['value'];
 					$query['project'] = $project;
