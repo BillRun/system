@@ -154,7 +154,7 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 		$srcPath = $file_path;
 		if (file_exists($srcPath)) {
 			Billrun_Factory::log()->log("Saving zip file to : $path", Zend_Log::DEBUG);
-			if (!empty($this->backup($srcPath, basename($srcPath), $path, false, true ))) {
+			if (empty($this->backup($srcPath, basename($srcPath), $path, false, true ))) {
 				Billrun_Factory::log()->log(" Failed when trying to save file : " . basename($srcPath) . " to third party path : $path", Zend_Log::ERR);
 			}
 		}
