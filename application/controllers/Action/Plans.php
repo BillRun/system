@@ -81,7 +81,8 @@ class PlansAction extends ApiAction {
 		} else if ($resource instanceof Mongodloid_Cursor) {
 			$results = array();
 			foreach ($resource as $item) {
-				$results[] = $item->getRawData();
+				$rawItem = $item->getRawData();
+				$results[] = $this->setTimeToReadable($rawItem);
 			}
 		}
 		if (isset($params['strip']) && !empty($params['strip'])) {
@@ -91,6 +92,19 @@ class PlansAction extends ApiAction {
 
 	}
 
+	/**
+	 * Change the times of a mongo record
+	 * @param record - Record to change the times of.
+	 * @return The record with translated time.
+	 */
+	protected function setTimeToReadable($record) {
+		foreach (array('from', 'to') as $timeField) {
+			$record[$timeField] = date(DATE_ISO8601, $record[$timeField]->sec);
+		}
+		
+		return $record;
+	}
+	
 	/**
 	 * Process the query and prepere it for usage by the Plans model
 	 * @param type $query the query that was recevied from the http request.
