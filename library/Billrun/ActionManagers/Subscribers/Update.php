@@ -21,7 +21,8 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 	protected $recordToSet = array();
 	
 	protected $query = array();
-	protected $keepHistory = true;
+	protected $trackHistory = true;
+	protected $keepLines = true;
 	protected $keepBalances = true;
 	
 	/**
@@ -67,7 +68,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 	/**
 	 * Update a single subscriber record.
 	 * @param Mongodloid_Entity $record - Subscriber record to update.
-	 * @return boolean true if successful.
+	 * @return false if failed, the updated record if successful.
 	 * @throws WriteConcernException
 	 */
 	protected function updateSubscriberRecord($record) {
@@ -75,7 +76,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 			$record->collection($this->collection);
 
 			// Check if the user requested to keep history.
-			if($this->keepHistory) {
+			if($this->trackHistory) {
 				// This throws an exception if fails.
 				$this->handleKeepHistory($record);
 			}
@@ -88,7 +89,19 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 			$this->collection->save($record);
 		}
 		
-		return true;
+		return $record;
+	}
+
+	/**
+	 * Fill in the mendatory fields from the record.
+	 * @param type $record
+	 */
+	protected function fillMendatoryFields($record) {
+		foreach (['sid', 'imsi'] as $field) {
+			if(!isset($this->recordToSet[$field])) {
+				$this->recordToSet[$field] = $record[$field];
+			}	
+		}
 	}
 	
 	/**
@@ -97,14 +110,25 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 	 */
 	public function execute() {
 		$success = true;
-		$updatedDocument = null;
+		$returnDocuments = null;
 		try {
 			$cursor = $this->collection->query($this->query)->cursor();
 			foreach ($cursor as $record) {
-				if(!$this->updateSubscriberRecord($record)) {
+				
+				$fieldsChecked = true;
+				if($fieldsChecked){
+					$fieldsChecked = false;
+					$this->fillMendatoryFields($record);
+				}
+				
+				$returnDocuments[] = $record;
+				$updatedResult = $this->updateSubscriberRecord($record);
+				if($updatedResult === false) {
 					$success = false;
 					break;
 				}
+				
+				$returnDocuments[] = $updatedResult;
 			}
 			
 			if(!$this->keepBalances) {
@@ -121,7 +145,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 		$outputResult = 
 			array('status'  => ($success) ? (1) : (0),
 				  'desc'    => ($success) ? ('Success') : ('Failed') . ' updating subscriber',
-				  'details' => ($updatedDocument) ? json_encode($updatedDocument) : 'null');
+				  'details' => ($returnDocuments) ? json_encode($returnDocuments) : 'No results');
 		return $outputResult;
 	}
 
@@ -228,10 +252,13 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 		}
 				
 		// If keep_history is set take it.
-		$this->keepHistory = $input->get('keep_history');
+		$this->trackHistory = $input->get('track_history');
 		
 		// If keep_balances is set take it.
 		$this->keepBalances = $input->get('keep_balances');
+		
+		// If keep_lines is set take it.
+		$this->keepLines = $input->get('keep_lines');
 		
 		return true;
 	}
