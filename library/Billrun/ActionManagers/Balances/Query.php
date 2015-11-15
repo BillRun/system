@@ -106,7 +106,7 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 		foreach ($dateParameters as $fieldName => $fieldValue) {
 			list($condition, $value) = each($fieldValue);
 			$query[$fieldName] =
-				array($condition => new $value);
+				array($condition => $value);
 		}
 	}
 	
