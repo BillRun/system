@@ -25,7 +25,7 @@ class Billrun_ActionManagers_Balances_Updaters_Secret extends Billrun_ActionMana
 		// Get the record.
 		$dateQuery = array('to' => array('$gt', new MongoDate()));
 		$finalQuery = array_merge($dateQuery, $query);
-		$finalQuery['status'] = array('$eq' => 'active');
+		$finalQuery['status'] = array('$eq' => 'Active');
 		
 		$cardRecord = $cardsColl->query($finalQuery)->cursor()->current();
 		if(empty($cardRecord)) {
@@ -48,7 +48,7 @@ class Billrun_ActionManagers_Balances_Updaters_Secret extends Billrun_ActionMana
 	protected function signalCardAsUsed($cardRecord) {
 		$cardsColl = Billrun_Factory::db()->cardsCollection();
 		$query = array('_id' => array('$eq' => $cardRecord['_id']));
-		$update = array('$set' => array('status' => 'cancelled'));
+		$update = array('$set' => array('status' => 'Used'));
 		
 		$options = array(
 			'upsert' => false,

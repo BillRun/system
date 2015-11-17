@@ -89,7 +89,7 @@ class Billrun_ActionManagers_Cards_Query extends Billrun_ActionManagers_Cards_Ac
 			// Going through the lines
 			foreach ($cursor as $line) {
 				unset($line['secret']);
-				$returnData[] = json_encode($line->getRawData());
+				$returnData[] = $line->getRawData();
 			}
 		} catch (\Exception $e) {
 			Billrun_Factory::log('failed quering DB got error : ' . $e->getCode() . ' : ' . $e->getMessage(), Zend_Log::ALERT);
