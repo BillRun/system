@@ -121,7 +121,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 		$outputResult = 
 			array('status'  => ($success) ? (1) : (0),
 				  'desc'    => ($success) ? ('Success') : ('Failed') . ' updating subscriber',
-				  'details' => ($updatedDocument) ? json_encode($updatedDocument) : 'null');
+				  'details' => ($updatedDocument) ? $updatedDocument : 'null');
 		return $outputResult;
 	}
 

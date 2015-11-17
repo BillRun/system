@@ -120,7 +120,7 @@ class Billrun_ActionManagers_Cards_Create extends Billrun_ActionManagers_Cards_A
 		$outputResult = array(
 				'status' => ($success) ? (1) : (0),
 				'desc' => ($success) ? ('success creating ' . $count . ' cards') : ('Failed creating cards'),
-				'details' => ($success) ? (json_encode($this->cards)) : ('Failed to store into DB got error : ' . $e->getCode() . ' : ' . $e->getMessage() . '. ' . $res['n'] . ' cards removed')
+				'details' => ($success) ? ($this->cards) : ('Failed to store into DB got error : ' . $e->getCode() . ' : ' . $e->getMessage() . '. ' . $res['n'] . ' cards removed')
 		);
 		return $outputResult;
 	}

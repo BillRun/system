@@ -46,7 +46,7 @@ class Billrun_ActionManagers_Subscribers_Query extends Billrun_ActionManagers_Su
 			
 			// Going through the lines
 			foreach ($cursor as $line) {
-				$returnData[] = json_encode($line->getRawData());
+				$returnData[] = $line->getRawData();
 			}
 		} catch (\Exception $e) {
 			Billrun_Factory::log('failed quering DB got error : ' . $e->getCode() . ' : ' . $e->getMessage(), Zend_Log::ALERT);
