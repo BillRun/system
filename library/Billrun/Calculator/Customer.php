@@ -112,7 +112,12 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			$this->subscribersByStamp();
 			$subscriber = isset($this->subscribers[$row['stamp']]) ? $this->subscribers[$row['stamp']] : FALSE;
 		} else {
-			$subscriber = $this->loadSubscriberForLine($row);
+			if ($this->loadSubscriberForLine($row)) {	
+				$subscriber = $this->subscriber;
+			} else {
+				Billrun_Factory::log('Error load subscriber : ' . $row->get('stamp'), Zend_Log::ERR);
+				return false;
+			}
 		}
 		if (!$subscriber || !$subscriber->isValid()) {
 			if ($this->isOutgoingCall($row)) {
