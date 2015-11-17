@@ -21,7 +21,8 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 	protected $recordToSet = array();
 	
 	protected $query = array();
-	protected $keepHistory = true;
+	protected $trackHistory = true;
+	protected $keepLines = true;
 	protected $keepBalances = true;
 	
 	/**
@@ -121,7 +122,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 		$outputResult = 
 			array('status'  => ($success) ? (1) : (0),
 				  'desc'    => ($success) ? ('Success') : ('Failed') . ' updating subscriber',
-				  'details' => ($updatedDocument) ? $updatedDocument : 'null');
+				  'details' => ($updatedDocument) ? $updatedDocument : 'No results');
 		return $outputResult;
 	}
 

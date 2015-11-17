@@ -20,9 +20,6 @@ class Billrun_ActionManagers_Cards_Create extends Billrun_ActionManagers_Cards_A
 	 * @var type Array
 	 */
 	protected $cards = array();
-	protected $removeQuery = array();
-	protected $updateQuery = array();
-	protected $updateValues = array();
 	protected $inner_hash;
 	
 	/**
@@ -83,34 +80,54 @@ class Billrun_ActionManagers_Cards_Create extends Billrun_ActionManagers_Cards_A
 	}
 
 	/**
-	 * Execute the action.
+	 * Clean the inner hash from the cards in the mongo
+	 * @param type $bulkOptions - Options for bulk insert in mongo db.
+	 * @return type
+	 */
+	protected function cleanInnerHash($bulkOptions) {
+		$updateQuery = array('inner_hash' => $this->inner_hash);	
+		$updateValues = array('$unset' => array('inner_hash'=>1));			
+		$updateOptions = array_merge($bulkOptions, array('multiple' => 1));
+		return Billrun_Factory::db()->cardsCollection()->update($updateQuery, $updateValues, $updateOptions);
+	}
+	
+	/**
+	 * Remove the created cards due to error.
+	 * @param type $bulkOptions - Options used for bulk insert to the mongo db.
+	 * @return type
+	 */
+	protected function removeCreated($bulkOptions) {
+		$removeQuery = array('inner_hash' => $this->inner_hash);
+		return Billrun_Factory::db()->cardsCollection()->remove($removeQuery, $bulkOptions);
+	}
+	
+	/**
+	 * Execute the action. 
 	 * @return data for output.
 	 */
 	public function execute() {
 		$success = false;
+		$bulkOptions = array(
+			'continueOnError' => true,
+			'socketTimeoutMS' => 300000,
+			'wTimeoutMS' => 300000,
+			'w' => 1,
+		);
+		$exception = null;
 		try {
-			$bulkOptions = array(
-				'continueOnError' => true,
-				'socketTimeoutMS' => 300000,
-				'wTimeoutMS' => 300000,
-				'w' => 1,
-			);
-			$this->updateOptions = array_merge($bulkOptions, array('multiple' => 1));
 			$res = Billrun_Factory::db()->cardsCollection()->batchInsert($this->cards, $bulkOptions);
 			$success = $res['ok'];
 			$count = $res['nInserted'];
 		} catch (\Exception $e) {
+			$exception = $e;
 			Billrun_Factory::log('failed to store into DB got error : ' . $e->getCode() . ' : ' . $e->getMessage(), Zend_Log::ALERT);
 			Billrun_Factory::log('failed saving request :' . print_r($this->cards, 1), Zend_Log::ALERT);
 			$success = false;
-			$this->removeQuery['inner_hash'] = $this->inner_hash;
-			$res = Billrun_Factory::db()->cardsCollection()->remove($this->removeQuery, $bulkOptions);
+			$res = $this->removeCreated($bulkOptions);
 		}
 
 		if ($success) {
-			$this->updateQuery['inner_hash'] = $this->inner_hash;	
-			$this->updateValues['$unset'] = array('inner_hash'=>1);			
-			$res = Billrun_Factory::db()->cardsCollection()->update($this->updateQuery, $this->updateValues, $this->updateOptions);
+			$res = $this->cleanInnerHash($bulkOptions);
 		}
 		
 		array_walk($this->cards, function (&$card, $idx) { 
@@ -120,7 +137,9 @@ class Billrun_ActionManagers_Cards_Create extends Billrun_ActionManagers_Cards_A
 		$outputResult = array(
 				'status' => ($success) ? (1) : (0),
 				'desc' => ($success) ? ('success creating ' . $count . ' cards') : ('Failed creating cards'),
-				'details' => ($success) ? ($this->cards) : ('Failed to store into DB got error : ' . $e->getCode() . ' : ' . $e->getMessage() . '. ' . $res['n'] . ' cards removed')
+				'details' => ($success) ? 
+							 (json_encode($this->cards)) : 
+							 ('Failed storing cards in the data base : ' . $exception->getCode() . ' : ' . $exception->getMessage() . '. ' . $res['n'] . ' cards removed')
 		);
 		return $outputResult;
 	}
