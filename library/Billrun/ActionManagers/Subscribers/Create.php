@@ -75,7 +75,7 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 		$outputResult = 
 			array('status'  => ($success) ? (1) : (0),
 				  'desc'    => ($success) ? ('Success') : ('Failed') . ' creating subscriber',
-				  'details' => json_encode($entity));
+				  'details' => $entity);
 		return $outputResult;
 	}
 
