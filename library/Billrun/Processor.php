@@ -413,7 +413,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 			$adoptThreshold = time() - 3600;
 		}
 		
-		$receivedHorizion = date('Y-m-d H:i:s' , strtotime(Billrun_Factory::config()->getConfigValue($this->getType() . '.reciver_horizion', '8 weeks ago')));
+		$receivedHorizion = date('Y-m-d H:i:s' , strtotime(Billrun_Factory::config()->getConfigValue($this->getType() . '.receiver_horizion', '8 weeks ago')));
 		
 		$query = array(
 			'source' => static::$type,
