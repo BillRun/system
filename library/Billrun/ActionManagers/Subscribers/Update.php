@@ -107,7 +107,10 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 			$record->collection($this->collection);
 
 			// Check if the user requested to keep history.
-			if($this->keepHistory) {
+			if($this->trackHistory) {
+				$record['sid'] = $this->recordToSet['sid'];
+				$record['msisdn'] = $this->recordToSet['msisdn'];
+				
 				// This throws an exception if fails.
 				$this->handleKeepHistory($record);
 			}
@@ -265,7 +268,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 		}
 				
 		// If keep_history is set take it.
-		$this->keepHistory = $input->get('keep_history');
+		$this->trackHistory = $input->get('track_history');
 		
 		// If keep_balances is set take it.
 		$this->keepBalances = $input->get('keep_balances');
