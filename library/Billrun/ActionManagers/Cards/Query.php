@@ -88,8 +88,9 @@ class Billrun_ActionManagers_Cards_Query extends Billrun_ActionManagers_Cards_Ac
 
 			// Going through the lines
 			foreach ($cursor as $line) {
-				unset($line['secret']);
-				$returnData[] = $line->getRawData();
+				$rawItem = $line->getRawData();
+				unset($rawItem['secret']);
+				$returnData[] = Billrun_Util::convertRecordMongoDatetimeFields($rawItem, array('to', 'creation_time'));
 			}
 		} catch (\Exception $e) {
 			Billrun_Factory::log('failed quering DB got error : ' . $e->getCode() . ' : ' . $e->getMessage(), Zend_Log::ALERT);

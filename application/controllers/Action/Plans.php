@@ -82,7 +82,7 @@ class PlansAction extends ApiAction {
 			$results = array();
 			foreach ($resource as $item) {
 				$rawItem = $item->getRawData();
-				$results[] = $this->setTimeToReadable($rawItem);
+				$results[] = Billrun_Util::convertRecordMongoDatetimeFields($rawItem);
 			}
 		}
 		if (isset($params['strip']) && !empty($params['strip'])) {

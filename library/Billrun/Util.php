@@ -966,5 +966,23 @@ class Billrun_Util {
 
 		return $temp;
 	}
+	
+ 	/**
+	 * Change the times of a mongo record
+	 * 
+	 * @param array $row - Record to change the times of.
+	 * @param array $fields - date time fields array list
+	 * @param string $format - format datetime (based on php date function)
+	 * 
+	 * @return The record with translated time.
+	 */
+	public function convertRecordMongoDatetimeFields($record, array $fields = array('from', 'to'), $format = DATE_ISO8601) {
+		foreach ($fields as $timeField) {
+			if (isset($record[$timeField]->sec))
+			$record[$timeField] = date($format, $record[$timeField]->sec);
+		}
+		
+		return $record;
+	}
 
 }
