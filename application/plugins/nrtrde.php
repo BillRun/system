@@ -154,7 +154,8 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 		$srcPath = $file_path;
 		if (file_exists($srcPath)) {
 			Billrun_Factory::log()->log("Saving extracted file to : $path", Zend_Log::DEBUG);
-			if (empty($this->backup($srcPath, basename($srcPath), $path, false, true ))) {
+			$movedTo = $this->backup($srcPath, basename($srcPath), $path, false, true );
+			if (empty($movedTo)) {
 				Billrun_Factory::log()->log(" Failed when trying to save file : " . basename($srcPath) . " to third party path : $path", Zend_Log::ERR);
 			}
 		}
@@ -191,7 +192,10 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 		}
 		$ret = array();
 		foreach ($this->fraudConfig['groups'] as $groupName => $groupIds) {
-			$ret = array_merge($ret, $this->collectForGroup($groupName, $groupIds), $this->collectAdvanceEvents($groupName, $groupIds));
+			if(!Billrun_Factory::config()->getConfigValue('nrtrde.fraud.ignore_old_events', FALSE)) {
+				$oldEvents =$this->collectForGroup($groupName, $groupIds);
+			}
+			$ret = array_merge($ret, $oldEvents, $this->collectAdvanceEvents($groupName, $groupIds));
 		}
 
 		Billrun_Factory::log()->log('NRTRDE plugin located ' . count($ret) . ' items as fraud events for group : '.$groupName, Zend_Log::INFO);

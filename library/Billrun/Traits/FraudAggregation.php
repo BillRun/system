@@ -19,12 +19,16 @@ trait Billrun_Traits_FraudAggregation {
 	 * @var type 
 	 */
 	protected $fraudConfig = array();
+	
+	protected $fraudCollection = null;
 
 	public function __construct($options = array()) {
 		$this->initFraudAggregation();
+		
 	}
 
 	protected function initFraudAggregation() {
+		$this->fraudCollection = Billrun_Factory::db()->linesCollection();
 		$this->fraudConfig = Billrun_Factory::config()->getConfigValue('fraud', $this->fraudConfig);
 		$this->fraudConfig = array_merge($this->fraudConfig, Billrun_Factory::config()->getConfigValue($this->getName() . '.fraud', $this->fraudConfig));
 	}
@@ -34,8 +38,7 @@ trait Billrun_Traits_FraudAggregation {
 	 * @param type $groupName
 	 * @param type $groupIds
 	 */
-	protected function collectFraudEvents($groupName, $groupIds, $baseQuery) {
-		$lines = Billrun_Factory::db()->linesCollection();
+	protected function collectFraudEvents($groupName, $groupIds, $baseQuery) {		
 		$events = array();
 		$timeField = $this->getTimeField();
 
@@ -64,7 +67,7 @@ trait Billrun_Traits_FraudAggregation {
 					$query['where']['$match'] = array_merge($query['where']['$match'], (isset($eventQuery['query']) ? $this->parseEventQuery($eventQuery['query']) : array()), (isset($eventRules['group_rules'][$groupName]) ? $this->parseEventQuery($eventRules['group_rules'][$groupName]) : array()));
 					$ruleMatch = array('$match' => (isset($eventQuery['match']) ? $eventQuery['match'] : array('value' => array('$gte' => intval($eventQuery['threshold']))) ));
 					
-					$ret = $lines->aggregate( array($query['base_match'], $query['where'], $query['group_match'], $query['group'], $query['translate'], $query['project'], $ruleMatch), array("allowDiskUse" => true) );
+					$ret = $this->fraudCollection->aggregate( array($query['base_match'], $query['where'], $query['group_match'], $query['group'], $query['translate'], $query['project'], $ruleMatch), array("allowDiskUse" => true) );
 
 					if ($this->postProcessEventResults($events, $ret, $eventQuery, $key)) {
 						$events = array_merge($events, $ret);
