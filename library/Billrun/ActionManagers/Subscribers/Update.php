@@ -66,6 +66,37 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 	}
 	
 	/**
+	 * If user requested to keep the lines, all records in the lines collection are
+	 * updated according to the user request.
+	 */
+	protected function handleKeepLines() {
+		$keepLinesFieldsArray = Billrun_Factory::config()->getConfigValue('subscribers.keep_lines');
+		$keepLinesUpdate = array();
+		$keepLinesQuery = array();
+		// Check if there are updated values for 'keep_lines'
+		foreach ($this->recordToSet as $key=>$value) {
+			if(isset($this->query[$key]) && in_array($key, $keepLinesFieldsArray)) {
+				$keepLinesUpdate[$key] = $value;
+				$keepLinesQuery[$key] = $this->query[$key];	
+			}
+		}
+		
+		// No need to apply keep lines logic
+		if(empty($keepLinesQuery)) {
+			return true;
+		}
+		
+		$linesUpdate = array('$set' => $keepLinesUpdate);
+		$options = array(
+			'upsert' => false,
+			'new' => false,
+			'w' => 1,
+		);
+		$linesColl = Billrun_Factory::db()->linesCollection();
+		return $linesColl->findAndModify($keepLinesQuery, $keepLinesUpdate, array(), $options, true);
+	}
+	
+	/**
 	 * Update a single subscriber record.
 	 * @param Mongodloid_Entity $record - Subscriber record to update.
 	 * @return boolean true if successful.
@@ -98,8 +129,17 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 	 */
 	public function execute() {
 		$success = true;
+<<<<<<< HEAD
+		$returnDocuments = null;
+
+=======
 		$updatedDocument = null;
+>>>>>>> upstream/version_40
 		try {
+			if($this->keepLines) {
+				$this->handleKeepLines();
+			}
+			
 			$cursor = $this->collection->query($this->query)->cursor();
 			foreach ($cursor as $record) {
 				if(!$this->updateSubscriberRecord($record)) {
