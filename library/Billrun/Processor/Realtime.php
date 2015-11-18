@@ -70,6 +70,10 @@ class Billrun_Processor_Realtime extends Billrun_Processor {
 				return $row['MSCC']['used'];
 			case ('call'):
 				return 1;
+			case ('sms'):
+				return 1;
+			case ('service'):
+				return 1;
 		}
 		return 0;
 	}
@@ -84,6 +88,12 @@ class Billrun_Processor_Realtime extends Billrun_Processor {
 		}
 		if (isset($row['call_reference'])) {
 			return 'call';
+		}
+		if (isset($row['record_type']) && $row['record_type'] === 'sms') {
+			return 'sms';
+		}
+		if (isset($row['record_type']) && $row['record_type'] === 'service') {
+			return 'service';
 		}
 		return '';
 	}
