@@ -27,6 +27,7 @@ class depositPlugin extends Billrun_Plugin_BillrunPluginFraud {
 	public function __construct($options = array()) {
 		parent::__construct($options);
 		$this->initFraudAggregation();
+		$this->fraudCollection = Billrun_Factory::db()->eventsCollection();
 	}
 
 	/**
@@ -98,7 +99,10 @@ class depositPlugin extends Billrun_Plugin_BillrunPluginFraud {
 		}
 		$ret = array();
 		foreach ($this->fraudConfig['groups'] as $groupName => $groupIds) {
-			$ret = array_merge($ret, $this->collectForGroup($groupName, $groupIds));
+			if(!Billrun_Factory::config()->getConfigValue('deposit.fraud.ignore_old_events', FALSE)) {
+				$oldEvents =  $this->collectForGroup($groupName, $groupIds);
+			}
+			$ret = array_merge($ret, $oldEvents, $this->collectAdvanceEvents($groupName, $groupIds));
 		}
 		Billrun_Factory::log()->log("Deposits fraud found " . count($ret) . " items", Zend_Log::INFO);
 		return $ret;
@@ -157,6 +161,68 @@ class depositPlugin extends Billrun_Plugin_BillrunPluginFraud {
 
 		return $items;
 	}
+	
+	/**
+	 * Helper function to integrate advance event collection
+	 * @param type $groupName the  group to collect events for
+	 * @param type $groupIds the ids array to collect events for.
+	 */
+	protected function collectAdvanceEvents($groupName, $groupIds) {
+		$baseQuery =  array(
+			'base_match' => array(
+				'$match' => array(
+					'source' => array('$nin' => array('billing','ird')), // filter out billing events (70_PERCENT,FP_NATINAL,etc...)
+					'event_type' => array('$ne' => 'DEPOSITS'),
+				),
+			),
+			'where' => array(
+				'$match' => array(
+					'returned_value.success' => 1,
+					//'returned_value.ignored' => array('$ne' => 1),
+				),
+			),
+			'group_match' => array(
+				'$match' => array(
+					'group' => array( '$regex' => $groupIds ),
+				)
+			),
+			'group' => array(
+				'$group' => array(
+					"_id" => '$imsi',
+					'deposits' => array('$sum' => 1),
+					'events_ids' => array('$addToSet' => '$_id'),
+					'imsi' => array('$first' => '$imsi'),
+					'msisdn' => array('$first' => '$msisdn'),
+					'events_stamps' => array('$addToSet' => '$stamp'),
+					'group' => array('$first' => '$group')
+				),
+			),
+			'translate' => array(
+				'$project' => array(
+					"_id" => 1,
+					'deposits' => 1,
+					'events_ids' => 1,
+					'imsi' => 1,
+					'msisdn' => 1,
+					'events_stamps' => 1,
+					'group' => 1,
+				),
+			),
+			'project' => array(
+				'$project' => array(
+					"_id" => 1,
+					'deposits' => 1,
+					'events_ids' => 1,
+					'imsi' => 1,
+					'msisdn' => 1,
+					'events_stamps' => 1,
+					'group' => 1,
+				),
+			),
+		);
+
+		return $this->collectFraudEvents($groupName, $groupIds, $baseQuery);
+	}
 
 	/**
 	 * Add data that is needed to use the event object/DB document later
@@ -170,15 +236,21 @@ class depositPlugin extends Billrun_Plugin_BillrunPluginFraud {
 		$newEvent['source'] = $this->getName();
 		$newEvent['target_plans'] = $this->fraudConfig['defaults']['target_plans'];
 
-		switch ($type) {
-			case 'deposits':
-				$newEvent['threshold'] = Billrun_Factory::config()->getConfigValue('deposit.hourly.thresholds.deposits', 3);
-				$newEvent['units'] = 'DEPOSIT';
-				$newEvent['event_type'] = 'DEPOSITS';
-				break;
+		if(empty($newEvent['event_type']) ) {
+			switch ($type) {
+				case 'deposits':
+					$newEvent['threshold'] = Billrun_Factory::config()->getConfigValue('deposit.hourly.thresholds.deposits', 3);
+					$newEvent['units'] = 'DEPOSIT';
+					$newEvent['event_type'] = 'DEPOSITS';
+					break;
+			}
 		}
 
 		return $newEvent;
+	}
+	
+	protected function getTimeField() {
+		return 'notify_time';
 	}
 
 }

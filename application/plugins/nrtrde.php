@@ -192,7 +192,10 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 		}
 		$ret = array();
 		foreach ($this->fraudConfig['groups'] as $groupName => $groupIds) {
-			$ret = array_merge($ret, $this->collectForGroup($groupName, $groupIds), $this->collectAdvanceEvents($groupName, $groupIds));
+			if(!Billrun_Factory::config()->getConfigValue('nrtrde.fraud.ignore_old_events', FALSE)) {
+				$oldEvents =$this->collectForGroup($groupName, $groupIds);
+			}
+			$ret = array_merge($ret, $oldEvents, $this->collectAdvanceEvents($groupName, $groupIds));
 		}
 
 		Billrun_Factory::log()->log('NRTRDE plugin located ' . count($ret) . ' items as fraud events for group : '.$groupName, Zend_Log::INFO);
