@@ -129,12 +129,8 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 	 */
 	public function execute() {
 		$success = true;
-<<<<<<< HEAD
-		$returnDocuments = null;
 
-=======
 		$updatedDocument = null;
->>>>>>> upstream/version_40
 		try {
 			if($this->keepLines) {
 				$this->handleKeepLines();
