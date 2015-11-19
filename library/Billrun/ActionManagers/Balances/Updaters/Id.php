@@ -66,7 +66,7 @@ class Billrun_ActionManagers_Balances_Updaters_Id extends Billrun_ActionManagers
 		
 		if(!$balanceRecord || $balanceRecord->isEmpty()) {
 			// TODO: Report error.
-			$error = "Invalid blance record";
+			$error = "Invalid balance record";
 			$this->reportError($error, Zend_Log::ALERT);
 			return;
 		}
