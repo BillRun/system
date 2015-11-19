@@ -28,7 +28,7 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 	/**
 	 */
 	public function __construct() {
-		parent::__construct();
+		parent::__construct(array('error'=>"Success querying balances"));
 	}
 	
 	/**
@@ -45,7 +45,8 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 				$returnData[] = Billrun_Util::convertRecordMongoDatetimeFields($rawItem);
 			}
 		} catch (\Exception $e) {
-			Billrun_Factory::log('failed quering DB got error : ' . $e->getCode() . ' : ' . $e->getMessage(), Zend_Log::ALERT);
+			$error = 'failed quering DB got error : ' . $e->getCode() . ' : ' . $e->getMessage();
+			$this->reportError($error, Zend_Log::ALERT);
 			return null;
 		}	
 		
@@ -70,7 +71,7 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 		
 		$outputResult = 
 			array('status'  => ($success) ? (1) : (0),
-				  'desc'    => ($success) ? ('success') : ('Failed') . ' querying balances',
+				  'desc'    => $this->error,
 				  'details' => $returnData);
 		return $outputResult;
 	}
@@ -119,7 +120,8 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 	public function parse($input) {
 		$sid = $input->get('sid');
 		if(empty($sid)) {
-			Billrun_Factory::log("Balances Query receieved no sid!", Zend_Log::NOTICE);
+			$error = "Balances Query receieved no sid!";
+			$this->reportError($error, Zend_Log::NOTICE);
 			return false;
 		}
 		
@@ -145,7 +147,8 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 		
 		// Check if received both external_id and name.
 		if(count($prepaidQuery) > 1) {
-			Billrun_Factory::log("Received both external id and name in balances query, specify one or none.", Zend_Log::ERR);
+			$error ="Received both external id and name in balances query, specify one or none.";
+			$this->reportError($error, Zend_Log::ERR);
 			return false;
 		}
 		// If empty it means that there is no filtering to be done.
@@ -192,7 +195,8 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 		// TODO: Use the prepaid DB/API proxy.
 		$prepaidRecord = $prepaidCollection->query($prepaidQuery)->cursor()->current();
 		if(!$prepaidRecord || $prepaidRecord->isEmpty()) {
-			Billrun_Factory::log("Failed to get prepaid record.", Zend_Log::NOTICE);
+			$error = "Failed to get prepaid record";
+			$this->reportError($error, Zend_Log::NOTICE);
 			return false;
 		}
 		

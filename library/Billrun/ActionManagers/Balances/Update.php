@@ -40,7 +40,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 	/**
 	 */
 	public function __construct() {
-		parent::__construct();
+		parent::__construct(array('error' => "Success updating balances"));
 	}
 	
 	/**
@@ -56,7 +56,8 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		
 		$manager = new Billrun_ActionManagers_Balances_Updaters_Manager($updaterManagerInput);
 		if(!$manager) {
-			Billrun_Factory::log("Failed to get the updater manager!", Zend_Log::ERR);
+			$error = "Failed to get the updater manager!";
+			$this->reportError($error, Zend_Log::ERR);
 			return null;
 		}
 		
@@ -106,7 +107,8 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		$jsonUpdateData = null;
 		$update = $input->get('upsert');
 		if(empty($update) || (!($jsonUpdateData = json_decode($update, true)))) {
-			Billrun_Factory::log("Update action does not have an update field!", Zend_Log::ALERT);
+			$error = "Update action does not have an update field!";
+			$this->reportError($error, Zend_Log::ALERT);
 			return false;
 		}
 		
@@ -168,18 +170,22 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		$jsonQueryData = null;
 		$query = $input->get('query');
 		if(empty($query) || (!($jsonQueryData = json_decode($query, true)))) {
-			Billrun_Factory::log("Update action does not have a query field!", Zend_Log::ALERT);
+			$error = "Update action does not have a query field!";
+			$this->reportError($error, Zend_Log::ALERT);
 			return false;
 		}
 		
 		$this->query = $this->getUpdateFilter($jsonQueryData);
 		// This is a critical error!
 		if($this->query===null){
-			Billrun_Factory::log("Balances Update: Received more than one filter field!", Zend_Log::ERR);
+			$error = "Balances Update: Received more than one filter field";
+			$this->reportError($error, Zend_Log::ERR);
+			return false;
 		}
 		// No filter found.
 		else if(empty($this->query)) {
-			Billrun_Factory::log("Balances Update: Did not receive a filter field!", Zend_Log::ERR);
+			$error = "Balances Update: Did not receive a filter field!";
+			$this->reportError($error, Zend_Log::ERR);
 			return false;
 		}
 		
@@ -196,7 +202,8 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		
 		// Check that sid exists.
 		if(!$sid) {
-			Billrun_Factory::log("Update action did not receive a subscriber ID!", Zend_Log::ALERT);
+			$error = "Update action did not receive a subscriber ID!";
+			$this->reportError($error, Zend_Log::ALERT);
 			return false;
 		}
 		

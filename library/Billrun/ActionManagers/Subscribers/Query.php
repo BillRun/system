@@ -30,7 +30,7 @@ class Billrun_ActionManagers_Subscribers_Query extends Billrun_ActionManagers_Su
 	/**
 	 */
 	public function __construct() {
-		parent::__construct();
+		parent::__construct(array('error' => "Success deleting subscriber"));
 	}
 	
 	/**
@@ -50,7 +50,8 @@ class Billrun_ActionManagers_Subscribers_Query extends Billrun_ActionManagers_Su
 				$returnData[] = Billrun_Util::convertRecordMongoDatetimeFields($rawItem);
 			}
 		} catch (\Exception $e) {
-			Billrun_Factory::log('failed quering DB got error : ' . $e->getCode() . ' : ' . $e->getMessage(), Zend_Log::ALERT);
+			$error = 'failed quering DB got error : ' . $e->getCode() . ' : ' . $e->getMessage();
+			$this->reportError($error, Zend_Log::ALERT);
 			return null;
 		}	
 		
@@ -74,7 +75,7 @@ class Billrun_ActionManagers_Subscribers_Query extends Billrun_ActionManagers_Su
 		
 		$outputResult = 
 			array('status'  => ($success) ? (1) : (0),
-				  'desc'    => ($success) ? ('success') : ('Failed') . ' querying subscriber',
+				  'desc'    => $this->error,
 				  'details' => $returnData);
 		return $outputResult;
 	}
@@ -118,6 +119,8 @@ class Billrun_ActionManagers_Subscribers_Query extends Billrun_ActionManagers_Su
 		$jsonData = null;
 		$query = $input->get('query');
 		if(empty($query) || (!($jsonData = json_decode($query, true)))) {
+			$error = "Failed decoding JSON data";
+			$this->reportError($error, Zend_Log::ALERT);
 			return false;
 		}
 		
@@ -125,7 +128,8 @@ class Billrun_ActionManagers_Subscribers_Query extends Billrun_ActionManagers_Su
 		
 		// If there were errors.
 		if(!empty($invalidFields)) {
-			Billrun_Factory::log("Subscribers query received invalid query values in fields: " . implode(',', $invalidFields), Zend_Log::ALERT);
+			$error = "Subscribers query received invalid query values in fields: " . implode(',', $invalidFields);
+			$this->reportError($error, Zend_Log::ALERT);
 			return false;
 		}
 		

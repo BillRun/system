@@ -25,7 +25,7 @@ class Billrun_ActionManagers_Cards_Create extends Billrun_ActionManagers_Cards_A
 	/**
 	 */
 	public function __construct() {
-		parent::__construct();
+		parent::__construct(array('error' =>"Success creating cards"));
 	}
 
 	/**
@@ -49,7 +49,8 @@ class Billrun_ActionManagers_Cards_Create extends Billrun_ActionManagers_Cards_A
 		$create = $input->get('cards');
 
 		if (empty($create) || (!($jsonCreateDataArray = json_decode($create, true)))) {
-			Billrun_Factory::log("There is no create tag or create tag is empty!", Zend_Log::ALERT);
+			$error = "There is no create tag or create tag is empty!";
+			$this->reportError($error, Zend_Log::ALERT);
 			return false;
 		}
 
@@ -62,7 +63,8 @@ class Billrun_ActionManagers_Cards_Create extends Billrun_ActionManagers_Cards_A
 			$oneCard = array();
 			foreach ($createFields as $field) {
 				if (!isset($jsonCreateData[$field])) {
-					Billrun_Factory::log("Field: " . $field . " is not set!", Zend_Log::ALERT);
+					$error = "Field: " . $field . " is not set!";
+					$this->reportError($error, Zend_Log::ALERT);
 					return false;
 				}
 				$oneCard[$field] = $jsonCreateData[$field];
@@ -120,7 +122,8 @@ class Billrun_ActionManagers_Cards_Create extends Billrun_ActionManagers_Cards_A
 			$count = $res['nInserted'];
 		} catch (\Exception $e) {
 			$exception = $e;
-			Billrun_Factory::log('failed to store into DB got error : ' . $e->getCode() . ' : ' . $e->getMessage(), Zend_Log::ALERT);
+			$error = 'failed storing in the DB got error : ' . $e->getCode() . ' : ' . $e->getMessage();
+			$this->reportError($error, Zend_Log::ALERT);
 			Billrun_Factory::log('failed saving request :' . print_r($this->cards, 1), Zend_Log::ALERT);
 			$success = false;
 			$res = $this->removeCreated($bulkOptions);
@@ -136,7 +139,7 @@ class Billrun_ActionManagers_Cards_Create extends Billrun_ActionManagers_Cards_A
 			
 		$outputResult = array(
 				'status' => ($success) ? (1) : (0),
-				'desc' => ($success) ? ('success creating ' . $count . ' cards') : ('Failed creating cards'),
+				'desc' => $this->error,
 				'details' => ($success) ? 
 							 (json_encode($this->cards)) : 
 							 ('Failed storing cards in the data base : ' . $exception->getCode() . ' : ' . $exception->getMessage() . '. ' . $res['n'] . ' cards removed')

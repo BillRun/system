@@ -29,7 +29,8 @@ class Billrun_ActionManagers_Balances_Updaters_Secret extends Billrun_ActionMana
 		
 		$cardRecord = $cardsColl->query($finalQuery)->cursor()->current();
 		if(empty($cardRecord)) {
-			Billrun_Factory::log("Invalid card received, might be cancelled", Zend_Log::NOTICE);
+			$error = "Invalid card received, might be cancelled";
+			$this->reportError($error, Zend_Log::NOTICE);
 			return false;
 		}
 		

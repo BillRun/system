@@ -23,7 +23,7 @@ class Billrun_ActionManagers_Cards_Update extends Billrun_ActionManagers_Cards_A
 	/**
 	 */
 	public function __construct() {
-		parent::__construct();
+		parent::__construct(array('error' => "Success updating cards"));
 	}
 
 	/**
@@ -55,14 +55,16 @@ class Billrun_ActionManagers_Cards_Update extends Billrun_ActionManagers_Cards_A
 		$jsonQueryData = null;
 		$query = $input->get('query');
 		if (empty($query) || (!($jsonQueryData = json_decode($query, true)))) {
-			Billrun_Factory::log("There is no query tag or query tag is empty!", Zend_Log::ALERT);
+			$error = "There is no query tag or query tag is empty!";
+			$this->reportError($error, Zend_Log::ALERT);
 			return false;
 		}
 
 		$errLog = array_diff($queryFields, array_keys($jsonQueryData));
 
 		if (!isset($jsonQueryData['batch_number']) && !isset($jsonQueryData['serial_number'])) {
-			Billrun_Factory::log("Cannot update ! All the following fields are missing or empty:" . implode(', ', $errLog), Zend_Log::ALERT);
+			$error = "Cannot update ! All the following fields are missing or empty:" . implode(', ', $errLog);
+			$this->reportError($error, Zend_Log::ALERT);
 			return false;
 		}
 		
@@ -93,7 +95,8 @@ class Billrun_ActionManagers_Cards_Update extends Billrun_ActionManagers_Cards_A
 		$jsonUpdateData = null;
 		$update = $input->get('update');
 		if (empty($update) || (!($jsonUpdateData = json_decode($update, true)))) {
-			Billrun_Factory::log("There is no update tag or update tag is empty!", Zend_Log::ALERT);
+			$error = "There is no update tag or update tag is empty!";
+			$this->reportError($error, Zend_Log::ALERT);
 			return false;
 		}
 
@@ -120,14 +123,15 @@ class Billrun_ActionManagers_Cards_Update extends Billrun_ActionManagers_Cards_A
 			$updateResult = $this->collection->update($this->query, array('$set' => $this->update), array('w' => 1, 'multiple' => 1));
 			$updated = isset($updateResult['nModified']) ? $updateResult['nModified'] : 0;
 		} catch (\Exception $e) {
-			Billrun_Factory::log('failed to store into DB got error : ' . $e->getCode() . ' : ' . $e->getMessage(), Zend_Log::ALERT);
+			$error = 'failed storing in the DB got error : ' . $e->getCode() . ' : ' . $e->getMessage();
+			$this->reportError($error, Zend_Log::ALERT);
 			Billrun_Factory::log('failed saving request :' . print_r($this->update, 1), Zend_Log::ALERT);
 			$updated = 0;
 		}
 
 		$outputResult = array(
 				'status' => ($updated) ? (1) : (0),
-				'desc' => ($updated) ? ('success') : ('Failed updating card(s)'),
+				'desc' => $this->error,
 				'details' => 'Updated ' . $updated . ' card(s)'
 		);
 

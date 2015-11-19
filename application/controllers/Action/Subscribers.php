@@ -54,18 +54,21 @@ class SubscribersAction extends ApiAction {
 		// This is the method which is going to be executed.
 		$action = $this->getAction($request);
 		
+		$output = "";
 		// Check that received a valid action.
-		if(!$action) {
+		if(is_string($action)) {
 			// TODO: Report failed action. What do i write to the output if this happens?
 			Billrun_Factory::log("Failed to get subscriber action instance for received input", Zend_Log::ALERT);
-			return;
-		}
-		
-		$output = $action->execute();
-		
-		// Set the raw input.
-		$output['input'] = $request->getRequest();
-		
+			
+			$output = array('status'  => 0,
+				  'desc'    => $action,
+				  'details' => 'Error');
+		} else {
+			$output = $action->execute();
+
+			// Set the raw input.
+			$output['input'] = $request->getRequest();
+		}		
 		$this->getController()->setOutput(array($output));
 	}
 	

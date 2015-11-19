@@ -11,14 +11,15 @@
  *
  * @author Dori
  */
-abstract class Billrun_ActionManagers_Cards_Action {
+abstract class Billrun_ActionManagers_Cards_Action extends Billrun_ActionManagers_APIAction{
 
 	protected $collection = null;
 	
 	/**
 	 * Create an instance of the CardsAction type.
 	 */
-	public function __construct() {
+	public function __construct($params) {
+		parent::__construct($params);
 		$this->collection = Billrun_Factory::db()->cardsCollection();
 	}
 	

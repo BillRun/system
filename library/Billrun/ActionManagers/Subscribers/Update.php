@@ -28,7 +28,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 	/**
 	 */
 	public function __construct() {
-		parent::__construct();
+		parent::__construct(array('error' => "Success updating subscriber"));
 	}
 	
 	/**
@@ -116,6 +116,8 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 			}
 
 			if(!$record->set($key, $value)) {
+				$error = "Failed to set values to entity";
+				$this->reportError($error, Zend_Log::ALERT);
 				return false;
 			}
 
@@ -153,14 +155,15 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 			}
 			
 		} catch (\Exception $e) {
-			Billrun_Factory::log('failed to store into DB got error : ' . $e->getCode() . ' : ' . $e->getMessage(), Zend_Log::ALERT);
+			$error = 'failed storing in the DB got error : ' . $e->getCode() . ' : ' . $e->getMessage();
+			$this->reportError($error, Zend_Log::ALERT);
 			Billrun_Factory::log('failed saving request :' . print_r($this->recordToSet, 1), Zend_Log::ALERT);
 			$success = false;
 		}
 
 		$outputResult = 
 			array('status'  => ($success) ? (1) : (0),
-				  'desc'    => ($success) ? ('Success') : ('Failed') . ' updating subscriber',
+				  'desc'    => $this->error,
 				  'details' => ($updatedDocument) ? $updatedDocument : 'No results');
 		return $outputResult;
 	}
@@ -182,7 +185,8 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 		$jsonUpdateData = null;
 		$update = $input->get('update');
 		if(empty($update) || (!($jsonUpdateData = json_decode($update, true)))) {
-			Billrun_Factory::log("Update action does not have an update field!", Zend_Log::ALERT);
+			$error = "Update action does not have an update field!";
+			$this->reportError($error, Zend_Log::ALERT);
 			return false;
 		}
 		
@@ -237,7 +241,8 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 		$jsonQueryData = null;
 		$query = $input->get('query');
 		if(empty($query) || (!($jsonQueryData = json_decode($query, true)))) {
-			Billrun_Factory::log("Update action does not have a query field!", Zend_Log::ALERT);
+			$error = "Update action does not have a query field!";
+			$this->reportError($error, Zend_Log::ALERT);
 			return false;
 		}
 		
@@ -245,7 +250,8 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 		
 		// If there were errors.
 		if(!empty($invalidFields)) {
-			Billrun_Factory::log("Subscribers update received invalid query values in fields: " . implode(',', $invalidFields), Zend_Log::ALERT);
+			$error = "Subscribers update received invalid query values in fields: " . implode(',', $invalidFields);
+			$this->reportError($error, Zend_Log::ALERT);
 			return false;
 		}
 		

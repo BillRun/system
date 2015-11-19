@@ -55,18 +55,23 @@ class CardsAction extends ApiAction {
 		// This is the method which is going to be executed.
 		$action = $this->getAction($request);
 
+		$output = "";
 		// Check that received a valid action.
-		if (!$action) {
-			Billrun_Factory::log("Failed to get Cards action instance for received input", Zend_Log::ALERT);
-			return;
+		if(is_string($action)) {
+			// TODO: Report failed action. What do i write to the output if this happens?
+			Billrun_Factory::log("Failed to get cards action instance for received input", Zend_Log::ALERT);
+			
+			$output = array('status'  => 0,
+				  'desc'    => $action,
+				  'details' => 'Error');
+		} else {
+
+			$output = $action->execute();
+
+			// Set the raw input.
+			// For security reasons (secret code) - the input won't be send back.
+	//		$output['input'] = $request->getRequest();
 		}
-
-		$output = $action->execute();
-
-		// Set the raw input.
-		// For security reasons (secret code) - the input won't be send back.
-//		$output['input'] = $request->getRequest();
-
 		$this->getController()->setOutput(array($output));
 	}
 

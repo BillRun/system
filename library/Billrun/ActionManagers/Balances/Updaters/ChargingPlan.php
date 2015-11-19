@@ -25,7 +25,8 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		$chargingPlansCollection = Billrun_Factory::db()->plansCollection();
 		$chargingPlanRecord = $this->getRecord($query, $chargingPlansCollection, $this->getTranslateFields());
 		if (!$chargingPlanRecord) {
-			Billrun_Factory::log("Failed to get plan record to update balance query: " . print_r($query, 1), Zend_Log::ERR);
+			$error = "Failed to get plan record to update balance query: " . print_r($query, 1);
+			$this->reportError($error, Zend_Log::ERR);
 			return false;
 		}
 
@@ -36,7 +37,8 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 
 		// Subscriber was not found.
 		if (!$subscriber) {
-			Billrun_Factory::log("Updating by charging plan failed to get subscriber id: " . $subscriberId, Zend_Log::ERR);
+			$error = "Updating by charging plan failed to get subscriber id: " . $subscriberId;
+			$this->reportError($error, Zend_Log::ERR);
 			return false;
 		}
 
