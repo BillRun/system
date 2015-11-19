@@ -12,14 +12,15 @@
  * @author tom
  */
 // TODO: Make an interface for these classes.
-abstract class Billrun_ActionManagers_Balances_Action {
+abstract class Billrun_ActionManagers_Balances_Action extends Billrun_ActionManagers_APIAction{
 
 	protected $collection = null;
 	
 	/**
 	 * Create an instance of the SubscibersAction type.
 	 */
-	public function __construct() {
+	public function __construct($defaultError) {
+		parent::__construct($defaultError);
 		$this->collection = Billrun_Factory::db()->balancesCollection();
 	}
 	

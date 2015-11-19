@@ -11,14 +11,15 @@
  *
  * @author tom
  */
-abstract class Billrun_ActionManagers_Subscribers_Action {
+abstract class Billrun_ActionManagers_Subscribers_Action extends Billrun_ActionManagers_APIAction{
 
 	protected $collection = null;
 	
 	/**
 	 * Create an instance of the SubscibersAction type.
 	 */
-	public function __construct() {
+	public function __construct($defaultError) {
+		parent::__construct($defaultError);
 		$this->collection = Billrun_Factory::db()->subscribersCollection();
 	}
 	

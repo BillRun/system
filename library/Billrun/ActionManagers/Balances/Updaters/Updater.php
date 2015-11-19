@@ -11,7 +11,7 @@
  *
  * @author tom
  */
-abstract class Billrun_ActionManagers_Balances_Updaters_Updater {
+abstract class Billrun_ActionManagers_Balances_Updaters_Updater{
 
 	/**
 	 * If true then the values in mongo are updated by incrementation,
@@ -28,6 +28,8 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater {
 	 */
 	protected $ignoreOveruse = true;
 
+	protected $error = "";
+	
 	/**
 	 * Create a new instance of the updater class.
 	 * @param array $options - Holding:
@@ -47,7 +49,16 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater {
 			$this->ignoreOveruse = $options['zero'];
 		}
 	}
-
+	
+	protected function reportError($error, $errorLevel) {
+		$this->error = $error;
+		Billrun_Factory::log($error, $errorLevel);
+	}
+	
+	public function getError() {
+		return $this->error;
+	}
+	
 	/**
 	 * TODO: This kind of translator might exist, but if it does we need a more generic way. Best if not needed at all.
 	 * Update the field names to fit what is in the mongo.
@@ -116,7 +127,8 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater {
 		// TODO: Use the plans DB/API proxy.
 		$record = $collection->query($queryToUse)->cursor()->current();
 		if (!$record || $record->isEmpty()) {
-			Billrun_Factory::log("Could not find record. Query:[" . print_r($queryToUse, 1) . "]", Zend_Log::ALERT);
+			$error = "Could not find record. Query:[" . print_r($queryToUse, 1) . "]";
+			$this->reportError($error, Zend_Log::ALERT);
 			return null;
 		}
 
@@ -164,6 +176,8 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater {
 		$coll = Billrun_Factory::db()->subscribersCollection();
 		$results = $coll->query($subscriberQuery)->cursor()->limit(1)->current();
 		if ($results->isEmpty()) {
+			$error = "Subscriber not found for balance";
+			$this->reportError($error, Zend_Log::ALERT);
 			return false;
 		}
 		return $results->getRawData();
@@ -215,7 +229,8 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater {
 		// Check if mismatching serivce providers.
 		if ($planRecord['service_provider'] != $subscriberServiceProvider) {
 			$planServiceProvider = $planRecord['service_provider'];
-			Billrun_Factory::log("Failed updating balance! mismatching service prociders: subscriber: $subscriberServiceProvider plan: $planServiceProvider");
+			$error = "Failed updating balance! mismatching service prociders: subscriber: $subscriberServiceProvider plan: $planServiceProvider";
+			$this->reportError($error, Zend_Log::ALERT);
 			return false;
 		}
 

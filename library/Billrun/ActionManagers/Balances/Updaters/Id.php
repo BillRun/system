@@ -26,7 +26,8 @@ class Billrun_ActionManagers_Balances_Updaters_Id extends Billrun_ActionManagers
 		$coll = Billrun_Factory::db()->balancesCollection();
 		$this->getBalanceRecord($coll, $query);
 		if(!$this->balancesRecord){
-			Billrun_Factory::log("Failed to get balances record to update balances by ID", Zend_Log::ERR);
+			$error = "Failed to get balances record to update balances by ID";
+			$this->reportError($error, Zend_Log::ERR);
 			return false;
 		}
 		
@@ -35,7 +36,8 @@ class Billrun_ActionManagers_Balances_Updaters_Id extends Billrun_ActionManagers
 		
 		// Subscriber was not found.
 		if(!$subscriber) {
-			Billrun_Factory::log("Updating balances by ID failed to get subscriber id: " . $subscriberId, Zend_Log::ERR);
+			$error = "Updating balances by ID failed to get subscriber id: " . $subscriberId;
+			$this->reportError($error, Zend_Log::ERR);
 			return false;
 		}
 		
@@ -64,6 +66,8 @@ class Billrun_ActionManagers_Balances_Updaters_Id extends Billrun_ActionManagers
 		
 		if(!$balanceRecord || $balanceRecord->isEmpty()) {
 			// TODO: Report error.
+			$error = "Invalid blance record";
+			$this->reportError($error, Zend_Log::ALERT);
 			return;
 		}
 		
@@ -82,6 +86,8 @@ class Billrun_ActionManagers_Balances_Updaters_Id extends Billrun_ActionManagers
 		
 		// Find the record in the collection.
 		if(!$this->balancesRecord) {
+			$error = "Balance record not found";
+			$this->reportError($error, Zend_Log::ALERT);
 			return false;
 		}
 		

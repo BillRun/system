@@ -24,7 +24,7 @@ class Billrun_ActionManagers_Cards_Query extends Billrun_ActionManagers_Cards_Ac
 	/**
 	 */
 	public function __construct() {
-		parent::__construct();
+		parent::__construct("Success querying cards");
 	}
 
 	/**
@@ -48,14 +48,16 @@ class Billrun_ActionManagers_Cards_Query extends Billrun_ActionManagers_Cards_Ac
 		$jsonQueryData = null;
 		$query = $input->get('query');
 		if (empty($query) || (!($jsonQueryData = json_decode($query, true)))) {
-			Billrun_Factory::log("There is no query tag or query tag is empty!", Zend_Log::ALERT);
+			$error = "There is no query tag or query tag is empty!";
+			$this->reportError($error, Zend_Log::ALERT);
 			return false;
 		}
 
 		$errLog = array_diff($queryFields, array_keys($jsonQueryData));
 
 		if (!empty($errLog) && count($errLog) == count($queryFields)) {
-			Billrun_Factory::log("Cannot query ! All the following fields are missing or empty:" . implode(', ', $errLog), Zend_Log::ALERT);
+			$error = "Cannot query ! All the following fields are missing or empty:" . implode(', ', $errLog);
+			$this->reportError($error, Zend_Log::ALERT);
 			return false;
 		}
 		
@@ -93,14 +95,15 @@ class Billrun_ActionManagers_Cards_Query extends Billrun_ActionManagers_Cards_Ac
 				$returnData[] = Billrun_Util::convertRecordMongoDatetimeFields($rawItem, array('to', 'creation_time'));
 			}
 		} catch (\Exception $e) {
-			Billrun_Factory::log('failed quering DB got error : ' . $e->getCode() . ' : ' . $e->getMessage(), Zend_Log::ALERT);
+			$error = 'failed quering DB got error : ' . $e->getCode() . ' : ' . $e->getMessage();
+			$this->reportError($error, Zend_Log::ALERT);
 			$success = false;
 			$returnData = array();
 		}
 
 		$outputResult = array(
 				'status' => ($success) ? (1) : (0),
-				'desc' => ($success) ? ('success') : ('Failed querying cards'),
+				'desc' => $this->error,
 				'details' => $returnData
 		);
 		return $outputResult;
