@@ -20,6 +20,6 @@ class Billrun_Subscriber_Query_Types_Imsi extends Billrun_Subscriber_Query_Base 
 	 * name in the query.
 	 */
 	protected function getKeyFields() {
-		return array('IMSI' => 'imsi');
+		return array('imsi' => 'imsi');
 	}
 }

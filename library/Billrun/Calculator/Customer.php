@@ -276,7 +276,11 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		$customer_identification_translation = $this->translateCustomerIdentToAPI[$customer];
 		foreach ($customer_identification_translation as $key => $toKey) {
 			if (isset($row[$key])) {
-				$params[$toKey['toKey']] = preg_replace($toKey['clearRegex'], '', $row[$key]);
+				if (isset($toKey['clearRegex'])) {
+					$params[$toKey['toKey']] = preg_replace($toKey['clearRegex'], '', $row[$key]);
+				} else {
+					$params[$toKey['toKey']] = $row[$key];
+				}
 				//$this->subscriberNumber = $params[$toKey['toKey']];
 				Billrun_Factory::log("found identification for row: {$row['stamp']} from {$key} to " . $toKey['toKey'] . ' with value:' . $params[$toKey['toKey']], Zend_Log::DEBUG);
 				break;
