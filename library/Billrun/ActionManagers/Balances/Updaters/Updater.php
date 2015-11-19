@@ -50,6 +50,11 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater{
 		}
 	}
 	
+	/**
+	 * Report a log error and store the message reported.
+	 * @param string $error
+	 * @param Zend_Log_Filter_Priority $errorLevel
+	 */
 	protected function reportError($error, $errorLevel) {
 		$this->error = $error;
 		Billrun_Factory::log($error, $errorLevel);
