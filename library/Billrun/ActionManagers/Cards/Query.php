@@ -24,7 +24,7 @@ class Billrun_ActionManagers_Cards_Query extends Billrun_ActionManagers_Cards_Ac
 	/**
 	 */
 	public function __construct() {
-		parent::__construct("Success querying cards");
+		parent::__construct(array('error' => "Success querying cards"));
 	}
 
 	/**

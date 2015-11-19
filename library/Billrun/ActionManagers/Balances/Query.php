@@ -28,7 +28,7 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 	/**
 	 */
 	public function __construct() {
-		parent::__construct("Success querying balances");
+		parent::__construct(array('error'=>"Success querying balances"));
 	}
 	
 	/**

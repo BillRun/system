@@ -22,7 +22,7 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 	/**
 	 */
 	public function __construct() {
-		parent::__construct("Success creating subscriber");
+		parent::__construct(array('error' => "Success creating subscriber"));
 	}
 	
 	/**

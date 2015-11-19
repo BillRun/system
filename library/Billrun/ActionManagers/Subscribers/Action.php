@@ -18,8 +18,8 @@ abstract class Billrun_ActionManagers_Subscribers_Action extends Billrun_ActionM
 	/**
 	 * Create an instance of the SubscibersAction type.
 	 */
-	public function __construct($defaultError) {
-		parent::__construct(array("error"=>$defaultError));
+	public function __construct($params) {
+		parent::__construct($params);
 		$this->collection = Billrun_Factory::db()->subscribersCollection();
 	}
 	

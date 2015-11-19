@@ -23,7 +23,7 @@ class Billrun_ActionManagers_Cards_Update extends Billrun_ActionManagers_Cards_A
 	/**
 	 */
 	public function __construct() {
-		parent::__construct("Success updating cards");
+		parent::__construct(array('error' => "Success updating cards"));
 	}
 
 	/**

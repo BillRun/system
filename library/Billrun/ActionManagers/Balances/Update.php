@@ -40,7 +40,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 	/**
 	 */
 	public function __construct() {
-		parent::__construct("Success updating balances");
+		parent::__construct(array('error' => "Success updating balances"));
 	}
 	
 	/**

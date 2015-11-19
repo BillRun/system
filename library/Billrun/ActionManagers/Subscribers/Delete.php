@@ -29,7 +29,7 @@ class Billrun_ActionManagers_Subscribers_Delete extends Billrun_ActionManagers_S
 	/**
 	 */
 	public function __construct() {
-		parent::__construct("Success deleting subscriber");
+		parent::__construct(array('error' => "Success deleting subscriber"));
 	}
 
 	/**

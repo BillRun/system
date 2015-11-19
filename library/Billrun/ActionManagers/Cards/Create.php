@@ -25,7 +25,7 @@ class Billrun_ActionManagers_Cards_Create extends Billrun_ActionManagers_Cards_A
 	/**
 	 */
 	public function __construct() {
-		parent::__construct("Success creating cards");
+		parent::__construct(array('error' =>"Success creating cards"));
 	}
 
 	/**
