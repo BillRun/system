@@ -19,7 +19,7 @@ abstract class Billrun_ActionManagers_Cards_Action extends Billrun_ActionManager
 	 * Create an instance of the CardsAction type.
 	 */
 	public function __construct($defaultError) {
-		parent::__construct($defaultError);
+		parent::__construct(array("error"=>$defaultError));
 		$this->collection = Billrun_Factory::db()->cardsCollection();
 	}
 	

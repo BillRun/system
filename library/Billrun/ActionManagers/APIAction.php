@@ -18,8 +18,8 @@ abstract class Billrun_ActionManagers_APIAction {
 	 */
 	protected $error = "Successful";
 
-	protected function __construct($defaultError) {
-		$this->error = $defaultError;
+	protected function __construct($params) {
+		$this->error = $params['error'];
 	}
 	
 	/**
@@ -35,7 +35,7 @@ abstract class Billrun_ActionManagers_APIAction {
 	 * @param string $error - Error string to report.
 	 * @param Zend_Log_Filter_Priority $errorLevel
 	 */
-	protected function reportError($error, $errorLevel) {
+	protected function reportError($error, $errorLevel=Zend_Log::INFO) {
 		$this->error = $error;
 		Billrun_Factory::log($error, $errorLevel);
 	}
