@@ -25,6 +25,10 @@ class Billrun_Processor_Realtime extends Billrun_Processor {
 		$row = &$this->data['data'][0];
 		$row['usaget'] = $this->getLineUsageType($row);
 		$row['usagev'] = $this->getLineVolume($row);
+		if(!isset($row['urt'])) {
+			$row['urt'] = new MongoDate();
+		}
+
 		return true;
 	}
 
@@ -35,7 +39,9 @@ class Billrun_Processor_Realtime extends Billrun_Processor {
 	public function processData() {
 		parent::processData();
 		foreach ($this->data['data'] as &$row) {
-			$row['urt'] = new MongoDate($row['urt']['sec']);
+			if(!isset($row['urt'])) {
+				$row['urt'] = new MongoDate();
+			}
 		}
 		return true;
 	}

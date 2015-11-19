@@ -106,12 +106,13 @@ class RealtimeeventAction extends ApiAction {
 			unset($this->event['start_time']);
 		}
 		
-		if (isset($this->event['time_date'])) {
-			$this->event['record_opening_time'] = $this->event['time_date'];
-		}
+//		if (isset($this->event['time_date'])) {
+//			$this->event['record_opening_time'] = $this->event['time_date'];
+//		}
 		
 		$this->event['billrun_prepend'] = $this->isPrepend();
-		$this->event['urt'] = new MongoDate(strtotime($this->event['record_opening_time']));
+		// we are on real time -> the time is now
+		$this->event['urt'] = new MongoDate();
 	}
 	
 	/**
