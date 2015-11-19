@@ -19,7 +19,9 @@ abstract class Billrun_ActionManagers_APIAction {
 	protected $error = "Successful";
 
 	protected function __construct($params) {
-		$this->error = $params['error'];
+		if (isset($params['error'])) {
+			$this->error = $params['error'];
+		}
 	}
 	
 	/**
