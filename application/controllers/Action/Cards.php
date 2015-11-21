@@ -20,14 +20,13 @@ class CardsAction extends ApiAction {
 
 	/**
 	 * Get the correct action to use for this request.
-	 * @param data $request - The input request for the API.
 	 * @return Billrun_ActionManagers_Action
 	 * @todo - This is a generic function should find a better place to put it.
 	 */
-	protected function getAction($request) {
+	protected function getAction() {
 		$apiName = str_replace("Action", "", __CLASS__);
 		$apiManagerInput = array(
-			'input' => $request,
+			'input' => $this->getRequest(),
 			'api_name' => $apiName
 		);
 

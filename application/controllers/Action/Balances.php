@@ -18,15 +18,14 @@ class BalancesAction extends ApiAction{
 	
 	/**
 	 * Get the correct action to use for this request.
-	 * @param data $request - The input request for the API.
 	 * @return Billrun_ActionManagers_Action
 	 * @todo - This is a generic function should find a better place to put it.
 	 */
-	protected function getAction($request) {
+	protected function getAction() {
 		// TODO: Maybe add this functionallity (get api name) to the basic API action?
 		$apiName = str_replace("Action", "", __CLASS__);
 		$apiManagerInput = 
-			array('input'    => $request,
+			array('input'    => $this->getRequest(),
 				  'api_name' => $apiName);
 		
 		$manager = new Billrun_ActionManagers_APIManager($apiManagerInput);
@@ -44,10 +43,8 @@ class BalancesAction extends ApiAction{
 		// TODO: Not using Balances model here. Should it be used? and what for?
 		// There is an already existing Balances model, is this the right one?
 		
-		$request = $this->getRequest();
-		
 		// This is the method which is going to be executed.
-		$action = $this->getAction($request);
+		$action = $this->getAction();
 		
 		// Check that received a valid action.
 		$output = "";
