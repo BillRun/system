@@ -127,8 +127,8 @@ class Billrun_ActionManagers_Subscribers_Query extends Billrun_ActionManagers_Su
 		$invalidFields = $this->setQueryFields($jsonData);
 		
 		// If there were errors.
-		if(!empty($invalidFields)) {
-			$error = "Subscribers query received invalid query values in fields: " . implode(',', $invalidFields);
+		if(empty($this->subscriberQuery)) {
+			$error = "Subscribers query must receive one of the following fields: " . implode(',', $invalidFields);
 			$this->reportError($error, Zend_Log::ALERT);
 			return false;
 		}
