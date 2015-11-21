@@ -38,7 +38,7 @@ class Billrun_ActionManagers_Subscribers_Query extends Billrun_ActionManagers_Su
 	 */
 	protected function queryRangeSubscribers() {
 		try {
-			$cursor = $this->collection->query($this->subscriberQuerys)->cursor();
+			$cursor = $this->collection->query($this->subscriberQuery)->cursor();
 			if(!$this->queryInRange) {
 				$cursor->limit(1);
 			}
