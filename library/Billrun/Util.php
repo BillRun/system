@@ -975,7 +975,7 @@ class Billrun_Util {
 	 * 
 	 * @return The record with translated time.
 	 */
-	public function convertRecordMongoDatetimeFields($record, array $fields = array('from', 'to'), $format = DATE_ISO8601) {
+	public static function convertRecordMongoDatetimeFields($record, array $fields = array('from', 'to'), $format = DATE_ISO8601) {
 		foreach ($fields as $timeField) {
 			if (isset($record[$timeField]->sec))
 				$record[$timeField] = date($format, $record[$timeField]->sec);
