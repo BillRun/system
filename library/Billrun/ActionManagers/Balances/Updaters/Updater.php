@@ -60,6 +60,10 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater{
 		Billrun_Factory::log($error, $errorLevel);
 	}
 	
+	/**
+	 * Get the current error of this updater
+	 * @return string current error.
+	 */
 	public function getError() {
 		return $this->error;
 	}
