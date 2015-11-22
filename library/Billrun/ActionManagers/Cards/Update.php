@@ -98,7 +98,7 @@ class Billrun_ActionManagers_Cards_Update extends Billrun_ActionManagers_Cards_A
 		}
 
 		foreach ($updateFields as $field) {
-			if (isset($jsonUpdateData[$field])) {
+			if (isset($jsonUpdateData[$field]) && !empty($jsonUpdateData[$field])) {
 				$this->update[$field] = $jsonUpdateData[$field];
 			}
 		}
