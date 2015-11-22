@@ -62,8 +62,8 @@ class Billrun_ActionManagers_Cards_Create extends Billrun_ActionManagers_Cards_A
 		foreach ($jsonCreateDataArray as $jsonCreateData) {
 			$oneCard = array();
 			foreach ($createFields as $field) {
-				if (!isset($jsonCreateData[$field])) {
-					$error = "Field: " . $field . " is not set!";
+				if (!isset($jsonCreateData[$field]) || empty($jsonCreateData[$field])) {
+					$error = "Field: " . $field . " is not set or is empty!";
 					$this->reportError($error, Zend_Log::ALERT);
 					return false;
 				}
@@ -81,6 +81,28 @@ class Billrun_ActionManagers_Cards_Create extends Billrun_ActionManagers_Cards_A
 		return true;
 	}
 
+	/**
+	 * Clean the inner hash from the cards in the mongo
+	 * @param type $bulkOptions - Options for bulk insert in mongo db.
+	 * @return type
+	 */
+	protected function cleanInnerHash($bulkOptions) {
+		$updateQuery = array('inner_hash' => $this->inner_hash);	
+		$updateValues = array('$unset' => array('inner_hash'=>1));			
+		$updateOptions = array_merge($bulkOptions, array('multiple' => 1));
+		return Billrun_Factory::db()->cardsCollection()->update($updateQuery, $updateValues, $updateOptions);
+	}
+	
+	/**
+	 * Remove the created cards due to error.
+	 * @param type $bulkOptions - Options used for bulk insert to the mongo db.
+	 * @return type
+	 */
+	protected function removeCreated($bulkOptions) {
+		$removeQuery = array('inner_hash' => $this->inner_hash);
+		return Billrun_Factory::db()->cardsCollection()->remove($removeQuery, $bulkOptions);
+	}
+	
 	/**
 	 * Execute the action.
 	 * @return data for output.
