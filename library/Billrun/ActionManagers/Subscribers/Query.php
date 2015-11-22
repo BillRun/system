@@ -30,7 +30,7 @@ class Billrun_ActionManagers_Subscribers_Query extends Billrun_ActionManagers_Su
 	/**
 	 */
 	public function __construct() {
-		parent::__construct(array('error' => "Success deleting subscriber"));
+		parent::__construct(array('error' => "Success querying subscriber"));
 	}
 	
 	/**

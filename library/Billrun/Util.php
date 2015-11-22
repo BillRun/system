@@ -949,6 +949,10 @@ class Billrun_Util {
 	 * @return Integer value of input, or false if failed.
 	 */
 	public static function toNumber($input) {
+		if($input === "UNLIMITED") {
+			return $input;
+		}
+		
 		// Check that the input is an integer.
 		if (is_int($input)) {
 			return $input;

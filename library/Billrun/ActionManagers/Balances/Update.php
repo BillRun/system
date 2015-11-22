@@ -85,8 +85,8 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		
 		$outputResult = 
 			array('status'  => ($success) ? (1) : (0),
-				  'desc'    => ($success) ? ('success') : ('Failed') . ' updating balance',
-				  'details' => ($outputDocuments) ? $outputDocuments : 'null');
+				  'desc'    => ($success) ? ($this->error) : ($updater->getError()),
+				  'details' => ($outputDocuments) ? $outputDocuments : 'Empty balance');
 		return $outputResult;
 	}
 
@@ -107,7 +107,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		$jsonUpdateData = null;
 		$update = $input->get('upsert');
 		if(empty($update) || (!($jsonUpdateData = json_decode($update, true)))) {
-			$error = "Update action does not have an update field!";
+			$error = "Update action does not have an upsert field!";
 			$this->reportError($error, Zend_Log::ALERT);
 			return false;
 		}
