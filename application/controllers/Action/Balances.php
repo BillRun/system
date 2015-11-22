@@ -59,7 +59,7 @@ class BalancesAction extends ApiAction{
 			$output = $action->execute();
 
 			// Set the raw input.
-			$output['input'] = $request->getRequest();
+			$output['input'] = $this->getRequest();
 		}
 		$this->getController()->setOutput(array($output));
 	}
