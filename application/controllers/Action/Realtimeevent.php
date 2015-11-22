@@ -17,6 +17,7 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
 class RealtimeeventAction extends ApiAction {
 
 	protected $event = null;
+	protected $usaget = null;
 
 	/**
 	 * method to execute realtime event
@@ -65,89 +66,17 @@ class RealtimeeventAction extends ApiAction {
 	 * @todo get real data from request (now it's only mock-up)
 	 */
 	protected function getRequestData() {
-		//$requstData = $this->getRequest()->getRequest();
-		$jsonData = '{
-			"sessionId":"GyOCS.sasnlbumtsma0-0.pelephone.gy.lab;1378620500;536872634",
-			"ccRequestType":1,
-			"ccRequestNumber":415,
-			"destinationHost":"dgu1.pelephone.gy.lab",
-			"startTime":"20130908060820",
-			"MSCC":{
-				"used":1048576,
-				"requested":1048576,
-				"serviceIdentifier":400700,
-				"ratingGroup":92
-			},
-			"imsi":"425030024380232",
-			"msisdn":"972502182928",
-			"userEquipment":{
-				"type":0,
-				"value":"33353833393430343137363030323032"
-			},
-			"serviceContextId":"32251@3gpp.org",
-			"Service-Information":{
-				"calledStationId":"sphone.labpelephone.net.il",
-				"3GPPChargingCharacteristics":"0400",
-				"3GPPPDPType":"IPv4 (0)",
-				"3GPPGPRSNegotiatedQoSprofile":"9-13921f73968db044524859",
-				"SGSNAddress":"00015b876003",
-				"3GPPNSAPI":5,
-				"3GPPSelection-Mode":1,
-				"CGAddress":"000100000000",
-				"GGSNAddressFamily":1,
-				"GGSNAddress":"91.135.96.162",
-				"3GPPIMSIMCCMNC":42503,
-				"3GPPSGSNMCCMNC":42503,
-				"3GPPMSTimeZone":2101,
-				"PDPAddress":"00010aa12d0",
-				"3GPPUserLocationInfo":{
-					"geographicLocationType":1,
-					"MCC":"425",
-					"MNC":"03",
-					"locationAreaCode":6101,
-					"serviceAreaCode":1046
-				},
-				"3GPPRATType":"01"
-			},
-			"recordType":"start_call"
-		}';
-		
-		$xmlData = '<?xml version = "1.0" encoding = "UTF-8"?>
-			<request>
-			<calling_number>425030024380232</calling_number>
-			<imsi>425030024380232</imsi>
-			<dialed_digits>425030024380232</dialed_digits>
-			<event_type></event_type>
-			<service_key> </service_key>
-			<call_reference>2</call_reference>
-			<call_id> </call_id>
-			<vlr_number> </vlr_number>
-			<location_information>
-				<mcc>123</mcc>
-				<mnc>45</mnc>
-				<lac></lac>
-				<ci></ci>
-			</location_information>
-			<duration>2</duration>
-
-			<time_date>2013/09/01 11:59:03</time_date>
-			<time_zone>0</time_zone>
-			<free_call>0</free_call>
-			<recordType>reservation_time</recordType>
-			<SGSNAddress>00015b876003</SGSNAddress>
-			</request>
-		';
-		
+		$request = $this->getRequest()->getRequest();
+		$this->usaget = $request['usaget'];
 		$decoder = Billrun_Decoder_Manager::getDecoder(array(
-			'controllerName' => $this->getRequest()->controller, 
-			'actionName' => $this->getRequest()->getActionName()
+			'usaget' => $this->usaget
 		));
 		if (!$decoder) {
 			Billrun_Factory::log('Cannot get decoder', Zend_Log::ALERT);
 			return false;
 		}
 		
-		return Billrun_Util::parseDataToBillrunConvention($decoder->decode($xmlData));
+		return Billrun_Util::parseDataToBillrunConvention($decoder->decode($request['request']));
 	}
 	
 	/**
@@ -177,12 +106,13 @@ class RealtimeeventAction extends ApiAction {
 			unset($this->event['start_time']);
 		}
 		
-		if (isset($this->event['time_date'])) {
-			$this->event['record_opening_time'] = $this->event['time_date'];
-		}
+//		if (isset($this->event['time_date'])) {
+//			$this->event['record_opening_time'] = $this->event['time_date'];
+//		}
 		
 		$this->event['billrun_prepend'] = $this->isPrepend();
-		$this->event['urt'] = new MongoDate(strtotime($this->event['record_opening_time']));
+		// we are on real time -> the time is now
+		$this->event['urt'] = new MongoDate();
 	}
 	
 	/**
@@ -198,25 +128,6 @@ class RealtimeeventAction extends ApiAction {
 		$processor = Billrun_Processor::getInstance($options);
 		$processor->addDataRow($this->event);
 		$processor->process();
-
-		/*$ret = array(
-			'sessionId' => $this->event['sessionId'],
-			'ccRequestType' => $this->event['ccRequestType'],
-			'ccRequestNumber' => $this->event['ccRequestNumber'],
-			'MSCC' => $this->event['MSCC']
-//			'MSCC' => array(
-//				'used' => 1048576,
-//				'requested' => 1048576,
-//				'granted' => 1048576,
-//				'serviceIdentifier' => 400700,
-//				'ratingGroup' => 92,
-//				'returnCode' => 0
-//			),
-		);
-		$ret['MSCC']['returnCode'] = $data['granted_return_code'];
-		if ($data['granted_return_code'] == Billrun_Factory::config()->getConfigValue('prepaid.ok')) {
-			$ret['MSCC']['granted'] = $data['usagev'];
-		}*/
 		return $processor->getData()['data'][0];
 	}
 	
@@ -228,8 +139,7 @@ class RealtimeeventAction extends ApiAction {
 	 */
 	protected function respond($data) {
 		$encoder = Billrun_Encoder_Manager::getEncoder(array(
-			'controllerName' => $this->getRequest()->controller, 
-			'actionName' => $this->getRequest()->getActionName()
+			'usaget' => $this->usaget
 			));
 		if (!$encoder) {
 			Billrun_Factory::log('Cannot get encoder', Zend_Log::ALERT);
@@ -244,9 +154,10 @@ class RealtimeeventAction extends ApiAction {
 
 		$response = array($encoder->encode($responder->getResponse(), "response"));
 		$this->getController()->setOutput($response);
+		return $response;
 		// Sends response
-		$responseUrl = Billrun_Factory::config()->getConfigValue('IN.respose.url.realtimeevent');
-		return Billrun_Util::sendRequest($responseUrl, $response);
+		//$responseUrl = Billrun_Factory::config()->getConfigValue('IN.respose.url.realtimeevent');
+		//return Billrun_Util::sendRequest($responseUrl, $response);
 	}
 	
 	/**

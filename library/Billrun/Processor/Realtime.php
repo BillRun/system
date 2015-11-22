@@ -25,6 +25,10 @@ class Billrun_Processor_Realtime extends Billrun_Processor {
 		$row = &$this->data['data'][0];
 		$row['usaget'] = $this->getLineUsageType($row);
 		$row['usagev'] = $this->getLineVolume($row);
+		if(!isset($row['urt'])) {
+			$row['urt'] = new MongoDate();
+		}
+
 		return true;
 	}
 
@@ -35,7 +39,9 @@ class Billrun_Processor_Realtime extends Billrun_Processor {
 	public function processData() {
 		parent::processData();
 		foreach ($this->data['data'] as &$row) {
-			$row['urt'] = new MongoDate($row['urt']['sec']);
+			if(!isset($row['urt'])) {
+				$row['urt'] = new MongoDate();
+			}
 		}
 		return true;
 	}
@@ -70,6 +76,10 @@ class Billrun_Processor_Realtime extends Billrun_Processor {
 				return $row['MSCC']['used'];
 			case ('call'):
 				return 1;
+			case ('sms'):
+				return 1;
+			case ('service'):
+				return 1;
 		}
 		return 0;
 	}
@@ -84,6 +94,12 @@ class Billrun_Processor_Realtime extends Billrun_Processor {
 		}
 		if (isset($row['call_reference'])) {
 			return 'call';
+		}
+		if (isset($row['record_type']) && $row['record_type'] === 'sms') {
+			return 'sms';
+		}
+		if (isset($row['record_type']) && $row['record_type'] === 'service') {
+			return 'service';
 		}
 		return '';
 	}

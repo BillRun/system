@@ -14,7 +14,7 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  * 
  * @since    2.6
  */
-class PlansAction extends ApiAction {
+class Subscribers_auto_renewAction extends ApiAction {
 
 	public function execute() {
 		Billrun_Factory::log("Execute plans api call", Zend_Log::INFO);
@@ -24,16 +24,12 @@ class PlansAction extends ApiAction {
 		// TODO: Is this correct? or should an error be raised if no query received?
 		$requestedQuery = $request->get('query', array());
 		$query = $this->processQuery($requestedQuery);
-		$strip = $this->getCompundParam($request->get('strip', false), false);
-		$filter = !empty($strip) ? $strip : array('name');
 
 		$cacheParams = array(
 			'fetchParams' => array(
 				'query' => $query,
-				'filter' => $filter,
-				'strip' => $strip,
 			),
-			'stampParams' => array($requestedQuery, $filter, $strip),
+			'stampParams' => array($requestedQuery),
 		);
 
 		$this->setCacheLifeTime(Billrun_Utils_Time::daysToSeconds(1)); 
@@ -55,40 +51,20 @@ class PlansAction extends ApiAction {
 	 * @return boolean
 	 */
 	protected function fetchData($params) {
-		if (is_null($params)) {
-			$params = array();
-		}
 		if (!isset($params['query'])) {
-			$params['query'] = array();
+			return array();
 		}
-		$params['query']['$or'] = array(
-				array(
-					'hiddenFromApi' => array(
-						'$exists' => 0,
-					)
-				),
-				array(
-					'hiddenFromApi' => false
-				),
-				array(
-					'hiddenFromApi' => 0
-				)
-		);
-		$model = new PlansModel(array('sort' => array('from' => 1)));
-		$resource = $model->getData($params['query'], $params['filter']);
-		if (is_resource($resource)) {
-			$results = iterator_to_array($resource);
-		} else if ($resource instanceof Mongodloid_Cursor) {
-			$results = array();
-			foreach ($resource as $item) {
-				$rawItem = $item->getRawData();
-				$results[] = Billrun_Util::convertRecordMongoDatetimeFields($rawItem);
-			}
+		$auto_renew_collection = Billrun_Factory::db()->subscribers_auto_renew_servicesCollection();
+
+		$results = $auto_renew_collection->query($params['query'])->cursor();
+		$ret = array();
+		$date_fields = array('from', 'to', 'last_renew_date', 'creation_time');
+		foreach($results as $item) {
+			$rawItem = $item->getRawData();
+			$ret[] = Billrun_Util::convertRecordMongoDatetimeFields($rawItem, $date_fields);
+
 		}
-		if (isset($params['strip']) && !empty($params['strip'])) {
-			$results = $this->stripResults($results, $params['strip']);
-		}
-		return $results;
+		return $ret;
 
 	}
 

@@ -243,9 +243,7 @@ class Billrun_Util {
 	 * @return return true if input is timestamp else false
 	 */
 	public static function isTimestamp($timestamp) {
-		return ((string) (int) $timestamp === strval($timestamp)) 
-		&& ($timestamp <= PHP_INT_MAX) 
-		&& ($timestamp >= ~PHP_INT_MAX);
+		return ((string) (int) $timestamp === strval($timestamp)) && ($timestamp <= PHP_INT_MAX) && ($timestamp >= ~PHP_INT_MAX);
 	}
 
 	/**
@@ -812,32 +810,32 @@ class Billrun_Util {
 	 * @param type $defaultVal
 	 * @return type
 	 */
-	public static function getNestedArrayVal($array, $fields, $defaultVal = null,$retArr = FALSE) {
+	public static function getNestedArrayVal($array, $fields, $defaultVal = null, $retArr = FALSE) {
 		$fields = is_array($fields) ? $fields : explode('.', $fields);
 		$rawField = array_shift($fields);
-		preg_match("/\[([^\]]*)\]/", $rawField,$attr);		
-		if(!empty($attr)) {//Allow for  multiple attribute checks
-			$attr = explode("=",Billrun_Util::getFieldVal($attr[1],FALSE)); 
+		preg_match("/\[([^\]]*)\]/", $rawField, $attr);
+		if (!empty($attr)) {//Allow for  multiple attribute checks
+			$attr = explode("=", Billrun_Util::getFieldVal($attr[1], FALSE));
 		}
-		$field = preg_replace("/\[[^\]]*\]/", "", $rawField); 
-		$aggregate = $retArr &&  ($field =='*') ;
-		$keys = ($field != "*") ? array($field) : array_keys($array);	
-		
+		$field = preg_replace("/\[[^\]]*\]/", "", $rawField);
+		$aggregate = $retArr && ($field == '*');
+		$keys = ($field != "*") ? array($field) : array_keys($array);
+
 		$retVal = $aggregate ? array() : $defaultVal;
-		foreach ($keys as $key ) {
-			if( isset($array[$key]) && (empty($attr) || isset($array[$key][$attr[0]])) && (!isset($attr[1]) || $array[$key][$attr[0]] == $attr[1] ) ) {
+		foreach ($keys as $key) {
+			if (isset($array[$key]) && (empty($attr) || isset($array[$key][$attr[0]])) && (!isset($attr[1]) || $array[$key][$attr[0]] == $attr[1] )) {
 				if (!$aggregate) {
-					$retVal = empty($fields) ? $array[$key] : static::getNestedArrayVal($array[$key], $fields, $defaultVal,$retArr); 
+					$retVal = empty($fields) ? $array[$key] : static::getNestedArrayVal($array[$key], $fields, $defaultVal, $retArr);
 					break;
-				}
-				else {
-					$retVal[] = empty($fields) ? $array[$key] : static::getNestedArrayVal($array[$key], $fields, $defaultVal,$retArr); 
+				} else {
+					$retVal[] = empty($fields) ? $array[$key] : static::getNestedArrayVal($array[$key], $fields, $defaultVal, $retArr);
 				}
 			}
-		}		
-		
+		}
+
 		return $retVal;
 	}
+
 	/**
 	 * method to retrieve internation circuit groups
 	 * 
@@ -846,23 +844,24 @@ class Billrun_Util {
 	public static function getIntlCircuitGroups() {
 		return Billrun_Factory::config()->getConfigValue('Rate_Nsn.calculator.intl_cg', array());
 	}
+
 	/**
 	 * method to retrieve rates that ought to be included for fraud 
 	 * @return array of rate refs
 	 */
 	public static function getIntlRateRefs() {
-		$rate_key_list = Billrun_Factory::config()->getConfigValue('Rate_Nsn.calculator.intl_rates',array());
+		$rate_key_list = Billrun_Factory::config()->getConfigValue('Rate_Nsn.calculator.intl_rates', array());
 		$query = array("key" => array('$in' => $rate_key_list));
-		$ratesmodle =new RatesModel(array("collection" => "rates"));
-		$rates =$ratesmodle->getRates($query);
-		$rate_ref_list=array();
+		$ratesmodle = new RatesModel(array("collection" => "rates"));
+		$rates = $ratesmodle->getRates($query);
+		$rate_ref_list = array();
 		$ratesColl = Billrun_Factory::db()->ratesCollection();
 		foreach ($rates as $rate) {
-			$rate_ref_list[]= $ratesColl->createRefByEntity($rate)['$id']->{'$id'};
+			$rate_ref_list[] = $ratesColl->createRefByEntity($rate)['$id']->{'$id'};
 		}
 		return $rate_ref_list;
 	}
-        
+
 	/**
 	 * method to retrieve roaming circuit groups
 	 * 
@@ -871,7 +870,7 @@ class Billrun_Util {
 	public static function getRoamingCircuitGroups() {
 		return Billrun_Factory::config()->getConfigValue('Rate_Nsn.calculator.roaming_cg', array());
 	}
-	
+
 	/**
 	 * Send curl request
 	 * 
@@ -922,7 +921,7 @@ class Billrun_Util {
 
 		return $output;
 	}
-	
+
 	/**
 	 * Convert array keys to lower case and underscore (Billrun convention)
 	 * 
@@ -940,10 +939,10 @@ class Billrun_Util {
 				unset($parsedData[$key]);
 			}
 		}
-		
+
 		return $parsedData;
 	}
-	
+
 	/**
 	 * Return an integer based on an input string.
 	 * @param string/integer $input - String to convert or integer.
@@ -951,20 +950,38 @@ class Billrun_Util {
 	 */
 	public static function toNumber($input) {
 		// Check that the input is an integer.
-		if(is_int($input)) {
+		if (is_int($input)) {
 			return $input;
 		}
 
 		// Convert to int.
-		$temp = (int)$input;
+		$temp = (int) $input;
 
 		// If the convertion returns 0 and the input string is not 0 it's an error.
-		if(!$temp && $input !== "0"){
+		if (!$temp && $input !== "0") {
 			Billrun_Factory::log("Update action did not receive a valid subscriber ID! [" . print_r($input, true) . ']', Zend_Log::ALERT);
 			return false;
 		}
 
 		return $temp;
+	}
+
+	/**
+	 * Change the times of a mongo record
+	 * 
+	 * @param array $row - Record to change the times of.
+	 * @param array $fields - date time fields array list
+	 * @param string $format - format datetime (based on php date function)
+	 * 
+	 * @return The record with translated time.
+	 */
+	public static function convertRecordMongoDatetimeFields($record, array $fields = array('from', 'to'), $format = DATE_ISO8601) {
+		foreach ($fields as $timeField) {
+			if (isset($record[$timeField]->sec))
+				$record[$timeField] = date($format, $record[$timeField]->sec);
+		}
+
+		return $record;
 	}
 
 }

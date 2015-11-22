@@ -21,13 +21,14 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 	protected $recordToSet = array();
 	
 	protected $query = array();
-	protected $keepHistory = true;
+	protected $trackHistory = true;
+	protected $keepLines = true;
 	protected $keepBalances = true;
 	
 	/**
 	 */
 	public function __construct() {
-		parent::__construct();
+		parent::__construct(array('error' => "Success updating subscriber"));
 	}
 	
 	/**
@@ -65,6 +66,37 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 	}
 	
 	/**
+	 * If user requested to keep the lines, all records in the lines collection are
+	 * updated according to the user request.
+	 */
+	protected function handleKeepLines() {
+		$keepLinesFieldsArray = Billrun_Factory::config()->getConfigValue('subscribers.keep_lines');
+		$keepLinesUpdate = array();
+		$keepLinesQuery = array();
+		// Check if there are updated values for 'keep_lines'
+		foreach ($this->recordToSet as $key=>$value) {
+			if(isset($this->query[$key]) && in_array($key, $keepLinesFieldsArray)) {
+				$keepLinesUpdate[$key] = $value;
+				$keepLinesQuery[$key] = $this->query[$key];	
+			}
+		}
+		
+		// No need to apply keep lines logic
+		if(empty($keepLinesQuery)) {
+			return true;
+		}
+		
+		$linesUpdate = array('$set' => $keepLinesUpdate);
+		$options = array(
+			'upsert' => false,
+			'new' => false,
+			'w' => 1,
+		);
+		$linesColl = Billrun_Factory::db()->linesCollection();
+		return $linesColl->findAndModify($keepLinesQuery, $keepLinesUpdate, array(), $options, true);
+	}
+	
+	/**
 	 * Update a single subscriber record.
 	 * @param Mongodloid_Entity $record - Subscriber record to update.
 	 * @return boolean true if successful.
@@ -75,12 +107,17 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 			$record->collection($this->collection);
 
 			// Check if the user requested to keep history.
-			if($this->keepHistory) {
+			if($this->trackHistory) {
+				$record['sid'] = $this->recordToSet['sid'];
+				$record['msisdn'] = $this->recordToSet['msisdn'];
+				
 				// This throws an exception if fails.
 				$this->handleKeepHistory($record);
 			}
 
 			if(!$record->set($key, $value)) {
+				$error = "Failed to set values to entity";
+				$this->reportError($error, Zend_Log::ALERT);
 				return false;
 			}
 
@@ -97,8 +134,13 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 	 */
 	public function execute() {
 		$success = true;
+
 		$updatedDocument = null;
 		try {
+			if($this->keepLines) {
+				$this->handleKeepLines();
+			}
+			
 			$cursor = $this->collection->query($this->query)->cursor();
 			foreach ($cursor as $record) {
 				if(!$this->updateSubscriberRecord($record)) {
@@ -113,15 +155,16 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 			}
 			
 		} catch (\Exception $e) {
-			Billrun_Factory::log('failed to store into DB got error : ' . $e->getCode() . ' : ' . $e->getMessage(), Zend_Log::ALERT);
+			$error = 'failed storing in the DB got error : ' . $e->getCode() . ' : ' . $e->getMessage();
+			$this->reportError($error, Zend_Log::ALERT);
 			Billrun_Factory::log('failed saving request :' . print_r($this->recordToSet, 1), Zend_Log::ALERT);
 			$success = false;
 		}
 
 		$outputResult = 
 			array('status'  => ($success) ? (1) : (0),
-				  'desc'    => ($success) ? ('Success') : ('Failed') . ' updating subscriber',
-				  'details' => ($updatedDocument) ? json_encode($updatedDocument) : 'null');
+				  'desc'    => $this->error,
+				  'details' => ($updatedDocument) ? $updatedDocument : 'No results');
 		return $outputResult;
 	}
 
@@ -142,7 +185,8 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 		$jsonUpdateData = null;
 		$update = $input->get('update');
 		if(empty($update) || (!($jsonUpdateData = json_decode($update, true)))) {
-			Billrun_Factory::log("Update action does not have an update field!", Zend_Log::ALERT);
+			$error = "Update action does not have an update field!";
+			$this->reportError($error, Zend_Log::ALERT);
 			return false;
 		}
 		
@@ -197,7 +241,8 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 		$jsonQueryData = null;
 		$query = $input->get('query');
 		if(empty($query) || (!($jsonQueryData = json_decode($query, true)))) {
-			Billrun_Factory::log("Update action does not have a query field!", Zend_Log::ALERT);
+			$error = "Update action does not have a query field!";
+			$this->reportError($error, Zend_Log::ALERT);
 			return false;
 		}
 		
@@ -205,7 +250,8 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 		
 		// If there were errors.
 		if(!empty($invalidFields)) {
-			Billrun_Factory::log("Subscribers update received invalid query values in fields: " . implode(',', $invalidFields), Zend_Log::ALERT);
+			$error = "Subscribers update received invalid query values in fields: " . implode(',', $invalidFields);
+			$this->reportError($error, Zend_Log::ALERT);
 			return false;
 		}
 		
@@ -228,7 +274,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 		}
 				
 		// If keep_history is set take it.
-		$this->keepHistory = $input->get('keep_history');
+		$this->trackHistory = $input->get('track_history');
 		
 		// If keep_balances is set take it.
 		$this->keepBalances = $input->get('keep_balances');

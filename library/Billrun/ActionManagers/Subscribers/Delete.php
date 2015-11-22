@@ -29,7 +29,7 @@ class Billrun_ActionManagers_Subscribers_Delete extends Billrun_ActionManagers_S
 	/**
 	 */
 	public function __construct() {
-		parent::__construct();
+		parent::__construct(array('error' => "Success deleting subscriber"));
 	}
 
 	/**
@@ -61,10 +61,11 @@ class Billrun_ActionManagers_Subscribers_Delete extends Billrun_ActionManagers_S
 			
 			// Could not find the row to be deleted.
 			if(!$rowToDelete || $rowToDelete->isEmpty()) {
-				Billrun_Factory::log("Failed to get subscriber action instance for received input", Zend_Log::ALERT);
+				$error = "Failed to get subscriber action instance for received input";
+				$this->reportError($error, Zend_Log::ALERT);
 				$success = false;
 			} else {
-				$this->collection->updateEntity($rowToDelete, array('to' => new MongoDate()));
+				$success = $this->collection->updateEntity($rowToDelete, array('to' => new MongoDate()));
 			}
 			
 			if(!$this->keepBalances) {
@@ -73,14 +74,15 @@ class Billrun_ActionManagers_Subscribers_Delete extends Billrun_ActionManagers_S
 			}
 			
 		} catch (\Exception $e) {
-			Billrun_Factory::log('failed to store into DB got error : ' . $e->getCode() . ' : ' . $e->getMessage(), Zend_Log::ALERT);
+			$error = 'failed to storing in DB got error : ' . $e->getCode() . ' : ' . $e->getMessage();
+			$this->reportError($error, Zend_Log::ALERT);
 			Billrun_Factory::log('failed saving request :' . print_r($this->query, 1), Zend_Log::ALERT);
 			$success = false;
 		}
 
 		$outputResult = 
 			array('status' => ($success) ? (1) : (0),
-				  'desc'   => ($success) ? ('Success') : ('Failed') . ' deleting subscriber');
+				  'desc'   => $this->error);
 		
 		return $outputResult;
 	}
@@ -109,12 +111,15 @@ class Billrun_ActionManagers_Subscribers_Delete extends Billrun_ActionManagers_S
 		$jsonData = null;
 		$query = $input->get('query');
 		if(empty($query) || (!($jsonData = json_decode($query, true)))) {
+			$error = "Failed decoding JSON data";
+			$this->reportError($error, Zend_Log::ALERT);
 			return false;
 		}
 		
 		// If there were errors.
 		if(!$this->setQueryFields($jsonData)) {
-			Billrun_Factory::log("Subscribers delete received invalid query values.", Zend_Log::ALERT);
+			$error="Subscribers delete received invalid query values";
+			$this->reportError($error, Zend_Log::ALERT);
 			return false;
 		}
 		
@@ -140,12 +145,14 @@ class Billrun_ActionManagers_Subscribers_Delete extends Billrun_ActionManagers_S
 		
 		// No ID given.
 		if(empty($this->query)) {
-			Billrun_Factory::log("No query given for delete subscriber action", Zend_Log::ALERT);
+			$error = "No query given for delete subscriber action";
+			$this->reportError($error, Zend_Log::ALERT);
 			return false;
 		}
 		$fieldCount = count($this->query);
 		if($fieldCount != 1 && $fieldCount != count($queryFields)) {
-			Billrun_Factory::log("Delete subscriber can only use one OR all of the fields!", Zend_Log::ALERT);
+			$error = "Delete subscriber can only use one OR all of the fields!";
+			$this->reportError($error, Zend_Log::ALERT);
 			return false;
 		}
 		

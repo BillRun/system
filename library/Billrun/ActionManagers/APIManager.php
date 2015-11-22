@@ -60,7 +60,7 @@ class Billrun_ActionManagers_APIManager extends Billrun_ActionManagers_Manager {
 		if(!$action->parse($input)) {
 			Billrun_Factory::log("APIAction getAction Action failed to parse input! " . 
 								 print_r($input, 1), Zend_Log::INFO);
-			return null;
+			return $action->getError();
 		}
 		
 		return $action;

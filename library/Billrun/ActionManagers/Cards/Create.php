@@ -20,15 +20,12 @@ class Billrun_ActionManagers_Cards_Create extends Billrun_ActionManagers_Cards_A
 	 * @var type Array
 	 */
 	protected $cards = array();
-	protected $removeQuery = array();
-	protected $updateQuery = array();
-	protected $updateValues = array();
 	protected $inner_hash;
 	
 	/**
 	 */
 	public function __construct() {
-		parent::__construct();
+		parent::__construct(array('error' =>"Success creating cards"));
 	}
 
 	/**
@@ -52,7 +49,8 @@ class Billrun_ActionManagers_Cards_Create extends Billrun_ActionManagers_Cards_A
 		$create = $input->get('cards');
 
 		if (empty($create) || (!($jsonCreateDataArray = json_decode($create, true)))) {
-			Billrun_Factory::log("There is no create tag or create tag is empty!", Zend_Log::ALERT);
+			$error = "There is no create tag or create tag is empty!";
+			$this->reportError($error, Zend_Log::ALERT);
 			return false;
 		}
 
@@ -64,8 +62,9 @@ class Billrun_ActionManagers_Cards_Create extends Billrun_ActionManagers_Cards_A
 		foreach ($jsonCreateDataArray as $jsonCreateData) {
 			$oneCard = array();
 			foreach ($createFields as $field) {
-				if (!isset($jsonCreateData[$field]) || empty($jsonCreateData[$field])) {
-					Billrun_Factory::log("Field: " . $field . " is not set or is empty !", Zend_Log::ALERT);
+				if (!isset($jsonCreateData[$field])) {
+					$error = "Field: " . $field . " is not set!";
+					$this->reportError($error, Zend_Log::ALERT);
 					return false;
 				}
 				$oneCard[$field] = $jsonCreateData[$field];
@@ -88,29 +87,28 @@ class Billrun_ActionManagers_Cards_Create extends Billrun_ActionManagers_Cards_A
 	 */
 	public function execute() {
 		$success = false;
+		$bulkOptions = array(
+			'continueOnError' => true,
+			'socketTimeoutMS' => 300000,
+			'wTimeoutMS' => 300000,
+			'w' => 1,
+		);
+		$exception = null;
 		try {
-			$bulkOptions = array(
-				'continueOnError' => true,
-				'socketTimeoutMS' => 300000,
-				'wTimeoutMS' => 300000,
-				'w' => 1,
-			);
-			$this->updateOptions = array_merge($bulkOptions, array('multiple' => 1));
 			$res = Billrun_Factory::db()->cardsCollection()->batchInsert($this->cards, $bulkOptions);
 			$success = $res['ok'];
 			$count = $res['nInserted'];
 		} catch (\Exception $e) {
-			Billrun_Factory::log('failed to store into DB got error : ' . $e->getCode() . ' : ' . $e->getMessage(), Zend_Log::ALERT);
+			$exception = $e;
+			$error = 'failed storing in the DB got error : ' . $e->getCode() . ' : ' . $e->getMessage();
+			$this->reportError($error, Zend_Log::ALERT);
 			Billrun_Factory::log('failed saving request :' . print_r($this->cards, 1), Zend_Log::ALERT);
 			$success = false;
-			$this->removeQuery['inner_hash'] = $this->inner_hash;
-			$res = Billrun_Factory::db()->cardsCollection()->remove($this->removeQuery, $bulkOptions);
+			$res = $this->removeCreated($bulkOptions);
 		}
 
 		if ($success) {
-			$this->updateQuery['inner_hash'] = $this->inner_hash;	
-			$this->updateValues['$unset'] = array('inner_hash'=>1);			
-			$res = Billrun_Factory::db()->cardsCollection()->update($this->updateQuery, $this->updateValues, $this->updateOptions);
+			$res = $this->cleanInnerHash($bulkOptions);
 		}
 		
 		array_walk($this->cards, function (&$card, $idx) { 
@@ -119,8 +117,10 @@ class Billrun_ActionManagers_Cards_Create extends Billrun_ActionManagers_Cards_A
 			
 		$outputResult = array(
 				'status' => ($success) ? (1) : (0),
-				'desc' => ($success) ? ('success creating ' . $count . ' cards') : ('Failed creating cards'),
-				'details' => ($success) ? (json_encode($this->cards)) : ('Failed to store into DB got error : ' . $e->getCode() . ' : ' . $e->getMessage() . '. ' . $res['n'] . ' cards removed')
+				'desc' => $this->error,
+				'details' => ($success) ? 
+							 (json_encode($this->cards)) : 
+							 ('Failed storing cards in the data base : ' . $exception->getCode() . ' : ' . $exception->getMessage() . '. ' . $res['n'] . ' cards removed')
 		);
 		return $outputResult;
 	}

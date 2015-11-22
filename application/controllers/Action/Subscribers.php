@@ -20,14 +20,13 @@ class SubscribersAction extends ApiAction {
 	
 	/**
 	 * Get the correct action to use for this request.
-	 * @param data $request - The input request for the API.
 	 * @return Billrun_ActionManagers_Action
 	 * @todo - This is a generic function should find a better place to put it.
 	 */
-	protected function getAction($request) {
+	protected function getAction() {
 		$apiName = str_replace("Action", "", __CLASS__);
 		$apiManagerInput = 
-			array('input'    => $request,
+			array('input'    => $this->getRequest(),
 				  'api_name' => $apiName);
 		
 		$manager = new Billrun_ActionManagers_APIManager($apiManagerInput);
@@ -49,23 +48,24 @@ class SubscribersAction extends ApiAction {
 	public function execute() {
 		$this->initializeModel();
 		
-		$request = $this->getRequest();
-
 		// This is the method which is going to be executed.
-		$action = $this->getAction($request);
+		$action = $this->getAction();
 		
+		$output = "";
 		// Check that received a valid action.
-		if(!$action) {
+		if(is_string($action)) {
 			// TODO: Report failed action. What do i write to the output if this happens?
 			Billrun_Factory::log("Failed to get subscriber action instance for received input", Zend_Log::ALERT);
-			return;
-		}
-		
-		$output = $action->execute();
-		
-		// Set the raw input.
-		$output['input'] = $request->getRequest();
-		
+			
+			$output = array('status'  => 0,
+				  'desc'    => $action,
+				  'details' => 'Error');
+		} else {
+			$output = $action->execute();
+
+			// Set the raw input.
+			$output['input'] = $this->getRequest()->getRequest();
+		}		
 		$this->getController()->setOutput(array($output));
 	}
 	

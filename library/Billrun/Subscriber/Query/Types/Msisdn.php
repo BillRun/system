@@ -20,6 +20,6 @@ class Billrun_Subscriber_Query_Types_Msisdn extends Billrun_Subscriber_Query_Bas
 	 * name in the query.
 	 */
 	protected function getKeyFields() {
-		return array('MSISDN' => 'msisdn');
+		return array('msisdn' => 'msisdn');
 	}
 }
