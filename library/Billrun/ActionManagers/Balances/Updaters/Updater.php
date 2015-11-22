@@ -102,7 +102,7 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater{
 		$zeroingQuery[$valueFieldName] = array('$gt' => 0);
 		$zeriongUpdate['$set'][$valueFieldName] = 0;
 		$originalBeforeZeroing= $balancesColl->findAndModify($zeroingQuery, $zeriongUpdate);
-		Billrun_Factory::log("Before zeroing: " . print_r($originalBeforeZeroing, 1), Zend_Log::INFO);
+//		Billrun_Factory::log("Before zeroing: " . print_r($originalBeforeZeroing, 1), Zend_Log::INFO);
 	}
 	
 	/**
@@ -270,7 +270,7 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater{
 	 */
 	protected function getSetQuery($valueToUseInQuery, $valueFieldName, $toTime) {
 		$valueUpdateQuery = array();
-		$queryType = $this->isIncrement ? '$inc' : '$set';
+		$queryType = (!is_string($valueToUseInQuery) && $this->isIncrement) ? '$inc' : '$set';
 		$valueUpdateQuery[$queryType]
 			[$valueFieldName] = $valueToUseInQuery;
 		
