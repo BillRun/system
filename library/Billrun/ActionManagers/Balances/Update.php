@@ -86,7 +86,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		$outputResult = 
 			array('status'  => ($success) ? (1) : (0),
 				  'desc'    => ($success) ? ($this->error) : ($updater->getError()),
-				  'details' => ($outputDocuments) ? $outputDocuments : 'null');
+				  'details' => ($outputDocuments) ? $outputDocuments : 'Empty balance');
 		return $outputResult;
 	}
 
