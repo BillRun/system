@@ -118,7 +118,7 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 	 * @return true if valid.
 	 */
 	public function parse($input) {
-		$sid = $input->get('sid');
+		$sid = (int) $input->get('sid');
 		if(empty($sid)) {
 			$error = "Balances Query receieved no sid!";
 			$this->reportError($error, Zend_Log::NOTICE);

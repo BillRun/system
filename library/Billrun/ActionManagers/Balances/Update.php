@@ -198,7 +198,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 	 * @return integer The input sid, false if error occured.
 	 */
 	protected function getSid($input) {
-		$sid = $input->get('sid');
+		$sid = (int) $input->get('sid');
 		
 		// Check that sid exists.
 		if(!$sid) {
