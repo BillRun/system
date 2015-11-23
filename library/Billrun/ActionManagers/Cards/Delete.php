@@ -62,7 +62,7 @@ class Billrun_ActionManagers_Cards_Delete extends Billrun_ActionManagers_Cards_A
 
 		$errLog = array_diff($queryFields, array_keys($jsonQueryData));
 
-		if (!isset($jsonQueryData['batch_number']) || empty($jsonQueryData['batch_number'])) {
+		if (empty($jsonQueryData['batch_number'])) {
 			$error = "Cannot delete ! All the following fields are missing or empty:" . implode(', ', $errLog);
 			$this->reportError($error, Zend_Log::ALERT);
 			return false;
@@ -107,7 +107,7 @@ class Billrun_ActionManagers_Cards_Delete extends Billrun_ActionManagers_Cards_A
 			$exception = $e;
 			$error = 'failed deleting from the DB got error : ' . $e->getCode() . ' : ' . $e->getMessage();
 			$this->reportError($error, Zend_Log::ALERT);
-			Billrun_Factory::log('failed deleting request :' . print_r($this->delete, 1), Zend_Log::ALERT);
+			Billrun_Factory::log('failed deleting request :' . print_r($this->query, 1), Zend_Log::ALERT);
 			$success = false;
 		}
 
