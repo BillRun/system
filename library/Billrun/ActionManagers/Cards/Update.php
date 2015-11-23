@@ -101,7 +101,7 @@ class Billrun_ActionManagers_Cards_Update extends Billrun_ActionManagers_Cards_A
 		}
 
 		foreach ($updateFields as $field) {
-			if (isset($jsonUpdateData[$field])) {
+			if (isset($jsonUpdateData[$field]) && !empty($jsonUpdateData[$field])) {
 				$this->update[$field] = $jsonUpdateData[$field];
 			}
 		}
@@ -118,21 +118,25 @@ class Billrun_ActionManagers_Cards_Update extends Billrun_ActionManagers_Cards_A
 	 * @return data for output.
 	 */
 	public function execute() {
-		$updated = 0;
+		$exception = null;
 		try {
 			$updateResult = $this->collection->update($this->query, array('$set' => $this->update), array('w' => 1, 'multiple' => 1));
-			$updated = isset($updateResult['nModified']) ? $updateResult['nModified'] : 0;
+			$success = $updateResult['ok'];
+			$count = $updateResult['nModified'];
 		} catch (\Exception $e) {
+			$exception = $e;
 			$error = 'failed storing in the DB got error : ' . $e->getCode() . ' : ' . $e->getMessage();
 			$this->reportError($error, Zend_Log::ALERT);
 			Billrun_Factory::log('failed saving request :' . print_r($this->update, 1), Zend_Log::ALERT);
-			$updated = 0;
+			$success = false;
 		}
 
 		$outputResult = array(
-				'status' => ($updated) ? (1) : (0),
+				'status' => ($success) ? (1) : (0),
 				'desc' => $this->error,
-				'details' => 'Updated ' . $updated . ' card(s)'
+				'details' => ($success) ? 
+							 ('Updated ' . $count . ' card(s)') : 
+							 ('Failed updating card(s) : ' . $exception->getCode() . ' : ' . $exception->getMessage())
 		);
 
 		return $outputResult;
