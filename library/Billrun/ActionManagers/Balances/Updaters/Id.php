@@ -119,7 +119,8 @@ class Billrun_ActionManagers_Balances_Updaters_Id extends Billrun_ActionManagers
 		
 		$usedWallet = new Billrun_DataTypes_Wallet($chargingBy, $chargingByValue);
 		
+		$balance = $balancesColl->findAndModify($query, $valueUpdateQuery, array(), $options, true);
 		// Return the new document.
-		return array($usedWallet => $balancesColl->findAndModify($query, $valueUpdateQuery, array(), $options, true));
+		return array(array('wallet'=>$usedWallet, 'balance' => $balance));
 	}
 }

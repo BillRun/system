@@ -167,8 +167,10 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 			'w' => 1,
 		);
 
+		$balance = $balancesColl->findAndModify($query, $update, array(), $options, true);
+		
 		// Return the new document.
-		return array($chargingPlan=>$balancesColl->findAndModify($query, $update, array(), $options, true));
+		return array(array('wallets'=>$chargingPlan,'balance'=>$balance));
 	}
 	
 	/**

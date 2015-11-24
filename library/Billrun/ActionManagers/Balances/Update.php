@@ -75,17 +75,27 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 	/**
 	 * Report the balance update action to the lines collection
 	 * @param array $outputDocuments The output result of the Update action.
+	 * @return array Array of filtered balance mongo records.
 	 */
 	protected function reportInLines($outputDocuments) {
 		$db = Billrun_Factory::db();
 		$linesCollection = $db->linesCollection();
 		$balanceLine["sid"] = $this->subscriberId;
+		$balancesRecords = array();
 		$balanceLine = array_merge($balanceLine, $this->additional);
-		foreach ($outputDocuments as $wallet=>$document) {
-			$balanceLine["usagev"] = $wallet->getChargingBy();
-			$balanceLine["usaget"] = $wallet->getChargingByUsaget();
-			$linesCollection->insert($balanceLine);
+		$balanceLine['stamp'] = time();
+		
+		foreach ($outputDocuments as $balancePair) {
+			$wallet = $balancePair['wallet'];
+			$balance = $balancePair['balance'];
+			$currentBalance["usagev"] = $wallet->getChargingBy();
+			$currentBalance["usaget"] = $wallet->getValue();
+			$currentBalance['balance_ref'] = $db->balancesCollection()->createRefByEntity($balance);
+			$balanceLine['balances'][] = $currentBalance;
+			$balancesRecords[] = $balance->getRawData();
 		}
+		$linesCollection->insert($balanceLine);
+		return $balancesRecords;
 	}
 	
 	/**
@@ -98,17 +108,14 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		// Get the updater for the filter.
 		$updater = $this->getAction();
 		
-		$outputDocuments = 
+ 		$outputDocuments = 
 			$updater->update($this->query, $this->recordToSet, $this->subscriberId);
 	
 		if($outputDocuments === false) {
 			$success = false;
 		} else {
 			// Write the action to the lines collection.
-			$this->reportInLines($outputDocuments);
-			
-			// Take only the values.
-			$outputDocuments = array_values($outputDocuments);
+			$outputDocuments = $this->reportInLines($outputDocuments);
 		}
 		
 		$outputResult = 
@@ -258,7 +265,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 			return false;
 		}
 		
-		$this->additional = $input->get('additional');
+		$this->additional = json_decode($input->get('additional'), true);
 		if(!isset($this->additional)) {
 			$this->additional = array();
 		}

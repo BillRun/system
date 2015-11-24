@@ -13,7 +13,7 @@
  */
 class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_ActionManagers_Balances_Updaters_Updater {
 
-	const CHARGING_PRIORITY = 1000;
+	const CHARGING_PRIORITY = 10000;
 	
 	/**
 	 * Update the balances, based on the plans table
@@ -78,12 +78,14 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 				new Billrun_DataTypes_Wallet($chargingBy,
 											 $chargingByValue);
 			$to = $recordToSet['to'];
-			$balancesToReturn[$wallet] = 
+			$currentBalance = 
 				$this->updateBalance($wallet,
 									 $updateQuery, 
 									 $balancesColl, 
 									 $defaultBalance, 
 									 $to);
+			$balancesToReturn[] =
+				array('balance' => $currentBalance, 'wallet' => $wallet);
 		}
 
 		return $balancesToReturn;
@@ -150,7 +152,6 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 	protected function updateBalance($wallet, $query, $balancesColl, $defaultBalance, $toTime) {
 		// Get the balance with the current value field.
 		$query[$wallet->getFieldName()]['$exists'] = 1;
-		
 		$update = $this->getUpdateBalanceQuery($balancesColl, 
 											   $query, 
 											   $wallet,
