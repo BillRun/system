@@ -31,7 +31,7 @@ class VfdaysAction extends Action_Base {
 		$max_datetime = $request->get("max_datetime");
 		$this->plans = Billrun_Factory::config()->getConfigValue('nrtrde.fraud.events.NRTRDE1_B.target_plans');
 		$results = $this->count_days($sid, $year, $max_datetime);
-		$tap3_count = $this->count_days_tap3($sid, $year);
+		$tap3_count = $this->count_days_tap3($sid, $year, $max_datetime);
 		if (isset($results[0]["count"])) {
 			$days = $results[0]["count"];
 		} else {
@@ -123,9 +123,13 @@ class VfdaysAction extends Action_Base {
 		return $res;
 	}
 
-	public function count_days_tap3($sid, $year = null) {
+	public function count_days_tap3($sid, $year = null, $max_datetime = null) {
 		$from = date('YmdHis', strtotime($year . '-01-01' . ' 00:00:00'));
-		$to = date('YmdHis', strtotime($year . '-12-31' . ' 23:59:59'));
+		if (is_null($max_datetime)) {
+			$to = date('YmdHis', strtotime($year . '-12-31' . ' 23:59:59'));
+		} else {
+			$to = date('YmdHis', (!is_numeric($max_datetime) ? strtotime($max_datetime) : $max_datetime));
+		}
 		
 		$match = array(
 			'$match' => array(
