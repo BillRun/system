@@ -84,7 +84,7 @@ class RealtimeeventAction extends ApiAction {
 	 */
 	protected function setEventData() {
 		$this->event['source'] = 'realtime';
-		$this->event['type'] = 'gy';
+		$this->event['type'] = $this->getEventType();
 		$this->event['rand'] = rand(1,1000000);
 		$this->event['stamp'] = Billrun_Util::generateArrayStamp($this->event);
 		if (isset($this->event['service-information']['sgsnaddress'])) {
@@ -113,6 +113,26 @@ class RealtimeeventAction extends ApiAction {
 		$this->event['billrun_prepend'] = $this->isPrepend();
 		// we are on real time -> the time is now
 		$this->event['urt'] = new MongoDate();
+	}
+	
+	/**
+	 * Gets the event type for rates calculator
+	 * 
+	 * @return string event type
+	 */
+	protected function getEventType() {
+		//TODO: move to config
+		switch ($this->usaget) {
+			case ('sms'):
+				return 'smsrt';
+			case ('data'):
+				return 'gy';
+			case ('call'):
+				return 'nsn'; //TODO: change name of rate calculator
+			case ('service'):
+				return 'service';
+		}
+		return false;
 	}
 	
 	/**
