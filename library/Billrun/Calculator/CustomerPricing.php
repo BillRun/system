@@ -499,7 +499,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			return $pricingData;
 		}
 		$pricingData = $this->getLinePricingData($volume, $usage_type, $rate, $this->balance, $plan);
-		if (isset($row['billrun_prepend']) && $row['billrun_prepend']) {
+		if (isset($row['billrun_pretend']) && $row['billrun_pretend']) {
 			return $pricingData;
 		}
 
@@ -740,7 +740,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @param type $usageType
 	 */
 	protected function getPrepaidGrantedVolume($row, $rate, $balance, $usageType) {
-		if ((isset($row['billrun_prepend']) && $row['billrun_prepend']) || 
+		if ((isset($row['billrun_pretend']) && $row['billrun_pretend']) || 
 			(isset($row['free_call']) && $row['free_call'])) {
 			return 0;
 		}

@@ -87,32 +87,36 @@ class RealtimeeventAction extends ApiAction {
 		$this->event['type'] = 'gy';
 		$this->event['rand'] = rand(1,1000000);
 		$this->event['stamp'] = Billrun_Util::generateArrayStamp($this->event);
-		if (isset($this->event['service-information']['sgsnaddress'])) {
-			$this->event['sgsn_address'] = long2ip(hexdec($this->event['service-information']['sgsnaddress']));
-		} else {
-			$sgsn_dec = hexdec($this->event['sgsnaddress']);
-			if (is_numeric($sgsn_dec)) {
-				$this->event['sgsn_address'] = long2ip($sgsn_dec);
-			}
+		if ($this->usaget === 'data') {
+			$this->event['sgsn_address'] = $this->getSgsn($this->event);
+			$this->event['record_type'] = $this->getDataRecordType($this->event['request_type']);
 		}
-		
-		if (isset($this->event['sgsnaddress'])) {
-			$this->event['ggsn_address'] = $this->event['sgsnaddress'];
-			unset($this->event['sgsnaddress']);
-		}
-
-		if (isset($this->event['start_time'])) {
-			$this->event['record_opening_time'] = $this->event['startTime'];
-			unset($this->event['start_time']);
-		}
-		
-//		if (isset($this->event['time_date'])) {
-//			$this->event['record_opening_time'] = $this->event['time_date'];
-//		}
-		
-		$this->event['billrun_prepend'] = $this->isPrepend();
+				
+		$this->event['billrun_pretend'] = $this->isPretend($this->event);
 		// we are on real time -> the time is now
 		$this->event['urt'] = new MongoDate();
+	}
+	
+	protected function getSgsn($event) {
+		$sgsn = 0;
+		if (isset($event['service']['sgsn_address'])) {
+			$sgsn = $event['service']['sgsn_address'];
+		} else if(isset ($event['sgsn_address'])) {
+			$sgsn = $event['sgsn_address'];
+		} else if(isset ($event['sgsnaddress'])) {
+			$sgsn = $event['sgsnaddress'];
+		}
+		return long2ip(hexdec($sgsn));
+	}
+	
+	protected function getDataRecordType($requestCode) {
+		$requestTypes = Billrun_Factory::config()->getConfigValue('realtimeevent.data.requestType',array());
+		foreach ($requestTypes as $requestTypeDesc => $requestTypeCode) {
+			if ($requestCode === $requestTypeCode) {
+				return strtolower($requestTypeDesc);
+			}
+		}
+		return false;
 	}
 	
 	/**
@@ -146,7 +150,7 @@ class RealtimeeventAction extends ApiAction {
 			return false;
 		}
 		
-		$responder = Billrun_ActionManagers_Realtime_Responder_Call_Manager::getResponder($data);
+		$responder = Billrun_ActionManagers_Realtime_Responder_Manager::getResponder($data);
 		if (!$responder) {
 			Billrun_Factory::log('Cannot get responder', Zend_Log::ALERT);
 			return false;
@@ -165,8 +169,9 @@ class RealtimeeventAction extends ApiAction {
 	 * 
 	 * @return boolean
 	 */
-	protected function isPrepend() {
-		return ($this->event['record_type'] === 'start_call');
+	protected function isPretend($event) {
+		return (($this->usaget === 'call' && $event['record_type'] === 'start_call') ||
+			($this->usaget === 'data' && $event['request_type'] === "1"));
 	}
 
 }
