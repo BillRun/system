@@ -121,11 +121,18 @@ class RealtimeeventAction extends ApiAction {
 	 * @return string event type
 	 */
 	protected function getEventType() {
+		//TODO: move to config
 		switch ($this->usaget) {
 			case ('sms'):
 				return 'smsrt';
+			case ('data'):
+				return 'gy';
+			case ('call'):
+				return 'nsn'; //TODO: change name of rate calculator
+			case ('service'):
+				return 'service';
 		}
-		return 'gy';
+		return false;
 	}
 	
 	/**
