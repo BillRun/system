@@ -130,7 +130,7 @@ class Billrun_Balance extends Mongodloid_Entity {
 		$query = $this->getGetBalanceQuery($subscriberId, $urt, $chargingType, $usageType);
 		$cursor = $this->collection->query($query)->cursor();
 		if ($chargingType === 'prepaid') { // for pre-paid subscribers - choose correct balance by priority field
-			$cursor = $cursor->sort(array('priority' => -1));
+			$cursor = $cursor->sort(array('priority' => -1, 'to' => 1,));
 		}
 		return $cursor->setReadPreference('RP_PRIMARY')
 				->limit(1)->current();
