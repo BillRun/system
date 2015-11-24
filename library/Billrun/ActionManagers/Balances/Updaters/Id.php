@@ -78,7 +78,7 @@ class Billrun_ActionManagers_Balances_Updaters_Id extends Billrun_ActionManagers
 	 * Update a single balance.
 	 * @param type $query
 	 * @param type $balancesColl
-	 * @return type
+	 * @return Array with the wallet as the key and the Updated record as the value
 	 */
 	protected function updateBalance($query, $balancesColl, $recordToSet) {
 		$valueFieldName = array();
@@ -116,8 +116,10 @@ class Billrun_ActionManagers_Balances_Updaters_Id extends Billrun_ActionManagers
 			'new' => true,
 			'w' => 1,
 		);
-
+		
+		$usedWallet = new Billrun_DataTypes_Wallet($chargingBy, $chargingByValue);
+		
 		// Return the new document.
-		return array($balancesColl->findAndModify($query, $valueUpdateQuery, array(), $options, true));
+		return array($usedWallet => $balancesColl->findAndModify($query, $valueUpdateQuery, array(), $options, true));
 	}
 }

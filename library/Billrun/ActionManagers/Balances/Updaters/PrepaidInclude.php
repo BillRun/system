@@ -147,7 +147,7 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 	 * @param array $query
 	 * @param array $defaultBalance
 	 * @param MongoDate $toTime
-	 * @return Updated record.
+	 * @return Array with the wallet as the key and the Updated record as the value.
 	 */
 	protected function updateBalance($chargingPlan, $query, $defaultBalance, $toTime) {
 		$balancesColl = Billrun_Factory::db()->balancesCollection();
@@ -168,7 +168,7 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 		);
 
 		// Return the new document.
-		return $balancesColl->findAndModify($query, $update, array(), $options, true);
+		return array($chargingPlan=>$balancesColl->findAndModify($query, $update, array(), $options, true));
 	}
 	
 	/**

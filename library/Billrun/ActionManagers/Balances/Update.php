@@ -38,6 +38,12 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 	protected $updaterOptions = array();
 	
 	/**
+	 * Comment for updating a balance
+	 * @var string
+	 */
+	protected $additional;
+	
+	/**
 	 */
 	public function __construct() {
 		parent::__construct(array('error' => "Success updating balances"));
@@ -67,6 +73,22 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 	}
 	
 	/**
+	 * Report the balance update action to the lines collection
+	 * @param array $outputDocuments The output result of the Update action.
+	 */
+	protected function reportInLines($outputDocuments) {
+		$db = Billrun_Factory::db();
+		$linesCollection = $db->linesCollection();
+		$balanceLine["sid"] = $this->subscriberId;
+		$balanceLine = array_merge($balanceLine, $this->additional);
+		foreach ($outputDocuments as $wallet=>$document) {
+			$balanceLine["usagev"] = $wallet->getChargingBy();
+			$balanceLine["usaget"] = $wallet->getChargingByUsaget();
+			$linesCollection->insert($balanceLine);
+		}
+	}
+	
+	/**
 	 * Execute the action.
 	 * @return data for output.
 	 */
@@ -78,9 +100,15 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		
 		$outputDocuments = 
 			$updater->update($this->query, $this->recordToSet, $this->subscriberId);
-
+	
 		if($outputDocuments === false) {
 			$success = false;
+		} else {
+			// Write the action to the lines collection.
+			$this->reportInLines($outputDocuments);
+			
+			// Take only the values.
+			$outputDocuments = array_values($outputDocuments);
 		}
 		
 		$outputResult = 
@@ -207,7 +235,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 			return false;
 		}
 		
-		return Billrun_Util::toNumber($sid);;
+		return Billrun_Util::toNumber($sid);
 	}
 	
 	/**
@@ -228,6 +256,11 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		
 		if(!$this->setUpdateRecord($input)) {
 			return false;
+		}
+		
+		$this->additional = $input->get('additional');
+		if(!isset($this->additional)) {
+			$this->additional = array();
 		}
 		
 		$this->updaterOptions['increment'] = ($this->recordToSet['operation'] == "inc");
