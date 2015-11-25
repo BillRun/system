@@ -124,7 +124,7 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 */
 	protected function sendEmailOnFailure($event, $rpcRet) {
 		$msg = "Failed  when sending event to RPC" . PHP_EOL;
-		$msg .= "Event : stamp : {$event['stamps'][0]} , imsi :  " . @$event['imsi'] . " ,  msisdn :  " . (@$event['msisdn']) . PHP_EOL;
+		$msg .= "Event : stamp : {$event['stamps'][0]} , imsi :  " . @$event['imsi'] . " ,  msisdn :  " . (@$event['msisdn']) .  ", sid :  " . (@$event['sid']) . PHP_EOL;
 		$msg .= (isset($rpcRet['message']) ? "Message From RPC: " . $rpcRet['message'] : "No  failure  message  from the RPC.") . PHP_EOL;
 		$tmpStr = "";
 		foreach ($rpcRet as $key => $val) {
