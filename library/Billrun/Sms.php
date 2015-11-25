@@ -102,7 +102,7 @@ class Billrun_Sms {
 		return $response['error-code'] == 'success' ? true : false;
 	}
 
-	protected function sms_unicode($message) {
+	public static function sms_unicode($message) {
 		$latin = @iconv('UTF-8', 'ISO-8859-1', $message);
 		if (strcmp($latin, $message)) {
 			$arr = unpack('H*hex', @iconv('UTF-8', 'UCS-2BE', $message));

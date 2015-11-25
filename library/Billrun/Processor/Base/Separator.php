@@ -37,7 +37,7 @@ abstract class Billrun_Processor_Base_Separator extends Billrun_Processor {
 	 * 
 	 * @return Character representing the line type
 	 */
-	protected function getLineType($line) {
+	protected function getLineType($line, $length = 1) {
 		return $line[0];
 	}
 
