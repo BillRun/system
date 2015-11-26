@@ -740,6 +740,10 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @param type $usageType
 	 */
 	protected function getPrepaidGrantedVolume($row, $rate, $balance, $usageType) {
+		$requestedVolume = PHP_INT_MAX;
+		if (isset($row['usagev'])) {
+			$requestedVolume = $row['usagev'];
+		}
 		if ((isset($row['billrun_pretend']) && $row['billrun_pretend']) || 
 			(isset($row['free_call']) && $row['free_call'])) {
 			return 0;
@@ -757,7 +761,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		}
 		$currentBalanceVolume = abs($currentBalanceVolume);
 		
-		return ($currentBalanceVolume < $maximumGrantedVolume ? $currentBalanceVolume : $maximumGrantedVolume);
+		return min(array($currentBalanceVolume, $maximumGrantedVolume, $requestedVolume));
 	}
 	
 	/**

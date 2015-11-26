@@ -46,7 +46,7 @@ class Billrun_Calculator_Rate_Gy extends Billrun_Calculator_Rate_Ggsn {
 	protected function getLineRate($row) {
 		$line_time = $row['urt'];
 		foreach ($this->rates as $rate) {
-			if ($rate['params']['prefix'] === 'INTERNET_BILL_BY_VOLUME' && $rate['from'] <= $line_time && $line_time <= $rate['to']) { // Currently, real-time data is only localy
+			if ($rate['key'] === 'INTERNET_BILL_BY_VOLUME' && $rate['from'] <= $line_time && $line_time <= $rate['to']) { // Currently, real-time data is only localy
 				return $rate;
 			}
 		}
