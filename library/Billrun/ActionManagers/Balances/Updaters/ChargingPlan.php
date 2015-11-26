@@ -13,8 +13,6 @@
  */
 class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_ActionManagers_Balances_Updaters_Updater {
 
-	const CHARGING_PRIORITY = 10000;
-	
 	/**
 	 * Update the balances, based on the plans table
 	 * @param type $query - Query to find row to update.
@@ -48,9 +46,9 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		$updateQuery['sid'] = $subscriber['sid'];
 		$updateQuery['aid'] = $subscriber['aid'];
 		
-		// If the charging plan is recurring set a high priority.
-		if(isset($chargingPlanRecord['recurring'])) {
-			$updateQuery['priority'] = CHARGING_PRIORITY;
+		// Get the priority from the plan.
+		if(isset($chargingPlanRecord['priority'])) {
+			$updateQuery['priority'] = $chargingPlanRecord['priority'];
 		}
 		
 		if (!$this->validateServiceProviders($subscriberId, $recordToSet)) {
