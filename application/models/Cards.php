@@ -44,7 +44,7 @@ class CardsModel extends TabledateModel{
 								"secret",
 								"batch_number",
 								"serial_number",
-								"charging_plan_external_id",
+								"charging_plan_name",
 								"service_provider",
 								"to",
 								"status",
