@@ -46,7 +46,7 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		$updateQuery['sid'] = $subscriber['sid'];
 		$updateQuery['aid'] = $subscriber['aid'];
 		
-		if (!$this->validateServiceProviders($subscriberId, $recordToSet)) {
+		if (!$this->validateServiceProviders($subscriber, $recordToSet)) {
 			return false;
 		}
 

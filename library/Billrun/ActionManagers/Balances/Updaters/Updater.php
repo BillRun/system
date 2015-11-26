@@ -238,7 +238,7 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater{
 		// Check if mismatching serivce providers.
 		if ($planRecord['service_provider'] != $subscriberServiceProvider) {
 			$planServiceProvider = $planRecord['service_provider'];
-			$error = "Failed updating balance! mismatching service prociders: subscriber: $subscriberServiceProvider plan: $planServiceProvider";
+			$error = "Failed updating balance! mismatching service providers: subscriber: $subscriberServiceProvider plan: $planServiceProvider";
 			$this->reportError($error, Zend_Log::ALERT);
 			return false;
 		}
