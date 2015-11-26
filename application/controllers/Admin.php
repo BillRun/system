@@ -325,22 +325,15 @@ class AdminController extends Yaf_Controller_Abstract {
 	public function subscribersAction() {
 		if (!$this->allowed('read'))
 			return false;
+		$this->forward("tabledate", array('table' => 'subscribers'));
+		return false;
+	}
 
-		$table = 'subscribers';
-		$sort = $this->applySort($table);
-		$options = array(
-			'collection' => $table,
-			'sort' => $sort,
-		);
-
-		self::initModel($table, $options);
-		$query = $this->applyFilters($table);
-
-		$session = $this->getSession($table);
-		// this use for export
-		$this->getSetVar($session, $query, 'query', $query);
-
-		$this->getView()->component = $this->buildTableComponent($table, $query);
+	public function subscribersAutoRenewServicesAction() {
+		if (!$this->allowed('read'))
+			return false;
+		$this->forward("tabledate", array('table' => 'subscribers_auto_renew_services'));
+		return false;
 	}
 	
 	public function cardsAction() {
@@ -362,6 +355,26 @@ class AdminController extends Yaf_Controller_Abstract {
 
 		$this->getView()->component = $this->buildTableComponent($table, $query);		
 	}
+
+	public function Action() {
+		if (!$this->allowed('read'))
+			return false;
+		$table = "cards";
+//		$sort = array('received_time' => -1);
+		$sort = $this->applySort($table);
+		$options = array(
+			'collection' => $table,
+			'sort' => $sort,
+		);
+
+		self::initModel($table, $options);
+		$query = $this->applyFilters($table);
+
+		// this use for export
+		$this->getSetVar($this->getSession($table), $query, 'query', $query);
+
+		$this->getView()->component = $this->buildTableComponent($table, $query);		
+	}	
 	
 	/**
 	 * rates controller of admin
@@ -392,7 +405,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		self::initModel($table, $options);
 		$query = $this->applyFilters($table);
 
-		$this->getView()->component = $this->buildTableComponent($table, $query);
+		$this->getView()->component = $this->buildTableComponent($table, array());
 	}
 
 	public function loginAction() {
@@ -772,7 +785,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$options['extra_columns'] = $this->getSetVar($session, "extra_columns", "extra_columns", array());
 
 		if (is_null($this->model)) {
-			$model_name = ucfirst($collection_name) . "Model";
+			$model_name = ucfirst(str_replace('_', '', $collection_name)) . "Model";
 			if (class_exists($model_name)) {
 				$this->model = new $model_name($options);
 			} else {

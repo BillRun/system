@@ -45,6 +45,11 @@
 				<a href="<?php echo $this->baseUrl; ?>/admin/subscribers">Subscribers</a>
 			</li>
 		<?php endif; ?>			
+		<?php if(AdminController::authorized('read', 'subscribersautorenewservices')) : ?>
+			<li <?php echo ($active == 'subscribersautorenewservices' ? ' class="active"' : ''); ?>>
+				<a href="<?php echo $this->baseUrl; ?>/admin/subscribersautorenewservices">Subscribers Renew</a>
+			</li>
+		<?php endif; ?>			
 		<?php if (AdminController::authorized('admin')) : ?>
 			<li class="dropdown<?php echo (in_array($active, array('users', 'config', 'operations')) ? ' active' : ''); ?>">
 				<a class="dropdown-toggle"
