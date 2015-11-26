@@ -83,18 +83,19 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		$balanceLine["sid"] = $this->subscriberId;
 		$balancesRecords = array();
 		$balanceLine = array_merge($balanceLine, $this->additional);
-		$balanceLine['stamp'] = time();
+		$balanceLine['urt'] = time();
 		
 		foreach ($outputDocuments as $balancePair) {
 			$wallet = $balancePair['wallet'];
 			$balance = $balancePair['balance'];
-			$currentBalance["usagev"] = $wallet->getChargingBy();
-			$currentBalance["usaget"] = $wallet->getValue();
-			$currentBalance['balance_ref'] = $db->balancesCollection()->createRefByEntity($balance);
-			$balanceLine['balances'][] = $currentBalance;
+			$balanceLine["usagev"] = $wallet->getChargingBy();
+			$balanceLine["usaget"] = $wallet->getValue();
+			$balanceLine['balance_ref'] = $db->balancesCollection()->createRefByEntity($balance);
+			$balanceLine['stamp'] = Billrun_Util::generateArrayStamp($balanceLine);
+			$linesCollection->insert($balanceLine);
 			$balancesRecords[] = $balance->getRawData();
 		}
-		$linesCollection->insert($balanceLine);
+		
 		return $balancesRecords;
 	}
 	
