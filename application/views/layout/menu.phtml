@@ -47,7 +47,7 @@
 		<?php endif; ?>			
 		<?php if(AdminController::authorized('read', 'subscribersautorenewservices')) : ?>
 			<li <?php echo ($active == 'subscribersautorenewservices' ? ' class="active"' : ''); ?>>
-				<a href="<?php echo $this->baseUrl; ?>/admin/subscribersautorenewservices">Subscribers Renew</a>
+				<a href="<?php echo $this->baseUrl; ?>/admin/subscribersautorenewservices">Renew</a>
 			</li>
 		<?php endif; ?>			
 		<?php if (AdminController::authorized('admin')) : ?>
