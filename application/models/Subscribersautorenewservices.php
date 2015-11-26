@@ -14,15 +14,15 @@
  */
 
 /**
- * This class is to hold the logic for the Cards module.
+ * This class is to hold the logic for the subscribers module.
  *
  * @package  Models
  * @subpackage Table
  * @since    4.0
  */
-class CardsModel extends TableModel {
+class SubscribersautorenewservicesModel extends TabledateModel{
 	
-	protected $cards_coll;
+	protected $subscribers_auto_renew_services_coll;
 	
 	/**
 	 * constructor
@@ -30,34 +30,45 @@ class CardsModel extends TableModel {
 	 * @param array $params of parameters to preset the object
 	 */
 	public function __construct(array $params = array()) {
-		$params['collection'] = Billrun_Factory::db()->cards;
+		$params['collection'] = Billrun_Factory::db()->subscribers_auto_renew_services;
 		parent::__construct($params);
-		$this->cards_coll = Billrun_Factory::db()->cardsCollection();
-		$this->search_key = "secret";
+		$this->subscribers_auto_renew_services_coll = Billrun_Factory::db()->subscribers_auto_renew_servicesCollection();
+		$this->search_key = "sid";
 	}
-
+	
 	public function getTableColumns() {
 		$columns = array(
-			'batch_number' => 'Batch Number',
-			'serial_number' => 'Serial Number',
-			'charging_plan_external_id' => 'Charging Plan',
-			'service_provider' => 'Service Provider',
+			'sid' => 'SID',
+			'aid' => 'AID',
+			'last_renew_date' => 'Last Renew Date',
+			'interval' => 'Interval',
+			'charging_plan_name' => 'Charging Plan Name',
+			'charging_plan_external_id' => "Charging Plan External ID",
+			'done' => 'Done',
+			'remain' => 'Remain',
+			'operators' => 'Operation',
+			'from' => 'From',
 			'to' => 'To',
-			'_id' => 'Id',
+			'_id' => 'Id'
 		);
 		return $columns;
 	}
 
 	public function getSortFields() {
 		$sort_fields = array(
-			'batch_number' => 'Batch Number',
-			'serial_number' => 'Serial Number',
-			'charging_plan_external_id' => 'Charging Plan',
-			'service_provider' => 'Service Provider',
+			'sid' => 'SID',
+			'aid' => 'AID',
+			'last_renew_date' => 'Last Renew Date',
+			'interval' => 'Interval',
+			'charging_plan_name' => 'Charging Plan Name',
+			'charging_plan_external_id' => "Charging Plan External ID",
+			'done' => 'Done',
+			'remain' => 'Remain',
+			'operators' => 'Operation'
 		);
 		return array_merge($sort_fields, parent::getSortFields());
 	}
-	
+
 	public function getFilterFields() {
 		$months = 12;
 		$billruns = array();
@@ -75,21 +86,13 @@ class CardsModel extends TableModel {
 		arsort($billruns);
 
 		$filter_fields = array(
-			'batch_number' => array(
-				'key' => 'batch_number',
-				'db_key' => 'batch_number',
-				'input_type' => 'text',
-				'comparison' => 'equals',
-				'display' => 'Batch Number',
-				'default' => '',
-			),
-			'serial_number' => array(
-				'key' => 'serial_number',
-				'db_key' => 'serial_number',
-				'input_type' => 'text',
-				'comparison' => 'equals',
-				'display' => 'Serial Number',
-				'default' => '',				
+			'from' => array(
+				'key' => 'from',
+				'db_key' => 'from',
+				'input_type' => 'date',
+				'comparison' => '$gte',
+				'display' => 'From',
+				'default' => (new Zend_Date(strtotime('2 months ago'), null, new Zend_Locale('he_IL')))->toString('YYYY-MM-dd HH:mm:ss'),
 			),
 			'to' => array(
 				'key' => 'to',
@@ -106,13 +109,7 @@ class CardsModel extends TableModel {
 	public function getFilterFieldsOrder() {
 		$filter_field_order = array(
 			0 => array(
-				'batch_number' => array(
-					'width' => 2,
-				),
-				'serial_number' => array(
-					'width' => 2,
-				),
-				'sid' => array(
+				'from' => array(
 					'width' => 2,
 				),
 				'to' => array(
@@ -125,18 +122,15 @@ class CardsModel extends TableModel {
 	
 	public function getProtectedKeys($entity, $type) {
 		$parentKeys = parent::getProtectedKeys($entity, $type);
-		return array_merge(	array("_id"),
-							$parentKeys,
-							array(
-								"secret",
-								"batch_number",
-								"serial_number",
-								"charging_plan_name",
-								"service_provider",
-								"to",
-								"status",
-								"additional_information"
-							)
-						);
+		return array_merge($parentKeys, 
+						   array('sid',
+								'aid',
+								'last_renew_date',
+								'interval',
+								'charging_plan_name',
+								'charging_plan_external_id',
+								'done',
+								'remain',
+								'operators'));
 	}
 }
