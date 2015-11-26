@@ -73,10 +73,13 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 		
 		$chargingPlan = $this->getPlanObject($prepaidRecord, $recordToSet);
 		
-		return $this->updateBalance($chargingPlan, 
+		$updateResult = $this->updateBalance($chargingPlan, 
 									$updateQuery, 
 									$defaultBalance, 
 									$recordToSet['to']);
+		
+		$updateResult[0]['source'] = $prepaidIncludes->createRefByEntity($prepaidRecord);
+		return $updateResult;
 	}
 	
 	/**

@@ -49,7 +49,10 @@ class Billrun_ActionManagers_Balances_Updaters_Id extends Billrun_ActionManagers
 		
 		$balancesColl = Billrun_Factory::db()->balancesCollection();
 		
-		return $this->updateBalance($query, $balancesColl, $recordToSet);
+		$updateResult = $this->updateBalance($query, $balancesColl, $recordToSet);
+		$updateResult[0]['source'] = 
+			Billrun_Factory::db()->subscribersCollection()->createRefByEntity($subscriber);
+		return $updateResult;
 	}
 	
 	/**

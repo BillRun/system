@@ -88,6 +88,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		foreach ($outputDocuments as $balancePair) {
 			$wallet = $balancePair['wallet'];
 			$balance = $balancePair['balance'];
+			$balanceLine['source'] = $balancePair['source'];
 			$balanceLine["usagev"] = $wallet->getChargingBy();
 			$balanceLine["usaget"] = $wallet->getValue();
 			$balanceLine['balance_ref'] = $db->balancesCollection()->createRefByEntity($balance);

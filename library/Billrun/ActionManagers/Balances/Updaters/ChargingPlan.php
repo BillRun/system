@@ -14,6 +14,15 @@
 class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_ActionManagers_Balances_Updaters_Updater {
 
 	/**
+	 * Get the 'Source' value to put in the record of the lines collection.
+	 * @return object The value to set.
+	 */
+	protected function getSourceForLineRecord($chargingPlanRecord) {
+		$chargingPlansCollection = Billrun_Factory::db()->plansCollection();
+		return $chargingPlansCollection->createRefByEntity($chargingPlanRecord);		
+	}
+	
+	/**
 	 * Update the balances, based on the plans table
 	 * @param type $query - Query to find row to update.
 	 * @param type $recordToSet - Values to update.
@@ -68,7 +77,8 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 
 		// TODO: What if empty?
 		$balancesArray = $chargingPlanRecord['include'];
-
+		
+		$source = $this->setSourceForLineRecord($chargingPlanRecord);
 		$balancesToReturn = array();
 		// Go through all charging possibilities. 
 		foreach ($balancesArray as $chargingBy => $chargingByValue) {
@@ -83,7 +93,7 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 									 $defaultBalance, 
 									 $to);
 			$balancesToReturn[] =
-				array('balance' => $currentBalance, 'wallet' => $wallet);
+				array('balance' => $currentBalance, 'wallet' => $wallet, 'source' =>$source);
 		}
 
 		return $balancesToReturn;

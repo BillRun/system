@@ -12,7 +12,7 @@
  * @author tom
  */
 class Billrun_ActionManagers_Balances_Updaters_Secret extends Billrun_ActionManagers_Balances_Updaters_ChargingPlan {
-
+	
 	/**
 	 * Update the balances, based on the plans table
 	 * @param type $query - Query to find row to update.
