@@ -45,7 +45,7 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 				$returnData[] = Billrun_Util::convertRecordMongoDatetimeFields($rawItem);
 			}
 		} catch (\Exception $e) {
-			$error = 'failed quering DB got error : ' . $e->getCode() . ' : ' . $e->getMessage();
+			$error = 'failed querying DB got error : ' . $e->getCode() . ' : ' . $e->getMessage();
 			$this->reportError($error, Zend_Log::ALERT);
 			return null;
 		}	
