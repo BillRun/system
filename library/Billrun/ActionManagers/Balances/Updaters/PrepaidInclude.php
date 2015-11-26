@@ -116,13 +116,24 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 											 $toTime,
 										     $defaultBalance) {
 		$update = array();
+		$balance = $balancesColl->query($query)->cursor()->current();
+		
 		// If the balance doesn't exist take the setOnInsert query, 
 		// if it exists take the set query.
-		if(!$balancesColl->exists($query)) {
+		if(!isset($balance)){
 			$update = $this->getSetOnInsert($chargingPlan, $defaultBalance);
 		} else {
 			$this->handleZeroing($query, $balancesColl, $chargingPlan->getFieldName());
-			$update = $this->getSetQuery($chargingPlan->getValue(), $chargingPlan->getFieldName(), $toTime);
+			
+			// Take the largest expiration date.
+			if(time($balance['to']) > time($toTime)) {
+				$toTime = $balance['to'];
+			}
+			
+			$update = 
+				$this->getSetQuery($chargingPlan->getValue(), 
+								   $chargingPlan->getFieldName(), 
+								   $toTime);
 		}
 		
 		return $update;
