@@ -34,6 +34,10 @@ class Billrun_ActionManagers_Balances_Updaters_Secret extends Billrun_ActionMana
 			return false;
 		}
 		
+		if (!$this->validateServiceProviders($cardRecord, $recordToSet)) {
+			return false;
+		}
+		
 		$this->signalCardAsUsed($cardRecord);
 		
 		// Build the plan query from the card plan field.
