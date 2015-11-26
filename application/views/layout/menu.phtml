@@ -35,6 +35,16 @@
 				<a href="<?php echo $this->baseUrl; ?>/admin/logs">Log</a>
 			</li>
 		<?php endif; ?>
+		<?php if(AdminController::authorized('read', 'cards')) : ?>
+			<li <?php echo ($active == 'cards' ? ' class="active"' : ''); ?>>
+				<a href="<?php echo $this->baseUrl; ?>/admin/cards">Cards</a>
+			</li>
+		<?php endif; ?>
+		<?php if(AdminController::authorized('read', 'subscribers')) : ?>
+			<li <?php echo ($active == 'subscribers' ? ' class="active"' : ''); ?>>
+				<a href="<?php echo $this->baseUrl; ?>/admin/subscribers">Subscribers</a>
+			</li>
+		<?php endif; ?>			
 		<?php if (AdminController::authorized('admin')) : ?>
 			<li class="dropdown<?php echo (in_array($active, array('users', 'config', 'operations')) ? ' active' : ''); ?>">
 				<a class="dropdown-toggle"

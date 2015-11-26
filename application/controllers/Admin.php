@@ -322,6 +322,47 @@ class AdminController extends Yaf_Controller_Abstract {
 		return false;
 	}
 
+	public function subscribersAction() {
+		if (!$this->allowed('read'))
+			return false;
+
+		$table = 'subscribers';
+		$sort = $this->applySort($table);
+		$options = array(
+			'collection' => $table,
+			'sort' => $sort,
+		);
+
+		self::initModel($table, $options);
+		$query = $this->applyFilters($table);
+
+		$session = $this->getSession($table);
+		// this use for export
+		$this->getSetVar($session, $query, 'query', $query);
+
+		$this->getView()->component = $this->buildTableComponent($table, $query);
+	}
+	
+	public function cardsAction() {
+		if (!$this->allowed('read'))
+			return false;
+		$table = "cards";
+//		$sort = array('received_time' => -1);
+		$sort = $this->applySort($table);
+		$options = array(
+			'collection' => $table,
+			'sort' => $sort,
+		);
+
+		self::initModel($table, $options);
+		$query = $this->applyFilters($table);
+
+		// this use for export
+		$this->getSetVar($this->getSession($table), $query, 'query', $query);
+
+		$this->getView()->component = $this->buildTableComponent($table, $query);		
+	}
+	
 	/**
 	 * rates controller of admin
 	 */
