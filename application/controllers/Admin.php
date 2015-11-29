@@ -798,7 +798,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	}
 
 	protected function buildTableComponent($table, $filter_query, $options = array()) {
-		$this->title = preg_replace('/_/', ' ', ucfirst($table));
+		$this->title = str_replace('_', ' ', ucfirst($table));
 
 		// TODO: use ready pager/paginiation class (zend? joomla?) with auto print
 		$basic_params = array(
