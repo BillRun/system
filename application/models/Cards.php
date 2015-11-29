@@ -65,7 +65,7 @@ class CardsModel extends TableModel {
 		$names = $planModel->getData(array('type' => 'charging'));
 		$planNames = array();
 		foreach($names as $name) {
-			$planNames[] = $name['name'];
+			$planNames[$name['name']] = $name['name'];
 		}
 		
 		$statuses = array('Idle' => 'Idle', 'Shipped' => 'Shipped', 'Active' => 'Active', 'Disqualified' => 'Disqualified', 'Stolen' => 'Stolen', 'Expired' => 'Expired', 'Used' => 'Used');

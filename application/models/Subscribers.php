@@ -38,8 +38,8 @@ class SubscribersModel extends TabledateModel{
 	
 	public function getTableColumns() {
 		$columns = array(
-			'aid' => 'AID',
-			'sid' => 'SID',
+			'aid' => 'Account',
+			'sid' => 'Subscriber',
 			'msisdn' => 'MSISDN',
 			'plan' => 'Plan',
 			'language' => 'Language',
@@ -53,8 +53,8 @@ class SubscribersModel extends TabledateModel{
 
 	public function getSortFields() {
 		$sort_fields = array(
-			'aid' => 'AID',
-			'sid' => 'SID',
+			'aid' => 'Account',
+			'sid' => 'Subscriber',
 			'msisdn' => 'MSISDN',
 			'plan' => 'Plan',
 			'language' => 'Language',
@@ -65,19 +65,32 @@ class SubscribersModel extends TabledateModel{
 	
 	public function getFilterFields() {
 		$planModel = new PlansModel();
-		$names = $planModel->getData(array('$or' => array(array('type' => 'customers'), array('type' => ''))));
+		$names = $planModel->getData(
+			array(
+				'$or' => array(
+					array(
+						'type' => 'customer'
+						), 
+					array(
+						'type' => array(
+							'$exists' => false
+						)
+					)
+				)
+			)
+		);
 		$planNames = array();
 		foreach($names as $name) {
-			$planNames[] = $name['name'];
+			$planNames[$name['name']] = $name['name'];
 		}
-		
+
 		$filter_fields = array(
 			'aid' => array(
 				'key' => 'aid',
 				'db_key' => 'aid',
 				'input_type' => 'number',
 				'comparison' => 'equals',
-				'display' => 'AID',
+				'display' => 'Account',
 				'default' => '',
 			),			
 			'sid' => array(
@@ -85,7 +98,7 @@ class SubscribersModel extends TabledateModel{
 				'db_key' => 'sid',
 				'input_type' => 'number',
 				'comparison' => 'equals',
-				'display' => 'SID',
+				'display' => 'Subscriber',
 				'default' => '',
 			),			
 			'msisdn' => array(
