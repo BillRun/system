@@ -102,7 +102,6 @@ class CardsModel extends TableModel {
 				'db_key' => 'status',
 				'input_type' => 'multiselect',
 				'comparison' => '$in',
-				'singleselect' => 1,
 				'display' => 'Status',
 				'values' => $statuses,
 				'default' => array(),
