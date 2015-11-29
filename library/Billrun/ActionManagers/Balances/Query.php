@@ -66,6 +66,7 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 		// Check if the return data is invalid.
 		if(!$returnData) {
 			$returnData = array();
+			$this->reportError("No balances found");
 			$success=false;
 		}
 		

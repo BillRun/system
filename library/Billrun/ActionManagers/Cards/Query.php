@@ -101,6 +101,11 @@ class Billrun_ActionManagers_Cards_Query extends Billrun_ActionManagers_Cards_Ac
 			$returnData = array();
 		}
 
+		if(!$returnData) {
+			$success = false;
+			$this->reportError("No cards found");
+		}
+		
 		$outputResult = array(
 				'status' => ($success) ? (1) : (0),
 				'desc' => $this->error,
