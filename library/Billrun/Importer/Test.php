@@ -12,7 +12,7 @@
  * @package  Billrun
  * @since    4.0
  */
-class Billrun_Importer_Test implements Billrun_Importer {
+class Billrun_Importer_Test extends Billrun_Importer_Abstract {
 	
 	public function import() {
 		Billrun_Factory::log("This is test importer");
