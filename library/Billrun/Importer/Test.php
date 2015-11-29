@@ -7,13 +7,15 @@
  */
 
 /**
- * Billing Importer class
+ * Billing Importer test class
  *
  * @package  Billrun
  * @since    4.0
  */
-Interface Billrun_Importer {
+class Billrun_Importer_Test implements Billrun_Importer {
 	
-	public function import();
+	public function import() {
+		Billrun_Factory::log("This is test importer");
+	}
 	
 }

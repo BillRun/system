@@ -20,6 +20,17 @@ class ImportAction extends ApiAction {
 	 * it's called automatically by the cli main controller
 	 * @return boolean true if successfull.
 	 */
-	public function execute() {}
+	public function execute() {
+		$possibleOptions = array(
+			'type' => false,
+			'path' => false,
+		);
+
+		if (($options = $this->_controller->getInstanceOptions($possibleOptions)) === FALSE) {
+			return;
+		}
+		$import = Billrun_Factory::importer($options);
+		$import->import();
+	}
 
 }

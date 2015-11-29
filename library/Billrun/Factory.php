@@ -38,63 +38,70 @@ class Billrun_Factory {
 	/**
 	 * Cache instance
 	 * 
-	 * @var Billrun Cache
+	 * @var Billrun_Billrun Cache
 	 */
 	protected static $cache = null;
 
 	/**
 	 * Dispatcher instance
 	 * 
-	 * @var Billrun Dispatcher
+	 * @var Billrun_Billrun Dispatcher
 	 */
 	protected static $dispatcher = null;
 
 	/**
 	 * Chain instance
 	 * 
-	 * @var Billrun Chain
+	 * @var Billrun_Billrun Chain
 	 */
 	protected static $chain = null;
 
 	/**
+	 * Chain instance
+	 * 
+	 * @var Billrun_Billrun Chain
+	 */
+	protected static $importer = null;
+
+	/**
 	 * Subscriber instance
 	 * 
-	 * @var Billrun Subscriber
+	 * @var Billrun_Billrun Subscriber
 	 */
 	protected static $subscriber = null;
 
 	/**
 	 * Balance instance
 	 * 
-	 * @var Billrun Balance
+	 * @var Billrun_Billrun Balance
 	 */
 	protected static $balance = null;
 
 	/**
 	 * Tariff instance
 	 * 
-	 * @var Billrun Tariff
+	 * @var Billrun_Billrun Tariff
 	 */
 	protected static $tariff = null;
 
 	/**
 	 * Plan instance
 	 * 
-	 * @var Billrun Plan
+	 * @var Billrun_Billrun Plan
 	 */
 	protected static $plan = array();
 
 	/**
 	 * Smser instance
 	 * 
-	 * @var Billrun Smser
+	 * @var Billrun_Billrun Smser
 	 */
 	protected static $smser = null;
 
 	/**
 	 * Mailer instance
 	 * 
-	 * @var Billrun Mail
+	 * @var Billrun_Billrun Mail
 	 */
 	protected static $mailer = null;
 
@@ -367,5 +374,27 @@ class Billrun_Factory {
 		}
 		return self::$auth;
 	}
+	
+	/**
+	 * factory for importer class
+	 * 
+	 * @param array $options options of the importer
+	 * 
+	 * @return mixed instance of importer if success, else false
+	 */
+	static public function importer(array $options = array()) {
+		if (!isset($options)) {
+			Billrun_Factory::log('Importer trying to initizilized without type', Zend_Log::ERR);
+			return false;
+		}
+		$stamp = md5(serialize($options)); // unique stamp per db connection
+		if (!isset(self::$importer[$stamp])) {
+			$class_name = 'Billrun_Importer_' . $options['type'];
+			self::$importer[$stamp] = new $class_name($options);
+		}
+
+		return self::$importer[$stamp];
+	}
+
 
 }
