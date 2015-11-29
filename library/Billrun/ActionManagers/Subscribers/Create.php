@@ -26,13 +26,19 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 	}
 	
 	/**
-	 * Get the key name for getting a subscriber from the db.
-	 * @return string The name of the key to use to get the subscriber.
-	 * @todo This should be made more generic, this logic will probably happen many 
-	 * times in our code and is similar for getting a balance etc.
+	 * Get the query to run to get a subscriber from the db.
+	 * @return array Query to run in the mongo.
 	 */
-	protected function getSubscriberQueryKey() {
-		return 'imsi';
+	protected function getSubscriberQuery() {
+		$subscriberQueryKeys = 
+			Billrun_Factory::config()->getConfigValue('subscribers.create_query_fields');
+		foreach ($subscriberQueryKeys as $key) {
+			$subscriberQuery[$key] = $this->query[$key];
+		}
+		
+		// Get only active subscribers.
+		$subscriberQuery['to'] = array('$gte' => new MongoDate());
+		return $subscriberQuery;
 	}
 	
 	/**
@@ -41,11 +47,12 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 	 */
 	protected function subscriberExists() {
 		// Check if the subscriber already exists.
-		$subscriberQueryKey = $this->getSubscriberQueryKey();
-		$subscriberQuery[$subscriberQueryKey] = $this->query[$subscriberQueryKey];
+		$subscriberQuery = $this->getSubscriberQuery();
+		
+		$subscribers = $this->collection->query($subscriberQuery);
 		
 		// TODO: Use the subscriber class.
-		if($this->collection->query($subscriberQuery)->count() > 0){
+		if($subscribers->count() > 0){
 			$error='Subscriber already exists! [' . print_r($subscriberQuery, true) . ']';
 			$this->reportError($error, Zend_Log::ALERT);
 			return true;

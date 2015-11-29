@@ -119,6 +119,7 @@ class RealtimeeventAction extends ApiAction {
 	 * Gets the event type for rates calculator
 	 * 
 	 * @return string event type
+	 * @todo Get values from config
 	 */
 	protected function getEventType() {
 		//TODO: move to config
