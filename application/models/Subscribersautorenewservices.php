@@ -91,7 +91,7 @@ class SubscribersautorenewservicesModel extends TabledateModel{
 				'db_key' => 'charging_plan_name',
 				'input_type' => 'multiselect',
 				'comparison' => '$in',
-				'ref_coll' => 'charging_plan_name',
+				'ref_coll' => 'plans',
 				'ref_key' => 'name',
 				'display' => 'Charging Plan',
 				'values' => $planNames,
