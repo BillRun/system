@@ -70,8 +70,12 @@ class SubscribersautorenewservicesModel extends TabledateModel{
 	}
 
 	public function getFilterFields() {
-		$planNames = array_unique(array_keys(Billrun_Plan::getPlans()['by_name']));
-		$planNames = array_combine($planNames, $planNames);			
+		$planModel = new PlansModel();
+		$names = $planModel->getData(array('type' => 'charging'));
+		$planNames = array();
+		foreach($names as $name) {
+			$planNames[] = $name['name'];
+		}	
 
 		$filter_fields = array(
 			'sid' => array(
