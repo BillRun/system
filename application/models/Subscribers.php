@@ -117,37 +117,32 @@ class SubscribersModel extends TabledateModel{
 
 	public function getFilterFieldsOrder() {
 		$filter_field_order = array(
-			0 => array(
+			array(
 				'aid' => array(
-					'width' => 2
-				),
-				'msisdn' => array(
-					'width' => 2,
-				),
-				'plan' => array(
-					'width' => 2
-				),
-				'service_provider' => array(
 					'width' => 2
 				),
 				'sid' => array(
 					'width' => 2,
+				),				
+				'msisdn' => array(
+					'width' => 2,
+				)
+			),
+			array(
+				'plan' => array(
+					'width' => 2
+				),				
+				'service_provider' => array(
+					'width' => 2
 				)
 			)
 		);
 		return array_merge($filter_field_order, parent::getFilterFieldsOrder());
 	}
-	
+
 	public function getProtectedKeys($entity, $type) {
 		$parentKeys = parent::getProtectedKeys($entity, $type);
 		return array_merge($parentKeys, 
-						   array("imsi", 
-							     "msisdn", 
-							     "aid",
-							     "sid",
-							     "plan",
-							     "language",
-							     "service_provider",
-							     "charging_type"));
+						   array());
 	}
 }

@@ -546,7 +546,6 @@ class AdminController extends Yaf_Controller_Abstract {
 		self::initModel($table, $options);
 		$query = $this->applyFilters($table);
 		// this use for export
-		print_r(json_encode($query));
 
 		$this->getSetVar($this->getSession($table), $query, 'query', $query);
 		$this->getView()->component = $this->buildTableComponent($table, $query);		

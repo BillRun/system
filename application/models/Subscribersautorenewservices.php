@@ -114,14 +114,6 @@ class SubscribersautorenewservicesModel extends TabledateModel{
 	public function getProtectedKeys($entity, $type) {
 		$parentKeys = parent::getProtectedKeys($entity, $type);
 		return array_merge($parentKeys, 
-						   array('sid',
-								'aid',
-								'interval',
-								'charging_plan_name',
-								'charging_plan_external_id',
-								'done',
-								'remain',
-								'operators',
-								'last_renew_date'));
+						   array());
 	}
 }

@@ -125,7 +125,7 @@ class CardsModel extends TableModel {
 
 	public function getFilterFieldsOrder() {
 		$filter_field_order = array(
-			0 => array(
+			array(
 				'batch_number' => array(
 					'width' => 2,
 				),
@@ -134,11 +134,13 @@ class CardsModel extends TableModel {
 				),
 				'plan' => array(
 					'width' => 2
-				),
-				'status' => array(
+				)
+			),
+			array(
+				'service_provider' => array(
 					'width' => 2
 				),
-				'service_provider' => array(
+				'status' => array(
 					'width' => 2
 				),
 				'sid' => array(
@@ -146,8 +148,8 @@ class CardsModel extends TableModel {
 				),
 				'to' => array(
 					'width' => 2,
-				),
-			)
+				)
+			),
 		);
 		return $filter_field_order;
 	}	
@@ -156,15 +158,15 @@ class CardsModel extends TableModel {
 		$parentKeys = parent::getProtectedKeys($entity, $type);
 		return array_merge(	array("_id"),
 							$parentKeys,
+							array()
+						);
+	}
+	public function getHiddenKeys($entity, $type) {
+		$parentKeys = parent::getHiddenKeys($entity, $type);
+		return array_merge(	array("_id"),
+							$parentKeys,
 							array(
-								"secret",
-								"batch_number",
-								"serial_number",
-								"charging_plan_name",
-								"service_provider",
-								"to",
-								"status",
-								"additional_information"
+								"secret"
 							)
 						);
 	}

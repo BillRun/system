@@ -104,7 +104,7 @@
 		<?php if (!in_array($active, array('events', 'log'))) : ?>
 			<span class="pull-right">
 			<?php endif; ?>
-			<?php if (in_array($active, array('rates', 'plans', 'users')) && AdminController::authorized('write')) : ?>
+			<?php if (in_array($active, array('rates', 'plans', 'users', 'subscribers')) && AdminController::authorized('write')) : ?>
 				<?php if ($active != 'users') : ?>
 				<span><a id='close_and_new' data-type="close_and_new" href="#popupModal" class="btn btn-primary" data-toggle="modal" role="button">Close & new</a></span>
 				<?php endif; ?>
