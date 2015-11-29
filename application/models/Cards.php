@@ -42,6 +42,7 @@ class CardsModel extends TableModel {
 			'serial_number' => 'Serial Number',
 			'charging_plan_external_id' => 'Charging Plan',
 			'service_provider' => 'Service Provider',
+			'status' => 'Status',
 			'to' => 'To',
 			'_id' => 'Id',
 		);
@@ -53,33 +54,23 @@ class CardsModel extends TableModel {
 			'batch_number' => 'Batch Number',
 			'serial_number' => 'Serial Number',
 			'charging_plan_external_id' => 'Charging Plan',
+			'status' => 'Status',
 			'service_provider' => 'Service Provider',
 		);
 		return array_merge($sort_fields, parent::getSortFields());
 	}
 	
 	public function getFilterFields() {
-		$months = 12;
-		$billruns = array();
-		$timestamp = time();
-		for ($i = 0; $i < $months; $i++) {
-			$billrun_key = Billrun_Util::getBillrunKey($timestamp);
-			if ($billrun_key >= '201401') {
-				$billruns[$billrun_key] = $billrun_key;
-			}
-			else {
-				break;
-			}
-			$timestamp = strtotime("1 month ago", $timestamp);
-		}
-		arsort($billruns);
+		$planNames = array_unique(array_keys(Billrun_Plan::getPlans()['by_name']));
+		$planNames = array_combine($planNames, $planNames);		
 
+		$statuses = array('Idle' => 'Idle', 'Shipped' => 'Shipped', 'Active' => 'Active', 'Disqualified' => 'Disqualified', 'Stolen' => 'Stolen', 'Expired' => 'Expired', 'Used' => 'Used');
 		$filter_fields = array(
 			'batch_number' => array(
 				'key' => 'batch_number',
 				'db_key' => 'batch_number',
 				'input_type' => 'text',
-				'comparison' => 'equals',
+				'comparison' => 'contains',
 				'display' => 'Batch Number',
 				'default' => '',
 			),
@@ -87,9 +78,38 @@ class CardsModel extends TableModel {
 				'key' => 'serial_number',
 				'db_key' => 'serial_number',
 				'input_type' => 'text',
-				'comparison' => 'equals',
+				'comparison' => 'contains',
 				'display' => 'Serial Number',
 				'default' => '',				
+			),
+			'plan' => array(
+				'key' => 'plan',
+				'db_key' => 'current_plan',
+				'input_type' => 'multiselect',
+				'comparison' => '$in',
+				'ref_coll' => 'plans',
+				'ref_key' => 'name',
+				'display' => 'Plan',
+				'values' => $planNames,
+				'default' => array(),
+			),
+			'status' => array(
+				'key' => 'status',
+				'db_key' => 'status',
+				'input_type' => 'multiselect',
+				'comparison' => '$in',
+				'singleselect' => 1,
+				'display' => 'Status',
+				'values' => $statuses,
+				'default' => array(),
+			),			
+			'service_provider' => array(
+				'key' => 'service_provider',
+				'db_key' => 'service_provider',
+				'input_type' => 'text',
+				'comparison' => 'contains',
+				'display' => 'Service Provider',
+				'default' => '',
 			),
 			'to' => array(
 				'key' => 'to',
@@ -111,6 +131,15 @@ class CardsModel extends TableModel {
 				),
 				'serial_number' => array(
 					'width' => 2,
+				),
+				'plan' => array(
+					'width' => 2
+				),
+				'status' => array(
+					'width' => 2
+				),
+				'service_provider' => array(
+					'width' => 2
 				),
 				'sid' => array(
 					'width' => 2,
