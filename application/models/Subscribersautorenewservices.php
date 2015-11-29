@@ -38,15 +38,15 @@ class SubscribersautorenewservicesModel extends TabledateModel{
 	
 	public function getTableColumns() {
 		$columns = array(
-			'sid' => 'SID',
 			'aid' => 'AID',
-			'last_renew_date' => 'Last Renew Date',
+			'sid' => 'SID',
 			'interval' => 'Interval',
 			'charging_plan_name' => 'Charging Plan Name',
 			'charging_plan_external_id' => "Charging Plan External ID",
 			'done' => 'Done',
 			'remain' => 'Remain',
 			'operators' => 'Operation',
+			'last_renew_date' => 'Last Renew Date',
 			'from' => 'From',
 			'to' => 'To',
 			'_id' => 'Id'
@@ -56,51 +56,46 @@ class SubscribersautorenewservicesModel extends TabledateModel{
 
 	public function getSortFields() {
 		$sort_fields = array(
-			'sid' => 'SID',
 			'aid' => 'AID',
-			'last_renew_date' => 'Last Renew Date',
+			'sid' => 'SID',
 			'interval' => 'Interval',
 			'charging_plan_name' => 'Charging Plan Name',
 			'charging_plan_external_id' => "Charging Plan External ID",
 			'done' => 'Done',
 			'remain' => 'Remain',
-			'operators' => 'Operation'
+			'operators' => 'Operation',
+			'last_renew_date' => 'Last Renew Date'
 		);
 		return array_merge($sort_fields, parent::getSortFields());
 	}
 
 	public function getFilterFields() {
-		$months = 12;
-		$billruns = array();
-		$timestamp = time();
-		for ($i = 0; $i < $months; $i++) {
-			$billrun_key = Billrun_Util::getBillrunKey($timestamp);
-			if ($billrun_key >= '201401') {
-				$billruns[$billrun_key] = $billrun_key;
-			}
-			else {
-				break;
-			}
-			$timestamp = strtotime("1 month ago", $timestamp);
-		}
-		arsort($billruns);
+		$planModel = new PlansModel();
+		$names = $planModel->getData(array('type' => 'charging'));
+		$planNames = array();
+		foreach($names as $name) {
+			$planNames[] = $name['name'];
+		}	
 
 		$filter_fields = array(
-			'from' => array(
-				'key' => 'from',
-				'db_key' => 'from',
-				'input_type' => 'date',
-				'comparison' => '$gte',
-				'display' => 'From',
-				'default' => (new Zend_Date(strtotime('2 months ago'), null, new Zend_Locale('he_IL')))->toString('YYYY-MM-dd HH:mm:ss'),
-			),
-			'to' => array(
-				'key' => 'to',
-				'db_key' => 'to',
-				'input_type' => 'date',
-				'comparison' => '$lte',
-				'display' => 'To',
-				'default' => (new Zend_Date(strtotime("next month"), null, new Zend_Locale('he_IL')))->toString('YYYY-MM-dd HH:mm:ss'),
+			'sid' => array(
+				'key' => 'sid',
+				'db_key' => 'sid',
+				'input_type' => 'number',
+				'comparison' => 'equals',
+				'display' => 'SID',
+				'default' => '',
+			),			
+			'charging_plan_name' => array(
+				'key' => 'charging_plan_name',
+				'db_key' => 'charging_plan_name',
+				'input_type' => 'multiselect',
+				'comparison' => '$in',
+				'ref_coll' => 'charging_plan_name',
+				'ref_key' => 'name',
+				'display' => 'Charging Plan',
+				'values' => $planNames,
+				'default' => array(),
 			),
 		);
 		return array_merge($filter_fields, parent::getFilterFields());
@@ -109,28 +104,20 @@ class SubscribersautorenewservicesModel extends TabledateModel{
 	public function getFilterFieldsOrder() {
 		$filter_field_order = array(
 			0 => array(
-				'from' => array(
+				'sid' => array(
 					'width' => 2,
 				),
-				'to' => array(
+				'charging_plan_name' => array(
 					'width' => 2,
-				),
+				)
 			)
 		);
-		return $filter_field_order;
+		return array_merge($filter_field_order, parent::getFilterFieldsOrder());
 	}	
 	
 	public function getProtectedKeys($entity, $type) {
 		$parentKeys = parent::getProtectedKeys($entity, $type);
 		return array_merge($parentKeys, 
-						   array('sid',
-								'aid',
-								'last_renew_date',
-								'interval',
-								'charging_plan_name',
-								'charging_plan_external_id',
-								'done',
-								'remain',
-								'operators'));
+						   array());
 	}
 }

@@ -42,6 +42,7 @@ class CardsModel extends TableModel {
 			'serial_number' => 'Serial Number',
 			'charging_plan_external_id' => 'Charging Plan',
 			'service_provider' => 'Service Provider',
+			'status' => 'Status',
 			'to' => 'To',
 			'_id' => 'Id',
 		);
@@ -53,33 +54,27 @@ class CardsModel extends TableModel {
 			'batch_number' => 'Batch Number',
 			'serial_number' => 'Serial Number',
 			'charging_plan_external_id' => 'Charging Plan',
+			'status' => 'Status',
 			'service_provider' => 'Service Provider',
 		);
 		return array_merge($sort_fields, parent::getSortFields());
 	}
 	
 	public function getFilterFields() {
-		$months = 12;
-		$billruns = array();
-		$timestamp = time();
-		for ($i = 0; $i < $months; $i++) {
-			$billrun_key = Billrun_Util::getBillrunKey($timestamp);
-			if ($billrun_key >= '201401') {
-				$billruns[$billrun_key] = $billrun_key;
-			}
-			else {
-				break;
-			}
-			$timestamp = strtotime("1 month ago", $timestamp);
+		$planModel = new PlansModel();
+		$names = $planModel->getData(array('type' => 'charging'));
+		$planNames = array();
+		foreach($names as $name) {
+			$planNames[] = $name['name'];
 		}
-		arsort($billruns);
-
+		
+		$statuses = array('Idle' => 'Idle', 'Shipped' => 'Shipped', 'Active' => 'Active', 'Disqualified' => 'Disqualified', 'Stolen' => 'Stolen', 'Expired' => 'Expired', 'Used' => 'Used');
 		$filter_fields = array(
 			'batch_number' => array(
 				'key' => 'batch_number',
 				'db_key' => 'batch_number',
 				'input_type' => 'text',
-				'comparison' => 'equals',
+				'comparison' => 'contains',
 				'display' => 'Batch Number',
 				'default' => '',
 			),
@@ -87,9 +82,38 @@ class CardsModel extends TableModel {
 				'key' => 'serial_number',
 				'db_key' => 'serial_number',
 				'input_type' => 'text',
-				'comparison' => 'equals',
+				'comparison' => 'contains',
 				'display' => 'Serial Number',
 				'default' => '',				
+			),
+			'plan' => array(
+				'key' => 'plan',
+				'db_key' => 'current_plan',
+				'input_type' => 'multiselect',
+				'comparison' => '$in',
+				'ref_coll' => 'plans',
+				'ref_key' => 'name',
+				'display' => 'Plan',
+				'values' => $planNames,
+				'default' => array(),
+			),
+			'status' => array(
+				'key' => 'status',
+				'db_key' => 'status',
+				'input_type' => 'multiselect',
+				'comparison' => '$in',
+				'singleselect' => 1,
+				'display' => 'Status',
+				'values' => $statuses,
+				'default' => array(),
+			),			
+			'service_provider' => array(
+				'key' => 'service_provider',
+				'db_key' => 'service_provider',
+				'input_type' => 'text',
+				'comparison' => 'contains',
+				'display' => 'Service Provider',
+				'default' => '',
 			),
 			'to' => array(
 				'key' => 'to',
@@ -105,20 +129,31 @@ class CardsModel extends TableModel {
 
 	public function getFilterFieldsOrder() {
 		$filter_field_order = array(
-			0 => array(
+			array(
 				'batch_number' => array(
 					'width' => 2,
 				),
 				'serial_number' => array(
 					'width' => 2,
 				),
+				'plan' => array(
+					'width' => 2
+				)
+			),
+			array(
+				'service_provider' => array(
+					'width' => 2
+				),
+				'status' => array(
+					'width' => 2
+				),
 				'sid' => array(
 					'width' => 2,
 				),
 				'to' => array(
 					'width' => 2,
-				),
-			)
+				)
+			),
 		);
 		return $filter_field_order;
 	}	
@@ -127,15 +162,15 @@ class CardsModel extends TableModel {
 		$parentKeys = parent::getProtectedKeys($entity, $type);
 		return array_merge(	array("_id"),
 							$parentKeys,
+							array()
+						);
+	}
+	public function getHiddenKeys($entity, $type) {
+		$parentKeys = parent::getHiddenKeys($entity, $type);
+		return array_merge(	array("_id"),
+							$parentKeys,
 							array(
-								"secret",
-								"batch_number",
-								"serial_number",
-								"charging_plan_name",
-								"service_provider",
-								"to",
-								"status",
-								"additional_information"
+								"secret"
 							)
 						);
 	}
