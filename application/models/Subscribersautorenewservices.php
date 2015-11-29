@@ -38,8 +38,8 @@ class SubscribersautorenewservicesModel extends TabledateModel{
 	
 	public function getTableColumns() {
 		$columns = array(
-			'aid' => 'AID',
-			'sid' => 'SID',
+			'aid' => 'Account',
+			'sid' => 'Subscriber',
 			'interval' => 'Interval',
 			'charging_plan_name' => 'Charging Plan Name',
 			'charging_plan_external_id' => "Charging Plan External ID",
@@ -56,8 +56,8 @@ class SubscribersautorenewservicesModel extends TabledateModel{
 
 	public function getSortFields() {
 		$sort_fields = array(
-			'aid' => 'AID',
-			'sid' => 'SID',
+			'aid' => 'Account',
+			'sid' => 'Subscriber',
 			'interval' => 'Interval',
 			'charging_plan_name' => 'Charging Plan Name',
 			'charging_plan_external_id' => "Charging Plan External ID",
@@ -74,7 +74,7 @@ class SubscribersautorenewservicesModel extends TabledateModel{
 		$names = $planModel->getData(array('type' => 'charging'));
 		$planNames = array();
 		foreach($names as $name) {
-			$planNames[] = $name['name'];
+			$planNames[$name['name']] = $name['name'];
 		}	
 
 		$filter_fields = array(
@@ -83,7 +83,7 @@ class SubscribersautorenewservicesModel extends TabledateModel{
 				'db_key' => 'sid',
 				'input_type' => 'number',
 				'comparison' => 'equals',
-				'display' => 'SID',
+				'display' => 'Subscriber',
 				'default' => '',
 			),			
 			'charging_plan_name' => array(

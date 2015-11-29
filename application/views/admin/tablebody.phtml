@@ -19,7 +19,7 @@ foreach ($this->data as $item) {
 		if (isset($edit_key) && $h == $edit_key) {
 			$url = $this->baseUrl . '/admin/edit?type=' . strtolower($this->title) . '&amp;id=' . $item['_id'];
 			print '<a href="#popupModal " data-remote="' . $url . '" role="button" data-toggle="modal">' . $data . '</a>';
-		} else if (($h == 'from' || $h == 'to' || $h == 'urt' || $h == 'notify_time') && $data) {
+		} else if (($h == 'from' || $h == 'to' || $h == 'urt' || $h == 'notify_time' || $h == 'last_renew_date') && $data) {
 			$dateFormat = "Y-m-d H:i:s";
 			if (!empty($item["tzoffset"])) {
 				// TODO change this to regex and move to method in model
