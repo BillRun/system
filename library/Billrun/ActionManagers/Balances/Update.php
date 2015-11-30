@@ -119,14 +119,24 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 	
 		if($outputDocuments === false) {
 			$success = false;
+		} elseif (!$outputDocuments) {
+			$success = false;
+			$this->reportError("No balances found to update");
 		} else {
 			// Write the action to the lines collection.
 			$outputDocuments = $this->reportInLines($outputDocuments);
 		}
 		
+		if(!$success) {
+			$updaterError = $updater->getError();
+			if($updaterError) {
+				$this->error = $updaterError;
+			}
+		}
+		
 		$outputResult = 
 			array('status'  => ($success) ? (1) : (0),
-				  'desc'    => ($success) ? ($this->error) : ($updater->getError()),
+				  'desc'    => $this->error,
 				  'details' => ($outputDocuments) ? $outputDocuments : 'Empty balance');
 		return $outputResult;
 	}
