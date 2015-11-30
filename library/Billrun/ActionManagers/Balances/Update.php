@@ -80,15 +80,19 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 	protected function reportInLines($outputDocuments) {
 		$db = Billrun_Factory::db();
 		$linesCollection = $db->linesCollection();
+		$balanceLine = $this->additional;
 		$balanceLine["sid"] = $this->subscriberId;
 		$balancesRecords = array();
-		$balanceLine = array_merge($balanceLine, $this->additional);
 		$balanceLine['urt'] = time();
+		$balanceLine['source'] = 'api';
+		$balanceLine['type'] = 'charging';
 		
 		foreach ($outputDocuments as $balancePair) {
 			$wallet = $balancePair['wallet'];
 			$balance = $balancePair['balance'];
-			$balanceLine['source'] = $balancePair['source'];
+			$subscriber = $balancePair['subscriber'];
+			$balanceLine['aid'] = $subscriber['aid'];
+			$balanceLine['source_ref'] = $balancePair['source'];
 			$balanceLine["usagev"] = $wallet->getChargingBy();
 			$balanceLine["usaget"] = $wallet->getValue();
 			$balanceLine['balance_ref'] = $db->balancesCollection()->createRefByEntity($balance);

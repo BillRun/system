@@ -78,7 +78,7 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		// TODO: What if empty?
 		$balancesArray = $chargingPlanRecord['include'];
 		
-		$source = $this->setSourceForLineRecord($chargingPlanRecord);
+		$source = $this->getSourceForLineRecord($chargingPlanRecord);
 		$balancesToReturn = array();
 		// Go through all charging possibilities. 
 		foreach ($balancesArray as $chargingBy => $chargingByValue) {
@@ -93,7 +93,7 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 									 $defaultBalance, 
 									 $to);
 			$balancesToReturn[] =
-				array('balance' => $currentBalance, 'wallet' => $wallet, 'source' =>$source);
+				array('subscriber' => $subscriber, 'balance' => $currentBalance, 'wallet' => $wallet, 'source' =>$source);
 		}
 
 		return $balancesToReturn;

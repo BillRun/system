@@ -79,6 +79,7 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 									$recordToSet['to']);
 		
 		$updateResult[0]['source'] = $prepaidIncludes->createRefByEntity($prepaidRecord);
+		$updateResult[0]['subscriber'] = $subscriber;
 		return $updateResult;
 	}
 	
