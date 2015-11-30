@@ -152,7 +152,7 @@ class Billrun_ActionManagers_Subscribers_Query extends Billrun_ActionManagers_Su
 			if(isset($queryData[$field]) && !empty($queryData[$field])) {
 				$this->subscriberQuery[$field] = $queryData[$field];
 			} else {
-				$invalidFields[] = $field;
+//				$invalidFields[] = $field;
 			}
 		}
 		
