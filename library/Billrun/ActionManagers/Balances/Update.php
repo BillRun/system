@@ -38,6 +38,12 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 	protected $updaterOptions = array();
 	
 	/**
+	 * Comment for updating a balance
+	 * @var string
+	 */
+	protected $additional;
+	
+	/**
 	 */
 	public function __construct() {
 		parent::__construct(array('error' => "Success updating balances"));
@@ -67,6 +73,34 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 	}
 	
 	/**
+	 * Report the balance update action to the lines collection
+	 * @param array $outputDocuments The output result of the Update action.
+	 * @return array Array of filtered balance mongo records.
+	 */
+	protected function reportInLines($outputDocuments) {
+		$db = Billrun_Factory::db();
+		$linesCollection = $db->linesCollection();
+		$balanceLine["sid"] = $this->subscriberId;
+		$balancesRecords = array();
+		$balanceLine = array_merge($balanceLine, $this->additional);
+		$balanceLine['urt'] = time();
+		
+		foreach ($outputDocuments as $balancePair) {
+			$wallet = $balancePair['wallet'];
+			$balance = $balancePair['balance'];
+			$balanceLine['source'] = $balancePair['source'];
+			$balanceLine["usagev"] = $wallet->getChargingBy();
+			$balanceLine["usaget"] = $wallet->getValue();
+			$balanceLine['balance_ref'] = $db->balancesCollection()->createRefByEntity($balance);
+			$balanceLine['stamp'] = Billrun_Util::generateArrayStamp($balanceLine);
+			$linesCollection->insert($balanceLine);
+			$balancesRecords[] = $balance->getRawData();
+		}
+		
+		return $balancesRecords;
+	}
+	
+	/**
 	 * Execute the action.
 	 * @return data for output.
 	 */
@@ -76,11 +110,12 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		// Get the updater for the filter.
 		$updater = $this->getAction();
 		
-		$outputDocuments = 
+ 		$outputDocuments = 
 			$updater->update($this->query, $this->recordToSet, $this->subscriberId);
-
+	
 		if($outputDocuments === false) {
 			$success = false;
+<<<<<<< HEAD
 		} elseif (!$outputDocuments) {
 			$success = false;
 			$this->reportError("No balances found to update");
@@ -91,6 +126,11 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 			if($updaterError) {
 				$this->error = $updaterError;
 			}
+=======
+		} else {
+			// Write the action to the lines collection.
+			$outputDocuments = $this->reportInLines($outputDocuments);
+>>>>>>> upstream/version_40
 		}
 		
 		$outputResult = 
@@ -217,7 +257,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 			return false;
 		}
 		
-		return Billrun_Util::toNumber($sid);;
+		return Billrun_Util::toNumber($sid);
 	}
 	
 	/**
@@ -238,6 +278,11 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		
 		if(!$this->setUpdateRecord($input)) {
 			return false;
+		}
+		
+		$this->additional = json_decode($input->get('additional'), true);
+		if(!isset($this->additional)) {
+			$this->additional = array();
 		}
 		
 		$this->updaterOptions['increment'] = ($this->recordToSet['operation'] == "inc");

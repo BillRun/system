@@ -14,6 +14,15 @@
 class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_ActionManagers_Balances_Updaters_Updater {
 
 	/**
+	 * Get the 'Source' value to put in the record of the lines collection.
+	 * @return object The value to set.
+	 */
+	protected function getSourceForLineRecord($chargingPlanRecord) {
+		$chargingPlansCollection = Billrun_Factory::db()->plansCollection();
+		return $chargingPlansCollection->createRefByEntity($chargingPlanRecord);		
+	}
+	
+	/**
 	 * Update the balances, based on the plans table
 	 * @param type $query - Query to find row to update.
 	 * @param type $recordToSet - Values to update.
@@ -46,6 +55,11 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		$updateQuery['sid'] = $subscriber['sid'];
 		$updateQuery['aid'] = $subscriber['aid'];
 		
+		// Get the priority from the plan.
+		if(isset($chargingPlanRecord['priority'])) {
+			$updateQuery['priority'] = $chargingPlanRecord['priority'];
+		}
+		
 		if (!$this->validateServiceProviders($subscriberId, $recordToSet)) {
 			return false;
 		}
@@ -63,7 +77,8 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 
 		// TODO: What if empty?
 		$balancesArray = $chargingPlanRecord['include'];
-
+		
+		$source = $this->setSourceForLineRecord($chargingPlanRecord);
 		$balancesToReturn = array();
 		// Go through all charging possibilities. 
 		foreach ($balancesArray as $chargingBy => $chargingByValue) {
@@ -71,12 +86,14 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 				new Billrun_DataTypes_Wallet($chargingBy,
 											 $chargingByValue);
 			$to = $recordToSet['to'];
-			$balancesToReturn[] = 
+			$currentBalance = 
 				$this->updateBalance($wallet,
 									 $updateQuery, 
 									 $balancesColl, 
 									 $defaultBalance, 
 									 $to);
+			$balancesToReturn[] =
+				array('balance' => $currentBalance, 'wallet' => $wallet, 'source' =>$source);
 		}
 
 		return $balancesToReturn;
@@ -143,7 +160,6 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 	protected function updateBalance($wallet, $query, $balancesColl, $defaultBalance, $toTime) {
 		// Get the balance with the current value field.
 		$query[$wallet->getFieldName()]['$exists'] = 1;
-		
 		$update = $this->getUpdateBalanceQuery($balancesColl, 
 											   $query, 
 											   $wallet,
