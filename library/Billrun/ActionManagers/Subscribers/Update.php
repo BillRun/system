@@ -163,6 +163,10 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 			$success = false;
 		}
 
+		if(!$updatedDocument) {
+			$success = false;
+			$this->reportError("No subscribers found to update");
+		}
 		$outputResult = 
 			array('status'  => ($success) ? (1) : (0),
 				  'desc'    => $this->error,
