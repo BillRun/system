@@ -26,7 +26,7 @@ class SubscribersAction extends ApiAction {
 	protected function getAction() {
 		$apiName = str_replace("Action", "", __CLASS__);
 		$apiManagerInput = 
-			array('input'    => $this->getRequest(),
+			array('input'    => $this->getRequest()->getRequest(),
 				  'api_name' => $apiName);
 		
 		$manager = new Billrun_ActionManagers_APIManager($apiManagerInput);
