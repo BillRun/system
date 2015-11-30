@@ -78,7 +78,7 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		// TODO: What if empty?
 		$balancesArray = $chargingPlanRecord['include'];
 		
-		$source = $this->setSourceForLineRecord($chargingPlanRecord);
+		$source = $this->getSourceForLineRecord($chargingPlanRecord);
 		$balancesToReturn = array();
 		// Go through all charging possibilities. 
 		foreach ($balancesArray as $chargingBy => $chargingByValue) {
