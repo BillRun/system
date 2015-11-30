@@ -115,10 +115,12 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 	
 		if($outputDocuments === false) {
 			$success = false;
-<<<<<<< HEAD
 		} elseif (!$outputDocuments) {
 			$success = false;
 			$this->reportError("No balances found to update");
+		} else {
+			// Write the action to the lines collection.
+			$outputDocuments = $this->reportInLines($outputDocuments);
 		}
 		
 		if(!$success) {
@@ -126,11 +128,6 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 			if($updaterError) {
 				$this->error = $updaterError;
 			}
-=======
-		} else {
-			// Write the action to the lines collection.
-			$outputDocuments = $this->reportInLines($outputDocuments);
->>>>>>> upstream/version_40
 		}
 		
 		$outputResult = 
