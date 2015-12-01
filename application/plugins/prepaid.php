@@ -51,7 +51,7 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 		
 		$row['record_type'] = 'clear_call';
-		$responder = Billrun_ActionManagers_Realtime_Responder_Call_Manager::getResponder($row);
+		$responder = Billrun_ActionManagers_Realtime_Responder_Manager::getResponder($row);
 		if (!$responder) {
 			Billrun_Factory::log('Cannot get responder', Zend_Log::ALERT);
 			return false;

@@ -928,16 +928,14 @@ class Billrun_Util {
 	 * @param array $data
 	 */
 	public static function parseDataToBillrunConvention($data = array()) {
-		$parsedData = $data;
+		$parsedData = array();
 		foreach ($data as $key => $value) {
 			if (is_array($value)) {
-				$parsedData[$key] = self::parseDataToBillrunConvention($value);
+				$value = self::parseDataToBillrunConvention($value);
+				
 			}
 			$newKey = strtolower(preg_replace('/([a-z])([A-Z])/', '$1_$2', $key));
-			if ($key !== $newKey) {
-				$parsedData[$newKey] = $value;
-				unset($parsedData[$key]);
-			}
+			$parsedData[$newKey] = $value;
 		}
 
 		return $parsedData;

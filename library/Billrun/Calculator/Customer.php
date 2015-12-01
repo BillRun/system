@@ -116,6 +116,8 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 				$subscriber = $this->subscriber;
 			} else {
 				Billrun_Factory::log('Error load subscriber : ' . $row->get('stamp'), Zend_Log::ERR);
+				$row['granted_return_code'] = Billrun_Factory::config()->getConfigValue('prepaid.customer.no_subscriber');
+				$row['usagev'] = 0;
 				return false;
 			}
 		}
