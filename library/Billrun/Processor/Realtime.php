@@ -74,9 +74,11 @@ class Billrun_Processor_Realtime extends Billrun_Processor {
 		switch ($row['usaget']) {
 			case ('data'):
 				$sum = 0;
+				$freeOfChargeRatingGroups = Billrun_Factory::config()->getConfigValue('realtimeevent.data.freeOfChargeRatingGroups', array());
 				foreach ($row['mscc_data'] as $msccData) {
-					//TODO: check what rating groups should not be calculated
-					$sum += $msccData['requested_units'];
+					if (!in_array($msccData['rating_group'], $freeOfChargeRatingGroups)) {
+						$sum += $msccData['requested_units'];
+					}
 				}
 				return $sum;
 			case ('call'):
