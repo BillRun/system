@@ -39,6 +39,12 @@ class Billrun_DataTypes_Wallet {
 	protected $chargingByUsaget = null;
 	
 	/**
+	 * The period for when is this wallet active.
+	 * @var array
+	 */
+	protected $period = null;
+	
+	/**
 	 * Create a new instance of the wallet type.
 	 * @param array $chargingBy
 	 * @param array $chargingByValue
@@ -46,6 +52,12 @@ class Billrun_DataTypes_Wallet {
 	public function __construct($chargingBy, $chargingByValue) {
 		$chargingByUsegt = $chargingBy;
 
+		// The wallet does not handle the period.
+		if(isset($chargingByValue['period'])){
+			$this->period = $chargingByValue['period'];
+			unset($chargingByValue['period']);
+		}
+		
 		if (!is_array($chargingByValue)) {
 			$this->valueFieldName= 'balance.' . $chargingBy;
 			$this->value = $chargingByValue;
@@ -79,6 +91,15 @@ class Billrun_DataTypes_Wallet {
 	 */
 	public function getValue() {
 		return $this->value;
+	}
+	
+	/**
+	 * Get the period for the current wallet, null if not exists.
+	 * @return The current wallet period.
+	 * @todo Create a period object.
+	 */
+	public function getPeriod() {
+		return $this->period;
 	}
 	
 	/**
