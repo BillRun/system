@@ -236,6 +236,10 @@ class Mongodloid_Collection {
 	 * @return boolean true if the query returned results.
 	 */
 	public function exists($query) {
+		if(!$query) {
+			return false;
+		}
+		
 		$cursor = $this->query($query)->cursor();
 		// TODO: Validation on everything.
 		return !$cursor->current()->isEmpty();
