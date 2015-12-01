@@ -33,9 +33,7 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 		if (in_array($usage_type, array('call', 'incoming_call'))) {
 			if (isset($row['duration'])) {
 				return $row['duration'];
-			} else if ($row['record_type'] == '31') { // terminated call
-				return 0;
-			}
+			} 
 		}
 		if ($usage_type == 'sms') {
 			return 1;
@@ -53,10 +51,11 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 				return 'sms';
 			case '02':
 			case '12':
+			case '30':
 				return 'incoming_call';
 			case '11':
 			case '01':
-			case '30':
+			case '31':
 			default:
 				return 'call';
 		}
