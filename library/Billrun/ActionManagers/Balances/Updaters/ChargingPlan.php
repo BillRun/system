@@ -285,7 +285,11 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 			"from" => array('$lt', $nowTime));
 		$planRecord = $plansCollection->query($plansQuery)->cursor()->current();
 		$defaultBalance['current_plan'] = $plansCollection->createRefByEntity($planRecord);
-		$defaultBalance['charging_type'] = $subscriber['charging_type'];
+		if (isset($subscriber['charging_type'])) {
+			$defaultBalance['charging_type'] = $subscriber['charging_type'];
+		} else {
+			$defaultBalance['charging_type'] = Billrun_Factory::config()->getConfigValue("subscriber.charging_type_default", "prepaid");
+		}
 		// This is being set outside of this function!!!
 		//$defaultBalance['charging_by_usaget'] = 
 		// TODO: This is not the correct way, priority needs to be calculated.
