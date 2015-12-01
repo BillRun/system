@@ -243,18 +243,38 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater{
 	}
 
 	/**
+	 * Check with the mongo that the service provider is trusted.
+	 * @param string $serviceProvider - Service provider to test.
+	 * @return boolean true if trusted.
+	 * @todo Move this logic to a more generic location.
+	 */
+	protected function isServiceProvider($serviceProvider) {
+		$collection = Billrun_Factory::db()->serviceprovidersCollection();
+		$query = array('name' => $serviceProvider);
+		return $collection->exists($query);
+	}
+	
+	/**
 	 * Validate the service provider fields.
 	 * @param type $subscriber
 	 * @param type $planRecord
 	 * @return boolean
 	 */
 	protected function validateServiceProviders($subscriber, $planRecord) {
+		$planServiceProvider = $planRecord['service_provider'];
+		
+		// Check that the service provider is trusted.
+		if(!$this->isServiceProvider($planServiceProvider)) {
+			$error = "Received unknown service provider: $planServiceProvider";
+			$this->reportError($error, Zend_Log::ALERT);
+			return false;
+		}
+		
 		// Get the service provider to check that it fits the subscriber's.
 		$subscriberServiceProvider = $subscriber['service_provider'];
 
 		// Check if mismatching serivce providers.
-		if ($planRecord['service_provider'] != $subscriberServiceProvider) {
-			$planServiceProvider = $planRecord['service_provider'];
+		if ($planServiceProvider != $subscriberServiceProvider) {
 			$error = "Failed updating balance! mismatching service providers: subscriber: $subscriberServiceProvider plan: $planServiceProvider";
 			$this->reportError($error, Zend_Log::ALERT);
 			return false;
