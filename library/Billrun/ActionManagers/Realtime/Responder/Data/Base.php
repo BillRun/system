@@ -45,8 +45,13 @@ abstract class Billrun_ActionManagers_Realtime_Responder_Data_Base extends Billr
 		$returnCode = $this->getReturnCode();
 
 		foreach ($this->row['mscc_data'] as $msccData) {
+			$currUsagev = $usagev;
+			$freeOfChargeRatingGroups = Billrun_Factory::config()->getConfigValue('realtimeevent.data.freeOfChargeRatingGroups', array());
+			if (in_array($msccData['rating_group'], $freeOfChargeRatingGroups)) {
+				$currUsagev = Billrun_Factory::config()->getConfigValue('realtimeevent.data.freeOfChargeRatingGroupsDefaultUsagev', 0);
+			}
 			$retMsccData[] = array_merge($msccData, array(
-				"grantedUnits" => $usagev,
+				"grantedUnits" => $currUsagev,
 				"validityTime" => $validityTime,
 				"quotaHoldingTime" => $defaultQuotaHoldingTime,
 				"resultCode" => $returnCode,
