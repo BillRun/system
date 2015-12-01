@@ -249,7 +249,7 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater{
 	 * @todo Move this logic to a more generic location.
 	 */
 	protected function isServiceProvider($serviceProvider) {
-		$collection = Billrun_Factory::db()->serviceProviderCollection();
+		$collection = Billrun_Factory::db()->serviceprovidersCollection();
 		$query = array('name' => $serviceProvider);
 		return $collection->exists($query);
 	}

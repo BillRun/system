@@ -111,7 +111,7 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 			return false;
 		}
 		
-		if (!$this->validateServiceProviders($subscriberId, $recordToSet)) {
+		if (!$this->validateServiceProviders($subscriber, $chargingPlanRecord)) {
 			return false;
 		}
 
