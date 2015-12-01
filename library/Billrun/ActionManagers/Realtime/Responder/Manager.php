@@ -10,7 +10,7 @@
  * Helper class to manage the responders.
  *
  */
-class Billrun_ActionManagers_Realtime_Responder_Call_Manager {
+class Billrun_ActionManagers_Realtime_Responder_Manager {
 
 	/**
 	 * Assistance function to get responder object based on response type
@@ -19,7 +19,7 @@ class Billrun_ActionManagers_Realtime_Responder_Call_Manager {
 	 * @return responderClass responder class
 	 */
 	public static function getResponder($data) {
-		$responderClassName = self::getResponderClassName($data['record_type']);
+		$responderClassName = self::getResponderClassName($data);
 		if (!class_exists($responderClassName)) {
 			Billrun_Factory::log("Could not send respond. class $responderClassName not exists. Data:" . print_r($data, 1), Zend_Log::ALERT);
 			return false;
@@ -31,12 +31,12 @@ class Billrun_ActionManagers_Realtime_Responder_Call_Manager {
 	/**
 	 * Assistance function to get responder object name based on response type
 	 * 
-	 * @param type $recordType
+	 * @param type $data
 	 * @return string the name of the class
 	 */
-	protected static function getResponderClassName($recordType) {
-		$classNamePref = 'Billrun_ActionManagers_Realtime_Responder_Call_';
-		return $classNamePref . str_replace(" ", "", ucwords(str_replace("_", " ", $recordType)));
+	protected static function getResponderClassName($data) {
+		$classNamePref = 'Billrun_ActionManagers_Realtime_Responder_' . ucfirst($data['usaget'] . '_');
+		return $classNamePref . str_replace(" ", "", ucwords(str_replace("_", " ", $data['record_type'])));
 	}
 
 }

@@ -73,7 +73,12 @@ class Billrun_Processor_Realtime extends Billrun_Processor {
 	protected function getLineVolume($row) {
 		switch ($row['usaget']) {
 			case ('data'):
-				return $row['MSCC']['used'];
+				$sum = 0;
+				foreach ($row['mscc_data'] as $msccData) {
+					//TODO: check what rating groups should not be calculated
+					$sum += $msccData['requested_units'];
+				}
+				return $sum;
 			case ('call'):
 				return 1;
 			case ('sms'):
@@ -89,7 +94,7 @@ class Billrun_Processor_Realtime extends Billrun_Processor {
 	 * @param $row the CDR line  to get the usage for.
 	 */
 	protected function getLineUsageType($row) {
-		if (isset($row['MSCC']['used'])) {
+		if (isset($row['mscc_data'])) {
 			return 'data';
 		}
 		if (isset($row['call_reference'])) {
