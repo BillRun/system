@@ -83,7 +83,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		$balanceLine = $this->additional;
 		$balanceLine["sid"] = $this->subscriberId;
 		$balancesRecords = array();
-		$balanceLine['urt'] = time();
+		$balanceLine['urt'] = new MongoDate();
 		$balanceLine['source'] = 'api';
 		$balanceLine['type'] = 'charging';
 		
