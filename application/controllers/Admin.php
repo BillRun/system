@@ -322,6 +322,40 @@ class AdminController extends Yaf_Controller_Abstract {
 		return false;
 	}
 
+	public function subscribersAction() {
+		if (!$this->allowed('read'))
+			return false;
+		$this->forward("tabledate", array('table' => 'subscribers'));
+		return false;
+	}
+
+	public function subscribersAutoRenewServicesAction() {
+		if (!$this->allowed('read'))
+			return false;
+		$this->forward("tabledate", array('table' => 'subscribers_auto_renew_services'));
+		return false;
+	}
+
+	public function Action() {
+		if (!$this->allowed('read'))
+			return false;
+		$table = "cards";
+//		$sort = array('received_time' => -1);
+		$sort = $this->applySort($table);
+		$options = array(
+			'collection' => $table,
+			'sort' => $sort,
+		);
+
+		self::initModel($table, $options);
+		$query = $this->applyFilters($table);
+
+		// this use for export
+		$this->getSetVar($this->getSession($table), $query, 'query', $query);
+
+		$this->getView()->component = $this->buildTableComponent($table, $query);		
+	}	
+	
 	/**
 	 * rates controller of admin
 	 */
@@ -422,6 +456,10 @@ class AdminController extends Yaf_Controller_Abstract {
 		return true;
 	}
 
+	static public function showInMenu($page) {
+		return Billrun_Config::getInstance()->getConfigValue('show_in_menu.' . $page, true);
+	}
+	
 	/**
 	 * method to check if user is allowed to access page, if not redirect or show error message
 	 * 
@@ -495,6 +533,24 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->getView()->component = $this->buildTableComponent('queue', $query);
 	}
 
+	public function cardsAction() {
+		if (!$this->allowed('read'))
+			return false;
+		$table = "cards";
+		$sort = $this->applySort($table);
+		$options = array(
+			'collection' => $table,
+			'sort' => $sort,
+		);
+
+		self::initModel($table, $options);
+		$query = $this->applyFilters($table);
+		// this use for export
+
+		$this->getSetVar($this->getSession($table), $query, 'query', $query);
+		$this->getView()->component = $this->buildTableComponent($table, $query);		
+	}	
+	
 	protected function errorAction() {
 		$this->getView()->component = $this->renderView('error');
 	}
@@ -731,7 +787,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$options['extra_columns'] = $this->getSetVar($session, "extra_columns", "extra_columns", array());
 
 		if (is_null($this->model)) {
-			$model_name = ucfirst($collection_name) . "Model";
+			$model_name = ucfirst(str_replace('_', '', $collection_name)) . "Model";
 			if (class_exists($model_name)) {
 				$this->model = new $model_name($options);
 			} else {
@@ -742,7 +798,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	}
 
 	protected function buildTableComponent($table, $filter_query, $options = array()) {
-		$this->title = ucfirst($table);
+		$this->title = str_replace('_', ' ', ucfirst($table));
 
 		// TODO: use ready pager/paginiation class (zend? joomla?) with auto print
 		$basic_params = array(
@@ -814,8 +870,10 @@ class AdminController extends Yaf_Controller_Abstract {
 		}
 		foreach ($filter_fields as $filter_name => $filter_field) {
 			$value = $this->getSetVar($session, $filter_field['key'], $filter_field['key'], $filter_field['default']);
-			if ((!empty($value) || $value === 0 || $value === "0") && $filter_field['db_key'] != 'nofilter' && $filter = $model->applyFilter($filter_field, $value)) {
-				$query['$and'][] = $filter;
+			if ((!empty($value) || $value === 0 || $value === "0") &&
+				$filter_field['db_key'] != 'nofilter' &&
+				($filter = $model->applyFilter($filter_field, $value))) {
+					$query['$and'][] = $filter;
 			}
 		}
 		return $query;

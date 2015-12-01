@@ -527,8 +527,10 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		} else {
 			if (!is_null($this->balance->get('balance.totals.' . $balance_totals_key . '.usagev'))) {
 				$update['$set']['balance.totals.' . $balance_totals_key . '.usagev'] = $old_usage + $volume;
-			} else {
+			} else if (!is_null($this->balance->get('balance.totals.' . $balance_totals_key . '.cost'))) {
 				$update['$inc']['balance.totals.' . $balance_totals_key . '.cost'] = $pricingData[$this->pricingField];
+			} else {
+				$update['$inc']['balance.cost'] = $pricingData[$this->pricingField];
 			}
 		}
 		// update balance group (if exists)
@@ -543,8 +545,10 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				} else {
 					if (!is_null($this->balance->get('balance.totals.' . $balance_totals_key . '.usagev'))) {
 						$update['$inc']['balance.groups.' . $group . '.' . $usage_type . '.usagev'] = $volume;
+					} else if (!is_null($this->balance->get('balance.totals.' . $balance_totals_key . '.cost'))) {
+						$update['$inc']['balance.totals.' . $balance_totals_key . '.cost'] = $pricingData[$this->pricingField];
 					} else {
-						$update['$inc']['balance.groups.' . $group . '.' . $usage_type . '.cost'] = $pricingData[$this->pricingField];
+						$update['$inc']['balance.cost'] = $pricingData[$this->pricingField];
 					}
 				}
 				if (isset($this->balance->get('balance')['groups'][$group][$usage_type]['usagev'])) {

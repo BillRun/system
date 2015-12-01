@@ -12,7 +12,7 @@
  * @author tom
  */
 class Billrun_ActionManagers_Balances_Updaters_Secret extends Billrun_ActionManagers_Balances_Updaters_ChargingPlan {
-
+	
 	/**
 	 * Update the balances, based on the plans table
 	 * @param type $query - Query to find row to update.
@@ -31,6 +31,10 @@ class Billrun_ActionManagers_Balances_Updaters_Secret extends Billrun_ActionMana
 		if(empty($cardRecord)) {
 			$error = "Invalid card received, might be cancelled";
 			$this->reportError($error, Zend_Log::NOTICE);
+			return false;
+		}
+		
+		if (!$this->validateServiceProviders($cardRecord, $recordToSet)) {
 			return false;
 		}
 		

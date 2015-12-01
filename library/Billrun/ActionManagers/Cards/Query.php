@@ -95,12 +95,17 @@ class Billrun_ActionManagers_Cards_Query extends Billrun_ActionManagers_Cards_Ac
 				$returnData[] = Billrun_Util::convertRecordMongoDatetimeFields($rawItem, array('to', 'creation_time'));
 			}
 		} catch (\Exception $e) {
-			$error = 'failed quering DB got error : ' . $e->getCode() . ' : ' . $e->getMessage();
+			$error = 'failed querying DB got error : ' . $e->getCode() . ' : ' . $e->getMessage();
 			$this->reportError($error, Zend_Log::ALERT);
 			$success = false;
 			$returnData = array();
 		}
 
+		if(!$returnData) {
+			$success = false;
+			$this->reportError("No cards found");
+		}
+		
 		$outputResult = array(
 				'status' => ($success) ? (1) : (0),
 				'desc' => $this->error,

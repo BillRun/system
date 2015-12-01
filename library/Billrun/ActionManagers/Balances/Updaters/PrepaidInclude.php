@@ -73,10 +73,14 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 		
 		$chargingPlan = $this->getPlanObject($prepaidRecord, $recordToSet);
 		
-		return $this->updateBalance($chargingPlan, 
+		$updateResult = $this->updateBalance($chargingPlan, 
 									$updateQuery, 
 									$defaultBalance, 
 									$recordToSet['to']);
+		
+		$updateResult[0]['source'] = $prepaidIncludes->createRefByEntity($prepaidRecord);
+		$updateResult[0]['subscriber'] = $subscriber;
+		return $updateResult;
 	}
 	
 	/**
@@ -113,13 +117,24 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 											 $toTime,
 										     $defaultBalance) {
 		$update = array();
+		$balance = $balancesColl->query($query)->cursor()->current();
+		
 		// If the balance doesn't exist take the setOnInsert query, 
 		// if it exists take the set query.
-		if(!$balancesColl->exists($query)) {
+		if(!isset($balance)){
 			$update = $this->getSetOnInsert($chargingPlan, $defaultBalance);
 		} else {
 			$this->handleZeroing($query, $balancesColl, $chargingPlan->getFieldName());
-			$update = $this->getSetQuery($chargingPlan->getValue(), $chargingPlan->getFieldName(), $toTime);
+			
+			// Take the largest expiration date.
+			if(time($balance['to']) > time($toTime)) {
+				$toTime = $balance['to'];
+			}
+			
+			$update = 
+				$this->getSetQuery($chargingPlan->getValue(), 
+								   $chargingPlan->getFieldName(), 
+								   $toTime);
 		}
 		
 		return $update;
@@ -147,7 +162,7 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 	 * @param array $query
 	 * @param array $defaultBalance
 	 * @param MongoDate $toTime
-	 * @return Updated record.
+	 * @return Array with the wallet as the key and the Updated record as the value.
 	 */
 	protected function updateBalance($chargingPlan, $query, $defaultBalance, $toTime) {
 		$balancesColl = Billrun_Factory::db()->balancesCollection();
@@ -167,8 +182,10 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 			'w' => 1,
 		);
 
+		$balance = $balancesColl->findAndModify($query, $update, array(), $options, true);
+		
 		// Return the new document.
-		return $balancesColl->findAndModify($query, $update, array(), $options, true);
+		return array(array('wallets'=>$chargingPlan,'balance'=>$balance));
 	}
 	
 	/**

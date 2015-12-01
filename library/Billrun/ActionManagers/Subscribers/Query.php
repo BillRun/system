@@ -70,6 +70,7 @@ class Billrun_ActionManagers_Subscribers_Query extends Billrun_ActionManagers_Su
 		// Check if the return data is invalid.
 		if(!$returnData) {
 			$returnData = array();
+			$this->reportError("No subscribers found");
 			$success=false;
 		}
 		
@@ -152,7 +153,7 @@ class Billrun_ActionManagers_Subscribers_Query extends Billrun_ActionManagers_Su
 			if(isset($queryData[$field]) && !empty($queryData[$field])) {
 				$this->subscriberQuery[$field] = $queryData[$field];
 			} else {
-				$invalidFields[] = $field;
+//				$invalidFields[] = $field;
 			}
 		}
 		

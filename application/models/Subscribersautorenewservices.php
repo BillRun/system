@@ -20,9 +20,9 @@
  * @subpackage Table
  * @since    4.0
  */
-class SubscribersModel extends TabledateModel{
+class SubscribersautorenewservicesModel extends TabledateModel{
 	
-	protected $subscribers_coll;
+	protected $subscribers_auto_renew_services_coll;
 	
 	/**
 	 * constructor
@@ -30,9 +30,9 @@ class SubscribersModel extends TabledateModel{
 	 * @param array $params of parameters to preset the object
 	 */
 	public function __construct(array $params = array()) {
-		$params['collection'] = Billrun_Factory::db()->subscribers;
+		$params['collection'] = Billrun_Factory::db()->subscribers_auto_renew_services;
 		parent::__construct($params);
-		$this->subscribers_coll = Billrun_Factory::db()->subscribersCollection();
+		$this->subscribers_auto_renew_services_coll = Billrun_Factory::db()->subscribers_auto_renew_servicesCollection();
 		$this->search_key = "sid";
 	}
 	
@@ -40,13 +40,16 @@ class SubscribersModel extends TabledateModel{
 		$columns = array(
 			'aid' => 'Account',
 			'sid' => 'Subscriber',
-			'msisdn' => 'MSISDN',
-			'plan' => 'Plan',
-			'language' => 'Language',
-			'service_provider' => 'Service Provider',
+			'interval' => 'Interval',
+			'charging_plan_name' => 'Charging Plan Name',
+			'charging_plan_external_id' => "Charging Plan External ID",
+			'done' => 'Done',
+			'remain' => 'Remain',
+			'operators' => 'Operation',
+			'last_renew_date' => 'Last Renew Date',
 			'from' => 'From',
 			'to' => 'To',
-			'_id' => 'Id',
+			'_id' => 'Id'
 		);
 		return $columns;
 	}
@@ -55,44 +58,26 @@ class SubscribersModel extends TabledateModel{
 		$sort_fields = array(
 			'aid' => 'Account',
 			'sid' => 'Subscriber',
-			'msisdn' => 'MSISDN',
-			'plan' => 'Plan',
-			'language' => 'Language',
-			'service_provider' => 'Service Provider'
+			'interval' => 'Interval',
+			'charging_plan_name' => 'Charging Plan Name',
+			'charging_plan_external_id' => "Charging Plan External ID",
+			'done' => 'Done',
+			'remain' => 'Remain',
+			'operators' => 'Operation',
+			'last_renew_date' => 'Last Renew Date'
 		);
 		return array_merge($sort_fields, parent::getSortFields());
 	}
-	
+
 	public function getFilterFields() {
 		$planModel = new PlansModel();
-		$names = $planModel->getData(
-			array(
-				'$or' => array(
-					array(
-						'type' => 'customer'
-						), 
-					array(
-						'type' => array(
-							'$exists' => false
-						)
-					)
-				)
-			)
-		);
+		$names = $planModel->getData(array('type' => 'charging'));
 		$planNames = array();
 		foreach($names as $name) {
 			$planNames[$name['name']] = $name['name'];
-		}
+		}	
 
 		$filter_fields = array(
-			'aid' => array(
-				'key' => 'aid',
-				'db_key' => 'aid',
-				'input_type' => 'number',
-				'comparison' => 'equals',
-				'display' => 'Account',
-				'default' => '',
-			),			
 			'sid' => array(
 				'key' => 'sid',
 				'db_key' => 'sid',
@@ -101,62 +86,35 @@ class SubscribersModel extends TabledateModel{
 				'display' => 'Subscriber',
 				'default' => '',
 			),			
-			'msisdn' => array(
-				'key' => 'msisdn',
-				'db_key' => 'msisdn',
-				'input_type' => 'text',
-				'comparison' => 'contains',
-				'display' => 'MSISDN',
-				'default' => '',
-			),			
-			'plan' => array(
-				'key' => 'plan',
-				'db_key' => 'current_plan',
+			'charging_plan_name' => array(
+				'key' => 'charging_plan_name',
+				'db_key' => 'charging_plan_name',
 				'input_type' => 'multiselect',
 				'comparison' => '$in',
 				'ref_coll' => 'plans',
 				'ref_key' => 'name',
-				'display' => 'Plan',
+				'display' => 'Charging Plan',
 				'values' => $planNames,
 				'default' => array(),
-			),		
-			'service_provider' => array(
-				'key' => 'service_provider',
-				'db_key' => 'service_provider',
-				'input_type' => 'text',
-				'comparison' => 'contains',
-				'display' => 'Service Provider',
-				'default' => '',
-			)
+			),
 		);
 		return array_merge($filter_fields, parent::getFilterFields());
 	}
 
 	public function getFilterFieldsOrder() {
 		$filter_field_order = array(
-			array(
-				'aid' => array(
-					'width' => 2
-				),
+			0 => array(
 				'sid' => array(
 					'width' => 2,
-				),				
-				'msisdn' => array(
+				),
+				'charging_plan_name' => array(
 					'width' => 2,
-				)
-			),
-			array(
-				'plan' => array(
-					'width' => 2
-				),				
-				'service_provider' => array(
-					'width' => 2
 				)
 			)
 		);
 		return array_merge($filter_field_order, parent::getFilterFieldsOrder());
-	}
-
+	}	
+	
 	public function getProtectedKeys($entity, $type) {
 		$parentKeys = parent::getProtectedKeys($entity, $type);
 		return array_merge($parentKeys, 

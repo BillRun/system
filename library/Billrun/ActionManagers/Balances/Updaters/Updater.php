@@ -13,6 +13,8 @@
  */
 abstract class Billrun_ActionManagers_Balances_Updaters_Updater{
 
+	const UNLIMITED_DATE = "30 December 2099";
+	
 	/**
 	 * If true then the values in mongo are updated by incrementation,
 	 * if false then the values in the mongo are forceablly set.
@@ -220,8 +222,23 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater{
 	 */
 	protected function getDateFromDataRecord($chargingPlan) {
 		$period = $chargingPlan['period'];
-		$unit = $period['units'];
+		return $this->getDateFromPeriod($period);
+	}
+	
+	/**
+	 * Get a mongo date object based on a period object.
+	 * @param period $period
+	 * @return \MongoDate
+	 * @todo Create a period object.
+	 */
+	protected function getDateFromPeriod($period) {
 		$duration = $period['duration'];
+		// If this plan is unlimited.
+		// TODO: Move this logic to a more generic location
+		if($duration == "UNLIMITED") {
+			return new MongoDate(strtotime(self::UNLIMITED_DATE));
+		}
+		$unit = $period['units'];
 		return new MongoDate(strtotime("+ " . $duration . " " . $unit));
 	}
 
@@ -238,7 +255,7 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater{
 		// Check if mismatching serivce providers.
 		if ($planRecord['service_provider'] != $subscriberServiceProvider) {
 			$planServiceProvider = $planRecord['service_provider'];
-			$error = "Failed updating balance! mismatching service prociders: subscriber: $subscriberServiceProvider plan: $planServiceProvider";
+			$error = "Failed updating balance! mismatching service providers: subscriber: $subscriberServiceProvider plan: $planServiceProvider";
 			$this->reportError($error, Zend_Log::ALERT);
 			return false;
 		}
