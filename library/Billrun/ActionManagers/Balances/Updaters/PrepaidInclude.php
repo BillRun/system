@@ -149,7 +149,7 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 	protected function getSetOnInsert($chargingPlan, 
 									  $defaultBalance) {
 		$defaultBalance['charging_by'] = $chargingPlan->getChargingBy();
-		$defaultBalance['charging_by_usegt'] = $chargingPlan->getChargingByUsaget();
+		$defaultBalance['charging_by_usaget'] = $chargingPlan->getChargingByUsaget();
 		$defaultBalance[$chargingPlan->getFieldName()] = $chargingPlan->getValue();
 		return array(
 			'$setOnInsert' => $defaultBalance,

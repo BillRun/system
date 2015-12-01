@@ -292,7 +292,7 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater{
 	protected function getSetOnInsert($wallet, 
 									  $defaultBalance) {
 		$defaultBalance['charging_by'] = $wallet->getChargingBy();
-		$defaultBalance['charging_by_usegt'] = $wallet->getChargingByUsaget();
+		$defaultBalance['charging_by_usaget'] = $wallet->getChargingByUsaget();
 		$defaultBalance[$wallet->getFieldName()] = $wallet->getValue();
 		return array(
 			'$setOnInsert' => $defaultBalance,
