@@ -84,6 +84,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		$balanceLine["sid"] = $this->subscriberId;
 		$balancesRecords = array();
 		$balanceLine['urt'] = new MongoDate();
+		$balanceLine['process'] = Billrun_Util::generateCurrentTime();
 		$balanceLine['source'] = 'api';
 		$balanceLine['type'] = 'charging';
 		
