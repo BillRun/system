@@ -92,13 +92,14 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 			$wallet = $balancePair['wallet'];
 			$balance = $balancePair['balance'];
 			$subscriber = $balancePair['subscriber'];
-			$balanceLine['aid'] = $subscriber['aid'];
-			$balanceLine['source_ref'] = $balancePair['source'];
-			$balanceLine["usagev"] = $wallet->getChargingBy();
-			$balanceLine["usaget"] = $wallet->getValue();
-			$balanceLine['balance_ref'] = $db->balancesCollection()->createRefByEntity($balance);
-			$balanceLine['stamp'] = Billrun_Util::generateArrayStamp($balanceLine);
-			$linesCollection->insert($balanceLine);
+			$insertLine = $balanceLine;
+			$insertLine['aid'] = $subscriber['aid'];
+			$insertLine['source_ref'] = $balancePair['source'];
+			$insertLine["usaget"] = $wallet->getChargingBy();
+			$insertLine["usagev"] = $wallet->getValue();
+			$insertLine['balance_ref'] = $db->balancesCollection()->createRefByEntity($balance);
+			$insertLine['stamp'] = Billrun_Util::generateArrayStamp($insertLine);
+			$linesCollection->insert($insertLine);
 			$balancesRecords[] = $balance->getRawData();
 		}
 		
