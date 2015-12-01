@@ -216,13 +216,13 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 	/**
 	 * Set all the query fields in the record with values.
 	 * @param array $queryData - Data received.
-	 * @return array - Array of strings of invalid field name. Empty if all is valid.
+	 * @return boolean true if success to set fields
 	 */
 	protected function setQueryFields($queryData) {
 		$queryFields = $this->getQueryFields();
 		
-		// Arrary of errors to report if any occurs.
-		$invalidFields = array();
+		// Array of errors to report if any occurs.
+		$ret = false;
 		
 		// Get only the values to be set in the update record.
 		// TODO: If no update fields are specified the record's to and from values will still be updated!
@@ -230,12 +230,11 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 			// ATTENTION: This check will not allow updating to empty values which might be legitimate.
 			if(isset($queryData[$field]) && !empty($queryData[$field])) {
 				$this->query[$field] = $queryData[$field];
-			} else {
-				$invalidFields[] = $field;
+				$ret = true;
 			}
 		}
 		
-		return $invalidFields;
+		return $ret;
 	}
 	
 	/**
@@ -252,11 +251,9 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 			return false;
 		}
 		
-		$invalidFields = $this->setQueryFields($jsonQueryData);
-		
 		// If there were errors.
-		if(!empty($invalidFields)) {
-			$error = "Subscribers update received invalid query values in fields: " . implode(',', $invalidFields);
+		if($this->setQueryFields($jsonQueryData) === FALSE) {
+			$error = "Subscribers update received invalid query values in fields";
 			$this->reportError($error, Zend_Log::ALERT);
 			return false;
 		}
