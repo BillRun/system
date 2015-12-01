@@ -54,5 +54,39 @@ abstract class Billrun_ActionManagers_Realtime_Responder_Data_Base extends Billr
 		}
 		return $retMsccData;
 	}
+	
+	/**
+	 * Gets the real usagev of the user (known only on the next API call)
+	 * 
+	 * @return type
+	 */
+	protected function getRealUsagev() {
+		$sum = 0;	
+		foreach ($this->row['mscc_data'] as $msccData) {
+			$sum += intval($msccData['used_units']);
+		}
+		return $sum;
+	}
+	
+	/**
+	 * Gets a query to find amount of balance (usagev) calculated in last data call
+	 * 
+	 * @return array
+	 */
+	protected function getRebalanceQuery() {
+		return array(
+			array(
+				'$match' => array(
+					"session_id" => $this->row['session_id']
+				)
+			),
+			array(
+				'$group' => array(
+					'_id' => '$session_id',
+					'sum' => array('$last' => '$usagev')
+				)
+			)
+		);
+	}
 
 }
