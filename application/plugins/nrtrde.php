@@ -192,8 +192,9 @@ class nrtrdePlugin extends Billrun_Plugin_BillrunPluginFraud {
 		}
 		$ret = array();
 		foreach ($this->fraudConfig['groups'] as $groupName => $groupIds) {
+			$oldEvents=array();
 			if(!Billrun_Factory::config()->getConfigValue('nrtrde.fraud.ignore_old_events', FALSE)) {
-				$oldEvents =$this->collectForGroup($groupName, $groupIds);
+				$oldEvents = $this->collectForGroup($groupName, $groupIds);
 			}
 			$ret = array_merge($ret, $oldEvents, $this->collectAdvanceEvents($groupName, $groupIds));
 		}
