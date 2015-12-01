@@ -79,29 +79,28 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Pl
 				$advancedEvents = $this->collectFraudEvents($groupName, $groupIds, $baseQuery);
 
 				//old method
-				Billrun_Factory::log()->log('ggsnPlugin::handlerCollect collecting monthly data exceeders for group :' . $groupName, Zend_Log::DEBUG);
-				$aggregateQuery = $this->getBaseAggregateQuery($charge_time, $groupName, $groupIds);
-				$wherePos = array_search('where', array_keys($aggregateQuery));
-				$aggregateQuery = array_values(array_merge
-								(
-								array_slice($aggregateQuery, 0, $wherePos + 1), array(
-					'filter_ird' => array(
-						'$match' => $this->getNonIRDLinesQuery(),
-					),
-								), array_slice($aggregateQuery, $wherePos + 1)
-				));
 				$oldEvents = array();
 				if(!Billrun_Factory::config()->getConfigValue('ggsn.fraud.ignore_old_events', FALSE)) {
+					Billrun_Factory::log()->log('ggsnPlugin::handlerCollect collecting monthly data exceeders for group :' . $groupName, Zend_Log::DEBUG);
+					$aggregateQuery = $this->getBaseAggregateQuery($charge_time, $groupName, $groupIds);
+					$wherePos = array_search('where', array_keys($aggregateQuery));
+					$aggregateQuery = array_values(array_merge
+									(
+									array_slice($aggregateQuery, 0, $wherePos + 1), array(
+						'filter_ird' => array(
+							'$match' => $this->getNonIRDLinesQuery(),
+						),
+									), array_slice($aggregateQuery, $wherePos + 1)
+					));
+
 					$dataExceedersAlerts = $this->detectDataExceeders($lines, $aggregateQuery, $groupName);
 					Billrun_Factory::log()->log('GGSN plugin of monthly usage fraud found ' . count($dataExceedersAlerts) . ' events for group ' . $groupName, Zend_Log::INFO);
 					Billrun_Factory::log()->log('ggsnPlugin::handlerCollect collecting hourly data exceeders for group :' . $groupName, Zend_Log::DEBUG);
 					$hourlyDataExceedersAlerts = $this->detectHourlyDataExceeders($lines, $aggregateQuery);
 					Billrun_Factory::log()->log('GGSN plugin of hourly usage fraud found ' . count($hourlyDataExceedersAlerts) . ' events for group ' . $groupName, Zend_Log::INFO);
 						$oldEvents = array_merge($dataExceedersAlerts, $hourlyDataExceedersAlerts);
-				} else {
-						$events = array_merge($events, $advancedEvents, $oldEvents);
-				}
-			
+				} 
+				$events = array_merge($events, $advancedEvents, $oldEvents);
 			}
 		}
 
@@ -300,6 +299,7 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Pl
 					"download" => array('$sum' => '$fbc_downlink_volume'),
 					"upload" => array('$sum' => '$fbc_uplink_volume'),
 					"usagev" => array('$sum' => array('$add' => array('$fbc_downlink_volume', '$fbc_uplink_volume'))),
+					'aprice' => array('$sum' => '$aprice'),
 					//"usagev" => array('$sum' => '$usagev'), //TODO usethis once the usagev is calculated before the fraud.
 					"duration" => array('$sum' => '$duration'),
 					'lines_stamps' => array('$addToSet' => '$stamp'),
@@ -312,6 +312,7 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Pl
 					'upload' => array('$multiply' => array('$upload', 0.001)),
 					'usagev' => array('$multiply' => array('$usagev', 0.001)),
 					'duration' => 1,
+					'aprice' => 1,
 					'imsi' => '$_id.imsi',
 					'msisdn' => array('$substr' => array('$_id.msisdn', 5, 10)),
 					'lines_stamps' => 1,
@@ -325,6 +326,7 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Pl
 					'duration' => 1,
 					'imsi' => 1,
 					'msisdn' => 1,
+					'aprice' => 1,
 					'lines_stamps' => 1,
 						), $this->addToProject(array('group' => $groupName,))),
 			),
