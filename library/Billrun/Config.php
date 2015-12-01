@@ -34,7 +34,8 @@ class Billrun_Config {
 	 */
 	protected function __construct($config) {
 		$this->config = $config;
-		if (!empty($config['configuration']['include']) && $config['configuration']['include']->valid()) {
+		$configInclude = $config['configuration']['include'];
+		if (!empty($configInclude) && $configInclude->valid()) {
 			foreach ($config->toArray()['configuration']['include'] as $filePath) {
 				$this->addConfig($filePath);
 			}

@@ -26,7 +26,7 @@ class CardsAction extends ApiAction {
 	protected function getAction() {
 		$apiName = str_replace("Action", "", __CLASS__);
 		$apiManagerInput = array(
-			'input' => $this->getRequest()->getRequest(),
+			'input' => $this->getRequest(),
 			'api_name' => $apiName
 		);
 
