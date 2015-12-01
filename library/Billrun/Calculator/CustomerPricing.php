@@ -753,19 +753,23 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			return 0;
 		}
 		$maximumGrantedVolume = $this->getPrepaidGrantedVolumeByRate($rate, $usageType);
+		$rowInOrOutOfBalanceKey = 'in';
 		if (isset($balance->get("balance")["totals"][$usageType]["usagev"])) {
 			$currentBalanceVolume = $balance->get("balance")["totals"][$usageType]["usagev"];
+			
 		} else {
 			if (isset($balance->get("balance")["totals"][$usageType]["cost"])) {
 				$price = $balance->get("balance")["totals"][$usageType]["cost"];
 			} else {
 				$price = $balance->get("balance")["cost"];
+				$rowInOrOutOfBalanceKey = 'out';
 			}
 			$currentBalanceVolume = Billrun_Calculator_CustomerPricing::getVolumeByRate($rate, $usageType, abs($price));
 		}
 		$currentBalanceVolume = abs($currentBalanceVolume);
-		
-		return min(array($currentBalanceVolume, $maximumGrantedVolume, $requestedVolume));
+		$usagev = min(array($currentBalanceVolume, $maximumGrantedVolume, $requestedVolume));
+		$row[$rowInOrOutOfBalanceKey . '_balance_usage'] = $usagev;
+		return $usagev;
 	}
 	
 	/**
