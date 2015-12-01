@@ -90,14 +90,18 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Pl
 					),
 								), array_slice($aggregateQuery, $wherePos + 1)
 				));
+				$oldEvents = array();
 				if(!Billrun_Factory::config()->getConfigValue('ggsn.fraud.ignore_old_events', FALSE)) {
 					$dataExceedersAlerts = $this->detectDataExceeders($lines, $aggregateQuery, $groupName);
 					Billrun_Factory::log()->log('GGSN plugin of monthly usage fraud found ' . count($dataExceedersAlerts) . ' events for group ' . $groupName, Zend_Log::INFO);
 					Billrun_Factory::log()->log('ggsnPlugin::handlerCollect collecting hourly data exceeders for group :' . $groupName, Zend_Log::DEBUG);
 					$hourlyDataExceedersAlerts = $this->detectHourlyDataExceeders($lines, $aggregateQuery);
 					Billrun_Factory::log()->log('GGSN plugin of hourly usage fraud found ' . count($hourlyDataExceedersAlerts) . ' events for group ' . $groupName, Zend_Log::INFO);
+						$oldEvents = array_merge($dataExceedersAlerts, $hourlyDataExceedersAlerts);
+				} else {
+						$events = array_merge($events, $advancedEvents, $oldEvents);
 				}
-				$events = array_merge($events, $advancedEvents, $dataExceedersAlerts, $hourlyDataExceedersAlerts);
+			
 			}
 		}
 
