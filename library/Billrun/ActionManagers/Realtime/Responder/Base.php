@@ -100,19 +100,19 @@ abstract class Billrun_ActionManagers_Realtime_Responder_Base {
 	 * 
 	 * @return type
 	 */
-	protected function getChargedUsagev() {
-		$lines_coll = Billrun_Factory::db()->linesCollection();
-		$query = $this->getRebalanceQuery();
-		return $lines_coll->aggregate($query)->current()['sum'];
+	protected function getChargedUsagev($lineToRebalance) {
+		return $lineToRebalance['usagev'];
 	}
 	
 	/**
 	 * Calculate balance leftovers and add it to the current balance (if were taken due to prepaid mechanism)
 	 */
 	protected function rebalance() {
-		$rebalanceUsagev = $this->getRealUsagev() - $this->getChargedUsagev();
-		if ($rebalanceUsagev < 0) {
-			$this->handleRebalanceRequired($rebalanceUsagev);
+		$lineToRebalace = $this->getLineToUpdate()->current();
+		$realUsagev = $this->getRealUsagev();
+		$chargedUsagev = $this->getChargedUsagev($lineToRebalace);
+		if (($realUsagev - $chargedUsagev) <= 0) {
+			$this->handleRebalanceRequired(-$realUsagev, $lineToRebalace);
 		}
 	}
 
@@ -122,7 +122,9 @@ abstract class Billrun_ActionManagers_Realtime_Responder_Base {
 	 * 
 	 * @param type $rebalanceUsagev amount of balance (usagev) to return to the balance
 	 */
-	protected function handleRebalanceRequired($rebalanceUsagev) {
+	protected function handleRebalanceRequired($rebalanceUsagev, $lineToRebalance = null) {
+		
+		// Update subscribers balance
 		$rebalanceRow = new Mongodloid_Entity($this->row);
 		unset($rebalanceRow['_id']);
 		$rebalanceRow['prepaid_rebalance'] = true;
@@ -130,6 +132,25 @@ abstract class Billrun_ActionManagers_Realtime_Responder_Base {
 		$customerPricingCalc = Billrun_Calculator::getInstance(array('type' => 'customerPricing', 'autoload' => false));
 		$rate = $customerPricingCalc->getRowRate($rebalanceRow);
 		$customerPricingCalc->updateSubscriberBalance($rebalanceRow, $rebalanceRow['usaget'], $rate);
+		
+		// Update previous line
+		$lines_coll = Billrun_Factory::db()->linesCollection();
+		$updateQuery = $this->getUpdateLineUpdateQuery($rebalanceUsagev);
+		$lines_coll->update(array('_id' => $lineToRebalance->getId()->getMongoId()), $updateQuery);
+	}
+	
+	
+	/**
+	 * Gets the update query to update subscriber's Line
+	 * 
+	 * @param type $rebalanceUsagev
+	 */
+	protected function getUpdateLineUpdateQuery($rebalanceUsagev) {
+		return array(
+			'$inc' => array(
+				'usagev' => $rebalanceUsagev
+			)
+		);
 	}
 
 }

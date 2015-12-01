@@ -42,5 +42,13 @@ class Billrun_ActionManagers_Realtime_Responder_Call_ReleaseCall extends Billrun
 			)
 		);
 	}
+	
+	/**
+	 * Gets the Line that needs to be updated
+	 * @todo Implement function when we will have spec
+	 */	
+	protected function getLineToUpdate() {
+		return null;
+	}
 
 }

@@ -69,24 +69,18 @@ abstract class Billrun_ActionManagers_Realtime_Responder_Data_Base extends Billr
 	}
 	
 	/**
-	 * Gets a query to find amount of balance (usagev) calculated in last data call
-	 * 
-	 * @return array
-	 */
-	protected function getRebalanceQuery() {
-		return array(
-			array(
-				'$match' => array(
-					"session_id" => $this->row['session_id']
-				)
-			),
-			array(
-				'$group' => array(
-					'_id' => '$session_id',
-					'sum' => array('$last' => '$usagev')
-				)
-			)
+	 * Gets the Line that needs to be updated
+	 */	
+	protected function getLineToUpdate() {
+		$findQuery = array(
+			"sid" => $this->row['sid'],
+			"session_id" => $this->row['session_id'],
+			"request_num" => array('$lt' => $this->row['request_num'])
 		);
+		
+		$lines_coll = Billrun_Factory::db()->linesCollection();
+		$line = $lines_coll->query($findQuery)->cursor()->sort(array('request_num' => -1))->limit(1);
+		return $line;
 	}
 
 }
