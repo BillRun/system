@@ -21,29 +21,37 @@ class Billrun_ActionManagers_Balances_Updaters_Secret extends Billrun_ActionMana
 	 * @return The updated record, false if failed.
 	 */
 	public function update($query, $recordToSet, $subscriberId) {
-		$cardsColl = Billrun_Factory::db()->cardsCollection();
 		// Get the record.
-		$dateQuery = array('to' => array('$gt', new MongoDate()));
+		if (isset($query['secret'])) {
+			$query['secret'] = hash('sha512',$query['secret']);
+		} else {
+			$error = "No secret input";
+			$this->reportError($error, Zend_Log::ALERT);
+			return false;
+		}
+		$dateQuery = array(
+			'to' => array(
+				'$gt' => new MongoDate()
+			)
+		);
 		$finalQuery = array_merge($dateQuery, $query);
 		$finalQuery['status'] = array('$eq' => 'Active');
-		
+		$cardsColl = Billrun_Factory::db()->cardsCollection();
 		$cardRecord = $cardsColl->query($finalQuery)->cursor()->current();
-		if(empty($cardRecord)) {
+		if($cardRecord->isEmpty()) {
 			$error = "Invalid card received, might be cancelled";
 			$this->reportError($error, Zend_Log::NOTICE);
 			return false;
 		}
 		
-		if (!$this->validateServiceProviders($cardRecord, $recordToSet)) {
-			return false;
-		}
-		
-		$this->signalCardAsUsed($cardRecord, $subscriberId);
-		
 		// Build the plan query from the card plan field.
 		$planQuery = array('charging_plan_name' => $cardRecord['charging_plan']);
 		
-		return parent::update($planQuery, $recordToSet, $subscriberId);
+		$ret = parent::update($planQuery, $recordToSet, $subscriberId);
+		if ($ret !== FALSE) {
+			$this->signalCardAsUsed($cardRecord, $subscriberId);
+		}
+		return $ret;
 	}
 	
 	/**
@@ -53,13 +61,14 @@ class Billrun_ActionManagers_Balances_Updaters_Secret extends Billrun_ActionMana
 	protected function signalCardAsUsed($cardRecord, $subscriberId) {
 		$query = array(
 			'_id' => array(
-				'$eq' => $cardRecord['_id']
+				'$eq' => $cardRecord['_id']->getMongoID()
 			)
 		);
 		$update = array(
 			'$set' => array(
 				'status' => 'Used',
 				'sid'    => $subscriberId,
+				'activation_datetime'    => new MongoDate(),
 			),
 		);
 		$options = array(

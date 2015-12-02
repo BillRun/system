@@ -92,7 +92,7 @@ class Billrun_ActionManagers_Cards_Query extends Billrun_ActionManagers_Cards_Ac
 			foreach ($cursor as $line) {
 				$rawItem = $line->getRawData();
 				unset($rawItem['secret']);
-				$returnData[] = Billrun_Util::convertRecordMongoDatetimeFields($rawItem, array('to', 'creation_time'));
+				$returnData[] = Billrun_Util::convertRecordMongoDatetimeFields($rawItem, array('to', 'creation_time', 'activation_datetime'));
 			}
 		} catch (\Exception $e) {
 			$error = 'failed querying DB got error : ' . $e->getCode() . ' : ' . $e->getMessage();
