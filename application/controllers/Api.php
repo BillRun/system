@@ -45,7 +45,7 @@ class ApiController extends Yaf_Controller_Abstract {
 	 * default method of api. Just print api works
 	 */
 	public function indexAction() {
-		$this->setOutput(array(array('status' => true, 'message' => 'Billrun API works')));
+		$this->setOutput(array(array('status' => 1, 'message' => 'Billrun API works')));
 	}
 
 	/**
