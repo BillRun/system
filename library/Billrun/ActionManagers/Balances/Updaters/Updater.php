@@ -221,7 +221,7 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater{
 	 * @return \MongoDate
 	 */
 	protected function getDateFromDataRecord($chargingPlan) {
-		$period = $chargingPlan['period']; // OFER
+		$period = $chargingPlan['period'];
 		return $this->getDateFromPeriod($period);
 	}
 	

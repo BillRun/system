@@ -51,20 +51,22 @@ class Billrun_ActionManagers_Balances_Updaters_Secret extends Billrun_ActionMana
 	 * @param mongoEntity $cardRecord - Record to set as canceled in the mongo.
 	 */
 	protected function signalCardAsUsed($cardRecord, $subscriberId) {
-		$cardsColl = Billrun_Factory::db()->cardsCollection();
-		$query = array('_id' => array('$eq' => $cardRecord['_id']));
-		$update = array('$set' => 
-			array(
+		$query = array(
+			'_id' => array(
+				'$eq' => $cardRecord['_id']
+			)
+		);
+		$update = array(
+			'$set' => array(
 				'status' => 'Used',
 				'sid'    => $subscriberId,
 			),
 		);
-		
 		$options = array(
 			'upsert' => false,
 			'w' => 1,
 		);
-
+		$cardsColl = Billrun_Factory::db()->cardsCollection();
 		$cardsColl->findAndModify($query, $update, array(), $options, true);
 	}
 }

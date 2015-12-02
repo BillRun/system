@@ -173,7 +173,7 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 		// Return the new document.
 		return array(
 			array(
-				'wallets' => $chargingPlan,
+				'wallet' => $chargingPlan,
 				'balance' => $balance
 			)
 		);
