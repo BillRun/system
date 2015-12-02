@@ -209,7 +209,7 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater{
 	 * @param type $recordToSet
 	 * @param type $dataRecord
 	 */
-	protected function handleExpirationDate($recordToSet, $dataRecord) {
+	protected function handleExpirationDate(&$recordToSet, $dataRecord) {
 		if (!$recordToSet['to']) {
 			$recordToSet['to'] = $this->getDateFromDataRecord($dataRecord);
 		}
@@ -221,7 +221,7 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater{
 	 * @return \MongoDate
 	 */
 	protected function getDateFromDataRecord($chargingPlan) {
-		$period = $chargingPlan['period'];
+		$period = $chargingPlan['period']; // OFER
 		return $this->getDateFromPeriod($period);
 	}
 	
@@ -238,7 +238,13 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater{
 		if($duration == "UNLIMITED") {
 			return new MongoDate(strtotime(self::UNLIMITED_DATE));
 		}
-		$unit = $period['units'];
+		if (isset($period['units'])) {
+			$unit = $period['units'];
+		} else if (isset($period['unit'])) {
+			$unit = $period['unit'];
+		} else {
+			$unit = 'months';
+		}
 		return new MongoDate(strtotime("+ " . $duration . " " . $unit));
 	}
 
@@ -289,8 +295,7 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater{
 	 * @param array $defaultBalance
 	 * @return type
 	 */
-	protected function getSetOnInsert($wallet, 
-									  $defaultBalance) {
+	protected function getSetOnInsert($wallet, $defaultBalance) {
 		$defaultBalance['charging_by'] = $wallet->getChargingBy();
 		$defaultBalance['charging_by_usaget'] = $wallet->getChargingByUsaget();
 		$defaultBalance[$wallet->getFieldName()] = $wallet->getValue();

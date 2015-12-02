@@ -38,7 +38,7 @@ class Billrun_ActionManagers_Balances_Updaters_Secret extends Billrun_ActionMana
 			return false;
 		}
 		
-		$this->signalCardAsUsed($cardRecord);
+		$this->signalCardAsUsed($cardRecord, $subscriberId);
 		
 		// Build the plan query from the card plan field.
 		$planQuery = array('charging_plan_name' => $cardRecord['charging_plan']);
@@ -50,10 +50,15 @@ class Billrun_ActionManagers_Balances_Updaters_Secret extends Billrun_ActionMana
 	 * Signal a given card as used after it has been used to charge a balance.
 	 * @param mongoEntity $cardRecord - Record to set as canceled in the mongo.
 	 */
-	protected function signalCardAsUsed($cardRecord) {
+	protected function signalCardAsUsed($cardRecord, $subscriberId) {
 		$cardsColl = Billrun_Factory::db()->cardsCollection();
 		$query = array('_id' => array('$eq' => $cardRecord['_id']));
-		$update = array('$set' => array('status' => 'Used'));
+		$update = array('$set' => 
+			array(
+				'status' => 'Used',
+				'sid'    => $subscriberId,
+			),
+		);
 		
 		$options = array(
 			'upsert' => false,
