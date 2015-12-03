@@ -45,19 +45,6 @@ class Billrun_Calculator_Rate_Callrt extends Billrun_Calculator_Rate {
 	}
 	
 	/**
-	 * load the ggsn rates to be used later.
-	 */
-	protected function loadRates() {
-		$rates_coll = Billrun_Factory::db()->ratesCollection();
-		$rates = $rates_coll->query($this->rateKeyMapping)->cursor();
-		$this->rates = array();
-		foreach ($rates as $value) {
-			$value->collection($rates_coll);
-			$this->rates[] = $value;
-		}
-	}
-	
-	/**
 	 * @see Billrun_Calculator_Rate::getLineRate
 	 */
 	protected function getLineRate($row) {
@@ -83,24 +70,23 @@ class Billrun_Calculator_Rate_Callrt extends Billrun_Calculator_Rate {
 		//$rates_coll = Billrun_Factory::db()->ratesCollection();
 		foreach ($called_number_prefixes as $prefix) {
 			if (isset($this->rates[$prefix])) {
-				$rate = $this->rates[$prefix];
-				//foreach ($this->rates[$prefix] as $rate) {
+				foreach ($this->rates[$prefix] as $rate) {
 					if (isset($rate['rates'][$usage_type]) && (!isset($rate['params']['fullEqual']) || $prefix == $called_number)) {
 						if ($rate['from'] <= $urt && $rate['to'] >= $urt) {
 							if (is_null($ocg)) {
 								$matchedRate = $rate;
-								break 1;
+								break 2;
 							} else {
 								foreach ($rate['params']['out_circuit_group'] as $groups) {
 									if ($groups['from'] <= $ocg && $groups['to'] >= $ocg) {
 										$matchedRate = $rate;
-										break 2;
+										break 3;
 									}
 								}
 							}
 						}
 					}
-				//}
+				}
 			}
 		}
 		return $matchedRate;
