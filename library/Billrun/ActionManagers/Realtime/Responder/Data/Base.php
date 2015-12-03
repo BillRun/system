@@ -74,7 +74,7 @@ abstract class Billrun_ActionManagers_Realtime_Responder_Data_Base extends Billr
 	}
 	
 	/**
-	 * Gets the Line that needs to be updated
+	 * Gets the Line that needs to be updated (on rebalance)
 	 */	
 	protected function getLineToUpdate() {
 		$findQuery = array(
