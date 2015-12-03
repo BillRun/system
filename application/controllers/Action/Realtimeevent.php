@@ -133,7 +133,7 @@ class RealtimeeventAction extends ApiAction {
 			case ('data'):
 				return 'gy';
 			case ('call'):
-				return 'nsn'; //TODO: change name of rate calculator
+				return 'callrt'; //TODO: change name of rate calculator
 			case ('service'):
 				return 'service';
 		}
