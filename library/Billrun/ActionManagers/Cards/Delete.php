@@ -98,25 +98,29 @@ class Billrun_ActionManagers_Cards_Delete extends Billrun_ActionManagers_Cards_A
 			'w' => 1,
 			'multiple' => 1
 		);
-		$exception = null;
 		try {
 			$deleteResult = $this->removeCreated($bulkOptions);
 			$success = $deleteResult['ok'];
 			$count = $deleteResult['n'];
 		} catch (\Exception $e) {
-			$exception = $e;
 			$error = 'failed deleting from the DB got error : ' . $e->getCode() . ' : ' . $e->getMessage();
 			$this->reportError($error, Zend_Log::ALERT);
 			Billrun_Factory::log('failed deleting request :' . print_r($this->query, 1), Zend_Log::ALERT);
 			$success = false;
 		}
 
+		if(!$count) {
+			$success = false;
+			$error = "Card Not Found";
+			$this->reportError($error);
+		}
+		
 		$outputResult = array(
 				'status' => ($success) ? (1) : (0),
 				'desc' => $this->error,
 				'details' => ($success) ? 
 							 ('Deleted ' . $count . ' card(s)') : 
-							 ('Failed deleting card(s) : ' . $exception->getCode() . ' : ' . $exception->getMessage())
+							 ($error)
 		);
 
 		return $outputResult;
