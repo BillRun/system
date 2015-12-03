@@ -432,6 +432,34 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 			Billrun_Factory::log()->log("Fraud plugin - Failed to insert line with the stamp: " . $line['stamp'] . " to the fraud lines collection, got Exception : " . $e->getCode() . " : " . $e->getMessage(), Zend_Log::ERR);
 		}
 	}
+	
+	/**
+	 * Save lines reference to the fraud DB queue to be priced by fruad.
+	 * @param type $lines
+	 */
+	public function insertToFraudQueue($lines) {
+		try {
+			Billrun_Factory::log()->log('Fraud plugin - Inserting ' . count($lines) . ' Lines to fraud lines collection', Zend_Log::INFO);
+			$fraud_connection = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('fraud.db'))->queueCollection();
+			foreach ($lines as $line) {
+				$queueLine = array( 'stamp'=> $line['stamp'],
+									'urt'=>$line['urt'],
+									'type'=>$line['type'],
+									'calc_time' => false,
+									'calc_name' => false,
+								);
+				if(isset($line['aid']) && isset($line['sid']) ) {
+					$queueLine['aid'] =  $line['aid'];
+					$queueLine['sid'] =  $line['sid'];
+					$queueLine['calc_name'] = 'rate';
+				}
+
+				$fraud_connection->insert(new Mongodloid_Entity($queueLine), array('w' => 0));
+			}
+		} catch (Exception $e) {
+			Billrun_Factory::log()->log("Fraud plugin - Failed to insert line with the stamp: " . $line['stamp'] . " to the fraud queue collection, got Exception : " . $e->getCode() . " : " . $e->getMessage(), Zend_Log::ERR);
+		}
+	}
 
 	/**
 	 * TODO document
@@ -447,6 +475,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 		if (!empty($roamingLines)) {
 			$this->insertToFraudLines($roamingLines);
+			$this->insertToFraudQueue($roamingLines);
 		}
 	}
 
