@@ -95,12 +95,13 @@ class ApiController extends Yaf_Controller_Abstract {
 	 */
 	protected function setOutputMethod() {
 		$action = $this->getRequest()->getActionName();
+		$usaget = $_REQUEST['usaget'];
 		$output_methods = Billrun_Factory::config()->getConfigValue('api.outputMethod');
-		if (!isset($output_methods[$action]) || is_null($output_methods[$action])) {
+		if (isset($output_methods[$action][$usaget]) && !is_null($output_methods[$action][$usaget])) {
+			$this->getView()->outputMethod = $output_methods[$action][$usaget];
+		} else {
 			Billrun_Factory::log('No output method defined; set to json encode', Zend_Log::DEBUG);
 			$this->getView()->outputMethod = array('Zend_Json', 'encode');
-		} else {
-			$this->getView()->outputMethod = $output_methods[$action];
 		}
 	}
 
