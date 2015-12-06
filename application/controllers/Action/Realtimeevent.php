@@ -112,7 +112,7 @@ class RealtimeeventAction extends ApiAction {
 	protected function getDataRecordType($requestCode) {
 		$requestTypes = Billrun_Factory::config()->getConfigValue('realtimeevent.data.requestType',array());
 		foreach ($requestTypes as $requestTypeDesc => $requestTypeCode) {
-			if ($requestCode === $requestTypeCode) {
+			if ($requestCode == $requestTypeCode) {
 				return strtolower($requestTypeDesc);
 			}
 		}
