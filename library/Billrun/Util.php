@@ -940,6 +940,34 @@ class Billrun_Util {
 
 		return $parsedData;
 	}
+	
+	/**
+	 * Convert array keys to camel case from Billrun convention
+	 * 
+	 * @param array $data
+	 */
+	public static function parseBillrunConventionToCamelCase($data = array()) {
+		$parsedData = array();
+		foreach ($data as $key => $value) {
+			if (is_array($value)) {
+				$value = self::parseBillrunConventionToCamelCase($value);
+				
+			}
+			$newKey = self::underscoresToCamelCase($key);
+			$parsedData[$newKey] = $value;
+		}
+
+		return $parsedData;
+	}
+	
+	public static function underscoresToCamelCase($string, $capitalizeFirstCharacter = false)  {
+
+		$str = str_replace(' ', '', ucwords(str_replace('_', ' ', $string)));
+		if (!$capitalizeFirstCharacter) {
+			$str[0] = strtolower($str[0]);
+		}
+		return $str;
+	}
 
 	/**
 	 * Return an integer based on an input string.
