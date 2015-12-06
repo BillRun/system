@@ -357,7 +357,7 @@ function update_current(obj) {
 	var item_checked = $(obj).next("input[type=checkbox],input[type=hidden]");
 	checkItems = false;
 	if (item_checked.length) {
-		$(obj).data('remote', '/admin/edit?coll=' + active_collection + '&id=' + item_checked.eq(0).val() + '&type=' + $(obj).data('type'));
+		$(obj).data('remote', '/admin/medit?coll=' + active_collection + '&id=' + item_checked.eq(0).val() + '&type=' + $(obj).data('type'));
 	}
 }
 

@@ -128,6 +128,30 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->getView()->hiddenKeys = $model->getHiddenKeys($entity, $type);
 	}
 
+	public function meditAction() {
+		if (!$this->allowed('read'))
+			return false;
+		$coll = Billrun_Util::filter_var($this->getRequest()->get('coll'), FILTER_SANITIZE_STRING);
+		$id = Billrun_Util::filter_var($this->getRequest()->get('id'), FILTER_SANITIZE_STRING);
+		$type = Billrun_Util::filter_var($this->getRequest()->get('type'), FILTER_SANITIZE_STRING);
+
+		$model = self::initModel($coll);
+		if ($type == 'new') {
+			$entity = $model->getEmptyItem();
+		} else {
+			$entity = $model->getItem($id);
+		}
+		if ($type == 'close_and_new' && is_subclass_of($model, "TabledateModel") && !$model->isLast($entity)) {
+			die("There's already a newer entity with this key");
+		}
+		// passing values into the view
+		$this->getView()->entity = $entity;
+		$this->getView()->collectionName = $coll;
+		$this->getView()->type = $type;
+		$this->getView()->protectedKeys = $model->getProtectedKeys($entity, $type);
+		$this->getView()->hiddenKeys = $model->getHiddenKeys($entity, $type);
+	}
+	
 	public function confirmAction() {
 		if (!$this->allowed('write'))
 			return false;
@@ -388,6 +412,25 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->getView()->component = $this->buildTableComponent($table, $query);
 	}
 
+/*
+	public function editrateAction() {
+		$coll	= Billrun_Util::filter_var($this->getRequest()->get('coll'), FILTER_SANITIZE_STRING);
+		$id		= Billrun_Util::filter_var($this->getRequest()->get('id'), FILTER_SANITIZE_STRING);
+		$model = self::initModel($coll);
+		$entity = $model->getItem($id);
+		$params = array_merge($this->getRequest()->getParams(), $this->getRequest()->getPost());
+		$this->getView()->component = $this->getEditRateForm($params, $entity);
+	}	
+	
+	protected function getEditRateForm($params, $entity) {
+		$this->title = "Rates";
+		$params = array_merge(array(
+			'title' => $this->title,
+		), $params);
+		$ret = $this->renderView('editrate', $params);
+		return $ret;
+	}
+*/	
 	public function loginAction() {
 		if (Billrun_Factory::user() !== FALSE) {
 			// if already logged-in redirect to admin homepage
@@ -758,7 +801,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * @return string the render layout including the page (component)
 	 */
 	protected function render($tpl, array $parameters = array()) {
-		if ($tpl == 'edit' || $tpl == 'confirm' || $tpl == 'logdetails' || $tpl == 'wholesaleajax') {
+		if ($tpl == 'medit' || $tpl == 'confirm' || $tpl == 'logdetails' || $tpl == 'wholesaleajax') {
 			return parent::render($tpl, $parameters);
 		}
 		$tpl = 'index';

@@ -1,0 +1,272 @@
+<div class="modal-header">
+	<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+	<h3 id="popupModalLabel"><?php echo AdminController::authorized('write')?'MEdit' : 'MView'; ?> item</h3>
+</div>
+<div class="modal-body"><?php
+$protected = array();
+	$entity = $this->entity->getRawData();
+	
+	foreach ($this->protectedKeys as $key) {
+		if (isset($entity[$key])) {
+			$protected[$key] = $entity[$key];
+			unset($entity[$key]);
+		}
+	}
+	foreach ($this->hiddenKeys as $key) {
+		unset($entity[$key]);
+	}
+
+print '<div class="form_protect">';
+if (isset($protected['log_stamp'])) {
+	$log_stamp = $protected['log_stamp'];
+}
+foreach ($protected as $k => $v) {
+	print '<span class="label label-info">' . $k . '</span>';
+	if ($k == "file") {
+		print '<a href="#LogPopup" data-toggle="modal" data-remote=""><span id="form' . $k . '"class="label label-inverse">' . $v . '</span></a><br />';
+	} else {
+		print '<span id="form' . $k . '"class="label label-inverse">' . $v . '</span><br />';
+	}
+}
+print '<span id="form_type" class="hidden">' . $this->type . '</span>';
+print '<span id="form_coll" class="hidden">' . $this->collectionName . '</span>';
+print '</div>';
+?>
+<form class='form-inline'>
+	<h3>Price</h3>
+	<input type='number' id='plan-price' value='<?php echo $entity['price']?>' class='form-control' />
+	
+	<h3>Vatable
+	<input type="checkbox" id="plan-vatable" value="<?php echo $entity['vatable'] ?>"
+		   class="form-control" <?php $entity['vatable'] == '1' ? print " checked " : "" ?>/>
+	</h3>
+	<h3>
+		Include
+		<small><i id='add-plan-option' class='glyphicon glyphicon-plus-sign' style='color: green; cursor: pointer'></i></small>
+	</h3>
+	<div id='call-rates'>
+		<table class='table table-striped call-rates-table'>
+			<thead>
+				<tr>
+					<th></th>
+				</tr>
+			</thead>
+			<tbody id='plan-options-tbody'>
+	<?php foreach($entity['options'] as $option) { ?>
+				<tr><?php
+			print "<td>&nbsp;</td>";
+			print "<td><input type='text' value='" . $option['name'] . "' class='form-control plan-option-name' /></td>";
+			print "<td><input type='text' value='" . $option['tech_name'] . "' class='form-control plan-option-tech-name' /></td>";
+			print "<td><input type='number' value='" . $option['price'] . "' class='form-control plan-option-price' /></td>";
+			print "<td><input type='number' value='" . $option['display_order'] . "' class='form-control plan-option-dosplay-order' /></td>";
+			print "<td><input type='text' value='" . $option['invoice_type'] . "' class='form-control plan-option-invoice-type' /></td>";			
+			print "<td><input type='text' value='" . $option['type'] . "' class='form-control plan-option-type' /></td>";			
+			print "<td><input type='text' value='" . $option['erp_account'] . "' class='form-control plan-erp-account' /></td>";			
+			
+				?></tr>
+	<?php } ?>
+			</tbody>
+		</table>
+	</div>
+</form>
+	
+<script type="text/javascript">
+	var newOutCircuitGroupIndex = 0;
+	var newCallRateIndex = 0;
+	var newSMSRateIndex = 0;
+	var availableOptions = [<?php foreach($availablePlans as $availablePlan) { echo "\"$availablePlan\","; } ?>];
+
+	$('#add-prefix').on('click', function () {
+		$('#rate-prefixes').append("<input type='number' class='form-control rate-prefix' />");
+	});
+	$('#add-plan-provisioning').on('click', function () {
+		$('#plan-provisionings').append("<input type='text' class='form-control plan-provisioning' />");
+	});
+	$('#add-out-circuit-group').on('click', function () {
+		newOutCircuitGroupIndex++;
+		var new_out_circuit_group = $("<div class='form-group'><label for='out-circuit-group-" + newOutCircuitGroupIndex + "-from'>From:</label>\
+<input type='number' class='form-control rate-out-circuit-group-from' id='out-circuit-group-" + newOutCircuitGroupIndex + "-from' />\
+<label for='out-circuit-group-" + newOutCircuitGroupIndex + "-to'>To:</label>\
+<input type='number' class='form-control rate-out-circuit-group-to' id='out-circuit-group-" + newOutCircuitGroupIndex + "-to' /></div>");
+		$('#rate-out-circuit-groups').prepend(new_out_circuit_group);
+	});
+	
+	$('#add-call-rate').on('click', function () {
+		newCallRateIndex++;
+		var newCallRate = $("<tr><td><input type='number' id='call-rate-" + newCallRateIndex + "-interval' class='form-control rate-call-interval' /></td>\
+		<td><input type='number' id='call-rate-" + newCallRateIndex + "-price' class='form-control rate-call-price' /></td>\
+		<td><input type='number' id='call-rate-" + newCallRateIndex + "-to' class='form-control rate-call-to' /></td></tr>");
+		$('#call-rates-tbody').append(newCallRate);
+	});
+	$('#add-call-plan').on('click', function () {
+		var newCallPlanSelect = $("<select class='form-control rate-call-plan'></select>");
+		var newCallPlanOption;
+		$.each(availableOptions, function (i, opt) {
+			newCallPlanOption = $("<option>" + opt + "</option>");
+			newCallPlanOption.attr('id', opt);
+			newCallPlanOption.val(opt);
+			$(newCallPlanSelect).append(newCallPlanOption);
+		});
+		$('#rate-call-plans').append(newCallPlanSelect);
+	});
+	$('#add-sms-plan').on('click', function () {
+		var newCallPlanSelect = $("<select class='form-control rate-sms-plan'></select>");
+		var newCallPlanOption;
+		$.each(availableOptions, function (i, opt) {
+			newCallPlanOption = $("<option>" + opt + "</option>");
+			newCallPlanOption.attr('id', opt);
+			newCallPlanOption.val(opt);
+			$(newCallPlanSelect).append(newCallPlanOption);
+		});
+		$('#rate-sms-plans').append(newCallPlanSelect);
+	});
+	
+	$('#add-sms-rate').on('click', function () {
+		newSMSRateIndex++;
+		var newSMSRate = $("<tr><td><input type='number' id='sms-rate-" + newSMSRateIndex + "-interval' class='form-control rate-sms-interval' /></td>\
+		<td><input type='number' id='sms-rate-" + newSMSRateIndex + "-price' class='form-control rate-sms-price' /></td>\
+		<td><input type='number' id='sms-rate-" + newSMSRateIndex + "-to' class='form-control rate-sms-to' /></td></tr>");
+		$('#sms-rates-tbody').append(newSMSRate);
+	});
+	
+	var entityJson = <?php echo json_encode($entity); ?>;
+	console.log(entityJson);
+	var _jsonData = entityJson;
+	var opt = {
+		change: function(data) {
+			/* called on every change */
+			_jsonData = data;
+		},
+		propertyclick: function(path) { /* called when a property is clicked with the JS path to that property */
+			jsonPath = JSON.parse(path);
+			var protectedKeys = <?php echo json_encode($this->protectedKeys); ?>;
+			for (p in jsonPath) {
+				if ($.inArray(jsonPath[p], protectedKeys) !== -1) {
+					$('input[title="' + jsonPath[p] + '"]').attr('disabled', 'disabled');
+				}
+			}
+		}
+	};
+	/* opt.propertyElement = '<textarea>'; */ // element of the property field, <input> is default
+	/* opt.valueElement = '<textarea>'; */  // element of the value field, <input> is default
+	//var _jsonEditor = $('#jsondiv').jsonEditor(entityJson, opt);
+	$('#save').unbind();
+	$('#save').removeAttr("disabled");
+	$('#save').click(function saveClick() {
+		/*
+		$(this).attr('disabled', 'disabled');
+		$(this).unbind("click", saveClick);
+		*/
+	   var call_rates = [];
+	   var cur = {};
+		$('#call-rates-tbody tr').each(function (i, rate) { 
+			cur.interval = $('.rate-call-interval', rate).val();
+			cur.price = $('.rate-call-price', rate).val();
+			cur.to = $('.rate-call-to', rate).val();
+			call_rates.push(cur);
+			cur = {};
+		});
+	   var sms_rates = [];
+	   cur = {};
+		$('#sms-rates-tbody tr').each(function (i, rate) { 
+			cur.interval = $('.rate-sms-interval', rate).val();
+			cur.price = $('.rate-sms-price', rate).val();
+			cur.to = $('.rate-sms-to', rate).val();
+			sms_rates.push(cur);
+			cur = {};
+		});		
+		
+		var out_circuit_group = [];
+		cur = {};
+		$('.rate-out-circuit-group').each(function (i, group) {
+			cur.from = $('.rate-out-circuit-group-from', group).val();
+			cur.to = $('.rate-out-circuit-group-to', group).val();
+			out_circuit_group.push(cur);
+			cur = {};
+		});
+		
+		var prefixes = [];
+		$('.rate-prefix').each(function (i, prefix) {
+			prefixes.push($(prefix).val());
+		});
+		
+		var record_types = [];
+		$('.rate-record-type').each(function (i, record_type) {
+			record_types.push($(record_type).val());
+		});
+		var call_plans = [];
+		$('.rate-call-plan').each(function (k, plan) {
+			call_plans.push($(plan).val());
+		});
+		var sms_plans = [];
+		$('.rate-sms-plan').each(function (k, plan) {
+			sms_plans.push($(plan).val());
+		});
+		var data = {
+			params: {
+				out_circuit_group: out_circuit_group,
+				prefix: prefixes,
+				record_type: record_types
+			},
+			rates: {
+				call: {
+					access: $('#rate-call-access').val(),
+					unit: $('#rate-call-unit').val(),
+					category: $('#rate-call-category').val(),
+					rate: call_rates,
+					plans: call_plans
+				},
+				sms: {
+					access: $('#rate-sms-access').val(),
+					unit: $('#rate-sms-unit').val(),
+					category: $('#rate-sms-category').val(),
+					rate: sms_rates,
+					plans: sms_plans
+				}
+			}
+		};
+		var _ajaxOpts = {
+			async: true,
+			cache: false,
+			//			dataType:'json',
+			type: 'POST',
+			data: {
+				id: $('#form_id').html(),
+				coll: $('#form_coll').html(),
+				type: $('#form_type').html(),
+				duplicate_rates: $('#duplicate_rates').is(':checked'),
+				data: JSON.stringify(data)
+			},
+			success: function(data, textStatus, jqXHR) {
+				if (data != 'null') {
+					alert(data);
+					$('#save').removeAttr("disabled");
+					$('#save').bind("click", saveClick);
+					return;
+				}
+				window.location.reload();
+			},
+			error: function(jqXHR, textStatus, errorThrown) {
+				alert('some error occured');
+			}
+		};
+		$.ajax('<?php echo $this->baseUrl; ?>/admin/save', _ajaxOpts);
+	});
+
+	$('#formfile').click(function() {
+		if ($('#formfile').html().length) {
+			$('#formfile').parent().data('remote', '<?php echo $this->baseUrl; ?>/admin/logDetails?type=logDetails&coll=log&stamp=' + $('#formlog_stamp').html());
+		}
+	});
+</script>
+<div class="modal-footer">
+	<?php if ($this->collectionName == 'plans' && $this->type == 'duplicate') : ?>
+	<div class="edit_checkboxes">
+	<input class="span1" id="duplicate_rates" name="duplicate_rates" type="checkbox" value="on" checked> <label class="span1" for="duplicate_rates">Duplicate rates</label>
+	</div>
+	<?php endif; ?>
+	<button id="cancelPopup" class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
+	<?php if (AdminController::authorized('write')) : ?>
+	<button id="save" class="btn btn-primary">Save changes</button>
+	<?php endif; ?>
+</div>
