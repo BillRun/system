@@ -151,7 +151,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 				$updatedDocument[] = $record->getRawData();
 			}
 			
-			if(!$this->keepBalances) {
+			if($this->keepBalances === FALSE) {
 				// Close balances.
 				$this->closeBalances($this->recordToSet['sid'], $this->recordToSet['aid']);
 			}
