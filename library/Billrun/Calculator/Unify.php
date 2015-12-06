@@ -324,7 +324,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 	}
 
 	public function isNsnLineLegitimate($line) {
-		if ((isset($line['arate']) && $line['arate'] !== false) || (isset($line['usaget']) && $line['usaget'] == 'incoming_call' && isset($line['sid']))) {
+		if ((isset($line['arate']) && $line['arate'] !== false) || (isset($line['usaget']) && $line['usaget'] == 'incoming_call' && (isset($line['sid']) || (isset($line['record_type']) && $line['record_type'] == '30')))) {
 			return false;
 		}
 		return true;
