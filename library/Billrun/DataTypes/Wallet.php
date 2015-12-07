@@ -50,7 +50,7 @@ class Billrun_DataTypes_Wallet {
 	 * @param array $chargingByValue
 	 */
 	public function __construct($chargingBy, $chargingByValue) {
-		$chargingByUsegt = $chargingBy;
+		$chargingByUsaget = $chargingBy;
 
 		// The wallet does not handle the period.
 		if (isset($chargingByValue['period'])) {
@@ -59,15 +59,15 @@ class Billrun_DataTypes_Wallet {
 		}
 
 		if (!is_array($chargingByValue)) {
-			$this->valueFieldName = 'balance.' . $chargingBy;
+			$this->valueFieldName = 'balance.' . str_replace("total_", "totals.", $chargingBy);
 			$this->value = $chargingByValue;
 		} else {
-			list($chargingByUsegt, $this->value) = each($chargingByValue);
-			$this->valueFieldName = 'balance.totals.' . $chargingBy . '.' . $chargingByUsegt;
+			list($chargingByUsaget, $this->value) = each($chargingByValue);
+			$this->valueFieldName = 'balance.totals.' . $chargingBy . '.' . $chargingByUsaget;
 		}
 
 		$this->chargingBy = $chargingBy;
-		$this->chargingByUsaget = $chargingByUsegt;
+		$this->chargingByUsaget = $chargingByUsaget;
 
 		$this->setValue();
 	}
