@@ -179,7 +179,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 	 * @return array - Array of fields to set.
 	 */
 	protected function getUpdateFields() {
-		return array('imsi', 'msisdn', 'aid', 'sid', 'plan', 'language', 'service_provider');
+		return array('imsi', 'msisdn', 'aid', 'sid', 'plan', 'language', 'service_provider', 'charging_type');
 	}
 	
 	/**
