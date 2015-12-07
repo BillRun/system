@@ -22,6 +22,11 @@ abstract class Billrun_Importer_Csv extends Billrun_Importer_Abstract {
 	
 	abstract function getCollectionName();
 	
+	public function __construct($options) {
+		parent::__construct($options);
+		Billrun_Factory::config()->addConfig(APPLICATION_PATH . "/conf/importers/conf.ini");
+	}
+	
 	public function import() {
 		Billrun_Factory::log("Starting to import CSV", Zend_Log::INFO);
 		$path = $this->getPath();
