@@ -86,14 +86,13 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 			return true;
 		}
 		
-		$linesUpdate = array('$set' => $keepLinesUpdate);
 		$options = array(
 			'upsert' => false,
 			'new' => false,
 			'w' => 1,
 		);
 		$linesColl = Billrun_Factory::db()->linesCollection();
-		return $linesColl->findAndModify($keepLinesQuery, $keepLinesUpdate, array(), $options, true);
+		return $linesColl->findAndModify($keepLinesQuery, array('$set' => $keepLinesUpdate), array(), $options, true);
 	}
 	
 	/**
