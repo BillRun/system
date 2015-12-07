@@ -15,26 +15,22 @@
  */
 class Billrun_Importer_ChargingPlans extends Billrun_Importer_Csv {
 
-	const COLUMN_SERVICE_PROVIDER = 1;
-	const COLUMN_MAIN_ACCOUNT = 3;
-	const COLUMN_BONUS_ACCOUNT = 4;
-	const COLUMN_CHARGING_TYPE = 14;
-	const COLUMN_EXPIRATION = 13;
-	const COLUMN_CALL_USAGEV = 6;
-	const COLUMN_SMS_USAGEV = 9;
-	const COLUMN_DATA_USAGEV = 10;
-	const COLUMN_DATA_COST = 7;
-
+	protected $fieldsColumns = null;
+	
+	public function __construct($options) {
+		parent::__construct($options);
+		$this->fieldsColumns = Billrun_Factory::config()->getConfigValue('importer.ChargingPlans.columns', array());
+	}
 	public function getCollectionName() {
 		return 'plans';
 	}
 
 	protected function getServiceProvider($rowData) {
-		return strtoupper($rowData[self::COLUMN_SERVICE_PROVIDER]);
+		return strtoupper($rowData[$this->fieldsColumns['service_provider']]);
 	}
 
 	protected function getChargingType($rowData) {
-		switch ($rowData[self::COLUMN_CHARGING_TYPE]) {
+		switch ($rowData[$this->fieldsColumns['charging_type']]) {
 			case ('דיגיטלי'):
 			case ('דיגיטלי '):
 			case ('דיגטלי'):
@@ -68,36 +64,36 @@ class Billrun_Importer_ChargingPlans extends Billrun_Importer_Csv {
 	}
 	
 	protected function getCost($rowData) {
-		if ($rowData[self::COLUMN_MAIN_ACCOUNT] > 0) {
-			return intval($rowData[self::COLUMN_MAIN_ACCOUNT]);
+		if ($rowData[$this->fieldsColumns['main_account']] > 0) {
+			return intval($rowData[$this->fieldsColumns['main_account']]);
 		}
 
-		if ($rowData[self::COLUMN_BONUS_ACCOUNT] > 0) {
-			return intval($rowData[self::COLUMN_BONUS_ACCOUNT]);
+		if ($rowData[$this->fieldsColumns['bonus_account']] > 0) {
+			return intval($rowData[$this->fieldsColumns['bonus_account']]);
 		}
 
 		return NULL;
 	}
 
 	protected function getCall($rowData) {
-		if ($rowData[self::COLUMN_CALL_USAGEV] == 0) {
+		if ($rowData[$this->fieldsColumns['specific']['call_usagev']] == 0) {
 			return NULL;
 		}
 		return
 			array(
-				'usagev' => intval($rowData[self::COLUMN_CALL_USAGEV]),
+				'usagev' => intval($rowData[$this->fieldsColumns['specific']['call_usagev']]) * 60,
 				'period' => $this->getDuration($rowData)
 			)
 		;
 	}
 
 	protected function getData($rowData) {
-		if ($rowData[self::COLUMN_DATA_USAGEV] != 0) {
+		if ($rowData[$this->fieldsColumns['specific']['data_usagev']] != 0) {
 			$key = 'usagev';
-			$value = intval($rowData[self::COLUMN_DATA_USAGEV]);
-		} else if ($rowData[self::COLUMN_DATA_COST] != 0) {
+			$value = intval($rowData[$this->fieldsColumns['specific']['data_usagev']]);
+		} else if ($rowData[$this->fieldsColumns['specific']['data_cost']] != 0) {
 			$key = 'cost';
-			$value = intval($rowData[self::COLUMN_DATA_COST]);
+			$value = intval($rowData[$this->fieldsColumns['specific']['data_cost']]);
 		} else {
 			return NULL;
 		}
@@ -110,26 +106,41 @@ class Billrun_Importer_ChargingPlans extends Billrun_Importer_Csv {
 	}
 
 	protected function getSms($rowData) {
-		if ($rowData[self::COLUMN_SMS_USAGEV] == 0) {
+		if ($rowData[$this->fieldsColumns['specific']['sms_usagev']] == 0) {
 			return NULL;
 		}
 		return
 			array(
-				'usagev' => intval($rowData[self::COLUMN_SMS_USAGEV]),
+				'usagev' => intval($rowData[$this->fieldsColumns['specific']['sms_usagev']]),
 				'period' => $this->getDuration($rowData)
 			);
 	}
 	
 	protected function getDuration($rowData) {
-		$duration = ($rowData[self::COLUMN_EXPIRATION] == 0 ? 'UNLIMITED' : intval($rowData[self::COLUMN_EXPIRATION]));
+		$duration = ($rowData[$this->fieldsColumns['expirations_date']] == 0 ? 'UNLIMITED' : intval($rowData[$this->fieldsColumns['expirations_date']]));
 		return array(
 			'unit' => 'days',
 			'duration' => $duration
 		);
 	}
 	
-	protected function getPriority() {
-		return 1;
+	protected function getPriority($rowData) {
+		$priorities = Billrun_Factory::config()->getConfigValue('importer.ChargingPlans.priority', array());
+		
+		if ($rowData[$this->fieldsColumns['bonus_account']] != 0) {
+			return $priorities['bonus_account'];
+		}
+		$specificBalancesCounter = 0;
+		foreach ($this->fieldsColumns['specific'] as $key => $columnIndex) {
+			if ($rowData[$columnIndex] != 0) {
+				$specificBalancesCounter++;
+			}
+		}
+		
+		if ($specificBalancesCounter === 0) {
+			return $priorities['main_account'];
+		}
+		return $priorities['basic'] + $specificBalancesCounter;
 	}
 
 }
