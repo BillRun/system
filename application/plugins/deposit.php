@@ -99,6 +99,7 @@ class depositPlugin extends Billrun_Plugin_BillrunPluginFraud {
 		}
 		$ret = array();
 		foreach ($this->fraudConfig['groups'] as $groupName => $groupIds) {
+			$oldEvents = array();
 			if(!Billrun_Factory::config()->getConfigValue('deposit.fraud.ignore_old_events', FALSE)) {
 				$oldEvents =  $this->collectForGroup($groupName, $groupIds);
 			}
