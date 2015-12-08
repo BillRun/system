@@ -41,7 +41,7 @@ class Billrun_Util {
 		if (!$dayofmonth) {
 			$dayofmonth = Billrun_Factory::config()->getConfigValue('billrun.charging_day', 25);
 		}
-		$format = "Ym" . $dayofmonth . "000000";
+		$format = "Ym" . str_pad($dayofmonth, '2', '0', STR_PAD_LEFT) . "000000";
 		if (date("d") >= $dayofmonth) {
 			$time = date($format);
 		} else {
@@ -58,7 +58,7 @@ class Billrun_Util {
 		if ($depth == 0 || !is_array($arrays)) {
 			return $arrays;
 		}
-		//	print_r($arrays);
+
 		$retArr = array();
 		foreach ($arrays as $subKey => $subArray) {
 			if ($key) {
@@ -313,21 +313,35 @@ class Billrun_Util {
 		return FALSE;
 	}
 
-	public static function sendMail($subject, $body, $recipients, $attachments = array()) {
+	/**
+	 * Send Email helper
+	 * @param type $subject the subject of the message.
+	 * @param type $body the body of the message
+	 * @param type $attachments (optional)
+	 * @return type
+	 */
+	public static function sendMail($subject, $body, $recipients = array(), $attachments = array()) {
+
 		$mailer = Billrun_Factory::mailer()->
-			setSubject($subject)->
-			setBodyText($body);
+				setSubject($subject)->
+				setBodyText($body);
+
 		//add attachments
 		foreach ($attachments as $attachment) {
 			$mailer->addAttachment($attachment);
 		}
 		//set recipents
-//		foreach ($recipients as $recipient) {
-//			$mailer->addTo($recipient);
-//		}
-		$mailer->addTo($recipients);
-		//sen email
-		return $mailer->send();
+		foreach ($recipients as $recipient) {
+			$mailer->addTo($recipient);
+		}
+		//send email
+		try {
+			$ret = $mailer->send();
+		} catch (Exception $e) {
+			Billrun_Factory::log()->log("Failed when trying to send  email on alert results, Failed with : " . $e, Zend_Log::ERR);
+			$ret = FALSE;
+		}
+		return $ret;
 	}
 
 	/**
@@ -816,5 +830,77 @@ class Billrun_Util {
 		return Billrun_Factory::config()->getConfigValue('Rate_Nsn.calculator.roaming_cg', array());
 	}
 
+	/**
+	 * Send SMS helper
+	 * @param type $recipient recipient number
+	 * @param type $message - body message
+	 * @return type
+	 */
+	public static function sendSms($message, $recipients) {
+		$smser = Billrun_Factory::smser();
+
+		if (empty($recipients) || empty($message)) {
+			return FALSE;
+		}
+
+		try {
+			$ret = $smser->send($message, $recipients);
+		} catch (Exception $e) {
+			Billrun_Factory::log()->log("Failed when trying to send  sms on alert results, Failed with : " . $e, Zend_Log::ERR);
+			$ret = FALSE;
+		}
+		return $ret;
+	}
+
+	/**
+	 * Send curl request
+	 * 
+	 * @param string $url full path
+	 * @param string $data parameters for the request
+	 * @param string $method should be POST or GET
+	 * 
+	 * @return array or FALSE on failure
+	 */
+	public static function sendRequest($url, array $data = array(), $method = Zend_Http_Client::POST, array $headers = array('Accept-encoding' => 'deflate'), $timeout = null) {
+		if (empty($url)) {
+			Billrun_Factory::log()->log("Bad parameters: url - " . $url . " method: " . $method, Zend_Log::ERR);
+			return FALSE;
+		}
+
+		$method = strtoupper($method);
+		if (!defined("Zend_Http_Client::" . $method)) {
+			return FALSE;
+		}
+
+		$zendMethod = constant("Zend_Http_Client::" . $method);
+		$curl = new Zend_Http_Client_Adapter_Curl();
+		if (!is_null($timeout)) {
+			$curl->setCurlOption(CURLOPT_TIMEOUT, $timeout);
+		}
+		$client = new Zend_Http_Client($url);
+		$client->setHeaders($headers);
+		$client->setAdapter($curl);
+		$client->setMethod($method);
+
+		if (!empty($data)) {
+			if ($zendMethod == Zend_Http_Client::POST) {
+				$client->setParameterPost($data);
+			} else {
+				$client->setParameterGet($data);
+			}
+		}
+		try {
+			$response = $client->request();
+			$output = $response->getBody();
+		} catch (Zend_Http_Client_Exception $e) {
+			$output = null;
+		}
+		if (empty($output)) {
+			Billrun_Factory::log()->log("Bad RPC result: " . print_r($response, TRUE) . " Parameters sent: " . print_r($data, TRUE), Zend_Log::WARN);
+			return FALSE;
+		}
+
+		return $output;
+	}
 
 }

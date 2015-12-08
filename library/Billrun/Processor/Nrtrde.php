@@ -19,6 +19,11 @@
  */
 class Billrun_Processor_Nrtrde extends Billrun_Processor_Base_Separator {
 
+	protected $standatizeFieldsMapping = array(
+		'callingNumber' => 'calling_number',
+		'connectedNumber' => 'called_number',
+	);
+	
 	/**
 	 * the type of the object
 	 *
@@ -113,6 +118,13 @@ class Billrun_Processor_Nrtrde extends Billrun_Processor_Base_Separator {
 		$this->parser->setLine($line);
 		Billrun_Factory::dispatcher()->trigger('beforeDataParsing', array(&$line, $this));
 		$row = $this->parser->parse();
+		
+		foreach ($this->standatizeFieldsMapping as $key => $value) {
+			if(isset($row[$key])) {
+				$row[$value] = $row[$key];
+			}
+		}
+		
 		$row['source'] = static::$type;
 		$row['type'] = self::$type;
 		$row['sender'] = $this->data['header']['sender'];
@@ -124,6 +136,7 @@ class Billrun_Processor_Nrtrde extends Billrun_Processor_Base_Separator {
 		$row['usaget'] = $this->getLineUsageType($row);
 		settype($row['callEventDuration'], 'integer');
 		$row['usagev'] = $this->getLineVolume($row,$row['usaget']);
+		
 		Billrun_Factory::dispatcher()->trigger('afterDataParsing', array(&$row, $this));
 		$this->data['data'][] = $row;
 		return $row;

@@ -134,6 +134,7 @@ class Zend_Ftp_File {
 		// retry ftp get if declared
 		if ($get === FALSE && $autoRecover) {
 			$this->_ftp->disconnect();
+			// the first arg will connect again to the ftp resource
 			$get = @ftp_get($this->_ftp->getConnection(), $file, $this->_path, $mode, $offset);
 		}
 
@@ -223,21 +224,21 @@ class Zend_Ftp_File {
 	}
 
 	/**
-	 * Whether or not the file exists
-	 * 
-	 * @return boolean
-	 */
-	public function exists() {
-		// Unfinished
-	}
-	
-	/**
 	 * method to receive file size on server
 	 * 
 	 * @return int the file size on success, or -1 on error
 	 */
 	public function size() {
 		return @ftp_size($this->_ftp->getConnection(), $this->_path);
+	}
+
+	/**
+	 * Whether or not the file exists
+	 * 
+	 * @return boolean
+	 */
+	public function exists() {
+		// Unfinished
 	}
 
 	/**

@@ -11,7 +11,8 @@
  */
 class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plugin_Interface_IParser, Billrun_Plugin_Interface_IProcessor {
 
-	use Billrun_Traits_FileSequenceChecking;
+	use Billrun_Traits_FileSequenceChecking,
+		 Billrun_Traits_FraudAggregation;
 
 	/**
 	 * plugin name
@@ -36,6 +37,7 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 	public function __construct(array $options = array()) {
 		$this->nsnConfig = (new Yaf_Config_Ini(Billrun_Factory::config()->getConfigValue('nsn.config_path')))->toArray();
 		$this->ild_called_number_regex = Billrun_Factory::config()->getConfigValue('016_one_way.identifications.called_number_regex');
+		$this->initFraudAggregation();
 	}
 
 	/////////////////////////////////////////////// Reciver //////////////////////////////////////
@@ -105,30 +107,107 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 //		//check if the file was received more then an hour ago.
 //		$query['extra_data.month'] = array('$gt' => date('Ym', strtotime('previous month')));
 //	}
-
+	
 	/**
 	 * @see Billrun_Plugin_BillrunPluginFraud::handlerCollect
 	 */
 	public function handlerCollect($options) {
-		if ($options['type'] != 'roaming') {
+		if( $options['type'] != 'roaming') { 
 			return FALSE;
 		}
-		$monthlyThreshold = floatval(Billrun_Factory::config()->getConfigValue('nsn.thresholds.monthly_voice', 36000));
-		$dailyThreshold = floatval(Billrun_Factory::config()->getConfigValue('nsn.thresholds.daily_voice', 3600));
 
-		Billrun_Factory::log()->log("nsnPlugin::handlerCollect collecting monthly  exceedres", Zend_Log::DEBUG);
-		$monthlyAlerts = $this->detectDurationExcceders(date('Y0101000000'), $monthlyThreshold);
-		foreach ($monthlyAlerts as &$val) {
-			$val['threshold'] = $monthlyThreshold;
+		$events = array();
+		//@TODO  switch  these lines  once  you have the time to test it.
+		//$charge_time = new MongoDate($this->get_last_charge_time(true) - date_default_timezone_get() );
+		$charge_time = Billrun_Util::getLastChargeTime(true);
+
+		$advancedEvents = array();
+		if (isset($this->fraudConfig['groups'])) {
+			foreach ($this->fraudConfig['groups'] as $groupName => $groupIds) {
+				$baseQuery = $this->getBaseAggregateQuery($charge_time, $groupName, $groupIds);
+				$advancedEvents = $this->collectFraudEvents($groupName, $groupIds, $baseQuery);
+				$events = array_merge($events, $advancedEvents);
+			}
 		}
 
-		Billrun_Factory::log()->log("nsnPlugin::handlerCollect collecting hourly  exceedres", Zend_Log::DEBUG);
+		return $events;
+	}
+	
+	/**
+	 * Get the base aggregation query.
+	 * @param type $charge_time the charge time of the billrun (records will not be pull before that)
+	 * @return Array containing a standard PHP mongo aggregate query to retrive  ggsn entries by imsi.
+	 */
+	protected function getBaseAggregateQuery($charge_time, $groupName, $groupMatch) {
+		$ret = array(
+			'base_match' => array(
+				'$match' => array(
+					'type' => 'nsn',
+				)
+			),
+			'where' => array(
+				'$match' => array(
+					'deposit_stamp' => array('$exists' => false),
+				),
+			),
+			'group_match' => array(
+				'$match' => $groupMatch,
+			),
+			'group' => array(
+				'$group' => array(
+					"_id" => array('sid' => '$sid', 'imsi'=> '$imsi', 'msisdn' => '$calling_number'),
+					"usagev" => array('$sum' => '$usagev'),
+					"duration" => array('$sum' => '$usagev'),
+					'lines_stamps' => array('$addToSet' => '$stamp'),
+				),
+			),
+			'translate' => array(
+				'$project' => array(
+					'_id' => 0,
+					'usagev' => 1,
+					'duration' => 1,
+					'sid' => '$_id.sid',
+					'imsi' => '$_id.imsi',
+					'msisdn' => array('$substr' => array('$_id.msisdn', 3,10)),//'$_id.msisdn',
+					'lines_stamps' => 1,
+				),
+			),
+			'project' => array(
+				'$project' => array_merge(array(					
+					'duration' => 1,
+					'imsi' => 1,
+					'sid' => 1,
+					'msisdn' => 1,
+					'lines_stamps' => 1,
+						), $this->addToProject(array('group' => $groupName,))),
+			),
+		);
+		
+		return $ret;
+	}
+	
+	/**
+	 * old  fraud  event logic  to detect over usage in golan  internaional provider (016)
+	 * @return array  containing all the events
+	 */
+	protected function collectGolanIntl() {
+
+		$monthlyThreshold = floatval(Billrun_Factory::config()->getConfigValue('nsn.thresholds.monthly_voice',36000));
+		$dailyThreshold = floatval(Billrun_Factory::config()->getConfigValue('nsn.thresholds.daily_voice',3600));
+
+		Billrun_Factory::log()->log("nsnPlugin::handlerCollect collecting monthly  exceedres",  Zend_Log::DEBUG);
+		$monthlyAlerts = $this->detectDurationExcceders(date('Y0101000000'), $monthlyThreshold);
+		foreach($monthlyAlerts as &$val) {
+			$val['threshold'] = $monthlyThreshold;
+		};
+
+		Billrun_Factory::log()->log("nsnPlugin::handlerCollect collecting hourly  exceedres",  Zend_Log::DEBUG);
 		$dailyAlerts = $this->detectDurationExcceders(date('Y01d000000'), $dailyThreshold);
 		foreach ($dailyAlerts as &$val) {
 			$val['threshold'] = $dailyThreshold;
 		}
-
-		return array_merge($monthlyAlerts, $dailyAlerts);
+		
+		return array_merge($monthlyAlerts,$dailyAlerts);
 	}
 
 	/**
@@ -147,17 +226,17 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 			array(
 				'$match' => array(
 					'event_stamp' => array('$exists' => false),
-					'record_type' => array('$in' => array('01', '11')),
+						'record_type' => array('$in' => array('01','11')),
 					'called_number' => array('$regex' => '^(?=10[^1]|1016|016|97216)....'),
-					'duration' => array('$gt' => 0),
+						'duration'=> array('$gt'=> 0),
 					//@TODO  switch to unified time once you have the time to test it
-					//'urt' => array('$gt' => $charge_time),
+						//'unified_record_time' => array('$gt' => $charge_time),
 					'charging_start_time' => array('$gte' => $fromDate),
 				),
 			),
 			array(
 				'$group' => array(
-					'_id' => array('imsi' => '$calling_imsi', 'msisdn' => '$calling_number'),
+						'_id' => array('imsi'=>'$calling_imsi', 'msisdn' => '$calling_number' ),
 					'duration' => array('$sum' => '$duration'),
 					'lines_stamps' => array('$addToSet' => '$stamp'),
 				),
@@ -173,7 +252,7 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 			),
 			array(
 				'$match' => array(
-					'value' => array('$gte' => $threshold),
+						'value' => array('$gte' => $threshold ),
 				),
 			),
 		);
@@ -186,8 +265,10 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 	 * @see Billrun_Plugin_BillrunPluginFraud::addAlertData 
 	 */
 	protected function addAlertData(&$event) {
-		$event['units'] = 'SECS';
-		$event['event_type'] = 'MABAL_016';
+		if(empty($event['group'])) {
+			$event['units'] = 'SECS';
+			$event['event_type'] = 'MABAL_016';
+		}
 		return $event;
 	}
 
@@ -541,4 +622,3 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 	
 }
 
-?>

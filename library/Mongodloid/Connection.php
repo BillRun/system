@@ -77,7 +77,7 @@ class Mongodloid_Connection {
 		if (!empty($this->password)) {
 			$options['password'] = $this->password;
 		}
-		
+
 		if (isset($options['readPreference'])) {
 			$readPreference = $options['readPreference'];
 			unset($options['readPreference']);

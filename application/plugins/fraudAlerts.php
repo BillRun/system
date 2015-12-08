@@ -35,23 +35,23 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 */
 	protected $isDryRun = false;
 
-	public function __construct($options = array(
-	)) {
+	public function __construct($options = array()) {
+
 		$this->alertServer = isset($options['alertHost']) ?
-			$options['alertHost'] :
-			Billrun_Factory::config()->getConfigValue('fraudAlerts.alert.host', '127.0.0.1');
+				$options['alertHost'] :
+				Billrun_Factory::config()->getConfigValue('fraudAlerts.alert.host', '127.0.0.1');
 
 		$this->alertPath = isset($options['alertPath']) ?
-			$options['alertPath'] :
-			Billrun_Factory::config()->getConfigValue('fraudAlerts.alert.path', '/');
+				$options['alertPath'] :
+				Billrun_Factory::config()->getConfigValue('fraudAlerts.alert.path', '/');
 
 		$this->alertTypes = isset($options['alertTypes']) ?
-			$options['alertTypes'] :
-			Billrun_Factory::config()->getConfigValue('fraudAlerts.alert.types', array('nrtrde', 'ggsn', 'deposit', 'ilds', 'nsn'));
+				$options['alertTypes'] :
+				Billrun_Factory::config()->getConfigValue('fraudAlerts.alert.types', array('nrtrde', 'ggsn', 'deposit', 'ilds', 'nsn', 'billing1', 'billing2'));
 
 		$this->isDryRun = isset($options['dryRun']) ?
-			$options['dryRun'] :
-			Billrun_Factory::config()->getConfigValue('fraudAlerts.alert.dry_run', false);
+				$options['dryRun'] :
+				Billrun_Factory::config()->getConfigValue('fraudAlerts.alert.dry_run', false);
 
 		$this->startTime = time();
 
@@ -65,7 +65,8 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @return type
 	 */
 	public function handlerNotify($handler, $options) {
-		if ($options['type'] != 'roaming') {
+
+		if ($options['type'] != 'notify') {
 			return FALSE;
 		}
 		$ret = $this->roamingNotify();
@@ -92,17 +93,21 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 			}
 
 			$ret = $this->notifyOnEvent($event);
-			if ($ret === FALSE) {
-				$this->sendEmailOnFailure($event, $ret);
-				//some connection failure - mark event as paused
-				$this->markEvent($event, FALSE);
-			} else if (isset($ret['success']) && $ret['success']) {
+			if (isset($ret['success']) && $ret['success']) {
 				$event['deposit_stamp'] = $event['stamps'][0]; // remember what event you sent to the remote server
 				$event['returned_value'] = (array) $ret;
 				$this->markEvent($event);
-				$this->markEventLines($event);
-			} else {
+				if (!isset($ret['ignored']) || !$ret['ignored']) {
+					$this->markEventLines($event);
+				}
+			} else if (isset($ret['success']) && !$ret['success']) {
 				$this->sendEmailOnFailure($event, $ret);
+				$this->markEvent($event, FALSE);
+			} else {
+				//some connection failure - mark event as paused
+				$this->sendEmailOnFailure($event, $ret);
+				$this->markEvent($event, FALSE);
+				$this->markEventLines($event);
 			}
 
 			//Decrease the amount of alerts allowed in a single run if 0 is reached the break the loop.
@@ -124,11 +129,13 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 */
 	protected function sendEmailOnFailure($event, $rpcRet) {
 		$msg = "Failed  when sending event to RPC" . PHP_EOL;
-		$msg .= "Event : stamp : {$event['stamps'][0]} , imsi :  " . @$event['imsi'] . " ,  msisdn :  " . (@$event['msisdn']) . PHP_EOL;
+		$msg .= "Event : stamp : {$event['stamps'][0]} , imsi :  " . @$event['imsi'] . " ,  msisdn :  " . (@$event['msisdn']) .  ", sid :  " . (@$event['sid']) . PHP_EOL;
 		$msg .= (isset($rpcRet['message']) ? "Message From RPC: " . $rpcRet['message'] : "No  failure  message  from the RPC.") . PHP_EOL;
 		$tmpStr = "";
-		foreach ($rpcRet as $key => $val) {
-			$tmpStr .= " $key : $val,";
+		if (is_array($rpcRet)) {
+			foreach ($rpcRet as $key => $val) {
+				$tmpStr .= " $key : $val,";
+			}
 		}
 		$msg .= "RPC Result : " . $tmpStr . PHP_EOL;
 		Billrun_Factory::log()->log($msg, Zend_Log::ALERT);
@@ -141,7 +148,7 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @return mixed the response from the remote server after json decoding
 	 */
 	protected function notifyOnEvent($args) {
-		if (!(isset($args['imsi']) || isset($args['msisdn']))) {
+		if (!(isset($args['imsi']) || isset($args['msisdn']) || isset($args['sid']) )) {
 			Billrun_Log::getInstance()->log("fraudAlertsPlugin::notifyOnEvent cannot find IMSI nor NDC_SN", Zend_Log::NOTICE);
 		}
 
@@ -152,6 +159,8 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 
 			$args['imsi'] = $testData[$key]['imsi'];
 			$args['msisdn'] = $testData[$key]['msisdn'];
+			$args['aid'] = $testData[$key]['aid'];
+			$args['sid'] = $testData[$key]['sid'];
 		}
 
 		//unset uneeded fields...
@@ -166,10 +175,15 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 			'units' => 'units',
 			'IMSI' => 'imsi',
 			'NDC_SN' => 'msisdn',
+			'account_id' => 'aid',
+			'subscriber_id' => 'sid',
+			'plan' => 'plan',
+			'target_plans' => 'target_plans',
+			'group' => 'group'
 		);
 
 		foreach ($required_args as $key => $argsKey) {
-			$required_args[$key] = isset($args[$argsKey]) ? $args[$argsKey] : null;
+			$required_args[$key] = isset($args[$argsKey]) ? (is_array($args[$argsKey]) ? implode(",", $args[$argsKey]) : $args[$argsKey] ) : null;
 			unset($args[$argsKey]);
 		}
 
@@ -189,14 +203,16 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		// http://framework.zend.com/manual/1.12/en/zend.http.client.adapters.html#zend.http.client.adapters.curl
 		$url = 'http://' . $this->alertServer . $this->alertPath . '?' . http_build_query($query_args);
 		unset($post_args['stamps']);
-		$post_array = array_diff($post_args, $query_args);
+		$post_array = @array_diff($post_args, $query_args);
 		$post_fields = array(
 			'extra_data' => Zend_Json::encode($post_array)
 		);
 		Billrun_Log::getInstance()->log("fraudAlertsPlugin::notifyRemoteServer URL: " . $url, Zend_Log::INFO);
+		Billrun_Log::getInstance()->log("fraudAlertsPlugin::notifyRemoteServer Post: " . print_r($post_fields, 1), Zend_Log::INFO);
 
 		if (!$this->isDryRun) {
-			$output = Billrun_Util::sendRequest($url, $post_fields, Zend_Http_Client::POST);
+			$timeout = intval(Billrun_Factory::config()->getConfigValue('fraudAlerts.timeout', 30));
+			$output = Billrun_Util::sendRequest($url, $post_fields, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), $timeout);
 
 			Billrun_Log::getInstance()->log("fraudAlertsPlugin::notifyRemoteServer response: " . $output, Zend_Log::INFO);
 
@@ -233,19 +249,20 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 */
 	protected function gatherEvents($types) {
 		$events = $this->eventsCol->aggregate(
-			array(
+				array(
 			'$match' => array(
 				'notify_time' => array('$exists' => false),
 				'source' => array('$in' => $types)
 			),
-			), array(
-			'$sort' => array('priority' => 1)
-			), array(
+				), array(
+			'$sort' => array('priority' => 1, 'creation_time' => 1)
+				), array(
 			'$group' => array(
-				'_id' => array('imsi' => '$imsi', 'msisdn' => '$msisdn'),
+				'_id' => array('imsi' => '$imsi', 'msisdn' => '$msisdn', 'sid' => '$sid','channel' => '$channel'),
 				'id' => array('$addToSet' => '$_id'),
 				'imsi' => array('$first' => '$imsi'),
 				'msisdn' => array('$first' => '$msisdn'),
+				'aid' => array('$first' => '$aid'),
 				'value' => array('$first' => '$value'),
 				'event_type' => array('$first' => '$event_type'),
 				'units' => array('$first' => '$units'),
@@ -253,6 +270,9 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 				'priority' => array('$first' => '$priority'),
 				//'deposit_stamp' => array('$first' => '$_id'),
 				'source' => array('$first' => '$source'),
+				'plan' => array('$first' => '$plan'),
+				'target_plans' => array('$first' => '$target_plans'),
+				'group' => array('$first' => '$group'),
 				'stamps' => array('$addToSet' => '$stamp'),
 			),
 			), array(
@@ -262,6 +282,8 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 				'_id' => 0,
 				'imsi' => '$_id.imsi',
 				'msisdn' => '$_id.msisdn',
+				'sid' => '$_id.sid',
+				'aid' => 1,
 				'value' => 1,
 				'event_type' => 1,
 				'units' => 1,
@@ -270,8 +292,11 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 				'id' => 1,
 				'source' => 1,
 				'stamps' => 1,
+				'plan' => 1,
+				'target_plans' => 1,
+				'group' => 1,
 			),
-			)
+				)
 		);
 		return $events;
 	}
@@ -282,14 +307,14 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @param mixed $failure info on failure
 	 */
 	protected function markEvent($event, $failure = null) {
-		Billrun_Log::getInstance()->log("Fraud alerts mark event " . $event['deposit_stamp'], Zend_Log::INFO);
+		Billrun_Log::getInstance()->log("Fraud alerts mark event " . ($failure !== null ? join(",",$event['stamps']) : $event['deposit_stamp'] ), Zend_Log::INFO);
 		//mark events as dealt with.
 		$events_where = array(
 			'notify_time' => array('$exists' => false),
 			'_id' => array('$in' => $event['id']),
 		);
 
-		if (is_null($failure)) {
+		if (is_null($failure)) { // no failure
 			$events_update_set = array(
 				'$set' => array(
 					'notify_time' => new MongoDate(),
@@ -315,20 +340,40 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @param type $event the event that relate to the lines.
 	 */
 	protected function markEventLines($event) {
+		if ($event['source'] == 'billing') { // HACK to prvent the fraud from trying to mark  the lines of an event  that originated in the billing system
+			return;
+		}
 		//mark deposit for the lines on the current imsi
 		Billrun_Log::getInstance()->log("Fraud alerts mark event lines " . $event['deposit_stamp'], Zend_Log::INFO);
 		$imsi = (isset($event['imsi']) && $event['imsi']) ? $event['imsi'] : null;
-		$msisdn = (isset($event['msisdn']) && $event['msisdn']) ? $event['msisdn'] : null;
-
+		//$msisdn = (isset($event['msisdn']) && $event['msisdn']) ? $event['msisdn'] : null;
+		$sid = (isset($event['sid']) && $event['sid']) ? $event['sid'] : null;
+		// backward compatibility
+		$subscriber_id = (isset($event['subscriber_id']) && $event['subscriber_id']) ? $event['subscriber_id'] : null;
 		$lines_where = array();
 
-		if ($imsi) {
-			$lines_where['imsi'] = $imsi;
+		if (isset($subscriber_id)) {
+			$lines_where['subscriber_id'] = $subscriber_id;
+			$hint = array('subscriber_id' => 1);
+		} else if (isset($sid)) {
+			$lines_where['subscriber_id'] = $sid;
+			$hint = array('subscriber_id' => 1);
 		}
 
-		if ($msisdn) {
-			$lines_where['msisdn'] = $msisdn;
+		if (isset($imsi)) {
+			$lines_where['imsi'] = $imsi;
+			if (!isset($hint)) {
+				$hint = array('imsi' => 1);
+			}
 		}
+
+		/* TODO no lines have this field reinstate once all lines have this field.
+		 * if (isset($msisdn)) {
+			$lines_where['msisdn'] = $msisdn;
+			if (!isset($hint)) {
+				$hint = array('msisdn' => 1);
+			}
+		}*/
 
 //		if (isset($event['effects'])) {
 //			$lines_where[$event['effects']['key']] = $event['effects']['filter'];
@@ -340,14 +385,17 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$lines_where['process_time'] = array('$lt' => date(Billrun_Base::base_dateformat, $this->startTime));
 		$lines_where['deposit_stamp'] = array('$exists' => false);
 
-		if (!($imsi || $msisdn)) {
-			Billrun_Log::getInstance()->log("fraudAlertsPlugin::markEventLines cannot find IMSI nor NDC_SN on event, marking CDR lines with event_stamp of : " . print_r($event['stamps'], 1), Zend_Log::INFO);
+		if (!($imsi || $sid || $subscriber_id )) {
+			Billrun_Log::getInstance()->log("fraudAlertsPlugin::markEventLines cannot find IMSI nor NDC_SN  or SID on event, marking CDR lines with event_stamp of : " . print_r($event['stamps'], 1), Zend_Log::INFO);
 			$lines_where['event_stamp'] = array('$in' => $event['stamps']);
 		}
 
 		// the update will done manually due to performance with collection update (not supported with hint)
 		// @TODO: when update command will suport hint will use update (see remark code after foreach loop)
-		$rows = $this->linesCol->query($lines_where)->cursor()->hint(array('imsi' => 1));
+		$rows = $this->linesCol->query($lines_where)->cursor(); //->hint($hint);
+		if (isset($hint)) {
+			$rows->hint($hint);
+		}
 		foreach ($rows as $row) {
 			$row->collection($this->linesCol);
 			$row->set('deposit_stamp', $event['deposit_stamp']);

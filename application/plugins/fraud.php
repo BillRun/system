@@ -120,7 +120,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$filterTypes = false;
 		}
 
-		$price_before = $this->calculateCost($balance->balance, $filterTypes);
+		$price_before = $this->calculateCost($balance, $filterTypes);
 		$price_after = $price_before + $rowPrice;
 		foreach ($limits['rules'] as $rule) {
 			$this->checkCostRule($rule, $row, $price_before, $price_after);
@@ -603,7 +603,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 			} else {
 				$pricingData = $update = array();
 			}
-		} else if($row['type'] == "nrtrde") {
+		} else if($row['type'] == "nrtrde" ) {
 			$usage_type = $row['usaget'];
 			foreach($update['$set'] as $key => $val) {
 				if($key != 'tx.'. $row['stamp']) {
@@ -614,6 +614,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$update['$inc']['balance.groups.' . 'nrtrde' . '.' . $usage_type . '.usagev'] = $row['usagev'];
 			$update['$inc']['balance.groups.' . 'nrtrde' . '.' . $usage_type . '.cost'] = $pricingData[$calculator->pricingField];
 			$update['$inc']['balance.groups.' . 'nrtrde' . '.' . $usage_type . '.count'] = 1;
+			$update['$inc']['balance.groups.' . 'nrtrde.cost'] = $pricingData[$calculator->pricingField];
 		}
 	}
 
