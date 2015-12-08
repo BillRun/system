@@ -240,6 +240,8 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 				return false;
 			}
 		}
+		
+		return true;
 	}
 	
 	/**
