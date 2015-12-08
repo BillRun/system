@@ -124,12 +124,12 @@ class Billrun_Importer_ChargingPlans extends Billrun_Importer_Csv {
 			$key = 'usagev';
 			$value = doubleval($rowData[$this->fieldsColumns['specific']['data_usagev']]);
 			$pp_includes_name = Billrun_Factory::config()->getConfigValue('importer.ChargingPlans.pp_includes_name.data_usagev', NULL);
-			$pp_includes_external_id = Billrun_Factory::config()->getConfigValue('importer.ChargingPlans.pp_includes_name.data_usagev', NULL);
+			$pp_includes_external_id = Billrun_Factory::config()->getConfigValue('importer.ChargingPlans.pp_includes_external_id.data_usagev', NULL);
 		} else if ($rowData[$this->fieldsColumns['specific']['data_cost']] != 0) {
 			$key = 'cost';
 			$value = doubleval($rowData[$this->fieldsColumns['specific']['data_cost']]);
 			$pp_includes_name = Billrun_Factory::config()->getConfigValue('importer.ChargingPlans.pp_includes_name.data_cost', NULL);
-			$pp_includes_external_id = Billrun_Factory::config()->getConfigValue('importer.ChargingPlans.pp_includes_name.data_cost', NULL);
+			$pp_includes_external_id = Billrun_Factory::config()->getConfigValue('importer.ChargingPlans.pp_includes_external_id.data_cost', NULL);
 		} else {
 			return NULL;
 		}
