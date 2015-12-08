@@ -45,7 +45,7 @@ class Billrun_ActionManagers_Balances_Updaters_Secret extends Billrun_ActionMana
 		}
 		
 		// Build the plan query from the card plan field.
-		$planQuery = array('charging_plan_name' => $cardRecord['charging_plan']);
+		$planQuery = array('charging_plan_name' => $cardRecord['charging_plan_name']);
 		
 		$ret = parent::update($planQuery, $recordToSet, $subscriberId);
 		if ($ret !== FALSE) {
