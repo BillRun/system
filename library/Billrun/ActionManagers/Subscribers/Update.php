@@ -178,7 +178,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 	 * @return array - Array of fields to set.
 	 */
 	protected function getUpdateFields() {
-		return array('imsi', 'msisdn', 'aid', 'sid', 'plan', 'language', 'service_provider', 'charging_type');
+		return Billrun_Factory::config()->getConfigValue('subscribers.update_fields');
 	}
 	
 	/**
@@ -192,6 +192,10 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 		if(empty($update) || (!($jsonUpdateData = json_decode($update, true)))) {
 			$error = "Update action does not have an update field!";
 			$this->reportError($error, Zend_Log::ALERT);
+			return false;
+		}
+		
+		if(!$this->validateSubscriberUpdateValues($jsonUpdateData)) {
 			return false;
 		}
 		
@@ -210,6 +214,32 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 		$this->recordToSet['to'] = new MongoDate(strtotime('+100 years'));
 		
 		return true;
+	}
+	
+	/**
+	 * Check if the identification values to be updated for a subscriber 
+	 * already exist for another subscriber.
+	 * @param type $jsonUpdateData
+	 * @return boolean
+	 */
+	protected function validateSubscriberUpdateValues($jsonUpdateData) {
+		$subscriberFields = Billrun_Factory::config()->getConfigValue('subscribers.query_fields');
+		$subscriberValidationQuery = array('$or');
+		foreach ($subscriberFields as $subField) {
+			if(isset($jsonUpdateData[$subField])) {
+				$subscriberValidationQuery['$or'][] = 
+					array($subField => $jsonUpdateData[$subField]);
+			}
+		}
+		
+		if(!empty($subscriberValidationQuery)) {
+			$subCol = Billrun_Factory::db()->subscribersCollection();
+			if($subCol->exists($subscriberValidationQuery)) {
+				$error = "A subscriber with the same fields already exists!";
+				$this->reportError($error, Zend_Log::ALERT);
+				return false;
+			}
+		}
 	}
 	
 	/**
