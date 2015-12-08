@@ -26,10 +26,6 @@ class Billrun_Importer_ChargingPlans extends Billrun_Importer_Csv {
 		return 'plans';
 	}
 
-	protected function getServiceProvider($rowData) {
-		return strtoupper($rowData[$this->fieldsColumns['service_provider']]);
-	}
-
 	protected function getChargingType($rowData) {
 		switch ($rowData[$this->fieldsColumns['charging_type']]) {
 			case ('דיגיטלי'):
