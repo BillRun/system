@@ -11,7 +11,7 @@
  * Imports from Csv to mongo collection plans
  *
  * @package  Billrun
- * @since    5.0
+ * @since    4.0
  */
 class Billrun_Importer_ChargingPlans extends Billrun_Importer_Csv {
 
