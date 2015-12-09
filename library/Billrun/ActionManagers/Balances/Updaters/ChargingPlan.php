@@ -103,11 +103,15 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		// TODO: What if empty?
 		$balancesArray = $chargingPlanRecord['include'];
 
+		$ppName = $chargingPlanRecord['pp_includes_name'];
+		$ppID = $chargingPlanRecord['pp_includes_external_id'];
+		
 		$source = $this->getSourceForLineRecord($chargingPlanRecord);
 		$balancesToReturn = array();
 		// Go through all charging possibilities. 
 		foreach ($balancesArray as $chargingBy => $chargingByValue) {
-			$returnPair = $this->goThroughBalanceWallets($chargingBy, $chargingByValue, $recordToSet, $updateQuery, $defaultBalance);
+			$ppPair = $this->populatePPValues($chargingByValue, $ppName, $ppID);
+			$returnPair = $this->goThroughBalanceWallets($chargingBy, $chargingByValue, $recordToSet, $updateQuery, $defaultBalance, $ppPair);
 			$returnPair['source'] = $source;
 			$returnPair['subscriber'] = $subscriber;
 
@@ -118,17 +122,41 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 	}
 
 	/**
+	 * Populate the PP values if do not exist use the balance values.
+	 * @param type $chargingByValue
+	 * @param type $ppName
+	 * @param type $ppID
+	 * @return pair of pp includes values.
+	 */
+	protected function populatePPValues(&$chargingByValue, $ppName, $ppID) {
+		$ppPair = null;
+		
+		// populate pp values
+		foreach (array('pp_includes_name', 'pp_includes_external_id') as $ppField) {
+			if(!isset($chargingByValue[$ppField])) {
+				$ppPair[$ppField] = $ppName;
+			} else {
+				$ppPair = $chargingByValue[$ppField];
+				unset($chargingByValue[$ppField]);
+			}	
+		}
+		
+		return $ppPair;
+	}
+	
+	/**
 	 * Go through the balance wallets and update accordingly
 	 * @param string $chargingBy Name of type charged by.
 	 * @param string $chargingByValue Value of charging typed (KB, MINUTES etc)
 	 * @param array $recordToSet - Record to be set in the mongo.
 	 * @param array $updateQuery - Query to use for updating the mongo.
 	 * @param array $defaultBalance - The default balance value to use if need to upsert.
+	 * @param array $ppPair - Holds the PP values to set to the balance.
 	 * @return array Array of balance and wallet.
 	 * @todo Create a query object that holds the array and the collection that it will be run on.
 	 */
-	protected function goThroughBalanceWallets($chargingBy, $chargingByValue, $recordToSet, $updateQuery, $defaultBalance) {
-		$wallet = new Billrun_DataTypes_Wallet($chargingBy, $chargingByValue);
+	protected function goThroughBalanceWallets($chargingBy, $chargingByValue, $recordToSet, $updateQuery, $defaultBalance, $ppPair) {
+		$wallet = new Billrun_DataTypes_Wallet($chargingBy, $chargingByValue, $ppPair);
 
 		$to = $this->getExpirationTime($wallet, $recordToSet);
 
@@ -180,7 +208,7 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 			$update = $this->getSetOnInsert($wallet, $defaultBalance);
 		} else {
 			$this->handleZeroing($query, $balancesColl, $wallet->getFieldName());
-			$update = $this->getSetQuery($wallet->getValue(), $wallet->getFieldName(), $toTime);
+			$update = $this->getSetQuery($wallet, $toTime);
 		}
 
 		return $update;

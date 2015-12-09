@@ -122,7 +122,10 @@ class Billrun_ActionManagers_Balances_Updaters_Id extends Billrun_ActionManagers
 			'w' => 1,
 		);
 		
-		$usedWallet = new Billrun_DataTypes_Wallet($chargingBy, $chargingByValue);
+		$ppPair['pp_includes_external_id'] = $this->balancesRecord['pp_includes_external_id'];
+		$ppPair['pp_includes_name'] = $this->balancesRecord['pp_includes_name'];
+		
+		$usedWallet = new Billrun_DataTypes_Wallet($chargingBy, $chargingByValue, $ppPair);
 		
 		$balance = $balancesColl->findAndModify($query, $valueUpdateQuery, array(), $options, true);
 		// Return the new document.
