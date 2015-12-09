@@ -101,6 +101,9 @@ class CronController extends Yaf_Controller_Abstract {
 	}
 
 	public function autoRenewServices() {		
+		// TODO: If creation date was on the 28 of the month and the next month
+		// had only 28 days then the next charging date will be set to the end of 
+		// the month, this is very complicated to reslove.
 		if($this->areDeadDays()) {
 			return;
 		}
@@ -117,6 +120,7 @@ class CronController extends Yaf_Controller_Abstract {
 			
 			$this->updateAutoRenewRecord($collection);
 		}
+		
 	}
 	
 	/**
