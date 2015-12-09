@@ -298,6 +298,8 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater{
 	protected function getSetOnInsert($wallet, $defaultBalance) {
 		$defaultBalance['charging_by'] = $wallet->getChargingBy();
 		$defaultBalance['charging_by_usaget'] = $wallet->getChargingByUsaget();
+		$defaultBalance['pp_includes_name'] = $wallet->getPPName();
+		$defaultBalance['pp_includes_external_id'] = $wallet->getPPID();
 		$defaultBalance[$wallet->getFieldName()] = $wallet->getValue();
 		return array(
 			'$setOnInsert' => $defaultBalance,
@@ -306,20 +308,22 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater{
 
 	/**
 	 * Get the set part of the query.
-	 * @param string $valueToUseInQuery - The value name of the balance.
-	 * @param string $valueFieldName - The name of the field to be set.
+	 * @param string $chargingPlan - The wallet in use.
 	 * @param MongoDate $toTime - Expiration date.
 	 */
-	protected function getSetQuery($valueToUseInQuery, $valueFieldName, $toTime) {
+	protected function getSetQuery($chargingPlan, $toTime) {
 		$valueUpdateQuery = array();
+		$valueToUseInQuery = $chargingPlan->getValue();
 		$queryType = (!is_string($valueToUseInQuery) && $this->isIncrement) ? '$inc' : '$set';
 		$valueUpdateQuery[$queryType]
-			[$valueFieldName] = $valueToUseInQuery;
+			[$chargingPlan->getFieldName()] = $valueToUseInQuery;
 		
 		// The TO time is always set.
 		$valueUpdateQuery['$set']
 			['to'] = $toTime;
-		
+		$valueUpdateQuery['$set']['pp_includes_name'] = $chargingPlan->getPPName();
+		$valueUpdateQuery['$set']['pp_includes_external_id'] = $chargingPlan->getPPID();
+			
 		return $valueUpdateQuery;
 	}
 	

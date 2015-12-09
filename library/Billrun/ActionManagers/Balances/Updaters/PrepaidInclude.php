@@ -97,7 +97,10 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 			$chargingByUsaget = array($chargingByUsaget => $recordToSet['value']);
 		}
 
-		return new Billrun_DataTypes_Wallet($chargingBy, $chargingByUsaget);
+		$ppPair['pp_includes_name'] = $prepaidRecord['name'];
+		$ppPair['pp_includes_external_id'] = $prepaidRecord['external_id'];
+		
+		return new Billrun_DataTypes_Wallet($chargingBy, $chargingByUsaget, $ppPair);
 	}
 
 	/**
@@ -125,25 +128,10 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 				$toTime = $balance['to'];
 			}
 
-			$update = $this->getSetQuery($chargingPlan->getValue(), $chargingPlan->getFieldName(), $toTime);
+			$update = $this->getSetQuery($chargingPlan,$toTime);
 		}
 
 		return $update;
-	}
-
-	/**
-	 * Return the part of the query for setOnInsert
-	 * @param Billrun_DataTypes_Wallet $chargingPlan
-	 * @param array $defaultBalance
-	 * @return array
-	 */
-	protected function getSetOnInsert($chargingPlan, $defaultBalance) {
-		$defaultBalance['charging_by'] = $chargingPlan->getChargingBy();
-		$defaultBalance['charging_by_usaget'] = $chargingPlan->getChargingByUsaget();
-		$defaultBalance[$chargingPlan->getFieldName()] = $chargingPlan->getValue();
-		return array(
-			'$setOnInsert' => $defaultBalance,
-		);
 	}
 
 	/**
@@ -161,7 +149,7 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 		$query[$chargingPlan->getFieldName()]['$exists'] = 1;
 
 		$update = $this->getUpdateBalanceQuery($balancesColl, $query, $chargingPlan, $toTime, $defaultBalance);
-
+		
 		$options = array(
 			'upsert' => true,
 			'new' => true,
