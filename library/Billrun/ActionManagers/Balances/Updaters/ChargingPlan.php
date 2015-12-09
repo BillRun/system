@@ -85,7 +85,7 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 			'aid' => $subscriber['aid'],
 			'sid' => $subscriber['sid'],
 		);
-		
+
 		$chargingPlanRecord = $this->handleChargingPlan($query, $updateQuery);
 		if ($chargingPlanRecord === false) {
 			return false;
@@ -105,20 +105,54 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 
 		$ppName = $chargingPlanRecord['pp_includes_name'];
 		$ppID = $chargingPlanRecord['pp_includes_external_id'];
-		
+
 		$source = $this->getSourceForLineRecord($chargingPlanRecord);
 		$balancesToReturn = array();
 		// Go through all charging possibilities. 
 		foreach ($balancesArray as $chargingBy => $chargingByValue) {
-			$ppPair = $this->populatePPValues($chargingByValue, $ppName, $ppID);
-			$returnPair = $this->goThroughBalanceWallets($chargingBy, $chargingByValue, $recordToSet, $updateQuery, $defaultBalance, $ppPair);
-			$returnPair['source'] = $source;
-			$returnPair['subscriber'] = $subscriber;
+			if (Billrun_Util::isAssoc($chargingByValue)) {
+				$ppPair = $this->populatePPValues($chargingByValue, $ppName, $ppID);
+				$params = array(
+					'chargingBy' => $chargingBy,
+					'chargingByValue' => $chargingByValue,
+					'recordToSet' => $recordToSet,
+					'updateQuery' => $updateQuery,
+					'defaultBalance' => $defaultBalance,
+					'ppPair' => $ppPair,
+					'source' => $source,
+					'subscriber' => $subscriber
+				);
+				$returnPair = $this->goThroughBalanceWallets($params);
+				$balancesToReturn[] = $returnPair;
+			} else {
+				foreach ($chargingByValue as $chargingByValueValue) {
+					$ppPair = $this->populatePPValues($chargingByValueValue, $ppName, $ppID);
+					$params = array(
+						'chargingBy' => $chargingBy,
+						'chargingByValue' => $chargingByValueValue,
+						'recordToSet' => $recordToSet,
+						'updateQuery' => $updateQuery,
+						'defaultBalance' => $defaultBalance,
+						'ppPair' => $ppPair,
+						'source' => $source,
+						'subscriber' => $subscriber
+					);
+					$returnPair = $this->goThroughBalanceWallets($params);
+					$balancesToReturn[] = $returnPair;
 
-			$balancesToReturn[] = $returnPair;
+				}
+			}
 		}
 
 		return $balancesToReturn;
+	}
+
+	protected function goThroughBalanceWallets($params) {
+		$returnPair = $this->updateBalanceByWallet(
+			$params['chargingBy'], $params['chargingByValue'], $params['recordToSet'], $params['updateQuery'], $params['defaultBalance'], $params['ppPair']);
+		$returnPair['source'] = $params['source'];
+		$returnPair['subscriber'] = $params['subscriber'];
+		return $returnPair;
 	}
 
 	/**
@@ -130,20 +164,20 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 	 */
 	protected function populatePPValues(&$chargingByValue, $ppName, $ppID) {
 		$ppPair = null;
-		
+
 		// populate pp values
 		foreach (array('pp_includes_name', 'pp_includes_external_id') as $ppField) {
 			if(!isset($chargingByValue[$ppField])) {
-				$ppPair[$ppField] = $ppName;
+				$ppPair[$ppField] = $ppField == 'pp_includes_name' ? $ppName : $ppID;
 			} else {
-				$ppPair = $chargingByValue[$ppField];
+				$ppPair[$ppField] = $chargingByValue[$ppField];
 				unset($chargingByValue[$ppField]);
-			}	
+			}
 		}
-		
+
 		return $ppPair;
 	}
-	
+
 	/**
 	 * Go through the balance wallets and update accordingly
 	 * @param string $chargingBy Name of type charged by.
@@ -155,7 +189,7 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 	 * @return array Array of balance and wallet.
 	 * @todo Create a query object that holds the array and the collection that it will be run on.
 	 */
-	protected function goThroughBalanceWallets($chargingBy, $chargingByValue, $recordToSet, $updateQuery, $defaultBalance, $ppPair) {
+	protected function updateBalanceByWallet($chargingBy, $chargingByValue, $recordToSet, $updateQuery, $defaultBalance, $ppPair) {
 		$wallet = new Billrun_DataTypes_Wallet($chargingBy, $chargingByValue, $ppPair);
 
 		$to = $this->getExpirationTime($wallet, $recordToSet);
@@ -221,6 +255,10 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 	 * @return Mongoldoid_Entity
 	 */
 	protected function updateBalance($wallet, $query, $defaultBalance, $toTime) {
+		// HOTFIX: remove priority and use pp_external_id instead
+		unset($query['priority']);
+		$query['pp_includes_external_id'] = $wallet->getPPID();
+		
 		// Get the balance with the current value field.
 		$query[$wallet->getFieldName()]['$exists'] = 1;
 		$balancesColl = Billrun_Factory::db()->balancesCollection();
@@ -231,7 +269,7 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 			'new' => true,
 			'w' => 1,
 		);
-
+		
 		// Return the new document.
 		return $balancesColl->findAndModify($query, $update, array(), $options, true);
 	}
