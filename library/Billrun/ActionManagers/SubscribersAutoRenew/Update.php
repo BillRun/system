@@ -19,9 +19,8 @@ class Billrun_ActionManagers_SubscribersAutoRenew_Update extends Billrun_ActionM
 	 * @var type Array
 	 */
 	protected $recordToSet = array();
-	protected $to = null;
+	protected $updateQuery = null;
 	protected $query = array();
-	protected $isIncrement = true;
 	
 	/**
 	 */
@@ -38,21 +37,15 @@ class Billrun_ActionManagers_SubscribersAutoRenew_Update extends Billrun_ActionM
 		$success = true;
 
 		$updatedDocument = null;
+		
+		$options = array(
+			'upsert' => true,
+			'new' => true,
+			'w' => 1,
+			);
+				
 		try {
-			$cursor = $this->collection->query($this->query)->cursor();
-			foreach ($cursor as $record) {
-				$updatedDocument[] = $record->getRawData();
-				if(!$this->updateSubscriberRecord($record)) {
-					$success = false;
-					break;
-				}
-				$updatedDocument[] = $record->getRawData();
-			}
-			
-			if($this->keepBalances === FALSE) {
-				// Close balances.
-				$this->closeBalances($this->recordToSet['sid'], $this->recordToSet['aid']);
-			}
+			$updatedDocument = $this->collection->update($this->query, $this->updateQuery, $options);
 			
 		} catch (\Exception $e) {
 			$error = 'failed storing in the DB got error : ' . $e->getCode() . ' : ' . $e->getMessage();
@@ -63,7 +56,7 @@ class Billrun_ActionManagers_SubscribersAutoRenew_Update extends Billrun_ActionM
 
 		if(!$updatedDocument) {
 			$success = false;
-			$this->reportError("No subscribers found to update");
+			$this->reportError("No auto renew records found to update");
 		}
 		$outputResult = 
 			array('status'  => ($success) ? (1) : (0),
@@ -92,15 +85,96 @@ class Billrun_ActionManagers_SubscribersAutoRenew_Update extends Billrun_ActionM
 			return false;
 		}
 		
-		$this->to = $jsonUpdateData['to'];
+		$this->populateUpdateQuery($jsonUpdateData);
 		
-		if(isset($jsonUpdateData['operation'])) {
-			$this->isIncrement = ($jsonUpdateData['operation'] == 'inc');
+		if(!$this->fillWithChargingPlanValues()) {
+			return false;
 		}
 		
+		if(!$this->fillWithSubscriberValues()) {
+			return false;
+		}
+
+		return true;
+	}
+	
+	protected function populateUpdateQuery($jsonUpdateData) {
 		// TODO INTERVAL IS ALWAYS MONTH
+		$this->updateQuery['interval'] = 'month';
+		
+		$this->updateQuery['to'] = $jsonUpdateData['to'];
+		$this->updateQuery['creation_time'] = date();
+		$this->updateQuery['from'] = $this->updateQuery['creation_time'];
+		$this->updateQuery['last_renew_date'] = $this->updateQuery['creation_time'];
+		$this->updateQuery['operation'] = $jsonUpdateData['operation'];
+		$this->updateQuery['done'] = 0;
+		$this->updateQuery['remain'] = 
+			$this->countMonths(strtotime($this->updateQuery['from']), strtotime($this->updateQuery['to']));
+	}
+	
+	/**
+	 * 
+	 * @return type
+	 * @todo This is generic enough to be moved to anoter location.
+	 */
+	protected function getDateBoundQuery() {
+		return array(
+			'to' => array(
+				'$gt' => new MongoDate()
+			),
+			'from' => array(
+				'$lt' => new MongoDate()
+			)
+		);
+	}
+	
+	protected function fillWithSubscriberValues() {
+		$this->updateQuery['sid'] = $this->query['sid'];
+		$subCollection = Billrun_Factory::db()->subscribersCollection();
+		$subQuery = $this->getDateBoundQuery();
+		$subQuery['sid'] = $this->query['sid'];
+		$subRecord = $subCollection->query($subQuery, array('aid'));
+		
+		if(!$subRecord) {
+			$error = "Subscriber not found for " . $sid;
+			$this->reportError($error, Zend_Log::ALERT);
+			return false;
+		}
+		
+		$this->updateQuery['aid'] = $subQuery['aid'];
 		
 		return true;
+	}
+	
+	protected function fillWithChargingPlanValues() {
+		// Get the charging plan.
+		$plansCollection = Billrun_Factory::db()->plansCollection();
+		$chargingPlanQuery = $this->getDateBoundQuery();
+		$chargingPlanQuery['type'] = 'charging';
+		$chargingPlanQuery['name'] = $this->query['charging_plan'];
+		
+		$planRecord = $plansCollection->query($chargingPlanQuery)->cursor()->current();
+		if(!$planRecord) {
+			$error = "Charging plan not found!";
+			$this->reportError($error, Zend_Log::ALERT);
+			return false;
+		}
+		$this->updateQuery['charging_plan_name'] = $planRecord['name'];
+		$this->updateQuery['charging_plan_external_id'] = $planRecord['external_id'];
+		
+		return true;
+	}
+	
+	protected function countMonths($d1, $d2) {
+		$min_date = min($d1, $d2);
+		$max_date = max($d1, $d2);
+		$i = 0;
+
+		while (($min_date = strtotime("+1 MONTH", $min_date)) <= $max_date) {
+			$i++;
+		}
+		
+		return $i;
 	}
 	
 	/**
@@ -111,20 +185,20 @@ class Billrun_ActionManagers_SubscribersAutoRenew_Update extends Billrun_ActionM
 	protected function setQueryFields($queryData) {
 		$queryFields =  Billrun_Factory::config()->getConfigValue('autorenew.query_fields');
 		
-		// Array of errors to report if any occurs.
-		$ret = false;
-		
 		// Get only the values to be set in the update record.
 		// TODO: If no update fields are specified the record's to and from values will still be updated!
 		foreach ($queryFields as $field) {
 			// ATTENTION: This check will not allow updating to empty values which might be legitimate.
-			if(isset($queryData[$field]) && !empty($queryData[$field])) {
-				$this->query[$field] = $queryData[$field];
-				$ret = true;
+			if(!isset($queryData[$field]) || empty($queryData[$field])) {
+				$error = "Query is missing " . $field;
+				$this->reportError($error, Zend_Log::ALERT);
+				return false;
 			}
+			
+			$this->query[$field] = $queryData[$field];
 		}
 		
-		return $ret;
+		return true;
 	}
 	
 	/**
