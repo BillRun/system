@@ -100,6 +100,19 @@ class CronController extends Yaf_Controller_Abstract {
 		}
 	}
 
+	public function autoRenewServices() {		
+		$collection = Billrun_Factory::db()->subscribers_auto_renew_servicesCollection();
+		
+		$queryDate = array('creation_time' => strtotime('-1 month'));
+		
+		$autoRenewCursor = $collection->query($queryDate)->cursor();
+		
+		// Go through the records.
+		foreach ($autoRenewCursor as $autoRenewRecord) {
+		}
+		
+	}
+	
 	/**
 	 * method to add output to the stream and log
 	 * 
