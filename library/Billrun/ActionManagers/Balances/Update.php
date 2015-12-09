@@ -38,6 +38,12 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 	protected $updaterOptions = array();
 	
 	/**
+	 * Comment for updating a balance
+	 * @var string
+	 */
+	protected $additional;
+	
+	/**
 	 */
 	public function __construct() {
 		parent::__construct(array('error' => "Success updating balances"));
@@ -50,9 +56,10 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 	 */
 	protected function getAction() {
 		$filterName=key($this->query);
-		$updaterManagerInput = 
-			array('options'     => $this->updaterOptions,
-				  'filter_name' => $filterName);
+		$updaterManagerInput = array(
+				'options'     => $this->updaterOptions,
+				'filter_name' => $filterName
+		);
 		
 		$manager = new Billrun_ActionManagers_Balances_Updaters_Manager($updaterManagerInput);
 		if(!$manager) {
@@ -67,6 +74,42 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 	}
 	
 	/**
+	 * Report the balance update action to the lines collection
+	 * @param array $outputDocuments The output result of the Update action.
+	 * @return array Array of filtered balance mongo records.
+	 */
+	protected function reportInLines($outputDocuments) {
+		$db = Billrun_Factory::db();
+		$linesCollection = $db->linesCollection();
+		$balanceLine = $this->additional;
+		$balanceLine["sid"] = $this->subscriberId;
+		$balancesRecords = array();
+		$balanceLine['urt'] = new MongoDate();
+		$balanceLine['process'] = Billrun_Util::generateCurrentTime();
+		$balanceLine['source'] = 'api';
+		$balanceLine['type'] = 'charging';
+		
+		foreach ($outputDocuments as $balancePair) {
+			$balance = $balancePair['balance'];
+			$subscriber = $balancePair['subscriber'];
+			$insertLine = $balanceLine;
+			$insertLine['aid'] = $subscriber['aid'];
+			$insertLine['source_ref'] = $balancePair['source'];
+			if (isset($balancePair['wallet'])) {
+				$wallet = $balancePair['wallet'];
+				$insertLine["usaget"] = $wallet->getChargingBy();
+				$insertLine["usagev"] = $wallet->getValue();
+			}
+			$insertLine['balance_ref'] = $db->balancesCollection()->createRefByEntity($balance);
+			$insertLine['stamp'] = Billrun_Util::generateArrayStamp($insertLine);
+			$linesCollection->insert($insertLine);
+			$balancesRecords[] = $balance->getRawData();
+		}
+		
+		return $balancesRecords;
+	}
+	
+	/**
 	 * Execute the action.
 	 * @return data for output.
 	 */
@@ -76,17 +119,30 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		// Get the updater for the filter.
 		$updater = $this->getAction();
 		
-		$outputDocuments = 
-			$updater->update($this->query, $this->recordToSet, $this->subscriberId);
-
+		$outputDocuments = $updater->update($this->query, $this->recordToSet, $this->subscriberId);
+	
 		if($outputDocuments === false) {
 			$success = false;
+		} elseif (!$outputDocuments) {
+			$success = false;
+			$this->reportError("No balances found to update");
+		} else {
+			// Write the action to the lines collection.
+			$outputDocuments = $this->reportInLines($outputDocuments);
 		}
 		
-		$outputResult = 
-			array('status'  => ($success) ? (1) : (0),
-				  'desc'    => ($success) ? ($this->error) : ($updater->getError()),
-				  'details' => ($outputDocuments) ? $outputDocuments : 'Empty balance');
+		if(!$success) {
+			$updaterError = $updater->getError();
+			if($updaterError) {
+				$this->error = $updaterError;
+			}
+		}
+		
+		$outputResult = array(
+			'status'  => ($success) ? (1) : (0),
+			 'desc'    => $this->error,
+			 'details' => ($outputDocuments) ? $outputDocuments : 'Empty balance',
+		);
 		return $outputResult;
 	}
 
@@ -121,7 +177,9 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 			
 		// TODO: If to is not set, but received opration set, it's an error, report?
 		$to = isset($jsonUpdateData['expiration_date']) ? ($jsonUpdateData['expiration_date']) : 0;
-		$this->recordToSet['to'] = new MongoDate(strtotime($to));
+		if ($to) {
+			$this->recordToSet['to'] = new MongoDate(strtotime($to));
+		}
 		$updateFields = $this->getUpdateFields();
 		
 		// Get only the values to be set in the update record.
@@ -207,7 +265,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 			return false;
 		}
 		
-		return Billrun_Util::toNumber($sid);;
+		return Billrun_Util::toNumber($sid);
 	}
 	
 	/**
@@ -228,6 +286,11 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		
 		if(!$this->setUpdateRecord($input)) {
 			return false;
+		}
+		
+		$this->additional = json_decode($input->get('additional'), true);
+		if(!isset($this->additional)) {
+			$this->additional = array();
 		}
 		
 		$this->updaterOptions['increment'] = ($this->recordToSet['operation'] == "inc");

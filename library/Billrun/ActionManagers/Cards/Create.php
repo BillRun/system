@@ -35,6 +35,18 @@ class Billrun_ActionManagers_Cards_Create extends Billrun_ActionManagers_Cards_A
 	protected function getCreateFields() {
 		return Billrun_Factory::config()->getConfigValue('cards.create_fields', array());
 	}
+	
+	/**
+	 * Check with the mongo that the service provider is trusted.
+	 * @param string $serviceProvider - Service provider to test.
+	 * @return boolean true if trusted.
+	 * @todo Move this logic to a more generic location.
+	 */
+	protected function isServiceProvider($serviceProvider) {
+		$collection = Billrun_Factory::db()->serviceprovidersCollection();
+		$query = array('name' => $serviceProvider);
+		return $collection->exists($query);
+	}
 
 	/**
 	 * This function builds the create for the Cards creation API after 
@@ -68,6 +80,13 @@ class Billrun_ActionManagers_Cards_Create extends Billrun_ActionManagers_Cards_A
 					return false;
 				}
 				$oneCard[$field] = $jsonCreateData[$field];
+			}
+
+			// service provider validity check
+			if(!$this->isServiceProvider($oneCard['service_provider'])) {
+				$error = "Received unknown service provider: " . $oneCard['service_provider'];
+				$this->reportError($error, Zend_Log::ALERT);
+				return false;
 			}
 
 			$oneCard['secret'] = hash('sha512',$oneCard['secret']);

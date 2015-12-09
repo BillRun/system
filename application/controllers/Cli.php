@@ -49,6 +49,7 @@ class CliController extends Yaf_Controller_Abstract {
 				'g|G|generate' => 'Generate xml and csv files of specific billrun',
 				'e|E|respond' => 'Respond to files that were processed',
 				'l|L|alert' => 'Process and detect alerts',
+				'i|I|import' => 'Process and detect alerts',
 				'h|H|help' => 'Displays usage information.',
 				'type-s' => 'Process: Ild type to use',
 				'stamp-s' => 'Process: Stamp to use for this run',

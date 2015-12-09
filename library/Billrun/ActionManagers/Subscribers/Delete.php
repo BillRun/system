@@ -61,7 +61,7 @@ class Billrun_ActionManagers_Subscribers_Delete extends Billrun_ActionManagers_S
 			
 			// Could not find the row to be deleted.
 			if(!$rowToDelete || $rowToDelete->isEmpty()) {
-				$error = "Failed to get subscriber action instance for received input";
+				$error = "Subscriber record not found";
 				$this->reportError($error, Zend_Log::ALERT);
 				$success = false;
 			} else {

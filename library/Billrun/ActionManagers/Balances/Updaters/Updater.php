@@ -13,6 +13,8 @@
  */
 abstract class Billrun_ActionManagers_Balances_Updaters_Updater{
 
+	const UNLIMITED_DATE = "30 December 2099";
+	
 	/**
 	 * If true then the values in mongo are updated by incrementation,
 	 * if false then the values in the mongo are forceablly set.
@@ -207,7 +209,7 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater{
 	 * @param type $recordToSet
 	 * @param type $dataRecord
 	 */
-	protected function handleExpirationDate($recordToSet, $dataRecord) {
+	protected function handleExpirationDate(&$recordToSet, $dataRecord) {
 		if (!$recordToSet['to']) {
 			$recordToSet['to'] = $this->getDateFromDataRecord($dataRecord);
 		}
@@ -220,11 +222,44 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater{
 	 */
 	protected function getDateFromDataRecord($chargingPlan) {
 		$period = $chargingPlan['period'];
-		$unit = $period['units'];
+		return $this->getDateFromPeriod($period);
+	}
+	
+	/**
+	 * Get a mongo date object based on a period object.
+	 * @param period $period
+	 * @return \MongoDate
+	 * @todo Create a period object.
+	 */
+	protected function getDateFromPeriod($period) {
 		$duration = $period['duration'];
+		// If this plan is unlimited.
+		// TODO: Move this logic to a more generic location
+		if($duration == "UNLIMITED") {
+			return new MongoDate(strtotime(self::UNLIMITED_DATE));
+		}
+		if (isset($period['units'])) {
+			$unit = $period['units'];
+		} else if (isset($period['unit'])) {
+			$unit = $period['unit'];
+		} else {
+			$unit = 'months';
+		}
 		return new MongoDate(strtotime("+ " . $duration . " " . $unit));
 	}
 
+	/**
+	 * Check with the mongo that the service provider is trusted.
+	 * @param string $serviceProvider - Service provider to test.
+	 * @return boolean true if trusted.
+	 * @todo Move this logic to a more generic location.
+	 */
+	protected function isServiceProvider($serviceProvider) {
+		$collection = Billrun_Factory::db()->serviceprovidersCollection();
+		$query = array('name' => $serviceProvider);
+		return $collection->exists($query);
+	}
+	
 	/**
 	 * Validate the service provider fields.
 	 * @param type $subscriber
@@ -232,13 +267,21 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater{
 	 * @return boolean
 	 */
 	protected function validateServiceProviders($subscriber, $planRecord) {
+		$planServiceProvider = $planRecord['service_provider'];
+		
+		// Check that the service provider is trusted.
+		if(!$this->isServiceProvider($planServiceProvider)) {
+			$error = "Received unknown service provider: $planServiceProvider";
+			$this->reportError($error, Zend_Log::ALERT);
+			return false;
+		}
+		
 		// Get the service provider to check that it fits the subscriber's.
 		$subscriberServiceProvider = $subscriber['service_provider'];
 
 		// Check if mismatching serivce providers.
-		if ($planRecord['service_provider'] != $subscriberServiceProvider) {
-			$planServiceProvider = $planRecord['service_provider'];
-			$error = "Failed updating balance! mismatching service prociders: subscriber: $subscriberServiceProvider plan: $planServiceProvider";
+		if ($planServiceProvider != $subscriberServiceProvider) {
+			$error = "Failed updating balance! mismatching service providers: subscriber: $subscriberServiceProvider plan: $planServiceProvider";
 			$this->reportError($error, Zend_Log::ALERT);
 			return false;
 		}
@@ -252,10 +295,11 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater{
 	 * @param array $defaultBalance
 	 * @return type
 	 */
-	protected function getSetOnInsert($wallet, 
-									  $defaultBalance) {
+	protected function getSetOnInsert($wallet, $defaultBalance) {
 		$defaultBalance['charging_by'] = $wallet->getChargingBy();
-		$defaultBalance['charging_by_usegt'] = $wallet->getChargingByUsaget();
+		$defaultBalance['charging_by_usaget'] = $wallet->getChargingByUsaget();
+		$defaultBalance['pp_includes_name'] = $wallet->getPPName();
+		$defaultBalance['pp_includes_external_id'] = $wallet->getPPID();
 		$defaultBalance[$wallet->getFieldName()] = $wallet->getValue();
 		return array(
 			'$setOnInsert' => $defaultBalance,
@@ -264,20 +308,22 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater{
 
 	/**
 	 * Get the set part of the query.
-	 * @param string $valueToUseInQuery - The value name of the balance.
-	 * @param string $valueFieldName - The name of the field to be set.
+	 * @param string $chargingPlan - The wallet in use.
 	 * @param MongoDate $toTime - Expiration date.
 	 */
-	protected function getSetQuery($valueToUseInQuery, $valueFieldName, $toTime) {
+	protected function getSetQuery($chargingPlan, $toTime) {
 		$valueUpdateQuery = array();
+		$valueToUseInQuery = $chargingPlan->getValue();
 		$queryType = (!is_string($valueToUseInQuery) && $this->isIncrement) ? '$inc' : '$set';
 		$valueUpdateQuery[$queryType]
-			[$valueFieldName] = $valueToUseInQuery;
+			[$chargingPlan->getFieldName()] = $valueToUseInQuery;
 		
 		// The TO time is always set.
 		$valueUpdateQuery['$set']
 			['to'] = $toTime;
-		
+		$valueUpdateQuery['$set']['pp_includes_name'] = $chargingPlan->getPPName();
+		$valueUpdateQuery['$set']['pp_includes_external_id'] = $chargingPlan->getPPID();
+			
 		return $valueUpdateQuery;
 	}
 	

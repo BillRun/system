@@ -928,19 +928,45 @@ class Billrun_Util {
 	 * @param array $data
 	 */
 	public static function parseDataToBillrunConvention($data = array()) {
-		$parsedData = $data;
+		$parsedData = array();
 		foreach ($data as $key => $value) {
 			if (is_array($value)) {
-				$parsedData[$key] = self::parseDataToBillrunConvention($value);
+				$value = self::parseDataToBillrunConvention($value);
+				
 			}
 			$newKey = strtolower(preg_replace('/([a-z])([A-Z])/', '$1_$2', $key));
-			if ($key !== $newKey) {
-				$parsedData[$newKey] = $value;
-				unset($parsedData[$key]);
-			}
+			$parsedData[$newKey] = $value;
 		}
 
 		return $parsedData;
+	}
+	
+	/**
+	 * Convert array keys to camel case from Billrun convention
+	 * 
+	 * @param array $data
+	 */
+	public static function parseBillrunConventionToCamelCase($data = array()) {
+		$parsedData = array();
+		foreach ($data as $key => $value) {
+			if (is_array($value)) {
+				$value = self::parseBillrunConventionToCamelCase($value);
+				
+			}
+			$newKey = self::underscoresToCamelCase($key);
+			$parsedData[$newKey] = $value;
+		}
+
+		return $parsedData;
+	}
+	
+	public static function underscoresToCamelCase($string, $capitalizeFirstCharacter = false)  {
+
+		$str = str_replace(' ', '', ucwords(str_replace('_', ' ', $string)));
+		if (!$capitalizeFirstCharacter) {
+			$str[0] = strtolower($str[0]);
+		}
+		return $str;
 	}
 
 	/**

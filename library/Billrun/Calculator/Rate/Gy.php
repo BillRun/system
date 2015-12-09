@@ -29,7 +29,7 @@ class Billrun_Calculator_Rate_Gy extends Billrun_Calculator_Rate_Ggsn {
 	 * @deprecated since version 2.9
 	 */
 	protected function getLineVolume($row) {
-		return $row['MSCC']['used'];
+		return $row['msccData']['usedUnits'];
 	}
 
 	/**
@@ -46,10 +46,11 @@ class Billrun_Calculator_Rate_Gy extends Billrun_Calculator_Rate_Ggsn {
 	protected function getLineRate($row) {
 		$line_time = $row['urt'];
 		foreach ($this->rates as $rate) {
-			if (preg_match($rate['params']['sgsn_addresses'], $row['sgsn_address']) && $rate['from'] <= $line_time && $line_time <= $rate['to']) {
+			if ($rate['key'] === 'INTERNET_BILL_BY_VOLUME' && $rate['from'] <= $line_time && $line_time <= $rate['to']) { // Currently, real-time data is only localy
 				return $rate;
 			}
 		}
+
 		Billrun_Factory::log("Couldn't find rate for row : " . print_r($row['stamp'], 1), Zend_Log::DEBUG);
 		return FALSE;
 	}

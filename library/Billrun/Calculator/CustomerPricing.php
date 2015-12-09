@@ -499,7 +499,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			return $pricingData;
 		}
 		$pricingData = $this->getLinePricingData($volume, $usage_type, $rate, $this->balance, $plan);
-		if (isset($row['billrun_prepend']) && $row['billrun_prepend']) {
+		if (isset($row['billrun_pretend']) && $row['billrun_pretend']) {
 			return $pricingData;
 		}
 
@@ -527,8 +527,10 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		} else {
 			if (!is_null($this->balance->get('balance.totals.' . $balance_totals_key . '.usagev'))) {
 				$update['$set']['balance.totals.' . $balance_totals_key . '.usagev'] = $old_usage + $volume;
-			} else {
+			} else if (!is_null($this->balance->get('balance.totals.' . $balance_totals_key . '.cost'))) {
 				$update['$inc']['balance.totals.' . $balance_totals_key . '.cost'] = $pricingData[$this->pricingField];
+			} else {
+				$update['$inc']['balance.cost'] = $pricingData[$this->pricingField];
 			}
 		}
 		// update balance group (if exists)
@@ -543,8 +545,10 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				} else {
 					if (!is_null($this->balance->get('balance.totals.' . $balance_totals_key . '.usagev'))) {
 						$update['$inc']['balance.groups.' . $group . '.' . $usage_type . '.usagev'] = $volume;
+					} else if (!is_null($this->balance->get('balance.totals.' . $balance_totals_key . '.cost'))) {
+						$update['$inc']['balance.totals.' . $balance_totals_key . '.cost'] = $pricingData[$this->pricingField];
 					} else {
-						$update['$inc']['balance.groups.' . $group . '.' . $usage_type . '.cost'] = $pricingData[$this->pricingField];
+						$update['$inc']['balance.cost'] = $pricingData[$this->pricingField];
 					}
 				}
 				if (isset($this->balance->get('balance')['groups'][$group][$usage_type]['usagev'])) {
@@ -556,7 +560,9 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		} else {
 			$pricingData['usagesb'] = floatval($old_usage);
 		}
-		$update['$set']['balance.cost'] = $balanceRaw['balance']['cost'] + $pricingData[$this->pricingField];
+		if ($row['charging_type'] === 'postpaid') {
+			$update['$set']['balance.cost'] = $balanceRaw['balance']['cost'] + $pricingData[$this->pricingField];
+		}
 		$options = array('w' => 1);
 		Billrun_Factory::log("Updating balance " . $balance_id . " of subscriber " . $row['sid'], Zend_Log::DEBUG);
 		Billrun_Factory::dispatcher()->trigger('beforeCommitSubscriberBalance', array(&$row, &$pricingData, &$query, &$update, $rate, $this));
@@ -740,24 +746,32 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @param type $usageType
 	 */
 	protected function getPrepaidGrantedVolume($row, $rate, $balance, $usageType) {
-		if ((isset($row['billrun_prepend']) && $row['billrun_prepend']) || 
+		$requestedVolume = PHP_INT_MAX;
+		if (isset($row['usagev'])) {
+			$requestedVolume = $row['usagev'];
+		}
+		if ((isset($row['billrun_pretend']) && $row['billrun_pretend']) || 
 			(isset($row['free_call']) && $row['free_call'])) {
 			return 0;
 		}
 		$maximumGrantedVolume = $this->getPrepaidGrantedVolumeByRate($rate, $usageType);
+		$rowInOrOutOfBalanceKey = 'in';
 		if (isset($balance->get("balance")["totals"][$usageType]["usagev"])) {
 			$currentBalanceVolume = $balance->get("balance")["totals"][$usageType]["usagev"];
+			
 		} else {
 			if (isset($balance->get("balance")["totals"][$usageType]["cost"])) {
 				$price = $balance->get("balance")["totals"][$usageType]["cost"];
 			} else {
 				$price = $balance->get("balance")["cost"];
+				$rowInOrOutOfBalanceKey = 'out';
 			}
 			$currentBalanceVolume = Billrun_Calculator_CustomerPricing::getVolumeByRate($rate, $usageType, abs($price));
 		}
 		$currentBalanceVolume = abs($currentBalanceVolume);
-		
-		return ($currentBalanceVolume < $maximumGrantedVolume ? $currentBalanceVolume : $maximumGrantedVolume);
+		$usagev = min(array($currentBalanceVolume, $maximumGrantedVolume, $requestedVolume));
+		$row[$rowInOrOutOfBalanceKey . '_balance_usage'] = $usagev;
+		return $usagev;
 	}
 	
 	/**

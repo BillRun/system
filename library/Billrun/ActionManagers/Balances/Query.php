@@ -45,7 +45,7 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 				$returnData[] = Billrun_Util::convertRecordMongoDatetimeFields($rawItem);
 			}
 		} catch (\Exception $e) {
-			$error = 'failed quering DB got error : ' . $e->getCode() . ' : ' . $e->getMessage();
+			$error = 'failed querying DB got error : ' . $e->getCode() . ' : ' . $e->getMessage();
 			$this->reportError($error, Zend_Log::ALERT);
 			return null;
 		}	
@@ -66,6 +66,7 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 		// Check if the return data is invalid.
 		if(!$returnData) {
 			$returnData = array();
+			$this->reportError("No balances found");
 			$success=false;
 		}
 		
@@ -120,7 +121,7 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 	public function parse($input) {
 		$sid = (int) $input->get('sid');
 		if(empty($sid)) {
-			$error = "Balances Query receieved no sid!";
+			$error = "Balances Query received no sid!";
 			$this->reportError($error, Zend_Log::NOTICE);
 			return false;
 		}

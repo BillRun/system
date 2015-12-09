@@ -86,14 +86,13 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 			return true;
 		}
 		
-		$linesUpdate = array('$set' => $keepLinesUpdate);
 		$options = array(
 			'upsert' => false,
 			'new' => false,
 			'w' => 1,
 		);
 		$linesColl = Billrun_Factory::db()->linesCollection();
-		return $linesColl->findAndModify($keepLinesQuery, $keepLinesUpdate, array(), $options, true);
+		return $linesColl->findAndModify($keepLinesQuery, array('$set' => $keepLinesUpdate), array(), $options, true);
 	}
 	
 	/**
@@ -151,7 +150,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 				$updatedDocument[] = $record->getRawData();
 			}
 			
-			if(!$this->keepBalances) {
+			if($this->keepBalances === FALSE) {
 				// Close balances.
 				$this->closeBalances($this->recordToSet['sid'], $this->recordToSet['aid']);
 			}
@@ -163,6 +162,10 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 			$success = false;
 		}
 
+		if(!$updatedDocument) {
+			$success = false;
+			$this->reportError("No subscribers found to update");
+		}
 		$outputResult = 
 			array('status'  => ($success) ? (1) : (0),
 				  'desc'    => $this->error,
@@ -175,7 +178,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 	 * @return array - Array of fields to set.
 	 */
 	protected function getUpdateFields() {
-		return array('imsi', 'msisdn', 'aid', 'sid', 'plan', 'language', 'service_provider');
+		return Billrun_Factory::config()->getConfigValue('subscribers.update_fields');
 	}
 	
 	/**
@@ -189,6 +192,10 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 		if(empty($update) || (!($jsonUpdateData = json_decode($update, true)))) {
 			$error = "Update action does not have an update field!";
 			$this->reportError($error, Zend_Log::ALERT);
+			return false;
+		}
+		
+		if(!$this->validateSubscriberUpdateValues($jsonUpdateData)) {
 			return false;
 		}
 		
@@ -210,15 +217,43 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 	}
 	
 	/**
+	 * Check if the identification values to be updated for a subscriber 
+	 * already exist for another subscriber.
+	 * @param type $jsonUpdateData
+	 * @return boolean
+	 */
+	protected function validateSubscriberUpdateValues($jsonUpdateData) {
+		$subscriberFields = Billrun_Factory::config()->getConfigValue('subscribers.query_fields');
+		$subscriberValidationQuery = array('$or');
+		foreach ($subscriberFields as $subField) {
+			if(isset($jsonUpdateData[$subField])) {
+				$subscriberValidationQuery['$or'][] = 
+					array($subField => $jsonUpdateData[$subField]);
+			}
+		}
+		
+		if(!empty($subscriberValidationQuery)) {
+			$subCol = Billrun_Factory::db()->subscribersCollection();
+			if($subCol->exists($subscriberValidationQuery)) {
+				$error = "A subscriber with the same fields already exists!";
+				$this->reportError($error, Zend_Log::ALERT);
+				return false;
+			}
+		}
+		
+		return true;
+	}
+	
+	/**
 	 * Set all the query fields in the record with values.
 	 * @param array $queryData - Data received.
-	 * @return array - Array of strings of invalid field name. Empty if all is valid.
+	 * @return boolean true if success to set fields
 	 */
 	protected function setQueryFields($queryData) {
 		$queryFields = $this->getQueryFields();
 		
-		// Arrary of errors to report if any occurs.
-		$invalidFields = array();
+		// Array of errors to report if any occurs.
+		$ret = false;
 		
 		// Get only the values to be set in the update record.
 		// TODO: If no update fields are specified the record's to and from values will still be updated!
@@ -226,12 +261,11 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 			// ATTENTION: This check will not allow updating to empty values which might be legitimate.
 			if(isset($queryData[$field]) && !empty($queryData[$field])) {
 				$this->query[$field] = $queryData[$field];
-			} else {
-				$invalidFields[] = $field;
+				$ret = true;
 			}
 		}
 		
-		return $invalidFields;
+		return $ret;
 	}
 	
 	/**
@@ -248,11 +282,9 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 			return false;
 		}
 		
-		$invalidFields = $this->setQueryFields($jsonQueryData);
-		
 		// If there were errors.
-		if(!empty($invalidFields)) {
-			$error = "Subscribers update received invalid query values in fields: " . implode(',', $invalidFields);
+		if($this->setQueryFields($jsonQueryData) === FALSE) {
+			$error = "Subscribers update received invalid query values in fields";
 			$this->reportError($error, Zend_Log::ALERT);
 			return false;
 		}

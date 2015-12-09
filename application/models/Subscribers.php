@@ -36,16 +36,130 @@ class SubscribersModel extends TabledateModel{
 		$this->search_key = "sid";
 	}
 	
+	public function getTableColumns() {
+		$columns = array(
+			'aid' => 'Account',
+			'sid' => 'Subscriber',
+			'msisdn' => 'MSISDN',
+			'plan' => 'Plan',
+			'language' => 'Language',
+			'service_provider' => 'Service Provider',
+			'from' => 'From',
+			'to' => 'To',
+			'_id' => 'Id',
+		);
+		return $columns;
+	}
+
+	public function getSortFields() {
+		$sort_fields = array(
+			'aid' => 'Account',
+			'sid' => 'Subscriber',
+			'msisdn' => 'MSISDN',
+			'plan' => 'Plan',
+			'language' => 'Language',
+			'service_provider' => 'Service Provider'
+		);
+		return array_merge($sort_fields, parent::getSortFields());
+	}
+	
+	public function getFilterFields() {
+		$planModel = new PlansModel();
+		$names = $planModel->getData(
+			array(
+				'$or' => array(
+					array(
+						'type' => 'customer'
+						), 
+					array(
+						'type' => array(
+							'$exists' => false
+						)
+					)
+				)
+			)
+		);
+		$planNames = array();
+		foreach($names as $name) {
+			$planNames[$name['name']] = $name['name'];
+		}
+
+		$filter_fields = array(
+			'aid' => array(
+				'key' => 'aid',
+				'db_key' => 'aid',
+				'input_type' => 'number',
+				'comparison' => 'equals',
+				'display' => 'Account',
+				'default' => '',
+			),			
+			'sid' => array(
+				'key' => 'sid',
+				'db_key' => 'sid',
+				'input_type' => 'number',
+				'comparison' => 'equals',
+				'display' => 'Subscriber',
+				'default' => '',
+			),			
+			'msisdn' => array(
+				'key' => 'msisdn',
+				'db_key' => 'msisdn',
+				'input_type' => 'text',
+				'comparison' => 'contains',
+				'display' => 'MSISDN',
+				'default' => '',
+			),			
+			'plan' => array(
+				'key' => 'plan',
+				'db_key' => 'current_plan',
+				'input_type' => 'multiselect',
+				'comparison' => '$in',
+				'ref_coll' => 'plans',
+				'ref_key' => 'name',
+				'display' => 'Plan',
+				'values' => $planNames,
+				'default' => array(),
+			),		
+			'service_provider' => array(
+				'key' => 'service_provider',
+				'db_key' => 'service_provider',
+				'input_type' => 'text',
+				'comparison' => 'contains',
+				'display' => 'Service Provider',
+				'default' => '',
+			)
+		);
+		return array_merge($filter_fields, parent::getFilterFields());
+	}
+
+	public function getFilterFieldsOrder() {
+		$filter_field_order = array(
+			array(
+				'aid' => array(
+					'width' => 2
+				),
+				'sid' => array(
+					'width' => 2,
+				),				
+				'msisdn' => array(
+					'width' => 2,
+				)
+			),
+			array(
+				'plan' => array(
+					'width' => 2
+				),				
+				'service_provider' => array(
+					'width' => 2
+				)
+			)
+		);
+		return array_merge($filter_field_order, parent::getFilterFieldsOrder());
+	}
+
 	public function getProtectedKeys($entity, $type) {
 		$parentKeys = parent::getProtectedKeys($entity, $type);
 		return array_merge($parentKeys, 
-						   array("imsi", 
-							     "msisdn", 
-							     "aid",
-							     "sid",
-							     "plan",
-							     "language",
-							     "service_provider",
-							     "charging_type"));
+						   array());
 	}
 }

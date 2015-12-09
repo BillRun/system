@@ -19,7 +19,7 @@ foreach ($this->data as $item) {
 		if (isset($edit_key) && $h == $edit_key) {
 			$url = $this->baseUrl . '/admin/edit?type=' . strtolower($this->title) . '&amp;id=' . $item['_id'];
 			print '<a href="#popupModal " data-remote="' . $url . '" role="button" data-toggle="modal">' . $data . '</a>';
-		} else if (($h == 'from' || $h == 'to' || $h == 'urt' || $h == 'notify_time') && $data) {
+		} else if (($h == 'from' || $h == 'to' || $h == 'urt' || $h == 'notify_time' || $h == 'last_renew_date') && $data) {
 			$dateFormat = "Y-m-d H:i:s";
 			if (!empty($item["tzoffset"])) {
 				// TODO change this to regex and move to method in model
@@ -41,7 +41,7 @@ foreach ($this->data as $item) {
 		} else if ($h == 'arate' && isset($item['arate_id'])) {
 			$url = $this->baseUrl . '/admin/edit?coll=rates&amp;type=update&amp;id=' . $item['arate_id'];
 			print '<a href="#popupModal " data-remote="' . $url . '" role="button" data-toggle="modal" title="' . $data . '">' . $data . '</a>';
-		} else if (($active == 'balances' && is_numeric($data) && !in_array($h, array('aid', 'sid')) && strpos($h, 'billrun') === FALSE) || ($active == 'lines' && ($h == 'aprice' || $h == 'usagev' || $h == 'usagesb'))) {
+		} else if (is_numeric($data) && (($active == 'balances' && !in_array($h, array('aid', 'sid')) && strpos($h, 'billrun') === FALSE) || ($active == 'lines' && ($h == 'aprice' || $h == 'usagev' || $h == 'usagesb')))) {
 			if (is_float($data) && strpos($h, 'usage') === FALSE) { // hack: is_float sometimes take long numbers as float
 				print number_format($data, 2);
 			} else if (($active == 'lines' && $item['usaget'] == 'data') || ($active == 'balances' && strpos($columnName, 'usage') !== FALSE && strpos($columnName, 'data') !== FALSE)) {
