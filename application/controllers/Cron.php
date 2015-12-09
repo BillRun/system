@@ -104,11 +104,14 @@ class CronController extends Yaf_Controller_Abstract {
 		$collection = Billrun_Factory::db()->subscribers_auto_renew_servicesCollection();
 		
 		$queryDate = array('creation_time' => strtotime('-1 month'));
-		
+		$queryDate['remain'] = array('$gt' => 0);
 		$autoRenewCursor = $collection->query($queryDate)->cursor();
 		
 		// Go through the records.
 		foreach ($autoRenewCursor as $autoRenewRecord) {
+			// TODO: Update balance according to Prepaid include
+			
+			// TODO: Update last update time to today.
 		}
 		
 	}
