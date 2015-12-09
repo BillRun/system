@@ -43,15 +43,31 @@ class Billrun_DataTypes_Wallet {
 	 * @var array
 	 */
 	protected $period = null;
+	
+	/**
+	 * The name of the pp include.
+	 * @var string
+	 */
+	protected $ppName = null;
+	
+	/**
+	 * The ID of the pp include.
+	 * @var integer
+	 */
+	protected $ppID = null;
 
 	/**
 	 * Create a new instance of the wallet type.
 	 * @param array $chargingBy
 	 * @param array $chargingByValue
+	 * @param array $ppPair Pair of prepaid includes values.
 	 */
-	public function __construct($chargingBy, $chargingByValue) {
+	public function __construct($chargingBy, $chargingByValue, $ppPair) {
 		$chargingByUsaget = $chargingBy;
 
+		$this->ppID = $ppPair['pp_includes_external_id'];
+		$this->ppName = $ppPair['pp_includes_name'];
+		
 		// The wallet does not handle the period.
 		if (isset($chargingByValue['period'])) {
 			$this->period = $chargingByValue['period'];
@@ -124,6 +140,21 @@ class Billrun_DataTypes_Wallet {
 	 */
 	public function getChargingByUsaget() {
 		return $this->chargingByUsaget;
+	}
+	
+	/**
+	 * Get the pp include name.
+	 * @return string
+	 */
+	public function getPPName() {
+		return $this->ppName;
+	}
+	/**
+	 * Get the pp include ID.
+	 * @return integer
+	 */
+	public function getPPID() {
+		return $this->ppID;
 	}
 
 }
