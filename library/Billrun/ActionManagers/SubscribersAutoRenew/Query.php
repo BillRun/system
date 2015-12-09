@@ -7,47 +7,39 @@
  */
 
 /**
- * This is a parser to be used by the subscribers action.
+ * This is a parser to be used by the auto renew action.
  *
  * @author tom
  * @todo This class is very similar to balances query, 
  * a generic query class should be created for both to implement.
  */
-class Billrun_ActionManagers_SubscribersAutoRenew_Query extends Billrun_ActionManagers_Subscribers_Action{
+class Billrun_ActionManagers_SubscribersAutoRenew_Query extends Billrun_ActionManagers_APIAction{
 	
 	/**
 	 * Field to hold the data to be written in the DB.
 	 * @var type Array
 	 */
-	protected $subscriberQuery = array();
-	
-	/**
-	 * If true then the query is a ranged query in a specific date.
-	 * @var boolean 
-	 */
-	protected $queryInRange = false;
+	protected $query = array();
 	
 	/**
 	 */
 	public function __construct() {
-		parent::__construct(array('error' => "Success querying subscriber"));
+		parent::__construct(array('error' => "Success querying auto renew"));
+		$this->collection = Billrun_Factory::db()->subscribers_auto_renew_servicesCollection();
 	}
 	
 	/**
 	 * Query the subscribers collection to receive data in a range.
 	 */
-	protected function queryRangeSubscribers() {
+	protected function queryRange() {
 		try {
-			$cursor = $this->collection->query($this->subscriberQuery)->cursor();
-			if(!$this->queryInRange) {
-				$cursor->limit(1);
-			}
+			$cursor = $this->collection->query($this->query)->cursor();
 			$returnData = array();
-			
+			$date_fields = array('from', 'to', 'last_renew_date', 'creation_time');
 			// Going through the lines
 			foreach ($cursor as $line) {
 				$rawItem = $line->getRawData();
-				$returnData[] = Billrun_Util::convertRecordMongoDatetimeFields($rawItem);
+				$returnData[] = Billrun_Util::convertRecordMongoDatetimeFields($rawItem, $date_fields);
 			}
 		} catch (\Exception $e) {
 			$error = 'failed quering DB got error : ' . $e->getCode() . ' : ' . $e->getMessage();
@@ -64,7 +56,7 @@ class Billrun_ActionManagers_SubscribersAutoRenew_Query extends Billrun_ActionMa
 	 */
 	public function execute() {
 		$returnData = 
-			$this->queryRangeSubscribers();
+			$this->queryRange();
 
 		$success=true;
 		// Check if the return data is invalid.
@@ -82,18 +74,17 @@ class Billrun_ActionManagers_SubscribersAutoRenew_Query extends Billrun_ActionMa
 	
 	/**
 	 * Parse the to and from parameters if exists. If not execute handling logic.
-	 * @param type $input - The received input.
 	 */
-	protected function parseDateParameters($input) {
-		// Check if there is a to field.
-		$to = $input->get('to');
-		$from = $input->get('from');
-		if($to && $from) {
-			$this->subscriberQuery['to'] =
-				array('$lte' => new MongoTimestamp($to));
-			$this->subscriberQuery['from'] = 
-				array('$gte' => new MongoTimestamp($from));
-			$this->queryInRange = true;
+	protected function parseDateParameters() {
+		if (!isset($this->query['from'])){
+			$this->query['from']['$lte'] = new MongoDate();
+		} else {
+			$this->query['from'] = $this->intToMongoDate($this->query['from']);
+		}
+		if (!$this->query['to']) {
+			$this->query['to']['$gte'] = new MongoDate();
+		} else {
+			$this->query['to'] = $this->intToMongoDate($this->query['to']);
 		}
 	}
 	
@@ -124,38 +115,15 @@ class Billrun_ActionManagers_SubscribersAutoRenew_Query extends Billrun_ActionMa
 			return false;
 		}
 		
-		$invalidFields = $this->setQueryFields($jsonData);
-		
-		// If there were errors.
-		if(empty($this->subscriberQuery)) {
-			$error = "Subscribers query must receive one of the following fields: " . implode(',', $invalidFields);
+		if(!isset($query['sid'])) {
+			$error = "Did not receive an SID argument";
 			$this->reportError($error, Zend_Log::ALERT);
 			return false;
 		}
 		
+		$this->query = $query;
+		$this->parseDateParameters();
+		
 		return true;
-	}
-	
-	/**
-	 * Set all the query fields in the record with values.
-	 * @param array $queryData - Data received.
-	 * @return array - Array of strings of invalid field name. Empty if all is valid.
-	 */
-	protected function setQueryFields($queryData) {
-		$queryFields = $this->getQueryFields();
-		
-		// Arrary of errors to report if any occurs.
-		$invalidFields = array();
-		
-		// Get only the values to be set in the update record.
-		foreach ($queryFields as $field) {
-			if(isset($queryData[$field]) && !empty($queryData[$field])) {
-				$this->subscriberQuery[$field] = $queryData[$field];
-			} else {
-				$invalidFields[] = $field;
-			}
-		}
-		
-		return $invalidFields;
 	}
 }
