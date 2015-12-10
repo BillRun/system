@@ -120,7 +120,6 @@ class CronController extends Yaf_Controller_Abstract {
 			
 			$this->updateAutoRenewRecord($collection);
 		}
-		
 	}
 	
 	/**
