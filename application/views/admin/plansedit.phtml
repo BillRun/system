@@ -8,8 +8,8 @@
 		cursor: pointer;
 	}
 </style>
-
-<div class="container component">	
+<script src='<?php echo $this->baseUrl; ?>/js/controllers/PlansController.js'></script>
+<div class="container component" ng-app='plansApp' ng-controller='PlansController'>	
 <?php
 $protected = array();
 	$entity = $this->data['entity']->getRawData();
