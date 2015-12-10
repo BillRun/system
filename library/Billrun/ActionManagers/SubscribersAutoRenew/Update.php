@@ -12,7 +12,10 @@
  * @author tom
  */
 class Billrun_ActionManagers_SubscribersAutoRenew_Update extends Billrun_ActionManagers_APIAction{
-	// TODO: Create a generic update action class. This class shares some logic with the cards and balances update action. The setUpdateRecord function is shared.
+	// TODO: Create a generic update action class. 
+	// TODO: This class shares some logic with the cards and balances update action. 
+	// TODO: The setUpdateRecord function is shared. 
+	// TODO: This is to be implemented using 'trait'
 	
 	/**
 	 * Field to hold the data to be written in the DB.
