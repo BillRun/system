@@ -87,9 +87,7 @@ class Billrun_ActionManagers_SubscribersAutoRenew_Update extends Billrun_ActionM
 			$this->reportError($error, Zend_Log::ALERT);
 			return false;
 		}
-		
-		$this->populateUpdateQuery($jsonUpdateData);
-		
+				
 		if(!$this->fillWithChargingPlanValues()) {
 			return false;
 		}
@@ -98,21 +96,27 @@ class Billrun_ActionManagers_SubscribersAutoRenew_Update extends Billrun_ActionM
 			return false;
 		}
 
+		$this->populateUpdateQuery($jsonUpdateData);
+
 		return true;
 	}
 	
+	/**
+	 * Populate the update query
+	 * @param type $jsonUpdateData
+	 */
 	protected function populateUpdateQuery($jsonUpdateData) {
 		// TODO INTERVAL IS ALWAYS MONTH
 		$this->updateQuery['interval'] = 'month';
 		
 		$this->updateQuery['to'] = $jsonUpdateData['to'];
-		$this->updateQuery['creation_time'] = date();
-		$this->updateQuery['from'] = $this->updateQuery['creation_time'];
-		$this->updateQuery['last_renew_date'] = $this->updateQuery['creation_time'];
-		$this->updateQuery['operation'] = $jsonUpdateData['operation'];
+				$this->updateQuery['operation'] = $jsonUpdateData['operation'];
 		$this->updateQuery['done'] = 0;
 		$this->updateQuery['remain'] = 
 			$this->countMonths(strtotime($this->updateQuery['from']), strtotime($this->updateQuery['to']));
+		$this->updateQuery['creation_time'] = MongoDate();
+		$this->updateQuery['from'] = $this->updateQuery['creation_time'];
+		$this->updateQuery['last_renew_date'] = $this->updateQuery['creation_time'];
 	}
 	
 	/**
@@ -139,7 +143,7 @@ class Billrun_ActionManagers_SubscribersAutoRenew_Update extends Billrun_ActionM
 		$subRecord = $subCollection->query($subQuery, array('aid'));
 		
 		if(!$subRecord) {
-			$error = "Subscriber not found for " . $sid;
+			$error = "Subscriber not found for " . $subQuery['sid'];
 			$this->reportError($error, Zend_Log::ALERT);
 			return false;
 		}
