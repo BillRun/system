@@ -17,11 +17,6 @@ class Billrun_Importer_Cards extends Billrun_Importer_Csv {
 	public function getCollectionName() {
 		return 'cards';
 	}
-	
-	protected function getSerialNumber($rowData) {
-		$serial_number = $rowData[0] . $rowData[1];
-		return $serial_number;
-	}	
 
 	protected function getSecret($rowData) {
 		$secret = hash('sha512',$rowData[2]);
