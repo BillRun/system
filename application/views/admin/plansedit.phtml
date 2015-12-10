@@ -122,17 +122,17 @@ print '</div>';
 					<input type='text' class='form-control include-group-name' value='<?php echo $group_name ?>' />
 					<i class='delete-plan glyphicon glyphicon-minus-sign'></i>
 					<br/>
-					<?php $groupParams = array("data", "call", "incoming_call", "incoming_sms", "sms") ?>
-					<select class='plan-param-type form-control'>
-						<?php foreach($groupParams as $param) {
-							$disabled = $group_data[$param] ? ' disabled ' : '';
-							print "<option value='$param' $disabled>$param</option>";
-						} ?>
-					</select>
-					<i class="add-plan-param glyphicon glyphicon-plus-sign"></i>
-					<br/>
 					<div>
 						<ul>
+						<?php $groupParams = array("data", "call", "incoming_call", "incoming_sms", "sms") ?>
+						<select class='plan-param-type form-control'>
+							<?php foreach($groupParams as $param) {
+								$disabled = $group_data[$param] ? ' disabled ' : '';
+								print "<option value='$param' $disabled>$param</option>";
+							} ?>
+						</select>
+						<i class="add-plan-param glyphicon glyphicon-plus-sign"></i>
+						<br/>
 						<?php if ($group_data['limits']) : ?>
 						<div id='include-group-limits-div'>
 							Limits: <small>(edit enabled in advanced mode)</small>
