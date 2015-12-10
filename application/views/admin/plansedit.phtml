@@ -7,13 +7,14 @@
 		color: green;
 		cursor: pointer;
 	}
+	#plan-include-groups-div {
+		margin-top: 15px;
+	}
 </style>
-<script src='<?php echo $this->baseUrl; ?>/js/controllers/PlansController.js'></script>
-<div class="container component" ng-app='plansApp' ng-controller='PlansController'>	
+
 <?php
 $protected = array();
 	$entity = $this->data['entity']->getRawData();
-	$availablePlans = $this->data['availablePlans'];
 	foreach ($this->data['protectedKeys'] as $key) {
 		if (isset($entity[$key])) {
 			$protected[$key] = $entity[$key];
@@ -23,7 +24,16 @@ $protected = array();
 	foreach ($this->data['hiddenKeys'] as $key) {
 		unset($entity[$key]);
 	}
+?>
 
+<script>
+	var entity = <?php echo json_encode($this->data['entity']->getRawData()); ?>;
+	var form_data = <?php echo json_encode($this->data); ?>;
+</script>
+<script src='<?php echo $this->baseUrl; ?>/js/controllers/PlansController.js'></script>
+<div class="container component" ng-app='plansApp' ng-controller='PlansController'>
+
+<?php
 	print '<div class="form_protect">';
 if (isset($protected['log_stamp'])) {
 	$log_stamp = $protected['log_stamp'];
@@ -40,278 +50,126 @@ print '<span id="form_type" class="hidden">' . $this->data['type'] . '</span>';
 print '<span id="form_coll" class="hidden">' . $this->data['collectionName'] . '</span>';
 print '</div>';
 ?>
-<form class='form-inline'>
+<form class='form-inline' ng-submit='savePlan()'>
 	<h3>Price</h3>
-	<input type='number' id='plan-price' value='<?php echo $entity['price']?>' class='form-control' />
+	<input ng-model='entity.price' type='text' id='plan-price' class='form-control' />
 	
 	<h3>Vatable
-	<input type="checkbox" id="plan-vatable" value="<?php echo $entity['vatable'] ?>"
-		   class="form-control" <?php $entity['vatable'] == '1' ? print " checked " : "" ?>/>
+	<input ng-model='entity.vatable' type="checkbox" id="plan-vatable" class="form-control" />
 	</h3>
 	<h3>To</h3>
-	<input type='text' id='plan-to' value='<?php echo $entity['to'] ?>' disabled />
+	<input ng-model='entity.to' type='text' id='plan-to' disabled />
 
 	<h3>
 		Include
 	</h3>
-	<select id='new-include-type'>
-		<option id='new-include-call' value='call' <?php $entity['include']['call'] ? print " disabled " : "" ?>>Call</option>
-		<option id='new-include-data' value='data' <?php $entity['include']['data'] ? print " disabled " : "" ?>>Data</option>
-		<option id='new-include-mms' value='mms' <?php $entity['include']['mms'] ? print " disabled " : "" ?>>MMS</option>
-		<option id='new-include-sms' value='sms' <?php $entity['include']['sms'] ? print " disabled " : "" ?>>SMS</option>
-		<option id='new-include-groups' value='groups' <?php $entity['include']['groups'] ? print " disabled " : "" ?>>Groups</option>
+	<select id='new-include-type' class='form-control' ng-model='newIncludeType'>
+		<option ng-repeat='type in includeTypes'>{{type}}</option>
 	</select>
-	<i id='add-plan-include' class='glyphicon glyphicon-plus-sign'></i>
+	<input ng-model='newIncludeValue' type='text' class='form-control' ng-disabled='newIncludeType == "groups"' />
+	<i id='add-plan-include' class='glyphicon glyphicon-plus-sign' ng-click='addPlanInclude()'></i>
 	<ul>
 	<div id='plan-includes'>
-		<?php if($entity['include']['call']) : ?>
-		<div>
+		<div ng-if='entity.include.call'>
 			<h4>
 				Call
-				<small><i class='delete-plan glyphicon glyphicon-minus-sign' data-type='call'></i></small>				
+				<small><i class='delete-plan glyphicon glyphicon-minus-sign' ng-click='deleteInclude("call")'></i></small>				
 			</h4>
-			<input type='text' class='plan-include form-control' data-type='call' value='<?php echo $entity['include']['call'] ?>' />
+			<input ng-model='entity.include.call' type='text' class='plan-include form-control' />
 		</div>
-		<?php endif ?>
 
-		<?php if($entity['include']['data']) : ?>
-		<div>
+		<div ng-if='entity.include.data'>
 			<h4>
 				Data
-				<small><i class='delete-plan glyphicon glyphicon-minus-sign' data-type='data'></i></small>				
+				<small><i class='delete-plan glyphicon glyphicon-minus-sign'  ng-click='deleteInclude("data")'></i></small>				
 			</h4>
-			<input type='text' class='plan-include form-control' data-type='data' value='<?php echo $entity['include']['data'] ?>' />
+			<input ng-model='entity.include.data' type='text' class='plan-include form-control' />
 		</div>
-		<?php endif ?>
 
-		<?php if($entity['include']['mms']) : ?>
-		<div>
+		<div ng-if='entity.include.mms'>
 			<h4>
 				MMS
-				<small><i class='delete-plan glyphicon glyphicon-minus-sign' data-type='mms'></i></small>				
+				<small><i class='delete-plan glyphicon glyphicon-minus-sign' ng-click='deleteInclude("mms")'></i></small>				
 			</h4>
-			<input type='text' class='plan-include form-control' data-type='mms' value='<?php echo $entity['include']['mms'] ?>' />
+			<input ng-model='entity.include.mms' type='text' class='plan-include form-control' />
 		</div>
-		<?php endif ?>
 
-		<?php if($entity['include']['sms']) : ?>
-		<div>
+		<div ng-if='entity.include.sms'>
 			<h4>
 				SMS
-				<small><i class='delete-plan glyphicon glyphicon-minus-sign' data-type='sms'></i></small>				
+				<small><i class='delete-plan glyphicon glyphicon-minus-sign' ng-click='deleteInclude("sms")'></i></small>				
 			</h4>
-			<input type='text' class='plan-include form-control' data-type='sms' value='<?php echo $entity['include']['sms'] ?>' />
+			<input ng-model='entity.include.sms' type='text' class='plan-include form-control' />
 		</div>
-		<?php endif ?>
 
-		<?php if ($entity['include']['groups']) : ?>
-		<div id='plan-include-groups-div'>
-			<h4>
-				Groups
-				<small><i class='add-group glyphicon glyphicon-plus-sign'></i></small>
-			</h4>
-				<?php foreach($entity['include']['groups'] as $group_name => $group_data) { ?>
-				<div style='margin-bottom: 15px' class='plan-include-group'>
-					<input type='text' class='form-control include-group-name' value='<?php echo $group_name ?>' />
-					<i class='delete-plan glyphicon glyphicon-minus-sign'></i>
-					<?php $groupParams = array("data", "call", "incoming_call", "incoming_sms", "sms") ?>
-					<select class='plan-param-type'>
-						<?php foreach($groupParams as $param) {
-							$disabled = $group_data[$param] ? ' disabled ' : '';
-							print "<option value='$param' $disabled>$param</option>";
-						} ?>
+		<div id='plan-include-groups-div' ng-if='entity.include.groups'>
+			<span class='h4'>Groups</span>
+			<input ng-model='newGroup.name' type='text' class='form-control' />
+			<i class='add-group glyphicon glyphicon-plus-sign' ng-click="addNewGroup()"></i>
+			<ul>
+				<div style='margin-top: 15px; margin-bottom: 15px' class='plan-include-group' ng-repeat='(group_name, group_data) in entity.include.groups'>
+					<!--<input ng-model='group_name' type='text' class='form-control include-group-name' />-->
+					<span>{{group_name}}</span>
+					<i class='delete-plan glyphicon glyphicon-minus-sign' ng-click='deleteGroup(group_name)'></i>
+					<select class='plan-param-type form-control' ng-model='newParamType[group_name]'>
+						<option ng-repeat='param in groupParams'>{{param}}</option>
 					</select>
-					<i class="add-plan-param glyphicon glyphicon-plus-sign"></i>
+					<input type='text' class='form-control' ng-model='newParamValue[group_name]' />
+					<i class="add-plan-param glyphicon glyphicon-plus-sign" ng-click='addGroupParam(group_name)'></i>
 					<br/>
 					<ul>
-					<?php if ($group_data['limits']) : ?>
-					<div id='include-group-limits-div'>
-						Limits: <small>(edit enabled in advanced mode)</small>
-						<input type='text' class='form-control group-param' data-name='limits' value='<?php echo json_encode($group_data['limits']) ?>' disabled />
-						<i class='delete-plan glyphicon glyphicon-minus-sign'></i>
-					</div>
-					<?php endif ?>
+						<div id='include-group-limits-div' ng-if='group_data.limits'>
+							Limits: <small>(edit enabled in advanced mode)</small>
+							<input ng-model='group_data.limits' type='text' class='form-control group-param' disabled />
+							<i class='delete-plan glyphicon glyphicon-minus-sign' ng-click='deleteGroupParam(group_name, "limits")'></i>
+						</div>
 
-					<?php if ($group_data['rule']) : ?>
-					<div id='include-group-rule-div'>
-						Rule: <small>(edit enabled in advanced mode)</small>
-						<input type='text' class='form-control group-param' data-name='rule' value='<?php echo json_encode($group_data['rule']) ?>' disabled />
-						<i class='delete-plan glyphicon glyphicon-minus-sign'></i>
-					</div>
-					<?php endif ?>
+						<div id='include-group-rule-div' ng-if='group_data.rule'>
+							Rule: <small>(edit enabled in advanced mode)</small>
+							<input ng-model='group_data.rule' type='text' class='form-control group-param' disabled />
+							<i class='delete-plan glyphicon glyphicon-minus-sign' ng-click='deleteGroupParam(group_name, "rule")'></i>
+						</div>
 
-					<?php if ($group_data['data']) : ?>
-					<div id='include-group-data-div'>
-						Data: <input type='text' class='form-control group-param' data-name='data' value='<?php echo $group_data['data'] ?>' />
-						<i class='delete-plan glyphicon glyphicon-minus-sign'></i>
-					</div>
-					<?php endif ?>
+						<div id='include-group-data-div' ng-if='group_data.data'>
+							Data: <input ng-model='group_data.data' type='text' class='form-control group-param' />
+							<i class='delete-plan glyphicon glyphicon-minus-sign' ng-click='deleteGroupParam(group_name, "data")'></i>
+						</div>
 
-					<?php if ($group_data['call']) : ?>
-					<div id='include-group-call-div'>
-						Call: <input type='text' class='form-control group-param' data-name='call' value='<?php echo $group_data['call'] ?>' />
-						<i class='delete-plan glyphicon glyphicon-minus-sign'></i>
-					</div>
-					<?php endif ?>
+						<div id='include-group-call-div' ng-if='group_data.call'>
+							Call: <input ng-model='group_data.call' type='text' class='form-control group-param' />
+							<i class='delete-plan glyphicon glyphicon-minus-sign' ng-click='deleteGroupParam(group_name, "call")'></i>
+						</div>
 
-					<?php if ($group_data['incoming_call']) : ?>
-					<div id='include-group-incoming-call-div'>
-						Incoming Call: <input type='text' class='form-control group-param' data-name='incoming_call' value='<?php echo $group_data['incoming_call'] ?>' />
-						<i class='delete-plan glyphicon glyphicon-minus-sign'></i>
-					</div>
-					<?php endif ?>
+						<div id='include-group-incoming-call-div' ng-if='group_data.incoming_call'>
+							Incoming Call: <input ng-model='group_data.incoming_call' type='text' class='form-control group-param' />
+							<i class='delete-plan glyphicon glyphicon-minus-sign' ng-click='deleteGroupParam(group_name, "incoming_call")'></i>
+						</div>
 
-					<?php if ($group_data['incoming_sms']) : ?>
-					<div id='include-group-incoming-sms-div'>
-						Incoming SMS: <input type='text' class='form-control group-param' data-name='incoming_sms' value='<?php echo $group_data['incoming-sms'] ?>' />
-						<i class='delete-plan glyphicon glyphicon-minus-sign'></i>
-					</div>
-					<?php endif ?>
+						<div id='include-group-incoming-sms-div' ng-if='group_data.incoming_sms'>
+							Incoming SMS: <input ng-model='group_data.incoming_sms' type='text' class='form-control group-param' />
+							<i class='delete-plan glyphicon glyphicon-minus-sign' ng-click='deleteGroupParam(group_name, "incoming_sms")'></i>
+						</div>
 
-
-					<?php if ($group_data['sms']) : ?>
-					<div id='include-group-sms-div'>
-						SMS: <input type='text' class='form-control group-param' data-name='sms' value='<?php echo $group_data['sms'] ?>' />
-						<i class='delete-plan glyphicon glyphicon-minus-sign'></i>
-					</div>
-					<?php endif ?>
+						<div id='include-group-sms-div' ng-if='group_data.sms'>
+							SMS: <input ng-model='group_data.sms' type='text' class='form-control group-param' />
+							<i class='delete-plan glyphicon glyphicon-minus-sign' ng-click='deleteGroupParam(group_name, "sms")'></i>
+						</div>
 					</ul>
 				</div>
-				<?php } ?>
-			<?php endif ?>
+			</ul>
 		</div>
 	</div>
-	</ul>
-</form>
-	
+	</ul>	
 	<div class="modal-footer">
 		<?php if ($this->collectionName == 'plans' && $this->type == 'duplicate') : ?>
 		<div class="edit_checkboxes">
 		<input class="span1" id="duplicate_rates" name="duplicate_rates" type="checkbox" value="on" checked> <label class="span1" for="duplicate_rates">Duplicate rates</label>
 		</div>
 		<?php endif; ?>
-		<button id="cancel" class="btn" aria-hidden="true">Close</button>
+		<button id="cancel" ng-click='cancel()' class="btn" aria-hidden="true">Close</button>
 		<?php if (AdminController::authorized('write')) : ?>
-		<button id="save" class="btn btn-primary">Save changes</button>
+		<button type='submit' class="btn btn-primary">Save changes</button>
 		<?php endif; ?>
 	</div>
+	</form>
 </div>
-	
-<script type="text/javascript">
-	$('#cancel').click(function () {
-		window.location = '<?php echo $this->data['baseUrl']; ?>/admin/<?php echo $this->data['collectionName'] ?>';		
-	});
-	
-	$('#save').click(function () {
-		var include = {};
-		$('.plan-include').each(function (i, elem) {
-			if (!$(elem).val().trim()) return;
-			var t = $(elem).data('type');
-			if ($(elem).prop('type') === "number")
-				include[t] = parseFloat($(elem).val());
-			else
-				include[t] = $(elem).val();
-		});
-		if ($('.plan-include-group').length) {
-			include['groups'] = {};
-			$('.plan-include-group').each(function (i, groupdiv) {
-				var group_name = $('.include-group-name', groupdiv).val();
-				if (!group_name.trim()) return;
-				include['groups'][group_name] = {};
-				$('.group-param', groupdiv).each(function (i, param) {
-					if (!$(param).val().trim()) return;
-					var name = $(param).data('name');
-					if ($(param).prop('type') === "number")
-						include['groups'][group_name][name] = parseFloat($(param).val());
-					else
-						include['groups'][group_name][name] = $(param).val();
-				});
-			});
-		}
-		var data = {
-			price: parseFloat($('#plan-price').val()),
-			vatable: $('#plan-vatable').is(':checked'),
-			to: $('#plan-to').val(),
-			include: include
-		};
-		var _ajaxOpts = {
-			async: true,
-			cache: false,
-			//			dataType:'json',
-			type: 'POST',
-			data: {
-				id: $('#form_id').html(),
-				coll: $('#form_coll').html(),
-				type: $('#form_type').html(),
-				duplicate_rates: $('#duplicate_rates').is(':checked'),
-				data: JSON.stringify(data)
-			},
-			success: function(data, textStatus, jqXHR) {
-				if (data != 'null') {
-					alert(data);
-					$('#save').removeAttr("disabled");
-					$('#save').bind("click", saveClick);
-					return;
-				}
-				window.location = '<?php echo $this->data['baseUrl']; ?>/admin/<?php echo $this->data['collectionName'] ?>';
-			},
-			error: function(jqXHR, textStatus, errorThrown) {
-				alert('some error occured');
-			}
-		};
-		$.ajax('<?php echo $this->data['baseUrl']; ?>/admin/save', _ajaxOpts);
-	});		
-
-	function registerDeleteBtn() {
-		$('.delete-plan').unbind();
-		$('.delete-plan').click(function () {
-			$(this).closest('div').remove();
-		});
-	}
-	function registerAddBtn() {
-		$('#add-plan-include').unbind();
-		$('#add-plan-include').click(function () {
-			var type = $('#new-include-type').val();
-			var $div = $('<div></div>');
-			var $heading = $('<h4></h4>');
-			$heading.html(type);
-			$heading.append("<small><i class='delete-plan glyphicon glyphicon-minus-sign' data-type='" + type.toLowerCase() + "'></i></small>");
-			$div.append($heading);
-			$div.append("<input type='text' id='plan-include-" + type.toLowerCase() + "' class='form-control' />");
-			$("#plan-includes").prepend($div);
-			registerDeleteBtn();
-		});
-
-		$('.add-plan-param').unbind();
-		$('.add-plan-param').click(function () {
-			var type = $(this).prev().val();
-			var $div = $("<div></div>");
-			$div.html(type + ": <input type='text' class='form-control group-param' data-name='" + type + "' /><i class='delete-plan glyphicon glyphicon-minus-sign'></i>");
-			$('ul', $(this).parent()).prepend($div);
-			registerDeleteBtn();
-		});
-		
-		$('.add-group').unbind();
-		$('.add-group').click(function () {
-			var groupNames = ["data", "call", "incoming_call", "incoming_sms", "sms"];
-			var $div = $("<div></div>").addClass('plan-include-group');
-			var $input = $("<input type='text'></input>").addClass('form-control include-group-name');
-			var $deleteIcon = $("<i></i>").addClass('delete-plan glyphicon glyphicon-minus-sign');
-			var $select = $("<select></select>").addClass('plan-param-type');
-			var $addIcon = $("<i></i>").addClass('add-plan-param glyphicon glyphicon-plus-sign');
-			$.each(groupNames, function (i, groupName) {
-				var $option = $("<option>", {
-					value: groupName,
-					text: groupName
-				});
-				$select.append($option);
-			});
-			$div.append($input).append($deleteIcon).append($select).append($addIcon).append("<ul></ul>");
-			$('#plan-include-groups-div').append($div);
-			registerDeleteBtn();
-			registerAddBtn();
-		});		
-	}
-	registerDeleteBtn();
-	registerAddBtn();
-</script>
