@@ -1,5 +1,5 @@
 <style>
-	.h3 {
+	.h3, .glyphicon-chevron-down, .glyphicon-chevron-right {
 		cursor: pointer;
 	}
 </style>
@@ -60,10 +60,10 @@ print '</div>';
 			<table class='table table-striped table-bordered call-rates-table'>
 				<thead>
 					<tr>
-						<th>Interval</th>
-						<th>Price</th>
-						<th>To</th>
-						<th></th>
+						<th style='width: 30%'>Interval</th>
+						<th style='width: 30%'>Price</th>
+						<th style='width: 30%'>To</th>
+						<th style='width: 10%'></th>
 					</tr>
 				</thead>
 				<tbody id='call-rates-tbody'>
@@ -115,10 +115,10 @@ print '</div>';
 			<table class='table table-striped table-bordered sms-rates-table'>
 				<thead>
 					<tr>
-						<th>Interval</th>
-						<th>Price</th>
-						<th>To</th>
-						<th></th>
+						<th style='width: 30%'>Interval</th>
+						<th style='width: 30%'>Price</th>
+						<th style='width: 30%'>To</th>
+						<th style='width: 10%'></th>
 					</tr>
 				</thead>
 				<tbody id='sms-rates-tbody'>		
@@ -172,7 +172,8 @@ print '</div>';
 		?>
 		</ul>
 	</div>
-	<br/>
+
+	<hr/>
 
 	<i class='glyphicon glyphicon-chevron-down'></i>&nbsp;<span class='h3'>Prefix</span>&nbsp;
 	<i id='add-prefix' class='glyphicon glyphicon-plus-sign' style='color: green; cursor: pointer'></i>
@@ -185,8 +186,9 @@ print '</div>';
 		?>
 		</ul>
 	</div>
-	<br/>
-	
+
+	<hr/>
+
 	<i class='glyphicon glyphicon-chevron-down'></i>&nbsp;<span class='h3'>Record Types</span>&nbsp;
 	<i id='add-record-type' class='glyphicon glyphicon-plus-sign' style='color: green; cursor: pointer'></i>
 	<div id='rate-record-types'>
