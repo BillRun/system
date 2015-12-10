@@ -101,17 +101,19 @@ class CronController extends Yaf_Controller_Abstract {
 	}
 
 	public function autoRenewServices() {		
-		// TODO: If creation date was on the 28 of the month and the next month
-		// had only 28 days then the next charging date will be set to the end of 
-		// the month, this is very complicated to reslove.
-		if($this->areDeadDays()) {
-			return;
-		}
-		
 		$collection = Billrun_Factory::db()->subscribers_auto_renew_servicesCollection();
 		
 		$queryDate = array('creation_time' => strtotime('-1 month'));
 		$queryDate['remain'] = array('$gt' => 0);
+		
+		// Check if last day.
+		if(date('d') == date('t')) {
+			$queryDate = array('$or' => $queryDate);
+			$queryDate['$or']['$and']['eom'] = 1;
+			$queryDate['$or']['$and']['creation_time']['$gt'] = strtotime('-1 month');
+			$queryDate['$or']['$and']['creation_time']['$lt'] = strtotime('first day of this month');
+		}
+		
 		$autoRenewCursor = $collection->query($queryDate)->cursor();
 		
 		// Go through the records.
@@ -147,7 +149,12 @@ class CronController extends Yaf_Controller_Abstract {
 	 */
 	protected function updateAutoRenewRecord($collection) {
 		$autoRenewRecord['remain'] = $autoRenewRecord['remain'] - 1;
-		$autoRenewRecord['last_renew_date'] = date();
+		
+		if($autoRenewRecord['eom'] == 1) {
+			$autoRenewRecord['last_renew_date'] = new MongoDate(strtotime('last day of this month'));
+		} else {
+			$autoRenewRecord['last_renew_date'] = new MongoDate();
+		}
 		$autoRenewRecord['done'] = $autoRenewRecord['done'] + 1;
 
 		return $collection->updateEntity($autoRenewRecord);
