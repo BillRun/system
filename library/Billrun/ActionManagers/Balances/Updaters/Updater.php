@@ -319,8 +319,7 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater{
 			[$chargingPlan->getFieldName()] = $valueToUseInQuery;
 		
 		// The TO time is always set.
-		$valueUpdateQuery['$set']
-			['to'] = $toTime;
+		$valueUpdateQuery['$set']['to'] = $toTime;
 		$valueUpdateQuery['$set']['pp_includes_name'] = $chargingPlan->getPPName();
 		$valueUpdateQuery['$set']['pp_includes_external_id'] = $chargingPlan->getPPID();
 			
