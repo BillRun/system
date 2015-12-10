@@ -114,6 +114,14 @@ class Billrun_ActionManagers_SubscribersAutoRenew_Update extends Billrun_ActionM
 		$this->updateQuery['done'] = 0;
 		$this->updateQuery['remain'] = 
 			$this->countMonths(strtotime($this->updateQuery['from']), strtotime($this->updateQuery['to']));
+		
+		// Check if we are at the end of the month.
+		if(date('d') == date('t')) {
+			$this->updateQuery['eom'] = 1;
+		} else {
+			$this->updateQuery['eom'] = 0;
+		}
+		
 		$this->updateQuery['creation_time'] = MongoDate();
 		$this->updateQuery['from'] = $this->updateQuery['creation_time'];
 		$this->updateQuery['last_renew_date'] = $this->updateQuery['creation_time'];
