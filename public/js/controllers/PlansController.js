@@ -54,6 +54,11 @@ angular.module('plansApp', []).config(function ($httpProvider) {
   $scope.newParamType = {};
   $scope.newParamValue = {};
   $scope.newGroup = {name: ""};
+  $scope.shown = {include: true, groups: true};
+  $scope.shownGroups = {};
+  _.each($scope.entity.include.groups, function (group, group_name) {
+    $scope.shownGroups[group_name] = true;
+  });
 
   $scope.addPlanInclude = function () {
     if ($scope.newIncludeType && $scope.newIncludeValue && $scope.entity.include[$scope.newIncludeType] === undefined)
