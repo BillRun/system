@@ -388,25 +388,6 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->getView()->component = $this->buildTableComponent($table, $query);
 	}
 
-/*
-	public function editrateAction() {
-		$coll	= Billrun_Util::filter_var($this->getRequest()->get('coll'), FILTER_SANITIZE_STRING);
-		$id		= Billrun_Util::filter_var($this->getRequest()->get('id'), FILTER_SANITIZE_STRING);
-		$model = self::initModel($coll);
-		$entity = $model->getItem($id);
-		$params = array_merge($this->getRequest()->getParams(), $this->getRequest()->getPost());
-		$this->getView()->component = $this->getEditRateForm($params, $entity);
-	}	
-	
-	protected function getEditRateForm($params, $entity) {
-		$this->title = "Rates";
-		$params = array_merge(array(
-			'title' => $this->title,
-		), $params);
-		$ret = $this->renderView('editrate', $params);
-		return $ret;
-	}
-*/	
 	public function loginAction() {
 		if (Billrun_Factory::user() !== FALSE) {
 			// if already logged-in redirect to admin homepage
