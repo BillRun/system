@@ -64,7 +64,7 @@ class Billrun_Importer_ChargingPlans extends Billrun_Importer_Csv {
 		$ret = NULL;
 		if ($rowData[$this->fieldsColumns['main_account']] > 0) {
 			$ret[] = array(
-				'value' => doubleval($rowData[$this->fieldsColumns['main_account']]),
+				'value' => (-1) * doubleval($rowData[$this->fieldsColumns['main_account']]),
 				'pp_includes_name' => Billrun_Factory::config()->getConfigValue('importer.ChargingPlans.pp_includes_name.main_account', NULL),
 				'pp_includes_external_id' => Billrun_Factory::config()->getConfigValue('importer.ChargingPlans.pp_includes_external_id.main_account', NULL)
 			);
@@ -72,7 +72,7 @@ class Billrun_Importer_ChargingPlans extends Billrun_Importer_Csv {
 
 		if ($rowData[$this->fieldsColumns['bonus_account']] > 0) {
 			$ret[] = array(
-				'value' => doubleval($rowData[$this->fieldsColumns['bonus_account']]),
+				'value' => (-1) * doubleval($rowData[$this->fieldsColumns['bonus_account']]),
 				'pp_includes_name' => Billrun_Factory::config()->getConfigValue('importer.ChargingPlans.pp_includes_name.bonus_account', NULL),
 				'pp_includes_external_id' => Billrun_Factory::config()->getConfigValue('importer.ChargingPlans.pp_includes_external_id.bonus_account', NULL)
 			);
@@ -80,7 +80,7 @@ class Billrun_Importer_ChargingPlans extends Billrun_Importer_Csv {
 
 		if ($rowData[$this->fieldsColumns['special_monthly_reward']] > 0) {
 			$ret[] = array(
-				'value' => doubleval($rowData[$this->fieldsColumns['special_monthly_reward']]),
+				'value' => (-1) * doubleval($rowData[$this->fieldsColumns['special_monthly_reward']]),
 				'pp_includes_name' => Billrun_Factory::config()->getConfigValue('importer.ChargingPlans.pp_includes_name.special_monthly_reward', NULL),
 				'pp_includes_external_id' => Billrun_Factory::config()->getConfigValue('importer.ChargingPlans.pp_includes_external_id.special_monthly_reward', NULL)
 			);
@@ -107,7 +107,7 @@ class Billrun_Importer_ChargingPlans extends Billrun_Importer_Csv {
 		}
 		return
 			array(
-				'usagev' => doubleval($rowData[$this->fieldsColumns['specific']['call_usagev']]) * 60,
+				'usagev' => (-1) * doubleval($rowData[$this->fieldsColumns['specific']['call_usagev']]) * 60,
 				'period' => $this->getDuration($rowData),
 				'pp_includes_name' => Billrun_Factory::config()->getConfigValue('importer.ChargingPlans.pp_includes_name.call_usagev', NULL),
 				'pp_includes_external_id' => Billrun_Factory::config()->getConfigValue('importer.ChargingPlans.pp_includes_external_id.call_usagev', NULL)
@@ -118,12 +118,12 @@ class Billrun_Importer_ChargingPlans extends Billrun_Importer_Csv {
 	protected function getData($rowData) {
 		if ($rowData[$this->fieldsColumns['specific']['data_usagev']] != 0) {
 			$key = 'usagev';
-			$value = doubleval($rowData[$this->fieldsColumns['specific']['data_usagev']]);
+			$value = (-1) * doubleval($rowData[$this->fieldsColumns['specific']['data_usagev']]);
 			$pp_includes_name = Billrun_Factory::config()->getConfigValue('importer.ChargingPlans.pp_includes_name.data_usagev', NULL);
 			$pp_includes_external_id = Billrun_Factory::config()->getConfigValue('importer.ChargingPlans.pp_includes_external_id.data_usagev', NULL);
 		} else if ($rowData[$this->fieldsColumns['specific']['data_cost']] != 0) {
 			$key = 'cost';
-			$value = doubleval($rowData[$this->fieldsColumns['specific']['data_cost']]);
+			$value = (-1) * doubleval($rowData[$this->fieldsColumns['specific']['data_cost']]);
 			$pp_includes_name = Billrun_Factory::config()->getConfigValue('importer.ChargingPlans.pp_includes_name.data_cost', NULL);
 			$pp_includes_external_id = Billrun_Factory::config()->getConfigValue('importer.ChargingPlans.pp_includes_external_id.data_cost', NULL);
 		} else {
@@ -145,7 +145,7 @@ class Billrun_Importer_ChargingPlans extends Billrun_Importer_Csv {
 		}
 		return
 			array(
-				'usagev' => intval($rowData[$this->fieldsColumns['specific']['sms_usagev']]),
+				'usagev' => (-1) * intval($rowData[$this->fieldsColumns['specific']['sms_usagev']]),
 				'period' => $this->getDuration($rowData),
 				'pp_includes_name' => Billrun_Factory::config()->getConfigValue('importer.ChargingPlans.pp_includes_name.sms_cost', NULL),
 				'pp_includes_external_id' => Billrun_Factory::config()->getConfigValue('importer.ChargingPlans.pp_includes_external_id.sms_cost', NULL)

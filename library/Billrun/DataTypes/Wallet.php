@@ -65,7 +65,7 @@ class Billrun_DataTypes_Wallet {
 	public function __construct($chargingBy, $chargingByValue, $ppPair) {
 		$chargingByUsaget = $chargingBy;
 
-		$this->ppID = $ppPair['pp_includes_external_id'];
+		$this->ppID = (int) $ppPair['pp_includes_external_id'];
 		$this->ppName = $ppPair['pp_includes_name'];
 		
 		// The wallet does not handle the period.
@@ -74,9 +74,9 @@ class Billrun_DataTypes_Wallet {
 			unset($chargingByValue['period']);
 		}
 
-		if (!is_array($chargingByValue)) {
-			$this->valueFieldName = 'balance.' . str_replace("total_", "totals.", $chargingBy);
-			$this->value = $chargingByValue;
+		if (!is_array($chargingByValue) || isset($chargingByValue['value'])) {
+			$this->valueFieldName = 'balance.' . str_replace("total_", "", $chargingBy);
+			$this->value = isset($chargingByValue['value']) ? $chargingByValue['value'] : $chargingByValue;
 		} else {
 			list($chargingByUsaget, $this->value) = each($chargingByValue);
 			$this->valueFieldName = 'balance.totals.' . $chargingBy . '.' . $chargingByUsaget;

@@ -92,15 +92,15 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 		$chargingBy = $prepaidRecord['charging_by'];
 		$chargingByUsaget = $prepaidRecord['charging_by_usaget'];
 		if ($chargingBy == $chargingByUsaget) {
-			$chargingByUsaget = $recordToSet['value'];
+			$chargingByValue = $recordToSet['value'];
 		} else {
-			$chargingByUsaget = array($chargingByUsaget => $recordToSet['value']);
+			$chargingByValue = array($chargingBy => $recordToSet['value']);
 		}
 
 		$ppPair['pp_includes_name'] = $prepaidRecord['name'];
 		$ppPair['pp_includes_external_id'] = $prepaidRecord['external_id'];
 		
-		return new Billrun_DataTypes_Wallet($chargingBy, $chargingByUsaget, $ppPair);
+		return new Billrun_DataTypes_Wallet($chargingByUsaget, $chargingByValue, $ppPair);
 	}
 
 	/**
@@ -147,6 +147,7 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 
 		// Get the balance with the current value field.
 		$query[$chargingPlan->getFieldName()]['$exists'] = 1;
+		$query['pp_includes_external_id'] = $chargingPlan->getPPID();
 
 		$update = $this->getUpdateBalanceQuery($balancesColl, $query, $chargingPlan, $toTime, $defaultBalance);
 		
