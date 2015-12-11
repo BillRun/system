@@ -58,7 +58,6 @@ abstract class Billrun_Importer_Csv extends Billrun_Importer_Abstract {
 		$this->save();
 		
 		Billrun_Factory::log("Done importing CSV", Zend_Log::INFO);
-		die(" end...");
 	}
 	
 	protected function getImporterName() {
