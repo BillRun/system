@@ -22,7 +22,7 @@ class Billrun_Importer_ChargingPlans extends Billrun_Importer_Csv {
 		$this->fieldsColumns = Billrun_Factory::config()->getConfigValue('importer.ChargingPlans.columns', array());
 	}
 	
-	public function getCollectionName() {
+	protected function getCollectionName() {
 		return 'plans';
 	}
 

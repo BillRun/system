@@ -19,8 +19,12 @@ abstract class Billrun_Importer_Csv extends Billrun_Importer_Abstract {
 	protected $fieldToImport = null;
 	protected $dataToImport = null;
 	protected $importerName = null;
+	protected $fields = null;
+	protected $handle = null;
+	protected $delimiter = null;
+	protected $limit = null;
 	
-	abstract function getCollectionName();
+	abstract protected function getCollectionName();
 	
 	public function __construct($options) {
 		parent::__construct($options);
@@ -37,13 +41,14 @@ abstract class Billrun_Importer_Csv extends Billrun_Importer_Abstract {
 			return FALSE;
 		}
 
-		if (($handle = fopen($path, "r")) !== FALSE) {
-			$delimiter = $this->getDelimiter();
-			$limit = $this->getLimit();
+		if (($this->handle = fopen($path, "r")) !== FALSE) {
+			$this->delimiter = $this->getDelimiter();
+			$this->limit = $this->getLimit();
 			$rowsIndexesToSkip = $this->getRowsIndexesToSkip();
 			$this->dataToImport = array();
+			$this->fields = $this->getImporterFields();
 			$rowIndex = 0;
-			while (($data = fgetcsv($handle, $limit, $delimiter)) !== FALSE) {
+			while (($data = fgetcsv($this->handle, $this->limit, $this->delimiter)) !== FALSE) {
 				if (in_array($rowIndex, $rowsIndexesToSkip)) {
 					Billrun_Factory::log("Row " . $rowIndex . " skipped", Zend_Log::INFO);
 					$rowIndex++;
@@ -65,17 +70,17 @@ abstract class Billrun_Importer_Csv extends Billrun_Importer_Abstract {
 	}
 	
 	public function save() {
-		$this->collectionName = $this->getCollectionName();
-		$success = false;
-		$error = '';
-		$bulkOptions = array(
-			'continueOnError' => true,
-			'socketTimeoutMS' => 300000,
-			'wTimeoutMS' => 300000,
-			'w' => 1,
-		);
 		try {
-			$res = Billrun_Factory::db()->{$this->collectionName . "Collection"}()->batchInsert($this->dataToImport, $bulkOptions);
+			$error = '';
+			$bulkOptions = array(
+				'continueOnError' => true,
+				'socketTimeoutMS' => 300000,
+				'wTimeoutMS' => 300000,
+				'w' => 1,
+			);
+			$collectionName = $this->getCollectionName();
+			$collection = Billrun_Factory::db()->getCollection($collectionName);
+			$res = $collection->batchInsert($this->dataToImport, $bulkOptions);
 			$success = $res['ok'];
 			$count = $res['nInserted'];
 			Billrun_Factory::log($count . " entries was added to " . $this->collectionName . " collection", Zend_Log::INFO);
@@ -135,8 +140,7 @@ abstract class Billrun_Importer_Csv extends Billrun_Importer_Abstract {
 	 */
 	protected function getDataToSave($rowData) {
 		$ret = array();
-		$fields = $this->getImporterFields();
-		foreach ($fields as $field => $rowFieldIndex) {
+		foreach ($this->fields as $field => $rowFieldIndex) {
 			if (is_array($rowFieldIndex)) {  // The value needs to be calculated from an inner function
 				$ret[$field] = (isset($rowFieldIndex['classMethod']) ? call_user_method($rowFieldIndex['classMethod'], $this, $rowData) : '');
 			} else if (is_numeric($rowFieldIndex)) { // This is an index in the row's data

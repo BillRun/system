@@ -14,7 +14,7 @@
  */
 class Billrun_Importer_Cards extends Billrun_Importer_Csv {
 	
-	public function getCollectionName() {
+	protected function getCollectionName() {
 		return 'cards';
 	}
 
