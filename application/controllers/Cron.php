@@ -100,6 +100,98 @@ class CronController extends Yaf_Controller_Abstract {
 		}
 	}
 
+	public function autoRenewServices() {		
+		$collection = Billrun_Factory::db()->subscribers_auto_renew_servicesCollection();
+		
+		$queryDate = array('creation_time' => strtotime('-1 month'));
+		$queryDate['remain'] = array('$gt' => 0);
+		
+		// Check if last day.
+		if(date('d') == date('t')) {
+			$queryDate = array('$or' => $queryDate);
+			$queryDate['$or']['$and']['eom'] = 1;
+			$queryDate['$or']['$and']['creation_time']['$gt'] = strtotime('-1 month');
+			$queryDate['$or']['$and']['creation_time']['$lt'] = strtotime('first day of this month');
+		}
+		
+		$autoRenewCursor = $collection->query($queryDate)->cursor();
+		
+		// Go through the records.
+		foreach ($autoRenewCursor as $autoRenewRecord) {
+			$this->updateBalanceByAutoRenew($autoRenewRecord);
+			
+			$this->updateAutoRenewRecord($collection);
+		}
+	}
+	
+	/**
+	 * Check if we are in 'dead' days
+	 * @return boolean
+	 */
+	protected function areDeadDays() {
+		$lastDayLastMonth = date('d', strtotime('last day of previous month'));
+		$today = date('d');
+		
+		if($lastDayLastMonth <= $today) {
+			$lastDay = date('t');
+			if($today != $lastDay) {
+				return true;
+			}
+		}
+		
+		return false;
+	}
+	
+	/**
+	 * Update the auto renew record after usage.
+	 * @param type $collection
+	 * @return type
+	 */
+	protected function updateAutoRenewRecord($collection) {
+		$autoRenewRecord['remain'] = $autoRenewRecord['remain'] - 1;
+		
+		if($autoRenewRecord['eom'] == 1) {
+			$autoRenewRecord['last_renew_date'] = new MongoDate(strtotime('last day of this month'));
+		} else {
+			$autoRenewRecord['last_renew_date'] = new MongoDate();
+		}
+		$autoRenewRecord['done'] = $autoRenewRecord['done'] + 1;
+
+		return $collection->updateEntity($autoRenewRecord);
+	}
+	
+	/**
+	 * Update a balance according to a auto renew record.
+	 * @param type $autoRenewRecord
+	 * @return boolean
+	 */
+	protected function updateBalanceByAutoRenew($autoRenewRecord) {
+		$updater = new Billrun_ActionManagers_Balances_Update(); 
+
+		$updaterInput['method'] = 'update';
+		$updaterInput['sid'] = $autoRenewRecord['sid'];
+
+		// Build the query
+		$updaterInputQuery['charging_plan_external_id'] = $autoRenewRecord['charging_plan_external_id'];
+		$updaterInputUpdate['from'] = $autoRenewRecord['from'];
+		$updaterInputUpdate['to'] = $autoRenewRecord['to'];
+		$updaterInputUpdate['operation'] = $autoRenewRecord['operation'];
+
+		$updaterInput['query'] = $updaterInputQuery;
+		$updaterInput['update'] = $updaterInputUpdate;
+
+		if(!$updater->parse(json_encode($updaterInput))) {
+			// TODO: What do I do here?
+			return false;
+		}
+		if(!$updater->execute()) {
+			// TODO: What do I do here?
+			return false;
+		}
+		
+		return true;
+	}
+	
 	/**
 	 * method to add output to the stream and log
 	 * 

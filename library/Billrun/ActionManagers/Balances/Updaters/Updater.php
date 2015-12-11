@@ -118,6 +118,9 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater{
 		$planQuery = array(
 			'to' => array(
 				'$gt' => new MongoDate()
+			),
+			'from' => array(
+				'$lt' => new MongoDate()
 			)
 		);
 
