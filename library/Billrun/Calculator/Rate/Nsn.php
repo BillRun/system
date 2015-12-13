@@ -33,7 +33,7 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 		if (in_array($usage_type, array('call', 'incoming_call'))) {
 			if (isset($row['duration'])) {
 				return $row['duration'];
-			} 
+			}
 		}
 		if ($usage_type == 'sms') {
 			return 1;
@@ -75,13 +75,16 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 
 		if ($record_type == "01" || //MOC call
 				($record_type == "11" && in_array($icg, Billrun_Util::getRoamingCircuitGroups()) &&
-				$ocg != '3060' && $ocg != '3061') // Roaming on Cellcom and not redirection
+			$ocg != '3060' && $ocg != '3061') // Roaming on Cellcom and not redirection
 		) {
 			$matchedRate = $this->getRateByParams($called_number, $usage_type, $line_time, $ocg);
 		} else if ($record_type == '30' && isset($row['ild_prefix'])) {
 			$called_number = preg_replace('/^016/', '', $called_number);
 			$matchedRate = $this->getRateByParams($called_number, $usage_type, $line_time);
-		} else if($record_type == '31' && $ocg == '2102') {
+		} else if ($record_type == "31" //STC call
+			&& in_array($icg, Billrun_Util::getRoamingCircuitGroups()) &&
+			$ocg != '3060' && $ocg != '3061' // Roaming on Cellcom and not redirection
+		) { 
 			$matchedRate = $this->getRateByParams($called_number, $usage_type, $line_time, $ocg);
 		}
 
