@@ -11,7 +11,7 @@
  * Imports from Csv to mongo collection
  *
  * @package  Billrun
- * @since    5.0
+ * @since    4.0
  */
 abstract class Billrun_Importer_Csv extends Billrun_Importer_Abstract {
 	
