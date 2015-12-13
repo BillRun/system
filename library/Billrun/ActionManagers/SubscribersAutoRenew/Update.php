@@ -185,7 +185,11 @@ class Billrun_ActionManagers_SubscribersAutoRenew_Update extends Billrun_ActionM
 		$max_date = max($d1, $d2);
 		$i = 0;
 
-		while (($min_date = strtotime("+1 MONTH", $min_date)) <= $max_date) {
+		$maxMonth = date('m', $max_date);
+		while (($min_date = strtotime("first day of next month", $min_date)) <= $max_date) {
+			if(date('m', $min_date) == $maxMonth) {
+				break;
+			}
 			$i++;
 		}
 		
