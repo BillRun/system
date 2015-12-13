@@ -49,7 +49,7 @@ class Billrun_Importer_Csv_Simple extends Billrun_Importer_Csv {
 	protected function getDataToSave($rowData) {
 		$ret = array();
 		foreach ($this->fields as $field => $rowFieldIndex) {
-			$ret[$rowFieldIndex] = $rowData[$field];
+			$ret[$rowFieldIndex] = trim($rowData[$field]);
 		}
 		return $ret;
 	}
