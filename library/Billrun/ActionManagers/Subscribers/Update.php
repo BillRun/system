@@ -182,6 +182,34 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 	}
 	
 	/**
+	 * Validate the input plan for the subscriber
+	 * @todo This is multiplicated in the Subscribers Create module.
+	 * @todo Create a validatePlan function that receives a plan name, where to put it?
+	 * @return boolean True if valid.
+	 */
+	protected function validatePlan() {
+		// If the update doesn't affect the plan there is no reason to validate it.
+		if(!isset($this->recordToSet['plan'])) {
+			return true;
+		}
+		$planName = $this->recordToSet['plan'];
+		$planQuery = Billrun_Util::getDateBoundQuery();
+		$planQuery['type'] = 'customer';
+		$planQuery['name'] = $planName;
+		$planCollection = Billrun_Factory::db()->plansCollection();
+		$currentPlan = $planCollection->query($planQuery)->cursor()->current();
+		
+		// TODO: Use the subscriber class.
+		if(!$currentPlan){
+			$error='Invalid plan for the subscriber! [' . print_r($planName, true) . ']';
+			$this->reportError($error, Zend_Log::ALERT);
+			return false;
+		}		
+		
+		return true;
+	}
+	
+	/**
 	 * Set the values for the update record to be set.
 	 * @param httpRequest $input - The input received from the user.
 	 * @return true if successful false otherwise.
@@ -307,6 +335,10 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 			return false;
 		}
 				
+		if(!$this->validatePlan()) {
+			return false;
+		}
+		
 		// If keep_history is set take it.
 		$this->trackHistory = $input->get('track_history');
 		
