@@ -127,26 +127,10 @@ class Billrun_ActionManagers_SubscribersAutoRenew_Update extends Billrun_ActionM
 		$this->updateQuery['last_renew_date'] = $this->updateQuery['creation_time'];
 	}
 	
-	/**
-	 * 
-	 * @return type
-	 * @todo This is generic enough to be moved to anoter location.
-	 */
-	protected function getDateBoundQuery() {
-		return array(
-			'to' => array(
-				'$gt' => new MongoDate()
-			),
-			'from' => array(
-				'$lt' => new MongoDate()
-			)
-		);
-	}
-	
 	protected function fillWithSubscriberValues() {
 		$this->updateQuery['sid'] = $this->query['sid'];
 		$subCollection = Billrun_Factory::db()->subscribersCollection();
-		$subQuery = $this->getDateBoundQuery();
+		$subQuery = Billrun_Util::getDateBoundQuery();
 		$subQuery['sid'] = $this->query['sid'];
 		$subRecord = $subCollection->query($subQuery, array('aid'));
 		
@@ -164,7 +148,7 @@ class Billrun_ActionManagers_SubscribersAutoRenew_Update extends Billrun_ActionM
 	protected function fillWithChargingPlanValues() {
 		// Get the charging plan.
 		$plansCollection = Billrun_Factory::db()->plansCollection();
-		$chargingPlanQuery = $this->getDateBoundQuery();
+		$chargingPlanQuery = Billrun_Util::getDateBoundQuery();
 		$chargingPlanQuery['type'] = 'charging';
 		$chargingPlanQuery['name'] = $this->query['charging_plan'];
 		
