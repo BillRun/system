@@ -393,6 +393,22 @@ class Billrun_Util {
 	}
 
 	/**
+	 * 
+	 * @return type
+	 * @todo This is generic enough to be moved to anoter location.
+	 */
+	public function getDateBoundQuery() {
+		return array(
+			'to' => array(
+				'$gt' => new MongoDate()
+			),
+			'from' => array(
+				'$lt' => new MongoDate()
+			)
+		);
+	}
+	
+	/**
 	 * method to fork process of PHP-Cli
 	 * 
 	 * @param String $cmd the command to run

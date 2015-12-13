@@ -62,6 +62,30 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 	}
 	
 	/**
+	 * Validate the input plan for the subscriber
+	 * @return boolean True if valid.
+	 */
+	protected function validatePlan() {
+		$subscriberQuery = $this->getSubscriberQuery();
+		
+		$planName = $subscriberQuery['plan'];
+		$planQuery = Billrun_Util::getDateBoundQuery();
+		$planQuery['type'] = 'customer';
+		$planQuery['name'] = $planName;
+		$planCollection = Billrun_Factory::db()->plansCollection();
+		$currentPlan = $planCollection->query($planQuery)->cursor()->current();
+		
+		// TODO: Use the subscriber class.
+		if(!$currentPlan){
+			$error='Invalid plan for the subscriber! [' . print_r($planName, true) . ']';
+			$this->reportError($error, Zend_Log::ALERT);
+			return false;
+		}		
+		
+		return true;
+	}
+	
+	/**
 	 * Execute the action.
 	 * @return data for output.
 	 */
@@ -69,7 +93,8 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 		$success = false;
 		try {
 			// Create the subscriber only if it doesn't already exists.
-			if(!$this->subscriberExists()) {
+			if($this->validatePlan() &&
+			   !$this->subscriberExists()) {
 				$entity = new Mongodloid_Entity($this->query);
 
 				$success = ($this->collection->save($entity, 1) !== false);
