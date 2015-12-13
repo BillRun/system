@@ -40,7 +40,7 @@ $protected = array();
 	var form_data = <?php echo json_encode($this->data); ?>;
 </script>
 <script src='<?php echo $this->baseUrl; ?>/js/controllers/PlansController.js'></script>
-<div class="container component" ng-app='plansApp' ng-controller='PlansController'>
+<div class="container component" ng-controller='PlansController'>
 
 <?php
 	print '<div class="form_protect">';
@@ -79,13 +79,13 @@ print '</div>';
 
 	<hr/>
 	
-	<i class='glyphicon glyphicon-chevron-right' ng-hide='shown.include'></i>
-	<i class='glyphicon glyphicon-chevron-down' ng-show='shown.include'></i>
+	<i class='glyphicon glyphicon-chevron-right' ng-hide='shown.include' ng-click='shown.include = !shown.include'></i>
+	<i class='glyphicon glyphicon-chevron-down' ng-show='shown.include' ng-click='shown.include = !shown.include'></i>
 	<span class='h3' ng-click='shown.include = !shown.include'>
 		Include
 	</span>
 	<select id='new-include-type' class='form-control' ng-model='newIncludeType'>
-		<option ng-repeat='type in includeTypes'>{{type}}</option>
+		<option ng-repeat='type in includeTypes' ng-disabled="entity.include[type]">{{type}}</option>
 	</select>
 	<input ng-model='newIncludeValue' type='text' class='form-control' ng-disabled='newIncludeType == "groups"' />
 	<i id='add-plan-include' class='glyphicon glyphicon-plus-sign' ng-click='addPlanInclude()'></i>
@@ -124,8 +124,8 @@ print '</div>';
 		</div>
 
 		<div id='plan-include-groups-div' ng-if='entity.include.groups'>
-			<i class='glyphicon glyphicon-chevron-right' ng-hide='shown.groups'></i>
-			<i class='glyphicon glyphicon-chevron-down' ng-show='shown.groups'></i>			
+			<i class='glyphicon glyphicon-chevron-right' ng-hide='shown.groups' ng-click='shown.groups = !shown.groups'></i>
+			<i class='glyphicon glyphicon-chevron-down' ng-show='shown.groups' ng-click='shown.groups = !shown.groups'></i>
 			<span class='h4' ng-click='shown.groups = !shown.groups'>Groups</span>
 			<input ng-model='newGroup.name' type='text' class='form-control' />
 			<i class='add-group glyphicon glyphicon-plus-sign' ng-click="addNewGroup()"></i>
@@ -133,12 +133,12 @@ print '</div>';
 				<div style='margin-top: 15px; margin-bottom: 15px' class='plan-include-group' ng-show='shown.groups'
 					 ng-repeat='(group_name, group_data) in entity.include.groups'>
 					<!--<input ng-model='group_name' type='text' class='form-control include-group-name' />-->
-					<i class='glyphicon glyphicon-chevron-right' ng-hide='shownGroups[group_name]'></i>
-					<i class='glyphicon glyphicon-chevron-down' ng-show='shownGroups[group_name]'></i>
+					<i class='glyphicon glyphicon-chevron-right' ng-hide='shownGroups[group_name]' ng-click='shownGroups[group_name] = !shownGroups[group_name]'></i>
+					<i class='glyphicon glyphicon-chevron-down' ng-show='shownGroups[group_name]' ng-click='shownGroups[group_name] = !shownGroups[group_name]'></i>
 					<span ng-click='shownGroups[group_name] = !shownGroups[group_name]' class='group-name'>{{group_name}}</span>
 					<i class='delete-plan glyphicon glyphicon-minus-sign' ng-click='deleteGroup(group_name)'></i>
 					<select class='plan-param-type form-control' ng-model='newParamType[group_name]'>
-						<option ng-repeat='param in groupParams'>{{param}}</option>
+						<option ng-repeat='param in groupParams' ng-disabled="entity.include.groups[group_name][param]">{{param}}</option>
 					</select>
 					<input type='text' class='form-control' ng-model='newParamValue[group_name]' />
 					<i class="add-plan-param glyphicon glyphicon-plus-sign" ng-click='addGroupParam(group_name)'></i>
