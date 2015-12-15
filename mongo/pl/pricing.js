@@ -57,14 +57,15 @@ db.tmp_PPS_PREFIXES.aggregate({$group:{_id:"$BILLING_ALLOCATION", prefixes:{$add
 												print("usaget : " + _usaget);
 												print("plan : " + _plan_id);
 												if (_tariffs[_usaget] === undefined) _tariffs[_usaget] = {};
-												_tariffs[_usaget][_plan_id] = {
+												if (_tariffs[_usaget][_plan_id] === undefined) _tariffs[_usaget][_plan_id] = [];
+												_tariffs[_usaget][_plan_id].push({
 													'access':   obj7.INITIAL_CHARGE,
 													'rate':     {
 														'to': 2147483647,
 														'price': obj7.ADD_CHARGE,
 														'interval': obj7.ADD_AMOUNT
 													}
-												};
+												});
 											}
 										);
 									}
