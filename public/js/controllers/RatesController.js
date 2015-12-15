@@ -1,20 +1,4 @@
-app.controller('RatesController', ['$scope', '$http', '$window', function ($scope, $http, $window) {
-  $scope.entity = entity;
-  $scope.form_data = form_data;
-  $scope.availableCallUnits = ['seconds', 'minutes', 'hours'];
-  $scope.availablePlans = available_plans;
-  $scope.newOutCircuitGroup = {from: undefined, to: undefined};
-  $scope.newPrefix = {value: undefined};
-  $scope.newRecordType = {value: undefined};
-  $scope.newCallRate = {interval: undefined,
-	  price: undefined,
-	  to: undefined};
-  $scope.newCallPlan = {value: undefined};
-  $scope.newSMSRate = {interval: undefined,
-	  price: undefined,
-	  to: undefined};
-  $scope.newSMSPlan = {value: undefined};
-  
+app.controller('RatesController', ['$scope', '$http', '$window', function ($scope, $http, $window) {  
   $scope.addOutCircuitGroup = function () {
 	if ($scope.newOutCircuitGroup.to === undefined && $scope.newOutCircuitGroup.from === undefined) return;
 	$scope.entity.params.out_circuit_group.push($scope.newOutCircuitGroup);
@@ -124,5 +108,23 @@ app.controller('RatesController', ['$scope', '$http', '$window', function ($scop
     }, function (err) {
       alert("Danger! Danger! Beedeebeedeebeedee!");
     });
+  };
+  
+  $scope.init = function () {
+	$scope.entity = entity;
+	$scope.form_data = form_data;
+	$scope.availableCallUnits = ['seconds', 'minutes', 'hours'];
+	$scope.availablePlans = available_plans;
+	$scope.newOutCircuitGroup = {from: undefined, to: undefined};
+	$scope.newPrefix = {value: undefined};
+	$scope.newRecordType = {value: undefined};
+	$scope.newCallRate = {interval: undefined,
+		price: undefined,
+		to: undefined};
+	$scope.newCallPlan = {value: undefined};
+	$scope.newSMSRate = {interval: undefined,
+		price: undefined,
+		to: undefined};
+	$scope.newSMSPlan = {value: undefined};
   };
 }]);

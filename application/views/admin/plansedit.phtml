@@ -19,24 +19,25 @@
 $protected = array();
 	$entity = $this->data['entity']->getRawData();
 	foreach ($this->data['protectedKeys'] as $key) {
-		if (isset($entity[$key])) {
+		if ($key !== '_id' && isset($entity[$key])) {
 			$protected[$key] = $entity[$key];
 			unset($entity[$key]);
 		}
 	}
-	foreach ($this->data['hiddenKeys'] as $key) {
+	foreach ($key !== '_id' && $this->data['hiddenKeys'] as $key) {
 		unset($entity[$key]);
 	}
 ?>
 
 <script>
-	var entity = <?php echo json_encode($this->data['entity']->getRawData()); ?>;
+	var entity = <?php echo json_encode($entity); ?>;
 	var form_data = <?php echo json_encode($this->data); ?>;
 </script>
 <script src='<?php echo $this->baseUrl; ?>/js/controllers/PlansController.js'></script>
-<div class="container component" ng-controller='PlansController'>
+<div class="container component" ng-controller='PlansController' ng-init="init()">
 	<center>
 		<h2>{{entity.name}}</h2>
+		<h3>Customer Plan</h3>
 	</center>
 <form class='form-inline' ng-submit='savePlan()'>
 	<div class="row">
@@ -213,7 +214,28 @@ $protected = array();
 		</div>
 	</div>
 
+	<div class="modal fade" id="popupModal" tabindex="-1" role="dialog" aria-labelledby="popupModalLabel" aria-hidden="true">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+					<h3 id="popupModalLabel"></h3>
+				</div>
+				<div class="modal-body">
+				</div>
+				<div class="modal-footer">
+					<button id="cancelPopup" class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
+					<?php if (AdminController::authorized('write')) : ?>
+						<button id="save" class="btn btn-primary">Save changes</button>
+					<?php endif; ?>
+				</div>
+			</div><!-- /.modal-content -->
+		</div><!-- /.modal-dialog -->
+	</div>
+	
 	<div class="modal-footer">
+		<a href="#popupModal" data-type="update" data-toggle="modal" role="button"
+			data-remote="<?php echo $this->baseUrl . '/admin/edit?coll=' . $this->data['collectionName'] . '&type=update&id=' . $entity['_id']; ?>">Advanced Mode</a>
 		<?php if ($this->collectionName == 'plans' && $this->type == 'duplicate') : ?>
 		<div class="edit_checkboxes">
 		<input class="span1" id="duplicate_rates" name="duplicate_rates" type="checkbox" value="on" checked> <label class="span1" for="duplicate_rates">Duplicate rates</label>

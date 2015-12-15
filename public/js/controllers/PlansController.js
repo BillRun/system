@@ -1,11 +1,5 @@
 app.controller('PlansController', ['$scope', '$http', '$window', function ($scope, $http, $window) {
-  $scope.entity = entity;
-  $scope.form_data = form_data;
-  $scope.includeTypes = ['call', 'data', 'sms', 'mms'];
-  $scope.groupParams = ["data", "call", "incoming_call", "incoming_sms", "sms"];
-  $scope.newInclude = {type: undefined, value: undefined};
-  $scope.newGroupParam = [];
-  $scope.newGroup = {name: ""};
+  'use strict';
 
   $scope.addPlanInclude = function () {
     if ($scope.newInclude && $scope.newInclude.value && $scope.entity.include[$scope.newInclude.type] === undefined) {
@@ -56,5 +50,15 @@ app.controller('PlansController', ['$scope', '$http', '$window', function ($scop
     }, function (err) {
       alert("Danger! Danger! Beedeebeedeebeedee!");
     });
+  };
+
+  $scope.init = function () {
+	$scope.entity = entity;
+	$scope.form_data = form_data;
+	$scope.includeTypes = ['call', 'data', 'sms', 'mms'];
+	$scope.groupParams = ["data", "call", "incoming_call", "incoming_sms", "sms"];
+	$scope.newInclude = {type: undefined, value: undefined};
+	$scope.newGroupParam = [];
+	$scope.newGroup = {name: ""};
   };
 }]);

@@ -31,7 +31,7 @@ $protected = array();
 	var available_plans = <?php echo json_encode($availablePlans); ?>; 
 </script>
 <script src='<?php echo $this->baseUrl; ?>/js/controllers/RatesController.js'></script>
-<div class="container component" ng-controller='RatesController'>	
+<div class="container component" ng-controller='RatesController' ng-init="init()">
 	<center>
 		<h2>{{entity.key}}</h2>
 	</center>
