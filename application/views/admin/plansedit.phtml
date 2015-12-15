@@ -213,25 +213,6 @@ $protected = array();
 			</div>
 		</div>
 	</div>
-
-	<div class="modal fade" id="popupModal" tabindex="-1" role="dialog" aria-labelledby="popupModalLabel" aria-hidden="true">
-		<div class="modal-dialog">
-			<div class="modal-content">
-				<div class="modal-header">
-					<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-					<h3 id="popupModalLabel"></h3>
-				</div>
-				<div class="modal-body">
-				</div>
-				<div class="modal-footer">
-					<button id="cancelPopup" class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
-					<?php if (AdminController::authorized('write')) : ?>
-						<button id="save" class="btn btn-primary">Save changes</button>
-					<?php endif; ?>
-				</div>
-			</div><!-- /.modal-content -->
-		</div><!-- /.modal-dialog -->
-	</div>
 	
 	<div class="modal-footer">
 		<a href="#popupModal" data-type="update" data-toggle="modal" role="button"
@@ -248,3 +229,76 @@ $protected = array();
 	</div>
 	</form>
 </div>
+
+<div class="modal fade" id="popupModal" tabindex="-1" role="dialog" aria-labelledby="popupModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				<h3 id="popupModalLabel"></h3>
+			</div>
+			<div class="modal-body">
+			</div>
+			<div class="modal-footer">
+				<button id="cancelPopup" class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
+				<?php if (AdminController::authorized('write')) : ?>
+					<button id="save" class="btn btn-primary">Save changes</button>
+				<?php endif; ?>
+			</div>
+		</div><!-- /.modal-content -->
+	</div><!-- /.modal-dialog -->
+</div>
+<script>
+var opt = {
+	change: function(data) {
+		/* called on every change */
+		_jsonData = data;
+	},
+	propertyclick: function(path) { /* called when a property is clicked with the JS path to that property */
+		jsonPath = JSON.parse(path);
+		var protectedKeys = <?php echo json_encode($this->protectedKeys); ?>;
+		for (p in jsonPath) {
+			if ($.inArray(jsonPath[p], protectedKeys) !== -1) {
+				$('input[title="' + jsonPath[p] + '"]').attr('disabled', 'disabled');
+			}
+		}
+	}
+};
+/* opt.propertyElement = '<textarea>'; */ // element of the property field, <input> is default
+/* opt.valueElement = '<textarea>'; */  // element of the value field, <input> is default
+//var _jsonEditor = $('#popupModal').jsonEditor(entity, opt);
+$('#save').unbind();
+$('#save').removeAttr("disabled");
+$('#save').click(function saveClick() {
+	$(this).attr('disabled', 'disabled');
+	$(this).unbind("click", saveClick);
+	console.log(_jsonData);
+	var _ajaxOpts = {
+		async: true,
+		cache: false,
+		//			dataType:'json',
+		type: 'POST',
+		data: {
+			id: $('#form_id').html(),
+			coll: $('#form_coll').html(),
+			type: $('#form_type').html(),
+			duplicate_rates: $('#duplicate_rates').is(':checked'),
+			data: JSON.stringify(_jsonData)
+		},
+		success: function(data, textStatus, jqXHR) {
+			if (data != 'null') {
+				alert(data);
+				$('#save').removeAttr("disabled");
+				$('#save').bind("click", saveClick);
+				return;
+			}
+			location.href = "<?php echo $this->baseUrl; ?>/admin/plans";
+		},
+		error: function(jqXHR, textStatus, errorThrown) {
+			alert('some error occured');
+		}
+	};
+	$.ajax('<?php echo $this->baseUrl; ?>/admin/save', _ajaxOpts);
+});
+</script>
+
