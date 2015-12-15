@@ -9,6 +9,7 @@ db.tmp_PP_PLAN.ensureIndex({"PP_PLAN_ID": 1}, { unique: false , sparse: false, b
 // long script to migrate the rates pricing
 var _rate, _plan, _plan_id, _usaget, _appid, _prefixes = [], _tariffs = {}, _cos_id;
 var _location_id, _subtype;
+//db.tmp_PPS_PREFIXES.aggregate({$match:{BILLING_ALLOCATION:/Voice Bezeq/}}, {$group:{_id:"$BILLING_ALLOCATION", prefixes:{$addToSet:"$PPS_PREFIXES"}}}).forEach(
 db.tmp_PPS_PREFIXES.aggregate({$group:{_id:"$BILLING_ALLOCATION", prefixes:{$addToSet:"$PPS_PREFIXES"}}}).forEach(
 	function(obj1) {
 		_rate_name = obj1._id;
@@ -37,6 +38,9 @@ db.tmp_PPS_PREFIXES.aggregate({$group:{_id:"$BILLING_ALLOCATION", prefixes:{$add
 									function(obj6) {
 										db.tmp_PP_TARIFFS.find({"PP_TARIFF_ID":obj6.PP_TARIFF_ID}).forEach(
 											function(obj7) {
+												if (obj7.PP_TARIFF_NAME.toLowerCase().contains('inter ') !== false || obj7.PP_TARIFF_NAME.toLowerCase().contains('interconnect') !== false) {
+													return;
+												}
 												switch(obj7.UNIT_TYPE) {
 													case "1":
 														_usaget = 'cost';
@@ -55,7 +59,8 @@ db.tmp_PPS_PREFIXES.aggregate({$group:{_id:"$BILLING_ALLOCATION", prefixes:{$add
 														break;
 												}
 												print("usaget : " + _usaget);
-												print("plan : " + _plan_id);
+												print("plan : " + obj4.COS_ID + " " + _plan_id);
+												print("tarif : " + obj7.PP_TARIFF_NAME);
 												if (_tariffs[_usaget] === undefined) _tariffs[_usaget] = {};
 												if (_tariffs[_usaget][_plan_id] === undefined) _tariffs[_usaget][_plan_id] = [];
 												_tariffs[_usaget][_plan_id].push({
@@ -81,7 +86,7 @@ db.tmp_PPS_PREFIXES.aggregate({$group:{_id:"$BILLING_ALLOCATION", prefixes:{$add
 			'to':      ISODate('2099-12-31 23:59:59'),
 			'key':     _rate_name,
 			'params':  {
-				'prefixes': _prefixes
+				'prefix': _prefixes
 			},
 			'rates': _tariffs
 		};
