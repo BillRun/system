@@ -1,0 +1,45 @@
+<style>
+	.glyphicon-minus-sign {
+		color: #bc2328;
+		cursor: pointer;
+	}
+	.glyphicon-plus-sign {
+		color: green;
+		cursor: pointer;
+	}
+	#plan-include-groups-div {
+		margin-top: 15px;
+	}
+	table {
+		margin-top: 10px;
+	}
+</style>
+
+<?php
+$protected = array();
+	$entity = $this->data['entity']->getRawData();
+	foreach ($this->data['protectedKeys'] as $key) {
+		if (isset($entity[$key])) {
+			$protected[$key] = $entity[$key];
+			unset($entity[$key]);
+		}
+	}
+	foreach ($this->data['hiddenKeys'] as $key) {
+		unset($entity[$key]);
+	}
+?>
+
+<script>
+	var entity = <?php echo json_encode($this->data['entity']->getRawData()); ?>;
+	var form_data = <?php echo json_encode($this->data); ?>;
+</script>
+<script src='<?php echo $this->baseUrl; ?>/js/controllers/PlansController.js'></script>
+<div class="container component" ng-controller='PlansController' ng-init="init()">
+	<center>
+		<h2>{{entity.name}}</h2>
+		<h3>Charging Plan</h3>
+	</center>
+<form class='form-inline' ng-submit='savePlan()'>
+	
+</form>
+</div>

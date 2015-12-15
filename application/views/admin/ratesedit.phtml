@@ -1,10 +1,15 @@
 <style>
-	.h3, .glyphicon-chevron-down, .glyphicon-chevron-right {
+	.glyphicon-plus-sign {
+		color: green;
+		cursor: pointer;
+	}
+	
+	.glyphicon-minus-sign {
+		color: #bc2328;
 		cursor: pointer;
 	}
 </style>
 
-<div class="container component">	
 <?php
 $protected = array();
 	$entity = $this->data['entity']->getRawData();
@@ -18,81 +23,122 @@ $protected = array();
 	foreach ($this->data['hiddenKeys'] as $key) {
 		unset($entity[$key]);
 	}
-
-	print '<div class="form_protect">';
-if (isset($protected['log_stamp'])) {
-	$log_stamp = $protected['log_stamp'];
-}
-foreach ($protected as $k => $v) {
-	print '<span class="label label-info">' . $k . '</span>';
-	if ($k == "file") {
-		print '<a href="#LogPopup" data-toggle="modal" data-remote=""><span id="form' . $k . '"class="label label-inverse">' . $v . '</span></a><br />';
-	} else {
-		print '<span id="form' . $k . '"class="label label-inverse">' . $v . '</span><br />';
-	}
-}
-print '<span id="form_type" class="hidden">' . $this->data['type'] . '</span>';
-print '<span id="form_coll" class="hidden">' . $this->data['collectionName'] . '</span>';
-print '</div>';
 ?>
-	<br/>
-<form class='form-inline'>
-	<i class='glyphicon glyphicon-chevron-down'></i>&nbsp;<span class='h3'>Call</span>
+
+<script>
+	var entity = <?php echo json_encode($this->data['entity']->getRawData()); ?>;
+	var form_data = <?php echo json_encode($this->data); ?>;
+	var available_plans = <?php echo json_encode($availablePlans); ?>; 
+</script>
+<script src='<?php echo $this->baseUrl; ?>/js/controllers/RatesController.js'></script>
+<div class="container component" ng-controller='RatesController' ng-init="init()">
+	<center>
+		<h2>{{entity.key}}</h2>
+	</center>
+<form class='form-inline' ng-submit='saveRate()'>
+	<h3>
+		Out Circuit Group
+	</h3>
+	<div id='rate-out-circuit-groups'>
+		<div class='rate-out-circuit-group' ng-repeat="outCircuitGroup in entity.params.out_circuit_group">
+			<label>From:</label>
+			<input type='text' class='form-control' ng-model="outCircuitGroup.from" />
+			<label>To:</label>
+			<input type='text' class='form-control' ng-model="outCircuitGroup.to" />
+			<i class='glyphicon glyphicon-minus-sign' ng-click="deleteOutCircuitGroup(outCircuitGroup)"></i>
+		</div>
+		<div>
+			<label>From:</label>
+			<input type='text' class='form-control' ng-model="newOutCircuitGroup.from" />
+			<label>To:</label>
+			<input type='text' class='form-control' ng-model="newOutCircuitGroup.to" />
+			<i class='glyphicon glyphicon-plus-sign' ng-click="addOutCircuitGroup()"></i>
+		</div>
+	</div>
+
+	<h3>
+		Prefix
+	</h3>
+	<div id='rate-prefixes'>
+		<div ng-repeat="prefix in entity.params.prefix track by $index">
+			<input type="text" class="form-control" ng-model="prefix" />
+			<i class='glyphicon glyphicon-minus-sign' ng-click='deletePrefix($index)'></i>
+		</div>
+		<div>
+			<input type="text" class="form-control" ng-model="newPrefix.value" />
+			<i class='glyphicon glyphicon-plus-sign' ng-click="addPrefix()"></i>
+		</div>
+	</div>
+	
+	<h3>
+		Record Types
+	</h3>
+	<div id='rate-record-types'>
+		<div ng-repeat="recordType in entity.params.record_type track by $index">
+			<input type="text" class="form-control" ng-model="recordType" />
+			<i class='glyphicon glyphicon-minus-sign' ng-click='deleteRecordType($index)'></i>
+		</div>
+		<div>
+			<input type="text" class="form-control" ng-model="newRecordType.value" />
+			<i class='glyphicon glyphicon-plus-sign' ng-click="addRecordType()"></i>
+		</div>
+	</div>
+
+	<hr/>
+
+	<h2>Tariffs</h2>
+	<h3>Call</h3>
 	<div>
 		<ul>
 		<label for='rate-call-access'>Access</label>
-		<input type='number' class='form-control' id='rate-call-access' value='<?php echo $entity['rates']['call']['access'] ?>' />
+		<input type='number' class='form-control' ng-model="entity.rates.call.access" />
 		<label for='rate-unit'>Unit</label>
-		<?php $availableCallUnits = array('seconds', 'minutes', 'hours');  ?>
 		<select class='form-control' id='rate-call-unit'>
-			<?php
-			foreach($availableCallUnits as $unit) {
-				$selected = ($entity['rates']['call']['unit'] == $unit) ? " selected " : "";
-				print "<option value='$unit' $selected>$unit</option>";
-			}
-			?>
+			<option ng-repeat="unit in availableCallUnits" value="{{unit}}">{{unit}}</options>
 		</select>	
 		<h4>
 			Rates
-			<small><i id='add-call-rate' class='glyphicon glyphicon-plus-sign' style='color: green; cursor: pointer'></i></small>
 		</h4>
 		<div id='call-rates'>
 			<table class='table table-striped table-bordered call-rates-table'>
 				<thead>
 					<tr>
-						<th style='width: 30%'>Interval</th>
-						<th style='width: 30%'>Price</th>
-						<th style='width: 30%'>To</th>
-						<th style='width: 10%'></th>
+						<th>Interval</th>
+						<th>Price</th>
+						<th>To</th>
+						<th></th>
 					</tr>
 				</thead>
 				<tbody id='call-rates-tbody'>
-		<?php foreach($entity['rates']['call']['rate'] as $rate) { ?>
-					<tr>
-			<?php print "<td><input type='number' value='" . $rate['interval'] . "' class='form-control rate-call-interval' /></td>"; ?>
-			<?php print "<td><input type='number' value='" . $rate['price'] . "' class='form-control rate-call-price' /></td>"; ?>
-			<?php print "<td><input type='number' value='" . $rate['to'] . "' class='form-control rate-call-to' /></td>"; ?>		
-						<td><i class='delete-call-rate glyphicon glyphicon-minus-sign' style='color: #bc2328; cursor: pointer'></i></td>
+					<tr ng-repeat="rate in entity.rates.call.rate">
+						<td><input type='number' ng-model="rate.interval" class='form-control rate-call-interval' /></td>
+						<td><input type='text' ng-model="rate.price" class='form-control rate-call-price' /></td>
+						<td><input type='text' ng-model="rate.to" class='form-control rate-call-to' /></td>	
+						<td><i class='glyphicon glyphicon-minus-sign' ng-click="deleteCallRate(rate)"></i></td>
 					</tr>
-		<?php } ?>
+					<tr>
+						<td><input type="number" ng-model="newCallRate.interval" class="form-control" /></td>
+						<td><input type="text" ng-model='newCallRate.price' class='form-control' /></td>
+						<td><input type='text' ng-model='newCallRate.to' class='form-control' /></td>
+						<td><i class='glyphicon glyphicon-plus-sign' ng-click="addCallRate()"></i></td>
+					</tr>
 				</tbody>
 			</table>
-			<h4>
-				Plans
-				<small><i id='add-call-plan' class='glyphicon glyphicon-plus-sign' style='color: green; cursor: pointer'></i></small>
-			</h4>
+			
+			<h4>Plans</h4>
 			<div id='rate-call-plans'>
-				<?php foreach($entity['rates']['call']['plans'] as $plan) { ?>
-				<div class='rate-call-plan-div'>
-				<select class='form-control rate-call-plan'>
-					<?php foreach($availablePlans as $availablePlan) {
-						$selected = $availablePlan === $plan ? "selected" : "";
-						print "<option id='$availablePlan' value='$availablePlan' $selected >$availablePlan</option>";
-					} ?>
-				</select>
-				<i class='delete-call-plan glyphicon glyphicon-minus-sign' style='color: #bc2328; cursor: pointer'></i>
+				<div ng-repeat='callPlan in entity.rates.call.plans track by $index'>
+					<select class='form-control rate-call-plan' ng-model='callPlan'>
+						<option ng-repeat='availablePlan in availablePlans' value='{{availablePlan}}'>{{availablePlan}}</option>
+					</select>
+					<i class='glyphicon glyphicon-minus-sign' ng-click='deleteCallPlan($index)'></i>
 				</div>
-				<?php } ?>
+				<div>
+					<select class='form-control' ng-model='newCallPlan.value'>
+						<option ng-repeat='availablePlan in availablePlans' value='{{availablePlan}}'>{{availablePlan}}</option>
+					</select>
+					<i class='glyphicon glyphicon-plus-sign' ng-click='addCallPlan()'></i>
+				</div>
 			</div>
 		</div>
 		</ul>
@@ -100,370 +146,144 @@ print '</div>';
 	
 	<hr/>
 
-	<i class='glyphicon glyphicon-chevron-down'></i>&nbsp;<span class='h3'>SMS</span>
+	<h3>SMS</h3>
 	<div>
 		<ul>
 		<label for='rate-sms-category'>Category</label>
-		<input type='text' class='form-control' id='rate-sms-category' value='<?php echo $entity['rates']['sms']['category'] ?>' />
-		<label for='rate-unit'>Unit: </label> <input type='text' disabled id='rate-sms-unit' value='counter' />
+		<input type='text' id='rate-sms-category' class='form-control' ng-model='entity.rates.sms.category' />
+		<label for='rate-unit'>Unit: </label> <input type='text' disabled value='counter' />
 
 		<h4>
 			Rates
-			<small><i id='add-sms-rate' class='glyphicon glyphicon-plus-sign' style='color: green; cursor: pointer'></i></small>
 		</h4>
 		<div id='sms-rates'>
-			<table class='table table-striped table-bordered sms-rates-table'>
+			<table class='table table-striped table-bordered call-rates-table'>
 				<thead>
 					<tr>
-						<th style='width: 30%'>Interval</th>
-						<th style='width: 30%'>Price</th>
-						<th style='width: 30%'>To</th>
-						<th style='width: 10%'></th>
+						<th>Interval</th>
+						<th>Price</th>
+						<th>To</th>
+						<th></th>
 					</tr>
 				</thead>
-				<tbody id='sms-rates-tbody'>		
-		<?php foreach($entity['rates']['sms']['rate'] as $rate) { ?>
-					<tr>
-			<?php print "<td><input type='number' value='" . $rate['interval'] . "' class='form-control rate-sms-interval' /></td>"; ?>
-			<?php print "<td><input type='number' value='" . $rate['price'] . "' class='form-control rate-sms-price' /></td>"; ?>
-			<?php print "<td><input type='number' value='" . $rate['to'] . "' class='form-control rate-sms-to' /></td>"; ?>
-						<td><i class='delete-call-rate glyphicon glyphicon-minus-sign' style='color: #bc2328; cursor: pointer'></i></td>					
+				<tbody id='sms-rates-tbody'>
+					<tr ng-repeat="rate in entity.rates.sms.rate">
+						<td><input type='number' ng-model="rate.interval" class='form-control rate-call-interval' /></td>
+						<td><input type='text' ng-model="rate.price" class='form-control rate-call-price' /></td>
+						<td><input type='text' ng-model="rate.to" class='form-control rate-call-to' /></td>	
+						<td><i class='glyphicon glyphicon-minus-sign' ng-click="deleteSMSRate(rate)"></i></td>
 					</tr>
-		<?php } ?>
+					<tr>
+						<td><input type="number" ng-model="newSMSRate.interval" class="form-control" /></td>
+						<td><input type="text" ng-model='newSMSRate.price' class='form-control' /></td>
+						<td><input type='text' ng-model='newSMSRate.to' class='form-control' /></td>
+						<td><i class='glyphicon glyphicon-plus-sign' ng-click="addSMSRate()"></i></td>
+					</tr>
 				</tbody>
 			</table>
-			<h4>
-				Plans
-				<small><i id='add-sms-plan' class='glyphicon glyphicon-plus-sign' style='color: green; cursor: pointer'></i></small>
-			</h4>
+			
+			<h4>Plans</h4>
 			<div id='rate-sms-plans'>
-				<?php foreach($entity['rates']['sms']['plans'] as $plan) { ?>
-				<div class="rate-sms-plan-div">
-					<select class='form-control rate-sms-plan'>
-						<?php foreach($availablePlans as $availablePlan) {
-							$selected = $availablePlan === $plan ? "selected" : "";
-							print "<option id='$availablePlan' value='$availablePlan' $selected >$availablePlan</option>";
-						} ?>
+				<div ng-repeat='smsPlan in entity.rates.sms.plans track by $index'>
+					<select class='form-control' ng-model='smsPlan'>
+						<option ng-repeat='availablePlan in availablePlans' value='{{availablePlan}}'>{{availablePlan}}</option>
 					</select>
-					<i class='delete-sms-plan glyphicon glyphicon-minus-sign' style='color: #bc2328; cursor: pointer'></i>
+					<i class='glyphicon glyphicon-minus-sign' ng-click='deleteSMSPlan($index)'></i>
 				</div>
-				<?php } ?>
+				<div>
+					<select class='form-control' ng-model='newSMSPlan.value'>
+						<option ng-repeat='availablePlan in availablePlans' value='{{availablePlan}}'>{{availablePlan}}</option>
+					</select>
+					<i class='glyphicon glyphicon-plus-sign' ng-click='addSMSPlan()'></i>
+				</div>
 			</div>
 		</div>
 		</ul>
 	</div>
-	
-	<hr/>
-
-	<i class='glyphicon glyphicon-chevron-down'></i>&nbsp;<span class='h3'>Out Circuit Group</span>&nbsp;
-	<i id='add-out-circuit-group' class='glyphicon glyphicon-plus-sign' style='color: green; cursor: pointer'></i>
-	<div id='rate-out-circuit-groups'>
-		<ul>
-		<?php 
-		foreach($entity['params']['out_circuit_group'] as $index => $out_circuit_group) {
-			print "<div class='rate-out-circuit-group'>";
-			print "<label for='out-circuit-group-$index-from'>From:</label>";
-			print "<input type='number' class='form-control rate-out-circuit-group-from' id='out-circuit-group-$index-from' value='" . $out_circuit_group['from'] . "' />";
-			print "<label for='out-circuit-group-$index-to'>To:</label>";
-			print "<input type='number' class='form-control rate-out-circuit-group-to' id='out-circuit-group-$index-to' value='" . $out_circuit_group['to'] . "' />";
-			print "<i class='delete-call-out-circuit-group glyphicon glyphicon-minus-sign' style='color: #bc2328; cursor: pointer'></i>";
-			print "</div>";
-		}
-		?>
-		</ul>
-	</div>
-
-	<hr/>
-
-	<i class='glyphicon glyphicon-chevron-down'></i>&nbsp;<span class='h3'>Prefix</span>&nbsp;
-	<i id='add-prefix' class='glyphicon glyphicon-plus-sign' style='color: green; cursor: pointer'></i>
-	<div id='rate-prefixes'>
-		<ul>
-		<?php
-		foreach($entity['params']['prefix'] as $prefix) {
-			print "<input type='number' class='form-control rate-prefix' value='$prefix' />";
-		}
-		?>
-		</ul>
-	</div>
-
-	<hr/>
-
-	<i class='glyphicon glyphicon-chevron-down'></i>&nbsp;<span class='h3'>Record Types</span>&nbsp;
-	<i id='add-record-type' class='glyphicon glyphicon-plus-sign' style='color: green; cursor: pointer'></i>
-	<div id='rate-record-types'>
-		<ul>
-		<?php
-		foreach($entity['params']['record_type'] as $record_type) {
-			print "<input type='text' class='form-control rate-record-type' value='$record_type' />";
-		}
-		?>
-		</ul>
-	</div>
-</form>
 	<div class="modal-footer">
+		<a href="#popupModal" data-type="update" data-toggle="modal" role="button"
+			data-remote="<?php echo $this->baseUrl . '/admin/edit?coll=' . $this->data['collectionName'] . '&type=update&id=' . $entity['_id']; ?>">Advanced Mode</a>
 		<?php if ($this->data['collectionName'] == 'plans' && $this->data['type'] == 'duplicate') : ?>
 		<div class="edit_checkboxes">
 		<input class="span1" id="duplicate_rates" name="duplicate_rates" type="checkbox" value="on" checked> <label class="span1" for="duplicate_rates">Duplicate rates</label>
 		</div>
 		<?php endif; ?>
-		<button id="cancelSave" class="btn" aria-hidden="true">Cancel</button>
+		<button class="btn" aria-hidden="true">Cancel</button>
 		<?php if (AdminController::authorized('write')) : ?>
-		<button id="save" class="btn btn-primary">Save changes</button>
+		<button type='submit' class="btn btn-primary">Save changes</button>
 		<?php endif; ?>
 	</div>
+</form>
 </div>
-	
-<script type="text/javascript">
-	var newOutCircuitGroupIndex = 0;
-	var newCallRateIndex = 0;
-	var newSMSRateIndex = 0;
-	var availableOptions = [<?php foreach($availablePlans as $availablePlan) { echo "\"$availablePlan\","; } ?>];
 
-	$('.h3').click(function () {
-		$($(this).nextAll('div')[0]).toggle();
-		if ($(this).prev('i').hasClass('glyphicon-chevron-down'))
-			$(this).prev('i').removeClass('glyphicon-chevron-down').addClass('glyphicon-chevron-right');
-		else
-			$(this).prev('i').removeClass('glyphicon-chevron-right').addClass('glyphicon-chevron-down');
-	});
-
-	/* TODO: Conformation dialog */
-	function bindDeleteCallRateBtn() {
-		$('.delete-call-rate').unbind();
-		$('.delete-call-rate').click(function () {
-			$(this).parent().parent().remove();
-		});
-	}
-	function bindDeleteSMSRateBtn() {
-		$('.delete-sms-rate').unbind();
-		$('.delete-sms-rate').click(function () {
-			$(this).parent().parent().remove();
-		});
-	}
-	function bindDeleteCallPlanBtn() {
-		$('.delete-call-plan').unbind();
-		$('.delete-call-plan').click(function() {
-			$(this).parent().remove();
-		});
-	}
-	function bindDeleteSMSPlanBtn() {
-		$('.delete-sms-plan').unbind();
-		$('.delete-sms-plan').click(function() {
-			$(this).parent().remove();
-		});
-	}
-	function bindDeleteOutCircuitGroup() {
-		$('.delete-call-out-circuit-group').unbind();
-		$('.delete-call-out-circuit-group').click(function() {
-			$(this).parent().remove();
-		});
-	}
-
-	bindDeleteCallRateBtn();
-	bindDeleteSMSRateBtn();
-	bindDeleteCallPlanBtn();
-	bindDeleteOutCircuitGroup();
-	bindDeleteSMSPlanBtn();
-
-	$('#add-prefix').on('click', function () {
-		$('#rate-prefixes').append("<input type='number' class='form-control rate-prefix' />");
-	});
-	$('#add-record-type').on('click', function () {
-		$('#rate-record-types').append("<input type='text' class='form-control rate-record-type' />");
-	});
-	$('#add-out-circuit-group').on('click', function () {
-		newOutCircuitGroupIndex++;
-		var new_out_circuit_group = $("<div class='form-group'><label for='out-circuit-group-" + newOutCircuitGroupIndex + "-from'>From:</label>\
-<input type='number' class='form-control rate-out-circuit-group-from' id='out-circuit-group-" + newOutCircuitGroupIndex + "-from' />\
-<label for='out-circuit-group-" + newOutCircuitGroupIndex + "-to'>To:</label>\
-<input type='number' class='form-control rate-out-circuit-group-to' id='out-circuit-group-" + newOutCircuitGroupIndex + "-to' />\
-<i class='delete-call-out-circuit-group glyphicon glyphicon-minus-sign' style='color: #bc2328; cursor: pointer'></i>\
-</div>");
-		$('#rate-out-circuit-groups').append(new_out_circuit_group);
-		bindDeleteOutCircuitGroup();
-	});
-	
-	$('#add-call-rate').on('click', function () {
-		newCallRateIndex++;
-		var newCallRate = $("<tr><td><input type='number' id='call-rate-" + newCallRateIndex + "-interval' class='form-control rate-call-interval' /></td>\
-		<td><input type='number' id='call-rate-" + newCallRateIndex + "-price' class='form-control rate-call-price' /></td>\
-		<td><input type='number' id='call-rate-" + newCallRateIndex + "-to' class='form-control rate-call-to' /></td>\
-		<td><i class='delete-call-rate glyphicon glyphicon-minus-sign' style='color: #bc2328; cursor: pointer'></i></td></tr>");
-		$('#call-rates-tbody').append(newCallRate);
-		bindDeleteCallRateBtn();
-	});
-	$('#add-call-plan').on('click', function () {
-		var newCallPlanSelect = $("<select class='form-control rate-call-plan'></select>");
-		var newCallPlanOption;
-		$.each(availableOptions, function (i, opt) {
-			newCallPlanOption = $("<option>" + opt + "</option>");
-			newCallPlanOption.attr('id', opt);
-			newCallPlanOption.val(opt);
-			$(newCallPlanSelect).append(newCallPlanOption);
-		});
-		var newCallPlanDiv = $("<div class='call-plan-div'></div>");
-		$(newCallPlanDiv).append(newCallPlanSelect);
-		$(newCallPlanDiv).append("<i class='delete-call-plan glyphicon glyphicon-minus-sign' style='color: #bc2328; cursor: pointer'></i>");
-		$('#rate-call-plans').append(newCallPlanDiv);
-		bindDeleteCallPlanBtn();
-	});
-	$('#add-sms-plan').on('click', function () {
-		var newSMSPlanSelect = $("<select class='form-control rate-sms-plan'></select>");
-		var newSMSPlanOption;
-		$.each(availableOptions, function (i, opt) {
-			newSMSPlanOption = $("<option>" + opt + "</option>");
-			newSMSPlanOption.attr('id', opt);
-			newSMSPlanOption.val(opt);
-			$(newSMSPlanSelect).append(newSMSPlanOption);
-		});
-		var newSMSPlanDiv = $("<div class='sms-plan-div'></div>");
-		$(newSMSPlanDiv).append(newSMSPlanSelect);
-		$(newSMSPlanDiv).append("<i class='delete-sms-plan glyphicon glyphicon-minus-sign' style='color: #bc2328; cursor: pointer'></i>");
-		$('#rate-sms-plans').append(newSMSPlanDiv);		
-		bindDeleteSMSPlanBtn();
-	});
-	
-	$('#add-sms-rate').on('click', function () {
-		newSMSRateIndex++;
-		var newSMSRate = $("<tr><td><input type='number' id='sms-rate-" + newSMSRateIndex + "-interval' class='form-control rate-sms-interval' /></td>\
-		<td><input type='number' id='sms-rate-" + newSMSRateIndex + "-price' class='form-control rate-sms-price' /></td>\
-		<td><input type='number' id='sms-rate-" + newSMSRateIndex + "-to' class='form-control rate-sms-to' /></td>\
-		<td><i class='delete-sms-rate glyphicon glyphicon-minus-sign' style='color: #bc2328; cursor: pointer'></i></td></tr>");
-		$('#sms-rates-tbody').append(newSMSRate);
-		bindDeleteSMSRateBtn();		
-	});
-	
-	var entityJson = <?php echo json_encode($entity); ?>;
-	var _jsonData = entityJson;
-	var opt = {
-		change: function(data) {
-			/* called on every change */
-			_jsonData = data;
-		},
-		propertyclick: function(path) { /* called when a property is clicked with the JS path to that property */
-			jsonPath = JSON.parse(path);
-			var protectedKeys = <?php echo json_encode($this->data['protectedKeys']); ?>;
-			for (p in jsonPath) {
-				if ($.inArray(jsonPath[p], protectedKeys) !== -1) {
-					$('input[title="' + jsonPath[p] + '"]').attr('disabled', 'disabled');
-				}
+<div class="modal fade" id="popupModal" tabindex="-1" role="dialog" aria-labelledby="popupModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				<h3 id="popupModalLabel"></h3>
+			</div>
+			<div class="modal-body">
+			</div>
+			<div class="modal-footer">
+				<button id="cancelPopup" class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
+				<?php if (AdminController::authorized('write')) : ?>
+					<button id="save" class="btn btn-primary">Save changes</button>
+				<?php endif; ?>
+			</div>
+		</div><!-- /.modal-content -->
+	</div><!-- /.modal-dialog -->
+</div>
+<script>
+var opt = {
+	change: function(data) {
+		/* called on every change */
+		_jsonData = data;
+	},
+	propertyclick: function(path) { /* called when a property is clicked with the JS path to that property */
+		jsonPath = JSON.parse(path);
+		var protectedKeys = <?php echo json_encode($this->protectedKeys); ?>;
+		for (p in jsonPath) {
+			if ($.inArray(jsonPath[p], protectedKeys) !== -1) {
+				$('input[title="' + jsonPath[p] + '"]').attr('disabled', 'disabled');
 			}
+		}
+	}
+};
+/* opt.propertyElement = '<textarea>'; */ // element of the property field, <input> is default
+/* opt.valueElement = '<textarea>'; */  // element of the value field, <input> is default
+//var _jsonEditor = $('#popupModal').jsonEditor(entity, opt);
+$('#save').unbind();
+$('#save').removeAttr("disabled");
+$('#save').click(function saveClick() {
+	$(this).attr('disabled', 'disabled');
+	$(this).unbind("click", saveClick);
+	console.log(_jsonData);
+	var _ajaxOpts = {
+		async: true,
+		cache: false,
+		//			dataType:'json',
+		type: 'POST',
+		data: {
+			id: $('#form_id').html(),
+			coll: $('#form_coll').html(),
+			type: $('#form_type').html(),
+			duplicate_rates: $('#duplicate_rates').is(':checked'),
+			data: JSON.stringify(_jsonData)
+		},
+		success: function(data, textStatus, jqXHR) {
+			if (data != 'null') {
+				alert(data);
+				$('#save').removeAttr("disabled");
+				$('#save').bind("click", saveClick);
+				return;
+			}
+			location.href = "<?php echo $this->baseUrl; ?>/admin/rates";
+		},
+		error: function(jqXHR, textStatus, errorThrown) {
+			alert('some error occured');
 		}
 	};
-	/* opt.propertyElement = '<textarea>'; */ // element of the property field, <input> is default
-	/* opt.valueElement = '<textarea>'; */  // element of the value field, <input> is default
-	//var _jsonEditor = $('#jsondiv').jsonEditor(entityJson, opt);
-	$('#save').unbind();
-	$('#save').removeAttr("disabled");
-	$('#save').click(function saveClick() {
-		/*
-		$(this).attr('disabled', 'disabled');
-		$(this).unbind("click", saveClick);
-		*/
-	   var call_rates = [];
-	   var cur = {};
-		$('#call-rates-tbody tr').each(function (i, rate) { 
-			cur.interval = $('.rate-call-interval', rate).val();
-			cur.price = $('.rate-call-price', rate).val();
-			cur.to = $('.rate-call-to', rate).val();
-			call_rates.push(cur);
-			cur = {};
-		});
-	   var sms_rates = [];
-	   cur = {};
-		$('#sms-rates-tbody tr').each(function (i, rate) { 
-			cur.interval = $('.rate-sms-interval', rate).val();
-			cur.price = $('.rate-sms-price', rate).val();
-			cur.to = $('.rate-sms-to', rate).val();
-			sms_rates.push(cur);
-			cur = {};
-		});		
-		
-		var out_circuit_group = [];
-		cur = {};
-		$('.rate-out-circuit-group').each(function (i, group) {
-			cur.from = $('.rate-out-circuit-group-from', group).val();
-			cur.to = $('.rate-out-circuit-group-to', group).val();
-			out_circuit_group.push(cur);
-			cur = {};
-		});
-		
-		var prefixes = [];
-		$('.rate-prefix').each(function (i, prefix) {
-			prefixes.push($(prefix).val());
-		});
-		
-		var record_types = [];
-		$('.rate-record-type').each(function (i, record_type) {
-			record_types.push($(record_type).val());
-		});
-		var call_plans = [];
-		$('.rate-call-plan').each(function (k, plan) {
-			call_plans.push($(plan).val());
-		});
-		var sms_plans = [];
-		$('.rate-sms-plan').each(function (k, plan) {
-			sms_plans.push($(plan).val());
-		});
-		var data = {
-			params: {
-				out_circuit_group: out_circuit_group,
-				prefix: prefixes,
-				record_type: record_types
-			},
-			rates: {
-				call: {
-					access: $('#rate-call-access').val(),
-					unit: $('#rate-call-unit').val(),
-					category: $('#rate-call-category').val(),
-					rate: call_rates,
-					plans: call_plans
-				},
-				sms: {
-					access: $('#rate-sms-access').val(),
-					unit: $('#rate-sms-unit').val(),
-					category: $('#rate-sms-category').val(),
-					rate: sms_rates,
-					plans: sms_plans
-				}
-			}
-		};
-		var _ajaxOpts = {
-			async: true,
-			cache: false,
-			//			dataType:'json',
-			type: 'POST',
-			data: {
-				id: $('#form_id').html(),
-				coll: $('#form_coll').html(),
-				type: $('#form_type').html(),
-				duplicate_rates: $('#duplicate_rates').is(':checked'),
-				data: JSON.stringify(data)
-			},
-			success: function(data, textStatus, jqXHR) {
-				if (data != 'null') {
-					alert(data);
-					$('#save').removeAttr("disabled");
-					$('#save').bind("click", saveClick);
-					return;
-				}
-				window.location = '<?php echo $this->data['baseUrl']; ?>/admin/<?php echo $this->data['collectionName'] ?>';
-			},
-			error: function(jqXHR, textStatus, errorThrown) {
-				alert('some error occured');
-			}
-		};
-		$.ajax('<?php echo $this->data['baseUrl']; ?>/admin/save', _ajaxOpts);
-	});
-
-	$('#formfile').click(function() {
-		if ($('#formfile').html().length) {
-			$('#formfile').parent().data('remote', '<?php echo $this->data['baseUrl']; ?>/admin/logDetails?type=logDetails&coll=log&stamp=' + $('#formlog_stamp').html());
-		}
-	});
-	
-	$('#cancelSave').click(function () {
-		window.location = '<?php echo $this->data['baseUrl']; ?>/admin/<?php echo $this->data['collectionName'] ?>';
-	});
+	$.ajax('<?php echo $this->baseUrl; ?>/admin/save', _ajaxOpts);
+});
 </script>
