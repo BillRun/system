@@ -1,10 +1,15 @@
 <style>
-	.h3 {
+	.glyphicon-plus-sign {
+		color: green;
+		cursor: pointer;
+	}
+	
+	.glyphicon-minus-sign {
+		color: #bc2328;
 		cursor: pointer;
 	}
 </style>
 
-<div class="container component">	
 <?php
 $protected = array();
 	$entity = $this->data['entity']->getRawData();
@@ -18,43 +23,73 @@ $protected = array();
 	foreach ($this->data['hiddenKeys'] as $key) {
 		unset($entity[$key]);
 	}
-
-	print '<div class="form_protect">';
-if (isset($protected['log_stamp'])) {
-	$log_stamp = $protected['log_stamp'];
-}
-foreach ($protected as $k => $v) {
-	print '<span class="label label-info">' . $k . '</span>';
-	if ($k == "file") {
-		print '<a href="#LogPopup" data-toggle="modal" data-remote=""><span id="form' . $k . '"class="label label-inverse">' . $v . '</span></a><br />';
-	} else {
-		print '<span id="form' . $k . '"class="label label-inverse">' . $v . '</span><br />';
-	}
-}
-print '<span id="form_type" class="hidden">' . $this->data['type'] . '</span>';
-print '<span id="form_coll" class="hidden">' . $this->data['collectionName'] . '</span>';
-print '</div>';
 ?>
-	<br/>
+
+<script>
+	var entity = <?php echo json_encode($this->data['entity']->getRawData()); ?>;
+	var form_data = <?php echo json_encode($this->data); ?>;
+	var available_plans = <?php echo json_encode($availablePlans); ?>; 
+</script>
+<script src='<?php echo $this->baseUrl; ?>/js/controllers/RatesController.js'></script>
+<div class="container component" ng-controller='RatesController'>	
+	<center>
+		<h2>{{entity.key}}</h2>
+	</center>
 <form class='form-inline'>
-	<i class='glyphicon glyphicon-chevron-down'></i>&nbsp;<span class='h3'>Call</span>
+	<h3>
+		Out Circuit Group
+		<small><i class='glyphicon glyphicon-plus-sign' ng-click='addOutCircuitGroup()'></i></small>
+	</h3>
+	<div id='rate-out-circuit-groups'>
+		<div class='rate-out-circuit-group' ng-repeat="outCircuitGroup in entity.params.out_circuit_group">
+			<label>From:</label>
+			<input type='text' class='form-control' ng-model="outCircuitGroup.from" />
+			<label>To:</label>
+			<input type='text' class='form-control' ng-model="outCircuitGroup.to" />
+			<i class='glyphicon glyphicon-minus-sign' ng-click="deleteOutCircuitGroup(outCircuitGroup)"></i>
+		</div>
+	</div>
+
+	<h3>
+		Prefix
+	</h3>
+	<div id='rate-prefixes'>
+		<div class="input-group" ng-repeat="prefix in entity.params.prefix">
+			<input type="text" class="form-control" ng-model="prefix" />
+		</div>
+		<div>
+			<input type="text" class="form-control" ng-model="newPrefix.value" />
+			<i class='glyphicon glyphicon-plus-sign' ng-click="addPrefix()"></i>
+		</div>
+	</div>
+	
+	<h3>
+		Record Types
+	</h3>
+	<div id='rate-record-types'>
+		<div class="input-group" ng-repeat="recordType in entity.params.record_type">
+			<input type="text" class="form-control" ng-model="recordType" />
+		</div>
+		<div>
+			<input type="text" class="form-control" ng-model="newRecordType.value" />
+			<i class='glyphicon glyphicon-plus-sign' ng-click="addRecordType()"></i>
+		</div>
+	</div>
+
+	<hr/>
+
+	<h2>Tariffs</h2>
+	<h3>Call</h3>
 	<div>
 		<ul>
 		<label for='rate-call-access'>Access</label>
-		<input type='number' class='form-control' id='rate-call-access' value='<?php echo $entity['rates']['call']['access'] ?>' />
+		<input type='number' class='form-control' ng-model="entity.rates.call.access" />
 		<label for='rate-unit'>Unit</label>
-		<?php $availableCallUnits = array('seconds', 'minutes', 'hours');  ?>
 		<select class='form-control' id='rate-call-unit'>
-			<?php
-			foreach($availableCallUnits as $unit) {
-				$selected = ($entity['rates']['call']['unit'] == $unit) ? " selected " : "";
-				print "<option value='$unit' $selected>$unit</option>";
-			}
-			?>
+			<option ng-repeat="unit in availableCallUnits" value="{{unit}}">{{unit}}</options>
 		</select>	
 		<h4>
 			Rates
-			<small><i id='add-call-rate' class='glyphicon glyphicon-plus-sign' style='color: green; cursor: pointer'></i></small>
 		</h4>
 		<div id='call-rates'>
 			<table class='table table-striped table-bordered call-rates-table'>
@@ -67,32 +102,35 @@ print '</div>';
 					</tr>
 				</thead>
 				<tbody id='call-rates-tbody'>
-		<?php foreach($entity['rates']['call']['rate'] as $rate) { ?>
-					<tr>
-			<?php print "<td><input type='number' value='" . $rate['interval'] . "' class='form-control rate-call-interval' /></td>"; ?>
-			<?php print "<td><input type='number' value='" . $rate['price'] . "' class='form-control rate-call-price' /></td>"; ?>
-			<?php print "<td><input type='number' value='" . $rate['to'] . "' class='form-control rate-call-to' /></td>"; ?>		
-						<td><i class='delete-call-rate glyphicon glyphicon-minus-sign' style='color: #bc2328; cursor: pointer'></i></td>
+					<tr ng-repeat="rate in entity.rates.call.rate">
+						<td><input type='number' ng-model="rate.interval" class='form-control rate-call-interval' /></td>
+						<td><input type='text' ng-model="rate.price" class='form-control rate-call-price' /></td>
+						<td><input type='text' ng-model="rate.to" class='form-control rate-call-to' /></td>	
+						<td><i class='glyphicon glyphicon-minus-sign' ng-click="deleteCallRate(rate)"></i></td>
 					</tr>
-		<?php } ?>
+					<tr>
+						<td><input type="number" ng-model="newCallRate.interval" class="form-control" /></td>
+						<td><input type="text" ng-model='newCallRate.price' class='form-control' /></td>
+						<td><input type='text' ng-model='newCallRate.to' class='form-control' /></td>
+						<td><i class='glyphicon glyphicon-plus-sign' ng-click="addCallRate()"></i></td>
+					</tr>
 				</tbody>
 			</table>
-			<h4>
-				Plans
-				<small><i id='add-call-plan' class='glyphicon glyphicon-plus-sign' style='color: green; cursor: pointer'></i></small>
-			</h4>
+			
+			<h4>Plans</h4>
 			<div id='rate-call-plans'>
-				<?php foreach($entity['rates']['call']['plans'] as $plan) { ?>
-				<div class='rate-call-plan-div'>
-				<select class='form-control rate-call-plan'>
-					<?php foreach($availablePlans as $availablePlan) {
-						$selected = $availablePlan === $plan ? "selected" : "";
-						print "<option id='$availablePlan' value='$availablePlan' $selected >$availablePlan</option>";
-					} ?>
-				</select>
-				<i class='delete-call-plan glyphicon glyphicon-minus-sign' style='color: #bc2328; cursor: pointer'></i>
+				<div ng-repeat='callPlan in entity.rates.call.plans track by $index'>
+					<select class='form-control rate-call-plan' ng-model='callPlan'>
+						<option ng-repeat='availablePlan in availablePlans' value='{{availablePlan}}'>{{availablePlan}}</option>
+					</select>
+					<i class='glyphicon glyphicon-minus-sign' ng-click='deleteCallPlan($index)'></i>
 				</div>
-				<?php } ?>
+				<div>
+					<select class='form-control' ng-model='newCallPlan.value'>
+						<option ng-repeat='availablePlan in availablePlans' value='{{availablePlan}}'>{{availablePlan}}</option>
+					</select>
+					<i class='glyphicon glyphicon-plus-sign' ng-click='addCallPlan()'></i>
+				</div>
 			</div>
 		</div>
 		</ul>
@@ -100,19 +138,18 @@ print '</div>';
 	
 	<hr/>
 
-	<i class='glyphicon glyphicon-chevron-down'></i>&nbsp;<span class='h3'>SMS</span>
+	<h3>SMS</h3>
 	<div>
 		<ul>
 		<label for='rate-sms-category'>Category</label>
-		<input type='text' class='form-control' id='rate-sms-category' value='<?php echo $entity['rates']['sms']['category'] ?>' />
-		<label for='rate-unit'>Unit: </label> <input type='text' disabled id='rate-sms-unit' value='counter' />
+		<input type='text' id='rate-sms-category' class='form-control' ng-model='entity.rates.sms.category' />
+		<label for='rate-unit'>Unit: </label> <input type='text' disabled value='counter' />
 
 		<h4>
 			Rates
-			<small><i id='add-sms-rate' class='glyphicon glyphicon-plus-sign' style='color: green; cursor: pointer'></i></small>
 		</h4>
 		<div id='sms-rates'>
-			<table class='table table-striped table-bordered sms-rates-table'>
+			<table class='table table-striped table-bordered call-rates-table'>
 				<thead>
 					<tr>
 						<th>Interval</th>
@@ -121,81 +158,38 @@ print '</div>';
 						<th></th>
 					</tr>
 				</thead>
-				<tbody id='sms-rates-tbody'>		
-		<?php foreach($entity['rates']['sms']['rate'] as $rate) { ?>
-					<tr>
-			<?php print "<td><input type='number' value='" . $rate['interval'] . "' class='form-control rate-sms-interval' /></td>"; ?>
-			<?php print "<td><input type='number' value='" . $rate['price'] . "' class='form-control rate-sms-price' /></td>"; ?>
-			<?php print "<td><input type='number' value='" . $rate['to'] . "' class='form-control rate-sms-to' /></td>"; ?>
-						<td><i class='delete-call-rate glyphicon glyphicon-minus-sign' style='color: #bc2328; cursor: pointer'></i></td>					
+				<tbody id='sms-rates-tbody'>
+					<tr ng-repeat="rate in entity.rates.sms.rate">
+						<td><input type='number' ng-model="rate.interval" class='form-control rate-call-interval' /></td>
+						<td><input type='text' ng-model="rate.price" class='form-control rate-call-price' /></td>
+						<td><input type='text' ng-model="rate.to" class='form-control rate-call-to' /></td>	
+						<td><i class='glyphicon glyphicon-minus-sign' ng-click="deleteSMSRate(rate)"></i></td>
 					</tr>
-		<?php } ?>
+					<tr>
+						<td><input type="number" ng-model="newSMSRate.interval" class="form-control" /></td>
+						<td><input type="text" ng-model='newSMSRate.price' class='form-control' /></td>
+						<td><input type='text' ng-model='newSMSRate.to' class='form-control' /></td>
+						<td><i class='glyphicon glyphicon-plus-sign' ng-click="addSMSRate()"></i></td>
+					</tr>
 				</tbody>
 			</table>
-			<h4>
-				Plans
-				<small><i id='add-sms-plan' class='glyphicon glyphicon-plus-sign' style='color: green; cursor: pointer'></i></small>
-			</h4>
+			
+			<h4>Plans</h4>
 			<div id='rate-sms-plans'>
-				<?php foreach($entity['rates']['sms']['plans'] as $plan) { ?>
-				<div class="rate-sms-plan-div">
-					<select class='form-control rate-sms-plan'>
-						<?php foreach($availablePlans as $availablePlan) {
-							$selected = $availablePlan === $plan ? "selected" : "";
-							print "<option id='$availablePlan' value='$availablePlan' $selected >$availablePlan</option>";
-						} ?>
+				<div ng-repeat='smsPlan in entity.rates.sms.plans track by $index'>
+					<select class='form-control' ng-model='smsPlan'>
+						<option ng-repeat='availablePlan in availablePlans' value='{{availablePlan}}'>{{availablePlan}}</option>
 					</select>
-					<i class='delete-sms-plan glyphicon glyphicon-minus-sign' style='color: #bc2328; cursor: pointer'></i>
+					<i class='glyphicon glyphicon-minus-sign'></i>
 				</div>
-				<?php } ?>
+				<div>
+					<select class='form-control' ng-model='newSMSPlan.value'>
+						<option ng-repeat='availablePlan in availablePlans' value='{{availablePlan}}'>{{availablePlan}}</option>
+					</select>
+					<i class='glyphicon glyphicon-plus-sign' ng-click='addSMSPlan()'></i>
+				</div>
 			</div>
 		</div>
-		</ul>
-	</div>
-	
-	<hr/>
-
-	<i class='glyphicon glyphicon-chevron-down'></i>&nbsp;<span class='h3'>Out Circuit Group</span>&nbsp;
-	<i id='add-out-circuit-group' class='glyphicon glyphicon-plus-sign' style='color: green; cursor: pointer'></i>
-	<div id='rate-out-circuit-groups'>
-		<ul>
-		<?php 
-		foreach($entity['params']['out_circuit_group'] as $index => $out_circuit_group) {
-			print "<div class='rate-out-circuit-group'>";
-			print "<label for='out-circuit-group-$index-from'>From:</label>";
-			print "<input type='number' class='form-control rate-out-circuit-group-from' id='out-circuit-group-$index-from' value='" . $out_circuit_group['from'] . "' />";
-			print "<label for='out-circuit-group-$index-to'>To:</label>";
-			print "<input type='number' class='form-control rate-out-circuit-group-to' id='out-circuit-group-$index-to' value='" . $out_circuit_group['to'] . "' />";
-			print "<i class='delete-call-out-circuit-group glyphicon glyphicon-minus-sign' style='color: #bc2328; cursor: pointer'></i>";
-			print "</div>";
-		}
-		?>
-		</ul>
-	</div>
-	<br/>
-
-	<i class='glyphicon glyphicon-chevron-down'></i>&nbsp;<span class='h3'>Prefix</span>&nbsp;
-	<i id='add-prefix' class='glyphicon glyphicon-plus-sign' style='color: green; cursor: pointer'></i>
-	<div id='rate-prefixes'>
-		<ul>
-		<?php
-		foreach($entity['params']['prefix'] as $prefix) {
-			print "<input type='number' class='form-control rate-prefix' value='$prefix' />";
-		}
-		?>
-		</ul>
-	</div>
-	<br/>
-	
-	<i class='glyphicon glyphicon-chevron-down'></i>&nbsp;<span class='h3'>Record Types</span>&nbsp;
-	<i id='add-record-type' class='glyphicon glyphicon-plus-sign' style='color: green; cursor: pointer'></i>
-	<div id='rate-record-types'>
-		<ul>
-		<?php
-		foreach($entity['params']['record_type'] as $record_type) {
-			print "<input type='text' class='form-control rate-record-type' value='$record_type' />";
-		}
-		?>
 		</ul>
 	</div>
 </form>

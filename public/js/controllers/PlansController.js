@@ -1,20 +1,17 @@
 app.controller('PlansController', ['$scope', '$http', '$window', function ($scope, $http, $window) {
   $scope.entity = entity;
   $scope.form_data = form_data;
-  $scope.includeTypes = ['call', 'data', 'sms', 'mms', 'groups'];
+  $scope.includeTypes = ['call', 'data', 'sms', 'mms'];
   $scope.groupParams = ["data", "call", "incoming_call", "incoming_sms", "sms"];
-  $scope.newParamType = {};
-  $scope.newParamValue = {};
+  $scope.newInclude = {type: undefined, value: undefined};
+  $scope.newGroupParam = [];
   $scope.newGroup = {name: ""};
-  $scope.shown = {include: true, groups: true};
-  $scope.shownGroups = {};
-  _.each($scope.entity.include.groups, function (group, group_name) {
-    $scope.shownGroups[group_name] = true;
-  });
 
   $scope.addPlanInclude = function () {
-    if ($scope.newIncludeType && $scope.newIncludeValue && $scope.entity.include[$scope.newIncludeType] === undefined)
-      $scope.entity.include[$scope.newIncludeType] = $scope.newIncludeValue;
+    if ($scope.newInclude && $scope.newInclude.value && $scope.entity.include[$scope.newInclude.type] === undefined) {
+      $scope.entity.include[$scope.newInclude.type] = $scope.newInclude.value;
+	  $scope.newInclude = {type: undefined, value: undefined};
+	}
   };
 
   $scope.deleteInclude = function (name) {
@@ -28,6 +25,7 @@ app.controller('PlansController', ['$scope', '$http', '$window', function ($scop
   $scope.addNewGroup = function () {
     if ($scope.entity.include.groups[$scope.newGroup.name]) return;
     $scope.entity.include.groups[$scope.newGroup.name] = {};
+	$scope.newGroup.name = "";
   };
 
   $scope.deleteGroup = function (group_name) {
@@ -35,8 +33,11 @@ app.controller('PlansController', ['$scope', '$http', '$window', function ($scop
   };
 
   $scope.addGroupParam = function (group_name) {
-    if (group_name && $scope.newParamType[group_name] && $scope.newParamValue[group_name] && $scope.entity.include.groups[group_name])
-      $scope.entity.include.groups[group_name][$scope.newParamType[group_name]] = $scope.newParamValue[group_name];
+    if (group_name && $scope.newGroupParam[group_name] && $scope.newGroupParam[group_name].value && $scope.entity.include.groups[group_name]) {
+      $scope.entity.include.groups[group_name][$scope.newGroupParam[group_name].type] = $scope.newGroupParam[group_name].value;
+	  $scope.newGroupParam[group_name].type = undefined;
+	  $scope.newGroupParam[group_name].value = undefined;
+	}
   };
 
   $scope.cancel = function () {
