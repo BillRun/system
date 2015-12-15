@@ -43,6 +43,18 @@ class Billrun_ActionManagers_Cards_Update extends Billrun_ActionManagers_Cards_A
 	}
 
 	/**
+	 * Check with the mongo that the service provider is trusted.
+	 * @param string $serviceProvider - Service provider to test.
+	 * @return boolean true if trusted.
+	 * @todo Move this logic to a more generic location.
+	 */
+	protected function isServiceProvider($serviceProvider) {
+		$collection = Billrun_Factory::db()->serviceprovidersCollection();
+		$query = array('name' => $serviceProvider);
+		return $collection->exists($query);
+	}
+	
+	/**
 	 * This function builds the query for the Cards Update API after 
 	 * validating existance of mandatory fields and their values.
 	 * @param array $input - fields for query in Jason format. 
@@ -105,6 +117,13 @@ class Billrun_ActionManagers_Cards_Update extends Billrun_ActionManagers_Cards_A
 				$this->update[$field] = $jsonUpdateData[$field];
 			}
 		}
+		
+		// service provider validity check
+		if(isset($this->update['service_provider']) && !$this->isServiceProvider($this->update['service_provider'])) {
+			$error = "Received unknown service provider: " . $this->update['service_provider'];
+			$this->reportError($error, Zend_Log::ALERT);
+			return false;
+		}
 
 		if (isset($this->update['to'])) {
 			$this->update['to'] = new MongoDate(strtotime($this->update['to']));
@@ -123,6 +142,7 @@ class Billrun_ActionManagers_Cards_Update extends Billrun_ActionManagers_Cards_A
 			$updateResult = $this->collection->update($this->query, array('$set' => $this->update), array('w' => 1, 'multiple' => 1));
 			$success = $updateResult['ok'];
 			$count = $updateResult['nModified'];
+			$found = $updateResult['n'];
 		} catch (\Exception $e) {
 			$exception = $e;
 			$error = 'failed storing in the DB got error : ' . $e->getCode() . ' : ' . $e->getMessage();
@@ -131,12 +151,22 @@ class Billrun_ActionManagers_Cards_Update extends Billrun_ActionManagers_Cards_A
 			$success = false;
 		}
 
+		if(!$count) {
+			$success = false;
+			if($found) {
+				$error = "Nothing to update - Input data are the same as existing data";
+			} else {
+				$error = "Card Not Found";
+			}			
+			$this->reportError($error);
+		}
+		
 		$outputResult = array(
 				'status' => ($success) ? (1) : (0),
 				'desc' => $this->error,
 				'details' => ($success) ? 
 							 ('Updated ' . $count . ' card(s)') : 
-							 ('Failed updating card(s) : ' . $exception->getCode() . ' : ' . $exception->getMessage())
+							 ($error)
 		);
 
 		return $outputResult;

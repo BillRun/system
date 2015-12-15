@@ -21,45 +21,61 @@ class Billrun_ActionManagers_Balances_Updaters_Secret extends Billrun_ActionMana
 	 * @return The updated record, false if failed.
 	 */
 	public function update($query, $recordToSet, $subscriberId) {
-		$cardsColl = Billrun_Factory::db()->cardsCollection();
 		// Get the record.
-		$dateQuery = array('to' => array('$gt', new MongoDate()));
+		if (isset($query['secret'])) {
+			$query['secret'] = hash('sha512',$query['secret']);
+		} else {
+			$error = "No secret input";
+			$this->reportError($error, Zend_Log::ALERT);
+			return false;
+		}
+		$dateQuery = array(
+			'to' => array(
+				'$gt' => new MongoDate()
+			)
+		);
 		$finalQuery = array_merge($dateQuery, $query);
 		$finalQuery['status'] = array('$eq' => 'Active');
-		
+		$cardsColl = Billrun_Factory::db()->cardsCollection();
 		$cardRecord = $cardsColl->query($finalQuery)->cursor()->current();
-		if(empty($cardRecord)) {
+		if($cardRecord->isEmpty()) {
 			$error = "Invalid card received, might be cancelled";
 			$this->reportError($error, Zend_Log::NOTICE);
 			return false;
 		}
 		
-		if (!$this->validateServiceProviders($cardRecord, $recordToSet)) {
-			return false;
-		}
-		
-		$this->signalCardAsUsed($cardRecord);
-		
 		// Build the plan query from the card plan field.
-		$planQuery = array('charging_plan_name' => $cardRecord['charging_plan']);
+		$planQuery = array('charging_plan_name' => $cardRecord['charging_plan_name']);
 		
-		return parent::update($planQuery, $recordToSet, $subscriberId);
+		$ret = parent::update($planQuery, $recordToSet, $subscriberId);
+		if ($ret !== FALSE) {
+			$this->signalCardAsUsed($cardRecord, $subscriberId);
+		}
+		return $ret;
 	}
 	
 	/**
 	 * Signal a given card as used after it has been used to charge a balance.
 	 * @param mongoEntity $cardRecord - Record to set as canceled in the mongo.
 	 */
-	protected function signalCardAsUsed($cardRecord) {
-		$cardsColl = Billrun_Factory::db()->cardsCollection();
-		$query = array('_id' => array('$eq' => $cardRecord['_id']));
-		$update = array('$set' => array('status' => 'Used'));
-		
+	protected function signalCardAsUsed($cardRecord, $subscriberId) {
+		$query = array(
+			'_id' => array(
+				'$eq' => $cardRecord['_id']->getMongoID()
+			)
+		);
+		$update = array(
+			'$set' => array(
+				'status' => 'Used',
+				'sid'    => $subscriberId,
+				'activation_datetime'    => new MongoDate(),
+			),
+		);
 		$options = array(
 			'upsert' => false,
 			'w' => 1,
 		);
-
+		$cardsColl = Billrun_Factory::db()->cardsCollection();
 		$cardsColl->findAndModify($query, $update, array(), $options, true);
 	}
 }

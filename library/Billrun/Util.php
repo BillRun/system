@@ -393,6 +393,22 @@ class Billrun_Util {
 	}
 
 	/**
+	 * 
+	 * @return type
+	 * @todo This is generic enough to be moved to anoter location.
+	 */
+	public function getDateBoundQuery() {
+		return array(
+			'to' => array(
+				'$gt' => new MongoDate()
+			),
+			'from' => array(
+				'$lt' => new MongoDate()
+			)
+		);
+	}
+	
+	/**
 	 * method to fork process of PHP-Cli
 	 * 
 	 * @param String $cmd the command to run
@@ -940,6 +956,34 @@ class Billrun_Util {
 
 		return $parsedData;
 	}
+	
+	/**
+	 * Convert array keys to camel case from Billrun convention
+	 * 
+	 * @param array $data
+	 */
+	public static function parseBillrunConventionToCamelCase($data = array()) {
+		$parsedData = array();
+		foreach ($data as $key => $value) {
+			if (is_array($value)) {
+				$value = self::parseBillrunConventionToCamelCase($value);
+				
+			}
+			$newKey = self::underscoresToCamelCase($key);
+			$parsedData[$newKey] = $value;
+		}
+
+		return $parsedData;
+	}
+	
+	public static function underscoresToCamelCase($string, $capitalizeFirstCharacter = false)  {
+
+		$str = str_replace(' ', '', ucwords(str_replace('_', ' ', $string)));
+		if (!$capitalizeFirstCharacter) {
+			$str[0] = strtolower($str[0]);
+		}
+		return $str;
+	}
 
 	/**
 	 * Return an integer based on an input string.
@@ -985,5 +1029,11 @@ class Billrun_Util {
 
 		return $record;
 	}
+	
+	public static function isAssoc($arr)
+	{
+		return array_keys($arr) !== range(0, count($arr) - 1);
+	}
+
 
 }

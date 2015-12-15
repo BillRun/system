@@ -37,14 +37,15 @@ class Billrun_ActionManagers_Subscribers_Delete extends Billrun_ActionManagers_S
 	 */
 	protected function closeBalances($sid, $aid) {
 		// Find all balances.
-		$balancesUpdate = array('$set' => array('to', new MongoDate()));
-		$balancesQuery = 
-			array('sid' => $sid, 
-				  'aid' => $aid);
+		$balancesUpdate = array('$set' => array('to' => new MongoDate()));
+		$balancesQuery = Billrun_Util::getDateBoundQuery();
+		$balancesQuery['sid'] = $sid; 
+		$balancesQuery['aid'] = $aid; 
 		$options = array(
 			'upsert' => false,
 			'new' => false,
 			'w' => 1,
+			'multi' => true,
 		);
 		$balancesColl = Billrun_Factory::db()->balancesCollection();
 		$balancesColl->findAndModify($balancesQuery, $balancesUpdate, array(), $options, true);
@@ -61,7 +62,7 @@ class Billrun_ActionManagers_Subscribers_Delete extends Billrun_ActionManagers_S
 			
 			// Could not find the row to be deleted.
 			if(!$rowToDelete || $rowToDelete->isEmpty()) {
-				$error = "Failed to get subscriber action instance for received input";
+				$error = "Subscriber record not found";
 				$this->reportError($error, Zend_Log::ALERT);
 				$success = false;
 			} else {
@@ -133,6 +134,9 @@ class Billrun_ActionManagers_Subscribers_Delete extends Billrun_ActionManagers_S
 	 */
 	protected function setQueryFields($queryData) {
 		$queryFields = $this->getQueryFields();
+		
+		// Initialize the query with date bound values.
+		$this->query = Billrun_Util::getDateBoundQuery();
 		
 		// Get only the values to be set in the update record.
 		// TODO: If no update fields are specified the record's to and from values will still be updated!

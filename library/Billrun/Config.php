@@ -45,7 +45,7 @@ class Billrun_Config {
 		}
 	}
 
-	protected function addConfig($path) {
+	public function addConfig($path) {
 		$addedConf = new Yaf_Config_Ini($path);
 		$this->config = new Yaf_Config_Simple($this->mergeConfigs($this->config->toArray(), $addedConf->toArray()));
 	}

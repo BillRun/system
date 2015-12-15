@@ -118,6 +118,9 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater{
 		$planQuery = array(
 			'to' => array(
 				'$gt' => new MongoDate()
+			),
+			'from' => array(
+				'$lt' => new MongoDate()
 			)
 		);
 
@@ -209,7 +212,7 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater{
 	 * @param type $recordToSet
 	 * @param type $dataRecord
 	 */
-	protected function handleExpirationDate($recordToSet, $dataRecord) {
+	protected function handleExpirationDate(&$recordToSet, $dataRecord) {
 		if (!$recordToSet['to']) {
 			$recordToSet['to'] = $this->getDateFromDataRecord($dataRecord);
 		}
@@ -238,7 +241,13 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater{
 		if($duration == "UNLIMITED") {
 			return new MongoDate(strtotime(self::UNLIMITED_DATE));
 		}
-		$unit = $period['units'];
+		if (isset($period['units'])) {
+			$unit = $period['units'];
+		} else if (isset($period['unit'])) {
+			$unit = $period['unit'];
+		} else {
+			$unit = 'months';
+		}
 		return new MongoDate(strtotime("+ " . $duration . " " . $unit));
 	}
 
@@ -289,10 +298,11 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater{
 	 * @param array $defaultBalance
 	 * @return type
 	 */
-	protected function getSetOnInsert($wallet, 
-									  $defaultBalance) {
+	protected function getSetOnInsert($wallet, $defaultBalance) {
 		$defaultBalance['charging_by'] = $wallet->getChargingBy();
 		$defaultBalance['charging_by_usaget'] = $wallet->getChargingByUsaget();
+		$defaultBalance['pp_includes_name'] = $wallet->getPPName();
+		$defaultBalance['pp_includes_external_id'] = $wallet->getPPID();
 		$defaultBalance[$wallet->getFieldName()] = $wallet->getValue();
 		return array(
 			'$setOnInsert' => $defaultBalance,
@@ -301,20 +311,21 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater{
 
 	/**
 	 * Get the set part of the query.
-	 * @param string $valueToUseInQuery - The value name of the balance.
-	 * @param string $valueFieldName - The name of the field to be set.
+	 * @param string $chargingPlan - The wallet in use.
 	 * @param MongoDate $toTime - Expiration date.
 	 */
-	protected function getSetQuery($valueToUseInQuery, $valueFieldName, $toTime) {
+	protected function getSetQuery($chargingPlan, $toTime) {
 		$valueUpdateQuery = array();
+		$valueToUseInQuery = $chargingPlan->getValue();
 		$queryType = (!is_string($valueToUseInQuery) && $this->isIncrement) ? '$inc' : '$set';
 		$valueUpdateQuery[$queryType]
-			[$valueFieldName] = $valueToUseInQuery;
+			[$chargingPlan->getFieldName()] = $valueToUseInQuery;
 		
 		// The TO time is always set.
-		$valueUpdateQuery['$set']
-			['to'] = $toTime;
-		
+		$valueUpdateQuery['$set']['to'] = $toTime;
+		$valueUpdateQuery['$set']['pp_includes_name'] = $chargingPlan->getPPName();
+		$valueUpdateQuery['$set']['pp_includes_external_id'] = $chargingPlan->getPPID();
+			
 		return $valueUpdateQuery;
 	}
 	

@@ -56,9 +56,10 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 	 */
 	protected function getAction() {
 		$filterName=key($this->query);
-		$updaterManagerInput = 
-			array('options'     => $this->updaterOptions,
-				  'filter_name' => $filterName);
+		$updaterManagerInput = array(
+				'options'     => $this->updaterOptions,
+				'filter_name' => $filterName
+		);
 		
 		$manager = new Billrun_ActionManagers_Balances_Updaters_Manager($updaterManagerInput);
 		if(!$manager) {
@@ -89,14 +90,16 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		$balanceLine['type'] = 'charging';
 		
 		foreach ($outputDocuments as $balancePair) {
-			$wallet = $balancePair['wallet'];
 			$balance = $balancePair['balance'];
 			$subscriber = $balancePair['subscriber'];
 			$insertLine = $balanceLine;
 			$insertLine['aid'] = $subscriber['aid'];
 			$insertLine['source_ref'] = $balancePair['source'];
-			$insertLine["usaget"] = $wallet->getChargingBy();
-			$insertLine["usagev"] = $wallet->getValue();
+			if (isset($balancePair['wallet'])) {
+				$wallet = $balancePair['wallet'];
+				$insertLine["usaget"] = $wallet->getChargingBy();
+				$insertLine["usagev"] = $wallet->getValue();
+			}
 			$insertLine['balance_ref'] = $db->balancesCollection()->createRefByEntity($balance);
 			$insertLine['stamp'] = Billrun_Util::generateArrayStamp($insertLine);
 			$linesCollection->insert($insertLine);
@@ -116,8 +119,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		// Get the updater for the filter.
 		$updater = $this->getAction();
 		
- 		$outputDocuments = 
-			$updater->update($this->query, $this->recordToSet, $this->subscriberId);
+		$outputDocuments = $updater->update($this->query, $this->recordToSet, $this->subscriberId);
 	
 		if($outputDocuments === false) {
 			$success = false;
@@ -136,10 +138,11 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 			}
 		}
 		
-		$outputResult = 
-			array('status'  => ($success) ? (1) : (0),
-				  'desc'    => $this->error,
-				  'details' => ($outputDocuments) ? $outputDocuments : 'Empty balance');
+		$outputResult = array(
+			'status'  => ($success) ? (1) : (0),
+			 'desc'    => $this->error,
+			 'details' => ($outputDocuments) ? $outputDocuments : 'Empty balance',
+		);
 		return $outputResult;
 	}
 
@@ -174,7 +177,9 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 			
 		// TODO: If to is not set, but received opration set, it's an error, report?
 		$to = isset($jsonUpdateData['expiration_date']) ? ($jsonUpdateData['expiration_date']) : 0;
-		$this->recordToSet['to'] = new MongoDate(strtotime($to));
+		if ($to) {
+			$this->recordToSet['to'] = new MongoDate(strtotime($to));
+		}
 		$updateFields = $this->getUpdateFields();
 		
 		// Get only the values to be set in the update record.

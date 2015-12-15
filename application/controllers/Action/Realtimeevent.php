@@ -112,7 +112,7 @@ class RealtimeeventAction extends ApiAction {
 	protected function getDataRecordType($requestCode) {
 		$requestTypes = Billrun_Factory::config()->getConfigValue('realtimeevent.data.requestType',array());
 		foreach ($requestTypes as $requestTypeDesc => $requestTypeCode) {
-			if ($requestCode === $requestTypeCode) {
+			if ($requestCode == $requestTypeCode) {
 				return strtolower($requestTypeDesc);
 			}
 		}
@@ -133,7 +133,7 @@ class RealtimeeventAction extends ApiAction {
 			case ('data'):
 				return 'gy';
 			case ('call'):
-				return 'nsn'; //TODO: change name of rate calculator
+				return 'callrt'; //TODO: change name of rate calculator
 			case ('service'):
 				return 'service';
 		}

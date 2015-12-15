@@ -86,14 +86,13 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 			return true;
 		}
 		
-		$linesUpdate = array('$set' => $keepLinesUpdate);
 		$options = array(
 			'upsert' => false,
 			'new' => false,
 			'w' => 1,
 		);
 		$linesColl = Billrun_Factory::db()->linesCollection();
-		return $linesColl->findAndModify($keepLinesQuery, $keepLinesUpdate, array(), $options, true);
+		return $linesColl->findAndModify($keepLinesQuery, array('$set' => $keepLinesUpdate), array(), $options, true);
 	}
 	
 	/**
@@ -151,7 +150,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 				$updatedDocument[] = $record->getRawData();
 			}
 			
-			if(!$this->keepBalances) {
+			if($this->keepBalances === FALSE) {
 				// Close balances.
 				$this->closeBalances($this->recordToSet['sid'], $this->recordToSet['aid']);
 			}
@@ -179,7 +178,35 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 	 * @return array - Array of fields to set.
 	 */
 	protected function getUpdateFields() {
-		return array('imsi', 'msisdn', 'aid', 'sid', 'plan', 'language', 'service_provider');
+		return Billrun_Factory::config()->getConfigValue('subscribers.update_fields');
+	}
+	
+	/**
+	 * Validate the input plan for the subscriber
+	 * @todo This is multiplicated in the Subscribers Create module.
+	 * @todo Create a validatePlan function that receives a plan name, where to put it?
+	 * @return boolean True if valid.
+	 */
+	protected function validatePlan() {
+		// If the update doesn't affect the plan there is no reason to validate it.
+		if(!isset($this->recordToSet['plan'])) {
+			return true;
+		}
+		$planName = $this->recordToSet['plan'];
+		$planQuery = Billrun_Util::getDateBoundQuery();
+		$planQuery['type'] = 'customer';
+		$planQuery['name'] = $planName;
+		$planCollection = Billrun_Factory::db()->plansCollection();
+		$currentPlan = $planCollection->query($planQuery)->cursor()->current();
+		
+		// TODO: Use the subscriber class.
+		if(!$currentPlan){
+			$error='Invalid plan for the subscriber! [' . print_r($planName, true) . ']';
+			$this->reportError($error, Zend_Log::ALERT);
+			return false;
+		}		
+		
+		return true;
 	}
 	
 	/**
@@ -196,6 +223,10 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 			return false;
 		}
 		
+		if(!$this->validateSubscriberUpdateValues($jsonUpdateData)) {
+			return false;
+		}
+		
 		$updateFields = $this->getUpdateFields();
 		
 		// Get only the values to be set in the update record.
@@ -209,6 +240,34 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 		
 		// THE 'from' FIELD IS SET AFTERWARDS WITH THE DATA FROM THE EXISTING RECORD IN MONGO.
 		$this->recordToSet['to'] = new MongoDate(strtotime('+100 years'));
+		
+		return true;
+	}
+	
+	/**
+	 * Check if the identification values to be updated for a subscriber 
+	 * already exist for another subscriber.
+	 * @param type $jsonUpdateData
+	 * @return boolean
+	 */
+	protected function validateSubscriberUpdateValues($jsonUpdateData) {
+		$subscriberFields = Billrun_Factory::config()->getConfigValue('subscribers.query_fields');
+		$subscriberValidationQuery = array('$or');
+		foreach ($subscriberFields as $subField) {
+			if(isset($jsonUpdateData[$subField])) {
+				$subscriberValidationQuery['$or'][] = 
+					array($subField => $jsonUpdateData[$subField]);
+			}
+		}
+		
+		if(!empty($subscriberValidationQuery)) {
+			$subCol = Billrun_Factory::db()->subscribersCollection();
+			if($subCol->exists($subscriberValidationQuery)) {
+				$error = "A subscriber with the same fields already exists!";
+				$this->reportError($error, Zend_Log::ALERT);
+				return false;
+			}
+		}
 		
 		return true;
 	}
@@ -276,6 +335,10 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 			return false;
 		}
 				
+		if(!$this->validatePlan()) {
+			return false;
+		}
+		
 		// If keep_history is set take it.
 		$this->trackHistory = $input->get('track_history');
 		

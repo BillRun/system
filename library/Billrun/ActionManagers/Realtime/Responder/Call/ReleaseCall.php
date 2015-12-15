@@ -44,11 +44,28 @@ class Billrun_ActionManagers_Realtime_Responder_Call_ReleaseCall extends Billrun
 	}
 	
 	/**
-	 * Gets the Line that needs to be updated
-	 * @todo Implement function when we will have spec
+	 * Gets the Line that needs to be updated (on rebalance)
 	 */	
 	protected function getLineToUpdate() {
-		return null;
+		$findQuery = array(
+			"sid" => $this->row['sid'],
+			"call_reference" => $this->row['call_reference'],
+			"_id" => array('$lt' => $this->row['request_num'])
+		);
+		
+		$lines_coll = Billrun_Factory::db()->linesCollection();
+		$line = $lines_coll->query($findQuery)->cursor()->sort(array('_id' => -1))->limit(1);
+		return $line;
+	}
+	
+	/**
+	 * See Billrun_ActionManagers_Realtime_Responder_Base->getChargedUsagev description
+	 */
+	protected function getChargedUsagev($lineToRebalance) {
+		$lines_coll = Billrun_Factory::db()->linesCollection();
+		$query = $this->getRebalanceQuery();
+		$line = $lines_coll->query($query)->cursor()->limit(1);
+		return $line['sum'];
 	}
 
 }

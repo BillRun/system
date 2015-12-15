@@ -73,14 +73,15 @@ class Billrun_Processor_Realtime extends Billrun_Processor {
 	protected function getLineVolume($row) {
 		switch ($row['usaget']) {
 			case ('data'):
-				$sum = 0;
+/*				$sum = 0;
 				$freeOfChargeRatingGroups = Billrun_Factory::config()->getConfigValue('realtimeevent.data.freeOfChargeRatingGroups', array());
 				foreach ($row['mscc_data'] as $msccData) {
 					if (!in_array($msccData['rating_group'], $freeOfChargeRatingGroups)) {
 						$sum += $msccData['requested_units'];
 					}
 				}
-				return $sum;
+				return $sum;*/
+				return Billrun_Factory::config()->getConfigValue('realtimeevent.data.quotaDefaultValue', 0);
 			case ('call'):
 				return 1;
 			case ('sms'):

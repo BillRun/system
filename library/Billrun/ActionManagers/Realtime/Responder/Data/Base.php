@@ -50,11 +50,13 @@ abstract class Billrun_ActionManagers_Realtime_Responder_Data_Base extends Billr
 			if (in_array($msccData['rating_group'], $freeOfChargeRatingGroups)) {
 				$currUsagev = Billrun_Factory::config()->getConfigValue('realtimeevent.data.freeOfChargeRatingGroupsDefaultUsagev', 0);
 			}
-			$retMsccData[] = array_merge($msccData, array(
-				"grantedUnits" => $currUsagev,
-				"validityTime" => $validityTime,
-				"quotaHoldingTime" => $defaultQuotaHoldingTime,
-				"resultCode" => $returnCode,
+			$retMsccData[] = array_merge(
+				Billrun_Util::parseBillrunConventionToCamelCase($msccData), 
+				array(
+					"grantedUnits" => $currUsagev,
+					"validityTime" => $validityTime,
+					"quotaHoldingTime" => $defaultQuotaHoldingTime,
+					"resultCode" => $returnCode,
 			));
 		}
 		return $retMsccData;
@@ -74,7 +76,7 @@ abstract class Billrun_ActionManagers_Realtime_Responder_Data_Base extends Billr
 	}
 	
 	/**
-	 * Gets the Line that needs to be updated
+	 * Gets the Line that needs to be updated (on rebalance)
 	 */	
 	protected function getLineToUpdate() {
 		$findQuery = array(
