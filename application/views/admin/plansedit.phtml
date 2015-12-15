@@ -24,7 +24,7 @@ $protected = array();
 			unset($entity[$key]);
 		}
 	}
-	foreach ($key !== '_id' && $this->data['hiddenKeys'] as $key) {
+	foreach ($this->data['hiddenKeys'] as $key) {
 		unset($entity[$key]);
 	}
 ?>

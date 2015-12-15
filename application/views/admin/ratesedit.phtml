@@ -15,7 +15,7 @@ $protected = array();
 	$entity = $this->data['entity']->getRawData();
 	$availablePlans = $this->data['availablePlans'];
 	foreach ($this->data['protectedKeys'] as $key) {
-		if (isset($entity[$key])) {
+		if ($key !== '_id' && isset($entity[$key])) {
 			$protected[$key] = $entity[$key];
 			unset($entity[$key]);
 		}
