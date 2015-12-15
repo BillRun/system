@@ -3,6 +3,7 @@ app.controller('RatesController', ['$scope', '$http', '$window', function ($scop
   $scope.form_data = form_data;
   $scope.availableCallUnits = ['seconds', 'minutes', 'hours'];
   $scope.availablePlans = available_plans;
+  $scope.newOutCircuitGroup = {from: undefined, to: undefined};
   $scope.newPrefix = {value: undefined};
   $scope.newRecordType = {value: undefined};
   $scope.newCallRate = {interval: undefined,
@@ -14,12 +15,28 @@ app.controller('RatesController', ['$scope', '$http', '$window', function ($scop
 	  to: undefined};
   $scope.newSMSPlan = {value: undefined};
   
+  $scope.addOutCircuitGroup = function () {
+	if ($scope.newOutCircuitGroup.to === undefined && $scope.newOutCircuitGroup.from === undefined) return;
+	$scope.entity.params.out_circuit_group.push($scope.newOutCircuitGroup);
+	$scope.newOutCircuitGroup = {to: undefined, from: undefined};
+  };
+  
+  $scope.deleteOutCircuitGroup = function (outCircuitGroup) {
+	if (outCircuitGroup === undefined) return;
+	$scope.entity.params.out_circuit_group = _.without($scope.entity.params.out_circuit_group, outCircuitGroup);
+  };
+  
   $scope.addPrefix = function () {
-	if (!$scope.newPrefix || !$scope.newPrefix.value) return;
-	if ($scope.params.prefix === undefined)
-		$scope.params.prefix = [];
+	if (!$scope.newPrefix || $scope.newPrefix.value === undefined) return;
+	if ($scope.entity.params.prefix === undefined)
+		$scope.entity.params.prefix = [];
 	$scope.entity.params.prefix.push($scope.newPrefix.value);
 	$scope.newPrefix.value = undefined;
+  };
+
+  $scope.deletePrefix = function (prefixIndex) {
+	if (prefixIndex === undefined) return;
+	$scope.entity.params.prefix.splice(prefixIndex, 1);
   };
 
   $scope.addRecordType = function () {
@@ -28,6 +45,11 @@ app.controller('RatesController', ['$scope', '$http', '$window', function ($scop
 		$scope.entity.params.record_type = [];
 	$scope.entity.params.record_type.push($scope.newRecordType.value);
 	$scope.newRecordType.value = undefined;
+  };
+  
+  $scope.deleteRecordType = function (recordTypeIndex) {
+	  if (recordTypeIndex === undefined) return;
+	  $scope.entity.params.record_type.splice(recordTypeIndex, 1);
   };
   
   $scope.addCallRate = function () {
@@ -54,7 +76,7 @@ app.controller('RatesController', ['$scope', '$http', '$window', function ($scop
   };
 
   $scope.deleteCallPlan = function (planIndex) {
-	if (!planIndex) return;
+	if (planIndex === undefined) return;
 	$scope.entity.rates.call.plans.splice(planIndex, 1);
   };
 
@@ -82,7 +104,7 @@ app.controller('RatesController', ['$scope', '$http', '$window', function ($scop
   };
   
   $scope.deleteSMSPlan = function (planIndex) {
-	if (!planIndex) return;
+	if (planIndex === undefined) return;
 	$scope.entity.rates.sms.plans.splice(planIndex, 1);
   };
   
@@ -97,10 +119,10 @@ app.controller('RatesController', ['$scope', '$http', '$window', function ($scop
       duplicate_rates: false,
       data: JSON.stringify($scope.entity)
     };
-	$http.post($scope.form_data.baseUrl + '/admin/save', ajaxOpts).then(function (res) {
-		$window.location = $scope.form_data.baseUrl + '/admin/' + $scope.form_data.collectionName;
-	}, function (err) {
-		alert("Danger! Danger! BEEDEE BEEDEE BEEDEE!");
-	});
+    $http.post($scope.form_data['baseUrl'] + '/admin/save', ajaxOpts).then(function (res) {
+      $window.location = $scope.form_data.baseUrl + '/admin/' + $scope.form_data.collectionName;
+    }, function (err) {
+      alert("Danger! Danger! Beedeebeedeebeedee!");
+    });
   };
 }]);
