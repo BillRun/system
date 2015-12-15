@@ -203,8 +203,10 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater{
 	 * @return type Query to run.
 	 */
 	protected function getSubscriberQuery($subscriberId) {
-		// Get subscriber query.
-		return array('sid' => $subscriberId);
+		$query = Billrun_Util::getDateBoundQuery();
+		$query['sid'] = $subscriberId;
+		
+		return $query;
 	}
 
 	/**
