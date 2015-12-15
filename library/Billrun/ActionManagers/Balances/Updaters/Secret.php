@@ -14,6 +14,26 @@
 class Billrun_ActionManagers_Balances_Updaters_Secret extends Billrun_ActionManagers_Balances_Updaters_ChargingPlan {
 	
 	/**
+	 * Get the card record according to the received query
+	 * @param array $query - Received query to get the record by.
+	 * @return boolean
+	 */
+	protected function getCardRecord($query) {
+		if (isset($query['secret'])) {
+			$query['secret'] = hash('sha512',$query['secret']);
+		} else {
+			$error = "No secret input";
+			$this->reportError($error, Zend_Log::ALERT);
+			return false;
+		}
+		$dateQuery = Billrun_Util::getDateBoundQuery();
+		$finalQuery = array_merge($dateQuery, $query);
+		$finalQuery['status'] = array('$eq' => 'Active');
+		$cardsColl = Billrun_Factory::db()->cardsCollection();
+		return $cardsColl->query($finalQuery)->cursor()->current();
+	}
+	
+	/**
 	 * Update the balances, based on the plans table
 	 * @param type $query - Query to find row to update.
 	 * @param type $recordToSet - Values to update.
@@ -22,22 +42,12 @@ class Billrun_ActionManagers_Balances_Updaters_Secret extends Billrun_ActionMana
 	 */
 	public function update($query, $recordToSet, $subscriberId) {
 		// Get the record.
-		if (isset($query['secret'])) {
-			$query['secret'] = hash('sha512',$query['secret']);
-		} else {
-			$error = "No secret input";
-			$this->reportError($error, Zend_Log::ALERT);
+		$cardRecord = $this->getCardRecord($query);
+		
+		if($cardRecord === false) {
 			return false;
 		}
-		$dateQuery = array(
-			'to' => array(
-				'$gt' => new MongoDate()
-			)
-		);
-		$finalQuery = array_merge($dateQuery, $query);
-		$finalQuery['status'] = array('$eq' => 'Active');
-		$cardsColl = Billrun_Factory::db()->cardsCollection();
-		$cardRecord = $cardsColl->query($finalQuery)->cursor()->current();
+		
 		if($cardRecord->isEmpty()) {
 			$error = "Invalid card received, might be cancelled";
 			$this->reportError($error, Zend_Log::NOTICE);

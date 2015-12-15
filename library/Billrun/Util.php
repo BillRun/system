@@ -393,7 +393,7 @@ class Billrun_Util {
 	}
 
 	/**
-	 * 
+	 * Get a query to filter all out dated and still not active records.
 	 * @return type
 	 * @todo This is generic enough to be moved to anoter location.
 	 */
