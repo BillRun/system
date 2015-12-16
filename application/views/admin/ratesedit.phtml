@@ -8,6 +8,9 @@
 		color: #bc2328;
 		cursor: pointer;
 	}
+	.clickable {
+		cursor: pointer;
+	}
 </style>
 
 <?php
@@ -57,9 +60,11 @@ $protected = array();
 	</div>
 
 	<h3>
-		Prefix
+		<small><i class="glyphicon glyphicon-chevron-down" ng-show="shown.prefix"></i></small>
+		<small><i class="glyphicon glyphicon-chevron-right" ng-hide="shown.prefix"></i></small>
+		<span ng-click="shown.prefix = !shown.prefix" class="clickable">Prefix</span>
 	</h3>
-	<div id='rate-prefixes'>
+	<div id='rate-prefixes' ng-show="shown.prefix">
 		<div ng-repeat="prefix in entity.params.prefix track by $index">
 			<input type="text" class="form-control" ng-model="entity.params.prefix[$index]" />
 			<i class='glyphicon glyphicon-minus-sign' ng-click='deletePrefix($index)'></i>
@@ -90,8 +95,12 @@ $protected = array();
 	<div>
 		<h3>Call</h3>
 		<ul ng-repeat="(callRateName, callRate) in entity.rates.call">
-			<h4>{{callRateName}}</h4>
-			<div ng-repeat="callRateParams in callRate track by $index">
+			<h4>
+				<small><i class="glyphicon glyphicon-chevron-down" ng-show="shown.rates[callRateName]"></i></small>
+				<small><i class="glyphicon glyphicon-chevron-right" ng-hide="shown.rates[callRateName]"></i></small>
+				<span ng-click="shown.rates[callRateName] = !shown.rates[callRateName]" class="clickable">{{callRateName}}</span>
+			</h4>
+			<div ng-repeat="callRateParams in callRate track by $index" ng-show="shown.rates[callRateName]">
 				<label for='rate-call-access'>Access</label>
 				<input type='text' class='form-control' ng-model="callRate[$index].access" />
 				<label for='rate-unit'>Unit</label>
@@ -183,8 +192,12 @@ $protected = array();
 	<div>
 		<h3>SMS</h3>
 		<ul ng-repeat="(smsRateName, smsRate) in entity.rates.sms">
-			<h4>{{smsRateName}}</h4>
-			<div ng-repeat="smsRateParams in smsRate track by $index">
+			<h4>
+				<small><i class="glyphicon glyphicon-chevron-down" ng-show="shown.rates[smsRateName]"></i></small>
+				<small><i class="glyphicon glyphicon-chevron-right" ng-hide="shown.rates[smsRateName]"></i></small>
+				<span ng-click="shown.rates[smsRateName] = !shown.rates[smsRateName]" class="clickable">{{smsRateName}}</span>
+			</h4>
+			<div ng-repeat="smsRateParams in smsRate track by $index" ng-show="shown.rates[smsRateName]">
 				<label for='rate-sms-access'>Access</label>
 				<input type='text' class='form-control' ng-model="smsRate[$index].access" />
 				<label for='rate-unit'>Unit</label>

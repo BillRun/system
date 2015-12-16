@@ -158,5 +158,8 @@ app.controller('RatesController', ['$scope', '$http', '$window', function ($scop
 		price: undefined,
 		to: undefined};
 	$scope.newSMSPlan = {value: undefined};
+	$scope.shown = {prefix: false,
+		rates: []
+	};
   };
 }]);
