@@ -37,18 +37,27 @@ app.controller('RatesController', ['$scope', '$http', '$window', function ($scop
   };
   
   $scope.addCallRate = function () {
-	if (!$scope.newCallRate || !$scope.newCallRate.interval || !$scope.newCallRate.price || !$scope.newCallRate.to) return;
-	if ($scope.entity.rates.call.rate === undefined)
-		$scope.entity.rates.call.rate = [];
-	$scope.entity.rates.call.rate.push($scope.newCallRate);
-	$scope.newCallRate = {interval: undefined,
-	  price: undefined,
-	  to: undefined};	  
+	if (!$scope.newCallRate || !$scope.newCallRate.name || !$scope.newCallRate.params.rate.interval
+			|| !$scope.newCallRate.params.rate.price || !$scope.newCallRate.params.rate.to)
+		return;
+	if ($scope.entity.rates.call === undefined)
+		$scope.entity.rates.call = {};
+    $scope.entity.rates.call[$scope.newCallRate.name] = [$scope.newCallRate.params];
+	$scope.newCallRate = {name: undefined,
+		params: {
+			unit: undefined,
+			access: undefined,
+			rate: {
+					interval: undefined,
+					price: undefined,
+					to: undefined}
+			}
+		};
   };
   
-  $scope.deleteCallRate = function(rate) {
-	  if (!rate) return;
-	  $scope.entity.rates.call.rate = _.without($scope.entity.rates.call.rate, rate);
+  $scope.deleteCallRate = function(rateName) {
+	  if (!rateName) return;
+	  delete $scope.entity.rates.call[rateName];
   };
   
   $scope.addCallPlan = function () {
