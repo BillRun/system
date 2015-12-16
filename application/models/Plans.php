@@ -24,6 +24,7 @@ class PlansModel extends TabledateModel {
 	public function getTableColumns() {
 		$columns = array(
 			'name' => 'Name',
+			'type' => 'Type',
 			'from' => 'From',
 			'to' => 'To',
 			'_id' => 'Id',
@@ -35,6 +36,7 @@ class PlansModel extends TabledateModel {
 		$sort_fields = array(
 			'name' => 'Name',
 			'price' => 'Price',
+			'type' => 'Type',
 		);
 		return array_merge($sort_fields, parent::getSortFields());
 	}

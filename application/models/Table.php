@@ -347,7 +347,7 @@ class TableModel {
 						$value = Admin_Table::convertValueByCaseType($value, $filter_field['case_type']);
 					}
 					return array(
-						$filter_field['db_key'] => array('$regex' => strval($value)),
+						$filter_field['db_key'] => array('$regex' => new MongoRegex(strval('/' . $value . '/i'))),
 					);
 				}
 			}
