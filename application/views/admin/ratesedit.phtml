@@ -3,7 +3,7 @@
 		color: green;
 		cursor: pointer;
 	}
-	
+
 	.glyphicon-minus-sign {
 		color: #bc2328;
 		cursor: pointer;
@@ -28,7 +28,7 @@ $protected = array();
 <script>
 	var entity = <?php echo json_encode($this->data['entity']->getRawData()); ?>;
 	var form_data = <?php echo json_encode($this->data); ?>;
-	var available_plans = <?php echo json_encode($availablePlans); ?>; 
+	var available_plans = <?php echo json_encode($availablePlans); ?>;
 </script>
 <script src='<?php echo $this->baseUrl; ?>/js/controllers/RatesController.js'></script>
 <div class="container component" ng-controller='RatesController' ng-init="init()">
@@ -69,7 +69,7 @@ $protected = array();
 			<i class='glyphicon glyphicon-plus-sign' ng-click="addPrefix()"></i>
 		</div>
 	</div>
-	
+
 	<div id='rate-record-types' ng-hide="entity.params.record_type === undefined">
 		<h3>
 			Record Types
@@ -95,9 +95,9 @@ $protected = array();
 				<label for='rate-call-access'>Access</label>
 				<input type='text' class='form-control' ng-model="callRateParams.access" />
 				<label for='rate-unit'>Unit</label>
-				<select class='form-control' id='rate-call-unit'>
+				<select class='form-control' id='rate-call-unit' ng-model='callRateParams.unit'>
 					<option ng-repeat="unit in availableCallUnits" value="{{unit}}">{{unit}}</options>
-				</select>	
+				</select>
 				<h4>
 					Rates
 				</h4>
@@ -115,7 +115,7 @@ $protected = array();
 							<tr>
 								<td><input type='text' ng-model="callRateParams.rate.interval" class='form-control rate-call-interval' /></td>
 								<td><input type='text' ng-model="callRateParams.rate.price" class='form-control rate-call-price' /></td>
-								<td><input type='text' ng-model="callRateParams.rate.to" class='form-control rate-call-to' /></td>	
+								<td><input type='text' ng-model="callRateParams.rate.to" class='form-control rate-call-to' /></td>
 								<td><i class='glyphicon glyphicon-minus-sign' ng-click="deleteCallRate(callRateName)"></i></td>
 							</tr>
 						</tbody>
@@ -150,7 +150,7 @@ $protected = array();
 				<label for='rate-unit'>Unit</label>
 				<select class='form-control' ng-model="newCallRate.params.unit">
 					<option ng-repeat="unit in availableCallUnits" value="{{unit}}">{{unit}}</options>
-				</select>	
+				</select>
 				<h4>
 					Rates
 				</h4>
@@ -168,7 +168,7 @@ $protected = array();
 							<tr>
 								<td><input type='text' ng-model="newCallRate.params.rate.interval" class='form-control rate-call-interval' /></td>
 								<td><input type='text' ng-model="newCallRate.params.rate.price" class='form-control rate-call-price' /></td>
-								<td><input type='text' ng-model="newCallRate.params.rate.to" class='form-control rate-call-to' /></td>	
+								<td><input type='text' ng-model="newCallRate.params.rate.to" class='form-control rate-call-to' /></td>
 								<td><i class='glyphicon glyphicon-plus-sign' ng-click="addCallRate()"></i></td>
 							</tr>
 						</tbody>
@@ -177,7 +177,7 @@ $protected = array();
 			</div>
 		</ul>
 	</div>
-	
+
 	<hr/>
 
 	<div>
@@ -204,7 +204,7 @@ $protected = array();
 						<tr ng-repeat="rate in smsRate.rate">
 							<td><input type='number' ng-model="rate.interval" class='form-control rate-call-interval' /></td>
 							<td><input type='text' ng-model="rate.price" class='form-control rate-call-price' /></td>
-							<td><input type='text' ng-model="rate.to" class='form-control rate-call-to' /></td>	
+							<td><input type='text' ng-model="rate.to" class='form-control rate-call-to' /></td>
 							<td><i class='glyphicon glyphicon-minus-sign' ng-click="deleteSMSRate(rate)"></i></td>
 						</tr>
 						<tr ng-hide="true">
