@@ -1,15 +1,15 @@
-app.controller('RatesController', ['$scope', '$http', '$window', function ($scope, $http, $window) {  
+app.controller('RatesController', ['$scope', '$http', '$window', function ($scope, $http, $window) {
   $scope.addOutCircuitGroup = function () {
 	if ($scope.newOutCircuitGroup.to === undefined && $scope.newOutCircuitGroup.from === undefined) return;
 	$scope.entity.params.out_circuit_group.push($scope.newOutCircuitGroup);
 	$scope.newOutCircuitGroup = {to: undefined, from: undefined};
   };
-  
+
   $scope.deleteOutCircuitGroup = function (outCircuitGroup) {
 	if (outCircuitGroup === undefined) return;
 	$scope.entity.params.out_circuit_group = _.without($scope.entity.params.out_circuit_group, outCircuitGroup);
   };
-  
+
   $scope.addPrefix = function () {
 	if (!$scope.newPrefix || $scope.newPrefix.value === undefined) return;
 	if ($scope.entity.params.prefix === undefined)
@@ -30,27 +30,38 @@ app.controller('RatesController', ['$scope', '$http', '$window', function ($scop
 	$scope.entity.params.record_type.push($scope.newRecordType.value);
 	$scope.newRecordType.value = undefined;
   };
-  
+
   $scope.deleteRecordType = function (recordTypeIndex) {
 	  if (recordTypeIndex === undefined) return;
 	  $scope.entity.params.record_type.splice(recordTypeIndex, 1);
   };
-  
+
   $scope.addCallRate = function () {
-	if (!$scope.newCallRate || !$scope.newCallRate.interval || !$scope.newCallRate.price || !$scope.newCallRate.to) return;
-	if ($scope.entity.rates.call.rate === undefined)
-		$scope.entity.rates.call.rate = [];
-	$scope.entity.rates.call.rate.push($scope.newCallRate);
-	$scope.newCallRate = {interval: undefined,
-	  price: undefined,
-	  to: undefined};	  
+	if (!$scope.newCallRate || !$scope.newCallRate.name || !$scope.newCallRate.params.rate.interval
+			|| !$scope.newCallRate.params.rate.price || !$scope.newCallRate.params.rate.to)
+		return;
+	if ($scope.entity.rates.call === undefined)
+		$scope.entity.rates.call = {};
+    $scope.entity.rates.call[$scope.newCallRate.name] = [$scope.newCallRate.params];
+	$scope.newCallRate = {
+	  name: undefined,
+	  params: {
+	    unit: undefined,
+		access: undefined,
+		rate: {
+		  interval: undefined,
+		  price: undefined,
+		  to: undefined
+		}
+	  }
+	};
   };
-  
-  $scope.deleteCallRate = function(rate) {
-	  if (!rate) return;
-	  $scope.entity.rates.call.rate = _.without($scope.entity.rates.call.rate, rate);
+
+  $scope.deleteCallRate = function(rateName) {
+	  if (!rateName) return;
+	  delete $scope.entity.rates.call[rateName];
   };
-  
+
   $scope.addCallPlan = function () {
 	if (!$scope.newCallPlan || !$scope.newCallPlan.value) return;
 	if ($scope.entity.rates.call.plans === undefined)
@@ -71,7 +82,7 @@ app.controller('RatesController', ['$scope', '$http', '$window', function ($scop
 	$scope.entity.rates.sms.rate.push($scope.newSMSRate);
 	$scope.newSMSRate = {interval: undefined,
 	  price: undefined,
-	  to: undefined};	  
+	  to: undefined};
   };
 
   $scope.deleteSMSRate = function (rate) {
@@ -86,12 +97,12 @@ app.controller('RatesController', ['$scope', '$http', '$window', function ($scop
 	$scope.entity.rates.sms.plans.push($scope.newSMSPlan.value);
 	$scope.newSMSPlan.value = undefined;
   };
-  
+
   $scope.deleteSMSPlan = function (planIndex) {
 	if (planIndex === undefined) return;
 	$scope.entity.rates.sms.plans.splice(planIndex, 1);
   };
-  
+
   $scope.cancel = function () {
     $window.location = $scope.form_data.baseUrl + '/admin/' + $scope.form_data.collectionName;
   };
@@ -109,18 +120,28 @@ app.controller('RatesController', ['$scope', '$http', '$window', function ($scop
       alert("Danger! Danger! Beedeebeedeebeedee!");
     });
   };
-  
+
   $scope.init = function () {
 	$scope.entity = entity;
+	if (_.isEmpty($scope.entity.rates)) {
+		$scope.entity.rates = {};
+	}
 	$scope.form_data = form_data;
 	$scope.availableCallUnits = ['seconds', 'minutes', 'hours'];
 	$scope.availablePlans = available_plans;
 	$scope.newOutCircuitGroup = {from: undefined, to: undefined};
 	$scope.newPrefix = {value: undefined};
 	$scope.newRecordType = {value: undefined};
-	$scope.newCallRate = {interval: undefined,
-		price: undefined,
-		to: undefined};
+	$scope.newCallRate = {name: undefined,
+	  params: {
+	    unit: undefined,
+		  access: undefined,
+		  rate: {
+		    interval: undefined,
+			price: undefined,
+			to: undefined}
+		}
+	};
 	$scope.newCallPlan = {value: undefined};
 	$scope.newSMSRate = {interval: undefined,
 		price: undefined,

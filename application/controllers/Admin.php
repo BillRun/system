@@ -697,7 +697,10 @@ class AdminController extends Yaf_Controller_Abstract {
 		);
 		
 		$viewData = array('data' => $editData);
-		$template = strtolower($coll) . 'edit';
+		if ($coll === "plans" && $entity['type'] === 'charging')
+			$template = 'chargingplanedit';
+		else
+			$template = strtolower($coll) . 'edit';
 		$this->getView()->component = $this->renderView($template, $viewData);
 	}
 

@@ -52,6 +52,10 @@ app.controller('PlansController', ['$scope', '$http', '$window', function ($scop
     });
   };
 
+  $scope.isObject = function (o) {
+	  return _.isObject(o);
+  };
+
   $scope.init = function () {
 	$scope.entity = entity;
 	$scope.form_data = form_data;
