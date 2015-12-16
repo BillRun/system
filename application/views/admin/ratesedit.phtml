@@ -61,7 +61,7 @@ $protected = array();
 	</h3>
 	<div id='rate-prefixes'>
 		<div ng-repeat="prefix in entity.params.prefix track by $index">
-			<input type="text" class="form-control" ng-model="prefix" />
+			<input type="text" class="form-control" ng-model="entity.params.prefix[$index]" />
 			<i class='glyphicon glyphicon-minus-sign' ng-click='deletePrefix($index)'></i>
 		</div>
 		<div>
@@ -91,11 +91,11 @@ $protected = array();
 		<h3>Call</h3>
 		<ul ng-repeat="(callRateName, callRate) in entity.rates.call">
 			<h4>{{callRateName}}</h4>
-			<div ng-repeat="callRateParams in callRate">
+			<div ng-repeat="callRateParams in callRate track by $index">
 				<label for='rate-call-access'>Access</label>
-				<input type='text' class='form-control' ng-model="callRateParams.access" />
+				<input type='text' class='form-control' ng-model="callRate[$index].access" />
 				<label for='rate-unit'>Unit</label>
-				<select class='form-control' id='rate-call-unit' ng-model='callRateParams.unit'>
+				<select class='form-control' id='rate-call-unit' ng-model='callRate[$index].unit'>
 					<option ng-repeat="unit in availableCallUnits" value="{{unit}}">{{unit}}</options>
 				</select>
 				<h4>
@@ -113,9 +113,9 @@ $protected = array();
 						</thead>
 						<tbody id='call-rates-tbody'>
 							<tr>
-								<td><input type='text' ng-model="callRateParams.rate.interval" class='form-control rate-call-interval' /></td>
-								<td><input type='text' ng-model="callRateParams.rate.price" class='form-control rate-call-price' /></td>
-								<td><input type='text' ng-model="callRateParams.rate.to" class='form-control rate-call-to' /></td>
+								<td><input type='text' ng-model="callRate[$index].rate.interval" class='form-control rate-call-interval' /></td>
+								<td><input type='text' ng-model="callRate[$index].rate.price" class='form-control rate-call-price' /></td>
+								<td><input type='text' ng-model="callRate[$index].rate.to" class='form-control rate-call-to' /></td>
 								<td><i class='glyphicon glyphicon-minus-sign' ng-click="deleteCallRate(callRateName)"></i></td>
 							</tr>
 						</tbody>
