@@ -52,11 +52,18 @@ $protected = array();
 		<div class="col-md-2">To</div>
 		<div class="col-md-6"><input ng-model='entity.to' type='text' id='plan-to' disabled /></div>
 	</div>
+	<div class="row" ng-if="entity.external_id">
+		<div class="col-md-2">External ID</div>
+		<div class="col-md-6"><input ng-model='entity.external_id' type='text' class="form-control" /></div>
+	</div>
+	<div class="row" ng-if="entity.external_code">
+		<div class="col-md-2">External Code</div>
+		<div class="col-md-6"><input ng-model='entity.external_code' type='text' class="form-control" /></div>
+	</div>
 
-	<hr/>
-	
-	<h3>Customer Plan Include</h3>
-	<div id='plan-includes'>
+	<div id='plan-includes' ng-if="entity.include">
+		<hr/>
+		<h3>Customer Plan Include</h3>
 		<div ng-if='entity.include.call !== undefined'>
 			<div class="row">
 				<div class="col-md-2">
@@ -84,7 +91,7 @@ $protected = array();
 		<div ng-if='entity.include.mms !== undefined'>
 			<div class="row">
 				<div class="col-md-2">
-					<small><i class='delete-plan glyphicon glyphicon-minus-sign' ng-click='deleteInclude("mms")'></i></small>				
+					<small><i class='delete-plan glyphicon glyphicon-minus-sign' ng-click='deleteInclude("mms")'></i></small>
 					MMS
 				</div>
 				<div class="col-md-6">
@@ -104,7 +111,7 @@ $protected = array();
 				</div>
 			</div>
 		</div>
-		
+
 		<div class='row'>
 			<div class='col-md-2'>
 				<select id='new-include-type' class='form-control' ng-model='newInclude.type'>
@@ -116,11 +123,10 @@ $protected = array();
 				<i id='add-plan-include' class='glyphicon glyphicon-plus-sign' ng-click='addPlanInclude()'></i>
 			</div>
 		</div>
+		<hr/>
 	</div>
-	
-	<hr/>		
-	
-	<div id='plan-include-groups-div'>
+
+	<div id='plan-include-groups-div' ng-if="entity.include">
 		<h3>Groups</h3>
 		<input ng-model='newGroup.name' type='text' class='form-control' />
 		<i class='add-group glyphicon glyphicon-plus-sign' ng-click="addNewGroup()"></i>
@@ -199,7 +205,7 @@ $protected = array();
 					<input ng-model='group_data.sms' type='text' class='form-control group-param' />
 				</div>
 			</div>
-			
+
 			<div class='row'>
 				<div class='col-md-2'>
 					<select class='plan-param-type form-control' ng-model='newGroupParam[group_name].type'>
@@ -213,7 +219,7 @@ $protected = array();
 			</div>
 		</div>
 	</div>
-	
+
 	<div class="modal-footer">
 		<a href="#popupModal" data-type="update" data-toggle="modal" role="button"
 			data-remote="<?php echo $this->baseUrl . '/admin/edit?coll=' . $this->data['collectionName'] . '&type=update&id=' . $entity['_id']; ?>">Advanced Mode</a>
