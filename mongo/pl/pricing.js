@@ -7,7 +7,7 @@ db.tmp_SUBTYPE_TRANSLATION.ensureIndex({"LOCATION_ID": 1}, { unique: false , spa
 db.tmp_PP_PLAN.ensureIndex({"PP_PLAN_ID": 1}, { unique: false , sparse: false, background: true });
 
 // long script to migrate the rates pricing
-var _rate, _plan, _plan_id, _usaget, _appid, _prefixes = [], _tariffs = {}, _cos_id;
+var _rate, _plan, _plan_id, _usaget, _appid, _prefixes = [], _tariffs = {}, _cos_id, _unit;
 var _location_id, _subtype;
 //db.tmp_PPS_PREFIXES.aggregate({$match:{BILLING_ALLOCATION:/Voice Bezeq/}}, {$group:{_id:"$BILLING_ALLOCATION", prefixes:{$addToSet:"$PPS_PREFIXES"}}}).forEach(
 db.tmp_PPS_PREFIXES.aggregate({$group:{_id:"$BILLING_ALLOCATION", prefixes:{$addToSet:"$PPS_PREFIXES"}}}).forEach(
@@ -44,17 +44,21 @@ db.tmp_PPS_PREFIXES.aggregate({$group:{_id:"$BILLING_ALLOCATION", prefixes:{$add
 												switch(obj7.UNIT_TYPE) {
 													case "1":
 														_usaget = 'cost';
+														_unit = 'NIS';
 														break;
 													case "2":
 														// Seconds
+														_unit = 'seconds';
 														_usaget = 'call';
 														break;
 													case "3":
 														// OCTET
+														_unit = 'bytes';
 														_usaget = 'data';
 														break;
 													case "4":
 														// SMS
+														_unit = 'counter';
 														_usaget = 'sms';
 														break;
 												}
@@ -65,6 +69,7 @@ db.tmp_PPS_PREFIXES.aggregate({$group:{_id:"$BILLING_ALLOCATION", prefixes:{$add
 												if (_tariffs[_usaget][_plan_id] === undefined) _tariffs[_usaget][_plan_id] = [];
 												_tariffs[_usaget][_plan_id].push({
 													'access':   obj7.INITIAL_CHARGE,
+													'unit' : _unit,
 													'rate':     {
 														'to': 2147483647,
 														'price': obj7.ADD_CHARGE,
