@@ -62,6 +62,32 @@ app.controller('RatesController', ['$scope', '$http', '$window', function ($scop
 	  delete $scope.entity.rates.call[rateName];
   };
 
+  $scope.addSMSRate = function () {
+	if (!$scope.newSMSRate || !$scope.newSMSRate.name || !$scope.newSMSRate.params.rate.interval
+			|| !$scope.newSMSRate.params.rate.price || !$scope.newSMSRate.params.rate.to)
+		return;
+	if ($scope.entity.rates.sms === undefined)
+		$scope.entity.rates.sms = {};
+    $scope.entity.rates.sms[$scope.newSMSRate.name] = [$scope.newSMSRate.params];
+	$scope.newSMSRate = {
+	  name: undefined,
+	  params: {
+	    unit: undefined,
+		access: undefined,
+		rate: {
+		  interval: undefined,
+		  price: undefined,
+		  to: undefined
+		}
+	  }
+	};
+  };
+
+  $scope.deleteSMSRate = function(rateName) {
+	  if (!rateName) return;
+	  delete $scope.entity.rates.sms[rateName];
+  };
+
   $scope.addCallPlan = function () {
 	if (!$scope.newCallPlan || !$scope.newCallPlan.value) return;
 	if ($scope.entity.rates.call.plans === undefined)
@@ -73,21 +99,6 @@ app.controller('RatesController', ['$scope', '$http', '$window', function ($scop
   $scope.deleteCallPlan = function (planIndex) {
 	if (planIndex === undefined) return;
 	$scope.entity.rates.call.plans.splice(planIndex, 1);
-  };
-
-  $scope.addSMSRate = function () {
-	if (!$scope.newSMSRate || !$scope.newSMSRate.interval || !$scope.newSMSRate.price || !$scope.newSMSRate.to) return;
-	if ($scope.entity.rates.sms.rate === undefined)
-		$scope.entity.rates.sms.rate = [];
-	$scope.entity.rates.sms.rate.push($scope.newSMSRate);
-	$scope.newSMSRate = {interval: undefined,
-	  price: undefined,
-	  to: undefined};
-  };
-
-  $scope.deleteSMSRate = function (rate) {
-	if (!rate) return;
-	$scope.entity.rates.sms.rate = _.without($scope.entity.rates.sms.rate, rate);
   };
 
   $scope.addSMSPlan = function () {
@@ -147,5 +158,8 @@ app.controller('RatesController', ['$scope', '$http', '$window', function ($scop
 		price: undefined,
 		to: undefined};
 	$scope.newSMSPlan = {value: undefined};
+	$scope.shown = {prefix: false,
+		rates: []
+	};
   };
 }]);
