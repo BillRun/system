@@ -32,7 +32,7 @@ class Billrun_ActionManagers_Realtime_Responder_Call_ReleaseCall extends Billrun
 		return array(
 			array(
 				'$match' => array(
-					"call_reference" => $this->row['call_reference'] . 'asd'
+					"call_reference" => $this->row['call_reference']
 				)
 			),
 			array(
