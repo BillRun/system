@@ -16,7 +16,7 @@ class Billrun_ActionManagers_Realtime_Responder_Call_StartCall extends Billrun_A
 	 * @return the connect to number
 	 */
 	protected function getConnectToNumber() {
-		return $this->row['calling_number'];
+		return $this->row['connected_number'];
 	}
 	
 	/**
@@ -26,6 +26,10 @@ class Billrun_ActionManagers_Realtime_Responder_Call_StartCall extends Billrun_A
 	 */
 	protected function getFreeCallAck() {
 		return (isset($this->row['FreeCall']) && $this->row['FreeCall'] ? 1 : 0);
+	}
+	
+	protected function getReservationTime() {
+		return Billrun_Factory::config()->getConfigValue('realtimeevent.callReservationTime.default', 180) * 10;
 	}
 
 }
