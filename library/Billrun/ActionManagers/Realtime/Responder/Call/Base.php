@@ -24,11 +24,59 @@ abstract class Billrun_ActionManagers_Realtime_Responder_Call_Base extends Billr
 	 * @return int clear cause value
 	 */
 	protected function getClearCause() {
-		if ($this->row['granted_return_code'] === 0) {
-			return Billrun_Factory::config()->getConfigValue('realtimeevent.clearCause.no_balance');
+		//TODO: check if call excceeded max duration (realtimeevent.callReservationTime.max)
+		if (isset($this->row['granted_return_code'])) {
+			$returnCodes = Billrun_Factory::config()->getConfigValue('prepaid.customer', array());
+			switch($this->row['granted_return_code']) {
+				case ($returnCodes['no_available_balances']):
+					return Billrun_Factory::config()->getConfigValue('realtimeevent.clearCause.no_balance');
+				case ($returnCodes['no_rate']):
+				case ($returnCodes['no_subscriber']):
+					return Billrun_Factory::config()->getConfigValue('realtimeevent.clearCause.inactive_account');
+			} 
 		}
 
 		return Billrun_Factory::config()->getConfigValue('realtimeevent.clearCause.normal_release');
+	}
+	
+	/**
+	 * Gets the reservation time allowed for call, until next check with BillRun
+	 * 
+	 * @return reservation time in 10th of seconds
+	 */
+	protected function getReservationTime() {
+		return $this->row['usagev'] * 10;
+	}
+	
+	protected function getReturnCode() {
+		if (isset($this->row['granted_return_code'])) {
+			$returnCodes = Billrun_Factory::config()->getConfigValue('prepaid.customer', array());
+			switch($this->row['granted_return_code']) {
+				case ($returnCodes['no_available_balances']):
+				case ($returnCodes['no_rate']):
+				case ($returnCodes['no_subscriber']):
+					return Billrun_Factory::config()->getConfigValue("realtimeevent.returnCode.call_not_allowed");
+			} 
+		}
+		
+		return Billrun_Factory::config()->getConfigValue("realtimeevent.returnCode.call_allowed");
+	}
+	
+	protected function getAnnouncement() {
+		$announcement = Billrun_Factory::config()->getConfigValue("realtimeevent.announcement.no_announcement");
+		$language = (isset($this->row['subscriber_lang']) ? $this->row['subscriber_lang'] : Billrun_Factory::config()->getConfigValue("realtimeevent.announcement.default_language"));
+		if (isset($this->row['granted_return_code'])) {
+			$returnCodes = Billrun_Factory::config()->getConfigValue('prepaid.customer', array());
+			switch($this->row['granted_return_code']) {
+				case ($returnCodes['no_available_balances']):
+					case ($returnCodes['no_rate']):
+					$announcement = Billrun_Factory::config()->getConfigValue("realtimeevent.announcement.insufficient_credit");
+				case ($returnCodes['no_subscriber']):
+					$announcement = Billrun_Factory::config()->getConfigValue("realtimeevent.announcement.subscriber_not_found");
+			} 
+		}
+		
+		return $language . '-' . $announcement;
 	}
 
 }

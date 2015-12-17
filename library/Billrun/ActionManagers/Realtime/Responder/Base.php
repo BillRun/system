@@ -111,8 +111,10 @@ abstract class Billrun_ActionManagers_Realtime_Responder_Base {
 		$lineToRebalace = $this->getLineToUpdate()->current();
 		$realUsagev = $this->getRealUsagev();
 		$chargedUsagev = $this->getChargedUsagev($lineToRebalace);
-		if (($realUsagev - $chargedUsagev) <= 0) {
-			$this->handleRebalanceRequired(-$realUsagev, $lineToRebalace);
+		if ($chargedUsagev !== null) {
+			if (($realUsagev - $chargedUsagev) <= 0) {
+				$this->handleRebalanceRequired(-$realUsagev, $lineToRebalace);
+			}
 		}
 	}
 

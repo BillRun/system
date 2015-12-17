@@ -83,7 +83,7 @@ class Billrun_Processor_Realtime extends Billrun_Processor {
 				return $sum;*/
 				return Billrun_Factory::config()->getConfigValue('realtimeevent.data.quotaDefaultValue', 0);
 			case ('call'):
-				return 1;
+				return Billrun_Factory::config()->getConfigValue('realtimeevent.callReservationTime.default', 180);
 			case ('sms'):
 				return 1;
 			case ('service'):

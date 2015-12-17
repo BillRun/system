@@ -87,9 +87,9 @@ class RealtimeeventAction extends ApiAction {
 		$this->event['type'] = $this->getEventType();
 		$this->event['rand'] = rand(1,1000000);
 		$this->event['stamp'] = Billrun_Util::generateArrayStamp($this->event);
+		$this->event['record_type'] = $this->getDataRecordType($this->usaget, $this->event);
 		if ($this->usaget === 'data') {
 			$this->event['sgsn_address'] = $this->getSgsn($this->event);
-			$this->event['record_type'] = $this->getDataRecordType($this->event['request_type']);
 		}
 				
 		$this->event['billrun_pretend'] = $this->isPretend($this->event);
@@ -109,14 +109,20 @@ class RealtimeeventAction extends ApiAction {
 		return long2ip(hexdec($sgsn));
 	}
 	
-	protected function getDataRecordType($requestCode) {
-		$requestTypes = Billrun_Factory::config()->getConfigValue('realtimeevent.data.requestType',array());
-		foreach ($requestTypes as $requestTypeDesc => $requestTypeCode) {
-			if ($requestCode == $requestTypeCode) {
-				return strtolower($requestTypeDesc);
-			}
+	protected function getDataRecordType($usaget, $data) {
+		switch ($usaget){
+			case('data'):
+				$requestCode = $data['request_type'];
+				$requestTypes = Billrun_Factory::config()->getConfigValue('realtimeevent.data.requestType',array());
+				foreach ($requestTypes as $requestTypeDesc => $requestTypeCode) {
+					if ($requestCode == $requestTypeCode) {
+						return strtolower($requestTypeDesc);
+					}
+				}
+				return false;
+			case('call'):
+				return $data['api_name'];
 		}
-		return false;
 	}
 	
 	/**

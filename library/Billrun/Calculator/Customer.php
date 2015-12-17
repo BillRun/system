@@ -152,6 +152,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 				}
 			}
 		}
+		$row['subscriber_lang'] = $subscriber->language;
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array(&$row, $this));
 		return $row;
 	}
