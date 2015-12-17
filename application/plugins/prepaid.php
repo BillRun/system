@@ -32,6 +32,7 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * 
 	 */
 	public function afterSubscriberBalanceNotFound($row) {
+		return false; // TODO: temporary, disable send of clear call
 		return self::sendClearCallRequest($row);
 	}
 	
