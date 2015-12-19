@@ -147,7 +147,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 					$success = false;
 					break;
 				}
-				$updatedDocument[] = $record->getRawData();
+				$updatedDocument[] = Billrun_Util::convertRecordMongoDatetimeFields($record->getRawData());
 			}
 			
 			if($this->keepBalances === FALSE) {
