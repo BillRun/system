@@ -288,11 +288,12 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		$to = $recordToSet['to'];
 		if (!$to) {
 			$to = $this->getDateFromDataRecord($chargingPlanRecord);
+			$defaultBalance['to'] = $to;
 		}
 
-		$defaultBalance['to'] = $to;
-		$defaultBalance['sid'] = $subscriber['sid'];
 		$defaultBalance['aid'] = $subscriber['aid'];
+		$defaultBalance['sid'] = $subscriber['sid'];
+		$defaultBalance['charging_type'] = $subscriber['charging_type'];
 
 		// Get the ref to the subscriber's plan.
 		$planName = $subscriber['plan'];
@@ -305,7 +306,7 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 			"from" => array('$lt', $nowTime)
 		);
 		$planRecord = $plansCollection->query($plansQuery)->cursor()->current();
-		$defaultBalance['current_plan'] = $plansCollection->createRefByEntity($planRecord);
+//		$defaultBalance['current_plan'] = $plansCollection->createRefByEntity($planRecord);
 		if (isset($subscriber['charging_type'])) {
 			$defaultBalance['charging_type'] = $subscriber['charging_type'];
 		} else {

@@ -226,6 +226,9 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater{
 	 * @return \MongoDate
 	 */
 	protected function getDateFromDataRecord($chargingPlan) {
+		if (!isset($chargingPlan['period'])) {
+			return;
+		}
 		$period = $chargingPlan['period'];
 		return $this->getDateFromPeriod($period);
 	}
@@ -250,7 +253,7 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater{
 		} else {
 			$unit = 'months';
 		}
-		return new MongoDate(strtotime("+ " . $duration . " " . $unit));
+		return new MongoDate(strtotime("tomorrow", strtotime("+ " . $duration . " " . $unit)));
 	}
 
 	/**
@@ -301,8 +304,10 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater{
 	 * @return type
 	 */
 	protected function getSetOnInsert($wallet, $defaultBalance) {
+		$defaultBalance['to'] = $this->getDateFromPeriod($wallet->getPeriod());
 		$defaultBalance['charging_by'] = $wallet->getChargingBy();
 		$defaultBalance['charging_by_usaget'] = $wallet->getChargingByUsaget();
+		$defaultBalance['charging_by_usaget_unit'] = $wallet->getChargingByUsagetUnit();
 		$defaultBalance['pp_includes_name'] = $wallet->getPPName();
 		$defaultBalance['pp_includes_external_id'] = $wallet->getPPID();
 		$defaultBalance[$wallet->getFieldName()] = $wallet->getValue();

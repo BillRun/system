@@ -97,7 +97,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 			$insertLine['source_ref'] = $balancePair['source'];
 			if (isset($balancePair['wallet'])) {
 				$wallet = $balancePair['wallet'];
-				$insertLine["usaget"] = $wallet->getChargingBy();
+				$insertLine["usaget"] = $wallet->getChargingByUsaget();
 				$insertLine["usagev"] = $wallet->getValue();
 			}
 			$insertLine['balance_ref'] = $db->balancesCollection()->createRefByEntity($balance);
