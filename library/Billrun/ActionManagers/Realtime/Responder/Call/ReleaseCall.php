@@ -15,11 +15,12 @@ class Billrun_ActionManagers_Realtime_Responder_Call_ReleaseCall extends Billrun
 	
 	/**
 	 * Gets the real usagev of the user (known only on the next API call)
+	 * Given in 10th of a second
 	 * 
 	 * @return type
 	 */
 	protected function getRealUsagev() {
-		return $this->row['duration'];
+		return $this->row['duration'] / 10;
 	}
 
 	/**
@@ -64,7 +65,7 @@ class Billrun_ActionManagers_Realtime_Responder_Call_ReleaseCall extends Billrun
 	protected function getChargedUsagev($lineToRebalance) {
 		$lines_coll = Billrun_Factory::db()->linesCollection();
 		$query = $this->getRebalanceQuery();
-		$line = $lines_coll->query($query)->cursor()->limit(1);
+		$line = $lines_coll->aggregate($query)->current();
 		return $line['sum'];
 	}
 
