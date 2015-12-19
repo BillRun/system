@@ -79,12 +79,12 @@ class Billrun_ActionManagers_Subscribersautorenew_Query extends Billrun_ActionMa
 		if (!isset($this->query['from'])){
 			$this->query['from']['$lte'] = new MongoDate();
 		} else {
-			$this->query['from'] = $this->intToMongoDate($this->query['from']);
+			$this->query['from'] = new MongoDate(strtotime($this->query['from']));
 		}
 		if (!$this->query['to']) {
 			$this->query['to']['$gte'] = new MongoDate();
 		} else {
-			$this->query['to'] = $this->intToMongoDate($this->query['to']);
+			$this->query['to'] = new MongoDate(strtotime($this->query['to']));
 		}
 	}
 	
