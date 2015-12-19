@@ -35,7 +35,7 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		if ($walletPeriod) {
 			return $this->getDateFromPeriod($walletPeriod);
 		}
-
+		$wallet->setPeriod($recordToSet['to']);
 		return $recordToSet['to'];
 	}
 
@@ -285,11 +285,11 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		$nowTime = new MongoDate();
 		$defaultBalance['from'] = $nowTime;
 
-		$to = $recordToSet['to'];
-		if (!$to) {
-			$to = $this->getDateFromDataRecord($chargingPlanRecord);
-			$defaultBalance['to'] = $to;
-		}
+//		$to = $recordToSet['to'];
+//		if (!$to) {
+//			$to = $this->getDateFromDataRecord($chargingPlanRecord);
+//			$defaultBalance['to'] = $to;
+//		}
 
 		$defaultBalance['aid'] = $subscriber['aid'];
 		$defaultBalance['sid'] = $subscriber['sid'];

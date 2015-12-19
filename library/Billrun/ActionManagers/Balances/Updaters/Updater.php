@@ -240,6 +240,9 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater{
 	 * @todo Create a period object.
 	 */
 	protected function getDateFromPeriod($period) {
+		if ($period instanceof MongoDate) {
+			return $period;
+		}
 		$duration = $period['duration'];
 		// If this plan is unlimited.
 		// TODO: Move this logic to a more generic location

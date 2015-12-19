@@ -76,7 +76,7 @@ class Billrun_DataTypes_Wallet {
 		
 		// The wallet does not handle the period.
 		if (isset($chargingByValue['period'])) {
-			$this->period = $chargingByValue['period'];
+			$this->setPeriod($chargingByValue['period']);
 			unset($chargingByValue['period']);
 		}
 
@@ -120,6 +120,15 @@ class Billrun_DataTypes_Wallet {
 	 */
 	public function getPeriod() {
 		return $this->period;
+	}
+
+	/**
+	 * Get the period for the current wallet, null if not exists.
+	 * @return The current wallet period.
+	 * @todo Create a period object.
+	 */
+	public function setPeriod($period) {
+		$this->period = $period;
 	}
 
 	/**
