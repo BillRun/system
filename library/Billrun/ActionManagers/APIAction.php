@@ -17,6 +17,7 @@ abstract class Billrun_ActionManagers_APIAction {
 	 * This members holds the error message to be reported.
 	 */
 	protected $error = "Successful";
+	protected $errorCode = 0;
 
 	protected function __construct($params) {
 		if (isset($params['error'])) {
@@ -35,10 +36,12 @@ abstract class Billrun_ActionManagers_APIAction {
 	/**
 	 * Report an error.
 	 * @param string $error - Error string to report.
+	 * @param int $errorCode - Code
 	 * @param Zend_Log_Filter_Priority $errorLevel
 	 */
-	protected function reportError($error, $errorLevel=Zend_Log::INFO) {
+	protected function reportError($error, $errorCode, $errorLevel=Zend_Log::INFO) {
 		$this->error = $error;
+		$this->errorCode = $errorCode;
 		Billrun_Factory::log($error, $errorLevel);
 	}
 }

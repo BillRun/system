@@ -56,8 +56,8 @@ class SubscribersAction extends ApiAction {
 		if(is_string($action)) {
 			// TODO: Report failed action. What do i write to the output if this happens?
 			Billrun_Factory::log("Failed to get subscriber action instance for received input", Zend_Log::ALERT);
-			
-			$output = array('status'  => 0,
+			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 10;
+			$output = array('status'  => $errorCode,
 				  'desc'    => $action,
 				  'details' => 'Error');
 		} else {

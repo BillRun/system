@@ -50,6 +50,7 @@ class Billrun_ActionManagers_Subscribers_Query extends Billrun_ActionManagers_Su
 				$returnData[] = Billrun_Util::convertRecordMongoDatetimeFields($rawItem);
 			}
 		} catch (\Exception $e) {
+			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 20;
 			$error = 'failed quering DB got error : ' . $e->getCode() . ' : ' . $e->getMessage();
 			$this->reportError($error, Zend_Log::ALERT);
 			return null;
@@ -66,16 +67,14 @@ class Billrun_ActionManagers_Subscribers_Query extends Billrun_ActionManagers_Su
 		$returnData = 
 			$this->queryRangeSubscribers();
 
-		$success=true;
 		// Check if the return data is invalid.
 		if(!$returnData) {
 			$returnData = array();
 			$this->reportError("No subscribers found");
-			$success=false;
 		}
 		
 		$outputResult = 
-			array('status'  => ($success) ? (1) : (0),
+			array('status'  => $this->errorCode,
 				  'desc'    => $this->error,
 				  'details' => $returnData);
 		return $outputResult;
@@ -120,8 +119,9 @@ class Billrun_ActionManagers_Subscribers_Query extends Billrun_ActionManagers_Su
 		$jsonData = null;
 		$query = $input->get('query');
 		if(empty($query) || (!($jsonData = json_decode($query, true)))) {
+			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 21;
 			$error = "Failed decoding JSON data";
-			$this->reportError($error, Zend_Log::ALERT);
+			$this->reportError($error, $errorCode, Zend_Log::ALERT);
 			return false;
 		}
 		
@@ -129,6 +129,7 @@ class Billrun_ActionManagers_Subscribers_Query extends Billrun_ActionManagers_Su
 		
 		// If there were errors.
 		if(empty($this->subscriberQuery)) {
+			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 21;
 			$error = "Subscribers query must receive one of the following fields: " . implode(',', $invalidFields);
 			$this->reportError($error, Zend_Log::ALERT);
 			return false;

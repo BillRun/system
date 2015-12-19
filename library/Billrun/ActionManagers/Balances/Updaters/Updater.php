@@ -31,6 +31,7 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater{
 	protected $ignoreOveruse = true;
 
 	protected $error = "";
+	protected $errorCode = 0;
 	
 	/**
 	 * Create a new instance of the updater class.
@@ -55,19 +56,21 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater{
 	/**
 	 * Report a log error and store the message reported.
 	 * @param string $error
+	 * @param integer $errorCode
 	 * @param Zend_Log_Filter_Priority $errorLevel
 	 */
-	protected function reportError($error, $errorLevel) {
+	protected function reportError($error, $errorCode, $errorLevel) {
 		$this->error = $error;
+		$this->errorCode = $errorCode;
 		Billrun_Factory::log($error, $errorLevel);
 	}
 	
 	/**
 	 * Get the current error of this updater
-	 * @return string current error.
+	 * @return array error code as key and current error as value.
 	 */
 	public function getError() {
-		return $this->error;
+		return array($this->errorCode => $this->error);
 	}
 	
 	/**
@@ -141,8 +144,9 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater{
 		// TODO: Use the plans DB/API proxy.
 		$record = $collection->query($queryToUse)->cursor()->current();
 		if (!$record || $record->isEmpty()) {
+			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 11;
 			$error = "Could not find record. Query:[" . print_r($queryToUse, 1) . "]";
-			$this->reportError($error, Zend_Log::ALERT);
+			$this->reportError($error, $errorCode, Zend_Log::ALERT);
 			return null;
 		}
 
@@ -191,7 +195,8 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater{
 		$results = $coll->query($subscriberQuery)->cursor()->limit(1)->current();
 		if ($results->isEmpty()) {
 			$error = "Subscriber not found for balance";
-			$this->reportError($error, Zend_Log::ALERT);
+			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 12;
+			$this->reportError($error, $errorCode, Zend_Log::ALERT);
 			return false;
 		}
 		return $results->getRawData();
@@ -283,7 +288,8 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater{
 		// Check that the service provider is trusted.
 		if(!$this->isServiceProvider($planServiceProvider)) {
 			$error = "Received unknown service provider: $planServiceProvider";
-			$this->reportError($error, Zend_Log::ALERT);
+			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 20;
+			$this->reportError($error, $errorCode, Zend_Log::ALERT);
 			return false;
 		}
 		
@@ -292,8 +298,9 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater{
 
 		// Check if mismatching serivce providers.
 		if ($planServiceProvider != $subscriberServiceProvider) {
+			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 13;
 			$error = "Failed updating balance! mismatching service providers: subscriber: $subscriberServiceProvider plan: $planServiceProvider";
-			$this->reportError($error, Zend_Log::ALERT);
+			$this->reportError($error, $errorCode, Zend_Log::ALERT);
 			return false;
 		}
 
