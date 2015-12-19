@@ -117,7 +117,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 			if(!$record->set($key, $value)) {
 				$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 30;
 				$error = "Failed to set values to entity";
-				$this->reportError($error, $errorCode, Zend_Log::ALERT);
+				$this->reportError($errorCode, Zend_Log::ALERT);
 				return false;
 			}
 
@@ -159,7 +159,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 		} catch (\Exception $e) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 31;
 			$error = 'failed storing in the DB got error : ' . $e->getCode() . ' : ' . $e->getMessage();
-			$this->reportError($error, $errorCode, Zend_Log::ALERT);
+			$this->reportError($errorCode, Zend_Log::ALERT);
 			Billrun_Factory::log('failed saving request :' . print_r($this->recordToSet, 1), Zend_Log::ALERT);
 			$success = false;
 		}
@@ -222,7 +222,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 		if(empty($update) || (!($jsonUpdateData = json_decode($update, true)))) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 32;
 			$error = "Update action does not have an update field!";
-			$this->reportError($error, $errorCode, Zend_Log::ALERT);
+			$this->reportError($errorCode, Zend_Log::ALERT);
 			return false;
 		}
 		
@@ -310,7 +310,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 		if(empty($query) || (!($jsonQueryData = json_decode($query, true)))) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 33;
 			$error = "Update action does not have a query field!";
-			$this->reportError($error, $errorCode, Zend_Log::ALERT);
+			$this->reportError($errorCode, Zend_Log::ALERT);
 			return false;
 		}
 		
@@ -318,7 +318,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 		if($this->setQueryFields($jsonQueryData) === FALSE) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 34;
 			$error = "Subscribers update received invalid query values in fields";
-			$this->reportError($error, $errorCode, Zend_Log::ALERT);
+			$this->reportError($errorCode, Zend_Log::ALERT);
 			return false;
 		}
 		

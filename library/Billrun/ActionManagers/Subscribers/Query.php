@@ -13,7 +13,7 @@
  * @todo This class is very similar to balances query, 
  * a generic query class should be created for both to implement.
  */
-class Billrun_ActionManagers_Subscribers_Query extends Billrun_ActionManagers_Subscribers_Action{
+class Billrun_ActionManagers_Subscribers_Query extends Billrun_ActionManagers_Subscribers_Action {
 	
 	/**
 	 * Field to hold the data to be written in the DB.
@@ -52,7 +52,7 @@ class Billrun_ActionManagers_Subscribers_Query extends Billrun_ActionManagers_Su
 		} catch (\Exception $e) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 20;
 			$error = 'failed quering DB got error : ' . $e->getCode() . ' : ' . $e->getMessage();
-			$this->reportError($error, Zend_Log::ALERT);
+			$this->reportError($errorCode, Zend_Log::ALERT);
 			return null;
 		}	
 		
@@ -70,13 +70,15 @@ class Billrun_ActionManagers_Subscribers_Query extends Billrun_ActionManagers_Su
 		// Check if the return data is invalid.
 		if(!$returnData) {
 			$returnData = array();
-			$this->reportError("No subscribers found");
+			$this->reportError(1004);
 		}
 		
-		$outputResult = 
-			array('status'  => $this->errorCode,
-				  'desc'    => $this->error,
-				  'details' => $returnData);
+		$outputResult = array(
+			'status'      => $this->errorCode == 0 ? 1 : 0,
+			'desc'        => $this->error,
+			'error_code'  => $this->errorCode,
+			'details'     => $returnData
+		);
 		return $outputResult;
 	}
 	
@@ -121,7 +123,7 @@ class Billrun_ActionManagers_Subscribers_Query extends Billrun_ActionManagers_Su
 		if(empty($query) || (!($jsonData = json_decode($query, true)))) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 21;
 			$error = "Failed decoding JSON data";
-			$this->reportError($error, $errorCode, Zend_Log::ALERT);
+			$this->reportError($errorCode, Zend_Log::ALERT);
 			return false;
 		}
 		

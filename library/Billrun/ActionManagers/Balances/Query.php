@@ -47,7 +47,7 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 		} catch (\Exception $e) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 30;
 			$error = 'failed querying DB got error : ' . $e->getCode() . ' : ' . $e->getMessage();
-			$this->reportError($error, $errorCode, Zend_Log::ALERT);
+			$this->reportError($errorCode, Zend_Log::ALERT);
 			return null;
 		}	
 		
@@ -66,13 +66,15 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 		if(!$returnData) {
 			$returnData = array();
 			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 34;
-			$this->reportError("No balances found", $errorCode);
+			$this->reportError($errorCode);
 		}
 		
-		$outputResult = 
-			array('status'  => $this->errorCode,
-				  'desc'    => $this->error,
-				  'details' => $returnData);
+		$outputResult = array(
+			'status'      => $this->errorCode == 0 ? 1 : 0,
+			'desc'        => $this->error,
+			'error_code'  => $this->errorCode,
+			'details'     => $returnData
+		);
 		return $outputResult;
 	}
 
@@ -122,7 +124,7 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 		if(empty($sid)) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 31;
 			$error = "Balances Query received no sid!";
-			$this->reportError($error, $errorCode, Zend_Log::NOTICE);
+			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
 		
@@ -150,7 +152,7 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 		if(count($prepaidQuery) > 1) {
 			$error ="Received both external id and name in balances query, specify one or none.";
 			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 32;
-			$this->reportError($error, $errorCode, Zend_Log::ERR);
+			$this->reportError($errorCode, Zend_Log::ERR);
 			return false;
 		}
 		// If empty it means that there is no filtering to be done.
@@ -199,7 +201,7 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 		if(!$prepaidRecord || $prepaidRecord->isEmpty()) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 33;
 			$error = "Failed to get prepaid record";
-			$this->reportError($error, $errorCode, Zend_Log::NOTICE);
+			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
 		

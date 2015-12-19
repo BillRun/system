@@ -57,7 +57,7 @@ class Billrun_ActionManagers_Cards_Delete extends Billrun_ActionManagers_Cards_A
 		if (empty($query) || (!($jsonQueryData = json_decode($query, true)))) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 10;
 			$error = "There is no query tag or query tag is empty!";
-			$this->reportError($error, $errorCode, Zend_Log::ALERT);
+			$this->reportError($errorCode, Zend_Log::ALERT);
 			return false;
 		}
 
@@ -66,7 +66,7 @@ class Billrun_ActionManagers_Cards_Delete extends Billrun_ActionManagers_Cards_A
 		if (empty($jsonQueryData['batch_number'])) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 11;
 			$error = "Cannot delete ! All the following fields are missing or empty:" . implode(', ', $errLog);
-			$this->reportError($error, $errorCode, Zend_Log::ALERT);
+			$this->reportError($errorCode, Zend_Log::ALERT);
 			return false;
 		}
 		
@@ -106,7 +106,7 @@ class Billrun_ActionManagers_Cards_Delete extends Billrun_ActionManagers_Cards_A
 		} catch (\Exception $e) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 12;
 			$error = 'failed deleting from the DB got error : ' . $e->getCode() . ' : ' . $e->getMessage();
-			$this->reportError($error, $errorCode, Zend_Log::ALERT);
+			$this->reportError($errorCode, Zend_Log::ALERT);
 			Billrun_Factory::log('failed deleting request :' . print_r($this->query, 1), Zend_Log::ALERT);
 		}
 
@@ -116,11 +116,12 @@ class Billrun_ActionManagers_Cards_Delete extends Billrun_ActionManagers_Cards_A
 		}
 		
 		$outputResult = array(
-				'status' => $this->errorCode,
-				'desc' => $this->error,
-				'details' => (!$this->errorCode) ? 
-							 ('Deleted ' . $count . ' card(s)') : 
-							 ($error)
+			'status'	  => $this->errorCode == 0 ? 1 : 0,
+			'desc'        => $this->error,
+			'error_code'  => $this->errorCode,
+			'details'     => (!$this->errorCode) ? 
+							('Deleted ' . $count . ' card(s)') : 
+							($error)
 		);
 
 		return $outputResult;

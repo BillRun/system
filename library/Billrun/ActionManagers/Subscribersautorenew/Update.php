@@ -51,7 +51,7 @@ class Billrun_ActionManagers_SubscribersAutoRenew_Update extends Billrun_ActionM
 		} catch (\Exception $e) {
 			$error = 'failed storing in the DB got error : ' . $e->getCode() . ' : ' . $e->getMessage();
 			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 10;
-			$this->reportError($error, $errorCode, Zend_Log::ALERT);
+			$this->reportError($errorCode, Zend_Log::ALERT);
 			Billrun_Factory::log('failed saving request :' . print_r($this->recordToSet, 1), Zend_Log::ALERT);
 		}
 
@@ -77,14 +77,14 @@ class Billrun_ActionManagers_SubscribersAutoRenew_Update extends Billrun_ActionM
 		if(empty($update) || (!($jsonUpdateData = json_decode($update, true)))) {
 			$error = "Update action does not have an upsert field!";
 			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 12;
-			$this->reportError($error, $errorCode, Zend_Log::ALERT);
+			$this->reportError($errorCode, Zend_Log::ALERT);
 			return false;
 		}
 		
 		if(!isset($jsonUpdateData['to'])) {
 			$error = "The 'to' field is mendatory";
 			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 13;
-			$this->reportError($error, $errorCode, Zend_Log::ALERT);
+			$this->reportError($errorCode, Zend_Log::ALERT);
 			return false;
 		}
 				
@@ -143,7 +143,7 @@ class Billrun_ActionManagers_SubscribersAutoRenew_Update extends Billrun_ActionM
 		if(!$subRecord) {
 			$error = "Subscriber not found for " . $subQuery['sid'];
 			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 14;
-			$this->reportError($error, $errorCode, Zend_Log::ALERT);
+			$this->reportError($errorCode, Zend_Log::ALERT);
 			return false;
 		}
 		
@@ -163,7 +163,7 @@ class Billrun_ActionManagers_SubscribersAutoRenew_Update extends Billrun_ActionM
 		if(!$planRecord) {
 			$error = "Charging plan not found!";
 			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 15;
-			$this->reportError($error, $errorCode, Zend_Log::ALERT);
+			$this->reportError($errorCode, Zend_Log::ALERT);
 			return false;
 		}
 		$this->updateQuery['charging_plan_name'] = $planRecord['name'];
@@ -203,7 +203,7 @@ class Billrun_ActionManagers_SubscribersAutoRenew_Update extends Billrun_ActionM
 			if(!isset($queryData[$field]) || empty($queryData[$field])) {
 				$error = "Query is missing a field: " . $field;
 				$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 16;
-				$this->reportError($error, $errorCode, Zend_Log::ALERT);
+				$this->reportError($errorCode, Zend_Log::ALERT);
 				return false;
 			}
 			
@@ -224,7 +224,7 @@ class Billrun_ActionManagers_SubscribersAutoRenew_Update extends Billrun_ActionM
 		if(empty($query) || (!($jsonQueryData = json_decode($query, true)))) {
 			$error = "Update action does not have a query field!";
 			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 17;
-			$this->reportError($error, $errorCode, Zend_Log::ALERT);
+			$this->reportError($errorCode, Zend_Log::ALERT);
 			return false;
 		}
 		
@@ -232,7 +232,7 @@ class Billrun_ActionManagers_SubscribersAutoRenew_Update extends Billrun_ActionM
 		if($this->setQueryFields($jsonQueryData) === FALSE) {
 			$error = "Subscribers update received invalid query values in fields";
 			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 18;
-			$this->reportError($error, $errorCode, Zend_Log::ALERT);
+			$this->reportError($errorCode, Zend_Log::ALERT);
 			return false;
 		}
 		

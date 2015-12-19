@@ -46,7 +46,7 @@ class Billrun_ActionManagers_Subscribersautorenew_Query extends Billrun_ActionMa
 		} catch (\Exception $e) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base");
 			$error = 'failed quering DB got error : ' . $e->getCode() . ' : ' . $e->getMessage();
-			$this->reportError($error, $errorCode, Zend_Log::ALERT);
+			$this->reportError($errorCode, Zend_Log::ALERT);
 			return null;
 		}	
 		
@@ -118,14 +118,14 @@ class Billrun_ActionManagers_Subscribersautorenew_Query extends Billrun_ActionMa
 		if(empty($query) || (!($jsonData = json_decode($query, true)))) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 2;
 			$error = "Failed decoding JSON data";
-			$this->reportError($error, $errorCode, Zend_Log::ALERT);
+			$this->reportError($errorCode, Zend_Log::ALERT);
 			return false;
 		}
 		
 		if(!isset($jsonData['sid'])) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 3;
 			$error = "Did not receive an SID argument";
-			$this->reportError($error, $errorCode, Zend_Log::ALERT);
+			$this->reportError($errorCode, Zend_Log::ALERT);
 			return false;
 		}
 		

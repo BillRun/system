@@ -63,7 +63,7 @@ class Billrun_ActionManagers_Cards_Create extends Billrun_ActionManagers_Cards_A
 		if (empty($create) || (!($jsonCreateDataArray = json_decode($create, true)))) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base");
 			$error = "There is no create tag or create tag is empty!";
-			$this->reportError($error, $errorCode, Zend_Log::ALERT);
+			$this->reportError($errorCode, Zend_Log::ALERT);
 			return false;
 		}
 
@@ -78,7 +78,7 @@ class Billrun_ActionManagers_Cards_Create extends Billrun_ActionManagers_Cards_A
 				if (!isset($jsonCreateData[$field]) || empty($jsonCreateData[$field])) {
 					$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 1;
 					$error = "Field: " . $field . " is not set or is empty!";
-					$this->reportError($error, $errorCode, Zend_Log::ALERT);
+					$this->reportError($errorCode, Zend_Log::ALERT);
 					return false;
 				}
 				$oneCard[$field] = $jsonCreateData[$field];
@@ -143,7 +143,7 @@ class Billrun_ActionManagers_Cards_Create extends Billrun_ActionManagers_Cards_A
 			$exception = $e;
 			$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 2;
 			$error = 'failed storing in the DB got error : ' . $e->getCode() . ' : ' . $e->getMessage();
-			$this->reportError($error, $errorCode, Zend_Log::ALERT);
+			$this->reportError($errorCode, Zend_Log::ALERT);
 			Billrun_Factory::log('failed saving request :' . print_r($this->cards, 1), Zend_Log::ALERT);
 			$res = $this->removeCreated($bulkOptions);
 		}
@@ -158,9 +158,10 @@ class Billrun_ActionManagers_Cards_Create extends Billrun_ActionManagers_Cards_A
 		});
 			
 		$outputResult = array(
-				'status' => $this->errorCode,
-				'desc' => $this->error,
-				'details' => (!$this->errorCode) ? 
+			'status' => $this->errorCode == 0 ? 1 : 0,
+			'desc' => $this->error,
+			'error_code' => $this->errorCode,
+			'details' => (!$this->errorCode) ? 
 							 (json_encode($this->cards)) : 
 							 ('Failed storing cards in the data base : ' . $exception->getCode() . ' : ' . $exception->getMessage() . '. ' . $res['n'] . ' cards removed')
 		);

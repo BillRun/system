@@ -21,6 +21,7 @@ abstract class Billrun_ActionManagers_Cards_Action extends Billrun_ActionManager
 	public function __construct($params) {
 		parent::__construct($params);
 		$this->collection = Billrun_Factory::db()->cardsCollection();
+		Billrun_Factory::config()->addConfig(APPLICATION_PATH . "/conf/cards/errors.ini");
 	}
 	
 	/**
