@@ -307,7 +307,9 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater{
 	 * @return type
 	 */
 	protected function getSetOnInsert($wallet, $defaultBalance) {
-		$defaultBalance['to'] = $this->getDateFromPeriod($wallet->getPeriod());
+		if (!isset($defaultBalance['to'])) {
+			$defaultBalance['to'] = $this->getDateFromPeriod($wallet->getPeriod());
+		}
 		$defaultBalance['charging_by'] = $wallet->getChargingBy();
 		$defaultBalance['charging_by_usaget'] = $wallet->getChargingByUsaget();
 		$defaultBalance['charging_by_usaget_unit'] = $wallet->getChargingByUsagetUnit();

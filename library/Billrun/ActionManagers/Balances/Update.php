@@ -103,7 +103,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 			$insertLine['balance_ref'] = $db->balancesCollection()->createRefByEntity($balance);
 			$insertLine['stamp'] = Billrun_Util::generateArrayStamp($insertLine);
 			$linesCollection->insert($insertLine);
-			$balancesRecords[] = $balance->getRawData();
+			$balancesRecords[] = Billrun_Util::convertRecordMongoDatetimeFields($balance->getRawData());
 		}
 		
 		return $balancesRecords;
