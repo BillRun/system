@@ -13,7 +13,7 @@
  * @todo This class is very similar to balances query, 
  * a generic query class should be created for both to implement.
  */
-class Billrun_ActionManagers_SubscribersAutoRenew_Query extends Billrun_ActionManagers_APIAction{
+class Billrun_ActionManagers_Subscribersautorenew_Query extends Billrun_ActionManagers_APIAction{
 	
 	/**
 	 * Field to hold the data to be written in the DB.
@@ -115,13 +115,13 @@ class Billrun_ActionManagers_SubscribersAutoRenew_Query extends Billrun_ActionMa
 			return false;
 		}
 		
-		if(!isset($query['sid'])) {
+		if(!isset($jsonData['sid'])) {
 			$error = "Did not receive an SID argument";
 			$this->reportError($error, Zend_Log::ALERT);
 			return false;
 		}
 		
-		$this->query = $query;
+		$this->query = $jsonData;
 		$this->parseDateParameters();
 		
 		return true;
