@@ -21,10 +21,12 @@ class Billrun_ActionManagers_Subscribersautorenew_Query extends Billrun_ActionMa
 	 */
 	protected $query = array();
 	
+	const DEFAULT_ERROR = "Success querying auto renew";
+	
 	/**
 	 */
 	public function __construct() {
-		parent::__construct(array('error' => "Success querying auto renew"));
+		parent::__construct(array('error' => self::DEFAULT_ERROR));
 		$this->collection = Billrun_Factory::db()->subscribers_auto_renew_servicesCollection();
 	}
 	
@@ -61,6 +63,10 @@ class Billrun_ActionManagers_Subscribersautorenew_Query extends Billrun_ActionMa
 		$success=true;
 		// Check if the return data is invalid.
 		if(!$returnData) {
+			// If no internal error occured, report on empty data.
+			if($this->error == self::DEFAULT_ERROR) {
+				$this->reportError("No data returned for query", Zend_Log::ALERT);
+			}
 			$returnData = array();
 			$success=false;
 		}
