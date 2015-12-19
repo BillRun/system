@@ -44,8 +44,9 @@ class Billrun_ActionManagers_Subscribersautorenew_Query extends Billrun_ActionMa
 				$returnData[] = Billrun_Util::convertRecordMongoDatetimeFields($rawItem, $date_fields);
 			}
 		} catch (\Exception $e) {
+			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base");
 			$error = 'failed quering DB got error : ' . $e->getCode() . ' : ' . $e->getMessage();
-			$this->reportError($error, Zend_Log::ALERT);
+			$this->reportError($error, $errorCode, Zend_Log::ALERT);
 			return null;
 		}	
 		
@@ -60,19 +61,18 @@ class Billrun_ActionManagers_Subscribersautorenew_Query extends Billrun_ActionMa
 		$returnData = 
 			$this->queryRange();
 
-		$success=true;
 		// Check if the return data is invalid.
 		if(!$returnData) {
 			// If no internal error occured, report on empty data.
 			if($this->error == self::DEFAULT_ERROR) {
-				$this->reportError("No data returned for query", Zend_Log::ALERT);
+				$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 1;
+				$this->reportError("No data returned for query", $errorCode, Zend_Log::ALERT);
 			}
 			$returnData = array();
-			$success=false;
 		}
 		
 		$outputResult = 
-			array('status'  => ($success) ? (1) : (0),
+			array('status'  => $this->errorCode,
 				  'desc'    => $this->error,
 				  'details' => $returnData);
 		return $outputResult;
@@ -116,14 +116,16 @@ class Billrun_ActionManagers_Subscribersautorenew_Query extends Billrun_ActionMa
 		$jsonData = null;
 		$query = $input->get('query');
 		if(empty($query) || (!($jsonData = json_decode($query, true)))) {
+			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 2;
 			$error = "Failed decoding JSON data";
-			$this->reportError($error, Zend_Log::ALERT);
+			$this->reportError($error, $errorCode, Zend_Log::ALERT);
 			return false;
 		}
 		
 		if(!isset($jsonData['sid'])) {
+			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 3;
 			$error = "Did not receive an SID argument";
-			$this->reportError($error, Zend_Log::ALERT);
+			$this->reportError($error, $errorCode, Zend_Log::ALERT);
 			return false;
 		}
 		
