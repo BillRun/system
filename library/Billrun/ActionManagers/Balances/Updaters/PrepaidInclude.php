@@ -36,7 +36,6 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 		// If updating by prepaid include the user must specify an expiration date.
 		if (!$recordToSet['to']) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 6;
-			$error = "Update balance by prepaid include must receive expiration date";
 			$this->reportError($errorCode, Zend_Log::ERR);
 			return false;
 		}
@@ -44,7 +43,6 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 		// No value is set.
 		if (!isset($recordToSet['value'])) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 7;
-			$error = "Update balance by prepaid include must receive value to update";
 			$this->reportError($errorCode, Zend_Log::ERR);
 			return false;
 		}
@@ -54,7 +52,6 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 		$prepaidRecord = $this->getRecord($query, $prepaidIncludes, $this->getTranslateFields());
 		if (!$prepaidRecord) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 8;
-			$error = "Failed to get prepaid include record";
 			$this->reportError($errorCode, Zend_Log::ERR);
 			return false;
 		}
@@ -65,7 +62,6 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 		// Subscriber was not found.
 		if (!$subscriber) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 9;
-			$error = "Updating by prepaid include failed to get subscriber id: " . $subscriberId;
 			$this->reportError($errorCode, Zend_Log::ERR);
 			return false;
 		}

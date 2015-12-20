@@ -42,22 +42,26 @@ abstract class Billrun_ActionManagers_APIAction {
 	
 	/**
 	 * Report an error.
-	 * @param string $error - Error string to report.
-	 * @param int $errorCode - Code
+	 * @param int $errorCode - Error index to report.
 	 * @param Zend_Log_Filter_Priority $errorLevel
 	 */
-	protected function reportError($error, $errorLevel=Zend_Log::INFO) {
-		if (is_numeric($error)) {
-			if (isset($this->errors[$error])) {
-				$this->error = $this->errors[$error];
-				$this->errorCode = $error;
+	protected function reportError($errorCode, $errorLevel=Zend_Log::INFO, array $args = array()) {
+		if (!is_numeric($errorCode)) {
+			$this->error = $errorCode;
+			$this->errorCode = -1;
+		} else {
+			if (isset($this->errors[$errorCode])) {
+				$this->error = $this->errors[$errorCode];
+				
+				if(!empty($args)) {
+					$this->error=vsprintf($this->error, $args);
+				}
+				
+				$this->errorCode = $errorCode;
 			} else {
 				$this->error = 'Unknown issue';
 				$this->errorCode = 999999;
 			}
-		} else {
-			$this->error = $error;
-			$this->errorCode = -1;
 		}
 		Billrun_Factory::log($this->errorCode . " " . $this->error, $errorLevel);
 	}
