@@ -48,16 +48,18 @@ class Billrun_ActionManagers_Cards_Query extends Billrun_ActionManagers_Cards_Ac
 		$jsonQueryData = null;
 		$query = $input->get('query');
 		if (empty($query) || (!($jsonQueryData = json_decode($query, true)))) {
+			$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 20;
 			$error = "There is no query tag or query tag is empty!";
-			$this->reportError($error, Zend_Log::ALERT);
+			$this->reportError($errorCode, Zend_Log::ALERT);
 			return false;
 		}
 
 		$errLog = array_diff($queryFields, array_keys($jsonQueryData));
 
 		if (!empty($errLog) && count($errLog) == count($queryFields)) {
+			$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 21;
 			$error = "Cannot query ! All the following fields are missing or empty:" . implode(', ', $errLog);
-			$this->reportError($error, Zend_Log::ALERT);
+			$this->reportError($errorCode, Zend_Log::ALERT);
 			return false;
 		}
 		
@@ -80,9 +82,7 @@ class Billrun_ActionManagers_Cards_Query extends Billrun_ActionManagers_Cards_Ac
 	 * @return data for output.
 	 */
 	public function execute() {
-
 		$skip = $this->page * $this->limit;
-		$success = true;
 
 		try {
 			$cursor = $this->collection->query($this->query)->cursor()->skip($skip)->limit($this->limit);
@@ -95,21 +95,22 @@ class Billrun_ActionManagers_Cards_Query extends Billrun_ActionManagers_Cards_Ac
 				$returnData[] = Billrun_Util::convertRecordMongoDatetimeFields($rawItem, array('to', 'creation_time', 'activation_datetime'));
 			}
 		} catch (\Exception $e) {
+			$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 22;
 			$error = 'failed querying DB got error : ' . $e->getCode() . ' : ' . $e->getMessage();
-			$this->reportError($error, Zend_Log::ALERT);
-			$success = false;
+			$this->reportError($errorCode, Zend_Log::ALERT);
 			$returnData = array();
 		}
 
 		if(!$returnData) {
-			$success = false;
-			$this->reportError("No cards found");
+			$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 23;
+			$this->reportError("No cards found", $errorCode);
 		}
 		
 		$outputResult = array(
-				'status' => ($success) ? (1) : (0),
-				'desc' => $this->error,
-				'details' => $returnData
+			'status'      => $this->errorCode == 0 ? 1 : 0,
+			'desc'        => $this->error,
+			'error_code'  => $this->errorCode,
+			'details'     => $returnData
 		);
 		return $outputResult;
 	}

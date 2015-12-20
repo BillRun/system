@@ -56,15 +56,16 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 	 */
 	protected function getAction() {
 		$filterName=key($this->query);
+		$this->updaterOptions['errors'] = $this->errors;
 		$updaterManagerInput = array(
 				'options'     => $this->updaterOptions,
-				'filter_name' => $filterName
+				'filter_name' => $filterName,
 		);
 		
 		$manager = new Billrun_ActionManagers_Balances_Updaters_Manager($updaterManagerInput);
 		if(!$manager) {
-			$error = "Failed to get the updater manager!";
-			$this->reportError($error, Zend_Log::ERR);
+			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 14;
+			$this->reportError($errorCode, Zend_Log::ERR);
 			return null;
 		}
 		
@@ -114,34 +115,29 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 	 * @return data for output.
 	 */
 	public function execute() {
-		$success = true;
-
 		// Get the updater for the filter.
 		$updater = $this->getAction();
 		
 		$outputDocuments = $updater->update($this->query, $this->recordToSet, $this->subscriberId);
 	
 		if($outputDocuments === false) {
-			$success = false;
-		} elseif (!$outputDocuments) {
-			$success = false;
-			$this->reportError("No balances found to update");
+			$this->error = $updater->getError();
+			$this->errorCode = $updater->getErrorCode();
 		} else {
-			// Write the action to the lines collection.
-			$outputDocuments = $this->reportInLines($outputDocuments);
-		}
-		
-		if(!$success) {
-			$updaterError = $updater->getError();
-			if($updaterError) {
-				$this->error = $updaterError;
+			if (!$outputDocuments) {
+				$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 21;
+				$this->reportError($errorCode);
+			} else {
+				// Write the action to the lines collection.
+				$outputDocuments = $this->reportInLines($outputDocuments);
 			}
 		}
 		
 		$outputResult = array(
-			'status'  => ($success) ? (1) : (0),
-			 'desc'    => $this->error,
-			 'details' => ($outputDocuments) ? $outputDocuments : 'Empty balance',
+			'status'      => $this->errorCode == 0 ? 1 : 0,
+			'desc'        => $this->error,
+			'error_code'  => $this->errorCode,
+			'details'     => ($outputDocuments) ? $outputDocuments : 'Empty balance',
 		);
 		return $outputResult;
 	}
@@ -164,7 +160,8 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		$update = $input->get('upsert');
 		if(empty($update) || (!($jsonUpdateData = json_decode($update, true)))) {
 			$error = "Update action does not have an upsert field!";
-			$this->reportError($error, Zend_Log::ALERT);
+			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 15;
+			$this->reportError($errorCode, Zend_Log::ALERT);
 			return false;
 		}
 		
@@ -229,7 +226,8 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		$query = $input->get('query');
 		if(empty($query) || (!($jsonQueryData = json_decode($query, true)))) {
 			$error = "Update action does not have a query field!";
-			$this->reportError($error, Zend_Log::ALERT);
+			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 16;
+			$this->reportError($errorCode, Zend_Log::ALERT);
 			return false;
 		}
 		
@@ -237,13 +235,15 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		// This is a critical error!
 		if($this->query===null){
 			$error = "Balances Update: Received more than one filter field";
-			$this->reportError($error, Zend_Log::ERR);
+			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 17;
+			$this->reportError($errorCode, Zend_Log::ERR);
 			return false;
 		}
 		// No filter found.
 		else if(empty($this->query)) {
+			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 18;
 			$error = "Balances Update: Did not receive a filter field!";
-			$this->reportError($error, Zend_Log::ERR);
+			$this->reportError($errorCode, Zend_Log::ERR);
 			return false;
 		}
 		
@@ -260,8 +260,9 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		
 		// Check that sid exists.
 		if(!$sid) {
+			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 19;
 			$error = "Update action did not receive a subscriber ID!";
-			$this->reportError($error, Zend_Log::ALERT);
+			$this->reportError($errorCode, Zend_Log::ALERT);
 			return false;
 		}
 		
