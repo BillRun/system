@@ -254,9 +254,7 @@ $protected = array();
 				<label for='rate-sms-access'>Access</label>
 				<input type='text' class='form-control' ng-model="newSMSRate.params.access" />
 				<label for='rate-unit'>Unit</label>
-				<select class='form-control' ng-model="newSMSRate.params.unit">
-					<option ng-repeat="unit in availableSMSUnits" value="{{unit}}">{{unit}}</options>
-				</select>
+				<input type="text" value="counter" disabled />
 				<h4>
 					Rates
 				</h4>

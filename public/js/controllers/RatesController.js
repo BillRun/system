@@ -146,12 +146,13 @@ app.controller('RatesController', ['$scope', '$http', '$window', function ($scop
 	$scope.newCallRate = {name: undefined,
 	  params: {
 	    unit: undefined,
-		  access: undefined,
-		  rate: {
-		    interval: undefined,
-			price: undefined,
-			to: undefined}
-		}
+		access: undefined,
+		rate: {
+		  interval: undefined,
+		  price: undefined,
+		  to: undefined
+	    }
+      }
 	};
 	$scope.newCallPlan = {value: undefined};
 	$scope.newSMSRate = {interval: undefined,
