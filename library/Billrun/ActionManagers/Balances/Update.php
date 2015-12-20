@@ -56,15 +56,15 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 	 */
 	protected function getAction() {
 		$filterName=key($this->query);
+		$this->updaterOptions['errors'] = $this->errors;
 		$updaterManagerInput = array(
 				'options'     => $this->updaterOptions,
-				'filter_name' => $filterName
+				'filter_name' => $filterName,
 		);
 		
 		$manager = new Billrun_ActionManagers_Balances_Updaters_Manager($updaterManagerInput);
 		if(!$manager) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 14;
-			$error = "Failed to get the updater manager!";
 			$this->reportError($errorCode, Zend_Log::ERR);
 			return null;
 		}
@@ -121,7 +121,8 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		$outputDocuments = $updater->update($this->query, $this->recordToSet, $this->subscriberId);
 	
 		if($outputDocuments === false) {
-			list($this->errorCode, $this->error) = each($updater->getError());
+			$this->error = $updater->getError();
+			$this->errorCode = $updater->getErrorCode();
 		} else {
 			if (!$outputDocuments) {
 				$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 21;

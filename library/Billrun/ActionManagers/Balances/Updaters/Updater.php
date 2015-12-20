@@ -48,6 +48,11 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 		if (isset($options['zero'])) {
 			$this->ignoreOveruse = $options['zero'];
 		}
+		
+		// Get the balances errors.
+		if (isset($options['errors'])) {
+			$this->errors = $options['errors'];
+		}
 	}
 	
 	/**
