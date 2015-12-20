@@ -39,6 +39,12 @@ class Billrun_DataTypes_Wallet {
 	protected $chargingByUsaget = null;
 
 	/**
+	 * Unit of the charge of the plan. [usaget\cost etc...]
+	 * @var string.
+	 */
+	protected $chargingByUsagetUnit = null;
+
+	/**
 	 * The period for when is this wallet active.
 	 * @var array
 	 */
@@ -70,7 +76,7 @@ class Billrun_DataTypes_Wallet {
 		
 		// The wallet does not handle the period.
 		if (isset($chargingByValue['period'])) {
-			$this->period = $chargingByValue['period'];
+			$this->setPeriod($chargingByValue['period']);
 			unset($chargingByValue['period']);
 		}
 
@@ -78,12 +84,14 @@ class Billrun_DataTypes_Wallet {
 			$this->valueFieldName = 'balance.' . str_replace("total_", "", $chargingBy);
 			$this->value = isset($chargingByValue['value']) ? $chargingByValue['value'] : $chargingByValue;
 		} else {
-			list($chargingByUsaget, $this->value) = each($chargingByValue);
-			$this->valueFieldName = 'balance.totals.' . $chargingBy . '.' . $chargingByUsaget;
+			list($chargingBy, $this->value) = each($chargingByValue);
+			$this->valueFieldName = 'balance.totals.' . $chargingByUsaget . '.' . $chargingBy;
 		}
 
 		$this->chargingBy = $chargingBy;
 		$this->chargingByUsaget = $chargingByUsaget;
+		$units = Billrun_Factory::config()->getConfigValue('usaget.unit');
+		$this->chargingByUsagetUnit = isset($units[$chargingByUsaget]) ? $units[$chargingByUsaget] : '';
 
 		$this->setValue();
 	}
@@ -93,12 +101,8 @@ class Billrun_DataTypes_Wallet {
 	 * @throws InvalidArgumentException
 	 */
 	protected function setValue() {
-		// Convert the value to an integer.
-		$numValue = Billrun_Util::toNumber($this->value);
-		if ($numValue === false) {
-			throw new InvalidArgumentException("Wallet initialized with non integer value " . $this->value);
-		}
-		$this->value = $numValue;
+		// Convert the value to float
+		settype($this->value, 'float');
 	}
 
 	/**
@@ -116,6 +120,15 @@ class Billrun_DataTypes_Wallet {
 	 */
 	public function getPeriod() {
 		return $this->period;
+	}
+
+	/**
+	 * Get the period for the current wallet, null if not exists.
+	 * @return The current wallet period.
+	 * @todo Create a period object.
+	 */
+	public function setPeriod($period) {
+		$this->period = $period;
 	}
 
 	/**
@@ -140,6 +153,14 @@ class Billrun_DataTypes_Wallet {
 	 */
 	public function getChargingByUsaget() {
 		return $this->chargingByUsaget;
+	}
+	
+	/**
+	 * Get the charging by unit usaget string value.
+	 * @return string
+	 */
+	public function getChargingByUsagetUnit() {
+		return $this->chargingByUsagetUnit;
 	}
 	
 	/**

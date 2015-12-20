@@ -226,6 +226,9 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater{
 	 * @return \MongoDate
 	 */
 	protected function getDateFromDataRecord($chargingPlan) {
+		if (!isset($chargingPlan['period'])) {
+			return;
+		}
 		$period = $chargingPlan['period'];
 		return $this->getDateFromPeriod($period);
 	}
@@ -237,6 +240,9 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater{
 	 * @todo Create a period object.
 	 */
 	protected function getDateFromPeriod($period) {
+		if ($period instanceof MongoDate) {
+			return $period;
+		}
 		$duration = $period['duration'];
 		// If this plan is unlimited.
 		// TODO: Move this logic to a more generic location
@@ -250,7 +256,7 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater{
 		} else {
 			$unit = 'months';
 		}
-		return new MongoDate(strtotime("+ " . $duration . " " . $unit));
+		return new MongoDate(strtotime("tomorrow", strtotime("+ " . $duration . " " . $unit)));
 	}
 
 	/**
@@ -301,8 +307,12 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater{
 	 * @return type
 	 */
 	protected function getSetOnInsert($wallet, $defaultBalance) {
+		if (!isset($defaultBalance['to'])) {
+			$defaultBalance['to'] = $this->getDateFromPeriod($wallet->getPeriod());
+		}
 		$defaultBalance['charging_by'] = $wallet->getChargingBy();
 		$defaultBalance['charging_by_usaget'] = $wallet->getChargingByUsaget();
+		$defaultBalance['charging_by_usaget_unit'] = $wallet->getChargingByUsagetUnit();
 		$defaultBalance['pp_includes_name'] = $wallet->getPPName();
 		$defaultBalance['pp_includes_external_id'] = $wallet->getPPID();
 		$defaultBalance[$wallet->getFieldName()] = $wallet->getValue();

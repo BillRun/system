@@ -67,8 +67,8 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 		}
 
 		// Set subscriber to query.
-		$updateQuery['sid'] = $subscriber['sid'];
 		$updateQuery['aid'] = $subscriber['aid'];
+		$updateQuery['sid'] = $subscriber['sid'];
 
 		// Create a default balance record.
 		$defaultBalance = $this->getDefaultBalance($subscriber, $prepaidRecord);
@@ -118,7 +118,7 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 
 		// If the balance doesn't exist take the setOnInsert query, 
 		// if it exists take the set query.
-		if (!isset($balance)) {
+		if (!isset($balance) || $balance->isEmpty()) {
 			$update = $this->getSetOnInsert($chargingPlan, $defaultBalance);
 		} else {
 			$this->handleZeroing($query, $balancesColl, $chargingPlan->getFieldName());
@@ -181,7 +181,7 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 		$defaultBalance['to'] = $prepaidRecord['to'];
 		$defaultBalance['sid'] = $subscriber['sid'];
 		$defaultBalance['aid'] = $subscriber['aid'];
-		$defaultBalance['current_plan'] = $this->getPlanRefForSubscriber($subscriber);
+//		$defaultBalance['current_plan'] = $this->getPlanRefForSubscriber($subscriber);
 		$defaultBalance['charging_type'] = $subscriber['charging_type'];
 		$defaultBalance['charging_by'] = $prepaidRecord['charging_by'];
 		$defaultBalance['charging_by_usaget'] = $prepaidRecord['charging_by_usaget'];

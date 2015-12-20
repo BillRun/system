@@ -109,11 +109,9 @@ class Billrun_ActionManagers_SubscribersAutoRenew_Update extends Billrun_ActionM
 		// TODO INTERVAL IS ALWAYS MONTH
 		$this->updateQuery['interval'] = 'month';
 		
-		$this->updateQuery['to'] = $jsonUpdateData['to'];
-				$this->updateQuery['operation'] = $jsonUpdateData['operation'];
+		$this->updateQuery['to'] = new MongoDate(strtotime($jsonUpdateData['to']));
+		$this->updateQuery['operation'] = $jsonUpdateData['operation'];
 		$this->updateQuery['done'] = 0;
-		$this->updateQuery['remain'] = 
-			$this->countMonths(strtotime($this->updateQuery['from']), strtotime($this->updateQuery['to']));
 		
 		// Check if we are at the end of the month.
 		if(date('d') == date('t')) {
@@ -122,9 +120,17 @@ class Billrun_ActionManagers_SubscribersAutoRenew_Update extends Billrun_ActionM
 			$this->updateQuery['eom'] = 0;
 		}
 		
-		$this->updateQuery['creation_time'] = MongoDate();
-		$this->updateQuery['from'] = $this->updateQuery['creation_time'];
+		$this->updateQuery['creation_time'] = new MongoDate();
+		if(isset($this->query['from'])) {
+			$this->updateQuery['from'] = new MongoDate(strtotime($this->query['from']));
+		} else {
+			$this->updateQuery['from'] = $this->updateQuery['creation_time'];
+		}
+		
 		$this->updateQuery['last_renew_date'] = $this->updateQuery['creation_time'];
+		
+		$this->updateQuery['remain'] = 
+			$this->countMonths(strtotime($this->query['from']), strtotime($jsonUpdateData['to']));
 	}
 	
 	protected function fillWithSubscriberValues() {
@@ -132,7 +138,7 @@ class Billrun_ActionManagers_SubscribersAutoRenew_Update extends Billrun_ActionM
 		$subCollection = Billrun_Factory::db()->subscribersCollection();
 		$subQuery = Billrun_Util::getDateBoundQuery();
 		$subQuery['sid'] = $this->query['sid'];
-		$subRecord = $subCollection->query($subQuery, array('aid'));
+		$subRecord = $subCollection->query($subQuery)->cursor()->current();
 		
 		if(!$subRecord) {
 			$error = "Subscriber not found for " . $subQuery['sid'];
@@ -140,7 +146,7 @@ class Billrun_ActionManagers_SubscribersAutoRenew_Update extends Billrun_ActionM
 			return false;
 		}
 		
-		$this->updateQuery['aid'] = $subQuery['aid'];
+		$this->updateQuery['aid'] = $subRecord['aid'];
 		
 		return true;
 	}

@@ -13,7 +13,7 @@
  * @todo This class is very similar to balances query, 
  * a generic query class should be created for both to implement.
  */
-class Billrun_ActionManagers_SubscribersAutoRenew_Query extends Billrun_ActionManagers_APIAction{
+class Billrun_ActionManagers_Subscribersautorenew_Query extends Billrun_ActionManagers_APIAction{
 	
 	/**
 	 * Field to hold the data to be written in the DB.
@@ -21,10 +21,12 @@ class Billrun_ActionManagers_SubscribersAutoRenew_Query extends Billrun_ActionMa
 	 */
 	protected $query = array();
 	
+	const DEFAULT_ERROR = "Success querying auto renew";
+	
 	/**
 	 */
 	public function __construct() {
-		parent::__construct(array('error' => "Success querying auto renew"));
+		parent::__construct(array('error' => self::DEFAULT_ERROR));
 		$this->collection = Billrun_Factory::db()->subscribers_auto_renew_servicesCollection();
 	}
 	
@@ -61,6 +63,10 @@ class Billrun_ActionManagers_SubscribersAutoRenew_Query extends Billrun_ActionMa
 		$success=true;
 		// Check if the return data is invalid.
 		if(!$returnData) {
+			// If no internal error occured, report on empty data.
+			if($this->error == self::DEFAULT_ERROR) {
+				$this->reportError("No data returned for query", Zend_Log::ALERT);
+			}
 			$returnData = array();
 			$success=false;
 		}
@@ -79,12 +85,12 @@ class Billrun_ActionManagers_SubscribersAutoRenew_Query extends Billrun_ActionMa
 		if (!isset($this->query['from'])){
 			$this->query['from']['$lte'] = new MongoDate();
 		} else {
-			$this->query['from'] = $this->intToMongoDate($this->query['from']);
+			$this->query['from'] = new MongoDate(strtotime($this->query['from']));
 		}
 		if (!$this->query['to']) {
 			$this->query['to']['$gte'] = new MongoDate();
 		} else {
-			$this->query['to'] = $this->intToMongoDate($this->query['to']);
+			$this->query['to'] = new MongoDate(strtotime($this->query['to']));
 		}
 	}
 	
@@ -115,13 +121,13 @@ class Billrun_ActionManagers_SubscribersAutoRenew_Query extends Billrun_ActionMa
 			return false;
 		}
 		
-		if(!isset($query['sid'])) {
+		if(!isset($jsonData['sid'])) {
 			$error = "Did not receive an SID argument";
 			$this->reportError($error, Zend_Log::ALERT);
 			return false;
 		}
 		
-		$this->query = $query;
+		$this->query = $jsonData;
 		$this->parseDateParameters();
 		
 		return true;
