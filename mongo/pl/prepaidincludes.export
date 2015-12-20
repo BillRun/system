@@ -6,5 +6,5 @@
 {"_id":{"$oid":"565da65004a872615c1e68ae"},"charging_by":"usagev","charging_by_usaget":"call","external_id":6.0,"from":{"$date":"2015-12-01T00:00:00.000Z"},"name":"Pele in_net Time","to":{"$date":"2999-01-01T00:00:00.000Z"}}
 {"_id":{"$oid":"565da65004a872615c1e68af"},"charging_by":"usagev","charging_by_usaget":"sms","external_id":7.0,"from":{"$date":"2015-12-01T00:00:00.000Z"},"name":"SMS Balance","to":{"$date":"2999-01-01T00:00:00.000Z"}}
 {"_id":{"$oid":"565da65004a872615c1e68b0"},"charging_by":"usagev","charging_by_usaget":"data","external_id":8.0,"from":{"$date":"2015-12-01T00:00:00.000Z"},"name":"Data Package","to":{"$date":"2999-01-01T00:00:00.000Z"}}
-{"_id":{"$oid":"565da65004a872615c1e68b1"},"charging_by":"cost","charging_by_usaget":"data","external_id":9.0,"from":{"$date":"2015-12-01T00:00:00.000Z"},"name":"Data Package","to":{"$date":"2999-01-01T00:00:00.000Z"}}
+{"_id":{"$oid":"565da65004a872615c1e68b1"},"charging_by":"total_cost","charging_by_usaget":"total_cost","external_id":9.0,"from":{"$date":"2015-12-01T00:00:00.000Z"},"name":"Monthly Bonus","to":{"$date":"2999-01-01T00:00:00.000Z"}}
 {"_id":{"$oid":"565da65004a872615c1e68b2"},"charging_by":"total_cost","charging_by_usaget":"total_cost","external_id":10.0,"from":{"$date":"2015-12-01T00:00:00.000Z"},"name":"Special Monthly Reward","to":{"$date":"2999-01-01T00:00:00.000Z"}}
