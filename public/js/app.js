@@ -1,5 +1,5 @@
-var app = angular.module('BillrunApp', []);
-app.config(function ($httpProvider) {
+var app = angular.module('BillrunApp', ['ngRoute']);
+app.config(function ($httpProvider, $routeProvider, $locationProvider) {
   $httpProvider.defaults.headers.post['Content-Type'] = 'application/x-www-form-urlencoded;charset=utf-8';
   /**
    * The workhorse; converts an object to x-www-form-urlencoded serialization.
@@ -47,4 +47,13 @@ app.config(function ($httpProvider) {
     if (!data) data = {};
     return angular.isObject(data) && String(data) !== '[object File]' ? param(data) : data;
   }];
+
+  $routeProvider.when('/admin/:entity/edit', {
+	  templateUrl: function (urlattr) {
+		  return 'views/' + urlattr.entity + '/edit.html';
+	  }
+  }).otherwise({
+	  redirectTo: '/admin/plans/edit'
+  });
+  $locationProvider.html5Mode({enabled: false, requireBase: false});
 });

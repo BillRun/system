@@ -16,8 +16,8 @@ class AdminController extends Yaf_Controller_Abstract {
 
 	/**
 	 * use for page title
-	 * 
-	 * @var string 
+	 *
+	 * @var string
 	 */
 	protected $title = null;
 	protected $session = null;
@@ -98,6 +98,25 @@ class AdminController extends Yaf_Controller_Abstract {
 		}
 	}
 
+	public function getAction() {
+		if (!$this->allowed('read'))
+			return false;
+		$coll = Billrun_Util::filter_var($this->getRequest()->get('coll'), FILTER_SANITIZE_STRING);
+		$id = Billrun_Util::filter_var($this->getRequest()->get('id'), FILTER_SANITIZE_STRING);
+		$type = Billrun_Util::filter_var($this->getRequest()->get('type'), FILTER_SANITIZE_STRING);
+
+		$model = self::initModel($coll);
+		if ($type == 'new') {
+			$entity = $model->getEmptyItem();
+		} else {
+			$entity = $model->getItem($id);
+		}
+		$response = new Yaf_Response_Http();
+		$response->setBody(json_encode($entity->getRawData()));
+		$response->response();
+		return false;
+	}
+
 	/**
 	 * save controller
 	 * @return boolean
@@ -127,7 +146,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->getView()->protectedKeys = $model->getProtectedKeys($entity, $type);
 		$this->getView()->hiddenKeys = $model->getHiddenKeys($entity, $type);
 	}
-	
+
 	public function confirmAction() {
 		if (!$this->allowed('write'))
 			return false;
@@ -299,10 +318,10 @@ class AdminController extends Yaf_Controller_Abstract {
 
 	/**
 	 * method to save all related rates after save
-	 * 
+	 *
 	 * @param Mongodloid_Collection $collection The collection to save to
 	 * @param Mongodolid_Entity $entity The entity to save
-	 * 
+	 *
 	 * @return void
 	 * @todo move to model
 	 */
@@ -353,9 +372,9 @@ class AdminController extends Yaf_Controller_Abstract {
 		// this use for export
 		$this->getSetVar($this->getSession($table), $query, 'query', $query);
 
-		$this->getView()->component = $this->buildTableComponent($table, $query);		
-	}	
-	
+		$this->getView()->component = $this->buildTableComponent($table, $query);
+	}
+
 	/**
 	 * rates controller of admin
 	 */
@@ -440,11 +459,11 @@ class AdminController extends Yaf_Controller_Abstract {
 
 	/**
 	 * method to check if user is authorize to resource
-	 * 
+	 *
 	 * @param string $permission the permission require authorization
-	 * 
+	 *
 	 * @return boolean true if have access, else false
-	 * 
+	 *
 	 * @todo: refactoring to core
 	 */
 	static public function authorized($permission, $page = null) {
@@ -459,14 +478,14 @@ class AdminController extends Yaf_Controller_Abstract {
 	static public function showInMenu($page) {
 		return Billrun_Config::getInstance()->getConfigValue('show_in_menu.' . $page, true);
 	}
-	
+
 	/**
 	 * method to check if user is allowed to access page, if not redirect or show error message
-	 * 
+	 *
 	 * @param string $permission the permission required to the page
-	 * 
+	 *
 	 * @return boolean true if have access, else false
-	 * 
+	 *
 	 */
 	protected function allowed($permission) {
 		$action = $this->getRequest()->getActionName();
@@ -548,9 +567,9 @@ class AdminController extends Yaf_Controller_Abstract {
 		// this use for export
 
 		$this->getSetVar($this->getSession($table), $query, 'query', $query);
-		$this->getView()->component = $this->buildTableComponent($table, $query);		
-	}	
-	
+		$this->getView()->component = $this->buildTableComponent($table, $query);
+	}
+
 	protected function errorAction() {
 		$this->getView()->component = $this->renderView('error');
 	}
@@ -684,7 +703,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		if ($type == 'close_and_new' && is_subclass_of($model, "TabledateModel") && !$model->isLast($entity)) {
 			die("There's already a newer entity with this key");
 		}
-		
+
 		// passing values into the view
 		$editData = array(
 			'entity' => $entity,
@@ -695,7 +714,7 @@ class AdminController extends Yaf_Controller_Abstract {
 			'availablePlans' => $availablePlans,
 			'baseUrl' => $this->baseUrl
 		);
-		
+
 		$viewData = array('data' => $editData);
 		if ($coll === "plans" && $entity['type'] === 'charging')
 			$template = 'chargingplanedit';
@@ -704,7 +723,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->getView()->component = $this->renderView($template, $viewData);
 	}
 
-	
+
 	/**
 	 * config controller of admin
 	 */
@@ -728,7 +747,7 @@ class AdminController extends Yaf_Controller_Abstract {
 
 	/**
 	 * method to render component page
-	 * 
+	 *
 	 * @param string $viewName the view name to render
 	 * @return type
 	 */
@@ -746,10 +765,10 @@ class AdminController extends Yaf_Controller_Abstract {
 
 	/**
 	 * method to render table view
-	 * 
+	 *
 	 * @param string $table the db table to render
 	 * @param array $columns the columns to show
-	 * 
+	 *
 	 * @return string the render page (HTML)
 	 * @todo refactoring this function
 	 */
@@ -790,14 +809,14 @@ class AdminController extends Yaf_Controller_Abstract {
 	// apply property
 	// remove property
 	protected function createToolbar() {
-		
+
 	}
 
 	/**
-	 * 
+	 *
 	 * @param string $tpl the default tpl the controller used; this will be override to use the general admin layout
 	 * @param array $parameters parameters of the view
-	 * 
+	 *
 	 * @return string the render layout including the page (component)
 	 */
 	protected function render($tpl, array $parameters = array()) {
@@ -856,7 +875,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	}
 
 	/**
-	 * 
+	 *
 	 * @param string $table the table name
 	 */
 	protected function getSession($table) {
@@ -956,11 +975,11 @@ class AdminController extends Yaf_Controller_Abstract {
 				)
 			);
 		}
-		
+
 		// If model is unidentified return false;
 		return false;
 	}
-		
+
 	/**
 	 * Translate the value by the type option.
 	 * @param string $option - Type option to translate by.
@@ -982,10 +1001,10 @@ class AdminController extends Yaf_Controller_Abstract {
 			default:
 				break;
 		}
-		
+
 		return $returnValue;
 	}
-	
+
 	/**
 	 * Translate the value by the case option.
 	 * @param string $option - Case option to translate by.
@@ -995,12 +1014,12 @@ class AdminController extends Yaf_Controller_Abstract {
 	protected function translateValueByCase($option, $inputValue) {
 		return Admin_Table::convertValueByCaseType($inputValue, $option);
 	}
-	
+
 	/**
 	 * Convert value to set for the correct mongo type.
 	 * @param string $option - Value type.
 	 * @param string $inputValue - The value to be set.
-	 * @return The value to set in the correct mongo type, null if no convertion found, 
+	 * @return The value to set in the correct mongo type, null if no convertion found,
 	 * false if invalid.
 	 */
 	protected function getValueForOption($option, $inputValue) {
@@ -1008,11 +1027,11 @@ class AdminController extends Yaf_Controller_Abstract {
 		if($returnValue === false) {
 			return false;
 		}
-		
+
 		if (isset($option['case'])) {
 			$returnValue = $this->translateValueByCase($option['case'], $returnValue);
 		}
-			
+
 		return $returnValue;
 	}
 
@@ -1034,7 +1053,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		// If no translator found return the input parameters.
 		return array($operator => $value);
 	}
-	
+
 	/**
 	 * Set the manual filter if the filter is a db ref.
 	 * @param type $inputValue - Value for the filter.
@@ -1050,10 +1069,10 @@ class AdminController extends Yaf_Controller_Abstract {
 		foreach ($cursor as $entity) {
 			$value[] = $collection->createRefByEntity($entity);
 		}
-		
+
 		return array('$in' => $value);
 	}
-	
+
 	/**
 	 * Set the naual filter for a key to the query.
 	 * @param array $query - Query to set the filter to.
@@ -1067,30 +1086,30 @@ class AdminController extends Yaf_Controller_Abstract {
 			if($convertedValue === false) {
 				return;
 			}
-			
+
 			$value = $convertedValue;
-			
+
 			list($operator, $value) = each($this->getOperatorValuePair($operator, $convertedValue));
-			
+
 			// Handle a db ref option.
 			if ($advancedOptions[$key]['type'] == 'dbref') {
 				list($operator, $value) = each($this->setManualFilterForDbref($value, $operator));
 			}
-			
+
 		$query[$key][$operator] = $value;
 	}
-	
+
 	public function getManualFilters($table) {
 		$advanced_options = $this->getAdvancedOptionsPerModel();
 		if ($advanced_options === false) {
 			Billrun_Factory::log("No options found for current model.", Zend_Log::DEBUG);
 			return false;
 		}
-		
+
 		$query = false;
 		$session = $this->getSession($table);
 		$keys = $this->getSetVar($session, 'manual_key', 'manual_key');
-		
+
 		$operators = $this->getSetVar($session, 'manual_operator', 'manual_operator');
 		$values = $this->getSetVar($session, 'manual_value', 'manual_value');
 		settype($operators, 'array');
@@ -1119,9 +1138,9 @@ class AdminController extends Yaf_Controller_Abstract {
 
 	/**
 	 * method to export rates to csv
-	 * 
+	 *
 	 * @return null; directly export to client
-	 * 
+	 *
 	 * @todo refactoring with model csv export
 	 */
 	public function exportratesAction() {
