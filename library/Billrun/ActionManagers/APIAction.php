@@ -24,7 +24,7 @@ abstract class Billrun_ActionManagers_APIAction {
 		if (isset($params['error'])) {
 			$this->error = $params['error'];
 		}
-		$this->errors = $errors = Billrun_Factory::config()->getConfigValue('errors', array());
+		$this->errors = Billrun_Factory::config()->getConfigValue('errors', array());
 	}
 	
 	/**
