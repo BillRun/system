@@ -1,0 +1,300 @@
+<style>
+	.glyphicon-plus-sign {
+		color: green;
+		cursor: pointer;
+	}
+
+	.glyphicon-minus-sign {
+		color: #bc2328;
+		cursor: pointer;
+	}
+	.clickable {
+		cursor: pointer;
+	}
+</style>
+
+<div class="container component" ng-controller='RatesController' ng-init="init()">
+	<center>
+		<h2>{{entity.key}}</h2>
+	</center>
+<form class='form-inline' ng-submit='saveRate()'>
+	<h2>Parameters</h2>
+	<div id='rate-out-circuit-groups' ng-hide="entity.params.out_circuit_group === undefined">
+		<h3>
+			Out Circuit Group
+		</h3>
+		<div class='rate-out-circuit-group' ng-repeat="outCircuitGroup in entity.params.out_circuit_group">
+			<label>From:</label>
+			<input type='text' class='form-control' ng-model="outCircuitGroup.from" />
+			<label>To:</label>
+			<input type='text' class='form-control' ng-model="outCircuitGroup.to" />
+			<i class='glyphicon glyphicon-minus-sign' ng-click="deleteOutCircuitGroup(outCircuitGroup)"></i>
+		</div>
+		<div>
+			<label>From:</label>
+			<input type='text' class='form-control' ng-model="newOutCircuitGroup.from" />
+			<label>To:</label>
+			<input type='text' class='form-control' ng-model="newOutCircuitGroup.to" />
+			<i class='glyphicon glyphicon-plus-sign' ng-click="addOutCircuitGroup()"></i>
+		</div>
+	</div>
+
+	<h3>
+		<small><i class="glyphicon glyphicon-chevron-down" ng-show="shown.prefix"></i></small>
+		<small><i class="glyphicon glyphicon-chevron-right" ng-hide="shown.prefix"></i></small>
+		<span ng-click="shown.prefix = !shown.prefix" class="clickable">Prefix</span>
+	</h3>
+	<div id='rate-prefixes' ng-if="shown.prefix">
+		<div ng-repeat="prefix in entity.params.prefix track by $index">
+			<input type="text" class="form-control" ng-model="entity.params.prefix[$index]" />
+			<i class='glyphicon glyphicon-minus-sign' ng-click='deletePrefix($index)'></i>
+		</div>
+		<div>
+			<a ng-click="addPrefix()" class="clickable">Add Prefix</a>
+		</div>
+	</div>
+
+	<div id='rate-record-types' ng-hide="entity.params.record_type === undefined">
+		<h3>
+			Record Types
+		</h3>
+		<div ng-repeat="recordType in entity.params.record_type track by $index">
+			<input type="text" class="form-control" ng-model="recordType" />
+			<i class='glyphicon glyphicon-minus-sign' ng-click='deleteRecordType($index)'></i>
+		</div>
+		<div>
+			<input type="text" class="form-control" ng-model="newRecordType.value" />
+			<i class='glyphicon glyphicon-plus-sign' ng-click="addRecordType()"></i>
+		</div>
+	</div>
+
+	<hr/>
+
+	<h2>Tariffs</h2>
+	<div>
+		<h3>Call</h3>
+		<ul ng-repeat="(callRateName, callRate) in entity.rates.call">
+			<h4>
+				<small><i class="glyphicon glyphicon-chevron-down" ng-show="shown.callRates[callRateName]"></i></small>
+				<small><i class="glyphicon glyphicon-chevron-right" ng-hide="shown.callRates[callRateName]"></i></small>
+				<span ng-click="shown.callRates[callRateName] = !shown.callRates[callRateName]" class="clickable">{{callRateName}}</span>
+				<small><i class='glyphicon glyphicon-minus-sign' ng-click="deleteCallRate(callRateName)"></i></small>
+			</h4>
+			<div ng-repeat="callRateParams in callRate track by $index" ng-if="shown.callRates[callRateName]">
+				<label for='rate-call-access'>Access</label>
+				<input type='text' class='form-control' ng-model="callRate[$index].access" />
+				<label for='rate-unit'>Unit</label>
+				<select class='form-control' id='rate-call-unit' ng-model='callRate[$index].unit'>
+					<option ng-repeat="unit in availableCallUnits">{{unit}}</option>
+				</select>
+				<h4>
+					Interval Prices
+				</h4>
+				<div id='call-rates'>
+					<table class='table table-striped table-bordered call-rates-table'>
+						<thead>
+							<tr>
+								<th>Interval</th>
+								<th>Price</th>
+								<th>To</th>
+							</tr>
+						</thead>
+						<tbody id='call-rates-tbody'>
+							<tr>
+								<td><input type='text' ng-model="callRate[$index].rate.interval" class='form-control rate-call-interval' /></td>
+								<td><input type='text' ng-model="callRate[$index].rate.price" class='form-control rate-call-price' /></td>
+								<td><input type='text' ng-model="callRate[$index].rate.to" class='form-control rate-call-to' /></td>
+							</tr>
+						</tbody>
+					</table>
+
+					<h4 ng-hide="true">Plans</h4>
+					<div id='rate-call-plans' ng-hide="true">
+						<div ng-repeat='callPlan in entity.rates.call.plans track by $index'>
+							<select class='form-control rate-call-plan' ng-model='callPlan'>
+								<option ng-repeat='availablePlan in availablePlans' value='{{availablePlan}}'>{{availablePlan}}</option>
+							</select>
+							<i class='glyphicon glyphicon-minus-sign' ng-click='deleteCallPlan($index)'></i>
+						</div>
+						<div>
+							<select class='form-control' ng-model='newCallPlan.value'>
+								<option ng-repeat='availablePlan in availablePlans' value='{{availablePlan}}'>{{availablePlan}}</option>
+							</select>
+							<i class='glyphicon glyphicon-plus-sign' ng-click='addCallPlan()'></i>
+						</div>
+					</div>
+				</div>
+			</div>
+			<hr/>
+		</ul>
+		<ul>
+			<div>
+				<div class="row">
+					<select ng-model="newCallRate.name" class="form-control">
+						<option value="" disabled>Select Plan</option>
+						<option ng-repeat="plan in availablePlans">{{plan}}</option>
+					</select>
+					<a ng-click="addCallRate()" class="clickable">Add Tariff</a>
+				</div>
+			</div>
+		</ul>
+	</div>
+
+	<hr/>
+
+	<div>
+		<h3>SMS</h3>
+		<ul ng-repeat="(smsRateName, smsRate) in entity.rates.sms">
+			<h4>
+				<small><i class="glyphicon glyphicon-chevron-down" ng-show="shown.smsRates[smsRateName]"></i></small>
+				<small><i class="glyphicon glyphicon-chevron-right" ng-hide="shown.smsRates[smsRateName]"></i></small>
+				<span ng-click="shown.smsRates[smsRateName] = !shown.smsRates[smsRateName]" class="clickable">{{smsRateName}}</span>
+				<small><i class='glyphicon glyphicon-minus-sign' ng-click="deleteSMSRate(smsRateName)"></i></small>
+			</h4>
+			<div ng-repeat="smsRateParams in smsRate track by $index" ng-if="shown.smsRates[smsRateName]">
+				<label for='rate-sms-access'>Access</label>
+				<input type='text' class='form-control' ng-model="smsRate[$index].access" />
+				<label for='rate-unit'>Unit</label>
+				<input ng-model="smsRate[$index].unit" type='text' class='form-control' disabled />
+				<h4>
+					Rates
+				</h4>
+				<div id='sms-rates'>
+					<table class='table table-striped table-bordered sms-rates-table'>
+						<thead>
+							<tr>
+								<th>Interval</th>
+								<th>Price</th>
+								<th>To</th>
+							</tr>
+						</thead>
+						<tbody id='sms-rates-tbody'>
+							<tr>
+								<td><input type='text' ng-model="smsRate[$index].rate.interval" class='form-control rate-sms-interval' /></td>
+								<td><input type='text' ng-model="smsRate[$index].rate.price" class='form-control rate-sms-price' /></td>
+								<td><input type='text' ng-model="smsRate[$index].rate.to" class='form-control rate-sms-to' /></td>
+							</tr>
+						</tbody>
+					</table>
+
+					<h4 ng-hide="true">Plans</h4>
+					<div id='rate-sms-plans' ng-hide="true">
+						<div ng-repeat='smsPlan in entity.rates.sms.plans track by $index'>
+							<select class='form-control rate-sms-plan' ng-model='smsPlan'>
+								<option ng-repeat='availablePlan in availablePlans' value='{{availablePlan}}'>{{availablePlan}}</option>
+							</select>
+							<i class='glyphicon glyphicon-minus-sign' ng-click='deleteSMSPlan($index)'></i>
+						</div>
+						<div>
+							<select class='form-control' ng-model='newSMSPlan.value'>
+								<option ng-repeat='availablePlan in availablePlans' value='{{availablePlan}}'>{{availablePlan}}</option>
+							</select>
+							<i class='glyphicon glyphicon-plus-sign' ng-click='addSMSPlan()'></i>
+						</div>
+					</div>
+				</div>
+			</div>
+			<hr/>
+		</ul>
+		<ul>
+			<div>
+				<div class="row">
+					<select ng-model="newSMSRate.name" class="form-control">
+						<option value="" disabled>Select Plan</option>
+						<option ng-repeat="plan in availablePlans">{{plan}}</option>
+					</select>
+					<a ng-click="addSMSRate()" class="clickable">Add Tariff</a>
+				</div>
+			</div>
+		</ul>
+	</div>
+	<div class="modal-footer">
+		<a href="#popupModal" data-type="update" data-toggle="modal" role="button"
+			data-remote="{{advancedModeRemoteURL()}}">Advanced Mode</a>
+		<!-- <?php if ($this->data['collectionName'] == 'plans' && $this->data['type'] == 'duplicate') : ?> -->
+		<div class="edit_checkboxes">
+		<input class="span1" id="duplicate_rates" name="duplicate_rates" type="checkbox" value="on" checked> <label class="span1" for="duplicate_rates">Duplicate rates</label>
+		</div>
+		<!-- <?php endif; ?> -->
+		<button class="btn" aria-hidden="true">Cancel</button>
+		<!-- <?php if (AdminController::authorized('write')) : ?> -->
+		<button type='submit' class="btn btn-primary">Save changes</button>
+		<!-- <?php endif; ?> -->
+	</div>
+</form>
+</div>
+
+<div class="modal fade" id="popupModal" tabindex="-1" role="dialog" aria-labelledby="popupModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				<h3 id="popupModalLabel"></h3>
+			</div>
+			<div class="modal-body">
+			</div>
+			<div class="modal-footer">
+				<button id="cancelPopup" class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
+				<!-- <?php if (AdminController::authorized('write')) : ?> -->
+					<button id="save" class="btn btn-primary">Save changes</button>
+				<!-- <?php endif; ?> -->
+			</div>
+		</div><!-- /.modal-content -->
+	</div><!-- /.modal-dialog -->
+</div>
+<script>
+var opt = {
+	change: function(data) {
+		/* called on every change */
+		_jsonData = data;
+	},
+	/*
+	 * FIX!! **
+	propertyclick: function(path) {
+		jsonPath = JSON.parse(path);
+		var protectedKeys = <?php echo json_encode($this->protectedKeys); ?>;
+		for (p in jsonPath) {
+			if ($.inArray(jsonPath[p], protectedKeys) !== -1) {
+				$('input[title="' + jsonPath[p] + '"]').attr('disabled', 'disabled');
+			}
+		}
+	}
+	*/
+};
+/* opt.propertyElement = '<textarea>'; */ // element of the property field, <input> is default
+/* opt.valueElement = '<textarea>'; */  // element of the value field, <input> is default
+//var _jsonEditor = $('#popupModal').jsonEditor(entity, opt);
+$('#save').unbind();
+$('#save').removeAttr("disabled");
+$('#save').click(function saveClick() {
+	$(this).attr('disabled', 'disabled');
+	$(this).unbind("click", saveClick);
+	console.log(_jsonData);
+	var _ajaxOpts = {
+		async: true,
+		cache: false,
+		//			dataType:'json',
+		type: 'POST',
+		data: {
+			id: $('#form_id').html(),
+			coll: $('#form_coll').html(),
+			type: $('#form_type').html(),
+			duplicate_rates: $('#duplicate_rates').is(':checked'),
+			data: JSON.stringify(_jsonData)
+		},
+		success: function(data, textStatus, jqXHR) {
+			if (data != 'null') {
+				alert(data);
+				$('#save').removeAttr("disabled");
+				$('#save').bind("click", saveClick);
+				return;
+			}
+			location.href = baseUrl + "/admin/rates";
+		},
+		error: function(jqXHR, textStatus, errorThrown) {
+			alert('some error occured');
+		}
+	};
+	$.ajax(baseUrl + '/admin/save', _ajaxOpts);
+});
+</script>

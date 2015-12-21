@@ -1,0 +1,294 @@
+<style>
+	.glyphicon-minus-sign {
+		color: #bc2328;
+		cursor: pointer;
+	}
+	.glyphicon-plus-sign {
+		color: green;
+		cursor: pointer;
+	}
+	#plan-include-groups-div {
+		margin-top: 15px;
+	}
+	table {
+		margin-top: 10px;
+	}
+</style>
+
+<center>
+	<h2>{{entity.name}}</h2>
+	<h3>Customer Plan</h3>
+</center>
+<div>
+	<form class='form-inline' ng-submit='savePlan()'>
+		<div class="row">
+			<div class="col-md-2">Price</div>
+			<div class="col-md-6"><input ng-model='entity.price' type='text' id='plan-price' class='form-control' /></div>
+		</div>
+		<div class="row">
+			<div class="col-md-2">Vatable</div>
+			<div class="col-md-6"><input ng-model='entity.vatable' type="checkbox" id="plan-vatable" class="form-control" /></div>
+		</div>
+		<div class="row">
+			<div class="col-md-2">To</div>
+			<div class="col-md-6"><input ng-model='entity.to' type='text' id='plan-to' disabled /></div>
+		</div>
+		<div class="row" ng-if="entity.external_id">
+			<div class="col-md-2">External ID</div>
+			<div class="col-md-6"><input ng-model='entity.external_id' type='text' class="form-control" /></div>
+		</div>
+		<div class="row" ng-if="entity.external_code">
+			<div class="col-md-2">External Code</div>
+			<div class="col-md-6"><input ng-model='entity.external_code' type='text' class="form-control" /></div>
+		</div>
+
+		<div id='plan-includes' ng-if="entity.include">
+			<hr/>
+			<h3>Customer Plan Include</h3>
+			<div ng-if='entity.include.call !== undefined'>
+				<div class="row">
+					<div class="col-md-2">
+						<small><i class='delete-plan glyphicon glyphicon-minus-sign' ng-click='deleteInclude("call")'></i></small>
+						Call
+					</div>
+					<div class="col-md-6">
+						<input ng-model='entity.include.call' type='text' class='plan-include form-control' />
+					</div>
+				</div>
+			</div>
+
+			<div ng-if='entity.include.data !== undefined'>
+				<div class="row">
+					<div class="col-md-2">
+						<small><i class='delete-plan glyphicon glyphicon-minus-sign'  ng-click='deleteInclude("data")'></i></small>
+						Data
+					</div>
+					<div class="col-md-6">
+						<input ng-model='entity.include.data' type='text' class='plan-include form-control' />
+					</div>
+				</div>
+			</div>
+
+			<div ng-if='entity.include.mms !== undefined'>
+				<div class="row">
+					<div class="col-md-2">
+						<small><i class='delete-plan glyphicon glyphicon-minus-sign' ng-click='deleteInclude("mms")'></i></small>
+						MMS
+					</div>
+					<div class="col-md-6">
+						<input ng-model='entity.include.mms' type='text' class='plan-include form-control' />
+					</div>
+				</div>
+			</div>
+
+			<div ng-if='entity.include.sms !== undefined'>
+				<div class="row">
+					<div class="col-md-2">
+						<small><i class='delete-plan glyphicon glyphicon-minus-sign' ng-click='deleteInclude("sms")'></i></small>
+						SMS
+					</div>
+					<div class="col-md-6">
+						<input ng-model='entity.include.sms' type='text' class='plan-include form-control' />
+					</div>
+				</div>
+			</div>
+
+			<div class='row'>
+				<div class='col-md-2'>
+					<select id='new-include-type' class='form-control' ng-model='newInclude.type'>
+						<option ng-repeat='type in includeTypes' ng-disabled="entity.include[type]">{{type}}</option>
+					</select>
+				</div>
+				<div class='col-md-6'>
+					<input ng-model='newInclude.value' type='text' class='form-control' ng-disabled='!newInclude.type' />
+					<i id='add-plan-include' class='glyphicon glyphicon-plus-sign' ng-click='addPlanInclude()'></i>
+				</div>
+			</div>
+			<hr/>
+		</div>
+
+		<div id='plan-include-groups-div' ng-if="entity.include">
+			<h3>Groups</h3>
+			<input ng-model='newGroup.name' type='text' class='form-control' />
+			<i class='add-group glyphicon glyphicon-plus-sign' ng-click="addNewGroup()"></i>
+			<div style='margin-top: 15px; margin-bottom: 15px' class='plan-include-group'
+				 ng-repeat='(group_name, group_data) in entity.include.groups'>
+				<h4>
+					<small><i class='delete-plan glyphicon glyphicon-minus-sign' ng-click='deleteGroup(group_name)'></i></small>
+					{{group_name}}
+				</h4>
+				<div class="row" ng-if='group_data.limits'>
+					<div class="col-md-2">
+						<i class='delete-plan glyphicon glyphicon-minus-sign' ng-click='deleteGroupParam(group_name, "limits")'></i>
+						Limits: <small>(edit enabled in advanced mode)</small>
+					</div>
+					<div class="col-md-6">
+						<input ng-model='group_data.limits' type='text' class='form-control group-param' disabled />
+					</div>
+				</div>
+
+				<div class='row' ng-if='group_data.rule'>
+					<div class='col-md-2'>
+						<small><i class='delete-plan glyphicon glyphicon-minus-sign' ng-click='deleteGroupParam(group_name, "rule")'></i></small>
+						Rule: <small>(edit enabled in advanced mode)</small>
+					</div>
+					<div class="col-md-6">
+						<input ng-model='group_data.rule' type='text' class='form-control group-param' disabled />
+					</div>
+				</div>
+
+				<div class="row" ng-if='group_data.data !== undefined'>
+					<div class="col-md-2">
+						<small><i class='delete-plan glyphicon glyphicon-minus-sign' ng-click='deleteGroupParam(group_name, "data")'></i></small>
+						Data:
+					</div>
+					<div class="col-md-6">
+						<input ng-model='group_data.data' type='text' class='form-control group-param' />
+					</div>
+				</div>
+
+				<div class="row" ng-if='group_data.call !== undefined'>
+					<div class="col-md-2">
+						<small><i class='delete-plan glyphicon glyphicon-minus-sign' ng-click='deleteGroupParam(group_name, "call")'></i></small>
+						Call:
+					</div>
+					<div class="col-md-6">
+						<input ng-model='group_data.call' type='text' class='form-control group-param' />
+					</div>
+				</div>
+
+				<div class="row" ng-if='group_data.incoming_call !== undefined'>
+					<div class="col-md-2">
+						<small><i class='delete-plan glyphicon glyphicon-minus-sign' ng-click='deleteGroupParam(group_name, "incoming_call")'></i></small>
+						Incoming Call:
+					</div>
+					<div class="col-md-6">
+						<input ng-model='group_data.incoming_call' type='text' class='form-control group-param' />
+					</div>
+				</div>
+
+				<div class="row" ng-if='group_data.incoming_sms !== undefined'>
+					<div class="col-md-2">
+						<small><i class='delete-plan glyphicon glyphicon-minus-sign' ng-click='deleteGroupParam(group_name, "incoming_sms")'></i></small>
+						Incoming SMS:
+					</div>
+					<div class='col-md-6'>
+						<input ng-model='group_data.incoming_sms' type='text' class='form-control group-param' />
+					</div>
+				</div>
+
+				<div class="row" ng-if='group_data.sms !== undefined'>
+					<div class="col-md-2">
+						<small><i class='delete-plan glyphicon glyphicon-minus-sign' ng-click='deleteGroupParam(group_name, "sms")'></i></small>
+						SMS:
+					</div>
+					<div class="col-md-6">
+						<input ng-model='group_data.sms' type='text' class='form-control group-param' />
+					</div>
+				</div>
+
+				<div class='row'>
+					<div class='col-md-2'>
+						<select class='plan-param-type form-control' ng-model='newGroupParam[group_name].type'>
+							<option ng-repeat='param in groupParams' ng-disabled="entity.include.groups[group_name][param]">{{param}}</option>
+						</select>
+					</div>
+					<div class='col-md-6'>
+						<input type='text' class='form-control' ng-model='newGroupParam[group_name].value' ng-disabled='!newGroupParam[group_name].type' />
+						<i class="add-plan-param glyphicon glyphicon-plus-sign" ng-click='addGroupParam(group_name)'></i>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="modal-footer">
+			<a href="#popupModal" data-type="update" data-toggle="modal" role="button"
+				data-remote="{{advancedModeRemoteURL()}}">Advanced Mode</a>
+			<!--<?php if ($this->collectionName == 'plans' && $this->type == 'duplicate') : ?>-->
+			<div class="edit_checkboxes">
+			<input class="span1" id="duplicate_rates" name="duplicate_rates" type="checkbox" value="on" checked> <label class="span1" for="duplicate_rates">Duplicate rates</label>
+			</div>
+			<!--<?php endif; ?>-->
+			<button id="cancel" ng-click='cancel()' class="btn" aria-hidden="true">Close</button>
+			<!--<?php if (AdminController::authorized('write')) : ?>-->
+			<button type='submit' class="btn btn-primary">Save changes</button>
+			<!--<?php endif; ?>-->
+		</div>
+	</form>
+</div>
+
+<div class="modal fade" id="popupModal" tabindex="-1" role="dialog" aria-labelledby="popupModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				<h3 id="popupModalLabel"></h3>
+			</div>
+			<div class="modal-body">
+			</div>
+			<div class="modal-footer">
+				<button id="cancelPopup" class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
+				<!-- TODO: check save permissions -->
+				<button id="save" class="btn btn-primary">Save changes</button>
+			</div>
+		</div><!-- /.modal-content -->
+	</div><!-- /.modal-dialog -->
+</div>
+
+
+<!-- TODO: FIND MORE ELEGANT SOLUTION! -->
+<script>
+var opt = {
+	change: function(data) {
+		/* called on every change */
+		_jsonData = data;
+	},
+	/*
+	 * FIX!!! ***
+	propertyclick: function(path) {
+		jsonPath = JSON.parse(path);
+		var protectedKeys = <?php echo json_encode($this->protectedKeys); ?>;
+		for (p in jsonPath) {
+			if ($.inArray(jsonPath[p], protectedKeys) !== -1) {
+				$('input[title="' + jsonPath[p] + '"]').attr('disabled', 'disabled');
+			}
+		}
+	}
+	*/
+};
+/* opt.propertyElement = '<textarea>'; */ // element of the property field, <input> is default
+/* opt.valueElement = '<textarea>'; */  // element of the value field, <input> is default
+//var _jsonEditor = $('#popupModal').jsonEditor(entity, opt);
+$('#save').unbind();
+$('#save').removeAttr("disabled");
+$('#save').click(function saveClick() {
+	$(this).attr('disabled', 'disabled');
+	$(this).unbind("click", saveClick);
+	console.log(_jsonData);
+	var _ajaxOpts = {
+		async: true,
+		cache: false,
+		//			dataType:'json',
+		type: 'POST',
+		data: {
+			id: $('#form_id').html(),
+			coll: $('#form_coll').html(),
+			type: $('#form_type').html(),
+			duplicate_rates: $('#duplicate_rates').is(':checked'),
+			data: JSON.stringify(_jsonData)
+		},
+		success: function(data, textStatus, jqXHR) {
+			if (data != 'null') {
+				alert(data);
+				$('#save').removeAttr("disabled");
+				$('#save').bind("click", saveClick);
+				return;
+			}
+			location.href = baseUrl + "/admin/plans";
+		},
+		error: function(jqXHR, textStatus, errorThrown) {
+			alert('some error occured');
+		}
+	};
+	$.ajax(baseUrl + '/admin/save', _ajaxOpts);
+});
+</script>

@@ -1,0 +1,38 @@
+<style>
+	.glyphicon-plus-sign {
+		color: green;
+		cursor: pointer;
+	}
+
+	.glyphicon-minus-sign {
+		color: #bc2328;
+		cursor: pointer;
+	}
+	.clickable {
+		cursor: pointer;
+	}
+</style>
+
+<div class="container component" ng-controller='BalancesController' ng-init="init()">
+	<center>
+		<h2>{{entity.aid}}</h2>
+	</center>
+	<form class='form-inline' ng-submit='saveBalance()'>
+		<div class="row">
+			<div class="col-md-2">
+				AID
+			</div>
+			<div class="col-md-6">
+				<input ng-model="entity.aid" type='number' class="form-control" />
+			</div>
+		</div>
+		<div class="row">
+			<div class="col-md-2">
+				SID
+			</div>
+			<div class="col-md-6">
+				<input ng-model="entity.sid" type='number' class="form-control" />
+			</div>
+		</div>
+	</form>
+</div>

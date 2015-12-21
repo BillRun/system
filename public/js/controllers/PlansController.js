@@ -1,5 +1,5 @@
-app.controller('PlansController', ['$scope', '$window', 'Database', '$routeParams',
-  function ($scope, $window, Database, $routeParams) {
+app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Database',
+  function ($scope, $window, $routeParams, Database) {
     'use strict';
 
     $scope.addPlanInclude = function () {
@@ -59,10 +59,18 @@ app.controller('PlansController', ['$scope', '$window', 'Database', '$routeParam
       return _.isObject(o);
     };
 
+    $scope.plansTemplate = function () {
+      if ($scope.entity && $scope.entity.type === 'charging') {
+        return 'views/plans/chargingedit.html';
+      } else if ($scope.entity) {
+        return 'views/plans/customeredit.html';
+      }
+      return '';
+    };
+
     $scope.init = function () {
       Database.getEntity('plans', $routeParams.id).then(function (res) {
         $scope.entity = res.data;
-        console.log($scope.entity);
       });
       $scope.includeTypes = ['call', 'data', 'sms', 'mms'];
       $scope.groupParams = ["data", "call", "incoming_call", "incoming_sms", "sms"];

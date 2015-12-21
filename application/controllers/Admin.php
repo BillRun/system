@@ -98,7 +98,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		}
 	}
 
-	public function getAction() {
+	public function getEntityAction() {
 		if (!$this->allowed('read'))
 			return false;
 		$coll = Billrun_Util::filter_var($this->getRequest()->get('coll'), FILTER_SANITIZE_STRING);
@@ -115,13 +115,62 @@ class AdminController extends Yaf_Controller_Abstract {
 		if (!$entity) {
 			return false;
 		}
-		$protectedKeys = $model->getProtectedKeys($entity, $type);
-		$hiddenKeys = $model->getHiddenKeys($entity, $type);
 		$entity = $entity->getRawData();
-		$protected = array();
-
 		$response = new Yaf_Response_Http();
 		$response->setBody(json_encode($entity));
+		$response->response();
+		return false;
+	}
+
+	public function getCollectionItemsAction() {
+		if (!$this->allowed('read'))
+			return false;
+		$coll = Billrun_Util::filter_var($this->getRequest()->get('coll'), FILTER_SANITIZE_STRING);
+		$session = $this->getSession("rates");
+		$show_prefix = $this->getSetVar($session, 'showprefix', 'showprefix', 0);
+		$sort = $this->applySort($coll);
+		$options = array(
+			'collection' => $coll,
+			'sort' => $sort,
+			'showprefix' => $show_prefix
+		);
+		// set the model
+		self::initModel($coll, $options);
+		$query = $this->applyFilters($coll);
+		// TODO: use ready pager/paginiation class (zend? joomla?) with auto print
+		$basic_params = array(
+			'title' => $this->title,
+			'active' => $coll,
+			'session' => $this->getSession($coll),
+		);
+		$params = array_merge($options, $basic_params, $this->getTableViewParams($query), $this->createFilterToolbar($coll));
+		$items = array();
+		$response = new Yaf_Response_Http();
+		foreach ($params['data'] as $item) {
+			$i = array();
+			foreach ($params['columns'] as $col => $v) {
+				$i[$col] = $item->get($col);
+			}
+			$i['_id'] = strval($item->getId());
+			$items[] = $i;
+		}
+		$params['data'] = $items;
+		$response->setBody(json_encode($params));
+		$response->response();
+		return false;
+	}
+
+	public function getAvailablePlansAction() {
+		if (!$this->allowed('read'))
+			return false;
+		$planModel = new PlansModel();
+		$names = $planModel->getData();
+		$availablePlans = array();
+		foreach($names as $name) {
+			$availablePlans[$name['name']] = $name['name'];
+		}
+		$response = new Yaf_Response_Http();
+		$response->setBody(json_encode($availablePlans));
 		$response->response();
 		return false;
 	}
@@ -689,49 +738,6 @@ class AdminController extends Yaf_Controller_Abstract {
 		);
 		$this->getView()->component = $this->renderView('config', $viewData);
 	}
-
-	public function meditAction() {
-		if (!$this->allowed('read'))
-			return false;
-		$coll = Billrun_Util::filter_var($this->getRequest()->get('coll'), FILTER_SANITIZE_STRING);
-		$id = Billrun_Util::filter_var($this->getRequest()->get('id'), FILTER_SANITIZE_STRING);
-		$type = Billrun_Util::filter_var($this->getRequest()->get('type'), FILTER_SANITIZE_STRING);
-		$planModel = new PlansModel();
-		$names = $planModel->getData();
-		$availablePlans = array();
-		foreach($names as $name) {
-			$availablePlans[$name['name']] = $name['name'];
-		}
-
-		$model = self::initModel($coll);
-		if ($type == 'new') {
-			$entity = $model->getEmptyItem();
-		} else {
-			$entity = $model->getItem($id);
-		}
-		if ($type == 'close_and_new' && is_subclass_of($model, "TabledateModel") && !$model->isLast($entity)) {
-			die("There's already a newer entity with this key");
-		}
-
-		// passing values into the view
-		$editData = array(
-			'entity' => $entity,
-			'collectionName' => $coll,
-			'type' => $type,
-			'protectedKeys' => $model->getProtectedKeys($entity, $type),
-			'hiddenKeys' => $model->getHiddenKeys($entity, $type),
-			'availablePlans' => $availablePlans,
-			'baseUrl' => $this->baseUrl
-		);
-
-		$viewData = array('data' => $editData);
-		if ($coll === "plans" && $entity['type'] === 'charging')
-			$template = 'chargingplanedit';
-		else
-			$template = strtolower($coll) . 'edit';
-		$this->getView()->component = $this->renderView($template, $viewData);
-	}
-
 
 	/**
 	 * config controller of admin

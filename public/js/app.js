@@ -10,33 +10,33 @@ app.config(function ($httpProvider, $routeProvider, $locationProvider) {
     var query = '', name, value, fullSubName, subName, subValue, innerObj, i;
 
     for (name in obj) {
-    value = obj[name];
+      value = obj[name];
 
-    if (value instanceof Array) {
-      for (i = 0; i < value.length; ++i) {
-      subValue = value[i];
-      fullSubName = name + '[' + i + ']';
-      innerObj = {};
-      innerObj[fullSubName] = subValue;
-      query += param(innerObj) + '&';
+      if (value instanceof Array) {
+        for (i = 0; i < value.length; ++i) {
+          subValue = value[i];
+          fullSubName = name + '[' + i + ']';
+          innerObj = {};
+          innerObj[fullSubName] = subValue;
+          query += param(innerObj) + '&';
+        }
+      } else if (value instanceof Object) {
+        for (subName in value) {
+          subValue = value[subName];
+
+          // TODO : Convert this in the directive!
+          if (subValue && subValue.toDateString)
+            subValue = twoDigit(subValue.getDate()) + '-' + twoDigit(subValue.getMonth() + 1) + '-' + subValue.getFullYear();
+          // TODO
+
+          fullSubName = name + '[' + subName + ']';
+          innerObj = {};
+          innerObj[fullSubName] = subValue;
+          query += param(innerObj) + '&';
+        }
+      } else if (value !== undefined && value !== null) {
+        query += encodeURIComponent(name) + '=' + encodeURIComponent(value) + '&';
       }
-    } else if (value instanceof Object) {
-      for (subName in value) {
-      subValue = value[subName];
-
-      // TODO : Convert this in the directive!
-      if (subValue && subValue.toDateString)
-        subValue = twoDigit(subValue.getDate()) + '-' + twoDigit(subValue.getMonth() + 1) + '-' + subValue.getFullYear();
-      // TODO
-
-      fullSubName = name + '[' + subName + ']';
-      innerObj = {};
-      innerObj[fullSubName] = subValue;
-      query += param(innerObj) + '&';
-      }
-    } else if (value !== undefined && value !== null) {
-      query += encodeURIComponent(name) + '=' + encodeURIComponent(value) + '&';
-    }
     }
 
     return query.length ? query.substr(0, query.length - 1) : query;
@@ -48,10 +48,13 @@ app.config(function ($httpProvider, $routeProvider, $locationProvider) {
     return angular.isObject(data) && String(data) !== '[object File]' ? param(data) : data;
   }];
 
-  $routeProvider.when('/admin/:entity/edit/:id', {
+  $routeProvider.when('/:collection/edit/:id', {
 	  templateUrl: function (urlattr) {
-		  return 'views/' + urlattr.entity + '/edit.html';
+		  return 'views/' + urlattr.collection + '/edit.html';
 	  }
+  }).when('/:collection/list', {
+    templateUrl: 'views/partials/collectionList.html',
+    controller: 'CollectionsController'
   });
   $locationProvider.html5Mode({enabled: false, requireBase: false});
 });

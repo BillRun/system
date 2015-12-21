@@ -10,7 +10,7 @@
         <meta name="description" content="BillRun Admin Panel">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 		<link href="http://www.billrun.net/templates/meet_gavern/images/favicon.ico" rel="shortcut icon" type="image/vnd.microsoft.icon" />
-		<base href='/'>
+		<base href='/'>  <!-- causes login not to work - but without it, can't redirect to angular pages INVESTIGATE!! -->
         <style>
             body {
                 padding-top: 50px;
@@ -33,7 +33,10 @@
 		<script src='<?php echo $this->baseUrl; ?>/js/factories/Database.js'></script>
 
 		<!-- controllers -->
+		<script src='<?php echo $this->baseUrl; ?>/js/controllers/CollectionsController.js'></script>
 		<script src='<?php echo $this->baseUrl; ?>/js/controllers/PlansController.js'></script>
+		<script src='<?php echo $this->baseUrl; ?>/js/controllers/RatesController.js'></script>
+		<script src='<?php echo $this->baseUrl; ?>/js/controllers/BalancesController.js'></script>
     </head>
     <body ng-app="BillrunApp">
         <!--[if lt IE 7]>
