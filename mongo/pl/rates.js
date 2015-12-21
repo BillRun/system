@@ -45,29 +45,25 @@ function create_tariff(tariff) {
 		return [{
 			'access': 0,
 			'unit' : _unit,
-			'rate':     {
+			'rate':     [{
 				'to': 2147483647,
 				'price': tariff.ADD_CHARGE,
 				'interval': tariff.ADD_AMOUNT
-			}
+			}]
 		}];
 	}
 	return [{
 		'access':   0,
 		'unit' : _unit,
-		'rate':     {
+		'rate':     [{
 			'to': tariff.INITIAL_AMOUNT,
 			'price': tariff.INITIAL_CHARGE,
 			'interval': tariff.INITIAL_AMOUNT
-		}
-	},{
-		'access':   0,
-		'unit' : _unit,
-		'rate':     {
+			},{
 			'to': 2147483647,
 			'price': tariff.ADD_CHARGE,
 			'interval': tariff.ADD_AMOUNT
-		}
+		}]
 
 	}];
 
