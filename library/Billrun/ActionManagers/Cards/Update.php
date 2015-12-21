@@ -155,13 +155,11 @@ class Billrun_ActionManagers_Cards_Update extends Billrun_ActionManagers_Cards_A
 
 		if(!$count) {
 			if($found) {
-				$error = "Nothing to update - Input data are the same as existing data";
 				$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 35;
 			} else {
 				$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 34;
-				$error = "Card Not Found";
 			}			
-			$this->reportError($error);
+			$this->reportError($errorCode, Zend_Log::ALERT);
 		}
 		
 		$outputResult = array(

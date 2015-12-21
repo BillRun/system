@@ -111,8 +111,8 @@ class Billrun_ActionManagers_Cards_Delete extends Billrun_ActionManagers_Cards_A
 		}
 
 		if(!$count) {
-			$error = "Card Not Found";
-			$this->reportError($error);
+			$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 13;
+			$this->reportError($errorCode, Zend_Log::ALERT);
 		}
 		
 		$outputResult = array(
