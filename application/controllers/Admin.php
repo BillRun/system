@@ -111,8 +111,17 @@ class AdminController extends Yaf_Controller_Abstract {
 		} else {
 			$entity = $model->getItem($id);
 		}
+
+		if (!$entity) {
+			return false;
+		}
+		$protectedKeys = $model->getProtectedKeys($entity, $type);
+		$hiddenKeys = $model->getHiddenKeys($entity, $type);
+		$entity = $entity->getRawData();
+		$protected = array();
+
 		$response = new Yaf_Response_Http();
-		$response->setBody(json_encode($entity->getRawData()));
+		$response->setBody(json_encode($entity));
 		$response->response();
 		return false;
 	}

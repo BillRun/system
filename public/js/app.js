@@ -48,12 +48,10 @@ app.config(function ($httpProvider, $routeProvider, $locationProvider) {
     return angular.isObject(data) && String(data) !== '[object File]' ? param(data) : data;
   }];
 
-  $routeProvider.when('/admin/:entity/edit', {
+  $routeProvider.when('/admin/:entity/edit/:id', {
 	  templateUrl: function (urlattr) {
 		  return 'views/' + urlattr.entity + '/edit.html';
 	  }
-  }).otherwise({
-	  redirectTo: '/admin/plans/edit'
   });
   $locationProvider.html5Mode({enabled: false, requireBase: false});
 });

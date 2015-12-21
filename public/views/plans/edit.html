@@ -15,21 +15,6 @@
 	}
 </style>
 
-<?php
-$protected = array();
-	$entity = $this->data['entity']->getRawData();
-	foreach ($this->data['protectedKeys'] as $key) {
-		if ($key !== '_id' && isset($entity[$key])) {
-			$protected[$key] = $entity[$key];
-			unset($entity[$key]);
-		}
-	}
-	foreach ($this->data['hiddenKeys'] as $key) {
-		unset($entity[$key]);
-	}
-?>
-
-<script src='js/controllers/PlansController.js'></script>
 <div class="container component" ng-controller='PlansController' ng-init="init()">
 	<center>
 		<h2>{{entity.name}}</h2>
@@ -215,7 +200,19 @@ $protected = array();
 			</div>
 		</div>
 	</div>
-
+	<div class="modal-footer">
+		<a href="#popupModal" data-type="update" data-toggle="modal" role="button"
+			data-remote="{{advancedModeRemoteURL()}}">Advanced Mode</a>
+		<!--<?php if ($this->collectionName == 'plans' && $this->type == 'duplicate') : ?>-->
+		<div class="edit_checkboxes">
+		<input class="span1" id="duplicate_rates" name="duplicate_rates" type="checkbox" value="on" checked> <label class="span1" for="duplicate_rates">Duplicate rates</label>
+		</div>
+		<!--<?php endif; ?>-->
+		<button id="cancel" ng-click='cancel()' class="btn" aria-hidden="true">Close</button>
+		<!--<?php if (AdminController::authorized('write')) : ?>-->
+		<button type='submit' class="btn btn-primary">Save changes</button>
+		<!--<?php endif; ?>-->
+	</div>
 	</form>
 </div>
 
@@ -230,10 +227,68 @@ $protected = array();
 			</div>
 			<div class="modal-footer">
 				<button id="cancelPopup" class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
-				<?php if (AdminController::authorized('write')) : ?>
-					<button id="save" class="btn btn-primary">Save changes</button>
-				<?php endif; ?>
+				<!-- TODO: check save permissions -->
+				<button id="save" class="btn btn-primary">Save changes</button>
 			</div>
 		</div><!-- /.modal-content -->
 	</div><!-- /.modal-dialog -->
 </div>
+
+
+<!-- TODO: FIND MORE ELEGANT SOLUTION! -->
+<script>
+var opt = {
+	change: function(data) {
+		/* called on every change */
+		_jsonData = data;
+	},
+	/*
+	 * FIX!!! ***
+	propertyclick: function(path) {
+		jsonPath = JSON.parse(path);
+		var protectedKeys = <?php echo json_encode($this->protectedKeys); ?>;
+		for (p in jsonPath) {
+			if ($.inArray(jsonPath[p], protectedKeys) !== -1) {
+				$('input[title="' + jsonPath[p] + '"]').attr('disabled', 'disabled');
+			}
+		}
+	}
+	*/
+};
+/* opt.propertyElement = '<textarea>'; */ // element of the property field, <input> is default
+/* opt.valueElement = '<textarea>'; */  // element of the value field, <input> is default
+//var _jsonEditor = $('#popupModal').jsonEditor(entity, opt);
+$('#save').unbind();
+$('#save').removeAttr("disabled");
+$('#save').click(function saveClick() {
+	$(this).attr('disabled', 'disabled');
+	$(this).unbind("click", saveClick);
+	console.log(_jsonData);
+	var _ajaxOpts = {
+		async: true,
+		cache: false,
+		//			dataType:'json',
+		type: 'POST',
+		data: {
+			id: $('#form_id').html(),
+			coll: $('#form_coll').html(),
+			type: $('#form_type').html(),
+			duplicate_rates: $('#duplicate_rates').is(':checked'),
+			data: JSON.stringify(_jsonData)
+		},
+		success: function(data, textStatus, jqXHR) {
+			if (data != 'null') {
+				alert(data);
+				$('#save').removeAttr("disabled");
+				$('#save').bind("click", saveClick);
+				return;
+			}
+			location.href = baseUrl + "/admin/plans";
+		},
+		error: function(jqXHR, textStatus, errorThrown) {
+			alert('some error occured');
+		}
+	};
+	$.ajax(baseUrl + '/admin/save', _ajaxOpts);
+});
+</script>
