@@ -103,7 +103,7 @@ class Billrun_ActionManagers_Cards_Query extends Billrun_ActionManagers_Cards_Ac
 
 		if(!$returnData) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 23;
-			$this->reportError("No cards found", $errorCode);
+			$this->reportError($errorCode, Zend_Log::ALERT);
 		}
 		
 		$outputResult = array(
