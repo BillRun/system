@@ -146,7 +146,7 @@ class ResetLinesModel {
 						'over_plan' => 1,
 						'plan' => 1,
 						'usagesb' => 1,
-						'usagev' => 1,
+//						'usagev' => 1,
 					),
 					'$set' => array(
 						'rebalance' => new MongoDate(),
