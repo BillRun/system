@@ -77,8 +77,7 @@ class Billrun_ActionManagers_Cards_Create extends Billrun_ActionManagers_Cards_A
 			foreach ($createFields as $field) {
 				if (!isset($jsonCreateData[$field]) || empty($jsonCreateData[$field])) {
 					$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 1;
-					$error = "Field: " . $field . " is not set or is empty!";
-					$this->reportError($errorCode, Zend_Log::ALERT);
+					$this->reportError($errorCode, Zend_Log::ALERT, array($field));
 					return false;
 				}
 				$oneCard[$field] = $jsonCreateData[$field];
