@@ -9,7 +9,7 @@
 /**
  * This is a prototype for a subscriber action.
  *
- * @author tom
+ * @author Tom Feigin
  */
 abstract class Billrun_ActionManagers_SubscribersAutoRenew_Action extends Billrun_ActionManagers_APIAction{
 

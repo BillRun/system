@@ -9,7 +9,7 @@
 /**
  * Holds the logic for updating balances using the prepaid include.
  *
- * @author tom
+ * @author Tom Feigin
  */
 class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_ActionManagers_Balances_Updaters_Updater {
 

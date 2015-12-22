@@ -9,7 +9,7 @@
 /**
  * Abstract class for regex operator translator.
  *
- * @author tom
+ * @author Tom Feigin
  */
 abstract class Admin_MongoOperatorTranslators_Regex extends Admin_MongoOperatorTranslators_Translator {
 	/**

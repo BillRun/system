@@ -9,7 +9,7 @@
 /**
  * This is a parser to be used by the subscribers action.
  *
- * @author tom
+ * @author Tom Feigin
  * @todo This class is very similar to balances query, 
  * a generic query class should be created for both to implement.
  */

@@ -9,7 +9,7 @@
 /**
  * class for mongo less than operator translator.
  *
- * @author tom
+ * @author Tom Feigin
  */
 class Admin_MongoOperatorTranslators_LessThanEquals extends Admin_MongoOperatorTranslators_Translator {
 	

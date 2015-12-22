@@ -9,7 +9,7 @@
 /**
  * This is a parser to be used by the subscribers action.
  *
- * @author tom
+ * @author Tom Feigin
  */
 class Billrun_ActionManagers_SubscribersAutoRenew_Update extends Billrun_ActionManagers_APIAction{
 	// TODO: Create a generic update action class. 
