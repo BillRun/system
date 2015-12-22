@@ -104,6 +104,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$coll = Billrun_Util::filter_var($this->getRequest()->get('coll'), FILTER_SANITIZE_STRING);
 		$id = Billrun_Util::filter_var($this->getRequest()->get('id'), FILTER_SANITIZE_STRING);
 		$type = Billrun_Util::filter_var($this->getRequest()->get('type'), FILTER_SANITIZE_STRING);
+		$response = new Yaf_Response_Http();
 
 		$model = self::initModel($coll);
 		if ($type == 'new') {
@@ -113,10 +114,11 @@ class AdminController extends Yaf_Controller_Abstract {
 		}
 
 		if (!$entity) {
+			$response->setBody(json_encode(array('error' => 'Could not find entity')));
+			$response->response();
 			return false;
 		}
 		$entity = $entity->getRawData();
-		$response = new Yaf_Response_Http();
 		$response->setBody(json_encode($entity));
 		$response->response();
 		return false;

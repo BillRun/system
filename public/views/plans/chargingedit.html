@@ -10,8 +10,8 @@
 	#plan-include-groups-div {
 		margin-top: 15px;
 	}
-	table {
-		margin-top: 10px;
+	.clickable {
+		cursor: pointer;
 	}
 </style>
 
@@ -21,212 +21,141 @@
 </center>
 <div>
 	<form class='form-inline' ng-submit='savePlan()'>
-		<div class='row'>
-			<div class='col-md-2'>
-				Description
-			</div>
-			<div class='col-md-6'>
-				<input ng-model='entity.desc' type='text' class='form-control' />
-			</div>
-		</div>
-		<div class='row'>
-			<div class='col-md-2'>
-				Service Provider
-			</div>
-			<div class='col-md-6'>
-				<input ng-model='entity.service_provider' type='text' class='form-control' />
-			</div>
-		</div>
-		<div class='row'>
-			<div class="col-md-2">
-				PP Includes Name:
-			</div>
-			<div class="col-md-6">
-				<input ng-model='entity.pp_includes_name' type='text' class='form-control' />
-			</div>
-		</div>
-		<div class='row'>
-			<div class="col-md-2">
-				PP Includes External ID:
-			</div>
-			<div class="col-md-6">
-				<input ng-model='entity.pp_includes_external_id' type='text' class='form-control' />
-			</div>
-		</div>
-		<h5>Period</h5>
-		<ul>
+		<div ng-if='!advancedMode'>
 			<div class='row'>
 				<div class='col-md-2'>
-					Unit:
+					Description
 				</div>
 				<div class='col-md-6'>
-					<input type="text" ng-model='entity.period.unit' class='form-control' />
+					<input ng-model='entity.desc' type='text' class='form-control' />
 				</div>
 			</div>
 			<div class='row'>
 				<div class='col-md-2'>
-					Duration:
+					Service Provider
 				</div>
 				<div class='col-md-6'>
-					<input ng-model='entity.period.duration' type='number' class='form-control' />
+					<input ng-model='entity.service_provider' type='text' class='form-control' />
 				</div>
 			</div>
-		</ul>
+			<div class='row'>
+				<div class="col-md-2">
+					PP Includes Name:
+				</div>
+				<div class="col-md-6">
+					<input ng-model='entity.pp_includes_name' type='text' class='form-control' />
+				</div>
+			</div>
+			<div class='row'>
+				<div class="col-md-2">
+					PP Includes External ID:
+				</div>
+				<div class="col-md-6">
+					<input ng-model='entity.pp_includes_external_id' type='text' class='form-control' />
+				</div>
+			</div>
+			<h5>Period</h5>
+			<ul>
+				<div class='row'>
+					<div class='col-md-2'>
+						Unit:
+					</div>
+					<div class='col-md-6'>
+						<input type="text" ng-model='entity.period.unit' class='form-control' />
+					</div>
+				</div>
+				<div class='row'>
+					<div class='col-md-2'>
+						Duration:
+					</div>
+					<div class='col-md-6'>
+						<input ng-model='entity.period.duration' type='number' class='form-control' />
+					</div>
+				</div>
+			</ul>
 
-		<hr/>
-		<h3>Include</h3>
-		<div class="row">
-			<div class="col-md-2">
-				Cost:
+			<hr/>
+			<h3>Include</h3>
+			<div class="row">
+				<div class="col-md-2">
+					Cost:
+				</div>
+				<div class="col-md-6">
+					<input ng-model="entity.include.cost" type="text" class="form-control" />
+				</div>
 			</div>
-			<div class="col-md-6">
-				<input ng-model="entity.include.cost" type="text" class="form-control" />
+			<div ng-repeat="(includeTypeName, includeType) in entity.include">
+				<div ng-if="isObject(includeType)">
+					<h4>{{includeTypeName}}</h4>
+					<div class="row">
+						<div class="col-md-2">
+							Cost:
+						</div>
+						<div class="col-md-6">
+							<input ng-model="includeType.cost" type="text" class="form-control" />
+						</div>
+					</div>
+					<div class="row">
+						<div class="col-md-2">
+							Usagev:
+						</div>
+						<div class="col-md-6">
+							<input ng-model='includeType.usagev' type='number' class='form-control' />
+						</div>
+					</div>
+					<div class='row'>
+						<div class="col-md-2">
+							Name:
+						</div>
+						<div class="col-md-6">
+							<input ng-model='includeType.pp_includes_name' type='text' class='form-control' />
+						</div>
+					</div>
+					<div class='row'>
+						<div class="col-md-2">
+							External ID:
+						</div>
+						<div class="col-md-6">
+							<input ng-model='includeType.pp_includes_external_id' type='text' class='form-control' />
+						</div>
+					</div>
+					<h5>Period</h5>
+					<ul>
+						<div class='row'>
+							<div class='col-md-2'>
+								Unit:
+							</div>
+							<div class='col-md-6'>
+								<input ng-model='includeType.period.unit' class='form-control' type="text" />
+							</div>
+						</div>
+						<div class='row'>
+							<div class='col-md-2'>
+								Duration:
+							</div>
+							<div class='col-md-6'>
+								<input ng-model='includeType.period.duration' type='number' class='form-control' />
+							</div>
+						</div>
+					</ul>
+					<hr ng-if="!$last" />
+				</div>
 			</div>
 		</div>
-		<div ng-repeat="(includeTypeName, includeType) in entity.include">
-			<div ng-if="isObject(includeType)">
-				<h4>{{includeTypeName}}</h4>
-				<div class="row">
-					<div class="col-md-2">
-						Cost:
-					</div>
-					<div class="col-md-6">
-						<input ng-model="includeType.cost" type="text" class="form-control" />
-					</div>
-				</div>
-				<div class="row">
-					<div class="col-md-2">
-						Usagev:
-					</div>
-					<div class="col-md-6">
-						<input ng-model='includeType.usagev' type='number' class='form-control' />
-					</div>
-				</div>
-				<div class='row'>
-					<div class="col-md-2">
-						Name:
-					</div>
-					<div class="col-md-6">
-						<input ng-model='includeType.pp_includes_name' type='text' class='form-control' />
-					</div>
-				</div>
-				<div class='row'>
-					<div class="col-md-2">
-						External ID:
-					</div>
-					<div class="col-md-6">
-						<input ng-model='includeType.pp_includes_external_id' type='text' class='form-control' />
-					</div>
-				</div>
-				<h5>Period</h5>
-				<ul>
-					<div class='row'>
-						<div class='col-md-2'>
-							Unit:
-						</div>
-						<div class='col-md-6'>
-							<input ng-model='includeType.period.unit' class='form-control' type="text" />
-						</div>
-					</div>
-					<div class='row'>
-						<div class='col-md-2'>
-							Duration:
-						</div>
-						<div class='col-md-6'>
-							<input ng-model='includeType.period.duration' type='number' class='form-control' />
-						</div>
-					</div>
-				</ul>
-				<hr ng-if="!$last" />
-			</div>
+		<div class='jsonView' ng-if='advancedMode === true'>
+			<json child='entity' default-collapsed='true' type='object'></json>
 		</div>
 		<div class="modal-footer">
-			<a href="#popupModal" data-type="update" data-toggle="modal" role="button"
-				data-remote="{{advancedModeRemoteURL()}}">Advanced Mode</a>
-			<!-- <?php if ($this->collectionName == 'plans' && $this->type == 'duplicate') : ?> -->
+			<a ng-click='setAdvancedMode(false)' class="clickable" ng-if='advancedMode'>Basic Mode</a>
+			<a ng-click='setAdvancedMode(true)' class="clickable" ng-if='!advancedMode'>Advanced Mode</a>
 			<div class="edit_checkboxes">
-			<input class="span1" id="duplicate_rates" name="duplicate_rates" type="checkbox" value="on" checked> <label class="span1" for="duplicate_rates">Duplicate rates</label>
+				<input ng-model='duplicateRates' class="span1" id="duplicate_rates" type="checkbox" value="on" checked>
+				<label class="span1" for="duplicate_rates">Duplicate rates</label>
 			</div>
-			<!-- <?php endif; ?> -->
-			<button id="cancel" ng-click='cancel()' class="btn" aria-hidden="true">Close</button>
+			<button class="btn" aria-hidden="true">Cancel</button>
 			<!-- <?php if (AdminController::authorized('write')) : ?> -->
 			<button type='submit' class="btn btn-primary">Save changes</button>
 			<!-- <?php endif; ?> -->
 		</div>
 	</form>
 </div>
-
-<div class="modal fade" id="popupModal" tabindex="-1" role="dialog" aria-labelledby="popupModalLabel" aria-hidden="true">
-	<div class="modal-dialog">
-		<div class="modal-content">
-			<div class="modal-header">
-				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-				<h3 id="popupModalLabel"></h3>
-			</div>
-			<div class="modal-body">
-			</div>
-			<div class="modal-footer">
-				<button id="cancelPopup" class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
-				<!-- <?php if (AdminController::authorized('write')) : ?> -->
-					<button id="save" class="btn btn-primary">Save changes</button>
-				<!-- <?php endif; ?> -->
-			</div>
-		</div><!-- /.modal-content -->
-	</div><!-- /.modal-dialog -->
-</div>
-<script>
-var opt = {
-	change: function(data) {
-		/* called on every change */
-		_jsonData = data;
-	},
-	/*
-	 *  FIX!! **
-	propertyclick: function(path) {
-		jsonPath = JSON.parse(path);
-		var protectedKeys = <?php echo json_encode($this->protectedKeys); ?>;
-		for (p in jsonPath) {
-			if ($.inArray(jsonPath[p], protectedKeys) !== -1) {
-				$('input[title="' + jsonPath[p] + '"]').attr('disabled', 'disabled');
-			}
-		}
-	}
-	*/
-};
-/* opt.propertyElement = '<textarea>'; */ // element of the property field, <input> is default
-/* opt.valueElement = '<textarea>'; */  // element of the value field, <input> is default
-//var _jsonEditor = $('#popupModal').jsonEditor(entity, opt);
-$('#save').unbind();
-$('#save').removeAttr("disabled");
-$('#save').click(function saveClick() {
-	$(this).attr('disabled', 'disabled');
-	$(this).unbind("click", saveClick);
-	console.log(_jsonData);
-	var _ajaxOpts = {
-		async: true,
-		cache: false,
-		//			dataType:'json',
-		type: 'POST',
-		data: {
-			id: $('#form_id').html(),
-			coll: $('#form_coll').html(),
-			type: $('#form_type').html(),
-			duplicate_rates: $('#duplicate_rates').is(':checked'),
-			data: JSON.stringify(_jsonData)
-		},
-		success: function(data, textStatus, jqXHR) {
-			if (data != 'null') {
-				alert(data);
-				$('#save').removeAttr("disabled");
-				$('#save').bind("click", saveClick);
-				return;
-			}
-			location.href = baseUrl + "/admin/plans";
-		},
-		error: function(jqXHR, textStatus, errorThrown) {
-			alert('some error occured');
-		}
-	};
-	$.ajax(baseUrl + '/admin/save', _ajaxOpts);
-});
-</script>

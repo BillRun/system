@@ -10,7 +10,6 @@
         <meta name="description" content="BillRun Admin Panel">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 		<link href="http://www.billrun.net/templates/meet_gavern/images/favicon.ico" rel="shortcut icon" type="image/vnd.microsoft.icon" />
-		<base href='/'>  <!-- causes login not to work - but without it, can't redirect to angular pages INVESTIGATE!! -->
         <style>
             body {
                 padding-top: 50px;
@@ -27,6 +26,12 @@
 		<script src='<?php echo $this->baseUrl; ?>/js/vendor/lodash.js'></script>
 		<script src='<?php echo $this->baseUrl; ?>/js/vendor/angular.min.js'></script>
 		<script src='<?php echo $this->baseUrl; ?>/js/vendor/angular-route.js'></script>
+		<script src='<?php echo $this->baseUrl; ?>/js/vendor/jquery-ui.min.js'></script>
+		<script src='<?php echo $this->baseUrl; ?>/js/vendor/sortable.js'></script>
+		<script src='<?php echo $this->baseUrl; ?>/js/vendor/JSONedit/directives.js'></script>
+
+		<link href='<?php echo $this->baseUrl; ?>/js/vendor/JSONedit/styles.css' rel="stylesheet" type='text/css'/>
+
 		<script src='<?php echo $this->baseUrl; ?>/js/app.js'></script>
 
 		<!-- factoreis & services -->
@@ -61,10 +66,18 @@
       </div>
     </div>
 
-		<div ng-view></div>
 	<!-- main component -->
 	<?php echo $this->component; ?>
 	<!-- end of main component -->
+	<!-- hackitty hack hack! -->
+	<script>
+		if (window.location.hash.match(/\/(edit|list)(\/)*/)) {
+			$('.component').remove();
+		}
+	</script>
+	<!-- end of hackitty hack hack -->
+
+	<div ng-view></div>
 
 		<?php echo $js; ?>
 		<script type="text/javascript">

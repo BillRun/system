@@ -48,13 +48,6 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
       });
     };
 
-    $scope.advancedModeRemoteURL = function () {
-      if ($scope.entity && $scope.entity['_id']) {
-        return baseUrl + '/admin/edit?coll=plans&type=update&id=' + $scope.entity['_id'];
-      }
-      return '';
-    };
-
     $scope.isObject = function (o) {
       return _.isObject(o);
     };
@@ -68,10 +61,19 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
       return '';
     };
 
+    $scope.setAdvancedMode = function (mode) {
+      $scope.advancedMode = mode;
+    };
+
     $scope.init = function () {
-      Database.getEntity('plans', $routeParams.id).then(function (res) {
+      var params = {
+        coll: 'plans',
+        id: $routeParams.id
+      };
+      Database.getEntity(params).then(function (res) {
         $scope.entity = res.data;
       });
+      $scope.type = {duplicate: false};
       $scope.includeTypes = ['call', 'data', 'sms', 'mms'];
       $scope.groupParams = ["data", "call", "incoming_call", "incoming_sms", "sms"];
       $scope.newInclude = {type: undefined, value: undefined};

@@ -12,9 +12,20 @@ app.controller('BalancesController', ['$scope', '$window', '$routeParams', 'Data
       });
     };
 
+    $scope.setAdvancedMode = function (mode) {
+      $scope.advancedMode = mode;
+    };
+
     $scope.init = function () {
-      Database.getEntity('balances', $routeParams.id).then(function (res) {
+      var params = {
+        coll: 'balances',
+        id: $routeParams.id,
+        type: 'update'
+      };
+      Database.getEntity(params).then(function (res) {
         $scope.entity = res.data;
+      }, function (err) {
+        alert("Danger! Danger! Beedeebeedeebeedee!");
       });
     };
   }]);

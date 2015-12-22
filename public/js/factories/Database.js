@@ -1,13 +1,9 @@
 app.factory('Database', ['$http', function ($http) {
     'use strict';
 
-    function getEntity(coll, id) {
-      var params = {
-        id: id,
-        coll: coll,
-        type: 'update'
-      };
-      return $http.get('/admin/getEntity', {params: params});
+    function getEntity(params) {
+      if (params.type === undefined) params.type = 'update';
+      return $http.get(baseUrl + '/admin/getEntity', {params: params});
     }
 
     function saveEntity(entity, coll) {
@@ -22,7 +18,7 @@ app.factory('Database', ['$http', function ($http) {
     }
 
     function getAvailablePlans() {
-      return $http.get('/admin/getAvailablePlans');
+      return $http.get(baseUrl + '/admin/getAvailablePlans');
     }
 
     function getCollectionItems(params) {

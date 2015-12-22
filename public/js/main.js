@@ -358,7 +358,8 @@ function update_current(obj) {
 	checkItems = false;
 	if (item_checked.length) {
     if (active_collection === 'plans' || active_collection === 'rates' || active_collection === 'balances')
-      window.location = '#/' + active_collection + '/edit/' + item_checked.eq(0).val();
+      //window.location = '#/' + active_collection + '/edit/' + item_checked.eq(0).val();
+        return;
     else
       $(obj).data('remote', '/admin/edit?coll=' + active_collection + '&id=' + item_checked.eq(0).val() + '&type=' + $(obj).data('type'));
 	}

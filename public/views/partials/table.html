@@ -3,9 +3,10 @@
 		cursor: pointer;
 	}
 </style>
+<h1>{{capitalize(collection.collection)}}</h1>
 <table class="table table-striped table-bordered table-no-more-tables">
 	<thead>
-		<th></th>
+		<th>#</th>
 		<th ng-repeat="header in collection.columns">{{header}}</th>
 	</thead>
 	<tbody>
@@ -14,10 +15,13 @@
 		</tr>
 		<tr ng-repeat="item in collection.data track by $index" ng-if="collection.data.length">
 			<td>
-				<a ng-click='editItem(collection.collection, item["_id"])' class='clickable'>#{{$index+1}}</a>
+				<b><a ng-click='editItem(collection.collection, item["_id"])' class='clickable'>#{{$index+1}}</a></b>
 			</td>
 			<td ng-repeat="(k, colName) in collection.columns">
-				{{item[k]}}
+				<span ng-if="datetimeCol(k)">
+					{{printDate(item[k])}}
+				</span>
+				<span ng-if="!datetimeCol(k)">{{item[k]}}</span>
 			</td>
 		</tr>
 	</tbody>

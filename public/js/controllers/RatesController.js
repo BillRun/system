@@ -47,7 +47,16 @@ app.controller('RatesController', ['$scope', '$http', '$window', '$routeParams',
         return;
       if ($scope.entity.rates.call === undefined)
         $scope.entity.rates.call = {};
-      $scope.entity.rates.call[$scope.newCallRate.name] = [{}];
+      var newPriceInterval = {
+        rate: [
+          {
+            interval: undefined,
+            price: undefined,
+            to: undefined
+          }
+        ]
+      };
+      $scope.entity.rates.call[$scope.newCallRate.name] = [newPriceInterval];
       $scope.shown.callRates[$scope.newCallRate.name] = true;
       $scope.newCallRate = {name: undefined};
     };
@@ -63,7 +72,7 @@ app.controller('RatesController', ['$scope', '$http', '$window', '$routeParams',
         return;
       if ($scope.entity.rates.sms === undefined)
         $scope.entity.rates.sms = {};
-      $scope.entity.rates.sms[$scope.newSMSRate.name] = [{unit: "counter"}];
+      $scope.entity.rates.sms[$scope.newSMSRate.name] = [{unit: "counter", rate: []}];
       $scope.shown.smsRates[$scope.newSMSRate.name] = true;
       $scope.newSMSRate = {name: undefined};
     };
@@ -72,6 +81,32 @@ app.controller('RatesController', ['$scope', '$http', '$window', '$routeParams',
       if (!rateName)
         return;
       delete $scope.entity.rates.sms[rateName];
+    };
+
+    $scope.addCallIntervalPrice = function (rate) {
+      if (rate.rate === undefined)
+        rate.rate = [];
+      var newCallIntervalPrice = {
+        interval: undefined,
+        price: undefined,
+        to: undefined
+      };
+      rate.rate.push(newCallIntervalPrice);
+    };
+
+    $scope.addSMSIntervalPrice = function (rate) {
+      if (rate.rate === undefined)
+        rate.rate = [];
+      var newSMSIntervalPrice = {
+        interval: undefined,
+        price: undefined,
+        to: undefined
+      };
+      rate.rate.push(newSMSIntervalPrice);
+    };
+
+    $scope.deleteSMSIntervalPrice = function (interval_price, smsRate) {
+      smsRate.rate = _.without(smsRate.rate, interval_price);
     };
 
     $scope.addCallPlan = function () {
@@ -104,6 +139,21 @@ app.controller('RatesController', ['$scope', '$http', '$window', '$routeParams',
       $scope.entity.rates.sms.plans.splice(planIndex, 1);
     };
 
+    $scope.callPlanExists = function (plan) {
+      if (plan && $scope.entity && $scope.entity.rates
+        && $scope.entity.rates.call && $scope.entity.rates.call[plan]) {
+        return true;
+      }
+      return false;
+    };
+    $scope.smsPlanExists = function (plan) {
+      if (plan && $scope.entity && $scope.entity.rates 
+        && $scope.entity.rates.sms && $scope.entity.rates.sms[plan]) {
+        return true;
+      }
+      return false;
+    };
+
     $scope.cancel = function () {
       $window.location = baseUrl + '/admin/rates';
     };
@@ -115,15 +165,17 @@ app.controller('RatesController', ['$scope', '$http', '$window', '$routeParams',
       });
     };
 
-    $scope.advancedModeRemoteURL = function () {
-      if ($scope.entity && $scope.entity['_id']) {
-        return baseUrl + '/admin/edit?coll=rates&type=update&id=' + $scope.entity['_id'];
-      }
-      return '';
+    $scope.setAdvancedMode = function (mode) {
+      $scope.advancedMode = mode;
     };
 
     $scope.init = function () {
-      Database.getEntity('rates', $routeParams.id).then(function (res) {
+      $scope.advancedMode = false;
+      var params = {
+        coll: 'rates',
+        id: $routeParams.id
+      };
+      Database.getEntity(params).then(function (res) {
         $scope.entity = res.data;
         if (_.isEmpty($scope.entity.rates)) {
           $scope.entity.rates = {};
