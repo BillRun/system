@@ -90,7 +90,7 @@ class Billrun_ActionManagers_SubscribersAutoRenew_Update extends Billrun_ActionM
 		$outputResult = 
 			array('status'  => ($success) ? (1) : (0),
 				  'desc'    => $this->error,
-				  'details' => 'Updated ' . $count . ' card(s)');
+				  'details' => 'Updated ' . $count . ' record(s)');
 		return $outputResult;
 	}
 	
