@@ -76,7 +76,7 @@ class Billrun_ActionManagers_SubscribersAutoRenew_Update extends Billrun_ActionM
 		$success = true;
 		try {
 			$updateResult = $this->collection->update($this->query, $this->updateQuery, $options);
-			$count = $updateResult['nModified'];
+			$count = $updateResult['nModified'] + $updateResult['nUpserted'];
 			$found = $updateResult['n'];
 			
 			$success = $this->handleResult($count, $found);
