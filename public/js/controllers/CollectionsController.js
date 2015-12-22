@@ -21,11 +21,16 @@ app.controller('CollectionsController', ['$scope', '$routeParams', '$location', 
       return '';
     };
 
+    $scope.filterList = function () {
+      
+    };
+
     $scope.init = function () {
       var params = {
         collection: $routeParams.collection,
         show_prefix: false
       };
+      $scope.listFilter = {};
       Database.getCollectionItems(params).then(function (res) {
         $scope.collection = res.data;
       });

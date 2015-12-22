@@ -1,0 +1,15 @@
+<form ng-submit='filterList()' class='form-inline'>
+	<div ng-repeat='filterField in collection.filter_fields_order'>
+		<div ng-repeat='(fieldName, field) in filterField'>
+			<label class='control-label'>{{collection.filter_fields[fieldName].display}}</label>
+			<input-field model='listFilter[fieldName]' type='collection.filter_fields[fieldName].input_type'></input-field>
+		</div>
+	</div>
+	<div class="toolbar-buttons">
+		<span>
+			<button class="btn btn-success" type="submit">Submit</button>
+		</span>
+		<span class="pull-right">
+		</span>
+	</div>
+</form>
