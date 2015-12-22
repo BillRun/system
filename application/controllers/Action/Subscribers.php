@@ -13,6 +13,7 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  * @package     Controllers
  * @subpackage  Action
  * @since       4.0
+ * @author Tom Feigin
 */
 class SubscribersAction extends ApiAction {
 	
