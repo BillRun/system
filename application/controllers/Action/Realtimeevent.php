@@ -75,8 +75,14 @@ class RealtimeeventAction extends ApiAction {
 			Billrun_Factory::log('Cannot get decoder', Zend_Log::ALERT);
 			return false;
 		}
-		
-		return Billrun_Util::parseDataToBillrunConvention($decoder->decode($request['request']));
+
+		if ($this->usaget == 'call') {
+			$requestBody = file_get_contents("PHP://input");
+		} else {
+			$requestBody = $request['request'];
+		}
+
+		return Billrun_Util::parseDataToBillrunConvention($decoder->decode($requestBody));
 	}
 	
 	/**

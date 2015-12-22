@@ -52,6 +52,7 @@ class Billrun_Calculator_Rate_Gy extends Billrun_Calculator_Rate_Ggsn {
 		}
 
 		Billrun_Factory::log("Couldn't find rate for row : " . print_r($row['stamp'], 1), Zend_Log::DEBUG);
+		$row['granted_return_code'] = Billrun_Factory::config()->getConfigValue('prepaid.customer.no_rate');
 		return FALSE;
 	}
 
