@@ -166,7 +166,7 @@ class Billrun_ActionManagers_SubscribersAutoRenew_Update extends Billrun_ActionM
 		$subQuery['sid'] = $this->query['sid'];
 		$subRecord = $subCollection->query($subQuery)->cursor()->current();
 		
-		if(!$subRecord) {
+		if($subRecord->isEmpty()) {
 			$error = "Subscriber not found for " . $subQuery['sid'];
 			$this->reportError($error, Zend_Log::ALERT);
 			return false;
@@ -185,7 +185,7 @@ class Billrun_ActionManagers_SubscribersAutoRenew_Update extends Billrun_ActionM
 		$chargingPlanQuery['name'] = $this->query['charging_plan'];
 		
 		$planRecord = $plansCollection->query($chargingPlanQuery)->cursor()->current();
-		if(!$planRecord) {
+		if($planRecord->isEmpty()) {
 			$error = "Charging plan not found!";
 			$this->reportError($error, Zend_Log::ALERT);
 			return false;
