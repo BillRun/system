@@ -9,7 +9,7 @@
 /**
  * Holds the logic for updating balances using charging plans.
  *
- * @author tom
+ * @author Tom Feigin
  */
 class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_ActionManagers_Balances_Updaters_Updater {
 

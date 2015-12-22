@@ -9,7 +9,7 @@
 /**
  * This is a parser to be used by the subscribers action.
  *
- * @author tom
+ * @author Tom Feigin
  */
 class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_Subscribers_Action{
 	// TODO: Create a generic update action class. This class shares some logic with the cards and balances update action. The setUpdateRecord function is shared.
