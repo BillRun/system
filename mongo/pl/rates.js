@@ -15,6 +15,7 @@ function create_tariff(tariff) {
 	if (tariff.PP_TARIFF_NAME.toLowerCase().contains('inter ') !== false 
 			|| tariff.PP_TARIFF_NAME.toLowerCase().contains('interconnect') !== false
 			|| tariff.PP_TARIFF_NAME.toLowerCase().contains('zero_airtime') !== false
+			|| tariff.PP_TARIFF_NAME.toLowerCase().contains('a-zero') !== false
 		) {
 		return false;
 	}
