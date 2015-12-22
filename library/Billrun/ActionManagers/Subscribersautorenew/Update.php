@@ -33,38 +33,64 @@ class Billrun_ActionManagers_SubscribersAutoRenew_Update extends Billrun_ActionM
 	}
 		
 	/**
-	 * Execute the action.
-	 * @return data for output.
+	 * Handle the update results.
+	 * @param type $count
+	 * @param type $found
+	 * @return boolean
 	 */
-	public function execute() {
-		$success = true;
-
-		$updatedDocument = null;
-		
-		$options = array(
+	protected function handleResult($count, $found) {
+		if($count) {
+			return true;
+		}
+	
+		if($found) {
+			// TODO: Add to error conf
+			$error = "Nothing to update - Input data are the same as existing data";
+		} else {
+			// TODO: Add to error conf
+			$error = "Subscriber auto renew Not Found";
+		}			
+		$this->reportError($error);
+		return false;
+	}
+	
+	/**
+	 * Get the update options array
+	 * @return array
+	 */
+	protected function getUpdateOptions() {
+		return array(
 			'upsert' => true,
 			'new' => true,
 			'w' => 1,
 			);
-				
+	}
+	
+	/**
+	 * Execute the action.
+	 * @return data for output.
+	 */
+	public function execute() {
+		$options = $this->getUpdateOptions();				
+		$count = 0;
+		$success = true;
 		try {
-			$updatedDocument = $this->collection->update($this->query, $this->updateQuery, $options);
+			$updateResult = $this->collection->update($this->query, $this->updateQuery, $options);
+			$count = $updateResult['nModified'] + $updateResult['nUpserted'];
+			$found = $updateResult['n'];
 			
+			$success = $this->handleResult($count, $found);
 		} catch (\Exception $e) {
+			$success = false;
 			$error = 'failed storing in the DB got error : ' . $e->getCode() . ' : ' . $e->getMessage();
 			$this->reportError($error, Zend_Log::ALERT);
 			Billrun_Factory::log('failed saving request :' . print_r($this->recordToSet, 1), Zend_Log::ALERT);
-			$success = false;
 		}
-
-		if(!$updatedDocument) {
-			$success = false;
-			$this->reportError("No auto renew records found to update");
-		}
+		
 		$outputResult = 
 			array('status'  => ($success) ? (1) : (0),
 				  'desc'    => $this->error,
-				  'details' => ($updatedDocument) ? $updatedDocument : 'No results');
+				  'details' => 'Updated ' . $count . ' record(s)');
 		return $outputResult;
 	}
 	
@@ -140,7 +166,7 @@ class Billrun_ActionManagers_SubscribersAutoRenew_Update extends Billrun_ActionM
 		$subQuery['sid'] = $this->query['sid'];
 		$subRecord = $subCollection->query($subQuery)->cursor()->current();
 		
-		if(!$subRecord) {
+		if($subRecord->isEmpty()) {
 			$error = "Subscriber not found for " . $subQuery['sid'];
 			$this->reportError($error, Zend_Log::ALERT);
 			return false;
@@ -159,7 +185,7 @@ class Billrun_ActionManagers_SubscribersAutoRenew_Update extends Billrun_ActionM
 		$chargingPlanQuery['name'] = $this->query['charging_plan'];
 		
 		$planRecord = $plansCollection->query($chargingPlanQuery)->cursor()->current();
-		if(!$planRecord) {
+		if($planRecord->isEmpty()) {
 			$error = "Charging plan not found!";
 			$this->reportError($error, Zend_Log::ALERT);
 			return false;
