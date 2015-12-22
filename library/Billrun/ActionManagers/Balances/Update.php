@@ -155,6 +155,23 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 	}
 	
 	/**
+	 * Handle when the upsert record is not received
+	 * @return boolean true on success
+	 */
+	protected function handleNoUpsert() {
+		// Check if the update record is needed.
+		$upsertNeeded = 
+			Billrun_ActionManagers_Balances_Updaters_Manager::isUpsertRecordNeeded(key($this->query));
+
+		if(!$upsertNeeded) {
+			return true;
+		}
+		$error = "Update action does not have an upsert field!";
+		$this->reportError($error, Zend_Log::ALERT);
+		return false;
+	}
+	
+	/**
 	 * Set the values for the update record to be set.
 	 * @param httpRequest $input - The input received from the user.
 	 * @return true if successful false otherwise.
@@ -162,10 +179,15 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 	protected function setUpdateRecord($input) {
 		$jsonUpdateData = null;
 		$update = $input->get('upsert');
+		
+		$upsertNeeded = true;
+		
 		if(empty($update) || (!($jsonUpdateData = json_decode($update, true)))) {
-			$error = "Update action does not have an upsert field!";
-			$this->reportError($error, Zend_Log::ALERT);
-			return false;
+			if(!$this->handleNoUpsert()) {
+				return false;
+			}
+			
+			$upsertNeeded = false;
 		}
 		
 		$operation = "inc";
@@ -180,6 +202,12 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		if ($to) {
 			$this->recordToSet['to'] = new MongoDate(strtotime($to));
 		}
+		
+		// Upsert is not needed so no need to go over the fields
+		if(!$upsertNeeded) {
+			return true;
+		}
+		
 		$updateFields = $this->getUpdateFields();
 		
 		// Get only the values to be set in the update record.
