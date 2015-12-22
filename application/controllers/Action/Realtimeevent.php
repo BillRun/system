@@ -66,23 +66,23 @@ class RealtimeeventAction extends ApiAction {
 	 * @todo get real data from request (now it's only mock-up)
 	 */
 	protected function getRequestData() {
-		 $request = $this->getRequest()->getRequest();
-			$this->usaget = $request['usaget'];
-			$decoder = Billrun_Decoder_Manager::getDecoder(array(
-					'usaget' => $this->usaget
-			));
-			if (!$decoder) {
-					Billrun_Factory::log('Cannot get decoder', Zend_Log::ALERT);
-					return false;
-			}
+		$request = $this->getRequest()->getRequest();
+		$this->usaget = $request['usaget'];
+		$decoder = Billrun_Decoder_Manager::getDecoder(array(
+				'usaget' => $this->usaget
+		));
+		if (!$decoder) {
+				Billrun_Factory::log('Cannot get decoder', Zend_Log::ALERT);
+				return false;
+		}
 
-			if ($this->usaget == 'call') {
-					$requestBody = file_get_contents("PHP://input");
-			} else {
-					$requestBody = $request['request'];
-			}
+		if ($this->usaget == 'call') {
+				$requestBody = file_get_contents("PHP://input");
+		} else {
+				$requestBody = $request['request'];
+		}
 
-			return Billrun_Util::parseDataToBillrunConvention($decoder->decode($requestBody));
+		return Billrun_Util::parseDataToBillrunConvention($decoder->decode($requestBody));
 	}
 	
 	/**
