@@ -48,8 +48,8 @@ function create_tariff(tariff) {
 			'unit' : _unit,
 			'rate':     [{
 				'to': 2147483647,
-				'price': tariff.ADD_CHARGE,
-				'interval': tariff.ADD_AMOUNT
+				'price': Number(tariff.ADD_CHARGE),
+				'interval': Number(tariff.ADD_AMOUNT)
 			}]
 		}];
 	}
@@ -57,13 +57,13 @@ function create_tariff(tariff) {
 		'access':   0,
 		'unit' : _unit,
 		'rate':     [{
-			'to': tariff.INITIAL_AMOUNT,
-			'price': tariff.INITIAL_CHARGE,
-			'interval': tariff.INITIAL_AMOUNT
+			'to': Number(tariff.INITIAL_AMOUNT),
+			'price': Number(tariff.INITIAL_CHARGE),
+			'interval': Number(tariff.INITIAL_AMOUNT)
 			},{
 			'to': 2147483647,
-			'price': tariff.ADD_CHARGE,
-			'interval': tariff.ADD_AMOUNT
+			'price': Number(tariff.ADD_CHARGE),
+			'interval': Number(tariff.ADD_AMOUNT)
 		}]
 
 	}];
