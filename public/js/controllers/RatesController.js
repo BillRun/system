@@ -48,6 +48,8 @@ app.controller('RatesController', ['$scope', '$http', '$window', '$routeParams',
       if ($scope.entity.rates.call === undefined)
         $scope.entity.rates.call = {};
       var newPriceInterval = {
+        access: 0,
+        unit: $scope.availableCallUnits[0],
         rate: [
           {
             interval: undefined,
@@ -72,7 +74,18 @@ app.controller('RatesController', ['$scope', '$http', '$window', '$routeParams',
         return;
       if ($scope.entity.rates.sms === undefined)
         $scope.entity.rates.sms = {};
-      $scope.entity.rates.sms[$scope.newSMSRate.name] = [{unit: "counter", rate: []}];
+      var newPriceInterval = {
+        unit: "counter",
+        access: 0,
+        rate: [
+          {
+            interval: undefined,
+            price: undefined,
+            to: undefined
+          }
+        ]
+      };
+      $scope.entity.rates.sms[$scope.newSMSRate.name] = [newPriceInterval];
       $scope.shown.smsRates[$scope.newSMSRate.name] = true;
       $scope.newSMSRate = {name: undefined};
     };
@@ -107,6 +120,9 @@ app.controller('RatesController', ['$scope', '$http', '$window', '$routeParams',
 
     $scope.deleteSMSIntervalPrice = function (interval_price, smsRate) {
       smsRate.rate = _.without(smsRate.rate, interval_price);
+    };
+    $scope.deleteCallIntervalPrice = function (interval_price, callRate) {
+      callRate.rate = _.without(callRate.rate, interval_price);
     };
 
     $scope.addCallPlan = function () {
