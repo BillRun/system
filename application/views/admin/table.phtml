@@ -2,7 +2,7 @@
 	var coll = <?php echo json_encode(strtolower($this->title)); ?>;
 </script>
 <div class="container component">
-	<?php 
+	<?php
 	echo "<h1>" . $this->title . "</h1>";
 	$this->display('toolbar.phtml', array());
 	print '<div style="clear:both;"></div>';

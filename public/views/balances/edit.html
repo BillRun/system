@@ -1,0 +1,102 @@
+<style>
+	.glyphicon-plus-sign {
+		color: green;
+		cursor: pointer;
+	}
+
+	.glyphicon-minus-sign {
+		color: #bc2328;
+		cursor: pointer;
+	}
+	.clickable {
+		cursor: pointer;
+	}
+</style>
+
+<div class="container component" ng-controller='BalancesController' ng-init="init()">
+	<center>
+		<h2>Subscriber {{entity.sid}} - Balance</h2>
+	</center>
+	<form class='form-inline' ng-submit='saveBalance()'>
+		<div ng-if='!advancedMode'>
+			<div class="row">
+				<div class="col-md-2">
+					aid
+				</div>
+				<div class="col-md-6">
+					<input ng-model="entity.aid" type='number' class="form-control" />
+				</div>
+			</div>
+			<div class="row">
+				<div class="col-md-2">
+					sid
+				</div>
+				<div class="col-md-6">
+					<input ng-model="entity.sid" type='number' class="form-control" />
+				</div>
+			</div>
+			<div class="row">
+				<div class="col-md-2">
+					pp includes external id
+				</div>
+				<div class="col-md-6">
+					<input ng-model="entity.pp_includes_external_id" type='number' class="form-control" disabled />
+				</div>
+			</div>
+			<div class="row">
+				<div class="col-md-2">
+					pp includes name
+				</div>
+				<div class="col-md-6">
+					<input ng-model="entity.pp_includes_name" type='text' class="form-control" disabled />
+				</div>
+			</div>
+
+			<hr/>
+			<h3>Total</h3>
+			<div class='row' ng-if='entity.balance.cost'>
+				<div class='col-md-2'>
+					Cost
+				</div>
+				<div class='col-md-6'>
+					<input ng-model='entity.balance.cost' type='number' class='form-control' />
+				</div>
+			</div>
+			<div class='row' ng-if='entity.balance.totals.call'>
+				<div class='col-md-2'>
+					Call
+				</div>
+				<div class='col-md-6'>
+					<input ng-model='entity.balance.totals.call.usagev' type='number' class='form-control' />
+				</div>
+			</div>
+			<div class='row' ng-if='entity.balance.totals.sms'>
+				<div class='col-md-2'>
+					SMS
+				</div>
+				<div class='col-md-6'>
+					<input ng-model='entity.balance.totals.sms.usagev' type='number' class='form-control' />
+				</div>
+			</div>
+			<div class='row' ng-if='entity.balance.totals.data'>
+				<div class='col-md-2'>
+					Data
+				</div>
+				<div class='col-md-6'>
+					<input ng-model='entity.balance.totals.data.usagev' type='number' class='form-control' />
+				</div>
+			</div>
+		</div>
+		<div class='jsonView' ng-if='advancedMode === true'>
+			<json child='entity' default-collapsed='true' type='object'></json>
+		</div>
+		<div class="modal-footer">
+			<a ng-click='setAdvancedMode(false)' class="clickable" ng-if='advancedMode'>Basic Mode</a>
+			<a ng-click='setAdvancedMode(true)' class="clickable" ng-if='!advancedMode'>Advanced Mode</a>
+			<button class="btn" ng-click='cancel()'>Cancel</button>
+			<!-- <?php if (AdminController::authorized('write')) : ?> -->
+			<button type='submit' class="btn btn-primary">Save changes</button>
+			<!-- <?php endif; ?> -->
+		</div>
+	</form>
+</div>
