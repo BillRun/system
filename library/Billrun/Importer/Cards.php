@@ -23,6 +23,11 @@ class Billrun_Importer_Cards extends Billrun_Importer_Csv {
 		return $secret;
 	}
 	
+	protected function getFrom($rowData) {
+		$from = new MongoDate();
+		return $from;
+	}
+	
 	protected function getTo($rowData) {
 		$to = new MongoDate(strtotime($rowData[6]));
 		return $to;
