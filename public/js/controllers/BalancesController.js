@@ -2,7 +2,7 @@ app.controller('BalancesController', ['$scope', '$window', '$routeParams', 'Data
   function ($scope, $window, $routeParams, Database) {
     'use strict';
     $scope.cancel = function () {
-      $window.location = baseUrl + '/admin/plans';
+      $window.location = baseUrl + '/admin/balances';
     };
     $scope.savePlan = function () {
       Database.saveEntity($scope.entity, 'plans').then(function (res) {

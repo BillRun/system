@@ -138,6 +138,12 @@ class RatesModel extends TabledateModel {
 	}
 
 	public function getFilterFields() {
+		$planModel = new PlansModel();
+		$names = $planModel->getData(array('type' => 'charging'));
+		$planNames = array();
+		foreach($names as $name) {
+			$planNames[$name['name']] = $name['name'];
+		}
 		$filter_fields = array(
 //			'usage' => array(
 //				'key' => 'rates.$',
@@ -164,6 +170,15 @@ class RatesModel extends TabledateModel {
 				'comparison' => 'contains',
 				'display' => 'Prefix',
 				'default' => '',
+			),
+			'plan' => array(
+				'key' => 'plan',
+				'db_keys' => array('rates.call', 'rates.sms'),
+				'input_type' => 'multiselect',
+				'comparison' => '$exists',
+				'display' => 'Plan',
+				'values' => $planNames,
+				'default' => array(),
 			),
 			'showprefix' => array(
 				'key' => 'showprefix',
@@ -193,6 +208,11 @@ class RatesModel extends TabledateModel {
 					'width' => 2,
 				),
 			),
+			array(
+				'plan' => array(
+					'width' => 2,
+				)
+			)
 		);
 		$post_filter_field = array(
 			array(
@@ -204,6 +224,24 @@ class RatesModel extends TabledateModel {
 		return array_merge($filter_field_order, parent::getFilterFieldsOrder(), $post_filter_field);
 	}
 
+	public function applyFilter($filter_field, $value) {
+		if ($filter_field['comparison'] == '$exists') {
+			if (!is_null($value) && $value != $filter_field['default'] && is_array($value)) {
+				$ret = array('$and' => array());
+				foreach($value as $val) {
+					$or = array('$or' => array());
+					foreach($filter_field['db_keys'] as $key) {
+						$or['$or'][] = array("$key.$val" => array('$exists' => true));
+					}
+					$ret['$and'][] = $or;
+				}
+				return $ret;
+			}			
+		} else {
+			return parent::applyFilter($filter_field, $value);
+		}
+	}
+	
 	/**
 	 * Get the data resource
 	 * 
