@@ -40,7 +40,34 @@ class PlansModel extends TabledateModel {
 		);
 		return array_merge($sort_fields, parent::getSortFields());
 	}
+	
+	public function getFilterFields() {
+		$filter_fields = array(
+			'type' => array(
+				'key' => 'type',
+				'db_key' => 'type',
+				'input_type' => 'multiselect',
+				'comparison' => '$in',
+				'singleselect' => 1,
+				'display' => 'Type',
+				'values' => array('customer' => 'customer', 'charging' => 'charging'),
+				'default' => array('customer'),
+			),
+		);
+		return array_merge($filter_fields, parent::getFilterFields());
+	}
 
+	public function getFilterFieldsOrder() {
+		$filter_field_order = array(
+			array(
+				'type' => array(
+					'width' => 2,
+				),
+			)
+		);
+		return array_merge($filter_field_order, parent::getFilterFieldsOrder());
+	}
+	
 	public function update($params) {
 		$source_id = $params['source_id'];
 		unset($params['source_id']); // we don't save because admin ref issues
