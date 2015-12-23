@@ -15,7 +15,7 @@
 
 <div class="container component" ng-controller='BalancesController' ng-init="init()">
 	<center>
-		<h2>Account {{entity.aid}} - Balance</h2>
+		<h2>Subscriber {{entity.sid}} - Balance</h2>
 	</center>
 	<form class='form-inline' ng-submit='saveBalance()'>
 		<div ng-if='!advancedMode'>
@@ -33,6 +33,22 @@
 				</div>
 				<div class="col-md-6">
 					<input ng-model="entity.sid" type='number' class="form-control" />
+				</div>
+			</div>
+			<div class="row">
+				<div class="col-md-2">
+					pp includes external id
+				</div>
+				<div class="col-md-6">
+					<input ng-model="entity.pp_includes_external_id" type='number' class="form-control" disabled />
+				</div>
+			</div>
+			<div class="row">
+				<div class="col-md-2">
+					pp includes name
+				</div>
+				<div class="col-md-6">
+					<input ng-model="entity.pp_includes_name" type='text' class="form-control" disabled />
 				</div>
 			</div>
 

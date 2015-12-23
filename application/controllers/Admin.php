@@ -170,7 +170,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		if (!$this->allowed('read'))
 			return false;
 		$planModel = new PlansModel();
-		$names = $planModel->getData();
+		$names = $planModel->getData(array('type' => 'customer'));
 		$availablePlans = array();
 		foreach($names as $name) {
 			$availablePlans[$name['name']] = $name['name'];
