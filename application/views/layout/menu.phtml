@@ -13,11 +13,11 @@
 			<li class="dropdown<?php echo (in_array($active, array('plans', 'rates')) ? ' active' : ''); ?>">
 				<a class="dropdown-toggle"
 				   data-toggle="dropdown"
-				   href="#">
+				   href="">
 					Rating
 					<b class="caret"></b>
 				</a>
-				<ul class="dropdown-menu"> 
+				<ul class="dropdown-menu">
 					<?php if (AdminController::authorized('read', 'plans') && AdminController::showInMenu('plans')) : ?>
 						<li<?php echo ($active == 'plans' ? ' class="active"' : ''); ?>>
 							<a href="<?php echo $this->baseUrl; ?>/admin/plans">Plans</a>
@@ -29,22 +29,22 @@
 						</li>
 					<?php endif; ?>
 				</ul>
-			</li>			
+			</li>
 		<?php endif ?>
 		<?php if(AdminController::authorized('read', 'subscribers') || AdminController::authorized('read', 'balances') || AdminController::authorized('read', 'subscribersautorenewservices')) : ?>
 			<li class="dropdown<?php echo (in_array($active, array('subscribers', 'balances', 'subscribersautorenewservices')) ? ' active' : ''); ?>">
 				<a class="dropdown-toggle"
 				   data-toggle="dropdown"
-				   href="#">
+				   href="">
 					Subscribers
 					<b class="caret"></b>
 				</a>
-				<ul class="dropdown-menu"> 
+				<ul class="dropdown-menu">
 					<?php if(AdminController::authorized('read', 'subscribers') && AdminController::showInMenu('subscribers')) : ?>
 						<li <?php echo ($active == 'subscribers' ? ' class="active"' : ''); ?>>
 							<a href="<?php echo $this->baseUrl; ?>/admin/subscribers">List</a>
 						</li>
-					<?php endif; ?>					
+					<?php endif; ?>
 					<?php if (AdminController::authorized('read', 'balances') && AdminController::showInMenu('balances')) : ?>
 						<li<?php echo ($active == 'balances' ? ' class="active"' : ''); ?>>
 							<a href="<?php echo $this->baseUrl; ?>/admin/balances">Balances</a>
@@ -54,7 +54,7 @@
 						<li <?php echo ($active == 'subscribersautorenewservices' ? ' class="active"' : ''); ?>>
 							<a href="<?php echo $this->baseUrl; ?>/admin/subscribersautorenewservices">Renew</a>
 						</li>
-					<?php endif; ?>					
+					<?php endif; ?>
 				</ul>
 			</li>
 		<?php endif ?>
@@ -72,16 +72,16 @@
 			<li <?php echo ($active == 'cards' ? ' class="active"' : ''); ?>>
 				<a href="<?php echo $this->baseUrl; ?>/admin/cards">Cards</a>
 			</li>
-		<?php endif; ?>		
+		<?php endif; ?>
 		<?php if (AdminController::authorized('admin')) : ?>
 			<li class="dropdown<?php echo (in_array($active, array('users', 'config', 'operations')) ? ' active' : ''); ?>">
 				<a class="dropdown-toggle"
 				   data-toggle="dropdown"
-				   href="#">
+				   href="">
 					Admin
 					<b class="caret"></b>
 				</a>
-				<ul class="dropdown-menu"> 
+				<ul class="dropdown-menu">
 					<li<?php echo ($active == 'config' ? ' class="active"' : ''); ?>>
 						<a href="<?php echo $this->baseUrl; ?>/admin/config">Config</a>
 					</li>
@@ -103,6 +103,6 @@
 				<a href="<?php echo $this->baseUrl; ?>/admin/logout">Logout</a>
 			</li>
 		<?php endif; ?>
-			
+
 	</ul>
 </div><!--/.navbar-collapse -->

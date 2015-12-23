@@ -1,0 +1,20 @@
+<style>
+	.date {
+		display: inline-table;
+		vertical-align: bottom;
+		clear: both;
+		width: 80%;
+	}
+</style>
+
+<input type='text' ng-model='model[field]'  class='form-control span2' ng-if='type === "text"' />
+<input type='number' ng-model='model[field]'  class='form-control span2' ng-if='type === "number"' />
+<input type='checkbox' ng-model='model[field]'  class='form-control span2' ng-if='type === "boolean"' />
+<div ng-if='type === "date"' class="input-group date">
+	<p class="input-group">
+	  <input type="text"  class='form-control' uib-datepicker-popup="yyyy-MM-dd" ng-model="model[field]" is-open="opened" close-text="Close" />
+	  <span class="input-group-btn">
+		<button type="button" class="btn btn-default" ng-click="opened = !opened"><i class="glyphicon glyphicon-calendar"></i></button>
+	  </span>
+	</p>
+</div>
