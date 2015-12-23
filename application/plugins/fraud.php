@@ -451,7 +451,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 				if(isset($line['aid']) && isset($line['sid']) ) {
 					$queueLine['aid'] =  $line['aid'];
 					$queueLine['sid'] =  $line['sid'];
-					$queueLine['calc_name'] = 'rate';
+					$queueLine['calc_name'] = 'customer';
 				}
 
 				$fraud_connection->insert(new Mongodloid_Entity($queueLine), array('w' => 0));
