@@ -22,16 +22,18 @@ app.factory('Database', ['$http', function ($http) {
     }
 
     function getCollectionItems(params) {
-      var params = {
-        coll: params.collection
-      };
       return $http.get(baseUrl + '/admin/getCollectionItems', {params: params});
+    }
+
+    function filterCollectionItems(params) {
+      return $http.post(baseUrl + '/admin/getCollectionItems', params);
     }
 
     return {
       getEntity: getEntity,
       saveEntity: saveEntity,
       getAvailablePlans: getAvailablePlans,
-      getCollectionItems: getCollectionItems
+      getCollectionItems: getCollectionItems,
+      filterCollectionItems: filterCollectionItems
     };
   }]);

@@ -3,7 +3,9 @@ app.directive('inputField', function () {
   return {
     scope: {
       model: '=',
-      type: '='
-    }, templateUrl: 'views/partials/inputField.html'
+      type: '=',
+      field: '='
+    }, link: function (scope) {
+    },templateUrl: 'views/partials/inputField.html'
   };
 });

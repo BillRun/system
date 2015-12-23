@@ -22,12 +22,18 @@ app.controller('CollectionsController', ['$scope', '$routeParams', '$location', 
     };
 
     $scope.filterList = function () {
-      
+      var params = {
+        coll: $routeParams.collection,
+        session: JSON.stringify($scope.collection.session)
+      };
+      Database.filterCollectionItems(params).then(function (res) {
+        $scope.collection.data = res.data.data;
+      });
     };
 
     $scope.init = function () {
       var params = {
-        collection: $routeParams.collection,
+        coll: $routeParams.collection,
         show_prefix: false
       };
       $scope.listFilter = {};

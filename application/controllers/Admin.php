@@ -123,12 +123,17 @@ class AdminController extends Yaf_Controller_Abstract {
 		$response->response();
 		return false;
 	}
-
+	
 	public function getCollectionItemsAction() {
 		if (!$this->allowed('read'))
 			return false;
 		$coll = Billrun_Util::filter_var($this->getRequest()->get('coll'), FILTER_SANITIZE_STRING);
-		$session = $this->getSession("rates");
+		$response = new Yaf_Response_Http();
+
+		$session = @json_decode($this->getRequest()->get('session'));
+		if (!$session) {
+			$session = $this->getSession();
+		}
 		$show_prefix = $this->getSetVar($session, 'showprefix', 'showprefix', 0);
 		$sort = $this->applySort($coll);
 		$options = array(
@@ -138,16 +143,15 @@ class AdminController extends Yaf_Controller_Abstract {
 		);
 		// set the model
 		self::initModel($coll, $options);
-		$query = $this->applyFilters($coll);
+		$query = $this->applyFilters($coll, $session);
 		// TODO: use ready pager/paginiation class (zend? joomla?) with auto print
 		$basic_params = array(
 			'title' => $this->title,
 			'active' => $coll,
-			'session' => $this->getSession($coll),
+			'session' => $session,
 		);
 		$params = array_merge($options, $basic_params, $this->getTableViewParams($query), $this->createFilterToolbar($coll));
 		$items = array();
-		$response = new Yaf_Response_Http();
 		foreach ($params['data'] as $item) {
 			$i = array();
 			foreach ($params['columns'] as $col => $v) {
@@ -939,9 +943,11 @@ class AdminController extends Yaf_Controller_Abstract {
 		return $session->$target_name;
 	}
 
-	protected function applyFilters($table) {
+	protected function applyFilters($table, $session = false) {
 		$model = $this->model;
-		$session = $this->getSession($table);
+		if (!$session) {
+			$session = $this->getSession($table);
+		}
 		$filter_fields = $model->getFilterFields();
 		$query = array();
 		if ($filter = $this->getManualFilters($table)) {
