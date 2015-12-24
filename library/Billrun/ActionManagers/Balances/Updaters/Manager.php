@@ -26,7 +26,7 @@ class Billrun_ActionManagers_Balances_Updaters_Manager extends Billrun_ActionMan
 	 * @return boolean true if upsert record is needed
 	 */
 	public static function isUpsertRecordNeeded($filterName) {
-		$noUpsert = Billrun_Factory::config()->getConfigValue("balances.updaters.no_upsert");
+		$noUpsert = Billrun_Factory::config()->getConfigValue("balances.updaters.no_upsert", array());
 		if(in_array($filterName, $noUpsert)) {
 			return false;
 		}
