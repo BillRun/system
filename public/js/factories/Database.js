@@ -11,7 +11,7 @@ app.factory('Database', ['$http', function ($http) {
         id: params.entity._id,
         coll: params.coll,
         type: params.type,
-        duplicate_rates: false,
+        duplicate_rates: params.duplicate_rates,
         data: JSON.stringify(params.entity)
       };
       return $http.post(baseUrl + '/admin/save', ajaxOpts);
