@@ -17,7 +17,7 @@
 
 <center>
 	<h2>{{entity.name}}</h2>
-	<h3>Customer Plan</h3>
+	<h3>Customer Plan ({{action}})</h3>
 </center>
 <div>
 	<form class='form-inline' ng-submit='savePlan()'>
@@ -206,6 +206,10 @@
 			<json child='entity' default-collapsed='true' type='object'></json>
 		</div>
 		<div class="modal-footer">
+			<div class='pull-left' ng-if='action === "duplicate"'>
+				<input ng-model='duplicate_rates.on' id='duplicate_rate' type='checkbox'/>
+				<label for='duplicate_rate'>Duplicate Rate</label>
+			</div>
 			<a ng-click='setAdvancedMode(false)' class="clickable" ng-if='advancedMode'>Basic Mode</a>
 			<a ng-click='setAdvancedMode(true)' class="clickable" ng-if='!advancedMode'>Advanced Mode</a>
 			<button class="btn" ng-click='cancel()'>Cancel</button>
