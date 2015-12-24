@@ -76,11 +76,12 @@ class RealtimeeventAction extends ApiAction {
 			return false;
 		}
 
-		if ($this->usaget == 'call') {
-			$requestBody = file_get_contents("PHP://input");
-		} else {
-			$requestBody = $request['request'];
-		}
+		$requestBody = $request['request'];
+//		if ($this->usaget == 'call') {
+//			$requestBody = file_get_contents("PHP://input");
+//		} else {
+//			$requestBody = $request['request'];
+//		}
 
 		return Billrun_Util::parseDataToBillrunConvention($decoder->decode($requestBody));
 	}
@@ -189,8 +190,10 @@ class RealtimeeventAction extends ApiAction {
 			return false;
 		}
 
-		$response = array($encoder->encode($responder->getResponse(), "response"));
-		$this->getController()->setOutput($response);
+		$response = $encoder->encode($responder->getResponse(), "response");
+		$this->getController()->setOutput(array($response, 1));
+//		$this->getView()->outputMethod = 'print_r';
+
 		return $response;
 		// Sends response
 		//$responseUrl = Billrun_Factory::config()->getConfigValue('IN.respose.url.realtimeevent');
