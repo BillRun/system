@@ -486,6 +486,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		$balanceRaw = $this->balance->getRawData();
 		if ($row['charging_type'] === 'prepaid' && !(isset($row['prepaid_rebalance']) && $row['prepaid_rebalance'])) { // If it's a prepaid row, but not rebalance
 			$row['usagev'] = $volume = $this->getPrepaidGrantedVolume($row, $rate, $this->balance, $usage_type);
+			$row['balance_ref'] = $this->balance->createRef();
 		} else {
 			$volume = $row['usagev'];
 		}
@@ -529,9 +530,6 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				$update['$set']['balance.totals.' . $balance_totals_key . '.usagev'] = $old_usage + $volume;
 			} else {
 				$cost = $pricingData[$this->pricingField];
-				if (isset($row['prepaid_rebalance']) && $row['prepaid_rebalance']) {
-					$cost *= -1;
-				}
 				if (!is_null($this->balance->get('balance.totals.' . $balance_totals_key . '.cost'))) {
 					$update['$inc']['balance.totals.' . $balance_totals_key . '.cost'] = $cost;
 				} else {
@@ -553,9 +551,6 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 					$update['$set']['balance.totals.' . $balance_totals_key . '.usagev'] = $old_usage + $volume;
 				} else {
 					$cost = $pricingData[$this->pricingField];
-					if (isset($row['prepaid_rebalance']) && $row['prepaid_rebalance']) {
-						$cost *= -1;
-					}
 					if (!is_null($this->balance->get('balance.totals.' . $balance_totals_key . '.cost'))) {
 						$update['$inc']['balance.totals.' . $balance_totals_key . '.cost'] = $cost;
 					} else {
