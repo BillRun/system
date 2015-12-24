@@ -76,12 +76,11 @@ class RealtimeeventAction extends ApiAction {
 			return false;
 		}
 
-		$requestBody = $request['request'];
-//		if ($this->usaget == 'call') {
-//			$requestBody = file_get_contents("PHP://input");
-//		} else {
-//			$requestBody = $request['request'];
-//		}
+		if (!empty($request['request'])) {
+			$requestBody = $request['request'];
+		} else {
+			$requestBody = file_get_contents("PHP://input");
+		}
 
 		return Billrun_Util::parseDataToBillrunConvention($decoder->decode($requestBody));
 	}
