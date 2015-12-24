@@ -71,6 +71,10 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
       $scope.advancedMode = mode;
     };
 
+    $scope.capitalize = function (str) {
+      return _.capitalize(str);
+    };
+
     $scope.init = function () {
       var params = {
         coll: $routeParams.collection,
