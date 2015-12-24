@@ -205,7 +205,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 		$currentPlan = $planCollection->query($planQuery)->cursor()->current();
 		
 		// TODO: Use the subscriber class.
-		if(!$currentPlan){
+		if($currentPlan->isEmpty()){
 			$error='Invalid plan for the subscriber! [' . print_r($planName, true) . ']';
 			$this->reportError($error, Zend_Log::ALERT);
 			return false;
@@ -257,7 +257,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 	 */
 	protected function validateSubscriberUpdateValues($jsonUpdateData) {
 		$subscriberFields = Billrun_Factory::config()->getConfigValue('subscribers.query_fields');
-		$subscriberValidationQuery = array('$or');
+		$subscriberValidationQuery = array();
 		foreach ($subscriberFields as $subField) {
 			if(isset($jsonUpdateData[$subField])) {
 				$subscriberValidationQuery['$or'][] = 
