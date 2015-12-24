@@ -171,16 +171,16 @@ app.controller('RatesController', ['$scope', '$http', '$window', '$routeParams',
     };
 
     $scope.cancel = function () {
-      $window.location = baseUrl + '/admin/rates';
+      $window.location = baseUrl + '/admin/' + $routeParams.collection;
     };
     $scope.saveRate = function () {
       var params = {
         entity: $scope.entity,
-        coll: 'rates',
+        coll: $routeParams.collection,
         type: $routeParams.action
       };
       Database.saveEntity(params).then(function (res) {
-        $window.location = baseUrl + '/admin/rates';
+        $window.location = baseUrl + '/admin/' + $routeParams.collection;
       }, function (err) {
         alert("Danger! Danger! Beedeebeedeebeedee!");
       });
@@ -193,7 +193,7 @@ app.controller('RatesController', ['$scope', '$http', '$window', '$routeParams',
     $scope.init = function () {
       $scope.advancedMode = false;
       var params = {
-        coll: 'rates',
+        coll: $routeParams.collection,
         id: $routeParams.id
       };
       Database.getEntity(params).then(function (res) {
