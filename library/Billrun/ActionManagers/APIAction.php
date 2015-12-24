@@ -9,7 +9,7 @@
 /**
  * Helper class to manage the API actions.
  *
- * @author tom
+ * @author Tom Feigin
  */
 abstract class Billrun_ActionManagers_APIAction {
 	

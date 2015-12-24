@@ -9,7 +9,7 @@
 /**
  * Helper class to manage the updaters.
  *
- * @author tom
+ * @author Tom Feigin
  */
 class Billrun_ActionManagers_Balances_Updaters_Manager extends Billrun_ActionManagers_Manager {
 	/**

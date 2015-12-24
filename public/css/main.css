@@ -20,7 +20,9 @@ div#listSize {
 	display: inline-table;
 	vertical-align: bottom;
 }
-
+.row {
+	margin-bottom: 5px;
+}
 .json-editor .value {
 	width:400px;
 }
@@ -154,7 +156,7 @@ tr.progress td, tr.progress th {
     50% { opacity: 0.0; }
     100% { opacity: 1.0; }
 }
-.toolbar-buttons, .control-group1 {
+.toolbar-buttons, .control-group1, .control-group2, .control-group3 {
 	margin:10px auto;
 }
 #manual_filters .controls-row {
