@@ -139,8 +139,9 @@ class RatesModel extends TabledateModel {
 
 	public function getFilterFields() {
 		$planModel = new PlansModel();
-		$names = $planModel->getData(array('type' => 'charging'));
+		$names = $planModel->getData(array('type' => 'customer'));
 		$planNames = array();
+		$planNames['BASE'] = 'BASE';
 		foreach($names as $name) {
 			$planNames[$name['name']] = $name['name'];
 		}
@@ -176,9 +177,10 @@ class RatesModel extends TabledateModel {
 				'db_keys' => array('rates.call', 'rates.sms'),
 				'input_type' => 'multiselect',
 				'comparison' => '$exists',
+				'singleselect' => true,
 				'display' => 'Plan',
 				'values' => $planNames,
-				'default' => array(),
+				'default' => array(array('BASE' => 'BASE')),
 			),
 			'showprefix' => array(
 				'key' => 'showprefix',
@@ -248,6 +250,11 @@ class RatesModel extends TabledateModel {
 	 * @return Mongo Cursor
 	 */
 	public function getData($filter_query = array(), $fields = false) {
+		if (isset($filter_query['$and'][0]['$and'][0]['$or'][0])) {
+			$filteredPlan = end(explode('.', key($filter_query['$and'][0]['$and'][0]['$or'][0])));
+		} else {
+			$filteredPlan = "BASE";
+		}
 		$cursor = $this->getRates($filter_query);
 		$this->_count = $cursor->count();
 		$resource = $cursor->sort($this->sort)->skip($this->offset())->limit($this->size);
@@ -276,20 +283,24 @@ class RatesModel extends TabledateModel {
 					if (is_array($rate)) {
 						$added_columns = array(
 							't' => $key,
-							'tprice' => $rate['rate'][0]['price'],
-							'taccess' => isset($rate['access']) ? $rate['access'] : 0,
+							'tprice' => $rate[$filteredPlan][0]['rate'][0]['price'],
+							'taccess' => isset($rate[$filteredPlan][0]['access']) ? $rate[$filteredPlan][0]['access'] : 0,
 						);
 						if (strpos($key, 'call') !== FALSE) {
-							$added_columns['tduration'] = Billrun_Util::durationFormat($rate['rate'][0]['interval']);
+							$added_columns['tduration'] = Billrun_Util::durationFormat($rate[$filteredPlan][0]['rate'][0]['interval']);
 						} else if ($key == 'data') {
-							$added_columns['tduration'] = Billrun_Util::byteFormat($rate['rate'][0]['interval'], '', 0, true);
+							$added_columns['tduration'] = Billrun_Util::byteFormat($rate[$filteredPlan][0]['rate'][0]['interval'], '', 0, true);
 						} else {
-							$added_columns['tduration'] = $rate['rate'][0]['interval'];
+							$added_columns['tduration'] = $rate[$filteredPlan][0]['rate'][0]['interval'];
 						}
 						$ret[] = new Mongodloid_Entity(array_merge($item->getRawData(), $added_columns, $rate));
 					}
 				}
-			} else if ($this->showprefix && (isset($filter_query['$and'][0]['key']) || isset($filter_query['$and'][0]['params.prefix'])) && !empty($item->get('params.prefix'))) {
+			} 
+			/*else if ($this->showprefix && (isset($filter_query['$and'][0]['key']) ||
+				isset($filter_query['$and'][0]['params.prefix']))
+				&& !empty($item->get('params.prefix'))) { */
+			else if ($this->showprefix && !empty($item->get('params.prefix'))) {
 				foreach ($item->get('params.prefix') as $prefix) {
 					$item_raw_data = $item->getRawData();
 					unset($item_raw_data['params']['prefix']); // to prevent high memory usage

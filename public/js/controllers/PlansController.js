@@ -38,11 +38,17 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
     };
 
     $scope.cancel = function () {
-      $window.location = baseUrl + '/admin/plans';
+      $window.location = baseUrl + '/admin/' + $routeParams.collection;
     };
     $scope.savePlan = function () {
-      Database.saveEntity($scope.entity, 'plans').then(function (res) {
-        $window.location = baseUrl + '/admin/plans';
+      var params = {
+        entity: $scope.entity,
+        coll: $routeParams.collection,
+        type: $routeParams.action,
+        duplicate_rates: $scope.duplicate_rates.on
+      };
+      Database.saveEntity(params).then(function () {
+        $window.location = baseUrl + '/admin/' + $routeParams.collection;
       }, function (err) {
         alert("Danger! Danger! Beedeebeedeebeedee!");
       });
@@ -65,15 +71,20 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
       $scope.advancedMode = mode;
     };
 
+    $scope.capitalize = function (str) {
+      return _.capitalize(str);
+    };
+
     $scope.init = function () {
       var params = {
-        coll: 'plans',
+        coll: $routeParams.collection,
         id: $routeParams.id
       };
       Database.getEntity(params).then(function (res) {
         $scope.entity = res.data;
       });
-      $scope.type = {duplicate: false};
+      $scope.action = $routeParams.action.replace(/_/g, ' ');
+      $scope.duplicate_rates = {on: ($scope.action === 'duplicate')};
       $scope.includeTypes = ['call', 'data', 'sms', 'mms'];
       $scope.groupParams = ["data", "call", "incoming_call", "incoming_sms", "sms"];
       $scope.newInclude = {type: undefined, value: undefined};

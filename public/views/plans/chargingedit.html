@@ -13,15 +13,38 @@
 	.clickable {
 		cursor: pointer;
 	}
+	fieldset {
+		padding: .35em .625em .75em;
+		margin: 0 2px;
+		border: 1px solid black;
+	}
+	legend {
+		width:inherit; /* Or auto */
+		padding:0 10px; /* To give a bit of padding on the left and right */
+		border-bottom:none;
+	}
+	.cost {
+		margin-right: -1px;
+		margin-left: 0px
+	}
 </style>
 
 <center>
-	<h2>{{entity.name}}</h2>
-	<h3>Charging Plan</h3>
+	<h2 ng-if='action !== "duplicate"'>{{entity.name}}</h2>
+	<h3>{{capitalize(action)}} Charging Plan</h3>
 </center>
 <div>
 	<form class='form-inline' ng-submit='savePlan()'>
 		<div ng-if='!advancedMode'>
+			<div class='row' ng-if='action === "duplicate"'>
+				<div class='col-md-2'>
+					Name
+				</div>
+				<div class='col-md-6'>
+					<input type='text' ng-model='entity.name' class='form-control'/>
+				</div>
+			</div>
+
 			<div class='row'>
 				<div class='col-md-2'>
 					Description
@@ -40,7 +63,7 @@
 			</div>
 			<div class='row'>
 				<div class="col-md-2">
-					PP Includes Name:
+					PP Includes Name
 				</div>
 				<div class="col-md-6">
 					<input ng-model='entity.pp_includes_name' type='text' class='form-control' />
@@ -48,7 +71,7 @@
 			</div>
 			<div class='row'>
 				<div class="col-md-2">
-					PP Includes External ID:
+					PP Includes External ID
 				</div>
 				<div class="col-md-6">
 					<input ng-model='entity.pp_includes_external_id' type='text' class='form-control' />
@@ -76,7 +99,7 @@
 
 			<hr/>
 			<h3>Include</h3>
-			<div class="row">
+			<div class="row" ng-if='!isObject(entity.include.cost)'>
 				<div class="col-md-2">
 					Cost:
 				</div>
@@ -84,61 +107,91 @@
 					<input ng-model="entity.include.cost" type="text" class="form-control" />
 				</div>
 			</div>
-			<div ng-repeat="(includeTypeName, includeType) in entity.include">
+			<div class="row cost" ng-repeat='cost in entity.include.cost track by $index' ng-if='isObject(entity.include.cost)'>
+				<fieldset>
+					<legend>Cost:</legend>
+					<div class='row'>
+						<div class='col-md-2'>
+							Value
+						</div>
+						<div class="col-md-6">
+							<input ng-model='cost.value' type='number' class='form-control' />
+						</div>
+					</div>
+					<div class='row'>
+						<div class='col-md-2'>
+							Name
+						</div>
+						<div class="col-md-6">
+							<input ng-model='cost.pp_includes_name' type='text' class='form-control' />
+						</div>
+					</div>
+					<div class='row'>
+						<div class='col-md-2'>
+							External Id
+						</div>
+						<div class="col-md-6">
+							<input ng-model='cost.pp_includes_external_id' type='text' class='form-control' />
+						</div>
+					</div>
+				</fieldset>
+			</div>			
+			<div ng-repeat="(includeTypeName, includeType) in entity.include" ng-if='includeTypeName !== "cost"'>
 				<div ng-if="isObject(includeType)">
-					<h4>{{includeTypeName}}</h4>
-					<div class="row">
-						<div class="col-md-2">
-							Cost:
-						</div>
-						<div class="col-md-6">
-							<input ng-model="includeType.cost" type="text" class="form-control" />
-						</div>
-					</div>
-					<div class="row">
-						<div class="col-md-2">
-							Usagev:
-						</div>
-						<div class="col-md-6">
-							<input ng-model='includeType.usagev' type='number' class='form-control' />
-						</div>
-					</div>
-					<div class='row'>
-						<div class="col-md-2">
-							Name:
-						</div>
-						<div class="col-md-6">
-							<input ng-model='includeType.pp_includes_name' type='text' class='form-control' />
-						</div>
-					</div>
-					<div class='row'>
-						<div class="col-md-2">
-							External ID:
-						</div>
-						<div class="col-md-6">
-							<input ng-model='includeType.pp_includes_external_id' type='text' class='form-control' />
-						</div>
-					</div>
-					<h5>Period</h5>
-					<ul>
-						<div class='row'>
-							<div class='col-md-2'>
-								Unit:
+					<fieldset>
+						<legend>{{includeTypeName}}</legend>
+						<div class="row">
+							<div class="col-md-2">
+								Cost:
 							</div>
-							<div class='col-md-6'>
-								<input ng-model='includeType.period.unit' class='form-control' type="text" />
+							<div class="col-md-6">
+								<input ng-model="includeType.cost" type="text" class="form-control" />
+							</div>
+						</div>
+						<div class="row">
+							<div class="col-md-2">
+								Usagev:
+							</div>
+							<div class="col-md-6">
+								<input ng-model='includeType.usagev' type='number' class='form-control' />
 							</div>
 						</div>
 						<div class='row'>
-							<div class='col-md-2'>
-								Duration:
+							<div class="col-md-2">
+								Name:
 							</div>
-							<div class='col-md-6'>
-								<input ng-model='includeType.period.duration' type='number' class='form-control' />
+							<div class="col-md-6">
+								<input ng-model='includeType.pp_includes_name' type='text' class='form-control' />
 							</div>
 						</div>
-					</ul>
-					<hr ng-if="!$last" />
+						<div class='row'>
+							<div class="col-md-2">
+								External ID:
+							</div>
+							<div class="col-md-6">
+								<input ng-model='includeType.pp_includes_external_id' type='text' class='form-control' />
+							</div>
+						</div>
+						<h5>Period</h5>
+						<ul>
+							<div class='row'>
+								<div class='col-md-2'>
+									Unit:
+								</div>
+								<div class='col-md-6'>
+									<input ng-model='includeType.period.unit' class='form-control' type="text" />
+								</div>
+							</div>
+							<div class='row'>
+								<div class='col-md-2'>
+									Duration:
+								</div>
+								<div class='col-md-6'>
+									<input ng-model='includeType.period.duration' type='number' class='form-control' />
+								</div>
+							</div>
+						</ul>
+					</fieldset>
 				</div>
 			</div>
 		</div>
@@ -146,12 +199,12 @@
 			<json child='entity' default-collapsed='true' type='object'></json>
 		</div>
 		<div class="modal-footer">
+			<div class='pull-left' ng-if='action === "duplicate"'>
+				<input ng-model='duplicate_rates.on' id='duplicate_rate' type='checkbox'/>
+				<label for='duplicate_rate'>Duplicate Rate</label>
+			</div>
 			<a ng-click='setAdvancedMode(false)' class="clickable" ng-if='advancedMode'>Basic Mode</a>
 			<a ng-click='setAdvancedMode(true)' class="clickable" ng-if='!advancedMode'>Advanced Mode</a>
-			<div class="edit_checkboxes">
-				<input ng-model='duplicateRates' class="span1" id="duplicate_rates" type="checkbox" value="on" checked>
-				<label class="span1" for="duplicate_rates">Duplicate rates</label>
-			</div>
 			<button class="btn" ng-click='cancel()'>Cancel</button>
 			<!-- <?php if (AdminController::authorized('write')) : ?> -->
 			<button type='submit' class="btn btn-primary">Save changes</button>

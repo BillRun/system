@@ -7,7 +7,7 @@ foreach ($this->data as $item) {
 	else:
 		print '<tr>';
 	endif;
-	$href = ($this->active === 'plans' || $this->active === 'rates' || $this->active === 'balances') ? '/admin#/' . $this->active . '/edit/' . $item['_id'] : '#popupModal';
+	$href = ($this->active === 'plans' || $this->active === 'rates' || $this->active === 'balances') ? '/admin#/' . $this->active . '/update/' . $item['_id'] : '#popupModal';
 	$onclick = ($this->active === 'plans' || $this->active === 'rates' || $this->active === 'balances') ? '' : 'update_current(this);';
 	print '<td data-title=\'#\'>'
 		. '<label class="checkbox">'

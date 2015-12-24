@@ -6,13 +6,13 @@ app.factory('Database', ['$http', function ($http) {
       return $http.get(baseUrl + '/admin/getEntity', {params: params});
     }
 
-    function saveEntity(entity, coll) {
+    function saveEntity(params) {
       var ajaxOpts = {
-        id: entity._id,
-        coll: coll,
-        type: 'update',
-        duplicate_rates: false,
-        data: JSON.stringify(entity)
+        id: params.entity._id,
+        coll: params.coll,
+        type: params.type,
+        duplicate_rates: params.duplicate_rates,
+        data: JSON.stringify(params.entity)
       };
       return $http.post(baseUrl + '/admin/save', ajaxOpts);
     }
