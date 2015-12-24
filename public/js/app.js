@@ -48,7 +48,7 @@ app.config(function ($httpProvider, $routeProvider, $locationProvider) {
     return angular.isObject(data) && String(data) !== '[object File]' ? param(data) : data;
   }];
 
-  $routeProvider.when('/:collection/edit/:id', {
+  $routeProvider.when('/:collection/:action/:id', {
 	  templateUrl: function (urlattr) {
 		  return 'views/' + urlattr.collection + '/edit.html';
 	  }

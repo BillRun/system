@@ -41,7 +41,12 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
       $window.location = baseUrl + '/admin/plans';
     };
     $scope.savePlan = function () {
-      Database.saveEntity($scope.entity, 'plans').then(function (res) {
+      var params = {
+        entity: $scope.entity,
+        coll: 'plans',
+        type: $routeParams.action
+      };
+      Database.saveEntity(params).then(function () {
         $window.location = baseUrl + '/admin/plans';
       }, function (err) {
         alert("Danger! Danger! Beedeebeedeebeedee!");

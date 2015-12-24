@@ -174,7 +174,12 @@ app.controller('RatesController', ['$scope', '$http', '$window', '$routeParams',
       $window.location = baseUrl + '/admin/rates';
     };
     $scope.saveRate = function () {
-      Database.saveEntity($scope.entity, 'rates').then(function (res) {
+      var params = {
+        entity: $scope.entity,
+        coll: 'rates',
+        type: $routeParams.action
+      };
+      Database.saveEntity(params).then(function (res) {
         $window.location = baseUrl + '/admin/rates';
       }, function (err) {
         alert("Danger! Danger! Beedeebeedeebeedee!");

@@ -139,7 +139,7 @@ class RatesModel extends TabledateModel {
 
 	public function getFilterFields() {
 		$planModel = new PlansModel();
-		$names = $planModel->getData(array('type' => 'charging'));
+		$names = $planModel->getData(array('type' => 'customer'));
 		$planNames = array();
 		foreach($names as $name) {
 			$planNames[$name['name']] = $name['name'];
@@ -289,7 +289,11 @@ class RatesModel extends TabledateModel {
 						$ret[] = new Mongodloid_Entity(array_merge($item->getRawData(), $added_columns, $rate));
 					}
 				}
-			} else if ($this->showprefix && (isset($filter_query['$and'][0]['key']) || isset($filter_query['$and'][0]['params.prefix'])) && !empty($item->get('params.prefix'))) {
+			} 
+			/*else if ($this->showprefix && (isset($filter_query['$and'][0]['key']) ||
+				isset($filter_query['$and'][0]['params.prefix']))
+				&& !empty($item->get('params.prefix'))) { */
+			else if ($this->showprefix && !empty($item->get('params.prefix'))) {
 				foreach ($item->get('params.prefix') as $prefix) {
 					$item_raw_data = $item->getRawData();
 					unset($item_raw_data['params']['prefix']); // to prevent high memory usage
