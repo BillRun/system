@@ -38,11 +38,16 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
     };
 
     $scope.cancel = function () {
-      $window.location = baseUrl + '/admin/plans';
+      $window.location = baseUrl + '/admin/' + $routeParams.collection;
     };
     $scope.savePlan = function () {
-      Database.saveEntity($scope.entity, 'plans').then(function (res) {
-        $window.location = baseUrl + '/admin/plans';
+      var params = {
+        entity: $scope.entity,
+        coll: $routeParams.collection,
+        type: $routeParams.action
+      };
+      Database.saveEntity(params).then(function () {
+        $window.location = baseUrl + '/admin/' + $routeParams.collection;
       }, function (err) {
         alert("Danger! Danger! Beedeebeedeebeedee!");
       });
@@ -67,7 +72,7 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
 
     $scope.init = function () {
       var params = {
-        coll: 'plans',
+        coll: $routeParams.collection,
         id: $routeParams.id
       };
       Database.getEntity(params).then(function (res) {
