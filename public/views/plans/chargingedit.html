@@ -61,42 +61,6 @@
 					<input ng-model='entity.service_provider' type='text' class='form-control' />
 				</div>
 			</div>
-			<div class='row'>
-				<div class="col-md-2">
-					PP Includes Name
-				</div>
-				<div class="col-md-6">
-					<input ng-model='entity.pp_includes_name' type='text' class='form-control' />
-				</div>
-			</div>
-			<div class='row'>
-				<div class="col-md-2">
-					PP Includes External ID
-				</div>
-				<div class="col-md-6">
-					<input ng-model='entity.pp_includes_external_id' type='text' class='form-control' />
-				</div>
-			</div>
-			<h5>Period</h5>
-			<ul>
-				<div class='row'>
-					<div class='col-md-2'>
-						Unit
-					</div>
-					<div class='col-md-6'>
-						<input type="text" ng-model='entity.period.unit' class='form-control' />
-					</div>
-				</div>
-				<div class='row'>
-					<div class='col-md-2'>
-						Duration
-					</div>
-					<div class='col-md-6'>
-						<input ng-model='entity.period.duration' type='number' class='form-control' />
-					</div>
-				</div>
-			</ul>
-
 			<hr/>
 			<h3>Include</h3>
 			<div class="row" ng-if='!isObject(entity.include.cost) && entity.include.cost'>
