@@ -9,7 +9,7 @@
 /**
  * This is a parser to be used by the subscribers action.
  *
- * @author tom
+ * @author Tom Feigin
  */
 class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_Subscribers_Action{
 	
@@ -68,7 +68,7 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 	protected function validatePlan() {
 		$subscriberQuery = $this->getSubscriberQuery();
 		
-		$planName = $subscriberQuery['plan'];
+		$planName = $this->query['plan'];
 		$planQuery = Billrun_Util::getDateBoundQuery();
 		$planQuery['type'] = 'customer';
 		$planQuery['name'] = $planName;
@@ -76,7 +76,7 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 		$currentPlan = $planCollection->query($planQuery)->cursor()->current();
 		
 		// TODO: Use the subscriber class.
-		if(!$currentPlan){
+		if(!$currentPlan || $currentPlan->isEmpty()){
 			$error='Invalid plan for the subscriber! [' . print_r($planName, true) . ']';
 			$this->reportError($error, Zend_Log::ALERT);
 			return false;

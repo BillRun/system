@@ -9,7 +9,7 @@
 /**
  * Holds the logic for updating balances using the prepaid include.
  *
- * @author tom
+ * @author Tom Feigin
  */
 class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_ActionManagers_Balances_Updaters_Updater {
 
@@ -56,6 +56,10 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 			return false;
 		}
 
+		if (isset($prepaidRecord['external_id']) && 
+			in_array($prepaidRecord['external_id'], Billrun_Factory::config()->getConfigValue('protected_unlimited_pp_includes', array()))) {
+			$recordToSet['to'] = new MongoDate(strtotime(self::UNLIMITED_DATE));
+		}
 		// Get the subscriber.
 		$subscriber = $this->getSubscriber($subscriberId);
 

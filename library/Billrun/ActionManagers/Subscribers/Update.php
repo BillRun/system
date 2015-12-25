@@ -9,7 +9,7 @@
 /**
  * This is a parser to be used by the subscribers action.
  *
- * @author tom
+ * @author Tom Feigin
  */
 class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_Subscribers_Action{
 	// TODO: Create a generic update action class. This class shares some logic with the cards and balances update action. The setUpdateRecord function is shared.
@@ -57,10 +57,13 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 	 * Keeps history before the records are modified.
 	 * @param type $record - Record to be modified.
 	 */
-	protected function handleKeepHistory($record) {				
+	protected function handleKeepHistory($record, $track_time = null) {
+		if (is_null($track_time)) {
+			$track_time = time();
+		}
 		// Cloning the record.
 		$oldRecord = clone $record;
-		$oldRecord['to'] = new MongoDate();
+		$oldRecord['to'] = new MongoDate($track_time);
 		// This throws an exception if fails.
 		$this->collection->save($oldRecord);
 	}
@@ -102,28 +105,30 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 	 * @throws WriteConcernException
 	 */
 	protected function updateSubscriberRecord($record) {
-		foreach ($this->recordToSet as $key => $value) {
-			$record->collection($this->collection);
 
 			// Check if the user requested to keep history.
-			if($this->trackHistory) {
-				$record['sid'] = $this->recordToSet['sid'];
-				$record['msisdn'] = $this->recordToSet['msisdn'];
-				
-				// This throws an exception if fails.
-				$this->handleKeepHistory($record);
-			}
+		if($this->trackHistory) {
+			$record['sid'] = $this->recordToSet['sid'];
+//				$record['msisdn'] = $this->recordToSet['msisdn'];
+			$track_time = time();
+			// This throws an exception if fails.
+			$this->handleKeepHistory($record, $track_time);
+			unset($record['_id']);
+			$this->recordToSet['from'] = new MongoDate($track_time+1);
+		}
 
+		$record->collection($this->collection);
+		foreach ($this->recordToSet as $key => $value) {
 			if(!$record->set($key, $value)) {
 				$error = "Failed to set values to entity";
 				$this->reportError($error, Zend_Log::ALERT);
 				return false;
 			}
+		}
 
 			// This throws an exception if fails.
-			$this->collection->save($record);
-		}
-		
+		$this->collection->save($record);
+				
 		return true;
 	}
 	
@@ -340,10 +345,10 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 		}
 		
 		// If keep_history is set take it.
-		$this->trackHistory = $input->get('track_history');
+		$this->trackHistory = $input->get('track_history', $this->trackHistory);
 		
 		// If keep_balances is set take it.
-		$this->keepBalances = $input->get('keep_balances');
+		$this->keepBalances = $input->get('keep_balances', $this->keepBalances);
 		
 		return true;
 	}

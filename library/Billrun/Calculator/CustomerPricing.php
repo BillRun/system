@@ -486,6 +486,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		$balanceRaw = $this->balance->getRawData();
 		if ($row['charging_type'] === 'prepaid' && !(isset($row['prepaid_rebalance']) && $row['prepaid_rebalance'])) { // If it's a prepaid row, but not rebalance
 			$row['usagev'] = $volume = $this->getPrepaidGrantedVolume($row, $rate, $this->balance, $usage_type);
+			$row['balance_ref'] = $this->balance->createRef();
 		} else {
 			$volume = $row['usagev'];
 		}
@@ -527,10 +528,13 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		} else {
 			if (!is_null($this->balance->get('balance.totals.' . $balance_totals_key . '.usagev'))) {
 				$update['$set']['balance.totals.' . $balance_totals_key . '.usagev'] = $old_usage + $volume;
-			} else if (!is_null($this->balance->get('balance.totals.' . $balance_totals_key . '.cost'))) {
-				$update['$inc']['balance.totals.' . $balance_totals_key . '.cost'] = $pricingData[$this->pricingField];
 			} else {
-				$update['$inc']['balance.cost'] = $pricingData[$this->pricingField];
+				$cost = $pricingData[$this->pricingField];
+				if (!is_null($this->balance->get('balance.totals.' . $balance_totals_key . '.cost'))) {
+					$update['$inc']['balance.totals.' . $balance_totals_key . '.cost'] = $cost;
+				} else {
+					$update['$inc']['balance.cost'] = $cost;
+				}
 			}
 		}
 		// update balance group (if exists)
@@ -544,12 +548,15 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 					$update['$inc']['balance.groups.' . $group . '.' . $usage_type . '.count'] = 1;
 				} else {
 					if (!is_null($this->balance->get('balance.totals.' . $balance_totals_key . '.usagev'))) {
-						$update['$inc']['balance.groups.' . $group . '.' . $usage_type . '.usagev'] = $volume;
-					} else if (!is_null($this->balance->get('balance.totals.' . $balance_totals_key . '.cost'))) {
-						$update['$inc']['balance.totals.' . $balance_totals_key . '.cost'] = $pricingData[$this->pricingField];
+					$update['$set']['balance.totals.' . $balance_totals_key . '.usagev'] = $old_usage + $volume;
+				} else {
+					$cost = $pricingData[$this->pricingField];
+					if (!is_null($this->balance->get('balance.totals.' . $balance_totals_key . '.cost'))) {
+						$update['$inc']['balance.totals.' . $balance_totals_key . '.cost'] = $cost;
 					} else {
-						$update['$inc']['balance.cost'] = $pricingData[$this->pricingField];
+						$update['$inc']['balance.cost'] = $cost;
 					}
+				}
 				}
 				if (isset($this->balance->get('balance')['groups'][$group][$usage_type]['usagev'])) {
 					$pricingData['usagesb'] = floatval($this->balance->get('balance')['balance']['groups'][$group][$usage_type]['usagev']);

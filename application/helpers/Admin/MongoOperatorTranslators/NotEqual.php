@@ -9,7 +9,7 @@
 /**
  * class for mongo not equal operator translator.
  *
- * @author tom
+ * @author Tom Feigin
  */
 class Admin_MongoOperatorTranslators_NotEqual extends Admin_MongoOperatorTranslators_Translator {
 	

@@ -31,7 +31,7 @@ class Billrun_Decoder_Manager {
 			$decoderName = Billrun_Factory::config()->getConfigValue(strtolower($controllerName) . ".decode." . strtolower($actionName));
 		} 
 		if (is_null($decoderName)) {
-			Billrun_Factory::log('No decoder defined; set to array', Zend_Log::WARN);
+			Billrun_Factory::log('No decoder defined; set to json', Zend_Log::WARN);
 			$decoderName = 'json';
 		}
 

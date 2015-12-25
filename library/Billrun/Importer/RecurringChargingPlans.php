@@ -61,6 +61,7 @@ class Billrun_Importer_RecurringChargingPlans extends Billrun_Importer_Csv {
 		if ($rowData[$this->fieldsColumns['main_account']] > 0) {
 			$ret[] = array(
 				'value' => (-1) * doubleval($rowData[$this->fieldsColumns['main_account']]),
+				'period' => $this->getDuration($rowData, true),
 				'pp_includes_name' => Billrun_Factory::config()->getConfigValue('importer.RecurringChargingPlans.pp_includes_name.main_account', NULL),
 				'pp_includes_external_id' => Billrun_Factory::config()->getConfigValue('importer.RecurringChargingPlans.pp_includes_external_id.main_account', NULL)
 			);
@@ -69,6 +70,7 @@ class Billrun_Importer_RecurringChargingPlans extends Billrun_Importer_Csv {
 		if ($rowData[$this->fieldsColumns['bonus_account']] > 0) {
 			$ret[] = array(
 				'value' => (-1) * doubleval($rowData[$this->fieldsColumns['bonus_account']]),
+				'period' => $this->getDuration($rowData),
 				'pp_includes_name' => Billrun_Factory::config()->getConfigValue('importer.RecurringChargingPlans.pp_includes_name.bonus_account', NULL),
 				'pp_includes_external_id' => Billrun_Factory::config()->getConfigValue('importer.RecurringChargingPlans.pp_includes_external_id.bonus_account', NULL)
 			);
@@ -82,9 +84,10 @@ class Billrun_Importer_RecurringChargingPlans extends Billrun_Importer_Csv {
 //			);
 //		}
 
-		if (is_array($ret) && count($ret) === 1) {
-			return $ret[0]['value'];
-		}
+//		// remove this because we will use only array of items
+//		if (is_array($ret) && count($ret) === 1) {
+//			return $ret[0]['value'];
+//		}
 		return $ret;
 	}
 	
@@ -148,7 +151,12 @@ class Billrun_Importer_RecurringChargingPlans extends Billrun_Importer_Csv {
 			);
 	}
 	
-	protected function getDuration($rowData) {
+	protected function getDuration($rowData, $unlimited = false) {
+		if ($unlimited) {
+			return array(
+				'duration' => 'UNLIMITED',
+			);
+		}
 		return array(
 			'unit' => 'month',
 			'duration' => 1

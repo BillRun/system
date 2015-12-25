@@ -45,7 +45,27 @@ class ApiController extends Yaf_Controller_Abstract {
 	 * default method of api. Just print api works
 	 */
 	public function indexAction() {
-		$this->setOutput(array(array('status' => 1, 'message' => 'Billrun API works')));
+		try {
+			// DB heartbeat
+			Billrun_Factory::db()->linesCollection()
+				->query()->cursor()->limit(1)->current(); 
+			Billrun_Factory::db()->balancesCollection()
+				->query()->cursor()->limit(1)->current(); 
+			$msg = 'SUCCESS';
+			$status = 1;
+		} catch (Exception $ex) {
+			Billrun_Factory::log('API Heartbeat failed. Error ' . $ex->getCode() . ": " . $ex->getMessage(), Zend_Log::EMERG);
+			$msg = 'FAILED';
+			$status = 0;
+		}
+		
+		if ($this->getRequest()->get('simple')) {
+			$this->setOutput(array($msg, 1));
+			$this->getView()->outputMethod = 'print_r';
+		} else {
+			$this->setOutput(array(array('status' => $status, 'message' => 'Billrun API ' . ucfirst($msg))));
+		}
+
 	}
 
 	/**
