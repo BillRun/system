@@ -7,7 +7,7 @@ $(function () {
 		var items_checked = $('#data_table :checked');
 		checkItems = true;
 		if (items_checked.length) {
-      if (active_collection === 'plans')// || active_collection === 'rates' || active_collection === 'balances')
+      if (active_collection === 'plans' || active_collection === 'rates')
         window.location = '/admin#/' + active_collection + '/' + $(this).data('type') + '/' + items_checked.eq(0).val();
       else {
         $(this).data('remote', '/admin/edit?coll=' + active_collection + '&id=' + items_checked.eq(0).val() + '&type=' + $(this).data('type'));

@@ -190,6 +190,10 @@ app.controller('RatesController', ['$scope', '$http', '$window', '$routeParams',
       $scope.advancedMode = mode;
     };
 
+    $scope.capitalize = function (str) {
+      return _.capitalize(str);
+    };
+
     $scope.init = function () {
       $scope.advancedMode = false;
       var params = {
@@ -206,6 +210,7 @@ app.controller('RatesController', ['$scope', '$http', '$window', '$routeParams',
       Database.getAvailablePlans().then(function (res) {
         $scope.availablePlans = res.data;
       });
+      $scope.action = $routeParams.action;
       $scope.newOutCircuitGroup = {from: undefined, to: undefined};
       $scope.newPrefix = {value: undefined};
       $scope.newRecordType = {value: undefined};
