@@ -15,7 +15,7 @@
 
 <div class="container component" ng-controller='RatesController' ng-init="init()">
 	<center>
-		<h2>{{entity.key}} Rate</h2>
+		<h2>{{capitalize(action)}} {{entity.key}} Rate</h2>
 	</center>
 	<form class='form-inline' ng-submit='saveRate()'>
 		<div ng-if='!advancedMode'>
