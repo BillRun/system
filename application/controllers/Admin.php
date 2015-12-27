@@ -335,7 +335,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		} else if (in_array($type, array('duplicate', 'new'))) {
 			$saveStatus = $model->duplicate($params);
 		}
- 
+
 //		$ret = array(
 //			'status' => $saveStatus,
 //			'closeLine' => $entity->getRawData(),
@@ -873,7 +873,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	public function initModel($collection_name, $options = array()) {
 		$session = $this->getSession($collection_name);
 		$options['page'] = $this->getSetVar($session, "page", "page", 1);
-?getptions['size'] = $this->getSetVar($session, "listSize", "size", Billrun_Factory::config()->getConfigValue('admin_panel.lines.limit', 100));
+		$options['size'] = $this->getSetVar($session, "listSize", "size", Billrun_Factory::config()->getConfigValue('admin_panel.lines.limit', 100));
 		$options['extra_columns'] = $this->getSetVar($session, "extra_columns", "extra_columns", array());
 
 		if (is_null($this->model)) {
