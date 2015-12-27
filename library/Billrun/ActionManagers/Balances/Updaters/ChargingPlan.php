@@ -210,7 +210,8 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		// TODO: Should this be in conf?
 		return array(
 			'charging_plan_name' => 'name',
-			'charging_plan_external_id' => 'external_id'
+			'charging_plan_external_id' => 'external_id',
+			'service_provider' => 'service_provider',
 		);
 	}
 
