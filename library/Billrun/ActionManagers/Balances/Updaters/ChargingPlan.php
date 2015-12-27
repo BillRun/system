@@ -81,6 +81,13 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 			return false;
 		}
 
+		if (!isset($query['service_provider'])) {
+			$query['service_provider'] = $subscriber['service_provider'];
+		} else if ($query['service_provider'] != $subscriber['service_provider']) {
+			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 13;
+			$this->reportError($errorCode, Zend_Log::NOTICE);
+		}
+
 		$updateQuery = array(
 			'aid' => $subscriber['aid'],
 			'sid' => $subscriber['sid'],
