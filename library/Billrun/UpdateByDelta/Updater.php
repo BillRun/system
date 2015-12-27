@@ -13,9 +13,9 @@
  * 
  * @package  Billing
  * @since    4.0
- * @author Tom Feigins
+ * @author Tom Feigin
  */
-class Billrun_UpdateByDelta {
+class Billrun_UpdateByDelta_Updater {
 	
 	/**
 	 * Execute the main logic
