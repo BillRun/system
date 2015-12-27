@@ -1,34 +1,3 @@
-<style>
-	.glyphicon-minus-sign {
-		color: #bc2328;
-		cursor: pointer;
-	}
-	.glyphicon-plus-sign {
-		color: green;
-		cursor: pointer;
-	}
-	#plan-include-groups-div {
-		margin-top: 15px;
-	}
-	.clickable {
-		cursor: pointer;
-	}
-	fieldset {
-		padding: .35em .625em .75em;
-		margin: 0 2px;
-		border: 1px solid black;
-	}
-	legend {
-		width:inherit; /* Or auto */
-		padding:0 10px; /* To give a bit of padding on the left and right */
-		border-bottom:none;
-	}
-	.cost {
-		margin-right: -1px;
-		margin-left: 0px
-	}
-</style>
-
 <center>
 	<h2 ng-if='action !== "duplicate"'>{{entity.name}}</h2>
 	<h3>{{capitalize(action)}} Charging Plan</h3>
@@ -100,7 +69,7 @@
 					</div>
 					
 					<h5>Period</h5>
-					<ul>
+					<div class="col-indent">
 						<div class='row'>
 							<div class='col-md-2'>
 								Unit:
@@ -118,9 +87,7 @@
 								<input ng-model='cost.period.duration' type='number' class='form-control' ng-if='isNumber(entity.include.cost)'/>
 							</div>
 						</div>
-					</ul>
-
-					
+					</div>
 				</fieldset>
 			</div>			
 			<div ng-repeat="(includeTypeName, includeType) in entity.include" ng-if='includeTypeName !== "cost"'>
@@ -160,9 +127,9 @@
 							</div>
 						</div>
 						<h5>Period</h5>
-						<ul>
+						<div class="">
 							<div class='row'>
-								<div class='col-md-2'>
+								<div class='col-md-2 col-indent'>
 									Unit
 								</div>
 								<div class='col-md-6'>
@@ -170,14 +137,14 @@
 								</div>
 							</div>
 							<div class='row'>
-								<div class='col-md-2'>
+								<div class='col-md-2 col-indent'>
 									Duration
 								</div>
 								<div class='col-md-6'>
 									<input ng-model='includeType.period.duration' type='number' class='form-control' />
 								</div>
 							</div>
-						</ul>
+						</div>
 					</fieldset>
 				</div>
 			</div>
