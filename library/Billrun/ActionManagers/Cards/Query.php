@@ -50,7 +50,7 @@ class Billrun_ActionManagers_Cards_Query extends Billrun_ActionManagers_Cards_Ac
 		if (empty($query) || (!($jsonQueryData = json_decode($query, true)))) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 20;
 			$error = "There is no query tag or query tag is empty!";
-			$this->reportError($errorCode, Zend_Log::ALERT);
+			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
 
@@ -59,7 +59,7 @@ class Billrun_ActionManagers_Cards_Query extends Billrun_ActionManagers_Cards_Ac
 		if (!empty($errLog) && count($errLog) == count($queryFields)) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 21;
 			$error = "Cannot query ! All the following fields are missing or empty:" . implode(', ', $errLog);
-			$this->reportError($errorCode, Zend_Log::ALERT);
+			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
 		
@@ -97,13 +97,13 @@ class Billrun_ActionManagers_Cards_Query extends Billrun_ActionManagers_Cards_Ac
 		} catch (\Exception $e) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 22;
 			$error = 'failed querying DB got error : ' . $e->getCode() . ' : ' . $e->getMessage();
-			$this->reportError($errorCode, Zend_Log::ALERT);
+			$this->reportError($errorCode, Zend_Log::NOTICE);
 			$returnData = array();
 		}
 
 		if(!$returnData) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 23;
-			$this->reportError($errorCode, Zend_Log::ALERT);
+			$this->reportError($errorCode, Zend_Log::NOTICE);
 		}
 		
 		$outputResult = array(

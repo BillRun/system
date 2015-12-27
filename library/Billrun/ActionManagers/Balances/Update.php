@@ -65,7 +65,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		$manager = new Billrun_ActionManagers_Balances_Updaters_Manager($updaterManagerInput);
 		if(!$manager) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 14;
-			$this->reportError($errorCode, Zend_Log::ERR);
+			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return null;
 		}
 		
@@ -161,7 +161,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		if(empty($update) || (!($jsonUpdateData = json_decode($update, true)))) {
 			$error = "Update action does not have an upsert field!";
 			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 15;
-			$this->reportError($errorCode, Zend_Log::ALERT);
+			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
 		
@@ -227,7 +227,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		if(empty($query) || (!($jsonQueryData = json_decode($query, true)))) {
 			$error = "Update action does not have a query field!";
 			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 16;
-			$this->reportError($errorCode, Zend_Log::ALERT);
+			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
 		
@@ -236,14 +236,14 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		if($this->query===null){
 			$error = "Balances Update: Received more than one filter field";
 			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 17;
-			$this->reportError($errorCode, Zend_Log::ERR);
+			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
 		// No filter found.
 		else if(empty($this->query)) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 18;
 			$error = "Balances Update: Did not receive a filter field!";
-			$this->reportError($errorCode, Zend_Log::ERR);
+			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
 		
@@ -262,7 +262,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		if(!$sid) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 19;
 			$error = "Update action did not receive a subscriber ID!";
-			$this->reportError($errorCode, Zend_Log::ALERT);
+			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
 		

@@ -69,7 +69,7 @@ class Billrun_ActionManagers_Cards_Update extends Billrun_ActionManagers_Cards_A
 		if (empty($query) || (!($jsonQueryData = json_decode($query, true)))) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 30;
 			$error = "There is no query tag or query tag is empty!";
-			$this->reportError($errorCode, Zend_Log::ALERT);
+			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
 
@@ -78,7 +78,7 @@ class Billrun_ActionManagers_Cards_Update extends Billrun_ActionManagers_Cards_A
 		if (!isset($jsonQueryData['batch_number']) && !isset($jsonQueryData['serial_number'])) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 31;
 			$error = "Cannot update ! All the following fields are missing or empty:" . implode(', ', $errLog);
-			$this->reportError($errorCode, Zend_Log::ALERT);
+			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
 		
@@ -111,7 +111,7 @@ class Billrun_ActionManagers_Cards_Update extends Billrun_ActionManagers_Cards_A
 		if (empty($update) || (!($jsonUpdateData = json_decode($update, true)))) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 32;
 			$error = "There is no update tag or update tag is empty!";
-			$this->reportError($errorCode, Zend_Log::ALERT);
+			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
 
@@ -124,7 +124,7 @@ class Billrun_ActionManagers_Cards_Update extends Billrun_ActionManagers_Cards_A
 		// service provider validity check
 		if(isset($this->update['service_provider']) && !$this->isServiceProvider($this->update['service_provider'])) {
 			$error = "Received unknown service provider: " . $this->update['service_provider'];
-			$this->reportError($error, Zend_Log::ALERT);
+			$this->reportError($error, Zend_Log::NOTICE);
 			return false;
 		}
 
@@ -149,8 +149,7 @@ class Billrun_ActionManagers_Cards_Update extends Billrun_ActionManagers_Cards_A
 			$exception = $e;
 			$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 33;
 			$error = 'failed storing in the DB got error : ' . $e->getCode() . ' : ' . $e->getMessage();
-			$this->reportError($errorCode, Zend_Log::ALERT);
-			Billrun_Factory::log('failed saving request :' . print_r($this->update, 1), Zend_Log::ALERT);
+			$this->reportError($errorCode, Zend_Log::NOTICE);
 		}
 
 		if(!$count) {
@@ -159,7 +158,7 @@ class Billrun_ActionManagers_Cards_Update extends Billrun_ActionManagers_Cards_A
 			} else {
 				$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 34;
 			}			
-			$this->reportError($errorCode, Zend_Log::ALERT);
+			$this->reportError($errorCode, Zend_Log::NOTICE);
 		}
 		
 		$outputResult = array(

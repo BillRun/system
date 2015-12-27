@@ -55,7 +55,7 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 		if($subscribers->count() > 0){
 			$error='Subscriber already exists! [' . print_r($subscriberQuery, true) . ']';
 			$errorCode =Billrun_Factory::config()->getConfigValue("subscriber_error_base");
-			$this->reportError($errorCode, Zend_Log::ALERT);
+			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return true;
 		}
 		
@@ -79,7 +79,7 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 		// TODO: Use the subscriber class.
 		if(!$currentPlan || $currentPlan->isEmpty()){
 			$error='Invalid plan for the subscriber! [' . print_r($planName, true) . ']';
-			$this->reportError($error, Zend_Log::ALERT);
+			$this->reportError($error, Zend_Log::NOTICE);
 			return false;
 		}		
 		
@@ -101,9 +101,7 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 			}	
 		} catch (\Exception $e) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 1;
-			$error = 'Failed storing in DB got error : ' . $e->getCode() . ' : ' . $e->getMessage();
-			$this->reportError($errorCode, Zend_Log::ALERT);
-			Billrun_Factory::log('failed saving request :' . print_r($this->query, 1), Zend_Log::ALERT);
+			$this->reportError($errorCode, Zend_Log::NOTICE);
 		}
 
 		$outputResult = 
@@ -137,7 +135,7 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 		if(empty($query) || (!($jsonData = json_decode($query, true)))) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 2;
 			$error = "Failed decoding JSON data";
-			$this->reportError($errorCode, Zend_Log::ALERT);
+			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
 		
@@ -147,7 +145,7 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 		if(!empty($invalidFields)) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 3;
 			$error="Subscribers create received invalid query values in fields: " . implode(',', $invalidFields);
-			$this->reportError($errorCode, Zend_Log::ALERT);
+			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
 		

@@ -127,7 +127,7 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 		$record = $collection->query($queryToUse)->cursor()->current();
 		if (!$record || $record->isEmpty()) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 11;
-			$this->reportError($errorCode, Zend_Log::ALERT);
+			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return null;
 		}
 
@@ -176,7 +176,7 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 		$results = $coll->query($subscriberQuery)->cursor()->limit(1)->current();
 		if ($results->isEmpty()) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 12;
-			$this->reportError($errorCode, Zend_Log::ALERT);
+			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
 		return $results->getRawData();
@@ -268,7 +268,7 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 		// Check that the service provider is trusted.
 		if(!$this->isServiceProvider($planServiceProvider)) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 20;
-			$this->reportError($errorCode, Zend_Log::ALERT);
+			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
 		
@@ -278,7 +278,7 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 		// Check if mismatching serivce providers.
 		if ($planServiceProvider != $subscriberServiceProvider) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 13;
-			$this->reportError($errorCode, Zend_Log::ALERT);
+			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
 

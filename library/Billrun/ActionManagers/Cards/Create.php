@@ -63,7 +63,7 @@ class Billrun_ActionManagers_Cards_Create extends Billrun_ActionManagers_Cards_A
 		if (empty($create) || (!($jsonCreateDataArray = json_decode($create, true)))) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base");
 			$error = "There is no create tag or create tag is empty!";
-			$this->reportError($errorCode, Zend_Log::ALERT);
+			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
 
@@ -77,7 +77,7 @@ class Billrun_ActionManagers_Cards_Create extends Billrun_ActionManagers_Cards_A
 			foreach ($createFields as $field) {
 				if (!isset($jsonCreateData[$field]) || empty($jsonCreateData[$field])) {
 					$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 1;
-					$this->reportError($errorCode, Zend_Log::ALERT, array($field));
+					$this->reportError($errorCode, Zend_Log::NOTICE, array($field));
 					return false;
 				}
 				$oneCard[$field] = $jsonCreateData[$field];
@@ -86,7 +86,7 @@ class Billrun_ActionManagers_Cards_Create extends Billrun_ActionManagers_Cards_A
 			// service provider validity check
 			if(!$this->isServiceProvider($oneCard['service_provider'])) {
 				$error = "Received unknown service provider: " . $oneCard['service_provider'];
-				$this->reportError($error, Zend_Log::ALERT);
+				$this->reportError($error, Zend_Log::NOTICE);
 				return false;
 			}
 
@@ -143,8 +143,8 @@ class Billrun_ActionManagers_Cards_Create extends Billrun_ActionManagers_Cards_A
 			$exception = $e;
 			$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 2;
 			$error = 'failed storing in the DB got error : ' . $e->getCode() . ' : ' . $e->getMessage();
-			$this->reportError($errorCode, Zend_Log::ALERT);
-			Billrun_Factory::log('failed saving request :' . print_r($this->cards, 1), Zend_Log::ALERT);
+			$this->reportError($errorCode, Zend_Log::NOTICE);
+			Billrun_Factory::log('failed saving request :' . print_r($this->cards, 1), Zend_Log::NOTICE);
 			$res = $this->removeCreated($bulkOptions);
 		}
 
