@@ -14,59 +14,173 @@
  * @package  Billing
  * @since    4.0
  * @author Tom Feigin
+ * 
+ * @todo Inherit from the error report class/interface to enable dynamic
+ * error reporting
  */
-class Billrun_UpdateByDelta_Updater {
+abstract class Billrun_UpdateByDelta_Updater {
+	
+	/**
+	 * Update the collection by an entity.
+	 * @param array $entity - Entity to update the mongo with.
+	 * @return true if successful.
+	 */
+	protected abstract function updateByEntity($entity);
+	
+	/**
+	 * Create a record in the collection.
+	 * @param array $entity - Entity to create in the mongo.
+	 * @return true if successful.
+	 */
+	protected abstract function createByEntity($entity);
+	
+	/**
+	 * Get the array of translate values of the update query field names and the corresponding
+	 * names found in the entity.
+	 * @return array of translate fields.
+	 */
+	protected abstract function getUpdateQueryTranslateFields();
+	
+	/**
+	 * Get the array of translate values of the query field names and the corresponding
+	 * names found in the entity.
+	 * @return array of translate fields.
+	 */
+	protected abstract function getQueryTranslateFields();
+	
+	/**
+	 * Get the collection for the API
+	 * @return Mongodloid_Collection the collection for the current updater.
+	 */
+	protected abstract function getCollection();
+
+	/**
+	 * Add all the values to the data base.
+	 * @param array $values - Array of values to add.
+	 * @return true if successful.
+	 */
+	protected function addValues($values) {
+		foreach ($values as $toAdd) {
+			$this->createByEntity($toAdd);
+		}
+	}
+
+	/**
+	 * Return an array of field names used as keys in order 
+	 * to compare the records properly
+	 */
+	protected abstract function getKeys();
+	
+	/**
+	 * Check if a field is mendatory for creating/updating an entity.
+	 * @param string $field - Field to check.
+	 * @return true if mendatory.
+	 */
+	protected abstract function isMendatoryField($field);
+	
+	/**
+	 * Get the mongo query by an entity.
+	 * @param array $entity - Entity to build the query by.
+	 * @param array $translateFields - Array of translate values to 
+	 * translate the entity by.
+	 * @return array query composed by the input entity.
+	 */
+	protected function translateEntityToQuery($entity, $translateFields) {
+		$query = array();
+		foreach ($translateFields as $field=>$translate) {
+			if($this->isMendatoryField($field) && !isset($entity[$translate])) {
+				// TODO: REPORT ERROR.
+				return false;
+			}
+			
+			$query[$field] = $entity[$translate];
+		}
+		
+		return $query;
+	}
+	
+	/**
+	 * Get the mongo query by an entity.
+	 * @param array $entity - Entity to build the query by.
+	 * @return array query composed by the input entity.
+	 */
+	protected function getQueryByEntity($entity) {
+		$queryTranslateFields = $this->getQueryTranslateFields(); 
+		return $this->translateEntityToQuery($entity, $queryTranslateFields);
+	}
+	
+	/**
+	 * Get the mongo update query by an entity.
+	 * @param array $entity - Entity to build the update query by.
+	 * @return array update query composed by the input entity.
+	 */
+	protected function getUpdateByEntity($entity) {
+		$queryTranslateFields = $this->getUpdateQueryTranslateFields(); 
+		return $this->translateEntityToQuery($entity, $queryTranslateFields);
+	}
 	
 	/**
 	 * Execute the main logic
 	 * @param array $query - Query to get data from the collection.
 	 * @param array $expectedReults - Array of json results to compare to 
 	 * the ones in the data base.
-	 * @param Mongodloid_Collection $collection
-	 * @param array $keys array of the field names used as keys in order 
-	 * to compare the records properly.
+	 * @return true if successful.
 	 * @todo validate the input params?
 	 */
-	public function execute($query, $expectedReults, $collection, $keys) {
-		$existingRecords = $this->getExistingRecords($query, $collection);
+	public function execute($query, $expectedReults) {
+		$existingRecords = $this->getExistingRecords($query);
 		
 		$toBeAdded = 
-			$this->handleDeltaArrays($expectedReults, $existingRecords, $collection, $keys);
+			$this->handleDeltaArrays($expectedReults, $existingRecords);
 		
 		// Add all the values.
-		foreach ($toBeAdded as $value) {
-			// TODO: Error handling?
-			$collection->insert($value);
+		return $this->addValues($toBeAdded);
+	}
+	
+	/**
+	 * Handle the delta updating of a single record.
+	 * @param array $expectedReults - Array of the expected results
+	 * @param array $existing - Existing record in the mongo.
+	 * @return a matched entity or false otherwise.
+	 */
+	protected function handleSingleRecord($expectedReults, $existing) {
+		$matched = false;
+		foreach ($expectedReults as $expected) {
+			// If the result is not 1 it means that we found the 
+			// record to update the existing by.
+			// TODO: Throws expection/returns error?
+			if($this->handleDelta($existing, $expected) !== 1) {
+				$matched = $expected;
+				break;
+			}
 		}
+
+		// If the record was not updated but we went through all the expected 
+		// results, it means that the record should be deleted.
+		if($matched === false) {
+			// Set the "to" date to now.
+			// TODO: Throws expection/returns error?
+			if(!$this->deleteEntity($existing)) {
+				Billrun_Factory::log("Failed to delete record: " . print_r($existing,1), Zend_Log::ERR);
+			}
+		}
+		
+		return $matched;
 	}
 	
 	/**
 	 * Handle the delta between the arrays.
+	 * @param array expectedResults - Array of the expected results.
 	 * @return array of records that are expected but not found.
 	 */
-	protected function handleDeltaArrays($expectedReults, $existingRecords, $collection, $keys) {
+	protected function handleDeltaArrays($expectedReults, $existingRecords) {
 		$expectedMatched = array();
 		
 		// Go through the existing records.
 		foreach ($existingRecords as $existing) {
-			$wasUpdated = false;
-			foreach ($expectedReults as $expected) {
-				// If the result is not 1 it means that we found the 
-				// record to update the existing by.
-				// TODO: Throws expection/returns error?
-				if($this->handleDelta($existing, $expected, $collection, $keys) !== 1) {
-					$expectedMatched[] = $expected;
-					$wasUpdated = true;
-					break;
-				}
-			}
-			
-			// If the record was not updated but we went through all the expected 
-			// results, it means that the record should be deleted.
-			if(!$wasUpdated) {
-				// Set the "to" date to now.
-				// TODO: Throws expection/returns error?
-				$collection->updateEntity($existing, array("to" => new MongoDate()));
+			$matched = $this->handleSingleRecord($expectedMatched, $existing);
+			if($matched !== false) {
+				$expectedMatched[] = $matched;
 			}
 		}
 		
@@ -74,14 +188,36 @@ class Billrun_UpdateByDelta_Updater {
 	}
 	
 	/**
+	 * Delete an entity that exist in the mongo but does not exist in the 
+	 * expected values.
+	 * @param Mongodloid_Entity $entity - Entity to delete
+	 * @return true if successful.
+	 */
+	protected function deleteEntity($entity) {
+		$deleteQuery = array("to" => new MongoDate());
+		return $this->getCollection()->updateEntity($entity, $deleteQuery);
+	}
+	
+	/**
+	 * Update a record in the mongo by a delta.
+	 * @param array $original - The original values.
+	 * @param array $delta - The delta values.
+	 */
+	protected function updateRecordByDiff($original, $delta) {
+		// TODO: Throws expection/returns error?
+		return $this->getCollection()->updateEntity($original, $delta);
+	}
+	
+	/**
 	 * Handle the delta between existing and expected records.
 	 * @param json $existing
 	 * @param json $expected
 	 * @param Mongodloid_Collection $collection
-	 * @param array $keys
 	 * @return int 1 if not matched, otherwise the result of the record's update.
+	 * @todo This is to be implemented by each API wrapper!!!
 	 */
-	protected function handleDelta($existing, $expected, $collection, $keys) {
+	protected function handleDelta($existing, $expected) {
+		$keys = $this->getKeys();
 		// Check if the record should exist.
 		foreach ($keys as $fieldKey) {
 			if($existing[$fieldKey] != $expected[$fieldKey]) {
@@ -90,21 +226,19 @@ class Billrun_UpdateByDelta_Updater {
 		}
 
 		// Update the record.
-		// TODO: Throws expection/returns error?
-		return $collection->updateEntity($existing, array_diff($expected, $existing));
+		return $this->updateRecordByDiff($existing, array_diff($expected, $existing));
 	}
 	
 	/**
 	 * Get the existing records in the mongo.
 	 * @param aray $query - Query to use for getting the existing elements.
-	 * @param MongoCollection - The collection to execute the query on.
 	 * @return array of Json objects.
 	 */
-	protected function getExistingRecords($query, $collection) {
+	protected function getExistingRecords($query) {
 		$existingRecords = array();
 
 		// Run the query on the collection.
-		$cursor = $collection->query($query)->cursor();
+		$cursor = $this->getCollection()->query($query)->cursor();
 		
 		foreach ($cursor as $record) {
 			$existingRecords[] = json_encode($record->getRawData());
