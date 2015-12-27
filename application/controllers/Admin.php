@@ -129,11 +129,18 @@ class AdminController extends Yaf_Controller_Abstract {
 			return false;
 		$coll = Billrun_Util::filter_var($this->getRequest()->get('coll'), FILTER_SANITIZE_STRING);
 		$response = new Yaf_Response_Http();
-
+/*
 		$session = @json_decode($this->getRequest()->get('session'));
-		if (!$session) {
+		if ($session) {
+			$s = $this->getSession();
+			foreach($session as $key => $val) {
+				$s->$key = $val;
+			}
+		} else {
 			$session = $this->getSession();
 		}
+ */
+		$session = $this->getSession();
 		$show_prefix = $this->getSetVar($session, 'showprefix', 'showprefix', 0);
 		$sort = $this->applySort($coll);
 		$options = array(
