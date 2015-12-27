@@ -49,7 +49,7 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		// TODO: This function is free similar to the one in ID, should refactor code to be more generic.
 		$chargingPlansCollection = Billrun_Factory::db()->plansCollection();
 		$chargingPlanRecord = $this->getRecord($query, $chargingPlansCollection, $this->getTranslateFields());
-		if (!$chargingPlanRecord) {
+		if (!$chargingPlanRecord || $chargingPlanRecord->isEmpty()) {
 			$error = "Failed to get plan record to update balance query: " . print_r($query, 1);
 			$this->reportError($error, Zend_Log::ERR);
 			return false;
