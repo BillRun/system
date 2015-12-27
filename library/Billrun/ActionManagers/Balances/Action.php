@@ -20,8 +20,9 @@ abstract class Billrun_ActionManagers_Balances_Action extends Billrun_ActionMana
 	 * Create an instance of the SubscibersAction type.
 	 */
 	public function __construct($params) {
-		parent::__construct($params);
 		$this->collection = Billrun_Factory::db()->balancesCollection();
+		Billrun_Factory::config()->addConfig(APPLICATION_PATH . "/conf/balances/errors.ini");
+		parent::__construct($params);
 	}
 	
 	/**

@@ -83,14 +83,19 @@ class Billrun_ActionManagers_SubscribersAutoRenew_Update extends Billrun_ActionM
 		} catch (\Exception $e) {
 			$success = false;
 			$error = 'failed storing in the DB got error : ' . $e->getCode() . ' : ' . $e->getMessage();
-			$this->reportError($error, Zend_Log::ALERT);
+			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 10;
+			$this->reportError($errorCode, Zend_Log::ALERT);
 			Billrun_Factory::log('failed saving request :' . print_r($this->recordToSet, 1), Zend_Log::ALERT);
 		}
 		
+		if(!$updatedDocument) {
+			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 11;
+			$this->reportError("No auto renew records found to update", $errorCode);
+		}
 		$outputResult = 
-			array('status'  => ($success) ? (1) : (0),
+			array('status'  => $this->errorCode,
 				  'desc'    => $this->error,
-				  'details' => 'Updated ' . $count . ' record(s)');
+				  'details' => ($updatedDocument) ? $updatedDocument : 'No results');
 		return $outputResult;
 	}
 	

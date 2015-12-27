@@ -22,8 +22,8 @@ class Billrun_ActionManagers_Balances_Updaters_Secret extends Billrun_ActionMana
 		if (isset($query['secret'])) {
 			$query['secret'] = hash('sha512',$query['secret']);
 		} else {
-			$error = "No secret input";
-			$this->reportError($error, Zend_Log::ALERT);
+			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 21;
+			$this->reportError($errorCode, Zend_Log::ALERT);
 			return false;
 		}
 		$dateQuery = Billrun_Util::getDateBoundQuery();
@@ -49,8 +49,8 @@ class Billrun_ActionManagers_Balances_Updaters_Secret extends Billrun_ActionMana
 		}
 		
 		if($cardRecord->isEmpty()) {
-			$error = "Invalid card received, might be cancelled";
-			$this->reportError($error, Zend_Log::NOTICE);
+			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 10;
+			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
 		
