@@ -21,6 +21,7 @@ abstract class Billrun_ActionManagers_Realtime_Responder_Data_Base extends Billr
 			$returnCodes = Billrun_Factory::config()->getConfigValue('prepaid.customer', array());
 			switch($this->row['granted_return_code']) {
 				case ($returnCodes['no_available_balances']):
+					return intval(Billrun_Factory::config()->getConfigValue("realtimeevent.data.returnCode.DIAMETER_CREDIT_LIMIT_REACHED", -1));
 				case ($returnCodes['no_rate']):
 					return intval(Billrun_Factory::config()->getConfigValue("realtimeevent.data.returnCode.DIAMETER_END_USER_SERVICE_DENIED", -1));
 				case ($returnCodes['no_subscriber']):

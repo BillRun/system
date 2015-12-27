@@ -112,8 +112,8 @@ abstract class Billrun_ActionManagers_Realtime_Responder_Base {
 		$realUsagev = $this->getRealUsagev();
 		$chargedUsagev = $this->getChargedUsagev($lineToRebalace);
 		if ($chargedUsagev !== null) {
-			if (($realUsagev - $chargedUsagev) <= 0) {
-				$this->handleRebalanceRequired(-$realUsagev, $lineToRebalace);
+			if (($realUsagev - $chargedUsagev) < 0) {
+				$this->handleRebalanceRequired($realUsagev-$chargedUsagev, $lineToRebalace);
 			}
 		}
 	}
@@ -127,14 +127,24 @@ abstract class Billrun_ActionManagers_Realtime_Responder_Base {
 	protected function handleRebalanceRequired($rebalanceUsagev, $lineToRebalance = null) {
 		
 		// Update subscribers balance
-		$rebalanceRow = new Mongodloid_Entity($this->row);
-		unset($rebalanceRow['_id']);
-		$rebalanceRow['prepaid_rebalance'] = true;
-		$rebalanceRow['usagev'] = $rebalanceUsagev;
-		$customerPricingCalc = Billrun_Calculator::getInstance(array('type' => 'customerPricing', 'autoload' => false));
-		$rate = $customerPricingCalc->getRowRate($rebalanceRow);
-		$customerPricingCalc->updateSubscriberBalance($rebalanceRow, $rebalanceRow['usaget'], $rate);
-		
+		$balanceRef = $lineToRebalance->get('balance_ref');
+		$balances_coll = Billrun_Factory::db()->balancesCollection();
+		$balance = $balances_coll->getRef($balanceRef);
+		$balance->collection($balances_coll);
+		$usaget = $lineToRebalance['usaget'];
+		if (!is_null($balance->get('balance.totals.' . $usaget . '.usagev'))) {
+			$balance['balance.totals.' . $usaget . '.usagev'] += $rebalanceUsagev;
+		} else {
+			$rate = Billrun_Factory::db()->ratesCollection()->getRef($lineToRebalance->get('arate', true));
+			$cost = Billrun_Calculator_CustomerPricing::getPriceByRate($rate, $usaget, $rebalanceUsagev);
+			if (!is_null($balance->get('balance.totals.' . $usaget . '.cost'))) {
+				$balance['balance.totals.' . $usaget . '.cost'] += $cost;
+			} else {
+				$balance['balance.cost'] += $cost;
+			}
+		}
+		$balance->save();
+					
 		// Update previous line
 		$lines_coll = Billrun_Factory::db()->linesCollection();
 		$updateQuery = $this->getUpdateLineUpdateQuery($rebalanceUsagev);

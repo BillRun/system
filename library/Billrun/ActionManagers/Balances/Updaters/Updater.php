@@ -9,7 +9,7 @@
 /**
  * Description of Updater
  *
- * @author tom
+ * @author Tom Feigin
  */
 abstract class Billrun_ActionManagers_Balances_Updaters_Updater{
 

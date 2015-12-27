@@ -7,7 +7,11 @@ $(function () {
 		var items_checked = $('#data_table :checked');
 		checkItems = true;
 		if (items_checked.length) {
-			$(this).data('remote', '/admin/edit?coll=' + active_collection + '&id=' + items_checked.eq(0).val() + '&type=' + $(this).data('type'));
+      if (active_collection === 'plans' || active_collection === 'rates')
+        window.location = '/admin#/' + active_collection + '/' + $(this).data('type') + '/' + items_checked.eq(0).val();
+      else {
+        $(this).data('remote', '/admin/edit?coll=' + active_collection + '&id=' + items_checked.eq(0).val() + '&type=' + $(this).data('type'));
+      }
 		}
 	});
 
@@ -357,8 +361,9 @@ function update_current(obj) {
 	var item_checked = $(obj).next("input[type=checkbox],input[type=hidden]");
 	checkItems = false;
 	if (item_checked.length) {
-    if (active_collection === 'plans' || active_collection === 'rates')
-      window.location = '/admin/medit?coll=' + active_collection + '&id=' + item_checked.eq(0).val() + '&type=' + $(obj).data('type');
+    if (active_collection === 'plans' || active_collection === 'rates' || active_collection === 'balances')
+      //window.location = '#/' + active_collection + '/edit/' + item_checked.eq(0).val();
+      return;
     else
       $(obj).data('remote', '/admin/edit?coll=' + active_collection + '&id=' + item_checked.eq(0).val() + '&type=' + $(obj).data('type'));
 	}

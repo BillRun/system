@@ -138,6 +138,13 @@ class RatesModel extends TabledateModel {
 	}
 
 	public function getFilterFields() {
+		$planModel = new PlansModel();
+		$names = $planModel->getData(array('type' => 'customer'));
+		$planNames = array();
+		$planNames['BASE'] = 'BASE';
+		foreach($names as $name) {
+			$planNames[$name['name']] = $name['name'];
+		}
 		$filter_fields = array(
 //			'usage' => array(
 //				'key' => 'rates.$',
@@ -164,6 +171,16 @@ class RatesModel extends TabledateModel {
 				'comparison' => 'contains',
 				'display' => 'Prefix',
 				'default' => '',
+			),
+			'plan' => array(
+				'key' => 'plan',
+				'db_keys' => array('rates.call', 'rates.sms'),
+				'input_type' => 'multiselect',
+				'comparison' => '$exists',
+				'singleselect' => true,
+				'display' => 'Plan',
+				'values' => $planNames,
+				'default' => array(array('BASE' => 'BASE')),
 			),
 			'showprefix' => array(
 				'key' => 'showprefix',
@@ -193,6 +210,11 @@ class RatesModel extends TabledateModel {
 					'width' => 2,
 				),
 			),
+			array(
+				'plan' => array(
+					'width' => 2,
+				)
+			)
 		);
 		$post_filter_field = array(
 			array(
@@ -204,12 +226,35 @@ class RatesModel extends TabledateModel {
 		return array_merge($filter_field_order, parent::getFilterFieldsOrder(), $post_filter_field);
 	}
 
+	public function applyFilter($filter_field, $value) {
+		if ($filter_field['comparison'] == '$exists') {
+			if (!is_null($value) && $value != $filter_field['default'] && is_array($value)) {
+				$ret = array('$and' => array());
+				foreach($value as $val) {
+					$or = array('$or' => array());
+					foreach($filter_field['db_keys'] as $key) {
+						$or['$or'][] = array("$key.$val" => array('$exists' => true));
+					}
+					$ret['$and'][] = $or;
+				}
+				return $ret;
+			}			
+		} else {
+			return parent::applyFilter($filter_field, $value);
+		}
+	}
+	
 	/**
 	 * Get the data resource
 	 * 
 	 * @return Mongo Cursor
 	 */
 	public function getData($filter_query = array(), $fields = false) {
+		if (isset($filter_query['$and'][0]['$and'][0]['$or'][0])) {
+			$filteredPlan = end(explode('.', key($filter_query['$and'][0]['$and'][0]['$or'][0])));
+		} else {
+			$filteredPlan = "BASE";
+		}
 		$cursor = $this->getRates($filter_query);
 		$this->_count = $cursor->count();
 		$resource = $cursor->sort($this->sort)->skip($this->offset())->limit($this->size);
@@ -238,20 +283,24 @@ class RatesModel extends TabledateModel {
 					if (is_array($rate)) {
 						$added_columns = array(
 							't' => $key,
-							'tprice' => $rate['rate'][0]['price'],
-							'taccess' => isset($rate['access']) ? $rate['access'] : 0,
+							'tprice' => $rate[$filteredPlan][0]['rate'][0]['price'],
+							'taccess' => isset($rate[$filteredPlan][0]['access']) ? $rate[$filteredPlan][0]['access'] : 0,
 						);
 						if (strpos($key, 'call') !== FALSE) {
-							$added_columns['tduration'] = Billrun_Util::durationFormat($rate['rate'][0]['interval']);
+							$added_columns['tduration'] = Billrun_Util::durationFormat($rate[$filteredPlan][0]['rate'][0]['interval']);
 						} else if ($key == 'data') {
-							$added_columns['tduration'] = Billrun_Util::byteFormat($rate['rate'][0]['interval'], '', 0, true);
+							$added_columns['tduration'] = Billrun_Util::byteFormat($rate[$filteredPlan][0]['rate'][0]['interval'], '', 0, true);
 						} else {
-							$added_columns['tduration'] = $rate['rate'][0]['interval'];
+							$added_columns['tduration'] = $rate[$filteredPlan][0]['rate'][0]['interval'];
 						}
 						$ret[] = new Mongodloid_Entity(array_merge($item->getRawData(), $added_columns, $rate));
 					}
 				}
-			} else if ($this->showprefix && (isset($filter_query['$and'][0]['key']) || isset($filter_query['$and'][0]['params.prefix'])) && !empty($item->get('params.prefix'))) {
+			} 
+			/*else if ($this->showprefix && (isset($filter_query['$and'][0]['key']) ||
+				isset($filter_query['$and'][0]['params.prefix']))
+				&& !empty($item->get('params.prefix'))) { */
+			else if ($this->showprefix && !empty($item->get('params.prefix'))) {
 				foreach ($item->get('params.prefix') as $prefix) {
 					$item_raw_data = $item->getRawData();
 					unset($item_raw_data['params']['prefix']); // to prevent high memory usage

@@ -46,7 +46,7 @@ class Billrun_Log extends Zend_Log {
 	 */
 	protected function addColor($string, $color) {
 		$fixedColor = $color %10;
-		return "\033[1;3" . $fixedColor . "m" . $string . "\033[0m ";
+		return "\033[1;3" . $fixedColor . "m" . $string . "\033[0m";
 	}
 	
 	/**
@@ -129,24 +129,24 @@ class Billrun_Log extends Zend_Log {
 		return self::$instances[$stamp];
 	}
 
-	/**
-	 * Overriding the Zend log _packEvent function to print with colors.
-	 * @param type $message
-	 * @param type $priority
-	 * @return type
-	 */
-	protected function _packEvent($message, $priority) {
-		$logRecord = parent::_packEvent($message, $priority);
-		if($this->colored && array_key_exists($priority, Billrun_Log::$PRIORITY_COLORS)){
-			// item is in the hastable
-			$logRecord['priorityName'] = 
-				str_pad($this->addColor($logRecord['priorityName'], 
-										Billrun_Log::$PRIORITY_COLORS[$priority]), 
-					    Billrun_Log::LOG_MSG_PREFIX_SIZE, " ");
-		}
-		
-		return $logRecord;
-	}
+//	/**
+//	 * Overriding the Zend log _packEvent function to print with colors.
+//	 * @param type $message
+//	 * @param type $priority
+//	 * @return type
+//	 */
+//	protected function _packEvent($message, $priority) {
+//		$logRecord = parent::_packEvent($message, $priority);
+//		if($this->colored && array_key_exists($priority, Billrun_Log::$PRIORITY_COLORS)){
+//			// item is in the hastable
+//			$logRecord['priorityName'] = 
+//				str_pad($this->addColor($logRecord['priorityName'], 
+//										Billrun_Log::$PRIORITY_COLORS[$priority]), 
+//					    Billrun_Log::LOG_MSG_PREFIX_SIZE, " ");
+//		}
+//		
+//		return $logRecord;
+//	}
 
 	/**
 	 * Log a crash using raised exception as crash details.

@@ -188,7 +188,6 @@ class BalancesModel extends TableModel {
 				'usage_value' => array(
 					'width' => 1,
 				),
-
 			)
 		);
 		return $filter_field_order;

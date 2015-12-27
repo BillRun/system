@@ -20,7 +20,8 @@ class Billrun_Encoder_Xml extends Billrun_Encoder_Base {
 	 * @return string xml
 	 */
 	protected function arrayToXML($array, $root = 'root') {
-		return '<?xml version = "1.0" encoding = "UTF-8"?>' . "<" . $root . ">" . $this->getXMLBody($array) . "</" . $root . ">";
+		header ("Content-Type:text/xml");
+		return '<?xml version="1.0" encoding="UTF-8"?>' . "<" . $root . ">" . $this->getXMLBody($array) . "</" . $root . ">";
 	}
 
 	/**
