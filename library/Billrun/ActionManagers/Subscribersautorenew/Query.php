@@ -31,6 +31,60 @@ class Billrun_ActionManagers_Subscribersautorenew_Query extends Billrun_ActionMa
 	}
 	
 	/**
+	 * Get a plan record according to the subscribers auto renew record.
+	 * @param Mongodloid_Entity $record
+	 * @return plan record.
+	 */
+	protected function getPlanRecord($record) {
+		$planCollection = Billrun_Factory::db()->plansCollection();
+		$planQuery = Billrun_Util::getDateBoundQuery();
+		$planQuery["name"] = $record['charging_plan_name'];
+		$planQuery["type"] = 'charging';
+		return $planCollection->query($planQuery)->cursor()->current();
+	}
+	
+	/**
+	 * Populate the plan values.
+	 * @param Mongodloid_Entity $record - Record to populate with plan values.
+	 */
+	protected function populatePlanValues(&$record) {
+		if(!isset($record['charging_plan_name'])) {
+			$this->reportError("No plan found for recurring record!", Zend_Log::ERR);
+			return false;
+		}
+		
+		$planRecord = $this->getPlanRecord($record);
+		if($planRecord->isEmpty()) {
+			$this->reportError("Invalid plan for subscribers auto renew!", Zend_Log::ERR);
+			return false;
+		}
+		
+		if(!isset($planRecord['include'])) {
+			// TODO: Is this an error?
+			return true;
+		}
+		
+		$includeList = $planRecord['include'];
+		
+		// TODO: Is this filtered by priority?
+		// TODO: Should this include the total_cost??
+		foreach ($includeList as $includeRoot => $includeValues) {
+			if(!isset($includeValues['pp_includes_name'])) {
+				continue;
+			}
+			
+			$toAdd = array();
+			
+			// Set the record values.
+			$toAdd['unit_type'] = $includeRoot;			
+			$toAdd['ammount'] = $includeValues['usagev'];
+			$record['includes'][$includeValues['pp_includes_name']] = $toAdd;
+		}
+		
+		return true;
+	}
+	
+	/**
 	 * Query the subscribers collection to receive data in a range.
 	 */
 	protected function queryRange() {
@@ -41,6 +95,11 @@ class Billrun_ActionManagers_Subscribersautorenew_Query extends Billrun_ActionMa
 			// Going through the lines
 			foreach ($cursor as $line) {
 				$rawItem = $line->getRawData();
+				
+				if(!$this->populatePlanValues($rawItem)) {
+					// TODO: What error is reported?
+					return false;
+				}
 				$returnData[] = Billrun_Util::convertRecordMongoDatetimeFields($rawItem, $date_fields);
 			}
 		} catch (\Exception $e) {
