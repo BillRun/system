@@ -24,7 +24,7 @@ app.controller('CardsController', ['$scope', '$window', '$routeParams', 'Databas
     $scope.isStatusDisabled = function (status) {
       if (status === undefined) return true;
       if ($scope.card_status === undefined) return false;
-      // idle -> active -> [expired,stolen,disqualified,used]
+      // idle -> (active optional) -> [expired,stolen,disqualified,used]
       // disallow going backwards
       return false;
     };
