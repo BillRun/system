@@ -118,7 +118,12 @@ class AdminController extends Yaf_Controller_Abstract {
 			$response->response();
 			return false;
 		}
+
 		$entity = $entity->getRawData();
+		foreach ($model->getHiddenKeys($entity, $type) as $key) {
+			if ($key !== '_id') unset($entity[$key]);
+		}
+		
 		$response->setBody(json_encode($entity));
 		$response->response();
 		return false;
@@ -176,8 +181,9 @@ class AdminController extends Yaf_Controller_Abstract {
 	public function getAvailablePlansAction() {
 		if (!$this->allowed('read'))
 			return false;
+		$type = Billrun_Util::filter_var($this->getRequest()->get('type'), FILTER_SANITIZE_STRING);
 		$planModel = new PlansModel();
-		$names = $planModel->getData(array('type' => 'customer'));
+		$names = $planModel->getData(array('type' => $type));
 		$availablePlans = array();
 		foreach($names as $name) {
 			$availablePlans[$name['name']] = $name['name'];

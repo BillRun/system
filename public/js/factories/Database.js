@@ -17,8 +17,9 @@ app.factory('Database', ['$http', function ($http) {
       return $http.post(baseUrl + '/admin/save', ajaxOpts);
     }
 
-    function getAvailablePlans() {
-      return $http.get(baseUrl + '/admin/getAvailablePlans');
+    function getAvailablePlans(type) {
+      if (type === undefined) type = 'customer';
+      return $http.get(baseUrl + '/admin/getAvailablePlans', {params: {type: type}});
     }
 
     function getCollectionItems(params) {
