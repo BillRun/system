@@ -984,7 +984,11 @@ class AdminController extends Yaf_Controller_Abstract {
 			$order = $this->getSetVar($session, 'order', 'order', 'asc') == 'asc' ? 1 : -1;
 			$sort = array($sort_by => $order);
 		} else {
-			$sort = array();
+			if ($table === "subscribers") {
+				$sort = array('from' => -1);
+			} else {
+				$sort = array();
+			}
 		}
 		return $sort;
 	}

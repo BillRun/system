@@ -1,0 +1,95 @@
+<div class="container component" ng-controller='SubscribersController' ng-init="init()">
+	<center>
+		<h2>{{capitalize(action)}} Subscriber {{entity.sid}}</h2>
+	</center>
+	<form class='form-inline' ng-submit='save()'>
+		<div ng-if='!advancedMode'>
+			<div class="row" ng-if='action === "new"'>
+				<div class="col-md-2">
+					Subscriber
+				</div>
+				<div class="col-md-6">
+					<input ng-model="entity.sid" type="number" class="form-control" />
+				</div>
+			</div>
+			<div class="row">
+				<div class="col-md-2">
+					Account
+				</div>
+				<div class="col-md-6">
+					<input ng-model="entity.aid" type="number" class="form-control" ng-disabled='action !== "new"' />
+				</div>
+			</div>
+			<div class="row">
+				<div class="col-md-2">
+					MSISDN
+				</div>
+				<div class="col-md-6">
+					<input ng-model="entity.msisdn" type="text" class="form-control" />
+				</div>
+			</div>
+			<div class="row">
+				<div class="col-md-2">
+					Service Provider
+				</div>
+				<div class="col-md-6">
+					<input ng-model='entity.service_provider' class='form-control' />
+				</div>
+			</div>
+			<div class="row">
+				<div class="col-md-2">
+					Plan
+				</div>
+				<div class="col-md-6">
+					<select ng-model='entity.plan' class='form-control'>
+						<option value='' disabled>Select Plan</option>
+						<option ng-repeat='availablePlan in availablePlans' value='{{availablePlan}}'>{{availablePlan}}</option>
+					</select>
+				</div>
+			</div>
+			<div class="row">
+				<div class="col-md-2">
+					Charging Type
+				</div>
+				<div class="col-md-6">
+					<select ng-model='entity.charging_type' class='form-control'>
+						<option value='' disabled>Select Charging Type</option>
+						<option ng-repeat='chargingType in availableChargingTypes' value='{{chargingType}}'>{{chargingType}}</option>
+					</select>
+				</div>
+			</div>
+			<div class="row">
+				<div class="col-md-2">
+					Language
+				</div>
+				<div class="col-md-6">
+					<select ng-model='entity.language' class='form-control'>
+						<option value='' disabled>Select Language</option>
+						<option ng-repeat='language in availableLanguages' value='{{language}}'>{{language}}</option>
+					</select>
+				</div>
+			</div>
+			<h4>IMSI</h4>
+			<div>
+				<div ng-repeat="imsi in entity.imsi track by $index">
+					<input type="text" class="form-control" ng-model="entity.imsi[$index]" />
+					<i class='glyphicon glyphicon-minus-sign' ng-click='deleteIMSI($index)'></i>
+				</div>
+				<div>
+					<a ng-click="addIMSI()" class="clickable">Add IMSI</a>
+				</div>
+			</div>
+		</div>
+		<div class='jsonView' ng-if='advancedMode === true'>
+			<json child='entity' default-collapsed='true' type='object'></json>
+		</div>
+		<div class="modal-footer">
+			<a ng-click='setAdvancedMode(false)' class="clickable" ng-if='advancedMode'>Basic Mode</a>
+			<a ng-click='setAdvancedMode(true)' class="clickable" ng-if='!advancedMode'>Advanced Mode</a>
+			<button class="btn" ng-click='cancel()'>Cancel</button>
+			<!-- <?php if (AdminController::authorized('write')) : ?> -->
+			<button type='submit' class="btn btn-primary">Save changes</button>
+			<!-- <?php endif; ?> -->
+		</div>		
+	</form>
+</div>

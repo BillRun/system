@@ -48,6 +48,7 @@
 		<script src='<?php echo $this->baseUrl; ?>/js/controllers/RatesController.js'></script>
 		<script src='<?php echo $this->baseUrl; ?>/js/controllers/BalancesController.js'></script>
 		<script src='<?php echo $this->baseUrl; ?>/js/controllers/CardsController.js'></script>
+		<script src='<?php echo $this->baseUrl; ?>/js/controllers/SubscribersController.js'></script>
     </head>
     <body ng-app="BillrunApp">
         <!--[if lt IE 7]>
@@ -77,7 +78,7 @@
 	<!-- end of main component -->
 	<!-- hackitty hack hack! -->
 	<script>
-		if (window.location.hash.match(/\/(update|list|duplicate|close_and_new)(\/)*/)) {
+		if (window.location.hash.match(/\/(update|list|duplicate|close_and_new|new)(\/)*/)) {
 			$('.component').remove();
 		}
 	</script>

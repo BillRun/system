@@ -105,6 +105,9 @@
 			<span class="pull-right">
 			<?php endif; ?>
 			<?php if (in_array($active, array('rates', 'plans', 'users', 'subscribers')) && AdminController::authorized('write')) : ?>
+				<?php if ($active == 'subscribers') : ?>
+				<span><a id='new' data-type='new' href='/admin#/subscribers/new' class='btn btn-primary' role='button'>New</a></span>
+				<?php endif ?>
 				<?php if ($active != 'users') : ?>
 				<span><a id='close_and_new' data-type="close_and_new" href="#popupModal" class="btn btn-primary" data-toggle="modal" role="button">Close & new</a></span>
 				<?php endif; ?>

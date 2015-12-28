@@ -52,6 +52,10 @@ app.config(function ($httpProvider, $routeProvider, $locationProvider) {
 	  templateUrl: function (urlattr) {
 		  return 'views/' + urlattr.collection + '/edit.html';
 	  }
+  }).when('/:collection/:action', {
+    templateUrl: function (urlattr) {
+      return 'views/' + urlattr.collection + '/edit.html';
+    }
   }).when('/:collection/list', {
     templateUrl: 'views/partials/collectionList.html',
     controller: 'CollectionsController'

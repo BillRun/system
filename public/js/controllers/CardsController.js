@@ -24,8 +24,8 @@ app.controller('CardsController', ['$scope', '$window', '$routeParams', 'Databas
     $scope.isStatusDisabled = function (status) {
       if (status === undefined) return true;
       if ($scope.card_status === undefined) return false;
-      if (status.toLowerCase() === "idle" && $scope.card_status.toLowerCase() !== "idle")
-        return true;
+      // idle -> active -> [expired,stolen,disqualified,used]
+      // disallow going backwards
       return false;
     };
 
@@ -42,7 +42,7 @@ app.controller('CardsController', ['$scope', '$window', '$routeParams', 'Databas
       Database.getEntity(params).then(function (res) {
         $scope.entity = res.data;
         $scope.card_status = $scope.entity.status;
-        $scope.cardStatuses = ["Idle", "Active", "Expired", "Stolen"];
+        $scope.cardStatuses = ["Idle", "Shipped", "Active", "Disqualified", "Used", "Expired", "Stolen"];
       }, function (err) {
         alert("Danger! Danger! Beedeebeedeebeedee!");
       });
