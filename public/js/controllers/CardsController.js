@@ -46,6 +46,9 @@ app.controller('CardsController', ['$scope', '$window', '$routeParams', 'Databas
       }, function (err) {
         alert("Danger! Danger! Beedeebeedeebeedee!");
       });
+      Database.getAvailableServiceProviders().then(function (res) {
+        $scope.availableServiceProviders = res.data;
+      });
       Database.getAvailablePlans('charging').then(function (res) {
         $scope.availablePlans = res.data;
       });

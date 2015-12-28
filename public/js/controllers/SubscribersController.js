@@ -53,6 +53,9 @@ app.controller('SubscribersController', ['$scope', '$window', '$routeParams', 'D
           alert("Danger! Danger! Beedeebeedeebeedee!");
         });
       }
+      Database.getAvailableServiceProviders().then(function (res) {
+        $scope.availableServiceProviders = res.data;
+      });
       Database.getAvailablePlans().then(function (res) {
         $scope.availablePlans = res.data;
       });

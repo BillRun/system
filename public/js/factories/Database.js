@@ -17,6 +17,10 @@ app.factory('Database', ['$http', function ($http) {
       return $http.post(baseUrl + '/admin/save', ajaxOpts);
     }
 
+    function getAvailableServiceProviders() {
+      return $http.get(baseUrl + '/admin/getAvailableServiceProviders');
+    }
+
     function getAvailablePlans(type) {
       if (type === undefined) type = 'customer';
       return $http.get(baseUrl + '/admin/getAvailablePlans', {params: {type: type}});
@@ -34,6 +38,7 @@ app.factory('Database', ['$http', function ($http) {
       getEntity: getEntity,
       saveEntity: saveEntity,
       getAvailablePlans: getAvailablePlans,
+      getAvailableServiceProviders: getAvailableServiceProviders,
       getCollectionItems: getCollectionItems,
       filterCollectionItems: filterCollectionItems
     };

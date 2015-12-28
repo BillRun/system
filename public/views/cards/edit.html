@@ -36,7 +36,9 @@
 					Service provider
 				</div>
 				<div class="col-md-6">
-					<input ng-model="entity.service_provider" type="text" class="form-control" />
+					<select ng-model="entity.service_provider" class="form-control">
+						<option ng-repeat="service_provider in availableServiceProviders">{{service_provider}}<option>
+					</select>				
 				</div>
 			</div>
 			<div class="row">

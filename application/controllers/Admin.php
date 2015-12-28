@@ -194,6 +194,18 @@ class AdminController extends Yaf_Controller_Abstract {
 		return false;
 	}
 
+	public function getAvailableServiceProvidersAction() {
+		if (!$this->allowed('read'))
+			return false;
+		$collection = Billrun_Factory::db()->serviceprovidersCollection()->distinct('name');
+		$availableServiceProviders = array();
+
+		$response = new Yaf_Response_Http();
+		$response->setBody(json_encode($collection));
+		$response->response();
+		return false;
+	}
+	
 	/**
 	 * save controller
 	 * @return boolean

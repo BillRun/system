@@ -83,6 +83,9 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
       Database.getEntity(params).then(function (res) {
         $scope.entity = res.data;
       });
+      Database.getAvailableServiceProviders().then(function (res) {
+        $scope.availableServiceProviders = res.data;
+      });
       $scope.action = $routeParams.action.replace(/_/g, ' ');
       $scope.duplicate_rates = {on: ($scope.action === 'duplicate')};
       $scope.includeTypes = ['call', 'data', 'sms', 'mms'];
