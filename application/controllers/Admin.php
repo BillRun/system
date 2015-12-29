@@ -118,8 +118,12 @@ class AdminController extends Yaf_Controller_Abstract {
 			$response->response();
 			return false;
 		}
+
 		$entity = $entity->getRawData();
-		$response->setBody(json_encode($entity));
+		foreach ($model->getHiddenKeys($entity, $type) as $key) {
+			if ($key !== '_id') unset($entity[$key]);
+		}
+		$response->setBody(json_encode(array('authorized_write' => AdminController::authorized('write'), 'entity' => $entity)));
 		$response->response();
 		return false;
 	}
@@ -168,7 +172,7 @@ class AdminController extends Yaf_Controller_Abstract {
 			$items[] = $i;
 		}
 		$params['data'] = $items;
-		$response->setBody(json_encode($params));
+		$response->setBody(json_encode(array('items' => $params, 'pager' => $this->model->getPager(), 'authorized_write' => AdminController::authorized('write'))));
 		$response->response();
 		return false;
 	}
@@ -176,8 +180,9 @@ class AdminController extends Yaf_Controller_Abstract {
 	public function getAvailablePlansAction() {
 		if (!$this->allowed('read'))
 			return false;
+		$type = Billrun_Util::filter_var($this->getRequest()->get('type'), FILTER_SANITIZE_STRING);
 		$planModel = new PlansModel();
-		$names = $planModel->getData(array('type' => 'customer'));
+		$names = $planModel->getData(array('type' => $type));
 		$availablePlans = array();
 		foreach($names as $name) {
 			$availablePlans[$name['name']] = $name['name'];
@@ -188,6 +193,18 @@ class AdminController extends Yaf_Controller_Abstract {
 		return false;
 	}
 
+	public function getAvailableServiceProvidersAction() {
+		if (!$this->allowed('read'))
+			return false;
+		$collection = Billrun_Factory::db()->serviceprovidersCollection()->distinct('name');
+		$availableServiceProviders = array();
+
+		$response = new Yaf_Response_Http();
+		$response->setBody(json_encode($collection));
+		$response->response();
+		return false;
+	}
+	
 	/**
 	 * save controller
 	 * @return boolean
@@ -306,6 +323,10 @@ class AdminController extends Yaf_Controller_Abstract {
 		$id = Billrun_Util::filter_var($this->getRequest()->get('id'), FILTER_SANITIZE_STRING);
 		$coll = Billrun_Util::filter_var($this->getRequest()->get('coll'), FILTER_SANITIZE_STRING);
 		$dup_rates = $this->getRequest()->get('duplicate_rates');
+		$batch_no = $this->getRequest()->get('batch_no') ? $this->getRequest()->get('batch_no') : false;
+		if ($batch_no) {
+			$range = json_decode($this->getRequest()->get('range'));
+		}
 		$duplicate_rates = ($dup_rates == 'true') ? true : false;
 		$model = self::initModel($coll);
 
@@ -329,7 +350,13 @@ class AdminController extends Yaf_Controller_Abstract {
 			$params = array_merge($params, array('duplicate_rates' => $duplicate_rates));
 		}
 		if ($type == 'update') {
-			$saveStatus = $model->update($params);
+			if ($batch_no) {
+				$cardObj = new Billrun_ActionManagers_Cards_Update();
+				$this->getRequest()->set('update', $this->getRequest()->get('data'));
+				$cardObj->updateProcess($this->getRequest());
+			} else {
+				$saveStatus = $model->update($params);
+			}
 		} else if ($type == 'close_and_new') {
 			$saveStatus = $model->closeAndNew($params);
 		} else if (in_array($type, array('duplicate', 'new'))) {
@@ -978,7 +1005,11 @@ class AdminController extends Yaf_Controller_Abstract {
 			$order = $this->getSetVar($session, 'order', 'order', 'asc') == 'asc' ? 1 : -1;
 			$sort = array($sort_by => $order);
 		} else {
-			$sort = array();
+			if ($table === "subscribers") {
+				$sort = array('from' => -1);
+			} else {
+				$sort = array();
+			}
 		}
 		return $sort;
 	}
