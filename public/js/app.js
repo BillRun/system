@@ -50,9 +50,6 @@ app.config(function ($httpProvider, $routeProvider, $locationProvider) {
 
   $routeProvider.when('/:collection/:action/:id?', {
 	  templateUrl: function (urlattr) {
-      if (urlattr.collection === "batch") {
-        return 'views/cards/edit.html';
-      }
 		  return 'views/' + urlattr.collection + '/edit.html';
 	  }
   }).when('/:collection/list', {

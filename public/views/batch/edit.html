@@ -1,23 +1,35 @@
-<div class="container component" ng-controller='CardsController' ng-init="init()">
+<div class="container component" ng-controller='BatchController' ng-init="init()">
 	<center>
-		<h2>{{capitalize(action)}} Card {{entity.serial_number}}</h2>
+		<h2>{{capitalize(action)}} Batch {{batch_no}}</h2>
 	</center>
 	<form class='form-inline' ng-submit='save()'>
-		<div ng-if='!advancedMode'>
+		<div>
 			<div class="row">
 				<div class="col-md-2">
-					Batch number
+					Serial numbers
 				</div>
 				<div class="col-md-6">
-					<input ng-model="entity.batch_number" type="text" class="form-control" />
+					<div class='row'>
+						<div class='col-xs-1'>
+							<label>From</label>
+						</div>
+						<div class='col-xs-6'>
+							<input ng-model="entity.serial_numbers_from" type="text" class="form-control" />
+						</div>
+					</div>
 				</div>
 			</div>
-			<div class="row">
-				<div class="col-md-2">
-					Serial number
-				</div>
-				<div class="col-md-6">
-					<input ng-model="entity.serial_number" type="text" class="form-control" />
+			<div class='row'>
+				<div class='col-md-2'></div>
+				<div class='col-md-6'>
+					<div class='row'>
+						<div class='col-xs-1'>
+							<label>To</label>
+						</div>
+						<div class='col-xs-6'>
+							<input ng-model='entity.serial_numbers_to' type='text' class='form-control' />
+						</div>
+					</div>
 				</div>
 			</div>
 			<div class="row">
@@ -54,12 +66,7 @@
 				</div>
 			</div>
 		</div>
-		<div class='jsonView' ng-if='advancedMode === true'>
-			<json child='entity' default-collapsed='true' type='object'></json>
-		</div>
 		<div class="modal-footer">
-			<a ng-click='setAdvancedMode(false)' class="clickable" ng-if='advancedMode'>Basic Mode</a>
-			<a ng-click='setAdvancedMode(true)' class="clickable" ng-if='!advancedMode'>Advanced Mode</a>
 			<button class="btn" ng-click='cancel()'>Cancel</button>
 			<!-- <?php if (AdminController::authorized('write')) : ?> -->
 			<button type='submit' class="btn btn-primary">Save changes</button>

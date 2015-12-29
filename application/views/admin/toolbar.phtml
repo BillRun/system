@@ -104,6 +104,9 @@
 		<?php if (!in_array($active, array('events', 'log'))) : ?>
 			<span class="pull-right">
 			<?php endif; ?>
+			<?php if ($active == 'cards') : ?>
+			<span><a id='edit-batch' data-type='edit-batch' onclick='editBatchCards()' class='btn btn-primary' role='button'>Edit Batch</a></span>
+			<?php endif ?>
 			<?php if (in_array($active, array('rates', 'plans', 'users', 'subscribers')) && AdminController::authorized('write')) : ?>
 				<?php if ($active == 'subscribers') : ?>
 				<span><a id='new' data-type='new' href='/admin#/subscribers/new' class='btn btn-primary' role='button'>New</a></span>

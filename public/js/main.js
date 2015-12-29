@@ -369,6 +369,13 @@ function update_current(obj) {
 	}
 }
 
+function editBatchCards() {
+  var batch_no = $('#batch_number').val();
+  if (batch_no) {
+    window.location = '/admin#/batch/update/' + batch_no;
+  }
+}
+
 function isAPIAvailable() {
 	// Check for the various File API support.
 	if (window.File && window.FileReader && window.FileList && window.Blob) {
