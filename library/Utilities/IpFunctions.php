@@ -8,9 +8,6 @@
 
 class Utilities_IpFunctions
 {
-	public function hi(){
-		print("hi".PHP_EOL);
-	}
 
 	// convert cidr to netmask
     // e.g. 21 = 255.255.248.0
