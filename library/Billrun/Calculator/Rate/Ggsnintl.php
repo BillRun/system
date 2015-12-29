@@ -86,9 +86,6 @@ class Billrun_Calculator_Rate_Ggsnintl extends Billrun_Calculator_Rate {
 			 if ($rate['key'] == 'UNRATED') {
 				$this->rates['UNRATED'] = $rate;
 			} else {
-//				if (isset($this->rates['by_names'][$rate['alpha3']]) && $this->rates['by_names'][$rate['alpha3']][0]['key'] != $rate['key'] ) {
-//					print('found doubles:'.$rate['key'].'   '.$rate['alpha3']. '    '.' '.$this->rates['by_names'][$rate['alpha3']][0]['key'].PHP_EOL );
-//				}
 				$this->rates['by_names'][$rate['alpha3']][] = $rate;
 			}
 		}
@@ -97,33 +94,35 @@ class Billrun_Calculator_Rate_Ggsnintl extends Billrun_Calculator_Rate {
 	 * @see Billrun_Calculator_Rate::getLineRate
 	 */
 	protected function getLineRate($row, $usage_type) {
-		$line_alpha3 = $this->getLineAlpha3($row);
-		print($line_alpha3.PHP_EOL);
+		$line_identifiers = $this->getLineAlpha3($row);
 		$line_time = $row['urt'];
-		if(isset($this->rates['by_names'][$line_alpha3])){
-			foreach ($this->rates['by_names'][$line_alpha3] as $rate) {
-				if ( $rate['from'] <= $line_time && $line_time <= $rate['to']) {
-					print($rate['key'].PHP_EOL);
-					return $rate;
+		if(!empty($line_identifiers)) {
+			if(isset($this->rates['by_names'][$line_identifiers['key']])){
+				foreach ($this->rates['by_names'][$line_identifiers['key']] as $rate) {
+					if ( $rate['provider'] == $line_identifiers['provider'] &&  $rate['from'] <= $line_time && $line_time <= $rate['to']) {
+						return $rate;
+					}
 				}
-
 			}
 		}
 		Billrun_Factory::log()->log("Couldn't find rate for row : " . print_r($row['stamp'], 1), Zend_Log::DEBUG);
-		return FALSE;
+		return $this->rates['UNRATED'];
 	}
 
 	protected function getLineAlpha3($row) {
-		foreach($this->countryMapping as $key => $address_list){
-			foreach ($address_list['sgsn_address'] as $address){
-				$ip_and_mask = explode('/',$address); 
-				$network = $ip_and_mask[0];
-				$mask = $ip_and_mask[1];
-				if(Utilities_IpFunctions::cidr_match($row['sgsn_address'], $network, $mask)){
-					return $key;
+		foreach($this->countryMapping as $provider => $aplha3s){
+			foreach($aplha3s as $key => $address_list){
+				foreach ($address_list['sgsn_address'] as $address){
+					$ip_and_mask = explode('/',$address); 
+					$network = $ip_and_mask[0];
+					$mask = $ip_and_mask[1];
+					if(Utilities_IpFunctions::cidr_match($row['sgsn_address'], $network, $mask)){
+						return array('key' => $key, 'provider' => $provider);
+					}
 				}
 			}
 		}
+		return FALSE;
 	}
 	
 }
