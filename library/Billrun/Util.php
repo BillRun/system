@@ -397,7 +397,7 @@ class Billrun_Util {
 	 * @return type
 	 * @todo This is generic enough to be moved to anoter location.
 	 */
-	public function getDateBoundQuery() {
+	public static function getDateBoundQuery() {
 		return array(
 			'to' => array(
 				'$gt' => new MongoDate()

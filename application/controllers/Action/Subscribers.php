@@ -59,9 +59,10 @@ class SubscribersAction extends ApiAction {
 			Billrun_Factory::log("Failed to get subscriber action instance for received input", Zend_Log::ALERT);
 			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 10;
 			$output = array(
-				'status' => $errorCode,
-				'desc' => $action,
-				'details' => 'Error'
+				'status'     => $errorCode == 0 ? 1 : 0,
+				'desc'       => $action,
+				'error_code' => $errorCode,
+				'details'    => 'Error'
 			);
 		} else {
 			$output = $action->execute();
