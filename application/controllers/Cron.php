@@ -180,11 +180,12 @@ class CronController extends Yaf_Controller_Abstract {
 		$updaterInputUpdate['to'] = $autoRenewRecord['to'];
 		$updaterInputUpdate['operation'] = $autoRenewRecord['operation'];
 
-		$updaterInput['query'] = $updaterInputQuery;
-		$updaterInput['update'] = $updaterInputUpdate;
-
-		$jsonFormat = json_encode($updaterInput,JSON_FORCE_OBJECT);
-		if(!$updater->parse($jsonFormat)) {
+		$updaterInput['query'] = json_encode($updaterInputQuery,JSON_FORCE_OBJECT);
+		$updaterInput['upsert'] = json_encode($updaterInputUpdate,JSON_FORCE_OBJECT);
+		
+		// Anonymous object
+		$jsonObject = new Billrun_AnObj($updaterInput);
+		if(!$updater->parse($jsonObject)) {
 			// TODO: What do I do here?
 			return false;
 		}
