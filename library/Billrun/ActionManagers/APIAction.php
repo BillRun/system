@@ -63,7 +63,7 @@ abstract class Billrun_ActionManagers_APIAction {
 				$this->errorCode = 999999;
 			}
 		}
-		Billrun_Factory::log($this->errorCode . " " . $this->error, $errorLevel);
+		Billrun_Factory::log($this->errorCode . ": " . $this->error, $errorLevel);
 	}
 	
 }
