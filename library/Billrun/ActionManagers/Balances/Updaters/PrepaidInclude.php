@@ -75,7 +75,7 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 		$updateQuery['sid'] = $subscriber['sid'];
 
 		// Create a default balance record.
-		$defaultBalance = $this->getDefaultBalance($subscriber, $prepaidRecord);
+		$defaultBalance = $this->getDefaultBalance($subscriber, $prepaidRecord, $recordToSet);
 
 		$chargingPlan = $this->getPlanObject($prepaidRecord, $recordToSet);
 
@@ -178,11 +178,11 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 	 * @param type $prepaidRecord
 	 * @param type $recordToSet
 	 */
-	protected function getDefaultBalance($subscriber, $prepaidRecord) {
+	protected function getDefaultBalance($subscriber, $prepaidRecord, $recordToSet) {
 		$defaultBalance = array();
 		$defaultBalance['from'] = new MongoDate();
 
-		$defaultBalance['to'] = $prepaidRecord['to'];
+		$defaultBalance['to'] = $recordToSet['to'];
 		$defaultBalance['sid'] = $subscriber['sid'];
 		$defaultBalance['aid'] = $subscriber['aid'];
 //		$defaultBalance['current_plan'] = $this->getPlanRefForSubscriber($subscriber);
