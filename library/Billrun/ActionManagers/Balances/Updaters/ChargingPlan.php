@@ -49,9 +49,9 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		// TODO: This function is free similar to the one in ID, should refactor code to be more generic.
 		$chargingPlansCollection = Billrun_Factory::db()->plansCollection();
 		$chargingPlanRecord = $this->getRecord($query, $chargingPlansCollection, $this->getTranslateFields());
-		if (!$chargingPlanRecord) {
-			$error = "Failed to get plan record to update balance query: " . print_r($query, 1);
-			$this->reportError($error, Zend_Log::ERR);
+		if (!$chargingPlanRecord || $chargingPlanRecord->isEmpty()) {
+			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base");
+			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
 
@@ -79,6 +79,13 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		// Subscriber was not found.
 		if ($subscriber === false) {
 			return false;
+		}
+
+		if (!isset($query['service_provider'])) {
+			$query['service_provider'] = $subscriber['service_provider'];
+		} else if ($query['service_provider'] != $subscriber['service_provider']) {
+			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 13;
+			$this->reportError($errorCode, Zend_Log::NOTICE);
 		}
 
 		$updateQuery = array(
@@ -238,7 +245,8 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		// TODO: Should this be in conf?
 		return array(
 			'charging_plan_name' => 'name',
-			'charging_plan_external_id' => 'external_id'
+			'charging_plan_external_id' => 'external_id',
+			'service_provider' => 'service_provider',
 		);
 	}
 

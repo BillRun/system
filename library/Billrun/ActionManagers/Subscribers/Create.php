@@ -54,7 +54,8 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 		// TODO: Use the subscriber class.
 		if($subscribers->count() > 0){
 			$error='Subscriber already exists! [' . print_r($subscriberQuery, true) . ']';
-			$this->reportError($error, Zend_Log::ALERT);
+			$errorCode =Billrun_Factory::config()->getConfigValue("subscriber_error_base");
+			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return true;
 		}
 		
@@ -78,7 +79,7 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 		// TODO: Use the subscriber class.
 		if(!$currentPlan || $currentPlan->isEmpty()){
 			$error='Invalid plan for the subscriber! [' . print_r($planName, true) . ']';
-			$this->reportError($error, Zend_Log::ALERT);
+			$this->reportError($error, Zend_Log::NOTICE);
 			return false;
 		}		
 		
@@ -90,24 +91,21 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 	 * @return data for output.
 	 */
 	public function execute() {
-		$success = false;
 		try {
 			// Create the subscriber only if it doesn't already exists.
 			if($this->validatePlan() &&
 			   !$this->subscriberExists()) {
 				$entity = new Mongodloid_Entity($this->query);
 
-				$success = ($this->collection->save($entity, 1) !== false);
+				$this->collection->save($entity, 1);
 			}	
 		} catch (\Exception $e) {
-			$error = 'Failed storing in DB got error : ' . $e->getCode() . ' : ' . $e->getMessage();
-			$this->reportError($error, Zend_Log::ALERT);
-			Billrun_Factory::log('failed saving request :' . print_r($this->query, 1), Zend_Log::ALERT);
-			$success = false;
+			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 1;
+			$this->reportError($errorCode, Zend_Log::NOTICE);
 		}
 
 		$outputResult = 
-			array('status'  => ($success) ? (1) : (0),
+			array('status'  => $this->errorCode,
 				  'desc'    => $this->error,
 				  'details' => $entity);
 		return $outputResult;
@@ -135,8 +133,9 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 		$jsonData = null;
 		$query = $input->get('subscriber');
 		if(empty($query) || (!($jsonData = json_decode($query, true)))) {
+			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 2;
 			$error = "Failed decoding JSON data";
-			$this->reportError($error, Zend_Log::ALERT);
+			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
 		
@@ -144,8 +143,9 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 		
 		// If there were errors.
 		if(!empty($invalidFields)) {
+			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 3;
 			$error="Subscribers create received invalid query values in fields: " . implode(',', $invalidFields);
-			$this->reportError($error, Zend_Log::ALERT);
+			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
 		

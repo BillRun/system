@@ -17,11 +17,14 @@ abstract class Billrun_ActionManagers_APIAction {
 	 * This members holds the error message to be reported.
 	 */
 	protected $error = "Successful";
+	protected $errorCode = 0;
+	protected $errors = array();
 
 	protected function __construct($params) {
 		if (isset($params['error'])) {
 			$this->error = $params['error'];
 		}
+		$this->errors = Billrun_Factory::config()->getConfigValue('errors', array());
 	}
 	
 	/**
@@ -32,13 +35,35 @@ abstract class Billrun_ActionManagers_APIAction {
 		return $this->error;
 	}
 	
+	protected function getErrorCode() {
+		return $this->errorCode;
+	}
+
+	
 	/**
 	 * Report an error.
-	 * @param string $error - Error string to report.
+	 * @param int $errorCode - Error index to report.
 	 * @param Zend_Log_Filter_Priority $errorLevel
 	 */
-	protected function reportError($error, $errorLevel=Zend_Log::INFO) {
-		$this->error = $error;
-		Billrun_Factory::log($error, $errorLevel);
+	protected function reportError($errorCode, $errorLevel=Zend_Log::INFO, array $args = array()) {
+		if (!is_numeric($errorCode)) {
+			$this->error = $errorCode;
+			$this->errorCode = -1;
+		} else {
+			if (isset($this->errors[$errorCode])) {
+				$this->error = $this->errors[$errorCode];
+				
+				if(!empty($args)) {
+					$this->error=vsprintf($this->error, $args);
+				}
+				
+				$this->errorCode = $errorCode;
+			} else {
+				$this->error = 'Unknown issue';
+				$this->errorCode = 999999;
+			}
+		}
+		Billrun_Factory::log($this->errorCode . " " . $this->error, $errorLevel);
 	}
+	
 }
