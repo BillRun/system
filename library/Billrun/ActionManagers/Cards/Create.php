@@ -15,6 +15,8 @@
  */
 class Billrun_ActionManagers_Cards_Create extends Billrun_ActionManagers_Cards_Action {
 
+	use Billrun_FieldValidator_ServiceProvider;
+	
 	/**
 	 * Field to hold the data to be written in the DB.
 	 * @var type Array
@@ -34,18 +36,6 @@ class Billrun_ActionManagers_Cards_Create extends Billrun_ActionManagers_Cards_A
 	 */
 	protected function getCreateFields() {
 		return Billrun_Factory::config()->getConfigValue('cards.create_fields', array());
-	}
-	
-	/**
-	 * Check with the mongo that the service provider is trusted.
-	 * @param string $serviceProvider - Service provider to test.
-	 * @return boolean true if trusted.
-	 * @todo Move this logic to a more generic location.
-	 */
-	protected function isServiceProvider($serviceProvider) {
-		$collection = Billrun_Factory::db()->serviceprovidersCollection();
-		$query = array('name' => $serviceProvider);
-		return $collection->exists($query);
 	}
 
 	/**
@@ -84,7 +74,7 @@ class Billrun_ActionManagers_Cards_Create extends Billrun_ActionManagers_Cards_A
 			}
 
 			// service provider validity check
-			if(!$this->isServiceProvider($oneCard['service_provider'])) {
+			if(!$this->validateServiceProvider($oneCard['service_provider'])) {
 				$error = "Received unknown service provider: " . $oneCard['service_provider'];
 				$this->reportError($error, Zend_Log::NOTICE);
 				return false;
