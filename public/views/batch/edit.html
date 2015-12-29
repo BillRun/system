@@ -1,0 +1,76 @@
+<div class="container component" ng-controller='BatchController' ng-init="init()">
+	<center>
+		<h2>{{capitalize(action)}} Batch {{batch_no}}</h2>
+	</center>
+	<form class='form-inline' ng-submit='save()'>
+		<div>
+			<div class="row">
+				<div class="col-md-2">
+					Serial numbers
+				</div>
+				<div class="col-md-6">
+					<div class='row'>
+						<div class='col-xs-1'>
+							<label>From</label>
+						</div>
+						<div class='col-xs-6'>
+							<input ng-model="entity.serial_numbers_from" type="text" class="form-control" />
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class='row'>
+				<div class='col-md-2'></div>
+				<div class='col-md-6'>
+					<div class='row'>
+						<div class='col-xs-1'>
+							<label>To</label>
+						</div>
+						<div class='col-xs-6'>
+							<input ng-model='entity.serial_numbers_to' type='text' class='form-control' />
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="row">
+				<div class="col-md-2">
+					Charging plan
+				</div>
+				<div class="col-md-6">
+					<select ng-model="entity.charging_plan_name" class="form-control">
+						<option value="" disabled>Select Charging Plan</option>
+						<option ng-repeat="plan in availablePlans">{{plan}}</option>
+					</select>					
+				</div>
+			</div>
+			<div class="row">
+				<div class="col-md-2">
+					Service provider
+				</div>
+				<div class="col-md-6">
+					<select ng-model="entity.service_provider" class="form-control">
+						<option value='' disabled>Select Service Provider</option>
+						<option ng-repeat="service_provider in availableServiceProviders">{{service_provider}}<option>
+					</select>				
+				</div>
+			</div>
+			<div class="row">
+				<div class="col-md-2">
+					Status
+				</div>
+				<div class="col-md-6">
+					<select ng-model="entity.status" class="form-control">
+						<option value='' disabled>Select Status</option>
+						<option ng-repeat="status in cardStatuses" ng-disabled="isStatusDisabled(status)">{{status}}<option>
+					</select>
+				</div>
+			</div>
+		</div>
+		<div class="modal-footer">
+			<button class="btn" ng-click='cancel()'>Cancel</button>
+			<!-- <?php if (AdminController::authorized('write')) : ?> -->
+			<button type='submit' class="btn btn-primary">Save changes</button>
+			<!-- <?php endif; ?> -->
+		</div>
+	</form>
+</div>

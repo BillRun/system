@@ -1,3 +1,52 @@
+.glyphicon-plus-sign {
+	color: green;
+	cursor: pointer;
+}
+
+.glyphicon-minus-sign {
+	color: #bc2328;
+	cursor: pointer;
+}
+.clickable {
+	cursor: pointer;
+}
+
+#plan-include-groups-div {
+	margin-top: 15px;
+}
+
+#plans-edit fieldset {
+	padding: .35em .625em .75em;
+	margin: 0 2px;
+	border: 1px solid black;
+}
+
+#plans-edit legend {
+	width:inherit; /* Or auto */
+	padding:0 10px; /* To give a bit of padding on the left and right */
+	border-bottom: none;
+	margin-bottom: 8px;
+}
+
+#plans-edit .cost {
+	margin-right: -1px;
+	margin-left: 0px
+}
+
+.custom-input.date {
+	display: inline-table;
+	vertical-align: bottom;
+	clear: both;
+	width: 80%;
+}
+
+.col-indent {
+	margin-left: 40px;
+}
+.col-md-2.col-indent {
+	margin-right: -40px;
+}
+
 .component {
 	/*margin-top:30px;*/
 }

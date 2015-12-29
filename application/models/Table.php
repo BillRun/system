@@ -427,7 +427,6 @@ class TableModel {
 		$count = $this->collection
 			->query($this->search_key, $key)
 			->count();
-
 		if ($count) {
 			die(json_encode("key already exists"));
 		}
