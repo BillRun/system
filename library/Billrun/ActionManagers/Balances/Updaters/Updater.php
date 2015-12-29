@@ -13,6 +13,8 @@
  */
 abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_ActionManagers_APIAction{
 
+	use Billrun_FieldValidator_ServiceProvider;
+	
 	const UNLIMITED_DATE = "30 December 2099";
 	
 	/**
@@ -243,18 +245,6 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 		}
 		return new MongoDate(strtotime("tomorrow", strtotime("+ " . $duration . " " . $unit)));
 	}
-
-	/**
-	 * Check with the mongo that the service provider is trusted.
-	 * @param string $serviceProvider - Service provider to test.
-	 * @return boolean true if trusted.
-	 * @todo Move this logic to a more generic location.
-	 */
-	protected function isServiceProvider($serviceProvider) {
-		$collection = Billrun_Factory::db()->serviceprovidersCollection();
-		$query = array('name' => $serviceProvider);
-		return $collection->exists($query);
-	}
 	
 	/**
 	 * Validate the service provider fields.
@@ -266,7 +256,7 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 		$planServiceProvider = $planRecord['service_provider'];
 		
 		// Check that the service provider is trusted.
-		if(!$this->isServiceProvider($planServiceProvider)) {
+		if(!$this->validateServiceProvider($planServiceProvider)) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 20;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;

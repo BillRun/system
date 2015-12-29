@@ -13,6 +13,8 @@
  */
 class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_Subscribers_Action{
 	
+	use Billrun_FieldValidator_CustomerPlan, Billrun_FieldValidator_ServiceProvider;
+	
 	/**
 	 * Field to hold the data to be written in the DB.
 	 * @var type Array
@@ -53,7 +55,6 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 		
 		// TODO: Use the subscriber class.
 		if($subscribers->count() > 0){
-			$error='Subscriber already exists! [' . print_r($subscriberQuery, true) . ']';
 			$errorCode =Billrun_Factory::config()->getConfigValue("subscriber_error_base");
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return true;
@@ -63,38 +64,19 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 	}
 	
 	/**
-	 * Validate the input plan for the subscriber
-	 * @return boolean True if valid.
-	 */
-	protected function validatePlan() {
-		$subscriberQuery = $this->getSubscriberQuery();
-		
-		$planName = $this->query['plan'];
-		$planQuery = Billrun_Util::getDateBoundQuery();
-		$planQuery['type'] = 'customer';
-		$planQuery['name'] = $planName;
-		$planCollection = Billrun_Factory::db()->plansCollection();
-		$currentPlan = $planCollection->query($planQuery)->cursor()->current();
-		
-		// TODO: Use the subscriber class.
-		if(!$currentPlan || $currentPlan->isEmpty()){
-			$error='Invalid plan for the subscriber! [' . print_r($planName, true) . ']';
-			$this->reportError($error, Zend_Log::NOTICE);
-			return false;
-		}		
-		
-		return true;
-	}
-	
-	/**
 	 * Execute the action.
 	 * @return data for output.
 	 */
 	public function execute() {
 		try {
 			// Create the subscriber only if it doesn't already exists.
-			if($this->validatePlan() &&
-			   !$this->subscriberExists()) {
+			if($this->validateCustomerPlan($this->query['plan']) !== true) {
+				$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 6;
+				$this->reportError($errorCode, Zend_Log::ALERT, $this->query['plan']);
+			} elseif(!$this->validateServiceProvider($this->query['service_provider'])) {
+				$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 5;
+				$this->reportError($errorCode, Zend_Log::ALERT, $this->query['service_provider']);
+			} elseif($this->subscriberExists()) { 
 				$entity = new Mongodloid_Entity($this->query);
 
 				$this->collection->save($entity, 1);

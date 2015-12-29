@@ -41,18 +41,6 @@ class Billrun_ActionManagers_Cards_Update extends Billrun_ActionManagers_Cards_A
 	protected function getUpdateFields() {
 		return Billrun_Factory::config()->getConfigValue('cards.update_fields', array());
 	}
-
-	/**
-	 * Check with the mongo that the service provider is trusted.
-	 * @param string $serviceProvider - Service provider to test.
-	 * @return boolean true if trusted.
-	 * @todo Move this logic to a more generic location.
-	 */
-	protected function isServiceProvider($serviceProvider) {
-		$collection = Billrun_Factory::db()->serviceprovidersCollection();
-		$query = array('name' => $serviceProvider);
-		return $collection->exists($query);
-	}
 	
 	/**
 	 * This function builds the query for the Cards Update API after 
@@ -122,7 +110,7 @@ class Billrun_ActionManagers_Cards_Update extends Billrun_ActionManagers_Cards_A
 		}
 		
 		// service provider validity check
-		if(isset($this->update['service_provider']) && !$this->isServiceProvider($this->update['service_provider'])) {
+		if(!$this->validateServiceProvider($this->update['service_provider'])) {
 			$error = "Received unknown service provider: " . $this->update['service_provider'];
 			$this->reportError($error, Zend_Log::NOTICE);
 			return false;
