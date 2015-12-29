@@ -115,21 +115,28 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 	 * @return data for output.
 	 */
 	public function execute() {
+		$success = true;
+
 		// Get the updater for the filter.
 		$updater = $this->getAction();
 		
 		$outputDocuments = $updater->update($this->query, $this->recordToSet, $this->subscriberId);
 	
 		if($outputDocuments === false) {
-			$this->error = $updater->getError();
-			$this->errorCode = $updater->getErrorCode();
+			$success = false;
+		} elseif (!$outputDocuments) {
+			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 21;
+			$this->reportError($errorCode, Zend_Log::NOTICE);
 		} else {
-			if (!$outputDocuments) {
-				$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 21;
-				$this->reportError($errorCode);
-			} else {
-				// Write the action to the lines collection.
-				$outputDocuments = $this->reportInLines($outputDocuments);
+			// Write the action to the lines collection.
+			$outputDocuments = $this->reportInLines($outputDocuments);
+		}
+		
+		if(!$success) {
+			$updaterError = $updater->getError();
+			if($updaterError) {
+				$this->error = $updaterError;
+				$this->errorCode = $updater->getErrorCode();
 			}
 		}
 		
@@ -151,6 +158,23 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 	}
 	
 	/**
+	 * Handle when the upsert record is not received
+	 * @return boolean true on success
+	 */
+	protected function handleNoUpsert() {
+		// Check if the update record is needed.
+		$upsertNeeded = 
+			Billrun_ActionManagers_Balances_Updaters_Manager::isUpsertRecordNeeded(key($this->query));
+
+		if(!$upsertNeeded) {
+			return true;
+		}
+		$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 15;
+		$this->reportError($errorCode, Zend_Log::NOTICE);
+		return false;
+	}
+	
+	/**
 	 * Set the values for the update record to be set.
 	 * @param httpRequest $input - The input received from the user.
 	 * @return true if successful false otherwise.
@@ -158,11 +182,15 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 	protected function setUpdateRecord($input) {
 		$jsonUpdateData = null;
 		$update = $input->get('upsert');
+		
+		$upsertNeeded = true;
+		
 		if(empty($update) || (!($jsonUpdateData = json_decode($update, true)))) {
-			$error = "Update action does not have an upsert field!";
-			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 15;
-			$this->reportError($errorCode, Zend_Log::NOTICE);
-			return false;
+			if(!$this->handleNoUpsert()) {
+				return false;
+			}
+			
+			$upsertNeeded = false;
 		}
 		
 		$operation = "inc";
@@ -177,6 +205,12 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		if ($to) {
 			$this->recordToSet['to'] = new MongoDate(strtotime($to));
 		}
+		
+		// Upsert is not needed so no need to go over the fields
+		if(!$upsertNeeded) {
+			return true;
+		}
+		
 		$updateFields = $this->getUpdateFields();
 		
 		// Get only the values to be set in the update record.
