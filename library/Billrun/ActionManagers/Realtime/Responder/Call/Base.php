@@ -63,19 +63,22 @@ abstract class Billrun_ActionManagers_Realtime_Responder_Call_Base extends Billr
 	}
 	
 	protected function getAnnouncement() {
-		$announcement = Billrun_Factory::config()->getConfigValue("realtimeevent.announcement.no_announcement");
+		$announcement = false;
 		$language = (isset($this->row['subscriber_lang']) ? $this->row['subscriber_lang'] : Billrun_Factory::config()->getConfigValue("realtimeevent.announcement.default_language"));
 		if (isset($this->row['granted_return_code'])) {
 			$returnCodes = Billrun_Factory::config()->getConfigValue('prepaid.customer', array());
 			switch($this->row['granted_return_code']) {
 				case ($returnCodes['no_available_balances']):
-					case ($returnCodes['no_rate']):
+				case ($returnCodes['no_rate']):
 					$announcement = Billrun_Factory::config()->getConfigValue("realtimeevent.announcement.insufficient_credit");
 				case ($returnCodes['no_subscriber']):
 					$announcement = Billrun_Factory::config()->getConfigValue("realtimeevent.announcement.subscriber_not_found");
 			} 
 		}
 		
+		if (!$announcement) {
+			return "";
+		}
 		return $language . '-' . $announcement;
 	}
 
