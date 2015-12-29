@@ -72,7 +72,7 @@ abstract class Billrun_ActionManagers_Manager {
 	 */
 	protected function validateActionClassName($actionClassName) {
 		// Check if the class exists.
-		return class_exists($actionClassName);
+		return class_exists($actionClassName, true);
 	}
 	
 	/**

@@ -12,6 +12,9 @@
  * @author Tom Feigin
  */
 class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_Subscribers_Action{
+	
+	use Billrun_FieldValidator_CustomerPlan, Billrun_FieldValidator_ServiceProvider;
+	
 	// TODO: Create a generic update action class. This class shares some logic with the cards and balances update action. The setUpdateRecord function is shared.
 	
 	/**
@@ -187,34 +190,6 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 	}
 	
 	/**
-	 * Validate the input plan for the subscriber
-	 * @todo This is multiplicated in the Subscribers Create module.
-	 * @todo Create a validatePlan function that receives a plan name, where to put it?
-	 * @return boolean True if valid.
-	 */
-	protected function validatePlan() {
-		// If the update doesn't affect the plan there is no reason to validate it.
-		if(!isset($this->recordToSet['plan'])) {
-			return true;
-		}
-		$planName = $this->recordToSet['plan'];
-		$planQuery = Billrun_Util::getDateBoundQuery();
-		$planQuery['type'] = 'customer';
-		$planQuery['name'] = $planName;
-		$planCollection = Billrun_Factory::db()->plansCollection();
-		$currentPlan = $planCollection->query($planQuery)->cursor()->current();
-		
-		// TODO: Use the subscriber class.
-		if($currentPlan->isEmpty()){
-			$error='Invalid plan for the subscriber! [' . print_r($planName, true) . ']';
-			$this->reportError($error, Zend_Log::NOTICE);
-			return false;
-		}		
-		
-		return true;
-	}
-	
-	/**
 	 * Set the values for the update record to be set.
 	 * @param httpRequest $input - The input received from the user.
 	 * @return true if successful false otherwise.
@@ -257,7 +232,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 	 */
 	protected function validateSubscriberUpdateValues($jsonUpdateData) {
 		$subscriberFields = Billrun_Factory::config()->getConfigValue('subscribers.query_fields');
-		$subscriberValidationQuery = array();
+		$subscriberValidationQuery = Billrun_Util::getDateBoundQuery();
 		foreach ($subscriberFields as $subField) {
 			if(isset($jsonUpdateData[$subField])) {
 				$subscriberValidationQuery['$or'][] = 
@@ -282,6 +257,9 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 	 * @return boolean true if success to set fields
 	 */
 	protected function setQueryFields($queryData) {
+		// Initialize the query with date bounds
+		$this->query = Billrun_Util::getDateBoundQuery();
+		
 		$queryFields = $this->getQueryFields();
 		
 		// Array of errors to report if any occurs.
@@ -338,8 +316,17 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 		if(!$this->setUpdateRecord($input)){
 			return false;
 		}
-				
-		if(!$this->validatePlan()) {
+			
+		$validateOutput = $this->validateCustomerPlan($this->recordToSet['plan']);
+		if($validateOutput !== true) {
+			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 36;
+			$this->reportError($errorCode, Zend_Log::ALERT, array($this->recordToSet['plan']));
+			return false;
+		}
+		
+		if(!$this->validateServiceProvider($this->recordToSet['service_provider'])) {
+			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 35;
+			$this->reportError($errorCode, Zend_Log::ALERT, array($this->recordToSet['service_provider']));
 			return false;
 		}
 		
