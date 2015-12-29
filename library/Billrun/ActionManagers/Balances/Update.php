@@ -100,6 +100,13 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 				$wallet = $balancePair['wallet'];
 				$insertLine["usaget"] = $wallet->getChargingByUsaget();
 				$insertLine["usagev"] = $wallet->getValue();
+				$insertLine["pp_includes_name"] = $wallet->getPPName();
+				$insertLine["pp_includes_external_id"] = $wallet->getPPID();
+				$balance_after = $this->getBalanceValue($balance);
+				$insertLine["balance_before"] = $balance_after - $insertLine["usagev"];
+				$insertLine["balance_after"] = $balance_after;
+				$insertLine["usage_unit"] = Billrun_Util::getUsagetUnit($insertLine["usaget"]);
+
 			}
 			$insertLine['balance_ref'] = $db->balancesCollection()->createRefByEntity($balance);
 			$insertLine['stamp'] = Billrun_Util::generateArrayStamp($insertLine);
@@ -110,6 +117,14 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		return $balancesRecords;
 	}
 	
+	protected function getBalanceValue($balance) {
+		if ($balance['charging_by_usaget'] == 'total_cost') {
+			return $balance['balance']['cost'];
+		}
+		return $balance['balance']['totals'][$balance['charging_by_usaget']][$balance['charging_by']];
+	}
+
+
 	/**
 	 * Execute the action.
 	 * @return data for output.

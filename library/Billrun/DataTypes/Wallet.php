@@ -90,8 +90,7 @@ class Billrun_DataTypes_Wallet {
 
 		$this->chargingBy = $chargingBy;
 		$this->chargingByUsaget = $chargingByUsaget;
-		$units = Billrun_Factory::config()->getConfigValue('usaget.unit');
-		$this->chargingByUsagetUnit = isset($units[$chargingByUsaget]) ? $units[$chargingByUsaget] : '';
+		$this->chargingByUsagetUnit = Billrun_Util::getUsagetUnit($chargingByUsaget);
 
 		$this->setValue();
 	}
