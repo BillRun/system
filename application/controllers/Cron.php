@@ -100,6 +100,9 @@ class CronController extends Yaf_Controller_Abstract {
 		}
 	}
 
+	public function autoRenewServicesAction() {
+		$this->autoRenewServices();
+	}		
 	public function autoRenewServices() {		
 		$collection = Billrun_Factory::db()->subscribers_auto_renew_servicesCollection();
 		
@@ -158,10 +161,6 @@ class CronController extends Yaf_Controller_Abstract {
 		$autoRenewRecord['done'] = $autoRenewRecord['done'] + 1;
 
 		return $collection->updateEntity($autoRenewRecord);
-	}
-	
-	protected function updateBalanceByAutoRenewAction($autoRenewRecord) {
-		$this->updateBalanceByAutoRenew($autoRenewRecord);
 	}
 	
 	/**
