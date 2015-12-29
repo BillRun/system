@@ -162,9 +162,7 @@
 			<a ng-click='setAdvancedMode(false)' class="clickable" ng-if='advancedMode'>Basic Mode</a>
 			<a ng-click='setAdvancedMode(true)' class="clickable" ng-if='!advancedMode'>Advanced Mode</a>
 			<button class="btn" ng-click='cancel()'>Cancel</button>
-			<!-- <?php if (AdminController::authorized('write')) : ?> -->
-			<button type='submit' class="btn btn-primary">Save changes</button>
-			<!-- <?php endif; ?> -->
+			<button type='submit' class="btn btn-primary" ng-if='authorized_write'>Save changes</button>
 		</div>
 	</form>
 </div>

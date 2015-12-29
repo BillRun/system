@@ -5,16 +5,16 @@ app.controller('BatchController', ['$scope', '$window', '$routeParams', 'Databas
       $window.location = baseUrl + '/admin/cards';
     };
     $scope.save = function () {
-      var range = {
-        from: $scope.entity.serial_numbers_from,
-        to: $scope.entity.serial_numbers_to
+      var serial_number_range = {
+        "$gte": $scope.entity.serial_numbers_from,
+        "$lte": $scope.entity.serial_numbers_to
       };
       var params = {
         entity: $scope.entity,
         coll: 'cards',
         batch: $scope.batch_no,
         type: $routeParams.action,
-        range: JSON.stringify(range)
+        serial_number: JSON.stringify(serial_number_range)
       };
       Database.saveEntity(params).then(function (res) {
         $window.location = baseUrl + '/admin/cards';
@@ -39,6 +39,13 @@ app.controller('BatchController', ['$scope', '$window', '$routeParams', 'Databas
       $scope.action = $routeParams.action;
       $scope.batch_no = $routeParams.id;
       $scope.cardStatuses = ["Idle", "Active", "Disqualified", "Used", "Expired", "Stolen"];
+      $scope.entity = {
+        serial_numbers_from: undefined,
+        serial_numbers_to: undefined,
+        service_provider: undefined,
+        status: undefined,
+        charging_plan_name: undefined
+      };
       Database.getAvailableServiceProviders().then(function (res) {
         $scope.availableServiceProviders = res.data;
       });

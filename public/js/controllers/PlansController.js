@@ -81,7 +81,8 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
         id: $routeParams.id
       };
       Database.getEntity(params).then(function (res) {
-        $scope.entity = res.data;
+        $scope.entity = res.data.entity;
+        $scope.authorized_write = res.data.authorized_write;
       });
       Database.getAvailableServiceProviders().then(function (res) {
         $scope.availableServiceProviders = res.data;

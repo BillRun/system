@@ -1,0 +1,38 @@
+<ul class="pagination pagination-right">
+	<li ng-class='{disabled: pager.current == 1}'>
+		<a ng-click='page(1)' class='clickable'>First</a>
+	</li>
+	<li ng-class='{disabled: pager.current == 1}'>
+		<a ng-click='prevPage()' class='clickable'>Prev</a>
+	</li>
+	<li ng-repeat='i in maxPages() track by $index' ng-class='{disabled: i == pager.current, active: i == pager.current}'>
+		<a ng-click='page(i)' class='clickable'>{{i}}</a>
+	</li>
+	<li ng-class='{disabled: pager.current == pager.count}'>
+		<a ng-click='nextPage()' class='clickable'>Next</a>
+	</li>
+	<li ng-class='{disabled: pager.current == pager.count}'>
+		<a ng-click='page(pager.count)' class='clickable'>Last</a>
+	</li>
+</ul>
+
+<div id="listSize" class="btn-group">
+	<button class="btn btn-danger dropdown-toggle" data-toggle="dropdown">{{pager.size}}<span class="caret"></span></button>
+	<ul class="dropdown-menu">
+		<li>
+			<a ng-click='setListSize(10)'>10</a>
+		</li>
+		<li>
+			<a ng-click='setListSize(50)'>50</a>
+		</li>
+		<li>
+			<a ng-click='setListSize(100)'>100</a>
+		</li>
+		<li>
+			<a ng-click='setListSize(500)'>500</a>
+		</li>
+		<li>
+			<a ng-click='setListSize(1000)'>1000</a>
+		</li>
+	</ul>
+</div>

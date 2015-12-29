@@ -123,8 +123,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		foreach ($model->getHiddenKeys($entity, $type) as $key) {
 			if ($key !== '_id') unset($entity[$key]);
 		}
-		
-		$response->setBody(json_encode($entity));
+		$response->setBody(json_encode(array('authorized_write' => AdminController::authorized('write'), 'entity' => $entity)));
 		$response->response();
 		return false;
 	}
@@ -173,7 +172,7 @@ class AdminController extends Yaf_Controller_Abstract {
 			$items[] = $i;
 		}
 		$params['data'] = $items;
-		$response->setBody(json_encode($params));
+		$response->setBody(json_encode(array('items' => $params, 'pager' => $this->model->getPager(), 'authorized_write' => AdminController::authorized('write'))));
 		$response->response();
 		return false;
 	}
@@ -352,7 +351,9 @@ class AdminController extends Yaf_Controller_Abstract {
 		}
 		if ($type == 'update') {
 			if ($batch_no) {
-				// SAVE BATCH
+				$cardObj = new Billrun_ActionManagers_Cards_Update();
+				$this->getRequest()->set('update', $this->getRequest()->get('data'));
+				$cardObj->updateProcess($this->getRequest());
 			} else {
 				$saveStatus = $model->update($params);
 			}
