@@ -1035,5 +1035,9 @@ class Billrun_Util {
 		return array_keys($arr) !== range(0, count($arr) - 1);
 	}
 
+	public static function getUsagetUnit($usaget) {
+		$units = Billrun_Factory::config()->getConfigValue('usaget.unit');
+		return isset($units[$usaget]) ? $units[$usaget] : '';
+	}
 
 }
