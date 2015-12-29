@@ -160,6 +160,10 @@ class CronController extends Yaf_Controller_Abstract {
 		return $collection->updateEntity($autoRenewRecord);
 	}
 	
+	protected function updateBalanceByAutoRenewAction($autoRenewRecord) {
+		$this->updateBalanceByAutoRenew($autoRenewRecord);
+	}
+	
 	/**
 	 * Update a balance according to a auto renew record.
 	 * @param type $autoRenewRecord
@@ -180,7 +184,8 @@ class CronController extends Yaf_Controller_Abstract {
 		$updaterInput['query'] = $updaterInputQuery;
 		$updaterInput['update'] = $updaterInputUpdate;
 
-		if(!$updater->parse(json_encode($updaterInput))) {
+		$jsonFormat = json_encode($updaterInput,JSON_FORCE_OBJECT);
+		if(!$updater->parse($jsonFormat)) {
 			// TODO: What do I do here?
 			return false;
 		}
