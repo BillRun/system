@@ -364,20 +364,23 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	public static function getPriceByRate($rate, $usage_type, $volume, $plan = null) {
 		$rates_arr = self::getRatesArray($rate, $usage_type, $plan);
 		$price = 0;
-		foreach ($rates_arr as $currRate) {
+			foreach ($rates_arr as $currRate) {
+			if (isset($currRate['rate'])) {
+				$currRate = $currRate['rate'];
+			}
 			if (0 == $volume) { // volume could be negative if it's a refund amount
 				break;
 			}//break if no volume left to price.
-			$volumeToPriceCurrentRating = ($volume - $currRate['rate']['to'] < 0) ? $volume : $currRate['rate']['to']; // get the volume that needed to be priced for the current rating
-			if (isset($currRate['rate']['ceil'])) {
-				$ceil = $currRate['rate']['ceil'];
+			$volumeToPriceCurrentRating = ($volume - $currRate['to'] < 0) ? $volume : $currRate['to']; // get the volume that needed to be priced for the current rating
+			if (isset($currRate['ceil'])) {
+				$ceil = $currRate['ceil'];
 			} else {
 				$ceil = true;
 			}
 			if ($ceil) {
-				$price += floatval(ceil($volumeToPriceCurrentRating / $currRate['rate']['interval']) * $currRate['rate']['price']); // actually price the usage volume by the current 	
+				$price += floatval(ceil($volumeToPriceCurrentRating / $currRate['interval']) * $currRate['price']); // actually price the usage volume by the current 	
 			} else {
-				$price += floatval($volumeToPriceCurrentRating / $currRate['rate']['interval'] * $currRate['rate']['price']); // actually price the usage volume by the current 
+				$price += floatval($volumeToPriceCurrentRating / $currRate['interval'] * $currRate['price']); // actually price the usage volume by the current 
 			}
 			$volume = $volume - $volumeToPriceCurrentRating; //decrease the volume that was priced
 		}
@@ -403,17 +406,21 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				break;
 			}
 			
-			$volumeAvailableInCurrentRate = floor(($price / $currRate['rate']['price']) / $currRate['rate']['interval']) * $currRate['rate']['interval']; // In case of no limit
-			if (isset($currRate['rate']['from'])) {
-				$lastRateFrom = $currRate['rate']['from'];
+			if (isset($currRate['rate'])) {
+				$currRate = $currRate['rate'];
 			}
-			$currentRateMaxVolume = $currRate['rate']['to'] - $lastRateFrom;
-			$lastRateFrom = $currRate['rate']['to']; // Support the case of rate without "from" field
+			
+			$volumeAvailableInCurrentRate = floor(($price / $currRate['price']) / $currRate['interval']) * $currRate['interval']; // In case of no limit
+			if (isset($currRate['from'])) {
+				$lastRateFrom = $currRate['from'];
+			}
+			$currentRateMaxVolume = $currRate['to'] - $lastRateFrom;
+			$lastRateFrom = $currRate['to']; // Support the case of rate without "from" field
 			$volumeInCurrentRate = ($volumeAvailableInCurrentRate < $currentRateMaxVolume ? $volumeAvailableInCurrentRate : $currentRateMaxVolume); // Checks limit for current rate
 			if ($volumeInCurrentRate == 0) {
 				break;
 			}
-			$price -= ($volumeInCurrentRate * $currRate['rate']['price']);
+			$price -= ($volumeInCurrentRate * $currRate['price']);
 			$volume += $volumeInCurrentRate;
 		}
 		return $volume;
@@ -426,7 +433,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		if (isset($rate['rates'][$usage_type]['BASE'])) {
 			return $rate['rates'][$usage_type]['BASE'];
 		}
-		return $rate['rates'][$usage_type];
+		return $rate['rates'][$usage_type]['rate'];
 	}
 	
 	/**
@@ -753,6 +760,9 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @param type $usageType
 	 */
 	protected function getPrepaidGrantedVolume($row, $rate, $balance, $usageType) {
+		if (isset($row['api_name']) && $row['api_name'] == 'release_call') {
+			return 0;
+		}
 		$requestedVolume = PHP_INT_MAX;
 		if (isset($row['usagev'])) {
 			$requestedVolume = $row['usagev'];

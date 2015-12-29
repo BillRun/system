@@ -130,13 +130,16 @@ abstract class Billrun_ActionManagers_Realtime_Responder_Base {
 		$balanceRef = $lineToRebalance->get('balance_ref');
 		$balances_coll = Billrun_Factory::db()->balancesCollection();
 		$balance = $balances_coll->getRef($balanceRef);
+		if (is_array($balance['tx']) && empty($balance['tx'])) {
+			$balance['tx'] = new stdClass();
+		}
 		$balance->collection($balances_coll);
 		$usaget = $lineToRebalance['usaget'];
 		if (!is_null($balance->get('balance.totals.' . $usaget . '.usagev'))) {
 			$balance['balance.totals.' . $usaget . '.usagev'] += $rebalanceUsagev;
 		} else {
 			$rate = Billrun_Factory::db()->ratesCollection()->getRef($lineToRebalance->get('arate', true));
-			$cost = Billrun_Calculator_CustomerPricing::getPriceByRate($rate, $usaget, $rebalanceUsagev);
+			$cost = Billrun_Calculator_CustomerPricing::getPriceByRate($rate, $usaget, $rebalanceUsagev, $lineToRebalance['plan']);
 			if (!is_null($balance->get('balance.totals.' . $usaget . '.cost'))) {
 				$balance['balance.totals.' . $usaget . '.cost'] += $cost;
 			} else {
