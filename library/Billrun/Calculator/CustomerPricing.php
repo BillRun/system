@@ -313,7 +313,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			$ret['out_plan'] = $volumeToCharge = $volume;
 		}
 
-		$price = $accessPrice + self::getPriceByRate($rate, $usageType, $volumeToCharge, $plan);
+		$price = $accessPrice + self::getPriceByRate($rate, $usageType, $volumeToCharge, $plan->getName());
 		//Billrun_Factory::log("Rate : ".print_r($typedRates,1),  Zend_Log::DEBUG);
 		$ret[$this->pricingField] = $price;
 		return $ret;
@@ -368,16 +368,16 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			if (0 == $volume) { // volume could be negative if it's a refund amount
 				break;
 			}//break if no volume left to price.
-			$volumeToPriceCurrentRating = ($volume - $currRate['to'] < 0) ? $volume : $currRate['to']; // get the volume that needed to be priced for the current rating
-			if (isset($currRate['ceil'])) {
-				$ceil = $currRate['ceil'];
+			$volumeToPriceCurrentRating = ($volume - $currRate['rate']['to'] < 0) ? $volume : $currRate['rate']['to']; // get the volume that needed to be priced for the current rating
+			if (isset($currRate['rate']['ceil'])) {
+				$ceil = $currRate['rate']['ceil'];
 			} else {
 				$ceil = true;
 			}
 			if ($ceil) {
-				$price += floatval(ceil($volumeToPriceCurrentRating / $currRate['interval']) * $currRate['price']); // actually price the usage volume by the current 	
+				$price += floatval(ceil($volumeToPriceCurrentRating / $currRate['rate']['interval']) * $currRate['rate']['price']); // actually price the usage volume by the current 	
 			} else {
-				$price += floatval($volumeToPriceCurrentRating / $currRate['interval'] * $currRate['price']); // actually price the usage volume by the current 
+				$price += floatval($volumeToPriceCurrentRating / $currRate['rate']['interval'] * $currRate['rate']['price']); // actually price the usage volume by the current 
 			}
 			$volume = $volume - $volumeToPriceCurrentRating; //decrease the volume that was priced
 		}
@@ -426,7 +426,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		if (isset($rate['rates'][$usage_type]['BASE'])) {
 			return $rate['rates'][$usage_type]['BASE'];
 		}
-		return $rate['rates'][$usage_type]['rate'];
+		return $rate['rates'][$usage_type];
 	}
 	
 	/**
