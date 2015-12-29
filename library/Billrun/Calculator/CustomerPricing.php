@@ -313,7 +313,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			$ret['out_plan'] = $volumeToCharge = $volume;
 		}
 
-		$price = $accessPrice + self::getPriceByRate($rate, $usageType, $volumeToCharge, $plan);
+		$price = $accessPrice + self::getPriceByRate($rate, $usageType, $volumeToCharge, $plan->getName());
 		//Billrun_Factory::log("Rate : ".print_r($typedRates,1),  Zend_Log::DEBUG);
 		$ret[$this->pricingField] = $price;
 		return $ret;
@@ -364,7 +364,10 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	public static function getPriceByRate($rate, $usage_type, $volume, $plan = null) {
 		$rates_arr = self::getRatesArray($rate, $usage_type, $plan);
 		$price = 0;
-		foreach ($rates_arr as $currRate) {
+			foreach ($rates_arr as $currRate) {
+			if (isset($currRate['rate'])) {
+				$currRate = $currRate['rate'];
+			}
 			if (0 == $volume) { // volume could be negative if it's a refund amount
 				break;
 			}//break if no volume left to price.
@@ -403,6 +406,10 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				break;
 			}
 			
+			if (isset($currRate['rate'])) {
+				$currRate = $currRate['rate'];
+			}
+			
 			$volumeAvailableInCurrentRate = floor(($price / $currRate['price']) / $currRate['interval']) * $currRate['interval']; // In case of no limit
 			if (isset($currRate['from'])) {
 				$lastRateFrom = $currRate['from'];
@@ -420,11 +427,11 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	}
 	
 	protected static function getRatesArray($rate, $usage_type, $plan = null) {
-		if (!is_null($plan) && !empty($plan_name = $plan->getName()) && isset($rate['rates'][$usage_type]['rate'][$plan_name])) {
-			return $rate['rates'][$usage_type]['rate'][$plan_name];
+		if (!is_null($plan) && isset($rate['rates'][$usage_type][$plan])) {
+			return $rate['rates'][$usage_type][$plan];
 		}
-		if (isset($rate['rates'][$usage_type]['rate']['BASE'])) {
-			return $rate['rates'][$usage_type]['rate']['BASE'];
+		if (isset($rate['rates'][$usage_type]['BASE'])) {
+			return $rate['rates'][$usage_type]['BASE'];
 		}
 		return $rate['rates'][$usage_type]['rate'];
 	}
@@ -484,15 +491,15 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			return false;
 		}
 		$balanceRaw = $this->balance->getRawData();
+		$plan = Billrun_Factory::plan(array('name' => $row['plan'], 'time' => $row['urt']->sec, 'disableCache' => true));
 		if ($row['charging_type'] === 'prepaid' && !(isset($row['prepaid_rebalance']) && $row['prepaid_rebalance'])) { // If it's a prepaid row, but not rebalance
-			$row['usagev'] = $volume = $this->getPrepaidGrantedVolume($row, $rate, $this->balance, $usage_type);
+			$row['usagev'] = $volume = $this->getPrepaidGrantedVolume($row, $rate, $this->balance, $usage_type, $plan);
 			$row['balance_ref'] = $this->balance->createRef();
 		} else {
 			$volume = $row['usagev'];
 		}
 		$this->countConcurrentRetries++;
 		Billrun_Factory::dispatcher()->trigger('beforeUpdateSubscriberBalance', array($this->balance, &$row, $rate, $this));
-		$plan = Billrun_Factory::plan(array('name' => $row['plan'], 'time' => $row['urt']->sec, 'disableCache' => true));
 		$balance_totals_key = ($row['charging_type'] === 'postpaid' ? $plan->getBalanceTotalsKey($usage_type, $rate) : $usage_type);
 		$tx = $this->balance->get('tx');
 		if (!empty($tx) && array_key_exists($row['stamp'], $tx)) { // we're after a crash
@@ -753,6 +760,9 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @param type $usageType
 	 */
 	protected function getPrepaidGrantedVolume($row, $rate, $balance, $usageType) {
+		if (isset($row['api_name']) && $row['api_name'] == 'release_call') {
+			return 0;
+		}
 		$requestedVolume = PHP_INT_MAX;
 		if (isset($row['usagev'])) {
 			$requestedVolume = $row['usagev'];
@@ -761,7 +771,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			(isset($row['free_call']) && $row['free_call'])) {
 			return 0;
 		}
-		$maximumGrantedVolume = $this->getPrepaidGrantedVolumeByRate($rate, $usageType);
+		$maximumGrantedVolume = $this->getPrepaidGrantedVolumeByRate($rate, $usageType, $row['plan']);
 		$rowInOrOutOfBalanceKey = 'in';
 		if (isset($balance->get("balance")["totals"][$usageType]["usagev"])) {
 			$currentBalanceVolume = $balance->get("balance")["totals"][$usageType]["usagev"];
@@ -773,7 +783,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				$price = $balance->get("balance")["cost"];
 				$rowInOrOutOfBalanceKey = 'out';
 			}
-			$currentBalanceVolume = Billrun_Calculator_CustomerPricing::getVolumeByRate($rate, $usageType, abs($price));
+			$currentBalanceVolume = Billrun_Calculator_CustomerPricing::getVolumeByRate($rate, $usageType, abs($price), $row['plan']);
 		}
 		$currentBalanceVolume = abs($currentBalanceVolume);
 		$usagev = min(array($currentBalanceVolume, $maximumGrantedVolume, $requestedVolume));
@@ -786,12 +796,12 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @param type $rate
 	 * @param type $usageType
 	 */
-	protected function getPrepaidGrantedVolumeByRate($rate, $usageType) {
+	protected function getPrepaidGrantedVolumeByRate($rate, $usageType, $planName) {
 		if (isset($rate["rates"][$usageType]["prepaid_granted_usagev"])) {
 			return $rate["rates"][$usageType]["prepaid_granted_usagev"];
 		}
 		if (isset($rate["rates"][$usageType]["prepaid_granted_cost"])) {
-			return Billrun_Calculator_CustomerPricing::getVolumeByRate($rate, $usageType, $rate["rates"][$usageType]["prepaid_granted_cost"]);
+			return Billrun_Calculator_CustomerPricing::getVolumeByRate($rate, $usageType, $rate["rates"][$usageType]["prepaid_granted_cost"], $planName);
 		}
 		
 		$usagevDefault = Billrun_Factory::config()->getConfigValue("rates.prepaid_granted.$usageType.usagev", 0);
@@ -799,7 +809,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			return $usagevDefault;
 		}
 		
-		return Billrun_Calculator_CustomerPricing::getVolumeByRate($rate, $usageType, Billrun_Factory::config()->getConfigValue("rates.prepaid_granted.$usageType.cost", 0));
+		return Billrun_Calculator_CustomerPricing::getVolumeByRate($rate, $usageType, Billrun_Factory::config()->getConfigValue("rates.prepaid_granted.$usageType.cost", 0), $planName);
 	}
 
 }

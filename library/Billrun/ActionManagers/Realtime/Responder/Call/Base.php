@@ -36,7 +36,7 @@ abstract class Billrun_ActionManagers_Realtime_Responder_Call_Base extends Billr
 			} 
 		}
 
-		return Billrun_Factory::config()->getConfigValue('realtimeevent.clearCause.normal_release');
+		return "";
 	}
 	
 	/**
