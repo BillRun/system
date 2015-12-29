@@ -49,13 +49,15 @@ class Billrun_ActionManagers_Subscribersautorenew_Query extends Billrun_ActionMa
 	 */
 	protected function populatePlanValues(&$record) {
 		if(!isset($record['charging_plan_name'])) {
-			$this->reportError("No plan found for recurring record!", Zend_Log::ERR);
+			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 4;
+			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
 		
 		$planRecord = $this->getPlanRecord($record);
 		if($planRecord->isEmpty()) {
-			$this->reportError("Invalid plan for subscribers auto renew!", Zend_Log::ERR);
+			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 5;
+			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
 		
