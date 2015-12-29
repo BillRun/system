@@ -232,7 +232,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 	 */
 	protected function validateSubscriberUpdateValues($jsonUpdateData) {
 		$subscriberFields = Billrun_Factory::config()->getConfigValue('subscribers.query_fields');
-		$subscriberValidationQuery = array();
+		$subscriberValidationQuery = Billrun_Util::getDateBoundQuery();
 		foreach ($subscriberFields as $subField) {
 			if(isset($jsonUpdateData[$subField])) {
 				$subscriberValidationQuery['$or'][] = 
@@ -257,6 +257,9 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 	 * @return boolean true if success to set fields
 	 */
 	protected function setQueryFields($queryData) {
+		// Initialize the query with date bounds
+		$this->query = Billrun_Util::getDateBoundQuery();
+		
 		$queryFields = $this->getQueryFields();
 		
 		// Array of errors to report if any occurs.
