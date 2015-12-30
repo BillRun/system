@@ -63,7 +63,7 @@ app.controller('SubscribersController', ['$scope', '$window', '$routeParams', 'D
       Database.getAvailablePlans().then(function (res) {
         $scope.availablePlans = res.data;
       });
-      $scope.availableLanguages = ["Hebrew", "English"];
+      $scope.availableLanguages = ["Hebrew", "English", "Arabic", "Russian", "Thai"];
       $scope.availableChargingTypes = ["prepaid", "postpaid"];
     };
   }]);
