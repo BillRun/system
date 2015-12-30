@@ -504,6 +504,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		}
 		$pricingData = $this->getLinePricingData($volume, $usage_type, $rate, $this->balance, $plan);
 		if (isset($row['billrun_pretend']) && $row['billrun_pretend']) {
+			Billrun_Factory::dispatcher()->trigger('afterUpdateSubscriberBalance', array(array_merge($row->getRawData(), $pricingData), $this->balance, &$pricingData, $this));
 			return $pricingData;
 		}
 

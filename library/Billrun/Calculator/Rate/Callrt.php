@@ -48,12 +48,30 @@ class Billrun_Calculator_Rate_Callrt extends Billrun_Calculator_Rate {
 	 * @see Billrun_Calculator_Rate::getLineRate
 	 */
 	protected function getLineRate($row) {
-		$called_number = $row->get('calling_number');
+		$called_number = $this->get_called_number($row);
 		$line_time = $row->get('urt');
 		$usage_type = $row->get('usaget');
 		$matchedRate = $this->getRateByParams($called_number, $usage_type, $line_time);
 
 		return $matchedRate;
+	}
+	
+	/**
+	 * method to identify the destination of the call
+	 * 
+	 * @param array $row billing line
+	 * 
+	 * @return string
+	 */
+	protected function get_called_number($row) {
+		$called_number = $row->get('called_number');
+		if (empty($called_number)) {
+			$called_number = $row->get('dialed_digits');
+			if (empty($called_number)) {
+				$called_number = $row->get('connected_number');
+			}
+		}
+		return $called_number;
 	}
 
 	/**
@@ -63,6 +81,7 @@ class Billrun_Calculator_Rate_Callrt extends Billrun_Calculator_Rate {
 	 * @param MongoDate $urt the time of the event
 	 * @param string $ocg the out circuit group of the event. If not supplied, ocg will be ignored in the search.
 	 * @return Mongodloid_Entity the matched rate or UNRATED rate if none found
+	 * @todo make this method work by db query
 	 */
 	protected function getRateByParams($called_number, $usage_type, $urt, $ocg = null) {
 		$matchedRate = $this->rates['UNRATED'];
