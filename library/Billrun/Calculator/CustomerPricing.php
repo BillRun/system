@@ -197,7 +197,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 					}
 
 					// billrun cannot override on api calls
-					if (!isset($row['billrun']) || $row['source'] != 'api') {
+					if ($row['charging_type'] != 'prepaid' && (!isset($row['billrun']) || $row['source'] != 'api')) {
 						$pricingData['billrun'] = $row['urt']->sec <= $this->active_billrun_end_time ? $this->active_billrun : $this->next_active_billrun;
 					}
 				}
