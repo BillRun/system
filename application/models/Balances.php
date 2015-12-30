@@ -93,20 +93,20 @@ class BalancesModel extends TableModel {
 		);
 
 		$filter_fields = array(
-			'aid' => array(
-				'key' => 'aid',
-				'db_key' => 'aid',
-				'input_type' => 'number',
-				'comparison' => 'equals',
-				'display' => 'Account id',
-				'default' => '',
-			),
 			'sid' => array(
 				'key' => 'sid',
 				'db_key' => 'sid',
 				'input_type' => 'number',
 				'comparison' => 'equals',
 				'display' => 'Subscriber id',
+				'default' => '',
+			),
+			'aid' => array(
+				'key' => 'aid',
+				'db_key' => 'aid',
+				'input_type' => 'number',
+				'comparison' => 'equals',
+				'display' => 'Account id',
 				'default' => '',
 			),
 			'usage_type' => array(
@@ -161,10 +161,10 @@ class BalancesModel extends TableModel {
 	public function getFilterFieldsOrder() {
 		$filter_field_order = array(
 			0 => array(
-				'aid' => array(
+				'sid' => array(
 					'width' => 2,
 				),
-				'sid' => array(
+				'aid' => array(
 					'width' => 2,
 				),
 			),
