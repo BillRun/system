@@ -132,6 +132,9 @@ class AdminController extends Yaf_Controller_Abstract {
 		if (!$this->allowed('read'))
 			return false;
 		$coll = Billrun_Util::filter_var($this->getRequest()->get('coll'), FILTER_SANITIZE_STRING);
+		$filter = @json_decode($this->getRequest()->get('filter'));
+		$size = $this->getRequest()->get('size');
+		$page = $this->getRequest()->get('page');
 		$response = new Yaf_Response_Http();
 /*
 		$session = @json_decode($this->getRequest()->get('session'));
@@ -144,7 +147,15 @@ class AdminController extends Yaf_Controller_Abstract {
 			$session = $this->getSession();
 		}
  */
-		$session = $this->getSession();
+		$session = $this->getSession($coll);
+		if ($filter) {
+			foreach($filter as $key => $val) {
+				$session->$key = $val;
+			}
+		}
+		$file = fopen('mylog', 'w+');
+		fwrite($file, print_r($session,1));
+		fclose($file);
 		$show_prefix = $this->getSetVar($session, 'showprefix', 'showprefix', 0);
 		$sort = $this->applySort($coll);
 		$options = array(
@@ -154,13 +165,14 @@ class AdminController extends Yaf_Controller_Abstract {
 		);
 		// set the model
 		self::initModel($coll, $options);
+		
 		$query = $this->applyFilters($coll, $session);
-		// TODO: use ready pager/paginiation class (zend? joomla?) with auto print
 		$basic_params = array(
 			'title' => $this->title,
 			'active' => $coll,
 			'session' => $session,
 		);
+		$this->model->setSize($size);
 		$params = array_merge($options, $basic_params, $this->getTableViewParams($query), $this->createFilterToolbar($coll));
 		$items = array();
 		foreach ($params['data'] as $item) {
