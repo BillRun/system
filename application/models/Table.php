@@ -279,6 +279,9 @@ class TableModel {
 				$new_data[$value] = $raw_data[$value];
 			}
 			foreach ($params as $key => $value) {
+				if (in_array($key, array("to", "from")) && is_array($value)) {
+					$value = new MongoDate($value['sec']);
+				}
 				$new_data[$key] = $value;
 			}
 			$entity->setRawData($new_data);
