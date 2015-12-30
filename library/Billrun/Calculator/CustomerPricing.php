@@ -364,7 +364,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	public static function getPriceByRate($rate, $usage_type, $volume, $plan = null) {
 		$rates_arr = self::getRatesArray($rate, $usage_type, $plan);
 		$price = 0;
-			foreach ($rates_arr as $currRate) {
+		foreach ($rates_arr as $currRate) {
 			if (isset($currRate['rate'])) {
 				$currRate = $currRate['rate'];
 			}
@@ -406,10 +406,6 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				break;
 			}
 			
-			if (isset($currRate['rate'])) {
-				$currRate = $currRate['rate'];
-			}
-			
 			$volumeAvailableInCurrentRate = floor(($price / $currRate['price']) / $currRate['interval']) * $currRate['interval']; // In case of no limit
 			if (isset($currRate['from'])) {
 				$lastRateFrom = $currRate['from'];
@@ -428,10 +424,10 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	
 	protected static function getRatesArray($rate, $usage_type, $plan = null) {
 		if (!is_null($plan) && isset($rate['rates'][$usage_type][$plan])) {
-			return $rate['rates'][$usage_type][$plan];
+			return $rate['rates'][$usage_type][$plan]['rate'];
 		}
 		if (isset($rate['rates'][$usage_type]['BASE'])) {
-			return $rate['rates'][$usage_type]['BASE'];
+			return $rate['rates'][$usage_type]['BASE']['rate'];
 		}
 		return $rate['rates'][$usage_type]['rate'];
 	}
