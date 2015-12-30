@@ -31,10 +31,10 @@ class SubscribersAction extends ApiAction {
 			'api_name' => $apiName
 		);
 
-		$manager = new Billrun_ActionManagers_APIManager($apiManagerInput);
+		$this->manager = new Billrun_ActionManagers_APIManager($apiManagerInput);
 
 		// This is the method which is going to be executed.
-		return $manager->getAction();
+		return $this->manager->getAction();
 	}
 
 	/**
@@ -58,10 +58,10 @@ class SubscribersAction extends ApiAction {
 		if (is_string($action)) {
 			// TODO: Report failed action. What do i write to the output if this happens?
 			Billrun_Factory::log("Failed to get subscriber action instance for received input", Zend_Log::ALERT);
-			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 10;
+			$errorCode = $this->manager->getErrorCode();
 			$output = array(
 				'status'     => $errorCode == 0 ? 1 : 0,
-				'desc'       => $action,
+				'desc'       => $this->manager->getError(),
 				'error_code' => $errorCode,
 				'details'    => 'Error'
 			);

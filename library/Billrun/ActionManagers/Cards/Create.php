@@ -73,10 +73,17 @@ class Billrun_ActionManagers_Cards_Create extends Billrun_ActionManagers_Cards_A
 				$oneCard[$field] = $jsonCreateData[$field];
 			}
 
+			// status validity check (should be "Idle" by default(
+			if($oneCard['status'] != "Idle") {
+				$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 3;
+				$this->reportError($errorCode, Zend_Log::NOTICE, array($oneCard['status']));
+				return false;
+			}
+
 			// service provider validity check
 			if(!$this->validateServiceProvider($oneCard['service_provider'])) {
-				$error = "Received unknown service provider: " . $oneCard['service_provider'];
-				$this->reportError($error, Zend_Log::NOTICE);
+				$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 4;
+				$this->reportError($errorCode, Zend_Log::NOTICE, array($oneCard['service_provider']	));
 				return false;
 			}
 
@@ -127,7 +134,7 @@ class Billrun_ActionManagers_Cards_Create extends Billrun_ActionManagers_Cards_A
 		);
 		$exception = null;
 		try {
-			$res = Billrun_Factory::db()->cardsCollection()->batchInsert($this->cards, $bulkOptions);
+ 			$res = Billrun_Factory::db()->cardsCollection()->batchInsert($this->cards, $bulkOptions);
 			$count = $res['nInserted'];
 		} catch (\Exception $e) {
 			$exception = $e;
