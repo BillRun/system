@@ -19,7 +19,7 @@ app.controller('BatchController', ['$scope', '$window', '$routeParams', 'Databas
       Database.saveEntity(params).then(function (res) {
         $window.location = baseUrl + '/admin/cards';
       }, function (err) {
-        alert("Danger! Danger! Beedeebeedeebeedee!");
+        alert("Connection error!");
       });
     };
 
