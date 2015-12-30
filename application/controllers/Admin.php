@@ -136,12 +136,17 @@ class AdminController extends Yaf_Controller_Abstract {
 		$page = $this->getRequest()->get('page');
 		$response = new Yaf_Response_Http();
 		$session = $this->getSession($coll);
-//		$filter = @json_decode($this->getRequest()->get('filter'));
-//		if ($filter) {
-//			foreach($filter as $key => $val) {
-//				$session->$key = $val;
-//			}
-//		}
+		/*
+		$filter = @json_decode($this->getRequest()->get('filter'));
+		if ($filter) {
+			foreach($filter as $key => $val) {
+				if (!is_array($val)) {
+					$session->$key = $val;
+				}
+			}
+		}
+		 * 
+		 */
 		$show_prefix = $this->getSetVar($session, 'showprefix', 'showprefix', 0);
 		$sort = $this->applySort($coll);
 		$options = array(
@@ -151,14 +156,13 @@ class AdminController extends Yaf_Controller_Abstract {
 		);
 		// set the model
 		self::initModel($coll, $options);
-		
-		$query = $this->applyFilters($coll, $session);
+		$this->model->setSize($size);
+		$query = $this->applyFilters($coll);
 		$basic_params = array(
 			'title' => $this->title,
 			'active' => $coll,
 			'session' => $session,
 		);
-		$this->model->setSize($size);
 		$params = array_merge($options, $basic_params, $this->getTableViewParams($query), $this->createFilterToolbar($coll));
 		$items = array();
 		foreach ($params['data'] as $item) {
@@ -982,7 +986,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		}
 		$filter_fields = $model->getFilterFields();
 		$query = array();
-		if ($filter = $this->getManualFilters($table)) {
+		if (($filter = $this->getManualFilters($table, $session))) {
 			$query['$and'][] = $filter;
 		}
 		foreach ($filter_fields as $filter_name => $filter_field) {
@@ -1159,7 +1163,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$query[$key][$operator] = $value;
 	}
 
-	public function getManualFilters($table) {
+	public function getManualFilters($table, $session = false) {
 		$advanced_options = $this->getAdvancedOptionsPerModel();
 		if ($advanced_options === false) {
 			Billrun_Factory::log("No options found for current model.", Zend_Log::DEBUG);
@@ -1167,7 +1171,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		}
 
 		$query = false;
-		$session = $this->getSession($table);
+		if (!$session) $session = $this->getSession($table);
 		$keys = $this->getSetVar($session, 'manual_key', 'manual_key');
 
 		$operators = $this->getSetVar($session, 'manual_operator', 'manual_operator');

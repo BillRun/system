@@ -42,10 +42,14 @@ app.controller('CollectionsController', ['$scope', '$routeParams', '$location', 
     $scope.filterList = function () {
       var params = {
         coll: $routeParams.collection,
-        session: JSON.stringify($scope.listFilter)
+        filter: JSON.stringify($scope.session),
+        showprefix: $scope.session.showprefix,
+        size: $scope.pager.size
       };
       Database.filterCollectionItems(params).then(function (res) {
-        $scope.collection.data = res.data.data;
+        console.log(res.data);
+        $scope.collection = res.data.items;
+        $scope.session = res.data.items.session;
       });
     };
 

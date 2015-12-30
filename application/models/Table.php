@@ -279,6 +279,9 @@ class TableModel {
 				$new_data[$value] = $raw_data[$value];
 			}
 			foreach ($params as $key => $value) {
+				if (in_array($key, array("to", "from"))) {
+					$value = new Zend_Date($value, null, new Zend_Locale('he_IL'));
+				}
 				$new_data[$key] = $value;
 			}
 			$entity->setRawData($new_data);

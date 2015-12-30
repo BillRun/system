@@ -33,7 +33,7 @@ app.factory('Database', ['$http', function ($http) {
     }
 
     function filterCollectionItems(params) {
-      return $http.post(baseUrl + '/admin/getCollectionItems', {params: params});
+      return $http.get(baseUrl + '/admin/getCollectionItems', {params: params});
     }
 
     return {
