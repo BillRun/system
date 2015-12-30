@@ -574,7 +574,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		if ($row['charging_type'] === 'postpaid') {
 			$update['$set']['balance.cost'] = $balanceRaw['balance']['cost'] + $pricingData[$this->pricingField];
 		}
-		$options = array('w' => 1);
+//		$options = array('w' => 'majority');
 		Billrun_Factory::log("Updating balance " . $balance_id . " of subscriber " . $row['sid'], Zend_Log::DEBUG);
 		Billrun_Factory::dispatcher()->trigger('beforeCommitSubscriberBalance', array(&$row, &$pricingData, &$query, &$update, $rate, $this));
 		$ret = $this->balances->update($query, $update, $options);
