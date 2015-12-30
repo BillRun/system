@@ -280,7 +280,7 @@ class RatesModel extends TabledateModel {
 				$ret[] = $row;
 			} else if ($item->get('rates') && !$this->showprefix) {
 				foreach ($item->get('rates') as $key => $rate) {
-					if (is_array($rate)) {
+					if (is_array($rate) && isset($rate[$filteredPlan])) {
 						$added_columns = array(
 							't' => $key,
 							'tprice' => $rate[$filteredPlan][0]['rate'][0]['price'],
