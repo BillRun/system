@@ -56,7 +56,6 @@ class Billrun_ActionManagers_Cards_Delete extends Billrun_ActionManagers_Cards_A
 		$query = $input->get('query');
 		if (empty($query) || (!($jsonQueryData = json_decode($query, true)))) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 10;
-			$error = "There is no query tag or query tag is empty!";
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
@@ -65,8 +64,8 @@ class Billrun_ActionManagers_Cards_Delete extends Billrun_ActionManagers_Cards_A
 
 		if (empty($jsonQueryData['batch_number'])) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 11;
-			$error = "Cannot delete ! All the following fields are missing or empty:" . implode(', ', $errLog);
-			$this->reportError($errorCode, Zend_Log::NOTICE);
+			$missingQueryFields = implode(', ', $errLog);
+			$this->reportError($errorCode, Zend_Log::NOTICE, array($missingQueryFields));
 			return false;
 		}
 		

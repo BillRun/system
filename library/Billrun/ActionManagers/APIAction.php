@@ -35,7 +35,7 @@ abstract class Billrun_ActionManagers_APIAction {
 		return $this->error;
 	}
 	
-	protected function getErrorCode() {
+	public function getErrorCode() {
 		return $this->errorCode;
 	}
 

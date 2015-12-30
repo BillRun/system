@@ -13,6 +13,8 @@
  */
 class Billrun_ActionManagers_Cards_Update extends Billrun_ActionManagers_Cards_Action {
 
+	use Billrun_FieldValidator_ServiceProvider;
+	
 	/**
 	 * Field to hold the data to be written in the DB.
 	 * @var type Array
@@ -56,17 +58,16 @@ class Billrun_ActionManagers_Cards_Update extends Billrun_ActionManagers_Cards_A
 		$query = $input->get('query');
 		if (empty($query) || (!($jsonQueryData = json_decode($query, true)))) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 30;
-			$error = "There is no query tag or query tag is empty!";
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
 
 		$errLog = array_diff($queryFields, array_keys($jsonQueryData));
 
-		if (!isset($jsonQueryData['batch_number']) && !isset($jsonQueryData['serial_number'])) {
+		if (!isset($jsonQueryData['batch_number']) || !isset($jsonQueryData['serial_number'])) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 31;
-			$error = "Cannot update ! All the following fields are missing or empty:" . implode(', ', $errLog);
-			$this->reportError($errorCode, Zend_Log::NOTICE);
+			$missingQueryFields = implode(', ', $errLog);
+			$this->reportError($errorCode, Zend_Log::NOTICE, array($missingQueryFields));
 			return false;
 		}
 		
@@ -111,11 +112,11 @@ class Billrun_ActionManagers_Cards_Update extends Billrun_ActionManagers_Cards_A
 		
 		// service provider validity check
 		if(!$this->validateServiceProvider($this->update['service_provider'])) {
-			$error = "Received unknown service provider: " . $this->update['service_provider'];
-			$this->reportError($error, Zend_Log::NOTICE);
+			$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 36;
+			$this->reportError($errorCode, Zend_Log::NOTICE, array($oneCard['service_provider']	));
 			return false;
 		}
-
+	
 		if (isset($this->update['to'])) {
 			$this->update['to'] = new MongoDate(strtotime($this->update['to']));
 		}
