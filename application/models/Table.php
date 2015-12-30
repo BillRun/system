@@ -278,9 +278,12 @@ class TableModel {
 			foreach ($hidden_keys as $value) {
 				$new_data[$value] = $raw_data[$value];
 			}
+			$file = fopen('mylog', 'w+');
+			fwrite($file, print_r($params, 1));
+			fclose($file);
 			foreach ($params as $key => $value) {
-				if (in_array($key, array("to", "from"))) {
-					$value = new Zend_Date($value, null, new Zend_Locale('he_IL'));
+				if (in_array($key, array("to", "from")) && is_array($value)) {
+					$value = new MongoDate($value['sec']);
 				}
 				$new_data[$key] = $value;
 			}
