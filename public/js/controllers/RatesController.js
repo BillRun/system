@@ -182,7 +182,7 @@ app.controller('RatesController', ['$scope', '$http', '$window', '$routeParams',
       Database.saveEntity(params).then(function (res) {
         $window.location = baseUrl + '/admin/' + $routeParams.collection;
       }, function (err) {
-        alert("Danger! Danger! Beedeebeedeebeedee!");
+        alert("Connection error!");
       });
     };
 
