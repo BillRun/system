@@ -49,6 +49,9 @@ app.controller('SubscribersController', ['$scope', '$window', '$routeParams', 'D
         };
         Database.getEntity(params).then(function (res) {
           $scope.entity = res.data.entity;
+          if ($scope.entity.imsi && _.isString($scope.entity.imsi)) {
+            $scope.entity.imsi = [$scope.entity.imsi];
+          }
           $scope.authorized_write = res.data.authorized_write;
         }, function (err) {
           alert("Danger! Danger! Beedeebeedeebeedee!");
@@ -60,7 +63,7 @@ app.controller('SubscribersController', ['$scope', '$window', '$routeParams', 'D
       Database.getAvailablePlans().then(function (res) {
         $scope.availablePlans = res.data;
       });
-      $scope.availableLanguages = ["Hebrew", "English"];
+      $scope.availableLanguages = ["Hebrew", "English", "Arabic", "Russian", "Thai"];
       $scope.availableChargingTypes = ["prepaid", "postpaid"];
     };
   }]);
