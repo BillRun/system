@@ -49,6 +49,9 @@ app.controller('SubscribersController', ['$scope', '$window', '$routeParams', 'D
         };
         Database.getEntity(params).then(function (res) {
           $scope.entity = res.data.entity;
+          if ($scope.entity.imsi && _.isString($scope.entity.imsi)) {
+            $scope.entity.imsi = [$scope.entity.imsi];
+          }
           $scope.authorized_write = res.data.authorized_write;
         }, function (err) {
           alert("Danger! Danger! Beedeebeedeebeedee!");
