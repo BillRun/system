@@ -87,7 +87,7 @@ abstract class Billrun_ActionManagers_Realtime_Responder_Base {
 		$responseFields = $this->getResponseFields();
 		foreach ($responseFields as $responseField => $rowField) {
 			if (is_array($rowField)) {
-				$ret[$responseField] = (isset($rowField['classMethod']) ? call_user_method($rowField['classMethod'], $this) : '');
+				$ret[$responseField] = (isset($rowField['classMethod']) ? $this->{$rowField['classMethod']}() : '');
 			} else {
 				$ret[$responseField] = (isset($this->row[$rowField]) ? $this->row[$rowField] : '');
 			}
