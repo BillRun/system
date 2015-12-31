@@ -20,7 +20,8 @@ class Billrun_ActionManagers_Realtime_Responder_Call_ReleaseCall extends Billrun
 	 * @return type
 	 */
 	protected function getRealUsagev() {
-		return $this->row['duration'] / 10;
+		$duration = (!empty($this->row['duration']) ? $this->row['duration'] : 0);
+		return $duration / 10;
 	}
 
 	/**
