@@ -100,7 +100,7 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 		return $row['usagev'];
 	}
 	
-	public function beforeSubscriberRebalance($lineToRebalance, $balance, $rebalanceUsagev, $rebalanceCost, $lineUpdateQuery, $responder) {
+	public function beforeSubscriberRebalance($lineToRebalance, $balance, &$rebalanceUsagev, &$rebalanceCost, &$lineUpdateQuery, $responder) {
 		try {
 			if ($balance['charging_by_usaget'] == 'total_cost' || $balance['charging_by_usaget'] == 'cost') {
 				$lineUpdateQuery['$inc']['balance_after'] = $rebalanceCost;
