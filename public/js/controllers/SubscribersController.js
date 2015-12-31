@@ -18,7 +18,7 @@ app.controller('SubscribersController', ['$scope', '$window', '$routeParams', 'D
         }
         $window.location = baseUrl + '/admin/' + $routeParams.collection;
       }, function (err) {
-        alert("Danger! Danger! Beedeebeedeebeedee!");
+        alert("Connection error!");
       });
     };
 
@@ -55,7 +55,7 @@ app.controller('SubscribersController', ['$scope', '$window', '$routeParams', 'D
           }
           $scope.authorized_write = res.data.authorized_write;
         }, function (err) {
-          alert("Danger! Danger! Beedeebeedeebeedee!");
+          alert("Connection error!");
         });
       }
       Database.getAvailableServiceProviders().then(function (res) {

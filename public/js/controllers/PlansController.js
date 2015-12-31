@@ -50,7 +50,7 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
       Database.saveEntity(params).then(function () {
         $window.location = baseUrl + '/admin/' + $routeParams.collection;
       }, function (err) {
-        alert("Danger! Danger! Beedeebeedeebeedee!");
+        alert("Connection error!");
       });
     };
 

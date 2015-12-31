@@ -13,7 +13,7 @@ app.controller('CardsController', ['$scope', '$window', '$routeParams', 'Databas
       Database.saveEntity(params).then(function (res) {
         $window.location = baseUrl + '/admin/' + $routeParams.collection;
       }, function (err) {
-        alert("Danger! Danger! Beedeebeedeebeedee!");
+        alert("Connection error!");
       });
     };
 
@@ -51,7 +51,7 @@ app.controller('CardsController', ['$scope', '$window', '$routeParams', 'Databas
         $scope.authorized_write = res.data.authorized_write;
         $scope.cardStatuses = ["Idle", "Active", "Disqualified", "Used", "Expired", "Stolen"];
       }, function (err) {
-        alert("Danger! Danger! Beedeebeedeebeedee!");
+        alert("Connection error!");
       });
       Database.getAvailableServiceProviders().then(function (res) {
         $scope.availableServiceProviders = res.data;

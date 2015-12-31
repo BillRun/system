@@ -10,7 +10,7 @@
 		<tr ng-repeat="item in collection.data track by $index" ng-if="collection.data.length">
 			<td>
 				<input type='checkbox' ng-model='selected_items[item._id]' />
-				<b><a ng-click='editItem(collection.collection, item["_id"])' class='clickable'>#{{($index+1) + (pager.current * pager.size)}}</a></b>
+				<b><a ng-click='editItem(collection.collection, item["_id"])' class='clickable'>#{{($index+1) + ((pager.current - 1) * pager.size)}}</a></b>
 			</td>
 			<td ng-repeat="(k, colName) in collection.columns">
 				<span ng-if="datetimeCol(k)">

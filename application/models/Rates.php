@@ -280,18 +280,18 @@ class RatesModel extends TabledateModel {
 				$ret[] = $row;
 			} else if ($item->get('rates') && !$this->showprefix) {
 				foreach ($item->get('rates') as $key => $rate) {
-					if (is_array($rate)) {
+					if (is_array($rate) && isset($rate[$filteredPlan])) {
 						$added_columns = array(
 							't' => $key,
-							'tprice' => $rate[$filteredPlan][0]['rate'][0]['price'],
-							'taccess' => isset($rate[$filteredPlan][0]['access']) ? $rate[$filteredPlan][0]['access'] : 0,
+							'tprice' => $rate[$filteredPlan]['rate'][0]['price'],
+							'taccess' => isset($rate[$filteredPlan]['access']) ? $rate[$filteredPlan][0]['access'] : 0,
 						);
 						if (strpos($key, 'call') !== FALSE) {
-							$added_columns['tduration'] = Billrun_Util::durationFormat($rate[$filteredPlan][0]['rate'][0]['interval']);
+							$added_columns['tduration'] = Billrun_Util::durationFormat($rate[$filteredPlan]['rate'][0]['interval']);
 						} else if ($key == 'data') {
-							$added_columns['tduration'] = Billrun_Util::byteFormat($rate[$filteredPlan][0]['rate'][0]['interval'], '', 0, true);
+							$added_columns['tduration'] = Billrun_Util::byteFormat($rate[$filteredPlan]['rate'][0]['interval'], '', 0, true);
 						} else {
-							$added_columns['tduration'] = $rate[$filteredPlan][0]['rate'][0]['interval'];
+							$added_columns['tduration'] = $rate[$filteredPlan]['rate'][0]['interval'];
 						}
 						$ret[] = new Mongodloid_Entity(array_merge($item->getRawData(), $added_columns, $rate));
 					}

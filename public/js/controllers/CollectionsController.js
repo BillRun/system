@@ -42,10 +42,14 @@ app.controller('CollectionsController', ['$scope', '$routeParams', '$location', 
     $scope.filterList = function () {
       var params = {
         coll: $routeParams.collection,
-        session: JSON.stringify($scope.collection.session)
+        filter: JSON.stringify($scope.session),
+        showprefix: $scope.session.showprefix,
+        size: $scope.pager.size
       };
       Database.filterCollectionItems(params).then(function (res) {
-        $scope.collection.data = res.data.data;
+        console.log(res.data);
+        $scope.collection = res.data.items;
+        $scope.session = res.data.items.session;
       });
     };
 
@@ -70,13 +74,24 @@ app.controller('CollectionsController', ['$scope', '$routeParams', '$location', 
     };
 
     $scope.page = function (page) {
-      $location.search({page: page});
+      if (page === $scope.pager.current) return;
+      $location.search({page: page, size: $scope.pager.size});
     };
     $scope.nextPage = function () {
-      $scope.page(parseInt($scope.pager.current, 10) + 1);
+      if ($scope.pager.current === $scope.pager.count) return;
+      $scope.page($scope.pager.current + 1);
     };
     $scope.prevPage = function () {
-      $scope.page(parseInt($scope.pager.current, 10) - 1);
+      if ($scope.pager.current === 1) return;
+      $scope.page($scope.pager.current - 1);
+    };
+    $scope.lastPage = function () {
+      if ($scope.pager.current === $scope.pager.count) return;
+      $scope.page($scope.pager.count);
+    };
+    $scope.firstPage = function () {
+      if ($scope.pager.current === 1) return;
+      $scope.page(1);
     };
 
     $scope.contains = function (arr, str) {
@@ -91,21 +106,43 @@ app.controller('CollectionsController', ['$scope', '$routeParams', '$location', 
       return a;
     };
 
+    $scope.setListSize = function (size) {
+      if (size < $scope.pager.size) {
+        $scope.pager.size = size;
+        $scope.collection.data = $scope.collection.data.slice(0, size);
+        return;
+      }
+      $location.search({size: size});
+    };
+
     $scope.init = function () {
       var params = {
-        coll: $routeParams.collection,
-        show_prefix: false
+        coll: $routeParams.collection
       };
-      $scope.active = $routeParams.collection;
       $scope.listFilter = {};
+      $scope.availableListSizes = [10, 50, 100, 500, 1000];
+      $scope.active = $routeParams.collection;
       $scope.selected_items = {};
-      if ($location.search() && $location.search().page) {
-        params.page = parseInt($location.search().page, 10);
+      if ($location.search()) {
+        if ($location.search().page) {
+          params.page = parseInt($location.search().page, 10);
+        } else {
+          params.page = 1;
+          }
+        if ($location.search().size) {
+          params.size = parseInt($location.search().size, 10);
+        } else {
+          params.size = 100;
+        }
       }
       Database.getCollectionItems(params).then(function (res) {
         $scope.pager = res.data.pager;
+        $scope.pager.current = parseInt($scope.pager.current, 10);
+        $scope.pager.size = parseInt($scope.pager.size, 10);
+        $scope.pager.count = parseInt($scope.pager.count, 10);
         calculatePaging();
         $scope.collection = res.data.items;
+        $scope.session = res.data.items.session;
         $scope.authorized_write = res.data.authorized_write;
       });
     };
