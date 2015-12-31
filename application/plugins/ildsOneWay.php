@@ -114,8 +114,16 @@ class ildsOneWayPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$row->collection($this->lines_coll);
 		$res = $row->getRawData();
 		$res['file'] = 'cdrFile:' . $row['file'] . ' cdrNb:' . $row['record_number'];
-		$res['charging_start_time'] = substr($row['charging_start_time'], 2);
-		$res['charging_end_time'] = substr($row['charging_end_time'], 2);
+		if (!empty($row['charging_start_time'])) {
+			$res['charging_start_time'] = substr($row['charging_start_time'], 2);
+			$res['charging_end_time'] = substr($row['charging_end_time'], 2);
+		} else if (!empty($row['call_reference_time'])) {
+			$res['charging_start_time'] = substr($row['call_reference_time'], 2);
+			$res['charging_end_time'] = date('ymdhis', strtotime($row['call_reference_time'])+ $row['usagev']);
+		} else {
+			$res['charging_start_time'] = date('ymdhis', strtotime($row['process_time']));
+			$res['charging_end_time'] = date('ymdhis', strtotime($row['process_time'])+ $row['usagev']);
+		}
 		$res['prepaid'] = '0';
 		$res['is_in_glti'] = '0';
 		$res['origin_carrier'] = $this->providers[$row[$this->ild_prefix_field_name]];
