@@ -11,8 +11,9 @@ app.controller('SubscribersController', ['$scope', '$window', '$routeParams', 'D
         type: $scope.action
       };
       Database.saveEntity(params).then(function (res) {
+        console.log(res)  ;
         if (res.data !== "null") {
-          alert(res.data);
+         
           return false;
         }
         $window.location = baseUrl + '/admin/' + $routeParams.collection;
