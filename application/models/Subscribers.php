@@ -108,7 +108,15 @@ class SubscribersModel extends TabledateModel{
 				'comparison' => 'contains',
 				'display' => 'MSISDN',
 				'default' => '',
-			),			
+			),
+			'imsi' => array(
+				'key' => 'imsi',
+				'db_key' => 'imsi',
+				'input_type' => 'text',
+				'comparison' => '$in',
+				'display' => 'IMSI',
+				'default' => ''
+			),
 			'plan' => array(
 				'key' => 'plan',
 				'db_key' => 'current_plan',
@@ -146,6 +154,9 @@ class SubscribersModel extends TabledateModel{
 				)
 			),
 			array(
+				'imsi' => array(
+					'width' => 2,
+				),
 				'plan' => array(
 					'width' => 2
 				),				

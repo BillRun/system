@@ -207,6 +207,15 @@ class AdminController extends Yaf_Controller_Abstract {
 		return false;
 	}
 	
+	public function getViewINIAction() {
+		if (!$this->allowed('read'))
+			return false;
+		$response = new Yaf_Response_Http();
+		$conf = new Yaf_Config_Ini(APPLICATION_PATH . '/conf/view/fields.ini');
+		$response->setBody(json_encode($conf->toArray()));
+		$response->response();
+		return false;
+	}
 	/**
 	 * save controller
 	 * @return boolean

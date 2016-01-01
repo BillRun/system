@@ -57,4 +57,9 @@ app.config(function ($httpProvider, $routeProvider, $locationProvider) {
 	  }
   });
   $locationProvider.html5Mode({enabled: false, requireBase: false});
-});
+}).run(['$http', '$rootScope', function ($http, $rootScope) {
+    'use strict';
+    $http.get(baseUrl + '/admin/getViewINI').then(function (res) {
+      $rootScope.fields = res.data;
+    });
+}]);
