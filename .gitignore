@@ -1,0 +1,13 @@
+/.directory
+backups
+backup
+exports
+files
+workspace
+mongo/*.json
+*~
+exports
+logs/debug.log*
+cache
+crontab
+conf/dori.ini

@@ -1,0 +1,67 @@
+<div class="container component" ng-controller='CardsController' ng-init="init()">
+	<center>
+		<h2>{{capitalize(action)}} Card {{entity.serial_number}}</h2>
+	</center>
+	<form class='form-inline' ng-submit='save()'>
+		<div ng-if='!advancedMode'>
+			<div class="row">
+				<div class="col-md-2">
+					Batch number
+				</div>
+				<div class="col-md-6">
+					<input ng-model="entity.batch_number" type="text" class="form-control" />
+				</div>
+			</div>
+			<div class="row">
+				<div class="col-md-2">
+					Serial number
+				</div>
+				<div class="col-md-6">
+					<input ng-model="entity.serial_number" type="text" class="form-control" />
+				</div>
+			</div>
+			<div class="row">
+				<div class="col-md-2">
+					Charging plan
+				</div>
+				<div class="col-md-6">
+					<select ng-model="entity.charging_plan_name" class="form-control">
+						<option value="" disabled>Select Charging Plan</option>
+						<option ng-repeat="plan in availablePlans">{{plan}}</option>
+					</select>					
+				</div>
+			</div>
+			<div class="row">
+				<div class="col-md-2">
+					Service provider
+				</div>
+				<div class="col-md-6">
+					<select ng-model="entity.service_provider" class="form-control">
+						<option value='' disabled>Select Service Provider</option>
+						<option ng-repeat="service_provider in availableServiceProviders">{{service_provider}}<option>
+					</select>				
+				</div>
+			</div>
+			<div class="row">
+				<div class="col-md-2">
+					Status
+				</div>
+				<div class="col-md-6">
+					<select ng-model="entity.status" class="form-control">
+						<option value='' disabled>Select Status</option>
+						<option ng-repeat="status in cardStatuses" ng-disabled="isStatusDisabled(status)">{{status}}<option>
+					</select>
+				</div>
+			</div>
+		</div>
+		<div class='jsonView' ng-if='advancedMode === true'>
+			<json child='entity' default-collapsed='true' type='object'></json>
+		</div>
+		<div class="modal-footer">
+			<a ng-click='setAdvancedMode(false)' class="clickable" ng-if='advancedMode'>Basic Mode</a>
+			<a ng-click='setAdvancedMode(true)' class="clickable" ng-if='!advancedMode'>Advanced Mode</a>
+			<button class="btn" ng-click='cancel()'>Cancel</button>
+			<button type='submit' class="btn btn-primary" ng-if='authorized_write'>Save changes</button>
+		</div>
+	</form>
+</div>

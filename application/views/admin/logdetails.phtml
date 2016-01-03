@@ -1,0 +1,20 @@
+<?php
+
+$protected = array();
+$entity = $this->entity->getRawData();
+
+foreach ($this->protectedKeys as $key) {
+	if (isset($entity[$key])) {
+		$protected[$key] = $entity[$key];
+		unset($entity[$key]);
+	}
+}
+
+print '<div class="form_protect">';
+foreach ($protected as $k => $v) {
+	print '<span class="label label-info">' . $k . '</span>';
+	print '<span id="form' . $k . '"class="label label-inverse">' . $v . '</span><br />';
+}
+print '<span id="form_type" class="hidden">' . $this->type . '</span>';
+print '<span id="form_coll" class="hidden">' . $this->collectionName . '</span>';
+print '</div>';

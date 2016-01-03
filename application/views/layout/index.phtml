@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js"> <!--<![endif]-->
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+        <title>BillRun<?php echo $title ? ' | ' . $title : ''; ?></title>
+        <meta name="description" content="BillRun Admin Panel">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+		<link href="http://www.billrun.net/templates/meet_gavern/images/favicon.ico" rel="shortcut icon" type="image/vnd.microsoft.icon" />
+        <style>
+            body {
+                padding-top: 50px;
+                padding-bottom: 20px;
+            }
+        </style>
+		<?php echo $css; ?>
+		<script>
+			baseUrl = '<?php echo $this->baseUrl; ?>';
+		</script>
+		<script src="<?php echo $this->baseUrl; ?>/js/vendor/modernizr-2.6.2-respond-1.1.0.min.js"></script>
+		<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+		<script>window.jQuery || document.write('<script src="<?php echo $this->baseUrl; ?>/js/vendor/jquery-1.11.0.min.js"><\/script>')</script>
+
+		<script src='<?php echo $this->baseUrl; ?>/js/vendor/lodash.js'></script>
+		<script src='<?php echo $this->baseUrl; ?>/js/vendor/angular.min.js'></script>
+		<script src='<?php echo $this->baseUrl; ?>/js/vendor/angular-route.js'></script>
+		<script src='<?php echo $this->baseUrl; ?>/js/vendor/ui-bootstrap.js'></script>
+		<script src='<?php echo $this->baseUrl; ?>/js/vendor/jquery-ui.min.js'></script>
+		<script src='<?php echo $this->baseUrl; ?>/js/vendor/sortable.js'></script>
+		<script src='<?php echo $this->baseUrl; ?>/js/vendor/JSONedit/directives.js'></script>
+
+		<link href='<?php echo $this->baseUrl; ?>/js/vendor/JSONedit/styles.css' rel="stylesheet" type='text/css'/>
+
+		<script src='<?php echo $this->baseUrl; ?>/js/app.js'></script>
+
+		<!-- factoreis & services -->
+		<script src='<?php echo $this->baseUrl; ?>/js/factories/Database.js'></script>
+
+		<!-- directives -->
+		<script src='<?php echo $this->baseUrl; ?>/js/directives/inputField.js'></script>
+
+		<!-- controllers -->
+		<script src='<?php echo $this->baseUrl; ?>/js/controllers/CollectionsController.js'></script>
+		<script src='<?php echo $this->baseUrl; ?>/js/controllers/PlansController.js'></script>
+		<script src='<?php echo $this->baseUrl; ?>/js/controllers/RatesController.js'></script>
+		<script src='<?php echo $this->baseUrl; ?>/js/controllers/BalancesController.js'></script>
+		<script src='<?php echo $this->baseUrl; ?>/js/controllers/CardsController.js'></script>
+		<script src='<?php echo $this->baseUrl; ?>/js/controllers/BatchController.js'></script>
+		<script src='<?php echo $this->baseUrl; ?>/js/controllers/SubscribersController.js'></script>
+    </head>
+    <body ng-app="BillrunApp">
+        <!--[if lt IE 7]>
+            <p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
+        <![endif]-->
+    <div class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+      <div class="container">
+        <div class="navbar-header billrun-logo">
+			<button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+				<span class="sr-only">Toggle navigation</span>
+				<span class="icon-bar"></span>
+				<span class="icon-bar"></span>
+				<span class="icon-bar"></span>
+			</button>
+			<a class="brand" href="<?php echo $this->baseUrl; ?>/admin">
+				<img src="http://www.billrun.net/images/billrun/web-logo.png" alt="BillRun"/>
+			</a>
+        </div>
+		<?php
+			print $this->render('menu.phtml', array('active' => $active));
+		?>
+      </div>
+    </div>
+
+	<!-- main component -->
+	<?php echo $this->component; ?>
+	<!-- end of main component -->
+	<!-- hackitty hack hack! -->
+	<script>
+		if (window.location.hash.match(/\/(update|list|duplicate|close_and_new|new)(\/)*/)) {
+			$('.component').remove();
+		}
+	</script>
+	<!-- end of hackitty hack hack -->
+
+	<div ng-view></div>
+
+		<?php echo $js; ?>
+		<script type="text/javascript">
+			if (typeof google !== 'undefined') {
+				google.load('visualization', '1', {packages: ["corechart", "annotatedtimeline", "controls"]});
+			}
+		</script>
+
+    </body>
+</html>
