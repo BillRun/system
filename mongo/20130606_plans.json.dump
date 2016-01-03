@@ -1,0 +1,2 @@
+{ "_id" : { "$oid" : "51b0997d510692826179cf9f" }, "from" : { "$date" : 1325376000000 }, "to" : { "$date" : 32913907200000 }, "name" : "LARGE", "include" : { "call" : "UNLIMITED", "sms" : "UNLIMITED", "mms" : "UNLIMITED", "data" : "UNLIMITED" }, price: 83.898305085 }
+{ "_id" : { "$oid" : "51b0997e510692826179cfa0" }, "from" : { "$date" : 1325376000000 }, "to" : { "$date" : 32913907200000 }, "name" : "SMALL", "include" : { "call" : "3600", "sms" : "60", "data" : "1000000000" }, price: 8.466101695 }

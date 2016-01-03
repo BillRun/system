@@ -1,0 +1,237 @@
+<div class="container component" ng-controller='RatesController' ng-init="init()">
+	<center>
+		<h2>{{capitalize(action)}} {{entity.key}} Rate</h2>
+	</center>
+	<form class='form-inline' ng-submit='saveRate()'>
+		<div ng-if='!advancedMode'>
+			<h2>Parameters</h2>
+			<div id='rate-out-circuit-groups' ng-hide="entity.params.out_circuit_group === undefined">
+				<h3>
+					Out Circuit Group
+				</h3>
+				<div class='rate-out-circuit-group' ng-repeat="outCircuitGroup in entity.params.out_circuit_group">
+					<label>From:</label>
+					<input type='text' class='form-control' ng-model="outCircuitGroup.from" />
+					<label>To:</label>
+					<input type='text' class='form-control' ng-model="outCircuitGroup.to" />
+					<i class='glyphicon glyphicon-minus-sign' ng-click="deleteOutCircuitGroup(outCircuitGroup)"></i>
+				</div>
+				<div>
+					<label>From:</label>
+					<input type='text' class='form-control' ng-model="newOutCircuitGroup.from" />
+					<label>To:</label>
+					<input type='text' class='form-control' ng-model="newOutCircuitGroup.to" />
+					<i class='glyphicon glyphicon-plus-sign' ng-click="addOutCircuitGroup()"></i>
+				</div>
+			</div>
+
+			<h3>
+				<small><i class="glyphicon glyphicon-chevron-down" ng-show="shown.prefix"></i></small>
+				<small><i class="glyphicon glyphicon-chevron-right" ng-hide="shown.prefix"></i></small>
+				<span ng-click="shown.prefix = !shown.prefix" class="clickable">Prefix</span>
+			</h3>
+			<div id='rate-prefixes' ng-if="shown.prefix">
+				<div ng-repeat="prefix in entity.params.prefix track by $index">
+					<input type="text" class="form-control" ng-model="entity.params.prefix[$index]" />
+					<i class='glyphicon glyphicon-minus-sign' ng-click='deletePrefix($index)'></i>
+				</div>
+				<div>
+					<a ng-click="addPrefix()" class="clickable">Add Prefix</a>
+				</div>
+			</div>
+
+			<div id='rate-record-types' ng-hide="entity.params.record_type === undefined">
+				<h3>
+					Record Types
+				</h3>
+				<div ng-repeat="recordType in entity.params.record_type track by $index">
+					<input type="text" class="form-control" ng-model="recordType" />
+					<i class='glyphicon glyphicon-minus-sign' ng-click='deleteRecordType($index)'></i>
+				</div>
+				<div>
+					<input type="text" class="form-control" ng-model="newRecordType.value" />
+					<i class='glyphicon glyphicon-plus-sign' ng-click="addRecordType()"></i>
+				</div>
+			</div>
+
+			<hr/>
+
+			<h2>Tariffs</h2>
+			<div class="row">
+				<div class="col-indent">
+					<h3>Call</h3>
+					<select ng-model="newCallRate.name" class="form-control">
+						<option value="" disabled>Select Plan</option>
+						<option ng-repeat="plan in availablePlans" ng-disabled='callPlanExists(plan)'>{{plan}}</option>
+					</select>
+					<a ng-click="addCallRate()" class="clickable">Add New Call Tariff</a>
+				</div>
+				<div ng-repeat="(callRateName, callRate) in entity.rates.call" class="col-indent">
+					<h4>
+						<small><i class="glyphicon glyphicon-chevron-down" ng-show="shown.callRates[callRateName]"></i></small>
+						<small><i class="glyphicon glyphicon-chevron-right" ng-hide="shown.callRates[callRateName]"></i></small>
+						<span ng-click="shown.callRates[callRateName] = !shown.callRates[callRateName]" class="clickable">{{callRateName}}</span>
+						<small><i class='glyphicon glyphicon-minus-sign' ng-click="deleteCallRate(callRateName)"></i></small>
+					</h4>
+					<!--<div ng-repeat="callRateParams in callRate track by $index" ng-if="shown.callRates[callRateName]">-->
+					<div ng-if='shown.callRates[callRateName]'>
+						<div class="row">
+							<div class="col-md-1">
+								<label for='rate-call-access'>Access</label>
+							</div>
+							<div class='col-md-6'>
+								<input type='text' class='form-control' ng-model="callRate.access" />
+							</div>
+						</div>
+						<div class="row">
+							<div class="col-md-1">
+								<label for='rate-unit'>Unit</label>
+							</div>
+							<div class='col-md-6'>
+								<select class='form-control' id='rate-call-unit' ng-model='callRate.unit'>
+									<option ng-repeat="unit in availableCallUnits">{{unit}}</option>
+								</select>
+							</div>
+						</div>
+						<h4>
+							Interval Prices
+						</h4>
+						<div id='call-rates'>
+							<table class='table table-striped table-bordered call-rates-table'>
+								<thead>
+									<tr>
+										<th>Interval</th>
+										<th>Price</th>
+										<th>To</th>
+										<th></th>
+									</tr>
+								</thead>
+								<tbody id='call-rates-tbody'>
+									<tr ng-repeat='interval_price in callRate.rate track by $index'>
+										<td><input type='text' ng-model="callRate.rate[$index].interval" class='form-control rate-call-interval' required /></td>
+										<td><input type='text' ng-model="callRate.rate[$index].price" class='form-control rate-call-price' required /></td>
+										<td><input type='text' ng-model="callRate.rate[$index].to" class='form-control rate-call-to' required /></td>
+										<td>
+											<i class='glyphicon glyphicon-minus-sign' ng-if='!$last || $first' ng-click='deleteCallIntervalPrice(interval_price, callRate)'></i>
+											<i class='glyphicon glyphicon-plus-sign' ng-if='$last' ng-click='addCallIntervalPrice(callRate)'></i>
+										</td>
+									</tr>
+								</tbody>
+							</table>
+
+							<h4 ng-hide="true">Plans</h4>
+							<div id='rate-call-plans' ng-hide="true">
+								<div ng-repeat='callPlan in entity.rates.call.plans track by $index'>
+									<select class='form-control rate-call-plan' ng-model='callPlan'>
+										<option ng-repeat='availablePlan in availablePlans' value='{{availablePlan}}'>{{availablePlan}}</option>
+									</select>
+									<i class='glyphicon glyphicon-minus-sign' ng-click='deleteCallPlan($index)'></i>
+								</div>
+								<div>
+									<select class='form-control' ng-model='newCallPlan.value'>
+										<option ng-repeat='availablePlan in availablePlans' value='{{availablePlan}}'>{{availablePlan}}</option>
+									</select>
+									<i class='glyphicon glyphicon-plus-sign' ng-click='addCallPlan()'></i>
+								</div>
+							</div>
+						</div>
+					</div>
+					<hr/>
+				</div>
+			</div>
+
+			<hr/>
+
+			<div>
+				<h3>SMS</h3>
+				<div class="row">
+					<div class='col-indent'>
+						<select ng-model="newSMSRate.name" class="form-control">
+							<option value="" disabled>Select Plan</option>
+							<option ng-repeat="plan in availablePlans" ng-disabled='smsPlanExists(plan)'>{{plan}}</option>
+						</select>
+						<a ng-click="addSMSRate()" class="clickable">Add New SMS Tariff</a>
+					</div>
+					<div ng-repeat="(smsRateName, smsRate) in entity.rates.sms" class="col-indent">
+						<h4>
+							<small><i class="glyphicon glyphicon-chevron-down" ng-show="shown.smsRates[smsRateName]"></i></small>
+							<small><i class="glyphicon glyphicon-chevron-right" ng-hide="shown.smsRates[smsRateName]"></i></small>
+							<span ng-click="shown.smsRates[smsRateName] = !shown.smsRates[smsRateName]" class="clickable">{{smsRateName}}</span>
+							<small><i class='glyphicon glyphicon-minus-sign' ng-click="deleteSMSRate(smsRateName)"></i></small>
+						</h4>
+						<div ng-repeat="smsRateParams in smsRate track by $index" ng-if="shown.smsRates[smsRateName]">
+							<div class="row">
+								<div class="col-md-1">
+									<label>Access</label>
+								</div>
+								<div class='col-md-6'>
+									<input type='text' class='form-control' ng-model="smsRate[$index].access" />
+								</div>
+							</div>
+							<div class='row'>
+								<div class='col-md-1'>
+									<label>Unit</label>
+								</div>
+								<div class='col-md-6'>
+									<input ng-model="smsRate[$index].unit" type='text' class='form-control' disabled />
+								</div>
+							</div>
+							<h4>
+								Interval Prices
+							</h4>
+							<div id='sms-rates'>
+								<table class='table table-striped table-bordered sms-rates-table'>
+									<thead>
+										<tr>
+											<th>Interval</th>
+											<th>Price</th>
+											<th>To</th>
+											<th></th>
+										</tr>
+									</thead>
+									<tbody id='sms-rates-tbody'>
+										<tr ng-repeat='interval_price in smsRateParams.rate track by $index'>
+											<td><input type='text' ng-model="smsRateParams.rate[$index].interval" class='form-control rate-sms-interval' required /></td>
+											<td><input type='text' ng-model="smsRateParams.rate[$index].price" class='form-control rate-sms-price' required /></td>
+											<td><input type='text' ng-model="smsRateParams.rate[$index].to" class='form-control rate-sms-to' required /></td>
+											<td>
+												<i class='glyphicon glyphicon-minus-sign' ng-if='!$last || $first' ng-click='deleteSMSIntervalPrice(interval_price, smsRateParams)'></i>
+												<i class='glyphicon glyphicon-plus-sign' ng-if='$last' ng-click='addSMSIntervalPrice(smsRateParams)'></i>
+											</td>
+										</tr>
+									</tbody>
+								</table>
+
+								<h4 ng-hide="true">Plans</h4>
+								<div id='rate-sms-plans' ng-hide="true">
+									<div ng-repeat='smsPlan in entity.rates.sms.plans track by $index'>
+										<select class='form-control rate-sms-plan' ng-model='smsPlan'>
+											<option ng-repeat='availablePlan in availablePlans' value='{{availablePlan}}'>{{availablePlan}}</option>
+										</select>
+										<i class='glyphicon glyphicon-minus-sign' ng-click='deleteSMSPlan($index)'></i>
+									</div>
+									<div>
+										<select class='form-control' ng-model='newSMSPlan.value'>
+											<option ng-repeat='availablePlan in availablePlans' value='{{availablePlan}}'>{{availablePlan}}</option>
+										</select>
+										<i class='glyphicon glyphicon-plus-sign' ng-click='addSMSPlan()'></i>
+									</div>
+								</div>
+							</div>
+						</div>
+						<hr/>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class='jsonView' ng-if='advancedMode === true'>
+			<json child='entity' default-collapsed='true' type='object'></json>
+		</div>
+		<div class="modal-footer">
+			<a ng-click='setAdvancedMode(false)' class="clickable" ng-if='advancedMode'>Basic Mode</a>
+			<a ng-click='setAdvancedMode(true)' class="clickable" ng-if='!advancedMode'>Advanced Mode</a>
+			<button class="btn" ng-click='cancel()'>Cancel</button>
+			<button type='submit' class="btn btn-primary" ng-if='authorized_write'>Save changes</button>
+		</div>
+	</form>
+</div>
