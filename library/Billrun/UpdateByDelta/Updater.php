@@ -208,8 +208,8 @@ abstract class Billrun_UpdateByDelta_Updater {
 		// results, it means that the record should be deleted.
 		if($matched === false) {
 			// Set the "to" date to now.
-			// TODO: Throws expection/returns error?
-			if(!$this->deleteEntity($existing)) {
+			
+			if(!$this->deleteEntity(new Mongodloid_Entity($existing))) {
 				Billrun_Factory::log("Failed to delete record: " . print_r($existing,1), Zend_Log::ERR);
 			}
 		}
@@ -253,8 +253,14 @@ abstract class Billrun_UpdateByDelta_Updater {
 	 * @param array $delta - The delta values.
 	 */
 	protected function updateRecordByDiff($original, $delta) {
+		if(is_array($original)) {
+			$entity = new Mongodloid_Entity($original, $this->getCollection());
+		} else {
+			$entity = $original;
+		}
+		
 		// TODO: Throws expection/returns error?
-		return $this->getCollection()->updateEntity($original, $delta);
+		return $this->getCollection()->updateEntity($entity, $delta);
 	}
 	
 	/**
