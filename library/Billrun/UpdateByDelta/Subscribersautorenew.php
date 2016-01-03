@@ -16,6 +16,8 @@
  */
 class Billrun_UpdateByDelta_Subscribersautorenew extends Billrun_UpdateByDelta_Updater {
 	
+	use Billrun_ActionManagers_ErrorReporter;
+	
 	/**
 	 * Array of the mendatory fields.
 	 * @var array
@@ -44,8 +46,9 @@ class Billrun_UpdateByDelta_Subscribersautorenew extends Billrun_UpdateByDelta_U
 	 * @param array $delta - The delta values.
 	 */
 	protected function updateRecordByDiff($original, $delta) {
+		$entity = new Mongodloid_Entity($original, $this->getCollection());
 		// TODO: Throws expection/returns error?
-		return $this->getCollection()->updateEntity($original, $delta);
+		return $this->getCollection()->updateEntity($entity, $delta);
 	}
 	
 	/**
@@ -94,7 +97,7 @@ class Billrun_UpdateByDelta_Subscribersautorenew extends Billrun_UpdateByDelta_U
 			return false;
 		}
 		
-		return json_encode(array("query" => $query, "upsert" => $upsert));
+		return array("query" => json_encode($query), "upsert" => json_encode($upsert));
 	}
 	
 	/**
@@ -109,12 +112,16 @@ class Billrun_UpdateByDelta_Subscribersautorenew extends Billrun_UpdateByDelta_U
 		}
 		
 		$updater = new Billrun_ActionManagers_Subscribersautorenew_Update();
-		if(!$updater->parse($updaterInput)) {
-			// TODO: Report error.
+		$input = new Billrun_AnObj($updaterInput);
+		if(!$updater->parse($input) &&
+			!$updater->execute()	&&
+			$updater->getErrorCode() != 0) {
+			$this->error = $updater->getError();
+			$this->errorCode = $updater->getErrorCode();
 			return false;
 		}
 		
-		return $updater->execute();
+		return true;
 	}
 	
 	/**
