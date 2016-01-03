@@ -61,12 +61,25 @@ class Billrun_ActionManagers_Subscribersautorenew_Query extends Billrun_ActionMa
 			return false;
 		}
 		
+		$record['includes'] = $this->getIncludesArray($planRecord);
+		
+		return true;
+	}
+	
+	/**
+	 * Get the 'includes' array to return for the plan record.
+	 * @param Mongodloid_Entity $planRecord - Record for the current used plan
+	 * @return array of include values to return.
+	 * @todo Create an object representing the 'include' structure? (charging_name: {type:X, ammount:Y}) ?
+	 */
+	protected function getIncludesArray($planRecord) {
 		if(!isset($planRecord['include'])) {
 			// TODO: Is this an error?
-			return true;
+			return array();
 		}
 		
 		$includeList = $planRecord['include'];
+		$includesToReturn = array();
 		
 		// TODO: Is this filtered by priority?
 		// TODO: Should this include the total_cost??
@@ -78,12 +91,12 @@ class Billrun_ActionManagers_Subscribersautorenew_Query extends Billrun_ActionMa
 			$toAdd = array();
 			
 			// Set the record values.
-			$toAdd['unit_type'] = $includeRoot;			
+			$toAdd['unit_type'] = Billrun_Util::getUsagetUnit($includeRoot);			
 			$toAdd['ammount'] = $includeValues['usagev'];
-			$record['includes'][$includeValues['pp_includes_name']] = $toAdd;
+			$includesToReturn [$includeValues['pp_includes_name']] = $toAdd;
 		}
 		
-		return true;
+		return $includesToReturn;
 	}
 	
 	/**
