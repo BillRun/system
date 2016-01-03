@@ -39,15 +39,11 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 	 * @return boolean
 	 */
 	protected function handleResult($count, $found) {
-		if($count) {
+		if($count || $found) {
 			return true;
 		}
 	
-		if($found) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 19;
-		} else {
-			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 14;
-		}			
+		$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 14;
 		$this->reportError($errorCode);
 		return false;
 	}
@@ -160,7 +156,7 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 		$set['remain'] = 
 			$this->countMonths(strtotime($this->query['from']), strtotime($jsonUpdateData['to']));
 		
-		$this->updateQuery['$set'] = $set;
+		$this->updateQuery['$set'] = array_merge($this->updateQuery['$set'], $set);
 	}
 	
 	protected function fillWithSubscriberValues() {
