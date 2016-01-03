@@ -56,18 +56,31 @@ class Mongodloid_Collection {
 	}
 	
 	/**
+	 * Get the ID, different if array or object.
+	 * @param type $entity
+	 */
+	protected function getEntityID($entity) {
+		if(isset($entity['_id'])) {
+			return $entity['_id'];
+		}
+		
+		return $entity->getId()->getMongoId();
+	}
+	
+	/**
 	 * Update a collection by entity.
 	 * @param Mongodloid_Entity $entity - Entity to update in the collection.
 	 * @param array $fields - Array of keys and values to be updated in the entity.
 	 * @return mongo update result.
 	 */
 	public function updateEntity($entity, $fields) {
+		
 		$data = array(
-			'_id' => $entity->getId()->getMongoID()
+			'_id' => $this->getEntityID($entity),
 		);
 		
 		// This function changes fields, should I clone fields before sending?
-		$this->setEntityFields($fields);
+		$this->setEntityFields($entity, $fields);
 		
 		return $this->update($data, array('$set' => $fields));
 	}
