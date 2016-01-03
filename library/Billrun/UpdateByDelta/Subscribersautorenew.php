@@ -38,6 +38,36 @@ class Billrun_UpdateByDelta_Subscribersautorenew extends Billrun_UpdateByDelta_U
 		return Billrun_Factory::config()->getConfigValue('autorenew.query_translate_fields');
 	}
 	
+		/**
+	 * Update a record in the mongo by a delta.
+	 * @param array $original - The original values.
+	 * @param array $delta - The delta values.
+	 */
+	protected function updateRecordByDiff($original, $delta) {
+		// TODO: Throws expection/returns error?
+		return $this->getCollection()->updateEntity($original, $delta);
+	}
+	
+	/**
+	 * Handle the delta between existing and expected records.
+	 * @param json $existing
+	 * @param json $expected
+	 * @param Mongodloid_Collection $collection
+	 * @return int 1 if not matched, otherwise the result of the record's update.
+	 */
+	protected function handleDelta($existing, $expected) {
+		$keys = $this->getKeys();
+		// Check if the record should exist.
+		foreach ($keys as $fieldKey) {
+			if($existing[$fieldKey] != $expected[$fieldKey]) {
+				return 1;
+			}
+		}
+
+		// Update the record.
+		return $this->updateRecordByDiff($existing, array_diff($expected, $existing));
+	}
+	
 	/**
 	 * Get the array of translate values of the update query field names and the corresponding
 	 * names found in the entity.
@@ -78,7 +108,7 @@ class Billrun_UpdateByDelta_Subscribersautorenew extends Billrun_UpdateByDelta_U
 			return false;
 		}
 		
-		$updater = new Billrun_ActionManagers_SubscribersAutoRenew_Update();
+		$updater = new Billrun_ActionManagers_Subscribersautorenew_Update();
 		if(!$updater->parse($updaterInput)) {
 			// TODO: Report error.
 			return false;

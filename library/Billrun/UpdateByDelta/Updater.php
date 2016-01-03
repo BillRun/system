@@ -60,9 +60,12 @@ abstract class Billrun_UpdateByDelta_Updater {
 	 * @return true if successful.
 	 */
 	protected function addValues($values) {
+		$success = true;
 		foreach ($values as $toAdd) {
-			$this->createByEntity($toAdd);
+			$success = $this->createByEntity($toAdd) && $success;
 		}
+		
+		return $success;
 	}
 
 	/**
@@ -110,6 +113,16 @@ abstract class Billrun_UpdateByDelta_Updater {
 	}
 	
 	/**
+	 * Translate a single field
+	 * @param array $field - Field to translate.
+	 * @return string translated.
+	 */
+	protected function translateField($field) {
+		$queryTranslateFields = $this->getQueryTranslateFields(); 
+		return $queryTranslateFields[$field];
+	}
+	
+	/**
 	 * Get the mongo update query by an entity.
 	 * @param array $entity - Entity to build the update query by.
 	 * @return array update query composed by the input entity.
@@ -120,21 +133,57 @@ abstract class Billrun_UpdateByDelta_Updater {
 	}
 	
 	/**
+	 * Melt the records to be added with the default record.
+	 * @param array $toBeAdded - Array of records to be added.
+	 * @param array $defaultRecord - The default record to use.
+	 */
+	protected function meltWithDefault($toBeAdded, $defaultRecord) {
+		$melted = array();
+		foreach ($toBeAdded as $record) {
+			$temp = $defaultRecord;
+			foreach ($record as $key => $value) {
+				$temp[$key] = $value;
+			}
+			$melted[] = $temp;
+		}
+		
+		return $melted;
+	}
+	
+	/**
 	 * Execute the main logic
 	 * @param array $query - Query to get data from the collection.
 	 * @param array $expectedReults - Array of json results to compare to 
 	 * the ones in the data base.
+	 * @param array $defaultRecord - A default record to wrap the existing 
+	 * values with if missing fields.
 	 * @return true if successful.
 	 * @todo validate the input params?
 	 */
-	public function execute($query, $expectedReults) {
+	public function execute($query, $expectedReults, $defaultRecord=array()) {
 		$existingRecords = $this->getExistingRecords($query);
 		
 		$toBeAdded = 
 			$this->handleDeltaArrays($expectedReults, $existingRecords);
 		
+		$valuesToAdd = $this->meltWithDefault($toBeAdded, $defaultRecord);
+		
 		// Add all the values.
-		return $this->addValues($toBeAdded);
+		return $this->addValues($valuesToAdd);
+	}
+	
+	/**
+	 * Fill the expected record with the values of the existing record.
+	 * @param array $existing
+	 * @param array $expected
+	 * @return Merged record
+	 */
+	protected function getMatched($existing, $expected) {
+		$matched = $existing;
+		foreach ($expected as $key => $value) {
+			$matched[$key] = $value;
+		}
+		return $matched;
 	}
 	
 	/**
@@ -150,7 +199,7 @@ abstract class Billrun_UpdateByDelta_Updater {
 			// record to update the existing by.
 			// TODO: Throws expection/returns error?
 			if($this->handleDelta($existing, $expected) !== 1) {
-				$matched = $expected;
+				$matched = $this->getMatched($existing, $expected);
 				break;
 			}
 		}
@@ -178,7 +227,7 @@ abstract class Billrun_UpdateByDelta_Updater {
 		
 		// Go through the existing records.
 		foreach ($existingRecords as $existing) {
-			$matched = $this->handleSingleRecord($expectedMatched, $existing);
+			$matched = $this->handleSingleRecord($expectedReults, $existing);
 			if($matched !== false) {
 				$expectedMatched[] = $matched;
 			}
@@ -241,7 +290,7 @@ abstract class Billrun_UpdateByDelta_Updater {
 		$cursor = $this->getCollection()->query($query)->cursor();
 		
 		foreach ($cursor as $record) {
-			$existingRecords[] = json_encode($record->getRawData());
+			$existingRecords[] = $record->getRawData();
 		}
 		
 		return $existingRecords;
