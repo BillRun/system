@@ -145,20 +145,7 @@ class LinesModel extends TableModel {
 	}
 
 	public function getTableColumns() {
-		$columns = array(
-			'type' => 'Type',
-			'sid' => 'Subscriber',
-			'aid' => 'Account',
-			'calling_number' => 'Calling',
-			'called_number' => 'Called',
-			'plan' => 'Plan',
-			'usaget' => 'Usage',
-			'usagev' => 'Volume',
-			'arate' => 'Rate',
-			'aprice' => 'Charge',
-			'billrun' => 'Billrun',
-			'urt' => 'Time',
-		);
+		$columns = parent::getTableColumns();
 		if (!empty($this->extra_columns)) {
 			$extra_columns = array_intersect_key($this->getExtraColumns(), array_fill_keys($this->extra_columns, ""));
 			$columns = array_merge($columns, $extra_columns);

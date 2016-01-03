@@ -63,4 +63,55 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$requestUrl = Billrun_Factory::config()->getConfigValue('IN.request.url.realtimeevent');
 		return Billrun_Util::sendRequest($requestUrl, $request);
 	}
+	
+	public function afterUpdateSubscriberBalance($row, $balance, &$pricingData, $calculator) {
+		try {
+			$pp_includes_name = $balance->get('pp_includes_name');
+			if (!empty($pp_includes_name)) {
+				$pricingData['pp_includes_name'] = $pp_includes_name;
+			}
+			$pp_includes_external_id = $balance->get('pp_includes_external_id');
+			if (!empty($pp_includes_external_id)) {
+				$pricingData['pp_includes_external_id'] = $pp_includes_external_id;
+			}
+
+			$balance_before = $this->getBalanceValue($balance);
+			$balance_usage = $this->getBalanceUsage($balance, $row);
+			$pricingData["balance_before"] = $balance_before;
+			$pricingData["balance_after"] = $balance_before + $balance_usage;
+			$pricingData["usage_unit"] = Billrun_Util::getUsagetUnit($balance->get('charging_by_usaget'));
+		} catch (Exception $ex) {
+			Billrun_Factory::log('prepaid plugin afterUpdateSubscriberBalance error', Zend_Log::ERR);
+			Billrun_Factory::log($ex->getCode() . ': ' . $ex->getMessage(), Zend_Log::ERR);
+		}
+	}
+	
+	protected function getBalanceValue($balance) {
+		if ($balance->get('charging_by_usaget') == 'total_cost') {
+			return $balance->get('balance')['cost'];
+		}
+		return $balance->get('balance')['totals'][$balance['charging_by_usaget']][$balance['charging_by']];
+	}
+	
+	protected function getBalanceUsage($balance, $row) {
+		if ($balance->get('charging_by_usaget') == 'total_cost' || $balance->get('charging_by_usaget') == 'cost') {
+			return $row['aprice'];
+		}
+		return $row['usagev'];
+	}
+	
+	public function beforeSubscriberRebalance($lineToRebalance, $balance, &$rebalanceUsagev, &$rebalanceCost, &$lineUpdateQuery, $responder) {
+		try {
+			if ($balance['charging_by_usaget'] == 'total_cost' || $balance['charging_by_usaget'] == 'cost') {
+				$lineUpdateQuery['$inc']['balance_after'] = $rebalanceCost;
+			} else {
+				$lineUpdateQuery['$inc']['balance_after'] = $rebalanceUsagev;
+			}
+		} catch (Exception $ex) {
+			Billrun_Factory::log('prepaid plugin beforeSubscriberRebalance error', Zend_Log::ERR);
+			Billrun_Factory::log($ex->getCode() . ': ' . $ex->getMessage(), Zend_Log::ERR);
+		}
+
+	}
+
 }

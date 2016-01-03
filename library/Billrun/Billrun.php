@@ -909,7 +909,7 @@ class Billrun_Billrun {
 			'billrun_key' => 1,
 		);
 		$runtime_billrun_key = Billrun_Util::getBillrunKey($now);
-		$last = Billrun_Factory::db(array('name' => 'billrun'))->billrunCollection()->query()->cursor()->limit(1)->fields($fields)->sort($sort)->current();
+		$last = Billrun_Factory::db()->billrunCollection()->query()->cursor()->limit(1)->fields($fields)->sort($sort)->current();
 		if ($last->isEmpty()) {
 			$active_billrun = $runtime_billrun_key;
 		} else {

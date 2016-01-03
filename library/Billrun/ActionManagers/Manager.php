@@ -72,7 +72,7 @@ abstract class Billrun_ActionManagers_Manager {
 	 */
 	protected function validateActionClassName($actionClassName) {
 		// Check if the class exists.
-		return class_exists($actionClassName);
+		return class_exists($actionClassName, true);
 	}
 	
 	/**
@@ -83,13 +83,13 @@ abstract class Billrun_ActionManagers_Manager {
 	protected function getActionInstance($actionClass) {
 		// Validate the action class.
 		if(!$this->validateActionClassName($actionClass)) {
-			Billrun_Factory::log("getAction Action '$actionClass' is an invalid class!", Zend_Log::INFO);
+			Billrun_Factory::log("getAction Action '$actionClass' is an invalid class!", Zend_Log::ERR);
 			return null;
 		}
 		
 		$action = $this->allocateAction($actionClass);
 		if(!$action) {
-			Billrun_Factory::log("getAction Action '$actionClass' is invalid!", Zend_Log::INFO);
+			Billrun_Factory::log("getAction Action '$actionClass' is invalid!", Zend_Log::ERR);
 			return null;
 		}
 		
@@ -103,7 +103,7 @@ abstract class Billrun_ActionManagers_Manager {
 	 */
 	public function getAction() {
 		if(!$this->validate()) {
-			Billrun_Factory::log("Action manager received invalid options", Zend_Log::NOTICE);
+			Billrun_Factory::log("Action manager received invalid options", Zend_Log::ERR);
 			return null;
 		}
 		

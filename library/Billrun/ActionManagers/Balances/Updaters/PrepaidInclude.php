@@ -35,15 +35,15 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 	public function update($query, $recordToSet, $subscriberId) {
 		// If updating by prepaid include the user must specify an expiration date.
 		if (!$recordToSet['to']) {
-			$error = "Update balance by prepaid include must receive expiration date";
-			$this->reportError($error, Zend_Log::ERR);
+			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 6;
+			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
 
 		// No value is set.
 		if (!isset($recordToSet['value'])) {
-			$error = "Update balance by prepaid include must receive value to update";
-			$this->reportError($error, Zend_Log::ERR);
+			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 7;
+			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
 
@@ -51,8 +51,8 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 		$prepaidIncludes = $db->prepaidincludesCollection();
 		$prepaidRecord = $this->getRecord($query, $prepaidIncludes, $this->getTranslateFields());
 		if (!$prepaidRecord) {
-			$error = "Failed to get prepaid include record";
-			$this->reportError($error, Zend_Log::ERR);
+			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 8;
+			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
 
@@ -65,8 +65,8 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 
 		// Subscriber was not found.
 		if (!$subscriber) {
-			$error = "Updating by prepaid include failed to get subscriber id: " . $subscriberId;
-			$this->reportError($error, Zend_Log::ERR);
+			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 9;
+			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
 
@@ -75,7 +75,7 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 		$updateQuery['sid'] = $subscriber['sid'];
 
 		// Create a default balance record.
-		$defaultBalance = $this->getDefaultBalance($subscriber, $prepaidRecord);
+		$defaultBalance = $this->getDefaultBalance($subscriber, $prepaidRecord, $recordToSet);
 
 		$chargingPlan = $this->getPlanObject($prepaidRecord, $recordToSet);
 
@@ -178,11 +178,11 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 	 * @param type $prepaidRecord
 	 * @param type $recordToSet
 	 */
-	protected function getDefaultBalance($subscriber, $prepaidRecord) {
+	protected function getDefaultBalance($subscriber, $prepaidRecord, $recordToSet) {
 		$defaultBalance = array();
 		$defaultBalance['from'] = new MongoDate();
 
-		$defaultBalance['to'] = $prepaidRecord['to'];
+		$defaultBalance['to'] = $recordToSet['to'];
 		$defaultBalance['sid'] = $subscriber['sid'];
 		$defaultBalance['aid'] = $subscriber['aid'];
 //		$defaultBalance['current_plan'] = $this->getPlanRefForSubscriber($subscriber);

@@ -31,6 +31,62 @@ class Billrun_ActionManagers_Subscribersautorenew_Query extends Billrun_ActionMa
 	}
 	
 	/**
+	 * Get a plan record according to the subscribers auto renew record.
+	 * @param Mongodloid_Entity $record
+	 * @return plan record.
+	 */
+	protected function getPlanRecord($record) {
+		$planCollection = Billrun_Factory::db()->plansCollection();
+		$planQuery = Billrun_Util::getDateBoundQuery();
+		$planQuery["name"] = $record['charging_plan_name'];
+		$planQuery["type"] = 'charging';
+		return $planCollection->query($planQuery)->cursor()->current();
+	}
+	
+	/**
+	 * Populate the plan values.
+	 * @param Mongodloid_Entity $record - Record to populate with plan values.
+	 */
+	protected function populatePlanValues(&$record) {
+		if(!isset($record['charging_plan_name'])) {
+			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 4;
+			$this->reportError($errorCode, Zend_Log::NOTICE);
+			return false;
+		}
+		
+		$planRecord = $this->getPlanRecord($record);
+		if($planRecord->isEmpty()) {
+			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 5;
+			$this->reportError($errorCode, Zend_Log::NOTICE);
+			return false;
+		}
+		
+		if(!isset($planRecord['include'])) {
+			// TODO: Is this an error?
+			return true;
+		}
+		
+		$includeList = $planRecord['include'];
+		
+		// TODO: Is this filtered by priority?
+		// TODO: Should this include the total_cost??
+		foreach ($includeList as $includeRoot => $includeValues) {
+			if(!isset($includeValues['pp_includes_name'])) {
+				continue;
+			}
+			
+			$toAdd = array();
+			
+			// Set the record values.
+			$toAdd['unit_type'] = $includeRoot;			
+			$toAdd['ammount'] = $includeValues['usagev'];
+			$record['includes'][$includeValues['pp_includes_name']] = $toAdd;
+		}
+		
+		return true;
+	}
+	
+	/**
 	 * Query the subscribers collection to receive data in a range.
 	 */
 	protected function queryRange() {
@@ -41,11 +97,16 @@ class Billrun_ActionManagers_Subscribersautorenew_Query extends Billrun_ActionMa
 			// Going through the lines
 			foreach ($cursor as $line) {
 				$rawItem = $line->getRawData();
+				
+				if(!$this->populatePlanValues($rawItem)) {
+					// TODO: What error is reported?
+					return false;
+				}
 				$returnData[] = Billrun_Util::convertRecordMongoDatetimeFields($rawItem, $date_fields);
 			}
 		} catch (\Exception $e) {
-			$error = 'failed quering DB got error : ' . $e->getCode() . ' : ' . $e->getMessage();
-			$this->reportError($error, Zend_Log::ALERT);
+			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base");
+			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return null;
 		}	
 		
@@ -60,19 +121,18 @@ class Billrun_ActionManagers_Subscribersautorenew_Query extends Billrun_ActionMa
 		$returnData = 
 			$this->queryRange();
 
-		$success=true;
 		// Check if the return data is invalid.
 		if(!$returnData) {
 			// If no internal error occured, report on empty data.
 			if($this->error == self::DEFAULT_ERROR) {
-				$this->reportError("No data returned for query", Zend_Log::ALERT);
+				$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 1;
+				$this->reportError($errorCode, Zend_Log::NOTICE);
 			}
 			$returnData = array();
-			$success=false;
 		}
 		
 		$outputResult = 
-			array('status'  => ($success) ? (1) : (0),
+			array('status'  => $this->errorCode,
 				  'desc'    => $this->error,
 				  'details' => $returnData);
 		return $outputResult;
@@ -116,14 +176,14 @@ class Billrun_ActionManagers_Subscribersautorenew_Query extends Billrun_ActionMa
 		$jsonData = null;
 		$query = $input->get('query');
 		if(empty($query) || (!($jsonData = json_decode($query, true)))) {
-			$error = "Failed decoding JSON data";
-			$this->reportError($error, Zend_Log::ALERT);
+			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 2;
+			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
 		
 		if(!isset($jsonData['sid'])) {
-			$error = "Did not receive an SID argument";
-			$this->reportError($error, Zend_Log::ALERT);
+			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 3;
+			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
 		

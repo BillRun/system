@@ -20,7 +20,8 @@ class Billrun_ActionManagers_Realtime_Responder_Call_ReleaseCall extends Billrun
 	 * @return type
 	 */
 	protected function getRealUsagev() {
-		return $this->row['duration'] / 10;
+		$duration = (!empty($this->row['duration']) ? $this->row['duration'] : 0);
+		return $duration / 10;
 	}
 
 	/**
@@ -51,7 +52,7 @@ class Billrun_ActionManagers_Realtime_Responder_Call_ReleaseCall extends Billrun
 		$findQuery = array(
 			"sid" => $this->row['sid'],
 			"call_reference" => $this->row['call_reference'],
-			"_id" => array('$lt' => $this->row['request_num'])
+			"api_name" => array('$ne' => "release_call"),
 		);
 		
 		$lines_coll = Billrun_Factory::db()->linesCollection();
@@ -67,6 +68,30 @@ class Billrun_ActionManagers_Realtime_Responder_Call_ReleaseCall extends Billrun
 		$query = $this->getRebalanceQuery();
 		$line = $lines_coll->aggregate($query)->current();
 		return $line['sum'];
+	}
+	
+	protected function getClearCause() {
+		if (isset($this->row['granted_return_code'])) {
+			$returnCodes = Billrun_Factory::config()->getConfigValue('prepaid.customer', array());
+			switch($this->row['granted_return_code']) {
+				case ($returnCodes['no_subscriber']):
+					return Billrun_Factory::config()->getConfigValue('realtimeevent.clearCause.inactive_account');
+			} 
+		}
+
+		return "";
+	}
+	
+	protected function getReturnCode() {
+		if (isset($this->row['granted_return_code'])) {
+			$returnCodes = Billrun_Factory::config()->getConfigValue('prepaid.customer', array());
+			switch($this->row['granted_return_code']) {
+				case ($returnCodes['no_subscriber']):
+					return Billrun_Factory::config()->getConfigValue("realtimeevent.returnCode.call_not_allowed");
+			} 
+		}
+		
+		return Billrun_Factory::config()->getConfigValue("realtimeevent.returnCode.call_allowed");
 	}
 
 }

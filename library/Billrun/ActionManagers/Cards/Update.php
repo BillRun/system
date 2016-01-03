@@ -13,6 +13,8 @@
  */
 class Billrun_ActionManagers_Cards_Update extends Billrun_ActionManagers_Cards_Action {
 
+	use Billrun_FieldValidator_ServiceProvider;
+	
 	/**
 	 * Field to hold the data to be written in the DB.
 	 * @var type Array
@@ -41,18 +43,6 @@ class Billrun_ActionManagers_Cards_Update extends Billrun_ActionManagers_Cards_A
 	protected function getUpdateFields() {
 		return Billrun_Factory::config()->getConfigValue('cards.update_fields', array());
 	}
-
-	/**
-	 * Check with the mongo that the service provider is trusted.
-	 * @param string $serviceProvider - Service provider to test.
-	 * @return boolean true if trusted.
-	 * @todo Move this logic to a more generic location.
-	 */
-	protected function isServiceProvider($serviceProvider) {
-		$collection = Billrun_Factory::db()->serviceprovidersCollection();
-		$query = array('name' => $serviceProvider);
-		return $collection->exists($query);
-	}
 	
 	/**
 	 * This function builds the query for the Cards Update API after 
@@ -67,16 +57,17 @@ class Billrun_ActionManagers_Cards_Update extends Billrun_ActionManagers_Cards_A
 		$jsonQueryData = null;
 		$query = $input->get('query');
 		if (empty($query) || (!($jsonQueryData = json_decode($query, true)))) {
-			$error = "There is no query tag or query tag is empty!";
-			$this->reportError($error, Zend_Log::ALERT);
+			$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 30;
+			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
 
 		$errLog = array_diff($queryFields, array_keys($jsonQueryData));
 
-		if (!isset($jsonQueryData['batch_number']) && !isset($jsonQueryData['serial_number'])) {
-			$error = "Cannot update ! All the following fields are missing or empty:" . implode(', ', $errLog);
-			$this->reportError($error, Zend_Log::ALERT);
+		if (!isset($jsonQueryData['batch_number']) || !isset($jsonQueryData['serial_number'])) {
+			$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 31;
+			$missingQueryFields = implode(', ', $errLog);
+			$this->reportError($errorCode, Zend_Log::NOTICE, array($missingQueryFields));
 			return false;
 		}
 		
@@ -107,8 +98,9 @@ class Billrun_ActionManagers_Cards_Update extends Billrun_ActionManagers_Cards_A
 		$jsonUpdateData = null;
 		$update = $input->get('update');
 		if (empty($update) || (!($jsonUpdateData = json_decode($update, true)))) {
+			$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 32;
 			$error = "There is no update tag or update tag is empty!";
-			$this->reportError($error, Zend_Log::ALERT);
+			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
 
@@ -119,12 +111,12 @@ class Billrun_ActionManagers_Cards_Update extends Billrun_ActionManagers_Cards_A
 		}
 		
 		// service provider validity check
-		if(isset($this->update['service_provider']) && !$this->isServiceProvider($this->update['service_provider'])) {
-			$error = "Received unknown service provider: " . $this->update['service_provider'];
-			$this->reportError($error, Zend_Log::ALERT);
+		if(!$this->validateServiceProvider($this->update['service_provider'])) {
+			$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 36;
+			$this->reportError($errorCode, Zend_Log::NOTICE, array($oneCard['service_provider']	));
 			return false;
 		}
-
+	
 		if (isset($this->update['to'])) {
 			$this->update['to'] = new MongoDate(strtotime($this->update['to']));
 		}
@@ -140,33 +132,31 @@ class Billrun_ActionManagers_Cards_Update extends Billrun_ActionManagers_Cards_A
 		$exception = null;
 		try {
 			$updateResult = $this->collection->update($this->query, array('$set' => $this->update), array('w' => 1, 'multiple' => 1));
-			$success = $updateResult['ok'];
 			$count = $updateResult['nModified'];
 			$found = $updateResult['n'];
 		} catch (\Exception $e) {
 			$exception = $e;
+			$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 33;
 			$error = 'failed storing in the DB got error : ' . $e->getCode() . ' : ' . $e->getMessage();
-			$this->reportError($error, Zend_Log::ALERT);
-			Billrun_Factory::log('failed saving request :' . print_r($this->update, 1), Zend_Log::ALERT);
-			$success = false;
+			$this->reportError($errorCode, Zend_Log::NOTICE);
 		}
 
 		if(!$count) {
-			$success = false;
 			if($found) {
-				$error = "Nothing to update - Input data are the same as existing data";
+				$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 35;
 			} else {
-				$error = "Card Not Found";
+				$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 34;
 			}			
-			$this->reportError($error);
+			$this->reportError($errorCode, Zend_Log::NOTICE);
 		}
 		
 		$outputResult = array(
-				'status' => ($success) ? (1) : (0),
-				'desc' => $this->error,
-				'details' => ($success) ? 
-							 ('Updated ' . $count . ' card(s)') : 
-							 ($error)
+			'status'      => $this->errorCode == 0 ? 1 : 0,
+			'desc' => $this->error,
+			'error_code'  => $this->errorCode,
+			'details' => (!$this->errorCode) ? 
+						 ('Updated ' . $count . ' card(s)') : 
+						 ($error)
 		);
 
 		return $outputResult;

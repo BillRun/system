@@ -100,6 +100,9 @@ class CronController extends Yaf_Controller_Abstract {
 		}
 	}
 
+	public function autoRenewServicesAction() {
+		$this->autoRenewServices();
+	}		
 	public function autoRenewServices() {		
 		$collection = Billrun_Factory::db()->subscribers_auto_renew_servicesCollection();
 		
@@ -177,10 +180,12 @@ class CronController extends Yaf_Controller_Abstract {
 		$updaterInputUpdate['to'] = $autoRenewRecord['to'];
 		$updaterInputUpdate['operation'] = $autoRenewRecord['operation'];
 
-		$updaterInput['query'] = $updaterInputQuery;
-		$updaterInput['update'] = $updaterInputUpdate;
-
-		if(!$updater->parse(json_encode($updaterInput))) {
+		$updaterInput['query'] = json_encode($updaterInputQuery,JSON_FORCE_OBJECT);
+		$updaterInput['upsert'] = json_encode($updaterInputUpdate,JSON_FORCE_OBJECT);
+		
+		// Anonymous object
+		$jsonObject = new Billrun_AnObj($updaterInput);
+		if(!$updater->parse($jsonObject)) {
 			// TODO: What do I do here?
 			return false;
 		}

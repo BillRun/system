@@ -55,16 +55,17 @@ class Billrun_ActionManagers_Cards_Delete extends Billrun_ActionManagers_Cards_A
 		$jsonQueryData = null;
 		$query = $input->get('query');
 		if (empty($query) || (!($jsonQueryData = json_decode($query, true)))) {
-			$error = "There is no query tag or query tag is empty!";
-			$this->reportError($error, Zend_Log::ALERT);
+			$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 10;
+			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
 
 		$errLog = array_diff($queryFields, array_keys($jsonQueryData));
 
 		if (empty($jsonQueryData['batch_number'])) {
-			$error = "Cannot delete ! All the following fields are missing or empty:" . implode(', ', $errLog);
-			$this->reportError($error, Zend_Log::ALERT);
+			$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 11;
+			$missingQueryFields = implode(', ', $errLog);
+			$this->reportError($errorCode, Zend_Log::NOTICE, array($missingQueryFields));
 			return false;
 		}
 		
@@ -100,27 +101,25 @@ class Billrun_ActionManagers_Cards_Delete extends Billrun_ActionManagers_Cards_A
 		);
 		try {
 			$deleteResult = $this->removeCreated($bulkOptions);
-			$success = $deleteResult['ok'];
 			$count = $deleteResult['n'];
 		} catch (\Exception $e) {
+			$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 12;
 			$error = 'failed deleting from the DB got error : ' . $e->getCode() . ' : ' . $e->getMessage();
-			$this->reportError($error, Zend_Log::ALERT);
-			Billrun_Factory::log('failed deleting request :' . print_r($this->query, 1), Zend_Log::ALERT);
-			$success = false;
+			$this->reportError($errorCode, Zend_Log::NOTICE);
 		}
 
 		if(!$count) {
-			$success = false;
-			$error = "Card Not Found";
-			$this->reportError($error);
+			$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 13;
+			$this->reportError($errorCode, Zend_Log::NOTICE);
 		}
 		
 		$outputResult = array(
-				'status' => ($success) ? (1) : (0),
-				'desc' => $this->error,
-				'details' => ($success) ? 
-							 ('Deleted ' . $count . ' card(s)') : 
-							 ($error)
+			'status'	  => $this->errorCode == 0 ? 1 : 0,
+			'desc'        => $this->error,
+			'error_code'  => $this->errorCode,
+			'details'     => (!$this->errorCode) ? 
+							('Deleted ' . $count . ' card(s)') : 
+							($error)
 		);
 
 		return $outputResult;

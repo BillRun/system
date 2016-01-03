@@ -12,6 +12,9 @@
  * @author Tom Feigin
  */
 class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_Subscribers_Action{
+	
+	use Billrun_FieldValidator_CustomerPlan, Billrun_FieldValidator_ServiceProvider;
+	
 	// TODO: Create a generic update action class. This class shares some logic with the cards and balances update action. The setUpdateRecord function is shared.
 	
 	/**
@@ -120,8 +123,9 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 		$record->collection($this->collection);
 		foreach ($this->recordToSet as $key => $value) {
 			if(!$record->set($key, $value)) {
+				$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 30;
 				$error = "Failed to set values to entity";
-				$this->reportError($error, Zend_Log::ALERT);
+				$this->reportError($errorCode, Zend_Log::NOTICE);
 				return false;
 			}
 		}
@@ -161,9 +165,8 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 			}
 			
 		} catch (\Exception $e) {
-			$error = 'failed storing in the DB got error : ' . $e->getCode() . ' : ' . $e->getMessage();
-			$this->reportError($error, Zend_Log::ALERT);
-			Billrun_Factory::log('failed saving request :' . print_r($this->recordToSet, 1), Zend_Log::ALERT);
+			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 31;
+			$this->reportError($errorCode, Zend_Log::NOTICE);
 			$success = false;
 		}
 
@@ -187,34 +190,6 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 	}
 	
 	/**
-	 * Validate the input plan for the subscriber
-	 * @todo This is multiplicated in the Subscribers Create module.
-	 * @todo Create a validatePlan function that receives a plan name, where to put it?
-	 * @return boolean True if valid.
-	 */
-	protected function validatePlan() {
-		// If the update doesn't affect the plan there is no reason to validate it.
-		if(!isset($this->recordToSet['plan'])) {
-			return true;
-		}
-		$planName = $this->recordToSet['plan'];
-		$planQuery = Billrun_Util::getDateBoundQuery();
-		$planQuery['type'] = 'customer';
-		$planQuery['name'] = $planName;
-		$planCollection = Billrun_Factory::db()->plansCollection();
-		$currentPlan = $planCollection->query($planQuery)->cursor()->current();
-		
-		// TODO: Use the subscriber class.
-		if(!$currentPlan){
-			$error='Invalid plan for the subscriber! [' . print_r($planName, true) . ']';
-			$this->reportError($error, Zend_Log::ALERT);
-			return false;
-		}		
-		
-		return true;
-	}
-	
-	/**
 	 * Set the values for the update record to be set.
 	 * @param httpRequest $input - The input received from the user.
 	 * @return true if successful false otherwise.
@@ -223,8 +198,8 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 		$jsonUpdateData = null;
 		$update = $input->get('update');
 		if(empty($update) || (!($jsonUpdateData = json_decode($update, true)))) {
-			$error = "Update action does not have an update field!";
-			$this->reportError($error, Zend_Log::ALERT);
+			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 32;
+			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
 		
@@ -257,7 +232,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 	 */
 	protected function validateSubscriberUpdateValues($jsonUpdateData) {
 		$subscriberFields = Billrun_Factory::config()->getConfigValue('subscribers.query_fields');
-		$subscriberValidationQuery = array('$or');
+		$subscriberValidationQuery = Billrun_Util::getDateBoundQuery();
 		foreach ($subscriberFields as $subField) {
 			if(isset($jsonUpdateData[$subField])) {
 				$subscriberValidationQuery['$or'][] = 
@@ -268,8 +243,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 		if(!empty($subscriberValidationQuery)) {
 			$subCol = Billrun_Factory::db()->subscribersCollection();
 			if($subCol->exists($subscriberValidationQuery)) {
-				$error = "A subscriber with the same fields already exists!";
-				$this->reportError($error, Zend_Log::ALERT);
+				$this->reportError(Billrun_Factory::config()->getConfigValue("subscriber_error_base"), Zend_Log::NOTICE);
 				return false;
 			}
 		}
@@ -283,6 +257,9 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 	 * @return boolean true if success to set fields
 	 */
 	protected function setQueryFields($queryData) {
+		// Initialize the query with date bounds
+		$this->query = Billrun_Util::getDateBoundQuery();
+		
 		$queryFields = $this->getQueryFields();
 		
 		// Array of errors to report if any occurs.
@@ -310,15 +287,15 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 		$jsonQueryData = null;
 		$query = $input->get('query');
 		if(empty($query) || (!($jsonQueryData = json_decode($query, true)))) {
-			$error = "Update action does not have a query field!";
-			$this->reportError($error, Zend_Log::ALERT);
+			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 33;
+			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
 		
 		// If there were errors.
 		if($this->setQueryFields($jsonQueryData) === FALSE) {
-			$error = "Subscribers update received invalid query values in fields";
-			$this->reportError($error, Zend_Log::ALERT);
+			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 34;
+			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
 		
@@ -339,8 +316,17 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 		if(!$this->setUpdateRecord($input)){
 			return false;
 		}
-				
-		if(!$this->validatePlan()) {
+			
+		$validateOutput = $this->validateCustomerPlan($this->recordToSet['plan']);
+		if($validateOutput !== true) {
+			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 36;
+			$this->reportError($errorCode, Zend_Log::ALERT, array($this->recordToSet['plan']));
+			return false;
+		}
+		
+		if(!$this->validateServiceProvider($this->recordToSet['service_provider'])) {
+			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 35;
+			$this->reportError($errorCode, Zend_Log::ALERT, array($this->recordToSet['service_provider']));
 			return false;
 		}
 		
