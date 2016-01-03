@@ -61,6 +61,12 @@ class Billrun_ActionManagers_Subscribersautorenew_Bydelta extends Billrun_Action
 		
 		$success = $deltaUpdater->execute($query, $this->expected, $defaultRecord);
 
+		if($deltaUpdater->getErrorCode() != 0) {
+			$this->error = $deltaUpdater->getError();
+			$this->errorCode = $deltaUpdater->getErrorCode();
+			$success = false;
+		}
+		
 		$outputResult = 
 			array('status'     => $success,
 				  'error_code' => $this->errorCode,

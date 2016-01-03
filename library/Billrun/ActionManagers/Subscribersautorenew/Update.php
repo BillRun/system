@@ -44,13 +44,11 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 		}
 	
 		if($found) {
-			// TODO: Add to error conf
-			$error = "Nothing to update - Input data are the same as existing data";
+			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 19;
 		} else {
-			// TODO: Add to error conf
-			$error = "Subscriber auto renew Not Found";
+			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 14;
 		}			
-		$this->reportError($error);
+		$this->reportError($errorCode);
 		return false;
 	}
 	
@@ -74,9 +72,10 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 		$options = $this->getUpdateOptions();				
 		$count = 0;
 		$success = true;
+		$updateResult = null;
 		try {
 			$updateResult = $this->collection->update($this->query, $this->updateQuery, $options);
-			$count = $updateResult['nModified'] + $updateResult['nUpserted'];
+			$count = $updateResult['nModified'] + (isset($updateResult['nUpserted']) ? $updateResult['nUpserted'] : 0);
 			$found = $updateResult['n'];
 			$success = $this->handleResult($count, $found);
 		} catch (\Exception $e) {
@@ -85,14 +84,14 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 		}
 		
-		if(!$updatedDocument) {
+		if(!$updateResult) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 11;
-			$this->reportError("No auto renew records found to update", $errorCode);
+			$this->reportError($errorCode);
 		}
 		$outputResult = array(
 			'status'  => $this->errorCode,
 			'desc'    => $this->error,
-			'details' => ($updatedDocument) ? $updatedDocument : 'No results',
+			'details' => ($updateResult) ? $updateResult : 'No results',
 		);
 		return $outputResult;
 	}
@@ -106,14 +105,14 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 		$jsonUpdateData = null;
 		$update = $input->get('upsert');
 		if(empty($update) || (!($jsonUpdateData = json_decode($update, true)))) {
-			$error = "Update action does not have an upsert field!";
-			$this->reportError($error, Zend_Log::NOTICE);
+			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 12;
+			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
 		
 		if(!isset($jsonUpdateData['to'])) {
-			$error = "The 'to' field is mendatory";
-			$this->reportError($error, Zend_Log::NOTICE);
+			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 13;
+			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
 				
@@ -136,46 +135,48 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 	 */
 	protected function populateUpdateQuery($jsonUpdateData) {
 		// TODO INTERVAL IS ALWAYS MONTH
-		$this->updateQuery['interval'] = 'month';
+		$set['interval'] = 'month';
 		
-		$this->updateQuery['to'] = new MongoDate(strtotime($jsonUpdateData['to']));
-		$this->updateQuery['operation'] = $jsonUpdateData['operation'];
-		$this->updateQuery['done'] = 0;
+		$set['to'] = new MongoDate(strtotime($jsonUpdateData['to']));
+		$set['operation'] = $jsonUpdateData['operation'];
+		$set['done'] = 0;
 		
 		// Check if we are at the end of the month.
 		if(date('d') == date('t')) {
-			$this->updateQuery['eom'] = 1;
+			$set['eom'] = 1;
 		} else {
-			$this->updateQuery['eom'] = 0;
+			$set['eom'] = 0;
 		}
 		
-		$this->updateQuery['creation_time'] = new MongoDate();
+		$set['creation_time'] = new MongoDate();
 		if(isset($this->query['from'])) {
-			$this->updateQuery['from'] = new MongoDate(strtotime($this->query['from']));
+			$set['from'] = new MongoDate(strtotime($this->query['from']));
 		} else {
-			$this->updateQuery['from'] = $this->updateQuery['creation_time'];
+			$set['from'] = $set['creation_time'];
 		}
 		
-		$this->updateQuery['last_renew_date'] = $this->updateQuery['creation_time'];
+		$set['last_renew_date'] = $set['creation_time'];
 		
-		$this->updateQuery['remain'] = 
+		$set['remain'] = 
 			$this->countMonths(strtotime($this->query['from']), strtotime($jsonUpdateData['to']));
+		
+		$this->updateQuery['$set'] = $set;
 	}
 	
 	protected function fillWithSubscriberValues() {
-		$this->updateQuery['sid'] = $this->query['sid'];
+		$this->updateQuery['$set']['sid'] = $this->query['sid'];
 		$subCollection = Billrun_Factory::db()->subscribersCollection();
 		$subQuery = Billrun_Util::getDateBoundQuery();
 		$subQuery['sid'] = $this->query['sid'];
 		$subRecord = $subCollection->query($subQuery)->cursor()->current();
 		
 		if($subRecord->isEmpty()) {
-			$error = "Subscriber not found for " . $subQuery['sid'];
-			$this->reportError($error, Zend_Log::NOTICE);
+			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 14;
+			$this->reportError($errorCode, Zend_Log::NOTICE, array($subQuery['sid']));
 			return false;
 		}
 		
-		$this->updateQuery['aid'] = $subRecord['aid'];
+		$this->updateQuery['$set']['aid'] = $subRecord['aid'];
 		
 		return true;
 	}
@@ -189,12 +190,12 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 		
 		$planRecord = $plansCollection->query($chargingPlanQuery)->cursor()->current();
 		if($planRecord->isEmpty()) {
-			$error = "Charging plan not found!";
-			$this->reportError($error, Zend_Log::NOTICE);
+			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 15;
+			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
-		$this->updateQuery['charging_plan_name'] = $planRecord['name'];
-		$this->updateQuery['charging_plan_external_id'] = $planRecord['external_id'];
+		$this->updateQuery['$set']['charging_plan_name'] = $planRecord['name'];
+		$this->updateQuery['$set']['charging_plan_external_id'] = $planRecord['external_id'];
 		
 		return true;
 	}
@@ -228,8 +229,8 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 		foreach ($queryFields as $field) {
 			// ATTENTION: This check will not allow updating to empty values which might be legitimate.
 			if(!isset($queryData[$field]) || empty($queryData[$field])) {
-				$error = "Query is missing " . $field;
-				$this->reportError($error, Zend_Log::NOTICE);
+				$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 16;
+				$this->reportError($errorCode, Zend_Log::NOTICE, array($field));
 				return false;
 			}
 			
@@ -248,15 +249,15 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 		$jsonQueryData = null;
 		$query = $input->get('query');
 		if(empty($query) || (!($jsonQueryData = json_decode($query, true)))) {
-			$error = "Update action does not have a query field!";
-			$this->reportError($error, Zend_Log::NOTICE);
+			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 17;
+			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
 		
 		// If there were errors.
 		if($this->setQueryFields($jsonQueryData) === FALSE) {
-			$error = "Subscribers update received invalid query values in fields";
-			$this->reportError($error, Zend_Log::NOTICE);
+			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 18;
+			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
 		
