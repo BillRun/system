@@ -282,7 +282,11 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 				if (isset($toKey['clearRegex'])) {
 					$params[$toKey['toKey']] = preg_replace($toKey['clearRegex'], '', $row[$key]);
 				} else {
-					$params[$toKey['toKey']] = $row[$key];
+					if ($toKey['toKey'] === 'msisdn') {
+						$params[$toKey['toKey']] = Billrun_Util::msisdn($row[$key]);
+					} else {
+						$params[$toKey['toKey']] = $row[$key];
+					}
 				}
 				//$this->subscriberNumber = $params[$toKey['toKey']];
 				Billrun_Factory::log("found identification for row: {$row['stamp']} from {$key} to " . $toKey['toKey'] . ' with value:' . $params[$toKey['toKey']], Zend_Log::DEBUG);

@@ -38,8 +38,8 @@ class SubscribersModel extends TabledateModel{
 	
 	public function getTableColumns() {
 		$columns = array(
-			'aid' => 'Account',
 			'sid' => 'Subscriber',
+			'aid' => 'Account',
 			'msisdn' => 'MSISDN',
 			'plan' => 'Plan',
 			'language' => 'Language',
@@ -53,8 +53,8 @@ class SubscribersModel extends TabledateModel{
 
 	public function getSortFields() {
 		$sort_fields = array(
-			'aid' => 'Account',
 			'sid' => 'Subscriber',
+			'aid' => 'Account',
 			'msisdn' => 'MSISDN',
 			'plan' => 'Plan',
 			'language' => 'Language',
@@ -85,20 +85,20 @@ class SubscribersModel extends TabledateModel{
 		}
 
 		$filter_fields = array(
-			'aid' => array(
-				'key' => 'aid',
-				'db_key' => 'aid',
-				'input_type' => 'number',
-				'comparison' => 'equals',
-				'display' => 'Account',
-				'default' => '',
-			),			
 			'sid' => array(
 				'key' => 'sid',
 				'db_key' => 'sid',
 				'input_type' => 'number',
 				'comparison' => 'equals',
 				'display' => 'Subscriber',
+				'default' => '',
+			),			
+			'aid' => array(
+				'key' => 'aid',
+				'db_key' => 'aid',
+				'input_type' => 'number',
+				'comparison' => 'equals',
+				'display' => 'Account',
 				'default' => '',
 			),			
 			'msisdn' => array(
@@ -135,12 +135,12 @@ class SubscribersModel extends TabledateModel{
 	public function getFilterFieldsOrder() {
 		$filter_field_order = array(
 			array(
-				'aid' => array(
-					'width' => 2
-				),
 				'sid' => array(
 					'width' => 2,
 				),				
+				'aid' => array(
+					'width' => 2
+				),
 				'msisdn' => array(
 					'width' => 2,
 				)

@@ -30,10 +30,10 @@ class CardsAction extends ApiAction {
 			'api_name' => $apiName
 		);
 
-		$manager = new Billrun_ActionManagers_APIManager($apiManagerInput);
+		$this->manager = new Billrun_ActionManagers_APIManager($apiManagerInput);
 
 		// This is the method which is going to be executed.
-		return $manager->getAction();
+		return $this->manager->getAction();
 	}
 
 	/**
@@ -56,20 +56,23 @@ class CardsAction extends ApiAction {
 
 		$output = "";
 		// Check that received a valid action.
-		if(is_string($action)) {
+		if (is_string($action)) {
 			// TODO: Report failed action. What do i write to the output if this happens?
 			Billrun_Factory::log("Failed to get cards action instance for received input", Zend_Log::ALERT);
-			
-			$output = array('status'  => 0,
-				  'desc'    => $action,
-				  'details' => 'Error');
+			$errorCode = $this->manager->getErrorCode();
+			$output = array(
+				'status'     => $errorCode == 0 ? 1 : 0,
+				'desc'       => $this->manager->getError(),
+				'error_code' => $errorCode,
+				'details'    => 'Error'
+			);
 		} else {
 
 			$output = $action->execute();
 
 			// Set the raw input.
 			// For security reasons (secret code) - the input won't be send back.
-	//		$output['input'] = $request->getRequest();
+			//		$output['input'] = $request->getRequest();
 		}
 		$this->getController()->setOutput(array($output));
 	}

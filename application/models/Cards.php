@@ -40,7 +40,7 @@ class CardsModel extends TableModel {
 		$columns = array(
 			'batch_number' => 'Batch Number',
 			'serial_number' => 'Serial Number',
-			'charging_plan_external_id' => 'Charging Plan',
+			'charging_plan_name' => 'Charging Plan',
 			'service_provider' => 'Service Provider',
 			'status' => 'Status',
 			'to' => 'To',
@@ -53,7 +53,7 @@ class CardsModel extends TableModel {
 		$sort_fields = array(
 			'batch_number' => 'Batch Number',
 			'serial_number' => 'Serial Number',
-			'charging_plan_external_id' => 'Charging Plan',
+			'charging_plan_name' => 'Charging Plan',
 			'status' => 'Status',
 			'service_provider' => 'Service Provider',
 		);
@@ -86,9 +86,9 @@ class CardsModel extends TableModel {
 				'display' => 'Serial Number',
 				'default' => '',				
 			),
-			'plan' => array(
-				'key' => 'plan',
-				'db_key' => 'current_plan',
+			'charging_plan_name' => array(
+				'key' => 'charging_plan_name',
+				'db_key' => 'charging_plan_name',
 				'input_type' => 'multiselect',
 				'comparison' => '$in',
 				'ref_coll' => 'plans',
@@ -135,7 +135,7 @@ class CardsModel extends TableModel {
 				'serial_number' => array(
 					'width' => 2,
 				),
-				'plan' => array(
+				'charging_plan_name' => array(
 					'width' => 2
 				)
 			),

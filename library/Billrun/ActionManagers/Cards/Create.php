@@ -15,6 +15,8 @@
  */
 class Billrun_ActionManagers_Cards_Create extends Billrun_ActionManagers_Cards_Action {
 
+	use Billrun_FieldValidator_ServiceProvider;
+	
 	/**
 	 * Field to hold the data to be written in the DB.
 	 * @var type Array
@@ -35,18 +37,6 @@ class Billrun_ActionManagers_Cards_Create extends Billrun_ActionManagers_Cards_A
 	protected function getCreateFields() {
 		return Billrun_Factory::config()->getConfigValue('cards.create_fields', array());
 	}
-	
-	/**
-	 * Check with the mongo that the service provider is trusted.
-	 * @param string $serviceProvider - Service provider to test.
-	 * @return boolean true if trusted.
-	 * @todo Move this logic to a more generic location.
-	 */
-	protected function isServiceProvider($serviceProvider) {
-		$collection = Billrun_Factory::db()->serviceprovidersCollection();
-		$query = array('name' => $serviceProvider);
-		return $collection->exists($query);
-	}
 
 	/**
 	 * This function builds the create for the Cards creation API after 
@@ -61,8 +51,9 @@ class Billrun_ActionManagers_Cards_Create extends Billrun_ActionManagers_Cards_A
 		$create = $input->get('cards');
 
 		if (empty($create) || (!($jsonCreateDataArray = json_decode($create, true)))) {
+			$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base");
 			$error = "There is no create tag or create tag is empty!";
-			$this->reportError($error, Zend_Log::ALERT);
+			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
 
@@ -75,17 +66,24 @@ class Billrun_ActionManagers_Cards_Create extends Billrun_ActionManagers_Cards_A
 			$oneCard = array();
 			foreach ($createFields as $field) {
 				if (!isset($jsonCreateData[$field]) || empty($jsonCreateData[$field])) {
-					$error = "Field: " . $field . " is not set or is empty!";
-					$this->reportError($error, Zend_Log::ALERT);
+					$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 1;
+					$this->reportError($errorCode, Zend_Log::NOTICE, array($field));
 					return false;
 				}
 				$oneCard[$field] = $jsonCreateData[$field];
 			}
 
+			// status validity check (should be "Idle" by default(
+			if($oneCard['status'] != "Idle") {
+				$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 3;
+				$this->reportError($errorCode, Zend_Log::NOTICE, array($oneCard['status']));
+				return false;
+			}
+
 			// service provider validity check
-			if(!$this->isServiceProvider($oneCard['service_provider'])) {
-				$error = "Received unknown service provider: " . $oneCard['service_provider'];
-				$this->reportError($error, Zend_Log::ALERT);
+			if(!$this->validateServiceProvider($oneCard['service_provider'])) {
+				$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 4;
+				$this->reportError($errorCode, Zend_Log::NOTICE, array($oneCard['service_provider']	));
 				return false;
 			}
 
@@ -128,7 +126,6 @@ class Billrun_ActionManagers_Cards_Create extends Billrun_ActionManagers_Cards_A
 	 * @return data for output.
 	 */
 	public function execute() {
-		$success = false;
 		$bulkOptions = array(
 			'continueOnError' => true,
 			'socketTimeoutMS' => 300000,
@@ -137,19 +134,19 @@ class Billrun_ActionManagers_Cards_Create extends Billrun_ActionManagers_Cards_A
 		);
 		$exception = null;
 		try {
-			$res = Billrun_Factory::db()->cardsCollection()->batchInsert($this->cards, $bulkOptions);
-			$success = $res['ok'];
+ 			$res = Billrun_Factory::db()->cardsCollection()->batchInsert($this->cards, $bulkOptions);
 			$count = $res['nInserted'];
 		} catch (\Exception $e) {
 			$exception = $e;
+			$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 2;
 			$error = 'failed storing in the DB got error : ' . $e->getCode() . ' : ' . $e->getMessage();
-			$this->reportError($error, Zend_Log::ALERT);
-			Billrun_Factory::log('failed saving request :' . print_r($this->cards, 1), Zend_Log::ALERT);
-			$success = false;
+			$this->reportError($errorCode, Zend_Log::NOTICE);
+			Billrun_Factory::log('failed saving request :' . print_r($this->cards, 1), Zend_Log::NOTICE);
 			$res = $this->removeCreated($bulkOptions);
 		}
 
-		if ($success) {
+		// Error code 0 is success
+		if (!$this->errorCode) {
 			$res = $this->cleanInnerHash($bulkOptions);
 		}
 		
@@ -158,9 +155,10 @@ class Billrun_ActionManagers_Cards_Create extends Billrun_ActionManagers_Cards_A
 		});
 			
 		$outputResult = array(
-				'status' => ($success) ? (1) : (0),
-				'desc' => $this->error,
-				'details' => ($success) ? 
+			'status' => $this->errorCode == 0 ? 1 : 0,
+			'desc' => $this->error,
+			'error_code' => $this->errorCode,
+			'details' => (!$this->errorCode) ? 
 							 (json_encode($this->cards)) : 
 							 ('Failed storing cards in the data base : ' . $exception->getCode() . ' : ' . $exception->getMessage() . '. ' . $res['n'] . ' cards removed')
 		);

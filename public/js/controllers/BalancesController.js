@@ -13,7 +13,7 @@ app.controller('BalancesController', ['$scope', '$window', '$routeParams', 'Data
       Database.saveEntity(params).then(function (res) {
         $window.location = baseUrl + '/admin/' + $routeParams.collection;
       }, function (err) {
-        alert("Danger! Danger! Beedeebeedeebeedee!");
+        alert("Connection error!");
       });
     };
 
@@ -27,9 +27,10 @@ app.controller('BalancesController', ['$scope', '$window', '$routeParams', 'Data
         id: $routeParams.id
       };
       Database.getEntity(params).then(function (res) {
-        $scope.entity = res.data;
+        $scope.entity = res.data.entity;
+        $scope.authorized_write = res.data.authorized_write;
       }, function (err) {
-        alert("Danger! Danger! Beedeebeedeebeedee!");
+        alert("Connection error!");
       });
     };
   }]);

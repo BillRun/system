@@ -43,7 +43,7 @@ function create_tariff(tariff) {
 	print("usaget : " + _usaget);
 	print("tariff : " + tariff.PP_TARIFF_NAME);
 	if (tariff.INITIAL_AMOUNT == tariff.ADD_AMOUNT && tariff.INITIAL_CHARGE == tariff.ADD_CHARGE) {
-		return [{
+		return {
 			'access': 0,
 			'unit' : _unit,
 			'rate':     [{
@@ -51,9 +51,9 @@ function create_tariff(tariff) {
 				'price': Number(tariff.ADD_CHARGE),
 				'interval': Number(tariff.ADD_AMOUNT)
 			}]
-		}];
+		};
 	}
-	return [{
+	return {
 		'access':   0,
 		'unit' : _unit,
 		'rate':     [{
@@ -65,12 +65,11 @@ function create_tariff(tariff) {
 			'price': Number(tariff.ADD_CHARGE),
 			'interval': Number(tariff.ADD_AMOUNT)
 		}]
-
-	}];
+	};
 
 }
 
-//db.tmp_PPS_PREFIXES.aggregate({$match:{BILLING_ALLOCATION:/^Bezeq144$/}}, {$group:{_id:"$BILLING_ALLOCATION", prefixes:{$addToSet:"$PPS_PREFIXES"}}}).forEach(
+//db.tmp_PPS_PREFIXES.aggregate({$match:{BILLING_ALLOCATION:/013_GERMANY/}}, {$group:{_id:"$BILLING_ALLOCATION", prefixes:{$addToSet:"$PPS_PREFIXES"}}}).forEach(
 db.tmp_PPS_PREFIXES.aggregate({$group:{_id:"$BILLING_ALLOCATION", prefixes:{$addToSet:"$PPS_PREFIXES"}}}).forEach(
 	function(obj1) {
 		_rate_name = obj1._id;
@@ -111,9 +110,10 @@ db.tmp_PPS_PREFIXES.aggregate({$group:{_id:"$BILLING_ALLOCATION", prefixes:{$add
 													_find_tariff = true;
 													if (_tariffs[_usaget] === undefined)
 														_tariffs[_usaget] = {};
-													if (_tariffs[_usaget][_plan_name] === undefined)
-														_tariffs[_usaget][_plan_name] = [];
-													Array.prototype.push.apply(_tariffs[_usaget][_plan_name], _t);
+//													if (_tariffs[_usaget][_plan_name] === undefined)
+//														_tariffs[_usaget][_plan_name] = {};
+//													Array.prototype.push.apply(_tariffs[_usaget][_plan_name], _t);
+												_tariffs[_usaget][_plan_name] = _t;
 												}
 											}
 										);
@@ -138,8 +138,9 @@ db.tmp_PPS_PREFIXES.aggregate({$group:{_id:"$BILLING_ALLOCATION", prefixes:{$add
 												if (_t !== false) {
 													_find_tariff = true;
 													if (_tariffs[_usaget] === undefined) _tariffs[_usaget] = {};
-													if (_tariffs[_usaget][_plan_name] === undefined) _tariffs[_usaget][_plan_name] = [];
-													Array.prototype.push.apply(_tariffs[_usaget][_plan_name], _t);
+//													if (_tariffs[_usaget][_plan_name] === undefined) _tariffs[_usaget][_plan_name] = [];
+//													Array.prototype.push.apply(_tariffs[_usaget][_plan_name], _t);
+													_tariffs[_usaget][_plan_name] = _t;
 												}
 											}
 										);

@@ -48,13 +48,13 @@ app.config(function ($httpProvider, $routeProvider, $locationProvider) {
     return angular.isObject(data) && String(data) !== '[object File]' ? param(data) : data;
   }];
 
-  $routeProvider.when('/:collection/:action/:id', {
+  $routeProvider.when('/:collection/list', {
+    templateUrl: 'views/partials/collectionList.html',
+    controller: 'CollectionsController'
+  }).when('/:collection/:action/:id?', {
 	  templateUrl: function (urlattr) {
 		  return 'views/' + urlattr.collection + '/edit.html';
 	  }
-  }).when('/:collection/list', {
-    templateUrl: 'views/partials/collectionList.html',
-    controller: 'CollectionsController'
   });
   $locationProvider.html5Mode({enabled: false, requireBase: false});
 });

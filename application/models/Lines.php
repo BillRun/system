@@ -145,20 +145,7 @@ class LinesModel extends TableModel {
 	}
 
 	public function getTableColumns() {
-		$columns = array(
-			'type' => 'Type',
-			'aid' => 'Account',
-			'sid' => 'Subscriber',
-			'calling_number' => 'Calling',
-			'called_number' => 'Called',
-			'plan' => 'Plan',
-			'usaget' => 'Usage',
-			'usagev' => 'Volume',
-			'arate' => 'Rate',
-			'aprice' => 'Charge',
-			'billrun' => 'Billrun',
-			'urt' => 'Time',
-		);
+		$columns = parent::getTableColumns();
 		if (!empty($this->extra_columns)) {
 			$extra_columns = array_intersect_key($this->getExtraColumns(), array_fill_keys($this->extra_columns, ""));
 			$columns = array_merge($columns, $extra_columns);
@@ -183,20 +170,20 @@ class LinesModel extends TableModel {
 		arsort($billruns);
 
 		$filter_fields = array(
-			'aid' => array(
-				'key' => 'aid',
-				'db_key' => 'aid',
-				'input_type' => 'number',
-				'comparison' => 'equals',
-				'display' => 'Account id',
-				'default' => '',
-			),
 			'sid' => array(
 				'key' => 'sid',
 				'db_key' => 'sid',
 				'input_type' => 'number',
 				'comparison' => 'equals',
 				'display' => 'Subscriber id',
+				'default' => '',
+			),
+			'aid' => array(
+				'key' => 'aid',
+				'db_key' => 'aid',
+				'input_type' => 'number',
+				'comparison' => 'equals',
+				'display' => 'Account id',
 				'default' => '',
 			),
 			'from' => array(
@@ -278,10 +265,10 @@ class LinesModel extends TableModel {
 	public function getFilterFieldsOrder() {
 		$filter_field_order = array(
 			0 => array(
-				'aid' => array(
-					'width' => 2,
-				),
 				'sid' => array(
+					'width' => 2,
+				),				
+				'aid' => array(
 					'width' => 2,
 				),
 				'from' => array(

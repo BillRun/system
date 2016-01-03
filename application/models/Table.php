@@ -279,6 +279,9 @@ class TableModel {
 				$new_data[$value] = $raw_data[$value];
 			}
 			foreach ($params as $key => $value) {
+				if (in_array($key, array("to", "from")) && is_array($value)) {
+					$value = new MongoDate($value['sec']);
+				}
 				$new_data[$key] = $value;
 			}
 			$entity->setRawData($new_data);
@@ -427,7 +430,6 @@ class TableModel {
 		$count = $this->collection
 			->query($this->search_key, $key)
 			->count();
-
 		if ($count) {
 			die(json_encode("key already exists"));
 		}

@@ -13,6 +13,8 @@
  */
 class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_Subscribers_Action{
 	
+	use Billrun_FieldValidator_CustomerPlan, Billrun_FieldValidator_ServiceProvider;
+	
 	/**
 	 * Field to hold the data to be written in the DB.
 	 * @var type Array
@@ -53,8 +55,8 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 		
 		// TODO: Use the subscriber class.
 		if($subscribers->count() > 0){
-			$error='Subscriber already exists! [' . print_r($subscriberQuery, true) . ']';
-			$this->reportError($error, Zend_Log::ALERT);
+			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base");
+			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return true;
 		}
 		
@@ -62,54 +64,38 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 	}
 	
 	/**
-	 * Validate the input plan for the subscriber
-	 * @return boolean True if valid.
-	 */
-	protected function validatePlan() {
-		$subscriberQuery = $this->getSubscriberQuery();
-		
-		$planName = $this->query['plan'];
-		$planQuery = Billrun_Util::getDateBoundQuery();
-		$planQuery['type'] = 'customer';
-		$planQuery['name'] = $planName;
-		$planCollection = Billrun_Factory::db()->plansCollection();
-		$currentPlan = $planCollection->query($planQuery)->cursor()->current();
-		
-		// TODO: Use the subscriber class.
-		if(!$currentPlan || $currentPlan->isEmpty()){
-			$error='Invalid plan for the subscriber! [' . print_r($planName, true) . ']';
-			$this->reportError($error, Zend_Log::ALERT);
-			return false;
-		}		
-		
-		return true;
-	}
-	
-	/**
 	 * Execute the action.
 	 * @return data for output.
 	 */
 	public function execute() {
-		$success = false;
 		try {
 			// Create the subscriber only if it doesn't already exists.
-			if($this->validatePlan() &&
-			   !$this->subscriberExists()) {
+			if($this->validateCustomerPlan($this->query['plan']) !== true) {
+				$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 6;
+				$this->reportError($errorCode, Zend_Log::ALERT, array($this->query['plan']));
+			} elseif(!$this->validateServiceProvider($this->query['service_provider'])) {
+				$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 5;
+				$this->reportError($errorCode, Zend_Log::ALERT, array($this->query['service_provider']));
+			} elseif(!$this->subscriberExists()) { 
 				$entity = new Mongodloid_Entity($this->query);
 
-				$success = ($this->collection->save($entity, 1) !== false);
+				$this->collection->save($entity, 1);
 			}	
 		} catch (\Exception $e) {
-			$error = 'Failed storing in DB got error : ' . $e->getCode() . ' : ' . $e->getMessage();
-			$this->reportError($error, Zend_Log::ALERT);
-			Billrun_Factory::log('failed saving request :' . print_r($this->query, 1), Zend_Log::ALERT);
-			$success = false;
+			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 1;
+			$this->reportError($errorCode, Zend_Log::NOTICE);
+			Billrun_Factory::log($e->getCode() . ": " . $e->getMessage(), Billrun_Log::WARN);
 		}
 
-		$outputResult = 
-			array('status'  => ($success) ? (1) : (0),
-				  'desc'    => $this->error,
-				  'details' => $entity);
+		$outputResult = array(
+			'status'        => $this->errorCode == 0 ? 1 : 0,
+			'desc'          => $this->error,
+			'error_code'    => $this->errorCode,
+		);
+		
+		if (isset($entity)) {
+			$outputResult['details'] = $entity->getRawData();
+		}
 		return $outputResult;
 	}
 
@@ -135,8 +121,9 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 		$jsonData = null;
 		$query = $input->get('subscriber');
 		if(empty($query) || (!($jsonData = json_decode($query, true)))) {
+			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 2;
 			$error = "Failed decoding JSON data";
-			$this->reportError($error, Zend_Log::ALERT);
+			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
 		
@@ -144,8 +131,9 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 		
 		// If there were errors.
 		if(!empty($invalidFields)) {
-			$error="Subscribers create received invalid query values in fields: " . implode(',', $invalidFields);
-			$this->reportError($error, Zend_Log::ALERT);
+			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 3;
+			$error = "Subscribers create received invalid query values in fields: " . implode(',', $invalidFields);
+			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
 		

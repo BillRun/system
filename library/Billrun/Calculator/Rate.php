@@ -142,6 +142,10 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 		Billrun_Factory::dispatcher()->trigger('beforeCalculatorUpdateRow', array($row, $this));
 		$current = $row->getRawData();
 		$rate = $this->getLineRate($row);
+		if (is_null($rate) || $rate === false) {
+			$row['granted_return_code'] = Billrun_Factory::config()->getConfigValue('prepaid.customer.no_rate');
+			return false;
+		}
 		if (isset($rate['key']) && $rate['key'] == "UNRATED") {
 			return false;
 		}
@@ -153,7 +157,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 		);
 		if ($rate) {
 			// TODO: push plan to the function to enable market price by plan
-			$added_values[$this->aprField] = Billrun_Calculator_CustomerPricing::getPriceByRate($rate, $row['usaget'], $row['usagev']);
+			$added_values[$this->aprField] = Billrun_Calculator_CustomerPricing::getPriceByRate($rate, $row['usaget'], $row['usagev'], $row['plan']);
 		}
 		$newData = array_merge($current, $added_values);
 		$row->setRawData($newData);

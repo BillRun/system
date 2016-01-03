@@ -397,7 +397,7 @@ class Billrun_Util {
 	 * @return type
 	 * @todo This is generic enough to be moved to anoter location.
 	 */
-	public function getDateBoundQuery() {
+	public static function getDateBoundQuery() {
 		return array(
 			'to' => array(
 				'$gt' => new MongoDate()
@@ -1035,5 +1035,9 @@ class Billrun_Util {
 		return array_keys($arr) !== range(0, count($arr) - 1);
 	}
 
+	public static function getUsagetUnit($usaget) {
+		$units = Billrun_Factory::config()->getConfigValue('usaget.unit');
+		return isset($units[$usaget]) ? $units[$usaget] : '';
+	}
 
 }

@@ -42,6 +42,7 @@ class Billrun_Calculator_Rate_Gy extends Billrun_Calculator_Rate_Ggsn {
 
 	/**
 	 * @see Billrun_Calculator_Rate::getLineRate
+	 * @todo make a query instead of cpu search
 	 */
 	protected function getLineRate($row) {
 		$line_time = $row['urt'];

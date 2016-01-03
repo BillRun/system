@@ -118,8 +118,12 @@ class AdminController extends Yaf_Controller_Abstract {
 			$response->response();
 			return false;
 		}
+
 		$entity = $entity->getRawData();
-		$response->setBody(json_encode($entity));
+		foreach ($model->getHiddenKeys($entity, $type) as $key) {
+			if ($key !== '_id') unset($entity[$key]);
+		}
+		$response->setBody(json_encode(array('authorized_write' => AdminController::authorized('write'), 'entity' => $entity)));
 		$response->response();
 		return false;
 	}
@@ -128,19 +132,21 @@ class AdminController extends Yaf_Controller_Abstract {
 		if (!$this->allowed('read'))
 			return false;
 		$coll = Billrun_Util::filter_var($this->getRequest()->get('coll'), FILTER_SANITIZE_STRING);
+		$size = $this->getRequest()->get('size');
+		$page = $this->getRequest()->get('page');
 		$response = new Yaf_Response_Http();
-/*
-		$session = @json_decode($this->getRequest()->get('session'));
-		if ($session) {
-			$s = $this->getSession();
-			foreach($session as $key => $val) {
-				$s->$key = $val;
+		$session = $this->getSession($coll);
+		/*
+		$filter = @json_decode($this->getRequest()->get('filter'));
+		if ($filter) {
+			foreach($filter as $key => $val) {
+				if (!is_array($val)) {
+					$session->$key = $val;
+				}
 			}
-		} else {
-			$session = $this->getSession();
 		}
- */
-		$session = $this->getSession();
+		 * 
+		 */
 		$show_prefix = $this->getSetVar($session, 'showprefix', 'showprefix', 0);
 		$sort = $this->applySort($coll);
 		$options = array(
@@ -150,8 +156,8 @@ class AdminController extends Yaf_Controller_Abstract {
 		);
 		// set the model
 		self::initModel($coll, $options);
-		$query = $this->applyFilters($coll, $session);
-		// TODO: use ready pager/paginiation class (zend? joomla?) with auto print
+		$this->model->setSize($size);
+		$query = $this->applyFilters($coll);
 		$basic_params = array(
 			'title' => $this->title,
 			'active' => $coll,
@@ -168,7 +174,7 @@ class AdminController extends Yaf_Controller_Abstract {
 			$items[] = $i;
 		}
 		$params['data'] = $items;
-		$response->setBody(json_encode($params));
+		$response->setBody(json_encode(array('items' => $params, 'pager' => $this->model->getPager(), 'authorized_write' => AdminController::authorized('write'))));
 		$response->response();
 		return false;
 	}
@@ -176,8 +182,9 @@ class AdminController extends Yaf_Controller_Abstract {
 	public function getAvailablePlansAction() {
 		if (!$this->allowed('read'))
 			return false;
+		$type = Billrun_Util::filter_var($this->getRequest()->get('type'), FILTER_SANITIZE_STRING);
 		$planModel = new PlansModel();
-		$names = $planModel->getData(array('type' => 'customer'));
+		$names = $planModel->getData(array('type' => $type));
 		$availablePlans = array();
 		foreach($names as $name) {
 			$availablePlans[$name['name']] = $name['name'];
@@ -188,6 +195,18 @@ class AdminController extends Yaf_Controller_Abstract {
 		return false;
 	}
 
+	public function getAvailableServiceProvidersAction() {
+		if (!$this->allowed('read'))
+			return false;
+		$collection = Billrun_Factory::db()->serviceprovidersCollection()->distinct('name');
+		$availableServiceProviders = array();
+
+		$response = new Yaf_Response_Http();
+		$response->setBody(json_encode($collection));
+		$response->response();
+		return false;
+	}
+	
 	/**
 	 * save controller
 	 * @return boolean
@@ -306,6 +325,10 @@ class AdminController extends Yaf_Controller_Abstract {
 		$id = Billrun_Util::filter_var($this->getRequest()->get('id'), FILTER_SANITIZE_STRING);
 		$coll = Billrun_Util::filter_var($this->getRequest()->get('coll'), FILTER_SANITIZE_STRING);
 		$dup_rates = $this->getRequest()->get('duplicate_rates');
+		$batch_no = $this->getRequest()->get('batch_no') ? $this->getRequest()->get('batch_no') : false;
+		if ($batch_no) {
+			$range = json_decode($this->getRequest()->get('range'));
+		}
 		$duplicate_rates = ($dup_rates == 'true') ? true : false;
 		$model = self::initModel($coll);
 
@@ -329,7 +352,13 @@ class AdminController extends Yaf_Controller_Abstract {
 			$params = array_merge($params, array('duplicate_rates' => $duplicate_rates));
 		}
 		if ($type == 'update') {
-			$saveStatus = $model->update($params);
+			if ($batch_no) {
+				$cardObj = new Billrun_ActionManagers_Cards_Update();
+				$this->getRequest()->set('update', $this->getRequest()->get('data'));
+				$cardObj->updateProcess($this->getRequest());
+			} else {
+				$saveStatus = $model->update($params);
+			}
 		} else if ($type == 'close_and_new') {
 			$saveStatus = $model->closeAndNew($params);
 		} else if (in_array($type, array('duplicate', 'new'))) {
@@ -957,12 +986,13 @@ class AdminController extends Yaf_Controller_Abstract {
 		}
 		$filter_fields = $model->getFilterFields();
 		$query = array();
-		if ($filter = $this->getManualFilters($table)) {
+		if (($filter = $this->getManualFilters($table, $session))) {
 			$query['$and'][] = $filter;
 		}
 		foreach ($filter_fields as $filter_name => $filter_field) {
 			$value = $this->getSetVar($session, $filter_field['key'], $filter_field['key'], $filter_field['default']);
 			if ((!empty($value) || $value === 0 || $value === "0") &&
+				is_array($filter_field) && isset($filter_field['db_key']) && 
 				$filter_field['db_key'] != 'nofilter' &&
 				($filter = $model->applyFilter($filter_field, $value))) {
 					$query['$and'][] = $filter;
@@ -978,7 +1008,11 @@ class AdminController extends Yaf_Controller_Abstract {
 			$order = $this->getSetVar($session, 'order', 'order', 'asc') == 'asc' ? 1 : -1;
 			$sort = array($sort_by => $order);
 		} else {
-			$sort = array();
+			if ($table === "subscribers") {
+				$sort = array('from' => -1);
+			} else {
+				$sort = array();
+			}
 		}
 		return $sort;
 	}
@@ -1129,7 +1163,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$query[$key][$operator] = $value;
 	}
 
-	public function getManualFilters($table) {
+	public function getManualFilters($table, $session = false) {
 		$advanced_options = $this->getAdvancedOptionsPerModel();
 		if ($advanced_options === false) {
 			Billrun_Factory::log("No options found for current model.", Zend_Log::DEBUG);
@@ -1137,7 +1171,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		}
 
 		$query = false;
-		$session = $this->getSession($table);
+		if (!$session) $session = $this->getSession($table);
 		$keys = $this->getSetVar($session, 'manual_key', 'manual_key');
 
 		$operators = $this->getSetVar($session, 'manual_operator', 'manual_operator');

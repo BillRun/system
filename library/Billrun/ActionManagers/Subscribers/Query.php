@@ -13,7 +13,7 @@
  * @todo This class is very similar to balances query, 
  * a generic query class should be created for both to implement.
  */
-class Billrun_ActionManagers_Subscribers_Query extends Billrun_ActionManagers_Subscribers_Action{
+class Billrun_ActionManagers_Subscribers_Query extends Billrun_ActionManagers_Subscribers_Action {
 	
 	/**
 	 * Field to hold the data to be written in the DB.
@@ -50,8 +50,9 @@ class Billrun_ActionManagers_Subscribers_Query extends Billrun_ActionManagers_Su
 				$returnData[] = Billrun_Util::convertRecordMongoDatetimeFields($rawItem);
 			}
 		} catch (\Exception $e) {
+			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 20;
 			$error = 'failed quering DB got error : ' . $e->getCode() . ' : ' . $e->getMessage();
-			$this->reportError($error, Zend_Log::ALERT);
+			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return null;
 		}	
 		
@@ -66,18 +67,18 @@ class Billrun_ActionManagers_Subscribers_Query extends Billrun_ActionManagers_Su
 		$returnData = 
 			$this->queryRangeSubscribers();
 
-		$success=true;
 		// Check if the return data is invalid.
 		if(!$returnData) {
 			$returnData = array();
-			$this->reportError("No subscribers found");
-			$success=false;
+			$this->reportError(1004);
 		}
 		
-		$outputResult = 
-			array('status'  => ($success) ? (1) : (0),
-				  'desc'    => $this->error,
-				  'details' => $returnData);
+		$outputResult = array(
+			'status'      => $this->errorCode == 0 ? 1 : 0,
+			'desc'        => $this->error,
+			'error_code'  => $this->errorCode,
+			'details'     => $returnData
+		);
 		return $outputResult;
 	}
 	
@@ -120,8 +121,9 @@ class Billrun_ActionManagers_Subscribers_Query extends Billrun_ActionManagers_Su
 		$jsonData = null;
 		$query = $input->get('query');
 		if(empty($query) || (!($jsonData = json_decode($query, true)))) {
+			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 21;
 			$error = "Failed decoding JSON data";
-			$this->reportError($error, Zend_Log::ALERT);
+			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
 		
@@ -129,8 +131,9 @@ class Billrun_ActionManagers_Subscribers_Query extends Billrun_ActionManagers_Su
 		
 		// If there were errors.
 		if(empty($this->subscriberQuery)) {
+			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 21;
 			$error = "Subscribers query must receive one of the following fields: " . implode(',', $invalidFields);
-			$this->reportError($error, Zend_Log::ALERT);
+			$this->reportError($error, Zend_Log::NOTICE);
 			return false;
 		}
 		
