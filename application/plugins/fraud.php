@@ -137,7 +137,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * 
 	 */
 	protected function calculateCost($balance, $filter = false) {
-		if (empty($balance) || !isset($balance['cost'])) {
+		if (empty($balance) || !isset($balance['balance']['cost'])) {
 			return 0;
 		}
 		$costFieldName = 'cost';
@@ -159,13 +159,15 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 	protected function sumBalance($balance, $sumField, $filter = array()) {
 		if (count($filter) == 1) {
 			// if filter only one don't array make the array manipulation
-			return $balance['totals'][$filter[0]][$sumField];
+			return $balance[$filter[0]][$sumField];
 		}
 
 		if (!empty($filter)) {
-			$costArray = array_intersect_key($balance['totals'], array_combine($filter, $filter));
+			foreach($filter as $field) {
+				$costArray[$field] = $balance[$field];
+			}
 		} else {
-			$costArray = $balance['totals'];
+			$costArray = $balance;
 		}
 
 		$totalArray = array_column($costArray, $sumField);
