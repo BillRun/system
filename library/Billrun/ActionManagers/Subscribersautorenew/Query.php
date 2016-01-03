@@ -13,7 +13,7 @@
  * @todo This class is very similar to balances query, 
  * a generic query class should be created for both to implement.
  */
-class Billrun_ActionManagers_Subscribersautorenew_Query extends Billrun_ActionManagers_APIAction{
+class Billrun_ActionManagers_Subscribersautorenew_Query extends Billrun_ActionManagers_Subscribersautorenew_Action{
 	
 	/**
 	 * Field to hold the data to be written in the DB.

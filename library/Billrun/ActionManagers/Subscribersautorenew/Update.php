@@ -11,7 +11,7 @@
  *
  * @author Tom Feigin
  */
-class Billrun_ActionManagers_SubscribersAutoRenew_Update extends Billrun_ActionManagers_APIAction{
+class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionManagers_Subscribersautorenew_Action{
 	// TODO: Create a generic update action class. 
 	// TODO: This class shares some logic with the cards and balances update action. 
 	// TODO: The setUpdateRecord function is shared. 
