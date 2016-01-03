@@ -40,7 +40,7 @@ class Billrun_Config {
 				$this->addConfig($filePath);
 			}
 		}
-		if (file_exists($env_conf = APPLICATION_PATH . '/conf/' . Billrun_Util::getHostName() . '.ini')) {
+		if (!isset($config['disableHostConfigLoad']) && file_exists($env_conf = APPLICATION_PATH . '/conf/' . Billrun_Util::getHostName() . '.ini')) {
 			$this->addConfig($env_conf);
 		}
 	}
@@ -84,12 +84,15 @@ class Billrun_Config {
 	/**
 	 * method to get the instance of the class (singleton)
 	 */
-	static public function getInstance() {
-		if (is_null(self::$instance)) {
-			$config = Yaf_Application::app()->getConfig();
-			self::$instance = new self($config);
+	static public function getInstance($config = null) {
+		$stamp = Billrun_Util::generateArrayStamp($config);
+		if (empty(self::$instance[$stamp])) {
+			if (empty($config)) {
+				$config = Yaf_Application::app()->getConfig();
+			}
+			self::$instance[$stamp] = new self($config);
 		}
-		return self::$instance;
+		return self::$instance[$stamp];
 	}
 
 	public function loadDbConfig() {
@@ -189,6 +192,10 @@ class Billrun_Config {
 			return true;
 		}
 		return false;
+	}
+	
+	public function toArray() {
+		return $this->config->toArray();
 	}
 
 }
