@@ -1,4 +1,4 @@
-app.controller('CollectionsController', ['$scope', '$routeParams', '$location', 'Database',
+app.controller('ListController', ['$scope', '$routeParams', '$location', 'Database',
   function ($scope, $routeParams, $location, Database) {
     'use strict';
 

@@ -1,9 +1,9 @@
-app.controller('SubscribersController', ['$scope', '$window', '$routeParams', 'Database', 'Utils',
-  function ($scope, $window, $routeParams, Database, Utils) {
+app.controller('SubscribersController', ['$scope', '$window', '$routeParams', 'Database', '$controller',
+  function ($scope, $window, $routeParams, Database, $controller) {
     'use strict';
-    $scope.cancel = function () {
-      $window.location = baseUrl + '/admin/' + $routeParams.collection;
-    };
+
+    $controller('EditController', {$scope: $scope});
+
     $scope.save = function () {
       var params = {
         entity: $scope.entity,
@@ -41,7 +41,6 @@ app.controller('SubscribersController', ['$scope', '$window', '$routeParams', 'D
 
     $scope.init = function () {
       $scope.action = $routeParams.action;
-      $scope.utils = Utils;
       $scope.entity = {imsi: []};
       if ($scope.action.toLowerCase() !== "new") {
         var params = {

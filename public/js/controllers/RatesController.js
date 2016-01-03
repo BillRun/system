@@ -1,6 +1,8 @@
-app.controller('RatesController', ['$scope', '$http', '$window', '$routeParams', 'Database',
-  function ($scope, $http, $window, $routeParams, Database) {
+app.controller('RatesController', ['$scope', '$routeParams', 'Database', '$controller',
+  function ($scope, $routeParams, Database, $controller) {
     'use strict';
+
+    $controller('EditController', {$scope: $scope});
 
     $scope.addOutCircuitGroup = function () {
       if ($scope.newOutCircuitGroup.to === undefined && $scope.newOutCircuitGroup.from === undefined)
@@ -168,26 +170,6 @@ app.controller('RatesController', ['$scope', '$http', '$window', '$routeParams',
         return true;
       }
       return false;
-    };
-
-    $scope.cancel = function () {
-      $window.location = baseUrl + '/admin/' + $routeParams.collection;
-    };
-    $scope.saveRate = function () {
-      var params = {
-        entity: $scope.entity,
-        coll: $routeParams.collection,
-        type: $routeParams.action
-      };
-      Database.saveEntity(params).then(function (res) {
-        $window.location = baseUrl + '/admin/' + $routeParams.collection;
-      }, function (err) {
-        alert("Connection error!");
-      });
-    };
-
-    $scope.setAdvancedMode = function (mode) {
-      $scope.advancedMode = mode;
     };
 
     $scope.capitalize = function (str) {

@@ -50,14 +50,14 @@ app.config(function ($httpProvider, $routeProvider, $locationProvider) {
 
   $routeProvider.when('/:collection/list', {
     templateUrl: 'views/partials/collectionList.html',
-    controller: 'CollectionsController'
+    controller: 'ListController'
   }).when('/:collection/:action/:id?', {
 	  templateUrl: function (urlattr) {
 		  return 'views/' + urlattr.collection + '/edit.html';
 	  }
   });
   $locationProvider.html5Mode({enabled: false, requireBase: false});
-}).run(['$http', '$rootScope', function ($http, $rootScope) {
+}).run(['$http', '$rootScope', 'Utils', function ($http, $rootScope, Utils) {
     'use strict';
     $http.get(baseUrl + '/admin/getViewINI').then(function (res) {
       $rootScope.fields = res.data;

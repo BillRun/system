@@ -32,6 +32,30 @@
 					</select>				
 				</div>
 			</div>
+			<div class='row' ng-if='utils.display("from", "plans")'>
+				<div class='col-md-2'>
+					{{utils.getDisplayValue("from", "plans")}}
+				</div>
+				<div class='col-md-6'>
+					<input type="text" class="form-control" uib-datepicker-popup="yyyy-MM-dd" ng-model="entity.from" is-open="status.opened"
+						   date-disabled="utils.disabled('from', 'plans')" close-text="Close" />
+					<span>
+					  <butfromn type="butfromn" class="btn btn-default" ng-click="status.opened = !status.opened"><i class="glyphicon glyphicon-calendar"></i></butfromn>
+					</span>
+				</div>
+			</div>
+			<div class='row' ng-if='utils.display("to", "plans")'>
+				<div class='col-md-2'>
+					{{utils.getDisplayValue("to", "plans")}}
+				</div>
+				<div class='col-md-6'>
+					<input type="text" class="form-control" uib-datepicker-popup="yyyy-MM-dd" ng-model="entity.to" is-open="status.opened"
+						   date-disabled="utils.disabled('to', 'plans')" close-text="Close" />
+					<span>
+					  <button type="button" class="btn btn-default" ng-click="status.opened = !status.opened"><i class="glyphicon glyphicon-calendar"></i></button>
+					</span>
+				</div>
+			</div>
 			<hr/>
 			<h3>Include</h3>
 			<div class="row" ng-if='!isObject(entity.include.cost) && entity.include.cost'>

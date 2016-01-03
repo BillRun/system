@@ -280,7 +280,9 @@ class TableModel {
 			}
 			foreach ($params as $key => $value) {
 				if (in_array($key, array("to", "from")) && is_array($value)) {
-					$value = new MongoDate($value['sec']);
+					$value = new MongoDate((new Zend_Date($value['sec'], null, new Zend_Locale('he_IL')))->getTimestamp());
+				} else if (in_array($key, array("to", "from"))) {
+					$value = new MongoDate((new Zend_Date($value, null, new Zend_Locale('he_IL')))->getTimestamp());
 				}
 				$new_data[$key] = $value;
 			}
