@@ -211,8 +211,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		if (!$this->allowed('read'))
 			return false;
 		$response = new Yaf_Response_Http();
-		//$conf = new Yaf_Config_Ini(APPLICATION_PATH . '/conf/view/fields.ini');
-		$conf = new Yaf_Config_Ini(APPLICATION_PATH . '/config/ui.ini');
+		$conf = Billrun_Config::getInstance(new Yaf_Config_Ini(APPLICATION_PATH . '/conf/ui.ini'));
 		$response->setBody(json_encode($conf->toArray()));
 		$response->response();
 		return false;
@@ -363,7 +362,8 @@ class AdminController extends Yaf_Controller_Abstract {
 		}
 		if ($type == 'update') {
 			if (strtolower($coll) === 'cards') {
-				$this->forward("Api", "Cards", $this->getRequest()->getRequest());
+				//$this->getRequest()->set('update', $this->getRequest()->get('data'));
+				$this->forward("Api", "Cards", $this->getRequest());
 			} else {
 				$saveStatus = $model->update($params);
 			}
