@@ -18,7 +18,7 @@ app.controller('EditController', ['$scope', 'Utils', '$routeParams', '$window', 
         duplicate_rates: ($scope.duplicate_rates ? $scope.duplicate_rates.on : false)
       };
       Database.saveEntity(params).then(function (res) {
-        $window.location = baseUrl + '/admin/' + $routeParams.collection;
+        $window.location = baseUrl + '/admin/' + $routeParams.collection.replace(/_/g, '');
       }, function (err) {
         alert("Connection error!");
       });
