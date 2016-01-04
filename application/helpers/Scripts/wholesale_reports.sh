@@ -77,11 +77,11 @@ case $report_name in
 	js_code="$js_code$nsn_end_code" ;;
 
 	"sip_out_call" )
- 	js_code=$js_code'var dir="'$out_str'";var network = "all";db.lines.aggregate({$match:{urt:{$gte:from_date, $lte:to_date}, type:"nsn", record_type : "31"}},'$nsn_grouping_out')';
+ 	js_code=$js_code'var dir="'$out_str'";var network = "sip";db.lines.aggregate({$match:{urt:{$gte:from_date, $lte:to_date}, type:"nsn", record_type : "31"}},'$nsn_grouping_out')';
 	js_code="$js_code$nsn_end_code" ;;
 
 	"sip_in_call" )
- 	js_code=$js_code'var dir="'$in_str'";var network = "all";db.lines.aggregate({$match:{urt:{$gte:from_date, $lte:to_date}, type:"nsn", record_type : "30"}},'$nsn_grouping_in')';
+ 	js_code=$js_code'var dir="'$in_str'";var network = "sip";db.lines.aggregate({$match:{urt:{$gte:from_date, $lte:to_date}, type:"nsn", record_type : "30"}},'$nsn_grouping_in')';
 	js_code="$js_code$nsn_end_code" ;;
 
 
