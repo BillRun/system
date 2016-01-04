@@ -2,7 +2,8 @@
 	<center>
 		<h2>{{capitalize(action)}} Subscriber {{entity.sid}}</h2>
 	</center>
-	<form class='form-inline' ng-submit='save()'>
+	<div ng-show="flash.message" ng-class="flash.cls">{{flash.message}}</div>
+	<form class='form-inline'>
 		<div ng-if='!advancedMode'>
 			<div class="row" ng-if='action === "new"'>
 				<div class="col-md-2">
@@ -26,6 +27,8 @@
 				</div>
 				<div class="col-md-6">
 					<input ng-model="entity.msisdn" type="text" class="form-control" />
+					<error-message field="msisdn" messages="errorMessages" />
+				
 				</div>
 			</div>
 			<div class="row">
@@ -37,6 +40,7 @@
 						<option ng-repeat="service_provider in availableServiceProviders">{{service_provider}}<option>
 					</select>	
 				</div>
+					<error-message field="service_provider" messages="errorMessages" />
 			</div>
 			<div class="row">
 				<div class="col-md-2">
@@ -71,12 +75,13 @@
 					</select>
 				</div>
 			</div>
-			<h4>IMSI</h4>
+			<h4>IMSI <error-message field="imsi" messages="errorMessages" /></h4>
 			<div>
 				<div ng-repeat="imsi in entity.imsi track by $index">
 					<input type="text" class="form-control" ng-model="entity.imsi[$index]" />
 					<i class='glyphicon glyphicon-minus-sign' ng-click='deleteIMSI($index)'></i>
 				</div>
+
 				<div>
 					<a ng-click="addIMSI()" class="clickable">Add IMSI</a>
 				</div>
@@ -89,7 +94,8 @@
 			<a ng-click='setAdvancedMode(false)' class="clickable" ng-if='advancedMode'>Basic Mode</a>
 			<a ng-click='setAdvancedMode(true)' class="clickable" ng-if='!advancedMode'>Advanced Mode</a>
 			<button class="btn" ng-click='cancel()'>Cancel</button>
-			<button type='submit' class="btn btn-primary" ng-if='authorized_write'>Save changes</button>
+			<button ng-click="save(false)" class="btn btn-primary" ng-if='authorized_write'>Apply</button>
+			<button ng-click="save(true)" class="btn btn-primary" ng-if='authorized_write'>Save & Exit</button>
 		</div>		
 	</form>
 </div>

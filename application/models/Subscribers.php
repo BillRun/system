@@ -166,9 +166,9 @@ class SubscribersModel extends TabledateModel{
   			$messages["msisdn"][] = "Msisdn is required" ;
   			$validateStatus = false ; 
 
-  	} 		
+  	} 
 
-  	
+
   	$cursor =  $this->collection->find(array("msisdn" => (string)$params["msisdn"]),array());
 
 
@@ -190,12 +190,33 @@ class SubscribersModel extends TabledateModel{
   			$validateStatus = false ; 
 
   	} 		
+
   	if(!$params["plan"])  { 
   			$messages["plan"][] = "plan is required" ;
   			$validateStatus = false ; 
   	} 		
 
-  	Billrun_Factory::log("validation   " .print_r($messages,1), Zend_Log::DEBUG);
+		if($params["imsi"]  && !is_array($params["imsi"]) )  { 
+  			$messages["imsi"][] = "imsi should be an array  of imsi" ;
+  			$validateStatus = false ; 
+  	} 	
+
+  	if($params["imsi"]  && is_array($params["imsi"]) && sizeof($params["imsi"]) > 2 )  { 
+  			$messages["imsi"][] = "Maximum 2 Imsi-s for subscriber" ;
+  			$validateStatus = false ; 
+  	} 
+
+  	if($params["imsi"]  && is_array($params["imsi"]) ) {
+  			if(sizeof($params["imsi"]) != sizeof(array_unique($params["imsi"]))) {
+						$messages["imsi"][] = "Duplicate imsi !!!" ;
+  					$validateStatus = false ; 
+  			}
+
+  	}			
+
+
+
+  	//Billrun_Factory::log("validation   " .print_r($messages,1), Zend_Log::DEBUG);
 
   	return array(
   			"status" => $validateStatus ,
