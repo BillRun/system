@@ -5,20 +5,16 @@ app.controller('SubscribersController', ['$scope', '$window', '$routeParams', 'D
     $controller('EditController', {$scope: $scope});
 
     $scope.flash =  { 
-                      message :"" ,
-                      cls:""
-                    } ; 
-
-    $scope.cancel = function () {
-      $window.location = baseUrl + '/admin/' + $routeParams.collection;
+      message :"" ,
+      cls:""
     };
+
     $scope.save = function (redirect) {
       var params = {
         entity: $scope.entity,
         coll: 'subscribers',
         type: $scope.action
       };
-      
       $scope.errorMessages =[];
       Database.saveEntity(params).then(function (res) {
         console.log(res)  ;
@@ -26,12 +22,9 @@ app.controller('SubscribersController', ['$scope', '$window', '$routeParams', 'D
            $scope.errorMessages = res.data.errorMessages;
         }  else { 
             if(redirect) { 
-              
-                $window.location = baseUrl + '/admin/' + $routeParams.collection;
+              $window.location = baseUrl + '/admin/' + $routeParams.collection;
             }
         }
-
-        
       }, function (err) {
         alert("Connection error!");
       });
