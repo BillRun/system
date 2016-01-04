@@ -4,27 +4,6 @@ app.controller('SubscribersController', ['$scope', '$window', '$routeParams', 'D
 
     $controller('EditController', {$scope: $scope});
 
-    $scope.save = function () {
-      var params = {
-        entity: $scope.entity,
-        coll: 'subscribers',
-        type: $scope.action
-      };
-      Database.saveEntity(params).then(function (res) {
-        if (res.data !== "null") {
-          alert(res.data);
-          return false;
-        }
-        $window.location = baseUrl + '/admin/' + $routeParams.collection;
-      }, function (err) {
-        alert("Connection error!");
-      });
-    };
-
-    $scope.setAdvancedMode = function (mode) {
-      $scope.advancedMode = mode;
-    };
-
     $scope.addIMSI = function () {
       $scope.entity.imsi.push("");
     };
@@ -33,10 +12,6 @@ app.controller('SubscribersController', ['$scope', '$window', '$routeParams', 'D
       if (imsiIndex === undefined)
         return;
       $scope.entity.imsi.splice(imsiIndex, 1);
-    };
-
-    $scope.capitalize = function (str) {
-      return _.capitalize(str);
     };
 
     $scope.init = function () {
