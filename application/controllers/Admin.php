@@ -12,6 +12,8 @@
  * @package  Controller
  * @since    0.5
  */
+
+
 class AdminController extends Yaf_Controller_Abstract {
 
 	/**
@@ -26,7 +28,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	protected $cssPaths = array();
 	protected $jsPaths = array();
 	protected $commit;
-
+	
 	/**
 	 * method to control and navigate the user to the right view
 	 */
@@ -328,7 +330,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	 */
 	public function saveAction() {
 		if (!$this->allowed('write'))
-			die(json_encode(null));
+			return $this->responseError("Permission denied, make sure you have write permission");
 		$flatData = $this->getRequest()->get('data');
 		$type = Billrun_Util::filter_var($this->getRequest()->get('type'), FILTER_SANITIZE_STRING);
 		$id = Billrun_Util::filter_var($this->getRequest()->get('id'), FILTER_SANITIZE_STRING);
@@ -343,13 +345,13 @@ class AdminController extends Yaf_Controller_Abstract {
 
 		$collection = Billrun_Factory::db()->getCollection($coll);
 		if (!($collection instanceof Mongodloid_Collection)) {
-			return false;
+			 return $this->responseError($collection . " collection not exists");
 		}
 
 		$data = @json_decode($flatData, true);
 
 		if (empty($data) || ($type != 'new' && empty($id)) || empty($coll)) {
-			return false;
+				return $this->responseError("Data param is empty");
 		}
 
 		if ($id) {
@@ -360,6 +362,13 @@ class AdminController extends Yaf_Controller_Abstract {
 		if ($duplicate_rates) {
 			$params = array_merge($params, array('duplicate_rates' => $duplicate_rates));
 		}
+
+		if ($coll === "subscribers") {
+			$validation =  $model->validate($params,$type) ;
+			if(!$validation["status"] ) {	   	
+				return $this->responseSuccess($validation);
+			}
+		}
 		if ($type == 'update') {
 			if (strtolower($coll) === 'cards') {
 				//$this->getRequest()->set('update', $this->getRequest()->get('data'));
@@ -368,9 +377,9 @@ class AdminController extends Yaf_Controller_Abstract {
 				$saveStatus = $model->update($params);
 			}
 		} else if ($type == 'close_and_new') {
-			$saveStatus = $model->closeAndNew($params);
+		  	$saveStatus = $model->closeAndNew($params);
 		} else if (in_array($type, array('duplicate', 'new'))) {
-			$saveStatus = $model->duplicate($params);
+				$saveStatus = $model->duplicate($params);
 		}
 
 //		$ret = array(
@@ -380,8 +389,9 @@ class AdminController extends Yaf_Controller_Abstract {
 //		);
 		// @TODO: need to load ajax view
 		// for now just die with json
-		die(json_encode(null));
+		return $this->responseSuccess(array("data" => $params , "status"=>true ));
 	}
+
 
 	public function logDetailsAction() {
 		$coll = Billrun_Util::filter_var($this->getRequest()->get('coll'), FILTER_SANITIZE_STRING);
@@ -1313,4 +1323,35 @@ class AdminController extends Yaf_Controller_Abstract {
 		}
 	}
 
+public function responseError($message,$statusCode = 500)
+	{
+		
+		$resp = $this->getResponse();
+		$req  =  $this->getRequest();
+		$resp->setHeader($req->getServer('SERVER_PROTOCOL') , $statusCode . ' ' . $message);
+		$resp->setHeader('Content-Type','application/json');
+		$resp->setBody($message);
+		//$resp->response();
+		return false;
+	}
+
+	/**
+	 * @param string $message
+	 * @param int $successStatus
+	 * @return bool
+	 */
+	public function responseSuccess($answer)
+	{
+			
+		$statusCode = 200 ;	
+		$resp =  $this->getResponse();
+		$req  =  $this->getRequest();
+		$resp->setHeader($req->getServer('SERVER_PROTOCOL')  , $statusCode . ' OK');
+		$resp->setHeader('Content-Type','application/json');
+		$resp->setBody(json_encode($answer));
+		//$resp->response();
+		return false;
+	}
+
+  
 }

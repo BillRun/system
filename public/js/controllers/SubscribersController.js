@@ -1,11 +1,64 @@
-app.controller('SubscribersController', ['$scope', '$window', '$routeParams', 'Database', '$controller',
-  function ($scope, $window, $routeParams, Database, $controller) {
+app.controller('SubscribersController', ['$scope', '$window', '$routeParams', 'Database', '$controller', 'utils',
+  function ($scope, $window, $routeParams, Database, $controller, utils) {
     'use strict';
 
     $controller('EditController', {$scope: $scope});
 
+    $scope.flash =  { 
+                      message :"" ,
+                      cls:""
+                    } ; 
+
+    $scope.cancel = function () {
+      $window.location = baseUrl + '/admin/' + $routeParams.collection;
+    };
+    $scope.save = function (redirect) {
+      var params = {
+        entity: $scope.entity,
+        coll: 'subscribers',
+        type: $scope.action
+      };
+      
+      $scope.errorMessages =[];
+      Database.saveEntity(params).then(function (res) {
+        console.log(res)  ;
+        if(!_.isUndefined(res.data.errorMessages)) {
+           $scope.errorMessages = res.data.errorMessages;
+        }  else { 
+            if(redirect) { 
+              
+                $window.location = baseUrl + '/admin/' + $routeParams.collection;
+            }
+        }
+
+        
+      }, function (err) {
+        alert("Connection error!");
+      });
+    };
+
     $scope.addIMSI = function () {
-      $scope.entity.imsi.push("");
+      
+
+      if($scope.entity.imsi.length >=2) { 
+       
+        $scope.flash.message ="Maximum 2 imsi for subscriber" ;
+        $scope.flash.cls ="alert alert-danger" ;
+        utils.flashMessage('flash',$scope);
+
+        return false ;
+      }
+
+      var idx = _.findIndex( $scope.entity.imsi , function(i) {
+          return ( _.trim(i) == '' || !_.trim(i) );
+      });
+
+      if(idx>0 ) {
+        return ;
+      } else { 
+        $scope.entity.imsi.push("");
+      }
+
     };
 
     $scope.deleteIMSI = function (imsiIndex) {
