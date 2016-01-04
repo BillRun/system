@@ -38,7 +38,7 @@ app.controller('EditController', ['$scope', 'Utils', '$routeParams', '$window', 
 
     $scope.initEdit = function () {
       var params = {
-        coll: $routeParams.collection,
+        coll: $routeParams.collection.replace(/_/g, ''),
         id: $routeParams.id
       };
       Database.getEntity(params).then(function (res) {
