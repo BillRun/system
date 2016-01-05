@@ -1,6 +1,71 @@
-<form>
-	<p>IMSI: <input type="text" name="imsi" value='425030002438039'></p>
-	<p><input type="radio" name="type" value="call" checked='checked'>Call</p>
-	<p><input type="radio" name="type" value="data">Data</p>
-	<p><input type="submit" value="Submit"></p>
-</form>
+<?php if ($testForm) : ?>
+
+	<form>
+		<h3>Add Balance</h3>
+		<input type="hidden" name="type" value="addBalance" >
+		<p>SID: <input type="text" name="sid" value='546918666'></p>
+		<p>Amount: <input type="text" name="amount" value='100'> (positive int)</p>
+		<p><input type="submit" value="Start Test"></p>
+	</form>
+
+<hr/>
+
+	<form>
+		<h3>Test Call</h3>
+		<input type="hidden" name="type" value="call" >
+		<p>IMSI: <input type="text" name="imsi" value='425030002438039'></p>
+		<p>Scenario : <textarea rows="4" name="scenario">start_call, answer_call, reservation_time, release_call</textarea> comma separated actions</p>
+		<p><input type="checkbox" name="removelines" value="1" checked> Remove all existing lines for this imsi</p>
+		<p><input type="submit" value="Start Test"></p>
+	</form>
+
+<hr/>
+
+	<form>
+		<h3>Test Data</h3>
+		<input type="hidden" name="type" value="data" >
+		<p>IMSI: <input type="text" name="imsi" value='425030002438039'></p>
+		<p>Scenario : <textarea rows="4" name="scenario">init, update, update, final</textarea> comma separated actions</p>
+		<p><input type="checkbox" name="removelines" value="1" checked> Remove all existing lines for this imsi</p>
+		<p><input type="submit" value="Start Test"></p>
+	</form>
+
+<?php else : ?>
+
+	<p>Balance before</p>
+	<ul>
+		<?php foreach ($balance['before'] as $balance_id => $cost) : ?>
+		<li>Balance ID <?=$balance_id ?> is : <b><?=$cost ?></b></li>
+		<?php endforeach;	?>
+	</ul>
+
+	<?php if(!empty($lines)) : ?>
+		<p>Lines</p>
+		<ul>
+		<?php foreach ($lines['rows'] as $line ) : ?>
+			<li><?=$line['record_type'] ?> : <b><?=$line['aprice'] ?></b></li>
+		<?php endforeach; ?>
+			<li>Total : <b><?=$lines['total']?></b></li>
+		</ul>
+	<?php else :?>
+		<p>No Lines</p>
+	<?php endif; ?>
+
+
+	<p>Balance after</p>
+	<ul>
+		<?php foreach ($balance['after'] as $balance_id => $cost) : ?>
+			<li>Balance ID <?=$balance_id ?> is : <b><?= $cost ?></b></li>
+		<?php endforeach;	?>
+	</ul>
+	
+	<p>Balance Diff</p>
+	<ul>
+		<?php foreach ($balance['after'] as $balance_id => $cost) : ?>
+			<li>Balance ID <?=$balance_id ?> Diff is : <b><?= $balance['after'][$balance_id] - $balance['before'][$balance_id] ?></b></li>
+		<?php endforeach;	?>
+	</ul>
+	
+	
+	<p> <a href="test">Return</a></p>
+<?php endif; ?>
