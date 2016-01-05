@@ -329,8 +329,17 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * @todo protect the from and to to be continuely
 	 */
 	public function saveAction() {
+		$v = new Billrun_Validator() ;
+		// $v->RequiredValidator("sasa","");
+		// $v->IntegerValidator("sasa1111111","111.1");
+		// $v->NumberValidator("sasa","1212");
+		// $v->LengthValidator("sasa111","1212",array("min"=>10));
+
+		//print_R($v->getErrors());
+
 		if (!$this->allowed('write'))
 			return $this->responseError("Permission denied, make sure you have write permission");
+
 		$flatData = $this->getRequest()->get('data');
 		$type = Billrun_Util::filter_var($this->getRequest()->get('type'), FILTER_SANITIZE_STRING);
 		$id = Billrun_Util::filter_var($this->getRequest()->get('id'), FILTER_SANITIZE_STRING);
@@ -363,10 +372,13 @@ class AdminController extends Yaf_Controller_Abstract {
 			$params = array_merge($params, array('duplicate_rates' => $duplicate_rates));
 		}
 
+
+
 		if ($coll === "subscribers") {
-			$validation =  $model->validate($params,$type) ;
-			if(!$validation["status"] ) {	   	
-				return $this->responseSuccess($validation);
+			$v->validate($params,$coll) ;
+
+			if($v->isValid()) {	   	
+				return $this->responseSuccess(array("data" => $v->getValidations() ,"params" => $params , "status"=>true ));
 			}
 		}
 		if ($type == 'update') {
