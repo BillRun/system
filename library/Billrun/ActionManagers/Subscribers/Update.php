@@ -96,9 +96,10 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 			'upsert' => false,
 			'new' => false,
 			'w' => 1,
+			'multi' =>1,
 		);
 		$linesColl = Billrun_Factory::db()->linesCollection();
-		return $linesColl->findAndModify($keepLinesQuery, array('$set' => $keepLinesUpdate), array(), $options, true);
+		return $linesColl->update($keepLinesQuery, array('$set' => $keepLinesUpdate),$options);
 	}
 	
 	/**
@@ -108,10 +109,16 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 	 * @throws WriteConcernException
 	 */
 	protected function updateSubscriberRecord($record) {
-
-			// Check if the user requested to keep history.
+		// Check if the user requested to keep history.
 		if($this->trackHistory) {
-			$record['sid'] = $this->recordToSet['sid'];
+			$subscriberFields = Billrun_Factory::config()->getConfigValue('subscribers.query_fields');
+			
+			// Check if the key fields are being updated and apply them to history.
+			foreach ($subscriberFields as $key => $value) {
+				if(isset($this->recordToSet[$key])) {
+					$record[$key] = $value;
+				}
+			}
 //				$record['msisdn'] = $this->recordToSet['msisdn'];
 			$track_time = time();
 			// This throws an exception if fails.
