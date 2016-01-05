@@ -93,7 +93,7 @@ class CardsModel extends TableModel {
 				'comparison' => '$in',
 				'ref_coll' => 'plans',
 				'ref_key' => 'name',
-				'display' => 'Plan',
+				'display' => 'Charging Plan',
 				'values' => $planNames,
 				'default' => array(),
 			),

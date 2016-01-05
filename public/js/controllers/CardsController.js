@@ -1,10 +1,11 @@
-app.controller('CardsController', ['$scope', '$window', '$routeParams', 'Database',
-  function ($scope, $window, $routeParams, Database) {
+app.controller('CardsController', ['$scope', '$window', '$routeParams', 'Database', '$controller',
+  function ($scope, $window, $routeParams, Database, $controller) {
     'use strict';
-    $scope.cancel = function () {
-      $window.location = baseUrl + '/admin/' + $routeParams.collection;
-    };
+
+    $controller('EditController', {$scope: $scope});
+
     $scope.save = function () {
+      $scope.entity.to = $scope.entity.to / 1000;
       var params = {
         entity: $scope.entity,
         coll: 'cards',
@@ -15,10 +16,6 @@ app.controller('CardsController', ['$scope', '$window', '$routeParams', 'Databas
       }, function (err) {
         alert("Connection error!");
       });
-    };
-
-    $scope.setAdvancedMode = function (mode) {
-      $scope.advancedMode = mode;
     };
 
     $scope.isStatusDisabled = function (status) {
@@ -35,10 +32,6 @@ app.controller('CardsController', ['$scope', '$window', '$routeParams', 'Databas
       return true;
     };
 
-    $scope.capitalize = function (str) {
-      return _.capitalize(str);
-    };
-
     $scope.init = function () {
       $scope.action = $routeParams.action;
       var params = {
@@ -49,6 +42,9 @@ app.controller('CardsController', ['$scope', '$window', '$routeParams', 'Databas
         $scope.entity = res.data.entity;
         $scope.card_status = $scope.entity.status;
         $scope.authorized_write = res.data.authorized_write;
+        if (_.isObject($scope.entity.to)) {
+          $scope.entity.to = $scope.entity.to.sec * 1000;
+        }
         $scope.cardStatuses = ["Idle", "Active", "Disqualified", "Used", "Expired", "Stolen"];
       }, function (err) {
         alert("Connection error!");

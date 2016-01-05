@@ -69,12 +69,12 @@ class PlansModel extends TabledateModel {
 	}
 	
 	public function update($params) {
-		$source_id = $params['source_id'];
-		unset($params['source_id']); // we don't save because admin ref issues
-		$duplicate = $params['duplicate_rates'];
-		unset($params['duplicate_rates']);
 		$entity = parent::update($params);
 		if ($duplicate) {
+			$source_id = $params['source_id'];
+			unset($params['source_id']); // we don't save because admin ref issues
+			$duplicate = $params['duplicate_rates'];
+			unset($params['duplicate_rates']);
 			$new_id = $entity['_id']->getMongoID();
 			self::duplicate_rates($source_id, $new_id);
 		}
