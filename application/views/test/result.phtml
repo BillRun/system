@@ -1,0 +1,143 @@
+<html>
+	<head>
+		<link rel="stylesheet" href="<?= $baseUrl ?>/css/bootstrap.min.css">
+		<link rel="stylesheet" href="<?= $baseUrl ?>/css/testContraoller.min.css">
+		<script src="<?= $baseUrl ?>/js/vendor/ui-bootstrap.js"></script>
+		<script src="<?= $baseUrl ?>/js/controllers/testContraoller"></script>
+	</head>
+	<body>
+		<div class="container">
+			<div class="page-header">
+				<h1>Results</h1>
+			</div>
+
+			<?php if (!empty($balances['before'])) : ?>
+				<div class="panel panel-default">
+					<div class="panel-heading">Balances Before</div>
+					<div class="panel-body">
+						<table class="table table-striped">
+							<thead>
+								<tr>
+									<th>ID</th>
+									<th>Amount</th>
+									<th>Charging by Usaget</th>
+									<th>Charging By</th>
+								</tr>
+							</thead>
+							<tbody>
+								<?php foreach ($balances['before'] as $balance_id => $balance) : ?>
+									<tr>
+										<td><?= $balance_id ?></td>
+										<td><?= $balance['amount'] ?></td>
+										<td><?= $balance['charging_by_usaget'] ?></td>
+										<td><?= $balance['charging_by'] ?></td>
+									</tr>
+								<?php endforeach; ?>
+							</tbody>
+						</table>
+					</div>
+				</div>
+			<?php endif; ?>
+
+
+			<?php if (!empty($lines['rows'])) : ?>
+				<div class="panel panel-default">
+					<div class="panel-heading">Lines for action <?= $lines['ref'] ?></div>
+					<div class="panel-body">
+						<table class="table table-striped">
+							<thead>
+								<tr>
+									<th>#</th>
+									<th>URT</th>
+									<th>Usage T</th>
+									<th>Type</th>
+									<th>aPrice</th>
+									<th>Usage V</th>
+									<th>Balance Before</th>
+									<th>Balance After</th>
+									<th>arate</th>
+								</tr>
+							</thead>
+							<tbody>
+								<?php foreach ($lines['rows'] as $key => $line) : ?>
+									<tr>
+										<td><?= ($key + 1) ?> </td>
+										<td><?= $line['time_date'] ?></td>
+										<td><?= $line['usaget'] ?></td>
+										<td><?= $line['record_type'] ?> </td>
+										<td><?= $line['aprice'] ?></td>
+										<td><?= $line['usagev'] ?></td>
+										<td><?= $line['balance_before'] ?></td>
+										<td><?= $line['balance_after'] ?></td>
+										<td><?= $line['arate'] ?></td>
+									</tr>
+								<?php endforeach; ?>
+							</tbody>
+						</table>
+					</div>
+					<div class="panel-footer">Total (aprice) : <?= $lines['total'] ?></div>
+				</div>
+			<?php endif; ?>
+
+			<?php if (!empty($balances['after'])) : ?>
+				<div class="panel panel-default">
+					<div class="panel-heading">Balances After</div>
+					<div class="panel-body">
+						<table class="table table-striped">
+							<thead>
+								<tr>
+									<th>ID</th>
+									<th>Amount</th>
+									<th>Charging by usaget</th>
+									<th>Charging By</th>
+								</tr>
+							</thead>
+							<tbody>
+								<?php foreach ($balances['after'] as $balance_id => $balance) : ?>
+									<tr>
+										<td><?= $balance_id ?></td>
+										<td><?= $balance['amount'] ?></td>
+										<td><?= $balance['charging_by_usaget'] ?></td>
+										<td><?= $balance['charging_by'] ?></td>
+									</tr>
+								<?php endforeach; ?>
+							</tbody>
+						</table>
+					</div>
+				</div>
+			<?php endif; ?>
+
+			<?php if (!empty($balances['after']) && !empty($balances['before'])) : ?>
+				<div class="panel panel-default">
+					<div class="panel-heading">Balances Diff</div>
+					<div class="panel-body">
+						<table class="table table-striped">
+							<thead>
+								<tr>
+									<th>ID</th>
+									<th>Diff</th>
+									<th>Charging by usaget</th>
+									<th>Charging By</th>
+								</tr>
+							</thead>
+							<tbody>
+								<?php foreach ($balances['before'] as $balance_id => $balance) : ?>
+									<tr>
+										<td><?= $balance_id ?></td>
+										<td><?= ($balances['after'][$balance_id]['amount']) - ($balances['before'][$balance_id]['amount']) ?></td>
+										<td><?= $balance['charging_by_usaget'] ?></td>
+										<td><?= $balance['charging_by'] ?></td>
+									</tr>
+								<?php endforeach; ?>
+							</tbody>
+						</table>
+					</div>
+				</div>
+			<?php endif; ?>
+
+			<hr/>
+
+			<a href="/test" class="btn btn-success">Return</a>
+		</div>
+	</body>
+</html>
