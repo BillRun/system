@@ -39,6 +39,14 @@ class Billrun_ActionManagers_Cards_Create extends Billrun_ActionManagers_Cards_A
 	}
 
 	/**
+	 * Get the array of initial statuses.
+	 * @return array - Array of initial statuses.
+	 */
+	protected function getInitialStatus() {
+		return Billrun_Factory::config()->getConfigValue('cards.initialStatus', array());
+	}
+	
+	/**
 	 * This function builds the create for the Cards creation API after 
 	 * validating existance of field and that they are not empty.
 	 * @param array $input - fields for insertion in Jason format. 
@@ -47,6 +55,7 @@ class Billrun_ActionManagers_Cards_Create extends Billrun_ActionManagers_Cards_A
 	 */
 	protected function createProcess($input) {
 		$createFields = $this->getCreateFields();
+		$initialStatus = $this->getInitialStatus();
 		$jsonCreateDataArray = null;
 		$create = $input->get('cards');
 
@@ -73,8 +82,8 @@ class Billrun_ActionManagers_Cards_Create extends Billrun_ActionManagers_Cards_A
 				$oneCard[$field] = $jsonCreateData[$field];
 			}
 
-			// status validity check (should be "Idle" by default(
-			if($oneCard['status'] != "Idle") {
+			// Initial status validity check (Initial status should be "Idle")
+			if($initialStatus && !in_array($oneCard['status'], $initialStatus)) {
 				$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 3;
 				$this->reportError($errorCode, Zend_Log::NOTICE, array($oneCard['status']));
 				return false;
