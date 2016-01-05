@@ -1,71 +1,133 @@
-<?php if ($testForm) : ?>
+<html>
+	<head>
+		<link rel="stylesheet" href="<?= $baseUrl ?>/css/bootstrap.min.css">
+		<link rel="stylesheet" href="<?= $baseUrl ?>/css/testContraoller.min.css">
+		<script src="<?= $baseUrl ?>/js/vendor/ui-bootstrap.js"></script>
+		<script src="<?= $baseUrl ?>/js/controllers/testContraoller"></script>
+	</head>
+	<body>
+		<div class="container">
+			<div class="page-header">
+				<h1>Unit Testing</h1>
+			</div>
+			
+			<div class="row">
+				<div class="col-md-3 text-center"><h3>Add Balance</h3></div>
+				<div class="col-md-9">
+					<form action="/test/result" method="get">
+						<input type="hidden" name="type" value="addBalance" >
+						<div class="form-group row">
+							<label for="sid" class="col-sm-2 form-control-label text-right">SID</label>
+							<div class="col-sm-5">
+								<input type="text" name="sid" value='<?= $sid ?>'  class="form-control">
+							</div>
+						</div>
+						<div class="form-group row">
+							<label for="amount" class="col-sm-2 form-control-label text-right">Amount</label>
+							<div class="col-sm-5">
+								<input type="text" name="amount" value='100'  class="form-control">
+								<small class="text-muted">Positive Integer.</small>
+							</div>
+						</div>
+						<div class="form-group row">
+							<label for="balanceType" class="col-sm-2 form-control-label text-right">Balance Type</label>
+							<div class="col-sm-5">
+								<select class="form-control" name='balanceType'>
+									<?php foreach ($balance_types as $balance_type) : ?>
+										<option value="<?= $balance_type ?>" <?php if ('CORE BALANCE' == $balance_type) echo 'selected' ?>><?= $balance_type ?></option>
+									<?php endforeach; ?>
+								</select>
+							</div>
+						</div>
+						<div class="form-group row">
+							<div class="col-sm-offset-2 col-sm-10">
+								<button type="submit" class="btn btn-success">Add Balance</button>
+							</div>
+						</div>
+					</form>
+				</div>
+			</div>
 
-	<form>
-		<h3>Add Balance</h3>
-		<input type="hidden" name="type" value="addBalance" >
-		<p>SID: <input type="text" name="sid" value='546918666'></p>
-		<p>Amount: <input type="text" name="amount" value='100'> (positive int)</p>
-		<p><input type="submit" value="Start Test"></p>
-	</form>
+			<hr/>
 
-<hr/>
+			<div class="row">
+				<div class="col-md-3 text-center"><h3>Test Call</h3></div>
+				<div class="col-md-9">
+					<form action="/test/result" method="get">
+						<input type="hidden" name="type" value="call">
+						<div class="form-group row">
+							<label for="imsi" class="col-sm-2 form-control-label text-right">IMSI</label>
+							<div class="col-sm-5">
+								<input type="text" name="imsi" value='<?= $imsi ?>' class="form-control">
+							</div>
+						</div>
+						<div class="form-group row">
+							<label for="inputPassword3" class="col-sm-2 form-control-label text-right">Scenario</label>
+							<div class="col-sm-5">
+								<textarea rows="6" name="scenario" class="form-control" ><?= $call_scenario ?></textarea>
+								<small class="text-muted">[ACTION_NAME|DURATION] New line per action, Default call duration is 4000.</small>
+							</div>
+						</div>
+						<div class="form-group row">
+							<label class="col-sm-2 text-right"></label>
+							<div class="col-sm-5">
+								<div class="checkbox">
+									<label>
+										<input type="checkbox" name="removelines" value="1" checked>Remove all existing lines for this imsi
+									</label>
+								</div>
+							</div>
+						</div>
+						<div class="form-group row">
+							<div class="col-sm-offset-2 col-sm-10">
+								<button type="submit" class="btn btn-success">Start Test</button>
+							</div>
+						</div>
+					</form>
+				</div>
+			</div>
 
-	<form>
-		<h3>Test Call</h3>
-		<input type="hidden" name="type" value="call" >
-		<p>IMSI: <input type="text" name="imsi" value='425030002438039'></p>
-		<p>Scenario : <textarea rows="4" name="scenario">start_call, answer_call, reservation_time, release_call</textarea> comma separated actions</p>
-		<p><input type="checkbox" name="removelines" value="1" checked> Remove all existing lines for this imsi</p>
-		<p><input type="submit" value="Start Test"></p>
-	</form>
+			<hr/>
 
-<hr/>
+			<div class="row">
+				<div class="col-md-3 text-center">
+					<h3>Test Data</h3>
+				</div>
+				<div class="col-md-9">
+					<form action="/test/result" method="get">
+						<input type="hidden" name="type" value="data">
+						<div class="form-group row">
+							<label for="imsi" class="col-sm-2 form-control-label text-right">IMSI</label>
+							<div class="col-sm-5">
+								<input type="text" name="imsi" value='<?= $imsi ?>' class="form-control">
+							</div>
+						</div>
+						<div class="form-group row">
+							<label for="scenario" class="col-sm-2 form-control-label text-right">Scenario</label>
+							<div class="col-sm-5">
+								<textarea rows="6" name="scenario" class="form-control"><?= $data_scenario ?></textarea>
+								<small class="text-muted">[ACTION_NAME|USAGE] New line per action, Default data usage is 1000.</small>
+							</div>
+						</div>
+						<div class="form-group row">
+							<label class="col-sm-2"></label>
+							<div class="col-sm-5">
+								<div class="checkbox">
+									<label>
+										<input type="checkbox" name="removelines" value="1" checked>Remove all existing lines for this imsi
+									</label>
+								</div>
+							</div>
+						</div>
+						<div class="form-group row">
+							<div class="col-sm-offset-2 col-sm-10">
+								<button type="submit" class="btn btn-success">Start Test</button>
+							</div>
+						</div>
+					</form>
+				</div>
+			</div>			
 
-	<form>
-		<h3>Test Data</h3>
-		<input type="hidden" name="type" value="data" >
-		<p>IMSI: <input type="text" name="imsi" value='425030002438039'></p>
-		<p>Scenario : <textarea rows="4" name="scenario">init, update, update, final</textarea> comma separated actions</p>
-		<p><input type="checkbox" name="removelines" value="1" checked> Remove all existing lines for this imsi</p>
-		<p><input type="submit" value="Start Test"></p>
-	</form>
-
-<?php else : ?>
-
-	<p>Balance before</p>
-	<ul>
-		<?php foreach ($balance['before'] as $balance_id => $cost) : ?>
-		<li>Balance ID <?=$balance_id ?> is : <b><?=$cost ?></b></li>
-		<?php endforeach;	?>
-	</ul>
-
-	<?php if(!empty($lines)) : ?>
-		<p>Lines</p>
-		<ul>
-		<?php foreach ($lines['rows'] as $line ) : ?>
-			<li><?=$line['record_type'] ?> : <b><?=$line['aprice'] ?></b></li>
-		<?php endforeach; ?>
-			<li>Total : <b><?=$lines['total']?></b></li>
-		</ul>
-	<?php else :?>
-		<p>No Lines</p>
-	<?php endif; ?>
-
-
-	<p>Balance after</p>
-	<ul>
-		<?php foreach ($balance['after'] as $balance_id => $cost) : ?>
-			<li>Balance ID <?=$balance_id ?> is : <b><?= $cost ?></b></li>
-		<?php endforeach;	?>
-	</ul>
-	
-	<p>Balance Diff</p>
-	<ul>
-		<?php foreach ($balance['after'] as $balance_id => $cost) : ?>
-			<li>Balance ID <?=$balance_id ?> Diff is : <b><?= $balance['after'][$balance_id] - $balance['before'][$balance_id] ?></b></li>
-		<?php endforeach;	?>
-	</ul>
-	
-	
-	<p> <a href="test">Return</a></p>
-<?php endif; ?>
+		</div>
+	</body>
+</html>
