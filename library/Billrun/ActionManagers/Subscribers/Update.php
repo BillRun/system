@@ -172,7 +172,8 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 
 		if(!$updatedDocument) {
 			$success = false;
-			$this->reportError("No subscribers found to update");
+			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 37;
+			$this->reportError($errorCode);
 		}
 		$outputResult = 
 			array('status'  => ($success) ? (1) : (0),
