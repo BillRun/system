@@ -28,6 +28,7 @@ class Billrun_Validator {
 		'length'=>'LengthValidator',
 		'in'=>'RangeValidator',
 		'numerical'=>'NumberValidator',
+    'integer'=>'IntegerValidator', 
 		'captcha'=>'CaptchaValidator',
 		'type'=>'TypeValidator',
 		'default'=>'DefaultValueValidator',
@@ -48,7 +49,7 @@ class Billrun_Validator {
 		$this->options = array();
     $this->isValid = true ;
 		$this->validations = 	Billrun_Config::getInstance(new Yaf_Config_Ini(APPLICATION_PATH . '/conf/validation.ini'))->toArray();
-    Billrun_Factory::log("validation.ini " . print_r($this->validations ,true), Zend_Log::DEBUG);
+//    Billrun_Factory::log("validation.ini " . print_r($this->validations ,true), Zend_Log::DEBUG);
 
 
 	}
@@ -123,9 +124,11 @@ public function LengthValidator ($attribute , $value  ,$extra = array("min" => n
 
 	
 
-public function IntegerValidator ($attribute , $value , $extra = array() ) { 
+    public function IntegerValidator ($attribute , $value , $extra = array() ) { 
   	$code = "integer" ;
   	
+    Billrun_Factory::log("in IntegerValidator :$attribute , $value " . print_r($val ,true), Zend_Log::DEBUG);   
+
   	if(isset($extra["message"])) {
   		$message = $$extra['message'] ;
   	} else { 
@@ -140,37 +143,67 @@ public function IntegerValidator ($attribute , $value , $extra = array() ) {
 		}
   	return true ;
   }
-	
-	
-  public function validate($params,$collection) {
-    if(!isset($this->validations[$collection])) { 
+
+	 public function validate($params,$collection) {
+   
+    $val = $this->getKeyVal(array($this->validations,$collection));
+    //Billrun_Factory::log("getKeyVal $collection" . print_r($val ,true), Zend_Log::DEBUG);   
+    if(!$this->getKeyVal(array($this->validations,$collection))) { 
       $this->isValid = true ; 
       return $this ;
     }
+  
 
-    foreach($params as $attr ) {
-      if(isset())
+    foreach($params as $attr => $val) {
+      
+      $keyval= $this->getKeyVal(array($this->validations,$collection,$attr)) ;  
+         if(!($keyval && isset($keyval["check"]) && isset(self::$validatorsFunctions[$keyval["check"]]))) {
+         //  Billrun_Factory::log("check function  => $attr" . print_r($keyval["check"] ,true), Zend_Log::DEBUG);
+         continue ;
+      }
+
+     $extra = $keyval  ; 
+     unset($extra["check"]);
+
+     $fn = array('self', self::$validatorsFunctions[$keyval["check"]] );
+     call_user_func( $fn,$attr,$val,$extra);
+
     }
-
-    return $this ;
-
+   
+   return $this ;
   }
-	public function getOptions() {
-		return $this->options;
-	}
-	
-	public function getRules() {
-		return $this->rules;
-	}
 
-	public function getErrors() {
-		return $this->errors;
-	}
-	
-	public function getValidations() {
-		return $this->validations;
-	}
-	public function isValid() {
+  public function getOptions() {
+    return $this->options;
+  }
+  
+  public function getRules() {
+    return $this->rules;
+  }
+
+  public function getErrors() {
+    return $this->errors;
+  }
+  
+  public function getValidations() {
+    return $this->validations;
+  }
+  public function isValid() {
     return $this->isValid;
   }
-}
+
+  public function getKeyVal($array=array()) {
+      $where =  array_shift($array)  ;
+      $stepinto = $where;
+
+      while ($key = array_shift($array)) { 
+         if(!isset($stepinto[$key])) {
+            return null ;
+         } else { 
+             $stepinto = $stepinto[$key]; 
+         }
+      }
+
+      return $stepinto;
+  }
+ } 
