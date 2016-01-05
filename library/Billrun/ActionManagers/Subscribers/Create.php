@@ -57,7 +57,7 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 		if($subscribers->count() > 0){
 			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base");
 			$parameters = http_build_query($this->query, '', ', ');
-			$this->reportError($errorCode, Zend_Log::NOTICE, $parameters);
+			$this->reportError($errorCode, Zend_Log::NOTICE, array($parameters));
 			return true;
 		}
 		
