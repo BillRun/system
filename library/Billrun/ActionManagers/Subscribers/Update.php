@@ -243,7 +243,9 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 		if(!empty($subscriberValidationQuery)) {
 			$subCol = Billrun_Factory::db()->subscribersCollection();
 			if($subCol->exists($subscriberValidationQuery)) {
-				$this->reportError(Billrun_Factory::config()->getConfigValue("subscriber_error_base"), Zend_Log::NOTICE);
+				$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base");
+				$parameters = http_build_query($this->query, '', ', ');
+				$this->reportError($errorCode, Zend_Log::NOTICE, $parameters);
 				return false;
 			}
 		}
