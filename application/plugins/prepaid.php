@@ -99,5 +99,19 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 		return $row['usagev'];
 	}
+	
+	public function beforeSubscriberRebalance($lineToRebalance, $balance, &$rebalanceUsagev, &$rebalanceCost, &$lineUpdateQuery, $responder) {
+		try {
+			if ($balance['charging_by_usaget'] == 'total_cost' || $balance['charging_by_usaget'] == 'cost') {
+				$lineUpdateQuery['$inc']['balance_after'] = $rebalanceCost;
+			} else {
+				$lineUpdateQuery['$inc']['balance_after'] = $rebalanceUsagev;
+			}
+		} catch (Exception $ex) {
+			Billrun_Factory::log('prepaid plugin beforeSubscriberRebalance error', Zend_Log::ERR);
+			Billrun_Factory::log($ex->getCode() . ': ' . $ex->getMessage(), Zend_Log::ERR);
+		}
+
+	}
 
 }

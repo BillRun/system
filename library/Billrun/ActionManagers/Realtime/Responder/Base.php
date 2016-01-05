@@ -135,23 +135,28 @@ abstract class Billrun_ActionManagers_Realtime_Responder_Base {
 		}
 		$balance->collection($balances_coll);
 		$usaget = $lineToRebalance['usaget'];
+		$rate = Billrun_Factory::db()->ratesCollection()->getRef($lineToRebalance->get('arate', true));
+		$rebalanceCost = Billrun_Calculator_CustomerPricing::getPriceByRate($rate, $usaget, $rebalanceUsagev, $lineToRebalance['plan']);
 		if (!is_null($balance->get('balance.totals.' . $usaget . '.usagev'))) {
 			$balance['balance.totals.' . $usaget . '.usagev'] += $rebalanceUsagev;
 		} else {
-			$rate = Billrun_Factory::db()->ratesCollection()->getRef($lineToRebalance->get('arate', true));
-			$cost = Billrun_Calculator_CustomerPricing::getPriceByRate($rate, $usaget, $rebalanceUsagev, $lineToRebalance['plan']);
 			if (!is_null($balance->get('balance.totals.' . $usaget . '.cost'))) {
-				$balance['balance.totals.' . $usaget . '.cost'] += $cost;
+				$balance['balance.totals.' . $usaget . '.cost'] += $rebalanceCost;
 			} else {
-				$balance['balance.cost'] += $cost;
+				$balance['balance.cost'] += $rebalanceCost;
 			}
 		}
+
+		$updateQuery = $this->getUpdateLineUpdateQuery($rebalanceUsagev, $rebalanceCost);
+
+		Billrun_Factory::dispatcher()->trigger('beforeSubscriberRebalance', array($lineToRebalance, $balance, &$rebalanceUsagev, &$rebalanceCost, &$updateQuery, $this));
+
 		$balance->save();
 					
 		// Update previous line
 		$lines_coll = Billrun_Factory::db()->linesCollection();
-		$updateQuery = $this->getUpdateLineUpdateQuery($rebalanceUsagev);
 		$lines_coll->update(array('_id' => $lineToRebalance->getId()->getMongoId()), $updateQuery);
+		Billrun_Factory::dispatcher()->trigger('afterSubscriberRebalance', array($lineToRebalance, $balance, &$rebalanceUsagev, &$rebalanceCost, &$updateQuery, $this));
 	}
 	
 	
@@ -160,10 +165,15 @@ abstract class Billrun_ActionManagers_Realtime_Responder_Base {
 	 * 
 	 * @param type $rebalanceUsagev
 	 */
-	protected function getUpdateLineUpdateQuery($rebalanceUsagev) {
+	protected function getUpdateLineUpdateQuery($rebalanceUsagev, $cost) {
 		return array(
 			'$inc' => array(
-				'usagev' => $rebalanceUsagev
+				'usagev' => $rebalanceUsagev,
+				'aprice' => $cost,
+			),
+			'$set' => array(
+				'rebalance_usagev' => $rebalanceUsagev,
+				'rebalance_cost' => $cost,
 			)
 		);
 	}
