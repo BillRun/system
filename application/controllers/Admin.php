@@ -374,13 +374,19 @@ class AdminController extends Yaf_Controller_Abstract {
 
 
 
-		if ($coll === "subscribers") {
+		
 			$v->validate($params,$coll) ;
+							Billrun_Factory::log("Validation result :\n " . print_r( 
+								array(
+									"validationRules" => 	$v->getValidations() , 
+									"params" => $params ,
+									"validation" => $v->getErrors()
+									),true), Zend_log::INFO);
 
-			if($v->isValid()) {	   	
+		if(!$v->isValid()) {	   	
 				return $this->responseSuccess(array("data" => $v->getValidations() ,"params" => $params , "status"=>true ));
-			}
 		}
+		
 		if ($type == 'update') {
 			if (strtolower($coll) === 'cards') {
 				//$this->getRequest()->set('update', $this->getRequest()->get('data'));
