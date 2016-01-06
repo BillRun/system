@@ -25,6 +25,7 @@ class PlansModel extends TabledateModel {
 		$columns = array(
 			'name' => 'Name',
 			'type' => 'Type',
+			'service_provider' => 'Service Provider',
 			'from' => 'From',
 			'to' => 'To'
 		);
@@ -36,6 +37,7 @@ class PlansModel extends TabledateModel {
 			'name' => 'Name',
 			'price' => 'Price',
 			'type' => 'Type',
+			'service_provider' => 'Service Provider'
 		);
 		return array_merge($sort_fields, parent::getSortFields());
 	}

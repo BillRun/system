@@ -100,14 +100,14 @@
 						<span ng-click="shown.callRates[callRateName] = !shown.callRates[callRateName]" class="clickable">{{callRateName}}</span>
 						<small><i class='glyphicon glyphicon-minus-sign' ng-click="deleteCallRate(callRateName)"></i></small>
 					</h4>
-					<!--<div ng-repeat="callRateParams in callRate track by $index" ng-if="shown.callRates[callRateName]">-->
-					<div ng-if='shown.callRates[callRateName]'>
+					<div ng-repeat="callRateParams in callRate track by $index" ng-if="shown.callRates[callRateName]">
+<!--					<div ng-if='shown.callRates[callRateName]'>-->
 						<div class="row">
 							<div class="col-md-1">
 								<label for='rate-call-access'>Access</label>
 							</div>
 							<div class='col-md-6'>
-								<input type='text' class='form-control' ng-model="callRate.access" />
+								<input type='text' class='form-control' ng-model="callRateParams.access" />
 							</div>
 						</div>
 						<div class="row">
@@ -115,7 +115,7 @@
 								<label for='rate-unit'>Unit</label>
 							</div>
 							<div class='col-md-6'>
-								<select class='form-control' id='rate-call-unit' ng-model='callRate.unit'>
+								<select class='form-control' id='rate-call-unit' ng-model='callRateParams.unit'>
 									<option ng-repeat="unit in availableCallUnits">{{unit}}</option>
 								</select>
 							</div>
@@ -134,13 +134,13 @@
 									</tr>
 								</thead>
 								<tbody id='call-rates-tbody'>
-									<tr ng-repeat='interval_price in callRate.rate track by $index'>
-										<td><input type='text' ng-model="callRate.rate[$index].interval" class='form-control rate-call-interval' required /></td>
-										<td><input type='text' ng-model="callRate.rate[$index].price" class='form-control rate-call-price' required /></td>
-										<td><input type='text' ng-model="callRate.rate[$index].to" class='form-control rate-call-to' required /></td>
+									<tr ng-repeat='interval_price in callRateParams.rate track by $index'>
+										<td><input type='text' ng-model="callRateParams.rate[$index].interval" class='form-control rate-call-interval' required /></td>
+										<td><input type='text' ng-model="callRateParams.rate[$index].price" class='form-control rate-call-price' required /></td>
+										<td><input type='text' ng-model="callRateParams.rate[$index].to" class='form-control rate-call-to' required /></td>
 										<td>
-											<i class='glyphicon glyphicon-minus-sign' ng-if='!$last || $first' ng-click='deleteCallIntervalPrice(interval_price, callRate)'></i>
-											<i class='glyphicon glyphicon-plus-sign' ng-if='$last' ng-click='addCallIntervalPrice(callRate)'></i>
+											<i class='glyphicon glyphicon-minus-sign' ng-if='!$last || $first' ng-click='deleteCallIntervalPrice(interval_price, callRateParams)'></i>
+											<i class='glyphicon glyphicon-plus-sign' ng-if='$last' ng-click='addCallIntervalPrice(callRateParams)'></i>
 										</td>
 									</tr>
 								</tbody>
