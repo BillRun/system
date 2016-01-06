@@ -38,7 +38,7 @@ class TestController extends Yaf_Controller_Abstract {
 			Billrun_Factory::log('Exit Unit testing. Unit testing not allowed on production');
 			die();
 		}
-		$this->baseApiUrl = "http://" . $this->getRequest()->getServer('HTTP_HOST') . $this->getRequest()->getBaseUri() . '/api';
+		$this->baseApiUrl = "http" . (!empty($this->getRequest()->getServer('HTTPS')) ? 's' : '') . "://" .  $this->getRequest()->getServer('HTTP_HOST') . $this->getRequest()->getBaseUri() . '/api';
 		$this->reference = rand(1000000000, 9999999999);
 		$this->baseUrl = $this->getRequest()->getBaseUri();
 	}
@@ -64,7 +64,7 @@ class TestController extends Yaf_Controller_Abstract {
 	public function resultAction() {
 		//redirect if to test page if data not exist
 		if(empty($_SERVER['QUERY_STRING'])){
-			$url = "http://" . $_SERVER['HTTP_HOST'] . "/" . $this->baseUrl . "/test";
+			$url = "http" . (!empty($this->getRequest()->getServer('HTTPS')) ? 's' : '') . "://" . $_SERVER['HTTP_HOST'] . "/" . $this->baseUrl . "/test";
 			header("Location: $url");
 			die();
 		}
