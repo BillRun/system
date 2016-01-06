@@ -45,7 +45,7 @@
 				</div>
 				<div class='col-md-6'>
 					<p class="input-group">
-					  <input type="text" class="form-control" uib-datepicker-popup="yyyy-MM-dd" ng-model="entity.from" is-open="status.opened" date-disabled="utils.disabled('from', 'rates')" close-text="Close" />
+					  <input type="text" class="form-control" uib-datepicker-popup="{{utils.getDateFormat()}}" ng-model="entity.from" is-open="status.opened" date-disabled="utils.disabled('from', 'rates')" close-text="Close" />
 					  <span class="input-group-btn">
 						<butfromn type="butfromn" class="btn btn-default" ng-click="status.opened = !status.opened"><i class="glyphicon glyphicon-calendar"></i></butfromn>
 					  </span>
@@ -58,7 +58,7 @@
 				</div>
 				<div class='col-md-6'>
 					<p class="input-group">
-					  <input type="text" class="form-control" uib-datepicker-popup="yyyy-MM-dd" ng-model="entity.to" is-open="status.opened" date-disabled="utils.disabled('to', 'rates')" close-text="Close" />
+					  <input type="text" class="form-control" uib-datepicker-popup="{{utils.getDateFormat()}}" ng-model="entity.to" is-open="status.opened" date-disabled="utils.disabled('to', 'rates')" close-text="Close" />
 					  <span class="input-group-btn">
 						<button type="button" class="btn btn-default" ng-click="status.opened = !status.opened"><i class="glyphicon glyphicon-calendar"></i></button>
 					  </span>

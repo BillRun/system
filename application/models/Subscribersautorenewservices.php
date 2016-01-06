@@ -43,6 +43,7 @@ class SubscribersautorenewservicesModel extends TabledateModel{
 			'interval' => 'Interval',
 			'charging_plan_name' => 'Charging Plan Name',
 			'charging_plan_external_id' => "Charging Plan External ID",
+			'service_provider' => "Service Provider",
 			'done' => 'Done',
 			'remain' => 'Remain',
 			'operators' => 'Operation',
