@@ -45,8 +45,7 @@ class SubscribersModel extends TabledateModel{
 			'language' => 'Language',
 			'service_provider' => 'Service Provider',
 			'from' => 'From',
-			'to' => 'To',
-			'_id' => 'Id',
+			'to' => 'To'
 		);
 		return $columns;
 	}

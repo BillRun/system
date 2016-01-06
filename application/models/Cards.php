@@ -43,8 +43,7 @@ class CardsModel extends TableModel {
 			'charging_plan_name' => 'Charging Plan',
 			'service_provider' => 'Service Provider',
 			'status' => 'Status',
-			'to' => 'To',
-			'_id' => 'Id',
+			'to' => 'To'
 		);
 		return $columns;
 	}

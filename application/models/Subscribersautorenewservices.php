@@ -49,8 +49,7 @@ class SubscribersautorenewservicesModel extends TabledateModel{
 			'operators' => 'Operation',
 			'last_renew_date' => 'Last Renew Date',
 			'from' => 'From',
-			'to' => 'To',
-			'_id' => 'Id'
+			'to' => 'To'
 		);
 		return $columns;
 	}

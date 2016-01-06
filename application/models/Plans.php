@@ -26,8 +26,7 @@ class PlansModel extends TabledateModel {
 			'name' => 'Name',
 			'type' => 'Type',
 			'from' => 'From',
-			'to' => 'To',
-			'_id' => 'Id',
+			'to' => 'To'
 		);
 		return $columns;
 	}
