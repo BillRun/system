@@ -1,23 +1,61 @@
 <html>
 	<head>
-		<link rel="stylesheet" href="<?= $baseUrl ?>/css/bootstrap.min.css">
-		<script src="<?php echo $baseUrl ?>/js/vendor/ui-bootstrap.js"></script>
+		<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+		<script>window.jQuery || document.write('<script src="<?php echo $this->subdomain; ?>/js/vendor/jquery-1.11.0.min.js"><\/script>')</script>
+		<link rel="stylesheet" href="<?php echo $subdomain ?>/css/bootstrap.min.css">
+		<script src="<?php echo $subdomain ?>/js/vendor/bootstrap.js"></script>
+		<link rel="stylesheet" href="<?php echo $subdomain ?>/css/bootstrap.vertical-tabs.min.css">
 	</head>
 	<body>
 		<div class="container">
 			<div class="page-header">
 				<h1>Unit Testing</h1>
 			</div>
-			
-			<div class="row">
-				<div class="col-md-3 text-center"><h3>Add Balance</h3></div>
-				<div class="col-md-9">
+
+			<div class="col-xs-3">
+				<ul class="nav nav-tabs tabs-left">
+					<li class="active"><a data-toggle="tab" href="#add-charge">Add Charge</a></li>
+					<li><a data-toggle="tab" href="#add-balance">Add Balance</a></li>
+					<li><a data-toggle="tab" href="#test-call">Test Call</a></li>
+					<li><a data-toggle="tab" href="#test-data">Test Data</a></li>
+				</ul>
+			</div>
+
+
+			<div class="tab-content col-xs-9">
+				<div id="add-charge" class="tab-pane fade in active">
+					<form action="/test/result" method="get">
+						<input type="hidden" name="type" value="addCharge" >
+						<div class="form-group row">
+							<label for="sid" class="col-sm-2 form-control-label text-right">SID</label>
+							<div class="col-sm-5">
+								<input type="text" name="sid" value='<?php echo $sid ?>'  class="form-control">
+							</div>
+						</div>
+						<div class="form-group row">
+							<label for="balanceType" class="col-sm-2 form-control-label text-right">Charging Name</label>
+							<div class="col-sm-5">
+								<select class="form-control" name='balanceType'>
+									<?php foreach ($balance_types['plans'] as $balance_type) : ?>
+										<option value="<?php echo $balance_type['name'] ?>"><?php echo $balance_type['name'] . " | " . $balance_type['desc'] ?></option>
+									<?php endforeach; ?>
+								</select>
+							</div>
+						</div>
+						<div class="form-group row">
+							<div class="col-sm-offset-2 col-sm-10">
+								<button type="submit" class="btn btn-success">Add Charge</button>
+							</div>
+						</div>
+					</form>
+				</div>
+				<div id="add-balance" class="tab-pane fade">
 					<form action="/test/result" method="get">
 						<input type="hidden" name="type" value="addBalance" >
 						<div class="form-group row">
 							<label for="sid" class="col-sm-2 form-control-label text-right">SID</label>
 							<div class="col-sm-5">
-								<input type="text" name="sid" value='<?= $sid ?>'  class="form-control">
+								<input type="text" name="sid" value='<?php echo $sid ?>'  class="form-control">
 							</div>
 						</div>
 						<div class="form-group row">
@@ -31,8 +69,8 @@
 							<label for="balanceType" class="col-sm-2 form-control-label text-right">Balance Type</label>
 							<div class="col-sm-5">
 								<select class="form-control" name='balanceType'>
-									<?php foreach ($balance_types as $balance_type) : ?>
-										<option value="<?= $balance_type ?>" <?php if ('CORE BALANCE' == $balance_type) echo 'selected' ?>><?= $balance_type ?></option>
+									<?php foreach ($balance_types['prepaidincludes'] as $balance_type) : ?>
+										<option value="<?php echo $balance_type ?>" <?php if ('CORE BALANCE' == $balance_type) echo 'selected' ?>><?php echo $balance_type ?></option>
 									<?php endforeach; ?>
 								</select>
 							</div>
@@ -44,25 +82,25 @@
 						</div>
 					</form>
 				</div>
-			</div>
-
-			<hr/>
-
-			<div class="row">
-				<div class="col-md-3 text-center"><h3>Test Call</h3></div>
-				<div class="col-md-9">
+				<div id="test-call" class="tab-pane fade">
 					<form action="/test/result" method="get">
 						<input type="hidden" name="type" value="call">
 						<div class="form-group row">
 							<label for="imsi" class="col-sm-2 form-control-label text-right">IMSI</label>
 							<div class="col-sm-5">
-								<input type="text" name="imsi" value='<?= $imsi ?>' class="form-control">
+								<input type="text" name="imsi" value='<?php echo $imsi ?>' class="form-control">
 							</div>
 						</div>
 						<div class="form-group row">
-							<label for="inputPassword3" class="col-sm-2 form-control-label text-right">Scenario</label>
+							<label for="dialedDigits" class="col-sm-2 form-control-label text-right">Dialed Digits</label>
 							<div class="col-sm-5">
-								<textarea rows="6" name="scenario" class="form-control" ><?= $call_scenario ?></textarea>
+								<input type="text" name="dialedDigits" value='<?php echo $dialed_digits ?>' class="form-control">
+							</div>
+						</div>
+						<div class="form-group row">
+							<label for="scenario" class="col-sm-2 form-control-label text-right">Scenario</label>
+							<div class="col-sm-5">
+								<textarea rows="6" name="scenario" class="form-control" ><?php echo $call_scenario ?></textarea>
 								<small class="text-muted">[ACTION_NAME|DURATION] New line per action, Default call duration is 4000.</small>
 							</div>
 						</div>
@@ -71,7 +109,40 @@
 							<div class="col-sm-5">
 								<div class="checkbox">
 									<label>
-										<input type="checkbox" name="removelines" value="1" checked>Remove all existing lines for this imsi
+										<input type="checkbox" name="removeLines" value="remove" checked>Remove all existing lines for this imsi
+									</label>
+								</div>
+							</div>
+						</div>
+						<div class="form-group row">
+							<div class="col-sm-offset-2 col-sm-10">
+								<button type="submit" class="btn btn-success">Start Test</button>
+							</div>
+						</div>
+					</form>
+				</div>
+				<div id="test-data" class="tab-pane fade">
+					<form action="/test/result" method="get">
+						<input type="hidden" name="type" value="data">
+						<div class="form-group row">
+							<label for="imsi" class="col-sm-2 form-control-label text-right">IMSI</label>
+							<div class="col-sm-5">
+								<input type="text" name="imsi" value='<?php echo $imsi ?>' class="form-control">
+							</div>
+						</div>
+						<div class="form-group row">
+							<label for="scenario" class="col-sm-2 form-control-label text-right">Scenario</label>
+							<div class="col-sm-5">
+								<textarea rows="6" name="scenario" class="form-control"><?php echo $data_scenario ?></textarea>
+								<small class="text-muted">[ACTION_NAME|USAGE] New line per action, Default data usage is 1000.</small>
+							</div>
+						</div>
+						<div class="form-group row">
+							<label class="col-sm-2"></label>
+							<div class="col-sm-5">
+								<div class="checkbox">
+									<label>
+										<input type="checkbox" name="removeLines" value="remove" checked>Remove all existing lines for this imsi
 									</label>
 								</div>
 							</div>
@@ -84,48 +155,6 @@
 					</form>
 				</div>
 			</div>
-
-			<hr/>
-
-			<div class="row">
-				<div class="col-md-3 text-center">
-					<h3>Test Data</h3>
-				</div>
-				<div class="col-md-9">
-					<form action="/test/result" method="get">
-						<input type="hidden" name="type" value="data">
-						<div class="form-group row">
-							<label for="imsi" class="col-sm-2 form-control-label text-right">IMSI</label>
-							<div class="col-sm-5">
-								<input type="text" name="imsi" value='<?= $imsi ?>' class="form-control">
-							</div>
-						</div>
-						<div class="form-group row">
-							<label for="scenario" class="col-sm-2 form-control-label text-right">Scenario</label>
-							<div class="col-sm-5">
-								<textarea rows="6" name="scenario" class="form-control"><?= $data_scenario ?></textarea>
-								<small class="text-muted">[ACTION_NAME|USAGE] New line per action, Default data usage is 1000.</small>
-							</div>
-						</div>
-						<div class="form-group row">
-							<label class="col-sm-2"></label>
-							<div class="col-sm-5">
-								<div class="checkbox">
-									<label>
-										<input type="checkbox" name="removelines" value="1" checked>Remove all existing lines for this imsi
-									</label>
-								</div>
-							</div>
-						</div>
-						<div class="form-group row">
-							<div class="col-sm-offset-2 col-sm-10">
-								<button type="submit" class="btn btn-success">Start Test</button>
-							</div>
-						</div>
-					</form>
-				</div>
-			</div>			
-
 		</div>
 	</body>
 </html>

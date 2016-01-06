@@ -1,7 +1,7 @@
 <html>
 	<head>
-		<link rel="stylesheet" href="<?= $baseUrl ?>/css/bootstrap.min.css">
-		<script src="<?= $baseUrl ?>/js/vendor/ui-bootstrap.js"></script>
+		<link rel="stylesheet" href="<?php echo $subdomain ?>/css/bootstrap.min.css">
+		<script src="<?php echo $subdomain ?>/js/vendor/ui-bootstrap.js"></script>
 	</head>
 	<body>
 		<div class="container">
@@ -25,10 +25,10 @@
 							<tbody>
 								<?php foreach ($balances['before'] as $balance_id => $balance) : ?>
 									<tr>
-										<td><?= $balance_id ?></td>
-										<td><?= $balance['amount'] ?></td>
-										<td><?= $balance['charging_by_usaget'] ?></td>
-										<td><?= $balance['charging_by'] ?></td>
+										<td><?php echo $balance_id ?></td>
+										<td><?php echo number_format($balance['amount'], 3) ?></td>
+										<td><?php echo $balance['charging_by_usaget'] ?></td>
+										<td><?php echo $balance['charging_by'] ?></td>
 									</tr>
 								<?php endforeach; ?>
 							</tbody>
@@ -40,7 +40,7 @@
 
 			<?php if (!empty($lines['rows'])) : ?>
 				<div class="panel panel-default">
-					<div class="panel-heading">Lines for action <?= $lines['ref'] ?></div>
+					<div class="panel-heading">Lines for action <?php echo $lines['ref'] ?></div>
 					<div class="panel-body">
 						<table class="table table-striped">
 							<thead>
@@ -59,21 +59,21 @@
 							<tbody>
 								<?php foreach ($lines['rows'] as $key => $line) : ?>
 									<tr>
-										<td><?= ($key + 1) ?> </td>
-										<td><?= $line['time_date'] ?></td>
-										<td><?= $line['usaget'] ?></td>
-										<td><?= $line['record_type'] ?> </td>
-										<td><?= $line['aprice'] ?></td>
-										<td><?= $line['usagev'] ?></td>
-										<td><?= $line['balance_before'] ?></td>
-										<td><?= $line['balance_after'] ?></td>
-										<td><?= $line['arate'] ?></td>
+										<td><?php echo ($key + 1) ?> </td>
+										<td><?php echo $line['time_date'] ?></td>
+										<td><?php echo $line['usaget'] ?></td>
+										<td><?php echo $line['record_type'] ?> </td>
+										<td><?php echo $line['aprice'] ?></td>
+										<td><?php echo $line['usagev'] ?></td>
+										<td><?php echo $line['balance_before'] ?></td>
+										<td><?php echo $line['balance_after'] ?></td>
+										<td><?php echo $line['arate'] ?></td>
 									</tr>
 								<?php endforeach; ?>
 							</tbody>
 						</table>
 					</div>
-					<div class="panel-footer">Total (aprice) : <?= $lines['total'] ?></div>
+					<div class="panel-footer">Total (aprice) : <?php echo $lines['total'] ?></div>
 				</div>
 			<?php endif; ?>
 
@@ -93,10 +93,10 @@
 							<tbody>
 								<?php foreach ($balances['after'] as $balance_id => $balance) : ?>
 									<tr>
-										<td><?= $balance_id ?></td>
-										<td><?= $balance['amount'] ?></td>
-										<td><?= $balance['charging_by_usaget'] ?></td>
-										<td><?= $balance['charging_by'] ?></td>
+										<td><?php echo $balance_id ?></td>
+										<td><?php echo number_format($balance['amount'], 3) ?></td>
+										<td><?php echo $balance['charging_by_usaget'] ?></td>
+										<td><?php echo $balance['charging_by'] ?></td>
 									</tr>
 								<?php endforeach; ?>
 							</tbody>
@@ -121,10 +121,10 @@
 							<tbody>
 								<?php foreach ($balances['before'] as $balance_id => $balance) : ?>
 									<tr>
-										<td><?= $balance_id ?></td>
-										<td><?= ($balances['after'][$balance_id]['amount']) - ($balances['before'][$balance_id]['amount']) ?></td>
-										<td><?= $balance['charging_by_usaget'] ?></td>
-										<td><?= $balance['charging_by'] ?></td>
+										<td><?php echo $balance_id ?></td>
+										<td><?php echo number_format(($balances['after'][$balance_id]['amount']) - ($balances['before'][$balance_id]['amount']),3) ?></td>
+										<td><?php echo $balance['charging_by_usaget'] ?></td>
+										<td><?php echo $balance['charging_by'] ?></td>
 									</tr>
 								<?php endforeach; ?>
 							</tbody>
@@ -133,8 +133,39 @@
 				</div>
 			<?php endif; ?>
 
-			<hr/>
+			<?php if (!empty($apiCalls)) : ?>
+				<div class="panel panel-default">
+					<div class="panel-heading">Api Calls</div>
+					<div class="panel-body">
+						<table class="table table-striped">
+							<thead>
+								<tr>
+									<th>#</th>
+									<th>Data</th>
+								</tr>
+							</thead>
+							<tbody>
+								<?php foreach ($apiCalls as $key => $api_call) : ?>
+									<tr>
+										<td><?php echo ($key + 1) ?></td>
+										<td>
+											<span class="glyphicon glyphicon-chevron-right " aria-hidden="true">Request</span>
+											<pre> <?php echo htmlspecialchars($api_call['request']) ?></pre>
 
+											<span class="glyphicon glyphicon-chevron-left" aria-hidden="true">Response</span>
+											<pre> <?php echo htmlspecialchars($api_call['response']) ?></pre>
+										</td>
+									</tr>
+								<?php endforeach; ?>
+							</tbody>
+						</table>
+					</div>
+				</div>
+			<?php endif; ?>
+			
+			
+			<hr/>
+			
 			<a href="/test" class="btn btn-success">Return</a>
 		</div>
 	</body>

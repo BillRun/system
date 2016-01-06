@@ -11,6 +11,7 @@
  *
  * @package  Controller
  * @since    4.0
+ * @author	 Roman Edneral
  */
 class TestController extends Yaf_Controller_Abstract {
 
@@ -19,8 +20,10 @@ class TestController extends Yaf_Controller_Abstract {
 	 * 
 	 * @var string
 	 */
-	protected $baseUrl = '';
-	protected $baseApiUrl = '';
+	protected $protocol = '';
+	protected $subdomain = '';
+	protected $siteUrl = '';
+	protected $apiUrl = '';
 	
     /**
 	 * unique ref for Data and API calls
@@ -28,6 +31,13 @@ class TestController extends Yaf_Controller_Abstract {
 	 * @var string
 	 */
 	protected $reference = '';
+	
+    /**
+	 * save all request and responce
+	 *
+	 * @var string
+	 */
+	protected $apiCalls = array();
 
 	/**
 	 * method to control and navigate the user to the right view
@@ -38,9 +48,11 @@ class TestController extends Yaf_Controller_Abstract {
 			Billrun_Factory::log('Exit Unit testing. Unit testing not allowed on production');
 			die();
 		}
-		$this->baseApiUrl = "http" . (!empty($this->getRequest()->getServer('HTTPS')) ? 's' : '') . "://" .  $this->getRequest()->getServer('HTTP_HOST') . $this->getRequest()->getBaseUri() . '/api';
+		$this->protocol = (empty($this->getRequest()->getServer('HTTPS'))) ? 'http://' : 'https	://';
+		$this->subdomain = $this->getRequest()->getBaseUri();
+		$this->siteUrl = $this->protocol . $this->basehost .  $this->getRequest()->getServer('HTTP_HOST') . $this->subdomain;
+		$this->apiUrl = $this->siteUrl . '/api';
 		$this->reference = rand(1000000000, 9999999999);
-		$this->baseUrl = $this->getRequest()->getBaseUri();
 	}
 
 	/**
@@ -49,7 +61,8 @@ class TestController extends Yaf_Controller_Abstract {
 	 * @return void
 	 */
 	public function indexAction() {
-		$this->getView()->baseUrl = $this->baseUrl;
+		//var_dump(Billrun_Util::filter_var($this->getRequest()->get('imsi'), FILTER_SANITIZE_STRING));
+		$this->getView()->subdomain = $this->subdomain;
 		$formParams = $this->_getTestTestingData();
 		foreach ($formParams as $name => $value) {
 			$this->getView()->{$name} = $value;
@@ -62,27 +75,27 @@ class TestController extends Yaf_Controller_Abstract {
 	 * @return void
 	 */
 	public function resultAction() {
-		//redirect if to test page if data not exist
+		//redirect to test page if test data not exist
 		if(empty($_SERVER['QUERY_STRING'])){
-			$url = "http" . (!empty($this->getRequest()->getServer('HTTPS')) ? 's' : '') . "://" . $_SERVER['HTTP_HOST'] . "/" . $this->baseUrl . "/test";
-			header("Location: $url");
+			header("Location: " . $this->siteUrl. "/test");
 			die();
 		}
-		
-		$imsi = (string) filter_input(INPUT_GET, 'imsi'); //'425030002438039';
-		$type = (string) filter_input(INPUT_GET, 'type');
-		$scenarioData = (string) filter_input(INPUT_GET, 'scenario');
-		$scenario = array_map('trim', explode("\n", trim($scenarioData)));
-		$sid = (int) filter_input(INPUT_GET, 'sid');
-		$amount = (int) filter_input(INPUT_GET, 'amount');
-		$balanceType = (string) filter_input(INPUT_GET, 'balanceType');
-		$removeLines = filter_input(INPUT_GET, 'removelines');
+		$imsi	= Billrun_Util::filter_var($this->getRequest()->get('imsi'), FILTER_SANITIZE_STRING);
+		$type	= Billrun_Util::filter_var($this->getRequest()->get('type'), FILTER_SANITIZE_STRING);
+		$sid	= (int)Billrun_Util::filter_var($this->getRequest()->get('sid'), FILTER_VALIDATE_INT);
+		$amount = (int)Billrun_Util::filter_var($this->getRequest()->get('amount'), FILTER_SANITIZE_NUMBER_INT);
+		$scenarioData	= Billrun_Util::filter_var($this->getRequest()->get('scenario'), FILTER_SANITIZE_STRING);
+		$scenario		= array_map('trim', explode("\n", trim($scenarioData)));
+		$balanceType	= Billrun_Util::filter_var($this->getRequest()->get('balanceType'), FILTER_SANITIZE_STRING);
+		$removeLines	= Billrun_Util::filter_var($this->getRequest()->get('removeLines'), FILTER_SANITIZE_STRING);
+		$dialedDigits	= Billrun_Util::filter_var($this->getRequest()->get('dialedDigits'), FILTER_SANITIZE_STRING);
+
 
 		if (empty($sid)) {
 			$sid = $this->_getSid($imsi);
 		}
-		if($removeLines == 1){
-		// Reset - remove all linese before test
+		if($removeLines == 'remove'){
+			//Remove all lines by SID
 			$this->_resetLines($sid);
 		}
 		// Get balance before scenario
@@ -93,10 +106,13 @@ class TestController extends Yaf_Controller_Abstract {
 				$this->_dataScenario($scenario, $imsi);
 				break;
 			case 'call':
-				$this->_callScenario($scenario, $imsi);
+				$this->_callScenario($scenario, $imsi, $dialedDigits);
 				break;
 			case 'addBalance':
 				$this->_addBalance($sid, $amount, $balanceType);
+				break;
+			case 'addCharge':
+				$this->_addCharge($sid, $balanceType);
 				break;
 		}
 		
@@ -106,9 +122,10 @@ class TestController extends Yaf_Controller_Abstract {
 		// Get balance after scenario
 		$balance['after'] = $this->_getBalance($sid);
 
-		$this->getView()->baseUrl = $this->baseUrl;
+		$this->getView()->subdomain = $this->subdomain;
 		$this->getView()->lines = $lines;
 		$this->getView()->balances = $balance;
+		$this->getView()->apiCalls = $this->apiCalls;
 	}
 
 	/**
@@ -135,13 +152,14 @@ class TestController extends Yaf_Controller_Abstract {
 	 * 
 	 * @return void
 	 */
-	public function _callScenario($scenario, $imsi) {
+	public function _callScenario($scenario, $imsi, $dialedDigits) {
 		foreach ($scenario as $index => $name) {
 			$nameAndUssage = explode("|", $name);
 			$args = array(
 				'imsi' => $imsi,
 				'type' => $nameAndUssage[0],
-				'duration' => ($nameAndUssage[1]) ? $nameAndUssage[1] : 4000
+				'duration' => ($nameAndUssage[1]) ? $nameAndUssage[1] : 4000, 
+				'dialedDigits' => $dialedDigits
 			);
 			$data = $this->_getCallData($args);
 			$this->sendRequest(array('usaget' => 'call', 'request' => $data));
@@ -158,9 +176,13 @@ class TestController extends Yaf_Controller_Abstract {
 		//$data['XDEBUG_SESSION_START'] = 'netbeans-xdebug';
 		$params = http_build_query($data);
 		$endpoint = trim("/" . $endpoint); // 'realtimeevent' / 'balances'
-		$URL = $this->baseApiUrl . $endpoint . '?' . $params;
+		$URL = $this->apiUrl . $endpoint . '?' . $params;
 		Billrun_Factory::log('SEND REQUEST: ' . $URL);
-		Billrun_Util::sendRequest($URL);
+		$res = Billrun_Util::sendRequest($URL);
+		$this->apiCalls[] = array(
+			'request' => $URL,
+			'response' => $res
+		);
 	}
 
 	/**
@@ -250,15 +272,17 @@ class TestController extends Yaf_Controller_Abstract {
 		$type = $data['type'];
 		$duration = $data['duration'];
 		$imsi = $data['imsi'];
+		$dialedDigits = $data['dialedDigits'];
+		
 		$request = '<?xml version = "1.0" encoding = "UTF-8"?>';
 		switch ($type) {
-			case 'start_call': $request .= '<request><api_name>start_call</api_name><calling_number>972502145131</calling_number><call_reference>' . $this->reference . '</call_reference><call_id>rm7123123123</call_id><imsi>' . $imsi . '</imsi><dialed_digits>0390222222</dialed_digits><connected_number>0390222222</connected_number><event_type>2</event_type><service_key>61</service_key><vlr>972500000701</vlr><location_mcc>425</location_mcc><location_mnc>03</location_mnc><location_area>7201</location_area><location_cell>53643</location_cell><time_date>2015/08/13 11:59:03</time_date><call_type>x</call_type></request>';
+			case 'start_call': $request .= '<request><api_name>start_call</api_name><calling_number>972502145131</calling_number><call_reference>' . $this->reference . '</call_reference><call_id>rm7123123123</call_id><imsi>' . $imsi . '</imsi><dialed_digits>'. $dialedDigits .'</dialed_digits><connected_number>'. $dialedDigits .'</connected_number><event_type>2</event_type><service_key>61</service_key><vlr>972500000701</vlr><location_mcc>425</location_mcc><location_mnc>03</location_mnc><location_area>7201</location_area><location_cell>53643</location_cell><time_date>2015/08/13 11:59:03</time_date><call_type>x</call_type></request>';
 				break;
-			case 'answer_call': $request .= '<request><api_name>answer_call</api_name><calling_number>972502145131</calling_number><call_reference>' . $this->reference . '</call_reference><call_id>rm7123123123</call_id><imsi>' . $imsi . '</imsi><dialed_digits>0390222222</dialed_digits><connected_number>0390222222</connected_number><time_date>2015/08/13 11:59:03.325</time_date><call_type>x</call_type></request>';
+			case 'answer_call': $request .= '<request><api_name>answer_call</api_name><calling_number>972502145131</calling_number><call_reference>' . $this->reference . '</call_reference><call_id>rm7123123123</call_id><imsi>' . $imsi . '</imsi><dialed_digits>'. $dialedDigits .'</dialed_digits><connected_number>'. $dialedDigits .'</connected_number><time_date>2015/08/13 11:59:03.325</time_date><call_type>x</call_type></request>';
 				break;
-			case 'reservation_time': $request .= '<request><api_name>reservation_time</api_name><calling_number>972502145131</calling_number><call_reference>' . $this->reference . '</call_reference><call_id>rm7123123123</call_id><imsi>' . $imsi . '</imsi><connected_number>0390222222</connected_number><time_date>2015/08/13 11:59:03.423</time_date></request>';
+			case 'reservation_time': $request .= '<request><api_name>reservation_time</api_name><calling_number>972502145131</calling_number><call_reference>' . $this->reference . '</call_reference><call_id>rm7123123123</call_id><imsi>' . $imsi . '</imsi><connected_number>'. $dialedDigits .'</connected_number><time_date>2015/08/13 11:59:03.423</time_date></request>';
 				break;
-			case 'release_call': $request = '<request><api_name>release_call</api_name><calling_number>972502145131</calling_number><call_reference>' . $this->reference . '</call_reference><call_id>rm7123123123</call_id><imsi>' . $imsi . '</imsi><connected_number>0390222222</connected_number><time_date>2015/08/13 11:59:03.543</time_date><duration>' . $duration . '</duration><scp_release_cause>mmm</scp_release_cause><isup_release_cause>nnn</isup_release_cause><call_leg>x</call_leg></request>';
+			case 'release_call': $request = '<request><api_name>release_call</api_name><calling_number>972502145131</calling_number><call_reference>' . $this->reference . '</call_reference><call_id>rm7123123123</call_id><imsi>' . $imsi . '</imsi><connected_number>'. $dialedDigits .'</connected_number><time_date>2015/08/13 11:59:03.543</time_date><duration>' . $duration . '</duration><scp_release_cause>mmm</scp_release_cause><isup_release_cause>nnn</isup_release_cause><call_leg>x</call_leg></request>';
 				break;
 			default: $request = NULL;
 				break;
@@ -281,6 +305,24 @@ class TestController extends Yaf_Controller_Abstract {
 			'sid' => $sid,
 			'query' => json_encode(["pp_includes_name" => $balance_type]),
 			'upsert' => json_encode(["value" => $amount, "expiration_date" => "2016-07-01T00:00:00+02:00"])
+		);
+		return $request;
+	}
+	/**
+	 * Get data for AddBalance request
+	 * @param String $type start_call / answer_call / reservation_time / release_call
+	 * @param Array $data : imsi
+	 * @return XML string
+	 */
+	protected function _getAddChargeData($data) {
+		$sid = $data['sid'];
+		$balance_type = $data['balance_type'];
+		$amount = (-1) * $data['amount'];
+		$request = array(
+			'method' => 'update',
+			'sid' => $sid,
+			'query' => json_encode(["charging_plan_name" => $balance_type]),
+			'upsert' => json_encode(["a" => 1])
 		);
 		return $request;
 	}
@@ -315,7 +357,7 @@ class TestController extends Yaf_Controller_Abstract {
 				$amount = $row['balance']['totals'][$row["charging_by_usaget"]][$row["charging_by"]];
 			}
 			$balances[(string) $row['_id']] = array(
-				'amount' => -1 * number_format($amount,3),
+				'amount' => -1 * $amount,
 				'charging_by_usaget' => $row["charging_by_usaget"],
 				'charging_by' => $row["charging_by"]
 			);
@@ -366,17 +408,29 @@ class TestController extends Yaf_Controller_Abstract {
 		$this->sendRequest($data, 'balances');
 	}
 	
+	protected function _addCharge($sid, $type) {
+		$args = array('sid' => $sid, 'balance_type' => $type);
+		$data = $this->_getAddChargeData($args);
+		$this->sendRequest($data, 'balances');
+	}
+
 	protected function _getTestTestingData(){
 		$output = array();
-		$cursor = Billrun_Factory::db()->prepaidincludesCollection()->query()->cursor()->limit(100000)->sort(['urt' => 1]);
+		$cursor = Billrun_Factory::db()->prepaidincludesCollection()->query()->cursor()->limit(100000)->sort(['name' => 1]);
 		foreach ($cursor as $row) {
-			$output['balance_types'][] = $row['name'];
+			$output['balance_types']['prepaidincludes'][] = $row['name'];
+		}
+		$searchQuery = array('type' => 'charging');
+		$cursor = Billrun_Factory::db()->plansCollection()->query($searchQuery)->cursor()->limit(100000)->sort(['name' => 1]);
+		foreach ($cursor as $row) {
+			$output['balance_types']['plans'][] = array('name' => $row['name'], 'desc' => $row['desc']);
 		}
 		
-		$output['call_scenario'] = "start_call\nanswer_call\nreservation_time\nrelease_call|5000";
-		$output['data_scenario'] = "init\nupdate|1000\nupdate|800\nfinal|500";
-		$output['imsi'] = "425030002438039";
-		$output['sid'] = "546918666";
+		$output['call_scenario'] = str_replace('\n', "\n", Billrun_Factory::config()->getConfigValue('test.call_scenario',""));
+		$output['data_scenario'] = str_replace('\n', "\n", Billrun_Factory::config()->getConfigValue('test.data_scenario',""));
+		$output['imsi'] = Billrun_Factory::config()->getConfigValue('test.imsi','425030002438039');
+		$output['sid'] = Billrun_Factory::config()->getConfigValue('test.sid','546918666');
+		$output['dialed_digits'] = Billrun_Factory::config()->getConfigValue('test.dialed_digits','0390222222');
 		return $output;
 	}
 
