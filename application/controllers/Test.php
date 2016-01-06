@@ -38,7 +38,7 @@ class TestController extends Yaf_Controller_Abstract {
 			Billrun_Factory::log('Exit Unit testing. Unit testing not allowed on production');
 			die();
 		}
-		$this->baseApiUrl = "http://" . gethostname() . $this->getRequest()->getBaseUri() . '/api';
+		$this->baseApiUrl = "http://" . $this->getRequest()->getServer('HTTP_HOST') . $this->getRequest()->getBaseUri() . '/api';
 		$this->reference = rand(1000000000, 9999999999);
 		$this->baseUrl = $this->getRequest()->getBaseUri();
 	}
@@ -159,7 +159,7 @@ class TestController extends Yaf_Controller_Abstract {
 		$params = http_build_query($data);
 		$endpoint = trim("/" . $endpoint); // 'realtimeevent' / 'balances'
 		$URL = $this->baseApiUrl . $endpoint . '?' . $params;
-		Billrun_Factory::log('SEND REQUEST' . $URL);
+		Billrun_Factory::log('SEND REQUEST: ' . $URL);
 		Billrun_Util::sendRequest($URL);
 	}
 
