@@ -90,37 +90,55 @@ class UtestController extends Yaf_Controller_Abstract {
 		if (empty($sid)) {
 			$sid = $this->getSid($imsi);
 		}
+		
+		$result = array();
 
+		//Create test by type
+		switch ($type) {
+			case 'data':
+				$utest = new TestDataModel($this);
+				$result = array('balance_before', 'balance_after', 'lines');
+				break;
+			case 'call':
+				$utest = new TestCallModel($this);
+				$result = array('balance_before', 'balance_after', 'lines');
+				break;
+			case 'addBalance':
+				$utest = new AddBalanceModel($this);
+				$result = array('balance_before', 'balance_after', 'lines');
+				break;
+			case 'addCharge':
+				$utest = new AddChargeModel($this);
+				$result = array('balance_before', 'balance_after', 'lines');
+				break;
+			case 'cretaeSubscriber':
+				$utest = new CretaeSubscriberModel($this);
+				$result = array();
+				break;
+		}
+		
 		if ($removeLines == 'remove') {
 			//Remove all lines by SID
 			$this->resetLines($sid);
 		}
 
-		// Get balance before scenario
-		$balance['before'] = $this->getBalance($sid);
-
-		//Run test by type
-		switch ($type) {
-			case 'data':
-				$utest = new TestDataModel($this);
-				break;
-			case 'call':
-				$utest = new TestCallModel($this);
-				break;
-			case 'addBalance':
-				$utest = new AddBalanceModel($this);
-				break;
-			case 'addCharge':
-				$utest = new AddChargeModel($this);
-				break;
+		if(in_array('balance_before', $result)){
+			// Get balance before scenario
+			$balance['before'] = $this->getBalance($sid);
 		}
+		
+		//Run test by type
 		$utest->doTest();
 
-		// Get all lines created during scenarion
-		$lines = $this->getLines($sid, (addBalance == $type));
+		if(in_array('lines', $result)){
+			// Get all lines created during scenarion
+			$lines = $this->getLines($sid, (addBalance == $type));
+		}
 
-		// Get balance after scenario
-		$balance['after'] = $this->getBalance($sid);
+		if(in_array('balance_after', $result)){
+			// Get balance after scenario
+			$balance['after'] = $this->getBalance($sid);
+		}
 
 		$this->getView()->subdomain = $this->subdomain;
 		$this->getView()->lines = $lines;
@@ -258,11 +276,21 @@ class UtestController extends Yaf_Controller_Abstract {
 		foreach ($cursor as $row) {
 			$output['balance_types']['plans'][] = array('name' => $row['name'], 'desc' => $row['desc'], 'service_provider' => $row['service_provider']);
 		}
+		$searchQuery = array('type' => 'customer');
+		$cursor = Billrun_Factory::db()->plansCollection()->query($searchQuery)->cursor()->limit(100000)->sort(['name' => 1]);
+		foreach ($cursor as $row) {
+			$output['customer_plans'][] = $row['name'];
+		}
 
 		$output['call_scenario'] = str_replace('\n', "\n", $this->conf->getConfigValue('test.call_scenario', ""));
 		$output['data_scenario'] = str_replace('\n', "\n", $this->conf->getConfigValue('test.data_scenario', ""));
+		$output['service_providers'] = $this->conf->getConfigValue('test.service_provider', array());
+		$output['charging_types'] = $this->conf->getConfigValue('test.charging_type', array());
+		$output['languages'] = $this->conf->getConfigValue('test.language', array());
 		$output['imsi'] = $this->conf->getConfigValue('test.imsi', '');
+		$output['msisdn'] = $this->conf->getConfigValue('test.msisdn', '');
 		$output['sid'] = $this->conf->getConfigValue('test.sid', '');
+		$output['aid'] = $this->conf->getConfigValue('test.aid', '');
 		$output['dialed_digits'] = $this->conf->getConfigValue('test.dialed_digits', '');
 		return $output;
 	}
