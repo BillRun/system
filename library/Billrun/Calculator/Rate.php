@@ -197,12 +197,15 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	 */
 	protected function getRateByParams() {		
 		$query = $this->getRateQuery();
-		$matchedRate = Billrun_Factory::db()->ratesCollection()->aggregate($query)->current();
+		$rates_coll= Billrun_Factory::db()->ratesCollection();
+		$matchedRate = $rates_coll->aggregate($query)->current();
 		
 		if (empty($matchedRate)) {
 			return false;
 		}
-		return $matchedRate;
+		
+		$key = $matchedRate->get('key');
+		return $rates_coll->query(array("key" => $key))->cursor()->current();
 	}
 	
 	/**
@@ -261,6 +264,12 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	 */
 	protected function getPrefixMatchQuery() {
 		return array('$in' => Billrun_Util::getPrefixes($this->rowDataForQuery['called_number']));
+	}
+	
+	protected function getAggregateId() {
+		return array(
+			"_id" => '$_id',
+			"pref" => '$params.prefix');
 	}
 
 }
