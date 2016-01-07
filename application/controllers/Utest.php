@@ -13,7 +13,7 @@
  * @since    4.0
  * @author	 Roman Edneral
  */
-class TestController extends Yaf_Controller_Abstract {
+class UtestController extends Yaf_Controller_Abstract {
 
 	/**
 	 * base url for API calls
@@ -55,7 +55,7 @@ class TestController extends Yaf_Controller_Abstract {
 		$this->apiUrl = $this->siteUrl . '/api';
 		$this->reference = rand(1000000000, 9999999999);
 		//Load Test conf file
-		$this->conf = Billrun_Config::getInstance(new Yaf_Config_Ini(APPLICATION_PATH . '/conf/test/conf.ini'));
+		$this->conf = Billrun_Config::getInstance(new Yaf_Config_Ini(APPLICATION_PATH . '/conf/utest/conf.ini'));
 	}
 
 	/**
@@ -80,7 +80,7 @@ class TestController extends Yaf_Controller_Abstract {
 	public function resultAction() {
 		//redirect to test page if test data not exist
 		if(empty($_SERVER['QUERY_STRING'])){
-			header("Location: " . $this->siteUrl. "/test");
+			header("Location: " . $this->siteUrl. "/utest");
 			die();
 		}
 		$imsi	= Billrun_Util::filter_var($this->getRequest()->get('imsi'), FILTER_SANITIZE_STRING);
