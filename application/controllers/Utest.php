@@ -178,13 +178,12 @@ class UtestController extends Yaf_Controller_Abstract {
 	 */
 	protected function sendRequest($data = array(), $endpoint = 'realtimeevent') {
 		//$data['XDEBUG_SESSION_START'] = 'netbeans-xdebug';
-		$params = http_build_query($data);
-		$endpoint = trim("/" . $endpoint); // 'realtimeevent' / 'balances'
-		$URL = $this->apiUrl . $endpoint . '?' . $params;
-		Billrun_Factory::log('SEND REQUEST: ' . $URL);
-		$res = Billrun_Util::sendRequest($URL);
+		$requestType = $this->conf->getConfigValue('test.requestType','');
+		$URL = $this->apiUrl . trim("/" . $endpoint); // 'realtimeevent' / 'balances'
+		$res = Billrun_Util::sendRequest($URL, $data, $requestType);
 		$this->apiCalls[] = array(
-			'request' => $URL,
+			'uri' => $requestType . " " . $URL ,
+			'request' => http_build_query($data),
 			'response' => $res
 		);
 	}
