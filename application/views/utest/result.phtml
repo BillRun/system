@@ -147,7 +147,7 @@
 									<p><strong><?php echo ($key + 1) ?></strong></p>
 								</div>
 								<div class="col-sm-11">
-									<pre><?php echo htmlspecialchars($api_call['uri']) ?></pre>
+									<pre><?php echo htmlspecialchars($api_call['method']) ?>  <?php echo htmlspecialchars($api_call['uri']) ?> <strong>(<?php echo htmlspecialchars($api_call['duration']) ?> microtime)</strong></pre>
 								</div>
 							</div>
 							<div class="row">
@@ -166,7 +166,7 @@
 									<pre><?php echo htmlspecialchars($api_call['response']) ?></pre>
 								</div>
 							</div>
-							<?php if(count($apiCalls) !== ($key+1)) : ?>
+							<?php if (count($apiCalls) !== ($key + 1)) : ?>
 								<hr>
 							<?php endif; ?>
 						<?php endforeach; ?>

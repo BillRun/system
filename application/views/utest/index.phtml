@@ -27,135 +27,16 @@
 
 			<div class="tab-content col-xs-9">
 				<div id="add-charge" class="tab-pane fade in active">
-					<form action="/utest/result" method="get">
-						<input type="hidden" name="type" value="addCharge" >
-						<div class="form-group row">
-							<label for="sid" class="col-sm-2 form-control-label text-right">SID</label>
-							<div class="col-sm-5">
-								<input type="text" name="sid" value='<?php echo $sid ?>'  class="form-control">
-							</div>
-						</div>
-						<div class="form-group row">
-							<label for="balanceType" class="col-sm-2 form-control-label text-right">Charging Name</label>
-							<div class="col-sm-5">
-								<select class="form-control" name='balanceType'>
-									<?php foreach ($balance_types['plans'] as $balance_type) : ?>
-										<option value="<?php echo $balance_type['name'] ?>"><?php echo $balance_type['name'] . " | " . $balance_type['desc'] ?></option>
-									<?php endforeach; ?>
-								</select>
-							</div>
-						</div>
-						<div class="form-group row">
-							<div class="col-sm-offset-2 col-sm-10">
-								<button type="submit" class="btn btn-success">Add Charge</button>
-							</div>
-						</div>
-					</form>
+					<?php include 'tests/addCharge.phtml' ?>
 				</div>
 				<div id="add-balance" class="tab-pane fade">
-					<form action="/utest/result" method="get">
-						<input type="hidden" name="type" value="addBalance" >
-						<div class="form-group row">
-							<label for="sid" class="col-sm-2 form-control-label text-right">SID</label>
-							<div class="col-sm-5">
-								<input type="text" name="sid" value='<?php echo $sid ?>'  class="form-control">
-							</div>
-						</div>
-						<div class="form-group row">
-							<label for="amount" class="col-sm-2 form-control-label text-right">Amount</label>
-							<div class="col-sm-5">
-								<input type="text" name="amount" value='100'  class="form-control">
-								<small class="text-muted">Positive Integer.</small>
-							</div>
-						</div>
-						<div class="form-group row">
-							<label for="balanceType" class="col-sm-2 form-control-label text-right">Balance Type</label>
-							<div class="col-sm-5">
-								<select class="form-control" name='balanceType'>
-									<?php foreach ($balance_types['prepaidincludes'] as $balance_type) : ?>
-										<option value="<?php echo $balance_type ?>" <?php if ('CORE BALANCE' == $balance_type) echo 'selected' ?>><?php echo $balance_type ?></option>
-									<?php endforeach; ?>
-								</select>
-							</div>
-						</div>
-						<div class="form-group row">
-							<div class="col-sm-offset-2 col-sm-10">
-								<button type="submit" class="btn btn-success">Add Balance</button>
-							</div>
-						</div>
-					</form>
+					<?php include 'tests/addBalance.phtml' ?>
 				</div>
 				<div id="test-call" class="tab-pane fade">
-					<form action="/utest/result" method="get">
-						<input type="hidden" name="type" value="call">
-						<div class="form-group row">
-							<label for="imsi" class="col-sm-2 form-control-label text-right">IMSI</label>
-							<div class="col-sm-5">
-								<input type="text" name="imsi" value='<?php echo $imsi ?>' class="form-control">
-							</div>
-						</div>
-						<div class="form-group row">
-							<label for="dialedDigits" class="col-sm-2 form-control-label text-right">Dialed Digits</label>
-							<div class="col-sm-5">
-								<input type="text" name="dialedDigits" value='<?php echo $dialed_digits ?>' class="form-control">
-							</div>
-						</div>
-						<div class="form-group row">
-							<label for="scenario" class="col-sm-2 form-control-label text-right">Scenario</label>
-							<div class="col-sm-5">
-								<textarea rows="6" name="scenario" class="form-control" ><?php echo $call_scenario ?></textarea>
-								<small class="text-muted">[ACTION_NAME|DURATION] New line per action, Default call duration is 4000.</small>
-							</div>
-						</div>
-						<div class="form-group row">
-							<label class="col-sm-2 text-right"></label>
-							<div class="col-sm-5">
-								<div class="checkbox">
-									<label>
-										<input type="checkbox" name="removeLines" value="remove" checked>Remove all existing lines for this imsi
-									</label>
-								</div>
-							</div>
-						</div>
-						<div class="form-group row">
-							<div class="col-sm-offset-2 col-sm-10">
-								<button type="submit" class="btn btn-success">Start Test</button>
-							</div>
-						</div>
-					</form>
+					<?php include 'tests/testCall.phtml' ?>
 				</div>
 				<div id="test-data" class="tab-pane fade">
-					<form action="/utest/result" method="get">
-						<input type="hidden" name="type" value="data">
-						<div class="form-group row">
-							<label for="imsi" class="col-sm-2 form-control-label text-right">IMSI</label>
-							<div class="col-sm-5">
-								<input type="text" name="imsi" value='<?php echo $imsi ?>' class="form-control">
-							</div>
-						</div>
-						<div class="form-group row">
-							<label for="scenario" class="col-sm-2 form-control-label text-right">Scenario</label>
-							<div class="col-sm-5">
-								<textarea rows="6" name="scenario" class="form-control"><?php echo $data_scenario ?></textarea>
-								<small class="text-muted">[ACTION_NAME|USAGE] New line per action, Default data usage is 1000.</small>
-							</div>
-						</div>
-						<div class="form-group row">
-							<label class="col-sm-2"></label>
-							<div class="col-sm-5">
-								<div class="checkbox">
-									<label>
-										<input type="checkbox" name="removeLines" value="remove" checked>Remove all existing lines for this imsi
-									</label>
-								</div>
-							</div>
-						</div>
-						<div class="form-group row">
-							<div class="col-sm-offset-2 col-sm-10">
-								<button type="submit" class="btn btn-success">Start Test</button>
-							</div>
-						</div>
-					</form>
+					<?php include 'tests/testData.phtml' ?>
 				</div>
 			</div>
 		</div>
