@@ -15,7 +15,7 @@
  * @todo Merge to general internet data rate calculator
  *
  */
-class Billrun_Calculator_Rate_Gy extends Billrun_Calculator_Rate_Ggsn {
+class Billrun_Calculator_Rate_Gy extends Billrun_Calculator_Rate {
 
 	/**
 	 * the type of the object
@@ -40,21 +40,8 @@ class Billrun_Calculator_Rate_Gy extends Billrun_Calculator_Rate_Ggsn {
 		return 'data';
 	}
 
-	/**
-	 * @see Billrun_Calculator_Rate::getLineRate
-	 * @todo make a query instead of cpu search
-	 */
-	protected function getLineRate($row) {
-		$line_time = $row['urt'];
-		foreach ($this->rates as $rate) {
-			if ($rate['key'] === 'INTERNET_BILL_BY_VOLUME' && $rate['from'] <= $line_time && $line_time <= $rate['to']) { // Currently, real-time data is only localy
-				return $rate;
-			}
-		}
-
-		Billrun_Factory::log("Couldn't find rate for row : " . print_r($row['stamp'], 1), Zend_Log::DEBUG);
-		$row['granted_return_code'] = Billrun_Factory::config()->getConfigValue('prepaid.customer.no_rate');
-		return FALSE;
+	protected function getDataRateKey() {
+		return 'INTERNET_BILL_BY_VOLUME';
 	}
 
 }
