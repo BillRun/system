@@ -208,9 +208,9 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 		Billrun_Factory::log('Plugin calc cpu end', Zend_Log::INFO);
 	}
 
-	public function afterProcessorStore($processor) {
+	public function afterProcessorStore($processor, $realtime = false) {
 		Billrun_Factory::log('Plugin calc cpu triggered after processor store', Zend_Log::INFO);
-		$customerPricingCalc = Billrun_Calculator::getInstance(array('type' => 'customerPricing', 'autoload' => false));
+		$customerPricingCalc = Billrun_Calculator::getInstance(array('type' => 'customerPricing', 'autoload' => false, 'realtime' => $realtime));
 		foreach ($this->tx_saved_rows as $row) {
 			$customerPricingCalc->removeBalanceTx($row);
 		}

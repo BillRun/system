@@ -63,7 +63,7 @@ class Billrun_Processor_Realtime extends Billrun_Processor {
 			return FALSE;
 		}
 
-		Billrun_Factory::dispatcher()->trigger('afterProcessorStore', array($this));
+		Billrun_Factory::dispatcher()->trigger('afterProcessorStore', array($this, true));
 
 		//$this->removefromWorkspace($this->getFileStamp());
 		Billrun_Factory::dispatcher()->trigger('afterProcessorRemove', array($this));
