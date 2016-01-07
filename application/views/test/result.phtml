@@ -6,8 +6,12 @@
 	<body>
 		<div class="container">
 			<div class="page-header">
-				<h1>Results</h1>
+				<h1>Results for <?php echo $testType; ?></h1>
 			</div>
+			<ol class="breadcrumb">
+				<li><a href="/test">Test</a></li>
+				<li><?php echo $testType; ?></li>
+			</ol>
 
 			<?php if (!empty($balances['before'])) : ?>
 				<div class="panel panel-default">
@@ -122,7 +126,7 @@
 								<?php foreach ($balances['before'] as $balance_id => $balance) : ?>
 									<tr>
 										<td><?php echo $balance_id ?></td>
-										<td><?php echo number_format(($balances['after'][$balance_id]['amount']) - ($balances['before'][$balance_id]['amount']),3) ?></td>
+										<td><?php echo number_format(($balances['after'][$balance_id]['amount']) - ($balances['before'][$balance_id]['amount']), 3) ?></td>
 										<td><?php echo $balance['charging_by_usaget'] ?></td>
 										<td><?php echo $balance['charging_by'] ?></td>
 									</tr>
@@ -137,35 +141,31 @@
 				<div class="panel panel-default">
 					<div class="panel-heading">Api Calls</div>
 					<div class="panel-body">
-						<table class="table table-striped">
-							<thead>
-								<tr>
-									<th>#</th>
-									<th>Data</th>
-								</tr>
-							</thead>
-							<tbody>
-								<?php foreach ($apiCalls as $key => $api_call) : ?>
-									<tr>
-										<td><?php echo ($key + 1) ?></td>
-										<td>
-											<span class="glyphicon glyphicon-chevron-right " aria-hidden="true">Request</span>
-											<pre> <?php echo htmlspecialchars($api_call['request']) ?></pre>
-
-											<span class="glyphicon glyphicon-chevron-left" aria-hidden="true">Response</span>
-											<pre> <?php echo htmlspecialchars($api_call['response']) ?></pre>
-										</td>
-									</tr>
-								<?php endforeach; ?>
-							</tbody>
-						</table>
+						<?php foreach ($apiCalls as $key => $api_call) : ?>
+							<div class="row">
+								<div class="col-sm-1 text-center">
+									<p><?php echo ($key + 1) ?> <span class="glyphicon glyphicon-export" aria-hidden="true"></span>  Request</p>
+								</div>
+								<div class="col-sm-11">
+									<pre> <?php echo htmlspecialchars($api_call['request']) ?></pre>
+								</div>
+							</div>
+							<div class="row">
+								<div class="col-sm-1 text-center">
+									<p><?php echo ($key + 1) ?> <span class="glyphicon glyphicon-import" aria-hidden="true"></span>Response</p>
+								</div>
+								<div class="col-sm-11">
+									<pre> <?php echo htmlspecialchars($api_call['response']) ?></pre>
+								</div>
+							</div>
+							<?php if(count($apiCalls) !== ($key+1)) : ?>
+								<hr>
+							<?php endif; ?>
+						<?php endforeach; ?>
 					</div>
 				</div>
 			<?php endif; ?>
-			
-			
-			<hr/>
-			
+
 			<a href="/test" class="btn btn-success">Return</a>
 		</div>
 	</body>
