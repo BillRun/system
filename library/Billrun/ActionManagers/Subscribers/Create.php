@@ -139,7 +139,7 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 		}
 		
 		// Set the from and to values.
-		$this->query['from']= new MongoDate();
+		$this->query['creation_time'] = $this->query['from']= new MongoDate();
 		$this->query['to']= new MongoDate(strtotime('+100 years'));
 		
 		return true;
