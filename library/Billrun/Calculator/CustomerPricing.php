@@ -645,7 +645,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @see Billrun_Calculator::isLineLegitimate
 	 */
 	public function isLineLegitimate($line) {
-		$arate = $this->getRateByRef($line->get('arate', true));
+		$arate = $this->getRateByRef($line->get('arate'));
 		return !is_null($arate) && (empty($arate['skip_calc']) || !in_array(self::$type, $arate['skip_calc'])) &&
 			isset($line['sid']) && $line['sid'] !== false &&
 			$line['urt']->sec >= $this->billrun_lower_bound_timestamp;
@@ -686,8 +686,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @param type $db_ref
 	 */
 	public function getRowRate($row) {
-		return $this->get('arate');
-		//return $this->getRateByRef($row->get('arate', true));
+		return $this->getRateByRef($row->get('arate', true));
 	}
 
 	/**
@@ -709,13 +708,17 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	}
 
 	protected function getRateByRef($rate_ref) {
-		if (isset($rate_ref['$id'])) {
-			$id_str = strval($rate_ref['$id']);
-			if (isset($this->rates[$id_str])) {
-				return $this->rates[$id_str];
-			}
-		}
-		return null;
+		$rates_coll = Billrun_Factory::db()->ratesCollection();
+		$rate = $rates_coll->getRef($rate_ref);
+		return $rate;
+		
+//		if (isset($rate_ref['$id'])) {
+//			$id_str = strval($rate_ref['$id']);
+//			if (isset($this->rates[$id_str])) {
+//				return $this->rates[$id_str];
+//			}
+//		}
+//		return null;
 	}
 
 	/**
