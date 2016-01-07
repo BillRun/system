@@ -18,7 +18,6 @@ class Billrun_Calculator_Rate_Callrt extends Billrun_Calculator_Rate {
 	
 	public function __construct($options = array()) {
 		parent::__construct($options);
-		$this->loadRates();
 	}
 
 	/**
@@ -51,6 +50,7 @@ class Billrun_Calculator_Rate_Callrt extends Billrun_Calculator_Rate {
 		$called_number = $this->get_called_number($row);
 		$line_time = $row->get('urt');
 		$usage_type = $row->get('usaget');
+		$this->setRowDataForQuery($row);
 		$matchedRate = $this->getRateByParams($called_number, $usage_type, $line_time);
 
 		return $matchedRate;
@@ -66,48 +66,26 @@ class Billrun_Calculator_Rate_Callrt extends Billrun_Calculator_Rate {
 	protected function get_called_number($row) {
 		$called_number = $row->get('called_number');
 		if (empty($called_number)) {
-			$called_number = $row->get('dialed_digits');
+			$called_number = $row->get('connected_number');
 			if (empty($called_number)) {
-				$called_number = $row->get('connected_number');
+				$called_number = $row->get('dialed_digits');
 			}
 		}
 		return $called_number;
 	}
-
+	
 	/**
-	 * Get a matching rate by the supplied params
-	 * @param string $called_number the number called
-	 * @param string $usage_type the usage type (call / sms ...)
-	 * @param MongoDate $urt the time of the event
-	 * @param string $ocg the out circuit group of the event. If not supplied, ocg will be ignored in the search.
-	 * @return Mongodloid_Entity the matched rate or UNRATED rate if none found
-	 * @todo make this method work by db query
+	 * Assistance function to generate 'prefix' field query with current row.
+	 * 
+	 * @return array query for 'prefix' field
 	 */
-	protected function getRateByParams($called_number, $usage_type, $urt, $ocg = null) {
-		$matchedRate = $this->rates['UNRATED'];
-		$called_number_prefixes = Billrun_Util::getPrefixes($called_number);
-		//$rates_coll = Billrun_Factory::db()->ratesCollection();
-		foreach ($called_number_prefixes as $prefix) {
-			if (isset($this->rates[$prefix])) {
-				foreach ($this->rates[$prefix] as $rate) {
-					if (isset($rate['rates'][$usage_type]) && (!isset($rate['params']['fullEqual']) || $prefix == $called_number)) {
-						if ($rate['from'] <= $urt && $rate['to'] >= $urt) {
-							if (is_null($ocg)) {
-								$matchedRate = $rate;
-								break 2;
-							} else {
-								foreach ($rate['params']['out_circuit_group'] as $groups) {
-									if ($groups['from'] <= $ocg && $groups['to'] >= $ocg) {
-										$matchedRate = $rate;
-										break 3;
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-		return $matchedRate;
+	protected function getPrefixMatchQuery() {
+		return array('$in' => Billrun_Util::getPrefixes($this->rowDataForQuery['called_number']));
+	}
+	
+	protected function getAggregateId() {
+		return array(
+			"_id" => '$_id',
+			"pref" => '$params.prefix');
 	}
 }
