@@ -96,6 +96,12 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		} else {
 			$autoload = true;
 		}
+		
+		if (isset($options['realtime'])) {
+			$realtime = $options['realtime'];
+		} else {
+			$realtime = false;
+		}
 
 		$options['autoload'] = false;
 		parent::__construct($options);
@@ -117,10 +123,13 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		if ($autoload) {
 			$this->load();
 		}
-		$this->loadRates();
-		$this->loadPlans();
+		//TODO: check how to remove call to loadRates
 		$this->balances = Billrun_Factory::db()->balancesCollection()->setReadPreference('RP_PRIMARY');
-		$this->active_billrun = Billrun_Billrun::getActiveBillrun();
+		if (!$realtime) {
+			$this->loadRates();
+			$this->loadPlans();
+			$this->active_billrun = Billrun_Billrun::getActiveBillrun();
+		}
 		$this->active_billrun_end_time = Billrun_Util::getEndTime($this->active_billrun);
 		$this->next_active_billrun = Billrun_Util::getFollowingBillrunKey($this->active_billrun);
 		// max recursive retrues for value=oldValue tactic
@@ -677,7 +686,8 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @param type $db_ref
 	 */
 	public function getRowRate($row) {
-		return $this->getRateByRef($row->get('arate', true));
+		return $this->get('arate');
+		//return $this->getRateByRef($row->get('arate', true));
 	}
 
 	/**

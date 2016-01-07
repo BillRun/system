@@ -256,20 +256,5 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	protected function getToTimeQuery() {
 		return array('$gte' => $this->rowDataForQuery['line_time']);
 	}
-	
-	/**
-	 * Assistance function to generate 'prefix' field query with current row.
-	 * 
-	 * @return array query for 'prefix' field
-	 */
-	protected function getPrefixMatchQuery() {
-		return array('$in' => Billrun_Util::getPrefixes($this->rowDataForQuery['called_number']));
-	}
-	
-	protected function getAggregateId() {
-		return array(
-			"_id" => '$_id',
-			"pref" => '$params.prefix');
-	}
 
 }
