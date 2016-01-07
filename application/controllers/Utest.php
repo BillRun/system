@@ -13,7 +13,7 @@
  * @since    4.0
  * @author	 Roman Edneral
  */
-class TestController extends Yaf_Controller_Abstract {
+class UtestController extends Yaf_Controller_Abstract {
 
 	/**
 	 * base url for API calls
@@ -24,6 +24,7 @@ class TestController extends Yaf_Controller_Abstract {
 	protected $subdomain = '';
 	protected $siteUrl = '';
 	protected $apiUrl = '';
+	protected $conf = '';
 	
     /**
 	 * unique ref for Data and API calls
@@ -53,6 +54,8 @@ class TestController extends Yaf_Controller_Abstract {
 		$this->siteUrl = $this->protocol . $this->basehost .  $this->getRequest()->getServer('HTTP_HOST') . $this->subdomain;
 		$this->apiUrl = $this->siteUrl . '/api';
 		$this->reference = rand(1000000000, 9999999999);
+		//Load Test conf file
+		$this->conf = Billrun_Config::getInstance(new Yaf_Config_Ini(APPLICATION_PATH . '/conf/utest/conf.ini'));
 	}
 
 	/**
@@ -77,7 +80,7 @@ class TestController extends Yaf_Controller_Abstract {
 	public function resultAction() {
 		//redirect to test page if test data not exist
 		if(empty($_SERVER['QUERY_STRING'])){
-			header("Location: " . $this->siteUrl. "/test");
+			header("Location: " . $this->siteUrl. "/utest");
 			die();
 		}
 		$imsi	= Billrun_Util::filter_var($this->getRequest()->get('imsi'), FILTER_SANITIZE_STRING);
@@ -126,6 +129,7 @@ class TestController extends Yaf_Controller_Abstract {
 		$this->getView()->lines = $lines;
 		$this->getView()->balances = $balance;
 		$this->getView()->apiCalls = $this->apiCalls;
+		$this->getView()->testType = ucfirst (preg_replace('/(?!^)[A-Z]{2,}(?=[A-Z][a-z])|[A-Z][a-z]/', ' $0', $type));
 	}
 
 	/**
@@ -426,11 +430,11 @@ class TestController extends Yaf_Controller_Abstract {
 			$output['balance_types']['plans'][] = array('name' => $row['name'], 'desc' => $row['desc']);
 		}
 		
-		$output['call_scenario'] = str_replace('\n', "\n", Billrun_Factory::config()->getConfigValue('test.call_scenario',""));
-		$output['data_scenario'] = str_replace('\n', "\n", Billrun_Factory::config()->getConfigValue('test.data_scenario',""));
-		$output['imsi'] = Billrun_Factory::config()->getConfigValue('test.imsi','425030002438039');
-		$output['sid'] = Billrun_Factory::config()->getConfigValue('test.sid','546918666');
-		$output['dialed_digits'] = Billrun_Factory::config()->getConfigValue('test.dialed_digits','0390222222');
+		$output['call_scenario'] = str_replace('\n', "\n", $this->conf->getConfigValue('test.call_scenario',""));
+		$output['data_scenario'] = str_replace('\n', "\n", $this->conf->getConfigValue('test.data_scenario',""));
+		$output['imsi'] = $this->conf->getConfigValue('test.imsi','');
+		$output['sid'] = $this->conf->getConfigValue('test.sid','');
+		$output['dialed_digits'] = $this->conf->getConfigValue('test.dialed_digits','');
 		return $output;
 	}
 
