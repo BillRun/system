@@ -111,13 +111,14 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 	protected function updateSubscriberRecord($record) {
 		// Check if the user requested to keep history.
 		if($this->trackHistory) {
-			$subscriberFields = Billrun_Factory::config()->getConfigValue('subscribers.query_fields');
-			
-			// Check if the key fields are being updated and apply them to history.
-			foreach ($subscriberFields as $key => $value) {
-				if(isset($this->recordToSet[$key])) {
-					$record[$key] = $value;
-				}
+			if(isset($this->recordToSet['sid'])) {
+				$queryArray = array('sid' => $record['sid']);
+				$updateArray = array('$set' => array('sid' => $this->recordToSet['sid']));
+				$updateOptionsArray = array('multiple' => 1);
+				Billrun_Factory::db()->subscribersCollection()
+					->update($queryArray, $updateArray, $updateOptionsArray);
+
+				$record['sid'] = $this->recordToSet['sid'];
 			}
 //				$record['msisdn'] = $this->recordToSet['msisdn'];
 			$track_time = time();
