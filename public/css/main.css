@@ -351,3 +351,5 @@ div.billrun-logo img {
 /* clear: both; */
 float: left;
 }
+
+.errorMessage { color:red;}

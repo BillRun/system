@@ -279,8 +279,14 @@ class TableModel {
 				$new_data[$value] = $raw_data[$value];
 			}
 			foreach ($params as $key => $value) {
-				if (in_array($key, array("to", "from")) && is_array($value)) {
+				if (get_class($value) === "MongoDate") {
+					; // do nothing
+				} else if (in_array($key, array("to", "from")) && is_array($value)) {
+					//$value = new MongoDate((new Zend_Date($value['sec'], null, new Zend_Locale('he_IL')))->getTimestamp());
 					$value = new MongoDate($value['sec']);
+				} else if (in_array($key, array("to", "from"))) {
+					//$value = new MongoDate((new Zend_Date($value, null, new Zend_Locale('he_IL')))->getTimestamp());
+					$value = new MongoDate(strtotime($value));
 				}
 				$new_data[$key] = $value;
 			}

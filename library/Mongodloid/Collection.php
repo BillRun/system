@@ -67,7 +67,7 @@ class Mongodloid_Collection {
 		);
 		
 		// This function changes fields, should I clone fields before sending?
-		$this->setEntityFields($fields);
+		$this->setEntityFields($entity, $fields);
 		
 		return $this->update($data, array('$set' => $fields));
 	}

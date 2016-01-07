@@ -2,7 +2,7 @@
 	<center>
 		<h2>{{capitalize(action)}} {{entity.key}} Rate</h2>
 	</center>
-	<form class='form-inline' ng-submit='saveRate()'>
+	<form class='form-inline' ng-submit='save()'>
 		<div ng-if='!advancedMode'>
 			<h2>Parameters</h2>
 			<div id='rate-out-circuit-groups' ng-hide="entity.params.out_circuit_group === undefined">
@@ -25,6 +25,47 @@
 				</div>
 			</div>
 
+			<div id='rate-record-types' ng-hide="entity.params.record_type === undefined">
+				<h3>
+					Record Types
+				</h3>
+				<div ng-repeat="recordType in entity.params.record_type track by $index">
+					<input type="text" class="form-control" ng-model="recordType" />
+					<i class='glyphicon glyphicon-minus-sign' ng-click='deleteRecordType($index)'></i>
+				</div>
+				<div>
+					<input type="text" class="form-control" ng-model="newRecordType.value" />
+					<i class='glyphicon glyphicon-plus-sign' ng-click="addRecordType()"></i>
+				</div>
+			</div>
+
+			<div class='row' ng-if='utils.display("from", "rates")'>
+				<div class='col-md-2'>
+					{{utils.getDisplayValue("from", "rates")}}
+				</div>
+				<div class='col-md-6'>
+					<p class="input-group">
+					  <input type="text" class="form-control" uib-datepicker-popup="yyyy-MM-dd" ng-model="entity.from" is-open="status.opened" date-disabled="utils.disabled('from', 'rates')" close-text="Close" />
+					  <span class="input-group-btn">
+						<butfromn type="butfromn" class="btn btn-default" ng-click="status.opened = !status.opened"><i class="glyphicon glyphicon-calendar"></i></butfromn>
+					  </span>
+					</p>
+				</div>
+			</div>
+			<div class='row' ng-if='utils.display("to", "rates")'>
+				<div class='col-md-2'>
+					{{utils.getDisplayValue("to", "rates")}}
+				</div>
+				<div class='col-md-6'>
+					<p class="input-group">
+					  <input type="text" class="form-control" uib-datepicker-popup="yyyy-MM-dd" ng-model="entity.to" is-open="status.opened" date-disabled="utils.disabled('to', 'rates')" close-text="Close" />
+					  <span class="input-group-btn">
+						<button type="button" class="btn btn-default" ng-click="status.opened = !status.opened"><i class="glyphicon glyphicon-calendar"></i></button>
+					  </span>
+					</p>
+				</div>
+			</div>
+			
 			<h3>
 				<small><i class="glyphicon glyphicon-chevron-down" ng-show="shown.prefix"></i></small>
 				<small><i class="glyphicon glyphicon-chevron-right" ng-hide="shown.prefix"></i></small>
@@ -37,20 +78,6 @@
 				</div>
 				<div>
 					<a ng-click="addPrefix()" class="clickable">Add Prefix</a>
-				</div>
-			</div>
-
-			<div id='rate-record-types' ng-hide="entity.params.record_type === undefined">
-				<h3>
-					Record Types
-				</h3>
-				<div ng-repeat="recordType in entity.params.record_type track by $index">
-					<input type="text" class="form-control" ng-model="recordType" />
-					<i class='glyphicon glyphicon-minus-sign' ng-click='deleteRecordType($index)'></i>
-				</div>
-				<div>
-					<input type="text" class="form-control" ng-model="newRecordType.value" />
-					<i class='glyphicon glyphicon-plus-sign' ng-click="addRecordType()"></i>
 				</div>
 			</div>
 

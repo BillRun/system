@@ -21,6 +21,8 @@ class Billrun_ActionManagers_Cards_Update extends Billrun_ActionManagers_Cards_A
 	 */
 	protected $query = array();
 	protected $update = array();
+	protected $validateQuery = array();
+	protected $serialRange;
 
 	/**
 	 */
@@ -44,6 +46,102 @@ class Billrun_ActionManagers_Cards_Update extends Billrun_ActionManagers_Cards_A
 		return Billrun_Factory::config()->getConfigValue('cards.update_fields', array());
 	}
 	
+	/**
+	 * Get the array of valid statuses.
+	 * @return array - Array of valid statuses.
+	 */
+	protected function getStatuses() {
+		return Billrun_Factory::config()->getConfigValue('cards.status', array());
+	}
+	
+	/**
+	 * Get the indication whether to validate status transition or not.
+	 * @return bool - TRUE or FALSE (default: FALSE).
+	 */
+	protected function getStatusValidation() {
+		return Billrun_Factory::config()->getConfigValue('cards.statusValidation', FALSE);
+	}
+	
+	/**
+	 * Get the array of initial statuses.
+	 * @return array - Array of initial statuses.
+	 */
+	protected function getInitialStatus() {
+		return Billrun_Factory::config()->getConfigValue('cards.initialStatus', array());
+	}
+	
+	/**
+	 * Get the arrays of statuses allowed for each requested status (status transition permit).
+	 * @return array - Array of statuses allowed for each requested status.
+	 */
+	protected function getAllowFromStatus() {
+		return Billrun_Factory::config()->getConfigValue('cards.allowFromStatus', array());
+	}
+
+	/**
+	 * This function validates transition between statuses.
+	 * @param array $input - fields for query and update. 
+	 * @return Return false (and writes errLog) when find 
+	 * mismatch (not permited transit action between statuses)
+	 * and true when validation check OK and can continue 
+	 * with the process.
+	 */
+	protected function statusValidationProcess() {
+		$statusTransition = FALSE;
+		$this->validateQuery = $this->query;
+		$statusValidation = $this->getStatusValidation();
+		$availableStatuses = $this->getStatuses();
+		// Check if to validate status
+		if($statusValidation) {
+			// Check request for status change
+			if (isset($this->update['status'])) {
+				$updateStatus = $this->update['status'];
+				// Check requested status in the permissible statuses available array
+				if (!in_array($updateStatus, $availableStatuses)) {
+					$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 37;						
+					$this->reportError($errorCode, Zend_Log::NOTICE, array($updateStatus));
+					return false;
+				}
+				$allowFromStatus = $this->getAllowFromStatus();
+				//Check existance of original status in the request for status change
+				if (isset($this->query['status'])) {
+					$queryStatus = $this->query['status'];
+					$this->validateQuery['status'] = ['$ne' => $queryStatus];
+					if (!in_array($queryStatus, $allowFromStatus[$updateStatus])) {
+						$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 38;						
+						$this->reportError($errorCode, Zend_Log::NOTICE, array($queryStatus, $updateStatus));
+						return false;
+					}						
+				// Check if there are origin available permissible statuses 
+				} else	if ($allowFromStatus[$updateStatus]) {
+					$this->validateQuery['status']['$nin'] = $allowFromStatus[$updateStatus];
+				} else {
+					$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 39;						
+					$this->reportError($errorCode, Zend_Log::NOTICE, array($updateStatus));
+					return false;
+				}					
+			}
+			// Check serial_number range validity
+			if (isset($this->query['serial_number'])) {
+				if (is_array($this->query['serial_number'])) {
+					if (isset($this->query['serial_number']['$gte']) xor isset($this->query['serial_number']['$lte'])) {
+							$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 40;						
+							$this->reportError($errorCode, Zend_Log::NOTICE);
+							return false;
+					}
+				}
+			}
+			// Check if there are impermissible statuses for the requested new status in query from the DB 
+			$count = $this->collection->query($this->validateQuery)->cursor()->count();
+			if ($count) {
+				$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 41;						
+				$this->reportError($errorCode, Zend_Log::NOTICE, array($count, implode(', ', array_diff($availableStatuses, $allowFromStatus[$updateStatus])), $updateStatus));
+				return false;
+			}
+		}
+		return true;
+	}
+		
 	/**
 	 * This function builds the query for the Cards Update API after 
 	 * validating existance of mandatory fields and their values.
@@ -81,7 +179,7 @@ class Billrun_ActionManagers_Cards_Update extends Billrun_ActionManagers_Cards_A
 				$this->query[$field] = $jsonQueryData[$field];
 			}
 		}
-
+		
 		return true;
 	}
 
@@ -168,12 +266,16 @@ class Billrun_ActionManagers_Cards_Update extends Billrun_ActionManagers_Cards_A
 	 * @return true if valid.
 	 */
 	public function parse($input) {
-
+		
 		if (!$this->queryProcess($input)) {
 			return false;
 		}
 
 		if (!$this->updateProcess($input)) {
+			return false;
+		}
+		
+		if (!$this->statusValidationProcess()) {
 			return false;
 		}
 

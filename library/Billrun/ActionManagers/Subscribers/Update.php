@@ -96,9 +96,10 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 			'upsert' => false,
 			'new' => false,
 			'w' => 1,
+			'multi' =>1,
 		);
 		$linesColl = Billrun_Factory::db()->linesCollection();
-		return $linesColl->findAndModify($keepLinesQuery, array('$set' => $keepLinesUpdate), array(), $options, true);
+		return $linesColl->update($keepLinesQuery, array('$set' => $keepLinesUpdate),$options);
 	}
 	
 	/**
@@ -108,10 +109,16 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 	 * @throws WriteConcernException
 	 */
 	protected function updateSubscriberRecord($record) {
-
-			// Check if the user requested to keep history.
+		// Check if the user requested to keep history.
 		if($this->trackHistory) {
-			$record['sid'] = $this->recordToSet['sid'];
+			$subscriberFields = Billrun_Factory::config()->getConfigValue('subscribers.query_fields');
+			
+			// Check if the key fields are being updated and apply them to history.
+			foreach ($subscriberFields as $key => $value) {
+				if(isset($this->recordToSet[$key])) {
+					$record[$key] = $value;
+				}
+			}
 //				$record['msisdn'] = $this->recordToSet['msisdn'];
 			$track_time = time();
 			// This throws an exception if fails.
@@ -172,7 +179,8 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 
 		if(!$updatedDocument) {
 			$success = false;
-			$this->reportError("No subscribers found to update");
+			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 37;
+			$this->reportError($errorCode);
 		}
 		$outputResult = 
 			array('status'  => ($success) ? (1) : (0),
@@ -225,25 +233,54 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 	}
 	
 	/**
+	 * Get the query used to check if the requested subscriber update is valid
+	 * @param type $jsonUpdateData
+	 * @return array Query to check if a subscriber exists with a 
+	 * key value that is requested to be update for another subscriber.
+	 */
+	protected function getSubscriberUpdateValidationQuery($jsonUpdateData) {
+		$subscriberFields = Billrun_Factory::config()->getConfigValue('subscribers.query_fields');
+		
+		$subscriberValidationQuery = array();
+		$or = array();
+		foreach ($subscriberFields as $subField) {
+			if(!isset($jsonUpdateData[$subField])) {
+				continue;
+			}
+			
+			$or[] = 
+				array($subField => $jsonUpdateData[$subField]);
+		}
+		
+		if(!empty($or)) {
+			$subscriberValidationQuery = Billrun_Util::getDateBoundQuery();
+			$subscriberValidationQuery['$or'] = $or;
+			
+			// Exclude the actual user being updated.
+			foreach ($this->query as $key => $value) {
+				$subscriberValidationQuery[$key]['$ne'] = $value;
+			}
+		}
+		
+		return $subscriberValidationQuery;
+	}
+	
+	/**
 	 * Check if the identification values to be updated for a subscriber 
 	 * already exist for another subscriber.
 	 * @param type $jsonUpdateData
 	 * @return boolean
 	 */
 	protected function validateSubscriberUpdateValues($jsonUpdateData) {
-		$subscriberFields = Billrun_Factory::config()->getConfigValue('subscribers.query_fields');
-		$subscriberValidationQuery = Billrun_Util::getDateBoundQuery();
-		foreach ($subscriberFields as $subField) {
-			if(isset($jsonUpdateData[$subField])) {
-				$subscriberValidationQuery['$or'][] = 
-					array($subField => $jsonUpdateData[$subField]);
-			}
-		}
+		$subscriberValidationQuery = $this->getSubscriberUpdateValidationQuery($jsonUpdateData);
 		
 		if(!empty($subscriberValidationQuery)) {
 			$subCol = Billrun_Factory::db()->subscribersCollection();
+			
 			if($subCol->exists($subscriberValidationQuery)) {
-				$this->reportError(Billrun_Factory::config()->getConfigValue("subscriber_error_base"), Zend_Log::NOTICE);
+				$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base");
+				$parameters = http_build_query($this->query, '', ', ');
+				$this->reportError($errorCode, Zend_Log::NOTICE, array($parameters));
 				return false;
 			}
 		}
