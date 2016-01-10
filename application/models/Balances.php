@@ -180,10 +180,32 @@ class BalancesModel extends TableModel {
 	}
 
 	public function getData($filter_query = array()) {
- 		$resource = parent::getData($filter_query);
+		$resource = parent::getData($filter_query);
 		$ret = array();
-		foreach($resource as $item) {
- 			if ($current_plan = $this->getDBRefField($item, 'current_plan')) {
+		$aggregate = Billrun_Config::getInstance()->getConfigValue('admin_panel.balances.aggregate', false);
+		foreach ($resource as $item) {
+			if ($aggregate) {
+				$totals = array();
+				foreach ($item['balance']['totals'] as $key => $val) {
+					if ($val['cost']) {
+						$totals[] = $val['cost'] + " NIS " + $key;
+					} else if ($val['usagev']) {
+						switch ($key) {
+							case "sms": $totals[] = $val['usagev'] . " counter";
+								break;
+							case "data": $totals[] = $val['usagev'] . " bytes";
+								break;
+							case "call": $totals[] = $val['usagev'] . " seconds";
+								break;
+						}
+					}
+				}
+				if ($item['balance']['cost']) {
+					$totals[] = $item['balance']['cost'] . " NIS";
+				}
+				$item['totals'] = implode(',', $totals);
+			}
+			if ($current_plan = $this->getDBRefField($item, 'current_plan')) {
 				$item['current_plan'] = $current_plan['name'];
 			}
 			$ret[] = $item;

@@ -51,6 +51,7 @@ app.controller('RatesController', ['$scope', '$routeParams', 'Database', '$contr
         $scope.entity.rates.call = {};
       var newPriceInterval = {
         access: 0,
+        interconnect: 0,
         unit: $scope.availableCallUnits[0],
         rate: [
           {
@@ -79,6 +80,7 @@ app.controller('RatesController', ['$scope', '$routeParams', 'Database', '$contr
       var newPriceInterval = {
         unit: "counter",
         access: 0,
+        interconnect: 0,
         rate: [
           {
             interval: undefined,

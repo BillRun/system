@@ -112,10 +112,18 @@
 <!--					<div ng-if='shown.callRates[callRateName]'>-->
 						<div class="row">
 							<div class="col-md-1">
-								<label for='rate-call-access'>Access</label>
+								<label>Access</label>
 							</div>
 							<div class='col-md-6'>
-								<input type='text' class='form-control' ng-model="callRateParams.access" />
+								<input type='number' class='form-control' ng-model="callRateParams.access" />
+							</div>
+						</div>
+						<div class="row">
+							<div class="col-md-1">
+								<label>Interconnect</label>
+							</div>
+							<div class='col-md-6'>
+								<input type='number' class='form-control' ng-model="callRateParams.interconnect" />
 							</div>
 						</div>
 						<div class="row">
@@ -200,7 +208,15 @@
 									<label>Access</label>
 								</div>
 								<div class='col-md-6'>
-									<input type='text' class='form-control' ng-model="smsRate[$index].access" />
+									<input type='number' class='form-control' ng-model="smsRate[$index].access" />
+								</div>
+							</div>
+							<div class="row">
+								<div class="col-md-1">
+									<label>Interconnect</label>
+								</div>
+								<div class='col-md-6'>
+									<input type='number' class='form-control' ng-model="smsRate[$index].interconnect" />
 								</div>
 							</div>
 							<div class='row'>
