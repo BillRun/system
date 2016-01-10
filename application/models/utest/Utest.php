@@ -7,11 +7,11 @@
  */
 
 /**
- * Events model class
+ * Basic unit test model class
  *
  * @package  Models
  * @subpackage uTest
- * @since    0.4
+ * @since    4.0
  */
 abstract class UtestModel {
 

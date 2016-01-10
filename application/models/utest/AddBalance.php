@@ -7,11 +7,11 @@
  */
 
 /**
- * Events model class
+ * Add balance model class
  *
  * @package  Models
  * @subpackage uTest
- * @since    0.4
+ * @since    4.0
  */
 class AddBalanceModel extends UtestModel {
 

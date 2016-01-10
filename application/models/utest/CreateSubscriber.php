@@ -7,11 +7,11 @@
  */
 
 /**
- * Events model class
+ * Create subscriber model class
  *
  * @package  Models
  * @subpackage uTest
- * @since    0.4
+ * @since    4.0
  */
 class CreateSubscriberModel extends UtestModel {
 

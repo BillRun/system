@@ -7,11 +7,11 @@
  */
 
 /**
- * Events model class
+ * Test data model class
  *
  * @package  Models
  * @subpackage uTest
- * @since    0.4
+ * @since    4.0
  */
 class TestDataModel extends UtestModel {
 
