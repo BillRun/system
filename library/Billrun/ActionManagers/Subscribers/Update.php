@@ -278,18 +278,30 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 				continue;
 			}
 			
+			$subFieldValue = $jsonUpdateData[$subField];
+			if(is_array($subFieldValue)) {
+				$subFieldValue = array('$in' => $subFieldValue);
+			}
+			
 			$or[] = 
-				array($subField => $jsonUpdateData[$subField]);
+				array($subField => $subFieldValue);
 		}
 		
 		if(!empty($or)) {
-			$subscriberValidationQuery = Billrun_Util::getDateBoundQuery();
 			$subscriberValidationQuery['$or'] = $or;
 			
 			// Exclude the actual user being updated.
 			foreach ($this->query as $key => $value) {
-				$subscriberValidationQuery[$key]['$ne'] = $value;
+				if(isset($value['$in'])) {
+					$subscriberValidationQuery[$key]['$nin'] = $value['$in'];
+				} else {
+					$subscriberValidationQuery[$key]['$ne'] = $value;
+				}
 			}
+			
+			$date = Billrun_Util::getDateBoundQuery();
+			$subscriberValidationQuery['from'] = $date['from'];
+			$subscriberValidationQuery['to'] = $date['to'];
 		}
 		
 		return $subscriberValidationQuery;
@@ -337,7 +349,11 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 		foreach ($queryFields as $field) {
 			// ATTENTION: This check will not allow updating to empty values which might be legitimate.
 			if(isset($queryData[$field]) && !empty($queryData[$field])) {
-				$this->query[$field] = $queryData[$field];
+				$queryDataValue = $queryData[$field];
+				if(is_array($queryDataValue)) {
+					$queryDataValue = array('$in' => $queryDataValue);
+				}
+				$this->query[$field] = $queryDataValue;
 				$ret = true;
 			}
 		}
