@@ -1,36 +1,37 @@
-<form action="/utest/result" method="get">
+<form action="/utest/result" method="<?php echo $request_method ?>" class="form-horizontal">
 	<input type="hidden" name="type" value="cretaeSubscriber">
 
 	<div class="form-group row">
-		<label for="sid" class="col-sm-2 form-control-label text-right">SID</label>
+		<label for="sid" class="col-sm-2 control-label text-right">SID</label>
 		<div class="col-sm-5">
 			<input type="text" name="sid" value='<?php echo $sid ?>'  class="form-control">
 		</div>
 	</div>
 
 	<div class="form-group row">
-		<label for="imsi" class="col-sm-2 form-control-label text-right">IMSI</label>
+		<label for="imsi" class="col-sm-2 text-right">IMSI</label>
 		<div class="col-sm-5">
-			<input type="text" name="imsi" value='<?php echo $imsi ?>' class="form-control">
+			<textarea rows="4" name="imsi" class="form-control" ><?php echo $imsi ?></textarea>
+			<small class="text-muted">New line per IMSI.</small>
 		</div>
 	</div>
 
 	<div class="form-group row">
-		<label for="msisdn" class="col-sm-2 form-control-label text-right">MSISDN</label>
+		<label for="msisdn" class="col-sm-2 control-label text-right">MSISDN</label>
 		<div class="col-sm-5">
 			<input type="text" name="msisdn" value='<?php echo $msisdn ?>' class="form-control">
 		</div>
 	</div>
 
 	<div class="form-group row">
-		<label for="aid" class="col-sm-2 form-control-label text-right">AID</label>
+		<label for="aid" class="col-sm-2 control-label text-right">AID</label>
 		<div class="col-sm-5">
 			<input type="text" name="aid" value='<?php echo $aid ?>' class="form-control">
 		</div>
 	</div>
 
 	<div class="form-group row">
-		<label for="plan" class="col-sm-2 form-control-label text-right">Plan</label>
+		<label for="plan" class="col-sm-2 control-label text-right">Plan</label>
 		<div class="col-sm-5">
 			<select class="form-control" name='plan'>
 				<option value=""></option>
@@ -42,7 +43,7 @@
 	</div>
 
 	<div class="form-group row">
-		<label for="service_provider" class="col-sm-2 form-control-label text-right">Service Provider</label>
+		<label for="service_provider" class="col-sm-2 control-label text-right">Service Provider</label>
 		<div class="col-sm-5">
 			<select class="form-control" name='service_provider'>
 				<option value=""></option>
@@ -54,7 +55,7 @@
 	</div>
 
 	<div class="form-group row">
-		<label for="charging_type" class="col-sm-2 form-control-label text-right">Charging Type</label>
+		<label for="charging_type" class="col-sm-2 control-label text-right">Charging Type</label>
 		<div class="col-sm-5">
 			<select class="form-control" name='charging_type'>
 				<option value=""></option>
@@ -66,7 +67,7 @@
 	</div>
 
 	<div class="form-group row">
-		<label for="language" class="col-sm-2 form-control-label text-right">Language</label>
+		<label for="language" class="col-sm-2 control-label text-right">Language</label>
 		<div class="col-sm-5">
 			<select class="form-control" name='language'>
 				<?php foreach ($languages as $language) : ?>

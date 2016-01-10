@@ -78,7 +78,7 @@ class UtestController extends Yaf_Controller_Abstract {
 	 */
 	public function resultAction() {
 		//redirect to test page if test data not exist
-		if (empty($_SERVER['QUERY_STRING'])) {
+		if (empty($_REQUEST)) {
 			header("Location: " . $this->siteUrl . "/utest");
 			die();
 		}
@@ -113,7 +113,11 @@ class UtestController extends Yaf_Controller_Abstract {
 				break;
 			case 'cretaeSubscriber':
 				$utest = new CretaeSubscriberModel($this);
-				$result = array();
+				$result = array('subscriber_after', 'subscriber_before');
+				break;
+			case 'updateSubscriber':
+				$utest = new UpdateSubscriberModel($this);
+				$result = array('subscriber_after', 'subscriber_before', 'balance_before', 'balance_after', 'lines');
 				break;
 		}
 		
@@ -127,12 +131,22 @@ class UtestController extends Yaf_Controller_Abstract {
 			$balance['before'] = $this->getBalance($sid);
 		}
 		
+		if(in_array('subscriber_before', $result)){
+			// Get balance before scenario
+			$subscriber['before'] = $this->getSubscriber($sid);
+		}
+		
 		//Run test by type
 		$utest->doTest();
 
+		if(in_array('subscriber_after', $result)){
+			// Get balance before scenario
+			$subscriber['after'] = $this->getSubscriber($sid);
+		}
+		
 		if(in_array('lines', $result)){
 			// Get all lines created during scenarion
-			$lines = $this->getLines($sid, (addBalance == $type));
+			$lines = $this->getLines($sid, $type);
 		}
 
 		if(in_array('balance_after', $result)){
@@ -140,9 +154,11 @@ class UtestController extends Yaf_Controller_Abstract {
 			$balance['after'] = $this->getBalance($sid);
 		}
 
+		$this->getView()->sid = $sid;
 		$this->getView()->subdomain = $this->subdomain;
 		$this->getView()->lines = $lines;
 		$this->getView()->balances = $balance;
+		$this->getView()->subscribers = $subscriber;
 		$this->getView()->apiCalls = $this->apiCalls;
 		$this->getView()->testType = ucfirst(preg_replace('/(?!^)[A-Z]{2,}(?=[A-Z][a-z])|[A-Z][a-z]/', ' $0', $type));
 	}
@@ -159,7 +175,7 @@ class UtestController extends Yaf_Controller_Abstract {
 	 */
 	public function sendRequest($data = array(), $endpoint = 'realtimeevent') {
 		//$data['XDEBUG_SESSION_START'] = 'netbeans-xdebug';
-		$methodType = $this->conf->getConfigValue('test.requestType', '');
+		$methodType = $this->conf->getConfigValue('test.requestType', 'GET');
 		$URL = $this->apiUrl . trim("/" . $endpoint); // 'realtimeevent' / 'balances'
 		//Calc microtine for API
 		$time_start = microtime(true);
@@ -221,19 +237,52 @@ class UtestController extends Yaf_Controller_Abstract {
 	}
 
 	/**
+	 * Find Subscriber by SID
+	 * @param type $sid
+	 */
+	protected function getSubscriber($sid) {
+		$subscribers = array();
+		$searchQuery = array("sid" => (int)$sid);
+		$cursor = Billrun_Factory::db()->subscribersCollection()->query($searchQuery)->cursor()->limit(100000)->sort(['to' => 1]);
+		foreach ($cursor as $row) {
+			$rowData = $row->getRawData();
+			ksort($rowData);
+			$id = (string)$rowData['_id'];
+			foreach ($rowData as $key => $value) {
+				if(get_class ($value) == 'MongoId'){
+					$subscribers[$id][$key] = $id;
+				}
+				else if(get_class ($value) == 'MongoDate'){
+					$subscribers[$id][$key] = date('d/m/Y H:i:s', $value->sec);
+				}
+				else if(is_array($value)){
+					$subscribers[$id][$key] = implode(", ",$value);
+				}
+				else {
+					$subscribers[$id][$key] = $value;
+				}
+			}	
+		}
+		return $subscribers;
+	}
+
+	/**
 	 * Find all lines by SID and unique reference
 	 * @param type $sid
 	 * @param type $charging - if TRUE, return only CHARGING lines
 	 */
-	protected function getLines($sid, $charging = false) {
+	protected function getLines($sid, $type) {
 		$lines = array();
 		$amount = 0;
 
-		if ($charging) {
+		
+		if ($type == 'addBalance') {
 			$searchQuery = array(
 				"sid" => $sid,
 				"type" => 'charging'
 			);
+		} else if($type == 'updateSubscriber'){
+			$searchQuery = array("sid" => $sid);
 		} else {
 			$searchQuery = array(
 				"sid" => $sid,
@@ -267,24 +316,31 @@ class UtestController extends Yaf_Controller_Abstract {
 	 */
 	protected function getTestFormData() {
 		$output = array();
+		$output['balance_types']['prepaidincludes'] = array();
 		$cursor = Billrun_Factory::db()->prepaidincludesCollection()->query()->cursor()->limit(100000)->sort(['name' => 1]);
 		foreach ($cursor as $row) {
 			$output['balance_types']['prepaidincludes'][] = $row['name'];
 		}
+		$output['balance_types']['plans'] = array();
 		$searchQuery = array('type' => 'charging');
 		$cursor = Billrun_Factory::db()->plansCollection()->query($searchQuery)->cursor()->limit(100000)->sort(['name' => 1]);
 		foreach ($cursor as $row) {
 			$output['balance_types']['plans'][] = array('name' => $row['name'], 'desc' => $row['desc'], 'service_provider' => $row['service_provider']);
 		}
+		$output['customer_plans'] = array();
 		$searchQuery = array('type' => 'customer');
 		$cursor = Billrun_Factory::db()->plansCollection()->query($searchQuery)->cursor()->limit(100000)->sort(['name' => 1]);
 		foreach ($cursor as $row) {
 			$output['customer_plans'][] = $row['name'];
 		}
+		$output['service_providers'] = array();
+		$cursor = Billrun_Factory::db()->serviceprovidersCollection()->query()->cursor()->limit(100000)->sort(['name' => 1]);
+		foreach ($cursor as $row) {
+			$output['service_providers'][] = $row['name'];
+		}
 
 		$output['call_scenario'] = str_replace('\n', "\n", $this->conf->getConfigValue('test.call_scenario', ""));
 		$output['data_scenario'] = str_replace('\n', "\n", $this->conf->getConfigValue('test.data_scenario', ""));
-		$output['service_providers'] = $this->conf->getConfigValue('test.service_provider', array());
 		$output['charging_types'] = $this->conf->getConfigValue('test.charging_type', array());
 		$output['languages'] = $this->conf->getConfigValue('test.language', array());
 		$output['imsi'] = $this->conf->getConfigValue('test.imsi', '');
@@ -292,6 +348,7 @@ class UtestController extends Yaf_Controller_Abstract {
 		$output['sid'] = $this->conf->getConfigValue('test.sid', '');
 		$output['aid'] = $this->conf->getConfigValue('test.aid', '');
 		$output['dialed_digits'] = $this->conf->getConfigValue('test.dialed_digits', '');
+		$output['request_method'] = $this->conf->getConfigValue('test.requestType', 'GET');
 		return $output;
 	}
 

@@ -2,8 +2,9 @@
 	<head>
 		<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
 		<script>window.jQuery || document.write('<script src="<?php echo $this->subdomain; ?>/js/vendor/jquery-1.11.0.min.js"><\/script>')</script>
-		<link rel="stylesheet" href="<?php echo $subdomain ?>/css/bootstrap.min.css">
 		<script src="<?php echo $subdomain ?>/js/vendor/bootstrap.js"></script>
+		<script src="<?php echo $subdomain ?>/js/utest/utest.js"></script>
+		<link rel="stylesheet" href="<?php echo $subdomain ?>/css/bootstrap.min.css">
 		<link rel="stylesheet" href="<?php echo $subdomain ?>/css/bootstrap.vertical-tabs.min.css">
 	</head>
 	<body>
@@ -22,6 +23,7 @@
 					<li><a data-toggle="tab" href="#test-call">Test Call</a></li>
 					<li><a data-toggle="tab" href="#test-data">Test Data</a></li>
 					<li><a data-toggle="tab" href="#cretae-subscriber">Cretae Subscriber</a></li>
+					<li><a data-toggle="tab" href="#update-subscriber">Update Subscriber</a></li>
 				</ul>
 			</div>
 
@@ -41,6 +43,9 @@
 				</div>
 				<div id="cretae-subscriber" class="tab-pane fade">
 					<?php include 'tests/cretaeSubscriber.phtml' ?>
+				</div>
+				<div id="update-subscriber" class="tab-pane fade">
+					<?php include 'tests/updateSubscriber.phtml' ?>
 				</div>
 			</div>
 		</div>
