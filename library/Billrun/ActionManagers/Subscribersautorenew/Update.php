@@ -112,14 +112,14 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 			return false;
 		}
 				
-		if(!$this->fillWithChargingPlanValues()) {
-			return false;
-		}
-		
 		if(!$this->fillWithSubscriberValues()) {
 			return false;
 		}
 
+		if(!$this->fillWithChargingPlanValues()) {
+			return false;
+		}
+		
 		$this->populateUpdateQuery($jsonUpdateData);
 
 		return true;
@@ -173,6 +173,7 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 		}
 		
 		$this->updateQuery['$set']['aid'] = $subRecord['aid'];
+		$this->updateQuery['$set']['service_provider'] = $subRecord['service_provider'];
 		
 		return true;
 	}
@@ -183,6 +184,7 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 		$chargingPlanQuery = Billrun_Util::getDateBoundQuery();
 		$chargingPlanQuery['type'] = 'charging';
 		$chargingPlanQuery['name'] = $this->query['charging_plan'];
+		$chargingPlanQuery['service_provider'] = $this->updateQuery['$set']['service_provider'];
 		
 		$planRecord = $plansCollection->query($chargingPlanQuery)->cursor()->current();
 		if($planRecord->isEmpty()) {
@@ -192,7 +194,24 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 		}
 		$this->updateQuery['$set']['charging_plan_name'] = $planRecord['name'];
 		$this->updateQuery['$set']['charging_plan_external_id'] = $planRecord['external_id'];
-		
+		$include = $planRecord['include'];
+		foreach ($include as $key => &$val) {
+			if (isset($val['usagev'])) {
+				$val['unit_type'] = Billrun_Util::getUsagetUnit($key);
+			} else if (isset($val['cost'])) {
+				$val['unit_type'] = 'NIS';
+			} else if ($key == 'cost') {
+				if (Billrun_Util::isAssoc($val)) {
+					$val['unit_type'] = 'NIS';
+				} else {
+					foreach ($val as &$v)
+					$v['unit_type'] = 'NIS';
+				}
+			}
+		}
+
+		$this->updateQuery['$set']['include'] = $include;
+//		
 		return true;
 	}
 	
