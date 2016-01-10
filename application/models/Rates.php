@@ -108,8 +108,7 @@ class RatesModel extends TabledateModel {
 				'key' => 'Key',
 				'prefix' => 'Prefix',
 				'from' => 'From',
-				'to' => 'To',
-				'_id' => 'Id',
+				'to' => 'To'
 			);
 		} else {
 			$columns = array(
@@ -119,8 +118,7 @@ class RatesModel extends TabledateModel {
 				'tduration' => 'Interval',
 				'taccess' => 'Access',
 				'from' => 'From',
-				'to' => 'To',
-				'_id' => 'Id',
+				'to' => 'To'
 			);
 		}
 		if (!empty($this->extra_columns)) {

@@ -67,11 +67,12 @@ class Billrun_ActionManagers_Subscribersautorenew_Bydelta extends Billrun_Action
 			$success = false;
 		}
 		
-		$outputResult = 
-			array('status'     => $success,
-				  'error_code' => $this->errorCode,
-				  'desc'       => $this->error,
-				  'details'    => $this->expected);
+		$outputResult = array(
+			'status'      => $this->errorCode == 0 ? 1 : 0,
+			'error_code'  => $this->errorCode,
+			'desc'        => $this->error,
+			'details'     => $this->expected
+		);
 		return $outputResult;	
 	}
 	

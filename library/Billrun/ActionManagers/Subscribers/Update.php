@@ -111,13 +111,14 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 	protected function updateSubscriberRecord($record) {
 		// Check if the user requested to keep history.
 		if($this->trackHistory) {
-			$subscriberFields = Billrun_Factory::config()->getConfigValue('subscribers.query_fields');
-			
-			// Check if the key fields are being updated and apply them to history.
-			foreach ($subscriberFields as $key => $value) {
-				if(isset($this->recordToSet[$key])) {
-					$record[$key] = $value;
-				}
+			if(isset($this->recordToSet['sid'])) {
+				$queryArray = array('sid' => $record['sid']);
+				$updateArray = array('$set' => array('sid' => $this->recordToSet['sid']));
+				$updateOptionsArray = array('multiple' => 1);
+				Billrun_Factory::db()->subscribersCollection()
+					->update($queryArray, $updateArray, $updateOptionsArray);
+
+				$record['sid'] = $this->recordToSet['sid'];
 			}
 //				$record['msisdn'] = $this->recordToSet['msisdn'];
 			$track_time = time();
@@ -248,18 +249,37 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 				continue;
 			}
 			
-			$or[] = 
-				array($subField => $jsonUpdateData[$subField]);
+			if (is_array($jsonUpdateData[$subField])) {
+				$filtered_array = Billrun_Util::array_remove_compound_elements($jsonUpdateData[$subField]);
+				$or[] = array(
+					$subField => array(
+						'$in' => $filtered_array,
+					)
+				);
+			} else {
+				$or[] = array(
+					$subField => $jsonUpdateData[$subField]
+				);
+			}
+			
 		}
 		
+		
 		if(!empty($or)) {
-			$subscriberValidationQuery = Billrun_Util::getDateBoundQuery();
 			$subscriberValidationQuery['$or'] = $or;
-			
+
 			// Exclude the actual user being updated.
 			foreach ($this->query as $key => $value) {
-				$subscriberValidationQuery[$key]['$ne'] = $value;
+				if(isset($value['$in'])) {
+					$subscriberValidationQuery[$key]['$nin'] = $value['$in'];
+				} else {
+					$subscriberValidationQuery[$key]['$ne'] = $value;
+				}
 			}
+
+		   $date = Billrun_Util::getDateBoundQuery();
+		   $subscriberValidationQuery['from'] = $date['from'];
+		   $subscriberValidationQuery['to'] = $date['to'];
 		}
 		
 		return $subscriberValidationQuery;
@@ -307,7 +327,11 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 		foreach ($queryFields as $field) {
 			// ATTENTION: This check will not allow updating to empty values which might be legitimate.
 			if(isset($queryData[$field]) && !empty($queryData[$field])) {
-				$this->query[$field] = $queryData[$field];
+				$queryDataValue = $queryData[$field];
+				if(is_array($queryDataValue)){
+					$queryDataValue = array('$in' => $queryDataValue);
+				}
+				$this->query[$field] = $queryDataValue;
 				$ret = true;
 			}
 		}
