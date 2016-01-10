@@ -85,7 +85,7 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 			$this->reportError($errorCode);
 		}
 		$outputResult = array(
-			'status'        => $this->errorCode ==0 ? 1 : 0,
+			'status'        => $this->errorCode == 0 ? 1 : 0,
 			'desc'          => $this->error,
 			'error_code'    => $this->errorCode,
 			'details'       => ($updateResult) ? $updateResult : 'No results',
