@@ -249,8 +249,19 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 				continue;
 			}
 			
-			$or[] = 
-				array($subField => $jsonUpdateData[$subField]);
+			if (is_array($jsonUpdateData[$subField])) {
+				$filtered_array = Billrun_Util::array_remove_compound_elements($jsonUpdateData[$subField]);
+				$or[] = array(
+					$subField => array(
+						'$in' => $filtered_array,
+					)
+				);
+			} else {
+				$or[] = array(
+					$subField => $jsonUpdateData[$subField]
+				);
+			}
+			
 		}
 		
 		if(!empty($or)) {
@@ -259,6 +270,13 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 			
 			// Exclude the actual user being updated.
 			foreach ($this->query as $key => $value) {
+				if(isset($value['$in'])) {
+					$subscriberValidationQuery[$key]['$nin'] = $value['$in'];
+				} else {
+					$subscriberValidationQuery[$key]['$ne'] = $value;
+				}
+
+
 				$subscriberValidationQuery[$key]['$ne'] = $value;
 			}
 		}
