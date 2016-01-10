@@ -139,7 +139,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 	 * to be updated.
 	 */
 	protected function handleFieldKeyHistory() {
-		$subscriberFields = Billrun_Factory::config()->getConfigValue('subscribers.query_fields');
+		$subscriberFields = Billrun_Factory::config()->getConfigValue('subscribers.prime_key');
 
 		$queryArray = $this->query;
 		
