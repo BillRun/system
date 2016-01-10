@@ -187,21 +187,15 @@ class BalancesModel extends TableModel {
 			if ($aggregate) {
 				$totals = array();
 				foreach ($item['balance']['totals'] as $key => $val) {
+					$unit = Billrun_Util::getUsagetUnit($key);
 					if ($val['cost']) {
-						$totals[] = $val['cost'] + " NIS " + $key;
+						$totals[] = $val['cost'] + " $unit $key";
 					} else if ($val['usagev']) {
-						switch ($key) {
-							case "sms": $totals[] = $val['usagev'] . " counter";
-								break;
-							case "data": $totals[] = $val['usagev'] . " bytes";
-								break;
-							case "call": $totals[] = $val['usagev'] . " seconds";
-								break;
-						}
+						$totals[] = $val['usagev'] . " " . $unit;
 					}
 				}
 				if ($item['balance']['cost']) {
-					$totals[] = $item['balance']['cost'] . " NIS";
+					$totals[] = $item['balance']['cost'] . " " . Billrun_Util::getUsagetUnit('cost');
 				}
 				$item['totals'] = implode(',', $totals);
 			}
