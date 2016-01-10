@@ -111,16 +111,6 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 	protected function updateSubscriberRecord($record) {
 		// Check if the user requested to keep history.
 		if($this->trackHistory) {
-			if(isset($this->recordToSet['sid'])) {
-				$queryArray = array('sid' => $record['sid']);
-				$updateArray = array('$set' => array('sid' => $this->recordToSet['sid']));
-				$updateOptionsArray = array('multiple' => 1);
-				Billrun_Factory::db()->subscribersCollection()
-					->update($queryArray, $updateArray, $updateOptionsArray);
-
-				$record['sid'] = $this->recordToSet['sid'];
-			}
-//				$record['msisdn'] = $this->recordToSet['msisdn'];
 			$track_time = time();
 			// This throws an exception if fails.
 			$this->handleKeepHistory($record, $track_time);
@@ -128,11 +118,11 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 			$this->recordToSet['from'] = new MongoDate($track_time+1);
 		}
 
+		// TODO: THIS IS UNNCESSARY 
 		$record->collection($this->collection);
-		foreach ($this->recordToSet as $key => $value) {
-			if(!$record->set($key, $value)) {
+		foreach ($this->recordToSet as $key => $field) {
+			if(!$record->set($key, $field)) {
 				$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 30;
-				$error = "Failed to set values to entity";
 				$this->reportError($errorCode, Zend_Log::NOTICE);
 				return false;
 			}
@@ -142,6 +132,35 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 		$this->collection->save($record);
 				
 		return true;
+	}
+
+	/**
+	 * Update all the key values of the subscriber, e.g. sid, to the new values
+	 * to be updated.
+	 */
+	protected function handleFieldKeyHistory() {
+		$subscriberFields = Billrun_Factory::config()->getConfigValue('subscribers.query_fields');
+
+		$queryArray = $this->query;
+		
+		$updateArray = array();
+		// Check if the key fields are being updated and apply them to history.
+		foreach ($subscriberFields as $field) {
+			if(isset($this->recordToSet[$field])) {
+				$updateArray['$set'][$field] = $this->recordToSet[$field];
+				$queryArray[$field] = $this->recordToSet[$field];
+			}
+		}
+		$updateOptionsArray = array('multiple' => 1);
+		
+		// This query is not date bound!
+		unset($this->query['to']);
+		unset($this->query['from']);
+		
+		Billrun_Factory::db()->subscribersCollection()
+			->update($this->query, $updateArray, $updateOptionsArray);
+
+		$this->query = $queryArray;
 	}
 	
 	/**
@@ -155,6 +174,10 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 		try {
 			if($this->keepLines) {
 				$this->handleKeepLines();
+			}
+			
+			if($this->trackHistory) {
+				$this->handleFieldKeyHistory();
 			}
 			
 			$cursor = $this->collection->query($this->query)->cursor();
