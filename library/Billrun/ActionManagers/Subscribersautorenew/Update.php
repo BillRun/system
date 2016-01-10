@@ -134,7 +134,11 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 		$set['interval'] = 'month';
 		
 		$set['to'] = new MongoDate(strtotime($jsonUpdateData['to']));
-		$set['operation'] = $jsonUpdateData['operation'];
+		if (isset($jsonUpdateData['operation'])) {
+			$set['operation'] = $jsonUpdateData['operation'];
+		} else {
+			$set['operation'] = 'inc';
+		}
 		$set['done'] = 0;
 		
 		// Check if we are at the end of the month.
