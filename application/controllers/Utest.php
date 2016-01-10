@@ -115,6 +115,10 @@ class UtestController extends Yaf_Controller_Abstract {
 				$utest = new CretaeSubscriberModel($this);
 				$result = array('subscriber_after', 'subscriber_before');
 				break;
+			case 'updateSubscriber':
+				$utest = new UpdateSubscriberModel($this);
+				$result = array('subscriber_after', 'subscriber_before', 'balance_before', 'balance_after', 'lines');
+				break;
 		}
 		
 		if ($removeLines == 'remove') {
@@ -142,7 +146,7 @@ class UtestController extends Yaf_Controller_Abstract {
 		
 		if(in_array('lines', $result)){
 			// Get all lines created during scenarion
-			$lines = $this->getLines($sid, (addBalance == $type));
+			$lines = $this->getLines($sid, $type);
 		}
 
 		if(in_array('balance_after', $result)){
@@ -267,15 +271,18 @@ class UtestController extends Yaf_Controller_Abstract {
 	 * @param type $sid
 	 * @param type $charging - if TRUE, return only CHARGING lines
 	 */
-	protected function getLines($sid, $charging = false) {
+	protected function getLines($sid, $type) {
 		$lines = array();
 		$amount = 0;
 
-		if ($charging) {
+		
+		if ($type == 'addBalance') {
 			$searchQuery = array(
 				"sid" => $sid,
 				"type" => 'charging'
 			);
+		} else if($type == 'updateSubscriber'){
+			$searchQuery = array("sid" => $sid);
 		} else {
 			$searchQuery = array(
 				"sid" => $sid,

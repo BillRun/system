@@ -47,11 +47,9 @@
 				<div class="panel panel-default">
 					<div class="panel-heading">Subscriber Before SID : <?php echo $sid ?></div>
 					<div class="panel-body">
-						<div class="row col-sm-1"></div>
 						<?php foreach ($subscribers['before'] as $subscriber_id => $subscriber) : ?>
-							<div class="row well col-sm-5">
+							<div class="row well col-sm-5" style='margin: 10px 30px;'>
 								<?php foreach ($subscriber as $fieldName => $fieldValue) : ?>
-
 									<div class="col-sm-5 text-right">
 										<?php echo $fieldName ?>
 									</div>
@@ -60,9 +58,7 @@
 									</div>
 								<?php endforeach; ?>
 							</div>
-							<div class="row col-sm-2"></div>
 						<?php endforeach; ?>
-						<div class="row col-sm-1"></div>
 					</div>
 				</div>
 			<?php endif; ?>
@@ -70,12 +66,10 @@
 			<?php if (!empty($subscribers['after'])) : ?>
 				<div class="panel panel-default">
 					<div class="panel-heading">Subscriber After SID : <?php echo $sid ?></div>
-					<div class="panel-body">
-						<div class="row col-sm-1"></div>
+					<div class="panel-body ">>
 						<?php foreach ($subscribers['after'] as $subscriber_id => $subscriber) : ?>
-							<div class="row well col-sm-5">
+							<div class="row well col-sm-5" style='margin: 10px 30px;'>
 								<?php foreach ($subscriber as $fieldName => $fieldValue) : ?>
-
 									<div class="col-sm-5 text-right">
 										<?php echo $fieldName ?>
 									</div>
@@ -84,9 +78,7 @@
 									</div>
 								<?php endforeach; ?>
 							</div>
-							<div class="row col-sm-2"></div>
 						<?php endforeach; ?>
-						<div class="row col-sm-1"></div>
 					</div>
 				</div>
 			<?php endif; ?>
@@ -106,7 +98,7 @@
 									<th>Usage V</th>
 									<th>Balance Before</th>
 									<th>Balance After</th>
-									<th>arate</th>
+									<th>aRate ID</th>
 								</tr>
 							</thead>
 							<tbody>
