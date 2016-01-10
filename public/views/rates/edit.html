@@ -4,6 +4,14 @@
 	</center>
 	<form class='form-inline' ng-submit='save()'>
 		<div ng-if='!advancedMode'>
+			<div class="row">
+				<div class="col-md-2">
+					{{utils.getDisplayValue("key", "rates")}}
+				</div>
+				<div class="col-md-6">
+					<input ng-model="entity.key" type='text' class="form-control" ng-if="action === 'new'" /> 
+				</div>
+			</div>
 			<h2>Parameters</h2>
 			<div id='rate-out-circuit-groups' ng-hide="entity.params.out_circuit_group === undefined">
 				<h3>
@@ -139,7 +147,7 @@
 										<td><input type='text' ng-model="callRateParams.rate[$index].price" class='form-control rate-call-price' required /></td>
 										<td><input type='text' ng-model="callRateParams.rate[$index].to" class='form-control rate-call-to' required /></td>
 										<td>
-											<i class='glyphicon glyphicon-minus-sign' ng-if='!$last || $first' ng-click='deleteCallIntervalPrice(interval_price, callRateParams)'></i>
+											<i class='glyphicon glyphicon-minus-sign' ng-click='deleteCallIntervalPrice(interval_price, callRateParams)'></i>
 											<i class='glyphicon glyphicon-plus-sign' ng-if='$last' ng-click='addCallIntervalPrice(callRateParams)'></i>
 										</td>
 									</tr>
@@ -222,7 +230,7 @@
 											<td><input type='text' ng-model="smsRateParams.rate[$index].price" class='form-control rate-sms-price' required /></td>
 											<td><input type='text' ng-model="smsRateParams.rate[$index].to" class='form-control rate-sms-to' required /></td>
 											<td>
-												<i class='glyphicon glyphicon-minus-sign' ng-if='!$last || $first' ng-click='deleteSMSIntervalPrice(interval_price, smsRateParams)'></i>
+												<i class='glyphicon glyphicon-minus-sign' ng-click='deleteSMSIntervalPrice(interval_price, smsRateParams)'></i>
 												<i class='glyphicon glyphicon-plus-sign' ng-if='$last' ng-click='addSMSIntervalPrice(smsRateParams)'></i>
 											</td>
 										</tr>

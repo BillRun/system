@@ -110,20 +110,18 @@ class AdminController extends Yaf_Controller_Abstract {
 
 		$model = self::initModel($coll);
 		if ($type == 'new') {
-			$entity = $model->getEmptyItem();
+			$entity = $model->getEmptyItem()->getRawData();
 		} else {
 			$entity = $model->getItem($id);
-		}
-
-		if (!$entity) {
-			$response->setBody(json_encode(array('error' => 'Could not find entity')));
-			$response->response();
-			return false;
-		}
-
-		$entity = $entity->getRawData();
-		foreach ($model->getHiddenKeys($entity, $type) as $key) {
-			if ($key !== '_id') unset($entity[$key]);
+			if (!$entity) {
+				$response->setBody(json_encode(array('error' => 'Could not find entity')));
+				$response->response();
+				return false;
+			}
+			$entity = $entity->getRawData();
+			foreach ($model->getHiddenKeys($entity, $type) as $key) {
+				if ($key !== '_id') unset($entity[$key]);
+			}
 		}
 		$response->setBody(json_encode(array('authorized_write' => AdminController::authorized('write'), 'entity' => $entity)));
 		$response->response();
@@ -464,6 +462,21 @@ class AdminController extends Yaf_Controller_Abstract {
 	/**
 	 * plans controller of admin
 	 */
+	public function chargingplansAction() {
+		if (!$this->allowed('read'))
+			return false;
+		$this->_request->setParam('plan_type', 'charging');
+		$this->forward('tabledate', array('table' => 'plans'));
+		return false;
+	}
+	public function customerplansAction() {
+		if (!$this->allowed('read'))
+			return false;
+		$this->_request->setParam('plan_type', 'customer');
+		$this->forward('tabledate', array('table' => 'plans'));
+		return false;
+	}
+
 	public function plansAction() {
 		if (!$this->allowed('read'))
 			return false;
@@ -529,7 +542,7 @@ class AdminController extends Yaf_Controller_Abstract {
 			'sort' => $sort,
 			'showprefix' => $showprefix,
 		);
-
+		if ($table === "plans") $options['plan_type'] = $this->_request->getParam('plan_type');
 		// set the model
 		self::initModel($table, $options);
 		$query = $this->applyFilters($table);
@@ -918,6 +931,9 @@ class AdminController extends Yaf_Controller_Abstract {
 		}
 		if ($this->getRequest()->getActionName() == "tabledate") {
 			$parameters['active'] = $this->_request->getParam("table");
+			if ($parameters['active'] === 'plans') {
+				$parameters['active'] = $this->_request->getParam('plan_type') . $parameters['active'];
+			}
 		}
 
 		$parameters['title'] = $this->title;
@@ -943,12 +959,15 @@ class AdminController extends Yaf_Controller_Abstract {
 				die("Error loading model");
 			}
 		}
+		if ($collection_name === "plans" && $options['plan_type']) $this->model->type = $options['plan_type'];
 		return $this->model;
 	}
 
 	protected function buildTableComponent($table, $filter_query, $options = array()) {
 		$this->title = str_replace('_', ' ', ucfirst($table));
-
+		if ($table === 'plans') {
+			$this->title = ucfirst($this->_request->getParam('plan_type')) . ' ' . $this->title;
+		}
 		// TODO: use ready pager/paginiation class (zend? joomla?) with auto print
 		$basic_params = array(
 			'title' => $this->title,
@@ -1028,6 +1047,10 @@ class AdminController extends Yaf_Controller_Abstract {
 					$query['$and'][] = $filter;
 			}
 		}
+		if ($table === "plans") {
+			$query['$and'][] = array('type' => $this->_request->getParam('plan_type'));
+		}
+
 		return $query;
 	}
 

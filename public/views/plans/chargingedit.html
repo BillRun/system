@@ -95,17 +95,19 @@
 					</div>
 					
 					<h5>Period</h5>
-					<div class="col-indent">
+					<div>
 						<div class='row'>
-							<div class='col-md-2'>
+							<div class='col-md-2 col-indent'>
 								Unit:
 							</div>
 							<div class='col-md-6'>
-								<input ng-model='cost.period.unit' class='form-control' type="text" />
+								<select class='form-control' ng-model='cost.period.unit'>
+									<option ng-repeat="unit in availableCostUnits">{{unit}}</option>
+								</select>
 							</div>
 						</div>
 						<div class='row'>
-							<div class='col-md-2'>
+							<div class='col-md-2 col-indent'>
 								Duration:
 							</div>
 							<div class='col-md-6'>
@@ -159,7 +161,9 @@
 									Unit
 								</div>
 								<div class='col-md-6'>
-									<input ng-model='includeType.period.unit' class='form-control' type="text" />
+									<select class='form-control' ng-model='includeType.period.unit'>
+										<option ng-repeat="unit in availableCostUnits">{{unit}}</option>
+									</select>
 								</div>
 							</div>
 							<div class='row'>

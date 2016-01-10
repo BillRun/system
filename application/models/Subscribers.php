@@ -38,12 +38,12 @@ class SubscribersModel extends TabledateModel{
 	
 	public function getTableColumns() {
 		$columns = array(
-			'sid' => 'Subscriber',
-			'aid' => 'Account',
+			'sid' => 'Subscriber No',
+			'aid' => 'BAN',
 			'msisdn' => 'MSISDN',
 			'plan' => 'Plan',
-			'language' => 'Language',
 			'service_provider' => 'Service Provider',
+			'language' => 'Language',
 			'from' => 'From',
 			'to' => 'To'
 		);
@@ -52,8 +52,8 @@ class SubscribersModel extends TabledateModel{
 
 	public function getSortFields() {
 		$sort_fields = array(
-			'sid' => 'Subscriber',
-			'aid' => 'Account',
+			'sid' => 'Subscriber No',
+			'aid' => 'BAN',
 			'msisdn' => 'MSISDN',
 			'plan' => 'Plan',
 			'language' => 'Language',
@@ -89,7 +89,7 @@ class SubscribersModel extends TabledateModel{
 				'db_key' => 'sid',
 				'input_type' => 'number',
 				'comparison' => 'equals',
-				'display' => 'Subscriber',
+				'display' => 'Subscriber No',
 				'default' => '',
 			),			
 			'aid' => array(
@@ -97,7 +97,7 @@ class SubscribersModel extends TabledateModel{
 				'db_key' => 'aid',
 				'input_type' => 'number',
 				'comparison' => 'equals',
-				'display' => 'Account',
+				'display' => 'BAN',
 				'default' => '',
 			),			
 			'msisdn' => array(
