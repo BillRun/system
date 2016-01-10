@@ -35,7 +35,10 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 		$subscriberQueryKeys = 
 			Billrun_Factory::config()->getConfigValue('subscribers.create_query_fields');
 		foreach ($subscriberQueryKeys as $key) {
-			$subscriberQuery[$key] = $this->query[$key];
+			if (is_array($this->query[$key])) {
+				$subscriberQuery['$or'][][$key] = array('$in' => Billrun_Util::array_remove_compound_elements($this->query[$key]));
+			}
+			$subscriberQuery['$or'][][$key] = $this->query[$key];
 		}
 		
 		// Get only active subscribers.

@@ -249,13 +249,19 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 				continue;
 			}
 			
-			$subFieldValue = $jsonUpdateData[$subField];
-			if(is_array($subFieldValue)) {
-				$subFieldValue = array('$in' => $subFieldValue);
+			if (is_array($jsonUpdateData[$subField])) {
+				$filtered_array = Billrun_Util::array_remove_compound_elements($jsonUpdateData[$subField]);
+				$or[] = array(
+					$subField => array(
+						'$in' => $filtered_array,
+					)
+				);
+			} else {
+				$or[] = array(
+					$subField => $jsonUpdateData[$subField]
+				);
 			}
-
-			$or[] = 
-				array($subField => $subFieldValue);
+			
 		}
 		
 		
