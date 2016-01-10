@@ -409,18 +409,6 @@ class Billrun_Util {
 	}
 	
 	/**
-	 * Bound a query to filter all out dated and still not active records.
-	 * @param $query array - The query to date bound.
-	 * @return type
-	 */
-	public static function dateBoundQuery(&$query) {
-		$query['to'] = array(
-			'$gt' => new MongoDate());
-		$query['from'] = array(
-			'$lt' => new MongoDate());
-	}
-	
-	/**
 	 * method to fork process of PHP-Cli
 	 * 
 	 * @param String $cmd the command to run
