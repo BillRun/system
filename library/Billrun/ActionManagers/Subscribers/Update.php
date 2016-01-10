@@ -151,6 +151,12 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 				$queryArray[$field] = $this->recordToSet[$field];
 			}
 		}
+		
+		// If nothing to update
+		if(empty($updateArray)) {
+			return;
+		}
+		
 		$updateOptionsArray = array('multiple' => 1);
 		
 		// This query is not date bound!
