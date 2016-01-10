@@ -41,8 +41,12 @@ class CretaeSubscriberModel extends UtestModel {
 	}
 
 	protected function getRequestData($params) {
+		$imsi = array_map('trim', explode("\n", trim($params['imsi'])));
+		if(count($imsi) == 1) {
+			$imsi = $imsi[0];
+		}
 		$subscriber = array(
-			"imsi" => $params['imsi'],
+			"imsi" => $imsi,
 			"msisdn" => $params['msisdn'],
 			"aid" => $params['aid'],
 			"sid" => $params['sid'],

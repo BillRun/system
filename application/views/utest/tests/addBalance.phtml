@@ -1,20 +1,20 @@
-<form action="/utest/result" method="get">
+<form action="/utest/result" method="<?php echo $request_method ?>" class="form-horizontal">
 	<input type="hidden" name="type" value="addBalance" >
 	<div class="form-group row">
-		<label for="sid" class="col-sm-2 form-control-label text-right">SID</label>
+		<label for="sid" class="col-sm-2 control-label text-right">SID</label>
 		<div class="col-sm-5">
 			<input type="text" name="sid" value='<?php echo $sid ?>'  class="form-control">
 		</div>
 	</div>
 	<div class="form-group row">
-		<label for="amount" class="col-sm-2 form-control-label text-right">Amount</label>
+		<label for="amount" class="col-sm-2 control-label text-right">Amount</label>
 		<div class="col-sm-5">
 			<input type="text" name="amount" value='100'  class="form-control">
 			<small class="text-muted">Positive Integer.</small>
 		</div>
 	</div>
 	<div class="form-group row">
-		<label for="balanceType" class="col-sm-2 form-control-label text-right">Balance Type</label>
+		<label for="balanceType" class="col-sm-2 control-label text-right">Balance Type</label>
 		<div class="col-sm-5">
 			<select class="form-control" name='balanceType'>
 				<?php foreach ($balance_types['prepaidincludes'] as $balance_type) : ?>

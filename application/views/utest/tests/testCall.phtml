@@ -1,19 +1,19 @@
-<form action="/utest/result" method="get">
+<form action="/utest/result" method="<?php echo $request_method ?>" class="form-horizontal">
 	<input type="hidden" name="type" value="call">
 	<div class="form-group row">
-		<label for="imsi" class="col-sm-2 form-control-label text-right">IMSI</label>
+		<label for="imsi" class="col-sm-2 control-label text-right">IMSI</label>
 		<div class="col-sm-5">
 			<input type="text" name="imsi" value='<?php echo $imsi ?>' class="form-control">
 		</div>
 	</div>
 	<div class="form-group row">
-		<label for="dialedDigits" class="col-sm-2 form-control-label text-right">Dialed Digits</label>
+		<label for="dialedDigits" class="col-sm-2 control-label text-right">Dialed Digits</label>
 		<div class="col-sm-5">
 			<input type="text" name="dialedDigits" value='<?php echo $dialed_digits ?>' class="form-control">
 		</div>
 	</div>
 	<div class="form-group row">
-		<label for="scenario" class="col-sm-2 form-control-label text-right">Scenario</label>
+		<label for="scenario" class="col-sm-2 control-label text-right">Scenario</label>
 		<div class="col-sm-5">
 			<textarea rows="6" name="scenario" class="form-control" ><?php echo $call_scenario ?></textarea>
 			<small class="text-muted">[ACTION_NAME|DURATION] New line per action, Default call duration is 4000.</small>

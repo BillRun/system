@@ -1,7 +1,9 @@
 <html>
 	<head>
+		<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+		<script>window.jQuery || document.write('<script src="<?php echo $this->subdomain; ?>/js/vendor/jquery-1.11.0.min.js"><\/script>')</script>
 		<link rel="stylesheet" href="<?php echo $subdomain ?>/css/bootstrap.min.css">
-		<script src="<?php echo $subdomain ?>/js/vendor/ui-bootstrap.js"></script>
+		<script src="<?php echo $subdomain ?>/js/vendor/bootstrap.js"></script>
 	</head>
 	<body>
 		<div class="container">
@@ -41,6 +43,53 @@
 				</div>
 			<?php endif; ?>
 
+			<?php if (!empty($subscribers['before'])) : ?>
+				<div class="panel panel-default">
+					<div class="panel-heading">Subscriber Before SID : <?php echo $sid ?></div>
+					<div class="panel-body">
+						<div class="row col-sm-1"></div>
+						<?php foreach ($subscribers['before'] as $subscriber_id => $subscriber) : ?>
+							<div class="row well col-sm-5">
+								<?php foreach ($subscriber as $fieldName => $fieldValue) : ?>
+
+									<div class="col-sm-5 text-right">
+										<?php echo $fieldName ?>
+									</div>
+									<div class="col-sm-7 text-left">
+										<?php echo $fieldValue ?>
+									</div>
+								<?php endforeach; ?>
+							</div>
+							<div class="row col-sm-2"></div>
+						<?php endforeach; ?>
+						<div class="row col-sm-1"></div>
+					</div>
+				</div>
+			<?php endif; ?>
+
+			<?php if (!empty($subscribers['after'])) : ?>
+				<div class="panel panel-default">
+					<div class="panel-heading">Subscriber After SID : <?php echo $sid ?></div>
+					<div class="panel-body">
+						<div class="row col-sm-1"></div>
+						<?php foreach ($subscribers['after'] as $subscriber_id => $subscriber) : ?>
+							<div class="row well col-sm-5">
+								<?php foreach ($subscriber as $fieldName => $fieldValue) : ?>
+
+									<div class="col-sm-5 text-right">
+										<?php echo $fieldName ?>
+									</div>
+									<div class="col-sm-7 text-left">
+										<?php echo $fieldValue ?>
+									</div>
+								<?php endforeach; ?>
+							</div>
+							<div class="row col-sm-2"></div>
+						<?php endforeach; ?>
+						<div class="row col-sm-1"></div>
+					</div>
+				</div>
+			<?php endif; ?>
 
 			<?php if (!empty($lines['rows'])) : ?>
 				<div class="panel panel-default">

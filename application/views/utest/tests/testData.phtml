@@ -1,13 +1,13 @@
-<form action="/utest/result" method="get">
+<form action="/utest/result" method="<?php echo $request_method ?>" class="form-horizontal">
 	<input type="hidden" name="type" value="data">
 	<div class="form-group row">
-		<label for="imsi" class="col-sm-2 form-control-label text-right">IMSI</label>
+		<label for="imsi" class="col-sm-2 control-label text-right">IMSI</label>
 		<div class="col-sm-5">
 			<input type="text" name="imsi" value='<?php echo $imsi ?>' class="form-control">
 		</div>
 	</div>
 	<div class="form-group row">
-		<label for="scenario" class="col-sm-2 form-control-label text-right">Scenario</label>
+		<label for="scenario" class="col-sm-2 control-label text-right">Scenario</label>
 		<div class="col-sm-5">
 			<textarea rows="6" name="scenario" class="form-control"><?php echo $data_scenario ?></textarea>
 			<small class="text-muted">[ACTION_NAME|USAGE] New line per action, Default data usage is 1000.</small>
