@@ -10,7 +10,7 @@
 			</li>
 		<?php endif; ?>
 		<?php if (AdminController::authorized('read', 'plans') || AdminController::authorized('read', 'rates')) : ?>
-			<li class="dropdown<?php echo (in_array($active, array('plans', 'rates')) ? ' active' : ''); ?>">
+			<li class="dropdown<?php echo (in_array($active, array('customerplans', 'chargingplans', 'rates')) ? ' active' : ''); ?>">
 				<a class="dropdown-toggle"
 				   data-toggle="dropdown"
 				   href="">
@@ -19,8 +19,11 @@
 				</a>
 				<ul class="dropdown-menu">
 					<?php if (AdminController::authorized('read', 'plans') && AdminController::showInMenu('plans')) : ?>
-						<li<?php echo ($active == 'plans' ? ' class="active"' : ''); ?>>
-							<a href="<?php echo $this->baseUrl; ?>/admin/plans">Plans</a>
+						<li<?php echo ($active == 'customerplans' ? ' class="active"' : ''); ?>>
+							<a href="<?php echo $this->baseUrl; ?>/admin/customerplans">Customer Plans</a>
+						</li>
+						<li<?php echo ($active == 'chargingplans' ? ' class="active"' : ''); ?>>
+							<a href="<?php echo $this->baseUrl; ?>/admin/chargingplans">Charging Plans</a>
 						</li>
 					<?php endif; ?>
 					<?php if (AdminController::authorized('read', 'rates') && AdminController::showInMenu('rates')) : ?>

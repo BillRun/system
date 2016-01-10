@@ -6,7 +6,7 @@
 		<div ng-if='!advancedMode'>
 			<div class="row">
 				<div class="col-md-2">
-					aid
+					{{utils.getDisplayValue("aid", "balances")}}
 				</div>
 				<div class="col-md-6">
 					<input ng-model="entity.aid" type='number' class="form-control" />
@@ -14,7 +14,7 @@
 			</div>
 			<div class="row">
 				<div class="col-md-2">
-					sid
+					{{utils.getDisplayValue("sid", "balances")}}
 				</div>
 				<div class="col-md-6">
 					<input ng-model="entity.sid" type='number' class="form-control" />
@@ -22,7 +22,7 @@
 			</div>
 			<div class="row">
 				<div class="col-md-2">
-					pp includes external id
+					{{utils.getDisplayValue("pp_includes_external_id", "balances")}}
 				</div>
 				<div class="col-md-6">
 					<input ng-model="entity.pp_includes_external_id" type='number' class="form-control" disabled />
@@ -30,7 +30,7 @@
 			</div>
 			<div class="row">
 				<div class="col-md-2">
-					pp includes name
+					{{utils.getDisplayValue("pp_includes_name", "balances")}}
 				</div>
 				<div class="col-md-6">
 					<input ng-model="entity.pp_includes_name" type='text' class="form-control" disabled />
