@@ -21,7 +21,6 @@ class Billrun_Validator {
 		'required'=>'RequiredValidator',
 		'filter'=>'FilterValidator',
 		'match'=>'RegularExpressionValidator',
-		'email'=>'EmailValidator',
 		'url'=>'UrlValidator',
 		'unique'=>'UniqueValidator',
 		'compare'=>'CompareValidator',
@@ -29,8 +28,6 @@ class Billrun_Validator {
 		'in'=>'RangeValidator',
 		'number'=>'NumberValidator',
     'integer'=>'IntegerValidator', 
-		'captcha'=>'CaptchaValidator',
-		'type'=>'TypeValidator',
 		'default'=>'DefaultValueValidator',
 		'boolean'=>'BooleanValidator',
 		'date'=>'DateValidator',
@@ -41,17 +38,17 @@ class Billrun_Validator {
 	protected $errors;
 	protected $params;
   protected $isValid;
+  protected $summaryReport; 
 
 	public function __construct(array $params = array()) {
 		
 		$this->params = $params; 
+
 		$this->errors = array("attributes">array(),"global"=>array());
 		$this->options = array();
+    $this->summaryReport = array() ;
     $this->isValid = true ;
 		$this->validations = 	Billrun_Config::getInstance(new Yaf_Config_Ini(APPLICATION_PATH . '/conf/validation.ini'))->toArray();
-//    Billrun_Factory::log("validation.ini " . print_r($this->validations ,true), Zend_Log::DEBUG);
-
-
 	}
 
  	protected function isEmpty($value,$trim=false)
@@ -62,15 +59,24 @@ class Billrun_Validator {
 	protected function addError($attribute,$message,$code ,$index=-1)
 	{
     $this->valid = false ;  
-    if($index>=0) 
-		   $this->errors['attributes'][$attribute][$index][]  = array ("message" => $message , "error_code" => $code );
-     else 
-       $this->errors['attributes'][$attribute][]  = array ("message" => $message , "error_code" => $code );
+    if($index>=0) {
+      $indexText = sprintf("[%d]", $index+1);
+   	  $this->errors['attributes'][$attribute][$index][]  = array ("message" => $message , "error_code" => $code );
+     }
+     else {
+      $indexText ="";
+      $this->errors['attributes'][$attribute][]  = array ("message" => $message , "error_code" => $code );
+     }
+      $replacement = $attribute .$indexText ; 
+      $new_message = preg_replace("/".$attribute."/",$replacement, $message) ;
+      $this->summaryReport[] =  $new_message ;
 	}
 
-  public function RequiredValidator ($attribute , $value , $validationOptions =array("trim"=>false),$index=-1) { 
+  public function RequiredValidator ($attribute , $value , $validationOptions = array() ,$index=-1) { 
   	$code = "required" ;
-  	$trim = $validationOptions["trim"];
+
+  	$trim = isset($validationOptions["trim"]) ? $validationOptions["trim"] : false;
+
   	if(isset($validationOptions["message"])) {
   		$message = $validationOptions['message'] ;
   	} else {
@@ -85,9 +91,24 @@ class Billrun_Validator {
   }
 
 
-public function UniqueValidator($attribute , $value , $validationOptions =array("trim"=>false),$index=-1) { 
-  
+public function DefaultValueValidator ($attribute , $value , $validationOptions = array() ,$index=-1) { 
+    $checkValue = $validationOptions["checkValue"];
+    return $checkValue ;
+  }
+
+public function FilterValidator ($attribute , $value , $validationOptions = array() ,$index=-1) { 
+    $trim = isset($validationOptions["trim"]) ? $validationOptions["trim"] : false;
+    if($this->isEmpty($value,$trim)) {
+      $this->addError($attribute,$message,$code,$index) ;
+      return false ;
+    }
+    return true ;
+  }
+
+public function UniqueValidator($attribute , $value , $validationOptions =array(),$index=-1) { 
+
     $code = "unique" ;
+
     if(strlen(trim("$value")) == 0  ||  !isset($validationOptions["collection"])) {
         return true;      
     }
@@ -112,8 +133,7 @@ public function UniqueValidator($attribute , $value , $validationOptions =array(
       $checkUniqueQuery =  array_merge($checkUniqueQuery,array( "_id" => array('$ne' => (string)$MongoID))) ;
     }
     
-    Billrun_Factory::log("checkUniqueQuery : " .print_r($checkUniqueQuery) , Zend_Log::DEBUG);
-
+   
     $cursor =  $collection->find($checkUniqueQuery,array())  ; 
 
     if($cursor->count())   {
@@ -196,7 +216,7 @@ public function LengthValidator ($attribute , $value  ,$validationOptions = arra
       /*  get collection rules tree    */
       $val = $this->getKeyVal(array($this->validations,$collection));
       if(!$this->getKeyVal(array($this->validations,$collection))) { 
-        $this->isValid = true ; 
+      
         return $this ;
       }
       /* loop over the collection attributes */
@@ -221,7 +241,7 @@ public function LengthValidator ($attribute , $value  ,$validationOptions = arra
           //skip undefined validation test
 
           if(!is_array($checkOptions)) {
-            $checkOptions = array() ;
+            $checkOptions = array("checkValue" => $checkOptions)  ;
           }
 
           if($check == "unique") {
@@ -232,7 +252,7 @@ public function LengthValidator ($attribute , $value  ,$validationOptions = arra
          
           $checkOptions["objectRef"] = $object ;
           if(!(isset(self::$validatorsFunctions[$check]))) {
-              Billrun_Factory::log("undefined check function  => $check (please implement)" , Zend_Log::DEBUG);
+              Billrun_Factory::log("undefined check function  => $check (please implement)" , Zend_Log::ERROR);
               continue ;
           }
         
@@ -265,14 +285,25 @@ public function LengthValidator ($attribute , $value  ,$validationOptions = arra
   }
 
   public function getErrors() {
-    return $this->errors;
+    return array(
+      "errors"=>$this->errors ,
+      "summaryReport" => $this->summaryReport,
+      "isValid" => $this->isValid()
+      );
   }
   
+  public function getReport() {
+    return $this->summaryReport;
+  }
+
   public function getValidations() {
     return $this->validations;
   }
   public function isValid() {
-    return $this->isValid;
+    if(sizeof($this->summaryReport)) { 
+      return false ;
+    }
+      return true;
   }
 
   public function getKeyVal($array=array(),$default=null) {

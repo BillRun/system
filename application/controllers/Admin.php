@@ -375,16 +375,12 @@ class AdminController extends Yaf_Controller_Abstract {
 
 
 		
-			$v->validate($params,$coll) ;
-							Billrun_Factory::log("Validation result :\n " . print_r( 
-								array(
-									"validationRules" => 	$v->getValidations() , 
-									"params" => $params ,
-									"validation" => $v->getErrors()
-									),true), Zend_log::INFO);
+		$v->validate($params,$coll) ;
+		
 
 		if(!$v->isValid()) {	   	
-				return $this->responseSuccess(array("data" => $v->getValidations() ,"params" => $params , "status"=>true ));
+		
+				return $this->responseError($v->getErrors());
 		}
 		
 		if ($type == 'update') {
@@ -1341,14 +1337,18 @@ class AdminController extends Yaf_Controller_Abstract {
 		}
 	}
 
-public function responseError($message,$statusCode = 500)
+public function responseError($message,$statusCode = 400)
 	{
 		
 		$resp = $this->getResponse();
 		$req  =  $this->getRequest();
-		$resp->setHeader($req->getServer('SERVER_PROTOCOL') , $statusCode . ' ' . $message);
+		$resp->setHeader($req->getServer('SERVER_PROTOCOL') , $statusCode );
 		$resp->setHeader('Content-Type','application/json');
-		$resp->setBody($message);
+		if(is_array($message)) { 
+			$resp->setBody(json_encode($message));
+		} else { 
+			$resp->setBody($message);
+		}
 		//$resp->response();
 		return false;
 	}
