@@ -240,7 +240,7 @@ class QueryAction extends ApiAction {
 			}
 		}
 		if ($ret === false) {
-			$this->setError('Require to supply: ' . implode(',', $requestFields), $request);
+			$this->setError('Require to supply one of the following fields: ' . implode(', ', $requestFields), $request);
 		}
 		return $ret;
 	}
