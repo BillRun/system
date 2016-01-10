@@ -237,6 +237,8 @@ class Generator_Golanxml extends Billrun_Generator {
 			$this->writer->startElement('SUBSCRIBER_INF');
 			$this->writer->startElement('SUBSCRIBER_DETAILS');
 			$this->writer->writeElement('SUBSCRIBER_ID', $subscriber['sid']);
+			$this->writer->writeElement('OFFER_ID_CURR', $subscriber['offer_id_curr']);
+			$this->writer->writeElement('OFFER_ID_NEXT', $subscriber['offer_id_next']);
 			$this->writer->endElement();
 
 			$this->writeBillingLines($subscriber, $lines);
@@ -290,7 +292,7 @@ class Generator_Golanxml extends Billrun_Generator {
 				}
 			}
 
-			$subscriber_sumup_TOTAL_MANUAL_CORRECTION_CREDIT_PROMOTION = 0;
+ 			$subscriber_sumup_TOTAL_MANUAL_CORRECTION_CREDIT_PROMOTION = 0;
 			if (isset($subscriber['breakdown']['credit']['refund_vatable']) && is_array($subscriber['breakdown']['credit']['refund_vatable'])) {
 				foreach ($subscriber['breakdown']['credit']['refund_vatable'] as $key => $credit) {
 					if (strpos($key, 'CRM-REFUND_PROMOTION') !== FALSE) {

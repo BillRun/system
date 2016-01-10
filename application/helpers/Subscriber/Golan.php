@@ -163,7 +163,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 	 * @todo use Zend_Http_Client
 	 */
 	static protected function send($url, $post_data = null) {
-		// create a new cURL resource
+ // create a new cURL resource
 		$ch = curl_init();
 
 		// set URL and other appropriate options
@@ -282,6 +282,8 @@ class Subscriber_Golan extends Billrun_Subscriber {
 							if ($sid) {
 								$concat['data']['plan'] = isset($subscriber['curr_plan']) ? $subscriber['curr_plan'] : null;
 								$concat['data']['next_plan'] = isset($subscriber['next_plan']) ? $subscriber['next_plan'] : null;
+								$concat['data']['offer_id_next'] = isset($subscriber['offer_id_next']) ? $subscriber['offer_id_next'] : null;
+								$concat['data']['offer_id_curr'] = isset($subscriber['offer_id_curr']) ? $subscriber['offer_id_curr'] : null;
 							} else {
 								$concat['data']['plan'] = 'ACCOUNT';
 								$concat['data']['next_plan'] = 'ACCOUNT';
@@ -511,6 +513,8 @@ class Subscriber_Golan extends Billrun_Subscriber {
 			'plan' => $next_plan->getName(),
 			'plan_ref' => $next_plan->createRef(),
 			'process_time' => date(Billrun_Base::base_dateformat),
+			'offer_id_curr' => $this->offer_id_curr,
+			'offer_id_next' => $this->offer_id_next,
 		);
 		$stamp = md5($flat_entry['aid'] . $flat_entry['sid'] . $billrun_end_time);
 		$flat_entry['stamp'] = $stamp;

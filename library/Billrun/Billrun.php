@@ -137,6 +137,8 @@ class Billrun_Billrun {
 		$subscriber_entry['subscriber_status'] = $status;
 		$subscriber_entry['current_plan'] = $current_plan_ref;
 		$subscriber_entry['next_plan'] = $next_plan_ref;
+		$subscriber_entry['offer_id_next'] = $subscriber->offer_id_next;
+		$subscriber_entry['offer_id_curr'] = $subscriber->offer_id_curr;
 		foreach ($subscriber->getExtraFieldsForBillrun() as $field => $save) {
 			if ($field == !$save) {
 				continue;
