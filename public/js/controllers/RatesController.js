@@ -178,24 +178,19 @@ app.controller('RatesController', ['$scope', '$routeParams', 'Database', '$contr
 
     $scope.init = function () {
       $scope.advancedMode = false;
-      var params = {
-        coll: $routeParams.collection,
-        id: $routeParams.id
-      };
-      Database.getEntity(params).then(function (res) {
-        $scope.entity = res.data.entity;
-        $scope.authorized_write = res.data.authorized_write;
-        if (_.isEmpty($scope.entity.rates)) {
-          $scope.entity.rates = {};
+      $scope.initEdit(function (entity) {
+        if (_.isEmpty(entity.rates)) {
+          entity.rates = {};
+        }
+        if (_.isEmpty(entity.params)) {
+          entity.params = {};
         }
       });
-      $scope.availableCallUnits = ['seconds', 'minutes', 'hours'];
+      $scope.availableCallUnits = ['seconds', 'minutes'];
       Database.getAvailablePlans().then(function (res) {
         $scope.availablePlans = res.data;
       });
-      $scope.action = $routeParams.action;
       $scope.newOutCircuitGroup = {from: undefined, to: undefined};
-      $scope.newPrefix = {value: undefined};
       $scope.newRecordType = {value: undefined};
       $scope.newCallRate = {name: undefined};
       $scope.newCallPlan = {value: undefined};
@@ -205,5 +200,6 @@ app.controller('RatesController', ['$scope', '$routeParams', 'Database', '$contr
         callRates: [],
         smsRates: []
       };
+      if ($scope.action === "new") $scope.shown.prefix = true;
     };
   }]);

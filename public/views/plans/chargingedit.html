@@ -37,7 +37,7 @@
 					{{utils.getDisplayValue("from", "plans")}}
 				</div>
 				<div class='col-md-6'>
-					<input type="text" class="form-control" uib-datepicker-popup="yyyy-MM-dd" ng-model="entity.from" is-open="status.opened"
+					<input type="text" class="form-control" uib-datepicker-popup="{{utils.getDateFormat()}}" ng-model="entity.from" is-open="status.opened"
 						   date-disabled="utils.disabled('from', 'plans')" close-text="Close" />
 					<span>
 					  <butfromn type="butfromn" class="btn btn-default" ng-click="status.opened = !status.opened"><i class="glyphicon glyphicon-calendar"></i></butfromn>
@@ -49,7 +49,7 @@
 					{{utils.getDisplayValue("to", "plans")}}
 				</div>
 				<div class='col-md-6'>
-					<input type="text" class="form-control" uib-datepicker-popup="yyyy-MM-dd" ng-model="entity.to" is-open="status.opened"
+					<input type="text" class="form-control" uib-datepicker-popup="{{utils.getDateFormat()}}" ng-model="entity.to" is-open="status.opened"
 						   date-disabled="utils.disabled('to', 'plans')" close-text="Close" />
 					<span>
 					  <button type="button" class="btn btn-default" ng-click="status.opened = !status.opened"><i class="glyphicon glyphicon-calendar"></i></button>
@@ -95,17 +95,19 @@
 					</div>
 					
 					<h5>Period</h5>
-					<div class="col-indent">
+					<div>
 						<div class='row'>
-							<div class='col-md-2'>
+							<div class='col-md-2 col-indent'>
 								Unit:
 							</div>
 							<div class='col-md-6'>
-								<input ng-model='cost.period.unit' class='form-control' type="text" />
+								<select class='form-control' ng-model='cost.period.unit'>
+									<option ng-repeat="unit in availableCostUnits">{{unit}}</option>
+								</select>
 							</div>
 						</div>
 						<div class='row'>
-							<div class='col-md-2'>
+							<div class='col-md-2 col-indent'>
 								Duration:
 							</div>
 							<div class='col-md-6'>
@@ -159,7 +161,9 @@
 									Unit
 								</div>
 								<div class='col-md-6'>
-									<input ng-model='includeType.period.unit' class='form-control' type="text" />
+									<select class='form-control' ng-model='includeType.period.unit'>
+										<option ng-repeat="unit in availableCostUnits">{{unit}}</option>
+									</select>
 								</div>
 							</div>
 							<div class='row'>
