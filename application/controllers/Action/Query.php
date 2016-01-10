@@ -123,7 +123,7 @@ class QueryAction extends ApiAction {
 	protected function buildQuery($request) {
 		$executeQuery = $this->getMaxListQuery($request);
 		// Error occured.
-		if($executeQuery === false) {
+		if(empty($executeQuery)) {
 			// TODO: Return true on purpose? 
 			return false;
 		}
@@ -233,14 +233,16 @@ class QueryAction extends ApiAction {
 	 */
 	protected function validateRequest($request) {
 		$requestFields = $this->getRequestFields();
+		$ret = false;
 		foreach ($requestFields as $field) {
-			if (!isset($request[$field])) {
-				$this->setError('Require to supply: ' . implode(',', $requestFields), $request);
-				return false;
+			if (isset($request[$field])) {
+				$ret = true;
 			}
 		}
-	
-		return true;
+		if ($ret === false) {
+			$this->setError('Require to supply: ' . implode(',', $requestFields), $request);
+		}
+		return $ret;
 	}
 	
 	/**
