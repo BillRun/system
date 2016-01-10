@@ -13,7 +13,7 @@
  * @subpackage uTest
  * @since    0.4
  */
-class CretaeSubscriberModel extends UtestModel {
+class CreateSubscriberModel extends UtestModel {
 
 	public function doTest() {
 		$sid = (int) Billrun_Util::filter_var($this->controller->getRequest()->get('sid'), FILTER_VALIDATE_INT);

@@ -111,8 +111,8 @@ class UtestController extends Yaf_Controller_Abstract {
 				$utest = new AddChargeModel($this);
 				$result = array('balance_before', 'balance_after', 'lines');
 				break;
-			case 'cretaeSubscriber':
-				$utest = new CretaeSubscriberModel($this);
+			case 'createSubscriber':
+				$utest = new CreateSubscriberModel($this);
 				$result = array('subscriber_after', 'subscriber_before');
 				break;
 			case 'updateSubscriber':
