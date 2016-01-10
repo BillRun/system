@@ -204,8 +204,9 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 				if (Billrun_Util::isAssoc($val)) {
 					$val['unit_type'] = 'NIS';
 				} else {
-					foreach ($val as &$v)
-					$v['unit_type'] = 'NIS';
+					foreach ($val as &$v) {
+						$v['unit_type'] = 'NIS';
+					}
 				}
 			}
 		}
