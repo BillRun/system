@@ -1,0 +1,48 @@
+<html>
+	<head>
+		<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+		<script>window.jQuery || document.write('<script src="<?php echo $this->subdomain; ?>/js/vendor/jquery-1.11.0.min.js"><\/script>')</script>
+		<link rel="stylesheet" href="<?php echo $subdomain ?>/css/bootstrap.min.css">
+		<script src="<?php echo $subdomain ?>/js/vendor/bootstrap.js"></script>
+		<link rel="stylesheet" href="<?php echo $subdomain ?>/css/bootstrap.vertical-tabs.min.css">
+	</head>
+	<body>
+		<div class="container">
+			<div class="page-header">
+				<h1>Unit Testing</h1>
+			</div>
+			<ol class="breadcrumb">
+				<li>uTest</li>
+			</ol>
+
+			<div class="col-xs-3">
+				<ul class="nav nav-tabs tabs-left">
+					<li class="active"><a data-toggle="tab" href="#add-charge">Add Charge</a></li>
+					<li><a data-toggle="tab" href="#add-balance">Add Balance</a></li>
+					<li><a data-toggle="tab" href="#test-call">Test Call</a></li>
+					<li><a data-toggle="tab" href="#test-data">Test Data</a></li>
+					<li><a data-toggle="tab" href="#cretae-subscriber">Cretae Subscriber</a></li>
+				</ul>
+			</div>
+
+
+			<div class="tab-content col-xs-9">
+				<div id="add-charge" class="tab-pane fade in active">
+					<?php include 'tests/addCharge.phtml' ?>
+				</div>
+				<div id="add-balance" class="tab-pane fade">
+					<?php include 'tests/addBalance.phtml' ?>
+				</div>
+				<div id="test-call" class="tab-pane fade">
+					<?php include 'tests/testCall.phtml' ?>
+				</div>
+				<div id="test-data" class="tab-pane fade">
+					<?php include 'tests/testData.phtml' ?>
+				</div>
+				<div id="cretae-subscriber" class="tab-pane fade">
+					<?php include 'tests/cretaeSubscriber.phtml' ?>
+				</div>
+			</div>
+		</div>
+	</body>
+</html>
