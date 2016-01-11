@@ -44,10 +44,9 @@ app.controller('ListController', ['$scope', '$routeParams', '$location', 'Databa
         coll: $routeParams.collection,
         filter: JSON.stringify($scope.session),
         showprefix: $scope.session.showprefix,
-        size: $scope.pager.size
+        size: $scope.pager.sizebalances
       };
       Database.filterCollectionItems(params).then(function (res) {
-        console.log(res.data);
         $scope.collection = res.data.items;
         $scope.session = res.data.items.session;
       });

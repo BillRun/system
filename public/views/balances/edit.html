@@ -1,15 +1,15 @@
-<div class="container component" ng-controller='BalancesController' ng-init="init()">
+<div class="container component" ng-controller='BalancesController as vm' ng-init="vm.init()">
 	<center>
-		<h2>Subscriber {{entity.sid}} - Balance</h2>
+		<h2>Subscriber {{vm.entity.sid}} - Balance</h2>
 	</center>
-	<form class='form-inline' ng-submit='save()'>
-		<div ng-if='!advancedMode'>
+	<form class='form-inline' ng-submit='vm.save()'>
+		<div ng-if='!vm.advancedMode'>
 			<div class="row">
 				<div class="col-md-2">
 					{{utils.getDisplayValue("aid", "balances")}}
 				</div>
 				<div class="col-md-6">
-					<input ng-model="entity.aid" type='number' class="form-control" />
+					<input ng-model="vm.entity.aid" type='number' class="form-control" />
 				</div>
 			</div>
 			<div class="row">
@@ -17,7 +17,7 @@
 					{{utils.getDisplayValue("sid", "balances")}}
 				</div>
 				<div class="col-md-6">
-					<input ng-model="entity.sid" type='number' class="form-control" />
+					<input ng-model="vm.entity.sid" type='number' class="form-control" />
 				</div>
 			</div>
 			<div class="row">
@@ -25,7 +25,7 @@
 					{{utils.getDisplayValue("pp_includes_external_id", "balances")}}
 				</div>
 				<div class="col-md-6">
-					<input ng-model="entity.pp_includes_external_id" type='number' class="form-control" disabled />
+					<input ng-model="vm.entity.pp_includes_external_id" type='number' class="form-control" disabled />
 				</div>
 			</div>
 			<div class="row">
@@ -33,53 +33,53 @@
 					{{utils.getDisplayValue("pp_includes_name", "balances")}}
 				</div>
 				<div class="col-md-6">
-					<input ng-model="entity.pp_includes_name" type='text' class="form-control" disabled />
+					<input ng-model="vm.entity.pp_includes_name" type='text' class="form-control" disabled />
 				</div>
 			</div>
 
 			<hr/>
 			<h3>Total</h3>
-			<div class='row' ng-if='entity.balance.cost'>
+			<div class='row' ng-if='vm.entity.balance.cost'>
 				<div class='col-md-2'>
 					Cost
 				</div>
 				<div class='col-md-6'>
-					<input ng-model='entity.balance.cost' type='number' class='form-control' />
+					<input ng-model='vm.entity.balance.cost' type='number' class='form-control' />
 				</div>
 			</div>
-			<div class='row' ng-if='entity.balance.totals.call'>
+			<div class='row' ng-if='vm.entity.balance.totals.call'>
 				<div class='col-md-2'>
 					Call
 				</div>
 				<div class='col-md-6'>
-					<input ng-model='entity.balance.totals.call.usagev' type='number' class='form-control' />
+					<input ng-model='vm.entity.balance.totals.call.usagev' type='number' class='form-control' />
 				</div>
 			</div>
-			<div class='row' ng-if='entity.balance.totals.sms'>
+			<div class='row' ng-if='vm.entity.balance.totals.sms'>
 				<div class='col-md-2'>
 					SMS
 				</div>
 				<div class='col-md-6'>
-					<input ng-model='entity.balance.totals.sms.usagev' type='number' class='form-control' />
+					<input ng-model='vm.entity.balance.totals.sms.usagev' type='number' class='form-control' />
 				</div>
 			</div>
-			<div class='row' ng-if='entity.balance.totals.data'>
+			<div class='row' ng-if='vm.entity.balance.totals.data'>
 				<div class='col-md-2'>
 					Data
 				</div>
 				<div class='col-md-6'>
-					<input ng-model='entity.balance.totals.data.usagev' type='number' class='form-control' />
+					<input ng-model='vm.entity.balance.totals.data.usagev' type='number' class='form-control' />
 				</div>
 			</div>
 		</div>
-		<div class='jsonView' ng-if='advancedMode === true'>
-			<json child='entity' default-collapsed='true' type='object'></json>
+		<div class='jsonView' ng-if='vm.advancedMode === true'>
+			<json child='vm.entity' default-collapsed='true' type='object'></json>
 		</div>
 		<div class="modal-footer">
-			<a ng-click='setAdvancedMode(false)' class="clickable" ng-if='advancedMode'>Basic Mode</a>
-			<a ng-click='setAdvancedMode(true)' class="clickable" ng-if='!advancedMode'>Advanced Mode</a>
-			<button class="btn" ng-click='cancel()'>Cancel</button>
-			<button type='submit' class="btn btn-primary" ng-if='authorized_write'>Save changes</button>
+			<a ng-click='vm.setAdvancedMode(false)' class="clickable" ng-if='vm.advancedMode'>Basic Mode</a>
+			<a ng-click='vm.setAdvancedMode(true)' class="clickable" ng-if='!vm.advancedMode'>Advanced Mode</a>
+			<button class="btn" ng-click='vm.cancel()'>Cancel</button>
+			<button type='submit' class="btn btn-primary" ng-if='vm.authorized_write'>Save changes</button>
 		</div>
 	</form>
 </div>

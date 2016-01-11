@@ -1,11 +1,14 @@
-app.controller('BalancesController', ['$scope', '$controller',
-  function ($scope, $controller) {
-    'use strict';
+angular
+  .module('BillrunApp')
+  .controller('BalancesController', BalancesController);
 
-    $controller('EditController', {$scope: $scope});
+function BalancesController($controller) {
+  'use strict';
 
-    $scope.init = function () {
-      $scope.entity = {};
-      $scope.initEdit($scope.entity);
-    };
-  }]);
+  var vm = this;
+  $controller('EditController', {$scope: vm});
+
+  vm.init = function () {
+    vm.initEdit();
+  };
+}

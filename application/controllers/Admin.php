@@ -136,7 +136,6 @@ class AdminController extends Yaf_Controller_Abstract {
 		$page = $this->getRequest()->get('page');
 		$response = new Yaf_Response_Http();
 		$session = $this->getSession($coll);
-		/*
 		$filter = @json_decode($this->getRequest()->get('filter'));
 		if ($filter) {
 			foreach($filter as $key => $val) {
@@ -145,8 +144,6 @@ class AdminController extends Yaf_Controller_Abstract {
 				}
 			}
 		}
-		 * 
-		 */
 		$show_prefix = $this->getSetVar($session, 'showprefix', 'showprefix', 0);
 		$sort = $this->applySort($coll);
 		$options = array(
