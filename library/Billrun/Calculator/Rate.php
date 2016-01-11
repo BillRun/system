@@ -218,12 +218,18 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 			Billrun_Config::getInstance()->getConfigValue('rate_pipeline.' . static::$type, array());
 		$query = array();
 		foreach ($pipelines as $currPipeline) {
+			if (!is_array($currPipeline)) {
+				continue;
+			}
 			foreach ($currPipeline as $pipelineOperator => $pipeline) {
 				$pipelineValue = '';
 				if (is_array($pipeline)) {
 					foreach ($pipeline as $key => $value) {
 						if (isset($value['classMethod'])) {
-							$pipelineValue[$key] = call_user_method($value['classMethod'], $this);
+							if (!method_exists($this, $value['classMethod'])) {
+								continue;
+							}
+							$pipelineValue[$key] = $this->{$value['classMethod']}();
 						} else {
 							$pipelineValue[$key] = (is_numeric($value)) ? intval($value) : $value;
 						}
