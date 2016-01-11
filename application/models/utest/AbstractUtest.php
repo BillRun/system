@@ -13,7 +13,7 @@
  * @subpackage uTest
  * @since    4.0
  */
-abstract class AbstractUtestModel {
+abstract class utest_AbstractUtestModel{
 
 	protected $controller;
 	protected $name;
@@ -38,7 +38,12 @@ abstract class AbstractUtestModel {
 	}
 	
 	public function getTestTemplate(){
-		return lcfirst($this->name . ".phtml");
+		$prefix = 'utest_';
+		$name = $this->name;
+		if (substr($name, 0, strlen($prefix)) == $prefix) {
+			$name = substr($name, strlen($prefix));
+		}
+		return lcfirst($name . ".phtml");
 	}
 	
 	public function  getTestResults(){

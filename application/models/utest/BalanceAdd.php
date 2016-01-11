@@ -13,7 +13,7 @@
  * @subpackage uTest
  * @since    4.0
  */
-class TestBalanceAddModel extends AbstractUtestModel {
+class utest_BalanceAddModel extends utest_AbstractUtestModel {
 
 	public function __construct(\UtestController $controller) {
 		parent::__construct($controller);

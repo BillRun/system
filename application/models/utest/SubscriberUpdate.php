@@ -13,7 +13,7 @@
  * @subpackage uTest
  * @since    4.0
  */
-class TestSubscriberUpdateModel extends AbstractUtestModel {
+class utest_SubscriberUpdateModel extends utest_AbstractUtestModel {
 
 	public function __construct(\UtestController $controller) {
 		parent::__construct($controller);

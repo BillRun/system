@@ -51,7 +51,7 @@ class UtestController extends Yaf_Controller_Abstract {
 		}
 		$this->protocol = (empty($this->getRequest()->getServer('HTTPS'))) ? 'http://' : 'https	://';
 		$this->subdomain = $this->getRequest()->getBaseUri();
-		$this->siteUrl = $this->protocol . $this->basehost . $this->getRequest()->getServer('HTTP_HOST') . $this->subdomain;
+		$this->siteUrl = $this->protocol . $this->getRequest()->getServer('HTTP_HOST') . $this->subdomain;
 		$this->apiUrl = $this->siteUrl . '/api';
 		$this->reference = rand(1000000000, 9999999999);
 		//Load Test conf file
@@ -65,7 +65,7 @@ class UtestController extends Yaf_Controller_Abstract {
 	 */
 	public function indexAction() {
 		$tests = array();	
-		foreach ( $this->getEnabledTastes() as $key => $testModelName) {
+		foreach ( $this->getEnabledTests() as $key => $testModelName) {
 			$tests[] = new $testModelName($this);
 		}
 		$this->getView()->tests = $tests;
@@ -148,7 +148,6 @@ class UtestController extends Yaf_Controller_Abstract {
 		$this->getView()->balances = $balance;
 		$this->getView()->subscribers = $subscriber;
 		$this->getView()->apiCalls = $this->apiCalls;
-		//$this->getView()->testType = ucfirst(preg_replace('/(?!^)[A-Z]{2,}(?=[A-Z][a-z])|[A-Z][a-z]/', ' $0', $type));
 	}
 
 	public function getReference() {
@@ -188,7 +187,7 @@ class UtestController extends Yaf_Controller_Abstract {
 		Billrun_Factory::db()->linesCollection()->remove(array('sid' => $sid));
 	}
 	/**
-	 * Delete all lines by SID 
+	 * Delete all Subscribers by SID 
 	 * @param type $sid
 	 */
 	protected function resetSubscribers($sid) {
@@ -347,26 +346,10 @@ class UtestController extends Yaf_Controller_Abstract {
 		return $output;
 	}
 	
-	protected function getEnabledTastes() {
-//		//From files
-//		$tests = array();
-//		//Scan test dir and set all avalibes tests to TPL
-//		$directory = __DIR__ . '/../models/utest/';
-//		$files = glob($directory . "Test*.php");
-//		foreach ($files as $key => $file) {
-//			$tests[] = basename($file, ".php") . 'Model';
-//		}
-		
+	protected function getEnabledTests() {
 		//From config
 		$tests = $this->conf->getConfigValue('test.enableTests', array());
-	
 		return $tests;
 	}
 
 }
-
-spl_autoload_register(function ($class) {
-	$class = preg_replace('/' . preg_quote('Model', '/') . '$/', '', $class);
-	$path = __DIR__ . '/../models/utest/' . $class . '.php';
-	include $path;
-});
