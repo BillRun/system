@@ -133,7 +133,8 @@ class ildsOneWayPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$row[$this->pricingField] =  $res['aprice'] = round($this->access_price + Billrun_Calculator_CustomerPricing::getPriceByRate($row['arate'], $row['usaget'], $row['usagev']), 4);
 
 		if ($row['usagev'] == '0') {
-			$res['records_type'] = '005';
+			return;
+//			$res['records_type'] = '005';
 		} else if (!$row['arate']) {
 			$res['records_type'] = '002';
 			$res['sampleDurationInSec'] = '0';
