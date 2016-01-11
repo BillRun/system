@@ -51,7 +51,6 @@ class Subscriber_Golan extends Billrun_Subscriber {
 			if (!file_exists($this->crm_output_dir)) {
 				mkdir($this->crm_output_dir, 0777, true);
 			}
-
 		}
 		$creditCalcOptions = array_merge(array('type' => 'Rate_Credit', 'autoload' => false), Billrun_Factory::config()->getConfigValue('Rate_Credit.calculator', array()));
 		$this->creditCalc = Billrun_Calculator::getInstance($creditCalcOptions);
@@ -163,7 +162,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 	 * @todo use Zend_Http_Client
 	 */
 	static protected function send($url, $post_data = null) {
- // create a new cURL resource
+		// create a new cURL resource
 		$ch = curl_init();
 
 		// set URL and other appropriate options
@@ -312,13 +311,12 @@ class Subscriber_Golan extends Billrun_Subscriber {
 								}
 								$concat['data']['credits'] = $credits;
 							}
-							
+
 							if (isset($subscriber['did_premium'])) {
 								$count = intval($subscriber['did_premium']);
-								 while ($count > 0) {
-									 $subscriber['services'][] = 'DID_PREMIUM';
-									 $count--;
-									
+								while ($count > 0) {
+									$subscriber['services'][] = 'DID_PREMIUM';
+									$count--;
 								}
 							}
 
