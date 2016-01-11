@@ -586,7 +586,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 //		$options = array('w' => 'majority');
 		Billrun_Factory::log("Updating balance " . $balance_id . " of subscriber " . $row['sid'], Zend_Log::DEBUG);
 		Billrun_Factory::dispatcher()->trigger('beforeCommitSubscriberBalance', array(&$row, &$pricingData, &$query, &$update, $rate, $this));
-		$ret = $this->balances->update($query, $update, $options);
+		$ret = $this->balances->update($query, $update);
 		if (!($ret['ok'] && $ret['updatedExisting'])) {
 			// failed because of different totals (could be that another server with another line raised the totals). 
 			// Need to calculate pricingData from the beginning
