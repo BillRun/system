@@ -1,6 +1,25 @@
 <?php
 
-class AddChargeModel extends UtestModel {
+/**
+ * @package         Billing
+ * @copyright       Copyright (C) 2012-2015 S.D.O.C. LTD. All rights reserved.
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
+ */
+
+/**
+ * TestAddChargeModel  model class
+ *
+ * @package  Models
+ * @subpackage uTest
+ * @since    4.0
+ */
+class TestChargeAddModel extends AbstractUtestModel {
+	
+	public function __construct(\UtestController $controller) {
+		parent::__construct($controller);
+		$this->result = array('balance_before', 'balance_after', 'lines');
+		$this->label = 'Add Charging Plan';
+	}
 
 	function doTest() {
 		$sid = (int) Billrun_Util::filter_var($this->controller->getRequest()->get('sid'), FILTER_VALIDATE_INT);

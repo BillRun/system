@@ -1,7 +1,7 @@
 <form action="/utest/result" method="<?php echo $request_method ?>" class="form-horizontal">
-	<input type="hidden" name="type" value="updateSubscriber">
+	<input type="hidden" name="type" value="<?php echo $name ?>">
 	
-	<h3>Search by </h3>
+	<h3>Search by :</h3>
 	<div class="form-group row">
 		<label for="sid" class="col-sm-2 control-label text-right">SID</label>
 		<div class="col-sm-5 input-group">
@@ -21,14 +21,13 @@
 		</div>
 	</div>
 	
-	<hr>
-	<h3>Update:</h3>
+	<h3>Update :</h3>
 	<div class="form-group row">
 		<label for="new_sid" class="col-sm-2 control-label text-right">SID</label>
 		<div class="col-sm-5 input-group">
 			<span class="input-group-addon">
 				<input type="checkbox" class='enable-input' name="enable-new_sid">
-				<small class="text-muted text-center">Check checkbox to send value.</small>
+				<small class="text-muted text-center">Check to send value.</small>
 			</span>
 			<input type="text" name="new_sid" value=''  class="form-control">
 		</div>
@@ -39,7 +38,7 @@
 		<div class="col-sm-5 input-group">
 			<span class="input-group-addon">
 				<input type="checkbox" class='enable-input' name="enable-new_imsi">
-				<small class="text-muted text-center">Check checkbox to send value.</small>
+				<small class="text-muted text-center">Check to send value.</small>
 			</span>
 			<textarea rows="4" name="new_imsi" class="form-control" ></textarea>
 			<small class="text-muted">New line per IMSI.</small>
@@ -51,7 +50,7 @@
 		<div class="col-sm-5 input-group">
 			<span class="input-group-addon">
 				<input type="checkbox" class='enable-input' name="enable-new_msisdn">
-				<small class="text-muted text-center">Check checkbox to send value.</small>
+				<small class="text-muted text-center">Check to send value.</small>
 			</span>
 			<input type="text" name="new_msisdn" value='' class="form-control">
 		</div>
@@ -62,7 +61,7 @@
 		<div class="col-sm-5 input-group">
 			<span class="input-group-addon">
 				<input type="checkbox" class='enable-input' name="enable-aid">
-				<small class="text-muted text-center">Check checkbox to send value.</small>
+				<small class="text-muted text-center">Check to send value.</small>
 			</span>
 			<input type="text" name="aid" value='' class="form-control">
 		</div>
@@ -73,7 +72,7 @@
 		<div class="col-sm-5 input-group">
 			<span class="input-group-addon">
 				<input type="checkbox" class='enable-input' name="enable-plan">
-				<small class="text-muted text-center">Check checkbox to send value.</small>
+				<small class="text-muted text-center">Check to send value.</small>
 			</span>
 			<select class="form-control" name='plan'>
 				<option value=""></option>
@@ -89,7 +88,7 @@
 		<div class="col-sm-5 input-group">
 			<span class="input-group-addon">
 				<input type="checkbox" class='enable-input' name="enable-service_provider">
-				<small class="text-muted text-center">Check checkbox to send value.</small>
+				<small class="text-muted text-center">Check to send value.</small>
 			</span>
 			<select class="form-control" name='service_provider'>
 				<option value=""></option>
@@ -105,7 +104,7 @@
 		<div class="col-sm-5 input-group">
 			<span class="input-group-addon">
 				<input type="checkbox" class='enable-input' name="enable-charging_type">
-				<small class="text-muted text-center">Check checkbox to send value.</small>
+				<small class="text-muted text-center">Check to send value.</small>
 			</span>
 			<select class="form-control" name='charging_type'>
 				<option value=""></option>
@@ -121,7 +120,7 @@
 		<div class="col-sm-5 input-group">
 			<span class="input-group-addon">
 				<input type="checkbox" class='enable-input' name="enable-language">
-				<small class="text-muted text-center">Check checkbox to send value.</small>
+				<small class="text-muted text-center">Check to send value.</small>
 			</span>
 			<select class="form-control" name='language'>
 				<?php foreach ($languages as $language) : ?>
@@ -137,7 +136,7 @@
 		<div class="col-sm-5 input-group">
 			<span class="input-group-addon">
 				<input type="checkbox" class='enable-input' name="enable-track_history">
-				<small class="text-muted text-center">Check checkbox to send value.</small>
+				<small class="text-muted text-center">Check to send value.</small>
 			</span>
 			<select class="form-control" name='track_history'>
 					<option value="1" checked>True</option>
@@ -151,7 +150,7 @@
 		<div class="col-sm-5 input-group">
 			<span class="input-group-addon">
 				<input type="checkbox" class='enable-input' name="enable-keep_balances">
-				<small class="text-muted text-center">Check checkbox to send value.</small>
+				<small class="text-muted text-center">Check to send value.</small>
 			</span>
 			<select class="form-control" name='keep_balances'>
 					<option value="1" checked>True</option>
@@ -165,7 +164,7 @@
 		<div class="col-sm-5 input-group">
 			<span class="input-group-addon">
 				<input type="checkbox" class='enable-input' class='enable-input' name="enable-keep_lines">
-				<small class="text-muted text-center">Check checkbox to send value.</small>
+				<small class="text-muted text-center">Check to send value.</small>
 			</span>
 			<select class="form-control" name='keep_lines'>
 					<option value="1" checked>True</option>

@@ -13,8 +13,14 @@
  * @subpackage uTest
  * @since    4.0
  */
-class CreateSubscriberModel extends UtestModel {
+class TestSubscriberCreateModel extends AbstractUtestModel {
 
+	public function __construct(\UtestController $controller) {
+		parent::__construct($controller);
+		$this->result = array('subscriber_after', 'subscriber_before');
+		$this->label = 'Create Subscriber';
+	}
+	
 	public function doTest() {
 		$sid = (int) Billrun_Util::filter_var($this->controller->getRequest()->get('sid'), FILTER_VALIDATE_INT);
 		$aid = (int) Billrun_Util::filter_var($this->controller->getRequest()->get('aid'), FILTER_SANITIZE_STRING);
@@ -61,5 +67,5 @@ class CreateSubscriberModel extends UtestModel {
 		);
 		return $request;
 	}
-
+	
 }
