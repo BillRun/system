@@ -2,8 +2,9 @@
 	<head>
 		<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
 		<script>window.jQuery || document.write('<script src="<?php echo $this->subdomain; ?>/js/vendor/jquery-1.11.0.min.js"><\/script>')</script>
-		<link rel="stylesheet" href="<?php echo $subdomain ?>/css/bootstrap.min.css">
 		<script src="<?php echo $subdomain ?>/js/vendor/bootstrap.js"></script>
+		<script src="<?php echo $subdomain ?>/js/utest/utest.js"></script>
+		<link rel="stylesheet" href="<?php echo $subdomain ?>/css/bootstrap.min.css">
 	</head>
 	<body>
 		<div class="container">
@@ -17,8 +18,8 @@
 
 			<?php if (!empty($balances['before'])) : ?>
 				<div class="panel panel-default">
-					<div class="panel-heading">Balances Before</div>
-					<div class="panel-body">
+					<div class="panel-heading down" data-toggle="collapse" data-target="#balance-before"> Balances Before</div>
+					<div class="panel-body collapse in" id='balance-before'>
 						<table class="table table-striped">
 							<thead>
 								<tr>
@@ -45,7 +46,9 @@
 
 			<?php if (!empty($subscribers['before'])) : ?>
 				<div class="panel panel-default">
-					<div class="panel-heading" data-toggle="collapse" data-target="#subscriber-before">Subscriber Before SID : <?php echo $sid ?></div>
+					<div class="panel-heading up" data-toggle="collapse" data-target="#subscriber-before">
+						Subscriber Before SID : <?php echo $sid ?>
+					</div>
 					<div class="panel-body collapse" id='subscriber-before'>
 						<?php foreach ($subscribers['before'] as $subscriber_id => $subscriber) : ?>
 							<div class="row well col-sm-5" style='margin: 10px 30px;'>
@@ -65,7 +68,8 @@
 
 			<?php if (!empty($subscribers['after'])) : ?>
 				<div class="panel panel-default">
-					<div class="panel-heading" data-toggle="collapse" data-target="#subscriber-after">Subscriber After SID : <?php echo $sid ?></div>
+					<div class="panel-heading up" data-toggle="collapse" data-target="#subscriber-after">
+						Subscriber After SID : <?php echo $sid ?></div>
 					<div class="panel-body collapse" id='subscriber-after'>
 						<?php foreach ($subscribers['after'] as $subscriber_id => $subscriber) : ?>
 							<div class="row well col-sm-5" style='margin: 10px 30px;'>
@@ -85,8 +89,8 @@
 
 			<?php if (!empty($lines['rows'])) : ?>
 				<div class="panel panel-default">
-					<div class="panel-heading">Lines for action <?php echo $lines['ref'] ?></div>
-					<div class="panel-body">
+					<div class="panel-heading down" data-toggle="collapse" data-target="#lines">Lines for action <?php echo $lines['ref'] ?></div>
+					<div class="panel-body collapse in" id='lines'>
 						<table class="table table-striped">
 							<thead>
 								<tr>
@@ -124,8 +128,8 @@
 
 			<?php if (!empty($balances['after'])) : ?>
 				<div class="panel panel-default">
-					<div class="panel-heading">Balances After</div>
-					<div class="panel-body">
+					<div class="panel-heading down" data-toggle="collapse" data-target="#balance-after">Balances After</div>
+					<div class="panel-body collapse in" id='balance-after'>
 						<table class="table table-striped">
 							<thead>
 								<tr>
@@ -152,8 +156,8 @@
 
 			<?php if (!empty($balances['after']) && !empty($balances['before'])) : ?>
 				<div class="panel panel-default">
-					<div class="panel-heading">Balances Diff</div>
-					<div class="panel-body">
+					<div class="panel-heading down" data-toggle="collapse" data-target="#balance-diff">Balances Diff</div>
+					<div class="panel-body collapse in" id='balance-diff'>
 						<table class="table table-striped">
 							<thead>
 								<tr>

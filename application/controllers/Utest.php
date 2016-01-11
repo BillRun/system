@@ -64,12 +64,8 @@ class UtestController extends Yaf_Controller_Abstract {
 	 * @return void
 	 */
 	public function indexAction() {
-		//Scan test dir and set all avalibes tests to TPL
-		$tests = array();
-		$directory = __DIR__ . '/../models/utest/';
-		$files = glob($directory . "Test*.php");
-		foreach ($files as $key => $file) {
-			$testModelName = basename($file, ".php") . 'Model';
+		$tests = array();	
+		foreach ( $this->getEnabledTastes() as $key => $testModelName) {
 			$tests[] = new $testModelName($this);
 		}
 		$this->getView()->tests = $tests;
@@ -349,6 +345,22 @@ class UtestController extends Yaf_Controller_Abstract {
 		$output['dialed_digits'] = $this->conf->getConfigValue('test.dialed_digits', '');
 		$output['request_method'] = $this->conf->getConfigValue('test.requestType', 'GET');
 		return $output;
+	}
+	
+	protected function getEnabledTastes() {
+//		//From files
+//		$tests = array();
+//		//Scan test dir and set all avalibes tests to TPL
+//		$directory = __DIR__ . '/../models/utest/';
+//		$files = glob($directory . "Test*.php");
+//		foreach ($files as $key => $file) {
+//			$tests[] = basename($file, ".php") . 'Model';
+//		}
+		
+		//From config
+		$tests = $this->conf->getConfigValue('test.enableTests', array());
+	
+		return $tests;
 	}
 
 }
