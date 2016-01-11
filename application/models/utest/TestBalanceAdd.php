@@ -13,8 +13,14 @@
  * @subpackage uTest
  * @since    4.0
  */
-class AddBalanceModel extends UtestModel {
+class TestBalanceAddModel extends AbstractUtestModel {
 
+	public function __construct(\UtestController $controller) {
+		parent::__construct($controller);
+		$this->result = array('balance_before', 'balance_after', 'lines');
+		$this->label = 'Add Balance';
+	}
+	
 	function doTest() {
 		$sid = (int) Billrun_Util::filter_var($this->controller->getRequest()->get('sid'), FILTER_VALIDATE_INT);
 		$name = Billrun_Util::filter_var($this->controller->getRequest()->get('balanceType'), FILTER_SANITIZE_STRING);

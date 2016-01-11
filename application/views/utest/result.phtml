@@ -8,11 +8,11 @@
 	<body>
 		<div class="container">
 			<div class="page-header">
-				<h1>Results for <?php echo $testType; ?></h1>
+				<h1>Results for <?php echo $test->getTestLabel(); ?></h1>
 			</div>
 			<ol class="breadcrumb">
 				<li><a href="/utest">uTest</a></li>
-				<li><?php echo $testType; ?></li>
+				<li><?php echo $test->getTestLabel(); ?></li>
 			</ol>
 
 			<?php if (!empty($balances['before'])) : ?>
@@ -45,8 +45,8 @@
 
 			<?php if (!empty($subscribers['before'])) : ?>
 				<div class="panel panel-default">
-					<div class="panel-heading">Subscriber Before SID : <?php echo $sid ?></div>
-					<div class="panel-body">
+					<div class="panel-heading" data-toggle="collapse" data-target="#subscriber-before">Subscriber Before SID : <?php echo $sid ?></div>
+					<div class="panel-body collapse" id='subscriber-before'>
 						<?php foreach ($subscribers['before'] as $subscriber_id => $subscriber) : ?>
 							<div class="row well col-sm-5" style='margin: 10px 30px;'>
 								<?php foreach ($subscriber as $fieldName => $fieldValue) : ?>
@@ -65,8 +65,8 @@
 
 			<?php if (!empty($subscribers['after'])) : ?>
 				<div class="panel panel-default">
-					<div class="panel-heading">Subscriber After SID : <?php echo $sid ?></div>
-					<div class="panel-body ">>
+					<div class="panel-heading" data-toggle="collapse" data-target="#subscriber-after">Subscriber After SID : <?php echo $sid ?></div>
+					<div class="panel-body collapse" id='subscriber-after'>
 						<?php foreach ($subscribers['after'] as $subscriber_id => $subscriber) : ?>
 							<div class="row well col-sm-5" style='margin: 10px 30px;'>
 								<?php foreach ($subscriber as $fieldName => $fieldValue) : ?>
@@ -215,7 +215,7 @@
 				</div>
 			<?php endif; ?>
 
-			<a href="/utest" class="btn btn-success">Return</a>
+			<a href="/utest#<?php echo $test->getTestName() ?>" class="btn btn-success">Return</a>
 		</div>
 	</body>
 </html>

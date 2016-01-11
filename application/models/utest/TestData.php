@@ -13,8 +13,14 @@
  * @subpackage uTest
  * @since    4.0
  */
-class TestDataModel extends UtestModel {
+class TestDataModel extends AbstractUtestModel {
 
+	public function __construct(\UtestController $controller) {
+		parent::__construct($controller);
+		$this->result = array('balance_before', 'balance_after', 'lines');
+		$this->label = 'Data';
+	}
+	
 	/**
 	 * main action to do basic tests
 	 * 

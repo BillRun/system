@@ -64,7 +64,17 @@ class UtestController extends Yaf_Controller_Abstract {
 	 * @return void
 	 */
 	public function indexAction() {
+		//Scan test dir and set all avalibes tests to TPL
+		$tests = array();
+		$directory = __DIR__ . '/../models/utest/';
+		$files = glob($directory . "Test*.php");
+		foreach ($files as $key => $file) {
+			$testModelName = basename($file, ".php") . 'Model';
+			$tests[] = new $testModelName($this);
+		}
+		$this->getView()->tests = $tests;
 		$this->getView()->subdomain = $this->subdomain;
+		
 		$formParams = $this->getTestFormData();
 		foreach ($formParams as $name => $value) {
 			$this->getView()->{$name} = $value;
@@ -83,6 +93,7 @@ class UtestController extends Yaf_Controller_Abstract {
 			die();
 		}
 		$removeLines = Billrun_Util::filter_var($this->getRequest()->get('removeLines'), FILTER_SANITIZE_STRING);
+		$removeSubscriber = Billrun_Util::filter_var($this->getRequest()->get('removeSubscriber'), FILTER_SANITIZE_STRING);
 		$type = Billrun_Util::filter_var($this->getRequest()->get('type'), FILTER_SANITIZE_STRING);
 		$sid = (int) Billrun_Util::filter_var($this->getRequest()->get('sid'), FILTER_VALIDATE_INT);
 		$imsi = Billrun_Util::filter_var($this->getRequest()->get('imsi'), FILTER_SANITIZE_STRING);
@@ -91,41 +102,21 @@ class UtestController extends Yaf_Controller_Abstract {
 			$sid = $this->getSid($imsi);
 		}
 		
-		$result = array();
-
-		//Create test by type
-		switch ($type) {
-			case 'data':
-				$utest = new TestDataModel($this);
-				$result = array('balance_before', 'balance_after', 'lines');
-				break;
-			case 'call':
-				$utest = new TestCallModel($this);
-				$result = array('balance_before', 'balance_after', 'lines');
-				break;
-			case 'addBalance':
-				$utest = new AddBalanceModel($this);
-				$result = array('balance_before', 'balance_after', 'lines');
-				break;
-			case 'addCharge':
-				$utest = new AddChargeModel($this);
-				$result = array('balance_before', 'balance_after', 'lines');
-				break;
-			case 'createSubscriber':
-				$utest = new CreateSubscriberModel($this);
-				$result = array('subscriber_after', 'subscriber_before');
-				break;
-			case 'updateSubscriber':
-				$utest = new UpdateSubscriberModel($this);
-				$result = array('subscriber_after', 'subscriber_before', 'balance_before', 'balance_after', 'lines');
-				break;
-		}
-		
 		if ($removeLines == 'remove') {
 			//Remove all lines by SID
 			$this->resetLines($sid);
 		}
-
+		if ($removeSubscriber == 'remove') {
+			//Remove all Subscriber by SID
+			$this->resetSubscribers($sid);
+		}
+		
+		//Create test by type
+		$tetsClassName = $type .'Model';
+		$utest = new $tetsClassName($this);
+		$result = $utest->getTestResults();//Get parts for results
+		
+		
 		if(in_array('balance_before', $result)){
 			// Get balance before scenario
 			$balance['before'] = $this->getBalance($sid);
@@ -154,13 +145,14 @@ class UtestController extends Yaf_Controller_Abstract {
 			$balance['after'] = $this->getBalance($sid);
 		}
 
+		$this->getView()->test = $utest;
 		$this->getView()->sid = $sid;
 		$this->getView()->subdomain = $this->subdomain;
 		$this->getView()->lines = $lines;
 		$this->getView()->balances = $balance;
 		$this->getView()->subscribers = $subscriber;
 		$this->getView()->apiCalls = $this->apiCalls;
-		$this->getView()->testType = ucfirst(preg_replace('/(?!^)[A-Z]{2,}(?=[A-Z][a-z])|[A-Z][a-z]/', ' $0', $type));
+		//$this->getView()->testType = ucfirst(preg_replace('/(?!^)[A-Z]{2,}(?=[A-Z][a-z])|[A-Z][a-z]/', ' $0', $type));
 	}
 
 	public function getReference() {
@@ -198,6 +190,13 @@ class UtestController extends Yaf_Controller_Abstract {
 	 */
 	protected function resetLines($sid) {
 		Billrun_Factory::db()->linesCollection()->remove(array('sid' => $sid));
+	}
+	/**
+	 * Delete all lines by SID 
+	 * @param type $sid
+	 */
+	protected function resetSubscribers($sid) {
+		Billrun_Factory::db()->subscribersCollection()->remove(array('sid' => $sid));
 	}
 
 	/**

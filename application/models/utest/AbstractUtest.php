@@ -13,15 +13,35 @@
  * @subpackage uTest
  * @since    4.0
  */
-abstract class UtestModel {
+abstract class AbstractUtestModel {
 
 	protected $controller;
+	protected $name;
+	protected $label;
+	protected $result;
 
 	public function __construct(UtestController $controller) {
 		$this->controller = $controller;
+		$this->name = preg_replace('/' . preg_quote('Model', '/') . '$/', '', get_class($this));
 	}
 
 	abstract function doTest();
-
+	
 	abstract protected function getRequestData($params);
+	
+	public function getTestName(){
+		return $this->name;
+	}
+	
+	public function getTestLabel(){
+		return $this->label;
+	}
+	
+	public function getTestTemplate(){
+		return lcfirst($this->name . ".phtml");
+	}
+	
+	public function  getTestResults(){
+		return $this->result;
+	}
 }
