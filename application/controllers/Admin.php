@@ -133,7 +133,6 @@ class AdminController extends Yaf_Controller_Abstract {
 			return false;
 		$coll = Billrun_Util::filter_var($this->getRequest()->get('coll'), FILTER_SANITIZE_STRING);
 		$size = $this->getRequest()->get('size');
-		$page = $this->getRequest()->get('page');
 		$response = new Yaf_Response_Http();
 		$session = $this->getSession($coll);
 		$filter = @json_decode($this->getRequest()->get('filter'));
@@ -171,7 +170,12 @@ class AdminController extends Yaf_Controller_Abstract {
 			$items[] = $i;
 		}
 		$params['data'] = $items;
-		$response->setBody(json_encode(array('items' => $params, 'pager' => $this->model->getPager(), 'authorized_write' => AdminController::authorized('write'))));
+		$response->setBody(json_encode(array(
+			'items' => $params,
+			'pager' => $this->model->getPager(),
+			'authorized_write' => AdminController::authorized('write'),
+			'filter_fields' => $this->model->getFilterFields()
+		)));
 		$response->response();
 		return false;
 	}

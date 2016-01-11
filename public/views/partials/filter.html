@@ -1,9 +1,12 @@
 <form ng-submit='filterList()' class='form-inline'>
 	<div ng-repeat='filterField in collection.filter_fields_order'>
-		<div ng-repeat='(fieldName, field) in filterField'>
-			<label class='control-label'>{{collection.filter_fields[fieldName].display}}</label>
-			<input-field model='session' field="fieldName" type='collection.filter_fields[fieldName].input_type'></input-field>
-			<!--<input-field model='listFilter' field='fieldName' type='collection.filter_fields[fieldName].input_type'></input-field>-->
+		<div ng-repeat='(fieldName, field) in filterField' class="row">
+			<div class="col-md-2">
+				<label class='control-label'>{{collection.filter_fields[fieldName].display}}</label>
+			</div>
+			<div class='col-md-6'>
+				<input-field model='session' field="fieldName" type='collection.filter_fields[fieldName].input_type' fields='filter_fields'></input-field>
+			</div>
 		</div>
 	</div>
 	<div class="toolbar-buttons">

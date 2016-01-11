@@ -109,31 +109,31 @@ class BalancesModel extends TableModel {
 				'display' => 'BAN',
 				'default' => '',
 			),
-			'usage_type' => array(
-				'key' => 'manual_key',
-				'db_key' => 'nofilter',
-				'input_type' => 'multiselect',
-				'display' => 'Usage',
-				'values' => $usage_filter_values,
-				'singleselect' => 1,
-				'default' => array(),
-			),
-			'usage_filter' => array(
-				'key' => 'manual_operator',
-				'db_key' => 'nofilter',
-				'input_type' => 'multiselect',
-				'display' => '',
-				'values' => $operators,
-				'singleselect' => 1,
-				'default' => array(),
-			),
-			'usage_value' => array(
-				'key' => 'manual_value',
-				'db_key' => 'nofilter',
-				'input_type' => 'number',
-				'display' => '',
-				'default' => '',
-			),
+//			'usage_type' => array(
+//				'key' => 'manual_key',
+//				'db_key' => 'nofilter',
+//				'input_type' => 'multiselect',
+//				'display' => 'Usage',
+//				'values' => $usage_filter_values,
+//				'singleselect' => 1,
+//				'default' => array(),
+//			),
+//			'usage_filter' => array(
+//				'key' => 'manual_operator',
+//				'db_key' => 'nofilter',
+//				'input_type' => 'multiselect',
+//				'display' => '',
+//				'values' => $operators,
+//				'singleselect' => 1,
+//				'default' => array(),
+//			),
+//			'usage_value' => array(
+//				'key' => 'manual_value',
+//				'db_key' => 'nofilter',
+//				'input_type' => 'number',
+//				'display' => '',
+//				'default' => '',
+//			),
 			'plan' => array(
 				'key' => 'plan',
 				'db_key' => 'current_plan',
@@ -164,17 +164,17 @@ class BalancesModel extends TableModel {
 					'width' => 2,
 				),
 			),
-			3 => array(
-				'usage_type' => array(
-					'width' => 2,
-				),
-				'usage_filter' => array(
-					'width' => 1,
-				),
-				'usage_value' => array(
-					'width' => 1,
-				),
-			)
+//			3 => array(
+//				'usage_type' => array(
+//					'width' => 2,
+//				),
+//				'usage_filter' => array(
+//					'width' => 1,
+//				),
+//				'usage_value' => array(
+//					'width' => 1,
+//				),
+//			)
 		);
 		return $filter_field_order;
 	}

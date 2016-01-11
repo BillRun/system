@@ -1,5 +1,5 @@
-app.controller('ListController', ['$scope', '$routeParams', '$location', 'Database',
-  function ($scope, $routeParams, $location, Database) {
+app.controller('ListController', ['$scope', '$routeParams', '$location', 'Database', 'Utils',
+  function ($scope, $routeParams, $location, Database, Utils) {
     'use strict';
 
     var min_pages = 0;
@@ -20,6 +20,18 @@ app.controller('ListController', ['$scope', '$routeParams', '$location', 'Databa
       $scope.i = min;
     }
 
+    function getCollectionItems(res) {
+      $scope.pager = res.data.pager;
+      $scope.pager.current = parseInt($scope.pager.current, 10);
+      $scope.pager.size = parseInt($scope.pager.size, 10);
+      $scope.pager.count = parseInt($scope.pager.count, 10);
+      calculatePaging();
+      $scope.collection = res.data.items;
+      $scope.session = res.data.items.session;
+      $scope.filter_fields = res.data.filter_fields;
+      $scope.authorized_write = res.data.authorized_write;
+    }
+
     $scope.capitalize = function (str) {
       return _.capitalize(str);
     };
@@ -34,7 +46,8 @@ app.controller('ListController', ['$scope', '$routeParams', '$location', 'Databa
     $scope.printDate = function (dateobj) {
       if (_.isObject(dateobj) && dateobj.sec) {
         var d = new Date(dateobj.sec * 1000);
-        return moment(d).format("YYYY-MM-DD HH:MM:SS");
+        var format = Utils.getDateFormat() + " HH:MM:SS";
+        return moment(d).format(format.toUpperCase());
       }
       return '';
     };
@@ -43,13 +56,9 @@ app.controller('ListController', ['$scope', '$routeParams', '$location', 'Databa
       var params = {
         coll: $routeParams.collection,
         filter: JSON.stringify($scope.session),
-        showprefix: $scope.session.showprefix,
-        size: $scope.pager.sizebalances
+        size: $scope.pager.size
       };
-      Database.filterCollectionItems(params).then(function (res) {
-        $scope.collection = res.data.items;
-        $scope.session = res.data.items.session;
-      });
+      Database.getCollectionItems(params).then(getCollectionItems);
     };
 
     $scope.editBatch = function () {
@@ -106,11 +115,6 @@ app.controller('ListController', ['$scope', '$routeParams', '$location', 'Databa
     };
 
     $scope.setListSize = function (size) {
-      if (size < $scope.pager.size) {
-        $scope.pager.size = size;
-        $scope.collection.data = $scope.collection.data.slice(0, size);
-        return;
-      }
       $location.search({size: size});
     };
 
@@ -134,15 +138,6 @@ app.controller('ListController', ['$scope', '$routeParams', '$location', 'Databa
           params.size = 100;
         }
       }
-      Database.getCollectionItems(params).then(function (res) {
-        $scope.pager = res.data.pager;
-        $scope.pager.current = parseInt($scope.pager.current, 10);
-        $scope.pager.size = parseInt($scope.pager.size, 10);
-        $scope.pager.count = parseInt($scope.pager.count, 10);
-        calculatePaging();
-        $scope.collection = res.data.items;
-        $scope.session = res.data.items.session;
-        $scope.authorized_write = res.data.authorized_write;
-      });
+      Database.getCollectionItems(params).then(getCollectionItems);
     };
   }]);
