@@ -106,19 +106,19 @@ class utest_SubscriberUpdateModel extends utest_AbstractUtestModel {
 					'value' => $language,
 					'enable' => $enable_lang
 				),
-				'track_history' => array(
-					'value' => $track_history,
-					'enable' => $enable_track_history
-				),
-				'keep_balances' => array(
-					'value' => $keep_balances,
-					'enable' => $enable_keep_balances
-				),
-				'keep_lines' => array(
-					'value' => $keep_lines,
-					'enable' => $enable_keep_lines
-				),
-			)
+			),
+			'track_history' => array(
+				'value' => $track_history,
+				'enable' => $enable_track_history
+			),
+			'keep_balances' => array(
+				'value' => $keep_balances,
+				'enable' => $enable_keep_balances
+			),
+			'keep_lines' => array(
+				'value' => $keep_lines,
+				'enable' => $enable_keep_lines
+			),
 		);
 
 		$data = $this->getRequestData($params);
@@ -146,6 +146,17 @@ class utest_SubscriberUpdateModel extends utest_AbstractUtestModel {
 			'query' => json_encode($query),
 			'update' => json_encode($update),
 		);
+		
+		
+		if($params['track_history']['enable'] === 'on'){
+			$request['track_history'] = $params['track_history']['value'];
+		}
+		if($params['keep_balances']['enable'] === 'on'){
+			$request['keep_balances'] = $params['keep_balances']['value'];
+		}
+		if($params['keep_lines']['enable'] === 'on'){
+			$request['keep_lines'] = $params['keep_lines']['value'];
+		}
 		return $request;
 	}
 	

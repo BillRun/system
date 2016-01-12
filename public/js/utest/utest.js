@@ -22,8 +22,8 @@ $(document).ready(function () {
 	}
 	$('.enable-input').trigger('change');
 	
-	$("div.up[data-toggle='collapse']").prepend('<span class="glyphicon glyphicon-expand"></span> ');
-	$("div.down[data-toggle='collapse']").prepend('<span class="glyphicon glyphicon-collapse-down"></span> ');
+	$("div.up[data-toggle='collapse']").prepend('<a href="#"><span class="glyphicon glyphicon-expand"></span></a> ');
+	$("div.down[data-toggle='collapse']").prepend('<a href="#"><span class="glyphicon glyphicon-collapse-down"></span></a> ');
 	$('.collapse').on('show.bs.collapse', function(){
 		$(this).parent().find(".glyphicon.glyphicon-expand").removeClass("glyphicon-expand").addClass("glyphicon-collapse-down");
 	}).on('hide.bs.collapse', function(){
