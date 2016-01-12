@@ -378,13 +378,15 @@ class AdminController extends Yaf_Controller_Abstract {
 
 
 
-		if ($coll === "subscribers") {
-			$v->validate($params,$coll) ;
+		
+		$v->validate($params,$coll) ;
+		
 
-			if($v->isValid()) {	   	
-				return $this->responseSuccess(array("data" => $v->getValidations() ,"params" => $params , "status"=>true ));
-			}
+		if(!$v->isValid()) {	   	
+		
+				return $this->responseError($v->getErrors());
 		}
+		
 		if ($type == 'update') {
 			if (strtolower($coll) === 'cards') {
 				//$this->getRequest()->set('update', $this->getRequest()->get('data'));
@@ -1364,14 +1366,18 @@ class AdminController extends Yaf_Controller_Abstract {
 		}
 	}
 
-public function responseError($message,$statusCode = 500)
+public function responseError($message,$statusCode = 400)
 	{
 		
 		$resp = $this->getResponse();
 		$req  =  $this->getRequest();
-		$resp->setHeader($req->getServer('SERVER_PROTOCOL') , $statusCode . ' ' . $message);
+		$resp->setHeader($req->getServer('SERVER_PROTOCOL') , $statusCode );
 		$resp->setHeader('Content-Type','application/json');
-		$resp->setBody($message);
+		if(is_array($message)) { 
+			$resp->setBody(json_encode($message));
+		} else { 
+			$resp->setBody($message);
+		}
 		//$resp->response();
 		return false;
 	}
