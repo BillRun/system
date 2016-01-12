@@ -105,7 +105,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 			'upsert' => false,
 			'new' => false,
 			'w' => 1,
-			'multi' =>1,
+			'multiple' =>1,
 		);
 		$linesColl = Billrun_Factory::db()->linesCollection();
 		return $linesColl->update($keepLinesQuery, array('$set' => $keepLinesUpdate),$options);
