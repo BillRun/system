@@ -39,6 +39,14 @@ class UtestController extends Yaf_Controller_Abstract {
 	 * @var string
 	 */
 	protected $apiCalls = array();
+	
+	/**
+	 * save all request and responce
+	 *
+	 * @var string
+	 */
+	protected $testStartTime = null;
+	protected $testEndTime = null;
 
 	/**
 	 * method to control and navigate the user to the right view
@@ -93,9 +101,15 @@ class UtestController extends Yaf_Controller_Abstract {
 		$type = Billrun_Util::filter_var($this->getRequest()->get('type'), FILTER_SANITIZE_STRING);
 		$sid = (int) Billrun_Util::filter_var($this->getRequest()->get('sid'), FILTER_VALIDATE_INT);
 		$imsi = Billrun_Util::filter_var($this->getRequest()->get('imsi'), FILTER_SANITIZE_STRING);
+		$msisdn = Billrun_Util::filter_var($this->getRequest()->get('msisdn'), FILTER_SANITIZE_STRING);
 
 		if (empty($sid)) {
-			$sid = $this->getSid($imsi);
+			if(!empty($imsi)){
+				$query = array('imsi' => $imsi);
+			} elseif(!empty($msisdn)) {
+				$query = array('msisdn' => $msisdn);
+			}
+			$sid = $this->getSid();
 		}
 		
 		if ($removeLines == 'remove') {
@@ -123,8 +137,11 @@ class UtestController extends Yaf_Controller_Abstract {
 			$subscriber['before'] = $this->getSubscriber($sid);
 		}
 		
+		$this->testStartTime = gettimeofday();
 		//Run test by type
 		$utest->doTest();
+		$this->testEndTime = gettimeofday();
+		
 
         //Update SID if SID was changed in test
 		$new_sid = (int)Billrun_Util::filter_var($this->getRequest()->get('new_sid'), FILTER_VALIDATE_INT);
@@ -137,7 +154,7 @@ class UtestController extends Yaf_Controller_Abstract {
 		
 		if(in_array('lines', $result)){
 			// Get all lines created during scenarion
-			$lines = $this->getLines($sid_after_test, $type);
+			$lines = $this->getLines();
 		}
 
 		if(in_array('balance_after', $result)){
@@ -203,8 +220,7 @@ class UtestController extends Yaf_Controller_Abstract {
 	 * Find SID by IMSI 
 	 * @param type $imsi
 	 */
-	protected function getSid($imsi) {
-		$searchQuery = ['imsi' => $imsi];
+	protected function getSid($searchQuery) {
 		$cursor = Billrun_Factory::db()->subscribersCollection()->query($searchQuery)->cursor()->limit(100000);
 		foreach ($cursor as $row) {
 			return $row['sid'];
@@ -273,26 +289,16 @@ class UtestController extends Yaf_Controller_Abstract {
 	 * @param type $sid
 	 * @param type $charging - if TRUE, return only CHARGING lines
 	 */
-	protected function getLines($sid, $type) {
+	protected function getLines() {
 		$lines = array();
 		$amount = 0;
 
-		
-		if ($type == 'addBalance') {
-			$searchQuery = array(
-				"sid" => $sid,
-				"type" => 'charging'
-			);
-		} else if($type == 'updateSubscriber'){
-			$searchQuery = array("sid" => $sid);
-		} else {
-			$searchQuery = array(
-				"sid" => $sid,
-				'$or' => array(
-					array("session_id" => (int) $this->reference),
-					array("call_reference" => (string) $this->reference)),
-			);
-		}
+		$searchQuery = array(
+			'urt' => array(
+				'$gte' => new MongoDate($this->testStartTime['sec'], $this->testStartTime['usec']),
+				'$lte' => new MongoDate($this->testEndTime['sec'], $this->testEndTime['usec'])
+			)
+		);
 
 		$cursor = Billrun_Factory::db()->linesCollection()->query($searchQuery)->cursor()->limit(100000)->sort(['urt' => 1]);
 		foreach ($cursor as $row) {
@@ -309,7 +315,7 @@ class UtestController extends Yaf_Controller_Abstract {
 			);
 		}
 		$lines['total'] = $amount;
-		$lines['ref'] = $charging ? "Charging" : $this->reference;
+		$lines['ref'] = 'Lines that was created during test run, <strong>from ' . date('d/m/Y H:i:s', ($this->testStartTime['sec'])) .":".$this->testStartTime['usec'] . " to " . date('d/m/Y H:i:s', $this->testEndTime['sec']) .":".$this->testEndTime['usec'] .'</strong>, test ID : ' .  $this->reference;
 		return $lines;
 	}
 	
