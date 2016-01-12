@@ -138,8 +138,13 @@ class AdminController extends Yaf_Controller_Abstract {
 		$filter = @json_decode($this->getRequest()->get('filter'));
 		if ($filter) {
 			foreach($filter as $key => $val) {
-				if (!is_array($val)) {
-					$session->$key = $val;
+				$session->$key = $val;
+				if (is_array($val)) {
+					$t = array();
+					foreach($val as $v) {
+						$t[$v] = $v;
+					}
+					$session->$key = $t;
 				}
 			}
 		}
