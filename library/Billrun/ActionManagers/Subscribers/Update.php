@@ -35,14 +35,36 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 	}
 	
 	/**
-	 * Close all the open balances for a subscriber.
+	 * U[date all the balances for a subscriber.
 	 * 
-	 * @param string $sid - The sid of the user to close the balance for.
-	 * @param string $aid - The aid of the user to close the balance for.
+	 * @param integer $sid - The sid of the user to close the balance for.
+	 * @param integer $aid - The aid of the user to close the balance for.
+	 */
+	protected function updateBalances($sid, $aid) {
+		// Find all balances.
+		$balancesUpdate = array('$set' => array('sid' => $sid, 'aid' => $aid));
+		$balancesQuery = Billrun_Util::getDateBoundQuery();
+		$balancesQuery['sid'] = $this->query['sid'];
+		$options = array(
+			'upsert' => false,
+			'new' => false,
+			'w' => 1,
+			'multi' => 1
+		);
+		// TODO: Use balances DB/API proxy class.
+		$balancesColl = Billrun_Factory::db()->balancesCollection();
+		$balancesColl->findAndModify($balancesQuery, $balancesUpdate, array(), $options, true);
+	}
+	
+	/**
+	 * Update balances.
+	 * 
+	 * @param integer $sid - The sid of the user to close the balance for.
+	 * @param integer $aid - The aid of the user to close the balance for.
 	 */
 	protected function closeBalances($sid, $aid) {
 		// Find all balances.
-		$balancesUpdate = array('$set' => array('to', new MongoDate()));
+		$balancesUpdate = array('$set' => array('to' => new MongoDate()));
 		$balancesQuery = 
 			array('sid' => $sid, 
 				  'aid' => $aid);
@@ -50,6 +72,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 			'upsert' => false,
 			'new' => false,
 			'w' => 1,
+			'multui' => 1
 		);
 		// TODO: Use balances DB/API proxy class.
 		$balancesColl = Billrun_Factory::db()->balancesCollection();
@@ -145,6 +168,32 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 	}
 	
 	/**
+	 * Handle all balance logic related to the subscriber update
+	 */
+	protected function handleBalances() {
+		$sid = $this->query['sid']; 
+		$aid = $this->query['aid']; 
+		// Check if needed to update the balances.
+		if((isset($this->recordToSet['sid']) && ($this->query['sid'] != $this->recordToSet['sid'])) ||
+			(isset($this->recordToSet['aid']) && ($this->query['aid'] != $this->recordToSet['aid']))) {
+
+			if(isset($this->recordToSet['sid'])) {
+				$sid = $this->recordToSet['sid'];
+			}
+
+			if(isset($this->recordToSet['aid'])) {
+				$aid = $this->recordToSet['aid'];
+			}
+			$this->updateBalances($sid, $aid);
+		}
+
+		if($this->keepBalances === FALSE) {
+			// Close balances.
+			$this->closeBalances($sid, $aid);
+		} 
+	}
+	
+	/**
 	 * Execute the action.
 	 * @return data for output.
 	 */
@@ -167,10 +216,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 				$updatedDocument[] = Billrun_Util::convertRecordMongoDatetimeFields($record->getRawData());
 			}
 			
-			if($this->keepBalances === FALSE) {
-				// Close balances.
-				$this->closeBalances($this->recordToSet['sid'], $this->recordToSet['aid']);
-			}
+			$this->handleBalances();
 			
 		} catch (\Exception $e) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 31;
