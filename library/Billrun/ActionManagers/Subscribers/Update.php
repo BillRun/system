@@ -37,15 +37,24 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 	/**
 	 * Close all the open balances for a subscriber.
 	 * 
-	 * @param string $sid - The sid of the user to close the balance for.
-	 * @param string $aid - The aid of the user to close the balance for.
+	 * @param array $update array for update (collection update convention)
+	 * 
+	 * @return mixed false if failed else array of mongo update results
 	 */
-	protected function closeBalances($sid, $aid) {
+	protected function handleBalances(array $update = array()) {
 		// Find all balances.
-		$balancesUpdate = array('$set' => array('to', new MongoDate()));
-		$balancesQuery = 
-			array('sid' => $sid, 
-				  'aid' => $aid);
+		$balancesQuery = array();
+		if (isset($this->recordToSet['sid'])) {
+			$balancesQuery['sid'];
+		}
+		if (isset($this->recordToSet['aid'])) {
+			$balancesQuery['aid'];
+		}
+		
+		if (empty($balancesQuery)) {
+			return false;
+		}
+
 		$options = array(
 			'upsert' => false,
 			'new' => false,
@@ -53,7 +62,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 		);
 		// TODO: Use balances DB/API proxy class.
 		$balancesColl = Billrun_Factory::db()->balancesCollection();
-		$balancesColl->findAndModify($balancesQuery, $balancesUpdate, array(), $options, true);
+		return $balancesColl->findAndModify($balancesQuery, $update, array(), $options, true);
 	}
 	
 	/**
@@ -169,7 +178,17 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 			
 			if($this->keepBalances === FALSE) {
 				// Close balances.
-				$this->closeBalances($this->recordToSet['sid'], $this->recordToSet['aid']);
+				$updateArray = array('$set' => array('to', new MongoDate()));
+				$this->handleBalances($updateArray);
+			} else if (isset($this->recordToSet['sid']) || $this->recordToSet['aid']) {
+				$updateArray = array('$set' => array());
+				if (isset($this->recordToSet['sid'])) {
+					$updateArray['$set']['sid'] = $this->recordToSet['sid'];
+				}
+				if (isset($this->recordToSet['aid'])) {
+					$updateArray['$set']['aid'] = $this->recordToSet['aid'];
+				}
+				$this->handleBalances($updateArray);
 			}
 			
 		} catch (\Exception $e) {
