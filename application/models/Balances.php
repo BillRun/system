@@ -109,31 +109,31 @@ class BalancesModel extends TableModel {
 				'display' => 'BAN',
 				'default' => '',
 			),
-			'usage_type' => array(
-				'key' => 'manual_key',
-				'db_key' => 'nofilter',
-				'input_type' => 'multiselect',
-				'display' => 'Usage',
-				'values' => $usage_filter_values,
-				'singleselect' => 1,
-				'default' => array(),
-			),
-			'usage_filter' => array(
-				'key' => 'manual_operator',
-				'db_key' => 'nofilter',
-				'input_type' => 'multiselect',
-				'display' => '',
-				'values' => $operators,
-				'singleselect' => 1,
-				'default' => array(),
-			),
-			'usage_value' => array(
-				'key' => 'manual_value',
-				'db_key' => 'nofilter',
-				'input_type' => 'number',
-				'display' => '',
-				'default' => '',
-			),
+//			'usage_type' => array(
+//				'key' => 'manual_key',
+//				'db_key' => 'nofilter',
+//				'input_type' => 'multiselect',
+//				'display' => 'Usage',
+//				'values' => $usage_filter_values,
+//				'singleselect' => 1,
+//				'default' => array(),
+//			),
+//			'usage_filter' => array(
+//				'key' => 'manual_operator',
+//				'db_key' => 'nofilter',
+//				'input_type' => 'multiselect',
+//				'display' => '',
+//				'values' => $operators,
+//				'singleselect' => 1,
+//				'default' => array(),
+//			),
+//			'usage_value' => array(
+//				'key' => 'manual_value',
+//				'db_key' => 'nofilter',
+//				'input_type' => 'number',
+//				'display' => '',
+//				'default' => '',
+//			),
 			'plan' => array(
 				'key' => 'plan',
 				'db_key' => 'current_plan',
@@ -164,26 +164,42 @@ class BalancesModel extends TableModel {
 					'width' => 2,
 				),
 			),
-			3 => array(
-				'usage_type' => array(
-					'width' => 2,
-				),
-				'usage_filter' => array(
-					'width' => 1,
-				),
-				'usage_value' => array(
-					'width' => 1,
-				),
-			)
+//			3 => array(
+//				'usage_type' => array(
+//					'width' => 2,
+//				),
+//				'usage_filter' => array(
+//					'width' => 1,
+//				),
+//				'usage_value' => array(
+//					'width' => 1,
+//				),
+//			)
 		);
 		return $filter_field_order;
 	}
 
 	public function getData($filter_query = array()) {
- 		$resource = parent::getData($filter_query);
+		$resource = parent::getData($filter_query);
 		$ret = array();
-		foreach($resource as $item) {
- 			if ($current_plan = $this->getDBRefField($item, 'current_plan')) {
+		$aggregate = Billrun_Config::getInstance()->getConfigValue('admin_panel.balances.aggregate', false);
+		foreach ($resource as $item) {
+			if ($aggregate) {
+				$totals = array();
+				foreach ($item['balance']['totals'] as $key => $val) {
+					$unit = Billrun_Util::getUsagetUnit($key);
+					if ($val['cost']) {
+						$totals[] = $val['cost'] + " $unit $key";
+					} else if ($val['usagev']) {
+						$totals[] = $val['usagev'] . " " . $unit;
+					}
+				}
+				if ($item['balance']['cost']) {
+					$totals[] = $item['balance']['cost'] . " " . Billrun_Util::getUsagetUnit('cost');
+				}
+				$item['totals'] = implode(',', $totals);
+			}
+			if ($current_plan = $this->getDBRefField($item, 'current_plan')) {
 				$item['current_plan'] = $current_plan['name'];
 			}
 			$ret[] = $item;

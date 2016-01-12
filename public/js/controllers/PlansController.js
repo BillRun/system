@@ -51,6 +51,7 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
     $scope.init = function () {
       $scope.initEdit();
       $scope.availableCostUnits = ['days', 'months'];
+      $scope.availableOperations = ['set', 'accumulated', 'charge'];
       Database.getAvailableServiceProviders().then(function (res) {
         $scope.availableServiceProviders = res.data;
       });
