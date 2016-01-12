@@ -3,7 +3,7 @@
 <div class="navbar-collapse collapse">
 	<ul class="nav navbar-nav">
 		<li<?php echo ($active == '' ? ' class="active"' : ''); ?>>
-			<a href="<?php echo $this->baseUrl; ?>/admin">Home</a>
+			<a href="<?php echo $this->baseUrl; ?>/admin/">Home</a>
 		</li>		<?php if (AdminController::authorized('read', 'lines') && AdminController::showInMenu('lines')) : ?>
 			<li<?php echo ($active == 'lines' ? ' class="active"' : ''); ?>>
 				<a href="<?php echo $this->baseUrl; ?>/admin/lines">Lines</a>

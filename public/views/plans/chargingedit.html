@@ -32,6 +32,24 @@
 					</select>				
 				</div>
 			</div>
+			<div class='row'>
+				<div class='col-md-2'>
+					{{utils.getDisplayValue("operation", "plans")}}
+				</div>
+				<div class='col-md-6'>
+					<select ng-model="entity.operation" class="form-control">
+						<option ng-repeat="operation in availableOperations">{{operation}}<option>
+					</select>				
+				</div>
+			</div>
+			<div class="row">
+				<div class='col-md-2'>
+					{{utils.getDisplayValue("recurring", "plans")}}
+				</div>
+				<div class='col-md-6'>
+					<input ng-model='entity.recurring' type='number' class='form-control' />
+				</div>
+			</div>
 			<div class='row' ng-if='utils.display("from", "plans")'>
 				<div class='col-md-2'>
 					{{utils.getDisplayValue("from", "plans")}}
@@ -56,126 +74,128 @@
 					</span>
 				</div>
 			</div>
-			<hr/>
-			<h3>Include</h3>
-			<div class="row" ng-if='!isObject(entity.include.cost) && entity.include.cost'>
-				<div class="col-md-2">
-					Cost
+			
+			<div ng-hide="entity.include === undefined">
+				<hr/>
+				<h3>Include</h3>
+				<div class="row" ng-if='!isObject(entity.include.cost) && entity.include.cost'>
+					<div class="col-md-2">
+						Cost
+					</div>
+					<div class="col-md-6">
+						<input ng-model="entity.include.cost" type="text" class="form-control" />
+					</div>
 				</div>
-				<div class="col-md-6">
-					<input ng-model="entity.include.cost" type="text" class="form-control" />
-				</div>
-			</div>
-			<div class="row cost" ng-repeat='cost in entity.include.cost track by $index' ng-if='isObject(entity.include.cost)'>
-				<fieldset>
-					<legend>Cost</legend>
-					<div class='row'>
-						<div class='col-md-2'>
-							Value
-						</div>
-						<div class="col-md-6">
-							<input ng-model='cost.value' type='number' class='form-control' />
-						</div>
-					</div>
-					<div class='row'>
-						<div class='col-md-2'>
-							Name
-						</div>
-						<div class="col-md-6">
-							<input ng-model='cost.pp_includes_name' type='text' class='form-control' />
-						</div>
-					</div>
-					<div class='row'>
-						<div class='col-md-2'>
-							External Id
-						</div>
-						<div class="col-md-6">
-							<input ng-model='cost.pp_includes_external_id' type='text' class='form-control' />
-						</div>
-					</div>
-					
-					<h5>Period</h5>
-					<div>
-						<div class='row'>
-							<div class='col-md-2 col-indent'>
-								Unit:
-							</div>
-							<div class='col-md-6'>
-								<select class='form-control' ng-model='cost.period.unit'>
-									<option ng-repeat="unit in availableCostUnits">{{unit}}</option>
-								</select>
-							</div>
-						</div>
-						<div class='row'>
-							<div class='col-md-2 col-indent'>
-								Duration:
-							</div>
-							<div class='col-md-6'>
-								<input ng-model='cost.period.duration' type='text' class='form-control' ng-if='!isNumber(entity.include.cost)'/>
-								<input ng-model='cost.period.duration' type='number' class='form-control' ng-if='isNumber(entity.include.cost)'/>
-							</div>
-						</div>
-					</div>
-				</fieldset>
-			</div>			
-			<div ng-repeat="(includeTypeName, includeType) in entity.include" ng-if='includeTypeName !== "cost"'>
-				<div ng-if="isObject(includeType)">
+				<div class="row cost" ng-repeat='cost in entity.include.cost track by $index' ng-if='isObject(entity.include.cost)'>
 					<fieldset>
-						<legend>{{includeTypeName}}</legend>
-						<div class="row">
-							<div class="col-md-2">
-								Cost
+						<legend>Cost</legend>
+						<div class='row'>
+							<div class='col-md-2'>
+								Value
 							</div>
 							<div class="col-md-6">
-								<input ng-model="includeType.cost" type="text" class="form-control" />
-							</div>
-						</div>
-						<div class="row">
-							<div class="col-md-2">
-								Usagev
-							</div>
-							<div class="col-md-6">
-								<input ng-model='includeType.usagev' type='number' class='form-control' />
+								<input ng-model='cost.value' type='number' class='form-control' />
 							</div>
 						</div>
 						<div class='row'>
-							<div class="col-md-2">
+							<div class='col-md-2'>
 								Name
 							</div>
 							<div class="col-md-6">
-								<input ng-model='includeType.pp_includes_name' type='text' class='form-control' />
+								<input ng-model='cost.pp_includes_name' type='text' class='form-control' />
 							</div>
 						</div>
 						<div class='row'>
-							<div class="col-md-2">
-								External ID
+							<div class='col-md-2'>
+								External Id
 							</div>
 							<div class="col-md-6">
-								<input ng-model='includeType.pp_includes_external_id' type='text' class='form-control' />
+								<input ng-model='cost.pp_includes_external_id' type='text' class='form-control' />
 							</div>
 						</div>
+
 						<h5>Period</h5>
-						<div class="">
+						<div>
 							<div class='row'>
 								<div class='col-md-2 col-indent'>
-									Unit
+									Unit:
 								</div>
 								<div class='col-md-6'>
-									<select class='form-control' ng-model='includeType.period.unit'>
+									<select class='form-control' ng-model='cost.period.unit'>
 										<option ng-repeat="unit in availableCostUnits">{{unit}}</option>
 									</select>
 								</div>
 							</div>
 							<div class='row'>
 								<div class='col-md-2 col-indent'>
-									Duration
+									Duration:
 								</div>
 								<div class='col-md-6'>
-									<input ng-model='includeType.period.duration' type='number' class='form-control' />
+									<input ng-model='cost.period.duration' type='text' class='form-control'/>
 								</div>
 							</div>
 						</div>
 					</fieldset>
+				</div>			
+				<div ng-repeat="(includeTypeName, includeType) in entity.include" ng-if='includeTypeName !== "cost"'>
+					<div ng-if="isObject(includeType)">
+						<fieldset>
+							<legend>{{includeTypeName}}</legend>
+							<div class="row">
+								<div class="col-md-2">
+									Cost
+								</div>
+								<div class="col-md-6">
+									<input ng-model="includeType.cost" type="text" class="form-control" />
+								</div>
+							</div>
+							<div class="row">
+								<div class="col-md-2">
+									Usagev
+								</div>
+								<div class="col-md-6">
+									<input ng-model='includeType.usagev' type='number' class='form-control' />
+								</div>
+							</div>
+							<div class='row'>
+								<div class="col-md-2">
+									Name
+								</div>
+								<div class="col-md-6">
+									<input ng-model='includeType.pp_includes_name' type='text' class='form-control' />
+								</div>
+							</div>
+							<div class='row'>
+								<div class="col-md-2">
+									External ID
+								</div>
+								<div class="col-md-6">
+									<input ng-model='includeType.pp_includes_external_id' type='text' class='form-control' />
+								</div>
+							</div>
+							<h5>Period</h5>
+							<div class="">
+								<div class='row'>
+									<div class='col-md-2 col-indent'>
+										Unit
+									</div>
+									<div class='col-md-6'>
+										<select class='form-control' ng-model='includeType.period.unit'>
+											<option ng-repeat="unit in availableCostUnits">{{unit}}</option>
+										</select>
+									</div>
+								</div>
+								<div class='row'>
+									<div class='col-md-2 col-indent'>
+										Duration
+									</div>
+									<div class='col-md-6'>
+										<input ng-model='includeType.period.duration' type='number' class='form-control' />
+									</div>
+								</div>
+							</div>
+						</fieldset>
+					</div>
 				</div>
 			</div>
 		</div>
