@@ -14,6 +14,12 @@
 class Billrun_ActionManagers_Balances_Updaters_Secret extends Billrun_ActionManagers_Balances_Updaters_ChargingPlan {
 	
 	/**
+	 * Reference to the card being used.
+	 * @var type Reference
+	 */
+	protected $cardRef;
+	
+	/**
 	 * Get the card record according to the received query
 	 * @param array $query - Received query to get the record by.
 	 * @return boolean
@@ -28,7 +34,7 @@ class Billrun_ActionManagers_Balances_Updaters_Secret extends Billrun_ActionMana
 		}
 		$dateQuery = Billrun_Util::getDateBoundQuery();
 		$finalQuery = array_merge($dateQuery, $query);
-		$finalQuery['status'] = array('$eq' => 'Active');
+//		$finalQuery['status'] = array('$eq' => 'Active');
 		$cardsColl = Billrun_Factory::db()->cardsCollection();
 		return $cardsColl->query($finalQuery)->cursor()->current();
 	}
@@ -53,6 +59,8 @@ class Billrun_ActionManagers_Balances_Updaters_Secret extends Billrun_ActionMana
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
+		
+		$this->setSourceForLineRecord($cardRecord);
 		
 		// Build the plan query from the card plan and service provider field.
 		$planQuery = array(
@@ -90,5 +98,22 @@ class Billrun_ActionManagers_Balances_Updaters_Secret extends Billrun_ActionMana
 		);
 		$cardsColl = Billrun_Factory::db()->cardsCollection();
 		$cardsColl->findAndModify($query, $update, array(), $options, true);
+	}
+	
+	/**
+	 * Set the 'Source' value to put in the record of the lines collection.
+	 * @return object The value to set.
+	 */
+	protected function setSourceForLineRecord($card) {
+		$collection = Billrun_Factory::db()->cardsCollection();
+		$this->cardRef = $collection->createRefByEntity($card);
+	}
+	
+	/**
+	 * Get the 'Source' value to put in the record of the lines collection.
+	 * @return object The value to set.
+	 */
+	protected function getSourceForLineRecord($chargingPlanRecord) {
+		return $this->cardRef;
 	}
 }
