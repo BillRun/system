@@ -54,14 +54,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 		);
 		// TODO: Use balances DB/API proxy class.
 		$balancesColl = Billrun_Factory::db()->balancesCollection();
-		$bla = $balancesColl->query($balancesQuery)->cursor();
-		$a = $bla->count();
-		$b = $bla->count(false);
-		print_r($bla);
-		print_r($a);
-		print_r($b);
-		$x = $balancesColl->update($balancesQuery, array('$set' => $balancesUpdate), $options);
-		print_r($x);
+		$balancesColl->update($balancesQuery, array('$set' => $balancesUpdate), $options);
 	}
 	
 	/**
@@ -78,7 +71,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 				  'aid' => $aid);
 		$options = array(
 			'upsert' => false,
-			'multuiple' => 1
+			'multiple' => 1
 		);
 		// TODO: Use balances DB/API proxy class.
 		$balancesColl = Billrun_Factory::db()->balancesCollection();
@@ -125,7 +118,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 			'upsert' => false,
 			'new' => false,
 			'w' => 1,
-			'multi' =>true,
+			'multiple' =>true,
 		);
 		$linesColl = Billrun_Factory::db()->linesCollection();
 		return $linesColl->update($keepLinesQuery, array('$set' => $keepLinesUpdate),$options);
