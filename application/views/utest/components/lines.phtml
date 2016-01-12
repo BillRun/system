@@ -1,12 +1,12 @@
 			<?php if (!empty($lines['rows'])) : ?>
 				<div class="panel panel-default">
-					<div class="panel-heading down" data-toggle="collapse" data-target="#lines">Lines for action ID : <?php echo $lines['ref'] ?>,  SID : <?php echo $sid ?></div>
+					<div class="panel-heading down" data-toggle="collapse" data-target="#lines"><?php echo $lines['ref'] ?>,  SID : <?php echo $sid ?></div>
 					<div class="panel-body collapse in" id='lines'>
 						<table class="table table-striped">
 							<thead>
 								<tr>
 									<th>#</th>
-									<th>URT</th>
+									<!--<th>URT</th>-->
 									<th>Usage T</th>
 									<th>Type</th>
 									<th>aPrice</th>
@@ -20,7 +20,7 @@
 								<?php foreach ($lines['rows'] as $key => $line) : ?>
 									<tr>
 										<td><?php echo ($key + 1) ?> </td>
-										<td><?php echo $line['time_date'] ?></td>
+										<!--<td><?php echo $line['time_date'] ?></td>-->
 										<td><?php echo $line['usaget'] ?></td>
 										<td><?php echo $line['record_type'] ?> </td>
 										<td><?php echo $line['aprice'] ?></td>
