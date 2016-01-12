@@ -10,7 +10,8 @@
 			</li>
 		<?php endif; ?>
 		<?php if (AdminController::authorized('read', 'plans') || AdminController::authorized('read', 'rates')) : ?>
-			<li class="dropdown<?php echo (in_array($active, array('customerplans', 'chargingplans', 'rates')) ? ' active' : ''); ?>">
+			<?php $active_tab = preg_match("/(customerplans|chargingplans|rates)/", $_SERVER['REQUEST_URI']); ?>
+			<li class="dropdown<?php echo ($active_tab ? ' active' : ''); ?>">
 				<a class="dropdown-toggle"
 				   data-toggle="dropdown"
 				   href="">
