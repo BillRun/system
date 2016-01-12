@@ -28,14 +28,14 @@ class utest_SubscriberUpdateModel extends utest_AbstractUtestModel {
 
 
 		$sid = (int) Billrun_Util::filter_var($this->controller->getRequest()->get('new_sid'), FILTER_VALIDATE_INT);
-		$enable_sid = Billrun_Util::filter_var($this->controller->getRequest()->get('enable-new_sid'), FILTER_VALIDATE_INT);
-
+		$enable_sid = Billrun_Util::filter_var($this->controller->getRequest()->get('enable-new_sid'), FILTER_SANITIZE_STRING);
+		
 		$imsi = Billrun_Util::filter_var($this->controller->getRequest()->get('new_imsi'), FILTER_SANITIZE_STRING);
 		$enable_imsi = Billrun_Util::filter_var($this->controller->getRequest()->get('enable-new_imsi'), FILTER_SANITIZE_STRING);
 
 		$msisdn = Billrun_Util::filter_var($this->controller->getRequest()->get('new_msisdn'), FILTER_SANITIZE_STRING);
 		$enable_msisdn = Billrun_Util::filter_var($this->controller->getRequest()->get('enable-new_msisdn'), FILTER_SANITIZE_STRING);
-
+	
 		$aid = (int) Billrun_Util::filter_var($this->controller->getRequest()->get('aid'), FILTER_SANITIZE_STRING);
 		$enable_aid = Billrun_Util::filter_var($this->controller->getRequest()->get('enable-aid'), FILTER_SANITIZE_STRING);
 

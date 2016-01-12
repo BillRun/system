@@ -1,0 +1,36 @@
+<?php if (!empty($apiCalls)) : ?>
+	<div class="panel panel-default">
+		<div class="panel-heading">Api Calls</div>
+		<div class="panel-body">
+			<?php foreach ($apiCalls as $key => $api_call) : ?>
+				<div class="row">
+					<div class="col-sm-1 text-center">
+						<p><strong><?php echo ($key + 1) ?></strong></p>
+					</div>
+					<div class="col-sm-11">
+						<pre><?php echo htmlspecialchars($api_call['method']) ?>  <?php echo htmlspecialchars($api_call['uri']) ?> <strong>(<?php echo htmlspecialchars($api_call['duration']) ?> microtime)</strong></pre>
+					</div>
+				</div>
+				<div class="row">
+					<div class="col-sm-1 text-center">
+						<p><span class="glyphicon glyphicon-export" aria-hidden="true"></span>Request Data</p>
+					</div>
+					<div class="col-sm-11">
+						<pre><?php echo urldecode(htmlspecialchars($api_call['request'])) ?></pre>
+					</div>
+				</div>
+				<div class="row">
+					<div class="col-sm-1 text-center">
+						<p><span class="glyphicon glyphicon-import" aria-hidden="true"></span>Response Data</p>
+					</div>
+					<div class="col-sm-11">
+						<pre><?php echo htmlspecialchars($api_call['response']) ?></pre>
+					</div>
+				</div>
+				<?php if (count($apiCalls) !== ($key + 1)) : ?>
+					<hr>
+				<?php endif; ?>
+			<?php endforeach; ?>
+		</div>
+	</div>
+<?php endif; ?>
