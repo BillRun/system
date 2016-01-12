@@ -37,23 +37,31 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 	/**
 	 * U[date all the balances for a subscriber.
 	 * 
-	 * @param integer $sid - The sid of the user to close the balance for.
-	 * @param integer $aid - The aid of the user to close the balance for.
+	 * @param integer $sid - The sid of the user to update to.
+	 * @param integer $aid - The aid of the user to update to.
 	 */
 	protected function updateBalances($sid, $aid) {
 		// Find all balances.
-		$balancesUpdate = array('$set' => array('sid' => $sid, 'aid' => $aid));
+		$balancesUpdate['sid'] = $sid;
+		$balancesUpdate['aid'] = $aid;
 		$balancesQuery = Billrun_Util::getDateBoundQuery();
 		$balancesQuery['sid'] = $this->query['sid'];
+		$balancesQuery['aid'] = $this->query['aid'];
+			
 		$options = array(
 			'upsert' => false,
-			'new' => false,
-			'w' => 1,
-			'multi' => 1
+			'multiple' => true,
 		);
 		// TODO: Use balances DB/API proxy class.
 		$balancesColl = Billrun_Factory::db()->balancesCollection();
-		$balancesColl->findAndModify($balancesQuery, $balancesUpdate, array(), $options, true);
+		$bla = $balancesColl->query($balancesQuery)->cursor();
+		$a = $bla->count();
+		$b = $bla->count(false);
+		print_r($bla);
+		print_r($a);
+		print_r($b);
+		$x = $balancesColl->update($balancesQuery, array('$set' => $balancesUpdate), $options);
+		print_r($x);
 	}
 	
 	/**
@@ -70,13 +78,11 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 				  'aid' => $aid);
 		$options = array(
 			'upsert' => false,
-			'new' => false,
-			'w' => 1,
-			'multui' => 1
+			'multuiple' => 1
 		);
 		// TODO: Use balances DB/API proxy class.
 		$balancesColl = Billrun_Factory::db()->balancesCollection();
-		$balancesColl->findAndModify($balancesQuery, $balancesUpdate, array(), $options, true);
+		$balancesColl->update($balancesQuery, $balancesUpdate, $options);
 	}
 	
 	/**
@@ -119,7 +125,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 			'upsert' => false,
 			'new' => false,
 			'w' => 1,
-			'multi' =>1,
+			'multi' =>true,
 		);
 		$linesColl = Billrun_Factory::db()->linesCollection();
 		return $linesColl->update($keepLinesQuery, array('$set' => $keepLinesUpdate),$options);
@@ -155,7 +161,6 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 		foreach ($this->recordToSet as $key => $value) {
 			if(!$record->set($key, $value)) {
 				$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 30;
-				$error = "Failed to set values to entity";
 				$this->reportError($errorCode, Zend_Log::NOTICE);
 				return false;
 			}
@@ -364,7 +369,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 		$this->query = Billrun_Util::getDateBoundQuery();
 		
 		$queryFields = $this->getQueryFields();
-		
+		$queryFields = array_merge($queryFields, Billrun_Factory::config()->getConfigValue('subscribers.extra_fields'));
 		// Array of errors to report if any occurs.
 		$ret = false;
 		
@@ -380,6 +385,14 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 				$this->query[$field] = $queryDataValue;
 				$ret = true;
 			}
+		}
+		
+		$count = count($this->query) - 2;
+		
+		if(($count >0) && ($count < count($queryFields))) {
+			$rawData = 
+				$this->collection->query($this->query)->cursor()->current()->getRawData();
+			return $this->setQueryFields($rawData);
 		}
 		
 		return $ret;
@@ -424,7 +437,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 			return false;
 		}
 			
-		$validateOutput = $this->validateCustomerPlan($this->recordToSet['plan']);
+		$validateOutput = $this->validateCustomerPlan(@$this->recordToSet['plan']);
 		if($validateOutput !== true) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 36;
 			$this->reportError($errorCode, Zend_Log::ALERT, array($this->recordToSet['plan']));
