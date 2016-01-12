@@ -133,20 +133,21 @@ class AdminController extends Yaf_Controller_Abstract {
 			return false;
 		$coll = Billrun_Util::filter_var($this->getRequest()->get('coll'), FILTER_SANITIZE_STRING);
 		$size = $this->getRequest()->get('size');
-		$page = $this->getRequest()->get('page');
 		$response = new Yaf_Response_Http();
 		$session = $this->getSession($coll);
-		/*
 		$filter = @json_decode($this->getRequest()->get('filter'));
 		if ($filter) {
 			foreach($filter as $key => $val) {
-				if (!is_array($val)) {
-					$session->$key = $val;
+				$session->$key = $val;
+				if (is_array($val)) {
+					$t = array();
+					foreach($val as $v) {
+						$t[$v] = $v;
+					}
+					$session->$key = $t;
 				}
 			}
 		}
-		 * 
-		 */
 		$show_prefix = $this->getSetVar($session, 'showprefix', 'showprefix', 0);
 		$sort = $this->applySort($coll);
 		$options = array(
@@ -174,7 +175,12 @@ class AdminController extends Yaf_Controller_Abstract {
 			$items[] = $i;
 		}
 		$params['data'] = $items;
-		$response->setBody(json_encode(array('items' => $params, 'pager' => $this->model->getPager(), 'authorized_write' => AdminController::authorized('write'))));
+		$response->setBody(json_encode(array(
+			'items' => $params,
+			'pager' => $this->model->getPager(),
+			'authorized_write' => AdminController::authorized('write'),
+			'filter_fields' => $this->model->getFilterFields()
+		)));
 		$response->response();
 		return false;
 	}
@@ -372,13 +378,15 @@ class AdminController extends Yaf_Controller_Abstract {
 
 
 
-		if ($coll === "subscribers") {
-			$v->validate($params,$coll) ;
+		
+		$v->validate($params,$coll) ;
+		
 
-			if($v->isValid()) {	   	
-				return $this->responseSuccess(array("data" => $v->getValidations() ,"params" => $params , "status"=>true ));
-			}
+		if(!$v->isValid()) {	   	
+		
+				return $this->responseError($v->getErrors());
 		}
+		
 		if ($type == 'update') {
 			if (strtolower($coll) === 'cards') {
 				//$this->getRequest()->set('update', $this->getRequest()->get('data'));
@@ -1358,14 +1366,18 @@ class AdminController extends Yaf_Controller_Abstract {
 		}
 	}
 
-public function responseError($message,$statusCode = 500)
+public function responseError($message,$statusCode = 400)
 	{
 		
 		$resp = $this->getResponse();
 		$req  =  $this->getRequest();
-		$resp->setHeader($req->getServer('SERVER_PROTOCOL') , $statusCode . ' ' . $message);
+		$resp->setHeader($req->getServer('SERVER_PROTOCOL') , $statusCode );
 		$resp->setHeader('Content-Type','application/json');
-		$resp->setBody($message);
+		if(is_array($message)) { 
+			$resp->setBody(json_encode($message));
+		} else { 
+			$resp->setBody($message);
+		}
 		//$resp->response();
 		return false;
 	}

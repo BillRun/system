@@ -26,7 +26,8 @@ app.controller('SubscribersController', ['$scope', '$window', '$routeParams', 'D
             }
         }
       }, function (err) {
-        alert("Connection error!");
+        $scope.err=err;
+        console.log(err);
       });
     };
 
