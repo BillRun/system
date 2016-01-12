@@ -103,7 +103,7 @@ abstract class Billrun_Receiver extends Billrun_Base {
 		}
 
 		$log = Billrun_Factory::db()->logCollection();
-		$result = $log->update($query, $update, array('w' => 1));
+		$result = $log->update($query, $update);
 
 		if ($result['ok'] != 1 || $result['n'] != 1) {
 			Billrun_Factory::log("Billrun_Receiver::logDB - Failed when trying to update a file log record " . $fileData['file_name'] . " with stamp of : {$fileData['stamp']}", Zend_Log::NOTICE);

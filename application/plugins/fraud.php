@@ -401,7 +401,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		try {
 			Billrun_Factory::log()->log("Fraud plugin - Event stamp: " . $newEvent['stamp'] . " inserted to the fraud events", Zend_Log::INFO);
 			$fraud_connection = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('fraud.db'))->eventsCollection();
-			$fraud_connection->insert($newEvent, array('w' => 0));
+			$fraud_connection->insert($newEvent);
 		} catch (Exception $e) {
 			// @TODO: dump to file for durability
 			Billrun_Factory::log()->log("Fraud plugin - Failed insert line with the stamp: " . $newEvent['stamp'] . " to the fraud events, got Exception : " . $e->getCode() . " : " . $e->getMessage(), Zend_Log::ERR);
@@ -438,7 +438,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 					$line['subscriber_id'] = $line['sid'];
 				}
 
-				$fraud_connection->insert(new Mongodloid_Entity($line), array('w' => 0));
+				$fraud_connection->insert(new Mongodloid_Entity($line));
 			}
 		} catch (Exception $e) {
 			Billrun_Factory::log()->log("Fraud plugin - Failed to insert line with the stamp: " . $line['stamp'] . " to the fraud lines collection, got Exception : " . $e->getCode() . " : " . $e->getMessage(), Zend_Log::ERR);
@@ -552,7 +552,6 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 
 		$options = array(
 			'upsert' => true,
-			'w' => 0,
 		);
 
 		try {
@@ -582,7 +581,6 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 
 		$options = array(
 			'upsert' => true,
-			'w' => 0,
 		);
 
 		try {

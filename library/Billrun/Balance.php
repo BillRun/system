@@ -204,7 +204,6 @@ class Billrun_Balance extends Mongodloid_Entity {
 		$options = array(
 			'upsert' => true,
 			'new' => true,
-			'w' => 1,
 		);
 		Billrun_Factory::log()->log("Create empty balance, from: " . date("Y-m-d", $from) . " to: " . date("Y-m-d", $to) . ", if not exists for subscriber " . $sid, Zend_Log::DEBUG);
 		$output = $this->collection->findAndModify($query, $update, array(), $options, false);

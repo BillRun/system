@@ -56,8 +56,7 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 		return array(
 			'upsert' => true,
 			'new' => true,
-			'w' => 1,
-			);
+		);
 	}
 	
 	/**

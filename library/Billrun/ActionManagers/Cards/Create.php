@@ -139,7 +139,6 @@ class Billrun_ActionManagers_Cards_Create extends Billrun_ActionManagers_Cards_A
 			'continueOnError' => true,
 			'socketTimeoutMS' => 300000,
 			'wTimeoutMS' => 300000,
-			'w' => 1,
 		);
 		$exception = null;
 		try {
