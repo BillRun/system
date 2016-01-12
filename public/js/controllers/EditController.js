@@ -42,6 +42,7 @@ app.controller('EditController', ['$scope', 'Utils', '$routeParams', '$window', 
         id: $routeParams.id,
         type: $routeParams.action
       };
+      $scope.advancedMode = false;
       $scope.action = $routeParams.action;
       Database.getEntity(params).then(function (res) {
         $scope.entity = res.data.entity;
