@@ -24,11 +24,9 @@ class PlansModel extends TabledateModel {
 	public function getTableColumns() {
 		$columns = array(
 			'name' => 'Name',
-			'type' => 'Type',
-			'from' => 'From',
-			'to' => 'To',
-			'_id' => 'Id',
 		);
+		if ($this->type === 'charging') $columns['service_provider'] = 'Service Provider';
+		$columns['from'] = 'From'; $columns['to'] = 'To';
 		return $columns;
 	}
 
@@ -36,38 +34,11 @@ class PlansModel extends TabledateModel {
 		$sort_fields = array(
 			'name' => 'Name',
 			'price' => 'Price',
-			'type' => 'Type',
+			'service_provider' => 'Service Provider'
 		);
 		return array_merge($sort_fields, parent::getSortFields());
 	}
-	
-	public function getFilterFields() {
-		$filter_fields = array(
-			'type' => array(
-				'key' => 'type',
-				'db_key' => 'type',
-				'input_type' => 'multiselect',
-				'comparison' => '$in',
-				'singleselect' => 1,
-				'display' => 'Type',
-				'values' => array('customer' => 'customer', 'charging' => 'charging'),
-				'default' => array('customer'),
-			),
-		);
-		return array_merge($filter_fields, parent::getFilterFields());
-	}
 
-	public function getFilterFieldsOrder() {
-		$filter_field_order = array(
-			array(
-				'type' => array(
-					'width' => 2,
-				),
-			)
-		);
-		return array_merge($filter_field_order, parent::getFilterFieldsOrder());
-	}
-	
 	public function update($params) {
 		$entity = parent::update($params);
 		if ($duplicate) {

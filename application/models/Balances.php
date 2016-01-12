@@ -98,7 +98,7 @@ class BalancesModel extends TableModel {
 				'db_key' => 'sid',
 				'input_type' => 'number',
 				'comparison' => 'equals',
-				'display' => 'Subscriber id',
+				'display' => 'Subscriber No',
 				'default' => '',
 			),
 			'aid' => array(
@@ -106,7 +106,7 @@ class BalancesModel extends TableModel {
 				'db_key' => 'aid',
 				'input_type' => 'number',
 				'comparison' => 'equals',
-				'display' => 'Account id',
+				'display' => 'BAN',
 				'default' => '',
 			),
 			'usage_type' => array(
@@ -145,15 +145,6 @@ class BalancesModel extends TableModel {
 				'values' => $planNames,
 				'default' => array(),
 			),
-			'billrun' => array(
-				'key' => 'billrun',
-				'db_key' => 'billrun_month',
-				'input_type' => 'multiselect',
-				'comparison' => '$in',
-				'display' => 'Billrun',
-				'values' => $billruns,
-				'default' => array(),
-			),
 		);
 		return array_merge($filter_fields, parent::getFilterFields());
 	}
@@ -165,11 +156,6 @@ class BalancesModel extends TableModel {
 					'width' => 2,
 				),
 				'aid' => array(
-					'width' => 2,
-				),
-			),
-			1 => array(
-				'billrun' => array(
 					'width' => 2,
 				),
 			),

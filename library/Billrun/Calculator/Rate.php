@@ -197,12 +197,15 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	 */
 	protected function getRateByParams() {		
 		$query = $this->getRateQuery();
-		$matchedRate = Billrun_Factory::db()->ratesCollection()->aggregate($query)->current();
+		$rates_coll= Billrun_Factory::db()->ratesCollection();
+		$matchedRate = $rates_coll->aggregate($query)->current();
 		
 		if (empty($matchedRate)) {
 			return false;
 		}
-		return $matchedRate;
+		
+		$key = $matchedRate->get('key');
+		return $rates_coll->query(array("key" => $key))->cursor()->current();
 	}
 	
 	/**
@@ -215,12 +218,18 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 			Billrun_Config::getInstance()->getConfigValue('rate_pipeline.' . static::$type, array());
 		$query = array();
 		foreach ($pipelines as $currPipeline) {
+			if (!is_array($currPipeline)) {
+				continue;
+			}
 			foreach ($currPipeline as $pipelineOperator => $pipeline) {
 				$pipelineValue = '';
 				if (is_array($pipeline)) {
 					foreach ($pipeline as $key => $value) {
 						if (isset($value['classMethod'])) {
-							$pipelineValue[$key] = call_user_method($value['classMethod'], $this);
+							if (!method_exists($this, $value['classMethod'])) {
+								continue;
+							}
+							$pipelineValue[$key] = $this->{$value['classMethod']}();
 						} else {
 							$pipelineValue[$key] = (is_numeric($value)) ? intval($value) : $value;
 						}
@@ -252,15 +261,6 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	 */
 	protected function getToTimeQuery() {
 		return array('$gte' => $this->rowDataForQuery['line_time']);
-	}
-	
-	/**
-	 * Assistance function to generate 'prefix' field query with current row.
-	 * 
-	 * @return array query for 'prefix' field
-	 */
-	protected function getPrefixMatchQuery() {
-		return array('$in' => Billrun_Util::getPrefixes($this->rowDataForQuery['called_number']));
 	}
 
 }

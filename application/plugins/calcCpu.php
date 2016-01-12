@@ -105,9 +105,9 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$data['header']['linesStats']['garbage'] = $garbage_counter;
 	}
 	
-	protected function customerPricingCalc($processor,&$data) {
+	protected function customerPricingCalc($processor,&$data, $realtime = false) {
 		Billrun_Factory::log('Plugin calc cpu customer pricing', Zend_Log::INFO);
-		$customerPricingCalc = Billrun_Calculator::getInstance(array('type' => 'customerPricing', 'autoload' => false));
+		$customerPricingCalc = Billrun_Calculator::getInstance(array('type' => 'customerPricing', 'autoload' => false, 'realtime' => $realtime));
 		$queue_data = $processor->getQueueData();
 
 		foreach ($data['data'] as &$line) {
@@ -186,7 +186,7 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 	}
 
-	public function beforeProcessorStore($processor) {
+	public function beforeProcessorStore($processor, $realtime = false) {
 		Billrun_Factory::log('Plugin calc cpu triggered before processor store', Zend_Log::INFO);
 		$options = array(
 			'autoload' => 0,
@@ -201,16 +201,16 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 
 		$this->customerCalc($processor, $data, $options);
 		$this->rateCalc($processor, $data, $options);
-		$this->customerPricingCalc($processor, $data);
+		$this->customerPricingCalc($processor, $data, $realtime);
 		$this->unifyCalc($processor, $data);
 		
 
 		Billrun_Factory::log('Plugin calc cpu end', Zend_Log::INFO);
 	}
 
-	public function afterProcessorStore($processor) {
+	public function afterProcessorStore($processor, $realtime = false) {
 		Billrun_Factory::log('Plugin calc cpu triggered after processor store', Zend_Log::INFO);
-		$customerPricingCalc = Billrun_Calculator::getInstance(array('type' => 'customerPricing', 'autoload' => false));
+		$customerPricingCalc = Billrun_Calculator::getInstance(array('type' => 'customerPricing', 'autoload' => false, 'realtime' => $realtime));
 		foreach ($this->tx_saved_rows as $row) {
 			$customerPricingCalc->removeBalanceTx($row);
 		}

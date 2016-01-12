@@ -96,6 +96,12 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		} else {
 			$autoload = true;
 		}
+		
+		if (isset($options['realtime'])) {
+			$realtime = $options['realtime'];
+		} else {
+			$realtime = false;
+		}
 
 		$options['autoload'] = false;
 		parent::__construct($options);
@@ -117,10 +123,13 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		if ($autoload) {
 			$this->load();
 		}
-		$this->loadRates();
-		$this->loadPlans();
+		//TODO: check how to remove call to loadRates
 		$this->balances = Billrun_Factory::db()->balancesCollection()->setReadPreference('RP_PRIMARY');
-		$this->active_billrun = Billrun_Billrun::getActiveBillrun();
+		if (!$realtime) {
+			$this->loadRates();
+			$this->loadPlans();
+			$this->active_billrun = Billrun_Billrun::getActiveBillrun();
+		}
 		$this->active_billrun_end_time = Billrun_Util::getEndTime($this->active_billrun);
 		$this->next_active_billrun = Billrun_Util::getFollowingBillrunKey($this->active_billrun);
 		// max recursive retrues for value=oldValue tactic
@@ -577,7 +586,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 //		$options = array('w' => 'majority');
 		Billrun_Factory::log("Updating balance " . $balance_id . " of subscriber " . $row['sid'], Zend_Log::DEBUG);
 		Billrun_Factory::dispatcher()->trigger('beforeCommitSubscriberBalance', array(&$row, &$pricingData, &$query, &$update, $rate, $this));
-		$ret = $this->balances->update($query, $update, $options);
+		$ret = $this->balances->update($query, $update);
 		if (!($ret['ok'] && $ret['updatedExisting'])) {
 			// failed because of different totals (could be that another server with another line raised the totals). 
 			// Need to calculate pricingData from the beginning
@@ -636,7 +645,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @see Billrun_Calculator::isLineLegitimate
 	 */
 	public function isLineLegitimate($line) {
-		$arate = $this->getRateByRef($line->get('arate', true));
+		$arate = $this->getRateByRef($line->get('arate'));
 		return !is_null($arate) && (empty($arate['skip_calc']) || !in_array(self::$type, $arate['skip_calc'])) &&
 			isset($line['sid']) && $line['sid'] !== false &&
 			$line['urt']->sec >= $this->billrun_lower_bound_timestamp;
@@ -699,13 +708,17 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	}
 
 	protected function getRateByRef($rate_ref) {
-		if (isset($rate_ref['$id'])) {
-			$id_str = strval($rate_ref['$id']);
-			if (isset($this->rates[$id_str])) {
-				return $this->rates[$id_str];
-			}
-		}
-		return null;
+		$rates_coll = Billrun_Factory::db()->ratesCollection();
+		$rate = $rates_coll->getRef($rate_ref);
+		return $rate;
+		
+//		if (isset($rate_ref['$id'])) {
+//			$id_str = strval($rate_ref['$id']);
+//			if (isset($this->rates[$id_str])) {
+//				return $this->rates[$id_str];
+//			}
+//		}
+//		return null;
 	}
 
 	/**

@@ -56,14 +56,14 @@ class Billrun_Processor_Realtime extends Billrun_Processor {
 
 		Billrun_Factory::dispatcher()->trigger('afterProcessorParsing', array($this));
 		$this->prepareQueue();
-		Billrun_Factory::dispatcher()->trigger('beforeProcessorStore', array($this));
+		Billrun_Factory::dispatcher()->trigger('beforeProcessorStore', array($this, true));
 
 		if ($this->store() === FALSE) {
 			Billrun_Factory::log("Billrun_Processor: cannot store the parser lines " . $this->filePath, Zend_Log::ERR);
 			return FALSE;
 		}
 
-		Billrun_Factory::dispatcher()->trigger('afterProcessorStore', array($this));
+		Billrun_Factory::dispatcher()->trigger('afterProcessorStore', array($this, true));
 
 		//$this->removefromWorkspace($this->getFileStamp());
 		Billrun_Factory::dispatcher()->trigger('afterProcessorRemove', array($this));
