@@ -200,7 +200,7 @@
 									<p><span class="glyphicon glyphicon-export" aria-hidden="true"></span>Request Data</p>
 								</div>
 								<div class="col-sm-11">
-									<pre><?php echo htmlspecialchars($api_call['request']) ?></pre>
+									<pre><?php echo urldecode(htmlspecialchars($api_call['request'])) ?></pre>
 								</div>
 							</div>
 							<div class="row">
