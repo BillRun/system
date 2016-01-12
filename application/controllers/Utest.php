@@ -224,7 +224,10 @@ class UtestController extends Yaf_Controller_Abstract {
 			$balances[(string) $row['_id']] = array(
 				'amount' => -1 * $amount,
 				'charging_by_usaget' => $row["charging_by_usaget"],
-				'charging_by' => $row["charging_by"]
+				'charging_by_usaget_unit' => $row["charging_by_usaget_unit"],
+				'charging_by' => $row["charging_by"],
+				'to' => date('d/m/Y H:i:s', $row["to"]->sec),
+				'from' => date('d/m/Y H:i:s', $row["from"]->sec)
 			);
 		}
 		return $balances;
