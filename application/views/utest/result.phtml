@@ -16,15 +16,15 @@
 				<li><?php echo $test->getTestLabel(); ?></li>
 			</ol>
 
-			<?php print $this->render('utest/components/balance.phtml', array('balances' => $balances['before'], 'label' => 'Balances Before', 'id' => 'balance-before')); ?>
+			<?php print $this->render('utest/components/balance.phtml', array('balances' => $balances['before'], 'label' => 'Balances Before Test SID : ' . $sid, 'id' => 'balance-before')); ?>
 
-			<?php print $this->render('utest/components/subscriber.phtml', array('subscribers' => $subscribers['before'], 'label' => 'Subscriber Before SID : ' . $sid, 'id' => 'subscriber-before')); ?>
+			<?php print $this->render('utest/components/subscriber.phtml', array('subscribers' => $subscribers['before'], 'label' => 'Subscriber Before Test SID : ' . $sid, 'id' => 'subscriber-before')); ?>
 
-			<?php print $this->render('utest/components/subscriber.phtml', array('subscribers' => $subscribers['after'], 'label' => 'Subscriber After SID : ' . $sid, 'id' => 'subscriber-after')); ?>
+			<?php print $this->render('utest/components/subscriber.phtml', array('subscribers' => $subscribers['after'], 'label' => 'Subscriber After Test SID : ' . $sid_after_test, 'id' => 'subscriber-after')); ?>
 
-			<?php print $this->render('utest/components/lines.phtml', array('lines' => $lines)); ?>
+			<?php print $this->render('utest/components/lines.phtml', array('lines' => $lines, 'sid' => $sid_after_test)); ?>
 
-			<?php print $this->render('utest/components/balance.phtml', array('balances' => $balances['after'], 'label' => 'Balances After', 'id' => 'balance-after')); ?>
+			<?php print $this->render('utest/components/balance.phtml', array('balances' => $balances['after'], 'label' => 'Balances After Test SID : ' . $sid_after_test, 'id' => 'balance-after')); ?>
 
 			<?php print $this->render('utest/components/balanceDiff.phtml', array('balances_after' => $balances['after'], 'balances_before' => $balances['before'])); ?>
 
