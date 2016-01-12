@@ -44,11 +44,11 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 	protected function handleBalances(array $update = array()) {
 		// Find all balances.
 		$balancesQuery = array();
-		if (isset($this->recordToSet['sid'])) {
-			$balancesQuery['sid'];
+		if (isset($this->query['sid'])) {
+			$balancesQuery['sid'] = $this->query['sid'];
 		}
-		if (isset($this->recordToSet['aid'])) {
-			$balancesQuery['aid'];
+		if (isset($this->query['aid'])) {
+			$balancesQuery['aid'] = $this->query['aid'];
 		}
 		
 		if (empty($balancesQuery)) {
@@ -58,10 +58,11 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 		$options = array(
 			'upsert' => false,
 			'new' => false,
+			'multiple' => true,
 		);
 		// TODO: Use balances DB/API proxy class.
 		$balancesColl = Billrun_Factory::db()->balancesCollection();
-		return $balancesColl->update($balancesQuery, $update, array(), $options, true);
+		return $balancesColl->update($balancesQuery, $update, $options);
 	}
 	
 	/**
