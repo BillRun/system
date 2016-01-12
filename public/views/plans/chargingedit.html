@@ -32,6 +32,24 @@
 					</select>				
 				</div>
 			</div>
+			<div class='row'>
+				<div class='col-md-2'>
+					{{utils.getDisplayValue("operation", "plans")}}
+				</div>
+				<div class='col-md-6'>
+					<select ng-model="entity.operation" class="form-control">
+						<option ng-repeat="operation in availableOperations">{{operation}}<option>
+					</select>				
+				</div>
+			</div>
+			<div class="row">
+				<div class='col-md-2'>
+					{{utils.getDisplayValue("recurring", "plans")}}
+				</div>
+				<div class='col-md-6'>
+					<input ng-model='entity.recurring' type='number' class='form-control' />
+				</div>
+			</div>
 			<div class='row' ng-if='utils.display("from", "plans")'>
 				<div class='col-md-2'>
 					{{utils.getDisplayValue("from", "plans")}}

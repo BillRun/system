@@ -22,7 +22,8 @@ foreach ($this->data as $item) {
 			$url = $this->baseUrl . '/admin/edit?type=' . strtolower($this->title) . '&amp;id=' . $item['_id'];
 			print '<a href="#popupModal " data-remote="' . $url . '" role="button" data-toggle="modal">' . $data . '</a>';
 		} else if (($h == 'from' || $h == 'to' || $h == 'urt' || $h == 'notify_time' || $h == 'last_renew_date') && $data) {
-			$dateFormat = "Y-m-d H:i:s";
+			//$dateFormat = "Y-d-m H:i:s";
+			$dateFormat = Billrun_Factory::config()->getConfigValue('admin_panel.date_format', 'Y-d-m H:i:s');
 			if (!empty($item["tzoffset"])) {
 				// TODO change this to regex and move to method in model
 				$tzoffset = $item['tzoffset'];
