@@ -128,6 +128,10 @@ class RealtimeeventAction extends ApiAction {
 				return false;
 			case('call'):
 				return $data['api_name'];
+			case('sms'):
+				return 'sms';
+			case('service'):
+				return 'service';
 		}
 	}
 	
