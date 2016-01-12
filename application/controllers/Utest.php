@@ -126,23 +126,28 @@ class UtestController extends Yaf_Controller_Abstract {
 		//Run test by type
 		$utest->doTest();
 
+        //Update SID if SID was changed in test
+		$new_sid = (int)Billrun_Util::filter_var($this->getRequest()->get('new_sid'), FILTER_VALIDATE_INT);
+		$sid_after_test = (!empty($new_sid)) ? $new_sid : $sid;
+
 		if(in_array('subscriber_after', $result)){
 			// Get balance before scenario
-			$subscriber['after'] = $this->getSubscriber($sid);
+			$subscriber['after'] = $this->getSubscriber($sid_after_test);
 		}
 		
 		if(in_array('lines', $result)){
 			// Get all lines created during scenarion
-			$lines = $this->getLines($sid, $type);
+			$lines = $this->getLines($sid_after_test, $type);
 		}
 
 		if(in_array('balance_after', $result)){
 			// Get balance after scenario
-			$balance['after'] = $this->getBalance($sid);
+			$balance['after'] = $this->getBalance($sid_after_test);
 		}
 
 		$this->getView()->test = $utest;
 		$this->getView()->sid = $sid;
+		$this->getView()->sid_after_test = $sid_after_test;
 		$this->getView()->subdomain = $this->subdomain;
 		$this->getView()->lines = $lines;
 		$this->getView()->balances = $balance;
