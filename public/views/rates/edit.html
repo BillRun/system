@@ -4,12 +4,12 @@
 	</center>
 	<form class='form-inline' ng-submit='save()'>
 		<div ng-if='!advancedMode'>
-			<div class="row">
+			<div class="row" ng-if="action === 'new'">
 				<div class="col-md-2">
 					{{utils.getDisplayValue("key", "rates")}}
 				</div>
 				<div class="col-md-6">
-					<input ng-model="entity.key" type='text' class="form-control" ng-if="action === 'new'" /> 
+					<input ng-model="entity.key" type='text' class="form-control" /> 
 				</div>
 			</div>
 			<h2>Parameters</h2>

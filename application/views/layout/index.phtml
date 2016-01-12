@@ -44,6 +44,7 @@
 		<script src='<?php echo $this->baseUrl; ?>/js/directives/inputField.js'></script>
 
 		<!-- controllers -->
+		<script src='<?php echo $this->baseUrl; ?>/js/controllers/MenuController.js'></script>
 		<script src='<?php echo $this->baseUrl; ?>/js/controllers/EditController.js'></script>
 		<script src='<?php echo $this->baseUrl; ?>/js/controllers/ListController.js'></script>
 		<script src='<?php echo $this->baseUrl; ?>/js/controllers/PlansController.js'></script>
@@ -71,6 +72,7 @@
 				<img src="http://www.billrun.net/images/billrun/web-logo.png" alt="BillRun"/>
 			</a>
         </div>
+		<div ng-include="'views/partials/menu.html'" ng-if='false'></div>
 		<?php
 			print $this->render('menu.phtml', array('active' => $active));
 		?>
