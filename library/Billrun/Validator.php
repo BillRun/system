@@ -113,9 +113,7 @@ public function UniqueValidator($attribute , $value , $validationOptions =array(
         return true;      
     }
 
-
     $collection = Billrun_Factory::db()->getCollection($validationOptions["collection"]);
-
     if (!($collection instanceof Mongodloid_Collection)) {
       return true;
     }
@@ -129,17 +127,16 @@ public function UniqueValidator($attribute , $value , $validationOptions =array(
 
     $checkUniqueQuery = array($attribute => $value);
     if($MongoID =  $validationOptions["objectRef"]["_id"])  { 
-
       $checkUniqueQuery =  array_merge($checkUniqueQuery,array( "_id" => array('$ne' => (string)$MongoID))) ;
     }
     
    
     $cursor =  $collection->find($checkUniqueQuery,array())  ; 
-
     if($cursor->count())   {
       $this->addError($attribute,$message,$code,$index) ;
       return false; 
     }
+
     return true ;
   }
 
