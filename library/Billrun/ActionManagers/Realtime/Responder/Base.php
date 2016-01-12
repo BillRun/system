@@ -178,4 +178,40 @@ abstract class Billrun_ActionManagers_Realtime_Responder_Base {
 		);
 	}
 
+	/**
+	 * Gets response status.
+	 * @return int 1 - success, o -failure
+	 */
+	protected function getStatus() {
+		if (isset($this->row['granted_return_code'])) {
+			$returnCodes = Billrun_Factory::config()->getConfigValue('prepaid.customer', array());
+			switch($this->row['granted_return_code']) {
+				case ($returnCodes['no_rate']):
+				case ($returnCodes['no_subscriber']):
+					return 0;
+			} 
+		}
+
+		return 1;
+	}
+	
+	/**
+	 * Gets response description
+	 * @return string Description
+	 */
+	protected function getDesc() {
+		if (isset($this->row['granted_return_code'])) {
+			$returnCodes = Billrun_Factory::config()->getConfigValue('prepaid.customer', array());
+			switch($this->row['granted_return_code']) {
+				case ($returnCodes['no_available_balances']):
+					return "No balance";
+				case ($returnCodes['no_rate']):
+					return "Error: No rate";
+				case ($returnCodes['no_subscriber']):
+					return "Error: No subscriber";
+			} 
+		}
+
+		return "Success";
+	}
 }
