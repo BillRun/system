@@ -34,7 +34,7 @@ class Billrun_ActionManagers_Balances_Updaters_Secret extends Billrun_ActionMana
 		}
 		$dateQuery = Billrun_Util::getDateBoundQuery();
 		$finalQuery = array_merge($dateQuery, $query);
-//		$finalQuery['status'] = array('$eq' => 'Active');
+		$finalQuery['status'] = array('$eq' => 'Active');
 		$cardsColl = Billrun_Factory::db()->cardsCollection();
 		return $cardsColl->query($finalQuery)->cursor()->current();
 	}
