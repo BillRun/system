@@ -76,7 +76,6 @@ abstract class Billrun_Importer_Csv extends Billrun_Importer_Abstract {
 				'continueOnError' => true,
 				'socketTimeoutMS' => 300000,
 				'wTimeoutMS' => 300000,
-				'w' => 1,
 			);
 			$collectionName = $this->getCollectionName();
 			$collection = Billrun_Factory::db()->getCollection($collectionName);

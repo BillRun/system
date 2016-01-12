@@ -44,7 +44,6 @@ class Billrun_ActionManagers_Subscribers_Delete extends Billrun_ActionManagers_S
 		$options = array(
 			'upsert' => false,
 			'new' => false,
-			'w' => 1,
 			'multiple' => true,
 		);
 		$balancesColl = Billrun_Factory::db()->balancesCollection();

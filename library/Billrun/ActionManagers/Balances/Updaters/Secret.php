@@ -94,7 +94,6 @@ class Billrun_ActionManagers_Balances_Updaters_Secret extends Billrun_ActionMana
 		);
 		$options = array(
 			'upsert' => false,
-			'w' => 1,
 		);
 		$cardsColl = Billrun_Factory::db()->cardsCollection();
 		$cardsColl->findAndModify($query, $update, array(), $options, true);

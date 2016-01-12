@@ -229,7 +229,7 @@ class Billrun_ActionManagers_Cards_Update extends Billrun_ActionManagers_Cards_A
 	public function execute() {
 		$exception = null;
 		try {
-			$updateResult = $this->collection->update($this->query, array('$set' => $this->update), array('w' => 1, 'multiple' => 1));
+			$updateResult = $this->collection->update($this->query, array('$set' => $this->update), array('multiple' => 1));
 			$count = $updateResult['nModified'];
 			$found = $updateResult['n'];
 		} catch (\Exception $e) {

@@ -58,7 +58,6 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 		$options = array(
 			'upsert' => false,
 			'new' => false,
-			'w' => 1,
 		);
 		// TODO: Use balances DB/API proxy class.
 		$balancesColl = Billrun_Factory::db()->balancesCollection();
@@ -104,7 +103,6 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 		$options = array(
 			'upsert' => false,
 			'new' => false,
-			'w' => 1,
 			'multiple' =>1,
 		);
 		$linesColl = Billrun_Factory::db()->linesCollection();
