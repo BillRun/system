@@ -18,7 +18,7 @@ class utest_ChargeAddModel extends utest_AbstractUtestModel {
 	public function __construct(\UtestController $controller) {
 		parent::__construct($controller);
 		$this->result = array('balance_before', 'balance_after', 'lines');
-		$this->label = 'Add Charging Plan';
+		$this->label = 'Update balance  by charging plan';
 	}
 
 	function doTest() {

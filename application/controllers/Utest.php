@@ -156,6 +156,11 @@ class UtestController extends Yaf_Controller_Abstract {
 			// Get all lines created during scenarion
 			$lines = $this->getLines();
 		}
+		
+		if(in_array('cards', $result)){
+			// Get all lines created during scenarion
+			$cards = $this->getCards();
+		}
 
 		if(in_array('balance_after', $result)){
 			// Get balance after scenario
@@ -166,6 +171,7 @@ class UtestController extends Yaf_Controller_Abstract {
 		$this->getView()->sid = $sid;
 		$this->getView()->sid_after_test = $sid_after_test;
 		$this->getView()->subdomain = $this->subdomain;
+		$this->getView()->cards = $cards;
 		$this->getView()->lines = $lines;
 		$this->getView()->balances = $balance;
 		$this->getView()->subscribers = $subscriber;
@@ -320,6 +326,44 @@ class UtestController extends Yaf_Controller_Abstract {
 	}
 	
 	/**
+	 * Find all Cards for test
+	 * @param type $sid
+	 * @param type $charging - if TRUE, return only CHARGING lines
+	 */
+	protected function getCards() {
+		$output = array();
+
+		$searchQuery = array(
+			'from' => array(
+				'$gte' => new MongoDate($this->testStartTime['sec'], $this->testStartTime['usec']),
+				'$lte' => new MongoDate($this->testEndTime['sec'], $this->testEndTime['usec'])
+			)
+		);
+
+		$cursor = Billrun_Factory::db()->cardsCollection()->query($searchQuery)->cursor()->limit(100000)->sort(['urt' => 1]);
+		foreach ($cursor as $row) {
+			$rowData = $row->getRawData();
+			$id = (string)$rowData['_id'];
+			foreach ($rowData as $key => $value) {
+				if(get_class ($value) == 'MongoId'){
+					$output['rows'][$id][$key] = $id;
+				}
+				else if(get_class ($value) == 'MongoDate'){
+					$output['rows'][$id][$key] = date('d/m/Y H:i:s', $value->sec);
+				}
+				else if(is_array($value)){
+					$output['rows'][$id][$key] = implode(", ",$value);
+				}
+				else {
+					$output['rows'][$id][$key] = $value;
+				}
+			}	
+		}
+		$output['label'] = 'Cards that was created during test run, <strong>from ' . date('d/m/Y H:i:s', ($this->testStartTime['sec'])) .":".$this->testStartTime['usec'] . " to " . date('d/m/Y H:i:s', $this->testEndTime['sec']) .":".$this->testEndTime['usec'] .'</strong>, Batch Number : ' .  $this->reference;
+		return $output;
+	}
+	
+	/**
 	 * Create data for main test form page
 	 */
 	protected function getTestFormData() {
@@ -357,6 +401,10 @@ class UtestController extends Yaf_Controller_Abstract {
 		$output['aid'] = $this->conf->getConfigValue('test.aid', '');
 		$output['dialed_digits'] = $this->conf->getConfigValue('test.dialed_digits', '');
 		$output['request_method'] = $this->conf->getConfigValue('test.requestType', 'GET');
+		
+		$cardsConf = Billrun_Config::getInstance(new Yaf_Config_Ini(APPLICATION_PATH . '/conf/cards/conf.ini'));
+		$output['card_statuses'] = $cardsConf->getConfigValue('cards.status', array());
+		
 		return $output;
 	}
 	
