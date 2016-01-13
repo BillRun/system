@@ -120,24 +120,25 @@ class Billrun_ActionManagers_Cards_Update extends Billrun_ActionManagers_Cards_A
 					$this->reportError($errorCode, Zend_Log::NOTICE, array($updateStatus));
 					return false;
 				}					
-			}
-			// Check serial_number range validity
-			if (isset($this->query['serial_number'])) {
-				if (is_array($this->query['serial_number'])) {
-					if (isset($this->query['serial_number']['$gte']) xor isset($this->query['serial_number']['$lte'])) {
-							$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 40;						
-							$this->reportError($errorCode, Zend_Log::NOTICE);
-							return false;
+				// Check serial_number range validity
+				if (isset($this->query['serial_number'])) {
+					if (is_array($this->query['serial_number'])) {
+						if (isset($this->query['serial_number']['$gte']) xor isset($this->query['serial_number']['$lte'])) {
+								$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 40;						
+								$this->reportError($errorCode, Zend_Log::NOTICE);
+								return false;
+						}
 					}
 				}
+				// Check if there are impermissible statuses for the requested new status in query from the DB 
+				$count = $this->collection->query($this->validateQuery)->cursor()->count();
+				if ($count) {
+					$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 41;						
+					$this->reportError($errorCode, Zend_Log::NOTICE, array($count, implode(', ', array_diff($availableStatuses, $allowFromStatus[$updateStatus])), $updateStatus));
+					return false;
+				}				
 			}
-			// Check if there are impermissible statuses for the requested new status in query from the DB 
-			$count = $this->collection->query($this->validateQuery)->cursor()->count();
-			if ($count) {
-				$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 41;						
-				$this->reportError($errorCode, Zend_Log::NOTICE, array($count, implode(', ', array_diff($availableStatuses, $allowFromStatus[$updateStatus])), $updateStatus));
-				return false;
-			}
+
 		}
 		return true;
 	}
