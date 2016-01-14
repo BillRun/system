@@ -47,9 +47,9 @@ class BalancesModel extends TableModel {
 	}
 	
 	protected function getBalancesFields() {
-		$basic_columns = Billrun_Factory::config()->getConfigValue('admin_panel.balances.table_columns');
-		$extra_columns = Billrun_Factory::config()->getConfigValue('admin_panel.balances.extra_columns');
-		
+		$conf = Billrun_Config::getInstance(new Yaf_Config_Ini(APPLICATION_PATH . '/conf/view/admin_panel.ini'))->toArray();
+		$basic_columns = $conf['admin_panel']['balances']['table_columns'];
+		$extra_columns = $conf['admin_panel']['balances']['extra_columns'];
 		return array_merge($basic_columns, $extra_columns);
 	}
 
@@ -182,22 +182,29 @@ class BalancesModel extends TableModel {
 	public function getData($filter_query = array()) {
 		$resource = parent::getData($filter_query);
 		$ret = array();
-		$aggregate = Billrun_Config::getInstance()->getConfigValue('admin_panel.balances.aggregate', false);
+		//$aggregate = Billrun_Config::getInstance()->getConfigValue('admin_panel.balances.aggregate', false);
+		$conf = Billrun_Config::getInstance(new Yaf_Config_Ini(APPLICATION_PATH . '/conf/view/admin_panel.ini'))->toArray();
+		$aggregate = $conf['admin_panel']['balances']['aggregate'];
 		foreach ($resource as $item) {
 			if ($aggregate) {
 				$totals = array();
+				$units = array();
 				foreach ($item['balance']['totals'] as $key => $val) {
 					$unit = Billrun_Util::getUsagetUnit($key);
 					if ($val['cost']) {
-						$totals[] = $val['cost'] + " $unit $key";
+						$totals[] = $val['cost'];
+						$units[] = $unit;
 					} else if ($val['usagev']) {
-						$totals[] = $val['usagev'] . " " . $unit;
+						$totals[] = $val['usagev'];
+						$units[] = $unit;
 					}
 				}
 				if ($item['balance']['cost']) {
-					$totals[] = $item['balance']['cost'] . " " . Billrun_Util::getUsagetUnit('cost');
+					$totals[] = $item['balance']['cost'];
+					$units[] = Billrun_Util::getUsagetUnit('cost');
 				}
 				$item['totals'] = implode(',', $totals);
+				$item['units'] = implode(',', $units);
 			}
 			if ($current_plan = $this->getDBRefField($item, 'current_plan')) {
 				$item['current_plan'] = $current_plan['name'];
