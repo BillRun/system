@@ -76,6 +76,11 @@
 				<a href="<?php echo $this->baseUrl; ?>/admin/cards">Cards</a>
 			</li>
 		<?php endif; ?>
+		<?php if(AdminController::authorized('read', 'utest') && AdminController::showInMenu('utest')) : ?>
+			<li <?php echo ($active == 'utest' ? ' class="active"' : ''); ?>>
+				<a href="<?php echo $this->baseUrl; ?>/utest">uTest</a>
+			</li>
+		<?php endif; ?>
 		<?php if (AdminController::authorized('admin')) : ?>
 			<li class="dropdown<?php echo (in_array($active, array('users', 'config', 'operations')) ? ' active' : ''); ?>">
 				<a class="dropdown-toggle"

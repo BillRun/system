@@ -3,9 +3,12 @@
 		<?php print $this->render('utest/components/layoutHeader.phtml', array('title' => 'Billrun | uTest')); ?>
 	</head>
 	<body>
+
+		<?php print $this->render('utest/components/navigation.phtml'); ?>
+		
 		<div class="container">
 			<div class="page-header">
-				<h1><img class='text-center span' src="http://www.billrun.net/images/billrun/web-logo.png" alt="BillRun"/> <small class="text-bottom">Unit Testing</small></h1>
+				<!--<h1><img class='text-center span' src="http://www.billrun.net/images/billrun/web-logo.png" alt="BillRun"/> <small class="text-bottom">Unit Testing</small></h1>-->
 			</div>
 			<ol class="breadcrumb">
 				<li><a href="/"><span class="glyphicon glyphicon-home" aria-hidden="true"></span></a></li>
@@ -16,7 +19,7 @@
 			<div class="col-xs-3">
 				<ul class="nav nav-tabs tabs-left">
 					<?php foreach ($tests as $key => $test) : ?>
-						<li><a data-toggle="tab" <?php //echo ($key == 0) ? 'class="active"' : '' ;  ?> href="#<?php echo $test->getTestName() ?>"><?php echo $test->getTestLabel() ?></a></li>
+						<li><a data-toggle="tab" href="#<?php echo $test->getTestName() ?>"><?php echo $test->getTestLabel() ?></a></li>
 					<?php endforeach; ?>
 				</ul>
 			</div>
@@ -33,7 +36,7 @@
 					</div>
 				</div>
 				<?php foreach ($tests as $key => $test) : ?>
-					<div id="<?php echo $test->getTestName() ?>" class="tab-pane fade <?php //echo ($key == 0) ? 'in active' : '' ;  ?>">
+					<div id="<?php echo $test->getTestName() ?>" class="tab-pane fade">
 						<?php print $this->render('utest/tests/' . $test->getTestTemplate(), array('name' => $test->getTestName(), 'label' => $test->getTestLabel())); ?>
 					</div>
 				<?php endforeach; ?>

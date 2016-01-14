@@ -3,9 +3,11 @@
 		<?php print $this->render('utest/components/layoutHeader.phtml', array('title' => 'Billrun | ' . $test->getTestLabel())); ?>
 	</head>
 	<body>
+		<?php print $this->render('utest/components/navigation.phtml'); ?>
+		
 		<div class="container">
 			<div class="page-header">
-				<h1>Results for <?php echo $test->getTestLabel(); ?></h1>
+				<!--<h1>Results for <?php echo $test->getTestLabel(); ?></h1>-->
 			</div>
 			<ol class="breadcrumb">
 				<li><a href="/"><span class="glyphicon glyphicon-home" aria-hidden="true"></span></a></li>
