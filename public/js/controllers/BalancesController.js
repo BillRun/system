@@ -10,6 +10,10 @@ function BalancesController($controller, Utils) {
   vm.utils = Utils;
 
   vm.init = function () {
-    vm.initEdit();
+    vm.initEdit(function (entity) {
+      if (entity.to && _.result(entity.to, 'sec')) {
+        entity.to = new Date(entity.to.sec * 1000);
+      }
+    });
   };
 }
