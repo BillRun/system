@@ -82,7 +82,9 @@
 		<div class=\"controls form-inline\">
 			 <select id=\"sort_by\" name=\"sort_by\" class=\"form-control multiselect\">";
 				foreach ($this->sort_fields as $sort_field_key => $sort_field_display) {
-					echo "<option value=\"" . $sort_field_key . "\"" . (isset($this->session->sort_by) && $this->session->sort_by == $sort_field_key || (!$this->session->sort_by && $sort_field_key == 'from' && $active == 'subscribers') ? " selected=\"selected\"" : "") . ">" . $sort_field_display . "</option>";
+					echo "<option value=\"" . $sort_field_key . "\"" . (isset($this->session->sort_by) && $this->session->sort_by == $sort_field_key || 
+						(!$this->session->sort_by && $sort_field_key == 'from' && $active == 'subscribers') ||
+						(!$this->session->sort_by && $sort_field_key == 'urt' && $active == 'lines') ? " selected=\"selected\"" : "") . ">" . $sort_field_display . "</option>";
 				}
 				echo "</select>
 			<label class=\"radio inline\">
