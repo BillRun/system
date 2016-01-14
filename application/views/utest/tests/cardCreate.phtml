@@ -1,37 +1,38 @@
 <form action="/utest/result" method="<?php echo $request_method ?>" class="form-horizontal">
+
 	<input type="hidden" name="type" value="<?php echo $name ?>" >
 
-	<div class="form-group row">
-		<dl class="col-sm-7 text-center">
+	<div class="form-group row required">
+		<dl class="col-sm-12 text-center">
 			<dt>API Cards Create</dt>
 			<dd>Batch Number parameter will be generated as random number of 10 digits</dd>
 			<dd>Serial Number parameter will be generated from Batch Number + count.</dd>
 		</dl>
 	</div>
 	<hr/>
-	
-	<div class="form-group row">
-		<label for="secrets" class="col-sm-2 control-label text-right">Secret</label>
-		<div class="col-sm-5">
+
+	<div class="form-group row required">
+		<label for="secrets" class="col-sm-4 control-label text-right">Secret</label>
+		<div class="col-sm-6">
 			<textarea rows="4" name="secrets" class="form-control" ></textarea>
 			<small class="text-muted">Batch Card creation, New line per CARD.</small>
 		</div>
 	</div>
 
-	<div class="form-group row">
-		<label for="balanceType" class="col-sm-2 control-label text-right">Charging Name</label>
-		<div class="col-sm-5">
+	<div class="form-group row required">
+		<label for="balanceType" class="col-sm-4 control-label text-right">Charging Name</label>
+		<div class="col-sm-6">
 			<select class="form-control" name='balanceType'>
 				<?php foreach ($balance_types['plans'] as $balance_type) : ?>
-					<option value="<?php echo $balance_type['name'] ?>|<?php echo $balance_type['service_provider'] ?>"><?php echo $balance_type['name'] . " (" . $balance_type['service_provider'] . ")"?></option>
+					<option value="<?php echo $balance_type['name'] ?>|<?php echo $balance_type['service_provider'] ?>"><?php echo $balance_type['name'] . " (" . $balance_type['service_provider'] . ")" ?></option>
 				<?php endforeach; ?>
 			</select>
 		</div>
 	</div>
 
 	<div class="form-group row">
-		<label for="service_provider" class="col-sm-2 control-label text-right">Service Provider</label>
-		<div class="col-sm-5">
+		<label for="service_provider" class="col-sm-4 control-label text-right">Service Provider</label>
+		<div class="col-sm-6">
 			<div class="input-group">
 				<span class="input-group-addon">
 					<input type="checkbox" class='enable-input' name="override_service_provider">
@@ -47,9 +48,9 @@
 		</div>
 	</div>
 
-	<div class="form-group row">
-		<label for="status" class="col-sm-2 control-label text-right">Status</label>
-		<div class="col-sm-5">
+	<div class="form-group row required">
+		<label for="status" class="col-sm-4 control-label text-right">Status</label>
+		<div class="col-sm-6">
 			<select class="form-control" name='status'>
 				<?php foreach ($card_statuses as $card_status) : ?>
 					<option value="<?php echo $card_status ?>"><?php echo $card_status ?></option>
@@ -58,9 +59,9 @@
 		</div>
 	</div>
 
-	<div class="form-group row">
-		<label for="created" class="col-sm-2 control-label text-right">Created Date</label>
-		<div class="col-sm-5">
+	<div class="form-group row required">
+		<label for="created" class="col-sm-4 control-label text-right">Created Date</label>
+		<div class="col-sm-6">
 			<div class='input-group date datetimepicker'>
 				<input type='text' class="form-control" value="<?php echo date('d/m/Y H:i') ?>" name='created'/>
 				<span class="input-group-addon">
@@ -70,9 +71,9 @@
 		</div>
 	</div>
 
-	<div class="form-group row">
-		<label for="expiration" class="col-sm-2 control-label text-right">Expiration Date</label>
-		<div class="col-sm-5">
+	<div class="form-group row required">
+		<label for="expiration" class="col-sm-4 control-label text-right">Expiration Date</label>
+		<div class="col-sm-6">
 			<div class='input-group date datetimepicker'>
 				<input type='text' class="form-control" value='<?php echo date('d/m/Y H:i', strtotime('+1 year')); ?>' name='expiration'/>
 				<span class="input-group-addon">
@@ -83,8 +84,9 @@
 	</div>
 
 	<div class="form-group row">
-		<div class="col-sm-offset-2 col-sm-10">
-			<button type="submit" class="btn btn-success">Add Charge</button>
+		<div class="col-sm-offset-4 col-sm-6">
+			<button type="submit" class="btn btn-success btn-block">Run Test</button>
 		</div>
 	</div>
+
 </form>

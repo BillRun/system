@@ -1,27 +1,39 @@
 <form action="/utest/result" method="<?php echo $request_method ?>" class="form-horizontal">
+	
 	<input type="hidden" name="type" value="<?php echo $name ?>">
+
 	<div class="form-group row">
-		<label for="imsi" class="col-sm-2 control-label text-right">IMSI</label>
-		<div class="col-sm-5">
+		<dl class="col-sm-12 text-center">
+			<dt><?php echo $label ?></dt>
+			<dd></dd>
+		</dl>
+	</div>
+	<hr/>
+
+	<div class="form-group row">
+		<label for="imsi" class="col-sm-4 control-label text-right">IMSI</label>
+		<div class="col-sm-6">
 			<input type="text" name="imsi" value='<?php echo $imsi ?>' class="form-control">
 		</div>
 	</div>
+
 	<div class="form-group row">
-		<label for="dialedDigits" class="col-sm-2 control-label text-right">Dialed Digits</label>
-		<div class="col-sm-5">
+		<label for="dialedDigits" class="col-sm-4 control-label text-right">Dialed Digits</label>
+		<div class="col-sm-6">
 			<input type="text" name="dialedDigits" value='<?php echo $dialed_digits ?>' class="form-control">
 		</div>
 	</div>
 	<div class="form-group row">
-		<label for="scenario" class="col-sm-2 text-right">Scenario</label>
-		<div class="col-sm-5">
+		<label for="scenario" class="col-sm-4 text-right">Scenario</label>
+		<div class="col-sm-6">
 			<textarea rows="6" name="scenario" class="form-control" ><?php echo $call_scenario ?></textarea>
 			<small class="text-muted">[ACTION_NAME|DURATION] New line per action, Default call duration is 4000.</small>
 		</div>
 	</div>
+
 	<div class="form-group row">
-		<label class="col-sm-2 text-right"></label>
-		<div class="col-sm-5">
+		<label class="col-sm-4 text-right"></label>
+		<div class="col-sm-6">
 			<div class="checkbox">
 				<label>
 					<input type="checkbox" name="removeLines" value="remove" checked>Remove all existing lines for this imsi
@@ -29,9 +41,11 @@
 			</div>
 		</div>
 	</div>
+
 	<div class="form-group row">
-		<div class="col-sm-offset-2 col-sm-10">
-			<button type="submit" class="btn btn-success">Start Test</button>
+		<div class="col-sm-offset-4 col-sm-6">
+			<button type="submit" class="btn btn-success btn-block">Run Test</button>
 		</div>
 	</div>
+	
 </form>

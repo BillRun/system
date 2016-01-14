@@ -1,32 +1,23 @@
 <html>
 	<head>
-		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-		<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
-		<script>window.jQuery || document.write('<script src="<?php echo $this->subdomain; ?>/js/vendor/jquery-1.11.0.min.js"><\/script>')</script>
-		<script src="<?php echo $subdomain ?>/js/vendor/bootstrap.js"></script>
-		<script src="<?php echo $subdomain ?>/js/moment.js"></script>
-		<script src="<?php echo $subdomain ?>/js/moment-with-locales.min.js"></script>
-		<script src="<?php echo $subdomain ?>/js/bootstrap-datetimepicker.min.js"></script>
-		<script src="<?php echo $subdomain ?>/js/utest/utest.js"></script>
-		<link rel="stylesheet" href="<?php echo $subdomain ?>/css/bootstrap.min.css">
-		<link rel="stylesheet" href="<?php echo $subdomain ?>/css/bootstrap.vertical-tabs.min.css">
-		<link rel="stylesheet" href="<?php echo $subdomain ?>/css/bootstrap-datetimepicker.min.css">
+		<?php print $this->render('utest/components/layoutHeader.phtml', array('title' => 'Billrun | uTest')); ?>
 	</head>
 	<body>
 		<div class="container">
 			<div class="page-header">
-				<h1>Unit Testing</h1>
+				<h1><img class='text-center span' src="http://www.billrun.net/images/billrun/web-logo.png" alt="BillRun"/> <small class="text-bottom">Unit Testing</small></h1>
 			</div>
 			<ol class="breadcrumb">
-				<li><a href="/utest">uTest</a></li>
+				<li><a href="/"><span class="glyphicon glyphicon-home" aria-hidden="true"></span></a></li>
+				<li>uTest</li>
 			</ol>
-			
-			
+
+
 			<div class="col-xs-3">
 				<ul class="nav nav-tabs tabs-left">
-					<?php foreach ($tests as $key => $test) :?>
-						<li><a data-toggle="tab" <?php //echo ($key == 0) ? 'class="active"' : '' ; ?> href="#<?php echo $test->getTestName() ?>"><?php echo $test->getTestLabel() ?></a></li>
-					<?php endforeach;?>
+					<?php foreach ($tests as $key => $test) : ?>
+						<li><a data-toggle="tab" <?php //echo ($key == 0) ? 'class="active"' : '' ;  ?> href="#<?php echo $test->getTestName() ?>"><?php echo $test->getTestLabel() ?></a></li>
+					<?php endforeach; ?>
 				</ul>
 			</div>
 
@@ -41,11 +32,11 @@
 						</h2>
 					</div>
 				</div>
-				<?php foreach ($tests as $key => $test) :?>
-					<div id="<?php echo $test->getTestName() ?>" class="tab-pane fade <?php //echo ($key == 0) ? 'in active' : '' ; ?>">
-						<?php print $this->render('utest/tests/' . $test->getTestTemplate(), array('name' => $test->getTestName())); ?>
+				<?php foreach ($tests as $key => $test) : ?>
+					<div id="<?php echo $test->getTestName() ?>" class="tab-pane fade <?php //echo ($key == 0) ? 'in active' : '' ;  ?>">
+						<?php print $this->render('utest/tests/' . $test->getTestTemplate(), array('name' => $test->getTestName(), 'label' => $test->getTestLabel())); ?>
 					</div>
-				<?php endforeach;?>
+				<?php endforeach; ?>
 			</div>
 		</div>
 	</body>

@@ -18,7 +18,7 @@ class utest_SubscriberDeleteModel extends utest_AbstractUtestModel {
 	public function __construct(\UtestController $controller) {
 		parent::__construct($controller);
 		$this->result = array('subscriber_after', 'subscriber_before', 'balance_before', 'balance_after');
-		$this->label = 'Delete Subscriber';
+		$this->label = 'Subscriber | Delete';
 	}
 
 	public function doTest() {

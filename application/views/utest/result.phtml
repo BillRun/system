@@ -1,15 +1,6 @@
 <html>
 	<head>
-		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-		<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
-		<script>window.jQuery || document.write('<script src="<?php echo $this->subdomain; ?>/js/vendor/jquery-1.11.0.min.js"><\/script>')</script>
-		<script src="<?php echo $subdomain ?>/js/vendor/bootstrap.js"></script>
-		<script src="<?php echo $subdomain ?>/js/moment.js"></script>
-		<script src="<?php echo $subdomain ?>/js/moment-with-locales.min.js"></script>
-		<script src="<?php echo $subdomain ?>/js/bootstrap-datetimepicker.min.js"></script>
-		<script src="<?php echo $subdomain ?>/js/utest/utest.js"></script>
-		<link rel="stylesheet" href="<?php echo $subdomain ?>/css/bootstrap.min.css">
-		<link rel="stylesheet" href="<?php echo $subdomain ?>/css/bootstrap-datetimepicker.min.css">
+		<?php print $this->render('utest/components/layoutHeader.phtml', array('title' => 'Billrun | ' . $test->getTestLabel())); ?>
 	</head>
 	<body>
 		<div class="container">
@@ -17,6 +8,7 @@
 				<h1>Results for <?php echo $test->getTestLabel(); ?></h1>
 			</div>
 			<ol class="breadcrumb">
+				<li><a href="/"><span class="glyphicon glyphicon-home" aria-hidden="true"></span></a></li>
 				<li><a href="/utest">uTest</a></li>
 				<li><?php echo $test->getTestLabel(); ?></li>
 			</ol>
