@@ -132,7 +132,11 @@ class UtestController extends Yaf_Controller_Abstract {
 			} elseif(!empty($msisdn)) {
 				$query = array('msisdn' => $msisdn);
 			}
-			$sid = $this->getSid();
+			if (!empty($query)) {
+				$sid = $this->getSid($query);
+			} else {
+				return;
+			}
 		}
 		
 		if ($removeLines == 'remove') {
@@ -194,10 +198,10 @@ class UtestController extends Yaf_Controller_Abstract {
 		$this->getView()->sid = $sid;
 		$this->getView()->sid_after_test = $sid_after_test;
 		$this->getView()->subdomain = $this->subdomain;
-		$this->getView()->cards = $cards;
-		$this->getView()->lines = $lines;
+		$this->getView()->cards = isset($cards) ? $cards : null;
+		$this->getView()->lines = isset($lines) ? $lines : null;
 		$this->getView()->balances = $balance;
-		$this->getView()->subscribers = $subscriber;
+		$this->getView()->subscribers = isset($subscriber) ? $subscriber : null;
 		$this->getView()->apiCalls = $this->apiCalls;
 		$this->getView()->test_collection = $test_collection;
 	}
