@@ -18,7 +18,7 @@ class utest_BalanceCardModel extends utest_AbstractUtestModel {
 	public function __construct(\UtestController $controller) {
 		parent::__construct($controller);
 		$this->result = array('balance_before', 'balance_after', 'lines');
-		$this->label = 'Update balance by card';
+		$this->label = 'Balance | Update by card';
 	}
 	
 	function doTest() {

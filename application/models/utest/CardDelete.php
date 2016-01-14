@@ -18,7 +18,7 @@ class utest_CardDeleteModel extends utest_AbstractUtestModel {
 	public function __construct(\UtestController $controller) {
 		parent::__construct($controller);
 		$this->result = array('cards');
-		$this->label = 'Delete Card';
+		$this->label = 'Card | Delete';
 	}
 
 	function doTest() {

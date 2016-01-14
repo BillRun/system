@@ -18,7 +18,7 @@ class utest_SmsModel extends utest_AbstractUtestModel {
 	public function __construct(\UtestController $controller) {
 		parent::__construct($controller);
 		$this->result = array('balance_before', 'balance_after', 'lines');
-		$this->label = 'SMS/MMS';
+		$this->label = 'SMS/MMS | Real-time event';
 	}
 	
 	/**

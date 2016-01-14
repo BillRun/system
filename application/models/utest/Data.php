@@ -18,7 +18,7 @@ class utest_DataModel extends utest_AbstractUtestModel {
 	public function __construct(\UtestController $controller) {
 		parent::__construct($controller);
 		$this->result = array('balance_before', 'balance_after', 'lines');
-		$this->label = 'Data';
+		$this->label = 'Data | Real-time event';
 	}
 	
 	/**
@@ -44,6 +44,7 @@ class utest_DataModel extends utest_AbstractUtestModel {
 			);
 			$data = $this->getRequestData($params);
 			$this->controller->sendRequest(array('usaget' => 'data', 'request' => $data));
+			sleep(1);
 		}
 	}
 
