@@ -186,18 +186,23 @@ class BalancesModel extends TableModel {
 		foreach ($resource as $item) {
 			if ($aggregate) {
 				$totals = array();
+				$units = array();
 				foreach ($item['balance']['totals'] as $key => $val) {
 					$unit = Billrun_Util::getUsagetUnit($key);
 					if ($val['cost']) {
-						$totals[] = $val['cost'] + " $unit $key";
+						$totals[] = $val['cost'];
+						$units[] = $unit;
 					} else if ($val['usagev']) {
-						$totals[] = $val['usagev'] . " " . $unit;
+						$totals[] = $val['usagev'];
+						$units[] = $unit;
 					}
 				}
 				if ($item['balance']['cost']) {
-					$totals[] = $item['balance']['cost'] . " " . Billrun_Util::getUsagetUnit('cost');
+					$totals[] = $item['balance']['cost'];
+					$units[] = Billrun_Util::getUsagetUnit('cost');
 				}
 				$item['totals'] = implode(',', $totals);
+				$item['units'] = implode(',', $units);
 			}
 			if ($current_plan = $this->getDBRefField($item, 'current_plan')) {
 				$item['current_plan'] = $current_plan['name'];
