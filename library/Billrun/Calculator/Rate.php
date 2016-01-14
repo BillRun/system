@@ -144,6 +144,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 		$rate = $this->getLineRate($row);
 		if (is_null($rate) || $rate === false) {
 			$row['granted_return_code'] = Billrun_Factory::config()->getConfigValue('prepaid.customer.no_rate');
+			$row['usagev'] = 0;
 			return false;
 		}
 		if (isset($rate['key']) && $rate['key'] == "UNRATED") {
@@ -200,7 +201,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 		$rates_coll= Billrun_Factory::db()->ratesCollection();
 		$matchedRate = $rates_coll->aggregate($query)->current();
 		
-		if (empty($matchedRate)) {
+		if ($matchedRate->isEmpty()) {
 			return false;
 		}
 		
