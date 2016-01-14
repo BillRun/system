@@ -88,4 +88,8 @@ class Billrun_Calculator_Rate_Callrt extends Billrun_Calculator_Rate {
 			"_id" => '$_id',
 			"pref" => '$params.prefix');
 	}
+	
+	protected function getRatesExistsQuery() {
+		return array('$exists' => true);
+	}
 }
