@@ -199,10 +199,22 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 		$data = &$processor->getData();
 
+		$before = microtime(true);
 		$this->customerCalc($processor, $data, $options);
+		$after = microtime(true);
+		Billrun_Factory::log('Customer calculator time: ' . ($after - $before)*1000 . " ms", Zend_Log::DEBUG);
+		$before = microtime(true);
 		$this->rateCalc($processor, $data, $options);
+		$after = microtime(true);
+		Billrun_Factory::log('Rate calculator time: ' . ($after - $before)*1000 . " ms", Zend_Log::DEBUG);
+		$before = microtime(true);
 		$this->customerPricingCalc($processor, $data, $realtime);
+		$after = microtime(true);
+		Billrun_Factory::log('CustomerPricing calculator time: ' . ($after - $before)*1000 . " ms", Zend_Log::DEBUG);
+		$before = microtime(true);
 		$this->unifyCalc($processor, $data);
+		$after = microtime(true);
+		Billrun_Factory::log('Unify calculator time: ' . ($after - $before)*1000 . " ms", Zend_Log::DEBUG);
 		
 
 		Billrun_Factory::log('Plugin calc cpu end', Zend_Log::INFO);
