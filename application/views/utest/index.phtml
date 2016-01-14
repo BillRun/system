@@ -16,6 +16,7 @@
 			</ol>
 
 
+			<?php if(!empty($tests)):?>
 			<div class="col-xs-3">
 				<ul class="nav nav-tabs tabs-left">
 					<?php foreach ($tests as $key => $test) : ?>
@@ -40,7 +41,14 @@
 						<?php print $this->render('utest/tests/' . $test->getTestTemplate(), array('name' => $test->getTestName(), 'label' => $test->getTestLabel())); ?>
 					</div>
 				<?php endforeach; ?>
-			</div>
+			</div>		
+			<?php else : ?>
+			<div class="list-group">
+				<?php foreach ($enabled_test_collections as $key => $enabled_test_collection) : ?>
+					<a href="utest?testcollection=<?php print $enabled_test_collection['param']; ?>" class="list-group-item">Test <?php print $enabled_test_collection['label']; ?>  </a>
+				<?php endforeach; ?>
+			 </div>
+			<?php endif; ?>
 		</div>
 	</body>
 </html>

@@ -11,7 +11,7 @@
 			</div>
 			<ol class="breadcrumb">
 				<li><a href="/"><span class="glyphicon glyphicon-home" aria-hidden="true"></span></a></li>
-				<li><a href="/utest">uTest</a></li>
+				<li><a href="/utest?testcollection=<?php echo $test_collection?>">uTest</a></li>
 				<li><?php echo $test->getTestLabel(); ?></li>
 			</ol>
 
@@ -31,7 +31,7 @@
 
 			<?php print $this->render('utest/components/api.phtml', array('apiCalls' => $apiCalls)); ?>
 
-			<a href="/utest#<?php echo $test->getTestName() ?>" class="btn btn-success">Return</a>
+			<a href="/utest?testcollection=<?php echo $test_collection?>#<?php echo $test->getTestName() ?>" class="btn btn-success">Return</a>
 		</div>
 	</body>
 </html>

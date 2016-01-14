@@ -72,16 +72,38 @@ class UtestController extends Yaf_Controller_Abstract {
 	 * @return void
 	 */
 	public function indexAction() {
-		$tests = array();	
-		foreach ( $this->getEnabledTests() as $key => $testModelName) {
-			$tests[] = new $testModelName($this);
-		}
-		$this->getView()->tests = $tests;
-		$this->getView()->subdomain = $this->subdomain;
-		
-		$formParams = $this->getTestFormData();
-		foreach ($formParams as $name => $value) {
-			$this->getView()->{$name} = $value;
+		$tests = array();
+		$test_collection = $this->getRequest()->get('testcollection');
+		if (!empty($test_collection)) {
+			foreach ($this->getEnabledTests($test_collection) as $key => $testModelName) {
+				$tests[] = new $testModelName($this);
+			}
+			$this->getView()->tests = $tests;
+			$this->getView()->subdomain = $this->subdomain;
+			$this->getView()->test_collection = $test_collection;
+
+			$formParams = $this->getTestFormData();
+			foreach ($formParams as $name => $value) {
+				$this->getView()->{$name} = $value;
+			}
+		} else {
+			$enabled_test_collections = array();
+			
+			foreach (array_keys($this->getEnabledTestsCollection()) as $value) {
+				$label = '';
+				if (substr($value, 0, strlen('utest')) == 'utest') {
+					$label = substr($value, strlen('utest'));
+				}
+				$label = preg_replace('/(?!^)[A-Z]{2,}(?=[A-Z][a-z])|[A-Z][a-z]/', ' $0', $label);
+				$label = ucwords($label);
+				$enabled_test_collections[] = array(
+					'param' => $value,
+					'label' => $label
+				);
+			}
+			$this->getView()->enabled_test_collections = $enabled_test_collections;
+			$this->getView()->test_collection = 'utest';
+
 		}
 	}
 
@@ -102,6 +124,7 @@ class UtestController extends Yaf_Controller_Abstract {
 		$sid = (int) Billrun_Util::filter_var($this->getRequest()->get('sid'), FILTER_VALIDATE_INT);
 		$imsi = Billrun_Util::filter_var($this->getRequest()->get('imsi'), FILTER_SANITIZE_STRING);
 		$msisdn = Billrun_Util::filter_var($this->getRequest()->get('msisdn'), FILTER_SANITIZE_STRING);
+		$test_collection = $this->getRequest()->get('testcollection');
 
 		if (empty($sid)) {
 			if(!empty($imsi)){
@@ -176,6 +199,7 @@ class UtestController extends Yaf_Controller_Abstract {
 		$this->getView()->balances = $balance;
 		$this->getView()->subscribers = $subscriber;
 		$this->getView()->apiCalls = $this->apiCalls;
+		$this->getView()->test_collection = $test_collection;
 	}
 
 	public function getReference() {
@@ -408,10 +432,14 @@ class UtestController extends Yaf_Controller_Abstract {
 		return $output;
 	}
 	
-	protected function getEnabledTests() {
+	protected function getEnabledTests($test_collection) {
 		//From config
-		$tests = $this->conf->getConfigValue('test.enableTests', array());
+		$tests = $this->conf->getConfigValue("test.enableTests.".$test_collection, array());
 		return $tests;
 	}
 
+	protected function getEnabledTestsCollection() {
+		$tests = $this->conf->getConfigValue("test.enableTests", array());
+		return $tests;
+	}
 }

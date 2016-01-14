@@ -1,6 +1,7 @@
-<form action="/utest/result" method="<?php echo $request_method ?>" class="form-horizontal">
+<form action="/utest/result?collection=<?php echo $test_collection?>" method="<?php echo $request_method ?>" class="form-horizontal">
 	
 	<input type="hidden" name="type" value="<?php echo $name ?>">
+	<input type="hidden" name="testcollection" value="<?php echo $test_collection ?>" >
 
 	<div class="form-group row">
 		<dl class="col-sm-12 text-center">
