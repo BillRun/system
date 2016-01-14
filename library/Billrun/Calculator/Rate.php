@@ -225,6 +225,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 				$pipelineValue = '';
 				if (is_array($pipeline)) {
 					foreach ($pipeline as $key => $value) {
+						$key = str_replace('__', '.', $key);
 						if (isset($value['classMethod'])) {
 							if (!method_exists($this, $value['classMethod'])) {
 								continue;
