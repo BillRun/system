@@ -214,7 +214,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	 * 
 	 * @return string mongo query
 	 */
-	protected function getRateQuery() {
+	protected function getRateQuery($row) {
 		$pipelines = Billrun_Config::getInstance()->getConfigValue('rate_pipeline.' . self::$type, array()) +
 			Billrun_Config::getInstance()->getConfigValue('rate_pipeline.' . static::$type, array());
 		$query = array();
