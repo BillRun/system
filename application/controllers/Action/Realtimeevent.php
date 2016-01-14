@@ -112,7 +112,7 @@ class RealtimeeventAction extends ApiAction {
 		} else if(isset ($event['sgsnaddress'])) {
 			$sgsn = $event['sgsnaddress'];
 		}
-		return long2ip(hexdec($sgsn));
+		return $sgsn;
 	}
 	
 	protected function getDataRecordType($usaget, $data) {

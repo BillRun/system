@@ -245,6 +245,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		if (is_null($plan_ref)) {
 			Billrun_Factory::log('No plan found for subscriber ' . $row['sid'], Zend_Log::ALERT);
 			$row['usagev'] = 0;
+			$row['apr'] = 0;
 			return false;
 		}
 
@@ -252,6 +253,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		if (!$balance || !$balance->isValid()) {
 			Billrun_Factory::log("couldn't get balance for subscriber: " . $row['sid'], Zend_Log::INFO);
 			$row['usagev'] = 0;
+			$row['apr'] = 0;
 			return false;
 		} else {
 			Billrun_Factory::log("Found balance  for subscriber " . $row['sid'], Zend_Log::DEBUG);
@@ -503,6 +505,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		$plan = Billrun_Factory::plan(array('name' => $row['plan'], 'time' => $row['urt']->sec, 'disableCache' => true));
 		if ($row['charging_type'] === 'prepaid' && !(isset($row['prepaid_rebalance']) && $row['prepaid_rebalance'])) { // If it's a prepaid row, but not rebalance
 			$row['usagev'] = $volume = $this->getPrepaidGrantedVolume($row, $rate, $this->balance, $usage_type, $plan);
+			$row['apr'] = Billrun_Calculator_CustomerPricing::getPriceByRate($rate, $row['usaget'], $row['usagev'], $row['plan']);
 			$row['balance_ref'] = $this->balance->createRef();
 		} else {
 			$volume = $row['usagev'];
