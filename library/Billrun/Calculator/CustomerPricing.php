@@ -367,10 +367,14 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @param string $usage_type the usage type
 	 * @param int $volume The usage volume (seconds of call, count of SMS, bytes  of data)
 	 * @param object $plan The plan the line is associate to
+	 * @todo : changed mms behavior as soon as we will add mms to rates
 	 * 
 	 * @return int the calculated price
 	 */
 	public static function getPriceByRate($rate, $usage_type, $volume, $plan = null) {
+		
+		if ($usage_type == 'mms') {$usage_type = 'sms';} //TODO: should be changed as soon as we will add mms to rates
+		
 		$rates_arr = self::getRatesArray($rate, $usage_type, $plan);
 		$price = 0;
 		foreach ($rates_arr as $currRate) {
