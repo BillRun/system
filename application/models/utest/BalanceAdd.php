@@ -18,7 +18,7 @@ class utest_BalanceAddModel extends utest_AbstractUtestModel {
 	public function __construct(\UtestController $controller) {
 		parent::__construct($controller);
 		$this->result = array('balance_before', 'balance_after', 'lines');
-		$this->label = 'Update balance by customer plan';
+		$this->label = 'Balance | Update by customer plan';
 	}
 	
 	function doTest() {

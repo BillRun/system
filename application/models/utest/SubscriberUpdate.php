@@ -18,7 +18,7 @@ class utest_SubscriberUpdateModel extends utest_AbstractUtestModel {
 	public function __construct(\UtestController $controller) {
 		parent::__construct($controller);
 		$this->result = array('subscriber_after', 'subscriber_before', 'balance_before', 'balance_after', 'lines');
-		$this->label = 'Update Subscriber';
+		$this->label = 'Subscriber | Update';
 	}
 
 	public function doTest() {

@@ -1,0 +1,7 @@
+.form-group.required .control-label:after {
+  content:" *";
+  color:red;
+}
+.text-bottom{
+	vertical-align: bottom;
+}

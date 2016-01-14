@@ -18,7 +18,7 @@ class utest_CardCreateModel extends utest_AbstractUtestModel {
 	public function __construct(\UtestController $controller) {
 		parent::__construct($controller);
 		$this->result = array('cards');
-		$this->label = 'Create Card';
+		$this->label = 'Card | Create';
 	}
 
 	function doTest() {
