@@ -410,14 +410,12 @@ class TableModel {
 	}
 
 	public function getExtraColumns() {
-		$conf = Billrun_Config::getInstance(new Yaf_Config_Ini(APPLICATION_PATH . '/conf/view/admin_panel.ini'))->toArray();
-		$extra_columns = $conf['admin_panel'][$this->collection_name]['extra_columns'];
+		$extra_columns = Billrun_Factory::config()->getConfigValue('admin_panel.' . $this->collection_name . '.extra_columns', array());
 		return $extra_columns;
 	}
 
 	public function getTableColumns() {
-		$conf = Billrun_Config::getInstance(new Yaf_Config_Ini(APPLICATION_PATH . '/conf/view/admin_panel.ini'))->toArray();
-		$columns = $conf['admin_panel'][$this->collection_name]['table_columns'];
+		$columns = Billrun_Factory::config()->getConfigValue('admin_panel.' . $this->collection_name . '.table_columns', array());
 		if (!empty($this->extra_columns)) {
 			$extra_columns = array_intersect_key($this->getExtraColumns(), array_fill_keys($this->extra_columns, ""));
 			$columns = array_merge($columns, $extra_columns);
