@@ -18,7 +18,7 @@ class utest_SmsModel extends utest_AbstractUtestModel {
 	public function __construct(\UtestController $controller) {
 		parent::__construct($controller);
 		$this->result = array('balance_before', 'balance_after', 'lines');
-		$this->label = 'Sms';
+		$this->label = 'SMS/MMS';
 	}
 	
 	/**
@@ -31,12 +31,14 @@ class utest_SmsModel extends utest_AbstractUtestModel {
 		$calling_number = Billrun_Util::filter_var($this->controller->getRequest()->get('msisdn'), FILTER_SANITIZE_STRING);
 		$called_number = Billrun_Util::filter_var($this->controller->getRequest()->get('called_number'), FILTER_SANITIZE_STRING);
 		$source_system = Billrun_Util::filter_var($this->controller->getRequest()->get('source_system'), FILTER_SANITIZE_STRING);
+		$usaget = Billrun_Util::filter_var($this->controller->getRequest()->get('usaget'), FILTER_SANITIZE_STRING);
 
 		//Run test scenario
 		$params = array(
 			'calling_number' => $calling_number,
 			'called_number' => $called_number,
 			'source_system' => $source_system,
+			'usaget' => $usaget,
 		);
 		
 		$data = $this->getRequestData($params);
@@ -53,7 +55,7 @@ class utest_SmsModel extends utest_AbstractUtestModel {
 
 		$request = array(
 			'request' => json_encode($params),
-			'usaget' => 'sms'
+			'usaget' => $params['usaget']
 		);
 
 		return $request;
