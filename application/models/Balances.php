@@ -47,9 +47,8 @@ class BalancesModel extends TableModel {
 	}
 	
 	protected function getBalancesFields() {
-		$conf = Billrun_Config::getInstance(new Yaf_Config_Ini(APPLICATION_PATH . '/conf/view/admin_panel.ini'))->toArray();
-		$basic_columns = $conf['admin_panel']['balances']['table_columns'];
-		$extra_columns = $conf['admin_panel']['balances']['extra_columns'];
+		$basic_columns = Billrun_Config::getInstance()->getConfigValue('admin_panel.balances.table_columns', array());
+		$extra_columns = Billrun_Config::getInstance()->getConfigValue('admin_panel.balances.extra_columns', array());
 		return array_merge($basic_columns, $extra_columns);
 	}
 
@@ -183,10 +182,9 @@ class BalancesModel extends TableModel {
 		$resource = parent::getData($filter_query);
 		$ret = array();
 		//$aggregate = Billrun_Config::getInstance()->getConfigValue('admin_panel.balances.aggregate', false);
-		$conf = Billrun_Config::getInstance(new Yaf_Config_Ini(APPLICATION_PATH . '/conf/view/admin_panel.ini'))->toArray();
 		$aggregate = $conf['admin_panel']['balances']['aggregate'];
 		foreach ($resource as $item) {
-			if ($aggregate) {
+			if (Billrun_Config::getInstance()->getConfigValue('admin_panel.balances.aggregate', 0)) {
 				$totals = array();
 				$units = array();
 				foreach ($item['balance']['totals'] as $key => $val) {
