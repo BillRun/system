@@ -175,7 +175,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	 */
 	protected function getLineRate($row) {
 		$this->setRowDataForQuery($row);
-		return $this->getRateByParams();
+		return $this->getRateByParams($row);
 	}
 	
 	/**
@@ -196,8 +196,8 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	 * Get a matching rate by config params
 	 * @return Mongodloid_Entity the matched rate or false if none found
 	 */
-	protected function getRateByParams() {		
-		$query = $this->getRateQuery();
+	protected function getRateByParams($row) {		
+		$query = $this->getRateQuery($row);
 		$rates_coll= Billrun_Factory::db()->ratesCollection();
 		$matchedRate = $rates_coll->aggregate($query)->current();
 		
@@ -231,7 +231,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 							if (!method_exists($this, $value['classMethod'])) {
 								continue;
 							}
-							$pipelineValue[$key] = $this->{$value['classMethod']}();
+							$pipelineValue[$key] = $this->{$value['classMethod']}($row);
 						} else {
 							$pipelineValue[$key] = (is_numeric($value)) ? intval($value) : $value;
 						}
