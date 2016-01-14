@@ -76,7 +76,7 @@
 				<a href="<?php echo $this->baseUrl; ?>/admin/cards">Cards</a>
 			</li>
 		<?php endif; ?>
-		<?php if(AdminController::authorized('read', 'utest') && AdminController::showInMenu('utest')) : ?>
+		<?php if(AdminController::authorized('read', 'utest') && AdminController::showInMenu('utest') && !Billrun_Factory::config()->isProd()) : ?>
 			<li class="dropdown<?php echo (in_array($active, array('utestbalance', 'utestRealTimeEvents', 'utestcards', 'utestsubscribers', 'utest', 'utest-result')) ? ' active' : ''); ?>">
 				<a class="dropdown-toggle"  data-toggle="dropdown" href="">uTest<b class="caret"></b></a>
 				<ul class="dropdown-menu">
