@@ -375,16 +375,9 @@ class AdminController extends Yaf_Controller_Abstract {
 		if ($duplicate_rates) {
 			$params = array_merge($params, array('duplicate_rates' => $duplicate_rates));
 		}
-
-
-
-		
 		$v->validate($params,$coll) ;
-		
-
 		if(!$v->isValid()) {	   	
-		
-				return $this->responseError($v->getErrors());
+			return $this->responseError($v->getErrors());
 		}
 		
 		if ($type == 'update') {
@@ -1071,7 +1064,9 @@ class AdminController extends Yaf_Controller_Abstract {
 		} else {
 			if ($table === "subscribers") {
 				$sort = array('from' => -1);
-			} else {
+			} else if ($table === "lines") {
+				$sort = array('urt' => -1);
+			}else {
 				$sort = array();
 			}
 		}
