@@ -39,7 +39,7 @@ class Billrun_Plan {
 		if (isset($params['data'])) {
 			$this->data = $params['data'];
 		} else {
-			self::initPlans();
+//			self::initPlans();
 			if (isset($params['id'])) {
 				$id = $params['id'];
 				if ($id instanceof Mongodloid_Id) {
