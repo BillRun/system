@@ -181,8 +181,8 @@ class BalancesModel extends TableModel {
 	public function getData($filter_query = array()) {
 		$resource = parent::getData($filter_query);
 		$ret = array();
-		//$aggregate = Billrun_Config::getInstance()->getConfigValue('admin_panel.balances.aggregate', false);
-		$aggregate = $conf['admin_panel']['balances']['aggregate'];
+//		$aggregate = Billrun_Config::getInstance()->getConfigValue('admin_panel.balances.aggregate', false);
+//		$aggregate = $conf['admin_panel']['balances']['aggregate'];
 		foreach ($resource as $item) {
 			if (Billrun_Config::getInstance()->getConfigValue('admin_panel.balances.aggregate', 0)) {
 				$totals = array();
