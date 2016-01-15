@@ -961,7 +961,7 @@ class AdminController extends Yaf_Controller_Abstract {
 				die("Error loading model");
 			}
 		}
-		if ($collection_name === "plans" && $options['plan_type']) $this->model->type = $options['plan_type'];
+		if ($collection_name === "plans" && isset($options['plan_type'])) $this->model->type = $options['plan_type'];
 		return $this->model;
 	}
 
