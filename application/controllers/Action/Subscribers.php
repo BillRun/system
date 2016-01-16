@@ -48,6 +48,7 @@ class SubscribersAction extends ApiAction {
 	 * The logic to be executed when this API plugin is called.
 	 */
 	public function execute() {
+		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/subscribers/conf.ini');
 		$this->initializeModel();
 
 		// This is the method which is going to be executed.

@@ -40,6 +40,7 @@ class SubscribersAutoRenewAction extends ApiAction {
 	 * The logic to be executed when this API plugin is called.
 	 */
 	public function execute() {
+		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/autorenew/conf.ini');
 		// This is the method which is going to be executed.
 		$action = $this->getAction();
 
