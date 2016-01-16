@@ -129,9 +129,9 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			$this->loadRates();
 			$this->loadPlans();
 			$this->active_billrun = Billrun_Billrun::getActiveBillrun();
+			$this->active_billrun_end_time = Billrun_Util::getEndTime($this->active_billrun);
+			$this->next_active_billrun = Billrun_Util::getFollowingBillrunKey($this->active_billrun);
 		}
-		$this->active_billrun_end_time = Billrun_Util::getEndTime($this->active_billrun);
-		$this->next_active_billrun = Billrun_Util::getFollowingBillrunKey($this->active_billrun);
 		// max recursive retrues for value=oldValue tactic
 		$this->concurrentMaxRetries = (int) Billrun_Factory::config()->getConfigValue('updateValueEqualOldValueMaxRetries', 8);
 		$this->sidsQueuedForRebalance = array_flip(Billrun_Factory::db()->rebalance_queueCollection()->distinct('sid'));
