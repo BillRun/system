@@ -365,12 +365,16 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * 
 	 * @param array $rate the rate entry
 	 * @param string $usage_type the usage type
-	 * @param int $volume The usage volume (seconds of call, count of SMS, bytes  of data)
+	 * @param int $volume The usage volume (seconds of call, count of SMS, bytes of data)
 	 * @param object $plan The plan the line is associate to
+	 * @param int $offset call start offset in seconds
 	 * 
 	 * @return int the calculated price
 	 */
-	public static function getPriceByRate($rate, $usage_type, $volume, $plan = null) {
+	public static function getPriceByRate($rate, $usage_type, $volume, $plan = null, $offset = 0) {
+		if ($offset) {
+			return static::getPriceByRate($rate, $usage_type, $offset + $volume, $plan) - static::getPriceByRate($rate, $usage_type, $offset, $plan);
+		}
 		$rates_arr = self::getRatesArray($rate, $usage_type, $plan);
 		$price = 0;
 		foreach ($rates_arr as $currRate) {
@@ -403,10 +407,14 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @param string $usage_type the usage type
 	 * @param int $price The price
 	 * @param object $plan The plan the line is associate to
+	 * @param int $offset call start offset in seconds
 	 * 
 	 * @return int the calculated volume
 	 */
-	public static function getVolumeByRate($rate, $usage_type, $price, $plan = null) {
+	public static function getVolumeByRate($rate, $usage_type, $price, $plan = null, $offset = 0) {
+		if ($offset) {
+			return static::getVolumeByRate($rate, $usage_type, $price + static::getPriceByRate($rate, $usage_type, $offset, $plan), $plan) - static::getVolumeByRate($rate, $usage_type, $price, $plan);
+		}
 		$rates_arr = self::getRatesArray($rate, $usage_type, $plan);
 		$volume = 0;
 		$lastRateFrom = 0;
