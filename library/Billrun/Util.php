@@ -1051,5 +1051,16 @@ class Billrun_Util {
 		$units = Billrun_Factory::config()->getConfigValue('usaget.unit');
 		return isset($units[$usaget]) ? $units[$usaget] : '';
 	}
+	
+	/**
+	 * Are two numbers equal (up to epsilon)
+	 * @param float $number1
+	 * @param float $number2
+	 * @param float $epsilon positive number
+	 * @return boolean
+	 */
+	public static function isEqual($number1, $number2, $epsilon = 0) {
+		return abs($number1 - $number2) < abs($epsilon);
+	}
 
 }

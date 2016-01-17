@@ -18,6 +18,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 
 	public $pricingField = self::DEF_CALC_DB_FIELD;
 	static protected $type = "pricing";
+	static protected $precision = 0.00001;
 
 	/**
 	 *
@@ -418,7 +419,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		$accessPrice = $this->getAccessPrice($rate, $usage_type, $plan);
 		$price = max(0, $price - $accessPrice);
 		foreach ($rates_arr as $currRate) {
-			if ($price == 0) {
+			if (Billrun_Util::isEqual($price, 0, static::$precision)) {
 				break;
 			}
 			
@@ -427,17 +428,17 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				$lastRateFrom = $currRate['from'];
 			}
 			$currentRateMaxVolume = $currRate['to'] - $lastRateFrom;
-			$lastRateFrom = $currRate['to']; // Support the case of rate without "from" field
+			$lastRateFrom = $currRate['to'] + 1; // Support the case of rate without "from" field
 			$volumeInCurrentRate = ($volumeAvailableInCurrentRate < $currentRateMaxVolume ? $volumeAvailableInCurrentRate : $currentRateMaxVolume); // Checks limit for current rate
 			if ($volumeInCurrentRate == 0) {
 				break;
 			}
-			$price -= ($volumeInCurrentRate * $currRate['price']);
+			$price -= ceil($volumeInCurrentRate / $currRate['interval']) * $currRate['price'];
 			$volume += $volumeInCurrentRate;
 		}
 		return $volume;
 	}
-	
+
 	protected static function getRatesArray($rate, $usage_type, $plan = null) {
 		if (!is_null($plan) && isset($rate['rates'][$usage_type][$plan])) {
 			return $rate['rates'][$usage_type][$plan]['rate'];
