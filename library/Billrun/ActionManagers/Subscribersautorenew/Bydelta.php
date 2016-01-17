@@ -97,6 +97,14 @@ class Billrun_ActionManagers_Subscribersautorenew_Bydelta extends Billrun_Action
 			return false;
 		}
 
+		if (isset($jsonData['from'])) {
+			$jsonData['from'] = new MongoDate($jsonData['from']);
+		}
+
+		if (isset($jsonData['to'])) {
+			$jsonData['to'] = new MongoDate($jsonData['to']);
+		}
+
 		$this->expected = $jsonData;
 		$this->sid = Billrun_Util::toNumber($sid);
 		
