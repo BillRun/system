@@ -51,9 +51,13 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
     $scope.removeIncludeType = function (include_type_name) {
       delete $scope.entity.include[include_type_name];
     };
+    $scope.removeIncludeCost = function (index) {
+      delete $scope.entity.include.cost[index];
+    };
 
-    $scope.addIncludeType = function (include_type) {
-      if (_.undefined($scope.entity.include[include_type])) {
+    $scope.addIncludeType = function () {
+      var include_type = $scope.newIncludeType.type;
+      if (_.isUndefined($scope.entity.include[include_type])) {
         $scope.entity.include[include_type] = {
           cost: undefined,
           usagev: undefined,
@@ -61,10 +65,16 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
           pp_includes_external_id: "",
           period: {
             duration: undefined,
-            unit: "",
+            unit: ""
           }
         };
       }
+      $scope.newIncludeType.type = '';
+    };
+
+    $scope.includeTypeExists = function (include_type) {
+      if (include_type === 'cost') return false;
+      return !_.isUndefined($scope.entity.include[include_type]);
     };
 
     $scope.cancel = function () {
@@ -75,6 +85,8 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
       $scope.initEdit();
       $scope.availableCostUnits = ['days', 'months'];
       $scope.availableOperations = ['set', 'accumulated', 'charge'];
+      $scope.newIncludeType = {type: ""};
+      $scope.availableIncludeTypes = ['cost', 'data', 'sms', 'call'];
       Database.getAvailableServiceProviders().then(function (res) {
         $scope.availableServiceProviders = res.data;
       });
