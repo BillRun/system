@@ -52,22 +52,26 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
       delete $scope.entity.include[include_type_name];
     };
     $scope.removeIncludeCost = function (index) {
-      delete $scope.entity.include.cost[index];
+      $scope.entity.include.cost.splice(index, 1);
     };
 
     $scope.addIncludeType = function () {
       var include_type = $scope.newIncludeType.type;
+      var new_include_type = {
+        cost: undefined,
+        usagev: undefined,
+        pp_includes_name: "",
+        pp_includes_external_id: "",
+        period: {
+          duration: undefined,
+          unit: ""
+        }
+      };
       if (_.isUndefined($scope.entity.include[include_type])) {
-        $scope.entity.include[include_type] = {
-          cost: undefined,
-          usagev: undefined,
-          pp_includes_name: "",
-          pp_includes_external_id: "",
-          period: {
-            duration: undefined,
-            unit: ""
-          }
-        };
+        if (include_type === "cost") $scope.entity.include.cost = [new_include_type];
+        else $scope.entity.include[include_type] = new_include_type;
+      } else if (include_type === "cost") {
+        $scope.entity.include.cost.push(new_include_type);
       }
       $scope.newIncludeType.type = '';
     };

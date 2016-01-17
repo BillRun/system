@@ -79,6 +79,7 @@
 				<hr/>
 				<h3>Include</h3>
 				<select class='form-control' ng-model='newIncludeType.type'>
+					<option value='' disabled>Select Rate Type</option>
 					<option ng-repeat='include_type in availableIncludeTypes'
 							ng-disabled='includeTypeExists(include_type)'
 							value='{{include_type}}'>
