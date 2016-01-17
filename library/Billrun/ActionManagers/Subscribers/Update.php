@@ -177,7 +177,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 			
 			if($this->keepBalances === FALSE) {
 				// Close balances.
-				$updateArray = array('$set' => array('to', new MongoDate()));
+				$updateArray = array('$set' => array('to' => new MongoDate()));
 				$this->handleBalances($updateArray);
 			} else if (isset($this->recordToSet['sid']) || $this->recordToSet['aid']) {
 				$updateArray = array('$set' => array());
@@ -411,10 +411,16 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 		}
 		
 		// If keep_history is set take it.
-		$this->trackHistory = $input->get('track_history', $this->trackHistory);
+		$trackHistory = filter_var($input->get('track_history', $this->trackHistory), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+		if (!is_null($trackHistory)) {
+			$this->trackHistory = $trackHistory;
+		}
 		
 		// If keep_balances is set take it.
-		$this->keepBalances = $input->get('keep_balances', $this->keepBalances);
+		$keepBalances = filter_var($input->get('keep_balances', $this->keepBalances), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+		if (!is_null($keepBalances)) {
+			$this->keepBalances = $keepBalances;
+		}
 		
 		return true;
 	}
