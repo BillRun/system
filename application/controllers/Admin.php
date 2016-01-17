@@ -1053,7 +1053,6 @@ class AdminController extends Yaf_Controller_Abstract {
 		if ($table === "plans") {
 			$query['$and'][] = array('type' => $this->_request->getParam('plan_type'));
 		}
-
 		return $query;
 	}
 
