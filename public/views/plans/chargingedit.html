@@ -140,7 +140,7 @@
 				<div ng-repeat="(includeTypeName, includeType) in entity.include" ng-if='includeTypeName !== "cost"'>
 					<div ng-if="isObject(includeType)">
 						<fieldset>
-							<legend>{{includeTypeName}}</legend>
+							<legend>{{includeTypeName}} <small><i class="glyphicon glyphicon-minus-sign" ng-click="removeIncludeType(includeTypeName)"></i></small></legend>
 							<div class="row">
 								<div class="col-md-2">
 									Cost
