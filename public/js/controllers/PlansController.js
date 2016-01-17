@@ -48,6 +48,10 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
       return '';
     };
 
+    $scope.cancel = function () {
+      $window.location = baseUrl + '/admin/' + $scope.entity.type + $routeParams.collection;
+    };
+
     $scope.init = function () {
       $scope.initEdit();
       $scope.availableCostUnits = ['days', 'months'];
