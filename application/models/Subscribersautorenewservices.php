@@ -38,32 +38,34 @@ class SubscribersautorenewservicesModel extends TabledateModel{
 	
 	public function getTableColumns() {
 		$columns = array(
-			'aid' => 'Account',
 			'sid' => 'Subscriber',
+			'aid' => 'BAN',
 			'interval' => 'Interval',
-			'charging_plan_name' => 'Charging Plan Name',
-			'charging_plan_external_id' => "Charging Plan External ID",
+			'charging_plan_name' => 'Charging Plan',
+			'charging_plan_external_id' => "Charging Plan ID",
 			'service_provider' => "Service Provider",
 			'done' => 'Done',
-			'remain' => 'Remain',
+			'remain' => 'Remaining',
 			'operators' => 'Operation',
+			'initial_renew_date' => "Initial Renew Date",
 			'last_renew_date' => 'Last Renew Date',
-			'from' => 'From',
-			'to' => 'To'
+			'from' => 'Start',
+			'to' => 'Expiration'
 		);
 		return $columns;
 	}
 
 	public function getSortFields() {
 		$sort_fields = array(
-			'aid' => 'Account',
 			'sid' => 'Subscriber',
+			'aid' => 'BAN',
 			'interval' => 'Interval',
 			'charging_plan_name' => 'Charging Plan Name',
 			'charging_plan_external_id' => "Charging Plan External ID",
 			'done' => 'Done',
-			'remain' => 'Remain',
+			'remain' => 'Remaining',
 			'operators' => 'Operation',
+			'initial_renew_date' => 'Initial Renew Date',
 			'last_renew_date' => 'Last Renew Date'
 		);
 		return array_merge($sort_fields, parent::getSortFields());
@@ -86,6 +88,14 @@ class SubscribersautorenewservicesModel extends TabledateModel{
 				'display' => 'Subscriber',
 				'default' => '',
 			),			
+			'aid' => array(
+				'key' => 'aid',
+				'db_key' => 'aid',
+				'input_type' => 'number',
+				'comparison' => 'equals',
+				'display' => 'BAN',
+				'default' => '',
+			),			
 			'charging_plan_name' => array(
 				'key' => 'charging_plan_name',
 				'db_key' => 'charging_plan_name',
@@ -97,6 +107,14 @@ class SubscribersautorenewservicesModel extends TabledateModel{
 				'values' => $planNames,
 				'default' => array(),
 			),
+			'service_provider' => array(
+				'key' => 'service_provider',
+				'db_key' => 'service_provider',
+				'input_type' => 'text',
+				'comparison' => 'contains',
+				'display' => 'Service Provider',
+				'default' => '',
+			)
 		);
 		return array_merge($filter_fields, parent::getFilterFields());
 	}
@@ -107,9 +125,15 @@ class SubscribersautorenewservicesModel extends TabledateModel{
 				'sid' => array(
 					'width' => 2,
 				),
+				'aid' => array(
+					'width' => 2,
+				),
 				'charging_plan_name' => array(
 					'width' => 2,
-				)
+				),
+				'service_provider' => array(
+					'width' => 2
+				),
 			)
 		);
 		return array_merge($filter_field_order, parent::getFilterFieldsOrder());
