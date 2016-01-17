@@ -189,8 +189,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				$volume = $row['usagev'];
 				$plan_name = isset($row['plan']) ? $row['plan'] : null;
 				if ($row['type'] == 'credit') {
-					$accessPrice = $this->getAccessPrice($rate, $usage_type, $plan_name);
-					$pricingData = array($this->pricingField => $accessPrice + self::getPriceByRate($rate, $usage_type, $volume, $row['plan']));
+					$pricingData = array($this->pricingField => self::getPriceByRate($rate, $usage_type, $volume, $row['plan']));
 				} else if ($row['type'] == 'service') {
 					$pricingData = array($this->pricingField => self::getPriceByRate($rate, $usage_type, $volume, $plan_name));
 				} else {
@@ -283,7 +282,6 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @todo refactoring the if-else-if-else-if-else to methods
 	 */
 	protected function getLinePricingData($volume, $usageType, $rate, $sub_balance, $plan) {
-		$accessPrice = $this->getAccessPrice($rate, $usageType, $plan->getName());
 		$ret = array();
 		if ($plan->isRateInBasePlan($rate, $usageType)) {
 			$planVolumeLeft = $plan->usageLeftInBasePlan($sub_balance, $rate, $usageType);
@@ -291,7 +289,6 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			if ($volumeToCharge < 0) {
 				$volumeToCharge = 0;
 				$ret['in_plan'] = $volume;
-				$accessPrice = 0;
 			} else if ($volumeToCharge > 0) {
 				if ($planVolumeLeft > 0) {
 					$ret['in_plan'] = $volume - $volumeToCharge;
@@ -304,7 +301,6 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			if ($volumeToCharge < 0) {
 				$volumeToCharge = 0;
 				$ret['in_group'] = $ret['in_plan'] = $volume;
-				$accessPrice = 0;
 			} else if ($volumeToCharge > 0) {
 				if ($groupVolumeLeft > 0) {
 					$ret['in_group'] = $ret['in_plan'] = $volume - $volumeToCharge;
@@ -322,7 +318,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			$ret['out_plan'] = $volumeToCharge = $volume;
 		}
 
-		$price = $accessPrice + self::getPriceByRate($rate, $usageType, $volumeToCharge, $plan->getName());
+		$price = self::getPriceByRate($rate, $usageType, $volumeToCharge, $plan->getName());
 		//Billrun_Factory::log("Rate : ".print_r($typedRates,1),  Zend_Log::DEBUG);
 		$ret[$this->pricingField] = $price;
 		return $ret;
@@ -361,7 +357,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	}
 
 	/**
-	 * Calculates the price for the given volume (w/o access price)
+	 * Calculates the price for the given volume
 	 * 
 	 * @param array $rate the rate entry
 	 * @param string $usage_type the usage type
@@ -375,6 +371,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		if ($offset) {
 			return static::getPriceByRate($rate, $usage_type, $offset + $volume, $plan) - static::getPriceByRate($rate, $usage_type, $offset, $plan);
 		}
+		$accessPrice = $this->getAccessPrice($rate, $usage_type, $plan);
 		$rates_arr = self::getRatesArray($rate, $usage_type, $plan);
 		$price = 0;
 		foreach ($rates_arr as $currRate) {
@@ -397,11 +394,11 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			}
 			$volume = $volume - $volumeToPriceCurrentRating; //decrease the volume that was priced
 		}
-		return $price;
+		return $accessPrice + $price;
 	}
 	
 	/**
-	 * Calculates the volume for the given price (w/o access price)
+	 * Calculates the volume for the given price
 	 * 
 	 * @param array $rate the rate entry
 	 * @param string $usage_type the usage type
@@ -418,6 +415,8 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		$rates_arr = self::getRatesArray($rate, $usage_type, $plan);
 		$volume = 0;
 		$lastRateFrom = 0;
+		$accessPrice = $this->getAccessPrice($rate, $usage_type, $plan);
+		$price = max(0, $price - $accessPrice);
 		foreach ($rates_arr as $currRate) {
 			if ($price == 0) {
 				break;
