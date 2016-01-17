@@ -411,16 +411,13 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 		}
 		
 		// If keep_history is set take it.
-		$trackHistory = filter_var($input->get('track_history', $this->trackHistory), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
-		if (!is_null($trackHistory)) {
-			$this->trackHistory = $trackHistory;
-		}
+		$this->trackHistory = Billrun_Util::filter_var($input->get('track_history', $this->trackHistory), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
 		
 		// If keep_balances is set take it.
-		$keepBalances = filter_var($input->get('keep_balances', $this->keepBalances), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
-		if (!is_null($keepBalances)) {
-			$this->keepBalances = $keepBalances;
-		}
+		$this->keepBalances = Billrun_Util::filter_var($input->get('keep_balances', $this->keepBalances), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+		
+		// If keep_lines is set take it.
+		$this->keepLines = Billrun_Util::filter_var($input->get('keep_lines', $this->keepLines), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
 		
 		return true;
 	}
