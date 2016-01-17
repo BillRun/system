@@ -64,13 +64,14 @@ app.controller('SubscribersController', ['$scope', '$window', '$routeParams', 'D
     $scope.init = function () {
       $scope.action = $routeParams.action;
       $scope.entity = {imsi: []};
-      if ($scope.action.toLowerCase() !== "new") {
         var params = {
           coll: $routeParams.collection,
-          id: $routeParams.id
+          id: $routeParams.id,
+          type: $routeParams.action
         };
         Database.getEntity(params).then(function (res) {
           $scope.entity = res.data.entity;
+          $scope.autorized_write = res.data.authorized_write;
           if ($scope.entity.imsi && _.isString($scope.entity.imsi)) {
             $scope.entity.imsi = [$scope.entity.imsi];
           }
@@ -78,7 +79,6 @@ app.controller('SubscribersController', ['$scope', '$window', '$routeParams', 'D
         }, function (err) {
           alert("Connection error!");
         });
-      }
       Database.getAvailableServiceProviders().then(function (res) {
         $scope.availableServiceProviders = res.data;
       });
