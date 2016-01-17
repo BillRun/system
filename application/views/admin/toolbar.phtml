@@ -110,7 +110,7 @@
 			<span><a id='edit-batch' data-type='edit-batch' onclick='editBatchCards()' class='btn btn-primary' role='button'>Edit Batch</a></span>
 			<?php endif ?>
 			<?php if (in_array($active, array('rates', 'plans', 'users', 'subscribers', 'subscribers_auto_renew_services')) && AdminController::authorized('write')) : ?>
-				<?php if (in_array($active, array('subscribers', 'rates', 'subscribers_auto_renew_services'))) : ?>
+				<?php if (in_array($active, array('subscribers', 'rates', 'subscribers_auto_renew_services', 'plans'))) : ?>
 				<span><a id='new' data-type='new' href='/admin#/<?php echo $active; ?>/new' class='btn btn-primary' role='button'>New</a></span>
 				<?php endif ?>
 				<?php if ($active != 'users') : ?>
