@@ -212,7 +212,7 @@ class Billrun_ActionManagers_Cards_Update extends Billrun_ActionManagers_Cards_A
 		// service provider validity check
 		if(!$this->validateServiceProvider($this->update['service_provider'])) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 36;
-			$this->reportError($errorCode, Zend_Log::NOTICE, array($oneCard['service_provider']	));
+			$this->reportError($errorCode, Zend_Log::NOTICE, array($this->update['service_provider']));
 			return false;
 		}
 	
