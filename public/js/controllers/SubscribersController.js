@@ -15,9 +15,8 @@ app.controller('SubscribersController', ['$scope', '$window', '$routeParams', 'D
         coll: 'subscribers',
         type: $scope.action
       };
-      $scope.errorMessages =[];
+      $scope.errorMessages = [];
       Database.saveEntity(params).then(function (res) {
-        console.log(res)  ;
         if(!_.isUndefined(res.data.errorMessages)) {
            $scope.errorMessages = res.data.errorMessages;
         }  else { 
