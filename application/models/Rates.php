@@ -172,7 +172,7 @@ class RatesModel extends TabledateModel {
 			),
 			'plan' => array(
 				'key' => 'plan',
-				'db_keys' => array('rates.call', 'rates.sms'),
+				'db_key' => array('rates.call', 'rates.sms'),
 				'input_type' => 'multiselect',
 				'comparison' => '$exists',
 				'singleselect' => true,
@@ -230,7 +230,7 @@ class RatesModel extends TabledateModel {
 				$ret = array('$and' => array());
 				foreach($value as $val) {
 					$or = array('$or' => array());
-					foreach($filter_field['db_keys'] as $key) {
+					foreach($filter_field['db_key'] as $key) {
 						$or['$or'][] = array("$key.$val" => array('$exists' => true));
 					}
 					$ret['$and'][] = $or;

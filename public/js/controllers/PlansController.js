@@ -48,6 +48,25 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
       return '';
     };
 
+    $scope.removeIncludeType = function (include_type_name) {
+      delete $scope.entity.include[include_type_name];
+    };
+
+    $scope.addIncludeType = function (include_type) {
+      if (_.undefined($scope.entity.include[include_type])) {
+        $scope.entity.include[include_type] = {
+          cost: undefined,
+          usagev: undefined,
+          pp_includes_name: "",
+          pp_includes_external_id: "",
+          period: {
+            duration: undefined,
+            unit: "",
+          }
+        };
+      }
+    };
+
     $scope.cancel = function () {
       $window.location = baseUrl + '/admin/' + $scope.entity.type + $routeParams.collection;
     };
