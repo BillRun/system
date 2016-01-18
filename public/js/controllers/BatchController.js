@@ -1,20 +1,24 @@
-app.controller('BatchController', ['$scope', '$window', '$routeParams', 'Database',
-  function ($scope, $window, $routeParams, Database) {
+app.controller('BatchController', ['$scope', '$window', '$routeParams', 'Database', '$location', '$controller',
+  function ($scope, $window, $routeParams, Database, $location, $controller) {
     'use strict';
+
+    $controller('EditController', {$scope: $scope});
+
     $scope.cancel = function () {
       $window.location = baseUrl + '/admin/cards';
     };
     $scope.save = function () {
-      var serial_number_range = {
-        "$gte": $scope.entity.serial_numbers_from,
-        "$lte": $scope.entity.serial_numbers_to
-      };
+      if ($location.search().cards) {
+        var serial_numbers = {
+          "$in": $location.search().cards
+        };
+      }
       var params = {
         entity: $scope.entity,
         coll: 'cards',
         batch: $scope.batch_no,
         type: $routeParams.action,
-        serial_number: JSON.stringify(serial_number_range)
+        serial_number: JSON.stringify(serial_numbers)
       };
       Database.saveEntity(params).then(function (res) {
         $window.location = baseUrl + '/admin/cards';
@@ -29,10 +33,6 @@ app.controller('BatchController', ['$scope', '$window', '$routeParams', 'Databas
       // idle -> (active optional) -> [expired,stolen,disqualified,used]
       // disallow going backwards
       return false;
-    };
-
-    $scope.capitalize = function (str) {
-      return _.capitalize(str);
     };
 
     $scope.init = function () {

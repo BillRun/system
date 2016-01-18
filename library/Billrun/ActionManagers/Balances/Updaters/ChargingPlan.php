@@ -303,7 +303,6 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		$options = array(
 			'upsert' => true,
 			'new' => true,
-			'w' => 1,
 		);
 		
 		// Return the new document.

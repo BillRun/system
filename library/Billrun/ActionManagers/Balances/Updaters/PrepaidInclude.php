@@ -158,7 +158,6 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 		$options = array(
 			'upsert' => true,
 			'new' => true,
-			'w' => 1,
 		);
 
 		$balance = $balancesColl->findAndModify($query, $update, array(), $options, true);

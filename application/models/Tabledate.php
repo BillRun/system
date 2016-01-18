@@ -48,8 +48,10 @@ class TabledateModel extends TableModel {
 
 	public function getItem($id) {
 		$entity = parent::getItem($id);
-		$entity['from'] = (new Zend_Date($entity['from']->sec))->toString('YYYY-MM-dd HH:mm:ss');
-		$entity['to'] = (new Zend_Date($entity['to']->sec))->toString('YYYY-MM-dd HH:mm:ss');
+		if (is_array($entity['from']) && isset($entity['from']->sec))
+			$entity['from'] = (new Zend_Date($entity['from']->sec))->toString('dd-MM-YYYY HH:mm:ss');
+		if (is_array($entity['to']) && isset($entity['to']->sec))
+			$entity['to'] = (new Zend_Date($entity['to']->sec))->toString('dd-MM-YYYY HH:mm:ss');
 		return $entity;
 	}
 

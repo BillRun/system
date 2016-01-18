@@ -122,7 +122,6 @@ class Billrun_ActionManagers_Subscribers_Query extends Billrun_ActionManagers_Su
 		$query = $input->get('query');
 		if(empty($query) || (!($jsonData = json_decode($query, true)))) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 21;
-			$error = "Failed decoding JSON data";
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
@@ -132,8 +131,7 @@ class Billrun_ActionManagers_Subscribers_Query extends Billrun_ActionManagers_Su
 		// If there were errors.
 		if(empty($this->subscriberQuery)) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 21;
-			$error = "Subscribers query must receive one of the following fields: " . implode(',', $invalidFields);
-			$this->reportError($error, Zend_Log::NOTICE);
+			$this->reportError($errorCode, Zend_Log::NOTICE, array(implode(',', $invalidFields)));
 			return false;
 		}
 		

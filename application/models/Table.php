@@ -251,6 +251,13 @@ class TableModel {
 
 		// convert mongo values into javascript values
 		$entity['_id'] = (string) $entity['_id'];
+		if ($entity['from'] && isset($entity['from']->sec))
+			$entity['from'] = (new Zend_Date($entity['from']->sec))->toString('dd-MM-YYYY HH:mm:ss');
+		if ($entity['to'] && isset($entity['to']->sec))
+			$entity['to'] = (new Zend_Date($entity['to']->sec))->toString('dd-MM-YYYY HH:mm:ss');
+		if ($entity['creation_time'] && isset($entity['creation_time']->sec))
+			$entity['creation_time'] = (new Zend_Date($entity['creation_time']->sec))->toString('dd-MM-YYYY HH:mm:ss');
+		return $entity;
 
 		return $entity;
 	}
@@ -279,8 +286,14 @@ class TableModel {
 				$new_data[$value] = $raw_data[$value];
 			}
 			foreach ($params as $key => $value) {
-				if (in_array($key, array("to", "from")) && is_array($value)) {
+				if (get_class($value) === "MongoDate") {
+					; // do nothing
+				} else if (in_array($key, array("to", "from")) && is_array($value)) {
+					//$value = new MongoDate((new Zend_Date($value['sec'], null, new Zend_Locale('he_IL')))->getTimestamp());
 					$value = new MongoDate($value['sec']);
+				} else if (in_array($key, array("to", "from"))) {
+					//$value = new MongoDate((new Zend_Date($value, null, new Zend_Locale('he_IL')))->getTimestamp());
+					$value = new MongoDate(strtotime($value));
 				}
 				$new_data[$key] = $value;
 			}

@@ -4,37 +4,9 @@
 	</center>
 	<form class='form-inline' ng-submit='save()'>
 		<div>
-			<div class="row">
+			<div class="row" ng-if='utils.display("charging_plan", "cards")'>
 				<div class="col-md-2">
-					Serial numbers
-				</div>
-				<div class="col-md-6">
-					<div class='row'>
-						<div class='col-xs-1'>
-							<label>From</label>
-						</div>
-						<div class='col-xs-6'>
-							<input ng-model="entity.serial_numbers_from" type="text" class="form-control" />
-						</div>
-					</div>
-				</div>
-			</div>
-			<div class='row'>
-				<div class='col-md-2'></div>
-				<div class='col-md-6'>
-					<div class='row'>
-						<div class='col-xs-1'>
-							<label>To</label>
-						</div>
-						<div class='col-xs-6'>
-							<input ng-model='entity.serial_numbers_to' type='text' class='form-control' />
-						</div>
-					</div>
-				</div>
-			</div>
-			<div class="row">
-				<div class="col-md-2">
-					Charging plan
+					{{utils.getDisplayValue("charging_plan", "cards")}}
 				</div>
 				<div class="col-md-6">
 					<select ng-model="entity.charging_plan_name" class="form-control">
@@ -43,9 +15,9 @@
 					</select>					
 				</div>
 			</div>
-			<div class="row">
+			<div class="row" ng-if='utils.display("service_provider", "cards")'>
 				<div class="col-md-2">
-					Service provider
+					{{utils.getDisplayValue("service_provider", "cards")}}
 				</div>
 				<div class="col-md-6">
 					<select ng-model="entity.service_provider" class="form-control">
@@ -54,9 +26,9 @@
 					</select>				
 				</div>
 			</div>
-			<div class="row">
+			<div class="row" ng-if='utils.display("status", "cards")'>
 				<div class="col-md-2">
-					Status
+					{{utils.getDisplayValue("status", "cards")}}
 				</div>
 				<div class="col-md-6">
 					<select ng-model="entity.status" class="form-control">

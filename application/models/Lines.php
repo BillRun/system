@@ -183,7 +183,7 @@ class LinesModel extends TableModel {
 				'db_key' => 'aid',
 				'input_type' => 'number',
 				'comparison' => 'equals',
-				'display' => 'Account id',
+				'display' => 'BAN',
 				'default' => '',
 			),
 			'from' => array(
@@ -292,7 +292,7 @@ class LinesModel extends TableModel {
 
 	public function getSortFields() {
 		return array(
-			'aid' => 'Account id',
+			'aid' => 'BAN',
 			'billrun_key' => 'Billrun',
 			'aprice' => 'Charge',
 			'plan' => 'Plan',

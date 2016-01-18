@@ -4,36 +4,36 @@
 	</center>
 	<form class='form-inline' ng-submit='save()'>
 		<div ng-if='!advancedMode'>
-			<div class="row">
+			<div class="row" ng-if='utils.display("batch_number", "cards")'>
 				<div class="col-md-2">
-					Batch number
+					{{utils.getDisplayValue("batch_number", "cards")}}
 				</div>
 				<div class="col-md-6">
 					<input ng-model="entity.batch_number" type="text" class="form-control" />
 				</div>
 			</div>
-			<div class="row">
+			<div class="row" ng-if='utils.display("serial_number", "cards")'>
 				<div class="col-md-2">
-					Serial number
+					{{utils.getDisplayValue("serial_number", "cards")}}
 				</div>
 				<div class="col-md-6">
 					<input ng-model="entity.serial_number" type="text" class="form-control" />
 				</div>
 			</div>
-			<div class="row">
+			<div class="row" ng-if='utils.display("charging_plan", "cards")'>
 				<div class="col-md-2">
-					Charging plan
+					{{utils.getDisplayValue("charging_plan", "cards")}}
 				</div>
 				<div class="col-md-6">
 					<select ng-model="entity.charging_plan_name" class="form-control">
 						<option value="" disabled>Select Charging Plan</option>
 						<option ng-repeat="plan in availablePlans">{{plan}}</option>
-					</select>					
+					</select>
 				</div>
 			</div>
-			<div class="row">
+			<div class="row" ng-if='utils.display("service_provider", "cards")'>
 				<div class="col-md-2">
-					Service provider
+					{{utils.getDisplayValue("service_provider", "cards")}}
 				</div>
 				<div class="col-md-6">
 					<select ng-model="entity.service_provider" class="form-control">
@@ -42,15 +42,26 @@
 					</select>				
 				</div>
 			</div>
-			<div class="row">
+			<div class="row" ng-if='utils.display("status", "cards")'>
 				<div class="col-md-2">
-					Status
+					{{utils.getDisplayValue("status", "cards")}}
 				</div>
 				<div class="col-md-6">
 					<select ng-model="entity.status" class="form-control">
 						<option value='' disabled>Select Status</option>
 						<option ng-repeat="status in cardStatuses" ng-disabled="isStatusDisabled(status)">{{status}}<option>
 					</select>
+				</div>
+			</div>
+			<div class='row' ng-if='utils.display("to", "cards")'>
+				<div class='col-md-2'>
+					{{utils.getDisplayValue("to", "cards")}}
+				</div>
+				<div class='col-md-6'>
+					<input type="text" class="form-control" uib-datepicker-popup="{{utils.getDateFormat()}}" ng-model="entity.to" is-open="status.opened" date-disabled="utils.disabled('to', 'cards')" close-text="Close" />
+					<span>
+					  <button type="button" class="btn btn-default" ng-click="status.opened = !status.opened"><i class="glyphicon glyphicon-calendar"></i></button>
+					</span>
 				</div>
 			</div>
 		</div>

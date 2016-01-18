@@ -68,7 +68,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 					'required' => array(
 						'fields' => array('sid', 'aid', 'ggsn_address', 'arate', 'urt'),
 						'match' => array(
-							'sgsn_address' => '/^(?=62\.90\.|37\.26\.|176\.12\.158\.(\d$|[1]\d$|2[10]$))/',
+							'sgsn_address' => '/^(?=62\.90\.|37\.26\.|85\.64\.|172\.28\.|176\.12\.158\.)/',
 						),
 					),
 					'date_seperation' => 'Ymd',
@@ -176,7 +176,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 			}
 //			foreach ($this->archivedLines as $line) {
 //				try {
-//					$archLinesColl->insert($line, array('w' => 1));
+//					$archLinesColl->insert($line);
 //					$linesArchivedStamps[] = $line['stamp'];
 //					unset($this->data[$line['stamp']]);
 //				} catch (\Exception $e) {
@@ -224,7 +224,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 			$update['$inc']['lcount'] = $row['lcount'];
 
 			$linesCollection = $db->linesCollection();
-			$ret = $linesCollection->update($query, $update, array('w' => 1, 'upsert' => true));
+			$ret = $linesCollection->update($query, $update, array('upsert' => true));
 			$success = isset($ret['ok']) && $ret['ok'] && isset($ret['n']) && $ret['n'] > 0;
 			if (!$success) {//TODO add support for w => 0 it should  not  enter the if
 				$updateFailedLines[$key] = array('unified' => $row, 'lines' => $this->unifiedToRawLines[$key]['update']);
