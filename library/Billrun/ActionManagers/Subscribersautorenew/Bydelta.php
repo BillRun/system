@@ -97,12 +97,14 @@ class Billrun_ActionManagers_Subscribersautorenew_Bydelta extends Billrun_Action
 			return false;
 		}
 
-		if (isset($jsonData['from'])) {
-			$jsonData['from'] = new MongoDate($jsonData['from']);
-		}
-
-		if (isset($jsonData['to'])) {
-			$jsonData['to'] = new MongoDate($jsonData['to']);
+		foreach ($jsonData as &$record) {
+			if (isset($record['from']) && $record['from'] != null) {
+				$record['from'] = new MongoDate($record['from']);
+			}
+			
+			if (isset($record['to']) && $record['to'] != null) {
+				$record['to'] = new MongoDate($record['to']);
+			}
 		}
 
 		$this->expected = $jsonData;
