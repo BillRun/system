@@ -3,6 +3,11 @@
 	cursor: pointer;
 }
 
+.glyphicon-edit {
+	color: green;
+	cursor: pointer;
+}
+
 .glyphicon-minus-sign {
 	color: #bc2328;
 	cursor: pointer;

@@ -1,4 +1,4 @@
-var app = angular.module('BillrunApp', ['ngRoute', 'JSONedit', 'ui.bootstrap']);
+var app = angular.module('BillrunApp', ['ngRoute', 'JSONedit', 'ui.bootstrap', 'xeditable']);
 app.config(function ($httpProvider, $routeProvider, $locationProvider) {
   $httpProvider.defaults.headers.post['Content-Type'] = 'application/x-www-form-urlencoded;charset=utf-8';
   /**
@@ -62,8 +62,9 @@ app.config(function ($httpProvider, $routeProvider, $locationProvider) {
 	  }
   });
   $locationProvider.html5Mode({enabled: false, requireBase: false});
-}).run(['$http', '$rootScope', 'Utils', function ($http, $rootScope) {
+}).run(['$http', '$rootScope', 'editableOptions', function ($http, $rootScope, editableOptions) {
     'use strict';
+    editableOptions.theme = 'bs3';
     $http.get(baseUrl + '/admin/getViewINI').then(function (res) {
       $rootScope.fields = res.data;
     });
