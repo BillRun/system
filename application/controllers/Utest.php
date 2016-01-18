@@ -70,6 +70,7 @@ class UtestController extends Yaf_Controller_Abstract {
 		$this->reference = rand(1000000000, 9999999999);
 		//Load Test conf file
 		$this->conf = Billrun_Config::getInstance(new Yaf_Config_Ini(APPLICATION_PATH . '/conf/utest/conf.ini'));
+		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/view/menu.ini');
 	}
 
 	/**
