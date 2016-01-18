@@ -2,6 +2,10 @@ $(document).ready(function () {
 	$(function () {
 		$('.datetimepicker').datetimepicker({locale: 'en', format: 'DD/MM/YYYY HH:mm', });
 	});
+	
+	//init Copy to clipard plugin
+	new Clipboard('.copy-to-clipboard-btn');
+
 	//select the right TAB from url hashtag
 	if(window.location.hash != "") {
 		$('a[href="' + window.location.hash + '"]').click()

@@ -135,7 +135,7 @@ class UtestController extends Yaf_Controller_Abstract {
 			if (!empty($query)) {
 				$sid = $this->getSid($query);
 			} else {
-				return;
+				$sid = null;
 			}
 		}
 		
