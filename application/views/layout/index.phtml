@@ -54,6 +54,7 @@
 		<script src='<?php echo $this->baseUrl; ?>/js/controllers/BatchController.js'></script>
 		<script src='<?php echo $this->baseUrl; ?>/js/controllers/SubscribersController.js'></script>
 		<script src='<?php echo $this->baseUrl; ?>/js/controllers/SubscribersAutoRenewController.js'></script>
+		<script src='<?php echo $this->baseUrl; ?>/js/controllers/ServiceProvidersController.js'></script>
     </head>
     <body ng-app="BillrunApp">
         <!--[if lt IE 7]>
@@ -84,7 +85,7 @@
 	<!-- end of main component -->
 	<!-- hackitty hack hack! -->
 	<script>
-		if (window.location.hash.match(/\/(update|list|duplicate|close_and_new|new)(\/)*/)) {
+		if (window.location.hash.match(/\/(update|list|duplicate|close_and_new|new|service_providers)(\/)*/)) {
 			$('.component').remove();
 		}
 	</script>

@@ -19,8 +19,9 @@ app.factory('Database', ['$http', function ($http) {
       return $http.post(baseUrl + '/admin/save', ajaxOpts);
     }
 
-    function getAvailableServiceProviders() {
-      return $http.get(baseUrl + '/admin/getAvailableServiceProviders');
+    function getAvailableServiceProviders(params) {
+      if (params === undefined) params = {};
+      return $http.get(baseUrl + '/admin/getAvailableServiceProviders', {params: params});
     }
 
     function getAvailablePlans(type) {

@@ -1,0 +1,27 @@
+<div class='container component' ng-init='vm.init()'>
+	<center>
+		<h2>Service Providers</h2>
+	</center>
+	<div>
+		<a ng-click='vm.save()' ng-disabled='vm.saving' class='btn btn-success'>Save</a>
+	</div>
+	<table class='table table-striped table-bordered'>
+		<thead>
+			<th style='width: 40%'>Name</th>
+			<th style='width: 30%'>Code</th>
+			<th style='width: 25%'>ID</th>
+			<th style='width: 5%'>Actions</th>
+		</thead>
+		<tbody>
+			<tr ng-repeat='service_provdier in vm.serviceProviders track by $index'>
+				<td><input type='text' ng-model='vm.serviceProviders[$index].name' class='form-control' /></td>
+				<td><input type='text' ng-model='vm.serviceProviders[$index].code' class='form-control' /></td>
+				<td><input type='text' ng-model='vm.serviceProviders[$index].id' class='form-control' /></td>
+				<td><i class='glyphicon glyphicon-minus-sign'></i></td>
+			</tr>
+		</tbody>
+	</table>
+	<div>
+		<a ng-click='vm.save()' ng-disabled='vm.saving' class='btn btn-success'>Save</a>
+	</div>
+</div>
