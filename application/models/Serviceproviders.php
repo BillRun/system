@@ -11,7 +11,7 @@
  *
  * @author lewis
  */
-class ServiceProvidersModel extends TabledateModel {
+class ServiceprovidersModel extends TabledateModel {
 	public function __construct(array $params = array()) {
 		$params['collection'] = Billrun_Factory::db()->serviceproviders;
 		parent::__construct($params);
