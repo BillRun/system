@@ -51,7 +51,6 @@ class Subscriber_Golan extends Billrun_Subscriber {
 			if (!file_exists($this->crm_output_dir)) {
 				mkdir($this->crm_output_dir, 0777, true);
 			}
-
 		}
 		$creditCalcOptions = array_merge(array('type' => 'Rate_Credit', 'autoload' => false), Billrun_Factory::config()->getConfigValue('Rate_Credit.calculator', array()));
 		$this->creditCalc = Billrun_Calculator::getInstance($creditCalcOptions);
@@ -282,6 +281,8 @@ class Subscriber_Golan extends Billrun_Subscriber {
 							if ($sid) {
 								$concat['data']['plan'] = isset($subscriber['curr_plan']) ? $subscriber['curr_plan'] : null;
 								$concat['data']['next_plan'] = isset($subscriber['next_plan']) ? $subscriber['next_plan'] : null;
+								$concat['data']['offer_id_next'] = isset($subscriber['offer_id_next']) ? $subscriber['offer_id_next'] : null;
+								$concat['data']['offer_id_curr'] = isset($subscriber['offer_id_curr']) ? $subscriber['offer_id_curr'] : null;
 							} else {
 								$concat['data']['plan'] = 'ACCOUNT';
 								$concat['data']['next_plan'] = 'ACCOUNT';
@@ -310,13 +311,12 @@ class Subscriber_Golan extends Billrun_Subscriber {
 								}
 								$concat['data']['credits'] = $credits;
 							}
-							
+
 							if (isset($subscriber['did_premium'])) {
 								$count = intval($subscriber['did_premium']);
-								 while ($count > 0) {
-									 $subscriber['services'][] = 'DID_PREMIUM';
-									 $count--;
-									
+								while ($count > 0) {
+									$subscriber['services'][] = 'DID_PREMIUM';
+									$count--;
 								}
 							}
 
@@ -511,6 +511,8 @@ class Subscriber_Golan extends Billrun_Subscriber {
 			'plan' => $next_plan->getName(),
 			'plan_ref' => $next_plan->createRef(),
 			'process_time' => date(Billrun_Base::base_dateformat),
+			'offer_id_curr' => $this->offer_id_curr,
+			'offer_id_next' => $this->offer_id_next,
 		);
 		$stamp = md5($flat_entry['aid'] . $flat_entry['sid'] . $billrun_end_time);
 		$flat_entry['stamp'] = $stamp;

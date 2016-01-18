@@ -237,6 +237,8 @@ class Generator_Golanxml extends Billrun_Generator {
 			$this->writer->startElement('SUBSCRIBER_INF');
 			$this->writer->startElement('SUBSCRIBER_DETAILS');
 			$this->writer->writeElement('SUBSCRIBER_ID', $subscriber['sid']);
+			$this->writer->writeElement('OFFER_ID_CURR', $subscriber['offer_id_curr']);
+			$this->writer->writeElement('OFFER_ID_NEXT', $subscriber['offer_id_next']);
 			$this->writer->endElement();
 
 			$this->writeBillingLines($subscriber, $lines);
