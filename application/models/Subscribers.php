@@ -38,23 +38,22 @@ class SubscribersModel extends TabledateModel{
 	
 	public function getTableColumns() {
 		$columns = array(
-			'sid' => 'Subscriber',
-			'aid' => 'Account',
+			'sid' => 'Subscriber No',
+			'aid' => 'BAN',
 			'msisdn' => 'MSISDN',
 			'plan' => 'Plan',
-			'language' => 'Language',
 			'service_provider' => 'Service Provider',
+			'language' => 'Language',
 			'from' => 'From',
-			'to' => 'To',
-			'_id' => 'Id',
+			'to' => 'To'
 		);
 		return $columns;
 	}
 
 	public function getSortFields() {
 		$sort_fields = array(
-			'sid' => 'Subscriber',
-			'aid' => 'Account',
+			'sid' => 'Subscriber No',
+			'aid' => 'BAN',
 			'msisdn' => 'MSISDN',
 			'plan' => 'Plan',
 			'language' => 'Language',
@@ -90,7 +89,7 @@ class SubscribersModel extends TabledateModel{
 				'db_key' => 'sid',
 				'input_type' => 'number',
 				'comparison' => 'equals',
-				'display' => 'Subscriber',
+				'display' => 'Subscriber No',
 				'default' => '',
 			),			
 			'aid' => array(
@@ -98,7 +97,7 @@ class SubscribersModel extends TabledateModel{
 				'db_key' => 'aid',
 				'input_type' => 'number',
 				'comparison' => 'equals',
-				'display' => 'Account',
+				'display' => 'BAN',
 				'default' => '',
 			),			
 			'msisdn' => array(
@@ -108,7 +107,15 @@ class SubscribersModel extends TabledateModel{
 				'comparison' => 'contains',
 				'display' => 'MSISDN',
 				'default' => '',
-			),			
+			),
+			'imsi' => array(
+				'key' => 'imsi',
+				'db_key' => 'imsi',
+				'input_type' => 'text',
+				'comparison' => '$in',
+				'display' => 'IMSI',
+				'default' => ''
+			),
 			'plan' => array(
 				'key' => 'plan',
 				'db_key' => 'current_plan',
@@ -146,6 +153,9 @@ class SubscribersModel extends TabledateModel{
 				)
 			),
 			array(
+				'imsi' => array(
+					'width' => 2,
+				),
 				'plan' => array(
 					'width' => 2
 				),				
@@ -156,6 +166,8 @@ class SubscribersModel extends TabledateModel{
 		);
 		return array_merge($filter_field_order, parent::getFilterFieldsOrder());
 	}
+
+  
 
 	public function getProtectedKeys($entity, $type) {
 		$parentKeys = parent::getProtectedKeys($entity, $type);

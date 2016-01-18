@@ -133,7 +133,6 @@ class Billrun_ActionManagers_Balances_Updaters_Id extends Billrun_ActionManagers
 			// We do not want to upsert if trying to update by ID.
 			'upsert' => false,
 			'new' => true,
-			'w' => 1,
 		);
 		
 		$ppPair['pp_includes_external_id'] = $this->balancesRecord['pp_includes_external_id'];

@@ -108,8 +108,7 @@ class RatesModel extends TabledateModel {
 				'key' => 'Key',
 				'prefix' => 'Prefix',
 				'from' => 'From',
-				'to' => 'To',
-				'_id' => 'Id',
+				'to' => 'To'
 			);
 		} else {
 			$columns = array(
@@ -119,8 +118,7 @@ class RatesModel extends TabledateModel {
 				'tduration' => 'Interval',
 				'taccess' => 'Access',
 				'from' => 'From',
-				'to' => 'To',
-				'_id' => 'Id',
+				'to' => 'To'
 			);
 		}
 		if (!empty($this->extra_columns)) {
@@ -174,7 +172,7 @@ class RatesModel extends TabledateModel {
 			),
 			'plan' => array(
 				'key' => 'plan',
-				'db_keys' => array('rates.call', 'rates.sms'),
+				'db_key' => array('rates.call', 'rates.sms'),
 				'input_type' => 'multiselect',
 				'comparison' => '$exists',
 				'singleselect' => true,
@@ -232,7 +230,7 @@ class RatesModel extends TabledateModel {
 				$ret = array('$and' => array());
 				foreach($value as $val) {
 					$or = array('$or' => array());
-					foreach($filter_field['db_keys'] as $key) {
+					foreach($filter_field['db_key'] as $key) {
 						$or['$or'][] = array("$key.$val" => array('$exists' => true));
 					}
 					$ret['$and'][] = $or;
@@ -284,7 +282,7 @@ class RatesModel extends TabledateModel {
 						$added_columns = array(
 							't' => $key,
 							'tprice' => $rate[$filteredPlan]['rate'][0]['price'],
-							'taccess' => isset($rate[$filteredPlan]['access']) ? $rate[$filteredPlan][0]['access'] : 0,
+							'taccess' => isset($rate[$filteredPlan][0]['access']) ? $rate[$filteredPlan][0]['access'] : 0,
 						);
 						if (strpos($key, 'call') !== FALSE) {
 							$added_columns['tduration'] = Billrun_Util::durationFormat($rate[$filteredPlan]['rate'][0]['interval']);

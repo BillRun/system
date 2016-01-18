@@ -1,36 +1,22 @@
-app.controller('BalancesController', ['$scope', '$window', '$routeParams', 'Database',
-  function ($scope, $window, $routeParams, Database) {
-    'use strict';
-    $scope.cancel = function () {
-      $window.location = baseUrl + '/admin/' + $routeParams.collection;
-    };
-    $scope.save = function () {
-      var params = {
-        entity: $scope.entity,
-        coll: 'balances',
-        type: $routeParams.action
-      };
-      Database.saveEntity(params).then(function (res) {
-        $window.location = baseUrl + '/admin/' + $routeParams.collection;
-      }, function (err) {
-        alert("Connection error!");
-      });
-    };
+angular
+  .module('BillrunApp')
+  .controller('BalancesController', BalancesController);
 
-    $scope.setAdvancedMode = function (mode) {
-      $scope.advancedMode = mode;
-    };
+function BalancesController($controller, Utils) {
+  'use strict';
 
-    $scope.init = function () {
-      var params = {
-        coll: $routeParams.collection,
-        id: $routeParams.id
-      };
-      Database.getEntity(params).then(function (res) {
-        $scope.entity = res.data.entity;
-        $scope.authorized_write = res.data.authorized_write;
-      }, function (err) {
-        alert("Connection error!");
-      });
-    };
-  }]);
+  var vm = this;
+  $controller('EditController', {$scope: vm});
+  vm.utils = Utils;
+
+  vm.init = function () {
+    vm.initEdit(function (entity) {
+      if (entity.to && _.result(entity.to, 'sec')) {
+        entity.to = new Date(entity.to.sec * 1000);
+      }
+      if (entity.from && _.result(entity.from, 'sec')) {
+        entity.from = new Date(entity.from.sec * 1000);
+      }
+    });
+  };
+}

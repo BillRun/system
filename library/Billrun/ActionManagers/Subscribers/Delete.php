@@ -44,11 +44,10 @@ class Billrun_ActionManagers_Subscribers_Delete extends Billrun_ActionManagers_S
 		$options = array(
 			'upsert' => false,
 			'new' => false,
-			'w' => 1,
-			'multi' => true,
+			'multiple' => true,
 		);
 		$balancesColl = Billrun_Factory::db()->balancesCollection();
-		$balancesColl->findAndModify($balancesQuery, $balancesUpdate, array(), $options, true);
+		$balancesColl->update($balancesQuery, $balancesUpdate, $options);
 	}
 	
 	/**
@@ -61,8 +60,8 @@ class Billrun_ActionManagers_Subscribers_Delete extends Billrun_ActionManagers_S
 			
 			// Could not find the row to be deleted.
 			if(!$rowToDelete || $rowToDelete->isEmpty()) {
-				$error = "Subscriber record not found";
-				$this->reportError($error, Zend_Log::NOTICE);
+				$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 16;
+				$this->reportError($errorCode, Zend_Log::NOTICE);
 			} else {
 				$this->collection->updateEntity($rowToDelete, array('to' => new MongoDate()));
 			}
@@ -74,7 +73,6 @@ class Billrun_ActionManagers_Subscribers_Delete extends Billrun_ActionManagers_S
 			
 		} catch (\Exception $e) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 11;
-			$error = 'failed to storing in DB got error : ' . $e->getCode() . ' : ' . $e->getMessage();
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 		}
 

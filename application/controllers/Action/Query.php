@@ -104,7 +104,7 @@ class QueryAction extends ApiAction {
 	 * @param array $request Input array to set values by.
 	 * @param array $query - Query to set values to.
 	 */
-	protected function setAdditionalValuesToQuery($request, $query) {
+	protected function setAdditionalValuesToQuery($request, &$query) {
 		if (isset($request['billrun'])) {
 			$query['billrun'] = $this->getBillrunQuery($request['billrun']);
 		}
@@ -113,6 +113,21 @@ class QueryAction extends ApiAction {
 			$inputRequestQuery = $this->getArrayParam($request['query']);
 			$query = array_merge($query, (array) $inputRequestQuery);
 		}
+		if (isset($request['from'])) {
+			$query['urt'] = array(
+				'$gte' => new MongoDate(strtotime($request['from'])),
+			);
+		}
+		if (isset($request['to'])) {
+			if (!isset($query['urt'])) {
+				$query['urt'] = array(
+					'$lte' => new MongoDate(strtotime($request['to'])),
+				);
+			} else {
+				$query['urt']['$lte'] = new MongoDate(strtotime($request['to']));
+			}
+		}
+
 	}
 	
 	/**
@@ -123,7 +138,7 @@ class QueryAction extends ApiAction {
 	protected function buildQuery($request) {
 		$executeQuery = $this->getMaxListQuery($request);
 		// Error occured.
-		if($executeQuery === false) {
+		if(empty($executeQuery)) {
 			// TODO: Return true on purpose? 
 			return false;
 		}
@@ -148,7 +163,7 @@ class QueryAction extends ApiAction {
 		} else {
 			$lines = $model->getData($query);
 			foreach ($lines as &$line) {
-				$line = $line->getRawData();
+				$line = Billrun_Util::convertRecordMongoDatetimeFields($line->getRawData(), array('urt'));;
 			}
 		}
 		
@@ -181,7 +196,7 @@ class QueryAction extends ApiAction {
 	 */
 	protected function getQueryOptions($request) {
 		return array(
-			'sort' => array('urt'),
+			'sort' => isset($request['sort']) ? json_decode($request['sort'], true) : array('urt' => -1),
 			'page' => isset($request['page']) && $request['page'] > 0 ? (int) $request['page']: 0,
 			'size' =>isset($request['size']) && $request['size'] > 0 ? (int) $request['size']: $this->getMaxList(),
 			);
@@ -233,14 +248,16 @@ class QueryAction extends ApiAction {
 	 */
 	protected function validateRequest($request) {
 		$requestFields = $this->getRequestFields();
+		$ret = false;
 		foreach ($requestFields as $field) {
-			if (!isset($request[$field])) {
-				$this->setError('Require to supply: ' . implode(',', $requestFields), $request);
-				return false;
+			if (isset($request[$field])) {
+				$ret = true;
 			}
 		}
-	
-		return true;
+		if ($ret === false) {
+			$this->setError('Require to supply one of the following fields: ' . implode(', ', $requestFields), $request);
+		}
+		return $ret;
 	}
 	
 	/**

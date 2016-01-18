@@ -1,6 +1,9 @@
 <?php
 print '<section id="no-more-tables"><table id="data_table" class="table table-striped table-bordered table-no-more-tables">';
-print '<thead><tr><th>#</th>';
+print '<thead><tr><th>'
+. '<label class="checkbox">#'
+	. '<input type="checkbox" id="check_all" />'
+	. '</label></th>';
 foreach ($this->columns as $value) {
 	print '<th>' . $value . '</th>';
 }

@@ -38,18 +38,22 @@
 
 		<!-- factoreis & services -->
 		<script src='<?php echo $this->baseUrl; ?>/js/factories/Database.js'></script>
+		<script src='<?php echo $this->baseUrl; ?>/js/factories/Utils.js'></script>
 
 		<!-- directives -->
 		<script src='<?php echo $this->baseUrl; ?>/js/directives/inputField.js'></script>
 
 		<!-- controllers -->
-		<script src='<?php echo $this->baseUrl; ?>/js/controllers/CollectionsController.js'></script>
+		<script src='<?php echo $this->baseUrl; ?>/js/controllers/MenuController.js'></script>
+		<script src='<?php echo $this->baseUrl; ?>/js/controllers/EditController.js'></script>
+		<script src='<?php echo $this->baseUrl; ?>/js/controllers/ListController.js'></script>
 		<script src='<?php echo $this->baseUrl; ?>/js/controllers/PlansController.js'></script>
 		<script src='<?php echo $this->baseUrl; ?>/js/controllers/RatesController.js'></script>
 		<script src='<?php echo $this->baseUrl; ?>/js/controllers/BalancesController.js'></script>
 		<script src='<?php echo $this->baseUrl; ?>/js/controllers/CardsController.js'></script>
 		<script src='<?php echo $this->baseUrl; ?>/js/controllers/BatchController.js'></script>
 		<script src='<?php echo $this->baseUrl; ?>/js/controllers/SubscribersController.js'></script>
+		<script src='<?php echo $this->baseUrl; ?>/js/controllers/SubscribersAutoRenewController.js'></script>
     </head>
     <body ng-app="BillrunApp">
         <!--[if lt IE 7]>
@@ -64,10 +68,11 @@
 				<span class="icon-bar"></span>
 				<span class="icon-bar"></span>
 			</button>
-			<a class="brand" href="<?php echo $this->baseUrl; ?>/admin">
+			<a class="brand" href="<?php echo $this->baseUrl; ?>/admin/">
 				<img src="http://www.billrun.net/images/billrun/web-logo.png" alt="BillRun"/>
 			</a>
         </div>
+		<div ng-include="'views/partials/menu.html'" ng-if='false'></div>
 		<?php
 			print $this->render('menu.phtml', array('active' => $active));
 		?>

@@ -470,7 +470,6 @@ abstract class Billrun_Processor extends Billrun_Base {
 					'continueOnError' => true,
 					'socketTimeoutMS' => 300000,
 					'wTimeoutMS' => 300000,
-					'w' => 1,
 				);
 			} else {
 				// we are on 2.4 and lower
@@ -478,7 +477,6 @@ abstract class Billrun_Processor extends Billrun_Base {
 					'continueOnError' => true,
 					'wtimeout' => 300000,
 					'timeout' => 300000,
-					'w' => 1,
 				);
 			}
 			$offset = 0;
@@ -516,7 +514,6 @@ abstract class Billrun_Processor extends Billrun_Base {
 					'continueOnError' => true,
 					'socketTimeoutMS' => 300000,
 					'wTimeoutMS' => 300000,
-					'w' => 1,
 				);
 			} else {
 				// we are on 2.4 and lower
@@ -524,7 +521,6 @@ abstract class Billrun_Processor extends Billrun_Base {
 					'continueOnError' => true,
 					'wtimeout' => 300000,
 					'timeout' => 300000,
-					'w' => 1,
 				);
 			}
 			$offset = 0;

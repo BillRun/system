@@ -1,0 +1,27 @@
+<?php if (!empty($balances_after) && !empty($balances_before)) : ?>
+	<div class="panel panel-default">
+		<div class="panel-heading down" data-toggle="collapse" data-target="#balance-diff">Balances Diff</div>
+		<div class="panel-body collapse in" id='balance-diff'>
+			<table class="table table-striped">
+				<thead>
+					<tr>
+						<th>ID</th>
+						<th>Diff</th>
+						<th>Charging by usaget</th>
+						<th>Charging By</th>
+					</tr>
+				</thead>
+				<tbody>
+					<?php foreach ($balances_before as $balance_id => $balance) : ?>
+						<tr>
+							<td><?php echo $balance_id ?></td>
+							<td><?php echo number_format(($balances_after[$balance_id]['amount']) - ($balances_before[$balance_id]['amount']), 3) ?></td>
+							<td><?php echo $balance['charging_by_usaget'] ?></td>
+							<td><?php echo $balance['charging_by'] ?></td>
+						</tr>
+					<?php endforeach; ?>
+				</tbody>
+			</table>
+		</div>
+	</div>
+<?php endif; ?>

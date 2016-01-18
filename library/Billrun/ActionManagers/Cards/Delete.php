@@ -96,7 +96,6 @@ class Billrun_ActionManagers_Cards_Delete extends Billrun_ActionManagers_Cards_A
 			'continueOnError' => true,
 			'socketTimeoutMS' => 300000,
 			'wTimeoutMS' => 300000,
-			'w' => 1,
 			'multiple' => 1
 		);
 		try {

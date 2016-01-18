@@ -1,32 +1,57 @@
-app.controller('SubscribersController', ['$scope', '$window', '$routeParams', 'Database',
-  function ($scope, $window, $routeParams, Database) {
+app.controller('SubscribersController', ['$scope', '$window', '$routeParams', 'Database', '$controller', 'utils',
+  function ($scope, $window, $routeParams, Database, $controller, utils) {
     'use strict';
-    $scope.cancel = function () {
-      $window.location = baseUrl + '/admin/' + $routeParams.collection;
+
+    $controller('EditController', {$scope: $scope});
+
+    $scope.flash =  { 
+      message :"" ,
+      cls:""
     };
-    $scope.save = function () {
+
+    $scope.save = function (redirect) {
       var params = {
         entity: $scope.entity,
         coll: 'subscribers',
         type: $scope.action
       };
+      $scope.errorMessages = [];
       Database.saveEntity(params).then(function (res) {
-        if (res.data !== "null") {
-          alert(res.data);
-          return false;
+        if(!_.isUndefined(res.data.errorMessages)) {
+           $scope.errorMessages = res.data.errorMessages;
+        }  else { 
+            if(redirect) { 
+              $window.location = baseUrl + '/admin/' + $routeParams.collection;
+            }
         }
-        $window.location = baseUrl + '/admin/' + $routeParams.collection;
       }, function (err) {
-        alert("Connection error!");
+        $scope.err=err;
+        console.log(err);
       });
     };
 
-    $scope.setAdvancedMode = function (mode) {
-      $scope.advancedMode = mode;
-    };
-
     $scope.addIMSI = function () {
-      $scope.entity.imsi.push("");
+      
+
+      if($scope.entity.imsi.length >=2) { 
+       
+        $scope.flash.message ="Maximum 2 imsi for subscriber" ;
+        $scope.flash.cls ="alert alert-danger" ;
+        utils.flashMessage('flash',$scope);
+
+        return false ;
+      }
+
+      var idx = _.findIndex( $scope.entity.imsi , function(i) {
+          return ( _.trim(i) == '' || !_.trim(i) );
+      });
+
+      if(idx>0 ) {
+        return ;
+      } else { 
+        $scope.entity.imsi.push("");
+      }
+
     };
 
     $scope.deleteIMSI = function (imsiIndex) {
@@ -35,28 +60,24 @@ app.controller('SubscribersController', ['$scope', '$window', '$routeParams', 'D
       $scope.entity.imsi.splice(imsiIndex, 1);
     };
 
-    $scope.capitalize = function (str) {
-      return _.capitalize(str);
-    };
-
     $scope.init = function () {
       $scope.action = $routeParams.action;
       $scope.entity = {imsi: []};
-      if ($scope.action.toLowerCase() !== "new") {
-        var params = {
-          coll: $routeParams.collection,
-          id: $routeParams.id
-        };
-        Database.getEntity(params).then(function (res) {
-          $scope.entity = res.data.entity;
-          if ($scope.entity.imsi && _.isString($scope.entity.imsi)) {
-            $scope.entity.imsi = [$scope.entity.imsi];
-          }
-          $scope.authorized_write = res.data.authorized_write;
-        }, function (err) {
-          alert("Connection error!");
-        });
-      }
+      var params = {
+        coll: $routeParams.collection,
+        id: $routeParams.id,
+        type: $routeParams.action
+      };
+      Database.getEntity(params).then(function (res) {
+        $scope.entity = res.data.entity;
+        $scope.autorized_write = res.data.authorized_write;
+        if ($scope.entity.imsi && _.isString($scope.entity.imsi)) {
+          $scope.entity.imsi = [$scope.entity.imsi];
+        }
+        $scope.authorized_write = res.data.authorized_write;
+      }, function (err) {
+        alert("Connection error!");
+      });
       Database.getAvailableServiceProviders().then(function (res) {
         $scope.availableServiceProviders = res.data;
       });

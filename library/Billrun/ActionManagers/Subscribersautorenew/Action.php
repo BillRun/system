@@ -11,7 +11,7 @@
  *
  * @author Tom Feigin
  */
-abstract class Billrun_ActionManagers_SubscribersAutoRenew_Action extends Billrun_ActionManagers_APIAction{
+abstract class Billrun_ActionManagers_Subscribersautorenew_Action extends Billrun_ActionManagers_APIAction{
 
 	protected $collection = null;
 	

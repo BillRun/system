@@ -3,6 +3,9 @@ $('body').on('hidden.bs.modal', '.modal', function () {
 });
 var checkItems = false;
 $(function () {
+  $('#check_all').change(function () {
+    $("tbody input[type='checkbox']").prop('checked', $(this).prop('checked'));
+  });
 	$("#close_and_new,#duplicate").click(function () {
 		var items_checked = $('#data_table :checked');
 		checkItems = true;
@@ -371,8 +374,13 @@ function update_current(obj) {
 
 function editBatchCards() {
   var batch_no = $('#batch_number').val();
+  var selected = $('tbody input[type="checkbox"]:checked');
+  var serial_numbers = [];
+  $.each(selected, function (check, elm) {
+    serial_numbers.push($(elm).parent().parent().parent().find('*[data-title="Serial Number"]').html());
+  });
   if (batch_no) {
-    window.location = '/admin#/batch/update/' + batch_no;
+    window.location = '/admin#/batch/update/' + batch_no + "?cards=[" + serial_numbers.join(',') + "]";
   }
 }
 

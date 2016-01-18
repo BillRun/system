@@ -1,6 +1,8 @@
-app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Database',
-  function ($scope, $window, $routeParams, Database) {
+app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Database', '$controller',
+  function ($scope, $window, $routeParams, Database, $controller) {
     'use strict';
+
+    $controller('EditController', {$scope: $scope});
 
     $scope.addPlanInclude = function () {
       if ($scope.newInclude && $scope.newInclude.value && $scope.entity.include[$scope.newInclude.type] === undefined) {
@@ -37,27 +39,6 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
       }
     };
 
-    $scope.cancel = function () {
-      $window.location = baseUrl + '/admin/' + $routeParams.collection;
-    };
-    $scope.savePlan = function () {
-      var params = {
-        entity: $scope.entity,
-        coll: $routeParams.collection,
-        type: $routeParams.action,
-        duplicate_rates: $scope.duplicate_rates.on
-      };
-      Database.saveEntity(params).then(function () {
-        $window.location = baseUrl + '/admin/' + $routeParams.collection;
-      }, function (err) {
-        alert("Connection error!");
-      });
-    };
-
-    $scope.isObject = function (o) {
-      return _.isObject(o);
-    };
-
     $scope.plansTemplate = function () {
       if ($scope.entity && $scope.entity.type === 'charging') {
         return 'views/plans/chargingedit.html';
@@ -67,23 +48,49 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
       return '';
     };
 
-    $scope.setAdvancedMode = function (mode) {
-      $scope.advancedMode = mode;
+    $scope.removeIncludeType = function (include_type_name) {
+      delete $scope.entity.include[include_type_name];
+    };
+    $scope.removeIncludeCost = function (index) {
+      $scope.entity.include.cost.splice(index, 1);
     };
 
-    $scope.capitalize = function (str) {
-      return _.capitalize(str);
+    $scope.addIncludeType = function () {
+      var include_type = $scope.newIncludeType.type;
+      var new_include_type = {
+        cost: undefined,
+        usagev: undefined,
+        pp_includes_name: "",
+        pp_includes_external_id: "",
+        period: {
+          duration: undefined,
+          unit: ""
+        }
+      };
+      if (_.isUndefined($scope.entity.include[include_type])) {
+        if (include_type === "cost") $scope.entity.include.cost = [new_include_type];
+        else $scope.entity.include[include_type] = new_include_type;
+      } else if (include_type === "cost") {
+        $scope.entity.include.cost.push(new_include_type);
+      }
+      $scope.newIncludeType.type = '';
+    };
+
+    $scope.includeTypeExists = function (include_type) {
+      if (include_type === 'cost') return false;
+      return !_.isUndefined($scope.entity.include[include_type]);
+    };
+
+    $scope.cancel = function () {
+      $window.location = baseUrl + '/admin/' + $scope.entity.type + $routeParams.collection;
     };
 
     $scope.init = function () {
-      var params = {
-        coll: $routeParams.collection,
-        id: $routeParams.id
-      };
-      Database.getEntity(params).then(function (res) {
-        $scope.entity = res.data.entity;
-        $scope.authorized_write = res.data.authorized_write;
-      });
+      $scope.initEdit();
+      $scope.availableCostUnits = ['days', 'months'];
+      $scope.availableOperations = ['set', 'accumulated', 'charge'];
+      $scope.newIncludeType = {type: ""};
+      $scope.availableIncludeTypes = ['cost', 'data', 'sms', 'call'];
       Database.getAvailableServiceProviders().then(function (res) {
         $scope.availableServiceProviders = res.data;
       });

@@ -112,7 +112,7 @@ class RealtimeeventAction extends ApiAction {
 		} else if(isset ($event['sgsnaddress'])) {
 			$sgsn = $event['sgsnaddress'];
 		}
-		return long2ip(hexdec($sgsn));
+		return $sgsn;
 	}
 	
 	protected function getDataRecordType($usaget, $data) {
@@ -128,6 +128,12 @@ class RealtimeeventAction extends ApiAction {
 				return false;
 			case('call'):
 				return $data['api_name'];
+			case('sms'):
+				return 'sms';
+			case('mms'):
+				return 'mms';
+			case('service'):
+				return 'service';
 		}
 	}
 	
@@ -142,6 +148,8 @@ class RealtimeeventAction extends ApiAction {
 		switch ($this->usaget) {
 			case ('sms'):
 				return 'smsrt';
+			case ('mms'):
+				return 'mmsrt';
 			case ('data'):
 				return 'gy';
 			case ('call'):

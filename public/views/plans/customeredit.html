@@ -3,20 +3,8 @@
 	<h3>{{capitalize(action)}} Customer Plan</h3>
 </center>
 <div>
-	<form class='form-inline' ng-submit='savePlan()'>
+	<form class='form-inline' ng-submit='save()'>
 		<div ng-if='!advancedMode'>
-			<div class="row">
-				<div class="col-md-2">Price</div>
-				<div class="col-md-6"><input ng-model='entity.price' type='text' id='plan-price' class='form-control' /></div>
-			</div>
-			<div class="row">
-				<div class="col-md-2">Vatable</div>
-				<div class="col-md-6"><input ng-model='entity.vatable' type="checkbox" id="plan-vatable" class="form-control" /></div>
-			</div>
-			<div class="row">
-				<div class="col-md-2">To</div>
-				<div class="col-md-6"><input ng-model='entity.to' type='text' id='plan-to' disabled /></div>
-			</div>
 			<div class="row" ng-if="entity.external_id">
 				<div class="col-md-2">External ID</div>
 				<div class="col-md-6"><input ng-model='entity.external_id' type='text' class="form-control" /></div>
@@ -24,6 +12,30 @@
 			<div class="row" ng-if="entity.external_code">
 				<div class="col-md-2">External Code</div>
 				<div class="col-md-6"><input ng-model='entity.external_code' type='text' class="form-control" /></div>
+			</div>
+			<div class='row' ng-if='utils.display("from", "plans")'>
+				<div class='col-md-2'>
+					{{utils.getDisplayValue("from", "plans")}}
+				</div>
+				<div class='col-md-6'>
+					<input type="text" class="form-control" uib-datepicker-popup="{{utils.getDateFormat()}}" ng-model="entity.from" is-open="status.opened"
+						   date-disabled="utils.disabled('from', 'plans')" close-text="Close" />
+					<span>
+					  <butfromn type="butfromn" class="btn btn-default" ng-click="status.opened = !status.opened"><i class="glyphicon glyphicon-calendar"></i></butfromn>
+					</span>
+				</div>
+			</div>
+			<div class='row' ng-if='utils.display("to", "plans")'>
+				<div class='col-md-2'>
+					{{utils.getDisplayValue("to", "plans")}}
+				</div>
+				<div class='col-md-6'>
+					<input type="text" class="form-control" uib-datepicker-popup="{{utils.getDateFormat()}}" ng-model="entity.to" is-open="status.opened"
+						   date-disabled="utils.disabled('to', 'plans')" close-text="Close" />
+					<span>
+					  <button type="button" class="btn btn-default" ng-click="status.opened = !status.opened"><i class="glyphicon glyphicon-calendar"></i></button>
+					</span>
+				</div>
 			</div>
 
 			<div id='plan-includes' ng-if="entity.include">

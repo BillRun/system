@@ -144,6 +144,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 		$rate = $this->getLineRate($row);
 		if (is_null($rate) || $rate === false) {
 			$row['granted_return_code'] = Billrun_Factory::config()->getConfigValue('prepaid.customer.no_rate');
+			$row['usagev'] = 0;
 			return false;
 		}
 		if (isset($rate['key']) && $rate['key'] == "UNRATED") {
@@ -174,7 +175,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	 */
 	protected function getLineRate($row) {
 		$this->setRowDataForQuery($row);
-		return $this->getRateByParams();
+		return $this->getRateByParams($row);
 	}
 	
 	/**
@@ -195,14 +196,17 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	 * Get a matching rate by config params
 	 * @return Mongodloid_Entity the matched rate or false if none found
 	 */
-	protected function getRateByParams() {		
-		$query = $this->getRateQuery();
-		$matchedRate = Billrun_Factory::db()->ratesCollection()->aggregate($query)->current();
+	protected function getRateByParams($row) {		
+		$query = $this->getRateQuery($row);
+		$rates_coll= Billrun_Factory::db()->ratesCollection();
+		$matchedRate = $rates_coll->aggregate($query)->current();
 		
-		if (empty($matchedRate)) {
+		if ($matchedRate->isEmpty()) {
 			return false;
 		}
-		return $matchedRate;
+		
+		$key = $matchedRate->get('key');
+		return $rates_coll->query(array("key" => $key))->cursor()->current();
 	}
 	
 	/**
@@ -210,17 +214,24 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	 * 
 	 * @return string mongo query
 	 */
-	protected function getRateQuery() {
+	protected function getRateQuery($row) {
 		$pipelines = Billrun_Config::getInstance()->getConfigValue('rate_pipeline.' . self::$type, array()) +
 			Billrun_Config::getInstance()->getConfigValue('rate_pipeline.' . static::$type, array());
 		$query = array();
 		foreach ($pipelines as $currPipeline) {
+			if (!is_array($currPipeline)) {
+				continue;
+			}
 			foreach ($currPipeline as $pipelineOperator => $pipeline) {
 				$pipelineValue = '';
 				if (is_array($pipeline)) {
 					foreach ($pipeline as $key => $value) {
+						$key = str_replace('__', '.', $key);
 						if (isset($value['classMethod'])) {
-							$pipelineValue[$key] = call_user_method($value['classMethod'], $this);
+							if (!method_exists($this, $value['classMethod'])) {
+								continue;
+							}
+							$pipelineValue[$key] = $this->{$value['classMethod']}($row);
 						} else {
 							$pipelineValue[$key] = (is_numeric($value)) ? intval($value) : $value;
 						}
@@ -252,15 +263,6 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	 */
 	protected function getToTimeQuery() {
 		return array('$gte' => $this->rowDataForQuery['line_time']);
-	}
-	
-	/**
-	 * Assistance function to generate 'prefix' field query with current row.
-	 * 
-	 * @return array query for 'prefix' field
-	 */
-	protected function getPrefixMatchQuery() {
-		return array('$in' => Billrun_Util::getPrefixes($this->rowDataForQuery['called_number']));
 	}
 
 }
