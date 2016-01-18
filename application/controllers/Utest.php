@@ -57,6 +57,12 @@ class UtestController extends Yaf_Controller_Abstract {
 			Billrun_Factory::log('Exit Unit testing. Unit testing not allowed on production');
 			die();
 		}
+		
+		if(!AdminController::authorized('write', 'utest')){
+			//$this->getRequest()->getQuery();
+			header("Location: " . $this->siteUrl . "/admin/login");
+			die();
+		}
 		$this->protocol = (empty($this->getRequest()->getServer('HTTPS'))) ? 'http://' : 'https	://';
 		$this->subdomain = $this->getRequest()->getBaseUri();
 		$this->siteUrl = $this->protocol . $this->getRequest()->getServer('HTTP_HOST') . $this->subdomain;
@@ -74,36 +80,32 @@ class UtestController extends Yaf_Controller_Abstract {
 	public function indexAction() {
 		$tests = array();
 		$test_collection = $this->getRequest()->get('testcollection');
+		$enabledTests = $this->getEnabledTests($test_collection);
 		if (!empty($test_collection)) {
-			foreach ($this->getEnabledTests($test_collection) as $key => $testModelName) {
+			foreach ($enabledTests as $key => $testModelName) {
 				$tests[] = new $testModelName($this);
 			}
-			$this->getView()->tests = $tests;
-			$this->getView()->subdomain = $this->subdomain;
-			$this->getView()->test_collection = $test_collection;
-
-			$formParams = $this->getTestFormData();
-			foreach ($formParams as $name => $value) {
-				$this->getView()->{$name} = $value;
-			}
-		} else {
-			$enabled_test_collections = array();
-			
-			foreach (array_keys($this->getEnabledTestsCollection()) as $value) {
-				$label = '';
-				if (substr($value, 0, strlen('utest')) == 'utest') {
-					$label = substr($value, strlen('utest'));
-				}
-				$label = preg_replace('/(?!^)[A-Z]{2,}(?=[A-Z][a-z])|[A-Z][a-z]/', ' $0', $label);
-				$label = ucwords($label);
+		} 
+		else {
+			$enabled_test_collections = array();	
+			foreach (array_keys($enabledTests) as $value) {
 				$enabled_test_collections[] = array(
 					'param' => $value,
-					'label' => $label
+					'label' => $this->cleanLabel($value)
 				);
 			}
 			$this->getView()->enabled_test_collections = $enabled_test_collections;
-			$this->getView()->test_collection = 'utest';
+			$test_collection = 'utest';
+		}
+		
+		$this->getView()->tests = $tests;
+		$this->getView()->subdomain = $this->subdomain;
+		$this->getView()->test_collection = $test_collection;
+		$this->getView()->test_collection_label = $this->cleanLabel($test_collection);
 
+		$formParams = $this->getTestFormData();
+		foreach ($formParams as $name => $value) {
+			$this->getView()->{$name} = $value;
 		}
 	}
 
@@ -204,6 +206,7 @@ class UtestController extends Yaf_Controller_Abstract {
 		$this->getView()->subscribers = isset($subscriber) ? $subscriber : null;
 		$this->getView()->apiCalls = $this->apiCalls;
 		$this->getView()->test_collection = $test_collection;
+		$this->getView()->test_collection_label = $this->cleanLabel($test_collection);
 	}
 
 	public function getReference() {
@@ -437,13 +440,21 @@ class UtestController extends Yaf_Controller_Abstract {
 	}
 	
 	protected function getEnabledTests($test_collection) {
-		//From config
-		$tests = $this->conf->getConfigValue("test.enableTests.".$test_collection, array());
+		if(!empty($test_collection)){
+			$tests = $this->conf->getConfigValue("test.enableTests.".$test_collection, array());
+		} else {
+			$tests = $this->conf->getConfigValue("test.enableTests", array());
+		}
 		return $tests;
 	}
-
-	protected function getEnabledTestsCollection() {
-		$tests = $this->conf->getConfigValue("test.enableTests", array());
-		return $tests;
+	
+	protected function cleanLabel($string) {
+		$label = '';
+		if (substr($string, 0, strlen('utest')) == 'utest') {
+			$label = substr($string, strlen('utest'));
+		}
+		$label = preg_replace('/(?!^)[A-Z]{2,}(?=[A-Z][a-z])|[A-Z][a-z]/', ' $0', $label);
+		$label = ucwords($label);
+		return $label;
 	}
 }
