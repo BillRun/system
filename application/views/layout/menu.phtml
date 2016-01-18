@@ -2,15 +2,15 @@
 	//	 require to use instead of general layout (layout/menu.phtml) ?>
 <div class="navbar-collapse collapse">
 	<ul class="nav navbar-nav">
-		<li<?php echo ($active == '' ? ' class="active"' : ''); ?>>
+		<li class='menu-item-home <?php echo ($active == '' ? ' active' : ''); ?>'>
 			<a href="<?php echo $this->baseUrl; ?>/admin/">Home</a>
 		</li>		<?php if (AdminController::authorized('read', 'lines') && AdminController::showInMenu('lines')) : ?>
-			<li<?php echo ($active == 'lines' ? ' class="active"' : ''); ?>>
+			<li class='menu-item-lines <?php echo ($active == 'lines' ? ' active' : ''); ?>'>
 				<a href="<?php echo $this->baseUrl; ?>/admin/lines">Lines</a>
 			</li>
 		<?php endif; ?>
 		<?php if (AdminController::authorized('read', 'plans') || AdminController::authorized('read', 'rates')) : ?>
-			<li class="dropdown<?php echo (in_array($active, array('customerplans', 'chargingplans', 'rates')) ? ' active' : ''); ?>">
+			<li class="menu-item-chargingplans menu-item-customerplans menu-item-rates dropdown<?php echo (in_array($active, array('customerplans', 'chargingplans', 'rates')) ? ' active' : ''); ?>">
 				<a class="dropdown-toggle"
 				   data-toggle="dropdown"
 				   href="">
@@ -19,15 +19,15 @@
 				</a>
 				<ul class="dropdown-menu">
 					<?php if (AdminController::authorized('read', 'plans') && AdminController::showInMenu('plans')) : ?>
-						<li<?php echo ($active == 'customerplans' ? ' class="active"' : ''); ?>>
+						<li class='menu-item-customerplans <?php echo ($active == 'customerplans' ? ' active' : ''); ?>'>
 							<a href="<?php echo $this->baseUrl; ?>/admin/customerplans">Customer Plans</a>
 						</li>
-						<li<?php echo ($active == 'chargingplans' ? ' class="active"' : ''); ?>>
+						<li class='menu-item-chargingplans <?php echo ($active == 'chargingplans' ? ' active' : ''); ?>'>
 							<a href="<?php echo $this->baseUrl; ?>/admin/chargingplans">Charging Plans</a>
 						</li>
 					<?php endif; ?>
 					<?php if (AdminController::authorized('read', 'rates') && AdminController::showInMenu('rates')) : ?>
-						<li<?php echo ($active == 'rates' ? ' class="active"' : ''); ?>>
+						<li class='menu-item-rates <?php echo ($active == 'rates' ? ' class="active"' : ''); ?>'>
 							<a href="<?php echo $this->baseUrl; ?>/admin/rates">Rates</a>
 						</li>
 					<?php endif; ?>
@@ -35,7 +35,7 @@
 			</li>
 		<?php endif ?>
 		<?php if(AdminController::authorized('read', 'subscribers') || AdminController::authorized('read', 'balances') || AdminController::authorized('read', 'subscribersautorenewservices')) : ?>
-			<li class="dropdown<?php echo (in_array($active, array('subscribers', 'balances', 'subscribersautorenewservices')) ? ' active' : ''); ?>">
+			<li class="menu-item-subscribers menu-item-balances menu-item-subscribers_auto_renew_services dropdown<?php echo (in_array($active, array('subscribers', 'balances', 'subscribersautorenewservices')) ? ' active' : ''); ?>">
 				<a class="dropdown-toggle"
 				   data-toggle="dropdown"
 				   href="">
@@ -44,17 +44,17 @@
 				</a>
 				<ul class="dropdown-menu">
 					<?php if(AdminController::authorized('read', 'subscribers') && AdminController::showInMenu('subscribers')) : ?>
-						<li <?php echo ($active == 'subscribers' ? ' class="active"' : ''); ?>>
+						<li class='menu-item-subscribers <?php echo ($active == 'subscribers' ? ' active' : ''); ?>'>
 							<a href="<?php echo $this->baseUrl; ?>/admin/subscribers">List</a>
 						</li>
 					<?php endif; ?>
 					<?php if (AdminController::authorized('read', 'balances') && AdminController::showInMenu('balances')) : ?>
-						<li<?php echo ($active == 'balances' ? ' class="active"' : ''); ?>>
+						<li class='menu-item-balances <?php echo ($active == 'balances' ? ' active' : ''); ?>'>
 							<a href="<?php echo $this->baseUrl; ?>/admin/balances">Balances</a>
 						</li>
 					<?php endif; ?>
 					<?php if(AdminController::authorized('read', 'subscribersautorenewservices') && AdminController::showInMenu('subscribersautorenewservices')) : ?>
-						<li <?php echo ($active == 'subscribersautorenewservices' ? ' class="active"' : ''); ?>>
+						<li class='menu-item-subscribers_auto_renew_services <?php echo ($active == 'subscribersautorenewservices' ? ' active' : ''); ?>'>
 							<a href="<?php echo $this->baseUrl; ?>/admin/subscribersautorenewservices">Renew</a>
 						</li>
 					<?php endif; ?>
@@ -62,7 +62,7 @@
 			</li>
 		<?php endif ?>
 		<?php if (AdminController::authorized('read', 'queue') && AdminController::showInMenu('queue')) : ?>
-			<li<?php echo ($active == 'queue' ? ' class="active"' : ''); ?>>
+			<li class='menu-item-queue <?php echo ($active == 'queue' ? ' active' : ''); ?>'>
 				<a href="<?php echo $this->baseUrl; ?>/admin/queue">Queue</a>
 			</li>
 		<?php endif; ?>
@@ -72,7 +72,7 @@
 			</li>
 		<?php endif; ?>
 		<?php if(AdminController::authorized('read', 'cards') && AdminController::showInMenu('cards')) : ?>
-			<li <?php echo ($active == 'cards' ? ' class="active"' : ''); ?>>
+			<li class='menu-item-cards <?php echo ($active == 'cards' ? ' active' : ''); ?>'>
 				<a href="<?php echo $this->baseUrl; ?>/admin/cards">Cards</a>
 			</li>
 		<?php endif; ?>
@@ -96,7 +96,7 @@
 			</li>	
 		<?php endif; ?>
 		<?php if (AdminController::authorized('admin')) : ?>
-			<li class="dropdown<?php echo (in_array($active, array('users', 'config', 'operations')) ? ' active' : ''); ?>">
+			<li class="menu-item-service_providers dropdown<?php echo (in_array($active, array('users', 'config', 'operations')) ? ' active' : ''); ?>">
 				<a class="dropdown-toggle"
 				   data-toggle="dropdown"
 				   href="">
@@ -112,6 +112,9 @@
 					</li>
 					<li<?php echo ($active == 'operations' ? ' class="active"' : ''); ?>>
 						<a href="<?php echo $this->baseUrl; ?>/admin/operations">Operations</a>
+					</li>
+					<li class='menu-item-service_providers'>
+						<a href='<?php echo $this->baseUrl; ?>/admin#/service_providers'>Service Providers</a>
 					</li>
 				</ul>
 			</li>
