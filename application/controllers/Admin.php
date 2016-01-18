@@ -111,7 +111,7 @@ class AdminController extends Yaf_Controller_Abstract {
 
 		$model = self::initModel($coll);
 		if ($type == 'new') {
-			$entity = $model->getEmptyItem()->getRawData();
+			$entity = $model->getEmptyItem();
 		} else {
 			$entity = $model->getItem($id);
 			if (!$entity) {

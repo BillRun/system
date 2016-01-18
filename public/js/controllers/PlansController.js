@@ -1,5 +1,5 @@
-app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Database', '$controller',
-  function ($scope, $window, $routeParams, Database, $controller) {
+app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Database', '$controller', '$location',
+  function ($scope, $window, $routeParams, Database, $controller, $location) {
     'use strict';
 
     $controller('EditController', {$scope: $scope});
@@ -40,12 +40,7 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
     };
 
     $scope.plansTemplate = function () {
-      if ($scope.entity && $scope.entity.type === 'charging') {
-        return 'views/plans/chargingedit.html';
-      } else if ($scope.entity) {
-        return 'views/plans/customeredit.html';
-      }
-      return '';
+      return 'views/plans/' + $location.search().type + 'edit.html';
     };
 
     $scope.removeIncludeType = function (include_type_name) {
@@ -81,14 +76,65 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
       return !_.isUndefined($scope.entity.include[include_type]);
     };
 
+    $scope.save = function () {
+      var params = {
+        entity: $scope.entity,
+        coll: $routeParams.collection,
+        type: $routeParams.action,
+        duplicate_rates: ($scope.duplicate_rates ? $scope.duplicate_rates.on : false)
+      };
+      Database.saveEntity(params).then(function (res) {
+        $window.location = baseUrl + '/admin/' + $location.search().type + 'plans';
+      }, function (err) {
+        alert("Connection error!");
+      });
+    };
     $scope.cancel = function () {
       $window.location = baseUrl + '/admin/' + $scope.entity.type + $routeParams.collection;
     };
 
     $scope.init = function () {
-      $scope.initEdit(function (entity) {
-        angular.element('.menu-item-' + entity.type + 'plans').addClass('active');
+      angular.element('.menu-item-' + $location.search().type + 'plans').addClass('active');
+      var params = {
+        coll: $routeParams.collection.replace(/_/g, ''),
+        id: $routeParams.id,
+        type: $routeParams.action
+      };
+      $scope.advancedMode = false;
+      $scope.action = $routeParams.action;
+      Database.getEntity(params).then(function (res) {
+        if ($routeParams.action !== "new") {
+          $scope.entity = res.data.entity;
+          if (_.isUndefined(entity.include)) entity.include = {};
+        } else if ($location.search().type === "charging") {
+          $scope.entity = {
+            "name" : "",
+            "external_id" : "",
+            "service_provider" : "",
+            "desc" : "",
+            "type" : "charging",
+            "operation" : "",
+            "charging_type" : [],
+            "from" : new Date(),
+            "to" : new Date(),
+            "include" : {},
+            "priority" : "0"
+          };
+        } else if ($location.search().type === "customer") {
+          $scope.entity = {
+            "name": "",
+            "from": new Date(),
+            "to": new Date(),
+            "type": "customer",
+            "external_id": "",
+            "external_code": ""
+          };
+        }
+        $scope.authorized_write = res.data.authorized_write;
+      }, function (err) {
+        alert("Connection error!");
       });
+
       $scope.availableCostUnits = ['days', 'months'];
       $scope.availableOperations = ['set', 'accumulated', 'charge'];
       $scope.newIncludeType = {type: ""};

@@ -5,11 +5,15 @@
 <div>
 	<form class='form-inline' ng-submit='save()'>
 		<div ng-if='!advancedMode'>
-			<div class="row" ng-if="entity.external_id">
+			<div class='row' ng-if='action === "new"'>
+				<div class='col-md-2'>Name</div>
+				<div class='col-md-6'><input ng-model='entity.name' type='text' class='form-control' /></div>
+			</div>
+			<div class="row">
 				<div class="col-md-2">External ID</div>
 				<div class="col-md-6"><input ng-model='entity.external_id' type='text' class="form-control" /></div>
 			</div>
-			<div class="row" ng-if="entity.external_code">
+			<div class="row">
 				<div class="col-md-2">External Code</div>
 				<div class="col-md-6"><input ng-model='entity.external_code' type='text' class="form-control" /></div>
 			</div>
