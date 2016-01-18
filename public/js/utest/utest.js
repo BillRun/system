@@ -21,8 +21,8 @@ $(document).ready(function () {
 			sendingValue = $(this).closest('span').next('select');
 		} else if($(this).closest('span').next('textarea').length){
 			sendingValue = $(this).closest('span').next('textarea');
-		} else if($(this).closest('div').next('div.date').find('input').length){
-			sendingValue = $(this).closest('div').next('div.date').find('input');
+		} else if($(this).closest('div').next('div.datetimepicker').find('input').length){
+			sendingValue = $(this).closest('div').next('div.datetimepicker').find('input');
 		}
 		
 		if ($(this).is(':checked')) {
