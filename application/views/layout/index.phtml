@@ -93,23 +93,6 @@
 
 	<div ng-view></div>
 
-	<script>
-		$(window).load(function () {
-			if (window.location.hash) {
-				var split = window.location.hash.split('/');
-				split.splice(0, 1); // first element is #
-				var cur = split[0];
-				$('.menu-item-home').removeClass('active');
-				if ($('.menu-item-' + cur).length) {
-					$('.menu-item-' + cur).addClass('active');
-				} else if (cur === 'plans') {
-					var h3text = $('.subtitle').text();
-					if (h3text.toLowerCase().match(/charging/))	$('.menu-item-chargingplans').addClass('active');
-					else if (h3text.toLowerCase().match(/customer/)) $('.menu-item-customerplans').addClass('active');
-				}
-			}
-		});
-	</script>
 		<?php echo $js; ?>
 		<script type="text/javascript">
 			if (typeof google !== 'undefined') {

@@ -86,7 +86,9 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
     };
 
     $scope.init = function () {
-      $scope.initEdit();
+      $scope.initEdit(function (entity) {
+        angular.element('.menu-item-' + entity.type + 'plans').addClass('active');
+      });
       $scope.availableCostUnits = ['days', 'months'];
       $scope.availableOperations = ['set', 'accumulated', 'charge'];
       $scope.newIncludeType = {type: ""};
