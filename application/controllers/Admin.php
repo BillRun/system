@@ -63,6 +63,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->addJs($this->baseUrl . '/js/jquery.csv-0.71.min.js');
 		$this->addJs($this->baseUrl . '/js/main.js');
 		Yaf_Loader::getInstance(APPLICATION_PATH . '/application/helpers')->registerLocalNamespace('Admin');
+		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/view/admin_panel.ini');
 	}
 
 	protected function addCss($path) {
@@ -113,17 +114,15 @@ class AdminController extends Yaf_Controller_Abstract {
 			$entity = $model->getEmptyItem();
 		} else {
 			$entity = $model->getItem($id);
-		}
-
-		if (!$entity) {
-			$response->setBody(json_encode(array('error' => 'Could not find entity')));
-			$response->response();
-			return false;
-		}
-
-		$entity = $entity->getRawData();
-		foreach ($model->getHiddenKeys($entity, $type) as $key) {
-			if ($key !== '_id') unset($entity[$key]);
+			if (!$entity) {
+				$response->setBody(json_encode(array('error' => 'Could not find entity')));
+				$response->response();
+				return false;
+			}
+			$entity = $entity->getRawData();
+			foreach ($model->getHiddenKeys($entity, $type) as $key) {
+				if ($key !== '_id') unset($entity[$key]);
+			}
 		}
 		$response->setBody(json_encode(array('authorized_write' => AdminController::authorized('write'), 'entity' => $entity)));
 		$response->response();
@@ -135,20 +134,21 @@ class AdminController extends Yaf_Controller_Abstract {
 			return false;
 		$coll = Billrun_Util::filter_var($this->getRequest()->get('coll'), FILTER_SANITIZE_STRING);
 		$size = $this->getRequest()->get('size');
-		$page = $this->getRequest()->get('page');
 		$response = new Yaf_Response_Http();
 		$session = $this->getSession($coll);
-		/*
 		$filter = @json_decode($this->getRequest()->get('filter'));
 		if ($filter) {
 			foreach($filter as $key => $val) {
-				if (!is_array($val)) {
-					$session->$key = $val;
+				$session->$key = $val;
+				if (is_array($val)) {
+					$t = array();
+					foreach($val as $v) {
+						$t[$v] = $v;
+					}
+					$session->$key = $t;
 				}
 			}
 		}
-		 * 
-		 */
 		$show_prefix = $this->getSetVar($session, 'showprefix', 'showprefix', 0);
 		$sort = $this->applySort($coll);
 		$options = array(
@@ -176,7 +176,12 @@ class AdminController extends Yaf_Controller_Abstract {
 			$items[] = $i;
 		}
 		$params['data'] = $items;
-		$response->setBody(json_encode(array('items' => $params, 'pager' => $this->model->getPager(), 'authorized_write' => AdminController::authorized('write'))));
+		$response->setBody(json_encode(array(
+			'items' => $params,
+			'pager' => $this->model->getPager(),
+			'authorized_write' => AdminController::authorized('write'),
+			'filter_fields' => $this->model->getFilterFields()
+		)));
 		$response->response();
 		return false;
 	}
@@ -200,15 +205,23 @@ class AdminController extends Yaf_Controller_Abstract {
 	public function getAvailableServiceProvidersAction() {
 		if (!$this->allowed('read'))
 			return false;
-		$collection = Billrun_Factory::db()->serviceprovidersCollection()->distinct('name');
-		$availableServiceProviders = array();
-
+		if ($this->getRequest()->get('full_objects')) {
+			$serviceProvidersModel = new ServiceprovidersModel();
+			$collection = array();
+			foreach ($serviceProvidersModel->getData() as $serviceProvider) {
+				$raw = $serviceProvider->getRawData();
+				$raw['_id'] = strval($serviceProvider->getId());
+				$collection[] = $raw;
+			}
+		} else {
+			$collection = Billrun_Factory::db()->serviceprovidersCollection()->distinct('name');
+		}
 		$response = new Yaf_Response_Http();
 		$response->setBody(json_encode($collection));
 		$response->response();
 		return false;
 	}
-	
+
 	public function getViewINIAction() {
 		if (!$this->allowed('read'))
 			return false;
@@ -285,7 +298,11 @@ class AdminController extends Yaf_Controller_Abstract {
 	public function removeAction() {
 		if (!$this->allowed('write'))
 			die(json_encode(null));
-		$ids = explode(",", Billrun_Util::filter_var($this->getRequest()->get('ids'), FILTER_SANITIZE_STRING));
+		$ids = $this->getRequest()->get('ids');
+		if (!is_array($ids)) {
+			Billrun_Util::filter_var($ids, FILTER_SANITIZE_STRING);
+			$ids = explode(",", $this->getRequest()->get('ids'));
+		}
 		if (!is_array($ids) || count($ids) == 0 || empty($ids)) {
 			return;
 		}
@@ -371,18 +388,12 @@ class AdminController extends Yaf_Controller_Abstract {
 		if ($duplicate_rates) {
 			$params = array_merge($params, array('duplicate_rates' => $duplicate_rates));
 		}
-
-
-
-		
+		/*
 		$v->validate($params,$coll) ;
-		
-
 		if(!$v->isValid()) {	   	
-		
-				return $this->responseError($v->getErrors());
+			return $this->responseError($v->getErrors());
 		}
-		
+		*/
 		if ($type == 'update') {
 			if (strtolower($coll) === 'cards') {
 				//$this->getRequest()->set('update', $this->getRequest()->get('data'));
@@ -393,7 +404,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		} else if ($type == 'close_and_new') {
 		  	$saveStatus = $model->closeAndNew($params);
 		} else if (in_array($type, array('duplicate', 'new'))) {
-				$saveStatus = $model->duplicate($params);
+			$saveStatus = $model->duplicate($params);
 		}
 
 //		$ret = array(
@@ -466,6 +477,21 @@ class AdminController extends Yaf_Controller_Abstract {
 	/**
 	 * plans controller of admin
 	 */
+	public function chargingplansAction() {
+		if (!$this->allowed('read'))
+			return false;
+		$this->_request->setParam('plan_type', 'charging');
+		$this->forward('tabledate', array('table' => 'plans'));
+		return false;
+	}
+	public function customerplansAction() {
+		if (!$this->allowed('read'))
+			return false;
+		$this->_request->setParam('plan_type', 'customer');
+		$this->forward('tabledate', array('table' => 'plans'));
+		return false;
+	}
+
 	public function plansAction() {
 		if (!$this->allowed('read'))
 			return false;
@@ -531,7 +557,7 @@ class AdminController extends Yaf_Controller_Abstract {
 			'sort' => $sort,
 			'showprefix' => $showprefix,
 		);
-
+		if ($table === "plans") $options['plan_type'] = $this->_request->getParam('plan_type');
 		// set the model
 		self::initModel($table, $options);
 		$query = $this->applyFilters($table);
@@ -920,6 +946,9 @@ class AdminController extends Yaf_Controller_Abstract {
 		}
 		if ($this->getRequest()->getActionName() == "tabledate") {
 			$parameters['active'] = $this->_request->getParam("table");
+			if ($parameters['active'] === 'plans') {
+				$parameters['active'] = $this->_request->getParam('plan_type') . $parameters['active'];
+			}
 		}
 
 		$parameters['title'] = $this->title;
@@ -945,12 +974,15 @@ class AdminController extends Yaf_Controller_Abstract {
 				die("Error loading model");
 			}
 		}
+		if ($collection_name === "plans" && $options['plan_type']) $this->model->type = $options['plan_type'];
 		return $this->model;
 	}
 
 	protected function buildTableComponent($table, $filter_query, $options = array()) {
 		$this->title = str_replace('_', ' ', ucfirst($table));
-
+		if ($table === 'plans') {
+			$this->title = ucfirst($this->_request->getParam('plan_type')) . ' ' . $this->title;
+		}
 		// TODO: use ready pager/paginiation class (zend? joomla?) with auto print
 		$basic_params = array(
 			'title' => $this->title,
@@ -1030,6 +1062,9 @@ class AdminController extends Yaf_Controller_Abstract {
 					$query['$and'][] = $filter;
 			}
 		}
+		if ($table === "plans") {
+			$query['$and'][] = array('type' => $this->_request->getParam('plan_type'));
+		}
 		return $query;
 	}
 
@@ -1042,7 +1077,9 @@ class AdminController extends Yaf_Controller_Abstract {
 		} else {
 			if ($table === "subscribers") {
 				$sort = array('from' => -1);
-			} else {
+			} else if ($table === "lines") {
+				$sort = array('urt' => -1);
+			}else {
 				$sort = array();
 			}
 		}

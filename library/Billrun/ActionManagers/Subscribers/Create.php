@@ -35,7 +35,10 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 		$subscriberQueryKeys = 
 			Billrun_Factory::config()->getConfigValue('subscribers.create_query_fields');
 		foreach ($subscriberQueryKeys as $key) {
-			$subscriberQuery[$key] = $this->query[$key];
+			if (is_array($this->query[$key])) {
+				$subscriberQuery['$or'][][$key] = array('$in' => Billrun_Util::array_remove_compound_elements($this->query[$key]));
+			}
+			$subscriberQuery['$or'][][$key] = $this->query[$key];
 		}
 		
 		// Get only active subscribers.
@@ -56,7 +59,8 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 		// TODO: Use the subscriber class.
 		if($subscribers->count() > 0){
 			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base");
-			$this->reportError($errorCode, Zend_Log::NOTICE);
+			$parameters = http_build_query($this->query, '', ', ');
+			$this->reportError($errorCode, Zend_Log::NOTICE, array($parameters));
 			return true;
 		}
 		
@@ -138,7 +142,7 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 		}
 		
 		// Set the from and to values.
-		$this->query['from']= new MongoDate();
+		$this->query['creation_time'] = $this->query['from']= new MongoDate();
 		$this->query['to']= new MongoDate(strtotime('+100 years'));
 		
 		return true;

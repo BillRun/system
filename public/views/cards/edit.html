@@ -64,7 +64,7 @@
 					{{utils.getDisplayValue("to", "cards")}}
 				</div>
 				<div class='col-md-6'>
-					<input type="text" class="form-control" uib-datepicker-popup="yyyy-MM-dd" ng-model="entity.to" is-open="status.opened" date-disabled="utils.disabled('to', 'cards')" close-text="Close" />
+					<input type="text" class="form-control" uib-datepicker-popup="{{utils.getDateFormat()}}" ng-model="entity.to" is-open="status.opened" date-disabled="utils.disabled('to', 'cards')" close-text="Close" />
 					<span>
 					  <button type="button" class="btn btn-default" ng-click="status.opened = !status.opened"><i class="glyphicon glyphicon-calendar"></i></button>
 					</span>

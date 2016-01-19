@@ -7,8 +7,8 @@ foreach ($this->data as $item) {
 	else:
 		print '<tr>';
 	endif;
-	$href = ($this->active === 'plans' || $this->active === 'rates' || $this->active === 'balances' || $this->active === 'cards' || $this->active === 'subscribers') ? '/admin#/' . $this->active . '/update/' . $item['_id'] : '#popupModal';
-	$onclick = ($this->active === 'plans' || $this->active === 'rates' || $this->active === 'balances' || $this->active === 'cards' || $this->active === 'subscribers') ? '' : 'update_current(this);';
+	$href = ($this->active === 'subscribers_auto_renew_services' || $this->active === 'plans' || $this->active === 'rates' || $this->active === 'balances' || $this->active === 'cards' || $this->active === 'subscribers') ? '/admin#/' . $this->active . '/update/' . $item['_id'] : '#popupModal';
+	$onclick = ($this->active === 'subscribers_auto_renew_services' || $this->active === 'plans' || $this->active === 'rates' || $this->active === 'balances' || $this->active === 'cards' || $this->active === 'subscribers') ? '' : 'update_current(this);';
 	print '<td data-title=\'#\'>'
 		. '<label class="checkbox">'
 		. '<a onclick="' . $onclick . '" href="' . $href . '" data-type="update" data-toggle="modal" role="button" data-remote="">#' . ($c + 1) . '</a>&nbsp;'
@@ -22,7 +22,8 @@ foreach ($this->data as $item) {
 			$url = $this->baseUrl . '/admin/edit?type=' . strtolower($this->title) . '&amp;id=' . $item['_id'];
 			print '<a href="#popupModal " data-remote="' . $url . '" role="button" data-toggle="modal">' . $data . '</a>';
 		} else if (($h == 'from' || $h == 'to' || $h == 'urt' || $h == 'notify_time' || $h == 'last_renew_date') && $data) {
-			$dateFormat = "Y-m-d H:i:s";
+			//$dateFormat = "Y-d-m H:i:s";
+			$dateFormat = Billrun_Factory::config()->getConfigValue('admin_panel.date_format', 'Y-d-m H:i:s');
 			if (!empty($item["tzoffset"])) {
 				// TODO change this to regex and move to method in model
 				$tzoffset = $item['tzoffset'];

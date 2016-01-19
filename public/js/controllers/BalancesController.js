@@ -1,11 +1,22 @@
-app.controller('BalancesController', ['$scope', '$controller',
-  function ($scope, $controller) {
-    'use strict';
+angular
+  .module('BillrunApp')
+  .controller('BalancesController', BalancesController);
 
-    $controller('EditController', {$scope: $scope});
+function BalancesController($controller, Utils) {
+  'use strict';
 
-    $scope.init = function () {
-      $scope.entity = {};
-      $scope.initEdit($scope.entity);
-    };
-  }]);
+  var vm = this;
+  $controller('EditController', {$scope: vm});
+  vm.utils = Utils;
+
+  vm.init = function () {
+    vm.initEdit(function (entity) {
+      if (entity.to && _.result(entity.to, 'sec')) {
+        entity.to = new Date(entity.to.sec * 1000);
+      }
+      if (entity.from && _.result(entity.from, 'sec')) {
+        entity.from = new Date(entity.from.sec * 1000);
+      }
+    });
+  };
+}

@@ -1,4 +1,4 @@
-var app = angular.module('BillrunApp', ['ngRoute', 'JSONedit', 'ui.bootstrap']);
+var app = angular.module('BillrunApp', ['ngRoute', 'JSONedit', 'ui.bootstrap', 'xeditable']);
 app.config(function ($httpProvider, $routeProvider, $locationProvider) {
   $httpProvider.defaults.headers.post['Content-Type'] = 'application/x-www-form-urlencoded;charset=utf-8';
   /**
@@ -48,17 +48,23 @@ app.config(function ($httpProvider, $routeProvider, $locationProvider) {
     return angular.isObject(data) && String(data) !== '[object File]' ? param(data) : data;
   }];
 
-  $routeProvider.when('/:collection/list', {
+  $routeProvider.when('/service_providers', {
+    templateUrl: 'views/service_providers.html',
+    controller: 'ServiceProvidersController',
+    controllerAs: 'vm'
+  }).when('/:collection/list', {
     templateUrl: 'views/partials/collectionList.html',
-    controller: 'ListController'
+    controller: 'ListController',
+    controllerAs: 'vm'
   }).when('/:collection/:action/:id?', {
 	  templateUrl: function (urlattr) {
 		  return 'views/' + urlattr.collection + '/edit.html';
 	  }
   });
   $locationProvider.html5Mode({enabled: false, requireBase: false});
-}).run(['$http', '$rootScope', 'Utils', function ($http, $rootScope, Utils) {
+}).run(['$http', '$rootScope', 'editableOptions', function ($http, $rootScope, editableOptions) {
     'use strict';
+    editableOptions.theme = 'bs3';
     $http.get(baseUrl + '/admin/getViewINI').then(function (res) {
       $rootScope.fields = res.data;
     });

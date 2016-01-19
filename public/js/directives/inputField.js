@@ -4,8 +4,12 @@ app.directive('inputField', function () {
     scope: {
       model: '=',
       type: '=',
-      field: '='
+      field: '=',
+      fields: '='
     }, link: function (scope) {
+      if (_.result(scope, "model.showprefix")) {
+        scope.model.showprefix = Boolean(scope.model.showprefix);
+      }
     },templateUrl: 'views/partials/inputField.html'
   };
 })

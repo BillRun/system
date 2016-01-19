@@ -1,0 +1,50 @@
+<div class='container component' ng-init='vm.init()'>
+	<center>
+		<h2>Service Providers</h2>
+	</center>
+	<table class='table table-striped table-bordered'>
+		<thead>
+			<th style='width: 40%'>Name</th>
+			<th style='width: 30%'>Code</th>
+			<th style='width: 20%'>ID</th>
+			<th style='width: 10%'>Actions</th>
+		</thead>
+		<tbody>
+			<tr ng-repeat='service_provider in vm.serviceProviders track by $index'>
+				<td>
+					<span editable-text='vm.serviceProviders[$index].name' e-name="name" e-form="spedit">
+						{{vm.serviceProviders[$index].name}}
+					</span>
+				</td>
+				<td>
+					<span editable-text="vm.serviceProviders[$index].code" e-name="code" e-form="spedit">
+						{{vm.serviceProviders[$index].code}}
+					</span>
+				</td>
+				<td>
+					<span editable-text="vm.serviceProviders[$index].id" e-name="id" e-form="spedit">
+						{{vm.serviceProviders[$index].id}}
+					</span>
+				</td>
+				<td>
+					<form editable-form name="spedit" class="form-buttons form-inline"
+						  onbeforesave="vm.saveServiceProvider($data, service_provider)"
+						  ng-show="spedit.$visible" shown="vm.inserted === service_provider">
+						<button type="submit" ng-disabled="spedit.$waiting" class="btn btn-primary">
+							<i class="glyphicon glyphicon-ok"></i>
+						</button>
+						<button type="button" ng-disabled="spedit.$waiting"
+								ng-click="spedit.$cancel()" class="btn btn-default">
+							<i class="glyphicon glyphicon-remove"></i>
+						</button>
+					</form>
+					<div class="buttons" ng-show="!spedit.$visible">
+						<i class="glyphicon glyphicon-edit" ng-click="spedit.$show()"></i>
+						<i class='glyphicon glyphicon-minus-sign' ng-click="vm.removeServiceProvider(service_provider)"></i>
+					</div>
+				</td>
+			</tr>
+		</tbody>
+	</table>
+	<button type='button' ng-clikc='vm.addServiceProvider()' class='btn btn-primary'>Add Service Provider</button>
+</div>

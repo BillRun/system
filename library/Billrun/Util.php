@@ -450,6 +450,18 @@ class Billrun_Util {
 	}
 
 	/**
+	 * remove all elements that are not string and not numeric
+	 * @param array $ar array to verify
+	 * @return array
+	 */
+	public static function array_remove_compound_elements($ar) {
+		if (!is_array($ar)) {
+			return array();
+		}
+		return array_filter($ar, function($var) {return is_string($var) || is_numeric($var);});
+	}
+
+	/**
 	 * method to convert phone number to msisdn
 	 * 
 	 * @param string $phoneNumber the phone number to convert

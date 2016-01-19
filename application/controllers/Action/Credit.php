@@ -83,7 +83,7 @@ class CreditAction extends ApiAction {
 					'urt' => $entity['urt'],
 					'calc_name' => false,
 					'calc_time' => false,
-			), array('w' => 1));
+			));
 		}
 	}
 

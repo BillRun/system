@@ -47,7 +47,7 @@ app.controller('CardsController', ['$scope', '$window', '$routeParams', 'Databas
         $scope.card_status = $scope.entity.status;
         $scope.authorized_write = res.data.authorized_write;
         if (_.isObject($scope.entity.to)) {
-          $scope.entity.to = $scope.entity.to.sec * 1000;
+          $scope.entity.to = new Date($scope.entity.to.sec * 1000);
         }
         $scope.cardStatuses = ["Idle", "Active", "Disqualified", "Used", "Expired", "Stolen"];
       }, function (err) {

@@ -47,9 +47,8 @@ class BalancesModel extends TableModel {
 	}
 	
 	protected function getBalancesFields() {
-		$basic_columns = Billrun_Factory::config()->getConfigValue('admin_panel.balances.table_columns');
-		$extra_columns = Billrun_Factory::config()->getConfigValue('admin_panel.balances.extra_columns');
-		
+		$basic_columns = Billrun_Config::getInstance()->getConfigValue('admin_panel.balances.table_columns', array());
+		$extra_columns = Billrun_Config::getInstance()->getConfigValue('admin_panel.balances.extra_columns', array());
 		return array_merge($basic_columns, $extra_columns);
 	}
 
@@ -98,7 +97,7 @@ class BalancesModel extends TableModel {
 				'db_key' => 'sid',
 				'input_type' => 'number',
 				'comparison' => 'equals',
-				'display' => 'Subscriber id',
+				'display' => 'Subscriber No',
 				'default' => '',
 			),
 			'aid' => array(
@@ -106,34 +105,34 @@ class BalancesModel extends TableModel {
 				'db_key' => 'aid',
 				'input_type' => 'number',
 				'comparison' => 'equals',
-				'display' => 'Account id',
+				'display' => 'BAN',
 				'default' => '',
 			),
-			'usage_type' => array(
-				'key' => 'manual_key',
-				'db_key' => 'nofilter',
-				'input_type' => 'multiselect',
-				'display' => 'Usage',
-				'values' => $usage_filter_values,
-				'singleselect' => 1,
-				'default' => array(),
-			),
-			'usage_filter' => array(
-				'key' => 'manual_operator',
-				'db_key' => 'nofilter',
-				'input_type' => 'multiselect',
-				'display' => '',
-				'values' => $operators,
-				'singleselect' => 1,
-				'default' => array(),
-			),
-			'usage_value' => array(
-				'key' => 'manual_value',
-				'db_key' => 'nofilter',
-				'input_type' => 'number',
-				'display' => '',
-				'default' => '',
-			),
+//			'usage_type' => array(
+//				'key' => 'manual_key',
+//				'db_key' => 'nofilter',
+//				'input_type' => 'multiselect',
+//				'display' => 'Usage',
+//				'values' => $usage_filter_values,
+//				'singleselect' => 1,
+//				'default' => array(),
+//			),
+//			'usage_filter' => array(
+//				'key' => 'manual_operator',
+//				'db_key' => 'nofilter',
+//				'input_type' => 'multiselect',
+//				'display' => '',
+//				'values' => $operators,
+//				'singleselect' => 1,
+//				'default' => array(),
+//			),
+//			'usage_value' => array(
+//				'key' => 'manual_value',
+//				'db_key' => 'nofilter',
+//				'input_type' => 'number',
+//				'display' => '',
+//				'default' => '',
+//			),
 			'plan' => array(
 				'key' => 'plan',
 				'db_key' => 'current_plan',
@@ -143,15 +142,6 @@ class BalancesModel extends TableModel {
 				'ref_key' => 'name',
 				'display' => 'Plan',
 				'values' => $planNames,
-				'default' => array(),
-			),
-			'billrun' => array(
-				'key' => 'billrun',
-				'db_key' => 'billrun_month',
-				'input_type' => 'multiselect',
-				'comparison' => '$in',
-				'display' => 'Billrun',
-				'values' => $billruns,
 				'default' => array(),
 			),
 		);
@@ -168,36 +158,53 @@ class BalancesModel extends TableModel {
 					'width' => 2,
 				),
 			),
-			1 => array(
-				'billrun' => array(
-					'width' => 2,
-				),
-			),
 			2 => array(
 				'plan' => array(
 					'width' => 2,
 				),
 			),
-			3 => array(
-				'usage_type' => array(
-					'width' => 2,
-				),
-				'usage_filter' => array(
-					'width' => 1,
-				),
-				'usage_value' => array(
-					'width' => 1,
-				),
-			)
+//			3 => array(
+//				'usage_type' => array(
+//					'width' => 2,
+//				),
+//				'usage_filter' => array(
+//					'width' => 1,
+//				),
+//				'usage_value' => array(
+//					'width' => 1,
+//				),
+//			)
 		);
 		return $filter_field_order;
 	}
 
 	public function getData($filter_query = array()) {
- 		$resource = parent::getData($filter_query);
+		$resource = parent::getData($filter_query);
 		$ret = array();
-		foreach($resource as $item) {
- 			if ($current_plan = $this->getDBRefField($item, 'current_plan')) {
+//		$aggregate = Billrun_Config::getInstance()->getConfigValue('admin_panel.balances.aggregate', false);
+//		$aggregate = $conf['admin_panel']['balances']['aggregate'];
+		foreach ($resource as $item) {
+			if (Billrun_Config::getInstance()->getConfigValue('admin_panel.balances.aggregate', 0)) {
+				$totals = array();
+				$units = array();
+				foreach ($item['balance']['totals'] as $key => $val) {
+					$unit = Billrun_Util::getUsagetUnit($key);
+					if ($val['cost']) {
+						$totals[] = $val['cost'];
+						$units[] = $unit;
+					} else if ($val['usagev']) {
+						$totals[] = $val['usagev'];
+						$units[] = $unit;
+					}
+				}
+				if ($item['balance']['cost']) {
+					$totals[] = $item['balance']['cost'];
+					$units[] = Billrun_Util::getUsagetUnit('cost');
+				}
+				$item['totals'] = implode(',', $totals);
+				$item['units'] = implode(',', $units);
+			}
+			if ($current_plan = $this->getDBRefField($item, 'current_plan')) {
 				$item['current_plan'] = $current_plan['name'];
 			}
 			$ret[] = $item;

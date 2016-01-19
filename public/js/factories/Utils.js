@@ -33,9 +33,23 @@ app.factory('Utils', ['$rootScope', function ($rootScope) {
       return false;
     }
 
+    function getDateFormat(field, coll) {
+      if (field === undefined) {
+        if (coll === undefined) {
+          return $rootScope.fields['date_format'];
+        }
+        return $rootScope.fields[coll]['date_format'];
+      }
+      if (coll === undefined) {
+        return $rootScope.fields[field]['date_format'];
+      }
+      return $rootScope.fields[coll][field]['date_format'];
+    }
+
     return {
       getDisplayValue: getDisplayValue,
       display: display,
-      disabled: disabled
+      disabled: disabled,
+      getDateFormat: getDateFormat
     };
   }]);

@@ -6,6 +6,9 @@ app.controller('EditController', ['$scope', 'Utils', '$routeParams', '$window', 
     $scope._ = _;
     $scope.entity = {};
 
+    angular.element('.menu-item-home').removeClass('active');
+    angular.element('.menu-item-' + $routeParams.collection).addClass('active');
+
     $scope.cancel = function () {
       $window.location = baseUrl + '/admin/' + $routeParams.collection;
     };
@@ -15,10 +18,10 @@ app.controller('EditController', ['$scope', 'Utils', '$routeParams', '$window', 
         entity: $scope.entity,
         coll: $routeParams.collection,
         type: $routeParams.action,
-        duplicate_rates: ($scope.duplicate_rates ? $scope.duplicate_rates.on : false)
+        duplicate_rates: ($scope.duplicate_rates ? $scope.duplicate_rates.on : false),
       };
       Database.saveEntity(params).then(function (res) {
-        $window.location = baseUrl + '/admin/' + $routeParams.collection;
+        $window.location = baseUrl + '/admin/' + $routeParams.collection.replace(/_/g, '');
       }, function (err) {
         alert("Connection error!");
       });
@@ -36,14 +39,18 @@ app.controller('EditController', ['$scope', 'Utils', '$routeParams', '$window', 
       $scope.advancedMode = mode;
     };
 
-    $scope.initEdit = function () {
+    $scope.initEdit = function (callback) {
       var params = {
-        coll: $routeParams.collection,
-        id: $routeParams.id
+        coll: $routeParams.collection.replace(/_/g, ''),
+        id: $routeParams.id,
+        type: $routeParams.action
       };
+      $scope.advancedMode = false;
+      $scope.action = $routeParams.action;
       Database.getEntity(params).then(function (res) {
         $scope.entity = res.data.entity;
         $scope.authorized_write = res.data.authorized_write;
+        if (callback !== undefined) callback($scope.entity);
       }, function (err) {
         alert("Connection error!");
       });
