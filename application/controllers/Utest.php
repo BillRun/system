@@ -53,6 +53,7 @@ class UtestController extends Yaf_Controller_Abstract {
 	 */
 	public function init() {
 		Billrun_Factory::log('Start Unit testing');
+		
 		if (Billrun_Factory::config()->isProd()) {
 			Billrun_Factory::log('Exit Unit testing. Unit testing not allowed on production');
 			die();
@@ -63,14 +64,25 @@ class UtestController extends Yaf_Controller_Abstract {
 			header("Location: " . $this->siteUrl . "/admin/login");
 			die();
 		}
-		$this->protocol = (empty($this->getRequest()->getServer('HTTPS'))) ? 'http://' : 'https	://';
-		$this->subdomain = $this->getRequest()->getBaseUri();
-		$this->siteUrl = $this->protocol . $this->getRequest()->getServer('HTTP_HOST') . $this->subdomain;
-		$this->apiUrl = $this->siteUrl . '/api';
-		$this->reference = rand(1000000000, 9999999999);
+		
 		//Load Test conf file
 		$this->conf = Billrun_Config::getInstance(new Yaf_Config_Ini(APPLICATION_PATH . '/conf/utest/conf.ini'));
 		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/view/menu.ini');
+		
+		//init self params
+		$protocol = $this->conf->getConfigValue('test.protocol', '');
+		if(empty($protocol)){
+			$protocol = (empty($this->getRequest()->getServer('HTTPS'))) ? 'http' : 'https';
+		}
+		$this->protocol = $protocol.'://';
+		$this->subdomain = $this->getRequest()->getBaseUri();
+		$siteUrl = $this->conf->getConfigValue('test.hostname', '');
+		if(empty($siteUrl)){
+			$siteUrl =  $this->getRequest()->getServer('HTTP_HOST') . $this->subdomain;
+		}
+		$this->siteUrl = $this->protocol . $siteUrl;
+		$this->apiUrl = $this->siteUrl . '/api';
+		$this->reference = rand(1000000000, 9999999999);
 	}
 
 	/**
