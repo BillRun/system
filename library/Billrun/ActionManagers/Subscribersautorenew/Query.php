@@ -85,7 +85,6 @@ class Billrun_ActionManagers_Subscribersautorenew_Query extends Billrun_ActionMa
 		// TODO: Should this include the total_cost??
 		foreach ($includeList as $includeRoot => $includeValues) {
 			if(($includeRoot == 'cost') && (is_numeric($includeValues))) {
-				$includeRoot = "total_cost";
 				$includeValues['pp_includes_name'] = "Total";
 				$includeValues = array('usagev' => $includeValues);
 			} else if(!isset($includeValues['pp_includes_name'])) {
