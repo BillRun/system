@@ -22,6 +22,7 @@ app.controller('SubscribersController', ['$scope', '$window', '$routeParams', 'D
       $scope.err ={};
       Database.saveEntity(params).then(function (res) {
         console.log(res)  ;
+        
             if(redirect) { 
               $window.location = baseUrl + '/admin/' + $routeParams.collection;
             }

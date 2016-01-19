@@ -128,6 +128,7 @@ public function UniqueValidator($attribute , $value , $validationOptions =array(
 
     $checkUniqueQuery = array($attribute => $value);
     if($MongoID =  $validationOptions["objectRef"]["_id"])  { 
+      
       $checkUniqueQuery =  array_merge($checkUniqueQuery,array( "_id" => array('$ne' => new MongoId((string) $MongoID )))) ;
     }
     
