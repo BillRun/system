@@ -2,27 +2,34 @@ app.factory('Utils', ['$rootScope', function ($rootScope) {
     'use strict';
 
     function getDisplayValue(str, coll) {
-      if ($rootScope.fields[coll] && $rootScope.fields[coll][str]
-        && $rootScope.fields[coll][str]['display_value'])
-        return $rootScope.fields[coll][str]['display_value'];
-      if ($rootScope.fields[str] && $rootScope.fields[str]['display_value'])
-        return $rootScope.fields[str]['display_value'];
-      return _.capitalize(str.replace('_', ' '));
+      var globalStr = _.result($rootScope,'fields[coll].display_value[str]');  
+      var str = _.result($rootScope,'fields[coll].display_value[str]',str);  
+      var returnStr  = globalStr|| str ; 
+      return _.capitalize(returnStr.replace(/_/g, ' '));
     }
 
     function display(field, coll) {
-      if ($rootScope.fields[coll] && $rootScope.fields[coll][field] && $rootScope.fields[coll][field]['display'])
-        return parseInt($rootScope.fields[coll][field]['display'], 10);
-      if ($rootScope.fields[field] && $rootScope.fields[field]['display'])
-        return parseInt($rootScope.fields[field]['display'], 10);
+      var str = _.result($rootScope,'fields[coll].display[field]');  
+      if(str !== undefined)  {
+          return ( parseInt(str,10) == 1 ?  true :  false ); 
+      } 
+
+      var globalStr = _.result($rootScope,'fields.display[field]');  
+      if(globalStr !== undefined)  {
+          return ( parseInt(globalStr,10) == 1 ?  true : false ); 
+      }
       return true;
     }
 
     function disabled(field, coll) {
-      if ($rootScope.fields[coll] && $rootScope.fields[coll][field] && $rootScope.fields[coll][field]['disabled'])
-        return parseInt($rootScope.fields[coll][field]['disabled'], 10);
-      if ($rootScope.fields[field] && $rootScope.fields[field]['disabled'])
-        return parseInt($rootScope.fields[field]['disabled'], 10);
+      var str = _.result($rootScope,'fields[coll].disabled[field]');  
+      if(str !== undefined)  {
+          return (parseInt(str,10) == 1 ?  true : false ); 
+      }
+      var globalStr = _.result($rootScope,'fields.disabled[field]');  
+      if(globalStr !== undefined)  {
+          return ( parseInt(globalStr,10) == 1 ?  true :  false ); 
+      }
       return false;
     }
 

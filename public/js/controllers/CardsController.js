@@ -4,17 +4,21 @@ app.controller('CardsController', ['$scope', '$window', '$routeParams', 'Databas
 
     $controller('EditController', {$scope: $scope});
 
-    $scope.save = function () {
+    $scope.save = function (redirect) {
       $scope.entity.to = $scope.entity.to / 1000;
       var params = {
         entity: $scope.entity,
         coll: 'cards',
         type: $routeParams.action
       };
+      $scope.err ={};
       Database.saveEntity(params).then(function (res) {
-        $window.location = baseUrl + '/admin/' + $routeParams.collection;
+        if(redirect) { 
+          $window.location = baseUrl + '/admin/' + $routeParams.collection;
+        }
       }, function (err) {
-        alert("Connection error!");
+        $scope.err = err;
+       
       });
     };
 

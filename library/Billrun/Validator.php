@@ -25,6 +25,7 @@ class Billrun_Validator {
 		'unique'=>'UniqueValidator',
 		'compare'=>'CompareValidator',
 		'length'=>'LengthValidator',
+    'uniqueWith'=>'UniqueWithValidator',
 		'in'=>'RangeValidator',
 		'number'=>'NumberValidator',
     'integer'=>'IntegerValidator', 
@@ -113,9 +114,7 @@ public function UniqueValidator($attribute , $value , $validationOptions =array(
         return true;      
     }
 
-
     $collection = Billrun_Factory::db()->getCollection($validationOptions["collection"]);
-
     if (!($collection instanceof Mongodloid_Collection)) {
       return true;
     }
@@ -129,18 +128,61 @@ public function UniqueValidator($attribute , $value , $validationOptions =array(
 
     $checkUniqueQuery = array($attribute => $value);
     if($MongoID =  $validationOptions["objectRef"]["_id"])  { 
-
-      $checkUniqueQuery =  array_merge($checkUniqueQuery,array( "_id" => array('$ne' => (string)$MongoID))) ;
+      $checkUniqueQuery =  array_merge($checkUniqueQuery,array( "_id" => array('$ne' => new MongoId((string) $MongoID )))) ;
     }
     
    
     $cursor =  $collection->find($checkUniqueQuery,array())  ; 
-
     if($cursor->count())   {
       $this->addError($attribute,$message,$code,$index) ;
       return false; 
     }
+
     return true ;
+  }
+
+
+public function UniqueWithValidator($attribute , $value , $validationOptions =array() , $index=-1) { 
+
+    $code = "uniqueWith" ;
+    if(!(isset($validationOptions["attributes"])  && is_array($validationOptions["attributes"]))) {
+        return true;      
+    }
+
+    $collection = Billrun_Factory::db()->getCollection($validationOptions["collection"]);
+    if (!($collection instanceof Mongodloid_Collection)) {
+      return true;
+    }
+
+    if(isset($validationOptions["message"])) {
+      $message = $validationOptions['message'] ;
+    } else {
+      $message = $attribute .  " with value : ". $value ." has already been taken" ;
+    }
+
+    $checkUniqueQuery = array();
+
+    foreach($validationOptions["attributes"] as $attrIndex => $attr) {
+      //if(!isset($validationOptions["objectRef"][$attr])){ 
+        $checkUniqueQuery[$attr] = $validationOptions["objectRef"][$attr] ;
+      //}
+    }
+
+    if($MongoID =  $validationOptions["objectRef"]["_id"])  { 
+       $checkUniqueQuery =  array_merge($checkUniqueQuery,array( "_id" => array('$ne' => new MongoId((string) $MongoID )))) ;
+    }
+    
+     Billrun_Factory::log("validationOptions : " .print_r($validationOptions,1) , Zend_Log::DEBUG);
+     Billrun_Factory::log("checkUniqueQuery : " .print_r($checkUniqueQuery,1) , Zend_Log::DEBUG);
+   
+    $cursor =  $collection->find($checkUniqueQuery,array())  ; 
+    Billrun_Factory::log("$cursor->count() :" .print_r($cursor,true) , Zend_Log::DEBUG);
+    if($cursor->count())   {
+      $this->addError($attribute,$message,$code,$index) ;
+      return false; 
+    }
+
+    return true;
   }
 
 
@@ -244,7 +286,7 @@ public function LengthValidator ($attribute , $value  ,$validationOptions = arra
             $checkOptions = array("checkValue" => $checkOptions)  ;
           }
 
-          if($check == "unique") {
+          if($check === "unique" || $check === "uniqueWith") {
             if(!isset($checkOptions["collection"])) { 
               $checkOptions = array_merge(array("collection" => $collection) ,$checkOptions);
             }
@@ -320,4 +362,8 @@ public function LengthValidator ($attribute , $value  ,$validationOptions = arra
 
       return $stepinto;
   }
- } 
+
+  //Custome validation test 
+
+
+  } 
