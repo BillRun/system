@@ -21,7 +21,7 @@ class UtestController extends Yaf_Controller_Abstract {
 	 * @var string
 	 */
 	protected $protocol = '';
-	protected $subdomain = '';
+	protected $baseUrl = '';
 	protected $siteUrl = '';
 	protected $apiUrl = '';
 	protected $conf = '';
@@ -53,6 +53,7 @@ class UtestController extends Yaf_Controller_Abstract {
 	 */
 	public function init() {
 		Billrun_Factory::log('Start Unit testing');
+		
 		if (Billrun_Factory::config()->isProd()) {
 			Billrun_Factory::log('Exit Unit testing. Unit testing not allowed on production');
 			die();
@@ -63,14 +64,28 @@ class UtestController extends Yaf_Controller_Abstract {
 			header("Location: " . $this->siteUrl . "/admin/login");
 			die();
 		}
-		$this->protocol = (empty($this->getRequest()->getServer('HTTPS'))) ? 'http://' : 'https	://';
-		$this->subdomain = $this->getRequest()->getBaseUri();
-		$this->siteUrl = $this->protocol . $this->getRequest()->getServer('HTTP_HOST') . $this->subdomain;
-		$this->apiUrl = $this->siteUrl . '/api';
-		$this->reference = rand(1000000000, 9999999999);
+		
 		//Load Test conf file
 		$this->conf = Billrun_Config::getInstance(new Yaf_Config_Ini(APPLICATION_PATH . '/conf/utest/conf.ini'));
 		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/view/menu.ini');
+		
+		//init self params
+		$protocol = $this->conf->getConfigValue('test.protocol', '');
+		if(empty($protocol)){
+			$protocol = (empty($this->getRequest()->getServer('HTTPS'))) ? 'http' : 'https';
+		}
+		
+		$this->protocol = $protocol.'://';
+		$this->baseUrl = $this->getRequest()->getBaseUri();
+		
+		$hostname = $this->conf->getConfigValue('test.hostname', '');
+		if(empty($hostname)){
+			$hostname =  $this->getRequest()->getServer('HTTP_HOST') . $this->baseUrl;
+		}
+		
+		$this->siteUrl = $this->protocol . $hostname;
+		$this->apiUrl = $this->siteUrl . '/api';
+		$this->reference = rand(1000000000, 9999999999);
 	}
 
 	/**
@@ -100,7 +115,7 @@ class UtestController extends Yaf_Controller_Abstract {
 		}
 		
 		$this->getView()->tests = $tests;
-		$this->getView()->subdomain = $this->subdomain;
+		$this->getView()->baseUrl = $this->baseUrl;
 		$this->getView()->test_collection = $test_collection;
 		$this->getView()->test_collection_label = $this->cleanLabel($test_collection);
 
@@ -200,7 +215,7 @@ class UtestController extends Yaf_Controller_Abstract {
 		$this->getView()->test = $utest;
 		$this->getView()->sid = $sid;
 		$this->getView()->sid_after_test = $sid_after_test;
-		$this->getView()->subdomain = $this->subdomain;
+		$this->getView()->baseUrl = $this->baseUrl;
 		$this->getView()->cards = isset($cards) ? $cards : null;
 		$this->getView()->lines = isset($lines) ? $lines : null;
 		$this->getView()->balances = $balance;
@@ -226,7 +241,11 @@ class UtestController extends Yaf_Controller_Abstract {
 		$URL = $this->apiUrl . trim("/" . $endpoint); // 'realtimeevent' / 'balances'
 		//Calc microtine for API
 		$time_start = microtime(true);
-		$res = Billrun_Util::sendRequest($URL, $data, $methodType);
+		try {
+			$res = Billrun_Util::sendRequest($URL, $data, $methodType);
+		} catch (Exception $exc) {
+			$res = "Send Request error (" . $exc->getCode() . ") " . $exc->getMessage();
+		}
 		$time_end = microtime(true);
 		$duration = $time_end - $time_start;
 
