@@ -84,7 +84,11 @@ class Billrun_ActionManagers_Subscribersautorenew_Query extends Billrun_ActionMa
 		// TODO: Is this filtered by priority?
 		// TODO: Should this include the total_cost??
 		foreach ($includeList as $includeRoot => $includeValues) {
-			if(!isset($includeValues['pp_includes_name'])) {
+			if(($includeRoot === 'cost') && (is_int($includeValues))) {
+				$includeRoot = "total_cost";
+				$includeValues['pp_includes_name'] = "Total";
+				$includeValues = array('usagev' => $includeValues);
+			} else if(!isset($includeValues['pp_includes_name'])) {
 				continue;
 			}
 			
