@@ -66,6 +66,20 @@ class Billrun_ActionManagers_Subscribersautorenew_Query extends Billrun_ActionMa
 		return true;
 	}
 	
+	protected function setIncludeValuesToAdd(&$includesToReturn, $root, $values) {
+		$toAdd = array();
+			
+		// Set the record values.
+		$toAdd['unit_type'] = Billrun_Util::getUsagetUnit($root);			
+
+		if(isset($values['usagev'])) {
+			$toAdd['ammount'] = $values['usagev'];
+		} else {
+			$toAdd['ammount'] = $values['cost'];
+		}
+		$includesToReturn [$values['pp_includes_name']] = $toAdd;
+	}
+	
 	/**
 	 * Get the 'includes' array to return for the plan record.
 	 * @param Mongodloid_Entity $planRecord - Record for the current used plan
@@ -84,24 +98,27 @@ class Billrun_ActionManagers_Subscribersautorenew_Query extends Billrun_ActionMa
 		// TODO: Is this filtered by priority?
 		// TODO: Should this include the total_cost??
 		foreach ($includeList as $includeRoot => $includeValues) {
-			if(($includeRoot == 'cost') && (is_numeric($includeValues))) {
-				$includeValues['pp_includes_name'] = "Total";
-				$includeValues = array('usagev' => $includeValues);
+			if($includeRoot == 'cost') {
+				if(is_numeric($includeValues)) {
+					$includeValues = array('usagev' => $includeValues);
+					$includeValues['pp_includes_name'] = $planRecord['pp_includes_name'];
+				} else {
+					foreach ($includeValues as $value) {
+						if(!is_array($value)) {
+							continue;
+						}
+						
+						if(isset($value['value'])) {
+							$value['usagev'] = $value['value'];
+						}
+						$this->setIncludeValuesToAdd($includesToReturn, $includeRoot, $value);
+					}
+				}
 			} else if(!isset($includeValues['pp_includes_name'])) {
 				continue;
 			}
 			
-			$toAdd = array();
-			
-			// Set the record values.
-			$toAdd['unit_type'] = Billrun_Util::getUsagetUnit($includeRoot);			
-			
-			if(isset($includeValues['usagev'])) {
-				$toAdd['ammount'] = $includeValues['usagev'];
-			} else {
-				$toAdd['ammount'] = $includeValues['cost'];
-			}
-			$includesToReturn [$includeValues['pp_includes_name']] = $toAdd;
+			$this->setIncludeValuesToAdd($includesToReturn, $includeRoot, $includeValues);
 		}
 		
 		return $includesToReturn;
