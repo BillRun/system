@@ -19,18 +19,12 @@ app.controller('SubscribersController', ['$scope', '$window', '$routeParams', 'D
         type: $scope.action
       };
       
-      $scope.errorMessages =[];
+      $scope.err ={};
       Database.saveEntity(params).then(function (res) {
         console.log(res)  ;
-        if(!_.isUndefined(res.data.errorMessages)) {
-           $scope.errorMessages = res.data.errorMessages;
-        }  else { 
             if(redirect) { 
               $window.location = baseUrl + '/admin/' + $routeParams.collection;
             }
-        }
-
-        
       }, function (err) {
         $scope.err=err;
         console.log(err);
