@@ -4,10 +4,6 @@ app.controller('SubscribersController', ['$scope', '$window', '$routeParams', 'D
 
     $controller('EditController', {$scope: $scope});
 
-    $scope.flash =  { 
-      message :"" ,
-      cls:""
-    };
 
     $scope.save = function (redirect) {
       var params = {
@@ -16,7 +12,7 @@ app.controller('SubscribersController', ['$scope', '$window', '$routeParams', 'D
         type: $scope.action
       };
       $scope.err ={};
-      Database.saveEntity(params).then(function (res) {
+      Database.saveEntity(params).the        console.log(res)  ;n(function (res) {
         if(redirect) { 
           $window.location = baseUrl + '/admin/' + $routeParams.collection;
         }

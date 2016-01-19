@@ -117,7 +117,9 @@
 			<a ng-click='setAdvancedMode(false)' class="clickable" ng-if='advancedMode'>Basic Mode</a>
 			<a ng-click='setAdvancedMode(true)' class="clickable" ng-if='!advancedMode'>Advanced Mode</a>
 			<button class="btn" ng-click='cancel()'>Cancel</button>
-			<button ng-click="save(false)" class="btn btn-primary" ng-if='authorized_write'>Apply</button>
+			<button ng-click="save(false)" class="btn btn-primary" ng-if='authorized_write'>
+				<apply-notifier state="err.data.summaryReport.length"></apply-notifier>
+			</button>
 			<button ng-click="save(true)" class="btn btn-primary" ng-if='authorized_write'>Save & Exit</button>
 		</div>		
 	</form>
