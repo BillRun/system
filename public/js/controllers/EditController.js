@@ -13,7 +13,8 @@ app.controller('EditController', ['$scope', 'Utils', '$routeParams', '$window', 
       $window.location = baseUrl + '/admin/' + $routeParams.collection;
     };
 
-    $scope.save = function () {
+    $scope.save = function (redirect) {
+      $scope.err ={};
       var params = {
         entity: $scope.entity,
         coll: $routeParams.collection,
@@ -21,9 +22,12 @@ app.controller('EditController', ['$scope', 'Utils', '$routeParams', '$window', 
         duplicate_rates: ($scope.duplicate_rates ? $scope.duplicate_rates.on : false),
       };
       Database.saveEntity(params).then(function (res) {
-        $window.location = baseUrl + '/admin/' + $routeParams.collection.replace(/_/g, '');
+        if(redirect)   {
+           $window.location = baseUrl + '/admin/' + $routeParams.collection.replace(/_/g, '');
+        }
+       
       }, function (err) {
-        alert("Connection error!");
+          $scope.err=err;
       });
     };
 

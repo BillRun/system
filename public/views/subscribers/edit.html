@@ -4,11 +4,8 @@
 	</center>
     <ul class="list-group" ng-show="err.data.summaryReport.length">
       <li class="list-group-item h4 list-group-item-danger">Please resolve the problems below</li>
-
 			<li class="errorMessage list-group-item" ng-repeat="m in err.data.summaryReport">{{m}}</li>
 		</ul>
-
-
 	<div ng-show="flash.message" ng-class="flash.cls">{{flash.message}}</div>
 	<form class='form-inline'>
 		<div ng-if='!advancedMode'>
@@ -117,8 +114,9 @@
 			<a ng-click='setAdvancedMode(false)' class="clickable" ng-if='advancedMode'>Basic Mode</a>
 			<a ng-click='setAdvancedMode(true)' class="clickable" ng-if='!advancedMode'>Advanced Mode</a>
 			<button class="btn" ng-click='cancel()'>Cancel</button>
-			<button ng-click="save(false)" class="btn btn-primary" ng-if='authorized_write'>
-				<apply-notifier state="err.data.summaryReport.length"></apply-notifier>
+			<button apply-notifier 
+							onerr="err" 
+							text="Apply" ng-click="save(false)" class="btn" ng-if='authorized_write'>
 			</button>
 			<button ng-click="save(true)" class="btn btn-primary" ng-if='authorized_write'>Save & Exit</button>
 		</div>		

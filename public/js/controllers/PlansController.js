@@ -76,7 +76,8 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
       return !_.isUndefined($scope.entity.include[include_type]);
     };
 
-    $scope.save = function () {
+    $scope.save = function (redirect) {
+       $scope.err ={};
       var params = {
         entity: $scope.entity,
         coll: $routeParams.collection,
@@ -84,9 +85,11 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
         duplicate_rates: ($scope.duplicate_rates ? $scope.duplicate_rates.on : false)
       };
       Database.saveEntity(params).then(function (res) {
-        $window.location = baseUrl + '/admin/' + $location.search().type + 'plans';
+        if(redirect) {
+          $window.location = baseUrl + '/admin/' + $location.search().type + 'plans';
+        }
       }, function (err) {
-        alert("Connection error!");
+        $scope.err=err;
       });
     };
     $scope.cancel = function () {
@@ -105,7 +108,7 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
       Database.getEntity(params).then(function (res) {
         if ($routeParams.action !== "new") {
           $scope.entity = res.data.entity;
-          if (_.isUndefined(entity.include)) entity.include = {};
+          if (_.isUndefined($scope.entity.include)) entity.include = {};
         } else if ($location.search().type === "charging") {
           $scope.entity = {
             "name" : "",
