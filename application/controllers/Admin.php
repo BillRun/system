@@ -389,6 +389,9 @@ class AdminController extends Yaf_Controller_Abstract {
 			$params = array_merge($params, array('duplicate_rates' => $duplicate_rates));
 		}
 		
+		//Billrun_Factory::log("USER: " . var_export( Billrun_Factory::user() ), Zend_log::INFO);
+
+   
 		$v->validate($params,$coll) ;
 		if(!$v->isValid()) {	   	
 			return $this->responseError($v->getErrors());
