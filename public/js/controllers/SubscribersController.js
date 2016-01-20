@@ -4,7 +4,6 @@ app.controller('SubscribersController', ['$scope', '$window', '$routeParams', 'D
 
     $controller('EditController', {$scope: $scope});
 
-
     $scope.save = function (redirect) {
       var params = {
         entity: $scope.entity,
@@ -12,7 +11,7 @@ app.controller('SubscribersController', ['$scope', '$window', '$routeParams', 'D
         type: $scope.action
       };
       $scope.err ={};
-      Database.saveEntity(params).the        console.log(res)  ;n(function (res) {
+      Database.saveEntity(params).then(function (res) {
         if(redirect) { 
           $window.location = baseUrl + '/admin/' + $routeParams.collection;
         }
@@ -23,23 +22,18 @@ app.controller('SubscribersController', ['$scope', '$window', '$routeParams', 'D
     };
 
     $scope.addIMSI = function () {
-      
-
       if($scope.entity.imsi.length >=2) { 
-       
         $scope.flash.message ="Maximum 2 imsi for subscriber" ;
         $scope.flash.cls ="alert alert-danger" ;
         utils.flashMessage('flash',$scope);
-
         return false ;
       }
-
       var idx = _.findIndex( $scope.entity.imsi , function(i) {
-          return ( _.trim(i) == '' || !_.trim(i) );
+          return (_.trim(i) === '' || !_.trim(i) );
       });
 
       if(idx>0 ) {
-        return ;
+        return;
       } else { 
         $scope.entity.imsi.push("");
       }
@@ -55,6 +49,7 @@ app.controller('SubscribersController', ['$scope', '$window', '$routeParams', 'D
     $scope.init = function () {
       $scope.action = $routeParams.action;
       $scope.entity = {imsi: []};
+      $scope.availableBalanceTypes = [];
       var params = {
         coll: $routeParams.collection,
         id: $routeParams.id,
