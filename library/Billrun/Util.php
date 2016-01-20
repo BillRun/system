@@ -1062,5 +1062,27 @@ class Billrun_Util {
 	public static function isEqual($number1, $number2, $epsilon = 0) {
 		return abs($number1 - $number2) < abs($epsilon);
 	}
+	
+	/**
+	 * Floor a decimal
+	 * @param float $num
+	 * @param float $epsilon positive number
+	 * @return float
+	 */
+	public static function floordec($num, $epsilon) {
+		$rounded = round($num);
+		return static::isEqual($num, $rounded, $epsilon) ? $rounded : floor($num);
+	}
+	
+	/**
+	 * Ceil a decimal
+	 * @param float $num
+	 * @param float $epsilon positive number
+	 * @return float
+	 */
+	public static function ceildec($num, $epsilon) {
+		$rounded = round($num);
+		return static::isEqual($num, $rounded, $epsilon) ? $rounded : ceil($num);
+	}
 
 }
