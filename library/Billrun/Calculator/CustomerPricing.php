@@ -130,9 +130,9 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			$this->loadRates();
 			$this->loadPlans();
 			$this->active_billrun = Billrun_Billrun::getActiveBillrun();
-		}
 		$this->active_billrun_end_time = Billrun_Util::getEndTime($this->active_billrun);
 		$this->next_active_billrun = Billrun_Util::getFollowingBillrunKey($this->active_billrun);
+		}
 		// max recursive retrues for value=oldValue tactic
 		$this->concurrentMaxRetries = (int) Billrun_Factory::config()->getConfigValue('updateValueEqualOldValueMaxRetries', 8);
 		$this->sidsQueuedForRebalance = array_flip(Billrun_Factory::db()->rebalance_queueCollection()->distinct('sid'));
@@ -240,11 +240,12 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @todo Add compatiblity to prepaid
 	 */
 	public function loadSubscriberBalance($row) {
-		$plan = Billrun_Factory::plan(array('name' => $row['plan'], 'time' => $row['urt']->sec, 'disableCache' => true));
+		$plan = Billrun_Factory::plan(array('name' => $row['plan'], 'time' => $row['urt']->sec, /*'disableCache' => true*/));
 		$plan_ref = $plan->createRef();
 		if (is_null($plan_ref)) {
 			Billrun_Factory::log('No plan found for subscriber ' . $row['sid'], Zend_Log::ALERT);
 			$row['usagev'] = 0;
+			$row['apr'] = 0;
 			return false;
 		}
 
@@ -252,6 +253,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		if (!$balance || !$balance->isValid()) {
 			Billrun_Factory::log("couldn't get balance for subscriber: " . $row['sid'], Zend_Log::INFO);
 			$row['usagev'] = 0;
+			$row['apr'] = 0;
 			return false;
 		} else {
 			Billrun_Factory::log("Found balance  for subscriber " . $row['sid'], Zend_Log::DEBUG);
@@ -365,6 +367,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @param int $volume The usage volume (seconds of call, count of SMS, bytes of data)
 	 * @param object $plan The plan the line is associate to
 	 * @param int $offset call start offset in seconds
+	 * @todo : changed mms behavior as soon as we will add mms to rates
 	 * 
 	 * @return int the calculated price
 	 */
@@ -373,6 +376,9 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			return static::getPriceByRate($rate, $usage_type, $offset + $volume, $plan) - static::getPriceByRate($rate, $usage_type, $offset, $plan);
 		}
 		$accessPrice = static::getAccessPrice($rate, $usage_type, $plan);
+		
+		if ($usage_type == 'mms') {$usage_type = 'sms';} //TODO: should be changed as soon as we will add mms to rates
+		
 		$rates_arr = self::getRatesArray($rate, $usage_type, $plan);
 		$price = 0;
 		foreach ($rates_arr as $currRate) {
@@ -423,7 +429,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			if (Billrun_Util::isEqual($price, 0, static::$precision)) {
 				break;
 			}
-
+			
 			$volumeAvailableInCurrentRate = Billrun_Util::floordec($price / $currRate['price'], static::$precision) * $currRate['interval']; // In case of no limit
 			if (isset($currRate['from'])) {
 				$lastRateFrom = $currRate['from'];
@@ -439,7 +445,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		}
 		return $volume;
 	}
-
+	
 	protected static function getRatesArray($rate, $usage_type, $plan = null) {
 		if (!is_null($plan) && isset($rate['rates'][$usage_type][$plan])) {
 			return $rate['rates'][$usage_type][$plan]['rate'];
@@ -505,9 +511,10 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			return false;
 		}
 		$balanceRaw = $this->balance->getRawData();
-		$plan = Billrun_Factory::plan(array('name' => $row['plan'], 'time' => $row['urt']->sec, 'disableCache' => true));
+		$plan = Billrun_Factory::plan(array('name' => $row['plan'], 'time' => $row['urt']->sec, /*'disableCache' => true*/));
 		if ($row['charging_type'] === 'prepaid' && !(isset($row['prepaid_rebalance']) && $row['prepaid_rebalance'])) { // If it's a prepaid row, but not rebalance
 			$row['usagev'] = $volume = $this->getPrepaidGrantedVolume($row, $rate, $this->balance, $usage_type, $plan);
+			$row['apr'] = Billrun_Calculator_CustomerPricing::getPriceByRate($rate, $row['usaget'], $row['usagev'], $row['plan']);
 			$row['balance_ref'] = $this->balance->createRef();
 		} else {
 			$volume = $row['usagev'];
@@ -736,7 +743,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @param string $plan
 	 */
 	protected function addPlanRef($row, $plan) {
-		$planObj = Billrun_Factory::plan(array('name' => $plan, 'time' => $row['urt']->sec, 'disableCache' => true));
+		$planObj = Billrun_Factory::plan(array('name' => $plan, 'time' => $row['urt']->sec, /*'disableCache' => true*/));
 		if (!$planObj->get('_id')) {
 			Billrun_Factory::log("Couldn't get plan for CDR line : {$row['stamp']} with plan $plan", Zend_Log::ALERT);
 			return;

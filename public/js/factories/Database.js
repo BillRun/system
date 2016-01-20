@@ -19,8 +19,15 @@ app.factory('Database', ['$http', function ($http) {
       return $http.post(baseUrl + '/admin/save', ajaxOpts);
     }
 
-    function getAvailableServiceProviders() {
-      return $http.get(baseUrl + '/admin/getAvailableServiceProviders');
+    function removeEntity(params) {
+      if (!_.isArray(params.ids) && _.isString(params.ids)) params.ids = [params.ids];
+      params.type = 'remove';
+      return $http.post(baseUrl + '/admin/remove', params);
+    }
+
+    function getAvailableServiceProviders(params) {
+      if (params === undefined) params = {};
+      return $http.get(baseUrl + '/admin/getAvailableServiceProviders', {params: params});
     }
 
     function getAvailablePlans(type) {
@@ -39,6 +46,7 @@ app.factory('Database', ['$http', function ($http) {
     return {
       getEntity: getEntity,
       saveEntity: saveEntity,
+      removeEntity: removeEntity,
       getAvailablePlans: getAvailablePlans,
       getAvailableServiceProviders: getAvailableServiceProviders,
       getCollectionItems: getCollectionItems,

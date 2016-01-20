@@ -144,6 +144,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 		$rate = $this->getLineRate($row);
 		if (is_null($rate) || $rate === false) {
 			$row['granted_return_code'] = Billrun_Factory::config()->getConfigValue('prepaid.customer.no_rate');
+			$row['usagev'] = 0;
 			return false;
 		}
 		if (isset($rate['key']) && $rate['key'] == "UNRATED") {
@@ -174,7 +175,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	 */
 	protected function getLineRate($row) {
 		$this->setRowDataForQuery($row);
-		return $this->getRateByParams();
+		return $this->getRateByParams($row);
 	}
 	
 	/**
@@ -195,12 +196,12 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	 * Get a matching rate by config params
 	 * @return Mongodloid_Entity the matched rate or false if none found
 	 */
-	protected function getRateByParams() {		
-		$query = $this->getRateQuery();
+	protected function getRateByParams($row) {		
+		$query = $this->getRateQuery($row);
 		$rates_coll= Billrun_Factory::db()->ratesCollection();
 		$matchedRate = $rates_coll->aggregate($query)->current();
 		
-		if (empty($matchedRate)) {
+		if ($matchedRate->isEmpty()) {
 			return false;
 		}
 		
@@ -213,7 +214,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	 * 
 	 * @return string mongo query
 	 */
-	protected function getRateQuery() {
+	protected function getRateQuery($row) {
 		$pipelines = Billrun_Config::getInstance()->getConfigValue('rate_pipeline.' . self::$type, array()) +
 			Billrun_Config::getInstance()->getConfigValue('rate_pipeline.' . static::$type, array());
 		$query = array();
@@ -225,11 +226,12 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 				$pipelineValue = '';
 				if (is_array($pipeline)) {
 					foreach ($pipeline as $key => $value) {
+						$key = str_replace('__', '.', $key);
 						if (isset($value['classMethod'])) {
 							if (!method_exists($this, $value['classMethod'])) {
 								continue;
 							}
-							$pipelineValue[$key] = $this->{$value['classMethod']}();
+							$pipelineValue[$key] = $this->{$value['classMethod']}($row);
 						} else {
 							$pipelineValue[$key] = (is_numeric($value)) ? intval($value) : $value;
 						}

@@ -1,4 +1,11 @@
 $(document).ready(function () {
+	$(function () {
+		$('.datetimepicker').datetimepicker({locale: 'en', format: 'DD/MM/YYYY HH:mm', });
+	});
+	
+	//init Copy to clipard plugin
+	new Clipboard('.copy-to-clipboard-btn');
+
 	//select the right TAB from url hashtag
 	if(window.location.hash != "") {
 		$('a[href="' + window.location.hash + '"]').click()
@@ -7,17 +14,24 @@ $(document).ready(function () {
 	//Select to send checkboxes
 	$('.enable-input').change(setInputByCheckboxState);
 	function setInputByCheckboxState() {
+		var sendingValue = null;
+		if($(this).closest('span').next('input').length){
+			sendingValue = $(this).closest('span').next('input');
+		} else if ($(this).closest('span').next('select').length){
+			sendingValue = $(this).closest('span').next('select');
+		} else if($(this).closest('span').next('textarea').length){
+			sendingValue = $(this).closest('span').next('textarea');
+		} else if($(this).closest('div').next('div.datetimepicker').find('input').length){
+			sendingValue = $(this).closest('div').next('div.datetimepicker').find('input');
+		}
+		
 		if ($(this).is(':checked')) {
-			$(this).closest('span').next('input').prop('disabled', false);
-			$(this).closest('span').next('select').prop('disabled', false);
-			$(this).closest('span').next('textarea').prop('disabled', false);
+			sendingValue.prop('disabled', false);
 			$(this).siblings('small').hide();
 		} else {
-			$(this).closest('span').next('input').val('');
+			sendingValue.val('');
+			sendingValue.prop('disabled', true);
 			$(this).siblings('small').show();
-			$(this).closest('span').next('input').prop('disabled', true);
-			$(this).closest('span').next('select').prop('disabled', true);
-			$(this).closest('span').next('textarea').prop('disabled', true);
 		}
 	}
 	$('.enable-input').trigger('change');

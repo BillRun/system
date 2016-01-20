@@ -63,6 +63,8 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->addJs($this->baseUrl . '/js/jquery.csv-0.71.min.js');
 		$this->addJs($this->baseUrl . '/js/main.js');
 		Yaf_Loader::getInstance(APPLICATION_PATH . '/application/helpers')->registerLocalNamespace('Admin');
+		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/view/admin_panel.ini');
+		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/view/menu.ini');
 	}
 
 	protected function addCss($path) {
@@ -110,7 +112,7 @@ class AdminController extends Yaf_Controller_Abstract {
 
 		$model = self::initModel($coll);
 		if ($type == 'new') {
-			$entity = $model->getEmptyItem()->getRawData();
+			$entity = $model->getEmptyItem();
 		} else {
 			$entity = $model->getItem($id);
 			if (!$entity) {
@@ -204,15 +206,23 @@ class AdminController extends Yaf_Controller_Abstract {
 	public function getAvailableServiceProvidersAction() {
 		if (!$this->allowed('read'))
 			return false;
-		$collection = Billrun_Factory::db()->serviceprovidersCollection()->distinct('name');
-		$availableServiceProviders = array();
-
+		if ($this->getRequest()->get('full_objects')) {
+			$serviceProvidersModel = new ServiceprovidersModel();
+			$collection = array();
+			foreach ($serviceProvidersModel->getData() as $serviceProvider) {
+				$raw = $serviceProvider->getRawData();
+				$raw['_id'] = strval($serviceProvider->getId());
+				$collection[] = $raw;
+			}
+		} else {
+			$collection = Billrun_Factory::db()->serviceprovidersCollection()->distinct('name');
+		}
 		$response = new Yaf_Response_Http();
 		$response->setBody(json_encode($collection));
 		$response->response();
 		return false;
 	}
-	
+
 	public function getViewINIAction() {
 		if (!$this->allowed('read'))
 			return false;
@@ -289,7 +299,11 @@ class AdminController extends Yaf_Controller_Abstract {
 	public function removeAction() {
 		if (!$this->allowed('write'))
 			die(json_encode(null));
-		$ids = explode(",", Billrun_Util::filter_var($this->getRequest()->get('ids'), FILTER_SANITIZE_STRING));
+		$ids = $this->getRequest()->get('ids');
+		if (!is_array($ids)) {
+			Billrun_Util::filter_var($ids, FILTER_SANITIZE_STRING);
+			$ids = explode(",", $this->getRequest()->get('ids'));
+		}
 		if (!is_array($ids) || count($ids) == 0 || empty($ids)) {
 			return;
 		}
@@ -375,18 +389,12 @@ class AdminController extends Yaf_Controller_Abstract {
 		if ($duplicate_rates) {
 			$params = array_merge($params, array('duplicate_rates' => $duplicate_rates));
 		}
-
-
-
-		
+		/*
 		$v->validate($params,$coll) ;
-		
-
 		if(!$v->isValid()) {	   	
-		
-				return $this->responseError($v->getErrors());
+			return $this->responseError($v->getErrors());
 		}
-		
+		*/
 		if ($type == 'update') {
 			if (strtolower($coll) === 'cards') {
 				//$this->getRequest()->set('update', $this->getRequest()->get('data'));
@@ -397,7 +405,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		} else if ($type == 'close_and_new') {
 		  	$saveStatus = $model->closeAndNew($params);
 		} else if (in_array($type, array('duplicate', 'new'))) {
-				$saveStatus = $model->duplicate($params);
+			$saveStatus = $model->duplicate($params);
 		}
 
 //		$ret = array(
@@ -967,7 +975,7 @@ class AdminController extends Yaf_Controller_Abstract {
 				die("Error loading model");
 			}
 		}
-		if ($collection_name === "plans" && $options['plan_type']) $this->model->type = $options['plan_type'];
+		if ($collection_name === "plans" && isset($options['plan_type'])) $this->model->type = $options['plan_type'];
 		return $this->model;
 	}
 
@@ -1058,7 +1066,6 @@ class AdminController extends Yaf_Controller_Abstract {
 		if ($table === "plans") {
 			$query['$and'][] = array('type' => $this->_request->getParam('plan_type'));
 		}
-
 		return $query;
 	}
 
@@ -1071,7 +1078,9 @@ class AdminController extends Yaf_Controller_Abstract {
 		} else {
 			if ($table === "subscribers") {
 				$sort = array('from' => -1);
-			} else {
+			} else if ($table === "lines") {
+				$sort = array('urt' => -1);
+			}else {
 				$sort = array();
 			}
 		}

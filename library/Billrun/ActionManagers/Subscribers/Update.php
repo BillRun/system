@@ -177,7 +177,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 			
 			if($this->keepBalances === FALSE) {
 				// Close balances.
-				$updateArray = array('$set' => array('to', new MongoDate()));
+				$updateArray = array('$set' => array('to' => new MongoDate()));
 				$this->handleBalances($updateArray);
 			} else if (isset($this->recordToSet['sid']) || $this->recordToSet['aid']) {
 				$updateArray = array('$set' => array());
@@ -317,7 +317,8 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 			
 			if($subCol->exists($subscriberValidationQuery)) {
 				$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base");
-				$parameters = http_build_query($this->query, '', ', ');
+				$cleaned = Billrun_Util::array_remove_compound_elements($this->query);
+				$parameters = http_build_query($cleaned, '', ', ');
 				$this->reportError($errorCode, Zend_Log::NOTICE, array($parameters));
 				return false;
 			}
@@ -410,10 +411,13 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 		}
 		
 		// If keep_history is set take it.
-		$this->trackHistory = $input->get('track_history', $this->trackHistory);
+		$this->trackHistory = Billrun_Util::filter_var($input->get('track_history', $this->trackHistory), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
 		
 		// If keep_balances is set take it.
-		$this->keepBalances = $input->get('keep_balances', $this->keepBalances);
+		$this->keepBalances = Billrun_Util::filter_var($input->get('keep_balances', $this->keepBalances), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+		
+		// If keep_lines is set take it.
+		$this->keepLines = Billrun_Util::filter_var($input->get('keep_lines', $this->keepLines), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
 		
 		return true;
 	}

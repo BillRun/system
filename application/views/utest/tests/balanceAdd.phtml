@@ -1,21 +1,34 @@
 <form action="/utest/result" method="<?php echo $request_method ?>" class="form-horizontal">
+
 	<input type="hidden" name="type" value="<?php echo $name ?>" >
+	<input type="hidden" name="testcollection" value="<?php echo $test_collection ?>" >
+
 	<div class="form-group row">
-		<label for="sid" class="col-sm-2 control-label text-right">SID</label>
-		<div class="col-sm-5">
+		<dl class="col-sm-12 text-center">
+			<dt><?php echo $label ?></dt>
+			<dd></dd>
+		</dl>
+	</div>
+	<hr/>
+
+	<div class="form-group row">
+		<label for="sid" class="col-sm-4 control-label text-right">SID</label>
+		<div class="col-sm-6">
 			<input type="text" name="sid" value='<?php echo $sid ?>'  class="form-control">
 		</div>
 	</div>
+
 	<div class="form-group row">
-		<label for="amount" class="col-sm-2 control-label text-right">Amount</label>
-		<div class="col-sm-5">
+		<label for="amount" class="col-sm-4 control-label text-right">Amount</label>
+		<div class="col-sm-6">
 			<input type="text" name="amount" value='100'  class="form-control">
 			<small class="text-muted">Positive Integer.</small>
 		</div>
 	</div>
+
 	<div class="form-group row">
-		<label for="balanceType" class="col-sm-2 control-label text-right">Balance Type</label>
-		<div class="col-sm-5">
+		<label for="balanceType" class="col-sm-4 control-label text-right">Balance Type</label>
+		<div class="col-sm-6">
 			<select class="form-control" name='balanceType'>
 				<?php foreach ($balance_types['prepaidincludes'] as $balance_type) : ?>
 					<option value="<?php echo $balance_type ?>" <?php if ('CORE BALANCE' == $balance_type) echo 'selected' ?>><?php echo $balance_type ?></option>
@@ -23,9 +36,11 @@
 			</select>
 		</div>
 	</div>
+
 	<div class="form-group row">
-		<div class="col-sm-offset-2 col-sm-10">
-			<button type="submit" class="btn btn-success">Add Balance</button>
+		<div class="col-sm-offset-4 col-sm-6">
+			<button type="submit" class="btn btn-success btn-block">Run Test</button>
 		</div>
 	</div>
+
 </form>

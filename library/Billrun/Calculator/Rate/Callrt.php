@@ -15,10 +15,6 @@
 class Billrun_Calculator_Rate_Callrt extends Billrun_Calculator_Rate {
 
 	static protected $type = 'callrt';
-	
-	public function __construct($options = array()) {
-		parent::__construct($options);
-	}
 
 	/**
 	 * Check if a given line should be rated.
@@ -87,5 +83,9 @@ class Billrun_Calculator_Rate_Callrt extends Billrun_Calculator_Rate {
 		return array(
 			"_id" => '$_id',
 			"pref" => '$params.prefix');
+	}
+	
+	protected function getRatesExistsQuery() {
+		return array('$exists' => true);
 	}
 }

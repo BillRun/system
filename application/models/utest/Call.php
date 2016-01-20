@@ -18,7 +18,7 @@ class utest_CallModel extends utest_AbstractUtestModel {
 	public function __construct(\UtestController $controller) {
 		parent::__construct($controller);
 		$this->result = array('balance_before', 'balance_after', 'lines');
-		$this->label = 'Call';
+		$this->label = 'Call | Real-time event';
 	}
 
 	/**
@@ -45,6 +45,7 @@ class utest_CallModel extends utest_AbstractUtestModel {
 			);
 			$data = $this->getRequestData($params);
 			$this->controller->sendRequest(array('usaget' => 'call', 'request' => $data));
+			sleep(1);
 		};
 	}
 

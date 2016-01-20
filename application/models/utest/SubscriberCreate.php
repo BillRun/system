@@ -18,7 +18,7 @@ class utest_SubscriberCreateModel extends utest_AbstractUtestModel {
 	public function __construct(\UtestController $controller) {
 		parent::__construct($controller);
 		$this->result = array('subscriber_after', 'subscriber_before');
-		$this->label = 'Create Subscriber';
+		$this->label = 'Subscriber | Create';
 	}
 	
 	public function doTest() {
