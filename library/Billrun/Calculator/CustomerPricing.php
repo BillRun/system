@@ -325,6 +325,9 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		}
 
 		$price = $accessPrice + self::getPriceByRate($rate, $usageType, $volumeToCharge, $plan->getName());
+		
+		// check if interconnect required
+		$ret['interconnect'] = $this->getInterConnectPrice($rate, $usageType, $plan->getName()) * $volume;
 		//Billrun_Factory::log("Rate : ".print_r($typedRates,1),  Zend_Log::DEBUG);
 		$ret[$this->pricingField] = $price;
 		return $ret;
@@ -459,23 +462,50 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @param type $planName
 	 * @return int Access price
 	 */
-	protected function getAccessPrice($rate, $usageType, $planName) {
+	protected function getAccessPrice($rate, $usageType, $planName = null) {
+		if (isset($rate['rates'][$usageType][$planName]['access'])) {
+			return $rate['rates'][$usageType][$planName]['access'];
+		}
+		
+		if (isset($rate['rates'][$usageType]['BASE']['access'])) {
+			return $rate['rates'][$usageType]['BASE']['access'];
+		}
+		
 		if (isset($rate['rates'][$usageType]['access'])) {
-			$access = $rate['rates'][$usageType]['access'];
-			if (isset($access[$planName])) {
-				return $access[$planName];
-			}
-			if (isset($access['BASE'])) {
-				return $access['BASE'];
-			}
-			if (is_numeric($access)) {
-				return $access;
-			}
+			return $rate['rates'][$usageType]['access'];
 		}
 		
 		return 0;
 	}
 
+	/**
+	 * Gets correct interconnect price from rate by priority order: 
+	 *	1. Interconnect for the customer plan.
+	 *	2. Base plan
+	 *	3. Numeric value
+	 *	4. Return 0
+	 * 
+	 * @param type $rate pricing rate row
+	 * @param type $usageType
+	 * @param type $planName
+	 * @return int Access price
+	 */
+	protected function getInterConnectPrice($rate, $usageType, $planName) {
+		// @todo check if interconnect available and related to the row handled
+		if (isset($rate['rates'][$usageType][$planName]['interconnect'])) {
+			return $rate['rates'][$usageType][$planName]['interconnect'];
+		}
+		
+		if (isset($rate['rates'][$usageType]['BASE']['interconnect'])) {
+			return $rate['rates'][$usageType]['BASE']['interconnect'];
+		}
+		
+		if (isset($rate['rates'][$usageType]['interconnect'])) {
+			return $rate['rates'][$usageType]['interconnect'];
+		}
+		
+		return 0;
+	}
 	/**
 	 * Update the subscriber balance for a given usage
 	 * Method is recursive - it tries to update subscriber balances with value=oldValue tactic
@@ -590,7 +620,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		if ($row['charging_type'] === 'postpaid') {
 			$update['$set']['balance.cost'] = $balanceRaw['balance']['cost'] + $pricingData[$this->pricingField];
 		}
-
+		
 		Billrun_Factory::log("Updating balance " . $balance_id . " of subscriber " . $row['sid'], Zend_Log::DEBUG);
 		Billrun_Factory::dispatcher()->trigger('beforeCommitSubscriberBalance', array(&$row, &$pricingData, &$query, &$update, $rate, $this));
 		$ret = $this->balances->update($query, $update);
