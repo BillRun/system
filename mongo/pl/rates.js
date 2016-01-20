@@ -190,6 +190,7 @@ db.tmp_PPS_PREFIXES.aggregate({$group:{_id:"$BILLING_ALLOCATION", prefixes:{$add
 			'key':     _rate_name.replace(/ |-/g, "_").toUpperCase(),
 			'params':  {
 				'prefix': _prefixes,
+				'shabbat': false,
 			},
 			'rates': _tariffs
 		};
@@ -284,6 +285,7 @@ db.tmp_PPS_PREFIXES.aggregate({$group:{_id:"$BILLING_ALLOCATION", prefixes:{$add
 			'key':     _rate_name.replace(/ |-/g, "_").toUpperCase() + '_SHABBAT',
 			'params':  {
 				'prefix': _prefixes,
+				'shabbat': true,
 			},
 			'rates': _tariffs
 		};

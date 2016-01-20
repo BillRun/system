@@ -32,13 +32,13 @@ class Billrun_HebrewCal {
 		// Soukott
 		'01/14' => HEBCAL_SHORTDAY, // sukott evening
 		'01/15' => HEBCAL_HOLIDAY, // sukott
-		'01/16' => HEBCAL_HOLIDAY, // sukott
-		'01/17' => HEBCAL_HOLIDAY, // sukott
-		'01/18' => HEBCAL_HOLIDAY, // sukott
-		'01/19' => HEBCAL_HOLIDAY, // sukott
-		'01/20' => HEBCAL_HOLIDAY, // sukott
-		'01/21' => HEBCAL_HOLIDAY, // sukott
-		'01/22' => HEBCAL_WORKDAY, // Simchat Torah
+//		'01/16' => HEBCAL_HOLIDAY, // sukott
+//		'01/17' => HEBCAL_HOLIDAY, // sukott
+//		'01/18' => HEBCAL_HOLIDAY, // sukott
+//		'01/19' => HEBCAL_HOLIDAY, // sukott
+//		'01/20' => HEBCAL_HOLIDAY, // sukott
+		'01/21' => HEBCAL_SHORTDAY, // sukott
+		'01/22' => HEBCAL_HOLIDAY, // Simchat Torah
 		// Hanukka
 		'03/25' => HEBCAL_WORKDAY, // Hanukka
 		'03/26' => HEBCAL_WORKDAY, // Hanukka
@@ -56,12 +56,12 @@ class Billrun_HebrewCal {
 		// Pesaach
 		'08/14' => HEBCAL_SHORTDAY, // Pesaach evening
 		'08/15' => HEBCAL_HOLIDAY, // Pesaach
-		'08/16' => HEBCAL_HOLIDAY, // Pesaach
-		'08/17' => HEBCAL_HOLIDAY, // Pesaach
-		'08/18' => HEBCAL_HOLIDAY, // Pesaach
-		'08/19' => HEBCAL_HOLIDAY, // Pesaach
-		'08/20' => HEBCAL_HOLIDAY, // Pesaach
-		'08/21' => HEBCAL_HOLIDAY, // Pesaach
+//		'08/16' => HEBCAL_HOLIDAY, // Pesaach
+//		'08/17' => HEBCAL_HOLIDAY, // Pesaach
+//		'08/18' => HEBCAL_HOLIDAY, // Pesaach
+//		'08/19' => HEBCAL_HOLIDAY, // Pesaach
+		'08/20' => HEBCAL_SHORTDAY, // Pesaach
+		'08/21' => HEBCAL_HOLIDAY, // Pesaach Sheni (Second)
 		// Yom HaShoah
 		'08/26' => HEBCAL_WORKDAY, // Yom HaShoah evening
 		'08/27' => HEBCAL_WORKDAY, // Yom HaShoah

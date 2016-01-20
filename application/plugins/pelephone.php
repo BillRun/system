@@ -23,24 +23,26 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	protected $name = 'pelephone';
 	
 	public function extendRateParamsQuery(&$query, &$row, &$calculator) {
-		$now = date('w') . '-' . date('His');
-		$query[0]['$match']['$or'] = array(
-			array(
-				'timeinweek' => array(
-					'$ne' => true
+		$current_time = date('His');
+		$weektime = date('w') . '-' . $current_time;
+		$current_datetime = time();
+		$day_type = Billrun_HebrewCal::getDayType($current_datetime);
+		if (
+			($weektime >= '5-160000' && $weektime <= '6-200000') ||
+			($day_type == HEBCAL_SHORTDAY && $current_time >= '160000' && $current_time <= '235959') ||
+			(
+				$day_type == HEBCAL_HOLIDAY && 
+				(
+					($current_time >= '000000' && $current_time <= '195959') || 
+					(Billrun_HebrewCal::getDayType($nextday = strtotime('+1 day', $current_datetime)) == HEBCAL_HOLIDAY || date('w', $nextday) == 6)
 				)
-			),
-			array(
-				'timeinweek' => array(
-					'from' => array(
-						'$lte' => $now
-					),
-					'to' => array(
-						'$gte' => $now
-					),
-				)
-			),
-		);
+			)
+		) {
+			$shabbat = true;
+		} else {
+			$shabbat = false;
+		}
+		$query[0]['$match']['params.shabbat'] = $shabbat;
 	}
 	
 
