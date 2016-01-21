@@ -139,6 +139,16 @@ function cos_plans(subtype, appid, usaget, shabbat, tariffs, tariffs_interconnec
 	);
 }
 
+function getUniqueArray(arr) {
+	var hash = {}, result = [];
+	for ( var i = 0, l = arr.length; i < l; ++i ) {
+		if ( !hash.hasOwnProperty(arr[i]) ) {
+			hash[ arr[i] ] = true;
+			result.push(arr[i]);
+		}
+	}
+	return result;
+}
 
 //db.tmp_PPS_PREFIXES.aggregate({$match:{BILLING_ALLOCATION:/012_URU/}}, {$group:{_id:"$BILLING_ALLOCATION", prefixes:{$addToSet:"$PPS_PREFIXES"}}}).forEach(
 db.tmp_PPS_PREFIXES.aggregate({$group:{_id:"$BILLING_ALLOCATION", prefixes:{$addToSet:"$PPS_PREFIXES"}}}).forEach(
@@ -180,55 +190,6 @@ db.tmp_PPS_PREFIXES.aggregate({$group:{_id:"$BILLING_ALLOCATION", prefixes:{$add
 			}
 		);
 
-		_tt = true;
-		db.rates.find({'rates':{$eq:_tariffs_interconnect}}).limit(1).forEach(function() {_tt = false})
-		if (_tt && typeof _tariffs_interconnect != "undefined" &&
-			(_tariffs_interconnect.hasOwnProperty('call') ||
-			_tariffs_interconnect.hasOwnProperty('video_call') ||
-			_tariffs_interconnect.hasOwnProperty('data') ||
-			_tariffs_interconnect.hasOwnProperty('sms'))
-		) {
-			_rate = {
-				'from':    ISODate('2016-01-01'),
-				'to':      ISODate('2099-12-31 23:59:59'),
-				'key':     _rate_name.replace(/ |-/g, "_").toUpperCase(),
-				'params':  {
-					'prefix': _prefixes,
-					'shabbat': false,
-					'interconnect': false,
-				},
-				'rates': _tariffs
-			};
-			db.rates.insert(_rate);
-
-			_rate = {
-				'from':    ISODate('2016-01-01'),
-				'to':      ISODate('2099-12-31 23:59:59'),
-				'key':     _rate_name.replace(/ |-/g, "_").toUpperCase() + '_INTERCONNECT',
-				'params':  {
-					'prefix': _prefixes,
-					'shabbat': false,
-					'interconnect': true,
-				},
-				'rates': _tariffs_interconnect
-			};
-			db.rates.insert(_rate);
-		} else {
-			_rate = {
-				'from':    ISODate('2016-01-01'),
-				'to':      ISODate('2099-12-31 23:59:59'),
-				'key':     _rate_name.replace(/ |-/g, "_").toUpperCase(),
-				'params':  {
-					'prefix': _prefixes,
-					'shabbat': false,
-				},
-				'rates': _tariffs
-			};
-			db.rates.insert(_rate);
-
-		}
-		
-		
 		_tariffs_shabbat = {};
 		_tariffs_shabbat_interconnect = {};
 //		======================================================================================================================================================
@@ -260,6 +221,11 @@ db.tmp_PPS_PREFIXES.aggregate({$group:{_id:"$BILLING_ALLOCATION", prefixes:{$add
 				);
 			}
 		);
+
+		for (var i = 0; i < _prefixes.length; i++) {
+			_prefixes[i] = _prefixes[i].replace(/^0000/g, "A");
+		}
+		_prefixes = getUniqueArray(_prefixes);
 
 		_rate = {
 			'from':    ISODate('2016-01-01'),
@@ -312,8 +278,6 @@ db.tmp_PPS_PREFIXES.aggregate({$group:{_id:"$BILLING_ALLOCATION", prefixes:{$add
 			'rates': _tariffs_shabbat_interconnect
 		};
 		db.rates.insert(_rate);
-
-
 
 	}
 );
