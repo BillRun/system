@@ -110,12 +110,14 @@ public function UniqueValidator($attribute , $value , $validationOptions =array(
 
     $code = "unique" ;
 
-    if(strlen(trim("$value")) == 0  ||  !isset($validationOptions["collection"])) {
+     
+     if(strlen(trim("$value")) == 0  ||  !isset($validationOptions["collection"])) {
         return true;      
     }
 
     $collection = Billrun_Factory::db()->getCollection($validationOptions["collection"]);
-    if (!($collection instanceof Mongodloid_Collection)) {
+     if (!($collection instanceof Mongodloid_Collection)) {
+
       return true;
     }
 
@@ -128,7 +130,7 @@ public function UniqueValidator($attribute , $value , $validationOptions =array(
 
     $checkUniqueQuery = array($attribute => $value);
     if($MongoID =  $validationOptions["objectRef"]["_id"])  { 
-      
+
       $checkUniqueQuery =  array_merge($checkUniqueQuery,array( "_id" => array('$ne' => new MongoId((string) $MongoID )))) ;
     }
     
@@ -204,7 +206,20 @@ public function UniqueWithValidator($attribute , $value , $validationOptions =ar
 			 return false; 
 			}
 
-  		return true;
+    $status =  true ; 
+    if($validationOptions["max"] !==null && $value>$validationOptions["max"]) {
+      $message= $attribute . " is  greater then the Maximum :" . $validationOptions["max"] ;
+      $this->addError($attribute,$message,$code,$index) ;
+      $status = false ;
+    }
+
+    if($validationOptions["min"] !==null && $value<$validationOptions["min"])  {
+      $message= $attribute . " is  lower then the Minimum :" . $validationOptions["min"] ;
+      $this->addError($attribute,$message,$code,$index) ;
+      $status = false ;
+    }
+
+  		 return $status ;
   }
 
 
@@ -216,14 +231,14 @@ public function LengthValidator ($attribute , $value  ,$validationOptions = arra
 
 		if($validationOptions["min"] !==null && $length<$validationOptions["min"])
 		{
-			$message= $attribute . " is too short (minimum is " . $validationOptions["min"] . " characters)')";
+			$message= $attribute . " is too short (minimum is " . $validationOptions["min"] . " characters)";
 			$this->addError($attribute,$message,$code,$index) ;
       $status = false ;
 		}
 
 		if($validationOptions["max"] !==null && $length>$validationOptions["max"])
 		{
-			$message= $attribute ." is too long (maximum is " . $validationOptions["max"] . " characters)')";
+			$message= $attribute ." is too long (maximum is " . $validationOptions["max"] . " characters)";
 			$this->addError($attribute,$message,$code,$index) ;
       $status = false ;
 		}
@@ -243,18 +258,25 @@ public function LengthValidator ($attribute , $value  ,$validationOptions = arra
   		$message = $validationOptions['message'] ;
   	} else { 
   		$message = $attribute . " must be an integer" ;
+      if(!isset($validationOptions["message"])){
+          $validationOptions["message"] = $message ;
+      }
   	}
-  	if( !$this->NumberValidator($attribute,$value ,$validationOptions = array("message" => $message),$index)) {
+   
+  	if( !$this->NumberValidator($attribute,$value ,$validationOptions,$index)) {
   			return true;
   	};
   	if(!preg_match($this->integerPattern,"$value"))	{
 				$this->addError($attribute,$message,$code,$index) ;
 				return false;
 		}
+    
+
   	return true ;
   }
 
-	 public function validate($object,$collection) {
+
+	 public function validate_one_level($object,$collection) {
 
       /*  get collection rules tree    */
       $val = $this->getKeyVal(array($this->validations,$collection));
@@ -264,6 +286,7 @@ public function LengthValidator ($attribute , $value  ,$validationOptions = arra
       }
       /* loop over the collection attributes */
 
+      
       foreach($object as $attr => $attrValue) {
         
 
@@ -319,6 +342,76 @@ public function LengthValidator ($attribute , $value  ,$validationOptions = arra
    return $this ;
   }
 
+
+ public function validate($object,$collection) {
+
+      /*  get collection rules tree    */
+       Billrun_Factory::log("Validate collection : " .$collection ."\n" , Zend_Log::INFO);
+      $val = $this->getKeyVal(array($this->validations,$collection));
+      if(!$this->getKeyVal(array($this->validations,$collection))) { 
+      
+        return $this ;
+      }
+      /* loop over the collection attributes */
+
+      $flat = $this->flatTree($object) ;
+//Billrun_Factory::log("Flat : " .var_export($flat,true), Zend_Log::INFO);
+
+     // Billrun_Factory::log("collection validations : " . var_export($this->getKeyVal(array($this->validations,$collection)),1) ."\n" , Zend_Log::INFO);
+
+
+      foreach(array_values($flat)  as $attrInfo) {
+        $attr  =  $attrInfo["key"] ;
+        $attrRules= $this->getKeyVal(array($this->validations,$collection,$attr)) ;  
+
+        //Billrun_Factory::log("attrRules  for $attr : " . var_export($attrRules,1) ."\n" , Zend_Log::INFO);
+
+        if($attrRules === null) continue ;
+
+        $attrType = $this->getKeyVal(array($attrRules,"is"),"scalar") ;
+
+        if(isset($attrRules["is"])) { 
+           unset($attrRules["is"]);
+        }  
+        
+        
+        foreach($attrRules as $check => $checkOptions ) { 
+          if(!is_array($checkOptions)) {
+             $checkOptions = array("checkValue" => $checkOptions)  ;
+          }
+
+          if($check === "unique" || $check === "uniqueWith") {
+            if(!isset($checkOptions["collection"])) { 
+              $checkOptions = array_merge(array("collection" => $collection) ,$checkOptions);
+            }
+          }
+         
+          $checkOptions["objectRef"] = $object ;
+
+          if(!(isset(self::$validatorsFunctions[$check]))) {
+              Billrun_Factory::log("undefined check function  => $check (please implement)" , Zend_Log::INFO);
+              continue ;
+          }
+        
+
+        if($attrInfo["type"] == "array") { 
+          $fn = array('self', self::$validatorsFunctions[$check] );
+          $valIndex=0;  
+          foreach($attrInfo["value"] as $scalarVal) { 
+             call_user_func( $fn,$attr,$scalarVal,$checkOptions,$valIndex);
+             $valIndex++;
+          }
+           
+        }
+
+        if($attrType == "scalar" ) { 
+          $fn = array('self', self::$validatorsFunctions[$check] );
+          call_user_func( $fn,$attr,$attrInfo["value"],$checkOptions);          
+        }     
+      }
+    } 
+   return $this ;
+  }
   public function getOptions() {
     return $this->options;
   }
@@ -364,7 +457,31 @@ public function LengthValidator ($attribute , $value  ,$validationOptions = arra
       return $stepinto;
   }
 
-  //Custome validation test 
+  private function is_list($array) {
+    foreach($array as $key => $value) {
+        if( is_string($key) ) {
+            return false; 
+        };
+    }
+    return true;
+  }
 
+public function flatTree($params) { 
+  $iterator = new RecursiveIteratorIterator(
+      new RecursiveArrayIterator($params) ,RecursiveIteratorIterator::CHILD_FIRST
+  );
+  $attrs =array();
+  for($iterator; $iterator->valid(); $iterator->next()) {
+          $value = $iterator->current();
+          $type = gettype($value);
 
+          if($type === "array" && ! self::is_list($value)) continue ;
+          array_push($attrs , array( "key"=>$iterator->key(),
+                                  "type" => $type,
+                                  "depth" => $iterator->getDepth(),
+                                  "value"=> $value) );
+  }
+  return $attrs ;
   } 
+
+}

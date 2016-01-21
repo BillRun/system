@@ -1,4 +1,19 @@
 var app = angular.module('BillrunApp', ['ngRoute', 'JSONedit', 'ui.bootstrap', 'xeditable']);
+app.run(function($rootScope, $location, $interval) {
+  
+    var lastDigestRun = Date.now();
+    var idleCheck = $interval(function() {
+        var now = Date.now();            
+        if (now - lastDigestRun > 30*60*1000) {
+            window.location = '/admin/logout' ;
+        }
+    }, 15*60*1000);
+
+    $rootScope.$on('$routeChangeStart', function(evt) {
+        lastDigestRun = Date.now();  
+    });
+});
+
 app.config(function ($httpProvider, $routeProvider, $locationProvider) {
   $httpProvider.defaults.headers.post['Content-Type'] = 'application/x-www-form-urlencoded;charset=utf-8';
   /**
