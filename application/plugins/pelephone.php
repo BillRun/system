@@ -42,7 +42,13 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		} else {
 			$shabbat = false;
 		}
+		if (!empty($row['np_code'])) {
+			$interconnect = true;
+		} else {
+			$interconnect = false;
+		}
 		$query[0]['$match']['params.shabbat'] = $shabbat;
+		$query[0]['$match']['params.interconnect'] = $interconnect;
 	}
 	
 
