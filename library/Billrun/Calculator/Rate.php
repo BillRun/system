@@ -98,7 +98,8 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	public function writeLine($line, $dataKey) {
 		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteLine', array('data' => $line, 'calculator' => $this));
 		$save = array();
-		$saveProperties = array($this->ratingField,$this->ratingKeyField, 'usaget', 'usagev', $this->pricingField, $this->aprField,);
+		$saveProperties = array($this->ratingField,$this->ratingKeyField, 'usaget', 'usagev', $this->pricingField, $this->aprField);
+		$saveProperties = array_merge($saveProperties,$this->getAdditionalProperties());
 		foreach ($saveProperties as $p) {
 			if (!is_null($val = $line->get($p, true))) {
 				$save['$set'][$p] = $val;
@@ -144,6 +145,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 		$usage_type = $this->getLineUsageType($row);
 		$volume = $this->getLineVolume($row, $usage_type);
 		$rate = $this->getLineRate($row, $usage_type);
+		$additional_values = $this->getLineAdditionalValues($row);
 		if (isset($rate['key']) && $rate['key'] == "UNRATED") {
 			return false;
 		}
@@ -158,6 +160,9 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 		
 		if ($rate) {
 			$added_values[$this->aprField] = Billrun_Calculator_CustomerPricing::getPriceByRate($rate, $usage_type, $volume);
+		}
+		if(!empty($additional_values)) {
+			$added_values = array_merge($added_values,$additional_values);
 		}
 		$newData = array_merge($current, $added_values);
 		$row->setRawData($newData);
@@ -201,6 +206,14 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 		);
 		$rates = Billrun_Factory::db()->ratesCollection();
 		return $rates->query($query)->cursor()->current();
+	}
+	
+	protected function getLineAdditionalValues(){
+		return array();
+	}
+	
+	protected function getAdditionalProperties() {
+		return array();
 	}
 
 }

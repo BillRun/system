@@ -125,5 +125,29 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 		}
 		return $matchedRate;
 	}
-
+	
+	protected function getLineAdditionalValues($row) {
+		$circuit_groups = Billrun_Factory::config()->getConfigValue('Rate_Nsn.calculator.tg');
+		$rate_key = null;
+		if( in_array($row['record_type'],array('30','11')) && ($row['in_circuit_group'] > $circuit_groups['icg']['min']) && 
+			($row['in_circuit_group'] < $circuit_groups['icg']['max']) ) {
+			if(preg_match('/^(997|972)?1800016/',$row['called_number'])) {
+				$rate_key = 'IL_TF';
+			} else if(preg_match('/^(997|972)?1700016/',$row['called_number'])) {
+				$rate_key = 'IL_1700';
+			}
+		} else if(in_array($row['record_type'],array('12','02')) && preg_match('/(^RCEL)|(^$)/',$row['out_circuit_group_name'])
+			&& (preg_match('/^(972)?5/',$row['called_number']))) {
+			$rate_key = 'IL_MOBILE';
+		}
+		if(isset($rate_key)){
+			return array('wholesale_rate_key' => $rate_key);
+		}
+		return array();
+	}
+		
+	protected function getAdditionalProperties() {
+		return Billrun_Factory::config()->getConfigValue('Rate_Nsn.calculator.additional_properties');
+	}
+		
 }
