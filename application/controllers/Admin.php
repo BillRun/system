@@ -543,7 +543,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		if (!$this->allowed('read'))
 			return false;
 		$session = $this->getSession("rates");
-		$show_prefix = $this->getSetVar($session, 'showprefix', 'showprefix', 0);
+		$show_prefix = $this->getSetVar($session, 'showprefix', 'showprefix', 'off');
 		$this->forward("tabledate", array('table' => 'rates', 'showprefix' => $show_prefix));
 		return false;
 	}
