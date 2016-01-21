@@ -49,7 +49,7 @@ class utest_SubscriberUpdateModel extends utest_AbstractUtestModel {
 		$enable_charging_type = Billrun_Util::filter_var($this->controller->getRequest()->get('enable-charging_type'), FILTER_SANITIZE_STRING);
 
 		$language = Billrun_Util::filter_var($this->controller->getRequest()->get('language'), FILTER_SANITIZE_STRING);
-		$enable_lang = Billrun_Util::filter_var($this->controller->getRequest()->get('enable-enable-language'), FILTER_SANITIZE_STRING);
+		$enable_lang = Billrun_Util::filter_var($this->controller->getRequest()->get('enable-language'), FILTER_SANITIZE_STRING);
 
 
 		$track_history = (bool) Billrun_Util::filter_var($this->controller->getRequest()->get('track_history'), FILTER_SANITIZE_STRING);
