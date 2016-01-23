@@ -198,8 +198,8 @@ class UtestController extends Yaf_Controller_Abstract {
 		}
 		
 		if(in_array('lines', $result)){
-			// Get all lines created during scenarion
-			$lines = $this->getLines();
+			// Get all lines created during scenarion by sid
+			$lines = $this->getLines($sid_after_test);
 		}
 		
 		if(in_array('cards', $result)){
@@ -342,15 +342,14 @@ class UtestController extends Yaf_Controller_Abstract {
 	}
 
 	/**
-	 * Find all lines by SID and unique reference
+	 * Find all lines by SID during the test
 	 * @param type $sid
-	 * @param type $charging - if TRUE, return only CHARGING lines
 	 */
-	protected function getLines() {
+	protected function getLines($sid) {
 		$lines = array();
 		$amount = 0;
-
 		$searchQuery = array(
+			'sid' => $sid,
 			'urt' => array(
 				'$gte' => new MongoDate($this->testStartTime['sec'], $this->testStartTime['usec']),
 				'$lte' => new MongoDate($this->testEndTime['sec'], $this->testEndTime['usec'])
