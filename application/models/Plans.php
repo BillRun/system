@@ -29,7 +29,7 @@ class PlansModel extends TabledateModel {
 			$columns['desc'] = "Description";
 			$columns['service_provider'] = 'Service Provider';
 		}
-		$columns['from'] = 'From'; $columns['to'] = 'To';
+		$columns['from'] = 'From'; $columns['to'] = 'Expiration';
 		return $columns;
 	}
 

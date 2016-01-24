@@ -2,14 +2,14 @@
 	<center>
 		<h2>Subscriber {{vm.entity.sid}} - Balance</h2>
 	</center>
-	<form class='form-inline' ng-submit='vm.save()'>
+	<form class='form-inline' ng-submit='vm.saveBalance()'>
 		<div ng-if='!vm.advancedMode'>
 			<div class="row">
 				<div class="col-md-2">
 					{{vm.utils.getDisplayValue("aid", "balances")}}
 				</div>
 				<div class="col-md-6">
-					<input ng-model="vm.entity.aid" ng-disabled='vm.utils.disabled("aid", "balances")' type='number' class="form-control" />
+					<input ng-model="vm.entity.aid" ng-disabled='vm.action !== "new" && vm.utils.disabled("aid", "balances", vm.action)' type='number' class="form-control" />
 				</div>
 			</div>
 			<div class="row">
@@ -17,7 +17,7 @@
 					{{vm.utils.getDisplayValue("sid", "balances")}}
 				</div>
 				<div class="col-md-6">
-					<input ng-model="vm.entity.sid" ng-disabled='vm.utils.disabled("aid", "balances")' type='number' class="form-control" />
+					<input ng-model="vm.entity.sid" ng-disabled='vm.action !== "new" && vm.utils.disabled("aid", "balances", vm.action)' type='number' class="form-control" />
 				</div>
 			</div>
 			<div class="row">
@@ -25,7 +25,7 @@
 					{{vm.utils.getDisplayValue("pp_includes_external_id", "balances")}}
 				</div>
 				<div class="col-md-6">
-					<input ng-model="vm.entity.pp_includes_external_id" type='number' class="form-control" disabled />
+					<input ng-model="vm.entity.pp_includes_external_id" ng-disabled='vm.action !== "new" && vm.utils.disabled("pp_includes_external_id", "balances", vm.action)' type='number' class="form-control" />
 				</div>
 			</div>
 			<div class="row">
@@ -33,7 +33,10 @@
 					{{vm.utils.getDisplayValue("pp_includes_name", "balances")}}
 				</div>
 				<div class="col-md-6">
-					<input ng-model="vm.entity.pp_includes_name" type='text' class="form-control" disabled />
+					<select class='form-control' ng-model='vm.entity.pp_includes_name' ng-if='vm.action === "new"'>
+						<option ng-repeat='balanceType in vm.availableBalanceTypes' value='{{balanceType}}'>{{balanceType}}</option>
+					</select>
+					<input ng-model="vm.entity.pp_includes_name" ng-if='vm.action === "update"' ng-disabled="vm.utils.disabled('pp_includes_name', 'balances', vm.action)" type='text' class="form-control" />
 				</div>
 			</div>
 			<div class='row' ng-if='vm.utils.display("to", "balances")'>
@@ -53,6 +56,26 @@
 
 			<hr/>
 			<h3>Total</h3>
+			<div ng-if='vm.action === "new"'>
+				<div class='row'>
+					<div class='col-md-2'>
+						Balance
+					</div>
+					<div class='col-md-6'>
+						<select class='form-control' ng-model='vm.newBalance'>
+							<option ng-repeat='balance in vm.availableBalances' value="balance">{{balance}}</option>
+						</select>
+					</div>
+				</div>
+				<div class='row'>
+					<div class='col-md-2'>
+						Amount
+					</div>
+					<div class='col-md-6'>
+						<input ng-model='vm.newBalanceAmount' type='number' class='form-control' />
+					</div>
+				</div>
+			</div>
 			<div class='row' ng-if='vm.entity.balance.cost'>
 				<div class='col-md-2'>
 					Cost

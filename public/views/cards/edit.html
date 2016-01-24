@@ -2,7 +2,13 @@
 	<center>
 		<h2>{{capitalize(action)}} Card {{entity.serial_number}}</h2>
 	</center>
-	<form class='form-inline' ng-submit='save()'>
+
+   <ul class="list-group" ng-show="err.data.summaryReport.length">
+      <li class="list-group-item h4 list-group-item-danger">Please resolve the problems below</li>
+			<li class="errorMessage list-group-item" ng-repeat="m in err.data.summaryReport">{{m}}</li>
+		</ul>
+
+	<form class='form-inline'>
 		<div ng-if='!advancedMode'>
 			<div class="row" ng-if='utils.display("batch_number", "cards")'>
 				<div class="col-md-2">
@@ -29,7 +35,7 @@
 						<option value="" disabled>Select Charging Plan</option>
 						<option ng-repeat="plan in availablePlans">{{plan}}</option>
 					</select>
-				</div>
+				</div> 
 			</div>
 			<div class="row" ng-if='utils.display("service_provider", "cards")'>
 				<div class="col-md-2">
@@ -72,7 +78,11 @@
 			<a ng-click='setAdvancedMode(false)' class="clickable" ng-if='advancedMode'>Basic Mode</a>
 			<a ng-click='setAdvancedMode(true)' class="clickable" ng-if='!advancedMode'>Advanced Mode</a>
 			<button class="btn" ng-click='cancel()'>Cancel</button>
-			<button type='submit' class="btn btn-primary" ng-if='authorized_write'>Save changes</button>
+			<button apply-notifier 
+							onerr="err" 
+							text="Apply" ng-click="save(false)" class="btn" ng-if='authorized_write'>
+			</button>
+			<button ng-click="save(true)" class="btn btn-primary" ng-if='authorized_write'>Save & Exit</button>
 		</div>
 	</form>
 </div>
