@@ -238,7 +238,7 @@ $(function () {
 
 	});
 
-	$('.multiselect:not(#usage,#billrun,#source,#extra_columns select)').multiselect({});
+	$('.multiselect:not(#usage,#billrun,#source,#plan,#extra_columns select)').multiselect({});
 
 	$('#usage,#billrun,#source').multiselect({
 		selectAllValue: 'all',
@@ -253,6 +253,15 @@ $(function () {
 		selectAllValue: 'all',
 		selectedClass: null
 	});
+
+  $('select[id="plan"]').multiselect({
+    maxHeight: 250,
+    enableFiltering: true,
+    enableCaseInsensitiveFiltering: true,
+    includeSelectAllOption: true,
+    selectAllValue: 'all',
+    selectedClass: null
+  });
 
 	$('#search-criteria').submit(function () {
 		if ($("#type").length && !$("#type :selected").length) {
