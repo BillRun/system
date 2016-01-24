@@ -38,7 +38,7 @@ class SubscribersautorenewservicesModel extends TabledateModel{
 	
 	public function getTableColumns() {
 		$columns = array(
-			'sid' => 'Subscriber',
+			'sid' => 'Subscriber No',
 			'aid' => 'BAN',
 			'interval' => 'Interval',
 			'charging_plan_name' => 'Charging Plan',
@@ -57,7 +57,7 @@ class SubscribersautorenewservicesModel extends TabledateModel{
 
 	public function getSortFields() {
 		$sort_fields = array(
-			'sid' => 'Subscriber',
+			'sid' => 'Subscriber No',
 			'aid' => 'BAN',
 			'interval' => 'Interval',
 			'charging_plan_name' => 'Charging Plan Name',
@@ -85,7 +85,7 @@ class SubscribersautorenewservicesModel extends TabledateModel{
 				'db_key' => 'sid',
 				'input_type' => 'number',
 				'comparison' => 'equals',
-				'display' => 'Subscriber',
+				'display' => 'Subscriber No',
 				'default' => '',
 			),			
 			'aid' => array(

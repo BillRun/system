@@ -1,4 +1,19 @@
 var app = angular.module('BillrunApp', ['ngRoute', 'JSONedit', 'ui.bootstrap', 'xeditable']);
+app.run(function ($rootScope, $location, $interval) {
+
+  var lastDigestRun = Date.now();
+  var idleCheck = $interval(function () {
+    var now = Date.now();
+    if (now - lastDigestRun > 30 * 60 * 1000) {
+      window.location = '/admin/logout';
+    }
+  }, 15 * 60 * 1000);
+
+  $rootScope.$on('$routeChangeStart', function (evt) {
+    lastDigestRun = Date.now();
+  });
+});
+
 app.config(function ($httpProvider, $routeProvider, $locationProvider) {
   $httpProvider.defaults.headers.post['Content-Type'] = 'application/x-www-form-urlencoded;charset=utf-8';
   /**
@@ -44,9 +59,10 @@ app.config(function ($httpProvider, $routeProvider, $locationProvider) {
 
   // Override $http service's default transformRequest
   $httpProvider.defaults.transformRequest = [function (data) {
-    if (!data) data = {};
-    return angular.isObject(data) && String(data) !== '[object File]' ? param(data) : data;
-  }];
+      if (!data)
+        data = {};
+      return angular.isObject(data) && String(data) !== '[object File]' ? param(data) : data;
+    }];
 
   $routeProvider.when('/service_providers', {
     templateUrl: 'views/service_providers.html',
@@ -57,9 +73,9 @@ app.config(function ($httpProvider, $routeProvider, $locationProvider) {
     controller: 'ListController',
     controllerAs: 'vm'
   }).when('/:collection/:action/:id?', {
-	  templateUrl: function (urlattr) {
-		  return 'views/' + urlattr.collection + '/edit.html';
-	  }
+    templateUrl: function (urlattr) {
+      return 'views/' + urlattr.collection + '/edit.html';
+    }
   });
   $locationProvider.html5Mode({enabled: false, requireBase: false});
 }).run(['$http', '$rootScope', 'editableOptions', function ($http, $rootScope, editableOptions) {
@@ -68,4 +84,4 @@ app.config(function ($httpProvider, $routeProvider, $locationProvider) {
     $http.get(baseUrl + '/admin/getViewINI').then(function (res) {
       $rootScope.fields = res.data;
     });
-}]);
+  }]);

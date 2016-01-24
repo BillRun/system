@@ -43,9 +43,9 @@ class CardsModel extends TableModel {
 			'charging_plan_name' => 'Charging Plan',
 			'service_provider' => 'Service Provider',
 			'status' => 'Status',
-			'to' => 'Expiration Date',
+			'to' => 'Expiration',
 			'sid' => 'Subscriber No',
-			'activation_datetime' => 'Activation Date',
+			'activation_datetime' => 'Activation',
 		);
 		return $columns;
 	}
@@ -58,7 +58,7 @@ class CardsModel extends TableModel {
 			'status' => 'Status',
 			'service_provider' => 'Service Provider',
 			'sid' => 'Subscriber No',
-			'activation_datetime' => 'Activation Date'
+			'activation_datetime' => 'Activation'
 		);
 		return array_merge($sort_fields, parent::getSortFields());
 	}
@@ -90,7 +90,7 @@ class CardsModel extends TableModel {
 				'default' => '',				
 			),
 			'charging_plan_name' => array(
-				'key' => 'charging_plan_name',
+				'key' => 'plan',
 				'db_key' => 'charging_plan_name',
 				'input_type' => 'multiselect',
 				'comparison' => '$in',
@@ -130,7 +130,7 @@ class CardsModel extends TableModel {
 				'db_key' => 'to',
 				'input_type' => 'date',
 				'comparison' => '$lte',
-				'display' => 'Expiration Date',
+				'display' => 'Expiration',
 				'default' => (new Zend_Date(strtotime("next month"), null, new Zend_Locale('he_IL')))->toString('YYYY-MM-dd HH:mm:ss'),
 			),
 		);
