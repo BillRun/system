@@ -281,3 +281,37 @@ db.tmp_PPS_PREFIXES.aggregate({$group:{_id:"$BILLING_ALLOCATION", prefixes:{$add
 
 	}
 );
+
+// insert data manually (only 1 rates, 2 plans inside - BASE and one plan)
+db.rates.insert({
+	"from" : ISODate("2012-06-01T00:00:00Z"),
+	"key" : "INTERNET_BILL_BY_VOLUME",
+	"params" : {
+		"sgsn_addresses" : /^(?=91\.135\.)/
+	},
+	"rates" : {
+		"data" : {
+			"BASE" : {
+				"rate" : [
+					{
+						"to" : 2147483647,
+						"price" : 0.000976,
+						"interval" : 1024
+					}
+				],
+				"unit" : "bytes"
+			},
+			"PP_PreTalk" : {
+				"rate" : [
+					{
+						"to" : 2147483647,
+						"price" : 0.000244,
+						"interval" : 1024
+					}
+				],
+				"unit" : "bytes"
+			}
+		}
+	},
+	"to" : ISODate("2113-08-28T17:23:55Z")
+})
