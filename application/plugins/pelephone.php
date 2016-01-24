@@ -28,7 +28,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 		$current_time = date('His');
 		$weektime = date('w') . '-' . $current_time;
-		$current_datetime = time();
+		$current_datetime = $row['urt']->sec;
 		$day_type = Billrun_HebrewCal::getDayType($current_datetime);
 		if (
 			($weektime >= '5-160000' && $weektime <= '6-200000') ||
