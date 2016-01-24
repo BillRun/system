@@ -90,7 +90,7 @@ class CardsModel extends TableModel {
 				'default' => '',				
 			),
 			'charging_plan_name' => array(
-				'key' => 'charging_plan_name',
+				'key' => 'plan',
 				'db_key' => 'charging_plan_name',
 				'input_type' => 'multiselect',
 				'comparison' => '$in',
