@@ -21,7 +21,7 @@ class UtestController extends Yaf_Controller_Abstract {
 	 * @var string
 	 */
 	protected $protocol = '';
-	protected $subdomain = '';
+	protected $baseUrl = '';
 	protected $siteUrl = '';
 	protected $apiUrl = '';
 	protected $conf = '';
@@ -53,17 +53,39 @@ class UtestController extends Yaf_Controller_Abstract {
 	 */
 	public function init() {
 		Billrun_Factory::log('Start Unit testing');
+		
 		if (Billrun_Factory::config()->isProd()) {
 			Billrun_Factory::log('Exit Unit testing. Unit testing not allowed on production');
 			die();
 		}
-		$this->protocol = (empty($this->getRequest()->getServer('HTTPS'))) ? 'http://' : 'https	://';
-		$this->subdomain = $this->getRequest()->getBaseUri();
-		$this->siteUrl = $this->protocol . $this->getRequest()->getServer('HTTP_HOST') . $this->subdomain;
-		$this->apiUrl = $this->siteUrl . '/api';
-		$this->reference = rand(1000000000, 9999999999);
+		
+		if(!AdminController::authorized('write', 'utest')){
+			//$this->getRequest()->getQuery();
+			header("Location: " . $this->siteUrl . "/admin/login");
+			die();
+		}
+		
 		//Load Test conf file
 		$this->conf = Billrun_Config::getInstance(new Yaf_Config_Ini(APPLICATION_PATH . '/conf/utest/conf.ini'));
+		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/view/menu.ini');
+		
+		//init self params
+		$protocol = $this->conf->getConfigValue('test.protocol', '');
+		if(empty($protocol)){
+			$protocol = (empty($this->getRequest()->getServer('HTTPS'))) ? 'http' : 'https';
+		}
+		
+		$this->protocol = $protocol.'://';
+		$this->baseUrl = $this->getRequest()->getBaseUri();
+		
+		$hostname = $this->conf->getConfigValue('test.hostname', '');
+		if(empty($hostname)){
+			$hostname =  $this->getRequest()->getServer('HTTP_HOST') . $this->baseUrl;
+		}
+		
+		$this->siteUrl = $this->protocol . $hostname;
+		$this->apiUrl = $this->siteUrl . '/api';
+		$this->reference = rand(1000000000, 9999999999);
 	}
 
 	/**
@@ -74,36 +96,32 @@ class UtestController extends Yaf_Controller_Abstract {
 	public function indexAction() {
 		$tests = array();
 		$test_collection = $this->getRequest()->get('testcollection');
+		$enabledTests = $this->getEnabledTests($test_collection);
 		if (!empty($test_collection)) {
-			foreach ($this->getEnabledTests($test_collection) as $key => $testModelName) {
+			foreach ($enabledTests as $key => $testModelName) {
 				$tests[] = new $testModelName($this);
 			}
-			$this->getView()->tests = $tests;
-			$this->getView()->subdomain = $this->subdomain;
-			$this->getView()->test_collection = $test_collection;
-
-			$formParams = $this->getTestFormData();
-			foreach ($formParams as $name => $value) {
-				$this->getView()->{$name} = $value;
-			}
-		} else {
-			$enabled_test_collections = array();
-			
-			foreach (array_keys($this->getEnabledTestsCollection()) as $value) {
-				$label = '';
-				if (substr($value, 0, strlen('utest')) == 'utest') {
-					$label = substr($value, strlen('utest'));
-				}
-				$label = preg_replace('/(?!^)[A-Z]{2,}(?=[A-Z][a-z])|[A-Z][a-z]/', ' $0', $label);
-				$label = ucwords($label);
+		} 
+		else {
+			$enabled_test_collections = array();	
+			foreach (array_keys($enabledTests) as $value) {
 				$enabled_test_collections[] = array(
 					'param' => $value,
-					'label' => $label
+					'label' => $this->cleanLabel($value)
 				);
 			}
 			$this->getView()->enabled_test_collections = $enabled_test_collections;
-			$this->getView()->test_collection = 'utest';
+			$test_collection = 'utest';
+		}
+		
+		$this->getView()->tests = $tests;
+		$this->getView()->baseUrl = $this->baseUrl;
+		$this->getView()->test_collection = $test_collection;
+		$this->getView()->test_collection_label = $this->cleanLabel($test_collection);
 
+		$formParams = $this->getTestFormData();
+		foreach ($formParams as $name => $value) {
+			$this->getView()->{$name} = $value;
 		}
 	}
 
@@ -135,7 +153,7 @@ class UtestController extends Yaf_Controller_Abstract {
 			if (!empty($query)) {
 				$sid = $this->getSid($query);
 			} else {
-				return;
+				$sid = null;
 			}
 		}
 		
@@ -180,8 +198,8 @@ class UtestController extends Yaf_Controller_Abstract {
 		}
 		
 		if(in_array('lines', $result)){
-			// Get all lines created during scenarion
-			$lines = $this->getLines();
+			// Get all lines created during scenarion by sid
+			$lines = $this->getLines($sid_after_test);
 		}
 		
 		if(in_array('cards', $result)){
@@ -197,13 +215,14 @@ class UtestController extends Yaf_Controller_Abstract {
 		$this->getView()->test = $utest;
 		$this->getView()->sid = $sid;
 		$this->getView()->sid_after_test = $sid_after_test;
-		$this->getView()->subdomain = $this->subdomain;
+		$this->getView()->baseUrl = $this->baseUrl;
 		$this->getView()->cards = isset($cards) ? $cards : null;
 		$this->getView()->lines = isset($lines) ? $lines : null;
 		$this->getView()->balances = $balance;
 		$this->getView()->subscribers = isset($subscriber) ? $subscriber : null;
 		$this->getView()->apiCalls = $this->apiCalls;
 		$this->getView()->test_collection = $test_collection;
+		$this->getView()->test_collection_label = $this->cleanLabel($test_collection);
 	}
 
 	public function getReference() {
@@ -222,7 +241,11 @@ class UtestController extends Yaf_Controller_Abstract {
 		$URL = $this->apiUrl . trim("/" . $endpoint); // 'realtimeevent' / 'balances'
 		//Calc microtine for API
 		$time_start = microtime(true);
-		$res = Billrun_Util::sendRequest($URL, $data, $methodType);
+		try {
+			$res = Billrun_Util::sendRequest($URL, $data, $methodType);
+		} catch (Exception $exc) {
+			$res = "Send Request error (" . $exc->getCode() . ") " . $exc->getMessage();
+		}
 		$time_end = microtime(true);
 		$duration = $time_end - $time_start;
 
@@ -319,15 +342,14 @@ class UtestController extends Yaf_Controller_Abstract {
 	}
 
 	/**
-	 * Find all lines by SID and unique reference
+	 * Find all lines by SID during the test
 	 * @param type $sid
-	 * @param type $charging - if TRUE, return only CHARGING lines
 	 */
-	protected function getLines() {
+	protected function getLines($sid) {
 		$lines = array();
 		$amount = 0;
-
 		$searchQuery = array(
+			'sid' => $sid,
 			'urt' => array(
 				'$gte' => new MongoDate($this->testStartTime['sec'], $this->testStartTime['usec']),
 				'$lte' => new MongoDate($this->testEndTime['sec'], $this->testEndTime['usec'])
@@ -437,13 +459,21 @@ class UtestController extends Yaf_Controller_Abstract {
 	}
 	
 	protected function getEnabledTests($test_collection) {
-		//From config
-		$tests = $this->conf->getConfigValue("test.enableTests.".$test_collection, array());
+		if(!empty($test_collection)){
+			$tests = $this->conf->getConfigValue("test.enableTests.".$test_collection, array());
+		} else {
+			$tests = $this->conf->getConfigValue("test.enableTests", array());
+		}
 		return $tests;
 	}
-
-	protected function getEnabledTestsCollection() {
-		$tests = $this->conf->getConfigValue("test.enableTests", array());
-		return $tests;
+	
+	protected function cleanLabel($string) {
+		$label = '';
+		if (substr($string, 0, strlen('utest')) == 'utest') {
+			$label = substr($string, strlen('utest'));
+		}
+		$label = preg_replace('/(?!^)[A-Z]{2,}(?=[A-Z][a-z])|[A-Z][a-z]/', ' $0', $label);
+		$label = ucwords($label);
+		return $label;
 	}
 }

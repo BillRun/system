@@ -66,6 +66,20 @@ class Billrun_ActionManagers_Subscribersautorenew_Query extends Billrun_ActionMa
 		return true;
 	}
 	
+	protected function setIncludeValuesToAdd(&$includesToReturn, $root, $values) {
+		$toAdd = array();
+			
+		// Set the record values.
+		$toAdd['unit_type'] = Billrun_Util::getUsagetUnit($root);			
+
+		if(isset($values['usagev'])) {
+			$toAdd['ammount'] = $values['usagev'];
+		} else {
+			$toAdd['ammount'] = $values['cost'];
+		}
+		$includesToReturn [$values['pp_includes_name']] = $toAdd;
+	}
+	
 	/**
 	 * Get the 'includes' array to return for the plan record.
 	 * @param Mongodloid_Entity $planRecord - Record for the current used plan
@@ -84,16 +98,27 @@ class Billrun_ActionManagers_Subscribersautorenew_Query extends Billrun_ActionMa
 		// TODO: Is this filtered by priority?
 		// TODO: Should this include the total_cost??
 		foreach ($includeList as $includeRoot => $includeValues) {
-			if(!isset($includeValues['pp_includes_name'])) {
+			if($includeRoot == 'cost') {
+				if(is_numeric($includeValues)) {
+					$includeValues = array('usagev' => $includeValues);
+					$includeValues['pp_includes_name'] = $planRecord['pp_includes_name'];
+				} else {
+					foreach ($includeValues as $value) {
+						if(!is_array($value)) {
+							continue;
+						}
+						
+						if(isset($value['value'])) {
+							$value['usagev'] = $value['value'];
+						}
+						$this->setIncludeValuesToAdd($includesToReturn, $includeRoot, $value);
+					}
+				}
+			} else if(!isset($includeValues['pp_includes_name'])) {
 				continue;
 			}
 			
-			$toAdd = array();
-			
-			// Set the record values.
-			$toAdd['unit_type'] = Billrun_Util::getUsagetUnit($includeRoot);			
-			$toAdd['ammount'] = $includeValues['usagev'];
-			$includesToReturn [$includeValues['pp_includes_name']] = $toAdd;
+			$this->setIncludeValuesToAdd($includesToReturn, $includeRoot, $includeValues);
 		}
 		
 		return $includesToReturn;
@@ -160,12 +185,12 @@ class Billrun_ActionManagers_Subscribersautorenew_Query extends Billrun_ActionMa
 		if (!isset($this->query['from'])){
 			$this->query['from']['$lte'] = new MongoDate();
 		} else {
-			$this->query['from'] = new MongoDate(strtotime($this->query['from']));
+			$this->query['from'] = array('$lte' => new MongoDate(strtotime($this->query['from'])));
 		}
 		if (!$this->query['to']) {
 			$this->query['to']['$gte'] = new MongoDate();
 		} else {
-			$this->query['to'] = new MongoDate(strtotime($this->query['to']));
+			$this->query['to'] = array('$gte' => new MongoDate(strtotime($this->query['to'])));
 		}
 	}
 	

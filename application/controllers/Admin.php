@@ -112,7 +112,7 @@ class AdminController extends Yaf_Controller_Abstract {
 
 		$model = self::initModel($coll);
 		if ($type == 'new') {
-			$entity = $model->getEmptyItem()->getRawData();
+			$entity = $model->getEmptyItem();
 		} else {
 			$entity = $model->getItem($id);
 			if (!$entity) {
@@ -206,15 +206,23 @@ class AdminController extends Yaf_Controller_Abstract {
 	public function getAvailableServiceProvidersAction() {
 		if (!$this->allowed('read'))
 			return false;
-		$collection = Billrun_Factory::db()->serviceprovidersCollection()->distinct('name');
-		$availableServiceProviders = array();
-
+		if ($this->getRequest()->get('full_objects')) {
+			$serviceProvidersModel = new ServiceprovidersModel();
+			$collection = array();
+			foreach ($serviceProvidersModel->getData() as $serviceProvider) {
+				$raw = $serviceProvider->getRawData();
+				$raw['_id'] = strval($serviceProvider->getId());
+				$collection[] = $raw;
+			}
+		} else {
+			$collection = Billrun_Factory::db()->serviceprovidersCollection()->distinct('name');
+		}
 		$response = new Yaf_Response_Http();
 		$response->setBody(json_encode($collection));
 		$response->response();
 		return false;
 	}
-	
+
 	public function getViewINIAction() {
 		if (!$this->allowed('read'))
 			return false;
@@ -291,7 +299,11 @@ class AdminController extends Yaf_Controller_Abstract {
 	public function removeAction() {
 		if (!$this->allowed('write'))
 			die(json_encode(null));
-		$ids = explode(",", Billrun_Util::filter_var($this->getRequest()->get('ids'), FILTER_SANITIZE_STRING));
+		$ids = $this->getRequest()->get('ids');
+		if (!is_array($ids)) {
+			Billrun_Util::filter_var($ids, FILTER_SANITIZE_STRING);
+			$ids = explode(",", $this->getRequest()->get('ids'));
+		}
 		if (!is_array($ids) || count($ids) == 0 || empty($ids)) {
 			return;
 		}

@@ -27,7 +27,7 @@
 							<td><?php echo $line['usagev'] ?></td>
 							<td><?php echo $line['balance_before'] ?></td>
 							<td><?php echo $line['balance_after'] ?></td>
-							<td><?php echo $line['arate'] ?></td>
+							<td><a href="<?php echo $this->baseUrl; ?>/admin#/rates/update/<?php echo $line['arate'] ?>" target="_blank"><?php echo $line['arate'] ?></a></td>
 						</tr>
 					<?php endforeach; ?>
 				</tbody>

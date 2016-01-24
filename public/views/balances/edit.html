@@ -9,7 +9,7 @@
 					{{vm.utils.getDisplayValue("aid", "balances")}}
 				</div>
 				<div class="col-md-6">
-					<input ng-model="vm.entity.aid" type='number' class="form-control" />
+					<input ng-model="vm.entity.aid" ng-disabled='vm.utils.disabled("aid", "balances")' type='number' class="form-control" />
 				</div>
 			</div>
 			<div class="row">
@@ -17,7 +17,7 @@
 					{{vm.utils.getDisplayValue("sid", "balances")}}
 				</div>
 				<div class="col-md-6">
-					<input ng-model="vm.entity.sid" type='number' class="form-control" />
+					<input ng-model="vm.entity.sid" ng-disabled='vm.utils.disabled("aid", "balances")' type='number' class="form-control" />
 				</div>
 			</div>
 			<div class="row">
