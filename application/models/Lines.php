@@ -175,7 +175,7 @@ class LinesModel extends TableModel {
 				'db_key' => 'sid',
 				'input_type' => 'number',
 				'comparison' => 'equals',
-				'display' => 'Subscriber id',
+				'display' => 'Subscriber No',
 				'default' => '',
 			),
 			'aid' => array(
@@ -199,7 +199,7 @@ class LinesModel extends TableModel {
 				'db_key' => 'urt',
 				'input_type' => 'date',
 				'comparison' => '$lte',
-				'display' => 'To',
+				'display' => 'Expiration',
 				'default' => (new Zend_Date(strtotime("next month"), null, new Zend_Locale('he_IL')))->toString('YYYY-MM-dd HH:mm:ss'),
 			),
 			'usage' => array(
@@ -297,7 +297,7 @@ class LinesModel extends TableModel {
 			'aprice' => 'Charge',
 			'plan' => 'Plan',
 			'process_time' => 'Process time',
-			'sid' => 'Subscriber id',
+			'sid' => 'Subscriber No',
 			'urt' => 'Time',
 			'type' => 'Type',
 			'usaget' => 'Usage type',

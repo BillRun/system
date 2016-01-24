@@ -358,3 +358,5 @@ float: left;
 }
 
 .errorMessage { color:red;}
+.danger { color:red;}
+.success { color:green;}
