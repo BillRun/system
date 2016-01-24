@@ -27,6 +27,13 @@ class UtestController extends Yaf_Controller_Abstract {
 	protected $conf = '';
 
 	/**
+	 * Test
+	 *
+	 * @var utest object
+	 */
+	protected $utest = '';
+	
+	/**
 	 * unique ref for Data and API calls
 	 *
 	 * @var string
@@ -168,8 +175,8 @@ class UtestController extends Yaf_Controller_Abstract {
 		
 		//Create test by type
 		$tetsClassName = $type .'Model';
-		$utest = new $tetsClassName($this);
-		$result = $utest->getTestResults();//Get parts for results
+		$this->utest = new $tetsClassName($this);
+		$result = $this->utest->getTestResults();//Get parts for results
 		
 		
 		if(in_array('balance_before', $result)){
@@ -184,7 +191,7 @@ class UtestController extends Yaf_Controller_Abstract {
 		
 		$this->testStartTime = gettimeofday();
 		//Run test by type
-		$utest->doTest();
+		$this->utest->doTest();
 		$this->testEndTime = gettimeofday();
 		
 
@@ -212,7 +219,7 @@ class UtestController extends Yaf_Controller_Abstract {
 			$balance['after'] = $this->getBalance($sid_after_test);
 		}
 
-		$this->getView()->test = $utest;
+		$this->getView()->test = $this->utest;
 		$this->getView()->sid = $sid;
 		$this->getView()->sid_after_test = $sid_after_test;
 		$this->getView()->baseUrl = $this->baseUrl;
@@ -350,13 +357,21 @@ class UtestController extends Yaf_Controller_Abstract {
 		$lines = array();
 		$rates = array();
 		$amount = 0;
-		$searchQuery = array(
-			'sid' => $sid,
-			'urt' => array(
-				'$gte' => new MongoDate($this->testStartTime['sec'], $this->testStartTime['usec']),
-				'$lte' => new MongoDate($this->testEndTime['sec'], $this->testEndTime['usec'])
-			)
-		);
+        //Search lines by testID + sid (for test with configurable date)
+		if(in_array($this->utest->getTestName(), array('utest_Call'))){
+			$searchQuery = array(
+				'sid' => $sid,
+				'call_reference' => (string)$this->reference
+			);
+		} else { //Search lines by test time + sid
+			$searchQuery = array(
+				'sid' => $sid,
+				'urt' => array(
+					'$gte' => new MongoDate($this->testStartTime['sec'], $this->testStartTime['usec']),
+					'$lte' => new MongoDate($this->testEndTime['sec'], $this->testEndTime['usec'])
+				)
+			);
+		}
 
 		$cursor = Billrun_Factory::db()->linesCollection()->query($searchQuery)->cursor()->limit(100000)->sort(['urt' => 1]);
 		foreach ($cursor as $row) {
@@ -390,7 +405,11 @@ class UtestController extends Yaf_Controller_Abstract {
 		}
 		$lines['rates'] = $rates;
 		$lines['total'] = $amount;
-		$lines['ref'] = 'Lines that was created during test run, <strong>from ' . date('d/m/Y H:i:s', ($this->testStartTime['sec'])) .":".$this->testStartTime['usec'] . " to " . date('d/m/Y H:i:s', $this->testEndTime['sec']) .":".$this->testEndTime['usec'] .'</strong>, test ID : ' .  $this->reference;
+		if(in_array($this->utest->getTestName(), array('utest_Call'))){
+			$lines['ref'] = 'Lines that was created during test run, test ID : ' .  $this->reference;
+		} else {
+			$lines['ref'] = 'Lines that was created during test run, <strong>from ' . date('d/m/Y H:i:s', ($this->testStartTime['sec'])) .":".$this->testStartTime['usec'] . " to " . date('d/m/Y H:i:s', $this->testEndTime['sec']) .":".$this->testEndTime['usec'] .'</strong>, test ID : ' .  $this->reference;
+		}
 		return $lines;
 	}
 	
