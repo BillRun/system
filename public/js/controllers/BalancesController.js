@@ -12,8 +12,10 @@ function BalancesController($controller, Utils) {
   vm.saveBalance = function () {
     if (vm.action === 'new') {
       if (vm.newBalance && vm.newBalanceAmount) {
-        if (vm.newBalance !== 'cost') vm.entity.balance = {totals: {usagev: vm.newBalanceAmount}};
-        else vm.entity.balance = {cost: vm.newBalanceAmount};
+        if (vm.newBalance !== 'cost')
+          vm.entity.balance = {totals: {usagev: vm.newBalanceAmount}};
+        else
+          vm.entity.balance = {cost: vm.newBalanceAmount};
       }
     }
     vm.save();

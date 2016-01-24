@@ -14,7 +14,7 @@ app.controller('EditController', ['$scope', 'Utils', '$routeParams', '$window', 
     };
 
     $scope.save = function (redirect) {
-      $scope.err ={};
+      $scope.err = {};
       var params = {
         entity: $scope.entity,
         coll: $routeParams.collection,
@@ -22,12 +22,12 @@ app.controller('EditController', ['$scope', 'Utils', '$routeParams', '$window', 
         duplicate_rates: ($scope.duplicate_rates ? $scope.duplicate_rates.on : false),
       };
       Database.saveEntity(params).then(function (res) {
-        if(redirect)   {
-           $window.location = baseUrl + '/admin/' + $routeParams.collection.replace(/_/g, '');
+        if (redirect) {
+          $window.location = baseUrl + '/admin/' + $routeParams.collection.replace(/_/g, '');
         }
-       
+
       }, function (err) {
-          $scope.err=err;
+        $scope.err = err;
       });
     };
 
@@ -54,7 +54,8 @@ app.controller('EditController', ['$scope', 'Utils', '$routeParams', '$window', 
       Database.getEntity(params).then(function (res) {
         $scope.entity = res.data.entity;
         $scope.authorized_write = res.data.authorized_write;
-        if (callback !== undefined) callback($scope.entity);
+        if (callback !== undefined)
+          callback($scope.entity);
       }, function (err) {
         alert("Connection error!");
       });

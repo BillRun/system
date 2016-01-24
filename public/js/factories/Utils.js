@@ -2,7 +2,8 @@ app.factory('Utils', ['$rootScope', function ($rootScope) {
     'use strict';
 
     function getDisplayValue(str, coll) {
-      if ($rootScope.fields === undefined) return str.replace(/_/g, ' ');
+      if ($rootScope.fields === undefined)
+        return str.replace(/_/g, ' ');
       if ($rootScope.fields[coll] && $rootScope.fields[coll][str]
         && $rootScope.fields[coll][str]['display_value'])
         return $rootScope.fields[coll][str]['display_value'];
@@ -12,7 +13,8 @@ app.factory('Utils', ['$rootScope', function ($rootScope) {
     }
 
     function display(field, coll) {
-      if ($rootScope.fields === undefined) return false;
+      if ($rootScope.fields === undefined)
+        return false;
       if ($rootScope.fields[coll] && $rootScope.fields[coll][field] && $rootScope.fields[coll][field]['display'])
         return parseInt($rootScope.fields[coll][field]['display'], 10);
       if ($rootScope.fields[field] && $rootScope.fields[field]['display'])
@@ -21,7 +23,8 @@ app.factory('Utils', ['$rootScope', function ($rootScope) {
     }
 
     function disabled(field, coll) {
-      if ($rootScope.fields === undefined) return true;
+      if ($rootScope.fields === undefined)
+        return true;
       if ($rootScope.fields[coll] && $rootScope.fields[coll][field] && $rootScope.fields[coll][field]['disabled'])
         return parseInt($rootScope.fields[coll][field]['disabled'], 10);
       if ($rootScope.fields[field] && $rootScope.fields[field]['disabled'])
