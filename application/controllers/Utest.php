@@ -451,6 +451,7 @@ class UtestController extends Yaf_Controller_Abstract {
 		$output['aid'] = $this->conf->getConfigValue('test.aid', '');
 		$output['dialed_digits'] = $this->conf->getConfigValue('test.dialed_digits', '');
 		$output['request_method'] = $this->conf->getConfigValue('test.requestType', 'GET');
+		$output['np_codes'] = $this->conf->getConfigValue('test.npCodes', array());
 		
 		$cardsConf = Billrun_Config::getInstance(new Yaf_Config_Ini(APPLICATION_PATH . '/conf/cards/conf.ini'));
 		$output['card_statuses'] = $cardsConf->getConfigValue('cards.status', array());
