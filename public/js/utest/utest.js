@@ -2,6 +2,10 @@ $(document).ready(function () {
 	$(function () {
 		$('.datetimepicker').datetimepicker({locale: 'en', format: 'DD/MM/YYYY HH:mm', });
 	});
+	
+	//init Copy to clipard plugin
+	new Clipboard('.copy-to-clipboard-btn');
+
 	//select the right TAB from url hashtag
 	if(window.location.hash != "") {
 		$('a[href="' + window.location.hash + '"]').click()
@@ -17,8 +21,8 @@ $(document).ready(function () {
 			sendingValue = $(this).closest('span').next('select');
 		} else if($(this).closest('span').next('textarea').length){
 			sendingValue = $(this).closest('span').next('textarea');
-		} else if($(this).closest('div').next('div.date').find('input').length){
-			sendingValue = $(this).closest('div').next('div.date').find('input');
+		} else if($(this).closest('div').next('div.datetimepicker').find('input').length){
+			sendingValue = $(this).closest('div').next('div.datetimepicker').find('input');
 		}
 		
 		if ($(this).is(':checked')) {

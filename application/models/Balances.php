@@ -187,17 +187,19 @@ class BalancesModel extends TableModel {
 			if (Billrun_Config::getInstance()->getConfigValue('admin_panel.balances.aggregate', 0)) {
 				$totals = array();
 				$units = array();
-				foreach ($item['balance']['totals'] as $key => $val) {
-					$unit = Billrun_Util::getUsagetUnit($key);
-					if ($val['cost']) {
-						$totals[] = $val['cost'];
-						$units[] = $unit;
-					} else if ($val['usagev']) {
-						$totals[] = $val['usagev'];
-						$units[] = $unit;
+				if (isset($item['balance']['totals'])) {
+					foreach ($item['balance']['totals'] as $key => $val) {
+						$unit = Billrun_Util::getUsagetUnit($key);
+						if (isset($val['cost'])) {
+							$totals[] = $val['cost'];
+							$units[] = $unit;
+						} else if (isset($val['usagev'])) {
+							$totals[] = $val['usagev'];
+							$units[] = $unit;
+						}
 					}
 				}
-				if ($item['balance']['cost']) {
+				if (isset($item['balance']['cost'])) {
 					$totals[] = $item['balance']['cost'];
 					$units[] = Billrun_Util::getUsagetUnit('cost');
 				}

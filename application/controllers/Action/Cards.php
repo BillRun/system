@@ -47,6 +47,7 @@ class CardsAction extends ApiAction {
 	 * The logic to be executed when this API plugin is called.
 	 */
 	public function execute() {
+		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/cards/conf.ini');
 		$this->initializeModel();
 
 		$request = $this->getRequest();

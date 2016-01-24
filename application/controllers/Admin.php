@@ -64,6 +64,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->addJs($this->baseUrl . '/js/main.js');
 		Yaf_Loader::getInstance(APPLICATION_PATH . '/application/helpers')->registerLocalNamespace('Admin');
 		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/view/admin_panel.ini');
+		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/view/menu.ini');
 	}
 
 	protected function addCss($path) {
@@ -977,7 +978,7 @@ class AdminController extends Yaf_Controller_Abstract {
 				die("Error loading model");
 			}
 		}
-		if ($collection_name === "plans" && $options['plan_type']) $this->model->type = $options['plan_type'];
+		if ($collection_name === "plans" && isset($options['plan_type'])) $this->model->type = $options['plan_type'];
 		return $this->model;
 	}
 

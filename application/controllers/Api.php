@@ -128,6 +128,7 @@ class ApiController extends Yaf_Controller_Abstract {
 		}
 		Billrun_Factory::log('No output method defined; set to json encode', Zend_Log::DEBUG);
 		$this->getView()->outputMethod = array('Zend_Json', 'encode');
+		header('Content-Type: application/json');
 	}
 
 }
