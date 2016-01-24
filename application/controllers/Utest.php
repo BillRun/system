@@ -372,20 +372,24 @@ class UtestController extends Yaf_Controller_Abstract {
 				'balance_after' => number_format($row['balance_after'], 3),
 				'arate' => $rateId
 			);
-			$rates[$rateId] = '';
+			if(!empty($rateId)){
+				$rates[$rateId] = '';
+			}
 		}
 		// get Rates referen
-		$rates_mongo_ids = array_map( function($val){ return new MongoId($val);}, array_keys($rates));
-		$searchQuery = array('_id' => array( '$in' => $rates_mongo_ids));
-		$cursor = Billrun_Factory::db()->ratesCollection()->query($searchQuery)->cursor()->limit(100000);
-		foreach ($cursor as $row) {
-			$rowData = $row->getRawData();
-			$id = (string)$rowData['_id'];
-			$key = (string)$rowData['key'];
-			$rates[$id] = array('key' => $key);
+		if(!empty($rates)){
+			$rates_mongo_ids = array_map( function($val){ return new MongoId($val);}, array_keys($rates));
+			$searchQuery = array('_id' => array( '$in' => $rates_mongo_ids));
+			$cursor = Billrun_Factory::db()->ratesCollection()->query($searchQuery)->cursor()->limit(100000);
+			foreach ($cursor as $row) {
+				$rowData = $row->getRawData();
+				$id = (string)$rowData['_id'];
+				$key = (string)$rowData['key'];
+				$rates[$id] = array('key' => $key);
+			}
 		}
-		$lines['total'] = $amount;
 		$lines['rates'] = $rates;
+		$lines['total'] = $amount;
 		$lines['ref'] = 'Lines that was created during test run, <strong>from ' . date('d/m/Y H:i:s', ($this->testStartTime['sec'])) .":".$this->testStartTime['usec'] . " to " . date('d/m/Y H:i:s', $this->testEndTime['sec']) .":".$this->testEndTime['usec'] .'</strong>, test ID : ' .  $this->reference;
 		return $lines;
 	}
