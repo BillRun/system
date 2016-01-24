@@ -203,7 +203,7 @@ class Billrun_HebrewCal {
 	 */
 	public static function getHebrewDate($unixtime, $asArray = false) {
 		$date = jdtojewish(gregoriantojd(date('m', $unixtime), date('d', $unixtime), date('Y', $unixtime)));
-		return $asArray ? split("/", $date) : $date;
+		return $asArray ? explode("/", $date) : $date;
 	}
 
 	public static function isLeapYear($unixtime) {
