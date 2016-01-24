@@ -13,7 +13,7 @@
 						<th>Usage V</th>
 						<th>Balance Before</th>
 						<th>Balance After</th>
-						<th>aRate ID</th>
+						<th>aRate</th>
 					</tr>
 				</thead>
 				<tbody>
@@ -27,7 +27,7 @@
 							<td><?php echo $line['usagev'] ?></td>
 							<td><?php echo $line['balance_before'] ?></td>
 							<td><?php echo $line['balance_after'] ?></td>
-							<td><a href="<?php echo $this->baseUrl; ?>/admin#/rates/update/<?php echo $line['arate'] ?>" target="_blank"><?php echo $line['arate'] ?></a></td>
+							<td><a href="<?php echo $this->baseUrl; ?>/admin#/rates/update/<?php echo $line['arate'] ?>" target="_blank"><?php echo $lines['rates'][$line['arate']]['key'] ?></a></td>
 						</tr>
 					<?php endforeach; ?>
 				</tbody>

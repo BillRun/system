@@ -301,6 +301,7 @@ class UtestController extends Yaf_Controller_Abstract {
 			}
 			$balances[(string) $row['_id']] = array(
 				'amount' => -1 * $amount,
+				'pp_includes_name' => $row["pp_includes_name"],
 				'charging_by_usaget' => $row["charging_by_usaget"],
 				'charging_by_usaget_unit' => $row["charging_by_usaget_unit"],
 				'charging_by' => $row["charging_by"],
@@ -347,6 +348,7 @@ class UtestController extends Yaf_Controller_Abstract {
 	 */
 	protected function getLines($sid) {
 		$lines = array();
+		$rates = array();
 		$amount = 0;
 		$searchQuery = array(
 			'sid' => $sid,
@@ -359,6 +361,7 @@ class UtestController extends Yaf_Controller_Abstract {
 		$cursor = Billrun_Factory::db()->linesCollection()->query($searchQuery)->cursor()->limit(100000)->sort(['urt' => 1]);
 		foreach ($cursor as $row) {
 			$amount += $row['aprice'];
+			$rateId = (string)$row['arate']['$id'];
 			$lines['rows'][] = array(
 				'time_date' => date('d/m/Y H:i:s', $row['urt']->sec),
 				'record_type' => $row['record_type'],
@@ -367,10 +370,22 @@ class UtestController extends Yaf_Controller_Abstract {
 				'usagev' => $row['usagev'],
 				'balance_before' => number_format($row['balance_before'], 3),
 				'balance_after' => number_format($row['balance_after'], 3),
-				'arate' => (string) $row['arate']['$id']
+				'arate' => $rateId
 			);
+			$rates[$rateId] = '';
+		}
+		// get Rates referen
+		$rates_mongo_ids = array_map( function($val){ return new MongoId($val);}, array_keys($rates));
+		$searchQuery = array('_id' => array( '$in' => $rates_mongo_ids));
+		$cursor = Billrun_Factory::db()->ratesCollection()->query($searchQuery)->cursor()->limit(100000);
+		foreach ($cursor as $row) {
+			$rowData = $row->getRawData();
+			$id = (string)$rowData['_id'];
+			$key = (string)$rowData['key'];
+			$rates[$id] = array('key' => $key);
 		}
 		$lines['total'] = $amount;
+		$lines['rates'] = $rates;
 		$lines['ref'] = 'Lines that was created during test run, <strong>from ' . date('d/m/Y H:i:s', ($this->testStartTime['sec'])) .":".$this->testStartTime['usec'] . " to " . date('d/m/Y H:i:s', $this->testEndTime['sec']) .":".$this->testEndTime['usec'] .'</strong>, test ID : ' .  $this->reference;
 		return $lines;
 	}
