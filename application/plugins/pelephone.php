@@ -23,6 +23,9 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	protected $name = 'pelephone';
 	
 	public function extendRateParamsQuery(&$query, &$row, &$calculator) {
+		if (!in_array($row['usaget'], array('call', 'video_call', 'sms', 'mms'))) {
+			return;
+		}
 		$current_time = date('His');
 		$weektime = date('w') . '-' . $current_time;
 		$current_datetime = time();
