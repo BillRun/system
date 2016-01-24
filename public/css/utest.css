@@ -5,3 +5,21 @@
 .text-bottom{
 	vertical-align: bottom;
 }
+.code {
+    font-family: Menlo,Monaco,Consolas,"Courier New",monospace;
+}
+.copy-request-data-btn{
+	white-space: normal;
+}
+.nested-row{
+	margin:0;
+}
+.pt15{
+	padding-top: 15px;
+}
+.pt10{
+	padding-top: 10px;
+}
+.word-break-all{
+	word-break: break-all;
+}

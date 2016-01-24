@@ -6,6 +6,9 @@ app.controller('EditController', ['$scope', 'Utils', '$routeParams', '$window', 
     $scope._ = _;
     $scope.entity = {};
 
+    angular.element('.menu-item-home').removeClass('active');
+    angular.element('.menu-item-' + $routeParams.collection).addClass('active');
+
     $scope.cancel = function () {
       $window.location = baseUrl + '/admin/' + $routeParams.collection;
     };

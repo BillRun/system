@@ -1051,5 +1051,38 @@ class Billrun_Util {
 		$units = Billrun_Factory::config()->getConfigValue('usaget.unit');
 		return isset($units[$usaget]) ? $units[$usaget] : '';
 	}
+	
+	/**
+	 * Are two numbers equal (up to epsilon)
+	 * @param float $number1
+	 * @param float $number2
+	 * @param float $epsilon positive number
+	 * @return boolean
+	 */
+	public static function isEqual($number1, $number2, $epsilon = 0) {
+		return abs($number1 - $number2) < abs($epsilon);
+	}
+	
+	/**
+	 * Floor a decimal
+	 * @param float $num
+	 * @param float $epsilon positive number
+	 * @return float
+	 */
+	public static function floordec($num, $epsilon) {
+		$rounded = round($num);
+		return static::isEqual($num, $rounded, $epsilon) ? $rounded : floor($num);
+	}
+	
+	/**
+	 * Ceil a decimal
+	 * @param float $num
+	 * @param float $epsilon positive number
+	 * @return float
+	 */
+	public static function ceildec($num, $epsilon) {
+		$rounded = round($num);
+		return static::isEqual($num, $rounded, $epsilon) ? $rounded : ceil($num);
+	}
 
 }

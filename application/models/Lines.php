@@ -211,15 +211,15 @@ class LinesModel extends TableModel {
 				'values' => Billrun_Factory::config()->getConfigValue('admin_panel.line_usages'),
 				'default' => array(),
 			),
-			'billrun' => array(
-				'key' => 'billrun',
-				'db_key' => 'billrun',
-				'input_type' => 'multiselect',
-				'comparison' => '$in',
-				'display' => 'Billrun',
-				'values' => $billruns,
-				'default' => array(),
-			),
+//			'billrun' => array(
+//				'key' => 'billrun',
+//				'db_key' => 'billrun',
+//				'input_type' => 'multiselect',
+//				'comparison' => '$in',
+//				'display' => 'Billrun',
+//				'values' => $billruns,
+//				'default' => array(),
+//			),
 		);
 		return array_merge($filter_fields, parent::getFilterFields());
 	}
@@ -282,9 +282,9 @@ class LinesModel extends TableModel {
 				'usage' => array(
 					'width' => 2,
 				),
-				'billrun' => array(
-					'width' => 2,
-				),
+//				'billrun' => array(
+//					'width' => 2,
+//				),
 			),
 		);
 		return $filter_field_order;
@@ -293,7 +293,7 @@ class LinesModel extends TableModel {
 	public function getSortFields() {
 		return array(
 			'aid' => 'BAN',
-			'billrun_key' => 'Billrun',
+//			'billrun_key' => 'Billrun',
 			'aprice' => 'Charge',
 			'plan' => 'Plan',
 			'process_time' => 'Process time',
