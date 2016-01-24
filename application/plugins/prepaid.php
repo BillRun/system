@@ -90,7 +90,9 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 		if ($balance->get('charging_by_usaget') == 'total_cost') {
 			return $balance->get('balance')['cost'];
 		}
-		return $balance->get('balance')['totals'][$balance['charging_by_usaget']][$balance['charging_by']];
+		$charging_by_usaget = $balance->get('charging_by_usaget');
+		$charging_by = $balance->get('charging_by');
+		return $balance->get('balance')['totals'][$charging_by_usaget][$charging_by];
 	}
 	
 	protected function getBalanceUsage($balance, $row) {
