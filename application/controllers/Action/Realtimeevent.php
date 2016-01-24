@@ -107,8 +107,12 @@ class RealtimeeventAction extends ApiAction {
 
 				
 		$this->event['billrun_pretend'] = $this->isPretend($this->event);
-		// we are on real time -> the time is now
-		$this->event['urt'] = new MongoDate();
+		if (isset($this->event['time_date'])) {
+			$this->event['urt'] = new MongoDate(strtotime($this->event['time_date']));
+		} else {
+			// we are on real time -> the time is now
+			$this->event['urt'] = new MongoDate();
+		}
 	}
 	
 	protected function getSgsn($event) {
