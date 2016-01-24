@@ -171,7 +171,6 @@ class RatesModel extends TabledateModel {
 				'db_key' => array('rates.call', 'rates.sms'),
 				'input_type' => 'multiselect',
 				'comparison' => '$exists',
-				'singleselect' => true,
 				'display' => 'Plan',
 				'values' => $planNames,
 				'default' => array(array('BASE' => 'BASE')),
