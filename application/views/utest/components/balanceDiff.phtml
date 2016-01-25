@@ -15,7 +15,7 @@
 				<tbody>
 					<?php foreach ($balances_before as $balance_id => $balance) : ?>
 						<tr>
-							<td><a href="<?php echo $this->baseUrl; ?>/admin#/balances/update/<?php echo $balance_id ?>" target="_blank" data-toggle="tooltip" title="$balance_id"><?php echo $balance['pp_includes_name'] ?> <span class="glyphicon glyphicon-question-sign" aria-hidden="false"></span></a></td>
+							<td><a href="<?php echo $this->baseUrl; ?>/admin#/balances/update/<?php echo $balance_id ?>" target="_blank" data-toggle="tooltip" title="<?php echo $balance_id ?>"><?php echo $balance['pp_includes_name'] ?> <span class="glyphicon glyphicon-question-sign" aria-hidden="false"></span></a></td>
 							<td><?php echo number_format(($balances_after[$balance_id]['amount']) - ($balances_before[$balance_id]['amount']), 3) ?></td>
 							<td><?php echo $balance['charging_by_usaget_unit']?></td>
 							<td><?php echo $balance['charging_by_usaget'] ?></td>
