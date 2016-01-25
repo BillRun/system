@@ -40,7 +40,8 @@ abstract class Billrun_Generator extends Billrun_Base {
 		if (isset($options['csv_filename'])) {
 			$this->csvPath = $this->export_directory . '/' . $options['csv_filename'] . '.csv';
 		} else {
-			$this->csvPath = $this->export_directory . '/' . $this->getStamp() . '.csv';
+			$today = date("Ymd");
+			$this->csvPath = $this->export_directory . '/' . $this->getStamp() .'_'. $today . '.csv';
 		}
 
 		$this->loadCsv();
