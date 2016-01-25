@@ -447,16 +447,16 @@ class UtestController extends Yaf_Controller_Abstract {
 	 */
 	protected function getTestFormData() {
 		$output = array();
-		$output['balance_types']['prepaidincludes'] = array();
+		$output['prepaidincludes'] = array();
 		$cursor = Billrun_Factory::db()->prepaidincludesCollection()->query()->cursor()->limit(100000)->sort(['name' => 1]);
 		foreach ($cursor as $row) {
-			$output['balance_types']['prepaidincludes'][] = $row['name'];
+			$output['prepaidincludes'][] = $row['name'];
 		}
-		$output['balance_types']['plans'] = array();
+		$output['charging_plans'] = array();
 		$searchQuery = array('type' => 'charging');
 		$cursor = Billrun_Factory::db()->plansCollection()->query($searchQuery)->cursor()->limit(100000)->sort(['name' => 1]);
 		foreach ($cursor as $row) {
-			$output['balance_types']['plans'][] = array('name' => $row['name'], 'desc' => $row['desc'], 'service_provider' => $row['service_provider']);
+			$output['charging_plans'][] = array('name' => $row['name'], 'desc' => $row['desc'], 'service_provider' => $row['service_provider']);
 		}
 		$output['customer_plans'] = array();
 		$searchQuery = array('type' => 'customer');
