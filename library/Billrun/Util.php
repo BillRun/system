@@ -1085,4 +1085,21 @@ class Billrun_Util {
 		return static::isEqual($num, $rounded, $epsilon) ? $rounded : ceil($num);
 	}
 
+
+	public static function countMonths($d1, $d2) {
+		$min_date = min($d1, $d2);
+		$max_date = max($d1, $d2);
+		$i = 0;
+
+		$maxMonth = date('m', $max_date);
+		while (($min_date = strtotime("first day of next month", $min_date)) <= $max_date) {
+			if(date('m', $min_date) == $maxMonth) {
+				break;
+			}
+			$i++;
+		}
+		
+		return $i;
+	}
+	
 }

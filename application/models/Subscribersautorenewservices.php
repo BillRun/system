@@ -144,4 +144,9 @@ class SubscribersautorenewservicesModel extends TabledateModel{
 		return array_merge($parentKeys, 
 						   array());
 	}
+	
+	public function update($params) {
+		$params['remain'] = Billrun_Util::countMonths(strtotime($params['from']), strtotime($params['to']));
+		return parent::update($params);
+	}
 }
