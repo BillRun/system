@@ -355,7 +355,7 @@ class UtestController extends Yaf_Controller_Abstract {
 	 */
 	protected function getLines($sid) {
 		$lines = array();
-		$total = 0;
+		$total_aprice = $total_usagev = 0;
         //Search lines by testID + sid (for test with configurable date)
 		if(in_array($this->utest->getTestName(), array('utest_Call'))){
 			$searchQuery = array(
@@ -375,7 +375,8 @@ class UtestController extends Yaf_Controller_Abstract {
 		$cursor = Billrun_Factory::db()->linesCollection()->query($searchQuery)->cursor()->limit(100000)->sort(['urt' => 1]);
 		foreach ($cursor as $row) {
 			$rowData = $row->getRawData();
-			$total += $rowData['aprice'];
+			$total_aprice += $rowData['aprice'];
+			$total_usagev += $rowData['usagev'];
 			$line = array(
 				'time_date' => date('d/m/Y H:i:s', $rowData['urt']->sec),
 				'record_type' => $rowData['record_type'],
@@ -395,7 +396,8 @@ class UtestController extends Yaf_Controller_Abstract {
 			$lines['rows'][] = $line;
 		}
 		
-		$lines['total'] = $total;
+		$lines['total_aprice'] = $total_aprice;
+		$lines['total_usagev'] = $total_usagev;
 		if(in_array($this->utest->getTestName(), array('utest_Call'))){
 			$lines['ref'] = 'Lines that was created during test run, test ID : ' .  $this->reference;
 		} else {
