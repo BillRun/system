@@ -125,7 +125,7 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 		}
 		return $matchedRate;
 	}
-	
+	//todo: move the regex and rate keys to config
 	protected function getLineAdditionalValues($row) {
 		$circuit_groups = Billrun_Factory::config()->getConfigValue('Rate_Nsn.calculator.whloesale_incoming_rate_key');
 		$rate_key = null;
