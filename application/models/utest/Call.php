@@ -33,6 +33,7 @@ class utest_CallModel extends utest_AbstractUtestModel {
 		$dialedDigits = Billrun_Util::filter_var($this->controller->getRequest()->get('dialedDigits'), FILTER_SANITIZE_STRING);
 		$imsi = Billrun_Util::filter_var($this->controller->getRequest()->get('imsi'), FILTER_SANITIZE_STRING);
 		$time_date = Billrun_Util::filter_var($this->controller->getRequest()->get('time_date'), FILTER_SANITIZE_STRING);
+		$send_time_date = Billrun_Util::filter_var($this->controller->getRequest()->get('send_time_date'), FILTER_SANITIZE_STRING);
 		$np_code = Billrun_Util::filter_var($this->controller->getRequest()->get('np_code'), FILTER_SANITIZE_STRING);
 		$send_np_code = Billrun_Util::filter_var($this->controller->getRequest()->get('send_np_code'), FILTER_SANITIZE_STRING);
 
@@ -54,10 +55,12 @@ class utest_CallModel extends utest_AbstractUtestModel {
 				'duration' => isset($nameAndUssage[1]) ? $nameAndUssage[1] : 4000,
 				'dialedDigits' => $dialedDigits,
 				'call_reference' => $this->controller->getReference(),
-				'time_date' => date_format(date_add(date_create_from_format('d/m/Y H:i', $time_date), new DateInterval('PT' . $index . 'S')), 'Y/m/d H:i:s.000') // 2015/08/13 11:59:03.325
 			);
-			if($send_np_code  === 'on'){
+			if($send_np_code === 'on'){
 				$params['np_code'] = $np_code;
+			}
+			if($send_time_date === 'on'){
+				$params['time_date'] = date_format(date_add(date_create_from_format('d/m/Y H:i', $time_date), new DateInterval('PT' . $index . 'S')), 'Y/m/d H:i:s.000'); // 2015/08/13 11:59:03.325
 			}
 			$data = $this->getRequestData($params);
 			$this->controller->sendRequest(array('usaget' => 'call', 'request' => $data));
@@ -77,7 +80,7 @@ class utest_CallModel extends utest_AbstractUtestModel {
 		$duration = $params['duration'];
 		$dialedDigits = $params['dialedDigits'];
 		$call_reference = $params['call_reference'];
-		$time_date = $params['time_date'];
+		$time_date = isset($params['time_date']) ? $params['time_date'] : date_format(date_create(), 'Y/m/d H:i:s.000');
 		$msisdn = $params['msisdn'];
 		$np_code = isset($params['np_code']) ? '<np_code>' . $params['np_code'] . '</np_code>' : '';
 		
