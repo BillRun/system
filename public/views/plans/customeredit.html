@@ -14,6 +14,13 @@
 				<div class='col-md-6'><input ng-model='entity.name' type='text' class='form-control' /></div>
 			</div>
 			<div class="row">
+				<div class="col-md-2">Service Provider</div>
+				<div class='col-md-6'>
+					<select ng-model="entity.service_provider" class="form-control">
+						<option ng-repeat="service_provider in availableServiceProviders">{{service_provider}}<option>
+					</select>				
+				</div>			</div>
+			<div class="row">
 				<div class="col-md-2">External ID</div>
 				<div class="col-md-6"><input ng-model='entity.external_id' type='text' class="form-control" /></div>
 			</div>
@@ -46,72 +53,7 @@
 				</div>
 			</div>
 
-			<div id='plan-includes' ng-if="entity.include">
-				<hr/>
-				<h3>Customer Plan Include</h3>
-				<div ng-if='entity.include.call !== undefined'>
-					<div class="row">
-						<div class="col-md-2">
-							<small><i class='delete-plan glyphicon glyphicon-minus-sign' ng-click='deleteInclude("call")'></i></small>
-							Call
-						</div>
-						<div class="col-md-6">
-							<input ng-model='entity.include.call' type='text' class='plan-include form-control' />
-						</div>
-					</div>
-				</div>
-
-				<div ng-if='entity.include.data !== undefined'>
-					<div class="row">
-						<div class="col-md-2">
-							<small><i class='delete-plan glyphicon glyphicon-minus-sign'  ng-click='deleteInclude("data")'></i></small>
-							Data
-						</div>
-						<div class="col-md-6">
-							<input ng-model='entity.include.data' type='text' class='plan-include form-control' />
-						</div>
-					</div>
-				</div>
-
-				<div ng-if='entity.include.mms !== undefined'>
-					<div class="row">
-						<div class="col-md-2">
-							<small><i class='delete-plan glyphicon glyphicon-minus-sign' ng-click='deleteInclude("mms")'></i></small>
-							MMS
-						</div>
-						<div class="col-md-6">
-							<input ng-model='entity.include.mms' type='text' class='plan-include form-control' />
-						</div>
-					</div>
-				</div>
-
-				<div ng-if='entity.include.sms !== undefined'>
-					<div class="row">
-						<div class="col-md-2">
-							<small><i class='delete-plan glyphicon glyphicon-minus-sign' ng-click='deleteInclude("sms")'></i></small>
-							SMS
-						</div>
-						<div class="col-md-6">
-							<input ng-model='entity.include.sms' type='text' class='plan-include form-control' />
-						</div>
-					</div>
-				</div>
-
-				<div class='row'>
-					<div class='col-md-2'>
-						<select id='new-include-type' class='form-control' ng-model='newInclude.type'>
-							<option ng-repeat='type in includeTypes' ng-disabled="entity.include[type]">{{type}}</option>
-						</select>
-					</div>
-					<div class='col-md-6'>
-						<input ng-model='newInclude.value' type='text' class='form-control' ng-disabled='!newInclude.type' />
-						<i id='add-plan-include' class='glyphicon glyphicon-plus-sign' ng-click='addPlanInclude()'></i>
-					</div>
-				</div>
-				<hr/>
-			</div>
-
-			<div id='plan-include-groups-div' ng-if="entity.include">
+			<div id='plan-include-groups-div' ng-if="entity.include.groups !== undefined">
 				<h3>Groups</h3>
 				<input ng-model='newGroup.name' type='text' class='form-control' />
 				<i class='add-group glyphicon glyphicon-plus-sign' ng-click="addNewGroup()"></i>
