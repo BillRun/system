@@ -72,7 +72,7 @@
 				<span class="icon-bar"></span>
 			</button>
 			<a class="brand" href="<?php echo $this->baseUrl; ?>/admin/">
-				<img src="http://www.billrun.net/images/billrun/web-logo.png" alt="BillRun"/>
+				<img src="img/web-logo.png" alt="BillRun"/>
 			</a>
         </div>
 		<div ng-include="'views/partials/menu.html'" ng-if='false'></div>
@@ -89,13 +89,17 @@
 	<script>
 		if (window.location.hash.match(/\/(update|list|duplicate|close_and_new|new|service_providers)(\/)*/)) {
 			$('.component').remove();
-		} else if ($('h1').length && $('h1').text().match(/(charging|customer)/gi)) {
+		} else if ($('h1').length && $('h1').text().match(/(charging|customer|recurring)/gi)) {
 			var href = $("#new").attr('href');
-			href += '?type=' + $("h1").text().match(/(charging|customer)/gi)[0].toLowerCase();
+			var match = $("h1").text().match(/(charging|customer|recurring)/gi)[0].toLowerCase();
+			if ($('h1').text().match(/recurring/gi)) {
+				match = 'charging';
+			}
+			href += '?type=' + match;
 			$('#new').attr('href', href);
 			$(".checkbox").find('[data-type="update"]').each(function (e) {
 				href = $(this).attr('href');
-				href += '?type=' + $("h1").text().match(/(charging|customer)/gi)[0].toLowerCase();				
+				href += '?type=' + match;
 				$(this).attr('href', href);
 			});
 		}
