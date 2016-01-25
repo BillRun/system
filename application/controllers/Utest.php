@@ -355,7 +355,7 @@ class UtestController extends Yaf_Controller_Abstract {
 	 */
 	protected function getLines($sid) {
 		$lines = array();
-		$total = 0;
+		$total_aprice = $total_usagev = 0;
         //Search lines by testID + sid (for test with configurable date)
 		if(in_array($this->utest->getTestName(), array('utest_Call'))){
 			$searchQuery = array(
@@ -375,7 +375,8 @@ class UtestController extends Yaf_Controller_Abstract {
 		$cursor = Billrun_Factory::db()->linesCollection()->query($searchQuery)->cursor()->limit(100000)->sort(['urt' => 1]);
 		foreach ($cursor as $row) {
 			$rowData = $row->getRawData();
-			$total += $rowData['aprice'];
+			$total_aprice += $rowData['aprice'];
+			$total_usagev += $rowData['usagev'];
 			$line = array(
 				'time_date' => date('d/m/Y H:i:s', $rowData['urt']->sec),
 				'record_type' => $rowData['record_type'],
@@ -395,7 +396,8 @@ class UtestController extends Yaf_Controller_Abstract {
 			$lines['rows'][] = $line;
 		}
 		
-		$lines['total'] = $total;
+		$lines['total_aprice'] = $total_aprice;
+		$lines['total_usagev'] = $total_usagev;
 		if(in_array($this->utest->getTestName(), array('utest_Call'))){
 			$lines['ref'] = 'Lines that was created during test run, test ID : ' .  $this->reference;
 		} else {
@@ -447,16 +449,16 @@ class UtestController extends Yaf_Controller_Abstract {
 	 */
 	protected function getTestFormData() {
 		$output = array();
-		$output['balance_types']['prepaidincludes'] = array();
+		$output['prepaidincludes'] = array();
 		$cursor = Billrun_Factory::db()->prepaidincludesCollection()->query()->cursor()->limit(100000)->sort(['name' => 1]);
 		foreach ($cursor as $row) {
-			$output['balance_types']['prepaidincludes'][] = $row['name'];
+			$output['prepaidincludes'][] = $row['name'];
 		}
-		$output['balance_types']['plans'] = array();
+		$output['charging_plans'] = array();
 		$searchQuery = array('type' => 'charging');
 		$cursor = Billrun_Factory::db()->plansCollection()->query($searchQuery)->cursor()->limit(100000)->sort(['name' => 1]);
 		foreach ($cursor as $row) {
-			$output['balance_types']['plans'][] = array('name' => $row['name'], 'desc' => $row['desc'], 'service_provider' => $row['service_provider']);
+			$output['charging_plans'][] = array('name' => $row['name'], 'desc' => $row['desc'], 'service_provider' => $row['service_provider']);
 		}
 		$output['customer_plans'] = array();
 		$searchQuery = array('type' => 'customer');
