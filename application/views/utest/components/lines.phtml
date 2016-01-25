@@ -27,7 +27,13 @@
 							<td><?php echo $line['usagev'] ?></td>
 							<td><?php echo $line['balance_before'] ?></td>
 							<td><?php echo $line['balance_after'] ?></td>
-							<td><a href="<?php echo $this->baseUrl; ?>/admin#/rates/update/<?php echo $line['arate'] ?>" target="_blank"><?php echo $lines['rates'][$line['arate']]['key'] ?></a></td>
+							<td>
+								<?php if (!empty($line['arate'])) : ?>
+									<a href="<?php echo $this->baseUrl; ?>/admin#/rates/update/<?php echo $line['arate']['id'] ?>" target="_blank"><?php echo $line['arate']['key'] ?></a>
+								<?php else : ?>
+									Rate Not Found
+								<?php endif; ?>
+							</td>
 						</tr>
 					<?php endforeach; ?>
 				</tbody>

@@ -355,8 +355,7 @@ class UtestController extends Yaf_Controller_Abstract {
 	 */
 	protected function getLines($sid) {
 		$lines = array();
-		$rates = array();
-		$amount = 0;
+		$total = 0;
         //Search lines by testID + sid (for test with configurable date)
 		if(in_array($this->utest->getTestName(), array('utest_Call'))){
 			$searchQuery = array(
@@ -375,36 +374,28 @@ class UtestController extends Yaf_Controller_Abstract {
 
 		$cursor = Billrun_Factory::db()->linesCollection()->query($searchQuery)->cursor()->limit(100000)->sort(['urt' => 1]);
 		foreach ($cursor as $row) {
-			$amount += $row['aprice'];
-			$rateId = (string)$row['arate']['$id'];
-			$lines['rows'][] = array(
-				'time_date' => date('d/m/Y H:i:s', $row['urt']->sec),
-				'record_type' => $row['record_type'],
-				'aprice' => $row['aprice'],
-				'usaget' => $row['usaget'],
-				'usagev' => $row['usagev'],
-				'balance_before' => number_format($row['balance_before'], 3),
-				'balance_after' => number_format($row['balance_after'], 3),
-				'arate' => $rateId
+			$rowData = $row->getRawData();
+			$total += $rowData['aprice'];
+			$line = array(
+				'time_date' => date('d/m/Y H:i:s', $rowData['urt']->sec),
+				'record_type' => $rowData['record_type'],
+				'aprice' => $rowData['aprice'],
+				'usaget' => $rowData['usaget'],
+				'usagev' => $rowData['usagev'],
+				'balance_before' => number_format($rowData['balance_before'], 3),
+				'balance_after' => number_format($rowData['balance_after'], 3),
 			);
-			if(!empty($rateId)){
-				$rates[$rateId] = '';
+			$arate = Billrun_Factory::db()->ratesCollection()->getRef($rowData['arate']);
+			if(!empty($arate)){
+				$line['arate'] = array(
+					'id' => (string)$arate->get('_id'),
+					'key' => $arate->get('key')
+				);
 			}
+			$lines['rows'][] = $line;
 		}
-		// get Rates referen
-		if(!empty($rates)){
-			$rates_mongo_ids = array_map( function($val){ return new MongoId($val);}, array_keys($rates));
-			$searchQuery = array('_id' => array( '$in' => $rates_mongo_ids));
-			$cursor = Billrun_Factory::db()->ratesCollection()->query($searchQuery)->cursor()->limit(100000);
-			foreach ($cursor as $row) {
-				$rowData = $row->getRawData();
-				$id = (string)$rowData['_id'];
-				$key = (string)$rowData['key'];
-				$rates[$id] = array('key' => $key);
-			}
-		}
-		$lines['rates'] = $rates;
-		$lines['total'] = $amount;
+		
+		$lines['total'] = $total;
 		if(in_array($this->utest->getTestName(), array('utest_Call'))){
 			$lines['ref'] = 'Lines that was created during test run, test ID : ' .  $this->reference;
 		} else {
