@@ -239,7 +239,7 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 	protected function setLinesInvoiceId($stamps, $invoice_id) {
 		$lines = Billrun_Factory::db()->linesCollection();
 		$where = array(
-			'lines' => array(
+			'stamp' => array(
 				'$in' => $stamps,
 			),
 			// the next or is for protection (source query that populate the lines)

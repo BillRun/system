@@ -91,6 +91,7 @@ class Billrun_Calculator_Ilds extends Billrun_Calculator {
 		switch ($type):
 			case '012':
 			case '015':
+			case '017':
 				$rating_charge = round($charge / 1000, 3);
 				break;
 
