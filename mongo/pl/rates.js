@@ -14,7 +14,7 @@ var _rate, _plan, _plan_name, _usaget, _appid, _prefixes = [], _tariffs = {}, _c
 var _location_id, _subtype, _t, _find_tariff, _interconnect,_tariff_ids;
 
 function create_tariff(tariff, interconnect) {
-	var _access = 0;
+	var _access = 0; var _amount, _amount2;
 	tariff.INITIAL_CHARGE = Number(tariff.INITIAL_CHARGE);
 	tariff.INITIAL_AMOUNT = Number(tariff.INITIAL_AMOUNT);
 	tariff.ADD_CHARGE     = Number(tariff.ADD_CHARGE);
@@ -32,6 +32,14 @@ function create_tariff(tariff, interconnect) {
 
 	print("create_tariff usaget : " + _usaget);
 	print("create_tariff tariff : " + tariff.PP_TARIFF_NAME);
+	if (_usaget == 'sms') {
+		_amount = 1;
+		_amount2 = 1;
+	} else {
+		_amount = tariff.INITIAL_AMOUNT;
+		_amount2 = tariff.ADD_AMOUNT;
+	}
+
 	if (tariff.INITIAL_AMOUNT == tariff.ADD_AMOUNT && tariff.INITIAL_CHARGE == tariff.ADD_CHARGE) {
 		return {
 			'access': _access,
@@ -39,21 +47,21 @@ function create_tariff(tariff, interconnect) {
 			'rate':     [{
 				'to': 2147483647,
 				'price': Number(tariff.ADD_CHARGE),
-				'interval': Number(tariff.ADD_AMOUNT)
+				'interval': Number(_amount2)
 			}]
 		};
-	}
+	}	
 	return {
 		'access':   _access,
 		'unit' : _unit,
 		'rate':     [{
-			'to': Number(tariff.INITIAL_AMOUNT),
+			'to': Number(_amount),
 			'price': Number(tariff.INITIAL_CHARGE),
-			'interval': Number(tariff.INITIAL_AMOUNT)
+			'interval': Number(_amount)
 			},{
 			'to': 2147483647,
 			'price': Number(tariff.ADD_CHARGE),
-			'interval': Number(tariff.ADD_AMOUNT)
+			'interval': Number(_amount2)
 		}]
 	};
 
