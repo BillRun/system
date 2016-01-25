@@ -1068,6 +1068,12 @@ class AdminController extends Yaf_Controller_Abstract {
 		}
 		if ($table === "plans") {
 			$query['$and'][] = array('type' => $this->_request->getParam('plan_type'));
+			if ($this->_request->getParam('plan_type') === 'charging') {
+				$query['$and'][] = array('$or' => array(
+					array('recurring' => array('$exists' => false)),
+					array('recurring' => 0), 
+				));
+			}
 		}
 		return $query;
 	}
