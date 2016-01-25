@@ -46,7 +46,7 @@
 					</select>				
 				</div>
 			</div>
-			<div class="row">
+			<div class="row" ng-if="utils.display('recurring', 'plans')">
 				<div class='col-md-2'>
 					{{utils.getDisplayValue("recurring", "plans")}}
 				</div>
