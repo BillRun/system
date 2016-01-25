@@ -79,7 +79,7 @@
 				</div>
 			</div>
 			
-			<div ng-hide="entity.include === undefined">
+			<div ng-if="entity.include !== undefined">
 				<hr/>
 				<h3>Include</h3>
 				<select class='form-control' ng-model='newIncludeType.type'>
