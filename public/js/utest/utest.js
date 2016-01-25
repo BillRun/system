@@ -1,15 +1,39 @@
 $(document).ready(function () {
-	$(function () {
-		$('.datetimepicker').datetimepicker({locale: 'en', format: 'DD/MM/YYYY HH:mm', });
-	});
-	
+	//init datepicker fields
+	$('.datetimepicker').datetimepicker({locale: 'en', format: 'DD/MM/YYYY HH:mm', });
 	//init Copy to clipard plugin
 	new Clipboard('.copy-to-clipboard-btn');
 
-	//select the right TAB from url hashtag
-	if(window.location.hash != "") {
-		$('a[href="' + window.location.hash + '"]').click()
+
+	//select the right TAB from url hashtag and Fill data if exist
+	if (window.location.hash != "") {
+		var tetsId = window.location.hash;
+		//show the last test form tab
+		$('.nav-tabs a[href="' + tetsId + '"]').tab('show');
+		//fill the form with saved submited values
+		$(tetsId).find('form').autofill($.parseJSON(localStorage.getItem(tetsId)));
+		//remove all form saved values
+		Object.keys(localStorage).forEach(function (key) {
+			if (/^#utest_/.test(key)) {
+				localStorage.removeItem(key);
+			}
+		});
+	} else {
+		//show first test tab
+		$('.nav-tabs a:first').tab('show');
 	}
+	
+	
+	//on form submit, save submited value to refill them on back button
+	$( "form" ).submit(function( event ) {
+		var key = '#' + $(this).find('input[name="type"]').val();
+		//create key->value array of form data
+		var formSerializeArray = $(this).serializeArray();
+		var formData = {};
+		$.map(formSerializeArray, function(n, i){ formData[n['name']] = n['value'];});
+		localStorage.setItem(key, JSON.stringify(formData));
+	});
+
 	
 	//Select to send checkboxes
 	$('.enable-input').change(setInputByCheckboxState);
@@ -36,6 +60,8 @@ $(document).ready(function () {
 	}
 	$('.enable-input').trigger('change');
 	
+	
+	//applay collapse containers
 	$("div.up[data-toggle='collapse']").prepend('<a href="#"><span class="glyphicon glyphicon-expand"></span></a> ');
 	$("div.down[data-toggle='collapse']").prepend('<a href="#"><span class="glyphicon glyphicon-collapse-down"></span></a> ');
 	$('.collapse').on('show.bs.collapse', function(){
