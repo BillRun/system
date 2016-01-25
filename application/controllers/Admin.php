@@ -495,6 +495,13 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->forward('tabledate', array('table' => 'plans'));
 		return false;
 	}
+	public function recurringplansAction() {
+		if (!$this->allowed('read'))
+			return false;
+		$this->_request->setParam('plan_type', 'recurring');
+		$this->forward('tabledate', array('table' => 'plans'));
+		return false;
+	}
 
 	public function plansAction() {
 		if (!$this->allowed('read'))
@@ -1067,12 +1074,16 @@ class AdminController extends Yaf_Controller_Abstract {
 			}
 		}
 		if ($table === "plans") {
-			$query['$and'][] = array('type' => $this->_request->getParam('plan_type'));
-			if ($this->_request->getParam('plan_type') === 'charging') {
-				$query['$and'][] = array('$or' => array(
-					array('recurring' => array('$exists' => false)),
-					array('recurring' => 0), 
-				));
+			if ($this->_request->getParam('plan_type') == 'recurring') {
+				$query['$and'][] = array('type' => 'charging', 'recurring' => 1);
+			} else {
+				$query['$and'][] = array('type' => $this->_request->getParam('plan_type'));
+				if ($this->_request->getParam('plan_type') === 'charging') {
+					$query['$and'][] = array('$or' => array(
+						array('recurring' => array('$exists' => false)),
+						array('recurring' => 0), 
+					));
+				}
 			}
 		}
 		return $query;

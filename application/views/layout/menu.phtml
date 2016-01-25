@@ -25,6 +25,9 @@
 						<li class='menu-item-chargingplans <?php echo ($active == 'chargingplans' ? ' active' : ''); ?>'>
 							<a href="<?php echo $this->baseUrl; ?>/admin/chargingplans">Charging Plans</a>
 						</li>
+						<li class="menu-item-recurringplans <?php echo ($active == 'recurringplans' ? ' active' : ''); ?>">
+							<a href="<?php echo $this->baseUrl; ?>/admin/recurringplans">Recurring Plans</a>
+						</li>
 					<?php endif; ?>
 					<?php if (AdminController::authorized('read', 'rates') && AdminController::showInMenu('rates')) : ?>
 						<li class='menu-item-rates <?php echo ($active == 'rates' ? ' class="active"' : ''); ?>'>
