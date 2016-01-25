@@ -127,7 +127,7 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 	}
 	
 	protected function getLineAdditionalValues($row) {
-		$circuit_groups = Billrun_Factory::config()->getConfigValue('Rate_Nsn.calculator.tg');
+		$circuit_groups = Billrun_Factory::config()->getConfigValue('Rate_Nsn.calculator.whloesale_incoming_rate_key');
 		$rate_key = null;
 		if( in_array($row['record_type'],array('30','11')) && ($row['in_circuit_group'] > $circuit_groups['icg']['min']) && 
 			($row['in_circuit_group'] < $circuit_groups['icg']['max']) ) {
@@ -140,8 +140,9 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 			&& (preg_match('/^(972)?5/',$row['called_number']))) {
 			$rate_key = 'IL_MOBILE';
 		}
+		$additional_properties = $this->getAdditionalProperties();
 		if(isset($rate_key)){
-			return array('wholesale_rate_key' => $rate_key);
+			return array($additional_properties['wholesale_rate_key'] => $rate_key);
 		}
 		return array();
 	}
