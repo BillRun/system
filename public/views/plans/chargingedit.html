@@ -7,7 +7,7 @@
 			<li class="errorMessage list-group-item" ng-repeat="m in err.data.summaryReport">{{m}}</li>
 </ul>
 <div>
-	<form class='form-inline' ng-submit='save()'>
+	<form class='form-inline'>
 		<div ng-if='!advancedMode'>
 			<div class='row' ng-if='action === "duplicate" || action === "new"'>
 				<div class='col-md-2'>

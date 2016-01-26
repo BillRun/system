@@ -18,7 +18,7 @@ function BalancesController($controller, Utils) {
           vm.entity.balance = {cost: vm.newBalanceAmount};
       }
     }
-    vm.save();
+    vm.save(true);
   };
 
   vm.init = function () {

@@ -25,7 +25,6 @@ app.controller('EditController', ['$scope', 'Utils', '$routeParams', '$window', 
         if (redirect) {
           $window.location = baseUrl + '/admin/' + $routeParams.collection.replace(/_/g, '');
         }
-
       }, function (err) {
         $scope.err = err;
       });
