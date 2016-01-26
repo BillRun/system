@@ -67,6 +67,7 @@ class TableModel {
 	 */
 	public $extra_columns;
 
+	protected $error; 
 	/**
 	 * constructor
 	 * 
@@ -440,11 +441,16 @@ class TableModel {
 
 	public function duplicate($params) {
 		$key = $params[$this->search_key];
-		$count = $this->collection
+		Billrun_Factory::log(' search_key  ' .$this->search_key , Zend_log::INFO);
+		Billrun_Factory::log(' key  ' .$key , Zend_log::INFO);
+
+		if($key) { 
+			$count = $this->collection
 			->query($this->search_key, $key)
 			->count();
-		if ($count) {
-			die(json_encode("key already exists"));
+			if ($count) {
+				return $this->setError("key already exists") ;
+			}
 		}
 		if (isset($params['_id']->{'id'})) {
 			$params['source_id'] = (string) $params['_id']->{'$id'};
@@ -522,4 +528,12 @@ class TableModel {
 		return $row[$header];
 	}
 
+	protected function setError($str) {
+			$this->error = $str ;
+			return false;
+	}
+
+	public function getError($str) {
+			return $this->error;
+	}
 }

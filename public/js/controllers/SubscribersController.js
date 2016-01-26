@@ -1,5 +1,5 @@
-app.controller('SubscribersController', ['$scope', '$window', '$routeParams', 'Database', '$controller', 'utils',
-  function ($scope, $window, $routeParams, Database, $controller, utils) {
+app.controller('SubscribersController', ['$scope', '$window', '$routeParams', 'Database', '$controller',
+  function ($scope, $window, $routeParams, Database, $controller ) {
     'use strict';
 
     $controller('EditController', {$scope: $scope});
@@ -23,9 +23,7 @@ app.controller('SubscribersController', ['$scope', '$window', '$routeParams', 'D
 
     $scope.addIMSI = function () {
       if($scope.entity.imsi.length >=2) { 
-        $scope.flash.message ="Maximum 2 imsi for subscriber" ;
-        $scope.flash.cls ="alert alert-danger" ;
-        utils.flashMessage('flash',$scope);
+      
         return false ;
       }
       var idx = _.findIndex( $scope.entity.imsi , function(i) {

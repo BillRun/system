@@ -2,10 +2,13 @@ app.factory('Utils', ['$rootScope', function ($rootScope) {
     'use strict';
 
     function getDisplayValue(str, coll) {
-      console.log();
-      var str = _.result($rootScope.fields, coll + '.' + str + '.display_value');
-      var globalStr = _.result($rootScope.fields, str + '.display_value', str);
-      var returnStr  = globalStr|| str ; 
+     
+      var d1 = _.result($rootScope.fields, coll + '.' + str + '.display_value');
+      var d2 = _.result($rootScope.fields, str + '.display_value');
+      console.log(d1,d2,d1||d2);
+
+      var returnStr  =  (d1 || d2) || str ;  ; 
+     
       return _.capitalize(returnStr.replace(/_/g, ' '));
     }
 
@@ -48,10 +51,13 @@ app.factory('Utils', ['$rootScope', function ($rootScope) {
       return $rootScope.fields[coll][field]['date_format'];
     }
 
+   
+
     return {
       getDisplayValue: getDisplayValue,
       display: display,
       disabled: disabled,
       getDateFormat: getDateFormat
+
     };
   }]);

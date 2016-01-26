@@ -377,7 +377,8 @@ class AdminController extends Yaf_Controller_Abstract {
 		$data = @json_decode($flatData, true);
 
 		if (empty($data) || ($type != 'new' && empty($id)) || empty($coll)) {
-				return $this->responseError("Data param is empty");
+
+				return $this->responseError($v->setReport(array("Data is empty !!!")));
 		}
 
 		if ($id) {
@@ -405,10 +406,11 @@ class AdminController extends Yaf_Controller_Abstract {
 				$saveStatus = $model->update($params);
 			}
 		} else if ($type == 'close_and_new') {
-		  	$saveStatus = $model->closeAndNew($params);
+		  	 $model->closeAndNew($params);
 		} else if (in_array($type, array('duplicate', 'new'))) {
-			$saveStatus = $model->duplicate($params);
+			 $model->duplicate($params);
 		}
+
 
 //		$ret = array(
 //			'status' => $saveStatus,
@@ -417,7 +419,13 @@ class AdminController extends Yaf_Controller_Abstract {
 //		);
 		// @TODO: need to load ajax view
 		// for now just die with json
-		return $this->responseSuccess(array("data" => $params , "status"=>true ));
+ 
+		if($errorMsg = $model->getError()) { 
+			return $this->responseError($errorMsg);
+		} else { 
+			return $this->responseSuccess(array("data" => $params , "status"=>true ));
+		}
+		
 	}
 
 
@@ -1387,7 +1395,7 @@ public function responseError($message,$statusCode = 400)
 		if(is_array($message)) { 
 			$resp->setBody(json_encode($message));
 		} else { 
-			$resp->setBody($message);
+			$resp->setBody(json_encode(array("message"=>$message)));
 		}
 		//$resp->response();
 		return false;

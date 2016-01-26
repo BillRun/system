@@ -116,9 +116,11 @@ public function UniqueValidator($attribute , $value , $validationOptions =array(
     }
 
     $collection = Billrun_Factory::db()->getCollection($validationOptions["collection"]);
-     if (!($collection instanceof Mongodloid_Collection)) {
+    //Billrun_Factory::log("collection :" .print_r($collection,true) , Zend_Log::DEBUG);
 
-      return true;
+     if (!($collection instanceof Mongodloid_Collection)) {
+       $this->addError($attribute,$validationOptions["collection"] . " is not instanceof of $message Mongodloid_Collection",$code,$index) ;
+       return false; 
     }
 
 
@@ -129,13 +131,14 @@ public function UniqueValidator($attribute , $value , $validationOptions =array(
     }
 
     $checkUniqueQuery = array($attribute => $value);
-    if($MongoID =  $validationOptions["objectRef"]["_id"])  { 
 
-      $checkUniqueQuery =  array_merge($checkUniqueQuery,array( "_id" => array('$ne' => new MongoId((string) $MongoID )))) ;
+    if(isset($validationOptions["objectRef"]["_id"])) {
+        $MongoID =  $validationOptions["objectRef"]["_id"]; 
+        $checkUniqueQuery =  array_merge($checkUniqueQuery,array( "_id" => array('$ne' => new MongoId((string) $MongoID )))) ;
     }
     
-   
     $cursor =  $collection->find($checkUniqueQuery,array())  ; 
+     Billrun_Factory::log("$cursor->count() :" .var_export($checkUniqueQuery,true) , Zend_Log::DEBUG);
     if($cursor->count())   {
       $this->addError($attribute,$message,$code,$index) ;
       return false; 
@@ -171,12 +174,12 @@ public function UniqueWithValidator($attribute , $value , $validationOptions =ar
       //}
     }
 
-    if($MongoID =  $validationOptions["objectRef"]["_id"])  { 
-       $checkUniqueQuery =  array_merge($checkUniqueQuery,array( "_id" => array('$ne' => new MongoId((string) $MongoID )))) ;
+ if(isset($validationOptions["objectRef"]["_id"])) {
+        $MongoID =  $validationOptions["objectRef"]["_id"]; 
+        $checkUniqueQuery =  array_merge($checkUniqueQuery,array( "_id" => array('$ne' => new MongoId((string) $MongoID )))) ;
     }
-    
-     Billrun_Factory::log("validationOptions : " .print_r($validationOptions,1) , Zend_Log::DEBUG);
-     Billrun_Factory::log("checkUniqueQuery : " .print_r($checkUniqueQuery,1) , Zend_Log::DEBUG);
+   
+
    
     $cursor =  $collection->find($checkUniqueQuery,array())  ; 
     Billrun_Factory::log("$cursor->count() :" .print_r($cursor,true) , Zend_Log::DEBUG);
@@ -355,9 +358,9 @@ public function LengthValidator ($attribute , $value  ,$validationOptions = arra
       /* loop over the collection attributes */
 
       $flat = $this->flatTree($object) ;
-//Billrun_Factory::log("Flat : " .var_export($flat,true), Zend_Log::INFO);
+      Billrun_Factory::log("Flat : " .var_export($flat,true), Zend_Log::INFO);
 
-     // Billrun_Factory::log("collection validations : " . var_export($this->getKeyVal(array($this->validations,$collection)),1) ."\n" , Zend_Log::INFO);
+     Billrun_Factory::log("collection validations : " . var_export($this->getKeyVal(array($this->validations,$collection)),1) ."\n" , Zend_Log::INFO);
 
 
       foreach(array_values($flat)  as $attrInfo) {
@@ -402,9 +405,7 @@ public function LengthValidator ($attribute , $value  ,$validationOptions = arra
              $valIndex++;
           }
            
-        }
-
-        if($attrType == "scalar" ) { 
+        } else { 
           $fn = array('self', self::$validatorsFunctions[$check] );
           call_user_func( $fn,$attr,$attrInfo["value"],$checkOptions);          
         }     
@@ -427,7 +428,14 @@ public function LengthValidator ($attribute , $value  ,$validationOptions = arra
       "isValid" => $this->isValid()
       );
   }
-  
+
+
+  public function setReport($report) {
+     $this->summaryReport = $report ;
+     $this->isValid = false ;
+     return  $this->getErrors();
+  }
+
   public function getReport() {
     return $this->summaryReport;
   }
@@ -467,20 +475,26 @@ public function LengthValidator ($attribute , $value  ,$validationOptions = arra
   }
 
 public function flatTree($params) { 
+  
+ 
+  Billrun_Factory::log("flat params  => ". var_export($params,true) , Zend_Log::INFO);
   $iterator = new RecursiveIteratorIterator(
-      new RecursiveArrayIterator($params) ,RecursiveIteratorIterator::CHILD_FIRST
+      new RecursiveArrayIterator(array("params"=>$params)) ,RecursiveIteratorIterator::CHILD_FIRST
   );
   $attrs =array();
+
   for($iterator; $iterator->valid(); $iterator->next()) {
           $value = $iterator->current();
           $type = gettype($value);
 
-          if($type === "array" && ! self::is_list($value)) continue ;
-          array_push($attrs , array( "key"=>$iterator->key(),
+          if($type === "array" && !self::is_list($value)) continue ;
+
+          array_push($attrs , array("key"=>$iterator->key(),
                                   "type" => $type,
                                   "depth" => $iterator->getDepth(),
                                   "value"=> $value) );
   }
+ 
   return $attrs ;
   } 
 
