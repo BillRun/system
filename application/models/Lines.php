@@ -154,7 +154,6 @@ class LinesModel extends TableModel {
 			unset($columns['aid']);
 			unset($columns['sid']);
 			unset($columns['plan']);
-			Billrun_Factory::log(print_r($columns, 1));
 		}
 		return $columns;
 	}
