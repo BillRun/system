@@ -3,7 +3,7 @@
 		<h2>{{capitalize(action)}} Subscriber Auto Renew</h2>
 	</center>
 	<div ng-show="flash.message" ng-class="flash.cls">{{flash.message}}</div>
-	<form class='form-inline' ng-submit="save()">
+	<form class='form-inline' ng-submit="save(true)">
 		<div ng-if='!advancedMode'>
 			<div class="row" ng-if='utils.display("sid", "renew")'>
 				<div class="col-md-2">
