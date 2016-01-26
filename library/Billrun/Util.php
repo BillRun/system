@@ -325,7 +325,8 @@ class Billrun_Util {
 		if ($seconds > 3600) {
 			return gmdate('H:i:s', $seconds);
 		}
-		return gmdate('i:s', $seconds);
+		//return gmdate('i:s', $seconds);
+		return $seconds;
 	}
 
 	/**
