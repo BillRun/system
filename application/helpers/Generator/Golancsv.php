@@ -59,7 +59,8 @@ class Generator_Golancsv extends Billrun_Generator {
 		if (isset($options['accounts_csv_filename'])) {
 			$this->accountsCsvPath = $this->export_directory . '/' . $options['account_csv_filename'] . '.csv';
 		} else {
-			$this->accountsCsvPath = $this->export_directory . '/accounts' . $this->stamp . '.csv';
+			$csv_day = $this->getFileNameDate();
+			$this->accountsCsvPath = $this->export_directory . '/accounts' . $this->stamp . '_' . $csv_day . '.csv';
 		}
 		if (isset($options['subscribers_csv_filename'])) {
 			$this->subscribersCsvPath = $this->export_directory . '/' . $options['subscriber_csv_filename'] . '.csv';
@@ -426,6 +427,11 @@ class Generator_Golancsv extends Billrun_Generator {
 			$plan->collection($plans_coll);
 			$this->plans[strval($plan->getId())] = $plan;
 		}
+	}
+	
+	protected function getFileNameDate() {
+		$billrun_day = Billrun_Factory::config()->getConfigValue('billrun.charging_day',25);
+		return date('Ym').$billrun_day;
 	}
 
 }
