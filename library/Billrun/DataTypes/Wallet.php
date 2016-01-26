@@ -90,7 +90,11 @@ class Billrun_DataTypes_Wallet {
 
 		$this->chargingBy = $chargingBy;
 		$this->chargingByUsaget = $chargingByUsaget;
-		$this->chargingByUsagetUnit = Billrun_Util::getUsagetUnit($chargingByUsaget);
+		if ($this->chargingBy == 'cost' || $this->chargingBy == 'total_cost') {
+			$this->chargingByUsagetUnit = Billrun_Util::getUsagetUnit($this->chargingBy);
+		} else {
+			$this->chargingByUsagetUnit = Billrun_Util::getUsagetUnit($chargingByUsaget);
+		}
 
 		$this->setValue();
 	}
