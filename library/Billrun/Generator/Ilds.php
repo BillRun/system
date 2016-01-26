@@ -68,7 +68,7 @@ class Billrun_Generator_Ilds extends Billrun_Generator {
 			))
 			//->equals('source', 'ilds')
 			->equals('billrun', $this->getStamp())
-			->equals('subscriber_id', $subscriber_id)
+			->equals('subscriber_id', "$subscriber_id")
 			->notExists('billrun_excluded')
 			// todo check how to use hint with 2 indexes
 			->cursor()
