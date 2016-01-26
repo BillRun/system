@@ -144,11 +144,16 @@ class LinesModel extends TableModel {
 		return $this->collection->distinct($field, $filter_query);
 	}
 
-	public function getTableColumns() {
+	public function getTableColumns($remove_info_columns = false) {
 		$columns = parent::getTableColumns();
 		if (!empty($this->extra_columns)) {
 			$extra_columns = array_intersect_key($this->getExtraColumns(), array_fill_keys($this->extra_columns, ""));
 			$columns = array_merge($columns, $extra_columns);
+		}
+		if ($remove_info_columns) {
+			unset($columns['aid']);
+			unset($columns['sid']);
+			unset($columns['plan']);
 		}
 		return $columns;
 	}
@@ -169,6 +174,14 @@ class LinesModel extends TableModel {
 		}
 		arsort($billruns);
 
+		$planModel = new PlansModel();
+		$names = $planModel->getData(array('type' => 'customer'));
+		$planNames = array();
+		foreach($names as $name) {
+			$planNames[$name['name']] = $name['name'];
+		}
+
+		
 		$filter_fields = array(
 			'sid' => array(
 				'key' => 'sid',
@@ -185,6 +198,16 @@ class LinesModel extends TableModel {
 				'comparison' => 'equals',
 				'display' => 'BAN',
 				'default' => '',
+			),
+			'plan' => array(
+				'key' => 'plan',
+				'db_key' => 'plan',
+				'input_type' => 'multiselect',
+				'singleselect' => true,
+				'comparison' => '$in',
+				'display' => 'Plan',
+				'values' => $planNames,
+				'default' => array(),
 			),
 			'from' => array(
 				'key' => 'from',
@@ -271,14 +294,17 @@ class LinesModel extends TableModel {
 				'aid' => array(
 					'width' => 2,
 				),
+				'plan' => array(
+					'width' => 2,
+				)
+			),
+			1 => array(
 				'from' => array(
 					'width' => 2,
 				),
 				'to' => array(
 					'width' => 2,
 				),
-			),
-			1 => array(
 				'usage' => array(
 					'width' => 2,
 				),

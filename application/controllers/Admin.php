@@ -898,13 +898,18 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * @return string the render page (HTML)
 	 * @todo refactoring this function
 	 */
-	protected function getTableViewParams($filter_query = array(), $skip = null, $size = null) {
+	protected function getTableViewParams($filter_query = array(), $skip = null, $size = null, $session = null) {
 		if (isset($skip) && !empty($size)) {
 			$this->model->setSize($size);
 			$this->model->setPage($skip);
 		}
 		$data = $this->model->getData($filter_query);
-		$columns = $this->model->getTableColumns();
+		$table = strtolower(str_replace("Model", "", get_class($this->model)));
+		if ($this->getSetVar($this->getSession($table), 'sid', 'sid')) {
+			$columns = $this->model->getTableColumns(true);
+		} else {
+			$columns = $this->model->getTableColumns();
+		}
 		$edit_key = $this->model->getEditKey();
 		$pagination = $this->model->printPager();
 		$sizeList = $this->model->printSizeList();
@@ -1063,6 +1068,16 @@ class AdminController extends Yaf_Controller_Abstract {
 		$query = array();
 		if (($filter = $this->getManualFilters($table, $session))) {
 			$query['$and'][] = $filter;
+		}
+		if ($table === 'lines') {
+			if (($v = $this->getSetVar($session, 'sid', 'sid'))) {
+				$sub = Billrun_Factory::db()->subscribersCollection()->query(array('sid' => $v))->cursor()->limit(1)->current();
+				if ($sub) {
+					$sub = $sub->getRawData();
+					$session->aid = $sub['aid'];
+					$session->plan = $sub['plan'];
+				}
+			}
 		}
 		foreach ($filter_fields as $filter_name => $filter_field) {
 			$value = $this->getSetVar($session, $filter_field['key'], $filter_field['key'], $filter_field['default']);
