@@ -696,8 +696,13 @@ class AdminController extends Yaf_Controller_Abstract {
 		$session = $this->getSession($table);
 		// this use for export
 		$this->getSetVar($session, $query, 'query', $query);
-
-		$this->getView()->component = $this->buildTableComponent('lines', $query);
+		
+		if ($this->getRequest()->isPost()) {
+			// redirect
+			$this->redirect($this->baseUrl . '/admin/lines');
+		} else {
+			$this->getView()->component = $this->buildTableComponent('lines', $query);
+		}
 	}
 
 	public function queueAction() {
