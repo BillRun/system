@@ -45,28 +45,13 @@ final class Billrun_Version
 	public $URL = '<a href="https://bill.run">BillRun</a>';
 
 	/**
-	 * Compares two a "PHP standardized" version number against the current Joomla version.
-	 *
-	 * @param   string  $minimum  The minimum version of the Joomla which is compatible.
-	 *
-	 * @return  bool    True if the version is compatible.
-	 *
-	 * @see     http://www.php.net/version_compare
-	 * @since   4.0
-	 */
-	public static function isCompatible($minimum)
-	{
-		return version_compare(JVERSION, $minimum, 'ge');
-	}
-
-	/**
 	 * Gets a "PHP standardized" version string for the current Joomla.
 	 *
 	 * @return  string  Version string.
 	 *
 	 * @since   4.0
 	 */
-	public static function getShortVersion()
+	public function getShortVersion()
 	{
 		return $this->RELEASE . '.' . $this->DEV_LEVEL;
 	}
