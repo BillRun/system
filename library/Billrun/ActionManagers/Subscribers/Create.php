@@ -136,8 +136,7 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 		// If there were errors.
 		if(!empty($invalidFields)) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 3;
-			$error = "Subscribers create received invalid query values in fields: " . implode(',', $invalidFields);
-			$this->reportError($errorCode, Zend_Log::NOTICE);
+			$this->reportError($errorCode, Zend_Log::NOTICE, array(implode(',', $invalidFields)));
 			return false;
 		}
 		
@@ -155,6 +154,7 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 	 */
 	protected function setQueryFields($queryData) {
 		$queryFields = $this->getQueryFields();
+		$optionalFields = $this->getOptionalFields();
 		
 		// Arrary of errors to report if any occurs.
 		$invalidFields = array();
@@ -165,7 +165,7 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 			// ATTENTION: This check will not allow updating to empty values which might be legitimate.
 			if(isset($queryData[$field]) && !empty($queryData[$field])) {
 				$this->query[$field] = $queryData[$field];
-			} else {
+			} else if(!in_array($field, $optionalFields)) {
 				$invalidFields[] = $field;
 			}
 		}
@@ -179,5 +179,9 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 	 */
 	protected function getQueryFields() {
 		return Billrun_Factory::config()->getConfigValue("subscribers.create_fields");
+	}
+	
+	protected function getOptionalFields() {
+		return Billrun_Factory::config()->getConfigValue("subscribers.optional_fields");
 	}
 }
