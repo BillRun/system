@@ -204,7 +204,6 @@ class LinesModel extends TableModel {
 				'key' => 'plan',
 				'db_key' => 'plan',
 				'input_type' => 'multiselect',
-				'singleselect' => true,
 				'comparison' => '$in',
 				'display' => 'Plan',
 				'values' => $planNames,
