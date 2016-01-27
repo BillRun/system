@@ -21,29 +21,14 @@
 				<div class="col-xs-3">
 					<ul class="nav nav-tabs tabs-left">
 						<?php foreach ($tests as $key => $test) : ?>
-							<li class="<?php echo ($key == 0) ? 'active' : ''?>"><a data-toggle="tab" href="#<?php echo $test->getTestName() ?>"><?php echo $test->getTestLabel() ?></a></li>
+							<li><a data-toggle="tab" href="#<?php echo $test->getTestName() ?>"><?php echo $test->getTestLabel() ?></a></li>
 						<?php endforeach; ?>
 					</ul>
 				</div>
 
 				<div class="tab-content col-xs-9">
-<!--					<div class="tab-pane fade in active">
-						<div class="well well-lg text-center">
-							<img class='text-center' src="http://www.billrun.net/images/billrun/web-logo.png" alt="BillRun"/>
-							<hr>
-							<h2>
-								<p>Welcome to Unit testing home</p>
-								<p>Please select Test to begin...</p>
-							</h2>
-							<div class="list-group">
-								<?php foreach ($tests as $key => $test) : ?>
-									<a data-toggle="tab" class="list-group-item" href="#<?php echo $test->getTestName() ?>"><?php echo $test->getTestLabel() ?></a>
-								<?php endforeach; ?>
-							</div>
-						</div>
-					</div>-->
 					<?php foreach ($tests as $key => $test) : ?>
-						<div id="<?php echo $test->getTestName() ?>" class="tab-pane fade <?php echo ($key == 0) ? 'in active' : ''?>">
+						<div id="<?php echo $test->getTestName() ?>" class="tab-pane fade">
 							<?php print $this->render('utest/tests/' . $test->getTestTemplate(), array('name' => $test->getTestName(), 'label' => $test->getTestLabel())); ?>
 						</div>
 					<?php endforeach; ?>
