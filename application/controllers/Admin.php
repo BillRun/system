@@ -1069,16 +1069,6 @@ class AdminController extends Yaf_Controller_Abstract {
 		if (($filter = $this->getManualFilters($table, $session))) {
 			$query['$and'][] = $filter;
 		}
-		if ($table === 'lines') {
-			if (($v = $this->getSetVar($session, 'sid', 'sid'))) {
-				$sub = Billrun_Factory::db()->subscribersCollection()->query(array('sid' => $v))->cursor()->limit(1)->current();
-				if ($sub) {
-					$sub = $sub->getRawData();
-					$session->aid = $sub['aid'];
-					$session->plan = $sub['plan'];
-				}
-			}
-		}
 		foreach ($filter_fields as $filter_name => $filter_field) {
 			$value = $this->getSetVar($session, $filter_field['key'], $filter_field['key'], $filter_field['default']);
 			if ((!empty($value) || $value === 0 || $value === "0") &&
