@@ -1,5 +1,5 @@
-app.controller('RatesController', ['$scope', '$routeParams', 'Database', '$controller',
-  function ($scope, $routeParams, Database, $controller) {
+app.controller('RatesController', ['$scope', '$routeParams', 'Database', '$controller', '$location',
+  function ($scope, $routeParams, Database, $controller, $location) {
     'use strict';
 
     $controller('EditController', {$scope: $scope});
@@ -207,6 +207,7 @@ app.controller('RatesController', ['$scope', '$routeParams', 'Database', '$contr
     };
 
     $scope.init = function () {
+      console.log($location.search().plans);
       $scope.advancedMode = false;
       $scope.initEdit(function (entity) {
         if (_.isEmpty(entity.rates)) {

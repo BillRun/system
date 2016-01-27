@@ -151,9 +151,10 @@ class LinesModel extends TableModel {
 			$columns = array_merge($columns, $extra_columns);
 		}
 		if ($remove_info_columns) {
-			unset($columns['aid']);
-			unset($columns['sid']);
-			unset($columns['plan']);
+			$removable_fields = Billrun_Factory::config()->getConfigValue('admin_panel.lines.removable_columns', []);
+			foreach($removable_fields as $removable_field) {
+				unset($columns[$removable_field]);
+			}
 		}
 		return $columns;
 	}
@@ -203,7 +204,6 @@ class LinesModel extends TableModel {
 				'key' => 'plan',
 				'db_key' => 'plan',
 				'input_type' => 'multiselect',
-				'singleselect' => true,
 				'comparison' => '$in',
 				'display' => 'Plan',
 				'values' => $planNames,
