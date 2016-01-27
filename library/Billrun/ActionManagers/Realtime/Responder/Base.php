@@ -136,15 +136,15 @@ abstract class Billrun_ActionManagers_Realtime_Responder_Base {
 		$balance->collection($balances_coll);
 		$usaget = $lineToRebalance['usaget'];
 		$rate = Billrun_Factory::db()->ratesCollection()->getRef($lineToRebalance->get('arate', true));
-		$rebalanceCost = Billrun_Calculator_CustomerPricing::getPriceByRate($rate, $usaget, $rebalanceUsagev, $lineToRebalance['plan']);
+		$call_offset = isset($lineToRebalance['call_offset']) ? $lineToRebalance['call_offset'] : 0;
+		$rebalance_offset = $call_offset + $rebalanceUsagev;
+		$rebalanceCost = Billrun_Calculator_CustomerPricing::getPriceByRate($rate, $usaget, (-1) * $rebalanceUsagev, $lineToRebalance['plan'], $rebalance_offset);
 		if (!is_null($balance->get('balance.totals.' . $usaget . '.usagev'))) {
 			$balance['balance.totals.' . $usaget . '.usagev'] += $rebalanceUsagev;
+		} else if (!is_null($balance->get('balance.totals.' . $usaget . '.cost'))) {
+			$balance['balance.totals.' . $usaget . '.cost'] += $rebalanceCost;
 		} else {
-			if (!is_null($balance->get('balance.totals.' . $usaget . '.cost'))) {
-				$balance['balance.totals.' . $usaget . '.cost'] += $rebalanceCost;
-			} else {
-				$balance['balance.cost'] += $rebalanceCost;
-			}
+			$balance['balance.cost'] += $rebalanceCost;
 		}
 
 		$updateQuery = $this->getUpdateLineUpdateQuery($rebalanceUsagev, $rebalanceCost);
