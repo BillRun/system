@@ -418,13 +418,18 @@ function isAPIAvailable() {
 $(document).ready(function () {
 	$(".config input[type='checkbox']").bootstrapSwitch();
 
-  if ($('select[id="plan"]').length) {
-    $('a[data-type="update"]').each(function (i, el) {
-      var href = $(el).attr('href');
-      href += '?plans=' + JSON.stringify($('select[id="plan"]').val());
-      $(el).attr('href', href);
-    });
+  if (window.location.pathname.match(/rates/gi)) {
+    if ($('select[id="plan"]').length) {
+      $('a[data-type="update"]').each(function (i, el) {
+        var href = $(el).attr('href');
+        href += '?plans=' + JSON.stringify($('select[id="plan"]').val());
+        $(el).attr('href', href);
+      });
+    }
   }
+  $('#data_table tbody tr').on('click', function () {
+      $(this).addClass('highlight').siblings().removeClass('highlight');
+  });
 });
 
 /**
