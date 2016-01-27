@@ -105,7 +105,7 @@
 					</select>
 					<a ng-click="addCallRate()" class="clickable">Add New Call Tariff</a>
 				</div>
-				<div ng-repeat="(callRateName, callRate) in entity.rates.call" class="col-indent">
+				<div ng-repeat="(callRateName, callRate) in entity.rates.call" class="col-indent" id="{{callRateName}}">
 					<h4>
 						<small><i class="glyphicon glyphicon-chevron-down" ng-show="shown.callRates[callRateName]"></i></small>
 						<small><i class="glyphicon glyphicon-chevron-right" ng-hide="shown.callRates[callRateName]"></i></small>
