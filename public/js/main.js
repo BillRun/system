@@ -429,7 +429,7 @@ $(document).ready(function () {
     }
   }
   $('#data_table tbody tr').on('click', function () {
-      $(this).addClass('highlight').siblings().removeClass('highlight');
+      $(this).toggleClass('highlight').siblings().removeClass('highlight');
   });
 });
 

@@ -22,6 +22,8 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	 */
 	protected $name = 'pelephone';
 	
+	protected $row;
+	
 	public function extendRateParamsQuery(&$query, &$row, &$calculator) {
 		if (!in_array($row['usaget'], array('call', 'video_call', 'sms', 'mms'))) {
 			return;
@@ -52,6 +54,40 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 		$query[0]['$match']['params.shabbat'] = $shabbat;
 		$query[0]['$match']['params.interconnect'] = $interconnect;
+	}
+	
+	/**
+	 * use to store the row to extend balance query (method extendGetBalanceQuery)
+	 * 
+	 * @param array $row
+	 * @param Billrun_Calculator $calculator
+	 */
+	public function beforeCalculatorUpdateRow(&$row, Billrun_Calculator $calculator) {
+		if ($calculator->getType() == 'pricing') {
+			$this->row = $row;
+		}
+	}
+	
+	/**
+	 * method to extend the balance
+	 * 
+	 * @param array $query the query that will pull the balance
+	 * @param int $timeNow the time of the row (unix timestamp)
+	 * @param string $chargingType
+	 * @param string $usageType
+	 * @param Billrun_Balance $balance
+	 * 
+	 * @todo change the values to be with flag taken from pp_includes into balance object
+	 * 
+	 */
+	public function extendGetBalanceQuery(&$query, &$timeNow, &$chargingType, &$usageType, Billrun_Balance $balance) {
+		if (!empty($this->row['np_code'])) {
+			// we are out of PL network
+			$query['pp_includes_external_id'] = array('$ne', 7);
+		}
+		if (isset($this->row['call_type']) && $this->row['call_type'] == '2') {
+			$query['pp_includes_external_id'] = array('$nin', array(3, 4));
+		}
 	}
 	
 
