@@ -418,6 +418,7 @@ function isAPIAvailable() {
 $(document).ready(function () {
 	$(".config input[type='checkbox']").bootstrapSwitch();
 
+  $('table').stickyTableHeaders();
   if (window.location.pathname.match(/rates/gi)) {
     if ($('select[id="plan"]').length) {
       $('a[data-type="update"]').each(function (i, el) {
