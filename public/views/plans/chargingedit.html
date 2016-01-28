@@ -7,7 +7,7 @@
 			<li class="errorMessage list-group-item" ng-repeat="m in err.data.summaryReport">{{m}}</li>
 </ul>
 <div>
-	<form class='form-inline' ng-submit='save()'>
+	<form class='form-inline'>
 		<div ng-if='!advancedMode'>
 			<div class='row' ng-if='action === "duplicate" || action === "new"'>
 				<div class='col-md-2'>
@@ -46,7 +46,7 @@
 					</select>				
 				</div>
 			</div>
-			<div class="row">
+			<div class="row" ng-if="utils.display('recurring', 'plans')">
 				<div class='col-md-2'>
 					{{utils.getDisplayValue("recurring", "plans")}}
 				</div>
@@ -79,7 +79,7 @@
 				</div>
 			</div>
 			
-			<div ng-hide="entity.include === undefined">
+			<div ng-if="entity.include !== undefined">
 				<hr/>
 				<h3>Include</h3>
 				<select class='form-control' ng-model='newIncludeType.type'>

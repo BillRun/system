@@ -1,5 +1,5 @@
-app.controller('RatesController', ['$scope', '$routeParams', 'Database', '$controller',
-  function ($scope, $routeParams, Database, $controller) {
+app.controller('RatesController', ['$scope', '$routeParams', 'Database', '$controller', '$location', '$anchorScroll',
+  function ($scope, $routeParams, Database, $controller, $location, $anchorScroll) {
     'use strict';
 
     $controller('EditController', {$scope: $scope});
@@ -207,6 +207,11 @@ app.controller('RatesController', ['$scope', '$routeParams', 'Database', '$contr
     };
 
     $scope.init = function () {
+      $scope.shown = {prefix: false,
+        callRates: [],
+        smsRates: [],
+        dataRates: []
+      };
       $scope.advancedMode = false;
       $scope.initEdit(function (entity) {
         if (_.isEmpty(entity.rates)) {
@@ -214,6 +219,17 @@ app.controller('RatesController', ['$scope', '$routeParams', 'Database', '$contr
         }
         if (_.isEmpty(entity.params)) {
           entity.params = {};
+        }
+        if ($location.search().plans && $location.search().plans.length) {
+          var plans = JSON.parse($location.search().plans);
+          _.remove(plans, function (e) {
+            return e === "BASE";
+          });
+          if (plans.length === 1) {
+            $scope.shown.callRates[plans] = true;
+            $location.hash(plans);
+            $anchorScroll();
+          }
         }
       });
       $scope.availableCallUnits = ['seconds', 'minutes'];
@@ -228,11 +244,6 @@ app.controller('RatesController', ['$scope', '$routeParams', 'Database', '$contr
       $scope.newSMSRate = {name: undefined};
       $scope.newSMSPlan = {value: undefined};
       $scope.newDataRate = {name: undefined};
-      $scope.shown = {prefix: false,
-        callRates: [],
-        smsRates: [],
-        dataRates: []
-      };
       if ($scope.action === "new") $scope.shown.prefix = true;
     };
   }]);

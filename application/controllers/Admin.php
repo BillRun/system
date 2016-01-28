@@ -495,6 +495,13 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->forward('tabledate', array('table' => 'plans'));
 		return false;
 	}
+	public function recurringplansAction() {
+		if (!$this->allowed('read'))
+			return false;
+		$this->_request->setParam('plan_type', 'recurring');
+		$this->forward('tabledate', array('table' => 'plans'));
+		return false;
+	}
 
 	public function plansAction() {
 		if (!$this->allowed('read'))
@@ -689,8 +696,13 @@ class AdminController extends Yaf_Controller_Abstract {
 		$session = $this->getSession($table);
 		// this use for export
 		$this->getSetVar($session, $query, 'query', $query);
-
-		$this->getView()->component = $this->buildTableComponent('lines', $query);
+		
+		if ($this->getRequest()->isPost()) {
+			// redirect
+			$this->redirect($this->baseUrl . '/admin/lines');
+		} else {
+			$this->getView()->component = $this->buildTableComponent('lines', $query);
+		}
 	}
 
 	public function queueAction() {
@@ -891,13 +903,18 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * @return string the render page (HTML)
 	 * @todo refactoring this function
 	 */
-	protected function getTableViewParams($filter_query = array(), $skip = null, $size = null) {
+	protected function getTableViewParams($filter_query = array(), $skip = null, $size = null, $session = null) {
 		if (isset($skip) && !empty($size)) {
 			$this->model->setSize($size);
 			$this->model->setPage($skip);
 		}
 		$data = $this->model->getData($filter_query);
-		$columns = $this->model->getTableColumns();
+		$table = strtolower(str_replace("Model", "", get_class($this->model)));
+		if ($this->getSetVar($this->getSession($table), 'sid', 'sid')) {
+			$columns = $this->model->getTableColumns(true);
+		} else {
+			$columns = $this->model->getTableColumns();
+		}
 		$edit_key = $this->model->getEditKey();
 		$pagination = $this->model->printPager();
 		$sizeList = $this->model->printSizeList();
@@ -1067,7 +1084,17 @@ class AdminController extends Yaf_Controller_Abstract {
 			}
 		}
 		if ($table === "plans") {
-			$query['$and'][] = array('type' => $this->_request->getParam('plan_type'));
+			if ($this->_request->getParam('plan_type') == 'recurring') {
+				$query['$and'][] = array('type' => 'charging', 'recurring' => 1);
+			} else {
+				$query['$and'][] = array('type' => $this->_request->getParam('plan_type'));
+				if ($this->_request->getParam('plan_type') === 'charging') {
+					$query['$and'][] = array('$or' => array(
+						array('recurring' => array('$exists' => false)),
+						array('recurring' => 0), 
+					));
+				}
+			}
 		}
 		return $query;
 	}

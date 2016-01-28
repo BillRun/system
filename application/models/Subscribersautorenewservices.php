@@ -144,4 +144,11 @@ class SubscribersautorenewservicesModel extends TabledateModel{
 		return array_merge($parentKeys, 
 						   array());
 	}
+	
+	public function update($params) {
+		$params['remain'] = Billrun_Util::countMonths(strtotime($params['from']), strtotime($params['to']));
+		if (is_string($params['last_renew_date'])) $params['last_renew_date'] = new MongoDate(strtotime($params['last_renew_date']));
+		else if (is_array($params['last_renew_date'])) $params['last_renew_date'] = new MongoDate($params['last_renew_date']['sec']);
+		return parent::update($params);
+	}
 }

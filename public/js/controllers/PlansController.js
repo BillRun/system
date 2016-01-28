@@ -111,8 +111,8 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
       Database.getEntity(params).then(function (res) {
         if ($routeParams.action !== "new") {
           $scope.entity = res.data.entity;
-          if (_.isUndefined($scope.entity.include))
-            entity.include = {};
+          if (_.isUndefined($scope.entity.include) && $scope.entity.recurring != 1)
+            $scope.entity.include = {};
         } else if ($location.search().type === "charging") {
           $scope.entity = {
             "name": "",

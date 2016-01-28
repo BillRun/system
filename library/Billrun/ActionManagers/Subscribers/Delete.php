@@ -60,7 +60,7 @@ class Billrun_ActionManagers_Subscribers_Delete extends Billrun_ActionManagers_S
 			
 			// Could not find the row to be deleted.
 			if(!$rowToDelete || $rowToDelete->isEmpty()) {
-				$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 16;
+				$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 15;
 				$this->reportError($errorCode, Zend_Log::NOTICE);
 			} else {
 				$this->collection->updateEntity($rowToDelete, array('to' => new MongoDate()));
@@ -130,6 +130,13 @@ class Billrun_ActionManagers_Subscribers_Delete extends Billrun_ActionManagers_S
 	 * @return array - Array of strings of invalid field name. Empty if all is valid.
 	 */
 	protected function setQueryFields($queryData) {
+		
+		if (!isset($queryData['sid']) || empty($queryData['sid'])) {
+			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 14;
+			$this->reportError($errorCode, Zend_Log::NOTICE);
+			return false;
+		}
+		
 		$queryFields = $this->getQueryFields();
 		
 		// Initialize the query with date bound values.
@@ -142,21 +149,6 @@ class Billrun_ActionManagers_Subscribers_Delete extends Billrun_ActionManagers_S
 			if(isset($queryData[$field]) && !empty($queryData[$field])) {
 				$this->query[$field] = $queryData[$field];
 			}
-		}
-		
-		// No ID given.
-		if(empty($this->query)) {
-			$error = "No query given for delete subscriber action";
-			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 14;
-			$this->reportError($errorCode, Zend_Log::NOTICE);
-			return false;
-		}
-		$fieldCount = count($this->query);
-		if($fieldCount != 1 && $fieldCount != count($queryFields)) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 15;
-			$error = "Delete subscriber can only use one OR all of the fields!";
-			$this->reportError($errorCode, Zend_Log::NOTICE);
-			return false;
 		}
 		
 		return true;

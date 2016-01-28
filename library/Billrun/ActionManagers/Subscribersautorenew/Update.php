@@ -158,7 +158,7 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 		$set['last_renew_date'] = $set['creation_time'];
 		
 		$set['remain'] = 
-			$this->countMonths(strtotime($this->query['from']), strtotime($jsonUpdateData['to']));
+			Billrun_Util::countMonths(strtotime($this->query['from']), strtotime($jsonUpdateData['to']));
 		
 		$this->updateQuery['$set'] = array_merge($this->updateQuery['$set'], $set);
 	}
@@ -219,23 +219,7 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 //		
 		return true;
 	}
-	
-	protected function countMonths($d1, $d2) {
-		$min_date = min($d1, $d2);
-		$max_date = max($d1, $d2);
-		$i = 0;
 
-		$maxMonth = date('m', $max_date);
-		while (($min_date = strtotime("first day of next month", $min_date)) <= $max_date) {
-			if(date('m', $min_date) == $maxMonth) {
-				break;
-			}
-			$i++;
-		}
-		
-		return $i;
-	}
-	
 	/**
 	 * Set all the query fields in the record with values.
 	 * @param array $queryData - Data received.

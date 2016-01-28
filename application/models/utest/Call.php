@@ -52,7 +52,7 @@ class utest_CallModel extends utest_AbstractUtestModel {
 				'msisdn' => $subscriber['msisdn'],
 				'imsi' => $imsi,
 				'type' => $nameAndUssage[0],
-				'duration' => isset($nameAndUssage[1]) ? $nameAndUssage[1] : 4000,
+				'duration' => isset($nameAndUssage[1]) ? ($nameAndUssage[1]*10) : 4800, // default 8 minutes
 				'dialedDigits' => $dialedDigits,
 				'call_reference' => $this->controller->getReference(),
 			);

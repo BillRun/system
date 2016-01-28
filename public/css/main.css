@@ -1,3 +1,7 @@
+#data_table tbody tr.highlight td{
+	background-color: #80B3DF;
+}
+
 .glyphicon-plus-sign {
 	color: green;
 	cursor: pointer;
