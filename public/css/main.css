@@ -52,6 +52,9 @@
 	width: 80%;
 }
 
+.row-indent{
+	margin-left: 20px;
+}
 .col-indent {
 	margin-left: 40px;
 }
