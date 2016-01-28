@@ -185,7 +185,7 @@ class RealtimeeventAction extends ApiAction {
 		$processor = Billrun_Processor::getInstance($options);
 		$processor->addDataRow($this->event);
 		$processor->process();
-		return $processor->getData()['data'][0];
+		return current($processor->getAllLines());
 	}
 	
 	/**
