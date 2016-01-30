@@ -222,13 +222,15 @@ app.controller('RatesController', ['$scope', '$routeParams', 'Database', '$contr
         }
         if ($location.search().plans && $location.search().plans.length) {
           var plans = JSON.parse($location.search().plans);
-          _.remove(plans, function (e) {
-            return e === "BASE";
-          });
-          if (plans.length === 1) {
-            $scope.shown.callRates[plans] = true;
-            $location.hash(plans);
-            $anchorScroll();
+          if (plans) {
+            _.remove(plans, function (e) {
+              return e === "BASE";
+            });
+            if (plans.length === 1) {
+              $scope.shown.callRates[plans] = true;
+              $location.hash(plans);
+              $anchorScroll();
+            }
           }
         }
       });

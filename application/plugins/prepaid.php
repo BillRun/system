@@ -37,6 +37,57 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 	
 	/**
+	 * method to set call_offset
+	 * 
+	 * @param array $row the row we are running on
+	 * @param Billrun_Calculator $calculator the calculator trigger the event
+	 * 
+	 * @return void
+	 */
+	public function beforeCalculatorUpdateRow(&$row, Billrun_Calculator $calculator) {
+		if (!isset($row['call_offset']) && ($calculator->getType() == 'pricing' || stripos(get_class($calculator), 'rate') !== FALSE)) {
+			$row['call_offset'] = $this->getRowCurrentUsagev($row);
+		}
+		
+	}
+	
+	protected function getRowCurrentUsagev($row) {
+		try {
+			$lines_coll = Billrun_Factory::db()->linesCollection();
+			$query = $this->getRowCurrentUsagevQuery($row);
+			$line = $lines_coll->aggregate($query)->current();
+		} catch (Exception $ex) {
+			Billrun_Factory::log($ex->getCode() . ': ' . $ex->getMessage());
+		}
+		return isset($line['sum']) ? $line['sum'] : 0;
+	}
+	
+	protected function getRowCurrentUsagevQuery($row) {
+		$query = array(
+			array(
+				'$match' => array(
+					"sid" => $row['sid'],
+				)
+			),
+			array(
+				'$group' => array(
+					'_id' => null,
+					'sum' => array('$sum' => '$usagev'),
+				)
+			)
+		);
+		if ($row['usaget'] == 'call') {
+			$query[0]['$match']['call_reference'] = $row['call_reference'];
+			$query[0]['$match']['api_name'] = array('$ne' => 'start_call');
+			$query[0]['$match']['stamp'] = array('$ne' => $row['stamp']);
+		} else {
+			$query[0]['$match']['session_id'] = $row['session_id'];
+		}
+		return $query;
+	}
+
+	
+	/**
 	 * Send a request of ClearCall
 	 * 
 	 * @param type $row
