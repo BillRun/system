@@ -22,6 +22,12 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	 */
 	protected $name = 'pelephone';
 	
+	/**
+	 * billing row to handle
+	 * use to pre-fetch the billing line if the line is not passed in the requested event
+	 * 
+	 * @var array
+	 */
 	protected $row;
 	
 	public function extendRateParamsQuery(&$query, &$row, &$calculator) {
@@ -47,7 +53,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		} else {
 			$shabbat = false;
 		}
-		if (!empty($row['np_code'])) {
+		if ($this->isInterconnect($row)) {
 			$interconnect = true;
 		} else {
 			$interconnect = false;
@@ -56,6 +62,18 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		$query[0]['$match']['params.interconnect'] = $interconnect;
 	}
 	
+	/**
+	 * method to check if billing row is interconnect (not under PL network)
+	 * 
+	 * @param array $row the row to check
+	 * 
+	 * @return boolean true if not under PL network else false
+	 */
+	protected function isInterconnect($row) {
+		return isset($row['np_code']) && substr($row['np_code'], 0, 3) != '831'; // 831 np prefix of PL; @todo: move it to configuration
+	}
+
+
 	/**
 	 * use to store the row to extend balance query (method extendGetBalanceQuery)
 	 * 
@@ -81,12 +99,20 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * 
 	 */
 	public function extendGetBalanceQuery(&$query, &$timeNow, &$chargingType, &$usageType, Billrun_Balance $balance) {
-		if (!empty($this->row['np_code'])) {
-			// we are out of PL network
-			$query['pp_includes_external_id'] = array('$ne', 7);
-		}
-		if (isset($this->row['call_type']) && $this->row['call_type'] == '2') {
-			$query['pp_includes_external_id'] = array('$nin', array(3, 4));
+		if (!empty($this->row)) {
+			$pp_includes_external_ids = array();
+			if ($this->isInterconnect($this->row)) {
+				// we are out of PL network
+				array_push($pp_includes_external_ids, 7);
+			}
+
+			if (isset($this->row['call_type']) && $this->row['call_type'] == '2') {
+				array_push($pp_includes_external_ids, 3, 4);
+			}
+
+			if (count($pp_includes_external_ids)) {
+				$query['pp_includes_external_id'] = array('$nin' => $pp_includes_external_ids);
+			}
 		}
 	}
 	
