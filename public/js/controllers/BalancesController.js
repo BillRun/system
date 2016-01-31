@@ -12,7 +12,7 @@ function BalancesController($controller, Utils, $http) {
   vm.saveBalance = function () {
     if (vm.action === 'new') {
       var postData = {method: 'update', sid: "" + vm.entity.sid, query: JSON.stringify({
-          pp_includes_name: vm.entity.pp_includes_name
+          "pp_includes_name": vm.entity.pp_includes_name
         }),
         upsert: JSON.stringify({
           value: vm.newBalanceAmount, expiration_date: vm.entity.to, operation: "set"
@@ -24,7 +24,7 @@ function BalancesController($controller, Utils, $http) {
         else
           // TODO: change to flash message
           alert(res.data.desc + " - " + res.data.details);
-    });
+      });
     } else {
       vm.save(true);
     }
